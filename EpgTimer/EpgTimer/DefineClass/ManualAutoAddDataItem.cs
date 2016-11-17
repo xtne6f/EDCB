@@ -1,161 +1,144 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Windows;
+using System.Windows.Media;
 
 namespace EpgTimer
 {
-    public class ManualAutoAddDataItem
+    public class ManualAutoAddDataItem : AutoAddDataItemT<ManualAutoAddData>
     {
-        public ManualAutoAddDataItem(ManualAutoAddData item)
-        {
-            this.ManualAutoAddInfo = item;
-        }
+        public ManualAutoAddDataItem() { }
+        public ManualAutoAddDataItem(ManualAutoAddData item) : base(item) { }
 
-        public ManualAutoAddData ManualAutoAddInfo
-        {
-            get;
-            set;
-        }
+        public ManualAutoAddData ManualAutoAddInfo { get { return (ManualAutoAddData)_data; } set { _data = value; } }
+        public override bool IsManual { get { return true; } }
 
         public String DayOfWeek
         {
             get
             {
+                if (ManualAutoAddInfo == null) return "";
+                //
                 String view = "";
-                if (ManualAutoAddInfo != null)
+                byte dayOfWeekFlag = GetWeekFlgMod();
+                for (int i = 0; i < 7; i++)
                 {
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x01) != 0)
+                    if ((dayOfWeekFlag & 0x01) != 0)
                     {
-                        view += "日";
+                        view += "日月火水木金土"[i];
                     }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x02) != 0)
-                    {
-                        view += "月";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x04) != 0)
-                    {
-                        view += "火";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x08) != 0)
-                    {
-                        view += "水";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x10) != 0)
-                    {
-                        view += "木";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x20) != 0)
-                    {
-                        view += "金";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x40) != 0)
-                    {
-                        view += "土";
-                    }
+                    dayOfWeekFlag >>= 1;
                 }
                 return view;
             }
         }
-
-        public String Time
+        public double DayOfWeekValue
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
+                if (ManualAutoAddInfo == null) return double.MinValue;
+                //
+                int ret = 0;
+                byte dayOfWeekFlag = GetWeekFlgMod();
+                for (int i = 1; i <= 7; i++)
                 {
-                    UInt32 hh = ManualAutoAddInfo.startTime / (60 * 60);
-                    UInt32 mm = (ManualAutoAddInfo.startTime % (60 * 60)) / 60;
-                    UInt32 ss = ManualAutoAddInfo.startTime % 60;
-                    view = hh.ToString() + ":" + mm.ToString() + ":" + ss.ToString();
-
-                    UInt32 endTime = ManualAutoAddInfo.startTime + ManualAutoAddInfo.durationSecond;
-                    if (endTime > 24 * 60 * 60)
+                    if ((dayOfWeekFlag & 0x01) != 0)
                     {
-                        endTime -= 24 * 60 * 60;
+                        ret = 10 * ret + i;
                     }
-                    hh = endTime / (60 * 60);
-                    mm = (endTime % (60 * 60)) / 60;
-                    ss = endTime % 60;
-                    view += " ～ " + hh.ToString() + ":" + mm.ToString() + ":" + ss.ToString();
+                    dayOfWeekFlag >>= 1;
                 }
-                return view;
+                return ret * Math.Pow(10, (7 - ret.ToString().Length));
             }
         }
-
-        public String Title
+        private byte GetWeekFlgMod()
+        {
+            if (Settings.Instance.LaterTimeUse == true && DateTime28.IsLateHour(ManualAutoAddInfo.PgStartTime.Hour) == true)
+            {
+                return ManualAutoAddData.ShiftWeekFlag(ManualAutoAddInfo.dayOfWeekFlag, -1);
+            }
+            return ManualAutoAddInfo.dayOfWeekFlag;
+        }
+        public String StartTime
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.title;
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return CommonManager.ConvertTimeText(ManualAutoAddInfo.PgStartTime
+                    , ManualAutoAddInfo.durationSecond, true, Settings.Instance.ResInfoNoSecond, true, true);
             }
         }
-
-        public String StationName
+        public UInt32 StartTimeValue
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.stationName;
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return UInt32.MinValue;
+                //
+                return ManualAutoAddInfo.startTime;
             }
         }
-
-        public String RecMode
+        public String StartTimeShort
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    switch (ManualAutoAddInfo.recSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return CommonManager.ConvertTimeText(ManualAutoAddInfo.PgStartTime
+                    , ManualAutoAddInfo.durationSecond, true, true, true, true);
             }
         }
-
-        public String Priority
+        public String ProgramDuration
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.recSetting.Priority.ToString();
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return CommonManager.ConvertDurationText(ManualAutoAddInfo.PgDurationSecond, Settings.Instance.ResInfoNoDurSecond);
             }
+        }
+        public UInt32 ProgramDurationValue
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return UInt32.MinValue;
+                //
+                return ManualAutoAddInfo.PgDurationSecond;
+            }
+        }
+        public override String NetworkName
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return CommonManager.ConvertNetworkNameText(ManualAutoAddInfo.originalNetworkID);
+            }
+        }
+        public override String ServiceName
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return ManualAutoAddInfo.stationName;
+            }
+        }
+        public override String ConvertInfoText()
+        {
+            if (ManualAutoAddInfo == null) return "";
+            //
+            String view = "";
+            view += "番組名 : " + EventName + "\r\n";
+            view += "曜日 : " + DayOfWeek + "\r\n";
+            view += "時間 : " + CommonManager.ConvertTimeText(ManualAutoAddInfo.PgStartTime, ManualAutoAddInfo.durationSecond, true, false, true, true) + "\r\n";
+            view += "サービス : " + ServiceName + "(" + NetworkName + ")" + "\r\n";
+            view += "自動登録 : " + (KeyEnabled == true ? "有効" : "無効");
+
+            view += "\r\n\r\n" + ConvertRecSettingText();
+            return view;
         }
     }
+
 }

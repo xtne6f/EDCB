@@ -1,16 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.IO;
 using System.Windows.Interop;
 
 namespace EpgTimer
@@ -26,62 +16,33 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            String plugInFile = "Write_Default.dll";
-            String recNamePlugInFile = "";
+            if (CommonManager.Instance.IsConnected == true)
+            {
+                CommonManager.Instance.DB.ReloadPlugInFile();
+            }
+            comboBox_writePlugIn.ItemsSource = CommonManager.Instance.DB.WritePlugInList.Values;
+            comboBox_writePlugIn.SelectedItem = "Write_Default.dll";
 
-            ErrCode err = CommonManager.Instance.DB.ReloadPlugInFile();
-            if (err == ErrCode.CMD_ERR_CONNECT)
-            {
-                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-            }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
-            {
-                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-            }
-            if (err != ErrCode.CMD_SUCCESS)
-            {
-                MessageBox.Show("PlugIn一覧の取得でエラーが発生しました。");
-            }
-
-            int select = 0;
-            foreach (string info in CommonManager.Instance.DB.WritePlugInList.Values)
-            {
-                int index = comboBox_writePlugIn.Items.Add(info);
-                if (String.Compare(info, plugInFile, true) == 0)
-                {
-                    select = index;
-                }
-            }
-            if (comboBox_writePlugIn.Items.Count != 0)
-            {
-                comboBox_writePlugIn.SelectedIndex = select;
-            }
-
-            select = 0;
-            comboBox_recNamePlugIn.Items.Add("なし");
-            foreach (string info in CommonManager.Instance.DB.RecNamePlugInList.Values)
-            {
-                int index = comboBox_recNamePlugIn.Items.Add(info);
-                if (String.Compare(info, recNamePlugInFile, true) == 0)
-                {
-                    select = index;
-                }
-            }
-            if (comboBox_recNamePlugIn.Items.Count != 0)
-            {
-                comboBox_recNamePlugIn.SelectedIndex = select;
-            }
+            var list = CommonManager.Instance.DB.RecNamePlugInList.Values.ToList();
+            list.Insert(0, "なし");
+            comboBox_recNamePlugIn.ItemsSource = list;
+            comboBox_recNamePlugIn.SelectedItem = "なし";
 
             if (CommonManager.Instance.NWMode == true)
             {
-                button_folder.IsEnabled = false;
                 button_write.IsEnabled = false;
                 button_recName.IsEnabled = false;
             }
         }
 
+        public void SetPartialMode(bool partialRec)
+        {
+            this.Title = "録画フォルダ、使用PlugIn設定" + (partialRec == true ? " (部分受信)" : "");
+        }
+
         public void SetDefSetting(RecFileSetInfo info)
         {
+            button_ok.Content = "変更";
             textBox_recFolder.Text = String.Compare(info.RecFolder, "!Default", true) == 0 ? "" : info.RecFolder;
             foreach (string text in comboBox_writePlugIn.Items)
             {
@@ -111,12 +72,7 @@ namespace EpgTimer
 
         private void button_folder_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
-            dlg.Description = "フォルダ選択";
-            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                textBox_recFolder.Text = dlg.SelectedPath;
-            }
+            CommonManager.GetFolderNameByDialog(textBox_recFolder, "録画フォルダの選択", true);
         }
 
         private void button_write_Click(object sender, RoutedEventArgs e)

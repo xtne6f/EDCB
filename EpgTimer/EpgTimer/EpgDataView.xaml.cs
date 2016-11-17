@@ -1,16 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EpgTimer
 {
@@ -19,103 +11,78 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgDataView : UserControl
     {
-        private bool RedrawEpg = true;
+        private bool ReloadInfo = true;
 
         public EpgDataView()
         {
             InitializeComponent();
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        private List<EpgDataViewItem> Views
         {
-            try
-            {
-                if (RedrawEpg == true && this.IsVisible == true)
-                {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            get { return tabControl.Items.Cast<TabItem>().Select(item => item.Content).OfType<EpgDataViewItem>().ToList(); }
+        }
+
+        public void SaveViewData()
+        {
+            //存在しないときは、本当に無いか、破棄されて保存済み
+            this.Views.ForEach(view => view.SaveViewData());
         }
 
         /// <summary>
         /// EPGデータの更新通知
         /// </summary>
-        public void UpdateEpgData()
+        public void UpdateInfo(bool reload = true)
         {
-            try
+            ReloadInfo |= reload;
+            if (ReloadInfo == true && this.IsVisible == true)
             {
-                if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
-                {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
-                }
-                else
-                {
-                    RedrawEpg = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                ReloadInfo = !ReloadInfoData();
             }
         }
 
         /// <summary>
         /// 予約情報の更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void UpdateReserveInfo(bool reload = true)
         {
-            try
-            {
-                foreach (TabItem item in tabControl.Items)
-                {
-                    if (item.Content.GetType() == typeof(EpgDataViewItem))
-                    {
-                        EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.UpdateReserveData();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            this.Views.ForEach(view => view.UpdateReserveInfo(reload));
         }
 
         /// <summary>
         /// 設定の更新通知
         /// </summary>
+        CustomEpgTabInfo oldInfo = null;
+        object oldState = null;
+        int? oldID = null;
         public void UpdateSetting()
         {
             try
             {
-                //まず表示中のタブのデータをクリア
-                foreach (TabItem item in tabControl.Items)
-                {
-                    if (item.Content.GetType() == typeof(EpgDataViewItem))
-                    {
-                        EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.ClearInfo();
-                    }
-                }
-                //タブの削除
-                tabControl.Items.Clear();
+                SaveViewData();
 
-                ReDrawEpgData();
+                //表示していた番組表の情報を保存
+                var item = tabControl.SelectedItem as TabItem;
+                if (item != null)
+                {
+                    var view = item.Content as EpgDataViewItem;
+                    oldInfo = view.GetViewMode();
+                    oldState = view.GetViewState();
+                    oldID = oldInfo.ID;
+                }
+
+                //一度全部削除して作り直す。
+                //保存情報は次回のタブ作成時に復元する。
+                tabControl.Items.Clear();
+                UpdateInfo();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { CommonUtil.DispatcherMsgBoxShow(ex.Message + "\r\n" + ex.StackTrace); }
+
+            //UpdateInfo()は非表示の時走らない。
+            //データはここでクリアしてしまうので、現に表示されているもの以外は表示状態はリセットされる。
+            //ただし、番組表(oldID)の選択そのものは保持する。
+            oldInfo = null;
+            oldState = null;
         }
 
         /// <summary>
@@ -125,288 +92,79 @@ namespace EpgTimer
         {
             try
             {
+                List<CustomEpgTabInfo> setInfo = null;
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
-                    if (CommonManager.Instance.NWMode == true)
-                    {
-                        if (CommonManager.Instance.NW.IsConnected == false)
-                        {
-                            return false;
-                        }
-                    }
-                    ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                        }), null);
-                        return false;
-                    }
-                    if (err == ErrCode.CMD_ERR_BUSY)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
-                        }), null);
-                        return false;
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                        }), null);
-                        return false;
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
-                        }), null);
-                        return false;
-                    }
-                    CommonManager.Instance.DB.ReloadReserveInfo();
-
-                    bool findTere = false;
-                    bool findBS = false;
-                    bool findCS = false;
-                    bool findOther = false;
-
-                    CustomEpgTabInfo setInfoBS = new CustomEpgTabInfo();
-                    setInfoBS.ViewMode = 0;
-                    setInfoBS.TabName = "BS";
-                    setInfoBS.NeedTimeOnlyBasic = false;
-                    CustomEpgTabInfo setInfoCS = new CustomEpgTabInfo();
-                    setInfoCS.ViewMode = 0;
-                    setInfoCS.TabName = "CS";
-                    setInfoCS.NeedTimeOnlyBasic = false;
-                    CustomEpgTabInfo setInfoTere = new CustomEpgTabInfo();
-                    setInfoTere.ViewMode = 0;
-                    setInfoTere.TabName = "地デジ";
-                    setInfoTere.NeedTimeOnlyBasic = false;
-                    CustomEpgTabInfo setInfoOther = new CustomEpgTabInfo();
-                    setInfoOther.ViewMode = 0;
-                    setInfoOther.TabName = "その他";
-                    setInfoOther.NeedTimeOnlyBasic = false;
-
-
-                    //デフォルト表示
-                    foreach (EpgServiceAllEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values)
-                    {
-                        if (info.serviceInfo.ONID == 0x0004)
-                        {
-                            findBS = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
-                            setInfoBS.ViewServiceList.Add(id);
-                        }
-                        else if (info.serviceInfo.ONID == 0x0006 || info.serviceInfo.ONID == 0x0007)
-                        {
-                            findCS = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
-                            setInfoCS.ViewServiceList.Add(id);
-                        }
-                        else if (0x7880 <= info.serviceInfo.ONID && info.serviceInfo.ONID <= 0x7FE8)
-                        {
-                            findTere = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
-                            setInfoTere.ViewServiceList.Add(id);
-                        }
-                        else
-                        {
-                            findOther = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
-                            setInfoOther.ViewServiceList.Add(id);
-                        }
-                    }
-                    if (findBS == true)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(setInfoBS);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = setInfoBS.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
-                    }
-                    if (findCS == true)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(setInfoCS);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = setInfoCS.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
-                    }
-                    if (findTere == true)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(setInfoTere);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = setInfoTere.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
-
-                    }
-                    if (findOther == true)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(setInfoOther);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = setInfoOther.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
-                    }
-                    if (tabControl.Items.Count > 0)
-                    {
-                        tabControl.SelectedIndex = 0;
-                    }
+                    setInfo = CommonManager.Instance.CreateDefaultTabInfo();
                 }
                 else
                 {
-                    //カスタム表示
-                    foreach (CustomEpgTabInfo info in Settings.Instance.CustomEpgTabList)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(info);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = info.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
-                    }
-                    if (tabControl.Items.Count > 0)
-                    {
-                        tabControl.SelectedIndex = 0;
-                    }
+                    setInfo = Settings.Instance.CustomEpgTabList;
                 }
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
 
+                int selectIndex = 0;
+                setInfo.ForEach(info => 
+                {
+                    var epgView = new EpgDataViewItem();
+                    var tabItem = new TabItem();
+                    tabItem.Header = info.TabName;
+                    tabItem.Content = epgView;
+                    int index = tabControl.Items.Add(tabItem);
+
+                    //とりあえず同じIDを探して表示してみる(中身は別物になってるかもしれないが、とりあえず表示を試みる)。
+                    //標準・カスタム切り替えの際は、標準番組表が負のIDを与えられているので、このコードは走らない。
+                    object state = null;
+                    if (oldID == info.ID)
+                    {
+                        selectIndex = index;
+                        if (oldInfo != null)
+                        {
+                            info = info.Clone();
+                            info.ViewMode = oldInfo.ViewMode;
+                            state = oldState;
+                        }
+                    }
+                    epgView.SetViewMode(info, state);
+                });
+                tabControl.SelectedIndex = selectIndex;
+                oldID = null;
             }
+            catch (Exception ex) { CommonUtil.DispatcherMsgBoxShow(ex.Message + "\r\n" + ex.StackTrace); }
             return true;
-        }
-
-        void epgView_ViewSettingClick(object sender, object param)
-        {
-            try
-            {
-                if (Settings.Instance.UseCustomEpgView == false)
-                {
-                    MessageBox.Show("デフォルト表示では設定を変更することはできません。");
-                }
-                else
-                {
-                    if (sender.GetType() == typeof(EpgDataViewItem))
-                    {
-                        if (param == null)
-                        {
-                            EpgDataViewItem item = sender as EpgDataViewItem;
-                            CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-                            item.GetViewMode(ref setInfo);
-
-                            EpgDataViewSettingWindow dlg = new EpgDataViewSettingWindow();
-                            PresentationSource topWindow = PresentationSource.FromVisual(this);
-                            if (topWindow != null)
-                            {
-                                dlg.Owner = (Window)topWindow.RootVisual;
-                            }
-                            dlg.SetDefSetting(setInfo);
-                            if (dlg.ShowDialog() == true)
-                            {
-                                dlg.GetSetting(ref setInfo);
-                                item.SetViewMode(setInfo);
-                            }
-                        }
-                        else
-                        {
-                            EpgDataViewItem item = sender as EpgDataViewItem;
-                            CustomEpgTabInfo setInfo = param as CustomEpgTabInfo;
-                            item.SetViewMode(setInfo);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
         /// EPGデータの再描画
         /// </summary>
-        private bool ReDrawEpgData()
+        private bool ReloadInfoData(bool reload = true)
         {
-            bool ret = true;
-            try
+            //タブが無ければ生成、あれば更新
+            if (tabControl.Items.Count == 0)
             {
-                if (tabControl.Items.Count == 0)
-                {
-                    //タブの生成
-                    ret = CreateTabItem();
-                }
-                else
-                {
-                    //まず表示中のタブのデータをクリア
-                    foreach (TabItem item in tabControl.Items)
-                    {
-                        if (item.Content.GetType() == typeof(EpgDataViewItem))
-                        {
-                            EpgDataViewItem view = item.Content as EpgDataViewItem;
-                            view.UpdateEpgData();
-                        }
-                    }
-                }
+                return CreateTabItem();
             }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-            }
-            return ret;
+
+            this.Views.ForEach(view => view.UpdateInfo(reload));
+            return true;
+        }
+
+        //メニューの更新
+        public void RefreshMenu()
+        {
+            this.Views.ForEach(view => view.RefreshMenu());
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             try
             {
-                if (RedrawEpg == true && this.IsVisible == true)
-                {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
-                }
+                UpdateInfo(false);
                 if (this.IsVisible)
                 {
-                    this.searchJumpTargetProgram();
+                    this.searchJumpTargetProgram();//EPG更新後に探す
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         /// <summary>
@@ -414,21 +172,13 @@ namespace EpgTimer
         /// </summary>
         void searchJumpTargetProgram()
         {
-            UInt64 serviceKey_Target1 = 0;
-            if (BlackoutWindow.selectedReserveItem != null)
-            {
-                ReserveData reserveData1 = BlackoutWindow.selectedReserveItem.ReserveInfo;
-                serviceKey_Target1 = CommonManager.Create64Key(reserveData1.OriginalNetworkID, reserveData1.TransportStreamID, reserveData1.ServiceID);
-            }
-            else if (BlackoutWindow.selectedSearchItem != null)
-            {
-                EpgEventInfo eventInfo1 = BlackoutWindow.selectedSearchItem.EventInfo;
-                serviceKey_Target1 = CommonManager.Create64Key(eventInfo1.original_network_id, eventInfo1.transport_stream_id, eventInfo1.service_id);
-            }
+            UInt64 serviceKey_Target1 = BlackoutWindow.Create64Key();
+            if (serviceKey_Target1 == 0) return;
+
             foreach (TabItem tabItem1 in this.tabControl.Items)
             {
-                EpgDataViewItem epgView1 = tabItem1.Content as EpgDataViewItem;
-                foreach (UInt64 serviceKey_OnTab1 in epgView1.ViewInfo.ViewServiceList)
+                var epgView1 = tabItem1.Content as EpgDataViewItem;
+                foreach (UInt64 serviceKey_OnTab1 in epgView1.GetViewMode().ViewServiceList)
                 {
                     if (serviceKey_Target1 == serviceKey_OnTab1)
                     {

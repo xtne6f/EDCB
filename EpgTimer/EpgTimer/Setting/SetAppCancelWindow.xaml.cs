@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace EpgTimer
 {
+    using BoxExchangeEdit;
+
     /// <summary>
     /// SetAppCancelWindow.xaml の相互作用ロジック
     /// </summary>
@@ -28,80 +22,57 @@ namespace EpgTimer
         public SetAppCancelWindow()
         {
             InitializeComponent();
-        }
 
-        private void button_process_del_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_process.SelectedItem != null)
+            if (CommonManager.Instance.NWMode == true)
             {
-                listBox_process.Items.RemoveAt(listBox_process.SelectedIndex);
+                ViewUtil.ChangeChildren(grid_main, false);
+                listBox_process.IsEnabled = true;
+                textBox_process.SetReadOnlyWithEffect(true);
+                button_cancel.IsEnabled = true;
+            }
+
+            var bx = new BoxExchangeEditor(null, listBox_process, true);
+            listBox_process.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_process, textBox_process);
+            if (CommonManager.Instance.NWMode == false)
+            {
+                bx.AllowKeyAction();
+                bx.AllowDragDrop();
+                button_process_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
+                button_process_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_process, textBox_process);
+                textBox_process.KeyDown += ViewUtil.KeyDown_Enter(button_process_add);
             }
         }
 
-        private void button_process_add_Click(object sender, RoutedEventArgs e)
+        private void button_process_open_Click(object sender, RoutedEventArgs e)
         {
-            if (String.IsNullOrEmpty(textBox_process.Text) == false)
-            {
-                foreach (String info in listBox_process.Items)
-                {
-                    if (String.Compare(textBox_process.Text, info, true) == 0)
-                    {
-                        MessageBox.Show("すでに追加されています");
-                        return;
-                    }
-                }
-                listBox_process.Items.Add(textBox_process.Text);
-            }
+            CommonManager.GetFileNameByDialog(textBox_process, true, "", ".exe");
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void button_OK_Click(object sender, RoutedEventArgs e)
         {
-            processList.Clear();
-            foreach (String info in listBox_process.Items)
-            {
-                processList.Add(info);
-            }
+            DialogResult = true;
+
+            processList = listBox_process.Items.OfType<string>().ToList();
             ngMin = textBox_ng_min.Text;
-            if (checkBox_ng_usePC.IsChecked == true)
-            {
-                ngUsePC = true;
-            }
-            else
-            {
-                ngUsePC = false;
-            }
+            ngUsePC = (checkBox_ng_usePC.IsChecked == true);
             ngUsePCMin = textBox_ng_usePC_min.Text;
-            if (checkBox_ng_fileStreaming.IsChecked == true)
-            {
-                ngFileStreaming = true;
-            }
-            else
-            {
-                ngFileStreaming = false;
-            }
-            if (checkBox_ng_shareFile.IsChecked == true)
-            {
-                ngShareFile = true;
-            }
-            else
-            {
-                ngShareFile = false;
-            }
+            ngFileStreaming = (checkBox_ng_fileStreaming.IsChecked == true);
+            ngShareFile = (checkBox_ng_shareFile.IsChecked == true);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            foreach (string info in processList)
-            {
-                listBox_process.Items.Add(info);
-            }
-
+            listBox_process.Items.AddItems(processList);
             textBox_ng_min.Text = ngMin;
             checkBox_ng_usePC.IsChecked = ngUsePC;
             textBox_ng_usePC_min.Text = ngUsePCMin;
             checkBox_ng_fileStreaming.IsChecked = ngFileStreaming;
             checkBox_ng_shareFile.IsChecked = ngShareFile;
+        }
 
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
         }
     }
 }

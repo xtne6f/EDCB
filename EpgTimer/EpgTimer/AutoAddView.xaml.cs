@@ -1,16 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EpgTimer
 {
@@ -24,16 +15,22 @@ namespace EpgTimer
             InitializeComponent();
         }
 
-        public void SaveSize()
+        public void RefreshMenu()
         {
-            epgAutoAddView.SaveSize();
-            manualAutoAddView.SaveSize();
+            epgAutoAddView.RefreshMenu();
+            manualAutoAddView.RefreshMenu();
         }
 
-        public void UpdateAutoAddInfo()
+        public void SaveViewData()
         {
-            epgAutoAddView.UpdateInfo();
-            manualAutoAddView.UpdateInfo();
+            epgAutoAddView.SaveViewData();
+            manualAutoAddView.SaveViewData();
+        }
+
+        public void UpdateInfo(bool reload = true)
+        {
+            epgAutoAddView.UpdateInfo(reload);
+            manualAutoAddView.UpdateInfo(reload);
         }
 
     }

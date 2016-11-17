@@ -1,16 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EpgTimer
 {
@@ -25,88 +17,64 @@ namespace EpgTimer
 
             try
             {
-                foreach (String info in Settings.Instance.AndKeyList)
-                {
-                    ComboBox_andKey.Items.Add(info);
-                }
-                foreach (String info in Settings.Instance.NotKeyList)
-                {
-                    ComboBox_notKey.Items.Add(info);
-                }
+                Settings.Instance.AndKeyList.ForEach(s => ComboBox_andKey.Items.Add(s));
+                Settings.Instance.NotKeyList.ForEach(s => ComboBox_notKey.Items.Add(s));
             }
-            catch
+            catch { }
+        }
+
+        protected virtual void ComboBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var tb = e.OriginalSource as TextBox;
+            if (tb != null)
             {
+                ((ComboBox)sender).Text = tb.Text;
             }
         }
 
-        public void SaveSearchLog()
+        public void AddSearchLog()
+        {
+            if (Settings.Instance.SaveSearchKeyword == false) return;
+
+            AddSerchLog(ComboBox_andKey, Settings.Instance.AndKeyList, 30);
+            AddSerchLog(ComboBox_notKey, Settings.Instance.NotKeyList, 30);
+        }
+
+        private void AddSerchLog(ComboBox box, List<string> log, byte MaxLog)
         {
             try
             {
-                bool find = false;
-                if (ComboBox_andKey.Text.Length > 0)
-                {
-                    foreach (String info in Settings.Instance.AndKeyList)
-                    {
-                        if (String.Compare(ComboBox_andKey.Text, info, true) == 0)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        Settings.Instance.AndKeyList.Add(ComboBox_andKey.Text);
-                        ComboBox_andKey.Items.Add(ComboBox_andKey.Text);
-                        if (Settings.Instance.AndKeyList.Count > 30)
-                        {
-                            Settings.Instance.AndKeyList.RemoveAt(0);
-                        }
-                    }
-                }
+                string searchWord = box.Text;
+                if (string.IsNullOrEmpty(searchWord) == true) return;
 
-                find = false;
-                if (ComboBox_notKey.Text.Length > 0)
-                {
-                    foreach (String info in Settings.Instance.NotKeyList)
-                    {
-                        if (String.Compare(ComboBox_notKey.Text, info, true) == 0)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        Settings.Instance.NotKeyList.Add(ComboBox_notKey.Text);
-                        ComboBox_notKey.Items.Add(ComboBox_notKey.Text);
-                        if (Settings.Instance.NotKeyList.Count > 30)
-                        {
-                            Settings.Instance.NotKeyList.RemoveAt(0);
-                        }
-                    }
-                }
-                Settings.SaveToXmlFile();
+                box.Items.Remove(searchWord);
+                box.Items.Insert(0, searchWord);
+                box.Text = searchWord;
 
+                log.Remove(searchWord);
+                log.Insert(0, searchWord);
+                if (log.Count > MaxLog)
+                {
+                    log.RemoveAt(log.Count - 1);
+                }
             }
-            catch
-            {
-            }
+            catch { }
         }
 
-        public void GetSearchKey(ref EpgSearchKeyInfo key)
+        public EpgSearchKeyInfo GetSearchKey()
         {
+            var key = new EpgSearchKeyInfo();
             key.andKey = ComboBox_andKey.Text;
             key.notKey = ComboBox_notKey.Text;
             searchKeyDescView.GetSearchKey(ref key);
+            return key;
         }
 
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
-            searchKeyDescView.SetSearchKey(key);
-            ComboBox_andKey.Text = System.Text.RegularExpressions.Regex.Replace(
-                key.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
+            ComboBox_andKey.Text = key.andKey;
             ComboBox_notKey.Text = key.notKey;
+            searchKeyDescView.SetSearchKey(key);
         }
     }
 }

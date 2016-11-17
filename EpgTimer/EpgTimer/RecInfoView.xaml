@@ -1,80 +1,56 @@
-﻿<UserControl x:Class="EpgTimer.RecInfoView"
+﻿<local:DataViewBase x:Class="EpgTimer.RecInfoView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
+             xmlns:local="clr-namespace:EpgTimer.UserCtrlView"
+             d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="CheckBox">
-                        <BulletDecorator>
-                            <BulletDecorator.Bullet>
-                                <!--オフ状態のイメージ-->
-                                <Image Name="TickImage" Source="/Resources/key_no.png" Grid.Column="0" Stretch="None" />
-                            </BulletDecorator.Bullet>
-                            <ContentPresenter VerticalAlignment="Center" Grid.Column="1"/>
-                        </BulletDecorator>
-                        <ControlTemplate.Triggers>
-                            <!--オン状態のイメージ-->
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
-                            </Trigger>
-                            <!--未確定状態のイメージ-->
-                            <Trigger Property="IsChecked" Value="{x:Null}">
-                                <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
-            <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="番組名" Name="EventName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="Drop" Name="Drops" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="結果" Name="Result" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" Click="headerSelect_Click" />
-        </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu">
-            <MenuItem Header="録画情報" Click="button_recInfo_Click" />
-            <MenuItem Header="削除" Click="button_del_Click" />
-            <MenuItem Header="再生" Click="button_play_Click" />
-            <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" />
-        </ContextMenu>
-
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="UserCtrlView\ReserveListViewStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="{x:Type CheckBox}" BasedOn="{StaticResource {x:Type CheckBox}}" >
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="CheckBox">
+                            <BulletDecorator>
+                                <BulletDecorator.Bullet>
+                                    <!--オフ状態のイメージ-->
+                                    <Image Name="TickImage" Source="/Resources/key_no.png" Grid.Column="0" Stretch="None" />
+                                </BulletDecorator.Bullet>
+                                <ContentPresenter VerticalAlignment="Center" Grid.Column="1"/>
+                            </BulletDecorator>
+                            <ControlTemplate.Triggers>
+                                <!--オン状態のイメージ-->
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
+                                </Trigger>
+                                <!--未確定状態のイメージ-->
+                                <Trigger Property="IsChecked" Value="{x:Null}">
+                                    <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="100" />
-        </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" >
-            <ListView.Resources>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="ToolTipService.ShowDuration" Value="20000" />
-                    <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                    <Setter Property="Background" Value="{Binding BackColor}" />
-                    <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
-                    <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
-                </Style>
-            </ListView.Resources>
+    <DockPanel>
+        <StackPanel Name="stackPanel_button" MinWidth="100" >
+            <Button Content="再生" Name="button_play" Margin="0,10,0,10" />
+            <Button Content="削除" Name="button_del" Margin="0,10,0,10" />
+            <Button Content="全クリア" Name="button_delAll" Margin="0,10,0,10" />
+        </StackPanel>
+        <ListView Name="listView_recinfo" Style="{StaticResource DataListViewStyle}" >
             <ListView.View>
-                <GridView x:Name="gridView_recinfo">
+                <GridView x:Name="gridView_recinfo" >
                     <GridViewColumn>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="IsProtect">
-                                <Image Source="/Resources/key.png" Stretch="None" />
+                            <GridViewColumnHeader Tag="プロテクト" Uid="IsProtect">
+                                <Image Source="/Resources/key.png" Stretch="None" IsHitTestVisible="False" />
                             </GridViewColumnHeader>
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
@@ -85,50 +61,66 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="日時" Uid="StartTime" />
                         </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="長さ" Uid="ProgramDuration" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=ProgramDuration}" HorizontalAlignment="Right" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="サービス名" Uid="ServiceName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="番組名" Uid="EventName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Drops}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Drop" Tag="Drops" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="Drop" Tag="Drop(全信号)" Uid="Drops" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=DropsSerious}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="*Drop(映像・音声)" Tag="*Drop(映像・音声)" Uid="DropsSerious" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Scrambles}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Scramble" Tag="Scrambles" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="Scramble" Tag="Scramble(全信号)" Uid="Scrambles" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ScramblesSerious}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="*Scramble(映像・音声)" Tag="*Scramble(映像・音声)" Uid="ScramblesSerious" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Result}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="結果" Tag="Result" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="結果" Uid="Result" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=RecFilePath}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="録画ファイル" Tag="RecFilePath" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="録画ファイル" Uid="RecFilePath" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button">
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
-            <Button Content="再生" Height="23" Name="button_play" Margin="0,10,0,10" Click="button_play_Click" />
-        </StackPanel>
-    </Grid>
-</UserControl>
+    </DockPanel>
+</local:DataViewBase>

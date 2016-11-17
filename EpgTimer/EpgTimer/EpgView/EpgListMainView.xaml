@@ -1,14 +1,17 @@
-﻿<UserControl x:Class="EpgTimer.EpgListMainView"
+﻿<local:EpgViewBase x:Class="EpgTimer.EpgListMainView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="500" d:DesignWidth="700" Loaded="UserControl_Loaded">
+             xmlns:local="clr-namespace:EpgTimer.EpgView"
+             d:DesignHeight="500" d:DesignWidth="700" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\UserCtrlView\ReserveListViewStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -21,92 +24,17 @@
                 <RowDefinition Height="100" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <ScrollViewer Name="scrollViewer1">
-                <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
-            </ScrollViewer>
+            <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" VerticalScrollBarVisibility="Auto" />
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
+            <ListView Grid.Row="1" Name="listView_event" SelectionChanged="listView_event_SelectionChanged" Style="{StaticResource DataListViewStyle}" >
                 <ListView.Resources>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="Background" Value="{Binding BackColor}" />
-                        <EventSetter Event="MouseDoubleClick" Handler="listView_event_MouseDoubleClick"/>
-                        <Setter Property="BorderThickness" Value="5,0,0,1" />
-                        <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListItemStyle}" >
+                        <Setter Property="ToolTip" Value="{x:Null}" />
                     </Style>
                 </ListView.Resources>
                 <ListView.View>
-                    <GridView x:Name="gridView_event">
-                        <GridViewColumn Width="30">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content=""/>
-                            </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Path=Reserved}" Foreground="Tomato" FontWeight="Bold" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                    </GridView>
+                    <GridView x:Name="gridView_event" />
                 </ListView.View>
-                <ListView.ContextMenu>
-                    <ContextMenu x:Name="listView_event_contextMenu">
-                        <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" />
-                        <MenuItem x:Name="cm_add" Header="予約追加 (_C)">
-                            <MenuItem Header="ダイアログ表示 (_X)" Click="cm_add_Click" />
-                            <Separator/>
-                            <MenuItem x:Name="cm_add_preset" Header="プリセット (_Z)" />
-                        </MenuItem>
-                        <MenuItem x:Name="cm_chg" Header="予約変更 (_C)">
-                            <MenuItem Header="ダイアログ表示 (_X)" Click="cm_change_Click" />
-                            <Separator/>
-                            <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="無効 (_5)" Name="recmode_no" Click="cm_chg_recmode_Click" />
-                            <Separator/>
-                            <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
-                                <MenuItem Header="1 (_1)" Name="priority_1" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="2 (_2)" Name="priority_2" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="3 (_3)" Name="priority_3" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="4 (_4)" Name="priority_4" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="5 (_5)" Name="priority_5" Click="cm_chg_priority_Click" />
-                            </MenuItem>
-                        </MenuItem>
-                        <MenuItem x:Name="cm_del" Header="予約削除" Click="cm_del_Click" />
-                        <MenuItem x:Name="cm_autoadd" Header="自動予約登録" Click="cm_autoadd_Click" />
-                        <MenuItem x:Name="cm_timeshift" Header="追っかけ再生 (_P)" Click="cm_timeShiftPlay_Click" />
-                        <Separator/>
-                        <MenuItem x:Name="cm_view" Header="表示モード (_W)">
-                            <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
-                            <Separator/>
-                            <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード (_1)" Click="cm_chg_viewMode_Click"  />
-                            <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード (_2)" Click="cm_chg_viewMode_Click" />
-                            <MenuItem x:Name="cm_chg_viewMode3" Header="リスト表示モード (_3)" Click="cm_chg_viewMode_Click" />
-                        </MenuItem>
-                    </ContextMenu>
-                </ListView.ContextMenu>
             </ListView>
         </Grid>
         <ListView Margin="0,0,5,29" Name="listBox_service" ItemsSource="{Binding}">
@@ -118,13 +46,13 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding Path=IsSelected}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" />
+                                <CheckBox IsChecked="{Binding Path=IsSelected}" Checked="CheckBox_Changed" Unchecked="CheckBox_Changed" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}" >
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" Width="150"/>
+                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>
@@ -133,4 +61,4 @@
         <Button Content="全チェック" Height="23" HorizontalAlignment="Left" Name="button_chkAll" VerticalAlignment="Bottom" Width="75" Click="button_chkAll_Click" />
         <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="80,0,0,0" Name="button_clearAll" VerticalAlignment="Bottom" Width="75" Click="button_clearAll_Click" />
     </Grid>
-</UserControl>
+</local:EpgViewBase>

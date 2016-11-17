@@ -15,17 +15,28 @@ namespace EpgTimer {
         /// <summary>
         /// 番組表への受け渡し
         /// </summary>
-        public static ReserveItem selectedReserveItem = null;
+        public static object SelectedData = null;
+        public static bool HasData { get { return SelectedData != null; } }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public static SearchItem selectedSearchItem = null;
+        public static SearchItem SelectedItem { get { return SelectedData as SearchItem; } }
+        public static bool HasReserveData { get { return SelectedItem != null && SelectedItem.ReserveInfo != null; } }
+        public static bool HasProgramData { get { return SelectedItem != null && SelectedItem.EventInfo != null; } }
 
-        /// <summary>
-        /// 番組表へジャンプした際に非表示にしたSearchWindow
-        /// </summary>
-        public static SearchWindow unvisibleSearchWindow = null;
+        //番組表へジャンプ中
+        public static bool NowJumpTable = false;
+
+        public static void Clear()
+        {
+            SelectedData = null;
+            NowJumpTable = false;
+        }
+
+        public static ulong Create64Key()
+        {
+            if (HasReserveData == true) return SelectedItem.ReserveInfo.Create64Key();
+            if (HasProgramData == true) return SelectedItem.EventInfo.Create64Key();
+            return 0;
+        }
 
         public BlackoutWindow(Window owner0) {
             InitializeComponent();

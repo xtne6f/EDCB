@@ -1,16 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 
 namespace EpgTimer.EpgView
@@ -23,6 +15,7 @@ namespace EpgTimer.EpgView
         public WeekDayView()
         {
             InitializeComponent();
+            this.Background = CommonManager.Instance.EpgWeekdayBorderColor;
         }
 
         public void ClearInfo()
@@ -30,18 +23,15 @@ namespace EpgTimer.EpgView
             stackPanel_day.Children.Clear();
         }
 
-        public void SetDay(System.Collections.SortedList dayList)
+        public void SetDay(List<DateTime> dayList)
         {
             try
             {
                 stackPanel_day.Children.Clear();
-                foreach (DateTime time in dayList.Values)
+                foreach (DateTime time in dayList)
                 {
-                    TextBlock item = new TextBlock();
-
-                    item.Width = Settings.Instance.ServiceWidth - 2;
-                    item.Text = time.ToString("M/d\r\n(ddd)");
-
+                    var item = ViewUtil.GetPanelTextBlock(time.ToString("M/d\r\n(ddd)"));
+                    item.Width = Settings.Instance.ServiceWidth - 1;
 
                     Color backgroundColor;
                     if (time.DayOfWeek == DayOfWeek.Saturday)
@@ -59,26 +49,15 @@ namespace EpgTimer.EpgView
                         item.Foreground = Brushes.Black;
                         backgroundColor = Colors.White;
                     }
-                    if (Settings.Instance.EpgGradationHeader == false)
-                    {
-                        item.Background = new SolidColorBrush(backgroundColor);
-                    }
-                    else
-                    {
-                        item.Background = ColorDef.GradientBrush(backgroundColor, 0.8);
-                    }
+                    item.Background = CommonManager._GetColorBrush(backgroundColor.ToString(), 0, Settings.Instance.EpgGradationHeader, 0.8, 1.2);
 
-                    item.Margin = new Thickness(1, 1, 1, 1);
-                    item.TextAlignment = TextAlignment.Center;
-                    item.FontSize = 12;
+                    item.Padding = new Thickness(0, 0, 0, 2);
+                    item.Margin = new Thickness(0, 1, 1, 1);
                     item.FontWeight = FontWeights.Bold;
                     stackPanel_day.Children.Add(item);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
     }
 }

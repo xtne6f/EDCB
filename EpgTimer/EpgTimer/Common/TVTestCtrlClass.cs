@@ -82,9 +82,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    UInt64 key = ((UInt64)ONID) << 32 |
-                        ((UInt64)TSID) << 16 |
-                        ((UInt64)SID);
+                    UInt64 key = CommonManager.Create64Key(ONID, TSID, SID);
                     TvTestChChgInfo chInfo = new TvTestChChgInfo();
                     ErrCode err = cmd.SendGetChgChTVTest(key, ref chInfo);
                     if (err == ErrCode.CMD_SUCCESS)

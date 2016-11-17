@@ -1,16 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EpgTimer.TunerReserveViewCtrl
 {
@@ -29,26 +19,28 @@ namespace EpgTimer.TunerReserveViewCtrl
             stackPanel_tuner.Children.Clear();
         }
 
-        public void SetTunerInfo(List<TunerNameViewItem> tunerInfo)
+        public void SetTunerInfo(List<PanelItem<TunerReserveInfo>> tunerInfo)
         {
             stackPanel_tuner.Children.Clear();
-            foreach (TunerNameViewItem info in tunerInfo)
+            foreach (var info in tunerInfo)
             {
-                TextBlock item = new TextBlock();
-                item.Text = info.TunerInfo.tunerName;
-                if (info.TunerInfo.tunerID != 0xFFFFFFFF)
-                {
-                    item.Text += "\r\nID: " + info.TunerInfo.tunerID.ToString("X8");
-                }
-                item.Width = info.Width - 4;
-                item.Margin = new Thickness(2, 2, 2, 2);
-                item.Background = Brushes.AliceBlue;
-                item.Foreground = Brushes.Black;
-                item.TextAlignment = TextAlignment.Center;
-                item.FontSize = 12;
-                stackPanel_tuner.Children.Add(item);
+                var tuner1 = new StackPanel();
+                tuner1.Width = info.Width - 1;
+                tuner1.Margin = new Thickness(0, 1, 1, 1);
+                tuner1.Background = CommonManager.Instance.TunerNameBackColor;
+
+                var text = ViewUtil.GetPanelTextBlock(info.Data.tunerName);
+                text.Margin = new Thickness(1, 0, 1, 0);
+                text.Foreground = CommonManager.Instance.TunerNameFontColor;
+                tuner1.Children.Add(text);
+
+                text = ViewUtil.GetPanelTextBlock("ID: " + info.Data.tunerID.ToString("X8"));
+                text.Margin = new Thickness(1, 0, 1, 2);
+                text.Foreground = CommonManager.Instance.TunerNameFontColor;
+                tuner1.Children.Add(text);
+
+                stackPanel_tuner.Children.Add(tuner1);
             }
         }
     }
-
 }

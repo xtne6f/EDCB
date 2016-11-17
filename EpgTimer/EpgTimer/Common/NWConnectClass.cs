@@ -47,6 +47,14 @@ namespace EpgTimer
             }
         }
 
+        public bool OnPolling
+        {
+            get
+            {
+                return pollingClient != null;
+            }
+        }
+
         public NWConnect(CtrlCmdUtil ctrlCmd)
         {
             connectFlag = false;

@@ -1,16 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+
+using EpgTimer.EpgView;
 
 namespace EpgTimer
 {
@@ -19,203 +13,123 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgDataViewItem : UserControl
     {
-        public event ViewSettingClickHandler ViewSettingClick = null;
-
-        private CustomEpgTabInfo viewInfo = null;
-        private Object viewCtrl = null;
+        private EpgViewBase viewCtrl = null;
         public EpgDataViewItem()
         {
             InitializeComponent();
         }
 
-        public void ClearInfo()
+        public void SaveViewData()
         {
-            //情報クリア
+            if (viewCtrl != null) viewCtrl.SaveViewData();
+        }
+
+        public void RefreshMenu()
+        {
+            if (viewCtrl != null) viewCtrl.RefreshMenu();
+        }
+
+        public void UpdateReserveInfo(bool reload = true)
+        {
+            if (viewCtrl != null) viewCtrl.UpdateReserveInfo(reload);
+        }
+
+        public void UpdateInfo(bool reload = true)
+        {
+            if (viewCtrl != null) viewCtrl.UpdateInfo(reload);
+        }
+
+        public object GetViewState()
+        {
+            return viewCtrl == null ? null : viewCtrl.GetViewState();
+        }
+        public void SetViewState(object data)
+        {
+            if (viewCtrl != null) viewCtrl.SetViewState(data);
+        }
+
+        /// <summary>現在のEPGデータ表示モードの設定を取得する</summary>
+        public CustomEpgTabInfo GetViewMode()
+        {
+            return viewCtrl == null ? null : viewCtrl.GetViewMode();
+        }
+
+        /// <summary>EPGデータの表示モードを設定する</summary>
+        /// <param name="setInfo">[IN]表示モードの設定値</param>
+        public void SetViewMode(CustomEpgTabInfo setInfo, object state = null)
+        {
+            //表示モード一緒で、絞り込み内容変化のみ。
             if (viewCtrl != null)
             {
-                if (viewCtrl.GetType() == typeof(EpgListMainView))
+                CustomEpgTabInfo viewInfo = viewCtrl.GetViewMode();
+                if (viewInfo != null && viewInfo.ViewMode == setInfo.ViewMode)
                 {
-                    EpgListMainView item = viewCtrl as EpgListMainView;
-                    item.ClearInfo();
-                }
-                else if (viewCtrl.GetType() == typeof(EpgMainView))
-                {
-                    EpgMainView item = viewCtrl as EpgMainView;
-                    item.ClearInfo();
-                }
-                else if (viewCtrl.GetType() == typeof(EpgWeekMainView))
-                {
-                    EpgWeekMainView item = viewCtrl as EpgWeekMainView;
-                    item.ClearInfo();
-                }
-            }
-            grid_main.Children.Clear();
-            viewCtrl = null;
-        }
-
-        /// <summary>
-        /// 現在のEPGデータ表示モードの設定を取得する
-        /// </summary>
-        /// <param name="setInfo">[OUT]表示モードの設定値</param>
-        /// <returns></returns>
-        public bool GetViewMode(ref CustomEpgTabInfo setInfo)
-        {
-            if (viewInfo == null)
-            {
-                return false;
-            }
-
-            viewInfo.CopyTo(ref setInfo);
-
-            return true;
-        }
-
-        /// <summary>
-        /// EPGデータの表示モードを設定する
-        /// </summary>
-        /// <param name="setInfo">[IN]表示モードの設定値</param>
-        public void SetViewMode(CustomEpgTabInfo setInfo)
-        {
-            if (viewInfo != null && viewCtrl != null)
-            {
-                if (viewInfo.ViewMode == setInfo.ViewMode)
-                {
-                    //表示モード一緒で、絞り込み内容変化
-                    if (viewCtrl.GetType() == typeof(EpgListMainView))
-                    {
-                        EpgListMainView item = viewCtrl as EpgListMainView;
-                        item.SetViewMode(setInfo);
-                    }
-                    else if (viewCtrl.GetType() == typeof(EpgMainView))
-                    {
-                        EpgMainView item = viewCtrl as EpgMainView;
-                        item.SetViewMode(setInfo);
-                    }
-                    else if (viewCtrl.GetType() == typeof(EpgWeekMainView))
-                    {
-                        EpgWeekMainView item = viewCtrl as EpgWeekMainView;
-                        item.SetViewMode(setInfo);
-                    }
-
-                    viewInfo = setInfo;
+                    viewInfo = setInfo.Clone();
+                    viewCtrl.SetViewMode(viewInfo);
                     return;
                 }
             }
-            viewInfo = setInfo;
 
-            //情報クリア
-            if (viewCtrl != null)
-            {
-                if (viewCtrl.GetType() == typeof(EpgListMainView))
-                {
-                    EpgListMainView item = viewCtrl as EpgListMainView;
-                    item.ClearInfo();
-                }
-                else if (viewCtrl.GetType() == typeof(EpgMainView))
-                {
-                    EpgMainView item = viewCtrl as EpgMainView;
-                    item.ClearInfo();
-                }
-                else if (viewCtrl.GetType() == typeof(EpgWeekMainView))
-                {
-                    EpgWeekMainView item = viewCtrl as EpgWeekMainView;
-                    item.ClearInfo();
-                }
-            }
-            grid_main.Children.Clear();
-            viewCtrl = null;
-
-
+            //切り替える場合
+            SaveViewData();
             switch (setInfo.ViewMode)
             {
-                case 1:
-                    //1週間表示
-                    {
-                        EpgWeekMainView item = new EpgWeekMainView();
-                        item.ViewSettingClick += new ViewSettingClickHandler(item_ViewSettingClick);
-                        item.SetViewMode(setInfo);
-                        grid_main.Children.Add(item);
-                        viewCtrl = item;
-                    }
+                case 1://1週間表示
+                    viewCtrl = new EpgWeekMainView();
                     break;
-                case 2:
-                    //リスト表示
-                    {
-                        EpgListMainView item = new EpgListMainView();
-                        item.ViewSettingClick += new ViewSettingClickHandler(item_ViewSettingClick);
-                        item.SetViewMode(setInfo);
-                        grid_main.Children.Add(item);
-                        viewCtrl = item;
-                    }
+                case 2://リスト表示
+                    viewCtrl = new EpgListMainView();
                     break;
-                default:
-                    //標準ラテ欄表示
-                    {
-                        EpgMainView item = new EpgMainView();
-                        item.ViewSettingClick += new ViewSettingClickHandler(item_ViewSettingClick);
-                        item.SetViewMode(setInfo);
-                        grid_main.Children.Add(item);
-                        viewCtrl = item;
-                    }
+                default://標準ラテ欄表示
+                    viewCtrl = new EpgMainView();
                     break;
             }
-        }
 
-        public void UpdateReserveData()
-        {
-            if (viewCtrl != null)
-            {
-                if (viewCtrl.GetType() == typeof(EpgListMainView))
-                {
-                    EpgListMainView item = viewCtrl as EpgListMainView;
-                    item.UpdateReserveData();
-                }
-                else if (viewCtrl.GetType() == typeof(EpgMainView))
-                {
-                    EpgMainView item = viewCtrl as EpgMainView;
-                    item.UpdateReserveData();
-                }
-                else if (viewCtrl.GetType() == typeof(EpgWeekMainView))
-                {
-                    EpgWeekMainView item = viewCtrl as EpgWeekMainView;
-                    item.UpdateReserveData();
-                }
-            }
-        }
-
-        public void UpdateEpgData()
-        {
-            if (viewCtrl != null)
-            {
-                if (viewCtrl.GetType() == typeof(EpgListMainView))
-                {
-                    EpgListMainView item = viewCtrl as EpgListMainView;
-                    item.UpdateEpgData();
-                }
-                else if (viewCtrl.GetType() == typeof(EpgMainView))
-                {
-                    EpgMainView item = viewCtrl as EpgMainView;
-                    item.UpdateEpgData();
-                }
-                else if (viewCtrl.GetType() == typeof(EpgWeekMainView))
-                {
-                    EpgWeekMainView item = viewCtrl as EpgWeekMainView;
-                    item.UpdateEpgData();
-                }
-            }
+            viewCtrl.ViewSettingClick += new ViewSettingClickHandler(item_ViewSettingClick);
+            viewCtrl.SetViewMode(setInfo);
+            if (state != null) SetViewState(state);
+            grid_main.Children.Clear();
+            grid_main.Children.Add(viewCtrl);
         }
 
         private void item_ViewSettingClick(object sender, object param)
         {
-            if (ViewSettingClick != null)
+            try
             {
-                ViewSettingClick(this, param);
-            }
-        }
+                if (param is CustomEpgTabInfo)
+                {
+                    this.SetViewMode(param as CustomEpgTabInfo);
+                }
+                else
+                {
+                    var dlg = new EpgDataViewSettingWindow();
+                    dlg.Owner = CommonUtil.GetTopWindow(this);
+                    dlg.SetDefSetting(this.GetViewMode());
+                    dlg.SetTrySetModeEnable();
+                    if (Settings.Instance.UseCustomEpgView == false)
+                    {
+                        dlg.SetTrySetModeOnly();
+                    }
+                    if (dlg.ShowDialog() == true)
+                    {
+                        var setInfo = new CustomEpgTabInfo();
+                        dlg.GetSetting(ref setInfo);
 
-        public CustomEpgTabInfo ViewInfo 
-        { 
-            get { return this.viewInfo; }
+                        if (Settings.Instance.UseCustomEpgView == true && Settings.Instance.TryEpgSetting == false)
+                        {
+                            if (setInfo.ID >= 0 && setInfo.ID <= Settings.Instance.CustomEpgTabList.Count)
+                            {
+                                Settings.Instance.CustomEpgTabList[setInfo.ID] = setInfo;
+                                Settings.SaveToXmlFile();
+                            }
+                        }
+
+                        this.SetViewMode(setInfo);
+                        viewCtrl.UpdateInfo();
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
     }
 }

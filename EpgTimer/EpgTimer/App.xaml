@@ -4,5 +4,12 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <!-- アプリケーション レベルでスコープされたリソースは、ここで定義する必要があります。 -->
+        
+        <!-- デザイン時用。最初のスタイル適用で上書きされてしまう。 -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="UserCtrlView\UiLayoutStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

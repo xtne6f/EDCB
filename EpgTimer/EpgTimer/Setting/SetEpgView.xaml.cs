@@ -1,416 +1,473 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Markup;
+using System.Windows.Shapes;
 
 namespace EpgTimer.Setting
 {
+    using BoxExchangeEdit;
+    using ComboItem = KeyValuePair<string, Brush>;
+
     /// <summary>
     /// SetEpgView.xaml の相互作用ロジック
     /// </summary>
     public partial class SetEpgView : UserControl
     {
+        private MenuSettingData ctxmSetInfo;
+        private RadioBtnSelect epgPopupRadioBtns;
+        private RadioBtnSelect tunerPopupRadioBtns;
+
+        public bool IsChangeEpgArcLoadSetting { get; private set; }
+        //public bool IsClearColorSetting { get; private set; }
+
         public SetEpgView()
         {
             InitializeComponent();
 
+            if (CommonManager.Instance.NWMode == true)
+            {
+                stackPanel_epgArchivePeriod.IsEnabled = false;
+            }
+
             try
             {
-                var colorList = new SortedList<string, SolidColorBrush>();
-                foreach (var prop in typeof(Brushes).GetProperties())
-                {
-                    colorList.Add(prop.Name, (SolidColorBrush)prop.GetValue(null, null));
-                }
-                colorList.Add("カスタム", Brushes.Transparent);
-                comboBox0.DataContext = colorList;
-                comboBox1.DataContext = colorList;
-                comboBox2.DataContext = colorList;
-                comboBox3.DataContext = colorList;
-                comboBox4.DataContext = colorList;
-                comboBox5.DataContext = colorList;
-                comboBox6.DataContext = colorList;
-                comboBox7.DataContext = colorList;
-                comboBox8.DataContext = colorList;
-                comboBox9.DataContext = colorList;
-                comboBox10.DataContext = colorList;
-                comboBox11.DataContext = colorList;
-                comboBox12.DataContext = colorList;
-                comboBox13.DataContext = colorList;
-                comboBox_reserveNormal.DataContext = colorList;
-                comboBox_reserveNo.DataContext = colorList;
-                comboBox_reserveNoTuner.DataContext = colorList;
-                comboBox_reserveWarning.DataContext = colorList;
-                comboBox_colorTitle1.DataContext = colorList;
-                comboBox_colorTitle2.DataContext = colorList;
-
-                comboBox0.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x00]));
-                comboBox1.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x01]));
-                comboBox2.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x02]));
-                comboBox3.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x03]));
-                comboBox4.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x04]));
-                comboBox5.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x05]));
-                comboBox6.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x06]));
-                comboBox7.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x07]));
-                comboBox8.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x08]));
-                comboBox9.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x09]));
-                comboBox10.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x0A]));
-                comboBox11.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x0B]));
-                comboBox12.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x0F]));
-                comboBox13.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x10]));
-
-                comboBox_reserveNormal.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorNormal));
-                comboBox_reserveNo.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorNo));
-                comboBox_reserveNoTuner.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorNoTuner));
-                comboBox_reserveWarning.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorWarning));
+                textBox_mouse_scroll.Text = Settings.Instance.ScrollSize.ToString();
+                textBox_service_width.Text = Settings.Instance.ServiceWidth.ToString();
+                textBox_minHeight.Text = Settings.Instance.MinHeight.ToString();
+                textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
+                textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
+                checkBox_epg_popup.IsChecked = Settings.Instance.EpgPopup;
+                epgPopupRadioBtns = new RadioBtnSelect(radioButton_epg_popup_onOver, radioButton_epg_popup_onClick, radioButton_epg_popup_resOnly);
+                epgPopupRadioBtns.Value = Settings.Instance.EpgPopupMode;
+                textBox_epg_popup_Width.Text = Settings.Instance.EpgPopupWidth.ToString();
+                checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
+                checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
+                checkBox_toolTip_noView_only.IsChecked = Settings.Instance.EpgToolTipNoViewOnly;
+                textBox_toolTipWait.Text = Settings.Instance.EpgToolTipViewWait.ToString();
+                checkBox_epg_ExtInfo_table.IsChecked = Settings.Instance.EpgExtInfoTable;
+                checkBox_epg_ExtInfo_popup.IsChecked = Settings.Instance.EpgExtInfoPopup;
+                checkBox_epg_ExtInfo_tooltip.IsChecked = Settings.Instance.EpgExtInfoTooltip;
+                checkBox_singleOpen.IsChecked = Settings.Instance.EpgInfoSingleClick;
+                checkBox_scrollAuto.IsChecked = Settings.Instance.MouseScrollAuto;
+                checkBox_gradation.IsChecked = Settings.Instance.EpgGradation;
+                checkBox_gradationHeader.IsChecked = Settings.Instance.EpgGradationHeader;
+                checkBox_openInfo.IsChecked = (Settings.Instance.EpgInfoOpenMode != 0);
+                checkBox_displayNotifyChange.IsChecked = Settings.Instance.DisplayNotifyEpgChange;
                 checkBox_reserveBackground.IsChecked = Settings.Instance.ReserveRectBackground;
 
-                comboBox_colorTitle1.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.TitleColor1));
-                comboBox_colorTitle2.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.TitleColor2));
+                int epgArcHour = IniFileHandler.GetPrivateProfileInt("SET", "EpgArchivePeriodHour", 0, SettingPath.TimerSrvIniPath);
+                double epgArcDay = IniFileHandler.GetPrivateProfileDouble("SET", "EpgArchivePeriodDay", 0, SettingPath.TimerSrvIniPath);
+                epgArcDay = (int)(epgArcDay * 24) == epgArcHour ? epgArcDay : epgArcHour / 24d;
+                textBox_epgArchivePeriod.Text = Math.Min(Math.Max(epgArcDay, 0), 14).ToString();
+                checkBox_epgNoLoadArcInfo.IsChecked = !Settings.Instance.EpgLoadArcInfo;
+                checkBox_epgNoDisplayOld.IsChecked = Settings.Instance.EpgNoDisplayOld;
+                textBox_epgNoDisplayOldDays.Text = Settings.Instance.EpgNoDisplayOldDays.ToString();
 
-                foreach (FontFamily family in Fonts.SystemFontFamilies)
-                {
-                    LanguageSpecificStringDictionary dictionary = family.FamilyNames;
+                textBox_tuner_mouse_scroll.Text = Settings.Instance.TunerScrollSize.ToString();
+                textBox_tuner_width.Text = Settings.Instance.TunerWidth.ToString();
+                textBox_tuner_minHeight.Text = Settings.Instance.TunerMinHeight.ToString();
+                textBox_tunerDdragScroll.Text = Settings.Instance.TunerDragScroll.ToString();
+                textBox_tunerMinLineHeight.Text = Settings.Instance.TunerMinimumLine.ToString();
+                checkBox_tuner_popup.IsChecked = Settings.Instance.TunerPopup;
+                tunerPopupRadioBtns = new RadioBtnSelect(radioButton_tuner_popup_onOver, radioButton_tuner_popup_onClick);
+                tunerPopupRadioBtns.Value = Settings.Instance.TunerPopupMode;
+                checkBox_tuner_popup_recInfo.IsChecked = Settings.Instance.TunerPopupRecinfo;
+                textBox_tuner_popup_Width.Text = Settings.Instance.TunerPopupWidth.ToString();
+                checkBox_tuner_title_indent.IsChecked = Settings.Instance.TunerTitleIndent;
+                checkBox_tunerDescToolTip.IsChecked = Settings.Instance.TunerToolTip;
+                textBox_tunerToolTipWait.Text = Settings.Instance.TunerToolTipViewWait.ToString();
+                checkBox_tunerSingleOpen.IsChecked = Settings.Instance.TunerInfoSingleClick;
+                checkBox_tuner_scrollAuto.IsChecked = Settings.Instance.TunerMouseScrollAuto;
+                checkBox_tuner_service_nowrap.IsChecked = Settings.Instance.TunerServiceNoWrap;
+                checkBox_tunerColorModeUse.IsChecked = Settings.Instance.TunerColorModeUse;
+                comboBox_tunerFontColorService.IsEnabled = !Settings.Instance.TunerColorModeUse;
+                button_tunerFontCustColorService.IsEnabled = !Settings.Instance.TunerColorModeUse;
+                checkBox_tuner_display_offres.IsChecked = Settings.Instance.TunerDisplayOffReserve;
 
-                    XmlLanguage FLanguage = XmlLanguage.GetLanguage("ja-JP");
-                    if (dictionary.ContainsKey(FLanguage) == true)
-                    {
-                        string s = dictionary[FLanguage] as string;
-                        comboBox_font.Items.Add(s);
-                        if (String.Compare(s, Settings.Instance.FontName) == 0)
-                        {
-                            comboBox_font.SelectedItem = s;
-                        }
-                        comboBox_fontTitle.Items.Add(s);
-                        if (String.Compare(s, Settings.Instance.FontNameTitle) == 0)
-                        {
-                            comboBox_fontTitle.SelectedItem = s;
-                        }
-                    }
-                }
-                if (comboBox_font.SelectedItem == null)
+                this.listBox_tab.KeyDown += ViewUtil.KeyDown_Enter(button_tab_chg);
+                var bx = new BoxExchangeEditor(null, this.listBox_tab, true, true, true);
+                bx.targetBoxAllowDoubleClick(bx.TargetBox, (sender, e) => button_tab_chg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                button_tab_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
+                button_tab_up.Click += new RoutedEventHandler(bx.button_Up_Click);
+                button_tab_down.Click += new RoutedEventHandler(bx.button_Down_Click);
+                button_tab_top.Click += new RoutedEventHandler(bx.button_Top_Click);
+                button_tab_bottom.Click += new RoutedEventHandler(bx.button_Bottom_Click);
+
+                radioButton_1_def.IsChecked = (Settings.Instance.UseCustomEpgView == false);
+                radioButton_1_cust.IsChecked = (Settings.Instance.UseCustomEpgView != false);
+
+                listBox_tab.Items.AddItems(Settings.Instance.CustomEpgTabList);
+                if (listBox_tab.Items.Count > 0) listBox_tab.SelectedIndex = 0;
+
+                XmlLanguage FLanguage = XmlLanguage.GetLanguage("ja-JP");
+                List<string> fontList = Fonts.SystemFontFamilies
+                    .Where(f => f.FamilyNames.ContainsKey(FLanguage) == true)
+                    .Select(f => f.FamilyNames[FLanguage]).ToList();
+
+                var setCmboFont = new Action<string, ComboBox>((name, cmb) =>
                 {
-                    comboBox_font.SelectedIndex = 0;
-                }
-                if (comboBox_fontTitle.SelectedItem == null)
-                {
-                    comboBox_fontTitle.SelectedIndex = 0;
-                }
+                    cmb.ItemsSource = fontList;
+                    cmb.SelectedItem = name;
+                    if (cmb.SelectedItem == null) cmb.SelectedIndex = 0;
+                });
+                setCmboFont(Settings.Instance.FontNameTitle, comboBox_fontTitle);
+                setCmboFont(Settings.Instance.FontName, comboBox_font);
+                setCmboFont(Settings.Instance.TunerFontNameService, comboBox_fontTunerService);
+                setCmboFont(Settings.Instance.TunerFontName, comboBox_fontTuner);
+
                 textBox_fontSize.Text = Settings.Instance.FontSize.ToString();
                 textBox_fontSizeTitle.Text = Settings.Instance.FontSizeTitle.ToString();
                 checkBox_fontBoldTitle.IsChecked = Settings.Instance.FontBoldTitle;
+                textBox_fontTunerSize.Text = Settings.Instance.TunerFontSize.ToString();
+                textBox_fontTunerSizeService.Text = Settings.Instance.TunerFontSizeService.ToString();
+                checkBox_fontTunerBoldService.IsChecked = Settings.Instance.TunerFontBoldService;
 
-                textBox_mouse_scroll.Text = Settings.Instance.ScrollSize.ToString();
-                textBox_minHeight.Text = Settings.Instance.MinHeight.ToString();
-                textBox_service_width.Text = Settings.Instance.ServiceWidth.ToString();
-                textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
-                textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
-                checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
-                checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
-                checkBox_toolTip_noView_only.IsChecked = Settings.Instance.EpgToolTipNoViewOnly;
-                textBox_toolTipWait.Text = Settings.Instance.EpgToolTipViewWait.ToString();
-                checkBox_epg_popup.IsChecked = Settings.Instance.EpgPopup;
-                checkBox_gradation.IsChecked = Settings.Instance.EpgGradation;
-                checkBox_gradationHeader.IsChecked = Settings.Instance.EpgGradationHeader;
+                var colorReference = typeof(Brushes).GetProperties().ToDictionary(p => p.Name, p => new ComboItem(p.Name, (Brush)p.GetValue(null, null)));
+                colorReference.Add("カスタム", new ComboItem("カスタム", this.Resources["HatchBrush"] as VisualBrush));
 
-                if (Settings.Instance.UseCustomEpgView == false)
+                var setComboColor1 = new Action<string, ComboBox>((name, cmb) =>
                 {
-                    radioButton_1_def.IsChecked = true;
-                    radioButton_1_cust.IsChecked = false;
-                }
-                else
+                    cmb.ItemsSource = colorReference.Values;
+                    cmb.SelectedItem = colorReference.ContainsKey(name) == true ? colorReference[name] : colorReference["カスタム"];
+                });
+                var setComboColors = new Action<List<string>, Panel>((list, pnl) =>
                 {
-                    radioButton_1_def.IsChecked = false;
-                    radioButton_1_cust.IsChecked = true;
-                }
-                foreach (CustomEpgTabInfo info in Settings.Instance.CustomEpgTabList)
-                {
-                    listBox_tab.Items.Add(info);
-                }
-                if (listBox_tab.Items.Count > 0)
-                {
-                    listBox_tab.SelectedIndex = 0;
-                }
+                    foreach (var cmb in pnl.Children.OfType<ComboBox>())
+                    {
+                        int idx = int.Parse((string)cmb.Tag);
+                        setComboColor1(list[idx], cmb);
+                    }
+                });
 
-                button0.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x00]));
-                button1.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x01]));
-                button2.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x02]));
-                button3.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x03]));
-                button4.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x04]));
-                button5.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x05]));
-                button6.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x06]));
-                button7.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x07]));
-                button8.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x08]));
-                button9.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x09]));
-                button10.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x0A]));
-                button11.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x0B]));
-                button12.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x0F]));
-                button13.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x10]));
-                button14.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x11]));
-                button15.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x12]));
-                button16.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x13]));
-                button17.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x14]));
+                //番組表のフォント色と予約枠色はSettingsが個別のため個別処理。
+                //これをまとめて出来るようにSettingsを変えると以前の設定が消える。
+                setComboColor1(Settings.Instance.TitleColor1, comboBox_colorTitle1);
+                setComboColor1(Settings.Instance.TitleColor2, comboBox_colorTitle2);
+                setComboColors(Settings.Instance.ContentColorList, grid_EpgColors);
+                setComboColor1(Settings.Instance.ReserveRectColorNormal, comboBox_reserveNormal);
+                setComboColor1(Settings.Instance.ReserveRectColorNo, comboBox_reserveNo);
+                setComboColor1(Settings.Instance.ReserveRectColorNoTuner, comboBox_reserveNoTuner);
+                setComboColor1(Settings.Instance.ReserveRectColorWarning, comboBox_reserveWarning);
+                setComboColor1(Settings.Instance.ReserveRectColorAutoAddMissing, comboBox_reserveAutoAddMissing);
+                setComboColor1(Settings.Instance.ReserveRectColorMultiple, comboBox_reserveMultiple);
+                setComboColors(Settings.Instance.EpgEtcColors, grid_EpgTimeColors);
+                setComboColors(Settings.Instance.EpgEtcColors, grid_EpgEtcColors);
+                setComboColors(Settings.Instance.TunerServiceColors, grid_TunerFontColor);
+                setComboColors(Settings.Instance.TunerServiceColors, grid_TunerColors);
+                setComboColors(Settings.Instance.TunerServiceColors, grid_TunerEtcColors);
 
-                button_colorTitle1.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor1));
-                button_colorTitle2.Background = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor2));
-
-                checkBox_singleOpen.IsChecked = Settings.Instance.EpgInfoSingleClick;
-                if (Settings.Instance.EpgInfoOpenMode == 0)
+                var setButtonColor1 = new Action<uint, Button>((clr, btn) => btn.Background = new SolidColorBrush(ColorDef.FromUInt(clr)));
+                var setButtonColors = new Action<List<uint>, Panel>((list, pnl) =>
                 {
-                    checkBox_openInfo.IsChecked = false;
-                }
-                else
-                {
-                    checkBox_openInfo.IsChecked = true;
-                }
+                    foreach (var btn in pnl.Children.OfType<Button>())
+                    {
+                        int idx = int.Parse((string)btn.Tag);
+                        setButtonColor1(list[idx], btn);
+                    }
+                });
+                setButtonColor1(Settings.Instance.TitleCustColor1, button_colorTitle1);
+                setButtonColor1(Settings.Instance.TitleCustColor2, button_colorTitle2);
+                setButtonColors(Settings.Instance.ContentCustColorList, grid_EpgColors);
+                setButtonColors(Settings.Instance.ContentCustColorList, grid_EpgColorsReserve);
+                setButtonColors(Settings.Instance.EpgEtcCustColors, grid_EpgTimeColors);
+                setButtonColors(Settings.Instance.EpgEtcCustColors, grid_EpgEtcColors);
+                setButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerFontColor);
+                setButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerColors);
+                setButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerEtcColors);
 
-                checkBox_scrollAuto.IsChecked = Settings.Instance.MouseScrollAuto;
+                //録画済み一覧画面
+                textBox_dropErrIgnore.Text = Settings.Instance.RecInfoDropErrIgnore.ToString();
+                textBox_dropWrnIgnore.Text = Settings.Instance.RecInfoDropWrnIgnore.ToString();
+                textBox_scrambleIgnore.Text = Settings.Instance.RecInfoScrambleIgnore.ToString();
+                checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
+                checkBox_recinfo_errCritical.IsChecked = Settings.Instance.RecinfoErrCriticalDrops;
+                checkBox_recNoYear.IsChecked = Settings.Instance.RecInfoNoYear;
+                checkBox_recNoSecond.IsChecked = Settings.Instance.RecInfoNoSecond;
+                checkBox_recNoDurSecond.IsChecked = Settings.Instance.RecInfoNoDurSecond;
+                checkBox_ChacheOn.IsChecked = Settings.Instance.RecInfoExtraDataCache;
+                checkBox_CacheOptimize.IsChecked = Settings.Instance.RecInfoExtraDataCacheOptimize;
+                checkBox_CacheKeepConnect.IsChecked = Settings.Instance.RecInfoExtraDataCacheKeepConnect;
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    checkBox_CacheKeepConnect.IsEnabled = false;//{Binding}を破棄しているので注意
+                }
+                setComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
+                setButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
+
+                //予約一覧・共通画面
+                this.ctxmSetInfo = Settings.Instance.MenuSet.Clone();
+                checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
+                checkBox_displayMultiple.IsChecked = Settings.Instance.DisplayReserveMultiple;
+                checkBox_resNoYear.IsChecked = Settings.Instance.ResInfoNoYear;
+                checkBox_resNoSecond.IsChecked = Settings.Instance.ResInfoNoSecond;
+                checkBox_resNoDurSecond.IsChecked = Settings.Instance.ResInfoNoDurSecond;
+                checkBox_TrimSortTitle.IsChecked = Settings.Instance.TrimSortTitle;
+
+                setComboColor1(Settings.Instance.ListDefColor, cmb_ListDefFontColor);
+                setComboColors(Settings.Instance.RecModeFontColors, grid_ReserveRecModeColors);
+                setComboColors(Settings.Instance.ResBackColors, grid_ReserveBackColors);
+                setComboColors(Settings.Instance.StatColors, grid_StatColors);
+
+                setButtonColor1(Settings.Instance.ListDefCustColor, btn_ListDefFontColor);
+                setButtonColors(Settings.Instance.RecModeFontCustColors, grid_ReserveRecModeColors);
+                setButtonColors(Settings.Instance.ResBackCustColors, grid_ReserveBackColors);
+                setButtonColors(Settings.Instance.StatCustColors, grid_StatColors);
+
+                textBox_DisplayJumpTime.Text = Settings.Instance.DisplayNotifyJumpTime.ToString();
+                checkBox_LaterTimeUse.IsChecked = Settings.Instance.LaterTimeUse;
+                textBox_LaterTimeHour.Text = (Settings.Instance.LaterTimeHour + 24).ToString();
+                checkBox_displayPresetOnSearch.IsChecked = Settings.Instance.DisplayPresetOnSearch;
+                checkBox_toolTips.IsChecked = !Settings.Instance.NoToolTip;
+                textBox_ToolTipsWidth.Text = Settings.Instance.ToolTipWidth.ToString();
+                checkBox_NotNoStyle.ToolTip = string.Format("チェック時、テーマファイル「{0}」があればそれを、無ければ既定のテーマ(Aero)を適用します。", System.IO.Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location) + ".rd.xaml");
+                checkBox_NotNoStyle.IsChecked = Settings.Instance.NoStyle == 0;
+                checkBox_displayStatus.IsChecked = Settings.Instance.DisplayStatus;
+                checkBox_displayStatusNotify.IsChecked = Settings.Instance.DisplayStatusNotify;
+                checkBox_IsVisibleReserveView.IsChecked = Settings.Instance.IsVisibleReserveView;
+                checkBox_IsVisibleRecInfoView.IsChecked = Settings.Instance.IsVisibleRecInfoView;
+                checkBox_IsVisibleAutoAddView.IsChecked = Settings.Instance.IsVisibleAutoAddView;
+                checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked = Settings.Instance.IsVisibleAutoAddViewMoveOnly;
+
+                foreach (var item in new Dictionary<object, string> {
+                            { CtxmCode.ReserveView, "予約一覧" },{ CtxmCode.TunerReserveView, "使用予定チューナー" },
+                            { CtxmCode.RecInfoView, "録画済み一覧" },{ CtxmCode.EpgAutoAddView, "キーワード予約登録" },
+                            { CtxmCode.ManualAutoAddView, "プログラム予約登録" },{ CtxmCode.EpgView, "番組表" } })
+                {
+                    wrapPanel_StartTab.Children.Add(new RadioButton { Tag = item.Key, Content = item.Value });
+                }
+                var rbtn = wrapPanel_StartTab.Children.OfType<RadioButton>()
+                    .FirstOrDefault(item => item.Tag as CtxmCode? == Settings.Instance.StartTab);
+                if (rbtn != null) rbtn.IsChecked = true;
+
+                foreach (var item in new Dictionary<object, string> {
+                            { Dock.Bottom, "下" },{ Dock.Top, "上" },{ Dock.Left, "左" },{ Dock.Right, "右" } })
+                {
+                    wrapPanel_MainViewButtonsDock.Children.Add(new RadioButton { Tag = item.Key, Content = item.Value });
+                }
+                rbtn = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
+                    .FirstOrDefault(item => item.Tag as Dock? == Settings.Instance.MainViewButtonsDock);
+                if (rbtn != null) rbtn.IsChecked = true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void SaveSetting()
         {
             try
             {
-                Settings.Instance.ScrollSize = Convert.ToDouble(textBox_mouse_scroll.Text);
-                Settings.Instance.MinHeight = Convert.ToDouble(textBox_minHeight.Text);
-                Settings.Instance.ServiceWidth = Convert.ToDouble(textBox_service_width.Text);
-                Settings.Instance.DragScroll = Convert.ToDouble(textBox_dragScroll.Text);
-                Settings.Instance.MinimumHeight = Convert.ToDouble(textBox_minimumHeight.Text);
-                if (checkBox_title_indent.IsChecked == true)
-                {
-                    Settings.Instance.EpgTitleIndent = true;
-                }
-                else
-                {
-                    Settings.Instance.EpgTitleIndent = false;
-                }
+                Settings.Instance.ScrollSize = MenuUtil.MyToNumerical(textBox_mouse_scroll, Convert.ToDouble, 240);
+                Settings.Instance.ServiceWidth = MenuUtil.MyToNumerical(textBox_service_width, Convert.ToDouble, double.MaxValue, 16, 150);//小さいと描画で落ちる
+                Settings.Instance.MinHeight = MenuUtil.MyToNumerical(textBox_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
+                Settings.Instance.MinimumHeight = MenuUtil.MyToNumerical(textBox_minimumHeight, Convert.ToDouble, double.MaxValue, 0, 0);
+                Settings.Instance.DragScroll = MenuUtil.MyToNumerical(textBox_dragScroll, Convert.ToDouble, 1.5);
+                Settings.Instance.EpgTitleIndent = (checkBox_title_indent.IsChecked == true);
                 Settings.Instance.EpgToolTip = (checkBox_descToolTip.IsChecked == true);
                 Settings.Instance.EpgToolTipNoViewOnly = (checkBox_toolTip_noView_only.IsChecked == true);
-                Settings.Instance.EpgToolTipViewWait = Convert.ToInt32(textBox_toolTipWait.Text);
+                Settings.Instance.EpgToolTipViewWait = MenuUtil.MyToNumerical(textBox_toolTipWait, Convert.ToInt32, Int32.MaxValue, Int32.MinValue, 1500);
                 Settings.Instance.EpgPopup = (checkBox_epg_popup.IsChecked == true);
-                if (checkBox_gradation.IsChecked == true)
-                {
-                    Settings.Instance.EpgGradation = true;
-                }
-                else
-                {
-                    Settings.Instance.EpgGradation = false;
-                }
-                if (checkBox_gradationHeader.IsChecked == true)
-                {
-                    Settings.Instance.EpgGradationHeader = true;
-                }
-                else
-                {
-                    Settings.Instance.EpgGradationHeader = false;
-                }
+                Settings.Instance.EpgPopupMode = epgPopupRadioBtns.Value;
+                Settings.Instance.EpgPopupWidth = MenuUtil.MyToNumerical(textBox_epg_popup_Width, Convert.ToDouble, double.MaxValue, 0, 1);
+                Settings.Instance.EpgExtInfoTable = (checkBox_epg_ExtInfo_table.IsChecked == true);
+                Settings.Instance.EpgExtInfoPopup = (checkBox_epg_ExtInfo_popup.IsChecked == true);
+                Settings.Instance.EpgExtInfoTooltip = (checkBox_epg_ExtInfo_tooltip.IsChecked == true);
+                Settings.Instance.EpgGradation = (checkBox_gradation.IsChecked == true);
+                Settings.Instance.EpgGradationHeader = (checkBox_gradationHeader.IsChecked == true);
+                Settings.Instance.EpgInfoSingleClick = (checkBox_singleOpen.IsChecked == true);
+                Settings.Instance.EpgInfoOpenMode = (byte)(checkBox_openInfo.IsChecked == true ? 1 : 0);
+                Settings.Instance.MouseScrollAuto = (checkBox_scrollAuto.IsChecked == true);
+                Settings.Instance.DisplayNotifyEpgChange = (checkBox_displayNotifyChange.IsChecked == true);
+                Settings.Instance.ReserveRectBackground = (checkBox_reserveBackground.IsChecked == true);
 
-                Settings.Instance.ContentColorList[0x00] = ((KeyValuePair<string, SolidColorBrush>)comboBox0.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x01] = ((KeyValuePair<string, SolidColorBrush>)comboBox1.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x02] = ((KeyValuePair<string, SolidColorBrush>)comboBox2.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x03] = ((KeyValuePair<string, SolidColorBrush>)comboBox3.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x04] = ((KeyValuePair<string, SolidColorBrush>)comboBox4.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x05] = ((KeyValuePair<string, SolidColorBrush>)comboBox5.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x06] = ((KeyValuePair<string, SolidColorBrush>)comboBox6.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x07] = ((KeyValuePair<string, SolidColorBrush>)comboBox7.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x08] = ((KeyValuePair<string, SolidColorBrush>)comboBox8.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x09] = ((KeyValuePair<string, SolidColorBrush>)comboBox9.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x0A] = ((KeyValuePair<string, SolidColorBrush>)comboBox10.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x0B] = ((KeyValuePair<string, SolidColorBrush>)comboBox11.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x0F] = ((KeyValuePair<string, SolidColorBrush>)comboBox12.SelectedItem).Key;
-                Settings.Instance.ContentColorList[0x10] = ((KeyValuePair<string, SolidColorBrush>)comboBox13.SelectedItem).Key;
-                Settings.Instance.ReserveRectColorNormal = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveNormal.SelectedItem).Key;
-                Settings.Instance.ReserveRectColorNo = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveNo.SelectedItem).Key;
-                Settings.Instance.ReserveRectColorNoTuner = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveNoTuner.SelectedItem).Key;
-                Settings.Instance.ReserveRectColorWarning = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveWarning.SelectedItem).Key;
-                Settings.Instance.TitleColor1 = ((KeyValuePair<string, SolidColorBrush>)comboBox_colorTitle1.SelectedItem).Key;
-                Settings.Instance.TitleColor2 = ((KeyValuePair<string, SolidColorBrush>)comboBox_colorTitle2.SelectedItem).Key;
-                if (checkBox_reserveBackground.IsChecked == true)
-                {
-                    Settings.Instance.ReserveRectBackground = true;
-                }
-                else
-                {
-                    Settings.Instance.ReserveRectBackground = false;
-                }
+                double epgArcDay = MenuUtil.MyToNumerical(textBox_epgArchivePeriod, Convert.ToDouble, 14, 0, 0);
+                IniFileHandler.WritePrivateProfileString("SET", "EpgArchivePeriodHour", ((int)(epgArcDay * 24)).ToString(), SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "EpgArchivePeriodDay", epgArcDay.ToString(), SettingPath.TimerSrvIniPath);
+                IsChangeEpgArcLoadSetting = Settings.Instance.EpgLoadArcInfo != (checkBox_epgNoLoadArcInfo.IsChecked == false);
+                Settings.Instance.EpgLoadArcInfo = (checkBox_epgNoLoadArcInfo.IsChecked == false);
+                Settings.Instance.EpgNoDisplayOld = (checkBox_epgNoDisplayOld.IsChecked == true);
+                Settings.Instance.EpgNoDisplayOldDays = MenuUtil.MyToNumerical(textBox_epgNoDisplayOldDays, Convert.ToDouble, double.MaxValue, double.MinValue, 1);
+
+                Settings.Instance.TunerScrollSize = MenuUtil.MyToNumerical(textBox_tuner_mouse_scroll, Convert.ToDouble, 240);
+                Settings.Instance.TunerWidth = MenuUtil.MyToNumerical(textBox_tuner_width, Convert.ToDouble, double.MaxValue, 16, 150);//小さいと描画で落ちる
+                Settings.Instance.TunerMinHeight = MenuUtil.MyToNumerical(textBox_tuner_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
+                Settings.Instance.TunerMinimumLine = MenuUtil.MyToNumerical(textBox_tunerMinLineHeight, Convert.ToDouble, double.MaxValue, 0, 0);
+                Settings.Instance.TunerDragScroll = MenuUtil.MyToNumerical(textBox_tunerDdragScroll, Convert.ToDouble, 1.5);
+                Settings.Instance.TunerMouseScrollAuto = (checkBox_tuner_scrollAuto.IsChecked == true);
+                Settings.Instance.TunerServiceNoWrap = (checkBox_tuner_service_nowrap.IsChecked == true);
+                Settings.Instance.TunerTitleIndent = (checkBox_tuner_title_indent.IsChecked == true);
+                Settings.Instance.TunerToolTip = (checkBox_tunerDescToolTip.IsChecked == true);
+                Settings.Instance.TunerToolTipViewWait = MenuUtil.MyToNumerical(textBox_tunerToolTipWait, Convert.ToInt32, Int32.MaxValue, Int32.MinValue, 1500);
+                Settings.Instance.TunerPopup = (checkBox_tuner_popup.IsChecked == true);
+                Settings.Instance.TunerPopupMode = tunerPopupRadioBtns.Value;
+                Settings.Instance.TunerPopupRecinfo = (checkBox_tuner_popup_recInfo.IsChecked == true);
+                Settings.Instance.TunerPopupWidth = MenuUtil.MyToNumerical(textBox_tuner_popup_Width, Convert.ToDouble, double.MaxValue, 0, 1);
+                Settings.Instance.TunerInfoSingleClick = (checkBox_tunerSingleOpen.IsChecked == true);
+                Settings.Instance.TunerColorModeUse = (checkBox_tunerColorModeUse.IsChecked == true);
+                Settings.Instance.TunerDisplayOffReserve = (checkBox_tuner_display_offres.IsChecked == true);
 
                 if (comboBox_font.SelectedItem != null)
                 {
                     Settings.Instance.FontName = comboBox_font.SelectedItem as string;
                 }
-                Settings.Instance.FontSize = Convert.ToDouble(textBox_fontSize.Text);
+                Settings.Instance.FontSize = MenuUtil.MyToNumerical(textBox_fontSize, Convert.ToDouble, 72, 1, 12);
                 if (comboBox_fontTitle.SelectedItem != null)
                 {
                     Settings.Instance.FontNameTitle = comboBox_fontTitle.SelectedItem as string;
                 }
-                Settings.Instance.FontSizeTitle = Convert.ToDouble(textBox_fontSizeTitle.Text);
-                if (checkBox_fontBoldTitle.IsChecked == true)
-                {
-                    Settings.Instance.FontBoldTitle = true;
-                }
-                else
-                {
-                    Settings.Instance.FontBoldTitle = false;
-                }
+                Settings.Instance.FontSizeTitle = MenuUtil.MyToNumerical(textBox_fontSizeTitle, Convert.ToDouble, 72, 1, 12);
+                Settings.Instance.FontBoldTitle = (checkBox_fontBoldTitle.IsChecked == true);
 
-                if (radioButton_1_cust.IsChecked == true)
+                if (comboBox_fontTuner.SelectedItem != null)
                 {
-                    Settings.Instance.UseCustomEpgView = true;
-                    IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustEpg", "1", SettingPath.TimerSrvIniPath);
+                    Settings.Instance.TunerFontName = comboBox_fontTuner.SelectedItem as string;
                 }
-                else
+                Settings.Instance.TunerFontSize = MenuUtil.MyToNumerical(textBox_fontTunerSize, Convert.ToDouble, 72, 1, 12);
+                if (comboBox_fontTunerService.SelectedItem != null)
                 {
-                    Settings.Instance.UseCustomEpgView = false;
-                    IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustEpg", "0", SettingPath.TimerSrvIniPath);
+                    Settings.Instance.TunerFontNameService = comboBox_fontTunerService.SelectedItem as string;
                 }
+                Settings.Instance.TunerFontSizeService = MenuUtil.MyToNumerical(textBox_fontTunerSizeService, Convert.ToDouble, 72, 1, 12);
+                Settings.Instance.TunerFontBoldService = (checkBox_fontTunerBoldService.IsChecked == true);
 
-                Settings.Instance.CustomEpgTabList.Clear();
-                int custCount = listBox_tab.Items.Count;
-                IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustCount", custCount.ToString(), SettingPath.TimerSrvIniPath);
-                custCount = 0;
-                foreach (CustomEpgTabInfo info in listBox_tab.Items)
-                {
-                    Settings.Instance.CustomEpgTabList.Add(info);
+                Settings.Instance.UseCustomEpgView = (radioButton_1_cust.IsChecked == true);
+                Settings.Instance.CustomEpgTabList = listBox_tab.Items.OfType<CustomEpgTabInfo>().ToList();
+                Settings.SetCustomEpgTabInfoID();
 
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Name", info.TabName, SettingPath.TimerSrvIniPath);
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewServiceCount", info.ViewServiceList.Count.ToString(), SettingPath.TimerSrvIniPath);
-                    int serviceCount = 0;
-                    foreach (Int64 id in info.ViewServiceList)
+                var getComboColor1 = new Func<ComboBox, string>((cmb) => ((ComboItem)(cmb.SelectedItem)).Key);
+                var getComboColors = new Action<List<string>, Panel>((list, pnl) =>
+                {
+                    foreach (var cmb in pnl.Children.OfType<ComboBox>())
                     {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewService" + serviceCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
-                        serviceCount++;
+                        int idx = int.Parse((string)cmb.Tag);
+                        list[idx] = getComboColor1(cmb);
                     }
+                });
+                Settings.Instance.TitleColor1 = getComboColor1(comboBox_colorTitle1);
+                Settings.Instance.TitleColor2 = getComboColor1(comboBox_colorTitle2);
+                getComboColors(Settings.Instance.ContentColorList, grid_EpgColors);
+                Settings.Instance.ReserveRectColorNormal = getComboColor1(comboBox_reserveNormal);
+                Settings.Instance.ReserveRectColorNo = getComboColor1(comboBox_reserveNo);
+                Settings.Instance.ReserveRectColorNoTuner = getComboColor1(comboBox_reserveNoTuner);
+                Settings.Instance.ReserveRectColorWarning = getComboColor1(comboBox_reserveWarning);
+                Settings.Instance.ReserveRectColorAutoAddMissing = getComboColor1(comboBox_reserveAutoAddMissing);
+                Settings.Instance.ReserveRectColorMultiple = getComboColor1(comboBox_reserveMultiple);
+                getComboColors(Settings.Instance.EpgEtcColors, grid_EpgTimeColors);
+                getComboColors(Settings.Instance.EpgEtcColors, grid_EpgEtcColors);
+                getComboColors(Settings.Instance.TunerServiceColors, grid_TunerFontColor);
+                getComboColors(Settings.Instance.TunerServiceColors, grid_TunerColors);
+                getComboColors(Settings.Instance.TunerServiceColors, grid_TunerEtcColors);
 
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ContentCount", info.ViewContentKindList.Count.ToString(), SettingPath.TimerSrvIniPath);
-                    int contentCount = 0;
-                    foreach (UInt16 id in info.ViewContentKindList)
+                var getButtonColor1 = new Func<Button, uint>((btn) => ColorDef.ToUInt((btn.Background as SolidColorBrush).Color));
+                var getButtonColors = new Action<List<uint>, Panel>((list, pnl) =>
+                {
+                    foreach (var btm in pnl.Children.OfType<Button>())
                     {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Content" + contentCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
-                        contentCount++;
+                        int idx = int.Parse((string)btm.Tag);
+                        list[idx] = getButtonColor1(btm);
                     }
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewMode", info.ViewMode.ToString(), SettingPath.TimerSrvIniPath);
-                    if (info.NeedTimeOnlyBasic == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyBasic", "1", SettingPath.TimerSrvIniPath);
-                    }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyBasic", "0", SettingPath.TimerSrvIniPath);
-                    }
-                    if (info.NeedTimeOnlyWeek == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyWeek", "1", SettingPath.TimerSrvIniPath);
-                    }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyWeek", "0", SettingPath.TimerSrvIniPath);
-                    }
-                    if (info.SearchMode == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "SearchMode", "1", SettingPath.TimerSrvIniPath);
-                    }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "SearchMode", "0", SettingPath.TimerSrvIniPath);
-                    }
-                    
-                    custCount++;
-                }
+                });
 
-                Settings.Instance.ContentCustColorList[0x00] = ColorDef.ToUInt(((SolidColorBrush)button0.Background).Color);
-                Settings.Instance.ContentCustColorList[0x01] = ColorDef.ToUInt(((SolidColorBrush)button1.Background).Color);
-                Settings.Instance.ContentCustColorList[0x02] = ColorDef.ToUInt(((SolidColorBrush)button2.Background).Color);
-                Settings.Instance.ContentCustColorList[0x03] = ColorDef.ToUInt(((SolidColorBrush)button3.Background).Color);
-                Settings.Instance.ContentCustColorList[0x04] = ColorDef.ToUInt(((SolidColorBrush)button4.Background).Color);
-                Settings.Instance.ContentCustColorList[0x05] = ColorDef.ToUInt(((SolidColorBrush)button5.Background).Color);
-                Settings.Instance.ContentCustColorList[0x06] = ColorDef.ToUInt(((SolidColorBrush)button6.Background).Color);
-                Settings.Instance.ContentCustColorList[0x07] = ColorDef.ToUInt(((SolidColorBrush)button7.Background).Color);
-                Settings.Instance.ContentCustColorList[0x08] = ColorDef.ToUInt(((SolidColorBrush)button8.Background).Color);
-                Settings.Instance.ContentCustColorList[0x09] = ColorDef.ToUInt(((SolidColorBrush)button9.Background).Color);
-                Settings.Instance.ContentCustColorList[0x0A] = ColorDef.ToUInt(((SolidColorBrush)button10.Background).Color);
-                Settings.Instance.ContentCustColorList[0x0B] = ColorDef.ToUInt(((SolidColorBrush)button11.Background).Color);
-                Settings.Instance.ContentCustColorList[0x0F] = ColorDef.ToUInt(((SolidColorBrush)button12.Background).Color);
-                Settings.Instance.ContentCustColorList[0x10] = ColorDef.ToUInt(((SolidColorBrush)button13.Background).Color);
-                Settings.Instance.ContentCustColorList[0x11] = ColorDef.ToUInt(((SolidColorBrush)button14.Background).Color);
-                Settings.Instance.ContentCustColorList[0x12] = ColorDef.ToUInt(((SolidColorBrush)button15.Background).Color);
-                Settings.Instance.ContentCustColorList[0x13] = ColorDef.ToUInt(((SolidColorBrush)button16.Background).Color);
-                Settings.Instance.ContentCustColorList[0x14] = ColorDef.ToUInt(((SolidColorBrush)button17.Background).Color);
-                Settings.Instance.TitleCustColor1 = ColorDef.ToUInt(((SolidColorBrush)button_colorTitle1.Background).Color);
-                Settings.Instance.TitleCustColor2 = ColorDef.ToUInt(((SolidColorBrush)button_colorTitle2.Background).Color);
+                Settings.Instance.TitleCustColor1 = getButtonColor1(button_colorTitle1);
+                Settings.Instance.TitleCustColor2 = getButtonColor1(button_colorTitle2);
+                getButtonColors(Settings.Instance.ContentCustColorList, grid_EpgColors);
+                getButtonColors(Settings.Instance.ContentCustColorList, grid_EpgColorsReserve);
+                getButtonColors(Settings.Instance.EpgEtcCustColors, grid_EpgTimeColors);
+                getButtonColors(Settings.Instance.EpgEtcCustColors, grid_EpgEtcColors);
+                getButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerFontColor);
+                getButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerColors);
+                getButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerEtcColors);
 
-                if (checkBox_singleOpen.IsChecked == true)
-                {
-                    Settings.Instance.EpgInfoSingleClick = true;
-                }
-                else
-                {
-                    Settings.Instance.EpgInfoSingleClick = false;
-                }
-                if (checkBox_openInfo.IsChecked == true)
-                {
-                    Settings.Instance.EpgInfoOpenMode = 1;
-                }
-                else
-                {
-                    Settings.Instance.EpgInfoOpenMode = 0;
-                }
+                //録画済み一覧画面
+                Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
+                Settings.Instance.RecInfoDropErrIgnore = MenuUtil.MyToNumerical(textBox_dropErrIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropErrIgnore);
+                Settings.Instance.RecInfoDropWrnIgnore = MenuUtil.MyToNumerical(textBox_dropWrnIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropWrnIgnore);
+                Settings.Instance.RecInfoScrambleIgnore = MenuUtil.MyToNumerical(textBox_scrambleIgnore, Convert.ToInt64, Settings.Instance.RecInfoScrambleIgnore);
+                Settings.Instance.RecinfoErrCriticalDrops = (checkBox_recinfo_errCritical.IsChecked == true);
+                Settings.Instance.RecInfoNoYear = (checkBox_recNoYear.IsChecked == true);
+                Settings.Instance.RecInfoNoSecond = (checkBox_recNoSecond.IsChecked == true);
+                Settings.Instance.RecInfoNoDurSecond = (checkBox_recNoDurSecond.IsChecked == true);
+                getComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
+                getButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
+                Settings.Instance.RecInfoExtraDataCache = (checkBox_ChacheOn.IsChecked == true);
+                Settings.Instance.RecInfoExtraDataCacheOptimize = (checkBox_CacheOptimize.IsChecked == true);
+                Settings.Instance.RecInfoExtraDataCacheKeepConnect = (checkBox_CacheKeepConnect.IsChecked == true);
 
-                if (checkBox_scrollAuto.IsChecked == true)
-                {
-                    Settings.Instance.MouseScrollAuto = true;
-                }
-                else
-                {
-                    Settings.Instance.MouseScrollAuto = false;
-                }
+                //予約一覧画面
+                Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();
+                Settings.Instance.DisplayReserveAutoAddMissing = (checkBox_displayAutoAddMissing.IsChecked != false);
+                Settings.Instance.DisplayReserveMultiple = (checkBox_displayMultiple.IsChecked != false);
+                Settings.Instance.ResInfoNoYear = (checkBox_resNoYear.IsChecked == true);
+                Settings.Instance.ResInfoNoSecond = (checkBox_resNoSecond.IsChecked == true);
+                Settings.Instance.ResInfoNoDurSecond = (checkBox_resNoDurSecond.IsChecked == true);
+                Settings.Instance.TrimSortTitle = (checkBox_TrimSortTitle.IsChecked == true);
+
+                Settings.Instance.ListDefColor = getComboColor1(cmb_ListDefFontColor);
+                getComboColors(Settings.Instance.RecModeFontColors, grid_ReserveRecModeColors);
+                getComboColors(Settings.Instance.ResBackColors, grid_ReserveBackColors);
+                getComboColors(Settings.Instance.StatColors, grid_StatColors);
+
+                Settings.Instance.ListDefCustColor = getButtonColor1(btn_ListDefFontColor);
+                getButtonColors(Settings.Instance.RecModeFontCustColors, grid_ReserveRecModeColors);
+                getButtonColors(Settings.Instance.ResBackCustColors, grid_ReserveBackColors);
+                getButtonColors(Settings.Instance.StatCustColors, grid_StatColors);
+
+                Settings.Instance.DisplayNotifyJumpTime = MenuUtil.MyToNumerical(textBox_DisplayJumpTime, Convert.ToDouble, Double.MaxValue, 0, 3);
+                Settings.Instance.LaterTimeUse = (checkBox_LaterTimeUse.IsChecked == true);
+                Settings.Instance.LaterTimeHour = MenuUtil.MyToNumerical(textBox_LaterTimeHour, Convert.ToInt32, 36, 24, 28) - 24;
+                Settings.Instance.DisplayPresetOnSearch = (checkBox_displayPresetOnSearch.IsChecked == true);
+                Settings.Instance.NoStyle = (checkBox_NotNoStyle.IsChecked == true ? 0 : 1);
+                Settings.Instance.NoToolTip = checkBox_toolTips.IsChecked == false;
+                Settings.Instance.ToolTipWidth = MenuUtil.MyToNumerical(textBox_ToolTipsWidth, Convert.ToDouble, Double.MaxValue, 16, 400);
+                Settings.Instance.DisplayStatus = (checkBox_displayStatus.IsChecked == true);
+                Settings.Instance.DisplayStatusNotify = (checkBox_displayStatusNotify.IsChecked == true);
+                Settings.Instance.IsVisibleReserveView = (checkBox_IsVisibleReserveView.IsChecked == true);
+                Settings.Instance.IsVisibleRecInfoView = (checkBox_IsVisibleRecInfoView.IsChecked == true);
+                Settings.Instance.IsVisibleAutoAddView = (checkBox_IsVisibleAutoAddView.IsChecked == true);
+                Settings.Instance.IsVisibleAutoAddViewMoveOnly = (checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked == true);
+
+                CtxmCode? code = wrapPanel_StartTab.Children.OfType<RadioButton>()
+                    .Where(btn => btn.IsChecked == true).Select(btn => btn.Tag as CtxmCode?).FirstOrDefault();
+                if (code != null) Settings.Instance.StartTab = (CtxmCode)code;
+
+                Dock? dock = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
+                    .Where(btn => btn.IsChecked == true).Select(btn => btn.Tag as Dock?).FirstOrDefault();
+                if (dock != null) Settings.Instance.MainViewButtonsDock = (Dock)dock;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_tab_add_Click(object sender, RoutedEventArgs e)
         {
-            EpgDataViewSettingWindow dlg = new EpgDataViewSettingWindow();
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                dlg.Owner = (Window)topWindow.RootVisual;
-            }
+            var dlg = new EpgDataViewSettingWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             if (dlg.ShowDialog() == true)
             {
-                CustomEpgTabInfo info = new CustomEpgTabInfo();
+                var info = new CustomEpgTabInfo();
                 dlg.GetSetting(ref info);
                 listBox_tab.Items.Add(info);
+                listBox_tab.SelectedItem = info;
+                listBox_tab.ScrollIntoView(info);
             }
         }
-
         private void button_tab_chg_Click(object sender, RoutedEventArgs e)
         {
-            if (listBox_tab.SelectedItem != null)
+            if (listBox_tab.SelectedItem == null)
             {
-                EpgDataViewSettingWindow dlg = new EpgDataViewSettingWindow();
-                PresentationSource topWindow = PresentationSource.FromVisual(this);
-                if (topWindow != null)
+                if (listBox_tab.Items.Count != 0)
                 {
-                    dlg.Owner = (Window)topWindow.RootVisual;
+                    listBox_tab.SelectedIndex = 0;
                 }
-                CustomEpgTabInfo setInfo = listBox_tab.SelectedItem as CustomEpgTabInfo;
+            }
+            var setInfo = listBox_tab.SelectedItem as CustomEpgTabInfo;
+            if (setInfo != null)
+            {
+                listBox_tab.UnselectAll();
+                listBox_tab.SelectedItem = setInfo;
+                var dlg = new EpgDataViewSettingWindow();
+                dlg.Owner = CommonUtil.GetTopWindow(this);
                 dlg.SetDefSetting(setInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -420,60 +477,40 @@ namespace EpgTimer.Setting
             }
             else
             {
-                MessageBox.Show("アイテムが選択されていません");
+                button_tab_add_Click(null, null);
             }
         }
 
-        private void button_tab_del_Click(object sender, RoutedEventArgs e)
+        private void button_tab_clone_Click(object sender, RoutedEventArgs e)
         {
             if (listBox_tab.SelectedItem != null)
             {
-                listBox_tab.Items.RemoveAt(listBox_tab.SelectedIndex);
-                if (listBox_tab.Items.Count > 0)
-                {
-                    listBox_tab.SelectedIndex = 0;
-                }
-            }
-            else
-            {
-                MessageBox.Show("アイテムが選択されていません");
+                List<CustomEpgTabInfo> items = listBox_tab.SelectedItems.OfType<CustomEpgTabInfo>().ToList().Clone();
+                items.ForEach(info => info.TabName += "～コピー");
+                button_tab_copyAdd(items);
             }
         }
 
-        private void button_tab_up_Click(object sender, RoutedEventArgs e)
+        private void button_tab_defaultCopy_Click(object sender, RoutedEventArgs e)
         {
-            if (listBox_tab.SelectedItem != null)
-            {
-                if (listBox_tab.SelectedIndex >= 1)
-                {
-                    object temp = listBox_tab.SelectedItem;
-                    int index = listBox_tab.SelectedIndex;
-                    listBox_tab.Items.RemoveAt(listBox_tab.SelectedIndex);
-                    listBox_tab.Items.Insert(index - 1, temp);
-                    listBox_tab.SelectedIndex = index - 1;
-                }
-            }
+            button_tab_copyAdd(CommonManager.Instance.CreateDefaultTabInfo());
         }
 
-        private void buttontab_down_Click(object sender, RoutedEventArgs e)
+        private void button_tab_copyAdd(List<CustomEpgTabInfo> items)
         {
-            if (listBox_tab.SelectedItem != null)
+            if (items.Count != 0)
             {
-                if (listBox_tab.SelectedIndex < listBox_tab.Items.Count - 1)
-                {
-                    object temp = listBox_tab.SelectedItem;
-                    int index = listBox_tab.SelectedIndex;
-                    listBox_tab.Items.RemoveAt(listBox_tab.SelectedIndex);
-                    listBox_tab.Items.Insert(index + 1, temp);
-                    listBox_tab.SelectedIndex = index + 1;
-                }
+                listBox_tab.Items.AddItems(items);
+                listBox_tab.UnselectAll();
+                listBox_tab.SelectedItemsAdd(items);
+                listBox_tab.ScrollIntoViewIndex(int.MaxValue);
             }
         }
 
         private void button_Color_Click(object sender, RoutedEventArgs e)
         {
-            ColorSetWindow dlg = new ColorSetWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            var dlg = new ColorSetWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             Color item = ((SolidColorBrush)((Button)sender).Background).Color;
             dlg.SetColor(item);
             if (dlg.ShowDialog() == true)
@@ -482,5 +519,37 @@ namespace EpgTimer.Setting
                 ((SolidColorBrush)((Button)sender).Background).Color = item;
             }
         }
+
+        private void checkBox_tunerColorModeUse_Click(object sender, RoutedEventArgs e)
+        {
+            comboBox_tunerFontColorService.IsEnabled = (checkBox_tunerColorModeUse.IsChecked == false);
+            button_tunerFontCustColorService.IsEnabled = (checkBox_tunerColorModeUse.IsChecked == false);
+        }
+
+        private void button_set_cm_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SetContextMenuWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
+            dlg.info = this.ctxmSetInfo.Clone();
+            if (dlg.ShowDialog() == true)
+            {
+                this.ctxmSetInfo = dlg.info.Clone();
+            }
+        }
+        /*
+        private void button_color_reset_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBoxResult.OK == MessageBox.Show("設定ウィンドウが閉じ、全ての色設定を初期化します。\r\n" + "(色設定以外の設定は保存されます。)", "色設定の初期化", MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.Cancel))
+            {
+                var setting = CommonUtil.GetTopWindow(this) as SettingWindow;
+                if (setting == null)
+                {
+                    MessageBox.Show("不明な原因により失敗しました。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                IsClearColorSetting = true;
+                setting.button_OK.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+        }*/
     }
 }

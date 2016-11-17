@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
 using System.Reflection;
@@ -8,11 +9,21 @@ namespace EpgTimer
 {
     public static class ColorDef
     {
-        public static SolidColorBrush BrushFromName(string name)
+        public static Color ColorFromName(string name)
         {
-            PropertyInfo prop = typeof(Brushes).GetProperty(name);
-            return prop == null ? Brushes.White : (SolidColorBrush)prop.GetValue(null, null);
+            try
+            {
+                return (Color)ColorConverter.ConvertFromString(name);//#形式でも大丈夫
+                //return (Color)typeof(Colors).GetProperty(name).GetValue(null, null);
+            }
+            catch
+            {
+                return Colors.White;
+            }
         }
+        //未使用
+        //public static SolidColorBrush BrushFromName(string name) { return new SolidColorBrush(ColorFromName(name)); }
+
         public static Color FromUInt(UInt32 value)
         {
             return Color.FromArgb((byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
@@ -47,15 +58,13 @@ namespace EpgTimer
             g = Math.Min(g, 255);
             b = Math.Min(b, 255);
 
-            Color color2 = Color.FromArgb(color.A, (byte)r, (byte)g, (byte)b);
+            var color2 = Color.FromArgb(color.A, (byte)r, (byte)g, (byte)b);
             
-            LinearGradientBrush brush = new LinearGradientBrush();
+            var brush = new LinearGradientBrush();
             brush.StartPoint = new Point(0, 0.5);
             brush.EndPoint = new Point(0, 1);
             brush.GradientStops.Add(new GradientStop(color, 0.0));
             brush.GradientStops.Add(new GradientStop(color2, 1.0));
-            brush.Freeze();
-
             return brush;
         }
     }

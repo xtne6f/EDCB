@@ -25,6 +25,37 @@ namespace EpgTimer
     // sed 's/_\(.*\)(void){$/public \1(){/' |
     // sed 's/\t/    /g'
 
+    /// <summary>転送ファイルデータ</summary>
+    public class FileData : ICtrlCmdReadWrite
+    {
+        public string Name = "";
+        public uint Size = 0;
+        public uint Status = 0;
+        public byte[] Data = null;
+
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref Name);
+            r.Read(ref Size);
+            r.Read(ref Status);
+            Data = null;
+            if (Size != 0) Data = r.ReadBytes((int)Size);
+            r.End();
+        }
+        public void Write(MemoryStream s, ushort version)
+        {
+            var w = new CtrlCmdWriter(s, version);
+            w.Begin();
+            w.Write(Name);
+            w.Write(Size);
+            w.Write(Status);
+            if (Size != 0) w.Stream.Write(Data, 0, (int)Size);
+            w.End();
+        }
+    }
+
     /// <summary>録画フォルダ情報</summary>
     public class RecFileSetInfo : ICtrlCmdReadWrite
     {
@@ -66,7 +97,7 @@ namespace EpgTimer
     }
 
     /// <summary>録画設定情報</summary>
-    public class RecSettingData : ICtrlCmdReadWrite
+    public partial class RecSettingData : ICtrlCmdReadWrite
     {
         /// <summary>録画モード</summary>
         public byte RecMode;
@@ -103,17 +134,17 @@ namespace EpgTimer
         public RecSettingData()
         {
             RecMode = 1;
-            Priority = 1;
+            Priority = 2;
             TuijyuuFlag = 1;
-            ServiceMode = 0;
+            ServiceMode = 16;
             PittariFlag = 0;
             BatFilePath = "";
             RecFolderList = new List<RecFileSetInfo>();
             SuspendMode = 0;
             RebootFlag = 0;
             UseMargineFlag = 0;
-            StartMargine = 10;
-            EndMargine = 5;
+            StartMargine = 5;
+            EndMargine = 2;
             ContinueRecFlag = 0;
             PartialRecFlag = 0;
             TunerID = 0;
@@ -172,7 +203,7 @@ namespace EpgTimer
     }
 
     /// <summary>登録予約情報</summary>
-    public class ReserveData : ICtrlCmdReadWrite
+    public partial class ReserveData : ICtrlCmdReadWrite
     {
         /// <summary>番組名</summary>
         public string Title;
@@ -287,7 +318,7 @@ namespace EpgTimer
         }
     }
 
-    public class RecFileInfo : ICtrlCmdReadWrite
+    public partial class RecFileInfo : ICtrlCmdReadWrite
     {
         /// <summary>ID</summary>
         public uint ID;
@@ -320,9 +351,9 @@ namespace EpgTimer
         /// <summary>コメント</summary>
         public string Comment;
         /// <summary>.program.txtファイルの内容</summary>
-        public string ProgramInfo;
+        public string _ProgramInfo;
         /// <summary>.errファイルの内容</summary>
-        public string ErrInfo;
+        public string _ErrInfo;
         public byte ProtectFlag;
         public RecFileInfo()
         {
@@ -341,8 +372,8 @@ namespace EpgTimer
             RecStatus = 0;
             StartTimeEpg = new DateTime();
             Comment = "";
-            ProgramInfo = "";
-            ErrInfo = "";
+            _ProgramInfo = "";
+            _ErrInfo = "";
             ProtectFlag = 0;
         }
         public void Write(MemoryStream s, ushort version)
@@ -364,8 +395,8 @@ namespace EpgTimer
             w.Write(RecStatus);
             w.Write(StartTimeEpg);
             w.Write(Comment);
-            w.Write(ProgramInfo);
-            w.Write(ErrInfo);
+            w.Write(_ProgramInfo);
+            w.Write(_ErrInfo);
             if (version >= 4)
             {
                 w.Write(ProtectFlag);
@@ -391,8 +422,8 @@ namespace EpgTimer
             r.Read(ref RecStatus);
             r.Read(ref StartTimeEpg);
             r.Read(ref Comment);
-            r.Read(ref ProgramInfo);
-            r.Read(ref ErrInfo);
+            r.Read(ref _ProgramInfo);
+            r.Read(ref _ErrInfo);
             if (version >= 4)
             {
                 r.Read(ref ProtectFlag);
@@ -733,7 +764,7 @@ namespace EpgTimer
         }
     }
 
-    public class EpgEventInfo : ICtrlCmdReadWrite
+    public partial class EpgEventInfo : ICtrlCmdReadWrite
     {
         public ushort original_network_id;
         public ushort transport_stream_id;
@@ -764,6 +795,10 @@ namespace EpgTimer
         public EpgEventGroupInfo EventRelayInfo;
         /// <summary>ノンスクランブルフラグ</summary>
         public byte FreeCAFlag;
+
+        /// <summary>EpgTimer内のみ有効/過去番組情報</summary>
+        public bool PastDataFlag;
+        
         public EpgEventInfo()
         {
             original_network_id = 0;
@@ -782,6 +817,7 @@ namespace EpgTimer
             EventGroupInfo = null;
             EventRelayInfo = null;
             FreeCAFlag = 0;
+            PastDataFlag = false;
         }
         public void Write(MemoryStream s, ushort version)
         {
@@ -1034,6 +1070,20 @@ namespace EpgTimer
         public byte chkRecEnd;
         /// <summary>(自動予約登録の条件専用)録画済かのチェック対象期間</summary>
         public ushort chkRecDay;
+        /// <summary>(自動予約登録の条件専用)録画済かのチェックの際、同一サービスのチェックを省略する</summary>
+        public byte chkRecNoService;
+        /// <summary>最低番組長(分/0は無制限)</summary>
+        public ushort chkDurationMin;
+        /// <summary>最大番組長(分/0は無制限)</summary>
+        public ushort chkDurationMax;
+
+        //以下は、EpgTimerSrv側ではandKeyへの装飾で処理しているので、ここで吸収する。
+        //ほかのフラグに合わせ、byte型にしておく。
+        /// <summary>大文字小文字を区別する</summary>
+        public byte caseFlag;
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag;
+
         public EpgSearchKeyInfo()
         {
             andKey = "";
@@ -1051,12 +1101,25 @@ namespace EpgTimer
             freeCAFlag = 0;
             chkRecEnd = 0;
             chkRecDay = 6;
+            chkRecNoService = 0;
+            chkDurationMin = 0;
+            chkDurationMax = 0;
+            caseFlag = 0;
+            keyDisabledFlag = 0;
         }
         public void Write(MemoryStream s, ushort version)
         {
+            //装飾フラグをここで処理
+            ushort chkRecDay_Send = (ushort)((chkRecNoService != 0 ? 40000 : 0) + chkRecDay % 10000);
+
+            string andKey_Send = (chkDurationMin > 0 || chkDurationMax > 0 ?
+                "D!{" + ((10000 + Math.Min((int)chkDurationMin, 9999)) * 10000 + Math.Min((int)chkDurationMax, 9999)) + "}" : "") + andKey;
+            andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey_Send;
+            andKey_Send = (keyDisabledFlag == 1 ? "^!{999}" : "") + andKey_Send;
+
             var w = new CtrlCmdWriter(s, version);
             w.Begin();
-            w.Write(andKey);
+            w.Write(andKey_Send);
             w.Write(notKey);
             w.Write(regExpFlag);
             w.Write(titleOnlyFlag);
@@ -1072,7 +1135,7 @@ namespace EpgTimer
             if (version >= 3)
             {
                 w.Write(chkRecEnd);
-                w.Write(chkRecDay);
+                w.Write(chkRecDay_Send);
             }
             w.End();
         }
@@ -1100,29 +1163,42 @@ namespace EpgTimer
             }
             if (version >= 5 && r.RemainSize() >= 5)
             {
-                byte recNoService = 0;
-                r.Read(ref recNoService);
-                if (recNoService != 0)
-                {
-                    chkRecDay = (ushort)(chkRecDay % 10000 + 40000);
-                }
-                ushort durMin = 0;
-                ushort durMax = 0;
-                r.Read(ref durMin);
-                r.Read(ref durMax);
-                if (durMin > 0 || durMax > 0)
-                {
-                    andKey = andKey.Insert(
-                        System.Text.RegularExpressions.Regex.Match(andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?").Length,
-                        "D!{" + ((10000 + Math.Min((int)durMin, 9999)) * 10000 + Math.Min((int)durMax, 9999)) + "}");
-                }
+                r.Read(ref chkRecNoService);
+                r.Read(ref chkDurationMin);
+                r.Read(ref chkDurationMax);
             }
             r.End();
+
+            //装飾フラグをここで処理
+            if (chkRecDay >= 40000)
+            {
+                chkRecNoService = (byte)(chkRecDay >= 40000 ? 1 : 0);
+                chkRecDay %= 10000;
+            }
+
+            if (andKey.StartsWith("^!{999}") == true)//"^!{999}"が前
+            {
+                keyDisabledFlag = 1;
+                andKey = andKey.Substring(7);
+            }
+            if (andKey.StartsWith("C!{999}") == true)
+            {
+                caseFlag = 1;
+                andKey = andKey.Substring(7);
+            }
+            if (andKey.Length > 13 && andKey.StartsWith("D!{1") == true && andKey[12] == '}')
+            {
+                uint dur = 0;
+                uint.TryParse(andKey.Substring(4, 8), out dur);
+                andKey = andKey.Substring(13);
+                chkDurationMin = (ushort)(dur / 10000);
+                chkDurationMax = (ushort)(dur % 10000);
+            }
         }
     }
 
     /// <summary>自動予約登録情報</summary>
-    public class EpgAutoAddData : ICtrlCmdReadWrite
+    public partial class EpgAutoAddData : ICtrlCmdReadWrite
     {
         public uint dataID;
         /// <summary>検索キー</summary>
@@ -1166,7 +1242,7 @@ namespace EpgTimer
         }
     }
 
-    public class ManualAutoAddData : ICtrlCmdReadWrite
+    public partial class ManualAutoAddData : ICtrlCmdReadWrite
     {
         public uint dataID;
         /// <summary>対象曜日</summary>
@@ -1187,6 +1263,11 @@ namespace EpgTimer
         public ushort serviceID;
         /// <summary>録画設定</summary>
         public RecSettingData recSetting;
+
+        //以下は、titleを装飾してEpgTimer側で実装する。
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag;
+
         public ManualAutoAddData()
         {
             dataID = 0;
@@ -1199,16 +1280,21 @@ namespace EpgTimer
             transportStreamID = 0;
             serviceID = 0;
             recSetting = new RecSettingData();
+            keyDisabledFlag = 0;
         }
         public void Write(MemoryStream s, ushort version)
         {
+            //andKey装飾のフラグをここで処理。dayOfWeekFlagをtitleに移動して保存。
+            string title_Send = (keyDisabledFlag == 1 ? "^!{999}" + string.Format("[{0,0:X2}]", dayOfWeekFlag) : "") + title;
+            byte dayOfWeekFlag_Send = (byte)(keyDisabledFlag == 1 ? 0 : dayOfWeekFlag);
+
             var w = new CtrlCmdWriter(s, version);
             w.Begin();
             w.Write(dataID);
-            w.Write(dayOfWeekFlag);
+            w.Write(dayOfWeekFlag_Send);
             w.Write(startTime);
             w.Write(durationSecond);
-            w.Write(title);
+            w.Write(title_Send);
             w.Write(stationName);
             w.Write(originalNetworkID);
             w.Write(transportStreamID);
@@ -1231,6 +1317,14 @@ namespace EpgTimer
             r.Read(ref serviceID);
             r.Read(ref recSetting);
             r.End();
+
+            //andKey装飾のフラグをここで処理
+            if (title.StartsWith("^!{999}") == true)
+            {
+                keyDisabledFlag = 1;
+                byte.TryParse(title.Substring(8, 2), System.Globalization.NumberStyles.AllowHexSpecifier, null, out dayOfWeekFlag);
+                title = title.Substring(11);
+            }
         }
     }
 

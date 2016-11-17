@@ -1,16 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EpgTimer.EpgView
 {
@@ -22,6 +13,7 @@ namespace EpgTimer.EpgView
         public ServiceView()
         {
             InitializeComponent();
+            this.Background = CommonManager.Instance.EpgServiceBorderColor;
         }
 
         public void ClearInfo()
@@ -34,38 +26,30 @@ namespace EpgTimer.EpgView
             stackPanel_service.Children.Clear();
             foreach (EpgServiceInfo info in serviceList)
             {
-                TextBlock item = new TextBlock();
-                item.Text = info.service_name;
-                if (info.remote_control_key_id != 0)
+                var service1 = new StackPanel();
+                service1.Width = Settings.Instance.ServiceWidth - 1;
+                service1.Margin = new Thickness(0, 1, 1, 1);
+                service1.Background = CommonManager.Instance.EpgServiceBackColor;
+                service1.MouseLeftButtonDown += (sender, e) =>
                 {
-                    item.Text += "\r\n" + info.remote_control_key_id.ToString();
-                }
-                else
-                {
-                    item.Text += "\r\n" + info.network_name + " " + info.SID.ToString();
-                }
-                item.Width = Settings.Instance.ServiceWidth - 2;
-                item.Margin = new Thickness(1, 1, 1, 1);
-                item.Background = CommonManager.Instance.CustServiceColor;
-                item.Foreground = Brushes.White;
-                item.TextAlignment = TextAlignment.Center;
-                item.FontSize = 12;
-                item.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);
-                item.DataContext = info;
-                stackPanel_service.Children.Add(item);
-            }
-        }
-
-        void item_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ClickCount == 2)
-            {
-                if (sender.GetType() == typeof(TextBlock))
-                {
-                    TextBlock item = sender as TextBlock;
-                    EpgServiceInfo serviceInfo = item.DataContext as EpgServiceInfo;
+                    if (e.ClickCount != 2) return;
+                    //
+                    var serviceInfo = ((FrameworkElement)sender).DataContext as EpgServiceInfo;
                     CommonManager.Instance.TVTestCtrl.SetLiveCh(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
-                }
+                };
+                service1.DataContext = info;
+
+                var text = ViewUtil.GetPanelTextBlock(info.service_name);
+                text.Margin = new Thickness(1, 0, 1, 0);
+                text.Foreground = CommonManager.Instance.EpgServiceFontColor;
+                service1.Children.Add(text);
+
+                text = ViewUtil.GetPanelTextBlock(info.remote_control_key_id != 0 ? info.remote_control_key_id.ToString() : info.network_name + " " + info.SID.ToString());
+                text.Margin = new Thickness(1, 0, 1, 2);
+                text.Foreground = CommonManager.Instance.EpgServiceFontColor;
+                service1.Children.Add(text);
+
+                stackPanel_service.Children.Add(service1);
             }
         }
     }

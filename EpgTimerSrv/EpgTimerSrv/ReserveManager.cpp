@@ -263,7 +263,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 	return false;
 }
 
-bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus)
+bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus, bool noReportNotify)
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -297,7 +297,10 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
-		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		//自動登録リスト更新時(EPG更新時など)にNOTIFYの発生を抑制するため
+		if( noReportNotify != true){
+			AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		}
 		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
 		return true;
 	}

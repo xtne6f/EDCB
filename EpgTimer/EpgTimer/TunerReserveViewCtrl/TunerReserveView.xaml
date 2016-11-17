@@ -1,30 +1,31 @@
-﻿<UserControl x:Class="EpgTimer.TunerReserveViewCtrl.TunerReserveView"
+﻿<local2:PanelViewBase x:Class="EpgTimer.TunerReserveViewCtrl.TunerReserveView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" xmlns:local="clr-namespace:EpgTimer.TunerReserveViewCtrl">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type ListBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-    </UserControl.Resources>
-    <Grid>
-        <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
-            <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top">
+             mc:Ignorable="d"
+             xmlns:local="clr-namespace:EpgTimer.TunerReserveViewCtrl"
+             xmlns:local2="clr-namespace:EpgTimer.UserCtrlView"
+             d:DesignHeight="300" d:DesignWidth="300">
 
-                <local:TunerReservePanel x:Name="reserveViewPanel" Background="DarkGray" MouseMove="reserveViewPanel_MouseMove" MouseLeftButtonDown="reserveViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="reserveViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="reserveViewPanel_MouseRightButtonDown" />
+        <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged" PreviewMouseWheel="scrollViewer_PreviewMouseWheel">
+            <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown" MouseLeave="canvas_MouseLeave" >
+                <local:TunerReservePanel x:Name="reserveViewPanel" />
+                <Border x:Name="popupItem" BorderThickness="1" IsHitTestVisible="False" Canvas.ZIndex="20" SizeChanged="popupItem_SizeChanged">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
+                    </Border.Effect>
+                    <StackPanel x:Name="popupItemTextArea">
+                        <TextBlock x:Name="sutatusText" LineStackingStrategy="BlockLineHeight"/>
+                        <TextBlock x:Name="recInfoText" TextWrapping="Wrap"  LineStackingStrategy="BlockLineHeight"/>
+                        <Grid>
+                            <TextBlock x:Name="minText" LineStackingStrategy="BlockLineHeight" />
+                            <TextBlock x:Name="titleText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight" />
+                        </Grid>
+                        <TextBlock x:Name="infoText" TextWrapping="Wrap"  LineStackingStrategy="BlockLineHeight"/>
+                    </StackPanel>
+                </Border>
             </Canvas>
         </ScrollViewer>
-    </Grid>
-</UserControl>
+
+</local2:PanelViewBase>

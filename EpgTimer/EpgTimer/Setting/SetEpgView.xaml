@@ -6,329 +6,647 @@
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="780">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>        
+        <VisualBrush x:Key="HatchBrush" TileMode="Tile" Viewbox="0,0,10,10" ViewboxUnits="Absolute" Viewport="0,0,6,6" ViewportUnits="Absolute">
+            <VisualBrush.Visual>
+                <Canvas Background="White" Width="10" Height="10">
+                    <Path Stroke="Black" Data="M 0 0 l 10 10 M 0 10 l 10 -10" />
+                </Canvas>
+            </VisualBrush.Visual>
+        </VisualBrush>
+        <Style x:Key="colorCombo" TargetType="{x:Type ComboBox}" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=SelectedItem.Key}"/>
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Width" Value="120"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="ComboBox.ItemTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Label BorderBrush="Black" BorderThickness="1" Background="{Binding Path=Value}" Width="20" Height="15" />
+                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
+                        </StackPanel>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="colorButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=Background}"/>
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Width" Value="58"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <EventSetter Event="Click" Handler="button_Color_Click"/>
+        </Style>
+        <!-- 例えば<Grid Resources="{StaticResource cusColorSetPanel}">などとして使えるがデザイン時に反映されないので保留
+        <ResourceDictionary x:Key="cusColorSetPanel" >
+            <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
+            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
+        </ResourceDictionary>
+        -->
     </UserControl.Resources>
-    <Grid>
-        <TabControl Name="tabControl">
-            <TabItem Header="基本" Name="tabItem_basic">
-                <Grid>
-                    <GroupBox Header="フォント" Margin="6,6,6,0" Name="groupBox3" Height="102" VerticalAlignment="Top">
-                        <Grid>
-                            <Label Content="タイトル" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label1" VerticalAlignment="Top" />
-                            <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="96,6,0,0" Name="label2" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="167,6,0,0" Name="comboBox_fontTitle" VerticalAlignment="Top" Width="203" />
-                            <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="386,6,0,0" Name="label3" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="438,8,0,0" Name="textBox_fontSizeTitle" VerticalAlignment="Top" Width="39" />
-                            <CheckBox Content="太字" Height="16" HorizontalAlignment="Left" Margin="483,11,0,0" Name="checkBox_fontBoldTitle" VerticalAlignment="Top" />
-                            <Label Content="タイトル以外" Height="28" HorizontalAlignment="Left" Margin="6,36,0,0" Name="label4" VerticalAlignment="Top" />
-                            <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="96,36,0,0" Name="label5" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="167,36,0,0" Name="comboBox_font" VerticalAlignment="Top" Width="203" />
-                            <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="386,36,0,0" Name="label6" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="438,38,0,0" Name="textBox_fontSize" VerticalAlignment="Top" Width="39" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="539,8,0,0" Name="comboBox_colorTitle1" VerticalAlignment="Top" Width="98" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
+    <TabControl>
+        <TabItem Header="番組表">
+            <TabControl>
+                <TabItem Header="基本">
+                    <StackPanel>
+                        <GroupBox Header="フォント" Margin="6,6,6,0" >
+                            <StackPanel Orientation="Horizontal">
+                                <Grid>
+                                    <Label Content="タイトル" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                                    <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="84,6,0,0" VerticalAlignment="Top" />
+                                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="155,6,0,0" Name="comboBox_fontTitle" VerticalAlignment="Top" Width="203" />
+                                    <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="374,6,0,0" VerticalAlignment="Top" />
+                                    <TextBox Height="24" HorizontalAlignment="Left" Margin="426,6,0,0" Name="textBox_fontSizeTitle" VerticalAlignment="Top" Width="39" />
+                                    <CheckBox Content="太字" Height="16" HorizontalAlignment="Left" Margin="471,11,0,0" Name="checkBox_fontBoldTitle" VerticalAlignment="Top" />
+                                    <Label Content="タイトル以外" Height="28" HorizontalAlignment="Left" Margin="6,36,0,0" VerticalAlignment="Top" />
+                                    <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="84,36,0,0" VerticalAlignment="Top" />
+                                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="155,36,0,0" Name="comboBox_font" VerticalAlignment="Top" Width="203" />
+                                    <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="374,36,0,0" VerticalAlignment="Top" />
+                                    <TextBox Height="24" HorizontalAlignment="Left" Margin="426,36,0,0" Name="textBox_fontSize" VerticalAlignment="Top" Width="39" />
+                                </Grid>
+                                <Grid>
+                                    <ComboBox Style="{StaticResource colorCombo}" Margin="12,6,0,0" Width="96" Name="comboBox_colorTitle1" Tag="0" />
+                                    <ComboBox Style="{StaticResource colorCombo}" Margin="12,36,0,0" Width="96" Name="comboBox_colorTitle2" Tag="1" />
+                                    <Button Style="{StaticResource colorButton}" Margin="116,6,0,0" Name="button_colorTitle1" Tag="0" />
+                                    <Button Style="{StaticResource colorButton}" Margin="116,36,0,0" Name="button_colorTitle2" Tag="1" />
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="表示設定" Margin="6,6,6,0" >
+                            <Grid>
+                                <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
+                                <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_scrollAuto" VerticalAlignment="Top" />
+                                <Label Content="サービス１つの幅" Height="28" HorizontalAlignment="Left" Margin="11,36,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="165,36,0,0" Name="textBox_service_width" VerticalAlignment="Top" Width="55" />
+                                <Label Content="1分あたりの高さ" Height="28" HorizontalAlignment="Left" Margin="327,6,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="470,6,0,0" Name="textBox_minHeight" VerticalAlignment="Top" Width="55" />
+                                <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="470,36,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
+                                <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="650,6,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
+                                <StackPanel Margin="11,64,0,0" Width="304" HorizontalAlignment="Left">
+                                    <CheckBox Content="番組内容のポップアップ表示" Margin="0,6,0,0" Name="checkBox_epg_popup" />
+                                    <StackPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_epg_popup, UpdateSourceTrigger=PropertyChanged}" >
+                                        <WrapPanel>
+                                            <RadioButton Content="マウスオーバー" Margin="0,6,12,0" Name="radioButton_epg_popup_onOver" />
+                                            <RadioButton Content="クリックしたとき" Margin="0,6,12,0" Name="radioButton_epg_popup_onClick" />
+                                            <RadioButton Content="予約のみマウスオーバーで、他はクリックしたとき" Margin="0,6,12,0" Name="radioButton_epg_popup_resOnly" />
+                                        </WrapPanel>
+                                        <WrapPanel>
+                                            <Label Content="ポップアップの幅　サービスの幅 ×" />
+                                            <TextBox Width="55" Name="textBox_epg_popup_Width" />
+                                            <Label Content="倍" />
+                                        </WrapPanel>
+                                    </StackPanel>
+                                    <CheckBox Content="詳細をツールチップ表示する" Margin="0,6,0,0" Name="checkBox_descToolTip" />
+                                    <StackPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" >
+                                        <CheckBox Content="番組名を表示しきれない物のみ表示する" Margin="0,6,0,0" Name="checkBox_toolTip_noView_only" />
+                                        <WrapPanel>
+                                            <Label Content="ツールチップを表示するまでの時間(ミリ秒)" />
+                                            <TextBox Width="55" Margin="12,0,0,0" Name="textBox_toolTipWait" />
+                                        </WrapPanel>
+                                    </StackPanel>
+                                    <Label Content="番組内容を詳しく表示する" />
+                                    <WrapPanel Margin="20,0,0,0" >
+                                        <CheckBox Content="番組表" Margin="0,6,12,0" Name="checkBox_epg_ExtInfo_table" />
+                                        <CheckBox Content="ポップアップ" Margin="0,6,12,0" Name="checkBox_epg_ExtInfo_popup" />
+                                        <CheckBox Content="ツールチップ" Margin="0,6,12,0" Name="checkBox_epg_ExtInfo_tooltip" />
+                                    </WrapPanel>
+                                </StackPanel>
+                                <StackPanel Margin="327,64,0,0" >
+                                    <CheckBox Content="シングルクリックで予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_singleOpen" />
+                                    <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_openInfo" />
+                                    <CheckBox Content="番組名と番組内容の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_title_indent" />
+                                    <CheckBox Content="番組表の切り替え時にも強調表示をする" Margin="0,6,0,0" Name="checkBox_displayNotifyChange" />
+                                    <GroupBox Header="過去の番組情報" Margin="0,6,0,0" >
+                                        <StackPanel>
+                                            <StackPanel Name="stackPanel_epgArchivePeriod" Orientation="Horizontal" >
+                                                <Label Content="EPG取得後も" Name="label_epgArchivePeriod1" />
+                                                <TextBox Name="textBox_epgArchivePeriod" Width="55" />
+                                                <Label Content="日前まで保存する　( 最大14日 )" />
+                                            </StackPanel>
+                                            <CheckBox Content="過去の番組情報を表示しない" Name="checkBox_epgNoLoadArcInfo" Margin="0,2,0,2" ToolTipService.ShowDuration="60000" ToolTip="過去の番組情報を読み込まないようにします。&#10;・過去の番組情報を読み込んでいると、番組データの不整合のため表示が乱れる場合があります。&#10;・検索による絞り込みを使用している場合は、元々過去の番組情報は読み込まれていません。" />
+                                            <StackPanel Orientation="Horizontal" ToolTip="前2つのオプションとは関係なく、強制的に表示を制限します。" >
+                                                <CheckBox Content="番組表の表示を" Name="checkBox_epgNoDisplayOld" />
+                                                <TextBox Name="textBox_epgNoDisplayOldDays" Width="55" Margin="6,0,0,0"/>
+                                                <Label Content="日前までに制限する"/>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="539,36,0,0" Name="comboBox_colorTitle2" VerticalAlignment="Top" Width="98">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
+                                    </GroupBox>
+                                    <WrapPanel>
+                                        <Label Content="グラデーション表示を行う" />
+                                        <CheckBox Content="番組" Margin="12,0,0,0" Name="checkBox_gradation" />
+                                        <CheckBox Content="サービス・時刻軸" Margin="12,0,0,0" Name="checkBox_gradationHeader" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="色1">
+                    <TabItem.Resources>
+                        <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
+                        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
+                    </TabItem.Resources>
+                    <StackPanel>
+                        <GroupBox Header="ジャンル別背景色" Margin="6,6,6,0" >
+                            <Grid x:Name="grid_EpgColors" >
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="ニュース／報道" Height="24" HorizontalAlignment="Left" Margin="12,23,0,0" VerticalAlignment="Top" />
+                                <Label Content="スポーツ" Height="28" HorizontalAlignment="Left" Margin="390,23,0,0" VerticalAlignment="Top" />
+                                <Label Content="情報／ワイドショー" Height="28" HorizontalAlignment="Left" Margin="12,53,0,0" VerticalAlignment="Top" />
+                                <Label Content="ドラマ" Height="28" HorizontalAlignment="Left" Margin="390,53,0,0" VerticalAlignment="Top" />
+                                <Label Content="音楽" Height="28" HorizontalAlignment="Left" Margin="12,83,0,0" VerticalAlignment="Top" />
+                                <Label Content="バラエティ" Height="28" HorizontalAlignment="Left" Margin="390,83,0,0" VerticalAlignment="Top" />
+                                <Label Content="映画" Height="28" HorizontalAlignment="Left" Margin="12,113,0,0" VerticalAlignment="Top" />
+                                <Label Content="アニメ／特撮" Height="28" HorizontalAlignment="Left" Margin="390,113,0,0" VerticalAlignment="Top" />
+                                <Label Content="ドキュメンタリー／教養" Height="28" HorizontalAlignment="Left" Margin="12,143,0,0" VerticalAlignment="Top" />
+                                <Label Content="劇場／公演" Height="28" HorizontalAlignment="Left" Margin="390,143,0,0" VerticalAlignment="Top" />
+                                <Label Content="趣味／教育" Height="28" HorizontalAlignment="Left" Margin="12,173,0,0" VerticalAlignment="Top" />
+                                <Label Content="福祉" Height="28" HorizontalAlignment="Left" Margin="390,173,0,0" VerticalAlignment="Top" />
+                                <Label Content="その他" Height="28" HorizontalAlignment="Left" Margin="12,203,0,0" VerticalAlignment="Top" />
+                                <Label Content="なし" Height="28" HorizontalAlignment="Left" Margin="390,203,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,27,0,0" Tag="0" />
+                                <ComboBox Margin="488,27,0,0" Tag="1" />
+                                <ComboBox Margin="166,57,0,0" Tag="2" />
+                                <ComboBox Margin="488,57,0,0" Tag="3" />
+                                <ComboBox Margin="166,87,0,0" Tag="4" />
+                                <ComboBox Margin="488,87,0,0" Tag="5" />
+                                <ComboBox Margin="166,117,0,0" Tag="6" />
+                                <ComboBox Margin="488,117,0,0" Tag="7" />
+                                <ComboBox Margin="166,147,0,0" Tag="8" />
+                                <ComboBox Margin="488,147,0,0" Tag="9" />
+                                <ComboBox Margin="166,177,0,0" Tag="10" />
+                                <ComboBox Margin="488,177,0,0" Tag="11" />
+                                <ComboBox Margin="166,207,0,0" Tag="15" />
+                                <ComboBox Margin="488,207,0,0" Tag="16" />
+                                <Button Margin="292,27,0,0" Tag="0" />
+                                <Button Margin="614,27,0,0" Tag="1" />
+                                <Button Margin="292,57,0,0" Tag="2" />
+                                <Button Margin="614,57,0,0" Tag="3" />
+                                <Button Margin="292,87,0,0" Tag="4" />
+                                <Button Margin="614,87,0,0" Tag="5" />
+                                <Button Margin="292,117,0,0" Tag="6" />
+                                <Button Margin="614,117,0,0" Tag="7" />
+                                <Button Margin="292,147,0,0" Tag="8" />
+                                <Button Margin="614,147,0,0" Tag="9" />
+                                <Button Margin="292,177,0,0" Tag="10" />
+                                <Button Margin="614,177,0,0" Tag="11" />
+                                <Button Margin="292,207,0,0" Tag="15" />
+                                <Button Margin="614,206,0,0" Tag="16" />
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox Margin="6,6,6,0" >
+                            <GroupBox.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content ="予約枠 ( " Padding="0"/>
+                                    <CheckBox Content="塗りつぶしで表示 )  " Name="checkBox_reserveBackground" />
+                                    <Label Content ="※マークはオプション使用時のみ" Padding="0" ToolTip="[予約一覧・共通]-[基本]画面も参照"/>
+                                </StackPanel>
+                            </GroupBox.Header>
+                            <Grid x:Name="grid_EpgColorsReserve" >
+                                <Label Content="通常" Height="28" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="無効" Height="28" HorizontalAlignment="Left" Margin="390,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="チューナー不足" Height="28" HorizontalAlignment="Left" Margin="12,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="一部実行" Height="28" HorizontalAlignment="Left" Margin="390,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="自動予約登録不明※" Height="28" HorizontalAlignment="Left" Margin="12,60,0,0" VerticalAlignment="Top" ToolTip="[動作設定]-[予約情報管理]画面参照" />
+                                <Label Content="重複EPG予約※" Height="28" HorizontalAlignment="Left" Margin="390,60,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,4,0,0" Name="comboBox_reserveNormal" />
+                                <ComboBox Margin="488,4,0,0" Name="comboBox_reserveNo" />
+                                <ComboBox Margin="166,34,0,0" Name="comboBox_reserveNoTuner" />
+                                <ComboBox Margin="488,34,0,0" Name="comboBox_reserveWarning" />
+                                <ComboBox Margin="166,64,0,0" Name="comboBox_reserveAutoAddMissing" />
+                                <ComboBox Margin="488,64,0,0" Name="comboBox_reserveMultiple" />
+                                <Button Margin="292,4,0,0" Tag="17" />
+                                <Button Margin="614,4,0,0" Tag="18" />
+                                <Button Margin="292,34,0,0" Tag="19" />
+                                <Button Margin="614,34,0,0" Tag="20" />
+                                <Button Margin="292,64,0,0" Tag="21" />
+                                <Button Margin="614,64,0,0" Tag="22" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="色2">
+                    <TabItem.Resources>
+                        <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
+                        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
+                    </TabItem.Resources>
+                    <StackPanel>
+                        <GroupBox Header="時刻表示色設定" Margin="6,6,6,0" >
+                            <Grid x:Name="grid_EpgTimeColors">
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="00～05時" Height="24" HorizontalAlignment="Left" Margin="12,23,0,0" VerticalAlignment="Top" />
+                                <Label Content="06～11時" Height="28" HorizontalAlignment="Left" Margin="390,23,0,0" VerticalAlignment="Top" />
+                                <Label Content="12～17時" Height="28" HorizontalAlignment="Left" Margin="12,53,0,0" VerticalAlignment="Top" />
+                                <Label Content="18～23時" Height="28" HorizontalAlignment="Left" Margin="390,53,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示文字色" Height="24" HorizontalAlignment="Left" Margin="12,83,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示枠色" Height="24" HorizontalAlignment="Left" Margin="390,83,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,27,0,0" Tag="0" />
+                                <ComboBox Margin="488,27,0,0" Tag="1" />
+                                <ComboBox Margin="166,57,0,0" Tag="2" />
+                                <ComboBox Margin="488,57,0,0" Tag="3" />
+                                <ComboBox Margin="166,87,0,0" Tag="9" />
+                                <ComboBox Margin="488,87,0,0" Tag="10" />
+                                <Button Margin="292,27,0,0" Tag="0" />
+                                <Button Margin="614,27,0,0" Tag="1" />
+                                <Button Margin="292,57,0,0" Tag="2" />
+                                <Button Margin="614,57,0,0" Tag="3" />
+                                <Button Margin="292,87,0,0" Tag="9" />
+                                <Button Margin="614,87,0,0" Tag="10" />
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox Header="その他色設定" Margin="6,6,6,0" >
+                            <Grid x:Name="grid_EpgEtcColors">
+                                <Label Content="番組表背景色" Height="24" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="番組枠色" Height="24" HorizontalAlignment="Left" Margin="12,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="1週間モード日付枠色" Height="24" HorizontalAlignment="Left" Margin="12,60,0,0" VerticalAlignment="Top" />
+                                <Label Content="サービス文字色" Height="24" HorizontalAlignment="Left" Margin="390,00,00,0" VerticalAlignment="Top" />
+                                <Label Content="サービス背景色" Height="24" HorizontalAlignment="Left" Margin="390,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="サービス枠色" Height="24" HorizontalAlignment="Left" Margin="390,60,00,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,4,0,0" Tag="5" />
+                                <ComboBox Margin="166,34,0,0" Tag="6" />
+                                <ComboBox Margin="166,64,0,0" Tag="11" />
+                                <ComboBox Margin="488,4,0,0" Tag="7" />
+                                <ComboBox Margin="488,34,0,0" Tag="4" />
+                                <ComboBox Margin="488,64,0,0" Tag="8" />
+                                <Button Margin="292,4,0,0" Tag="5" />
+                                <Button Margin="292,34,0,0" Tag="6" />
+                                <Button Margin="292,64,0,0" Tag="11" />
+                                <Button Margin="614,4,0,0" Tag="7" />
+                                <Button Margin="614,34,0,0" Tag="4" />
+                                <Button Margin="614,64,0,0" Tag="8" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="表示項目">
+                    <DockPanel Margin="6">
+                        <StackPanel DockPanel.Dock="Top">
+                            <RadioButton Content="デフォルト表示" Name="radioButton_1_def" />
+                            <RadioButton Content="カスタマイズ表示" Name="radioButton_1_cust" Margin="0,6,0,0" />
+                        </StackPanel>
+                        <GroupBox Header="カスタマイズ表示設定" Margin="0,6,0,0" >
+                            <Grid Margin="6" >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="auto" />
+                                    <RowDefinition Height="6" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="6" />
+                                    <RowDefinition Height="auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="auto" />
+                                    <ColumnDefinition Width="auto" />
+                                    <ColumnDefinition Width="7*" />
+                                </Grid.ColumnDefinitions>
+                                <Label Content="表示タブ" />
+                                <ListBox Grid.Row="2" Name="listBox_tab" SelectionMode="Extended" />
+                                <Grid Grid.Row="4" MinWidth="200" >
+                                    <Button HorizontalAlignment="Left" MinWidth="54" Content="コピー" Name="button_tab_clone" Click="button_tab_clone_Click" />
+                                    <Button HorizontalAlignment="Right" Margin="20,0,0,0" Content="デフォルト表示をコピー" Name="button_tab_defaultCopy" Click="button_tab_defaultCopy_Click" />
+                                </Grid>
+                                <StackPanel MinWidth="54" Margin="12,0,0,0" Grid.Row="2" Grid.Column="1">
+                                    <Button Content="追加" Margin="0,0,0,6" Name="button_tab_add" Click="button_tab_add_Click" />
+                                    <Button Content="変更" Margin="0,0,0,6" Name="button_tab_chg" Click="button_tab_chg_Click" />
+                                    <Button Content="削除" Margin="0,0,0,12" Name="button_tab_del" />
+                                    <Button Content="↑↑" Margin="0,0,0,6" Name="button_tab_top" />
+                                    <Button Content="↑" Margin="0,0,0,6" Name="button_tab_up" />
+                                    <Button Content="↓" Margin="0,0,0,6" Name="button_tab_down" />
+                                    <Button Content="↓↓" Margin="0,0,0,6" Name="button_tab_bottom" />
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+                    </DockPanel>
+                </TabItem>
+            </TabControl>
+        </TabItem>
+        <TabItem Header="使用予定チューナー">
+            <TabControl>
+                <TabItem Header="基本">
+                    <StackPanel>
+                        <GroupBox Header="フォント" Margin="6,6,6,0" >
+                            <StackPanel Orientation="Horizontal">
+                                <Grid>
+                                    <Label Content="サービス" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                                    <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="84,6,0,0" VerticalAlignment="Top" />
+                                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="155,6,0,0" Name="comboBox_fontTunerService" VerticalAlignment="Top" Width="203" />
+                                    <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="374,6,0,0" VerticalAlignment="Top" />
+                                    <TextBox Height="24" HorizontalAlignment="Left" Margin="426,6,0,0" Name="textBox_fontTunerSizeService" VerticalAlignment="Top" Width="39" />
+                                    <CheckBox Content="太字" Height="16" HorizontalAlignment="Left" Margin="471,11,0,0" Name="checkBox_fontTunerBoldService" VerticalAlignment="Top" />
+                                    <Label Content="サービス以外" Height="28" HorizontalAlignment="Left" Margin="6,36,0,0" VerticalAlignment="Top" />
+                                    <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="84,36,0,0" VerticalAlignment="Top" />
+                                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="155,36,0,0" Name="comboBox_fontTuner" VerticalAlignment="Top" Width="203" />
+                                    <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="374,36,0,0" VerticalAlignment="Top" />
+                                    <TextBox Height="24" HorizontalAlignment="Left" Margin="426,36,0,0" Name="textBox_fontTunerSize" VerticalAlignment="Top" Width="39" />
+                                </Grid>
+                                <Grid x:Name="grid_TunerFontColor">
+                                    <ComboBox Style="{StaticResource colorCombo}" Margin="12,6,0,0" Width="96" Name="comboBox_tunerFontColorService" Tag="0" />
+                                    <ComboBox Style="{StaticResource colorCombo}" Margin="12,36,0,0" Width="96" Tag="1"/>
+                                    <Button Style="{StaticResource colorButton}" Margin="116,6,0,0" Name="button_tunerFontCustColorService" Tag="0" />
+                                    <Button Style="{StaticResource colorButton}" Margin="116,36,0,0" Tag="1" />
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="表示設定" Margin="6,6,6,0">
+                            <Grid>
+                                <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label47" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_tuner_mouse_scroll" VerticalAlignment="Top" Width="55" />
+                                <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_tuner_scrollAuto" VerticalAlignment="Top" />
+                                <Label Content="チューナー１つの幅" Height="28" HorizontalAlignment="Left" Margin="11,36,0,0" Name="label48" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="165,36,0,0" Name="textBox_tuner_width" VerticalAlignment="Top" Width="55" />
+                                <Label Content="1分あたりの高さ" Height="28" HorizontalAlignment="Left" Margin="327,6,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="470,6,0,0" Name="textBox_tuner_minHeight" VerticalAlignment="Top" Width="55" />
+                                <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" Name="label39" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="650,6,0,0" Name="textBox_tunerMinLineHeight" VerticalAlignment="Top" Width="55" />
+                                <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label38" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="470,36,0,0" Name="textBox_tunerDdragScroll" VerticalAlignment="Top" Width="55" />
+                                <StackPanel Margin="11,64,0,0" Width="304" HorizontalAlignment="Left">
+                                    <CheckBox Content="予約のポップアップ表示" Margin="0,6,0,0" Name="checkBox_tuner_popup" />
+                                    <StackPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tuner_popup, UpdateSourceTrigger=PropertyChanged}" >
+                                        <WrapPanel>
+                                            <RadioButton Content="マウスオーバー" Margin="0,6,12,0" Name="radioButton_tuner_popup_onOver" />
+                                            <RadioButton Content="クリックしたとき" Margin="0,6,12,0" Name="radioButton_tuner_popup_onClick" />
+                                        </WrapPanel>
+                                        <CheckBox Content="ポップアップに優先度と録画モードを表示する" Margin="0,6,0,0" Name="checkBox_tuner_popup_recInfo" />
+                                        <WrapPanel>
+                                            <Label Content="ポップアップの幅　チューナーの幅 ×" />
+                                            <TextBox Width="55" Name="textBox_tuner_popup_Width" />
+                                            <Label Content="倍" />
+                                        </WrapPanel>
+                                    </StackPanel>
+                                    <CheckBox Content="詳細をツールチップ表示する" Margin="0,6,0,0" Name="checkBox_tunerDescToolTip" />
+                                    <WrapPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tunerDescToolTip, UpdateSourceTrigger=PropertyChanged}" >
+                                        <Label Content="ツールチップを表示するまでの時間(ミリ秒)" />
+                                        <TextBox Width="55" Margin="12,0,0,0" Name="textBox_tunerToolTipWait" />
+                                    </WrapPanel>
+                                </StackPanel>
+                                <StackPanel Margin="327,64,0,0" >
+                                    <CheckBox Content="シングルクリックで予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_tunerSingleOpen" />
+                                    <CheckBox Content="サービスのフォント色を優先度で変える('色'タブの設定)" Margin="0,6,0,0" Name="checkBox_tunerColorModeUse" ToolTip="チェックされていない場合はこの画面の設定色が使われます。" Click="checkBox_tunerColorModeUse_Click" />
+                                    <CheckBox Content="サービス名と番組名の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_tuner_title_indent" />
+                                    <CheckBox Content="サービス名を改行しない" Margin="0,6,0,0" Name="checkBox_tuner_service_nowrap" />
+                                    <CheckBox Content="無効の予約も表示する" Margin="0,6,0,0" Name="checkBox_tuner_display_offres" />
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="色">
+                    <TabItem.Resources>
+                        <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
+                        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
+                    </TabItem.Resources>
+                    <StackPanel>
+                        <GroupBox Header="優先度別サービス色設定" Margin="6,6,6,0" VerticalAlignment="Top" >
+                            <Grid x:Name="grid_TunerColors" >
+                                <TextBlock Text="※" HorizontalAlignment="Left" Margin="385,27,0,0" VerticalAlignment="Top" />
+                                <TextBlock Text="[基本]タブの「サービスのフォント色を優先度で変える」チェック時のみ有効" HorizontalAlignment="Left" Margin="403,27,0,0" VerticalAlignment="Top" TextWrapping="Wrap" Width="256" />
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="優先度 5(高い)" Height="28" HorizontalAlignment="Left" Margin="12,23,0,0" VerticalAlignment="Top" />
+                                <Label Content="優先度 4" Height="28" HorizontalAlignment="Left" Margin="12,53,0,0" VerticalAlignment="Top" />
+                                <Label Content="優先度 3" Height="28" HorizontalAlignment="Left" Margin="12,83,0,0" VerticalAlignment="Top" />
+                                <Label Content="優先度 2" Height="28" HorizontalAlignment="Left" Margin="12,113,0,0" VerticalAlignment="Top" />
+                                <Label Content="優先度 1 (低い)" Height="28" HorizontalAlignment="Left" Margin="12,143,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,27,0,0" Tag="6" />
+                                <ComboBox Margin="166,57,0,0" Tag="5" />
+                                <ComboBox Margin="166,87,0,0" Tag="4" />
+                                <ComboBox Margin="166,117,0,0" Tag="3" />
+                                <ComboBox Margin="166,147,0,0" Tag="2" />
+                                <Button Margin="292,27,0,0" Tag="6" />
+                                <Button Margin="292,57,0,0" Tag="5" />
+                                <Button Margin="292,87,0,0" Tag="4" />
+                                <Button Margin="292,117,0,0" Tag="3" />
+                                <Button Margin="292,147,0,0" Tag="2" />
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox Header="その他色設定" Margin="6,6,6,0" >
+                            <Grid x:Name="grid_TunerEtcColors">
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,-28,0,0" VerticalAlignment="Top" />
+                                <Label Content="予約表示エリア背景色" Height="24" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="予約枠色" Height="24" HorizontalAlignment="Left" Margin="390,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示文字色" Height="24" HorizontalAlignment="Left" Margin="12,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示背景色" Height="24" HorizontalAlignment="Left" Margin="12,60,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示枠色" Height="24" HorizontalAlignment="Left" Margin="12,90,0,0" VerticalAlignment="Top" />
+                                <Label Content="チューナー文字色" Height="24" HorizontalAlignment="Left" Margin="390,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="チューナー背景色" Height="24" HorizontalAlignment="Left" Margin="390,60,0,0" VerticalAlignment="Top" />
+                                <Label Content="チューナー枠色" Height="24" HorizontalAlignment="Left" Margin="390,90,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,4,0,0" Tag="7" />
+                                <ComboBox Margin="488,4,0,0" Tag="8" />
+                                <ComboBox Margin="166,34,0,0" Tag="9" />
+                                <ComboBox Margin="166,64,0,0" Tag="10" />
+                                <ComboBox Margin="166,94,0,0" Tag="11" />
+                                <ComboBox Margin="488,34,0,0" Tag="12" />
+                                <ComboBox Margin="488,64,0,0" Tag="13" />
+                                <ComboBox Margin="488,94,0,0" Tag="14" />
+                                <Button Margin="292,4,0,0" Tag="7" />
+                                <Button Margin="614,4,0,0" Tag="8" />
+                                <Button Margin="292,34,0,0" Tag="9" />
+                                <Button Margin="292,64,0,0" Tag="10" />
+                                <Button Margin="292,94,0,0" Tag="11" />
+                                <Button Margin="614,34,0,0" Tag="12" />
+                                <Button Margin="614,64,0,0" Tag="13" />
+                                <Button Margin="614,94,0,0" Tag="14" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+        </TabItem>
+        <TabItem Header="録画済み一覧">
+            <StackPanel>
+                <GroupBox Header="各種設定" Margin="6,6,6,0">
+                    <StackPanel Margin="11,6,0,0" >
+                        <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Name="checkBox_playDClick" />
+                        <StackPanel Orientation="Horizontal" >
+                            <Label Content="リスト表示で省略する" VerticalAlignment="Top" />
+                            <CheckBox Content="'年'" Margin="12,0,0,0" Name="checkBox_recNoYear" VerticalAlignment="Center" />
+                            <CheckBox Content="'秒'" Margin="12,0,0,0" Name="checkBox_recNoSecond" VerticalAlignment="Center" />
+                            <CheckBox Content="長さの'秒'" Margin="12,0,0,0"  Name="checkBox_recNoDurSecond" VerticalAlignment="Center" />
+                        </StackPanel >
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <Label Content="番組情報・エラーログのキャッシュ" VerticalAlignment="Center" ToolTip="起動中、取得したテキストデータを保持します。(キャッシュしない場合、必要時に毎回EpgTimerSrvから取得します。)" />
+                            <CheckBox Content="する　（" Margin="12,0,0,0" Name="checkBox_ChacheOn" VerticalAlignment="Center" />
+                            <CheckBox Content="不要データを削除する　" Margin="12,0,0,0" Name="checkBox_CacheOptimize" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_ChacheOn, UpdateSourceTrigger=PropertyChanged}"/>
+                            <CheckBox Content="再接続時も保持する　）" Margin="12,0,0,0" Name="checkBox_CacheKeepConnect"  VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_ChacheOn, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel >
+                        <GroupBox Header="ドロップ・スクランブル未解除" Margin="0,0,0,6">
+                            <Grid>
+                                <Label Content="ドロップをエラー扱いしない閾値" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="264,6,0,0" Name="textBox_dropErrIgnore" VerticalAlignment="Top" Width="62" />
+                                <Label Content="ドロップを警告扱いしない閾値" Height="28" HorizontalAlignment="Left" Margin="6,36,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="264,36,0,0" Name="textBox_dropWrnIgnore" VerticalAlignment="Top" Width="62" />
+                                <Label Content="スクランブル未解除を警告扱いしない閾値" Height="28" HorizontalAlignment="Left" Margin="6,66,0,0" VerticalAlignment="Top" />
+                                <TextBox Height="24" HorizontalAlignment="Left" Margin="264,66,0,0" Name="textBox_scrambleIgnore" VerticalAlignment="Top" Width="62" />
+                                <Label Content="※それぞれ-1指定で、ドロップなどを全て無視。" Height="28" HorizontalAlignment="Left" Margin="6,87,0,0" VerticalAlignment="Top" />
+                                <CheckBox Content="エラー・警告表示にドロップ(映像・音声)、" Height="16" HorizontalAlignment="Left" Margin="352,12,0,0" Name="checkBox_recinfo_errCritical" VerticalAlignment="Top" />
+                                <Label Content="スクランブル未解除(映像・音声)を使う" Height="28" HorizontalAlignment="Left" Margin="410,21,0,0" VerticalAlignment="Top" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="背景色" Margin="6,6,6,0" >
+                    <GroupBox.Resources>
+                        <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
+                        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
+                    </GroupBox.Resources>
+                    <Grid x:Name="grid_RecInfoBackColors">
+                        <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
+                        <Label Content="デフォルト" Height="28" HorizontalAlignment="Left" Margin="12,23,0,0" VerticalAlignment="Top" />
+                        <Label Content="エラー" Height="28" HorizontalAlignment="Left" Margin="12,53,0,0" VerticalAlignment="Top" />
+                        <Label Content="警告" Height="28" HorizontalAlignment="Left" Margin="12,83,0,0" VerticalAlignment="Top" />
+                        <ComboBox Margin="166,27,0,0" Tag="0" />
+                        <ComboBox Margin="166,57,0,0" Tag="1" />
+                        <ComboBox Margin="166,87,0,0" Tag="2" />
+                        <Button Margin="292,27,0,0" Tag="0" />
+                        <Button Margin="292,57,0,0" Tag="1" />
+                        <Button Margin="292,87,0,0" Tag="2" />
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+        </TabItem>
+        <TabItem Header="予約一覧・共通" >
+            <TabControl>
+                <TabItem Header="基本" >
+                    <TabItem.Resources>
+                        <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                            <Setter Property="Margin" Value="0,0,12,0"/>
+                        </Style>
+                    </TabItem.Resources>
+                    <GroupBox Header="各種設定" Margin="6,6,6,0" VerticalAlignment="Top" Padding="0,0,0,6">
+                        <StackPanel Margin="11,0,0,0" >
+                            <Button Margin="0,6,0,4" Content="右クリックメニューの設定" HorizontalAlignment="Left" Name="button_set_cm" Click="button_set_cm_Click" />
+                            <CheckBox Margin="0,4,0,0" Content="自動予約登録(キーワード予約、プログラム予約)を見失った予約を強調表示する" Name="checkBox_displayAutoAddMissing" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わったときなどに発生する場合があります" />
+                            <CheckBox Margin="0,4,0,0" Content="重複しているEPG予約を強調表示する" Name="checkBox_displayMultiple" ToolTip="プログラム予約は対象外です" />
+                            <StackPanel Margin="0,2,0,-2" Orientation="Horizontal" >
+                                <Label Content="番組表などへジャンプしたときの強調表示の継続時間" />
+                                <TextBox Width="55" Margin="12,0,0,0" Name="textBox_DisplayJumpTime" />
+                                <Label Content="秒" Margin="12,0,0,0" />
+                            </StackPanel>
+                            <StackPanel Margin="0,2,0,-2" Orientation="Horizontal" >
+                                <Label Content="リスト表示で省略する(録画済み一覧以外)" VerticalAlignment="Center" />
+                                <CheckBox Content="'年'" Margin="12,0,0,0" Name="checkBox_resNoYear" />
+                                <CheckBox Content="'秒'" Margin="12,0,0,0" Name="checkBox_resNoSecond" ToolTip="たまに'秒'単位の番組も存在します。" />
+                                <CheckBox Content="長さの'秒'" Margin="12,0,0,0" Name="checkBox_resNoDurSecond" ToolTip="たまに'秒'単位の番組も存在します。" />
+                            </StackPanel>
+                            <CheckBox Margin="0,4,0,0" Content="番組名で並べ替えるとき記号類を無視する" Name="checkBox_TrimSortTitle" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります" />
+                            <StackPanel Margin="0,2,0,-2" Orientation="Horizontal" >
+                                <CheckBox Content="深夜時間表示をする" Name="checkBox_LaterTimeUse" />
+                                <TextBox Width="55" Margin="12,0,0,0" Name="textBox_LaterTimeHour" />
+                                <Label Content="時まで" Margin="12,0,0,0" />
+                            </StackPanel>
+                            <CheckBox Margin="0,4,0,0" Content="検索/キーワード予約ダイアログの録画設定タブにプリセットを表示する" Name="checkBox_displayPresetOnSearch" />
+                            <CheckBox Margin="0,4,0,0" Content="テーマを適用する(要再起動)" Name="checkBox_NotNoStyle" />
+                            <StackPanel Margin="0,2,0,-2" Orientation="Horizontal" >
+                                <CheckBox Content="詳細情報のツールチップを表示する  ツールチップの幅" Name="checkBox_toolTips" ToolTip="番組表、使用予定チューナー画面、その他一部画面は個別にツールチップの表示設定があります。" />
+                                <TextBox Margin="6,0,0,0" Name="textBox_ToolTipsWidth" Width="62" />
+                            </StackPanel>
+                            <CheckBox Margin="0,4,0,0" Content="ステータス表示をする" Name="checkBox_displayStatus" />
+                            <CheckBox Margin="14,4,0,0" Content="主要操作の操作結果を表示をする" Name="checkBox_displayStatusNotify" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
+                            <GroupBox Header="初期表示画面" Margin="0,4,0,0" >
+                                <WrapPanel Name="wrapPanel_StartTab" Margin="6,6,0,0" />
+                            </GroupBox>
+                            <DockPanel Margin="0,4,0,0">
+                                <GroupBox Header="各画面のボタン列の位置" >
+                                    <WrapPanel Name="wrapPanel_MainViewButtonsDock" Margin="6,6,0,0" />
+                                </GroupBox>
+                                <GroupBox Header="各画面のボタン列を表示する" Margin="6,0,0,0" >
+                                    <WrapPanel Margin="6,6,0,0">
+                                        <CheckBox Content="予約一覧" Margin="0,0,12,0" Name="checkBox_IsVisibleReserveView" />
+                                        <CheckBox Content="録画済み一覧" Margin="0,0,12,0" Name="checkBox_IsVisibleRecInfoView" />
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
+                                            <CheckBox Content="自動予約登録（" Margin="0,0,12,0" Name="checkBox_IsVisibleAutoAddView" />
+                                            <CheckBox Content="「並び替え」のみ表示　）" Margin="-6,0,12,0" Name="checkBox_IsVisibleAutoAddViewMoveOnly" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_IsVisibleAutoAddView, UpdateSourceTrigger=PropertyChanged}"/>
                                         </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,8,0,0" Name="button_colorTitle1" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                        </Grid>
+                                    </WrapPanel>
+                                </GroupBox>
+                            </DockPanel>
+                        </StackPanel>
                     </GroupBox>
-                    <GroupBox Header="表示" Height="248" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
-                        <Grid>
-                            <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label7" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
-                            <Label Content="サービス１つの幅" Height="28" HorizontalAlignment="Left" Margin="11,36,0,0" Name="label8" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="165,36,0,0" Name="textBox_service_width" VerticalAlignment="Top" Width="55" />
-                            <Label Content="1分あたりの高さ" Height="28" HorizontalAlignment="Left" Margin="327,6,0,0" Name="label9" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="470,8,0,0" Name="textBox_minHeight" VerticalAlignment="Top" Width="55" />
-                            <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label10" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="470,38,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
-                            <CheckBox Content="番組内容表示位置を番組名表示位置にあわせる" Height="16" HorizontalAlignment="Left" Margin="350,70,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
-                            <CheckBox Content="詳細をツールチップ表示する" Height="16" HorizontalAlignment="Left" Margin="350,92,0,0" Name="checkBox_descToolTip" VerticalAlignment="Top" />
-                            <CheckBox Content="番組名を表示しきれない物のみ表示する" Height="16" HorizontalAlignment="Left" Margin="370,114,0,0" Name="checkBox_toolTip_noView_only" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
-                            <Label Content="ツールチップを表示するまでの時間(ミリ秒)" Height="28" HorizontalAlignment="Left" Margin="370,132,0,0" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="605,134,0,0" Name="textBox_toolTipWait" VerticalAlignment="Top" Width="47" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
-                            <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="535,92,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" />
-                            <Label Content="グラデーション表示を行う" Height="28" HorizontalAlignment="Left" Margin="350,160,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="番組" Height="16" HorizontalAlignment="Left" Margin="503,165,0,0" Name="checkBox_gradation" VerticalAlignment="Top" />
-                            <CheckBox Content="サービス・時刻軸" Height="16" HorizontalAlignment="Left" Margin="563,165,0,0" Name="checkBox_gradationHeader" VerticalAlignment="Top" />
-                            <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,148,0,0" Name="checkBox_singleOpen" VerticalAlignment="Top" />
-                            <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="350,193,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
-                            <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_scrollAuto" VerticalAlignment="Top" />
-                            <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" Name="label36" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="650,8,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
-                        </Grid>
-                    </GroupBox>
-                </Grid>
-            </TabItem>
-            <TabItem Header="色" Name="tabItem_color">
-                <Grid>
-                    <GroupBox Header="ジャンル別背景色" Height="267" Margin="6,6,6,0" Name="groupBox1" VerticalAlignment="Top" >
-                        <Grid>
-                            <Label Content="ニュース／報道" Height="28" HorizontalAlignment="Left" Margin="12,27,0,0" Name="label11" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,27,0,0" Name="comboBox0" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="スポーツ" Height="28" HorizontalAlignment="Left" Margin="400,27,0,0" Name="label12" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,27,0,0" Name="comboBox1" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="情報／ワイドショー" Height="28" HorizontalAlignment="Left" Margin="12,57,0,0" Name="label13" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,57,0,0" Name="comboBox2" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="ドラマ" Height="28" HorizontalAlignment="Left" Margin="400,57,0,0" Name="label14" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,57,0,0" Name="comboBox3" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="音楽" Height="28" HorizontalAlignment="Left" Margin="12,91,0,0" Name="label15" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,91,0,0" Name="comboBox4" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="バラエティ" Height="28" HorizontalAlignment="Left" Margin="400,91,0,0" Name="label16" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,91,0,0" Name="comboBox5" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="映画" Height="28" HorizontalAlignment="Left" Margin="12,121,0,0" Name="label17" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,121,0,0" Name="comboBox6" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="アニメ／特撮" Height="28" HorizontalAlignment="Left" Margin="400,121,0,0" Name="label18" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,121,0,0" Name="comboBox7" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="ドキュメンタリー／教養" Height="28" HorizontalAlignment="Left" Margin="12,151,0,0" Name="label19" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,151,0,0" Name="comboBox8" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="劇場／公演" Height="28" HorizontalAlignment="Left" Margin="400,151,0,0" Name="label20" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,151,0,0" Name="comboBox9" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="趣味／教育" Height="28" HorizontalAlignment="Left" Margin="12,181,0,0" Name="label21" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,181,0,0" Name="comboBox10" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="福祉" Height="28" HorizontalAlignment="Left" Margin="400,181,0,0" Name="label22" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,181,0,0" Name="comboBox11" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="その他" Height="28" HorizontalAlignment="Left" Margin="12,211,0,0" Name="label23" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,211,0,0" Name="comboBox12" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="なし" Height="28" HorizontalAlignment="Left" Margin="400,211,0,0" Name="label24" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="498,211,0,0" Name="comboBox13" VerticalAlignment="Top" Width="120">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,56,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,56,0,0" Name="button3" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,90,0,0" Name="button4" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,90,0,0" Name="button5" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,120,0,0" Name="button6" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,120,0,0" Name="button7" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,150,0,0" Name="button8" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,150,0,0" Name="button9" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,180,0,0" Name="button10" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,180,0,0" Name="button11" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,210,0,0" Name="button12" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,210,0,0" Name="button13" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" Name="label30" VerticalAlignment="Top" />
-                            <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="624,0,0,0" Name="label31" VerticalAlignment="Top" />
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox Header="予約枠" Height="147" Margin="0,279,12,0" Name="groupBox4" VerticalAlignment="Top" >
-                        <Grid>
-                            <Label Content="通常" Height="28" HorizontalAlignment="Left" Margin="18,28,0,0" Name="label25" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="172,28,0,0" Name="comboBox_reserveNormal" VerticalAlignment="Top" Width="120">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="無効" Height="28" HorizontalAlignment="Left" Margin="406,28,0,0" Name="label26" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="504,28,0,0" Name="comboBox_reserveNo" VerticalAlignment="Top" Width="120">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="チューナー不足" Height="28" HorizontalAlignment="Left" Margin="18,58,0,0" Name="label27" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="172,58,0,0" Name="comboBox_reserveNoTuner" VerticalAlignment="Top" Width="120">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Label Content="一部実行" Height="28" HorizontalAlignment="Left" Margin="406,58,0,0" Name="label28" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="504,58,0,0" Name="comboBox_reserveWarning" VerticalAlignment="Top" Width="120">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Value}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <CheckBox Content="塗りつぶしで表示" Height="16" HorizontalAlignment="Left" Margin="18,92,0,0" Name="checkBox_reserveBackground" VerticalAlignment="Top" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,27,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,28,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,57,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,57,0,0" Name="button17" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="298,0,0,0" Name="label32" VerticalAlignment="Top" />
-                            <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="630,0,0,0" Name="label33" VerticalAlignment="Top" />
-                        </Grid>
-                    </GroupBox>
-                </Grid>
-            </TabItem>
-            <TabItem Header="表示項目" Name="tabItem_view">
-                <Grid>
-                    <RadioButton Content="デフォルト表示" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="radioButton_1_def" VerticalAlignment="Top" />
-                    <RadioButton Content="カスタマイズ表示" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="radioButton_1_cust" VerticalAlignment="Top" />
-                    <GroupBox Header="カスタマイズ表示設定" Name="groupBox5" Margin="1,50,6,0" Height="225" Width="763" VerticalAlignment="Top">
-                        <Grid>
-                            <Label Content="表示タブ" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label29" VerticalAlignment="Top" />
-                            <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" />
-                            <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="213,40,0,0" Name="button_tab_add" VerticalAlignment="Top" Width="46" Click="button_tab_add_Click" />
-                            <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="213,69,0,0" Name="button_tab_chg" VerticalAlignment="Top" Width="46" Click="button_tab_chg_Click" />
-                            <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="213,98,0,0" Name="button_tab_del" VerticalAlignment="Top" Width="46" Click="button_tab_del_Click" />
-                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="213,136,0,0" Name="button_tab_up" VerticalAlignment="Top" Width="46" Click="button_tab_up_Click" />
-                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="213,165,0,0" Name="buttontab_down" VerticalAlignment="Top" Width="46" Click="buttontab_down_Click" />
-                        </Grid>
-                    </GroupBox>
-                </Grid>
-            </TabItem>
-        </TabControl>
-    </Grid>
+                </TabItem>
+                <TabItem Header="色" >
+                    <TabItem.Resources>
+                        <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
+                        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
+                    </TabItem.Resources>
+                    <StackPanel>
+                        <GroupBox Header="各画面共通デフォルト文字色" Margin="6,6,6,0" >
+                            <Grid>
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="デフォルト" Height="28" HorizontalAlignment="Left" Margin="12,23,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,27,0,0" Name="cmb_ListDefFontColor" />
+                                <Button Margin="292,27,0,0" Name="btn_ListDefFontColor" />
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox Header="録画モード別文字色" Margin="6,6,6,0" >
+                            <Grid x:Name="grid_ReserveRecModeColors">
+                                <Label Content="全サービス" Height="28" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="全サービス" Height="28" HorizontalAlignment="Left" Margin="390,-3,0,0" VerticalAlignment="Top" />
+                                <Label Content="(デコード処理無し)" Height="28" HorizontalAlignment="Left" Margin="390,11,0,0" VerticalAlignment="Top" />
+                                <Label Content="指定サービス" Height="28" HorizontalAlignment="Left" Margin="12,30,0,0" VerticalAlignment="Top" ToolTip="[動作設定]-[予約情報管理]画面参照" />
+                                <Label Content="指定サービス" Height="28" HorizontalAlignment="Left" Margin="390,27,0,0" VerticalAlignment="Top" />
+                                <Label Content="(デコード処理無し)" Height="28" HorizontalAlignment="Left" Margin="390,41,0,0" VerticalAlignment="Top" />
+                                <Label Content="視聴" Height="28" HorizontalAlignment="Left" Margin="12,60,0,0" VerticalAlignment="Top" ToolTip="[動作設定]-[予約情報管理]画面参照" />
+                                <Label Content="無効" Height="28" HorizontalAlignment="Left" Margin="390,60,0,0" VerticalAlignment="Top" ToolTip="[動作設定]-[予約情報管理]画面参照" />
+                                <ComboBox Margin="166,4,0,0" Tag="0" />
+                                <ComboBox Margin="488,4,0,0" Tag="2" />
+                                <ComboBox Margin="166,34,0,0" Tag="1" />
+                                <ComboBox Margin="488,34,0,0" Tag="3" />
+                                <ComboBox Margin="166,64,0,0" Tag="4" />
+                                <ComboBox Margin="488,64,0,0" Tag="5" />
+                                <Button Margin="292,4,0,0" Tag="0" />
+                                <Button Margin="614,4,0,0" Tag="2" />
+                                <Button Margin="292,34,0,0" Tag="1" />
+                                <Button Margin="614,34,0,0" Tag="3" />
+                                <Button Margin="292,64,0,0" Tag="4" />
+                                <Button Margin="614,64,0,0" Tag="5" />
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox Margin="6,6,6,0" Header="予約エラー等背景色   ※マークはオプション使用時のみ">
+                            <Grid x:Name="grid_ReserveBackColors">
+                                <Label Content="通常" Height="28" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="無効" Height="28" HorizontalAlignment="Left" Margin="390,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="チューナー不足" Height="28" HorizontalAlignment="Left" Margin="12,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="一部実行" Height="28" HorizontalAlignment="Left" Margin="390,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="自動予約登録不明※" Height="28" HorizontalAlignment="Left" Margin="12,60,0,0" VerticalAlignment="Top" ToolTip="[動作設定]-[予約情報管理]画面参照" />
+                                <Label Content="重複EPG予約※" Height="28" HorizontalAlignment="Left" Margin="390,60,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,4,0,0" Tag="0" />
+                                <ComboBox Margin="488,4,0,0" Tag="1" />
+                                <ComboBox Margin="166,34,0,0" Tag="2" />
+                                <ComboBox Margin="488,34,0,0" Tag="3" />
+                                <ComboBox Margin="166,64,0,0" Tag="4" />
+                                <ComboBox Margin="488,64,0,0" Tag="5" />
+                                <Button Margin="292,4,0,0" Tag="0" />
+                                <Button Margin="614,4,0,0" Tag="1" />
+                                <Button Margin="292,34,0,0" Tag="2" />
+                                <Button Margin="614,34,0,0" Tag="3" />
+                                <Button Margin="292,64,0,0" Tag="4" />
+                                <Button Margin="614,64,0,0" Tag="5" />
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox Header="状態表示列文字色" Margin="6,6,6,0" VerticalAlignment="Top" >
+                            <Grid x:Name="grid_StatColors">
+                                <Label Content="予約中" Height="28" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="録画中" Height="28" HorizontalAlignment="Left" Margin="390,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="放送中" Height="28" HorizontalAlignment="Left" Margin="12,30,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,4,0,0" Tag="0" />
+                                <ComboBox Margin="488,4,0,0" Tag="1" />
+                                <ComboBox Margin="166,34,0,0" Tag="2" />
+                                <Button Margin="292,4,0,0" Tag="0" />
+                                <Button Margin="614,4,0,0" Tag="1" />
+                                <Button Margin="292,34,0,0" Tag="2" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+        </TabItem>
+    </TabControl>
 </UserControl>

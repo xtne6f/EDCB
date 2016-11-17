@@ -2,58 +2,102 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EpgTimer
 {
-    public class ReserveViewItem
+    public class ReserveViewItem : PanelItem<ReserveData>
     {
-        public ReserveViewItem()
-        {
-            TitleDrawErr = false;
-        }
-        public ReserveViewItem(ReserveData info)
-        {
-            TitleDrawErr = false;
-            ReserveInfo = info;
-        }
+        public ReserveViewItem(ReserveData info) : base(info) { }
+        public ReserveData ReserveInfo { get { return Data; } protected set { Data = value; } }
 
-        public ReserveData ReserveInfo
+        public Brush ForeColorPriTuner
         {
-            get;
-            set;
-        }
-        public double Width
-        {
-            get;
-            set;
-        }
+            get
+            {
+                if (ReserveInfo == null) return Brushes.Black;
 
-        public double Height
-        {
-            get;
-            set;
+                return CommonManager.Instance.CustTunerServiceColorPri[ReserveInfo.RecSetting.Priority - 1];
+            }
         }
-
-        public double LeftPos
+        public Brush BackColorTuner
         {
-            get;
-            set;
+            get
+            {
+                return ViewUtil.ReserveErrBrush(ReserveInfo);
+            }
         }
-
-        public double TopPos
+        public String StatusTuner
         {
-            get;
-            set;
+            get
+            {
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.IsOnRec() == true)
+                    {
+                        if (ReserveInfo.IsEnabled == false || ReserveInfo.OverlapMode == 2)
+                        {
+                            return "放送中*";
+                        }
+                        if (ReserveInfo.OverlapMode == 1)
+                        {
+                            return "一部のみ録画中*";
+                        }
+                        return "録画中*";
+                    }
+                }
+                return "";
+            }
         }
-
-        public bool TitleDrawErr
+        public Brush BorderBrushTuner
         {
-            get;
-            set;
+            get
+            {
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.IsOnRec() == true)
+                    {
+                        return CommonManager.Instance.StatRecForeColor;
+                    }
+                    if (ReserveInfo.IsEnabled == false)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x12];
+                    }
+                }
+                return CommonManager.Instance.TunerReserveBorderColor;
+            }
+        }
+        public Brush BorderBrush
+        {
+            get
+            {
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.IsEnabled == false)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x12];
+                    }
+                    if (ReserveInfo.OverlapMode == 2)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x13];
+                    }
+                    if (ReserveInfo.OverlapMode == 1)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x14];
+                    }
+                    if (ReserveInfo.IsAutoAddInvalid == true)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x15];
+                    }
+                    if (ReserveInfo.IsMultiple == true)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x16];
+                    }
+                }
+                return CommonManager.Instance.CustContentColorList[0x11];
+            }
         }
     }
+
 }
