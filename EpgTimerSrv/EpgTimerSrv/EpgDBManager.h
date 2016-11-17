@@ -2,6 +2,7 @@
 
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
+#include "../../Common/BlockLock.h"
 
 #import "RegExp.tlb" no_namespace named_guids
 
@@ -32,15 +33,47 @@ public:
 
 	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result);
 
-	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param);
+	//P = [](vector<SEARCH_RESULT_EVENT>&) -> void
+	template<class P>
+	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, P enumProc) {
+		CBlockLock lock(&this->epgMapLock);
+		vector<SEARCH_RESULT_EVENT> result;
+		CoInitialize(NULL);
+		{
+			IRegExpPtr regExp;
+			for( size_t i = 0; i < key->size(); i++ ){
+				SearchEvent(&(*key)[i], result, regExp);
+			}
+		}
+		CoUninitialize();
+		enumProc(result);
+		return TRUE;
+	}
 
 	BOOL GetServiceList(vector<EPGDB_SERVICE_INFO>* list);
 
-	BOOL EnumEventInfo(LONGLONG serviceKey, vector<EPGDB_EVENT_INFO>* result);
+	//P = [](const vector<EPGDB_EVENT_INFO>&) -> void
+	template<class P>
+	BOOL EnumEventInfo(LONGLONG serviceKey, P enumProc) const {
+		CBlockLock lock(&this->epgMapLock);
+		map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>::const_iterator itr = this->epgMap.find(serviceKey);
+		if( itr == this->epgMap.end() || itr->second.eventList.empty() ){
+			return FALSE;
+		}
+		enumProc(itr->second.eventList);
+		return TRUE;
+	}
 
-	BOOL EnumEventInfo(LONGLONG serviceKey, void (*enumProc)(const vector<EPGDB_EVENT_INFO>*, void*), void* param);
-
-	BOOL EnumEventAll(void (*enumProc)(vector<const EPGDB_SERVICE_EVENT_INFO*>*, void*), void* param);
+	//P = [](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>&) -> void
+	template<class P>
+	BOOL EnumEventAll(P enumProc) const {
+		CBlockLock lock(&this->epgMapLock);
+		if( this->epgMap.empty() ){
+			return FALSE;
+		}
+		enumProc(this->epgMap);
+		return TRUE;
+	}
 
 	BOOL SearchEpg(
 		WORD ONID,
@@ -69,7 +102,7 @@ public:
 	static void ConvertSearchText(wstring& str);
 
 protected:
-	CRITICAL_SECTION epgMapLock;
+	mutable CRITICAL_SECTION epgMapLock;
 
 	HANDLE loadThread;
 	BOOL loadStop;
@@ -81,7 +114,7 @@ protected:
 	void ClearEpgData();
 	static UINT WINAPI LoadThread(LPVOID param);
 
-	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap, IRegExpPtr& regExp);
+	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, IRegExpPtr& regExp);
 	BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);
 	static BOOL IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
 	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);

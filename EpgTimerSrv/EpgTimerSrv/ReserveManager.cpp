@@ -262,7 +262,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 	return false;
 }
 
-bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment, bool setReserveStatus)
+bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus, bool noReportNotify)
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -274,9 +274,6 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		RESERVE_DATA r = reserveList[i];
 		//すでに終了していないか
 		if( now < ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
-			if( setComment == false ){
-				r.comment.clear();
-			}
 			r.presentFlag = FALSE;
 			r.overlapMode = RESERVE_EXECUTE;
 			if( setReserveStatus == false ){
@@ -299,7 +296,10 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
-		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		//自動登録リスト更新時(EPG更新時など)にNOTIFYの発生を抑制するため
+		if( noReportNotify != true){
+			AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		}
 		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
 		return true;
 	}
@@ -318,7 +318,6 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(r.reserveID);
 		if( itr != this->reserveText.GetMap().end() ){
 			//変更できないフィールドを上書き
-			r.comment = itr->second.comment;
 			r.presentFlag = itr->second.presentFlag;
 			r.startTimeEpg = itr->second.startTimeEpg;
 			if( setReserveStatus == false ){
@@ -1147,7 +1146,7 @@ void CReserveManager::CheckTuijyuTuner()
 			ChgReserveData(chgList, true);
 		}
 		if( relayAddList.empty() == false ){
-			AddReserveData(relayAddList, false, true);
+			AddReserveData(relayAddList, true);
 		}
 	}
 }
@@ -1872,12 +1871,13 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
 			}
 			if( infoEventName.empty() == false && info.StartTimeFlag != 0 ){
+				int chkDayActual = chkDay >= 20000 ? chkDay % 10000 : chkDay;
 				map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr;
 				for( itr = this->recInfo2Text.GetMap().begin(); itr != this->recInfo2Text.GetMap().end(); itr++ ){
-					if( itr->second.originalNetworkID == info.original_network_id &&
-					    itr->second.transportStreamID == info.transport_stream_id &&
-					    itr->second.serviceID == info.service_id &&
-					    ConvertI64Time(itr->second.startTime) + chkDay*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
+					if( (chkDay >= 40000 || itr->second.originalNetworkID == info.original_network_id) &&
+					    (chkDay >= 30000 || itr->second.transportStreamID == info.transport_stream_id) &&
+					    (chkDay >= 20000 || itr->second.serviceID == info.service_id) &&
+					    ConvertI64Time(itr->second.startTime) + chkDayActual*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
 						if( this->recInfo2RegExp.empty() == false ){
 							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());

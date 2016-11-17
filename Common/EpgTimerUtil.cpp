@@ -347,6 +347,48 @@ static const struct KIND_INFO {
 	{ 0x0BFF, L"福祉" },
 
 	{ 0x0FFF, L"その他" },
+
+	{ 0x7000, L"テニス" },
+	{ 0x7001, L"バスケットボール" },
+	{ 0x7002, L"ラグビー" },
+	{ 0x7003, L"アメリカンフットボール" },
+	{ 0x7004, L"ボクシング" },
+	{ 0x7005, L"プロレス" },
+	{ 0x700F, L"その他" },
+	{ 0x70FF, L"スポーツ(CS)" },
+
+	{ 0x7100, L"アクション" },
+	{ 0x7101, L"SF／ファンタジー" },
+	{ 0x7102, L"コメディー" },
+	{ 0x7103, L"サスペンス／ミステリー" },
+	{ 0x7104, L"恋愛／ロマンス" },
+	{ 0x7105, L"ホラー／スリラー" },
+	{ 0x7106, L"ウエスタン" },
+	{ 0x7107, L"ドラマ／社会派ドラマ" },
+	{ 0x7108, L"アニメーション" },
+	{ 0x7109, L"ドキュメンタリー" },
+	{ 0x710A, L"アドベンチャー／冒険" },
+	{ 0x710B, L"ミュージカル／音楽映画" },
+	{ 0x710C, L"ホームドラマ" },
+	{ 0x710F, L"その他" },
+	{ 0x71FF, L"洋画(CS)" },
+
+	{ 0x7200, L"アクション" },
+	{ 0x7201, L"SF／ファンタジー" },
+	{ 0x7202, L"お笑い／コメディー" },
+	{ 0x7203, L"サスペンス／ミステリー" },
+	{ 0x7204, L"恋愛／ロマンス" },
+	{ 0x7205, L"ホラー／スリラー" },
+	{ 0x7206, L"青春／学園／アイドル" },
+	{ 0x7207, L"任侠／時代劇" },
+	{ 0x7208, L"アニメーション" },
+	{ 0x7209, L"ドキュメンタリー" },
+	{ 0x720A, L"アドベンチャー／冒険" },
+	{ 0x720B, L"ミュージカル／音楽映画" },
+	{ 0x720C, L"ホームドラマ" },
+	{ 0x720F, L"その他" },
+	{ 0x72FF, L"邦画(CS)" },
+
 	{ 0xFFFF, L"なし" },
 },
 componentKindSortedArray[] = {
@@ -429,11 +471,8 @@ componentKindSortedArray[] = {
 
 static LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
 {
-	struct KIND_INFO_COMPARE {
-		bool operator()(const KIND_INFO& l, const KIND_INFO& r) const { return l.key < r.key; }
-	};
 	KIND_INFO info = { key };
-	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, KIND_INFO_COMPARE());
+	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, [](const KIND_INFO& a, const KIND_INFO& b) { return a.key < b.key; });
 	return ret != arr + len && ret->key == key ? ret->str : NULL;
 }
 
@@ -473,16 +512,28 @@ void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring s
 	if( info->contentInfo != NULL ){
 		text+=L"ジャンル : \r\n";
 		for( size_t i=0; i<info->contentInfo->nibbleList.size(); i++ ){
-			WORD key1 = ((WORD)info->contentInfo->nibbleList[i].content_nibble_level_1) << 8 | 0xFF;
-			WORD key2 = ((WORD)info->contentInfo->nibbleList[i].content_nibble_level_1) << 8 | info->contentInfo->nibbleList[i].content_nibble_level_2;
-			LPCWSTR retStr = SearchKindInfoArray(key1, contentKindSortedArray, _countof(contentKindSortedArray));
+			BYTE nibble1 = info->contentInfo->nibbleList[i].content_nibble_level_1;
+			BYTE nibble2 = info->contentInfo->nibbleList[i].content_nibble_level_2;
+			if( nibble1 == 0x0E && nibble2 == 0x01 ){
+				//CS拡張用情報
+				nibble1 = info->contentInfo->nibbleList[i].user_nibble_1 | 0x70;
+				nibble2 = info->contentInfo->nibbleList[i].user_nibble_2;
+			}
+			WCHAR buff[32];
+			LPCWSTR retStr = SearchKindInfoArray(nibble1 << 8 | 0xFF, contentKindSortedArray, _countof(contentKindSortedArray));
 			if( retStr != NULL ){
 				text+=retStr;
-				retStr = SearchKindInfoArray(key2, contentKindSortedArray, _countof(contentKindSortedArray));
+				retStr = SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
 				if( retStr != NULL ){
 					text+=L" - ";
 					text+=retStr;
+				}else if( nibble1 != 0x0F ){
+					swprintf_s(buff, L" - (0x%02X)", nibble2);
+					text += buff;
 				}
+			}else{
+				swprintf_s(buff, L"(0x%02X) - (0x%02X)", nibble1, nibble2);
+				text += buff;
 			}
 			text+=L"\r\n";
 		}

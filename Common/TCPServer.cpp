@@ -259,7 +259,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 						}
 					}
 
-					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP ){
+					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
 						char ip[64];
 						if( getnameinfo((struct sockaddr *)&client, sizeof(client), ip, sizeof(ip), NULL, 0, NI_NUMERICHOST) != 0 ){
 							ip[0] = '\0';

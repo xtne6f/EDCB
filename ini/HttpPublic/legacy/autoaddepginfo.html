@@ -25,6 +25,7 @@ if aa.dataID==0 then
     freeCAFlag=0,
     chkRecEnd=false,
     chkRecDay=6,
+    chkRecNoService=false,
     chkDurationMin=0,
     chkDurationMax=0,
     contentList={},
@@ -77,7 +78,7 @@ if aa.searchInfo then
     ..'<input type="checkbox" name="aimaiFlag" value="1"'..(si.aimaiFlag and ' checked="checked"' or '')..'>あいまい検索モード\n'
     ..'<input type="checkbox" name="titleOnlyFlag" value="1"'..(si.titleOnlyFlag and ' checked="checked"' or '')..'>番組名のみ検索対象にする<br><br>\n'
     ..'ジャンル絞り込み<br><select name="contentList" multiple size="5">\n'
-  for i=0,15 do
+  for _i,i in ipairs({0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,15}) do
     nibble1=edcb.GetGenreName(i*256+255)
     if nibble1~='' then
       ct=ct..'<option value="'..(i*256+255)..'"'
@@ -139,6 +140,7 @@ if aa.searchInfo then
     ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下<br>\n'
     ..'※それぞれ0分で絞り込み無し<br><br>\n'
   ct=ct..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked="checked"' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
+    ..'<input type="checkbox" name="chkRecNoService" value="1"'..(si.chkRecNoService and ' checked="checked"' or '')..'>全てのサービスで無効にする<br>\n'
     ..'確認対象期間<input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
     ..'</div><div class="section"><h2>録画設定</h2>\n'..RecSettingTemplate(rs)..'</div>\n'
     ..'<div><input type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'"></div></form></dd>\n'

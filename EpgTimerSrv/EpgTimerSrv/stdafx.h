@@ -43,3 +43,4 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString);
 #endif
 
 #include "../../Common/Common.h"
+#define CTRL_CMD_UTIL_USE_COMPAT_FLAGS

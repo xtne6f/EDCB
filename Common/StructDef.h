@@ -1,6 +1,12 @@
 #ifndef __STRUCT_DEF_H__
 #define __STRUCT_DEF_H__
 
+//転送ファイルデータ
+typedef struct _FILE_DATA{
+	wstring Name;				//ファイル名
+	vector<BYTE> Data;			//ファイルデータ
+} FILE_DATA;
+
 //録画フォルダ情報
 typedef struct _REC_FILE_SET_INFO{
 	wstring recFolder;			//録画フォルダ
@@ -394,7 +400,7 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 	//CMD_VER 3以降
 	//自動予約登録の条件専用
 	BYTE chkRecEnd;					//録画済かのチェックあり
-	WORD chkRecDay;					//録画済かのチェック対象期間
+	WORD chkRecDay;					//録画済かのチェック対象期間（+20000=SID無視,+30000=TS|SID無視,+40000=ON|TS|SID無視）
 	_EPGDB_SEARCH_KEY_INFO(void){
 		andKey = L"";
 		notKey = L"";

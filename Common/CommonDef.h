@@ -76,6 +76,7 @@
 #define NOTIFY_UPDATE_REC_INFO	3			//録画結果情報が更新された
 #define NOTIFY_UPDATE_AUTOADD_EPG	4		//EPG自動予約登録情報が更新された
 #define NOTIFY_UPDATE_AUTOADD_MANUAL	5	//プログラム自動予約登録情報が更新された
+#define NOTIFY_UPDATE_PROFILE		51		//設定ファイル(ini)が更新された
 #define NOTIFY_UPDATE_SRV_STATUS	100		//Srvの動作状況が変更（param1:ステータス 0:通常、1:録画中、2:EPG取得中）
 #define NOTIFY_UPDATE_PRE_REC_START	101		//録画準備開始（param4:ログ用メッセージ）
 #define NOTIFY_UPDATE_REC_START		102		//録画開始（param4:ログ用メッセージ）

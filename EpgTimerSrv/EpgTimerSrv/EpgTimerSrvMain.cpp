@@ -15,6 +15,9 @@
 #include <LM.h>
 #pragma comment (lib, "netapi32.lib")
 
+//互換動作のためのグローバルなフラグ(この手法は綺麗ではないが最もシンプルなので)
+DWORD g_compatFlags;
+
 static const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
 static const char UPNP_URN_CDS_1[] = "urn:schemas-upnp-org:service:ContentDirectory:1";
 static const char UPNP_URN_CMS_1[] = "urn:schemas-upnp-org:service:ConnectionManager:1";
@@ -83,6 +86,10 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 {
 	this->notifyManager.SetGUI(!serviceFlag_);
 	this->residentFlag = serviceFlag_;
+
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
+	g_compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 4095, iniPath.c_str());
 
 	DWORD awayMode;
 	OSVERSIONINFOEX osvi;
@@ -415,22 +422,27 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//リロード終わったので自動予約登録処理を行う
 				ctx->sys->reserveManager.CheckTuijyu();
 				bool addCountUpdated = false;
+				bool addReserve = false;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
 					for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->epgAutoAdd.GetMap().begin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
 						DWORD addCount = itr->second.addCount;
-						ctx->sys->AutoAddReserveEPG(itr->second);
+						addReserve |= ctx->sys->AutoAddReserveEPG(itr->second, true);
 						if( addCount != itr->second.addCount ){
 							addCountUpdated = true;
 						}
 					}
 					for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->manualAutoAdd.GetMap().begin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
-						ctx->sys->AutoAddReserveProgram(itr->second);
+						addReserve |= ctx->sys->AutoAddReserveProgram(itr->second, true);
 					}
 				}
 				if( addCountUpdated ){
 					//予約登録数の変化を通知する
 					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				}
+				if( addReserve ){
+					//予約情報の変化を通知する
+					ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 				}
 				ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_EPGDATA);
 
@@ -970,7 +982,7 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 	return false;
 }
 
-bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
+bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, bool noReportNotify)
 {
 	bool modified = false;
 	vector<RESERVE_DATA> setList;
@@ -1059,7 +1071,7 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 			}
 		}
 	}
-	if( setList.empty() == false && this->reserveManager.AddReserveData(setList, true) ){
+	if( setList.empty() == false && this->reserveManager.AddReserveData(setList, false, noReportNotify) ){
 		modified = true;
 	}
 	CBlockLock lock(&this->settingLock);
@@ -1068,7 +1080,7 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 	return modified;
 }
 
-bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
+bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, bool noReportNotify)
 {
 	vector<RESERVE_DATA> setList;
 	SYSTEMTIME baseTime;
@@ -1101,37 +1113,12 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 					item.serviceID = data.serviceID;
 					item.eventID = 0xFFFF;
 					item.recSetting = data.recSetting;
+					item.comment = L"プログラム自動予約";
 				}
 			}
 		}
 	}
-	return setList.empty() == false && this->reserveManager.AddReserveData(setList);
-}
-
-static void SearchPgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
-{
-	vector<const EPGDB_EVENT_INFO*> valp;
-	valp.reserve(pval->size());
-	for( size_t i = 0; i < pval->size(); i++ ){
-		valp.push_back((*pval)[i].info);
-	}
-	CMD_STREAM *resParam = (CMD_STREAM*)param;
-	resParam->param = CMD_SUCCESS;
-	resParam->data = NewWriteVALUE(valp, resParam->dataSize);
-}
-
-static void EnumPgInfoCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
-{
-	CMD_STREAM *resParam = (CMD_STREAM*)param;
-	resParam->param = CMD_SUCCESS;
-	resParam->data = NewWriteVALUE(*pval, resParam->dataSize);
-}
-
-static void EnumPgAllCallback(vector<const EPGDB_SERVICE_EVENT_INFO*>* pval, void* param)
-{
-	CMD_STREAM *resParam = (CMD_STREAM*)param;
-	resParam->param = CMD_SUCCESS;
-	resParam->data = NewWriteVALUE(*pval, resParam->dataSize);
+	return setList.empty() == false && this->reserveManager.AddReserveData(setList, false, noReportNotify);
 }
 
 int CALLBACK CEpgTimerSrvMain::CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
@@ -1152,6 +1139,9 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 	resParam->dataSize = 0;
 	resParam->param = CMD_ERR;
 
+	if( sys->CtrlCmdProcessCompatible(*cmdParam, *resParam) ){
+		return 0;
+	}
 
 	switch( cmdParam->param ){
 	case CMD2_EPG_SRV_RELOAD_EPG:
@@ -1298,7 +1288,10 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		}else{
 			LONGLONG serviceKey;
 			if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL) ){
-				sys->epgDB.EnumEventInfo(serviceKey, EnumPgInfoCallback, resParam);
+				sys->epgDB.EnumEventInfo(serviceKey, [=](const vector<EPGDB_EVENT_INFO>& val) {
+					resParam->param = CMD_SUCCESS;
+					resParam->data = NewWriteVALUE(val, resParam->dataSize);
+				});
 			}
 		}
 		break;
@@ -1309,7 +1302,13 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		}else{
 			vector<EPGDB_SEARCH_KEY_INFO> key;
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) ){
-				sys->epgDB.SearchEpg(&key, SearchPgCallback, resParam);
+				sys->epgDB.SearchEpg(&key, [=](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
+					vector<const EPGDB_EVENT_INFO*> valp;
+					valp.reserve(val.size());
+					for( size_t i = 0; i < val.size(); valp.push_back(val[i++].info) );
+					resParam->param = CMD_SUCCESS;
+					resParam->data = NewWriteVALUE(valp, resParam->dataSize);
+				});
 			}
 		}
 		break;
@@ -1383,10 +1382,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					sys->epgAutoAdd.SaveText();
 				}
+				bool addReserve = false;
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveEPG(val[i]);
+					addReserve |= sys->AutoAddReserveEPG(val[i], true);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				if( addReserve ){
+					sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1418,10 +1421,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					sys->epgAutoAdd.SaveText();
 				}
+				bool addReserve = false;
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveEPG(val[i]);
+					addReserve |= sys->AutoAddReserveEPG(val[i], true);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				if( addReserve ){
+					sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1452,10 +1459,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					sys->manualAutoAdd.SaveText();
 				}
+				bool addReserve = false;
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveProgram(val[i]);
+					addReserve |= sys->AutoAddReserveProgram(val[i], true);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				if( addReserve ){
+					sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1487,10 +1498,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					sys->manualAutoAdd.SaveText();
 				}
+				bool addReserve = false;
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveProgram(val[i]);
+					addReserve |= sys->AutoAddReserveProgram(val[i], true);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				if( addReserve ){
+					sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1527,7 +1542,13 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
-			sys->epgDB.EnumEventAll(EnumPgAllCallback, resParam);
+			sys->epgDB.EnumEventAll([=](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) {
+				vector<const EPGDB_SERVICE_EVENT_INFO*> valp;
+				valp.reserve(val.size());
+				for( auto itr = val.cbegin(); itr != val.end(); valp.push_back(&(itr++)->second) );
+				resParam->param = CMD_SUCCESS;
+				resParam->data = NewWriteVALUE(valp, resParam->dataSize);
+			});
 		}
 		break;
 	case CMD2_EPG_SRV_ENUM_PLUGIN:
@@ -1816,10 +1837,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						sys->epgAutoAdd.SaveText();
 					}
+					bool addReserve = false;
 					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveEPG(val[i]);
+						addReserve |= sys->AutoAddReserveEPG(val[i], true);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+					if( addReserve ){
+						sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+					}
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
@@ -1843,10 +1868,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						sys->epgAutoAdd.SaveText();
 					}
+					bool addReserve = false;
 					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveEPG(val[i]);
+						addReserve |= sys->AutoAddReserveEPG(val[i], true);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+					if( addReserve ){
+						sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+					}
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
@@ -1886,10 +1915,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						sys->manualAutoAdd.SaveText();
 					}
+					bool addReserve = false;
 					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveProgram(val[i]);
+						addReserve |= sys->AutoAddReserveProgram(val[i], true);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+					if( addReserve ){
+						sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+					}
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
@@ -1913,10 +1946,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						sys->manualAutoAdd.SaveText();
 					}
+					bool addReserve = false;
 					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveProgram(val[i]);
+						addReserve |= sys->AutoAddReserveProgram(val[i], true);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+					if( addReserve ){
+						sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+					}
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
@@ -2120,6 +2157,227 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 	}
 
 	return 0;
+}
+
+bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam)
+{
+	//※この関数はtkntrec版( https://github.com/tkntrec/EDCB )を参考にした
+
+	switch( cmdParam.param ){
+	case CMD2_EPG_SRV_ISREGIST_GUI_TCP:
+		if( g_compatFlags & 0x04 ){
+			//互換動作: TCP接続の登録状況確認コマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_ISREGIST_GUI_TCP\r\n");
+			REGIST_TCP_INFO val;
+			if( ReadVALUE(&val, cmdParam.data, cmdParam.dataSize, NULL) ){
+				vector<REGIST_TCP_INFO> registTCP = this->notifyManager.GetRegistTCP();
+				BOOL registered = std::find_if(registTCP.begin(), registTCP.end(), [&val](const REGIST_TCP_INFO& a) {
+					return a.ip == val.ip && a.port == val.port;
+				}) != registTCP.end();
+				resParam.data = NewWriteVALUE(registered, resParam.dataSize);
+				resParam.param = CMD_SUCCESS;
+			}
+			return true;
+		}
+		break;
+	case CMD2_EPG_SRV_PROFILE_UPDATE:
+		if( g_compatFlags & 0x08 ){
+			//互換動作: 設定更新通知コマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_PROFILE_UPDATE\r\n");
+			this->notifyManager.AddNotify(NOTIFY_UPDATE_PROFILE);
+			resParam.param = CMD_SUCCESS;
+			return true;
+		}
+		break;
+	case CMD2_EPG_SRV_GET_NETWORK_PATH:
+		if( g_compatFlags & 0x10 ){
+			//互換動作: ネットワークパス取得コマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_GET_NETWORK_PATH\r\n");
+			wstring path;
+			if( ReadVALUE(&path, cmdParam.data, cmdParam.dataSize, NULL) ){
+				wstring netPath;
+				//UNCパスはそのまま返す
+				if( path.compare(0, 2, L"\\\\") == 0 ){
+					netPath = path;
+				}else{
+					DWORD resume = 0;
+					for( NET_API_STATUS res = ERROR_MORE_DATA; netPath.empty() && res == ERROR_MORE_DATA; ){
+						PSHARE_INFO_502 bufPtr;
+						DWORD er, tr;
+						res = NetShareEnum(NULL, 502, (BYTE**)&bufPtr, MAX_PREFERRED_LENGTH, &er, &tr, &resume);
+						if( res != ERROR_SUCCESS && res != ERROR_MORE_DATA ){
+							break;
+						}
+						for( PSHARE_INFO_502 p = bufPtr; p < bufPtr + er; p++ ){
+							//共有名が$で終わるのは隠し共有
+							if( p->shi502_netname[0] && p->shi502_netname[wcslen(p->shi502_netname) - 1] != L'$' ){
+								wstring shiPath = p->shi502_path;
+								ChkFolderPath(shiPath);
+								if( path.size() >= shiPath.size() &&
+								    CompareNoCase(shiPath, path.substr(0, shiPath.size())) == 0 &&
+								    (path.size() == shiPath.size() || path[shiPath.size()] == L'\\') ){
+									//共有パスそのものか配下にある
+									WCHAR computerName[MAX_COMPUTERNAME_LENGTH + 1];
+									DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
+									if( GetComputerName(computerName, &len) ){
+										netPath = wstring(L"\\\\") + computerName + L'\\' + p->shi502_netname + path.substr(shiPath.size());
+										break;
+									}
+								}
+							}
+						}
+						NetApiBufferFree(bufPtr);
+					}
+				}
+				if( netPath.empty() == false ){
+					resParam.data = NewWriteVALUE(netPath, resParam.dataSize);
+					resParam.param = CMD_SUCCESS;
+				}
+			}
+			return true;
+		}
+		break;
+	case CMD2_EPG_SRV_SEARCH_PG2:
+		if( g_compatFlags & 0x20 ){
+			//互換動作: 番組検索の追加コマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG2\r\n");
+			if( this->epgDB.IsInitialLoadingDataDone() == FALSE ){
+				resParam.param = CMD_ERR_BUSY;
+			}else{
+				WORD ver;
+				DWORD readSize;
+				if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) ){
+					vector<EPGDB_SEARCH_KEY_INFO> key;
+					if( ReadVALUE2(ver, &key, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
+						this->epgDB.SearchEpg(&key, [=, &resParam](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
+							vector<const EPGDB_EVENT_INFO*> valp;
+							valp.reserve(val.size());
+							for( size_t i = 0; i < val.size(); valp.push_back(val[i++].info) );
+							resParam.data = NewWriteVALUE2WithVersion(ver, valp, resParam.dataSize);
+							resParam.param = CMD_SUCCESS;
+						});
+					}
+				}
+			}
+			return true;
+		}
+		break;
+	case CMD2_EPG_SRV_SEARCH_PG_BYKEY2:
+		if( g_compatFlags & 0x20 ){
+			//互換動作: 番組検索の追加コマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG_BYKEY2\r\n");
+			if( this->epgDB.IsInitialLoadingDataDone() == FALSE ){
+				resParam.param = CMD_ERR_BUSY;
+			}else{
+				WORD ver;
+				DWORD readSize;
+				if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) ){
+					vector<EPGDB_SEARCH_KEY_INFO> key;
+					if( ReadVALUE2(ver, &key, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
+						vector<vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> byResult(key.size());
+						vector<const EPGDB_EVENT_INFO*> valp;
+						EPGDB_EVENT_INFO dummy;
+						dummy.original_network_id = 0;
+						dummy.transport_stream_id = 0;
+						dummy.service_id = 0;
+						dummy.event_id = 0;
+						GetSystemTime(&dummy.start_time);
+						for( size_t i = 0; i < key.size(); i++ ){
+							vector<EPGDB_SEARCH_KEY_INFO> byKey(1, key[i]);
+							if( this->epgDB.SearchEpg(&byKey, &byResult[i]) ){
+								for( size_t j = 0; j < byResult[i].size(); valp.push_back(&byResult[i][j++].info) );
+							}
+							valp.push_back(&dummy);
+						}
+						resParam.data = NewWriteVALUE2WithVersion(ver, valp, resParam.dataSize);
+						resParam.param = CMD_SUCCESS;
+					}
+				}
+			}
+			return true;
+		}
+		break;
+	case CMD2_EPG_SRV_GET_RECINFO_LIST2:
+		if( g_compatFlags & 0x40 ){
+			//互換動作: リスト指定の録画済み一覧取得コマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_GET_RECINFO_LIST2\r\n");
+			WORD ver;
+			DWORD readSize;
+			if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) ){
+				vector<DWORD> idList;
+				if( ReadVALUE2(ver, &idList, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
+					vector<REC_FILE_INFO> listA = this->reserveManager.GetRecFileInfoAll(false);
+					vector<REC_FILE_INFO> list;
+					REC_FILE_INFO info;
+					for( size_t i = 0; i < idList.size(); i++ ){
+						info.id = idList[i];
+						vector<REC_FILE_INFO>::const_iterator itr =
+							std::lower_bound(listA.begin(), listA.end(), info, [](const REC_FILE_INFO& a, const REC_FILE_INFO& b) { return a.id < b.id; });
+						if( itr != listA.end() && itr->id == info.id ){
+							list.push_back(*itr);
+						}
+					}
+					for( size_t i = 0; i < list.size(); i++ ){
+						if( this->reserveManager.GetRecFileInfo(list[i].id, &info) ){
+							list[i].programInfo = info.programInfo;
+							list[i].errInfo = info.errInfo;
+						}
+					}
+					resParam.data = NewWriteVALUE2WithVersion(ver, list, resParam.dataSize);
+					resParam.param = CMD_SUCCESS;
+				}
+			}
+			return true;
+		}
+		break;
+	case CMD2_EPG_SRV_FILE_COPY2:
+		if( g_compatFlags & 0x80 ){
+			//互換動作: 指定ファイルをまとめて転送するコマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_FILE_COPY2\r\n");
+			WORD ver;
+			DWORD readSize;
+			if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) ){
+				vector<wstring> list;
+				if( ReadVALUE2(ver, &list, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) && list.size() < 32 ){
+					vector<FILE_DATA> result(list.size());
+					for( size_t i = 0; i < list.size(); i++ ){
+						result[i].Name = list[i];
+						wstring path;
+						if( CompareNoCase(list[i], L"ChSet5.txt") == 0 ){
+							GetSettingPath(path);
+							path += L'\\' + list[i];
+						}else if( CompareNoCase(list[i], L"EpgTimerSrv.ini") == 0 ||
+						          CompareNoCase(list[i], L"Common.ini") == 0 ||
+						          CompareNoCase(list[i], L"EpgDataCap_Bon.ini") == 0 ||
+						          CompareNoCase(list[i], L"BonCtrl.ini") == 0 ||
+						          CompareNoCase(list[i], L"Bitrate.ini") == 0 ){
+							GetModuleFolderPath(path);
+							path += L'\\' + list[i];
+						}
+						if( path.empty() == false ){
+							HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+							if( hFile != INVALID_HANDLE_VALUE ){
+								DWORD dwFileSize = GetFileSize(hFile, NULL);
+								if( dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0 && dwFileSize < 16 * 1024 * 1024 ){
+									result[i].Data.resize(dwFileSize);
+									DWORD dwRead;
+									if( ReadFile(hFile, &result[i].Data.front(), dwFileSize, &dwRead, NULL) == FALSE || dwRead != dwFileSize ){
+										result[i].Data.clear();
+									}
+								}
+								CloseHandle(hFile);
+							}
+						}
+					}
+					resParam.data = NewWriteVALUE2WithVersion(ver, result, resParam.dataSize);
+					resParam.param = CMD_SUCCESS;
+				}
+			}
+			return true;
+		}
+		break;
+	}
+	return false;
 }
 
 int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
@@ -2403,28 +2661,22 @@ int CEpgTimerSrvMain::LuaGetServiceList(lua_State* L)
 	return 1;
 }
 
-void CEpgTimerSrvMain::LuaGetEventMinMaxTimeCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
-{
-	__int64 minTime = LLONG_MAX;
-	__int64 maxTime = LLONG_MIN;
-	for( size_t i = 0; i < pval->size(); i++ ){
-		if( (*pval)[i].StartTimeFlag ){
-			__int64 startTime = ConvertI64Time((*pval)[i].start_time);
-			minTime = min(minTime, startTime);
-			maxTime = max(maxTime, startTime);
-		}
-	}
-	((__int64*)param)[0] = minTime;
-	((__int64*)param)[1] = maxTime;
-}
-
 int CEpgTimerSrvMain::LuaGetEventMinMaxTime(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 3 ){
 		__int64 minMaxTime[2] = { LLONG_MAX, LLONG_MIN };
 		ws.sys->epgDB.EnumEventInfo(_Create64Key(
-			(WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3)), LuaGetEventMinMaxTimeCallback, minMaxTime);
+			(WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3)),
+			[&minMaxTime](const vector<EPGDB_EVENT_INFO>& val) {
+			for( size_t i = 0; i < val.size(); i++ ){
+				if( val[i].StartTimeFlag ){
+					__int64 startTime = ConvertI64Time(val[i].start_time);
+					minMaxTime[0] = min(minMaxTime[0], startTime);
+					minMaxTime[1] = max(minMaxTime[1], startTime);
+				}
+			}
+		});
 		if( minMaxTime[0] != LLONG_MAX ){
 			lua_newtable(ws.L);
 			SYSTEMTIME st;
@@ -2439,80 +2691,19 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTime(lua_State* L)
 	return 1;
 }
 
-struct EnumEventParam {
-	void* param;
-	vector<int> key;
-	__int64 startTime;
-	__int64 endTime;
-};
-
-void CEpgTimerSrvMain::LuaEnumEventInfoCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
-{
-	const EnumEventParam& ep = *(const EnumEventParam*)param;
-	CLuaWorkspace& ws = *(CLuaWorkspace*)ep.param;
-	lua_newtable(ws.L);
-	int n = 0;
-	for( size_t i = 0; i < pval->size(); i++ ){
-		if( (ep.startTime != 0 || ep.endTime != LLONG_MAX) && (ep.startTime != LLONG_MAX || (*pval)[i].StartTimeFlag) ){
-			if( (*pval)[i].StartTimeFlag == 0 ){
-				continue;
-			}
-			__int64 startTime = ConvertI64Time((*pval)[i].start_time);
-			if( startTime < ep.startTime || ep.endTime <= startTime ){
-				continue;
-			}
-		}
-		lua_newtable(ws.L);
-		PushEpgEventInfo(ws, (*pval)[i]);
-		lua_rawseti(ws.L, -2, ++n);
-	}
-}
-
-void CEpgTimerSrvMain::LuaEnumEventAllCallback(vector<const EPGDB_SERVICE_EVENT_INFO*>* pval, void* param)
-{
-	const EnumEventParam& ep = *(const EnumEventParam*)param;
-	CLuaWorkspace& ws = *(CLuaWorkspace*)ep.param;
-	lua_newtable(ws.L);
-	int n = 0;
-	for( size_t i = 0; i < pval->size(); i++ ){
-		for( size_t j = 0; j + 2 < ep.key.size(); j += 3 ){
-			if( (ep.key[j] < 0 || ep.key[j] == (*pval)[i]->serviceInfo.ONID) &&
-			    (ep.key[j+1] < 0 || ep.key[j+1] == (*pval)[i]->serviceInfo.TSID) &&
-			    (ep.key[j+2] < 0 || ep.key[j+2] == (*pval)[i]->serviceInfo.SID) ){
-				for( size_t k = 0; k < (*pval)[i]->eventList.size(); k++ ){
-					if( (ep.startTime != 0 || ep.endTime != LLONG_MAX) && (ep.startTime != LLONG_MAX || (*pval)[i]->eventList[k].StartTimeFlag) ){
-						if( (*pval)[i]->eventList[k].StartTimeFlag == 0 ){
-							continue;
-						}
-						__int64 startTime = ConvertI64Time((*pval)[i]->eventList[k].start_time);
-						if( startTime < ep.startTime || ep.endTime <= startTime ){
-							continue;
-						}
-					}
-					lua_newtable(ws.L);
-					PushEpgEventInfo(ws, (*pval)[i]->eventList[k]);
-					lua_rawseti(ws.L, -2, ++n);
-				}
-				break;
-			}
-		}
-	}
-}
-
 int CEpgTimerSrvMain::LuaEnumEventInfo(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) >= 1 && lua_istable(L, 1) ){
-		EnumEventParam ep;
-		ep.param = &ws;
-		ep.startTime = 0;
-		ep.endTime = LLONG_MAX;
+		vector<int> key;
+		__int64 enumStart = 0;
+		__int64 enumEnd = LLONG_MAX;
 		if( lua_gettop(L) == 2 && lua_istable(L, -1) ){
 			if( LuaHelp::isnil(L, "startTime") ){
-				ep.startTime = LLONG_MAX;
+				enumStart = LLONG_MAX;
 			}else{
-				ep.startTime = ConvertI64Time(LuaHelp::get_time(L, "startTime"));
-				ep.endTime = ep.startTime + LuaHelp::get_int(L, "durationSecond") * I64_1SEC;
+				enumStart = ConvertI64Time(LuaHelp::get_time(L, "startTime"));
+				enumEnd = enumStart + LuaHelp::get_int(L, "durationSecond") * I64_1SEC;
 			}
 			lua_pop(L, 1);
 		}
@@ -2522,55 +2713,44 @@ int CEpgTimerSrvMain::LuaEnumEventInfo(lua_State* L)
 				lua_pop(L, 1);
 				break;
 			}
-			ep.key.push_back(LuaHelp::isnil(L, "onid") ? -1 : LuaHelp::get_int(L, "onid"));
-			ep.key.push_back(LuaHelp::isnil(L, "tsid") ? -1 : LuaHelp::get_int(L, "tsid"));
-			ep.key.push_back(LuaHelp::isnil(L, "sid") ? -1 : LuaHelp::get_int(L, "sid"));
+			key.push_back(LuaHelp::isnil(L, "onid") ? -1 : LuaHelp::get_int(L, "onid"));
+			key.push_back(LuaHelp::isnil(L, "tsid") ? -1 : LuaHelp::get_int(L, "tsid"));
+			key.push_back(LuaHelp::isnil(L, "sid") ? -1 : LuaHelp::get_int(L, "sid"));
 			lua_pop(L, 1);
 		}
-		if( ep.key.size() == 3 && ep.key[0] >= 0 && ep.key[1] >= 0 && ep.key[2] >= 0 ){
-			if( ws.sys->epgDB.EnumEventInfo(_Create64Key(ep.key[0] & 0xFFFF, ep.key[1] & 0xFFFF, ep.key[2] & 0xFFFF), LuaEnumEventInfoCallback, &ep) != FALSE ){
-				return 1;
+		BOOL ret = ws.sys->epgDB.EnumEventAll([=, &ws, &key](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) {
+			lua_newtable(ws.L);
+			int n = 0;
+			for( auto itr = val.cbegin(); itr != val.end(); itr++ ){
+				for( size_t i = 0; i + 2 < key.size(); i += 3 ){
+					if( (key[i] < 0 || key[i] == itr->second.serviceInfo.ONID) &&
+					    (key[i+1] < 0 || key[i+1] == itr->second.serviceInfo.TSID) &&
+					    (key[i+2] < 0 || key[i+2] == itr->second.serviceInfo.SID) ){
+						for( size_t j = 0; j < itr->second.eventList.size(); j++ ){
+							if( (enumStart != 0 || enumEnd != LLONG_MAX) && (enumStart != LLONG_MAX || itr->second.eventList[j].StartTimeFlag) ){
+								if( itr->second.eventList[j].StartTimeFlag == 0 ){
+									continue;
+								}
+								__int64 startTime = ConvertI64Time(itr->second.eventList[j].start_time);
+								if( startTime < enumStart || enumEnd <= startTime ){
+									continue;
+								}
+							}
+							lua_newtable(ws.L);
+							PushEpgEventInfo(ws, itr->second.eventList[j]);
+							lua_rawseti(ws.L, -2, ++n);
+						}
+						break;
+					}
+				}
 			}
-		}else{
-			if( ws.sys->epgDB.EnumEventAll(LuaEnumEventAllCallback, &ep) != FALSE ){
-				return 1;
-			}
+		});
+		if( ret ){
+			return 1;
 		}
 	}
 	lua_pushnil(L);
 	return 1;
-}
-
-void CEpgTimerSrvMain::LuaSearchEpgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
-{
-	CLuaWorkspace& ws = *(CLuaWorkspace*)param;
-	SYSTEMTIME now;
-	GetLocalTime(&now);
-	now.wHour = 0;
-	now.wMinute = 0;
-	now.wSecond = 0;
-	now.wMilliseconds = 0;
-	//対象期間
-	__int64 chkTime = LuaHelp::get_int(ws.L, "days") * 24 * 60 * 60 * I64_1SEC;
-	if( chkTime > 0 ){
-		chkTime += ConvertI64Time(now);
-	}else{
-		//たぶんバグだが互換のため
-		chkTime = LuaHelp::get_int(ws.L, "days29") * 29 * 60 * 60 * I64_1SEC;
-		if( chkTime > 0 ){
-			chkTime += ConvertI64Time(now);
-		}
-	}
-	lua_newtable(ws.L);
-	int n = 0;
-	for( size_t i = 0; i < pval->size(); i++ ){
-		if( (chkTime <= 0 || (*pval)[i].info->StartTimeFlag != 0 && chkTime > ConvertI64Time((*pval)[i].info->start_time)) ){
-			//イベントグループはチェックしないので注意
-			lua_newtable(ws.L);
-			PushEpgEventInfo(ws, *(*pval)[i].info);
-			lua_rawseti(ws.L, -2, ++n);
-		}
-	}
 }
 
 int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
@@ -2605,7 +2785,36 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 				}
 			}
 		}
-		if( ws.sys->epgDB.SearchEpg(&keyList, LuaSearchEpgCallback, &ws) != FALSE ){
+		BOOL ret = ws.sys->epgDB.SearchEpg(&keyList, [&ws](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
+			SYSTEMTIME now;
+			GetLocalTime(&now);
+			now.wHour = 0;
+			now.wMinute = 0;
+			now.wSecond = 0;
+			now.wMilliseconds = 0;
+			//対象期間
+			__int64 chkTime = LuaHelp::get_int(ws.L, "days") * 24 * 60 * 60 * I64_1SEC;
+			if( chkTime > 0 ){
+				chkTime += ConvertI64Time(now);
+			}else{
+				//たぶんバグだが互換のため
+				chkTime = LuaHelp::get_int(ws.L, "days29") * 29 * 60 * 60 * I64_1SEC;
+				if( chkTime > 0 ){
+					chkTime += ConvertI64Time(now);
+				}
+			}
+			lua_newtable(ws.L);
+			int n = 0;
+			for( size_t i = 0; i < val.size(); i++ ){
+				if( chkTime <= 0 || val[i].info->StartTimeFlag != 0 && chkTime > ConvertI64Time(val[i].info->start_time) ){
+					//イベントグループはチェックしないので注意
+					lua_newtable(ws.L);
+					PushEpgEventInfo(ws, *val[i].info);
+					lua_rawseti(ws.L, -2, ++n);
+				}
+			}
+		});
+		if( ret ){
 			return 1;
 		}
 	}
@@ -3218,7 +3427,8 @@ void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARC
 	LuaHelp::reg_boolean(L, "notDateFlag", k.notDateFlag != 0);
 	LuaHelp::reg_int(L, "freeCAFlag", k.freeCAFlag);
 	LuaHelp::reg_boolean(L, "chkRecEnd", k.chkRecEnd != 0);
-	LuaHelp::reg_int(L, "chkRecDay", k.chkRecDay);
+	LuaHelp::reg_int(L, "chkRecDay", k.chkRecDay >= 40000 ? k.chkRecDay % 10000 : k.chkRecDay);
+	LuaHelp::reg_boolean(L, "chkRecNoService", k.chkRecDay >= 40000);
 	LuaHelp::reg_int(L, "chkDurationMin", durMin);
 	LuaHelp::reg_int(L, "chkDurationMax", durMax);
 	lua_pushstring(L, "contentList");
@@ -3226,6 +3436,7 @@ void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARC
 	for( size_t i = 0; i < k.contentList.size(); i++ ){
 		lua_newtable(L);
 		LuaHelp::reg_int(L, "content_nibble", k.contentList[i].content_nibble_level_1 << 8 | k.contentList[i].content_nibble_level_2);
+		LuaHelp::reg_int(L, "user_nibble", k.contentList[i].user_nibble_1 << 8 | k.contentList[i].user_nibble_2);
 		lua_rawseti(L, -2, (int)i + 1);
 	}
 	lua_rawset(L, -3);
@@ -3265,6 +3476,7 @@ bool CEpgTimerSrvMain::FetchReserveData(CLuaWorkspace& ws, RESERVE_DATA& r)
 	r.transportStreamID = (WORD)LuaHelp::get_int(L, "tsid");
 	r.serviceID = (WORD)LuaHelp::get_int(L, "sid");
 	r.eventID = (WORD)LuaHelp::get_int(L, "eid");
+	UTF8toW(LuaHelp::get_string(L, "comment"), r.comment);
 	r.reserveID = (WORD)LuaHelp::get_int(L, "reserveID");
 	r.startTimeEpg = LuaHelp::get_time(L, "startTimeEpg");
 	lua_getfield(L, -1, "recSetting");
@@ -3328,6 +3540,9 @@ void CEpgTimerSrvMain::FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY
 	k.freeCAFlag = (BYTE)LuaHelp::get_int(L, "freeCAFlag");
 	k.chkRecEnd = LuaHelp::get_boolean(L, "chkRecEnd");
 	k.chkRecDay = (WORD)LuaHelp::get_int(L, "chkRecDay");
+	if( LuaHelp::get_boolean(L, "chkRecNoService") ){
+		k.chkRecDay = k.chkRecDay % 10000 + 40000;
+	}
 	int durMin = LuaHelp::get_int(L, "chkDurationMin");
 	int durMax = LuaHelp::get_int(L, "chkDurationMax");
 	if( durMin > 0 || durMax > 0 ){
@@ -3348,6 +3563,8 @@ void CEpgTimerSrvMain::FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY
 			k.contentList.resize(i + 1);
 			k.contentList[i].content_nibble_level_1 = LuaHelp::get_int(L, "content_nibble") >> 8 & 0xFF;
 			k.contentList[i].content_nibble_level_2 = LuaHelp::get_int(L, "content_nibble") & 0xFF;
+			k.contentList[i].user_nibble_1 = LuaHelp::get_int(L, "user_nibble") >> 8 & 0xFF;
+			k.contentList[i].user_nibble_2 = LuaHelp::get_int(L, "user_nibble") & 0xFF;
 			lua_pop(L, 1);
 		}
 	}

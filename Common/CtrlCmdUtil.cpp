@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "CtrlCmdUtil.h"
 
+#ifdef CTRL_CMD_UTIL_USE_COMPAT_FLAGS
+extern DWORD g_compatFlags;
+#endif
+
 namespace CtrlCmdUtilImpl_
 {
 
@@ -45,6 +49,20 @@ BOOL ReadVALUE( WORD ver, wstring* val, const BYTE* buff, DWORD buffSize, DWORD*
 
 	*readSize = valSize;
 	return TRUE;
+}
+
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const FILE_DATA& val )
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.Name);
+	pos += WriteVALUE(ver, buff, pos, (DWORD)val.Data.size());
+	pos += WriteVALUE(ver, buff, pos, (DWORD)0);
+	if( (DWORD)val.Data.size() != 0 ){
+		if( buff != NULL ) memcpy(buff + pos, &val.Data.front(), (DWORD)val.Data.size());
+		pos += (DWORD)val.Data.size();
+	}
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
 }
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_SETTING_DATA& val )
@@ -673,8 +691,31 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_DATE_INFO* val, const BYTE* buff, DWORD b
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SEARCH_KEY_INFO& val )
 {
+	WORD chkRecDay = val.chkRecDay;
+	const wstring* andKey = &val.andKey;
+#ifdef CTRL_CMD_UTIL_USE_COMPAT_FLAGS
+	wstring andKey_;
+	WORD durMin = 0;
+	WORD durMax = 0;
+	bool compatFlag = (g_compatFlags & 0x01) != 0;
+	if( compatFlag ){
+		//互換動作: CtrlCmdの検索条件に録画済チェックに関するフィールドを追加
+		chkRecDay = chkRecDay >= 40000 ? chkRecDay % 10000 : chkRecDay;
+		size_t durPos = andKey->compare(0, 7, L"^!{999}") ? 0 : 7;
+		durPos += andKey->compare(durPos, 7, L"C!{999}") ? 0 : 7;
+		if( andKey->compare(durPos, 4, L"D!{1") == 0 ){
+			LPWSTR endp;
+			DWORD dur = wcstoul(andKey->c_str() + durPos + 3, &endp, 10);
+			if( endp - (andKey->c_str() + durPos + 3) == 9 && endp[0] == L'}' ){
+				andKey = &((andKey_ = *andKey).erase(durPos, 13));
+				durMin = dur / 10000 % 10000;
+				durMax = dur % 10000;
+			}
+		}
+	}
+#endif
 	DWORD pos = buffOffset + sizeof(DWORD);
-	pos += WriteVALUE(ver, buff, pos, val.andKey);
+	pos += WriteVALUE(ver, buff, pos, *andKey);
 	pos += WriteVALUE(ver, buff, pos, val.notKey);
 	pos += WriteVALUE(ver, buff, pos, val.regExpFlag);
 	pos += WriteVALUE(ver, buff, pos, val.titleOnlyFlag);
@@ -689,8 +730,15 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SEARCH_KEY
 	pos += WriteVALUE(ver, buff, pos, val.freeCAFlag);
 	if( ver >= 3 ){
 		pos += WriteVALUE(ver, buff, pos, val.chkRecEnd);
-		pos += WriteVALUE(ver, buff, pos, val.chkRecDay);
+		pos += WriteVALUE(ver, buff, pos, chkRecDay);
 	}
+#ifdef CTRL_CMD_UTIL_USE_COMPAT_FLAGS
+	if( ver >= 5 && compatFlag ){
+		pos += WriteVALUE(ver, buff, pos, (BYTE)(val.chkRecDay >= 40000 ? 1 : 0));
+		pos += WriteVALUE(ver, buff, pos, durMin);
+		pos += WriteVALUE(ver, buff, pos, durMax);
+	}
+#endif
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
 }
@@ -723,6 +771,24 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 		if( ver >= 3 ){
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecEnd );
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecDay );
+		}
+		if( ver >= 5 && buffSize - pos >= 5 ){
+			BYTE recNoService;
+			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &recNoService );
+			if( recNoService ){
+				val->chkRecDay = val->chkRecDay % 10000 + 40000;
+			}
+			WORD durMin;
+			WORD durMax;
+			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &durMin );
+			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &durMax );
+			if( durMin > 0 || durMax > 0 ){
+				WCHAR dur[32];
+				swprintf_s(dur, L"D!{%d}", (10000 + min(max(durMin, 0), 9999)) * 10000 + min(max(durMax, 0), 9999));
+				size_t durPos = val->andKey.compare(0, 7, L"^!{999}") ? 0 : 7;
+				durPos += val->andKey.compare(durPos, 7, L"C!{999}") ? 0 : 7;
+				val->andKey.insert(durPos, dur);
+			}
 		}
 	}
 
