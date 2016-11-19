@@ -496,9 +496,7 @@ DWORD CEpgDataCap_BonMain::GetEpgInfo(
 	if(epgInfo != NULL ){
 		*epgInfo = L"";
 		if( ret == NO_ERR ){
-			wstring epgText = L"";
-			_ConvertEpgInfoText(&info, epgText);
-			*epgInfo = epgText.c_str();
+			*epgInfo = ConvertEpgInfoText(&info);
 		}
 	}
 

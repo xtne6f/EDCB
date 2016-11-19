@@ -5,28 +5,10 @@
 #include "StringUtil.h"
 #include "TimeUtil.h"
 
-LONGLONG _Create64Key( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID )
+unsigned long CalcCrc32(int n, const BYTE* c)
 {
-	LONGLONG Key = 
-		(((LONGLONG)(OriginalNetworkID&0x0000FFFF))<<32) |
-		(((LONGLONG)(TransportStreamID&0x0000FFFF))<<16) |
-		((LONGLONG)(ServiceID&0x0000FFFF));
-	return Key;
-}
-
-ULONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID )
-{
-	ULONGLONG Key = 
-		(((ULONGLONG)(OriginalNetworkID & 0x0000FFFF))<<48) |
-		(((LONGLONG)(TransportStreamID & 0x0000FFFF))<<32) |
-		(((LONGLONG)(ServiceID & 0x0000FFFF))<<16) |
-		((LONGLONG)(EventID & 0x0000FFFF));
-	return Key;
-}
-
-#define CRCPOLY1 0x04C11DB7UL
-typedef unsigned char byte;
-static const unsigned long crctable[256] = {
+	//CRCPOLY = 0x04C11DB7
+	static const unsigned long crctable[256] = {
 	0x00000000, 0x04C11DB7, 0x09823B6E, 0x0D4326D9,	0x130476DC, 0x17C56B6B, 0x1A864DB2, 0x1E475005,
 	0x2608EDB8, 0x22C9F00F, 0x2F8AD6D6, 0x2B4BCB61, 0x350C9B64, 0x31CD86D3, 0x3C8EA00A, 0x384FBDBD,
 	0x4C11DB70, 0x48D0C6C7, 0x4593E01E, 0x4152FDA9,	0x5F15ADAC, 0x5BD4B01B, 0x569796C2, 0x52568B75, 
@@ -59,128 +41,53 @@ static const unsigned long crctable[256] = {
 	0xE3A1CBC1, 0xE760D676, 0xEA23F0AF, 0xEEE2ED18,	0xF0A5BD1D, 0xF464A0AA, 0xF9278673, 0xFDE69BC4, 
 	0x89B8FD09, 0x8D79E0BE, 0x803AC667, 0x84FBDBD0,	0x9ABC8BD5, 0x9E7D9662, 0x933EB0BB, 0x97FFAD0C,
 	0xAFB010B1, 0xAB710D06, 0xA6322BDF, 0xA2F33668,	0xBCB4666D, 0xB8757BDA, 0xB5365D03, 0xB1F740B4
-};
-
-unsigned long _Crc32(int n, const BYTE* c)
-{
+	};
 	unsigned long r;
 
 	r = 0xFFFFFFFFUL;
 	while (--n >= 0)
-		r = (r << CHAR_BIT) ^ crctable[(byte)(r >> (32 - CHAR_BIT)) ^ *c++];
+		r = (r << 8) ^ crctable[(BYTE)(r >> 24) ^ *c++];
 	return r & 0xFFFFFFFFUL;
 }
 
-DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit)
+FILETIME MJDtoFILETIME(DWORD mjd, DWORD bcdTime)
 {
-	if( data == NULL || (size<<1) < digit ){
-		return 0;
-	}
-	DWORD value = 0;
-	for( BYTE i=0; i<digit; i++ ){
-		value = value*10;
-		if( (i & 0x1) == 0 ){
-			value += (data[i>>1]&0xF0)>>4;
-		}else{
-			value += (data[i>>1]&0x0F);
-		}
-	}
-	return value;
+	DWORD h = (bcdTime >> 20 & 3) * 10 + (bcdTime >> 16 & 15);
+	DWORD m = (bcdTime >> 12 & 7) * 10 + (bcdTime >> 8 & 15);
+	DWORD s = (bcdTime >> 4 & 7) * 10 + (bcdTime & 15);
+	LARGE_INTEGER li;
+	//"1858-11-17"
+	li.QuadPart = 81377568000000000LL + (((mjd * 24 + h) * 60 + m) * 60LL + s) * 10000000LL;
+	FILETIME ft;
+	ft.dwLowDateTime = li.LowPart;
+	ft.dwHighDateTime = li.HighPart;
+	return ft;
 }
 
-BOOL _MJDtoYMD(DWORD mjd, WORD* y, WORD* m, WORD* d)
-{
-	if( y == NULL || m == NULL || d == NULL ){
-		return FALSE;
-	}
-	
-	int yy = (int)( ((double)mjd-15078.2)/365.25 );
-	int mm = (int)( ((double)mjd-14956.1-(int)(yy*365.25))/30.6001 );
-	*d = (WORD)( mjd-14956-(int)(yy*365.25)-(int)(mm*30.6001) );
-	WORD k=0;
-	if( mm == 14 || mm == 15 ){
-		k=1;
-	}
-
-	*y = (WORD)(yy + k);
-	*m = (WORD)(mm-1-k*12);
-
-	return TRUE;
-}
-
-BOOL _MJDtoSYSTEMTIME(DWORD mjd, SYSTEMTIME* time)
-{
-	if( time == NULL ){
-		return FALSE;
-	}
-
-	FILETIME fileTime;
-	SYSTEMTIME mjdTime;
-	LONGLONG oneDay = 24*60*60*(LONGLONG)10000000;
-
-	ZeroMemory(&mjdTime, sizeof(SYSTEMTIME));
-	mjdTime.wYear = 1858;
-	mjdTime.wMonth = 11;
-	mjdTime.wDay = 17;
-
-	SystemTimeToFileTime(&mjdTime, &fileTime);
-	LONGLONG tempTime = ((LONGLONG)fileTime.dwHighDateTime)<<32 | fileTime.dwLowDateTime;
-	tempTime += (LONGLONG)mjd*oneDay;
-
-	fileTime.dwLowDateTime = (DWORD)(tempTime&0x00000000FFFFFFFF);
-	fileTime.dwHighDateTime = (DWORD)((tempTime&0xFFFFFFFF00000000)>>32);
-
-	FileTimeToSystemTime(&fileTime, time);
-
-	return TRUE;
-}
-
-BOOL _GetBitrate(WORD ONID, WORD TSID, WORD SID, DWORD* bitrate)
+DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid)
 {
 	wstring iniPath;
 	GetModuleFolderPath(iniPath);
 
 	iniPath += L"\\Bitrate.ini";
 
-	wstring defKey = L"FFFFFFFFFFFF";
-	wstring defNWKey = L"";
-	Format(defNWKey, L"%04XFFFFFFFF", ONID);
-	wstring defTSKey = L"";
-	Format(defTSKey, L"%04X%04XFFFF", ONID, TSID);
-	wstring key = L"";
-	Format(key, L"%04X%04X%04X", ONID, TSID, SID);
-
-	int defRate = GetPrivateProfileInt(L"BITRATE", defKey.c_str(), 0, iniPath.c_str());
-	int defNWRate = GetPrivateProfileInt(L"BITRATE", defNWKey.c_str(), 0, iniPath.c_str());
-	int defTSRate = GetPrivateProfileInt(L"BITRATE", defTSKey.c_str(), 0, iniPath.c_str());
-	int rate = GetPrivateProfileInt(L"BITRATE", key.c_str(), 0, iniPath.c_str());
-
-	if( rate != 0 ){
-		*bitrate = (DWORD)rate;
-		return TRUE;
+	for( int i = 0; i < 4; i++ ){
+		WCHAR key[32];
+		swprintf_s(key, L"%04X%04X%04X", i > 2 ? 0xFFFF : onid, i > 1 ? 0xFFFF : tsid, i > 0 ? 0xFFFF : sid);
+		int bitrate = GetPrivateProfileInt(L"BITRATE", key, 0, iniPath.c_str());
+		if( bitrate > 0 ){
+			return bitrate;
+		}
 	}
-	if( defTSRate != 0 ){
-		*bitrate = (DWORD)defTSRate;
-		return TRUE;
-	}
-	if( defNWRate != 0 ){
-		*bitrate = (DWORD)defNWRate;
-		return TRUE;
-	}
-	if( defRate != 0 ){
-		*bitrate = (DWORD)defRate;
-		return TRUE;
-	}
-	*bitrate = 19*1024;
-	return TRUE;
+	return 19 * 1024;
 }
 
 //EPG情報をTextに変換
-void _ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, wstring& text)
+wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName, const wstring* extraText)
 {
-	text = L"";
+	wstring text;
 	if( info == NULL ){
-		return ;
+		return text;
 	}
 
 	wstring time=L"未定";
@@ -192,6 +99,10 @@ void _ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, wstring& text)
 	}
 	text += time;
 	text += L"\r\n";
+	if( serviceName != NULL ){
+		text += *serviceName;
+		text += L"\r\n";
+	}
 
 	if(info->shortInfo != NULL ){
 		text += info->shortInfo->event_name;
@@ -206,6 +117,9 @@ void _ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, wstring& text)
 		text += L"\r\n\r\n";
 	}
 
+	if( extraText != NULL ){
+		text += *extraText;
+	}
 	wstring buff = L"";
 	Format(buff, L"OriginalNetworkID:%d(0x%04X)\r\nTransportStreamID:%d(0x%04X)\r\nServiceID:%d(0x%04X)\r\nEventID:%d(0x%04X)\r\n",
 		info->original_network_id, info->original_network_id,
@@ -213,12 +127,27 @@ void _ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, wstring& text)
 		info->service_id, info->service_id,
 		info->event_id, info->event_id);
 	text += buff;
+	return text;
 }
 
-static const struct KIND_INFO {
+namespace
+{
+struct KIND_INFO {
 	WORD key;
 	LPCWSTR str;
-} contentKindSortedArray[] = {
+};
+
+LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
+{
+	KIND_INFO info = { key };
+	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, [](const KIND_INFO& a, const KIND_INFO& b) { return a.key < b.key; });
+	return ret != arr + len && ret->key == key ? ret->str : NULL;
+}
+}
+
+void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
+{
+	static const KIND_INFO contentKindSortedArray[] = {
 	{ 0x0000, L"定時・総合" },
 	{ 0x0001, L"天気" },
 	{ 0x0002, L"特集・ドキュメント" },
@@ -390,8 +319,16 @@ static const struct KIND_INFO {
 	{ 0x72FF, L"邦画(CS)" },
 
 	{ 0xFFFF, L"なし" },
-},
-componentKindSortedArray[] = {
+	};
+	LPCWSTR retStr = SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
+	if( retStr != NULL ){
+		name = retStr;
+	}
+}
+
+void GetComponentTypeName(BYTE content, BYTE type, wstring& name)
+{
+	static const KIND_INFO componentKindSortedArray[] = {
 	{ 0x0101, L"480i(525i)、アスペクト比4:3" },
 	{ 0x0102, L"480i(525i)、アスペクト比16:9 パンベクトルあり" },
 	{ 0x0103, L"480i(525i)、アスペクト比16:9 パンベクトルなし" },
@@ -467,46 +404,19 @@ componentKindSortedArray[] = {
 	{ 0x05E2, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
 	{ 0x05E3, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
 	{ 0x05E4, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" },
-};
-
-static LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
-{
-	KIND_INFO info = { key };
-	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, [](const KIND_INFO& a, const KIND_INFO& b) { return a.key < b.key; });
-	return ret != arr + len && ret->key == key ? ret->str : NULL;
+	};
+	LPCWSTR retStr = SearchKindInfoArray(content << 8 | type, componentKindSortedArray, _countof(componentKindSortedArray));
+	if( retStr != NULL ){
+		name = retStr;
+	}
 }
 
 //EPG情報をTextに変換
-void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring serviceName)
+wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& serviceName)
 {
-	text = L"";
+	wstring text;
 	if( info == NULL ){
-		return ;
-	}
-
-	wstring time=L"未定";
-	if( info->StartTimeFlag == TRUE && info->DurationFlag == TRUE ){
-		GetTimeString3(info->start_time, info->durationSec, time);
-	}else if( info->StartTimeFlag == TRUE && info->DurationFlag == FALSE ){
-		GetTimeString4(info->start_time, time);
-		time += L" ～ 未定";
-	}
-	text += time;
-	text += L"\r\n";
-	text += serviceName;
-	text += L"\r\n";
-
-	if(info->shortInfo != NULL ){
-		text += info->shortInfo->event_name;
-		text += L"\r\n\r\n";
-		text += info->shortInfo->text_char;
-		text += L"\r\n\r\n";
-	}
-
-	if(info->extInfo != NULL ){
-		text += L"詳細情報\r\n";
-		text += info->extInfo->text_char;
-		text += L"\r\n\r\n";
+		return text;
 	}
 
 	if( info->contentInfo != NULL ){
@@ -520,11 +430,13 @@ void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring s
 				nibble2 = info->contentInfo->nibbleList[i].user_nibble_2;
 			}
 			WCHAR buff[32];
-			LPCWSTR retStr = SearchKindInfoArray(nibble1 << 8 | 0xFF, contentKindSortedArray, _countof(contentKindSortedArray));
-			if( retStr != NULL ){
+			wstring retStr;
+			GetGenreName(nibble1, 0xFF, retStr);
+			if( retStr.empty() == false ){
 				text+=retStr;
-				retStr = SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
-				if( retStr != NULL ){
+				retStr = L"";
+				GetGenreName(nibble1, nibble2, retStr);
+				if( retStr.empty() == false ){
 					text+=L" - ";
 					text+=retStr;
 				}else if( nibble1 != 0x0F ){
@@ -542,9 +454,9 @@ void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring s
 
 	if( info->componentInfo != NULL ){
 		text+=L"映像 : ";
-		WORD key = ((WORD)info->componentInfo->stream_content) << 8 | info->componentInfo->component_type;
-		LPCWSTR retStr = SearchKindInfoArray(key, componentKindSortedArray, _countof(componentKindSortedArray));
-		if( retStr != NULL ){
+		wstring retStr;
+		GetComponentTypeName(info->componentInfo->stream_content, info->componentInfo->component_type, retStr);
+		if( retStr.empty() == false ){
 			text+=retStr;
 			if( info->componentInfo->text_char.size() > 0 ){
 				text+=L"\r\n";
@@ -557,9 +469,9 @@ void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring s
 	if( info->audioInfo != NULL ){
 		text+=L"音声 : ";
 		for( size_t i=0; i<info->audioInfo->componentList.size(); i++ ){
-			WORD key = ((WORD)info->audioInfo->componentList[i].stream_content) << 8 | info->audioInfo->componentList[i].component_type;
-			LPCWSTR retStr = SearchKindInfoArray(key, componentKindSortedArray, _countof(componentKindSortedArray));
-			if( retStr != NULL ){
+			wstring retStr;
+			GetComponentTypeName(info->audioInfo->componentList[i].stream_content, info->audioInfo->componentList[i].component_type, retStr);
+			if( retStr.empty() == false ){
 				text+=retStr;
 				if( info->audioInfo->componentList[i].text_char.size() > 0 ){
 					text+=L"\r\n";
@@ -606,13 +518,7 @@ void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring s
         text += L"\r\n";
     }
 
-	wstring buff = L"";
-	Format(buff, L"OriginalNetworkID:%d(0x%04X)\r\nTransportStreamID:%d(0x%04X)\r\nServiceID:%d(0x%04X)\r\nEventID:%d(0x%04X)\r\n",
-		info->original_network_id, info->original_network_id,
-		info->transport_stream_id, info->transport_stream_id,
-		info->service_id, info->service_id,
-		info->event_id, info->event_id);
-	text += buff;
+	return ConvertEpgInfoText(info, &serviceName, &text);
 }
 
 void GetChkDrivePath(wstring directoryPath, wstring& mountPath)
@@ -628,22 +534,6 @@ void GetChkDrivePath(wstring directoryPath, wstring& mountPath)
 		return ;
 	}
 	mountPath = szMount;
-}
-
-void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
-{
-	LPCWSTR retStr = SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
-	if( retStr != NULL ){
-		name = retStr;
-	}
-}
-
-void GetComponentTypeName(BYTE content, BYTE type, wstring& name)
-{
-	LPCWSTR retStr = SearchKindInfoArray(content << 8 | type, componentKindSortedArray, _countof(componentKindSortedArray));
-	if( retStr != NULL ){
-		name = retStr;
-	}
 }
 
 void CopyEpgInfo(EPG_EVENT_INFO* destInfo, const EPGDB_EVENT_INFO* srcInfo)

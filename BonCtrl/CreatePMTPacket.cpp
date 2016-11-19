@@ -77,7 +77,6 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 	BYTE last_section_number;
 	WORD PCR_PID;
 	WORD program_info_length;
-	DWORD crc32;
 
 
 	DWORD readSize = 0;
@@ -104,11 +103,7 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 		return ERR_FALSE;
 	}
 	//CRCチェック
-	crc32 = ((DWORD)data[3+section_length-4])<<24 |
-		((DWORD)data[3+section_length-3])<<16 |
-		((DWORD)data[3+section_length-2])<<8 |
-		data[3+section_length-1];
-	if( crc32 != _Crc32(3+section_length-4, data) ){
+	if( CalcCrc32(3+section_length, data) != 0 ){
 		_OutputDebugString(L"CCreatePMTPacket::CRC Err");
 		return ERR_FALSE;
 	}
@@ -320,7 +315,7 @@ void CCreatePMTPacket::CreatePMT()
 	this->createPSI[6] = this->createVer<<1;
 	this->createPSI[6] |= 0xC1;
 
-	unsigned long ulCrc = _Crc32((int)this->createPSI.size()-1, &this->createPSI[1]);
+	unsigned long ulCrc = CalcCrc32((int)this->createPSI.size()-1, &this->createPSI[1]);
 	this->createPSI.push_back(ulCrc>>24&0xFF);
 	this->createPSI.push_back(ulCrc>>16&0xFF);
 	this->createPSI.push_back(ulCrc>>8&0xFF);

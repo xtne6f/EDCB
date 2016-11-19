@@ -5,24 +5,20 @@
 #include "EpgDataCap3Def.h"
 
 //チャンネルを__int64としてキーにする
-LONGLONG _Create64Key( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID );
+static inline LONGLONG _Create64Key(WORD onid, WORD tsid, WORD sid) { return sid | (DWORD)tsid << 16 | (LONGLONG)onid << 32; }
 //EventIDをunsigned __int64としてキーにする
-ULONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID );
+static inline ULONGLONG _Create64Key2(WORD onid, WORD tsid, WORD sid, WORD eid) { return eid | (DWORD)sid << 16 | (ULONGLONG)tsid << 32 | (ULONGLONG)onid << 48; }
 //CRC32をもとめる
-unsigned long _Crc32(int n,  const BYTE* c);
-//BCD->DWORD変換
-DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit);
-//MJD->YYYY/MM/DD変換
-BOOL _MJDtoYMD(DWORD mjd, WORD* y, WORD* m, WORD* d);
-//MJD->SYSTEMTIME変換
-BOOL _MJDtoSYSTEMTIME(DWORD mjd, SYSTEMTIME* time);
+unsigned long CalcCrc32(int n, const BYTE* c);
+//MJD->FILETIME変換
+FILETIME MJDtoFILETIME(DWORD mjd, DWORD bcdTime = 0);
 
 //iniファイルから予想ビットレートを取得する
-BOOL _GetBitrate(WORD ONID, WORD TSID, WORD SID, DWORD* bitrate);
+DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid);
 
 //EPG情報をTextに変換
-void _ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, wstring& text);
-void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring serviceName);
+wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName = NULL, const wstring* extraText = NULL);
+wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& serviceName);
 
 //フォルダパスから実際のドライブパスを取得
 void GetChkDrivePath(wstring directoryPath, wstring& mountPath);

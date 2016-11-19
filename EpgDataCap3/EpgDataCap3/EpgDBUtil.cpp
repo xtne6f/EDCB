@@ -95,14 +95,11 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 	for( DWORD i = 0; i < eventLoopSize; i++ ){
 		eit.SetLoopIndex(lp, i);
 		WORD event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
-		SYSTEMTIME start_time = {};
+		FILETIME start_time = {};
 		DWORD mjd = eit.GetNumber(Desc::start_time_mjd, lp);
 		DWORD bcd = eit.GetNumber(Desc::start_time_bcd, lp);
 		if( mjd != 0xFFFF || bcd != 0xFFFFFF ){
-			_MJDtoSYSTEMTIME(mjd, &start_time);
-			start_time.wHour = (bcd >> 20 & 15) * 10 + (bcd >> 16 & 15);
-			start_time.wMinute = (bcd >> 12 & 15) * 10 + (bcd >> 8 & 15);
-			start_time.wSecond = (bcd >> 4 & 15) * 10 + (bcd & 15);
+			start_time = MJDtoFILETIME(mjd, bcd);
 		}
 		DWORD duration = eit.GetNumber(Desc::d_duration, lp);
 		if( duration != 0xFFFFFF ){
@@ -114,9 +111,8 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 
 		if( eit.GetNumber(Desc::running_status, lp) == 1 || eit.GetNumber(Desc::running_status, lp) == 3 ){
 			//非実行中または停止中
-			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x %04d/%02d/%02d %02d:%02d",
-				original_network_id,  transport_stream_id, service_id, event_id,
-				start_time.wYear, start_time.wMonth, start_time.wDay, start_time.wHour, start_time.wMinute
+			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x\r\n",
+				original_network_id,  transport_stream_id, service_id, event_id
 				);
 			continue;
 		}
@@ -130,7 +126,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		if( table_id <= 0x4F && section_number <= 1 ){
 			//[p/f]
 			if( section_number == 0 ){
-				if( start_time.wYear == 0 ){
+				if( start_time.dwHighDateTime == 0 ){
 					OutputDebugString(L"Invalid EIT[p/f]\r\n");
 				}else if( serviceInfo->nowEvent == NULL || siTag.time >= serviceInfo->nowEvent->time ){
 					if( serviceInfo->nowEvent == NULL || serviceInfo->nowEvent->event_id != event_id ){
@@ -180,7 +176,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		}else if( PID != 0x0012 || table_id > 0x4F ){
 			//[schedule]もしくは(H-EITでないとき)[p/f after]
 			//TODO: イベント消滅には対応していない(クラス設計的に対応は厳しい)。EDCB的には実用上のデメリットはあまり無い
-			if( start_time.wYear == 0 || duration == 0xFFFFFF ){
+			if( start_time.dwHighDateTime == 0 || duration == 0xFFFFFF ){
 				OutputDebugString(L"Invalid EIT[schedule]\r\n");
 			}else{
 				itrEvent = serviceInfo->eventMap.find(event_id);
@@ -201,8 +197,12 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		if( eventInfo ){
 			//開始時間等はタイムスタンプのみを基準に更新
 			if( siTag.time >= eventInfo->time ){
-				eventInfo->StartTimeFlag = start_time.wYear != 0;
-				eventInfo->start_time = start_time;
+				eventInfo->StartTimeFlag = start_time.dwHighDateTime != 0;
+				SYSTEMTIME stZero = {};
+				eventInfo->start_time = stZero;
+				if( eventInfo->StartTimeFlag ){
+					FileTimeToSystemTime(&start_time, &eventInfo->start_time);
+				}
 				eventInfo->DurationFlag = duration != 0xFFFFFF;
 				eventInfo->durationSec = duration != 0xFFFFFF ? duration : 0;
 				eventInfo->freeCAFlag = eit.GetNumber(Desc::free_CA_mode, lp) != 0;

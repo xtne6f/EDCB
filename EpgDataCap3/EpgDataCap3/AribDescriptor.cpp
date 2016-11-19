@@ -1185,7 +1185,7 @@ bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSi
 		Clear();
 		return false;
 	}
-	if( Has(CRC_32) && _Crc32(readSize, data) != 0 ){
+	if( Has(CRC_32) && CalcCrc32(readSize, data) != 0 ){
 		OutputDebugString(L"CDescriptor::DecodeSI: CRC32 error\r\n");
 		Clear();
 		return false;

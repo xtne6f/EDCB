@@ -29,7 +29,6 @@ protected:
 	BYTE last_section_number;
 //	WORD PCR_PID;
 	WORD program_info_length;
-	DWORD crc32;
 
 protected:
 	void Clear();

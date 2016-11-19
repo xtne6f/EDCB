@@ -808,10 +808,8 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 			break;
 		}
 	}
-	wstring outTextW;
-	_ConvertEpgInfoText2(&info, outTextW, serviceName);
 	string outText;
-	WtoA(outTextW, outText);
+	WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
 
 	HANDLE hFile = _CreateDirectoryAndFile(savePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, NULL, append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( hFile != INVALID_HANDLE_VALUE ){
@@ -888,7 +886,7 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) co
 			param.pittariEventID = reserve.eid;
 			DWORD bitrate = 0;
 			if( this->keepDisk ){
-				_GetBitrate(reserve.onid, reserve.tsid, reserve.sid, &bitrate);
+				bitrate = GetBitrateFromIni(reserve.onid, reserve.tsid, reserve.sid);
 			}
 			param.createSize = (ULONGLONG)(bitrate / 8) * 1000 *
 				max(reserve.durationSecond + (reserve.startTime + reserve.endMargin - now) / I64_1SEC, 0LL);

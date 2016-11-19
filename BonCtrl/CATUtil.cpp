@@ -59,11 +59,7 @@ BOOL CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
 		return FALSE;
 	}
 	//CRCチェック
-	crc32 = ((DWORD)data[3+section_length-4])<<24 |
-		((DWORD)data[3+section_length-3])<<16 |
-		((DWORD)data[3+section_length-2])<<8 |
-		data[3+section_length-1];
-	if( crc32 != _Crc32(3+section_length-4, data) ){
+	if( CalcCrc32(3+section_length, data) != 0 ){
 		return FALSE;
 	}
 

@@ -1206,8 +1206,7 @@ void CReserveManager::CheckAutoDel() const
 					//時計精度の関係で実際に録画が始まった後もしばらくこの条件を満たし、余分に確保されるかもしれない
 					//(厳密にやるのは簡単ではないので、従来通りゆるい実装にしておく)
 					if( now < startTime ){
-						DWORD bitrate = 0;
-						_GetBitrate(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, &bitrate);
+						DWORD bitrate = GetBitrateFromIni(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID);
 						jtr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
 					}
 				}

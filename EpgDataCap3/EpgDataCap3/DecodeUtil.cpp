@@ -489,22 +489,13 @@ void CDecodeUtil::CheckSDT(WORD PID, const Desc::CDescriptor& sdt)
 
 void CDecodeUtil::CheckTDT(const Desc::CDescriptor& tdt)
 {
-	SYSTEMTIME time = {};
-	_MJDtoSYSTEMTIME(tdt.GetNumber(Desc::jst_time_mjd), &time);
-	DWORD bcd = tdt.GetNumber(Desc::jst_time_bcd);
-	time.wHour = (bcd >> 20 & 15) * 10 + (bcd >> 16 & 15);
-	time.wMinute = (bcd >> 12 & 15) * 10 + (bcd >> 8 & 15);
-	time.wSecond = (bcd >> 4 & 15) * 10 + (bcd & 15);
+	FILETIME time = MJDtoFILETIME(tdt.GetNumber(Desc::jst_time_mjd), tdt.GetNumber(Desc::jst_time_bcd));
 	if( tdt.GetNumber(Desc::table_id) == 0x73 ){
 		//TOT
-		if( SystemTimeToFileTime(&time, &this->totTime) == FALSE ){
-			this->totTime.dwHighDateTime = 0;
-		}
+		this->totTime = time;
 		this->totTimeTick = GetTickCount();
 	}else{
-		if( SystemTimeToFileTime(&time, &this->tdtTime) == FALSE ){
-			this->tdtTime.dwHighDateTime = 0;
-		}
+		this->tdtTime = time;
 		this->tdtTimeTick = GetTickCount();
 	}
 }
@@ -548,19 +539,7 @@ void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 					DWORD timeBytesSize;
 					const BYTE* timeBytes = sit.GetBinary(Desc::jst_time, &timeBytesSize, lp);
 					if( timeBytes != NULL && timeBytesSize >= 5 ){
-						DWORD mjd = timeBytes[0] << 8 | timeBytes[1];
-						SYSTEMTIME time;
-						_MJDtoSYSTEMTIME(mjd, &time);
-						BYTE b = timeBytes[2];
-						time.wHour = (WORD)_BCDtoDWORD(&b, 1, 2);
-						b = timeBytes[3];
-						time.wMinute = (WORD)_BCDtoDWORD(&b, 1, 2);
-						b = timeBytes[4];
-						time.wSecond = (WORD)_BCDtoDWORD(&b, 1, 2);
-
-						if( SystemTimeToFileTime(&time, &this->sitTime) == FALSE ){
-							this->sitTime.dwHighDateTime = 0;
-						}
+						this->sitTime = MJDtoFILETIME(timeBytes[0] << 8 | timeBytes[1], timeBytes[2] << 16 | timeBytes[3] << 8 | timeBytes[4]);
 						this->sitTimeTick = GetTickCount();
 					}
 				}
