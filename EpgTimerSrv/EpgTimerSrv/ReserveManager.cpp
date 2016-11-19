@@ -1460,7 +1460,7 @@ DWORD CReserveManager::Check()
 
 		if( CheckEpgCap(isEpgCap) ){
 			//EPGŽæ“¾‚ªŠ®—¹‚µ‚½
-			this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_END);
+			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_EPGCAP_END, L"");
 			return MAKELONG(0, CHECK_EPGCAP_END);
 		}else if( this->shutdownModePending >= 0 &&
 		          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == FALSE &&
@@ -1598,7 +1598,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 						this->epgCapWork = true;
 						this->epgCapSetTimeSync = false;
 						this->epgCapTimeSyncBase = -1;
-						this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_START);
+						this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_EPGCAP_START, L"");
 					}
 				}
 			}

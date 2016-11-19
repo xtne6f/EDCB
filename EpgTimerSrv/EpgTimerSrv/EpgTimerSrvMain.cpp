@@ -301,8 +301,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"EPG取得" :
 						itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"EPG取得" : L"");
 					if( nid.szInfoTitle[0] ){
-						wstring info = itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? wstring(L"開始") :
-						               itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? wstring(L"終了") : itr->param4;
+						LPCWSTR info = itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"開始" :
+						               itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"終了" : itr->param4.c_str();
 						if( ctx->sys->saveNotifyLog ){
 							//通知情報ログ保存
 							wstring logPath;
@@ -313,7 +313,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								SYSTEMTIME st = itr->time;
 								wstring log;
 								Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s] %s",
-									st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, nid.szInfoTitle, info.c_str());
+									st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, nid.szInfoTitle, info);
 								Replace(log, L"\r\n", L"  ");
 								string logA;
 								WtoA(log + L"\r\n", logA);
@@ -332,12 +332,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 							nid.uFlags = NIF_INFO;
 							nid.dwInfoFlags = NIIF_INFO;
 							nid.uTimeout = 10000; //効果はない
-							if( info.size() > 63 ){
-								info.resize(62);
-								info += L'…';
-							}
-							Shell_NotifyIcon(NIM_MODIFY, &nid);
-							wcscpy_s(nid.szInfo, info.c_str());
+							wcsncpy_s(nid.szInfo, info, _TRUNCATE);
 							Shell_NotifyIcon(NIM_MODIFY, &nid);
 						}
 					}
@@ -1625,6 +1620,65 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						resParam->param = CMD_SUCCESS;
 						break;
 					}
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_GET_NOTIFY_LOG:
+		OutputDebugString(L"CMD2_EPG_SRV_GET_NOTIFY_LOG\r\n");
+		if( sys->saveNotifyLog ){
+			int n;
+			if( ReadVALUE(&n, cmdParam->data, cmdParam->dataSize, NULL) ){
+				wstring logPath;
+				GetModuleFolderPath(logPath);
+				logPath += L"\\EpgTimerSrvNotifyLog.txt";
+				HANDLE hFile = CreateFile(logPath.c_str(), FILE_READ_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				if( hFile != INVALID_HANDLE_VALUE ){
+					LARGE_INTEGER liSize;
+					if( GetFileSizeEx(hFile, &liSize) ){
+						//末尾からn行だけ戻った位置をさがす
+						LARGE_INTEGER liPos = liSize;
+						bool foundLastLine = false;
+						while( liPos.QuadPart > 0 && n > 0 ){
+							DWORD dwToRead = (DWORD)min(liPos.QuadPart, 4096);
+							liPos.QuadPart -= dwToRead;
+							char buff[4096];
+							DWORD dwRead;
+							if( SetFilePointerEx(hFile, liPos, NULL, FILE_BEGIN) == FALSE ||
+							    ReadFile(hFile, buff, dwToRead, &dwRead, NULL) == FALSE || dwRead != dwToRead ){
+								liPos.QuadPart += dwToRead;
+								break;
+							}
+							liPos.QuadPart += dwRead;
+							for( ; dwRead > 0; dwRead--, liPos.QuadPart-- ){
+								if( buff[dwRead - 1] == '\n' ){
+									if( foundLastLine ){
+										//必要行数に達したか大きすぎる場合は完了
+										if( --n <= 0 || liSize.QuadPart - liPos.QuadPart >= 64 * 1024 * 1024 ){
+											n = 0;
+											break;
+										}
+									}
+									foundLastLine = true;
+								}else if( foundLastLine == false ){
+									liSize.QuadPart--;
+								}
+							}
+						}
+						if( foundLastLine && liSize.QuadPart - liPos.QuadPart < 128 * 1024 * 1024 ){
+							vector<char> buff((size_t)(liSize.QuadPart - liPos.QuadPart));
+							DWORD dwRead;
+							if( buff.empty() ||
+							    SetFilePointerEx(hFile, liPos, NULL, FILE_BEGIN) &&
+							    ReadFile(hFile, &buff.front(), (DWORD)buff.size(), &dwRead, NULL) && dwRead == buff.size() ){
+								wstring buffW;
+								AtoW(string(buff.begin(), buff.end()), buffW);
+								resParam->data = NewWriteVALUE(buffW, resParam->dataSize);
+								resParam->param = CMD_SUCCESS;
+							}
+						}
+					}
+					CloseHandle(hFile);
 				}
 			}
 		}
