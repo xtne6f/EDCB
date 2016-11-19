@@ -4,6 +4,8 @@
 
 //UPnPのUDP(Port1900)部分を担当するサーバ
 //UPnPCtrlフォルダにあるC言語ベース(?)のコードをC++で再実装したもの
+//※UPnPCtrlフォルダは不要のため削除済み。必要なら以前のコミットを参照
+//  UPnP(DLNA)のHTTP応答や文字列処理などがほぼスタンドアロンで実装されていた
 class CUpnpSsdpServer
 {
 public:
