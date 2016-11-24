@@ -11,10 +11,10 @@ function _ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
     end
     s=s..'\n'
     if v.shortInfo then
-      s=s..v.shortInfo.event_name..'\n\n'..v.shortInfo.text_char..'\n\n'
+      s=s..v.shortInfo.event_name..'\n\n'..DecorateUri(v.shortInfo.text_char)..'\n\n'
     end
     if v.extInfo then
-      s=s..'詳細情報\n'..v.extInfo.text_char..'\n\n'
+      s=s..'詳細情報\n'..DecorateUri(v.extInfo.text_char)..'\n\n'
     end
     if v.contentInfoList then
       s=s..'ジャンル : \n'
@@ -102,6 +102,40 @@ function RecSettingTemplate(rs)
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td></tr>\n'
   end
   s=s..'</table><br>\n'
+  return s
+end
+
+--URIをタグ装飾する
+function DecorateUri(s)
+  local i=1
+  while i<=#s do
+    if s:find('^http',i) or s:find('^ｈｔｔｐ',i) then
+      local hw='&/:;%#$?()~.=+-_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+      local fw='＆／：；％＃＄？（）￣．＝＋－＿０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ'
+      local j,href=i,''
+      while j<=#s do
+        local k=hw:find(s:sub(j,j),1,true)
+        if k then
+          href=href..hw:sub(k,k)
+          j=j+1
+        else
+          k=fw:find(s:sub(j,j+2),1,true)
+          if j+2<=#s and k and k%3==1 then
+            href=href..hw:sub((k+2)/3,(k+2)/3)..(k==1 and 'amp;' or '')
+            j=j+3
+          else
+            break
+          end
+        end
+      end
+      if href:find('^https?://.') then
+        href='<a href="'..href..'">'..s:sub(i,j-1)..'</a>'
+        s=s:sub(1,i-1)..href..s:sub(j)
+        i=i+#href-(j-i)
+      end
+    end
+    i=i+1
+  end
   return s
 end
 

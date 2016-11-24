@@ -37,7 +37,7 @@ if v then
     ..'    <dt>スクランブル</dt><dd>'..v.scrambles..'</dd>\n'
     ..(video and '    <dt>ファイル</dt><dd><a href="'..mg.url_encode(video):gsub('%%2f','/')..'">'..edcb.Convert('utf-8', 'utf-8', video)..'</a> [<a href="'
        ..mg.url_encode(video:gsub('[^\\/]*$','')..'chunk.lua'):gsub('%%2f','/')..'?0='..mg.url_encode(video:match('[^\\/]*$'))..'">chunk.lua</a>]</dd>\n' or '')
-    ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..string.gsub(v.programInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
+    ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..DecorateUri(v.programInfo):gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="recinfodel.html?id='..v.id..'"><div>\n'
