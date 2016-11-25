@@ -25,7 +25,7 @@ if r then
       edcb.htmlEscape=15
       if f then
         f:close()
-        video=PathToRoot()..NativeToDocumentPath(recFilePath)..ext
+        video=NativeToDocumentPath(recFilePath)..ext
         break
       end
     end
@@ -34,8 +34,8 @@ if r then
   ct=ct..'  <dl>\n'
     ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..string.gsub(epgInfo, '\r?\n', '<br>\n')
       or FormatTimeAndDuration(os.time(r.startTime), r.durationSecond)..'<br>'..r.stationName..'<br>'..r.title)..'</dd>\n'
-    ..(video and '    <dt>ファイル</dt><dd><a href="'..mg.url_encode(video):gsub('%%2f','/')..'">'..edcb.Convert('utf-8', 'utf-8', video)..'</a> [<a href="'
-       ..mg.url_encode(video:gsub('[^\\/]*$','')..'chunk.lua'):gsub('%%2f','/')..'?0='..mg.url_encode(video:match('[^\\/]*$'))..'">chunk.lua</a>]</dd>\n' or '')
+    ..(video and '    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)
+       ..'</a> [<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>]</dd>\n' or '')
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="reserveinfo.html"><div>\n'
     ..'<input type="hidden" name="id" value="'..r.reserveID..'"><select name="presetID">\n'

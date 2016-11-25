@@ -1,7 +1,5 @@
--- ファイルをチャンク転送するスクリプト
--- このスクリプトと同じ場所のファイルをタイムシフト再生できる(容量確保録画には未対応): http://localhost:5510/video/chunk.lua?0=foo.ts
--- ディレクトリインデックス(http://localhost:5510/video/)に↓みたいなブックマークレットを適用すると便利
--- javascript:void((function(){var x=document.links;for(var i=0;i<x.length;i++){x[i].href=x[i].href.replace(/\/(?!chunk\.lua)([^\/]{4,})$/,'/chunk.lua?0=$1')}})())
+-- ファイルを転送するスクリプト
+-- ファイルをタイムシフト再生できる(容量確保録画には未対応): http://localhost:5510/xcode.lua?0=video/foo.ts
 
 -- トランスコードするかどうか(する場合はreadex.exeとffmpeg.exeをパスの通ったどこかに用意すること)
 XCODE=false
@@ -13,31 +11,32 @@ XEXT='.webm'
 -- 転送開始前に変換しておく量(bytes)
 XPREPARE=nil
 
-fname=nil
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+fpath=nil
 for i=0,99 do
   -- 変数名は転送開始位置(99分率)
-  fname=mg.get_var(mg.request_info.query_string, ''..i)
-  if fname then
-    -- トラバーサル対策
-    fname=string.match(edcb.Convert('utf-8', 'cp932', edcb.Convert('cp932', 'utf-8', fname)), '^[^\\/:*?"<>|]+$')
+  fpath=mg.get_var(mg.request_info.query_string, ''..i)
+  if fpath then
+    fpath=DocumentToNativePath(fpath)
     offset=i
     break
   end
 end
 
 f=nil
-if fname then
-  fpath=edcb.Convert('cp932', 'utf-8', mg.script_name:gsub('[0-9A-Za-z.]*$', '')..fname)
+if fpath then
+  fname='xcode'..(fpath:match('%.[0-9A-Za-z]+$') or '')
+  fpath=edcb.Convert('cp932', 'utf-8', fpath)
   f=io.open(fpath, 'rb')
   if f then
     offset=math.floor((f:seek('end', 0) or 0) * offset / 99 / 188) * 188
     if XCODE then
       f:close()
       f=io.popen('readex '..offset..' 4 "'..fpath..'" | '..XCMD, 'rb')
-      fname='chunk'..XEXT
+      fname='xcode'..XEXT
     else
       f:seek('set', offset)
-      fname='chunk'..(string.match(fname, '%.[0-9A-Za-z]+$') or '')
       XPREPARE=nil
     end
   end

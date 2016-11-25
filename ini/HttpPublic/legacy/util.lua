@@ -159,6 +159,20 @@ function NativeToDocumentPath(path)
   return nil
 end
 
+--ドキュメントルートからの相対パスをOSの絶対パスに変換する
+function DocumentToNativePath(path)
+  --冗長表現の可能性を潰す
+  local esc=edcb.htmlEscape
+  edcb.htmlEscape=0
+  path=edcb.Convert('utf-8','cp932',edcb.Convert('cp932','utf-8',path)):gsub('/+','/')
+  edcb.htmlEscape=esc
+  --禁止文字と正規化のチェック
+  if not path:find('[\0-\x1f\x7f\\:*?"<>|]') and not path:find('%./') and not path:find('%.$') then
+    return mg.document_root..'\\'..path:gsub('/','\\')
+  end
+  return nil
+end
+
 --レスポンスを生成する
 function Response(code,ctype,charset,cl)
   return 'HTTP/1.1 '..code..' '..mg.get_response_code_text(code)
