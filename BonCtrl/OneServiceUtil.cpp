@@ -75,7 +75,6 @@ BOOL COneServiceUtil::SendUdp(
 
 	if(udpPortMutex.size() != 0){
 		for( int i=0; i<(int)udpPortMutex.size(); i++ ){
-			::ReleaseMutex(udpPortMutex[i]);
 			::CloseHandle(udpPortMutex[i]);
 		}
 		udpPortMutex.clear();
@@ -91,7 +90,7 @@ BOOL COneServiceUtil::SendUdp(
 
 			while(1){
 				Format(key, L"%s%d_%d", MUTEX_UDP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
-				portMutex = CreateMutex(NULL, TRUE, key.c_str());
+				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		
 				if( portMutex == NULL ){
 					(*sendList)[i].port++;
@@ -130,7 +129,6 @@ BOOL COneServiceUtil::SendTcp(
 
 	if(tcpPortMutex.size() != 0){
 		for( int i=0; i<(int)tcpPortMutex.size(); i++ ){
-			::ReleaseMutex(tcpPortMutex[i]);
 			::CloseHandle(tcpPortMutex[i]);
 		}
 		tcpPortMutex.clear();
@@ -146,7 +144,7 @@ BOOL COneServiceUtil::SendTcp(
 
 			while(1){
 				Format(key, L"%s%d_%d", MUTEX_TCP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
-				portMutex = CreateMutex(NULL, TRUE, key.c_str());
+				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		
 				if( portMutex == NULL ){
 					(*sendList)[i].port++;

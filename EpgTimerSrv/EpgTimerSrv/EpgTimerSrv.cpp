@@ -107,7 +107,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	if( IsInstallService(SERVICE_NAME) == FALSE ){
 		//普通にexeとして起動を行う
-		HANDLE hMutex = CreateMutex(NULL, TRUE, EPG_TIMER_BON_SRV_MUTEX);
+		HANDLE hMutex = CreateMutex(NULL, FALSE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
 				StartDebugLog();
@@ -121,12 +121,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				CoUninitialize();
 				StopDebugLog();
 			}
-			ReleaseMutex(hMutex);
 			CloseHandle(hMutex);
 		}
 	}else if( IsStopService(SERVICE_NAME) == FALSE ){
 		//サービスとして実行
-		HANDLE hMutex = CreateMutex(NULL, TRUE, EPG_TIMER_BON_SRV_MUTEX);
+		HANDLE hMutex = CreateMutex(NULL, FALSE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
 				StartDebugLog();
@@ -139,7 +138,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				}
 				StopDebugLog();
 			}
-			ReleaseMutex(hMutex);
 			CloseHandle(hMutex);
 		}
 	}else{

@@ -44,7 +44,6 @@ BOOL CTimeShiftUtil::Send(
 	if( this->sendUdpIP.empty() == false && (val->udp == 0 || this->sendUdpIP != ip) ){
 		this->sendUdpIP.clear();
 		this->sendUdp.CloseUpload();
-		ReleaseMutex(this->udpPortMutex);
 		CloseHandle(this->udpPortMutex);
 	}
 	if( this->sendUdpIP.empty() && val->udp != 0 ){
@@ -56,7 +55,7 @@ BOOL CTimeShiftUtil::Send(
 		wstring mutexKey;
 		for( ; item.port < 1234 + 100; item.port++ ){
 			Format(mutexKey, L"%s%d_%d", MUTEX_UDP_PORT_NAME, val->ip, item.port);
-			this->udpPortMutex = CreateMutex(NULL, TRUE, mutexKey.c_str());
+			this->udpPortMutex = CreateMutex(NULL, FALSE, mutexKey.c_str());
 			if( this->udpPortMutex ){
 				if( GetLastError() != ERROR_ALREADY_EXISTS ){
 					break;
@@ -80,7 +79,6 @@ BOOL CTimeShiftUtil::Send(
 	if( this->sendTcpIP.empty() == false && (val->tcp == 0 || this->sendTcpIP != ip) ){
 		this->sendTcpIP.clear();
 		this->sendTcp.CloseUpload();
-		ReleaseMutex(this->tcpPortMutex);
 		CloseHandle(this->tcpPortMutex);
 	}
 	if( this->sendTcpIP.empty() && val->tcp != 0 ){
@@ -92,7 +90,7 @@ BOOL CTimeShiftUtil::Send(
 		wstring mutexKey;
 		for( ; item.port < 2230 + 100; item.port++ ){
 			Format(mutexKey, L"%s%d_%d", MUTEX_TCP_PORT_NAME, val->ip, item.port);
-			this->tcpPortMutex = CreateMutex(NULL, TRUE, mutexKey.c_str());
+			this->tcpPortMutex = CreateMutex(NULL, FALSE, mutexKey.c_str());
 			if( this->tcpPortMutex ){
 				if( GetLastError() != ERROR_ALREADY_EXISTS ){
 					break;
