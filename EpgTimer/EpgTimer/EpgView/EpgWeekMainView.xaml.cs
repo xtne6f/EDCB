@@ -99,7 +99,7 @@ namespace EpgTimer
             try
             {
                 nowViewTimer.Stop();
-                DateTime nowTime = DateTime.Now;
+                DateTime nowTime = DateTime.UtcNow.AddHours(9);
                 nowTime = new DateTime(2001, 1, nowTime.Hour < setViewInfo.StartTimeWeek ? 2 : 1, nowTime.Hour, nowTime.Minute, nowTime.Second);
 
                 if (nowLine == null)
@@ -243,7 +243,7 @@ namespace EpgTimer
                 }
                 DateTime startTime = timeList.Keys[0];
 
-                DateTime time = DateTime.Now;
+                DateTime time = DateTime.UtcNow.AddHours(9);
                 time = new DateTime(2001, 1, time.Hour < setViewInfo.StartTimeWeek ? 2 : 1, time.Hour, time.Minute, time.Second);
 
                 if (time < startTime)

@@ -1219,7 +1219,7 @@ namespace EpgTimer
                 String filePath = SettingPath.ModulePath;
                 filePath += "\\Log";
                 Directory.CreateDirectory(filePath);
-                filePath += "\\EpgTimerNotify_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
+                filePath += "\\EpgTimerNotify_" + DateTime.UtcNow.AddHours(9).ToString("yyyyMMdd") + ".txt";
                 StreamWriter file = new StreamWriter(filePath, true, System.Text.Encoding.GetEncoding("shift_jis"));
                 file.WriteLine(new NotifySrvInfoItem(notifyInfo));
                 file.Close();

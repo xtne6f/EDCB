@@ -469,7 +469,7 @@ namespace EpgTimer
 
             foreach (ReserveData resInfo in sortList.Values)
             {
-                if (resInfo.StartTime > DateTime.Now)
+                if (resInfo.StartTime > DateTime.UtcNow.AddHours(9))
                 {
                     info = resInfo;
                     ret = true;

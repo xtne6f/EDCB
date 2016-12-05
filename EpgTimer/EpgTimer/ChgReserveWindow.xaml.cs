@@ -59,7 +59,7 @@ namespace EpgTimer
                 this.Title = "プログラム予約追加";
                 checkBox_program.Visibility = System.Windows.Visibility.Hidden;
 
-                DateTime startTime = DateTime.Now.AddMinutes(1);
+                DateTime startTime = DateTime.UtcNow.AddHours(9).AddMinutes(1);
                 datePicker_start.SelectedDate = startTime;
                 comboBox_sh.SelectedIndex = startTime.Hour;
                 comboBox_sm.SelectedIndex = startTime.Minute;

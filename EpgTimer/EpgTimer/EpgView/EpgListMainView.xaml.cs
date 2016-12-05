@@ -445,7 +445,7 @@ namespace EpgTimer
                     eventList = CommonManager.Instance.DB.ServiceEventList;
                 }
 
-                DateTime now = DateTime.Now;
+                DateTime now = DateTime.UtcNow.AddHours(9);
                 foreach (ServiceItem info in serviceList)
                 {
                     if (info.IsSelected == true)

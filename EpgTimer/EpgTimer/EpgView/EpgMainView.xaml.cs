@@ -105,7 +105,7 @@ namespace EpgTimer
             try
             {
                 nowViewTimer.Stop();
-                DateTime nowTime = DateTime.Now;
+                DateTime nowTime = DateTime.UtcNow.AddHours(9);
                 if (timeList.Count < 1 || nowTime < timeList.Keys[0])
                 {
                     if (nowLine != null)
@@ -1130,7 +1130,7 @@ namespace EpgTimer
                 }
                 DateTime startTime = timeList.Keys[0];
 
-                DateTime time = DateTime.Now;
+                DateTime time = DateTime.UtcNow.AddHours(9);
                 if (time < startTime)
                 {
                     epgProgramView.scrollViewer.ScrollToVerticalOffset(0);
