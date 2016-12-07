@@ -9,8 +9,7 @@ CTSOut::CTSOut(void)
 {
 	InitializeCriticalSection(&this->objLock);
 
-	this->chChangeFlag = FALSE;
-	this->chChangeErr = FALSE;
+	this->chChangeState = CH_ST_INIT;
 	this->chChangeTime = 0;
 	this->lastONID = 0xFFFF;
 	this->lastTSID = 0xFFFF;
@@ -37,8 +36,7 @@ void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 {
 	CBlockLock lock(&this->objLock);
 
-	this->chChangeFlag = TRUE;
-	this->chChangeErr = FALSE;
+	this->chChangeState = CH_ST_WAIT_PAT;
 	this->chChangeTime = GetTickCount();
 
 	this->decodeUtil.UnLoadDll();
@@ -51,50 +49,34 @@ void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 	}
 }
 
-BOOL CTSOut::IsChChanging(BOOL* chChgErr)
+BOOL CTSOut::IsChUnknown(DWORD* elapsedTime)
 {
 	CBlockLock lock(&this->objLock);
 
-	if( chChgErr != NULL ){
-		*chChgErr = this->chChangeErr;
-	}
-
-	if( this->chChangeFlag == TRUE ){
-		if( GetTickCount() - this->chChangeTime > 15000 ){
-			if( chChgErr != NULL ){
-				*chChgErr = TRUE;
-			}
-			return FALSE;
+	if( this->chChangeState != CH_ST_DONE ){
+		if( elapsedTime != NULL ){
+			*elapsedTime = this->chChangeState == CH_ST_INIT ? MAXDWORD : GetTickCount() - this->chChangeTime;
 		}
+		return TRUE;
 	}
-
-	return this->chChangeFlag;
-}
-
-void CTSOut::ResetChChange()
-{
-	this->lastONID = 0xFFFF;
-	this->lastTSID = 0xFFFF;
+	return FALSE;
 }
 
 BOOL CTSOut::GetStreamID(WORD* ONID, WORD* TSID)
 {
 	CBlockLock lock(&this->objLock);
 
-	if( this->chChangeFlag == FALSE ){
-		if( this->epgUtil.GetTSID(ONID, TSID) == NO_ERR ){
-			this->lastONID = *ONID;
-			this->lastTSID = *TSID;
-			return TRUE;
-		}
+	if( this->chChangeState == CH_ST_DONE ){
+		*ONID = this->lastONID;
+		*TSID = this->lastTSID;
+		return TRUE;
 	}
 	return FALSE;
 }
 
 void CTSOut::OnChChanged(WORD onid, WORD tsid)
 {
-	this->chChangeFlag = FALSE;
-	this->chChangeErr = FALSE;
+	this->chChangeState = CH_ST_DONE;
 	this->lastONID = onid;
 	this->lastTSID = tsid;
 	this->epgUtil.ClearSectionStatus();
@@ -120,6 +102,11 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	if( dataSize == 0 || data == NULL ){
 		return;
 	}
+	DWORD tick = GetTickCount();
+	if( this->chChangeState == CH_ST_WAIT_PAT && tick - this->chChangeTime < 1000 ){
+		//1秒間はチャンネル切り替え前のパケット来る可能性を考慮して無視する
+		return;
+	}
 	this->decodeBuff.clear();
 
 	BYTE* decodeData = NULL;
@@ -128,60 +115,39 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 		for( DWORD i=0; i<dataSize; i+=188 ){
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data + i, 188) == TRUE ){
-				if( this->chChangeFlag == TRUE ){
+				if( this->chChangeState != CH_ST_DONE ){
 					//チャンネル切り替え中
-					if( GetTickCount() - this->chChangeTime < 1000 ){
-						//1秒間は切り替え前のパケット来る可能性を考慮して無視する
-						return;
-					}
-					//簡易パケット解析
 					if( packet.transport_scrambling_control != 0 ){
 						//スクランブルパケットなので解析できない
 						continue;
 					}
-					if( packet.data_byteSize < 3 ){
-						//サイズが小さすぎる
-						continue;
-					}
-					if(packet.payload_unit_start_indicator == 1 && 
-						packet.data_byte[0] == 0x00 &&
-						packet.data_byte[1] == 0x00 &&
-						packet.data_byte[2] == 0x01){
-						//PES
-						continue;
-					}
 					this->epgUtil.AddTSPacket(data + i, 188);
-					WORD onid = 0xFFFF;
-					WORD tsid = 0xFFFF;
-					if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
-						if( onid != this->lastONID || tsid != this->lastTSID ){
-							OutputDebugString(L"★Ch Change Complete\r\n");
-						_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
-							OnChChanged(onid, tsid);
-
-						}else if( GetTickCount() - this->chChangeTime > 7000 ){
-							OutputDebugString(L"★Ch NoChange\r\n");
-							OnChChanged(onid, tsid);
-						}else{
-							continue;
+					//GetTSID()が切り替え前の値を返さないようにPATを待つ
+					if( this->chChangeState == CH_ST_WAIT_PAT ){
+						if( packet.PID == 0 && packet.payload_unit_start_indicator ){
+							this->chChangeState = CH_ST_WAIT_PAT2;
+						}
+					}else if( this->chChangeState == CH_ST_WAIT_PAT2 ){
+						if( packet.PID == 0 && packet.payload_unit_start_indicator ){
+							this->chChangeState = CH_ST_WAIT_ID;
 						}
 					}
-					else{
-						if( GetTickCount() - this->chChangeTime > 15000 ){
-							//15秒以上たってるなら切り替わったとする
-							OutputDebugString(L"★GetTSID Err\r\n");
-							//this->chChangeFlag = FALSE;
-							this->chChangeErr = TRUE;
-							this->lastONID = onid;
-							this->lastTSID = tsid;
-							//this->epgUtil.ClearSectionStatus();
-							//this->decodeUtil.SetNetwork(onid, tsid);
-							//this->decodeUtil.SetEmm(this->emmEnableFlag);
-							//ResetErrCount();
+					if( this->chChangeState == CH_ST_INIT || this->chChangeState == CH_ST_WAIT_ID ){
+						WORD onid;
+						WORD tsid;
+						if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
+							if( this->chChangeState == CH_ST_INIT ){
+								_OutputDebugString(L"★Ch Init 0x%04X 0x%04X\r\n", onid, tsid);
+								OnChChanged(onid, tsid);
+							}else if( onid != this->lastONID || tsid != this->lastTSID ){
+								_OutputDebugString(L"★Ch Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+								OnChChanged(onid, tsid);
+							}else if( tick - this->chChangeTime > 7000 ){
+								OutputDebugString(L"★Ch NoChange\r\n");
+								OnChChanged(onid, tsid);
+							}
 						}
-						continue;
 					}
-
 				}else{
 					//指定サービスに必要なPIDを解析
 					if( packet.transport_scrambling_control == 0 ){
@@ -270,40 +236,22 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						}
 					}
 				}
-			}else{
-				if( this->chChangeFlag == TRUE ){
-					if( GetTickCount() - this->chChangeTime > 15000 ){
-						//15秒以上たってるなら切り替わったとする
-						//OutputDebugString(L"★Ch Change Err NoPacket\r\n");
-						//this->chChangeFlag = FALSE;
-						this->chChangeErr = TRUE;
-						this->lastONID = 0xFFFF;
-						this->lastTSID = 0xFFFF;
-						//this->epgUtil.ClearSectionStatus();
-						//this->decodeUtil.SetNetwork(onid, tsid);
-						//this->decodeUtil.SetEmm(this->emmEnableFlag);
-						//ResetErrCount();
-					}
-				}
-				continue;
 			}
 		}
-		if( this->chChangeFlag == FALSE ){
-			WORD onid = 0xFFFF;
-			WORD tsid = 0xFFFF;
+		if( this->chChangeState == CH_ST_DONE ){
+			WORD onid;
+			WORD tsid;
 			if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
 				if( onid != this->lastONID || tsid != this->lastTSID ){
-					OutputDebugString(L"★UnKnown Ch Change \r\n");
-					_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+					_OutputDebugString(L"★Ch Unexpected Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
 					OnChChanged(onid, tsid);
-
 				}
 			}
 		}
 	}
 	try{
 		if( this->decodeBuff.empty() == false ){
-			if( this->enableDecodeFlag == TRUE && this->chChangeFlag == FALSE ){
+			if( this->enableDecodeFlag ){
 				//デコード必要
 
 				if( decodeUtil.Decode(&this->decodeBuff.front(), (DWORD)this->decodeBuff.size(), &decodeData, &decodeSize) == FALSE ){
@@ -544,7 +492,7 @@ BOOL CTSOut::SetEmm(
 	CBlockLock lock(&this->objLock);
 
 	try{
-		if( this->lastONID != 0xFFFF && this->lastTSID != 0xFFFF ){
+		if( this->chChangeState == CH_ST_DONE ){
 			//チューニング済みで
 			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
 				//最初に EMM 処理が設定される場合は DLL を読み込む
@@ -924,7 +872,7 @@ BOOL CTSOut::SetScramble(
 	CBlockLock lock(&this->objLock);
 
 	try{
-		if( this->lastONID != 0xFFFF && this->lastTSID != 0xFFFF ){
+		if( this->chChangeState == CH_ST_DONE ){
 			//チューニング済みで
 			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
 				//最初にスクランブル解除が設定される場合は DLL を再読み込みする

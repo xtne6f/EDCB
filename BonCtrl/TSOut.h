@@ -24,8 +24,7 @@ public:
 	~CTSOut(void);
 
 	void SetChChangeEvent(BOOL resetEpgUtil = FALSE);
-	BOOL IsChChanging(BOOL* chChgErr);
-	void ResetChChange();
+	BOOL IsChUnknown(DWORD* elapsedTime = NULL);
 
 	//現在のストリームのIDを取得する
 	//戻り値：
@@ -334,8 +333,7 @@ protected:
 	CScrambleDecoderUtil decodeUtil;
 	CCreatePATPacket patUtil;
 
-	BOOL chChangeFlag;
-	BOOL chChangeErr;
+	enum { CH_ST_INIT, CH_ST_WAIT_PAT, CH_ST_WAIT_PAT2, CH_ST_WAIT_ID, CH_ST_DONE } chChangeState;
 	DWORD chChangeTime;
 	WORD lastONID;
 	WORD lastTSID;
