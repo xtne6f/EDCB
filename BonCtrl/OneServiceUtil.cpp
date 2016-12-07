@@ -6,10 +6,6 @@ COneServiceUtil::COneServiceUtil(void)
 {
 	this->SID = 0xFFFF;
 
-	this->sendUdp = NULL;
-	this->sendTcp = NULL;
-	this->writeFile = NULL;
-
 	this->pmtPID = 0xFFFF;
 
 	this->enableScramble = TRUE;
@@ -23,9 +19,8 @@ COneServiceUtil::COneServiceUtil(void)
 
 COneServiceUtil::~COneServiceUtil(void)
 {
-	SAFE_DELETE(this->sendUdp);
-	SAFE_DELETE(this->sendTcp);
-	SAFE_DELETE(this->writeFile);
+	SendUdp(NULL);
+	SendTcp(NULL);
 }
 
 void COneServiceUtil::SetEpgUtil(
@@ -82,7 +77,7 @@ BOOL COneServiceUtil::SendUdp(
 
 	if( sendList != NULL ){
 		if( this->sendUdp == NULL ){
-			this->sendUdp = new CSendUDP;
+			this->sendUdp.reset(new CSendUDP);
 		}
 		for( size_t i=0; i<sendList->size(); i++ ){
 			wstring key = L"";
@@ -108,7 +103,7 @@ BOOL COneServiceUtil::SendUdp(
 
 		this->sendUdp->StartUpload(sendList);
 	}else{
-		SAFE_DELETE(this->sendUdp);
+		this->sendUdp.reset();
 	}
 
 	return TRUE;
@@ -136,7 +131,7 @@ BOOL COneServiceUtil::SendTcp(
 
 	if( sendList != NULL ){
 		if( this->sendTcp == NULL ){
-			this->sendTcp = new CSendTCP;
+			this->sendTcp.reset(new CSendTCP);
 		}
 		for( size_t i=0; i<sendList->size(); i++ ){
 			wstring key = L"";
@@ -162,7 +157,7 @@ BOOL COneServiceUtil::SendTcp(
 
 		this->sendTcp->StartUpload(sendList);
 	}else{
-		SAFE_DELETE(this->sendTcp);
+		this->sendTcp.reset();
 	}
 
 	return TRUE;
@@ -331,10 +326,10 @@ void COneServiceUtil::SetPmtPID(
 }
 
 void COneServiceUtil::SetEmmPID(
-	map<WORD,WORD>* PIDMap
+	const map<WORD,WORD>& PIDMap
 	)
 {
-	this->emmPIDMap = *PIDMap;
+	this->emmPIDMap = PIDMap;
 }
 
 //ファイル保存を開始する
@@ -352,7 +347,7 @@ void COneServiceUtil::SetEmmPID(
 // saveFolder			[IN]使用するフォルダ一覧
 // saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 BOOL COneServiceUtil::StartSave(
-	wstring fileName,
+	const wstring& fileName,
 	BOOL overWriteFlag,
 	BOOL pittariFlag,
 	WORD pittariONID,
@@ -360,8 +355,8 @@ BOOL COneServiceUtil::StartSave(
 	WORD pittariSID,
 	WORD pittariEventID,
 	ULONGLONG createSize,
-	vector<REC_FILE_SET_INFO>* saveFolder,
-	vector<wstring>* saveFolderSub,
+	const vector<REC_FILE_SET_INFO>* saveFolder,
+	const vector<wstring>* saveFolderSub,
 	int maxBuffCount
 )
 {
@@ -372,7 +367,7 @@ BOOL COneServiceUtil::StartSave(
 			this->pittariStart = FALSE;
 			this->pittariEndChk = FALSE;
 
-			this->writeFile = new CWriteTSFile;
+			this->writeFile.reset(new CWriteTSFile);
 			return this->writeFile->StartSave(fileName, overWriteFlag, createSize, saveFolder, saveFolderSub, maxBuffCount);
 		}
 	}else{
@@ -406,7 +401,7 @@ void COneServiceUtil::StratPittariRec()
 {
 	if( this->writeFile == NULL ){
 		OutputDebugString(L"*:StratPittariRec");
-		this->writeFile = new CWriteTSFile;
+		this->writeFile.reset(new CWriteTSFile);
 		this->writeFile->StartSave(this->fileName, this->overWriteFlag, this->createSize, &this->saveFolder, &this->saveFolderSub, this->maxBuffCount);
 	}
 }
@@ -435,7 +430,7 @@ BOOL COneServiceUtil::EndSave()
 		return FALSE;
 	}
 	BOOL ret = this->writeFile->EndSave();
-	SAFE_DELETE(this->writeFile);
+	this->writeFile.reset();
 	OutputDebugString(L"*:EndSave");
 	return ret;
 }
@@ -524,7 +519,7 @@ void COneServiceUtil::GetSaveFilePath(
 //引数：
 // filePath			[IN]保存ファイル名
 void COneServiceUtil::SaveErrCount(
-	wstring filePath
+	const wstring& filePath
 	)
 {
 	this->dropCount.SaveLog(filePath);
@@ -540,7 +535,7 @@ void COneServiceUtil::SetSignalLevel(
 
 //録画中のファイルの出力サイズを取得する
 //引数：
-// writeSize			[OUT]保存ファイル名
+// writeSize			[OUT]出力サイズ
 void COneServiceUtil::GetRecWriteSize(
 	__int64* writeSize
 	)
@@ -551,15 +546,15 @@ void COneServiceUtil::GetRecWriteSize(
 }
 
 void COneServiceUtil::SetBonDriver(
-	wstring bonDriver
+	const wstring& bonDriver
 	)
 {
 	this->dropCount.SetBonDriver(bonDriver);
 }
 
 void COneServiceUtil::SetPIDName(
-	map<WORD, string>* pidName
+	const map<WORD, string>& pidName
 	)
 {
-	this->dropCount.SetPIDName(pidName);
+	this->dropCount.SetPIDName(&pidName);
 }

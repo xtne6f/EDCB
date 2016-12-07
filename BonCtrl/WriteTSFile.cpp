@@ -35,11 +35,11 @@ CWriteTSFile::~CWriteTSFile(void)
 // saveFolder			[IN]使用するフォルダ一覧
 // saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 BOOL CWriteTSFile::StartSave(
-	wstring fileName,
+	const wstring& fileName,
 	BOOL overWriteFlag,
 	ULONGLONG createSize,
-	vector<REC_FILE_SET_INFO>* saveFolder,
-	vector<wstring>* saveFolderSub,
+	const vector<REC_FILE_SET_INFO>* saveFolder,
+	const vector<wstring>* saveFolderSub,
 	int maxBuffCount
 )
 {
@@ -56,7 +56,7 @@ BOOL CWriteTSFile::StartSave(
 		this->maxBuffCount = maxBuffCount;
 		this->writeTotalSize = 0;
 		this->subRecFlag = FALSE;
-		vector<REC_FILE_SET_INFO> saveFolder_ = *saveFolder;
+		const vector<REC_FILE_SET_INFO>& saveFolder_ = *saveFolder;
 		this->saveFolderSub = *saveFolderSub;
 		for( size_t i=0; i<saveFolder_.size(); i++ ){
 			SAVE_INFO item;

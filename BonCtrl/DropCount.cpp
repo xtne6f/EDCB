@@ -88,7 +88,7 @@ void CDropCount::SetSignal(float level)
 	this->signalLv = level;
 }
 
-void CDropCount::SetBonDriver(wstring bonDriver)
+void CDropCount::SetBonDriver(const wstring& bonDriver)
 {
 	this->bonFile = bonDriver;
 }
@@ -168,7 +168,7 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 	info->lastCounter = continuity_counter;
 }
 
-void CDropCount::SaveLog(wstring filePath)
+void CDropCount::SaveLog(const wstring& filePath)
 {
 	HANDLE file = _CreateDirectoryAndFile( filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( file != INVALID_HANDLE_VALUE ){

@@ -23,11 +23,11 @@ public:
 	// saveFolder			[IN]使用するフォルダ一覧
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 	BOOL StartSave(
-		wstring fileName,
+		const wstring& fileName,
 		BOOL overWriteFlag,
 		ULONGLONG createSize,
-		vector<REC_FILE_SET_INFO>* saveFolder,
-		vector<wstring>* saveFolderSub,
+		const vector<REC_FILE_SET_INFO>* saveFolder,
+		const vector<wstring>* saveFolderSub,
 		int maxBuffCount
 	);
 

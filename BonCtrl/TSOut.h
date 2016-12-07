@@ -23,7 +23,7 @@ public:
 	CTSOut(void);
 	~CTSOut(void);
 
-	DWORD SetChChangeEvent(BOOL resetEpgUtil = FALSE);
+	void SetChChangeEvent(BOOL resetEpgUtil = FALSE);
 	BOOL IsChChanging(BOOL* chChgErr);
 	void ResetChChange();
 
@@ -38,7 +38,7 @@ public:
 		WORD* TSID
 		);
 
-	DWORD AddTSBuff(BYTE* data, DWORD dataSize);
+	void AddTSBuff(BYTE* data, DWORD dataSize);
 
 	//EMM処理の動作設定
 	//戻り値：
@@ -67,15 +67,13 @@ public:
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	BOOL StartSaveEPG(
-		wstring epgFilePath
+		const wstring& epgFilePath
 		);
 
 	//EPGデータの保存を終了する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// copy			[IN]tmpからコピー処理行うかどうか
-	BOOL StopSaveEPG(
+	void StopSaveEPG(
 		BOOL copy
 		);
 
@@ -123,7 +121,7 @@ public:
 		DWORD* id
 		);
 
-	//TSストリーム制御用コントロールを作成する
+	//TSストリーム制御用コントロールを削除する
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗
 	//引数：
@@ -187,7 +185,7 @@ public:
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 	BOOL StartSave(
 		DWORD id,
-		wstring fileName,
+		const wstring& fileName,
 		BOOL overWriteFlag,
 		BOOL pittariFlag,
 		WORD pittariONID,
@@ -195,8 +193,8 @@ public:
 		WORD pittariSID,
 		WORD pittariEventID,
 		ULONGLONG createSize,
-		vector<REC_FILE_SET_INFO>* saveFolder,
-		vector<wstring>* saveFolderSub,
+		const vector<REC_FILE_SET_INFO>* saveFolder,
+		const vector<wstring>* saveFolderSub,
 		int maxBuffCount
 	);
 
@@ -248,7 +246,7 @@ public:
 	//録画中のファイルの出力サイズを取得する
 	//引数：
 	// id					[IN]制御識別ID
-	// writeSize			[OUT]保存ファイル名
+	// writeSize			[OUT]出力サイズ
 	void GetRecWriteSize(
 		DWORD id,
 		__int64* writeSize
@@ -262,7 +260,7 @@ public:
 	// transportStreamID		[IN]取得対象のtransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
-	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
+	// epgInfo					[OUT]EPG情報
 	DWORD GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -280,7 +278,7 @@ public:
 	// serviceID				[IN]取得対象のServiceID
 	// eventID					[IN]取得対象のEventID
 	// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
-	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
+	// epgInfo					[OUT]EPG情報
 	DWORD SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -318,7 +316,7 @@ public:
 	// filePath				[IN]保存ファイル名
 	void SaveErrCount(
 		DWORD id,
-		wstring filePath
+		const wstring& filePath
 		);
 
 	void SetSignalLevel(
@@ -326,11 +324,11 @@ public:
 		);
 
 	void SetBonDriver(
-		wstring bonDriver
+		const wstring& bonDriver
 		);
 
 protected:
-	HANDLE lockEvent;
+	CRITICAL_SECTION objLock;
 
 	CEpgDataCap3Util epgUtil;
 	CScrambleDecoderUtil decodeUtil;
@@ -348,9 +346,9 @@ protected:
 	BOOL emmEnableFlag;
 	BOOL serviceOnlyFlag;
 
-	map<DWORD, COneServiceUtil*> serviceUtilMap; //キー識別ID
+	map<DWORD, std::unique_ptr<COneServiceUtil>> serviceUtilMap; //キー識別ID
 	map<WORD, CPMTUtil> pmtUtilMap; //キーPMTのPID
-	CCATUtil* catUtil;
+	CCATUtil catUtil;
 
 	map<WORD,WORD> needPIDMap; //キーPID
 
@@ -364,12 +362,7 @@ protected:
 
 	wstring bonFile;
 protected:
-	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 30*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	void CheckNeedPID();
-	BOOL IsNeedPID(CTSPacketUtil* packet);
 
 	DWORD GetNextID();
 
