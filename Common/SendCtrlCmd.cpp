@@ -213,11 +213,6 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	freeaddrinfo(result);
 
 	if( sock == INVALID_SOCKET ){
-		int a= GetLastError();
-		wstring aa;
-		Format(aa,L"%d",a);
-		OutputDebugString(aa.c_str());
-		closesocket(sock);
 		return CMD_ERR_CONNECT;
 	}
 
