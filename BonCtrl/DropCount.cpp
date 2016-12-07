@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "DropCount.h"
 #include "../Common/StringUtil.h"
+#include "../Common/TimeUtil.h"
 
 
 CDropCount::CDropCount(void)
@@ -46,7 +47,7 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 		    this->lastLogScramble < this->scramble ){
 			string logline;
 			SYSTEMTIME now;
-			GetLocalTime(&now);
+			ConvertSystemTime(GetNowI64Time(), &now);
 			Format(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%I64d Scramble:%I64d Signal: %.02f\r\n",
 				now.wYear,
 				now.wMonth,

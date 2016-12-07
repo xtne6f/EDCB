@@ -1,11 +1,6 @@
 #include "stdafx.h"
 #include "TimeUtil.h"
 
-BOOL GetSumTime(SYSTEMTIME StartTime, int iSec, SYSTEMTIME* ResTime )
-{
-	return ConvertSystemTime(ConvertI64Time(StartTime) + iSec * I64_1SEC, ResTime);
-}
-
 void GetTimeString( SYSTEMTIME Time, wstring& strDay )
 {
 	wstring strBase;
@@ -86,9 +81,9 @@ void GetDayOfWeekString2( SYSTEMTIME Time, wstring& strWeek )
 
 __int64 GetNowI64Time()
 {
-	SYSTEMTIME sTime;
-	GetLocalTime(&sTime);
-	return ConvertI64Time(sTime);
+	FILETIME fTime;
+	GetSystemTimeAsFileTime(&fTime);
+	return ((__int64)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime) + 9 * 3600 * I64_1SEC;
 }
 
 __int64 ConvertI64Time(SYSTEMTIME Time)

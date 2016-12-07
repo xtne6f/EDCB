@@ -28,9 +28,9 @@ page=tonumber(mg.get_var(mg.request_info.query_string,'page')) or 0
 date=tonumber(mg.get_var(mg.request_info.query_string,'date')) or 0
 --dateクエリは今日(深夜4時区切り)を基準(=0)とする
 now=os.time()
-timezone=os.time(os.date('*t',now))-os.time(os.date('!*t',now))
-baseDate=math.floor((now+timezone-4*3600)/(24*3600))
-baseTime=baseDate*24*3600+4*3600-timezone
+timezone=now-os.time(os.date('!*t',now))
+baseDate=math.floor((now+(9-4)*3600)/(24*3600))
+baseTime=(baseDate*24+4)*3600
 
 rt={}
 for i,v in ipairs(edcb.GetReserveData()) do
@@ -61,9 +61,9 @@ for i,v in ipairs(edcb.GetServiceList() or {}) do
       maxTime=maxTime and os.time(mmt.maxTime)<maxTime and maxTime or os.time(mmt.maxTime)
     end
     --表示範囲の番組だけ取得する
-    st[#st].et=edcb.EnumEventInfo({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}
+    st[#st].et=edcb.EnumEventInfo({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('!*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}
     for j,w in ipairs(edcb.EnumEventInfoArchive and
-        edcb.EnumEventInfoArchive({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}) do
+        edcb.EnumEventInfoArchive({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('!*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}) do
       w.past=true
       table.insert(st[#st].et, w)
     end
@@ -85,7 +85,7 @@ pageNav=pageNav..'  ||\n'
 
 if minTime then
   for i=math.floor((minTime+timezone-4*3600)/(24*3600)),math.floor((maxTime+timezone-4*3600)/(24*3600)) do
-    d=os.date('*t', i*24*3600-timezone)
+    d=os.date('!*t', i*24*3600)
     pageNav=pageNav..'  '..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;date='..(i-baseDate)..'">' or '')
       ..d.month..'/'..d.day..'('..({'日','月','火','水','木','金','土'})[d.wday]..')'..(i-baseDate~=date and '</a>\n' or '\n')
   end
@@ -113,10 +113,10 @@ for i,v in ipairs(st) do
   table.insert(ctt, '<td class="epg-col">\n')
   lastPx=0
   for j,w in ipairs(v.et) do
-    startTime=os.time(w.startTime)
+    startTime=os.time(w.startTime)+timezone
     startPx=math.min(math.floor((startTime-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
     endPx=math.min(math.floor(((
-      w.durationSecond and startTime+w.durationSecond or (j<#v.et and os.time(v.et[j+1].startTime) or startTime) --終了時間未定
+      w.durationSecond and startTime+w.durationSecond or (j<#v.et and os.time(v.et[j+1].startTime)+timezone or startTime) --終了時間未定
       )-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
     if startPx-lastPx>0 then
       table.insert(ctt, '<div style="border:0;height:'..(startPx-lastPx)..'px"></div>\n')
@@ -132,9 +132,9 @@ for i,v in ipairs(st) do
         w.eventGroupInfo.eventDataList[1].eid~=w.eid)
       table.insert(ctt, '<div class="cont-'..cont..(w.past and ' past' or '')..'" style="height:'..(endPx-lastPx)..'px">'
         ..(not w.past and rt[string.format('%04X%04X%04X%04X', w.onid, w.tsid, w.sid, w.eid)] and '<b>予</b> ' or '')
-        ..os.date('%M', startTime)
+        ..string.format('%02d', w.startTime.min)
         ..(sub and '' or ' <a href=\"'
-          ..(w.past and 'epgpastinfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..os.time(w.startTime)
+          ..(w.past and 'epgpastinfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..(os.time(w.startTime)+timezone)
             or 'epginfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid)..'">'
           ..(w.shortInfo and w.shortInfo.event_name or '&nbsp;')..'</a>')
         ..'</div>\n')

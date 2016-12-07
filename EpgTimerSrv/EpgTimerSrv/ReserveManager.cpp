@@ -1618,7 +1618,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							this->epgCapTimeSyncDelayMax = delay;
 							this->epgCapTimeSyncTick = tick;
 							this->epgCapTimeSyncQuality = 0;
-							OutputDebugString(L"šSetLocalTime start\r\n");
+							OutputDebugString(L"šSetSystemTime start\r\n");
 						}
 					}else if( delay != 0 ){
 						//’x‰„ŽžŠÔ‚Ì—h‚ç‚¬‚ð‹L˜^‚·‚é(delay==0‚Í–¢Žæ“¾‚Æ‹æ•Ê‚Å‚«‚È‚¢‚Ì‚ÅœŠO)
@@ -1635,14 +1635,14 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 				    this->epgCapTimeSyncDelayMax - this->epgCapTimeSyncDelayMin > 10 * I64_1SEC ){
 					//•Ê‚ÌƒvƒƒZƒX‚ªŽžŒv‡‚í‚¹‚µ‚½or—h‚ç‚¬‚·‚¬
 					this->epgCapTimeSyncBase = -1;
-					OutputDebugString(L"šSetLocalTime cancel\r\n");
+					OutputDebugString(L"šSetSystemTime cancel\r\n");
 				}else if( this->epgCapTimeSyncQuality > 150 * 1000 ){
 					//ŠT‚Ë2ƒ`ƒƒƒ“ƒlƒ‹ˆÈã‚Ì’x‰„ŽžŠÔ‚ðŠÏ‘ª‚Å‚«‚½‚Í‚¸
 					//ŽžŒv‡‚í‚¹(—vSE_SYSTEMTIME_NAME“ÁŒ )
 					__int64 delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
 					SYSTEMTIME setTime;
-					ConvertSystemTime(now + delay, &setTime);
-					_OutputDebugString(L"šSetLocalTime %s%d\r\n", SetLocalTime(&setTime) ? L"" : L"err ", (int)(delay / I64_1SEC));
+					ConvertSystemTime(now + delay - 9 * 3600 * I64_1SEC, &setTime);
+					_OutputDebugString(L"šSetSystemTime %s%d\r\n", SetSystemTime(&setTime) ? L"" : L"err ", (int)(delay / I64_1SEC));
 					this->epgCapSetTimeSync = true;
 				}
 			}

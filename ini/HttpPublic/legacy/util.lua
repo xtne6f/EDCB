@@ -2,7 +2,7 @@
 function _ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
   local s, v = '', (type(onidOrEpg)=='table' and onidOrEpg or edcb.SearchEpg(onidOrEpg, tsid, sid, eid))
   if v then
-    s=s..(v.startTime and FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)..(v.durationSecond and '' or '～未定') or '未定')..'\n'
+    s=s..(v.startTime and FormatTimeAndDuration(v.startTime, v.durationSecond)..(v.durationSecond and '' or '～未定') or '未定')..'\n'
     for i,w in ipairs(edcb.GetServiceList() or {}) do
       if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
         s=s..w.service_name
@@ -141,8 +141,9 @@ end
 
 --時間の文字列を取得する
 function FormatTimeAndDuration(t,dur)
-  return os.date('%Y/%m/%d(',t)..({'日','月','火','水','木','金','土',})[1+os.date('%w',t)]
-    ..os.date(') %H:%M',t)..(dur and os.date('～%H:%M',t+dur) or '')
+  dur=dur and (t.hour*3600+t.min*60+t.sec+dur)
+  return string.format('%d/%02d/%02d(%s) %02d:%02d',t.year,t.month,t.day,({'日','月','火','水','木','金','土',})[t.wday],t.hour,t.min)
+    ..(dur and string.format('～%02d:%02d',math.floor(dur/3600)%24,math.floor(dur/60)%60) or '')
 end
 
 --ドキュメントルートへの相対パスを取得する

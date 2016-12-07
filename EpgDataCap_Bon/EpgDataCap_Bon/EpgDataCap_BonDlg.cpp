@@ -1033,10 +1033,8 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"録画を開始できませんでした\r\n");
 		return;
 	}
-	SYSTEMTIME now;
-	GetLocalTime(&now);
 	SYSTEMTIME end;
-	GetSumTime(now, 30*60, &end);
+	ConvertSystemTime(GetNowI64Time() + 30 * 60 * I64_1SEC, &end);
 
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_H), end.wHour);
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_M), end.wMinute);
@@ -1103,13 +1101,11 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckRecSet()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_REC_SET)) != BST_UNCHECKED ){
 		BtnUpdate(GUI_REC_SET_TIME);
-		SYSTEMTIME now;
-		GetLocalTime(&now);
 
 		int selH = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_REC_H));
 		int selM = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_REC_M));
 
-		DWORD nowTime = now.wHour*60*60 + now.wMinute*60 + now.wSecond;
+		DWORD nowTime = (DWORD)(GetNowI64Time() / I64_1SEC % (24*60*60));
 		DWORD endTime = selH*60*60 + selM*60;
 
 		if( nowTime > endTime ){

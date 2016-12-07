@@ -31,7 +31,7 @@ if v then
     end
   end
   ct=ct..'  <dl>\n'
-    ..'    <dt>番組名</dt><dd>'..FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)..'<br>'..v.serviceName..'<br>'..v.title..'</dd>\n'
+    ..'    <dt>番組名</dt><dd>'..FormatTimeAndDuration(v.startTime, v.durationSecond)..'<br>'..v.serviceName..'<br>'..v.title..'</dd>\n'
     ..'    <dt>結果</dt><dd>'..v.comment..'</dd>\n'
     ..'    <dt>ドロップ</dt><dd>'..v.drops..'</dd>\n'
     ..'    <dt>スクランブル</dt><dd>'..v.scrambles..'</dd>\n'

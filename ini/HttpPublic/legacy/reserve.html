@@ -36,7 +36,7 @@ for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) d
   table.insert(ctt, '    <tr'
     ..(v.recSetting.recMode==5 and ' class="disabled"' or v.overlapMode==1 and ' class="partially"' or v.overlapMode==2 and ' class="shortage"' or '')
     ..'><td><a href="reserveinfo.html?id='..v.reserveID..'">'
-    ..FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)
+    ..FormatTimeAndDuration(v.startTime, v.durationSecond)
     ..'</a></td><td>'..v.stationName..'</td><td>'..v.title..'</td></tr>\n')
 end
 

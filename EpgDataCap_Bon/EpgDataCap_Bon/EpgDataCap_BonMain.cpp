@@ -570,7 +570,7 @@ BOOL CEpgDataCap_BonMain::StartRec(
 
 	wstring fileName = L"";
 	SYSTEMTIME now;
-	GetLocalTime(&now);
+	ConvertSystemTime(GetNowI64Time(), &now);
 	Format(fileName, L"%04d%02d%02d-%02d%02d%02d-%s.ts",
 		now.wYear,
 		now.wMonth,

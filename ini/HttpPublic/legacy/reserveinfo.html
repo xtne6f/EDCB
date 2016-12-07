@@ -33,7 +33,7 @@ if r then
   epgInfo=_ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
   ct=ct..'  <dl>\n'
     ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..string.gsub(epgInfo, '\r?\n', '<br>\n')
-      or FormatTimeAndDuration(os.time(r.startTime), r.durationSecond)..'<br>'..r.stationName..'<br>'..r.title)..'</dd>\n'
+      or FormatTimeAndDuration(r.startTime, r.durationSecond)..'<br>'..r.stationName..'<br>'..r.title)..'</dd>\n'
     ..(video and '    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)
        ..'</a> [<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>]</dd>\n' or '')
     ..'    <dt>プリセット</dt><dd>\n'

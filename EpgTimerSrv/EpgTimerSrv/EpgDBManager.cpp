@@ -97,13 +97,16 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		sys->ClearEpgData();
 		return 0;
 	}
+	FILETIME ftUtcNow;
+	GetSystemTimeAsFileTime(&ftUtcNow);
+	__int64 utcNow = (__int64)ftUtcNow.dwHighDateTime << 32 | ftUtcNow.dwLowDateTime;
 	do{
 		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
 			LONGLONG fileTime = (LONGLONG)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
 			if( fileTime != 0 ){
 				//見つかったファイルを一覧に追加
 				//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
-				WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < GetNowI64Time() ? L'0' :
+				WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < utcNow ? L'0' :
 				               lstrlen(findData.cFileName) < 12 || _wcsicmp(findData.cFileName + lstrlen(findData.cFileName) - 12, L"ffff_epg.dat") ? L'1' : L'2';
 				wstring item = prefix + epgDataPath + L'\\' + findData.cFileName;
 				epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
@@ -127,7 +130,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		if( tmpFile != INVALID_HANDLE_VALUE ){
 			tmpError = NO_ERROR;
 			FILETIME ft;
-			if( GetFileTime(tmpFile, NULL, NULL, &ft) == FALSE || ((LONGLONG)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + 300*I64_1SEC < GetNowI64Time() ){
+			if( GetFileTime(tmpFile, NULL, NULL, &ft) == FALSE || ((LONGLONG)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + 300*I64_1SEC < utcNow ){
 				//おそらく後始末されていない一時ファイルなので無視
 				tmpError = ERROR_FILE_NOT_FOUND;
 			}

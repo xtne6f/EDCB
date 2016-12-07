@@ -36,7 +36,7 @@ for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) d
   table.insert(ctt, '    <tr'
     ..(v.drops>0 and ' class="drops"' or v.scrambles>0 and ' class="scrambles"' or '')
     ..'><td><a href="recinfodesc.html?id='..v.id..'">'
-    ..FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)
+    ..FormatTimeAndDuration(v.startTime, v.durationSecond)
     ..'</a></td><td>'..v.serviceName..'</td><td>'..v.title..'</td><td>'..v.comment..'</td></tr>\n')
 end
 

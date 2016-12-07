@@ -7,6 +7,7 @@
 #include "../../Common/BlockLock.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/StringUtil.h"
+#include "../../Common/TimeUtil.h"
 
 CNotifyManager::CNotifyManager(void)
 {
@@ -123,7 +124,7 @@ BOOL CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount)
 		//現在のsrvStatusを返す
 		NOTIFY_SRV_INFO status;
 		status.notifyID = NOTIFY_UPDATE_SRV_STATUS;
-		GetLocalTime(&status.time);
+		ConvertSystemTime(GetNowI64Time(), &status.time);
 		status.param1 = this->srvStatus;
 		//巡回カウンタは最後の通知と同値
 		status.param3 = this->notifyCount;
@@ -166,7 +167,7 @@ void CNotifyManager::AddNotify(DWORD status)
 
 	{
 		NOTIFY_SRV_INFO info;
-		GetLocalTime(&info.time);
+		ConvertSystemTime(GetNowI64Time(), &info.time);
 		info.notifyID = status;
 		BOOL find = FALSE;
 		for(size_t i=0; i<this->notifyList.size(); i++ ){
@@ -190,7 +191,7 @@ void CNotifyManager::SetNotifySrvStatus(DWORD status)
 	if( status != this->srvStatus ){
 		NOTIFY_SRV_INFO info;
 		info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
-		GetLocalTime(&info.time);
+		ConvertSystemTime(GetNowI64Time(), &info.time);
 		info.param1 = this->srvStatus = (status == 0xFFFFFFFF ? this->srvStatus : status);
 
 		this->notifyList.push_back(info);
@@ -205,7 +206,7 @@ void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
 	{
 		NOTIFY_SRV_INFO info;
 		info.notifyID = notifyID;
-		GetLocalTime(&info.time);
+		ConvertSystemTime(GetNowI64Time(), &info.time);
 		info.param4 = msg;
 
 		this->notifyList.push_back(info);

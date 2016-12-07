@@ -27,7 +27,8 @@ else
       ..v.sid..'</SID><eventID>'
       ..v.eid..'</eventID>')
     if v.startTime then
-      table.insert(ct, os.date('<startDate>%Y/%m/%d</startDate><startTime>%H:%M:%S</startTime><startDayOfWeek>', os.time(v.startTime))
+      table.insert(ct, string.format('<startDate>%d/%02d/%02d</startDate><startTime>%02d:%02d:%02d</startTime><startDayOfWeek>',
+                                     v.startTime.year, v.startTime.month, v.startTime.day, v.startTime.hour, v.startTime.min, v.startTime.sec)
         ..(v.startTime.wday-1)..'</startDayOfWeek>')
     end
     if v.durationSecond then

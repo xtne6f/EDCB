@@ -868,13 +868,8 @@ bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, 
 		*resumeTimer = CreateWaitableTimer(NULL, FALSE, NULL);
 	}
 	if( *resumeTimer != NULL ){
-		FILETIME locTime;
-		locTime.dwLowDateTime = (DWORD)setTime;
-		locTime.dwHighDateTime = (DWORD)(setTime >> 32);
-		FILETIME utcTime = {};
-		LocalFileTimeToFileTime(&locTime, &utcTime);
 		LARGE_INTEGER liTime;
-		liTime.QuadPart = (LONGLONG)utcTime.dwHighDateTime << 32 | utcTime.dwLowDateTime;
+		liTime.QuadPart = setTime - 9 * 3600 * I64_1SEC;
 		if( SetWaitableTimer(*resumeTimer, &liTime, 0, NULL, NULL, TRUE) != FALSE ){
 			*resumeTime = setTime;
 			return true;
@@ -1088,8 +1083,8 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 {
 	vector<RESERVE_DATA> setList;
 	SYSTEMTIME baseTime;
-	GetLocalTime(&baseTime);
-	__int64 now = ConvertI64Time(baseTime);
+	__int64 now = GetNowI64Time();
+	ConvertSystemTime(now, &baseTime);
 	baseTime.wHour = 0;
 	baseTime.wMinute = 0;
 	baseTime.wSecond = 0;
@@ -2875,7 +2870,7 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 		}
 		BOOL ret = ws.sys->epgDB.SearchEpg(&keyList, [&ws](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
 			SYSTEMTIME now;
-			GetLocalTime(&now);
+			ConvertSystemTime(GetNowI64Time(), &now);
 			now.wHour = 0;
 			now.wMinute = 0;
 			now.wSecond = 0;

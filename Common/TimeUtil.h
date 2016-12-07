@@ -5,8 +5,6 @@
 
 #define I64_1SEC ((__int64)10000000)
 
-BOOL GetSumTime(SYSTEMTIME StartTime, int iSec, SYSTEMTIME* ResTime );
-
 void GetTimeString( SYSTEMTIME Time, wstring& strDay );
 
 void GetTimeString2( SYSTEMTIME StartTime, SYSTEMTIME EndTime, wstring& strDay );
