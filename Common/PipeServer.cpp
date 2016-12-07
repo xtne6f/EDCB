@@ -7,6 +7,7 @@
 #include "ErrDef.h"
 
 #define PIPE_TIMEOUT 500
+#define PIPE_CONNECT_OPEN_TIMEOUT 20000
 
 CPipeServer::CPipeServer(void)
 {
@@ -126,7 +127,16 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 		ConnectNamedPipe(hPipe, &stOver);
 		SetEvent(hEventConnect);
 
-		DWORD dwRes = WaitForMultipleObjects(2, hEventArray, FALSE, INFINITE);
+		DWORD dwRes;
+		for( int t = 0; (dwRes = WaitForMultipleObjects(2, hEventArray, FALSE, 10000)) == WAIT_TIMEOUT; ){
+			//クライアントが接続待ちイベントを獲得したままパイプに接続しなかった場合に接続不能になるのを防ぐ
+			if( WaitForSingleObject(hEventConnect, 0) == WAIT_OBJECT_0 || t >= PIPE_CONNECT_OPEN_TIMEOUT ){
+				SetEvent(hEventConnect);
+				t = 0;
+			}else{
+				t += 10000;
+			}
+		}
 		if( dwRes == WAIT_OBJECT_0 ){
 			//STOP
 			break;
