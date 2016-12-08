@@ -48,7 +48,6 @@ BOOL CTimeShiftUtil::Send(
 	}
 	if( this->sendUdpIP.empty() && val->udp != 0 ){
 		NW_SEND_INFO item;
-		item.ip = val->ip;
 		item.port = 1234;
 		item.ipString = ip;
 		item.broadcastFlag = FALSE;
@@ -83,7 +82,6 @@ BOOL CTimeShiftUtil::Send(
 	}
 	if( this->sendTcpIP.empty() && val->tcp != 0 ){
 		NW_SEND_INFO item;
-		item.ip = val->ip;
 		item.port = 2230;
 		item.ipString = ip;
 		item.broadcastFlag = FALSE;

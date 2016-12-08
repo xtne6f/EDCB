@@ -310,11 +310,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					udp = L"UDP送信：";
 					for( size_t i=0; i<udpSendList.size(); i++ ){
 						wstring buff;
-						if( udpSendList[i].broadcastFlag == FALSE ){
-							Format(buff, L"%s:%d ",udpSendList[i].ipString.c_str(), udpSendList[i].port);
-						}else{
-							Format(buff, L"%s:%d(Broadcast) ",udpSendList[i].ipString.c_str(), udpSendList[i].port);
-						}
+						Format(buff, L":%d%s ", udpSendList[i].port, udpSendList[i].broadcastFlag ? L"(Broadcast)" : L"");
+						udp += udpSendList[i].ipString.find(L':') == wstring::npos ? udpSendList[i].ipString : L'[' + udpSendList[i].ipString + L']';
 						udp += buff;
 					}
 					udp += L"\r\n";
@@ -326,7 +323,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					tcp = L"TCP送信：";
 					for( size_t i=0; i<tcpSendList.size(); i++ ){
 						wstring buff;
-						Format(buff, L"%s:%d ",tcpSendList[i].ipString.c_str(), tcpSendList[i].port);
+						Format(buff, L":%d ", tcpSendList[i].port);
+						tcp += tcpSendList[i].ipString.find(L':') == wstring::npos ? tcpSendList[i].ipString : L'[' + tcpSendList[i].ipString + L']';
 						tcp += buff;
 					}
 					tcp += L"\r\n";

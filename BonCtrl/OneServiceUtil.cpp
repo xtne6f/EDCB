@@ -83,8 +83,14 @@ BOOL COneServiceUtil::SendUdp(
 			wstring key = L"";
 			HANDLE portMutex;
 
-			while(1){
-				Format(key, L"%s%d_%d", MUTEX_UDP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
+			//¶¬‚Å‚«‚È‚­‚Ä‚à[‚Å‚Í‚È‚¢‚Ì‚Å‚Ù‚Ç‚Ù‚Ç‚É‘Å‚¿Ø‚é
+			for( int j = 0; j < 100; j++ ){
+				UINT u[4];
+				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
+					Format(key, L"%s%d_%d", MUTEX_UDP_PORT_NAME, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
+				}else{
+					Format(key, L"%s%s_%d", MUTEX_UDP_PORT_NAME, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+				}
 				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		
 				if( portMutex == NULL ){
@@ -93,12 +99,11 @@ BOOL COneServiceUtil::SendUdp(
 					CloseHandle(portMutex);
 					(*sendList)[i].port++;
 				}else{
+					_OutputDebugString(L"%s\r\n", key.c_str());
+					this->udpPortMutex.push_back(portMutex);
 					break;
 				}
 			}
-
-			_OutputDebugString(L"%s\r\n", key.c_str());
-			udpPortMutex.push_back(portMutex);
 		}
 
 		this->sendUdp->StartUpload(sendList);
@@ -137,8 +142,14 @@ BOOL COneServiceUtil::SendTcp(
 			wstring key = L"";
 			HANDLE portMutex;
 
-			while(1){
-				Format(key, L"%s%d_%d", MUTEX_TCP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
+			//¶¬‚Å‚«‚È‚­‚Ä‚à[‚Å‚Í‚È‚¢‚Ì‚Å‚Ù‚Ç‚Ù‚Ç‚É‘Å‚¿Ø‚é
+			for( int j = 0; j < 100; j++ ){
+				UINT u[4];
+				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
+					Format(key, L"%s%d_%d", MUTEX_TCP_PORT_NAME, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
+				}else{
+					Format(key, L"%s%s_%d", MUTEX_TCP_PORT_NAME, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+				}
 				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		
 				if( portMutex == NULL ){
@@ -147,12 +158,11 @@ BOOL COneServiceUtil::SendTcp(
 					CloseHandle(portMutex);
 					(*sendList)[i].port++;
 				}else{
+					_OutputDebugString(L"%s\r\n", key.c_str());
+					this->tcpPortMutex.push_back(portMutex);
 					break;
 				}
 			}
-
-			_OutputDebugString(L"%s\r\n", key.c_str());
-			tcpPortMutex.push_back(portMutex);
 		}
 
 		this->sendTcp->StartUpload(sendList);

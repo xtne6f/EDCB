@@ -318,14 +318,15 @@ BOOL CEpgDataCap_BonMain::SendUDP(
 
 			WCHAR key[64];
 			wsprintf(key, L"IP%d",i);
-			item.ip = GetPrivateProfileInt( L"SET_UDP", key, 2130706433, appIniPath.c_str() );
+			item.ipString = GetPrivateProfileToString(L"SET_UDP", key, L"2130706433", appIniPath.c_str());
+			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
+				item.ipString.erase(0, 1).pop_back();
+			}else{
+				UINT ip = _wtoi(item.ipString.c_str());
+				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
+			}
 			wsprintf(key, L"Port%d",i);
 			item.port = GetPrivateProfileInt( L"SET_UDP", key, 1234, appIniPath.c_str() );
-			Format(item.ipString, L"%d.%d.%d.%d",
-				(item.ip&0xFF000000)>>24,
-				(item.ip&0x00FF0000)>>16,
-				(item.ip&0x0000FF00)>>8,
-				(item.ip&0x000000FF) );
 			wsprintf(key, L"BroadCast%d",i);
 			item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key, 0, appIniPath.c_str() );
 
@@ -385,14 +386,15 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 
 			WCHAR key[64];
 			wsprintf(key, L"IP%d",i);
-			item.ip = GetPrivateProfileInt( L"SET_TCP", key, 2130706433, appIniPath.c_str() );
+			item.ipString = GetPrivateProfileToString(L"SET_TCP", key, L"2130706433", appIniPath.c_str());
+			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
+				item.ipString.erase(0, 1).pop_back();
+			}else{
+				UINT ip = _wtoi(item.ipString.c_str());
+				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
+			}
 			wsprintf(key, L"Port%d",i);
 			item.port = GetPrivateProfileInt( L"SET_TCP", key, 2230, appIniPath.c_str() );
-			Format(item.ipString, L"%d.%d.%d.%d",
-				(item.ip&0xFF000000)>>24,
-				(item.ip&0x00FF0000)>>16,
-				(item.ip&0x0000FF00)>>8,
-				(item.ip&0x000000FF) );
 			item.broadcastFlag = 0;
 
 			tcpSendList.push_back(item);

@@ -9,7 +9,6 @@
 //ネットワーク送信用設定
 typedef struct _NW_SEND_INFO{
 	wstring ipString;
-	DWORD ip;
 	DWORD port;
 	BOOL broadcastFlag;
 }NW_SEND_INFO;
