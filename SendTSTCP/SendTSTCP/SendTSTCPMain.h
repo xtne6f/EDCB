@@ -59,8 +59,6 @@ public:
 
 
 protected:
-	HANDLE m_hStopConnectEvent;
-	HANDLE m_hConnectThread;
 	HANDLE m_hStopSendEvent;
 	HANDLE m_hSendThread;
 
@@ -79,6 +77,5 @@ protected:
 
 protected:
 	static UINT WINAPI SendThread(LPVOID pParam);
-	static UINT WINAPI ConnectThread(LPVOID pParam);
 
 };
