@@ -601,7 +601,7 @@ BOOL CTSOut::CreateServiceCtrl(
 	CBlockLock lock(&this->objLock);
 
 	*id = GetNextID();
-	auto itr = this->serviceUtilMap.insert(pair<DWORD, std::unique_ptr<COneServiceUtil>>(*id, new COneServiceUtil)).first;
+	auto itr = this->serviceUtilMap.insert(std::make_pair(*id, std::unique_ptr<COneServiceUtil>(new COneServiceUtil))).first;
 	itr->second->SetEpgUtil(&this->epgUtil);
 	itr->second->SetBonDriver(bonFile);
 
