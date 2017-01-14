@@ -101,6 +101,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				MessageBox(NULL, L"Failed to install/remove " SERVICE_NAME L".\r\nRun as Administrator on Vista and later.", NULL, MB_ICONERROR);
 			}
 			return 0;
+		}else if( lstrcmpi(_T("setting"), lpCmdLine + 1) == 0 ){
+			//設定ダイアログを表示する
+			CoInitialize(NULL);
+			CEpgTimerSrvSetting setting;
+			setting.ShowDialog();
+			CoUninitialize();
+			return 0;
 		}
 	}
 

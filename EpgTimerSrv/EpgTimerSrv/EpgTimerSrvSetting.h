@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../Common/ParseTextInstances.h"
+
 class CEpgTimerSrvSetting
 {
 public:
@@ -54,4 +56,35 @@ public:
 	};
 	static SETTING LoadSetting(LPCWSTR iniPath);
 	static vector<pair<wstring, wstring>> EnumBonFileName(LPCWSTR settingPath);
+	INT_PTR ShowDialog();
+private:
+	static vector<wstring> EnumRecNamePlugInFileName(LPCWSTR moduleFolder);
+	static bool GetDlgButtonCheck(HWND hwnd, int id);
+	static void SetDlgButtonCheck(HWND hwnd, int id, bool check);
+	static void AddListBoxItem(HWND hList, HWND hItem);
+	static void DeleteListBoxItem(HWND hList);
+	static void MoveListBoxItem(HWND hList, int step);
+	static void OnSelChangeListBoxItem(HWND hList, HWND hItem);
+	INT_PTR OnInitDialog();
+	void OnTcnSelchangeTab();
+	void OnBnClickedOk();
+	void OnBnClickedSetRecNamePlugIn();
+	void OnBnClickedSetEpgServiceVideo();
+	void OnLbnSelchangeListSetEpgService();
+	void AddEpgTime(bool check);
+	void DeleteEpgTime();
+	void BrowseFolder(HWND hTarget);
+	void BrowseExeFile(HWND hTarget);
+	void ToggleStartup(bool execute, bool add);
+	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static INT_PTR CALLBACK ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	HWND hwndTop;
+	HWND hwndBasic;
+	HWND hwndEpg;
+	HWND hwndRec;
+	HWND hwndReserve;
+	HWND hwndOther;
+	HWND hwndChild[5];
+	CParseChText5 chSet;
 };

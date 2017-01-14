@@ -570,6 +570,22 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		break;
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){
+		case IDC_BUTTON_SETTING:
+			{
+				WCHAR modulePath[MAX_PATH];
+				DWORD len = GetModuleFileName(NULL, modulePath, _countof(modulePath));
+				if( len != 0 && len < _countof(modulePath) ){
+					PROCESS_INFORMATION pi;
+					STARTUPINFO si = {};
+					si.cb = sizeof(si);
+					WCHAR buff[] = L" /setting";
+					if( CreateProcess(modulePath, buff, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
+						CloseHandle(pi.hThread);
+						CloseHandle(pi.hProcess);
+					}
+				}
+			}
+			break;
 		case IDC_BUTTON_S3:
 		case IDC_BUTTON_S4:
 			if( ctx->sys->IsSuspendOK() ){
