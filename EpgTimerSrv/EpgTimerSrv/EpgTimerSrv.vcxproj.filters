@@ -198,6 +198,9 @@
     <ClInclude Include="UpnpSsdpServer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="EpgTimerSrvSetting.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -300,6 +303,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="UpnpSsdpServer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="EpgTimerSrvSetting.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

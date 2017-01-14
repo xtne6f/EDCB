@@ -210,6 +210,7 @@
     <ClInclude Include="EpgDBManager.h" />
     <ClInclude Include="EpgTimerSrv.h" />
     <ClInclude Include="EpgTimerSrvMain.h" />
+    <ClInclude Include="EpgTimerSrvSetting.h" />
     <ClInclude Include="FileStreamingManager.h" />
     <ClInclude Include="HttpServer.h" />
     <ClInclude Include="lauxlib.h" />
@@ -262,6 +263,7 @@
     <ClCompile Include="EpgDBManager.cpp" />
     <ClCompile Include="EpgTimerSrv.cpp" />
     <ClCompile Include="EpgTimerSrvMain.cpp" />
+    <ClCompile Include="EpgTimerSrvSetting.cpp" />
     <ClCompile Include="FileStreamingManager.cpp" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="NotifyManager.cpp" />

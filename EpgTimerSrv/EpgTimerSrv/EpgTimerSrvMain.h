@@ -27,7 +27,7 @@ private:
 	//シャットダウン問い合わせダイアログ
 	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void ReloadNetworkSetting();
-	void ReloadSetting();
+	void ReloadSetting(bool initialize = false);
 	//現在の予約状態に応じた復帰タイマをセットする
 	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
 	//システムをシャットダウンする
@@ -120,25 +120,14 @@ private:
 	HWND hwndMain;
 
 	bool residentFlag;
-	bool saveNotifyLog;
-	DWORD wakeMarginSec;
+	CEpgTimerSrvSetting::SETTING setting;
 	unsigned short tcpPort;
 	DWORD tcpResponseTimeoutSec;
 	wstring tcpAccessControlList;
 	CHttpServer::SERVER_OPTIONS httpOptions;
 	string httpServerRandom;
 	vector<pair<int, wstring>> dmsPublicFileList;
-	int autoAddHour;
-	bool chkGroupEvent;
 	bool useSyoboi;
-	//LOBYTEにモード(1=スタンバイ,2=休止,3=電源断,4=なにもしない)、HIBYTEに再起動フラグ
-	WORD defShutdownMode;
-	DWORD ngUsePCTime;
-	bool ngFileStreaming;
-	bool ngShareFile;
-	DWORD noStandbySec;
-	vector<wstring> noSuspendExeList;
-	vector<wstring> tvtestUseBon;
 	bool nwtvUdp;
 	bool nwtvTcp;
 	DWORD notifyUpdateCount[6];

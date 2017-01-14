@@ -143,8 +143,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx = (MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
 		ctx->sys->hwndMain = hwnd;
-		ctx->sys->reserveManager.Initialize();
-		ctx->sys->ReloadSetting();
+		ctx->sys->ReloadSetting(true);
 		ctx->sys->ReloadNetworkSetting();
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdPipeCallback, ctx->sys, ctx->serviceFlag);
 		ctx->sys->epgDB.ReloadEpgData();
@@ -213,7 +212,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//スリープ抑止解除
 				SetThreadExecutionState(ES_CONTINUOUS);
 				//rebootFlag時は(指定+5分前)に復帰
-				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->wakeMarginSec + (HIBYTE(wParam) != 0 ? 300 : 0)) ){
+				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->setting.wakeTime * 60 + (HIBYTE(wParam) != 0 ? 300 : 0)) ){
 					SetShutdown(LOBYTE(wParam));
 					if( HIBYTE(wParam) != 0 ){
 						//再起動問い合わせ
@@ -303,7 +302,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					if( nid.szInfoTitle[0] ){
 						LPCWSTR info = itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"開始" :
 						               itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"終了" : itr->param4.c_str();
-						if( ctx->sys->saveNotifyLog ){
+						if( ctx->sys->setting.saveNotifyLog ){
 							//通知情報ログ保存
 							wstring logPath;
 							GetModuleFolderPath(logPath);
@@ -452,7 +451,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case TIMER_SET_RESUME:
 			{
 				//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
-				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->wakeMarginSec);
+				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->setting.wakeTime * 60);
 				//スリープ抑止
 				EXECUTION_STATE esFlags = ctx->shutdownModePending == 0 && ctx->sys->IsSuspendOK() ? ES_CONTINUOUS : ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ctx->awayMode;
 				if( SetThreadExecutionState(esFlags) != esFlags ){
@@ -474,7 +473,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					if( ctx->sys->epgDB.ReloadEpgData() != FALSE ){
 						//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 						SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
-						ctx->shutdownModePending = ctx->sys->defShutdownMode;
+						ctx->shutdownModePending = MAKEWORD((ctx->sys->setting.recEndMode + 3) % 4 + 1, ctx->sys->setting.reboot);
 					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
@@ -484,7 +483,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
 						ctx->shutdownModePending = LOWORD(ret);
 						if( LOBYTE(ctx->shutdownModePending) == 0 ){
-							ctx->shutdownModePending = ctx->sys->defShutdownMode;
+							ctx->shutdownModePending = MAKEWORD((ctx->sys->setting.recEndMode + 3) % 4 + 1, ctx->sys->setting.reboot);
 						}
 					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
@@ -574,7 +573,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_S3:
 		case IDC_BUTTON_S4:
 			if( ctx->sys->IsSuspendOK() ){
-				PostMessage(hwnd, WM_REQUEST_SHUTDOWN, MAKEWORD(LOWORD(wParam) == IDC_BUTTON_S3 ? 1 : 2, HIBYTE(ctx->sys->defShutdownMode)), 0);
+				PostMessage(hwnd, WM_REQUEST_SHUTDOWN, MAKEWORD(LOWORD(wParam) == IDC_BUTTON_S3 ? 1 : 2, ctx->sys->setting.reboot), 0);
 			}else{
 				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
 			}
@@ -658,7 +657,7 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 			}else if( ctx->sys->IsSuspendOK() ){
 				//スタンバイ休止または電源断
 				PostMessage(ctx->sys->hwndMain, WM_REQUEST_SHUTDOWN, HIBYTE(ctx->queryShutdownMode) == 0xFF ?
-					MAKEWORD(LOBYTE(ctx->queryShutdownMode), HIBYTE(ctx->sys->defShutdownMode)) : ctx->queryShutdownMode, 0);
+					MAKEWORD(LOBYTE(ctx->queryShutdownMode), ctx->sys->setting.reboot) : ctx->queryShutdownMode, 0);
 			}
 			//FALL THROUGH!
 		case IDCANCEL:
@@ -681,16 +680,16 @@ void CEpgTimerSrvMain::StopMain()
 bool CEpgTimerSrvMain::IsSuspendOK()
 {
 	DWORD marginSec;
-	bool ngFileStreaming_;
+	bool noFileStreaming;
 	{
 		CBlockLock lock(&this->settingLock);
 		//rebootFlag時の復帰マージンを基準に3分余裕を加えたものと抑制条件のどちらか大きいほう
-		marginSec = max(this->wakeMarginSec + 300 + 180, this->noStandbySec);
-		ngFileStreaming_ = this->ngFileStreaming;
+		marginSec = max(this->setting.wakeTime + 5 + 3, this->setting.noStandbyTime) * 60;
+		noFileStreaming = this->setting.noFileStreaming;
 	}
 	__int64 now = GetNowI64Time();
 	//シャットダウン可能で復帰が間に合うときだけ
-	return (ngFileStreaming_ == false || this->streamingManager.IsStreaming() == FALSE) &&
+	return (noFileStreaming == false || this->streamingManager.IsStreaming() == FALSE) &&
 	       this->reserveManager.IsActive() == false &&
 	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC &&
 	       IsFindNoSuspendExe() == false &&
@@ -737,70 +736,30 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 	PostMessage(this->hwndMain, WM_RESET_SERVER, 0, 0);
 }
 
-void CEpgTimerSrvMain::ReloadSetting()
+void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 {
-	this->reserveManager.ReloadSetting();
-
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	this->epgDB.SetArchivePeriod(GetPrivateProfileInt(L"SET", L"EpgArchivePeriodHour", 0, iniPath.c_str()) * 3600);
+	CEpgTimerSrvSetting::SETTING s = CEpgTimerSrvSetting::LoadSetting(iniPath.c_str());
+	if( initialize ){
+		this->reserveManager.Initialize(s);
+	}else{
+		this->reserveManager.ReloadSetting(s);
+	}
+	this->epgDB.SetArchivePeriod(s.epgArchivePeriodHour * 3600);
 
 	CBlockLock lock(&this->settingLock);
 
+	this->setting = std::move(s);
 	if( this->residentFlag == false ){
-		int residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath.c_str());
-		if( residentMode >= 1 ){
+		if( this->setting.residentMode >= 1 ){
 			//常駐する(CMD2_EPG_SRV_CLOSEを無視)
 			this->residentFlag = true;
 			//タスクトレイに表示するかどうか
-			PostMessage(this->hwndMain, WM_SHOW_TRAY, residentMode >= 2,
-				GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath.c_str()) == 0);
+			PostMessage(this->hwndMain, WM_SHOW_TRAY, this->setting.residentMode >= 2, !this->setting.noBalloonTip);
 		}
 	}
-	this->saveNotifyLog = GetPrivateProfileInt(L"SET", L"SaveNotifyLog", 0, iniPath.c_str()) != 0;
-	this->wakeMarginSec = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath.c_str()) * 60;
-	this->autoAddHour = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath.c_str()) * 24 +
-	                    GetPrivateProfileInt(L"SET", L"AutoAddHour", 0, iniPath.c_str());
-	this->chkGroupEvent = GetPrivateProfileInt(L"SET", L"ChkGroupEvent", 1, iniPath.c_str()) != 0;
-	this->defShutdownMode = MAKEWORD((GetPrivateProfileInt(L"SET", L"RecEndMode", 0, iniPath.c_str()) + 3) % 4 + 1,
-	                                 (GetPrivateProfileInt(L"SET", L"Reboot", 0, iniPath.c_str()) != 0 ? 1 : 0));
-	this->ngUsePCTime = 0;
-	if( GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePC", 0, iniPath.c_str()) != 0 ){
-		this->ngUsePCTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePCTime", 3, iniPath.c_str()) * 60 * 1000;
-		//閾値が0のときは常に使用中扱い
-		if( this->ngUsePCTime == 0 ){
-			this->ngUsePCTime = MAXDWORD;
-		}
-	}
-	this->ngFileStreaming = GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath.c_str()) != 0;
-	this->ngShareFile = GetPrivateProfileInt(L"NO_SUSPEND", L"NoShareFile", 0, iniPath.c_str()) != 0;
-	this->noStandbySec = GetPrivateProfileInt(L"NO_SUSPEND", L"NoStandbyTime", 10, iniPath.c_str()) * 60;
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
-
-	this->noSuspendExeList.clear();
-	int count = GetPrivateProfileInt(L"NO_SUSPEND", L"Count", 0, iniPath.c_str());
-	if( count == 0 ){
-		this->noSuspendExeList.push_back(L"EpgDataCap_Bon.exe");
-	}
-	for( int i = 0; i < count; i++ ){
-		WCHAR key[16];
-		wsprintf(key, L"%d", i);
-		wstring buff = GetPrivateProfileToString(L"NO_SUSPEND", key, L"", iniPath.c_str());
-		if( buff.empty() == false ){
-			this->noSuspendExeList.push_back(buff);
-		}
-	}
-
-	this->tvtestUseBon.clear();
-	count = GetPrivateProfileInt(L"TVTEST", L"Num", 0, iniPath.c_str());
-	for( int i = 0; i < count; i++ ){
-		WCHAR key[16];
-		wsprintf(key, L"%d", i);
-		wstring buff = GetPrivateProfileToString(L"TVTEST", key, L"", iniPath.c_str());
-		if( buff.empty() == false ){
-			this->tvtestUseBon.push_back(buff);
-		}
-	}
 }
 
 bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec)
@@ -882,7 +841,14 @@ bool CEpgTimerSrvMain::IsUserWorking() const
 	//最終入力時刻取得
 	LASTINPUTINFO lii;
 	lii.cbSize = sizeof(LASTINPUTINFO);
-	return this->ngUsePCTime == MAXDWORD || this->ngUsePCTime && GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < this->ngUsePCTime;
+	if( this->setting.noUsePC ){
+		if( this->setting.noUsePCTime != 0 ){
+			return GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < this->setting.noUsePCTime * 60 * 1000;
+		}
+		//閾値が0のときは常に使用中扱い
+		return true;
+	}
+	return false;
 }
 
 bool CEpgTimerSrvMain::IsFindShareTSFile() const
@@ -891,7 +857,7 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 	FILE_INFO_3* fileInfo;
 	DWORD entriesread;
 	DWORD totalentries;
-	if( this->ngShareFile && NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&fileInfo, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
+	if( this->setting.noShareFile && NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&fileInfo, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
 		for( DWORD i = 0; i < entriesread; i++ ){
 			if( IsExt(fileInfo[i].fi3_pathname, L".ts") != FALSE ){
 				OutputDebugString(L"共有フォルダTSアクセス\r\n");
@@ -908,7 +874,7 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 {
 	CBlockLock lock(&this->settingLock);
 
-	if( this->noSuspendExeList.empty() == false ){
+	if( this->setting.noSuspendExeList.empty() == false ){
 		//Toolhelpスナップショットを作成する
 		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 		if( hSnapshot != INVALID_HANDLE_VALUE ){
@@ -917,10 +883,10 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 			procent.dwSize = sizeof(PROCESSENTRY32);
 			if( Process32First(hSnapshot, &procent) != FALSE ){
 				do{
-					for( size_t i = 0; i < this->noSuspendExeList.size(); i++ ){
+					for( size_t i = 0; i < this->setting.noSuspendExeList.size(); i++ ){
 						//procent.szExeFileにプロセス名
-						wstring strExe = wstring(procent.szExeFile).substr(0, this->noSuspendExeList[i].size());
-						if( CompareNoCase(strExe, this->noSuspendExeList[i]) == 0 ){
+						wstring strExe = wstring(procent.szExeFile).substr(0, this->setting.noSuspendExeList[i].size());
+						if( CompareNoCase(strExe, this->setting.noSuspendExeList[i]) == 0 ){
 							_OutputDebugString(L"起動exe:%s\r\n", procent.szExeFile);
 							found = true;
 							break;
@@ -944,8 +910,8 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 	bool chkGroupEvent_;
 	{
 		CBlockLock lock(&this->settingLock);
-		autoAddHour_ = this->autoAddHour;
-		chkGroupEvent_ = this->chkGroupEvent;
+		autoAddHour_ = this->setting.autoAddHour;
+		chkGroupEvent_ = this->setting.chkGroupEvent;
 	}
 	__int64 now = GetNowI64Time();
 
@@ -1303,7 +1269,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			WORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->IsSuspendOK() ){
 				if( HIBYTE(val) == 0xFF ){
-					val = MAKEWORD(LOBYTE(val), HIBYTE(sys->defShutdownMode));
+					val = MAKEWORD(LOBYTE(val), sys->setting.reboot);
 				}
 				PostMessage(sys->hwndMain, WM_REQUEST_SHUTDOWN, val, 0);
 				resParam->param = CMD_SUCCESS;
@@ -1555,8 +1521,8 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 				vector<DWORD> idList = sys->reserveManager.GetSupportServiceTuner(info.chInfo.ONID, info.chInfo.TSID, info.chInfo.SID);
 				for( int i = (int)idList.size() - 1; i >= 0; i-- ){
 					info.bonDriver = sys->reserveManager.GetTunerBonFileName(idList[i]);
-					for( size_t j = 0; j < sys->tvtestUseBon.size(); j++ ){
-						if( CompareNoCase(sys->tvtestUseBon[j], info.bonDriver) == 0 ){
+					for( size_t j = 0; j < sys->setting.viewBonList.size(); j++ ){
+						if( CompareNoCase(sys->setting.viewBonList[j], info.bonDriver) == 0 ){
 							if( sys->reserveManager.IsOpenTuner(idList[i]) == false ){
 								info.chInfo.useBonCh = TRUE;
 								sys->reserveManager.GetTunerCh(idList[i], info.chInfo.ONID, info.chInfo.TSID, info.chInfo.SID, &info.chInfo.space, &info.chInfo.ch);
@@ -1575,7 +1541,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		break;
 	case CMD2_EPG_SRV_GET_NOTIFY_LOG:
 		OutputDebugString(L"CMD2_EPG_SRV_GET_NOTIFY_LOG\r\n");
-		if( sys->saveNotifyLog ){
+		if( sys->setting.saveNotifyLog ){
 			int n;
 			if( ReadVALUE(&n, cmdParam->data, cmdParam->dataSize, NULL) ){
 				wstring logPath;
@@ -1642,8 +1608,8 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 				vector<DWORD> idUseList;
 				for( int i = (int)idList.size() - 1; i >= 0; i-- ){
 					wstring bonDriver = sys->reserveManager.GetTunerBonFileName(idList[i]);
-					for( size_t j = 0; j < sys->tvtestUseBon.size(); j++ ){
-						if( CompareNoCase(sys->tvtestUseBon[j], bonDriver) == 0 ){
+					for( size_t j = 0; j < sys->setting.viewBonList.size(); j++ ){
+						if( CompareNoCase(sys->setting.viewBonList[j], bonDriver) == 0 ){
 							idUseList.push_back(idList[i]);
 							break;
 						}

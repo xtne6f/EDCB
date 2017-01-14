@@ -28,7 +28,7 @@ CReserveManager::~CReserveManager(void)
 	DeleteCriticalSection(&this->managerLock);
 }
 
-void CReserveManager::Initialize()
+void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 {
 	this->tunerManager.ReloadTuner();
 	this->tunerManager.GetEnumTunerBank(&this->tunerBankMap, this->notifyManager, this->epgDBManager);
@@ -38,7 +38,7 @@ void CReserveManager::Initialize()
 	GetSettingPath(settingPath);
 	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
 
-	ReloadSetting();
+	ReloadSetting(s);
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
 	DWORD shiftID = GetPrivateProfileInt(L"SET", L"RecInfoShiftID", 100000, iniPath.c_str());
@@ -72,12 +72,10 @@ void CReserveManager::Finalize()
 	this->tunerBankMap.clear();
 }
 
-void CReserveManager::ReloadSetting()
+void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 {
 	CBlockLock lock(&this->managerLock);
 
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
 	wstring commonIniPath;
 	GetCommonIniPath(commonIniPath);
 	wstring viewIniPath;
@@ -88,82 +86,18 @@ void CReserveManager::ReloadSetting()
 
 	this->chUtil.ParseText((settingPath + L"\\ChSet5.txt").c_str());
 
-	this->ngCapTimeSec = GetPrivateProfileInt(L"SET", L"NGEpgCapTime", 20, iniPath.c_str()) * 60;
-	this->ngCapTunerTimeSec = GetPrivateProfileInt(L"SET", L"NGEpgCapTunerTime", 20, iniPath.c_str()) * 60;
-	this->epgCapTimeSync = GetPrivateProfileInt(L"SET", L"TimeSync", 0, iniPath.c_str()) != 0;
-	this->epgCapTimeList.clear();
-	int count = GetPrivateProfileInt(L"EPG_CAP", L"Count", 0, iniPath.c_str());
-	for( int i = 0; i < count; i++ ){
-		WCHAR key[64];
-		wsprintf(key, L"%dSelect", i);
-		if( GetPrivateProfileInt(L"EPG_CAP", key, 0, iniPath.c_str()) != 0 ){
-			wsprintf(key, L"%d", i);
-			wstring buff = GetPrivateProfileToString(L"EPG_CAP", key, L"", iniPath.c_str());
-			//曜日指定接尾辞(w1=Mon,...,w7=Sun)
-			unsigned int hour, minute, wday = 0;
-			if( swscanf_s(buff.c_str(), L"%u:%uw%u", &hour, &minute, &wday) >= 2 ){
-				//取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2,bit3=CS3)。負値のときは共通設定に従う
-				wsprintf(key, L"%dBasicOnlyFlags", i);
-				int basicOnlyFlags = GetPrivateProfileInt(L"EPG_CAP", key, -1, iniPath.c_str());
-				basicOnlyFlags = basicOnlyFlags < 0 ? 0xFF : basicOnlyFlags & 15;
-				if( wday == 0 ){
-					//曜日指定なし
-					for( int j = 0; j < 7; j++ ){
-						this->epgCapTimeList.push_back(MAKELONG(((j * 24 + hour) * 60 + minute) % 10080, basicOnlyFlags));
-					}
-				}else{
-					this->epgCapTimeList.push_back(MAKELONG(((wday * 24 + hour) * 60 + minute) % 10080, basicOnlyFlags));
-				}
-			}
-		}
-	}
+	this->setting = s;
 
-	this->autoDelExtList.clear();
-	this->autoDelFolderList.clear();
-	if( GetPrivateProfileInt(L"SET", L"AutoDel", 0, iniPath.c_str()) != 0 ){
-		count = GetPrivateProfileInt(L"DEL_EXT", L"Count", 0, iniPath.c_str());
-		for( int i = 0; i < count; i++ ){
-			WCHAR key[64];
-			wsprintf(key, L"%d", i);
-			this->autoDelExtList.push_back(GetPrivateProfileToString(L"DEL_EXT", key, L"", iniPath.c_str()));
-		}
-		count = GetPrivateProfileInt(L"DEL_CHK", L"Count", 0, iniPath.c_str());
-		for( int i = 0; i < count; i++ ){
-			WCHAR key[64];
-			wsprintf(key, L"%d", i);
-			this->autoDelFolderList.push_back(GetPrivateProfileToString(L"DEL_CHK", key, L"", iniPath.c_str()));
-		}
-	}
-
-	this->defStartMargin = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
-	this->defEndMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
-	this->notFindTuijyuHour = GetPrivateProfileInt(L"SET", L"TuijyuHour", 3, iniPath.c_str());
-	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str()) != 0;
-	this->fixedTunerPriority = GetPrivateProfileInt(L"SET", L"FixedTunerPriority", 1, iniPath.c_str()) != 0;
-
-	this->recInfoText.SetKeepCount(
-		GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniPath.c_str()) == 0 ? UINT_MAX :
-		GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniPath.c_str()));
+	this->recInfoText.SetKeepCount(s.autoDelRecInfo ? s.autoDelRecInfoNum : UINT_MAX);
 	this->recInfoText.SetRecInfoDelFile(GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
 	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", commonIniPath.c_str()).c_str());
 
-	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniPath.c_str()));
-	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 2, iniPath.c_str());
-	this->recInfo2RegExp = GetPrivateProfileToString(L"SET", L"RecInfo2RegExp", L"", iniPath.c_str());
-
+	this->recInfo2Text.SetKeepCount(s.recInfo2Max);
 	this->defEnableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
 	this->defEnableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
-	this->errEndBatRun = GetPrivateProfileInt(L"SET", L"ErrEndBatRun", 0, iniPath.c_str()) != 0;
-
-	this->recNamePlugInFileName.clear();
-	if( GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniPath.c_str()) != 0 ){
-		this->recNamePlugInFileName = GetPrivateProfileToString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", iniPath.c_str());
-	}
-	this->recNameNoChkYen = GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str()) != 0;
-	this->delReserveMode = GetPrivateProfileInt(L"SET", L"DelReserveMode", 2, iniPath.c_str());
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
-		itr->second->ReloadSetting();
+		itr->second->ReloadSetting(s);
 	}
 	ReloadBankMap();
 }
@@ -248,13 +182,13 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 			//recNamePlugInを展開して実ファイル名をセット
 			for( size_t i = 0; i <= r.recSetting.recFolderList.size(); i++ ){
 				if( i < r.recSetting.recFolderList.size() || r.recSetting.recFolderList.empty() ){
-					const wstring* recNamePlugIn = &this->recNamePlugInFileName;
+					LPCWSTR recNamePlugIn = this->setting.recNamePlugIn ? this->setting.recNamePlugInFile.c_str() : L"";
 					if( i < r.recSetting.recFolderList.size() && r.recSetting.recFolderList[i].recNamePlugIn.empty() == false ){
-						recNamePlugIn = &r.recSetting.recFolderList[i].recNamePlugIn;
+						recNamePlugIn = r.recSetting.recFolderList[i].recNamePlugIn.c_str();
 					}
 					r.recFileNameList.push_back(CTunerBankCtrl::ConvertRecName(
-						recNamePlugIn->c_str(), r.startTime, r.durationSecond, r.title.c_str(), r.originalNetworkID, r.transportStreamID, r.serviceID, r.eventID,
-						r.stationName.c_str(), L"チューナー不明", 0xFFFFFFFF, r.reserveID, this->epgDBManager, r.startTime, 0, this->recNameNoChkYen));
+						recNamePlugIn, r.startTime, r.durationSecond, r.title.c_str(), r.originalNetworkID, r.transportStreamID, r.serviceID, r.eventID,
+						r.stationName.c_str(), L"チューナー不明", 0xFFFFFFFF, r.reserveID, this->epgDBManager, r.startTime, 0, this->setting.noChkYen));
 				}
 			}
 		}
@@ -462,7 +396,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 			if( itr->second.recSetting.recMode != RECMODE_NO ){
 				//バンクから削除
 				for( auto jtr = this->tunerBankMap.cbegin(); jtr != this->tunerBankMap.end(); jtr++ ){
-					if( jtr->second->DelReserve(idList[i], this->delReserveMode == 0 ? NULL : &retList) ){
+					if( jtr->second->DelReserve(idList[i], this->setting.delReserveMode == 0 ? NULL : &retList) ){
 						break;
 					}
 				}
@@ -474,7 +408,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 	}
 	for( auto itrRet = retList.begin(); itrRet != retList.end(); itrRet++ ){
 		//正常終了をキャンセル中断に差し替える
-		if( this->delReserveMode == 2 && itrRet->type == CTunerBankCtrl::CHECK_END ){
+		if( this->setting.delReserveMode == 2 && itrRet->type == CTunerBankCtrl::CHECK_END ){
 			itrRet->type = CTunerBankCtrl::CHECK_END_CANCEL;
 		}
 	}
@@ -634,9 +568,9 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			for( itrRes = sortTimeMap.begin(); itrRes != itrTime; itrRes++ ){
 				//バンク決定順のキーはチューナ固定優先ビットつき実効優先度(予約優先度<<60|チューナ固定優先ビット<<59|開始順)
 				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | itrRes->second->reserveID & 0xFFFF;
-				__int64 priority = (this->backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
-				__int64 fixedBit = (this->fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->backPriority : !this->backPriority;
-				sortResMap.insert(std::make_pair((this->backPriority ? -1 : 1) * (priority << 60 | fixedBit << 59 | startOrder), itrRes->second));
+				__int64 priority = (this->setting.backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
+				__int64 fixedBit = (this->setting.fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->setting.backPriority : !this->setting.backPriority;
+				sortResMap.insert(std::make_pair((this->setting.backPriority ? -1 : 1) * (priority << 60 | fixedBit << 59 | startOrder), itrRes->second));
 			}
 			itrTime = sortTimeMap.erase(sortTimeMap.begin(), itrTime);
 
@@ -827,8 +761,8 @@ void CReserveManager::CalcEntireReserveTime(__int64* startTime, __int64* endTime
 
 	__int64 startTime_ = ConvertI64Time(data.startTime);
 	__int64 endTime_ = startTime_ + data.durationSecond * I64_1SEC;
-	__int64 startMargin = this->defStartMargin * I64_1SEC;
-	__int64 endMargin = this->defEndMargin * I64_1SEC;
+	__int64 startMargin = this->setting.startMargin * I64_1SEC;
+	__int64 endMargin = this->setting.endMargin * I64_1SEC;
 	if( data.recSetting.useMargineFlag != 0 ){
 		startMargin = data.recSetting.startMargine * I64_1SEC;
 		endMargin = data.recSetting.endMargine * I64_1SEC;
@@ -1071,7 +1005,7 @@ void CReserveManager::CheckTuijyuTuner()
 						//EIT[p/f]の継続時間未定。以降の予約も時間未定とみなし、終了まで5分を切る予約は5分伸ばす
 						__int64 startTime, endTime;
 						CalcEntireReserveTime(&startTime, &endTime, r);
-						if( endTime - startTime < this->notFindTuijyuHour * 3600 * I64_1SEC && endTime < GetNowI64Time() + 300 * I64_1SEC ){
+						if( endTime - startTime < this->setting.tuijyuHour * 3600 * I64_1SEC && endTime < GetNowI64Time() + 300 * I64_1SEC ){
 							r.durationSecond += 300;
 							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 							chgRes = true;
@@ -1156,21 +1090,21 @@ void CReserveManager::CheckAutoDel() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	if( this->autoDelFolderList.empty() ){
+	if( this->setting.autoDel == false ){
 		return;
 	}
 
 	//ファイル削除可能なフォルダをドライブごとに仕分け
 	map<wstring, pair<ULONGLONG, vector<wstring>>> mountMap;
-	for( size_t i = 0; i < this->autoDelFolderList.size(); i++ ){
+	for( size_t i = 0; i < this->setting.delChkList.size(); i++ ){
 		wstring mountPath;
-		GetChkDrivePath(this->autoDelFolderList[i], mountPath);
+		GetChkDrivePath(this->setting.delChkList[i], mountPath);
 		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
 		if( itr == mountMap.end() ){
 			itr = mountMap.insert(std::make_pair(mountPath, std::make_pair(0ULL, vector<wstring>()))).first;
 		}
-		itr->second.second.push_back(this->autoDelFolderList[i]);
+		itr->second.second.push_back(this->setting.delChkList[i]);
 	}
 
 	//直近で必要になりそうな空き領域を概算する
@@ -1249,13 +1183,13 @@ void CReserveManager::CheckAutoDel() const
 					DeleteFile(delPath.c_str());
 					needFreeSize -= tsFileMap.begin()->second.first;
 					_OutputDebugString(L"★Auto Delete2 : %s\r\n", delPath.c_str());
-					for( size_t i = 0 ; i < this->autoDelExtList.size(); i++ ){
+					for( size_t i = 0 ; i < this->setting.delExtList.size(); i++ ){
 						wstring delFolder;
 						wstring delTitle;
 						GetFileFolder(delPath, delFolder);
 						GetFileTitle(delPath, delTitle);
-						DeleteFile((delFolder + L"\\" + delTitle + this->autoDelExtList[i]).c_str());
-						_OutputDebugString(L"★Auto Delete2 : %s\r\n", (delFolder + L"\\" + delTitle + this->autoDelExtList[i]).c_str());
+						DeleteFile((delFolder + L"\\" + delTitle + this->setting.delExtList[i]).c_str());
+						_OutputDebugString(L"★Auto Delete2 : %s\r\n", (delFolder + L"\\" + delTitle + this->setting.delExtList[i]).c_str());
 					}
 				}
 				tsFileMap.erase(tsFileMap.begin());
@@ -1306,7 +1240,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
 		if( itrRes != this->reserveText.GetMap().end() ){
 			if( itrRet->type == CTunerBankCtrl::CHECK_END && itrRet->recFilePath.empty() == false &&
-			    itrRet->drops < this->recInfo2DropChk && itrRet->epgEventName.empty() == false ){
+			    itrRet->drops < this->setting.recInfo2DropChk && itrRet->epgEventName.empty() == false ){
 				//録画済みとして登録
 				PARSE_REC_INFO2_ITEM item;
 				item.originalNetworkID = itrRes->second.originalNetworkID;
@@ -1381,7 +1315,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			batInfo.macroList.push_back(pair<string, wstring>("AddKey",
 				itrRes->second.comment.compare(0, 8, L"EPG自動予約(") == 0 && itrRes->second.comment.size() >= 9 ?
 				itrRes->second.comment.substr(8, itrRes->second.comment.size() - 9) : wstring()));
-			if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->errEndBatRun) &&
+			if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->setting.errEndBatRun) &&
 			    item.recFilePath.empty() == false && itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
 				batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
 				this->batManager.AddBatWork(batInfo);
@@ -1495,10 +1429,10 @@ vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
 			auto itr = this->tunerBankMap.find(tunerIDList[i].first[j]);
 			CTunerBankCtrl::TR_STATE state = itr->second->GetState();
 			__int64 minTime = itr->second->GetNearestReserveTime();
-			if( this->ngCapTimeSec != 0 && (state != CTunerBankCtrl::TR_IDLE || minTime < now + this->ngCapTimeSec * I64_1SEC) ){
+			if( this->setting.ngEpgCapTime != 0 && (state != CTunerBankCtrl::TR_IDLE || minTime < now + this->setting.ngEpgCapTime * 60 * I64_1SEC) ){
 				//実行しちゃいけない
 				ngCapCount++;
-			}else if( state == CTunerBankCtrl::TR_IDLE && minTime > now + this->ngCapTunerTimeSec * I64_1SEC ){
+			}else if( state == CTunerBankCtrl::TR_IDLE && minTime > now + this->setting.ngEpgCapTunerTime * 60 * I64_1SEC ){
 				//使えるチューナ
 				epgCapIDList.push_back(itr->first);
 				epgCapMax--;
@@ -1605,7 +1539,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 		}
 	}else{
 		//EPG取得中
-		if( this->epgCapTimeSync && this->epgCapSetTimeSync == false ){
+		if( this->setting.timeSync && this->epgCapSetTimeSync == false ){
 			DWORD tick = GetTickCount();
 			for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 				if( itr->second->GetState() == CTunerBankCtrl::TR_EPGCAP ){
@@ -1729,19 +1663,21 @@ __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) con
 	int baseTime = st.wDayOfWeek * 1440 + (int)(now / (60 * I64_1SEC) % 1440);
 	//baseTimeとの差が最小のEPG取得時刻を探す
 	int minDiff = INT_MAX;
-	WORD minVal = 0;
-	for( size_t i = 0; i < this->epgCapTimeList.size(); i++ ){
-		int diff = (LOWORD(this->epgCapTimeList[i]) + 7 * 1440 - baseTime) % (7 * 1440);
-		if( minDiff > diff ){
-			minDiff = diff;
-			minVal = HIWORD(this->epgCapTimeList[i]);
+	int minVal = 0;
+	for( auto itr = this->setting.epgCapTimeList.cbegin(); itr != this->setting.epgCapTimeList.end(); itr++ ){
+		if( itr->first ){
+			int diff = (itr->second.first + 7 * 1440 - baseTime) % (itr->second.first < 1440 ? 1440 : 7 * 1440);
+			if( minDiff > diff ){
+				minDiff = diff;
+				minVal = itr->second.second;
+			}
 		}
 	}
 	if( minDiff == INT_MAX ){
 		return LLONG_MAX;
 	}
 	if( basicOnlyFlags ){
-		*basicOnlyFlags = minVal == 0xFF ? -1 : minVal;
+		*basicOnlyFlags = minVal;
 	}
 	return (now / (60 * I64_1SEC) + minDiff) * (60 * I64_1SEC);
 }
@@ -1864,9 +1800,9 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 		regExp.CreateInstance(CLSID_RegExp);
 		if( regExp != NULL && info.shortInfo != NULL ){
 			wstring infoEventName = info.shortInfo->event_name;
-			if( this->recInfo2RegExp.empty() == false ){
+			if( this->setting.recInfo2RegExp.empty() == false ){
 				regExp->PutGlobal(VARIANT_TRUE);
-				regExp->PutPattern(_bstr_t(this->recInfo2RegExp.c_str()));
+				regExp->PutPattern(_bstr_t(this->setting.recInfo2RegExp.c_str()));
 				_bstr_t rpl = regExp->Replace(_bstr_t(infoEventName.c_str()), _bstr_t());
 				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
 			}
@@ -1879,7 +1815,7 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 					    (chkDay >= 20000 || itr->second.serviceID == info.service_id) &&
 					    ConvertI64Time(itr->second.startTime) + chkDayActual*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
-						if( this->recInfo2RegExp.empty() == false ){
+						if( this->setting.recInfo2RegExp.empty() == false ){
 							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
 							eventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
 						}

@@ -4,38 +4,6 @@
 #include "../../Common/StringUtil.h"
 
 
-CTunerManager::CTunerManager(void)
-{
-}
-
-
-CTunerManager::~CTunerManager(void)
-{
-}
-
-BOOL CTunerManager::FindBonFileName(wstring src, wstring& dllName)
-{
-	size_t pos = src.rfind(L')');
-	if( pos == string::npos ){
-		return FALSE;
-	}
-
-	int count = 1;
-	for( int i=(int)pos-1; i>=0; i-- ){
-		if( src[i] == L')' ){
-			count++;
-		}else if( src[i] == L'(' ){
-			count--;
-		}
-		if( count == 0 ){
-			dllName = src.substr(0, i);
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
 //チューナー一覧の読み込みを行う
 //戻り値：
 // TRUE（成功）、FALSE（失敗）
@@ -49,57 +17,37 @@ BOOL CTunerManager::ReloadTuner()
 	wstring srvIniPath = L"";
 	GetModuleIniPath(srvIniPath);
 
-	wstring searchKey = path;
-	searchKey += L"\\*.ChSet4.txt";
+	vector<pair<wstring, wstring>> nameList = CEpgTimerSrvSetting::EnumBonFileName(path.c_str());
 
-	WIN32_FIND_DATA findData;
-	HANDLE find;
-
-	//指定フォルダのファイル一覧取得
-	find = FindFirstFile( searchKey.c_str(), &findData);
-	if ( find == INVALID_HANDLE_VALUE ) {
-		return FALSE;
-	}
-	do{
-		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			wstring bonFileName;
-			if( FindBonFileName(findData.cFileName, bonFileName) != FALSE ){
-				wstring chSetPath = L"";
-				Format(chSetPath, L"%s\\%s", path.c_str(), findData.cFileName);
-
-				bonFileName += L".dll";
-
-				WORD count = (WORD)GetPrivateProfileInt(bonFileName.c_str(), L"Count", 0, srvIniPath.c_str());
-				if( count != 0 ){
-					//カウント0以上のものだけ利用
-					WORD priority = (WORD)GetPrivateProfileInt(bonFileName.c_str(), L"Priority", 0, srvIniPath.c_str());
-					BOOL epgCapFlag = (BOOL)GetPrivateProfileInt(bonFileName.c_str(), L"GetEpg", 1, srvIniPath.c_str());
-					WORD EPGcount = (WORD)GetPrivateProfileInt(bonFileName.c_str(), L"EPGCount", count, srvIniPath.c_str());
-					if(EPGcount==0)	EPGcount = count;
-
-					if( this->tunerMap.find((DWORD)priority<<16 | 1) != this->tunerMap.end() ){
-						OutputDebugString(L"CTunerManager::ReloadTuner(): Duplicate bonID\r\n");
-						count = 0;
-					}
-					for( WORD i=1; i<=count; i++ ){
-						TUNER_INFO item;
-						item.epgCapMaxOfThisBon = min(epgCapFlag == FALSE ? 0 : EPGcount, count);
-						item.bonFileName = bonFileName;
-						item.chSet4FilePath = chSetPath;
-						CParseChText4 chUtil;
-						chUtil.ParseText(chSetPath.c_str());
-						map<DWORD, CH_DATA4>::const_iterator itr;
-						for( itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
-							item.chList.push_back(itr->second);
-						}
-						this->tunerMap.insert(pair<DWORD, TUNER_INFO>((DWORD)priority<<16 | i, item));
-					}
+	for( size_t i = 0; i < nameList.size(); i++ ){
+		WORD count = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"Count", 0, srvIniPath.c_str());
+		if( count != 0 ){
+			//カウント1以上のものだけ利用
+			WORD priority = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"Priority", 0, srvIniPath.c_str());
+			WORD epgCount = 0;
+			if( GetPrivateProfileInt(nameList[i].first.c_str(), L"GetEpg", 1, srvIniPath.c_str()) != 0 ){
+				epgCount = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"EPGCount", 0, srvIniPath.c_str());
+				if( epgCount == 0 ){
+					epgCount = count;
+				}
+			}
+			if( this->tunerMap.find((DWORD)priority << 16 | 1) != this->tunerMap.end() ){
+				OutputDebugString(L"CTunerManager::ReloadTuner(): Duplicate bonID\r\n");
+				count = 0;
+			}
+			for( WORD j = 0; j < count; j++ ){
+				TUNER_INFO& item = this->tunerMap.insert(std::make_pair((DWORD)priority << 16 | (j + 1), TUNER_INFO())).first->second;
+				item.epgCapMaxOfThisBon = min(epgCount, count);
+				item.bonFileName = nameList[i].first;
+				CParseChText4 chUtil;
+				chUtil.ParseText((path + L'\\' + nameList[i].second).c_str());
+				item.chList.reserve(chUtil.GetMap().size());
+				for( map<DWORD, CH_DATA4>::const_iterator itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
+					item.chList.push_back(itr->second);
 				}
 			}
 		}
-	}while(FindNextFile(find, &findData));
-
-	FindClose(find);
+	}
 
 	return TRUE;
 }

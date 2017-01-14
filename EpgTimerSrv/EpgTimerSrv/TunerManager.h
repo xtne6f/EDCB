@@ -10,9 +10,6 @@ class CEpgDBManager;
 class CTunerManager
 {
 public:
-	CTunerManager(void);
-	~CTunerManager(void);
-
 	//チューナー一覧の読み込みを行う
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
@@ -89,15 +86,12 @@ public:
 		) const;
 
 protected:
-	typedef struct _TUNER_INFO{
+	struct TUNER_INFO {
 		wstring bonFileName;
 		WORD epgCapMaxOfThisBon;
 		vector<CH_DATA4> chList;
-		wstring chSet4FilePath;
-	}TUNER_INFO;
+	};
 
 	map<DWORD, TUNER_INFO> tunerMap; //キー bonID<<16 | tunerID
-protected:
-	static BOOL FindBonFileName(wstring src, wstring& dllName);
 };
 

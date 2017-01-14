@@ -2,6 +2,7 @@
 
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
+#include "EpgTimerSrvSetting.h"
 
 //1つのチューナ(EpgDataCap_Bon.exe)を管理する
 //必ずオブジェクト生成→ReloadSetting()→…→破棄の順番で利用しなければならない
@@ -73,7 +74,7 @@ public:
 
 	CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
 	~CTunerBankCtrl();
-	void ReloadSetting();
+	void ReloadSetting(const CEpgTimerSrvSetting::SETTING& s);
 
 	//予約を追加する
 	bool AddReserve(const TUNER_RESERVE& reserve);

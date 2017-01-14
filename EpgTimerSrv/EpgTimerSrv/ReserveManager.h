@@ -18,9 +18,9 @@ public:
 	};
 	CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
 	~CReserveManager();
-	void Initialize();
+	void Initialize(const CEpgTimerSrvSetting::SETTING& s);
 	void Finalize();
-	void ReloadSetting();
+	void ReloadSetting(const CEpgTimerSrvSetting::SETTING& s);
 	//予約情報一覧を取得する
 	vector<RESERVE_DATA> GetReserveDataAll(bool getRecFileName = false) const;
 	//チューナ毎の予約情報を取得する
@@ -145,26 +145,9 @@ private:
 
 	map<DWORD, std::unique_ptr<CTunerBankCtrl>> tunerBankMap;
 
-	DWORD ngCapTimeSec;
-	DWORD ngCapTunerTimeSec;
-	bool epgCapTimeSync;
-	//LOWORDに取得時刻の日曜日からのオフセット(分)、HIWORDに取得種別
-	vector<DWORD> epgCapTimeList;
-	vector<wstring> autoDelExtList;
-	vector<wstring> autoDelFolderList;
-	int defStartMargin;
-	int defEndMargin;
-	int notFindTuijyuHour;
-	bool backPriority;
-	bool fixedTunerPriority;
-	int recInfo2DropChk;
-	wstring recInfo2RegExp;
+	CEpgTimerSrvSetting::SETTING setting;
 	bool defEnableCaption;
 	bool defEnableData;
-	bool errEndBatRun;
-	wstring recNamePlugInFileName;
-	bool recNameNoChkYen;
-	int delReserveMode;
 
 	DWORD checkCount;
 	__int64 lastCheckEpgCap;
