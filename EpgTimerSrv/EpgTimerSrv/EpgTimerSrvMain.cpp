@@ -803,52 +803,6 @@ void CEpgTimerSrvMain::ReloadSetting()
 	}
 }
 
-pair<wstring, REC_SETTING_DATA> CEpgTimerSrvMain::LoadRecSetData(WORD preset) const
-{
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
-	WCHAR defIndex[32];
-	WCHAR defName[32];
-	WCHAR defFolderName[2][32];
-	defIndex[preset == 0 ? 0 : wsprintf(defIndex, L"%d", preset)] = L'\0';
-	wsprintf(defName, L"REC_DEF%s", defIndex);
-	wsprintf(defFolderName[0], L"REC_DEF_FOLDER%s", defIndex);
-	wsprintf(defFolderName[1], L"REC_DEF_FOLDER_1SEG%s", defIndex);
-
-	pair<wstring, REC_SETTING_DATA> ret;
-	ret.first = preset == 0 ? wstring(L"デフォルト") : GetPrivateProfileToString(defName, L"SetName", L"", iniPath.c_str());
-	REC_SETTING_DATA& rs = ret.second;
-	rs.recMode = (BYTE)GetPrivateProfileInt(defName, L"RecMode", 1, iniPath.c_str());
-	rs.priority = (BYTE)GetPrivateProfileInt(defName, L"Priority", 2, iniPath.c_str());
-	rs.tuijyuuFlag = (BYTE)GetPrivateProfileInt(defName, L"TuijyuuFlag", 1, iniPath.c_str());
-	rs.serviceMode = (BYTE)GetPrivateProfileInt(defName, L"ServiceMode", 0, iniPath.c_str());
-	rs.pittariFlag = (BYTE)GetPrivateProfileInt(defName, L"PittariFlag", 0, iniPath.c_str());
-	rs.batFilePath = GetPrivateProfileToString(defName, L"BatFilePath", L"", iniPath.c_str());
-	for( int i = 0; i < 2; i++ ){
-		vector<REC_FILE_SET_INFO>& recFolderList = i == 0 ? rs.recFolderList : rs.partialRecFolder;
-		int count = GetPrivateProfileInt(defFolderName[i], L"Count", 0, iniPath.c_str());
-		for( int j = 0; j < count; j++ ){
-			recFolderList.resize(j + 1);
-			WCHAR key[32];
-			wsprintf(key, L"%d", j);
-			recFolderList[j].recFolder = GetPrivateProfileToString(defFolderName[i], key, L"", iniPath.c_str());
-			wsprintf(key, L"WritePlugIn%d", j);
-			recFolderList[j].writePlugIn = GetPrivateProfileToString(defFolderName[i], key, L"Write_Default.dll", iniPath.c_str());
-			wsprintf(key, L"RecNamePlugIn%d", j);
-			recFolderList[j].recNamePlugIn = GetPrivateProfileToString(defFolderName[i], key, L"", iniPath.c_str());
-		}
-	}
-	rs.suspendMode = (BYTE)GetPrivateProfileInt(defName, L"SuspendMode", 0, iniPath.c_str());
-	rs.rebootFlag = (BYTE)GetPrivateProfileInt(defName, L"RebootFlag", 0, iniPath.c_str());
-	rs.useMargineFlag = (BYTE)GetPrivateProfileInt(defName, L"UseMargineFlag", 0, iniPath.c_str());
-	rs.startMargine = GetPrivateProfileInt(defName, L"StartMargine", 0, iniPath.c_str());
-	rs.endMargine = GetPrivateProfileInt(defName, L"EndMargine", 0, iniPath.c_str());
-	rs.continueRecFlag = (BYTE)GetPrivateProfileInt(defName, L"ContinueRec", 0, iniPath.c_str());
-	rs.partialRecFlag = (BYTE)GetPrivateProfileInt(defName, L"PartialRec", 0, iniPath.c_str());
-	rs.tunerID = GetPrivateProfileInt(defName, L"TunerID", 0, iniPath.c_str());
-	return ret;
-}
-
 bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec)
 {
 	__int64 returnTime = this->reserveManager.GetSleepReturnTime(GetNowI64Time() + marginSec * I64_1SEC);
@@ -2464,7 +2418,6 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "ChgProtectRecFileInfo", LuaChgProtectRecFileInfo, sys);
 	LuaHelp::reg_function(L, "DelRecFileInfo", LuaDelRecFileInfo, sys);
 	LuaHelp::reg_function(L, "GetTunerReserveAll", LuaGetTunerReserveAll, sys);
-	LuaHelp::reg_function(L, "EnumRecPresetInfo", LuaEnumRecPresetInfo, sys);
 	LuaHelp::reg_function(L, "EnumAutoAdd", LuaEnumAutoAdd, sys);
 	LuaHelp::reg_function(L, "EnumManuAdd", LuaEnumManuAdd, sys);
 	LuaHelp::reg_function(L, "DelAutoAdd", LuaDelAutoAdd, sys);
@@ -2476,6 +2429,56 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_int(L, "htmlEscape", 0);
 	LuaHelp::reg_string(L, "serverRandom", sys->httpServerRandom.c_str());
 	lua_setglobal(L, "edcb");
+	luaL_dostring(L,
+		"edcb.EnumRecPresetInfo=function()"
+		" local gp,p,d,r=edcb.GetPrivateProfile,'EpgTimerSrv.ini',{0},{}"
+		" for v in gp('SET','PresetID','',p):gmatch('[0-9]+') do"
+		"  d[#d+1]=0+v"
+		" end"
+		" table.sort(d)"
+		" for i=1,#d do if i==1 or d[i]~=d[i-1] then"
+		"  local n='REC_DEF'..(d[i]==0 and '' or d[i])"
+		"  local m=gp(n,'UseMargineFlag',0,p)~='0'"
+		"  r[#r+1]={"
+		"   id=d[i],"
+		"   name=d[i]==0 and 'Default' or gp(n,'SetName','',p),"
+		"   recSetting={"
+		"    recMode=tonumber(gp(n,'RecMode',1,p)) or 1,"
+		"    priority=tonumber(gp(n,'Priority',2,p)) or 2,"
+		"    tuijyuuFlag=gp(n,'TuijyuuFlag',1,p)~='0',"
+		"    serviceMode=tonumber(gp(n,'ServiceMode',0,p)) or 0,"
+		"    pittariFlag=gp(n,'PittariFlag',0,p)~='0',"
+		"    batFilePath=gp(n,'BatFilePath','',p),"
+		"    suspendMode=tonumber(gp(n,'SuspendMode',0,p)) or 0,"
+		"    rebootFlag=gp(n,'RebootFlag',0,p)~='0',"
+		"    startMargin=m and (tonumber(gp(n,'StartMargine',0,p)) or 0) or nil,"
+		"    endMargin=m and (tonumber(gp(n,'EndMargine',0,p)) or 0) or nil,"
+		"    continueRecFlag=gp(n,'ContinueRec',0,p)~='0',"
+		"    partialRecFlag=tonumber(gp(n,'PartialRec',0,p)) or 0,"
+		"    tunerID=tonumber(gp(n,'TunerID',0,p)) or 0,"
+		"    recFolderList={},"
+		"    partialRecFolder={}"
+		"   }"
+		"  }"
+		"  n=n:gsub('EF','EF_FOLDER')"
+		"  for j=1,tonumber(gp(n,'Count',0,p)) or 0 do"
+		"   r[#r].recSetting.recFolderList[j]={"
+		"    recFolder=gp(n,''..(j-1),'',p),"
+		"    writePlugIn=gp(n,'WritePlugIn'..(j-1),'Write_Default.dll',p),"
+		"    recNamePlugIn=gp(n,'RecNamePlugIn'..(j-1),'',p)"
+		"   }"
+		"  end"
+		"  n=n:gsub('ER','ER_1SEG')"
+		"  for j=1,tonumber(gp(n,'Count',0,p)) or 0 do"
+		"   r[#r].recSetting.partialRecFolder[j]={"
+		"    recFolder=gp(n,''..(j-1),'',p),"
+		"    writePlugIn=gp(n,'WritePlugIn'..(j-1),'Write_Default.dll',p),"
+		"    recNamePlugIn=gp(n,'RecNamePlugIn'..(j-1),'',p)"
+		"   }"
+		"  end"
+		" end end"
+		" return r;"
+		"end");
 	return 0;
 }
 
@@ -3075,35 +3078,6 @@ int CEpgTimerSrvMain::LuaGetTunerReserveAll(lua_State* L)
 			lua_pushinteger(L, (int)list[i].reserveList[j]);
 			lua_rawseti(L, -2, (int)j + 1);
 		}
-		lua_rawset(L, -3);
-		lua_rawseti(L, -2, (int)i + 1);
-	}
-	return 1;
-}
-
-int CEpgTimerSrvMain::LuaEnumRecPresetInfo(lua_State* L)
-{
-	CLuaWorkspace ws(L);
-	lua_newtable(L);
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
-	wstring parseBuff = GetPrivateProfileToString(L"SET", L"PresetID", L"", iniPath.c_str());
-	vector<WORD> idList(1, 0);
-	while( parseBuff.empty() == false ){
-		wstring presetID;
-		Separate(parseBuff, L",", presetID, parseBuff);
-		idList.push_back((WORD)_wtoi(presetID.c_str()));
-	}
-	std::sort(idList.begin(), idList.end());
-	idList.erase(std::unique(idList.begin(), idList.end()), idList.end());
-	for( size_t i = 0; i < idList.size(); i++ ){
-		lua_newtable(L);
-		pair<wstring, REC_SETTING_DATA> ret = ws.sys->LoadRecSetData(idList[i]);
-		LuaHelp::reg_int(L, "id", idList[i]);
-		LuaHelp::reg_string(L, "name", ws.WtoUTF8(ret.first));
-		lua_pushstring(L, "recSetting");
-		lua_newtable(L);
-		PushRecSettingData(ws, ret.second);
 		lua_rawset(L, -3);
 		lua_rawseti(L, -2, (int)i + 1);
 	}

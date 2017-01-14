@@ -28,8 +28,6 @@ private:
 	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void ReloadNetworkSetting();
 	void ReloadSetting();
-	//プリセット録画設定を読み込む(旧CRestApiManagerから移動)
-	pair<wstring, REC_SETTING_DATA> LoadRecSetData(WORD preset) const;
 	//現在の予約状態に応じた復帰タイマをセットする
 	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
 	//システムをシャットダウンする
@@ -93,7 +91,6 @@ private:
 	static int LuaChgProtectRecFileInfo(lua_State* L);
 	static int LuaDelRecFileInfo(lua_State* L);
 	static int LuaGetTunerReserveAll(lua_State* L);
-	static int LuaEnumRecPresetInfo(lua_State* L);
 	static int LuaEnumAutoAdd(lua_State* L);
 	static int LuaEnumManuAdd(lua_State* L);
 	static int LuaDelAutoAdd(lua_State* L);
