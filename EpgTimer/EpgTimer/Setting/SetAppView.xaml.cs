@@ -39,6 +39,7 @@ namespace EpgTimer.Setting
                 checkBox_wakeReconnect.IsEnabled = true;
                 checkBox_suspendClose.IsEnabled = true;
                 checkBox_ngAutoEpgLoad.IsEnabled = true;
+                button_srvSetting.IsEnabled = false;
             }
 
             try
@@ -557,6 +558,29 @@ namespace EpgTimer.Setting
                 }
                 button_shortCutAdd.Visibility = Visibility.Visible;
                 button_shortCutDel.Visibility = Visibility.Hidden;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        private void button_srvSetting_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (CommonManager.Instance.SrvSettingProcess == null || CommonManager.Instance.SrvSettingProcess.HasExited)
+                {
+                    CommonManager.Instance.SrvSettingProcess =
+                        System.Diagnostics.Process.Start(System.IO.Path.Combine(SettingPath.ModulePath, "EpgTimerSrv.exe"), "/setting");
+                }
+                else
+                {
+                    SetForegroundWindow(CommonManager.Instance.SrvSettingProcess.MainWindowHandle);
+                }
             }
             catch (Exception ex)
             {

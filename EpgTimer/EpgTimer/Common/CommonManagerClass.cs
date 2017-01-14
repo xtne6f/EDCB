@@ -26,6 +26,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public System.Diagnostics.Process SrvSettingProcess
+        {
+            get;
+            set;
+        }
         public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary
         {
             get;

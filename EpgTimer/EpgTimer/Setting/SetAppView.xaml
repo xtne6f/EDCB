@@ -28,6 +28,7 @@
                     <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,125,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
                     <Button Content="スタートアップにEpgTimer.exeのショートカットを作成する" Height="23" HorizontalAlignment="Left" Margin="6,160,0,0" Name="button_shortCutAdd" VerticalAlignment="Top" Width="340" Click="button_shortCutAdd_Click" />
                     <Button Content="スタートアップからEpgTimer.exeのショートカットを削除する" Height="23" HorizontalAlignment="Left" Margin="6,160,0,0" Name="button_shortCutDel" VerticalAlignment="Top" Width="340" Click="button_shortCutDel_Click" />
+                    <Button Content="EpgTimerSrv設定" Height="23" HorizontalAlignment="Left" Margin="6,200,0,0" Name="button_srvSetting" VerticalAlignment="Top" Width="150" Click="button_srvSetting_Click" />
                 </Grid>
             </TabItem>
             <TabItem Header="ボタン表示" Name="tabItem4">
