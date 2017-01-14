@@ -71,26 +71,6 @@ namespace EpgTimer
                 return iniPath;
             }
         }
-        public static string DefSettingFolderPath
-        {
-            get
-            {
-//                string defSetPath = System.Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-//                defSetPath += "\\EpgTimerBon";
-                string defSetPath = ModulePath.TrimEnd('\\');
-                defSetPath += "\\Setting";
-
-                return defSetPath;
-            }
-        }
-        public static string SettingFolderPath
-        {
-            get
-            {
-                string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, CommonIniPath);
-                return (Path.IsPathRooted(path) ? "" : ModulePath.TrimEnd('\\') + "\\") + path;
-            }
-        }
         public static void CheckFolderPath(ref string folderPath)
         {
             if( folderPath.LastIndexOf("\\") == folderPath.Length-1 ){

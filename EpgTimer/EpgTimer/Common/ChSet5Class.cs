@@ -76,36 +76,6 @@ namespace EpgTimer
             }
             return true;
         }
-        public static bool SaveFile()
-        {
-            try
-            {
-                String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamWriter writer = (new System.IO.StreamWriter(filePath, false, System.Text.Encoding.Default));
-                if (Instance.ChList != null)
-                {
-                    foreach (ChSet5Item info in Instance.ChList.Values)
-                    {
-                        writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
-                            info.ServiceName,
-                            info.NetworkName,
-                            info.ONID,
-                            info.TSID,
-                            info.SID,
-                            info.ServiceType,
-                            info.PartialFlag,
-                            info.EpgCapFlag,
-                            info.SearchFlag);
-                    }
-                }
-                writer.Close();
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
     }
 
     public class ChSet5Item

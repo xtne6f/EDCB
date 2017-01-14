@@ -124,16 +124,9 @@
     </Compile>
     <Compile Include="DefineClass\ServiceItem2.cs" />
     <Compile Include="DefineClass\ServiceViewItem.cs" />
-    <Compile Include="Setting\SetApp2DelWindow.xaml.cs">
-      <DependentUpon>SetApp2DelWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Setting\SetAppCancelWindow.xaml.cs">
-      <DependentUpon>SetAppCancelWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Setting\SetOtherAppView.xaml.cs">
       <DependentUpon>SetOtherAppView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DefineClass\TunerInfo.cs" />
     <Compile Include="Common\TVTestCtrlClass.cs" />
     <Compile Include="DefineClass\TunerNameViewItem.cs" />
     <Compile Include="SuspendCheckWindow.xaml.cs">
@@ -202,9 +195,6 @@
     <Compile Include="Setting\SetAppView.xaml.cs">
       <DependentUpon>SetAppView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Setting\SetBasicView.xaml.cs">
-      <DependentUpon>SetBasicView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Setting\SetDefRecSettingWindow.xaml.cs">
       <DependentUpon>SetDefRecSettingWindow.xaml</DependentUpon>
     </Compile>
@@ -270,14 +260,6 @@
     <Page Include="RecInfoView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Setting\SetApp2DelWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Setting\SetAppCancelWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
     </Page>
     <Page Include="Setting\SetOtherAppView.xaml">
       <SubType>Designer</SubType>
@@ -409,10 +391,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Setting\SetAppView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Setting\SetBasicView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

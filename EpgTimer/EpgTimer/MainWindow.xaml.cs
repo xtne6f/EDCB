@@ -49,17 +49,6 @@ namespace EpgTimer
                 cmd.SetSendMode(true);
                 cmd.SetNWSetting(null, 0);
             }
-            else
-            {
-                try
-                {
-                    using (var sr = new System.IO.StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
-                    {
-                        ChSet5.Load(sr);
-                    }
-                }
-                catch { }
-            }
             CommonManager.Instance.ReloadCustContentColorList();
 
             if (Settings.Instance.NoStyle == 0)
@@ -278,8 +267,17 @@ namespace EpgTimer
                     pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
                     pipeServer.StartServer(pipeEventName, pipeName, (c, r) => OutsideCmdCallback(c, r, false));
 
-                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != ErrCode.CMD_SUCCESS; i++)
+                    for (int i = 0; i < 150; i++)
                     {
+                        if (cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) == ErrCode.CMD_SUCCESS)
+                        {
+                            byte[] binData;
+                            if (cmd.SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
+                            {
+                                ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932)));
+                            }
+                            break;
+                        }
                         Thread.Sleep(100);
                     }
                 }
@@ -522,9 +520,7 @@ namespace EpgTimer
             byte[] binData;
             if (cmd.SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
             {
-                string filePath = SettingPath.SettingFolderPath;
-                System.IO.Directory.CreateDirectory(filePath);
-                ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.Default));
+                ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932)));
             }
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
@@ -772,21 +768,9 @@ namespace EpgTimer
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                     }
                     epgView.UpdateSetting();
-                    cmd.SendReloadSetting();
                     ResetButtonView();
                     ResetTaskMenu();
                 }
-            }
-            if (CommonManager.Instance.NWMode == false)
-            {
-                try
-                {
-                    using (var sr = new System.IO.StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
-                    {
-                        ChSet5.Load(sr);
-                    }
-                }
-                catch { }
             }
         }
 
