@@ -2158,7 +2158,9 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		if( g_compatFlags & 0x08 ){
 			//互換動作: 設定更新通知コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_PROFILE_UPDATE\r\n");
-			this->notifyManager.AddNotify(NOTIFY_UPDATE_PROFILE);
+			wstring val = L"";
+			ReadVALUE(&val, cmdParam.data, cmdParam.dataSize, NULL); //失敗しても構わない
+			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PROFILE, val);
 			resParam.param = CMD_SUCCESS;
 			return true;
 		}
