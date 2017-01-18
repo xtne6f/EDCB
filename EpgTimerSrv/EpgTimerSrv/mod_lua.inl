@@ -1,3 +1,7 @@
+/* This file is part of the CivetWeb web server.
+ * See https://github.com/civetweb/civetweb/
+ */
+
 #include "civetweb_lua.h"
 /*#include "civetweb_private_lua.h"*/
 
@@ -49,18 +53,24 @@ static const char lua_regkey_connlist = 2;
 static void handle_request(struct mg_connection *);
 static int handle_lsp_request(struct mg_connection *,
                               const char *,
-                              struct file *,
+                              struct mg_file *,
                               struct lua_State *);
 
 static void
-reg_string(struct lua_State *L, const char *name, const char *val)
+reg_lstring(struct lua_State *L,
+            const char *name,
+            const void *buffer,
+            size_t buflen)
 {
-	if (name != NULL && val != NULL) {
+	if (name != NULL && buffer != NULL) {
 		lua_pushstring(L, name);
-		lua_pushstring(L, val);
+		lua_pushlstring(L, (const char *)buffer, buflen);
 		lua_rawset(L, -3);
 	}
 }
+
+#define reg_string(L, name, val)                                               \
+	reg_lstring(L, name, val, val ? strlen(val) : 0)
 
 static void
 reg_int(struct lua_State *L, const char *name, int val)
@@ -158,13 +168,21 @@ static int
 lsp_sock_close(lua_State *L)
 {
 	int num_args = lua_gettop(L);
+	size_t s;
+	SOCKET *psock;
+
 	if ((num_args == 1) && lua_istable(L, -1)) {
 		lua_getfield(L, -1, "sock");
-		closesocket((SOCKET)lua_tonumber(L, -1));
+		psock = (SOCKET *)lua_tolstring(L, -1, &s);
+		if (s != sizeof(SOCKET)) {
+			return luaL_error(L, "invalid internal state in :close() call");
+		}
+		/* Do not closesocket(*psock); here, close it in __gc */
+		(void)psock;
 	} else {
 		return luaL_error(L, "invalid :close() call");
 	}
-	return 1;
+	return 0;
 }
 
 static int
@@ -173,17 +191,23 @@ lsp_sock_recv(lua_State *L)
 	int num_args = lua_gettop(L);
 	char buf[2000];
 	int n;
+	size_t s;
+	SOCKET *psock;
 
 	if ((num_args == 1) && lua_istable(L, -1)) {
 		lua_getfield(L, -1, "sock");
-		n = recv((SOCKET)lua_tonumber(L, -1), buf, sizeof(buf), 0);
+		psock = (SOCKET *)lua_tolstring(L, -1, &s);
+		if (s != sizeof(SOCKET)) {
+			return luaL_error(L, "invalid internal state in :recv() call");
+		}
+		n = recv(*psock, buf, sizeof(buf), 0);
 		if (n <= 0) {
 			lua_pushnil(L);
 		} else {
 			lua_pushlstring(L, buf, n);
 		}
 	} else {
-		return luaL_error(L, "invalid :close() call");
+		return luaL_error(L, "invalid :recv() call");
 	}
 	return 1;
 }
@@ -194,14 +218,20 @@ lsp_sock_send(lua_State *L)
 	int num_args = lua_gettop(L);
 	const char *buf;
 	size_t len, sent = 0;
-	int n = 0, sock;
+	int n = 0;
+	size_t s;
+	SOCKET *psock;
 
 	if ((num_args == 2) && lua_istable(L, -2) && lua_isstring(L, -1)) {
 		buf = lua_tolstring(L, -1, &len);
 		lua_getfield(L, -2, "sock");
-		sock = (int)lua_tonumber(L, -1);
+		psock = (SOCKET *)lua_tolstring(L, -1, &s);
+		if (s != sizeof(SOCKET)) {
+			return luaL_error(L, "invalid internal state in :close() call");
+		}
+
 		while (sent < len) {
-			if ((n = send(sock, buf + sent, (int)(len - sent), 0)) <= 0) {
+			if ((n = send(*psock, buf + sent, (int)(len - sent), 0)) <= 0) {
 				break;
 			}
 			sent += n;
@@ -213,9 +243,34 @@ lsp_sock_send(lua_State *L)
 	return 1;
 }
 
+static int
+lsp_sock_gc(lua_State *L)
+{
+	int num_args = lua_gettop(L);
+	size_t s;
+	SOCKET *psock;
+
+	if ((num_args == 1) && lua_istable(L, -1)) {
+		lua_getfield(L, -1, "sock");
+		psock = (SOCKET *)lua_tolstring(L, -1, &s);
+		if (s != sizeof(SOCKET)) {
+			return luaL_error(
+			    L,
+			    "invalid internal state in __gc for object created by connect");
+		}
+		closesocket(*psock);
+	} else {
+		return luaL_error(L, "__gc for object created by connect failed");
+	}
+	return 0;
+}
+
+/* Methods and meta-methods supported by the object returned by connect.
+ * For meta-methods, see http://lua-users.org/wiki/MetatableEvents */
 static const struct luaL_Reg luasocket_methods[] = {{"close", lsp_sock_close},
                                                     {"send", lsp_sock_send},
                                                     {"recv", lsp_sock_recv},
+                                                    {"__gc", lsp_sock_gc},
                                                     {NULL, NULL}};
 
 static int
@@ -241,12 +296,10 @@ lsp_connect(lua_State *L)
 			return luaL_error(L, ebuf);
 		} else {
 			lua_newtable(L);
-			reg_int(L, "sock", (int)sock);
+			reg_lstring(L, "sock", (const char *)&sock, sizeof(SOCKET));
 			reg_string(L, "host", lua_tostring(L, -4));
 			luaL_getmetatable(L, LUASOCKET);
 			lua_setmetatable(L, -2);
-			/* TODO (high): The metatable misses a _gc method to free the
-			 * sock object -> currently lsp_connect is a resource leak. */
 		}
 	} else {
 		return luaL_error(
@@ -330,11 +383,11 @@ lsp(struct mg_connection *conn,
 	for (i = 0; i < len; i++) {
 		if (p[i] == '\n')
 			lines++;
-		if ((i + 1) < len && p[i] == '<' && p[i + 1] == '?') {
+		if (((i + 1) < len) && (p[i] == '<') && (p[i + 1] == '?')) {
 
 			/* <?= ?> means a variable is enclosed and its value should be
 			 * printed */
-			is_var = ((i + 2) < len && p[i + 2] == '=');
+			is_var = (((i + 2) < len) && (p[i + 2] == '='));
 
 			if (is_var)
 				j = i + 2;
@@ -344,7 +397,7 @@ lsp(struct mg_connection *conn,
 			while (j < len) {
 				if (p[j] == '\n')
 					lualines++;
-				if ((j + 1) < len && p[j] == '?' && p[j + 1] == '>') {
+				if (((j + 1) < len) && (p[j] == '?') && (p[j + 1] == '>')) {
 					mg_write(conn, p + pos, i - pos);
 
 					mg_snprintf(conn,
@@ -476,7 +529,7 @@ lsp_include(lua_State *L)
 	struct mg_connection *conn =
 	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
 	int num_args = lua_gettop(L);
-	struct file file = STRUCT_FILE_INITIALIZER;
+	struct mg_file file = STRUCT_FILE_INITIALIZER;
 	const char *filename = (num_args == 1) ? lua_tostring(L, 1) : NULL;
 
 	if (filename) {
@@ -1126,6 +1179,10 @@ prepare_lua_request_info(struct mg_connection *conn, lua_State *L)
 	reg_int(L, "num_headers", conn->request_info.num_headers);
 	reg_int(L, "server_port", ntohs(conn->client.lsa.sin.sin_port));
 
+	if (conn->path_info != NULL) {
+		reg_string(L, "path_info", conn->path_info);
+	}
+
 	if (conn->request_info.content_length >= 0) {
 		/* reg_int64: content_length */
 		lua_pushstring(L, "content_length");
@@ -1293,7 +1350,11 @@ prepare_lua_environment(struct mg_context *ctx,
 		reg_string(L, "document_root", ctx->config[DOCUMENT_ROOT]);
 		reg_string(L, "auth_domain", ctx->config[AUTHENTICATION_DOMAIN]);
 #if defined(USE_WEBSOCKET)
-		reg_string(L, "websocket_root", ctx->config[WEBSOCKET_ROOT]);
+		if (ctx->config[WEBSOCKET_ROOT]) {
+			reg_string(L, "websocket_root", ctx->config[WEBSOCKET_ROOT]);
+		} else {
+			reg_string(L, "websocket_root", ctx->config[DOCUMENT_ROOT]);
+		}
 #endif
 
 		if (ctx->systemName != NULL) {
@@ -1357,7 +1418,6 @@ lua_error_handler(lua_State *L)
 static void *
 lua_allocator(void *ud, void *ptr, size_t osize, size_t nsize)
 {
-
 	(void)ud;
 	(void)osize; /* not used */
 
@@ -1419,20 +1479,20 @@ mg_exec_lua_script(struct mg_connection *conn,
 static int
 handle_lsp_request(struct mg_connection *conn,
                    const char *path,
-                   struct file *filep,
+                   struct mg_file *filep,
                    struct lua_State *ls)
 {
 	void *p = NULL;
 	lua_State *L = NULL;
 	int error = 1;
-	struct file filesize = STRUCT_FILE_INITIALIZER;
+	struct mg_file filesize = STRUCT_FILE_INITIALIZER;
 
 	/* Assume the script does not support keep_alive. The script may change this
 	 * by calling mg.keep_alive(true). */
 	conn->must_close = 1;
 
 	/* We need both mg_stat to get file size, and mg_fopen to get fd */
-	if (!mg_stat(conn, path, &filesize)) {
+	if (!mg_stat(conn, path, &filesize.stat)) {
 
 		/* File not found */
 		if (ls == NULL) {
@@ -1444,7 +1504,7 @@ handle_lsp_request(struct mg_connection *conn,
 		goto cleanup_handle_lsp_request;
 	}
 
-	if (!mg_fopen(conn, path, "r", filep)) {
+	if (!mg_fopen(conn, path, MG_FOPEN_MODE_READ, filep)) {
 
 		/* File not found or not accessible */
 		if (ls == NULL) {
@@ -1461,16 +1521,16 @@ handle_lsp_request(struct mg_connection *conn,
 
 	/* TODO: Operations mg_fopen and mg_stat should do what their names
 	 * indicate. They should not fill in different members of the same
-	 * struct file.
+	 * struct mg_file.
 	 * See Github issue #225 */
-	filep->size = filesize.size;
+	filep->stat.size = filesize.stat.size;
 
-	if (filep->membuf == NULL
+	if (filep->access.membuf == NULL
 	    && (p = mmap(NULL,
-	                 (size_t)filep->size,
+	                 (size_t)filep->stat.size,
 	                 PROT_READ,
 	                 MAP_PRIVATE,
-	                 fileno(filep->fp),
+	                 fileno(filep->access.fp),
 	                 0)) == MAP_FAILED) {
 
 		/* mmap failed */
@@ -1484,8 +1544,8 @@ handle_lsp_request(struct mg_connection *conn,
 			luaL_error(ls,
 			           "mmap(%s, %zu, %d): %s",
 			           path,
-			           (size_t)filep->size,
-			           fileno(filep->fp),
+			           (size_t)filep->stat.size,
+			           fileno(filep->access.fp),
 			           strerror(errno));
 		}
 
@@ -1511,21 +1571,21 @@ handle_lsp_request(struct mg_connection *conn,
 
 	/* Lua state is ready to use */
 	/* We're not sending HTTP headers here, Lua page must do it. */
-	error = lsp(conn,
-	            path,
-	            (filep->membuf == NULL) ? (const char *)p
-	                                    : (const char *)filep->membuf,
-	            filep->size,
-	            L);
-
+	error =
+	    lsp(conn,
+	        path,
+	        (filep->access.membuf == NULL) ? (const char *)p
+	                                       : (const char *)filep->access.membuf,
+	        filep->stat.size,
+	        L);
 
 cleanup_handle_lsp_request:
 
 	if (L != NULL && ls == NULL)
 		lua_close(L);
 	if (p != NULL)
-		munmap(p, filep->size);
-	mg_fclose(filep);
+		munmap(p, filep->stat.size);
+	(void)mg_fclose(&filep->access);
 
 	return error;
 }
@@ -1740,13 +1800,109 @@ lua_websocket_close(struct mg_connection *conn, void *ws_arg)
 #endif
 
 
+lua_State *
+mg_prepare_lua_context_script(const char *file_name,
+                              struct mg_context *ctx,
+                              char *ebuf,
+                              size_t ebuf_len)
+{
+	struct lua_State *L;
+	int lua_ret;
+	const char *lua_err_txt;
+
+	L = luaL_newstate();
+	if (L == NULL) {
+		mg_snprintf(NULL,
+		            NULL, /* No truncation check for ebuf */
+		            ebuf,
+		            ebuf_len,
+		            "Error: %s",
+		            "Cannot create Lua state");
+		return 0;
+	}
+	civetweb_open_lua_libs(L);
+
+	lua_ret = luaL_loadfile(L, file_name);
+	if (lua_ret != LUA_OK) {
+		/* Error when loading the file (e.g. file not found, out of memory, ...)
+		 */
+		lua_err_txt = lua_tostring(L, -1);
+		mg_snprintf(NULL,
+		            NULL, /* No truncation check for ebuf */
+		            ebuf,
+		            ebuf_len,
+		            "Error loading file %s: %s\n",
+		            file_name,
+		            lua_err_txt);
+		return 0;
+	}
+
+	/* The script file is loaded, now call it */
+	lua_ret = lua_pcall(L,
+	                    /* no arguments */ 0,
+	                    /* zero or one return value */ 1,
+	                    /* errors as strint return value */ 0);
+
+	if (lua_ret != LUA_OK) {
+		/* Error when executing the script */
+		lua_err_txt = lua_tostring(L, -1);
+		mg_snprintf(NULL,
+		            NULL, /* No truncation check for ebuf */
+		            ebuf,
+		            ebuf_len,
+		            "Error running file %s: %s\n",
+		            file_name,
+		            lua_err_txt);
+		return 0;
+	}
+	/*	lua_close(L); must be done somewhere else */
+
+	return L;
+}
+
+
+int
+run_lua(const char *file_name)
+{
+	int func_ret = EXIT_FAILURE;
+	char ebuf[512] = {0};
+	lua_State *L =
+	    mg_prepare_lua_context_script(file_name, NULL, ebuf, sizeof(ebuf));
+	if (L) {
+		/* Script executed */
+		if (lua_type(L, -1) == LUA_TNUMBER) {
+			func_ret = (int)lua_tonumber(L, -1);
+		} else {
+			func_ret = EXIT_SUCCESS;
+		}
+		lua_close(L);
+	} else {
+		fprintf(stderr, "%s\n", ebuf);
+	}
+	return func_ret;
+}
+
+
+static void *lib_handle_uuid = NULL;
+
 static void
 lua_init_optional_libraries(void)
 {
 #if !defined(_WIN32)
-	void *dll_handle = dlopen("libuuid.so", RTLD_LAZY);
-	pf_uuid_generate.p = dlsym(dll_handle, "uuid_generate");
+	lib_handle_uuid = dlopen("libuuid.so", RTLD_LAZY);
+	pf_uuid_generate.p = dlsym(lib_handle_uuid, "uuid_generate");
 #else
 	pf_uuid_generate.p = 0;
 #endif
+}
+
+
+static void
+lua_exit_optional_libraries(void)
+{
+#if !defined(_WIN32)
+	dlclose(lib_handle_uuid);
+#endif
+	pf_uuid_generate.p = 0;
+	lib_handle_uuid = NULL;
 }
