@@ -85,18 +85,25 @@ void CSetDlgEpg::SaveIni(void)
 	WritePrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BACK_CS2)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"EpgCapBackCS3BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BACK_CS3)), appIniPath.c_str() );
 
+	BOOL chSetModified = FALSE;
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		map<LONGLONG, CH_DATA5>::const_iterator itr;
 		itr = this->chSet.GetMap().begin();
 		advance(itr, i);
-		this->chSet.SetEpgCapMode(
-			itr->second.originalNetworkID,
-			itr->second.transportStreamID,
-			itr->second.serviceID,
-			ListView_GetCheckState(GetDlgItem(IDC_LIST_SERVICE), i)
-			);
+		if( (ListView_GetCheckState(GetDlgItem(IDC_LIST_SERVICE), i) != FALSE) != (itr->second.epgCapFlag != FALSE) ){
+			chSetModified = TRUE;
+			this->chSet.SetEpgCapMode(
+				itr->second.originalNetworkID,
+				itr->second.transportStreamID,
+				itr->second.serviceID,
+				itr->second.epgCapFlag == FALSE
+				);
+		}
 	}
-	this->chSet.SaveText();
+	//チェックを操作したときだけ保存する
+	if( chSetModified ){
+		this->chSet.SaveText();
+	}
 }
 
 

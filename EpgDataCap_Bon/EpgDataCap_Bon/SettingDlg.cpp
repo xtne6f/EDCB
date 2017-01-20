@@ -65,25 +65,29 @@ BOOL CSettingDlg::OnInitDialog()
 	Item.pszText = L"外部アプリケーション設定";
 	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 5, &Item);
 
-	basicDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_BASIC), GetDlgItem(IDC_TAB) );
-	appDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APP), GetDlgItem(IDC_TAB) );
-	epgDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_EPG), GetDlgItem(IDC_TAB) );
-	networkDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_NW), GetDlgItem(IDC_TAB) );
-	appBtnDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APPBTN), GetDlgItem(IDC_TAB) );
-	serviceDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_SERVICE), GetDlgItem(IDC_TAB) );
+	basicDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_BASIC), GetSafeHwnd() );
+	appDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APP), GetSafeHwnd() );
+	epgDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_EPG), GetSafeHwnd() );
+	networkDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_NW), GetSafeHwnd() );
+	appBtnDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APPBTN), GetSafeHwnd() );
+	serviceDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_SERVICE), GetSafeHwnd() );
 
 	RECT rc;
-	GetClientRect(GetDlgItem(IDC_TAB), &rc);
+	GetWindowRect(GetDlgItem(IDC_TAB), &rc);
 	TabCtrl_AdjustRect(GetDlgItem(IDC_TAB), FALSE, &rc);
+	POINT pt;
+	pt.x = rc.left;
+	pt.y = rc.top;
+	ScreenToClient(GetSafeHwnd(), &pt);
 
 	rc.right -= rc.left;
 	rc.bottom -= rc.top;
-	MoveWindow(basicDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
-	MoveWindow(appDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
-	MoveWindow(epgDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
-	MoveWindow(networkDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
-	MoveWindow(appBtnDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
-	MoveWindow(serviceDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
+	MoveWindow(basicDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
+	MoveWindow(appDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
+	MoveWindow(epgDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
+	MoveWindow(networkDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
+	MoveWindow(appBtnDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
+	MoveWindow(serviceDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
 
 	TabCtrl_SetCurSel(GetDlgItem(IDC_TAB), 0);
 	ShowWindow(basicDlg.GetSafeHwnd(), SW_SHOW);
