@@ -31,11 +31,25 @@ if r then
     end
   end
   epgInfo=_ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
+  dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct=ct..'  <dl>\n'
     ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..string.gsub(epgInfo, '\r?\n', '<br>\n')
-      or FormatTimeAndDuration(r.startTime, r.durationSecond)..'<br>'..r.stationName..'<br>'..r.title)..'</dd>\n'
+      or FormatTimeAndDuration(r.startTime, r.durationSecond)..'<br>'..r.stationName..'<br>'..r.title..'<br><br>'
+        ..string.format('OriginalNetworkID:%d(0x%04X)<br>', r.onid, r.onid)
+        ..string.format('TransportStreamID:%d(0x%04X)<br>', r.tsid, r.tsid)
+        ..string.format('ServiceID:%d(0x%04X)<br>', r.sid, r.sid)
+      )..'</dd>\n'
     ..(video and '    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)
        ..'</a> [<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>]</dd>\n' or '')
+    ..'    <dt>プログラム予約'..(r.eid==65535 and '' or '化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
+    ..'</dt><dd>\n'
+    ..'<form method="POST" action="reservechg.html?id='..r.reserveID
+    ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'予約日時: <input type="text" name="startDate" value="'..string.format('%d/%d/%d', r.startTime.year, r.startTime.month, r.startTime.day)
+    ..'"> <input type="text" name="startTime" value="'..string.format('%d:%d:%d', r.startTime.hour, r.startTime.min, r.startTime.sec)
+    ..'"> ～ <input type="text" name="endTime" value="'..string.format('%d:%d:%d', math.floor(dur/3600)%24, math.floor(dur/60)%60, dur%60)
+    ..'"><br>\n'
+    ..'<input type="submit" value="変更"></div></form></dd>\n'
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="reserveinfo.html"><div>\n'
     ..'<input type="hidden" name="id" value="'..r.reserveID..'"><select name="presetID">\n'

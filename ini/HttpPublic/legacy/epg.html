@@ -145,6 +145,20 @@ for i,v in ipairs(st) do
 end
 
 table.insert(ctt, '</tr>\n'..rowTail..'  </table>\n</div>\n'..(#st==0 and '' or pageNav)..[=[
+<div class="aside">
+  <form method="POST" action="epgaction.html?epgcap=y">
+    <div>
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="submit" value="EPG取得">
+    </div>
+  </form>
+  <form method="POST" action="epgaction.html?reload=y">
+    <div>
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="submit" value="EPG再読み込み">
+    </div>
+  </form>
+</div>
 <div id="footer">
   <a href="index.html">メニューへ</a>
 </div>

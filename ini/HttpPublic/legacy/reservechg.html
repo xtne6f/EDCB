@@ -71,6 +71,29 @@ if post and r then
     rs.tunerID=tunerID
     rs.partialRecFlag=partialRecFlag and 1 or 0
     changed=edcb.ChgReserveData(r)
+  else
+    start={}
+    start.year,start.month,start.day=(mg.get_var(post, 'startDate') or ''):match('(%d+)/(%d+)/(%d+)')
+    start.hour,start.min,start.sec=(mg.get_var(post, 'startTime') or ''):match('(%d+):(%d+):(%d+)')
+    endHour,endMin,endSec=(mg.get_var(post, 'endTime') or ''):match('(%d+):(%d+):(%d+)')
+    if start.year and start.hour and endHour then
+      --start.wdayをセットするため
+      start=os.time(start)
+      if start then
+        timezone=start-os.time(os.date('!*t', start))
+        start=os.date('!*t', start+timezone)
+        if start then
+          dur=(endHour-start.hour)*3600+(endMin-start.min)*60+endSec-start.sec
+          if -24*3600<dur and dur<24*3600 then
+            --プログラム予約化
+            r.eid=65535
+            r.startTime=start
+            r.durationSecond=dur<0 and dur+24*3600 or dur
+            changed=edcb.ChgReserveData(r)
+          end
+        end
+      end
+    end
   end
 end
 

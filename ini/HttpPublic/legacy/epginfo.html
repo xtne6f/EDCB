@@ -34,7 +34,18 @@ if not r and presetID==65535 then
 end
 
 ct=ct..'    <dt>番組情報</dt><dd>\n'..string.gsub(_ConvertEpgInfoText2(onid, tsid, sid, eid), '\r?\n', '<br>\n')..'</dd>\n'
-  ..'    <dt>プリセット<dt><dd>\n'
+if r then
+  dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
+  ct=ct..'    <dt>プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）</dt><dd>\n'
+    ..'<form method="POST" action="reservechg.html?id='..r.reserveID
+    ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'予約日時: <input type="text" name="startDate" value="'..string.format('%d/%d/%d', r.startTime.year, r.startTime.month, r.startTime.day)
+    ..'"> <input type="text" name="startTime" value="'..string.format('%d:%d:%d', r.startTime.hour, r.startTime.min, r.startTime.sec)
+    ..'"> ～ <input type="text" name="endTime" value="'..string.format('%d:%d:%d', math.floor(dur/3600)%24, math.floor(dur/60)%60, dur%60)
+    ..'"><br>\n'
+    ..'<input type="submit" value="変更"></div></form></dd>\n'
+end
+ct=ct..'    <dt>プリセット<dt><dd>\n'
   ..'<form action="epginfo.html"><div>'
   ..'<input type="hidden" name="id" value="'..onid..'-'..tsid..'-'..sid..'-'..eid..'"><select name="presetID">\n'
 preset=false
