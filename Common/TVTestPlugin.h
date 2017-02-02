@@ -1,7 +1,5 @@
 /*
-	TVTest プラグインヘッダ ver.0.0.14-pre
-
-	※ ver.0.0.14 はまだ開発途中です。今後変更される可能性があります。
+	TVTest プラグインヘッダ ver.0.0.14
 
 	このファイルは再配布・改変など自由に行って構いません。
 	ただし、改変した場合はオリジナルと違う旨を記載して頂けると、混乱がなくてい
@@ -122,6 +120,15 @@
 	  ・MESSAGE_FREEFAVORITELIST
 	  ・MESSAGE_GET1SEGMODE
 	  ・MESSAGE_SET1SEGMODE
+	  ・MESSAGE_GETDPI
+	  ・MESSAGE_GETFONT
+	  ・MESSAGE_SHOWDIALOG
+	  ・MESSAGE_CONVERTTIME
+	  ・MESSAGE_SETVIDEOSTREAMCALLBACK
+	  ・MESSAGE_GETVARSTRINGCONTEXT
+	  ・MESSAGE_FREEVARSTRINGCONTEXT
+	  ・MESSAGE_FORMATVARSTRING
+	  ・MESSAGE_REGISTERVARIABLE
 	・以下のイベントを追加した
 	  ・EVENT_FILTERGRAPH_INITIALIZE
 	  ・EVENT_FILTERGRAPH_INITIALIZED
@@ -134,13 +141,13 @@
 	  ・EVENT_PANELITEM_NOTIFY
 	  ・EVENT_FAVORITESCHANGED
 	  ・EVENT_1SEGMODECHANGED
-	・MESSAGE_GETSETTING で取得できる設定に以下を追加した
-	  ・OSDFont
-	  ・PanelFont
-	  ・ProgramGuideFont
-	  ・StatusBarFont
-	  ・DPI
 	・プラグインのフラグに PLUGIN_FLAG_NOENABLEDDISABLED を追加した
+	・録画情報のフラグに RECORD_FLAG_UTC を追加した。
+	・MESSAGE_GETRECORDSTATUS にフラグの指定を追加した。
+	・MESSAGE_GETSETTING で取得できる設定に以下を追加した。
+	  ・RecordFileName
+	  ・CaptureFolder
+	  ・CaptureFileName
 
 	ver.0.0.13 (TVTest ver.0.7.16 or later)
 	・以下のメッセージを追加した
@@ -199,10 +206,7 @@
 	・MESSAGE_RESET にパラメータを追加した
 
 	ver.0.0.8 (TVTest ver.0.6.0 or later)
-	・以下のメッセージを追加した
-	  ・MESSAGE_GETBCASINFO
-	  ・MESSAGE_SENDBCASCOMMAND
-	  ・MESSAGE_GETHOSTINFO
+	・MESSAGE_GETHOSTINFO を追加した
 	・MESSAGE_SETCHANNEL のパラメータにサービスIDを追加した
 
 	ver.0.0.7 (TVTest ver.0.5.45 or later)
@@ -232,7 +236,7 @@
 	ver.0.0.2
 	・MESSAGE_GETAUDIOSTREAM と MESSAGE_SETAUDIOSTREAM を追加した
 	・ServiceInfo 構造体に AudioComponentType と SubtitlePID メンバを追加した
-	・StatusInfo 構造体に DropPacketCount と BcasCardStatus メンバを追加した
+	・StatusInfo 構造体に DropPacketCount と Reserved メンバを追加した
 
 	ver.0.0.1
 	・以下のメッセージを追加した
@@ -392,8 +396,8 @@ enum {
 	MESSAGE_DOCOMMAND,					// コマンドの実行
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,8)
-	MESSAGE_GETBCASINFO,				// B-CAS カードの情報を取得
-	MESSAGE_SENDBCASCOMMAND,			// B-CAS カードにコマンドを送信
+	MESSAGE_REMOVED1,					// (機能削除)
+	MESSAGE_REMOVED2,					// (機能削除)
 	MESSAGE_GETHOSTINFO,				// ホストプログラムの情報を取得
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,9)
@@ -455,6 +459,15 @@ enum {
 	MESSAGE_FREEFAVORITELIST,			// お気に入りチャンネルを解放
 	MESSAGE_GET1SEGMODE,				// ワンセグモードを取得
 	MESSAGE_SET1SEGMODE,				// ワンセグモードを設定
+	MESSAGE_GETDPI,						// DPIを取得
+	MESSAGE_GETFONT,					// フォントを取得
+	MESSAGE_SHOWDIALOG,					// ダイアログを表示
+	MESSAGE_CONVERTTIME,				// 日時を変換
+	MESSAGE_SETVIDEOSTREAMCALLBACK,		// 映像ストリームのコールバック関数を設定
+	MESSAGE_GETVARSTRINGCONTEXT,		// 変数文字列のコンテキストを取得
+	MESSAGE_FREEVARSTRINGCONTEXT,		// 変数文字列のコンテキストを解放
+	MESSAGE_FORMATVARSTRING,			// 変数文字列を使って文字列をフォーマット
+	MESSAGE_REGISTERVARIABLE,			// 変数を登録
 #endif
 	MESSAGE_TRAILER
 };
@@ -524,6 +537,7 @@ enum {
 	EVENT_PANELITEM_NOTIFY,						// パネル項目の通知
 	EVENT_FAVORITESCHANGED,						// お気に入りチャンネルが変更された
 	EVENT_1SEGMODECHANGED,						// ワンセグモードが変わった
+	EVENT_GETVARIABLE,							// 変数の取得
 #endif
 	EVENT_TRAILER
 };
@@ -550,22 +564,31 @@ inline bool MsgQueryMessage(PluginParam *pParam,UINT Message) {
 }
 
 // メモリ再確保
-// 仕様はreallocと同じ
+// pData が NULL で新しい領域を確保
+// Size が0で領域を解放
 inline void *MsgMemoryReAlloc(PluginParam *pParam,void *pData,DWORD Size) {
 	return (void*)(*pParam->Callback)(pParam,MESSAGE_MEMORYALLOC,(LPARAM)pData,Size);
 }
 
 // メモリ確保
-// 仕様はrealloc(NULL,Size)と同じ
 inline void *MsgMemoryAlloc(PluginParam *pParam,DWORD Size) {
 	return (void*)(*pParam->Callback)(pParam,MESSAGE_MEMORYALLOC,(LPARAM)(void*)NULL,Size);
 }
 
 // メモリ開放
-// 仕様はrealloc(pData,0)と同じ
-// (実際にreallocでメモリ開放しているコードは見たこと無いけど...)
 inline void MsgMemoryFree(PluginParam *pParam,void *pData) {
 	(*pParam->Callback)(pParam,MESSAGE_MEMORYALLOC,(LPARAM)pData,0);
+}
+
+// 文字列複製
+inline LPWSTR MsgStringDuplicate(PluginParam *pParam,LPCWSTR pszString) {
+	if (pszString==NULL)
+		return NULL;
+	DWORD Size=(::lstrlenW(pszString)+1)*sizeof(WCHAR);
+	LPWSTR pszDup=(LPWSTR)MsgMemoryAlloc(pParam,Size);
+	if (pszDup!=NULL)
+		::CopyMemory(pszDup,pszString,Size);
+	return pszDup;
 }
 
 // イベントハンドル用コールバックの設定
@@ -719,6 +742,9 @@ enum {
 // 録画フラグ
 enum {
 	RECORD_FLAG_CANCEL		=0x10000000UL	// キャンセル
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,14)
+	, RECORD_FLAG_UTC		=0x00000001UL	// UTC 日時
+#endif
 };
 
 // 録画開始時間の指定方法
@@ -744,17 +770,18 @@ struct RecordInfo {
 							// %～% で囲まれた置換キーワードを使用できます
 	int MaxFileName;		// ファイル名の最大長(MESSAGE_GETRECORDのみで使用)
 	FILETIME ReserveTime;	// 録画予約された時刻(MESSAGE_GETRECORDのみで使用)
+							// ローカル時刻(Flags に RECORD_FLAG_UTC を指定した場合 UTC)
 	DWORD StartTimeSpec;	// 録画開始時間の指定方法(RECORD_START_???)
 	union {
 		FILETIME Time;		// 録画開始時刻(StartTimeSpec==RECORD_START_TIME)
-							// ローカル時刻
+							// ローカル時刻(Flags に RECORD_FLAG_UTC を指定した場合 UTC)
 		ULONGLONG Delay;	// 録画開始時間(StartTimeSpec==RECORD_START_DELAY)
 							// 録画を開始するまでの時間(ms)
 	} StartTime;
 	DWORD StopTimeSpec;		// 録画停止時間の指定方法(RECORD_STOP_???)
 	union {
 		FILETIME Time;		// 録画停止時刻(StopTimeSpec==RECORD_STOP_TIME)
-							// ローカル時刻
+							// ローカル時刻(Flags に RECORD_FLAG_UTC を指定した場合 UTC)
 		ULONGLONG Duration;	// 録画停止時間(StopTimeSpec==RECORD_STOP_DURATION)
 							// 開始時間からのミリ秒
 	} StopTime;
@@ -825,17 +852,6 @@ inline bool MsgSetPanScan(PluginParam *pParam,const PanScanInfo *pInfo) {
 	return (*pParam->Callback)(pParam,MESSAGE_SETPANSCAN,(LPARAM)pInfo,0)!=0;
 }
 
-// B-CAS カードの状態
-enum {
-	BCAS_STATUS_OK,				// エラーなし
-	BCAS_STATUS_NOTOPEN,		// 開かれていない(スクランブル解除なし)
-	BCAS_STATUS_NOCARDREADER,	// カードリーダが無い
-	BCAS_STATUS_NOCARD,			// カードがない
-	BCAS_STATUS_OPENERROR,		// オープンエラー
-	BCAS_STATUS_TRANSMITERROR,	// 通信エラー
-	BCAS_STATUS_ESTABLISHERROR	// コンテキスト確立失敗
-};
-
 // ステータス情報
 struct StatusInfo {
 	DWORD Size;							// 構造体のサイズ
@@ -846,8 +862,7 @@ struct StatusInfo {
 	DWORD ScramblePacketCount;			// 復号漏れパケット数
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,2)
 	DWORD DropPacketCount;				// ドロップパケット数
-	DWORD BcasCardStatus;				// B-CAS カードの状態(BCAS_STATUS_???)
-										// ※ B-CAS 関連の機能は削除されました。現在は利用できません。
+	DWORD Reserved;						// 予約
 #endif
 };
 
@@ -872,13 +887,14 @@ enum {
 struct RecordStatusInfo {
 	DWORD Size;				// 構造体のサイズ
 	DWORD Status;			// 状態(RECORD_STATUS_???)
-	FILETIME StartTime;		// 録画開始時刻(ローカル時刻)
+	FILETIME StartTime;		// 録画開始時刻
+							// ローカル時刻(RECORD_STATUS_FLAG_UTC が指定されていれば UTC)
 	DWORD RecordTime;		// 録画時間(ms) 一時停止中を含まない
 	DWORD PauseTime;		// 一時停止時間(ms)
 	DWORD StopTimeSpec;		// 録画停止時間の指定方法(RECORD_STOP_???)
 	union {
 		FILETIME Time;		// 録画停止予定時刻(StopTimeSpec==RECORD_STOP_TIME)
-							// (ローカル時刻)
+							// ローカル時刻(RECORD_STATUS_FLAG_UTC が指定されていれば UTC)
 		ULONGLONG Duration;	// 録画停止までの時間(StopTimeSpec==RECORD_STOP_DURATION)
 							// 開始時刻(StartTime)からミリ秒単位
 	} StopTime;
@@ -899,6 +915,15 @@ enum { RECORDSTATUSINFO_SIZE_V1=TVTEST_OFFSETOF(RecordStatusInfo,pszFileName) };
 inline bool MsgGetRecordStatus(PluginParam *pParam,RecordStatusInfo *pInfo) {
 	return (*pParam->Callback)(pParam,MESSAGE_GETRECORDSTATUS,(LPARAM)pInfo,0)!=0;
 }
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,14)
+// 録画ステータス取得フラグ
+enum {
+	RECORD_STATUS_FLAG_UTC = 0x00000001U	// UTC の時刻を取得
+};
+inline bool MsgGetRecordStatus(PluginParam *pParam,RecordStatusInfo *pInfo,DWORD Flags) {
+	return (*pParam->Callback)(pParam,MESSAGE_GETRECORDSTATUS,(LPARAM)pInfo,Flags)!=0;
+}
+#endif
 
 // 映像の情報
 struct VideoInfo {
@@ -1112,7 +1137,7 @@ struct ProgramInfo {
 	int MaxEventText;		// イベントテキストの最大長
 	LPWSTR pszEventExtText;	// 追加イベントテキスト
 	int MaxEventExtText;	// 追加イベントテキストの最大長
-	SYSTEMTIME StartTime;	// 開始日時(JST)
+	SYSTEMTIME StartTime;	// 開始日時(EPG 日時 : UTC+9)
 	DWORD Duration;			// 長さ(秒単位)
 };
 
@@ -1299,64 +1324,6 @@ inline bool MsgDoCommand(PluginParam *pParam,LPCWSTR pszCommand)
 
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,8)
 
-// B-CAS の情報
-struct BCasInfo {
-	DWORD Size;						// 構造体のサイズ
-	WORD CASystemID;				// CA_system_id
-	BYTE CardID[6];					// カードID
-	BYTE CardType;					// カード種別
-	BYTE MessagePartitionLength;	// メッセージ分割長
-	BYTE SystemKey[32];				// システム鍵
-	BYTE InitialCBC[8];				// CBC初期値
-	BYTE CardManufacturerID;		// メーカ識別
-	BYTE CardVersion;				// バージョン
-	WORD CheckCode;					// チェックコード
-	char szFormatCardID[25];		// 可読形式のカードID (4桁の数字x5)
-};
-
-// B-CAS カードの情報を取得する
-// ※ B-CAS 関連の機能は削除されました。現在は利用できません。
-// カードが開かれていない場合は false が返ります。
-inline bool MsgGetBCasInfo(PluginParam *pParam,BCasInfo *pInfo)
-{
-	return (*pParam->Callback)(pParam,MESSAGE_GETBCASINFO,(LPARAM)pInfo,0)!=0;
-}
-
-// B-CAS コマンドの情報
-struct BCasCommandInfo {
-	const BYTE *pSendData;	// 送信データ
-	DWORD SendSize;			// 送信サイズ (バイト単位)
-	BYTE *pReceiveData;		// 受信データ
-	DWORD ReceiveSize;		// 受信サイズ (バイト単位)
-};
-
-// B-CAS カードにコマンドを送信する
-// ※ B-CAS 関連の機能は削除されました。現在は利用できません。
-// BCasCommandInfo の pSendData に送信データへのポインタを指定して、
-// SendSize に送信データのバイト数を設定します。
-// また、pReceiveData に受信データを格納するバッファへのポインタを指定して、
-// ReceiveSize にバッファに格納できる最大サイズを設定します。
-// 送信が成功すると、ReceiveSize に受信したデータのサイズが返されます。
-inline bool MsgSendBCasCommand(PluginParam *pParam,BCasCommandInfo *pInfo)
-{
-	return (*pParam->Callback)(pParam,MESSAGE_SENDBCASCOMMAND,(LPARAM)pInfo,0)!=0;
-}
-
-// B-CAS カードにコマンドを送信する
-// ※ B-CAS 関連の機能は削除されました。現在は利用できません。
-inline bool MsgSendBCasCommand(PluginParam *pParam,const BYTE *pSendData,DWORD SendSize,BYTE *pReceiveData,DWORD *pReceiveSize)
-{
-	BCasCommandInfo Info;
-	Info.pSendData=pSendData;
-	Info.SendSize=SendSize;
-	Info.pReceiveData=pReceiveData;
-	Info.ReceiveSize=*pReceiveSize;
-	if (!MsgSendBCasCommand(pParam,&Info))
-		return false;
-	*pReceiveSize=Info.ReceiveSize;
-	return true;
-}
-
 // ホストプログラムの情報
 struct HostInfo {
 	DWORD Size;						// 構造体のサイズ
@@ -1414,12 +1381,14 @@ enum SettingType {
 	IniFilePath           Ini ファイルのパス                  文字列
 	RecordFolder          録画時の保存先フォルダ              文字列
 
-	* ver.0.0.14 以降
-	OSDFont               OSD のフォント                      データ(LOGFONT)
-	PanelFont             パネルのフォント                    データ(LOGFONT)
-	ProgramGuideFont      番組表のフォント                    データ(LOGFONT)
-	StatusBarFont         ステータスバーのフォント            データ(LOGFONT)
-	DPI                   UIのDPI                             int
+	ver.0.0.14 以降
+	RecordFileName        録画のファイル名(※1)               文字列
+	CaptureFolder         キャプチャの保存先フォルダ(※2)     文字列
+	CaptureFileName       キャプチャのファイル名(※1)         文字列
+
+	※1　%event-name% などの変数が含まれている可能性があります。
+	　 　MsgFormatVarString を使って変数を展開できます。
+	※2　相対パスの可能性があります。その場合実行ファイルの場所が基準です。
 */
 
 // 設定を取得する
@@ -1478,17 +1447,6 @@ inline DWORD MsgGetSetting(PluginParam *pParam,LPCWSTR pszName,LPWSTR pszString,
 	if (!(*pParam->Callback)(pParam,MESSAGE_GETSETTING,(LPARAM)&Info,0))
 		return 0;
 	return Info.ValueSize/sizeof(WCHAR);
-}
-
-// フォントの設定を取得する
-inline bool MsgGetSetting(PluginParam *pParam,LPCWSTR pszName,LOGFONTW *pFont)
-{
-	SettingInfo Info;
-	Info.pszName=pszName;
-	Info.Type=SETTING_TYPE_DATA;
-	Info.ValueSize=sizeof(LOGFONTW);
-	Info.Value.pData=pFont;
-	return (*pParam->Callback)(pParam,MESSAGE_GETSETTING,(LPARAM)&Info,0)!=FALSE;
 }
 
 // BonDriverのフルパス名を取得する
@@ -1572,6 +1530,7 @@ enum {
 };
 
 // 録画開始情報
+// EVENT_STARTRECORD で渡されます。
 struct StartRecordInfo {
 	DWORD Size;				// 構造体のサイズ
 	DWORD Flags;			// フラグ(現在未使用)
@@ -1786,7 +1745,7 @@ struct EpgEventInfo {
 	BYTE RunningStatus;					// running_status
 	BYTE FreeCaMode;					// free_CA_mode
 	DWORD Reserved;						// 予約
-	SYSTEMTIME StartTime;				// 開始日時(ローカル時刻)
+	SYSTEMTIME StartTime;				// 開始日時(EPG 日時 : UTC+9)
 	DWORD Duration;						// 長さ(秒単位)
 	BYTE VideoListLength;				// 映像の情報の数
 	BYTE AudioListLength;				// 音声の情報の数
@@ -1923,7 +1882,7 @@ struct ProgramGuideProgramInfo {
 	WORD TransportStreamID;	// ストリームID
 	WORD ServiceID;			// サービスID
 	WORD EventID;			// イベントID
-	SYSTEMTIME StartTime;	// 開始日時
+	SYSTEMTIME StartTime;	// 開始日時(EPG 日時 : UTC+9)
 	DWORD Duration;			// 長さ(秒単位)
 };
 
@@ -2019,10 +1978,11 @@ struct FilterGraphInfo {
 
 // スタイル値の単位
 enum {
-	STYLE_UNIT_UNDEFINED,	// 未定義
-	STYLE_UNIT_PIXEL,		// ピクセル
-	STYLE_UNIT_POINT,		// ポイント
-	STYLE_UNIT_DIP			// dip
+	STYLE_UNIT_UNDEFINED,		// 未定義
+	STYLE_UNIT_LOGICAL_PIXEL,	// 論理ピクセル(96 DPI におけるピクセル単位)
+	STYLE_UNIT_PHYSICAL_PIXEL,	// 物理ピクセル
+	STYLE_UNIT_POINT,			// ポイント(1/72インチ)
+	STYLE_UNIT_DIP				// dip(1/160インチ)
 };
 
 // スタイル値の情報
@@ -2031,22 +1991,25 @@ struct StyleValueInfo {
 	DWORD Flags;		// 各種フラグ(現在は常に0)
 	LPCWSTR pszName;	// スタイル名
 	int Unit;			// 取得する値の単位(STYLE_UNIT_*)
+	int DPI;			// DPI の指定
 	int Value;			// 取得された値
 };
 
 // スタイル値を取得する
+// TVTest.style.ini で設定されたスタイル値を取得します。
 // 通常は下のオーバーロードされた関数を利用する方が簡単です。
 inline bool MsgGetStyleValue(PluginParam *pParam,StyleValueInfo *pInfo) {
 	return (*pParam->Callback)(pParam,MESSAGE_GETSTYLEVALUE,(LPARAM)pInfo,0)!=FALSE;
 }
 
 // 指定された単位のスタイル値を取得する
-inline bool MsgGetStyleValue(PluginParam *pParam,LPCWSTR pszName,int Unit,int *pValue) {
+inline bool MsgGetStyleValue(PluginParam *pParam,LPCWSTR pszName,int Unit,int DPI,int *pValue) {
 	StyleValueInfo Info;
 	Info.Size=sizeof(Info);
 	Info.Flags=0;
 	Info.pszName=pszName;
 	Info.Unit=Unit;
+	Info.DPI=DPI;
 	if (!MsgGetStyleValue(pParam,&Info))
 		return false;
 	*pValue=Info.Value;
@@ -2055,12 +2018,12 @@ inline bool MsgGetStyleValue(PluginParam *pParam,LPCWSTR pszName,int Unit,int *p
 
 // オリジナルの単位のスタイル値を取得する
 inline bool MsgGetStyleValue(PluginParam *pParam,LPCWSTR pszName,int *pValue) {
-	return MsgGetStyleValue(pParam,pszName,STYLE_UNIT_UNDEFINED,pValue);
+	return MsgGetStyleValue(pParam,pszName,STYLE_UNIT_UNDEFINED,0,pValue);
 }
 
-// ピクセル単位のスタイル値を取得する
-inline bool MsgGetStyleValuePixels(PluginParam *pParam,LPCWSTR pszName,int *pValue) {
-	return MsgGetStyleValue(pParam,pszName,STYLE_UNIT_PIXEL,pValue);
+// 物理ピクセル単位のスタイル値を取得する
+inline bool MsgGetStyleValuePixels(PluginParam *pParam,LPCWSTR pszName,int DPI,int *pValue) {
+	return MsgGetStyleValue(pParam,pszName,STYLE_UNIT_PHYSICAL_PIXEL,DPI,pValue);
 }
 
 // テーマの背景描画情報
@@ -2070,6 +2033,7 @@ struct ThemeDrawBackgroundInfo {
 	LPCWSTR pszStyle;	// スタイル名
 	HDC hdc;			// 描画先DC
 	RECT DrawRect;		// 描画領域
+	int DPI;			// DPI の指定(0でメインウィンドウと同じ)
 };
 
 // テーマ描画フラグ
@@ -2084,13 +2048,14 @@ inline bool MsgThemeDrawBackground(PluginParam *pParam,ThemeDrawBackgroundInfo *
 }
 
 // テーマの背景を描画する
-inline bool MsgThemeDrawBackground(PluginParam *pParam,LPCWSTR pszStyle,HDC hdc,const RECT &DrawRect) {
+inline bool MsgThemeDrawBackground(PluginParam *pParam,LPCWSTR pszStyle,HDC hdc,const RECT &DrawRect,int DPI=0) {
 	ThemeDrawBackgroundInfo Info;
 	Info.Size=sizeof(Info);
 	Info.Flags=0;
 	Info.pszStyle=pszStyle;
 	Info.hdc=hdc;
 	Info.DrawRect=DrawRect;
+	Info.DPI=DPI;
 	return MsgThemeDrawBackground(pParam,&Info);
 }
 
@@ -2356,6 +2321,7 @@ inline bool MsgRegisterPluginCommand(PluginParam *pParam,const PluginCommandInfo
 }
 
 // プラグインのコマンドの状態を設定する
+// State に PLUGIN_COMMAND_STATE_* の組み合わせを指定します。
 inline bool MsgSetPluginCommandState(PluginParam *pParam,int ID,DWORD State) {
 	return (*pParam->Callback)(pParam,MESSAGE_SETPLUGINCOMMANDSTATE,ID,State)!=FALSE;
 }
@@ -2546,6 +2512,7 @@ enum {
 };
 
 // ステータス項目の通知を行う
+// Type に STATUS_ITEM_NOTIFY_* のいずれかを指定します。
 inline bool MsgStatusItemNotify(PluginParam *pParam,int ID,UINT Type) {
 	return (*pParam->Callback)(pParam,MESSAGE_STATUSITEMNOTIFY,ID,Type)!=FALSE;
 }
@@ -2590,7 +2557,9 @@ enum {
 	STATUS_ITEM_EVENT_ENTER,				// フォーカスが当たった
 	STATUS_ITEM_EVENT_LEAVE,				// フォーカスが離れた
 	STATUS_ITEM_EVENT_SIZECHANGED,			// 項目の大きさが変わった
-	STATUS_ITEM_EVENT_UPDATETIMER			// 更新タイマー
+	STATUS_ITEM_EVENT_UPDATETIMER,			// 更新タイマー
+	STATUS_ITEM_EVENT_STYLECHANGED,			// スタイルが変わった(DPI の変更など)
+	STATUS_ITEM_EVENT_FONTCHANGED			// フォントが変わった
 };
 
 // ステータス項目のマウスイベント情報
@@ -2698,7 +2667,7 @@ enum {
 	PANEL_ITEM_SET_INFO_MASK_STYLE	=0x00000002U	// StyleMask / Style を設定
 };
 
-// ステータス項目を設定する
+// パネル項目を設定する
 // PanelItemSetInfo の Size に構造体のサイズを、Mask に設定したい情報を、
 // ID に設定したい項目の識別子を指定して呼び出します。
 /*
@@ -2758,7 +2727,9 @@ enum {
 	PANEL_ITEM_EVENT_ACTIVATE,		// 項目がアクティブになる
 	PANEL_ITEM_EVENT_DEACTIVATE,	// 項目が非アクティブになる
 	PANEL_ITEM_EVENT_ENABLE,		// 項目が有効になる
-	PANEL_ITEM_EVENT_DISABLE		// 項目が無効になる
+	PANEL_ITEM_EVENT_DISABLE,		// 項目が無効になる
+	PANEL_ITEM_EVENT_STYLECHANGED,	// スタイルが変わった(DPI の変更など)
+	PANEL_ITEM_EVENT_FONTCHANGED	// フォントが変わった
 };
 
 // パネル項目作成イベントの情報
@@ -2861,6 +2832,368 @@ inline bool MsgSet1SegMode(PluginParam *pParam,bool f1SegMode) {
 	return (*pParam->Callback)(pParam,MESSAGE_SET1SEGMODE,f1SegMode,0)!=FALSE;
 }
 
+// 取得する DPI の種類
+enum DPIType {
+	DPI_TYPE_SYSTEM,	// システム
+	DPI_TYPE_WINDOW,	// ウィンドウ
+	DPI_TYPE_RECT,		// 矩形
+	DPI_TYPE_POINT,		// 位置
+	DPI_TYPE_MONITOR	// モニタ
+};
+
+// DPI 取得のフラグ
+enum {
+	DPI_FLAG_FORCED = 0x00000001U	// 強制指定された DPI を取得
+};
+
+// DPI 取得の情報
+struct GetDPIInfo {
+	DPIType Type;			// 取得する DPI の種類(DPI_TYPE_*)
+	DWORD Flags;			// フラグ(DPI_FLAG_*)
+	union {
+		HWND hwnd;			// ウィンドウハンドル(Type == DPI_TYPE_WINDOW)
+		RECT Rect;			// 矩形(Type == DPI_TYPE_RECT)
+		POINT Point;		// 位置(Type == DPI_TYPE_POINT)
+		HMONITOR hMonitor;	// モニタ(Type == DPI_TYPE_MONITOR)
+	};
+};
+
+// DPI を取得する
+// エラー時は0が返ります。
+inline int MsgGetDPI(PluginParam *pParam,GetDPIInfo *pInfo) {
+	return (int)(*pParam->Callback)(pParam,MESSAGE_GETDPI,(LPARAM)pInfo,0);
+}
+inline int MsgGetSystemDPI(PluginParam *pParam) {
+	GetDPIInfo Info;
+	Info.Type=DPI_TYPE_SYSTEM;
+	Info.Flags=0;
+	return (int)(*pParam->Callback)(pParam,MESSAGE_GETDPI,(LPARAM)&Info,0);
+}
+inline int MsgGetDPIFromWindow(PluginParam *pParam,HWND hwnd,DWORD Flags=0) {
+	GetDPIInfo Info;
+	Info.Type=DPI_TYPE_WINDOW;
+	Info.Flags=Flags;
+	Info.hwnd=hwnd;
+	return (int)(*pParam->Callback)(pParam,MESSAGE_GETDPI,(LPARAM)&Info,0);
+}
+inline int MsgGetDPIFromRect(PluginParam *pParam,const RECT &Rect,DWORD Flags=0) {
+	GetDPIInfo Info;
+	Info.Type=DPI_TYPE_RECT;
+	Info.Flags=Flags;
+	Info.Rect=Rect;
+	return (int)(*pParam->Callback)(pParam,MESSAGE_GETDPI,(LPARAM)&Info,0);
+}
+inline int MsgGetDPIFromPoint(PluginParam *pParam,const POINT &Point,DWORD Flags=0) {
+	GetDPIInfo Info;
+	Info.Type=DPI_TYPE_POINT;
+	Info.Flags=Flags;
+	Info.Point=Point;
+	return (int)(*pParam->Callback)(pParam,MESSAGE_GETDPI,(LPARAM)&Info,0);
+}
+inline int MsgGetDPIFromPoint(PluginParam *pParam,LONG x,LONG y,DWORD Flags=0) {
+	POINT pt;
+	pt.x=x;
+	pt.y=y;
+	return MsgGetDPIFromPoint(pParam,pt,Flags);
+}
+inline int MsgGetDPIFromMonitor(PluginParam *pParam,HMONITOR hMonitor,DWORD Flags=0) {
+	GetDPIInfo Info;
+	Info.Type=DPI_TYPE_MONITOR;
+	Info.Flags=Flags;
+	Info.hMonitor=hMonitor;
+	return (int)(*pParam->Callback)(pParam,MESSAGE_GETDPI,(LPARAM)&Info,0);
+}
+
+// フォント取得の情報
+struct GetFontInfo {
+	DWORD Size;			// 構造体のサイズ
+	DWORD Flags;		// フラグ(現在は常に0)
+	LPCWSTR pszName;	// 取得するフォントの指定
+	LOGFONTW LogFont;	// 取得したフォント
+	int DPI;			// DPI の指定(0で指定なし)
+};
+
+// フォントを取得する
+// 以下のフォントが取得できます。
+/*
+	OSDFont           OSD のフォント
+	PanelFont         パネルのフォント
+	ProgramGuideFont  番組表のフォント
+	StatusBarFont     ステータスバーのフォント
+*/
+inline bool MsgGetFont(PluginParam *pParam,GetFontInfo *pInfo) {
+	return (int)(*pParam->Callback)(pParam,MESSAGE_GETFONT,(LPARAM)pInfo,0)!=FALSE;
+}
+inline bool MsgGetFont(PluginParam *pParam,LPCWSTR pszName,LOGFONTW *pLogFont,int DPI=0) {
+	GetFontInfo Info;
+	Info.Size=sizeof(GetFontInfo);
+	Info.Flags=0;
+	Info.pszName=pszName;
+	Info.DPI=DPI;
+	if (!MsgGetFont(pParam,&Info))
+		return false;
+	*pLogFont=Info.LogFont;
+	return true;
+}
+
+// ダイアログのメッセージ処理関数
+typedef INT_PTR (CALLBACK *DialogMessageFunc)(HWND hDlg,UINT uMsg,WPARAM wParam,LPARAM lParam,void *pClientData);
+
+// ダイアログ表示の情報
+struct ShowDialogInfo {
+	DWORD Size;						// 構造体のサイズ
+	DWORD Flags;					// フラグ(SHOW_DIALOG_FLAG_*)
+	HINSTANCE hinst;				// ダイアログテンプレートのインスタンス
+	LPCWSTR pszTemplate;			// ダイアログテンプレート
+	DialogMessageFunc pMessageFunc;	// メッセージ処理関数
+	void *pClientData;				// メッセージ処理関数に渡すパラメータ
+	HWND hwndOwner;					// オーナーウィンドウのハンドル
+	POINT Position;					// ダイアログの位置(Flags に SHOW_DIALOG_FLAG_POSITION が指定されている場合に有効)
+};
+
+// ダイアログ表示のフラグ
+enum {
+	SHOW_DIALOG_FLAG_MODELESS = 0x00000001U,	// モードレス
+	SHOW_DIALOG_FLAG_POSITION = 0x00000002U		// 位置指定が有効
+};
+
+// ダイアログを表示する
+// DialogBox / CreateDialog などの代わりに MsgShowDialog を利用すると、
+// DPI に応じたスケーリングなどが自動的に行われます。
+// Flags に SHOW_DIALOG_FLAG_MODELESS を指定するとモードレスダイアログが作成され、
+// ダイアログのウィンドウハンドルが返ります。
+// 指定しない場合はモーダルダイアログが作成され、EndDialog で指定された値が返ります。
+inline INT_PTR MsgShowDialog(PluginParam *pParam,ShowDialogInfo *pInfo) {
+	return (*pParam->Callback)(pParam,MESSAGE_SHOWDIALOG,(LPARAM)pInfo,0);
+}
+
+// 各種日時
+union TimeUnion {
+	SYSTEMTIME SystemTime;
+	FILETIME FileTime;
+};
+
+// 日時変換のフラグ
+enum {
+	CONVERT_TIME_FLAG_FROM_FILETIME = 0x00000001U,	// FILETIME から変換
+	CONVERT_TIME_FLAG_TO_FILETIME   = 0x00000002U,	// FILETIME へ変換
+	CONVERT_TIME_FLAG_FILETIME      = CONVERT_TIME_FLAG_FROM_FILETIME | CONVERT_TIME_FLAG_TO_FILETIME,
+	CONVERT_TIME_FLAG_OFFSET        = 0x00000004U	// オフセットの指定
+};
+
+// 日時変換の種類
+enum {
+	CONVERT_TIME_TYPE_UTC,			// UTC
+	CONVERT_TIME_TYPE_LOCAL,		// ローカル
+	CONVERT_TIME_TYPE_EPG,			// EPG 日時(UTC+9)
+	CONVERT_TIME_TYPE_EPG_DISPLAY	// EPG の表示用(変換先としてのみ指定可能)
+};
+
+// 日時変換の情報
+struct ConvertTimeInfo {
+	DWORD Size;					// 構造体のサイズ
+	DWORD Flags;				// 各種フラグ(CONVERT_TIME_FLAG_*)
+	DWORD TypeFrom;				// 変換元の種類(CONVERT_TIME_TYPE_*)
+	DWORD TypeTo;				// 変換先の種類(CONVERT_TIME_TYPE_*)
+	TimeUnion From;				// 変換元の日時
+	TimeUnion To;				// 変換先の日時
+	LONGLONG Offset;			// オフセットms(Flags に CONVERT_TIME_FLAG_OFFSET が指定されている場合のみ)
+};
+
+// 日時を変換する
+// Flags に CONVERT_TIME_FLAG_OFFSET を指定すると、Offset の時間が変換結果に加算されます。
+bool inline MsgConvertTime(PluginParam *pParam,ConvertTimeInfo *pInfo) {
+	return (*pParam->Callback)(pParam,MESSAGE_CONVERTTIME,(LPARAM)pInfo,0)!=FALSE;
+}
+// EPG 日時を変換する
+bool inline MsgConvertEpgTimeTo(
+	PluginParam *pParam,const SYSTEMTIME &EpgTime,DWORD Type,SYSTEMTIME *pDstTime)
+{
+	ConvertTimeInfo Info;
+	Info.Size = sizeof(ConvertTimeInfo);
+	Info.Flags = 0;
+	Info.TypeFrom = CONVERT_TIME_TYPE_EPG;
+	Info.TypeTo = Type;
+	Info.From.SystemTime = EpgTime;
+	if (!MsgConvertTime(pParam, &Info))
+		return false;
+	*pDstTime = Info.To.SystemTime;
+	return true;
+}
+
+// 映像ストリームのコールバック関数
+// Format はストリームのコーデックの FourCC で、現在以下のいずれかです。
+//   FCC('mp2v')  MPEG-2 Video
+//   FCC('H264')  H.264
+//   FCC('H265')  H.265
+// 渡されたデータを加工することはできません。
+// 戻り値は今のところ常に0を返します。
+typedef LRESULT (CALLBACK *VideoStreamCallbackFunc)(
+	DWORD Format,const void *pData,SIZE_T Size,void *pClientData);
+
+// 映像ストリームを取得するコールバック関数を設定する
+// 一つのプラグインで設定できるコールバック関数は一つだけです。
+// pClinetData はコールバック関数に渡されます。
+// pCallback に NULL を指定すると、設定が解除されます。
+inline bool MsgSetVideoStreamCallback(PluginParam *pParam,VideoStreamCallbackFunc pCallback,void *pClientData=NULL)
+{
+	return (*pParam->Callback)(pParam,MESSAGE_SETVIDEOSTREAMCALLBACK,(LPARAM)pCallback,(LPARAM)pClientData)!=0;
+}
+
+// 変数文字列のコンテキスト
+// MsgFormatVarString の説明を参照してください。
+struct VarStringContext;
+
+// 変数文字列のコンテキストを取得
+// 取得したコンテキストは MsgFreeVarStringContext で解放します。
+inline VarStringContext *MsgGetVarStringContext(PluginParam *pParam) {
+	return (VarStringContext*)(*pParam->Callback)(pParam,MESSAGE_GETVARSTRINGCONTEXT,0,0);
+}
+// 変数文字列のコンテキストを解放
+// MsgGetVarStringContext で取得したコンテキストを解放します。
+inline void MsgFreeVarStringContext(PluginParam *pParam,VarStringContext *pContext) {
+	(*pParam->Callback)(pParam,MESSAGE_FREEVARSTRINGCONTEXT,(LPARAM)pContext,0);
+}
+
+// 変数文字列のマップ関数
+typedef BOOL (CALLBACK *VarStringMapFunc)(LPCWSTR pszVar, LPWSTR *ppszString, void *pClientData);
+
+// 変数文字列のフォーマットフラグ
+enum {
+	VAR_STRING_FORMAT_FLAG_FILENAME = 0x00000001	// ファイル名用(ファイル名に使えない文字が全角になる)
+};
+
+// 変数文字列のフォーマット情報
+struct VarStringFormatInfo {
+	DWORD Size;							// 構造体のサイズ
+	DWORD Flags;						// 各種フラグ(VAR_STRING_FORMAT_FLAG_*)
+	LPCWSTR pszFormat;					// フォーマット文字列
+	const VarStringContext *pContext;	// コンテキスト(NULL で現在のコンテキスト)
+	VarStringMapFunc pMapFunc;			// マップ関数(必要なければ NULL)
+	void *pClientData;					// マップ関数に渡す任意データ
+	LPWSTR pszResult;					// 変換結果の文字列
+};
+
+// 変数文字列を使って文字列をフォーマット
+// 変数文字列は、%event-name% などの変数が含まれた文字列です。
+// このような文字列の変数を展開した文字列を取得できます。
+// 変数の展開に必要な、現在の番組や日時などの情報をコンテキストと呼びます。
+// MsgGetVarStringContext で、その時点のコンテキストを取得できます。
+/*
+	// 現在のコンテキストを取得
+	// (ここでは例のために取得していますが、現在の情報を使うのであれば
+	//  VarStringFormatInfo.pContext を NULL にすればよいです)
+	VarStringContext *pContext = MsgGetVarStringContext(pParam);
+
+	// 文字列をフォーマットする
+	VarStringFormatInfo Info;
+	Info.Size = sizeof(VarStringFormatInfo);
+	Info.Flags = 0;
+	Info.pszFormat = L"%event-name% %tot-date% %tot-time%";
+	Info.pContext = pContext;
+	Info.pMapFunc = NULL;
+	Info.pClientData = NULL;
+
+	if (MsgFormatVarString(pParam, &Info)) {
+		// Info.pszResult に結果の文字列が返される
+		...
+		// 不要になったらメモリを解放する
+		MsgMemoryFree(pParam, Info.pszResult);
+	}
+
+	// 不要になったらコンテキストを解放する
+	MsgFreeVarStringContext(pParam, pContext);
+*/
+// マップ関数を指定すると、任意の変数を文字列に変換できます。
+// 上記の例でマップ関数を使う場合は以下のようになります。
+/*
+	BOOL CALLBACK VarStringMap(LPCWSTR pszVar, LPWSTR *ppszString, void *pClientData)
+	{
+		PluginParam *pParam = static_cast<PluginParam*>(pClientData);
+		if (::lstrcmpiW(pszVar, L"my-var") == 0) {
+			LPCWSTR pszMapString = L"replaced string";	// 置き換える文字列
+			*ppszString = MsgStringDuplicate(pParam, pszMapString);
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+	Info.pMapFunc = VarStringMap;
+	Info.pClientData = pParam;
+*/
+inline bool MsgFormatVarString(PluginParam *pParam,VarStringFormatInfo *pInfo) {
+	return (*pParam->Callback)(pParam,MESSAGE_FORMATVARSTRING,(LPARAM)pInfo,0)!=FALSE;
+}
+
+// 変数登録のフラグ
+enum {
+	REGISTER_VARIABLE_FLAG_OVERRIDE = 0x00000001	// デフォルトの変数を上書き
+};
+
+// 変数登録の情報
+struct RegisterVariableInfo {
+	DWORD Size;				// 構造体のサイズ
+	DWORD Flags;			// フラグ(REGISTER_VARIABLE_FLAG_*)
+	LPCWSTR pszKeyword;		// 識別子
+	LPCWSTR pszDescription;	// 説明文
+	LPCWSTR pszValue;		// 変数の値(NULL で動的に取得)
+};
+
+// 変数取得の情報
+// EVENT_GETVARIABLE で渡されます。
+struct GetVariableInfo {
+	LPCWSTR pszKeyword;		// 識別子
+	LPWSTR pszValue;		// 値
+};
+
+// 変数を登録
+// 変数を登録すると、TVTest の各所の変数文字列で利用できるようになります。
+// 変数の識別子は半角のアルファベットと数字、-記号のみ使用してください。
+// TVTest で既に定義されている識別子と同じものを指定した場合、
+// Flags に REGISTER_VARIABLE_FLAG_OVERRIDE が設定されている場合は
+// プラグインで登録されたものが優先され、そうでない場合は TVTest での定義が優先されます。
+// 同じ識別子の変数を再登録すると、値が更新されます。
+/*
+	// 変数 lucky-number を登録します。
+	// 変数文字列の中で "%lucky-number%" を使うと、"777" に置き換えられます。
+	RegisterVariableInfo Info;
+	Info.Size           = sizeof(RegisterVariableInfo);
+	Info.Flags          = 0;
+	Info.pszKeyword     = L"lucky-number";
+	Info.pszDescription = L"幸運の番号";
+	Info.pszValue       = L"777";
+	MsgRegisterVariable(pParam, &Info);
+*/
+// 変数の値が頻繁に変わるような場合は、動的に取得されるようにします。
+// pszValue に NULL を指定すると、変数が必要になった段階で
+// EVENT_GETVARIABLE が呼ばれるので、そこで値を返します。
+/*
+	// 変数の値が動的に取得されるようにする例
+	RegisterVariableInfo Info;
+	Info.Size           = sizeof(RegisterVariableInfo);
+	Info.Flags          = 0;
+	Info.pszKeyword     = L"tick-count";
+	Info.pszDescription = L"Tick count";
+	Info.pszValue       = NULL;
+	MsgRegisterVariable(pParam, &Info);
+
+	// EVENT_GETVARIABLE で値を返します。
+	bool OnGetVariable(GetVariableInfo *pInfo)
+	{
+		if (lstrcmpiW(pInfo->pszKeyword, L"tick-count") == 0) {
+			// GetTickCount() の値を返す
+			WCHAR szValue[16];
+			wsprintf(szValue, L"%u", GetTickCount());
+			pInfo->pszValue = MsgStringDuplicate(pParam, szValue);
+			return true;
+		}
+		return false;
+	}
+*/
+inline bool MsgRegisterVariable(PluginParam *pParam,const RegisterVariableInfo *pInfo) {
+	return (*pParam->Callback)(pParam,MESSAGE_REGISTERVARIABLE,(LPARAM)pInfo,0)!=FALSE;
+}
+
 #endif	// TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,14)
 
 
@@ -2896,6 +3229,9 @@ public:
 	}
 	void MemoryFree(void *pData) {
 		MsgMemoryFree(m_pParam,pData);
+	}
+	LPWSTR StringDuplicate(LPCWSTR pszString) {
+		return MsgStringDuplicate(m_pParam,pszString);
 	}
 	bool SetEventCallback(EventCallbackFunc Callback,void *pClientData=NULL) {
 		return MsgSetEventCallback(m_pParam,Callback,pClientData);
@@ -2984,6 +3320,12 @@ public:
 #endif
 		return MsgGetRecordStatus(m_pParam,pInfo);
 	}
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,14)
+	bool GetRecordStatus(RecordStatusInfo *pInfo,DWORD Flags) {
+		pInfo->Size=sizeof(RecordStatusInfo);
+		return MsgGetRecordStatus(m_pParam,pInfo,Flags);
+	}
+#endif
 	bool GetVideoInfo(VideoInfo *pInfo) {
 		pInfo->Size=sizeof(VideoInfo);
 		return MsgGetVideoInfo(m_pParam,pInfo);
@@ -3123,16 +3465,6 @@ public:
 	}
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,8)
-	bool GetBCasInfo(BCasInfo *pInfo) {
-		pInfo->Size=sizeof(BCasInfo);
-		return MsgGetBCasInfo(m_pParam,pInfo);
-	}
-	bool SendBCasCommand(BCasCommandInfo *pInfo) {
-		return MsgSendBCasCommand(m_pParam,pInfo);
-	}
-	bool SendBCasCommand(const BYTE *pSendData,DWORD SendSize,BYTE *pReceiveData,DWORD *pReceiveSize) {
-		return MsgSendBCasCommand(m_pParam,pSendData,SendSize,pReceiveData,pReceiveSize);
-	}
 	bool GetHostInfo(HostInfo *pInfo) {
 		pInfo->Size=sizeof(HostInfo);
 		return MsgGetHostInfo(m_pParam,pInfo);
@@ -3150,9 +3482,6 @@ public:
 	}
 	DWORD GetSetting(LPCWSTR pszName,LPWSTR pszString,DWORD MaxLength) {
 		return MsgGetSetting(m_pParam,pszName,pszString,MaxLength);
-	}
-	bool GetSetting(LPCWSTR pszName,LOGFONTW *pFont) {
-		return MsgGetSetting(m_pParam,pszName,pFont);
 	}
 	int GetDriverFullPathName(LPWSTR pszPath,int MaxLength) {
 		return MsgGetDriverFullPathName(m_pParam,pszPath,MaxLength);
@@ -3229,21 +3558,21 @@ public:
 		pInfo->Size=sizeof(StyleValueInfo);
 		return MsgGetStyleValue(m_pParam,pInfo);
 	}
-	bool GetStyleValue(LPCWSTR pszName,int Unit,int *pValue) {
-		return MsgGetStyleValue(m_pParam,pszName,Unit,pValue);
+	bool GetStyleValue(LPCWSTR pszName,int Unit,int DPI,int *pValue) {
+		return MsgGetStyleValue(m_pParam,pszName,Unit,DPI,pValue);
 	}
 	bool GetStyleValue(LPCWSTR pszName,int *pValue) {
 		return MsgGetStyleValue(m_pParam,pszName,pValue);
 	}
-	bool GetStyleValuePixels(LPCWSTR pszName,int *pValue) {
-		return MsgGetStyleValuePixels(m_pParam,pszName,pValue);
+	bool GetStyleValuePixels(LPCWSTR pszName,int DPI,int *pValue) {
+		return MsgGetStyleValuePixels(m_pParam,pszName,DPI,pValue);
 	}
 	bool ThemeDrawBackground(ThemeDrawBackgroundInfo *pInfo) {
 		pInfo->Size=sizeof(ThemeDrawBackgroundInfo);
 		return MsgThemeDrawBackground(m_pParam,pInfo);
 	}
-	bool ThemeDrawBackground(LPCWSTR pszStyle,HDC hdc,const RECT &DrawRect) {
-		return MsgThemeDrawBackground(m_pParam,pszStyle,hdc,DrawRect);
+	bool ThemeDrawBackground(LPCWSTR pszStyle,HDC hdc,const RECT &DrawRect,int DPI=0) {
+		return MsgThemeDrawBackground(m_pParam,pszStyle,hdc,DrawRect,DPI);
 	}
 	bool ThemeDrawText(ThemeDrawTextInfo *pInfo) {
 		pInfo->Size=sizeof(ThemeDrawTextInfo);
@@ -3350,6 +3679,62 @@ public:
 	}
 	bool Set1SegMode(bool f1SegMode) {
 		return MsgSet1SegMode(m_pParam,f1SegMode);
+	}
+	int GetDPI(GetDPIInfo *pInfo) {
+		return MsgGetDPI(m_pParam,pInfo);
+	}
+	int GetSystemDPI() {
+		return MsgGetSystemDPI(m_pParam);
+	}
+	int GetDPIFromWindow(HWND hwnd,DWORD Flags=0) {
+		return MsgGetDPIFromWindow(m_pParam,hwnd,Flags);
+	}
+	int GetDPIFromRect(const RECT &Rect,DWORD Flags=0) {
+		return MsgGetDPIFromRect(m_pParam,Rect,Flags);
+	}
+	int GetDPIFromPoint(const POINT &Point,DWORD Flags=0) {
+		return MsgGetDPIFromPoint(m_pParam,Point,Flags);
+	}
+	int GetDPIFromPoint(LONG x,LONG y,DWORD Flags=0) {
+		return MsgGetDPIFromPoint(m_pParam,x,y,Flags);
+	}
+	int GetDPIFromMonitor(HMONITOR hMonitor,DWORD Flags=0) {
+		return MsgGetDPIFromMonitor(m_pParam,hMonitor,Flags);
+	}
+	bool GetFont(GetFontInfo *pInfo) {
+		pInfo->Size=sizeof(GetFontInfo);
+		return MsgGetFont(m_pParam,pInfo);
+	}
+	bool GetFont(LPCWSTR pszName,LOGFONTW *pLogFont,int DPI=0) {
+		return MsgGetFont(m_pParam,pszName,pLogFont,DPI);
+	}
+	INT_PTR ShowDialog(ShowDialogInfo *pInfo) {
+		pInfo->Size=sizeof(ShowDialogInfo);
+		return MsgShowDialog(m_pParam,pInfo);
+	}
+	bool ConvertTime(ConvertTimeInfo *pInfo) {
+		pInfo->Size=sizeof(ConvertTimeInfo);
+		return MsgConvertTime(m_pParam,pInfo);
+	}
+	bool ConvertEpgTimeTo(const SYSTEMTIME &EpgTime,DWORD Type,SYSTEMTIME *pDstTime) {
+		return MsgConvertEpgTimeTo(m_pParam,EpgTime,Type,pDstTime);
+	}
+	bool SetVideoStreamCallback(VideoStreamCallbackFunc pCallback,void *pClientData=NULL) {
+		return MsgSetVideoStreamCallback(m_pParam,pCallback,pClientData);
+	}
+	VarStringContext *GetVarStringContext() {
+		return MsgGetVarStringContext(m_pParam);
+	}
+	void FreeVarStringContext(VarStringContext *pContext) {
+		MsgFreeVarStringContext(m_pParam,pContext);
+	}
+	bool FormatVarString(VarStringFormatInfo *pInfo) {
+		pInfo->Size=sizeof(VarStringFormatInfo);
+		return MsgFormatVarString(m_pParam,pInfo);
+	}
+	bool RegisterVariable(RegisterVariableInfo *pInfo) {
+		pInfo->Size=sizeof(RegisterVariableInfo);
+		return MsgRegisterVariable(m_pParam,pInfo);
 	}
 #endif
 };
@@ -3529,6 +3914,8 @@ protected:
 	virtual void OnFavoritesChanged() {}
 	// ワンセグモードが変わった
 	virtual void On1SegModeChanged(bool f1SegMode) {}
+	// 変数を取得
+	virtual bool OnGetVariable(GetVariableInfo *pInfo) { return false; }
 #endif
 
 public:
@@ -3626,6 +4013,8 @@ public:
 		case EVENT_1SEGMODECHANGED:
 			On1SegModeChanged(lParam1!=0);
 			return 0;
+		case EVENT_GETVARIABLE:
+			return OnGetVariable((GetVariableInfo*)lParam1);
 #endif
 		}
 		return 0;
