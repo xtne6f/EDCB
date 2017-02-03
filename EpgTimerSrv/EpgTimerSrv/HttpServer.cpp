@@ -312,9 +312,10 @@ bool get_boolean(lua_State* L, const char* name)
 
 SYSTEMTIME get_time(lua_State* L, const char* name)
 {
-	SYSTEMTIME st = {};
+	SYSTEMTIME ret = {};
 	lua_getfield(L, -1, name);
 	if( lua_istable(L, -1) ){
+		SYSTEMTIME st;
 		st.wYear = (WCHAR)get_int(L, "year");
 		st.wMonth = (WCHAR)get_int(L, "month");
 		st.wDay = (WCHAR)get_int(L, "day");
@@ -322,10 +323,13 @@ SYSTEMTIME get_time(lua_State* L, const char* name)
 		st.wMinute = (WCHAR)get_int(L, "min");
 		st.wSecond = (WCHAR)get_int(L, "sec");
 		st.wMilliseconds = (WCHAR)get_int(L, "msec");
-		st.wDayOfWeek = (WORD)(get_int(L, "wday") - 1);
+		FILETIME ft;
+		if( SystemTimeToFileTime(&st, &ft) && FileTimeToSystemTime(&ft, &st) ){
+			ret = st;
+		}
 	}
 	lua_pop(L, 1);
-	return st;
+	return ret;
 }
 
 }

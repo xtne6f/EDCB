@@ -68,13 +68,10 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, wstring& convert
 			wstring name;
 			AtoW(GetTimeMacroName(i), name);
 			if( var.compare(1, wstring::npos, name) == 0 ){
-				if( var[0] == L'S' ){
-					ret = GetTimeMacroValue(i, info->startTime);
-				}else{
-					SYSTEMTIME tEnd;
-					ConvertSystemTime(ConvertI64Time(info->startTime) + info->durationSec * I64_1SEC, &tEnd);
-					ret = GetTimeMacroValue(i, tEnd);
-				}
+				SYSTEMTIME st;
+				//曜日フィールドが正しくない時代があったので必ず変換する
+				ConvertSystemTime(ConvertI64Time(info->startTime) + (var[0] == L'S' ? 0 : info->durationSec) * I64_1SEC, &st);
+				ret = GetTimeMacroValue(i, st);
 				found = TRUE;
 				break;
 			}

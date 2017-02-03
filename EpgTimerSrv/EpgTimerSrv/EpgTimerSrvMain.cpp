@@ -273,8 +273,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						if( ctx->notifyActiveTime != LLONG_MAX ){
 							SYSTEMTIME st;
 							ConvertSystemTime(ctx->notifyActiveTime + 30 * I64_1SEC, &st);
-							swprintf_s(nid.szTip, L"次の予約・取得：%d/%d(%c) %d:%02d",
-								st.wMonth, st.wDay, wstring(L"日月火水木金土").at(st.wDayOfWeek % 7), st.wHour, st.wMinute);
+							swprintf_s(nid.szTip, L"次の予約・取得：%d/%d(%s) %d:%02d",
+								st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 						}
 						nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 						nid.uCallbackMessage = WM_TRAY_PUSHICON;

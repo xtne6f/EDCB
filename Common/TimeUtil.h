@@ -13,7 +13,7 @@ void GetTimeString3( SYSTEMTIME StartTime, DWORD dwDureSec, wstring& strDay );
 
 void GetTimeString4( SYSTEMTIME Time, wstring& strDay );
 
-void GetDayOfWeekString2( SYSTEMTIME Time, wstring& strWeek );
+LPCWSTR GetDayOfWeekName( WORD wDayOfWeek );
 
 __int64 GetNowI64Time();
 
