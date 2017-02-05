@@ -158,6 +158,8 @@ UINT WINAPI CBonDriverUtil::DriverThread(LPVOID param)
 		CoUninitialize();
 		return 0;
 	}
+	//割り込み遅延への耐性はBonDriverのバッファ能力に依存するので、相対優先順位を上げておく
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 
 	//メッセージループ
 	MSG msg;
