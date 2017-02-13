@@ -2410,6 +2410,27 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "ListDmsPublicFile", LuaListDmsPublicFile, sys);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
 	LuaHelp::reg_string(L, "serverRandom", sys->httpServerRandom.c_str());
+	//ファイルハンドルはDLLを越えて互換とは限らないので、"FILE*"メタテーブルも独自のものが必要
+	LuaHelp::f_createmeta(L);
+	//osライブラリに対するUTF-8補完
+	static const luaL_Reg oslib[] = {
+		{ "execute", LuaHelp::os_execute },
+		{ "remove", LuaHelp::os_remove },
+		{ "rename", LuaHelp::os_rename },
+		{ NULL, NULL }
+	};
+	lua_pushliteral(L, "os");
+	luaL_newlib(L, oslib);
+	lua_rawset(L, -3);
+	//ioライブラリに対するUTF-8補完
+	static const luaL_Reg iolib[] = {
+		{ "open", LuaHelp::io_open },
+		{ "popen", LuaHelp::io_popen },
+		{ NULL, NULL }
+	};
+	lua_pushliteral(L, "io");
+	luaL_newlib(L, iolib);
+	lua_rawset(L, -3);
 	lua_setglobal(L, "edcb");
 	luaL_dostring(L,
 		"edcb.EnumRecPresetInfo=function()"

@@ -332,4 +332,339 @@ SYSTEMTIME get_time(lua_State* L, const char* name)
 	return ret;
 }
 
+namespace
+{
+
+wchar_t* utf8towcsdup(const char* s)
+{
+	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s, -1, NULL, 0);
+	if( len > 0 ){
+		wchar_t* w = (wchar_t*)calloc(len, sizeof(wchar_t));
+		if( w != NULL && MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s, -1, w, len) > 0 ){
+			return w;
+		}
+		free(w);
+	}
+	return NULL;
+}
+
+void nefree(void* p)
+{
+	int en = errno;
+	free(p);
+	errno = en;
+}
+
+//Refer: Lua-5.2.4/liolib.c (See Copyright Notice in lua.h)
+
+int checkmode(const char* mode)
+{
+	return *mode != '\0' && strchr("rwa", *(mode++)) != NULL &&
+		(*mode != '+' || ++mode) && //skip if char is '+'
+		(*mode != 'b' || ++mode) && //skip if char is 'b'
+		(*mode == '\0');
+}
+
+luaL_Stream* tolstream(lua_State* L)
+{
+	return (luaL_Stream*)luaL_checkudata(L, 1, "EDCB_FILE*");
+}
+
+int f_tostring(lua_State* L)
+{
+	luaL_Stream* p = tolstream(L);
+	if( p->closef == NULL )
+		lua_pushliteral(L, "edcb_file (closed)");
+	else
+		lua_pushfstring(L, "edcb_file (%p)", p->f);
+	return 1;
+}
+
+FILE* tofile(lua_State* L)
+{
+	luaL_Stream* p = tolstream(L);
+	if( p->closef == NULL )
+		luaL_error(L, "attempt to use a closed file");
+	lua_assert(p->f);
+	return p->f;
+}
+
+luaL_Stream* newprefile(lua_State* L)
+{
+	luaL_Stream* p = (luaL_Stream*)lua_newuserdata(L, sizeof(luaL_Stream));
+	p->closef = NULL; //mark file handle as 'closed'
+	luaL_setmetatable(L, "EDCB_FILE*");
+	return p;
+}
+
+int aux_close(lua_State* L)
+{
+	luaL_Stream* p = tolstream(L);
+	lua_CFunction cf = p->closef;
+	p->closef = NULL; //mark stream as closed
+	return (*cf)(L); //close it
+}
+
+int f_close(lua_State* L)
+{
+	tofile(L); //make sure argument is an open stream
+	return aux_close(L);
+}
+
+int f_gc(lua_State* L)
+{
+	luaL_Stream* p = tolstream(L);
+	if( p->closef != NULL && p->f != NULL )
+		aux_close(L); //ignore closed and incompletely open files
+	return 0;
+}
+
+int f_fclose(lua_State* L)
+{
+	luaL_Stream* p = tolstream(L);
+	return luaL_fileresult(L, (fclose(p->f) == 0), NULL);
+}
+
+int f_pclose(lua_State* L)
+{
+	luaL_Stream* p = tolstream(L);
+	return luaL_execresult(L, _pclose(p->f));
+}
+
+int test_eof(lua_State* L, FILE* f)
+{
+	int c = getc(f);
+	ungetc(c, f);
+	lua_pushlstring(L, NULL, 0);
+	return (c != EOF);
+}
+
+void read_all(lua_State* L, FILE* f)
+{
+	size_t rlen = LUAL_BUFFERSIZE; //how much to read in each cycle
+	luaL_Buffer b;
+	luaL_buffinit(L, &b);
+	for(;;){
+		char* p = luaL_prepbuffsize(&b, rlen);
+		size_t nr = fread(p, sizeof(char), rlen, f);
+		luaL_addsize(&b, nr);
+		if( nr < rlen ) break; //eof?
+		else if( rlen <= ((~(size_t)0) / 4) ) //avoid buffers too large
+			rlen *= 2; //double buffer size at each iteration
+	}
+	luaL_pushresult(&b); //close buffer
+}
+
+int read_chars(lua_State* L, FILE* f, size_t n)
+{
+	luaL_Buffer b;
+	luaL_buffinit(L, &b);
+	char* p = luaL_prepbuffsize(&b, n); //prepare buffer to read whole block
+	size_t nr = fread(p, sizeof(char), n, f); //try to read 'n' chars
+	luaL_addsize(&b, nr);
+	luaL_pushresult(&b); //close buffer
+	return (nr > 0); //true iff read something
+}
+
+int f_read(lua_State* L)
+{
+	FILE* f = tofile(L);
+	int nargs = lua_gettop(L) - 1;
+	int success;
+	int n;
+	clearerr(f);
+	if( nargs == 0 ){ //no arguments?
+		return luaL_error(L, "invalid format");
+	}else{ //ensure stack space for all results and for auxlib's buffer
+		luaL_checkstack(L, nargs + LUA_MINSTACK, "too many arguments");
+		success = 1;
+		for( n = 2; nargs-- && success; n++ ){
+			if( lua_type(L, n) == LUA_TNUMBER ){
+				size_t l = (size_t)lua_tointeger(L, n);
+				success = (l == 0) ? test_eof(L, f) : read_chars(L, f, l);
+			}else{
+				const char* p = lua_tostring(L, n);
+				luaL_argcheck(L, p && p[0] == '*', n, "invalid option");
+				switch( p[1] ){
+				case 'a': //file
+					read_all(L, f); //read entire file
+					success = 1; //always success
+					break;
+				default:
+					return luaL_argerror(L, n, "invalid format");
+				}
+			}
+		}
+	}
+	if( ferror(f) )
+		return luaL_fileresult(L, 0, NULL);
+	if( !success ){
+		lua_pop(L, 1); //remove last result
+		lua_pushnil(L); //push nil instead
+	}
+	return n - 2;
+}
+
+int f_write(lua_State* L)
+{
+	FILE* f = tofile(L);
+	lua_pushvalue(L, 1); //push file at the stack top (to be returned)
+	int arg = 2;
+	int nargs = lua_gettop(L) - arg;
+	int status = 1;
+	for( ; nargs--; arg++ ){
+		size_t l;
+		const char* s = luaL_checklstring(L, arg, &l);
+		status = status && (fwrite(s, sizeof(char), l, f) == l);
+	}
+	if( status ) return 1; //file handle already on stack top
+	else return luaL_fileresult(L, status, NULL);
+}
+
+int f_seek(lua_State* L)
+{
+	static const int mode[] = { SEEK_SET, SEEK_CUR, SEEK_END };
+	static const char* const modenames[] = { "set", "cur", "end", NULL };
+	FILE* f = tofile(L);
+	int op = luaL_checkoption(L, 2, "cur", modenames);
+	lua_Number p3 = luaL_optnumber(L, 3, 0);
+	__int64 offset = (__int64)p3;
+	luaL_argcheck(L, (lua_Number)offset == p3, 3, "not an integer in proper range");
+	op = _fseeki64(f, offset, mode[op]);
+	if( op )
+		return luaL_fileresult(L, 0, NULL); //error
+	else{
+		lua_pushnumber(L, (lua_Number)_ftelli64(f));
+		return 1;
+	}
+}
+
+int f_setvbuf(lua_State* L)
+{
+	static const int mode[] = { _IONBF, _IOFBF, _IOLBF };
+	static const char* const modenames[] = { "no", "full", "line", NULL };
+	FILE* f = tofile(L);
+	int op = luaL_checkoption(L, 2, NULL, modenames);
+	lua_Integer sz = luaL_optinteger(L, 3, LUAL_BUFFERSIZE);
+	int res = setvbuf(f, NULL, mode[op], sz);
+	return luaL_fileresult(L, res == 0, NULL);
+}
+
+int f_flush(lua_State* L)
+{
+	return luaL_fileresult(L, fflush(tofile(L)) == 0, NULL);
+}
+
+}
+
+//Refer: Lua-5.2.4/loslib.c (See Copyright Notice in lua.h)
+
+int os_execute(lua_State* L)
+{
+	const char* cmd = luaL_optstring(L, 1, NULL);
+	if( cmd != NULL ){
+		wchar_t* wcmd = utf8towcsdup(cmd);
+		luaL_argcheck(L, wcmd != NULL, 1, "utf8towcsdup");
+		int stat = _wsystem(wcmd);
+		nefree(wcmd);
+		return luaL_execresult(L, stat);
+	}else{
+		int stat = _wsystem(NULL);
+		lua_pushboolean(L, stat); //true if there is a shell
+		return 1;
+	}
+}
+
+int os_remove(lua_State* L)
+{
+	const char* filename = luaL_checkstring(L, 1);
+	wchar_t* wfilename = utf8towcsdup(filename);
+	luaL_argcheck(L, wfilename != NULL, 1, "utf8towcsdup");
+	int stat = _wremove(wfilename);
+	nefree(wfilename);
+	return luaL_fileresult(L, stat == 0, filename);
+}
+
+int os_rename(lua_State* L)
+{
+	const char* fromname = luaL_checkstring(L, 1);
+	const char* toname = luaL_checkstring(L, 2);
+	wchar_t* wfromname = utf8towcsdup(fromname);
+	luaL_argcheck(L, wfromname != NULL, 1, "utf8towcsdup");
+	wchar_t* wtoname = utf8towcsdup(toname);
+	if( wtoname == NULL ){
+		free(wfromname);
+		luaL_argerror(L, 2, "utf8towcsdup");
+	}
+	int stat = _wrename(wfromname, wtoname);
+	nefree(wtoname);
+	nefree(wfromname);
+	return luaL_fileresult(L, stat == 0, NULL);
+}
+
+//Refer: Lua-5.2.4/liolib.c (See Copyright Notice in lua.h)
+
+int io_open(lua_State* L)
+{
+	const char* filename = luaL_checkstring(L, 1);
+	const char* mode = luaL_optstring(L, 2, "r");
+	luaL_Stream* p = newprefile(L);
+	p->f = NULL;
+	p->closef = &f_fclose;
+	luaL_argcheck(L, checkmode(mode), 2, "invalid mode");
+	wchar_t* wfilename = utf8towcsdup(filename);
+	luaL_argcheck(L, wfilename != NULL, 1, "utf8towcsdup");
+	wchar_t* wmode = utf8towcsdup(mode);
+	if( wmode == NULL ){
+		free(wfilename);
+		luaL_argerror(L, 2, "utf8towcsdup");
+	}
+#pragma warning(push)
+#pragma warning(disable : 4996)
+	p->f = _wfopen(wfilename, wmode);
+#pragma warning(pop)
+	nefree(wmode);
+	nefree(wfilename);
+	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;
+}
+
+int io_popen(lua_State* L)
+{
+	const char* filename = luaL_checkstring(L, 1);
+	const char* mode = luaL_optstring(L, 2, "r");
+	luaL_Stream* p = newprefile(L);
+	wchar_t* wfilename = utf8towcsdup(filename);
+	luaL_argcheck(L, wfilename != NULL, 1, "utf8towcsdup");
+	wchar_t* wmode = utf8towcsdup(mode);
+	if( wmode == NULL ){
+		free(wfilename);
+		luaL_argerror(L, 2, "utf8towcsdup");
+	}
+	p->f = _wpopen(wfilename, wmode);
+	nefree(wmode);
+	nefree(wfilename);
+	p->closef = &f_pclose;
+	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;
+}
+
+void f_createmeta(lua_State* L)
+{
+	static const luaL_Reg flib[] = {
+		{ "close", f_close },
+		{ "flush", f_flush },
+		{ "read", f_read },
+		{ "seek", f_seek },
+		{ "setvbuf", f_setvbuf },
+		{ "write", f_write },
+		{ "__gc", f_gc },
+		{ "__tostring", f_tostring },
+		{ NULL, NULL }
+	};
+	luaL_newmetatable(L, "EDCB_FILE*"); //create metatable for file handles
+	lua_pushvalue(L, -1); //push metatable
+	lua_setfield(L, -2, "__index"); //metatable.__index = metatable
+	luaL_setfuncs(L, flib, 0); //add file methods to new metatable
+	lua_pop(L, 1); //pop new metatable
+}
+
 }

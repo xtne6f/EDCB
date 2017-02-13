@@ -51,4 +51,10 @@ namespace LuaHelp
 	int get_int(lua_State* L, const char* name);
 	bool get_boolean(lua_State* L, const char* name);
 	SYSTEMTIME get_time(lua_State* L, const char* name);
+	int os_execute(lua_State* L);
+	int os_remove(lua_State* L);
+	int os_rename(lua_State* L);
+	int io_open(lua_State* L);
+	int io_popen(lua_State* L);
+	void f_createmeta(lua_State* L);
 }
