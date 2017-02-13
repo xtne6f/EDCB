@@ -733,10 +733,6 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 			this->httpOptions.rootPath += L"\\HttpPublic";
 		}
 		ChkFolderPath(this->httpOptions.rootPath);
-		if( this->dmsPublicFileList.empty() || CompareNoCase(this->httpOptions.rootPath, this->dmsPublicFileList[0].second) != 0 ){
-			//公開フォルダの場所が変わったのでクリア
-			this->dmsPublicFileList.clear();
-		}
 		this->httpOptions.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
 		this->httpOptions.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
 		this->httpOptions.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 5, iniPath.c_str());
@@ -2407,7 +2403,7 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "AddOrChgAutoAdd", LuaAddOrChgAutoAdd, sys);
 	LuaHelp::reg_function(L, "AddOrChgManuAdd", LuaAddOrChgManuAdd, sys);
 	LuaHelp::reg_function(L, "GetNotifyUpdateCount", LuaGetNotifyUpdateCount, sys);
-	LuaHelp::reg_function(L, "ListDmsPublicFile", LuaListDmsPublicFile, sys);
+	LuaHelp::reg_function(L, "FindFile", LuaFindFile, sys);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
 	LuaHelp::reg_string(L, "serverRandom", sys->httpServerRandom.c_str());
 	//ファイルハンドルはDLLを越えて互換とは限らないので、"FILE*"メタテーブルも独自のものが必要
@@ -3251,50 +3247,42 @@ int CEpgTimerSrvMain::LuaGetNotifyUpdateCount(lua_State* L)
 	return 1;
 }
 
-int CEpgTimerSrvMain::LuaListDmsPublicFile(lua_State* L)
+int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	CBlockLock lock(&ws.sys->settingLock);
-	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile((ws.sys->httpOptions.rootPath + L"\\dlna\\dms\\PublicFile\\*").c_str(), &findData);
-	vector<pair<int, WIN32_FIND_DATA>> newList;
-	if( hFind == INVALID_HANDLE_VALUE ){
-		ws.sys->dmsPublicFileList.clear();
-	}else{
-		if( ws.sys->dmsPublicFileList.empty() ){
-			//要素0には公開フォルダの場所と次のIDを格納する
-			ws.sys->dmsPublicFileList.push_back(std::make_pair(0, ws.sys->httpOptions.rootPath));
-		}
-		do{
-			//TODO: 再帰的にリストしほうがいいがとりあえず…
-			if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-				bool exist = false;
-				for( size_t i = 1; i < ws.sys->dmsPublicFileList.size(); i++ ){ 
-					if( lstrcmpi(ws.sys->dmsPublicFileList[i].second.c_str(), findData.cFileName) == 0 ){
-						newList.push_back(std::make_pair(ws.sys->dmsPublicFileList[i].first, findData));
-						exist = true;
-						break;
-					}
+	if( lua_gettop(L) == 2 ){
+		int n = (int)lua_tointeger(L, 2);
+		LPCSTR pattern = lua_tostring(L, 1);
+		if( pattern ){
+			wstring strPattern;
+			UTF8toW(pattern, strPattern);
+			WIN32_FIND_DATA findData;
+			HANDLE hFind = FindFirstFile(strPattern.c_str(), &findData);
+			if( hFind != INVALID_HANDLE_VALUE ){
+				vector<WIN32_FIND_DATA> findList;
+				do{
+					findList.push_back(findData);
+				}while( (n <= 0 || --n > 0) && FindNextFile(hFind, &findData) );
+				FindClose(hFind);
+				lua_createtable(L, (int)findList.size(), 0);
+				for( size_t i = 0; i < findList.size(); i++ ){
+					lua_createtable(L, 0, 4);
+					LuaHelp::reg_string(L, "name", ws.WtoUTF8(findList[i].cFileName));
+					lua_pushliteral(L, "size");
+					lua_pushnumber(L, (lua_Number)((__int64)findList[i].nFileSizeHigh << 32 | findList[i].nFileSizeLow));
+					lua_rawset(L, -3);
+					LuaHelp::reg_boolean(L, "isdir", (findList[i].dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+					FILETIME ft = findList[i].ftLastWriteTime;
+					SYSTEMTIME st;
+					ConvertSystemTime(((__int64)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + 9 * 3600 * I64_1SEC, &st);
+					LuaHelp::reg_time(L, "mtime", st);
+					lua_rawseti(L, -2, (int)i + 1);
 				}
-				if( exist == false ){
-					newList.push_back(std::make_pair(ws.sys->dmsPublicFileList[0].first++, findData));
-				}
+				return 1;
 			}
-		}while( FindNextFile(hFind, &findData) );
-		ws.sys->dmsPublicFileList.resize(1);
+		}
 	}
-	lua_newtable(L);
-	for( size_t i = 0; i < newList.size(); i++ ){
-		//IDとファイル名の対応を記録しておく
-		ws.sys->dmsPublicFileList.push_back(std::make_pair(newList[i].first, wstring(newList[i].second.cFileName)));
-		lua_newtable(L);
-		LuaHelp::reg_int(L, "id", newList[i].first);
-		LuaHelp::reg_string(L, "name", ws.WtoUTF8(newList[i].second.cFileName));
-		lua_pushstring(L, "size");
-		lua_pushnumber(L, (lua_Number)((__int64)newList[i].second.nFileSizeHigh << 32 | newList[i].second.nFileSizeLow));
-		lua_rawset(L, -3);
-		lua_rawseti(L, -2, (int)i + 1);
-	}
+	lua_pushnil(L);
 	return 1;
 }
 

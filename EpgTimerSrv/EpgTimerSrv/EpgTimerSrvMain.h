@@ -98,7 +98,7 @@ private:
 	static int LuaAddOrChgAutoAdd(lua_State* L);
 	static int LuaAddOrChgManuAdd(lua_State* L);
 	static int LuaGetNotifyUpdateCount(lua_State* L);
-	static int LuaListDmsPublicFile(lua_State* L);
+	static int LuaFindFile(lua_State* L);
 	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
 	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);
 	static void PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_DATA& rs);
@@ -126,7 +126,6 @@ private:
 	wstring tcpAccessControlList;
 	CHttpServer::SERVER_OPTIONS httpOptions;
 	string httpServerRandom;
-	vector<pair<int, wstring>> dmsPublicFileList;
 	bool useSyoboi;
 	bool nwtvUdp;
 	bool nwtvTcp;
