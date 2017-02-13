@@ -230,41 +230,41 @@ void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)
 namespace LuaHelp
 {
 
-#if 1 //From: civetweb/mod_lua.inl
-void reg_string(lua_State* L, const char* name, const char* val)
+#if 1 //Refer: civetweb/mod_lua.inl
+void reg_string_(lua_State* L, const char* name, size_t size, const char* val)
 {
-	lua_pushstring(L, name);
+	lua_pushlstring(L, name, size - 1);
 	lua_pushstring(L, val);
 	lua_rawset(L, -3);
 }
 
-void reg_int(lua_State* L, const char* name, int val)
+void reg_int_(lua_State* L, const char* name, size_t size, int val)
 {
-	lua_pushstring(L, name);
+	lua_pushlstring(L, name, size - 1);
 	lua_pushinteger(L, val);
 	lua_rawset(L, -3);
 }
 
-void reg_boolean(lua_State* L, const char* name, bool val)
+void reg_boolean_(lua_State* L, const char* name, size_t size, bool val)
 {
-	lua_pushstring(L, name);
+	lua_pushlstring(L, name, size - 1);
 	lua_pushboolean(L, val);
 	lua_rawset(L, -3);
 }
 
-void reg_function(lua_State* L, const char* name, lua_CFunction func, void* userdata)
+void reg_function_(lua_State* L, const char* name, size_t size, lua_CFunction func, void* userdata)
 {
-	lua_pushstring(L, name);
+	lua_pushlstring(L, name, size - 1);
 	lua_pushlightuserdata(L, userdata);
 	lua_pushcclosure(L, func, 1);
 	lua_rawset(L, -3);
 }
 #endif
 
-void reg_time(lua_State* L, const char* name, const SYSTEMTIME &st)
+void reg_time_(lua_State* L, const char* name, size_t size, const SYSTEMTIME& st)
 {
-	lua_pushstring(L, name);
-	lua_newtable(L);
+	lua_pushlstring(L, name, size - 1);
+	lua_createtable(L, 0, 9);
 	reg_int(L, "year", st.wYear);
 	reg_int(L, "month", st.wMonth);
 	reg_int(L, "day", st.wDay);

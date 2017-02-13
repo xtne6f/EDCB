@@ -2995,7 +2995,7 @@ int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
 	for( size_t i = 0; i < list.size(); i++ ){
 		const REC_FILE_INFO& r = list[i];
 		{
-			lua_newtable(L);
+			lua_createtable(L, 0, 18);
 			LuaHelp::reg_int(L, "id", (int)r.id);
 			LuaHelp::reg_string(L, "recFilePath", ws.WtoUTF8(r.recFilePath));
 			LuaHelp::reg_string(L, "title", ws.WtoUTF8(r.title));
@@ -3293,14 +3293,14 @@ void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INF
 	LuaHelp::reg_boolean(L, "freeCAFlag", e.freeCAFlag != 0);
 	if( e.shortInfo ){
 		lua_pushstring(L, "shortInfo");
-		lua_newtable(L);
+		lua_createtable(L, 0, 2);
 		LuaHelp::reg_string(L, "event_name", ws.WtoUTF8(e.shortInfo->event_name));
 		LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.shortInfo->text_char));
 		lua_rawset(L, -3);
 	}
 	if( e.extInfo ){
 		lua_pushstring(L, "extInfo");
-		lua_newtable(L);
+		lua_createtable(L, 0, 1);
 		LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.extInfo->text_char));
 		lua_rawset(L, -3);
 	}
@@ -3308,7 +3308,7 @@ void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INF
 		lua_pushstring(L, "contentInfoList");
 		lua_newtable(L);
 		for( size_t i = 0; i < e.contentInfo->nibbleList.size(); i++ ){
-			lua_newtable(L);
+			lua_createtable(L, 0, 2);
 			LuaHelp::reg_int(L, "content_nibble", e.contentInfo->nibbleList[i].content_nibble_level_1 << 8 | e.contentInfo->nibbleList[i].content_nibble_level_2);
 			LuaHelp::reg_int(L, "user_nibble", e.contentInfo->nibbleList[i].user_nibble_1 << 8 | e.contentInfo->nibbleList[i].user_nibble_2);
 			lua_rawseti(L, -2, (int)i + 1);
@@ -3317,7 +3317,7 @@ void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INF
 	}
 	if( e.componentInfo ){
 		lua_pushstring(L, "componentInfo");
-		lua_newtable(L);
+		lua_createtable(L, 0, 4);
 		LuaHelp::reg_int(L, "stream_content", e.componentInfo->stream_content);
 		LuaHelp::reg_int(L, "component_type", e.componentInfo->component_type);
 		LuaHelp::reg_int(L, "component_tag", e.componentInfo->component_tag);
@@ -3328,7 +3328,7 @@ void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INF
 		lua_pushstring(L, "audioInfoList");
 		lua_newtable(L);
 		for( size_t i = 0; i < e.audioInfo->componentList.size(); i++ ){
-			lua_newtable(L);
+			lua_createtable(L, 0, 10);
 			LuaHelp::reg_int(L, "stream_content", e.audioInfo->componentList[i].stream_content);
 			LuaHelp::reg_int(L, "component_type", e.audioInfo->componentList[i].component_type);
 			LuaHelp::reg_int(L, "component_tag", e.audioInfo->componentList[i].component_tag);
@@ -3345,12 +3345,12 @@ void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INF
 	}
 	if( e.eventGroupInfo ){
 		lua_pushstring(L, "eventGroupInfo");
-		lua_newtable(L);
+		lua_createtable(L, 0, 2);
 		LuaHelp::reg_int(L, "group_type", e.eventGroupInfo->group_type);
 		lua_pushstring(L, "eventDataList");
 		lua_newtable(L);
 		for( size_t i = 0; i < e.eventGroupInfo->eventDataList.size(); i++ ){
-			lua_newtable(L);
+			lua_createtable(L, 0, 4);
 			LuaHelp::reg_int(L, "onid", e.eventGroupInfo->eventDataList[i].original_network_id);
 			LuaHelp::reg_int(L, "tsid", e.eventGroupInfo->eventDataList[i].transport_stream_id);
 			LuaHelp::reg_int(L, "sid", e.eventGroupInfo->eventDataList[i].service_id);
@@ -3362,12 +3362,12 @@ void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INF
 	}
 	if( e.eventRelayInfo ){
 		lua_pushstring(L, "eventRelayInfo");
-		lua_newtable(L);
+		lua_createtable(L, 0, 2);
 		LuaHelp::reg_int(L, "group_type", e.eventRelayInfo->group_type);
 		lua_pushstring(L, "eventDataList");
 		lua_newtable(L);
 		for( size_t i = 0; i < e.eventRelayInfo->eventDataList.size(); i++ ){
-			lua_newtable(L);
+			lua_createtable(L, 0, 4);
 			LuaHelp::reg_int(L, "onid", e.eventRelayInfo->eventDataList[i].original_network_id);
 			LuaHelp::reg_int(L, "tsid", e.eventRelayInfo->eventDataList[i].transport_stream_id);
 			LuaHelp::reg_int(L, "sid", e.eventRelayInfo->eventDataList[i].service_id);
