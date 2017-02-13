@@ -1,4 +1,4 @@
---f=io.open(edcb.Convert('cp932','utf-8',edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\EpgTimerSrvDebugLog.txt'),'rb')
+--f=edcb.io.open(edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\EpgTimerSrvDebugLog.txt','rb')
 if not f then
   mg.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\nNot Found or Forbidden.\r\n')
 else

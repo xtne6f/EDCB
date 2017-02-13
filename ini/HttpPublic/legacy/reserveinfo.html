@@ -20,9 +20,7 @@ r=edcb.GetReserveData(id)
 if r then
   if recFilePath and NativeToDocumentPath(recFilePath) then
     for i,ext in ipairs({'.mp4','.webm',''}) do
-      edcb.htmlEscape=0
-      f=io.open(edcb.Convert('cp932', 'utf-8', recFilePath..ext), 'rb')
-      edcb.htmlEscape=15
+      f=edcb.io and edcb.io.open(recFilePath..ext, 'rb')
       if f then
         f:close()
         video=NativeToDocumentPath(recFilePath)..ext

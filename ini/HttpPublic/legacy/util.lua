@@ -160,7 +160,7 @@ function DocumentToNativePath(path)
   --冗長表現の可能性を潰す
   local esc=edcb.htmlEscape
   edcb.htmlEscape=0
-  path=edcb.Convert('utf-8','cp932',edcb.Convert('cp932','utf-8',path)):gsub('/+','/')
+  path=edcb.Convert('utf-8','utf-8',path):gsub('/+','/')
   edcb.htmlEscape=esc
   --禁止文字と正規化のチェック
   if not path:find('[\0-\x1f\x7f\\:*?"<>|]') and not path:find('%./') and not path:find('%.$') then

@@ -1,4 +1,4 @@
-f=io.open(edcb.Convert('cp932','utf-8',edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\EpgTimerSrvNotifyLog.txt'),'rb')
+f=edcb.io.open(edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\EpgTimerSrvNotifyLog.txt','rb')
 if not f then
   mg.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\nNot Found or Forbidden.\r\n')
 else
@@ -7,11 +7,10 @@ else
   fsize=f:seek('end')
   ofs=c<0 and 0 or math.max(fsize-c,0)
   f:seek('set',ofs)
-  for a in f:lines('*L') do
-    if ofs==0 then
-      mg.write(edcb.Convert('utf-8','cp932',a))
-    end
-    ofs=0
+  a=edcb.Convert('utf-8','cp932',f:read('*a'))
+  if ofs~=0 then
+    a=a:gsub('^[^\n]*\n','')
   end
+  mg.write(a)
   f:close()
 end

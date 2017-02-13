@@ -27,13 +27,12 @@ end
 f=nil
 if fpath then
   fname='xcode'..(fpath:match('%.[0-9A-Za-z]+$') or '')
-  fpath=edcb.Convert('cp932', 'utf-8', fpath)
-  f=io.open(fpath, 'rb')
+  f=edcb.io.open(fpath, 'rb')
   if f then
     offset=math.floor((f:seek('end', 0) or 0) * offset / 99 / 188) * 188
     if XCODE then
       f:close()
-      f=io.popen('readex '..offset..' 4 "'..fpath..'" | '..XCMD, 'rb')
+      f=edcb.io.popen('readex '..offset..' 4 "'..fpath..'" | '..XCMD, 'rb')
       fname='xcode'..XEXT
     else
       f:seek('set', offset)
