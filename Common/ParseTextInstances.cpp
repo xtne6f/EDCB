@@ -388,13 +388,16 @@ bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
 	return true;
 }
 
-wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder)
+wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder, bool recInfoFolderOnly)
 {
 	wstring info;
 	if( recFilePath[0] != L'\0' ){
 		//ï‚ë´ÇÃò^âÊèÓïÒÉtÉ@ÉCÉãÇì«Ç›çûÇﬁ
 		DWORD shareAll = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
-		HANDLE hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		HANDLE hFile = INVALID_HANDLE_VALUE;
+		if( resultOfGetRecInfoFolder.empty() || recInfoFolderOnly == false ){
+			hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		}
 		if( hFile == INVALID_HANDLE_VALUE && resultOfGetRecInfoFolder.empty() == false ){
 			wstring recFileName;
 			GetFileName(recFilePath, recFileName);

@@ -75,7 +75,7 @@ public:
 	void SetRecInfoFolder(LPCWSTR folder);
 	wstring GetRecInfoFolder() const { return this->recInfoFolder; }
 	//•â‘«‚Ì˜^‰æî•ñ‚ğæ“¾‚·‚é
-	static wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder);
+	static wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder, bool recInfoFolderOnly);
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;

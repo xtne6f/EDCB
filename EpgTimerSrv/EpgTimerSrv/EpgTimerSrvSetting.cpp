@@ -82,6 +82,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 			}
 		}
 	}
+	s.recInfoFolderOnly = GetPrivateProfileInt(L"SET", L"RecInfoFolderOnly", 1, iniPath) != 0;
 	s.autoDel = GetPrivateProfileInt(L"SET", L"AutoDel", 0, iniPath) != 0;
 	s.delExtList.clear();
 	count = GetPrivateProfileInt(L"DEL_EXT", L"Count", INT_MAX, iniPath);
@@ -469,6 +470,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	hwnd = this->hwndReserve;
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY, setting.backPriority);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY, setting.fixedTunerPriority);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY, setting.recInfoFolderOnly);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_AUTODEL, setting.autoDel);
 	for( size_t i = 0; i < setting.delExtList.size(); i++ ){
 		ListBox_AddString(GetDlgItem(hwnd, IDC_LIST_SET_DEL_EXT), setting.delExtList[i].c_str());
@@ -728,6 +730,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	hwnd = this->hwndReserve;
 	WritePrivateProfileInt(L"SET", L"BackPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"FixedTunerPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"RecInfoFolderOnly", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"AutoDel", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_AUTODEL), iniPath.c_str());
 	num = 0;
 	for( int i = 0; i < ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_DEL_EXT)); i++ ){

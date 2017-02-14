@@ -431,6 +431,7 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) cons
 {
 	vector<REC_FILE_INFO> infoList;
 	wstring folder;
+	bool folderOnly;
 	{
 		CBlockLock lock(&this->managerLock);
 		infoList.reserve(this->recInfoText.GetMap().size());
@@ -440,11 +441,12 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) cons
 		if( getExtraInfo ){
 			folder = this->recInfoText.GetRecInfoFolder();
 		}
+		folderOnly = this->setting.recInfoFolderOnly;
 	}
 	if( getExtraInfo ){
 		for( size_t i = 0; i < infoList.size(); i++ ){
-			infoList[i].programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder);
-			infoList[i].errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder);
+			infoList[i].programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder, folderOnly);
+			infoList[i].errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder, folderOnly);
 		}
 	}
 	return infoList;
@@ -453,6 +455,7 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) cons
 bool CReserveManager::GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo) const
 {
 	wstring folder;
+	bool folderOnly;
 	{
 		CBlockLock lock(&this->managerLock);
 		map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().find(id);
@@ -463,10 +466,11 @@ bool CReserveManager::GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getE
 		if( getExtraInfo ){
 			folder = this->recInfoText.GetRecInfoFolder();
 		}
+		folderOnly = this->setting.recInfoFolderOnly;
 	}
 	if( getExtraInfo ){
-		recInfo->programInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".program.txt", folder);
-		recInfo->errInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".err", folder);
+		recInfo->programInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".program.txt", folder, folderOnly);
+		recInfo->errInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".err", folder, folderOnly);
 	}
 	return true;
 }

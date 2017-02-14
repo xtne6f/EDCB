@@ -26,6 +26,7 @@ public:
 		DWORD ngEpgCapTunerTime;
 		bool timeSync;
 		vector<pair<bool, pair<int, int>>> epgCapTimeList;
+		bool recInfoFolderOnly;
 		bool autoDel;
 		vector<wstring> delExtList;
 		vector<wstring> delChkList;
