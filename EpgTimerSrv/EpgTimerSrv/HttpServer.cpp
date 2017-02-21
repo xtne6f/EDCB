@@ -4,6 +4,8 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/ParseTextInstances.h"
 #include "civetweb.h"
+#include <io.h>
+#include <fcntl.h>
 
 #define LUA_DLL_NAME L"lua52.dll"
 
@@ -335,13 +337,16 @@ SYSTEMTIME get_time(lua_State* L, const char* name)
 namespace
 {
 
-wchar_t* utf8towcsdup(const char* s)
+wchar_t* utf8towcsdup(const char* s, const wchar_t* prefix = L"")
 {
 	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s, -1, NULL, 0);
 	if( len > 0 ){
-		wchar_t* w = (wchar_t*)calloc(len, sizeof(wchar_t));
-		if( w != NULL && MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s, -1, w, len) > 0 ){
-			return w;
+		wchar_t* w = (wchar_t*)calloc(wcslen(prefix) + len, sizeof(wchar_t));
+		if( w != NULL ){
+			wcscpy_s(w, wcslen(prefix) + 1, prefix);
+			if( MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s, -1, w + wcslen(prefix), len) > 0 ){
+				return w;
+			}
 		}
 		free(w);
 	}
@@ -355,6 +360,12 @@ void nefree(void* p)
 	errno = en;
 }
 
+struct LStream {
+	FILE* f; //stream (NULL for incompletely created streams)
+	lua_CFunction closef; //to close stream (NULL for closed streams)
+	HANDLE procf; //process handle used by f_pclose
+};
+
 //Refer: Lua-5.2.4/liolib.c (See Copyright Notice in lua.h)
 
 int checkmode(const char* mode)
@@ -365,14 +376,14 @@ int checkmode(const char* mode)
 		(*mode == '\0');
 }
 
-luaL_Stream* tolstream(lua_State* L)
+LStream* tolstream(lua_State* L)
 {
-	return (luaL_Stream*)luaL_checkudata(L, 1, "EDCB_FILE*");
+	return (LStream*)luaL_checkudata(L, 1, "EDCB_FILE*");
 }
 
 int f_tostring(lua_State* L)
 {
-	luaL_Stream* p = tolstream(L);
+	LStream* p = tolstream(L);
 	if( p->closef == NULL )
 		lua_pushliteral(L, "edcb_file (closed)");
 	else
@@ -382,16 +393,16 @@ int f_tostring(lua_State* L)
 
 FILE* tofile(lua_State* L)
 {
-	luaL_Stream* p = tolstream(L);
+	LStream* p = tolstream(L);
 	if( p->closef == NULL )
 		luaL_error(L, "attempt to use a closed file");
 	lua_assert(p->f);
 	return p->f;
 }
 
-luaL_Stream* newprefile(lua_State* L)
+LStream* newprefile(lua_State* L)
 {
-	luaL_Stream* p = (luaL_Stream*)lua_newuserdata(L, sizeof(luaL_Stream));
+	LStream* p = (LStream*)lua_newuserdata(L, sizeof(LStream));
 	p->closef = NULL; //mark file handle as 'closed'
 	luaL_setmetatable(L, "EDCB_FILE*");
 	return p;
@@ -399,7 +410,7 @@ luaL_Stream* newprefile(lua_State* L)
 
 int aux_close(lua_State* L)
 {
-	luaL_Stream* p = tolstream(L);
+	LStream* p = tolstream(L);
 	lua_CFunction cf = p->closef;
 	p->closef = NULL; //mark stream as closed
 	return (*cf)(L); //close it
@@ -413,7 +424,7 @@ int f_close(lua_State* L)
 
 int f_gc(lua_State* L)
 {
-	luaL_Stream* p = tolstream(L);
+	LStream* p = tolstream(L);
 	if( p->closef != NULL && p->f != NULL )
 		aux_close(L); //ignore closed and incompletely open files
 	return 0;
@@ -421,14 +432,22 @@ int f_gc(lua_State* L)
 
 int f_fclose(lua_State* L)
 {
-	luaL_Stream* p = tolstream(L);
+	LStream* p = tolstream(L);
 	return luaL_fileresult(L, (fclose(p->f) == 0), NULL);
 }
 
 int f_pclose(lua_State* L)
 {
-	luaL_Stream* p = tolstream(L);
-	return luaL_execresult(L, _pclose(p->f));
+	LStream* p = tolstream(L);
+	fclose(p->f);
+	DWORD dw;
+	int stat = -1;
+	if( WaitForSingleObject(p->procf, INFINITE) == WAIT_OBJECT_0 && GetExitCodeProcess(p->procf, &dw) ){
+		stat = (int)dw;
+	}
+	CloseHandle(p->procf);
+	errno = ECHILD;
+	return luaL_execresult(L, stat);
 }
 
 int test_eof(lua_State* L, FILE* f)
@@ -561,16 +580,32 @@ int f_flush(lua_State* L)
 
 int os_execute(lua_State* L)
 {
+	wchar_t cmdexe[MAX_PATH];
+	DWORD dw = GetEnvironmentVariable(L"ComSpec", cmdexe, MAX_PATH);
+	if( dw == 0 || dw >= MAX_PATH ){
+		cmdexe[0] = L'\0';
+	}
 	const char* cmd = luaL_optstring(L, 1, NULL);
 	if( cmd != NULL ){
-		wchar_t* wcmd = utf8towcsdup(cmd);
+		DWORD creflags = lua_toboolean(L, 2) ? 0 : CREATE_NO_WINDOW;
+		wchar_t* wcmd = utf8towcsdup(cmd, L" /c ");
 		luaL_argcheck(L, wcmd != NULL, 1, "utf8towcsdup");
-		int stat = _wsystem(wcmd);
+		STARTUPINFO si = {};
+		si.cb = sizeof(si);
+		PROCESS_INFORMATION pi;
+		int stat = -1;
+		if( cmdexe[0] && CreateProcess(cmdexe, wcmd, NULL, NULL, FALSE, creflags, NULL, NULL, &si, &pi) ){
+			CloseHandle(pi.hThread);
+			if( WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_OBJECT_0 && GetExitCodeProcess(pi.hProcess, &dw) ){
+				stat = (int)dw;
+			}
+			CloseHandle(pi.hProcess);
+		}
+		errno = ENOENT;
 		nefree(wcmd);
 		return luaL_execresult(L, stat);
 	}else{
-		int stat = _wsystem(NULL);
-		lua_pushboolean(L, stat); //true if there is a shell
+		lua_pushboolean(L, cmdexe[0]); //true if there is a shell
 		return 1;
 	}
 }
@@ -608,7 +643,7 @@ int io_open(lua_State* L)
 {
 	const char* filename = luaL_checkstring(L, 1);
 	const char* mode = luaL_optstring(L, 2, "r");
-	luaL_Stream* p = newprefile(L);
+	LStream* p = newprefile(L);
 	p->f = NULL;
 	p->closef = &f_fclose;
 	luaL_argcheck(L, checkmode(mode), 2, "invalid mode");
@@ -632,16 +667,69 @@ int io_popen(lua_State* L)
 {
 	const char* filename = luaL_checkstring(L, 1);
 	const char* mode = luaL_optstring(L, 2, "r");
-	luaL_Stream* p = newprefile(L);
-	wchar_t* wfilename = utf8towcsdup(filename);
+	DWORD creflags = lua_toboolean(L, 3) ? 0 : CREATE_NO_WINDOW;
+	LStream* p = newprefile(L);
+	luaL_argcheck(L, (mode[0] == 'r' || mode[0] == 'w') && (!mode[1] || mode[1] == 'b' && !mode[2]), 2, "invalid mode");
+	wchar_t* wfilename = utf8towcsdup(filename, L" /c ");
 	luaL_argcheck(L, wfilename != NULL, 1, "utf8towcsdup");
-	wchar_t* wmode = utf8towcsdup(mode);
-	if( wmode == NULL ){
-		free(wfilename);
-		luaL_argerror(L, 2, "utf8towcsdup");
+	p->f = NULL;
+	wchar_t cmdexe[MAX_PATH];
+	DWORD dw = GetEnvironmentVariable(L"ComSpec", cmdexe, MAX_PATH);
+	if( dw == 0 || dw >= MAX_PATH ){
+		cmdexe[0] = L'\0';
 	}
-	p->f = _wpopen(wfilename, wmode);
-	nefree(wmode);
+	HANDLE ppipe, tpipe, cpipe; //parent, temporary, child
+	if( cmdexe[0] && CreatePipe(mode[0] == 'r' ? &ppipe : &tpipe, mode[0] == 'r' ? &tpipe : &ppipe, NULL, 0) ){
+		BOOL b = DuplicateHandle(GetCurrentProcess(), tpipe, GetCurrentProcess(), &cpipe, 0, TRUE, DUPLICATE_SAME_ACCESS);
+		CloseHandle(tpipe);
+		if( b ){
+			SECURITY_ATTRIBUTES sa = {};
+			sa.nLength = sizeof(sa);
+			sa.bInheritHandle = TRUE;
+			STARTUPINFO si = {};
+			si.cb = sizeof(si);
+			si.dwFlags = STARTF_USESTDHANDLES;
+			if( mode[0] == 'r' ){
+				si.hStdInput = CreateFile(L"nul", GENERIC_READ, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				si.hStdOutput = cpipe;
+			}else{
+				si.hStdInput = cpipe;
+				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			}
+			si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			PROCESS_INFORMATION pi;
+			b = CreateProcess(cmdexe, wfilename, NULL, NULL, TRUE, creflags, NULL, NULL, &si, &pi);
+			if( si.hStdError != INVALID_HANDLE_VALUE ){
+				CloseHandle(si.hStdError);
+			}
+			if( si.hStdOutput != INVALID_HANDLE_VALUE ){
+				CloseHandle(si.hStdOutput);
+			}
+			if( si.hStdInput != INVALID_HANDLE_VALUE ){
+				CloseHandle(si.hStdInput);
+			}
+			if( b ){
+				CloseHandle(pi.hThread);
+				int osfd = _open_osfhandle((intptr_t)ppipe, mode[1] ? 0 : _O_TEXT);
+				if( osfd != -1 ){
+					ppipe = INVALID_HANDLE_VALUE;
+					p->f = _wfdopen(osfd, mode[0] == 'r' ? (mode[1] ? L"rb" : L"r") : (mode[1] ? L"wb" : L"w"));
+					if( p->f ){
+						p->procf = pi.hProcess;
+					}else{
+						_close(osfd);
+						CloseHandle(pi.hProcess);
+					}
+				}else{
+					CloseHandle(pi.hProcess);
+				}
+			}
+		}
+		if( ppipe != INVALID_HANDLE_VALUE ){
+			CloseHandle(ppipe);
+		}
+	}
+	errno = ENOENT;
 	nefree(wfilename);
 	p->closef = &f_pclose;
 	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;

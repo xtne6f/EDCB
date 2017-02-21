@@ -21,7 +21,7 @@ else
   f=edcb.io.popen(
     'ffmpeg.exe -f mpegts -i "'..proto..'://127.0.0.1:'..port..'?timeout=4000000'..(
       proto=='tcp' and '&listen=1&recv_buffer_size=481280&listen_timeout=4000' or '&pkt_size=48128&fifo_size=100000&overrun_nonfatal=1'
-    )..'" '..XOPT, 'rb')
+    )..'" '..XOPT, 'rb', true) -- 想定外にブロックしがちなのであえてプロンプトを表示
   fname='view'..XEXT
 end
 
