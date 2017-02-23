@@ -33,11 +33,9 @@ http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
 1.C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses（環境によってパスが違うかも）
 フォルダをルートフォルダ(Documentフォルダや各種プロジェクトと同階層のフォルダ)にコピーし、baseclasses.slnを開く
 
-（裏技）
-Windows SDK 7.1のISOイメージ"GRMSDK_EN_DVD.iso"を7-zipなどで展開し、さらに"Setup\WinSDKSamples\cab1.cab"を展開すると
-"winsdk_samples_multimedia_directshow_baseclasses_*"(*は任意)というファイルが70個見つかる。これを取り出してファイル名から
-"winsdk_samples_multimedia_directshow_baseclasses_"を取り除き、拡張子を復活させる(*_cpp→*.cppなど)とbaseclassesフォルダと同等になる。
-展開したファイルは読み取り専用属性になっているので注意。
+※BaseClassesはMicrosoftが公式に配布している模様
+https://github.com/Microsoft/Windows-classic-samples/tree/master/Samples/Win7Samples/multimedia/directshow/baseclasses
+https://developer.microsoft.com/en-us/windows/samples
 
 2.ツールバーにある緑色の横向き三角ボタンの右側にあるプルダウンメニューが「Release」に変更
 ソリューションエクスプローラー上の「BaseClasses」を右クリックして「ビルド」
