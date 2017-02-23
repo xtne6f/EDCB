@@ -217,11 +217,11 @@ end
 --CSRFトークンを取得する
 --※このトークンを含んだコンテンツを圧縮する場合はBEAST攻撃に少し気を配る
 function CsrfToken()
-  return edcb.serverRandom and edcb.serverRandom:sub(1,16) or ''
+  return edcb.serverRandom:sub(1,16)
 end
 
 --CSRFトークンを検査する
 --※サーバに変更を加える要求(POSTに限らない)を処理する前にこれを呼ぶべき
 function AssertCsrf(qs)
-  assert(not edcb.serverRandom or mg.get_var(qs,'ctok')==edcb.serverRandom:sub(1,16))
+  assert(mg.get_var(qs,'ctok')==edcb.serverRandom:sub(1,16))
 end

@@ -82,6 +82,10 @@ for i,v in ipairs({'BS','CS','地デジ','その他'}) do
   pageNav=pageNav..'  '..(tab==i-1 and v or '<a href="epg.html?tab='..(i-1)..'&amp;date='..date..'">'..v..'</a>')..'\n'
 end
 pageNav=pageNav..'  ||\n'
+  ..'  <a href="#noon">昼</a>\n'
+  ..'  <a href="#dusk">夕</a>\n'
+  ..'  <a href="#night">夜</a>\n'
+  ..'  ||\n'
 
 if minTime then
   for i=math.floor((minTime+timezone-4*3600)/(24*3600)),math.floor((maxTime+timezone-4*3600)/(24*3600)) do
@@ -102,14 +106,19 @@ rowHead='<tr class="epg-row-head">\n'..rowHead..'</tr>\n'
 
 colHead='<td class="epg-col-head">\n'
 for i=4,28 do
-  colHead=colHead..'<div class="t'..(i%24)..'" style="height:'..(ONE_MIN_PX*60)..'px">'..i..'</div>\n'
+  colHead=colHead..'<div class="t'..(i%24)..'"'
+    ..(i==11 and ' id="noon"' or i==17 and ' id="dusk"' or i==23 and ' id="night"' or '')
+    ..' style="height:'..(ONE_MIN_PX*60)..'px">'..i..'</div>\n'
 end
 colHead=colHead..'</td>\n'
 
 ctt={ct..pageNav..'<div id="main">\n  <table class="epg-table">\n'}
 table.insert(ctt, rowHead..'<tr>\n')
 for i,v in ipairs(st) do
-  if i%TIME_COLUMN==1 then table.insert(ctt, colHead) end
+  if i%TIME_COLUMN==1 then
+    table.insert(ctt, colHead)
+    colHead=colHead:gsub(' id=[^ ]+', '')
+  end
   table.insert(ctt, '<td class="epg-col">\n')
   lastPx=0
   for j,w in ipairs(v.et) do

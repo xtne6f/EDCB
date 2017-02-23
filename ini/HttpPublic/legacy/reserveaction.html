@@ -1,0 +1,33 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<div id="result">]=]
+
+post=ReadPost()
+
+AssertCsrf(post)
+
+if post then
+  if mg.get_var(mg.request_info.query_string, 'suspend') then
+    --ok=edcb.os.execute('start "SetSuspendState" powershell -NoProfile -Command "& {Start-Sleep 5;Add-Type -AssemblyName System.Windows.Forms;[System.Windows.Forms.Application]::SetSuspendState([System.Windows.Forms.PowerState]::Suspend,$false,$false)}"')
+    ct=ct..'スタンバイに移行'..(ok and 'します' or 'できません (スクリプトのコメントアウトを解除してください)')
+  end
+end
+
+ct=ct..[=[
+</div>
+<div id="footer">
+  <a href="reserve.html">予約一覧</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

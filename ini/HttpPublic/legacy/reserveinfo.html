@@ -14,7 +14,7 @@ ct=[=[
 ]=]
 
 id=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0
-recFilePath=edcb.GetRecFilePath and edcb.GetRecFilePath(id) or nil
+recFilePath=edcb.GetRecFilePath(id)
 edcb.htmlEscape=15
 r=edcb.GetReserveData(id)
 if r then
