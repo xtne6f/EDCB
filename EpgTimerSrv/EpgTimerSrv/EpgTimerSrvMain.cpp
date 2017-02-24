@@ -306,20 +306,22 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 							//通知情報ログ保存
 							wstring logPath;
 							GetModuleFolderPath(logPath);
-							logPath += L"\\EpgTimerSrvNotifyLog.txt";
+							logPath += L"\\EpgTimerSrvNotify.log";
 							HANDLE hFile = CreateFile(logPath.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 							if( hFile != INVALID_HANDLE_VALUE ){
+								DWORD dwWritten;
+								if( GetLastError() == ERROR_SUCCESS ){
+									WriteFile(hFile, L"\xFEFF", sizeof(WCHAR), &dwWritten, NULL);
+								}
 								SYSTEMTIME st = itr->time;
 								wstring log;
-								Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s] %s",
+								Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s] %s\r_",
 									st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, nid.szInfoTitle, info);
 								Replace(log, L"\r\n", L"  ");
-								string logA;
-								WtoA(log + L"\r\n", logA);
+								log.back() = L'\n';
 								LARGE_INTEGER liPos = {};
 								SetFilePointerEx(hFile, liPos, NULL, FILE_END);
-								DWORD dwWritten;
-								WriteFile(hFile, logA.c_str(), (DWORD)logA.size(), &dwWritten, NULL);
+								WriteFile(hFile, log.c_str(), (DWORD)(sizeof(WCHAR) * log.size()), &dwWritten, NULL);
 								CloseHandle(hFile);
 							}
 						}
@@ -1558,18 +1560,20 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			if( ReadVALUE(&n, cmdParam->data, cmdParam->dataSize, NULL) ){
 				wstring logPath;
 				GetModuleFolderPath(logPath);
-				logPath += L"\\EpgTimerSrvNotifyLog.txt";
-				HANDLE hFile = CreateFile(logPath.c_str(), FILE_READ_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				logPath += L"\\EpgTimerSrvNotify.log";
+				HANDLE hFile = CreateFile(logPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				if( hFile != INVALID_HANDLE_VALUE ){
 					LARGE_INTEGER liSize;
 					if( GetFileSizeEx(hFile, &liSize) ){
 						//末尾からn行だけ戻った位置をさがす
+						const DWORD sowc = sizeof(WCHAR);
+						liSize.QuadPart = liSize.QuadPart / sowc * sowc;
 						LARGE_INTEGER liPos = liSize;
 						bool foundLastLine = false;
-						while( liPos.QuadPart > 0 && n > 0 ){
-							DWORD dwToRead = (DWORD)min(liPos.QuadPart, 4096);
+						while( liPos.QuadPart > sowc && n > 0 ){
+							DWORD dwToRead = (DWORD)min(liPos.QuadPart - sowc, sowc * 4096);
 							liPos.QuadPart -= dwToRead;
-							char buff[4096];
+							WCHAR buff[4096];
 							DWORD dwRead;
 							if( SetFilePointerEx(hFile, liPos, NULL, FILE_BEGIN) == FALSE ||
 							    ReadFile(hFile, buff, dwToRead, &dwRead, NULL) == FALSE || dwRead != dwToRead ){
@@ -1577,8 +1581,8 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 								break;
 							}
 							liPos.QuadPart += dwRead;
-							for( ; dwRead > 0; dwRead--, liPos.QuadPart-- ){
-								if( buff[dwRead - 1] == '\n' ){
+							for( ; dwRead > 0; dwRead -= sowc, liPos.QuadPart -= sowc ){
+								if( buff[dwRead / sowc - 1] == L'\n' ){
 									if( foundLastLine ){
 										//必要行数に達したか大きすぎる場合は完了
 										if( --n <= 0 || liSize.QuadPart - liPos.QuadPart >= 64 * 1024 * 1024 ){
@@ -1588,19 +1592,17 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 									}
 									foundLastLine = true;
 								}else if( foundLastLine == false ){
-									liSize.QuadPart--;
+									liSize.QuadPart -= sowc;
 								}
 							}
 						}
 						if( foundLastLine && liSize.QuadPart - liPos.QuadPart < 128 * 1024 * 1024 ){
-							vector<char> buff((size_t)(liSize.QuadPart - liPos.QuadPart));
+							vector<WCHAR> buff((size_t)(liSize.QuadPart - liPos.QuadPart) / sowc);
 							DWORD dwRead;
 							if( buff.empty() ||
 							    SetFilePointerEx(hFile, liPos, NULL, FILE_BEGIN) &&
-							    ReadFile(hFile, &buff.front(), (DWORD)buff.size(), &dwRead, NULL) && dwRead == buff.size() ){
-								wstring buffW;
-								AtoW(string(buff.begin(), buff.end()), buffW);
-								resParam->data = NewWriteVALUE(buffW, resParam->dataSize);
+							    ReadFile(hFile, &buff.front(), (DWORD)(sowc * buff.size()), &dwRead, NULL) && dwRead == sowc * buff.size() ){
+								resParam->data = NewWriteVALUE(wstring(buff.begin(), buff.end()), resParam->dataSize);
 								resParam->param = CMD_SUCCESS;
 							}
 						}
