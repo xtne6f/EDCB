@@ -7,12 +7,12 @@ template <class K, class V>
 class CParseText
 {
 public:
-	CParseText() {}
+	CParseText() : isUtf8(false) {}
 	virtual ~CParseText() {}
 	bool ParseText(LPCWSTR path = NULL);
 	const map<K, V>& GetMap() const { return this->itemMap; }
 	const wstring& GetFilePath() const { return this->filePath; }
-	void SetFilePath(LPCWSTR path) { this->filePath = path; }
+	void SetFilePath(LPCWSTR path) { this->filePath = path; this->isUtf8 = false; }
 protected:
 	bool SaveText() const;
 	virtual bool ParseLine(LPCWSTR parseLine, pair<K, V>& item) = 0;
@@ -21,12 +21,14 @@ protected:
 	virtual bool SelectIDToSave(vector<K>& sortList) const { return false; }
 	map<K, V> itemMap;
 	wstring filePath;
+	bool isUtf8;
 };
 
 template <class K, class V>
 bool CParseText<K, V>::ParseText(LPCWSTR path)
 {
 	this->itemMap.clear();
+	this->isUtf8 = false;
 	if( path != NULL ){
 		this->filePath = path;
 	}
@@ -48,6 +50,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 		Sleep(200 * retry);
 	}
 
+	bool checkBom = false;
 	vector<char> buf;
 	vector<WCHAR> parseBuf;
 	for(;;){
@@ -60,13 +63,24 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 		}else{
 			buf.resize(buf.size() - 4096 + dwRead);
 		}
+		if( checkBom == false ){
+			checkBom = true;
+			if( buf.size() >= 3 && buf[0] == '\xEF' && buf[1] == '\xBB' && buf[2] == '\xBF' ){
+				this->isUtf8 = true;
+				buf.erase(buf.begin(), buf.begin() + 3);
+			}
+		}
 		//äÆëSÇ…ì«Ç›çûÇ‹ÇÍÇΩçsÇÇ≈Ç´ÇÈÇæÇØâêÕ
 		size_t offset = 0;
 		for( size_t i = 0; i < buf.size(); i++ ){
 			bool eof = buf[i] == '\0';
 			if( eof || buf[i] == '\r' && i + 1 < buf.size() && buf[i + 1] == '\n' ){
 				buf[i] = '\0';
-				AtoW(&buf[offset], i - offset, parseBuf);
+				if( this->isUtf8 ){
+					UTF8toW(&buf[offset], i - offset, parseBuf);
+				}else{
+					AtoW(&buf[offset], i - offset, parseBuf);
+				}
 				pair<K, V> item;
 				if( ParseLine(&parseBuf.front(), item) ){
 					this->itemMap.insert(item);
@@ -106,6 +120,10 @@ bool CParseText<K, V>::SaveText() const
 	}
 
 	bool ret = true;
+	DWORD dwWrite;
+	if( this->isUtf8 ){
+		ret = ret && WriteFile(hFile, "\xEF\xBB\xBF", 3, &dwWrite, NULL);
+	}
 	wstring saveLine;
 	vector<char> saveBuf;
 	vector<K> idList;
@@ -115,8 +133,12 @@ bool CParseText<K, V>::SaveText() const
 			saveLine.clear();
 			if( itr != this->itemMap.end() && SaveLine(*itr, saveLine) ){
 				saveLine += L"\r\n";
-				size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
-				DWORD dwWrite;
+				size_t len;
+				if( this->isUtf8 ){
+					len = WtoUTF8(saveLine.c_str(), saveLine.size(), saveBuf);
+				}else{
+					len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
+				}
 				ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 			}
 		}
@@ -125,8 +147,12 @@ bool CParseText<K, V>::SaveText() const
 			saveLine.clear();
 			if( SaveLine(*itr, saveLine) ){
 				saveLine += L"\r\n";
-				size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
-				DWORD dwWrite;
+				size_t len;
+				if( this->isUtf8 ){
+					len = WtoUTF8(saveLine.c_str(), saveLine.size(), saveBuf);
+				}else{
+					len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
+				}
 				ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 			}
 		}
@@ -134,8 +160,12 @@ bool CParseText<K, V>::SaveText() const
 	saveLine.clear();
 	if( SaveFooterLine(saveLine) ){
 		saveLine += L"\r\n";
-		size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
-		DWORD dwWrite;
+		size_t len;
+		if( this->isUtf8 ){
+			len = WtoUTF8(saveLine.c_str(), saveLine.size(), saveBuf);
+		}else{
+			len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
+		}
 		ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 	}
 	CloseHandle(hFile);
