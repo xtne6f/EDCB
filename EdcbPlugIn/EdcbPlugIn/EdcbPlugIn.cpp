@@ -980,24 +980,6 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 			resParam->param = CMD_SUCCESS;
 		}
 		break;
-	case CMD2_VIEW_APP_REC_WRITE_SIZE:
-		{
-			DWORD val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
-				__int64 writeSize = -1;
-				if (m_recCtrlMap.count(val) != 0 && !m_recCtrlMap[val].filePath.empty()) {
-					WIN32_FIND_DATA findData;
-					HANDLE hFind = FindFirstFile(m_recCtrlMap[val].filePath.c_str(), &findData);
-					if (hFind != INVALID_HANDLE_VALUE) {
-						FindClose(hFind);
-						writeSize = static_cast<__int64>(findData.nFileSizeHigh) << 32 | findData.nFileSizeLow;
-					}
-				}
-				resParam->data = NewWriteVALUE(writeSize, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
-			}
-		}
-		break;
 	default:
 		resParam->param = CMD_NON_SUPPORT;
 		break;
