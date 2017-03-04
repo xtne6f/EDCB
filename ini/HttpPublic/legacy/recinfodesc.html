@@ -20,9 +20,8 @@ v=edcb.GetRecFileInfo(id)
 if v then
   if w and NativeToDocumentPath(w.recFilePath) then
     for i,ext in ipairs({'.mp4','.webm',''}) do
-      f=edcb.io and edcb.io.open(w.recFilePath..ext, 'rb')
+      f=edcb.FindFile and edcb.FindFile(w.recFilePath..ext, 1)
       if f then
-        f:close()
         video=NativeToDocumentPath(w.recFilePath)..ext
         break
       end
@@ -33,9 +32,15 @@ if v then
     ..'    <dt>結果</dt><dd>'..v.comment..'</dd>\n'
     ..'    <dt>ドロップ</dt><dd>'..v.drops..'</dd>\n'
     ..'    <dt>スクランブル</dt><dd>'..v.scrambles..'</dd>\n'
-    ..(video and '    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)
-       ..'</a> [<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>]</dd>\n' or '')
-    ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..DecorateUri(v.programInfo):gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
+  if video then
+    ct=ct..'    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)..'</a>\n'
+      ..'[<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>\n'
+    for i=1,9 do
+      ct=ct..'<a href="xcode.lua?'..(i*10)..'='..mg.url_encode(video)..'">'..i..'</a>\n'
+    end
+    ct=ct..'<a href="xcode.lua?99='..mg.url_encode(video)..'">('..math.floor(f[1].size/1048576)..'M)</a>]</dd>\n'
+  end
+  ct=ct..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..DecorateUri(v.programInfo):gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="recinfodel.html?id='..v.id..'"><div>\n'

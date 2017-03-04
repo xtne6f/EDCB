@@ -20,9 +20,8 @@ r=edcb.GetReserveData(id)
 if r then
   if recFilePath and NativeToDocumentPath(recFilePath) then
     for i,ext in ipairs({'.mp4','.webm',''}) do
-      f=edcb.io and edcb.io.open(recFilePath..ext, 'rb')
+      f=edcb.FindFile and edcb.FindFile(recFilePath..ext, 1)
       if f then
-        f:close()
         video=NativeToDocumentPath(recFilePath)..ext
         break
       end
@@ -37,9 +36,15 @@ if r then
         ..string.format('TransportStreamID:%d(0x%04X)<br>', r.tsid, r.tsid)
         ..string.format('ServiceID:%d(0x%04X)<br>', r.sid, r.sid)
       )..'</dd>\n'
-    ..(video and '    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)
-       ..'</a> [<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>]</dd>\n' or '')
-    ..'    <dt>プログラム予約'..(r.eid==65535 and '' or '化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
+  if video then
+    ct=ct..'    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)..'</a>\n'
+      ..'[<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>\n'
+    for i=1,9 do
+      ct=ct..'<a href="xcode.lua?'..(i*10)..'='..mg.url_encode(video)..'">'..i..'</a>\n'
+    end
+    ct=ct..'<a href="xcode.lua?99='..mg.url_encode(video)..'">(?M)</a>]</dd>\n'
+  end
+  ct=ct..'    <dt>プログラム予約'..(r.eid==65535 and '' or '化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
     ..'</dt><dd>\n'
     ..'<form method="POST" action="reservechg.html?id='..r.reserveID
     ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
