@@ -2431,6 +2431,8 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	lua_rawset(L, -3);
 	lua_setglobal(L, "edcb");
 	luaL_dostring(L,
+		"package.path=package.path:gsub(';.[\\\\/][^;]*','');"
+		"package.cpath=package.cpath:gsub(';.[\\\\/][^;]*','');"
 		"edcb.EnumRecPresetInfo=function()"
 		" local gp,p,d,r=edcb.GetPrivateProfile,'EpgTimerSrv.ini',{0},{}"
 		" for v in gp('SET','PresetID','',p):gmatch('[0-9]+') do"
