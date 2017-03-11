@@ -34,7 +34,7 @@ BOOL CPacketInit::GetTSData(
 
 	if( this->packetSize != 0 ){
 		//“¯ŠúÏ‚Ý
-		for( DWORD i = this->packetSize - this->nextStartSize; i < inSize; i += this->packetSize ){
+		for( DWORD i = (this->packetSize - this->nextStartSize) % this->packetSize; i < inSize; i += this->packetSize ){
 			if( inData[i] != 0x47 ){
 				//Ä“¯Šú‚ª•K—v
 				this->packetSize = 0;
