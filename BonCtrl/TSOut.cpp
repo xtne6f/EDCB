@@ -368,7 +368,7 @@ void CTSOut::CheckNeedPID()
 				PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
 
 				//PMT‹LÚ‚ÌPID‚ð“o˜^
-				this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, 0));
+				this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, (WORD)0));
 				map<WORD,WORD>::iterator itrPID;
 				for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
 					this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
@@ -389,8 +389,8 @@ void CTSOut::CheckNeedPID()
 					PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item2.PMTPID,item2));
 					//_OutputDebugString(L"0x%04x, 0x%04x", itrPmt->first,itrPmt->second->program_number);
 					//PMT‹LÚ‚ÌPID‚ð“o˜^
-					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, 0));
-					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->second.PCR_PID, 0));
+					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, (WORD)0));
+					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->second.PCR_PID, (WORD)0));
 					map<WORD,WORD>::iterator itrPID;
 					for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
 						this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));

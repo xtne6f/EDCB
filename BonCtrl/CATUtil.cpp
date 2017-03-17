@@ -81,7 +81,7 @@ BOOL CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
 					//CA
 					WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
 					if (CA_PID != 0x1fff) {
-						PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+						PIDList.insert(pair<WORD,WORD>(CA_PID, (WORD)0));
 						//_OutputDebugString(L"CA_PID:0x%04x\r\n",CA_PID);
 					}
 				}
