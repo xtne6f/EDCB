@@ -621,6 +621,8 @@ BOOL CDecodeUtil::GetServiceListActual(
 		}
 	}
 	this->serviceList.reset(new SERVICE_INFO[*serviceListSize]);
+	this->serviceDBList.reset(new EPGDB_SERVICE_INFO[*serviceListSize]);
+	this->serviceAdapterList.reset(new CServiceInfoAdapter[*serviceListSize]);
 
 
 	wstring network_nameW = L"";
@@ -686,10 +688,9 @@ BOOL CDecodeUtil::GetServiceListActual(
 			continue;
 		}
 		for( DWORD i = 0; itr->second.SetLoopIndex(lp, i); i++ ){
-			this->serviceList[count].original_network_id = (WORD)itr->second.GetNumber(Desc::original_network_id);
-			this->serviceList[count].transport_stream_id = (WORD)itr->second.GetNumber(Desc::transport_stream_id);
-			this->serviceList[count].service_id = (WORD)itr->second.GetNumber(Desc::service_id, lp);
-			this->serviceList[count].extInfo = new SERVICE_EXT_INFO;
+			this->serviceDBList[count].ONID = (WORD)itr->second.GetNumber(Desc::original_network_id);
+			this->serviceDBList[count].TSID = (WORD)itr->second.GetNumber(Desc::transport_stream_id);
+			this->serviceDBList[count].SID = (WORD)itr->second.GetNumber(Desc::service_id, lp);
 
 			Desc::CDescriptor::CLoopPointer lp2 = lp;
 			if( itr->second.EnterLoop(lp2) ){
@@ -710,40 +711,24 @@ BOOL CDecodeUtil::GetServiceListActual(
 					if( srcSize > 0 ){
 						arib.PSISI((const BYTE*)src, srcSize, &service_name);
 					}
-					wstring service_provider_nameW = L"";
-					wstring service_nameW = L"";
-					AtoW(service_provider_name, service_provider_nameW);
-					AtoW(service_name, service_nameW);
-
-					this->serviceList[count].extInfo->service_type = (BYTE)itr->second.GetNumber(Desc::service_type, lp2);
-					if( service_provider_nameW.size() > 0 ){
-						this->serviceList[count].extInfo->service_provider_name = new WCHAR[service_provider_nameW.size()+1];
-						wcscpy_s(this->serviceList[count].extInfo->service_provider_name, service_provider_nameW.size()+1, service_provider_nameW.c_str());
-					}
-					if( service_nameW.size() > 0 ){
-						this->serviceList[count].extInfo->service_name = new WCHAR[service_nameW.size()+1];
-						wcscpy_s(this->serviceList[count].extInfo->service_name, service_nameW.size()+1, service_nameW.c_str());
-					}
+					this->serviceDBList[count].service_type = (BYTE)itr->second.GetNumber(Desc::service_type, lp2);
+					AtoW(service_provider_name, this->serviceDBList[count].service_provider_name);
+					AtoW(service_name, this->serviceDBList[count].service_name);
 				}
 			}
 
-			if( network_nameW.size() > 0 ){
-				this->serviceList[count].extInfo->network_name = new WCHAR[network_nameW.size()+1];
-				wcscpy_s(this->serviceList[count].extInfo->network_name, network_nameW.size()+1, network_nameW.c_str());
-			}
-			if( ts_nameW.size() > 0 ){
-				this->serviceList[count].extInfo->ts_name = new WCHAR[ts_nameW.size()+1];
-				wcscpy_s(this->serviceList[count].extInfo->ts_name, ts_nameW.size()+1, ts_nameW.c_str());
-			}
-			this->serviceList[count].extInfo->remote_control_key_id = remote_control_key_id;
+			this->serviceDBList[count].network_name = network_nameW;
+			this->serviceDBList[count].ts_name = ts_nameW;
+			this->serviceDBList[count].remote_control_key_id = remote_control_key_id;
 
-			this->serviceList[count].extInfo->partialReceptionFlag = FALSE;
+			this->serviceDBList[count].partialReceptionFlag = FALSE;
 			for( size_t j=0; j<partialServiceList.size(); j++ ){
 				if( partialServiceList[j] == this->serviceList[count].service_id ){
-					this->serviceList[count].extInfo->partialReceptionFlag = TRUE;
+					this->serviceDBList[count].partialReceptionFlag = TRUE;
 				}
 			}
 
+			this->serviceList[count] = this->serviceAdapterList[count].Create(&this->serviceDBList[count]);
 			count++;
 		}
 	}
@@ -785,18 +770,15 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	TSID = (WORD)this->patInfo->GetNumber(Desc::transport_stream_id);
 
 	this->serviceList.reset(new SERVICE_INFO[*serviceListSize]);
-
-	wstring network_nameW = L"";
-	wstring ts_nameW = L"";
-	BYTE remote_control_key_id = 0;
+	this->serviceDBList.reset(new EPGDB_SERVICE_INFO[*serviceListSize]);
+	this->serviceAdapterList.reset(new CServiceInfoAdapter[*serviceListSize]);
 
 	//サービスリスト
 	for( DWORD i=0; i<*serviceListSize; i++ ){
 		this->sitInfo->SetLoopIndex(lp, i);
-		this->serviceList[i].original_network_id = ONID;
-		this->serviceList[i].transport_stream_id = TSID;
-		this->serviceList[i].service_id = (WORD)this->sitInfo->GetNumber(Desc::service_id, lp);
-		this->serviceList[i].extInfo = new SERVICE_EXT_INFO;
+		this->serviceDBList[i].ONID = ONID;
+		this->serviceDBList[i].TSID = TSID;
+		this->serviceDBList[i].SID = (WORD)this->sitInfo->GetNumber(Desc::service_id, lp);
 
 		Desc::CDescriptor::CLoopPointer lp2 = lp;
 		if( this->sitInfo->EnterLoop(lp2) ){
@@ -817,34 +799,16 @@ BOOL CDecodeUtil::GetServiceListSIT(
 				if( srcSize > 0 ){
 					arib.PSISI((const BYTE*)src, srcSize, &service_name);
 				}
-				wstring service_provider_nameW = L"";
-				wstring service_nameW = L"";
-				AtoW(service_provider_name, service_provider_nameW);
-				AtoW(service_name, service_nameW);
-
-				this->serviceList[i].extInfo->service_type = (BYTE)this->sitInfo->GetNumber(Desc::service_type, lp2);
-				if( service_provider_nameW.size() > 0 ){
-					this->serviceList[i].extInfo->service_provider_name = new WCHAR[service_provider_nameW.size()+1];
-					wcscpy_s(this->serviceList[i].extInfo->service_provider_name, service_provider_nameW.size()+1, service_provider_nameW.c_str());
-				}
-				if( service_nameW.size() > 0 ){
-					this->serviceList[i].extInfo->service_name = new WCHAR[service_nameW.size()+1];
-					wcscpy_s(this->serviceList[i].extInfo->service_name, service_nameW.size()+1, service_nameW.c_str());
-				}
+				this->serviceDBList[i].service_type = (BYTE)this->sitInfo->GetNumber(Desc::service_type, lp2);
+				AtoW(service_provider_name, this->serviceDBList[i].service_provider_name);
+				AtoW(service_name, this->serviceDBList[i].service_name);
 			}
 		}
 
-		if( network_nameW.size() > 0 ){
-			this->serviceList[i].extInfo->network_name = new WCHAR[network_nameW.size()+1];
-			wcscpy_s(this->serviceList[i].extInfo->network_name, network_nameW.size()+1, network_nameW.c_str());
-		}
-		if( ts_nameW.size() > 0 ){
-			this->serviceList[i].extInfo->ts_name = new WCHAR[ts_nameW.size()+1];
-			wcscpy_s(this->serviceList[i].extInfo->ts_name, ts_nameW.size()+1, ts_nameW.c_str());
-		}
-		this->serviceList[i].extInfo->remote_control_key_id = remote_control_key_id;
+		//トランスポートの情報は取得できない
 
-		this->serviceList[i].extInfo->partialReceptionFlag = FALSE;
+		this->serviceDBList[i].partialReceptionFlag = FALSE;
+		this->serviceList[i] = this->serviceAdapterList[i].Create(&this->serviceDBList[i]);
 	}
 
 

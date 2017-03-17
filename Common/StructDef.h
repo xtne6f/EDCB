@@ -1,6 +1,8 @@
 #ifndef __STRUCT_DEF_H__
 #define __STRUCT_DEF_H__
 
+#include "EpgDataCap3Def.h"
+
 //転送ファイルデータ
 struct FILE_DATA {
 	wstring Name;				//ファイル名
@@ -230,12 +232,7 @@ struct EPGDB_EXTENDED_EVENT_INFO {
 };
 
 //EPGジャンルデータ
-struct EPGDB_CONTENT_DATA {
-	BYTE content_nibble_level_1;
-	BYTE content_nibble_level_2;
-	BYTE user_nibble_1;
-	BYTE user_nibble_2;
-};
+typedef EPG_CONTENT EPGDB_CONTENT_DATA;
 
 //EPGジャンル情報
 struct EPGDB_CONTEN_INFO {
@@ -270,12 +267,7 @@ struct EPGDB_AUDIO_COMPONENT_INFO {
 };
 
 //EPGイベントデータ
-struct EPGDB_EVENT_DATA {
-	WORD original_network_id;
-	WORD transport_stream_id;
-	WORD service_id;
-	WORD event_id;
-};
+typedef EPG_EVENT_DATA EPGDB_EVENT_DATA;
 
 //EPGイベントグループ情報
 struct EPGDB_EVENTGROUP_INFO {

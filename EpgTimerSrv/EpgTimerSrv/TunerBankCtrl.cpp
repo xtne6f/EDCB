@@ -1274,16 +1274,17 @@ wstring CTunerBankCtrl::ConvertRecName(
 		wcsncpy_s(info.bonDriverName, bonDriverName, _TRUNCATE);
 		info.bonDriverID = HIWORD(tunerID);
 		info.tunerID = LOWORD(tunerID);
-		std::unique_ptr<EPG_EVENT_INFO> epgInfo;
+		EPG_EVENT_INFO epgInfo;
+		EPGDB_EVENT_INFO epgDBInfo;
+		CEpgEventInfoAdapter epgInfoAdapter;
+		info.epgInfo = NULL;
 		if( eid != 0xFFFF ){
-			EPGDB_EVENT_INFO epgDBInfo;
 			if( epgDBManager_.SearchEpg(onid, tsid, sid, eid, &epgDBInfo) ){
-				epgInfo.reset(new EPG_EVENT_INFO);
-				CopyEpgInfo(epgInfo.get(), &epgDBInfo);
+				epgInfo = epgInfoAdapter.Create(&epgDBInfo);
+				info.epgInfo = &epgInfo;
 			}
 		}
 		info.reserveID = reserveID;
-		info.epgInfo = epgInfo.get();
 		info.sizeOfStruct = 0;
 		WCHAR name[512];
 		DWORD size = 512;

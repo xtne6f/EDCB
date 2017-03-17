@@ -26,7 +26,31 @@ void GetChkDrivePath(wstring directoryPath, wstring& mountPath);
 void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name);
 void GetComponentTypeName(BYTE content, BYTE type, wstring& name);
 
-void CopyEpgInfo(EPG_EVENT_INFO* destInfo, const EPGDB_EVENT_INFO* srcInfo);
 void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
+
+class CEpgEventInfoAdapter
+{
+public:
+	//EPGDB_EVENT_INFOを参照してEPG_EVENT_INFOを構築する
+	EPG_EVENT_INFO Create(EPGDB_EVENT_INFO* ref);
+private:
+	EPG_SHORT_EVENT_INFO shortInfo;
+	EPG_EXTENDED_EVENT_INFO extInfo;
+	EPG_CONTEN_INFO contentInfo;
+	EPG_COMPONENT_INFO componentInfo;
+	EPG_AUDIO_COMPONENT_INFO audioInfo;
+	vector<EPG_AUDIO_COMPONENT_INFO_DATA> audioList;
+	EPG_EVENTGROUP_INFO eventGroupInfo;
+	EPG_EVENTGROUP_INFO eventRelayInfo;
+};
+
+class CServiceInfoAdapter
+{
+public:
+	//EPGDB_SERVICE_INFOを参照してSERVICE_INFOを構築する
+	SERVICE_INFO Create(const EPGDB_SERVICE_INFO* ref);
+private:
+	SERVICE_EXT_INFO extInfo;
+};
 
 #endif

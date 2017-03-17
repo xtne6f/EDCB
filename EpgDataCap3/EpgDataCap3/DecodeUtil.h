@@ -63,6 +63,8 @@ protected:
 
 
 	std::unique_ptr<SERVICE_INFO[]> serviceList;
+	std::unique_ptr<EPGDB_SERVICE_INFO[]> serviceDBList;
+	std::unique_ptr<CServiceInfoAdapter[]> serviceAdapterList;
 
 protected:
 	void Clear();
