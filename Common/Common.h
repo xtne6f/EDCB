@@ -31,9 +31,6 @@ using std::vector;
 //#undef NULL
 //#define NULL nullptr
 
-template<class T> inline void SAFE_DELETE(T*& p) { delete p; p = NULL; }
-template<class T> inline void SAFE_DELETE_ARRAY(T*& p) { delete[] p; p = NULL; }
-
 inline void _OutputDebugString(const TCHAR* format, ...)
 {
 	// TODO: ‚±‚ÌŠÖ”–¼‚Í—\–ñ–¼ˆá”½‚Ìã‚É•´‚ç‚í‚µ‚¢‚Ì‚Å•ÏX‚·‚×‚«

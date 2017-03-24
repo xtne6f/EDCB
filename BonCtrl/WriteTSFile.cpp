@@ -59,8 +59,8 @@ BOOL CWriteTSFile::StartSave(
 		const vector<REC_FILE_SET_INFO>& saveFolder_ = *saveFolder;
 		this->saveFolderSub = *saveFolderSub;
 		for( size_t i=0; i<saveFolder_.size(); i++ ){
-			SAVE_INFO item;
-			item.writeUtil = NULL;
+			this->fileList.push_back(std::unique_ptr<SAVE_INFO>(new SAVE_INFO));
+			SAVE_INFO& item = *this->fileList.back();
 			item.freeChk = FALSE;
 			item.writePlugIn = saveFolder_[i].writePlugIn;
 			if( item.writePlugIn.size() == 0 ){
@@ -71,7 +71,6 @@ BOOL CWriteTSFile::StartSave(
 			if( item.recFileName.size() == 0 ){
 				item.recFileName = fileName;
 			}
-			this->fileList.push_back(item);
 		}
 
 		//受信スレッド起動
@@ -213,19 +212,18 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 	CWriteTSFile* sys = (CWriteTSFile*)param;
 	BOOL emptyFlag = TRUE;
 	for( size_t i=0; i<sys->fileList.size(); i++ ){
-		sys->fileList[i].writeUtil = new CWritePlugInUtil;
 		wstring moduleFolder;
 		GetModuleFolderPath(moduleFolder);
-		if( sys->fileList[i].writeUtil->Initialize((moduleFolder + L"\\Write\\" + sys->fileList[i].writePlugIn).c_str()) == FALSE ){
+		if( sys->fileList[i]->writeUtil.Initialize((moduleFolder + L"\\Write\\" + sys->fileList[i]->writePlugIn).c_str()) == FALSE ){
 			OutputDebugString(L"CWriteTSFile::StartSave Err 3\r\n");
-			SAFE_DELETE(sys->fileList[i].writeUtil);
+			sys->fileList[i].reset();
 		}else{
-			wstring folderPath = sys->fileList[i].recFolder;
+			wstring folderPath = sys->fileList[i]->recFolder;
 			ChkFolderPath(folderPath);
-			if( CompareNoCase(sys->fileList[i].writePlugIn, L"Write_Default.dll") == 0 ){
+			if( CompareNoCase(sys->fileList[i]->writePlugIn, L"Write_Default.dll") == 0 ){
 				//デフォルトの場合は空き容量をあらかじめチェック
 				if( sys->createSize > 0 ){
-					if( sys->ChkFreeFolder(sys->createSize, sys->fileList[i].recFolder) == FALSE ){
+					if( sys->ChkFreeFolder(sys->createSize, sys->fileList[i]->recFolder) == FALSE ){
 						if( sys->GetFreeFolder(sys->createSize, folderPath) ){
 							//空きなかったのでサブフォルダに録画
 							sys->subRecFlag = TRUE;
@@ -234,28 +232,28 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 				}
 			}
 			//開始
-			BOOL startRes = sys->fileList[i].writeUtil->StartSave(
-				(folderPath + L'\\' + sys->fileList[i].recFileName).c_str(), sys->overWriteFlag, sys->createSize);
+			BOOL startRes = sys->fileList[i]->writeUtil.StartSave(
+				(folderPath + L'\\' + sys->fileList[i]->recFileName).c_str(), sys->overWriteFlag, sys->createSize);
 			if( startRes == FALSE ){
 				OutputDebugString(L"CWriteTSFile::StartSave Err 2\r\n");
 				//エラー時サブフォルダでリトライ
 				if( sys->GetFreeFolder(sys->createSize, folderPath) ){
 					//空きなかったのでサブフォルダに録画
 					sys->subRecFlag = TRUE;
-					startRes = sys->fileList[i].writeUtil->StartSave(
-						(folderPath + L'\\' + sys->fileList[i].recFileName).c_str(), sys->overWriteFlag, sys->createSize);
+					startRes = sys->fileList[i]->writeUtil.StartSave(
+						(folderPath + L'\\' + sys->fileList[i]->recFileName).c_str(), sys->overWriteFlag, sys->createSize);
 				}
 			}
 			if( startRes == FALSE ){
-				SAFE_DELETE(sys->fileList[i].writeUtil);
+				sys->fileList[i].reset();
 			}else{
 				if( i == 0 ){
 					WCHAR saveFilePath[512] = L"";
 					DWORD saveFilePathSize = 512;
-					sys->fileList[i].writeUtil->GetSaveFilePath(saveFilePath, &saveFilePathSize);
+					sys->fileList[i]->writeUtil.GetSaveFilePath(saveFilePath, &saveFilePathSize);
 					sys->mainSaveFilePath = saveFilePath;
 				}
-				sys->fileList[i].freeChk = emptyFlag;
+				sys->fileList[i]->freeChk = emptyFlag;
 				emptyFlag = FALSE;
 			}
 		}
@@ -288,9 +286,9 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 			DWORD dataSize = (DWORD)data.front().size();
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
 				{
-					if( sys->fileList[i].writeUtil != NULL ){
+					if( sys->fileList[i] ){
 						DWORD write = 0;
-						if( sys->fileList[i].writeUtil->AddTSBuff( &data.front().front(), dataSize, &write) == FALSE ){
+						if( sys->fileList[i]->writeUtil.AddTSBuff(&data.front().front(), dataSize, &write) == FALSE ){
 							//空きがなくなった
 							if( i == 0 ){
 								CBlockLock lock(&sys->outThreadLock);
@@ -299,31 +297,31 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 									sys->writeTotalSize = -(sys->writeTotalSize + 1);
 								}
 							}
-							sys->fileList[i].writeUtil->StopSave();
+							sys->fileList[i]->writeUtil.StopSave();
 
-							if( sys->fileList[i].freeChk == TRUE ){
+							if( sys->fileList[i]->freeChk == TRUE ){
 								//次の空きを探す
 								wstring freeFolderPath = L"";
 								if( sys->GetFreeFolder(200*1024*1024, freeFolderPath) == TRUE ){
 									wstring recFilePath = freeFolderPath;
 									recFilePath += L"\\";
-									recFilePath += sys->fileList[i].recFileName;
+									recFilePath += sys->fileList[i]->recFileName;
 
 									//開始
-									if( sys->fileList[i].writeUtil->StartSave(recFilePath.c_str(), sys->overWriteFlag, 0) == FALSE ){
+									if( sys->fileList[i]->writeUtil.StartSave(recFilePath.c_str(), sys->overWriteFlag, 0) == FALSE ){
 										//失敗したので終わり
-										SAFE_DELETE(sys->fileList[i].writeUtil);
+										sys->fileList[i].reset();
 									}else{
 										sys->subRecFlag = TRUE;
 
 										if( dataSize > write ){
-											sys->fileList[i].writeUtil->AddTSBuff( &data.front().front()+write, dataSize-write, &write);
+											sys->fileList[i]->writeUtil.AddTSBuff(&data.front().front()+write, dataSize-write, &write);
 										}
 									}
 								}
 							}else{
 								//失敗したので終わり
-								SAFE_DELETE(sys->fileList[i].writeUtil);
+								sys->fileList[i].reset();
 							}
 						}else{
 							//原作では成否にかかわらずwriteTotalSizeにdataSizeを加算しているが
@@ -349,18 +347,18 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 		CBlockLock lock(&sys->outThreadLock);
 		for( std::list<vector<BYTE>>::iterator itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end() && itr->empty() == false; itr++ ){
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
-				if( sys->fileList[i].writeUtil ){
+				if( sys->fileList[i] ){
 					DWORD write = 0;
-					sys->fileList[i].writeUtil->AddTSBuff( &itr->front(), (DWORD)itr->size(), &write);
+					sys->fileList[i]->writeUtil.AddTSBuff(&itr->front(), (DWORD)itr->size(), &write);
 				}
 			}
 			itr->clear();
 		}
 	}
 	for( size_t i=0; i<sys->fileList.size(); i++ ){
-		if( sys->fileList[i].writeUtil ){
-			sys->fileList[i].writeUtil->StopSave();
-			SAFE_DELETE(sys->fileList[i].writeUtil);
+		if( sys->fileList[i] ){
+			sys->fileList[i]->writeUtil.StopSave();
+			sys->fileList[i].reset();
 		}
 	}
 
