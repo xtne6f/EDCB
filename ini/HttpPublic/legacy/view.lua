@@ -1,5 +1,9 @@
 -- ローカルUDPポート1234～1243またはTCPポート22230～22239を転送するスクリプト
 
+-- コマンドはEDCBのToolsフォルダにあるものを優先する
+ffmpeg=edcb.GetPrivateProfile('SET', 'ModulePath', '', 'Common.ini')..'\\Tools\\ffmpeg.exe'
+if not edcb.FindFile(ffmpeg, 1) then ffmpeg='ffmpeg.exe' end
+
 -- ffmpeg変換オプション
 -- ※UDPの場合はローカルでの安定した送受信も求められるので、システムに余力を残して調整すべき
 -- libvpxの例:リアルタイム変換と画質が両立するようにビットレート-bと計算量-cpu-usedを調整する
@@ -19,9 +23,9 @@ else
   -- 前回のプロセスが残っていたら終わらせる
   edcb.os.execute('wmic process where "name=\'ffmpeg.exe\' and commandline like \'%%'..proto..'://127.0.0.1:'..port..'%%\'" call terminate >nul')
   f=edcb.io.popen(
-    'ffmpeg.exe -f mpegts -i "'..proto..'://127.0.0.1:'..port..'?timeout=4000000'..(
+    '""'..ffmpeg..'" -f mpegts -i "'..proto..'://127.0.0.1:'..port..'?timeout=4000000'..(
       proto=='tcp' and '&listen=1&recv_buffer_size=481280&listen_timeout=4000' or '&pkt_size=48128&fifo_size=100000&overrun_nonfatal=1'
-    )..'" '..XOPT, 'rb', true) -- 想定外にブロックしがちなのであえてプロンプトを表示
+    )..'" '..XOPT..'"', 'rb', true) -- 想定外にブロックしがちなのであえてプロンプトを表示
   fname='view'..XEXT
 end
 

@@ -1,11 +1,17 @@
 -- ファイルを転送するスクリプト
 -- ファイルをタイムシフト再生できる(容量確保録画には未対応): http://localhost:5510/xcode.lua?0=video/foo.ts
 
--- トランスコードするかどうか(する場合はreadex.exeとffmpeg.exeをパスの通ったどこかに用意すること)
+-- コマンドはEDCBのToolsフォルダにあるものを優先する
+ffmpeg=edcb.GetPrivateProfile('SET', 'ModulePath', '', 'Common.ini')..'\\Tools\\ffmpeg.exe'
+if not edcb.FindFile(ffmpeg, 1) then ffmpeg='ffmpeg.exe' end
+readex=edcb.GetPrivateProfile('SET', 'ModulePath', '', 'Common.ini')..'\\Tools\\readex.exe'
+if not edcb.FindFile(readex, 1) then readex='readex.exe' end
+
+-- トランスコードするかどうか(する場合はreadex.exeとffmpeg.exeを用意すること)
 XCODE=false
 -- 変換コマンド
 -- libvpxの例:リアルタイム変換と画質が両立するようにビットレート-bと計算量-cpu-usedを調整する
-XCMD='ffmpeg -i pipe:0 -vcodec libvpx -b 896k -quality realtime -cpu-used 1 -vf yadif=0:-1:1 -s 512x288 -r 30000/1001 -acodec libvorbis -ab 128k -f webm -'
+XCMD='"'..ffmpeg..'" -i pipe:0 -vcodec libvpx -b 896k -quality realtime -cpu-used 1 -vf yadif=0:-1:1 -s 512x288 -r 30000/1001 -acodec libvorbis -ab 128k -f webm -'
 -- 変換後の拡張子
 XEXT='.webm'
 -- 転送開始前に変換しておく量(bytes)
@@ -34,7 +40,7 @@ if fpath then
       offset=math.floor((f:seek('end', 0) or 0) * offset / 99 / 188) * 188
       if XCODE then
         f:close()
-        f=edcb.io.popen('readex '..offset..' 4 "'..fpath..'" | '..XCMD, 'rb')
+        f=edcb.io.popen('""'..readex..'" '..offset..' 4 "'..fpath..'" | '..XCMD..'"', 'rb')
         fname='xcode'..XEXT
       else
         f:seek('set', offset)
