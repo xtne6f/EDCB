@@ -9,11 +9,11 @@ class CHttpServer
 {
 public:
 	struct SERVER_OPTIONS {
-		std::wstring ports;
-		std::wstring rootPath;
-		std::wstring accessControlList;
-		std::wstring authenticationDomain;
-		std::wstring sslCipherList;
+		wstring ports;
+		wstring rootPath;
+		wstring accessControlList;
+		wstring authenticationDomain;
+		wstring sslCipherList;
 		int numThreads;
 		int requestTimeout;
 		int sslProtocolVersion;
@@ -47,7 +47,7 @@ namespace LuaHelp
 	template<size_t size> inline void reg_function(lua_State* L, const char(&name)[size], lua_CFunction func, void* userdata) { reg_function_(L, name, size, func, userdata); }
 	template<size_t size> inline void reg_time(lua_State* L, const char(&name)[size], const SYSTEMTIME& st) { reg_time_(L, name, size, st); }
 	bool isnil(lua_State* L, const char* name);
-	std::string get_string(lua_State* L, const char* name);
+	string get_string(lua_State* L, const char* name);
 	int get_int(lua_State* L, const char* name);
 	bool get_boolean(lua_State* L, const char* name);
 	SYSTEMTIME get_time(lua_State* L, const char* name);

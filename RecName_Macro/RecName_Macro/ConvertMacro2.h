@@ -2,9 +2,6 @@
 
 #include "RecName_PlugIn.h"
 
-#include <string>
-using std::wstring;
-
 class CConvertMacro2
 {
 public:

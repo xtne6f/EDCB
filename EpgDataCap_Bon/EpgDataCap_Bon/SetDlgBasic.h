@@ -11,7 +11,7 @@ public:
 	BOOL Create(LPCTSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 
-	void SetIniPath(std::wstring commonIniPath, std::wstring appIniPath){
+	void SetIniPath(wstring commonIniPath, wstring appIniPath){
 		this->commonIniPath = commonIniPath;
 		this->appIniPath = appIniPath;
 	};
@@ -23,8 +23,8 @@ public:
 
 protected:
 	HWND m_hWnd;
-	std::wstring commonIniPath;
-	std::wstring appIniPath;
+	wstring commonIniPath;
+	wstring appIniPath;
 
 	afx_msg void OnBnClickedButtonRecPath();
 	afx_msg void OnBnClickedButtonRecAdd();

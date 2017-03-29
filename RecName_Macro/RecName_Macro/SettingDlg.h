@@ -1,8 +1,5 @@
 #pragma once
 
-#include <string>
-using std::wstring;
-
 class CSettingDlg
 {
 public:

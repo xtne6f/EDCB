@@ -4,16 +4,10 @@
 /*#ifdef _DEBUG
 #undef new
 #endif
-#include <string>
-#include <vector>
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 */
-#include <string>
-#include <vector>
-using std::string;
-using std::vector;
 
 #include "ColorDef.h"
 
