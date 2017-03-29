@@ -41,7 +41,7 @@ BOOL CSetDlgBasic::OnInitDialog()
 	}else{
 		for( int i = 0; i < iNum; i++ ){
 			WCHAR key[64];
-			wsprintf(key, L"RecFolderPath%d", i);
+			swprintf_s(key, L"RecFolderPath%d", i);
 			ListBox_AddString(GetDlgItem(IDC_LIST_REC_FOLDER), GetPrivateProfileToString( L"SET", key, L"", commonIniPath.c_str() ).c_str());
 		}
 	}
@@ -81,7 +81,7 @@ void CSetDlgBasic::SaveIni()
 	WritePrivateProfileInt(L"SET", L"RecFolderNum", iNum, commonIniPath.c_str());
 	for( int i = 0; i < iNum; i++ ){
 		WCHAR key[64];
-		wsprintf(key, L"RecFolderPath%d", i);
+		swprintf_s(key, L"RecFolderPath%d", i);
 		WCHAR folder[512] = L"";
 		int len = ListBox_GetTextLen(GetDlgItem(IDC_LIST_REC_FOLDER), i);
 		if( 0 <= len && len < 512 ){

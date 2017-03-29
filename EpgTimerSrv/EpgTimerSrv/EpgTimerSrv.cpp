@@ -60,7 +60,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	SetDllDirectory(_T(""));
 
 	if( lpCmdLine[0] == _T('-') || lpCmdLine[0] == _T('/') ){
-		if( lstrcmpi(_T("install"), lpCmdLine + 1) == 0 ){
+		if( _tcsicmp(_T("install"), lpCmdLine + 1) == 0 ){
 			bool installed = false;
 			TCHAR exePath[512];
 			if( GetModuleFileName(NULL, exePath, _countof(exePath)) != 0 ){
@@ -81,7 +81,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				MessageBox(NULL, L"Failed to install/remove " SERVICE_NAME L".\r\nRun as Administrator on Vista and later.", NULL, MB_ICONERROR);
 			}
 			return 0;
-		}else if( lstrcmpi(_T("remove"), lpCmdLine + 1) == 0 ){
+		}else if( _tcsicmp(_T("remove"), lpCmdLine + 1) == 0 ){
 			bool removed = false;
 			SC_HANDLE hScm = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
 			if( hScm != NULL ){
@@ -101,7 +101,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				MessageBox(NULL, L"Failed to install/remove " SERVICE_NAME L".\r\nRun as Administrator on Vista and later.", NULL, MB_ICONERROR);
 			}
 			return 0;
-		}else if( lstrcmpi(_T("setting"), lpCmdLine + 1) == 0 ){
+		}else if( _tcsicmp(_T("setting"), lpCmdLine + 1) == 0 ){
 			//設定ダイアログを表示する
 			CoInitialize(NULL);
 			CEpgTimerSrvSetting setting;
@@ -240,12 +240,12 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 		SYSTEMTIME st;
 		GetLocalTime(&st);
 		WCHAR header[64];
-		int len = wsprintf(header, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
-		                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+		int len = swprintf_s(header, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
+		                     st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 		DWORD dwWritten;
 		WriteFile(g_hDebugLog, header, sizeof(WCHAR) * len, &dwWritten, NULL);
 		if( lpOutputString ){
-			len = lstrlen(lpOutputString);
+			len = (int)wcslen(lpOutputString);
 			WriteFile(g_hDebugLog, lpOutputString, sizeof(WCHAR) * len, &dwWritten, NULL);
 			if( len == 0 || lpOutputString[len - 1] != L'\n' ){
 				WriteFile(g_hDebugLog, L"<NOBR>\r\n", sizeof(WCHAR) * 8, &dwWritten, NULL);

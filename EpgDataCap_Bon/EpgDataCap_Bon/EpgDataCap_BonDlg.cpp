@@ -107,7 +107,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 
 	for( int i=0; i<24; i++ ){
 		WCHAR buff[32];
-		wsprintf(buff, L"%d",i);
+		swprintf_s(buff, L"%d", i);
 		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_H), buff);
 		ComboBox_SetItemData(GetDlgItem(IDC_COMBO_REC_H), index, i);
 	}
@@ -115,7 +115,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 
 	for( int i=0; i<60; i++ ){
 		WCHAR buff[32];
-		wsprintf(buff, L"%d",i);
+		swprintf_s(buff, L"%d", i);
 		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_M), buff);
 		ComboBox_SetItemData(GetDlgItem(IDC_COMBO_REC_M), index, i);
 	}
@@ -136,7 +136,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 			err = ERR_FALSE;
 			WCHAR log[512 + 64] = L"";
 			GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-			lstrcat(log, L"BonDriver‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½\r\n");
+			wcscat_s(log, L"BonDriver‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½\r\n");
 			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 		}
 	}
@@ -527,7 +527,7 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 			WCHAR log[512 + 64] = L"";
 			GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
 			if( wstring(log).find(L"—\–ñ˜^‰æ’†\r\n") == wstring::npos ){
-				lstrcat(log, L"—\–ñ˜^‰æ’†\r\n");
+				wcscat_s(log, L"—\–ñ˜^‰æ’†\r\n");
 				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 			}
 			ChgIconStatus();
@@ -942,7 +942,7 @@ void CEpgDataCap_BonDlg::ReloadServiceList(BOOL ini)
 	if( ret != NO_ERR || this->serviceList.size() == 0 ){
 		WCHAR log[512 + 64] = L"";
 		GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-		lstrcat(log, L"ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚Ì“Ç‚İ‚İ‚É¸”s‚µ‚Ü‚µ‚½\r\n");
+		wcscat_s(log, L"ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚Ì“Ç‚İ‚İ‚É¸”s‚µ‚Ü‚µ‚½\r\n");
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 	}else{
 		int selectSel = 0;

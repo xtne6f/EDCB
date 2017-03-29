@@ -2506,7 +2506,7 @@ const char* CEpgTimerSrvMain::CLuaWorkspace::WtoUTF8(const wstring& strIn)
 			for( int j = 0; j < 5; j++ ){
 				if( rpl[j][0] == this->strOut[i] && (this->htmlEscape >> j & 1) ){
 					this->strOut[i] = '&';
-					this->strOut.insert(this->strOut.begin() + i + 1, rpl[j] + 1, rpl[j] + lstrlenA(rpl[j]));
+					this->strOut.insert(this->strOut.begin() + i + 1, rpl[j] + 1, rpl[j] + strlen(rpl[j]));
 					break;
 				}
 			}

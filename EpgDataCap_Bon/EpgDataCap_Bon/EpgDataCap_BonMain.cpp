@@ -75,7 +75,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	}else{
 		for( int i = 0; i < iNum; i++ ){
 			WCHAR key[64];
-			wsprintf(key, L"RecFolderPath%d", i );
+			swprintf_s(key, L"RecFolderPath%d", i);
 			this->recFolderList.push_back(GetPrivateProfileToString( L"SET", key, L"", commonIniPath.c_str() ));
 		}
 	}
@@ -317,7 +317,7 @@ BOOL CEpgDataCap_BonMain::SendUDP(
 			NW_SEND_INFO item;
 
 			WCHAR key[64];
-			wsprintf(key, L"IP%d",i);
+			swprintf_s(key, L"IP%d", i);
 			item.ipString = GetPrivateProfileToString(L"SET_UDP", key, L"2130706433", appIniPath.c_str());
 			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
 				item.ipString.erase(0, 1).pop_back();
@@ -325,9 +325,9 @@ BOOL CEpgDataCap_BonMain::SendUDP(
 				UINT ip = _wtoi(item.ipString.c_str());
 				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 			}
-			wsprintf(key, L"Port%d",i);
+			swprintf_s(key, L"Port%d", i);
 			item.port = GetPrivateProfileInt( L"SET_UDP", key, 1234, appIniPath.c_str() );
-			wsprintf(key, L"BroadCast%d",i);
+			swprintf_s(key, L"BroadCast%d", i);
 			item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key, 0, appIniPath.c_str() );
 
 			udpSendList.push_back(item);
@@ -385,7 +385,7 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 			NW_SEND_INFO item;
 
 			WCHAR key[64];
-			wsprintf(key, L"IP%d",i);
+			swprintf_s(key, L"IP%d", i);
 			item.ipString = GetPrivateProfileToString(L"SET_TCP", key, L"2130706433", appIniPath.c_str());
 			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
 				item.ipString.erase(0, 1).pop_back();
@@ -393,7 +393,7 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 				UINT ip = _wtoi(item.ipString.c_str());
 				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 			}
-			wsprintf(key, L"Port%d",i);
+			swprintf_s(key, L"Port%d", i);
 			item.port = GetPrivateProfileInt( L"SET_TCP", key, 2230, appIniPath.c_str() );
 			item.broadcastFlag = 0;
 
@@ -706,13 +706,11 @@ void CEpgDataCap_BonMain::ViewAppOpen()
 		wstring strOpen;
 		Format(strOpen, L"\"%s\" %s", this->viewPath.c_str(), this->viewOpt.c_str());
 
-		WCHAR* pszOpen = new WCHAR[strOpen.size() + 1];
-		lstrcpy(pszOpen, strOpen.c_str());
-		CreateProcess( NULL, pszOpen, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
-		delete [] pszOpen;
-
-		CloseHandle(pi.hThread);
-		CloseHandle(pi.hProcess);
+		vector<WCHAR> strBuff(strOpen.c_str(), strOpen.c_str() + strOpen.size() + 1);
+		if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+		}
 	}
 }
 

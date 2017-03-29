@@ -40,7 +40,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 		NW_SEND_INFO item;
 
 		WCHAR key[64];
-		wsprintf(key, L"IP%d",i);
+		swprintf_s(key, L"IP%d", i);
 		item.ipString = GetPrivateProfileToString(L"SET_UDP", key, L"2130706433", appIniPath.c_str());
 		if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
 			item.ipString.erase(0, 1).pop_back();
@@ -48,9 +48,9 @@ BOOL CSetDlgNetwork::OnInitDialog()
 			UINT ip = _wtoi(item.ipString.c_str());
 			Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 		}
-		wsprintf(key, L"Port%d",i);
+		swprintf_s(key, L"Port%d", i);
 		item.port = GetPrivateProfileInt( L"SET_UDP", key, 1234, appIniPath.c_str() );
-		wsprintf(key, L"BroadCast%d",i);
+		swprintf_s(key, L"BroadCast%d", i);
 		item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key, 0, appIniPath.c_str() );
 
 		udpSendList.push_back(item);
@@ -71,7 +71,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 		NW_SEND_INFO item;
 
 		WCHAR key[64];
-		wsprintf(key, L"IP%d",i);
+		swprintf_s(key, L"IP%d", i);
 		item.ipString = GetPrivateProfileToString(L"SET_TCP", key, L"2130706433", appIniPath.c_str());
 		if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
 			item.ipString.erase(0, 1).pop_back();
@@ -79,7 +79,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 			UINT ip = _wtoi(item.ipString.c_str());
 			Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 		}
-		wsprintf(key, L"Port%d",i);
+		swprintf_s(key, L"Port%d", i);
 		item.port = GetPrivateProfileInt( L"SET_TCP", key, 2230, appIniPath.c_str() );
 		item.broadcastFlag = 0;
 
@@ -109,30 +109,30 @@ void CSetDlgNetwork::SaveIni(void)
 	WritePrivateProfileInt( L"SET_UDP", L"Count", (int)udpSendList.size(), appIniPath.c_str() );
 	for( int i = 0; i < (int)udpSendList.size(); i++ ){
 		WCHAR key[64];
-		wsprintf(key, L"IP%d",i);
+		swprintf_s(key, L"IP%d", i);
 		UINT u[4];
 		if( swscanf_s(udpSendList[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
 			WritePrivateProfileInt(L"SET_UDP", key, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], appIniPath.c_str());
 		}else{
 			WritePrivateProfileString(L"SET_UDP", key, (L'[' + udpSendList[i].ipString + L']').c_str(), appIniPath.c_str());
 		}
-		wsprintf(key, L"Port%d",i);
+		swprintf_s(key, L"Port%d", i);
 		WritePrivateProfileInt( L"SET_UDP", key, udpSendList[i].port, appIniPath.c_str() );
-		wsprintf(key, L"BroadCast%d",i);
+		swprintf_s(key, L"BroadCast%d", i);
 		WritePrivateProfileInt( L"SET_UDP", key, udpSendList[i].broadcastFlag, appIniPath.c_str() );
 	}
 
 	WritePrivateProfileInt( L"SET_TCP", L"Count", (int)tcpSendList.size(), appIniPath.c_str() );
 	for( int i = 0; i < (int)tcpSendList.size(); i++ ){
 		WCHAR key[64];
-		wsprintf(key, L"IP%d",i);
+		swprintf_s(key, L"IP%d", i);
 		UINT u[4];
 		if( swscanf_s(tcpSendList[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
 			WritePrivateProfileInt(L"SET_TCP", key, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], appIniPath.c_str());
 		}else{
 			WritePrivateProfileString(L"SET_TCP", key, (L'[' + tcpSendList[i].ipString + L']').c_str(), appIniPath.c_str());
 		}
-		wsprintf(key, L"Port%d",i);
+		swprintf_s(key, L"Port%d", i);
 		WritePrivateProfileInt( L"SET_TCP", key, tcpSendList[i].port, appIniPath.c_str() );
 	}
 }
@@ -169,7 +169,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 		int len = ListBox_GetTextLen(hItem, i);
 		if( 0 <= len && len < 256 ){
 			ListBox_GetText(hItem, i, buff);
-			if(lstrcmpi(buff, add.c_str()) == 0 ){
+			if( CompareNoCase(add, buff) == 0 ){
 				return ;
 			}
 		}
@@ -234,7 +234,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 		int len = ListBox_GetTextLen(hItem, i);
 		if( 0 <= len && len < 256 ){
 			ListBox_GetText(hItem, i, buff);
-			if(lstrcmpi(buff, add.c_str()) == 0 ){
+			if( CompareNoCase(add, buff) == 0 ){
 				return ;
 			}
 		}
