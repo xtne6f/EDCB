@@ -387,6 +387,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 			}
 			if( ctx->sys->epgDB.IsLoadingData() == FALSE ){
+				DWORD tick = GetTickCount();
 				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
 				if( ctx->shutdownModePending ){
 					//このタイマはWM_TIMER以外でもKillTimer()するためメッセージキューに残った場合に対処するためシフト
@@ -422,6 +423,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
 					syoboi.SendReserve(&reserveList, &tunerList);
 				}
+				_OutputDebugString(L"Done PostLoad EpgData %dmsec\r\n", GetTickCount() - tick);
 			}
 			break;
 		case TIMER_QUERY_SHUTDOWN_PENDING:
