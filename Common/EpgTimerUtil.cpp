@@ -701,7 +701,9 @@ SERVICE_INFO CServiceInfoAdapter::Create(const EPGDB_SERVICE_INFO* ref)
 	extInfo.service_provider_name = r.service_provider_name.c_str();
 	extInfo.service_name = r.service_name.c_str();
 	extInfo.network_name = r.network_name.c_str();
-	extInfo.ts_name = r.ts_name.c_str();
+	//ŒİŠ·‚Ì‚½‚ßts_name‚Í–¢æ“¾‚â‹ó•¶š—ñ‚Ì‚Æ‚«NULL‚Æ‚·‚×‚«
+	//(service_name‚ÍNULL‚É‚µ‚Ä‚Í‚¢‚¯‚È‚¢BBonCtrl/ChSetUtil.cpp‚ğQÆ)
+	extInfo.ts_name = r.ts_name.empty() ? NULL : r.ts_name.c_str();
 	extInfo.remote_control_key_id = r.remote_control_key_id;
 	dest.extInfo = &extInfo;
 	return dest;
