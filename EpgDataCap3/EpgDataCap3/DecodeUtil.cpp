@@ -723,7 +723,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 
 			this->serviceDBList[count].partialReceptionFlag = FALSE;
 			for( size_t j=0; j<partialServiceList.size(); j++ ){
-				if( partialServiceList[j] == this->serviceList[count].service_id ){
+				if( partialServiceList[j] == this->serviceDBList[count].SID ){
 					this->serviceDBList[count].partialReceptionFlag = TRUE;
 				}
 			}
