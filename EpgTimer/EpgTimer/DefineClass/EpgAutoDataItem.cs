@@ -295,36 +295,8 @@ namespace EpgTimer
                     List<string> networkKeyList1 = new List<string>();
                     foreach (ulong service1 in this.EpgAutoAddInfo.searchInfo.serviceList)
                     {
-                        string network1 = "";
-                        try
-                        {
-                            ChSet5Item chSet5Item1 = ChSet5.Instance.ChList[service1];
-                            // SearchKeyDescViewよりコピペ
-                            if ((0x7880 <= chSet5Item1.ONID && chSet5Item1.ONID <= 0x7FE8) &&
-                                ChSet5.IsVideo(chSet5Item1.ServiceType))
-                            {
-                                network1 = "地デジ";
-                            }
-                            else if (chSet5Item1.ONID == 0x04 &&
-                              ChSet5.IsVideo(chSet5Item1.ServiceType))
-                            {
-                                network1 = "BS";
-                            }
-                            else if ((chSet5Item1.ONID == 0x06 || chSet5Item1.ONID == 0x07) &&
-                              ChSet5.IsVideo(chSet5Item1.ServiceType))
-                            {
-                                network1 = "CS";
-                            }
-                            else
-                            {
-                                network1 = "(?_?)";
-                            }
-                            //network1 = ChSet5.Instance.ChList[service1].NetworkName;
-                        }
-                        catch
-                        {
-                            network1 = "(x_x)";
-                        }
+                        ushort onid = (ushort)(service1 >> 32);
+                        string network1 = ChSet5.IsDttv(onid) ? "地デジ" : ChSet5.IsBS(onid) ? "BS" : ChSet5.IsCS(onid) ? "CS" : "その他";
                         if (!networkKeyList1.Contains(network1))
                         {
                             networkKeyList1.Add(network1);

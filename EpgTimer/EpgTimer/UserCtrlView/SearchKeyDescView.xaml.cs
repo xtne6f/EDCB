@@ -397,14 +397,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (ChSet5.IsVideo(info.ServiceInfo.service_type))
-                {
-                    info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
-                }
+                info.IsSelected = ChSet5.IsVideo(info.ServiceInfo.service_type);
             }
         }
 
@@ -412,15 +405,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (info.ServiceInfo.ONID == 0x04 &&
-                    ChSet5.IsVideo(info.ServiceInfo.service_type))
-                {
-                    info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
-                }
+                info.IsSelected = ChSet5.IsBS(info.ServiceInfo.ONID) && ChSet5.IsVideo(info.ServiceInfo.service_type);
             }
         }
 
@@ -428,15 +413,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((info.ServiceInfo.ONID == 0x06 || info.ServiceInfo.ONID == 0x07) &&
-                    ChSet5.IsVideo(info.ServiceInfo.service_type))
-                {
-                    info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
-                }
+                info.IsSelected = ChSet5.IsCS(info.ServiceInfo.ONID) && ChSet5.IsVideo(info.ServiceInfo.service_type);
             }
         }
 
@@ -444,15 +421,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
-                    ChSet5.IsVideo(info.ServiceInfo.service_type))
-                {
-                    info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
-                }
+                info.IsSelected = ChSet5.IsDttv(info.ServiceInfo.ONID) && ChSet5.IsVideo(info.ServiceInfo.service_type);
             }
         }
 
@@ -460,15 +429,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
-                    info.ServiceInfo.partialReceptionFlag == 1)
-                {
-                    info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
-                }
+                info.IsSelected = ChSet5.IsDttv(info.ServiceInfo.ONID) && info.ServiceInfo.partialReceptionFlag == 1;
             }
         }
 
@@ -476,18 +437,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (info.ServiceInfo.ONID != 0x04 &&
-                    info.ServiceInfo.ONID != 0x06 &&
-                    info.ServiceInfo.ONID != 0x07 &&
-                    !(0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8)
-                    )
-                {
-                    info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
-                }
+                info.IsSelected = ChSet5.IsOther(info.ServiceInfo.ONID);
             }
         }
 
@@ -590,7 +540,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (info.ServiceInfo.ONID == 0x04 &&
+                if (ChSet5.IsBS(info.ServiceInfo.ONID) &&
                     ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
@@ -602,7 +552,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((info.ServiceInfo.ONID == 0x06 || info.ServiceInfo.ONID == 0x07) &&
+                if (ChSet5.IsCS(info.ServiceInfo.ONID) &&
                     ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
@@ -614,7 +564,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
+                if (ChSet5.IsDttv(info.ServiceInfo.ONID) &&
                     ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
@@ -626,7 +576,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
+                if (ChSet5.IsDttv(info.ServiceInfo.ONID) &&
                     info.ServiceInfo.partialReceptionFlag == 1)
                 {
                     info.IsSelected = true;
@@ -638,11 +588,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (info.ServiceInfo.ONID != 0x04 &&
-                    info.ServiceInfo.ONID != 0x06 &&
-                    info.ServiceInfo.ONID != 0x07 &&
-                    !(0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8)
-                    )
+                if (ChSet5.IsOther(info.ServiceInfo.ONID))
                 {
                     info.IsSelected = true;
                 }

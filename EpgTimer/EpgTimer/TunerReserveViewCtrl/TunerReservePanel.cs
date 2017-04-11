@@ -236,26 +236,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         if (info.ReserveInfo.StationName.Length > 0)
                         {
                             String serviceName = info.ReserveInfo.StationName;
-                            if (0x7880 <= info.ReserveInfo.OriginalNetworkID && info.ReserveInfo.OriginalNetworkID <= 0x7FE8)
-                            {
-                                serviceName += " (地デジ)";
-                            }
-                            else if (info.ReserveInfo.OriginalNetworkID == 0x0004)
-                            {
-                                serviceName += " (BS)";
-                            }
-                            else if (info.ReserveInfo.OriginalNetworkID == 0x0006)
-                            {
-                                serviceName += " (CS1)";
-                            }
-                            else if (info.ReserveInfo.OriginalNetworkID == 0x0007)
-                            {
-                                serviceName += " (CS2)";
-                            }
-                            else
-                            {
-                                serviceName += " (その他)";
-                            }
+                            serviceName += " (" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
                             if (RenderText(serviceName, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, dInfoHeight - 6 - totalHeight, info.LeftPos + widthOffset, dInfoTopPos + totalHeight, ref useHeight) == false)
                             {
                                 info.TitleDrawErr = true;

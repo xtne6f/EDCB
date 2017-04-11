@@ -147,27 +147,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                                     DateTime endTime = info.ReserveInfo.StartTime + TimeSpan.FromSeconds(info.ReserveInfo.DurationSecond);
                                     view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
                                     view += info.ReserveInfo.StationName;
-                                    if (0x7880 <= info.ReserveInfo.OriginalNetworkID && info.ReserveInfo.OriginalNetworkID <= 0x7FE8)
-                                    {
-                                        view += " (地デジ)";
-                                    }
-                                    else if (info.ReserveInfo.OriginalNetworkID == 0x0004)
-                                    {
-                                        view += " (BS)";
-                                    }
-                                    else if (info.ReserveInfo.OriginalNetworkID == 0x0006)
-                                    {
-                                        view += " (CS1)";
-                                    }
-                                    else if (info.ReserveInfo.OriginalNetworkID == 0x0007)
-                                    {
-                                        view += " (CS2)";
-                                    }
-                                    else
-                                    {
-                                        view += " (その他)";
-                                    }
-                                    view += "\r\n";
+                                    view += " (" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
                                     view += info.ReserveInfo.Title;
 

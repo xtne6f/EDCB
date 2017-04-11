@@ -58,27 +58,7 @@ namespace EpgTimer
                 String view = "";
                 if (eventInfo != null)
                 {
-                    if (0x7880 <= eventInfo.original_network_id && eventInfo.original_network_id <= 0x7FE8)
-                    {
-                        view = "地デジ";
-                    }
-                    else if (eventInfo.original_network_id == 0x0004)
-                    {
-                        view = "BS";
-                    }
-                    else if (eventInfo.original_network_id == 0x0006)
-                    {
-                        view = "CS1";
-                    }
-                    else if (eventInfo.original_network_id == 0x0007)
-                    {
-                        view = "CS2";
-                    }
-                    else
-                    {
-                        view = "その他";
-                    }
-
+                    view = CommonManager.ConvertNetworkNameText(eventInfo.original_network_id);
                 }
                 return view;
             }
