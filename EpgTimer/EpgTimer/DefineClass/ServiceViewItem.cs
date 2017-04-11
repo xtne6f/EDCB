@@ -53,7 +53,7 @@ namespace EpgTimer
                         "original_network_id : " + ServiceInfo.ONID.ToString() + "(0x" + ServiceInfo.ONID.ToString("X4") + ")" + "\r\n" +
                         "transport_stream_id : " + ServiceInfo.TSID.ToString() + "(0x" + ServiceInfo.TSID.ToString("X4") + ")" + "\r\n" +
                         "service_id : " + ServiceInfo.SID.ToString() + "(0x" + ServiceInfo.SID.ToString("X4") + ")" + "\r\n" +
-                        "partial_reception : " + ServiceInfo.PartialFlag.ToString();
+                        "partial_reception : " + (ServiceInfo.PartialFlag ? 1 : 0);
                 }
                 return viewTip;
             }

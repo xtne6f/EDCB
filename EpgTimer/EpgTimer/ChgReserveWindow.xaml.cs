@@ -28,7 +28,7 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            comboBox_service.ItemsSource = ChSet5.Instance.ChList.Values;
+            comboBox_service.ItemsSource = ChSet5.Instance.ChListSelected;
             comboBox_sh.ItemsSource = Enumerable.Range(0, 24);
             comboBox_eh.ItemsSource = Enumerable.Range(0, 24);
             comboBox_sm.ItemsSource = Enumerable.Range(0, 60);

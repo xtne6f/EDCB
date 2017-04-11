@@ -395,8 +395,8 @@ namespace EpgTimer
                 info.TSID = item.TSID;
                 info.SID = item.SID;
                 info.network_name = item.NetworkName;
-                info.partialReceptionFlag = item.PartialFlag;
-                info.remote_control_key_id = item.RemoconID;
+                info.partialReceptionFlag = (byte)(item.PartialFlag ? 1 : 0);
+                info.remote_control_key_id = 0;
                 info.service_name = item.ServiceName;
                 info.service_provider_name = item.NetworkName;
                 info.service_type = (byte)item.ServiceType;

@@ -23,21 +23,19 @@ namespace EpgTimer
     public partial class SearchKeyDescView : UserControl
     {
         private EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-        private List<ServiceItem> serviceList = new List<ServiceItem>();
-        private Dictionary<Int64, ServiceItem> serviceDict = new Dictionary<long, ServiceItem>();
 
         public SearchKeyDescView()
         {
             InitializeComponent();
             try
             {
-                foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                var serviceList = new List<ServiceItem>();
+                foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
                 {
                     ServiceItem item = new ServiceItem();
 
                     item.ServiceInfo = CommonManager.ConvertChSet5To(info);
                     serviceList.Add(item);
-                    serviceDict.Add((Int64)item.ID, item);
                 }
                 listView_service.ItemsSource = serviceList;
 
@@ -272,16 +270,11 @@ namespace EpgTimer
                     }
                 }
 
-                foreach (ServiceItem info in serviceDict.Values)
+                var defKeySortedServiceList = new List<long>(defKey.serviceList);
+                defKeySortedServiceList.Sort();
+                foreach (ServiceItem info in listView_service.ItemsSource)
                 {
-                    info.IsSelected = false;
-                }
-                foreach (Int64 info in defKey.serviceList)
-                {
-                    if (serviceDict.ContainsKey(info) == true)
-                    {
-                        serviceDict[info].IsSelected = true;
-                    }
+                    info.IsSelected = defKeySortedServiceList.BinarySearch((long)info.ID) >= 0;
                 }
 
                 listBox_date.Items.Clear();

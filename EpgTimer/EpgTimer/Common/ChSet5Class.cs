@@ -12,6 +12,19 @@ namespace EpgTimer
             get;
             private set;
         }
+
+        public IEnumerable<ChSet5Item> ChListSelected
+        {
+            get
+            {
+                bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
+                //ネットワーク種別優先かつ限定受信を分離したID順ソート
+                return ChList.Values.Where(item => (ignoreEpgCap || item.EpgCapFlag)).OrderBy(item => (
+                    (ulong)(IsDttv(item.ONID) ? 0 : IsBS(item.ONID) ? 1 : IsCS(item.ONID) ? 2 : 3) << 56 |
+                    (ulong)(IsDttv(item.ONID) && item.PartialFlag ? 1 : 0) << 48 |
+                    item.Key));
+            }
+        }
         
         private static ChSet5 _instance;
         public static ChSet5 Instance
@@ -86,9 +99,9 @@ namespace EpgTimer
                             item.TSID = Convert.ToUInt16(list[3]);
                             item.SID = Convert.ToUInt16(list[4]);
                             item.ServiceType = Convert.ToUInt16(list[5]);
-                            item.PartialFlag = Convert.ToByte(list[6]);
-                            item.EpgCapFlag = Convert.ToByte(list[7]);
-                            item.SearchFlag = Convert.ToByte(list[8]);
+                            item.PartialFlag = Convert.ToInt32(list[6]) != 0;
+                            item.EpgCapFlag = Convert.ToInt32(list[7]) != 0;
+                            item.SearchFlag = Convert.ToInt32(list[8]) != 0;
                         }
                         finally
                         {
@@ -139,7 +152,7 @@ namespace EpgTimer
             get;
             set;
         }
-        public Byte PartialFlag
+        public bool PartialFlag
         {
             get;
             set;
@@ -154,17 +167,12 @@ namespace EpgTimer
             get;
             set;
         }
-        public Byte EpgCapFlag
+        public bool EpgCapFlag
         {
             get;
             set;
         }
-        public Byte SearchFlag
-        {
-            get;
-            set;
-        }
-        public Byte RemoconID
+        public bool SearchFlag
         {
             get;
             set;

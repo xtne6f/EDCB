@@ -41,7 +41,7 @@ namespace EpgTimer
                 comboBox_endSS.DataContext = Enumerable.Range(0, 60);
                 comboBox_endSS.SelectedIndex = 0;
 
-                comboBox_service.ItemsSource = ChSet5.Instance.ChList.Values;
+                comboBox_service.ItemsSource = ChSet5.Instance.ChListSelected;
                 comboBox_service.SelectedIndex = 0;
 
                 recSettingView.SetViewMode(false);

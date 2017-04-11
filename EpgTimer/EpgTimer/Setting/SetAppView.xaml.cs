@@ -27,7 +27,6 @@ namespace EpgTimer.Setting
         private List<ViewMenuItem> buttonItem = new List<ViewMenuItem>();
         private List<ViewMenuItem> taskItem = new List<ViewMenuItem>();
 
-        private Dictionary<UInt64, ServiceViewItem> serviceList = new Dictionary<UInt64, ServiceViewItem>();
         private List<IEPGStationInfo> stationList = new List<IEPGStationInfo>();
 
         public SetAppView()
@@ -51,6 +50,7 @@ namespace EpgTimer.Setting
                     checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                     checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
                     checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
+                    checkBox_showEpgCapServiceOnly.IsChecked = Settings.Instance.ShowEpgCapServiceOnly;
                     checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
                     checkBox_minHide.IsChecked = Settings.Instance.MinHide;
 
@@ -147,12 +147,12 @@ namespace EpgTimer.Setting
                 textBox_exe2.Text = Settings.Instance.Cust2BtnCmd;
                 textBox_opt2.Text = Settings.Instance.Cust2BtnCmdOpt;
 
-                foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                var serviceList = new List<ServiceViewItem>();
+                foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
                 {
-                    ServiceViewItem item = new ServiceViewItem(info);
-                    serviceList.Add(item.Key, item);
+                    serviceList.Add(new ServiceViewItem(info));
                 }
-                listBox_service.ItemsSource = serviceList.Values;
+                listBox_service.ItemsSource = serviceList;
 
                 stationList = Settings.Instance.IEpgStationList.ToList();
                 ReLoadStation();
@@ -193,6 +193,7 @@ namespace EpgTimer.Setting
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
             Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
             Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
+            Settings.Instance.ShowEpgCapServiceOnly = (bool)checkBox_showEpgCapServiceOnly.IsChecked;
 
             if (checkBox_noToolTips.IsChecked == true)
             {

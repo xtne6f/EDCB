@@ -173,7 +173,13 @@ namespace EpgTimer
                     for (int i = 0; i < 4; i++)
                     {
                         CustomEpgTabInfo setInfo = null;
-                        foreach (EpgServiceAllEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values)
+                        bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
+                        //リモコンキー優先のID順ソート
+                        foreach (EpgServiceAllEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values.Where(item => {
+                            ulong key = CommonManager.Create64Key(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID);
+                            return ignoreEpgCap || ChSet5.Instance.ChList.ContainsKey(key) && ChSet5.Instance.ChList[key].EpgCapFlag; }).OrderBy(item => (
+                            (ulong)(ChSet5.IsDttv(item.serviceInfo.ONID) ? (item.serviceInfo.remote_control_key_id + 255) % 256 : 0) << 48 |
+                            CommonManager.Create64Key(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID))))
                         {
                             string tabName = null;
                             if (i == 0 && ChSet5.IsDttv(info.serviceInfo.ONID))

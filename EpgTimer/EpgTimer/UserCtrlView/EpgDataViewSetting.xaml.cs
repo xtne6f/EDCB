@@ -30,7 +30,7 @@ namespace EpgTimer
                 comboBox_timeH_week.SelectedIndex = 4;
 
 
-                foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
                 {
                     if (ChSet5.IsBS(info.ONID))
                     {

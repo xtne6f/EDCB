@@ -103,6 +103,7 @@ namespace EpgTimer
         public bool NoBallonTips { get; set; }
         public int ForceHideBalloonTipSec { get; set; }
         public bool PlayDClick { get; set; }
+        public bool ShowEpgCapServiceOnly { get; set; }
         public double DragScroll { get; set; }
         public List<string> ContentColorList { get; set; }
         public List<UInt32> ContentCustColorList { get; set; }
@@ -279,6 +280,7 @@ namespace EpgTimer
             FontBoldTitle = true;
             NoToolTip = false;
             PlayDClick = false;
+            ShowEpgCapServiceOnly = false;
             DragScroll = 1.5;
             ContentColorList = new List<string>();
             ContentCustColorList = new List<uint>();
