@@ -209,7 +209,7 @@ DWORD CEpgDataCap_BonMain::SetCh(
 		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			this->bonCtrl.StopEpgCap();
 		}
-		err = this->bonCtrl.SetCh(ONID, TSID);
+		err = this->bonCtrl.SetCh(ONID, TSID, SID);
 		if( err == NO_ERR ){
 			this->lastONID = ONID;
 			this->lastTSID = TSID;

@@ -80,10 +80,12 @@ public:
 	// エラーコード
 	//引数：
 	// ONID			[IN]変更チャンネルのorignal_network_id
-	// TSID			[IN]変更チャンネルの物理transport_stream_id
+	// TSID			[IN]変更チャンネルのtransport_stream_id
+	// SID			[IN]変更チャンネルのservice_id
 	DWORD SetCh(
 		WORD ONID,
-		WORD TSID
+		WORD TSID,
+		WORD SID
 		);
 
 	//チャンネル変更中かどうか

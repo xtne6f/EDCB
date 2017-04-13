@@ -173,10 +173,12 @@ DWORD CBonCtrl::SetCh(
 // エラーコード
 //引数：
 // ONID			[IN]変更チャンネルのorignal_network_id
-// TSID			[IN]変更チャンネルの物理transport_stream_id
+// TSID			[IN]変更チャンネルのtransport_stream_id
+// SID			[IN]変更チャンネルのservice_id
 DWORD CBonCtrl::SetCh(
 	WORD ONID,
-	WORD TSID
+	WORD TSID,
+	WORD SID
 )
 {
 	if( this->tsOut.IsRec() == TRUE ){
@@ -187,7 +189,7 @@ DWORD CBonCtrl::SetCh(
 	DWORD ch=0;
 
 	DWORD ret = ERR_FALSE;
-	if( this->chUtil.GetCh( ONID, TSID, space, ch ) == TRUE ){
+	if( this->chUtil.GetCh( ONID, TSID, SID, space, ch ) == TRUE ){
 		ret = _SetCh(space, ch);
 	}
 
@@ -925,7 +927,8 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 		if( chkNext == TRUE ){
 			DWORD space = 0;
 			DWORD ch = 0;
-			sys->chUtil.GetCh(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, space, ch);
+			sys->chUtil.GetCh(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID,
+			                  sys->epgCapChList[chkCount].SID, space, ch);
 			sys->_SetCh(space, ch);
 			startTime = GetTickCount();
 			chkNext = FALSE;

@@ -43,6 +43,7 @@ public:
 	BOOL GetCh(
 		WORD ONID,
 		WORD TSID,
+		WORD SID,
 		DWORD& space,
 		DWORD& ch
 		);
