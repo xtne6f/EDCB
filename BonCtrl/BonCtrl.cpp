@@ -757,14 +757,21 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 					if( sys->tsOut.GetServiceListActual(&serviceListSize, &serviceList) == NO_ERR ){
 						if( serviceListSize > 0 ){
 							//ˆê——‚ÌŽæ“¾‚ª‚Å‚«‚½
-							for( DWORD i=0 ;i<serviceListSize; i++ ){
-								if( serviceList[i].extInfo != NULL ){
-									if( serviceList[i].extInfo->service_name != NULL ){
+							for( int currSID = 0; currSID < 0x10000; ){
+								//ServiceID‡‚É’Ç‰Á
+								int nextSID = 0x10000;
+								for( DWORD i = 0; i < serviceListSize; i++ ){
+									WORD serviceID = serviceList[i].service_id;
+									if( serviceID == currSID && serviceList[i].extInfo && serviceList[i].extInfo->service_name ){
 										if( wcslen(serviceList[i].extInfo->service_name) > 0 ){
 											sys->chUtil.AddServiceInfo(chkList[chkCount].space, chkList[chkCount].ch, chkList[chkCount].chName, &(serviceList[i]));
 										}
 									}
+									if( serviceID > currSID && serviceID < nextSID ){
+										nextSID = serviceID;
+									}
 								}
+								currSID = nextSID;
 							}
 							chkNext = TRUE;
 						}

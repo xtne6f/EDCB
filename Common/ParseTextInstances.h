@@ -18,7 +18,6 @@ public:
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, CH_DATA4>& item);
 	bool SaveLine(const pair<DWORD, CH_DATA4>& item, wstring& saveLine) const;
-	bool SelectIDToSave(vector<DWORD>& sortList) const;
 };
 
 //チャンネル情報ファイル「ChSet5.txt」の読み込みと保存処理を行う
@@ -33,7 +32,6 @@ public:
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item);
 	bool SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& saveLine) const;
-	bool SelectIDToSave(vector<LONGLONG>& sortList) const;
 };
 
 //拡張子とContent-Typeの対応ファイル「ContentTypeText.txt」の読み込みを行う

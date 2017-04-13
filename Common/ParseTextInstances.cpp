@@ -107,18 +107,6 @@ bool CParseChText4::SaveLine(const pair<DWORD, CH_DATA4>& item, wstring& saveLin
 	return FinalizeField(saveLine) == 11;
 }
 
-bool CParseChText4::SelectIDToSave(vector<DWORD>& sortList) const
-{
-	multimap<LONGLONG, DWORD> sortMap;
-	for( map<DWORD, CH_DATA4>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		sortMap.insert(pair<LONGLONG, DWORD>((LONGLONG)itr->second.space << 32 | (LONGLONG)itr->second.ch << 16 | itr->second.serviceID, itr->first));
-	}
-	for( multimap<LONGLONG, DWORD>::const_iterator itr = sortMap.begin(); itr != sortMap.end(); itr++ ){
-		sortList.push_back(itr->second);
-	}
-	return true;
-}
-
 LONGLONG CParseChText5::AddCh(const CH_DATA5& item)
 {
 	LONGLONG key = (LONGLONG)item.originalNetworkID << 32 | (LONGLONG)item.transportStreamID << 16 | item.serviceID;
@@ -173,28 +161,6 @@ bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& save
 		item.second.searchFlag
 		);
 	return FinalizeField(saveLine) == 8;
-}
-
-bool CParseChText5::SelectIDToSave(vector<LONGLONG>& sortList) const
-{
-	multimap<DWORD, LONGLONG> sortMap;
-	for( map<LONGLONG, CH_DATA5>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		DWORD network;
-		if( 0x7880 <= itr->second.originalNetworkID && itr->second.originalNetworkID <= 0x7FE8 ){
-			network = itr->second.partialFlag == FALSE ? 0 : 1; //’nã”g
-		}else if( itr->second.originalNetworkID == 0x04 ){
-			network = 2; //BS
-		}else if( itr->second.originalNetworkID == 0x06 || itr->second.originalNetworkID == 0x07 ){
-			network = 3; //CS
-		}else{
-			network = 4; //‚»‚Ì‘¼
-		}
-		sortMap.insert(pair<DWORD, LONGLONG>(network << 16 | itr->second.serviceID, itr->first));
-	}
-	for( multimap<DWORD, LONGLONG>::const_iterator itr = sortMap.begin(); itr != sortMap.end(); itr++ ){
-		sortList.push_back(itr->second);
-	}
-	return true;
 }
 
 void CParseContentTypeText::GetMimeType(wstring ext, wstring& mimeType) const
