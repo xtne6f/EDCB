@@ -194,46 +194,56 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect)
 {
 	//ÉoÉbÉ`ÇÃçÏê¨
-	HANDLE hRead = CreateFile( batSrcFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hRead == INVALID_HANDLE_VALUE ){
+	std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(batSrcFilePath, L"rb", _SH_DENYWR), fclose);
+	if( !fp ){
 		return FALSE;
 	}
-
-	DWORD dwRead=0;
-	DWORD dwL = GetFileSize(hRead, NULL);
-	if( dwL == INVALID_FILE_SIZE ){
-		dwL = 0;
-	}
-	vector<char> buff(dwL + 1);
-	if( dwL == 0 || ReadFile(hRead, &buff.front(), dwL, &dwRead, NULL) == FALSE || dwRead != dwL ){
-		CloseHandle(hRead);
-		return FALSE;
-	}
-	buff[dwL] = '\0';
-	CloseHandle(hRead);
-
-	string strRead = "";
-	strRead = &buff.front();
 
 	//ägí£ñΩóﬂ: BatMargin
 	exBatMargin = 0;
-	if( strRead.find("_EDCBX_BATMARGIN_=") != string::npos ){
-		exBatMargin = atoi(strRead.c_str() + strRead.find("_EDCBX_BATMARGIN_=") + 18) * 60;
-	}
 	//ägí£ñΩóﬂ: ÉEÉBÉìÉhÉEï\é¶èÛë‘
-	exSW = strRead.find("_EDCBX_HIDE_") != string::npos ? SW_HIDE :
-	       strRead.find("_EDCBX_NORMAL_") != string::npos ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
+	exSW = SW_SHOWMINNOACTIVE;
 	//ägí£ñΩóﬂ: ä¬ã´ìnÇµÇ…ÇÊÇÈíºê⁄é¿çs
 	exDirect = L"";
-	if( strRead.find("_EDCBX_DIRECT_") != string::npos ){
-		exDirect = CreateEnvironment(info);
+	__int64 fileSize = 0;
+	char olbuff[257];
+	for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
+		olbuff[n] = '\0';
+		if( strstr(olbuff, "_EDCBX_BATMARGIN_=") ){
+			//àÍéûìIÇ…ífï–Çäiî[Ç∑ÇÈÇ©Ç‡ÇµÇÍÇ»Ç¢Ç™ç≈èIìIÇ…ê≥ÇµÇØÇÍÇŒÇÊÇ¢
+			exBatMargin = strtoul(strstr(olbuff, "_EDCBX_BATMARGIN_=") + 18, NULL, 10) * 60;
+		}
+		if( strstr(olbuff, "_EDCBX_HIDE_") ){
+			exSW = SW_HIDE;
+		}
+		if( strstr(olbuff, "_EDCBX_NORMAL_") ){
+			exSW = SW_SHOWNORMAL;
+		}
+		if( exDirect.empty() && strstr(olbuff, "_EDCBX_DIRECT_") ){
+			exDirect = CreateEnvironment(info);
+			if( exDirect.empty() ){
+				return FALSE;
+			}
+		}
+		fileSize += (fileSize == 0 ? n : n - 64);
+		if( n < 256 ){
+			break;
+		}
+		memcpy(olbuff, olbuff + 192, 64);
+	}
+	if( exDirect.empty() == false ){
 		return TRUE;
 	}
 
-	HANDLE hWrite = CreateFile( batFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hWrite == INVALID_HANDLE_VALUE ){
+	if( fileSize >= 64 * 1024 * 1024 ){
 		return FALSE;
 	}
+	vector<char> buff((size_t)fileSize + 1, '\0');
+	rewind(fp.get());
+	if( fread(&buff.front(), 1, buff.size() - 1, fp.get()) != buff.size() - 1 ){
+		return FALSE;
+	}
+	string strRead = &buff.front();
 
 	string strWrite;
 	for( size_t pos = 0;; ){
@@ -262,12 +272,10 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 		}
 	}
 
-	DWORD dwWrite=0;
-	if( WriteFile(hWrite, strWrite.c_str(), (DWORD)strWrite.size(), &dwWrite, NULL) == FALSE || dwWrite != strWrite.size() ){
-		CloseHandle(hWrite);
+	fp.reset(_wfsopen(batFilePath, L"wb", _SH_DENYRW));
+	if( !fp || fputs(strWrite.c_str(), fp.get()) < 0 || fflush(fp.get()) != 0 ){
 		return FALSE;
 	}
-	CloseHandle(hWrite);
 
 	return TRUE;
 }

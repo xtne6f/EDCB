@@ -250,17 +250,16 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	if( arcMin < LLONG_MAX && sys->epgArchive.empty() ){
 		vector<BYTE> buff;
-		HANDLE file = CreateFile((settingPath + L"\\EpgArc.dat").c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if( file != INVALID_HANDLE_VALUE ){
-			DWORD dwSize = GetFileSize(file, NULL);
-			if( dwSize != 0 && dwSize != INVALID_FILE_SIZE ){
-				buff.resize(dwSize);
-				DWORD dwRead;
-				if( ReadFile(file, &buff.front(), dwSize, &dwRead, NULL) == FALSE || dwRead != dwSize ){
+		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen((settingPath + L"\\EpgArc.dat").c_str(), L"rb", _SH_DENYWR), fclose);
+		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
+			__int64 fileSize = _ftelli64(fp.get());
+			if( 0 < fileSize && fileSize < INT_MAX ){
+				buff.resize((size_t)fileSize);
+				rewind(fp.get());
+				if( fread(&buff.front(), 1, buff.size(), fp.get()) != buff.size() ){
 					buff.clear();
 				}
 			}
-			CloseHandle(file);
 		}
 		if( buff.empty() == false ){
 			WORD ver;
@@ -360,10 +359,9 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		for( auto itr = sys->epgArchive.cbegin(); itr != sys->epgArchive.end(); valp.push_back(&(itr++)->second) );
 		DWORD buffSize;
 		std::unique_ptr<BYTE[]> buff = NewWriteVALUE2WithVersion(5, valp, buffSize);
-		HANDLE file = CreateFile((settingPath + L"\\EpgArc.dat").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if( file != INVALID_HANDLE_VALUE ){
-			WriteFile(file, buff.get(), buffSize, &buffSize, NULL);
-			CloseHandle(file);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen((settingPath + L"\\EpgArc.dat").c_str(), L"wb", _SH_DENYRW), fclose);
+		if( fp ){
+			fwrite(buff.get(), 1, buffSize, fp.get());
 		}
 	}
 

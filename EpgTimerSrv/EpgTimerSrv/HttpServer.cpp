@@ -149,19 +149,25 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	this->mgContext = mg_start(&callbacks, this, options);
 
 	if( this->mgContext && op.enableSsdpServer ){
-		//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
-		char dddBuf[2048] = {};
-		HANDLE hFile = CreateFile((rootPathW + L"\\dlna\\dms\\ddd.xml").c_str(),
-		                          GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if( hFile != INVALID_HANDLE_VALUE ){
-			DWORD dwRead;
-			ReadFile(hFile, dddBuf, sizeof(dddBuf) - 1, &dwRead, NULL);
-			CloseHandle(hFile);
+		//"<UDN>uuid:{UUID}</UDN>"が必要
+		string notifyUuid;
+		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen((rootPathW + L"\\dlna\\dms\\ddd.xml").c_str(), L"rb", _SH_DENYNO), fclose);
+		if( fp ){
+			char olbuff[257];
+			for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
+				olbuff[n] = '\0';
+				char* udn = strstr(olbuff, "<UDN>uuid:");
+				if( udn && strlen(udn) >= 10 + 36 + 6 && strncmp(udn + 10 + 36, "</UDN>", 6) == 0 ){
+					notifyUuid.assign(udn + 5, 41);
+					break;
+				}
+				if( n < 256 ){
+					break;
+				}
+				memcpy(olbuff, olbuff + 192, 64);
+			}
 		}
-		string dddStr = dddBuf;
-		size_t udnFrom = dddStr.find("<UDN>uuid:");
-		if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
-			string notifyUuid(dddStr, udnFrom + 5, 41);
+		if( notifyUuid.empty() == false ){
 			//最後にみつかった':'より後ろか先頭をatoiした結果を通知ポートとする
 			int notifyPort = atoi(ports.c_str() + (ports.find_last_of(':') == string::npos ? 0 : ports.find_last_of(':') + 1)) & 0xFFFF;
 			//UPnPのUDP(Port1900)部分を担当するサーバ
@@ -654,10 +660,7 @@ int io_open(lua_State* L)
 		free(wfilename);
 		luaL_argerror(L, 2, "utf8towcsdup");
 	}
-#pragma warning(push)
-#pragma warning(disable : 4996)
-	p->f = _wfopen(wfilename, wmode);
-#pragma warning(pop)
+	p->f = _wfsopen(wfilename, wmode, _SH_DENYNO);
 	nefree(wmode);
 	nefree(wfilename);
 	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;

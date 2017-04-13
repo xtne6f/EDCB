@@ -804,15 +804,13 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	string outText;
 	WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
 
-	HANDLE hFile = _CreateDirectoryAndFile(savePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, NULL, append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if( hFile != INVALID_HANDLE_VALUE ){
+	//※原作と異なりディレクトリの自動生成はしない
+	std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(savePath.c_str(), append ? L"ab" : L"wb", _SH_DENYWR), fclose);
+	if( fp ){
 		if( append ){
-			SetFilePointer(hFile, 0, NULL, FILE_END);
-			outText = "\r\n-----------------------\r\n" + outText;
+			fputs("\r\n-----------------------\r\n", fp.get());
 		}
-		DWORD dwWrite;
-		WriteFile(hFile, outText.c_str(), (DWORD)outText.size(), &dwWrite, NULL);
-		CloseHandle(hFile);
+		fputs(outText.c_str(), fp.get());
 	}
 }
 

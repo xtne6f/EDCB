@@ -307,22 +307,17 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 							wstring logPath;
 							GetModuleFolderPath(logPath);
 							logPath += L"\\EpgTimerSrvNotify.log";
-							HANDLE hFile = CreateFile(logPath.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-							if( hFile != INVALID_HANDLE_VALUE ){
-								DWORD dwWritten;
-								if( GetLastError() == ERROR_SUCCESS ){
-									WriteFile(hFile, L"\xFEFF", sizeof(WCHAR), &dwWritten, NULL);
+							std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(logPath.c_str(), L"ab", _SH_DENYWR), fclose);
+							if( fp ){
+								_fseeki64(fp.get(), 0, SEEK_END);
+								if( _ftelli64(fp.get()) == 0 ){
+									fputwc(L'\xFEFF', fp.get());
 								}
 								SYSTEMTIME st = itr->time;
-								wstring log;
-								Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s] %s\r_",
-									st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, nid.szInfoTitle, info);
+								wstring log = wstring(nid.szInfoTitle) + L"] " + info;
 								Replace(log, L"\r\n", L"  ");
-								log.back() = L'\n';
-								LARGE_INTEGER liPos = {};
-								SetFilePointerEx(hFile, liPos, NULL, FILE_END);
-								WriteFile(hFile, log.c_str(), (DWORD)(sizeof(WCHAR) * log.size()), &dwWritten, NULL);
-								CloseHandle(hFile);
+								fwprintf(fp.get(), L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s\r\n",
+								         st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, log.c_str());
 							}
 						}
 						if( ctx->showBalloonTip ){
@@ -1454,17 +1449,16 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && CompareNoCase(val, L"ChSet5.txt") == 0 ){
 				wstring path;
 				GetSettingPath(path);
-				HANDLE hFile = CreateFile((path + L"\\ChSet5.txt").c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-				if( hFile != INVALID_HANDLE_VALUE ){
-					DWORD dwFileSize = GetFileSize(hFile, NULL);
-					if( dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0 ){
-						resParam->data.reset(new BYTE[dwFileSize]);
-						DWORD dwRead;
-						if( ReadFile(hFile, resParam->data.get(), dwFileSize, &dwRead, NULL) && dwRead == dwFileSize ){
-							resParam->dataSize = dwRead;
+				std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen((path + L"\\ChSet5.txt").c_str(), L"rb", _SH_DENYWR), fclose);
+				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
+					__int64 fileSize = _ftelli64(fp.get());
+					if( 0 < fileSize && fileSize < 64 * 1024 * 1024 ){
+						resParam->data.reset(new BYTE[(size_t)fileSize]);
+						rewind(fp.get());
+						if( fread(resParam->data.get(), 1, (size_t)fileSize, fp.get()) == (size_t)fileSize ){
+							resParam->dataSize = (DWORD)fileSize;
 						}
 					}
-					CloseHandle(hFile);
 					resParam->param = CMD_SUCCESS;
 				}
 			}
@@ -1563,53 +1557,43 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 				wstring logPath;
 				GetModuleFolderPath(logPath);
 				logPath += L"\\EpgTimerSrvNotify.log";
-				HANDLE hFile = CreateFile(logPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-				if( hFile != INVALID_HANDLE_VALUE ){
-					LARGE_INTEGER liSize;
-					if( GetFileSizeEx(hFile, &liSize) ){
+				std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(logPath.c_str(), L"rb", _SH_DENYNO), fclose);
+				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
+					__int64 count = _ftelli64(fp.get());
+					if( count >= 0 ){
 						//末尾からn行だけ戻った位置をさがす
 						const DWORD sowc = sizeof(WCHAR);
-						liSize.QuadPart = liSize.QuadPart / sowc * sowc;
-						LARGE_INTEGER liPos = liSize;
-						bool foundLastLine = false;
-						while( liPos.QuadPart > sowc && n > 0 ){
-							DWORD dwToRead = (DWORD)min(liPos.QuadPart - sowc, sowc * 4096);
-							liPos.QuadPart -= dwToRead;
+						__int64 pos = count = count / sowc;
+						while( pos > 1 && n > 0 ){
+							DWORD dwRead = (DWORD)min(pos - 1, 4096);
 							WCHAR buff[4096];
-							DWORD dwRead;
-							if( SetFilePointerEx(hFile, liPos, NULL, FILE_BEGIN) == FALSE ||
-							    ReadFile(hFile, buff, dwToRead, &dwRead, NULL) == FALSE || dwRead != dwToRead ){
-								liPos.QuadPart += dwToRead;
+							if( _fseeki64(fp.get(), sowc * (pos - dwRead), SEEK_SET) || fread(buff, sowc, dwRead, fp.get()) != dwRead ){
 								break;
 							}
-							liPos.QuadPart += dwRead;
-							for( ; dwRead > 0; dwRead -= sowc, liPos.QuadPart -= sowc ){
-								if( buff[dwRead / sowc - 1] == L'\n' ){
-									if( foundLastLine ){
+							for( ; dwRead > 0; pos-- ){
+								if( buff[--dwRead] == L'\n' ){
+									if( count > pos ){
 										//必要行数に達したか大きすぎる場合は完了
-										if( --n <= 0 || liSize.QuadPart - liPos.QuadPart >= 64 * 1024 * 1024 ){
+										if( --n <= 0 || count - pos >= 32 * 1024 * 1024 ){
 											n = 0;
 											break;
 										}
 									}
-									foundLastLine = true;
-								}else if( foundLastLine == false ){
-									liSize.QuadPart -= sowc;
+									//countは末尾改行の位置で固定
+								}else if( count == pos ){
+									count--;
 								}
 							}
 						}
-						if( foundLastLine && liSize.QuadPart - liPos.QuadPart < 128 * 1024 * 1024 ){
-							vector<WCHAR> buff((size_t)(liSize.QuadPart - liPos.QuadPart) / sowc);
-							DWORD dwRead;
-							if( buff.empty() ||
-							    SetFilePointerEx(hFile, liPos, NULL, FILE_BEGIN) &&
-							    ReadFile(hFile, &buff.front(), (DWORD)(sowc * buff.size()), &dwRead, NULL) && dwRead == sowc * buff.size() ){
+						if( count > pos && count - pos < 64 * 1024 * 1024 ){
+							vector<WCHAR> buff((size_t)(count - pos));
+							if( _fseeki64(fp.get(), sowc * pos, SEEK_SET) == 0 &&
+							    fread(&buff.front(), sowc, buff.size(), fp.get()) == buff.size() ){
 								resParam->data = NewWriteVALUE(wstring(buff.begin(), buff.end()), resParam->dataSize);
 								resParam->param = CMD_SUCCESS;
 							}
 						}
 					}
-					CloseHandle(hFile);
 				}
 			}
 		}
@@ -2345,17 +2329,16 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 							path += L'\\' + list[i];
 						}
 						if( path.empty() == false ){
-							HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-							if( hFile != INVALID_HANDLE_VALUE ){
-								DWORD dwFileSize = GetFileSize(hFile, NULL);
-								if( dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0 && dwFileSize < 16 * 1024 * 1024 ){
-									result[i].Data.resize(dwFileSize);
-									DWORD dwRead;
-									if( ReadFile(hFile, &result[i].Data.front(), dwFileSize, &dwRead, NULL) == FALSE || dwRead != dwFileSize ){
+							std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(path.c_str(), L"rb", _SH_DENYWR), fclose);
+							if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
+								__int64 fileSize = _ftelli64(fp.get());
+								if( 0 < fileSize && fileSize < 16 * 1024 * 1024 ){
+									result[i].Data.resize((size_t)fileSize);
+									rewind(fp.get());
+									if( fread(&result[i].Data.front(), 1, (size_t)fileSize, fp.get()) != (size_t)fileSize ){
 										result[i].Data.clear();
 									}
 								}
-								CloseHandle(hFile);
 							}
 						}
 					}

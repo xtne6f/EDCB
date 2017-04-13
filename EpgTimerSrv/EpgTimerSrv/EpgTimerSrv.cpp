@@ -14,7 +14,7 @@
 
 SERVICE_STATUS_HANDLE g_hStatusHandle;
 CEpgTimerSrvMain* g_pMain;
-static HANDLE g_hDebugLog;
+static FILE* g_debugLog;
 static CRITICAL_SECTION g_debugLogLock;
 static bool g_saveDebugLog;
 
@@ -26,14 +26,11 @@ static void StartDebugLog()
 		wstring logPath;
 		GetModuleFolderPath(logPath);
 		logPath += L"\\EpgTimerSrvDebugLog.txt";
-		g_hDebugLog = CreateFile(logPath.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if( g_hDebugLog != INVALID_HANDLE_VALUE ){
-			if( GetLastError() == ERROR_SUCCESS ){
-				DWORD dwWritten;
-				WriteFile(g_hDebugLog, "\xFF\xFE", sizeof(char) * 2, &dwWritten, NULL);
-			}else{
-				LARGE_INTEGER liPos = {};
-				SetFilePointerEx(g_hDebugLog, liPos, NULL, FILE_END);
+		g_debugLog = _wfsopen(logPath.c_str(), L"ab", _SH_DENYWR);
+		if( g_debugLog ){
+			_fseeki64(g_debugLog, 0, SEEK_END);
+			if( _ftelli64(g_debugLog) == 0 ){
+				fputwc(L'\xFEFF', g_debugLog);
 			}
 			InitializeCriticalSection(&g_debugLogLock);
 			g_saveDebugLog = true;
@@ -48,7 +45,7 @@ static void StopDebugLog()
 		OutputDebugString(L"****** LOG STOP ******\r\n");
 		g_saveDebugLog = false;
 		DeleteCriticalSection(&g_debugLogLock);
-		CloseHandle(g_hDebugLog);
+		fclose(g_debugLog);
 	}
 }
 
@@ -239,18 +236,11 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 		CBlockLock lock(&g_debugLogLock);
 		SYSTEMTIME st;
 		GetLocalTime(&st);
-		WCHAR header[64];
-		int len = swprintf_s(header, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
-		                     st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
-		DWORD dwWritten;
-		WriteFile(g_hDebugLog, header, sizeof(WCHAR) * len, &dwWritten, NULL);
-		if( lpOutputString ){
-			len = (int)wcslen(lpOutputString);
-			WriteFile(g_hDebugLog, lpOutputString, sizeof(WCHAR) * len, &dwWritten, NULL);
-			if( len == 0 || lpOutputString[len - 1] != L'\n' ){
-				WriteFile(g_hDebugLog, L"<NOBR>\r\n", sizeof(WCHAR) * 8, &dwWritten, NULL);
-			}
-		}
+		fwprintf(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
+		         st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
+		         lpOutputString ? lpOutputString : L"",
+		         lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
+		fflush(g_debugLog);
 	}
 	OutputDebugStringW(lpOutputString);
 }
