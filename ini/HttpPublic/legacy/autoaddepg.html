@@ -45,7 +45,7 @@ for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) d
     ..v.andKey..'&nbsp;</a></td><td>'..v.notKey..'</td><td>'
     ..(#v.contentList>0 and edcb.GetGenreName(v.contentList[1].content_nibble)..(#v.contentList>1 and 'など' or '') or '')..'</td><td>'
     ..serviceName..(#v.serviceList>1 and 'など' or '')..'</td><td>'
-    ..(({'全サービス','指定サービスのみ','全サービス（デコード処理なし）','指定サービスのみ（デコード処理なし）','視聴','無効'})[a[i].recSetting.recMode+1] or '')
+    ..(RecModeTextList()[a[i].recSetting.recMode+1] or '')
     ..'</td></tr>\n')
 end
 

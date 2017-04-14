@@ -107,7 +107,7 @@ if aa.searchInfo then
   ct=ct..'</select><br>\n'
     ..'<input type="checkbox" name="notContetFlag" value="1"'..(si.notContetFlag and ' checked="checked"' or '')..'>NOT扱い<br><br>\n'
     ..'サービス絞り込み<br><select name="serviceList" multiple size="5">\n'
-  for i,v in ipairs(edcb.GetChDataList()) do
+  for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
     ct=ct..'<option value="'..v.onid..'-'..v.tsid..'-'..v.sid..'"'
     for j,w in ipairs(si.serviceList) do
       if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
@@ -115,13 +115,7 @@ if aa.searchInfo then
         break
       end
     end
-    ct=ct..'>('..(
-      v.onid==4 and 'BS' or
-      v.onid==6 and 'CS1' or
-      v.onid==7 and 'CS2' or
-      v.onid==10 and 'スカパーHD' or
-      (v.onid==1 or v.onid==3) and 'スカパーSD' or
-      (0x7880<=v.onid and v.onid<=0x7FE8) and '地デジ' or 'その他')..') '..v.serviceName..'\n'
+    ct=ct..'>('..NetworkType(v.onid)..') '..v.serviceName..'\n'
   end
   ct=ct..'</select><br><br><br>\n'
     ..'時間絞り込み<input type="text" name="dateList" value="'

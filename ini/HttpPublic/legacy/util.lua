@@ -36,7 +36,7 @@ function _ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
       end
       s=s..'\n'
     end
-    s=s..'\n'..((v.onid<0x7880 or 0x7FE8<v.onid) and (v.freeCAFlag and '有料放送\n' or '無料放送\n') or '')
+    s=s..'\n'..(NetworkType(v.onid)=='地デジ' and '' or v.freeCAFlag and '有料放送\n' or '無料放送\n')
       ..string.format('OriginalNetworkID:%d(0x%04X)\n', v.onid, v.onid)
       ..string.format('TransportStreamID:%d(0x%04X)\n', v.tsid, v.tsid)
       ..string.format('ServiceID:%d(0x%04X)\n', v.sid, v.sid)
@@ -48,21 +48,18 @@ end
 --録画設定フォームのテンプレート
 function RecSettingTemplate(rs)
   local s='録画モード: <select name="recMode">'
-    ..'<option value="0"'..(rs.recMode==0 and ' selected="selected"' or '')..'>全サービス'
-    ..'<option value="1"'..(rs.recMode==1 and ' selected="selected"' or '')..'>指定サービスのみ'
-    ..'<option value="2"'..(rs.recMode==2 and ' selected="selected"' or '')..'>全サービス（デコード処理なし）'
-    ..'<option value="3"'..(rs.recMode==3 and ' selected="selected"' or '')..'>指定サービスのみ（デコード処理なし）'
-    ..'<option value="4"'..(rs.recMode==4 and ' selected="selected"' or '')..'>視聴'
-    ..'<option value="5"'..(rs.recMode==5 and ' selected="selected"' or '')..'>無効</select><br>\n'
+  for i=1,#RecModeTextList() do
+    s=s..'<option value="'..(i-1)..'"'..(rs.recMode==i-1 and ' selected="selected"' or '')..'>'..RecModeTextList()[i]
+  end
+  s=s..'</select><br>\n'
     ..'イベントリレー追従: <select name="tuijyuuFlag">'
     ..'<option value="0"'..(not rs.tuijyuuFlag and ' selected="selected"' or '')..'>しない'
     ..'<option value="1"'..(rs.tuijyuuFlag and ' selected="selected"' or '')..'>する</select><br>\n'
     ..'優先度: <select name="priority">'
-    ..'<option value="1"'..(rs.priority==1 and ' selected="selected"' or '')..'>1'
-    ..'<option value="2"'..(rs.priority==2 and ' selected="selected"' or '')..'>2'
-    ..'<option value="3"'..(rs.priority==3 and ' selected="selected"' or '')..'>3'
-    ..'<option value="4"'..(rs.priority==4 and ' selected="selected"' or '')..'>4'
-    ..'<option value="5"'..(rs.priority==5 and ' selected="selected"' or '')..'>5</select><br>\n'
+  for i=1,5 do
+    s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected="selected"' or '')..'>'..i
+  end
+  s=s..'</select><br>\n'
     ..'ぴったり（？）録画: <select name="pittariFlag">'
     ..'<option value="0"'..(not rs.pittariFlag and ' selected="selected"' or '')..'>しない'
     ..'<option value="1"'..(rs.pittariFlag and ' selected="selected"' or '')..'>する</select><br>\n'
@@ -97,6 +94,33 @@ function RecSettingTemplate(rs)
     ..'<input type="checkbox" name="rebootFlag" value="1"'..(rs.rebootFlag and ' checked="checked"' or '')..'>復帰後再起動する<br>\n'
     ..'録画後実行bat（プリセットによる変更のみ対応）: '..(#rs.batFilePath==0 and '（なし）' or rs.batFilePath)..'<br>\n'
   return s
+end
+
+function RecModeTextList()
+  return {'全サービス','指定サービスのみ','全サービス（デコード処理なし）','指定サービスのみ（デコード処理なし）','視聴','無効'}
+end
+
+function NetworkType(onid)
+  return not onid and {'地デジ','BS','CS1','CS2','CS3','その他'}
+    or NetworkType()[0x7880<=onid and onid<=0x7FE8 and 1 or onid==4 and 2 or onid==6 and 3 or onid==7 and 4 or onid==10 and 5 or 6]
+end
+
+--表示するサービスを選択する
+function SelectChDataList(a)
+  local n,r=0,{}
+  for i,v in ipairs(a) do
+    --EPG取得対象サービスのみ
+    if v.epgCapFlag then
+      --地デジ優先ソート
+      if NetworkType(v.onid)=='地デジ' then
+        n=n+1
+        table.insert(r,n,v)
+      else
+        table.insert(r,v)
+      end
+    end
+  end
+  return r
 end
 
 --URIをタグ装飾する

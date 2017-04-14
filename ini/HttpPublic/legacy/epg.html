@@ -37,17 +37,23 @@ for i,v in ipairs(edcb.GetReserveData()) do
   rt[string.format('%04X%04X%04X%04X', v.onid, v.tsid, v.sid, v.eid)]=true
 end
 
+showServices={}
+for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
+  if not HIDE_SERVICES[''..v.onid..'-'..v.tsid..'-'..v.sid] and (
+     tab==0 and NetworkType(v.onid)=='地デジ' or
+     tab==1 and NetworkType(v.onid)=='BS' or
+     tab==2 and NetworkType(v.onid):find('^CS') or
+     tab==3 and NetworkType(v.onid)=='その他') then
+    showServices[v.onid..'-'..v.tsid..'-'..v.sid]=true
+  end
+end
+
 minTime=nil
 maxTime=nil
 st={}
 edcb.htmlEscape=15
 for i,v in ipairs(edcb.GetServiceList() or {}) do
-  if not HIDE_SERVICES[''..v.onid..'-'..v.tsid..'-'..v.sid] and
-     (v.service_type==0x01 or v.service_type==0xA5 or v.service_type==0xAD) and (
-     tab==0 and v.onid==4 or
-     tab==1 and (v.onid==6 or v.onid==7) or
-     tab==2 and 0x7880<=v.onid and v.onid<=0x7FE8 or
-     tab==3 and v.onid~=4 and v.onid~=6 and v.onid~=7 and (v.onid<0x7880 or 0x7FE8<v.onid)) then
+  if showServices[''..v.onid..'-'..v.tsid..'-'..v.sid] then
     table.insert(st, v)
     st[#st].et={}
     mmt=edcb.GetEventMinMaxTime(v.onid, v.tsid, v.sid)
@@ -78,7 +84,7 @@ if SORT_BY_REMOCON_KEY_ID then
 end
 
 pageNav='<div class="page-nav">\n'
-for i,v in ipairs({'BS','CS','地デジ','その他'}) do
+for i,v in ipairs({'地デジ','BS','CS','その他'}) do
   pageNav=pageNav..'  '..(tab==i-1 and v or '<a href="epg.html?tab='..(i-1)..'&amp;date='..date..'">'..v..'</a>')..'\n'
 end
 pageNav=pageNav..'  ||\n'
