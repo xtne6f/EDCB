@@ -24,12 +24,13 @@
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,103,0,0" Name="checkBox_noBallonTips" VerticalAlignment="Top" />
                     <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,125,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
                     <CheckBox Content="EPG取得対象サービスのみ表示する" Height="16" HorizontalAlignment="Left" Margin="6,147,0,0" Name="checkBox_showEpgCapServiceOnly" VerticalAlignment="Top" />
+                    <CheckBox Content="テーマを適用する(要再起動)" Height="16" HorizontalAlignment="Left" Margin="6,169,0,0" Name="checkBox_NotNoStyle" VerticalAlignment="Top" />
                     <CheckBox Content="起動時に前回接続サーバーに接続する" Height="16" HorizontalAlignment="Left" Margin="351,81,0,0" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="351,103,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,125,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
-                    <Button Content="スタートアップにEpgTimer.exeのショートカットを作成する" Height="23" HorizontalAlignment="Left" Margin="6,182,0,0" Name="button_shortCutAdd" VerticalAlignment="Top" Width="340" Click="button_shortCutAdd_Click" />
-                    <Button Content="スタートアップからEpgTimer.exeのショートカットを削除する" Height="23" HorizontalAlignment="Left" Margin="6,182,0,0" Name="button_shortCutDel" VerticalAlignment="Top" Width="340" Click="button_shortCutDel_Click" />
-                    <Button Content="EpgTimerSrv設定" Height="23" HorizontalAlignment="Left" Margin="6,222,0,0" Name="button_srvSetting" VerticalAlignment="Top" Width="150" Click="button_srvSetting_Click" />
+                    <Button Content="スタートアップにEpgTimer.exeのショートカットを作成する" Height="23" HorizontalAlignment="Left" Margin="6,204,0,0" Name="button_shortCutAdd" VerticalAlignment="Top" Width="340" Click="button_shortCutAdd_Click" />
+                    <Button Content="スタートアップからEpgTimer.exeのショートカットを削除する" Height="23" HorizontalAlignment="Left" Margin="6,204,0,0" Name="button_shortCutDel" VerticalAlignment="Top" Width="340" Click="button_shortCutDel_Click" />
+                    <Button Content="EpgTimerSrv設定" Height="23" HorizontalAlignment="Left" Margin="6,244,0,0" Name="button_srvSetting" VerticalAlignment="Top" Width="150" Click="button_srvSetting_Click" />
                 </Grid>
             </TabItem>
             <TabItem Header="ボタン表示" Name="tabItem4">
