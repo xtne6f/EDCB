@@ -258,7 +258,6 @@ namespace EpgTimer
         public double SearchWndTop { get; set; }
         public double SearchWndWidth { get; set; }
         public double SearchWndHeight { get; set; }
-        public short AutoSaveNotifyLog { get; set; }
         public int NotifyLogMax { get; set; }
         public bool ShowTray { get; set; }
         public bool MinHide { get; set; }
@@ -397,7 +396,6 @@ namespace EpgTimer
             SearchWndTop = 0;
             SearchWndWidth = 0;
             SearchWndHeight = 0;
-            AutoSaveNotifyLog = 0;
             NotifyLogMax = 100;
             ShowTray = true;
             MinHide = true;

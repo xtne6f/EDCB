@@ -1226,19 +1226,5 @@ namespace EpgTimer
                 return epgBackColor;
             }
         }
-
-        public void AddNotifySave(NotifySrvInfo notifyInfo)
-        {
-            if (Settings.Instance.AutoSaveNotifyLog == 1)
-            {
-                String filePath = SettingPath.ModulePath;
-                filePath += "\\Log";
-                Directory.CreateDirectory(filePath);
-                filePath += "\\EpgTimerNotify_" + DateTime.UtcNow.AddHours(9).ToString("yyyyMMdd") + ".txt";
-                StreamWriter file = new StreamWriter(filePath, true, System.Text.Encoding.GetEncoding("shift_jis"));
-                file.WriteLine(new NotifySrvInfoItem(notifyInfo));
-                file.Close();
-            }
-        }
     }
 }

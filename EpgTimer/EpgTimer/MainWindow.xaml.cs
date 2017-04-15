@@ -1295,7 +1295,6 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
-                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.RecStart:
@@ -1309,7 +1308,6 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
-                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.RecEnd:
@@ -1323,7 +1321,6 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
-                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.RecTuijyu:
@@ -1337,7 +1334,6 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
-                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.ChgTuijyu:
@@ -1351,7 +1347,6 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
-                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.PreEpgCapStart:
@@ -1365,7 +1360,6 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
-                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.EpgCapStart:
@@ -1379,7 +1373,6 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
-                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 case UpdateNotifyItem.EpgCapEnd:
@@ -1393,7 +1386,6 @@ namespace EpgTimer
                             }
                         }
                         CommonManager.Instance.NotifyLogList.Add(status);
-                        CommonManager.Instance.AddNotifySave(status);
                     }
                     break;
                 default:
