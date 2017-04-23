@@ -22,12 +22,10 @@ namespace AribDescriptor
 //{参照},{即値|参照}:          入力データを{即値|参照}サイズだけ{参照}にDWORD値として格納
 //{参照},D_LOCAL,{即値|参照}:  DWORD値として格納しパース後に捨てる
 //{参照},D_LOCAL_TO_END:       D_LOCALと同様だが、できるだけ入力を消費する
-//{参照},D_STRING,{即値|参照}: 入力データを{即値|参照}サイズだけ{参照}に文字列として格納
-//{参照},D_STRING_TO_END:      D_STRINGと同様だが、できるだけ入力を消費する
 //{参照},D_BINARY,{即値|参照}: 入力データを{即値|参照}サイズだけ{参照}にバイト列として格納
 //{参照},D_BINARY_TO_END:      D_BINARYと同様だが、できるだけ入力を消費する
 //
-//※D_BEGIN*,D_DESCRIPTOR_LOOP,D_STRING*,D_BINARY*はバイト(8bit)境界でのみ使用できる
+//※D_BEGIN*,D_DESCRIPTOR_LOOP,D_BINARY*(==D_STRING*)はバイト(8bit)境界でのみ使用できる
 
 const short audio_component_descriptor_p[] = {
 	descriptor_tag, 8,
@@ -1413,37 +1411,6 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 			++*parser;
 
 			switch( **parser ){
-			case D_STRING:
-			case D_STRING_TO_END:
-				{
-					if( bitOffset != 0 ){
-						return -3;
-					}
-					DWORD byteSize = dataSize - readSize;
-					if( **parser == D_STRING ){
-						byteSize = GetOperand(*(++*parser), ppLocal) / 8;
-					}
-					++*parser;
-					if( readSize + byteSize > dataSize ){
-						return -1;
-					}
-					DWORD copySize = min(byteSize, 0xFFF);
-					pp->resize(pp->size() + 1);
-					DESCRIPTOR_PROPERTY& dp = pp->back();
-					dp.id = dpID;
-					dp.type = (short)(DESCRIPTOR_PROPERTY::TYPE_S | copySize);
-					if( copySize < sizeof(dp.s) ){
-						//直置き
-						memcpy(dp.s, data + readSize, copySize);
-						dp.s[copySize] = '\0';
-					}else{
-						dp.ps = new char[copySize + 1];
-						memcpy(dp.ps, data + readSize, copySize);
-						dp.ps[copySize] = '\0';
-					}
-					readSize += byteSize;
-				}
-				break;
 			case D_BINARY:
 			case D_BINARY_TO_END:
 				{
@@ -1620,30 +1587,6 @@ bool CDescriptor::SetNumber(short id, DWORD n, CLoopPointer lp)
 	return false;
 }
 
-const char* CDescriptor::GetString(short id, DWORD* size, CLoopPointer lp) const
-{
-	const DESCRIPTOR_PROPERTY* pp = FindProperty(id, lp);
-	if( pp != NULL && (pp->type & DESCRIPTOR_PROPERTY::TYPE_S) ){
-		if( size != NULL ){
-			*size = pp->type & DESCRIPTOR_PROPERTY::TYPE_MASK;
-		}
-		return (pp->type & DESCRIPTOR_PROPERTY::TYPE_MASK) < sizeof(pp->s) ? pp->s : pp->ps;
-	}
-	return NULL;
-}
-
-const char* CDescriptor::GetStringOrEmpty(short id, DWORD* size, CLoopPointer lp) const
-{
-	const char* ps = GetString(id, size, lp);
-	if( ps == NULL ){
-		if( size != NULL ){
-			*size = 0;
-		}
-		ps = "";
-	}
-	return ps;
-}
-
 const BYTE* CDescriptor::GetBinary(short id, DWORD* size, CLoopPointer lp) const
 {
 	const DESCRIPTOR_PROPERTY* pp = FindProperty(id, lp);
@@ -1660,8 +1603,6 @@ CDescriptor::DESCRIPTOR_PROPERTY::~DESCRIPTOR_PROPERTY()
 {
 	if( type == TYPE_P ){
 		delete pl;
-	}else if( (type & TYPE_S) && (type & TYPE_MASK) >= sizeof(s) ){
-		delete[] ps;
 	}else if( (type & TYPE_B) && (type & TYPE_MASK) >= sizeof(b) + 1 ){
 		delete[] pb;
 	}
@@ -1675,13 +1616,6 @@ CDescriptor::DESCRIPTOR_PROPERTY::DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY&
 		n = o.n;
 	}else if( type == TYPE_P ){
 		pl = new vector<vector<DESCRIPTOR_PROPERTY>>(*o.pl);
-	}else if( type & TYPE_S ){
-		if( (type & TYPE_MASK) >= sizeof(s) ){
-			ps = new char[(type & TYPE_MASK) + 1];
-			memcpy(ps, o.ps, (type & TYPE_MASK) + 1);
-		}else{
-			memcpy(s, o.s, sizeof(s));
-		}
 	}else if( type & TYPE_B ){
 		if( (type & TYPE_MASK) >= sizeof(b) + 1 ){
 			pb = new BYTE[type & TYPE_MASK];
@@ -1700,12 +1634,6 @@ CDescriptor::DESCRIPTOR_PROPERTY& CDescriptor::DESCRIPTOR_PROPERTY::operator=(DE
 		n = o.n;
 	}else if( type == TYPE_P ){
 		std::swap(pl, o.pl);
-	}else if( type & TYPE_S ){
-		if( (type & TYPE_MASK) >= sizeof(s) ){
-			std::swap(ps, o.ps);
-		}else{
-			memmove(s, o.s, sizeof(s));
-		}
 	}else if( type & TYPE_B ){
 		if( (type & TYPE_MASK) >= sizeof(b) + 1 ){
 			std::swap(pb, o.pb);

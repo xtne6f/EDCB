@@ -638,11 +638,11 @@ BOOL CDecodeUtil::GetServiceListActual(
 					continue;
 				}
 				DWORD srcSize;
-				const char* src = itr->second.GetStringOrEmpty(Desc::d_char, &srcSize, lp);
-				if( srcSize > 0 ){
+				const BYTE* src = itr->second.GetBinary(Desc::d_char, &srcSize, lp);
+				if( src && srcSize > 0 ){
 					CARIB8CharDecode arib;
 					string network_name = "";
-					arib.PSISI((const BYTE*)src, srcSize, &network_name);
+					arib.PSISI(src, srcSize, &network_name);
 					AtoW(network_name, network_nameW);
 				}
 			}
@@ -659,11 +659,11 @@ BOOL CDecodeUtil::GetServiceListActual(
 			for( DWORD j = 0; itr->second.SetLoopIndex(lp2, j); j++ ){
 				if( itr->second.GetNumber(Desc::descriptor_tag, lp2) == Desc::ts_information_descriptor ){
 					DWORD srcSize;
-					const char* src = itr->second.GetStringOrEmpty(Desc::ts_name_char, &srcSize, lp2);
-					if( srcSize > 0 ){
+					const BYTE* src = itr->second.GetBinary(Desc::ts_name_char, &srcSize, lp2);
+					if( src && srcSize > 0 ){
 						CARIB8CharDecode arib;
 						string ts_name = "";
-						arib.PSISI((const BYTE*)src, srcSize, &ts_name);
+						arib.PSISI(src, srcSize, &ts_name);
 						AtoW(ts_name, ts_nameW);
 					}
 					remote_control_key_id = (BYTE)itr->second.GetNumber(Desc::remote_control_key_id, lp2);
@@ -701,15 +701,15 @@ BOOL CDecodeUtil::GetServiceListActual(
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
-					const char* src;
+					const BYTE* src;
 					DWORD srcSize;
-					src = itr->second.GetStringOrEmpty(Desc::service_provider_name, &srcSize, lp2);
-					if( srcSize > 0 ){
-						arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
+					src = itr->second.GetBinary(Desc::service_provider_name, &srcSize, lp2);
+					if( src && srcSize > 0 ){
+						arib.PSISI(src, srcSize, &service_provider_name);
 					}
-					src = itr->second.GetStringOrEmpty(Desc::service_name, &srcSize, lp2);
-					if( srcSize > 0 ){
-						arib.PSISI((const BYTE*)src, srcSize, &service_name);
+					src = itr->second.GetBinary(Desc::service_name, &srcSize, lp2);
+					if( src && srcSize > 0 ){
+						arib.PSISI(src, srcSize, &service_name);
 					}
 					this->serviceDBList[count].service_type = (BYTE)itr->second.GetNumber(Desc::service_type, lp2);
 					AtoW(service_provider_name, this->serviceDBList[count].service_provider_name);
@@ -789,15 +789,15 @@ BOOL CDecodeUtil::GetServiceListSIT(
 				CARIB8CharDecode arib;
 				string service_provider_name = "";
 				string service_name = "";
-				const char* src;
+				const BYTE* src;
 				DWORD srcSize;
-				src = this->sitInfo->GetStringOrEmpty(Desc::service_provider_name, &srcSize, lp2);
-				if( srcSize > 0 ){
-					arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
+				src = this->sitInfo->GetBinary(Desc::service_provider_name, &srcSize, lp2);
+				if( src && srcSize > 0 ){
+					arib.PSISI(src, srcSize, &service_provider_name);
 				}
-				src = this->sitInfo->GetStringOrEmpty(Desc::service_name, &srcSize, lp2);
-				if( srcSize > 0 ){
-					arib.PSISI((const BYTE*)src, srcSize, &service_name);
+				src = this->sitInfo->GetBinary(Desc::service_name, &srcSize, lp2);
+				if( src && srcSize > 0 ){
+					arib.PSISI(src, srcSize, &service_name);
 				}
 				this->serviceDBList[i].service_type = (BYTE)this->sitInfo->GetNumber(Desc::service_type, lp2);
 				AtoW(service_provider_name, this->serviceDBList[i].service_provider_name);

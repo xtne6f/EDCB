@@ -370,12 +370,16 @@ void CEpgDBUtil::AddShortEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescrip
 		CARIB8CharDecode arib;
 		string event_name = "";
 		string text_char = "";
-		const char* src;
+		const BYTE* src;
 		DWORD srcSize;
-		src = eit.GetStringOrEmpty(Desc::event_name_char, &srcSize, lp);
-		arib.PSISI((const BYTE*)src, srcSize, &event_name);
-		src = eit.GetStringOrEmpty(Desc::text_char, &srcSize, lp);
-		arib.PSISI((const BYTE*)src, srcSize, &text_char);
+		src = eit.GetBinary(Desc::event_name_char, &srcSize, lp);
+		if( src && srcSize > 0 ){
+			arib.PSISI(src, srcSize, &event_name);
+		}
+		src = eit.GetBinary(Desc::text_char, &srcSize, lp);
+		if( src && srcSize > 0 ){
+			arib.PSISI(src, srcSize, &text_char);
+		}
 #ifdef DEBUG_EIT
 		text_char = g_szDebugEIT + text_char;
 #endif
@@ -391,10 +395,9 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 		BOOL foundFlag = FALSE;
 		CARIB8CharDecode arib;
 		string extendText = "";
-		string itemDescBuff = "";
-		string itemBuff = "";
+		vector<BYTE> itemBuff;
+		BOOL itemDescFlag = FALSE;
 		//text_length‚Í0‚Å‰^—p‚³‚ê‚é
-//		string textBuff = "";
 
 		Desc::CDescriptor::CLoopPointer lp = lpParent;
 		if( eit.EnterLoop(lp) ){
@@ -406,90 +409,43 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 				Desc::CDescriptor::CLoopPointer lp2 = lp;
 				if( eit.EnterLoop(lp2) ){
 					for( DWORD j=0; eit.SetLoopIndex(lp2, j); j++ ){
-						const char* src;
+						const BYTE* src;
 						DWORD srcSize;
-						src = eit.GetStringOrEmpty(Desc::item_description_char, &srcSize, lp2);
-						if( srcSize > 0 ){
-							//if( textBuff.size() > 0 ){
-							//	string buff = "";
-							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-							//	buff += "\r\n";
-							//	extendText += buff;
-							//	textBuff = "";
-							//}
-							if( itemBuff.size() > 0 ){
+						src = eit.GetBinary(Desc::item_description_char, &srcSize, lp2);
+						if( src && srcSize > 0 ){
+							if( itemDescFlag == FALSE && itemBuff.size() > 0 ){
 								string buff = "";
-								arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
+								arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
 								buff += "\r\n";
 								extendText += buff;
-								itemBuff = "";
+								itemBuff.clear();
 							}
-
-							itemDescBuff += src;
+							itemDescFlag = TRUE;
+							itemBuff.insert(itemBuff.end(), src, src + srcSize);
 						}
-						src = eit.GetStringOrEmpty(Desc::item_char, &srcSize, lp2);
-						if( srcSize > 0 ){
-							//if( textBuff.size() > 0 ){
-							//	string buff = "";
-							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-							//	buff += "\r\n";
-							//	extendText += buff;
-							//	textBuff = "";
-							//}
-							if( itemDescBuff.size() > 0 ){
+						src = eit.GetBinary(Desc::item_char, &srcSize, lp2);
+						if( src && srcSize > 0 ){
+							if( itemDescFlag && itemBuff.size() > 0 ){
 								string buff = "";
-								arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
+								arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
 								buff += "\r\n";
 								extendText += buff;
-								itemDescBuff = "";
+								itemBuff.clear();
 							}
-
-							itemBuff += src;
+							itemDescFlag = FALSE;
+							itemBuff.insert(itemBuff.end(), src, src + srcSize);
 						}
 					}
 				}
-				//if( extEvent->text_length > 0 ){
-				//	if( itemDescBuff.size() > 0 ){
-				//		string buff = "";
-				//		arib.PSISI((const BYTE*)itemDescBuff.c_str(), itemDescBuff.length(), &buff);
-				//		buff += "\r\n";
-				//		extendText += buff;
-				//		itemDescBuff = "";
-				//	}
-				//	if( itemBuff.size() > 0 ){
-				//		string buff = "";
-				//		arib.PSISI((const BYTE*)itemBuff.c_str(), itemBuff.length(), &buff);
-				//		buff += "\r\n";
-				//		extendText += buff;
-				//		itemBuff = "";
-				//	}
-
-				//	textBuff += extEvent->text_char;
-				//}
 			}
 		}
 
-		if( itemDescBuff.size() > 0 ){
-			string buff = "";
-			arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
-			buff += "\r\n";
-			extendText += buff;
-			itemDescBuff = "";
-		}
 		if( itemBuff.size() > 0 ){
 			string buff = "";
-			arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
+			arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
 			buff += "\r\n";
 			extendText += buff;
-			itemBuff = "";
 		}
-		//if( textBuff.size() > 0 ){
-		//	string buff = "";
-		//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-		//	buff += "\r\n";
-		//	extendText += buff;
-		//	textBuff = "";
-		//}
 
 		if( foundFlag == FALSE ){
 			return FALSE;
@@ -540,8 +496,10 @@ void CEpgDBUtil::AddComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescript
 		CARIB8CharDecode arib;
 		string text_char = "";
 		DWORD srcSize;
-		const char* src = eit.GetStringOrEmpty(Desc::text_char, &srcSize, lp);
-		arib.PSISI((const BYTE*)src, srcSize, &text_char);
+		const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
+		if( src && srcSize > 0 ){
+			arib.PSISI(src, srcSize, &text_char);
+		}
 		AtoW(text_char, eventInfo->componentInfo->text_char);
 
 	}
@@ -588,8 +546,10 @@ BOOL CEpgDBUtil::AddAudioComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDes
 				CARIB8CharDecode arib;
 				string text_char = "";
 				DWORD srcSize;
-				const char* src = eit.GetStringOrEmpty(Desc::text_char, &srcSize, lp);
-				arib.PSISI((const BYTE*)src, srcSize, &text_char);
+				const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
+				if( src && srcSize > 0 ){
+					arib.PSISI(src, srcSize, &text_char);
+				}
 				AtoW(text_char, item.text_char);
 
 			}
@@ -767,11 +727,11 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 		for( DWORD i = 0; nit.SetLoopIndex(lp, i); i++ ){
 			if( nit.GetNumber(Desc::descriptor_tag, lp) == Desc::network_name_descriptor ){
 				DWORD srcSize;
-				const char* src = nit.GetStringOrEmpty(Desc::d_char, &srcSize, lp);
-				if( srcSize > 0 ){
+				const BYTE* src = nit.GetBinary(Desc::d_char, &srcSize, lp);
+				if( src && srcSize > 0 ){
 					CARIB8CharDecode arib;
 					string network_name = "";
-					arib.PSISI((const BYTE*)src, srcSize, &network_name);
+					arib.PSISI(src, srcSize, &network_name);
 					AtoW(network_name, network_nameW);
 				}
 			}
@@ -809,11 +769,11 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 					if( nit.GetNumber(Desc::descriptor_tag, lp2) == Desc::ts_information_descriptor && itrFind != this->serviceInfoList.end()){
 						//ts_name‚Æremote_control_key_id
 						DWORD srcSize;
-						const char* src = nit.GetStringOrEmpty(Desc::ts_name_char, &srcSize, lp2);
-						if( srcSize > 0 ){
+						const BYTE* src = nit.GetBinary(Desc::ts_name_char, &srcSize, lp2);
+						if( src && srcSize > 0 ){
 							CARIB8CharDecode arib;
 							string ts_name = "";
-							arib.PSISI((const BYTE*)src, srcSize, &ts_name);
+							arib.PSISI(src, srcSize, &ts_name);
 							AtoW(ts_name, itrFind->second.ts_name);
 						}
 						itrFind->second.remote_control_key_id = (BYTE)nit.GetNumber(Desc::remote_control_key_id, lp2);
@@ -878,15 +838,15 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 							CARIB8CharDecode arib;
 							string service_provider_name = "";
 							string service_name = "";
-							const char* src;
+							const BYTE* src;
 							DWORD srcSize;
-							src = sit.GetStringOrEmpty(Desc::service_provider_name, &srcSize, lp2);
-							if( srcSize > 0 ){
-								arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
+							src = sit.GetBinary(Desc::service_provider_name, &srcSize, lp2);
+							if( src && srcSize > 0 ){
+								arib.PSISI(src, srcSize, &service_provider_name);
 							}
-							src = sit.GetStringOrEmpty(Desc::service_name, &srcSize, lp2);
-							if( srcSize > 0 ){
-								arib.PSISI((const BYTE*)src, srcSize, &service_name);
+							src = sit.GetBinary(Desc::service_name, &srcSize, lp2);
+							if( src && srcSize > 0 ){
+								arib.PSISI(src, srcSize, &service_name);
 							}
 							AtoW(service_provider_name, item.service_provider_name);
 							AtoW(service_name, item.service_name);
@@ -938,15 +898,15 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 						CARIB8CharDecode arib;
 						string service_provider_name = "";
 						string service_name = "";
-						const char* src;
+						const BYTE* src;
 						DWORD srcSize;
-						src = sdt.GetStringOrEmpty(Desc::service_provider_name, &srcSize, lp2);
-						if( srcSize > 0 ){
-							arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
+						src = sdt.GetBinary(Desc::service_provider_name, &srcSize, lp2);
+						if( src && srcSize > 0 ){
+							arib.PSISI(src, srcSize, &service_provider_name);
 						}
-						src = sdt.GetStringOrEmpty(Desc::service_name, &srcSize, lp2);
-						if( srcSize > 0 ){
-							arib.PSISI((const BYTE*)src, srcSize, &service_name);
+						src = sdt.GetBinary(Desc::service_name, &srcSize, lp2);
+						if( src && srcSize > 0 ){
+							arib.PSISI(src, srcSize, &service_name);
 						}
 						AtoW(service_provider_name, item.service_provider_name);
 						AtoW(service_name, item.service_name);

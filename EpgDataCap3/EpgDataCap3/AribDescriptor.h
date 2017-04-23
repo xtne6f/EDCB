@@ -22,10 +22,10 @@ namespace AribDescriptor
 		D_DESCRIPTOR_LOOP,
 		D_LOCAL,
 		D_LOCAL_TO_END,
-		D_STRING,
-		D_STRING_TO_END,
 		D_BINARY,
+		D_STRING = D_BINARY,
 		D_BINARY_TO_END,
+		D_STRING_TO_END = D_BINARY_TO_END,
 		D_IMMEDIATE_MAX = 0x1FFF,
 		reserved,
 		descriptor_tag,
@@ -370,8 +370,6 @@ namespace AribDescriptor
 		bool Has(short id, CLoopPointer lp = CLoopPointer()) const { return FindProperty(id, lp) != NULL; }
 		DWORD GetNumber(short id, CLoopPointer lp = CLoopPointer()) const;
 		bool SetNumber(short id, DWORD n, CLoopPointer lp = CLoopPointer());
-		const char* GetString(short id, DWORD* size = NULL, CLoopPointer lp = CLoopPointer()) const;
-		const char* GetStringOrEmpty(short id, DWORD* size = NULL, CLoopPointer lp = CLoopPointer()) const;
 		const BYTE* GetBinary(short id, DWORD* size = NULL, CLoopPointer lp = CLoopPointer()) const;
 	private:
 		struct DESCRIPTOR_PROPERTY {
@@ -380,8 +378,6 @@ namespace AribDescriptor
 			union {
 				DWORD n;
 				vector<vector<DESCRIPTOR_PROPERTY>>* pl;
-				char s[sizeof(char*)];
-				char* ps;
 				BYTE b[sizeof(BYTE*)];
 				BYTE* pb;
 			};
@@ -389,8 +385,7 @@ namespace AribDescriptor
 				TYPE_N = 0,
 				TYPE_P = 1,
 				TYPE_MASK = 0xFFF,
-				TYPE_S = 0x1000,
-				TYPE_B = 0x2000,
+				TYPE_B = 0x1000,
 			};
 			DESCRIPTOR_PROPERTY() : type(TYPE_N) {}
 			~DESCRIPTOR_PROPERTY();
