@@ -793,9 +793,9 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WritePrivateProfileInt(L"SET", L"SaveDebugLog", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG), iniPath.c_str());
 	//チェックを操作したときだけ変化させる
 	int compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 0, iniPath.c_str());
-	WritePrivateProfileInt(L"SET", L"CompatFlags",
-	                       GetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMPAT_TKNTREC) ?
-	                           (compatFlags % 4096 == 4095 ? compatFlags : 4095) : (compatFlags % 4096 == 4095 ? 0 : compatFlags), iniPath.c_str());
+	compatFlags = GetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMPAT_TKNTREC) ?
+	                  (compatFlags % 4096 == 4095 ? compatFlags : 4095) : (compatFlags % 4096 == 4095 ? 0 : compatFlags);
+	WritePrivateProfileInt(L"SET", L"CompatFlags", compatFlags, iniPath.c_str());
 	num = 0;
 	for( int i = 0; i < ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_VIEW_BON)); i++ ){
 		if( ListBox_GetTextLen(GetDlgItem(hwnd, IDC_LIST_SET_VIEW_BON), i) < MAX_PATH ){
@@ -817,6 +817,10 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	//設定を再読み込みさせる
 	CSendCtrlCmd ctrlCmd;
 	ctrlCmd.SendReloadSetting();
+	if( compatFlags & 0x08 ){
+		//互換動作: 設定更新通知コマンドを実装する
+		ctrlCmd.SendProfileUpdate(L"EpgTimerSrvSetting");
+	}
 }
 
 void CEpgTimerSrvSetting::OnBnClickedSetRecNamePlugIn()
