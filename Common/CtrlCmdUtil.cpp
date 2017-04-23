@@ -100,28 +100,24 @@ BOOL ReadVALUE( WORD ver, REC_SETTING_DATA* val, const BYTE* buff, DWORD buffSiz
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recMode );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->priority );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tuijyuuFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceMode );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->batFilePath );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFolderList );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->suspendMode );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->rebootFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->useMargineFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startMargine );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->endMargine );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->continueRecFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->partialRecFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tunerID );
-		if( ver >= 2 ){
-			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->partialRecFolder );
-		}
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recMode );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->priority );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tuijyuuFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceMode );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->batFilePath );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFolderList );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->suspendMode );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->rebootFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->useMargineFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startMargine );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->endMargine );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->continueRecFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->partialRecFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tunerID );
+	if( ver >= 2 ){
+		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->partialRecFolder );
 	}
-
 	*readSize = valSize;
 	return TRUE;
 }
@@ -163,33 +159,29 @@ BOOL ReadVALUE( WORD ver, RESERVE_DATA* val, const BYTE* buff, DWORD buffSize, D
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->title );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTime );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->durationSecond );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stationName );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->originalNetworkID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transportStreamID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->comment );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->reserveID );
-		BYTE bPadding;
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &bPadding );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->overlapMode );
-		wstring strPadding;
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &strPadding );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTimeEpg );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recSetting );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->reserveStatus );
-		if( ver >= 5 ){
-			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFileNameList );
-			DWORD dwPadding;
-			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &dwPadding );
-		}
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->title );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTime );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->durationSecond );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stationName );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->originalNetworkID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transportStreamID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->comment );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->reserveID );
+	BYTE bPadding;
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &bPadding );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->overlapMode );
+	wstring strPadding;
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &strPadding );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTimeEpg );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recSetting );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->reserveStatus );
+	if( ver >= 5 ){
+		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFileNameList );
+		DWORD dwPadding;
+		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &dwPadding );
 	}
-
 	*readSize = valSize;
 	return TRUE;
 }
@@ -221,20 +213,16 @@ BOOL ReadVALUE( WORD ver, EPGDB_SERVICE_INFO* val, const BYTE* buff, DWORD buffS
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ONID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->TSID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_type );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->partialReceptionFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_provider_name );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_name );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->network_name );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ts_name );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->remote_control_key_id );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ONID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->TSID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_type );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->partialReceptionFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_provider_name );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_name );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->network_name );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ts_name );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->remote_control_key_id );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -258,12 +246,8 @@ BOOL ReadVALUE( WORD ver, EPGDB_SHORT_EVENT_INFO* val, const BYTE* buff, DWORD b
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->event_name );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->text_char );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->event_name );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->text_char );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -286,11 +270,7 @@ BOOL ReadVALUE( WORD ver, EPGDB_EXTENDED_EVENT_INFO* val, const BYTE* buff, DWOR
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->text_char );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->text_char );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -316,14 +296,10 @@ BOOL ReadVALUE( WORD ver, EPGDB_CONTENT_DATA* val, const BYTE* buff, DWORD buffS
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->content_nibble_level_1 );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->content_nibble_level_2 );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->user_nibble_1 );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->user_nibble_2 );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->content_nibble_level_1 );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->content_nibble_level_2 );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->user_nibble_1 );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->user_nibble_2 );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -346,11 +322,7 @@ BOOL ReadVALUE( WORD ver, EPGDB_CONTEN_INFO* val, const BYTE* buff, DWORD buffSi
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->nibbleList );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->nibbleList );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -376,14 +348,10 @@ BOOL ReadVALUE( WORD ver, EPGDB_COMPONENT_INFO* val, const BYTE* buff, DWORD buf
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stream_content );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->component_type );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->component_tag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->text_char );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stream_content );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->component_type );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->component_tag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->text_char );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -415,20 +383,16 @@ BOOL ReadVALUE( WORD ver, EPGDB_AUDIO_COMPONENT_INFO_DATA* val, const BYTE* buff
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stream_content );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->component_type );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->component_tag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stream_type );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->simulcast_group_tag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ES_multi_lingual_flag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->main_component_flag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->quality_indicator );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->sampling_rate );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->text_char );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stream_content );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->component_type );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->component_tag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stream_type );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->simulcast_group_tag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ES_multi_lingual_flag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->main_component_flag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->quality_indicator );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->sampling_rate );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->text_char );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -451,11 +415,7 @@ BOOL ReadVALUE( WORD ver, EPGDB_AUDIO_COMPONENT_INFO* val, const BYTE* buff, DWO
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->componentList );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->componentList );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -481,14 +441,10 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_DATA* val, const BYTE* buff, DWORD buffSiz
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->original_network_id );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transport_stream_id );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_id );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->event_id );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->original_network_id );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transport_stream_id );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_id );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->event_id );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -512,12 +468,8 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENTGROUP_INFO* val, const BYTE* buff, DWORD bu
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->group_type );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventDataList );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->group_type );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventDataList );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -556,16 +508,15 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 	}
 	buffSize = valSize;
 
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->original_network_id );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transport_stream_id );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_id );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->event_id );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->StartTimeFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->start_time );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->DurationFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->durationSec );
 	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->original_network_id );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transport_stream_id );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->service_id );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->event_id );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->StartTimeFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->start_time );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->DurationFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->durationSec );
-
 		DWORD infoValSize;
 
 		val->shortInfo.reset(new EPGDB_SHORT_EVENT_INFO);
@@ -644,9 +595,8 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 		}else{
 			pos += size;
 		}
-
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->freeCAFlag );
 	}
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->freeCAFlag );
 
 	*readSize = valSize;
 	return TRUE;
@@ -675,16 +625,12 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_DATE_INFO* val, const BYTE* buff, DWORD b
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startDayOfWeek );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startHour );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startMin );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->endDayOfWeek );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->endHour );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->endMin );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startDayOfWeek );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startHour );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startMin );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->endDayOfWeek );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->endHour );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->endMin );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -753,26 +699,25 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->andKey );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notKey );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->regExpFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->titleOnlyFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->contentList );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->dateList );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceList );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->videoList );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->audioList );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->aimaiFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notContetFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notDateFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->freeCAFlag );
-		if( ver >= 3 ){
-			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecEnd );
-			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecDay );
-		}
-		if( ver >= 5 && buffSize - pos >= 5 ){
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->andKey );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notKey );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->regExpFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->titleOnlyFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->contentList );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->dateList );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceList );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->videoList );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->audioList );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->aimaiFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notContetFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notDateFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->freeCAFlag );
+	if( ver >= 3 ){
+		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecEnd );
+		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecDay );
+	}
+	if( ver >= 5 ){
+		if( buffSize - pos >= 5 ){
 			BYTE recNoService;
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &recNoService );
 			if( recNoService ){
@@ -791,7 +736,6 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 			}
 		}
 	}
-
 	*readSize = valSize;
 	return TRUE;
 }
@@ -820,17 +764,13 @@ BOOL ReadVALUE( WORD ver, SET_CH_INFO* val, const BYTE* buff, DWORD buffSize, DW
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->useSID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ONID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->TSID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->useBonCh );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->space );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ch );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->useSID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ONID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->TSID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->useBonCh );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->space );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ch );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -857,16 +797,11 @@ BOOL ReadVALUE( WORD ver, SET_CTRL_MODE* val, const BYTE* buff, DWORD buffSize, 
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enableScramble );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enableCaption );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enableData );
-
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enableScramble );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enableCaption );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enableData );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -892,14 +827,10 @@ BOOL ReadVALUE( WORD ver, REC_FILE_SET_INFO* val, const BYTE* buff, DWORD buffSi
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFolder );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->writePlugIn );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recNamePlugIn );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFileName );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFolder );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->writePlugIn );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recNamePlugIn );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFileName );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -931,21 +862,16 @@ BOOL ReadVALUE( WORD ver, SET_CTRL_REC_PARAM* val, const BYTE* buff, DWORD buffS
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->fileName );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->overWriteFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->createSize );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->saveFolder );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariONID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariTSID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariSID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariEventID );
-
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->fileName );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->overWriteFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->createSize );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->saveFolder );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariONID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariTSID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariSID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pittariEventID );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -969,12 +895,8 @@ BOOL ReadVALUE( WORD ver, SET_CTRL_REC_STOP_PARAM* val, const BYTE* buff, DWORD 
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->saveErrLog );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->saveErrLog );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1000,14 +922,10 @@ BOOL ReadVALUE( WORD ver, SET_CTRL_REC_STOP_RES_PARAM* val, const BYTE* buff, DW
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFilePath );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->drop );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->scramble );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->subRecFlag );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFilePath );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->drop );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->scramble );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->subRecFlag );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1049,30 +967,26 @@ BOOL ReadVALUE( WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, 
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->id );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFilePath );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->title );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTime );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->durationSecond );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceName );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->originalNetworkID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transportStreamID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->drops );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->scrambles );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recStatus );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTimeEpg );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->comment );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->programInfo );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->errInfo );
-		if( ver >= 4 ){
-			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->protectFlag );
-		}
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->id );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recFilePath );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->title );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTime );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->durationSecond );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceName );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->originalNetworkID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transportStreamID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->drops );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->scrambles );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recStatus );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTimeEpg );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->comment );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->programInfo );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->errInfo );
+	if( ver >= 4 ){
+		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->protectFlag );
 	}
-
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1100,16 +1014,12 @@ BOOL ReadVALUE( WORD ver, EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSi
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->dataID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->searchInfo );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recSetting );
-		if( ver >= 5 ){
-			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->addCount );
-		}
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->dataID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->searchInfo );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recSetting );
+	if( ver >= 5 ){
+		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->addCount );
 	}
-
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1136,15 +1046,11 @@ BOOL ReadVALUE( WORD ver, SEARCH_EPG_INFO_PARAM* val, const BYTE* buff, DWORD bu
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ONID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->TSID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pfOnlyFlag );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ONID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->TSID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pfOnlyFlag );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1170,14 +1076,10 @@ BOOL ReadVALUE( WORD ver, GET_EPG_PF_INFO_PARAM* val, const BYTE* buff, DWORD bu
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ONID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->TSID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pfNextFlag );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ONID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->TSID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->SID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->pfNextFlag );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1209,20 +1111,16 @@ BOOL ReadVALUE( WORD ver, MANUAL_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buf
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->dataID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->dayOfWeekFlag );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTime );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->durationSecond );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->title );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stationName );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->originalNetworkID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transportStreamID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recSetting );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->dataID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->dayOfWeekFlag );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTime );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->durationSecond );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->title );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->stationName );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->originalNetworkID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->transportStreamID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recSetting );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1247,14 +1145,9 @@ BOOL ReadVALUE( WORD ver, TUNER_RESERVE_INFO* val, const BYTE* buff, DWORD buffS
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tunerID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tunerName );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->reserveList );
-
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tunerID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tunerName );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->reserveList );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1278,12 +1171,8 @@ BOOL ReadVALUE( WORD ver, REGIST_TCP_INFO* val, const BYTE* buff, DWORD buffSize
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ip );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->port );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ip );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->port );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1307,12 +1196,8 @@ BOOL ReadVALUE( WORD ver, EPGDB_SERVICE_EVENT_INFO* val, const BYTE* buff, DWORD
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceInfo );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventList );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serviceInfo );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventList );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1336,12 +1221,8 @@ BOOL ReadVALUE( WORD ver, TVTEST_CH_CHG_INFO* val, const BYTE* buff, DWORD buffS
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->bonDriver );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chInfo );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->bonDriver );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chInfo );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1369,16 +1250,12 @@ BOOL ReadVALUE( WORD ver, NWPLAY_PLAY_INFO* val, const BYTE* buff, DWORD buffSiz
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ip );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->udp );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tcp );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->udpPort );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tcpPort );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ip );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->udp );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tcp );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->udpPort );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tcpPort );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1403,13 +1280,9 @@ BOOL ReadVALUE( WORD ver, NWPLAY_POS_CMD* val, const BYTE* buff, DWORD buffSize,
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->currentPos );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->totalPos );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->currentPos );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->totalPos );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1439,18 +1312,14 @@ BOOL ReadVALUE( WORD ver, TVTEST_STREAMING_INFO* val, const BYTE* buff, DWORD bu
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enableMode );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serverIP );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serverPort );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->filePath );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->udpSend );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tcpSend );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->timeShiftMode );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enableMode );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serverIP );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->serverPort );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->filePath );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->udpSend );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tcpSend );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->timeShiftMode );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1474,12 +1343,8 @@ BOOL ReadVALUE( WORD ver, NWPLAY_TIMESHIFT_INFO* val, const BYTE* buff, DWORD bu
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->filePath );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->filePath );
 	*readSize = valSize;
 	return TRUE;
 }
@@ -1509,18 +1374,14 @@ BOOL ReadVALUE( WORD ver, NOTIFY_SRV_INFO* val, const BYTE* buff, DWORD buffSize
 		return FALSE;
 	}
 	buffSize = valSize;
-
-	{
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notifyID );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->time );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param1 );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param2 );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param3 );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param4 );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param5 );
-		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param6 );
-	}
-
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notifyID );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->time );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param1 );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param2 );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param3 );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param4 );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param5 );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->param6 );
 	*readSize = valSize;
 	return TRUE;
 }
