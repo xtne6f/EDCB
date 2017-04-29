@@ -1,5 +1,5 @@
 -- ファイルを転送するスクリプト
--- ファイルをタイムシフト再生できる(容量確保録画には未対応): http://localhost:5510/xcode.lua?0=video/foo.ts
+-- ファイルをタイムシフト再生できる: http://localhost:5510/xcode.lua?0=video/foo.ts
 
 -- コマンドはEDCBのToolsフォルダにあるものを優先する
 ffmpeg=edcb.GetPrivateProfile('SET', 'ModulePath', '', 'Common.ini')..'\\Tools\\ffmpeg.exe'
@@ -40,9 +40,12 @@ if fpath then
       offset=math.floor((f:seek('end', 0) or 0) * offset / 99 / 188) * 188
       if XCODE then
         f:close()
-        f=edcb.io.popen('""'..readex..'" '..offset..' 4 "'..fpath..'" | '..XCMD..'"', 'rb')
+        -- 容量確保の可能性があるときは周期188+同期語0x47(188*256+0x47=48199)で対象ファイルを終端判定する
+        sync=fname:lower():find('%.ts$') and edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
+        f=edcb.io.popen('""'..readex..'" '..offset..(sync and ' 4p48199' or ' 4')..' "'..fpath..'" | '..XCMD..'"', 'rb')
         fname='xcode'..XEXT
       else
+        -- 容量確保には未対応
         f:seek('set', offset)
         XPREPARE=nil
       end
