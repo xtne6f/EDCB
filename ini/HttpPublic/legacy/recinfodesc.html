@@ -13,7 +13,7 @@ ct=[=[
 <div id="main">
 ]=]
 
-id=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0
+id=GetVarInt(mg.request_info.query_string,'id') or 0
 w=edcb.GetRecFileInfo(id)
 edcb.htmlEscape=15
 v=edcb.GetRecFileInfo(id)

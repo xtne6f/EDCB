@@ -66,9 +66,9 @@ function RecSettingTemplate(rs)
     ..'録画マージン: <input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked="checked"')..'>デフォルト || '
     ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or 0)..'"> '
     ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or 0)..'"><br>\n'
-    ..'指定サービス対象データ: <input type="checkbox" name="serviceMode" value="0"'..(rs.serviceMode%2==0 and ' checked="checked"' or '')..'>デフォルト || '
-    ..'<input type="checkbox" name="serviceMode_1" value="0"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/16)%2~=0 and ' checked="checked"' or '')..'>字幕を含める '
-    ..'<input type="checkbox" name="serviceMode_2" value="0"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/32)%2~=0 and ' checked="checked"' or '')..'>データカルーセルを含める<br>\n'
+    ..'指定サービス対象データ: <input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked="checked"' or '')..'>デフォルト || '
+    ..'<input type="checkbox" name="serviceMode_1" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/16)%2~=0 and ' checked="checked"' or '')..'>字幕を含める '
+    ..'<input type="checkbox" name="serviceMode_2" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/32)%2~=0 and ' checked="checked"' or '')..'>データカルーセルを含める<br>\n'
     ..'<table><tr><td>録画フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td><td>部分受信</td></tr>\n'
   for i,v in ipairs(rs.recFolderList) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>いいえ</td></tr>\n'
@@ -238,8 +238,17 @@ function ReadPost()
   return post
 end
 
+--クエリパラメータを整数チェックして取得する
+function GetVarInt(qs,n,ge,le,occ)
+  n=tonumber(mg.get_var(qs,n,occ))
+  if n and n==math.floor(n) and n>=(ge or -2147483648) and n<=(le or 2147483647) then
+    return n
+  end
+  return nil
+end
+
 --CSRFトークンを取得する
---※このトークンを含んだコンテンツを圧縮する場合はBEAST攻撃に少し気を配る
+--※このトークンを含んだコンテンツを圧縮する場合はBREACH攻撃に少し気を配る
 function CsrfToken()
   return edcb.serverRandom:sub(1,16)
 end

@@ -16,62 +16,47 @@ post=ReadPost()
 AssertCsrf(post)
 
 changed=false
-r=edcb.GetReserveData(tonumber(mg.get_var(mg.request_info.query_string, 'id')) or 0)
-if post and r then
-  presetID=tonumber(mg.get_var(post, 'presetID'))
-  recMode=tonumber(mg.get_var(post, 'recMode'))
-  tuijyuuFlag=tonumber(mg.get_var(post, 'tuijyuuFlag')) or 0
-  priority=tonumber(mg.get_var(post, 'priority'))
-  pittariFlag=tonumber(mg.get_var(post, 'pittariFlag')) or 0
-  suspendMode=tonumber(mg.get_var(post, 'suspendMode'))
-  rebootFlag=mg.get_var(post, 'rebootFlag')
-  useDefMarginFlag=mg.get_var(post, 'useDefMarginFlag')
-  startMargin=tonumber(mg.get_var(post, 'startMargin'))
-  endMargin=tonumber(mg.get_var(post, 'endMargin'))
-  serviceMode=mg.get_var(post, 'serviceMode')
-  serviceMode_1=mg.get_var(post, 'serviceMode_1')
-  serviceMode_2=mg.get_var(post, 'serviceMode_2')
-  continueRecFlag=mg.get_var(post, 'continueRecFlag')
-  tunerID=tonumber(mg.get_var(post, 'tunerID'))
-  partialRecFlag=mg.get_var(post, 'partialRecFlag')
-  if presetID and
-     recMode and
-     priority and
-     suspendMode and
-     (useDefMarginFlag or startMargin and endMargin) and tunerID
-  then
-    rs=r.recSetting
-    if presetID~=0xFFFF then
-      rs.batFilePath=''
-      rs.recFolderList={}
-      rs.partialRecFolder={}
-      for i,v in ipairs(edcb.EnumRecPresetInfo()) do
-        if v.id==presetID then
-          rs.batFilePath=v.recSetting.batFilePath
-          rs.recFolderList=v.recSetting.recFolderList
-          rs.partialRecFolder=v.recSetting.partialRecFolder
-          break
-        end
+r=edcb.GetReserveData(GetVarInt(mg.request_info.query_string,'id') or 0)
+if post and r and GetVarInt(post,'presetID') then
+  rs=r.recSetting
+  presetID=GetVarInt(post,'presetID')
+  if presetID~=0xFFFF then
+    for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+      if v.id==presetID then
+        rs.batFilePath=v.recSetting.batFilePath
+        rs.recFolderList=v.recSetting.recFolderList
+        rs.partialRecFolder=v.recSetting.partialRecFolder
+        presetID=0xFFFF
+        break
       end
     end
-    rs.recMode=recMode
-    rs.tuijyuuFlag=tuijyuuFlag~=0
-    rs.priority=priority
-    rs.pittariFlag=pittariFlag~=0
-    rs.suspendMode=suspendMode
-    rs.rebootFlag=rebootFlag~=nil
-    rs.startMargin=nil
-    rs.endMargin=nil
-    if not useDefMarginFlag then
-      rs.startMargin=startMargin
-      rs.endMargin=endMargin
-    end
-    rs.serviceMode=serviceMode and 0 or 1+(serviceMode_1 and 16 or 0)+(serviceMode_2 and 32 or 0)
-    rs.continueRecFlag=continueRecFlag~=nil
-    rs.tunerID=tunerID
-    rs.partialRecFlag=partialRecFlag and 1 or 0
+  end
+  rs.recMode=GetVarInt(post,'recMode',0,5)
+  rs.tuijyuuFlag=GetVarInt(post,'tuijyuuFlag')==1
+  rs.priority=GetVarInt(post,'priority',1,5)
+  rs.pittariFlag=GetVarInt(post,'pittariFlag')==1
+  rs.suspendMode=GetVarInt(post,'suspendMode',0,4)
+  rs.rebootFlag=GetVarInt(post,'rebootFlag')==1
+  useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
+  rs.startMargin=useMargin and GetVarInt(post,'startMargin')
+  rs.endMargin=useMargin and GetVarInt(post,'endMargin')
+  serviceMode_1=GetVarInt(post,'serviceMode_1',0,1) or 0
+  serviceMode_2=GetVarInt(post,'serviceMode_2',0,1) or 0
+  rs.serviceMode=GetVarInt(post,'serviceMode')==1 and 0 or 1+16*serviceMode_1+32*serviceMode_2
+  rs.continueRecFlag=GetVarInt(post,'continueRecFlag')==1
+  rs.tunerID=GetVarInt(post,'tunerID')
+  rs.partialRecFlag=GetVarInt(post,'partialRecFlag',0,1) or 0
+  if presetID==0xFFFF and
+     rs.recMode and
+     rs.priority and
+     rs.suspendMode and
+     (not useMargin or rs.startMargin and rs.endMargin) and
+     rs.tunerID
+  then
     changed=edcb.ChgReserveData(r)
-  else
+  end
+else
+  if post and r then
     start={}
     start.year,start.month,start.day=(mg.get_var(post, 'startDate') or ''):match('(%d+)/(%d+)/(%d+)')
     start.hour,start.min,start.sec=(mg.get_var(post, 'startTime') or ''):match('(%d+):(%d+):(%d+)')

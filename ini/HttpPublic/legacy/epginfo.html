@@ -19,7 +19,7 @@ onid=tonumber(onid) or 0
 tsid=tonumber(tsid) or 0
 sid=tonumber(sid) or 0
 eid=tonumber(eid) or 0
-presetID=tonumber(mg.get_var(mg.request_info.query_string,'presetID')) or 65535
+presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
 
 r=nil
 edcb.htmlEscape=15

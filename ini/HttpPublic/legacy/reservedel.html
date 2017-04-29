@@ -16,7 +16,7 @@ post=ReadPost()
 AssertCsrf(post)
 
 if post then
-  edcb.DelReserveData(tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0)
+  edcb.DelReserveData(GetVarInt(mg.request_info.query_string,'id') or 0)
   ct=ct..'予約を削除しました'
 end
 

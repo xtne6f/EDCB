@@ -13,7 +13,7 @@ ct=[=[
 <div id="main">
 ]=]
 
-id=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0
+id=GetVarInt(mg.request_info.query_string,'id') or 0
 recFilePath=edcb.GetRecFilePath(id)
 edcb.htmlEscape=15
 r=edcb.GetReserveData(id)
@@ -56,7 +56,7 @@ if r then
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="reserveinfo.html"><div>\n'
     ..'<input type="hidden" name="id" value="'..r.reserveID..'"><select name="presetID">\n'
-  presetID=tonumber(mg.get_var(mg.request_info.query_string,'presetID')) or 65535
+  presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
   preset=false
   rs=r.recSetting
   for i,v in ipairs(edcb.EnumRecPresetInfo()) do

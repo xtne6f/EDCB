@@ -17,7 +17,7 @@ ct=[=[
 
 edcb.htmlEscape=15
 a=edcb.EnumAutoAdd()
-pageIndex=tonumber(mg.get_var(mg.request_info.query_string,'page')) or 0
+pageIndex=GetVarInt(mg.request_info.query_string,'page',0,100000) or 0
 for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
   ct=ct..(i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"autoaddepg.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
 end
@@ -30,7 +30,7 @@ ct=ct..[=[
 ]=]
 
 ctt={}
-for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) do
+for i=pageIndex*PAGE_COUNT+1,math.min(#a,(pageIndex+1)*PAGE_COUNT) do
   v=a[i].searchInfo
   serviceName=''
   if #v.serviceList>0 then

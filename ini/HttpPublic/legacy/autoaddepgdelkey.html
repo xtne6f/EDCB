@@ -16,7 +16,7 @@ post=ReadPost()
 AssertCsrf(post)
 
 if post then
-  edcb.DelAutoAdd(tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0)
+  edcb.DelAutoAdd(GetVarInt(mg.request_info.query_string,'id') or 0)
   ct=ct..'削除しました'
 end
 

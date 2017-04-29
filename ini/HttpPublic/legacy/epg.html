@@ -23,9 +23,8 @@ ct=[=[
 <h1>番組表</h1>
 ]=]
 
-tab=tonumber(mg.get_var(mg.request_info.query_string,'tab')) or 0
-page=tonumber(mg.get_var(mg.request_info.query_string,'page')) or 0
-date=tonumber(mg.get_var(mg.request_info.query_string,'date')) or 0
+tab=GetVarInt(mg.request_info.query_string,'tab',0,3) or 0
+date=GetVarInt(mg.request_info.query_string,'date',-10000,1000) or 0
 --dateクエリは今日(深夜4時区切り)を基準(=0)とする
 now=os.time()
 timezone=now-os.time(os.date('!*t',now))

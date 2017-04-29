@@ -12,7 +12,7 @@ ct=[=[
 ]=]
 
 edcb.htmlEscape=15
-aa={dataID=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0}
+aa={dataID=GetVarInt(mg.request_info.query_string,'id') or 0}
 if aa.dataID==0 then
   ct=ct..'<h1>EPG予約 新規条件追加</h1>\n<div id="main">\n'
   aa.searchInfo={
@@ -47,7 +47,7 @@ if aa.searchInfo then
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="autoaddepginfo.html"><div>\n'
     ..'<input type="hidden" name="id" value="'..aa.dataID..'"><select name="presetID">\n'
-  presetID=tonumber(mg.get_var(mg.request_info.query_string,'presetID')) or 65535
+  presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
   if aa.dataID==0 and presetID==65535 then
     presetID=0
   end
