@@ -134,7 +134,9 @@ namespace EpgTimer.Setting
                 }
                 foreach (CustomEpgTabInfo info in Settings.Instance.CustomEpgTabList)
                 {
-                    listBox_tab.Items.Add(info);
+                    var info_copy = new CustomEpgTabInfo();
+                    info.CopyTo(ref info_copy);
+                    listBox_tab.Items.Add(info_copy);
                 }
                 if (listBox_tab.Items.Count > 0)
                 {
