@@ -207,9 +207,6 @@
     <Compile Include="UserCtrlView\SearchKeyView.xaml.cs">
       <DependentUpon>SearchKeyView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserCtrlView\SearchKeyDescView.xaml.cs">
-      <DependentUpon>SearchKeyDescView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="SearchWindow.xaml.cs">
       <DependentUpon>SearchWindow.xaml</DependentUpon>
     </Compile>
@@ -407,10 +404,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UserCtrlView\SearchKeyView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserCtrlView\SearchKeyDescView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
