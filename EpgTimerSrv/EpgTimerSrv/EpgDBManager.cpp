@@ -564,6 +564,7 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 		       _Create64Key2(b.info->original_network_id, b.info->transport_stream_id, b.info->service_id, b.info->event_id);
 	};
 	wstring targetWord;
+	vector<int> distForFind;
 	
 	//サービスごとに検索
 	for( size_t i=0; i<key->serviceList.size(); i++ ){
@@ -719,7 +720,7 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 					if( andKeyList.size() != 0 ){
 						if( key->regExpFlag == FALSE && key->aimaiFlag != 0 ){
 							//あいまい検索
-							if( IsFindLikeKeyword(caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE ){
+							if( IsFindLikeKeyword(caseFlag, andKeyList, targetWord, distForFind, &matchKey) == FALSE ){
 								//andキーワード見つからなかったので対象外
 								continue;
 							}
@@ -882,54 +883,48 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL case
 	}
 }
 
-BOOL CEpgDBManager::IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey)
+BOOL CEpgDBManager::IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, vector<int>& dist, wstring* findKey)
 {
-	BOOL ret = FALSE;
-
-	DWORD hitCount = 0;
-	DWORD missCount = 0;
-	for( size_t i=0; i<keyList->size(); i++ ){
-		wstring key= L"";
-		for( size_t j=0; j<(*keyList)[i].size(); j++ ){
-			key += (*keyList)[i].at(j);
-			if( SearchKeyword(word, key, caseFlag) == word.end() ){
-				missCount+=1;
-				key = (*keyList)[i].at(j);
-				if( SearchKeyword(word, key, caseFlag) == word.end() ){
-					missCount+=1;
-					key = L"";
-				}else{
-					//hitCount+=1;
-				}
-			}else{
-				hitCount+=(DWORD)key.size();
-			}
+	for( vector<wstring>::const_iterator itr = keyList.begin(); itr != keyList.end(); itr++ ){
+		//編集距離がしきい値以下になる文字列が含まれるか調べる
+		size_t l = 0;
+		size_t curr = itr->size() + 1;
+		dist.assign(curr * 2, 0);
+		for( size_t i = 1; i < curr; i++ ){
+			dist[i] = dist[i - 1] + 1;
 		}
-		if( andMode == FALSE ){
-			DWORD totalCount = hitCount+missCount;
-			DWORD per = (hitCount*100) / totalCount;
-			if( per > 70 ){
-				ret = TRUE;
+		BOOL matched = FALSE;
+		for( size_t i = 0; i < word.size(); i++ ){
+			wchar_t x = word[i];
+			for( size_t j = 0; j < itr->size(); j++ ){
+				wchar_t y = (*itr)[j];
+				if( caseFlag && x == y ||
+				    caseFlag == FALSE && (L'a' <= x && x <= L'z' ? x - L'a' + L'A' : x) == (L'a' <= y && y <= L'z' ? y - L'a' + L'A' : y) ){
+					dist[curr + j + 1] = dist[l + j];
+				}else{
+					dist[curr + j + 1] = 1 + (dist[l + j] < dist[l + j + 1] ? min(dist[l + j], dist[curr + j]) : min(dist[l + j + 1], dist[curr + j]));
+				}
+			}
+			//75%をしきい値とする
+			if( dist[curr + itr->size()] * 4 <= (int)itr->size() ){
+				matched = TRUE;
 				break;
 			}
-			hitCount = 0;
-			missCount = 0;
-		}else{
-			if( findKey != NULL ){
-				*findKey += (*keyList)[i];
+			std::swap(l, curr);
+		}
+		if( matched == FALSE ){
+			return FALSE;
+		}
+	}
+	if( findKey != NULL ){
+		for( size_t i = 0; i < keyList.size(); i++ ){
+			if( findKey->size() > 0 ){
+				*findKey += L' ';
 			}
+			*findKey += keyList[i];
 		}
 	}
-	if( andMode == TRUE ){
-		DWORD totalCount = hitCount+missCount;
-		DWORD per = (hitCount*100) / totalCount;
-		if( per > 70 ){
-			ret = TRUE;
-		}else{
-			ret = FALSE;
-		}
-	}
-	return ret;
+	return TRUE;
 }
 
 BOOL CEpgDBManager::GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const
