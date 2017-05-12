@@ -25,7 +25,7 @@ public:
 
 	void SetArchivePeriod(int periodSec);
 
-	BOOL ReloadEpgData();
+	BOOL ReloadEpgData(BOOL foreground = FALSE);
 
 	BOOL IsLoadingData() const;
 
@@ -141,6 +141,7 @@ protected:
 
 	HANDLE loadThread;
 	BOOL loadStop;
+	BOOL loadForeground;
 	BOOL initialLoadDone;
 	int archivePeriodSec;
 

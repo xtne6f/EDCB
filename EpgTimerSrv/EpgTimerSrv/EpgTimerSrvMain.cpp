@@ -146,7 +146,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->ReloadSetting(true);
 		ctx->sys->ReloadNetworkSetting();
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdPipeCallback, ctx->sys, ctx->serviceFlag);
-		ctx->sys->epgDB.ReloadEpgData();
+		ctx->sys->epgDB.ReloadEpgData(TRUE);
 		SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 		SetTimer(hwnd, TIMER_SET_RESUME, 30000, NULL);
@@ -469,21 +469,18 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				DWORD ret = ctx->sys->reserveManager.Check();
 				switch( HIWORD(ret) ){
 				case CReserveManager::CHECK_EPGCAP_END:
-					if( ctx->sys->epgDB.ReloadEpgData() != FALSE ){
-						//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
-						SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
-						ctx->shutdownModePending = MAKEWORD((ctx->sys->setting.recEndMode + 3) % 4 + 1, ctx->sys->setting.reboot);
-					}
+					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
+					ctx->sys->epgDB.ReloadEpgData(TRUE);
+					SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
+					ctx->shutdownModePending = MAKEWORD((ctx->sys->setting.recEndMode + 3) % 4 + 1, ctx->sys->setting.reboot);
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
 				case CReserveManager::CHECK_NEED_SHUTDOWN:
-					if( ctx->sys->epgDB.ReloadEpgData() != FALSE ){
-						//EPGリロード完了後に要求されたシャットダウン動作を試みる
-						SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
-						ctx->shutdownModePending = LOWORD(ret);
-						if( LOBYTE(ctx->shutdownModePending) == 0 ){
-							ctx->shutdownModePending = MAKEWORD((ctx->sys->setting.recEndMode + 3) % 4 + 1, ctx->sys->setting.reboot);
-						}
+					//要求されたシャットダウン動作を試みる(EPGリロードは不要)
+					SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
+					ctx->shutdownModePending = LOWORD(ret);
+					if( LOBYTE(ctx->shutdownModePending) == 0 ){
+						ctx->shutdownModePending = MAKEWORD((ctx->sys->setting.recEndMode + 3) % 4 + 1, ctx->sys->setting.reboot);
 					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;

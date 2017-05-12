@@ -19,6 +19,7 @@ CEpgDBManager::CEpgDBManager(void)
 	this->epgMapRefLock = std::make_pair(0, &this->epgMapLock);
 	this->loadThread = NULL;
 	this->loadStop = FALSE;
+	this->loadForeground = FALSE;
 	this->initialLoadDone = FALSE;
 	this->archivePeriodSec = 0;
 }
@@ -37,16 +38,21 @@ void CEpgDBManager::SetArchivePeriod(int periodSec)
 	this->archivePeriodSec = min(periodSec, 14 * 24 * 3600);
 }
 
-BOOL CEpgDBManager::ReloadEpgData()
+BOOL CEpgDBManager::ReloadEpgData(BOOL foreground)
 {
 	CancelLoadData(MAXDWORD);
 
 	CBlockLock lock(&this->epgMapLock);
 
 	if( this->loadThread == NULL ){
+		//フォアグラウンド読み込みを中断した場合は引き継ぐ
+		if( this->loadForeground == FALSE ){
+			this->loadForeground = foreground;
+		}
 		//受信スレッド起動
 		this->loadThread = (HANDLE)_beginthreadex(NULL, 0, LoadThread, this, 0, NULL);
 		if( this->loadThread == NULL ){
+			this->loadForeground = FALSE;
 			return FALSE;
 		}
 	}else{
@@ -62,9 +68,15 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	OutputDebugString(L"Start Load EpgData\r\n");
 	DWORD time = GetTickCount();
 
+	if( sys->loadForeground == FALSE ){
+		//バックグラウンドに移行
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+		SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+	}
 	CEpgDataCap3Util epgUtil;
 	if( epgUtil.Initialize(FALSE) != NO_ERR ){
 		OutputDebugString(L"★EpgDataCap3.dllの初期化に失敗しました。\r\n");
+		sys->loadForeground = FALSE;
 		return 0;
 	}
 
@@ -205,7 +217,6 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 							epgUtil.AddTSPacket(readBuff+i, 188);
 						}
 					}
-					Sleep(0);
 				}
 				CloseHandle(file);
 			}
@@ -213,13 +224,13 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 				DeleteFile((path + L".swp").c_str());
 			}
 		}
-		Sleep(0);
 	}
 
 	//EPGデータを取得
 	DWORD serviceListSize = 0;
 	SERVICE_INFO* serviceList = NULL;
 	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == FALSE ){
+		sys->loadForeground = FALSE;
 		return 0;
 	}
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> nextMap;
@@ -287,6 +298,11 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		}
 	}
 
+	if( sys->loadForeground == FALSE ){
+		//フォアグラウンドに復帰
+		SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+	}
 	for(;;){
 		//データベースを排他する
 		if( sys->epgMapRefLock.first == 0 ){
@@ -354,6 +370,11 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		}
 		Sleep(1);
 	}
+	if( sys->loadForeground == FALSE ){
+		//バックグラウンドに移行
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+		SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+	}
 	nextMap.clear();
 
 	//アーカイブファイルに書き込む
@@ -371,6 +392,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	_OutputDebugString(L"End Load EpgData %dmsec\r\n", GetTickCount()-time);
 
+	sys->loadForeground = FALSE;
 	return 0;
 }
 
