@@ -36,7 +36,7 @@ public:
 	//P = [](vector<SEARCH_RESULT_EVENT>&) -> void
 	template<class P>
 	BOOL SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, P enumProc) const {
-		CBlockLock lock(&this->epgMapLock);
+		CRefLock lock(&this->epgMapRefLock);
 		vector<SEARCH_RESULT_EVENT> result;
 		CoInitialize(NULL);
 		{
@@ -55,7 +55,7 @@ public:
 	//P = [](const vector<EPGDB_EVENT_INFO>&) -> void
 	template<class P>
 	BOOL EnumEventInfo(LONGLONG serviceKey, P enumProc) const {
-		CBlockLock lock(&this->epgMapLock);
+		CRefLock lock(&this->epgMapRefLock);
 		map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>::const_iterator itr = this->epgMap.find(serviceKey);
 		if( itr == this->epgMap.end() || itr->second.eventList.empty() ){
 			return FALSE;
@@ -67,7 +67,7 @@ public:
 	//P = [](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>&) -> void
 	template<class P>
 	BOOL EnumEventAll(P enumProc) const {
-		CBlockLock lock(&this->epgMapLock);
+		CRefLock lock(&this->epgMapRefLock);
 		if( this->epgMap.empty() ){
 			return FALSE;
 		}
@@ -78,7 +78,7 @@ public:
 	//P = [](const vector<EPGDB_EVENT_INFO>&) -> void
 	template<class P>
 	BOOL EnumArchiveEventInfo(LONGLONG serviceKey, P enumProc) const {
-		CBlockLock lock(&this->epgMapLock);
+		CRefLock lock(&this->epgMapRefLock);
 		map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>::const_iterator itr = this->epgArchive.find(serviceKey);
 		if( itr == this->epgArchive.end() ){
 			return FALSE;
@@ -90,7 +90,7 @@ public:
 	//P = [](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>&) -> void
 	template<class P>
 	void EnumArchiveEventAll(P enumProc) const {
-		CBlockLock lock(&this->epgMapLock);
+		CRefLock lock(&this->epgMapRefLock);
 		enumProc(this->epgArchive);
 	}
 
@@ -121,18 +121,34 @@ public:
 	static void ConvertSearchText(wstring& str);
 
 protected:
+	class CRefLock
+	{
+	public:
+		CRefLock(pair<int, CRITICAL_SECTION*>* ref_) : ref(ref_) {
+			CBlockLock lock(ref->second);
+			++ref->first;
+		}
+		~CRefLock() {
+			CBlockLock lock(ref->second);
+			--ref->first;
+		}
+	private:
+		pair<int, CRITICAL_SECTION*>* ref;
+	};
+
 	mutable CRITICAL_SECTION epgMapLock;
+	mutable pair<int, CRITICAL_SECTION*> epgMapRefLock;
 
 	HANDLE loadThread;
 	BOOL loadStop;
 	BOOL initialLoadDone;
 	int archivePeriodSec;
 
+	//これらデータベースの読み取りにかぎりepgMapRefLockでアクセスできる。LoadThread以外では変更できない
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgMap;
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgArchive;
 protected:
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
-	void ClearEpgData();
 	void CancelLoadData(DWORD forceTimeout);
 	static UINT WINAPI LoadThread(LPVOID param);
 
