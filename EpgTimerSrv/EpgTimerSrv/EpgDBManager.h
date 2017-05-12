@@ -9,15 +9,15 @@
 class CEpgDBManager
 {
 public:
-	typedef struct _SEARCH_RESULT_EVENT{
+	struct SEARCH_RESULT_EVENT {
 		const EPGDB_EVENT_INFO* info;
 		wstring findKey;
-	}SEARCH_RESULT_EVENT;
+	};
 
-	typedef struct _SEARCH_RESULT_EVENT_DATA{
+	struct SEARCH_RESULT_EVENT_DATA {
 		EPGDB_EVENT_INFO info;
 		wstring findKey;
-	}SEARCH_RESULT_EVENT_DATA;
+	};
 
 public:
 	CEpgDBManager(void);
@@ -27,17 +27,15 @@ public:
 
 	BOOL ReloadEpgData();
 
-	BOOL IsLoadingData();
+	BOOL IsLoadingData() const;
 
-	BOOL IsInitialLoadingDataDone();
+	BOOL IsInitialLoadingDataDone() const;
 
-	BOOL CancelLoadData();
-
-	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result);
+	BOOL SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result) const;
 
 	//P = [](vector<SEARCH_RESULT_EVENT>&) -> void
 	template<class P>
-	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, P enumProc) {
+	BOOL SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, P enumProc) const {
 		CBlockLock lock(&this->epgMapLock);
 		vector<SEARCH_RESULT_EVENT> result;
 		CoInitialize(NULL);
@@ -52,7 +50,7 @@ public:
 		return TRUE;
 	}
 
-	BOOL GetServiceList(vector<EPGDB_SERVICE_INFO>* list);
+	BOOL GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const;
 
 	//P = [](const vector<EPGDB_EVENT_INFO>&) -> void
 	template<class P>
@@ -102,7 +100,7 @@ public:
 		WORD SID,
 		WORD EventID,
 		EPGDB_EVENT_INFO* result
-		);
+		) const;
 
 	BOOL SearchEpg(
 		WORD ONID,
@@ -111,14 +109,14 @@ public:
 		LONGLONG startTime,
 		DWORD durationSec,
 		EPGDB_EVENT_INFO* result
-		);
+		) const;
 
 	BOOL SearchServiceName(
 		WORD ONID,
 		WORD TSID,
 		WORD SID,
 		wstring& serviceName
-		);
+		) const;
 
 	static void ConvertSearchText(wstring& str);
 
@@ -135,12 +133,13 @@ protected:
 protected:
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
 	void ClearEpgData();
+	void CancelLoadData(DWORD forceTimeout);
 	static UINT WINAPI LoadThread(LPVOID param);
 
-	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, IRegExpPtr& regExp);
-	BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);
+	void SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, IRegExpPtr& regExp) const;
+	static BOOL IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);
 	static BOOL IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
-	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
+	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
 	static BOOL IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
 
 };
