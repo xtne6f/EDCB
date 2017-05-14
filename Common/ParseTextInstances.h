@@ -57,7 +57,7 @@ protected:
 class CParseRecInfoText : public CParseText<DWORD, REC_FILE_INFO>
 {
 public:
-	CParseRecInfoText() : nextID(1), keepCount(UINT_MAX), recInfoDelFile(false) {}
+	CParseRecInfoText() : nextID(1), keepCount(UINT_MAX), recInfoDelFile(false), customizeDelExt(false) {}
 	using CParseText<DWORD, REC_FILE_INFO>::SaveText;
 	//録画済み情報を追加する
 	DWORD AddRecInfo(const REC_FILE_INFO& item);
@@ -70,6 +70,8 @@ public:
 	//AddRecInfo直後に残しておく非プロテクトの録画済み情報の個数を設定する
 	void SetKeepCount(DWORD n = UINT_MAX) { this->keepCount = n; }
 	void SetRecInfoDelFile(bool delFile) { this->recInfoDelFile = delFile; }
+	void CustomizeDelExt(bool customize) { this->customizeDelExt = customize; }
+	void SetCustomDelExt(const vector<wstring>& list) { this->customDelExt = list; }
 	void SetRecInfoFolder(LPCWSTR folder);
 	wstring GetRecInfoFolder() const { return this->recInfoFolder; }
 	//補足の録画情報を取得する
@@ -84,6 +86,8 @@ protected:
 	DWORD nextID;
 	DWORD keepCount;
 	bool recInfoDelFile;
+	bool customizeDelExt;
+	vector<wstring> customDelExt;
 	wstring recInfoFolder;
 };
 

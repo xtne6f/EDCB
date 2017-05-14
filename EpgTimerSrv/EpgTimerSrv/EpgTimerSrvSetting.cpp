@@ -83,6 +83,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 		}
 	}
 	s.recInfoFolderOnly = GetPrivateProfileInt(L"SET", L"RecInfoFolderOnly", 1, iniPath) != 0;
+	s.applyExtToRecInfoDel = GetPrivateProfileInt(L"SET", L"ApplyExtToRecInfoDel", 0, iniPath) != 0;
 	s.autoDel = GetPrivateProfileInt(L"SET", L"AutoDel", 0, iniPath) != 0;
 	s.delExtList.clear();
 	count = GetPrivateProfileInt(L"DEL_EXT", L"Count", INT_MAX, iniPath);
@@ -471,6 +472,8 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY, setting.backPriority);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY, setting.fixedTunerPriority);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY, setting.recInfoFolderOnly);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_DEL_FILE, GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_APPLY_EXT_TO, setting.applyExtToRecInfoDel);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_AUTODEL, setting.autoDel);
 	for( size_t i = 0; i < setting.delExtList.size(); i++ ){
 		ListBox_AddString(GetDlgItem(hwnd, IDC_LIST_SET_DEL_EXT), setting.delExtList[i].c_str());
@@ -527,6 +530,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	//˜A“®ˆ—‚Ì‚½‚ß
 	SendMessage(this->hwndBasic, WM_COMMAND, MAKELONG(IDC_LIST_SET_BON, LBN_SELCHANGE), 0);
 	SendMessage(this->hwndRec, WM_COMMAND, IDC_CHECK_SET_NO_USE_PC, 0);
+	SendMessage(this->hwndReserve, WM_COMMAND, IDC_CHECK_SET_REC_INFO_DEL_FILE, 0);
 	SendMessage(this->hwndReserve, WM_COMMAND, IDC_CHECK_SET_AUTODEL, 0);
 	SendMessage(this->hwndReserve, WM_COMMAND, IDC_CHECK_SET_RECNAME_PLUGIN, 0);
 	SendMessage(this->hwndOther, WM_COMMAND, IDC_CHECK_SET_TCP_SERVER, 0);
@@ -731,6 +735,8 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WritePrivateProfileInt(L"SET", L"BackPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"FixedTunerPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecInfoFolderOnly", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"RecInfoDelFile", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_DEL_FILE), commonIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"ApplyExtToRecInfoDel", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_APPLY_EXT_TO), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"AutoDel", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_AUTODEL), iniPath.c_str());
 	num = 0;
 	for( int i = 0; i < ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_DEL_EXT)); i++ ){
@@ -1119,16 +1125,27 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 		case IDC_CHECK_SET_NO_USE_PC:
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_NO_USE_PC), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			break;
+		case IDC_CHECK_SET_REC_INFO_DEL_FILE:
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_APPLY_EXT_TO), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
+			//˜A“®ˆ—‚Ì‚½‚ß
+			SendMessage(hDlg, WM_COMMAND, IDC_CHECK_SET_APPLY_EXT_TO, 0);
+			break;
 		case IDC_CHECK_SET_AUTODEL:
-			EnableWindow(GetDlgItem(hDlg, IDC_LIST_SET_DEL_EXT), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_DEL_EXT), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
-			EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_SET_DEL_EXT_ADD), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
-			EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_SET_DEL_EXT_DEL), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_LIST_SET_DEL_CHK), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_DEL_CHK), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_SET_DEL_CHK), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_SET_DEL_CHK_ADD), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_SET_DEL_CHK_DEL), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
+			//FALL THROUGH!
+		case IDC_CHECK_SET_APPLY_EXT_TO:
+			{
+				bool b = GetDlgButtonCheck(hDlg, IDC_CHECK_SET_AUTODEL) ||
+					GetDlgButtonCheck(hDlg, IDC_CHECK_SET_REC_INFO_DEL_FILE) && GetDlgButtonCheck(hDlg, IDC_CHECK_SET_APPLY_EXT_TO);
+				EnableWindow(GetDlgItem(hDlg, IDC_LIST_SET_DEL_EXT), b);
+				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_DEL_EXT), b);
+				EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_SET_DEL_EXT_ADD), b);
+				EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_SET_DEL_EXT_DEL), b);
+			}
 			break;
 		case IDC_CHECK_SET_RECNAME_PLUGIN:
 			EnableWindow(GetDlgItem(hDlg, IDC_COMBO_SET_RECNAME_PLUGIN), GetDlgButtonCheck(hDlg, LOWORD(wParam)));

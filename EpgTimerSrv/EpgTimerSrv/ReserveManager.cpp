@@ -91,6 +91,8 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	this->recInfoText.SetKeepCount(s.autoDelRecInfo ? s.autoDelRecInfoNum : UINT_MAX);
 	this->recInfoText.SetRecInfoDelFile(GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
 	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", commonIniPath.c_str()).c_str());
+	this->recInfoText.CustomizeDelExt(s.applyExtToRecInfoDel);
+	this->recInfoText.SetCustomDelExt(s.delExtList);
 
 	this->recInfo2Text.SetKeepCount(s.recInfo2Max);
 	this->defEnableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;

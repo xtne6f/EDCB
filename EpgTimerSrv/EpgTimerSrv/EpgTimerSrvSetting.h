@@ -27,6 +27,7 @@ public:
 		bool timeSync;
 		vector<pair<bool, pair<int, int>>> epgCapTimeList;
 		bool recInfoFolderOnly;
+		bool applyExtToRecInfoDel;
 		bool autoDel;
 		vector<wstring> delExtList;
 		vector<wstring> delChkList;

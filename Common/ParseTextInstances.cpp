@@ -392,15 +392,50 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 	}
 	//録画ファイルを削除する
 	DeleteFile(item.recFilePath.c_str());
-	DeleteFile((item.recFilePath + L".err").c_str());
-	DeleteFile((item.recFilePath + L".program.txt").c_str());
-	_OutputDebugString(L"★RecInfo Auto Delete : %s(.err|.program.txt)", item.recFilePath.c_str());
-	if( this->recInfoFolder.empty() == false ){
-		wstring recFileName;
-		GetFileName(item.recFilePath, recFileName);
-		DeleteFile((this->recInfoFolder + L"\\" + recFileName + L".err").c_str());
-		DeleteFile((this->recInfoFolder + L"\\" + recFileName + L".program.txt").c_str());
-		_OutputDebugString(L"★RecInfo Auto Delete : %s(.err|.program.txt)", (this->recInfoFolder + L"\\" + recFileName).c_str());
+	if( this->customizeDelExt ){
+		//カスタムルール
+		OutputDebugString((L"★RecInfo Auto Delete : " + item.recFilePath + L"\r\n").c_str());
+		wstring debug;
+		for( size_t i = 0; i < this->customDelExt.size(); i++ ){
+			wstring delPath;
+			wstring delTitle;
+			GetFileFolder(item.recFilePath, delPath);
+			GetFileTitle(item.recFilePath, delTitle);
+			delPath += L'\\' + delTitle;
+			DeleteFile((delPath + this->customDelExt[i]).c_str());
+			debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
+		}
+		if( debug.empty() == false ){
+			OutputDebugString((L"★RecInfo Auto Delete : " + debug + L")\r\n").c_str());
+		}
+		if( this->recInfoFolder.empty() == false ){
+			//録画情報フォルダにも適用
+			debug.clear();
+			for( size_t i = 0; i < this->customDelExt.size(); i++ ){
+				wstring delPath;
+				GetFileTitle(item.recFilePath, delPath);
+				delPath = this->recInfoFolder + L'\\' + delPath;
+				DeleteFile((delPath + this->customDelExt[i]).c_str());
+				debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
+			}
+			if( debug.empty() == false ){
+				OutputDebugString((L"★RecInfo Auto Delete : " + debug + L")\r\n").c_str());
+			}
+		}
+	}else{
+		//標準のルール
+		DeleteFile((item.recFilePath + L".err").c_str());
+		DeleteFile((item.recFilePath + L".program.txt").c_str());
+		OutputDebugString((L"★RecInfo Auto Delete : " + item.recFilePath + L"(.err|.program.txt)\r\n").c_str());
+		if( this->recInfoFolder.empty() == false ){
+			//録画情報フォルダにも適用
+			wstring delPath;
+			GetFileName(item.recFilePath, delPath);
+			delPath = this->recInfoFolder + L'\\' + delPath;
+			DeleteFile((delPath + L".err").c_str());
+			DeleteFile((delPath + L".program.txt").c_str());
+			OutputDebugString((L"★RecInfo Auto Delete : " + delPath + L"(.err|.program.txt)\r\n").c_str());
+		}
 	}
 }
 
