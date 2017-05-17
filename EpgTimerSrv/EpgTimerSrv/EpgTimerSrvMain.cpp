@@ -21,10 +21,19 @@ enum {
 	WM_RESET_SERVER = WM_APP,
 	WM_RELOAD_EPG_CHK,
 	WM_REQUEST_SHUTDOWN,
+	WM_REQUEST_REBOOT,
 	WM_QUERY_SHUTDOWN,
 	WM_RECEIVE_NOTIFY,
 	WM_TRAY_PUSHICON,
 	WM_SHOW_TRAY,
+};
+
+enum {
+	SD_MODE_INVALID,
+	SD_MODE_STANDBY,
+	SD_MODE_SUSPEND,
+	SD_MODE_SHUTDOWN,
+	SD_MODE_NONE,
 };
 
 struct MAIN_WINDOW_CONTEXT {
@@ -37,10 +46,12 @@ struct MAIN_WINDOW_CONTEXT {
 	CHttpServer httpServer;
 	HANDLE resumeTimer;
 	__int64 resumeTime;
-	WORD shutdownModePending;
+	BYTE shutdownModePending;
+	bool rebootFlagPending;
 	DWORD shutdownPendingTick;
 	HWND hDlgQueryShutdown;
-	WORD queryShutdownMode;
+	BYTE queryShutdownMode;
+	bool queryRebootFlag;
 	bool taskFlag;
 	bool showBalloonTip;
 	DWORD notifySrvStatus;
@@ -51,7 +62,7 @@ struct MAIN_WINDOW_CONTEXT {
 		, awayMode(awayMode_)
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
 		, resumeTimer(NULL)
-		, shutdownModePending(0)
+		, shutdownModePending(SD_MODE_INVALID)
 		, shutdownPendingTick(0)
 		, hDlgQueryShutdown(NULL)
 		, taskFlag(false)
@@ -203,28 +214,30 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		break;
 	case WM_REQUEST_SHUTDOWN:
 		//シャットダウン処理
-		if( wParam == 0x01FF ){
-			SetShutdown(4);
-		}else if( ctx->sys->IsSuspendOK() ){
-			if( LOBYTE(wParam) == 1 || LOBYTE(wParam) == 2 ){
+		if( ctx->sys->IsSuspendOK() ){
+			if( wParam == SD_MODE_STANDBY || wParam == SD_MODE_SUSPEND ){
 				//ストリーミングを終了する
 				ctx->sys->streamingManager.CloseAllFile();
 				//スリープ抑止解除
 				SetThreadExecutionState(ES_CONTINUOUS);
 				//rebootFlag時は(指定+5分前)に復帰
-				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->setting.wakeTime * 60 + (HIBYTE(wParam) != 0 ? 300 : 0)) ){
-					SetShutdown(LOBYTE(wParam));
-					if( HIBYTE(wParam) != 0 ){
+				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->setting.wakeTime * 60 + (lParam ? 300 : 0)) ){
+					SetShutdown(wParam == SD_MODE_STANDBY ? 1 : 2);
+					if( lParam ){
 						//再起動問い合わせ
-						if( SendMessage(hwnd, WM_QUERY_SHUTDOWN, 0x0100, 0) == FALSE ){
+						if( SendMessage(hwnd, WM_QUERY_SHUTDOWN, SD_MODE_INVALID, TRUE) == FALSE ){
 							SetShutdown(4);
 						}
 					}
 				}
-			}else if( LOBYTE(wParam) == 3 ){
+			}else if( wParam == SD_MODE_SHUTDOWN ){
 				SetShutdown(3);
 			}
 		}
+		break;
+	case WM_REQUEST_REBOOT:
+		//再起動
+		SetShutdown(4);
 		break;
 	case WM_QUERY_SHUTDOWN:
 		if( ctx->sys->notifyManager.IsGUI() ){
@@ -234,10 +247,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				icce.dwSize = sizeof(icce);
 				icce.dwICC = ICC_PROGRESS_CLASS;
 				InitCommonControlsEx(&icce);
-				ctx->queryShutdownMode = (WORD)wParam;
+				ctx->queryShutdownMode = (BYTE)wParam;
+				ctx->queryRebootFlag = lParam != FALSE;
 				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)ctx);
 			}
-		}else if( ctx->sys->QueryShutdown(HIBYTE(wParam), LOBYTE(wParam)) == false ){
+		}else if( ctx->sys->QueryShutdown(lParam != FALSE, (BYTE)wParam) == false ){
 			//GUI経由で問い合わせ開始できなかった
 			return FALSE;
 		}
@@ -377,7 +391,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( GetTickCount() - ctx->shutdownPendingTick > 30000 ){
 				//30秒以内にシャットダウン問い合わせできなければキャンセル
 				if( ctx->shutdownModePending ){
-					ctx->shutdownModePending = 0;
+					ctx->shutdownModePending = SD_MODE_INVALID;
 					OutputDebugString(L"Shutdown cancelled\r\n");
 				}
 			}
@@ -427,19 +441,19 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					//30秒以内にシャットダウン問い合わせできなければキャンセル
 					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->shutdownModePending ){
-						ctx->shutdownModePending = 0;
+						ctx->shutdownModePending = SD_MODE_INVALID;
 						OutputDebugString(L"Shutdown cancelled\r\n");
 					}
 				}else if( ctx->shutdownModePending && ctx->sys->IsSuspendOK() ){
 					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->sys->IsUserWorking() == false &&
-					    1 <= LOBYTE(ctx->shutdownModePending) && LOBYTE(ctx->shutdownModePending) <= 3 ){
+					    SD_MODE_STANDBY <= ctx->shutdownModePending &&  ctx->shutdownModePending <= SD_MODE_SHUTDOWN ){
 						//シャットダウン問い合わせ
-						if( SendMessage(hwnd, WM_QUERY_SHUTDOWN, ctx->shutdownModePending, 0) == FALSE ){
-							SendMessage(hwnd, WM_REQUEST_SHUTDOWN, ctx->shutdownModePending, 0);
+						if( SendMessage(hwnd, WM_QUERY_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending) == FALSE ){
+							SendMessage(hwnd, WM_REQUEST_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending);
 						}
 					}
-					ctx->shutdownModePending = 0;
+					ctx->shutdownModePending = SD_MODE_INVALID;
 				}
 			}
 			break;
@@ -452,7 +466,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
 				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->setting.wakeTime * 60);
 				//スリープ抑止
-				EXECUTION_STATE esFlags = ctx->shutdownModePending == 0 && ctx->sys->IsSuspendOK() ? ES_CONTINUOUS : ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ctx->awayMode;
+				EXECUTION_STATE esFlags = ctx->shutdownModePending == SD_MODE_INVALID && ctx->sys->IsSuspendOK() ? ES_CONTINUOUS : ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ctx->awayMode;
 				if( SetThreadExecutionState(esFlags) != esFlags ){
 					_OutputDebugString(L"SetThreadExecutionState(0x%08x)\r\n", (DWORD)esFlags);
 				}
@@ -472,15 +486,23 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 					ctx->sys->epgDB.ReloadEpgData(TRUE);
 					SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
-					ctx->shutdownModePending = MAKEWORD((ctx->sys->setting.recEndMode + 3) % 4 + 1, ctx->sys->setting.reboot);
+					ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
+					ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
 				case CReserveManager::CHECK_NEED_SHUTDOWN:
-					//要求されたシャットダウン動作を試みる(EPGリロードは不要)
+					//EPGリロードは暇なときだけ
+					if( ctx->sys->reserveManager.IsActive() == false ){
+						ctx->sys->epgDB.ReloadEpgData(TRUE);
+					}
+					//チェックは必須
 					SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
-					ctx->shutdownModePending = LOWORD(ret);
-					if( LOBYTE(ctx->shutdownModePending) == 0 ){
-						ctx->shutdownModePending = MAKEWORD((ctx->sys->setting.recEndMode + 3) % 4 + 1, ctx->sys->setting.reboot);
+					//要求されたシャットダウン動作を試みる
+					ctx->shutdownModePending = LOBYTE(ret);
+					ctx->rebootFlagPending = HIBYTE(ret) != 0;
+					if( ctx->shutdownModePending == SD_MODE_INVALID ){
+						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
+						ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
@@ -585,7 +607,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_S3:
 		case IDC_BUTTON_S4:
 			if( ctx->sys->IsSuspendOK() ){
-				PostMessage(hwnd, WM_REQUEST_SHUTDOWN, MAKEWORD(LOWORD(wParam) == IDC_BUTTON_S3 ? 1 : 2, ctx->sys->setting.reboot), 0);
+				PostMessage(hwnd, WM_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
 			}else{
 				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
 			}
@@ -644,12 +666,12 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)ctx);
 		ctx->hDlgQueryShutdown = hDlg;
 		SetDlgItemText(hDlg, IDC_STATIC_SHUTDOWN,
-			LOBYTE(ctx->queryShutdownMode) == 1 ? L"スタンバイに移行します。" :
-			LOBYTE(ctx->queryShutdownMode) == 2 ? L"休止に移行します。" :
-			LOBYTE(ctx->queryShutdownMode) == 3 ? L"シャットダウンします。" : L"再起動します。");
+			ctx->queryShutdownMode == SD_MODE_STANDBY ? L"スタンバイに移行します。" :
+			ctx->queryShutdownMode == SD_MODE_SUSPEND ? L"休止に移行します。" :
+			ctx->queryShutdownMode == SD_MODE_SHUTDOWN ? L"シャットダウンします。" : L"再起動します。");
 		SetTimer(hDlg, 1, 1000, NULL);
-		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETRANGE, 0, MAKELONG(0, LOBYTE(ctx->queryShutdownMode) == 0 ? 30 : 15));
-		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS, LOBYTE(ctx->queryShutdownMode) == 0 ? 30 : 15, 0);
+		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETRANGE, 0, MAKELONG(0, ctx->queryShutdownMode == SD_MODE_INVALID ? 30 : 15));
+		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS, ctx->queryShutdownMode == SD_MODE_INVALID ? 30 : 15, 0);
 		return TRUE;
 	case WM_DESTROY:
 		ctx->hDlgQueryShutdown = NULL;
@@ -663,13 +685,12 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){
 		case IDOK:
-			if( LOBYTE(ctx->queryShutdownMode) == 0 ){
+			if( ctx->queryShutdownMode == SD_MODE_INVALID ){
 				//再起動
-				PostMessage(ctx->sys->hwndMain, WM_REQUEST_SHUTDOWN, 0x01FF, 0);
+				PostMessage(ctx->sys->hwndMain, WM_REQUEST_REBOOT, 0, 0);
 			}else if( ctx->sys->IsSuspendOK() ){
 				//スタンバイ休止または電源断
-				PostMessage(ctx->sys->hwndMain, WM_REQUEST_SHUTDOWN, HIBYTE(ctx->queryShutdownMode) == 0xFF ?
-					MAKEWORD(LOBYTE(ctx->queryShutdownMode), ctx->sys->setting.reboot) : ctx->queryShutdownMode, 0);
+				PostMessage(ctx->sys->hwndMain, WM_REQUEST_SHUTDOWN, ctx->queryShutdownMode, ctx->queryRebootFlag);
 			}
 			//FALL THROUGH!
 		case IDCANCEL:
@@ -1276,17 +1297,15 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		{
 			WORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->IsSuspendOK() ){
-				if( HIBYTE(val) == 0xFF ){
-					val = MAKEWORD(LOBYTE(val), sys->setting.reboot);
-				}
-				PostMessage(sys->hwndMain, WM_REQUEST_SHUTDOWN, val, 0);
+				//再起動フラグが0xFFのときはデフォルト動作に従う
+				PostMessage(sys->hwndMain, WM_REQUEST_SHUTDOWN, LOBYTE(val), HIBYTE(val) == 0xFF ? sys->setting.reboot : (HIBYTE(val) != 0));
 				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_REBOOT:
 		{
-			PostMessage(sys->hwndMain, WM_REQUEST_SHUTDOWN, 0x01FF, 0);
+			PostMessage(sys->hwndMain, WM_REQUEST_REBOOT, 0, 0);
 			resParam->param = CMD_SUCCESS;
 		}
 		break;
