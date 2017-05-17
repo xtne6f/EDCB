@@ -871,14 +871,7 @@ namespace EpgTimer
                             return;
                         }
                     }
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
-                    {
-                        cmd.SendSuspend(0x0102);
-                    }
-                    else
-                    {
-                        cmd.SendSuspend(2);
-                    }
+                    cmd.SendSuspend(0xFF02);
                 }
                 else
                 {
@@ -933,14 +926,7 @@ namespace EpgTimer
                             return;
                         }
                     }
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
-                    {
-                        cmd.SendSuspend(0x0101);
-                    }
-                    else
-                    {
-                        cmd.SendSuspend(1);
-                    }
+                    cmd.SendSuspend(0xFF01);
                 }
                 else
                 {
