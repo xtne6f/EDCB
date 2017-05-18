@@ -3034,7 +3034,7 @@ int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
 			LuaHelp::reg_int(L, "scrambles", (int)r.scrambles);
 			LuaHelp::reg_int(L, "recStatus", (int)r.recStatus);
 			LuaHelp::reg_time(L, "startTimeEpg", r.startTimeEpg);
-			LuaHelp::reg_string(L, "comment", ws.WtoUTF8(r.comment));
+			LuaHelp::reg_string(L, "comment", ws.WtoUTF8(r.GetComment()));
 			LuaHelp::reg_string(L, "programInfo", ws.WtoUTF8(r.programInfo));
 			LuaHelp::reg_string(L, "errInfo", ws.WtoUTF8(r.errInfo));
 			LuaHelp::reg_boolean(L, "protectFlag", r.protectFlag != 0);

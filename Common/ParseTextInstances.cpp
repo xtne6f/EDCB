@@ -306,7 +306,6 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 		return false;
 	}
 	NextToken(token);
-	item.second.comment.assign(token[0], token[1]);
 	item.second.protectFlag = _wtoi(NextToken(token)) != 0;
 	item.second.id = this->nextID++;
 	item.first = item.second.id;
@@ -331,7 +330,7 @@ bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring
 		item.second.recStatus,
 		item.second.startTimeEpg.wYear, item.second.startTimeEpg.wMonth, item.second.startTimeEpg.wDay,
 		item.second.startTimeEpg.wHour, item.second.startTimeEpg.wMinute, item.second.startTimeEpg.wSecond,
-		item.second.comment.c_str(),
+		item.second.GetComment(),
 		item.second.protectFlag
 		);
 	return FinalizeField(saveLine) == 17;

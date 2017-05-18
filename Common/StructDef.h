@@ -91,6 +91,24 @@ struct RESERVE_DATA {
 	};
 };
 
+enum REC_END_STATUS {
+	REC_END_STATUS_NORMAL = 1,		//終了・録画終了
+	REC_END_STATUS_OPEN_ERR,		//チューナーのオープンに失敗しました
+	REC_END_STATUS_ERR_END,			//録画中にキャンセルされた可能性があります
+	REC_END_STATUS_NEXT_START_END,	//次の予約開始のためにキャンセルされました
+	REC_END_STATUS_START_ERR,		//録画時間に起動していなかった可能性があります
+	REC_END_STATUS_CHG_TIME,		//開始時間が変更されました
+	REC_END_STATUS_NO_TUNER,		//チューナー不足のため失敗しました
+	REC_END_STATUS_NO_RECMODE,		//無効扱いでした
+	REC_END_STATUS_NOT_FIND_PF,		//録画中に番組情報を確認できませんでした
+	REC_END_STATUS_NOT_FIND_6H,		//指定時間番組情報が見つかりませんでした
+	REC_END_STATUS_END_SUBREC,		//録画終了（空き容量不足で別フォルダへの保存が発生）
+	REC_END_STATUS_ERR_RECSTART,	//録画開始処理に失敗しました（空き容量不足の可能性あり）
+	REC_END_STATUS_NOT_START_HEAD,	//一部のみ録画が実行された可能性があります
+	REC_END_STATUS_ERR_CH_CHG,		//指定チャンネルのデータがBonDriverから出力されなかった可能性があります
+	REC_END_STATUS_ERR_END2,		//ファイル保存で致命的なエラーが発生した可能性があります
+};
+
 struct REC_FILE_INFO {
 	DWORD id;					//ID
 	wstring recFilePath;		//録画ファイルパス
@@ -106,7 +124,6 @@ struct REC_FILE_INFO {
 	__int64 scrambles;			//スクランブル数
 	DWORD recStatus;			//録画結果のステータス
 	SYSTEMTIME startTimeEpg;	//予約時の開始時間
-	wstring comment;			//コメント
 	wstring programInfo;		//.program.txtファイルの内容
 	wstring errInfo;			//.errファイルの内容
 	//CMD_VER 4以降
@@ -141,12 +158,28 @@ struct REC_FILE_INFO {
 		scrambles = 0;
 		recStatus = 0;
 		startTimeEpg = o.startTimeEpg;
-		comment = L"";
 		programInfo = L"";
 		errInfo = L"";
 		protectFlag = 0;
 		return *this;
 	};
+	LPCWSTR GetComment() const {
+		return recStatus == REC_END_STATUS_NORMAL ? (recFilePath.empty() ? L"終了" : L"録画終了") :
+			recStatus == REC_END_STATUS_OPEN_ERR ? L"チューナーのオープンに失敗しました" :
+			recStatus == REC_END_STATUS_ERR_END ? L"録画中にキャンセルされた可能性があります" :
+			recStatus == REC_END_STATUS_NEXT_START_END ? L"次の予約開始のためにキャンセルされました" :
+			recStatus == REC_END_STATUS_START_ERR ? L"録画時間に起動していなかった可能性があります" :
+			recStatus == REC_END_STATUS_CHG_TIME ? L"開始時間が変更されました" :
+			recStatus == REC_END_STATUS_NO_TUNER ? L"チューナー不足のため失敗しました" :
+			recStatus == REC_END_STATUS_NO_RECMODE ? L"無効扱いでした" :
+			recStatus == REC_END_STATUS_NOT_FIND_PF ? L"録画中に番組情報を確認できませんでした" :
+			recStatus == REC_END_STATUS_NOT_FIND_6H ? L"指定時間番組情報が見つかりませんでした" :
+			recStatus == REC_END_STATUS_END_SUBREC ? L"録画終了（空き容量不足で別フォルダへの保存が発生）" :
+			recStatus == REC_END_STATUS_ERR_RECSTART ? L"録画開始処理に失敗しました（空き容量不足の可能性あり）" :
+			recStatus == REC_END_STATUS_NOT_START_HEAD ? L"一部のみ録画が実行された可能性があります" :
+			recStatus == REC_END_STATUS_ERR_CH_CHG ? L"指定チャンネルのデータがBonDriverから出力されなかった可能性があります" :
+			recStatus == REC_END_STATUS_ERR_END2 ? L"ファイル保存で致命的なエラーが発生した可能性があります" : L"";
+	}
 };
 
 struct TUNER_RESERVE_INFO {

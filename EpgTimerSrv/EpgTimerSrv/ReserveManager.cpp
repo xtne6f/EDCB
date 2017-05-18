@@ -1222,7 +1222,6 @@ void CReserveManager::CheckOverTimeReserve()
 				REC_FILE_INFO item;
 				item = itr->second;
 				item.recStatus = REC_END_STATUS_NO_TUNER;
-				item.comment = L"チューナー不足のため失敗しました";
 				this->recInfoText.AddRecInfo(item);
 			}
 			this->reserveText.DelReserve(itr->first);
@@ -1268,49 +1267,38 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			case CTunerBankCtrl::CHECK_END:
 				if( ConvertI64Time(item.startTime) != ConvertI64Time(item.startTimeEpg) ){
 					item.recStatus = REC_END_STATUS_CHG_TIME;
-					item.comment = L"開始時間が変更されました";
 				}else{
 					item.recStatus = REC_END_STATUS_NORMAL;
-					item.comment = item.recFilePath.empty() ? L"終了" : L"録画終了";
 				}
 				break;
 			case CTunerBankCtrl::CHECK_END_NOT_FIND_PF:
 				item.recStatus = REC_END_STATUS_NOT_FIND_PF;
-				item.comment = L"録画中に番組情報を確認できませんでした";
 				break;
 			case CTunerBankCtrl::CHECK_END_NEXT_START_END:
 				item.recStatus = REC_END_STATUS_NEXT_START_END;
-				item.comment = L"次の予約開始のためにキャンセルされました";
 				break;
 			case CTunerBankCtrl::CHECK_END_END_SUBREC:
 				item.recStatus = REC_END_STATUS_END_SUBREC;
-				item.comment = L"録画終了（空き容量不足で別フォルダへの保存が発生）";
 				break;
 			case CTunerBankCtrl::CHECK_END_NOT_START_HEAD:
 				item.recStatus = REC_END_STATUS_NOT_START_HEAD;
-				item.comment = L"一部のみ録画が実行された可能性があります";
 				break;
 			case CTunerBankCtrl::CHECK_ERR_RECEND:
 				item.recStatus = REC_END_STATUS_ERR_END2;
-				item.comment = L"ファイル保存で致命的なエラーが発生した可能性があります";
 				break;
 			case CTunerBankCtrl::CHECK_END_CANCEL:
 			case CTunerBankCtrl::CHECK_ERR_REC:
 				item.recStatus = REC_END_STATUS_ERR_END;
-				item.comment = L"録画中にキャンセルされた可能性があります";
 				break;
 			case CTunerBankCtrl::CHECK_ERR_RECSTART:
 			case CTunerBankCtrl::CHECK_ERR_CTRL:
 				item.recStatus = REC_END_STATUS_ERR_RECSTART;
-				item.comment = L"録画開始処理に失敗しました（空き容量不足の可能性あり）";
 				break;
 			case CTunerBankCtrl::CHECK_ERR_OPEN:
 				item.recStatus = REC_END_STATUS_OPEN_ERR;
-				item.comment = L"チューナーのオープンに失敗しました";
 				break;
 			case CTunerBankCtrl::CHECK_ERR_PASS:
 				item.recStatus = REC_END_STATUS_START_ERR;
-				item.comment = L"録画時間に起動していなかった可能性があります";
 				break;
 			}
 			this->recInfoText.AddRecInfo(item);
@@ -1345,7 +1333,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			wstring msg;
 			Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\n%s",
 			       item.serviceName.c_str(), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute,
-			       stEnd.wHour, stEnd.wMinute, item.title.c_str(), item.comment.c_str());
+			       stEnd.wHour, stEnd.wMinute, item.title.c_str(), item.GetComment());
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
 		}
 	}
@@ -1962,7 +1950,7 @@ void CReserveManager::AddRecInfoMacro(vector<pair<string, wstring>>& macroList, 
 	swprintf_s(v, L"%I64d", recInfo.scrambles);			macroList.push_back(pair<string, wstring>("Scrambles", v));
 	macroList.push_back(pair<string, wstring>("Title", recInfo.title));
 	macroList.push_back(pair<string, wstring>("ServiceName", recInfo.serviceName));
-	macroList.push_back(pair<string, wstring>("Result", recInfo.comment));
+	macroList.push_back(pair<string, wstring>("Result", recInfo.GetComment()));
 	macroList.push_back(pair<string, wstring>("FilePath", recInfo.recFilePath));
 	wstring strVal;
 	GetFileFolder(recInfo.recFilePath, strVal);

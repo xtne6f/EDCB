@@ -914,7 +914,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_FILE_INFO& v
 	pos += WriteVALUE(ver, buff, pos, val.scrambles);
 	pos += WriteVALUE(ver, buff, pos, val.recStatus);
 	pos += WriteVALUE(ver, buff, pos, val.startTimeEpg);
-	pos += WriteVALUE(ver, buff, pos, val.comment);
+	pos += WriteVALUE(ver, buff, pos, wstring(val.GetComment()));
 	pos += WriteVALUE(ver, buff, pos, val.programInfo);
 	pos += WriteVALUE(ver, buff, pos, val.errInfo);
 	if( ver >= 4 ){
@@ -948,7 +948,8 @@ BOOL ReadVALUE( WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, 
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->scrambles );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recStatus );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->startTimeEpg );
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->comment );
+	wstring strPadding;
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &strPadding );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->programInfo );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->errInfo );
 	if( ver >= 4 ){
