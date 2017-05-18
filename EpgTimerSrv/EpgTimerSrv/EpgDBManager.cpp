@@ -70,8 +70,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	if( sys->loadForeground == FALSE ){
 		//バックグラウンドに移行
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-		SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 	}
 	CEpgDataCap3Util epgUtil;
 	if( epgUtil.Initialize(FALSE) != NO_ERR ){
@@ -112,6 +111,9 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		}while( FindNextFile(find, &findData) );
 		FindClose(find);
 	}
+
+	DWORD loadElapsed = 0;
+	DWORD loadTick = GetTickCount();
 
 	//EPGファイルの解析
 	for( vector<wstring>::iterator itr = epgFileList.begin(); itr != epgFileList.end(); itr++ ){
@@ -217,6 +219,17 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 							epgUtil.AddTSPacket(readBuff+i, 188);
 						}
 					}
+					if( sys->loadForeground == FALSE ){
+						//処理速度がだいたい2/3になるように休む。I/O負荷軽減が狙い
+						DWORD tick = GetTickCount();
+						loadElapsed += tick - loadTick;
+						loadTick = tick;
+						if( loadElapsed > 20 ){
+							Sleep(min(loadElapsed / 2, 100));
+							loadElapsed = 0;
+							loadTick = GetTickCount();
+						}
+					}
 				}
 				CloseHandle(file);
 			}
@@ -300,7 +313,6 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	if( sys->loadForeground == FALSE ){
 		//フォアグラウンドに復帰
-		SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 	}
 	for(;;){
@@ -372,8 +384,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	}
 	if( sys->loadForeground == FALSE ){
 		//バックグラウンドに移行
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-		SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 	}
 	nextMap.clear();
 
