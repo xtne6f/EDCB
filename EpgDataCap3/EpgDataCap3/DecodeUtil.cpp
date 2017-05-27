@@ -291,9 +291,6 @@ void CDecodeUtil::AddTSData(BYTE* data)
 				BYTE* section = NULL;
 				DWORD sectionSize = 0;
 				while( buffUtil->GetSectionBuff( &section, &sectionSize ) == TRUE ){
-					if( buffUtil->IsPES() == TRUE || sectionSize == 0 ){
-						continue;
-					}
 					switch( section[0] ){
 					case 0x00:
 						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_PAT) ){

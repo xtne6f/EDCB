@@ -1,16 +1,13 @@
 #include "StdAfx.h"
 #include "TSBuffUtil.h"
 
-CTSBuffUtil::CTSBuffUtil(BOOL supportPES)
+CTSBuffUtil::CTSBuffUtil()
 {
 	this->sectionSize = 0;
 	this->lastPID = 0xFFFF;
 	this->lastCounter = 0xFF;
 
 	this->duplicateFlag = FALSE;
-
-	this->supportPES = supportPES;
-	this->PESMode = FALSE;
 }
 
 void CTSBuffUtil::Clear()
@@ -21,8 +18,6 @@ void CTSBuffUtil::Clear()
 
 	this->lastPID = 0xFFFF;
 	this->lastCounter = 0xFF;
-
-	this->PESMode = FALSE;
 }
 
 BOOL CTSBuffUtil::CheckCounter(CTSPacketUtil* tsPacket)
@@ -122,18 +117,12 @@ DWORD CTSBuffUtil::Add188TS(CTSPacketUtil* tsPacket)
 		}
 		if(tsPacket->data_byte[0] == 0x00 && tsPacket->data_byte[1] == 0x00 && tsPacket->data_byte[2] == 0x01){
 			//PES
-			if( this->supportPES == FALSE ){
-				Clear();
-				return ERR_NOT_SUPPORT;
-			}
-			this->PESMode = TRUE;
+			Clear();
+			return ERR_NOT_SUPPORT;
 		}else if( tsPacket->adaptation_field_length > 0 && tsPacket->random_access_indicator == 1 ){
 			//PES
-			if( this->supportPES == FALSE ){
-				Clear();
-				return ERR_NOT_SUPPORT;
-			}
-			this->PESMode = TRUE;
+			Clear();
+			return ERR_NOT_SUPPORT;
 		}else if( tsPacket->adaptation_field_length > 0 && tsPacket->PCR_flag == 1 ){
 			//PCR
 			Clear();
@@ -151,11 +140,7 @@ DWORD CTSBuffUtil::Add188TS(CTSPacketUtil* tsPacket)
 			//PSI
 			this->lastPID = tsPacket->PID;
 			this->lastCounter = tsPacket->continuity_counter;
-			if( this->PESMode == FALSE ){
-				return AddSectionBuff(tsPacket);
-			}else{
-				return AddPESBuff(tsPacket);
-			}
+			return AddSectionBuff(tsPacket);
 		}else{
 			//スタート位置ではない
 			return ERR_ADD_NEXT;
@@ -163,18 +148,9 @@ DWORD CTSBuffUtil::Add188TS(CTSPacketUtil* tsPacket)
 	}else{
 		this->lastPID = tsPacket->PID;
 		this->lastCounter = tsPacket->continuity_counter;
-		if( this->PESMode == FALSE ){
-			return AddSectionBuff(tsPacket);
-		}else{
-			return AddPESBuff(tsPacket);
-		}
+		return AddSectionBuff(tsPacket);
 	}
 
-}
-
-BOOL CTSBuffUtil::IsPES()
-{
-	return this->PESMode;
 }
 
 BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
@@ -185,12 +161,7 @@ BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
 		tsPacket.payload_unit_start_indicator = 1;
 		tsPacket.data_byteSize = (BYTE)carryPacket.size();
 		tsPacket.data_byte = &carryPacket.front();
-		if( PESMode == FALSE ){
-			if( AddSectionBuff(&tsPacket) != 2 ){
-				carryPacket.clear();
-			}
-		}else{
-			AddPESBuff(&tsPacket);
+		if( AddSectionBuff(&tsPacket) != 2 ){
 			carryPacket.clear();
 		}
 	}
@@ -273,58 +244,6 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 			return TRUE;
 		}else{
 			return ERR_ADD_NEXT;
-		}
-	}
-}
-
-DWORD CTSBuffUtil::AddPESBuff(CTSPacketUtil* tsPacket)
-{
-	if( tsPacket->data_byteSize == 0 || tsPacket->data_byte == NULL ){
-		return ERR_ADD_NEXT;
-	}
-	if( tsPacket->payload_unit_start_indicator != 1 && (sectionSize == 0 || sectionSize == sectionBuff.size()) ){
-		return ERR_ADD_NEXT;
-	}
-
-	if( tsPacket->payload_unit_start_indicator == 1 ){
-		if(tsPacket->data_byteSize < 6 || tsPacket->data_byte[0] != 0x00 || tsPacket->data_byte[1] != 0x00 || tsPacket->data_byte[2] != 0x01){
-			sectionSize = 0;
-			return FALSE;
-		}
-		if( sectionSize != 0 && sectionSize != sectionBuff.size() ){
-			sectionSize = (DWORD)sectionBuff.size();
-			carryPacket.assign(tsPacket->data_byte, tsPacket->data_byte + tsPacket->data_byteSize);
-			return TRUE;
-		}
-
-		WORD PES_packet_length = ((WORD)tsPacket->data_byte[4])<<8 | tsPacket->data_byte[5];
-
-		if( PES_packet_length == 0 ){
-			//パケットサイズが不明であることを示す
-			sectionSize = MAXDWORD;
-			sectionBuff.assign(tsPacket->data_byte, tsPacket->data_byte + tsPacket->data_byteSize);
-			return ERR_ADD_NEXT;
-		}else{
-			sectionSize = PES_packet_length + 6;
-			sectionBuff.assign(tsPacket->data_byte, tsPacket->data_byte + min(tsPacket->data_byteSize, sectionSize));
-			if( sectionSize != sectionBuff.size() ){
-				return ERR_ADD_NEXT;
-			}else{
-				return TRUE;
-			}
-		}
-	}else{
-		//複数パケットにまたがっている
-		if( sectionSize == MAXDWORD ){
-			sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte, tsPacket->data_byte + tsPacket->data_byteSize);
-			return ERR_ADD_NEXT;
-		}else{
-			sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte, tsPacket->data_byte + min(tsPacket->data_byteSize, sectionSize - sectionBuff.size()));
-			if( sectionSize == sectionBuff.size() ){
-				return TRUE;
-			}else{
-				return ERR_ADD_NEXT;
-			}
 		}
 	}
 }
