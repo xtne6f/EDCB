@@ -92,8 +92,8 @@ namespace EpgTimer
                     if (EpgAutoAddInfo.searchInfo.dateList.Count == 1)
                     {
                         EpgSearchDateInfo info = EpgAutoAddInfo.searchInfo.dateList[0];
-                        view = CommonManager.Instance.DayOfWeekDictionary[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                            " ～ " + CommonManager.Instance.DayOfWeekDictionary[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
+                        view = CommonManager.Instance.DayOfWeekArray[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
+                            " ～ " + CommonManager.Instance.DayOfWeekArray[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
                     }
                     else if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
                     {
@@ -295,36 +295,8 @@ namespace EpgTimer
                     List<string> networkKeyList1 = new List<string>();
                     foreach (ulong service1 in this.EpgAutoAddInfo.searchInfo.serviceList)
                     {
-                        string network1 = "";
-                        try
-                        {
-                            ChSet5Item chSet5Item1 = ChSet5.Instance.ChList[service1];
-                            // SearchKeyDescViewよりコピペ
-                            if ((0x7880 <= chSet5Item1.ONID && chSet5Item1.ONID <= 0x7FE8) &&
-                                ChSet5.IsVideo(chSet5Item1.ServiceType))
-                            {
-                                network1 = "地デジ";
-                            }
-                            else if (chSet5Item1.ONID == 0x04 &&
-                              ChSet5.IsVideo(chSet5Item1.ServiceType))
-                            {
-                                network1 = "BS";
-                            }
-                            else if ((chSet5Item1.ONID == 0x06 || chSet5Item1.ONID == 0x07) &&
-                              ChSet5.IsVideo(chSet5Item1.ServiceType))
-                            {
-                                network1 = "CS";
-                            }
-                            else
-                            {
-                                network1 = "(?_?)";
-                            }
-                            //network1 = ChSet5.Instance.ChList[service1].NetworkName;
-                        }
-                        catch
-                        {
-                            network1 = "(x_x)";
-                        }
+                        ushort onid = (ushort)(service1 >> 32);
+                        string network1 = ChSet5.IsDttv(onid) ? "地デジ" : ChSet5.IsBS(onid) ? "BS" : ChSet5.IsCS(onid) ? "CS" : "その他";
                         if (!networkKeyList1.Contains(network1))
                         {
                             networkKeyList1.Add(network1);
@@ -513,119 +485,11 @@ namespace EpgTimer
             }
         }
 
-        /// <summary>
-        /// ToolTipViewからコピペ
-        /// </summary>
-        public String SearchInfoText
+        public Brush BorderBrush
         {
             get
             {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo != null)
-                    {
-                        view += "検索条件\r\n";
-                        view += "Andキーワード：" + AndKey + "\r\n";
-                        view += "Notキーワード：" + NotKey + "\r\n";
-                        view += "正規表現モード：" + RegExp + "\r\n";
-                        view += "番組名のみ検索対象：" + TitleOnly + "\r\n";
-                        view += "ジャンル絞り込み：" + JyanruKey + "\r\n";
-                        view += "時間絞り込み：" + DateKey + "\r\n";
-                        view += "検索対象サービス：" + ServiceKey + "\r\n";
-
-                        view += "\r\n";
-                    }
-                    if (EpgAutoAddInfo.recSetting != null)
-                    {
-                        view += "録画設定\r\n";
-                        view += "録画モード：" + RecMode + "\r\n";
-                        view += "優先度：" + Priority + "\r\n";
-                        view += "追従：" + Tuijyu + "\r\n";
-
-                        if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x01) == 0)
-                        {
-                            view += "指定サービス対象データ : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "指定サービス対象データ : ";
-                            if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x10) > 0)
-                            {
-                                view += "字幕含む ";
-                            }
-                            if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x20) > 0)
-                            {
-                                view += "データカルーセル含む";
-                            }
-                            view += "\r\n";
-                        }
-
-                        view += "録画実行bat : " + EpgAutoAddInfo.recSetting.BatFilePath + "\r\n";
-
-                        if (EpgAutoAddInfo.recSetting.RecFolderList.Count == 0)
-                        {
-                            view += "録画フォルダ : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画フォルダ : \r\n";
-                            foreach (RecFileSetInfo info in EpgAutoAddInfo.recSetting.RecFolderList)
-                            {
-                                view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
-                            }
-                        }
-
-                        if (EpgAutoAddInfo.recSetting.UseMargineFlag == 0)
-                        {
-                            view += "録画マージン : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画マージン : 開始 " + EpgAutoAddInfo.recSetting.StartMargine.ToString() +
-                                " 終了 " + EpgAutoAddInfo.recSetting.EndMargine.ToString() + "\r\n";
-                        }
-
-                        if (EpgAutoAddInfo.recSetting.SuspendMode == 0)
-                        {
-                            view += "録画後動作 : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画後動作 : ";
-                            switch (EpgAutoAddInfo.recSetting.SuspendMode)
-                            {
-                                case 1:
-                                    view += "スタンバイ";
-                                    break;
-                                case 2:
-                                    view += "休止";
-                                    break;
-                                case 3:
-                                    view += "シャットダウン";
-                                    break;
-                                case 4:
-                                    view += "何もしない";
-                                    break;
-                            }
-                            if (EpgAutoAddInfo.recSetting.RebootFlag == 1)
-                            {
-                                view += " 復帰後再起動する";
-                            }
-                            view += "\r\n";
-                        }
-                    }
-                }
-
-                return view;
-            }
-        }
-
-        public SolidColorBrush BorderBrush
-        {
-            get
-            {
-                SolidColorBrush color1 = Brushes.Gainsboro;
+                Brush color1 = Brushes.Gainsboro;
                 if (this.EpgAutoAddInfo.searchInfo.contentList.Count > 0)
                 {
                     byte content_nibble_level_1 = this.EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1;

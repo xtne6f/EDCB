@@ -155,7 +155,7 @@ namespace EpgTimer
                     SearchItem item = new SearchItem();
                     item.EventInfo = info;
 
-                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > DateTime.Now)
+                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > DateTime.UtcNow.AddHours(9))
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {
@@ -548,7 +548,7 @@ namespace EpgTimer
         {
             if (Title == "検索")
             {
-                this.searchKeyView.ComboBox_andKey.Focus();
+                this.searchKeyView.FocusAndKey();
             }
             else
             {
@@ -760,11 +760,11 @@ namespace EpgTimer
                 defKey.andKey = item.EventName;
                 defKey.serviceList.Clear();
 
-                foreach (ServiceItem info in searchKeyView.searchKeyDescView.listView_service.Items)
+                foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
                 {
                     if (info.ServiceName.Equals(item.ServiceName))
                     {
-                        defKey.serviceList.Add((long)info.ID);
+                        defKey.serviceList.Add((long)info.Key);
                     }
                 }
                 searchKeyView.SetSearchKey(defKey);

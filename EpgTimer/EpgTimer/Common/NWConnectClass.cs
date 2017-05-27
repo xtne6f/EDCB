@@ -86,7 +86,7 @@ namespace EpgTimer
 
             cmd.SetSendMode(true);
 
-            cmd.SetNWSetting(srvIP.ToString(), srvPort);
+            cmd.SetNWSetting(srvIP, srvPort);
 
             var status = new NotifySrvInfo();
             if (waitPort == 0 && cmd.SendGetNotifySrvStatus(ref status) != ErrCode.CMD_SUCCESS ||

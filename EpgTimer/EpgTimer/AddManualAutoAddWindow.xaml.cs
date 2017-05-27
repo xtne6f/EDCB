@@ -28,20 +28,20 @@ namespace EpgTimer
 
             try
             {
-                comboBox_startHH.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_startHH.DataContext = Enumerable.Range(0, 24);
                 comboBox_startHH.SelectedIndex = 0;
-                comboBox_startMM.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_startMM.DataContext = Enumerable.Range(0, 60);
                 comboBox_startMM.SelectedIndex = 0;
-                comboBox_startSS.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_startSS.DataContext = Enumerable.Range(0, 60);
                 comboBox_startSS.SelectedIndex = 0;
-                comboBox_endHH.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_endHH.DataContext = Enumerable.Range(0, 24);
                 comboBox_endHH.SelectedIndex = 0;
-                comboBox_endMM.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_endMM.DataContext = Enumerable.Range(0, 60);
                 comboBox_endMM.SelectedIndex = 0;
-                comboBox_endSS.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_endSS.DataContext = Enumerable.Range(0, 60);
                 comboBox_endSS.SelectedIndex = 0;
 
-                comboBox_service.ItemsSource = ChSet5.Instance.ChList.Values;
+                comboBox_service.ItemsSource = ChSet5.Instance.ChListSelected;
                 comboBox_service.SelectedIndex = 0;
 
                 recSettingView.SetViewMode(false);

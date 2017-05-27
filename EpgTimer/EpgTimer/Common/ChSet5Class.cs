@@ -12,6 +12,19 @@ namespace EpgTimer
             get;
             private set;
         }
+
+        public IEnumerable<ChSet5Item> ChListSelected
+        {
+            get
+            {
+                bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
+                //ネットワーク種別優先かつ限定受信を分離したID順ソート
+                return ChList.Values.Where(item => (ignoreEpgCap || item.EpgCapFlag)).OrderBy(item => (
+                    (ulong)(IsDttv(item.ONID) ? 0 : IsBS(item.ONID) ? 1 : IsCS(item.ONID) ? 2 : 3) << 56 |
+                    (ulong)(IsDttv(item.ONID) && item.PartialFlag ? 1 : 0) << 48 |
+                    item.Key));
+            }
+        }
         
         private static ChSet5 _instance;
         public static ChSet5 Instance
@@ -32,6 +45,34 @@ namespace EpgTimer
         public static bool IsVideo(UInt16 ServiceType)
         {
             return ServiceType == 0x01 || ServiceType == 0xA5 || ServiceType == 0xAD;
+        }
+        public static bool IsDttv(UInt16 ONID)
+        {
+            return 0x7880 <= ONID && ONID <= 0x7FE8;
+        }
+        public static bool IsBS(UInt16 ONID)
+        {
+            return ONID == 0x0004;
+        }
+        public static bool IsCS(UInt16 ONID)
+        {
+            return IsCS1(ONID) || IsCS2(ONID) || IsCS3(ONID);
+        }
+        public static bool IsCS1(UInt16 ONID)
+        {
+            return ONID == 0x0006;
+        }
+        public static bool IsCS2(UInt16 ONID)
+        {
+            return ONID == 0x0007;
+        }
+        public static bool IsCS3(UInt16 ONID)
+        {
+            return ONID == 0x000A;
+        }
+        public static bool IsOther(UInt16 ONID)
+        {
+            return IsDttv(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
         }
 
         public static bool Load(System.IO.StreamReader reader)
@@ -58,9 +99,9 @@ namespace EpgTimer
                             item.TSID = Convert.ToUInt16(list[3]);
                             item.SID = Convert.ToUInt16(list[4]);
                             item.ServiceType = Convert.ToUInt16(list[5]);
-                            item.PartialFlag = Convert.ToByte(list[6]);
-                            item.EpgCapFlag = Convert.ToByte(list[7]);
-                            item.SearchFlag = Convert.ToByte(list[8]);
+                            item.PartialFlag = Convert.ToInt32(list[6]) != 0;
+                            item.EpgCapFlag = Convert.ToInt32(list[7]) != 0;
+                            item.SearchFlag = Convert.ToInt32(list[8]) != 0;
                         }
                         finally
                         {
@@ -69,36 +110,6 @@ namespace EpgTimer
                         }
                     }
                 }
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-        public static bool SaveFile()
-        {
-            try
-            {
-                String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamWriter writer = (new System.IO.StreamWriter(filePath, false, System.Text.Encoding.Default));
-                if (Instance.ChList != null)
-                {
-                    foreach (ChSet5Item info in Instance.ChList.Values)
-                    {
-                        writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
-                            info.ServiceName,
-                            info.NetworkName,
-                            info.ONID,
-                            info.TSID,
-                            info.SID,
-                            info.ServiceType,
-                            info.PartialFlag,
-                            info.EpgCapFlag,
-                            info.SearchFlag);
-                    }
-                }
-                writer.Close();
             }
             catch
             {
@@ -141,7 +152,7 @@ namespace EpgTimer
             get;
             set;
         }
-        public Byte PartialFlag
+        public bool PartialFlag
         {
             get;
             set;
@@ -156,17 +167,12 @@ namespace EpgTimer
             get;
             set;
         }
-        public Byte EpgCapFlag
+        public bool EpgCapFlag
         {
             get;
             set;
         }
-        public Byte SearchFlag
-        {
-            get;
-            set;
-        }
-        public Byte RemoconID
+        public bool SearchFlag
         {
             get;
             set;

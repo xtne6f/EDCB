@@ -31,8 +31,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -41,17 +41,17 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,8,0,0" Name="button_colorTitle1" VerticalAlignment="Top" Width="58" Click="button_colorTitle1_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" VerticalAlignment="Top" Width="58" Click="button_colorTitle2_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,8,0,0" Name="button_colorTitle1" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="表示" Height="213" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
+                    <GroupBox Header="表示" Height="248" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
                         <Grid>
                             <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label7" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
@@ -61,14 +61,17 @@
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="470,8,0,0" Name="textBox_minHeight" VerticalAlignment="Top" Width="55" />
                             <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label10" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="470,38,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
-                            <CheckBox Content="番組詳細をツールチップで表示する" Height="16" HorizontalAlignment="Left" Margin="17,70,0,0" Name="checkBox_descToolTip" VerticalAlignment="Top" />
-                            <CheckBox Content="番組内容表示位置を番組名表示位置にあわせる" Height="16" HorizontalAlignment="Left" Margin="357,70,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
-                            <CheckBox Content="番組名を表示しきれない物のみ表示する" Height="16" HorizontalAlignment="Left" Margin="34,92,0,0" Name="checkBox_toolTip_noView_only" VerticalAlignment="Top" />
-                            <Label Content="ツールチップを表示するまでの時間" Height="28" HorizontalAlignment="Left" Margin="34,114,0,0" Name="label34" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="242,116,0,0" Name="textBox_toolTipWait" VerticalAlignment="Top" Width="47" />
-                            <Label Content="ミリ秒" Height="28" HorizontalAlignment="Left" Margin="295,114,0,0" Name="label35" VerticalAlignment="Top" />
+                            <CheckBox Content="番組内容表示位置を番組名表示位置にあわせる" Height="16" HorizontalAlignment="Left" Margin="350,70,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
+                            <CheckBox Content="詳細をツールチップ表示する" Height="16" HorizontalAlignment="Left" Margin="350,92,0,0" Name="checkBox_descToolTip" VerticalAlignment="Top" />
+                            <CheckBox Content="番組名を表示しきれない物のみ表示する" Height="16" HorizontalAlignment="Left" Margin="370,114,0,0" Name="checkBox_toolTip_noView_only" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
+                            <Label Content="ツールチップを表示するまでの時間(ミリ秒)" Height="28" HorizontalAlignment="Left" Margin="370,132,0,0" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="605,134,0,0" Name="textBox_toolTipWait" VerticalAlignment="Top" Width="47" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
+                            <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="535,92,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" />
+                            <Label Content="グラデーション表示を行う" Height="28" HorizontalAlignment="Left" Margin="350,160,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="番組" Height="16" HorizontalAlignment="Left" Margin="503,165,0,0" Name="checkBox_gradation" VerticalAlignment="Top" />
+                            <CheckBox Content="サービス・時刻軸" Height="16" HorizontalAlignment="Left" Margin="563,165,0,0" Name="checkBox_gradationHeader" VerticalAlignment="Top" />
                             <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,148,0,0" Name="checkBox_singleOpen" VerticalAlignment="Top" />
-                            <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="357,148,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
+                            <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="350,193,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
                             <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_scrollAuto" VerticalAlignment="Top" />
                             <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" Name="label36" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="650,8,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
@@ -85,8 +88,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -96,8 +99,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -107,8 +110,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -118,8 +121,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -129,8 +132,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -140,8 +143,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -151,8 +154,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -162,8 +165,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -173,8 +176,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -184,8 +187,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -195,8 +198,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -206,8 +209,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -217,8 +220,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -228,26 +231,26 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button0_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button1_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,56,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button2_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,56,0,0" Name="button3" VerticalAlignment="Top" Width="58" Click="button3_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,90,0,0" Name="button4" VerticalAlignment="Top" Width="58" Click="button4_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,90,0,0" Name="button5" VerticalAlignment="Top" Width="58" Click="button5_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,120,0,0" Name="button6" VerticalAlignment="Top" Width="58" Click="button6_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,120,0,0" Name="button7" VerticalAlignment="Top" Width="58" Click="button7_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,150,0,0" Name="button8" VerticalAlignment="Top" Width="58" Click="button8_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,150,0,0" Name="button9" VerticalAlignment="Top" Width="58" Click="button9_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,180,0,0" Name="button10" VerticalAlignment="Top" Width="58" Click="button10_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,180,0,0" Name="button11" VerticalAlignment="Top" Width="58" Click="button11_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,210,0,0" Name="button12" VerticalAlignment="Top" Width="58" Click="button12_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,210,0,0" Name="button13" VerticalAlignment="Top" Width="58" Click="button13_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,56,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,56,0,0" Name="button3" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,90,0,0" Name="button4" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,90,0,0" Name="button5" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,120,0,0" Name="button6" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,120,0,0" Name="button7" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,150,0,0" Name="button8" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,150,0,0" Name="button9" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,180,0,0" Name="button10" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,180,0,0" Name="button11" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,210,0,0" Name="button12" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,210,0,0" Name="button13" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" Name="label30" VerticalAlignment="Top" />
                             <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="624,0,0,0" Name="label31" VerticalAlignment="Top" />
                         </Grid>
@@ -259,8 +262,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -270,8 +273,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -281,8 +284,8 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -292,17 +295,17 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label Background="{Binding Path=Color}" Width="20" />
-                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=Key}" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <CheckBox Content="塗りつぶしで表示" Height="16" HorizontalAlignment="Left" Margin="18,92,0,0" Name="checkBox_reserveBackground" VerticalAlignment="Top" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,27,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button14_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,28,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button15_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,57,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button16_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,57,0,0" Name="button17" VerticalAlignment="Top" Width="58" Click="button17_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,27,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,28,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,57,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,57,0,0" Name="button17" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="298,0,0,0" Name="label32" VerticalAlignment="Top" />
                             <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="630,0,0,0" Name="label33" VerticalAlignment="Top" />
                         </Grid>

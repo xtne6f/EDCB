@@ -10,13 +10,13 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="410" />
-            <RowDefinition Height="35" />
+            <RowDefinition Height="29" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TabControl Name="tabControl1" TabStripPlacement="Bottom" Margin="0,0,0,3">
             <TabItem Header="検索条件" Name="tabItem1" KeyDown="tabItem_searchKey_KeyDown">
                 <Grid>
-                    <my:SearchKey x:Name="searchKeyView" />
+                    <my:SearchKeyView x:Name="searchKeyView" />
                 </Grid>
             </TabItem>
             <TabItem Header="録画設定" Name="tabItem2">
@@ -61,6 +61,8 @@
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_result_MouseDoubleClick" />
                     <EventSetter Event="KeyDown" Handler="listView_result_KeyDown" />
+                    <Setter Property="BorderThickness" Value="5,0,0,1" />
+                    <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                 </Style>
             </ListView.Resources>
             <ListView.View>

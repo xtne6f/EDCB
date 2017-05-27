@@ -41,6 +41,11 @@ namespace EpgTimer
                 return view;
             }
         }
+        public bool Past
+        {
+            get;
+            set;
+        }
         public String ServiceName
         {
             get;
@@ -53,27 +58,7 @@ namespace EpgTimer
                 String view = "";
                 if (eventInfo != null)
                 {
-                    if (0x7880 <= eventInfo.original_network_id && eventInfo.original_network_id <= 0x7FE8)
-                    {
-                        view = "地デジ";
-                    }
-                    else if (eventInfo.original_network_id == 0x0004)
-                    {
-                        view = "BS";
-                    }
-                    else if (eventInfo.original_network_id == 0x0006)
-                    {
-                        view = "CS1";
-                    }
-                    else if (eventInfo.original_network_id == 0x0007)
-                    {
-                        view = "CS2";
-                    }
-                    else
-                    {
-                        view = "その他";
-                    }
-
+                    view = CommonManager.ConvertNetworkNameText(eventInfo.original_network_id);
                 }
                 return view;
             }
@@ -210,13 +195,20 @@ namespace EpgTimer
                     Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
                     foreach (EpgContentData ecd1 in eventInfo.ContentInfo.nibbleList)
                     {
-                        if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
+                        int nibble1 = ecd1.content_nibble_level_1;
+                        int nibble2 = ecd1.content_nibble_level_2;
+                        if (nibble1 == 0x0E && nibble2 == 0x01)
                         {
-                            nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
+                            nibble1 = ecd1.user_nibble_1 | 0x70;
+                            nibble2 = ecd1.user_nibble_2;
+                        }
+                        if (nibbleDict1.ContainsKey(nibble1))
+                        {
+                            nibbleDict1[nibble1].Add(nibble2);
                         }
                         else
                         {
-                            nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
+                            nibbleDict1.Add(nibble1, new List<int>() { nibble2 });
                         }
                     }
                     foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
@@ -288,6 +280,46 @@ namespace EpgTimer
                 if (this.EventInfo == null) { return null; }
                 //
                 return CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
+            }
+        }
+        public Brush BorderBrush
+        {
+            get
+            {
+                Brush color1 = Brushes.White;
+                if (this.EventInfo != null)
+                {
+                    if (this.EventInfo.ContentInfo != null)
+                    {
+                        if (this.EventInfo.ContentInfo.nibbleList.Count > 0)
+                        {
+                            try
+                            {
+                                foreach (EpgContentData info1 in this.EventInfo.ContentInfo.nibbleList)
+                                {
+                                    if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
+                                    {
+                                        color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
+                                        break;
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                            }
+                        }
+                        else
+                        {
+                            color1 = CommonManager.Instance.CustContentColorList[0x10];
+                        }
+                    }
+                    else
+                    {
+                        color1 = CommonManager.Instance.CustContentColorList[0x10];
+                    }
+                }
+
+                return color1;
             }
         }
     }

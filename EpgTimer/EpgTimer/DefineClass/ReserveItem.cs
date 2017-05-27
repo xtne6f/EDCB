@@ -56,27 +56,7 @@ namespace EpgTimer
                 String view = "";
                 if (ReserveInfo != null)
                 {
-                    if (0x7880 <= ReserveInfo.OriginalNetworkID && ReserveInfo.OriginalNetworkID <= 0x7FE8)
-                    {
-                        view = "地デジ";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0004)
-                    {
-                        view = "BS";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0006)
-                    {
-                        view = "CS1";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0007)
-                    {
-                        view = "CS2";
-                    }
-                    else
-                    {
-                        view = "その他";
-                    }
-
+                    view = CommonManager.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
                 }
                 return view;
             }
@@ -238,115 +218,6 @@ namespace EpgTimer
                 if (ReserveInfo != null)
                 {
                     view = CommonManager.Instance.ConvertReserveText(ReserveInfo);
-                    /*                    view = ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                        DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                                        view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
-                                        view += ServiceName;
-                                        if (0x7880 <= ReserveInfo.OriginalNetworkID && ReserveInfo.OriginalNetworkID <= 0x7FE8)
-                                        {
-                                            view += " (地デジ)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0004)
-                                        {
-                                            view += " (BS)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0006)
-                                        {
-                                            view += " (CS1)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0007)
-                                        {
-                                            view += " (CS2)";
-                                        }
-                                        else
-                                        {
-                                            view += " (その他)";
-                                        }
-                                        view += "\r\n";
-
-                                        view += EventName + "\r\n\r\n";
-                                        view += "録画モード : " + RecMode + "\r\n";
-                                        view += "優先度 : " + Priority + "\r\n";
-                                        view += "追従 : " + Tuijyu + "\r\n";
-                                        view += "ぴったり（？） : " + Pittari + "\r\n";
-                                        if ((ReserveInfo.RecSetting.ServiceMode & 0x01) == 0)
-                                        {
-                                            view += "指定サービス対象データ : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "指定サービス対象データ : ";
-                                            if ((ReserveInfo.RecSetting.ServiceMode & 0x10) > 0)
-                                            {
-                                                view += "字幕含む ";
-                                            }
-                                            if ((ReserveInfo.RecSetting.ServiceMode & 0x20) > 0)
-                                            {
-                                                view += "データカルーセル含む";
-                                            }
-                                            view += "\r\n";
-                                        }
-
-                                        view += "録画実行bat : " + ReserveInfo.RecSetting.BatFilePath + "\r\n";
-
-                                        if (ReserveInfo.RecSetting.RecFolderList.Count == 0)
-                                        {
-                                            view += "録画フォルダ : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画フォルダ : \r\n";
-                                            foreach (RecFileSetInfo info in ReserveInfo.RecSetting.RecFolderList)
-                                            {
-                                                view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
-                                            }
-                                        }
-
-                                        if (ReserveInfo.RecSetting.UseMargineFlag == 0)
-                                        {
-                                            view += "録画マージン : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画マージン : 開始 " + ReserveInfo.RecSetting.StartMargine.ToString() +
-                                                " 終了 " + ReserveInfo.RecSetting.EndMargine.ToString() + "\r\n";
-                                        }
-
-                                        if (ReserveInfo.RecSetting.SuspendMode == 0)
-                                        {
-                                            view += "録画後動作 : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画後動作 : ";
-                                            switch (ReserveInfo.RecSetting.SuspendMode)
-                                            {
-                                                case 1:
-                                                    view += "スタンバイ";
-                                                    break;
-                                                case 2:
-                                                    view += "休止";
-                                                    break;
-                                                case 3:
-                                                    view += "シャットダウン";
-                                                    break;
-                                                case 4:
-                                                    view += "何もしない";
-                                                    break;
-                                            }
-                                            if (ReserveInfo.RecSetting.RebootFlag == 1)
-                                            {
-                                                view += " 復帰後再起動する";
-                                            }
-                                            view += "\r\n";
-                                        }
-                                        view += "予約状況 : " + ReserveInfo.Comment;
-                                        view += "\r\n\r\n";
-                                        view += "OriginalNetworkID : " + ReserveInfo.OriginalNetworkID.ToString() + " (0x" + ReserveInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
-                                        view += "TransportStreamID : " + ReserveInfo.TransportStreamID.ToString() + " (0x" + ReserveInfo.TransportStreamID.ToString("X4") + ")\r\n";
-                                        view += "ServiceID : " + ReserveInfo.ServiceID.ToString() + " (0x" + ReserveInfo.ServiceID.ToString("X4") + ")\r\n";
-                                        view += "EventID : " + ReserveInfo.EventID.ToString() + " (0x" + ReserveInfo.EventID.ToString("X4") + ")\r\n";*/
                 }
 
 
@@ -379,11 +250,11 @@ namespace EpgTimer
             }
         }
 
-        public SolidColorBrush BorderBrush
+        public Brush BorderBrush
         {
             get
             {
-                SolidColorBrush color1 = Brushes.White;
+                Brush color1 = Brushes.White;
                 if (this.EventInfo != null)
                 {
                     if (this.EventInfo.ContentInfo != null)

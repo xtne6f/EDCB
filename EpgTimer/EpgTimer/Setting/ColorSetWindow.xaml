@@ -8,33 +8,42 @@
     </Window.Resources>
 -->
     <Grid>
-        <Label Content="R" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
-        <TextBox Height="24" HorizontalAlignment="Left" Margin="36,14,0,0" Name="textBox_R" VerticalAlignment="Top" Width="39" InputMethod.IsInputMethodEnabled="False" TextChanged="textBox_R_TextChanged">
+        <Label Content="R" Height="28" HorizontalAlignment="Left" Margin="12,6,0,0" VerticalAlignment="Top" />
+        <TextBox Height="21" HorizontalAlignment="Left" Margin="36,8,0,0" Name="textBox_R" VerticalAlignment="Top" Width="39" InputMethod.IsInputMethodEnabled="False" TextChanged="textBox_R_TextChanged">
             <TextBox.Resources>
                 <Style TargetType="{x:Type TextBox}">
                     <Setter Property="InputMethod.PreferredImeState" Value="Off" />
                 </Style>
             </TextBox.Resources>
         </TextBox>
-        <Slider Height="23" HorizontalAlignment="Left" Margin="93,15,0,0" Name="slider_R" VerticalAlignment="Top" Width="114"  Minimum="0" Maximum="255" ValueChanged="slider_R_ValueChanged" SmallChange="1" />
-        <Label Content="G" Height="28" HorizontalAlignment="Left" Margin="12,42,0,0" Name="label2" VerticalAlignment="Top" />
-        <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="36,44,0,0" Name="textBox_G" VerticalAlignment="Top" Width="39" TextChanged="textBox_G_TextChanged">
+        <Slider Height="23" HorizontalAlignment="Left" Margin="93,8,0,0" Name="slider_R" VerticalAlignment="Top" Width="114"  Minimum="0" Maximum="255" ValueChanged="slider_R_ValueChanged" SmallChange="1" />
+        <Label Content="G" Height="28" HorizontalAlignment="Left" Margin="12,32,0,0" VerticalAlignment="Top" />
+        <TextBox Height="21" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="36,34,0,0" Name="textBox_G" VerticalAlignment="Top" Width="39" TextChanged="textBox_G_TextChanged">
             <TextBox.Resources>
                 <Style TargetType="{x:Type TextBox}">
                     <Setter Property="InputMethod.PreferredImeState" Value="Off" />
                 </Style>
             </TextBox.Resources>
         </TextBox>
-        <Slider Height="23" HorizontalAlignment="Left" Margin="93,45,0,0" Maximum="255" Minimum="0" Name="slider_G" VerticalAlignment="Top" Width="114" ValueChanged="slider_G_ValueChanged" SmallChange="1" />
-        <Label Content="B" Height="28" HorizontalAlignment="Left" Margin="12,72,0,0" Name="label3" VerticalAlignment="Top" />
-        <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="36,74,0,0" Name="textBox_B" VerticalAlignment="Top" Width="39" TextChanged="textBox_B_TextChanged">
+        <Slider Height="23" HorizontalAlignment="Left" Margin="93,34,0,0" Maximum="255" Minimum="0" Name="slider_G" VerticalAlignment="Top" Width="114" ValueChanged="slider_G_ValueChanged" SmallChange="1" />
+        <Label Content="B" Height="28" HorizontalAlignment="Left" Margin="12,58,0,0" VerticalAlignment="Top" />
+        <TextBox Height="21" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="36,60,0,0" Name="textBox_B" VerticalAlignment="Top" Width="39" TextChanged="textBox_B_TextChanged">
             <TextBox.Resources>
                 <Style TargetType="{x:Type TextBox}">
                     <Setter Property="InputMethod.PreferredImeState" Value="Off" />
                 </Style>
             </TextBox.Resources>
         </TextBox>
-        <Slider Height="23" HorizontalAlignment="Left" Margin="93,75,0,0" Maximum="255" Minimum="0" Name="slider_B" VerticalAlignment="Top" Width="114" ValueChanged="slider_B_ValueChanged" SmallChange="1" />
+        <Slider Height="23" HorizontalAlignment="Left" Margin="93,60,0,0" Maximum="255" Minimum="0" Name="slider_B" VerticalAlignment="Top" Width="114" ValueChanged="slider_B_ValueChanged" SmallChange="1" />
+        <Label Content="A" Height="28" HorizontalAlignment="Left" Margin="12,84,0,0" VerticalAlignment="Top" />
+        <TextBox Height="21" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="36,86,0,0" Name="textBox_A" VerticalAlignment="Top" Width="39" TextChanged="textBox_A_TextChanged">
+            <TextBox.Resources>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="InputMethod.PreferredImeState" Value="Off" />
+                </Style>
+            </TextBox.Resources>
+        </TextBox>
+        <Slider Height="23" HorizontalAlignment="Left" Margin="93,86,0,0" Maximum="255" Minimum="0" Name="slider_A" VerticalAlignment="Top" Width="114" ValueChanged="slider_A_ValueChanged" SmallChange="1" />
         <Rectangle Height="86" HorizontalAlignment="Left" Margin="222,12,0,0" Name="rectangle_color" Stroke="Black" VerticalAlignment="Top" Width="114" />
         <Button Content="OK" Height="23" HorizontalAlignment="Left" Margin="163,115,0,0" Name="button_OK" VerticalAlignment="Top" Width="77" Click="button_OK_Click" />
         <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" Margin="259,115,0,0" Name="button_cancel" VerticalAlignment="Top" Width="77" Click="button_cancel_Click" />

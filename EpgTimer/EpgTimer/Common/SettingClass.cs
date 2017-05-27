@@ -71,26 +71,6 @@ namespace EpgTimer
                 return iniPath;
             }
         }
-        public static string DefSettingFolderPath
-        {
-            get
-            {
-//                string defSetPath = System.Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-//                defSetPath += "\\EpgTimerBon";
-                string defSetPath = ModulePath.TrimEnd('\\');
-                defSetPath += "\\Setting";
-
-                return defSetPath;
-            }
-        }
-        public static string SettingFolderPath
-        {
-            get
-            {
-                string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, CommonIniPath);
-                return (Path.IsPathRooted(path) ? "" : ModulePath.TrimEnd('\\') + "\\") + path;
-            }
-        }
         public static void CheckFolderPath(ref string folderPath)
         {
             if( folderPath.LastIndexOf("\\") == folderPath.Length-1 ){
@@ -108,498 +88,84 @@ namespace EpgTimer
 
     public class Settings
     {
-        private bool useCustomEpgView;
-        private List<CustomEpgTabInfo> customEpgTabList;
-        private double minHeight;
-        private double minimumHeight;
-        private double serviceWidth;
-        private double scrollSize;
-        private string fontName;
-        private double fontSize;
-        private string fontNameTitle;
-        private double fontSizeTitle;
-        private bool fontBoldTitle;
-        private bool noToolTip;
-        private bool noBallonTips;
-        private int forceHideBalloonTipSec;
-        private bool playDClick;
-        private double dragScroll;
-        private List<string> contentColorList;
-        private List<UInt32> contentCustColorList;
-        private string reserveRectColorNormal;
-        private string reserveRectColorNo;
-        private string reserveRectColorNoTuner;
-        private string reserveRectColorWarning;
-        private string titleColor1;
-        private string titleColor2;
-        private UInt32 titleCustColor1;
-        private UInt32 titleCustColor2;
-        private bool reserveRectBackground;
-        private bool epgToolTip;
-        private bool epgTitleIndent;
-        private bool epgToolTipNoViewOnly;
-        private int epgToolTipViewWait;
-        private double resColumnWidth0;
-        private double resColumnWidth1;
-        private double resColumnWidth2;
-        private double resColumnWidth3;
-        private double resColumnWidth4;
-        private double resColumnWidth5;
-        private double resColumnWidth6;
-        private double resColumnWidth7;
-        private string resColumnHead;
-        private ListSortDirection resSortDirection;
-        private System.Windows.WindowState lastWindowState;
-        private double mainWndLeft;
-        private double mainWndTop;
-        private double mainWndWidth;
-        private double mainWndHeight;
-        private bool closeMin;
-        private bool wakeMin;
-        private bool viewButtonShowAsTab;
-        private List<string> viewButtonList;
-        private List<string> taskMenuList;
-        private string cust1BtnName;
-        private string cust1BtnCmd;
-        private string cust1BtnCmdOpt;
-        private string cust2BtnName;
-        private string cust2BtnCmd;
-        private string cust2BtnCmdOpt;
-        private List<string> andKeyList;
-        private List<string> notKeyList;
-        private bool searchKeyRegExp;
-        private bool searchKeyTitleOnly;
-        private bool searchKeyAimaiFlag;
-        private bool searchKeyNotContent;
-        private bool searchKeyNotDate;
-        private List<ContentKindInfo> searchKeyContentList;
-        private List<DateItem> searchKeyDateItemList;
-        private List<Int64> searchKeyServiceList;
-        private byte searchKeyFreeCA;
-        private byte searchKeyChkRecEnd;
-        private UInt16 searchKeyChkRecDay;
-        private double recInfoColumnWidth0;
-        private double recInfoColumnWidth1;
-        private double recInfoColumnWidth2;
-        private double recInfoColumnWidth3;
-        private double recInfoColumnWidth4;
-        private double recInfoColumnWidth5;
-        private double recInfoColumnWidth6;
-        private string recInfoColumnHead;
-        private ListSortDirection recInfoSortDirection;
-        private string tvTestExe;
-        private string tvTestCmd;
-        private bool nwTvMode;
-        private bool nwTvModeUDP;
-        private bool nwTvModeTCP;
-        private string filePlayExe;
-        private string filePlayCmd;
-        private bool filePlayOnAirWithExe;
-        private List<IEPGStationInfo> iEpgStationList;
-        private string nwServerIP;
-        private UInt32 nwServerPort;
-        private UInt32 nwWaitPort;
-        private string nwMacAdd;
-        private bool wakeReconnectNW;
-        private bool suspendCloseNW;
-        private bool ngAutoEpgLoadNW;
-        private Int32 tvTestOpenWait;
-        private Int32 tvTestChgBonWait;
-        private byte resDefColorR;
-        private byte resDefColorG;
-        private byte resDefColorB;
-        private byte resErrColorR;
-        private byte resErrColorG;
-        private byte resErrColorB;
-        private byte resWarColorR;
-        private byte resWarColorG;
-        private byte resWarColorB;
-        private byte resNoColorR;
-        private byte resNoColorG;
-        private byte resNoColorB;
-        private byte recEndDefColorR;
-        private byte recEndDefColorG;
-        private byte recEndDefColorB;
-        private byte recEndErrColorR;
-        private byte recEndErrColorG;
-        private byte recEndErrColorB;
-        private byte recEndWarColorR;
-        private byte recEndWarColorG;
-        private byte recEndWarColorB;
-        private byte epgTipsBackColorR;
-        private byte epgTipsBackColorG;
-        private byte epgTipsBackColorB;
-        private byte epgTipsForeColorR;
-        private byte epgTipsForeColorG;
-        private byte epgTipsForeColorB;
-        private bool epgInfoSingleClick;
-        private byte epgInfoOpenMode;
-        private UInt32 execBat;
-        private UInt32 suspendChk;
-        private List<ListColumnInfo> reserveListColumn;
-        private List<ListColumnInfo> recInfoListColumn;
-        private List<ListColumnInfo> autoAddEpgColumn;
-        private List<ListColumnInfo> autoAddManualColumn;
-        private double searchWndLeft;
-        private double searchWndTop;
-        private double searchWndWidth;
-        private double searchWndHeight;
-        private short autoSaveNotifyLog;
-        private bool showTray;
-        private bool minHide;
-        private bool mouseScrollAuto;
-        private int noStyle;
-
-        public bool UseCustomEpgView
-        {
-            get { return useCustomEpgView; }
-            set { useCustomEpgView = value; }
-        }
-        public List<CustomEpgTabInfo> CustomEpgTabList
-        {
-            get { return customEpgTabList; }
-            set { customEpgTabList = value; }
-        }
-        public double MinHeight
-        {
-            get { return minHeight; }
-            set { minHeight = value; }
-        }
-        public double ServiceWidth
-        {
-            get { return serviceWidth; }
-            set { serviceWidth = value; }
-        }
-        public double ScrollSize
-        {
-            get { return scrollSize; }
-            set { scrollSize = value; }
-        }
-        public double MinimumHeight
-        {
-            get { return minimumHeight; }
-            set { minimumHeight = value; }
-        }
-        public string FontName
-        {
-            get { return fontName; }
-            set { fontName = value; }
-        }
-        public double FontSize
-        {
-            get { return fontSize; }
-            set { fontSize = value; }
-        }
-        public string FontNameTitle
-        {
-            get { return fontNameTitle; }
-            set { fontNameTitle = value; }
-        }
-        public double FontSizeTitle
-        {
-            get { return fontSizeTitle; }
-            set { fontSizeTitle = value; }
-        }
-        public bool FontBoldTitle
-        {
-            get { return fontBoldTitle; }
-            set { fontBoldTitle = value; }
-        }
-        public bool NoToolTip
-        {
-            get { return noToolTip; }
-            set { noToolTip = value; }
-        }
-        public bool NoBallonTips
-        {
-            get { return noBallonTips; }
-            set { noBallonTips = value; }
-        }
-        public int ForceHideBalloonTipSec
-        {
-            get { return forceHideBalloonTipSec; }
-            set { forceHideBalloonTipSec = value; }
-        }
-        public bool PlayDClick
-        {
-            get { return playDClick; }
-            set { playDClick = value; }
-        }
-        public double DragScroll
-        {
-            get { return dragScroll; }
-            set { dragScroll = value; }
-        }
-        public List<string> ContentColorList
-        {
-            get { return contentColorList; }
-            set { contentColorList = value; }
-        }
-        public List<UInt32> ContentCustColorList
-        {
-            get { return contentCustColorList; }
-            set { contentCustColorList = value; }
-        }
-        public string ReserveRectColorNormal
-        {
-            get { return reserveRectColorNormal; }
-            set { reserveRectColorNormal = value; }
-        }
-        public string ReserveRectColorNo
-        {
-            get { return reserveRectColorNo; }
-            set { reserveRectColorNo = value; }
-        }
-        public string ReserveRectColorNoTuner
-        {
-            get { return reserveRectColorNoTuner; }
-            set { reserveRectColorNoTuner = value; }
-        }
-        public string ReserveRectColorWarning
-        {
-            get { return reserveRectColorWarning; }
-            set { reserveRectColorWarning = value; }
-        }
-        public bool ReserveRectBackground
-        {
-            get { return reserveRectBackground; }
-            set { reserveRectBackground = value; }
-        }
-        public string TitleColor1
-        {
-            get { return titleColor1; }
-            set { titleColor1 = value; }
-        }
-        public string TitleColor2
-        {
-            get { return titleColor2; }
-            set { titleColor2 = value; }
-        }
-        public UInt32 TitleCustColor1
-        {
-            get { return titleCustColor1; }
-            set { titleCustColor1 = value; }
-        }
-        public UInt32 TitleCustColor2
-        {
-            get { return titleCustColor2; }
-            set { titleCustColor2 = value; }
-        }
-        public bool EpgToolTip
-        {
-            get { return epgToolTip; }
-            set { epgToolTip = value; }
-        }
-        public bool EpgTitleIndent
-        {
-            get { return epgTitleIndent; }
-            set { epgTitleIndent = value; }
-        }
-        public bool EpgToolTipNoViewOnly
-        {
-            get { return epgToolTipNoViewOnly; }
-            set { epgToolTipNoViewOnly = value; }
-        }
-        public int EpgToolTipViewWait
-        {
-            get { return epgToolTipViewWait; }
-            set { epgToolTipViewWait = value; }
-        }
-        public double ResColumnWidth0
-        {
-            get { return resColumnWidth0; }
-            set { resColumnWidth0 = value; }
-        }
-        public double ResColumnWidth1
-        {
-            get { return resColumnWidth1; }
-            set { resColumnWidth1 = value; }
-        }
-        public double ResColumnWidth2
-        {
-            get { return resColumnWidth2; }
-            set { resColumnWidth2 = value; }
-        }
-        public double ResColumnWidth3
-        {
-            get { return resColumnWidth3; }
-            set { resColumnWidth3 = value; }
-        }
-        public double ResColumnWidth4
-        {
-            get { return resColumnWidth4; }
-            set { resColumnWidth4 = value; }
-        }
-        public double ResColumnWidth5
-        {
-            get { return resColumnWidth5; }
-            set { resColumnWidth5 = value; }
-        }
-        public double ResColumnWidth6
-        {
-            get { return resColumnWidth6; }
-            set { resColumnWidth6 = value; }
-        }
-        public double ResColumnWidth7
-        {
-            get { return resColumnWidth7; }
-            set { resColumnWidth7 = value; }
-        }
-        public string ResColumnHead
-        {
-            get { return resColumnHead; }
-            set { resColumnHead = value; }
-        }
-        public ListSortDirection ResSortDirection
-        {
-            get { return resSortDirection; }
-            set { resSortDirection = value; }
-        }
-        public System.Windows.WindowState LastWindowState
-        {
-            get { return lastWindowState; }
-            set { lastWindowState = value; }
-        }
-        public double MainWndLeft
-        {
-            get { return mainWndLeft; }
-            set { mainWndLeft = value; }
-        }
-        public double MainWndTop
-        {
-            get { return mainWndTop; }
-            set { mainWndTop = value; }
-        }
-        public double MainWndWidth
-        {
-            get { return mainWndWidth; }
-            set { mainWndWidth = value; }
-        }
-        public double MainWndHeight
-        {
-            get { return mainWndHeight; }
-            set { mainWndHeight = value; }
-        }
-        public bool CloseMin
-        {
-            get { return closeMin; }
-            set { closeMin = value; }
-        }
-        public bool WakeMin
-        {
-            get { return wakeMin; }
-            set { wakeMin = value; }
-        }
-        public bool ViewButtonShowAsTab
-        {
-            get { return viewButtonShowAsTab; }
-            set { viewButtonShowAsTab = value; }
-        }
-        public List<string> ViewButtonList
-        {
-            get { return viewButtonList; }
-            set { viewButtonList = value; }
-        }
-        public List<string> TaskMenuList
-        {
-            get { return taskMenuList; }
-            set { taskMenuList = value; }
-        }
-        public string Cust1BtnName
-        {
-            get { return cust1BtnName; }
-            set { cust1BtnName = value; }
-        }
-        public string Cust1BtnCmd
-        {
-            get { return cust1BtnCmd; }
-            set { cust1BtnCmd = value; }
-        }
-        public string Cust1BtnCmdOpt
-        {
-            get { return cust1BtnCmdOpt; }
-            set { cust1BtnCmdOpt = value; }
-        }
-        public string Cust2BtnName
-        {
-            get { return cust2BtnName; }
-            set { cust2BtnName = value; }
-        }
-        public string Cust2BtnCmd
-        {
-            get { return cust2BtnCmd; }
-            set { cust2BtnCmd = value; }
-        }
-        public string Cust2BtnCmdOpt
-        {
-            get { return cust2BtnCmdOpt; }
-            set { cust2BtnCmdOpt = value; }
-        }
-        public List<string> AndKeyList
-        {
-            get { return andKeyList; }
-            set { andKeyList = value; }
-        }
-        public List<string> NotKeyList
-        {
-            get { return notKeyList; }
-            set { notKeyList = value; }
-        }
-        public bool SearchKeyRegExp
-        {
-            get { return searchKeyRegExp; }
-            set { searchKeyRegExp = value; }
-        }
-        public bool SearchKeyTitleOnly
-        {
-            get { return searchKeyTitleOnly; }
-            set { searchKeyTitleOnly = value; }
-        }
-        public bool SearchKeyAimaiFlag
-        {
-            get { return searchKeyAimaiFlag; }
-            set { searchKeyAimaiFlag = value; }
-        }
-        public bool SearchKeyNotContent
-        {
-            get { return searchKeyNotContent; }
-            set { searchKeyNotContent = value; }
-        }
-        public bool SearchKeyNotDate
-        {
-            get { return searchKeyNotDate; }
-            set { searchKeyNotDate = value; }
-        }
-        public List<ContentKindInfo> SearchKeyContentList
-        {
-            get { return searchKeyContentList; }
-            set { searchKeyContentList = value; }
-        }
-        public List<DateItem> SearchKeyDateItemList
-        {
-            get { return searchKeyDateItemList; }
-            set { searchKeyDateItemList = value; }
-        }
-        public List<Int64> SearchKeyServiceList
-        {
-            get { return searchKeyServiceList; }
-            set { searchKeyServiceList = value; }
-        }
-        public byte SearchKeyFreeCA
-        {
-            get { return searchKeyFreeCA; }
-            set { searchKeyFreeCA = value; }
-        }
-        public byte SearchKeyChkRecEnd
-        {
-            get { return searchKeyChkRecEnd; }
-            set { searchKeyChkRecEnd = value; }
-        }
-        public UInt16 SearchKeyChkRecDay
-        {
-            get { return searchKeyChkRecDay; }
-            set { searchKeyChkRecDay = value; }
-        }
+        public bool UseCustomEpgView { get; set; }
+        public List<CustomEpgTabInfo> CustomEpgTabList { get; set; }
+        public double MinHeight { get; set; }
+        public double MinimumHeight { get; set; }
+        public double ServiceWidth { get; set; }
+        public double ScrollSize { get; set; }
+        public string FontName { get; set; }
+        public double FontSize { get; set; }
+        public string FontNameTitle { get; set; }
+        public double FontSizeTitle { get; set; }
+        public bool FontBoldTitle { get; set; }
+        public bool NoToolTip { get; set; }
+        public bool NoBallonTips { get; set; }
+        public int ForceHideBalloonTipSec { get; set; }
+        public bool PlayDClick { get; set; }
+        public bool ShowEpgCapServiceOnly { get; set; }
+        public double DragScroll { get; set; }
+        public List<string> ContentColorList { get; set; }
+        public List<UInt32> ContentCustColorList { get; set; }
+        public List<string> TimeColorList { get; set; }
+        public List<UInt32> TimeCustColorList { get; set; }
+        public string ReserveRectColorNormal { get; set; }
+        public string ReserveRectColorNo { get; set; }
+        public string ReserveRectColorNoTuner { get; set; }
+        public string ReserveRectColorWarning { get; set; }
+        public bool ReserveRectBackground { get; set; }
+        public string TitleColor1 { get; set; }
+        public string TitleColor2 { get; set; }
+        public UInt32 TitleCustColor1 { get; set; }
+        public UInt32 TitleCustColor2 { get; set; }
+        public string ServiceColor { get; set; }
+        public UInt32 ServiceCustColor { get; set; }
+        public bool EpgToolTip { get; set; }
+        public bool EpgTitleIndent { get; set; }
+        public bool EpgToolTipNoViewOnly { get; set; }
+        public int EpgToolTipViewWait { get; set; }
+        public bool EpgPopup { get; set; }
+        public bool EpgGradation { get; set; }
+        public bool EpgGradationHeader { get; set; }
+        public double ResColumnWidth0 { get; set; }
+        public double ResColumnWidth1 { get; set; }
+        public double ResColumnWidth2 { get; set; }
+        public double ResColumnWidth3 { get; set; }
+        public double ResColumnWidth4 { get; set; }
+        public double ResColumnWidth5 { get; set; }
+        public double ResColumnWidth6 { get; set; }
+        public double ResColumnWidth7 { get; set; }
+        public string ResColumnHead { get; set; }
+        public ListSortDirection ResSortDirection { get; set; }
+        public System.Windows.WindowState LastWindowState { get; set; }
+        public double MainWndLeft { get; set; }
+        public double MainWndTop { get; set; }
+        public double MainWndWidth { get; set; }
+        public double MainWndHeight { get; set; }
+        public bool CloseMin { get; set; }
+        public bool WakeMin { get; set; }
+        public bool ViewButtonShowAsTab { get; set; }
+        public List<string> ViewButtonList { get; set; }
+        public List<string> TaskMenuList { get; set; }
+        public string Cust1BtnName { get; set; }
+        public string Cust1BtnCmd { get; set; }
+        public string Cust1BtnCmdOpt { get; set; }
+        public string Cust2BtnName { get; set; }
+        public string Cust2BtnCmd { get; set; }
+        public string Cust2BtnCmdOpt { get; set; }
+        public List<string> AndKeyList { get; set; }
+        public List<string> NotKeyList { get; set; }
+        public bool SearchKeyRegExp { get; set; }
+        public bool SearchKeyTitleOnly { get; set; }
+        public bool SearchKeyAimaiFlag { get; set; }
+        public bool SearchKeyNotContent { get; set; }
+        public bool SearchKeyNotDate { get; set; }
+        public List<ContentKindInfo> SearchKeyContentList { get; set; }
+        public List<DateItem> SearchKeyDateItemList { get; set; }
+        public List<Int64> SearchKeyServiceList { get; set; }
+        public byte SearchKeyFreeCA { get; set; }
+        public byte SearchKeyChkRecEnd { get; set; }
+        public UInt16 SearchKeyChkRecDay { get; set; }
         [System.Xml.Serialization.XmlIgnore]
         public List<RecPresetItem> RecPresetList
         {
@@ -623,489 +189,218 @@ namespace EpgTimer
                 return list;
             }
         }
-        public double RecInfoColumnWidth0
-        {
-            get { return recInfoColumnWidth0; }
-            set { recInfoColumnWidth0 = value; }
-        }
-        public double RecInfoColumnWidth1
-        {
-            get { return recInfoColumnWidth1; }
-            set { recInfoColumnWidth1 = value; }
-        }
-        public double RecInfoColumnWidth2
-        {
-            get { return recInfoColumnWidth2; }
-            set { recInfoColumnWidth2 = value; }
-        }
-        public double RecInfoColumnWidth3
-        {
-            get { return recInfoColumnWidth3; }
-            set { recInfoColumnWidth3 = value; }
-        }
-        public double RecInfoColumnWidth4
-        {
-            get { return recInfoColumnWidth4; }
-            set { recInfoColumnWidth4 = value; }
-        }
-        public double RecInfoColumnWidth5
-        {
-            get { return recInfoColumnWidth5; }
-            set { recInfoColumnWidth5 = value; }
-        }
-        public double RecInfoColumnWidth6
-        {
-            get { return recInfoColumnWidth6; }
-            set { recInfoColumnWidth6 = value; }
-        }
-        public string RecInfoColumnHead
-        {
-            get { return recInfoColumnHead; }
-            set { recInfoColumnHead = value; }
-        }
-        public ListSortDirection RecInfoSortDirection
-        {
-            get { return recInfoSortDirection; }
-            set { recInfoSortDirection = value; }
-        }
-        public string TvTestExe
-        {
-            get { return tvTestExe; }
-            set { tvTestExe = value; }
-        }
-        public string TvTestCmd
-        {
-            get { return tvTestCmd; }
-            set { tvTestCmd = value; }
-        }
-        public bool NwTvMode
-        {
-            get { return nwTvMode; }
-            set { nwTvMode = value; }
-        }
-        public bool NwTvModeUDP
-        {
-            get { return nwTvModeUDP; }
-            set { nwTvModeUDP = value; }
-        }
-        public bool NwTvModeTCP
-        {
-            get { return nwTvModeTCP; }
-            set { nwTvModeTCP = value; }
-        }
-        public string FilePlayExe
-        {
-            get { return filePlayExe; }
-            set { filePlayExe = value; }
-        }
-        public string FilePlayCmd
-        {
-            get { return filePlayCmd; }
-            set { filePlayCmd = value; }
-        }
-        public bool FilePlayOnAirWithExe
-        {
-            get { return filePlayOnAirWithExe; }
-            set { filePlayOnAirWithExe = value; }
-        }
-        public List<IEPGStationInfo> IEpgStationList
-        {
-            get { return iEpgStationList; }
-            set { iEpgStationList = value; }
-        }
-        public string NWServerIP
-        {
-            get { return nwServerIP; }
-            set { nwServerIP = value; }
-        }
-        public UInt32 NWServerPort
-        {
-            get { return nwServerPort; }
-            set { nwServerPort = value; }
-        }
-        public UInt32 NWWaitPort
-        {
-            get { return nwWaitPort; }
-            set { nwWaitPort = value; }
-        }
-        public string NWMacAdd
-        {
-            get { return nwMacAdd; }
-            set { nwMacAdd = value; }
-        }
-        public bool WakeReconnectNW
-        {
-            get { return wakeReconnectNW; }
-            set { wakeReconnectNW = value; }
-        }
-        public bool SuspendCloseNW
-        {
-            get { return suspendCloseNW; }
-            set { suspendCloseNW = value; }
-        }
-        public bool NgAutoEpgLoadNW
-        {
-            get { return ngAutoEpgLoadNW; }
-            set { ngAutoEpgLoadNW = value; }
-        }
-        public Int32 TvTestOpenWait
-        {
-            get { return tvTestOpenWait; }
-            set { tvTestOpenWait = value; }
-        }
-        public Int32 TvTestChgBonWait
-        {
-            get { return tvTestChgBonWait; }
-            set { tvTestChgBonWait = value; }
-        }
-        public byte ResDefColorR
-        {
-            get { return resDefColorR; }
-            set { resDefColorR = value; }
-        }
-        public byte ResDefColorG
-        {
-            get { return resDefColorG; }
-            set { resDefColorG = value; }
-        }
-        public byte ResDefColorB
-        {
-            get { return resDefColorB; }
-            set { resDefColorB = value; }
-        }
-        public byte ResErrColorR
-        {
-            get { return resErrColorR; }
-            set { resErrColorR = value; }
-        }
-        public byte ResErrColorG
-        {
-            get { return resErrColorG; }
-            set { resErrColorG = value; }
-        }
-        public byte ResErrColorB
-        {
-            get { return resErrColorB; }
-            set { resErrColorB = value; }
-        }
-        public byte ResWarColorR
-        {
-            get { return resWarColorR; }
-            set { resWarColorR = value; }
-        }
-        public byte ResWarColorG
-        {
-            get { return resWarColorG; }
-            set { resWarColorG = value; }
-        }
-        public byte ResWarColorB
-        {
-            get { return resWarColorB; }
-            set { resWarColorB = value; }
-        }
-        public byte ResNoColorR
-        {
-            get { return resNoColorR; }
-            set { resNoColorR = value; }
-        }
-        public byte ResNoColorG
-        {
-            get { return resNoColorG; }
-            set { resNoColorG = value; }
-        }
-        public byte ResNoColorB
-        {
-            get { return resNoColorB; }
-            set { resNoColorB = value; }
-        }
-        public byte RecEndDefColorR
-        {
-            get { return recEndDefColorR; }
-            set { recEndDefColorR = value; }
-        }
-        public byte RecEndDefColorG
-        {
-            get { return recEndDefColorG; }
-            set { recEndDefColorG = value; }
-        }
-        public byte RecEndDefColorB
-        {
-            get { return recEndDefColorB; }
-            set { recEndDefColorB = value; }
-        }
-        public byte RecEndErrColorR
-        {
-            get { return recEndErrColorR; }
-            set { recEndErrColorR = value; }
-        }
-        public byte RecEndErrColorG
-        {
-            get { return recEndErrColorG; }
-            set { recEndErrColorG = value; }
-        }
-        public byte RecEndErrColorB
-        {
-            get { return recEndErrColorB; }
-            set { recEndErrColorB = value; }
-        }
-        public byte RecEndWarColorR
-        {
-            get { return recEndWarColorR; }
-            set { recEndWarColorR = value; }
-        }
-        public byte RecEndWarColorG
-        {
-            get { return recEndWarColorG; }
-            set { recEndWarColorG = value; }
-        }
-        public byte RecEndWarColorB
-        {
-            get { return recEndWarColorB; }
-            set { recEndWarColorB = value; }
-        }
-        public byte EpgTipsBackColorR
-        {
-            get { return epgTipsBackColorR; }
-            set { epgTipsBackColorR = value; }
-        }
-        public byte EpgTipsBackColorG
-        {
-            get { return epgTipsBackColorG; }
-            set { epgTipsBackColorG = value; }
-        }
-        public byte EpgTipsBackColorB
-        {
-            get { return epgTipsBackColorB; }
-            set { epgTipsBackColorB = value; }
-        }
-        public byte EpgTipsForeColorR
-        {
-            get { return epgTipsForeColorR; }
-            set { epgTipsForeColorR = value; }
-        }
-        public byte EpgTipsForeColorG
-        {
-            get { return epgTipsForeColorG; }
-            set { epgTipsForeColorG = value; }
-        }
-        public byte EpgTipsForeColorB
-        {
-            get { return epgTipsForeColorB; }
-            set { epgTipsForeColorB = value; }
-        }
-        public bool EpgInfoSingleClick
-        {
-            get { return epgInfoSingleClick; }
-            set { epgInfoSingleClick = value; }
-        }
-        public byte EpgInfoOpenMode
-        {
-            get { return epgInfoOpenMode; }
-            set { epgInfoOpenMode = value; }
-        }
-        public UInt32 ExecBat
-        {
-            get { return execBat; }
-            set { execBat = value; }
-        }
-        public UInt32 SuspendChk
-        {
-            get { return suspendChk; }
-            set { suspendChk = value; }
-        }
-        public List<ListColumnInfo> ReserveListColumn
-        {
-            get { return reserveListColumn; }
-            set { reserveListColumn = value; }
-        }
-        public List<ListColumnInfo> RecInfoListColumn
-        {
-            get { return recInfoListColumn; }
-            set { recInfoListColumn = value; }
-        }
-        public List<ListColumnInfo> AutoAddEpgColumn
-        {
-            get { return autoAddEpgColumn; }
-            set { autoAddEpgColumn = value; }
-        }
-        public List<ListColumnInfo> AutoAddManualColumn
-        {
-            get { return autoAddManualColumn; }
-            set { autoAddManualColumn = value; }
-        }
-        public double SearchWndLeft
-        {
-            get { return searchWndLeft; }
-            set { searchWndLeft = value; }
-        }
-        public double SearchWndTop
-        {
-            get { return searchWndTop; }
-            set { searchWndTop = value; }
-        }
-        public double SearchWndWidth
-        {
-            get { return searchWndWidth; }
-            set { searchWndWidth = value; }
-        }
-        public double SearchWndHeight
-        {
-            get { return searchWndHeight; }
-            set { searchWndHeight = value; }
-        }
-        public short AutoSaveNotifyLog
-        {
-            get { return autoSaveNotifyLog; }
-            set { autoSaveNotifyLog = value; }
-        }
-        public bool ShowTray
-        {
-            get { return showTray; }
-            set { showTray = value; }
-        }
-        public bool MinHide
-        {
-            get { return minHide; }
-            set { minHide = value; }
-        }
-        public bool MouseScrollAuto
-        {
-            get { return mouseScrollAuto; }
-            set { mouseScrollAuto = value; }
-        }
-        public int NoStyle
-        {
-            get { return noStyle; }
-            set { noStyle = value; }
-        }
-        
-        
+        public double RecInfoColumnWidth0 { get; set; }
+        public double RecInfoColumnWidth1 { get; set; }
+        public double RecInfoColumnWidth2 { get; set; }
+        public double RecInfoColumnWidth3 { get; set; }
+        public double RecInfoColumnWidth4 { get; set; }
+        public double RecInfoColumnWidth5 { get; set; }
+        public double RecInfoColumnWidth6 { get; set; }
+        public string RecInfoColumnHead { get; set; }
+        public ListSortDirection RecInfoSortDirection { get; set; }
+        public string TvTestExe { get; set; }
+        public string TvTestCmd { get; set; }
+        public bool NwTvMode { get; set; }
+        public bool NwTvModeUDP { get; set; }
+        public bool NwTvModeTCP { get; set; }
+        public string FilePlayExe { get; set; }
+        public string FilePlayCmd { get; set; }
+        public bool FilePlayOnAirWithExe { get; set; }
+        public List<IEPGStationInfo> IEpgStationList { get; set; }
+        public string NWServerIP { get; set; }
+        public UInt32 NWServerPort { get; set; }
+        public UInt32 NWWaitPort { get; set; }
+        public string NWMacAdd { get; set; }
+        public bool WakeReconnectNW { get; set; }
+        public bool SuspendCloseNW { get; set; }
+        public bool NgAutoEpgLoadNW { get; set; }
+        public Int32 TvTestOpenWait { get; set; }
+        public Int32 TvTestChgBonWait { get; set; }
+        public byte ResDefColorR { get; set; }
+        public byte ResDefColorG { get; set; }
+        public byte ResDefColorB { get; set; }
+        public byte ResErrColorR { get; set; }
+        public byte ResErrColorG { get; set; }
+        public byte ResErrColorB { get; set; }
+        public byte ResWarColorR { get; set; }
+        public byte ResWarColorG { get; set; }
+        public byte ResWarColorB { get; set; }
+        public byte ResNoColorR { get; set; }
+        public byte ResNoColorG { get; set; }
+        public byte ResNoColorB { get; set; }
+        public byte RecEndDefColorR { get; set; }
+        public byte RecEndDefColorG { get; set; }
+        public byte RecEndDefColorB { get; set; }
+        public byte RecEndErrColorR { get; set; }
+        public byte RecEndErrColorG { get; set; }
+        public byte RecEndErrColorB { get; set; }
+        public byte RecEndWarColorR { get; set; }
+        public byte RecEndWarColorG { get; set; }
+        public byte RecEndWarColorB { get; set; }
+        public byte EpgTipsBackColorR { get; set; }
+        public byte EpgTipsBackColorG { get; set; }
+        public byte EpgTipsBackColorB { get; set; }
+        public byte EpgTipsForeColorR { get; set; }
+        public byte EpgTipsForeColorG { get; set; }
+        public byte EpgTipsForeColorB { get; set; }
+        public byte EpgBackColorR { get; set; }
+        public byte EpgBackColorG { get; set; }
+        public byte EpgBackColorB { get; set; }
+        public bool EpgInfoSingleClick { get; set; }
+        public byte EpgInfoOpenMode { get; set; }
+        public UInt32 ExecBat { get; set; }
+        public UInt32 SuspendChk { get; set; }
+        public List<ListColumnInfo> ReserveListColumn { get; set; }
+        public List<ListColumnInfo> RecInfoListColumn { get; set; }
+        public List<ListColumnInfo> AutoAddEpgColumn { get; set; }
+        public List<ListColumnInfo> AutoAddManualColumn { get; set; }
+        public double SearchWndLeft { get; set; }
+        public double SearchWndTop { get; set; }
+        public double SearchWndWidth { get; set; }
+        public double SearchWndHeight { get; set; }
+        public int NotifyLogMax { get; set; }
+        public bool ShowTray { get; set; }
+        public bool MinHide { get; set; }
+        public bool MouseScrollAuto { get; set; }
+        public int NoStyle { get; set; }
+
         public Settings()
         {
-            useCustomEpgView = false;
-            customEpgTabList = new List<CustomEpgTabInfo>();
-            minHeight = 2;
-            minimumHeight = 0;
-            serviceWidth = 150;
-            scrollSize = 240;
-            fontName = "メイリオ";
-            fontSize = 12;
-            fontNameTitle = "メイリオ";
-            fontSizeTitle = 12;
-            fontBoldTitle = true;
-            noToolTip = false;
-            playDClick = false;
-            dragScroll = 1.5;
-            contentColorList = new List<string>();
-            contentCustColorList = new List<uint>();
-            reserveRectColorNormal = "Lime";
-            reserveRectColorNo = "Black";
-            reserveRectColorNoTuner = "Red";
-            reserveRectColorWarning = "Yellow";
-            titleColor1 = "Black";
-            titleColor2 = "Black";
-            titleCustColor1 = 0xFFFFFFFF;
-            titleCustColor2 = 0xFFFFFFFF;
-            reserveRectBackground = false;
-            epgToolTip = false;
-            epgTitleIndent = true;
-            epgToolTipNoViewOnly = true;
-            epgToolTipViewWait = 1500;
-            resColumnHead = "";
-            resSortDirection = ListSortDirection.Ascending;
-            lastWindowState = System.Windows.WindowState.Normal;
-            mainWndLeft = -100;
-            mainWndTop = -100;
-            mainWndWidth = -100;
-            mainWndHeight = -100;
-            closeMin = false;
-            wakeMin = false;
-            viewButtonShowAsTab = false;
-            viewButtonList = new List<string>();
-            taskMenuList = new List<string>();
-            cust1BtnName = "";
-            cust1BtnCmd = "";
-            cust1BtnCmdOpt = "";
-            cust2BtnName = "";
-            cust2BtnCmd = "";
-            cust2BtnCmdOpt = "";
-            andKeyList = new List<string>();
-            notKeyList = new List<string>();
-            searchKeyRegExp = false;
-            searchKeyTitleOnly = false;
-            searchKeyAimaiFlag = false;
-            searchKeyNotContent = false;
-            searchKeyNotDate = false;
-            searchKeyFreeCA = 0;
-            searchKeyChkRecEnd = 0;
-            searchKeyChkRecDay = 6;
-            searchKeyContentList = new List<ContentKindInfo>();
-            searchKeyDateItemList = new List<DateItem>();
-            searchKeyServiceList = new List<Int64>();
-            recInfoColumnHead = "";
-            recInfoSortDirection = ListSortDirection.Ascending;
-            tvTestExe = "";
-            tvTestCmd = "";
-            nwTvMode = false;
-            nwTvModeUDP = false;
-            nwTvModeTCP = false;
-            filePlayExe = "";
-            filePlayCmd = "\"$FilePath$\"";
-            filePlayOnAirWithExe = false;
-            iEpgStationList = new List<IEPGStationInfo>();
-            nwServerIP = "";
-            nwServerPort = 4510;
-            nwWaitPort = 0;
-            nwMacAdd = "";
-            wakeReconnectNW = false;
-            suspendCloseNW = false;
-            ngAutoEpgLoadNW = false;
-            tvTestOpenWait = 2000;
-            tvTestChgBonWait = 2000;
-            resDefColorR = 0xFF;
-            resDefColorG = 0xFF;
-            resDefColorB = 0xFF;
-            resErrColorR = 0xFF;
-            resErrColorG = 0;
-            resErrColorB = 0;
-            resWarColorR = 0xFF;
-            resWarColorG = 0xFF;
-            resWarColorB = 0;
-            resNoColorR = 0xA9;
-            resNoColorG = 0xA9;
-            resNoColorB = 0xA9;
-            recEndDefColorR = 0xFF;
-            recEndDefColorG = 0xFF;
-            recEndDefColorB = 0xFF;
-            recEndErrColorR = 0xFF;
-            recEndErrColorG = 0;
-            recEndErrColorB = 0;
-            recEndWarColorR = 0xFF;
-            recEndWarColorG = 0xFF;
-            recEndWarColorB = 0;
-            epgTipsBackColorR = 0xD3;
-            epgTipsBackColorG = 0xD3;
-            epgTipsBackColorB = 0xD3;
-            epgTipsForeColorR = 0;
-            epgTipsForeColorG = 0;
-            epgTipsForeColorB = 0;
-            epgInfoSingleClick = false;
-            epgInfoOpenMode = 0;
-            execBat = 0;
-            suspendChk = 0;
-            reserveListColumn = new List<ListColumnInfo>();
-            recInfoListColumn = new List<ListColumnInfo>();
-            autoAddEpgColumn = new List<ListColumnInfo>();
-            autoAddManualColumn = new List<ListColumnInfo>();
-            searchWndLeft = 0;
-            searchWndTop = 0;
-            searchWndWidth = 0;
-            searchWndHeight = 0;
-            autoSaveNotifyLog = 0;
-            showTray = true;
-            minHide = true;
-            mouseScrollAuto = false;
-            noStyle = 0;
+            UseCustomEpgView = false;
+            CustomEpgTabList = new List<CustomEpgTabInfo>();
+            MinHeight = 2;
+            MinimumHeight = 0;
+            ServiceWidth = 150;
+            ScrollSize = 240;
+            FontName = "メイリオ";
+            FontSize = 12;
+            FontNameTitle = "メイリオ";
+            FontSizeTitle = 12;
+            FontBoldTitle = true;
+            NoToolTip = false;
+            PlayDClick = false;
+            ShowEpgCapServiceOnly = false;
+            DragScroll = 1.5;
+            ContentColorList = new List<string>();
+            ContentCustColorList = new List<uint>();
+            TimeColorList = new List<string>();
+            TimeCustColorList = new List<uint>();
+            ReserveRectColorNormal = "Lime";
+            ReserveRectColorNo = "Black";
+            ReserveRectColorNoTuner = "Red";
+            ReserveRectColorWarning = "Yellow";
+            TitleColor1 = "Black";
+            TitleColor2 = "Black";
+            TitleCustColor1 = 0xFFFFFFFF;
+            TitleCustColor2 = 0xFFFFFFFF;
+            ServiceColor = "LightSlateGray";
+            ServiceCustColor = 0xFFFFFFFF;
+            ReserveRectBackground = false;
+            EpgToolTip = false;
+            EpgTitleIndent = true;
+            EpgToolTipNoViewOnly = true;
+            EpgToolTipViewWait = 1500;
+            EpgPopup = true;
+            EpgGradation = true;
+            EpgGradationHeader = true;
+            ResColumnHead = "";
+            ResSortDirection = ListSortDirection.Ascending;
+            LastWindowState = System.Windows.WindowState.Normal;
+            MainWndLeft = -100;
+            MainWndTop = -100;
+            MainWndWidth = -100;
+            MainWndHeight = -100;
+            CloseMin = false;
+            WakeMin = false;
+            ViewButtonShowAsTab = false;
+            ViewButtonList = new List<string>();
+            TaskMenuList = new List<string>();
+            Cust1BtnName = "";
+            Cust1BtnCmd = "";
+            Cust1BtnCmdOpt = "";
+            Cust2BtnName = "";
+            Cust2BtnCmd = "";
+            Cust2BtnCmdOpt = "";
+            AndKeyList = new List<string>();
+            NotKeyList = new List<string>();
+            SearchKeyRegExp = false;
+            SearchKeyTitleOnly = false;
+            SearchKeyAimaiFlag = false;
+            SearchKeyNotContent = false;
+            SearchKeyNotDate = false;
+            SearchKeyFreeCA = 0;
+            SearchKeyChkRecEnd = 0;
+            SearchKeyChkRecDay = 6;
+            SearchKeyContentList = new List<ContentKindInfo>();
+            SearchKeyDateItemList = new List<DateItem>();
+            SearchKeyServiceList = new List<Int64>();
+            RecInfoColumnHead = "";
+            RecInfoSortDirection = ListSortDirection.Ascending;
+            TvTestExe = "";
+            TvTestCmd = "";
+            NwTvMode = false;
+            NwTvModeUDP = false;
+            NwTvModeTCP = false;
+            FilePlayExe = "";
+            FilePlayCmd = "\"$FilePath$\"";
+            FilePlayOnAirWithExe = false;
+            IEpgStationList = new List<IEPGStationInfo>();
+            NWServerIP = "";
+            NWServerPort = 4510;
+            NWWaitPort = 0;
+            NWMacAdd = "";
+            WakeReconnectNW = false;
+            SuspendCloseNW = false;
+            NgAutoEpgLoadNW = false;
+            TvTestOpenWait = 2000;
+            TvTestChgBonWait = 2000;
+            ResDefColorR = 0xFF;
+            ResDefColorG = 0xFF;
+            ResDefColorB = 0xFF;
+            ResErrColorR = 0xFF;
+            ResErrColorG = 0;
+            ResErrColorB = 0;
+            ResWarColorR = 0xFF;
+            ResWarColorG = 0xFF;
+            ResWarColorB = 0;
+            ResNoColorR = 0xA9;
+            ResNoColorG = 0xA9;
+            ResNoColorB = 0xA9;
+            RecEndDefColorR = 0xFF;
+            RecEndDefColorG = 0xFF;
+            RecEndDefColorB = 0xFF;
+            RecEndErrColorR = 0xFF;
+            RecEndErrColorG = 0;
+            RecEndErrColorB = 0;
+            RecEndWarColorR = 0xFF;
+            RecEndWarColorG = 0xFF;
+            RecEndWarColorB = 0;
+            EpgTipsBackColorR = 0xD3;
+            EpgTipsBackColorG = 0xD3;
+            EpgTipsBackColorB = 0xD3;
+            EpgTipsForeColorR = 0;
+            EpgTipsForeColorG = 0;
+            EpgTipsForeColorB = 0;
+            EpgBackColorR = 0xA9;
+            EpgBackColorG = 0xA9;
+            EpgBackColorB = 0xA9;
+            EpgInfoSingleClick = false;
+            EpgInfoOpenMode = 0;
+            ExecBat = 0;
+            SuspendChk = 0;
+            ReserveListColumn = new List<ListColumnInfo>();
+            RecInfoListColumn = new List<ListColumnInfo>();
+            AutoAddEpgColumn = new List<ListColumnInfo>();
+            AutoAddManualColumn = new List<ListColumnInfo>();
+            SearchWndLeft = 0;
+            SearchWndTop = 0;
+            SearchWndWidth = 0;
+            SearchWndHeight = 0;
+            NotifyLogMax = 100;
+            ShowTray = true;
+            MinHide = true;
+            MouseScrollAuto = false;
+            NoStyle = 0;
         }
 
         [NonSerialized()]
@@ -1122,47 +417,23 @@ namespace EpgTimer
             set { _instance = value; }
         }
 
-        //番組表のデフォルトの背景色
-        private static void DefaultcontentColorList()
-        {
-            Instance.contentColorList.Add("LightYellow");
-            Instance.contentColorList.Add("Lavender");
-            Instance.contentColorList.Add("LavenderBlush");
-            Instance.contentColorList.Add("MistyRose");
-            Instance.contentColorList.Add("Honeydew");
-            Instance.contentColorList.Add("LightCyan");
-            Instance.contentColorList.Add("PapayaWhip");
-            Instance.contentColorList.Add("Pink");
-            Instance.contentColorList.Add("LightYellow");
-            Instance.contentColorList.Add("PapayaWhip");
-            Instance.contentColorList.Add("AliceBlue");
-            Instance.contentColorList.Add("AliceBlue");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("WhiteSmoke");
-            Instance.contentColorList.Add("White");
-        }
-
         /// <summary>
-        /// EpgTimer用設定ファイルロード関数
+        /// 設定ファイルロード関数
         /// </summary>
-        public static void LoadFromXmlFile()
+        public static void LoadFromXmlFile(bool nwMode = false)
         {
-            string path = GetSettingPath();
+            _LoadFromXmlFile(GetSettingPath(), nwMode);
+        }
+        private static void _LoadFromXmlFile(string path, bool nwMode)
+        {
             try
             {
-                FileStream fs = new FileStream(path,
-                    FileMode.Open,
-                    FileAccess.Read);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                        typeof(Settings));
-                //読み込んで逆シリアル化する
-                object obj = xs.Deserialize(fs);
-                fs.Close();
-                Instance = (Settings)obj;
-
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    //読み込んで逆シリアル化する
+                    var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
+                    Instance = (Settings)(xs.Deserialize(fs));
+                }
             }
             catch (Exception ex)
             {
@@ -1173,253 +444,165 @@ namespace EpgTimer
                     {
                         if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                         {
-                            try
-                            {
-                                FileStream fs = new FileStream(backPath,
-                                    FileMode.Open,
-                                    FileAccess.Read, FileShare.None);
-                                System.Xml.Serialization.XmlSerializer xs =
-                                    new System.Xml.Serialization.XmlSerializer(
-                                        typeof(Settings));
-                                //読み込んで逆シリアル化する
-                                object obj = xs.Deserialize(fs);
-                                fs.Close();
-                                Instance = (Settings)obj;
-                            }
-                            catch (Exception ex2)
-                            {
-                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
-                            }
+                            _LoadFromXmlFile(backPath, nwMode);
+                            return;
                         }
                     }
-                    else
-                    {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    }
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
             }
-            finally
-            {
-                if (Instance.contentColorList.Count == 0)
-                {
-                    DefaultcontentColorList();
-                }
-                else if (Instance.contentColorList.Count == 0x10)
-                {
-                    Instance.contentColorList.Add("White");
-                }
-                if (Instance.ContentCustColorList.Count == 0)
-                {
-                    for (int i = 0; i < 0x11+4; i++)
-                    {
-                        Instance.ContentCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.viewButtonList.Count == 0)
-                {
-                    Instance.viewButtonList.Add("設定");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("検索");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("スタンバイ");
-                    Instance.viewButtonList.Add("休止");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG取得");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG再読み込み");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("終了");
-                }
-                if (Instance.taskMenuList.Count == 0)
-                {
-                    Instance.taskMenuList.Add("設定");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("スタンバイ");
-                    Instance.taskMenuList.Add("休止");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("終了");
-                }
-                if (Instance.reserveListColumn.Count == 0)
-                {
-                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecFileName", double.NaN));
-                }
-                if (Instance.recInfoListColumn.Count == 0)
-                {
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
-                }
-                if (Instance.autoAddEpgColumn.Count == 0)
-                {
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                }
-                if (Instance.autoAddManualColumn.Count == 0)
-                {
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                }
-            }
-        }
- 
-        /// <summary>
-        /// EpgTimerNW用の設定ファイルロード関数
-        /// </summary>
-        public static void LoadFromXmlFileNW()
-        {
-            string path = GetSettingPath();
 
             try
             {
-                FileStream fs = new FileStream(path,
-                    FileMode.Open,
-                    FileAccess.Read, FileShare.None);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                        typeof(Settings));
-                //読み込んで逆シリアル化する
-                object obj = xs.Deserialize(fs);
-                fs.Close();
-                Instance = (Settings)obj;
-
-            }
-            catch (Exception ex)
-            {
-                if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
+                if (Instance.ContentColorList.Count == 0x10)//多分旧バージョンの互換用コード
                 {
-                    string backPath = path + ".back";
-                    if (System.IO.File.Exists(backPath) == true)
-                    {
-                        if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                        {
-                            try
-                            {
-                                FileStream fs = new FileStream(backPath,
-                                    FileMode.Open,
-                                    FileAccess.Read, FileShare.None);
-                                System.Xml.Serialization.XmlSerializer xs =
-                                    new System.Xml.Serialization.XmlSerializer(
-                                        typeof(Settings));
-                                //読み込んで逆シリアル化する
-                                object obj = xs.Deserialize(fs);
-                                fs.Close();
-                                Instance = (Settings)obj;
-                            }
-                            catch (Exception ex2)
-                            {
-                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    }
+                    Instance.ContentColorList.Add("White");
                 }
-            }
-            finally
-            {
-                if (Instance.contentColorList.Count == 0)
+                else if (Instance.ContentColorList.Count != 0x11)
                 {
-                    DefaultcontentColorList();
+                    //番組表のデフォルトの背景色
+                    Instance.ContentColorList.Clear();
+                    Instance.ContentColorList.Add("LightYellow");
+                    Instance.ContentColorList.Add("Lavender");
+                    Instance.ContentColorList.Add("LavenderBlush");
+                    Instance.ContentColorList.Add("MistyRose");
+                    Instance.ContentColorList.Add("Honeydew");
+                    Instance.ContentColorList.Add("LightCyan");
+                    Instance.ContentColorList.Add("PapayaWhip");
+                    Instance.ContentColorList.Add("Pink");
+                    Instance.ContentColorList.Add("LightYellow");
+                    Instance.ContentColorList.Add("PapayaWhip");
+                    Instance.ContentColorList.Add("AliceBlue");
+                    Instance.ContentColorList.Add("AliceBlue");
+                    Instance.ContentColorList.Add("White");
+                    Instance.ContentColorList.Add("White");
+                    Instance.ContentColorList.Add("White");
+                    Instance.ContentColorList.Add("WhiteSmoke");
+                    Instance.ContentColorList.Add("White");
                 }
-                else if (Instance.contentColorList.Count == 0x10)
+                if (Instance.ContentCustColorList.Count != 0x11 + 4)
                 {
-                    Instance.contentColorList.Add("White");
-                }
-                if (Instance.ContentCustColorList.Count == 0)
-                {
+                    Instance.ContentCustColorList.Clear();
                     for (int i = 0; i < 0x11+4; i++)
                     {
                         Instance.ContentCustColorList.Add(0xFFFFFFFF);
                     }
                 }
-                if (Instance.viewButtonList.Count == 0)
+                if (Instance.TimeColorList.Count != 4)
                 {
-                    Instance.viewButtonList.Add("設定");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("再接続");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("検索");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG取得");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG再読み込み");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("終了");
+                    //番組表の時間軸のデフォルトの背景色
+                    Instance.TimeColorList.Clear();
+                    Instance.TimeColorList.Add("MediumPurple");
+                    Instance.TimeColorList.Add("LightSeaGreen");
+                    Instance.TimeColorList.Add("LightSalmon");
+                    Instance.TimeColorList.Add("CornflowerBlue");
                 }
-                if (Instance.taskMenuList.Count == 0)
+                if (Instance.TimeCustColorList.Count != 4)
                 {
-                    Instance.taskMenuList.Add("設定");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("再接続");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("終了");
+                    Instance.TimeCustColorList.Clear();
+                    for (int i = 0; i < 4; i++)
+                    {
+                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
+                    }
                 }
-                if (Instance.reserveListColumn.Count == 0)
+                if (Instance.ViewButtonList.Count == 0)
                 {
-                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
+                    if (nwMode == false)
+                    {
+                        Instance.ViewButtonList.Add("設定");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("検索");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("スタンバイ");
+                        Instance.ViewButtonList.Add("休止");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("EPG取得");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("EPG再読み込み");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("終了");
+                    }
+                    else
+                    {
+                        Instance.ViewButtonList.Add("設定");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("再接続");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("検索");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("EPG取得");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("EPG再読み込み");
+                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add("終了");
+                    }
                 }
-                if (Instance.recInfoListColumn.Count == 0)
+                if (Instance.TaskMenuList.Count == 0)
                 {
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
+                    if (nwMode == false)
+                    {
+                        Instance.TaskMenuList.Add("設定");
+                        Instance.TaskMenuList.Add("（セパレータ）");
+                        Instance.TaskMenuList.Add("スタンバイ");
+                        Instance.TaskMenuList.Add("休止");
+                        Instance.TaskMenuList.Add("（セパレータ）");
+                        Instance.TaskMenuList.Add("終了");
+                    }
+                    else
+                    {
+                        Instance.TaskMenuList.Add("設定");
+                        Instance.TaskMenuList.Add("（セパレータ）");
+                        Instance.TaskMenuList.Add("再接続");
+                        Instance.TaskMenuList.Add("（セパレータ）");
+                        Instance.TaskMenuList.Add("終了");
+                    }
                 }
-                if (Instance.autoAddEpgColumn.Count == 0)
+                if (Instance.ReserveListColumn.Count == 0)
                 {
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo("RecFileName", double.NaN));
                 }
-                if (Instance.autoAddManualColumn.Count == 0)
+                if (Instance.RecInfoListColumn.Count == 0)
                 {
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
                 }
-                //Instance.nwTvMode = true;
+                if (Instance.AutoAddEpgColumn.Count == 0)
+                {
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                }
+                if (Instance.AutoAddManualColumn.Count == 0)
+                {
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -1435,15 +618,12 @@ namespace EpgTimer
                     System.IO.File.Copy(path, backPath, true);
                 }
 
-                FileStream fs = new FileStream(path,
-                    FileMode.Create,
-                    FileAccess.Write, FileShare.None);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                    typeof(Settings));
-                //シリアル化して書き込む
-                xs.Serialize(fs, Instance);
-                fs.Close();
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    //シリアル化して書き込む
+                    var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
+                    xs.Serialize(fs, Instance);
+                }
             }
             catch (Exception ex)
             {

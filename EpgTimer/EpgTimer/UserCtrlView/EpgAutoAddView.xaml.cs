@@ -227,7 +227,7 @@ namespace EpgTimer
 
                 foreach (EpgEventInfo info in list)
                 {
-                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.Now)
+                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.UtcNow.AddHours(9))
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {
@@ -674,11 +674,6 @@ namespace EpgTimer
         private void button_down_Click2(object sender, RoutedEventArgs e)
         {
             this.moveItem(itemMoveDirections.down);
-        }
-
-        private void myPopup_MouseLeave(object sender, MouseEventArgs e)
-        {
-            this.myPopup.IsOpen = false;
         }
 
     }

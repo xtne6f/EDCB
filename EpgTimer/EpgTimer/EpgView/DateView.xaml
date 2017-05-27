@@ -15,7 +15,10 @@
             <RowDefinition Height="20" />
             <RowDefinition Height="20" />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Name="stackPanel_day" Orientation="Horizontal" />
-        <StackPanel Grid.Row="1" Name="stackPanel_time" Orientation="Horizontal" />            
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Name="columnDefinition" Width="*" />
+        </Grid.ColumnDefinitions>
+        <UniformGrid Grid.Row="0" Name="uniformGrid_day" Rows="1" />
+        <UniformGrid Grid.Row="1" Name="uniformGrid_time" Rows="1" />
     </Grid>
 </UserControl>

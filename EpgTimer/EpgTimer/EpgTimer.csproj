@@ -100,7 +100,6 @@
     <Compile Include="Setting\ColorSetWindow.xaml.cs">
       <DependentUpon>ColorSetWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Common\EAAFileClass.cs" />
     <Compile Include="Common\IEPGFileClass.cs" />
     <Compile Include="Common\NWConnectClass.cs" />
     <Compile Include="NotifyLogWindow.xaml.cs">
@@ -125,16 +124,9 @@
     </Compile>
     <Compile Include="DefineClass\ServiceItem2.cs" />
     <Compile Include="DefineClass\ServiceViewItem.cs" />
-    <Compile Include="Setting\SetApp2DelWindow.xaml.cs">
-      <DependentUpon>SetApp2DelWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Setting\SetAppCancelWindow.xaml.cs">
-      <DependentUpon>SetAppCancelWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Setting\SetOtherAppView.xaml.cs">
       <DependentUpon>SetOtherAppView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DefineClass\TunerInfo.cs" />
     <Compile Include="Common\TVTestCtrlClass.cs" />
     <Compile Include="DefineClass\TunerNameViewItem.cs" />
     <Compile Include="SuspendCheckWindow.xaml.cs">
@@ -166,14 +158,10 @@
     <Compile Include="Common\PipeServer.cs" />
     <Compile Include="Common\RecNamePluginClass.cs" />
     <Compile Include="Common\WritePlugInClass.cs" />
-    <Compile Include="DefineClass\ColorSelectionItem.cs" />
     <Compile Include="Common\ChSet5Class.cs" />
     <Compile Include="Common\ColorDefClass.cs" />
     <Compile Include="DefineClass\DateItem.cs" />
     <Compile Include="DefineClass\IEPGStationInfo.cs" />
-    <Compile Include="DefineClass\PriorityInfo.cs" />
-    <Compile Include="DefineClass\RecModeInfo.cs" />
-    <Compile Include="DefineClass\YesNoInfo.cs" />
     <Compile Include="EpgDataViewItem.xaml.cs">
       <DependentUpon>EpgDataViewItem.xaml</DependentUpon>
     </Compile>
@@ -198,9 +186,6 @@
     <Compile Include="EpgView\EpgWeekMainView.xaml.cs">
       <DependentUpon>EpgWeekMainView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="KeyWordWindow.xaml.cs">
-      <DependentUpon>KeyWordWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Setting\SetDefSearchSettingWindow.xaml.cs">
       <DependentUpon>SetDefSearchSettingWindow.xaml</DependentUpon>
     </Compile>
@@ -209,9 +194,6 @@
     </Compile>
     <Compile Include="Setting\SetAppView.xaml.cs">
       <DependentUpon>SetAppView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Setting\SetBasicView.xaml.cs">
-      <DependentUpon>SetBasicView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Setting\SetDefRecSettingWindow.xaml.cs">
       <DependentUpon>SetDefRecSettingWindow.xaml</DependentUpon>
@@ -224,9 +206,6 @@
     </Compile>
     <Compile Include="UserCtrlView\SearchKeyView.xaml.cs">
       <DependentUpon>SearchKeyView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserCtrlView\SearchKeyDescView.xaml.cs">
-      <DependentUpon>SearchKeyDescView.xaml</DependentUpon>
     </Compile>
     <Compile Include="SearchWindow.xaml.cs">
       <DependentUpon>SearchWindow.xaml</DependentUpon>
@@ -278,14 +257,6 @@
     <Page Include="RecInfoView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Setting\SetApp2DelWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Setting\SetAppCancelWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
     </Page>
     <Page Include="Setting\SetOtherAppView.xaml">
       <SubType>Designer</SubType>
@@ -371,10 +342,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="KeyWordWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -387,9 +354,7 @@
     <Compile Include="Common\DBManagerClass.cs" />
     <Compile Include="Common\DefineEnum.cs" />
     <Compile Include="Common\SettingClass.cs" />
-    <Compile Include="DefineClass\ComponentKindInfo.cs" />
     <Compile Include="DefineClass\ContentKindInfo.cs" />
-    <Compile Include="DefineClass\DayOfWeekInfo.cs" />
     <Compile Include="DefineClass\CustomEpgTabInfo.cs" />
     <Compile Include="EpgView\DateView.xaml.cs">
       <DependentUpon>DateView.xaml</DependentUpon>
@@ -426,10 +391,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Setting\SetBasicView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Setting\SetDefRecSettingWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -443,10 +404,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UserCtrlView\SearchKeyView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserCtrlView\SearchKeyDescView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -169,105 +169,55 @@ namespace EpgTimer
                     }
                     CommonManager.Instance.DB.ReloadReserveInfo();
 
-                    bool findTere = false;
-                    bool findBS = false;
-                    bool findCS = false;
-                    bool findOther = false;
-
-                    CustomEpgTabInfo setInfoBS = new CustomEpgTabInfo();
-                    setInfoBS.ViewMode = 0;
-                    setInfoBS.TabName = "BS";
-                    setInfoBS.NeedTimeOnlyBasic = false;
-                    CustomEpgTabInfo setInfoCS = new CustomEpgTabInfo();
-                    setInfoCS.ViewMode = 0;
-                    setInfoCS.TabName = "CS";
-                    setInfoCS.NeedTimeOnlyBasic = false;
-                    CustomEpgTabInfo setInfoTere = new CustomEpgTabInfo();
-                    setInfoTere.ViewMode = 0;
-                    setInfoTere.TabName = "地デジ";
-                    setInfoTere.NeedTimeOnlyBasic = false;
-                    CustomEpgTabInfo setInfoOther = new CustomEpgTabInfo();
-                    setInfoOther.ViewMode = 0;
-                    setInfoOther.TabName = "その他";
-                    setInfoOther.NeedTimeOnlyBasic = false;
-
-
                     //デフォルト表示
-                    foreach (EpgServiceEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values)
+                    for (int i = 0; i < 4; i++)
                     {
-                        if (info.serviceInfo.ONID == 0x0004)
+                        CustomEpgTabInfo setInfo = null;
+                        bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
+                        //リモコンキー優先のID順ソート
+                        foreach (EpgServiceAllEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values.Where(item => {
+                            ulong key = CommonManager.Create64Key(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID);
+                            return ignoreEpgCap || ChSet5.Instance.ChList.ContainsKey(key) && ChSet5.Instance.ChList[key].EpgCapFlag; }).OrderBy(item => (
+                            (ulong)(ChSet5.IsDttv(item.serviceInfo.ONID) ? (item.serviceInfo.remote_control_key_id + 255) % 256 : 0) << 48 |
+                            CommonManager.Create64Key(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID))))
                         {
-                            findBS = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
-                            setInfoBS.ViewServiceList.Add(id);
+                            string tabName = null;
+                            if (i == 0 && ChSet5.IsDttv(info.serviceInfo.ONID))
+                            {
+                                tabName = "地デジ";
+                            }
+                            else if (i == 1 && ChSet5.IsBS(info.serviceInfo.ONID))
+                            {
+                                tabName = "BS";
+                            }
+                            else if (i == 2 && ChSet5.IsCS(info.serviceInfo.ONID))
+                            {
+                                tabName = "CS";
+                            }
+                            else if (i == 3 && ChSet5.IsOther(info.serviceInfo.ONID))
+                            {
+                                tabName = "その他";
+                            }
+                            if (tabName != null)
+                            {
+                                if (setInfo == null)
+                                {
+                                    setInfo = new CustomEpgTabInfo();
+                                    setInfo.TabName = tabName;
+                                }
+                                setInfo.ViewServiceList.Add(CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID));
+                            }
                         }
-                        else if (info.serviceInfo.ONID == 0x0006 || info.serviceInfo.ONID == 0x0007)
+                        if (setInfo != null)
                         {
-                            findCS = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
-                            setInfoCS.ViewServiceList.Add(id);
+                            EpgDataViewItem epgView = new EpgDataViewItem();
+                            epgView.SetViewMode(setInfo);
+                            epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
+                            TabItem tabItem = new TabItem();
+                            tabItem.Header = setInfo.TabName;
+                            tabItem.Content = epgView;
+                            tabControl.Items.Add(tabItem);
                         }
-                        else if (0x7880 <= info.serviceInfo.ONID && info.serviceInfo.ONID <= 0x7FE8)
-                        {
-                            findTere = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
-                            setInfoTere.ViewServiceList.Add(id);
-                        }
-                        else
-                        {
-                            findOther = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
-                            setInfoOther.ViewServiceList.Add(id);
-                        }
-                    }
-                    if (findBS == true)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(setInfoBS);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = setInfoBS.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
-                    }
-                    if (findCS == true)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(setInfoCS);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = setInfoCS.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
-                    }
-                    if (findTere == true)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(setInfoTere);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = setInfoTere.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
-
-                    }
-                    if (findOther == true)
-                    {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(setInfoOther);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = setInfoOther.TabName;
-                        tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
                     }
                     if (tabControl.Items.Count > 0)
                     {

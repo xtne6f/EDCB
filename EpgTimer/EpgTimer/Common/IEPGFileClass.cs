@@ -50,7 +50,7 @@ namespace EpgTimer
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(3), 16);
                         foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                         {
-                            if (0x7880 <= info.ONID && info.ONID <= 0x7FE8 && info.SID == sid)
+                            if (ChSet5.IsDttv(info.ONID) && info.SID == sid)
                             {
                                 AddInfo.OriginalNetworkID = info.ONID;
                                 AddInfo.TransportStreamID = info.TSID;
@@ -69,7 +69,7 @@ namespace EpgTimer
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(4));
                         foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                         {
-                            if (info.ONID == 4 && info.SID == sid)
+                            if (ChSet5.IsBS(info.ONID) && info.SID == sid)
                             {
                                 AddInfo.OriginalNetworkID = info.ONID;
                                 AddInfo.TransportStreamID = info.TSID;
@@ -88,7 +88,7 @@ namespace EpgTimer
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(4));
                         foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                         {
-                            if ((info.ONID == 6 || info.ONID == 7) && info.SID == sid)
+                            if (ChSet5.IsCS(info.ONID) && info.SID == sid)
                             {
                                 AddInfo.OriginalNetworkID = info.ONID;
                                 AddInfo.TransportStreamID = info.TSID;
@@ -107,7 +107,7 @@ namespace EpgTimer
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(3), 16);
                         foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                         {
-                            if (0x7880 <= info.ONID && info.ONID <= 0x7FE8 && info.SID == sid)
+                            if (ChSet5.IsDttv(info.ONID) && info.SID == sid)
                             {
                                 AddInfo.OriginalNetworkID = info.ONID;
                                 AddInfo.TransportStreamID = info.TSID;

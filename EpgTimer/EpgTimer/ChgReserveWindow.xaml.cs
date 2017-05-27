@@ -28,13 +28,13 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            comboBox_service.ItemsSource = ChSet5.Instance.ChList.Values;
-            comboBox_sh.ItemsSource = CommonManager.Instance.HourDictionary.Values;
-            comboBox_eh.ItemsSource = CommonManager.Instance.HourDictionary.Values;
-            comboBox_sm.ItemsSource = CommonManager.Instance.MinDictionary.Values;
-            comboBox_em.ItemsSource = CommonManager.Instance.MinDictionary.Values;
-            comboBox_ss.ItemsSource = CommonManager.Instance.MinDictionary.Values;
-            comboBox_es.ItemsSource = CommonManager.Instance.MinDictionary.Values;
+            comboBox_service.ItemsSource = ChSet5.Instance.ChListSelected;
+            comboBox_sh.ItemsSource = Enumerable.Range(0, 24);
+            comboBox_eh.ItemsSource = Enumerable.Range(0, 24);
+            comboBox_sm.ItemsSource = Enumerable.Range(0, 60);
+            comboBox_em.ItemsSource = Enumerable.Range(0, 60);
+            comboBox_ss.ItemsSource = Enumerable.Range(0, 60);
+            comboBox_es.ItemsSource = Enumerable.Range(0, 60);
 
         }
 
@@ -59,7 +59,7 @@ namespace EpgTimer
                 this.Title = "プログラム予約追加";
                 checkBox_program.Visibility = System.Windows.Visibility.Hidden;
 
-                DateTime startTime = DateTime.Now.AddMinutes(1);
+                DateTime startTime = DateTime.UtcNow.AddHours(9).AddMinutes(1);
                 datePicker_start.SelectedDate = startTime;
                 comboBox_sh.SelectedIndex = startTime.Hour;
                 comboBox_sm.SelectedIndex = startTime.Minute;

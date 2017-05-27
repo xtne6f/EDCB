@@ -31,6 +31,7 @@ namespace EpgTimer
         public NotifyLogWindow()
         {
             InitializeComponent();
+            textBox_logMax.Text = Settings.Instance.NotifyLogMax.ToString();
         }
 
         private void ReloadList()
@@ -44,11 +45,24 @@ namespace EpgTimer
 
             listView_log.DataContext = null;
             logList.Clear();
-            foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
+            string notifyLog = "";
+            if (CommonManager.Instance.CtrlCmd.SendGetNotifyLog(Math.Max(Settings.Instance.NotifyLogMax, 1), ref notifyLog) == ErrCode.CMD_SUCCESS)
             {
-                NotifySrvInfoItem item = new NotifySrvInfoItem();
-                item.NotifyInfo = info;
-                logList.Add(item);
+                //サーバに保存されたログを使う
+                foreach (string text in notifyLog.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    logList.Add(new NotifySrvInfoItem(text));
+                }
+                textBox_logMax.IsEnabled = true;
+            }
+            else
+            {
+                //クライアントで蓄積したログを使う
+                foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
+                {
+                    logList.Add(new NotifySrvInfoItem(info));
+                }
+                textBox_logMax.IsEnabled = false;
             }
             listView_log.DataContext = logList;
 
@@ -154,10 +168,17 @@ namespace EpgTimer
                 StreamWriter file = new StreamWriter(dlg.FileName, false, System.Text.Encoding.GetEncoding("shift_jis") );
                 foreach (NotifySrvInfoItem info in logList)
                 {
-                    file.Write(info.FileLogText);
+                    file.WriteLine(info);
                 }
                 file.Close();
             }
+        }
+
+        private void textBox_logMax_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            int logMax;
+            int.TryParse(textBox_logMax.Text, out logMax);
+            Settings.Instance.NotifyLogMax = logMax;
         }
     }
 }

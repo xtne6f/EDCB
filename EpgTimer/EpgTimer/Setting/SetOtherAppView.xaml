@@ -20,16 +20,12 @@
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" />
                     <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label4" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="134,80,0,0" Name="textBox_cmd" VerticalAlignment="Top" Width="456" />
-                    <Label Content="視聴に使用するBonDriver" Height="28" HorizontalAlignment="Left" Margin="12,144,0,0" Name="label3" VerticalAlignment="Top" />
-                    <ListBox Height="64" HorizontalAlignment="Left" Margin="44,178,0,0" Name="listBox_bon" VerticalAlignment="Top" Width="247" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="297,178,0,0" Name="button_del" VerticalAlignment="Top" Width="56" Click="button_del_Click" />
-                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="297,248,0,0" Name="button_add" VerticalAlignment="Top" Width="56" Click="button_add_Click" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="44,248,0,0" Name="comboBox_bon" VerticalAlignment="Top" Width="247" />
-                    <CheckBox Content="NetworkTVモード(録画用アプリやEpgTimerSrvからのUDP、TCP送信)で視聴する" Height="16" HorizontalAlignment="Left" Margin="12,277,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" />
-                    <CheckBox Content="UDP有効" Height="16" HorizontalAlignment="Left" Margin="44,330,0,0" Name="checkBox_nwUDP" VerticalAlignment="Top" />
-                    <CheckBox Content="TCP有効" Height="16" HorizontalAlignment="Left" Margin="134,330,0,0" Name="checkBox_nwTCP" VerticalAlignment="Top" />
+                    <Label Content="※視聴に使用するBonDriverはEpgTimerSrv設定で選択します。" Height="28" HorizontalAlignment="Left" Margin="12,144,0,0" Name="label3" VerticalAlignment="Top" />
+                    <CheckBox Content="NetworkTVモード(録画用アプリやEpgTimerSrvからのUDP、TCP送信)で視聴する" Height="16" HorizontalAlignment="Left" Margin="12,187,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" />
+                    <CheckBox Content="UDP有効" Height="16" HorizontalAlignment="Left" Margin="44,240,0,0" Name="checkBox_nwUDP" VerticalAlignment="Top" />
+                    <CheckBox Content="TCP有効" Height="16" HorizontalAlignment="Left" Margin="134,240,0,0" Name="checkBox_nwTCP" VerticalAlignment="Top" />
                     <Label Content="(BonDriverに関するオプションは自動的に付加されます)" Height="28" HorizontalAlignment="Left" Margin="134,110,0,0" Name="label5" VerticalAlignment="Top" />
-                    <Label Content="NetworkTVモードの送信方式 (追っかけ再生はNetworkTVモードで動作します。使用する場合はチェックしてください)" Height="28" HorizontalAlignment="Left" Margin="12,302,0,0" Name="label9" VerticalAlignment="Top" />
+                    <Label Content="NetworkTVモードの送信方式 (追っかけ再生はNetworkTVモードで動作します。使用する場合はチェックしてください)" Height="28" HorizontalAlignment="Left" Margin="12,212,0,0" Name="label9" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
             <TabItem Header="ファイル再生" Name="tabItem_play">

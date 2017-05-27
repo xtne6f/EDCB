@@ -25,16 +25,11 @@ namespace EpgTimer
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
         {
-            setBasicView.SaveSetting();
             setAppView.SaveSetting();
             setEpgView.SaveSetting();
             setOtherAppView.SaveSetting();
 
             Settings.SaveToXmlFile();
-            if (CommonManager.Instance.NWMode == false)
-            {
-                ChSet5.SaveFile();
-            }
             CommonManager.Instance.ReloadCustContentColorList();
 
             this.DialogResult = true;
