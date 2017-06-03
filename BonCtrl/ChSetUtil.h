@@ -13,14 +13,14 @@ public:
 
 	//チャンネル設定ファイルを読み込む
 	BOOL LoadChSet(
-		wstring chSet4FilePath,
-		wstring chSet5FilePath
+		const wstring& chSet4FilePath,
+		const wstring& chSet5FilePath
 		);
 
 	//チャンネル設定ファイルを保存する
 	BOOL SaveChSet(
-		wstring chSet4FilePath,
-		wstring chSet5FilePath
+		const wstring& chSet4FilePath,
+		const wstring& chSet5FilePath
 		);
 
 	//チャンネルスキャン用にクリアする
@@ -30,7 +30,7 @@ public:
 	BOOL AddServiceInfo(
 		DWORD space,
 		DWORD ch,
-		wstring chName,
+		const wstring& chName,
 		SERVICE_INFO* serviceInfo
 		);
 

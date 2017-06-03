@@ -82,7 +82,7 @@ protected:
 	// chkFolderPath		[IN]指定フォルダ
 	BOOL ChkFreeFolder(
 		ULONGLONG needFreeSize,
-		wstring chkFolderPath
+		const wstring& chkFolderPath
 	);
 
 	static UINT WINAPI OutThread(LPVOID param);

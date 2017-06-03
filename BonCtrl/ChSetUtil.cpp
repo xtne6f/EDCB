@@ -9,8 +9,8 @@ CChSetUtil::CChSetUtil(void)
 
 //チャンネル設定ファイルを読み込む
 BOOL CChSetUtil::LoadChSet(
-	wstring chSet4FilePath,
-	wstring chSet5FilePath
+	const wstring& chSet4FilePath,
+	const wstring& chSet5FilePath
 	)
 {
 	BOOL ret = TRUE;
@@ -25,8 +25,8 @@ BOOL CChSetUtil::LoadChSet(
 
 //チャンネル設定ファイルを保存する
 BOOL CChSetUtil::SaveChSet(
-	wstring chSet4FilePath,
-	wstring chSet5FilePath
+	const wstring& chSet4FilePath,
+	const wstring& chSet5FilePath
 	)
 {
 	//接続待ち
@@ -78,7 +78,7 @@ BOOL CChSetUtil::Clear()
 BOOL CChSetUtil::AddServiceInfo(
 	DWORD space,
 	DWORD ch,
-	wstring chName,
+	const wstring& chName,
 	SERVICE_INFO* serviceInfo
 	)
 {

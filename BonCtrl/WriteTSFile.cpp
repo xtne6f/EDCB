@@ -126,7 +126,7 @@ BOOL CWriteTSFile::GetFreeFolder(
 // chkFolderPath		[IN]指定フォルダ
 BOOL CWriteTSFile::ChkFreeFolder(
 	ULONGLONG needFreeSize,
-	wstring chkFolderPath
+	const wstring& chkFolderPath
 )
 {
 	BOOL ret = FALSE;
