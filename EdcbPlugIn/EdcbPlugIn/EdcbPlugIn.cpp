@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include "EdcbPlugIn.h"
 #include "../../Common/StringUtil.h"
-#include "../../Common/PathUtil.h"
 #include "../../Common/CommonDef.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -16,22 +15,6 @@
 namespace
 {
 
-wstring GetDllIniPath()
-{
-	WCHAR szDllPath[MAX_PATH];
-	DWORD len = GetModuleFileName(g_hinstDLL, szDllPath, MAX_PATH);
-	if (len != 0 && len < MAX_PATH) {
-		WCHAR szPath[_MAX_DRIVE + _MAX_DIR + _MAX_FNAME + 4 + 8];
-		WCHAR szDrive[_MAX_DRIVE];
-		WCHAR szDir[_MAX_DIR];
-		WCHAR szFname[_MAX_FNAME];
-		_wsplitpath_s(szDllPath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, nullptr, 0);
-		_wmakepath_s(szPath, szDrive, szDir, szFname, L".ini");
-		return szPath;
-	}
-	return L"";
-}
-
 BOOL DuplicateSave(LPCWSTR originalPath, DWORD *targetID, wstring *targetPath)
 {
 	vector<WCHAR> buf;
@@ -40,9 +23,7 @@ BOOL DuplicateSave(LPCWSTR originalPath, DWORD *targetID, wstring *targetPath)
 		buf.resize(buf.size() + 16, L'\0');
 	}
 	BOOL ret = FALSE;
-	wstring dir;
-	GetModuleFolderPath(dir);
-	HMODULE hDll = LoadLibrary((dir + L"\\Write_Multi.dll").c_str());
+	HMODULE hDll = LoadLibrary(GetModulePath().replace_filename(L"Write_Multi.dll").c_str());
 	if (hDll) {
 		BOOL (WINAPI*pfnDuplicateSave)(LPCWSTR,DWORD*,WCHAR*,DWORD,int,ULONGLONG) =
 			reinterpret_cast<BOOL (WINAPI*)(LPCWSTR,DWORD*,WCHAR*,DWORD,int,ULONGLONG)>(GetProcAddress(hDll, "DuplicateSave"));
@@ -133,9 +114,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnRecordStatusChange(int Status)
 
 void CEdcbPlugIn::CMyEventHandler::OnStartupDone()
 {
-	wstring dir;
-	GetFileFolder(GetDllIniPath(), dir);
-	if (GetModuleHandle((dir + L"\\EpgTimerPlugIn.tvtp").c_str())) {
+	if (GetModuleHandle(GetModulePath(g_hinstDLL).replace_filename(L"EpgTimerPlugIn.tvtp").c_str())) {
 		// 1プロセスに複数サーバは想定外なので開始しない(この判定方法は確実ではない)
 		m_outer.m_pApp->AddLog(L"EpgTimerPlugInが読み込まれているため正常動作しません。", TVTest::LOG_TYPE_ERROR);
 	}
@@ -186,19 +165,17 @@ bool CEdcbPlugIn::Initialize()
 		m_pApp->AddLog(L"TVTestのバージョンが古いため初期化できません。");
 		return false;
 	}
-	m_edcbDir = GetPrivateProfileToString(L"SET", L"EdcbFolderPath", L"", GetDllIniPath().c_str());
-	ChkFolderPath(m_edcbDir);
+	m_edcbDir = GetPrivateProfileToFolderPath(L"SET", L"EdcbFolderPath", GetModulePath(g_hinstDLL).replace_extension(L".ini").c_str()).native();
 	// 未指定のときはTVTestと同階層のEDCBフォルダ
-	GetModuleFolderPath(m_epgUtilPath);
 	if (m_edcbDir.empty()) {
-		GetFileFolder(m_epgUtilPath, m_edcbDir);
-		if (!m_edcbDir.empty()) {
-			m_edcbDir += L"\\EDCB";
+		fs_path altPath = GetModulePath().parent_path().parent_path();
+		if (altPath.is_absolute()) {
+			m_edcbDir = altPath.append(L"EDCB").native();
 		}
 	}
-	m_epgUtilPath += L"\\EpgDataCap3.dll";
-	if (m_epgUtil.Initialize(FALSE, m_epgUtilPath.c_str()) != NO_ERR) {
-		m_epgUtilPath = m_edcbDir + L"\\EpgDataCap3.dll";
+	m_epgUtilPath = GetModulePath().replace_filename(L"EpgDataCap3.dll").native();
+	if (!m_edcbDir.empty() && m_epgUtil.Initialize(FALSE, m_epgUtilPath.c_str()) != NO_ERR) {
+		m_epgUtilPath = fs_path(m_edcbDir).append(L"EpgDataCap3.dll").native();
 		if (m_epgUtil.Initialize(FALSE, m_epgUtilPath.c_str()) != NO_ERR) {
 			m_epgUtilPath.clear();
 		}
@@ -208,7 +185,7 @@ bool CEdcbPlugIn::Initialize()
 		return false;
 	}
 	CParseChText5 chText5;
-	if (!chText5.ParseText((GetEdcbSettingPath() + L"\\ChSet5.txt").c_str())) {
+	if (!chText5.ParseText(GetEdcbSettingPath().append(L"ChSet5.txt").c_str())) {
 		m_pApp->AddLog(L"ChSet5.txtが見つかりません。", TVTest::LOG_TYPE_ERROR);
 		return false;
 	}
@@ -291,10 +268,10 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	case WM_CREATE:
 		{
 			m_hwnd = hwnd;
-			wstring bonCtrlIniPath = m_edcbDir + L"\\BonCtrl.ini";
+			fs_path bonCtrlIniPath = fs_path(m_edcbDir).append(L"BonCtrl.ini");
 			m_epgCapTimeout = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, bonCtrlIniPath.c_str());
 			m_epgCapSaveTimeout = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, bonCtrlIniPath.c_str()) != 0;
-			wstring iniPath = GetDllIniPath();
+			fs_path iniPath = GetModulePath(g_hinstDLL).replace_extension(L".ini");
 			m_nonTunerDrivers = L"::" + GetPrivateProfileToString(L"SET", L"NonTunerDrivers",
 				L"BonDriver_UDP.dll:BonDriver_TCP.dll:BonDriver_File.dll:BonDriver_RecTask.dll:BonDriver_Pipe.dll", iniPath.c_str()) + L':';
 			m_recNamePrefix = GetPrivateProfileToString(L"SET", L"RecNamePrefix", L"", iniPath.c_str());
@@ -406,7 +383,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							// 保存開始
 							wstring name;
 							Format(name, L"%04X%04X_epg.dat", chInfo.ONID, basicFlag ? 0xFFFF : chInfo.TSID);
-							m_epgFilePath = GetEdcbSettingPath() + L"\\EpgData\\" + name;
+							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
 							HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 							if (epgFile != INVALID_HANDLE_VALUE) {
 								m_pApp->AddLog((L'★' + name).c_str());
@@ -483,7 +460,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							// 保存開始
 							wstring name;
 							Format(name, L"%04X%04X_epg.dat", onid, basicFlag ? 0xFFFF : tsid);
-							m_epgFilePath = GetEdcbSettingPath() + L"\\EpgData\\" + name;
+							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
 							HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 							if (epgFile != INVALID_HANDLE_VALUE) {
 								m_pApp->AddLog((L'★' + name).c_str());
@@ -573,7 +550,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				m_epgCapChList = *reinterpret_cast<vector<SET_CH_INFO>*>(lParam);
 				if (!m_epgCapChList.empty()) {
 					SetTimer(hwnd, TIMER_EPGCAP, 2000, nullptr);
-					wstring commonIniPath = m_edcbDir + L"\\Common.ini";
+					fs_path commonIniPath = fs_path(m_edcbDir).append(L"Common.ini");
 					m_epgCapBasicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str()) != 0;
 					m_epgCapBasicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str()) != 0;
 					m_epgCapBasicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str()) != 0;
@@ -821,9 +798,9 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 				REC_CTRL &recCtrl = m_recCtrlMap[val.ctrlID];
 				if (recCtrl.filePath.empty() && !val.saveFolder.empty()) {
 					// saveFolderは最初の要素のみ使う
-					wstring filePath = val.saveFolder[0].recFolder;
+					fs_path filePath = val.saveFolder[0].recFolder;
 					ChkFolderPath(filePath);
-					filePath += L'\\' + val.saveFolder[0].recFileName;
+					filePath.append(val.saveFolder[0].recFileName);
 					if (!m_recNamePrefix.empty()) {
 						// 対象サービスIDをファイル名に前置する
 						wstring prefix = m_recNamePrefix;
@@ -832,20 +809,17 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						Replace(prefix, L"$SID10$", macro);
 						Format(macro, L"%04X", recCtrl.sid);
 						Replace(prefix, L"$SID16$", macro);
-						wstring name;
-						GetFileName(filePath, name);
-						GetFileFolder(filePath, filePath);
-						filePath += L'\\' + prefix + name;
+						wstring name = prefix + filePath.filename().native();
+						filePath.replace_filename(name);
 					}
 					if (IsEdcbRecording()) {
 						// 重複録画
-						wstring dir;
-						GetFileFolder(filePath, dir);
-						_CreateDirectory(dir.c_str());
-						if (DuplicateSave(m_duplicateOriginalPath.c_str(), &recCtrl.duplicateTargetID, &filePath)) {
+						_CreateDirectory(filePath.parent_path().c_str());
+						wstring strFilePath = filePath.native();
+						if (DuplicateSave(m_duplicateOriginalPath.c_str(), &recCtrl.duplicateTargetID, &strFilePath)) {
 							SendMessage(m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
 							CBlockLock lock(&m_streamLock);
-							recCtrl.filePath = filePath;
+							recCtrl.filePath = strFilePath;
 							resParam->param = CMD_SUCCESS;
 						}
 						else {
@@ -857,19 +831,20 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						TVTest::RecordInfo ri;
 						ri.Mask = TVTest::RECORD_MASK_FILENAME;
 						// 置換キーワードを展開させないため
-						Replace(filePath, L"%", L"%%");
-						vector<WCHAR> buf(filePath.c_str(), filePath.c_str() + filePath.size() + 1);
+						wstring strFilePath = filePath.native();
+						Replace(strFilePath, L"%", L"%%");
+						vector<WCHAR> buf(strFilePath.c_str(), strFilePath.c_str() + strFilePath.size() + 1);
 						ri.pszFileName = &buf.front();
 						m_pApp->StopRecord();
 						if (m_pApp->StartRecord(&ri)) {
 							TVTest::RecordStatusInfo rsi;
-							WCHAR szFilePath[MAX_PATH];
-							rsi.pszFileName = szFilePath;
-							rsi.MaxFileName = _countof(szFilePath);
-							if (m_pApp->GetRecordStatus(&rsi) && szFilePath[0]) {
+							buf.resize(buf.size() + 64);
+							rsi.pszFileName = &buf.front();
+							rsi.MaxFileName = static_cast<int>(buf.size());
+							if (m_pApp->GetRecordStatus(&rsi) && buf[0]) {
 								SendMessage(m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
 								CBlockLock lock(&m_streamLock);
-								recCtrl.filePath = m_duplicateOriginalPath = szFilePath;
+								recCtrl.filePath = m_duplicateOriginalPath = &buf.front();
 								recCtrl.duplicateTargetID = 1;
 								SendMessage(m_hwnd, WM_SIGNAL_UPDATE_START, 0, 0);
 								resParam->param = CMD_SUCCESS;
@@ -897,15 +872,12 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 				}
 				if (!recCtrl.filePath.empty()) {
 					if (val.saveErrLog) {
-						wstring infoPath = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", (m_edcbDir + L"\\Common.ini").c_str());
-						ChkFolderPath(infoPath);
+						fs_path infoPath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", fs_path(m_edcbDir).append(L"Common.ini").c_str());
 						if (infoPath.empty()) {
 							infoPath = recCtrl.filePath + L".err";
 						}
 						else {
-							wstring name;
-							GetFileName(recCtrl.filePath, name);
-							infoPath += L'\\' + name + L".err";
+							infoPath.append(fs_path(recCtrl.filePath).filename().concat(L".err").native());
 						}
 						map<WORD, string> pidNameMap;
 						TVTest::ServiceInfo si;
@@ -922,7 +894,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						}
 						recCtrl.dropCount.SetPIDName(&pidNameMap);
 						recCtrl.dropCount.SetBonDriver(m_currentBonDriver);
-						recCtrl.dropCount.SaveLog(infoPath);
+						recCtrl.dropCount.SaveLog(infoPath.native());
 					}
 					SET_CTRL_REC_STOP_RES_PARAM resVal;
 					resVal.recFilePath = recCtrl.filePath;
@@ -986,12 +958,11 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 	}
 }
 
-wstring CEdcbPlugIn::GetEdcbSettingPath() const
+fs_path CEdcbPlugIn::GetEdcbSettingPath() const
 {
-	wstring ret = GetPrivateProfileToString(L"SET", L"DataSavePath", L"", (m_edcbDir + L"\\Common.ini").c_str());
-	ChkFolderPath(ret);
+	fs_path ret = GetPrivateProfileToFolderPath(L"SET", L"DataSavePath", fs_path(m_edcbDir).append(L"Common.ini").c_str());
 	if (ret.empty()) {
-		ret = m_edcbDir + L"\\Setting";
+		ret = fs_path(m_edcbDir).append(L"Setting");
 	}
 	return ret;
 }

@@ -9,6 +9,7 @@
 #include "../../Common/PipeServer.h"
 #include "../../Common/EpgDataCap3Util.h"
 #include "../../BonCtrl/DropCount.h"
+#include "../../Common/PathUtil.h"
 
 class CEdcbPlugIn : public TVTest::CTVTestPlugin
 {
@@ -53,7 +54,7 @@ private:
 	static int CALLBACK CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD_STREAM *resParam);
 	void CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resParam);
 	// EDCBの設定関係保存フォルダのパスを取得する
-	wstring GetEdcbSettingPath() const;
+	fs_path GetEdcbSettingPath() const;
 	// 録画停止中かどうか調べる
 	bool IsNotRecording() const;
 	// EDCBの制御下で録画中かどうか調べる

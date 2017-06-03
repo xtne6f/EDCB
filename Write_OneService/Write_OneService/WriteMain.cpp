@@ -18,9 +18,7 @@ CWriteMain::CWriteMain()
 		wstring name = GetPrivateProfileToString(L"SET", L"WritePlugin", L"", iniPath.c_str());
 		if( name.empty() == false && name[0] != L';' ){
 			//出力プラグインを数珠繋ぎ
-			wstring dir;
-			GetFileFolder(iniPath, dir);
-			this->writePlugin.Initialize((dir + L'\\' + name).c_str());
+			this->writePlugin.Initialize(fs_path(iniPath).replace_filename(name).c_str());
 		}
 	}
 }
@@ -44,16 +42,14 @@ BOOL CWriteMain::Start(
 
 	this->savePath = fileName;
 	this->targetSID = 0;
-	wstring name;
-	GetFileName(this->savePath, name);
+	fs_path name = fs_path(this->savePath).filename();
 	if( name.c_str()[0] == L'#' ){
 		//ファイル名が"#16進数4桁#"で始まるならこれをサービスIDと解釈して取り除く
 		WCHAR* endp;
 		WORD sid = (WORD)wcstol(name.c_str() + 1, &endp, 16);
 		if( endp - name.c_str() == 5 && *endp == L'#' ){
 			this->targetSID = sid == 0xFFFF ? 0 : sid;
-			GetFileFolder(this->savePath, this->savePath);
-			this->savePath += L'\\' + name.substr(6);
+			this->savePath = fs_path(this->savePath).replace_filename(name.c_str() + 6).native();
 		}
 	}
 
@@ -62,28 +58,30 @@ BOOL CWriteMain::Start(
 			this->savePath = L"";
 			return FALSE;
 		}
-		WCHAR path[512];
-		DWORD pathSize = 512;
-		if( this->writePlugin.pfnGetSaveFilePath(this->writePlugin.id, path, &pathSize) == FALSE ){
+		vector<WCHAR> path;
+		DWORD pathSize = 0;
+		if( this->writePlugin.pfnGetSaveFilePath(this->writePlugin.id, NULL, &pathSize) && pathSize > 0 ){
+			path.resize(pathSize);
+			if( this->writePlugin.pfnGetSaveFilePath(this->writePlugin.id, &path.front(), &pathSize) == FALSE ){
+				path.clear();
+			}
+		}
+		if( path.empty() ){
 			this->writePlugin.pfnStopSave(this->writePlugin.id);
 			this->savePath = L"";
 			return FALSE;
 		}
-		this->savePath = path;
+		this->savePath = &path.front();
 	}else{
 		_OutputDebugString(L"★CWriteMain::Start CreateFile:%s\r\n", this->savePath.c_str());
 		this->file = _CreateDirectoryAndFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if( this->file == INVALID_HANDLE_VALUE ){
 			_OutputDebugString(L"★CWriteMain::Start Err:0x%08X\r\n", GetLastError());
-			WCHAR szPath[_MAX_PATH];
-			WCHAR szDrive[_MAX_DRIVE];
-			WCHAR szDir[_MAX_DIR];
-			WCHAR szFname[_MAX_FNAME];
-			WCHAR szExt[_MAX_EXT];
-			_wsplitpath_s(fileName, szDrive, szDir, szFname, szExt);
-			_wmakepath_s(szPath, szDrive, szDir, szFname, NULL);
+			fs_path pathWoExt = this->savePath;
+			fs_path ext = pathWoExt.extension();
+			pathWoExt.replace_extension();
 			for( int i = 1; ; i++ ){
-				Format(this->savePath, L"%s-(%d)%s", szPath, i, szExt);
+				Format(this->savePath, L"%s-(%d)%s", pathWoExt.c_str(), i, ext.c_str());
 				this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 				if( this->file != INVALID_HANDLE_VALUE || i >= 999 ){
 					DWORD err = GetLastError();
