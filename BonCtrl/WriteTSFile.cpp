@@ -107,7 +107,7 @@ BOOL CWriteTSFile::GetFreeFolder(
 
 	for( int i = 0; i < (int)this->saveFolderSub.size(); i++ ){
 		ULARGE_INTEGER stFree;
-		if( _GetDiskFreeSpaceEx( this->saveFolderSub[i].c_str(), &stFree, NULL, NULL ) != FALSE ){
+		if( GetDiskFreeSpaceEx( GetChkDrivePath(this->saveFolderSub[i]).c_str(), &stFree, NULL, NULL ) != FALSE ){
 			if( stFree.QuadPart > needFreeSize ){
 				freeFolderPath = this->saveFolderSub[i];
 				ret = TRUE;
@@ -132,7 +132,7 @@ BOOL CWriteTSFile::ChkFreeFolder(
 	BOOL ret = FALSE;
 
 	ULARGE_INTEGER stFree;
-	if( _GetDiskFreeSpaceEx( chkFolderPath.c_str(), &stFree, NULL, NULL ) != FALSE ){
+	if( GetDiskFreeSpaceEx( GetChkDrivePath(chkFolderPath).c_str(), &stFree, NULL, NULL ) != FALSE ){
 		if( stFree.QuadPart > needFreeSize ){
 			ret = TRUE;
 		}

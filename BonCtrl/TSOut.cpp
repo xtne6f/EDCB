@@ -6,6 +6,7 @@
 #include "../Common/BlockLock.h"
 
 CTSOut::CTSOut(void)
+	: epgFile(NULL, fclose)
 {
 	InitializeCriticalSection(&this->objLock);
 
@@ -21,8 +22,6 @@ CTSOut::CTSOut(void)
 	this->serviceOnlyFlag = FALSE;
 
 	this->nextCtrlID = 1;
-
-	this->epgFile = NULL;
 }
 
 
@@ -207,7 +206,6 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						}
 					}
 					if( this->epgFile != NULL ){
-						DWORD write;
 						if( packet.PID == 0 && packet.payload_unit_start_indicator ){
 							if( this->epgFileState == EPG_FILE_ST_NONE ){
 								this->epgFileState = EPG_FILE_ST_PAT;
@@ -218,21 +216,20 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 								//TOTを前倒しで書き込むための場所を確保
 								BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
 								memset(nullData + 4, 0xFF, 184);
-								this->epgFileTotPos = SetFilePointer(this->epgFile, 0, NULL, FILE_CURRENT);
-								WriteFile(this->epgFile, nullData, 188, &write, NULL);
+								this->epgFileTotPos = _ftelli64(this->epgFile.get());
+								fwrite(nullData, 1, 188, this->epgFile.get());
 							}
 						}
 						//まずPAT、次に(あれば)TOTを書き込む。この処理は必須ではないが番組情報をより確実かつ効率的に読み出せる
 						if( packet.PID == 0x14 && this->epgFileState == EPG_FILE_ST_TOT ){
 							this->epgFileState = EPG_FILE_ST_ALL;
-							if( this->epgFileTotPos != INVALID_SET_FILE_POINTER ){
-								SetFilePointer(this->epgFile, this->epgFileTotPos, NULL, FILE_BEGIN);
+							if( this->epgFileTotPos >= 0 ){
+								_fseeki64(this->epgFile.get(), this->epgFileTotPos, SEEK_SET);
 							}
-							WriteFile(this->epgFile, data + i, 188, &write, NULL);
-							LONG posHigh = 0;
-							SetFilePointer(this->epgFile, 0, &posHigh, FILE_END);
+							fwrite(data + i, 1, 188, this->epgFile.get());
+							_fseeki64(this->epgFile.get(), 0, SEEK_END);
 						}else if( packet.PID == 0 && this->epgFileState >= EPG_FILE_ST_PAT || packet.PID <= 0x30 && this->epgFileState >= EPG_FILE_ST_TOT ){
-							WriteFile(this->epgFile, data + i, 188, &write, NULL);
+							fwrite(data + i, 1, 188, this->epgFile.get());
 						}
 					}
 				}
@@ -424,9 +421,9 @@ BOOL CTSOut::StartSaveEPG(
 	this->epgUtil.ClearSectionStatus();
 	this->epgFileState = EPG_FILE_ST_NONE;
 
-	this->epgFile = _CreateDirectoryAndFile(this->epgTempFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( this->epgFile == INVALID_HANDLE_VALUE ){
-		this->epgFile = NULL;
+	UtilCreateDirectories(fs_path(this->epgTempFilePath).parent_path());
+	this->epgFile.reset(_wfsopen(this->epgTempFilePath.c_str(), L"wb", _SH_DENYRW));
+	if( this->epgFile == NULL ){
 		OutputDebugString(L"err\r\n");
 		return FALSE;
 	}
@@ -444,8 +441,7 @@ void CTSOut::StopSaveEPG(
 		return;
 	}
 
-	CloseHandle(this->epgFile);
-	this->epgFile = NULL;
+	this->epgFile.reset();
 
 	if( copy == TRUE ){
 		CopyFile(this->epgTempFilePath.c_str(), this->epgFilePath.c_str(), FALSE );

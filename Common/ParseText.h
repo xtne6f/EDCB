@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util.h"
+#include "PathUtil.h"
 #include "StringUtil.h"
 
 template <class K, class V>
@@ -109,7 +109,8 @@ bool CParseText<K, V>::SaveText() const
 	}
 	HANDLE hFile;
 	for( int retry = 0;; ){
-		hFile = _CreateDirectoryAndFile((this->filePath + L".tmp").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		UtilCreateDirectories(fs_path(this->filePath).parent_path());
+		hFile = CreateFile((this->filePath + L".tmp").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if( hFile != INVALID_HANDLE_VALUE ){
 			break;
 		}else if( ++retry > 5 ){

@@ -1096,8 +1096,7 @@ void CReserveManager::CheckAutoDel() const
 	//ファイル削除可能なフォルダをドライブごとに仕分け
 	map<wstring, pair<ULONGLONG, vector<wstring>>> mountMap;
 	for( size_t i = 0; i < this->setting.delChkList.size(); i++ ){
-		wstring mountPath;
-		GetChkDrivePath(this->setting.delChkList[i], mountPath);
+		wstring mountPath = GetChkDrivePath(this->setting.delChkList[i]);
 		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
 		if( itr == mountMap.end() ){
@@ -1126,8 +1125,7 @@ void CReserveManager::CheckAutoDel() const
 				}
 			}
 			for( size_t i = 0; i < recFolderList.size(); i++ ){
-				wstring mountPath;
-				GetChkDrivePath(recFolderList[i], mountPath);
+				wstring mountPath = GetChkDrivePath(recFolderList[i]);
 				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator jtr = mountMap.find(mountPath);
 				if( jtr != mountMap.end() ){

@@ -6,7 +6,6 @@
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/BlockLock.h"
 #include "../../Common/TimeUtil.h"
-#include "../../Common/Util.h"
 #include <tlhelp32.h>
 
 CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)

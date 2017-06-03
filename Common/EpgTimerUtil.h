@@ -20,9 +20,6 @@ DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid);
 wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName = NULL, const wstring* extraText = NULL);
 wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& serviceName);
 
-//フォルダパスから実際のドライブパスを取得
-void GetChkDrivePath(wstring directoryPath, wstring& mountPath);
-
 void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name);
 void GetComponentTypeName(BYTE content, BYTE type, wstring& name);
 

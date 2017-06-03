@@ -5,7 +5,6 @@
 #include "EpgDataCap_Bon.h"
 #include "SetDlgBasic.h"
 
-#include "../../Common/Util.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
 
@@ -55,7 +54,7 @@ void CSetDlgBasic::SaveIni()
 	WCHAR settingFolderPath[512] = L"";
 	GetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, settingFolderPath, 512);
 	WritePrivateProfileString(L"SET", L"DataSavePath", _wcsicmp(settingFolderPath, GetDefSettingPath().c_str()) ? settingFolderPath : NULL, commonIniPath.c_str());
-	_CreateDirectory(settingFolderPath);
+	UtilCreateDirectories(settingFolderPath);
 
 	int iNum = ListBox_GetCount(GetDlgItem(IDC_LIST_REC_FOLDER));
 	if( iNum == 1 ){

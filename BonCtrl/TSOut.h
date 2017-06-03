@@ -2,7 +2,6 @@
 
 #include <Windows.h>
 
-#include "../Common/Util.h"
 #include "../Common/StructDef.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
@@ -352,9 +351,9 @@ protected:
 
 	DWORD nextCtrlID;
 
-	HANDLE epgFile;
+	std::unique_ptr<FILE, decltype(&fclose)> epgFile;
 	enum { EPG_FILE_ST_NONE, EPG_FILE_ST_PAT, EPG_FILE_ST_TOT, EPG_FILE_ST_ALL } epgFileState;
-	DWORD epgFileTotPos;
+	__int64 epgFileTotPos;
 	wstring epgFilePath;
 	wstring epgTempFilePath;
 

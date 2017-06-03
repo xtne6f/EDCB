@@ -207,7 +207,6 @@
     <ClInclude Include="..\..\Common\TimeShiftUtil.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
-    <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="BatManager.h" />
     <ClInclude Include="civetweb.h" />
     <ClInclude Include="civetweb_lua.h" />
@@ -252,7 +251,6 @@
     <ClCompile Include="..\..\Common\TimeShiftUtil.cpp" />
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
-    <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="BatManager.cpp" />
     <ClCompile Include="civetweb.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>

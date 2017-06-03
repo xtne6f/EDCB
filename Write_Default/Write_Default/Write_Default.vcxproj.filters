@@ -39,7 +39,7 @@
     <ClInclude Include="WriteMain.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\Util.h">
+    <ClInclude Include="..\..\Common\PathUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\StringUtil.h">
@@ -65,7 +65,7 @@
     <ClCompile Include="WriteMain.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\Util.cpp">
+    <ClCompile Include="..\..\Common\PathUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\StringUtil.cpp">

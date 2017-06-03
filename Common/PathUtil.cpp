@@ -258,11 +258,10 @@ fs_path GetModulePath(HMODULE hModule)
 
 fs_path GetPrivateProfileToFolderPath(LPCWSTR appName, LPCWSTR keyName, LPCWSTR fileName)
 {
-	WCHAR szPath[MAX_PATH + 1];
-	if( !appName || !keyName || GetPrivateProfileString(appName, keyName, L"", szPath, MAX_PATH + 1, fileName) >= MAX_PATH ){
+	if( !appName || !keyName ){
 		return fs_path();
 	}
-	fs_path path(szPath);
+	fs_path path(GetPrivateProfileToString(appName, keyName, L"", fileName));
 	ChkFolderPath(path);
 	return path;
 }
@@ -331,3 +330,57 @@ void ChkFolderPath(fs_path& path)
 	}
 }
 
+BOOL UtilCreateDirectories(const fs_path& path)
+{
+	if( path.empty() || path.is_relative() && path.has_root_path() ){
+		// パスが不完全
+		return FALSE;
+	}
+	if( GetFileAttributes(path.c_str()) != INVALID_FILE_ATTRIBUTES ){
+		// 既存
+		return FALSE;
+	}
+	DWORD err = GetLastError();
+	if( err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND ){
+		// 特殊な理由
+		_OutputDebugString(L"UtilCreateDirectories(): Error=%08x\r\n", err);
+		return FALSE;
+	}
+	UtilCreateDirectories(path.parent_path());
+	return CreateDirectory(path.c_str(), NULL);
+}
+
+wstring GetChkDrivePath(const wstring& directoryPath)
+{
+	WCHAR szVolumePathName[MAX_PATH];
+	if( GetVolumePathName(directoryPath.c_str(), szVolumePathName, MAX_PATH) == FALSE ){
+		return directoryPath;
+	}
+	WCHAR szMount[MAX_PATH];
+	if( GetVolumeNameForVolumeMountPoint(szVolumePathName, szMount, MAX_PATH) == FALSE ){
+		return szVolumePathName;
+	}
+	return szMount;
+}
+
+wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDefault, LPCWSTR fileName)
+{
+	WCHAR szBuff[512];
+	DWORD n = GetPrivateProfileString(appName, keyName, lpDefault, szBuff, 512, fileName);
+	if( n >= 510 ){
+		vector<WCHAR> buff(512);
+		do{
+			buff.resize(buff.size() * 2);
+			n = GetPrivateProfileString(appName, keyName, lpDefault, &buff.front(), (DWORD)buff.size(), fileName);
+		}while( n >= buff.size() - 2 && buff.size() < 1024 * 1024 );
+		return wstring(buff.begin(), buff.begin() + n);
+	}
+	return wstring(szBuff, szBuff + n);
+}
+
+BOOL WritePrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int value, LPCWSTR fileName)
+{
+	WCHAR sz[32];
+	swprintf_s(sz, L"%d", value);
+	return WritePrivateProfileString(appName, keyName, sz, fileName);
+}

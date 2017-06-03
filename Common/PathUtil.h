@@ -76,4 +76,11 @@ BOOL IsExt(const fs_path& filePath, const WCHAR* ext);
 void CheckFileName(wstring& fileName, BOOL noChkYen = FALSE);
 void ChkFolderPath(fs_path& path);
 
+// 再帰的にディレクトリを生成する
+BOOL UtilCreateDirectories(const fs_path& path);
+// フォルダパスから実際のドライブパスを取得
+wstring GetChkDrivePath(const wstring& directoryPath);
+wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDefault, LPCWSTR fileName);
+BOOL WritePrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int value, LPCWSTR fileName);
+
 #endif
