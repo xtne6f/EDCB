@@ -778,19 +778,13 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 
 void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& info, bool append) const
 {
-	wstring iniCommonPath;
-	GetCommonIniPath(iniCommonPath);
-	wstring infoFolder = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", iniCommonPath.c_str());
-	ChkFolderPath(infoFolder);
+	fs_path savePath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", GetCommonIniPath().c_str());
 
-	wstring savePath;
-	if( infoFolder.empty() ){
-		savePath = recPath;
+	if( savePath.empty() ){
+		savePath = fs_path(recPath).concat(L".program.txt");
 	}else{
-		GetFileName(recPath, savePath);
-		savePath = infoFolder + L"\\" + savePath;
+		savePath.append(fs_path(recPath).filename().concat(L".program.txt").native());
 	}
-	savePath += L".program.txt";
 
 	wstring serviceName;
 	for( size_t i = 0; i < this->chList.size(); i++ ){
@@ -835,16 +829,14 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) co
 			param.saveFolder = i == 0 ? reserve.recFolder : reserve.partialRecFolder;
 			if( param.saveFolder.empty() ){
 				param.saveFolder.resize(1);
-				wstring commonIniPath;
-				GetCommonIniPath(commonIniPath);
-				GetRecFolderPath(param.saveFolder[0].recFolder);
-				param.saveFolder[0].writePlugIn = GetPrivateProfileToString(L"SET", L"RecWritePlugIn0", L"", commonIniPath.c_str());
+				param.saveFolder[0].recFolder = GetRecFolderPath().native();
+				param.saveFolder[0].writePlugIn = GetPrivateProfileToString(L"SET", L"RecWritePlugIn0", L"", GetCommonIniPath().c_str());
 				param.saveFolder[0].recNamePlugIn = this->recNamePlugInFileName;
 			}else{
 				for( size_t j = 0; j < param.saveFolder.size(); j++ ){
 					if( CompareNoCase(param.saveFolder[j].recFolder, L"!Default") == 0 ){
 						//’ˆÓ: ‚±‚Ì’uŠ·‚ÍŒ´ì‚É‚Í‚È‚¢
-						GetRecFolderPath(param.saveFolder[j].recFolder);
+						param.saveFolder[j].recFolder = GetRecFolderPath().native();
 					}
 					if( param.saveFolder[j].recNamePlugIn.empty() ){
 						param.saveFolder[j].recNamePlugIn = this->recNamePlugInFileName;
@@ -1057,16 +1049,12 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 	if( this->hTunerProcess ){
 		return false;
 	}
-	wstring commonIniPath;
-	GetCommonIniPath(commonIniPath);
-	wstring strIni;
-	GetModuleFolderPath(strIni);
-	strIni += L"\\ViewApp.ini";
+	fs_path commonIniPath = GetCommonIniPath();
+	fs_path strIni = GetModulePath().replace_filename(L"ViewApp.ini");
 
 	wstring strExecute = GetPrivateProfileToString(L"SET", L"RecExePath", L"", commonIniPath.c_str());
 	if( strExecute.empty() ){
-		GetModuleFolderPath(strExecute);
-		strExecute += L"\\EpgDataCap_Bon.exe";
+		strExecute = GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").native();
 	}
 
 	wstring strParam = L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"Bon", L"-d", strIni.c_str()) + L" " + this->bonFileName;
@@ -1257,9 +1245,7 @@ wstring CTunerBankCtrl::ConvertRecName(
 {
 	wstring ret;
 	if( recNamePlugIn[0] ){
-		wstring plugInPath;
-		GetModuleFolderPath(plugInPath);
-		plugInPath += L"\\RecName\\";
+		fs_path plugInPath = GetModulePath().replace_filename(L"RecName\\");
 		PLUGIN_RESERVE_INFO info;
 		info.startTime = startTime;
 		info.durationSec = durationSec;

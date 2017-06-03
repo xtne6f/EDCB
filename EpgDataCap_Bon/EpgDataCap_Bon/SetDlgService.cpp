@@ -83,17 +83,13 @@ BOOL CSetDlgService::OnInitDialog()
 	lvc.cx = rc.right - GetSystemMetrics(SM_CXVSCROLL) - 4;
 	ListView_InsertColumn(hItem, 0, &lvc);
 
-	wstring path = L"";
-	GetSettingPath(path);
-
-	wstring searchKey = path;
-	searchKey += L"\\*.ChSet4.txt";
+	const fs_path path = GetSettingPath();
 
 	WIN32_FIND_DATA findData;
 	HANDLE find;
 
 	//指定フォルダのファイル一覧取得
-	find = FindFirstFile( searchKey.c_str(), &findData);
+	find = FindFirstFile(fs_path(path).append(L"*.ChSet4.txt").c_str(), &findData);
 	if ( find == INVALID_HANDLE_VALUE ) {
 		return FALSE;
 	}
@@ -101,9 +97,6 @@ BOOL CSetDlgService::OnInitDialog()
 		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
 			//本当に拡張子DLL?
 			if( IsExt(findData.cFileName, L".txt") == TRUE ){
-				wstring chSetPath = L"";
-				Format(chSetPath, L"%s\\%s", path.c_str(), findData.cFileName);
-
 				wstring bonFileName = L"";
 				wstring buff = findData.cFileName;
 
@@ -112,7 +105,7 @@ BOOL CSetDlgService::OnInitDialog()
 				bonFileName += L".dll";
 
 				if( chList.insert(std::make_pair(bonFileName, CParseChText4())).second ){
-					chList[bonFileName].ParseText(chSetPath.c_str());
+					chList[bonFileName].ParseText(fs_path(path).append(findData.cFileName).c_str());
 					ComboBox_AddString(GetDlgItem(IDC_COMBO_BON), bonFileName.c_str());
 				}
 			}

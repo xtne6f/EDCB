@@ -11,11 +11,9 @@ BOOL CTunerManager::ReloadTuner()
 {
 	this->tunerMap.clear();
 
-	wstring path = L"";
-	GetSettingPath(path);
+	const fs_path path = GetSettingPath();
 
-	wstring srvIniPath = L"";
-	GetModuleIniPath(srvIniPath);
+	const fs_path srvIniPath = GetModuleIniPath();
 
 	vector<pair<wstring, wstring>> nameList = CEpgTimerSrvSetting::EnumBonFileName(path.c_str());
 
@@ -40,7 +38,7 @@ BOOL CTunerManager::ReloadTuner()
 				item.epgCapMaxOfThisBon = min(epgCount, count);
 				item.bonFileName = nameList[i].first;
 				CParseChText4 chUtil;
-				chUtil.ParseText((path + L'\\' + nameList[i].second).c_str());
+				chUtil.ParseText(fs_path(path).append(nameList[i].second).c_str());
 				item.chList.reserve(chUtil.GetMap().size());
 				for( map<DWORD, CH_DATA4>::const_iterator itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
 					item.chList.push_back(itr->second);

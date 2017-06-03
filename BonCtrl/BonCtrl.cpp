@@ -116,13 +116,11 @@ DWORD CBonCtrl::OpenBonDriver(
 		this->analyzeThread = (HANDLE)_beginthreadex(NULL, 0, AnalyzeThread, this, 0, NULL);
 
 		this->tsOut.SetBonDriver(bonFile);
-		wstring settingPath;
-		GetSettingPath(settingPath);
-		wstring bonFileTitle;
-		GetFileTitle(bonFile, bonFileTitle);
+		fs_path settingPath = GetSettingPath();
 		wstring tunerName = this->bonUtil.GetTunerName();
 		CheckFileName(tunerName);
-		this->chUtil.LoadChSet( settingPath + L"\\" + bonFileTitle + L"(" + tunerName + L").ChSet4.txt", settingPath + L"\\ChSet5.txt" );
+		this->chUtil.LoadChSet(fs_path(settingPath).append(fs_path(bonFile).stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native(),
+		                       fs_path(settingPath).append(L"ChSet5.txt").native());
 	}
 
 	return ret;
@@ -681,15 +679,13 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 	//TODO: chUtilをconstに保っていないのでスレッド安全性は破綻している。スキャン時だけの問題なので修正はしないが要注意
 	sys->chUtil.Clear();
 
-	wstring settingPath;
-	GetSettingPath(settingPath);
-	wstring bonFileTitle;
-	GetFileTitle(sys->bonUtil.GetOpenBonDriverFileName(), bonFileTitle);
+	fs_path settingPath = GetSettingPath();
+	fs_path bonFile = sys->bonUtil.GetOpenBonDriverFileName();
 	wstring tunerName = sys->bonUtil.GetTunerName();
 	CheckFileName(tunerName);
 
-	wstring chSet4 = settingPath + L"\\" + bonFileTitle + L"(" + tunerName + L").ChSet4.txt";
-	wstring chSet5 = settingPath + L"\\ChSet5.txt";
+	wstring chSet4 = fs_path(settingPath).append(bonFile.stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native();
+	wstring chSet5 = fs_path(settingPath).append(L"ChSet5.txt").native();
 
 	vector<CHK_CH_INFO> chkList;
 	vector<pair<wstring, vector<wstring>>> spaceList = sys->bonUtil.GetOriginalChList();
@@ -713,10 +709,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 		return 0;
 	}
 
-	wstring folderPath;
-	GetModuleFolderPath( folderPath );
-	wstring iniPath = folderPath;
-	iniPath += L"\\BonCtrl.ini";
+	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
 
 	DWORD chChgTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ChChgTimeOut", 9, iniPath.c_str());
 	DWORD serviceChkTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ServiceChkTimeOut", 8, iniPath.c_str());
@@ -900,17 +893,13 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 
 	BOOL chkONIDs[16] = {};
 
-	wstring folderPath;
-	GetModuleFolderPath( folderPath );
-	wstring iniPath = folderPath;
-	iniPath += L"\\BonCtrl.ini";
+	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
 
 	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
 
 	//Common.iniは一般に外部プロセスが変更する可能性のある(はずの)ものなので、利用の直前にチェックする
-	wstring commonIniPath;
-	GetCommonIniPath(commonIniPath);
+	fs_path commonIniPath = GetCommonIniPath();
 	BOOL basicOnlyONIDs[16] = {};
 	basicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str());
 	basicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str());
@@ -1036,11 +1025,8 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 
 void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath)
 {
-	wstring epgDataFolderPath = L"";
-	GetSettingPath(epgDataFolderPath);
-	epgDataFolderPath += EPG_SAVE_FOLDER;
-
-	Format(epgDataFilePath, L"%s\\%04X%04X_epg.dat", epgDataFolderPath.c_str(), ONID, TSID);
+	Format(epgDataFilePath, L"%04X%04X_epg.dat", ONID, TSID);
+	epgDataFilePath = GetSettingPath().append(EPG_SAVE_FOLDER).append(epgDataFilePath).native();
 }
 
 //録画中のファイルのファイルパスを取得する
@@ -1136,10 +1122,7 @@ void CBonCtrl::StopBackgroundEpgCap()
 
 UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 {
-	wstring folderPath;
-	GetModuleFolderPath( folderPath );
-	wstring iniPath = folderPath;
-	iniPath += L"\\BonCtrl.ini";
+	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
 
 	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());

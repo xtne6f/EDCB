@@ -225,8 +225,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 		{
 			WCHAR buff[512] = L"";
 			sys->m_pApp->GetDriverFullPathName(buff, 512);
-			wstring bonName;
-			GetFileName(buff, bonName );
+			wstring bonName = fs_path(buff).filename().native();
 			if( bonName.size() > 0 ){
 				std::unique_ptr<BYTE[]> newBuff = NewWriteVALUE(bonName, resParam->dataSize);
 				memcpy(resParam->data, newBuff.get(), resParam->dataSize);
@@ -378,8 +377,7 @@ LRESULT CALLBACK CEpgTimerPlugIn::StreamCtrlDlgCallback(HWND hwnd,UINT uMsg,WPAR
 			{
 				WCHAR buff[512] = L"";
 				sys->m_pApp->GetDriverFullPathName(buff, 512);
-				wstring bonName;
-				GetFileName(buff, bonName );
+				wstring bonName = fs_path(buff).filename().native();
 				if( lParam != 0){
 					if( CompareNoCase(bonName, L"BonDriver_TCP.dll") != 0 ){
 						sys->m_pApp->SetDriverName(L"BonDriver_TCP.dll");

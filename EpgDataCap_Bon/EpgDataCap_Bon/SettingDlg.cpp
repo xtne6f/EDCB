@@ -31,11 +31,8 @@ INT_PTR CSettingDlg::DoModal()
 BOOL CSettingDlg::OnInitDialog()
 {
 	// TODO:  Ç±Ç±Ç…èâä˙âªÇí«â¡ÇµÇƒÇ≠ÇæÇ≥Ç¢
-	wstring path = L"";
-	GetCommonIniPath(path);
-	commonIniPath = path.c_str();
-	GetModuleIniPath(path);
-	appIniPath = path.c_str();
+	wstring commonIniPath = GetCommonIniPath().native();
+	wstring appIniPath = GetModuleIniPath().native();
 
 	basicDlg.SetIniPath(commonIniPath, appIniPath);
 	appDlg.SetIniPath(commonIniPath, appIniPath);

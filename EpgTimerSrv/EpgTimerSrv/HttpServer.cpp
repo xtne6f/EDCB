@@ -40,10 +40,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	}
 	string ports;
 	WtoUTF8(op.ports, ports);
-	wstring rootPathW = op.rootPath;
-	ChkFolderPath(rootPathW);
 	string rootPathU;
-	WtoUTF8(rootPathW, rootPathU);
+	WtoUTF8(op.rootPath, rootPathU);
 	//パスにASCII範囲外を含むのは(主にLuaが原因で)難ありなので蹴る
 	for( size_t i = 0; i < rootPathU.size(); i++ ){
 		if( rootPathU[i] & 0x80 ){
@@ -51,24 +49,19 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 			return false;
 		}
 	}
-	wstring modulePath;
-	GetModuleFolderPath(modulePath);
 	string accessLogPath;
 	//ログは_wfopen()されるのでWtoUTF8()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
-	WtoUTF8(modulePath, accessLogPath);
-	string errorLogPath = accessLogPath + "\\HttpError.log";
-	accessLogPath += "\\HttpAccess.log";
+	WtoUTF8(GetModulePath().replace_filename(L"HttpAccess.log").native(), accessLogPath);
+	string errorLogPath;
+	WtoUTF8(GetModulePath().replace_filename(L"HttpError.log").native(), errorLogPath);
 	string sslCertPath;
 	//認証鍵は実質fopen()されるのでWtoA()
-	WtoA(modulePath, sslCertPath);
-	sslCertPath += "\\ssl_cert.pem";
+	WtoA(GetModulePath().replace_filename(L"ssl_cert.pem").native(), sslCertPath);
 	string sslPeerPath;
-	WtoA(modulePath, sslPeerPath);
-	sslPeerPath += "\\ssl_peer.pem";
+	WtoA(GetModulePath().replace_filename(L"ssl_peer.pem").native(), sslPeerPath);
 	string globalAuthPath;
 	//グローバルパスワードは_wfopen()されるのでWtoUTF8()
-	WtoUTF8(modulePath, globalAuthPath);
-	globalAuthPath += "\\glpasswd";
+	WtoUTF8(GetModulePath().replace_filename(L"glpasswd").native(), globalAuthPath);
 
 	//Access Control List
 	string acl;
@@ -88,7 +81,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 
 	//追加のMIMEタイプ
 	CParseContentTypeText contentType;
-	contentType.ParseText((modulePath + L"\\ContentTypeText.txt").c_str());
+	contentType.ParseText(GetModulePath().replace_filename(L"ContentTypeText.txt").c_str());
 	wstring extraMimeW;
 	for( map<wstring, wstring>::const_iterator itr = contentType.GetMap().begin(); itr != contentType.GetMap().end(); itr++ ){
 		extraMimeW += itr->first + L'=' + itr->second + L',';
@@ -151,7 +144,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	if( this->mgContext && op.enableSsdpServer ){
 		//"<UDN>uuid:{UUID}</UDN>"が必要
 		string notifyUuid;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen((rootPathW + L"\\dlna\\dms\\ddd.xml").c_str(), L"rb", _SH_DENYNO), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(fs_path(op.rootPath).append(L"dlna\\dms\\ddd.xml").c_str(), L"rb", _SH_DENYNO), fclose);
 		if( fp ){
 			char olbuff[257];
 			for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){

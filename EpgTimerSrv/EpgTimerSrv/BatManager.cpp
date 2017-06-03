@@ -13,9 +13,7 @@ CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 {
 	InitializeCriticalSection(&this->managerLock);
 
-	GetModuleFolderPath(this->tmpBatFilePath);
-	this->tmpBatFilePath += L'\\';
-	this->tmpBatFilePath += tmpBatFileName;
+	this->tmpBatFilePath = GetModulePath().replace_filename(tmpBatFileName).native();
 	this->idleMargin = MAXDWORD;
 	this->nextBatMargin = 0;
 	this->batWorkExitingFlag = FALSE;
@@ -150,10 +148,10 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 						si.cb = sizeof(si);
 						si.dwFlags = STARTF_USESHOWWINDOW;
 						si.wShowWindow = exSW;
-						wstring batFolder;
+						fs_path batFolder;
 						if( exDirect.empty() == false ){
 							batFilePath = work.batFilePath;
-							GetFileFolder(batFilePath, batFolder);
+							batFolder = fs_path(batFilePath).parent_path();
 						}
 						wstring strParam = L" /c \"\"" + batFilePath + L"\" \"";
 						vector<WCHAR> strBuff(strParam.c_str(), strParam.c_str() + strParam.size() + 1);

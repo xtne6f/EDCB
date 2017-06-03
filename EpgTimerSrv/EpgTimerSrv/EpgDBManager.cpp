@@ -85,18 +85,14 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	//EPGファイルの検索
 	vector<wstring> epgFileList;
-	wstring settingPath;
-	GetSettingPath(settingPath);
-	wstring epgDataPath = settingPath + EPG_SAVE_FOLDER;
-
-	wstring searchKey = epgDataPath;
-	searchKey += L"\\*_epg.dat";
+	const fs_path settingPath = GetSettingPath();
+	const fs_path epgDataPath = fs_path(settingPath).append(EPG_SAVE_FOLDER);
 
 	WIN32_FIND_DATA findData;
 	HANDLE find;
 
 	//指定フォルダのファイル一覧取得
-	find = FindFirstFile( searchKey.c_str(), &findData);
+	find = FindFirstFile(fs_path(epgDataPath).append(L"*_epg.dat").c_str(), &findData);
 	if( find != INVALID_HANDLE_VALUE ){
 		do{
 			__int64 fileTime = (__int64)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
@@ -105,7 +101,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 				//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
 				WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < utcNow ? L'0' :
 				               wcslen(findData.cFileName) < 12 || _wcsicmp(findData.cFileName + wcslen(findData.cFileName) - 12, L"ffff_epg.dat") ? L'1' : L'2';
-				wstring item = prefix + epgDataPath + L'\\' + findData.cFileName;
+				wstring item = prefix + fs_path(epgDataPath).append(findData.cFileName).native();
 				epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
 			}
 		}while( FindNextFile(find, &findData) );
@@ -286,7 +282,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> arcFromFile;
 	if( arcMin < LLONG_MAX && sys->epgArchive.empty() ){
 		vector<BYTE> buff;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen((settingPath + L"\\EpgArc.dat").c_str(), L"rb", _SH_DENYWR), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(fs_path(settingPath).append(L"EpgArc.dat").c_str(), L"rb", _SH_DENYWR), fclose);
 		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 			__int64 fileSize = _ftelli64(fp.get());
 			if( 0 < fileSize && fileSize < INT_MAX ){
@@ -395,7 +391,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		for( auto itr = sys->epgArchive.cbegin(); itr != sys->epgArchive.end(); valp.push_back(&(itr++)->second) );
 		DWORD buffSize;
 		std::unique_ptr<BYTE[]> buff = NewWriteVALUE2WithVersion(5, valp, buffSize);
-		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen((settingPath + L"\\EpgArc.dat").c_str(), L"wb", _SH_DENYRW), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(fs_path(settingPath).append(L"EpgArc.dat").c_str(), L"wb", _SH_DENYRW), fclose);
 		if( fp ){
 			fwrite(buff.get(), 1, buffSize, fp.get());
 		}

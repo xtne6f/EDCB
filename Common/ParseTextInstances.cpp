@@ -259,7 +259,6 @@ bool CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
 void CParseRecInfoText::SetRecInfoFolder(LPCWSTR folder)
 {
 	this->recInfoFolder = folder;
-	ChkFolderPath(this->recInfoFolder);
 }
 
 bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item)
@@ -364,9 +363,8 @@ wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, 
 			hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		}
 		if( hFile == INVALID_HANDLE_VALUE && resultOfGetRecInfoFolder.empty() == false ){
-			wstring recFileName;
-			GetFileName(recFilePath, recFileName);
-			hFile = CreateFile((resultOfGetRecInfoFolder + L"\\" + recFileName + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			fs_path infoPath = fs_path(resultOfGetRecInfoFolder).append(fs_path(recFilePath).filename().concat(extension).native());
+			hFile = CreateFile(infoPath.c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		}
 		if( hFile != INVALID_HANDLE_VALUE ){
 			DWORD dwSize = GetFileSize(hFile, NULL);
@@ -396,11 +394,7 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 		OutputDebugString((L"★RecInfo Auto Delete : " + item.recFilePath + L"\r\n").c_str());
 		wstring debug;
 		for( size_t i = 0; i < this->customDelExt.size(); i++ ){
-			wstring delPath;
-			wstring delTitle;
-			GetFileFolder(item.recFilePath, delPath);
-			GetFileTitle(item.recFilePath, delTitle);
-			delPath += L'\\' + delTitle;
+			wstring delPath = fs_path(item.recFilePath).replace_extension().native();
 			DeleteFile((delPath + this->customDelExt[i]).c_str());
 			debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
 		}
@@ -411,9 +405,7 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 			//録画情報フォルダにも適用
 			debug.clear();
 			for( size_t i = 0; i < this->customDelExt.size(); i++ ){
-				wstring delPath;
-				GetFileTitle(item.recFilePath, delPath);
-				delPath = this->recInfoFolder + L'\\' + delPath;
+				wstring delPath = fs_path(this->recInfoFolder).append(fs_path(item.recFilePath).stem().native()).native();
 				DeleteFile((delPath + this->customDelExt[i]).c_str());
 				debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
 			}
@@ -428,9 +420,7 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 		OutputDebugString((L"★RecInfo Auto Delete : " + item.recFilePath + L"(.err|.program.txt)\r\n").c_str());
 		if( this->recInfoFolder.empty() == false ){
 			//録画情報フォルダにも適用
-			wstring delPath;
-			GetFileName(item.recFilePath, delPath);
-			delPath = this->recInfoFolder + L'\\' + delPath;
+			wstring delPath = fs_path(this->recInfoFolder).append(fs_path(item.recFilePath).filename().native()).native();
 			DeleteFile((delPath + L".err").c_str());
 			DeleteFile((delPath + L".program.txt").c_str());
 			OutputDebugString((L"★RecInfo Auto Delete : " + delPath + L"(.err|.program.txt)\r\n").c_str());
@@ -630,7 +620,6 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 		if( strRecFolderList[i].empty() == false ){
 			Separate(strRecFolderList[i], L"*", folderItem.recFolder, folderItem.writePlugIn);
 			Separate(folderItem.writePlugIn, L"*", folderItem.writePlugIn, folderItem.recNamePlugIn);
-			ChkFolderPath(folderItem.recFolder);
 			if( folderItem.writePlugIn.empty() ){
 				folderItem.writePlugIn = L"Write_Default.dll";
 			}

@@ -15,16 +15,12 @@ static bool g_saveDebugLog;
 
 static void StartDebugLog()
 {
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
-	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0 ){
-		wstring logFolder;
-		GetModuleFolderPath(logFolder);
+	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0 ){
 		for( int i = 0; i < 100; i++ ){
 			//ƒpƒX‚É“Y‚¦Žš‚ð‚Â‚¯‚Ä‘‚«ž‚Ý‰Â”\‚ÈÅ‰‚Ì‚à‚Ì‚É‹L˜^‚·‚é
 			WCHAR logFileName[64];
-			swprintf_s(logFileName, L"\\EpgDataCap_Bon_DebugLog-%d.txt", i);
-			g_debugLog = _wfsopen((logFolder + logFileName).c_str(), L"ab", _SH_DENYWR);
+			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
+			g_debugLog = _wfsopen(GetModulePath().replace_filename(logFileName).c_str(), L"ab", _SH_DENYWR);
 			if( g_debugLog ){
 				_fseeki64(g_debugLog, 0, SEEK_END);
 				if( _ftelli64(g_debugLog) == 0 ){

@@ -66,10 +66,7 @@ FILETIME MJDtoFILETIME(DWORD mjd, DWORD bcdTime)
 
 DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid)
 {
-	wstring iniPath;
-	GetModuleFolderPath(iniPath);
-
-	iniPath += L"\\Bitrate.ini";
+	fs_path iniPath = GetModulePath().replace_filename(L"Bitrate.ini");
 
 	for( int i = 0; i < 4; i++ ){
 		WCHAR key[32];

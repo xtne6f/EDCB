@@ -1,147 +1,312 @@
 #include "stdafx.h"
 #include "PathUtil.h"
-#include <wchar.h>
 
-void GetDefSettingPath(wstring& strPath)
+namespace filesystem_
 {
-	GetModuleFolderPath(strPath);
-	strPath += L"\\Setting";
+// Extract from Boost.Filesystem(1.64.0) www.boost.org/libs/filesystem
+// "Use, modification, and distribution are subject to the Boost Software License, Version 1.0. See www.boost.org/LICENSE_1_0.txt"
+
+path& path::append(const wchar_t* source)
+{
+	if (*source) {
+		size_t sep_pos(m_append_separator_if_needed());
+		m_pathname += source;
+		m_erase_redundant_separator(sep_pos);
+	}
+	return *this;
 }
 
-void GetSettingPath(wstring& strPath)
+path& path::append(const wstring& source)
 {
-	wstring strIni = L"";
-	GetCommonIniPath(strIni);
-	
-	WCHAR wPath[MAX_PATH + 8];
-	GetPrivateProfileString( L"Set", L"DataSavePath", L"", wPath, MAX_PATH + 8, strIni.c_str() );
-	strPath = wPath;
-	ChkFolderPath(strPath);
-	if( strPath.size() >= MAX_PATH ){
-		throw std::runtime_error("");
+	if (!source.empty()) {
+		size_t sep_pos(m_append_separator_if_needed());
+		m_pathname += source;
+		m_erase_redundant_separator(sep_pos);
 	}
-	if( strPath.empty() == true ){
-		GetDefSettingPath(strPath);
+	return *this;
+}
+
+// Returns: If separator is to be appended, m_pathname.size() before append. Otherwise 0.
+// Note: An append is never performed if size()==0, so a returned 0 is unambiguous.
+size_t path::m_append_separator_if_needed()
+{
+	if (!m_pathname.empty() && m_pathname.back() != L':' && !is_dir_sep(m_pathname.back())) {
+		m_pathname += L'\\';
+		return m_pathname.size() - 1;
 	}
+	return 0;
+}
+
+void path::m_erase_redundant_separator(size_t sep_pos)
+{
+	if (sep_pos && sep_pos + 1 < m_pathname.size() && is_dir_sep(m_pathname[sep_pos + 1])) {
+		m_pathname.erase(sep_pos, 1);
+	}
+}
+
+path& path::remove_filename()
+{
+	size_t end_pos(m_parent_path_end());
+	if (end_pos != wstring::npos) {
+		m_pathname.erase(end_pos);
+	}
+	return *this;
+}
+
+path& path::replace_extension(const path& new_extension)
+{
+	// erase existing extension, including the dot, if any
+	m_pathname.erase(m_pathname.size() - extension().m_pathname.size());
+	if (!new_extension.empty()) {
+		// append new_extension, adding the dot if necessary
+		if (new_extension.m_pathname[0] != L'.') {
+			m_pathname += L'.';
+		}
+		m_pathname += new_extension.m_pathname;
+	}
+	return *this;
+}
+
+path path::root_name() const
+{
+	size_t itr_pos;
+	size_t itr_element_size;
+	first_element(m_pathname, itr_pos, itr_element_size);
+	return (itr_pos != m_pathname.size()
+		&& ((itr_element_size > 1 && is_dir_sep(m_pathname[itr_pos]) && is_dir_sep(m_pathname[itr_pos + 1]))
+			|| m_pathname[itr_pos + itr_element_size - 1] == L':'
+		)) ? path(m_pathname.substr(itr_pos, itr_element_size)) : path();
+}
+
+path path::root_directory() const
+{
+	size_t pos(root_directory_start(m_pathname, m_pathname.size()));
+	return pos == wstring::npos ? path() : path(m_pathname.substr(pos, 1));
+}
+
+size_t path::m_parent_path_end() const
+{
+	size_t end_pos(filename_pos(m_pathname));
+	bool filename_was_separator(m_pathname.size() && is_dir_sep(m_pathname[end_pos]));
+	// skip separators unless root directory
+	size_t root_dir_pos(root_directory_start(m_pathname, end_pos));
+	for (; end_pos > 0 && end_pos - 1 != root_dir_pos && is_dir_sep(m_pathname[end_pos - 1]); --end_pos);
+	return end_pos == 1 && root_dir_pos == 0 && filename_was_separator ? wstring::npos : end_pos;
+}
+
+path path::parent_path() const
+{
+	size_t end_pos(m_parent_path_end());
+	return end_pos == wstring::npos ? path() : path(m_pathname.substr(0, end_pos));
+}
+
+path path::filename() const
+{
+	size_t pos(filename_pos(m_pathname));
+	return (m_pathname.size() && pos && is_dir_sep(m_pathname[pos]) && !is_root_separator(m_pathname, pos)
+		) ? path(L".") : path(m_pathname.c_str() + pos);
+}
+
+path path::stem() const
+{
+	path name(filename());
+	if (name.native() == L"." || name.native() == L"..") {
+		return name;
+	}
+	size_t pos(name.m_pathname.rfind(L'.'));
+	if (pos != wstring::npos) {
+		name.m_pathname.erase(pos);
+	}
+	return name;
+}
+
+// pos is position of the separator
+bool path::is_root_separator(const wstring& str, size_t pos)
+{
+	// ASSERT(!str.empty() && is_dir_sep(str[pos]));
+	// subsequent logic expects pos to be for leftmost slash of a set
+	for (; pos > 0 && is_dir_sep(str[pos - 1]); --pos);
+	//  "/" [...]
+	if (pos == 0) {
+		return true;
+	}
+	//  "c:/" [...]
+	if (pos == 2 && is_letter(str[0]) && str[1] == L':') {
+		return true;
+	}
+	//  "//" name "/"
+	if (pos < 3 || !is_dir_sep(str[0]) || !is_dir_sep(str[1])) {
+		return false;
+	}
+	return str.find_first_of(L"/\\", 2) == pos;
+}
+
+// return 0 if str itself is filename (or empty)
+size_t path::filename_pos(const wstring& str)
+{
+	// case: "//"
+	if (str.size() == 2 && is_dir_sep(str[0]) && is_dir_sep(str[1])) {
+		return 0;
+	}
+	// case: ends in "/"
+	if (str.size() && is_dir_sep(str[str.size() - 1])) {
+		return str.size() - 1;
+	}
+	// set pos to start of last element
+	size_t pos(str.find_last_of(L"/\\", str.size() - 1));
+	if (pos == wstring::npos && str.size() > 1) {
+		pos = str.find_last_of(L':', str.size() - 2);
+	}
+	return (pos == wstring::npos // path itself must be a filename (or empty)
+		|| (pos == 1 && is_dir_sep(str[0]))) // or net
+			? 0 // so filename is entire string
+			: pos + 1; // or starts after delimiter
+}
+
+// return npos if no root_directory found
+size_t path::root_directory_start(const wstring& str, size_t size)
+{
+	// case "c:/"
+	if (size > 2 && str[1] == L':' && is_dir_sep(str[2])) {
+		return 2;
+	}
+	// case "//"
+	if (size == 2 && is_dir_sep(str[0]) && is_dir_sep(str[1])) {
+		return wstring::npos;
+	}
+	// case "\\?\"
+	if (size > 4 && is_dir_sep(str[0]) && is_dir_sep(str[1]) && str[2] == L'?' && is_dir_sep(str[3])) {
+		size_t pos(str.find_first_of(L"/\\", 4));
+		return pos < size ? pos : wstring::npos;
+	}
+	// case "//net {/}"
+	if (size > 3 && is_dir_sep(str[0]) && is_dir_sep(str[1]) && !is_dir_sep(str[2])) {
+		size_t pos(str.find_first_of(L"/\\", 2));
+		return pos < size ? pos : wstring::npos;
+	}
+	// case "/"
+	if (size > 0 && is_dir_sep(str[0])) {
+		return 0;
+	}
+	return wstring::npos;
+}
+
+// sets pos and len of first element, excluding extra separators
+// if src.empty(), sets pos,len, to 0,0.
+void path::first_element(const wstring& src, size_t& element_pos, size_t& element_size)
+{
+	element_pos = 0;
+	element_size = 0;
+	if (src.empty()) {
+		return;
+	}
+	size_t cur(0);
+	// deal with // [network]
+	if (src.size() >= 2 && is_dir_sep(src[0]) && is_dir_sep(src[1]) && (src.size() == 2 || !is_dir_sep(src[2]))) {
+		cur += 2;
+		element_size += 2;
+	}
+	// leading (not non-network) separator
+	else if (is_dir_sep(src[0])) {
+		++element_size;
+		// bypass extra leading separators
+		for (; cur + 1 < src.size() && is_dir_sep(src[cur + 1]); ++cur, ++element_pos);
+		return;
+	}
+	// at this point, we have either a plain name, a network name,
+	// or (on Windows only) a device name
+	// find the end
+	for (; cur < src.size() && src[cur] != L':' && !is_dir_sep(src[cur]); ++cur, ++element_size);
+	// include device delimiter
+	if (cur < src.size() && src[cur] == L':') {
+		++element_size;
+	}
+}
+
+} // namespace filesystem_
+
+
+fs_path GetDefSettingPath()
+{
+	return GetModulePath().replace_filename(L"Setting");
+}
+
+fs_path GetSettingPath()
+{
+	fs_path path = GetPrivateProfileToFolderPath(L"SET", L"DataSavePath", GetCommonIniPath().c_str());
+	return path.empty() ? GetDefSettingPath() : path;
 }
 
 void GetModuleFolderPath(wstring& strPath)
 {
-	WCHAR strExePath[MAX_PATH];
-	DWORD len = GetModuleFileName(NULL, strExePath, MAX_PATH);
+	strPath = GetModulePath().parent_path().native();
+}
+
+fs_path GetModulePath(HMODULE hModule)
+{
+	WCHAR szPath[MAX_PATH];
+	DWORD len = GetModuleFileName(hModule, szPath, MAX_PATH);
 	if( len == 0 || len >= MAX_PATH ){
 		throw std::runtime_error("");
 	}
-
-	WCHAR szPath[_MAX_DRIVE + _MAX_DIR + 8];
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, NULL, 0, NULL, 0 );
-	_wmakepath_s(  szPath, szDrive, szDir, NULL, NULL );
-	strPath = szPath;
-	ChkFolderPath(strPath);
-}
-
-void GetModuleIniPath(wstring& strPath)
-{
-	WCHAR strExePath[MAX_PATH];
-	DWORD len = GetModuleFileName(NULL, strExePath, MAX_PATH);
-	if( len == 0 || len >= MAX_PATH ){
+	fs_path path(szPath);
+	if( path.is_relative() || path.has_filename() == false ){
 		throw std::runtime_error("");
 	}
-
-	WCHAR szPath[_MAX_DRIVE + _MAX_DIR + _MAX_FNAME + 4 + 8];
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
-	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, NULL, 0 );
-	_wmakepath_s(  szPath, szDrive, szDir, szFname, L".ini" );
-	strPath = szPath;
+	return path;
 }
 
-void GetCommonIniPath(wstring& strPath)
+fs_path GetPrivateProfileToFolderPath(LPCWSTR appName, LPCWSTR keyName, LPCWSTR fileName)
 {
-	GetModuleFolderPath(strPath);
-	strPath += L"\\Common.ini";
-}
-
-void GetEpgTimerSrvIniPath(wstring& strPath)
-{
-	GetModuleFolderPath(strPath);
-	strPath += L"\\EpgTimerSrv.ini";
-}
-
-void GetRecFolderPath(wstring& strPath)
-{
-	wstring strIni = L"";
-	GetCommonIniPath(strIni);
-	
-	WCHAR wPath[MAX_PATH + 8];
-	GetPrivateProfileString( L"Set", L"RecFolderPath0", L"", wPath, MAX_PATH + 8, strIni.c_str() );
-	strPath = wPath;
-	ChkFolderPath(strPath);
-	if( strPath.size() >= MAX_PATH ){
-		throw std::runtime_error("");
+	WCHAR szPath[MAX_PATH + 1];
+	if( !appName || !keyName || GetPrivateProfileString(appName, keyName, L"", szPath, MAX_PATH + 1, fileName) >= MAX_PATH ){
+		return fs_path();
 	}
-	if( strPath.empty() || GetPrivateProfileInt(L"SET", L"RecFolderNum", 0, strIni.c_str()) <= 0 ){
-		GetSettingPath(strPath);
+	fs_path path(szPath);
+	ChkFolderPath(path);
+	return path;
+}
+
+fs_path GetModuleIniPath(HMODULE hModule)
+{
+	return GetModulePath(hModule).replace_extension(L".ini");
+}
+
+fs_path GetCommonIniPath()
+{
+	return GetModulePath().replace_filename(L"Common.ini");
+}
+
+fs_path GetRecFolderPath(int index)
+{
+	fs_path iniPath = GetCommonIniPath();
+	int num = GetPrivateProfileInt(L"SET", L"RecFolderNum", 0, iniPath.c_str());
+	if( index <= 0 ){
+		// 必ず返す
+		fs_path path;
+		if( num > 0 ){
+			path = GetPrivateProfileToFolderPath(L"SET", L"RecFolderPath0", iniPath.c_str());
+		}
+		return path.empty() ? GetSettingPath() : path;
 	}
-}
-
-void GetFileTitle(const wstring& strPath, wstring& strTitle)
-{
-	WCHAR szFname[_MAX_FNAME];
-	_wsplitpath_s( strPath.c_str(), NULL, 0, NULL, 0, szFname, _MAX_FNAME, NULL, 0 );
-
-	strTitle = szFname;
-	return ;
-}
-
-void GetFileName(const wstring& strPath, wstring& strName)
-{
-	WCHAR strFileName[_MAX_FNAME + _MAX_EXT + 8];
-	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strPath.c_str(), NULL, 0, NULL, 0, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_wmakepath_s( strFileName, NULL, NULL, szFname, szExt );
-
-	strName = strFileName;
-	return ;
-}
-
-void GetFileExt(const wstring& strPath, wstring& strExt)
-{
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strPath.c_str(), NULL, 0, NULL, 0, NULL, 0, szExt, _MAX_EXT );
-
-	strExt = szExt;
-	return ;
-}
-
-void GetFileFolder(const wstring& strPath, wstring& strFolder)
-{
-	WCHAR szPath[_MAX_DRIVE + _MAX_DIR + 8];
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	_wsplitpath_s( strPath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, NULL, 0, NULL, 0 );
-	_wmakepath_s( szPath, szDrive, szDir, NULL, NULL );
-
-	strFolder = szPath;
-	ChkFolderPath(strFolder);
-	return ;
-}
-
-
-BOOL IsExt(const WCHAR* filePath, const WCHAR* ext)
-{
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( filePath, NULL, 0, NULL, 0, NULL, 0, szExt, _MAX_EXT );
-
-	if( _wcsicmp( szExt, ext ) != 0 ){
-		return FALSE;
+	for( int i = 1; i < num; i++ ){
+		WCHAR szKey[32];
+		swprintf_s(szKey, L"RecFolderPath%d", i);
+		fs_path path = GetPrivateProfileToFolderPath(L"SET", szKey, iniPath.c_str());
+		// 空要素は詰める
+		if( path.empty() == false ){
+			if( --index <= 0 ){
+				return path;
+			}
+		}
 	}
+	// 範囲外
+	return fs_path();
+}
 
-	return TRUE;
+BOOL IsExt(const fs_path& filePath, const WCHAR* ext)
+{
+	return _wcsicmp(filePath.extension().c_str(), ext) == 0;
 }
 
 void CheckFileName(wstring& fileName, BOOL noChkYen)
@@ -156,10 +321,13 @@ void CheckFileName(wstring& fileName, BOOL noChkYen)
 	}
 }
 
-void ChkFolderPath(wstring& strPath)
+void ChkFolderPath(fs_path& path)
 {
-	if( strPath.empty() == false && strPath.back() == L'\\' ){
-		strPath.pop_back();
+	// 過去にルートディレクトリ区切りを失った状態("C:"など)で設定などに保存していたので、これに対応する
+	if( path.empty() == false && path.native().back() != L'/' && path.native().back() != L'\\' ){
+		// 一時的に下層を作って上がる
+		// TODO: remove_filename()の末尾区切りについて標準の仕様が揺れている。状況によってはparent_path()に変更すること
+		path.concat(L"\\a").remove_filename();
 	}
 }
 

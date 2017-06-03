@@ -60,7 +60,7 @@ public:
 	static vector<pair<wstring, wstring>> EnumBonFileName(LPCWSTR settingPath);
 	INT_PTR ShowDialog();
 private:
-	static vector<wstring> EnumRecNamePlugInFileName(LPCWSTR moduleFolder);
+	static vector<wstring> EnumRecNamePlugInFileName();
 	static bool GetDlgButtonCheck(HWND hwnd, int id);
 	static void SetDlgButtonCheck(HWND hwnd, int id, bool check);
 	static void AddListBoxItem(HWND hList, HWND hItem);

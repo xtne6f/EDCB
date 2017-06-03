@@ -40,10 +40,7 @@ BOOL CSetDlgEpg::OnInitDialog()
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS2), GetPrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", 1, appIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS3), GetPrivateProfileInt( L"SET", L"EpgCapBackCS3BasicOnly", 0, appIniPath.c_str() ) );
 
-	wstring path;
-	GetSettingPath(path);
-	path += L"\\ChSet5.txt";
-	this->chSet.ParseText(path.c_str());
+	this->chSet.ParseText(GetSettingPath().append(L"ChSet5.txt").c_str());
 
 	//リストビューにチェックボックスと列をつくる
 	HWND hItem = GetDlgItem(IDC_LIST_SERVICE);

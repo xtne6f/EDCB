@@ -165,9 +165,7 @@ LRESULT CEpgTimerTaskDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 					case WM_LBUTTONUP:
 						{
 							//EpgTimer.exe‚ª‚ ‚ê‚Î‹N“®
-							wstring strPath;
-							GetModuleFolderPath(strPath);
-							strPath += L"\\EpgTimer.exe";
+							fs_path strPath = GetModulePath().replace_filename(L"EpgTimer.exe");
 							PROCESS_INFORMATION pi;
 							STARTUPINFO si = {};
 							si.cb = sizeof(si);

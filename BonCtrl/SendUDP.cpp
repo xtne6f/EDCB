@@ -60,9 +60,7 @@ BOOL CSendUDP::StartUpload( vector<NW_SEND_INFO>* List )
 		}
 		SockList.push_back(Item);
 	}
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
-	m_uiSendSize = GetPrivateProfileInt(L"Set", L"UDPPacket", 128, iniPath.c_str()) * 188;
+	m_uiSendSize = GetPrivateProfileInt(L"SET", L"UDPPacket", 128, GetModuleIniPath().c_str()) * 188;
 
 	return TRUE;
 }

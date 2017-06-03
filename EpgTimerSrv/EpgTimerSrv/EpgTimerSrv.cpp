@@ -20,12 +20,8 @@ static bool g_saveDebugLog;
 
 static void StartDebugLog()
 {
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
-	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0 ){
-		wstring logPath;
-		GetModuleFolderPath(logPath);
-		logPath += L"\\EpgTimerSrvDebugLog.txt";
+	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0 ){
+		fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvDebugLog.txt");
 		g_debugLog = _wfsopen(logPath.c_str(), L"ab", _SH_DENYWR);
 		if( g_debugLog ){
 			_fseeki64(g_debugLog, 0, SEEK_END);
@@ -59,13 +55,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	if( lpCmdLine[0] == _T('-') || lpCmdLine[0] == _T('/') ){
 		if( _tcsicmp(_T("install"), lpCmdLine + 1) == 0 ){
 			bool installed = false;
-			TCHAR exePath[512];
-			if( GetModuleFileName(NULL, exePath, _countof(exePath)) != 0 ){
+			fs_path exePath = GetModulePath();
+			{
 				SC_HANDLE hScm = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE);
 				if( hScm != NULL ){
 					SC_HANDLE hSrv = CreateService(
 						hScm, SERVICE_NAME, SERVICE_NAME, 0, SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
-						SERVICE_AUTO_START, SERVICE_ERROR_NORMAL, exePath, NULL, NULL, NULL, NULL, NULL);
+						SERVICE_AUTO_START, SERVICE_ERROR_NORMAL, exePath.c_str(), NULL, NULL, NULL, NULL, NULL);
 					if( hSrv != NULL ){
 						installed = true;
 						CloseServiceHandle(hSrv);

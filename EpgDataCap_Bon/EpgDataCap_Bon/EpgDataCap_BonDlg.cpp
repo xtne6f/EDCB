@@ -38,11 +38,7 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 
 	taskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 
-	wstring strPath = L"";
-	GetModuleIniPath(strPath);
-	this->moduleIniPath = strPath.c_str();
-	GetCommonIniPath(strPath);
-	this->commonIniPath = strPath.c_str();
+	this->moduleIniPath = GetModuleIniPath().native();
 
 	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
 	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );

@@ -4,10 +4,9 @@
 #include "ErrDef.h"
 #include "StructDef.h"
 
-#define SAVE_FOLDER L"\\EpgTimerBon"
-#define EPG_SAVE_FOLDER L"\\EpgData"
-#define LOGO_SAVE_FOLDER L"\\LogoData"
-#define BON_DLL_FOLDER L"\\BonDriver"
+#define EPG_SAVE_FOLDER L"EpgData"
+#define LOGO_SAVE_FOLDER L"LogoData"
+#define BON_DLL_FOLDER L"BonDriver"
 
 #define RESERVE_TEXT_NAME L"Reserve.txt"
 #define REC_INFO_TEXT_NAME L"RecInfo.txt"

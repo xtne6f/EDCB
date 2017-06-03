@@ -91,9 +91,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	this->notifyManager.SetGUI(!serviceFlag_);
 	this->residentFlag = serviceFlag_;
 
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
-	g_compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 0, iniPath.c_str());
+	g_compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 0, GetModuleIniPath().c_str());
 
 	DWORD awayMode;
 	OSVERSIONINFOEX osvi;
@@ -101,10 +99,9 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	osvi.dwMajorVersion = 6;
 	awayMode = VerifyVersionInfo(&osvi, VER_MAJORVERSION, VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL)) ? ES_AWAYMODE_REQUIRED : 0;
 
-	wstring settingPath;
-	GetSettingPath(settingPath);
-	this->epgAutoAdd.ParseText((settingPath + L"\\" + EPG_AUTO_ADD_TEXT_NAME).c_str());
-	this->manualAutoAdd.ParseText((settingPath + L"\\" + MANUAL_AUTO_ADD_TEXT_NAME).c_str());
+	fs_path settingPath = GetSettingPath();
+	this->epgAutoAdd.ParseText(fs_path(settingPath).append(EPG_AUTO_ADD_TEXT_NAME).c_str());
+	this->manualAutoAdd.ParseText(fs_path(settingPath).append(MANUAL_AUTO_ADD_TEXT_NAME).c_str());
 
 	//非表示のメインウィンドウを作成
 	WNDCLASSEX wc = {};
@@ -318,9 +315,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						               itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"終了" : itr->param4.c_str();
 						if( ctx->sys->setting.saveNotifyLog ){
 							//通知情報ログ保存
-							wstring logPath;
-							GetModuleFolderPath(logPath);
-							logPath += L"\\EpgTimerSrvNotify.log";
+							fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvNotify.log");
 							std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(logPath.c_str(), L"ab", _SH_DENYWR), fclose);
 							if( fp ){
 								_fseeki64(fp.get(), 0, SEEK_END);
@@ -590,17 +585,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		switch( LOWORD(wParam) ){
 		case IDC_BUTTON_SETTING:
 			{
-				WCHAR modulePath[MAX_PATH];
-				DWORD len = GetModuleFileName(NULL, modulePath, _countof(modulePath));
-				if( len != 0 && len < _countof(modulePath) ){
-					PROCESS_INFORMATION pi;
-					STARTUPINFO si = {};
-					si.cb = sizeof(si);
-					WCHAR buff[] = L" /setting";
-					if( CreateProcess(modulePath, buff, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
-						CloseHandle(pi.hThread);
-						CloseHandle(pi.hProcess);
-					}
+				PROCESS_INFORMATION pi;
+				STARTUPINFO si = {};
+				si.cb = sizeof(si);
+				WCHAR buff[] = L" /setting";
+				if( CreateProcess(GetModulePath().c_str(), buff, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
 				}
 			}
 			break;
@@ -618,21 +609,17 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			}
 			break;
 		case IDC_BUTTON_GUI:
-			{
-				wstring moduleFolder;
-				GetModuleFolderPath(moduleFolder);
-				if( GetFileAttributes((moduleFolder + L"\\EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
-					//EpgTimer.lnk(ショートカット)を優先的に開く
-					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
-				}else{
-					//EpgTimer.exeがあれば起動
-					PROCESS_INFORMATION pi;
-					STARTUPINFO si = {};
-					si.cb = sizeof(si);
-					if( CreateProcess((moduleFolder + L"\\EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
-						CloseHandle(pi.hThread);
-						CloseHandle(pi.hProcess);
-					}
+			if( GetFileAttributes(GetModulePath().replace_filename(L"EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
+				//EpgTimer.lnk(ショートカット)を優先的に開く
+				ShellExecute(NULL, L"open", GetModulePath().replace_filename(L"EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
+			}else{
+				//EpgTimer.exeがあれば起動
+				PROCESS_INFORMATION pi;
+				STARTUPINFO si = {};
+				si.cb = sizeof(si);
+				if( CreateProcess(GetModulePath().replace_filename(L"EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
 				}
 			}
 			break;
@@ -733,8 +720,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 {
 	CBlockLock lock(&this->settingLock);
 
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
+	fs_path iniPath = GetModuleIniPath();
 	this->tcpPort = 0;
 	if( GetPrivateProfileInt(L"SET", L"EnableTCPSrv", 0, iniPath.c_str()) != 0 ){
 		this->tcpAccessControlList = GetPrivateProfileToString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", iniPath.c_str());
@@ -744,12 +730,10 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 	this->httpOptions.ports.clear();
 	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
 	if( enableHttpSrv != 0 ){
-		this->httpOptions.rootPath = GetPrivateProfileToString(L"SET", L"HttpPublicFolder", L"", iniPath.c_str());
+		this->httpOptions.rootPath = GetPrivateProfileToFolderPath(L"SET", L"HttpPublicFolder", iniPath.c_str()).native();
 		if(this->httpOptions.rootPath.empty() ){
-			GetModuleFolderPath(this->httpOptions.rootPath);
-			this->httpOptions.rootPath += L"\\HttpPublic";
+			this->httpOptions.rootPath = GetModulePath().replace_filename(L"HttpPublic").native();
 		}
-		ChkFolderPath(this->httpOptions.rootPath);
 		this->httpOptions.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
 		this->httpOptions.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
 		this->httpOptions.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 5, iniPath.c_str());
@@ -767,8 +751,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 
 void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 {
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
+	fs_path iniPath = GetModuleIniPath();
 	CEpgTimerSrvSetting::SETTING s = CEpgTimerSrvSetting::LoadSetting(iniPath.c_str());
 	if( initialize ){
 		this->reserveManager.Initialize(s);
@@ -1463,9 +1446,8 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		{
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && CompareNoCase(val, L"ChSet5.txt") == 0 ){
-				wstring path;
-				GetSettingPath(path);
-				std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen((path + L"\\ChSet5.txt").c_str(), L"rb", _SH_DENYWR), fclose);
+				fs_path path = GetSettingPath().append(L"ChSet5.txt");
+				std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(path.c_str(), L"rb", _SH_DENYWR), fclose);
 				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 					__int64 fileSize = _ftelli64(fp.get());
 					if( 0 < fileSize && fileSize < 64 * 1024 * 1024 ){
@@ -1513,11 +1495,9 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_PLUGIN\r\n");
 			WORD mode;
 			if( ReadVALUE(&mode, cmdParam->data, cmdParam->dataSize, NULL) && (mode == 1 || mode == 2) ){
-				wstring path;
-				GetModuleFolderPath(path);
 				WIN32_FIND_DATA findData;
 				//指定フォルダのファイル一覧取得
-				HANDLE hFind = FindFirstFile((path + (mode == 1 ? L"\\RecName\\RecName*.dll" : L"\\Write\\Write*.dll")).c_str(), &findData);
+				HANDLE hFind = FindFirstFile(GetModulePath().replace_filename(mode == 1 ? L"RecName\\RecName*.dll" : L"Write\\Write*.dll").c_str(), &findData);
 				if( hFind != INVALID_HANDLE_VALUE ){
 					vector<wstring> fileList;
 					do{
@@ -1570,9 +1550,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		if( sys->setting.saveNotifyLog ){
 			int n;
 			if( ReadVALUE(&n, cmdParam->data, cmdParam->dataSize, NULL) ){
-				wstring logPath;
-				GetModuleFolderPath(logPath);
-				logPath += L"\\EpgTimerSrvNotify.log";
+				fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvNotify.log");
 				std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(logPath.c_str(), L"rb", _SH_DENYNO), fclose);
 				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 					__int64 count = _ftelli64(fp.get());
@@ -2204,7 +2182,9 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 							//共有名が$で終わるのは隠し共有
 							if( p->shi502_netname[0] && p->shi502_netname[wcslen(p->shi502_netname) - 1] != L'$' ){
 								wstring shiPath = p->shi502_path;
-								ChkFolderPath(shiPath);
+								if( shiPath.empty() == false && shiPath.back() == L'\\' ){
+									shiPath.pop_back();
+								}
 								if( path.size() >= shiPath.size() &&
 								    CompareNoCase(shiPath, path.substr(0, shiPath.size())) == 0 &&
 								    (path.size() == shiPath.size() || path[shiPath.size()] == L'\\') ){
@@ -2334,17 +2314,15 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 					vector<FILE_DATA> result(list.size());
 					for( size_t i = 0; i < list.size(); i++ ){
 						result[i].Name = list[i];
-						wstring path;
+						fs_path path;
 						if( CompareNoCase(list[i], L"ChSet5.txt") == 0 ){
-							GetSettingPath(path);
-							path += L'\\' + list[i];
+							path = GetSettingPath().append(list[i]);
 						}else if( CompareNoCase(list[i], L"EpgTimerSrv.ini") == 0 ||
 						          CompareNoCase(list[i], L"Common.ini") == 0 ||
 						          CompareNoCase(list[i], L"EpgDataCap_Bon.ini") == 0 ||
 						          CompareNoCase(list[i], L"BonCtrl.ini") == 0 ||
 						          CompareNoCase(list[i], L"Bitrate.ini") == 0 ){
-							GetModuleFolderPath(path);
-							path += L'\\' + list[i];
+							path = GetModulePath().replace_filename(list[i]);
 						}
 						if( path.empty() == false ){
 							std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(path.c_str(), L"rb", _SH_DENYWR), fclose);
@@ -2602,11 +2580,9 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 				UTF8toW(def, strDef);
 				UTF8toW(file, strFile);
 				if( _wcsicmp(strFile.substr(0, 8).c_str(), L"Setting\\") == 0 ){
-					GetSettingPath(path);
-					strFile = path + strFile.substr(7);
+					strFile = GetSettingPath().append(strFile.substr(8)).native();
 				}else{
-					GetModuleFolderPath(path);
-					strFile = path + L"\\" + strFile;
+					strFile = GetModulePath().replace_filename(strFile).native();
 				}
 				wstring buff = GetPrivateProfileToString(strApp.c_str(), strKey.c_str(), strDef.c_str(), strFile.c_str());
 				lua_pushstring(L, ws.WtoUTF8(buff));
@@ -2634,13 +2610,10 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 			UTF8toW(key ? key : "", strKey);
 			UTF8toW(val ? val : "", strVal);
 			UTF8toW(file, strFile);
-			wstring path;
 			if( _wcsicmp(strFile.substr(0, 8).c_str(), L"Setting\\") == 0 ){
-				GetSettingPath(path);
-				strFile = path + strFile.substr(7);
+				strFile = GetSettingPath().append(strFile.substr(8)).native();
 			}else{
-				GetModuleFolderPath(path);
-				strFile = path + L"\\" + strFile;
+				strFile = GetModulePath().replace_filename(strFile).native();
 			}
 			lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : NULL, val ? strVal.c_str() : NULL, strFile.c_str()));
 			return 1;

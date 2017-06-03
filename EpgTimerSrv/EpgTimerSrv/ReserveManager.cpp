@@ -34,20 +34,18 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 	this->tunerManager.GetEnumTunerBank(&this->tunerBankMap, this->notifyManager, this->epgDBManager);
 	this->lastCheckEpgCap = GetNowI64Time();
 
-	wstring settingPath;
-	GetSettingPath(settingPath);
-	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
+	fs_path settingPath = GetSettingPath();
+	this->reserveText.ParseText(fs_path(settingPath).append(RESERVE_TEXT_NAME).c_str());
 
 	ReloadSetting(s);
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
+	fs_path iniPath = GetModuleIniPath();
 	DWORD shiftID = GetPrivateProfileInt(L"SET", L"RecInfoShiftID", 100000, iniPath.c_str());
 	if( shiftID != 0 ){
 		this->recInfoText.SetNextID(shiftID + 1);
 		WritePrivateProfileInt(L"SET", L"RecInfoShiftID", shiftID % 900000 + 100000, iniPath.c_str());
 	}
-	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
-	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
+	this->recInfoText.ParseText(fs_path(settingPath).append(REC_INFO_TEXT_NAME).c_str());
+	this->recInfo2Text.ParseText(fs_path(settingPath).append(REC_INFO2_TEXT_NAME).c_str());
 
 	this->watchdogStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if( this->watchdogStopEvent ){
@@ -76,21 +74,16 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 {
 	CBlockLock lock(&this->managerLock);
 
-	wstring commonIniPath;
-	GetCommonIniPath(commonIniPath);
-	wstring viewIniPath;
-	GetModuleFolderPath(viewIniPath);
-	viewIniPath += L"\\EpgDataCap_Bon.ini";
-	wstring settingPath;
-	GetSettingPath(settingPath);
+	fs_path commonIniPath = GetCommonIniPath();
+	fs_path viewIniPath = GetModulePath().replace_filename(L"EpgDataCap_Bon.ini");
 
-	this->chUtil.ParseText((settingPath + L"\\ChSet5.txt").c_str());
+	this->chUtil.ParseText(GetSettingPath().append(L"ChSet5.txt").c_str());
 
 	this->setting = s;
 
 	this->recInfoText.SetKeepCount(s.autoDelRecInfo ? s.autoDelRecInfoNum : UINT_MAX);
 	this->recInfoText.SetRecInfoDelFile(GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
-	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", commonIniPath.c_str()).c_str());
+	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", commonIniPath.c_str()).c_str());
 	this->recInfoText.CustomizeDelExt(s.applyExtToRecInfoDel);
 	this->recInfoText.SetCustomDelExt(s.delExtList);
 
@@ -1125,8 +1118,7 @@ void CReserveManager::CheckAutoDel() const
 			vector<wstring> recFolderList;
 			if( itr->second.recSetting.recFolderList.empty() ){
 				//デフォルト
-				recFolderList.push_back(L"");
-				GetRecFolderPath(recFolderList.back());
+				recFolderList.push_back(GetRecFolderPath().native());
 			}else{
 				//複数指定あり
 				for( size_t i = 0; i < itr->second.recSetting.recFolderList.size(); i++ ){
@@ -1163,16 +1155,15 @@ void CReserveManager::CheckAutoDel() const
 			multimap<LONGLONG, pair<ULONGLONG, wstring>> tsFileMap;
 			for( size_t i = 0; i < itr->second.second.size(); i++ ){
 				wstring delFolder = itr->second.second[i];
-				ChkFolderPath(delFolder);
 				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile((delFolder + L"\\*.ts").c_str(), &findData);
+				HANDLE hFind = FindFirstFile(fs_path(delFolder).append(L"*.ts").c_str(), &findData);
 				if( hFind != INVALID_HANDLE_VALUE ){
 					do{
 						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".ts") != FALSE ){
 							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
 							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
 							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
-							item.second.second = delFolder + L"\\" + findData.cFileName;
+							item.second.second = fs_path(delFolder).append(findData.cFileName).native();
 							tsFileMap.insert(item);
 						}
 					}while( FindNextFile(hFind, &findData) );
@@ -1190,12 +1181,8 @@ void CReserveManager::CheckAutoDel() const
 					needFreeSize -= tsFileMap.begin()->second.first;
 					_OutputDebugString(L"★Auto Delete2 : %s\r\n", delPath.c_str());
 					for( size_t i = 0 ; i < this->setting.delExtList.size(); i++ ){
-						wstring delFolder;
-						wstring delTitle;
-						GetFileFolder(delPath, delFolder);
-						GetFileTitle(delPath, delTitle);
-						DeleteFile((delFolder + L"\\" + delTitle + this->setting.delExtList[i]).c_str());
-						_OutputDebugString(L"★Auto Delete2 : %s\r\n", (delFolder + L"\\" + delTitle + this->setting.delExtList[i]).c_str());
+						DeleteFile(fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
+						_OutputDebugString(L"★Auto Delete2 : %s\r\n", fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
 					}
 				}
 				tsFileMap.erase(tsFileMap.begin());
@@ -1471,8 +1458,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 						this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_EPGCAP_START, L"取得開始１分前");
 					}else{
 						//取得開始
-						wstring iniCommonPath;
-						GetCommonIniPath(iniCommonPath);
+						fs_path iniCommonPath = GetCommonIniPath();
 						int lastFlags = (GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, iniCommonPath.c_str()) != 0 ? 1 : 0) |
 						                (GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 2 : 0) |
 						                (GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 4 : 0) |
@@ -1579,8 +1565,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 			//EPG取得中のチューナが無くなったので取得完了
 			if( this->epgCapBasicOnlyFlags >= 0 ){
 				//EPG取得開始時の設定を書き戻し
-				wstring iniCommonPath;
-				GetCommonIniPath(iniCommonPath);
+				fs_path iniCommonPath = GetCommonIniPath();
 				WritePrivateProfileInt(L"SET", L"BSBasicOnly", (this->epgCapBasicOnlyFlags & 1) != 0, iniCommonPath.c_str());
 				WritePrivateProfileInt(L"SET", L"CS1BasicOnly", (this->epgCapBasicOnlyFlags & 2) != 0, iniCommonPath.c_str());
 				WritePrivateProfileInt(L"SET", L"CS2BasicOnly", (this->epgCapBasicOnlyFlags & 4) != 0, iniCommonPath.c_str());
@@ -1874,9 +1859,7 @@ UINT WINAPI CReserveManager::WatchdogThread(LPVOID param)
 void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName)
 {
 	if( workList.empty() == false ){
-		GetModuleFolderPath(workList[0].batFilePath);
-		workList[0].batFilePath += L'\\';
-		workList[0].batFilePath += fileName;
+		workList[0].batFilePath = GetModulePath().replace_filename(fileName).native();
 		if( GetFileAttributes(workList[0].batFilePath.c_str()) != INVALID_FILE_ATTRIBUTES ){
 			for( size_t i = 0; i < workList.size(); i++ ){
 				workList[i].batFilePath = workList[0].batFilePath;
@@ -1952,13 +1935,10 @@ void CReserveManager::AddRecInfoMacro(vector<pair<string, wstring>>& macroList, 
 	macroList.push_back(pair<string, wstring>("ServiceName", recInfo.serviceName));
 	macroList.push_back(pair<string, wstring>("Result", recInfo.GetComment()));
 	macroList.push_back(pair<string, wstring>("FilePath", recInfo.recFilePath));
-	wstring strVal;
-	GetFileFolder(recInfo.recFilePath, strVal);
-	ChkFolderPath(strVal);
-	macroList.push_back(pair<string, wstring>("FolderPath", strVal));
-	GetFileTitle(recInfo.recFilePath, strVal);
-	macroList.push_back(pair<string, wstring>("FileName", strVal));
-	strVal = recInfo.title;
+	fs_path path = recInfo.recFilePath;
+	macroList.push_back(pair<string, wstring>("FolderPath", path.parent_path().native()));
+	macroList.push_back(pair<string, wstring>("FileName", path.stem().native()));
+	wstring strVal = recInfo.title;
 	CheckFileName(strVal);
 	macroList.push_back(pair<string, wstring>("TitleF", strVal));
 	strVal = recInfo.title;

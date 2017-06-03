@@ -53,30 +53,18 @@ void CEpgDataCap_BonMain::SetHwnd(HWND wnd)
 //Ý’è‚ðs‚¤
 void CEpgDataCap_BonMain::ReloadSetting()
 {
-	wstring commonIniPath = L"";
-	GetCommonIniPath(commonIniPath);
+	fs_path commonIniPath = GetCommonIniPath();
 
-	wstring appIniPath = L"";
-	GetModuleIniPath(appIniPath);
+	fs_path appIniPath = GetModuleIniPath();
 
-	wstring settingPath = L"";
-	GetSettingPath(settingPath);
-
-	wstring bonDriverPath = L"";
-	GetModuleFolderPath(bonDriverPath);
-	bonDriverPath += BON_DLL_FOLDER;
-
-	this->bonCtrl.SetBonDriverFolder( bonDriverPath.c_str() );
+	this->bonCtrl.SetBonDriverFolder(GetModulePath().replace_filename(BON_DLL_FOLDER).c_str());
 
 	this->recFolderList.clear();
-	int iNum = GetPrivateProfileInt( L"SET", L"RecFolderNum", 0, commonIniPath.c_str() );
-	if( iNum == 0 ){
-		this->recFolderList.push_back( settingPath );
-	}else{
-		for( int i = 0; i < iNum; i++ ){
-			WCHAR key[64];
-			swprintf_s(key, L"RecFolderPath%d", i);
-			this->recFolderList.push_back(GetPrivateProfileToString( L"SET", key, L"", commonIniPath.c_str() ));
+	for( int i = 0; ; i++ ){
+		this->recFolderList.push_back(GetRecFolderPath(i).native());
+		if( this->recFolderList.back().empty() ){
+			this->recFolderList.pop_back();
+			break;
 		}
 	}
 
@@ -309,8 +297,7 @@ BOOL CEpgDataCap_BonMain::SendUDP(
 {
 	this->udpSendList.clear();
 	if( enableFlag == TRUE ){
-		wstring appIniPath = L"";
-		GetModuleIniPath(appIniPath);
+		fs_path appIniPath = GetModuleIniPath();
 
 		int udpCount = GetPrivateProfileInt( L"SET_UDP", L"Count", 0, appIniPath.c_str() );
 		for( int i = 0; i < udpCount; i++ ){
@@ -377,8 +364,7 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 {
 	this->tcpSendList.clear();
 	if( enableFlag == TRUE ){
-		wstring appIniPath = L"";
-		GetModuleIniPath(appIniPath);
+		fs_path appIniPath = GetModuleIniPath();
 
 		int tcpCount = GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
 		for( int i = 0; i < tcpCount; i++ ){
@@ -978,18 +964,11 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				BOOL subRec = FALSE;
 				sys->bonCtrl.GetSaveFilePath(val.ctrlID, &saveFile, &subRec);
 				if( saveFile.size() > 0 && val.saveErrLog == 1 ){
-					wstring iniCommonPath = L"";
-					GetCommonIniPath(iniCommonPath);
+					fs_path infoPath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", GetCommonIniPath().c_str());
 
-					wstring infoFolder = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", iniCommonPath.c_str());
-					ChkFolderPath(infoFolder);
-
-					if( infoFolder.size() > 0 ){
-						wstring tsFileName = L"";
-						GetFileName(saveFile, tsFileName);
-						wstring saveFileErr = L"";
-						Format(saveFileErr, L"%s\\%s.err", infoFolder.c_str(), tsFileName.c_str());
-						sys->bonCtrl.SaveErrCount(val.ctrlID, saveFileErr);
+					if( infoPath.empty() == false ){
+						infoPath.append(fs_path(saveFile).filename().concat(L".err").native());
+						sys->bonCtrl.SaveErrCount(val.ctrlID, infoPath.native());
 					}else{
 						wstring saveFileErr = saveFile;
 						saveFileErr += L".err";
