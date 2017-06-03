@@ -5,7 +5,7 @@
 #pragma once
 
 #include "resource.h"		// ƒƒCƒ“ ƒVƒ“ƒ{ƒ‹
-#include "../../Common/Util.h"
+#include "../../Common/PathUtil.h"
 
 
 // CEpgDataCap_BonApp:

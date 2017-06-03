@@ -518,21 +518,6 @@ wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& service
 	return ConvertEpgInfoText(info, &serviceName, &text);
 }
 
-void GetChkDrivePath(wstring directoryPath, wstring& mountPath)
-{
-	WCHAR szVolumePathName[MAX_PATH] = L"";
-	if( GetVolumePathName( directoryPath.c_str(), szVolumePathName, MAX_PATH) == FALSE ){
-		mountPath = directoryPath;
-		return ;
-	}
-	WCHAR szMount[MAX_PATH] = L"";
-	if( GetVolumeNameForVolumeMountPoint(szVolumePathName, szMount, MAX_PATH) == FALSE ){
-		mountPath = szVolumePathName;
-		return ;
-	}
-	mountPath = szMount;
-}
-
 void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest)
 {
 	dest->original_network_id = onid;

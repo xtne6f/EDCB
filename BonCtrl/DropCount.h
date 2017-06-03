@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../Common/Util.h"
-
 class CDropCount
 {
 public:

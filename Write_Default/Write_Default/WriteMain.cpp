@@ -45,18 +45,15 @@ BOOL CWriteMain::Start(
 
 	this->savePath = fileName;
 	_OutputDebugString(L"★CWriteMain::Start CreateFile:%s\r\n", this->savePath.c_str());
-	this->file = _CreateDirectoryAndFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+	UtilCreateDirectories(fs_path(this->savePath).parent_path());
+	this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( this->file == INVALID_HANDLE_VALUE ){
 		_OutputDebugString(L"★CWriteMain::Start Err:0x%08X\r\n", GetLastError());
-		WCHAR szPath[_MAX_PATH];
-		WCHAR szDrive[_MAX_DRIVE];
-		WCHAR szDir[_MAX_DIR];
-		WCHAR szFname[_MAX_FNAME];
-		WCHAR szExt[_MAX_EXT];
-		_wsplitpath_s(fileName, szDrive, szDir, szFname, szExt);
-		_wmakepath_s(szPath, szDrive, szDir, szFname, NULL);
+		fs_path pathWoExt = this->savePath;
+		fs_path ext = pathWoExt.extension();
+		pathWoExt.replace_extension();
 		for( int i = 1; ; i++ ){
-			Format(this->savePath, L"%s-(%d)%s", szPath, i, szExt);
+			Format(this->savePath, L"%s-(%d)%s", pathWoExt.c_str(), i, ext.c_str());
 			this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 			if( this->file != INVALID_HANDLE_VALUE || i >= 999 ){
 				DWORD err = GetLastError();
@@ -196,14 +193,9 @@ UINT WINAPI CWriteMain::TeeThread(LPVOID param)
 	Replace(cmd, L"$FilePath$", sys->savePath);
 	vector<WCHAR> cmdBuff(cmd.c_str(), cmd.c_str() + cmd.size() + 1);
 
-	WCHAR szCurrentDir[_MAX_PATH];
-	DWORD ret = GetModuleFileName(NULL, szCurrentDir, _MAX_PATH);
-	if( ret && ret < _MAX_PATH ){
+	{
 		//カレントは実行ファイルのあるフォルダ
-		WCHAR szDrive[_MAX_DRIVE];
-		WCHAR szDir[_MAX_DIR];
-		_wsplitpath_s(szCurrentDir, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, NULL, 0, NULL, 0);
-		_wmakepath_s(szCurrentDir, szDrive, szDir, NULL, NULL);
+		fs_path currentDir = GetModulePath().parent_path();
 
 		//標準入力にパイプしたプロセスを起動する
 		HANDLE tempPipe;
@@ -225,7 +217,7 @@ UINT WINAPI CWriteMain::TeeThread(LPVOID param)
 				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				PROCESS_INFORMATION pi;
-				bRet = CreateProcess(NULL, &cmdBuff.front(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, szCurrentDir, &si, &pi);
+				bRet = CreateProcess(NULL, &cmdBuff.front(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, currentDir.c_str(), &si, &pi);
 				CloseHandle(readPipe);
 				if( si.hStdOutput != INVALID_HANDLE_VALUE ){
 					CloseHandle(si.hStdOutput);
