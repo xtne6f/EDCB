@@ -57,24 +57,25 @@ namespace EpgTimer
         {
             get
             {
-                string iniPath = ModulePath.TrimEnd('\\');
-                iniPath += "\\Common.ini";
-                return iniPath;
+                return Path.Combine(ModulePath, "Common.ini");
             }
         }
         public static string TimerSrvIniPath
         {
             get
             {
-                string iniPath = ModulePath.TrimEnd('\\');
-                iniPath += "\\EpgTimerSrv.ini";
-                return iniPath;
+                return Path.Combine(ModulePath, "EpgTimerSrv.ini");
             }
         }
         public static void CheckFolderPath(ref string folderPath)
         {
-            if( folderPath.LastIndexOf("\\") == folderPath.Length-1 ){
-                folderPath = folderPath.Remove(folderPath.Length - 1);
+            //過去にルートディレクトリ区切りを失った状態("C:"など)で設定などに保存していたので、これに対応する
+            if (folderPath.Length > 0 &&
+                folderPath[folderPath.Length - 1] != Path.DirectorySeparatorChar &&
+                folderPath[folderPath.Length - 1] != Path.AltDirectorySeparatorChar)
+            {
+                //一時的に下層を作って上がる
+                folderPath = Path.GetDirectoryName(folderPath + Path.DirectorySeparatorChar + "a") ?? folderPath;
             }
         }
         public static string ModulePath
