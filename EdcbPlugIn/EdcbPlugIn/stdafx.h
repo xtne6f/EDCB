@@ -14,5 +14,7 @@
 
 
 // TODO: プログラムに必要な追加ヘッダーをここで参照してください
+#include <stdio.h>
+#include <share.h>
 #include "../../Common/Common.h"
 #define SEND_CTRL_CMD_NO_TCP

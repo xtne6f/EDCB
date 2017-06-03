@@ -131,7 +131,7 @@ CEdcbPlugIn::CEdcbPlugIn()
 	, m_outCtrlID(-1)
 	, m_statusCode(VIEW_APP_ST_ERR_BON)
 	, m_chChangeID(CH_CHANGE_OK)
-	, m_epgFile(INVALID_HANDLE_VALUE)
+	, m_epgFile(nullptr, fclose)
 	, m_epgReloadThread(nullptr)
 	, m_epgCapBack(false)
 	, m_recCtrlCount(0)
@@ -379,16 +379,17 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							m_epgCapChList.erase(m_epgCapChList.begin());
 							m_epgCapChkNext = true;
 						}
-						else if (m_epgFile == INVALID_HANDLE_VALUE) {
+						else if (!m_epgFile) {
 							// 保存開始
 							wstring name;
 							Format(name, L"%04X%04X_epg.dat", chInfo.ONID, basicFlag ? 0xFFFF : chInfo.TSID);
 							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
-							HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-							if (epgFile != INVALID_HANDLE_VALUE) {
+							UtilCreateDirectories(fs_path(m_epgFilePath).parent_path());
+							std::unique_ptr<FILE, decltype(&fclose)> epgFile(_wfsopen((m_epgFilePath + L".tmp").c_str(), L"wb", _SH_DENYRW), fclose);
+							if (epgFile) {
 								m_pApp->AddLog((L'★' + name).c_str());
 								CBlockLock lock(&m_streamLock);
-								m_epgFile = epgFile;
+								m_epgFile.swap(epgFile);
 								m_epgFileState = EPG_FILE_ST_NONE;
 							}
 							m_epgUtil.ClearSectionStatus();
@@ -415,14 +416,13 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							}
 						}
 					}
-					if (m_epgCapChkNext && m_epgFile != INVALID_HANDLE_VALUE) {
+					if (m_epgCapChkNext && m_epgFile) {
 						// 保存終了
-						HANDLE epgFile = m_epgFile;
 						{
+							std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
 							CBlockLock lock(&m_streamLock);
-							m_epgFile = INVALID_HANDLE_VALUE;
+							epgFile.swap(m_epgFile);
 						}
-						CloseHandle(epgFile);
 						if (saveEpgFile) {
 							CopyFile((m_epgFilePath + L".tmp").c_str(), m_epgFilePath.c_str(), FALSE);
 						}
@@ -456,16 +456,17 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						if (chkList.empty()) {
 							m_epgCapBack = false;
 						}
-						else if (m_epgFile == INVALID_HANDLE_VALUE) {
+						else if (!m_epgFile) {
 							// 保存開始
 							wstring name;
 							Format(name, L"%04X%04X_epg.dat", onid, basicFlag ? 0xFFFF : tsid);
 							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
-							HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-							if (epgFile != INVALID_HANDLE_VALUE) {
+							UtilCreateDirectories(fs_path(m_epgFilePath).parent_path());
+							std::unique_ptr<FILE, decltype(&fclose)> epgFile(_wfsopen((m_epgFilePath + L".tmp").c_str(), L"wb", _SH_DENYRW), fclose);
+							if (epgFile) {
 								m_pApp->AddLog((L'★' + name).c_str());
 								CBlockLock lock(&m_streamLock);
-								m_epgFile = epgFile;
+								m_epgFile.swap(epgFile);
 								m_epgFileState = EPG_FILE_ST_NONE;
 							}
 							m_epgUtil.ClearSectionStatus();
@@ -493,14 +494,13 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						}
 					}
 				}
-				if (!m_epgCapBack && m_epgFile != INVALID_HANDLE_VALUE) {
+				if (!m_epgCapBack && m_epgFile) {
 					// 保存終了
-					HANDLE epgFile = m_epgFile;
 					{
+						std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
 						CBlockLock lock(&m_streamLock);
-						m_epgFile = INVALID_HANDLE_VALUE;
+						epgFile.swap(m_epgFile);
 					}
-					CloseHandle(epgFile);
 					if (saveEpgFile) {
 						CopyFile((m_epgFilePath + L".tmp").c_str(), m_epgFilePath.c_str(), FALSE);
 					}
@@ -578,14 +578,13 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		// FALL THROUGH!
 	case WM_EPGCAP_BACK_STOP:
 		m_epgCapBack = false;
-		if (m_epgCapChList.empty() && m_epgFile != INVALID_HANDLE_VALUE) {
+		if (m_epgCapChList.empty() && m_epgFile) {
 			// 保存キャンセル
-			HANDLE epgFile = m_epgFile;
 			{
+				std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
 				CBlockLock lock(&m_streamLock);
-				m_epgFile = INVALID_HANDLE_VALUE;
+				epgFile.swap(m_epgFile);
 			}
-			CloseHandle(epgFile);
 			DeleteFile((m_epgFilePath + L".tmp").c_str());
 		}
 		return 0;
@@ -814,7 +813,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 					}
 					if (IsEdcbRecording()) {
 						// 重複録画
-						_CreateDirectory(filePath.parent_path().c_str());
+						UtilCreateDirectories(filePath.parent_path());
 						wstring strFilePath = filePath.native();
 						if (DuplicateSave(m_duplicateOriginalPath.c_str(), &recCtrl.duplicateTargetID, &strFilePath)) {
 							SendMessage(m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
@@ -1019,8 +1018,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 				}
 			}
 			else {
-				if (this_.m_epgFile != INVALID_HANDLE_VALUE) {
-					DWORD written;
+				if (this_.m_epgFile) {
 					if (packet.PID == 0 && packet.payload_unit_start_indicator) {
 						if (this_.m_epgFileState == EPG_FILE_ST_NONE) {
 							this_.m_epgFileState = EPG_FILE_ST_PAT;
@@ -1032,22 +1030,21 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 							// TOTを前倒しで書き込むための場所を確保
 							BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
 							memset(nullData + 4, 0xFF, 184);
-							this_.m_epgFileTotPos = SetFilePointer(this_.m_epgFile, 0, nullptr, FILE_CURRENT);
-							WriteFile(this_.m_epgFile, nullData, 188, &written, nullptr);
+							this_.m_epgFileTotPos = _ftelli64(this_.m_epgFile.get());
+							fwrite(nullData, 1, 188, this_.m_epgFile.get());
 						}
 					}
 					// まずPAT、次に(あれば)TOTを書き込む。この処理は必須ではないが番組情報をより確実かつ効率的に読み出せる
 					if (packet.PID == 0x14 && this_.m_epgFileState == EPG_FILE_ST_TOT) {
 						this_.m_epgFileState = EPG_FILE_ST_ALL;
-						if (this_.m_epgFileTotPos != INVALID_SET_FILE_POINTER) {
-							SetFilePointer(this_.m_epgFile, this_.m_epgFileTotPos, nullptr, FILE_BEGIN);
+						if (this_.m_epgFileTotPos >= 0) {
+							_fseeki64(this_.m_epgFile.get(), this_.m_epgFileTotPos, SEEK_SET);
 						}
-						WriteFile(this_.m_epgFile, pData, 188, &written, nullptr);
-						LONG posHigh = 0;
-						SetFilePointer(this_.m_epgFile, 0, &posHigh, FILE_END);
+						fwrite(pData, 1, 188, this_.m_epgFile.get());
+						_fseeki64(this_.m_epgFile.get(), 0, SEEK_END);
 					}
 					else if (packet.PID == 0 && this_.m_epgFileState >= EPG_FILE_ST_PAT || this_.m_epgFileState >= EPG_FILE_ST_TOT) {
-						WriteFile(this_.m_epgFile, pData, 188, &written, nullptr);
+						fwrite(pData, 1, 188, this_.m_epgFile.get());
 					}
 				}
 				this_.m_epgUtil.AddTSPacket(pData, 188);

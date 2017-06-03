@@ -74,7 +74,8 @@ BOOL CWriteMain::Start(
 		this->savePath = &path.front();
 	}else{
 		_OutputDebugString(L"šCWriteMain::Start CreateFile:%s\r\n", this->savePath.c_str());
-		this->file = _CreateDirectoryAndFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		UtilCreateDirectories(fs_path(this->savePath).parent_path());
+		this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if( this->file == INVALID_HANDLE_VALUE ){
 			_OutputDebugString(L"šCWriteMain::Start Err:0x%08X\r\n", GetLastError());
 			fs_path pathWoExt = this->savePath;

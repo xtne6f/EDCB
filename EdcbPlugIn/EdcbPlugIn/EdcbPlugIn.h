@@ -85,9 +85,9 @@ private:
 	bool m_chChangedAfterSetCh;
 	DWORD m_chChangeID;
 	DWORD m_chChangeTick;
-	HANDLE m_epgFile;
+	std::unique_ptr<FILE, decltype(&fclose)> m_epgFile;
 	enum { EPG_FILE_ST_NONE, EPG_FILE_ST_PAT, EPG_FILE_ST_TOT, EPG_FILE_ST_ALL } m_epgFileState;
-	DWORD m_epgFileTotPos;
+	__int64 m_epgFileTotPos;
 	wstring m_epgFilePath;
 	HANDLE m_epgReloadThread;
 	DWORD m_epgCapTimeout;
