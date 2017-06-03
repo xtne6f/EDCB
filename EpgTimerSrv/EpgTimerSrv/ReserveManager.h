@@ -18,9 +18,9 @@ public:
 	};
 	CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
 	~CReserveManager();
-	void Initialize();
+	void Initialize(const CEpgTimerSrvSetting::SETTING& s);
 	void Finalize();
-	void ReloadSetting();
+	void ReloadSetting(const CEpgTimerSrvSetting::SETTING& s);
 	//予約情報一覧を取得する
 	vector<RESERVE_DATA> GetReserveDataAll(bool getRecFileName = false) const;
 	//チューナ毎の予約情報を取得する
@@ -28,7 +28,7 @@ public:
 	//予約情報を取得する
 	bool GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName = false) const;
 	//予約情報を追加する
-	bool AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment = false, bool setReserveStatus = false);
+	bool AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus = false);
 	//予約情報を変更する
 	bool ChgReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus = false);
 	//予約情報を削除する
@@ -68,8 +68,8 @@ public:
 	bool SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList);
 	//ネットワークモードのチューナを閉じる
 	bool CloseNWTV();
-	//予約が録画中であればその録画ファイル名などを取得する
-	bool GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const;
+	//予約が録画中であればその録画ファイル名を取得する
+	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
 	//指定EPGイベントは録画済みかどうか
 	bool IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const;
 	//自動予約によって作成された指定イベントの予約を無効にする
@@ -105,6 +105,9 @@ private:
 	void CheckAutoDel() const;
 	//チューナ割り当てされていない古い予約を終了処理する
 	void CheckOverTimeReserve();
+	//予約終了を処理する
+	//shutdownMode: 最後に処理した予約の録画後動作を記録
+	void ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, int* shutdownMode = NULL);
 	//EPG取得可能なチューナIDのリストを取得する
 	vector<DWORD> GetEpgCapTunerIDList(__int64 now) const;
 	//EPG取得処理を管理する
@@ -142,30 +145,20 @@ private:
 
 	map<DWORD, std::unique_ptr<CTunerBankCtrl>> tunerBankMap;
 
-	DWORD ngCapTimeSec;
-	DWORD ngCapTunerTimeSec;
-	bool epgCapTimeSync;
-	//LOWORDに取得時刻の日曜日からのオフセット(分)、HIWORDに取得種別
-	vector<DWORD> epgCapTimeList;
-	vector<wstring> autoDelExtList;
-	vector<wstring> autoDelFolderList;
-	int defStartMargin;
-	int defEndMargin;
-	int notFindTuijyuHour;
-	bool backPriority;
-	int recInfo2DropChk;
-	wstring recInfo2RegExp;
+	CEpgTimerSrvSetting::SETTING setting;
 	bool defEnableCaption;
 	bool defEnableData;
-	bool errEndBatRun;
-	wstring recNamePlugInFileName;
-	bool recNameNoChkYen;
 
 	DWORD checkCount;
 	__int64 lastCheckEpgCap;
 	bool epgCapRequested;
 	bool epgCapWork;
 	bool epgCapSetTimeSync;
+	__int64 epgCapTimeSyncBase;
+	__int64 epgCapTimeSyncDelayMin;
+	__int64 epgCapTimeSyncDelayMax;
+	DWORD epgCapTimeSyncTick;
+	DWORD epgCapTimeSyncQuality;
 	int epgCapBasicOnlyFlags;
 	int shutdownModePending;
 	bool reserveModified;

@@ -72,7 +72,7 @@ public:
 		);
 
 	void SetEmmPID(
-		map<WORD,WORD>* PIDMap
+		const map<WORD,WORD>& PIDMap
 		);
 
 	//ファイル保存を開始する
@@ -90,7 +90,7 @@ public:
 	// saveFolder			[IN]使用するフォルダ一覧
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 	BOOL StartSave(
-		wstring fileName,
+		const wstring& fileName,
 		BOOL overWriteFlag,
 		BOOL pittariFlag,
 		WORD pittariONID,
@@ -98,8 +98,8 @@ public:
 		WORD pittariSID,
 		WORD pittariEventID,
 		ULONGLONG createSize,
-		vector<REC_FILE_SET_INFO>* saveFolder,
-		vector<wstring>* saveFolderSub,
+		const vector<REC_FILE_SET_INFO>* saveFolder,
+		const vector<wstring>* saveFolderSub,
 		int maxBuffCount
 	);
 
@@ -160,7 +160,7 @@ public:
 	//引数：
 	// filePath			[IN]保存ファイル名
 	void SaveErrCount(
-		wstring filePath
+		const wstring& filePath
 		);
 
 	void SetSignalLevel(
@@ -169,16 +169,16 @@ public:
 
 	//録画中のファイルの出力サイズを取得する
 	//引数：
-	// writeSize			[OUT]保存ファイル名
+	// writeSize			[OUT]出力サイズ
 	void GetRecWriteSize(
 		__int64* writeSize
 		);
 
 	void SetBonDriver(
-		wstring bonDriver
+		const wstring& bonDriver
 		);
 	void SetPIDName(
-		map<WORD, string>* pidName
+		const map<WORD, string>& pidName
 		);
 protected:
 	WORD SID;
@@ -190,9 +190,9 @@ protected:
 	vector<HANDLE> udpPortMutex;
 	vector<HANDLE> tcpPortMutex;
 
-	CSendUDP* sendUdp;
-	CSendTCP* sendTcp;
-	CWriteTSFile* writeFile;
+	std::unique_ptr<CSendUDP> sendUdp;
+	std::unique_ptr<CSendTCP> sendTcp;
+	std::unique_ptr<CWriteTSFile> writeFile;
 
 	vector<BYTE> buff;
 

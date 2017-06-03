@@ -1,9 +1,0 @@
-EXPORTS
-	GetPlugInName		@1
-	Setting				@2
-	CreateCtrl			@3
-	DeleteCtrl			@4
-	StartSave			@5
-	StopSave			@6
-	GetSaveFilePath		@7
-	AddTSBuff			@8

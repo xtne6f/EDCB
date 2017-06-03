@@ -12,9 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -29,37 +26,21 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_searchKey.Style = null;
-                    button_service_addAll.Style = null;
-                    button_service_add.Style = null;
-                    button_service_del.Style = null;
-                    button_service_delAll.Style = null;
-                    button_service_up.Style = null;
-                    button_service_down.Style = null;
-                    button_service_addVideo.Style = null;
-                    button_jyanru_addAll.Style = null;
-                    button_jyanru_add.Style = null;
-                    button_jyanru_del.Style = null;
-                    button_jyanru_delAll.Style = null;
-                }
-
-                comboBox_timeH_week.ItemsSource = CommonManager.Instance.HourDictionary.Values;
+                comboBox_timeH_week.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_timeH_week.SelectedIndex = 4;
 
 
-                foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
                 {
-                    if (info.ONID == 0x0004)
+                    if (ChSet5.IsBS(info.ONID))
                     {
                         listBox_serviceBS.Items.Add(info);
                     }
-                    else if (info.ONID == 0x0006 || info.ONID == 0x0007)
+                    else if (ChSet5.IsCS(info.ONID))
                     {
                         listBox_serviceCS.Items.Add(info);
                     }
-                    else if (0x7880 <= info.ONID && info.ONID <= 0x7FE8)
+                    else if (ChSet5.IsDttv(info.ONID))
                     {
                         listBox_serviceTere.Items.Add(info);
                     }
@@ -68,10 +49,7 @@ namespace EpgTimer
                         listBox_serviceOther.Items.Add(info);
                     }
                 }
-                foreach (ContentKindInfo info in CommonManager.Instance.ContentKindDictionary.Values)
-                {
-                    listBox_jyanru.Items.Add(info);
-                }
+                listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
 
                 radioButton_rate.IsChecked = true;
                 radioButton_week.IsChecked = false;
@@ -367,7 +345,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceBS.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -390,7 +368,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceCS.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -413,7 +391,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceTere.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -436,7 +414,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceOther.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }

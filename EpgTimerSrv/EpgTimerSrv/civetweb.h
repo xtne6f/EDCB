@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2016 the Civetweb developers
+/* Copyright (c) 2013-2017 the Civetweb developers
  * Copyright (c) 2004-2013 Sergey Lyubka
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,7 +23,10 @@
 #ifndef CIVETWEB_HEADER_INCLUDED
 #define CIVETWEB_HEADER_INCLUDED
 
-#define CIVETWEB_VERSION "1.8"
+#define CIVETWEB_VERSION "1.9.1"
+#define CIVETWEB_VERSION_MAJOR (1)
+#define CIVETWEB_VERSION_MINOR (9)
+#define CIVETWEB_VERSION_PATCH (1)
 
 #ifndef CIVETWEB_API
 #if defined(_WIN32)
@@ -47,6 +50,25 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+
+/* Initialize this library. This should be called once before any other
+ * function from this library. This function is not guaranteed to be
+ * thread safe.
+ * Parameters:
+ *   features: bit mask for features to be initialized.
+ * Return value:
+ *   initialized features
+ *   0: error
+ */
+CIVETWEB_API unsigned mg_init_library(unsigned features);
+
+
+/* Un-initialize this library.
+ * Return value:
+ *   0: error
+ */
+CIVETWEB_API unsigned mg_exit_library(void);
 
 
 struct mg_context;    /* Handle for the HTTP service itself */
@@ -86,6 +108,20 @@ struct mg_request_info {
 		const char *name;  /* HTTP header name */
 		const char *value; /* HTTP header value */
 	} http_headers[64];    /* Maximum 64 headers */
+
+	struct client_cert *client_cert; /* Client certificate information */
+
+	const char *acceptedWebSocketSubprotocol; /* websocket subprotocol,
+	                                           * accepted during handshake */
+};
+
+
+/* Client certificate information (part of mg_request_info) */
+struct client_cert {
+	const char *subject;
+	const char *issuer;
+	const char *serial;
+	const char *finger;
 };
 
 
@@ -174,7 +210,7 @@ struct mg_callbacks {
 	   Return value:
 	     NULL: do not serve file from memory, proceed with normal file open.
 	     non-NULL: pointer to the file contents in memory. data_len must be
-	       initilized with the size of the memory block. */
+	       initialized with the size of the memory block. */
 	const char *(*open_file)(const struct mg_connection *,
 	                         const char *path,
 	                         size_t *data_len);
@@ -350,6 +386,14 @@ typedef int (*mg_websocket_data_handler)(struct mg_connection *,
 typedef void (*mg_websocket_close_handler)(const struct mg_connection *,
                                            void *);
 
+/* struct mg_websocket_subprotocols
+ *
+ * List of accepted subprotocols
+ */
+struct mg_websocket_subprotocols {
+	int nb_subprotocols;
+	char **subprotocols;
+};
 
 /* mg_set_websocket_handler
 
@@ -363,6 +407,20 @@ mg_set_websocket_handler(struct mg_context *ctx,
                          mg_websocket_data_handler data_handler,
                          mg_websocket_close_handler close_handler,
                          void *cbdata);
+
+/* mg_set_websocket_handler
+
+   Set or remove handler functions for websocket connections.
+   This function works similar to mg_set_request_handler - see there. */
+CIVETWEB_API void mg_set_websocket_handler_with_subprotocols(
+    struct mg_context *ctx,
+    const char *uri,
+    struct mg_websocket_subprotocols *subprotocols,
+    mg_websocket_connect_handler connect_handler,
+    mg_websocket_ready_handler ready_handler,
+    mg_websocket_data_handler data_handler,
+    mg_websocket_close_handler close_handler,
+    void *cbdata);
 
 
 /* mg_authorization_handler
@@ -620,10 +678,26 @@ CIVETWEB_API void mg_send_mime_file(struct mg_connection *conn,
                                     const char *path,
                                     const char *mime_type);
 
+/* Send contents of the entire file together with HTTP headers.
+   Parameters:
+     conn: Current connection information.
+     path: Full path to the file to send.
+     mime_type: Content-Type for file.  NULL will cause the type to be
+                looked up by the file extension.
+     additional_headers: Additional custom header fields appended to the header.
+                         Each header must start with an X- to ensure it is not
+   included twice.
+                         NULL does not append anything.
+*/
+CIVETWEB_API void mg_send_mime_file2(struct mg_connection *conn,
+                                     const char *path,
+                                     const char *mime_type,
+                                     const char *additional_headers);
+
 /* Store body data into a file. */
 CIVETWEB_API long long mg_store_body(struct mg_connection *conn,
                                      const char *path);
-/* Read entire request body and stor it in a file "path".
+/* Read entire request body and store it in a file "path".
    Return:
      < 0   Error
      >= 0  Number of bytes stored in file "path".
@@ -917,7 +991,7 @@ CIVETWEB_API void mg_cry(const struct mg_connection *conn,
                          ...) PRINTF_ARGS(2, 3);
 
 
-/* utility methods to compare two buffers, case incensitive. */
+/* utility methods to compare two buffers, case insensitive. */
 CIVETWEB_API int mg_strcasecmp(const char *s1, const char *s2);
 CIVETWEB_API int mg_strncasecmp(const char *s1, const char *s2, size_t len);
 
@@ -1009,9 +1083,16 @@ CIVETWEB_API int mg_get_response(struct mg_connection *conn,
 #endif /* MG_CLIENT_UTIL */
 
 
-/* Check which features where set when civetweb has been compiled.
+/* Check which features where set when the civetweb library has been compiled.
+   The function explicitly addresses compile time defines used when building
+   the library - it does not mean, the feature has been initialized using a
+   mg_init_library call.
+   mg_check_feature can be called anytime, even before mg_init_library has
+   been called.
+
    Parameters:
      feature: specifies which feature should be checked
+       The value is a bit mask. The individual bits are defined as:
          1  serve files (NO_FILES not set)
          2  support HTTPS (NO_SSL not set)
          4  support CGI (NO_CGI not set)
@@ -1020,14 +1101,30 @@ CIVETWEB_API int mg_get_response(struct mg_connection *conn,
         32  support Lua scripts and Lua server pages (USE_LUA is set)
         64  support server side JavaScript (USE_DUKTAPE is set)
        128  support caching (NO_CACHING not set)
-       The result is undefined for all other feature values.
+       The result is undefined, if bits are set that do not represent a
+       defined feature (currently: feature >= 256).
+       The result is undefined, if no bit is set (feature == 0).
 
    Return:
-     If feature is available > 0
-     If feature is not available = 0
+     If feature is available, the corresponding bit is set
+     If feature is not available, the bit is 0
 */
 CIVETWEB_API unsigned mg_check_feature(unsigned feature);
 
+
+/* Get information on the system. Useful, if in support requests.
+   Parameters:
+     buffer: Store system information as string here.
+     buflen: Length of buffer (including a byte required for a terminating 0).
+   Return:
+     Available size of system information, exluding a terminating 0.
+     The information is complete, if the return value is smaller than buflen.
+   Note:
+     It is possible to determine the required buflen, by first calling this
+     function with  buffer = NULL and buflen = NULL. The required buflen is
+     one byte more than the returned value.
+*/
+CIVETWEB_API int mg_get_system_info(char *buffer, int buflen);
 
 #ifdef __cplusplus
 }

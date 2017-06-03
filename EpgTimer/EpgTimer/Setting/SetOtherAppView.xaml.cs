@@ -24,26 +24,8 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
-            if (CommonManager.Instance.NWMode == true)
-            {
-                tabItem_play.IsEnabled = false;
-                label3.IsEnabled = false;
-                listBox_bon.IsEnabled = false;
-                button_del.IsEnabled = false;
-                button_add.IsEnabled = false;
-                comboBox_bon.IsEnabled = false;
-            }
-
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_exe.Style = null;
-                    button_del.Style = null;
-                    button_add.Style = null;
-                    button_playExe.Style = null;
-                }
-
                 textBox_exe.Text = Settings.Instance.TvTestExe;
                 textBox_cmd.Text = Settings.Instance.TvTestCmd;
                 checkBox_nwTvMode.IsChecked = Settings.Instance.NwTvMode;
@@ -52,73 +34,12 @@ namespace EpgTimer.Setting
 
                 textBox_playExe.Text = Settings.Instance.FilePlayExe;
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
-
-                string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
-                SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
-                foreach (string info in files)
-                {
-                    try
-                    {
-                        String bonName = "";
-                        String fileName = System.IO.Path.GetFileName(info);
-                        bonName = GetBonFileName(fileName);
-                        bonName += ".dll";
-                        comboBox_bon.Items.Add(bonName);
-                    }
-                    catch
-                    {
-                    }
-                }
-                if (comboBox_bon.Items.Count > 0)
-                {
-                    comboBox_bon.SelectedIndex = 0;
-                }
-
-                StringBuilder buff = new StringBuilder(512);
-                buff.Clear();
-
-                int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
-                for (uint i = 0; i < num; i++)
-                {
-                    buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                    if (buff.Length > 0)
-                    {
-                        listBox_bon.Items.Add(buff.ToString());
-                    }
-                }
+                checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        private String GetBonFileName(String src)
-        {
-            int pos = src.LastIndexOf(")");
-            if (pos < 1)
-            {
-                return src;
-            }
-
-            int count = 1;
-            for (int i = pos - 1; i >= 0; i--)
-            {
-                if (src[i] == '(')
-                {
-                    count--;
-                }
-                else if (src[i] == ')')
-                {
-                    count++;
-                }
-                if (count == 0)
-                {
-                    return src.Substring(0, i);
-                }
-            }
-            return src;
         }
 
         public void SaveSetting()
@@ -151,16 +72,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.NwTvModeTCP = false;
             }
 
-            IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
-            for (int i = 0; i < listBox_bon.Items.Count; i++)
-            {
-                string val = listBox_bon.Items[i] as string;
-                IniFileHandler.WritePrivateProfileString("TVTEST", i.ToString(), val, SettingPath.TimerSrvIniPath);
-            }
-
             Settings.Instance.FilePlayExe = textBox_playExe.Text;
             Settings.Instance.FilePlayCmd = textBox_playCmd.Text;
-
+            Settings.Instance.FilePlayOnAirWithExe = checkBox_playOnAirWithExe.IsChecked == true;
         }
 
         private void button_exe_Click(object sender, RoutedEventArgs e)
@@ -173,30 +87,6 @@ namespace EpgTimer.Setting
             if (result == true)
             {
                 textBox_exe.Text = dlg.FileName;
-            }
-        }
-
-        private void button_del_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_bon.SelectedItem != null)
-            {
-                listBox_bon.Items.RemoveAt(listBox_bon.SelectedIndex);
-            }
-        }
-
-        private void button_add_Click(object sender, RoutedEventArgs e)
-        {
-            if (String.IsNullOrEmpty(comboBox_bon.Text) == false)
-            {
-                foreach (String info in listBox_bon.Items)
-                {
-                    if (String.Compare(comboBox_bon.Text, info, true) == 0)
-                    {
-                        MessageBox.Show("すでに追加されています");
-                        return;
-                    }
-                }
-                listBox_bon.Items.Add(comboBox_bon.Text);
             }
         }
 

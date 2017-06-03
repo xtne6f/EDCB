@@ -24,7 +24,6 @@ protected:
 	BYTE current_next_indicator;
 	BYTE section_number;
 	BYTE last_section_number;
-	DWORD crc32;
 
 protected:
 	void Clear();

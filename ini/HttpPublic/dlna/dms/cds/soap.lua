@@ -34,24 +34,23 @@ if post then
   elseif post:find('[<:]GetSystemUpdateID[ >]') then
     res=soapStart..'<u:GetSystemUpdateIDResponse'..xmlnsU..'><Id>1</Id></u:GetSystemUpdateIDResponse>'..soapEnd
   elseif post:find('[<:]Browse[ >]') then
-    objectID=post:match('[<:]ObjectID[^>]->(%d+)</')
+    objectID=post:match('[<:]ObjectID[^>]->(%x+)</')
     startIndex=post:match('[<:]StartingIndex[^>]->(%d+)</')
     requestedCount=post:match('[<:]RequestedCount[^>]->(%d+)</')
     if objectID and startIndex and requestedCount then
-      objectID=0+objectID
       startIndex=0+startIndex
       requestedCount=0+requestedCount
       if post:find('[<:]BrowseFlag[^>]->BrowseMetadata</') then
-        if objectID==0 then
+        if objectID=='0' then
           res='<container id="0" restricted="1" parentID=""><dc:title></dc:title><upnp:class>object.container</upnp:class></container>'
           num={1,1}
-        elseif objectID==1 then
+        elseif objectID=='1' then
           res='<container id="1" restricted="1" parentID="0"><dc:title>PublicFile</dc:title><upnp:class>object.container</upnp:class></container>'
           num={1,1}
         else
           edcb.htmlEscape=15
-          for i,v in ipairs(edcb.ListDmsPublicFile()) do
-            if v.id+2==objectID then
+          for i,v in ipairs(edcb.FindFile(mg.document_root..'\\dlna\\dms\\PublicFile\\*.*', 1000) or {}) do
+            if not v.isdir and mg.md5(v.name)==objectID then
               for j,w in ipairs(PROTOCOL_INFO) do
                 if v.name:sub(-#w[1]):lower()==w[1] then
                   --TODO: 長さを調べて原作のようにdurationプロパティを入れるとなお良いかも
@@ -68,20 +67,20 @@ if post then
           end
         end
       elseif post:find('[<:]BrowseFlag[^>]->BrowseDirectChildren</') then
-        if objectID==0 then
+        if objectID=='0' then
           res='<container id="1" restricted="1" parentID="0"><dc:title>PublicFile</dc:title><upnp:class>object.container</upnp:class></container>'
           num={1,1}
-        elseif objectID==1 then
+        elseif objectID=='1' then
           res=''
           num={0,0}
           edcb.htmlEscape=15
-          a=edcb.ListDmsPublicFile()
+          a=edcb.FindFile(mg.document_root..'\\dlna\\dms\\PublicFile\\*.*', 1000) or {}
           table.sort(a, function(a,b) return a.name < b.name end)
           for i,v in ipairs(a) do
             for j,w in ipairs(PROTOCOL_INFO) do
-              if v.name:sub(-#w[1]):lower()==w[1] then
+              if not v.isdir and v.name:sub(-#w[1]):lower()==w[1] then
                 if startIndex<=num[2] and num[1]<requestedCount then
-                  res=res..'<item id="'..(v.id+2)..'" restricted="1" parentID="1"><dc:title>'..v.name..'</dc:title><upnp:class>'..w[2]..'</upnp:class>'
+                  res=res..'<item id="'..mg.md5(v.name)..'" restricted="1" parentID="1"><dc:title>'..v.name..'</dc:title><upnp:class>'..w[2]..'</upnp:class>'
                     ..'<res size="'..v.size..'" protocolInfo="http-get:*:'..w[3]..':DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01500000000000000000000000000000'..(w[4] and ';DLNA.ORG_PN='..w[4] or '')..'">'
                     ..'http://'..HOSTNAME..':'..mg.request_info.server_port..'/dlna/dms/PublicFile/'..v.name..'</res></item>'
                   num[1]=num[1]+1

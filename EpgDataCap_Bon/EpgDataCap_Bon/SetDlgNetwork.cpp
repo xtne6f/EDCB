@@ -32,8 +32,6 @@ BOOL CSetDlgNetwork::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 BOOL CSetDlgNetwork::OnInitDialog()
 {
 	// TODO:  ここに初期化を追加してください
-	SendDlgItemMessage(m_hWnd, IDC_IPADDRESS_UDP, IPM_SETADDRESS, 0, (DWORD)GetPrivateProfileInt(L"SET", L"UDPIP", 2130706433, appIniPath.c_str()));
-	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, GetPrivateProfileInt(L"SET", L"UDPPort", 1234, appIniPath.c_str()), FALSE);
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_SEC, GetPrivateProfileInt(L"SET", L"UDPWait", 4, appIniPath.c_str()), FALSE);
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_PACKET, GetPrivateProfileInt(L"SET", L"UDPPacket", 128, appIniPath.c_str()), FALSE);
 
@@ -42,16 +40,17 @@ BOOL CSetDlgNetwork::OnInitDialog()
 		NW_SEND_INFO item;
 
 		WCHAR key[64];
-		wsprintf(key, L"IP%d",i);
-		item.ip = GetPrivateProfileInt( L"SET_UDP", key, 2130706433, appIniPath.c_str() );
-		wsprintf(key, L"Port%d",i);
+		swprintf_s(key, L"IP%d", i);
+		item.ipString = GetPrivateProfileToString(L"SET_UDP", key, L"2130706433", appIniPath.c_str());
+		if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
+			item.ipString.erase(0, 1).pop_back();
+		}else{
+			UINT ip = _wtoi(item.ipString.c_str());
+			Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
+		}
+		swprintf_s(key, L"Port%d", i);
 		item.port = GetPrivateProfileInt( L"SET_UDP", key, 1234, appIniPath.c_str() );
-		Format(item.ipString, L"%d.%d.%d.%d",
-			(item.ip&0xFF000000)>>24,
-			(item.ip&0x00FF0000)>>16,
-			(item.ip&0x0000FF00)>>8,
-			(item.ip&0x000000FF) );
-		wsprintf(key, L"BroadCast%d",i);
+		swprintf_s(key, L"BroadCast%d", i);
 		item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key, 0, appIniPath.c_str() );
 
 		udpSendList.push_back(item);
@@ -64,25 +63,24 @@ BOOL CSetDlgNetwork::OnInitDialog()
 		int index = ListBox_AddString(GetDlgItem(IDC_LIST_IP_UDP), add.c_str());
 		ListBox_SetItemData(GetDlgItem(IDC_LIST_IP_UDP), index, i);
 	}
-
-
-	SendDlgItemMessage(m_hWnd, IDC_IPADDRESS_TCP, IPM_SETADDRESS, 0, (DWORD)GetPrivateProfileInt(L"SET", L"TCPIP", 2130706433, appIniPath.c_str()));
-	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, GetPrivateProfileInt(L"SET", L"TCPPort", 2230, appIniPath.c_str()), FALSE);
+	SetDlgItemText(m_hWnd, IDC_IPADDRESS_UDP, udpSendList.empty() ? L"127.0.0.1" : udpSendList.back().ipString.c_str());
+	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, udpSendList.empty() ? 1234 : udpSendList.back().port, FALSE);
 
 	int tcpCount = GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
 	for( int i = 0; i < tcpCount; i++ ){
 		NW_SEND_INFO item;
 
 		WCHAR key[64];
-		wsprintf(key, L"IP%d",i);
-		item.ip = GetPrivateProfileInt( L"SET_TCP", key, 2130706433, appIniPath.c_str() );
-		wsprintf(key, L"Port%d",i);
+		swprintf_s(key, L"IP%d", i);
+		item.ipString = GetPrivateProfileToString(L"SET_TCP", key, L"2130706433", appIniPath.c_str());
+		if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
+			item.ipString.erase(0, 1).pop_back();
+		}else{
+			UINT ip = _wtoi(item.ipString.c_str());
+			Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
+		}
+		swprintf_s(key, L"Port%d", i);
 		item.port = GetPrivateProfileInt( L"SET_TCP", key, 2230, appIniPath.c_str() );
-		Format(item.ipString, L"%d.%d.%d.%d",
-			(item.ip&0xFF000000)>>24,
-			(item.ip&0x00FF0000)>>16,
-			(item.ip&0x0000FF00)>>8,
-			(item.ip&0x000000FF) );
 		item.broadcastFlag = 0;
 
 		tcpSendList.push_back(item);
@@ -92,6 +90,8 @@ BOOL CSetDlgNetwork::OnInitDialog()
 		int index = ListBox_AddString(GetDlgItem(IDC_LIST_IP_TCP), add.c_str());
 		ListBox_SetItemData(GetDlgItem(IDC_LIST_IP_TCP), index, i);
 	}
+	SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, tcpSendList.empty() ? L"127.0.0.1" : tcpSendList.back().ipString.c_str());
+	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, tcpSendList.empty() ? 2230 : tcpSendList.back().port, FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -103,35 +103,36 @@ void CSetDlgNetwork::SaveIni(void)
 		return;
 	}
 
-	DWORD ip = 0;
-	SendDlgItemMessage(m_hWnd, IDC_IPADDRESS_UDP, IPM_GETADDRESS, 0, (LPARAM)&ip);
-	//注意: 負値を記録する場合もあるが元仕様に合わせている
-	WritePrivateProfileInt( L"SET", L"UDPIP", ip, appIniPath.c_str() );
-	WritePrivateProfileInt( L"SET", L"UDPPort", GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, NULL, FALSE), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"UDPWait", GetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_SEC, NULL, FALSE), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"UDPPacket", GetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_PACKET, NULL, FALSE), appIniPath.c_str() );
 
 	WritePrivateProfileInt( L"SET_UDP", L"Count", (int)udpSendList.size(), appIniPath.c_str() );
 	for( int i = 0; i < (int)udpSendList.size(); i++ ){
 		WCHAR key[64];
-		wsprintf(key, L"IP%d",i);
-		WritePrivateProfileInt( L"SET_UDP", key, udpSendList[i].ip, appIniPath.c_str() );
-		wsprintf(key, L"Port%d",i);
+		swprintf_s(key, L"IP%d", i);
+		UINT u[4];
+		if( swscanf_s(udpSendList[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
+			WritePrivateProfileInt(L"SET_UDP", key, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], appIniPath.c_str());
+		}else{
+			WritePrivateProfileString(L"SET_UDP", key, (L'[' + udpSendList[i].ipString + L']').c_str(), appIniPath.c_str());
+		}
+		swprintf_s(key, L"Port%d", i);
 		WritePrivateProfileInt( L"SET_UDP", key, udpSendList[i].port, appIniPath.c_str() );
-		wsprintf(key, L"BroadCast%d",i);
+		swprintf_s(key, L"BroadCast%d", i);
 		WritePrivateProfileInt( L"SET_UDP", key, udpSendList[i].broadcastFlag, appIniPath.c_str() );
 	}
-
-	SendDlgItemMessage(m_hWnd, IDC_IPADDRESS_TCP, IPM_GETADDRESS, 0, (LPARAM)&ip);
-	WritePrivateProfileInt( L"SET", L"TCPIP", ip, appIniPath.c_str() );
-	WritePrivateProfileInt( L"SET", L"TCPPort", GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, NULL, FALSE), appIniPath.c_str() );
 
 	WritePrivateProfileInt( L"SET_TCP", L"Count", (int)tcpSendList.size(), appIniPath.c_str() );
 	for( int i = 0; i < (int)tcpSendList.size(); i++ ){
 		WCHAR key[64];
-		wsprintf(key, L"IP%d",i);
-		WritePrivateProfileInt( L"SET_TCP", key, tcpSendList[i].ip, appIniPath.c_str() );
-		wsprintf(key, L"Port%d",i);
+		swprintf_s(key, L"IP%d", i);
+		UINT u[4];
+		if( swscanf_s(tcpSendList[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
+			WritePrivateProfileInt(L"SET_TCP", key, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], appIniPath.c_str());
+		}else{
+			WritePrivateProfileString(L"SET_TCP", key, (L'[' + tcpSendList[i].ipString + L']').c_str(), appIniPath.c_str());
+		}
+		swprintf_s(key, L"Port%d", i);
 		WritePrivateProfileInt( L"SET_TCP", key, tcpSendList[i].port, appIniPath.c_str() );
 	}
 }
@@ -140,18 +141,18 @@ void CSetDlgNetwork::SaveIni(void)
 void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	DWORD ip = 0;
-	SendDlgItemMessage(m_hWnd, IDC_IPADDRESS_UDP, IPM_GETADDRESS, 0, (LPARAM)&ip);
+	WCHAR szIP[64] = {};
+	GetDlgItemText(m_hWnd, IDC_IPADDRESS_UDP, szIP, 63);
 	UINT udpPort = GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, NULL, FALSE);
 
 	NW_SEND_INFO item;
-	item.ip = ip;
 	item.port = udpPort;
-	Format(item.ipString, L"%d.%d.%d.%d",
-		(item.ip&0xFF000000)>>24,
-		(item.ip&0x00FF0000)>>16,
-		(item.ip&0x0000FF00)>>8,
-		(item.ip&0x000000FF) );
+	item.ipString = szIP;
+	if( item.ipString.find_first_not_of(L".0123456789:abcdef") != wstring::npos ||
+	    item.ipString.find_first_not_of(L".:") == wstring::npos ||
+	    item.ipString.find_first_of(L".:") == wstring::npos ){
+		return;
+	}
 
 	wstring add = L"";
 	Format(add, L"%s:%d",item.ipString.c_str(), item.port);
@@ -168,7 +169,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 		int len = ListBox_GetTextLen(hItem, i);
 		if( 0 <= len && len < 256 ){
 			ListBox_GetText(hItem, i, buff);
-			if(lstrcmpi(buff, add.c_str()) == 0 ){
+			if( CompareNoCase(add, buff) == 0 ){
 				return ;
 			}
 		}
@@ -210,18 +211,18 @@ void CSetDlgNetwork::OnBnClickedButtonDelUdp()
 void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	DWORD ip = 0;
-	SendDlgItemMessage(m_hWnd, IDC_IPADDRESS_TCP, IPM_GETADDRESS, 0, (LPARAM)&ip);
+	WCHAR szIP[64] = {};
+	GetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, szIP, 63);
 	UINT tcpPort = GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, NULL, FALSE);
 
 	NW_SEND_INFO item;
-	item.ip = ip;
 	item.port = tcpPort;
-	Format(item.ipString, L"%d.%d.%d.%d",
-		(item.ip&0xFF000000)>>24,
-		(item.ip&0x00FF0000)>>16,
-		(item.ip&0x0000FF00)>>8,
-		(item.ip&0x000000FF) );
+	item.ipString = szIP;
+	if( item.ipString.find_first_not_of(L".0123456789:abcdef") != wstring::npos ||
+	    item.ipString.find_first_not_of(L".:") == wstring::npos ||
+	    item.ipString.find_first_of(L".:") == wstring::npos ){
+		return;
+	}
 
 	wstring add = L"";
 	Format(add, L"%s:%d",item.ipString.c_str(), item.port);
@@ -233,7 +234,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 		int len = ListBox_GetTextLen(hItem, i);
 		if( 0 <= len && len < 256 ){
 			ListBox_GetText(hItem, i, buff);
-			if(lstrcmpi(buff, add.c_str()) == 0 ){
+			if( CompareNoCase(add, buff) == 0 ){
 				return ;
 			}
 		}

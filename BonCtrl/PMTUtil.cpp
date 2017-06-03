@@ -70,11 +70,7 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		return FALSE;
 	}
 	//CRCチェック
-	crc32 = ((DWORD)data[3+section_length-4])<<24 |
-		((DWORD)data[3+section_length-3])<<16 |
-		((DWORD)data[3+section_length-2])<<8 |
-		data[3+section_length-1];
-	if( crc32 != _Crc32(3+section_length-4, data) ){
+	if( CalcCrc32(3+section_length, data) != 0 ){
 		_OutputDebugString(L"CPMTUtil::crc32 Err");
 		return FALSE;
 	}
@@ -100,7 +96,7 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 				//CA
 				WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
 				if (CA_PID != 0x1fff) {
-					PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+					PIDList.insert(pair<WORD,WORD>(CA_PID, (WORD)0));
 				}
 			}
 			readSize += descriptor_length;
@@ -127,7 +123,7 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 					//CA
 					WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
 					if (CA_PID != 0x1fff) {
-						PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+						PIDList.insert(pair<WORD,WORD>(CA_PID, (WORD)0));
 					}
 				}
 				readSize += descriptor_length;

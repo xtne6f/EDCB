@@ -12,8 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
@@ -33,15 +31,6 @@ namespace EpgTimer
             InitializeComponent();
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_add.Style = null;
-                    button_del.Style = null;
-                    button_change.Style = null;
-                    button_up.Style = null;
-                    button_down.Style = null;
-                }
-
                 foreach (GridViewColumn info in gridView_key.Columns)
                 {
                     GridViewColumnHeader header = info.Header as GridViewColumnHeader;
@@ -238,7 +227,7 @@ namespace EpgTimer
 
                 foreach (EpgEventInfo info in list)
                 {
-                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.Now)
+                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.UtcNow.AddHours(9))
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {
@@ -685,11 +674,6 @@ namespace EpgTimer
         private void button_down_Click2(object sender, RoutedEventArgs e)
         {
             this.moveItem(itemMoveDirections.down);
-        }
-
-        private void myPopup_MouseLeave(object sender, MouseEventArgs e)
-        {
-            this.myPopup.IsOpen = false;
         }
 
     }

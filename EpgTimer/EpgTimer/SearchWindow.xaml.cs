@@ -14,9 +14,6 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -40,23 +37,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    ResourceDictionary rd = new ResourceDictionary();
-                    rd.MergedDictionaries.Add(
-                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                        //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                        );
-                    this.Resources = rd;
-                }
-                else
-                {
-                    button_search.Style = null;
-                    button_add_reserve.Style = null;
-                    button_add_epgAutoAdd.Style = null;
-                    button_chg_epgAutoAdd.Style = null;
-                }
-
                 //ウインドウ位置の復元
                 if (Settings.Instance.SearchWndTop != 0)
                 {
@@ -175,7 +155,7 @@ namespace EpgTimer
                     SearchItem item = new SearchItem();
                     item.EventInfo = info;
 
-                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > DateTime.Now)
+                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > DateTime.UtcNow.AddHours(9))
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {
@@ -568,7 +548,7 @@ namespace EpgTimer
         {
             if (Title == "検索")
             {
-                this.searchKeyView.ComboBox_andKey.Focus();
+                this.searchKeyView.FocusAndKey();
             }
             else
             {
@@ -780,11 +760,11 @@ namespace EpgTimer
                 defKey.andKey = item.EventName;
                 defKey.serviceList.Clear();
 
-                foreach (ServiceItem info in searchKeyView.searchKeyDescView.listView_service.Items)
+                foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
                 {
                     if (info.ServiceName.Equals(item.ServiceName))
                     {
-                        defKey.serviceList.Add((long)info.ID);
+                        defKey.serviceList.Add((long)info.Key);
                     }
                 }
                 searchKeyView.SetSearchKey(defKey);

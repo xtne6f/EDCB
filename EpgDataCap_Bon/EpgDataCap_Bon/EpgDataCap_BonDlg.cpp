@@ -19,20 +19,26 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	: m_hWnd(NULL)
 	, m_hKeyboardHook(NULL)
 {
-	m_hIcon = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	m_hIcon2 = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
-	iconRed = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_RED ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	iconBlue = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	iconGreen = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GREEN ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	iconGray = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GRAY ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	HMODULE hModule = GetModuleHandle(NULL);
+	HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE,PCWSTR,int,HICON*) =
+		(HRESULT (WINAPI*)(HINSTANCE,PCWSTR,int,HICON*))GetProcAddress(GetModuleHandle(L"comctl32.dll"), "LoadIconMetric");
+	if( pfnLoadIconMetric == NULL ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), LIM_SMALL, &m_hIcon) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), LIM_LARGE, &m_hIcon2) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_RED), LIM_SMALL, &iconRed) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), LIM_SMALL, &iconGreen) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), LIM_SMALL, &iconGray) != S_OK ){
+		m_hIcon = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		m_hIcon2 = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+		iconRed = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_RED), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		iconGreen = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		iconGray = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	}
+	iconBlue = m_hIcon;
 
 	taskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 
-	wstring strPath = L"";
-	GetModuleIniPath(strPath);
-	this->moduleIniPath = strPath.c_str();
-	GetCommonIniPath(strPath);
-	this->commonIniPath = strPath.c_str();
+	this->moduleIniPath = GetModuleIniPath().native();
 
 	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
 	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );
@@ -97,7 +103,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 
 	for( int i=0; i<24; i++ ){
 		WCHAR buff[32];
-		wsprintf(buff, L"%d",i);
+		swprintf_s(buff, L"%d", i);
 		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_H), buff);
 		ComboBox_SetItemData(GetDlgItem(IDC_COMBO_REC_H), index, i);
 	}
@@ -105,7 +111,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 
 	for( int i=0; i<60; i++ ){
 		WCHAR buff[32];
-		wsprintf(buff, L"%d",i);
+		swprintf_s(buff, L"%d", i);
 		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_M), buff);
 		ComboBox_SetItemData(GetDlgItem(IDC_COMBO_REC_M), index, i);
 	}
@@ -126,7 +132,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 			err = ERR_FALSE;
 			WCHAR log[512 + 64] = L"";
 			GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-			lstrcat(log, L"BonDriverが見つかりませんでした\r\n");
+			wcscat_s(log, L"BonDriverが見つかりませんでした\r\n");
 			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 		}
 	}
@@ -151,20 +157,22 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	//ウインドウの復元
 	WINDOWPLACEMENT Pos;
 	Pos.length = sizeof(WINDOWPLACEMENT);
-	Pos.flags = 0;
-	if( this->iniMin == FALSE ){
-		Pos.showCmd = SW_SHOW;
-	}else{
-		Pos.showCmd = SW_SHOWMINNOACTIVE;
-	}
-	Pos.rcNormalPosition.left = GetPrivateProfileInt(L"SET_WINDOW", L"left", 0, this->moduleIniPath.c_str());
-	Pos.rcNormalPosition.right = GetPrivateProfileInt(L"SET_WINDOW", L"right", 0, this->moduleIniPath.c_str());
-	Pos.rcNormalPosition.top = GetPrivateProfileInt(L"SET_WINDOW", L"top", 0, this->moduleIniPath.c_str());
-	Pos.rcNormalPosition.bottom = GetPrivateProfileInt(L"SET_WINDOW", L"bottom", 0, this->moduleIniPath.c_str());
-	if( Pos.rcNormalPosition.left != 0 &&
-		Pos.rcNormalPosition.right != 0 &&
-		Pos.rcNormalPosition.top != 0 &&
-		Pos.rcNormalPosition.bottom != 0 ){
+	int left = GetPrivateProfileInt(L"SET_WINDOW", L"left", INT_MAX, this->moduleIniPath.c_str());
+	int top = GetPrivateProfileInt(L"SET_WINDOW", L"top", INT_MAX, this->moduleIniPath.c_str());
+	if( left != INT_MAX && top != INT_MAX && GetWindowPlacement(m_hWnd, &Pos) ){
+		Pos.flags = 0;
+		Pos.showCmd = this->iniMin ? SW_SHOWMINNOACTIVE : SW_SHOW;
+		int width = GetPrivateProfileInt(L"SET_WINDOW", L"width", 0, this->moduleIniPath.c_str());
+		int height = GetPrivateProfileInt(L"SET_WINDOW", L"height", 0, this->moduleIniPath.c_str());
+		if( width > 0 && height > 0 ){
+			Pos.rcNormalPosition.right = left + width;
+			Pos.rcNormalPosition.bottom = top + height;
+		}else{
+			Pos.rcNormalPosition.right += left - Pos.rcNormalPosition.left;
+			Pos.rcNormalPosition.bottom += top - Pos.rcNormalPosition.top;
+		}
+		Pos.rcNormalPosition.left = left;
+		Pos.rcNormalPosition.top = top;
 		SetWindowPlacement(m_hWnd, &Pos);
 	}
 	SetTimer(TIMER_STATUS_UPDATE, 1000, NULL);
@@ -298,11 +306,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					udp = L"UDP送信：";
 					for( size_t i=0; i<udpSendList.size(); i++ ){
 						wstring buff;
-						if( udpSendList[i].broadcastFlag == FALSE ){
-							Format(buff, L"%s:%d ",udpSendList[i].ipString.c_str(), udpSendList[i].port);
-						}else{
-							Format(buff, L"%s:%d(Broadcast) ",udpSendList[i].ipString.c_str(), udpSendList[i].port);
-						}
+						Format(buff, L":%d%s ", udpSendList[i].port, udpSendList[i].broadcastFlag ? L"(Broadcast)" : L"");
+						udp += udpSendList[i].ipString.find(L':') == wstring::npos ? udpSendList[i].ipString : L'[' + udpSendList[i].ipString + L']';
 						udp += buff;
 					}
 					udp += L"\r\n";
@@ -314,7 +319,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					tcp = L"TCP送信：";
 					for( size_t i=0; i<tcpSendList.size(); i++ ){
 						wstring buff;
-						Format(buff, L"%s:%d ",tcpSendList[i].ipString.c_str(), tcpSendList[i].port);
+						Format(buff, L":%d ", tcpSendList[i].port);
+						tcp += tcpSendList[i].ipString.find(L':') == wstring::npos ? tcpSendList[i].ipString : L'[' + tcpSendList[i].ipString + L']';
 						tcp += buff;
 					}
 					tcp += L"\r\n";
@@ -342,16 +348,16 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				wstring chName = L"";
 				DWORD chkNum = 0;
 				DWORD totalNum = 0;
-				DWORD status = this->main.GetChScanStatus(&space, &ch, &chName, &chkNum, &totalNum);
-				if( status == ST_WORKING ){
+				CBonCtrl::JOB_STATUS status = this->main.GetChScanStatus(&space, &ch, &chName, &chkNum, &totalNum);
+				if( status == CBonCtrl::ST_WORKING ){
 					wstring log;
 					Format(log, L"%s (%d/%d 残り約 %d 秒)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 					SetTimer(TIMER_CHSCAN_STATSU, 1000, NULL);
-				}else if( status == ST_CANCEL ){
+				}else if( status == CBonCtrl::ST_CANCEL ){
 					KillTimer(TIMER_CHSCAN_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
-				}else if( status == ST_COMPLETE ){
+				}else if( status == CBonCtrl::ST_COMPLETE ){
 					KillTimer(TIMER_CHSCAN_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
 					ReloadServiceList();
@@ -395,8 +401,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				KillTimer( TIMER_EPGCAP_STATSU );
 				EPGCAP_SERVICE_INFO info;
-				DWORD status = this->main.GetEpgCapStatus(&info);
-				if( status == ST_WORKING ){
+				CBonCtrl::JOB_STATUS status = this->main.GetEpgCapStatus(&info);
+				if( status == CBonCtrl::ST_WORKING ){
 					int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 					if( sel != CB_ERR ){
 						DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
@@ -413,10 +419,10 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
 					SetTimer(TIMER_EPGCAP_STATSU, 1000, NULL);
-				}else if( status == ST_CANCEL ){
+				}else if( status == CBonCtrl::ST_CANCEL ){
 					KillTimer(TIMER_EPGCAP_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
-				}else if( status == ST_COMPLETE ){
+				}else if( status == CBonCtrl::ST_COMPLETE ){
 					KillTimer(TIMER_EPGCAP_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
 					BtnUpdate(GUI_NORMAL);
@@ -447,7 +453,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				HICON setIcon = this->iconBlue;
 				if( this->main.IsRec() == TRUE ){
 					setIcon = this->iconRed;
-				}else if( this->main.GetEpgCapStatus(NULL) == ST_WORKING ){
+				}else if( this->main.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 					setIcon = this->iconGreen;
 				}else if( this->main.GetOpenBonDriver(NULL) == FALSE ){
 					setIcon = this->iconGray;
@@ -489,7 +495,7 @@ void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
 			setIcon = this->iconRed;
-		}else if( this->main.GetEpgCapStatus(NULL) == ST_WORKING ){
+		}else if( this->main.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			setIcon = this->iconGreen;
 		}else if( this->main.GetOpenBonDriver(NULL) == FALSE ){
 			setIcon = this->iconGray;
@@ -517,7 +523,7 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 			WCHAR log[512 + 64] = L"";
 			GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
 			if( wstring(log).find(L"予約録画中\r\n") == wstring::npos ){
-				lstrcat(log, L"予約録画中\r\n");
+				wcscat_s(log, L"予約録画中\r\n");
 				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 			}
 			ChgIconStatus();
@@ -675,7 +681,7 @@ void CEpgDataCap_BonDlg::ChgIconStatus(){
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
 			setIcon = this->iconRed;
-		}else if( this->main.GetEpgCapStatus(NULL) == ST_WORKING ){
+		}else if( this->main.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			setIcon = this->iconGreen;
 		}else if( this->main.GetOpenBonDriver(NULL) == FALSE ){
 			setIcon = this->iconGray;
@@ -701,7 +707,7 @@ LRESULT CEpgDataCap_BonDlg::OnTaskbarCreated(WPARAM, LPARAM)
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
 			setIcon = this->iconRed;
-		}else if( this->main.GetEpgCapStatus(NULL) == ST_WORKING ){
+		}else if( this->main.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			setIcon = this->iconGreen;
 		}else if( this->main.GetOpenBonDriver(NULL) == FALSE ){
 			setIcon = this->iconGray;
@@ -932,7 +938,7 @@ void CEpgDataCap_BonDlg::ReloadServiceList(BOOL ini)
 	if( ret != NO_ERR || this->serviceList.size() == 0 ){
 		WCHAR log[512 + 64] = L"";
 		GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-		lstrcat(log, L"チャンネル情報の読み込みに失敗しました\r\n");
+		wcscat_s(log, L"チャンネル情報の読み込みに失敗しました\r\n");
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 	}else{
 		int selectSel = 0;
@@ -1021,10 +1027,8 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"録画を開始できませんでした\r\n");
 		return;
 	}
-	SYSTEMTIME now;
-	GetLocalTime(&now);
 	SYSTEMTIME end;
-	GetSumTime(now, 30*60, &end);
+	ConvertSystemTime(GetNowI64Time() + 30 * 60 * I64_1SEC, &end);
 
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_H), end.wHour);
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_M), end.wMinute);
@@ -1091,13 +1095,11 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckRecSet()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_REC_SET)) != BST_UNCHECKED ){
 		BtnUpdate(GUI_REC_SET_TIME);
-		SYSTEMTIME now;
-		GetLocalTime(&now);
 
 		int selH = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_REC_H));
 		int selM = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_REC_M));
 
-		DWORD nowTime = now.wHour*60*60 + now.wMinute*60 + now.wSecond;
+		DWORD nowTime = (DWORD)(GetNowI64Time() / I64_1SEC % (24*60*60));
 		DWORD endTime = selH*60*60 + selM*60;
 
 		if( nowTime > endTime ){

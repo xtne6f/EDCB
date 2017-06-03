@@ -12,10 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-using EpgTimer.EpgView;
-
 namespace EpgTimer.EpgView
 {
     /// <summary>
@@ -48,10 +44,10 @@ namespace EpgTimer.EpgView
                 {
                     item.Text += "\r\n" + info.network_name + " " + info.SID.ToString();
                 }
-                item.Width = Settings.Instance.ServiceWidth - 4;
-                item.Margin = new Thickness(2, 2, 2, 2);
-                item.Background = Brushes.AliceBlue;
-                item.Foreground = Brushes.Black;
+                item.Width = Settings.Instance.ServiceWidth - 2;
+                item.Margin = new Thickness(1, 1, 1, 1);
+                item.Background = CommonManager.Instance.CustServiceColor;
+                item.Foreground = Brushes.White;
                 item.TextAlignment = TextAlignment.Center;
                 item.FontSize = 12;
                 item.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);

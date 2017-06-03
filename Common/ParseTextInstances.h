@@ -18,7 +18,6 @@ public:
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, CH_DATA4>& item);
 	bool SaveLine(const pair<DWORD, CH_DATA4>& item, wstring& saveLine) const;
-	bool SelectIDToSave(vector<DWORD>& sortList) const;
 };
 
 //チャンネル情報ファイル「ChSet5.txt」の読み込みと保存処理を行う
@@ -33,7 +32,6 @@ public:
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item);
 	bool SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& saveLine) const;
-	bool SelectIDToSave(vector<LONGLONG>& sortList) const;
 };
 
 //拡張子とContent-Typeの対応ファイル「ContentTypeText.txt」の読み込みを行う
@@ -59,7 +57,7 @@ protected:
 class CParseRecInfoText : public CParseText<DWORD, REC_FILE_INFO>
 {
 public:
-	CParseRecInfoText() : nextID(1), keepCount(UINT_MAX), recInfoDelFile(false) {}
+	CParseRecInfoText() : nextID(1), keepCount(UINT_MAX), recInfoDelFile(false), customizeDelExt(false) {}
 	using CParseText<DWORD, REC_FILE_INFO>::SaveText;
 	//録画済み情報を追加する
 	DWORD AddRecInfo(const REC_FILE_INFO& item);
@@ -72,10 +70,12 @@ public:
 	//AddRecInfo直後に残しておく非プロテクトの録画済み情報の個数を設定する
 	void SetKeepCount(DWORD n = UINT_MAX) { this->keepCount = n; }
 	void SetRecInfoDelFile(bool delFile) { this->recInfoDelFile = delFile; }
+	void CustomizeDelExt(bool customize) { this->customizeDelExt = customize; }
+	void SetCustomDelExt(const vector<wstring>& list) { this->customDelExt = list; }
 	void SetRecInfoFolder(LPCWSTR folder);
 	wstring GetRecInfoFolder() const { return this->recInfoFolder; }
 	//補足の録画情報を取得する
-	static wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder);
+	static wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder, bool recInfoFolderOnly);
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;
@@ -86,6 +86,8 @@ protected:
 	DWORD nextID;
 	DWORD keepCount;
 	bool recInfoDelFile;
+	bool customizeDelExt;
+	vector<wstring> customDelExt;
 	wstring recInfoFolder;
 };
 

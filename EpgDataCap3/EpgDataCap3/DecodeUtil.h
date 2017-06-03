@@ -5,8 +5,6 @@
 #include "../../Common/TSBuffUtil.h"
 #include "../../Common/EpgDataCap3Def.h"
 
-#include "./Table/TableUtil.h"
-
 class CDecodeUtil
 {
 public:
@@ -43,28 +41,19 @@ public:
 		);
 
 protected:
-	struct NIT_SECTION_INFO{
-		BYTE last_section_number;
-		map<BYTE, std::unique_ptr<const CNITTable>> nitSection;
-	};
-	struct SDT_SECTION_INFO{
-		BYTE last_section_number;
-		map<BYTE, std::unique_ptr<const CSDTTable>> sdtSection;
-	};
-
 	CEpgDBUtil* epgDBUtil;
 
-	CTableUtil tableUtil;
+	AribDescriptor::CDescriptor tableBuff;
 
 	//PID毎のバッファリング
 	//キー PID
 	map<WORD, CTSBuffUtil> buffUtilMap;
 
-	std::unique_ptr<const CPATTable> patInfo;
-	NIT_SECTION_INFO nitActualInfo;
-	SDT_SECTION_INFO sdtActualInfo;
-	std::unique_ptr<const CBITTable> bitInfo;
-	std::unique_ptr<const CSITTable> sitInfo;
+	std::unique_ptr<const AribDescriptor::CDescriptor> patInfo;
+	map<BYTE, AribDescriptor::CDescriptor> nitActualInfo;
+	map<BYTE, AribDescriptor::CDescriptor> sdtActualInfo;
+	std::unique_ptr<const AribDescriptor::CDescriptor> bitInfo;
+	std::unique_ptr<const AribDescriptor::CDescriptor> sitInfo;
 	FILETIME totTime;
 	FILETIME tdtTime;
 	FILETIME sitTime;
@@ -74,20 +63,21 @@ protected:
 
 
 	std::unique_ptr<SERVICE_INFO[]> serviceList;
+	std::unique_ptr<EPGDB_SERVICE_INFO[]> serviceDBList;
+	std::unique_ptr<CServiceInfoAdapter[]> serviceAdapterList;
 
 protected:
 	void Clear();
 	void ClearBuff(WORD noClearPid);
 	void ChangeTSIDClear(WORD noClearPid);
 
-	BOOL CheckPAT(WORD PID, CPATTable* pat);
-	BOOL CheckNIT(WORD PID, CNITTable* nit);
-	BOOL CheckSDT(WORD PID, CSDTTable* sdt);
-	BOOL CheckTOT(WORD PID, CTOTTable* tot);
-	BOOL CheckTDT(WORD PID, CTDTTable* tdt);
-	BOOL CheckEIT(WORD PID, CEITTable* eit);
-	BOOL CheckBIT(WORD PID, CBITTable* bit);
-	BOOL CheckSIT(WORD PID, CSITTable* sit);
+	void CheckPAT(WORD PID, const AribDescriptor::CDescriptor& pat);
+	void CheckNIT(WORD PID, const AribDescriptor::CDescriptor& nit);
+	void CheckSDT(WORD PID, const AribDescriptor::CDescriptor& sdt);
+	void CheckTDT(const AribDescriptor::CDescriptor& tdt);
+	void CheckEIT(WORD PID, const AribDescriptor::CDescriptor& eit);
+	void CheckBIT(WORD PID, const AribDescriptor::CDescriptor& bit);
+	void CheckSIT(const AribDescriptor::CDescriptor& sit);
 
 	//自ストリームのサービス一覧をSITから取得する
 	//引数：

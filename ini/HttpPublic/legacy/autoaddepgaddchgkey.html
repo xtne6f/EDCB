@@ -1,13 +1,15 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=[=[
-<!doctype html><html lang="ja">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
 <title>EpgTimer</title>
 </head>
 <body>
-]=]
+<div id="result">]=]
 
 post=ReadPost()
 
@@ -15,7 +17,7 @@ AssertCsrf(post)
 
 aa={}
 lastRecSetting=nil
-aa.dataID=0+(mg.get_var(mg.request_info.query_string, 'id') or 0)
+aa.dataID=GetVarInt(mg.request_info.query_string,'id') or 0
 if aa.dataID~=0 then
   for i,v in ipairs(edcb.EnumAutoAdd()) do
     if v.dataID==aa.dataID then
@@ -30,79 +32,62 @@ if aa.dataID~=0 then
 end
 modified=false
 if post and (aa.dataID==0 or lastRecSetting) then
-  presetID=mg.get_var(post, 'presetID')
-  recMode=mg.get_var(post, 'recMode')
-  tuijyuuFlag=mg.get_var(post, 'tuijyuuFlag')
-  priority=mg.get_var(post, 'priority')
-  pittariFlag=mg.get_var(post, 'pittariFlag')
-  suspendMode=mg.get_var(post, 'suspendMode')
-  rebootFlag=mg.get_var(post, 'rebootFlag')
-  useDefMarginFlag=mg.get_var(post, 'useDefMarginFlag')
-  startMargin=mg.get_var(post, 'startMargin')
-  endMargin=mg.get_var(post, 'endMargin')
-  serviceMode=mg.get_var(post, 'serviceMode')
-  serviceMode_1=mg.get_var(post, 'serviceMode_1')
-  serviceMode_2=mg.get_var(post, 'serviceMode_2')
-  continueRecFlag=mg.get_var(post, 'continueRecFlag')
-  tunerID=mg.get_var(post, 'tunerID')
-  partialRecFlag=mg.get_var(post, 'partialRecFlag')
-  if presetID and
-     recMode and
-     priority and
-     suspendMode and
-     (useDefMarginFlag or startMargin and endMargin) and tunerID
-  then
-    aa.recSetting=lastRecSetting or {}
-    rs=aa.recSetting
-    if 0+presetID~=0xFFFF then
-      rs.batFilePath=''
-      rs.recFolderList={}
-      rs.partialRecFolder={}
-      for i,v in ipairs(edcb.EnumRecPresetInfo()) do
-        if v.id==0+presetID then
-          rs.batFilePath=v.recSetting.batFilePath
-          rs.recFolderList=v.recSetting.recFolderList
-          rs.partialRecFolder=v.recSetting.partialRecFolder
-          break
-        end
+  aa.recSetting=lastRecSetting or {}
+  rs=aa.recSetting
+  presetID=GetVarInt(post,'presetID',0,lastRecSetting and 0xFFFF or 0xFFFE)
+  if presetID and presetID~=0xFFFF then
+    for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+      if v.id==presetID then
+        rs.batFilePath=v.recSetting.batFilePath
+        rs.recFolderList=v.recSetting.recFolderList
+        rs.partialRecFolder=v.recSetting.partialRecFolder
+        presetID=0xFFFF
+        break
       end
     end
-    rs.recMode=0+recMode
-    rs.tuijyuuFlag=0+(tuijyuuFlag or 0)~=0
-    rs.priority=0+priority
-    rs.pittariFlag=0+(pittariFlag or 0)~=0
-    rs.suspendMode=0+suspendMode
-    rs.rebootFlag=rebootFlag~=nil
-    rs.startMargin=nil
-    rs.endMargin=nil
-    if not useDefMarginFlag then
-      rs.startMargin=0+startMargin
-      rs.endMargin=0+endMargin
-    end
-    rs.serviceMode=serviceMode and 0 or 1+(serviceMode_1 and 16 or 0)+(serviceMode_2 and 32 or 0)
-    rs.continueRecFlag=continueRecFlag~=nil
-    rs.tunerID=0+tunerID
-    rs.partialRecFlag=partialRecFlag and 1 or 0
-
+  end
+  rs.recMode=GetVarInt(post,'recMode',0,5)
+  rs.tuijyuuFlag=GetVarInt(post,'tuijyuuFlag')==1
+  rs.priority=GetVarInt(post,'priority',1,5)
+  rs.pittariFlag=GetVarInt(post,'pittariFlag')==1
+  rs.suspendMode=GetVarInt(post,'suspendMode',0,4)
+  rs.rebootFlag=GetVarInt(post,'rebootFlag')==1
+  useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
+  rs.startMargin=useMargin and GetVarInt(post,'startMargin')
+  rs.endMargin=useMargin and GetVarInt(post,'endMargin')
+  serviceMode_1=GetVarInt(post,'serviceMode_1',0,1) or 0
+  serviceMode_2=GetVarInt(post,'serviceMode_2',0,1) or 0
+  rs.serviceMode=GetVarInt(post,'serviceMode')==1 and 0 or 1+16*serviceMode_1+32*serviceMode_2
+  rs.continueRecFlag=GetVarInt(post,'continueRecFlag')==1
+  rs.tunerID=GetVarInt(post,'tunerID')
+  rs.partialRecFlag=GetVarInt(post,'partialRecFlag',0,1) or 0
+  if presetID==0xFFFF and
+     rs.recMode and
+     rs.priority and
+     rs.suspendMode and
+     (not useMargin or rs.startMargin and rs.endMargin) and
+     rs.tunerID
+  then
     aa.searchInfo={}
     si=aa.searchInfo
     si.andKey=mg.get_var(post, 'andKey') or ''
     si.notKey=mg.get_var(post, 'notKey') or ''
-    si.regExpFlag=0+(mg.get_var(post, 'regExpFlag') or 0)~=0
-    si.titleOnlyFlag=0+(mg.get_var(post, 'titleOnlyFlag') or 0)~=0
-    si.aimaiFlag=0+(mg.get_var(post, 'aimaiFlag') or 0)~=0
-    si.notContetFlag=0+(mg.get_var(post, 'notContetFlag') or 0)~=0
+    si.regExpFlag=GetVarInt(post,'regExpFlag')==1
+    si.titleOnlyFlag=GetVarInt(post,'titleOnlyFlag')==1
+    si.aimaiFlag=GetVarInt(post,'aimaiFlag')==1
+    si.notContetFlag=GetVarInt(post,'notContetFlag')==1
     si.notDateFlag=false
-    si.freeCAFlag=0+(mg.get_var(post, 'freeCAFlag') or 0)
-    si.chkRecEnd=0+(mg.get_var(post, 'chkRecEnd') or 0)~=0
-    si.chkRecDay=0+(mg.get_var(post, 'chkRecDay') or 0)
-    si.chkDurationMin=0+(mg.get_var(post, 'chkDurationMin') or 0)
-    si.chkDurationMax=0+(mg.get_var(post, 'chkDurationMax') or 0)
+    si.freeCAFlag=GetVarInt(post,'freeCAFlag',0,2) or 0
+    si.chkRecEnd=GetVarInt(post,'chkRecEnd')==1
+    si.chkRecDay=GetVarInt(post,'chkRecDay') or 0
+    si.chkRecNoService=GetVarInt(post,'chkRecNoService')==1
+    si.chkDurationMin=GetVarInt(post,'chkDurationMin') or 0
+    si.chkDurationMax=GetVarInt(post,'chkDurationMax') or 0
     si.contentList={}
     for i=0,10000 do
-      v=mg.get_var(post, 'contentList', i)
+      v=GetVarInt(post,'contentList',0,65535,i)
       if not v then break end
-      table.insert(si.contentList, {content_nibble=0+v})
+      table.insert(si.contentList, {content_nibble=v})
     end
     si.serviceList={}
     for i=0,10000 do
@@ -137,8 +122,10 @@ end
 ct=ct..(modified and (aa.dataID==0 and '追加しました' or '変更しました') or '入力値不正')
 
 ct=ct..[=[
-<br><br>
-<a href="autoaddepg.html">自動予約登録 EPG予約一覧</a>
+</div>
+<div id="footer">
+  <a href="autoaddepg.html">EPG予約一覧</a>
+</div>
 </body>
 </html>
 ]=]

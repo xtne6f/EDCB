@@ -2,18 +2,18 @@
 
 #include "TSPacketUtil.h"
 
-#define ERR_ADD_NEXT		100
-#define ERR_NOT_SUPPORT		101
-
 class CTSBuffUtil
 {
 public:
-	CTSBuffUtil(BOOL supportPES = FALSE);
+	static const DWORD ERR_ADD_NEXT = 100;
+	static const DWORD ERR_NOT_SUPPORT = 101;
+
+	//PES(Packetized Elementary Stream)対応は廃止した
+	CTSBuffUtil();
 
 	//Add188TS()がTRUEを返せばGetSectionBuff()は1回以上成功する。このとき受け取らなかったバッファは次のAdd188TS()で消える
 	DWORD Add188TS(CTSPacketUtil* tsPacket);
 	BOOL GetSectionBuff(BYTE** sectionData, DWORD* dataSize);
-	BOOL IsPES();
 
 protected:
 	DWORD sectionSize;
@@ -23,12 +23,8 @@ protected:
 	WORD lastPID;
 	BYTE lastCounter;
 	BOOL duplicateFlag;
-
-	BOOL supportPES;
-	BOOL PESMode;
 protected:
 	void Clear();
 	BOOL CheckCounter(CTSPacketUtil* tsPacket);
 	DWORD AddSectionBuff(CTSPacketUtil* tsPacket);
-	DWORD AddPESBuff(CTSPacketUtil* tsPacket);
 };

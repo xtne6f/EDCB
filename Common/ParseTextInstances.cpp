@@ -107,18 +107,6 @@ bool CParseChText4::SaveLine(const pair<DWORD, CH_DATA4>& item, wstring& saveLin
 	return FinalizeField(saveLine) == 11;
 }
 
-bool CParseChText4::SelectIDToSave(vector<DWORD>& sortList) const
-{
-	multimap<LONGLONG, DWORD> sortMap;
-	for( map<DWORD, CH_DATA4>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		sortMap.insert(pair<LONGLONG, DWORD>((LONGLONG)itr->second.space << 32 | (LONGLONG)itr->second.ch << 16 | itr->second.serviceID, itr->first));
-	}
-	for( multimap<LONGLONG, DWORD>::const_iterator itr = sortMap.begin(); itr != sortMap.end(); itr++ ){
-		sortList.push_back(itr->second);
-	}
-	return true;
-}
-
 LONGLONG CParseChText5::AddCh(const CH_DATA5& item)
 {
 	LONGLONG key = (LONGLONG)item.originalNetworkID << 32 | (LONGLONG)item.transportStreamID << 16 | item.serviceID;
@@ -173,28 +161,6 @@ bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& save
 		item.second.searchFlag
 		);
 	return FinalizeField(saveLine) == 8;
-}
-
-bool CParseChText5::SelectIDToSave(vector<LONGLONG>& sortList) const
-{
-	multimap<DWORD, LONGLONG> sortMap;
-	for( map<LONGLONG, CH_DATA5>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		DWORD network;
-		if( 0x7880 <= itr->second.originalNetworkID && itr->second.originalNetworkID <= 0x7FE8 ){
-			network = itr->second.partialFlag == FALSE ? 0 : 1; //地上波
-		}else if( itr->second.originalNetworkID == 0x04 ){
-			network = 2; //BS
-		}else if( itr->second.originalNetworkID == 0x06 || itr->second.originalNetworkID == 0x07 ){
-			network = 3; //CS
-		}else{
-			network = 4; //その他
-		}
-		sortMap.insert(pair<DWORD, LONGLONG>(network << 16 | itr->second.serviceID, itr->first));
-	}
-	for( multimap<DWORD, LONGLONG>::const_iterator itr = sortMap.begin(); itr != sortMap.end(); itr++ ){
-		sortList.push_back(itr->second);
-	}
-	return true;
 }
 
 void CParseContentTypeText::GetMimeType(wstring ext, wstring& mimeType) const
@@ -293,7 +259,6 @@ bool CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
 void CParseRecInfoText::SetRecInfoFolder(LPCWSTR folder)
 {
 	this->recInfoFolder = folder;
-	ChkFolderPath(this->recInfoFolder);
 }
 
 bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item)
@@ -340,7 +305,6 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 		return false;
 	}
 	NextToken(token);
-	item.second.comment.assign(token[0], token[1]);
 	item.second.protectFlag = _wtoi(NextToken(token)) != 0;
 	item.second.id = this->nextID++;
 	item.first = item.second.id;
@@ -365,7 +329,7 @@ bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring
 		item.second.recStatus,
 		item.second.startTimeEpg.wYear, item.second.startTimeEpg.wMonth, item.second.startTimeEpg.wDay,
 		item.second.startTimeEpg.wHour, item.second.startTimeEpg.wMinute, item.second.startTimeEpg.wSecond,
-		item.second.comment.c_str(),
+		item.second.GetComment(),
 		item.second.protectFlag
 		);
 	return FinalizeField(saveLine) == 17;
@@ -388,17 +352,19 @@ bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
 	return true;
 }
 
-wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder)
+wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder, bool recInfoFolderOnly)
 {
 	wstring info;
 	if( recFilePath[0] != L'\0' ){
 		//補足の録画情報ファイルを読み込む
 		DWORD shareAll = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
-		HANDLE hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		HANDLE hFile = INVALID_HANDLE_VALUE;
+		if( resultOfGetRecInfoFolder.empty() || recInfoFolderOnly == false ){
+			hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		}
 		if( hFile == INVALID_HANDLE_VALUE && resultOfGetRecInfoFolder.empty() == false ){
-			wstring recFileName;
-			GetFileName(recFilePath, recFileName);
-			hFile = CreateFile((resultOfGetRecInfoFolder + L"\\" + recFileName + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			fs_path infoPath = fs_path(resultOfGetRecInfoFolder).append(fs_path(recFilePath).filename().concat(extension).native());
+			hFile = CreateFile(infoPath.c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		}
 		if( hFile != INVALID_HANDLE_VALUE ){
 			DWORD dwSize = GetFileSize(hFile, NULL);
@@ -423,15 +389,42 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 	}
 	//録画ファイルを削除する
 	DeleteFile(item.recFilePath.c_str());
-	DeleteFile((item.recFilePath + L".err").c_str());
-	DeleteFile((item.recFilePath + L".program.txt").c_str());
-	_OutputDebugString(L"★RecInfo Auto Delete : %s(.err|.program.txt)", item.recFilePath.c_str());
-	if( this->recInfoFolder.empty() == false ){
-		wstring recFileName;
-		GetFileName(item.recFilePath, recFileName);
-		DeleteFile((this->recInfoFolder + L"\\" + recFileName + L".err").c_str());
-		DeleteFile((this->recInfoFolder + L"\\" + recFileName + L".program.txt").c_str());
-		_OutputDebugString(L"★RecInfo Auto Delete : %s(.err|.program.txt)", (this->recInfoFolder + L"\\" + recFileName).c_str());
+	if( this->customizeDelExt ){
+		//カスタムルール
+		OutputDebugString((L"★RecInfo Auto Delete : " + item.recFilePath + L"\r\n").c_str());
+		wstring debug;
+		for( size_t i = 0; i < this->customDelExt.size(); i++ ){
+			wstring delPath = fs_path(item.recFilePath).replace_extension().native();
+			DeleteFile((delPath + this->customDelExt[i]).c_str());
+			debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
+		}
+		if( debug.empty() == false ){
+			OutputDebugString((L"★RecInfo Auto Delete : " + debug + L")\r\n").c_str());
+		}
+		if( this->recInfoFolder.empty() == false ){
+			//録画情報フォルダにも適用
+			debug.clear();
+			for( size_t i = 0; i < this->customDelExt.size(); i++ ){
+				wstring delPath = fs_path(this->recInfoFolder).append(fs_path(item.recFilePath).stem().native()).native();
+				DeleteFile((delPath + this->customDelExt[i]).c_str());
+				debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
+			}
+			if( debug.empty() == false ){
+				OutputDebugString((L"★RecInfo Auto Delete : " + debug + L")\r\n").c_str());
+			}
+		}
+	}else{
+		//標準のルール
+		DeleteFile((item.recFilePath + L".err").c_str());
+		DeleteFile((item.recFilePath + L".program.txt").c_str());
+		OutputDebugString((L"★RecInfo Auto Delete : " + item.recFilePath + L"(.err|.program.txt)\r\n").c_str());
+		if( this->recInfoFolder.empty() == false ){
+			//録画情報フォルダにも適用
+			wstring delPath = fs_path(this->recInfoFolder).append(fs_path(item.recFilePath).filename().native()).native();
+			DeleteFile((delPath + L".err").c_str());
+			DeleteFile((delPath + L".program.txt").c_str());
+			OutputDebugString((L"★RecInfo Auto Delete : " + delPath + L"(.err|.program.txt)\r\n").c_str());
+		}
 	}
 }
 
@@ -627,7 +620,6 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 		if( strRecFolderList[i].empty() == false ){
 			Separate(strRecFolderList[i], L"*", folderItem.recFolder, folderItem.writePlugIn);
 			Separate(folderItem.writePlugIn, L"*", folderItem.writePlugIn, folderItem.recNamePlugIn);
-			ChkFolderPath(folderItem.recFolder);
 			if( folderItem.writePlugIn.empty() ){
 				folderItem.writePlugIn = L"Write_Default.dll";
 			}

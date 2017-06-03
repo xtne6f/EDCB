@@ -15,10 +15,10 @@ public:
 	ULONGLONG GetDropCount();
 	ULONGLONG GetScrambleCount();
 
-	void SaveLog(wstring filePath);
+	void SaveLog(const wstring& filePath);
 
 	void SetSignal(float level);
-	void SetBonDriver(wstring bonDriver);
+	void SetBonDriver(const wstring& bonDriver);
 	void SetNoLog(BOOL noLogDrop, BOOL noLogScramble);
 
 	void SetPIDName(

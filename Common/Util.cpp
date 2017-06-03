@@ -91,6 +91,6 @@ std::basic_string<TCHAR> GetPrivateProfileToString(LPCTSTR lpAppName, LPCTSTR lp
 BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPCTSTR lpFileName)
 {
 	TCHAR sz[32];
-	wsprintf(sz, TEXT("%d"), value);
+	_stprintf_s(sz, TEXT("%d"), value);
 	return WritePrivateProfileString(lpAppName, lpKeyName, sz, lpFileName);
 }

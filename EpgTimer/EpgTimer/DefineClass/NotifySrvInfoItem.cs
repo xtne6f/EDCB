@@ -7,247 +7,48 @@ namespace EpgTimer
 {
     public class NotifySrvInfoItem
     {
-        public NotifySrvInfo NotifyInfo
+        public NotifySrvInfoItem(NotifySrvInfo info)
         {
-            get;
-            set;
+            Time = info.time.ToString("yyyy/MM/dd HH:mm:ss.fff");
+            UpdateNotifyItem notifyID = (UpdateNotifyItem)info.notifyID;
+            Title = notifyID == UpdateNotifyItem.PreRecStart ? "予約録画開始準備" :
+                    notifyID == UpdateNotifyItem.RecStart ? "録画開始" :
+                    notifyID == UpdateNotifyItem.RecEnd ? "録画終了" :
+                    notifyID == UpdateNotifyItem.RecTuijyu ? "追従発生" :
+                    notifyID == UpdateNotifyItem.ChgTuijyu ? "番組変更" :
+                    notifyID == UpdateNotifyItem.PreEpgCapStart ? "EPG取得" :
+                    notifyID == UpdateNotifyItem.EpgCapStart ? "EPG取得" :
+                    notifyID == UpdateNotifyItem.EpgCapEnd ? "EPG取得" : info.notifyID.ToString();
+            LogText = notifyID == UpdateNotifyItem.EpgCapStart ? "開始" :
+                      notifyID == UpdateNotifyItem.EpgCapEnd ? "終了" : info.param4.Replace("\r\n", "  ");
+        }
+        public NotifySrvInfoItem(string text)
+        {
+            string[] s = text.Split(new char[] { '[', ']' }, 3);
+            Time = s.Length > 0 ? s[0].TrimEnd(' ') : "";
+            Title = s.Length > 1 ? s[1] : "";
+            LogText = s.Length > 2 ? s[2].TrimStart(' ') : "";
         }
         public String Time
         {
-            get
-            {
-                String text = "";
-                if (NotifyInfo != null)
-                {
-                    text = NotifyInfo.time.ToString("yyyy/MM/dd HH:mm:ss.fff");
-                }
-                return text;
-            }
+            get;
+            private set;
         }
         public String Title
         {
-            get
-            {
-                String text = "";
-                if (NotifyInfo != null)
-                {
-                    switch ((UpdateNotifyItem)NotifyInfo.notifyID)
-                    {
-                        case UpdateNotifyItem.PreRecStart:
-                            {
-                                text = "予約録画開始準備";
-                            }
-                            break;
-                        case UpdateNotifyItem.RecStart:
-                            {
-                                text = "録画開始";
-                            }
-                            break;
-                        case UpdateNotifyItem.RecEnd:
-                            {
-                                text = "録画終了";
-                            }
-                            break;
-                        case UpdateNotifyItem.RecTuijyu:
-                            {
-                                text = "追従発生";
-                            }
-                            break;
-                        case UpdateNotifyItem.ChgTuijyu:
-                            {
-                                text = "番組変更";
-                            }
-                            break;
-                        case UpdateNotifyItem.PreEpgCapStart:
-                            {
-                                text = "EPG取得";
-                            }
-                            break;
-                        case UpdateNotifyItem.EpgCapStart:
-                            {
-                                text = "EPG取得";
-                            }
-                            break;
-                        case UpdateNotifyItem.EpgCapEnd:
-                            {
-                                text = "EPG取得";
-                            }
-                            break;
-                        default:
-                            text = NotifyInfo.notifyID.ToString();
-                            break;
-                    }
-                }
-                return text;
-            }
+            get;
+            private set;
         }
 
         public String LogText
         {
-            get
-            {
-                String text = "";
-                if (NotifyInfo != null)
-                {
-                    switch ((UpdateNotifyItem)NotifyInfo.notifyID)
-                    {
-                        case UpdateNotifyItem.PreRecStart:
-                            {
-                                text = NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.RecStart:
-                            {
-                                text = NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.RecEnd:
-                            {
-                                text = NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.RecTuijyu:
-                            {
-                                text = NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.ChgTuijyu:
-                            {
-                                text = NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.PreEpgCapStart:
-                            {
-                                text = NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.EpgCapStart:
-                            {
-                                text = "開始";
-                            }
-                            break;
-                        case UpdateNotifyItem.EpgCapEnd:
-                            {
-                                text = "終了";
-                            }
-                            break;
-                        default:
-                            text = NotifyInfo.notifyID.ToString();
-                            break;
-                    }
-                }
-                return text;
-            }
+            get;
+            private set;
         }
 
-        public String FileLogText
+        public override string ToString()
         {
-            get
-            {
-                String text = "";
-                if (NotifyInfo != null)
-                {
-                    text = NotifyInfo.time.ToString("yyyy/MM/dd HH:mm:ss.fff");
-
-                    text += " [";
-                    switch ((UpdateNotifyItem)NotifyInfo.notifyID)
-                    {
-                        case UpdateNotifyItem.PreRecStart:
-                            {
-                                text += "予約録画開始準備";
-                            }
-                            break;
-                        case UpdateNotifyItem.RecStart:
-                            {
-                                text += "録画開始";
-                            }
-                            break;
-                        case UpdateNotifyItem.RecEnd:
-                            {
-                                text += "録画終了";
-                            }
-                            break;
-                        case UpdateNotifyItem.RecTuijyu:
-                            {
-                                text += "追従発生";
-                            }
-                            break;
-                        case UpdateNotifyItem.ChgTuijyu:
-                            {
-                                text += "番組変更";
-                            }
-                            break;
-                        case UpdateNotifyItem.PreEpgCapStart:
-                            {
-                                text += "EPG取得";
-                            }
-                            break;
-                        case UpdateNotifyItem.EpgCapStart:
-                            {
-                                text += "EPG取得";
-                            }
-                            break;
-                        case UpdateNotifyItem.EpgCapEnd:
-                            {
-                                text += "EPG取得";
-                            }
-                            break;
-                        default:
-                            text += NotifyInfo.notifyID.ToString();
-                            break;
-                    }
-                    text += "] ";
-
-                    switch ((UpdateNotifyItem)NotifyInfo.notifyID)
-                    {
-                        case UpdateNotifyItem.PreRecStart:
-                            {
-                                text += NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.RecStart:
-                            {
-                                text += NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.RecEnd:
-                            {
-                                text += NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.RecTuijyu:
-                            {
-                                text += NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.ChgTuijyu:
-                            {
-                                text += NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.PreEpgCapStart:
-                            {
-                                text += NotifyInfo.param4;
-                            }
-                            break;
-                        case UpdateNotifyItem.EpgCapStart:
-                            {
-                                text += "開始";
-                            }
-                            break;
-                        case UpdateNotifyItem.EpgCapEnd:
-                            {
-                                text += "終了";
-                            }
-                            break;
-                        default:
-                            text += NotifyInfo.notifyID.ToString();
-                            break;
-                    }
-                    text += "\r\n";
-                }
-                return text;
-            }
+            return Time + " [" + Title + "] " + LogText;
         }
     }
 }

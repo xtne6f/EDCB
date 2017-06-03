@@ -9,29 +9,22 @@
 #include "CmdLineUtil.h"
 #include "../../Common/BlockLock.h"
 
-static HANDLE g_hDebugLog;
+static FILE* g_debugLog;
 static CRITICAL_SECTION g_debugLogLock;
 static bool g_saveDebugLog;
 
 static void StartDebugLog()
 {
-	wstring iniPath;
-	GetModuleIniPath(iniPath);
-	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0 ){
-		wstring logFolder;
-		GetModuleFolderPath(logFolder);
+	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0 ){
 		for( int i = 0; i < 100; i++ ){
 			//パスに添え字をつけて書き込み可能な最初のものに記録する
 			WCHAR logFileName[64];
-			wsprintf(logFileName, L"\\EpgDataCap_Bon_DebugLog-%d.txt", i);
-			g_hDebugLog = CreateFile((logFolder + logFileName).c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if( g_hDebugLog != INVALID_HANDLE_VALUE ){
-				if( GetLastError() == ERROR_SUCCESS ){
-					DWORD dwWritten;
-					WriteFile(g_hDebugLog, "\xFF\xFE", sizeof(char) * 2, &dwWritten, NULL);
-				}else{
-					LARGE_INTEGER liPos = {};
-					SetFilePointerEx(g_hDebugLog, liPos, NULL, FILE_END);
+			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
+			g_debugLog = _wfsopen(GetModulePath().replace_filename(logFileName).c_str(), L"ab", _SH_DENYWR);
+			if( g_debugLog ){
+				_fseeki64(g_debugLog, 0, SEEK_END);
+				if( _ftelli64(g_debugLog) == 0 ){
+					fputwc(L'\xFEFF', g_debugLog);
 				}
 				InitializeCriticalSection(&g_debugLogLock);
 				g_saveDebugLog = true;
@@ -48,7 +41,7 @@ static void StopDebugLog()
 		OutputDebugString(L"****** LOG STOP ******\r\n");
 		g_saveDebugLog = false;
 		DeleteCriticalSection(&g_debugLogLock);
-		CloseHandle(g_hDebugLog);
+		fclose(g_debugLog);
 	}
 }
 
@@ -64,12 +57,12 @@ static void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 {
 	WCHAR path[MAX_PATH + 4];
 	path[GetModuleFileName(NULL, path, MAX_PATH)] = L'\0';
-	lstrcat(path, L".err");
+	wcscat_s(path, L".err");
 	HANDLE hFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( hFile != INVALID_HANDLE_VALUE ){
 		char buff[384];
 		DWORD written;
-		int len = wsprintfA(buff, "ExceptionCode = 0x%08X\r\n", exceptionCode);
+		int len = sprintf_s(buff, "ExceptionCode = 0x%08X\r\n", exceptionCode);
 		WriteFile(hFile, buff, len, &written, NULL);
 		for( int i = 0; addrOffsets[i]; i++ ){
 			SYMBOL_INFO symbol[1 + (256 + sizeof(SYMBOL_INFO)) / sizeof(SYMBOL_INFO)];
@@ -77,9 +70,9 @@ static void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 			symbol->MaxNameLen = 256;
 			DWORD64 displacement;
 			if( SymFromAddr(GetCurrentProcess(), (DWORD64)addrOffsets[i], &displacement, symbol) ){
-				len = wsprintfA(buff, "Trace%02d 0x%p = 0x%p(%s) + 0x%X\r\n", i, addrOffsets[i], (PVOID)symbol->Address, symbol->Name, (DWORD)displacement);
+				len = sprintf_s(buff, "Trace%02d 0x%p = 0x%p(%s) + 0x%X\r\n", i, addrOffsets[i], (PVOID)symbol->Address, symbol->Name, (DWORD)displacement);
 			}else{
-				len = wsprintfA(buff, "Trace%02d 0x%p = ?\r\n", i, addrOffsets[i]);
+				len = sprintf_s(buff, "Trace%02d 0x%p = ?\r\n", i, addrOffsets[i]);
 			}
 			WriteFile(hFile, buff, len, &written, NULL);
 		}
@@ -89,7 +82,12 @@ static void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 			modent.dwSize = sizeof(modent);
 			if( Module32FirstW(hSnapshot, &modent) ){
 				do{
-					len = wsprintfA(buff, "0x%p - 0x%p = %S\r\n", modent.modBaseAddr, modent.modBaseAddr + modent.modBaseSize - 1, modent.szModule);
+					char moduleA[256] = {};
+					for( int i = 0; i == 0 || i < 255 && moduleA[i - 1]; i++ ){
+						//文字化けしても構わない
+						moduleA[i] = (char)modent.szModule[i];
+					}
+					len = sprintf_s(buff, "0x%p - 0x%p = %s\r\n", modent.modBaseAddr, modent.modBaseAddr + modent.modBaseSize - 1, moduleA);
 					WriteFile(hFile, buff, len, &written, NULL);
 				}while( Module32NextW(hSnapshot, &modent) );
 			}
@@ -202,18 +200,18 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 	dlg.SetIniView(TRUE);
 	dlg.SetIniNW(TRUE);
 	for( itr = cCmdUtil.m_CmdList.begin(); itr != cCmdUtil.m_CmdList.end(); itr++ ){
-		if( lstrcmpi(itr->first.c_str(), L"d") == 0 ){
+		if( CompareNoCase(itr->first, L"d") == 0 ){
 			dlg.SetInitBon(itr->second.c_str());
 			OutputDebugString(itr->second.c_str());
-		}else if( lstrcmpi(itr->first.c_str(), L"min") == 0 ){
+		}else if( CompareNoCase(itr->first, L"min") == 0 ){
 			dlg.SetIniMin(TRUE);
-		}else if( lstrcmpi(itr->first.c_str(), L"noview") == 0 ){
+		}else if( CompareNoCase(itr->first, L"noview") == 0 ){
 			dlg.SetIniView(FALSE);
-		}else if( lstrcmpi(itr->first.c_str(), L"nonw") == 0 ){
+		}else if( CompareNoCase(itr->first, L"nonw") == 0 ){
 			dlg.SetIniNW(FALSE);
-		}else if( lstrcmpi(itr->first.c_str(), L"nwudp") == 0 ){
+		}else if( CompareNoCase(itr->first, L"nwudp") == 0 ){
 			dlg.SetIniNWUDP(TRUE);
-		}else if( lstrcmpi(itr->first.c_str(), L"nwtcp") == 0 ){
+		}else if( CompareNoCase(itr->first, L"nwtcp") == 0 ){
 			dlg.SetIniNWTCP(TRUE);
 		}
 	}
@@ -255,18 +253,11 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 		CBlockLock lock(&g_debugLogLock);
 		SYSTEMTIME st;
 		GetLocalTime(&st);
-		WCHAR header[64];
-		int len = wsprintf(header, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
-		                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
-		DWORD dwWritten;
-		WriteFile(g_hDebugLog, header, sizeof(WCHAR) * len, &dwWritten, NULL);
-		if( lpOutputString ){
-			len = lstrlen(lpOutputString);
-			WriteFile(g_hDebugLog, lpOutputString, sizeof(WCHAR) * len, &dwWritten, NULL);
-			if( len == 0 || lpOutputString[len - 1] != L'\n' ){
-				WriteFile(g_hDebugLog, L"<NOBR>\r\n", sizeof(WCHAR) * 8, &dwWritten, NULL);
-			}
-		}
+		fwprintf(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
+		         st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
+		         lpOutputString ? lpOutputString : L"",
+		         lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
+		fflush(g_debugLog);
 	}
 	OutputDebugStringW(lpOutputString);
 }

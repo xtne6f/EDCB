@@ -19,8 +19,8 @@
 #pragma comment(lib, "ws2_32.lib")
 
 // C ランタイム ヘッダー ファイル
-#include <tchar.h>
-#include <string>
+#include <stdio.h>
+#include <share.h>
 
 #define afx_msg
 

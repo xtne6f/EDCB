@@ -10,7 +10,20 @@ namespace EpgTimer
         public Dictionary<UInt64, ChSet5Item> ChList
         {
             get;
-            set;
+            private set;
+        }
+
+        public IEnumerable<ChSet5Item> ChListSelected
+        {
+            get
+            {
+                bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
+                //ネットワーク種別優先かつ限定受信を分離したID順ソート
+                return ChList.Values.Where(item => (ignoreEpgCap || item.EpgCapFlag)).OrderBy(item => (
+                    (ulong)(IsDttv(item.ONID) ? 0 : IsBS(item.ONID) ? 1 : IsCS(item.ONID) ? 2 : 3) << 56 |
+                    (ulong)(IsDttv(item.ONID) && item.PartialFlag ? 1 : 0) << 48 |
+                    item.Key));
+            }
         }
         
         private static ChSet5 _instance;
@@ -22,7 +35,6 @@ namespace EpgTimer
                     _instance = new ChSet5();
                 return _instance;
             }
-            set { _instance = value; }
         }
 
         public ChSet5()
@@ -30,20 +42,44 @@ namespace EpgTimer
             ChList = new Dictionary<UInt64, ChSet5Item>();
         }
 
-        public static bool LoadFile()
+        public static bool IsVideo(UInt16 ServiceType)
+        {
+            return ServiceType == 0x01 || ServiceType == 0xA5 || ServiceType == 0xAD;
+        }
+        public static bool IsDttv(UInt16 ONID)
+        {
+            return 0x7880 <= ONID && ONID <= 0x7FE8;
+        }
+        public static bool IsBS(UInt16 ONID)
+        {
+            return ONID == 0x0004;
+        }
+        public static bool IsCS(UInt16 ONID)
+        {
+            return IsCS1(ONID) || IsCS2(ONID) || IsCS3(ONID);
+        }
+        public static bool IsCS1(UInt16 ONID)
+        {
+            return ONID == 0x0006;
+        }
+        public static bool IsCS2(UInt16 ONID)
+        {
+            return ONID == 0x0007;
+        }
+        public static bool IsCS3(UInt16 ONID)
+        {
+            return ONID == 0x000A;
+        }
+        public static bool IsOther(UInt16 ONID)
+        {
+            return IsDttv(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
+        }
+
+        public static bool Load(System.IO.StreamReader reader)
         {
             try
             {
-                if (Instance.ChList == null)
-                {
-                    Instance.ChList = new Dictionary<UInt64, ChSet5Item>();
-                }
-                else
-                {
-                    Instance.ChList.Clear();
-                }
-                String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamReader reader = (new System.IO.StreamReader(filePath, System.Text.Encoding.Default));
+                Instance.ChList.Clear();
                 while (reader.Peek() >= 0)
                 {
                     string buff = reader.ReadLine();
@@ -63,9 +99,9 @@ namespace EpgTimer
                             item.TSID = Convert.ToUInt16(list[3]);
                             item.SID = Convert.ToUInt16(list[4]);
                             item.ServiceType = Convert.ToUInt16(list[5]);
-                            item.PartialFlag = Convert.ToByte(list[6]);
-                            item.EpgCapFlag = Convert.ToByte(list[7]);
-                            item.SearchFlag = Convert.ToByte(list[8]);
+                            item.PartialFlag = Convert.ToInt32(list[6]) != 0;
+                            item.EpgCapFlag = Convert.ToInt32(list[7]) != 0;
+                            item.SearchFlag = Convert.ToInt32(list[8]) != 0;
                         }
                         finally
                         {
@@ -74,39 +110,6 @@ namespace EpgTimer
                         }
                     }
                 }
-
-                reader.Close();
-
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-        public static bool SaveFile()
-        {
-            try
-            {
-                String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamWriter writer = (new System.IO.StreamWriter(filePath, false, System.Text.Encoding.Default));
-                if (Instance.ChList != null)
-                {
-                    foreach (ChSet5Item info in Instance.ChList.Values)
-                    {
-                        writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
-                            info.ServiceName,
-                            info.NetworkName,
-                            info.ONID,
-                            info.TSID,
-                            info.SID,
-                            info.ServiceType,
-                            info.PartialFlag,
-                            info.EpgCapFlag,
-                            info.SearchFlag);
-                    }
-                }
-                writer.Close();
             }
             catch
             {
@@ -149,7 +152,7 @@ namespace EpgTimer
             get;
             set;
         }
-        public Byte PartialFlag
+        public bool PartialFlag
         {
             get;
             set;
@@ -164,17 +167,12 @@ namespace EpgTimer
             get;
             set;
         }
-        public Byte EpgCapFlag
+        public bool EpgCapFlag
         {
             get;
             set;
         }
-        public Byte SearchFlag
-        {
-            get;
-            set;
-        }
-        public Byte RemoconID
+        public bool SearchFlag
         {
             get;
             set;

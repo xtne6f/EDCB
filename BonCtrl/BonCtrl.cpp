@@ -114,16 +114,13 @@ DWORD CBonCtrl::OpenBonDriver(
 		//解析スレッド起動
 		this->analyzeStopFlag = FALSE;
 		this->analyzeThread = (HANDLE)_beginthreadex(NULL, 0, AnalyzeThread, this, 0, NULL);
-		this->tsOut.ResetChChange();
 
 		this->tsOut.SetBonDriver(bonFile);
-		wstring settingPath;
-		GetSettingPath(settingPath);
-		wstring bonFileTitle;
-		GetFileTitle(bonFile, bonFileTitle);
+		fs_path settingPath = GetSettingPath();
 		wstring tunerName = this->bonUtil.GetTunerName();
 		CheckFileName(tunerName);
-		this->chUtil.LoadChSet( settingPath + L"\\" + bonFileTitle + L"(" + tunerName + L").ChSet4.txt", settingPath + L"\\ChSet5.txt" );
+		this->chUtil.LoadChSet(fs_path(settingPath).append(fs_path(bonFile).stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native(),
+		                       fs_path(settingPath).append(L"ChSet5.txt").native());
 	}
 
 	return ret;
@@ -174,10 +171,12 @@ DWORD CBonCtrl::SetCh(
 // エラーコード
 //引数：
 // ONID			[IN]変更チャンネルのorignal_network_id
-// TSID			[IN]変更チャンネルの物理transport_stream_id
+// TSID			[IN]変更チャンネルのtransport_stream_id
+// SID			[IN]変更チャンネルのservice_id
 DWORD CBonCtrl::SetCh(
 	WORD ONID,
-	WORD TSID
+	WORD TSID,
+	WORD SID
 )
 {
 	if( this->tsOut.IsRec() == TRUE ){
@@ -188,7 +187,7 @@ DWORD CBonCtrl::SetCh(
 	DWORD ch=0;
 
 	DWORD ret = ERR_FALSE;
-	if( this->chUtil.GetCh( ONID, TSID, space, ch ) == TRUE ){
+	if( this->chUtil.GetCh( ONID, TSID, SID, space, ch ) == TRUE ){
 		ret = _SetCh(space, ch);
 	}
 
@@ -207,33 +206,13 @@ DWORD CBonCtrl::_SetCh(
 	DWORD ret = ERR_FALSE;
 	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 		ret = NO_ERR;
-		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow ){
+		DWORD elapsed;
+		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow || this->tsOut.IsChUnknown(&elapsed) && elapsed > 15000 ){
 			this->tsOut.SetChChangeEvent(chScan);
 			_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
 			ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
 
 			StartBackgroundEpgCap();
-		}else{
-			BOOL chChgErr = FALSE;
-			if( this->tsOut.IsChChanging(&chChgErr) == TRUE ){
-				if( chChgErr == TRUE ){
-					//エラーの時は再設定
-					this->tsOut.SetChChangeEvent();
-					_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-					ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
-
-					StartBackgroundEpgCap();
-				}
-			}else{
-				if( chChgErr == TRUE ){
-					//エラーの時は再設定
-					this->tsOut.SetChChangeEvent();
-					_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-					ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
-
-					StartBackgroundEpgCap();
-				}
-			}
 		}
 	}else{
 		OutputDebugString(L"Err GetNowCh");
@@ -246,7 +225,21 @@ DWORD CBonCtrl::_SetCh(
 // TRUE（変更中）、FALSE（完了）
 BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
 {
-	return this->tsOut.IsChChanging(chChgErr);
+	if( chChgErr != NULL ){
+		*chChgErr = FALSE;
+	}
+	DWORD elapsed;
+	if( this->tsOut.IsChUnknown(&elapsed) && elapsed != MAXDWORD ){
+		if( elapsed > 15000 ){
+			//タイムアウトした
+			if( chChgErr != NULL ){
+				*chChgErr = TRUE;
+			}
+			return FALSE;
+		}
+		return TRUE;
+	}
+	return FALSE;
 }
 
 //現在のストリームのIDを取得する
@@ -646,14 +639,14 @@ DWORD CBonCtrl::StopChScan()
 
 //チャンネルスキャンの状態を取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // space		[OUT]スキャン中の物理CHのspace
 // ch			[OUT]スキャン中の物理CHのch
 // chName		[OUT]スキャン中の物理CHの名前
 // chkNum		[OUT]チェック済みの数
 // totalNum		[OUT]チェック対象の総数
-DWORD CBonCtrl::GetChScanStatus(
+CBonCtrl::JOB_STATUS CBonCtrl::GetChScanStatus(
 	DWORD* space,
 	DWORD* ch,
 	wstring* chName,
@@ -686,15 +679,13 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 	//TODO: chUtilをconstに保っていないのでスレッド安全性は破綻している。スキャン時だけの問題なので修正はしないが要注意
 	sys->chUtil.Clear();
 
-	wstring settingPath;
-	GetSettingPath(settingPath);
-	wstring bonFileTitle;
-	GetFileTitle(sys->bonUtil.GetOpenBonDriverFileName(), bonFileTitle);
+	fs_path settingPath = GetSettingPath();
+	fs_path bonFile = sys->bonUtil.GetOpenBonDriverFileName();
 	wstring tunerName = sys->bonUtil.GetTunerName();
 	CheckFileName(tunerName);
 
-	wstring chSet4 = settingPath + L"\\" + bonFileTitle + L"(" + tunerName + L").ChSet4.txt";
-	wstring chSet5 = settingPath + L"\\ChSet5.txt";
+	wstring chSet4 = fs_path(settingPath).append(bonFile.stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native();
+	wstring chSet5 = fs_path(settingPath).append(L"ChSet5.txt").native();
 
 	vector<CHK_CH_INFO> chkList;
 	vector<pair<wstring, vector<wstring>>> spaceList = sys->bonUtil.GetOriginalChList();
@@ -718,24 +709,18 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 		return 0;
 	}
 
-	wstring folderPath;
-	GetModuleFolderPath( folderPath );
-	wstring iniPath = folderPath;
-	iniPath += L"\\BonCtrl.ini";
+	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
 
 	DWORD chChgTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ChChgTimeOut", 9, iniPath.c_str());
 	DWORD serviceChkTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ServiceChkTimeOut", 8, iniPath.c_str());
 
 
-	DWORD wait = 0;
 	BOOL chkNext = TRUE;
 	DWORD startTime = 0;
-	DWORD chkWait = 0;
 	DWORD chkCount = 0;
-	BOOL firstChg = FALSE;
 
 	while(1){
-		if( ::WaitForSingleObject(sys->chScanStopEvent, wait) != WAIT_TIMEOUT ){
+		if( ::WaitForSingleObject(sys->chScanStopEvent, chkNext ? 0 : 1000) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			sys->chSt_err = ST_CANCEL;
 			break;
@@ -745,24 +730,18 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 			sys->chSt_ch = chkList[chkCount].ch;
 			sys->chSt_chName = chkList[chkCount].chName;
 			sys->_SetCh(chkList[chkCount].space, chkList[chkCount].ch, TRUE);
-			if( firstChg == FALSE ){
-				firstChg = TRUE;
-				sys->tsOut.ResetChChange();
-			}
 			startTime = GetTickCount();
 			chkNext = FALSE;
-			wait = 1000;
-			chkWait = chChgTimeOut;
 		}else{
-			BOOL chChgErr = FALSE;
-			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
-				if( GetTickCount() - startTime > chkWait * 1000 ){
-					//チャンネル切り替えに8秒以上かかってるので無信号と判断
+			DWORD elapsed;
+			if( sys->tsOut.IsChUnknown(&elapsed) ){
+				if( elapsed > chChgTimeOut * 1000 ){
+					//チャンネル切り替えにchChgTimeOut秒以上かかってるので無信号と判断
 					OutputDebugString(L"★AutoScan Ch Change timeout\r\n");
 					chkNext = TRUE;
 				}
 			}else{
-				if( GetTickCount() - startTime > (chkWait + serviceChkTimeOut) * 1000 || chChgErr == TRUE){
+				if( GetTickCount() - startTime > (chChgTimeOut + serviceChkTimeOut) * 1000 ){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
 					OutputDebugString(L"★AutoScan GetService timeout\r\n");
 					chkNext = TRUE;
@@ -773,14 +752,21 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 					if( sys->tsOut.GetServiceListActual(&serviceListSize, &serviceList) == NO_ERR ){
 						if( serviceListSize > 0 ){
 							//一覧の取得ができた
-							for( DWORD i=0 ;i<serviceListSize; i++ ){
-								if( serviceList[i].extInfo != NULL ){
-									if( serviceList[i].extInfo->service_name != NULL ){
+							for( int currSID = 0; currSID < 0x10000; ){
+								//ServiceID順に追加
+								int nextSID = 0x10000;
+								for( DWORD i = 0; i < serviceListSize; i++ ){
+									WORD serviceID = serviceList[i].service_id;
+									if( serviceID == currSID && serviceList[i].extInfo && serviceList[i].extInfo->service_name ){
 										if( wcslen(serviceList[i].extInfo->service_name) > 0 ){
 											sys->chUtil.AddServiceInfo(chkList[chkCount].space, chkList[chkCount].ch, chkList[chkCount].chName, &(serviceList[i]));
 										}
 									}
+									if( serviceID > currSID && serviceID < nextSID ){
+										nextSID = serviceID;
+									}
 								}
+								currSID = nextSID;
 							}
 							chkNext = TRUE;
 						}
@@ -882,10 +868,10 @@ DWORD CBonCtrl::StopEpgCap(
 
 //EPG取得のステータスを取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // info			[OUT]取得中のサービス
-DWORD CBonCtrl::GetEpgCapStatus(
+CBonCtrl::JOB_STATUS CBonCtrl::GetEpgCapStatus(
 	EPGCAP_SERVICE_INFO* info
 	)
 {
@@ -904,21 +890,16 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	DWORD wait = 0;
 	DWORD startTime = 0;
 	DWORD chkCount = 0;
-	DWORD chkWait = 8;
 
 	BOOL chkONIDs[16] = {};
 
-	wstring folderPath;
-	GetModuleFolderPath( folderPath );
-	wstring iniPath = folderPath;
-	iniPath += L"\\BonCtrl.ini";
+	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
 
 	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
 
 	//Common.iniは一般に外部プロセスが変更する可能性のある(はずの)ものなので、利用の直前にチェックする
-	wstring commonIniPath;
-	GetCommonIniPath(commonIniPath);
+	fs_path commonIniPath = GetCommonIniPath();
 	BOOL basicOnlyONIDs[16] = {};
 	basicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str());
 	basicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str());
@@ -933,13 +914,10 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			break;
 		}
 		if( chkNext == TRUE ){
-			if( sys->tsOut.IsChChanging(NULL) == TRUE ){
-				Sleep(200);
-				continue;
-			}
 			DWORD space = 0;
 			DWORD ch = 0;
-			sys->chUtil.GetCh(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, space, ch);
+			sys->chUtil.GetCh(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID,
+			                  sys->epgCapChList[chkCount].SID, space, ch);
 			sys->_SetCh(space, ch);
 			startTime = GetTickCount();
 			chkNext = FALSE;
@@ -948,21 +926,23 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			chkONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(chkONIDs) - 1)] = TRUE;
 			sys->epgSt_ch = sys->epgCapChList[chkCount];
 		}else{
-			BOOL chChgErr = FALSE;
-			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
-				if( GetTickCount() - startTime > chkWait * 1000 ){
-					//チャンネル切り替えに10秒以上かかってるので無信号と判断
+			DWORD tick = GetTickCount();
+			DWORD elapsed;
+			if( sys->tsOut.IsChUnknown(&elapsed) ){
+				startTime += min(tick - startTime, 1000);
+				if( elapsed > 15000 ){
+					//チャンネル切り替えがタイムアウトしたので無信号と判断
 					chkNext = TRUE;
 				}
 			}else{
-				if( GetTickCount() - startTime > (chkWait + timeOut * 60) * 1000 || chChgErr == TRUE){
-					//15分以上かかっているなら停止
+				if( tick - startTime > timeOut * 60 * 1000 ){
+					//timeOut分以上かかっているなら停止
 					sys->tsOut.StopSaveEPG(saveTimeOut);
 					chkNext = TRUE;
 					wait = 0;
 					_OutputDebugString(L"++%d分でEPG取得完了せず or Ch変更でエラー", timeOut);
-				}else if( GetTickCount() - startTime > chkWait * 1000 ){
-					//切り替えから15秒以上過ぎているので取得処理
+				}else if( tick - startTime > 5000 ){
+					//切り替え完了から5秒以上過ぎているので取得処理
 					if( startCap == FALSE ){
 						//取得開始
 						startCap = TRUE;
@@ -1045,11 +1025,8 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 
 void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath)
 {
-	wstring epgDataFolderPath = L"";
-	GetSettingPath(epgDataFolderPath);
-	epgDataFolderPath += EPG_SAVE_FOLDER;
-
-	Format(epgDataFilePath, L"%s\\%04X%04X_epg.dat", epgDataFolderPath.c_str(), ONID, TSID);
+	Format(epgDataFilePath, L"%04X%04X_epg.dat", ONID, TSID);
+	epgDataFilePath = GetSettingPath().append(EPG_SAVE_FOLDER).append(epgDataFilePath).native();
 }
 
 //録画中のファイルのファイルパスを取得する
@@ -1145,10 +1122,7 @@ void CBonCtrl::StopBackgroundEpgCap()
 
 UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 {
-	wstring folderPath;
-	GetModuleFolderPath( folderPath );
-	wstring iniPath = folderPath;
-	iniPath += L"\\BonCtrl.ini";
+	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
 
 	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
@@ -1224,7 +1198,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 			break;
 		}else{
 			if( GetTickCount() - startTime > timeOut * 60 * 1000 ){
-				//15分以上かかっているなら停止
+				//timeOut分以上かかっているなら停止
 				sys->tsOut.StopSaveEPG(saveTimeOut);
 				CSendCtrlCmd cmd;
 				cmd.SetConnectTimeOut(1000);

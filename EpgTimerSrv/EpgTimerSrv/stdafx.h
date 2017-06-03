@@ -18,9 +18,9 @@
 
 // C ランタイム ヘッダー ファイル
 #include <stdlib.h>
-#include <malloc.h>
 #include <memory.h>
-#include <tchar.h>
+#include <stdio.h>
+#include <share.h>
 
 #ifdef _UNICODE
 #if defined _M_IX86

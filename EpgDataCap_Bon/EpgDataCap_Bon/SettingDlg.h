@@ -26,8 +26,6 @@ public:
 protected:
 	HWND m_hWnd;
 	HWND m_hWndOwner;
-	std::wstring commonIniPath;
-	std::wstring appIniPath;
 
 	CSetDlgBasic basicDlg;
 	CSetDlgApp appDlg;

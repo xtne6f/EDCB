@@ -3,14 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-// 古い名前空間
-namespace CtrlCmdCLI
-{
-    namespace Def
-    {
-    }
-}
-
 namespace EpgTimer
 {
     /// <summary>CtrlCmdバイナリ形式との相互変換インターフェイス</summary>
@@ -226,6 +218,11 @@ namespace EpgTimer
             Stream.Seek(tailPos, SeekOrigin.Begin);
             tailPos = long.MaxValue;
         }
+        /// <summary>C++構造体型オブジェクトの読み込みに利用できる残サイズを取得する</summary>
+        public long RemainSize()
+        {
+            return tailPos - Stream.Position;
+        }
     }
 
     public enum CtrlCmd : uint
@@ -280,6 +277,10 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_RECINFO2 = 2017,
         /// <summary>録画済み情報のプロテクト変更</summary>
         CMD_EPG_SRV_CHG_PROTECT_RECINFO2 = 2019,
+        /// <summary>録画済み情報一覧取得（programInfoとerrInfoを除く）</summary>
+        CMD_EPG_SRV_ENUM_RECINFO_BASIC2 = 2020,
+        /// <summary>録画済み情報取得</summary>
+        CMD_EPG_SRV_GET_RECINFO2 = 2024,
         /// <summary>サーバー連携用　予約追加できるかのチェック（戻り値 0:追加不可 1:追加可能 2:追加可能だが開始か終了が重なるものあり 3:すでに同じ物がある）</summary>
         CMD_EPG_SRV_ADDCHK_RESERVE2 = 2030,
         /// <summary>サーバー連携用　EPGデータファイルのタイムスタンプ取得</summary>
@@ -298,6 +299,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ADD_MANU_ADD2 = 2142,
         /// <summary>プログラム予約自動登録の条件変更</summary>
         CMD_EPG_SRV_CHG_MANU_ADD2 = 2144,
+        /// <summary>サーバーの情報変更通知を取得（ロングポーリング）</summary>
+        CMD_EPG_SRV_GET_STATUS_NOTIFY2 = 2200,
         /// <summary>読み込まれたEPGデータのサービスの一覧取得</summary>
         CMD_EPG_SRV_ENUM_SERVICE = 1021,
         /// <summary>サービス指定で番組情報一覧を取得する</summary>
@@ -308,6 +311,10 @@ namespace EpgTimer
         CMD_EPG_SRV_SEARCH_PG = 1025,
         /// <summary>番組情報一覧取得</summary>
         CMD_EPG_SRV_ENUM_PG_ALL = 1026,
+        /// <summary>サービス指定で過去番組情報一覧を取得する</summary>
+        CMD_EPG_SRV_ENUM_PG_ARC_INFO = 1028,
+        /// <summary>過去番組情報一覧取得</summary>
+        CMD_EPG_SRV_ENUM_PG_ARC_ALL = 1029,
         /// <summary>自動予約登録の条件一覧取得</summary>
         CMD_EPG_SRV_ENUM_AUTO_ADD = 1031,
         /// <summary>自動予約登録の条件追加</summary>
@@ -338,6 +345,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_PLUGIN = 1061,
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
         CMD_EPG_SRV_GET_CHG_CH_TVTEST = 1062,
+        /// <summary>保存された情報通知ログを取得する</summary>
+        CMD_EPG_SRV_GET_NOTIFY_LOG = 1065,
         /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
         CMD_EPG_SRV_NWTV_SET_CH = 1070,
         /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
@@ -432,7 +441,7 @@ namespace EpgTimer
         private int connectTimeOut = 15000;
         private string eventName = "Global\\EpgTimerSrvConnect";
         private string pipeName = "EpgTimerSrvPipe";
-        private string ip = "127.0.0.1";
+        private System.Net.IPAddress ip = System.Net.IPAddress.Loopback;
         private uint port = 5678;
         // TODO: 本来この排他用オブジェクトは不要だが、このクラスの利用側がマルチスレッドを考慮していないようなので念のため従来仕様に合わせる
         private object thisLock = new object();
@@ -452,7 +461,7 @@ namespace EpgTimer
             }
         }
         /// <summary>TCP/IPモード時の接続先を設定</summary>
-        public void SetNWSetting(string ip, uint port)
+        public void SetNWSetting(System.Net.IPAddress ip, uint port)
         {
             lock (thisLock)
             {
@@ -501,12 +510,16 @@ namespace EpgTimer
         public ErrCode SendEnumService(ref List<EpgServiceInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_SERVICE, ref o); }
         /// <summary>サービス指定で番組情報を一覧を取得する</summary>
         public ErrCode SendEnumPgInfo(ulong service, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_INFO, service, ref o); }
+        /// <summary>サービス指定で過去番組情報一覧を取得する</summary>
+        public ErrCode SendEnumPgArcInfo(ulong service, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_INFO, service, ref o); }
         /// <summary>指定イベントの番組情報を取得する</summary>
         public ErrCode SendGetPgInfo(ulong pgID, ref EpgEventInfo val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_PG_INFO, pgID, ref o); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
         public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_SEARCH_PG, key, ref o); }
         /// <summary>番組情報一覧を取得する</summary>
         public ErrCode SendEnumPgAll(ref List<EpgServiceEventInfo> val) { object o = val;  return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ALL, ref o); }
+        /// <summary>過去番組情報一覧取得</summary>
+        public ErrCode SendEnumPgArcAll(ref List<EpgServiceEventInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_ALL, ref o); }
         /// <summary>自動予約登録条件を削除する</summary>
         public ErrCode SendDelEpgAutoAdd(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_AUTO_ADD, val); }
         /// <summary>プログラム予約自動登録の条件削除</summary>
@@ -519,6 +532,8 @@ namespace EpgTimer
         public ErrCode SendEnumPlugIn(ushort val, ref List<string> resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PLUGIN, val, ref o); }
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
         public ErrCode SendGetChgChTVTest(ulong val, ref TvTestChChgInfo resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_CHG_CH_TVTEST, val, ref o); }
+        /// <summary>保存された情報通知ログを取得する</summary>
+        public ErrCode SendGetNotifyLog(int val, ref string resVal) { object o = resVal; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_NOTIFY_LOG, val, ref o); resVal = (string)o; return ret; }
         /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
         public ErrCode SendNwTVSetCh(SetChInfo val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWTV_SET_CH, val); }
         /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
@@ -527,6 +542,8 @@ namespace EpgTimer
         public ErrCode SendNwTVMode(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWTV_MODE, val); }
         /// <summary>ストリーム配信用ファイルを開く</summary>
         public ErrCode SendNwPlayOpen(string val, ref uint resVal) { object o = resVal; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_OPEN, val, ref o); resVal = (uint)o; return ret; }
+        /// <summary>ストリーム配信用ファイルを閉じる</summary>
+        public ErrCode SendNwPlayClose(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_CLOSE, val); }
         /// <summary>ストリーム配信用ファイルをタイムシフトモードで開く</summary>
         public ErrCode SendNwTimeShiftOpen(uint val, ref NWPlayTimeShiftInfo resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_TF_OPEN, val, ref o); }
         #region // コマンドバージョン対応版
@@ -552,8 +569,14 @@ namespace EpgTimer
         public ErrCode SendChgManualAdd(List<ManualAutoAddData> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_MANU_ADD2, val); }
         /// <summary>録画済み情報一覧取得</summary>
         public ErrCode SendEnumRecInfo(ref List<RecFileInfo> val) { object o = val; return ReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_ENUM_RECINFO2, ref o); }
+        /// <summary>録画済み情報一覧取得（programInfoとerrInfoを除く）</summary>
+        public ErrCode SendEnumRecInfoBasic(ref List<RecFileInfo> val) { object o = val; return ReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_ENUM_RECINFO_BASIC2, ref o); }
+        /// <summary>録画済み情報取得</summary>
+        public ErrCode SendGetRecInfo(uint id, ref RecFileInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_RECINFO2, id, ref o); }
         /// <summary>録画済み情報のプロテクト変更</summary>
         public ErrCode SendChgProtectRecInfo(List<RecFileInfo> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_PROTECT_RECINFO2, val); }
+        /// <summary>現在のNOTIFY_UPDATE_SRV_STATUSを取得する</summary>
+        public ErrCode SendGetNotifySrvStatus(ref NotifySrvInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2, 0, ref o); }
         #endregion
         /// <summary>BonDriverの切り替え</summary>
         public ErrCode SendViewSetBonDrivere(string val) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_BONDRIVER, val); }
@@ -563,6 +586,8 @@ namespace EpgTimer
         public ErrCode SendViewSetCh(SetChInfo chInfo) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_CH, chInfo); }
         /// <summary>アプリケーションの終了</summary>
         public ErrCode SendViewAppClose() { return SendCmdWithoutData(CtrlCmd.CMD_VIEW_APP_CLOSE); }
+        /// <summary>識別用IDの取得</summary>
+        public ErrCode SendViewGetID(ref int val) { object o = val; var ret = ReceiveCmdData(CtrlCmd.CMD_VIEW_APP_GET_ID, ref o); val = (int)o; return ret; }
         /// <summary>ストリーミング配信制御IDの設定</summary>
         public ErrCode SendViewSetStreamingInfo(TVTestStreamingInfo val) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_TT_SET_CTRL, val); }
 
@@ -634,10 +659,21 @@ namespace EpgTimer
             }
         }
 
+        private static int ReadAll(Stream s, byte[] buffer, int offset, int size)
+        {
+            int n = 0;
+            for (int m; n < size && (m = s.Read(buffer, offset + n, size - n)) > 0; n += m) ;
+            return n;
+        }
+
         private ErrCode SendTCP(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
             lock (thisLock)
             {
+                if (ip == null)
+                {
+                    return ErrCode.CMD_ERR_CONNECT;
+                }
                 // 接続
                 using (var tcp = new System.Net.Sockets.TcpClient())
                 {
@@ -652,31 +688,25 @@ namespace EpgTimer
                     using (System.Net.Sockets.NetworkStream ns = tcp.GetStream())
                     {
                         // 送信
-                        var head = new byte[8];
+                        var head = new byte[8 + (send == null ? 0 : send.Length)];
                         BitConverter.GetBytes((uint)param).CopyTo(head, 0);
                         BitConverter.GetBytes((uint)(send == null ? 0 : send.Length)).CopyTo(head, 4);
-                        ns.Write(head, 0, 8);
                         if (send != null && send.Length != 0)
                         {
                             send.Close();
-                            byte[] data = send.ToArray();
-                            ns.Write(data, 0, data.Length);
+                            send.ToArray().CopyTo(head, 8);
                         }
+                        ns.Write(head, 0, head.Length);
                         // 受信
-                        if (ns.Read(head, 0, 8) != 8)
+                        if (ReadAll(ns, head, 0, 8) != 8)
                         {
                             return ErrCode.CMD_ERR;
                         }
                         uint resParam = BitConverter.ToUInt32(head, 0);
                         var resData = new byte[BitConverter.ToUInt32(head, 4)];
-                        for (int n = 0; n < resData.Length; )
+                        if (ReadAll(ns, resData, 0, resData.Length) != resData.Length)
                         {
-                            int m = ns.Read(resData, n, resData.Length - n);
-                            if (m <= 0)
-                            {
-                                return ErrCode.CMD_ERR;
-                            }
-                            n += m;
+                            return ErrCode.CMD_ERR;
                         }
                         res = new MemoryStream(resData, false);
                         return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;

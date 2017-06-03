@@ -14,8 +14,6 @@ using System.Windows.Shapes;
 using System.Collections;
 using System.Windows.Threading;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 using EpgTimer.TunerReserveViewCtrl;
 
 namespace EpgTimer
@@ -514,7 +512,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                CommonManager.Instance.TVTestCtrl.StartTimeShift(reserve.ReserveID);
+                CommonManager.Instance.FilePlay(reserve.ReserveID);
             }
             catch (Exception ex)
             {

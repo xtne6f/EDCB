@@ -28,10 +28,6 @@ CSetDlgService::CSetDlgService()
 
 CSetDlgService::~CSetDlgService()
 {
-	map<wstring, CH_SET_INFO*>::iterator itr;
-	for( itr = chList.begin(); itr != chList.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
 }
 
 BOOL CSetDlgService::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
@@ -87,17 +83,13 @@ BOOL CSetDlgService::OnInitDialog()
 	lvc.cx = rc.right - GetSystemMetrics(SM_CXVSCROLL) - 4;
 	ListView_InsertColumn(hItem, 0, &lvc);
 
-	wstring path = L"";
-	GetSettingPath(path);
-
-	wstring searchKey = path;
-	searchKey += L"\\*.ChSet4.txt";
+	const fs_path path = GetSettingPath();
 
 	WIN32_FIND_DATA findData;
 	HANDLE find;
 
 	//指定フォルダのファイル一覧取得
-	find = FindFirstFile( searchKey.c_str(), &findData);
+	find = FindFirstFile(fs_path(path).append(L"*.ChSet4.txt").c_str(), &findData);
 	if ( find == INVALID_HANDLE_VALUE ) {
 		return FALSE;
 	}
@@ -105,9 +97,6 @@ BOOL CSetDlgService::OnInitDialog()
 		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
 			//本当に拡張子DLL?
 			if( IsExt(findData.cFileName, L".txt") == TRUE ){
-				wstring chSetPath = L"";
-				Format(chSetPath, L"%s\\%s", path.c_str(), findData.cFileName);
-
 				wstring bonFileName = L"";
 				wstring buff = findData.cFileName;
 
@@ -115,14 +104,10 @@ BOOL CSetDlgService::OnInitDialog()
 
 				bonFileName += L".dll";
 
-				CH_SET_INFO* item = new CH_SET_INFO;
-				item->bonFile = bonFileName;
-				item->chSetPath = chSetPath;
-				item->chSet.ParseText(chSetPath.c_str());
-
-				chList.insert(pair<wstring, CH_SET_INFO*>(item->bonFile, item));
-
-				ComboBox_AddString(GetDlgItem(IDC_COMBO_BON), item->bonFile.c_str());
+				if( chList.insert(std::make_pair(bonFileName, CParseChText4())).second ){
+					chList[bonFileName].ParseText(fs_path(path).append(findData.cFileName).c_str());
+					ComboBox_AddString(GetDlgItem(IDC_COMBO_BON), bonFileName.c_str());
+				}
 			}
 		}
 	}while(FindNextFile(find, &findData));
@@ -150,10 +135,10 @@ void CSetDlgService::ReloadList()
 	GetDlgItemText(m_hWnd, IDC_COMBO_BON, text, 512);
 
 	wstring key = text;
-	map<wstring, CH_SET_INFO*>::iterator itr;
+	map<wstring, CParseChText4>::iterator itr;
 	itr = chList.find(key);
 	if( itr != chList.end()){
-		vector<CH_DATA4*> chDataList = itr->second->chSet.GetChDataList();
+		vector<CH_DATA4*> chDataList = itr->second.GetChDataList();
 		for( vector<CH_DATA4*>::iterator itrCh = chDataList.begin(); itrCh != chDataList.end(); itrCh++ ){
 			LVITEM lvi;
 			lvi.mask = LVIF_TEXT | LVIF_PARAM;
@@ -211,9 +196,9 @@ void CSetDlgService::SaveIni()
 
 	SynchronizeCheckState();
 
-	map<wstring, CH_SET_INFO*>::iterator itr;
+	map<wstring, CParseChText4>::iterator itr;
 	for( itr = chList.begin(); itr != chList.end(); itr++ ){
-		itr->second->chSet.SaveText();
+		itr->second.SaveText();
 	}
 }
 
@@ -245,11 +230,11 @@ void CSetDlgService::OnBnClickedButtonDel()
 		GetDlgItemText(m_hWnd, IDC_COMBO_BON, text, 512);
 
 		wstring key = text;
-		map<wstring, CH_SET_INFO*>::iterator itr;
+		map<wstring, CParseChText4>::iterator itr;
 		itr = chList.find(key);
 		if( itr != chList.end()){
 			SynchronizeCheckState();
-			itr->second->chSet.DelChService(chSet->space, chSet->ch, chSet->serviceID);
+			itr->second.DelChService(chSet->space, chSet->ch, chSet->serviceID);
 			ReloadList();
 		}
 	}

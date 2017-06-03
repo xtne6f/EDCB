@@ -1,7 +1,8 @@
 #pragma once
 
-#include "./Table/TableUtil.h"
+#include "AribDescriptor.h"
 #include "../../Common/EpgDataCap3Def.h"
+#include "../../Common/EpgTimerUtil.h"
 
 class CEpgDBUtil
 {
@@ -9,11 +10,11 @@ public:
 	CEpgDBUtil(void);
 	~CEpgDBUtil(void);
 
-	BOOL AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime);
+	BOOL AddEIT(WORD PID, const AribDescriptor::CDescriptor& eit, __int64 streamTime);
 
-	BOOL AddServiceList(const CNITTable* nit);
-	BOOL AddServiceList(WORD TSID, const CSITTable* sit);
-	BOOL AddSDT(const CSDTTable* sdt);
+	BOOL AddServiceListNIT(const AribDescriptor::CDescriptor& nit);
+	BOOL AddServiceListSIT(WORD TSID, const AribDescriptor::CDescriptor& sit);
+	BOOL AddSDT(const AribDescriptor::CDescriptor& sdt);
 
 	void SetStreamChangeEvent();
 
@@ -116,11 +117,11 @@ protected:
 		BYTE version;		//データ追加時のバージョン
 		DWORD time;			//データのタイムスタンプ(単位は10秒)
 	};
-	struct EVENT_INFO : EPG_EVENT_INFO{
-		//デストラクタは非仮想なので注意
+	struct EVENT_INFO{
 		DWORD time;
 		SI_TAG tagBasic;
 		SI_TAG tagExt;
+		EPGDB_EVENT_INFO db;	//ONID,TSID,SIDは未使用
 	};
 	struct SECTION_FLAG_INFO{
 		BYTE version;
@@ -128,9 +129,9 @@ protected:
 		BYTE ignoreFlags[32];	//無視する(送出されない)セクションのフラグ
 	};
 	struct SERVICE_EVENT_INFO{
-		map<WORD, std::unique_ptr<EVENT_INFO>> eventMap;
-		std::unique_ptr<EVENT_INFO> nowEvent;
-		std::unique_ptr<EVENT_INFO> nextEvent;
+		map<WORD, EVENT_INFO> eventMap;
+		vector<EVENT_INFO> nowEvent;
+		vector<EVENT_INFO> nextEvent;
 		BYTE lastTableID;
 		BYTE lastTableIDExt;
 		vector<SECTION_FLAG_INFO> sectionList;	//添え字はテーブル番号(0～7)
@@ -140,73 +141,53 @@ protected:
 			lastTableIDExt = 0;
 			sectionList.resize(8);
 		}
-		SERVICE_EVENT_INFO(SERVICE_EVENT_INFO&& o){
-			*this = std::move(o);
-		}
-		SERVICE_EVENT_INFO& operator=(SERVICE_EVENT_INFO&& o){
-			eventMap.swap(o.eventMap);
-			nowEvent.swap(o.nowEvent);
-			nextEvent.swap(o.nextEvent);
-			lastTableID = o.lastTableID;
-			lastTableIDExt = o.lastTableIDExt;
-			sectionList.swap(o.sectionList);
-			sectionExtList.swap(o.sectionExtList);
-			return *this;
-		}
 	};
 	map<ULONGLONG, SERVICE_EVENT_INFO> serviceEventMap;
 	map<ULONGLONG, BYTE> serviceList;
 
-	typedef struct _DB_SERVICE_INFO{
-		WORD original_network_id;	//original_network_id
-		WORD transport_stream_id;	//transport_stream_id
-		WORD service_id;			//service_id
-		BYTE service_type;
-		BYTE partialReceptionFlag;
-		wstring service_provider_name;
-		wstring service_name;
-		_DB_SERVICE_INFO(void){
-			service_type = 0;
-			partialReceptionFlag = FALSE;
-			service_provider_name = L"";
-			service_name = L"";
-		};
-	}DB_SERVICE_INFO;
-	typedef struct _DB_TS_INFO{
-		WORD original_network_id;	//original_network_id
-		WORD transport_stream_id;	//transport_stream_id
+	struct DB_TS_INFO{
 		wstring network_name;
 		wstring ts_name;
 		BYTE remote_control_key_id;
-		map<WORD,DB_SERVICE_INFO> serviceList;
-		_DB_TS_INFO(void){
-			network_name = L"";
-			ts_name = L"";
-			remote_control_key_id = 0;
-		};
-	}DB_TS_INFO;
+		map<WORD, EPGDB_SERVICE_INFO> serviceList;	//network_name,ts_name,remote_control_key_idは未使用
+	};
 	map<DWORD, DB_TS_INFO> serviceInfoList;
 
-	std::unique_ptr<EPG_EVENT_INFO[]> epgInfoList;
+	class CEventInfoStore
+	{
+	public:
+		void Update() {
+			data.reset(new EPG_EVENT_INFO[db.size()]);
+			adapter.reset(new CEpgEventInfoAdapter[db.size()]);
+			for( size_t i = 0; i < db.size(); i++ ){
+				data[i] = adapter[i].Create(&db[i]);
+			}
+		}
+		vector<EPGDB_EVENT_INFO> db;
+		std::unique_ptr<EPG_EVENT_INFO[]> data;
+	private:
+		std::unique_ptr<CEpgEventInfoAdapter[]> adapter;
+	};
+	CEventInfoStore epgInfoList;
 
-	std::unique_ptr<EPG_EVENT_INFO> epgInfo;
+	CEventInfoStore epgInfo;
 
-	std::unique_ptr<EPG_EVENT_INFO> searchEpgInfo;
+	CEventInfoStore searchEpgInfo;
 
-	std::unique_ptr<SERVICE_INFO[]> serviceDBList;
+	std::unique_ptr<SERVICE_INFO[]> serviceDataList;
+	std::unique_ptr<EPGDB_SERVICE_INFO[]> serviceDBList;
+	std::unique_ptr<CServiceInfoAdapter[]> serviceAdapterList;
 protected:
 	void Clear();
 	
-	static void AddBasicInfo(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList, WORD onid, WORD tsid);
-	static void AddShortEvent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* shortEvent);
-	static BOOL AddExtEvent(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList);
-	static void AddContent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* content);
-	static void AddComponent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* component);
-	static BOOL AddAudioComponent(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList);
-	static void AddEventGroup(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
-	static void AddEventRelay(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
+	static void AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent, WORD onid, WORD tsid);
+	static void AddShortEvent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
+	static BOOL AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent);
+	static void AddContent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
+	static void AddComponent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
+	static BOOL AddAudioComponent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent);
+	static void AddEventGroup(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp, WORD onid, WORD tsid);
+	static void AddEventRelay(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp, WORD onid, WORD tsid);
 
 	static BOOL CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList);
-
-	void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo);
 };

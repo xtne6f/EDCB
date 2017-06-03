@@ -84,18 +84,14 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 		return FALSE;
 	}
 
-	wstring iniAppPath = L"";
-	GetModuleIniPath(iniAppPath);
+	fs_path iniAppPath = GetModuleIniPath();
 	if( GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniAppPath.c_str()) == 0 ){
 		return FALSE;
 	}
 	_OutputDebugString(L"ÅöSyoboiCalUtil:SendReserve");
 
-	wstring textPath;
-	GetModuleFolderPath(textPath);
-	textPath += L"\\SyoboiCh.txt";
 	CParseServiceChgText srvChg;
-	srvChg.ParseText(textPath.c_str());
+	srvChg.ParseText(GetModulePath().replace_filename(L"SyoboiCh.txt").c_str());
 
 	wstring proxyServerName;
 	wstring proxyUserName;

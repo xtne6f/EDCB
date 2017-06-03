@@ -30,6 +30,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == ''">v100</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -37,6 +38,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == ''">Windows7.1SDK</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -45,6 +47,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == ''">v100</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -53,6 +56,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == ''">Windows7.1SDK</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -100,6 +104,9 @@
       <AdditionalDependencies>lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -115,6 +122,9 @@
       <AdditionalDependencies>lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -135,6 +145,9 @@
       <AdditionalDependencies>lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -155,6 +168,9 @@
       <AdditionalDependencies>lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="EpgTimerSrv.ico" />
@@ -167,7 +183,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h" />
     <ClInclude Include="..\..\BonCtrl\PacketInit.h" />
-    <ClInclude Include="..\..\BonCtrl\PMTUtil.h" />
     <ClInclude Include="..\..\BonCtrl\SendTCP.h" />
     <ClInclude Include="..\..\BonCtrl\SendUDP.h" />
     <ClInclude Include="..\..\Common\CommonDef.h" />
@@ -191,7 +206,6 @@
     <ClInclude Include="..\..\Common\TCPServer.h" />
     <ClInclude Include="..\..\Common\TimeShiftUtil.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
-    <ClInclude Include="..\..\Common\TSBuffUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
     <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="BatManager.h" />
@@ -200,8 +214,8 @@
     <ClInclude Include="EpgDBManager.h" />
     <ClInclude Include="EpgTimerSrv.h" />
     <ClInclude Include="EpgTimerSrvMain.h" />
+    <ClInclude Include="EpgTimerSrvSetting.h" />
     <ClInclude Include="FileStreamingManager.h" />
-    <ClInclude Include="FileStreamingUtil.h" />
     <ClInclude Include="HttpServer.h" />
     <ClInclude Include="lauxlib.h" />
     <ClInclude Include="lua.h" />
@@ -221,7 +235,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp" />
     <ClCompile Include="..\..\BonCtrl\PacketInit.cpp" />
-    <ClCompile Include="..\..\BonCtrl\PMTUtil.cpp" />
     <ClCompile Include="..\..\BonCtrl\SendTCP.cpp" />
     <ClCompile Include="..\..\BonCtrl\SendUDP.cpp" />
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
@@ -238,7 +251,6 @@
     <ClCompile Include="..\..\Common\TCPServer.cpp" />
     <ClCompile Include="..\..\Common\TimeShiftUtil.cpp" />
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
-    <ClCompile Include="..\..\Common\TSBuffUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
     <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="BatManager.cpp" />
@@ -255,8 +267,8 @@
     <ClCompile Include="EpgDBManager.cpp" />
     <ClCompile Include="EpgTimerSrv.cpp" />
     <ClCompile Include="EpgTimerSrvMain.cpp" />
+    <ClCompile Include="EpgTimerSrvSetting.cpp" />
     <ClCompile Include="FileStreamingManager.cpp" />
-    <ClCompile Include="FileStreamingUtil.cpp" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
     <ClCompile Include="ReserveManager.cpp" />

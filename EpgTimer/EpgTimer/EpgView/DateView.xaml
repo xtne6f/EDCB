@@ -6,18 +6,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type ListBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>        
@@ -27,7 +15,10 @@
             <RowDefinition Height="20" />
             <RowDefinition Height="20" />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Name="stackPanel_day" Orientation="Horizontal" />
-        <StackPanel Grid.Row="1" Name="stackPanel_time" Orientation="Horizontal" />            
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Name="columnDefinition" Width="*" />
+        </Grid.ColumnDefinitions>
+        <UniformGrid Grid.Row="0" Name="uniformGrid_day" Rows="1" />
+        <UniformGrid Grid.Row="1" Name="uniformGrid_time" Rows="1" />
     </Grid>
 </UserControl>

@@ -4,9 +4,6 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class ServiceItem : INotifyPropertyChanged
@@ -49,23 +46,7 @@ namespace EpgTimer
         }
         public String NetworkName
         {
-            get
-            {
-                String name = "その他";
-                if (ServiceInfo.ONID == 0x0004)
-                {
-                    name = "BS";
-                }
-                else if (ServiceInfo.ONID == 0x0006 || ServiceInfo.ONID == 0x0007)
-                {
-                    name = "CS";
-                }
-                else if (0x7880 <= ServiceInfo.ONID && ServiceInfo.ONID <= 0x7FE8)
-                {
-                    name = "地デジ";
-                }
-                return name;
-            }
+            get { return CommonManager.ConvertNetworkNameText(ServiceInfo.ONID); }
         }
     }
 }

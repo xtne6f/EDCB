@@ -138,13 +138,7 @@
     <ClInclude Include="..\..\Common\TCPServer.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="FileStreamingUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\TimeShiftUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\TSBuffUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\TSPacketUtil.h">
@@ -160,9 +154,6 @@
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\BonCtrl\PacketInit.h">
-      <Filter>ヘッダー ファイル\BonCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BonCtrl\PMTUtil.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\BonCtrl\SendTCP.h">
@@ -205,6 +196,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="UpnpSsdpServer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="EpgTimerSrvSetting.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -272,13 +266,7 @@
     <ClCompile Include="..\..\Common\TCPServer.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="FileStreamingUtil.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\TimeShiftUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\TSBuffUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp">
@@ -291,9 +279,6 @@
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\PacketInit.cpp">
-      <Filter>ソース ファイル\BonCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BonCtrl\PMTUtil.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\SendTCP.cpp">
@@ -318,6 +303,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="UpnpSsdpServer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="EpgTimerSrvSetting.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

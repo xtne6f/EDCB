@@ -4,10 +4,9 @@
 #include "ErrDef.h"
 #include "StructDef.h"
 
-#define SAVE_FOLDER L"\\EpgTimerBon"
-#define EPG_SAVE_FOLDER L"\\EpgData"
-#define LOGO_SAVE_FOLDER L"\\LogoData"
-#define BON_DLL_FOLDER L"\\BonDriver"
+#define EPG_SAVE_FOLDER L"EpgData"
+#define LOGO_SAVE_FOLDER L"LogoData"
+#define BON_DLL_FOLDER L"BonDriver"
 
 #define RESERVE_TEXT_NAME L"Reserve.txt"
 #define REC_INFO_TEXT_NAME L"RecInfo.txt"
@@ -54,28 +53,13 @@
 #define VIEW_APP_ST_GET_EPG				3 //EPG取得状態
 #define VIEW_APP_ST_ERR_CH_CHG			4 //チャンネル切り替え失敗状態
 
-#define REC_END_STATUS_NORMAL		1		//正常終了
-#define REC_END_STATUS_OPEN_ERR		2		//チューナーのオープンができなかった
-#define REC_END_STATUS_ERR_END		3		//録画中にエラーが発生した
-#define REC_END_STATUS_NEXT_START_END	4	//次の予約開始のため終了
-#define REC_END_STATUS_START_ERR	5		//開始時間が過ぎていた
-#define REC_END_STATUS_CHG_TIME		6		//開始時間が変更された
-#define REC_END_STATUS_NO_TUNER		7		//チューナーが足りなかった
-#define REC_END_STATUS_NO_RECMODE	8		//無効扱いだった
-#define REC_END_STATUS_NOT_FIND_PF	9		//p/fに番組情報確認できなかった
-#define REC_END_STATUS_NOT_FIND_6H	10		//6時間番組情報確認できなかった
-#define REC_END_STATUS_END_SUBREC	11		//サブフォルダへの録画が発生した
-#define REC_END_STATUS_ERR_RECSTART 12		//録画開始に失敗した
-#define REC_END_STATUS_NOT_START_HEAD 13	//一部のみ録画された
-#define REC_END_STATUS_ERR_CH_CHG	14		//チャンネル切り替えに失敗した
-#define REC_END_STATUS_ERR_END2		15		//録画中にエラーが発生した(Writeでexception)
-
 //NotifyID
 #define NOTIFY_UPDATE_EPGDATA		1		//EPGデータが更新された
 #define NOTIFY_UPDATE_RESERVE_INFO	2		//予約情報が更新された
 #define NOTIFY_UPDATE_REC_INFO	3			//録画結果情報が更新された
 #define NOTIFY_UPDATE_AUTOADD_EPG	4		//EPG自動予約登録情報が更新された
 #define NOTIFY_UPDATE_AUTOADD_MANUAL	5	//プログラム自動予約登録情報が更新された
+#define NOTIFY_UPDATE_PROFILE		51		//設定ファイル(ini)が更新された
 #define NOTIFY_UPDATE_SRV_STATUS	100		//Srvの動作状況が変更（param1:ステータス 0:通常、1:録画中、2:EPG取得中）
 #define NOTIFY_UPDATE_PRE_REC_START	101		//録画準備開始（param4:ログ用メッセージ）
 #define NOTIFY_UPDATE_REC_START		102		//録画開始（param4:ログ用メッセージ）

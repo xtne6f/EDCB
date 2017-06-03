@@ -4,7 +4,7 @@
 #include "../Common/StructDef.h"
 #include "../Common/ErrDef.h"
 #include "../Common/StringUtil.h"
-#include "../Common//WritePlugInUtil.h"
+#include "../Common/WritePlugInUtil.h"
 #include <list>
 
 class CWriteTSFile
@@ -23,11 +23,11 @@ public:
 	// saveFolder			[IN]使用するフォルダ一覧
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 	BOOL StartSave(
-		wstring fileName,
+		const wstring& fileName,
 		BOOL overWriteFlag,
 		ULONGLONG createSize,
-		vector<REC_FILE_SET_INFO>* saveFolder,
-		vector<wstring>* saveFolderSub,
+		const vector<REC_FILE_SET_INFO>* saveFolder,
+		const vector<wstring>* saveFolderSub,
 		int maxBuffCount
 	);
 
@@ -64,16 +64,6 @@ public:
 		);
 
 protected:
-	/*
-	HANDLE OpenFile(
-		wstring recFolderPath,
-		wstring recFileName,
-		BOOL overWriteFlag,
-		ULONGLONG createSize,
-		BOOL chkFree,
-		wstring& recFilePath
-		);
-*/
 	//保存サブフォルダから空きのあるフォルダパスを取得
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
@@ -98,8 +88,6 @@ protected:
 
 	static UINT WINAPI OutThread(LPVOID param);
 
-	BOOL GetNextFileName(wstring recFolder, wstring fileName, wstring& recPath);
-
 protected:
 	CRITICAL_SECTION outThreadLock;
 	std::list<vector<BYTE>> tsBuffList;
@@ -108,14 +96,14 @@ protected:
 	BOOL outStopFlag;
 	BOOL outStartFlag;
 
-	typedef struct _SAVE_INFO{
-		CWritePlugInUtil* writeUtil;
+	struct SAVE_INFO {
+		CWritePlugInUtil writeUtil;
 		BOOL freeChk;
 		wstring writePlugIn;
 		wstring recFolder;
 		wstring recFileName;
-	}SAVE_INFO;
-	vector<SAVE_INFO> fileList;
+	};
+	vector<std::unique_ptr<SAVE_INFO>> fileList;
 
 	BOOL overWriteFlag;
 	ULONGLONG createSize;

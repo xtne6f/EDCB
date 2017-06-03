@@ -1,6 +1,9 @@
 #include "StdAfx.h"
 #include "DropCount.h"
 #include "../Common/StringUtil.h"
+#include "../Common/TimeUtil.h"
+#include <stdio.h>
+#include <share.h>
 
 
 CDropCount::CDropCount(void)
@@ -46,7 +49,7 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 		    this->lastLogScramble < this->scramble ){
 			string logline;
 			SYSTEMTIME now;
-			GetLocalTime(&now);
+			ConvertSystemTime(GetNowI64Time(), &now);
 			Format(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%I64d Scramble:%I64d Signal: %.02f\r\n",
 				now.wYear,
 				now.wMonth,
@@ -88,7 +91,7 @@ void CDropCount::SetSignal(float level)
 	this->signalLv = level;
 }
 
-void CDropCount::SetBonDriver(wstring bonDriver)
+void CDropCount::SetBonDriver(const wstring& bonDriver)
 {
 	this->bonFile = bonDriver;
 }
@@ -168,19 +171,12 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 	info->lastCounter = continuity_counter;
 }
 
-void CDropCount::SaveLog(wstring filePath)
+void CDropCount::SaveLog(const wstring& filePath)
 {
-	HANDLE file = _CreateDirectoryAndFile( filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( file != INVALID_HANDLE_VALUE ){
-		DWORD write;
-
-		string buff;
-		if( this->log.empty() == false ){
-			WriteFile(file, this->log.c_str(), (DWORD)this->log.size(), &write, NULL );
-		}
-
-		buff = "\r\n";
-		WriteFile(file, buff.c_str(), (DWORD)buff.size(), &write, NULL );
+	//※原作と異なりディレクトリの自動生成はしない
+	std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(filePath.c_str(), L"wb", _SH_DENYWR), fclose);
+	if( fp ){
+		fprintf(fp.get(), "%s\r\n", this->log.c_str());
 
 		map<WORD, DROP_INFO>::iterator itr;
 		for( itr = this->infoMap.begin(); itr != this->infoMap.end(); itr++ ){
@@ -253,17 +249,13 @@ void CDropCount::SaveLog(wstring filePath)
 				}
 				break;
 			}
-			Format(buff, "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d  %s\r\n",
+			fprintf(fp.get(), "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d  %s\r\n",
 				itr->first, itr->second.total, itr->second.drop, itr->second.scramble, desc.c_str() );
-			WriteFile(file, buff.c_str(), (DWORD)buff.size(), &write, NULL );
 		}
 
 		string strA;
 		WtoA(bonFile, strA);
-		Format(buff, "\r\n使用BonDriver : %s\r\n", strA.c_str());
-		WriteFile(file, buff.c_str(), (DWORD)buff.size(), &write, NULL );
-
-		CloseHandle(file);
+		fprintf(fp.get(), "\r\n使用BonDriver : %s\r\n", strA.c_str());
 	}
 }
 

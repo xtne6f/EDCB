@@ -21,7 +21,7 @@ namespace EpgTimer
             StopServer();
         }
 
-        public bool StartServer(string strEventName, string strPipeName, CMD_CALLBACK_PROC pfnCmdProc, object pParam)
+        public bool StartServer(string strEventName, string strPipeName, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
         {
             if (pfnCmdProc == null || strEventName.Length == 0 || strPipeName.Length == 0)
             {
@@ -68,7 +68,7 @@ namespace EpgTimer
                                 if (stCmd.uiSize == 0 || pipe.Read(stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length)
                                 {
                                     CMD_STREAM stRes = new CMD_STREAM();
-                                    pfnCmdProc.Invoke(pParam, stCmd, ref stRes);
+                                    pfnCmdProc.Invoke(stCmd, stRes);
                                     if (stRes.uiParam == (uint)ErrCode.CMD_NEXT)
                                     {
                                         // Emun用の繰り返しは対応しない

@@ -31,5 +31,7 @@
             </ListView.View>
         </ListView>
         <Button Content="ファイルに保存する" Height="23" HorizontalAlignment="Left" Margin="112,12,0,0" Name="button_save" VerticalAlignment="Top" Width="130" Click="button_save_Click" />
+        <Label Content="表示行数" Height="28" HorizontalAlignment="Left" Margin="260,10,0,0" VerticalAlignment="Top" IsEnabled="{Binding Path=IsEnabled, ElementName=textBox_logMax, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBox Height="23" HorizontalAlignment="Left" Margin="330,12,0,0" Name="textBox_logMax" VerticalAlignment="Top" Width="60" TextChanged="textBox_logMax_TextChanged" />
     </Grid>
 </Window>

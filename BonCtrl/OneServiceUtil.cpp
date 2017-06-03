@@ -6,10 +6,6 @@ COneServiceUtil::COneServiceUtil(void)
 {
 	this->SID = 0xFFFF;
 
-	this->sendUdp = NULL;
-	this->sendTcp = NULL;
-	this->writeFile = NULL;
-
 	this->pmtPID = 0xFFFF;
 
 	this->enableScramble = TRUE;
@@ -23,9 +19,8 @@ COneServiceUtil::COneServiceUtil(void)
 
 COneServiceUtil::~COneServiceUtil(void)
 {
-	SAFE_DELETE(this->sendUdp);
-	SAFE_DELETE(this->sendTcp);
-	SAFE_DELETE(this->writeFile);
+	SendUdp(NULL);
+	SendTcp(NULL);
 }
 
 void COneServiceUtil::SetEpgUtil(
@@ -75,7 +70,6 @@ BOOL COneServiceUtil::SendUdp(
 
 	if(udpPortMutex.size() != 0){
 		for( int i=0; i<(int)udpPortMutex.size(); i++ ){
-			::ReleaseMutex(udpPortMutex[i]);
 			::CloseHandle(udpPortMutex[i]);
 		}
 		udpPortMutex.clear();
@@ -83,15 +77,21 @@ BOOL COneServiceUtil::SendUdp(
 
 	if( sendList != NULL ){
 		if( this->sendUdp == NULL ){
-			this->sendUdp = new CSendUDP;
+			this->sendUdp.reset(new CSendUDP);
 		}
 		for( size_t i=0; i<sendList->size(); i++ ){
 			wstring key = L"";
 			HANDLE portMutex;
 
-			while(1){
-				Format(key, L"%s%d_%d", MUTEX_UDP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
-				portMutex = CreateMutex(NULL, TRUE, key.c_str());
+			//生成できなくても深刻ではないのでほどほどに打ち切る
+			for( int j = 0; j < 100; j++ ){
+				UINT u[4];
+				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
+					Format(key, L"%s%d_%d", MUTEX_UDP_PORT_NAME, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
+				}else{
+					Format(key, L"%s%s_%d", MUTEX_UDP_PORT_NAME, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+				}
+				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		
 				if( portMutex == NULL ){
 					(*sendList)[i].port++;
@@ -99,17 +99,16 @@ BOOL COneServiceUtil::SendUdp(
 					CloseHandle(portMutex);
 					(*sendList)[i].port++;
 				}else{
+					_OutputDebugString(L"%s\r\n", key.c_str());
+					this->udpPortMutex.push_back(portMutex);
 					break;
 				}
 			}
-
-			_OutputDebugString(L"%s\r\n", key.c_str());
-			udpPortMutex.push_back(portMutex);
 		}
 
 		this->sendUdp->StartUpload(sendList);
 	}else{
-		SAFE_DELETE(this->sendUdp);
+		this->sendUdp.reset();
 	}
 
 	return TRUE;
@@ -130,7 +129,6 @@ BOOL COneServiceUtil::SendTcp(
 
 	if(tcpPortMutex.size() != 0){
 		for( int i=0; i<(int)tcpPortMutex.size(); i++ ){
-			::ReleaseMutex(tcpPortMutex[i]);
 			::CloseHandle(tcpPortMutex[i]);
 		}
 		tcpPortMutex.clear();
@@ -138,15 +136,21 @@ BOOL COneServiceUtil::SendTcp(
 
 	if( sendList != NULL ){
 		if( this->sendTcp == NULL ){
-			this->sendTcp = new CSendTCP;
+			this->sendTcp.reset(new CSendTCP);
 		}
 		for( size_t i=0; i<sendList->size(); i++ ){
 			wstring key = L"";
 			HANDLE portMutex;
 
-			while(1){
-				Format(key, L"%s%d_%d", MUTEX_TCP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
-				portMutex = CreateMutex(NULL, TRUE, key.c_str());
+			//生成できなくても深刻ではないのでほどほどに打ち切る
+			for( int j = 0; j < 100; j++ ){
+				UINT u[4];
+				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
+					Format(key, L"%s%d_%d", MUTEX_TCP_PORT_NAME, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
+				}else{
+					Format(key, L"%s%s_%d", MUTEX_TCP_PORT_NAME, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+				}
+				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		
 				if( portMutex == NULL ){
 					(*sendList)[i].port++;
@@ -154,17 +158,16 @@ BOOL COneServiceUtil::SendTcp(
 					CloseHandle(portMutex);
 					(*sendList)[i].port++;
 				}else{
+					_OutputDebugString(L"%s\r\n", key.c_str());
+					this->tcpPortMutex.push_back(portMutex);
 					break;
 				}
 			}
-
-			_OutputDebugString(L"%s\r\n", key.c_str());
-			tcpPortMutex.push_back(portMutex);
 		}
 
 		this->sendTcp->StartUpload(sendList);
 	}else{
-		SAFE_DELETE(this->sendTcp);
+		this->sendTcp.reset();
 	}
 
 	return TRUE;
@@ -213,7 +216,7 @@ BOOL COneServiceUtil::AddTSBuff(
 				}else if( packet.PID == this->pmtPID ){
 					//PMT
 					DWORD err = createPmt.AddData(&packet);
-					if( err == NO_ERR || err == ERR_NO_CHAGE ){
+					if( err == NO_ERR || err == CCreatePMTPacket::ERR_NO_CHAGE ){
 						BYTE* pmtBuff = NULL;
 						DWORD pmtBuffSize = 0;
 						if( createPmt.GetPacket(&pmtBuff, &pmtBuffSize) == TRUE ){
@@ -333,10 +336,10 @@ void COneServiceUtil::SetPmtPID(
 }
 
 void COneServiceUtil::SetEmmPID(
-	map<WORD,WORD>* PIDMap
+	const map<WORD,WORD>& PIDMap
 	)
 {
-	this->emmPIDMap = *PIDMap;
+	this->emmPIDMap = PIDMap;
 }
 
 //ファイル保存を開始する
@@ -354,7 +357,7 @@ void COneServiceUtil::SetEmmPID(
 // saveFolder			[IN]使用するフォルダ一覧
 // saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 BOOL COneServiceUtil::StartSave(
-	wstring fileName,
+	const wstring& fileName,
 	BOOL overWriteFlag,
 	BOOL pittariFlag,
 	WORD pittariONID,
@@ -362,8 +365,8 @@ BOOL COneServiceUtil::StartSave(
 	WORD pittariSID,
 	WORD pittariEventID,
 	ULONGLONG createSize,
-	vector<REC_FILE_SET_INFO>* saveFolder,
-	vector<wstring>* saveFolderSub,
+	const vector<REC_FILE_SET_INFO>* saveFolder,
+	const vector<wstring>* saveFolderSub,
 	int maxBuffCount
 )
 {
@@ -374,7 +377,7 @@ BOOL COneServiceUtil::StartSave(
 			this->pittariStart = FALSE;
 			this->pittariEndChk = FALSE;
 
-			this->writeFile = new CWriteTSFile;
+			this->writeFile.reset(new CWriteTSFile);
 			return this->writeFile->StartSave(fileName, overWriteFlag, createSize, saveFolder, saveFolderSub, maxBuffCount);
 		}
 	}else{
@@ -408,7 +411,7 @@ void COneServiceUtil::StratPittariRec()
 {
 	if( this->writeFile == NULL ){
 		OutputDebugString(L"*:StratPittariRec");
-		this->writeFile = new CWriteTSFile;
+		this->writeFile.reset(new CWriteTSFile);
 		this->writeFile->StartSave(this->fileName, this->overWriteFlag, this->createSize, &this->saveFolder, &this->saveFolderSub, this->maxBuffCount);
 	}
 }
@@ -437,7 +440,7 @@ BOOL COneServiceUtil::EndSave()
 		return FALSE;
 	}
 	BOOL ret = this->writeFile->EndSave();
-	SAFE_DELETE(this->writeFile);
+	this->writeFile.reset();
 	OutputDebugString(L"*:EndSave");
 	return ret;
 }
@@ -526,7 +529,7 @@ void COneServiceUtil::GetSaveFilePath(
 //引数：
 // filePath			[IN]保存ファイル名
 void COneServiceUtil::SaveErrCount(
-	wstring filePath
+	const wstring& filePath
 	)
 {
 	this->dropCount.SaveLog(filePath);
@@ -542,7 +545,7 @@ void COneServiceUtil::SetSignalLevel(
 
 //録画中のファイルの出力サイズを取得する
 //引数：
-// writeSize			[OUT]保存ファイル名
+// writeSize			[OUT]出力サイズ
 void COneServiceUtil::GetRecWriteSize(
 	__int64* writeSize
 	)
@@ -553,15 +556,15 @@ void COneServiceUtil::GetRecWriteSize(
 }
 
 void COneServiceUtil::SetBonDriver(
-	wstring bonDriver
+	const wstring& bonDriver
 	)
 {
 	this->dropCount.SetBonDriver(bonDriver);
 }
 
 void COneServiceUtil::SetPIDName(
-	map<WORD, string>* pidName
+	const map<WORD, string>& pidName
 	)
 {
-	this->dropCount.SetPIDName(pidName);
+	this->dropCount.SetPIDName(&pidName);
 }

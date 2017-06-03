@@ -1,8 +1,4 @@
 #pragma once
-#include <map>
-using std::wstring;
-using std::pair;
-using std::map;
 
 class CCmdLineUtil
 {

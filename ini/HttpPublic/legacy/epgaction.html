@@ -1,0 +1,34 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<div id="result">]=]
+
+post=ReadPost()
+
+AssertCsrf(post)
+
+if post then
+  if mg.get_var(mg.request_info.query_string, 'reload') then
+    ct=ct..'EPG再読み込みを開始'..(edcb.ReloadEpg() and 'しました' or 'できませんでした')
+  elseif mg.get_var(mg.request_info.query_string, 'epgcap') then
+    ct=ct..'EPG取得開始'..(edcb.EpgCapNow() and 'しました' or 'できませんでした')
+  end
+end
+
+ct=ct..[=[
+</div>
+<div id="footer">
+  <a href="epg.html">番組表</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

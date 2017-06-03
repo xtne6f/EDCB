@@ -27,9 +27,7 @@ private:
 	//シャットダウン問い合わせダイアログ
 	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void ReloadNetworkSetting();
-	void ReloadSetting();
-	//プリセット録画設定を読み込む(旧CRestApiManagerから移動)
-	pair<wstring, REC_SETTING_DATA> LoadRecSetData(WORD preset) const;
+	void ReloadSetting(bool initialize = false);
 	//現在の予約状態に応じた復帰タイマをセットする
 	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
 	//システムをシャットダウンする
@@ -50,6 +48,7 @@ private:
 	static int CALLBACK CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
 	static int CALLBACK CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
 	static int CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
+	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam);
 	static int InitLuaCallback(lua_State* L);
 	//Lua-edcb空間のコールバック
 	class CLuaWorkspace
@@ -74,12 +73,12 @@ private:
 	static int LuaEpgCapNow(lua_State* L);
 	static int LuaGetChDataList(lua_State* L);
 	static int LuaGetServiceList(lua_State* L);
-	static void LuaGetEventMinMaxTimeCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param);
 	static int LuaGetEventMinMaxTime(lua_State* L);
-	static void LuaEnumEventInfoCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param);
-	static void LuaEnumEventAllCallback(vector<const EPGDB_SERVICE_EVENT_INFO*>* pval, void* param);
+	static int LuaGetEventMinMaxTimeArchive(lua_State* L);
+	static int LuaGetEventMinMaxTimeProc(lua_State* L, bool archive);
 	static int LuaEnumEventInfo(lua_State* L);
-	static void LuaSearchEpgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param);
+	static int LuaEnumEventInfoArchive(lua_State* L);
+	static int LuaEnumEventInfoProc(lua_State* L, bool archive);
 	static int LuaSearchEpg(lua_State* L);
 	static int LuaAddReserveData(lua_State* L);
 	static int LuaChgReserveData(lua_State* L);
@@ -92,7 +91,6 @@ private:
 	static int LuaChgProtectRecFileInfo(lua_State* L);
 	static int LuaDelRecFileInfo(lua_State* L);
 	static int LuaGetTunerReserveAll(lua_State* L);
-	static int LuaEnumRecPresetInfo(lua_State* L);
 	static int LuaEnumAutoAdd(lua_State* L);
 	static int LuaEnumManuAdd(lua_State* L);
 	static int LuaDelAutoAdd(lua_State* L);
@@ -100,7 +98,7 @@ private:
 	static int LuaAddOrChgAutoAdd(lua_State* L);
 	static int LuaAddOrChgManuAdd(lua_State* L);
 	static int LuaGetNotifyUpdateCount(lua_State* L);
-	static int LuaListDmsPublicFile(lua_State* L);
+	static int LuaFindFile(lua_State* L);
 	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
 	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);
 	static void PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_DATA& rs);
@@ -122,26 +120,13 @@ private:
 	HWND hwndMain;
 
 	bool residentFlag;
-	bool saveNotifyLog;
-	DWORD wakeMarginSec;
+	CEpgTimerSrvSetting::SETTING setting;
 	unsigned short tcpPort;
 	DWORD tcpResponseTimeoutSec;
 	wstring tcpAccessControlList;
 	CHttpServer::SERVER_OPTIONS httpOptions;
 	string httpServerRandom;
-	bool enableSsdpServer;
-	vector<pair<int, wstring>> dmsPublicFileList;
-	int autoAddHour;
-	bool chkGroupEvent;
 	bool useSyoboi;
-	//LOBYTEにモード(1=スタンバイ,2=休止,3=電源断,4=なにもしない)、HIBYTEに再起動フラグ
-	WORD defShutdownMode;
-	DWORD ngUsePCTime;
-	bool ngFileStreaming;
-	bool ngShareFile;
-	DWORD noStandbySec;
-	vector<wstring> noSuspendExeList;
-	vector<wstring> tvtestUseBon;
 	bool nwtvUdp;
 	bool nwtvTcp;
 	DWORD notifyUpdateCount[6];

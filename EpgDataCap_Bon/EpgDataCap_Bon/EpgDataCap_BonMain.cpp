@@ -53,30 +53,18 @@ void CEpgDataCap_BonMain::SetHwnd(HWND wnd)
 //設定を行う
 void CEpgDataCap_BonMain::ReloadSetting()
 {
-	wstring commonIniPath = L"";
-	GetCommonIniPath(commonIniPath);
+	fs_path commonIniPath = GetCommonIniPath();
 
-	wstring appIniPath = L"";
-	GetModuleIniPath(appIniPath);
+	fs_path appIniPath = GetModuleIniPath();
 
-	wstring settingPath = L"";
-	GetSettingPath(settingPath);
-
-	wstring bonDriverPath = L"";
-	GetModuleFolderPath(bonDriverPath);
-	bonDriverPath += BON_DLL_FOLDER;
-
-	this->bonCtrl.SetBonDriverFolder( bonDriverPath.c_str() );
+	this->bonCtrl.SetBonDriverFolder(GetModulePath().replace_filename(BON_DLL_FOLDER).c_str());
 
 	this->recFolderList.clear();
-	int iNum = GetPrivateProfileInt( L"SET", L"RecFolderNum", 0, commonIniPath.c_str() );
-	if( iNum == 0 ){
-		this->recFolderList.push_back( settingPath );
-	}else{
-		for( int i = 0; i < iNum; i++ ){
-			WCHAR key[64];
-			wsprintf(key, L"RecFolderPath%d", i );
-			this->recFolderList.push_back(GetPrivateProfileToString( L"SET", key, L"", commonIniPath.c_str() ));
+	for( int i = 0; ; i++ ){
+		this->recFolderList.push_back(GetRecFolderPath(i).native());
+		if( this->recFolderList.back().empty() ){
+			this->recFolderList.pop_back();
+			break;
 		}
 	}
 
@@ -206,10 +194,10 @@ DWORD CEpgDataCap_BonMain::SetCh(
 {
 	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
-		if( this->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			this->bonCtrl.StopEpgCap();
 		}
-		err = this->bonCtrl.SetCh(ONID, TSID);
+		err = this->bonCtrl.SetCh(ONID, TSID, SID);
 		if( err == NO_ERR ){
 			this->lastONID = ONID;
 			this->lastTSID = TSID;
@@ -244,7 +232,7 @@ DWORD CEpgDataCap_BonMain::SetCh(
 {
 	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
-		if( this->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			this->bonCtrl.StopEpgCap();
 		}
 		err = this->bonCtrl.SetCh(space, ch);
@@ -309,24 +297,24 @@ BOOL CEpgDataCap_BonMain::SendUDP(
 {
 	this->udpSendList.clear();
 	if( enableFlag == TRUE ){
-		wstring appIniPath = L"";
-		GetModuleIniPath(appIniPath);
+		fs_path appIniPath = GetModuleIniPath();
 
 		int udpCount = GetPrivateProfileInt( L"SET_UDP", L"Count", 0, appIniPath.c_str() );
 		for( int i = 0; i < udpCount; i++ ){
 			NW_SEND_INFO item;
 
 			WCHAR key[64];
-			wsprintf(key, L"IP%d",i);
-			item.ip = GetPrivateProfileInt( L"SET_UDP", key, 2130706433, appIniPath.c_str() );
-			wsprintf(key, L"Port%d",i);
+			swprintf_s(key, L"IP%d", i);
+			item.ipString = GetPrivateProfileToString(L"SET_UDP", key, L"2130706433", appIniPath.c_str());
+			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
+				item.ipString.erase(0, 1).pop_back();
+			}else{
+				UINT ip = _wtoi(item.ipString.c_str());
+				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
+			}
+			swprintf_s(key, L"Port%d", i);
 			item.port = GetPrivateProfileInt( L"SET_UDP", key, 1234, appIniPath.c_str() );
-			Format(item.ipString, L"%d.%d.%d.%d",
-				(item.ip&0xFF000000)>>24,
-				(item.ip&0x00FF0000)>>16,
-				(item.ip&0x0000FF00)>>8,
-				(item.ip&0x000000FF) );
-			wsprintf(key, L"BroadCast%d",i);
+			swprintf_s(key, L"BroadCast%d", i);
 			item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key, 0, appIniPath.c_str() );
 
 			udpSendList.push_back(item);
@@ -376,23 +364,23 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 {
 	this->tcpSendList.clear();
 	if( enableFlag == TRUE ){
-		wstring appIniPath = L"";
-		GetModuleIniPath(appIniPath);
+		fs_path appIniPath = GetModuleIniPath();
 
 		int tcpCount = GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
 		for( int i = 0; i < tcpCount; i++ ){
 			NW_SEND_INFO item;
 
 			WCHAR key[64];
-			wsprintf(key, L"IP%d",i);
-			item.ip = GetPrivateProfileInt( L"SET_TCP", key, 2130706433, appIniPath.c_str() );
-			wsprintf(key, L"Port%d",i);
+			swprintf_s(key, L"IP%d", i);
+			item.ipString = GetPrivateProfileToString(L"SET_TCP", key, L"2130706433", appIniPath.c_str());
+			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
+				item.ipString.erase(0, 1).pop_back();
+			}else{
+				UINT ip = _wtoi(item.ipString.c_str());
+				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
+			}
+			swprintf_s(key, L"Port%d", i);
 			item.port = GetPrivateProfileInt( L"SET_TCP", key, 2230, appIniPath.c_str() );
-			Format(item.ipString, L"%d.%d.%d.%d",
-				(item.ip&0xFF000000)>>24,
-				(item.ip&0x00FF0000)>>16,
-				(item.ip&0x0000FF00)>>8,
-				(item.ip&0x000000FF) );
 			item.broadcastFlag = 0;
 
 			tcpSendList.push_back(item);
@@ -496,9 +484,7 @@ DWORD CEpgDataCap_BonMain::GetEpgInfo(
 	if(epgInfo != NULL ){
 		*epgInfo = L"";
 		if( ret == NO_ERR ){
-			wstring epgText = L"";
-			_ConvertEpgInfoText(&info, epgText);
-			*epgInfo = epgText.c_str();
+			*epgInfo = ConvertEpgInfoText(&info);
 		}
 	}
 
@@ -572,7 +558,7 @@ BOOL CEpgDataCap_BonMain::StartRec(
 
 	wstring fileName = L"";
 	SYSTEMTIME now;
-	GetLocalTime(&now);
+	ConvertSystemTime(GetNowI64Time(), &now);
 	Format(fileName, L"%04d%02d%02d-%02d%02d%02d-%s.ts",
 		now.wYear,
 		now.wMonth,
@@ -641,14 +627,14 @@ DWORD CEpgDataCap_BonMain::StopChScan()
 
 //チャンネルスキャンの状態を取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // space		[OUT]スキャン中の物理CHのspace
 // ch			[OUT]スキャン中の物理CHのch
 // chName		[OUT]スキャン中の物理CHの名前
 // chkNum		[OUT]チェック済みの数
 // totalNum		[OUT]チェック対象の総数
-DWORD CEpgDataCap_BonMain::GetChScanStatus(
+CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetChScanStatus(
 	DWORD* space,
 	DWORD* ch,
 	wstring* chName,
@@ -684,10 +670,10 @@ DWORD CEpgDataCap_BonMain::StopEpgCap(
 
 //EPG取得のステータスを取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // info			[OUT]取得中のサービス
-DWORD CEpgDataCap_BonMain::GetEpgCapStatus(
+CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetEpgCapStatus(
 	EPGCAP_SERVICE_INFO* info
 	)
 {
@@ -706,13 +692,11 @@ void CEpgDataCap_BonMain::ViewAppOpen()
 		wstring strOpen;
 		Format(strOpen, L"\"%s\" %s", this->viewPath.c_str(), this->viewOpt.c_str());
 
-		WCHAR* pszOpen = new WCHAR[strOpen.size() + 1];
-		lstrcpy(pszOpen, strOpen.c_str());
-		CreateProcess( NULL, pszOpen, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
-		delete [] pszOpen;
-
-		CloseHandle(pi.hThread);
-		CloseHandle(pi.hProcess);
+		vector<WCHAR> strBuff(strOpen.c_str(), strOpen.c_str() + strOpen.size() + 1);
+		if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+		}
 	}
 }
 
@@ -799,7 +783,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		OutputDebugString(L"CMD2_VIEW_APP_SET_CH");
 		{
 			if( sys->bonCtrl.IsRec() == FALSE ){
-				if( sys->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+				if( sys->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 					sys->bonCtrl.StopEpgCap();
 				}
 				SET_CH_INFO val;
@@ -841,7 +825,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				val = VIEW_APP_ST_ERR_BON;
 			}else if( sys->bonCtrl.IsRec() == TRUE ){
 				val = VIEW_APP_ST_REC;
-			}else if( sys->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+			}else if( sys->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 				val = VIEW_APP_ST_GET_EPG;
 			}else{
 				//VIEW_APP_ST_NORMAL
@@ -980,18 +964,11 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				BOOL subRec = FALSE;
 				sys->bonCtrl.GetSaveFilePath(val.ctrlID, &saveFile, &subRec);
 				if( saveFile.size() > 0 && val.saveErrLog == 1 ){
-					wstring iniCommonPath = L"";
-					GetCommonIniPath(iniCommonPath);
+					fs_path infoPath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", GetCommonIniPath().c_str());
 
-					wstring infoFolder = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", iniCommonPath.c_str());
-					ChkFolderPath(infoFolder);
-
-					if( infoFolder.size() > 0 ){
-						wstring tsFileName = L"";
-						GetFileName(saveFile, tsFileName);
-						wstring saveFileErr = L"";
-						Format(saveFileErr, L"%s\\%s.err", infoFolder.c_str(), tsFileName.c_str());
-						sys->bonCtrl.SaveErrCount(val.ctrlID, saveFileErr);
+					if( infoPath.empty() == false ){
+						infoPath.append(fs_path(saveFile).filename().concat(L".err").native());
+						sys->bonCtrl.SaveErrCount(val.ctrlID, infoPath.native());
 					}else{
 						wstring saveFileErr = saveFile;
 						saveFileErr += L".err";

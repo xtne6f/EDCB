@@ -183,7 +183,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					DWORD extSize = 0;
 					if( stRes.dataSize > 0 ){
 						extSize = min(stRes.dataSize, sizeof(head) - sizeof(DWORD)*2);
-						memcpy(head + 2, stRes.data, extSize);
+						memcpy(head + 2, stRes.data.get(), extSize);
 					}
 					//ブロッキングモードに変更
 					WSAEventSelect(waitList[i].sock, NULL, 0);
@@ -191,7 +191,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					ioctlsocket(waitList[i].sock, FIONBIO, &x);
 					if( send(waitList[i].sock, (const char*)head, sizeof(DWORD)*2 + extSize, 0) != SOCKET_ERROR ){
 						if( stRes.dataSize > extSize ){
-							send(waitList[i].sock, (const char*)stRes.data + extSize, stRes.dataSize - extSize, 0);
+							send(waitList[i].sock, (const char*)stRes.data.get() + extSize, stRes.dataSize - extSize, 0);
 						}
 					}
 					WSAEventSelect(waitList[i].sock, hEventList[2 + i], FD_READ | FD_CLOSE);
@@ -244,24 +244,31 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					if( RecvAll(sock, (char*)head, sizeof(DWORD)*2, 0) != sizeof(DWORD)*2 ){
 						break;
 					}
+					//第2,3バイトは0でなければならない
+					if( HIWORD(head[0]) != 0 ){
+						_OutputDebugString(L"Deny TCP cmd:0x%08x\r\n", head[0]);
+						break;
+					}
 					stCmd.param = head[0];
 					stCmd.dataSize = head[1];
 
 					if( stCmd.dataSize > 0 ){
-						stCmd.data = new BYTE[stCmd.dataSize];
-						if( RecvAll(sock, (char*)stCmd.data, stCmd.dataSize, 0) != (int)stCmd.dataSize ){
+						stCmd.data.reset(new BYTE[stCmd.dataSize]);
+						if( RecvAll(sock, (char*)stCmd.data.get(), stCmd.dataSize, 0) != (int)stCmd.dataSize ){
 							break;
 						}
 					}
 
-					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP ){
-						string ip = inet_ntoa(client.sin_addr);
+					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
+						char ip[64];
+						if( getnameinfo((struct sockaddr *)&client, sizeof(client), ip, sizeof(ip), NULL, 0, NI_NUMERICHOST) != 0 ){
+							ip[0] = '\0';
+						}
 
 						REGIST_TCP_INFO setParam;
 						AtoW(ip, setParam.ip);
 						ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
 
-						SAFE_DELETE_ARRAY(stCmd.data);
 						stCmd.data = NewWriteVALUE(setParam, stCmd.dataSize);
 					}
 
@@ -275,13 +282,12 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 								waitInfo.cmd = new CMD_STREAM;
 								waitInfo.cmd->param = stCmd.param;
 								waitInfo.cmd->dataSize = stCmd.dataSize;
-								waitInfo.cmd->data = stCmd.data;
+								waitInfo.cmd->data.swap(stCmd.data);
 								waitInfo.tick = GetTickCount();
 								waitList.push_back(waitInfo);
 								hEventList.push_back(WSACreateEvent());
 								WSAEventSelect(sock, hEventList.back(), FD_READ | FD_CLOSE);
 								sock = INVALID_SOCKET;
-								stCmd.data = NULL;
 							}
 						}
 						break;
@@ -291,10 +297,10 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					DWORD extSize = 0;
 					if( stRes.dataSize > 0 ){
 						extSize = min(stRes.dataSize, sizeof(head) - sizeof(DWORD)*2);
-						memcpy(head + 2, stRes.data, extSize);
+						memcpy(head + 2, stRes.data.get(), extSize);
 					}
 					if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) == SOCKET_ERROR ||
-					    stRes.dataSize > extSize && send(sock, (char*)stRes.data + extSize, stRes.dataSize - extSize, 0) == SOCKET_ERROR ){
+					    stRes.dataSize > extSize && send(sock, (char*)stRes.data.get() + extSize, stRes.dataSize - extSize, 0) == SOCKET_ERROR ){
 						break;
 					}
 					if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){

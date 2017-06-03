@@ -60,7 +60,6 @@ protected:
 	BOOL minTask;
 
 	wstring moduleIniPath;
-	wstring commonIniPath;
 
 	wstring iniBonDriver;
 	int initONID;

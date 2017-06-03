@@ -8,6 +8,11 @@
 class CCreatePMTPacket
 {
 public:
+	//次のTSパケット入れないと解析できない
+	static const DWORD ERR_NEED_NEXT_PACKET = 20;
+	//バージョンの変更ないため解析不要
+	static const DWORD ERR_NO_CHAGE = 30;
+
 	CCreatePMTPacket(void);
 
 	//PMT作成時のモード

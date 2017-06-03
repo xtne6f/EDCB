@@ -26,25 +26,6 @@ Windows SDK 7.1 用 Microsoft Visual C++ 2010 Service Pack 1 コンパイラ更新プログ
 http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
 
 
-[事前準備] 
-
-（Write_AVIVOをビルドするのに必要。通常は不要）
-
-1.C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses（環境によってパスが違うかも）
-フォルダをルートフォルダ(Documentフォルダや各種プロジェクトと同階層のフォルダ)にコピーし、baseclasses.slnを開く
-
-（裏技）
-Windows SDK 7.1のISOイメージ"GRMSDK_EN_DVD.iso"を7-zipなどで展開し、さらに"Setup\WinSDKSamples\cab1.cab"を展開すると
-"winsdk_samples_multimedia_directshow_baseclasses_*"(*は任意)というファイルが70個見つかる。これを取り出してファイル名から
-"winsdk_samples_multimedia_directshow_baseclasses_"を取り除き、拡張子を復活させる(*_cpp→*.cppなど)とbaseclassesフォルダと同等になる。
-展開したファイルは読み取り専用属性になっているので注意。
-
-2.ツールバーにある緑色の横向き三角ボタンの右側にあるプルダウンメニューが「Release」に変更
-ソリューションエクスプローラー上の「BaseClasses」を右クリックして「ビルド」
-(ルートフォルダ)\baseclasses\Release\strmbase.lib
-が作成されているのを確認
-
-
 [ビルド]
 
 1."Document\EDCB_ALL.VS2015.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
@@ -56,8 +37,6 @@ WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
 
 2.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
 
-3.（Write_AVIVOが必要な場合のみ）ソリューションエクスプローラ―でWrite_AVIVOを右クリックしてビルド
-
 
 [ビルド(VisualStudio2010)]
 
@@ -66,5 +45,3 @@ WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
 2."EpgTimer\EpgTimer.sln"を 右クリック→プログラムから開く→C# 2010 Express で開き、ツール(T)→設定→上級者設定にチェック、[Release][x86]にしてビルド
 
 3.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
-
-4.（Write_AVIVOが必要な場合のみ）ソリューションエクスプローラ―でWrite_AVIVOを右クリックしてビルド

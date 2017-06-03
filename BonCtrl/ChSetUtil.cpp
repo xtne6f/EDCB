@@ -169,19 +169,27 @@ BOOL CChSetUtil::GetEnumService(
 BOOL CChSetUtil::GetCh(
 	WORD ONID,
 	WORD TSID,
+	WORD SID,
 	DWORD& space,
 	DWORD& ch
 	)
 {
+	BOOL ret = FALSE;
 	map<DWORD, CH_DATA4>::const_iterator itr;
 	for( itr = this->chText4.GetMap().begin(); itr != this->chText4.GetMap().end(); itr++ ){
 		if( itr->second.originalNetworkID == ONID && itr->second.transportStreamID == TSID ){
-			space = itr->second.space;
-			ch = itr->second.ch;
-			return TRUE;
+			if( ret == FALSE || itr->second.serviceID == SID ){
+				ret = TRUE;
+				space = itr->second.space;
+				ch = itr->second.ch;
+				//SIDが同じものを優先する
+				if( itr->second.serviceID == SID ){
+					break;
+				}
+			}
 		}
 	}
-	return FALSE;
+	return ret;
 }
 
 //EPG取得対象のサービス一覧を取得する

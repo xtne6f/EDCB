@@ -403,6 +403,17 @@ public:
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_CHG_CH_TVTEST, val, resVal);
 	}
 
+	//設定ファイル(ini)の更新を通知させる
+	//戻り値：
+	//引数：
+	// val			[IN]Sender
+	// エラーコード
+	DWORD SendProfileUpdate(
+		wstring val
+		){
+		return SendCmdData(CMD2_EPG_SRV_PROFILE_UPDATE, val);
+	}
+
 	//ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
 	//戻り値：
 	// エラーコード
@@ -1100,7 +1111,7 @@ DWORD CSendCtrlCmd::ReceiveCmdData2(DWORD param, T* resVal)
 		WORD ver = 0;
 		DWORD readSize = 0;
 		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE ||
-			ReadVALUE2(ver, resVal, res.data + readSize, res.dataSize - readSize, NULL) == FALSE ){
+			ReadVALUE2(ver, resVal, res.data.get() + readSize, res.dataSize - readSize, NULL) == FALSE ){
 			ret = CMD_ERR;
 		}
 	}
@@ -1131,7 +1142,7 @@ DWORD CSendCtrlCmd::SendAndReceiveCmdData2(DWORD param, const T& val, U* resVal)
 		WORD ver = 0;
 		DWORD readSize = 0;
 		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE ||
-			ReadVALUE2(ver, resVal, res.data + readSize, res.dataSize - readSize, NULL) == FALSE ){
+			ReadVALUE2(ver, resVal, res.data.get() + readSize, res.dataSize - readSize, NULL) == FALSE ){
 			ret = CMD_ERR;
 		}
 	}

@@ -5,7 +5,8 @@ for i,v in ipairs(a) do
   table.insert(ct, '<reserveinfo><ID>'
     ..v.reserveID..'</ID><title>'
     ..v.title..'</title><startDate>'
-    ..os.date('%Y/%m/%d</startDate><startTime>%H:%M:%S</startTime><startDayOfWeek>', os.time(v.startTime))
+    ..string.format('%d/%02d/%02d</startDate><startTime>%02d:%02d:%02d</startTime><startDayOfWeek>',
+                    v.startTime.year, v.startTime.month, v.startTime.day, v.startTime.hour, v.startTime.min, v.startTime.sec)
     ..(v.startTime.wday-1)..'</startDayOfWeek><duration>'
     ..v.durationSecond..'</duration><service_name>'
     ..v.stationName..'</service_name><ONID>'
