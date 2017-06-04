@@ -385,11 +385,11 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							Format(name, L"%04X%04X_epg.dat", chInfo.ONID, basicFlag ? 0xFFFF : chInfo.TSID);
 							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
 							UtilCreateDirectories(fs_path(m_epgFilePath).parent_path());
-							std::unique_ptr<FILE, decltype(&fclose)> epgFile(_wfsopen((m_epgFilePath + L".tmp").c_str(), L"wb", _SH_DENYRW), fclose);
-							if (epgFile) {
+							FILE* epgFile;
+							if (_wfopen_s(&epgFile, (m_epgFilePath + L".tmp").c_str(), L"wbN") == 0) {
 								m_pApp->AddLog((L'Åö' + name).c_str());
 								CBlockLock lock(&m_streamLock);
-								m_epgFile.swap(epgFile);
+								m_epgFile.reset(epgFile);
 								m_epgFileState = EPG_FILE_ST_NONE;
 							}
 							m_epgUtil.ClearSectionStatus();
@@ -462,11 +462,11 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							Format(name, L"%04X%04X_epg.dat", onid, basicFlag ? 0xFFFF : tsid);
 							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
 							UtilCreateDirectories(fs_path(m_epgFilePath).parent_path());
-							std::unique_ptr<FILE, decltype(&fclose)> epgFile(_wfsopen((m_epgFilePath + L".tmp").c_str(), L"wb", _SH_DENYRW), fclose);
-							if (epgFile) {
+							FILE* epgFile;
+							if (_wfopen_s(&epgFile, (m_epgFilePath + L".tmp").c_str(), L"wbN") == 0) {
 								m_pApp->AddLog((L'Åö' + name).c_str());
 								CBlockLock lock(&m_streamLock);
-								m_epgFile.swap(epgFile);
+								m_epgFile.reset(epgFile);
 								m_epgFileState = EPG_FILE_ST_NONE;
 							}
 							m_epgUtil.ClearSectionStatus();
