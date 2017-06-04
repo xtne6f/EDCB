@@ -1122,6 +1122,10 @@ void CReserveManager::CheckAutoDel() const
 				//•¡”w’è‚ ‚è
 				for( size_t i = 0; i < itr->second.recSetting.recFolderList.size(); i++ ){
 					recFolderList.push_back(itr->second.recSetting.recFolderList[i].recFolder);
+					if( CompareNoCase(recFolderList.back(), L"!Default") == 0 ){
+						//’ˆÓ: ‚±‚Ì’uŠ·‚ÍŒ´ì‚É‚Í‚È‚¢
+						recFolderList.back() = GetRecFolderPath().native();
+					}
 				}
 			}
 			for( size_t i = 0; i < recFolderList.size(); i++ ){
