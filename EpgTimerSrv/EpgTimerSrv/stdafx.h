@@ -20,7 +20,20 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <stdio.h>
-#include <share.h>
+
+static inline FILE* secure_wfopen(const wchar_t* name, const wchar_t* mode)
+{
+	FILE* fp;
+	return _wfopen_s(&fp, name, mode) == 0 ? fp : NULL;
+}
+
+static inline FILE* shared_wfopen(const wchar_t* name, const wchar_t* mode)
+{
+#pragma warning(push)
+#pragma warning(disable : 4996)
+	return _wfopen(name, mode);
+#pragma warning(pop)
+}
 
 #ifdef _UNICODE
 #if defined _M_IX86

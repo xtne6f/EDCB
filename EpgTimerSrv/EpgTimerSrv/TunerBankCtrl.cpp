@@ -798,7 +798,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
 
 	//※原作と異なりディレクトリの自動生成はしない
-	std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(savePath.c_str(), append ? L"ab" : L"wb", _SH_DENYWR), fclose);
+	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(savePath.c_str(), append ? L"abN" : L"wbN"), fclose);
 	if( fp ){
 		if( append ){
 			fputs("\r\n-----------------------\r\n", fp.get());

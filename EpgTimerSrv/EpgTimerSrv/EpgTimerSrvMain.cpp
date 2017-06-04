@@ -316,7 +316,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						if( ctx->sys->setting.saveNotifyLog ){
 							//í ímèÓïÒÉçÉOï€ë∂
 							fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvNotify.log");
-							std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(logPath.c_str(), L"ab", _SH_DENYWR), fclose);
+							std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(logPath.c_str(), L"abN"), fclose);
 							if( fp ){
 								_fseeki64(fp.get(), 0, SEEK_END);
 								if( _ftelli64(fp.get()) == 0 ){
@@ -1447,7 +1447,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && CompareNoCase(val, L"ChSet5.txt") == 0 ){
 				fs_path path = GetSettingPath().append(L"ChSet5.txt");
-				std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(path.c_str(), L"rb", _SH_DENYWR), fclose);
+				std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(path.c_str(), L"rbN"), fclose);
 				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 					__int64 fileSize = _ftelli64(fp.get());
 					if( 0 < fileSize && fileSize < 64 * 1024 * 1024 ){
@@ -1551,7 +1551,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			int n;
 			if( ReadVALUE(&n, cmdParam->data, cmdParam->dataSize, NULL) ){
 				fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvNotify.log");
-				std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(logPath.c_str(), L"rb", _SH_DENYNO), fclose);
+				std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(logPath.c_str(), L"rbN"), fclose);
 				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 					__int64 count = _ftelli64(fp.get());
 					if( count >= 0 ){
@@ -2325,7 +2325,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 							path = GetModulePath().replace_filename(list[i]);
 						}
 						if( path.empty() == false ){
-							std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(path.c_str(), L"rb", _SH_DENYWR), fclose);
+							std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(path.c_str(), L"rbN"), fclose);
 							if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 								__int64 fileSize = _ftelli64(fp.get());
 								if( 0 < fileSize && fileSize < 16 * 1024 * 1024 ){

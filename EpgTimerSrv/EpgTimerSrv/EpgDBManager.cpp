@@ -282,7 +282,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> arcFromFile;
 	if( arcMin < LLONG_MAX && sys->epgArchive.empty() ){
 		vector<BYTE> buff;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(fs_path(settingPath).append(L"EpgArc.dat").c_str(), L"rb", _SH_DENYWR), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(fs_path(settingPath).append(L"EpgArc.dat").c_str(), L"rbN"), fclose);
 		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 			__int64 fileSize = _ftelli64(fp.get());
 			if( 0 < fileSize && fileSize < INT_MAX ){
@@ -391,7 +391,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		for( auto itr = sys->epgArchive.cbegin(); itr != sys->epgArchive.end(); valp.push_back(&(itr++)->second) );
 		DWORD buffSize;
 		std::unique_ptr<BYTE[]> buff = NewWriteVALUE2WithVersion(5, valp, buffSize);
-		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(fs_path(settingPath).append(L"EpgArc.dat").c_str(), L"wb", _SH_DENYRW), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(fs_path(settingPath).append(L"EpgArc.dat").c_str(), L"wbN"), fclose);
 		if( fp ){
 			fwrite(buff.get(), 1, buffSize, fp.get());
 		}

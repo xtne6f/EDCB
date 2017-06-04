@@ -192,7 +192,7 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect)
 {
 	//ÉoÉbÉ`ÇÃçÏê¨
-	std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(batSrcFilePath, L"rb", _SH_DENYWR), fclose);
+	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(batSrcFilePath, L"rbN"), fclose);
 	if( !fp ){
 		return FALSE;
 	}
@@ -270,7 +270,7 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 		}
 	}
 
-	fp.reset(_wfsopen(batFilePath, L"wb", _SH_DENYRW));
+	fp.reset(secure_wfopen(batFilePath, L"wbN"));
 	if( !fp || fputs(strWrite.c_str(), fp.get()) < 0 || fflush(fp.get()) != 0 ){
 		return FALSE;
 	}

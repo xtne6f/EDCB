@@ -22,7 +22,7 @@ static void StartDebugLog()
 {
 	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0 ){
 		fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvDebugLog.txt");
-		g_debugLog = _wfsopen(logPath.c_str(), L"ab", _SH_DENYWR);
+		g_debugLog = shared_wfopen(logPath.c_str(), L"abN");
 		if( g_debugLog ){
 			_fseeki64(g_debugLog, 0, SEEK_END);
 			if( _ftelli64(g_debugLog) == 0 ){
