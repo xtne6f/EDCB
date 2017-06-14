@@ -895,7 +895,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 
 	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
 
-	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
+	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 10, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
 
 	//Common.iniは一般に外部プロセスが変更する可能性のある(はずの)ものなので、利用の直前にチェックする
@@ -1124,7 +1124,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 {
 	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
 
-	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
+	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 10, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
 
 	CBonCtrl* sys = (CBonCtrl*)param;
