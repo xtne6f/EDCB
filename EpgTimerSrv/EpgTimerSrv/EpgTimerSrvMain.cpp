@@ -38,8 +38,6 @@ enum {
 
 struct MAIN_WINDOW_CONTEXT {
 	CEpgTimerSrvMain* const sys;
-	const bool serviceFlag;
-	const DWORD awayMode;
 	const UINT msgTaskbarCreated;
 	CPipeServer pipeServer;
 	CTCPServer tcpServer;
@@ -56,10 +54,8 @@ struct MAIN_WINDOW_CONTEXT {
 	bool showBalloonTip;
 	DWORD notifySrvStatus;
 	__int64 notifyActiveTime;
-	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_, bool serviceFlag_, DWORD awayMode_)
+	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_)
 		: sys(sys_)
-		, serviceFlag(serviceFlag_)
-		, awayMode(awayMode_)
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
 		, resumeTimer(NULL)
 		, shutdownModePending(SD_MODE_INVALID)
@@ -93,12 +89,6 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 
 	g_compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 0, GetModuleIniPath().c_str());
 
-	DWORD awayMode;
-	OSVERSIONINFOEX osvi;
-	osvi.dwOSVersionInfoSize = sizeof(osvi);
-	osvi.dwMajorVersion = 6;
-	awayMode = VerifyVersionInfo(&osvi, VER_MAJORVERSION, VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL)) ? ES_AWAYMODE_REQUIRED : 0;
-
 	fs_path settingPath = GetSettingPath();
 	this->epgAutoAdd.ParseText(fs_path(settingPath).append(EPG_AUTO_ADD_TEXT_NAME).c_str());
 	this->manualAutoAdd.ParseText(fs_path(settingPath).append(MANUAL_AUTO_ADD_TEXT_NAME).c_str());
@@ -113,7 +103,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	if( RegisterClassEx(&wc) == 0 ){
 		return false;
 	}
-	MAIN_WINDOW_CONTEXT ctx(this, serviceFlag_, awayMode);
+	MAIN_WINDOW_CONTEXT ctx(this);
 	if( CreateWindowEx(0, SERVICE_NAME, SERVICE_NAME, 0, 0, 0, 0, 0, NULL, NULL, GetModuleHandle(NULL), &ctx) == NULL ){
 		return false;
 	}
@@ -153,7 +143,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->hwndMain = hwnd;
 		ctx->sys->ReloadSetting(true);
 		ctx->sys->ReloadNetworkSetting();
-		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdPipeCallback, ctx->sys, ctx->serviceFlag);
+		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
+		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdPipeCallback, ctx->sys, !(ctx->sys->notifyManager.IsGUI()));
 		ctx->sys->epgDB.ReloadEpgData(TRUE);
 		SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
@@ -461,8 +452,20 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
 				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->setting.wakeTime * 60);
 				//スリープ抑止
-				EXECUTION_STATE esFlags = ctx->shutdownModePending == SD_MODE_INVALID && ctx->sys->IsSuspendOK() ? ES_CONTINUOUS : ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ctx->awayMode;
-				if( SetThreadExecutionState(esFlags) != esFlags ){
+				EXECUTION_STATE esFlags = ES_CONTINUOUS;
+				EXECUTION_STATE esLastFlags;
+				if( ctx->shutdownModePending == SD_MODE_INVALID && ctx->sys->IsSuspendOK() ){
+					esLastFlags = SetThreadExecutionState(esFlags);
+				}else{
+					esFlags |= ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED;
+					esLastFlags = SetThreadExecutionState(esFlags);
+					if( esLastFlags == 0 ){
+						//AwayMode未対応
+						esFlags = ES_CONTINUOUS | ES_SYSTEM_REQUIRED;
+						esLastFlags = SetThreadExecutionState(esFlags);
+					}
+				}
+				if( esLastFlags != esFlags ){
 					_OutputDebugString(L"SetThreadExecutionState(0x%08x)\r\n", (DWORD)esFlags);
 				}
 				//チップヘルプの更新が必要かチェック
