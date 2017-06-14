@@ -269,7 +269,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			m_hwnd = hwnd;
 			fs_path bonCtrlIniPath = fs_path(m_edcbDir).append(L"BonCtrl.ini");
-			m_epgCapTimeout = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, bonCtrlIniPath.c_str());
+			m_epgCapTimeout = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 10, bonCtrlIniPath.c_str());
 			m_epgCapSaveTimeout = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, bonCtrlIniPath.c_str()) != 0;
 			fs_path iniPath = GetModulePath(g_hinstDLL).replace_extension(L".ini");
 			m_nonTunerDrivers = L"::" + GetPrivateProfileToString(L"SET", L"NonTunerDrivers",
