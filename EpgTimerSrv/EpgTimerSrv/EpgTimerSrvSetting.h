@@ -55,11 +55,13 @@ public:
 		bool recOverWrite;
 		int processPriority;
 		bool keepDisk;
+		wstring tsExt;
 	};
 	static SETTING LoadSetting(LPCWSTR iniPath);
 	static vector<pair<wstring, wstring>> EnumBonFileName(LPCWSTR settingPath);
 	INT_PTR ShowDialog();
 private:
+	static wstring CheckTSExtension(const wstring& ext);
 	static vector<wstring> EnumRecNamePlugInFileName();
 	static bool GetDlgButtonCheck(HWND hwnd, int id);
 	static void SetDlgButtonCheck(HWND hwnd, int id, bool check);

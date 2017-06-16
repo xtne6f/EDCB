@@ -128,6 +128,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.recOverWrite = GetPrivateProfileInt(L"SET", L"RecOverWrite", 0, iniPath) != 0;
 	s.processPriority = GetPrivateProfileInt(L"SET", L"ProcessPriority", 3, iniPath);
 	s.keepDisk = GetPrivateProfileInt(L"SET", L"KeepDisk", 1, iniPath) != 0;
+	s.tsExt = CheckTSExtension(GetPrivateProfileToString(L"SET", L"TSExt", L".ts", iniPath));
 	return s;
 }
 
@@ -162,6 +163,16 @@ vector<pair<wstring, wstring>> CEpgTimerSrvSetting::EnumBonFileName(LPCWSTR sett
 		FindClose(hFind);
 	}
 	return ret;
+}
+
+wstring CEpgTimerSrvSetting::CheckTSExtension(const wstring& ext)
+{
+	//5ï∂éöà»â∫ÇÃâpêîéöägí£éqÇ…å¿ÇÈ
+	if( ext.size() < 2 || ext.size() > 6 || ext[0] != L'.' || ext.end() != std::find_if(ext.begin() + 1, ext.end(),
+	        [](wchar_t c) { return !(L'0' <= c && c <= L'9' || L'A' <= c && c <= L'Z' || L'a' <= c && c <= L'z'); }) ){
+		return L".ts";
+	}
+	return ext;
 }
 
 vector<wstring> CEpgTimerSrvSetting::EnumRecNamePlugInFileName()
@@ -509,6 +520,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_NOTIFY_LOG, setting.saveNotifyLog);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG, GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMPAT_TKNTREC, GetPrivateProfileInt(L"SET", L"CompatFlags", 0, iniPath.c_str()) % 4096 == 4095);
+	SetDlgItemText(hwnd, IDC_EDIT_SET_TS_EXT, setting.tsExt.c_str());
 
 	for( size_t i = 0; i < setting.viewBonList.size(); i++ ){
 		ListBox_AddString(GetDlgItem(hwnd, IDC_LIST_SET_VIEW_BON), setting.viewBonList[i].c_str());
@@ -788,6 +800,8 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	compatFlags = GetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMPAT_TKNTREC) ?
 	                  (compatFlags % 4096 == 4095 ? compatFlags : 4095) : (compatFlags % 4096 == 4095 ? 0 : compatFlags);
 	WritePrivateProfileInt(L"SET", L"CompatFlags", compatFlags, iniPath.c_str());
+	GetDlgItemText(hwnd, IDC_EDIT_SET_TS_EXT, buff, _countof(buff));
+	WritePrivateProfileString(L"SET", L"TSExt", CheckTSExtension(buff).c_str(), iniPath.c_str());
 	num = 0;
 	for( int i = 0; i < ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_VIEW_BON)); i++ ){
 		if( ListBox_GetTextLen(GetDlgItem(hwnd, IDC_LIST_SET_VIEW_BON), i) < MAX_PATH ){

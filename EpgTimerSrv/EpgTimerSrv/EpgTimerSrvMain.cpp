@@ -874,7 +874,8 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 	DWORD totalentries;
 	if( this->setting.noShareFile && NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&fileInfo, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
 		for( DWORD i = 0; i < entriesread; i++ ){
-			if( IsExt(fileInfo[i].fi3_pathname, L".ts") != FALSE ){
+			CBlockLock lock(&this->settingLock);
+			if( IsExt(fileInfo[i].fi3_pathname, this->setting.tsExt.c_str()) ){
 				OutputDebugString(L"共有フォルダTSアクセス\r\n");
 				found = true;
 				break;

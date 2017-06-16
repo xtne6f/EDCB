@@ -183,7 +183,8 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 					}
 					r.recFileNameList.push_back(CTunerBankCtrl::ConvertRecName(
 						recNamePlugIn, r.startTime, r.durationSecond, r.title.c_str(), r.originalNetworkID, r.transportStreamID, r.serviceID, r.eventID,
-						r.stationName.c_str(), L"チューナー不明", 0xFFFFFFFF, r.reserveID, this->epgDBManager, r.startTime, 0, this->setting.noChkYen));
+						r.stationName.c_str(), L"チューナー不明", 0xFFFFFFFF, r.reserveID, this->epgDBManager,
+						r.startTime, 0, this->setting.tsExt.c_str(), this->setting.noChkYen));
 				}
 			}
 		}
@@ -1158,10 +1159,10 @@ void CReserveManager::CheckAutoDel() const
 			for( size_t i = 0; i < itr->second.second.size(); i++ ){
 				wstring delFolder = itr->second.second[i];
 				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile(fs_path(delFolder).append(L"*.ts").c_str(), &findData);
+				HANDLE hFind = FindFirstFile(fs_path(delFolder).append(L'*' + this->setting.tsExt).c_str(), &findData);
 				if( hFind != INVALID_HANDLE_VALUE ){
 					do{
-						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".ts") != FALSE ){
+						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, this->setting.tsExt.c_str()) ){
 							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
 							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
 							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
