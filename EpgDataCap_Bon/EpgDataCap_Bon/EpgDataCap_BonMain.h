@@ -262,6 +262,7 @@ protected:
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
 
+	wstring recFileName;
 	BOOL overWriteFlag;
 
 	BOOL enableScrambleFlag;

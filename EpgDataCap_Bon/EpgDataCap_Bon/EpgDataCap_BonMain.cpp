@@ -74,6 +74,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	this->needCaption = GetPrivateProfileInt( L"SET", L"Caption", 1, appIniPath.c_str() );
 	this->needData = GetPrivateProfileInt( L"SET", L"Data", 0, appIniPath.c_str() );
 
+	this->recFileName = GetPrivateProfileToString( L"SET", L"RecFileName", L"$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts", appIniPath.c_str() );
 	this->overWriteFlag = GetPrivateProfileInt( L"SET", L"OverWrite", 0, appIniPath.c_str() );
 
 	this->viewPath = GetPrivateProfileToString( L"SET", L"ViewPath", L"", appIniPath.c_str() );
@@ -556,26 +557,22 @@ BOOL CEpgDataCap_BonMain::StartRec(
 		}
 	}
 
-	wstring fileName = L"";
+	wstring fileName = this->recFileName;
 	SYSTEMTIME now;
 	ConvertSystemTime(GetNowI64Time(), &now);
-	Format(fileName, L"%04d%02d%02d-%02d%02d%02d-%s.ts",
-		now.wYear,
-		now.wMonth,
-		now.wDay,
-		now.wHour,
-		now.wMinute,
-		now.wSecond,
-		serviceName.c_str()
-		);
+	for( int i = 0; GetTimeMacroName(i); i++ ){
+		wstring name;
+		AtoW(GetTimeMacroName(i), name);
+		Replace(fileName, L'$' + name + L'$', GetTimeMacroValue(i, now));
+	}
+	Replace(fileName, L"$ServiceName$", serviceName);
 	CheckFileName(fileName);
 
-	vector<REC_FILE_SET_INFO> saveFolder;
-	REC_FILE_SET_INFO forderItem;
-	forderItem.recFolder = this->recFolderList[0];
-	saveFolder.push_back(forderItem);
+	vector<REC_FILE_SET_INFO> saveFolder(1);
+	saveFolder.back().recFolder = this->recFolderList[0];
+	saveFolder.back().recFileName = fileName;
 
-	this->bonCtrl.StartSave(this->recCtrlID, fileName, this->overWriteFlag, FALSE, 0,0,0,0, 0, &saveFolder, &this->recFolderList);
+	this->bonCtrl.StartSave(this->recCtrlID, L"padding.ts", this->overWriteFlag, FALSE, 0,0,0,0, 0, &saveFolder, &this->recFolderList);
 
 	return TRUE;
 }
