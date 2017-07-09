@@ -4,11 +4,10 @@
 #include "CtrlCmdDef.h"
 #include "StructDef.h"
 
+#include <functional>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "Ws2_32.lib")
-
-typedef int (CALLBACK *CMD_CALLBACK_PROC)(void* pParam, CMD_STREAM* pCmdParam, CMD_STREAM* pResParam);
 
 class CTCPServer
 {
@@ -20,15 +19,13 @@ public:
 		DWORD dwPort, 
 		DWORD dwResponseTimeout,
 		LPCWSTR acl,
-		CMD_CALLBACK_PROC pfnCmdProc, 
-		void* pParam
+		const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc
 		);
 	void StopServer();
 	void NotifyUpdate();
 
 protected:
-	CMD_CALLBACK_PROC m_pCmdProc;
-	void* m_pParam;
+	std::function<void(CMD_STREAM*, CMD_STREAM*)> m_cmdProc;
 	DWORD m_dwPort;
 	DWORD m_dwResponseTimeout;
 	wstring m_acl;

@@ -707,7 +707,16 @@ void CEpgDataCap_BonMain::StartServer()
 
 	OutputDebugString(pipeName.c_str());
 	OutputDebugString(eventName.c_str());
-	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this);
+	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
+		resParam->param = CMD_ERR;
+		//CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ
+		//注意: CPipeServerがアクティブな間、ウィンドウは確実に存在しなければならない
+		this->cmdCapture = cmdParam;
+		this->resCapture = resParam;
+		SendMessage(this->msgWnd, WM_INVOKE_CTRL_CMD, 0, 0);
+		this->cmdCapture = NULL;
+		this->resCapture = NULL;
+	});
 }
 
 BOOL CEpgDataCap_BonMain::StopServer(BOOL checkOnlyFlag)
@@ -728,23 +737,6 @@ BOOL CEpgDataCap_BonMain::GetViewStatusInfo(
 	*sendUdpList = this->udpSendList;
 	*sendTcpList = this->tcpSendList;
 	return this->bonCtrl.GetViewStatusInfo(this->nwCtrlID, signal, space, ch, drop, scramble);
-}
-
-int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
-{
-	CEpgDataCap_BonMain* sys = (CEpgDataCap_BonMain*)param;
-
-	resParam->dataSize = 0;
-	resParam->param = CMD_ERR;
-
-	//CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ
-	//注意: CPipeServerがアクティブな間、ウィンドウは確実に存在しなければならない
-	sys->cmdCapture = cmdParam;
-	sys->resCapture = resParam;
-	SendMessage(sys->msgWnd, WM_INVOKE_CTRL_CMD, 0, 0);
-	sys->cmdCapture = NULL;
-	sys->resCapture = NULL;
-	return 0;
 }
 
 void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()

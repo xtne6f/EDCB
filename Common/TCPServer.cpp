@@ -6,8 +6,6 @@
 
 CTCPServer::CTCPServer(void)
 {
-	m_pCmdProc = NULL;
-	m_pParam = NULL;
 	m_dwPort = 8081;
 
 	m_hNotifyEvent = WSA_INVALID_EVENT;
@@ -26,22 +24,20 @@ CTCPServer::~CTCPServer(void)
 	WSACleanup();
 }
 
-BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
+BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl, const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc)
 {
-	if( pfnCmdProc == NULL || pParam == NULL ){
+	if( !cmdProc ){
 		return FALSE;
 	}
 	if( m_hThread != NULL &&
-	    m_pCmdProc == pfnCmdProc &&
-	    m_pParam == pParam &&
 	    m_dwPort == dwPort &&
 	    m_dwResponseTimeout == dwResponseTimeout &&
 	    m_acl == acl ){
+		//cmdProcの変化は想定していない
 		return TRUE;
 	}
 	StopServer();
-	m_pCmdProc = pfnCmdProc;
-	m_pParam = pParam;
+	m_cmdProc = cmdProc;
 	m_dwPort = dwPort;
 	m_dwResponseTimeout = dwResponseTimeout;
 	m_acl = acl;
@@ -170,7 +166,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					continue;
 				}
 				CMD_STREAM stRes;
-				pSys->m_pCmdProc(pSys->m_pParam, waitList[i].cmd, &stRes);
+				pSys->m_cmdProc(waitList[i].cmd, &stRes);
 				if( stRes.param == CMD_NO_RES ){
 					//応答は保留された
 					if( GetTickCount() - waitList[i].tick <= pSys->m_dwResponseTimeout ){
@@ -272,7 +268,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 						stCmd.data = NewWriteVALUE(setParam, stCmd.dataSize);
 					}
 
-					pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);
+					pSys->m_cmdProc(&stCmd, &stRes);
 					if( stRes.param == CMD_NO_RES ){
 						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
 							//保留可能なコマンドは応答待ちリストに移動

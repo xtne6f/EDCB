@@ -144,7 +144,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->ReloadSetting(true);
 		ctx->sys->ReloadNetworkSetting();
 		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
-		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdPipeCallback, ctx->sys, !(ctx->sys->notifyManager.IsGUI()));
+		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE,
+		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, false); },
+		                            !(ctx->sys->notifyManager.IsGUI()));
 		ctx->sys->epgDB.ReloadEpgData(TRUE);
 		SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
@@ -189,7 +191,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( tcpPort_ == 0 ){
 				ctx->tcpServer.StopServer();
 			}else{
-				ctx->tcpServer.StartServer(tcpPort_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(), CtrlCmdTcpCallback, ctx->sys);
+				ctx->tcpServer.StartServer(tcpPort_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(),
+				                           [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, true); });
 			}
 			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
 		}
@@ -529,7 +532,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					}
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() == false ){
-					ctx->httpServer.StartServer(op, InitLuaCallback, ctx->sys);
+					CEpgTimerSrvMain* sys = ctx->sys;
+					ctx->httpServer.StartServer(op, [sys](lua_State* L) { return sys->InitLuaCallback(L); });
 				}
 			}
 			break;
@@ -1076,26 +1080,14 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 	return setList.empty() == false && this->reserveManager.AddReserveData(setList);
 }
 
-int CALLBACK CEpgTimerSrvMain::CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
-{
-	return CtrlCmdCallback(param, cmdParam, resParam, false);
-}
-
-int CALLBACK CEpgTimerSrvMain::CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
-{
-	return CtrlCmdCallback(param, cmdParam, resParam, true);
-}
-
-int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag)
+void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag)
 {
 	//この関数はPipeとTCPとで同時に呼び出されるかもしれない(各々が同時に複数呼び出すことはない)
-	CEpgTimerSrvMain* sys = (CEpgTimerSrvMain*)param;
-
 	resParam->dataSize = 0;
 	resParam->param = CMD_ERR;
 
 	if( sys->CtrlCmdProcessCompatible(*cmdParam, *resParam) ){
-		return 0;
+		return;
 	}
 
 	switch( cmdParam->param ){
@@ -2147,8 +2139,6 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		resParam->param = CMD_NON_SUPPORT;
 		break;
 	}
-
-	return 0;
 }
 
 bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam)
@@ -2373,46 +2363,51 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 	return false;
 }
 
-int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
+void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 {
-	CEpgTimerSrvMain* sys = (CEpgTimerSrvMain*)lua_touserdata(L, -1);
-	lua_newtable(L);
-	LuaHelp::reg_function(L, "GetGenreName", LuaGetGenreName, sys);
-	LuaHelp::reg_function(L, "GetComponentTypeName", LuaGetComponentTypeName, sys);
-	LuaHelp::reg_function(L, "Sleep", LuaSleep, sys);
-	LuaHelp::reg_function(L, "Convert", LuaConvert, sys);
-	LuaHelp::reg_function(L, "GetPrivateProfile", LuaGetPrivateProfile, sys);
-	LuaHelp::reg_function(L, "WritePrivateProfile", LuaWritePrivateProfile, sys);
-	LuaHelp::reg_function(L, "ReloadEpg", LuaReloadEpg, sys);
-	LuaHelp::reg_function(L, "ReloadSetting", LuaReloadSetting, sys);
-	LuaHelp::reg_function(L, "EpgCapNow", LuaEpgCapNow, sys);
-	LuaHelp::reg_function(L, "GetChDataList", LuaGetChDataList, sys);
-	LuaHelp::reg_function(L, "GetServiceList", LuaGetServiceList, sys);
-	LuaHelp::reg_function(L, "GetEventMinMaxTime", LuaGetEventMinMaxTime, sys);
-	LuaHelp::reg_function(L, "GetEventMinMaxTimeArchive", LuaGetEventMinMaxTimeArchive, sys);
-	LuaHelp::reg_function(L, "EnumEventInfo", LuaEnumEventInfo, sys);
-	LuaHelp::reg_function(L, "EnumEventInfoArchive", LuaEnumEventInfoArchive, sys);
-	LuaHelp::reg_function(L, "SearchEpg", LuaSearchEpg, sys);
-	LuaHelp::reg_function(L, "AddReserveData", LuaAddReserveData, sys);
-	LuaHelp::reg_function(L, "ChgReserveData", LuaChgReserveData, sys);
-	LuaHelp::reg_function(L, "DelReserveData", LuaDelReserveData, sys);
-	LuaHelp::reg_function(L, "GetReserveData", LuaGetReserveData, sys);
-	LuaHelp::reg_function(L, "GetRecFilePath", LuaGetRecFilePath, sys);
-	LuaHelp::reg_function(L, "GetRecFileInfo", LuaGetRecFileInfo, sys);
-	LuaHelp::reg_function(L, "GetRecFileInfoBasic", LuaGetRecFileInfoBasic, sys);
-	LuaHelp::reg_function(L, "ChgProtectRecFileInfo", LuaChgProtectRecFileInfo, sys);
-	LuaHelp::reg_function(L, "DelRecFileInfo", LuaDelRecFileInfo, sys);
-	LuaHelp::reg_function(L, "GetTunerReserveAll", LuaGetTunerReserveAll, sys);
-	LuaHelp::reg_function(L, "EnumAutoAdd", LuaEnumAutoAdd, sys);
-	LuaHelp::reg_function(L, "EnumManuAdd", LuaEnumManuAdd, sys);
-	LuaHelp::reg_function(L, "DelAutoAdd", LuaDelAutoAdd, sys);
-	LuaHelp::reg_function(L, "DelManuAdd", LuaDelManuAdd, sys);
-	LuaHelp::reg_function(L, "AddOrChgAutoAdd", LuaAddOrChgAutoAdd, sys);
-	LuaHelp::reg_function(L, "AddOrChgManuAdd", LuaAddOrChgManuAdd, sys);
-	LuaHelp::reg_function(L, "GetNotifyUpdateCount", LuaGetNotifyUpdateCount, sys);
-	LuaHelp::reg_function(L, "FindFile", LuaFindFile, sys);
+	static const luaL_Reg closures[] = {
+		{ "GetGenreName", LuaGetGenreName },
+		{ "GetComponentTypeName", LuaGetComponentTypeName },
+		{ "Sleep", LuaSleep },
+		{ "Convert", LuaConvert },
+		{ "GetPrivateProfile", LuaGetPrivateProfile },
+		{ "WritePrivateProfile", LuaWritePrivateProfile },
+		{ "ReloadEpg", LuaReloadEpg },
+		{ "ReloadSetting", LuaReloadSetting },
+		{ "EpgCapNow", LuaEpgCapNow },
+		{ "GetChDataList", LuaGetChDataList },
+		{ "GetServiceList", LuaGetServiceList },
+		{ "GetEventMinMaxTime", LuaGetEventMinMaxTime },
+		{ "GetEventMinMaxTimeArchive", LuaGetEventMinMaxTimeArchive },
+		{ "EnumEventInfo", LuaEnumEventInfo },
+		{ "EnumEventInfoArchive", LuaEnumEventInfoArchive },
+		{ "SearchEpg", LuaSearchEpg },
+		{ "AddReserveData", LuaAddReserveData },
+		{ "ChgReserveData", LuaChgReserveData },
+		{ "DelReserveData", LuaDelReserveData },
+		{ "GetReserveData", LuaGetReserveData },
+		{ "GetRecFilePath", LuaGetRecFilePath },
+		{ "GetRecFileInfo", LuaGetRecFileInfo },
+		{ "GetRecFileInfoBasic", LuaGetRecFileInfoBasic },
+		{ "ChgProtectRecFileInfo", LuaChgProtectRecFileInfo },
+		{ "DelRecFileInfo", LuaDelRecFileInfo },
+		{ "GetTunerReserveAll", LuaGetTunerReserveAll },
+		{ "EnumAutoAdd", LuaEnumAutoAdd },
+		{ "EnumManuAdd", LuaEnumManuAdd },
+		{ "DelAutoAdd", LuaDelAutoAdd },
+		{ "DelManuAdd", LuaDelManuAdd },
+		{ "AddOrChgAutoAdd", LuaAddOrChgAutoAdd },
+		{ "AddOrChgManuAdd", LuaAddOrChgManuAdd },
+		{ "GetNotifyUpdateCount", LuaGetNotifyUpdateCount },
+		{ "FindFile", LuaFindFile },
+		{ NULL, NULL }
+	};
+	//必要な領域をヒントに与えて"edcb"メタテーブルを作成
+	lua_createtable(L, 0, _countof(closures) - 1 + 2 + 2 + 1);
+	lua_pushlightuserdata(L, this);
+	luaL_setfuncs(L, closures, 1);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
-	LuaHelp::reg_string(L, "serverRandom", sys->httpServerRandom.c_str());
+	LuaHelp::reg_string(L, "serverRandom", this->httpServerRandom.c_str());
 	//ファイルハンドルはDLLを越えて互換とは限らないので、"FILE*"メタテーブルも独自のものが必要
 	LuaHelp::f_createmeta(L);
 	//osライブラリに対するUTF-8補完
@@ -2487,7 +2482,6 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 		" end end"
 		" return r;"
 		"end");
-	return 0;
 }
 
 #if 1

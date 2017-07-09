@@ -28,7 +28,7 @@ CHttpServer::~CHttpServer()
 	StopServer();
 }
 
-bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_State*), void* initParam)
+bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void(lua_State*)>& initProc)
 {
 	StopServer();
 
@@ -136,7 +136,6 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	}
 
 	this->initLuaProc = initProc;
-	this->initLuaParam = initParam;
 	mg_callbacks callbacks = {};
 	callbacks.init_lua = &InitLua;
 	this->mgContext = mg_start(&callbacks, this, options);
@@ -224,7 +223,6 @@ void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)
 {
 	const CHttpServer* sys = (CHttpServer*)mg_get_user_data(mg_get_context(conn));
 	lua_State* L = (lua_State*)luaContext;
-	lua_pushlightuserdata(L, sys->initLuaParam);
 	sys->initLuaProc(L);
 }
 
@@ -250,14 +248,6 @@ void reg_boolean_(lua_State* L, const char* name, size_t size, bool val)
 {
 	lua_pushlstring(L, name, size - 1);
 	lua_pushboolean(L, val);
-	lua_rawset(L, -3);
-}
-
-void reg_function_(lua_State* L, const char* name, size_t size, lua_CFunction func, void* userdata)
-{
-	lua_pushlstring(L, name, size - 1);
-	lua_pushlightuserdata(L, userdata);
-	lua_pushcclosure(L, func, 1);
 	lua_rawset(L, -3);
 }
 #endif

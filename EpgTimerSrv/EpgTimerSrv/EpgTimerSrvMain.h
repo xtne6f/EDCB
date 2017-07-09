@@ -45,11 +45,9 @@ private:
 	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
 	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
 	//外部制御コマンド関係
-	static int CALLBACK CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
-	static int CALLBACK CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
-	static int CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
+	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
 	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam);
-	static int InitLuaCallback(lua_State* L);
+	void InitLuaCallback(lua_State* L);
 	//Lua-edcb空間のコールバック
 	class CLuaWorkspace
 	{
