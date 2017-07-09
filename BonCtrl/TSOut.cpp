@@ -422,11 +422,12 @@ BOOL CTSOut::StartSaveEPG(
 	this->epgFileState = EPG_FILE_ST_NONE;
 
 	UtilCreateDirectories(fs_path(this->epgTempFilePath).parent_path());
-	this->epgFile.reset(_wfsopen(this->epgTempFilePath.c_str(), L"wb", _SH_DENYRW));
-	if( this->epgFile == NULL ){
+	FILE* fp;
+	if( _wfopen_s(&fp, this->epgTempFilePath.c_str(), L"wbN") != 0 ){
 		OutputDebugString(L"err\r\n");
 		return FALSE;
 	}
+	this->epgFile.reset(fp);
 
 	return TRUE;
 }

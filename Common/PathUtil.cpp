@@ -310,13 +310,28 @@ BOOL IsExt(const fs_path& filePath, const WCHAR* ext)
 
 void CheckFileName(wstring& fileName, BOOL noChkYen)
 {
-	const WCHAR s[] = { L'/', L':', L'*', L'?', L'"', L'<', L'>', L'|', (noChkYen ? L'\0' : L'\\'), L'\0' };
-	const WCHAR r[] = { L'^', L'F', L'–', L'H', L'h', L'ƒ', L'„', L'b', L'', L'\0' };
+	static const WCHAR s[10] = L"\\/:*?\"<>|";
+	static const WCHAR r[10] = L"^F–Hhƒ„b";
+	// ƒgƒŠƒ€
+	size_t j = fileName.find_last_not_of(L' ');
+	fileName.erase(j == wstring::npos ? 0 : j + 1);
+	fileName.erase(0, fileName.find_first_not_of(L' '));
 	for( size_t i = 0; i < fileName.size(); i++ ){
+		if( L'\x1' <= fileName[i] && fileName[i] <= L'\x1f' || fileName[i] == L'\x7f' ){
+			// §Œä•¶š
+			fileName[i] = L'¬';
+		}
+		// ".\"‚Æ‚È‚é‚Æ‚«‚ÍnoChkYen‚Å‚à‘SŠp‚É
 		const WCHAR* p = wcschr(s, fileName[i]);
-		if( p ){
+		if( p && (noChkYen == FALSE || *p != L'\\' || (i > 0 && fileName[i - 1] == L'.')) ){
 			fileName[i] = r[p - s];
 		}
+	}
+	// –`“ª'\'‚ÍƒgƒŠƒ€
+	fileName.erase(0, fileName.find_first_not_of(L'\\'));
+	// ‚·‚×‚Ä'.'‚Ì‚Æ‚«‚Í‘SŠp‚É
+	if( fileName.find_first_not_of(L'.') == wstring::npos ){
+		for( size_t i = 0; i < fileName.size(); fileName[i++] = L'D' );
 	}
 }
 

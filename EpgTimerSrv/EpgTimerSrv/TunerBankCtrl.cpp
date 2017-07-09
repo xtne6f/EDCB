@@ -52,6 +52,7 @@ void CTunerBankCtrl::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	this->keepDisk = s.keepDisk;
 	this->recNameNoChkYen = s.noChkYen;
 	this->recNamePlugInFileName = s.recNamePlugIn ? s.recNamePlugInFile : wstring();
+	this->tsExt = s.tsExt;
 }
 
 bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
@@ -798,7 +799,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
 
 	//※原作と異なりディレクトリの自動生成はしない
-	std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(savePath.c_str(), append ? L"ab" : L"wb", _SH_DENYWR), fclose);
+	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(savePath.c_str(), append ? L"abN" : L"wbN"), fclose);
 	if( fp ){
 		if( append ){
 			fputs("\r\n-----------------------\r\n", fp.get());
@@ -857,7 +858,8 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) co
 				ConvertSystemTime(max(reserve.startTime, now), &stDefault);
 				param.saveFolder[j].recFileName = ConvertRecName(
 					param.saveFolder[j].recNamePlugIn.c_str(), st, reserve.durationSecond, reserve.title.c_str(), reserve.onid, reserve.tsid, sid, eid,
-					stationName.c_str(), this->bonFileName.c_str(), this->tunerID, reserve.reserveID, this->epgDBManager, stDefault, param.ctrlID, this->recNameNoChkYen);
+					stationName.c_str(), this->bonFileName.c_str(), this->tunerID, reserve.reserveID, this->epgDBManager,
+					stDefault, param.ctrlID, this->tsExt.c_str(), this->recNameNoChkYen);
 				param.saveFolder[j].recNamePlugIn.clear();
 			}
 			param.overWriteFlag = this->recOverWrite;
@@ -1240,7 +1242,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 wstring CTunerBankCtrl::ConvertRecName(
 	LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,
 	LPCWSTR serviceName, LPCWSTR bonDriverName, DWORD tunerID, DWORD reserveID, CEpgDBManager& epgDBManager_,
-	const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, bool noChkYen)
+	const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, LPCWSTR ext, bool noChkYen)
 {
 	wstring ret;
 	if( recNamePlugIn[0] ){
@@ -1278,8 +1280,8 @@ wstring CTunerBankCtrl::ConvertRecName(
 	}
 	if( ret.empty() ){
 		const SYSTEMTIME& st = startTimeForDefault;
-		Format(ret, L"%04d%02d%02d%02d%02d%02X%02X%02d-%.159s.ts",
-		       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, HIWORD(tunerID), LOWORD(tunerID), ctrlID, eventName);
+		Format(ret, L"%04d%02d%02d%02d%02d%02X%02X%02d-%.159s%s",
+		       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, HIWORD(tunerID), LOWORD(tunerID), ctrlID, eventName, ext);
 		CheckFileName(ret);
 	}
 	return ret;

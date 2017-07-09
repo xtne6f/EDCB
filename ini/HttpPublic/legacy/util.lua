@@ -249,12 +249,20 @@ end
 
 --CSRFトークンを取得する
 --※このトークンを含んだコンテンツを圧縮する場合はBREACH攻撃に少し気を配る
-function CsrfToken()
-  return edcb.serverRandom:sub(1,16)
+function CsrfToken(t)
+  --メッセージに時刻をつける
+  local m='legacy:'..(math.floor(os.time()/3600/12)+(t or 0))
+  local kip,kop=('\54'):rep(48),('\92'):rep(48)
+  for k in edcb.serverRandom:sub(1,32):gmatch('..') do
+    kip=string.char(bit32.bxor(tonumber(k,16),54))..kip
+    kop=string.char(bit32.bxor(tonumber(k,16),92))..kop
+  end
+  --HMAC-MD5(hex)
+  return mg.md5(kop..mg.md5(kip..m))
 end
 
 --CSRFトークンを検査する
 --※サーバに変更を加える要求(POSTに限らない)を処理する前にこれを呼ぶべき
 function AssertCsrf(qs)
-  assert(mg.get_var(qs,'ctok')==edcb.serverRandom:sub(1,16))
+  assert(mg.get_var(qs,'ctok')==CsrfToken() or mg.get_var(qs,'ctok')==CsrfToken(-1))
 end

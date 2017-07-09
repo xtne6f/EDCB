@@ -8,6 +8,10 @@
 
 #include "CmdLineUtil.h"
 #include "../../Common/BlockLock.h"
+#include <io.h>
+#include <fcntl.h>
+#include <share.h>
+#include <sys/stat.h>
 
 static FILE* g_debugLog;
 static CRITICAL_SECTION g_debugLogLock;
@@ -20,7 +24,15 @@ static void StartDebugLog()
 			//パスに添え字をつけて書き込み可能な最初のものに記録する
 			WCHAR logFileName[64];
 			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
-			g_debugLog = _wfsopen(GetModulePath().replace_filename(logFileName).c_str(), L"ab", _SH_DENYWR);
+			fs_path logPath = GetModulePath().replace_filename(logFileName);
+			//やりたいことは_wfsopen(L"abN",_SH_DENYWR)だが_wfsopenには"N"オプションがなさそうなので低水準で開く
+			int fd;
+			if( _wsopen_s(&fd, logPath.c_str(), _O_APPEND | _O_BINARY | _O_CREAT | _O_NOINHERIT | _O_WRONLY, _SH_DENYWR, _S_IWRITE) == 0 ){
+				g_debugLog = _wfdopen(fd, L"ab");
+				if( g_debugLog == NULL ){
+					_close(fd);
+				}
+			}
 			if( g_debugLog ){
 				_fseeki64(g_debugLog, 0, SEEK_END);
 				if( _ftelli64(g_debugLog) == 0 ){

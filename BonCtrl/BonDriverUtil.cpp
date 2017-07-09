@@ -75,7 +75,7 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFile, void (*recvFunc_)(void
 		this->hDriverThread = (HANDLE)_beginthreadex(NULL, 0, DriverThread, this, 0, NULL);
 		if( this->hDriverThread ){
 			//Openˆ—‚ªŠ®—¹‚·‚é‚Ü‚Å‘Ò‚Â
-			while( WaitForSingleObject(this->hDriverThread, 10) == WAIT_TIMEOUT && this->hwndDriver == false );
+			while( WaitForSingleObject(this->hDriverThread, 10) == WAIT_TIMEOUT && this->hwndDriver == NULL );
 			if( this->hwndDriver ){
 				Sleep(openWait);
 				return true;

@@ -81,7 +81,7 @@ void CSendCtrlCmd::SetPipeSetting(
 // ip			[IN]ê⁄ë±êÊIP
 // port			[IN]ê⁄ë±êÊÉ|Å[Ég
 void CSendCtrlCmd::SetNWSetting(
-	wstring ip,
+	const wstring& ip,
 	DWORD port
 	)
 {
@@ -186,7 +186,7 @@ static int RecvAll(SOCKET sock, char* buf, int len, int flags)
 	return n;
 }
 
-DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
+DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
 {
 	if( sendCmd == NULL || resCmd == NULL ){
 		return CMD_ERR_INVALID_ARG;
@@ -252,7 +252,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 #endif
 
 DWORD CSendCtrlCmd::SendFileCopy(
-	wstring val,
+	const wstring& val,
 	BYTE** resVal,
 	DWORD* resValSize
 	)
@@ -271,7 +271,7 @@ DWORD CSendCtrlCmd::SendFileCopy(
 }
 
 DWORD CSendCtrlCmd::SendGetEpgFile2(
-	wstring val,
+	const wstring& val,
 	BYTE** resVal,
 	DWORD* resValSize
 	)

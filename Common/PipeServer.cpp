@@ -11,11 +11,6 @@
 
 CPipeServer::CPipeServer(void)
 {
-	this->cmdProc = NULL;
-	this->cmdParam = NULL;
-	this->eventName = L"";
-	this->pipeName = L"";
-
 	this->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->workThread = NULL;
 }
@@ -38,19 +33,17 @@ CPipeServer::~CPipeServer(void)
 BOOL CPipeServer::StartServer(
 	LPCWSTR eventName_, 
 	LPCWSTR pipeName_, 
-	CMD_CALLBACK_PROC cmdCallback, 
-	void* callbackParam, 
+	const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc_,
 	BOOL insecureFlag_
 )
 {
-	if( cmdCallback == NULL || eventName_ == NULL || pipeName_ == NULL ){
+	if( !cmdProc_ || eventName_ == NULL || pipeName_ == NULL ){
 		return FALSE;
 	}
 	if( this->workThread != NULL ){
 		return FALSE;
 	}
-	this->cmdProc = cmdCallback;
-	this->cmdParam = callbackParam;
+	this->cmdProc = cmdProc_;
 	this->eventName = eventName_;
 	this->pipeName = pipeName_;
 	this->insecureFlag = insecureFlag_;
@@ -159,22 +152,14 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 					}
 				}
 
-				if( pSys->cmdProc != NULL){
-					pSys->cmdProc(pSys->cmdParam, &stCmd, &stRes);
-					head[0] = stRes.param;
-					head[1] = stRes.dataSize;
-					if( WriteFile(hPipe, head, sizeof(DWORD)*2, &dwWrite, NULL ) == FALSE ){
-						break;
-					}
-					if( stRes.dataSize > 0 ){
-						if( WriteFile(hPipe, stRes.data.get(), stRes.dataSize, &dwWrite, NULL ) == FALSE ){
-							break;
-						}
-					}
-				}else{
-					head[0] = CMD_NON_SUPPORT;
-					head[1] = 0;
-					if( WriteFile(hPipe, head, sizeof(DWORD)*2, &dwWrite, NULL ) == FALSE ){
+				pSys->cmdProc(&stCmd, &stRes);
+				head[0] = stRes.param;
+				head[1] = stRes.dataSize;
+				if( WriteFile(hPipe, head, sizeof(head), &dwWrite, NULL) == FALSE ){
+					break;
+				}
+				if( stRes.dataSize > 0 ){
+					if( WriteFile(hPipe, stRes.data.get(), stRes.dataSize, &dwWrite, NULL) == FALSE ){
 						break;
 					}
 				}

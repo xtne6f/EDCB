@@ -118,7 +118,7 @@ public:
 	static wstring ConvertRecName(
 		LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,
 		LPCWSTR serviceName, LPCWSTR bonDriverName, DWORD tunerID, DWORD reserveID, CEpgDBManager& epgDBManager_,
-		const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, bool noChkYen);
+		const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, LPCWSTR ext, bool noChkYen);
 	//バンクを監視して必要ならチューナを強制終了する
 	//概ね2秒ごとにワーカスレッドから呼ぶ
 	void Watch();
@@ -186,6 +186,7 @@ private:
 	bool keepDisk;
 	bool recNameNoChkYen;
 	wstring recNamePlugInFileName;
+	wstring tsExt;
 
 	mutable struct WATCH_CONTEXT {
 		CRITICAL_SECTION lock;

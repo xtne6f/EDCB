@@ -28,7 +28,7 @@ CHttpServer::~CHttpServer()
 	StopServer();
 }
 
-bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_State*), void* initParam)
+bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void(lua_State*)>& initProc)
 {
 	StopServer();
 
@@ -136,7 +136,6 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	}
 
 	this->initLuaProc = initProc;
-	this->initLuaParam = initParam;
 	mg_callbacks callbacks = {};
 	callbacks.init_lua = &InitLua;
 	this->mgContext = mg_start(&callbacks, this, options);
@@ -144,7 +143,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	if( this->mgContext && op.enableSsdpServer ){
 		//"<UDN>uuid:{UUID}</UDN>"‚ª•K—v
 		string notifyUuid;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(_wfsopen(fs_path(op.rootPath).append(L"dlna\\dms\\ddd.xml").c_str(), L"rb", _SH_DENYNO), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(fs_path(op.rootPath).append(L"dlna\\dms\\ddd.xml").c_str(), L"rbN"), fclose);
 		if( fp ){
 			char olbuff[257];
 			for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
@@ -224,7 +223,6 @@ void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)
 {
 	const CHttpServer* sys = (CHttpServer*)mg_get_user_data(mg_get_context(conn));
 	lua_State* L = (lua_State*)luaContext;
-	lua_pushlightuserdata(L, sys->initLuaParam);
 	sys->initLuaProc(L);
 }
 
@@ -250,14 +248,6 @@ void reg_boolean_(lua_State* L, const char* name, size_t size, bool val)
 {
 	lua_pushlstring(L, name, size - 1);
 	lua_pushboolean(L, val);
-	lua_rawset(L, -3);
-}
-
-void reg_function_(lua_State* L, const char* name, size_t size, lua_CFunction func, void* userdata)
-{
-	lua_pushlstring(L, name, size - 1);
-	lua_pushlightuserdata(L, userdata);
-	lua_pushcclosure(L, func, 1);
 	lua_rawset(L, -3);
 }
 #endif
@@ -653,7 +643,7 @@ int io_open(lua_State* L)
 		free(wfilename);
 		luaL_argerror(L, 2, "utf8towcsdup");
 	}
-	p->f = _wfsopen(wfilename, wmode, _SH_DENYNO);
+	p->f = shared_wfopen(wfilename, wmode);
 	nefree(wmode);
 	nefree(wfilename);
 	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;

@@ -217,7 +217,7 @@ UINT WINAPI CWriteMain::TeeThread(LPVOID param)
 				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				PROCESS_INFORMATION pi;
-				bRet = CreateProcess(NULL, &cmdBuff.front(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, currentDir.c_str(), &si, &pi);
+				bRet = CreateProcess(NULL, &cmdBuff.front(), NULL, NULL, TRUE, BELOW_NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, NULL, currentDir.c_str(), &si, &pi);
 				CloseHandle(readPipe);
 				if( si.hStdOutput != INVALID_HANDLE_VALUE ){
 					CloseHandle(si.hStdOutput);

@@ -20,7 +20,6 @@
 
 // C ランタイム ヘッダー ファイル
 #include <stdio.h>
-#include <share.h>
 
 #define afx_msg
 

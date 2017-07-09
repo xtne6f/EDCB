@@ -183,7 +183,8 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 					}
 					r.recFileNameList.push_back(CTunerBankCtrl::ConvertRecName(
 						recNamePlugIn, r.startTime, r.durationSecond, r.title.c_str(), r.originalNetworkID, r.transportStreamID, r.serviceID, r.eventID,
-						r.stationName.c_str(), L"チューナー不明", 0xFFFFFFFF, r.reserveID, this->epgDBManager, r.startTime, 0, this->setting.noChkYen));
+						r.stationName.c_str(), L"チューナー不明", 0xFFFFFFFF, r.reserveID, this->epgDBManager,
+						r.startTime, 0, this->setting.tsExt.c_str(), this->setting.noChkYen));
 				}
 			}
 		}
@@ -1122,6 +1123,10 @@ void CReserveManager::CheckAutoDel() const
 				//複数指定あり
 				for( size_t i = 0; i < itr->second.recSetting.recFolderList.size(); i++ ){
 					recFolderList.push_back(itr->second.recSetting.recFolderList[i].recFolder);
+					if( CompareNoCase(recFolderList.back(), L"!Default") == 0 ){
+						//注意: この置換は原作にはない
+						recFolderList.back() = GetRecFolderPath().native();
+					}
 				}
 			}
 			for( size_t i = 0; i < recFolderList.size(); i++ ){
@@ -1154,10 +1159,10 @@ void CReserveManager::CheckAutoDel() const
 			for( size_t i = 0; i < itr->second.second.size(); i++ ){
 				wstring delFolder = itr->second.second[i];
 				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile(fs_path(delFolder).append(L"*.ts").c_str(), &findData);
+				HANDLE hFind = FindFirstFile(fs_path(delFolder).append(L'*' + this->setting.tsExt).c_str(), &findData);
 				if( hFind != INVALID_HANDLE_VALUE ){
 					do{
-						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".ts") != FALSE ){
+						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, this->setting.tsExt.c_str()) ){
 							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
 							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
 							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
@@ -1554,7 +1559,21 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 					__int64 delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
 					SYSTEMTIME setTime;
 					ConvertSystemTime(now + delay - 9 * 3600 * I64_1SEC, &setTime);
-					_OutputDebugString(L"★SetSystemTime %s%d\r\n", SetSystemTime(&setTime) ? L"" : L"err ", (int)(delay / I64_1SEC));
+					LPCWSTR debug = L" err ";
+					if( SetSystemTime(&setTime) ){
+						debug = L" ";
+					}else{
+						//代理プロセス経由で時計合わせを試みる
+						HWND hwnd = FindWindowEx(HWND_MESSAGE, NULL, L"EpgTimerAdminProxy", NULL);
+						FILETIME ft;
+						if( hwnd && SystemTimeToFileTime(&setTime, &ft) ){
+							DWORD_PTR result;
+							if( SendMessageTimeout(hwnd, WM_APP, ft.dwLowDateTime, ft.dwHighDateTime, SMTO_BLOCK, 5000, &result) && result == TRUE ){
+								debug = L"(Proxy) ";
+							}
+						}
+					}
+					_OutputDebugString(L"★SetSystemTime%s%d\r\n", debug, (int)(delay / I64_1SEC));
 					this->epgCapSetTimeSync = true;
 				}
 			}

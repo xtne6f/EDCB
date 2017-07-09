@@ -6,6 +6,7 @@
 
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
+#include "../../Common/BlockLock.h"
 
 #define WM_INVOKE_CTRL_CMD	(CStreamCtrlDlg::WM_CUSTOM + 0)
 #define WM_TT_SET_CTRL		(CStreamCtrlDlg::WM_CUSTOM + 1)
@@ -25,10 +26,6 @@ CEpgTimerPlugIn::CEpgTimerPlugIn()
 	this->nwModeCurrentCtrlID = 0;
 	this->fullScreen = FALSE;
 	this->showNormal = TRUE;
-	this->cmdPool.param = CMD_ERR;
-	this->cmdPool.dataSize = 0;
-	this->resPool.param = CMD_ERR;
-	this->resPool.dataSize = 0;
 	InitializeCriticalSection(&this->cmdLock);
 }
 
@@ -82,7 +79,25 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 
 		OutputDebugString(pipeName.c_str());
 		OutputDebugString(eventName.c_str());
-		this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this);
+		this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
+			// SendMessageTimeout()はメッセージ処理中でも容赦なくタイムアウトするのでコマンドデータを排他処理する
+			{
+				CBlockLock lock(&this->cmdLock);
+				std::swap(this->cmdCapture.param, cmdParam->param);
+				std::swap(this->cmdCapture.dataSize, cmdParam->dataSize);
+				this->cmdCapture.data.swap(cmdParam->data);
+			}
+			// CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ(デッドロック防止のためタイムアウトつき)
+			DWORD_PTR dwResult;
+			if( SendMessageTimeout(this->ctrlDlg.GetDlgHWND(), WM_INVOKE_CTRL_CMD, 0, 0, SMTO_NORMAL, 10000, &dwResult) ){
+				CBlockLock lock(&this->cmdLock);
+				std::swap(resParam->param, this->resCapture.param);
+				std::swap(resParam->dataSize, this->resCapture.dataSize);
+				resParam->data.swap(this->resCapture.data);
+			}else{
+				resParam->param = CMD_ERR;
+			}
+		});
 
 		if( this->nwMode == TRUE ){
 			this->ctrlDlg.SetCtrlCmd(&this->cmd, this->nwModeInfo.ctrlID, this->nwModeInfo.udpSend, this->nwModeInfo.tcpSend, FALSE, this->nwModeInfo.timeShiftMode);
@@ -162,44 +177,11 @@ LRESULT CALLBACK CEpgTimerPlugIn::EventCallback(UINT Event,LPARAM lParam1,LPARAM
 	return 0;
 }
 
-int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
-{
-	CEpgTimerPlugIn* sys = (CEpgTimerPlugIn*)param;
-
-	resParam->dataSize = 0;
-	resParam->param = CMD_NON_SUPPORT;
-
-	if( cmdParam->dataSize <= sizeof(sys->cmdPool.data) ){
-		resParam->param = CMD_ERR;
-		// SendMessageTimeout()はメッセージ処理中でも容赦なくタイムアウトするのでコマンドデータを排他処理する
-		{
-			CAutoLock lock(&sys->cmdLock);
-			sys->cmdPool.param = cmdParam->param;
-			sys->cmdPool.dataSize = cmdParam->dataSize;
-			if( cmdParam->dataSize > 0 ){
-				memcpy(sys->cmdPool.data, cmdParam->data.get(), cmdParam->dataSize);
-			}
-		}
-		// CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ(デッドロック防止のためタイムアウトつき)
-		DWORD_PTR dwResult;
-		if( SendMessageTimeout(sys->ctrlDlg.GetDlgHWND(), WM_INVOKE_CTRL_CMD, 0, 0, SMTO_NORMAL, 10000, &dwResult) ){
-			CAutoLock lock(&sys->cmdLock);
-			resParam->param = sys->resPool.param;
-			resParam->dataSize = sys->resPool.dataSize;
-			if( resParam->dataSize > 0 ){
-				resParam->data.reset(new BYTE[resParam->dataSize]);
-				memcpy(resParam->data.get(), sys->resPool.data, resParam->dataSize);
-			}
-		}
-	}
-	return 0;
-}
-
 void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 {
-	CAutoLock lock(&this->cmdLock);
-	CMD_STREAM_POOL* cmdParam = &this->cmdPool;
-	CMD_STREAM_POOL* resParam = &this->resPool;
+	CBlockLock lock(&this->cmdLock);
+	CMD_STREAM* cmdParam = &this->cmdCapture;
+	CMD_STREAM* resParam = &this->resCapture;
 	CEpgTimerPlugIn* sys = this;
 
 	resParam->dataSize = 0;
@@ -227,8 +209,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 			sys->m_pApp->GetDriverFullPathName(buff, 512);
 			wstring bonName = fs_path(buff).filename().native();
 			if( bonName.size() > 0 ){
-				std::unique_ptr<BYTE[]> newBuff = NewWriteVALUE(bonName, resParam->dataSize);
-				memcpy(resParam->data, newBuff.get(), resParam->dataSize);
+				resParam->data = NewWriteVALUE(bonName, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
 		}

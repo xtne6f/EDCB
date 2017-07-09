@@ -262,6 +262,7 @@ protected:
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
 
+	wstring recFileName;
 	BOOL overWriteFlag;
 
 	BOOL enableScrambleFlag;
@@ -288,9 +289,5 @@ protected:
 
 	CMD_STREAM* cmdCapture;
 	CMD_STREAM* resCapture;
-
-protected:
-	//外部制御コマンド関係
-	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
 };
 

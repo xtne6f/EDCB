@@ -1,8 +1,7 @@
 #pragma once
 
 #include "StructDef.h"
-
-typedef int (CALLBACK *CMD_CALLBACK_PROC)(void* pParam, CMD_STREAM* pCmdParam, CMD_STREAM* pResParam);
+#include <functional>
 
 class CPipeServer
 {
@@ -13,15 +12,13 @@ public:
 	BOOL StartServer(
 		LPCWSTR eventName_, 
 		LPCWSTR pipeName_, 
-		CMD_CALLBACK_PROC cmdCallback, 
-		void* callbackParam, 
+		const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc_,
 		BOOL insecureFlag_ = FALSE
 		);
 	BOOL StopServer(BOOL checkOnlyFlag = FALSE);
 
 protected:
-	CMD_CALLBACK_PROC cmdProc;
-	void* cmdParam;
+	std::function<void(CMD_STREAM*, CMD_STREAM*)> cmdProc;
 	wstring eventName;
 	wstring pipeName;
 

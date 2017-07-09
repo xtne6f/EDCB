@@ -48,8 +48,6 @@ protected:
 	CPipeServer m_cPipe;
 	DWORD m_dwSrvStatus;
 
-	//外部制御コマンド関係
-	static int CALLBACK OutsideCmdCallback(void* pParam, CMD_STREAM* pCmdParam, CMD_STREAM* pResParam);
 	//CMD_TIMER_GUI_VIEW_EXECUTE Viewアプリ（EpgDataCap_Bon.exe）を起動
 	void CmdViewExecute(CMD_STREAM* pCmdParam, CMD_STREAM* pResParam);
 	//CMD_TIMER_GUI_QUERY_SUSPEND スタンバイ、休止、シャットダウンに入っていいかの確認をユーザーに行う

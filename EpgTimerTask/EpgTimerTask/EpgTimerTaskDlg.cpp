@@ -69,7 +69,23 @@ BOOL CEpgTimerTaskDlg::OnInitDialog()
 	Format(pipeName, L"\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_%d", GetCurrentProcessId());
 	Format(pipeEventName, L"Global\\EpgTimerGUI_Ctrl_BonConnect_%d", GetCurrentProcessId());
 
-	m_cPipe.StartServer(pipeEventName.c_str(), pipeName.c_str(), OutsideCmdCallback, this);
+	m_cPipe.StartServer(pipeEventName.c_str(), pipeName.c_str(), [this](CMD_STREAM* pCmdParam, CMD_STREAM* pResParam) {
+		pResParam->param = CMD_NON_SUPPORT;
+		switch( pCmdParam->param ){
+		case CMD2_TIMER_GUI_VIEW_EXECUTE:
+			CmdViewExecute(pCmdParam, pResParam);
+			break;
+		case CMD2_TIMER_GUI_QUERY_SUSPEND:
+			CmdViewQuerySuspend(pCmdParam, pResParam);
+			break;
+		case CMD2_TIMER_GUI_QUERY_REBOOT:
+			CmdViewQueryReboot(pCmdParam, pResParam);
+			break;
+		case CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2:
+			CmdSrvStatusChg(pCmdParam, pResParam);
+			break;
+		}
+	});
 
 	//ウインドウの復元
 	WINDOWPLACEMENT Pos;
@@ -342,31 +358,6 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 					SetTimer(m_hDlg, RETRY_CHG_TRAY, 5000, NULL);
 		}
 	}
-}
-
-int CALLBACK CEpgTimerTaskDlg::OutsideCmdCallback(void* pParam, CMD_STREAM* pCmdParam, CMD_STREAM* pResParam)
-{
-	CEpgTimerTaskDlg* pSys = (CEpgTimerTaskDlg*)pParam;
-	pResParam->param = CMD_NON_SUPPORT;
-	switch( pCmdParam->param ){
-		case CMD2_TIMER_GUI_VIEW_EXECUTE:
-			pSys->CmdViewExecute(pCmdParam, pResParam);
-			break;
-		case CMD2_TIMER_GUI_QUERY_SUSPEND:
-			pSys->CmdViewQuerySuspend(pCmdParam, pResParam);
-			break;
-		case CMD2_TIMER_GUI_QUERY_REBOOT:
-			pSys->CmdViewQueryReboot(pCmdParam, pResParam);
-			break;
-		case CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2:
-			pSys->CmdSrvStatusChg(pCmdParam, pResParam);
-			break;
-		default:
-			pResParam->param = CMD_NON_SUPPORT;
-			break;
-	}
-
-	return 0;
 }
 
 //CMD_TIMER_GUI_VIEW_EXECUTE Viewアプリ（EpgDataCap_Bon.exe）を起動

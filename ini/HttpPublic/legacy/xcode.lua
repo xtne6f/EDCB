@@ -33,15 +33,16 @@ end
 f=nil
 if fpath then
   fname='xcode'..(fpath:match('%.[0-9A-Za-z]+$') or '')
+  fnamets='xcode'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini'):lower()
   -- 拡張子を限定
-  if mg.get_mime_type(fname):find('^video/') or fname:lower():find('%.ts$') then
+  if mg.get_mime_type(fname):find('^video/') or fname:lower()==fnamets then
     f=edcb.io.open(fpath, 'rb')
     if f then
       offset=math.floor((f:seek('end', 0) or 0) * offset / 99 / 188) * 188
       if XCODE then
         f:close()
         -- 容量確保の可能性があるときは周期188+同期語0x47(188*256+0x47=48199)で対象ファイルを終端判定する
-        sync=fname:lower():find('%.ts$') and edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
+        sync=fname:lower()==fnamets and edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
         f=edcb.io.popen('""'..readex..'" '..offset..(sync and ' 4p48199' or ' 4')..' "'..fpath..'" | '..XCMD..'"', 'rb')
         fname='xcode'..XEXT
       else
