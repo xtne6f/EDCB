@@ -51,7 +51,7 @@ private:
 	vector<CH_DATA5> GetEpgCheckList(WORD onid, WORD tsid, int sid, bool basicFlag) const;
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static int CALLBACK CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD_STREAM *resParam);
+	void CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam);
 	void CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resParam);
 	// EDCBの設定関係保存フォルダのパスを取得する
 	fs_path GetEdcbSettingPath() const;

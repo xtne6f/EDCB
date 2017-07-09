@@ -121,7 +121,9 @@ void CEdcbPlugIn::CMyEventHandler::OnStartupDone()
 	else {
 		wstring pid;
 		Format(pid, L"%d", GetCurrentProcessId());
-		m_outer.m_pipeServer.StartServer((CMD2_VIEW_CTRL_WAIT_CONNECT + pid).c_str(), (CMD2_VIEW_CTRL_PIPE + pid).c_str(), CtrlCmdCallback, &m_outer);
+		CEdcbPlugIn *outer = &m_outer;
+		m_outer.m_pipeServer.StartServer((CMD2_VIEW_CTRL_WAIT_CONNECT + pid).c_str(), (CMD2_VIEW_CTRL_PIPE + pid).c_str(),
+		                                 [outer](CMD_STREAM *cmdParam, CMD_STREAM *resParam) { outer->CtrlCmdCallback(cmdParam, resParam); });
 	}
 }
 
@@ -592,50 +594,49 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-int CALLBACK CEdcbPlugIn::CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD_STREAM *resParam)
+void CEdcbPlugIn::CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam)
 {
-	CEdcbPlugIn &this_ = *static_cast<CEdcbPlugIn*>(param);
 	switch (cmdParam->param) {
 	case CMD2_VIEW_APP_GET_BONDRIVER:
 		{
-			CBlockLock lock(&this_.m_statusLock);
-			if (!this_.m_currentBonDriver.empty()) {
-				resParam->data = NewWriteVALUE(this_.m_currentBonDriver, resParam->dataSize);
+			CBlockLock lock(&m_statusLock);
+			if (!m_currentBonDriver.empty()) {
+				resParam->data = NewWriteVALUE(m_currentBonDriver, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
 	case CMD2_VIEW_APP_GET_DELAY:
 		{
-			CBlockLock lock(&this_.m_streamLock);
-			resParam->data = NewWriteVALUE(this_.m_epgUtil.GetTimeDelay(), resParam->dataSize);
+			CBlockLock lock(&m_streamLock);
+			resParam->data = NewWriteVALUE(m_epgUtil.GetTimeDelay(), resParam->dataSize);
 			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_GET_STATUS:
 		{
-			CBlockLock lock(&this_.m_statusLock);
-			resParam->data = NewWriteVALUE(this_.m_statusCode, resParam->dataSize);
+			CBlockLock lock(&m_statusLock);
+			resParam->data = NewWriteVALUE(m_statusCode, resParam->dataSize);
 			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_CLOSE:
-		SendNotifyMessage(this_.m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_CLOSE"));
-		SendNotifyMessage(this_.m_hwnd, WM_APP_CLOSE, 0, 0);
+		SendNotifyMessage(m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_CLOSE"));
+		SendNotifyMessage(m_hwnd, WM_APP_CLOSE, 0, 0);
 		resParam->param = CMD_SUCCESS;
 		break;
 	case CMD2_VIEW_APP_SET_ID:
-		SendNotifyMessage(this_.m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_ID"));
-		if (ReadVALUE(&this_.m_outCtrlID, cmdParam->data, cmdParam->dataSize, nullptr)) {
+		SendNotifyMessage(m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_ID"));
+		if (ReadVALUE(&m_outCtrlID, cmdParam->data, cmdParam->dataSize, nullptr)) {
 			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_GET_ID:
-		resParam->data = NewWriteVALUE(this_.m_outCtrlID, resParam->dataSize);
+		resParam->data = NewWriteVALUE(m_outCtrlID, resParam->dataSize);
 		resParam->param = CMD_SUCCESS;
 		break;
 	case CMD2_VIEW_APP_SET_STANDBY_REC:
-		SendNotifyMessage(this_.m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_STANDBY_REC"));
+		SendNotifyMessage(m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_STANDBY_REC"));
 		{
 			DWORD val;
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
@@ -645,13 +646,13 @@ int CALLBACK CEdcbPlugIn::CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD
 		}
 		break;
 	case CMD2_VIEW_APP_SET_CTRLMODE:
-		SendNotifyMessage(this_.m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_CTRLMODE"));
+		SendNotifyMessage(m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_CTRLMODE"));
 		{
 			SET_CTRL_MODE val;
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
-				CBlockLock lock(&this_.m_streamLock);
-				if (this_.m_recCtrlMap.count(val.ctrlID) != 0) {
-					this_.m_recCtrlMap[val.ctrlID].sid = val.SID;
+				CBlockLock lock(&m_streamLock);
+				if (m_recCtrlMap.count(val.ctrlID) != 0) {
+					m_recCtrlMap[val.ctrlID].sid = val.SID;
 				}
 				resParam->param = CMD_SUCCESS;
 			}
@@ -661,9 +662,9 @@ int CALLBACK CEdcbPlugIn::CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD
 		{
 			SEARCH_EPG_INFO_PARAM key;
 			if (ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, nullptr)) {
-				CBlockLock lock(&this_.m_streamLock);
+				CBlockLock lock(&m_streamLock);
 				EPG_EVENT_INFO *epgInfo;
-				if (this_.m_epgUtil.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR) {
+				if (m_epgUtil.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR) {
 					EPGDB_EVENT_INFO epgDBInfo;
 					ConvertEpgInfo(key.ONID, key.TSID, key.SID, epgInfo, &epgDBInfo);
 					resParam->data = NewWriteVALUE(epgDBInfo, resParam->dataSize);
@@ -676,9 +677,9 @@ int CALLBACK CEdcbPlugIn::CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD
 		{
 			GET_EPG_PF_INFO_PARAM key;
 			if (ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, nullptr)) {
-				CBlockLock lock(&this_.m_streamLock);
+				CBlockLock lock(&m_streamLock);
 				EPG_EVENT_INFO *epgInfo;
-				if (this_.m_epgUtil.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR) {
+				if (m_epgUtil.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR) {
 					EPGDB_EVENT_INFO epgDBInfo;
 					ConvertEpgInfo(key.ONID, key.TSID, key.SID, epgInfo, &epgDBInfo);
 					resParam->data = NewWriteVALUE(epgDBInfo, resParam->dataSize);
@@ -693,10 +694,9 @@ int CALLBACK CEdcbPlugIn::CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD
 		break;
 	default:
 		// 同期呼び出しが必要なコマンド
-		SendMessage(this_.m_hwnd, WM_INVOKE_CTRL_CMD, reinterpret_cast<WPARAM>(cmdParam), reinterpret_cast<LPARAM>(resParam));
+		SendMessage(m_hwnd, WM_INVOKE_CTRL_CMD, reinterpret_cast<WPARAM>(cmdParam), reinterpret_cast<LPARAM>(resParam));
 		break;
 	}
-	return 0;
 }
 
 void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resParam)
