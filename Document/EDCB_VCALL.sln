@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SendTSTCP", "..\SendTSTCP\S
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Write_Default", "..\Write_Default\Write_Default\Write_Default.vcxproj", "{1A31824D-D8E5-4AC5-9D89-354FEC750B94}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgTimerAdminProxy", "..\EpgTimerAdminProxy\EpgTimerAdminProxy\EpgTimerAdminProxy.vcxproj", "{750F3F26-7158-47C7-9903-CC83EA613610}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -89,6 +91,14 @@ Global
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|Win32.Build.0 = Release|Win32
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|x64.ActiveCfg = Release|x64
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|x64.Build.0 = Release|x64
+		{750F3F26-7158-47C7-9903-CC83EA613610}.Debug|Win32.ActiveCfg = Debug|Win32
+		{750F3F26-7158-47C7-9903-CC83EA613610}.Debug|Win32.Build.0 = Debug|Win32
+		{750F3F26-7158-47C7-9903-CC83EA613610}.Debug|x64.ActiveCfg = Debug|x64
+		{750F3F26-7158-47C7-9903-CC83EA613610}.Debug|x64.Build.0 = Debug|x64
+		{750F3F26-7158-47C7-9903-CC83EA613610}.Release|Win32.ActiveCfg = Release|Win32
+		{750F3F26-7158-47C7-9903-CC83EA613610}.Release|Win32.Build.0 = Release|Win32
+		{750F3F26-7158-47C7-9903-CC83EA613610}.Release|x64.ActiveCfg = Release|x64
+		{750F3F26-7158-47C7-9903-CC83EA613610}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

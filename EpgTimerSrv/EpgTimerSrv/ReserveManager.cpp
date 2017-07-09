@@ -1559,7 +1559,21 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 					__int64 delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
 					SYSTEMTIME setTime;
 					ConvertSystemTime(now + delay - 9 * 3600 * I64_1SEC, &setTime);
-					_OutputDebugString(L"★SetSystemTime %s%d\r\n", SetSystemTime(&setTime) ? L"" : L"err ", (int)(delay / I64_1SEC));
+					LPCWSTR debug = L" err ";
+					if( SetSystemTime(&setTime) ){
+						debug = L" ";
+					}else{
+						//代理プロセス経由で時計合わせを試みる
+						HWND hwnd = FindWindowEx(HWND_MESSAGE, NULL, L"EpgTimerAdminProxy", NULL);
+						FILETIME ft;
+						if( hwnd && SystemTimeToFileTime(&setTime, &ft) ){
+							DWORD_PTR result;
+							if( SendMessageTimeout(hwnd, WM_APP, ft.dwLowDateTime, ft.dwHighDateTime, SMTO_BLOCK, 5000, &result) && result == TRUE ){
+								debug = L"(Proxy) ";
+							}
+						}
+					}
+					_OutputDebugString(L"★SetSystemTime%s%d\r\n", debug, (int)(delay / I64_1SEC));
 					this->epgCapSetTimeSync = true;
 				}
 			}

@@ -869,19 +869,39 @@ bool CEpgTimerSrvMain::IsUserWorking() const
 bool CEpgTimerSrvMain::IsFindShareTSFile() const
 {
 	bool found = false;
-	FILE_INFO_3* fileInfo;
-	DWORD entriesread;
-	DWORD totalentries;
-	if( this->setting.noShareFile && NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&fileInfo, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
-		for( DWORD i = 0; i < entriesread; i++ ){
-			CBlockLock lock(&this->settingLock);
-			if( IsExt(fileInfo[i].fi3_pathname, this->setting.tsExt.c_str()) ){
-				OutputDebugString(L"共有フォルダTSアクセス\r\n");
-				found = true;
-				break;
+	if( this->setting.noShareFile ){
+		FILE_INFO_3* info;
+		DWORD entriesread;
+		DWORD totalentries;
+		if( NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&info, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
+			for( DWORD i = 0; i < entriesread; i++ ){
+				CBlockLock lock(&this->settingLock);
+				if( IsExt(info[i].fi3_pathname, this->setting.tsExt.c_str()) ){
+					found = true;
+					break;
+				}
+			}
+			NetApiBufferFree(info);
+		}else{
+			//代理プロセス経由で調べる
+			HWND hwnd = FindWindowEx(HWND_MESSAGE, NULL, L"EpgTimerAdminProxy", NULL);
+			if( hwnd ){
+				WCHAR ext[10] = {};
+				{
+					CBlockLock lock(&this->settingLock);
+					wcsncpy_s(ext, this->setting.tsExt.c_str(), _TRUNCATE);
+				}
+				DWORD wp = ext[1] | ext[2] << 8 | ext[3] << 16 | (DWORD)ext[4] << 24;
+				DWORD lp = ext[5] | ext[6] << 8 | ext[7] << 16 | (DWORD)ext[8] << 24;
+				DWORD_PTR result;
+				if( SendMessageTimeout(hwnd, WM_APP + 1, wp, lp, SMTO_BLOCK, 5000, &result) && result == TRUE ){
+					found = true;
+				}
 			}
 		}
-		NetApiBufferFree(fileInfo);
+		if( found ){
+			OutputDebugString(L"共有フォルダTSアクセス\r\n");
+		}
 	}
 	return found;
 }
