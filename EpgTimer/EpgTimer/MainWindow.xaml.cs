@@ -264,7 +264,9 @@ namespace EpgTimer
                     pipeServer = new PipeServer();
                     pipeName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
                     pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
-                    pipeServer.StartServer(pipeEventName, pipeName, (c, r) => OutsideCmdCallback(c, r, false));
+                    //コールバックは別スレッドかもしれないので設定は予めキャプチャする
+                    uint execBat = Settings.Instance.ExecBat;
+                    pipeServer.StartServer(pipeEventName, pipeName, (c, r) => OutsideCmdCallback(c, r, false, execBat));
 
                     for (int i = 0; i < 150; i++)
                     {
@@ -496,8 +498,10 @@ namespace EpgTimer
             {
                 foreach (var address in System.Net.Dns.GetHostAddresses(Settings.Instance.NWServerIP))
                 {
+                    //コールバックは別スレッドかもしれないので設定は予めキャプチャする
+                    uint execBat = Settings.Instance.ExecBat;
                     if (address.IsIPv6LinkLocal == false &&
-                        CommonManager.Instance.NW.ConnectServer(address, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true)) == true)
+                        CommonManager.Instance.NW.ConnectServer(address, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true, execBat)))
                     {
                         connected = true;
                         break;
@@ -999,127 +1003,85 @@ namespace EpgTimer
             }
         }
 
-        private void OutsideCmdCallback(CMD_STREAM pCmdParam, CMD_STREAM pResParam, bool networkFlag)
+        private Tuple<ErrCode, byte[], uint> OutsideCmdCallback(uint cmdParam, byte[] cmdData, bool networkFlag, uint execBat)
         {
-            System.Diagnostics.Trace.WriteLine((CtrlCmd)pCmdParam.uiParam);
-            switch ((CtrlCmd)pCmdParam.uiParam)
+            System.Diagnostics.Trace.WriteLine((CtrlCmd)cmdParam);
+            var res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_NON_SUPPORT, null, 0);
+
+            switch ((CtrlCmd)cmdParam)
             {
                 case CtrlCmd.CMD_TIMER_GUI_SHOW_DLG:
-                    if (networkFlag)
+                    if (networkFlag == false)
                     {
-                        pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
-                    }
-                    else
-                    {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
-                        this.Visibility = System.Windows.Visibility.Visible;
+                        res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, null, 0);
+                        Dispatcher.BeginInvoke(new Action(() => Visibility = Visibility.Visible));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_VIEW_EXECUTE:
-                    if (networkFlag)
+                    if (networkFlag == false)
                     {
-                        pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
-                    }
-                    else
-                    {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+                        //原作では成否にかかわらずCMD_SUCCESSだったが、サーバ側の仕様と若干矛盾するので変更した
+                        res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_ERR, null, 0);
                         String exeCmd = "";
-                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref exeCmd);
-                        try
+                        (new CtrlCmdReader(new System.IO.MemoryStream(cmdData, false))).Read(ref exeCmd);
+                        if (exeCmd.Length > 0 && exeCmd[0] == '"')
                         {
-                            string[] cmd = exeCmd.Split('\"');
-                            System.Diagnostics.Process process;
-                            if (cmd.Length >= 3)
+                            //形式は("FileName")か("FileName" Arguments..)のどちらか。ほかは拒否してよい
+                            int i = exeCmd.IndexOf('"', 1);
+                            if (i >= 2 && (exeCmd.Length == i + 1 || exeCmd[i + 1] == ' '))
                             {
-                                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(cmd[1], cmd[2]);
-                                if (cmd[1].IndexOf(".bat") >= 0)
+                                var startInfo = new System.Diagnostics.ProcessStartInfo(exeCmd.Substring(1, i - 1));
+                                if (exeCmd.Length > i + 2)
                                 {
-                                    startInfo.CreateNoWindow = true;
-                                    if (Settings.Instance.ExecBat == 0)
+                                    startInfo.Arguments = exeCmd.Substring(i + 2);
+                                }
+                                if (startInfo.FileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    if (execBat == 0)
                                     {
                                         startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
                                     }
-                                    else if (Settings.Instance.ExecBat == 1)
+                                    else if (execBat == 1)
                                     {
                                         startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
                                     }
-
                                 }
-                                process = System.Diagnostics.Process.Start(startInfo);
-                            }
-                            else if (cmd.Length >= 2)
-                            {
-                                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(cmd[1]);
-                                if (cmd[1].IndexOf(".bat") >= 0)
+                                //FileNameは実行ファイルか.batのフルパス。チェックはしない(安全性云々はここで考えることではない)
+                                try
                                 {
-                                    startInfo.CreateNoWindow = true;
-                                    if (Settings.Instance.ExecBat == 0)
+                                    //ShellExecute相当なので.batなどもそのまま与える
+                                    var process = System.Diagnostics.Process.Start(startInfo);
+                                    if (process != null)
                                     {
-                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                                        var w = new CtrlCmdWriter(new System.IO.MemoryStream());
+                                        w.Write(process.Id);
+                                        w.Stream.Close();
+                                        res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, w.Stream.ToArray(), 0);
                                     }
-                                    else if (Settings.Instance.ExecBat == 1)
-                                    {
-                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                                    }
-
                                 }
-                                process = System.Diagnostics.Process.Start(startInfo);
+                                catch { }
                             }
-                            else
-                            {
-                                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(cmd[0]);
-                                if (cmd[1].IndexOf(".bat") >= 0)
-                                {
-                                    startInfo.CreateNoWindow = true;
-                                    if (Settings.Instance.ExecBat == 0)
-                                    {
-                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
-                                    }
-                                    else if (Settings.Instance.ExecBat == 1)
-                                    {
-                                        startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                                    }
-
-                                }
-                                process = System.Diagnostics.Process.Start(startInfo);
-                            }
-                            var w = new CtrlCmdWriter(new System.IO.MemoryStream());
-                            w.Write(process.Id);
-                            w.Stream.Close();
-                            pResParam.bData = w.Stream.ToArray();
-                            pResParam.uiSize = (uint)pResParam.bData.Length;
-                        }
-                        catch
-                        {
                         }
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_SUSPEND:
-                    if (networkFlag)
+                    if (networkFlag == false)
                     {
-                        pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
-                    }
-                    else
-                    {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+                        res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, null, 0);
 
                         UInt16 param = 0;
-                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(cmdData, false))).Read(ref param);
 
                         Dispatcher.BeginInvoke(new Action(() => ShowSleepDialog(param)));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
-                    if (networkFlag)
+                    if (networkFlag == false)
                     {
-                        pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
-                    }
-                    else
-                    {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+                        res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, null, 0);
 
                         UInt16 param = 0;
-                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(cmdData, false))).Read(ref param);
 
                         Byte reboot = (Byte)((param & 0xFF00) >> 8);
                         Byte suspendMode = (Byte)(param & 0x00FF);
@@ -1137,33 +1099,19 @@ namespace EpgTimer
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2:
                     {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
-
                         NotifySrvInfo status = new NotifySrvInfo();
-                        var r = new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false));
+                        var r = new CtrlCmdReader(new System.IO.MemoryStream(cmdData, false));
                         ushort version = 0;
                         r.Read(ref version);
                         r.Version = version;
                         r.Read(ref status);
-                        //通知の巡回カウンタをuiSizeを利用して返す(やや汚い)
-                        pCmdParam.uiSize = status.param3;
-                        if (Dispatcher.CheckAccess() == true)
-                        {
-                            NotifyStatus(status);
-                        }
-                        else
-                        {
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                NotifyStatus(status);
-                            }));
-                        }
+                        //通知の巡回カウンタをItem3で返す
+                        res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, null, status.param3);
+                        Dispatcher.BeginInvoke(new Action(() => NotifyStatus(status)));
                     }
                     break;
-                default:
-                    pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
-                    break;
             }
+            return res;
         }
 
         private void ShowSleepDialog(UInt16 param)

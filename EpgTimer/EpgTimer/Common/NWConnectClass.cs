@@ -12,7 +12,7 @@ namespace EpgTimer
 {
     public class NWConnect
     {
-        private Action<CMD_STREAM, CMD_STREAM> cmdProc = null;
+        private Func<uint, byte[], Tuple<ErrCode, byte[], uint>> cmdProc = null;
 
         private bool connectFlag;
         private TcpListener server = null;
@@ -76,7 +76,7 @@ namespace EpgTimer
             client.Send(stream.ToArray(), (int)stream.Position, new IPEndPoint(broad, 0));
         }
 
-        public bool ConnectServer(IPAddress srvIP, UInt32 srvPort, UInt32 waitPort, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
+        public bool ConnectServer(IPAddress srvIP, UInt32 srvPort, UInt32 waitPort, Func<uint, byte[], Tuple<ErrCode, byte[], uint>> pfnCmdProc)
         {
             connectFlag = false;
 
@@ -171,16 +171,12 @@ namespace EpgTimer
                     }
                     if (readSize > 0 && ReadAll(stream, bHead, readSize, 8 - readSize) == 8 - readSize)
                     {
-                        CMD_STREAM stCmd = new CMD_STREAM();
-                        stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
-                        stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                        stCmd.bData = new byte[stCmd.uiSize];
-                        if (ReadAll(stream, stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length && stCmd.uiParam == (uint)ErrCode.CMD_SUCCESS)
+                        uint cmdParam = BitConverter.ToUInt32(bHead, 0);
+                        byte[] cmdData = new byte[BitConverter.ToUInt32(bHead, 4)];
+                        if (ReadAll(stream, cmdData, 0, cmdData.Length) == cmdData.Length && cmdParam == (uint)ErrCode.CMD_SUCCESS)
                         {
                             //通常の通知コマンドに変換
-                            stCmd.uiParam = (uint)CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2;
-                            cmdProc.Invoke(stCmd, new CMD_STREAM());
-                            targetCount = stCmd.uiSize;
+                            targetCount = cmdProc.Invoke((uint)CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2, cmdData).Item3;
                         }
                     }
                 }
@@ -201,8 +197,6 @@ namespace EpgTimer
 
             NetworkStream stream = client.GetStream();
 
-            CMD_STREAM stCmd = new CMD_STREAM();
-            CMD_STREAM stRes = new CMD_STREAM();
             //コマンド受信
             if (cmdProc != null)
             {
@@ -210,26 +204,20 @@ namespace EpgTimer
 
                 if (ReadAll(stream, bHead, 0, 8) == 8)
                 {
-                    stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
-                    stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                    stCmd.bData = new byte[stCmd.uiSize];
-                    if (ReadAll(stream, stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length)
+                    uint cmdParam = BitConverter.ToUInt32(bHead, 0);
+                    byte[] cmdData = new byte[BitConverter.ToUInt32(bHead, 4)];
+                    if (ReadAll(stream, cmdData, 0, cmdData.Length) == cmdData.Length)
                     {
-                        cmdProc.Invoke(stCmd, stRes);
-                        BitConverter.GetBytes(stRes.uiParam).CopyTo(bHead, 0);
-                        BitConverter.GetBytes(stRes.uiSize).CopyTo(bHead, 4);
+                        Tuple<ErrCode, byte[], uint> res = cmdProc.Invoke(cmdParam, cmdData);
+                        BitConverter.GetBytes((uint)res.Item1).CopyTo(bHead, 0);
+                        BitConverter.GetBytes(res.Item2 == null ? 0 : res.Item2.Length).CopyTo(bHead, 4);
                         stream.Write(bHead, 0, 8);
-                        if (stRes.uiSize > 0)
+                        if (res.Item2 != null && res.Item2.Length > 0)
                         {
-                            stream.Write(stRes.bData, 0, (int)stRes.uiSize);
+                            stream.Write(res.Item2, 0, res.Item2.Length);
                         }
                     }
                 }
-            }
-            else
-            {
-                stRes.uiSize = 0;
-                stRes.uiParam = 1;
             }
             stream.Dispose();
             client.Client.Close();
