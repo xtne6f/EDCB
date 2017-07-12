@@ -342,7 +342,7 @@ bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
 	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
 		work.push_back(&itr->second);
 	}
-	std::sort(work.begin(), work.end(), [](const REC_FILE_INFO* a, const REC_FILE_INFO* b) {
+	std::sort(work.begin(), work.end(), [](const REC_FILE_INFO* a, const REC_FILE_INFO* b) -> bool {
 		const SYSTEMTIME& sa = a->startTime;
 		const SYSTEMTIME& sb = b->startTime;
 		return sa.wYear < sb.wYear || sa.wYear == sb.wYear && (

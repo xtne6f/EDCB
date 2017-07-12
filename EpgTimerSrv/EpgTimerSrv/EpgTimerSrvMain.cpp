@@ -43,7 +43,7 @@ struct TASK_MAIN_WINDOW_CONTEXT {
 	DWORD notifySrvStatus;
 	TASK_MAIN_WINDOW_CONTEXT()
 		: msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
-		, queryShutdownContext(NULL, pair<BYTE, bool>())
+		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
 		, notifySrvStatus(0) {}
 };
 
@@ -69,7 +69,7 @@ struct MAIN_WINDOW_CONTEXT {
 		, resumeTimer(NULL)
 		, shutdownModePending(SD_MODE_INVALID)
 		, shutdownPendingTick(0)
-		, queryShutdownContext(NULL, pair<BYTE, bool>())
+		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
 		, taskFlag(false)
 		, showBalloonTip(false)
 		, notifySrvStatus(0)
