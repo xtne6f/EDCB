@@ -251,7 +251,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	SetDllDirectory(TEXT(""));
 	StartDebugLog();
 	//メインスレッドに対するCOMの初期化
-	CoInitialize(NULL);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	theApp.InitInstance();
 	CoUninitialize();
 	StopDebugLog();

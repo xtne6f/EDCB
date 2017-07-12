@@ -206,7 +206,7 @@ BOOL CWriteTSFile::AddTSBuff(
 UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 {
 	//プラグインがCOMを利用するかもしれないため
-	CoInitialize(NULL);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	CWriteTSFile* sys = (CWriteTSFile*)param;
 	BOOL emptyFlag = TRUE;
