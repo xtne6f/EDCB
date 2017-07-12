@@ -337,17 +337,26 @@ bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring
 
 bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
 {
-	multimap<wstring, DWORD> sortMap;
+	vector<const REC_FILE_INFO*> work;
+	work.reserve(this->itemMap.size());
 	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		wstring strKey;
-		Format(strKey, L"%04d%02d%02d%02d%02d%02d%04X%04X",
-			itr->second.startTime.wYear, itr->second.startTime.wMonth, itr->second.startTime.wDay,
-			itr->second.startTime.wHour, itr->second.startTime.wMinute, itr->second.startTime.wSecond,
-			itr->second.originalNetworkID, itr->second.transportStreamID);
-		sortMap.insert(pair<wstring, DWORD>(strKey, itr->first));
+		work.push_back(&itr->second);
 	}
-	for( multimap<wstring, DWORD>::const_iterator itr = sortMap.begin(); itr != sortMap.end(); itr++ ){
-		sortList.push_back(itr->second);
+	std::sort(work.begin(), work.end(), [](const REC_FILE_INFO* a, const REC_FILE_INFO* b) {
+		const SYSTEMTIME& sa = a->startTime;
+		const SYSTEMTIME& sb = b->startTime;
+		return sa.wYear < sb.wYear || sa.wYear == sb.wYear && (
+		       sa.wMonth < sb.wMonth || sa.wMonth == sb.wMonth && (
+		       sa.wDay < sb.wDay || sa.wDay == sb.wDay && (
+		       sa.wHour < sb.wHour || sa.wHour == sb.wHour && (
+		       sa.wMinute < sb.wMinute || sa.wMinute == sb.wMinute && (
+		       sa.wSecond < sb.wSecond || sa.wSecond == sb.wSecond && (
+		       a->originalNetworkID < b->originalNetworkID || a->originalNetworkID == b->originalNetworkID && (
+		       a->transportStreamID < b->transportStreamID)))))));
+	});
+	sortList.reserve(work.size());
+	for( size_t i = 0; i < work.size(); i++ ){
+		sortList.push_back(work[i]->id);
 	}
 	return true;
 }
@@ -763,7 +772,7 @@ vector<pair<LONGLONG, const RESERVE_DATA*>> CParseReserveText::GetReserveList(BO
 		}
 		retList.push_back( pair<LONGLONG, const RESERVE_DATA*>((startTime / I64_1SEC) << 16 | itr->second.transportStreamID, &itr->second) );
 	}
-	sort(retList.begin(), retList.end());
+	std::sort(retList.begin(), retList.end());
 	return retList;
 }
 
