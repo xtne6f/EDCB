@@ -14,6 +14,8 @@ class CEpgTimerSrvMain
 public:
 	CEpgTimerSrvMain();
 	~CEpgTimerSrvMain();
+	//メインループ処理(Taskモード)
+	static bool TaskMain();
 	//メインループ処理
 	//serviceFlag_: サービスとしての起動かどうか
 	bool Main(bool serviceFlag_);
@@ -22,10 +24,18 @@ public:
 	//休止／スタンバイに移行して構わない状況かどうか
 	bool IsSuspendOK(); //const;
 private:
+	//メインウィンドウ(Taskモード)
+	static LRESULT CALLBACK TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//メインウィンドウ
 	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//シャットダウン問い合わせダイアログ
 	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	//アイコンを読み込む
+	static HICON LoadSmallIcon(int iconID);
+	//GUI(EpgTimer)を起動する
+	static void OpenGUI();
+	//「予約削除」ポップアップを作成する
+	static void InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list);
 	void ReloadNetworkSetting();
 	void ReloadSetting(bool initialize = false);
 	//現在の予約状態に応じた復帰タイマをセットする

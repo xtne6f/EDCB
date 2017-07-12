@@ -36,6 +36,17 @@ enum {
 	SD_MODE_NONE,
 };
 
+struct TASK_MAIN_WINDOW_CONTEXT {
+	const UINT msgTaskbarCreated;
+	CPipeServer pipeServer;
+	pair<HWND, pair<BYTE, bool>> queryShutdownContext;
+	DWORD notifySrvStatus;
+	TASK_MAIN_WINDOW_CONTEXT()
+		: msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
+		, queryShutdownContext(NULL, pair<BYTE, bool>())
+		, notifySrvStatus(0) {}
+};
+
 struct MAIN_WINDOW_CONTEXT {
 	CEpgTimerSrvMain* const sys;
 	const UINT msgTaskbarCreated;
@@ -47,9 +58,7 @@ struct MAIN_WINDOW_CONTEXT {
 	BYTE shutdownModePending;
 	bool rebootFlagPending;
 	DWORD shutdownPendingTick;
-	HWND hDlgQueryShutdown;
-	BYTE queryShutdownMode;
-	bool queryRebootFlag;
+	pair<HWND, pair<BYTE, bool>> queryShutdownContext;
 	bool taskFlag;
 	bool showBalloonTip;
 	DWORD notifySrvStatus;
@@ -60,7 +69,7 @@ struct MAIN_WINDOW_CONTEXT {
 		, resumeTimer(NULL)
 		, shutdownModePending(SD_MODE_INVALID)
 		, shutdownPendingTick(0)
-		, hDlgQueryShutdown(NULL)
+		, queryShutdownContext(NULL, pair<BYTE, bool>())
 		, taskFlag(false)
 		, showBalloonTip(false)
 		, notifySrvStatus(0)
@@ -80,6 +89,33 @@ CEpgTimerSrvMain::CEpgTimerSrvMain()
 CEpgTimerSrvMain::~CEpgTimerSrvMain()
 {
 	DeleteCriticalSection(&this->settingLock);
+}
+
+bool CEpgTimerSrvMain::TaskMain()
+{
+	//非表示のメインウィンドウを作成
+	WNDCLASSEX wc = {};
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.lpfnWndProc = TaskMainWndProc;
+	wc.hInstance = GetModuleHandle(NULL);
+	wc.lpszClassName = SERVICE_NAME L" Task";
+	wc.hIcon = (HICON)LoadImage(NULL, IDI_INFORMATION, IMAGE_ICON, 0, 0, LR_SHARED);
+	if( RegisterClassEx(&wc) == 0 ){
+		return false;
+	}
+	TASK_MAIN_WINDOW_CONTEXT ctx;
+	if( CreateWindowEx(0, wc.lpszClassName, wc.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL, wc.hInstance, &ctx) == NULL ){
+		return false;
+	}
+	//メッセージループ
+	MSG msg;
+	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
+		if( ctx.queryShutdownContext.first == NULL || IsDialogMessage(ctx.queryShutdownContext.first, &msg) == FALSE ){
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
+	return true;
 }
 
 bool CEpgTimerSrvMain::Main(bool serviceFlag_)
@@ -112,12 +148,260 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	//メッセージループ
 	MSG msg;
 	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
-		if( ctx.hDlgQueryShutdown == NULL || IsDialogMessage(ctx.hDlgQueryShutdown, &msg) == FALSE ){
+		if( ctx.queryShutdownContext.first == NULL || IsDialogMessage(ctx.queryShutdownContext.first, &msg) == FALSE ){
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 	}
 	return true;
+}
+
+LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	enum {
+		TIMER_RETRY_ADD_TRAY = 1,
+	};
+
+	TASK_MAIN_WINDOW_CONTEXT* ctx = (TASK_MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	if( uMsg != WM_CREATE && ctx == NULL ){
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+	}
+
+	switch( uMsg ){
+	case WM_CREATE:
+		{
+			ctx = (TASK_MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
+			wstring pipeName;
+			wstring eventName;
+			Format(pipeName, L"%s%d", CMD2_GUI_CTRL_PIPE, GetCurrentProcessId());
+			Format(eventName, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, GetCurrentProcessId());
+			ctx->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), [hwnd](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
+				resParam->param = CMD_ERR;
+				switch( cmdParam->param ){
+				case CMD2_TIMER_GUI_VIEW_EXECUTE:
+					{
+						wstring exeCmd;
+						if( ReadVALUE(&exeCmd, cmdParam->data, cmdParam->dataSize, NULL) && exeCmd.compare(0, 1, L"\"") == 0 ){
+							//形式は("FileName")か("FileName" Arguments..)のどちらか。ほかは拒否してよい
+							size_t i = exeCmd.find(L'"', 1);
+							if( i >= 2 && (exeCmd.size() == i + 1 || exeCmd[i + 1] == L' ') ){
+								wstring file(exeCmd, 1, i - 1);
+								SHELLEXECUTEINFO sei = {};
+								sei.cbSize = sizeof(sei);
+								sei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
+								sei.lpFile = file.c_str();
+								if( exeCmd.size() > i + 2 ){
+									sei.lpParameters = exeCmd.erase(0, i + 2).c_str();
+								}
+								sei.nShow = file.size() < 4 || _wcsicmp(file.c_str() + file.size() - 4, L".bat") ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
+								if( ShellExecuteEx(&sei) && sei.hProcess ){
+									resParam->data = NewWriteVALUE(GetProcessId(sei.hProcess), resParam->dataSize);
+									resParam->param = CMD_SUCCESS;
+									CloseHandle(sei.hProcess);
+								}
+							}
+						}
+					}
+					break;
+				case CMD2_TIMER_GUI_QUERY_SUSPEND:
+					{
+						WORD val;
+						if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+							if( SD_MODE_STANDBY <= LOBYTE(val) && LOBYTE(val) <= SD_MODE_SHUTDOWN ){
+								PostMessage(hwnd, WM_QUERY_SHUTDOWN, LOBYTE(val), HIBYTE(val));
+							}
+							resParam->param = CMD_SUCCESS;
+						}
+					}
+					break;
+				case CMD2_TIMER_GUI_QUERY_REBOOT:
+					PostMessage(hwnd, WM_QUERY_SHUTDOWN, SD_MODE_INVALID, TRUE);
+					resParam->param = CMD_SUCCESS;
+					break;
+				case CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2:
+					{
+						WORD ver;
+						DWORD readSize;
+						NOTIFY_SRV_INFO status;
+						if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+						    ReadVALUE2(ver, &status, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+							if( status.notifyID == NOTIFY_UPDATE_SRV_STATUS ){
+								PostMessage(hwnd, WM_RECEIVE_NOTIFY, FALSE, status.param1);
+							}
+							resParam->param = CMD_SUCCESS;
+						}
+					}
+					break;
+				default:
+					resParam->param = CMD_NON_SUPPORT;
+					break;
+				}
+			});
+			CSendCtrlCmd cmd;
+			for( int timeout = 0; cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS; timeout += 100 ){
+				Sleep(100);
+				if( timeout > CONNECT_TIMEOUT ){
+					MessageBox(hwnd, L"サービスの起動を確認できませんでした。", NULL, MB_ICONERROR);
+					PostMessage(hwnd, WM_CLOSE, 0, 0);
+					break;
+				}
+			}
+			PostMessage(hwnd, WM_RECEIVE_NOTIFY, TRUE, 0);
+		}
+		return 0;
+	case WM_DESTROY:
+		{
+			CSendCtrlCmd cmd;
+			cmd.SendUnRegistGUI(GetCurrentProcessId());
+			ctx->pipeServer.StopServer();
+			//タスクトレイから削除
+			NOTIFYICONDATA nid = {};
+			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
+			nid.hWnd = hwnd;
+			nid.uID = 1;
+			Shell_NotifyIcon(NIM_DELETE, &nid);
+			RemoveProp(hwnd, L"PopupSel");
+			RemoveProp(hwnd, L"PopupSelData");
+			PostQuitMessage(0);
+		}
+		return 0;
+	case WM_REQUEST_SHUTDOWN:
+		{
+			CSendCtrlCmd cmd;
+			cmd.SendSuspend(MAKEWORD(wParam, lParam));
+		}
+		break;
+	case WM_REQUEST_REBOOT:
+		{
+			CSendCtrlCmd cmd;
+			cmd.SendReboot();
+		}
+		break;
+	case WM_QUERY_SHUTDOWN:
+		if( ctx->queryShutdownContext.first == NULL ){
+			INITCOMMONCONTROLSEX icce;
+			icce.dwSize = sizeof(icce);
+			icce.dwICC = ICC_PROGRESS_CLASS;
+			InitCommonControlsEx(&icce);
+			ctx->queryShutdownContext.second.first = (BYTE)wParam;
+			ctx->queryShutdownContext.second.second = lParam != FALSE;
+			CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
+		}
+		return TRUE;
+	case WM_RECEIVE_NOTIFY:
+		//通知を受け取る
+		{
+			if( wParam == FALSE ){
+				ctx->notifySrvStatus = (DWORD)lParam;
+			}
+			NOTIFYICONDATA nid = {};
+			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
+			nid.hWnd = hwnd;
+			nid.uID = 1;
+			nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED : ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN : IDI_ICON_BLUE);
+			nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+			nid.uCallbackMessage = WM_TRAY_PUSHICON;
+			if( Shell_NotifyIcon(NIM_MODIFY, &nid) == FALSE && Shell_NotifyIcon(NIM_ADD, &nid) == FALSE ){
+				SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 5000, NULL);
+			}
+			if( nid.hIcon ){
+				DestroyIcon(nid.hIcon);
+			}
+		}
+		break;
+	case WM_TRAY_PUSHICON:
+		//タスクトレイ関係
+		switch( LOWORD(lParam) ){
+		case WM_LBUTTONUP:
+			OpenGUI();
+			break;
+		case WM_RBUTTONUP:
+			{
+				HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU_TRAY));
+				if( hMenu ){
+					POINT point;
+					GetCursorPos(&point);
+					SetForegroundWindow(hwnd);
+					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, hwnd, NULL);
+					DestroyMenu(hMenu);
+				}
+			}
+			break;
+		}
+		break;
+	case WM_TIMER:
+		switch( wParam ){
+		case TIMER_RETRY_ADD_TRAY:
+			KillTimer(hwnd, TIMER_RETRY_ADD_TRAY);
+			SendMessage(hwnd, WM_RECEIVE_NOTIFY, TRUE, 0);
+			break;
+		}
+		break;
+	case WM_INITMENUPOPUP:
+		if( GetMenuItemID((HMENU)wParam, 0) == IDC_MENU_RESERVE ){
+			CSendCtrlCmd cmd;
+			vector<RESERVE_DATA> list;
+			cmd.SendEnumReserve(&list);
+			InitReserveMenuPopup((HMENU)wParam, list);
+			return 0;
+		}
+		break;
+	case WM_MENUSELECT:
+		if( lParam != 0 && (HIWORD(wParam) & MF_POPUP) == 0 ){
+			MENUITEMINFO mii;
+			mii.cbSize = sizeof(mii);
+			mii.fMask = MIIM_ID | MIIM_DATA;
+			if( GetMenuItemInfo((HMENU)lParam, LOWORD(wParam), FALSE, &mii) ){
+				//WM_COMMANDでは取得できないので、ここで選択内容を記録する
+				SetProp(hwnd, L"PopupSel", (HANDLE)(UINT_PTR)mii.wID);
+				SetProp(hwnd, L"PopupSelData", (HANDLE)mii.dwItemData);
+			}
+		}
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDC_BUTTON_SETTING:
+			ShellExecute(NULL, NULL, GetModulePath().replace_filename(EPG_TIMER_SERVICE_EXE).c_str(), L"/setting", NULL, SW_SHOWNORMAL);
+			break;
+		case IDC_BUTTON_S3:
+		case IDC_BUTTON_S4:
+			{
+				CSendCtrlCmd cmd;
+				if(cmd.SendChkSuspend() == CMD_SUCCESS ){
+					cmd.SendSuspend(LOWORD(wParam) == IDC_BUTTON_S3 ? 0xFF01 : 0xFF02);
+				}else{
+					MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
+				}
+			}
+			break;
+		case IDC_BUTTON_END:
+			if( MessageBox(hwnd, SERVICE_NAME L" (Task) を終了します（サービスは終了しません）。", L"確認", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
+				SendMessage(hwnd, WM_CLOSE, 0, 0);
+			}
+			break;
+		case IDC_BUTTON_GUI:
+			OpenGUI();
+			break;
+		default:
+			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
+				//「予約削除」
+				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
+					CSendCtrlCmd cmd;
+					cmd.SendDelReserve(vector<DWORD>(1, (DWORD)(UINT_PTR)GetProp(hwnd, L"PopupSelData")));
+				}
+			}
+			break;
+		}
+		break;
+	default:
+		if( uMsg == ctx->msgTaskbarCreated ){
+			//シェルの再起動時
+			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+		}
+		break;
+	}
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -233,14 +517,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_QUERY_SHUTDOWN:
 		if( ctx->sys->notifyManager.IsGUI() ){
 			//直接尋ねる
-			if( ctx->hDlgQueryShutdown == NULL ){
+			if( ctx->queryShutdownContext.first == NULL ){
 				INITCOMMONCONTROLSEX icce;
 				icce.dwSize = sizeof(icce);
 				icce.dwICC = ICC_PROGRESS_CLASS;
 				InitCommonControlsEx(&icce);
-				ctx->queryShutdownMode = (BYTE)wParam;
-				ctx->queryRebootFlag = lParam != FALSE;
-				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)ctx);
+				ctx->queryShutdownContext.second.first = (BYTE)wParam;
+				ctx->queryShutdownContext.second.second = lParam != FALSE;
+				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
 			}
 		}else if( ctx->sys->QueryShutdown(lParam != FALSE, (BYTE)wParam) == false ){
 			//GUI経由で問い合わせ開始できなかった
@@ -267,14 +551,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						nid.cbSize = NOTIFYICONDATA_V2_SIZE;
 						nid.hWnd = hwnd;
 						nid.uID = 1;
-						int iconID = ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
-						             ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN : IDI_ICON_BLUE;
-						HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE,PCWSTR,int,HICON*) =
-							(HRESULT (WINAPI*)(HINSTANCE,PCWSTR,int,HICON*))GetProcAddress(GetModuleHandle(L"comctl32.dll"), "LoadIconMetric");
-						if( pfnLoadIconMetric == NULL ||
-						    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), LIM_SMALL, &nid.hIcon) != S_OK ){
-							nid.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), IMAGE_ICON, 16, 16, 0);
-						}
+						nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED : ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN : IDI_ICON_BLUE);
 						if( ctx->notifyActiveTime != LLONG_MAX ){
 							SYSTEMTIME st;
 							ConvertSystemTime(ctx->notifyActiveTime + 30 * I64_1SEC, &st);
@@ -343,7 +620,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		//タスクトレイ関係
 		switch( LOWORD(lParam) ){
 		case WM_LBUTTONUP:
-			SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_GUI, 0);
+			OpenGUI();
 			break;
 		case WM_RBUTTONUP:
 			{
@@ -541,38 +818,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		break;
 	case WM_INITMENUPOPUP:
 		if( GetMenuItemID((HMENU)wParam, 0) == IDC_MENU_RESERVE ){
-			//「予約削除」ポップアップを生成
 			vector<RESERVE_DATA> list = ctx->sys->reserveManager.GetReserveDataAll();
-			__int64 maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
-			list.erase(std::remove_if(list.begin(), list.end(), [=](const RESERVE_DATA& a) {
-				return a.recSetting.recMode == RECMODE_NO || ConvertI64Time(a.startTime) > maxTime;
-			}), list.end());
-			std::sort(list.begin(), list.end(), [](const RESERVE_DATA& a, const RESERVE_DATA& b) {
-				return ConvertI64Time(a.startTime) < ConvertI64Time(b.startTime);
-			});
-			HMENU hMenu = (HMENU)wParam;
-			while( GetMenuItemCount(hMenu) > 0 && DeleteMenu(hMenu, 0, MF_BYPOSITION) );
-			if( list.empty() ){
-				InsertMenu(hMenu, 0, MF_GRAYED | MF_BYPOSITION, IDC_MENU_RESERVE, L"(24時間以内に予約なし)");
-			}
-			for( UINT i = 0; i < list.size() && i <= IDC_MENU_RESERVE_MAX - IDC_MENU_RESERVE; i++ ){
-				MENUITEMINFO mii;
-				mii.cbSize = sizeof(mii);
-				mii.fMask = MIIM_ID | MIIM_DATA | MIIM_STRING;
-				mii.wID = IDC_MENU_RESERVE + i;
-				mii.dwItemData = list[i].reserveID;
-				SYSTEMTIME endTime;
-				ConvertSystemTime(ConvertI64Time(list[i].startTime) + list[i].durationSecond * I64_1SEC, &endTime);
-				WCHAR text[128];
-				swprintf_s(text, L"%02d:%02d～%02d:%02d%s %.31s 【%.31s】",
-				           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
-				           list[i].recSetting.recMode == RECMODE_VIEW ? L"▲" : L"",
-				           list[i].title.c_str(), list[i].stationName.c_str());
-				std::replace(text, text + wcslen(text), L'　', L' ');
-				std::replace(text, text + wcslen(text), L'&', L'＆');
-				mii.dwTypeData = text;
-				InsertMenuItem(hMenu, i, TRUE, &mii);
-			}
+			InitReserveMenuPopup((HMENU)wParam, list);
 			return 0;
 		}
 		break;
@@ -591,16 +838,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){
 		case IDC_BUTTON_SETTING:
-			{
-				PROCESS_INFORMATION pi;
-				STARTUPINFO si = {};
-				si.cb = sizeof(si);
-				WCHAR buff[] = L" /setting";
-				if( CreateProcess(GetModulePath().c_str(), buff, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
-					CloseHandle(pi.hThread);
-					CloseHandle(pi.hProcess);
-				}
-			}
+			ShellExecute(NULL, NULL, GetModulePath().c_str(), L"/setting", NULL, SW_SHOWNORMAL);
 			break;
 		case IDC_BUTTON_S3:
 		case IDC_BUTTON_S4:
@@ -616,19 +854,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			}
 			break;
 		case IDC_BUTTON_GUI:
-			if( GetFileAttributes(GetModulePath().replace_filename(L"EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
-				//EpgTimer.lnk(ショートカット)を優先的に開く
-				ShellExecute(NULL, L"open", GetModulePath().replace_filename(L"EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
-			}else{
-				//EpgTimer.exeがあれば起動
-				PROCESS_INFORMATION pi;
-				STARTUPINFO si = {};
-				si.cb = sizeof(si);
-				if( CreateProcess(GetModulePath().replace_filename(L"EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
-					CloseHandle(pi.hThread);
-					CloseHandle(pi.hProcess);
-				}
-			}
+			OpenGUI();
 			break;
 		default:
 			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
@@ -652,23 +878,23 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 
 INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	pair<HWND, pair<BYTE, bool>>* ctx = (pair<HWND, pair<BYTE, bool>>*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
 	switch( uMsg ){
 	case WM_INITDIALOG:
-		ctx = (MAIN_WINDOW_CONTEXT*)lParam;
+		ctx = (pair<HWND, pair<BYTE, bool>>*)lParam;
 		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)ctx);
-		ctx->hDlgQueryShutdown = hDlg;
+		ctx->first = hDlg;
 		SetDlgItemText(hDlg, IDC_STATIC_SHUTDOWN,
-			ctx->queryShutdownMode == SD_MODE_STANDBY ? L"スタンバイに移行します。" :
-			ctx->queryShutdownMode == SD_MODE_SUSPEND ? L"休止に移行します。" :
-			ctx->queryShutdownMode == SD_MODE_SHUTDOWN ? L"シャットダウンします。" : L"再起動します。");
+			ctx->second.first == SD_MODE_STANDBY ? L"スタンバイに移行します。" :
+			ctx->second.first == SD_MODE_SUSPEND ? L"休止に移行します。" :
+			ctx->second.first == SD_MODE_SHUTDOWN ? L"シャットダウンします。" : L"再起動します。");
 		SetTimer(hDlg, 1, 1000, NULL);
-		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETRANGE, 0, MAKELONG(0, ctx->queryShutdownMode == SD_MODE_INVALID ? 30 : 15));
-		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS, ctx->queryShutdownMode == SD_MODE_INVALID ? 30 : 15, 0);
+		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETRANGE, 0, MAKELONG(0, ctx->second.first == SD_MODE_INVALID ? 30 : 15));
+		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS, ctx->second.first == SD_MODE_INVALID ? 30 : 15, 0);
 		return TRUE;
 	case WM_DESTROY:
-		ctx->hDlgQueryShutdown = NULL;
+		ctx->first = NULL;
 		break;
 	case WM_TIMER:
 		if( SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS,
@@ -679,12 +905,12 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){
 		case IDOK:
-			if( ctx->queryShutdownMode == SD_MODE_INVALID ){
+			if( ctx->second.first == SD_MODE_INVALID ){
 				//再起動
-				PostMessage(ctx->sys->hwndMain, WM_REQUEST_REBOOT, 0, 0);
-			}else if( ctx->sys->IsSuspendOK() ){
+				PostMessage(GetParent(hDlg), WM_REQUEST_REBOOT, 0, 0);
+			}else{
 				//スタンバイ休止または電源断
-				PostMessage(ctx->sys->hwndMain, WM_REQUEST_SHUTDOWN, ctx->queryShutdownMode, ctx->queryRebootFlag);
+				PostMessage(GetParent(hDlg), WM_REQUEST_SHUTDOWN, ctx->second.first, ctx->second.second);
 			}
 			//FALL THROUGH!
 		case IDCANCEL:
@@ -694,6 +920,62 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 		break;
 	}
 	return FALSE;
+}
+
+HICON CEpgTimerSrvMain::LoadSmallIcon(int iconID)
+{
+	HICON hIcon;
+	HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*) =
+		(HRESULT (WINAPI*)(HINSTANCE, PCWSTR, int, HICON*))GetProcAddress(GetModuleHandle(L"comctl32.dll"), "LoadIconMetric");
+	if( pfnLoadIconMetric == NULL ||
+	    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), LIM_SMALL, &hIcon) != S_OK ){
+		hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), IMAGE_ICON, 16, 16, 0);
+	}
+	return hIcon;
+}
+
+void CEpgTimerSrvMain::OpenGUI()
+{
+	if( GetFileAttributes(GetModulePath().replace_filename(L"EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
+		//EpgTimer.lnk(ショートカット)を優先的に開く
+		ShellExecute(NULL, NULL, GetModulePath().replace_filename(L"EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
+	}else{
+		//EpgTimer.exeがあれば起動
+		ShellExecute(NULL, NULL, GetModulePath().replace_filename(L"EpgTimer.exe").c_str(), NULL, NULL, SW_SHOWNORMAL);
+	}
+}
+
+void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list)
+{
+	__int64 maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
+	list.erase(std::remove_if(list.begin(), list.end(), [=](const RESERVE_DATA& a) {
+		return a.recSetting.recMode == RECMODE_NO || ConvertI64Time(a.startTime) > maxTime;
+	}), list.end());
+	std::sort(list.begin(), list.end(), [](const RESERVE_DATA& a, const RESERVE_DATA& b) {
+		return ConvertI64Time(a.startTime) < ConvertI64Time(b.startTime);
+	});
+	while( GetMenuItemCount(hMenu) > 0 && DeleteMenu(hMenu, 0, MF_BYPOSITION) );
+	if( list.empty() ){
+		InsertMenu(hMenu, 0, MF_GRAYED | MF_BYPOSITION, IDC_MENU_RESERVE, L"(24時間以内に予約なし)");
+	}
+	for( UINT i = 0; i < list.size() && i <= IDC_MENU_RESERVE_MAX - IDC_MENU_RESERVE; i++ ){
+		MENUITEMINFO mii;
+		mii.cbSize = sizeof(mii);
+		mii.fMask = MIIM_ID | MIIM_DATA | MIIM_STRING;
+		mii.wID = IDC_MENU_RESERVE + i;
+		mii.dwItemData = list[i].reserveID;
+		SYSTEMTIME endTime;
+		ConvertSystemTime(ConvertI64Time(list[i].startTime) + list[i].durationSecond * I64_1SEC, &endTime);
+		WCHAR text[128];
+		swprintf_s(text, L"%02d:%02d～%02d:%02d%s %.31s 【%.31s】",
+		           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
+		           list[i].recSetting.recMode == RECMODE_VIEW ? L"▲" : L"",
+		           list[i].title.c_str(), list[i].stationName.c_str());
+		std::replace(text, text + wcslen(text), L'　', L' ');
+		std::replace(text, text + wcslen(text), L'&', L'＆');
+		mii.dwTypeData = text;
+		InsertMenuItem(hMenu, i, TRUE, &mii);
+	}
 }
 
 void CEpgTimerSrvMain::StopMain()

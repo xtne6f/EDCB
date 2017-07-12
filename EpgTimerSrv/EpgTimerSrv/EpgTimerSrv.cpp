@@ -55,6 +55,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 {
 	SetDllDirectory(_T(""));
 
+	TCHAR szTask[] = _T("/task");
+	if( _wcsicmp(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
+		//Taskモードを強制する
+		lpCmdLine = szTask;
+	}
 	if( lpCmdLine[0] == _T('-') || lpCmdLine[0] == _T('/') ){
 		if( _tcsicmp(_T("install"), lpCmdLine + 1) == 0 ){
 			return 0;
@@ -65,6 +70,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvSetting setting;
 			setting.ShowDialog();
+			CoUninitialize();
+			return 0;
+		}else if( _tcsicmp(_T("task"), lpCmdLine + 1) == 0 ){
+			//Taskモード
+			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+			CEpgTimerSrvMain::TaskMain();
 			CoUninitialize();
 			return 0;
 		}
