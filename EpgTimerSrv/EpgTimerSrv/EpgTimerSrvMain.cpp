@@ -83,12 +83,14 @@ CEpgTimerSrvMain::CEpgTimerSrvMain()
 	, nwtvTcp(false)
 {
 	memset(this->notifyUpdateCount, 0, sizeof(this->notifyUpdateCount));
+	InitializeCriticalSection(&this->autoAddLock);
 	InitializeCriticalSection(&this->settingLock);
 }
 
 CEpgTimerSrvMain::~CEpgTimerSrvMain()
 {
 	DeleteCriticalSection(&this->settingLock);
+	DeleteCriticalSection(&this->autoAddLock);
 }
 
 bool CEpgTimerSrvMain::TaskMain()
@@ -673,16 +675,20 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				ctx->sys->reserveManager.CheckTuijyu();
 				bool addCountUpdated = false;
 				{
-					CBlockLock lock(&ctx->sys->settingLock);
-					for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->epgAutoAdd.GetMap().begin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
+					CBlockLock lock(&ctx->sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
+					for( auto itr = ctx->sys->epgAutoAdd.GetMap().cbegin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
 						DWORD addCount = itr->second.addCount;
-						ctx->sys->AutoAddReserveEPG(itr->second);
+						ctx->sys->AutoAddReserveEPG(itr->second, addList);
 						if( addCount != itr->second.addCount ){
 							addCountUpdated = true;
 						}
 					}
-					for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->manualAutoAdd.GetMap().begin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
-						ctx->sys->AutoAddReserveProgram(itr->second);
+					for( auto itr = ctx->sys->manualAutoAdd.GetMap().cbegin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
+						ctx->sys->AutoAddReserveProgram(itr->second, addList);
+					}
+					if( addList.empty() == false ){
+						ctx->sys->reserveManager.AddReserveData(addList);
 					}
 				}
 				if( addCountUpdated ){
@@ -1223,10 +1229,8 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 	return false;
 }
 
-bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
+void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList)
 {
-	bool modified = false;
-	vector<RESERVE_DATA> setList;
 	int addCount = 0;
 	int autoAddHour_;
 	bool chkGroupEvent_;
@@ -1306,24 +1310,17 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 				}
 			}else if( data.searchInfo.chkRecEnd != 0 && this->reserveManager.IsFindRecEventInfo(info, data.searchInfo.chkRecDay) ){
 				//録画済みなので無効でない予約は無効にする
-				if( this->reserveManager.ChgAutoAddNoRec(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id) ){
-					modified = true;
-				}
+				this->reserveManager.ChgAutoAddNoRec(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id);
 			}
 		}
 	}
-	if( setList.empty() == false && this->reserveManager.AddReserveData(setList) ){
-		modified = true;
-	}
-	CBlockLock lock(&this->settingLock);
+	CBlockLock lock(&this->autoAddLock);
 	//addCountは参考程度の情報。保存もされないので更新を通知する必要はない
 	this->epgAutoAdd.SetAddCount(data.dataID, addCount);
-	return modified;
 }
 
-bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
+void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const
 {
-	vector<RESERVE_DATA> setList;
 	SYSTEMTIME baseTime;
 	__int64 now = GetNowI64Time();
 	ConvertSystemTime(now, &baseTime);
@@ -1340,7 +1337,14 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 			if( startTime > now ){
 				//同一時間の予約がすでにあるかチェック
 				if( this->reserveManager.IsFindProgramReserve(
-				    data.originalNetworkID, data.transportStreamID, data.serviceID, startTime, data.durationSecond) == false ){
+				    data.originalNetworkID, data.transportStreamID, data.serviceID, startTime, data.durationSecond) == false &&
+				    std::find_if(setList.begin(), setList.end(), [&](const RESERVE_DATA& a) {
+				        return a.originalNetworkID == data.originalNetworkID &&
+				               a.transportStreamID == data.transportStreamID &&
+				               a.serviceID == data.serviceID &&
+				               a.eventID == 0xFFFF &&
+				               ConvertI64Time(a.startTime) == startTime &&
+				               a.durationSecond == data.durationSecond; }) == setList.end() ){
 					//見つからなかったので予約追加
 					setList.resize(setList.size() + 1);
 					RESERVE_DATA& item = setList.back();
@@ -1359,7 +1363,6 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 			}
 		}
 	}
-	return setList.empty() == false && this->reserveManager.AddReserveData(setList);
 }
 
 void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag)
@@ -1602,9 +1605,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_AUTO_ADD\r\n");
 			vector<EPG_AUTO_ADD_DATA> val;
 			{
-				CBlockLock lock(&sys->settingLock);
-				map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
-				for( itr = sys->epgAutoAdd.GetMap().begin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
+				CBlockLock lock(&sys->autoAddLock);
+				for( auto itr = sys->epgAutoAdd.GetMap().cbegin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
 					val.push_back(itr->second);
 				}
 			}
@@ -1617,14 +1619,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			vector<EPG_AUTO_ADD_DATA> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				{
-					CBlockLock lock(&sys->settingLock);
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
+						sys->AutoAddReserveEPG(val[i], addList);
 					}
 					sys->epgAutoAdd.SaveText();
-				}
-				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveEPG(val[i]);
+					sys->reserveManager.AddReserveData(addList);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				resParam->param = CMD_SUCCESS;
@@ -1635,7 +1637,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			vector<DWORD> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
-				CBlockLock lock(&sys->settingLock);
+				CBlockLock lock(&sys->autoAddLock);
 				for( size_t i = 0; i < val.size(); i++ ){
 					sys->epgAutoAdd.DelData(val[i]);
 				}
@@ -1650,16 +1652,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			vector<EPG_AUTO_ADD_DATA> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) ){
 				{
-					CBlockLock lock(&sys->settingLock);
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
-						if( sys->epgAutoAdd.ChgData(val[i]) == false ){
-							val.erase(val.begin() + (i--));
+						if( sys->epgAutoAdd.ChgData(val[i]) ){
+							sys->AutoAddReserveEPG(val[i], addList);
 						}
 					}
 					sys->epgAutoAdd.SaveText();
-				}
-				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveEPG(val[i]);
+					sys->reserveManager.AddReserveData(addList);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				resParam->param = CMD_SUCCESS;
@@ -1671,9 +1672,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_MANU_ADD\r\n");
 			vector<MANUAL_AUTO_ADD_DATA> val;
 			{
-				CBlockLock lock(&sys->settingLock);
-				map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr;
-				for( itr = sys->manualAutoAdd.GetMap().begin(); itr != sys->manualAutoAdd.GetMap().end(); itr++ ){
+				CBlockLock lock(&sys->autoAddLock);
+				for( auto itr = sys->manualAutoAdd.GetMap().cbegin(); itr != sys->manualAutoAdd.GetMap().end(); itr++ ){
 					val.push_back(itr->second);
 				}
 			}
@@ -1686,14 +1686,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			vector<MANUAL_AUTO_ADD_DATA> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				{
-					CBlockLock lock(&sys->settingLock);
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						val[i].dataID = sys->manualAutoAdd.AddData(val[i]);
+						sys->AutoAddReserveProgram(val[i], addList);
 					}
 					sys->manualAutoAdd.SaveText();
-				}
-				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveProgram(val[i]);
+					sys->reserveManager.AddReserveData(addList);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 				resParam->param = CMD_SUCCESS;
@@ -1704,7 +1704,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			vector<DWORD> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
-				CBlockLock lock(&sys->settingLock);
+				CBlockLock lock(&sys->autoAddLock);
 				for( size_t i = 0; i < val.size(); i++ ){
 					sys->manualAutoAdd.DelData(val[i]);
 				}
@@ -1719,16 +1719,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			vector<MANUAL_AUTO_ADD_DATA> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) ){
 				{
-					CBlockLock lock(&sys->settingLock);
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
-						if( sys->manualAutoAdd.ChgData(val[i]) == false ){
-							val.erase(val.begin() + (i--));
+						if( sys->manualAutoAdd.ChgData(val[i]) ){
+							sys->AutoAddReserveProgram(val[i], addList);
 						}
 					}
 					sys->manualAutoAdd.SaveText();
-				}
-				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveProgram(val[i]);
+					sys->reserveManager.AddReserveData(addList);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 				resParam->param = CMD_SUCCESS;
@@ -2093,9 +2092,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, NULL) ){
 				vector<EPG_AUTO_ADD_DATA> val;
 				{
-					CBlockLock lock(&sys->settingLock);
-					map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
-					for( itr = sys->epgAutoAdd.GetMap().begin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
+					CBlockLock lock(&sys->autoAddLock);
+					for( auto itr = sys->epgAutoAdd.GetMap().cbegin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
 						val.push_back(itr->second);
 					}
 				}
@@ -2113,14 +2111,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 				vector<EPG_AUTO_ADD_DATA> val;
 				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					{
-						CBlockLock lock(&sys->settingLock);
+						CBlockLock lock(&sys->autoAddLock);
+						vector<RESERVE_DATA> addList;
 						for( size_t i = 0; i < val.size(); i++ ){
 							val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
+							sys->AutoAddReserveEPG(val[i], addList);
 						}
 						sys->epgAutoAdd.SaveText();
-					}
-					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveEPG(val[i]);
+						sys->reserveManager.AddReserveData(addList);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
@@ -2138,16 +2136,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 				vector<EPG_AUTO_ADD_DATA> val;
 				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					{
-						CBlockLock lock(&sys->settingLock);
+						CBlockLock lock(&sys->autoAddLock);
+						vector<RESERVE_DATA> addList;
 						for( size_t i = 0; i < val.size(); i++ ){
-							if( sys->epgAutoAdd.ChgData(val[i]) == false ){
-								val.erase(val.begin() + (i--));
+							if( sys->epgAutoAdd.ChgData(val[i]) ){
+								sys->AutoAddReserveEPG(val[i], addList);
 							}
 						}
 						sys->epgAutoAdd.SaveText();
-					}
-					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveEPG(val[i]);
+						sys->reserveManager.AddReserveData(addList);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
@@ -2163,9 +2160,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, NULL) ){
 				vector<MANUAL_AUTO_ADD_DATA> val;
 				{
-					CBlockLock lock(&sys->settingLock);
-					map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr;
-					for( itr = sys->manualAutoAdd.GetMap().begin(); itr != sys->manualAutoAdd.GetMap().end(); itr++ ){
+					CBlockLock lock(&sys->autoAddLock);
+					for( auto itr = sys->manualAutoAdd.GetMap().cbegin(); itr != sys->manualAutoAdd.GetMap().end(); itr++ ){
 						val.push_back(itr->second);
 					}
 				}
@@ -2183,14 +2179,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 				vector<MANUAL_AUTO_ADD_DATA> val;
 				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					{
-						CBlockLock lock(&sys->settingLock);
+						CBlockLock lock(&sys->autoAddLock);
+						vector<RESERVE_DATA> addList;
 						for( size_t i = 0; i < val.size(); i++ ){
 							val[i].dataID = sys->manualAutoAdd.AddData(val[i]);
+							sys->AutoAddReserveProgram(val[i], addList);
 						}
 						sys->manualAutoAdd.SaveText();
-					}
-					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveProgram(val[i]);
+						sys->reserveManager.AddReserveData(addList);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
@@ -2208,16 +2204,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 				vector<MANUAL_AUTO_ADD_DATA> val;
 				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					{
-						CBlockLock lock(&sys->settingLock);
+						CBlockLock lock(&sys->autoAddLock);
+						vector<RESERVE_DATA> addList;
 						for( size_t i = 0; i < val.size(); i++ ){
-							if( sys->manualAutoAdd.ChgData(val[i]) == false ){
-								val.erase(val.begin() + (i--));
+							if( sys->manualAutoAdd.ChgData(val[i]) ){
+								sys->AutoAddReserveProgram(val[i], addList);
 							}
 						}
 						sys->manualAutoAdd.SaveText();
-					}
-					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveProgram(val[i]);
+						sys->reserveManager.AddReserveData(addList);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
@@ -2339,12 +2334,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			EPG_AUTO_ADD_DATA item;
 			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
 				{
-					CBlockLock lock(&sys->settingLock);
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
 					item.dataID = sys->epgAutoAdd.AddData(item);
+					sys->AutoAddReserveEPG(item, addList);
 					sys->epgAutoAdd.SaveText();
+					sys->reserveManager.AddReserveData(addList);
 				}
 				resParam->param = OLD_CMD_SUCCESS;
-				sys->AutoAddReserveEPG(item);
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
@@ -2354,7 +2351,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			resParam->param = OLD_CMD_ERR;
 			EPG_AUTO_ADD_DATA item;
 			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
-				CBlockLock lock(&sys->settingLock);
+				CBlockLock lock(&sys->autoAddLock);
 				sys->epgAutoAdd.DelData(item.dataID);
 				sys->epgAutoAdd.SaveText();
 				resParam->param = OLD_CMD_SUCCESS;
@@ -2368,12 +2365,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			EPG_AUTO_ADD_DATA item;
 			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
 				{
-					CBlockLock lock(&sys->settingLock);
-					sys->epgAutoAdd.ChgData(item);
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
+					if( sys->epgAutoAdd.ChgData(item) ){
+						sys->AutoAddReserveEPG(item, addList);
+					}
 					sys->epgAutoAdd.SaveText();
+					sys->reserveManager.AddReserveData(addList);
 				}
 				resParam->param = OLD_CMD_SUCCESS;
-				sys->AutoAddReserveEPG(item);
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
@@ -3366,7 +3366,7 @@ int CEpgTimerSrvMain::LuaGetTunerReserveAll(lua_State* L)
 int CEpgTimerSrvMain::LuaEnumAutoAdd(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	CBlockLock lock(&ws.sys->settingLock);
+	CBlockLock lock(&ws.sys->autoAddLock);
 	lua_newtable(L);
 	int i = 0;
 	for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ws.sys->epgAutoAdd.GetMap().begin(); itr != ws.sys->epgAutoAdd.GetMap().end(); itr++, i++ ){
@@ -3389,7 +3389,7 @@ int CEpgTimerSrvMain::LuaEnumAutoAdd(lua_State* L)
 int CEpgTimerSrvMain::LuaEnumManuAdd(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	CBlockLock lock(&ws.sys->settingLock);
+	CBlockLock lock(&ws.sys->autoAddLock);
 	lua_newtable(L);
 	int i = 0;
 	for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ws.sys->manualAutoAdd.GetMap().begin(); itr != ws.sys->manualAutoAdd.GetMap().end(); itr++, i++ ){
@@ -3416,7 +3416,7 @@ int CEpgTimerSrvMain::LuaDelAutoAdd(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 1 ){
-		CBlockLock lock(&ws.sys->settingLock);
+		CBlockLock lock(&ws.sys->autoAddLock);
 		if( ws.sys->epgAutoAdd.DelData((DWORD)lua_tointeger(L, -1)) ){
 			ws.sys->epgAutoAdd.SaveText();
 			ws.sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
@@ -3429,7 +3429,7 @@ int CEpgTimerSrvMain::LuaDelManuAdd(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 1 ){
-		CBlockLock lock(&ws.sys->settingLock);
+		CBlockLock lock(&ws.sys->autoAddLock);
 		if( ws.sys->manualAutoAdd.DelData((DWORD)lua_tointeger(L, -1)) ){
 			ws.sys->manualAutoAdd.SaveText();
 			ws.sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
@@ -3452,18 +3452,20 @@ int CEpgTimerSrvMain::LuaAddOrChgAutoAdd(lua_State* L)
 				FetchRecSettingData(ws, item.recSetting);
 				bool modified = true;
 				{
-					CBlockLock lock(&ws.sys->settingLock);
+					CBlockLock lock(&ws.sys->autoAddLock);
 					if( item.dataID == 0 ){
 						item.dataID = ws.sys->epgAutoAdd.AddData(item);
 					}else{
 						modified = ws.sys->epgAutoAdd.ChgData(item);
 					}
 					if( modified ){
+						vector<RESERVE_DATA> addList;
+						ws.sys->AutoAddReserveEPG(item, addList);
 						ws.sys->epgAutoAdd.SaveText();
+						ws.sys->reserveManager.AddReserveData(addList);
 					}
 				}
 				if( modified ){
-					ws.sys->AutoAddReserveEPG(item);
 					ws.sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 					lua_pushboolean(L, true);
 					return 1;
@@ -3494,18 +3496,20 @@ int CEpgTimerSrvMain::LuaAddOrChgManuAdd(lua_State* L)
 			FetchRecSettingData(ws, item.recSetting);
 			bool modified = true;
 			{
-				CBlockLock lock(&ws.sys->settingLock);
+				CBlockLock lock(&ws.sys->autoAddLock);
 				if( item.dataID == 0 ){
 					item.dataID = ws.sys->manualAutoAdd.AddData(item);
 				}else{
 					modified = ws.sys->manualAutoAdd.ChgData(item);
 				}
 				if( modified ){
+					vector<RESERVE_DATA> addList;
+					ws.sys->AutoAddReserveProgram(item, addList);
 					ws.sys->manualAutoAdd.SaveText();
+					ws.sys->reserveManager.AddReserveData(addList);
 				}
 			}
 			if( modified ){
-				ws.sys->AutoAddReserveProgram(item);
 				ws.sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 				lua_pushboolean(L, true);
 				return 1;

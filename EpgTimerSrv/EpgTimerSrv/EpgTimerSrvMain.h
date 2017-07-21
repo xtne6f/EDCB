@@ -52,8 +52,8 @@ private:
 	bool IsFindShareTSFile() const;
 	//抑制条件のプロセスが起動しているかどうか
 	bool IsFindNoSuspendExe() const;
-	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
-	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
+	void AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList);
+	void AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const;
 	//外部制御コマンド関係
 	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
 	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam);
@@ -124,6 +124,8 @@ private:
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;
 
+	//autoAddLock->settingLockの順にロックする
+	mutable CRITICAL_SECTION autoAddLock;
 	mutable CRITICAL_SECTION settingLock;
 	HWND hwndMain;
 
