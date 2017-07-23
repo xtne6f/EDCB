@@ -55,7 +55,7 @@
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Resources\EpgTimer_Bon_Vista_blue_rev2.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\TaskIconBlue.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationFramework.Aero" />
@@ -444,18 +444,6 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\EpgTimer_Bon_Vista_blue_rev2.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\EpgTimer_Bon_Vista_gray_rev2.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\EpgTimer_Bon_Vista_green_rev2.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\EpgTimer_Bon_Vista_red_rev2.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\TaskIconBlue.ico" />

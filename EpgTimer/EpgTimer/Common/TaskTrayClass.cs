@@ -31,7 +31,11 @@ namespace EpgTimer
         }
         public Icon Icon {
             get { return notifyIcon.Icon; }
-            set { notifyIcon.Icon = value; }
+            set
+            {
+                System.Drawing.Size size = SystemInformation.SmallIconSize;
+                notifyIcon.Icon = new Icon(value, new System.Drawing.Size((size.Width + 15) / 16 * 16, (size.Height + 15) / 16 * 16));
+            }
         }
         public bool Visible{
             get { return notifyIcon.Visible; }

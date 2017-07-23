@@ -60,34 +60,6 @@ namespace EpgTimer.Properties {
             }
         }
         
-        internal static System.Drawing.Icon EpgTimer_Bon_Vista_blue_rev2 {
-            get {
-                object obj = ResourceManager.GetObject("EpgTimer_Bon_Vista_blue_rev2", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        internal static System.Drawing.Icon EpgTimer_Bon_Vista_gray_rev2 {
-            get {
-                object obj = ResourceManager.GetObject("EpgTimer_Bon_Vista_gray_rev2", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        internal static System.Drawing.Icon EpgTimer_Bon_Vista_green_rev2 {
-            get {
-                object obj = ResourceManager.GetObject("EpgTimer_Bon_Vista_green_rev2", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        internal static System.Drawing.Icon EpgTimer_Bon_Vista_red_rev2 {
-            get {
-                object obj = ResourceManager.GetObject("EpgTimer_Bon_Vista_red_rev2", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
         internal static System.Drawing.Icon TaskIconBlue {
             get {
                 object obj = ResourceManager.GetObject("TaskIconBlue", resourceCulture);
