@@ -6,19 +6,13 @@
     <Grid>
         <TabControl Name="tabControl" Margin="0,0,0,42">
             <TabItem Header="動作設定" Name="tabItem_app">
-                <Grid>
-                    <my:SetAppView x:Name="setAppView" />
-                </Grid>
+                <my:SetAppView x:Name="setAppView" />
             </TabItem>
             <TabItem Header="番組表" Name="tabItem_epgView">
-                <Grid>
-                    <my:SetEpgView x:Name="setEpgView" />
-                </Grid>
+                <my:SetEpgView x:Name="setEpgView" />
             </TabItem>
             <TabItem Header="外部アプリケーション" Name="tabItem_otherApp">
-                <Grid>
-                    <my:SetOtherAppView x:Name="setOtherAppView" />
-                </Grid>
+                <my:SetOtherAppView x:Name="setOtherAppView" />
             </TabItem>
         </TabControl>
         <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,0,114,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" />

@@ -11,14 +11,10 @@
         </Grid.RowDefinitions>
         <TabControl Name="tabControl1" TabStripPlacement="Bottom" Margin="0,0,0,3">
             <TabItem Header="検索条件" Name="tabItem1" KeyDown="tabItem_searchKey_KeyDown">
-                <Grid>
-                    <my:SearchKeyView x:Name="searchKeyView" />
-                </Grid>
+                <my:SearchKeyView x:Name="searchKeyView" />
             </TabItem>
             <TabItem Header="録画設定" Name="tabItem2">
-                <Grid>
-                    <my:RecSettingView x:Name="recSettingView" />
-                </Grid>
+                <my:RecSettingView x:Name="recSettingView" />
             </TabItem>
         </TabControl>
         <GridSplitter Grid.Row="0" Height="2" HorizontalAlignment="Stretch" Name="gridSplitter1" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
