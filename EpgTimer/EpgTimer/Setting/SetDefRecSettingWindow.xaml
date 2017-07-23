@@ -9,11 +9,6 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
-        <Grid.Resources>
-            <Style TargetType="{x:Type TextBox}">
-                <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-            </Style>
-        </Grid.Resources>
         <my:RecSettingView Grid.Row="1" x:Name="recSettingView" />
         <Button Content="閉じる" Grid.Row="2" Height="23" HorizontalAlignment="Right" Margin="0,5,12,0" Name="button_ok" VerticalAlignment="Top" Width="75" Click="button_ok_Click" />
         <Label Content="※変更を行うにはプリセットごとに変更ボタンを押してください" Height="28" HorizontalAlignment="Left" Margin="12,2,0,0" Name="label1" VerticalAlignment="Top" />

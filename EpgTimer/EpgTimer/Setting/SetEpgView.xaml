@@ -5,11 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="780">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>        
-    </UserControl.Resources>
     <Grid>
         <TabControl Name="tabControl">
             <TabItem Header="基本" Name="tabItem_basic">
@@ -20,13 +15,13 @@
                             <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="96,6,0,0" Name="label2" VerticalAlignment="Top" />
                             <ComboBox Height="24" HorizontalAlignment="Left" Margin="167,6,0,0" Name="comboBox_fontTitle" VerticalAlignment="Top" Width="203" />
                             <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="386,6,0,0" Name="label3" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="438,8,0,0" Name="textBox_fontSizeTitle" VerticalAlignment="Top" Width="39" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="438,8,0,0" Name="textBox_fontSizeTitle" VerticalAlignment="Top" Width="39" />
                             <CheckBox Content="太字" Height="16" HorizontalAlignment="Left" Margin="483,11,0,0" Name="checkBox_fontBoldTitle" VerticalAlignment="Top" />
                             <Label Content="タイトル以外" Height="28" HorizontalAlignment="Left" Margin="6,36,0,0" Name="label4" VerticalAlignment="Top" />
                             <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="96,36,0,0" Name="label5" VerticalAlignment="Top" />
                             <ComboBox Height="24" HorizontalAlignment="Left" Margin="167,36,0,0" Name="comboBox_font" VerticalAlignment="Top" Width="203" />
                             <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="386,36,0,0" Name="label6" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="438,38,0,0" Name="textBox_fontSize" VerticalAlignment="Top" Width="39" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="438,38,0,0" Name="textBox_fontSize" VerticalAlignment="Top" Width="39" />
                             <ComboBox Height="24" HorizontalAlignment="Left" Margin="539,8,0,0" Name="comboBox_colorTitle1" VerticalAlignment="Top" Width="98" ItemsSource="{Binding}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
@@ -54,18 +49,18 @@
                     <GroupBox Header="表示" Height="248" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
                         <Grid>
                             <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label7" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
                             <Label Content="サービス１つの幅" Height="28" HorizontalAlignment="Left" Margin="11,36,0,0" Name="label8" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="165,36,0,0" Name="textBox_service_width" VerticalAlignment="Top" Width="55" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="165,36,0,0" Name="textBox_service_width" VerticalAlignment="Top" Width="55" />
                             <Label Content="1分あたりの高さ" Height="28" HorizontalAlignment="Left" Margin="327,6,0,0" Name="label9" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="470,8,0,0" Name="textBox_minHeight" VerticalAlignment="Top" Width="55" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="470,8,0,0" Name="textBox_minHeight" VerticalAlignment="Top" Width="55" />
                             <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label10" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="470,38,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="470,38,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
                             <CheckBox Content="番組内容表示位置を番組名表示位置にあわせる" Height="16" HorizontalAlignment="Left" Margin="350,70,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
                             <CheckBox Content="詳細をツールチップ表示する" Height="16" HorizontalAlignment="Left" Margin="350,92,0,0" Name="checkBox_descToolTip" VerticalAlignment="Top" />
                             <CheckBox Content="番組名を表示しきれない物のみ表示する" Height="16" HorizontalAlignment="Left" Margin="370,114,0,0" Name="checkBox_toolTip_noView_only" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
                             <Label Content="ツールチップを表示するまでの時間(ミリ秒)" Height="28" HorizontalAlignment="Left" Margin="370,132,0,0" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="605,134,0,0" Name="textBox_toolTipWait" VerticalAlignment="Top" Width="47" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="605,134,0,0" Name="textBox_toolTipWait" VerticalAlignment="Top" Width="47" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
                             <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="535,92,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" />
                             <Label Content="グラデーション表示を行う" Height="28" HorizontalAlignment="Left" Margin="350,160,0,0" VerticalAlignment="Top" />
                             <CheckBox Content="番組" Height="16" HorizontalAlignment="Left" Margin="503,165,0,0" Name="checkBox_gradation" VerticalAlignment="Top" />
@@ -74,7 +69,7 @@
                             <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="350,193,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
                             <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_scrollAuto" VerticalAlignment="Top" />
                             <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" Name="label36" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="650,8,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="650,8,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
                         </Grid>
                     </GroupBox>
                 </Grid>

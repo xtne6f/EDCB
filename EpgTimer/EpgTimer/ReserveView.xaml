@@ -6,9 +6,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged" FontSize="12">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />

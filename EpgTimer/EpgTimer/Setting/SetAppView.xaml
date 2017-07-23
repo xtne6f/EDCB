@@ -5,11 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="780">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
     <Grid>
         <TabControl Name="tabControl1">
             <TabItem Header="全般" Name="tabItem3">

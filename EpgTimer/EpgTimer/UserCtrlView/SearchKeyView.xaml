@@ -5,11 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="700" xmlns:my="clr-namespace:EpgTimer">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
     <Grid>
         <Label Content="検索キーワード" Height="28" HorizontalAlignment="Left" Margin="10,8,0,0" VerticalAlignment="Top" />
         <Label Content="NOTキーワード" Height="28" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top" />
@@ -106,9 +101,9 @@
             </StackPanel>
             <StackPanel Grid.Column="1" HorizontalAlignment="Left" Margin="0,0,0,103" Orientation="Horizontal" VerticalAlignment="Bottom">
                 <Label Content="番組長" Height="28" Margin="0,0,5,0" VerticalAlignment="Center" />
-                <TextBox Height="24" Name="textBox_chkDurationMin" Text="0" VerticalAlignment="Center" Width="40" />
+                <TextBox Height="24" InputMethod.IsInputMethodEnabled="False" Name="textBox_chkDurationMin" Text="0" VerticalAlignment="Center" Width="40" />
                 <Label Content="分以上" Height="28" VerticalAlignment="Center" />
-                <TextBox Height="24" Name="textBox_chkDurationMax" Text="0" VerticalAlignment="Center" Width="40" />
+                <TextBox Height="24" InputMethod.IsInputMethodEnabled="False" Name="textBox_chkDurationMax" Text="0" VerticalAlignment="Center" Width="40" />
                 <Label Content="分以下(0で無制限)" Height="28" VerticalAlignment="Center" />
             </StackPanel>
             <GroupBox Grid.Column="1" Header="自動予約登録専用" Height="95" HorizontalAlignment="Left" Margin="0,0,0,5" VerticalAlignment="Bottom">
@@ -116,7 +111,7 @@
                     <CheckBox Content="同一番組名の録画結果があれば無効で登録する" Height="16" HorizontalAlignment="Left" Name="checkBox_chkRecEnd" VerticalAlignment="Top" />
                     <StackPanel HorizontalAlignment="Left" Margin="16,18,0,0" Orientation="Horizontal" VerticalAlignment="Top">
                         <Label Content="確認対象期間" Height="28" Margin="0,0,10,0" VerticalAlignment="Center" />
-                        <TextBox Height="24" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Name="textBox_chkRecDay" Text="0" VerticalAlignment="Center" Width="40" />
+                        <TextBox Height="24" InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Name="textBox_chkRecDay" Text="0" VerticalAlignment="Center" Width="40" />
                         <Label Content="日前まで" Height="28" VerticalAlignment="Center" />
                     </StackPanel>
                     <CheckBox Content="全てのサービスで無効にする" Height="16" HorizontalAlignment="Left" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Margin="16,48,0,0" Name="checkBox_chkRecNoService" VerticalAlignment="Top" />

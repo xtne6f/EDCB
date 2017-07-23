@@ -6,9 +6,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
             <MenuItem Header="Andキーワード" Name="AndKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="Notキーワード" Name="NotKey" IsCheckable="True" Click="headerSelect_Click" />
