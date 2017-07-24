@@ -1081,7 +1081,7 @@ namespace EpgTimer
             {
                 if (resDefBackColor == null)
                 {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
+                    Color item = Color.FromArgb(Settings.Instance.ResDefColorA, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
                     resDefBackColor = new SolidColorBrush();
                     resDefBackColor.Color = item;
                     resDefBackColor.Freeze();
@@ -1096,7 +1096,7 @@ namespace EpgTimer
             {
                 if (resErrBackColor == null)
                 {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
+                    Color item = Color.FromArgb(Settings.Instance.ResErrColorA, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
                     resErrBackColor = new SolidColorBrush();
                     resErrBackColor.Color = item;
                     resErrBackColor.Freeze();
@@ -1111,7 +1111,7 @@ namespace EpgTimer
             {
                 if (resWarBackColor == null)
                 {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
+                    Color item = Color.FromArgb(Settings.Instance.ResWarColorA, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
                     resWarBackColor = new SolidColorBrush();
                     resWarBackColor.Color = item;
                     resWarBackColor.Freeze();
@@ -1126,7 +1126,7 @@ namespace EpgTimer
             {
                 if (resNoBackColor == null)
                 {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
+                    Color item = Color.FromArgb(Settings.Instance.ResNoColorA, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
                     resNoBackColor = new SolidColorBrush();
                     resNoBackColor.Color = item;
                     resNoBackColor.Freeze();
@@ -1142,7 +1142,7 @@ namespace EpgTimer
             {
                 if (recEndDefBackColor == null)
                 {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
+                    Color item = Color.FromArgb(Settings.Instance.RecEndDefColorA, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
                     recEndDefBackColor = new SolidColorBrush();
                     recEndDefBackColor.Color = item;
                     recEndDefBackColor.Freeze();
@@ -1157,7 +1157,7 @@ namespace EpgTimer
             get
             {
                 if( recEndErrBackColor == null ){
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
+                    Color item = Color.FromArgb(Settings.Instance.RecEndErrColorA, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
                     recEndErrBackColor = new SolidColorBrush();
                     recEndErrBackColor.Color = item;
                     recEndErrBackColor.Freeze();
@@ -1173,7 +1173,7 @@ namespace EpgTimer
             {
                 if (recEndWarBackColor == null)
                 {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
+                    Color item = Color.FromArgb(Settings.Instance.RecEndWarColorA, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
                     recEndWarBackColor = new SolidColorBrush();
                     recEndWarBackColor.Color = item;
                     recEndWarBackColor.Freeze();
