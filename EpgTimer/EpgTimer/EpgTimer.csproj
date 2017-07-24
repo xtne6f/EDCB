@@ -458,10 +458,10 @@
     <None Include="Resources\TaskIconRed.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\key.png" />
+    <Resource Include="Resources\key.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\key_no.png" />
+    <Resource Include="Resources\key_no.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
