@@ -412,10 +412,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		TIMER_RELOAD_EPG_CHK_PENDING = 1,
 		TIMER_QUERY_SHUTDOWN_PENDING,
 		TIMER_RETRY_ADD_TRAY,
+		TIMER_INC_SRV_STATUS,
 		TIMER_SET_RESUME,
 		TIMER_CHECK,
 		TIMER_RESET_HTTP_SERVER,
 	};
+	static const DWORD SRV_STATUS_PRE_REC = 100;
 
 	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	if( uMsg != WM_CREATE && ctx == NULL ){
@@ -546,14 +548,23 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				ctx->tcpServer.NotifyUpdate();
 			}
 			for( vector<NOTIFY_SRV_INFO>::const_iterator itr = list.begin(); itr != list.end(); itr++ ){
-				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
-					ctx->notifySrvStatus = itr->param1;
+				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ||
+				    itr->notifyID == NOTIFY_UPDATE_PRE_REC_START && itr->param4.find(L'/') != wstring::npos &&
+				    (ctx->notifySrvStatus == 0 || ctx->notifySrvStatus > 2) && ctx->sys->setting.blinkPreRec ){
+					if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
+						ctx->notifySrvStatus = itr->param1;
+					}else{
+						ctx->notifySrvStatus = SRV_STATUS_PRE_REC;
+						SetTimer(hwnd, TIMER_INC_SRV_STATUS, 1000, NULL);
+					}
 					if( ctx->taskFlag ){
 						NOTIFYICONDATA nid = {};
 						nid.cbSize = NOTIFYICONDATA_V2_SIZE;
 						nid.hWnd = hwnd;
 						nid.uID = 1;
-						nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED : ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN : IDI_ICON_BLUE);
+						nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
+						                          ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN :
+						                          ctx->notifySrvStatus % 2 ? IDI_ICON_SEMI : IDI_ICON_BLUE);
 						if( ctx->notifyActiveTime != LLONG_MAX ){
 							SYSTEMTIME st;
 							ConvertSystemTime(ctx->notifyActiveTime + 30 * I64_1SEC, &st);
@@ -569,6 +580,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 							DestroyIcon(nid.hIcon);
 						}
 					}
+				}
+				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
+					//何もしない
 				}else if( itr->notifyID < _countof(ctx->sys->notifyUpdateCount) ){
 					//更新系の通知をカウント。書き込みがここだけかつDWORDなので排他はしない
 					ctx->sys->notifyUpdateCount[itr->notifyID]++;
@@ -732,6 +746,15 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case TIMER_RETRY_ADD_TRAY:
 			KillTimer(hwnd, TIMER_RETRY_ADD_TRAY);
 			SendMessage(hwnd, WM_RECEIVE_NOTIFY, TRUE, 0);
+			break;
+		case TIMER_INC_SRV_STATUS:
+			//最大20秒
+			if( SRV_STATUS_PRE_REC <= ctx->notifySrvStatus && ctx->notifySrvStatus < SRV_STATUS_PRE_REC + 20 ){
+				ctx->notifySrvStatus++;
+				SendMessage(hwnd, WM_RECEIVE_NOTIFY, TRUE, 0);
+			}else{
+				KillTimer(hwnd, TIMER_INC_SRV_STATUS);
+			}
 			break;
 		case TIMER_SET_RESUME:
 			{
