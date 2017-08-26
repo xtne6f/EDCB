@@ -22,7 +22,7 @@ namespace EpgTimer
     {
         private System.Threading.Mutex mutex;
 
-        private TaskTrayClass taskTray = null;
+        private TaskTrayClass taskTray = new TaskTrayClass();
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
@@ -34,8 +34,6 @@ namespace EpgTimer
         private bool initExe = false;
 
         private bool needUnRegist = true;
-
-        private bool idleShowBalloon = false;
 
         public MainWindow()
         {
@@ -284,18 +282,21 @@ namespace EpgTimer
                 }
 
                 //タスクトレイの表示
-                taskTray = new TaskTrayClass(this);
-                taskTray.Icon = Properties.Resources.TaskIconBlue;
-                taskTray.Visible = Settings.Instance.ShowTray;
-                taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
+                taskTray.Click += (sender, e) =>
+                {
+                    Show();
+                    WindowState = Settings.Instance.LastWindowState;
+                    Activate();
+                };
+                taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconBlue.ico");
 
                 CommonManager.Instance.DB.ReloadReserveInfo();
                 ReserveData item = new ReserveData();
                 if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
                 {
-                    String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
+                    String timeView = item.StartTime.ToString("M/d(ddd) H:mm～");
                     DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                    timeView += endTime.ToString("HH:mm:ss");
+                    timeView += endTime.ToString("H:mm");
                     taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
                 }
                 else
@@ -354,68 +355,60 @@ namespace EpgTimer
                 }
             }
         }
-        void taskTray_ContextMenuClick(object sender, EventArgs e)
-        {
-            String tag = sender.ToString();
-            if (String.Compare("設定", tag) == 0)
-            {
-                PresentationSource topWindow = PresentationSource.FromVisual(this);
-                if (topWindow == null)
-                {
-                    this.Visibility = System.Windows.Visibility.Visible;
-                    this.WindowState = Settings.Instance.LastWindowState;
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        SettingCmd();
-                    }));
-                }
-                else
-                {
-                    SettingCmd();
-                }
-            }
-            else if (String.Compare("終了", tag) == 0)
-            {
-                CloseCmd();
-            }
-            else if (String.Compare("スタンバイ", tag) == 0)
-            {
-                StandbyCmd();
-            }
-            else if (String.Compare("休止", tag) == 0)
-            {
-                SuspendCmd();
-            }
-            else if (String.Compare("EPG取得", tag) == 0)
-            {
-                EpgCapCmd();
-            }
-            else if (String.Compare("再接続", tag) == 0)
-            {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    ConnectCmd(true);
-                }
-            }
-        }
 
         private void ResetTaskMenu()
         {
-            List<Object> addList = new List<object>();
-            foreach (String info in Settings.Instance.TaskMenuList)
+            var addList = new List<KeyValuePair<string, Action<string>>>();
+            foreach (string info in Settings.Instance.TaskMenuList)
             {
-                if (String.Compare(info, "（セパレータ）") == 0)
+                if (info == "（セパレータ）")
                 {
-                    addList.Add("");
+                    addList.Add(new KeyValuePair<string, Action<string>>(null, null));
                 }
                 else
                 {
-                    addList.Add(info);
+                    addList.Add(new KeyValuePair<string, Action<string>>(info, tag =>
+                    {
+                        if (tag == "設定")
+                        {
+                            //メインウィンドウが表示済みであることを前提にしている箇所があるため
+                            if (PresentationSource.FromVisual(this) == null)
+                            {
+                                Show();
+                                WindowState = Settings.Instance.LastWindowState;
+                            }
+                            SettingCmd();
+                        }
+                        else if (tag == "終了")
+                        {
+                            CloseCmd();
+                        }
+                        else if (tag == "スタンバイ")
+                        {
+                            StandbyCmd();
+                        }
+                        else if (tag == "休止")
+                        {
+                            SuspendCmd();
+                        }
+                        else if (tag == "EPG取得")
+                        {
+                            EpgCapCmd();
+                        }
+                        else if (tag == "再接続")
+                        {
+                            if (CommonManager.Instance.NWMode)
+                            {
+                                ConnectCmd(true);
+                            }
+                        }
+                    }));
                 }
             }
-            taskTray.SetContextMenu(addList);
+            taskTray.ContextMenuList = addList;
+            taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
+            taskTray.Visible = Settings.Instance.ShowTray;
         }
-
 
         private void ResetButtonView()
         {
@@ -605,10 +598,7 @@ namespace EpgTimer
                         mutex.Close();
                     }
                 }
-                if (taskTray != null)
-                {
-                    taskTray.Dispose();
-                }
+                taskTray.Dispose();
             }
         }
 
@@ -648,10 +638,8 @@ namespace EpgTimer
             if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
             {
                 this.Visibility = System.Windows.Visibility.Visible;
-                taskTray.LastViewState = this.WindowState;
                 Settings.Instance.LastWindowState = this.WindowState;
             }
-            taskTray.Visible = Settings.Instance.ShowTray;
         }
 
         private void Window_PreviewDragEnter(object sender, DragEventArgs e)
@@ -1140,7 +1128,6 @@ namespace EpgTimer
 
         void NotifyStatus(NotifySrvInfo status)
         {
-            int IdleTimeSec = 10 * 60;
             System.Diagnostics.Trace.WriteLine((UpdateNotifyItem)status.notifyID);
 
             switch ((UpdateNotifyItem)status.notifyID)
@@ -1205,129 +1192,42 @@ namespace EpgTimer
                     {
                         if (status.param1 == 1)
                         {
-                            taskTray.Icon = Properties.Resources.TaskIconRed;
+                            taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconRed.ico");
                         }
                         else if (status.param1 == 2)
                         {
-                            taskTray.Icon = Properties.Resources.TaskIconGreen;
+                            taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconGreen.ico");
                         }
                         else
                         {
-                            taskTray.Icon = Properties.Resources.TaskIconBlue;
+                            taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconBlue.ico");
                         }
                     }
                     break;
                 case UpdateNotifyItem.PreRecStart:
-                    {
-                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
-                        {
-                            taskTray.ShowBalloonTip("予約録画開始準備", status.param4, 10 * 1000);
-                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
-                            {
-                                idleShowBalloon = true;
-                            }
-                        }
-                        CommonManager.Instance.NotifyLogList.Add(status);
-                    }
-                    break;
                 case UpdateNotifyItem.RecStart:
-                    {
-                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
-                        {
-                            taskTray.ShowBalloonTip("録画開始", status.param4, 10 * 1000);
-                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
-                            {
-                                idleShowBalloon = true;
-                            }
-                        }
-                        CommonManager.Instance.NotifyLogList.Add(status);
-                    }
-                    break;
                 case UpdateNotifyItem.RecEnd:
-                    {
-                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
-                        {
-                            taskTray.ShowBalloonTip("録画終了", status.param4, 10 * 1000);
-                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
-                            {
-                                idleShowBalloon = true;
-                            }
-                        }
-                        CommonManager.Instance.NotifyLogList.Add(status);
-                    }
-                    break;
                 case UpdateNotifyItem.RecTuijyu:
-                    {
-                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
-                        {
-                            taskTray.ShowBalloonTip("追従発生", status.param4, 10 * 1000);
-                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
-                            {
-                                idleShowBalloon = true;
-                            }
-                        }
-                        CommonManager.Instance.NotifyLogList.Add(status);
-                    }
-                    break;
                 case UpdateNotifyItem.ChgTuijyu:
-                    {
-                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
-                        {
-                            taskTray.ShowBalloonTip("番組変更", status.param4, 10 * 1000);
-                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
-                            {
-                                idleShowBalloon = true;
-                            }
-                        }
-                        CommonManager.Instance.NotifyLogList.Add(status);
-                    }
-                    break;
                 case UpdateNotifyItem.PreEpgCapStart:
-                    {
-                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
-                        {
-                            taskTray.ShowBalloonTip("EPG取得", status.param4, 10 * 1000);
-                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
-                            {
-                                idleShowBalloon = true;
-                            }
-                        }
-                        CommonManager.Instance.NotifyLogList.Add(status);
-                    }
-                    break;
                 case UpdateNotifyItem.EpgCapStart:
-                    {
-                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
-                        {
-                            taskTray.ShowBalloonTip("EPG取得", "開始", 10 * 1000);
-                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
-                            {
-                                idleShowBalloon = true;
-                            }
-                        }
-                        CommonManager.Instance.NotifyLogList.Add(status);
-                    }
-                    break;
                 case UpdateNotifyItem.EpgCapEnd:
+                    if (Settings.Instance.NoBallonTips == false)
                     {
-                        if (CommonUtil.GetIdleTimeSec() < IdleTimeSec || idleShowBalloon == false)
-                        {
-                            taskTray.ShowBalloonTip("EPG取得", "終了", 10 * 1000);
-                            if (CommonUtil.GetIdleTimeSec() > IdleTimeSec)
-                            {
-                                idleShowBalloon = true;
-                            }
-                        }
-                        CommonManager.Instance.NotifyLogList.Add(status);
+                        UpdateNotifyItem notifyID = (UpdateNotifyItem)status.notifyID;
+                        string title = notifyID == UpdateNotifyItem.PreRecStart ? "予約録画開始準備" :
+                                       notifyID == UpdateNotifyItem.RecStart ? "録画開始" :
+                                       notifyID == UpdateNotifyItem.RecEnd ? "録画終了" :
+                                       notifyID == UpdateNotifyItem.RecTuijyu ? "追従発生" :
+                                       notifyID == UpdateNotifyItem.ChgTuijyu ? "番組変更" : "EPG取得";
+                        string tips = notifyID == UpdateNotifyItem.EpgCapStart ? "開始" :
+                                      notifyID == UpdateNotifyItem.EpgCapEnd ? "終了" : status.param4;
+                        taskTray.ShowBalloonTip(title, tips, 10 * 1000);
                     }
+                    CommonManager.Instance.NotifyLogList.Add(status);
                     break;
                 default:
                     break;
-            }
-
-            if (CommonUtil.GetIdleTimeSec() < IdleTimeSec)
-            {
-                idleShowBalloon = false;
             }
 
             CommonManager.Instance.DB.ReloadReserveInfo();
@@ -1335,9 +1235,9 @@ namespace EpgTimer
 
             if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
             {
-                String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
+                String timeView = item.StartTime.ToString("M/d(ddd) H:mm～");
                 DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                timeView += endTime.ToString("HH:mm:ss");
+                timeView += endTime.ToString("H:mm");
                 taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
             }
             else
