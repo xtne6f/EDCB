@@ -126,10 +126,9 @@ namespace EpgTimer
                 string name = comboBox_writePlugIn.SelectedItem as string;
                 string filePath = System.IO.Path.Combine(SettingPath.ModulePath, "Write\\" + name);
 
-                WritePlugInClass plugin = new WritePlugInClass();
                 HwndSource hwnd = (HwndSource)HwndSource.FromVisual(this);
 
-                plugin.Setting(filePath, hwnd.Handle);
+                CommonUtil.ShowPlugInSetting(filePath, hwnd.Handle);
             }
         }
 
@@ -142,10 +141,9 @@ namespace EpgTimer
                 {
                     string filePath = System.IO.Path.Combine(SettingPath.ModulePath, "RecName\\" + name);
 
-                    RecNamePluginClass plugin = new RecNamePluginClass();
                     HwndSource hwnd = (HwndSource)HwndSource.FromVisual(this);
 
-                    plugin.Setting(filePath, hwnd.Handle);
+                    CommonUtil.ShowPlugInSetting(filePath, hwnd.Handle);
                 }
             }
         }
