@@ -59,33 +59,5 @@ namespace EpgTimer.Properties {
                 resourceCulture = value;
             }
         }
-        
-        internal static System.Drawing.Icon TaskIconBlue {
-            get {
-                object obj = ResourceManager.GetObject("TaskIconBlue", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        internal static System.Drawing.Icon TaskIconGray {
-            get {
-                object obj = ResourceManager.GetObject("TaskIconGray", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        internal static System.Drawing.Icon TaskIconGreen {
-            get {
-                object obj = ResourceManager.GetObject("TaskIconGreen", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        internal static System.Drawing.Icon TaskIconRed {
-            get {
-                object obj = ResourceManager.GetObject("TaskIconRed", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
     }
 }
