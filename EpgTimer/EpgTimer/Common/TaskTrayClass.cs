@@ -74,7 +74,9 @@ namespace EpgTimer
                             {
                                 var newcontitem = new ToolStripMenuItem();
                                 newcontitem.Text = item.Key;
-                                newcontitem.Click += (sender, e) => item.Value(item.Key);
+                                // CS4のforeachと互換するため明示的に捕捉
+                                var itemCap = item;
+                                newcontitem.Click += (sender, e) => itemCap.Value(itemCap.Key);
                                 menu.Items.Add(newcontitem);
                             }
                             else
