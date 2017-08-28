@@ -30,17 +30,9 @@ namespace EpgTimer
             String recNamePlugInFile = "";
 
             ErrCode err = CommonManager.Instance.DB.ReloadPlugInFile();
-            if (err == ErrCode.CMD_ERR_CONNECT)
-            {
-                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-            }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
-            {
-                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-            }
             if (err != ErrCode.CMD_SUCCESS)
             {
-                MessageBox.Show("PlugIn一覧の取得でエラーが発生しました。");
+                MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "PlugIn一覧の取得でエラーが発生しました。");
             }
 
             int select = 0;

@@ -193,46 +193,13 @@ namespace EpgTimer
                             }
                         }
                         ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                        if (err == ErrCode.CMD_ERR_CONNECT)
-                        {
-                            if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                                }), null);
-                            }
-                            return false;
-                        }
-                        if (err == ErrCode.CMD_ERR_BUSY)
-                        {
-                            /*if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
-                                }), null);
-                            }*/
-                            return false;
-                        }
-                        if (err == ErrCode.CMD_ERR_TIMEOUT)
-                        {
-                            if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                                }), null);
-                            }
-                            return false;
-                        }
                         if (err != ErrCode.CMD_SUCCESS)
                         {
-                            if (this.IsVisible == true)
+                            if (IsVisible && err != ErrCode.CMD_ERR_BUSY)
                             {
                                 this.Dispatcher.BeginInvoke(new Action(() =>
                                 {
-                                    MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
+                                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
                                 }), null);
                             }
                             return false; 
@@ -261,19 +228,9 @@ namespace EpgTimer
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    return false;
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約情報の取得でエラーが発生しました。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約情報の取得でエラーが発生しました。");
                     return false;
                 }
 
@@ -869,17 +826,9 @@ namespace EpgTimer
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
                 ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
                 }
             }
             catch (Exception ex)
@@ -903,17 +852,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("予約削除でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約削除でエラーが発生しました。");
                     }
                 }
             }
@@ -1009,17 +950,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("予約変更でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                     }
                 }
             }
@@ -1073,17 +1006,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("予約変更でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                     }
                 }
             }
@@ -1324,17 +1249,9 @@ namespace EpgTimer
                         List<ReserveData> list = new List<ReserveData>();
                         list.Add(reserveInfo);
                         ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
-                        if (err == ErrCode.CMD_ERR_CONNECT)
-                        {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                        }
-                        if (err == ErrCode.CMD_ERR_TIMEOUT)
-                        {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                        }
                         if (err != ErrCode.CMD_SUCCESS)
                         {
-                            MessageBox.Show("簡易予約でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
+                            MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "簡易予約でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
                         }
                     }
                 }

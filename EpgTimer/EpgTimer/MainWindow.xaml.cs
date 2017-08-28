@@ -838,13 +838,9 @@ namespace EpgTimer
         void SuspendCmd()
         {
             ErrCode err = CommonManager.CreateSrvCtrl().SendChkSuspend();
-            if (err == ErrCode.CMD_ERR_CONNECT)
+            if (err != ErrCode.CMD_SUCCESS)
             {
-                MessageBox.Show("サーバーに接続できませんでした");
-            }
-            else if (err != ErrCode.CMD_SUCCESS)
-            {
-                MessageBox.Show("休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+                MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
             }
             else
             {
@@ -890,13 +886,9 @@ namespace EpgTimer
         void StandbyCmd()
         {
             ErrCode err = CommonManager.CreateSrvCtrl().SendChkSuspend();
-            if (err == ErrCode.CMD_ERR_CONNECT)
+            if (err != ErrCode.CMD_SUCCESS)
             {
-                MessageBox.Show("サーバーに接続できませんでした");
-            }
-            else if (err != ErrCode.CMD_SUCCESS)
-            {
-                MessageBox.Show("スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+                MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
             }
             else
             {

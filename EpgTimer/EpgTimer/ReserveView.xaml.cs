@@ -161,27 +161,11 @@ namespace EpgTimer
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     this.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
                     }), null);
                     return false;
                 }
@@ -400,17 +384,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -436,17 +412,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -498,17 +466,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -562,17 +522,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -723,17 +675,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -757,17 +701,9 @@ namespace EpgTimer
                 if (list.Count > 0)
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
