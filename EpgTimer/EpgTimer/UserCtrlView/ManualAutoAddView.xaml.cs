@@ -20,7 +20,6 @@ namespace EpgTimer
     /// </summary>
     public partial class ManualAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
 
@@ -162,7 +161,7 @@ namespace EpgTimer
                 {
                     dataIDList.Add(info.ManualAutoAddInfo.dataID);
                 }
-                cmd.SendDelManualAdd(dataIDList);
+                CommonManager.CreateSrvCtrl().SendDelManualAdd(dataIDList);
             }
         }
 

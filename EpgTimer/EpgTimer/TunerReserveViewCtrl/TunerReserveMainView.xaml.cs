@@ -26,7 +26,6 @@ namespace EpgTimer
         private List<TunerNameViewItem> tunerList = new List<TunerNameViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         private bool updateReserveData = true;
 
@@ -343,7 +342,7 @@ namespace EpgTimer
                 }
                 List<UInt32> list = new List<UInt32>();
                 list.Add(reserve.ReserveID);
-                ErrCode err = (ErrCode)cmd.SendDelReserve(list);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
@@ -387,7 +386,7 @@ namespace EpgTimer
                 reserve.RecSetting.RecMode = (byte)val;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
@@ -431,7 +430,7 @@ namespace EpgTimer
                 reserve.RecSetting.Priority = (byte)val;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");

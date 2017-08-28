@@ -11,11 +11,6 @@ namespace EpgTimer
 {
     class CommonManager
     {
-        public CtrlCmdUtil CtrlCmd
-        {
-            get;
-            set;
-        }
         public DBManager DB
         {
             get;
@@ -109,10 +104,9 @@ namespace EpgTimer
 
         public CommonManager()
         {
-            CtrlCmd = new CtrlCmdUtil();
-            DB = new DBManager(CtrlCmd);
-            TVTestCtrl = new TVTestCtrlClass(CtrlCmd);
-            NW = new NWConnect(CtrlCmd);
+            DB = new DBManager();
+            TVTestCtrl = new TVTestCtrlClass();
+            NW = new NWConnect();
             {
                 ContentKindDictionary = new Dictionary<UInt16, ContentKindInfo>();
                 ContentKindDictionary.Add(0x00FF, new ContentKindInfo("ニュース／報道", "", 0x00, 0xFF));
@@ -372,6 +366,17 @@ namespace EpgTimer
             NotifyLogList = new List<NotifySrvInfo>();
             CustContentColorList = new List<Brush>();
             CustTimeColorList = new List<Brush>();
+        }
+
+        public static CtrlCmdUtil CreateSrvCtrl()
+        {
+            var cmd = new CtrlCmdUtil();
+            if (Instance.NWMode)
+            {
+                cmd.SetSendMode(true);
+                cmd.SetNWSetting(Instance.NW.ConnectedIP, Instance.NW.ConnectedPort);
+            }
+            return cmd;
         }
 
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
@@ -918,9 +923,9 @@ namespace EpgTimer
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
-                if (CtrlCmd.SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
                 {
-                    CtrlCmd.SendNwPlayClose(info.ctrlID);
+                    CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
                     if (info.filePath != "")
                     {
                         FilePlay(info.filePath);

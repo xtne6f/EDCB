@@ -13,12 +13,6 @@ namespace EpgTimer
     {
         Process process = null;
         string processType;
-        private CtrlCmdUtil cmd = null;
-
-        public TVTestCtrlClass(CtrlCmdUtil ctrlCmd)
-        {
-            cmd = ctrlCmd;
-        }
 
         public bool SetLiveCh(UInt16 ONID, UInt16 TSID, UInt16 SID)
         {
@@ -59,9 +53,9 @@ namespace EpgTimer
                         nwBonDriver = "BonDriver_TCP.dll";
                     }
                     
-                    if (cmd.SendNwTVMode(nwMode) == ErrCode.CMD_SUCCESS)
+                    if (CommonManager.CreateSrvCtrl().SendNwTVMode(nwMode) == ErrCode.CMD_SUCCESS)
                     {
-                        if (cmd.SendNwTVSetCh(chInfo) == ErrCode.CMD_SUCCESS)
+                        if (CommonManager.CreateSrvCtrl().SendNwTVSetCh(chInfo) == ErrCode.CMD_SUCCESS)
                         {
                             String val = "";
                             for (int i = 0; i < 10; i++)
@@ -86,7 +80,7 @@ namespace EpgTimer
                         ((UInt64)TSID) << 16 |
                         ((UInt64)SID);
                     TvTestChChgInfo chInfo = new TvTestChChgInfo();
-                    ErrCode err = cmd.SendGetChgChTVTest(key, ref chInfo);
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendGetChgChTVTest(key, ref chInfo);
                     if (err == ErrCode.CMD_SUCCESS)
                     {
                         String val = "";
@@ -160,7 +154,7 @@ namespace EpgTimer
                     }
                 }
                 NWPlayTimeShiftInfo playInfo = new NWPlayTimeShiftInfo();
-                ErrCode err = cmd.SendNwTimeShiftOpen(reserveID, ref playInfo);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref playInfo);
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバーに接続できませんでした");
@@ -231,7 +225,7 @@ namespace EpgTimer
                 }
 
                 UInt32 ctrlID = 0;
-                ErrCode err = cmd.SendNwPlayOpen(filePath, ref ctrlID);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendNwPlayOpen(filePath, ref ctrlID);
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバーに接続できませんでした");
@@ -340,7 +334,7 @@ namespace EpgTimer
             process = null;
             if (Settings.Instance.NwTvMode == true)
             {
-                cmd.SendNwTVClose();
+                CommonManager.CreateSrvCtrl().SendNwTVClose();
             }
         }
 

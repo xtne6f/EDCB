@@ -37,9 +37,6 @@ namespace EpgTimer
         ListSortDirection _lastDirection = ListSortDirection.Ascending;
         string _lastHeaderClicked2 = null;
         ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
-        
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-
 
         private Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
 
@@ -369,7 +366,7 @@ namespace EpgTimer
                 keyList.Add(setViewInfo.SearchKey);
                 List<EpgEventInfo> list = new List<EpgEventInfo>();
 
-                cmd.SendSearchPg(keyList, ref list);
+                CommonManager.CreateSrvCtrl().SendSearchPg(keyList, ref list);
 
                 //サービス毎のリストに変換
                 serviceEventList.Clear();
@@ -871,7 +868,7 @@ namespace EpgTimer
 
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
@@ -905,7 +902,7 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendDelReserve(list);
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
                     if (err == ErrCode.CMD_ERR_CONNECT)
                     {
                         MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
@@ -1011,7 +1008,7 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err == ErrCode.CMD_ERR_CONNECT)
                     {
                         MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
@@ -1075,7 +1072,7 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err == ErrCode.CMD_ERR_CONNECT)
                     {
                         MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
@@ -1326,7 +1323,7 @@ namespace EpgTimer
 
                         List<ReserveData> list = new List<ReserveData>();
                         list.Add(reserveInfo);
-                        ErrCode err = (ErrCode)cmd.SendAddReserve(list);
+                        ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
                         if (err == ErrCode.CMD_ERR_CONNECT)
                         {
                             MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");

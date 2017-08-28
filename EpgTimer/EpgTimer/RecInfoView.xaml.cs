@@ -31,8 +31,6 @@ namespace EpgTimer
         private string _lastHeaderClicked2 = null;
         private ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-
         private bool ReloadInfo = true;
 
         public RecInfoView()
@@ -135,7 +133,7 @@ namespace EpgTimer
                     {
                         IDList.Add(info.RecInfo.ID);
                     }
-                    cmd.SendDelRecInfo(IDList);
+                    CommonManager.CreateSrvCtrl().SendDelRecInfo(IDList);
                 }
             }
             catch (Exception ex)
@@ -335,7 +333,7 @@ namespace EpgTimer
                     RecInfoDescWindow dlg = new RecInfoDescWindow();
                     dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                     RecFileInfo extraRecInfo = new RecFileInfo();
-                    if (cmd.SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                    if (CommonManager.CreateSrvCtrl().SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
                     {
                         info.RecInfo.ProgramInfo = extraRecInfo.ProgramInfo;
                         info.RecInfo.ErrInfo = extraRecInfo.ErrInfo;
@@ -420,7 +418,7 @@ namespace EpgTimer
                 RecInfoDescWindow dlg = new RecInfoDescWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 RecFileInfo extraRecInfo = new RecFileInfo();
-                if (cmd.SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                if (CommonManager.CreateSrvCtrl().SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
                 {
                     info.RecInfo.ProgramInfo = extraRecInfo.ProgramInfo;
                     info.RecInfo.ErrInfo = extraRecInfo.ErrInfo;

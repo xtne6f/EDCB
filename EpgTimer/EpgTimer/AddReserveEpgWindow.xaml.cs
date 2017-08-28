@@ -21,7 +21,6 @@ namespace EpgTimer
     public partial class AddReserveEpgWindow : Window
     {
         private EpgEventInfo eventInfo = null;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         public AddReserveEpgWindow()
         {
@@ -165,7 +164,7 @@ namespace EpgTimer
 
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");

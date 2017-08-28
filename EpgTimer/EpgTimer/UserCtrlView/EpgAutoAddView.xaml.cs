@@ -20,7 +20,6 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
         private bool ReloadInfo = true;
 
@@ -172,7 +171,7 @@ namespace EpgTimer
                     {
                         dataIDList.Add(info.EpgAutoAddInfo.dataID);
                     }
-                    cmd.SendDelEpgAutoAdd(dataIDList);
+                    CommonManager.CreateSrvCtrl().SendDelEpgAutoAdd(dataIDList);
                 }
             }
             catch (Exception ex)
@@ -221,7 +220,7 @@ namespace EpgTimer
                     keyList.Add(key);
                 }
 
-                cmd.SendSearchPg(keyList, ref list);
+                CommonManager.CreateSrvCtrl().SendSearchPg(keyList, ref list);
 
                 List<UInt32> dellist = new List<UInt32>();
 
@@ -246,7 +245,7 @@ namespace EpgTimer
 
                 if (dellist.Count > 0)
                 {
-                    cmd.SendDelReserve(dellist);
+                    CommonManager.CreateSrvCtrl().SendDelReserve(dellist);
                     CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
                     CommonManager.Instance.DB.ReloadReserveInfo();
                 }
@@ -318,7 +317,7 @@ namespace EpgTimer
                     List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                     addList.Add(info1.EpgAutoAddInfo);
                     addList.Add(info2.EpgAutoAddInfo);
-                    if (cmd.SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
+                    if (CommonManager.CreateSrvCtrl().SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                     {
                         MessageBox.Show("変更に失敗しました");
                     }
@@ -346,7 +345,7 @@ namespace EpgTimer
                     List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                     addList.Add(info1.EpgAutoAddInfo);
                     addList.Add(info2.EpgAutoAddInfo);
-                    if (cmd.SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
+                    if (CommonManager.CreateSrvCtrl().SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                     {
                         MessageBox.Show("変更に失敗しました");
                     }
@@ -472,7 +471,7 @@ namespace EpgTimer
                 string caption1 = "登録項目削除の確認";
                 if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
                 {
-                    cmd.SendDelEpgAutoAdd(dataIDList);
+                    CommonManager.CreateSrvCtrl().SendDelEpgAutoAdd(dataIDList);
                 }
             }
             catch (Exception ex)
@@ -556,7 +555,7 @@ namespace EpgTimer
                 addList1.Add(item1.EpgAutoAddInfo);
 
             }
-            if (cmd.SendChgEpgAutoAdd(addList1) != ErrCode.CMD_SUCCESS)
+            if (CommonManager.CreateSrvCtrl().SendChgEpgAutoAdd(addList1) != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("変更に失敗しました");
             }
