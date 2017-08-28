@@ -16,7 +16,7 @@
                     <Button Content="録画設定のプリセットを設定" Height="23" HorizontalAlignment="Left" Margin="6,50,0,0" Name="button_recDef" VerticalAlignment="Top" Width="209" Click="button_recDef_Click" />
                     <Button Content="検索条件のデフォルト値を設定" Height="23" HorizontalAlignment="Left" Margin="242,50,0,0" Name="button_searchDef" VerticalAlignment="Top" Width="248" Click="button_searchDef_Click" />
                     <CheckBox Content="ツールチップの表示を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,81,0,0" Name="checkBox_noToolTips" VerticalAlignment="Top" />
-                    <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,103,0,0" Name="checkBox_noBallonTips" VerticalAlignment="Top" />
+                    <CheckBox Content="バルーンチップ／トーストでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,103,0,0" Name="checkBox_noBallonTips" VerticalAlignment="Top" />
                     <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,125,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
                     <CheckBox Content="EPG取得対象サービスのみ表示する" Height="16" HorizontalAlignment="Left" Margin="6,147,0,0" Name="checkBox_showEpgCapServiceOnly" VerticalAlignment="Top" />
                     <CheckBox Content="テーマを適用する(要再起動)" Height="16" HorizontalAlignment="Left" Margin="6,169,0,0" Name="checkBox_NotNoStyle" VerticalAlignment="Top" />
