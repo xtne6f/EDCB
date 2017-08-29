@@ -114,7 +114,8 @@ namespace EpgTimer
         public string ReserveRectColorNo { get; set; }
         public string ReserveRectColorNoTuner { get; set; }
         public string ReserveRectColorWarning { get; set; }
-        public bool ReserveRectBackground { get; set; }
+        public int ReserveRectFillOpacity { get; set; }
+        public bool ReserveRectFillWithShadow { get; set; }
         public string TitleColor1 { get; set; }
         public string TitleColor2 { get; set; }
         public UInt32 TitleCustColor1 { get; set; }
@@ -303,7 +304,8 @@ namespace EpgTimer
             TitleCustColor2 = 0xFFFFFFFF;
             ServiceColor = "LightSlateGray";
             ServiceCustColor = 0xFFFFFFFF;
-            ReserveRectBackground = false;
+            ReserveRectFillOpacity = 0;
+            ReserveRectFillWithShadow = true;
             EpgToolTip = false;
             EpgTitleIndent = true;
             EpgToolTipNoViewOnly = true;

@@ -990,263 +990,168 @@ namespace EpgTimer
             }
         }
 
-        public void ReloadCustContentColorList()
+        private static SolidColorBrush CreateCustColorBrush(string name, uint cust, byte a = 0xFF, int opacity = 100)
         {
-            try
+            SolidColorBrush brush;
+            if (name == "カスタム")
             {
-                CustContentColorList.Clear();
-                string name;
-                SolidColorBrush brush;
-                for (int i = 0; i < Settings.Instance.ContentColorList.Count; i++)
+                Color c = ColorDef.FromUInt(cust);
+                brush = new SolidColorBrush(Color.FromArgb((byte)(c.A * opacity / 100), c.R, c.G, c.B));
+                brush.Freeze();
+            }
+            else
+            {
+                brush = ColorDef.BrushFromName(name);
+                if (brush.Color.A != 0 && (a != 0xFF || opacity != 100))
                 {
-                    name = Settings.Instance.ContentColorList[i];
-                    brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                    if (Settings.Instance.EpgGradation == false)
-                    {
-                        if (brush == null)
-                        {
-                            (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[i]))).Freeze();
-                        }
-                        CustContentColorList.Add(brush);
-                    }
-                    else
-                    {
-                        CustContentColorList.Add(ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.ContentCustColorList[i]) : brush.Color));
-                    }
-                }
-                name = Settings.Instance.ReserveRectColorNormal;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x11]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorNo;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x12]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorNoTuner;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x13]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorWarning;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x14]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-
-                name = Settings.Instance.TitleColor1;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor1))).Freeze();
-                }
-                CustTitle1Color = brush;
-                name = Settings.Instance.TitleColor2;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor2))).Freeze();
-                }
-                CustTitle2Color = brush;
-                CustTimeColorList.Clear();
-                for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
-                {
-                    name = Settings.Instance.TimeColorList[i];
-                    brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                    if (Settings.Instance.EpgGradationHeader == false)
-                    {
-                        if (brush == null)
-                        {
-                            (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TimeCustColorList[i]))).Freeze();
-                        }
-                        CustTimeColorList.Add(brush);
-                    }
-                    else
-                    {
-                        CustTimeColorList.Add(ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.TimeCustColorList[i]) : brush.Color, 0.9, 1.1));
-                    }
-                }
-                name = Settings.Instance.ServiceColor;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (Settings.Instance.EpgGradationHeader == false)
-                {
-                    if (brush == null)
-                    {
-                        (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ServiceCustColor))).Freeze();
-                    }
-                    CustServiceColor = brush;
-                }
-                else
-                {
-                    CustServiceColor = ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.ServiceCustColor) : brush.Color, 1.0, 2.0);
+                    brush = new SolidColorBrush(Color.FromArgb((byte)(a * opacity / 100), brush.Color.R, brush.Color.G, brush.Color.B));
+                    brush.Freeze();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            return brush;
         }
 
+        public void ReloadCustContentColorList()
+        {
+            SolidColorBrush brush;
+            CustContentColorList.Clear();
+            List<string> cList = Settings.Instance.ContentColorList;
+            List<uint> ccList = Settings.Instance.ContentCustColorList;
+            for (int i = 0; i < 17; i++)
+            {
+                brush = CreateCustColorBrush(cList.Count > i ? cList[i] : "White", ccList.Count > i ? ccList[i] : 0);
+                CustContentColorList.Add(Settings.Instance.EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+            }
 
-        private SolidColorBrush resDefBackColor = null;
+            //0→50で塗りつぶしの不透明度が上がる
+            int fillOpacity = Math.Min(Settings.Instance.ReserveRectFillOpacity, 50) * 2;
+            //50→100で枠の不透明度が下がる
+            int strokeOpacity = Math.Min(100 - Settings.Instance.ReserveRectFillOpacity, 50) * 2;
+            //予約枠が色名指定のときは少し透過(0xA0)する
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList.Count > 17 ? ccList[17] : 0, 0xA0, strokeOpacity));
+            //次要素は予約塗りつぶしのブラシ
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList.Count > 17 ? ccList[17] : 0, 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList.Count > 18 ? ccList[18] : 0, 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList.Count > 18 ? ccList[18] : 0, 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList.Count > 19 ? ccList[19] : 0, 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList.Count > 19 ? ccList[19] : 0, 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList.Count > 20 ? ccList[20] : 0, 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList.Count > 20 ? ccList[20] : 0, 0xA0, fillOpacity));
+
+            CustTitle1Color = CreateCustColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
+            CustTitle2Color = CreateCustColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
+
+            CustTimeColorList.Clear();
+            cList = Settings.Instance.TimeColorList;
+            ccList = Settings.Instance.TimeCustColorList;
+            for (int i = 0; i < 4; i++)
+            {
+                brush = CreateCustColorBrush(cList.Count > i ? cList[i] : "White", ccList.Count > i ? ccList[i] : 0);
+                CustTimeColorList.Add(Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+            }
+
+            brush = CreateCustColorBrush(Settings.Instance.ServiceColor, Settings.Instance.ServiceCustColor);
+            CustServiceColor = Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush;
+        }
+
+        private static SolidColorBrush GetOrCreateBrush(ref SolidColorBrush brush, byte a, byte r, byte g, byte b)
+        {
+            if (brush == null)
+            {
+                brush = new SolidColorBrush();
+                brush.Color = Color.FromArgb(a, r, g, b);
+                brush.Freeze();
+            }
+            return brush;
+        }
+
+        private SolidColorBrush _resDefBackColor;
         public SolidColorBrush ResDefBackColor
         {
             get
             {
-                if (resDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(Settings.Instance.ResDefColorA, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
-                    resDefBackColor = new SolidColorBrush();
-                    resDefBackColor.Color = item;
-                    resDefBackColor.Freeze();
-                }
-                return resDefBackColor;
+                return GetOrCreateBrush(ref _resDefBackColor, Settings.Instance.ResDefColorA, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
             }
         }
-        private SolidColorBrush resErrBackColor = null;
+
+        private SolidColorBrush _resErrBackColor;
         public SolidColorBrush ResErrBackColor
         {
             get
             {
-                if (resErrBackColor == null)
-                {
-                    Color item = Color.FromArgb(Settings.Instance.ResErrColorA, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
-                    resErrBackColor = new SolidColorBrush();
-                    resErrBackColor.Color = item;
-                    resErrBackColor.Freeze();
-                }
-                return resErrBackColor;
+                return GetOrCreateBrush(ref _resErrBackColor, Settings.Instance.ResErrColorA, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
             }
         }
-        private SolidColorBrush resWarBackColor = null;
+
+        private SolidColorBrush _resWarBackColor;
         public SolidColorBrush ResWarBackColor
         {
             get
             {
-                if (resWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(Settings.Instance.ResWarColorA, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
-                    resWarBackColor = new SolidColorBrush();
-                    resWarBackColor.Color = item;
-                    resWarBackColor.Freeze();
-                }
-                return resWarBackColor;
+                return GetOrCreateBrush(ref _resWarBackColor, Settings.Instance.ResWarColorA, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
             }
         }
-        private SolidColorBrush resNoBackColor = null;
+
+        private SolidColorBrush _resNoBackColor;
         public SolidColorBrush ResNoBackColor
         {
             get
             {
-                if (resNoBackColor == null)
-                {
-                    Color item = Color.FromArgb(Settings.Instance.ResNoColorA, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
-                    resNoBackColor = new SolidColorBrush();
-                    resNoBackColor.Color = item;
-                    resNoBackColor.Freeze();
-                }
-                return resNoBackColor;
+                return GetOrCreateBrush(ref _resNoBackColor, Settings.Instance.ResNoColorA, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
             }
         }
 
-        private SolidColorBrush recEndDefBackColor = null;
+        private SolidColorBrush _recEndDefBackColor;
         public SolidColorBrush RecEndDefBackColor
         {
             get
             {
-                if (recEndDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(Settings.Instance.RecEndDefColorA, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
-                    recEndDefBackColor = new SolidColorBrush();
-                    recEndDefBackColor.Color = item;
-                    recEndDefBackColor.Freeze();
-                }
-                return recEndDefBackColor;
+                return GetOrCreateBrush(ref _recEndDefBackColor, Settings.Instance.RecEndDefColorA, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
             }
         }
-        
-        private SolidColorBrush recEndErrBackColor = null;
+
+        private SolidColorBrush _recEndErrBackColor;
         public SolidColorBrush RecEndErrBackColor
         {
             get
             {
-                if( recEndErrBackColor == null ){
-                    Color item = Color.FromArgb(Settings.Instance.RecEndErrColorA, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
-                    recEndErrBackColor = new SolidColorBrush();
-                    recEndErrBackColor.Color = item;
-                    recEndErrBackColor.Freeze();
-                }
-                return recEndErrBackColor;
+                return GetOrCreateBrush(ref _recEndErrBackColor, Settings.Instance.RecEndErrColorA, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
             }
         }
 
-        private SolidColorBrush recEndWarBackColor = null;
+        private SolidColorBrush _recEndWarBackColor;
         public SolidColorBrush RecEndWarBackColor
         {
             get
             {
-                if (recEndWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(Settings.Instance.RecEndWarColorA, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
-                    recEndWarBackColor = new SolidColorBrush();
-                    recEndWarBackColor.Color = item;
-                    recEndWarBackColor.Freeze();
-                }
-                return recEndWarBackColor;
+                return GetOrCreateBrush(ref _recEndWarBackColor, Settings.Instance.RecEndWarColorA, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
             }
         }
 
-        private SolidColorBrush epgTipsBackColor = null;
+        private SolidColorBrush _epgTipsBackColor;
         public SolidColorBrush EpgTipsBackColor
         {
             get
             {
-                if (epgTipsBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
-                    epgTipsBackColor = new SolidColorBrush();
-                    epgTipsBackColor.Color = item;
-                    epgTipsBackColor.Freeze();
-                }
-                return epgTipsBackColor;
+                return GetOrCreateBrush(ref _epgTipsBackColor, 0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
             }
         }
-        private SolidColorBrush epgTipsForeColor = null;
+
+        private SolidColorBrush _epgTipsForeColor;
         public SolidColorBrush EpgTipsForeColor
         {
             get
             {
-                if (epgTipsForeColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
-                    epgTipsForeColor = new SolidColorBrush();
-                    epgTipsForeColor.Color = item;
-                    epgTipsForeColor.Freeze();
-                }
-                return epgTipsForeColor;
+                return GetOrCreateBrush(ref _epgTipsForeColor, 0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
             }
         }
-        private SolidColorBrush epgBackColor = null;
+
+        private SolidColorBrush _epgBackColor;
         public SolidColorBrush EpgBackColor
         {
             get
             {
-                if (epgBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgBackColorR, Settings.Instance.EpgBackColorG, Settings.Instance.EpgBackColorB);
-                    epgBackColor = new SolidColorBrush(item);
-                    epgBackColor.Freeze();
-                }
-                return epgBackColor;
+                return GetOrCreateBrush(ref _epgBackColor, 0xFF, Settings.Instance.EpgBackColorR, Settings.Instance.EpgBackColorG, Settings.Instance.EpgBackColorB);
             }
         }
     }

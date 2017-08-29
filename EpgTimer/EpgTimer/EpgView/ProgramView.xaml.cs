@@ -360,49 +360,53 @@ namespace EpgTimer.EpgView
                 foreach (ReserveViewItem info in reserveList)
                 {
                     Rectangle rect = new Rectangle();
+                    Rectangle fillOnlyRect = Settings.Instance.ReserveRectFillWithShadow ? null : new Rectangle();
+                    Rectangle fillRect = fillOnlyRect ?? rect;
 
-                    Brush color;
                     if (info.ReserveInfo.RecSetting.RecMode == 5)
                     {
-                        color = CommonManager.Instance.CustContentColorList[0x12];
+                        rect.Stroke = CommonManager.Instance.CustContentColorList[19];
+                        fillRect.Fill = CommonManager.Instance.CustContentColorList[20];
                     }
                     else if (info.ReserveInfo.OverlapMode == 2)
                     {
-                        color = CommonManager.Instance.CustContentColorList[0x13];
+                        rect.Stroke = CommonManager.Instance.CustContentColorList[21];
+                        fillRect.Fill = CommonManager.Instance.CustContentColorList[22];
                     }
                     else if (info.ReserveInfo.OverlapMode == 1)
                     {
-                        color = CommonManager.Instance.CustContentColorList[0x14];
+                        rect.Stroke = CommonManager.Instance.CustContentColorList[23];
+                        fillRect.Fill = CommonManager.Instance.CustContentColorList[24];
                     }
                     else
                     {
-                        color = CommonManager.Instance.CustContentColorList[0x11];
+                        rect.Stroke = CommonManager.Instance.CustContentColorList[17];
+                        fillRect.Fill = CommonManager.Instance.CustContentColorList[18];
                     }
 
-                    if (Settings.Instance.ReserveRectBackground == false)
-                    {
-                        rect.Opacity = 0.5;
-                        rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
-                        rect.Fill = System.Windows.Media.Brushes.Transparent;
-                        rect.StrokeThickness = 3;
-
-                        rect.Stroke = color;
-                    }
-                    else
-                    {
-                        rect.Opacity = 0.3;
-                        rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 6 };
-                        rect.Fill = color;
-                    }
+                    rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+                    rect.StrokeThickness = 3;
                     rect.Width = info.Width;
                     rect.Height = info.Height;
                     rect.IsHitTestVisible = false;
+                    fillRect.Width = info.Width;
+                    fillRect.Height = info.Height;
+                    fillRect.IsHitTestVisible = false;
 
                     Canvas.SetLeft(rect, info.LeftPos);
                     Canvas.SetTop(rect, info.TopPos);
                     Canvas.SetZIndex(rect, 10);
                     canvas.Children.Add(rect);
                     reserveBorder.Add(rect);
+
+                    if (fillOnlyRect != null)
+                    {
+                        Canvas.SetLeft(fillOnlyRect, info.LeftPos);
+                        Canvas.SetTop(fillOnlyRect, info.TopPos);
+                        Canvas.SetZIndex(fillOnlyRect, 9);
+                        canvas.Children.Add(fillOnlyRect);
+                        reserveBorder.Add(fillOnlyRect);
+                    }
                 }
             }
             catch (Exception ex)

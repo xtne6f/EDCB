@@ -296,7 +296,9 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <CheckBox Content="塗りつぶしで表示" Height="16" HorizontalAlignment="Left" Margin="18,92,0,0" Name="checkBox_reserveBackground" VerticalAlignment="Top" />
+                            <Label Content="塗りつぶしで表示 (不透明度)" Height="28" HorizontalAlignment="Left" Margin="18,88,0,0" VerticalAlignment="Top" />
+                            <Slider AutoToolTipPlacement="TopLeft" Height="23" HorizontalAlignment="Left" LargeChange="10" Margin="211,92,0,0" Maximum="100" Minimum="0" Name="slider_reserveFillOpacity" SmallChange="1" VerticalAlignment="Top" Width="145" />
+                            <CheckBox Content="影付きで塗りつぶす" Height="16" HorizontalAlignment="Left" Margin="363,96,0,0" Name="checkBox_reserveFillWithShadow" VerticalAlignment="Top" />
                             <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,27,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,28,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,57,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />

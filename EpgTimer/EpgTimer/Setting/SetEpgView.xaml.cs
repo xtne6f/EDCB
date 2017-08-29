@@ -72,7 +72,8 @@ namespace EpgTimer.Setting
                 comboBox_reserveNo.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorNo));
                 comboBox_reserveNoTuner.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorNoTuner));
                 comboBox_reserveWarning.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorWarning));
-                checkBox_reserveBackground.IsChecked = Settings.Instance.ReserveRectBackground;
+                slider_reserveFillOpacity.Value = Math.Min(Math.Max(Settings.Instance.ReserveRectFillOpacity, 0), 100);
+                checkBox_reserveFillWithShadow.IsChecked = Settings.Instance.ReserveRectFillWithShadow;
 
                 comboBox_colorTitle1.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.TitleColor1));
                 comboBox_colorTitle2.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.TitleColor2));
@@ -241,14 +242,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.ReserveRectColorWarning = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveWarning.SelectedItem).Key;
                 Settings.Instance.TitleColor1 = ((KeyValuePair<string, SolidColorBrush>)comboBox_colorTitle1.SelectedItem).Key;
                 Settings.Instance.TitleColor2 = ((KeyValuePair<string, SolidColorBrush>)comboBox_colorTitle2.SelectedItem).Key;
-                if (checkBox_reserveBackground.IsChecked == true)
-                {
-                    Settings.Instance.ReserveRectBackground = true;
-                }
-                else
-                {
-                    Settings.Instance.ReserveRectBackground = false;
-                }
+                Settings.Instance.ReserveRectFillOpacity = (int)Math.Round(slider_reserveFillOpacity.Value);
+                Settings.Instance.ReserveRectFillWithShadow = checkBox_reserveFillWithShadow.IsChecked == true;
 
                 if (comboBox_font.SelectedItem != null)
                 {
