@@ -144,6 +144,7 @@ namespace EpgTimer
         public double MainWndTop { get; set; }
         public double MainWndWidth { get; set; }
         public double MainWndHeight { get; set; }
+        public double SearchWndTabsHeight { get; set; }
         public bool CloseMin { get; set; }
         public bool WakeMin { get; set; }
         public bool ViewButtonShowAsTab { get; set; }
@@ -320,6 +321,7 @@ namespace EpgTimer
             MainWndTop = -100;
             MainWndWidth = -100;
             MainWndHeight = -100;
+            SearchWndTabsHeight = 0;
             CloseMin = false;
             WakeMin = false;
             ViewButtonShowAsTab = false;

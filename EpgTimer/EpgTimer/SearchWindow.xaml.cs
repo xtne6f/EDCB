@@ -53,6 +53,11 @@ namespace EpgTimer
                 {
                     this.Height = Settings.Instance.SearchWndHeight;
                 }
+                if (Settings.Instance.SearchWndTabsHeight > 405)
+                {
+                    //操作不可能な値をセットしないよう努める
+                    grid_Tabs.Height = new GridLength(Math.Min(Settings.Instance.SearchWndTabsHeight, Height));
+                }
 
                 EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
                 Settings.GetDefSearchSetting(ref defKey);
@@ -469,16 +474,11 @@ namespace EpgTimer
         //    }
         //}
 
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void Window_Closing(object sender, CancelEventArgs e)
         {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
-                {
-                    Settings.Instance.SearchWndWidth = this.Width;
-                    Settings.Instance.SearchWndHeight = this.Height;
-                }
-            }
+            Settings.Instance.SearchWndWidth = Width;
+            Settings.Instance.SearchWndHeight = Height;
+            Settings.Instance.SearchWndTabsHeight = grid_Tabs.Height.Value;
         }
 
         private void Window_LocationChanged(object sender, EventArgs e)
