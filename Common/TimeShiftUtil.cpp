@@ -329,7 +329,7 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 	patUtil.GetPacket(&patBuff, &patSize);
 
 	memcpy(endBuff, patBuff, patSize);
-	for( int i=patSize; i<188*512; i+=188){
+	for( int i=patSize; i+3<188*512; i+=188){
 		endBuff[i] = 0x47;
 		endBuff[i+1] = 0x1F;
 		endBuff[i+2] = 0xFF;

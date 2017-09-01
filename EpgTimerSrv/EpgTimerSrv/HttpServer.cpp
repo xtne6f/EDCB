@@ -664,8 +664,10 @@ int io_popen(lua_State* L)
 	if( dw == 0 || dw >= MAX_PATH ){
 		cmdexe[0] = L'\0';
 	}
-	HANDLE ppipe, tpipe, cpipe; //parent, temporary, child
+	HANDLE ppipe = INVALID_HANDLE_VALUE; //parent
+	HANDLE tpipe = INVALID_HANDLE_VALUE; //temporary
 	if( cmdexe[0] && CreatePipe(mode[0] == 'r' ? &ppipe : &tpipe, mode[0] == 'r' ? &tpipe : &ppipe, NULL, 0) ){
+		HANDLE cpipe; //child
 		BOOL b = DuplicateHandle(GetCurrentProcess(), tpipe, GetCurrentProcess(), &cpipe, 0, TRUE, DUPLICATE_SAME_ACCESS);
 		CloseHandle(tpipe);
 		if( b ){
