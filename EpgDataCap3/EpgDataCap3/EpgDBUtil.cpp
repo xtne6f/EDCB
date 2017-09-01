@@ -40,7 +40,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 	WORD original_network_id = (WORD)eit.GetNumber(Desc::original_network_id);
 	WORD transport_stream_id = (WORD)eit.GetNumber(Desc::transport_stream_id);
 	WORD service_id = (WORD)eit.GetNumber(Desc::service_id);
-	ULONGLONG key = _Create64Key(original_network_id, transport_stream_id, service_id);
+	ULONGLONG key = Create64Key(original_network_id, transport_stream_id, service_id);
 
 	//サービスのmapを取得
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
@@ -656,7 +656,7 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatusService(
 	CBlockLock lock(&this->dbLock);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::const_iterator itr =
-		this->serviceEventMap.find(_Create64Key(originalNetworkID, transportStreamID, serviceID));
+		this->serviceEventMap.find(Create64Key(originalNetworkID, transportStreamID, serviceID));
 	if( itr != this->serviceEventMap.end() ){
 		if( l_eitFlag ){
 			//L-EITの状況
@@ -757,7 +757,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 						Desc::CDescriptor::CLoopPointer lp3 = lp2;
 						if( nit.EnterLoop(lp3) ){
 							for( DWORD k=0; nit.SetLoopIndex(lp3, k); k++ ){
-								ULONGLONG key = _Create64Key(onid, tsid, (WORD)nit.GetNumber(Desc::service_id, lp3));
+								ULONGLONG key = Create64Key(onid, tsid, (WORD)nit.GetNumber(Desc::service_id, lp3));
 								map<ULONGLONG, BYTE>::iterator itrService;
 								itrService = this->serviceList.find(key);
 								if( itrService == this->serviceList.end() ){
@@ -938,7 +938,7 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 {
 	CBlockLock lock(&this->dbLock);
 
-	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
+	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	itr = serviceEventMap.find(key);
@@ -1011,7 +1011,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	CBlockLock lock(&this->dbLock);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr =
-		this->serviceEventMap.find(_Create64Key(originalNetworkID, transportStreamID, serviceID));
+		this->serviceEventMap.find(Create64Key(originalNetworkID, transportStreamID, serviceID));
 	if( itr == this->serviceEventMap.end() ){
 		return FALSE;
 	}
@@ -1137,7 +1137,7 @@ BOOL CEpgDBUtil::GetEpgInfo(
 
 	this->epgInfo.db.clear();
 
-	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
+	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	itr = serviceEventMap.find(key);
@@ -1186,7 +1186,7 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 
 	this->searchEpgInfo.db.clear();
 
-	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
+	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	itr = serviceEventMap.find(key);

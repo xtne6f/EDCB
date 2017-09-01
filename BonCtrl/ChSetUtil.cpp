@@ -204,7 +204,7 @@ void CChSetUtil::GetEpgCapService(
 	map<ULONGLONG, ULONGLONG> addMap;
 	map<DWORD, CH_DATA4>::const_iterator itrCh4;
 	for( itrCh4 = this->chText4.GetMap().begin(); itrCh4 != this->chText4.GetMap().end(); itrCh4++ ){
-		LONGLONG key = _Create64Key(itrCh4->second.originalNetworkID, itrCh4->second.transportStreamID, itrCh4->second.serviceID);
+		LONGLONG key = Create64Key(itrCh4->second.originalNetworkID, itrCh4->second.transportStreamID, itrCh4->second.serviceID);
 		map<LONGLONG, CH_DATA5>::const_iterator itrCh5;
 		itrCh5 = this->chText5.GetMap().find(key);
 
@@ -254,7 +254,7 @@ BOOL CChSetUtil::IsPartial(
 	WORD SID
 	)
 {
-	LONGLONG key = _Create64Key(ONID, TSID, SID);
+	LONGLONG key = Create64Key(ONID, TSID, SID);
 	map<LONGLONG, CH_DATA5>::const_iterator itr;
 	itr = this->chText5.GetMap().find(key);
 	if( itr != this->chText5.GetMap().end() ){

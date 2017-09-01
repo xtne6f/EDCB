@@ -244,7 +244,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	}
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> nextMap;
 	for( const SERVICE_INFO* info = serviceList; info != serviceList + serviceListSize; info++ ){
-		LONGLONG key = _Create64Key(info->original_network_id, info->transport_stream_id, info->service_id);
+		LONGLONG key = Create64Key(info->original_network_id, info->transport_stream_id, info->service_id);
 		EPGDB_SERVICE_EVENT_INFO& item = nextMap.insert(std::make_pair(key, EPGDB_SERVICE_EVENT_INFO())).first->second;
 		item.serviceInfo.ONID = info->original_network_id;
 		item.serviceInfo.TSID = info->transport_stream_id;
@@ -300,7 +300,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 			if( ReadVALUE(&ver, &buff.front(), (DWORD)buff.size(), &readSize) &&
 			    ReadVALUE2(ver, &list, &buff.front() + readSize, (DWORD)buff.size() - readSize, NULL) ){
 				for( size_t i = 0; i < list.size(); i++ ){
-					LONGLONG key = _Create64Key(list[i].serviceInfo.ONID, list[i].serviceInfo.TSID, list[i].serviceInfo.SID);
+					LONGLONG key = Create64Key(list[i].serviceInfo.ONID, list[i].serviceInfo.TSID, list[i].serviceInfo.SID);
 					arcFromFile[key] = std::move(list[i]);
 				}
 			}
@@ -567,8 +567,8 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 
 	size_t resultSize = result.size();
 	auto compareResult = [](const SEARCH_RESULT_EVENT& a, const SEARCH_RESULT_EVENT& b) -> bool {
-		return _Create64Key2(a.info->original_network_id, a.info->transport_stream_id, a.info->service_id, a.info->event_id) <
-		       _Create64Key2(b.info->original_network_id, b.info->transport_stream_id, b.info->service_id, b.info->event_id);
+		return Create64PgKey(a.info->original_network_id, a.info->transport_stream_id, a.info->service_id, a.info->event_id) <
+		       Create64PgKey(b.info->original_network_id, b.info->transport_stream_id, b.info->service_id, b.info->event_id);
 	};
 	wstring targetWord;
 	vector<int> distForFind;
@@ -958,7 +958,7 @@ BOOL CEpgDBManager::SearchEpg(
 {
 	CRefLock lock(&this->epgMapRefLock);
 
-	LONGLONG key = _Create64Key(ONID, TSID, SID);
+	LONGLONG key = Create64Key(ONID, TSID, SID);
 	auto itr = this->epgMap.find(key);
 	if( itr != this->epgMap.end() ){
 		EPGDB_EVENT_INFO infoKey;
@@ -984,7 +984,7 @@ BOOL CEpgDBManager::SearchEpg(
 {
 	CRefLock lock(&this->epgMapRefLock);
 
-	LONGLONG key = _Create64Key(ONID, TSID, SID);
+	LONGLONG key = Create64Key(ONID, TSID, SID);
 	auto itr = this->epgMap.find(key);
 	if( itr != this->epgMap.end() ){
 		for( auto itrInfo = itr->second.eventList.cbegin(); itrInfo != itr->second.eventList.end(); itrInfo++ ){
@@ -1010,7 +1010,7 @@ BOOL CEpgDBManager::SearchServiceName(
 {
 	CRefLock lock(&this->epgMapRefLock);
 
-	LONGLONG key = _Create64Key(ONID, TSID, SID);
+	LONGLONG key = Create64Key(ONID, TSID, SID);
 	auto itr = this->epgMap.find(key);
 	if( itr != this->epgMap.end() ){
 		serviceName = itr->second.serviceInfo.service_name;

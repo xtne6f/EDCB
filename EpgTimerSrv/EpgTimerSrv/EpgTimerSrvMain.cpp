@@ -3037,7 +3037,7 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTimeProc(lua_State* L, bool archive)
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 3 ){
 		__int64 minMaxTime[2] = { LLONG_MAX, LLONG_MIN };
-		__int64 serviceKey = _Create64Key((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
+		__int64 serviceKey = Create64Key((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
 		auto enumProc = [&minMaxTime](const vector<EPGDB_EVENT_INFO>& val) -> void {
 			for( size_t i = 0; i < val.size(); i++ ){
 				if( val[i].StartTimeFlag ){
@@ -3166,7 +3166,7 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 				    (network & 4) && (onid == 6 || onid == 7) || //CS
 				    (network & 8) && ((onid < 0x7880 || 0x7FE8 < onid) && onid != 4 && onid != 6 && onid != 7) //‚»‚Ì‘¼
 				    ){
-					LONGLONG id = _Create64Key(onid, list[i].TSID, list[i].SID);
+					LONGLONG id = Create64Key(onid, list[i].TSID, list[i].SID);
 					if( std::find(key.serviceList.begin(), key.serviceList.end(), id) == key.serviceList.end() ){
 						key.serviceList.push_back(id);
 					}
