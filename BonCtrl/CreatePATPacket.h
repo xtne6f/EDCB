@@ -6,10 +6,10 @@
 class CCreatePATPacket
 {
 public:
-	typedef struct _PROGRAM_PID_INFO{
+	struct PROGRAM_PID_INFO {
 		WORD SID;
 		WORD PMTPID;
-	}PROGRAM_PID_INFO;
+	};
 public:
 	CCreatePATPacket(void);
 

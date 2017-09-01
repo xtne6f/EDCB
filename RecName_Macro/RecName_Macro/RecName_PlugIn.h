@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include "../../Common/EpgDataCap3Def.h"
 
-typedef struct _PLUGIN_RESERVE_INFO{
+typedef struct {
 	SYSTEMTIME startTime;		//開始時間
 	DWORD durationSec;			//総時間（単位秒）
 	WCHAR eventName[512];		//番組名

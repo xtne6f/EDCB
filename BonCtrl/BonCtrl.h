@@ -439,12 +439,12 @@ protected:
 	DWORD chSt_chkNum;
 	DWORD chSt_totalNum;
 	JOB_STATUS chSt_err;
-	typedef struct _CHK_CH_INFO{
+	struct CHK_CH_INFO {
 		DWORD space;
 		DWORD ch;
 		wstring spaceName;
 		wstring chName;
-	}CHK_CH_INFO;
+	};
 
 	//EPGŽæ“¾—p
 	HANDLE epgCapThread;
@@ -466,7 +466,7 @@ protected:
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
 protected:
-	DWORD _SetCh(
+	DWORD ProcessSetCh(
 		DWORD space,
 		DWORD ch,
 		BOOL chScan = FALSE

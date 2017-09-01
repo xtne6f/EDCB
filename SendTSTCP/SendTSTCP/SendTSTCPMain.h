@@ -67,12 +67,12 @@ protected:
 
 	std::list<vector<BYTE>> m_TSBuff;
 
-	typedef struct _SEND_INFO{
+	struct SEND_INFO {
 		string strIP;
 		DWORD dwPort;
 		SOCKET sock;
 		BOOL bConnect;
-	}SEND_INFO;
+	};
 	map<wstring, SEND_INFO> m_SendList;
 
 protected:

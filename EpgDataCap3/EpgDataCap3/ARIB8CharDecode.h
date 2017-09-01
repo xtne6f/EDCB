@@ -97,10 +97,10 @@ static char KanaTable[][3]={
 	"ヾ","ー","。","「","」","、","・"
 };
 
-typedef struct _GAIJI_TABLE{
+struct GAIJI_TABLE{
 	unsigned short usARIB8;
 	const char* strChar;
-} GAIJI_TABLE;
+};
 
 static GAIJI_TABLE GaijiTable[]={
 	{0x7A4D, "10."},
@@ -599,7 +599,7 @@ typedef enum{
 	STR_SPECIAL_2, //SZX 0x64
 } STRING_SIZE;
 
-typedef struct _CAPTION_CHAR_DATA{
+struct CAPTION_CHAR_DATA{
 	string strDecode;
 	STRING_SIZE emCharSizeMode;
 
@@ -617,26 +617,9 @@ typedef struct _CAPTION_CHAR_DATA{
 	WORD wCharH;
 	WORD wCharHInterval;
 	WORD wCharVInterval;
-	//=オペレーターの処理
-	_CAPTION_CHAR_DATA & operator= (const _CAPTION_CHAR_DATA & o) {
-		strDecode=o.strDecode;
-		emCharSizeMode = o.emCharSizeMode;
-		stCharColor = o.stCharColor;
-		stBackColor = o.stBackColor;
-		stRasterColor = o.stRasterColor;
-		bUnderLine = o.bUnderLine;
-		bShadow = o.bShadow;
-		bBold = o.bBold;
-		bItalic = o.bItalic;
-		bFlushMode = o.bFlushMode;
-		wCharW = o.wCharH;
-		wCharHInterval = o.wCharHInterval;
-		wCharVInterval = o.wCharVInterval;
-		return *this;
-	};
-} CAPTION_CHAR_DATA;
+};
 
-typedef struct _CAPTION_DATA{
+struct CAPTION_DATA{
 	BOOL bClear;
 	WORD wSWFMode;
 	WORD wClientX;
@@ -647,21 +630,7 @@ typedef struct _CAPTION_DATA{
 	WORD wPosY;
 	vector<CAPTION_CHAR_DATA> CharList;
 	DWORD dwWaitTime;
-	//=オペレーターの処理
-	_CAPTION_DATA & operator= (const _CAPTION_DATA & o) {
-		bClear=o.bClear;
-		wSWFMode = o.wSWFMode;
-		wClientX = o.wClientX;
-		wClientY = o.wClientY;
-		wClientW = o.wClientW;
-		wClientH = o.wClientH;
-		wPosX = o.wPosX;
-		wPosY = o.wPosY;
-		CharList = o.CharList;
-		dwWaitTime = o.dwWaitTime;
-		return *this;
-	};
-} CAPTION_DATA;
+};
 
 class CARIB8CharDecode
 {
@@ -675,18 +644,11 @@ public:
 	BOOL Caption( const BYTE* pbSrc, DWORD dwSrcSize, vector<CAPTION_DATA>* pCaptionList );
 
 protected:
-	typedef struct _MF_MODE{
+	struct MF_MODE{
 		int iMF; //文字符号集合
 		int iMode; //符号集合の分類
 		int iByte; //読み込みバイト数
-		//=オペレーターの処理
-		_MF_MODE & operator= (const _MF_MODE & o) {
-			iMF = o.iMF;
-			iMode = o.iMode;
-			iByte = o.iByte;
-			return *this;
-		}
-	} MF_MODE;
+	};
 
 	BOOL m_bPSI;
 

@@ -1,10 +1,10 @@
 #pragma once
 #include "NotifyManager.h"
 
-typedef struct _BAT_WORK_INFO{
+struct BAT_WORK_INFO {
 	wstring batFilePath;
 	vector<pair<string, wstring>> macroList;
-}BAT_WORK_INFO;
+};
 
 class CBatManager
 {

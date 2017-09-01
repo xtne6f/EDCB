@@ -1,6 +1,6 @@
 #pragma once
 
-typedef struct _CLUT_DAT{
+typedef struct {
 	unsigned char ucR;
 	unsigned char ucG;
 	unsigned char ucB;

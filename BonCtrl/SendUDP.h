@@ -16,11 +16,11 @@ public:
 	BOOL CloseUpload();
 
 protected:
-	typedef struct _SOCKET_DATA{
+	struct SOCKET_DATA {
 		SOCKET sock;
 		struct sockaddr_storage addr;
 		size_t addrlen;
-	}SOCKET_DATA;
+	};
 	vector<SOCKET_DATA> SockList;
 
 	UINT m_uiSendSize;
