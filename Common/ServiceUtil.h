@@ -1,5 +1,5 @@
-#ifndef __SERVICE_UTIL_H__
-#define __SERVICE_UTIL_H__
+#ifndef INCLUDE_SERVICE_UTIL_H
+#define INCLUDE_SERVICE_UTIL_H
 
 BOOL IsInstallService(LPCWSTR lpcwszName);
 BOOL IsStopService(LPCWSTR lpcwszName);

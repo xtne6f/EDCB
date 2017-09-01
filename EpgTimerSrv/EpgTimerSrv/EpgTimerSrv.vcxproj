@@ -198,7 +198,6 @@
     <ClInclude Include="..\..\Common\PipeServer.h" />
     <ClInclude Include="..\..\Common\ReNamePlugInUtil.h" />
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
-    <ClInclude Include="..\..\Common\SendTSTCP.h" />
     <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h" />
     <ClInclude Include="..\..\Common\ServiceUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />

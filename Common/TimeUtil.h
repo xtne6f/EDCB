@@ -1,5 +1,5 @@
-#ifndef __TIME_UTIL_H__
-#define __TIME_UTIL_H__
+#ifndef INCLUDE_TIME_UTIL_H
+#define INCLUDE_TIME_UTIL_H
 
 #include "StringUtil.h"
 

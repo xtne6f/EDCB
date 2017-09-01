@@ -1,5 +1,5 @@
-#ifndef __STRING_UTIL_H__
-#define __STRING_UTIL_H__
+#ifndef INCLUDE_STRING_UTIL_H
+#define INCLUDE_STRING_UTIL_H
 
 void Format(string& strBuff, const char *format, ...);
 

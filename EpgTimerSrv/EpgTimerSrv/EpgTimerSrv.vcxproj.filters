@@ -141,9 +141,6 @@
     <ClInclude Include="..\..\Common\TSPacketUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\SendTSTCP.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>

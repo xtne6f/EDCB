@@ -1,5 +1,5 @@
-#ifndef __EPG_TIMER_UTIL_H__
-#define __EPG_TIMER_UTIL_H__
+#ifndef INCLUDE_EPG_TIMER_UTIL_H
+#define INCLUDE_EPG_TIMER_UTIL_H
 
 #include "StructDef.h"
 #include "EpgDataCap3Def.h"

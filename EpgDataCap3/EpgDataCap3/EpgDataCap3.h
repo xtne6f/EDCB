@@ -1,5 +1,5 @@
-#ifndef __EPG_DATA_CAP3_H__
-#define __EPG_DATA_CAP3_H__
+#ifndef INCLUDE_EPG_DATA_CAP3_H
+#define INCLUDE_EPG_DATA_CAP3_H
 
 #include "../../Common/EpgDataCap3Def.h"
 

@@ -1,5 +1,5 @@
-#ifndef __CTRL_CMD_UTIL_H__
-#define __CTRL_CMD_UTIL_H__
+#ifndef INCLUDE_CTRL_CMD_UTIL_H
+#define INCLUDE_CTRL_CMD_UTIL_H
 
 #include "StructDef.h"
 

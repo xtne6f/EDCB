@@ -1,5 +1,5 @@
-#ifndef __PATH_UTIL_H__
-#define __PATH_UTIL_H__
+#ifndef INCLUDE_PATH_UTIL_H
+#define INCLUDE_PATH_UTIL_H
 
 namespace filesystem_
 {

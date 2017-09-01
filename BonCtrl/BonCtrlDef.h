@@ -1,5 +1,5 @@
-#ifndef __BON_CTRL_DEF_H__
-#define __BON_CTRL_DEF_H__
+#ifndef INCLUDE_BON_CTRL_DEF_H
+#define INCLUDE_BON_CTRL_DEF_H
 
 #define MUTEX_UDP_PORT_NAME			TEXT("Global\\EpgDataCap_Bon_UDP_PORT_")
 #define MUTEX_TCP_PORT_NAME			TEXT("Global\\EpgDataCap_Bon_TCP_PORT_")

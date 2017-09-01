@@ -1,5 +1,5 @@
-#ifndef __REC_NAME_PLUGIN_H__
-#define __REC_NAME_PLUGIN_H__
+#ifndef INCLUDE_REC_NAME_PLUGIN_H
+#define INCLUDE_REC_NAME_PLUGIN_H
 
 #include <Windows.h>
 #include "../../Common/EpgDataCap3Def.h"

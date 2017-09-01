@@ -1,5 +1,5 @@
-#ifndef __CTRL_CMD_DEF_H__
-#define __CTRL_CMD_DEF_H__
+#ifndef INCLUDE_CTRL_CMD_DEF_H
+#define INCLUDE_CTRL_CMD_DEF_H
 
 //デフォルトコネクトタイムアウト
 #define CONNECT_TIMEOUT 15*1000
