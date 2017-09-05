@@ -79,6 +79,25 @@ struct MAIN_WINDOW_CONTEXT {
 		, notifyActiveTime(LLONG_MAX) {}
 };
 
+//必要なバッファを確保してGetPrivateProfileSection()を呼ぶ
+vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName)
+{
+	vector<WCHAR> buff(4096);
+	for(;;){
+		DWORD n = GetPrivateProfileSection(appName, &buff.front(), (DWORD)buff.size(), fileName);
+		if( n < buff.size() - 2 ){
+			buff.resize(n + 1);
+			break;
+		}
+		if( buff.size() >= 16 * 1024 * 1024 ){
+			buff.assign(1, L'\0');
+			break;
+		}
+		buff.resize(buff.size() * 2);
+	}
+	return buff;
+}
+
 }
 
 CEpgTimerSrvMain::CEpgTimerSrvMain()
@@ -2645,18 +2664,51 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 						          CompareNoCase(list[i], L"Common.ini") == 0 ||
 						          CompareNoCase(list[i], L"EpgDataCap_Bon.ini") == 0 ||
 						          CompareNoCase(list[i], L"BonCtrl.ini") == 0 ||
+						          CompareNoCase(list[i], L"ViewApp.ini") == 0 ||
 						          CompareNoCase(list[i], L"Bitrate.ini") == 0 ){
 							path = GetModulePath().replace_filename(list[i]);
 						}
 						if( path.empty() == false ){
-							std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(path.c_str(), L"rbN"), fclose);
-							if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-								__int64 fileSize = _ftelli64(fp.get());
-								if( 0 < fileSize && fileSize < 16 * 1024 * 1024 ){
-									result[i].Data.resize((size_t)fileSize);
-									rewind(fp.get());
-									if( fread(&result[i].Data.front(), 1, (size_t)fileSize, fp.get()) != (size_t)fileSize ){
-										result[i].Data.clear();
+							if( IsExt(path, L".ini") ){
+								//ファイルロックを邪魔しないようAPI経由で読む
+								wstring strData = L"\xFEFF";
+								int appendModulePathState = _wcsicmp(path.filename().c_str(), L"Common.ini") == 0;
+								wstring sectionNames = GetPrivateProfileToString(NULL, NULL, NULL, path.c_str());
+								for( size_t j = 0; j < sectionNames.size() && sectionNames[j]; j += wcslen(sectionNames.c_str() + j) + 1 ){
+									LPCWSTR section = sectionNames.c_str() + j;
+									strData += wstring(L"[") + section + L"]\r\n";
+									if( appendModulePathState == 1 && _wcsicmp(section, L"SET") == 0 ){
+										//Common.iniに対する特例キー
+										strData += L"ModulePath=\"" + GetModulePath().parent_path().native() + L"\"\r\n";
+										appendModulePathState = 2;
+									}
+									vector<WCHAR> buff = GetPrivateProfileSectionBuffer(section, path.c_str());
+									for( size_t k = 0; k + 1 < buff.size(); k++ ){
+										if( buff[k] ){
+											strData += buff[k];
+										}else{
+											strData += L"\r\n";
+										}
+									}
+								}
+								if( appendModulePathState == 1 ){
+									//Common.iniに対する特例キー
+									strData += L"[SET]\r\nModulePath=\"" + GetModulePath().parent_path().native() + L"\"\r\n";
+								}
+								if( strData.size() > 1 ){
+									//BOMつきUTF-16
+									result[i].Data.assign((const BYTE*)strData.c_str(), (const BYTE*)(strData.c_str() + strData.size()));
+								}
+							}else{
+								std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(path.c_str(), L"rbN"), fclose);
+								if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
+									__int64 fileSize = _ftelli64(fp.get());
+									if( 0 < fileSize && fileSize < 16 * 1024 * 1024 ){
+										result[i].Data.resize((size_t)fileSize);
+										rewind(fp.get());
+										if( fread(&result[i].Data.front(), 1, (size_t)fileSize, fp.get()) != (size_t)fileSize ){
+											result[i].Data.clear();
+										}
 									}
 								}
 							}
