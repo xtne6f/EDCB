@@ -1850,6 +1850,18 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 	return chgList.empty() == false && ChgReserveData(chgList);
 }
 
+bool CReserveManager::GetChData(WORD onid, WORD tsid, WORD sid, CH_DATA5* chData) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	map<LONGLONG, CH_DATA5>::const_iterator itr = this->chUtil.GetMap().find(Create64Key(onid, tsid, sid));
+	if( itr != this->chUtil.GetMap().end() ){
+		*chData = itr->second;
+		return true;
+	}
+	return false;
+}
+
 vector<CH_DATA5> CReserveManager::GetChDataList() const
 {
 	CBlockLock lock(&this->managerLock);

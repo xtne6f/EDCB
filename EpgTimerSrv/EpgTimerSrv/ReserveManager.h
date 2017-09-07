@@ -75,6 +75,8 @@ public:
 	//自動予約によって作成された指定イベントの予約を無効にする
 	bool ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid);
 	//チャンネル情報を取得する
+	bool GetChData(WORD onid, WORD tsid, WORD sid, CH_DATA5* chData) const;
+	//チャンネル情報一覧を取得する
 	vector<CH_DATA5> GetChDataList() const;
 	//パラメータなしの通知を追加する
 	void AddNotifyAndPostBat(DWORD notifyID);

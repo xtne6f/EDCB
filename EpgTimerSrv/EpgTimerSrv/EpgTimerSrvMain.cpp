@@ -1339,7 +1339,14 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					item.startTime = info.start_time;
 					item.startTimeEpg = item.startTime;
 					item.durationSecond = info.durationSec;
-					this->epgDB.SearchServiceName(info.original_network_id, info.transport_stream_id, info.service_id, item.stationName);
+					//サービス名はチャンネル情報のものを優先する
+					CH_DATA5 chData;
+					if( this->reserveManager.GetChData(info.original_network_id, info.transport_stream_id, info.service_id, &chData) ){
+						item.stationName = chData.serviceName;
+					}
+					if( item.stationName.empty() ){
+						this->epgDB.SearchServiceName(info.original_network_id, info.transport_stream_id, info.service_id, item.stationName);
+					}
 					item.originalNetworkID = info.original_network_id;
 					item.transportStreamID = info.transport_stream_id;
 					item.serviceID = info.service_id;
