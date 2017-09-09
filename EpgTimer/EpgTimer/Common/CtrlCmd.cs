@@ -665,7 +665,7 @@ namespace EpgTimer
                     return ErrCode.CMD_ERR_CONNECT;
                 }
                 // 接続
-                using (var tcp = new System.Net.Sockets.TcpClient())
+                using (var tcp = new System.Net.Sockets.TcpClient(ip.AddressFamily))
                 {
                     try
                     {

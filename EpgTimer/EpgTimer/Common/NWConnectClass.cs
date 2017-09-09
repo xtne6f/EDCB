@@ -66,8 +66,15 @@ namespace EpgTimer
             ConnectedPort = 0;
 
             cmdProc = pfnCmdProc;
-            StartTCPServer(waitPort);
             pollingClient = null;
+
+            if (server == null && srvIP != null && waitPort != 0)
+            {
+                //TODO: 再接続などを考えるとこの生成方法は正確でないが、ほとんど互換のために残しているだけの機能なので適当
+                server = new TcpListener(srvIP.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, (int)waitPort);
+                server.Start();
+                server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
+            }
 
             var cmd = new CtrlCmdUtil();
 
@@ -88,27 +95,11 @@ namespace EpgTimer
                 ConnectedPort = srvPort;
                 if (waitPort == 0)
                 {
-                    pollingClient = new TcpClient();
+                    pollingClient = new TcpClient(srvIP.AddressFamily);
                     StartPolling(pollingClient, srvIP, srvPort, 0);
                 }
                 return true;
             }
-        }
-
-        private bool StartTCPServer(UInt32 port)
-        {
-            if (server != null)
-            {
-                return true;
-            }
-            if (port != 0)
-            {
-                server = new TcpListener(IPAddress.Any, (int)port);
-                server.Start();
-                server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
-            }
-
-            return true;
         }
 
         private static int ReadAll(Stream s, byte[] buffer, int offset, int size)
@@ -167,7 +158,7 @@ namespace EpgTimer
                     }
                 }
                 //pollingClientが置きかわっていなければ引き続き待ち受ける
-                var nextClient = new TcpClient();
+                var nextClient = new TcpClient(srvIP.AddressFamily);
                 if (Interlocked.CompareExchange(ref pollingClient, nextClient, client) == client)
                 {
                     StartPolling(nextClient, srvIP, srvPort, targetCount);

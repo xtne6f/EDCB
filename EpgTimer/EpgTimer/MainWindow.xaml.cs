@@ -486,12 +486,12 @@ namespace EpgTimer
             bool connected = false;
             try
             {
-                foreach (var address in System.Net.Dns.GetHostAddresses(Settings.Instance.NWServerIP))
+                //IPv4の名前解決を優先する
+                foreach (var address in System.Net.Dns.GetHostAddresses(Settings.Instance.NWServerIP).OrderBy(a => a.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork))
                 {
                     //コールバックは別スレッドかもしれないので設定は予めキャプチャする
                     uint execBat = Settings.Instance.ExecBat;
-                    if (address.IsIPv6LinkLocal == false &&
-                        CommonManager.Instance.NW.ConnectServer(address, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true, execBat)))
+                    if (CommonManager.Instance.NW.ConnectServer(address, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true, execBat)))
                     {
                         connected = true;
                         break;
