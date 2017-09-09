@@ -15,20 +15,17 @@ public:
 	CTCPServer(void);
 	~CTCPServer(void);
 
-	BOOL StartServer(
-		DWORD dwPort, 
-		DWORD dwResponseTimeout,
-		LPCWSTR acl,
-		const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc
-		);
+	bool StartServer(unsigned short port, bool ipv6, DWORD dwResponseTimeout, LPCWSTR acl,
+	                 const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc);
 	void StopServer();
 	void NotifyUpdate();
 
 protected:
 	std::function<void(CMD_STREAM*, CMD_STREAM*)> m_cmdProc;
-	DWORD m_dwPort;
+	unsigned short m_port;
+	bool m_ipv6;
 	DWORD m_dwResponseTimeout;
-	wstring m_acl;
+	string m_acl;
 
 	WSAEVENT m_hNotifyEvent;
 	BOOL m_stopFlag;
