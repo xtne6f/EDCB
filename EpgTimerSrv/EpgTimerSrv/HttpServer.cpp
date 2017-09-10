@@ -244,6 +244,13 @@ void reg_int_(lua_State* L, const char* name, size_t size, int val)
 	lua_rawset(L, -3);
 }
 
+void reg_int64_(lua_State* L, const char* name, size_t size, __int64 val)
+{
+	lua_pushlstring(L, name, size - 1);
+	lua_pushnumber(L, (lua_Number)val);
+	lua_rawset(L, -3);
+}
+
 void reg_boolean_(lua_State* L, const char* name, size_t size, bool val)
 {
 	lua_pushlstring(L, name, size - 1);

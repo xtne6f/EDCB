@@ -3393,8 +3393,8 @@ int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
 			LuaHelp::reg_int(L, "tsid", r.transportStreamID);
 			LuaHelp::reg_int(L, "sid", r.serviceID);
 			LuaHelp::reg_int(L, "eid", r.eventID);
-			LuaHelp::reg_int(L, "drops", (int)r.drops);
-			LuaHelp::reg_int(L, "scrambles", (int)r.scrambles);
+			LuaHelp::reg_int64(L, "drops", r.drops);
+			LuaHelp::reg_int64(L, "scrambles", r.scrambles);
 			LuaHelp::reg_int(L, "recStatus", (int)r.recStatus);
 			LuaHelp::reg_time(L, "startTimeEpg", r.startTimeEpg);
 			LuaHelp::reg_string(L, "comment", ws.WtoUTF8(r.GetComment()));
@@ -3642,9 +3642,7 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 				for( size_t i = 0; i < findList.size(); i++ ){
 					lua_createtable(L, 0, 4);
 					LuaHelp::reg_string(L, "name", ws.WtoUTF8(findList[i].cFileName));
-					lua_pushliteral(L, "size");
-					lua_pushnumber(L, (lua_Number)((__int64)findList[i].nFileSizeHigh << 32 | findList[i].nFileSizeLow));
-					lua_rawset(L, -3);
+					LuaHelp::reg_int64(L, "size", (__int64)findList[i].nFileSizeHigh << 32 | findList[i].nFileSizeLow);
 					LuaHelp::reg_boolean(L, "isdir", (findList[i].dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
 					FILETIME ft = findList[i].ftLastWriteTime;
 					SYSTEMTIME st;
