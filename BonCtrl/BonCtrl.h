@@ -35,6 +35,8 @@ public:
 
 	void SetEMMMode(BOOL enable);
 
+	void SetNoLogScramble(BOOL noLog);
+
 	void SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount);
 
 	//BonDriverƒtƒHƒ‹ƒ_‚ÌBonDriver_*.dll‚ð—ñ‹“

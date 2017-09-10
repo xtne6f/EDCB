@@ -22,6 +22,7 @@ CTSOut::CTSOut(void)
 	this->serviceOnlyFlag = FALSE;
 
 	this->nextCtrlID = 1;
+	this->noLogScramble = FALSE;
 }
 
 
@@ -601,6 +602,7 @@ BOOL CTSOut::CreateServiceCtrl(
 	auto itr = this->serviceUtilMap.insert(std::make_pair(*id, std::unique_ptr<COneServiceUtil>(new COneServiceUtil))).first;
 	itr->second->SetEpgUtil(&this->epgUtil);
 	itr->second->SetBonDriver(bonFile);
+	itr->second->SetNoLogScramble(noLogScramble);
 
 	return TRUE;
 }
@@ -1041,3 +1043,14 @@ void CTSOut::SetBonDriver(
 	bonFile = bonDriver;
 }
 
+void CTSOut::SetNoLogScramble(
+	BOOL noLog
+	)
+{
+	CBlockLock lock(&this->objLock);
+
+	for( auto itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){
+		itr->second->SetNoLogScramble(noLog);
+	}
+	noLogScramble = noLog;
+}

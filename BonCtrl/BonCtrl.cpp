@@ -82,6 +82,11 @@ void CBonCtrl::SetEMMMode(BOOL enable)
 	this->tsOut.SetEmm(enable);
 }
 
+void CBonCtrl::SetNoLogScramble(BOOL noLog)
+{
+	this->tsOut.SetNoLogScramble(noLog);
+}
+
 void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount)
 {
 	this->tsBuffMaxCount = tsBuffMaxCount;

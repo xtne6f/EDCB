@@ -325,6 +325,10 @@ public:
 		const wstring& bonDriver
 		);
 
+	void SetNoLogScramble(
+		BOOL noLog
+		);
+
 protected:
 	CRITICAL_SECTION objLock;
 
@@ -358,6 +362,7 @@ protected:
 	wstring epgTempFilePath;
 
 	wstring bonFile;
+	BOOL noLogScramble;
 protected:
 	void CheckNeedPID();
 

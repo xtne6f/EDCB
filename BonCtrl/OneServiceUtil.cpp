@@ -568,3 +568,10 @@ void COneServiceUtil::SetPIDName(
 {
 	this->dropCount.SetPIDName(&pidName);
 }
+
+void COneServiceUtil::SetNoLogScramble(
+	BOOL noLog
+	)
+{
+	this->dropCount.SetNoLog(FALSE, noLog);
+}
