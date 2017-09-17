@@ -123,6 +123,8 @@ namespace EpgTimer
         public string ServiceColor { get; set; }
         public UInt32 ServiceCustColor { get; set; }
         public bool EpgToolTip { get; set; }
+        public double EpgBorderLeftSize { get; set; }
+        public double EpgBorderTopSize { get; set; }
         public bool EpgTitleIndent { get; set; }
         public bool EpgToolTipNoViewOnly { get; set; }
         public int EpgToolTipViewWait { get; set; }
@@ -308,6 +310,8 @@ namespace EpgTimer
             ReserveRectFillOpacity = 0;
             ReserveRectFillWithShadow = true;
             EpgToolTip = false;
+            EpgBorderLeftSize = 2;
+            EpgBorderTopSize = 0.5;
             EpgTitleIndent = true;
             EpgToolTipNoViewOnly = true;
             EpgToolTipViewWait = 1500;

@@ -236,8 +236,8 @@ namespace EpgTimer.EpgView
             //この番組だけのEpgViewPanelをつくる
             popupItemPanel.Background = CommonManager.Instance.EpgBackColor;
             popupItemPanel.Width = info.Width;
-            popupItemPanel.BorderLeftSize = 1;
-            popupItemPanel.BorderTopSize = 0.5;
+            popupItemPanel.BorderLeftSize = Settings.Instance.EpgBorderLeftSize;
+            popupItemPanel.BorderTopSize = Settings.Instance.EpgBorderTopSize;
             popupItemPanel.IsTitleIndent = Settings.Instance.EpgTitleIndent;
             popupItemPanel.ItemFontNormal = new EpgViewPanel.ItemFont(Settings.Instance.FontName, false, true);
             popupItemPanel.ItemFontTitle = new EpgViewPanel.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle, true);
@@ -385,8 +385,8 @@ namespace EpgTimer.EpgView
                     item.Background = epgViewPanel.Background;
                     item.Height = Math.Ceiling(height);
                     item.Width = programList.Item1;
-                    item.BorderLeftSize = 1;
-                    item.BorderTopSize = 0.5;
+                    item.BorderLeftSize = Settings.Instance.EpgBorderLeftSize;
+                    item.BorderTopSize = Settings.Instance.EpgBorderTopSize;
                     item.IsTitleIndent = Settings.Instance.EpgTitleIndent;
                     item.ItemFontNormal = itemFontNormal;
                     item.ItemFontTitle = itemFontTitle;
