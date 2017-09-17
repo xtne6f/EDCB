@@ -23,7 +23,7 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgMainView : UserControl
     {
-        public event ViewSettingClickHandler ViewSettingClick = null;
+        public event Action<object, CustomEpgTabInfo> ViewSettingClick;
 
         private CustomEpgTabInfo setViewInfo = null;
 

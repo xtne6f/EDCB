@@ -190,7 +190,6 @@ namespace EpgTimer
                         {
                             EpgDataViewItem epgView = new EpgDataViewItem();
                             epgView.SetViewMode(setInfo);
-                            epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
                             TabItem tabItem = new TabItem();
                             tabItem.Header = setInfo.TabName;
                             tabItem.Content = epgView;
@@ -209,8 +208,6 @@ namespace EpgTimer
                     {
                         EpgDataViewItem epgView = new EpgDataViewItem();
                         epgView.SetViewMode(info);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
                         TabItem tabItem = new TabItem();
                         tabItem.Header = info.TabName;
                         tabItem.Content = epgView;
@@ -231,52 +228,6 @@ namespace EpgTimer
 
             }
             return true;
-        }
-
-        void epgView_ViewSettingClick(object sender, object param)
-        {
-            try
-            {
-                if (Settings.Instance.UseCustomEpgView == false)
-                {
-                    MessageBox.Show("デフォルト表示では設定を変更することはできません。");
-                }
-                else
-                {
-                    if (sender.GetType() == typeof(EpgDataViewItem))
-                    {
-                        if (param == null)
-                        {
-                            EpgDataViewItem item = sender as EpgDataViewItem;
-                            CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-                            item.GetViewMode(ref setInfo);
-
-                            EpgDataViewSettingWindow dlg = new EpgDataViewSettingWindow();
-                            PresentationSource topWindow = PresentationSource.FromVisual(this);
-                            if (topWindow != null)
-                            {
-                                dlg.Owner = (Window)topWindow.RootVisual;
-                            }
-                            dlg.SetDefSetting(setInfo);
-                            if (dlg.ShowDialog() == true)
-                            {
-                                dlg.GetSetting(ref setInfo);
-                                item.SetViewMode(setInfo);
-                            }
-                        }
-                        else
-                        {
-                            EpgDataViewItem item = sender as EpgDataViewItem;
-                            CustomEpgTabInfo setInfo = param as CustomEpgTabInfo;
-                            item.SetViewMode(setInfo);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>

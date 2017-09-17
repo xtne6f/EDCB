@@ -5,8 +5,6 @@ using System.Text;
 
 namespace EpgTimer
 {
-    public delegate void ViewSettingClickHandler(object sender, object param);
-
     public enum ErrCode : uint
     {
         CMD_SUCCESS = 1, //成功
