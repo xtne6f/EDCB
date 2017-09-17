@@ -87,17 +87,20 @@ namespace EpgTimer.Setting
                     {
                         string s = dictionary[FLanguage] as string;
                         comboBox_font.Items.Add(s);
-                        if (String.Compare(s, Settings.Instance.FontName) == 0)
-                        {
-                            comboBox_font.SelectedItem = s;
-                        }
                         comboBox_fontTitle.Items.Add(s);
-                        if (String.Compare(s, Settings.Instance.FontNameTitle) == 0)
-                        {
-                            comboBox_fontTitle.SelectedItem = s;
-                        }
                     }
                 }
+                //ローカル名がなくても一応候補に加える
+                foreach (FontFamily family in Fonts.SystemFontFamilies)
+                {
+                    if (family.FamilyNames.ContainsKey(XmlLanguage.GetLanguage("ja-JP")) == false)
+                    {
+                        comboBox_font.Items.Add(family.Source);
+                        comboBox_fontTitle.Items.Add(family.Source);
+                    }
+                }
+                comboBox_font.SelectedItem = Settings.Instance.FontName;
+                comboBox_fontTitle.SelectedItem = Settings.Instance.FontNameTitle;
                 if (comboBox_font.SelectedItem == null)
                 {
                     comboBox_font.SelectedIndex = 0;
