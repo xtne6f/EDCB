@@ -380,7 +380,8 @@ namespace EpgTimer
 
                 MenuItem menuItemNew = new MenuItem();
                 menuItemNew.Header = "簡易予約";
-                menuItemNew.Click += new RoutedEventHandler(cm_new_Click);
+                menuItemNew.DataContext = (uint)0;
+                menuItemNew.Click += new RoutedEventHandler(cm_add_preset_Click);
 
                 Separator separate = new Separator();
                 MenuItem menuItemAdd = new MenuItem();
@@ -393,20 +394,15 @@ namespace EpgTimer
                 menuItemAdd.Items.Add(menuItemAddDlg);
                 menuItemAdd.Items.Add(separate);
 
-                MenuItem menuItemPreset = new MenuItem();
-                menuItemPreset.Header = "プリセット (_Z)";
-
                 foreach (RecPresetItem info in Settings.Instance.RecPresetList)
                 {
                     MenuItem menuItem = new MenuItem();
                     menuItem.Header = info.DisplayName;
                     menuItem.DataContext = info.ID;
                     menuItem.Click += new RoutedEventHandler(cm_add_preset_Click);
-
-                    menuItemPreset.Items.Add(menuItem);
+                    menuItem.IsEnabled = program != null && program.Past == false;
+                    menuItemAdd.Items.Add(menuItem);
                 }
-
-                menuItemAdd.Items.Add(menuItemPreset);
 
                 Separator separate2 = new Separator();
                 MenuItem menuItemChg = new MenuItem();
@@ -508,29 +504,12 @@ namespace EpgTimer
                 menuItemChgViewMode1.Header = "標準モード (_1)";
                 menuItemChgViewMode1.DataContext = 0;
                 menuItemChgViewMode1.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
-                MenuItem menuItemChgViewMode2 = new MenuItem();
-                menuItemChgViewMode2.Header = "1週間モード (_2)";
-                menuItemChgViewMode2.DataContext = 1;
-                menuItemChgViewMode2.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
                 MenuItem menuItemChgViewMode3 = new MenuItem();
                 menuItemChgViewMode3.Header = "リスト表示モード (_3)";
                 menuItemChgViewMode3.DataContext = 2;
                 menuItemChgViewMode3.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
 
-                if (setViewInfo.ViewMode == 1)
-                {
-                    menuItemChgViewMode2.IsChecked = true;
-                }
-                else if (setViewInfo.ViewMode == 2)
-                {
-                    menuItemChgViewMode3.IsChecked = true;
-                }
-                else
-                {
-                    menuItemChgViewMode1.IsChecked = true;
-                }
                 menuItemView.Items.Add(menuItemChgViewMode1);
-                //menuItemView.Items.Add(menuItemChgViewMode2);
                 menuItemView.Items.Add(menuItemChgViewMode3);
                 menuItemView.Items.Add(separate3);
                 menuItemView.Items.Add(menuItemViewSetDlg);
@@ -563,7 +542,6 @@ namespace EpgTimer
                     {
                         menuItemNew.IsEnabled = program.Past == false;
                         menuItemAdd.IsEnabled = true;
-                        menuItemPreset.IsEnabled = program.Past == false;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
                         menuItemAutoAdd.IsEnabled = true;
@@ -841,74 +819,6 @@ namespace EpgTimer
 
                 dlg.SetSearchDefKey(key);
                 dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 簡易予約イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_new_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                ProgramViewItem program = GetProgramItem(clickPos);
-                if (program == null)
-                {
-                    return;
-                }
-                EpgEventInfo eventInfo = program.EventInfo;
-
-                if (eventInfo.StartTimeFlag == 0)
-                {
-                    MessageBox.Show("開始時間未定のため予約できません");
-                    return;
-                }
-
-                ReserveData reserveInfo = new ReserveData();
-                if (eventInfo.ShortInfo != null)
-                {
-                    reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                }
-
-                reserveInfo.StartTime = eventInfo.start_time;
-                reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                if (eventInfo.DurationFlag == 0)
-                {
-                    reserveInfo.DurationSecond = 10 * 60;
-                }
-                else
-                {
-                    reserveInfo.DurationSecond = eventInfo.durationSec;
-                }
-
-                UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                {
-                    reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                }
-                reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                reserveInfo.ServiceID = eventInfo.service_id;
-                reserveInfo.EventID = eventInfo.event_id;
-
-                RecSettingData setInfo = new RecSettingData();
-                Settings.GetDefRecSetting(0, ref setInfo);  //  デフォルトをとって来てくれる？
-                reserveInfo.RecSetting = setInfo;
-
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserveInfo);
-                ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "簡易予約でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
-                }
             }
             catch (Exception ex)
             {
