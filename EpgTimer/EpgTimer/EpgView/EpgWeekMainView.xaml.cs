@@ -1016,6 +1016,17 @@ namespace EpgTimer
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            var ps = PresentationSource.FromVisual(this);
+            if (ps != null)
+            {
+                //高DPI環境でProgramViewの位置を物理ピクセルに合わせるためにヘッダの幅を微調整する
+                //RootにUseLayoutRoundingを適用できれば不要だがボタン等が低品質になるので自力でやる
+                Point p = grid_PG.TransformToVisual(ps.RootVisual).Transform(new Point(40, 40));
+                Matrix m = ps.CompositionTarget.TransformToDevice;
+                grid_PG.ColumnDefinitions[0].Width = new GridLength(40 + Math.Floor(p.X * m.M11) / m.M11 - p.X);
+                grid_PG.RowDefinitions[0].Height = new GridLength(40 + Math.Floor(p.Y * m.M22) / m.M22 - p.Y);
+            }
+
             if (this.IsVisible == true)
             {
                 if (updateEpgData == true)
@@ -1583,7 +1594,7 @@ namespace EpgTimer
                 {
                     //最低表示行数を適用
                     programList.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-                    double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+                    double minimum = Math.Floor((Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight);
                     double lastLeft = double.MinValue;
                     double lastBottom = 0;
                     foreach (ProgramViewItem item in programList)

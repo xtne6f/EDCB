@@ -16,20 +16,22 @@ namespace EpgTimer.EpgView
     {
         public class ItemFont
         {
-            public string FamilyName { get; private set; }
-            public bool IsBold { get; private set; }
+            public bool NoCache { get; private set; }
             public GlyphTypeface GlyphType { get; private set; }
             public ushort[] GlyphIndexCache { get; private set; }
             public float[] GlyphWidthCache { get; private set; }
 
-            public ItemFont(string familyName, bool isBold)
+            public ItemFont(string familyName, bool isBold, bool noCache)
             {
-                FamilyName = familyName;
-                IsBold = isBold;
+                NoCache = noCache;
                 GlyphTypeface glyphType;
-                if ((new Typeface(new FontFamily(FamilyName),
+                if ((new Typeface(new FontFamily(familyName),
                                   FontStyles.Normal,
-                                  IsBold ? FontWeights.Bold : FontWeights.Normal,
+                                  isBold ? FontWeights.Bold : FontWeights.Normal,
+                                  FontStretches.Normal)).TryGetGlyphTypeface(out glyphType) ||
+                    (new Typeface(SystemFonts.MessageFontFamily,
+                                  FontStyles.Normal,
+                                  isBold ? FontWeights.Bold : FontWeights.Normal,
                                   FontStretches.Normal)).TryGetGlyphTypeface(out glyphType))
                 {
                     GlyphType = glyphType;
@@ -37,7 +39,7 @@ namespace EpgTimer.EpgView
             }
             public void PrepareCache()
             {
-                if (GlyphIndexCache == null)
+                if (NoCache == false && GlyphIndexCache == null)
                 {
                     GlyphIndexCache = new ushort[ushort.MaxValue + 1];
                     GlyphWidthCache = new float[ushort.MaxValue + 1];
@@ -75,6 +77,18 @@ namespace EpgTimer.EpgView
             }
         }
 
+        public double BorderLeftSize
+        {
+            get;
+            set;
+        }
+
+        public double BorderTopSize
+        {
+            get;
+            set;
+        }
+
         public bool IsTitleIndent
         {
             get;
@@ -93,14 +107,18 @@ namespace EpgTimer.EpgView
             set;
         }
 
+        public double LastItemRenderTextHeight
+        {
+            get;
+            private set;
+        }
+
         protected void CreateDrawTextList()
         {
+            LastItemRenderTextHeight = 0;
             textDrawLists = null;
             Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
 
-            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
-            this.VisualTextHintingMode = TextHintingMode.Fixed;
-            this.UseLayoutRounding = true;
             if (Items == null)
             {
                 return;
@@ -115,100 +133,83 @@ namespace EpgTimer.EpgView
             ItemFontNormal.PrepareCache();
             ItemFontTitle.PrepareCache();
 
-            try
             {
                 double selfLeft = Canvas.GetLeft(this);
-                double sizeNormal = Settings.Instance.FontSize;
-                double sizeTitle = Settings.Instance.FontSizeTitle;
+                double sizeTitle = Math.Max(Settings.Instance.FontSizeTitle, 1);
+                double sizeNormal = Math.Max(Settings.Instance.FontSize, 1);
+                double indentTitle = sizeTitle * 1.7;
+                double indentNormal = IsTitleIndent ? indentTitle : 2;
+                SolidColorBrush colorTitle = CommonManager.Instance.CustTitle1Color;
+                SolidColorBrush colorNormal = CommonManager.Instance.CustTitle2Color;
+
                 foreach (ProgramViewItem info in Items)
                 {
                     List<TextDrawItem> textDrawList = new List<TextDrawItem>();
                     textDrawLists.Add(textDrawList);
-                    if (info.Height > 2)
+
+                    double innerLeft = info.LeftPos + BorderLeftSize / 2;
+                    //0.26は細枠線での微調整
+                    double innerTop = info.TopPos + BorderTopSize / 2 - 0.26;
+                    double innerWidth = info.Width - BorderLeftSize;
+                    double innerHeight = info.Height - BorderTopSize;
+                    double useHeight;
+
+                    //分
+                    string min = (info.EventInfo.StartTimeFlag == 0 ? "?" : info.EventInfo.start_time.Minute.ToString("d02"));
+                    if (RenderText(min, textDrawList, ItemFontTitle, sizeTitle * 0.95,
+                                   innerWidth - 1, innerHeight,
+                                   innerLeft + 1, innerTop, out useHeight, colorTitle, m, selfLeft) == false)
                     {
-                        if (info.Height < sizeTitle + 3)
-                        {
-                            //高さ足りない
-                            info.TitleDrawErr = true;
-                        }
-
-                        double totalHeight = -2;
-
-                        //分
-                        string min;
-                        if (info.EventInfo.StartTimeFlag == 1)
-                        {
-                            min = info.EventInfo.start_time.Minute.ToString("d02") + "  ";
-                        }
-                        else
-                        {
-                            min = "未定 ";
-                        }
-                        double useHeight = 0;
-                        if (RenderText(min, ref textDrawList, ItemFontTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos - selfLeft - 1, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
-                        {
-                            info.TitleDrawErr = true;
-                            continue;
-                        }
-
-                        double widthOffset = sizeNormal * 1.7;
-                        //番組情報
-                        if (info.EventInfo.ShortInfo != null)
-                        {
-                            //タイトル
-                            if (info.EventInfo.ShortInfo.event_name.Length > 0)
-                            {
-                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, ItemFontTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 1 - totalHeight, info.LeftPos - selfLeft + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
-                                {
-                                    info.TitleDrawErr = true;
-                                    continue;
-                                }
-                                totalHeight += Math.Floor(useHeight + (sizeNormal / 2));
-                            }
-                            if (IsTitleIndent == false)
-                            {
-                                widthOffset = 0;
-                            }
-                            //説明
-                            if (info.EventInfo.ShortInfo.text_char.Length > 0)
-                            {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, ItemFontNormal, sizeNormal, info.Width - 10 - widthOffset, info.Height - 5 - totalHeight, info.LeftPos - selfLeft + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
-                                {
-                                    continue;
-                                }
-                                totalHeight += useHeight + sizeNormal;
-                            }
-
-                            //詳細
-//                            if (info.EventInfo.ExtInfo != null)
-//                            {
-//                                if (info.EventInfo.ExtInfo.text_char.Length > 0)
-//                                {
-//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
-//                                    {
-//                                        continue;
-//                                    }
-//                                    totalHeight += useHeight;
-//                                }
-//                            }
-                        }
+                        info.TitleDrawErr = true;
+                        LastItemRenderTextHeight = info.Height;
+                        continue;
                     }
+
+                    //タイトル
+                    string title = info.EventInfo.ShortInfo == null ? "" : info.EventInfo.ShortInfo.event_name;
+                    if (RenderText(title.Length > 0 ? title : " ", textDrawList, ItemFontTitle, sizeTitle,
+                                   innerWidth - sizeTitle * 0.5 - indentTitle, innerHeight,
+                                   innerLeft + indentTitle, innerTop, out useHeight, colorTitle, m, selfLeft) == false)
+                    {
+                        info.TitleDrawErr = true;
+                        LastItemRenderTextHeight = info.Height;
+                        continue;
+                    }
+                    if (info.Height < sizeTitle)
+                    {
+                        //高さ足りない
+                        info.TitleDrawErr = true;
+                    }
+                    LastItemRenderTextHeight = useHeight + sizeNormal * 0.5;
+
+                    if (info.EventInfo.ShortInfo != null)
+                    {
+                        //説明
+                        string detail = info.EventInfo.ShortInfo.text_char;
+                        //詳細
+                        //detail += info.EventInfo.ExtInfo == null ? "" : "\r\n\r\n" + info.EventInfo.ExtInfo.text_char;
+                        RenderText(detail, textDrawList, ItemFontNormal, sizeNormal,
+                                   innerWidth - sizeTitle * 0.5 - indentNormal, innerHeight - LastItemRenderTextHeight,
+                                   innerLeft + indentNormal, innerTop + LastItemRenderTextHeight, out useHeight, colorNormal, m, selfLeft);
+                        LastItemRenderTextHeight += useHeight;
+                    }
+                    LastItemRenderTextHeight = Math.Floor(LastItemRenderTextHeight + BorderTopSize + sizeNormal * 0.5);
+                    LastItemRenderTextHeight = Math.Min(LastItemRenderTextHeight, info.Height);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
-        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor, Matrix m)
+        private static bool RenderText(String text, List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize,
+                                       double maxWidth, double maxHeight, double x, double y,
+                                       out double totalHeight, SolidColorBrush fontColor, Matrix m, double selfLeft)
         {
-            double totalHeight = 0;
+            totalHeight = 0;
 
             string[] lineText = text.Replace("\r", "").Split('\n');
             foreach (string line in lineText)
             {
-                totalHeight += Math.Floor(2 + fontSize);
+                //行間は2行目から適用する
+                totalHeight += totalHeight == 0 ? fontSize : fontSize * 1.2;
                 List<ushort> glyphIndexes = new List<ushort>();
                 List<double> advanceWidths = new List<double>();
                 double totalWidth = 0;
@@ -217,20 +218,34 @@ namespace EpgTimer.EpgView
                     //この辞書検索が負荷の大部分を占めているのでテーブルルックアップする
                     //ushort glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
                     //double width = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
-                    ushort glyphIndex = itemFont.GlyphIndexCache[line[n]];
+                    ushort glyphIndex = itemFont.NoCache ? (ushort)0 : itemFont.GlyphIndexCache[line[n]];
+                    double glyphWidth;
                     if (glyphIndex == 0)
                     {
-                        itemFont.GlyphIndexCache[line[n]] = glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
-                        itemFont.GlyphWidthCache[glyphIndex] = (float)itemFont.GlyphType.AdvanceWidths[glyphIndex];
+                        //NoCacheまたはキャッシュミス
+                        itemFont.GlyphType.CharacterToGlyphMap.TryGetValue(line[n], out glyphIndex);
+                        itemFont.GlyphType.AdvanceWidths.TryGetValue(glyphIndex, out glyphWidth);
+                        if (itemFont.NoCache == false)
+                        {
+                            itemFont.GlyphIndexCache[line[n]] = glyphIndex;
+                            itemFont.GlyphWidthCache[glyphIndex] = (float)glyphWidth;
+                        }
+                        glyphWidth = (float)glyphWidth;
                     }
-                    double width = itemFont.GlyphWidthCache[glyphIndex] * fontSize;
+                    else
+                    {
+                        glyphWidth = itemFont.GlyphWidthCache[glyphIndex];
+                    }
+                    double width = glyphWidth * fontSize;
+
                     if (totalWidth + width > maxWidth)
                     {
                         if (glyphIndexes.Count > 0)
                         {
-                            double dpix = Math.Ceiling((x + 2) * m.M11);
+                            //originを物理ピクセルに合わせる。selfLeftはレンダリング時に加算されるので混ぜてはいけない
+                            double dpix = Math.Ceiling(x * m.M11);
                             double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
-                            Point origin = new Point(dpix / m.M11, dpiy / m.M22);
+                            Point origin = new Point(dpix / m.M11 - selfLeft, dpiy / m.M22);
                             TextDrawItem item = new TextDrawItem();
                             item.FontColor = fontColor;
                             item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
@@ -242,13 +257,12 @@ namespace EpgTimer.EpgView
                         if (totalHeight > maxHeight)
                         {
                             //次の行無理
-                            useHeight = totalHeight;
                             return false;
                         }
                         else
                         {
                             //次の行いける
-                            totalHeight += fontSize + 2;
+                            totalHeight += fontSize * 1.2;
 
                             glyphIndexes = new List<ushort>();
                             advanceWidths = new List<double>();
@@ -261,9 +275,9 @@ namespace EpgTimer.EpgView
                 }
                 if (glyphIndexes.Count > 0)
                 {
-                    double dpix = Math.Ceiling((x + 2) * m.M11);
+                    double dpix = Math.Ceiling(x * m.M11);
                     double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
-                    Point origin = new Point(dpix / m.M11, dpiy / m.M22);
+                    Point origin = new Point(dpix / m.M11 - selfLeft, dpiy / m.M22);
                     TextDrawItem item = new TextDrawItem();
                     item.FontColor = fontColor;
                     item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
@@ -273,7 +287,6 @@ namespace EpgTimer.EpgView
 
                 }
             }
-            useHeight = Math.Floor(totalHeight);
             return true;
         }
 
@@ -286,21 +299,26 @@ namespace EpgTimer.EpgView
                 return;
             }
             
-            try
             {
                 double selfLeft = Canvas.GetLeft(this);
-                double sizeNormal = Settings.Instance.FontSize;
-                double sizeTitle = Settings.Instance.FontSizeTitle;
                 Brush bgBrush = Background;
+                //位置がずれないように枠線の幅が1より大きいときは両側で分け合う
+                double borderLeft = BorderLeftSize > 1 ? BorderLeftSize / 2 : BorderLeftSize;
+                double borderTop = BorderTopSize > 1 ? BorderTopSize / 2 : BorderTopSize;
                 for (int i = 0; i < textDrawLists.Count; i++)
                 {
                     ProgramViewItem info = Items[i];
-                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos, info.Width, 1));
-                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos + info.Height, info.Width, 1));
-                    if (info.Height > 1)
+                    double bgHeight = Math.Min(borderTop, info.Height);
+                    if (info.Width > BorderLeftSize && bgHeight > 0)
                     {
-                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5));
-                        dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
+                        dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos, info.Width - BorderLeftSize, bgHeight));
+                        dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos + info.Height - bgHeight, info.Width - BorderLeftSize, bgHeight));
+                    }
+                    if (info.Width > BorderLeftSize && info.Height > BorderTopSize)
+                    {
+                        var textArea = new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos + borderTop, info.Width - BorderLeftSize, info.Height - BorderTopSize);
+                        dc.DrawRectangle(info.ContentColor, null, textArea);
+                        dc.PushClip(new RectangleGeometry(textArea));
                         foreach (TextDrawItem txtinfo in textDrawLists[i])
                         {
                             dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);
@@ -308,10 +326,6 @@ namespace EpgTimer.EpgView
                         dc.Pop();
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
     }
