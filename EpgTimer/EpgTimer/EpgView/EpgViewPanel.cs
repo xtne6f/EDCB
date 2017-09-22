@@ -95,6 +95,18 @@ namespace EpgTimer.EpgView
             set;
         }
 
+        public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceDictionaryNormal
+        {
+            get;
+            set;
+        }
+
+        public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceDictionaryTitle
+        {
+            get;
+            set;
+        }
+
         public ItemFont ItemFontNormal
         {
             get;
@@ -167,6 +179,10 @@ namespace EpgTimer.EpgView
 
                     //タイトル
                     string title = info.EventInfo.ShortInfo == null ? "" : info.EventInfo.ShortInfo.event_name;
+                    if (ReplaceDictionaryTitle != null)
+                    {
+                        title = CommonManager.ReplaceText(title, ReplaceDictionaryTitle);
+                    }
                     if (RenderText(title.Length > 0 ? title : " ", textDrawList, ItemFontTitle, sizeTitle,
                                    innerWidth - sizeTitle * 0.5 - indentTitle, innerHeight,
                                    innerLeft + indentTitle, innerTop, out useHeight, colorTitle, m, selfLeft) == false)
@@ -188,6 +204,10 @@ namespace EpgTimer.EpgView
                         string detail = info.EventInfo.ShortInfo.text_char;
                         //詳細
                         //detail += info.EventInfo.ExtInfo == null ? "" : "\r\n\r\n" + info.EventInfo.ExtInfo.text_char;
+                        if (ReplaceDictionaryNormal != null)
+                        {
+                            detail = CommonManager.ReplaceText(detail, ReplaceDictionaryNormal);
+                        }
                         RenderText(detail, textDrawList, ItemFontNormal, sizeNormal,
                                    innerWidth - sizeTitle * 0.5 - indentNormal, innerHeight - LastItemRenderTextHeight,
                                    innerLeft + indentNormal, innerTop + LastItemRenderTextHeight, out useHeight, colorNormal, m, selfLeft);
@@ -223,11 +243,20 @@ namespace EpgTimer.EpgView
                     if (glyphIndex == 0)
                     {
                         //NoCacheまたはキャッシュミス
-                        itemFont.GlyphType.CharacterToGlyphMap.TryGetValue(line[n], out glyphIndex);
-                        itemFont.GlyphType.AdvanceWidths.TryGetValue(glyphIndex, out glyphWidth);
-                        if (itemFont.NoCache == false)
+                        int key = 0;
+                        if (char.IsSurrogatePair(line, n))
                         {
-                            itemFont.GlyphIndexCache[line[n]] = glyphIndex;
+                            key = char.ConvertToUtf32(line, n++);
+                        }
+                        else if (char.IsSurrogate(line[n]) == false)
+                        {
+                            key = line[n];
+                        }
+                        itemFont.GlyphType.CharacterToGlyphMap.TryGetValue(key, out glyphIndex);
+                        itemFont.GlyphType.AdvanceWidths.TryGetValue(glyphIndex, out glyphWidth);
+                        if (itemFont.NoCache == false && key < itemFont.GlyphIndexCache.Length)
+                        {
+                            itemFont.GlyphIndexCache[key] = glyphIndex;
                             itemFont.GlyphWidthCache[glyphIndex] = (float)glyphWidth;
                         }
                         glyphWidth = (float)glyphWidth;

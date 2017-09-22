@@ -126,6 +126,8 @@ namespace EpgTimer
         public double EpgBorderLeftSize { get; set; }
         public double EpgBorderTopSize { get; set; }
         public bool EpgTitleIndent { get; set; }
+        public string EpgReplacePattern { get; set; }
+        public string EpgReplacePatternTitle { get; set; }
         public bool EpgToolTipNoViewOnly { get; set; }
         public int EpgToolTipViewWait { get; set; }
         public bool EpgPopup { get; set; }
@@ -313,6 +315,8 @@ namespace EpgTimer
             EpgBorderLeftSize = 2;
             EpgBorderTopSize = 0.5;
             EpgTitleIndent = true;
+            EpgReplacePattern = "";
+            EpgReplacePatternTitle = "";
             EpgToolTipNoViewOnly = true;
             EpgToolTipViewWait = 1500;
             EpgPopup = true;

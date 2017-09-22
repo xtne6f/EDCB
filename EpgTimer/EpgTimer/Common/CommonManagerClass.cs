@@ -391,6 +391,55 @@ namespace EpgTimer
             return key;
         }
 
+        public static Dictionary<char, List<KeyValuePair<string, string>>> CreateReplaceDictionary(string pattern)
+        {
+            var ret = new Dictionary<char, List<KeyValuePair<string, string>>>();
+            if (pattern.Length > 0)
+            {
+                string[] arr = pattern.Substring(1).Split(pattern[0]);
+                for (int i = 0; i + 1 < arr.Length; i += 2)
+                {
+                    //先頭文字で仕分けする
+                    if (arr[i].Length > 0)
+                    {
+                        List<KeyValuePair<string, string>> bucket;
+                        if (ret.TryGetValue(arr[i][0], out bucket) == false)
+                        {
+                            ret[arr[i][0]] = bucket = new List<KeyValuePair<string, string>>();
+                        }
+                        bucket.Add(new KeyValuePair<string, string>(arr[i], arr[i + 1]));
+                    }
+                }
+                foreach (var bucket in ret)
+                {
+                    //最長一致のため
+                    bucket.Value.Sort((a, b) => b.Key.Length - a.Key.Length);
+                }
+            }
+            return ret;
+        }
+
+        public static string ReplaceText(string text, Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionary)
+        {
+            var ret = new StringBuilder(text.Length);
+            for (int i = 0; i < text.Length; )
+            {
+                List<KeyValuePair<string, string>> bucket;
+                if (replaceDictionary.TryGetValue(text[i], out bucket))
+                {
+                    int j = bucket.FindIndex(p => string.Compare(text, i, p.Key, 0, p.Key.Length, StringComparison.Ordinal) == 0);
+                    if (j >= 0)
+                    {
+                        ret.Append(bucket[j].Value);
+                        i += bucket[j].Key.Length;
+                        continue;
+                    }
+                }
+                ret.Append(text[i++]);
+            }
+            return ret.ToString();
+        }
+
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
         {
             EpgServiceInfo info = new EpgServiceInfo();

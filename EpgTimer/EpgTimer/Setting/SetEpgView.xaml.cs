@@ -121,6 +121,8 @@ namespace EpgTimer.Setting
                 checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
                 textBox_borderLeftSize.Text = Settings.Instance.EpgBorderLeftSize.ToString();
                 textBox_borderTopSize.Text = Settings.Instance.EpgBorderTopSize.ToString();
+                textBox_replacePattern.Text = Settings.Instance.EpgReplacePattern;
+                textBox_replacePatternTitle.Text = Settings.Instance.EpgReplacePatternTitle;
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
                 checkBox_toolTip_noView_only.IsChecked = Settings.Instance.EpgToolTipNoViewOnly;
                 textBox_toolTipWait.Text = Settings.Instance.EpgToolTipViewWait.ToString();
@@ -200,6 +202,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.MinimumHeight = Convert.ToDouble(textBox_minimumHeight.Text);
                 Settings.Instance.EpgBorderLeftSize = Convert.ToDouble(textBox_borderLeftSize.Text);
                 Settings.Instance.EpgBorderTopSize = Convert.ToDouble(textBox_borderTopSize.Text);
+                Settings.Instance.EpgReplacePattern = textBox_replacePattern.Text;
+                Settings.Instance.EpgReplacePatternTitle = textBox_replacePatternTitle.Text;
                 if (checkBox_title_indent.IsChecked == true)
                 {
                     Settings.Instance.EpgTitleIndent = true;

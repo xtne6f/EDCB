@@ -239,6 +239,8 @@ namespace EpgTimer.EpgView
             popupItemPanel.BorderLeftSize = Settings.Instance.EpgBorderLeftSize;
             popupItemPanel.BorderTopSize = Settings.Instance.EpgBorderTopSize;
             popupItemPanel.IsTitleIndent = Settings.Instance.EpgTitleIndent;
+            popupItemPanel.ReplaceDictionaryNormal = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePattern);
+            popupItemPanel.ReplaceDictionaryTitle = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePatternTitle);
             popupItemPanel.ItemFontNormal = new EpgViewPanel.ItemFont(Settings.Instance.FontName, false, true);
             popupItemPanel.ItemFontTitle = new EpgViewPanel.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle, true);
             Canvas.SetLeft(popupItemPanel, 0);
@@ -378,6 +380,8 @@ namespace EpgTimer.EpgView
                 var itemFontNormal = new EpgViewPanel.ItemFont(Settings.Instance.FontName, false, false);
                 var itemFontTitle = new EpgViewPanel.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle, false);
                 epgViewPanel.Background = CommonManager.Instance.EpgBackColor;
+                epgViewPanel.ReplaceDictionaryNormal = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePattern);
+                epgViewPanel.ReplaceDictionaryTitle = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePatternTitle);
                 double totalWidth = 0;
                 foreach (var programList in programGroupList)
                 {
@@ -388,6 +392,8 @@ namespace EpgTimer.EpgView
                     item.BorderLeftSize = Settings.Instance.EpgBorderLeftSize;
                     item.BorderTopSize = Settings.Instance.EpgBorderTopSize;
                     item.IsTitleIndent = Settings.Instance.EpgTitleIndent;
+                    item.ReplaceDictionaryNormal = epgViewPanel.ReplaceDictionaryNormal;
+                    item.ReplaceDictionaryTitle = epgViewPanel.ReplaceDictionaryTitle;
                     item.ItemFontNormal = itemFontNormal;
                     item.ItemFontTitle = itemFontTitle;
                     Canvas.SetLeft(item, totalWidth);
