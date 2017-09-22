@@ -89,6 +89,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceUrlDictionary
+        {
+            get;
+            private set;
+        }
 
         private static CommonManager _instance;
         public static CommonManager Instance
@@ -366,6 +371,10 @@ namespace EpgTimer
             NotifyLogList = new List<NotifySrvInfo>();
             CustContentColorList = new List<Brush>();
             CustTimeColorList = new List<Brush>();
+            ReplaceUrlDictionary = CreateReplaceDictionary(",０,0,１,1,２,2,３,3,４,4,５,5,６,6,７,7,８,8,９,9" +
+                ",Ａ,A,Ｂ,B,Ｃ,C,Ｄ,D,Ｅ,E,Ｆ,F,Ｇ,G,Ｈ,H,Ｉ,I,Ｊ,J,Ｋ,K,Ｌ,L,Ｍ,M,Ｎ,N,Ｏ,O,Ｐ,P,Ｑ,Q,Ｒ,R,Ｓ,S,Ｔ,T,Ｕ,U,Ｖ,V,Ｗ,W,Ｘ,X,Ｙ,Y,Ｚ,Z" +
+                ",ａ,a,ｂ,b,ｃ,c,ｄ,d,ｅ,e,ｆ,f,ｇ,g,ｈ,h,ｉ,i,ｊ,j,ｋ,k,ｌ,l,ｍ,m,ｎ,n,ｏ,o,ｐ,p,ｑ,q,ｒ,r,ｓ,s,ｔ,t,ｕ,u,ｖ,v,ｗ,w,ｘ,x,ｙ,y,ｚ,z" +
+                ",！,!,＃,#,＄,$,％,%,＆,&,’,',（,(,）,),～,~,￣,~,＝,=,＠,@,；,;,：,:,？,?,＿,_,＋,+,－,-,＊,*,／,/,．,.");
         }
 
         public static CtrlCmdUtil CreateSrvCtrl()
@@ -461,103 +470,6 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             } 
             return info;
-        }
-
-        public static String ReplaceUrl(String url)
-        {
-            string retText = url;
-
-            retText = retText.Replace("ａ", "a");
-            retText = retText.Replace("ｂ", "b");
-            retText = retText.Replace("ｃ", "c");
-            retText = retText.Replace("ｄ", "d");
-            retText = retText.Replace("ｅ", "e");
-            retText = retText.Replace("ｆ", "f");
-            retText = retText.Replace("ｇ", "g");
-            retText = retText.Replace("ｈ", "h");
-            retText = retText.Replace("ｉ", "i");
-            retText = retText.Replace("ｊ", "j");
-            retText = retText.Replace("ｋ", "k");
-            retText = retText.Replace("ｌ", "l");
-            retText = retText.Replace("ｍ", "m");
-            retText = retText.Replace("ｎ", "n");
-            retText = retText.Replace("ｏ", "o");
-            retText = retText.Replace("ｐ", "p");
-            retText = retText.Replace("ｑ", "q");
-            retText = retText.Replace("ｒ", "r");
-            retText = retText.Replace("ｓ", "s");
-            retText = retText.Replace("ｔ", "t");
-            retText = retText.Replace("ｕ", "u");
-            retText = retText.Replace("ｖ", "v");
-            retText = retText.Replace("ｗ", "w");
-            retText = retText.Replace("ｘ", "x");
-            retText = retText.Replace("ｙ", "y");
-            retText = retText.Replace("ｚ", "z");
-            retText = retText.Replace("Ａ", "A");
-            retText = retText.Replace("Ｂ", "B");
-            retText = retText.Replace("Ｃ", "C");
-            retText = retText.Replace("Ｄ", "D");
-            retText = retText.Replace("Ｅ", "E");
-            retText = retText.Replace("Ｆ", "F");
-            retText = retText.Replace("Ｇ", "G");
-            retText = retText.Replace("Ｈ", "H");
-            retText = retText.Replace("Ｉ", "I");
-            retText = retText.Replace("Ｊ", "J");
-            retText = retText.Replace("Ｋ", "K");
-            retText = retText.Replace("Ｌ", "L");
-            retText = retText.Replace("Ｍ", "M");
-            retText = retText.Replace("Ｎ", "N");
-            retText = retText.Replace("Ｏ", "O");
-            retText = retText.Replace("Ｐ", "P");
-            retText = retText.Replace("Ｑ", "Q");
-            retText = retText.Replace("Ｒ", "R");
-            retText = retText.Replace("Ｓ", "S");
-            retText = retText.Replace("Ｔ", "T");
-            retText = retText.Replace("Ｕ", "U");
-            retText = retText.Replace("Ｖ", "V");
-            retText = retText.Replace("Ｗ", "W");
-            retText = retText.Replace("Ｘ", "X");
-            retText = retText.Replace("Ｙ", "Y");
-            retText = retText.Replace("Ｚ", "Z");
-            retText = retText.Replace("＃", "#");
-            retText = retText.Replace("＄", "$");
-            retText = retText.Replace("％", "%");
-            retText = retText.Replace("＆", "&");
-            retText = retText.Replace("’", "'");
-            retText = retText.Replace("（", "(");
-            retText = retText.Replace("）", ")");
-            retText = retText.Replace("～", "~");
-            retText = retText.Replace("＝", "=");
-            retText = retText.Replace("｜", "|");
-            retText = retText.Replace("＾", "^");
-            retText = retText.Replace("￥", "\\");
-            retText = retText.Replace("＠", "@");
-            retText = retText.Replace("；", ";");
-            retText = retText.Replace("：", ":");
-            retText = retText.Replace("｀", "`");
-            retText = retText.Replace("｛", "{");
-            retText = retText.Replace("｝", "}");
-            retText = retText.Replace("＜", "<");
-            retText = retText.Replace("＞", ">");
-            retText = retText.Replace("？", "?");
-            retText = retText.Replace("＿", "_");
-            retText = retText.Replace("＋", "+");
-            retText = retText.Replace("－", "-");
-            retText = retText.Replace("＊", "*");
-            retText = retText.Replace("／", "/");
-            retText = retText.Replace("．", ".");
-            retText = retText.Replace("０", "0");
-            retText = retText.Replace("１", "1");
-            retText = retText.Replace("２", "2");
-            retText = retText.Replace("３", "3");
-            retText = retText.Replace("４", "4");
-            retText = retText.Replace("５", "5");
-            retText = retText.Replace("６", "6");
-            retText = retText.Replace("７", "7");
-            retText = retText.Replace("８", "8");
-            retText = retText.Replace("９", "9");
-
-            return retText;
         }
 
         public static string GetErrCodeText(ErrCode err)

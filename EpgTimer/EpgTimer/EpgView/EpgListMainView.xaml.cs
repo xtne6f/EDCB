@@ -573,53 +573,25 @@ namespace EpgTimer
 
                 String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
 
-                Regex regex = new Regex("((http://|https://|ｈｔｔｐ：／／|ｈｔｔｐｓ：／／).*\r\n)");
-                if (regex.IsMatch(text) == true)
+                int searchFrom = 0;
+                Paragraph para = new Paragraph();
+                string rtext = CommonManager.ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
+                if (rtext.Length == text.Length)
                 {
-                    try
+                    for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
                     {
-                        //Regexのsplitでやるとhttp://だけのも取れたりするので、１つずつ行う
-                        FlowDocument flowDoc = new FlowDocument();
-                        Paragraph para = new Paragraph();
-
-                        do
-                        {
-                            Match matchVal = regex.Match(text);
-                            int index = text.IndexOf(matchVal.Value);
-
-                            para.Inlines.Add(text.Substring(0, index));
-                            text = text.Remove(0, index);
-
-                            Hyperlink h = new Hyperlink(new Run(matchVal.Value.Replace("\r\n", "")));
-                            h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
-                            h.Foreground = Brushes.Blue;
-                            h.Cursor = Cursors.Hand;
-                            String url = CommonManager.ReplaceUrl(matchVal.Value.Replace("\r\n", ""));
-                            h.NavigateUri = new Uri(url);
-                            para.Inlines.Add(h);
-                            para.Inlines.Add("\r\n");
-
-                            text = text.Remove(0, matchVal.Value.Length);
-                        } while (regex.IsMatch(text) == true);
-                        para.Inlines.Add(text);
-
-                        flowDoc.Blocks.Add(para);
-                        richTextBox_eventInfo.Document = flowDoc;
-                    }
-                    catch
-                    {
-                        text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                        FlowDocument flowDoc = new FlowDocument();
-                        flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                        richTextBox_eventInfo.Document = flowDoc;
+                        para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
+                        Hyperlink h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
+                        h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
+                        h.Foreground = Brushes.Blue;
+                        h.Cursor = Cursors.Hand;
+                        h.NavigateUri = new Uri(m.Value);
+                        para.Inlines.Add(h);
+                        searchFrom = m.Index + m.Length;
                     }
                 }
-                else
-                {
-                    FlowDocument flowDoc = new FlowDocument();
-                    flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                    richTextBox_eventInfo.Document = flowDoc;
-                }
+                para.Inlines.Add(text.Substring(searchFrom));
+                richTextBox_eventInfo.Document = new FlowDocument(para);
             }
         }
 
