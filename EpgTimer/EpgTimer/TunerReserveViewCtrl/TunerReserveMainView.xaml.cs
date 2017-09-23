@@ -519,6 +519,17 @@ namespace EpgTimer
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            var ps = PresentationSource.FromVisual(this);
+            if (ps != null)
+            {
+                //高DPI環境でTunerReserveViewの位置を物理ピクセルに合わせるためにヘッダの幅を微調整する
+                //RootにUseLayoutRoundingを適用できれば不要だがボタン等が低品質になるので自力でやる
+                Point p = grid_container.TransformToVisual(ps.RootVisual).Transform(new Point(40, 40));
+                Matrix m = ps.CompositionTarget.TransformToDevice;
+                grid_container.ColumnDefinitions[0].Width = new GridLength(40 + Math.Floor(p.X * m.M11) / m.M11 - p.X);
+                grid_container.RowDefinitions[0].Height = new GridLength(40 + Math.Floor(p.Y * m.M22) / m.M22 - p.Y);
+            }
+
             if (this.IsVisible == true)
             {
                 if (updateReserveData == true)

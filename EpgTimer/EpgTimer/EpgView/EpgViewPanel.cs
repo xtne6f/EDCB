@@ -55,7 +55,7 @@ namespace EpgTimer.EpgView
         public static readonly DependencyProperty BackgroundProperty =
             Panel.BackgroundProperty.AddOwner(typeof(EpgViewPanel));
         private List<ProgramViewItem> items;
-        private List<List<TextDrawItem>> textDrawLists;
+        private List<List<Tuple<Brush, GlyphRun>>> textDrawLists;
         public Brush Background
         {
             set { SetValue(BackgroundProperty, value); }
@@ -135,7 +135,7 @@ namespace EpgTimer.EpgView
             {
                 return;
             }
-            textDrawLists = new List<List<TextDrawItem>>(Items.Count);
+            textDrawLists = new List<List<Tuple<Brush, GlyphRun>>>(Items.Count);
 
             if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
                 ItemFontTitle == null || ItemFontTitle.GlyphType == null)
@@ -156,7 +156,7 @@ namespace EpgTimer.EpgView
 
                 foreach (ProgramViewItem info in Items)
                 {
-                    List<TextDrawItem> textDrawList = new List<TextDrawItem>();
+                    var textDrawList = new List<Tuple<Brush, GlyphRun>>();
                     textDrawLists.Add(textDrawList);
 
                     double innerLeft = info.LeftPos + BorderLeftSize / 2;
@@ -219,9 +219,9 @@ namespace EpgTimer.EpgView
             }
         }
 
-        private static bool RenderText(String text, List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize,
-                                       double maxWidth, double maxHeight, double x, double y,
-                                       out double totalHeight, SolidColorBrush fontColor, Matrix m, double selfLeft)
+        public static bool RenderText(string text, List<Tuple<Brush, GlyphRun>> textDrawList, ItemFont itemFont, double fontSize,
+                                      double maxWidth, double maxHeight, double x, double y,
+                                      out double totalHeight, Brush fontColor, Matrix m, double selfLeft)
         {
             totalHeight = 0;
 
@@ -275,11 +275,10 @@ namespace EpgTimer.EpgView
                             double dpix = Math.Ceiling(x * m.M11);
                             double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
                             Point origin = new Point(dpix / m.M11 - selfLeft, dpiy / m.M22);
-                            TextDrawItem item = new TextDrawItem();
-                            item.FontColor = fontColor;
-                            item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
+                            var item = new Tuple<Brush, GlyphRun>(fontColor, new GlyphRun(
+                                itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                null, null);
+                                null, null));
                             textDrawList.Add(item);
 
                         }
@@ -307,11 +306,10 @@ namespace EpgTimer.EpgView
                     double dpix = Math.Ceiling(x * m.M11);
                     double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
                     Point origin = new Point(dpix / m.M11 - selfLeft, dpiy / m.M22);
-                    TextDrawItem item = new TextDrawItem();
-                    item.FontColor = fontColor;
-                    item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
+                    var item = new Tuple<Brush, GlyphRun>(fontColor, new GlyphRun(
+                        itemFont.GlyphType, 0, false, fontSize,
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
-                        null, null);
+                        null, null));
                     textDrawList.Add(item);
 
                 }
@@ -348,20 +346,14 @@ namespace EpgTimer.EpgView
                         var textArea = new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos + borderTop, info.Width - BorderLeftSize, info.Height - BorderTopSize);
                         dc.DrawRectangle(info.ContentColor, null, textArea);
                         dc.PushClip(new RectangleGeometry(textArea));
-                        foreach (TextDrawItem txtinfo in textDrawLists[i])
+                        foreach (Tuple<Brush, GlyphRun> txtinfo in textDrawLists[i])
                         {
-                            dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);
+                            dc.DrawGlyphRun(txtinfo.Item1, txtinfo.Item2);
                         }
                         dc.Pop();
                     }
                 }
             }
         }
-    }
-
-    class TextDrawItem
-    {
-        public SolidColorBrush FontColor;
-        public GlyphRun Text;
     }
 }
