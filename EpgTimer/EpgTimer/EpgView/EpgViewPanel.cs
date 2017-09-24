@@ -18,6 +18,7 @@ namespace EpgTimer.EpgView
         {
             public bool NoCache { get; private set; }
             public GlyphTypeface GlyphType { get; private set; }
+            public GlyphTypeface FallbackGlyphType { get; private set; }
             public ushort[] GlyphIndexCache { get; private set; }
             public float[] GlyphWidthCache { get; private set; }
 
@@ -25,14 +26,32 @@ namespace EpgTimer.EpgView
             {
                 NoCache = noCache;
                 GlyphTypeface glyphType;
-                if ((new Typeface(new FontFamily(familyName),
-                                  FontStyles.Normal,
-                                  isBold ? FontWeights.Bold : FontWeights.Normal,
-                                  FontStretches.Normal)).TryGetGlyphTypeface(out glyphType) ||
-                    (new Typeface(SystemFonts.MessageFontFamily,
+                int fallback = familyName.IndexOf(',');
+                if ((new Typeface(new FontFamily(fallback < 0 ? familyName : familyName.Remove(fallback).Trim()),
                                   FontStyles.Normal,
                                   isBold ? FontWeights.Bold : FontWeights.Normal,
                                   FontStretches.Normal)).TryGetGlyphTypeface(out glyphType))
+                {
+                    GlyphType = glyphType;
+                }
+                if (fallback >= 0 && (new Typeface(new FontFamily(familyName.Substring(fallback + 1).Trim()),
+                                                   FontStyles.Normal,
+                                                   isBold ? FontWeights.Bold : FontWeights.Normal,
+                                                   FontStretches.Normal)).TryGetGlyphTypeface(out glyphType))
+                {
+                    if (GlyphType == null)
+                    {
+                        GlyphType = glyphType;
+                    }
+                    else
+                    {
+                        FallbackGlyphType = glyphType;
+                    }
+                }
+                if (GlyphType == null && (new Typeface(SystemFonts.MessageFontFamily,
+                                                       FontStyles.Normal,
+                                                       isBold ? FontWeights.Bold : FontWeights.Normal,
+                                                       FontStretches.Normal)).TryGetGlyphTypeface(out glyphType))
                 {
                     GlyphType = glyphType;
                 }
@@ -219,6 +238,14 @@ namespace EpgTimer.EpgView
             }
         }
 
+        private static GlyphRun CreateGlyphRun(double x, double y, Matrix m, double selfLeft,
+                                               GlyphTypeface glyphType, double fontSize, List<ushort> indexes, List<double> widths)
+        {
+            //originを物理ピクセルに合わせる。selfLeftはレンダリング時に加算されるので混ぜてはいけない
+            Point origin = new Point(Math.Ceiling(x * m.M11) / m.M11 - selfLeft, Math.Ceiling(y * m.M22) / m.M22);
+            return new GlyphRun(glyphType, 0, false, fontSize, indexes, origin, widths, null, null, null, null, null, null);
+        }
+
         public static bool RenderText(string text, List<Tuple<Brush, GlyphRun>> textDrawList, ItemFont itemFont, double fontSize,
                                       double maxWidth, double maxHeight, double x, double y,
                                       out double totalHeight, Brush fontColor, Matrix m, double selfLeft)
@@ -228,11 +255,18 @@ namespace EpgTimer.EpgView
             string[] lineText = text.Replace("\r", "").Split('\n');
             foreach (string line in lineText)
             {
+                if (totalHeight > maxHeight)
+                {
+                    //次の行無理
+                    return false;
+                }
                 //行間は2行目から適用する
                 totalHeight += totalHeight == 0 ? fontSize : fontSize * 1.2;
                 List<ushort> glyphIndexes = new List<ushort>();
                 List<double> advanceWidths = new List<double>();
                 double totalWidth = 0;
+                double originWidth = 0;
+                GlyphTypeface currentGlyphType = null;
                 for (int n = 0; n < line.Length; n++)
                 {
                     //この辞書検索が負荷の大部分を占めているのでテーブルルックアップする
@@ -240,6 +274,7 @@ namespace EpgTimer.EpgView
                     //double width = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
                     ushort glyphIndex = itemFont.NoCache ? (ushort)0 : itemFont.GlyphIndexCache[line[n]];
                     double glyphWidth;
+                    GlyphTypeface glyphType = itemFont.GlyphType;
                     if (glyphIndex == 0)
                     {
                         //NoCacheまたはキャッシュミス
@@ -252,12 +287,20 @@ namespace EpgTimer.EpgView
                         {
                             key = line[n];
                         }
-                        itemFont.GlyphType.CharacterToGlyphMap.TryGetValue(key, out glyphIndex);
-                        itemFont.GlyphType.AdvanceWidths.TryGetValue(glyphIndex, out glyphWidth);
-                        if (itemFont.NoCache == false && key < itemFont.GlyphIndexCache.Length)
+                        if (glyphType.CharacterToGlyphMap.TryGetValue(key, out glyphIndex) || itemFont.FallbackGlyphType == null)
                         {
-                            itemFont.GlyphIndexCache[key] = glyphIndex;
-                            itemFont.GlyphWidthCache[glyphIndex] = (float)glyphWidth;
+                            glyphType.AdvanceWidths.TryGetValue(glyphIndex, out glyphWidth);
+                            if (itemFont.NoCache == false && key < itemFont.GlyphIndexCache.Length)
+                            {
+                                itemFont.GlyphIndexCache[key] = glyphIndex;
+                                itemFont.GlyphWidthCache[glyphIndex] = (float)glyphWidth;
+                            }
+                        }
+                        else
+                        {
+                            glyphType = itemFont.FallbackGlyphType;
+                            glyphType.CharacterToGlyphMap.TryGetValue(key, out glyphIndex);
+                            glyphType.AdvanceWidths.TryGetValue(glyphIndex, out glyphWidth);
                         }
                         glyphWidth = (float)glyphWidth;
                     }
@@ -271,31 +314,31 @@ namespace EpgTimer.EpgView
                     {
                         if (glyphIndexes.Count > 0)
                         {
-                            //originを物理ピクセルに合わせる。selfLeftはレンダリング時に加算されるので混ぜてはいけない
-                            double dpix = Math.Ceiling(x * m.M11);
-                            double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
-                            Point origin = new Point(dpix / m.M11 - selfLeft, dpiy / m.M22);
-                            var item = new Tuple<Brush, GlyphRun>(fontColor, new GlyphRun(
-                                itemFont.GlyphType, 0, false, fontSize,
-                                glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                null, null));
-                            textDrawList.Add(item);
-
+                            textDrawList.Add(new Tuple<Brush, GlyphRun>(fontColor, CreateGlyphRun(
+                                x + originWidth, y + totalHeight, m, selfLeft, currentGlyphType, fontSize, glyphIndexes, advanceWidths)));
+                            glyphIndexes = new List<ushort>();
+                            advanceWidths = new List<double>();
                         }
                         if (totalHeight > maxHeight)
                         {
                             //次の行無理
                             return false;
                         }
-                        else
+                        totalHeight += fontSize * 1.2;
+                        originWidth = totalWidth = 0;
+                    }
+                    if (glyphType != currentGlyphType)
+                    {
+                        //フォントが変わった
+                        if (glyphIndexes.Count > 0)
                         {
-                            //次の行いける
-                            totalHeight += fontSize * 1.2;
-
+                            textDrawList.Add(new Tuple<Brush, GlyphRun>(fontColor, CreateGlyphRun(
+                                x + originWidth, y + totalHeight, m, selfLeft, currentGlyphType, fontSize, glyphIndexes, advanceWidths)));
                             glyphIndexes = new List<ushort>();
                             advanceWidths = new List<double>();
-                            totalWidth = 0;
                         }
+                        currentGlyphType = glyphType;
+                        originWidth = totalWidth;
                     }
                     glyphIndexes.Add(glyphIndex);
                     advanceWidths.Add(width);
@@ -303,15 +346,8 @@ namespace EpgTimer.EpgView
                 }
                 if (glyphIndexes.Count > 0)
                 {
-                    double dpix = Math.Ceiling(x * m.M11);
-                    double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
-                    Point origin = new Point(dpix / m.M11 - selfLeft, dpiy / m.M22);
-                    var item = new Tuple<Brush, GlyphRun>(fontColor, new GlyphRun(
-                        itemFont.GlyphType, 0, false, fontSize,
-                        glyphIndexes, origin, advanceWidths, null, null, null, null,
-                        null, null));
-                    textDrawList.Add(item);
-
+                    textDrawList.Add(new Tuple<Brush, GlyphRun>(fontColor, CreateGlyphRun(
+                        x + originWidth, y + totalHeight, m, selfLeft, currentGlyphType, fontSize, glyphIndexes, advanceWidths)));
                 }
             }
             return true;

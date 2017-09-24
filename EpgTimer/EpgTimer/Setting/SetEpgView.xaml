@@ -13,13 +13,13 @@
                         <Grid>
                             <Label Content="タイトル" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label1" VerticalAlignment="Top" />
                             <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="96,6,0,0" Name="label2" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="167,6,0,0" Name="comboBox_fontTitle" VerticalAlignment="Top" Width="203" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" IsEditable="True" Margin="167,6,0,0" Name="comboBox_fontTitle" VerticalAlignment="Top" Width="203" />
                             <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="386,6,0,0" Name="label3" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="438,8,0,0" Name="textBox_fontSizeTitle" VerticalAlignment="Top" Width="39" />
                             <CheckBox Content="太字" Height="16" HorizontalAlignment="Left" Margin="483,11,0,0" Name="checkBox_fontBoldTitle" VerticalAlignment="Top" />
                             <Label Content="タイトル以外" Height="28" HorizontalAlignment="Left" Margin="6,36,0,0" Name="label4" VerticalAlignment="Top" />
                             <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="96,36,0,0" Name="label5" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="167,36,0,0" Name="comboBox_font" VerticalAlignment="Top" Width="203" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" IsEditable="True" Margin="167,36,0,0" Name="comboBox_font" VerticalAlignment="Top" Width="203" />
                             <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="386,36,0,0" Name="label6" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="438,38,0,0" Name="textBox_fontSize" VerticalAlignment="Top" Width="39" />
                             <ComboBox Height="24" HorizontalAlignment="Left" Margin="539,8,0,0" Name="comboBox_colorTitle1" VerticalAlignment="Top" Width="98" ItemsSource="{Binding}">

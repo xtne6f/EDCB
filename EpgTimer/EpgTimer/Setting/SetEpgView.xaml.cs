@@ -99,16 +99,8 @@ namespace EpgTimer.Setting
                         comboBox_fontTitle.Items.Add(family.Source);
                     }
                 }
-                comboBox_font.SelectedItem = Settings.Instance.FontName;
-                comboBox_fontTitle.SelectedItem = Settings.Instance.FontNameTitle;
-                if (comboBox_font.SelectedItem == null)
-                {
-                    comboBox_font.SelectedIndex = 0;
-                }
-                if (comboBox_fontTitle.SelectedItem == null)
-                {
-                    comboBox_fontTitle.SelectedIndex = 0;
-                }
+                comboBox_font.Text = Settings.Instance.FontName;
+                comboBox_fontTitle.Text = Settings.Instance.FontNameTitle;
                 textBox_fontSize.Text = Settings.Instance.FontSize.ToString();
                 textBox_fontSizeTitle.Text = Settings.Instance.FontSizeTitle.ToString();
                 checkBox_fontBoldTitle.IsChecked = Settings.Instance.FontBoldTitle;
@@ -256,15 +248,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.ReserveRectFillOpacity = (int)Math.Round(slider_reserveFillOpacity.Value);
                 Settings.Instance.ReserveRectFillWithShadow = checkBox_reserveFillWithShadow.IsChecked == true;
 
-                if (comboBox_font.SelectedItem != null)
-                {
-                    Settings.Instance.FontName = comboBox_font.SelectedItem as string;
-                }
+                Settings.Instance.FontName = comboBox_font.Text;
                 Settings.Instance.FontSize = Convert.ToDouble(textBox_fontSize.Text);
-                if (comboBox_fontTitle.SelectedItem != null)
-                {
-                    Settings.Instance.FontNameTitle = comboBox_fontTitle.SelectedItem as string;
-                }
+                Settings.Instance.FontNameTitle = comboBox_fontTitle.Text;
                 Settings.Instance.FontSizeTitle = Convert.ToDouble(textBox_fontSizeTitle.Text);
                 if (checkBox_fontBoldTitle.IsChecked == true)
                 {
