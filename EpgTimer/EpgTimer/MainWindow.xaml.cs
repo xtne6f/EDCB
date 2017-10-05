@@ -86,43 +86,30 @@ namespace EpgTimer
 
             if (CommonManager.Instance.NWMode == false)
             {
-                bool startExe = true;
                 try
                 {
                     using (Mutex.OpenExisting("Global\\EpgTimer_Bon_Service")) { }
                 }
                 catch (WaitHandleCannotBeOpenedException)
                 {
-                    //二重起動抑止Mutexが存在しないのでEpgTimerSrvを起動する
-                    //サービスモード時は何もしない(遅延開始かもしれないので失敗にはしない)
-                    if (System.ServiceProcess.ServiceController.GetServices().All(sc => string.Compare(sc.ServiceName, "EpgTimer Service", true) != 0))
+                    //二重起動抑止Mutexが存在しないのでEpgTimerSrvがあれば起動する
+                    string exePath = System.IO.Path.Combine(SettingPath.ModulePath, "EpgTimerSrv.exe");
+                    if (System.IO.File.Exists(exePath))
                     {
-                        startExe = false;
+                        try
+                        {
+                            using (System.Diagnostics.Process.Start(exePath)) { }
+                        }
+                        catch
+                        {
+                            MessageBox.Show("EpgTimerSrv.exeの起動ができませんでした");
+                            closeFlag = true;
+                            Close();
+                            return;
+                        }
                     }
                 }
                 catch { }
-                try
-                {
-                    if (startExe == false)
-                    {
-                        String exePath = System.IO.Path.Combine(SettingPath.ModulePath, "EpgTimerSrv.exe");
-                        System.Diagnostics.Process process = System.Diagnostics.Process.Start(exePath);
-                        startExe = true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    startExe = false;
-                }
-
-                if (startExe == false)
-                {
-                    MessageBox.Show("EpgTimerSrv.exeの起動ができませんでした");
-                    closeFlag = true;
-                    Close();
-                    return;
-                }
             }
 
             InitializeComponent();
@@ -561,18 +548,18 @@ namespace EpgTimer
                         var cmd = CommonManager.CreateSrvCtrl();
                         cmd.SetConnectTimeOut(3000);
                         cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                        //実際にEpgTimerSrvを終了するかどうかは(現在は)EpgTimerSrvの判断で決まる
+                        //このフラグはEpgTimerと原作のサービスモードのEpgTimerSrvを混用するなど特殊な状況を想定したもの
+                        if (Settings.Instance.NoSendClose == 0)
+                        {
+                            cmd.SendClose();
+                        }
                         Settings.SaveToXmlFile();
                     }
                     pipeServer.StopServer();
 
                     if (mutex != null)
                     {
-                        if (System.ServiceProcess.ServiceController.GetServices().All(sc => string.Compare(sc.ServiceName, "EpgTimer Service", true) != 0) && initExe == true)
-                        {
-                            var cmd = CommonManager.CreateSrvCtrl();
-                            cmd.SetConnectTimeOut(3000);
-                            cmd.SendClose();
-                        }
                         mutex.ReleaseMutex();
                         mutex.Close();
                     }

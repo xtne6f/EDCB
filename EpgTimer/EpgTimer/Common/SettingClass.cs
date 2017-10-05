@@ -277,6 +277,7 @@ namespace EpgTimer
         public bool MinHide { get; set; }
         public bool MouseScrollAuto { get; set; }
         public int NoStyle { get; set; }
+        public int NoSendClose { get; set; }
 
         public Settings()
         {
@@ -428,6 +429,7 @@ namespace EpgTimer
             MinHide = true;
             MouseScrollAuto = false;
             NoStyle = 0;
+            NoSendClose = 0;
         }
 
         [NonSerialized()]
