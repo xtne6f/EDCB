@@ -30,8 +30,6 @@ namespace EpgTimer
         private string pipeEventName = "Global\\EpgTimerGUI_Ctrl_BonConnect_";
 
         private bool closeFlag = false;
-        private bool initExe = false;
-
         private bool needUnRegist = true;
 
         public MainWindow()
@@ -77,11 +75,7 @@ namespace EpgTimer
                 CheckCmdLine();
 
                 mutex.Close();
-                mutex = null;
-
-                closeFlag = true;
-                Close();
-                return;
+                Environment.Exit(0);
             }
 
             if (CommonManager.Instance.NWMode == false)
@@ -103,9 +97,9 @@ namespace EpgTimer
                         catch
                         {
                             MessageBox.Show("EpgTimerSrv.exeの起動ができませんでした");
-                            closeFlag = true;
-                            Close();
-                            return;
+                            mutex.ReleaseMutex();
+                            mutex.Close();
+                            Environment.Exit(0);
                         }
                     }
                 }
@@ -115,7 +109,6 @@ namespace EpgTimer
             InitializeComponent();
 
             Title = appName;
-            initExe = true;
 
             try
             {
@@ -537,14 +530,13 @@ namespace EpgTimer
             }
             else
             {
+                reserveView.SaveSize();
+                recInfoView.SaveSize();
+                autoAddView.SaveSize();
+
                 if (CommonManager.Instance.NWMode == false)
                 {
-                    if (initExe == true)
                     {
-                        reserveView.SaveSize();
-                        recInfoView.SaveSize();
-                        autoAddView.SaveSize();
-
                         var cmd = CommonManager.CreateSrvCtrl();
                         cmd.SetConnectTimeOut(3000);
                         cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
@@ -557,31 +549,17 @@ namespace EpgTimer
                         Settings.SaveToXmlFile();
                     }
                     pipeServer.StopServer();
-
-                    if (mutex != null)
-                    {
-                        mutex.ReleaseMutex();
-                        mutex.Close();
-                    }
                 }
                 else
                 {
-                    reserveView.SaveSize();
-                    recInfoView.SaveSize();
-                    autoAddView.SaveSize();
-
                     if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
                     {
                         CommonManager.CreateSrvCtrl().SendUnRegistTCP(Settings.Instance.NWWaitPort);
                     }
                     Settings.SaveToXmlFile();
-
-                    if (mutex != null)
-                    {
-                        mutex.ReleaseMutex();
-                        mutex.Close();
-                    }
                 }
+                mutex.ReleaseMutex();
+                mutex.Close();
                 taskTray.Dispose();
             }
         }
