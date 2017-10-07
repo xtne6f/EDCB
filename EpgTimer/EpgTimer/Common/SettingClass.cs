@@ -134,14 +134,6 @@ namespace EpgTimer
         public bool EpgPopup { get; set; }
         public bool EpgGradation { get; set; }
         public bool EpgGradationHeader { get; set; }
-        public double ResColumnWidth0 { get; set; }
-        public double ResColumnWidth1 { get; set; }
-        public double ResColumnWidth2 { get; set; }
-        public double ResColumnWidth3 { get; set; }
-        public double ResColumnWidth4 { get; set; }
-        public double ResColumnWidth5 { get; set; }
-        public double ResColumnWidth6 { get; set; }
-        public double ResColumnWidth7 { get; set; }
         public string ResColumnHead { get; set; }
         public ListSortDirection ResSortDirection { get; set; }
         public System.Windows.WindowState LastWindowState { get; set; }
@@ -197,13 +189,6 @@ namespace EpgTimer
                 return list;
             }
         }
-        public double RecInfoColumnWidth0 { get; set; }
-        public double RecInfoColumnWidth1 { get; set; }
-        public double RecInfoColumnWidth2 { get; set; }
-        public double RecInfoColumnWidth3 { get; set; }
-        public double RecInfoColumnWidth4 { get; set; }
-        public double RecInfoColumnWidth5 { get; set; }
-        public double RecInfoColumnWidth6 { get; set; }
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
         public string TvTestExe { get; set; }

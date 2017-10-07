@@ -52,40 +52,6 @@ namespace EpgTimer
                     columnList[info.Tag].Width = info.Width;
                     gridView_reserve.Columns.Add(columnList[info.Tag]);
                 }
-                /*
-                if (Settings.Instance.ResColumnWidth0 != 0)
-                {
-                    gridView_reserve.Columns[0].Width = Settings.Instance.ResColumnWidth0;
-                }
-                if (Settings.Instance.ResColumnWidth1 != 0)
-                {
-                    gridView_reserve.Columns[1].Width = Settings.Instance.ResColumnWidth1;
-                }
-                if (Settings.Instance.ResColumnWidth2 != 0)
-                {
-                    gridView_reserve.Columns[2].Width = Settings.Instance.ResColumnWidth2;
-                }
-                if (Settings.Instance.ResColumnWidth3 != 0)
-                {
-                    gridView_reserve.Columns[3].Width = Settings.Instance.ResColumnWidth3;
-                }
-                if (Settings.Instance.ResColumnWidth4 != 0)
-                {
-                    gridView_reserve.Columns[4].Width = Settings.Instance.ResColumnWidth4;
-                }
-                if (Settings.Instance.ResColumnWidth5 != 0)
-                {
-                    gridView_reserve.Columns[5].Width = Settings.Instance.ResColumnWidth5;
-                }
-                if (Settings.Instance.ResColumnWidth6 != 0)
-                {
-                    gridView_reserve.Columns[6].Width = Settings.Instance.ResColumnWidth6;
-                }
-                if (Settings.Instance.ResColumnWidth7 != 0)
-                {
-                    gridView_reserve.Columns[7].Width = Settings.Instance.ResColumnWidth7;
-                }
-                */
             }
             catch (Exception ex)
             {
@@ -98,16 +64,6 @@ namespace EpgTimer
         {
             try
             {
-                /*
-                Settings.Instance.ResColumnWidth0 = gridView_reserve.Columns[0].Width;
-                Settings.Instance.ResColumnWidth1 = gridView_reserve.Columns[1].Width;
-                Settings.Instance.ResColumnWidth2 = gridView_reserve.Columns[2].Width;
-                Settings.Instance.ResColumnWidth3 = gridView_reserve.Columns[3].Width;
-                Settings.Instance.ResColumnWidth4 = gridView_reserve.Columns[4].Width;
-                Settings.Instance.ResColumnWidth5 = gridView_reserve.Columns[5].Width;
-                Settings.Instance.ResColumnWidth6 = gridView_reserve.Columns[6].Width;
-                Settings.Instance.ResColumnWidth7 = gridView_reserve.Columns[7].Width;
-                */
                 Settings.Instance.ReserveListColumn.Clear();
                 foreach (GridViewColumn info in gridView_reserve.Columns)
                 {

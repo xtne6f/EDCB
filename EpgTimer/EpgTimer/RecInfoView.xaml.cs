@@ -51,35 +51,6 @@ namespace EpgTimer
                     columnList[info.Tag].Width = info.Width;
                     gridView_recinfo.Columns.Add(columnList[info.Tag]);
                 }
-                /*
-                if (Settings.Instance.RecInfoColumnWidth0 != 0)
-                {
-                    gridView_recinfo.Columns[1].Width = Settings.Instance.RecInfoColumnWidth0;
-                }
-                if (Settings.Instance.RecInfoColumnWidth1 != 0)
-                {
-                    gridView_recinfo.Columns[2].Width = Settings.Instance.RecInfoColumnWidth1;
-                }
-                if (Settings.Instance.RecInfoColumnWidth2 != 0)
-                {
-                    gridView_recinfo.Columns[3].Width = Settings.Instance.RecInfoColumnWidth2;
-                }
-                if (Settings.Instance.RecInfoColumnWidth3 != 0)
-                {
-                    gridView_recinfo.Columns[4].Width = Settings.Instance.RecInfoColumnWidth3;
-                }
-                if (Settings.Instance.RecInfoColumnWidth4 != 0)
-                {
-                    gridView_recinfo.Columns[5].Width = Settings.Instance.RecInfoColumnWidth4;
-                }
-                if (Settings.Instance.RecInfoColumnWidth5 != 0)
-                {
-                    gridView_recinfo.Columns[6].Width = Settings.Instance.RecInfoColumnWidth5;
-                }
-                if (Settings.Instance.RecInfoColumnWidth6 != 0)
-                {
-                    gridView_recinfo.Columns[7].Width = Settings.Instance.RecInfoColumnWidth6;
-                }*/
             }
             catch (Exception ex)
             {
@@ -91,15 +62,6 @@ namespace EpgTimer
         {
             try
             {
-                /*
-                Settings.Instance.RecInfoColumnWidth0 = gridView_recinfo.Columns[1].Width;
-                Settings.Instance.RecInfoColumnWidth1 = gridView_recinfo.Columns[2].Width;
-                Settings.Instance.RecInfoColumnWidth2 = gridView_recinfo.Columns[3].Width;
-                Settings.Instance.RecInfoColumnWidth3 = gridView_recinfo.Columns[4].Width;
-                Settings.Instance.RecInfoColumnWidth4 = gridView_recinfo.Columns[5].Width;
-                Settings.Instance.RecInfoColumnWidth5 = gridView_recinfo.Columns[6].Width;
-                Settings.Instance.RecInfoColumnWidth6 = gridView_recinfo.Columns[7].Width;
-                */
                 Settings.Instance.RecInfoListColumn.Clear();
                 foreach (GridViewColumn info in gridView_recinfo.Columns)
                 {
