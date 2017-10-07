@@ -976,11 +976,10 @@ namespace EpgTimer
         {
             SolidColorBrush brush;
             CustContentColorList.Clear();
-            List<string> cList = Settings.Instance.ContentColorList;
             List<uint> ccList = Settings.Instance.ContentCustColorList;
             for (int i = 0; i < 17; i++)
             {
-                brush = CreateCustColorBrush(cList.Count > i ? cList[i] : "White", ccList.Count > i ? ccList[i] : 0);
+                brush = CreateCustColorBrush(Settings.Instance.ContentColorList[i], ccList[i]);
                 CustContentColorList.Add(Settings.Instance.EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
             }
 
@@ -989,25 +988,23 @@ namespace EpgTimer
             //50→100で枠の不透明度が下がる
             int strokeOpacity = Math.Min(100 - Settings.Instance.ReserveRectFillOpacity, 50) * 2;
             //予約枠が色名指定のときは少し透過(0xA0)する
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList.Count > 17 ? ccList[17] : 0, 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList[17], 0xA0, strokeOpacity));
             //次要素は予約塗りつぶしのブラシ
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList.Count > 17 ? ccList[17] : 0, 0xA0, fillOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList.Count > 18 ? ccList[18] : 0, 0xA0, strokeOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList.Count > 18 ? ccList[18] : 0, 0xA0, fillOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList.Count > 19 ? ccList[19] : 0, 0xA0, strokeOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList.Count > 19 ? ccList[19] : 0, 0xA0, fillOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList.Count > 20 ? ccList[20] : 0, 0xA0, strokeOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList.Count > 20 ? ccList[20] : 0, 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList[17], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList[18], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList[18], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList[19], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList[19], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList[20], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList[20], 0xA0, fillOpacity));
 
             CustTitle1Color = CreateCustColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
             CustTitle2Color = CreateCustColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
 
             CustTimeColorList.Clear();
-            cList = Settings.Instance.TimeColorList;
-            ccList = Settings.Instance.TimeCustColorList;
             for (int i = 0; i < 4; i++)
             {
-                brush = CreateCustColorBrush(cList.Count > i ? cList[i] : "White", ccList.Count > i ? ccList[i] : 0);
+                brush = CreateCustColorBrush(Settings.Instance.TimeColorList[i], Settings.Instance.TimeCustColorList[i]);
                 CustTimeColorList.Add(Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
             }
 

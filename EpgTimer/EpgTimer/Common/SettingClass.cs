@@ -427,7 +427,11 @@ namespace EpgTimer
             get
             {
                 if (_instance == null)
+                {
                     _instance = new Settings();
+                    //色設定関係
+                    _instance.SetColorSetting();
+                }
                 return _instance;
             }
             set { _instance = value; }
@@ -470,57 +474,9 @@ namespace EpgTimer
 
             try
             {
-                if (Instance.ContentColorList.Count == 0x10)//多分旧バージョンの互換用コード
-                {
-                    Instance.ContentColorList.Add("White");
-                }
-                else if (Instance.ContentColorList.Count != 0x11)
-                {
-                    //番組表のデフォルトの背景色
-                    Instance.ContentColorList.Clear();
-                    Instance.ContentColorList.Add("LightYellow");
-                    Instance.ContentColorList.Add("Lavender");
-                    Instance.ContentColorList.Add("LavenderBlush");
-                    Instance.ContentColorList.Add("MistyRose");
-                    Instance.ContentColorList.Add("Honeydew");
-                    Instance.ContentColorList.Add("LightCyan");
-                    Instance.ContentColorList.Add("PapayaWhip");
-                    Instance.ContentColorList.Add("Pink");
-                    Instance.ContentColorList.Add("LightYellow");
-                    Instance.ContentColorList.Add("PapayaWhip");
-                    Instance.ContentColorList.Add("AliceBlue");
-                    Instance.ContentColorList.Add("AliceBlue");
-                    Instance.ContentColorList.Add("White");
-                    Instance.ContentColorList.Add("White");
-                    Instance.ContentColorList.Add("White");
-                    Instance.ContentColorList.Add("WhiteSmoke");
-                    Instance.ContentColorList.Add("White");
-                }
-                if (Instance.ContentCustColorList.Count != 0x11 + 4)
-                {
-                    Instance.ContentCustColorList.Clear();
-                    for (int i = 0; i < 0x11+4; i++)
-                    {
-                        Instance.ContentCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.TimeColorList.Count != 4)
-                {
-                    //番組表の時間軸のデフォルトの背景色
-                    Instance.TimeColorList.Clear();
-                    Instance.TimeColorList.Add("MediumPurple");
-                    Instance.TimeColorList.Add("LightSeaGreen");
-                    Instance.TimeColorList.Add("LightSalmon");
-                    Instance.TimeColorList.Add("CornflowerBlue");
-                }
-                if (Instance.TimeCustColorList.Count != 4)
-                {
-                    Instance.TimeCustColorList.Clear();
-                    for (int i = 0; i < 4; i++)
-                    {
-                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
+                //色設定関係
+                Instance.SetColorSetting();
+
                 if (Instance.ViewButtonList.Count == 0)
                 {
                     if (nwMode == false)
@@ -749,6 +705,51 @@ namespace EpgTimer
             defKey.freeCAFlag = Settings.Instance.SearchKeyFreeCA;
             defKey.chkRecEnd = Settings.Instance.SearchKeyChkRecEnd;
             defKey.chkRecDay = Settings.Instance.SearchKeyChkRecDay;
+        }
+
+        private void SetColorSetting()
+        {
+            //番組表の背景色
+            if (ContentColorList.Count < 17)
+            {
+                ContentColorList.AddRange((new string[] {
+                    "LightYellow",
+                    "Lavender",
+                    "LavenderBlush",
+                    "MistyRose",
+                    "Honeydew",
+                    "LightCyan",
+                    "PapayaWhip",
+                    "Pink",
+                    "LightYellow",
+                    "PapayaWhip",
+                    "AliceBlue",
+                    "AliceBlue",
+                    "White",
+                    "White",
+                    "White",
+                    "WhiteSmoke",
+                    "White" }).Skip(ContentColorList.Count));
+            }
+            //番組表の背景カスタム色(+4は番組表の予約枠色)
+            if (ContentCustColorList.Count < 17 + 4)
+            {
+                ContentCustColorList.AddRange(Enumerable.Repeat(0xFFFFFFFF, 17 + 4 - ContentCustColorList.Count));
+            }
+
+            //番組表の時間軸のデフォルトの背景色
+            if (TimeColorList.Count < 4)
+            {
+                TimeColorList.AddRange((new string[] {
+                    "MediumPurple",
+                    "LightSeaGreen",
+                    "LightSalmon",
+                    "CornflowerBlue" }).Skip(TimeColorList.Count));
+            }
+            if (TimeCustColorList.Count < 4)
+            {
+                TimeCustColorList.AddRange(Enumerable.Repeat(0xFFFFFFFF, 4 - TimeCustColorList.Count));
+            }
         }
     }
 }
