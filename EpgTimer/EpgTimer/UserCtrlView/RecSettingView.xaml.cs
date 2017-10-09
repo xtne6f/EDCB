@@ -746,16 +746,4 @@ namespace EpgTimer
 
 
     }
-
-    public class RecSettingViewInverter : IValueConverter
-    {
-        public object Convert(object v, Type t, object p, System.Globalization.CultureInfo c)
-        {
-            return !(v is bool && (bool)v);
-        }
-        public object ConvertBack(object v, Type t, object p, System.Globalization.CultureInfo c)
-        {
-            return !(v is bool && (bool)v);
-        }
-    }
 }
