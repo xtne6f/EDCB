@@ -59,8 +59,8 @@
                 <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="139,0,0,7" Name="comboBox_time_eh" VerticalAlignment="Bottom" Width="44" />
                 <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="186,0,0,7" Name="comboBox_time_em" VerticalAlignment="Bottom" Width="44" />
                 <StackPanel Grid.Row="1" Margin="20,0,0,61" Orientation="Horizontal" VerticalAlignment="Bottom">
-                    <RadioButton Checked="radioButton_time_Checked" Content="期間" Height="16" Margin="0,0,15,0" Name="radioButton_time" />
-                    <RadioButton Checked="radioButton_week_Checked" Content="曜日毎" Height="16" />
+                    <RadioButton Checked="radioButton_week_Checked" Content="曜日毎" Height="16" Margin="0,0,15,0" Name="radioButton_week" />
+                    <RadioButton Checked="radioButton_time_Checked" Content="期間" Height="16" />
                 </StackPanel>
                 <Button Click="button_date_add_Click" Content="追加" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="235,0,0,7" VerticalAlignment="Bottom" Width="60" />
             </Grid>
