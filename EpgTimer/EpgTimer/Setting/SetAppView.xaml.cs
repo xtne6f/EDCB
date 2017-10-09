@@ -68,7 +68,7 @@ namespace EpgTimer.Setting
                     Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? Visibility.Hidden : Visibility.Visible;
                 button_shortCutDel.Visibility = button_shortCutAdd.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
 
-                Settings.GetDefSearchSetting(ref defSearchKey);
+                Settings.Instance.GetDefSearchSetting(defSearchKey);
 
                 checkBox_showAsTab.IsChecked = Settings.Instance.ViewButtonShowAsTab;
 

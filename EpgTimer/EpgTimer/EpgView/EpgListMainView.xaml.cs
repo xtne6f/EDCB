@@ -1064,8 +1064,7 @@ namespace EpgTimer
                 if (ViewSettingClick != null)
                 {
                     MenuItem item = sender as MenuItem;
-                    CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-                    setViewInfo.CopyTo(ref setInfo);
+                    CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     if (sender == cm_chg_viewMode2)
                     {
                         setInfo.ViewMode = 1;

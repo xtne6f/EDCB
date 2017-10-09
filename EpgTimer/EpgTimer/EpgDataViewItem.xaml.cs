@@ -196,13 +196,12 @@ namespace EpgTimer
                 }
                 else
                 {
-                    param = new CustomEpgTabInfo();
-                    viewInfo.CopyTo(ref param);
                     var dlg = new EpgDataViewSettingWindow();
                     dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetDefSetting(param);
+                    dlg.SetDefSetting(viewInfo);
                     if (dlg.ShowDialog() == true)
                     {
+                        param = new CustomEpgTabInfo();
                         dlg.GetSetting(ref param);
                         SetViewMode(param);
                     }

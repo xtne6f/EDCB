@@ -882,8 +882,7 @@ namespace EpgTimer
                 if (ViewSettingClick != null)
                 {
                     MenuItem item = sender as MenuItem;
-                    CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-                    setViewInfo.CopyTo(ref setInfo);
+                    CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     setInfo.ViewMode = (int)item.DataContext;
                     ProgramViewItem program = GetProgramItem(clickPos);
                     if (program != null)
@@ -1714,8 +1713,7 @@ namespace EpgTimer
         }
         private void button1_Click(object sender, RoutedEventArgs e)
         {
-            CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-            setViewInfo.CopyTo(ref setInfo);
+            CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
             setInfo.ViewMode = 0;
             ViewSettingClick(this, setInfo);
         }

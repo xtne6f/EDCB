@@ -60,7 +60,7 @@ namespace EpgTimer
                 }
 
                 EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                Settings.GetDefSearchSetting(ref defKey);
+                Settings.Instance.GetDefSearchSetting(defKey);
 
                 searchKeyView.SetSearchKey(defKey);
             }

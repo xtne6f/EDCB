@@ -419,6 +419,53 @@ namespace EpgTimer
             NoSendClose = 0;
         }
 
+        public Settings DeepCloneStaticSettings()
+        {
+            var other = (Settings)MemberwiseClone();
+            other.CustomEpgTabList = CustomEpgTabList.Select(a => a.DeepClone()).ToList();
+            other.ContentColorList = ContentColorList.ToList();
+            other.ContentCustColorList = ContentCustColorList.ToList();
+            other.TimeColorList = TimeColorList.ToList();
+            other.TimeCustColorList = TimeCustColorList.ToList();
+            other.ViewButtonList = ViewButtonList.ToList();
+            other.TaskMenuList = TaskMenuList.ToList();
+            other.SearchKeyContentList = SearchKeyContentList.Select(a => a.DeepClone()).ToList();
+            other.SearchKeyDateItemList = SearchKeyDateItemList.Select(a => a.DeepClone()).ToList();
+            other.SearchKeyServiceList = SearchKeyServiceList.ToList();
+            other.IEpgStationList = IEpgStationList.Select(a => a.DeepClone()).ToList();
+            return other;
+        }
+
+        public void ShallowCopyDynamicSettingsTo(Settings dest)
+        {
+            //設定画面と関係なくその場で動的に更新されるプロパティ
+            dest.ResColumnHead = ResColumnHead;
+            dest.ResSortDirection = ResSortDirection;
+            dest.LastWindowState = LastWindowState;
+            dest.MainWndLeft = MainWndLeft;
+            dest.MainWndTop = MainWndTop;
+            dest.MainWndWidth = MainWndWidth;
+            dest.MainWndHeight = MainWndHeight;
+            dest.SearchWndTabsHeight = SearchWndTabsHeight;
+            dest.AndKeyList = AndKeyList;
+            dest.NotKeyList = NotKeyList;
+            dest.RecInfoColumnHead = RecInfoColumnHead;
+            dest.RecInfoSortDirection = RecInfoSortDirection;
+            dest.NWServerIP = NWServerIP;
+            dest.NWServerPort = NWServerPort;
+            dest.NWWaitPort = NWWaitPort;
+            dest.NWMacAdd = NWMacAdd;
+            dest.ReserveListColumn = ReserveListColumn;
+            dest.RecInfoListColumn = RecInfoListColumn;
+            dest.AutoAddEpgColumn = AutoAddEpgColumn;
+            dest.AutoAddManualColumn = AutoAddManualColumn;
+            dest.SearchWndLeft = SearchWndLeft;
+            dest.SearchWndTop = SearchWndTop;
+            dest.SearchWndWidth = SearchWndWidth;
+            dest.SearchWndHeight = SearchWndHeight;
+            dest.NotifyLogMax = NotifyLogMax;
+        }
+
         [NonSerialized()]
         private static Settings _instance;
         [System.Xml.Serialization.XmlIgnore]
@@ -665,46 +712,28 @@ namespace EpgTimer
 
         }
 
-        public static void GetDefSearchSetting(ref EpgSearchKeyInfo defKey)
+        public void GetDefSearchSetting(EpgSearchKeyInfo defKey)
         {
-            if (Settings.Instance.SearchKeyRegExp == true)
-            {
-                defKey.regExpFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyAimaiFlag == true)
-            {
-                defKey.aimaiFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyTitleOnly == true)
-            {
-                defKey.titleOnlyFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyNotContent == true)
-            {
-                defKey.notContetFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyNotDate == true)
-            {
-                defKey.notDateFlag = 1;
-            }
-            foreach (ContentKindInfo info in Settings.Instance.SearchKeyContentList)
+            defKey.regExpFlag = SearchKeyRegExp ? 1 : 0;
+            defKey.aimaiFlag = (byte)(SearchKeyAimaiFlag ? 1 : 0);
+            defKey.titleOnlyFlag = SearchKeyTitleOnly ? 1 : 0;
+            defKey.notContetFlag = (byte)(SearchKeyNotContent ? 1 : 0);
+            defKey.notDateFlag = (byte)(SearchKeyNotDate ? 1 : 0);
+            defKey.contentList.Clear();
+            foreach (ContentKindInfo info in SearchKeyContentList)
             {
                 EpgContentData item = new EpgContentData();
                 item.content_nibble_level_1 = info.Nibble1;
                 item.content_nibble_level_2 = info.Nibble2;
                 defKey.contentList.Add(item);
             }
-            foreach (DateItem info in Settings.Instance.SearchKeyDateItemList)
-            {
-                defKey.dateList.Add(info.DateInfo);
-            }
-            foreach (Int64 info in Settings.Instance.SearchKeyServiceList)
-            {
-                defKey.serviceList.Add(info);
-            }
-            defKey.freeCAFlag = Settings.Instance.SearchKeyFreeCA;
-            defKey.chkRecEnd = Settings.Instance.SearchKeyChkRecEnd;
-            defKey.chkRecDay = Settings.Instance.SearchKeyChkRecDay;
+            defKey.dateList.Clear();
+            defKey.dateList.AddRange(SearchKeyDateItemList.Select(a => a.DeepClone().DateInfo));
+            defKey.serviceList.Clear();
+            defKey.serviceList.AddRange(SearchKeyServiceList);
+            defKey.freeCAFlag = SearchKeyFreeCA;
+            defKey.chkRecEnd = SearchKeyChkRecEnd;
+            defKey.chkRecDay = SearchKeyChkRecDay;
         }
 
         private void SetColorSetting()
