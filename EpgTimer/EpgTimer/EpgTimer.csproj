@@ -211,7 +211,6 @@
       <DependentUpon>SetEpgView.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\TunerSelectInfo.cs" />
-    <Compile Include="DefineClass\ViewMenuItem.cs" />
     <Page Include="AddManualAutoAddWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
