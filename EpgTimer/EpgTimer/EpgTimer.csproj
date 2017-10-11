@@ -107,7 +107,6 @@
     </Compile>
     <Compile Include="DefineClass\ManualAutoAddDataItem.cs" />
     <Compile Include="DefineClass\EpgAutoDataItem.cs" />
-    <Compile Include="DefineClass\EpgCaptime.cs" />
     <Compile Include="UserCtrlView\ManualAutoAddView.xaml.cs">
       <DependentUpon>ManualAutoAddView.xaml</DependentUpon>
     </Compile>
@@ -118,7 +117,6 @@
     <Compile Include="RecInfoView.xaml.cs">
       <DependentUpon>RecInfoView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DefineClass\ServiceItem2.cs" />
     <Compile Include="DefineClass\ServiceViewItem.cs" />
     <Compile Include="Setting\SetOtherAppView.xaml.cs">
       <DependentUpon>SetOtherAppView.xaml</DependentUpon>
