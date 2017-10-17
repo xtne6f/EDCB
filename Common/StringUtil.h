@@ -1,9 +1,9 @@
 #ifndef INCLUDE_STRING_UTIL_H
 #define INCLUDE_STRING_UTIL_H
 
-void Format(string& strBuff, const char *format, ...);
+void Format(string& strBuff, PRINTF_FORMAT_SZ const char *format, ...);
 
-void Format(wstring& strBuff, const WCHAR *format, ...);
+void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...);
 
 void Replace(string& strBuff, const string& strOld, const string& strNew); //alias-safe
 

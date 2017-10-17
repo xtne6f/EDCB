@@ -11,6 +11,7 @@
 #include <tchar.h>
 #include <windows.h>
 #include <stdarg.h>
+#include <sal.h>
 
 using std::string;
 using std::wstring;
@@ -31,7 +32,9 @@ using std::vector;
 //#undef NULL
 //#define NULL nullptr
 
-inline void _OutputDebugString(const TCHAR* format, ...)
+#define PRINTF_FORMAT_SZ _In_z_ _Printf_format_string_
+
+inline void _OutputDebugString(PRINTF_FORMAT_SZ const TCHAR* format, ...)
 {
 	// TODO: ‚±‚ÌŠÖ”–¼‚Í—\–ñ–¼ˆá”½‚Ìã‚É•´‚ç‚í‚µ‚¢‚Ì‚Å•ÏX‚·‚×‚«
 	va_list params;
