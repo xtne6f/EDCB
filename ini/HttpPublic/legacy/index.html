@@ -28,4 +28,9 @@ ct=[=[
 </body>
 </html>
 ]=]
-mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+if not mg.request_info.uri:find('/$') and
+   not mg.request_info.uri:lower():find('%.html$') then
+  mg.write(Response(301, nil, nil, 0)..'Location: '..mg.request_info.uri..'/\r\n\r\n')
+else
+  mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+end
