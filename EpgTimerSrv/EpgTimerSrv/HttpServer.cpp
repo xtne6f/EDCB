@@ -20,6 +20,7 @@ const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 CHttpServer::CHttpServer()
 	: mgContext(NULL)
 	, hLuaDll(NULL)
+	, initedLibrary(false)
 {
 }
 
@@ -32,36 +33,37 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 {
 	StopServer();
 
-	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
-	this->hLuaDll = LoadLibrary(LUA_DLL_NAME);
-	if( this->hLuaDll == NULL ){
-		OutputDebugString(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.\r\n");
-		return false;
-	}
 	string ports;
 	WtoUTF8(op.ports, ports);
 	string rootPathU;
 	WtoUTF8(op.rootPath, rootPathU);
 	//パスにASCII範囲外を含むのは(主にLuaが原因で)難ありなので蹴る
-	for( size_t i = 0; i < rootPathU.size(); i++ ){
-		if( rootPathU[i] & 0x80 ){
-			OutputDebugString(L"CHttpServer::StartServer(): path has multibyte.\r\n");
-			return false;
-		}
+	if( std::find_if(rootPathU.begin(), rootPathU.end(), [](char c) { return (c & 0x80) != 0; }) != rootPathU.end() ){
+		OutputDebugString(L"CHttpServer::StartServer(): path has unavailable chars.\r\n");
+		return false;
 	}
 	string accessLogPath;
 	//ログは_wfopen()されるのでWtoUTF8()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
 	WtoUTF8(GetModulePath().replace_filename(L"HttpAccess.log").native(), accessLogPath);
 	string errorLogPath;
 	WtoUTF8(GetModulePath().replace_filename(L"HttpError.log").native(), errorLogPath);
-	string sslCertPath;
-	//認証鍵は実質fopen()されるのでWtoA()
-	WtoA(GetModulePath().replace_filename(L"ssl_cert.pem").native(), sslCertPath);
-	string sslPeerPath;
-	WtoA(GetModulePath().replace_filename(L"ssl_peer.pem").native(), sslPeerPath);
+
+	fs_path sslFsPath = GetModulePath().replace_filename(L"ssl_");
+	//認証鍵は実質fopen()されるのでCP_ACP
+	vector<char> sslPath(WideCharToMultiByte(CP_ACP, 0, sslFsPath.c_str(), -1, NULL, 0, NULL, NULL));
+	if( sslPath.empty() ||
+	    WideCharToMultiByte(CP_ACP, 0, sslFsPath.c_str(), -1, sslPath.data(), (int)sslPath.size(), NULL, NULL) == 0 ){
+		OutputDebugString(L"CHttpServer::StartServer(): path has unavailable chars.\r\n");
+		return false;
+	}
+	string sslCertPath = string(sslPath.data()) + "cert.pem";
+	string sslPeerPath = string(sslPath.data()) + "peer.pem";
+	fs_path sslPeerFsPath = sslFsPath.concat(L"peer.pem");
+
 	string globalAuthPath;
 	//グローバルパスワードは_wfopen()されるのでWtoUTF8()
-	WtoUTF8(GetModulePath().replace_filename(L"glpasswd").native(), globalAuthPath);
+	fs_path globalAuthFsPath = GetModulePath().replace_filename(L"glpasswd");
+	WtoUTF8(globalAuthFsPath.native(), globalAuthPath);
 
 	//Access Control List
 	string acl;
@@ -103,8 +105,9 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		"ssl_cipher_list", sslCipherList.c_str(),
 		"ssl_protocol_version", sslProtocolVersion.c_str(),
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
+		"access_control_allow_origin", "",
 	};
-	int opCount = 2 * 13;
+	int opCount = 2 * 14;
 	if( op.saveLog ){
 		options[opCount++] = "access_log_file";
 		options[opCount++] = accessLogPath.c_str();
@@ -120,27 +123,43 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		options[opCount++] = "ssl_certificate";
 		options[opCount++] = sslCertPath.c_str();
 	}
-	wstring sslPeerPathW;
-	AtoW(sslPeerPath, sslPeerPathW);
-	if( GetFileAttributes(sslPeerPathW.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
+	if( GetFileAttributes(sslPeerFsPath.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
 		//信頼済み証明書ファイルが「存在しないことを確信」できなければ有効にする
 		options[opCount++] = "ssl_verify_peer";
 		options[opCount++] = "yes";
 	}
-	wstring globalAuthPathW;
-	UTF8toW(globalAuthPath, globalAuthPathW);
-	if( GetFileAttributes(globalAuthPathW.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
+	if( GetFileAttributes(globalAuthFsPath.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
 		//グローバルパスワードは「存在しないことを確信」できなければ指定しておく
 		options[opCount++] = "global_auth_file";
 		options[opCount++] = globalAuthPath.c_str();
+	}
+
+	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
+	this->hLuaDll = LoadLibrary(LUA_DLL_NAME);
+	if( this->hLuaDll == NULL ){
+		OutputDebugString(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.\r\n");
+		return false;
+	}
+
+	//"serve files" + "support Lua" + "support caching" + (セキュアポートを含むとき)"support HTTPS"
+	unsigned int feat = 1 + 32 + 128 + (ports.find('s') != string::npos ? 2 : 0);
+	this->initedLibrary = true;
+	if( mg_init_library(feat) != feat ){
+		OutputDebugString(L"CHttpServer::StartServer(): Library initialization failed.\r\n");
+		StopServer();
+		return false;
 	}
 
 	this->initLuaProc = initProc;
 	mg_callbacks callbacks = {};
 	callbacks.init_lua = &InitLua;
 	this->mgContext = mg_start(&callbacks, this, options);
+	if( this->mgContext == NULL ){
+		StopServer();
+		return false;
+	}
 
-	if( this->mgContext && op.enableSsdpServer ){
+	if( op.enableSsdpServer ){
 		//"<UDN>uuid:{UUID}</UDN>"が必要
 		string notifyUuid;
 		std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(fs_path(op.rootPath).append(L"dlna\\dms\\ddd.xml").c_str(), L"rbN"), fclose);
@@ -184,7 +203,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 			OutputDebugString(L"CHttpServer::StartServer(): invalid /dlna/dms/ddd.xml\r\n");
 		}
 	}
-	return this->mgContext != NULL;
+	return true;
 }
 
 bool CHttpServer::StopServer(bool checkOnly)
@@ -211,6 +230,10 @@ bool CHttpServer::StopServer(bool checkOnly)
 			}
 		}
 		this->mgContext = NULL;
+	}
+	if( this->initedLibrary ){
+		mg_exit_library();
+		this->initedLibrary = false;
 	}
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);

@@ -31,6 +31,7 @@ private:
 	mg_context* mgContext;
 	std::function<void(lua_State*)> initLuaProc;
 	HMODULE hLuaDll;
+	bool initedLibrary;
 	CUpnpSsdpServer upnpSsdpServer;
 };
 
