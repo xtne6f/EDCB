@@ -33,7 +33,7 @@ baseTime=(baseDate*24+4)*3600
 
 rt={}
 for i,v in ipairs(edcb.GetReserveData()) do
-  rt[string.format('%04X%04X%04X%04X', v.onid, v.tsid, v.sid, v.eid)]=true
+  rt[('%04X%04X%04X%04X'):format(v.onid, v.tsid, v.sid, v.eid)]=true
 end
 
 showServices={}
@@ -54,7 +54,6 @@ edcb.htmlEscape=15
 for i,v in ipairs(edcb.GetServiceList() or {}) do
   if showServices[''..v.onid..'-'..v.tsid..'-'..v.sid] then
     table.insert(st, v)
-    st[#st].et={}
     mmt=edcb.GetEventMinMaxTime(v.onid, v.tsid, v.sid)
     if mmt then
       minTime=minTime and os.time(mmt.minTime)>minTime and minTime or os.time(mmt.minTime)
@@ -78,8 +77,8 @@ end
 
 if SORT_BY_REMOCON_KEY_ID then
   table.sort(st, function(a,b) return
-    string.format('%04X%04X%04X%04X', a.remote_control_key_id, a.onid, a.tsid, a.sid)<
-    string.format('%04X%04X%04X%04X', b.remote_control_key_id, b.onid, b.tsid, b.sid) end)
+    ('%04X%04X%04X%04X'):format(a.remote_control_key_id, a.onid, a.tsid, a.sid)<
+    ('%04X%04X%04X%04X'):format(b.remote_control_key_id, b.onid, b.tsid, b.sid) end)
 end
 
 pageNav='<div class="page-nav">\n'
@@ -145,9 +144,9 @@ for i,v in ipairs(st) do
         w.eventGroupInfo.eventDataList[1].sid~=w.sid or
         w.eventGroupInfo.eventDataList[1].eid~=w.eid)
       table.insert(ctt, '<div class="cont-'..cont..(w.past and ' past' or '')..'" style="height:'..(endPx-lastPx)..'px">'
-        ..(not w.past and rt[string.format('%04X%04X%04X%04X', w.onid, w.tsid, w.sid, w.eid)] and '<b>予</b> ' or '')
-        ..string.format('%02d', w.startTime.min)
-        ..(sub and '' or ' <a href=\"'
+        ..(not w.past and rt[('%04X%04X%04X%04X'):format(w.onid, w.tsid, w.sid, w.eid)] and '<b>予</b> ' or '')
+        ..('%02d'):format(w.startTime.min)
+        ..(sub and '' or ' <a href="'
           ..(w.past and 'epgpastinfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..(os.time(w.startTime)+timezone)
             or 'epginfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid)..'">'
           ..(w.shortInfo and w.shortInfo.event_name or '&nbsp;')..'</a>')
