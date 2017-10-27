@@ -7,7 +7,7 @@
 #include "../../Common/CommonDef.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/SendCtrlCmd.h"
-#include "../../Common/TsPacketUtil.h"
+#include "../../Common/TSPacketUtil.h"
 #include "../../Common/BlockLock.h"
 #include "../../Common/ParseTextInstances.h"
 #include <process.h>
