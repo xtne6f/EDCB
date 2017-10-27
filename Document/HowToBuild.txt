@@ -1,12 +1,12 @@
-[ƒrƒ‹ƒhŠÂ‹«]
+ï»¿[ãƒ“ãƒ«ãƒ‰ç’°å¢ƒ]
 
-Visual Studio Express 2015 for Desktop ‚ğƒCƒ“ƒXƒg[ƒ‹‚·‚é
-‘¼‚Ì‚à‚Ì‚ÍŠî–{“I‚É•s—v
+Visual Studio Express 2015 for Desktop ã¾ãŸã¯ Express 2017 for Desktop ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹
+ä»–ã®ã‚‚ã®ã¯åŸºæœ¬çš„ã«ä¸è¦
 
 
-[ƒrƒ‹ƒhŠÂ‹«(VisualStudio2010)]
+[ãƒ“ãƒ«ãƒ‰ç’°å¢ƒ(VisualStudio2010)]
 
-iˆÈ‰º‚ğ‡”Ô‚É“ü‚ê‚éj
+ï¼ˆä»¥ä¸‹ã‚’é †ç•ªã«å…¥ã‚Œã‚‹ï¼‰
 
 Visual C++ 2010 Express
 http://go.microsoft.com/fwlink/?LinkId=190491
@@ -19,29 +19,46 @@ http://www.microsoft.com/ja-jp/download/details.aspx?id=23691
 
 Windows SDK 7.1
 http://www.microsoft.com/en-us/download/details.aspx?id=8279
-# Visual C++ Compilers ‚Ìƒ`ƒFƒbƒN‚ğŠO‚µ‚ÄƒCƒ“ƒXƒg[ƒ‹‚·‚éB‚Å‚È‚¢‚Æ¸”s‚·‚é
-# Visual C++ x86/x64 2010 Redistributable ‚ğ–‘O‚ÉƒAƒ“ƒCƒ“ƒXƒg[ƒ‹‚µ‚Ä‚¨‚­•K—v‚ª‚ ‚é‚©‚à‚µ‚ê‚È‚¢
+# Visual C++ Compilers ã®ãƒã‚§ãƒƒã‚¯ã‚’å¤–ã—ã¦ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹ã€‚ã§ãªã„ã¨å¤±æ•—ã™ã‚‹
+# Visual C++ x86/x64 2010 Redistributable ã‚’äº‹å‰ã«ã‚¢ãƒ³ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã—ã¦ãŠãå¿…è¦ãŒã‚ã‚‹ã‹ã‚‚ã—ã‚Œãªã„
 
-Windows SDK 7.1 —p Microsoft Visual C++ 2010 Service Pack 1 ƒRƒ“ƒpƒCƒ‰XVƒvƒƒOƒ‰ƒ€
+Windows SDK 7.1 ç”¨ Microsoft Visual C++ 2010 Service Pack 1 ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©æ›´æ–°ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
 
 
-[ƒrƒ‹ƒh]
+[ãƒ“ãƒ«ãƒ‰]
 
-1."Document\EDCB_ALL.VS2015.sln"‚ğŠJ‚«Aƒc[ƒ‹ƒo[‚ğ[Release][Win32]‚É‚µ‚Äƒrƒ‹ƒh¨ƒ\ƒŠƒ…[ƒVƒ‡ƒ“‚Ìƒrƒ‹ƒh
+1."Document\EDCB_ALL.VS2015.sln"ã‚’é–‹ãã€ãƒ„ãƒ¼ãƒ«ãƒãƒ¼ã‚’[Release][Win32]ã«ã—ã¦ãƒ“ãƒ«ãƒ‰â†’ã‚½ãƒªãƒ¥ãƒ¼ã‚·ãƒ§ãƒ³ã®ãƒ“ãƒ«ãƒ‰
 
-i’ˆÓj
-WindowsXP‚ÅÀs‰Â”\‚Èƒtƒ@ƒCƒ‹‚ğì‚è‚½‚¢‚Æ‚«‚ÍAEpgTimer‚ğœ‚­‘SƒvƒƒWƒFƒNƒg‚Ì
-\¬ƒvƒƒpƒeƒB¨ƒvƒ‰ƒbƒgƒtƒH[ƒ€ƒc[ƒ‹ƒZƒbƒg‚ğ"v140_xp"‚ÉØ‚è‘Ö‚¦‚é•K—v‚ª‚ ‚é
-iƒ\ƒŠƒ…[ƒVƒ‡ƒ“ƒGƒNƒXƒvƒ[ƒ‰\ã‚ÅCtrl+ƒ}ƒEƒX‘I‘ğ‚ğ‹ìg‚·‚ê‚Î‚Ü‚Æ‚ß‚ÄØ‚è‘Ö‚¦‚ç‚ê‚éj
+ï¼ˆæ³¨æ„ï¼‰
+ãƒ»Windows SDKã®ã‚¨ãƒ©ãƒ¼ãŒå‡ºã‚‹å ´åˆã¯ã€ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆâ†’ã‚½ãƒªãƒ¥ãƒ¼ã‚·ãƒ§ãƒ³ã®å†ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ
+  ã§åˆ‡ã‚Šæ›¿ãˆã‚‹ã€‚ãƒ“ãƒ«ãƒ‰å¯èƒ½ãªãƒãƒ¼ã‚¸ãƒ§ãƒ³ãªã‚‰ä½•ã§ã‚‚ã„ã„
+ãƒ»WindowsXPã§å®Ÿè¡Œå¯èƒ½ãªãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œã‚ŠãŸã„ã¨ãã¯ã€EpgTimerã‚’é™¤ãå…¨ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆã®
+  æ§‹æˆãƒ—ãƒ­ãƒ‘ãƒ†ã‚£â†’ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ãƒ„ãƒ¼ãƒ«ã‚»ãƒƒãƒˆã‚’"v140_xp"ã«åˆ‡ã‚Šæ›¿ãˆã‚‹å¿…è¦ãŒã‚ã‚‹
+  ï¼ˆã‚½ãƒªãƒ¥ãƒ¼ã‚·ãƒ§ãƒ³ã‚¨ã‚¯ã‚¹ãƒ—ãƒ­ãƒ¼ãƒ©â€•ä¸Šã§Ctrl+ãƒã‚¦ã‚¹é¸æŠã‚’é§†ä½¿ã™ã‚Œã°ã¾ã¨ã‚ã¦åˆ‡ã‚Šæ›¿ãˆã‚‰ã‚Œã‚‹ï¼‰
 
-2.iEpgTimerNW‚ª•K—v‚Èê‡‚Ì‚İj¶¬‚³‚ê‚½"EpgTimer.exe"‚ğ"EpgTimerNW.exe"‚Æ‚¢‚¤ƒtƒ@ƒCƒ‹–¼‚ÅƒRƒs[
+2.ï¼ˆEpgTimerNWãŒå¿…è¦ãªå ´åˆã®ã¿ï¼‰ç”Ÿæˆã•ã‚ŒãŸ"EpgTimer.exe"ã‚’"EpgTimerNW.exe"ã¨ã„ã†ãƒ•ã‚¡ã‚¤ãƒ«åã§ã‚³ãƒ”ãƒ¼
 
 
-[ƒrƒ‹ƒh(VisualStudio2010)]
+[ãƒ“ãƒ«ãƒ‰(VisualStudio2010)]
 
-1."Document\EDCB_VCALL.sln"‚ğŠJ‚«Aƒc[ƒ‹ƒo[‚ğ[Release][Win32]‚É‚µ‚Äƒrƒ‹ƒh¨ƒ\ƒŠƒ…[ƒVƒ‡ƒ“‚Ìƒrƒ‹ƒh
+1."Document\EDCB_VCALL.sln"ã‚’é–‹ãã€ãƒ„ãƒ¼ãƒ«ãƒãƒ¼ã‚’[Release][Win32]ã«ã—ã¦ãƒ“ãƒ«ãƒ‰â†’ã‚½ãƒªãƒ¥ãƒ¼ã‚·ãƒ§ãƒ³ã®ãƒ“ãƒ«ãƒ‰
 
-2."EpgTimer\EpgTimer.sln"‚ğ ‰EƒNƒŠƒbƒN¨ƒvƒƒOƒ‰ƒ€‚©‚çŠJ‚­¨C# 2010 Express ‚ÅŠJ‚«Aƒc[ƒ‹(T)¨İ’è¨ã‹‰Òİ’è‚Éƒ`ƒFƒbƒNA[Release][x86]‚É‚µ‚Äƒrƒ‹ƒh
+2."EpgTimer\EpgTimer.sln"ã‚’ å³ã‚¯ãƒªãƒƒã‚¯â†’ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‹ã‚‰é–‹ãâ†’C# 2010 Express ã§é–‹ãã€ãƒ„ãƒ¼ãƒ«(T)â†’è¨­å®šâ†’ä¸Šç´šè€…è¨­å®šã«ãƒã‚§ãƒƒã‚¯ã€[Release][x86]ã«ã—ã¦ãƒ“ãƒ«ãƒ‰
 
-3.iEpgTimerNW‚ª•K—v‚Èê‡‚Ì‚İj¶¬‚³‚ê‚½"EpgTimer.exe"‚ğ"EpgTimerNW.exe"‚Æ‚¢‚¤ƒtƒ@ƒCƒ‹–¼‚ÅƒRƒs[
+3.ï¼ˆEpgTimerNWãŒå¿…è¦ãªå ´åˆã®ã¿ï¼‰ç”Ÿæˆã•ã‚ŒãŸ"EpgTimer.exe"ã‚’"EpgTimerNW.exe"ã¨ã„ã†ãƒ•ã‚¡ã‚¤ãƒ«åã§ã‚³ãƒ”ãƒ¼
+
+
+[ãã®ä»–]
+
+ãƒ»EpgTimer.exeã‚’ãƒ“ãƒ«ãƒ‰ã™ã‚‹ã ã‘ãªã‚‰VisualStudioã¯ä¸è¦(å‚è€ƒ:2ch_EDCB/52/224)
+  å¿…è¦ãªã‚‰.NET Framework v4.0ä»¥é™ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã—ã¦ã€EpgTimerãƒ•ã‚©ãƒ«ãƒ€ã§ã‚³ãƒãƒ³ãƒ‰ãƒ—ãƒ­ãƒ³ãƒ—ãƒˆã‚’é–‹ã„ã¦ä»¥ä¸‹ã‚’å®Ÿè¡Œ
+  > C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe EpgTimer.sln /p:Configuration=Release /p:Platform=x86
+  æ”¾ç½®ã—ã¦ã‚‚ãŸã¶ã‚“å•é¡Œãªã„ãŒã€MSB3644ã®è­¦å‘ŠãŒã§ã‚‹å ´åˆã¯"EpgTimer\EpgTimer\EpgTimer.csproj"ã‚’ãƒ¡ãƒ¢å¸³ã§é–‹ã
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+  ã¨ãªã£ã¦ã„ã‚‹éƒ¨åˆ†ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ã‚‹.NETã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã«å¤‰æ›´ã™ã‚‹ã‹ã€v4.0ã®Targeting Packã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹
+  v4.5ä»¥é™ã«Clientãƒ—ãƒ­ãƒ•ã‚¡ã‚¤ãƒ«ã¯å­˜åœ¨ã—ãªã„ã®ã§ã€<TargetFrameworkProfile>è¡Œã¯å‰Šé™¤ã™ã‚‹
+
+ãƒ»ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ãƒ„ãƒ¼ãƒ«ã‚»ãƒƒãƒˆ:LLVM-vs2014( http://releases.llvm.org/ )ã«å¯¾å¿œã—ã¦ã„ã‚‹
+  ã‚½ãƒ¼ã‚¹ã‚³ãƒ¼ãƒ‰ã®UTF-8å¤‰æ›ãŒå¿…è¦ã€‚ãƒªãƒã‚¸ãƒˆãƒªãƒ«ãƒ¼ãƒˆã§PowerShell-v5ã‚’é–‹ã„ã¦ä»¥ä¸‹ã‚’å®Ÿè¡Œ(Defaultã¨UTF8ã‚’å…¥ã‚Œã‹ãˆã‚‹ã¨é€†å¤‰æ›)
+  > ls *.h,*.cpp -Recurse -Exclude resource.h,targetver.h|foreach{$a=cat -Raw -Encoding Default $_;$a|Out-File -NoNewline -Encoding UTF8 $_}
