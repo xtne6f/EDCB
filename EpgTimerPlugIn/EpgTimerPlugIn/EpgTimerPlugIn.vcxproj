@@ -158,7 +158,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="EpgTimerPlugIn.def" />
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Common\CommonDef.h" />

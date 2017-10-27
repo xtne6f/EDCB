@@ -208,7 +208,6 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="res\EpgDataCap_Bon.ico" />
     <None Include="res\EpgDataCap_Bon.rc2" />
     <None Include="res\EpgDataCap_Bon_Vista_blue_rev2.ico" />

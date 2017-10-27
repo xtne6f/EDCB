@@ -21,7 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="EpgDataCap3.def">
       <Filter>ソース ファイル</Filter>
     </None>

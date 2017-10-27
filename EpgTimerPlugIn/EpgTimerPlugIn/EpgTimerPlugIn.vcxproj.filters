@@ -21,7 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="EpgTimerPlugIn.def">
       <Filter>ソース ファイル</Filter>
     </None>

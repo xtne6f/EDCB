@@ -27,7 +27,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="res\EpgDataCap_Bon.rc2">
       <Filter>リソース ファイル</Filter>
     </None>

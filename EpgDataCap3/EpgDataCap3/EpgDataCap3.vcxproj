@@ -160,7 +160,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="EpgDataCap3.def" />
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Common\EpgDataCap3Def.h" />
