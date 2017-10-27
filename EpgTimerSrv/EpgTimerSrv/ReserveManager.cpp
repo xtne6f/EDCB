@@ -1791,16 +1791,27 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 	bool ret = false;
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	try{
-		IRegExpPtr regExp;
-		regExp.CreateInstance(CLSID_RegExp);
-		if( regExp != NULL && info.shortInfo != NULL ){
+	void* pv;
+	if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
+		std::unique_ptr<IRegExp, decltype(&CEpgDBManager::ComRelease)> regExp((IRegExp*)pv, CEpgDBManager::ComRelease);
+		if( info.shortInfo != NULL ){
+			typedef std::unique_ptr<OLECHAR, decltype(&SysFreeString)> OleCharPtr;
 			wstring infoEventName = info.shortInfo->event_name;
 			if( this->setting.recInfo2RegExp.empty() == false ){
-				regExp->PutGlobal(VARIANT_TRUE);
-				regExp->PutPattern(_bstr_t(this->setting.recInfo2RegExp.c_str()));
-				_bstr_t rpl = regExp->Replace(_bstr_t(infoEventName.c_str()), _bstr_t());
-				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+				OleCharPtr pattern(SysAllocString(this->setting.recInfo2RegExp.c_str()), SysFreeString);
+				OleCharPtr rplFrom(SysAllocString(infoEventName.c_str()), SysFreeString);
+				OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
+				BSTR rpl_;
+				if( pattern && rplFrom && rplTo &&
+				    SUCCEEDED(regExp->put_Global(VARIANT_TRUE)) &&
+				    SUCCEEDED(regExp->put_Pattern(pattern.get())) &&
+				    SUCCEEDED(regExp->Replace(rplFrom.get(), rplTo.get(), &rpl_)) ){
+					OleCharPtr rpl(rpl_, SysFreeString);
+					infoEventName = SysStringLen(rpl.get()) ? rpl.get() : L"";
+				}else{
+					OutputDebugString(L"RecInfo2RegExp seems ill-formed\r\n");
+					infoEventName = L"";
+				}
 			}
 			if( infoEventName.empty() == false && info.StartTimeFlag != 0 ){
 				int chkDayActual = chkDay >= 20000 ? chkDay % 10000 : chkDay;
@@ -1812,8 +1823,15 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 					    ConvertI64Time(itr->second.startTime) + chkDayActual*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
 						if( this->setting.recInfo2RegExp.empty() == false ){
-							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
-							eventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+							OleCharPtr rplFrom(SysAllocString(eventName.c_str()), SysFreeString);
+							OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
+							BSTR rpl_;
+							if( rplFrom && rplTo && SUCCEEDED(regExp->Replace(rplFrom.get(), rplTo.get(), &rpl_)) ){
+								OleCharPtr rpl(rpl_, SysFreeString);
+								eventName = SysStringLen(rpl.get()) ? rpl.get() : L"";
+							}else{
+								eventName = L"";
+							}
 						}
 						if( infoEventName == eventName ){
 							ret = true;
@@ -1823,8 +1841,6 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 				}
 			}
 		}
-	}catch( _com_error& e ){
-		_OutputDebugString(L"%s\r\n", e.ErrorMessage());
 	}
 	CoUninitialize();
 

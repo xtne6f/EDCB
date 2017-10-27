@@ -176,7 +176,6 @@
     <None Include="EpgTimerSrv.ico" />
     <None Include="md5.inl" />
     <None Include="mod_lua.inl" />
-    <None Include="RegExp.tlb" />
     <None Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -223,6 +222,7 @@
     <ClInclude Include="luaconf.h" />
     <ClInclude Include="lualib.h" />
     <ClInclude Include="NotifyManager.h" />
+    <ClInclude Include="RegExp.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -270,6 +270,7 @@
     <ClCompile Include="FileStreamingManager.cpp" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
+    <ClCompile Include="RegExp.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

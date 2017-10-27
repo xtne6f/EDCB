@@ -485,7 +485,7 @@ BOOL CEpgDBManager::SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<S
 	});
 }
 
-void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, IRegExpPtr& regExp) const
+void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const
 {
 	if( key == NULL ){
 		return ;
@@ -828,36 +828,45 @@ static wstring::const_iterator SearchKeyword(const wstring& str, const wstring& 
 			[](wchar_t l, wchar_t r) { return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r); });
 }
 
-BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, BOOL andMode, wstring* findKey)
+BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp,
+                                  BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, BOOL andMode, wstring* findKey)
 {
 	if( regExpFlag == TRUE ){
 		//³‹K•\Œ»ƒ‚[ƒh
-		try{
-			if( regExp == NULL ){
-				regExp.CreateInstance(CLSID_RegExp);
+		if( !regExp ){
+			void* pv;
+			if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
+				regExp.reset((IRegExp*)pv);
 			}
-			if( regExp != NULL && word.size() > 0 && keyList.size() > 0 ){
-				_bstr_t target( word.c_str() );
-				_bstr_t pattern( keyList[0].c_str() );
-
-				regExp->PutGlobal( VARIANT_TRUE );
-				regExp->PutIgnoreCase( caseFlag == FALSE ? VARIANT_TRUE : VARIANT_FALSE );
-				regExp->PutPattern( pattern );
-
-				IMatchCollectionPtr pMatchCol( regExp->Execute( target ) );
-
-				if( pMatchCol->Count > 0 ){
-					if( findKey != NULL ){
-						IMatch2Ptr pMatch( pMatchCol->Item[0] );
-						_bstr_t value( pMatch->Value );
-
-						*findKey = !value ? L"" : value;
+		}
+		if( regExp && word.size() > 0 && keyList.size() > 0 ){
+			typedef std::unique_ptr<OLECHAR, decltype(&SysFreeString)> OleCharPtr;
+			OleCharPtr pattern(SysAllocString(keyList[0].c_str()), SysFreeString);
+			OleCharPtr target(SysAllocString(word.c_str()), SysFreeString);
+			if( pattern && target ){
+				IDispatch* pMatches;
+				if( SUCCEEDED(regExp->put_Global(VARIANT_TRUE)) &&
+				    SUCCEEDED(regExp->put_IgnoreCase(caseFlag ? VARIANT_FALSE : VARIANT_TRUE)) &&
+				    SUCCEEDED(regExp->put_Pattern(pattern.get())) &&
+				    SUCCEEDED(regExp->Execute(target.get(), &pMatches)) ){
+					std::unique_ptr<IMatchCollection, decltype(&ComRelease)> matches((IMatchCollection*)pMatches, ComRelease);
+					long count;
+					if( SUCCEEDED(matches->get_Count(&count)) && count > 0 ){
+						if( findKey != NULL ){
+							IDispatch* pMatch;
+							if( SUCCEEDED(matches->get_Item(0, &pMatch)) ){
+								std::unique_ptr<IMatch2, decltype(&ComRelease)> match((IMatch2*)pMatch, ComRelease);
+								BSTR value_;
+								if( SUCCEEDED(match->get_Value(&value_)) ){
+									OleCharPtr value(value_, SysFreeString);
+									*findKey = SysStringLen(value.get()) ? value.get() : L"";
+								}
+							}
+						}
+						return TRUE;
 					}
-					return TRUE;
 				}
 			}
-		}catch( _com_error& ){
-			//_OutputDebugString(L"%s\r\n", e.ErrorMessage());
 		}
 		return FALSE;
 	}else{
