@@ -328,10 +328,10 @@ void CTSOut::CheckNeedPID()
 				name = "HEVC VIDEO";
 				break;
 			case 0x06:
-				name = "字幕";
+				name = "\x8e\x9a\x96\x8b"; //(CP932)"字幕"
 				break;
 			case 0x0D:
-				name = "データカルーセル";
+				name = "\x83\x66\x81\x5b\x83\x5e\x83\x4a\x83\x8b\x81\x5b\x83\x5a\x83\x8b"; //(CP932)"データカルーセル"
 				break;
 			default:
 				Format(name, "stream_type 0x%0X", itrPID->second);
