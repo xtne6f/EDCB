@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TCPServer.h"
 #include <process.h>
 #include "ErrDef.h"

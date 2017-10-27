@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "WriteMain.h"
 #include <process.h>
 #include "../../Common/BlockLock.h"

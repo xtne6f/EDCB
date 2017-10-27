@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SendTSTCPMain.h"
 #include "../../Common/BlockLock.h"
 

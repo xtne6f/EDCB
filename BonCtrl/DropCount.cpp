@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "DropCount.h"
 #include "../Common/StringUtil.h"
 #include "../Common/TimeUtil.h"

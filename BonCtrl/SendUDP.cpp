@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SendUDP.h"
 #include "../Common/PathUtil.h"
 

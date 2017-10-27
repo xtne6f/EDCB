@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "ReserveManager.h"
 #include <process.h>
 #include "../../Common/PathUtil.h"

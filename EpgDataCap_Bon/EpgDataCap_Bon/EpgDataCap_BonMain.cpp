@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "EpgDataCap_BonMain.h"
 
 #include "EpgDataCap_BonDef.h"

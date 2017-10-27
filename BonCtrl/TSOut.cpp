@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TSOut.h"
 
 #include "../Common/TimeUtil.h"

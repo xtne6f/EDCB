@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "CmdLineUtil.h"
 
 CCmdLineUtil::CCmdLineUtil(void)

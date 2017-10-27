@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "CreatePATPacket.h"
 
 CCreatePATPacket::CCreatePATPacket(void)

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "EpgTimerSrvMain.h"
 #include "SyoboiCalUtil.h"
 #include "../../Common/PipeServer.h"

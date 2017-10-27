@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TimeShiftUtil.h"
 #include "../../Common/BlockLock.h"
 #include <process.h>
