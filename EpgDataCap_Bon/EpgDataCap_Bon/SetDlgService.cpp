@@ -165,25 +165,21 @@ void CSetDlgService::SynchronizeCheckState()
 
 BOOL CSetDlgService::FindBonFileName(wstring src, wstring& dllName)
 {
-	wstring buff = src;
-	size_t pos = buff.rfind(L")");
-	if( pos == string::npos ){
-		dllName = src;
+	size_t i = src.size();
+	for( int depth = 0; i > 0; ){
+		if( src[--i] == L')' ){
+			depth++;
+		}else if( src[i] == L'(' && depth > 0 ){
+			if( --depth == 0 ){
+				break;
+			}
+		}
+	}
+	dllName.swap(src);
+	if( i == 0 ){
 		return FALSE;
 	}
-
-	int count = 1;
-	for( size_t i=pos-1; i>=0; i-- ){
-		if(buff.compare(i,1,L")") == 0 ){
-			count++;
-		}else if(buff.compare(i,1,L"(") == 0){
-			count--;
-		}
-		if( count == 0 ){
-			dllName = buff.substr(0, i);
-			break;
-		}
-	}
+	dllName.erase(i);
 
 	return TRUE;
 }
