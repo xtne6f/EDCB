@@ -3614,7 +3614,7 @@ int CEpgTimerSrvMain::LuaGetNotifyUpdateCount(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	int n = -1;
-	if( lua_gettop(L) == 1 && 1 <= lua_tointeger(L, 1) && lua_tointeger(L, 1) < _countof(ws.sys->notifyUpdateCount) ){
+	if( lua_gettop(L) == 1 && 1 <= lua_tointeger(L, 1) && lua_tointeger(L, 1) < (int)_countof(ws.sys->notifyUpdateCount) ){
 		n = ws.sys->notifyUpdateCount[lua_tointeger(L, 1)] & 0x7FFFFFFF;
 	}
 	lua_pushinteger(L, n);

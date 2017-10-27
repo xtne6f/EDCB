@@ -132,7 +132,7 @@ bool CParseText<K, V>::SaveText() const
 	vector<K> idList;
 	if( SelectIDToSave(idList) ){
 		for( size_t i = 0; i < idList.size(); i++ ){
-			map<K, V>::const_iterator itr = this->itemMap.find(idList[i]);
+			auto itr = this->itemMap.find(idList[i]);
 			saveLine.clear();
 			if( itr != this->itemMap.end() && SaveLine(*itr, saveLine) ){
 				saveLine += L"\r\n";
@@ -146,7 +146,7 @@ bool CParseText<K, V>::SaveText() const
 			}
 		}
 	}else{
-		for( map<K, V>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
+		for( auto itr = this->itemMap.cbegin(); itr != this->itemMap.end(); itr++ ){
 			saveLine.clear();
 			if( SaveLine(*itr, saveLine) ){
 				saveLine += L"\r\n";

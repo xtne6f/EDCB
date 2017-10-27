@@ -77,7 +77,7 @@
 /* This code uses static_assert to check some conditions.
  * Unfortunately some compilers still do not support it, so we have a
  * replacement function here. */
-#if defined(_MSC_VER) && (_MSC_VER >= 1600)
+#if defined(_MSC_VER) && (_MSC_VER >= 1600) && !defined(__clang__)
 #define mg_static_assert static_assert
 #elif defined(__cplusplus) && (__cplusplus >= 201103L)
 #define mg_static_assert static_assert

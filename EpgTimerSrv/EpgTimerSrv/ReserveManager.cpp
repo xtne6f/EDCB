@@ -567,7 +567,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			multimap<__int64, const RESERVE_DATA*> sortResMap;
 			for( itrRes = sortTimeMap.begin(); itrRes != itrTime; itrRes++ ){
 				//バンク決定順のキーはチューナ固定優先ビットつき実効優先度(予約優先度<<60|チューナ固定優先ビット<<59|開始順)
-				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | itrRes->second->reserveID & 0xFFFF;
+				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | (itrRes->second->reserveID & 0xFFFF);
 				__int64 priority = (this->setting.backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
 				__int64 fixedBit = (this->setting.fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->setting.backPriority : !this->setting.backPriority;
 				sortResMap.insert(std::make_pair((this->setting.backPriority ? -1 : 1) * (priority << 60 | fixedBit << 59 | startOrder), itrRes->second));
