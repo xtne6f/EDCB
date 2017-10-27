@@ -55,6 +55,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 {
 	SetDllDirectory(_T(""));
 
+	TCHAR szTask[] = _T("/task");
+	if( _wcsicmp(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
+		//Taskモードを強制する
+		lpCmdLine = szTask;
+	}
 	if( lpCmdLine[0] == _T('-') || lpCmdLine[0] == _T('/') ){
 		if( _tcsicmp(_T("install"), lpCmdLine + 1) == 0 ){
 			return 0;
@@ -62,9 +67,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			return 0;
 		}else if( _tcsicmp(_T("setting"), lpCmdLine + 1) == 0 ){
 			//設定ダイアログを表示する
-			CoInitialize(NULL);
+			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvSetting setting;
 			setting.ShowDialog();
+			CoUninitialize();
+			return 0;
+		}else if( _tcsicmp(_T("task"), lpCmdLine + 1) == 0 ){
+			//Taskモード
+			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+			CEpgTimerSrvMain::TaskMain();
 			CoUninitialize();
 			return 0;
 		}
@@ -78,7 +89,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
 				StartDebugLog();
 				//メインスレッドに対するCOMの初期化
-				CoInitialize(NULL);
+				CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 				CEpgTimerSrvMain* pMain = new CEpgTimerSrvMain;
 				if( pMain->Main(false) == false ){
 					OutputDebugString(_T("_tWinMain(): Failed to start\r\n"));
@@ -133,7 +144,7 @@ void WINAPI service_main(DWORD dwArgc, LPTSTR *lpszArgv)
 		ReportServiceStatus(SERVICE_START_PENDING, 0, 1, 10000);
 
 		//メインスレッドに対するCOMの初期化
-		CoInitialize(NULL);
+		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 		//ここでは単純な(時間のかからない)初期化のみ行う
 		g_pMain = new CEpgTimerSrvMain;
 

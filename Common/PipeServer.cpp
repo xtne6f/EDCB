@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "PipeServer.h"
 #include <process.h>
 
@@ -87,10 +87,10 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 {
 	CPipeServer* pSys = (CPipeServer*)pParam;
 
-	HANDLE hPipe = NULL;
+	HANDLE hPipe = INVALID_HANDLE_VALUE;
 	HANDLE hEventConnect = NULL;
 	HANDLE hEventArray[2];
-	OVERLAPPED stOver;
+	OVERLAPPED stOver = {};
 
 	SECURITY_DESCRIPTOR sd = {};
 	SECURITY_ATTRIBUTES sa = {};
@@ -105,18 +105,13 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 	hEventArray[0] = pSys->stopEvent;
 	hEventArray[1] = CreateEvent(NULL, FALSE, FALSE, NULL);
 	
-	if( hPipe == NULL ){
+	if( hEventConnect && hEventArray[1] ){
 		hPipe = CreateNamedPipe(pSys->pipeName.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_OVERLAPPED,
 		                        PIPE_TYPE_BYTE, 1, 8192, 8192, PIPE_TIMEOUT, sa.nLength != 0 ? &sa : NULL);
-		if( hPipe == INVALID_HANDLE_VALUE ){
-			hPipe = NULL;
-		}
-
-		ZeroMemory(&stOver, sizeof(OVERLAPPED));
 		stOver.hEvent = hEventArray[1];
 	}
 
-	while( hPipe != NULL ){
+	while( hPipe != INVALID_HANDLE_VALUE ){
 		ConnectNamedPipe(hPipe, &stOver);
 		SetEvent(hEventConnect);
 
@@ -174,13 +169,17 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 		}
 	}
 
-	if( hPipe != NULL ){
+	if( hPipe != INVALID_HANDLE_VALUE ){
 		FlushFileBuffers(hPipe);
 		DisconnectNamedPipe(hPipe);
 		CloseHandle(hPipe);
 	}
 
-	CloseHandle(hEventArray[1]);
-	CloseHandle(hEventConnect);
+	if( hEventArray[1] ){
+		CloseHandle(hEventArray[1]);
+	}
+	if( hEventConnect ){
+		CloseHandle(hEventConnect);
+	}
 	return 0;
 }

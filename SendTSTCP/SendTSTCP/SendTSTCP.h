@@ -1,5 +1,5 @@
-#ifndef __SEND_TS_TCP_H__
-#define __SEND_TS_TCP_H__
+#ifndef INCLUDE_SEND_TS_TCP_H
+#define INCLUDE_SEND_TS_TCP_H
 
 //DLLの初期化
 //戻り値：識別ID（-1でエラー）

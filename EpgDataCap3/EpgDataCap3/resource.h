@@ -2,7 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by EpgDataCap3.rc
 
-// 新しいオブジェクトの次の既定値
+// Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS

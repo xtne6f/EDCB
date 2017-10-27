@@ -14,6 +14,8 @@ class CEpgTimerSrvMain
 public:
 	CEpgTimerSrvMain();
 	~CEpgTimerSrvMain();
+	//メインループ処理(Taskモード)
+	static bool TaskMain();
 	//メインループ処理
 	//serviceFlag_: サービスとしての起動かどうか
 	bool Main(bool serviceFlag_);
@@ -22,10 +24,18 @@ public:
 	//休止／スタンバイに移行して構わない状況かどうか
 	bool IsSuspendOK(); //const;
 private:
+	//メインウィンドウ(Taskモード)
+	static LRESULT CALLBACK TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//メインウィンドウ
 	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//シャットダウン問い合わせダイアログ
 	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	//アイコンを読み込む
+	static HICON LoadSmallIcon(int iconID);
+	//GUI(EpgTimer)を起動する
+	static void OpenGUI();
+	//「予約削除」ポップアップを作成する
+	static void InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list);
 	void ReloadNetworkSetting();
 	void ReloadSetting(bool initialize = false);
 	//現在の予約状態に応じた復帰タイマをセットする
@@ -42,8 +52,8 @@ private:
 	bool IsFindShareTSFile() const;
 	//抑制条件のプロセスが起動しているかどうか
 	bool IsFindNoSuspendExe() const;
-	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
-	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
+	void AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList);
+	void AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const;
 	//外部制御コマンド関係
 	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
 	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam);
@@ -114,12 +124,15 @@ private:
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;
 
+	//autoAddLock->settingLockの順にロックする
+	mutable CRITICAL_SECTION autoAddLock;
 	mutable CRITICAL_SECTION settingLock;
 	HWND hwndMain;
 
 	bool residentFlag;
 	CEpgTimerSrvSetting::SETTING setting;
 	unsigned short tcpPort;
+	bool tcpIPv6;
 	DWORD tcpResponseTimeoutSec;
 	wstring tcpAccessControlList;
 	CHttpServer::SERVER_OPTIONS httpOptions;

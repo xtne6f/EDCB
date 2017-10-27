@@ -160,12 +160,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="EpgDataCap3.def" />
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Common\BlockLock.h" />
+    <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\EpgDataCap3Def.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
+    <ClInclude Include="..\..\Common\InstanceManager.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />

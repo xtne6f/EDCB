@@ -8,6 +8,7 @@ public:
 	struct SETTING {
 		int epgArchivePeriodHour;
 		int residentMode;
+		bool blinkPreRec;
 		bool noBalloonTip;
 		bool saveNotifyLog;
 		DWORD wakeTime;

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "EpgDBUtil.h"
 
 #include "../../Common/StringUtil.h"
@@ -40,7 +40,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 	WORD original_network_id = (WORD)eit.GetNumber(Desc::original_network_id);
 	WORD transport_stream_id = (WORD)eit.GetNumber(Desc::transport_stream_id);
 	WORD service_id = (WORD)eit.GetNumber(Desc::service_id);
-	ULONGLONG key = _Create64Key(original_network_id, transport_stream_id, service_id);
+	ULONGLONG key = Create64Key(original_network_id, transport_stream_id, service_id);
 
 	//サービスのmapを取得
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
@@ -368,8 +368,8 @@ void CEpgDBUtil::AddShortEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescrip
 	}
 	{
 		CARIB8CharDecode arib;
-		string event_name = "";
-		string text_char = "";
+		wstring event_name;
+		wstring text_char;
 		const BYTE* src;
 		DWORD srcSize;
 		src = eit.GetBinary(Desc::event_name_char, &srcSize, lp);
@@ -384,8 +384,8 @@ void CEpgDBUtil::AddShortEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescrip
 		text_char = g_szDebugEIT + text_char;
 #endif
 
-		AtoW(event_name, eventInfo->shortInfo->event_name);
-		AtoW(text_char, eventInfo->shortInfo->text_char);
+		eventInfo->shortInfo->event_name.swap(event_name);
+		eventInfo->shortInfo->text_char.swap(text_char);
 	}
 }
 
@@ -394,7 +394,7 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 	{
 		BOOL foundFlag = FALSE;
 		CARIB8CharDecode arib;
-		string extendText = "";
+		wstring extendText;
 		vector<BYTE> itemBuff;
 		BOOL itemDescFlag = FALSE;
 		//text_lengthは0で運用される
@@ -414,9 +414,9 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						src = eit.GetBinary(Desc::item_description_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
 							if( itemDescFlag == FALSE && itemBuff.size() > 0 ){
-								string buff = "";
+								wstring buff;
 								arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
-								buff += "\r\n";
+								buff += L"\r\n";
 								extendText += buff;
 								itemBuff.clear();
 							}
@@ -426,9 +426,9 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						src = eit.GetBinary(Desc::item_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
 							if( itemDescFlag && itemBuff.size() > 0 ){
-								string buff = "";
+								wstring buff;
 								arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
-								buff += "\r\n";
+								buff += L"\r\n";
 								extendText += buff;
 								itemBuff.clear();
 							}
@@ -441,9 +441,9 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 		}
 
 		if( itemBuff.size() > 0 ){
-			string buff = "";
+			wstring buff;
 			arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
-			buff += "\r\n";
+			buff += L"\r\n";
 			extendText += buff;
 		}
 
@@ -456,7 +456,7 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 #ifdef DEBUG_EIT
 		extendText = g_szDebugEIT + extendText;
 #endif
-		AtoW(extendText, eventInfo->extInfo->text_char);
+		eventInfo->extInfo->text_char.swap(extendText);
 	}
 
 	return TRUE;
@@ -494,13 +494,13 @@ void CEpgDBUtil::AddComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescript
 		eventInfo->componentInfo->component_tag = (BYTE)eit.GetNumber(Desc::component_tag, lp);
 
 		CARIB8CharDecode arib;
-		string text_char = "";
+		wstring text_char;
 		DWORD srcSize;
 		const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
 		if( src && srcSize > 0 ){
 			arib.PSISI(src, srcSize, &text_char);
 		}
-		AtoW(text_char, eventInfo->componentInfo->text_char);
+		eventInfo->componentInfo->text_char.swap(text_char);
 
 	}
 }
@@ -544,13 +544,13 @@ BOOL CEpgDBUtil::AddAudioComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDes
 
 
 				CARIB8CharDecode arib;
-				string text_char = "";
+				wstring text_char;
 				DWORD srcSize;
 				const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
 				if( src && srcSize > 0 ){
 					arib.PSISI(src, srcSize, &text_char);
 				}
-				AtoW(text_char, item.text_char);
+				item.text_char.swap(text_char);
 
 			}
 		}
@@ -656,7 +656,7 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatusService(
 	CBlockLock lock(&this->dbLock);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::const_iterator itr =
-		this->serviceEventMap.find(_Create64Key(originalNetworkID, transportStreamID, serviceID));
+		this->serviceEventMap.find(Create64Key(originalNetworkID, transportStreamID, serviceID));
 	if( itr != this->serviceEventMap.end() ){
 		if( l_eitFlag ){
 			//L-EITの状況
@@ -730,9 +730,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 				const BYTE* src = nit.GetBinary(Desc::d_char, &srcSize, lp);
 				if( src && srcSize > 0 ){
 					CARIB8CharDecode arib;
-					string network_name = "";
-					arib.PSISI(src, srcSize, &network_name);
-					AtoW(network_name, network_nameW);
+					arib.PSISI(src, srcSize, &network_nameW);
 				}
 			}
 		}
@@ -757,7 +755,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 						Desc::CDescriptor::CLoopPointer lp3 = lp2;
 						if( nit.EnterLoop(lp3) ){
 							for( DWORD k=0; nit.SetLoopIndex(lp3, k); k++ ){
-								ULONGLONG key = _Create64Key(onid, tsid, (WORD)nit.GetNumber(Desc::service_id, lp3));
+								ULONGLONG key = Create64Key(onid, tsid, (WORD)nit.GetNumber(Desc::service_id, lp3));
 								map<ULONGLONG, BYTE>::iterator itrService;
 								itrService = this->serviceList.find(key);
 								if( itrService == this->serviceList.end() ){
@@ -772,9 +770,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 						const BYTE* src = nit.GetBinary(Desc::ts_name_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
 							CARIB8CharDecode arib;
-							string ts_name = "";
-							arib.PSISI(src, srcSize, &ts_name);
-							AtoW(ts_name, itrFind->second.ts_name);
+							arib.PSISI(src, srcSize, &itrFind->second.ts_name);
 						}
 						itrFind->second.remote_control_key_id = (BYTE)nit.GetNumber(Desc::remote_control_key_id, lp2);
 					}
@@ -836,8 +832,8 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 					for( DWORD j = 0; sit.SetLoopIndex(lp2, j); j++ ){
 						if( sit.GetNumber(Desc::descriptor_tag, lp2) == Desc::service_descriptor ){
 							CARIB8CharDecode arib;
-							string service_provider_name = "";
-							string service_name = "";
+							wstring service_provider_name;
+							wstring service_name;
 							const BYTE* src;
 							DWORD srcSize;
 							src = sit.GetBinary(Desc::service_provider_name, &srcSize, lp2);
@@ -848,8 +844,8 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 							if( src && srcSize > 0 ){
 								arib.PSISI(src, srcSize, &service_name);
 							}
-							AtoW(service_provider_name, item.service_provider_name);
-							AtoW(service_name, item.service_name);
+							item.service_provider_name.swap(service_provider_name);
+							item.service_name.swap(service_name);
 
 							item.service_type = (BYTE)sit.GetNumber(Desc::service_type, lp2);
 						}
@@ -896,8 +892,8 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 							continue;
 						}
 						CARIB8CharDecode arib;
-						string service_provider_name = "";
-						string service_name = "";
+						wstring service_provider_name;
+						wstring service_name;
 						const BYTE* src;
 						DWORD srcSize;
 						src = sdt.GetBinary(Desc::service_provider_name, &srcSize, lp2);
@@ -908,8 +904,8 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 						if( src && srcSize > 0 ){
 							arib.PSISI(src, srcSize, &service_name);
 						}
-						AtoW(service_provider_name, item.service_provider_name);
-						AtoW(service_name, item.service_name);
+						item.service_provider_name.swap(service_provider_name);
+						item.service_name.swap(service_name);
 
 						item.service_type = (BYTE)sdt.GetNumber(Desc::service_type, lp2);
 					}
@@ -938,7 +934,7 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 {
 	CBlockLock lock(&this->dbLock);
 
-	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
+	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	itr = serviceEventMap.find(key);
@@ -1011,7 +1007,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	CBlockLock lock(&this->dbLock);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr =
-		this->serviceEventMap.find(_Create64Key(originalNetworkID, transportStreamID, serviceID));
+		this->serviceEventMap.find(Create64Key(originalNetworkID, transportStreamID, serviceID));
 	if( itr == this->serviceEventMap.end() ){
 		return FALSE;
 	}
@@ -1137,7 +1133,7 @@ BOOL CEpgDBUtil::GetEpgInfo(
 
 	this->epgInfo.db.clear();
 
-	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
+	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	itr = serviceEventMap.find(key);
@@ -1186,7 +1182,7 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 
 	this->searchEpgInfo.db.clear();
 
-	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
+	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	itr = serviceEventMap.find(key);

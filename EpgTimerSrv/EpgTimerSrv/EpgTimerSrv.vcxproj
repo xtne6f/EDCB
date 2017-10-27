@@ -176,8 +176,6 @@
     <None Include="EpgTimerSrv.ico" />
     <None Include="md5.inl" />
     <None Include="mod_lua.inl" />
-    <None Include="ReadMe.txt" />
-    <None Include="RegExp.tlb" />
     <None Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -185,6 +183,8 @@
     <ClInclude Include="..\..\BonCtrl\PacketInit.h" />
     <ClInclude Include="..\..\BonCtrl\SendTCP.h" />
     <ClInclude Include="..\..\BonCtrl\SendUDP.h" />
+    <ClInclude Include="..\..\Common\BlockLock.h" />
+    <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />
@@ -192,13 +192,13 @@
     <ClInclude Include="..\..\Common\EpgDataCap3Util.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
+    <ClInclude Include="..\..\Common\InstanceManager.h" />
     <ClInclude Include="..\..\Common\ParseText.h" />
     <ClInclude Include="..\..\Common\ParseTextInstances.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\PipeServer.h" />
     <ClInclude Include="..\..\Common\ReNamePlugInUtil.h" />
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
-    <ClInclude Include="..\..\Common\SendTSTCP.h" />
     <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h" />
     <ClInclude Include="..\..\Common\ServiceUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
@@ -222,6 +222,7 @@
     <ClInclude Include="luaconf.h" />
     <ClInclude Include="lualib.h" />
     <ClInclude Include="NotifyManager.h" />
+    <ClInclude Include="RegExp.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -269,6 +270,7 @@
     <ClCompile Include="FileStreamingManager.cpp" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
+    <ClCompile Include="RegExp.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

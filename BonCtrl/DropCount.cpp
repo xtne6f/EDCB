@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "DropCount.h"
 #include "../Common/StringUtil.h"
 #include "../Common/TimeUtil.h"
@@ -254,8 +254,8 @@ void CDropCount::SaveLog(const wstring& filePath)
 		}
 
 		string strA;
-		WtoA(bonFile, strA);
-		fprintf(fp.get(), "\r\n使用BonDriver : %s\r\n", strA.c_str());
+		WtoA(L"使用BonDriver : " + bonFile, strA);
+		fprintf(fp.get(), "\r\n%s\r\n", strA.c_str());
 	}
 }
 

@@ -79,13 +79,13 @@ protected:
 
 	vector<BYTE> firstDescBuff;
 
-	typedef struct _SECOND_DESC_BUFF{
+	struct SECOND_DESC_BUFF {
 		BYTE stream_type;
 		WORD elementary_PID;
 		vector<BYTE> descBuff;
 		WORD quality;
 		WORD qualityPID;
-	}SECOND_DESC_BUFF;
+	};
 	vector<SECOND_DESC_BUFF> secondDescBuff;
 
 	vector<WORD> emmPIDList;

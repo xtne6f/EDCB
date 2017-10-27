@@ -52,7 +52,7 @@ size_t MBtoW(UINT codePage, const char *in, vector<WCHAR>& out, size_t outLenHin
 
 }
 
-void Format(string& strBuff, const char *format, ...)
+void Format(string& strBuff, PRINTF_FORMAT_SZ const char *format, ...)
 {
 	va_list params;
 
@@ -78,7 +78,7 @@ void Format(string& strBuff, const char *format, ...)
 	va_end(params);
 }
 
-void Format(wstring& strBuff, const WCHAR *format, ...)
+void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...)
 {
 	va_list params;
 

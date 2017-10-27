@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "ConvertMacro2.h"
 
 #include "../../Common/StringUtil.h"

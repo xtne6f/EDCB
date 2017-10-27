@@ -1,5 +1,5 @@
-#ifndef __ERR_DEF_H__
-#define __ERR_DEF_H__
+#ifndef INCLUDE_ERR_DEF_H
+#define INCLUDE_ERR_DEF_H
 
 #define ERR_FALSE		FALSE		//”Ä—pƒGƒ‰[
 #define NO_ERR			TRUE		//¬Œ÷

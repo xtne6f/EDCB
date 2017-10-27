@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "ReserveManager.h"
 #include <process.h>
 #include "../../Common/PathUtil.h"
@@ -567,7 +567,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			multimap<__int64, const RESERVE_DATA*> sortResMap;
 			for( itrRes = sortTimeMap.begin(); itrRes != itrTime; itrRes++ ){
 				//バンク決定順のキーはチューナ固定優先ビットつき実効優先度(予約優先度<<60|チューナ固定優先ビット<<59|開始順)
-				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | itrRes->second->reserveID & 0xFFFF;
+				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | (itrRes->second->reserveID & 0xFFFF);
 				__int64 priority = (this->setting.backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
 				__int64 fixedBit = (this->setting.fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->setting.backPriority : !this->setting.backPriority;
 				sortResMap.insert(std::make_pair((this->setting.backPriority ? -1 : 1) * (priority << 60 | fixedBit << 59 | startOrder), itrRes->second));
@@ -867,14 +867,14 @@ void CReserveManager::CheckTuijyuTuner()
 		const vector<pair<ULONGLONG, DWORD>>& cacheList = this->reserveText.GetSortByEventList();
 
 		vector<pair<ULONGLONG, DWORD>>::const_iterator itrCache = std::lower_bound(
-			cacheList.begin(), cacheList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, 0, 0), 0));
-		for( ; itrCache != cacheList.end() && itrCache->first <= _Create64Key2(onid, tsid, 0xFFFF, 0xFFFF); ){
+			cacheList.begin(), cacheList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, 0, 0), 0));
+		for( ; itrCache != cacheList.end() && itrCache->first <= Create64PgKey(onid, tsid, 0xFFFF, 0xFFFF); ){
 			//起動中のチャンネルに一致する予約をEIT[p/f]と照合する
 			WORD sid = itrCache->first >> 16 & 0xFFFF;
 			EPGDB_EVENT_INFO resPfVal[2];
 			int nowSuccess = itrBank->second->GetEventPF(sid, false, &resPfVal[0]);
 			int nextSuccess = itrBank->second->GetEventPF(sid, true, &resPfVal[1]);
-			for( ; itrCache != cacheList.end() && itrCache->first <= _Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
+			for( ; itrCache != cacheList.end() && itrCache->first <= Create64PgKey(onid, tsid, sid, 0xFFFF); itrCache++ ){
 				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrCache->second);
 				if( itrRes->second.eventID == 0xFFFF ||
 				    itrRes->second.recSetting.recMode == RECMODE_NO ||
@@ -968,7 +968,7 @@ void CReserveManager::CheckTuijyuTuner()
 								OutputDebugString(L"EventRelayCheck\r\n");
 								for( itrR = info.eventRelayInfo->eventDataList.begin(); itrR != info.eventRelayInfo->eventDataList.end(); itrR++ ){
 									map<LONGLONG, CH_DATA5>::const_iterator itrCh = this->chUtil.GetMap().find(
-										_Create64Key(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id));
+										Create64Key(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id));
 									if( itrCh != this->chUtil.GetMap().end() && relayAddList.empty() ){
 										//リレーできるチャンネル発見
 										RESERVE_DATA rr;
@@ -1685,8 +1685,8 @@ bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) co
 	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	return itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, eid);
+		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, eid), 0));
+	return itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, eid);
 }
 
 bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const
@@ -1696,8 +1696,8 @@ bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int
 	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, 0xFFFF), 0));
-	for( ; itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
+		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, 0xFFFF), 0));
+	for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, 0xFFFF); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.durationSecond == durationSec && ConvertI64Time(itrRes->second.startTime) == startTime ){
 			return true;
@@ -1790,17 +1790,28 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 	CBlockLock lock(&this->managerLock);
 	bool ret = false;
 
-	CoInitialize(NULL);
-	try{
-		IRegExpPtr regExp;
-		regExp.CreateInstance(CLSID_RegExp);
-		if( regExp != NULL && info.shortInfo != NULL ){
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	void* pv;
+	if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
+		std::unique_ptr<IRegExp, decltype(&CEpgDBManager::ComRelease)> regExp((IRegExp*)pv, CEpgDBManager::ComRelease);
+		if( info.shortInfo != NULL ){
+			typedef std::unique_ptr<OLECHAR, decltype(&SysFreeString)> OleCharPtr;
 			wstring infoEventName = info.shortInfo->event_name;
 			if( this->setting.recInfo2RegExp.empty() == false ){
-				regExp->PutGlobal(VARIANT_TRUE);
-				regExp->PutPattern(_bstr_t(this->setting.recInfo2RegExp.c_str()));
-				_bstr_t rpl = regExp->Replace(_bstr_t(infoEventName.c_str()), _bstr_t());
-				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+				OleCharPtr pattern(SysAllocString(this->setting.recInfo2RegExp.c_str()), SysFreeString);
+				OleCharPtr rplFrom(SysAllocString(infoEventName.c_str()), SysFreeString);
+				OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
+				BSTR rpl_;
+				if( pattern && rplFrom && rplTo &&
+				    SUCCEEDED(regExp->put_Global(VARIANT_TRUE)) &&
+				    SUCCEEDED(regExp->put_Pattern(pattern.get())) &&
+				    SUCCEEDED(regExp->Replace(rplFrom.get(), rplTo.get(), &rpl_)) ){
+					OleCharPtr rpl(rpl_, SysFreeString);
+					infoEventName = SysStringLen(rpl.get()) ? rpl.get() : L"";
+				}else{
+					OutputDebugString(L"RecInfo2RegExp seems ill-formed\r\n");
+					infoEventName = L"";
+				}
 			}
 			if( infoEventName.empty() == false && info.StartTimeFlag != 0 ){
 				int chkDayActual = chkDay >= 20000 ? chkDay % 10000 : chkDay;
@@ -1812,8 +1823,15 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 					    ConvertI64Time(itr->second.startTime) + chkDayActual*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
 						if( this->setting.recInfo2RegExp.empty() == false ){
-							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
-							eventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+							OleCharPtr rplFrom(SysAllocString(eventName.c_str()), SysFreeString);
+							OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
+							BSTR rpl_;
+							if( rplFrom && rplTo && SUCCEEDED(regExp->Replace(rplFrom.get(), rplTo.get(), &rpl_)) ){
+								OleCharPtr rpl(rpl_, SysFreeString);
+								eventName = SysStringLen(rpl.get()) ? rpl.get() : L"";
+							}else{
+								eventName = L"";
+							}
 						}
 						if( infoEventName == eventName ){
 							ret = true;
@@ -1823,8 +1841,6 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 				}
 			}
 		}
-	}catch( _com_error& e ){
-		_OutputDebugString(L"%s\r\n", e.ErrorMessage());
 	}
 	CoUninitialize();
 
@@ -1839,8 +1855,8 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	for( ; itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, eid); itr++ ){
+		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, eid), 0));
+	for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, eid); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.recSetting.recMode != RECMODE_NO && itrRes->second.comment.compare(0, 7, L"EPG自動予約") == 0 ){
 			chgList.push_back(itrRes->second);
@@ -1848,6 +1864,18 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 		}
 	}
 	return chgList.empty() == false && ChgReserveData(chgList);
+}
+
+bool CReserveManager::GetChData(WORD onid, WORD tsid, WORD sid, CH_DATA5* chData) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	map<LONGLONG, CH_DATA5>::const_iterator itr = this->chUtil.GetMap().find(Create64Key(onid, tsid, sid));
+	if( itr != this->chUtil.GetMap().end() ){
+		*chData = itr->second;
+		return true;
+	}
+	return false;
 }
 
 vector<CH_DATA5> CReserveManager::GetChDataList() const

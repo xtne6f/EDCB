@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TCPServer.h"
 #include <process.h>
 #include "ErrDef.h"
@@ -6,8 +6,6 @@
 
 CTCPServer::CTCPServer(void)
 {
-	m_dwPort = 8081;
-
 	m_hNotifyEvent = WSA_INVALID_EVENT;
 	m_stopFlag = FALSE;
 	m_hThread = NULL;
@@ -24,46 +22,67 @@ CTCPServer::~CTCPServer(void)
 	WSACleanup();
 }
 
-BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl, const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc)
+bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTimeout, LPCWSTR acl,
+                             const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc)
 {
 	if( !cmdProc ){
-		return FALSE;
+		return false;
 	}
+	string aclU;
+	WtoUTF8(acl, aclU);
 	if( m_hThread != NULL &&
-	    m_dwPort == dwPort &&
+	    m_port == port &&
+	    m_ipv6 == ipv6 &&
 	    m_dwResponseTimeout == dwResponseTimeout &&
-	    m_acl == acl ){
+	    m_acl == aclU ){
 		//cmdProcの変化は想定していない
-		return TRUE;
+		return true;
 	}
 	StopServer();
 	m_cmdProc = cmdProc;
-	m_dwPort = dwPort;
+	m_port = port;
+	m_ipv6 = ipv6;
 	m_dwResponseTimeout = dwResponseTimeout;
-	m_acl = acl;
+	m_acl = aclU;
 
-	m_sock = socket(AF_INET, SOCK_STREAM, 0);
-	if( m_sock == INVALID_SOCKET ){
-		return FALSE;
+	string strPort;
+	Format(strPort, "%d", m_port);
+	struct addrinfo hints = {};
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_family = m_ipv6 ? AF_INET6 : AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	struct addrinfo* result;
+	if( getaddrinfo(NULL, strPort.c_str(), &hints, &result) != 0 ){
+		return false;
 	}
-	struct sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons((WORD)dwPort);
-	addr.sin_addr.S_un.S_addr = INADDR_ANY;
-	BOOL b=1;
-
-	setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&b, sizeof(b));
 
 	m_stopFlag = FALSE;
-	if( bind(m_sock, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR ||
-	    listen(m_sock, 1) == SOCKET_ERROR ||
-	    (m_hNotifyEvent = WSACreateEvent()) == WSA_INVALID_EVENT ||
-	    (m_hThread = (HANDLE)_beginthreadex(NULL, 0, ServerThread, this, 0, NULL)) == NULL ){
+	m_sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	if( m_sock != INVALID_SOCKET ){
+		BOOL b = TRUE;
+		setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&b, sizeof(b));
+		if( m_ipv6 ){
+			//デュアルスタックにはしない
+			b = TRUE;
+			setsockopt(m_sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&b, sizeof(b));
+		}
+		if( bind(m_sock, result->ai_addr, (int)result->ai_addrlen) != SOCKET_ERROR && listen(m_sock, 1) != SOCKET_ERROR ){
+			m_hNotifyEvent = WSACreateEvent();
+			if( m_hNotifyEvent != WSA_INVALID_EVENT ){
+				m_hThread = (HANDLE)_beginthreadex(NULL, 0, ServerThread, this, 0, NULL);
+				if( m_hThread != NULL ){
+					freeaddrinfo(result);
+					return true;
+				}
+			}
+		}
 		StopServer();
-		return FALSE;
 	}
+	freeaddrinfo(result);
 
-	return TRUE;
+	return false;
 }
 
 void CTCPServer::StopServer()
@@ -96,31 +115,52 @@ void CTCPServer::NotifyUpdate()
 	}
 }
 
-static BOOL TestAcl(struct in_addr addr, wstring acl)
+static bool TestAcl(struct sockaddr* addr, string acl)
 {
 	//書式例: +192.168.0.0/16,-192.168.0.1
-	BOOL ret = FALSE;
+	//書式例(IPv6): +fe80::/64,-::1
+	bool ret = false;
 	for(;;){
-		wstring val;
-		BOOL sep = Separate(acl, L",", val, acl);
-		if( val.empty() || val[0] != L'+' && val[0] != L'-' ){
+		string val;
+		BOOL sep = Separate(acl, ",", val, acl);
+		if( val.empty() || val[0] != '+' && val[0] != '-' ){
 			//書式エラー
-			return FALSE;
+			return false;
 		}
-		wstring a, b, c, d, m;
-		Separate(val.substr(1), L".", a, b);
-		Separate(b, L".", b, c);
-		Separate(c, L".", c, d);
-		ULONG mask = Separate(d, L"/", d, m) ? _wtoi(m.c_str()) : 32;
-		if( a.empty() || b.empty() || c.empty() || d.empty() || mask > 32 ){
+		string m;
+		int mm = Separate(val, "/", val, m) ? atoi(m.c_str()) : addr->sa_family == AF_INET6 ? 128 : 32;
+		if( val.empty() || mm < 0 || mm > (addr->sa_family == AF_INET6 ? 128 : 32) ){
 			//書式エラー
-			return FALSE;
+			return false;
 		}
-		mask = mask == 0 ? 0 : 0xFFFFFFFFUL << (32 - mask);
-		ULONG host = (ULONG)_wtoi(a.c_str()) << 24 | _wtoi(b.c_str()) << 16 | _wtoi(c.c_str()) << 8 | _wtoi(d.c_str());
-		if( (ntohl(addr.s_addr) & mask) == (host & mask) ){
-			ret = val[0] == L'+';
+		struct addrinfo hints = {};
+		hints.ai_flags = AI_NUMERICHOST;
+		hints.ai_family = addr->sa_family;
+		struct addrinfo* result;
+		if( getaddrinfo(val.c_str() + 1, NULL, &hints, &result) != 0 ){
+			//書式エラー
+			return false;
 		}
+		if( result->ai_family == AF_INET6 ){
+			int i = 0;
+			for( ; i < 16; i++ ){
+				UCHAR mask = (UCHAR)(8 * i + 8 < mm ? 0xFF : 8 * i > mm ? 0 : 0xFF << (8 * i + 8 - mm));
+				if( (((struct sockaddr_in6*)addr)->sin6_addr.s6_addr[i] & mask) !=
+				    (((struct sockaddr_in6*)result->ai_addr)->sin6_addr.s6_addr[i] & mask) ){
+					break;
+				}
+			}
+			if( i == 16 ){
+				ret = val[0] == '+';
+			}
+		}else{
+			ULONG mask = mm == 0 ? 0 : 0xFFFFFFFFUL << (32 - mm);
+			if( (ntohl(((struct sockaddr_in*)addr)->sin_addr.s_addr) & mask) ==
+			    (ntohl(((struct sockaddr_in*)result->ai_addr)->sin_addr.s_addr) & mask) ){
+				ret = val[0] == '+';
+			}
+		}
+		freeaddrinfo(result);
 		if( sep == FALSE ){
 			return ret;
 		}
@@ -216,19 +256,32 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 				}
 			}
 		}else if( result == WSA_WAIT_EVENT_0 + 1 ){
-			struct sockaddr_in client = {};
-			int len = sizeof(client);
+			struct sockaddr_storage client = {};
+			int clientLen = sizeof(client);
 			SOCKET sock = INVALID_SOCKET;
 			WSANETWORKEVENTS events;
 			if( WSAEnumNetworkEvents(pSys->m_sock, hEventList[1], &events) != SOCKET_ERROR ){
 				if( events.lNetworkEvents & FD_ACCEPT ){
-					sock = accept(pSys->m_sock, (struct sockaddr *)&client, &len);
+					sock = accept(pSys->m_sock, (struct sockaddr*)&client, &clientLen);
 				}
 			}
-			if( sock != INVALID_SOCKET && TestAcl(client.sin_addr, pSys->m_acl) == FALSE ){
-				_OutputDebugString(L"Deny from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
-				closesocket(sock);
-			}else if( sock != INVALID_SOCKET ){
+			if( sock != INVALID_SOCKET ){
+				if( (pSys->m_ipv6 && client.ss_family != AF_INET6) || (pSys->m_ipv6 == false && client.ss_family != AF_INET) ){
+					OutputDebugString(L"IP protocol mismatch\r\n");
+					closesocket(sock);
+					sock = INVALID_SOCKET;
+				}else if( TestAcl((struct sockaddr*)&client, pSys->m_acl) == false ){
+					wstring ipW;
+					char ip[NI_MAXHOST];
+					if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 ){
+						UTF8toW(ip, ipW);
+					}
+					OutputDebugString((L"Deny from IP: " + ipW + L"\r\n").c_str());
+					closesocket(sock);
+					sock = INVALID_SOCKET;
+				}
+			}
+			if( sock != INVALID_SOCKET ){
 				//ブロッキングモードに変更
 				WSAEventSelect(sock, NULL, 0);
 				ULONG x = 0;
@@ -256,16 +309,17 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					}
 
 					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
-						char ip[64];
-						if( getnameinfo((struct sockaddr *)&client, sizeof(client), ip, sizeof(ip), NULL, 0, NI_NUMERICHOST) != 0 ){
-							ip[0] = '\0';
-						}
-
 						REGIST_TCP_INFO setParam;
-						AtoW(ip, setParam.ip);
-						ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
-
-						stCmd.data = NewWriteVALUE(setParam, stCmd.dataSize);
+						char ip[NI_MAXHOST];
+						if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 &&
+						    ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL) ){
+							UTF8toW(ip, setParam.ip);
+							stCmd.data = NewWriteVALUE(setParam, stCmd.dataSize);
+						}else{
+							//接続元IPの添付に失敗した
+							stCmd.dataSize = 0;
+							stCmd.data.reset();
+						}
 					}
 
 					pSys->m_cmdProc(&stCmd, &stRes);

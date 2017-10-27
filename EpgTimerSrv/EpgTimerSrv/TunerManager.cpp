@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TunerManager.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"

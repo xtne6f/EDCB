@@ -2,6 +2,7 @@
 
 #include "PathUtil.h"
 #include "StringUtil.h"
+#include <stdio.h>
 
 template <class K, class V>
 class CParseText
@@ -35,12 +36,14 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 	if( this->filePath.empty() ){
 		return false;
 	}
-	HANDLE hFile;
+	std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
 	for( int retry = 0;; ){
-		hFile = CreateFile(this->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if( hFile != INVALID_HANDLE_VALUE ){
+		FILE* fp_;
+		errno_t err = _wfopen_s(&fp_, this->filePath.c_str(), L"rbN");
+		if( err == 0 ){
+			fp.reset(fp_);
 			break;
-		}else if( GetLastError() == ERROR_FILE_NOT_FOUND ){
+		}else if( err == ENOENT ){
 			return true;
 		}else if( ++retry > 5 ){
 			//6回トライしてそれでもダメなら失敗
@@ -56,12 +59,12 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 	for(;;){
 		//4KB単位で読み込む
 		buf.resize(buf.size() + 4096);
-		DWORD dwRead;
-		if( ReadFile(hFile, &buf.front() + buf.size() - 4096, 4096, &dwRead, NULL) == FALSE || dwRead == 0 ){
+		size_t n = fread(&buf.front() + buf.size() - 4096, 1, 4096, fp.get());
+		if( n == 0 ){
 			buf.resize(buf.size() - 4096);
 			buf.push_back('\0');
 		}else{
-			buf.resize(buf.size() - 4096 + dwRead);
+			buf.resize(buf.size() - 4096 + n);
 		}
 		if( checkBom == false ){
 			checkBom = true;
@@ -97,7 +100,6 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 			break;
 		}
 	}
-	CloseHandle(hFile);
 	return true;
 }
 
@@ -107,11 +109,12 @@ bool CParseText<K, V>::SaveText() const
 	if( this->filePath.empty() ){
 		return false;
 	}
-	HANDLE hFile;
+	std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
 	for( int retry = 0;; ){
 		UtilCreateDirectories(fs_path(this->filePath).parent_path());
-		hFile = CreateFile((this->filePath + L".tmp").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if( hFile != INVALID_HANDLE_VALUE ){
+		FILE* fp_;
+		if( _wfopen_s(&fp_, (this->filePath + L".tmp").c_str(), L"wbN") == 0 ){
+			fp.reset(fp_);
 			break;
 		}else if( ++retry > 5 ){
 			OutputDebugString(L"CParseText<>::SaveText(): Error: Cannot open file\r\n");
@@ -121,16 +124,15 @@ bool CParseText<K, V>::SaveText() const
 	}
 
 	bool ret = true;
-	DWORD dwWrite;
 	if( this->isUtf8 ){
-		ret = ret && WriteFile(hFile, "\xEF\xBB\xBF", 3, &dwWrite, NULL);
+		ret = ret && fputs("\xEF\xBB\xBF", fp.get()) >= 0;
 	}
 	wstring saveLine;
 	vector<char> saveBuf;
 	vector<K> idList;
 	if( SelectIDToSave(idList) ){
 		for( size_t i = 0; i < idList.size(); i++ ){
-			map<K, V>::const_iterator itr = this->itemMap.find(idList[i]);
+			auto itr = this->itemMap.find(idList[i]);
 			saveLine.clear();
 			if( itr != this->itemMap.end() && SaveLine(*itr, saveLine) ){
 				saveLine += L"\r\n";
@@ -140,11 +142,11 @@ bool CParseText<K, V>::SaveText() const
 				}else{
 					len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 				}
-				ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
+				ret = ret && fwrite(&saveBuf.front(), 1, len, fp.get()) == len;
 			}
 		}
 	}else{
-		for( map<K, V>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
+		for( auto itr = this->itemMap.cbegin(); itr != this->itemMap.end(); itr++ ){
 			saveLine.clear();
 			if( SaveLine(*itr, saveLine) ){
 				saveLine += L"\r\n";
@@ -154,7 +156,7 @@ bool CParseText<K, V>::SaveText() const
 				}else{
 					len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 				}
-				ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
+				ret = ret && fwrite(&saveBuf.front(), 1, len, fp.get()) == len;
 			}
 		}
 	}
@@ -167,9 +169,9 @@ bool CParseText<K, V>::SaveText() const
 		}else{
 			len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 		}
-		ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
+		ret = ret && fwrite(&saveBuf.front(), 1, len, fp.get()) == len;
 	}
-	CloseHandle(hFile);
+	fp.reset();
 
 	if( ret ){
 		for( int retry = 0;; ){

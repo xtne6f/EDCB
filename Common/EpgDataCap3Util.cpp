@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "EpgDataCap3Util.h"
 
 #include "ErrDef.h"

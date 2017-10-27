@@ -158,9 +158,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="EpgTimerPlugIn.def" />
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Common\BlockLock.h" />
+    <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />

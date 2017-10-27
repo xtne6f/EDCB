@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SendCtrlCmd.h"
 #ifndef SEND_CTRL_CMD_NO_TCP
 #include <winsock2.h>

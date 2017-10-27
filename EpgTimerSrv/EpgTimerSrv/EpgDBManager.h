@@ -3,8 +3,9 @@
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
 #include "../../Common/BlockLock.h"
-
-#import "RegExp.tlb" no_namespace named_guids
+#include <objbase.h>
+#include <OleAuto.h>
+#include "RegExp.h"
 
 class CEpgDBManager
 {
@@ -38,9 +39,9 @@ public:
 	BOOL SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, P enumProc) const {
 		CRefLock lock(&this->epgMapRefLock);
 		vector<SEARCH_RESULT_EVENT> result;
-		CoInitialize(NULL);
+		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 		{
-			IRegExpPtr regExp;
+			std::unique_ptr<IRegExp, void(*)(IUnknown*)> regExp(NULL, ComRelease);
 			for( size_t i = 0; i < key->size(); i++ ){
 				SearchEvent(&(*key)[i], result, regExp);
 			}
@@ -119,6 +120,7 @@ public:
 		) const;
 
 	static void ConvertSearchText(wstring& str);
+	static void ComRelease(IUnknown* p) { p->Release(); }
 
 protected:
 	class CRefLock
@@ -153,10 +155,11 @@ protected:
 	void CancelLoadData(DWORD forceTimeout);
 	static UINT WINAPI LoadThread(LPVOID param);
 
-	void SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, IRegExpPtr& regExp) const;
+	void SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const;
 	static BOOL IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);
 	static BOOL IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
-	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
+	static BOOL IsFindKeyword(BOOL regExpFlag, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp,
+	                          BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
 	static BOOL IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, vector<int>& dist, wstring* findKey = NULL);
 
 };

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "EpgDataCap3Main.h"
 
 #include "../../Common/TimeUtil.h"

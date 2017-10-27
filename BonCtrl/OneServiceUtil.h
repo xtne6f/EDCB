@@ -180,6 +180,9 @@ public:
 	void SetPIDName(
 		const map<WORD, string>& pidName
 		);
+	void SetNoLogScramble(
+		BOOL noLog
+		);
 protected:
 	WORD SID;
 

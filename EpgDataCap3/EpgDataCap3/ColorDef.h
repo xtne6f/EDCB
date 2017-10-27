@@ -1,9 +1,6 @@
-#ifndef __COLOR_DEF_H__
-#define __COLOR_DEF_H__
-
 #pragma once
 
-typedef struct _CLUT_DAT{
+typedef struct {
 	unsigned char ucR;
 	unsigned char ucG;
 	unsigned char ucB;
@@ -142,6 +139,3 @@ static CLUT_DAT DefClut[]={
 	{255,255, 85,128}
 };
 #endif //COLOR_DEF_H_IMPLEMENT_TABLE
-
-
-#endif

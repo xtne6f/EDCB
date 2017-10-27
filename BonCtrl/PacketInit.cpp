@@ -1,15 +1,14 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "PacketInit.h"
 
 CPacketInit::CPacketInit(void)
 {
-	this->nextStartSize = 0;
 	this->packetSize = 0;
 }
 
 void CPacketInit::ClearBuff()
 {
-	this->nextStartSize = 0;
+	this->nextStartBuff.clear();
 	this->packetSize = 0;
 }
 
@@ -22,7 +21,7 @@ void CPacketInit::ClearBuff()
 // outData			[OUT]188バイトに整列したバッファ（次回呼び出しまで保持）
 // outSize			[OUT]outDataのサイズ（BYTE単位）
 BOOL CPacketInit::GetTSData(
-	BYTE* inData,
+	const BYTE* inData,
 	DWORD inSize,
 	BYTE** outData,
 	DWORD* outSize
@@ -34,7 +33,7 @@ BOOL CPacketInit::GetTSData(
 
 	if( this->packetSize != 0 ){
 		//同期済み
-		for( DWORD i = (this->packetSize - this->nextStartSize) % this->packetSize; i < inSize; i += this->packetSize ){
+		for( size_t i = (this->packetSize - this->nextStartBuff.size()) % this->packetSize; i < inSize; i += this->packetSize ){
 			if( inData[i] != 0x47 ){
 				//再同期が必要
 				this->packetSize = 0;
@@ -42,34 +41,32 @@ BOOL CPacketInit::GetTSData(
 			}
 		}
 		if( this->packetSize != 0 ){
-			if( this->nextStartSize + inSize < this->packetSize ){
+			if( this->nextStartBuff.size() + inSize < this->packetSize ){
 				this->outBuff.resize(1);
 				*outSize = 0;
 				//繰り越すだけ
-				memcpy( this->nextStartBuff + this->nextStartSize, inData, inSize );
-				this->nextStartSize += inSize;
+				this->nextStartBuff.insert(this->nextStartBuff.end(), inData, inData + inSize);
 			}else{
-				if( this->nextStartSize >= 188 ){
-					this->outBuff.assign(this->nextStartBuff, this->nextStartBuff + 188);
+				if( this->nextStartBuff.size() >= 188 ){
+					this->outBuff.assign(this->nextStartBuff.begin(), this->nextStartBuff.begin() + 188);
 				}else{
-					this->outBuff.assign(this->nextStartBuff, this->nextStartBuff + this->nextStartSize);
-					this->outBuff.insert(this->outBuff.end(), inData, inData + (188 - this->nextStartSize));
+					this->outBuff.assign(this->nextStartBuff.begin(), this->nextStartBuff.end());
+					this->outBuff.insert(this->outBuff.end(), inData, inData + (188 - this->nextStartBuff.size()));
 				}
-				DWORD inPos = this->packetSize - this->nextStartSize;
+				size_t inPos = this->packetSize - this->nextStartBuff.size();
 				for( ; inPos + this->packetSize <= inSize; inPos += this->packetSize ){
 					this->outBuff.insert(this->outBuff.end(), inData + inPos, inData + inPos + 188);
 				}
 				*outSize = (DWORD)this->outBuff.size();
 				//繰り越す
-				memcpy(this->nextStartBuff, inData + inPos, inSize - inPos);
-				this->nextStartSize = inSize - inPos;
+				this->nextStartBuff.assign(inData + inPos, inData + inSize);
 			}
 			*outData = &this->outBuff.front();
 			return TRUE;
 		}
 	}
 
-	DWORD nss = this->nextStartSize;
+	DWORD nss = (DWORD)this->nextStartBuff.size();
 
 	for( DWORD pos = 0; pos + 188 < nss + inSize; pos++ ){
 		if( pos < nss && this->nextStartBuff[pos] == 0x47 || pos >= nss && inData[pos - nss] == 0x47 ){
@@ -86,33 +83,28 @@ BOOL CPacketInit::GetTSData(
 				if( syncOK == FALSE ){
 					this->packetSize = 0;
 				}else if( pos < nss ){
-					this->nextStartSize -= pos;
-					memmove(this->nextStartBuff, this->nextStartBuff + pos, this->nextStartSize);
+					this->nextStartBuff.erase(this->nextStartBuff.begin(), this->nextStartBuff.begin() + pos);
 					//同期済みのときの繰り越しサイズはパケットサイズ未満でなければならない
-					if( this->nextStartSize >= this->packetSize ){
-						this->nextStartSize -= this->packetSize;
-						memmove(this->nextStartBuff, this->nextStartBuff + this->packetSize, this->nextStartSize);
+					if( this->nextStartBuff.size() >= this->packetSize ){
+						this->nextStartBuff.erase(this->nextStartBuff.begin(), this->nextStartBuff.begin() + this->packetSize);
 					}
 					return GetTSData(inData, inSize, outData, outSize);
 				}else{
-					this->nextStartSize = 0;
+					this->nextStartBuff.clear();
 					return GetTSData(inData + (pos - nss), inSize - (pos - nss), outData, outSize);
 				}
 			}
 		}
 	}
 
-	//再同期に失敗。可能なだけ繰り越しておく
+	//再同期に失敗。256バイト以下で可能なだけ繰り越しておく
 	if( inSize >= 256 ){
-		memcpy(this->nextStartBuff, inData + (inSize - 256), 256);
-		this->nextStartSize = 256;
-	}else if( this->nextStartSize + inSize <= 256 ){
-		memcpy(this->nextStartBuff + this->nextStartSize, inData, inSize);
-		this->nextStartSize += inSize;
+		this->nextStartBuff.assign(inData + inSize - 256, inData + inSize);
 	}else{
-		memmove(this->nextStartBuff, this->nextStartBuff + (this->nextStartSize + inSize - 256), 256 - inSize);
-		memcpy(this->nextStartBuff + (256 - inSize), inData, inSize);
-		this->nextStartSize = 256;
+		if( this->nextStartBuff.size() + inSize > 256 ){
+			this->nextStartBuff.erase(this->nextStartBuff.begin(), this->nextStartBuff.end() - (256 - inSize));
+		}
+		this->nextStartBuff.insert(this->nextStartBuff.end(), inData, inData + inSize);
 	}
 	return FALSE;
 }

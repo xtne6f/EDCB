@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "PMTUtil.h"
 
 #include "../Common/EpgTimerUtil.h"

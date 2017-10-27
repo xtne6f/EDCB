@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "AribDescriptor.h"
 #include "../../Common/EpgTimerUtil.h"
 

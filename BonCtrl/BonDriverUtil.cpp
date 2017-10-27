@@ -100,7 +100,7 @@ void CBonDriverUtil::CloseBonDriver()
 UINT WINAPI CBonDriverUtil::DriverThread(LPVOID param)
 {
 	//BonDriver‚ªCOM‚ð—˜—p‚·‚é‚©‚à‚µ‚ê‚È‚¢‚½‚ß
-	CoInitialize(NULL);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	CBonDriverUtil* sys = (CBonDriverUtil*)param;
 	IBonDriver* bonIF = NULL;

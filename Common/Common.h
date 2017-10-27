@@ -11,6 +11,7 @@
 #include <tchar.h>
 #include <windows.h>
 #include <stdarg.h>
+#include <sal.h>
 
 using std::string;
 using std::wstring;
@@ -19,6 +20,10 @@ using std::map;
 using std::multimap;
 using std::vector;
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wlogical-op-parentheses"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#else
 // 'identifier': unreferenced formal parameter
 #pragma warning(disable : 4100)
 
@@ -26,12 +31,15 @@ using std::vector;
 // 'class': assignment operator was implicitly defined as deleted
 #pragma warning(disable : 4512)
 #endif
+#endif
 
 // 適切でないNULLの検出用
 //#undef NULL
 //#define NULL nullptr
 
-inline void _OutputDebugString(const TCHAR* format, ...)
+#define PRINTF_FORMAT_SZ _In_z_ _Printf_format_string_
+
+inline void _OutputDebugString(PRINTF_FORMAT_SZ const TCHAR* format, ...)
 {
 	// TODO: この関数名は予約名違反の上に紛らわしいので変更すべき
 	va_list params;

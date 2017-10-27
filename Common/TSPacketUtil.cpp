@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TSPacketUtil.h"
 
 CTSPacketUtil::CTSPacketUtil(void)

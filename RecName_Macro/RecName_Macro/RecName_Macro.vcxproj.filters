@@ -21,7 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="RecName_PlugIn.def">
       <Filter>ソース ファイル</Filter>
     </None>
@@ -55,6 +54,9 @@
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\PathUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\Common.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
   </ItemGroup>

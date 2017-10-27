@@ -82,6 +82,11 @@ void CBonCtrl::SetEMMMode(BOOL enable)
 	this->tsOut.SetEmm(enable);
 }
 
+void CBonCtrl::SetNoLogScramble(BOOL noLog)
+{
+	this->tsOut.SetNoLogScramble(noLog);
+}
+
 void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount)
 {
 	this->tsBuffMaxCount = tsBuffMaxCount;
@@ -163,7 +168,7 @@ DWORD CBonCtrl::SetCh(
 		return ERR_FALSE;
 	}
 
-	return _SetCh(space, ch);
+	return ProcessSetCh(space, ch);
 }
 
 //ƒ`ƒƒƒ“ƒlƒ‹•ÏX
@@ -188,13 +193,13 @@ DWORD CBonCtrl::SetCh(
 
 	DWORD ret = ERR_FALSE;
 	if( this->chUtil.GetCh( ONID, TSID, SID, space, ch ) == TRUE ){
-		ret = _SetCh(space, ch);
+		ret = ProcessSetCh(space, ch);
 	}
 
 	return ret;
 }
 
-DWORD CBonCtrl::_SetCh(
+DWORD CBonCtrl::ProcessSetCh(
 	DWORD space,
 	DWORD ch,
 	BOOL chScan
@@ -729,7 +734,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 			sys->chSt_space = chkList[chkCount].space;
 			sys->chSt_ch = chkList[chkCount].ch;
 			sys->chSt_chName = chkList[chkCount].chName;
-			sys->_SetCh(chkList[chkCount].space, chkList[chkCount].ch, TRUE);
+			sys->ProcessSetCh(chkList[chkCount].space, chkList[chkCount].ch, TRUE);
 			startTime = GetTickCount();
 			chkNext = FALSE;
 		}else{
@@ -918,7 +923,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			DWORD ch = 0;
 			sys->chUtil.GetCh(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID,
 			                  sys->epgCapChList[chkCount].SID, space, ch);
-			sys->_SetCh(space, ch);
+			sys->ProcessSetCh(space, ch);
 			startTime = GetTickCount();
 			chkNext = FALSE;
 			startCap = FALSE;

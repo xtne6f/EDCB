@@ -13,6 +13,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	SETTING s;
 	s.epgArchivePeriodHour = GetPrivateProfileInt(L"SET", L"EpgArchivePeriodHour", 0, iniPath);
 	s.residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath);
+	s.blinkPreRec = GetPrivateProfileInt(L"SET", L"BlinkPreRec", 0, iniPath) != 0;
 	s.noBalloonTip = GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath) != 0;
 	s.saveNotifyLog = GetPrivateProfileInt(L"SET", L"SaveNotifyLog", 0, iniPath) != 0;
 	s.wakeTime = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath);
@@ -502,6 +503,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	//‚»‚Ì‘¼
 	hwnd = this->hwndOther;
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_SERVER, GetPrivateProfileInt(L"SET", L"EnableTCPSrv", 0, iniPath.c_str()) != 0);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_IPV6, GetPrivateProfileInt(L"SET", L"TCPIPv6", 0, iniPath.c_str()) != 0);
 	SetDlgItemInt(hwnd, IDC_EDIT_SET_TCP_PORT, GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str()), FALSE);
 	SetDlgItemText(hwnd, IDC_EDIT_SET_TCP_ACL, GetPrivateProfileToString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", iniPath.c_str()).c_str());
 	SetDlgItemInt(hwnd, IDC_EDIT_SET_TCP_RES_TO, GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str()), FALSE);
@@ -516,6 +518,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_TIME_SYNC, setting.timeSync);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_RESIDENT, setting.residentMode >= 1);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SHOW_TRAY, setting.residentMode != 1);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BLINK_PRE_REC, setting.blinkPreRec);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP, setting.noBalloonTip);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_NOTIFY_LOG, setting.saveNotifyLog);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG, GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0);
@@ -781,6 +784,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	//‚»‚Ì‘¼
 	hwnd = this->hwndOther;
 	WritePrivateProfileInt(L"SET", L"EnableTCPSrv", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_SERVER), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"TCPIPv6", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_IPV6), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"TCPPort", GetDlgItemInt(hwnd, IDC_EDIT_SET_TCP_PORT, NULL, FALSE), iniPath.c_str());
 	GetDlgItemText(hwnd, IDC_EDIT_SET_TCP_ACL, buff, _countof(buff));
 	WritePrivateProfileString(L"SET", L"TCPAccessControlList", buff, iniPath.c_str());
@@ -792,6 +796,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WritePrivateProfileInt(L"SET", L"ResidentMode",
 	                       GetDlgButtonCheck(hwnd, IDC_CHECK_SET_RESIDENT) ?
 	                           (GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SHOW_TRAY) ? 2 : 1) : 0, iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"BlinkPreRec", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BLINK_PRE_REC), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"NoBalloonTip", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"SaveNotifyLog", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_NOTIFY_LOG), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"SaveDebugLog", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG), iniPath.c_str());
@@ -1148,6 +1153,7 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 			EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_SET_RECNAME_PLUGIN), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			break;
 		case IDC_CHECK_SET_TCP_SERVER:
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_TCP_IPV6), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_TCP_PORT), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_TCP_RES_TO), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_TCP_ACL), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
@@ -1158,6 +1164,10 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 		case IDC_CHECK_SET_RESIDENT:
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_SHOW_TRAY), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_NO_BALLOON_TIP), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
+			//FALL THROUGH!
+		case IDC_CHECK_SET_SHOW_TRAY:
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_BLINK_PRE_REC),
+			             GetDlgButtonCheck(hDlg, IDC_CHECK_SET_RESIDENT) && GetDlgButtonCheck(hDlg, IDC_CHECK_SET_SHOW_TRAY));
 			break;
 		case IDC_BUTTON_SET_RECNAME_PLUGIN:
 			sys->OnBnClickedSetRecNamePlugIn();

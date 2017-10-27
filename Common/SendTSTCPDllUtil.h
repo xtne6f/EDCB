@@ -1,10 +1,7 @@
-#ifndef __SEND_TS_TCP_DLL_UTIL_H__
-#define __SEND_TS_TCP_DLL_UTIL_H__
+#ifndef INCLUDE_SEND_TS_TCP_DLL_UTIL_H
+#define INCLUDE_SEND_TS_TCP_DLL_UTIL_H
 
-#include "SendTSTCP.h"
 #include "ErrDef.h"
-
-using namespace sendtstcp;
 
 class CSendTSTCPDllUtil
 {
@@ -57,17 +54,26 @@ public:
 		);
 		
 protected:
+	typedef int (WINAPI *InitializeDLL)();
+	typedef DWORD (WINAPI *UnInitializeDLL)(int iID);
+	typedef DWORD (WINAPI *AddSendAddrDLL)(int iID, LPCWSTR lpcwszIP, DWORD dwPort);
+	typedef DWORD (WINAPI *ClearSendAddrDLL)(int iID);
+	typedef DWORD (WINAPI *StartSendDLL)(int iID);
+	typedef DWORD (WINAPI *StopSendDLL)(int iID);
+	typedef DWORD (WINAPI *AddSendDataDLL)(int iID, BYTE* pbData, DWORD dwSize);
+	typedef DWORD (WINAPI *ClearSendBuffDLL)(int iID);
+
 	HMODULE m_hModule;
 	int m_iID;
 
-	sendtstcp::InitializeDLL pfnInitializeDLL;
-	sendtstcp::UnInitializeDLL pfnUnInitializeDLL;
-	sendtstcp::AddSendAddrDLL pfnAddSendAddrDLL;
-	sendtstcp::ClearSendAddrDLL pfnClearSendAddrDLL;
-	sendtstcp::StartSendDLL pfnStartSendDLL;
-	sendtstcp::StopSendDLL pfnStopSendDLL;
-	sendtstcp::AddSendDataDLL pfnAddSendDataDLL;
-	sendtstcp::ClearSendBuffDLL pfnClearSendBuffDLL;
+	InitializeDLL pfnInitializeDLL;
+	UnInitializeDLL pfnUnInitializeDLL;
+	AddSendAddrDLL pfnAddSendAddrDLL;
+	ClearSendAddrDLL pfnClearSendAddrDLL;
+	StartSendDLL pfnStartSendDLL;
+	StopSendDLL pfnStopSendDLL;
+	AddSendDataDLL pfnAddSendDataDLL;
+	ClearSendBuffDLL pfnClearSendBuffDLL;
 
 protected:
 	BOOL LoadDll(void);

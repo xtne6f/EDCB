@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "EpgDataCap_BonMain.h"
 
 #include "EpgDataCap_BonDef.h"
@@ -104,6 +104,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 		this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
 	}
 	this->bonCtrl.SetEMMMode(this->enableEMMFlag);
+	this->bonCtrl.SetNoLogScramble(GetPrivateProfileInt( L"SET", L"NoLogScramble", 0, appIniPath.c_str() ) != 0);
 
 	DWORD tsBuffMaxCount = (DWORD)GetPrivateProfileInt( L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str() );
 	int writeBuffMaxCount = GetPrivateProfileInt( L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str() );

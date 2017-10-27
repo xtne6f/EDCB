@@ -16,7 +16,7 @@ public:
 	// outData			[OUT]188バイトに整列したバッファ（次回呼び出しまで保持）
 	// outSize			[OUT]outDataのサイズ（BYTE単位）
 	BOOL GetTSData(
-		BYTE* inData,
+		const BYTE* inData,
 		DWORD inSize,
 		BYTE** outData,
 		DWORD* outSize
@@ -27,8 +27,7 @@ public:
 
 protected:
 	vector<BYTE> outBuff;
-	BYTE nextStartBuff[256];
-	DWORD nextStartSize;
+	vector<BYTE> nextStartBuff;
 
 	DWORD packetSize;
 };

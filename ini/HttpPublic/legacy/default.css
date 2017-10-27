@@ -151,6 +151,19 @@ th, td {
   color: #fff;
 }
 
+.epg-list > div {
+  color: #000;
+}
+
+.epg-list > div > a:link {
+  text-decoration: none;
+}
+
+.epg-list > div > b {
+  background: #f00;
+  color: #fff;
+}
+
 .cont-0 {
   background: #ffffe0;
 }

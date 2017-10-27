@@ -1,5 +1,5 @@
-#ifndef __EPG_DATA_CAP3_DEF_H__
-#define __EPG_DATA_CAP3_DEF_H__
+#ifndef INCLUDE_EPG_DATA_CAP3_DEF_H
+#define INCLUDE_EPG_DATA_CAP3_DEF_H
 
 //EPGデータ取得ステータス
 typedef enum{

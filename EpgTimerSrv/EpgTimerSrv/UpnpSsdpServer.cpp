@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "UpnpSsdpServer.h"
 #include "../../Common/StringUtil.h"
 #include <process.h>

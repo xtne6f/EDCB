@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TunerBankCtrl.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -64,7 +64,7 @@ bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
 	}
 	TUNER_RESERVE_WORK& r = this->reserveMap.insert(std::make_pair(reserve.reserveID, TUNER_RESERVE_WORK())).first->second;
 	static_cast<TUNER_RESERVE&>(r) = reserve;
-	r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | r.reserveID & 0xFFFF;
+	r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | (r.reserveID & 0xFFFF);
 	r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
 	r.state = TR_IDLE;
 	r.retryOpenCount = 0;
@@ -103,7 +103,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 		TUNER_RESERVE_WORK& r = itr->second;
 		static_cast<TUNER_RESERVE&>(r) = *reserve;
 		//内部パラメータを再計算
-		r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | r.reserveID & 0xFFFF;
+		r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | (r.reserveID & 0xFFFF);
 		r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
 		return true;
 	}

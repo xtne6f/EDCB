@@ -1,5 +1,5 @@
-#ifndef __COMMON_DEF_H__
-#define __COMMON_DEF_H__
+#ifndef INCLUDE_COMMON_DEF_H
+#define INCLUDE_COMMON_DEF_H
 
 #include "ErrDef.h"
 #include "StructDef.h"

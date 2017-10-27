@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SyoboiCalUtil.h"
 
 #include <winhttp.h>
@@ -219,6 +219,8 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	LPCWSTR result = L"1";
 	HINTERNET connect = NULL;
 	HINTERNET request = NULL;
+	DWORD statusCode;
+	DWORD statusCodeSize;
 
 	if( WinHttpSetTimeouts(session, 15000, 15000, 15000, 15000) == FALSE ){
 		result = L"0 SetTimeouts";
@@ -256,8 +258,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 		goto EXIT;
 	}
 	//HTTPのステータスコード確認
-	DWORD statusCode;
-	DWORD statusCodeSize = sizeof(statusCode);
+	statusCodeSize = sizeof(statusCode);
 	if( WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX,
 	                        &statusCode, &statusCodeSize, WINHTTP_NO_HEADER_INDEX) == FALSE ){
 		statusCode = 0;

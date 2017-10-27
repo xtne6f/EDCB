@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TSOut.h"
 
 #include "../Common/TimeUtil.h"
@@ -22,6 +22,7 @@ CTSOut::CTSOut(void)
 	this->serviceOnlyFlag = FALSE;
 
 	this->nextCtrlID = 1;
+	this->noLogScramble = FALSE;
 }
 
 
@@ -327,10 +328,10 @@ void CTSOut::CheckNeedPID()
 				name = "HEVC VIDEO";
 				break;
 			case 0x06:
-				name = "字幕";
+				name = "\x8e\x9a\x96\x8b"; //(CP932)"字幕"
 				break;
 			case 0x0D:
-				name = "データカルーセル";
+				name = "\x83\x66\x81\x5b\x83\x5e\x83\x4a\x83\x8b\x81\x5b\x83\x5a\x83\x8b"; //(CP932)"データカルーセル"
 				break;
 			default:
 				Format(name, "stream_type 0x%0X", itrPID->second);
@@ -601,6 +602,7 @@ BOOL CTSOut::CreateServiceCtrl(
 	auto itr = this->serviceUtilMap.insert(std::make_pair(*id, std::unique_ptr<COneServiceUtil>(new COneServiceUtil))).first;
 	itr->second->SetEpgUtil(&this->epgUtil);
 	itr->second->SetBonDriver(bonFile);
+	itr->second->SetNoLogScramble(noLogScramble);
 
 	return TRUE;
 }
@@ -1041,3 +1043,14 @@ void CTSOut::SetBonDriver(
 	bonFile = bonDriver;
 }
 
+void CTSOut::SetNoLogScramble(
+	BOOL noLog
+	)
+{
+	CBlockLock lock(&this->objLock);
+
+	for( auto itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){
+		itr->second->SetNoLogScramble(noLog);
+	}
+	noLogScramble = noLog;
+}

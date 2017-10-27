@@ -159,11 +159,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="SendTSTCP.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Common\BlockLock.h" />
+    <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
+    <ClInclude Include="..\..\Common\InstanceManager.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SendTSTCP.h" />

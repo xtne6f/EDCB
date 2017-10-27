@@ -1,5 +1,5 @@
-#ifndef __STRUCT_DEF_H__
-#define __STRUCT_DEF_H__
+#ifndef INCLUDE_STRUCT_DEF_H
+#define INCLUDE_STRUCT_DEF_H
 
 #include "EpgDataCap3Def.h"
 

@@ -1,5 +1,5 @@
-#ifndef __WRITE_PLUGIN_H__
-#define __WRITE_PLUGIN_H__
+#ifndef INCLUDE_WRITE_PLUGIN_H
+#define INCLUDE_WRITE_PLUGIN_H
 
 #include <Windows.h>
 

@@ -16,6 +16,7 @@ ct=[=[
     <li><a href="recinfo.html">録画済み一覧</a></li>
     <li><a href="autoaddepg.html">EPG予約一覧</a></li>
     <li><a href="epg.html">番組表</a></li>
+    <li><a href="epglist.html">リスト番組表</a></li>
     <!--<li><a href="addprogres.html">プログラム予約追加(必要なら自作してください)</a></li>-->
     <li><a href="notifylog.lua?c=8192">情報通知ログ</a></li>
     <li><a href="debuglog.lua?c=8192">デバッグ出力</a></li>
@@ -28,4 +29,9 @@ ct=[=[
 </body>
 </html>
 ]=]
-mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+if not mg.request_info.uri:find('/$') and
+   not mg.request_info.uri:lower():find('%.html$') then
+  mg.write(Response(301, nil, nil, 0)..'Location: '..mg.request_info.uri..'/\r\n\r\n')
+else
+  mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+end

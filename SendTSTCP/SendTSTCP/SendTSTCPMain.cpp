@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SendTSTCPMain.h"
 #include "../../Common/BlockLock.h"
 
@@ -22,28 +22,10 @@ CSendTSTCPMain::CSendTSTCPMain(void)
 
 CSendTSTCPMain::~CSendTSTCPMain(void)
 {
-	if( m_hSendThread != NULL ){
-		::SetEvent(m_hStopSendEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(m_hSendThread, 2000) == WAIT_TIMEOUT ){
-			::TerminateThread(m_hSendThread, 0xffffffff);
-		}
-		CloseHandle(m_hSendThread);
-		m_hSendThread = NULL;
-	}
-	::CloseHandle(m_hStopSendEvent);
-	m_hStopSendEvent = NULL;
+	UnInitialize();
 
 	DeleteCriticalSection(&m_buffLock);
 	DeleteCriticalSection(&m_sendLock);
-
-	map<wstring, SEND_INFO>::iterator itr;
-	for( itr = m_SendList.begin(); itr != m_SendList.end(); itr){
-		if( itr->second.sock != INVALID_SOCKET ){
-			closesocket(itr->second.sock);
-		}
-	}
-	m_SendList.clear();
 
 	WSACleanup();
 }
@@ -284,7 +266,7 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 						(char*)&buffSend.front() + (buffSend.size() - adjust),
 						(int)adjust,
 						0
-						) == INVALID_SOCKET){
+						) == SOCKET_ERROR){
 							closesocket(itr->second.sock);
 							itr->second.sock = INVALID_SOCKET;
 							itr->second.bConnect = FALSE;
