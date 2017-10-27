@@ -235,6 +235,8 @@
     <ClInclude Include="..\..\BonCtrl\SendUDP.h" />
     <ClInclude Include="..\..\BonCtrl\TSOut.h" />
     <ClInclude Include="..\..\BonCtrl\WriteTSFile.h" />
+    <ClInclude Include="..\..\Common\BlockLock.h" />
+    <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />

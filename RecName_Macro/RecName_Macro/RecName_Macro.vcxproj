@@ -158,6 +158,7 @@
     <None Include="RecName_PlugIn.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
