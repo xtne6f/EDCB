@@ -23,7 +23,6 @@ namespace EpgTimer
     /// </summary>
     public partial class TunerReserveMainView : UserControl
     {
-        private List<TunerNameViewItem> tunerList = new List<TunerNameViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
 
@@ -51,7 +50,6 @@ namespace EpgTimer
             tunerReserveView.ClearInfo();
             tunerReserveTimeView.ClearInfo();
             tunerReserveNameView.ClearInfo();
-            tunerList.Clear();
             reserveList.Clear();
 
             return true;
@@ -592,103 +590,88 @@ namespace EpgTimer
             tunerReserveView.ClearInfo();
             tunerReserveTimeView.ClearInfo();
             tunerReserveNameView.ClearInfo();
-            List<DateTime> timeList = new List<DateTime>();
-            tunerList.Clear();
+            var timeList = new List<DateTime>();
+            var tunerList = new List<TunerNameViewItem>();
             reserveList.Clear();
             try
             {
                 double leftPos = 0;
-                for (int i = 0; i < CommonManager.Instance.DB.TunerReserveList.Count; i++)
+                foreach (TunerReserveInfo info in CommonManager.Instance.DB.TunerReserveList.Values)
                 {
                     double width = 150;
-                    TunerReserveInfo info = CommonManager.Instance.DB.TunerReserveList.Values.ElementAt(i);
-                    TunerNameViewItem tunerInfo = new TunerNameViewItem(info, width);
-                    tunerList.Add(tunerInfo);
-
-                    List<ReserveViewItem> tunerAddList = new List<ReserveViewItem>();
-                    for (int j = 0; j < info.reserveList.Count; j++ )
+                    int addOffset = reserveList.Count();
+                    foreach (uint reserveID in info.reserveList)
                     {
-                        UInt32 reserveID = (UInt32)info.reserveList[j];
-                        if (CommonManager.Instance.DB.ReserveList.ContainsKey(reserveID) == false)
+                        ReserveData reserveInfo;
+                        if (CommonManager.Instance.DB.ReserveList.TryGetValue(reserveID, out reserveInfo) == false)
                         {
                             continue;
                         }
-                        ReserveData reserveInfo = CommonManager.Instance.DB.ReserveList[reserveID];
-                        ReserveViewItem viewItem = new ReserveViewItem(CommonManager.Instance.DB.ReserveList[reserveID]);
 
-                        Int32 duration = (Int32)reserveInfo.DurationSecond;
                         DateTime startTime = reserveInfo.StartTime;
+                        DateTime endTime = startTime.AddSeconds(reserveInfo.DurationSecond);
                         if (reserveInfo.RecSetting.UseMargineFlag == 1)
                         {
                             if (reserveInfo.RecSetting.StartMargine < 0)
                             {
-                                startTime = reserveInfo.StartTime.AddSeconds(reserveInfo.RecSetting.StartMargine*-1);
-                                duration += reserveInfo.RecSetting.StartMargine;
+                                startTime = startTime.AddSeconds(-reserveInfo.RecSetting.StartMargine);
+                                endTime = endTime.AddSeconds(reserveInfo.RecSetting.StartMargine);
                             }
                             if (reserveInfo.RecSetting.EndMargine < 0)
                             {
-                                duration += reserveInfo.RecSetting.EndMargine;
+                                endTime = endTime.AddSeconds(reserveInfo.RecSetting.EndMargine);
                             }
                         }
-                        DateTime EndTime;
-                        EndTime = startTime.AddSeconds(duration);
-                        //if ((duration / 60) < Settings.Instance.MinHeight)
-                        //{
-                        //    duration = (int)Settings.Instance.MinHeight;
-                        //}
 
-                        viewItem.Height = Math.Floor((duration / 60) * Settings.Instance.MinHeight);
-                        if (viewItem.Height == 0)
+                        var viewItem = new ReserveViewItem(reserveInfo);
+                        viewItem.Height = Math.Floor((endTime - startTime).TotalMinutes * Settings.Instance.MinHeight);
+                        if (viewItem.Height < Settings.Instance.MinHeight)
                         {
                             viewItem.Height = Settings.Instance.MinHeight;
                         }
                         viewItem.Width = 150;
                         viewItem.LeftPos = leftPos;
 
-                        foreach (ReserveViewItem addItem in tunerAddList)
+                        for (int i = addOffset; i < reserveList.Count; i++)
                         {
-                            ReserveData addInfo = addItem.ReserveInfo;
-                            Int32 durationAdd = (Int32)addInfo.DurationSecond;
+                            ReserveData addInfo = reserveList[i].ReserveInfo;
                             DateTime startTimeAdd = addInfo.StartTime;
+                            DateTime endTimeAdd = startTimeAdd.AddSeconds(addInfo.DurationSecond);
                             if (addInfo.RecSetting.UseMargineFlag == 1)
                             {
                                 if (addInfo.RecSetting.StartMargine < 0)
                                 {
-                                    startTimeAdd = addInfo.StartTime.AddSeconds(addInfo.RecSetting.StartMargine*-1);
-                                    durationAdd += addInfo.RecSetting.StartMargine;
+                                    startTimeAdd = startTimeAdd.AddSeconds(-addInfo.RecSetting.StartMargine);
+                                    endTimeAdd = endTimeAdd.AddSeconds(addInfo.RecSetting.StartMargine);
                                 }
                                 if (addInfo.RecSetting.EndMargine < 0)
                                 {
-                                    durationAdd += addInfo.RecSetting.EndMargine;
+                                    endTimeAdd = endTimeAdd.AddSeconds(addInfo.RecSetting.EndMargine);
                                 }
                             }
-                            DateTime endTimeAdd;
-                            endTimeAdd = startTimeAdd.AddSeconds(durationAdd);
 
                             if ((startTimeAdd <= startTime && startTime < endTimeAdd) ||
-                                (startTimeAdd < EndTime && EndTime <= endTimeAdd) || 
-                                (startTime <= startTimeAdd && startTimeAdd < EndTime) ||
-                                (startTime < endTimeAdd && endTimeAdd <= EndTime)
+                                (startTimeAdd < endTime && endTime <= endTimeAdd) ||
+                                (startTime <= startTimeAdd && startTimeAdd < endTime) ||
+                                (startTime < endTimeAdd && endTimeAdd <= endTime)
                                 )
                             {
-                                if (addItem.LeftPos >= viewItem.LeftPos)
+                                if (reserveList[i].LeftPos == viewItem.LeftPos)
                                 {
+                                    //追加済みのものと重なるので移動して再チェック
+                                    i = addOffset - 1;
                                     viewItem.LeftPos += 150;
-                                    if (viewItem.LeftPos - leftPos >= width)
-                                    {
-                                        width += 150;
-                                    }
+                                    width = Math.Max(width, viewItem.LeftPos + viewItem.Width - leftPos);
                                 }
                             }
                         }
 
                         reserveList.Add(viewItem);
-                        tunerAddList.Add(viewItem);
 
                         //必要時間リストの構築
 
                         DateTime chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
-                        while (chkStartTime <= EndTime)
+                        while (chkStartTime <= endTime)
                         {
                             int index = timeList.BinarySearch(chkStartTime);
                             if (index < 0)
@@ -699,7 +682,7 @@ namespace EpgTimer
                         }
 
                     }
-                    tunerInfo.Width = width;
+                    tunerList.Add(new TunerNameViewItem(info, width));
                     leftPos += width;
                 }
 
@@ -711,7 +694,7 @@ namespace EpgTimer
                     {
                         if (item.ReserveInfo.RecSetting.StartMargine < 0)
                         {
-                            startTime = item.ReserveInfo.StartTime.AddSeconds(item.ReserveInfo.RecSetting.StartMargine*-1);
+                            startTime = startTime.AddSeconds(-item.ReserveInfo.RecSetting.StartMargine);
                         }
                     }
 
