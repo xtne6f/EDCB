@@ -223,3 +223,7 @@ th, td {
 .past {
   opacity: 0.5;
 }
+
+#now {
+  border-bottom: 2px solid #f00;
+}

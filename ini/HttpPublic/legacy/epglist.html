@@ -47,7 +47,7 @@ if sid==0 then
   end
   ctt={ct..'<div class="nav">\n<ul>\n'}
   for i,v in ipairs(st) do
-    table.insert(ctt, '<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'">'..v.service_name..'</a></li>\n')
+    table.insert(ctt, '<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'#now">'..v.service_name..'</a></li>\n')
   end
   table.insert(ctt, '</ul>\n</div>\n')
 else
@@ -70,8 +70,12 @@ else
       v.eventGroupInfo.eventDataList[1].sid~=v.sid or
       v.eventGroupInfo.eventDataList[1].eid~=v.eid)
     if not sub then
+      if v.startTime and os.time(v.startTime)+timezone <= now+9*3600 and
+         #et>i and et[i+1].startTime and os.time(et[i+1].startTime)+timezone > now+9*3600 then
+        v.now=true
+      end
       cont=v.contentInfoList and #v.contentInfoList>0 and math.floor(v.contentInfoList[1].content_nibble/256)%16 or 16
-      table.insert(ctt, '<div class="cont-'..cont..(v.past and ' past' or '')..'">'
+      table.insert(ctt, '<div class="cont-'..cont..(v.past and ' past"' or '"')..(v.now and ' id="now"' or '')..'>'
         ..(v.startTime and ('%02d%s %02d:%02d'):format(v.startTime.day, ({'日','月','火','水','木','金','土'})[v.startTime.wday], v.startTime.hour, v.startTime.min) or '不明')
         ..(not v.past and rt[('%04X%04X%04X%04X'):format(v.onid, v.tsid, v.sid, v.eid)] and ' <b>予</b>' or '')
         ..' <a href="'
