@@ -1,3 +1,5 @@
+-- vim:set ft=lua:
+-- このスクリプトは原作のREST API互換用で今は使われていません。配置する必要はありません。
 key={
   onid=mg.get_var(mg.request_info.query_string,'ONID'),
   tsid=mg.get_var(mg.request_info.query_string,'TSID'),
