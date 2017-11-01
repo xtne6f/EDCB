@@ -615,7 +615,6 @@ namespace EpgTimer
                             if (reserveInfo.RecSetting.StartMargine < 0)
                             {
                                 startTime = startTime.AddSeconds(-reserveInfo.RecSetting.StartMargine);
-                                endTime = endTime.AddSeconds(reserveInfo.RecSetting.StartMargine);
                             }
                             if (reserveInfo.RecSetting.EndMargine < 0)
                             {
@@ -642,7 +641,6 @@ namespace EpgTimer
                                 if (addInfo.RecSetting.StartMargine < 0)
                                 {
                                     startTimeAdd = startTimeAdd.AddSeconds(-addInfo.RecSetting.StartMargine);
-                                    endTimeAdd = endTimeAdd.AddSeconds(addInfo.RecSetting.StartMargine);
                                 }
                                 if (addInfo.RecSetting.EndMargine < 0)
                                 {
