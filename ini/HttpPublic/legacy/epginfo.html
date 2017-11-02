@@ -34,7 +34,7 @@ if not r and presetID==65535 then
   presetID=0
 end
 
-ct=ct..'    <dt>番組情報</dt><dd>\n'..string.gsub(_ConvertEpgInfoText2(onid, tsid, sid, eid), '\r?\n', '<br>\n')..'</dd>\n'
+ct=ct..'    <dt>番組情報</dt><dd>\n'..ConvertEpgInfoText2(onid,tsid,sid,eid):gsub('\r?\n','<br>\n')..'</dd>\n'
 if r then
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct=ct..'    <dt>プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）</dt><dd>\n'

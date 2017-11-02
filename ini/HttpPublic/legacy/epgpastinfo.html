@@ -24,7 +24,7 @@ _startTime=tonumber(_startTime) or 0
 edcb.htmlEscape=15
 et=edcb.EnumEventInfoArchive({{onid=_onid, tsid=_tsid, sid=_sid}}, {startTime=os.date('!*t',_startTime), durationSecond=1})
 if et and #et~=0 then
-  ct=ct..'    <dt>番組情報</dt><dd>\n'..string.gsub(_ConvertEpgInfoText2(et[1]), '\r?\n', '<br>\n')..'</dd>\n'
+  ct=ct..'    <dt>番組情報</dt><dd>\n'..ConvertEpgInfoText2(et[1]):gsub('\r?\n','<br>\n')..'</dd>\n'
 end
 
 ct=ct..[=[

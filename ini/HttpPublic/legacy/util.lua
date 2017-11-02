@@ -1,5 +1,5 @@
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
-function _ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
+function ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
   local s, v = '', (type(onidOrEpg)=='table' and onidOrEpg or edcb.SearchEpg(onidOrEpg, tsid, sid, eid))
   if v then
     s=s..(v.startTime and FormatTimeAndDuration(v.startTime, v.durationSecond)..(v.durationSecond and '' or '～未定') or '未定')..'\n'
@@ -37,10 +37,10 @@ function _ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
       s=s..'\n'
     end
     s=s..'\n'..(NetworkType(v.onid)=='地デジ' and '' or v.freeCAFlag and '有料放送\n' or '無料放送\n')
-      ..string.format('OriginalNetworkID:%d(0x%04X)\n', v.onid, v.onid)
-      ..string.format('TransportStreamID:%d(0x%04X)\n', v.tsid, v.tsid)
-      ..string.format('ServiceID:%d(0x%04X)\n', v.sid, v.sid)
-      ..string.format('EventID:%d(0x%04X)\n', v.eid, v.eid)
+      ..('OriginalNetworkID:%d(0x%04X)\n'):format(v.onid,v.onid)
+      ..('TransportStreamID:%d(0x%04X)\n'):format(v.tsid,v.tsid)
+      ..('ServiceID:%d(0x%04X)\n'):format(v.sid,v.sid)
+      ..('EventID:%d(0x%04X)\n'):format(v.eid,v.eid)
   end
   return s
 end

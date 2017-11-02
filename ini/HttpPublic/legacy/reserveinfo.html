@@ -28,7 +28,7 @@ if r then
       end
     end
   end
-  epgInfo=_ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
+  epgInfo=ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct=ct..'  <dl>\n'
     ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..string.gsub(epgInfo, '\r?\n', '<br>\n')
