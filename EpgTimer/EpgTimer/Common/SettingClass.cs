@@ -156,6 +156,8 @@ namespace EpgTimer
         public string Cust2BtnCmdOpt { get; set; }
         public List<string> AndKeyList { get; set; }
         public List<string> NotKeyList { get; set; }
+        public string SearchKeyAndKey { get; set; }
+        public string SearchKeyNotKey { get; set; }
         public bool SearchKeyRegExp { get; set; }
         public bool SearchKeyTitleOnly { get; set; }
         public bool SearchKeyAimaiFlag { get; set; }
@@ -333,6 +335,8 @@ namespace EpgTimer
             Cust2BtnCmdOpt = "";
             AndKeyList = new List<string>();
             NotKeyList = new List<string>();
+            SearchKeyAndKey = "";
+            SearchKeyNotKey = "";
             SearchKeyRegExp = false;
             SearchKeyTitleOnly = false;
             SearchKeyAimaiFlag = false;
@@ -716,6 +720,8 @@ namespace EpgTimer
 
         public void GetDefSearchSetting(EpgSearchKeyInfo defKey)
         {
+            defKey.andKey = SearchKeyAndKey;
+            defKey.notKey = SearchKeyNotKey;
             defKey.regExpFlag = SearchKeyRegExp ? 1 : 0;
             defKey.aimaiFlag = (byte)(SearchKeyAimaiFlag ? 1 : 0);
             defKey.titleOnlyFlag = SearchKeyTitleOnly ? 1 : 0;

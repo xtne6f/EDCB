@@ -226,6 +226,8 @@ namespace EpgTimer.Setting
             {
                 dlg.GetSetting(ref defSearchKey);
                 var settings = (Settings)DataContext;
+                settings.SearchKeyAndKey = defSearchKey.andKey;
+                settings.SearchKeyNotKey = defSearchKey.notKey;
                 settings.SearchKeyRegExp = defSearchKey.regExpFlag != 0;
                 settings.SearchKeyAimaiFlag = defSearchKey.aimaiFlag != 0;
                 settings.SearchKeyTitleOnly = defSearchKey.titleOnlyFlag != 0;
