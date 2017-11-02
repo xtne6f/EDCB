@@ -193,6 +193,46 @@ function DocumentToNativePath(path)
   return nil
 end
 
+--現在の変換モードでHTMLエスケープする
+function EdcbHtmlEscape(s)
+  return edcb.Convert('utf-8','utf-8',s)
+end
+
+--PCRをもとにファイルの長さを概算する(少なめに報告するかもしれない)
+function GetDurationSec(f)
+  local fsize=f:seek('end') or 0
+  if fsize>1880000 and f:seek('set') then
+    for i=1,10000 do
+      local buf=f:read(188)
+      if buf and #buf==188 and buf:byte(1)==0x47 then
+        --adaptation_field_control and adaptation_field_length and PCR_flag
+        if math.floor(buf:byte(4)/16)%4>=2 and buf:byte(5)>=5 and math.floor(buf:byte(6)/16)%2~=0 then
+          local pcr=((buf:byte(7)*256+buf:byte(8))*256+buf:byte(9))*256+buf:byte(10)
+          local pid=buf:byte(2)%32*256+buf:byte(3)
+          if f:seek('set',(math.floor(fsize/188)-10000)*188) then
+            for j=1,10000 do
+              buf=f:read(188)
+              if buf and #buf==188 and buf:byte(1)==0x47 then
+                if math.floor(buf:byte(4)/16)%4>=2 and buf:byte(5)>=5 and math.floor(buf:byte(6)/16)%2~=0 and
+                   pid==buf:byte(2)%32*256+buf:byte(3) then
+                  local pcr2=((buf:byte(7)*256+buf:byte(8))*256+buf:byte(9))*256+buf:byte(10)
+                  return math.floor((pcr2+0x100000000-pcr)%0x100000000/45000),fsize
+                end
+              else
+                break
+              end
+            end
+          end
+          break
+        end
+      else
+        break
+      end
+    end
+  end
+  return 0,fsize
+end
+
 --レスポンスを生成する
 function Response(code,ctype,charset,cl)
   return 'HTTP/1.1 '..code..' '..mg.get_response_code_text(code)
