@@ -114,6 +114,12 @@ namespace EpgTimer.EpgView
             set;
         }
 
+        public bool ExtInfoMode
+        {
+            get;
+            set;
+        }
+
         public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceDictionaryNormal
         {
             get;
@@ -222,7 +228,7 @@ namespace EpgTimer.EpgView
                         //説明
                         string detail = info.EventInfo.ShortInfo.text_char;
                         //詳細
-                        //detail += info.EventInfo.ExtInfo == null ? "" : "\r\n\r\n" + info.EventInfo.ExtInfo.text_char;
+                        detail += ExtInfoMode == false || info.EventInfo.ExtInfo == null ? "" : "\r\n\r\n" + info.EventInfo.ExtInfo.text_char;
                         if (ReplaceDictionaryNormal != null)
                         {
                             detail = CommonManager.ReplaceText(detail, ReplaceDictionaryNormal);

@@ -133,6 +133,7 @@ namespace EpgTimer
         public bool EpgToolTipNoViewOnly { get; set; }
         public int EpgToolTipViewWait { get; set; }
         public bool EpgPopup { get; set; }
+        public bool EpgExtInfoPopup { get; set; }
         public bool EpgGradation { get; set; }
         public bool EpgGradationHeader { get; set; }
         public string ResColumnHead { get; set; }
@@ -312,6 +313,7 @@ namespace EpgTimer
             EpgToolTipNoViewOnly = true;
             EpgToolTipViewWait = 1500;
             EpgPopup = true;
+            EpgExtInfoPopup = false;
             EpgGradation = true;
             EpgGradationHeader = true;
             ResColumnHead = "";

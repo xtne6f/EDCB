@@ -239,6 +239,7 @@ namespace EpgTimer.EpgView
             popupItemPanel.BorderLeftSize = Settings.Instance.EpgBorderLeftSize;
             popupItemPanel.BorderTopSize = Settings.Instance.EpgBorderTopSize;
             popupItemPanel.IsTitleIndent = Settings.Instance.EpgTitleIndent;
+            popupItemPanel.ExtInfoMode = Settings.Instance.EpgExtInfoPopup;
             popupItemPanel.ReplaceDictionaryNormal = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePattern);
             popupItemPanel.ReplaceDictionaryTitle = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePatternTitle);
             popupItemPanel.ItemFontNormal = new EpgViewPanel.ItemFont(Settings.Instance.FontName, false, true);
