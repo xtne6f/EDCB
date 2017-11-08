@@ -2,65 +2,39 @@
 #include "SettingDlg.h"
 #include "resource.h"
 
-wstring g_macro = L"";
-
-CSettingDlg::CSettingDlg(void)
+INT_PTR CSettingDlg::CreateSettingDialog(HINSTANCE hInstance, HWND parentWnd, wstring& macro_)
 {
+	this->macro = &macro_;
+	return DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG_MACRO), parentWnd, DlgProc, (LPARAM)this);
 }
 
-
-CSettingDlg::~CSettingDlg(void)
-{
-}
-
-DWORD CSettingDlg::CreateSettingDialog(HINSTANCE hInstance, HWND parentWnd)
-{
-	DWORD ret = 0;
-
-	g_macro = this->macro;
-	ret = (DWORD)DialogBox(hInstance,MAKEINTRESOURCE(IDD_DIALOG_MACRO), parentWnd, (DLGPROC)DlgProc );
-	if( ret == IDOK ){
-		this->macro = g_macro;
-	}
-
-	return ret;
-}
-
-LRESULT CALLBACK CSettingDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPARAM lp)
+INT_PTR CALLBACK CSettingDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
 	switch (msg) {
-		case WM_KEYDOWN:
-			if(wp == VK_RETURN){
-				{
-					WCHAR buff[1024] = L"";
-					GetDlgItemText(hDlgWnd,IDC_EDIT_MACRO, buff, 1024);
-					g_macro = buff;
-				}
-				EndDialog(hDlgWnd, IDOK);
-			}
-			break;
 		case WM_INITDIALOG:
-			SetDlgItemText(hDlgWnd, IDC_EDIT_MACRO, g_macro.c_str());
+			{
+				CSettingDlg* sys = (CSettingDlg*)lp;
+				SetWindowLongPtr(hDlgWnd, DWLP_USER, (LONG_PTR)sys);
+				SetDlgItemText(hDlgWnd, IDC_EDIT_MACRO, sys->macro->c_str());
+			}
 			return FALSE;
         case WM_COMMAND:
 			switch (LOWORD(wp)) {
 				case IDOK:
 					{
-						WCHAR buff[1024] = L"";
-						GetDlgItemText(hDlgWnd,IDC_EDIT_MACRO, buff, 1024);
-						g_macro = buff;
+						CSettingDlg* sys = (CSettingDlg*)GetWindowLongPtr(hDlgWnd, DWLP_USER);
+						vector<WCHAR> buff(GetWindowTextLength(GetDlgItem(hDlgWnd, IDC_EDIT_MACRO)) + 1, L'\0');
+						GetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_MACRO), buff.data(), (int)buff.size());
+						*sys->macro = buff.data();
 					}
 					EndDialog(hDlgWnd, IDOK);
 					break;
 				case IDCANCEL:
 					EndDialog(hDlgWnd, IDCANCEL);
 					break;
-				default:
-					return FALSE;
-				}
-		default:
+			}
 			return FALSE;
 	}
-	return TRUE;
+	return FALSE;
 }
 

@@ -5,9 +5,8 @@
 class CConvertMacro2
 {
 public:
-	CConvertMacro2(void);
-	~CConvertMacro2(void);
-
-	BOOL Convert(wstring macro, PLUGIN_RESERVE_INFO* info, wstring& convert);
+	static wstring Convert(const wstring& macro, const PLUGIN_RESERVE_INFO* info);
+private:
+	static BOOL ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, wstring& convert);
 };
 

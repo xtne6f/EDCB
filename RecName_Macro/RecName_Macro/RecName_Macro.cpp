@@ -7,7 +7,7 @@
 #include "RecName_PlugIn.h"
 #include "SettingDlg.h"
 #include "ConvertMacro2.h"
-#include <tchar.h>
+#include "../../Common/PathUtil.h"
 
 #define PLUGIN_NAME L"É}ÉNÉç PlugIn"
 
@@ -54,19 +54,15 @@ void WINAPI Setting(
 	HWND parentWnd
 	)
 {
-	WCHAR dllPath[512] = L"";
-	GetModuleFileName(g_instance, dllPath, 512);
-
-	wstring iniPath = dllPath;
-	iniPath += L".ini";
-
-	WCHAR buff[1024] = L"";
-	GetPrivateProfileString(L"SET", L"Macro", L"$Title$.ts", buff, 1024, iniPath.c_str());
-
-	CSettingDlg dlg;
-	dlg.macro = buff;
-	if( dlg.CreateSettingDialog(g_instance, parentWnd) == IDOK ){
-		WritePrivateProfileString(L"SET", L"Macro", dlg.macro.c_str(), iniPath.c_str());
+	WCHAR dllPath[512];
+	DWORD dwRet = GetModuleFileName(g_instance, dllPath, 512);
+	if( dwRet && dwRet < 512 ){
+		wstring iniPath = wstring(dllPath) + L".ini";
+		wstring macro = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", iniPath.c_str());
+		CSettingDlg dlg;
+		if( dlg.CreateSettingDialog(g_instance, parentWnd, macro) == IDOK ){
+			WritePrivateProfileString(L"SET", L"Macro", macro.c_str(), iniPath.c_str());
+		}
 	}
 }
 
@@ -123,30 +119,28 @@ BOOL WINAPI ConvertRecName3(
 	if( recNamesize == NULL ){
 		return FALSE;
 	}
-	WCHAR buff[1024];
+	wstring buff;
 	if( pattern == NULL ){
-		wcscpy_s(buff, L"$Title$.ts");
-		pattern = buff;
+		buff = L"$Title$.ts";
 		WCHAR dllPath[512];
 		DWORD dwRet = GetModuleFileName(g_instance, dllPath, 512);
 		if( dwRet && dwRet < 512 ){
-			GetPrivateProfileString(L"SET", L"Macro", L"$Title$.ts", buff, 1024, (wstring(dllPath) + L".ini").c_str());
+			buff = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", (wstring(dllPath) + L".ini").c_str());
 		}
+		pattern = buff.c_str();
 	}
 
-	wstring convert = L"";
-	CConvertMacro2 convertMacro;
-	BOOL ret = convertMacro.Convert(pattern, info, convert);
+	wstring convert = CConvertMacro2::Convert(pattern, info);
 	if( recName == NULL ){
 		*recNamesize = (DWORD)convert.size()+1;
 	}else{
 		if( *recNamesize < (DWORD)convert.size()+1 ){
 			*recNamesize = (DWORD)convert.size()+1;
-			ret = FALSE;
+			return FALSE;
 		}else{
 			wcscpy_s(recName, *recNamesize, convert.c_str());
 		}
 	}
 
-	return ret;
+	return TRUE;
 }

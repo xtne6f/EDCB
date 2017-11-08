@@ -3,15 +3,10 @@
 class CSettingDlg
 {
 public:
-	CSettingDlg(void);
-	~CSettingDlg(void);
-
-	DWORD CreateSettingDialog(HINSTANCE hInstance, HWND parentWnd);
-
-public:
-	wstring macro;
+	INT_PTR CreateSettingDialog(HINSTANCE hInstance, HWND parentWnd, wstring& macro_);
 
 protected:
-	static LRESULT CALLBACK DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPARAM lp);
+	static INT_PTR CALLBACK DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPARAM lp);
+	wstring* macro;
 };
 
