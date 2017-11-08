@@ -9,7 +9,7 @@ static inline LONGLONG Create64Key(WORD onid, WORD tsid, WORD sid) { return sid 
 //EventIDÇunsigned __int64Ç∆ÇµÇƒÉLÅ[Ç…Ç∑ÇÈ
 static inline ULONGLONG Create64PgKey(WORD onid, WORD tsid, WORD sid, WORD eid) { return eid | (DWORD)sid << 16 | (ULONGLONG)tsid << 32 | (ULONGLONG)onid << 48; }
 //CRC32ÇÇ‡Ç∆ÇﬂÇÈ
-unsigned long CalcCrc32(int n, const BYTE* c);
+DWORD CalcCrc32(int n, const BYTE* c);
 //MJD->FILETIMEïœä∑
 FILETIME MJDtoFILETIME(DWORD mjd, DWORD bcdTime = 0);
 

@@ -130,13 +130,13 @@ BOOL CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount)
 		status.param3 = this->notifyCount;
 		*info = status;
 		return TRUE;
-	}else if( this->notifySentList.empty() || targetCount - this->notifySentList.back().param3 < 0x80000000UL ){
+	}else if( this->notifySentList.empty() || targetCount - this->notifySentList.back().param3 < 0x80000000 ){
 		//存在するかどうかは即断できる
 		return FALSE;
 	}else{
 		//巡回カウンタがtargetCountよりも大きくなる最初の通知を返す
 		*info = *std::find_if(this->notifySentList.begin(), this->notifySentList.end(),
-		                      [=](const NOTIFY_SRV_INFO& a) { return targetCount - a.param3 >= 0x80000000UL; });
+		                      [=](const NOTIFY_SRV_INFO& a) { return targetCount - a.param3 >= 0x80000000; });
 		return TRUE;
 	}
 }
