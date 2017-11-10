@@ -1,794 +1,794 @@
-�l����10.69����̉��ϐ���
+﻿人柱版10.69からの改変説明
 
-���T�v��
-Readme.txt�AReadme_EpgDataCap_Bon.txt�AReadme_EpgTimer.txt�͊�{�I�ɐl����10.69
-�̂܂܂ł��B�X�V������History.txt�Ɉڂ���Ă��܂����A���łɓ��e���X�V���Ă��܂�
-��B���m�ȗ����͈ȉ����Q�Ƃ��Ă�������:
+■概要■
+Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人柱版10.69
+のままです。更新履歴はHistory.txtに移されていますが、すでに内容を更新していませ
+ん。正確な履歴は以下を参照してください:
 https://github.com/xtne6f/EDCB/commits/work
-https://github.com/xtne6f/EDCB/commits/log-mod4k7 (mod4k7�܂ł̗���)
-https://github.com/xtne6f/EDCB/commits/log-to-crlf (���s�R�[�h����܂ł̗���)
+https://github.com/xtne6f/EDCB/commits/log-mod4k7 (mod4k7までの履歴)
+https://github.com/xtne6f/EDCB/commits/log-to-crlf (改行コード安定までの履歴)
 
-���̃t�@�C���ł͏�q��Readme������ς��ꂽ����������������܂�(���҂̉��ϕ�����
-�����\���ԂŐ������܂�)�B�Ȃ��A�d�l�ɉe�����Ȃ��o�O�C����ׂ����f�U�C�����ς͏�
-�����܂��B�ǉ��@�\�ɂ��Ắy�ǉ��z�}�[�N��t���Ă��܂��B
-�T�[�r�X�Ƃ��Ďg�p���Ȃ��ꍇ�AEpgTimer.exe��EpgTimerTask.exe�̏풓��s�v�ɂł���
-��(EpgTimerSrv�ݒ聨���̑�)�B���̏ꍇ�AEpgTimerSrv.exe���^�X�N�g���C�A�C�R����\
-�����A�X���[�v�m�F�_�C�A���O��`���[�i�E�o�b�`�𒼐ڋN�����܂��B
-HTTP�T�[�o�@�\�̓t���@�\��Web�T�[�o��g�ݍ��݁A�y�[�W������Lua�ɔC���܂����B�ڍ�
-�� ��q�uCivetWeb�̑g�ݍ��݂ɂ��āv���Q�Ƃ��Ă��������B�f�t�H���g�ł�localhost
-�ȊO����̃A�N�Z�X�����ۂ���̂Œ��ӂ��Ă��������B
+このファイルでは上述のReadmeから改変された部分だけを説明します(他者の改変部分も
+原則能動態で説明します)。なお、仕様に影響しないバグ修正や細かいデザイン改変は省
+略します。追加機能については【追加】マークを付けています。
+サービスとして使用しない場合、EpgTimer.exeやEpgTimerTask.exeの常駐を不要にできま
+す(EpgTimerSrv設定→その他)。この場合、EpgTimerSrv.exeがタスクトレイアイコンを表
+示し、スリープ確認ダイアログやチューナ・バッチを直接起動します。
+HTTPサーバ機能はフル機能のWebサーバを組み込み、ページ生成をLuaに任せました。詳細
+は 後述「CivetWebの組み込みについて」を参照してください。デフォルトではlocalhost
+以外からのアクセスを拒否するので注意してください。
 
-���u���ʒm���O���t�@�C���ɕۑ�����v�̃��O�ۑ����EpgTimerSrvNotify.log(���g��
-Unicode�`��)�ɕύX���܂����B�ȑO�̃t�@�C��(EpgTimerSrvNotifyLog.txt)�͕��u�����
-�̂ŁA�K�v�Ȃ烁�����Ȃǂ�EpgTimerSrvNotify.log�Ɍ������Ă��������B
+※「情報通知ログをファイルに保存する」のログ保存先をEpgTimerSrvNotify.log(中身は
+Unicode形式)に変更しました。以前のファイル(EpgTimerSrvNotifyLog.txt)は放置される
+ので、必要ならメモ帳などでEpgTimerSrvNotify.logに結合してください。
 
-��Readme.txt��
-�������
-  �K�v�ȃ����^�C���̓r���h������ɂȂ�܂��B
-  OS�́A�����炭XP SP3�ȍ~�Ȃ瓮���ł��傤(XP�͂��łɏI�����Ă���̂Ŗ��m�F)�B
-��twitter.dll�̎�舵���ɂ���
-  twitter.dll�͍폜���܂����B�������Ă��������B
-����{�I�Ȏg�p����
-  �d�l�ύX�ł͂���܂��񂪁AProgram Files����OS�����ʂɊǗ�����t�H���_�ւ̔z�u
-  �͔����Ă��������B�������ݕی��o�[�`�����X�g�A�A��K�̓A�b�v�f�[�g���̑ޔ���
-  ���ɂ��A���܂��܂ȃg���u���������N�����܂��B
+■Readme.txt■
+◇動作環境
+  必要なランタイムはビルド環境次第になります。
+  OSは、おそらくXP SP3以降なら動くでしょう(XPはすでに終了しているので未確認)。
+◇twitter.dllの取り扱いについて
+  twitter.dllは削除しました。無視してください。
+◇基本的な使用準備
+  仕様変更ではありませんが、Program Files等のOSが特別に管理するフォルダへの配置
+  は避けてください。書き込み保護やバーチャルストア、大規模アップデート時の退避処
+  理により、さまざまなトラブルを引き起こします。
 
-��Readme_EpgDataCap_Bon.txt��
-���ݒ�
-  ����{�ݒ�^�u
-    Readme�ŐG����Ă��܂��񂪁A���΃p�X�͎g�p�s�ł�(�d�l�ύX�ł͂Ȃ�)�B����
-    �������Ă���悤�ɓ��삷��\��������܂����듮��ł��B���萫�ɖ�肪�o���
-    �Ő�΃p�X���g�p���Ă��������B
-  ������ݒ�^�u
-    �E�f�o�b�O�o�͂��t�@�C���ɕۑ�����y�ǉ��z
-      �f�o�b�O�o��(OutputDebugStringW)��EpgDataCap_Bon.exe�̋N�����ɉ�����
-      EpgDataCap_Bon_DebugLog-{�ԍ�}.txt�ɕۑ����܂��B
-    �ETS����/�t�@�C���o�̓o�b�t�@����y�ǉ��z
-      EpgDataCap_Bon.ini��TsBuffMaxCount/WriteBuffMaxCount��ݒ肵�܂��B
-  ��EPG�擾�ݒ�^�u
-    �E��{���̂ݎ擾����l�b�g���[�N(�����E�^�撆)�y�ǉ��z
-      ����ݒ�^�u�ɂ���A�������A�^�撆��EPG�f�[�^�擾�ɂ��āA��{���̂ݎ�
-      �����邩�ǂ����ݒ肵�܂��B
-  ���l�b�g���[�N�ݒ�^�u
-    IPv6�A�h���X���g�p�ł��܂��y�ǉ��z�B
-    �ETCP���M
-      �|�[�g�ԍ���22000�`22999�͈̔͂ł͑��M�`����plain�ɂȂ�܂��y�ǉ��z�B
+■Readme_EpgDataCap_Bon.txt■
+◇設定
+  ●基本設定タブ
+    Readmeで触れられていませんが、相対パスは使用不可です(仕様変更ではない)。うま
+    く動いているように動作する可能性もありますが誤動作です。安定性に問題が出るの
+    で絶対パスを使用してください。
+  ●動作設定タブ
+    ・デバッグ出力をファイルに保存する【追加】
+      デバッグ出力(OutputDebugStringW)をEpgDataCap_Bon.exeの起動数に応じて
+      EpgDataCap_Bon_DebugLog-{番号}.txtに保存します。
+    ・TS入力/ファイル出力バッファ上限【追加】
+      EpgDataCap_Bon.iniのTsBuffMaxCount/WriteBuffMaxCountを設定します。
+  ●EPG取得設定タブ
+    ・基本情報のみ取得するネットワーク(視聴・録画中)【追加】
+      動作設定タブにある、視聴中、録画中のEPGデータ取得について、基本情報のみ取
+      得するかどうか設定します。
+  ●ネットワーク設定タブ
+    IPv6アドレスも使用できます【追加】。
+    ・TCP送信
+      ポート番号が22000～22999の範囲では送信形式がplainになります【追加】。
 
-��TS�f�[�^/�t�@�C���o�̓f�[�^�̃o�b�t�@�����O�ő�l��ύX����
-�ݒ�l�́u�񐔁v�ł͂Ȃ��u48128�o�C�g��n�{�v�ɂȂ�܂��B
-�f�t�H���g�l�͏]���ʂ�ł��B
+◇TSデータ/ファイル出力データのバッファリング最大値を変更する
+設定値は「回数」ではなく「48128バイトのn倍」になります。
+デフォルト値は従来通りです。
 
-��EPG�擾�̃^�C���A�E�g�l��ύX����
-�f�t�H���g��10���ł͂Ȃ�15���ł�(�d�l�ύX�łȂ���\�L)
+◇EPG取得のタイムアウト値を変更する
+デフォルトは10分ではなく15分です(仕様変更でなく誤表記)
 
-����O�������̃X�^�b�N�g���[�X�o�͂ɂ��āy�ǉ��z
-EpgDataCap_Bon.exe���Ȃ�炩�̕s��ňُ�I������Ƃ��A�X�^�b�N�g���[�X��
-EpgDataCap_Bon.exe.err�Ƃ����e�L�X�g�t�@�C���ɏo�͂���悤�ɂ��܂���(�X�^�b�N�g
-���[�X�͕s�����̗L�p�ȃq���g�ɂȂ邱�Ƃ�����܂�)�B�܂��A�r���h���ɐ�������
-��EpgDataCap_Bon.pdb�������t�H���_�ɂ���Ώo�͓��e���ڍׂɂȂ�܂��B
+◇例外発生時のスタックトレース出力について【追加】
+EpgDataCap_Bon.exeがなんらかの不具合で異常終了するとき、スタックトレースを
+EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
+レースは不具合特定の有用なヒントになることがあります)。また、ビルド時に生成され
+るEpgDataCap_Bon.pdbが同じフォルダにあれば出力内容が詳細になります。
 
-��Readme_EpgTimer.txt��
-"EpgTimer.exe"��"EpgTimerNW�`.exe"�Ƀt�@�C���������l�[�����邱�ƂŁAEpgTimerNW��
-���̓���ɂȂ�܂��B�`�ɂ͔C�ӂ̕�������w��\�ŁA���̕����񂪈قȂ�EpgTimerNW
-�͑��d�N���ł��܂��B�^��ςݔԑg���"RecInfo2Data.bin"�̓e�L�X�g�`���ɂȂ���
-"RecInfo2.txt"�Ɉړ����܂����B�ڍs����ꍇ�́u����ԑg�����o�^�v�@�\�̂��߂̏��
-�����Z�b�g�����̂Œ��ӂ��Ă��������B
-OS�̃^�C���]�[���̉e�����󂯂Ȃ��Ȃ�܂����B�\��Ǘ����ʕ\�������ׂē��{�W����
-(UTC+9����)�ōs���܂��B
+■Readme_EpgTimer.txt■
+"EpgTimer.exe"を"EpgTimerNW～.exe"にファイル名をリネームすることで、EpgTimerNW相
+当の動作になります。～には任意の文字列を指定可能で、この文字列が異なるEpgTimerNW
+は多重起動できます。録画済み番組情報"RecInfo2Data.bin"はテキスト形式になって
+"RecInfo2.txt"に移動しました。移行する場合は「同一番組無効登録」機能のための情報
+がリセットされるので注意してください。
+OSのタイムゾーンの影響を受けなくなりました。予約管理や画面表示等すべて日本標準時
+(UTC+9時間)で行います。
 
-����ȋ@�\
-  �T�[�o�[�A�g�@�\�͔p�~���܂����B
+◇主な機能
+  サーバー連携機能は廃止しました。
 
-���g����
-  ���e�^�u
-    �^�u�̈ړ��̓V���[�g�J�b�g�L�[(Ctrl+1�`5)�ł��\�ł��B���Ȃ݂�(Ctrl+F)�͌�
-    ���_�C�A���O���J���܂��B�y�ǉ��z
-    �������\��o�^
-      �E�\�񂲂ƍ폜�{�^���y�ǉ��z
-        �I������Ă��鍀�ڂ��A���̌��������Ƀ}�b�`����\�񂲂ƍ폜���܂��B
+◇使い方
+  ◇各タブ
+    タブの移動はショートカットキー(Ctrl+1～5)でも可能です。ちなみに(Ctrl+F)は検
+    索ダイアログを開きます。【追加】
+    ●自動予約登録
+      ・予約ごと削除ボタン【追加】
+        選択されている項目を、その検索条件にマッチする予約ごと削除します。
 
-����������
-  �E���K�\�����[�h
-    ConvertText.txt�͔p�~���܂���(��q)
-  �E�����܂��������[�h
-    �����A���S���Y����ҏW�����Ɋ�Â����̂ɕύX���܂����B�ҏW�������L�[���[�h��
-    ��25%�ȉ�(1-3����=����0(���ʂ̌���)�A4-7����=����1�A8-11����=����2...)�ɂȂ�
-    �����񂪌����ΏۂɊ܂܂�Ă��邩���A�S�ẴL�[���[�h�ɂ��Ē��ׂ܂��B
-  �E�T�[�r�X�i����
-    Readme�ŐG����Ă���ʂ�A�Ƃ��Ɏ����\��o�^�ł͗]���ȃT�[�r�X���Ȃ��Ă���
-    �����B�������ׂ̓T�[�r�X���ɊT�˔�Ⴗ��̂ŁA�Ⴆ�΁A�T�[�r�X��S�`�F�b�N��
-    �������\�񂪑�ʂɂ���Ɨ\��Ǘ��ɉe������قǂ̕��ׂɂȂ�܂��B�����\��̌�
-    ���ɂ����������Ԃ̓f�o�b�O�o�͂�"Done PostLoad EpgData"�Ŋm�F�ł��܂��B���b
-    �P�ʂ̎��Ԃ��������Ă���Ƃ��͌����������H�v���Ă��������B
-  �E�召������ʁy�ǉ��z
-    �����L�[���[�h��NOT�L�[���[�h�̑啶��������(A��a�Ȃ�)����ʂ��Č������܂��B
-  �E�����o�^�𖳌��ɂ���y�ǉ��z
-    �����\��o�^�����ɒǉ�����Ƃ��A���̏����𖳌��ɂ���(�\�񂳂�Ȃ��Ȃ�)���ǂ�
-    ���ł��B�ʏ�̌����Ŏg�p����Ӗ��͂���܂���B
-  �E����ԑg���̘^�挋�ʂ�����Ζ����œo�^����
-    �E�S�ẴT�[�r�X�Ŗ����ɂ���y�ǉ��z
-      ����T�[�r�X���ǂ����̃`�F�b�N���ȗ����A����ԑg���݂̂Ŕ��f���܂��B
+◇検索条件
+  ・正規表現モード
+    ConvertText.txtは廃止しました(後述)
+  ・あいまい検索モード
+    検索アルゴリズムを編集距離に基づくものに変更しました。編集距離がキーワード長
+    の25%以下(1-3文字=距離0(普通の検索)、4-7文字=距離1、8-11文字=距離2...)になる
+    文字列が検索対象に含まれているかを、全てのキーワードについて調べます。
+  ・サービス絞込み
+    Readmeで触れられている通り、とくに自動予約登録では余分なサービスを省いてくだ
+    さい。検索負荷はサービス数に概ね比例するので、例えば、サービスを全チェックし
+    た自動予約が大量にあると予約管理に影響するほどの負荷になります。自動予約の検
+    索にかかった時間はデバッグ出力の"Done PostLoad EpgData"で確認できます。数秒
+    単位の時間がかかっているときは検索条件を工夫してください。
+  ・大小文字区別【追加】
+    検索キーワードやNOTキーワードの大文字小文字(Aとaなど)を区別して検索します。
+  ・自動登録を無効にする【追加】
+    自動予約登録条件に追加するとき、その条件を無効にする(予約されなくなる)かどう
+    かです。通常の検索で使用する意味はありません。
+  ・同一番組名の録画結果があれば無効で登録する
+    ・全てのサービスで無効にする【追加】
+      同一サービスかどうかのチェックを省略し、同一番組名のみで判断します。
 
-���^��ݒ�
-  �E�Ǐ]
-    �v���O�����\��ɐ؂�ւ���̂Ǝ����I�ȈႢ���قƂ�ǖ������߁A�u�C�x���g����
-    �[�Ǐ]�v�ɈӖ���ύX���܂����B
-  �E�^��t�H���_
-    �^��t�H���_���󗓂̂܂܂ɂ���Ɗ���̘^��ۑ��t�H���_�ɂȂ�܂��y�ǉ��z�B
-    �t�@�C����PlugIn�ɃI�v�V�����̕�������w��ł��܂��y�ǉ��z�B�I�v�V�����̈Ӗ�
-    ��PlugIn����ł����ARecName_Macro.dll�ł̓}�N�����w�肵�܂��B�I�v�V�������w
-    �肵�Ȃ���Ώ]������ł��B�Ή����Ă��Ȃ�PlugIn�ł̓I�v�V�����͖�������܂��B
-  �E�^��}�[�W��
-    ���S�Ș^����d������ꍇ�A�J�n�}�[�W���͏\���Ɋm�ۂ��Ă��������B�\��Ǘ���PC
-    �̏�Ԃɂ���Đ��b����\���b���x�̒x���͋N���蓾�܂��B�f�t�H���g�̊J�n�}�[�W
-    ��5�b�͈�ʂɂ��s�\���ł��B
+◇録画設定
+  ・追従
+    プログラム予約に切り替えるのと実質的な違いがほとんど無いため、「イベントリレ
+    ー追従」に意味を変更しました。
+  ・録画フォルダ
+    録画フォルダを空欄のままにすると既定の録画保存フォルダになります【追加】。
+    ファイル名PlugInにオプションの文字列を指定できます【追加】。オプションの意味
+    はPlugIn次第ですが、RecName_Macro.dllではマクロを指定します。オプションを指
+    定しなければ従来動作です。対応していないPlugInではオプションは無視されます。
+  ・録画マージン
+    完全な録画を重視する場合、開始マージンは十分に確保してください。予約管理やPC
+    の状態によって数秒から十数秒程度の遅延は起こり得ます。デフォルトの開始マージ
+    ン5秒は一般にやや不十分です。
 
-���ݒ�
-  EpgTimerSrv.exe(=�\��Ǘ���S��)�ɂ��Ă̐ݒ��ʂ𕪗����܂����B�u�ݒ聨����
-  �ݒ聨�S�ʁ�EpgTimerSrv�ݒ�v����N���ł��܂��B�ȉ��͕����O�̃^�u�\���ł̐���
-  �Ȃ̂œK�X�ǂ݂����Ă��������B�u����ݒ聨���̑��v�́u����ݒ聨�S�ʁv�ɕύX��
-  �܂����B
+◇設定
+  EpgTimerSrv.exe(=予約管理を担当)についての設定画面を分離しました。「設定→動作
+  設定→全般→EpgTimerSrv設定」から起動できます。以下は分離前のタブ構造での説明
+  なので適宜読みかえてください。「動作設定→その他」は「動作設定→全般」に変更し
+  ました。
 
-  ����{�ݒ�^�u
-    ���ۑ��t�H���_
-      �E�R�}���h���C�������y�ǉ��z
-        �^��p�A�v���̈������J�X�^�}�C�Y���܂��BEpgDataCap_Bon.exe�̏ꍇ�͘M��K
-        �v����܂���B
-        �E�ŏ���: EPG�擾��u�ŏ����ŋN������v�ݒ�̘^�掞�ɕt�������
-        �E�񎋒���: �������ȊO��u��������View���N������v�Ƀ`�F�b�N���Ă��Ȃ���
-                    ���ɕt�������
-      �E�^����ۑ��t�H���_�y�ǉ��z
-        .program.txt/.err�̕ۑ�����w�肵�܂�(Common.ini��RecInfoFolder�ɑ���)�B
-    ���`���[�i�[
-      ���p�\�ȃ`���[�i�[���̂���EPG�擾�Ɏg�p����`���[�i�[����ݒ�ł���悤
-      �ɂȂ�܂����B�y�ǉ��z
-    ��EPG�擾�ݒ�^�u
-      EPG�擾���Ԃɗj���Ǝ擾��ʂ��w��ł��܂��y�ǉ��z�B��ʂ͂�����ɂ���u��
-      �{���̂ݎ擾����l�b�g���[�N�v�̃`�F�b�N�{�b�N�X�Ŏw�肵�Ă��������B
-  ������ݒ�^�u
-    ���^�擮��
-      �Ebat���s����
-        �p�~���܂���(�o�b�`���ƂɎw��)�B
-      �E�^��t�@�C���̗e�ʊm�ۂ��s���y�ǉ��z
-        Bitrate.ini�����Ƃɘ^��e�ʂ�\�z���ăt�@�C���ɂ��炩���߃u�����N�̈��
-        �m�ۂ��܂�(EpgTimerSrv.ini��KeepDisk�ɑ���)�B����^�掞�̒f�Љ���}����
-        ����\���������ł����A���̂悤�ȃt�@�C����ǂ������Đ��ł���\�t�g�͔�
-        �r�I���Ȃ��ł��B
-    ���\����Ǘ�
-      �E�C�x���g�����[�ɂ��Ǐ]���s��
-        �p�~���܂���(�\�񂲂ƂɎw��)�B
-      �EEPG�f�[�^�ǂݍ��ݎ��A�\�񎞂Ɣԑg�����ς���Ă���Δԑg����ύX����
-        �p�~���܂���(��ɃI��)�B
-      �EEPG�f�[�^�ǂݍ��ݎ��AEventID�̕ύX���J�n�A�I�����Ԃ݂̂ŏ�������
-        �p�~���܂���(��ɃI�t)�B
-      �E���ꕨ���`�����l���ŘA���ƂȂ�`���[�i�[�̎g�p��D�悷��
-        �p�~���܂���(��ɃI��)�B
-      �E�D��x�������ꍇ�A�`���[�i�[�����w�肳�ꂽ�\����Ɋ��蓖�Ă���y�ǉ��z
-        �T�ˁA����́u�f�t�H���g�A���S���Y���v�Ɓu�A���S���Y��2�v�̈Ⴂ�ƍl����
-        ��������(���A���S���Y���ɂ��Ă͌�qQ&A�Q��)�B
-      �E�^����ۑ��t�H���_�w�莞�͘^��t�@�C���Ɠ����ꏊ���Q�Ƃ��Ȃ��y�ǉ��z
-        �^��ς݈ꗗ�Ŏg�p�����^����(.program.txt/.err)�́A�^��t�@�C���Ɠ�
-        ���ꏊ���^����ۑ��t�H���_�̏��ɎQ�Ƃ��܂����A���̋�����ύX���܂��B
-      �E�^��ς݈ꗗ����폜����Ƃ��ɘ^��t�@�C�����폜����y�ǉ��z
-        Common.ini��RecInfoDelFile�ɑ������܂��B
-        �E�����ɍ폜����t�@�C���̊g���q�͍폜�ݒ�ɏ]���y�ǉ��z
-          �f�t�H���g��.program.txt��.err���Ώۂł����A������J�X�^�}�C�Y���܂��B
-      �E�t�@�C�����֑̋������̕ϊ��Ώۂ���u\�v�����O����y�ǉ��z
-        PlugIn���Ԃ��t�@�C�����֑̋������̕ϊ��Ώۂ���u\�v�����O���āA�t�H���_
-        �K�w��\���ł���悤�ɂ��܂�(EpgTimerSrv.ini��NoChkYen�ɑ���)�B
-      �E�^�撆�̗\��폜���y�ǉ��z
-        �E�폜�̂�(�]������)
-        �E�^��ς݂ɒǉ�
-          �u�^��I���v�Ƃ��Ę^��ς݈ꗗ�ɒǉ����܂��B�^�����sbat�����s����A
-          �����Ƃ��Ĉ�����_�ɒ��ӂ��Ă��������B
-        �E�L�����Z���Ƃ��Ę^��ς݂ɒǉ�
-          �u�^�撆�ɃL�����Z�����ꂽ�\��������܂��v�Ƃ��Ēǉ����܂��B
-    ���{�^���\��
-      �E�^�u�̈ʒu�ɕ\���y�ǉ��z
-        �㕔�\���{�^�����㕔�^�u�ƕ���ɔz�u���܂��B
-    �����̑�/�S��
-      �E�l�b�g���[�N�ڑ���������
-        �E�A�N�Z�X����y�ǉ��z
-          EpgTimerSrv.exe���ڑ���������N���C�A���g��IP�A�h���X��
-            {����+|����-}{�l�b�g���[�N}/{�l�b�g�}�X�N},...
-          �̌`���ŕ����w�肵�܂��B�w��͍����珇�ɃN���C�A���g�Ɣ�r����A�Ō��
-          �}�b�`�����w���+-�ŉۂ����܂�܂�(HTTP�T�[�o�@�\�Ɠ������[��)�B
-        �E���ʐM�^�C���A�E�g(�b)�y�ǉ��z
-          EpgTimerNW�̃l�b�g���[�N�ڑ��Łu�N���C�A���g���ɑ҂��󂯃|�[�g�����v
-          ���I�t�ɂ����Ƃ��Ɏg���郍���O�|�[�����O�̍Đڑ��̊Ԋu���w�肵�܂��B
-      �EEPG�擾���ɕ����g���Ԃ�PC���v�𓯊�����
-        �����̐M�������m�ۂ��邽�߁A150�b�̕����g���Ԃ̊ϑ����s���܂��BEPG�擾��
-        �Ԃ�����150(��������150���`���[�i��)�b�ɖ����Ȃ��ꍇ�͓������܂���B
-        �d�l�ύX�ł͂���܂��񂪁A�����ɂ͊Ǘ��Ҍ����ł͂Ȃ�SE_SYSTEMTIME_NAME��
-        ��(�R���g���[���p�l�������[�J���Z�L�����e�B�|���V�[���V�X�e�������̕ύX)
-        ���K�v�ł��B���f�͔C���܂����Ǘ��ҋN��������������[�U�ɂ��̓�����^��
-        ��ق����}�V�ȋC�����܂��B
-      �EEPG�擾����ԑg����X���O�܂ŕۑ�����y�ǉ��z
-        EPG�擾��͉ߋ��̔ԑg��񂪏����܂����A�����"EpgArc.dat"�Ƃ����t�@�C��
-        �ɕۑ����āA�ԑg�\�Ȃǂɗ��p�ł���悤�ɂ��܂��B
-      �EEpgTimerSrv���풓������y�ǉ��z
-        �E�^�X�N�g���C�A�C�R����\������y�ǉ��z
-        �E�o���[���`�b�v�ł̓���ʒm��}������y�ǉ��z
-          ��������EpgTimerSrv.exe�����ڕ\��������̂ɂ��Ă̐ݒ�ł�
-      �E���ʒm���O���t�@�C���ɕۑ�����y�ǉ��z
-        ���ʒm���O��EpgTimerSrv�̂���t�H���_��EpgTimerSrvNotify.log�ɕۑ�����
-        ���B���ʒm���O�̃E�B���h�E�̕\���ɂ����p����܂��B
-      �E�f�o�b�O�o�͂��t�@�C���ɕۑ�����y�ǉ��z
-        EpgTimerSrv�̃f�o�b�O�o��(OutputDebugStringW)��EpgTimerSrv�̂���t�H���_
-        ��EpgTimerSrvDebugLog.txt�ɕۑ����܂��B
-      �EEpgTimerSrv�̉�����tkntrec�Ō݊��ɂ���y�ǉ��z
-        ���ύX��EpgTimerSrv�ċN����ɓK�p����܂��B
-        EpgTimer�ɑ΂���EpgTimerSrv�̂ӂ�܂���tkntrec�ł�EpgTimerSrv�Ɠ����ɂ�
-        �܂��B�܂�tkntrec�ł�EpgTimer�����p�ł���悤�ɂ��܂��B�ȑO��EpgTimer
-        ��ꕔ�̊O���c�[���Ƃ̒ʐM�͔�݊��ɂȂ�_�ɒ��ӂ��Ă��������B
-      �E�T�[�o�[�ԘA�g
-        �p�~���܂����B
-      �E�^�X�N�g���C�A�C�R����\������y�ǉ��z
-        �^�X�N�g���C�A�C�R���̕\���E��\����؂�ւ��܂��B
-      �EEPG�擾�ΏۃT�[�r�X�̂ݕ\������y�ǉ��z
-        �ꗗ��ԑg�\�ɕ\������T�[�r�X��EpgTimerSrv�ݒ�́uEPG�擾�ΏۃT�[�r�X�v
-        �Ń`�F�b�N���ꂽ�T�[�r�X�Ɍ��肵�܂��B
-      �E�e�[�}��K�p����(�v�ċN��)�y�ǉ��z
-        �u�f�U�C�������[�h���Ȃ��v�̐������Q�Ƃ��Ă������� (<NoStyle>�ɑ���)�B
-    ��Windows�T�[�r�X
-      ���̃^�u�͔p�~���܂����B�T�[�r�X�o�^�A������ini�t�H���_�ɂ���ȉ��̃o�b�`
-      �t�@�C�����Ǘ��Ҍ����ŋN�����Ă��������B�\��EpgTimer�͕��Ă��������B
-        �EEpgTimerSrv_Install.bat : �T�[�r�X�o�^�ƊJ�n
-        �EEpgTimerSrv_Remove.bat : �T�[�r�X��~�Ɖ���
-      EpgTimer���Ǘ��Ҍ����ŋN������K�v�͂���܂���(�ނ�������Ă�������)�B
-  ���ԑg�\�^�u
-    ����{
-      �E�\��
-        �E�Œ�\���s���y�ǉ��z
-          �Z���Ԃ̔ԑg�ł��ŒႱ�̍s�������������m�ۂ��܂��B�Z���Ԃ̔ԑg��������
-          ���ɂ����̂ŁA���p�I�ɂ�0.8���x�������߂��܂��B
-    ���\������
-      �E�J�X�^�}�C�Y�\��
-        �\���������\���T�[�r�X�ŁA����TS�̃T�[�r�X(�S�T�[�r�X�^��ł܂Ƃ߂Ę^��
-        ��������)���t���ɕ��ׂ�ƁA�����������\���ł��܂��y�ǉ��z�B��F
-          �A�t���J�����e���r3
-          �A�t���J�����e���r2
-          �A�t���J�����e���r1�A�̏��ɒǉ�����Ɣԑg�\���1�T�[�r�X���̕��ŕ\��
-  ���O���A�v���P�[�V����
-    ���t�@�C���Đ�
-      �E�Đ��A�v����exe�p�X
-        �w�肷���EpgTimerNW�̃t�@�C���Đ��ɂ����̃A�v�����g���܂��y�ǉ��z�B
-      �E�ǂ������Đ��ɂ��g�p����y�ǉ��z
-        �ǂ������Đ��ɂ�(NetworkTV���[�h�ł͂Ȃ�)���̃A�v�����g���܂��B
-    ��Twitter�ݒ�^�u
-      �p�~���܂����B
+  ●基本設定タブ
+    ●保存フォルダ
+      ・コマンドライン引数【追加】
+        録画用アプリの引数をカスタマイズします。EpgDataCap_Bon.exeの場合は弄る必
+        要ありません。
+        ・最小化: EPG取得や「最小化で起動する」設定の録画時に付加される
+        ・非視聴時: 視聴時以外や「視聴時はViewを起動する」にチェックしていないと
+                    きに付加される
+      ・録画情報保存フォルダ【追加】
+        .program.txt/.errの保存先を指定します(Common.iniのRecInfoFolderに相当)。
+    ●チューナー
+      利用可能なチューナー数のうちEPG取得に使用するチューナー数を設定できるよう
+      になりました。【追加】
+    ●EPG取得設定タブ
+      EPG取得時間に曜日と取得種別を指定できます【追加】。種別はすぐ上にある「基
+      本情報のみ取得するネットワーク」のチェックボックスで指定してください。
+  ●動作設定タブ
+    ●録画動作
+      ・bat実行条件
+        廃止しました(バッチごとに指定)。
+      ・録画ファイルの容量確保を行う【追加】
+        Bitrate.iniをもとに録画容量を予想してファイルにあらかじめブランク領域を
+        確保します(EpgTimerSrv.iniのKeepDiskに相当)。並列録画時の断片化を抑制で
+        きる可能性が高いですが、このようなファイルを追っかけ再生できるソフトは比
+        較的少ないです。
+    ●予約情報管理
+      ・イベントリレーによる追従を行う
+        廃止しました(予約ごとに指定)。
+      ・EPGデータ読み込み時、予約時と番組名が変わっていれば番組名を変更する
+        廃止しました(常にオン)。
+      ・EPGデータ読み込み時、EventIDの変更を開始、終了時間のみで処理する
+        廃止しました(常にオフ)。
+      ・同一物理チャンネルで連続となるチューナーの使用を優先する
+        廃止しました(常にオン)。
+      ・優先度が同じ場合、チューナー強制指定された予約を先に割り当てする【追加】
+        概ね、原作の「デフォルトアルゴリズム」と「アルゴリズム2」の違いと考えて
+        ください(現アルゴリズムについては後述Q&A参照)。
+      ・録画情報保存フォルダ指定時は録画ファイルと同じ場所を参照しない【追加】
+        録画済み一覧で使用される録画情報(.program.txt/.err)は、録画ファイルと同
+        じ場所→録画情報保存フォルダの順に参照しますが、この挙動を変更します。
+      ・録画済み一覧から削除するときに録画ファイルも削除する【追加】
+        Common.iniのRecInfoDelFileに相当します。
+        ・同時に削除するファイルの拡張子は削除設定に従う【追加】
+          デフォルトは.program.txtと.errが対象ですが、これをカスタマイズします。
+      ・ファイル名の禁則文字の変換対象から「\」を除外する【追加】
+        PlugInが返すファイル名の禁則文字の変換対象から「\」を除外して、フォルダ
+        階層を表現できるようにします(EpgTimerSrv.iniのNoChkYenに相当)。
+      ・録画中の予約削除を【追加】
+        ・削除のみ(従来動作)
+        ・録画済みに追加
+          「録画終了」として録画済み一覧に追加します。録画後実行batが実行され、
+          成功として扱われる点に注意してください。
+        ・キャンセルとして録画済みに追加
+          「録画中にキャンセルされた可能性があります」として追加します。
+    ●ボタン表示
+      ・タブの位置に表示【追加】
+        上部表示ボタンを上部タブと並列に配置します。
+    ●その他/全般
+      ・ネットワーク接続を許可する
+        ・アクセス制御【追加】
+          EpgTimerSrv.exeが接続を許可するクライアントのIPアドレスを
+            {許可+|拒否-}{ネットワーク}/{ネットマスク},...
+          の形式で複数指定します。指定は左から順にクライアントと比較され、最後に
+          マッチした指定の+-で可否が決まります(HTTPサーバ機能と同じルール)。
+        ・無通信タイムアウト(秒)【追加】
+          EpgTimerNWのネットワーク接続で「クライアント側に待ち受けポートを作る」
+          をオフにしたときに使われるロングポーリングの再接続の間隔を指定します。
+      ・EPG取得時に放送波時間でPC時計を同期する
+        同期の信頼性を確保するため、150秒の放送波時間の観測を行います。EPG取得時
+        間が延べ150(複数時は150÷チューナ数)秒に満たない場合は同期しません。
+        仕様変更ではありませんが、厳密には管理者権限ではなくSE_SYSTEMTIME_NAME特
+        権(コントロールパネル→ローカルセキュリティポリシー→システム時刻の変更)
+        が必要です。判断は任せますが管理者起動させるよりもユーザにこの特権を与え
+        るほうがマシな気がします。
+      ・EPG取得後も番組情報をX日前まで保存する【追加】
+        EPG取得後は過去の番組情報が消えますが、これを"EpgArc.dat"というファイル
+        に保存して、番組表などに利用できるようにします。
+      ・EpgTimerSrvを常駐させる【追加】
+        ・タスクトレイアイコンを表示する【追加】
+        ・バルーンチップでの動作通知を抑制する【追加】
+          ※これらはEpgTimerSrv.exeが直接表示するものについての設定です
+      ・情報通知ログをファイルに保存する【追加】
+        情報通知ログをEpgTimerSrvのあるフォルダのEpgTimerSrvNotify.logに保存しま
+        す。情報通知ログのウィンドウの表示にも利用されます。
+      ・デバッグ出力をファイルに保存する【追加】
+        EpgTimerSrvのデバッグ出力(OutputDebugStringW)をEpgTimerSrvのあるフォルダ
+        のEpgTimerSrvDebugLog.txtに保存します。
+      ・EpgTimerSrvの応答をtkntrec版互換にする【追加】
+        ※変更はEpgTimerSrv再起動後に適用されます。
+        EpgTimerに対するEpgTimerSrvのふるまいをtkntrec版のEpgTimerSrvと同じにし
+        ます。つまりtkntrec版のEpgTimerも利用できるようにします。以前のEpgTimer
+        や一部の外部ツールとの通信は非互換になる点に注意してください。
+      ・サーバー間連携
+        廃止しました。
+      ・タスクトレイアイコンを表示する【追加】
+        タスクトレイアイコンの表示・非表示を切り替えます。
+      ・EPG取得対象サービスのみ表示する【追加】
+        一覧や番組表に表示するサービスをEpgTimerSrv設定の「EPG取得対象サービス」
+        でチェックされたサービスに限定します。
+      ・テーマを適用する(要再起動)【追加】
+        「デザインをロードしない」の説明を参照してください (<NoStyle>に相当)。
+    ●Windowsサービス
+      このタブは廃止しました。サービス登録、解除はiniフォルダにある以下のバッチ
+      ファイルを管理者権限で起動してください。予めEpgTimerは閉じてください。
+        ・EpgTimerSrv_Install.bat : サービス登録と開始
+        ・EpgTimerSrv_Remove.bat : サービス停止と解除
+      EpgTimerを管理者権限で起動する必要はありません(むしろ避けてください)。
+  ●番組表タブ
+    ●基本
+      ・表示
+        ・最低表示行数【追加】
+          短時間の番組でも最低この行数だけ高さを確保します。短時間の番組が続くと
+          下にずれるので、実用的には0.8程度をお勧めします。
+    ●表示項目
+      ・カスタマイズ表示
+        表示条件→表示サービスで、同一TSのサービス(全サービス録画でまとめて録画
+        されるもの)を逆順に並べると、これらを結合表示できます【追加】。例：
+          アフリカ中央テレビ3
+          アフリカ中央テレビ2
+          アフリカ中央テレビ1、の順に追加すると番組表上は1サービス分の幅で表示
+  ●外部アプリケーション
+    ●ファイル再生
+      ・再生アプリのexeパス
+        指定するとEpgTimerNWのファイル再生にもこのアプリを使います【追加】。
+      ・追っかけ再生にも使用する【追加】
+        追っかけ再生にも(NetworkTVモードではなく)このアプリを使います。
+    ●Twitter設定タブ
+      廃止しました。
 
-���X�^���o�C�A�x�~��Ԃւ̈ڍs
-  ���̗\��^��܂���EPG�擾�ɑ΂��āA����ݒ�Ŏw�肵��"���A�����J�n����"+8���A
-  ���}�������Ŏw�肵�����Ԉȏ�̊J��������ꍇ�Ɉڍs���܂��B
+◇スタンバイ、休止状態への移行
+  次の予約録画またはEPG取得に対して、動作設定で指定した"復帰処理開始時間"+8分、
+  かつ抑制条件で指定した時間以上の開きがある場合に移行します。
 
-���^���̃o�b�`�t�@�C�����s�̎d�l
-  �o�b�`�̃v���Z�X�D��x��"�ʏ�ȉ�"(BELOW_NORMAL_PRIORITY_CLASS)�Ŏ��s���܂��B
-  �ȉ��̊g�����߂𗘗p�ł��܂��y�ǉ��z�B�g�����߂̓o�b�`�t�@�C�����̂ǂ����ɒ���
-  �L�q���Ă�������(rem�R�����g���ǂ�Ȍ`���ł�OK)�B
-  _EDCBX_BATMARGIN_={bat���s����(��)}
-    ���̃}�[�W���ȏ�^��\�肪�Ȃ��Ƃ��Ɏ��s�J�n���܂��B�f�t�H���g��0�ł��B
+◇録画後のバッチファイル実行の仕様
+  バッチのプロセス優先度は"通常以下"(BELOW_NORMAL_PRIORITY_CLASS)で実行します。
+  以下の拡張命令を利用できます【追加】。拡張命令はバッチファイル内のどこかに直接
+  記述してください(remコメント等どんな形式でもOK)。
+  _EDCBX_BATMARGIN_={bat実行条件(分)}
+    このマージン以上録画予定がないときに実行開始します。デフォルトは0です。
   _EDCBX_HIDE_
-    �E�B���h�E���\���ɂ��܂��B
+    ウィンドウを非表示にします。
   _EDCBX_NORMAL_
-    �E�B���h�E���ŏ������܂���B
+    ウィンドウを最小化しません。
   _EDCBX_DIRECT_
-    �}�N����u���ł͂Ȃ����ϐ��œn���Ē��ڎ��s���܂��B�}�N�����͂�$��%�ɂȂ邾
-    ���ł����Astart /wait���g���ĕʂ̃X�N���v�g�ɏ����������p���Ƃ��ɕ֗��ł��B
-    �܂��A�ȉ���ۏ؂��܂�:
-      �EEpgTimerSrv.exe�̂���t�H���_��"EpgTimer_Bon_RecEnd.bat"�����Ȃ�
-      �EEpgTimer.exe���o�R����Ԑڎ��s�͂��Ȃ�
-      �E�o�b�`�̃J�����g�f�B���N�g���͂��̃o�b�`�̂���t�H���_�ɂȂ�
-  �擾�ł���}�N���ɂ��Ă͈ȉ���3�s�̃R�}���h�Ŋm�F����Ǝ����葁���ł��B
+    マクロを置換ではなく環境変数で渡して直接実行します。マクロを囲う$が%になるだ
+    けですが、start /waitを使って別のスクリプトに処理を引き継ぐときに便利です。
+    また、以下を保証します:
+      ・EpgTimerSrv.exeのあるフォルダに"EpgTimer_Bon_RecEnd.bat"を作らない
+      ・EpgTimer.exeを経由する間接実行はしない
+      ・バッチのカレントディレクトリはそのバッチのあるフォルダになる
+  取得できるマクロについては以下の3行のコマンドで確認すると手っ取り早いです。
     >rem _EDCBX_DIRECT_
     >set
     >pause
 
-���}�N��
-  RecName_Macro.dll�Ɍ���A�ȉ��̊֐��@�\�𗘗p�ł��܂��B�y�ǉ��z
-  ���֐�����$,&,(���܂߂�Ƃ��͐��l�����Q��(&�����R�[�h;)���g��
-  �E�y�����u���zTr/�u���������X�g/�u����/
-    �E��F�ԑg����A��a�A$��B: $Tr/A&36;/aB/(Title)$
-  �E�y���p�̑S�p�zHtoZ,ZtoH
-  �E�y�p�����p�̑S�p�zHtoZ<alnum>,ZtoH<alnum>
-  �E�y������u���zS/�u��������/�u����/
-  �E�y�����폜�zRm/�폜�������X�g/
-    �E��F�ԑg���e����/���폜: $Rm!/!(SubTitle)$
-  �E�y���؂�zHead������[�ȗ��L��]
-    �E��F�ԑg���e�𔼊p�ɂ��čŒ�15������: $Head15(ZtoH(SubTitle))$
-    �E��F�ԑg�����ȗ��L�����Œ�15������: $Head15~(Title)$
+◇マクロ
+  RecName_Macro.dllに限り、以下の関数機能を利用できます。【追加】
+  ※関数部に$,&,(を含めるときは数値文字参照(&文字コード;)を使う
+  ・【文字置換】Tr/置換文字リスト/置換後/
+    ・例：番組名のA→a、$→B: $Tr/A&36;/aB/(Title)$
+  ・【半角⇔全角】HtoZ,ZtoH
+  ・【英数半角⇔全角】HtoZ<alnum>,ZtoH<alnum>
+  ・【文字列置換】S/置換文字列/置換後/
+  ・【文字削除】Rm/削除文字リスト/
+    ・例：番組内容から/を削除: $Rm!/!(SubTitle)$
+  ・【足切り】Head文字数[省略記号]
+    ・例：番組内容を半角にして最長15文字に: $Head15(ZtoH(SubTitle))$
+    ・例：番組名を省略記号つき最長15文字に: $Head15~(Title)$
 
-���Ǐ]�̎d�l(���̍��㏑��)
-  �������܂����������ɂ��EventID�ύX�ɑ΂���Ǐ]�����͈�؍s���܂���B
-  �Ǐ]�����ɂ͑傫��2��ނ���܂��B
-  1.EPG�f�[�^�ǂݍ��ݎ��ɁA�ǂݍ���EPG�f�[�^����Ǐ]���s��
-    ������EPG�f�[�^��EpgTimer�̔ԑg�\�Ɠ������̂ł�
-    �v���O�����\��A�����2.�ň�x�ł��ύX���ꂽ�\��͑ΏۊO�ł��B�Ǐ]����p����
-    �[�^�͊J�n���ԁA�I�����ԁA����уC�x���g���ł��B
+◇追従の仕様(この項上書き)
+  ※あいまい検索処理によるEventID変更に対する追従処理は一切行いません。
+  追従処理には大きく2種類あります。
+  1.EPGデータ読み込み時に、読み込んだEPGデータから追従を行う
+    ※このEPGデータはEpgTimerの番組表と同じものです
+    プログラム予約、および2.で一度でも変更された予約は対象外です。追従するパラメ
+    ータは開始時間、終了時間、およびイベント名です。
 
-  2.�N������EpgDataCap_Bon.exe�̒~�ς��Ă���EPG�f�[�^����Ǐ]���s��
-    �N�����̃`�����l���ƈقȂ�`�����l���̗\��A6���Ԉȏ��̗\��A�v���O�����\
-    ��A����і����\��͑ΏۊO�ł��B�Ǐ]����p�����[�^�͊J�n���ԁA�I�����ԁA�C�x
-    ���g���A����уC�x���g�����[�ł��B�C�x���g�����[�͌��ݔԑg(present)�̏���
-    �݂𗘗p���čs���܂��B
-    ���ݔԑg�̏I�����Ԃ�����ɂȂ����ꍇ�F
-      ���ݔԑg�̗\�񂪘^��I��(�}�[�W���܂�)�܂�5����؂�^�C�~���O�ŁA5�����\
-      ����������Ă����܂��B�I�����Ԗ���̂܂ܔԑg���I������ꍇ�A�ԑg�I������5
-      �`10����ɘ^�悪�I��邱�ƂɂȂ�܂��B�I�����Ԃ��ēx���肷��΁A���莞�Ԃ�
-      �ύX���܂��B
+  2.起動中のEpgDataCap_Bon.exeの蓄積しているEPGデータから追従を行う
+    起動中のチャンネルと異なるチャンネルの予約、6時間以上先の予約、プログラム予
+    約、および無効予約は対象外です。追従するパラメータは開始時間、終了時間、イベ
+    ント名、およびイベントリレーです。イベントリレーは現在番組(present)の情報の
+    みを利用して行います。
+    現在番組の終了時間が未定になった場合：
+      現在番組の予約が録画終了(マージン含む)まで5分を切るタイミングで、5分ずつ予
+      約を延長していきます。終了時間未定のまま番組が終わった場合、番組終了から5
+      ～10分後に録画が終わることになります。終了時間が再度決定すれば、決定時間に
+      変更します。
 
-    ���ԑg(following)�̏I�����Ԃ�����ɂȂ����ꍇ�F
-      ���ԑg�̗\�񂪘^��I��(�}�[�W���܂�)�܂�5����؂�^�C�~���O�ŁA5�����\��
-      ���������Ă����܂��B�I�����Ԗ���̂܂܎��ԑg���؂�ւ�����ꍇ�A��q�́u��
-      �݂ł����ł��Ȃ��ԑg�v�Ƃ��Ĉ����܂��B�I�����Ԃ��ēx���肷��΁A���莞�Ԃ�
-      �ύX���܂��B
-      �܂��A���̂Ƃ����݂ł����ł��Ȃ��ԑg�ɂ��Ă����Ԃ���܂�Ȃ��̂ŁA�����
-      �̗\�񂪘^��I��(�}�[�W���܂�)�܂�5����؂�^�C�~���O�ŁA�^�摍���Ԃ�
-      TuijyuHour�ɒB����܂ŁA5�����\����������Ă����܂��B���ԑg�̏I�����Ԃ�
-      �ēx���肷��΁A�������~���܂��B���̔ԑg�����݂܂��͎��ԑg�ɂȂ�΁A����
-      ���ԂɕύX���܂��B
-      �ꕔ�̕����ǂŁA�����������̔ԑg�̃C�x���gID���ύX����邱�Ƃ�����܂��B
-      ����ɑΏ����邽�߁A���݂܂��͎��ԑg�ɖ���Ǐ]���̗\��ƃC�x���g�������S��
-      �v����C�x���g�����݂���ꍇ�Ɍ���A���̗\���ԑg�I�����Ԃ܂ŉ������܂��B
+    次番組(following)の終了時間が未定になった場合：
+      次番組の予約が録画終了(マージン含む)まで5分を切るタイミングで、5分ずつ予約
+      を延長していきます。終了時間未定のまま次番組が切り替わった場合、後述の「現
+      在でも次でもない番組」として扱います。終了時間が再度決定すれば、決定時間に
+      変更します。
+      また、このとき現在でも次でもない番組についても時間が定まらないので、これら
+      の予約が録画終了(マージン含む)まで5分を切るタイミングで、録画総時間が
+      TuijyuHourに達するまで、5分ずつ予約を延長していきます。次番組の終了時間が
+      再度決定すれば、延長を停止します。この番組が現在または次番組になれば、その
+      時間に変更します。
+      一部の放送局で、未定解消直後の番組のイベントIDが変更されることがあります。
+      これに対処するため、現在または次番組に未定追従中の予約とイベント名が完全一
+      致するイベントが存在する場合に限り、その予約を番組終了時間まで延長します。
 
-��Twitter�@�\
-  Twitter�@�\�͔p�~���܂����B�����EpgTimerSrv.exe�̂���t�H���_�ɒu���ꂽ�ȉ�
-  �̃o�b�`�t�@�C�������s���܂��y�ǉ��z�B�擾�ł���}�N���͏]���Ƃ������������ł�
-  (NEW�n�}�N���͖��O����NEW����菜���Ă��܂�)�BPostRecEnd.bat�ȊO��$ReserveID$(
-  �\��ID)�A$RecMode$(�^�惂�[�h0=�S�T�[�r�X�`4=����)�A$ReserveComment$(�R�����g)
-  ���擾�ł��܂��B
-  �EPostAddReserve.bat : �\���ǉ������Ƃ�(����������)
-    �EEPG�����\��̂Ƃ�$ReserveComment$��"EPG�����\��"�Ƃ���������Ŏn�܂�܂�
-  �EPostChgReserve.bat : �\���ύX�����Ƃ�(����������)
-    �E$SYMDHMNEW$�`$SEYMDHM28NEW$�͎擾�ł��܂���(�K�v���ǂ����������c)
-  �EPostRecStart.bat : �^����J�n�����Ƃ�
-  �EPostRecEnd.bat : �^����I�������Ƃ�
-    �E�擾�ł���}�N���͘^���o�b�`�Ɗ��S�ɓ����ł�
-  �܂��A�C�x���g�������Ɉȉ��̃o�b�`�t�@�C�������s���܂��B
-  �EPostNotify.bat : �X�V�ʒm������ꂽ�Ƃ�
-    �E�擾�ł���}�N����$NotifyID$�݂̂ł�
-      �E$NotifyID$(1=EPG�f�[�^�X�V, 2=�\����X�V, 3=�^�挋�ʏ��X�V)
-  �o�b�`�d�l�͘^���o�b�`�Ɠ����ł����A_EDCBX_BATMARGIN_�͖����ł��B�܂��A
-  _EDCBX_DIRECT_�łȂ��Ƃ��̈ꎞ�t�@�C������"EpgTimer_Bon_Post.bat"�ł��B
-  ���s�͒���ɍs���܂�(�݂��ɕ�����s���Ȃ�)�B�܂��A���s���_�Ŋe�X�̓��삪������
-  �Ă���(�\��t�@�C�����X�V�ς݂ł���)���Ƃ�ۏ؂��܂��B
-  ini�t�H���_�ɊȒP�ȎQ�l�p�o�b�`�t�@�C����p�ӂ��܂����B
+◇Twitter機能
+  Twitter機能は廃止しました。代わりにEpgTimerSrv.exeのあるフォルダに置かれた以下
+  のバッチファイルを実行します【追加】。取得できるマクロは従来とだいたい同じです
+  (NEW系マクロは名前からNEWを取り除いています)。PostRecEnd.bat以外は$ReserveID$(
+  予約ID)、$RecMode$(録画モード0=全サービス～4=視聴)、$ReserveComment$(コメント)
+  も取得できます。
+  ・PostAddReserve.bat : 予約を追加したとき(無効を除く)
+    ・EPG自動予約のとき$ReserveComment$は"EPG自動予約"という文字列で始まります
+  ・PostChgReserve.bat : 予約を変更したとき(無効を除く)
+    ・$SYMDHMNEW$～$SEYMDHM28NEW$は取得できません(必要かどうか検討中…)
+  ・PostRecStart.bat : 録画を開始したとき
+  ・PostRecEnd.bat : 録画を終了したとき
+    ・取得できるマクロは録画後バッチと完全に同じです
+  また、イベント発生時に以下のバッチファイルを実行します。
+  ・PostNotify.bat : 更新通知が送られたとき
+    ・取得できるマクロは$NotifyID$のみです
+      ・$NotifyID$(1=EPGデータ更新, 2=予約情報更新, 3=録画結果情報更新)
+  バッチ仕様は録画後バッチと同じですが、_EDCBX_BATMARGIN_は無効です。また、
+  _EDCBX_DIRECT_でないときの一時ファイル名は"EpgTimer_Bon_Post.bat"です。
+  実行は直列に行います(互いに並列実行しない)。また、実行時点で各々の動作が完了し
+  ている(予約ファイル等更新済みである)ことを保証します。
+  iniフォルダに簡単な参考用バッチファイルを用意しました。
 
-��Q&A
-  �E�\�񊄂�U��̎d�����ڂ���
-    �S�\����J�n���ԂŃ\�[�g���A�\��̂Ȃ����ԑт��Ƃɑg�����A�g���Ƃ̗\��ɑ΂�
-    "�\��D��x>�J�n����(�I��D�掞�t��)>�\��ID"�̈�ӂȗD��x�����A�D��x����
-    �\����`���[�i�Ɋ��蓖�Ă܂��B�����ŁA�D��x�����ƂɎ��ۂ̘^�掞�Ԃ��v�Z���A
-    �Œ��ƂȂ�`���[�i��I�т܂�(���������Ȃ�BonDriver�̗D��x��)�B�`���[�i����
-    �w�莞�͂����őI�ׂ�`���[�i�����肳��邱�ƂɂȂ�܂��B�^�掞�Ԃ�0���Ȃ�`
-    ���[�i�s���ƂȂ�܂��B
-  �E�J�n�ƏI�����ԏd�Ȃ��Ă���Ƃ��̓�����ڂ���
-    �ʃ`�����l���̏ꍇ�A�O�ԑg�̗D��x�������Ƃ��͂��ꂪ�I���܂Ō�ԑg�̘^���
-    �n�܂�܂���B��ԑg�̗D��x�������Ƃ��́A���̊J�n20�b�O�ɑO�ԑg�̘^����I��
-    ���܂��B�}�[�W�����܂߂Ę^�掞�Ԃł��B�}�[�W���������̎d�l�͔p�~���܂����B
-  �E�v���O�����I�ɓo�^������@�́H
-    Reserve.txt��ID 0�ō��ڂ𒼐ڒǉ�����@�\�͔p�~���܂����B
-  �EEPG�擾��BS�ACS1�ACS2�̊�{���̂ݎ擾�ĉ��H
-    CS3(NetworkID=10)��ǉ����܂����y�ǉ��z�B
-  �E�Ǐ]�ł��邾�����s���Ȃ����߂̑΍�Ƃ�����H
-    �d�l�ύX�ł͂Ȃ����ӂł����A�f�W�^�������̎d�l��A�ߑO0�����ׂ��ł�EPG�擾��
-    ������̂�����ł��B
+◇Q&A
+  ・予約割り振りの仕方を詳しく
+    全予約を開始時間でソートし、予約のない時間帯ごとに組分け、組ごとの予約に対し
+    "予約優先度>開始時間(終ろ優先時逆順)>予約ID"の一意な優先度をつけ、優先度順に
+    予約をチューナに割り当てます。ここで、優先度をもとに実際の録画時間を計算し、
+    最長となるチューナを選びます(同じ長さならBonDriverの優先度順)。チューナ強制
+    指定時はここで選べるチューナが限定されることになります。録画時間が0分ならチ
+    ューナ不足となります。
+  ・開始と終了時間重なっているときの動作を詳しく
+    別チャンネルの場合、前番組の優先度が高いときはそれが終わるまで後番組の録画は
+    始まりません。後番組の優先度が高いときは、その開始20秒前に前番組の録画を終了
+    します。マージンを含めて録画時間です。マージン無視等の仕様は廃止しました。
+  ・プログラム的に登録する方法は？
+    Reserve.txtにID 0で項目を直接追加する機能は廃止しました。
+  ・EPG取得でBS、CS1、CS2の基本情報のみ取得て何？
+    CS3(NetworkID=10)を追加しました【追加】。
+  ・追従できるだけ失敗しないための対策とかある？
+    仕様変更ではなく注意ですが、デジタル放送の仕様上、午前0時を跨いでのEPG取得は
+    避けるのが無難です。
 
-���L�[���[�h�����̒u������������ύX����
-  ConvertText.txt�͔p�~���܂����B��Ɉȉ��̃e�[�u�����g���܂��B
-  <�u���O>
-  �O�P�Q�R�S�T�U�V�W�X
-  �`�a�b�c�d�e�f�g�h�i�j�k�l�m�n�o�p�q�r�s�t�u�v�w�x�y
-  ����������������������������������������������������
-  �f�h{�S�p��}�I���������i�j���{�C�|�D�^�F�G�������H���m�n�O�Q�M�o�b�p�`�����
-  ����������������
-  �� �� �� �� �� �����
-  �� �� �� �� �� �����
-  �� �� �� �� �� ����������
-  �� �� �� �� �� �� �� �� �� �� ���������������������߁�
-  <�u����>
+◇キーワード検索の置き換え文字を変更する
+  ConvertText.txtは廃止しました。常に以下のテーブルを使います。
+  <置換前>
+  ０１２３４５６７８９
+  ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ
+  ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ
+  ’”{全角空白}！＃＄％＆（）＊＋，－．／：；＜＝＞？＠［］＾＿｀｛｜｝～｡｢｣､･
+  ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵ
+  ｶﾞ ｷﾞ ｸﾞ ｹﾞ ｺﾞ ｶｷｸｹｺ
+  ｻﾞ ｼﾞ ｽﾞ ｾﾞ ｿﾞ ｻｼｽｾｿ
+  ﾀﾞ ﾁﾞ ﾂﾞ ﾃﾞ ﾄﾞ ﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉ
+  ﾊﾞ ﾋﾞ ﾌﾞ ﾍﾞ ﾎﾞ ﾊﾟ ﾋﾟ ﾌﾟ ﾍﾟ ﾎﾟ ﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝﾞﾟ￥
+  <置換後>
   0123456789
   ABCDEFGHIJKLMNOPQRSTUVWXYZ
   abcdefghijklmnopqrstuvwxyz
-  '"{���p��}!#$%&()*+,-./:;<=>?@[]^_`{|}~�B�u�v�A�E
-  ���@�B�D�F�H�������b�[�A�C�E�G�I
-  �K�M�O�Q�S�J�L�N�P�R
-  �U�W�Y�[�]�T�V�X�Z�\
-  �_�a�d�f�h�^�`�c�e�g�i�j�k�l�m
-  �o�r�u�x�{�p�s�v�y�|�n�q�t�w�z�}�~���������������������������J�K\
+  '"{半角空白}!#$%&()*+,-./:;<=>?@[]^_`{|}~。「」、・
+  ヲァィゥェォャュョッーアイウエオ
+  ガギグゲゴカキクケコ
+  ザジズゼゾサシスセソ
+  ダヂヅデドタチツテトナニヌネノ
+  バビブベボパピプペポハヒフヘホマミムメモヤユヨラリルレロワン゛゜\
 
-���Ǐ]����̃J�X�^�}�C�Y
-  �ENoEpgTuijyuMin�͔p�~���܂���(���0)
-  �EDuraChgMarginMin�͔p�~���܂���(���0)
-  �ETuijyuHour�̃f�t�H���g��3���ԂɂȂ�܂���
+◇追従動作のカスタマイズ
+  ・NoEpgTuijyuMinは廃止しました(常に0)
+  ・DuraChgMarginMinは廃止しました(常に0)
+  ・TuijyuHourのデフォルトは3時間になりました
 
-���\�񊄂�U��̃A���S���Y���̕ύX
-  �p�~���܂����B
+◇予約割り振りのアルゴリズムの変更
+  廃止しました。
 
-������ɘ^����s�����ԑg���̒~�ϐ���ύX����
-  RecInfo2Max�̃f�t�H���g��1000�ł�(�d�l�ύX�łȂ���\�L)�B
+◇正常に録画を行えた番組情報の蓄積数を変更する
+  RecInfo2Maxのデフォルトは1000です(仕様変更でなく誤表記)。
 
-������ɘ^����s�����ԑg���Ƃ��Ĕ��f���邽�߂̃h���b�v����ύX����
-  �h���b�v�J�E���g�̎d�l�ύX�ɂ��ARecInfo2DropChk�̃f�t�H���g��2�ɂȂ�܂����B
+◇正常に録画を行えた番組情報として判断するためのドロップ数を変更する
+  ドロップカウントの仕様変更により、RecInfo2DropChkのデフォルトは2になりました。
 
-���u���E�U����\���ł���悤�ɂ��� / DLNA��DMS�ۂ��@�\���g��
-  �uCivetWeb�̑g�ݍ��݂ɂ��āv���Q�ƁB
+◇ブラウザから表示できるようにする / DLNAのDMSぽい機能を使う
+  「CivetWebの組み込みについて」を参照。
 
-���^���bat�N�����̌`����ς���
-  ��T�[�r�X����<ExecBat>�ɏ]���܂���B��q�̊g�����߂Ńo�b�`���ƂɎw�肵�܂��B
+◇録画後bat起動時の形式を変える
+  非サービス時は<ExecBat>に従いません。上述の拡張命令でバッチごとに指定します。
 
-�����ʒm���O�������I�Ƀt�@�C���ɕۑ�����
-  �p�~���܂����BEpgTimerSrv���̕ۑ��@�\�𗘗p���Ă��������B
+◇情報通知ログを自動的にファイルに保存する
+  廃止しました。EpgTimerSrv側の保存機能を利用してください。
 
-���f�U�C�������[�h���Ȃ�
-  NoStyle��0(�f�t�H���g)�̂Ƃ��AEpgTimer�̂���t�H���_��EpgTimer.exe.rd.xaml����
-  ��΁A�����ɒ�`���ꂽ���\�[�X��K�p���܂��y�ǉ��z�Bini�t�H���_�ɊȒP�ȃT���v
-  ����p�ӂ����̂ŎQ�l�ɂ��Ă��������B
+◇デザインをロードしない
+  NoStyleが0(デフォルト)のとき、EpgTimerのあるフォルダにEpgTimer.exe.rd.xamlがあ
+  れば、そこに定義されたリソースを適用します【追加】。iniフォルダに簡単なサンプ
+  ルを用意したので参考にしてください。
 
-���ԑg�\�̔w�i�F��ύX�y�ǉ��z
-  EpgTimer.exe.xml��<EpgBackColorR/G/B>�ŕύX�ł��܂��B
+◇番組表の背景色を変更【追加】
+  EpgTimer.exe.xmlの<EpgBackColorR/G/B>で変更できます。
 
-������ԑg�����o�^�Ŕԑg���̔�r�̍ۂɖ������镶������w�肷��y�ǉ��z
-  [��]��[��]�Ȃǂ̂����ԑg��������ԑg�Ƃ��Ĉ��������ꍇ�ɗ��p���邱�Ƃ�z�肵
-  �����́BEpgTimerSrv.ini��SET��RecInfo2RegExp��ǉ����邱�ƂŎw��\�ł��B����
-  ��͐��K�\���Ƃ��Ĉ����A����Ƃ��ẮA�ԑg�����琳�K�\���Ƀ}�b�`���镔������
-  ���������̂�����ԑg������Ɏg���܂��B
-  ��FRecInfo2RegExp=\[[�Ė���]\]
-      �i[��]��[��]��[��]�ɑΉ��j
+◇同一番組無効登録で番組名の比較の際に無視する文字列を指定する【追加】
+  [無]や[生]などのついた番組名も同一番組として扱いたい場合に利用することを想定し
+  たもの。EpgTimerSrv.iniのSETにRecInfo2RegExpを追加することで指定可能です。文字
+  列は正規表現として扱われ、動作としては、番組名から正規表現にマッチする部分を削
+  除したものが同一番組名判定に使われます。
+  例：RecInfo2RegExp=\[[再無生]\]
+      （[再]と[無]と[生]に対応）
 
-���X���[�v�}�~�g���y�ǉ��z
-  �ݒ聨����ݒ聨�^�擮�쁨�}�~������[PC���g�p���̏ꍇ]�Ƀ`�F�b�N�����A�^��I
-  ������ԑg�\�擾��������PC���g�p(�}�E�X��L�[�{�[�h����)���Ă����ꍇ�A�X���[�v
-  �ւ̃J�E���g�_�E�����\������Ȃ��Ȃ�܂��B�܂��A���̉��ɂ���[X���ȓ��Ƀ��[�U�[
-  ���삪����Ύg�p���Ƃ݂Ȃ�]�Ŏg�p�����ǂ����̔��莞�Ԃ𒲐��ł��܂��B������0��
-  �����ꍇ�͏�Ɏg�p���ł���Ƃ݂Ȃ��܂�(�X���[�v���Ȃ��Ȃ�܂��j�B
+◇スリープ抑止拡張【追加】
+  設定→動作設定→録画動作→抑止条件→[PCを使用中の場合]にチェックを入れ、録画終
+  了時や番組表取得完了時にPCを使用(マウスやキーボード操作)していた場合、スリープ
+  へのカウントダウンが表示されなくなります。また、その下にある[X分以内にユーザー
+  操作があれば使用中とみなす]で使用中かどうかの判定時間を調整できます。ここを0に
+  した場合は常に使用中であるとみなします(スリープしなくなります）。
 
-���o���[���`�b�v�������I�ɕ���܂ł̎���(�b��)���w�肷��y�ǉ��z
-  (Vista�ȍ~�H��)�o���[���`�b�v�̓}�E�X���쓙���Ȃ���Ε\������Â��܂����A
-  EpgTimer.exe.xml��<ForceHideBalloonTipSec>�ŕ\���^�C���A�E�g���w��ł��܂��B
+◇バルーンチップを強制的に閉じるまでの時間(秒数)を指定する【追加】
+  (Vista以降？の)バルーンチップはマウス操作等がなければ表示されつづけますが、
+  EpgTimer.exe.xmlの<ForceHideBalloonTipSec>で表示タイムアウトを指定できます。
 
-��EpgTimerSrv�̃^�X�N�g���C���N���b�N�����ύX����y�ǉ��z
-  �f�t�H���g�ł�EpgTimerSrv.exe�Ɠ����ꏊ��EpgTimer.exe�����s���܂����AEpgTimer
-  �Ƃ������O�̃V���[�g�J�b�g�t�@�C��������΂���������s���܂��B
+◇EpgTimerSrvのタスクトレイ左クリック動作を変更する【追加】
+  デフォルトではEpgTimerSrv.exeと同じ場所のEpgTimer.exeを実行しますが、EpgTimer
+  という名前のショートカットファイルがあればこちらを実行します。
 
-��Write_Default��Tee�R�}���h�@�\�ɂ��āy�ǉ��z
-Write_Default�̒ʏ�̃t�@�C���o�͂ɕ��s���āA�o�͂Ɠ����f�[�^��PlugIn�ݒ�Ŏw��
-���ꂽ�R�}���h�̕W�����͂ɓn���܂��B�R�}���h�ɂ�$FilePath$(�o�̓t�@�C���p�X)���w
-��ł��܂��B�R�}���h�̃J�����g�f�B���N�g���͐e�v���Z�X(EpgDataCap_Bon.exe�Ȃ�)��
-����t�H���_�ɂȂ�܂��B
-�^��I����A�W�����͂͑��₩�ɕ����܂�(���͊����܂őҋ@���邱�Ƃ͂Ȃ�)�B�R�}
-���h�̏������x���^�摬�x�������ꍇ�͏I����̏����ɂ���(�����Ŏ󂯎�����o��
-�t�@�C���p�X�����Ƃɏ������p������Ȃ�)�R�}���h���ōH�v���Ă��������B
-�ETee�o�b�t�@�T�C�Y(byte) : �R�}���h�Ƀf�[�^����͂���P��
-�ETee�ǂݍ��ݒx��(byte) : �R�}���h�ւ̓��͂��t�@�C���o�͂��炱�̒l�����x�点��
+◇Write_DefaultのTeeコマンド機能について【追加】
+Write_Defaultの通常のファイル出力に平行して、出力と同じデータをPlugIn設定で指定
+されたコマンドの標準入力に渡します。コマンドには$FilePath$(出力ファイルパス)を指
+定できます。コマンドのカレントディレクトリは親プロセス(EpgDataCap_Bon.exeなど)の
+あるフォルダになります。
+録画終了後、標準入力は速やかに閉じられます(入力完了まで待機することはない)。コマ
+ンドの処理速度が録画速度を下回る場合は終了後の処理について(引数で受け取った出力
+ファイルパスをもとに処理を継続するなど)コマンド側で工夫してください。
+・Teeバッファサイズ(byte) : コマンドにデータを入力する単位
+・Tee読み込み遅延(byte) : コマンドへの入力をファイル出力からこの値だけ遅らせる
 
-���\��t�@�C������ByteOrderMark�t��UTF-8�Ή��ɂ��āy�ǉ��z
-�\��t�@�C����(EpgAutoAdd.txt, ManualAutoAdd.txt, RecInfo.txt, RecInfo2.txt,
-Reserve.txt)���������Ȃǂ��g���ĕ����R�[�h:UTF-8�ɕϊ�����ƁA�Ȍケ�̌`���œǂ�
-�������܂��B�ϊ���Ƃ�EpgTimerSrv.exe���I�������Ă���s���Ă��������B�ԑg���Ȃ�
-��Unicode�������܂߂Ă��������������Ɉ�����悤�ɂȂ�܂��B
-�������̃t�@�C���𒼐ڎQ�Ƃ���O���c�[���͗��p�ł��Ȃ��\���������Ȃ�܂��B
+◇予約ファイル等のByteOrderMark付きUTF-8対応について【追加】
+予約ファイル等(EpgAutoAdd.txt, ManualAutoAdd.txt, RecInfo.txt, RecInfo2.txt,
+Reserve.txt)をメモ帳などを使って文字コード:UTF-8に変換すると、以後この形式で読み
+書きします。変換作業はEpgTimerSrv.exeを終了させてから行ってください。番組名など
+にUnicode文字を含めても文字化けせずに扱えるようになります。
+※これらのファイルを直接参照する外部ツールは利用できない可能性が高くなります。
 
-���\��t�@�C������";;NextID="�ɂ��āy�ǉ��z
-ID�̍Ďg�p��h�����ߗ\��t�@�C�����̓��e��";;NextID="�R�����g�����܂��B�K�{��
-���̂ł͂Ȃ��̂ŁA�O���c�[���ɖ�肪�o��ꍇ��EpgTimerSrv.exe���I�������Ă��烁
-�����Ȃǂō폜�ł��܂��BReserve.txt�̃\�[�g�͗\��ID������\��������ɖ߂�܂��B
+◇予約ファイル等の";;NextID="について【追加】
+IDの再使用を防ぐため予約ファイル等の内容に";;NextID="コメントがつきます。必須な
+ものではないので、外部ツールに問題が出る場合はEpgTimerSrv.exeを終了させてからメ
+モ帳などで削除できます。Reserve.txtのソートは予約ID順から予約日時順に戻ります。
 
-��CivetWeb�̑g�ݍ��݂ɂ��ā�
-HTTP�T�[�o�@�\�̊ȒP���ƃf�B���N�g���g���o�[�T�����X�̃o�O�C����ړI�ɁAEpgTimerSrv.exe��CivetWeb��g�ݍ��݂܂����B
-HTTP�T�[�o�@�\�͏]���ʂ�EpgTimerSrv.ini��EnableHttpSrv�L�[��1�ɂ���ƗL���ɂȂ�܂�(2�ɂ����EpgTimerSrv.exe�Ɠ����ꏊ�Ƀ��O�t�@�C�����o��)�B
-�L���ɂ���ꍇ��EpgTimerSrv.exe�Ɠ����ꏊ��lua52.dll���K�v�ł��B�Ή�������̂�DL���Ă��������B
+■CivetWebの組み込みについて■
+HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetWebを組み込みました。
+HTTPサーバ機能は従来通りEpgTimerSrv.iniのEnableHttpSrvキーを1にすると有効になります(2にするとEpgTimerSrv.exeと同じ場所にログファイルも出力)。
+有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。
 https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
-CivetWeb�ɂ��Ă͖{�Ƃ̃h�L�������g�����Q�Ƃ��Ă�������(�p��) ���g�ݍ��݃o�[�W������v1.9.1
+CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.9.1
 https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
-SSL/TLS�𗘗p����ꍇ��EpgTimerSrv.exe�Ɠ����ꏊ��ssleay32.dll��libeay32.dll���K�v�ł��B���r���h(����)���邩�M���ł���ǂ���������肵�Ă��������B
-�Ƃ肠���� https://www.openssl.org/community/binaries.html �ɂ��� https://indy.fulgan.com/SSL/ �œ�����m�F���Ă��܂��B
+SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にssleay32.dllとlibeay32.dllが必要です。自ビルド(推奨)するか信頼できるどこかから入手してください。
+とりあえず https://www.openssl.org/community/binaries.html にある https://indy.fulgan.com/SSL/ で動作を確認しています。
 
-�uDLNA��DMS�ۂ��@�\�v��HTTP�T�[�o�ɓ������܂����B
-ini�t�H���_�ɂ���dlna�ȉ������J�t�H���_�ɒu����EpgTimerSrv.ini��EnableDMS�L�[��1�ɂ���ƗL���ɂȂ�܂��B
+「DLNAのDMSぽい機能」はHTTPサーバに統合しました。
+iniフォルダにあるdlna以下を公開フォルダに置いてEpgTimerSrv.iniのEnableDMSキーを1にすると有効になります。
 
-EpgTimerSrv.ini��SET�Ɉȉ��̃L�[[=�f�t�H���g]���w��ł��܂�:
+EpgTimerSrv.iniのSETに以下のキー[=デフォルト]を指定できます:
 HttpAccessControlList[=+127.0.0.1]
-  �A�N�Z�X����
-  # CivetWeb��access_control_list�ɑ���(������"deny all accesses"����X�^�[�g)
-  # �]���ʂ肷�ׂẴA�N�Z�X��������ꍇ��+0.0.0.0/0�Ƃ���
-  # ��+0.0.0.0/0�͍ŏI��i�B�L�����A�̋Z�p����v���L�V�����p���Đڑ������ł��邾�����肷�ׂ�
+  アクセス制御
+  # CivetWebのaccess_control_listに相当(ただし"deny all accesses"からスタート)
+  # 従来通りすべてのアクセスを許可する場合は+0.0.0.0/0とする
+  # ※+0.0.0.0/0は最終手段。キャリアの技術情報やプロキシを活用して接続元をできるだけ限定すべき
 HttpPort[=5510]
-  �|�[�g�ԍ�
-  # CivetWeb��listening_ports�ɑ���
-  # SSL�╡���|�[�g�w����@�Ȃǂ͖{�ƃh�L�������g�Q��
-HttpPublicFolder[=EpgTimerSrv.exe�Ɠ����ꏊ��"HttpPublic"]
-  ���J�t�H���_
-  # CivetWeb��document_root�ɑ���
-  # �t�H���_�p�X�ɓ��{��(�}���`�o�C�g)�������܂܂Ȃ�����
-HttpAuthenticationDomain[=CivetWeb�̃f�t�H���g]
-  �F�ؗ̈�
-  # CivetWeb��authentication_domain�ɑ���
-  # �p�X���[�h�m�F��ʂ̕����񂮂炢�̖��������Ȃ�
+  ポート番号
+  # CivetWebのlistening_portsに相当
+  # SSLや複数ポート指定方法などは本家ドキュメント参照
+HttpPublicFolder[=EpgTimerSrv.exeと同じ場所の"HttpPublic"]
+  公開フォルダ
+  # CivetWebのdocument_rootに相当
+  # フォルダパスに日本語(マルチバイト)文字を含まないこと
+HttpAuthenticationDomain[=CivetWebのデフォルト]
+  認証領域
+  # CivetWebのauthentication_domainに相当
+  # パスワード確認画面の文字列ぐらいの役割しかない
 HttpNumThreads[=5]
-  ���[�J�X���b�h��
-  # CivetWeb��num_threads�ɑ���
-  # �ő�50
+  ワーカスレッド数
+  # CivetWebのnum_threadsに相当
+  # 最大50
 HttpRequestTimeoutSec[=120]
-  ���N�G�X�g�^�C���A�E�g(�b)
-  # CivetWeb��request_timeout_ms�ɑ���
+  リクエストタイムアウト(秒)
+  # CivetWebのrequest_timeout_msに相当
 HttpSslCipherList[=HIGH:!aNULL:!MD5]
-  �g�p����SSL/TLS�̈Í��X�C�[�g�̃��X�g
-  # CivetWeb��ssl_cipher_list�ɑ���
+  使用するSSL/TLSの暗号スイートのリスト
+  # CivetWebのssl_cipher_listに相当
 HttpSslProtocolVersion[=2]
-  �󂯓����SSL/TLS�v���g�R���̃o�[�W����
-  # CivetWeb��ssl_protocol_version�ɑ���
-  # �l���傫���قǈ��S�B�K���P�[�Ȃǂ�SSL3.0���K�v�ȏꍇ��1�ɂ���
+  受け入れるSSL/TLSプロトコルのバージョン
+  # CivetWebのssl_protocol_versionに相当
+  # 値が大きいほど安全。ガラケーなどでSSL3.0が必要な場合は1にする
 HttpKeepAlive[=0]
-  Keep-Alive��L���ɂ��邩�ǂ���
-  # CivetWeb��enable_keep_alive�ɑ���
-  # �L���ɂ���[=1]�Ƃ��͈ȉ��ɒ���:
-  # �Emg.keep_alive(true)���\�b�h���Ă�Lua�X�N���v�g�͎����I�ڑ��ɂȂ邩������Ȃ��B
-  #   ���̃��\�b�h��true��Ԃ����Ƃ���"Content-Length"��K������A"Connection: close"���Ȃ�
+  Keep-Aliveを有効にするかどうか
+  # CivetWebのenable_keep_aliveに相当
+  # 有効にする[=1]ときは以下に注意:
+  # ・mg.keep_alive(true)メソッドを呼んだLuaスクリプトは持続的接続になるかもしれない。
+  #   このメソッドがtrueを返したときは"Content-Length"を必ず送り、"Connection: close"しない
 
-�����āA�ȉ��̐ݒ��CivetWeb�̃f�t�H���g����ύX���Ă��܂�:
-  ssi_pattern: "" (SSI�͖���)
-  extra_mime_types: "ContentTypeText.txt"�ɒǉ�����MIME�^�C�v(�]���ʂ�)
-  lua_script_pattern: "**.lua$|**.html$|*/api/*$" (�܂�.html�t�@�C����Lua�X�N���v�g�����ɂȂ�)
-    ��REST API�Ƃ̌݊��̂��߁A���J�t�H���_������api�t�H���_�ɂ���t�@�C����Lua�X�N���v�g�����ɂȂ�
-  ssl_certificate: HttpPort�ɕ���'s'���܂ނƂ��AEpgTimerSrv.exe�Ɠ����ꏊ��"ssl_cert.pem"
-  ssl_ca_file: EpgTimerSrv.exe�Ɠ����ꏊ��"ssl_peer.pem"
-  ssl_verify_peer: "ssl_peer.pem"�����݂���Ƃ�"yes"
-  global_auth_file: EpgTimerSrv.exe�Ɠ����ꏊ��"glpasswd"
+加えて、以下の設定をCivetWebのデフォルトから変更しています:
+  ssi_pattern: "" (SSIは無効)
+  extra_mime_types: "ContentTypeText.txt"に追加したMIMEタイプ(従来通り)
+  lua_script_pattern: "**.lua$|**.html$|*/api/*$" (つまり.htmlファイルはLuaスクリプト扱いになる)
+    ※REST APIとの互換のため、公開フォルダ直下のapiフォルダにあるファイルもLuaスクリプト扱いになる
+  ssl_certificate: HttpPortに文字's'を含むとき、EpgTimerSrv.exeと同じ場所の"ssl_cert.pem"
+  ssl_ca_file: EpgTimerSrv.exeと同じ場所の"ssl_peer.pem"
+  ssl_verify_peer: "ssl_peer.pem"が存在するとき"yes"
+  global_auth_file: EpgTimerSrv.exeと同じ場所の"glpasswd"
 
-���J�t�H���_�ȉ��̃t�H���_��t�@�C�������J�Ώۂł�(�F�X�V�ׂ�)�B
-ini�t�H���_�Ɍ�����ۂ����������Lua�X�N���v�g��ǉ������̂ŎQ�l�ɂ��Ă��������B
+公開フォルダ以下のフォルダやファイルが公開対象です(色々遊べる)。
+iniフォルダに原作っぽい動作をするLuaスクリプトを追加したので参考にしてください。
 
-�O�����J�͐������܂��񂪁A�������s���ꍇ�͈ȉ����Q�l��"ssl_peer.pem"�܂���"glpasswd"���쐬��(�t�H���_���Ƃ�.htpasswd�͕s�m��)�A
-SSL/TLS�𗘗p���Ă��������B����ɏd�v�ȃf�[�^����u�����Ă��������B
-CivetWeb�ŃZ�L�����e�B���m�ۂ���Ă��邾�낤�Ɣ��f�ł����͔̂F�؏����܂ł̕s���A�N�Z�X�ϐ��݂̂ł��B
-DoS�ϐ��͊��҂ł��܂��񂵁A�p�X�����̌��J�T�[�o�Ƃ��Ă̗��p�������߂ł��܂���B
+外部公開は推奨しませんが、もしも行う場合は以下を参考に"ssl_peer.pem"または"glpasswd"を作成し(フォルダごとの.htpasswdは不確実)、
+SSL/TLSを利用してください。さらに重要なデータから隔離してください。
+CivetWebでセキュリティが確保されているだろうと判断できたのは認証処理までの不正アクセス耐性のみです。
+DoS耐性は期待できませんし、パス無しの公開サーバとしての利用もお勧めできません。
 
-"ssl_cert.pem"(�閧��+���ȏ����ؖ���)�̍쐬�菇�͖{�ƃh�L�������g�ɏ]��Ȃ��ق����ǂ��ł��B�Í����x��
-�uSSL/TLS�Í��ݒ�K�C�h���C���v(https://www.ipa.go.jp/security/vuln/ssl_crypt_config.html)�𖞂����Ă��܂���B
-(�쐬�菇��A�L�ۂ݂ɂ��Ȃ����ƁBbash�̏ꍇ��type��cat)
+"ssl_cert.pem"(秘密鍵+自己署名証明書)の作成手順は本家ドキュメントに従わないほうが良いです。暗号強度が
+「SSL/TLS暗号設定ガイドライン」(https://www.ipa.go.jp/security/vuln/ssl_crypt_config.html)を満たしていません。
+(作成手順例、鵜呑みにしないこと。bashの場合はtype→cat)
 > openssl genrsa -out server.key 2048
 > openssl req -new -key server.key -out server.csr
 > openssl x509 -req -days 3650 -sha256 -in server.csr -signkey server.key -out server.crt
-  (���͍��ڂ̓f�t�H���g��OK�B�u���E�U�̏ؖ�����O�ǉ�����"server.crt"�Ɲd�󂪓��������������ӂ���)
-  ("Common Name"���ڂɂ̓T�[�o�̃h���C������IP�A�h���X���w�肵�Ă������ق����ǂ�����)
+  (入力項目はデフォルトでOK。ブラウザの証明書例外追加時に"server.crt"と拇印が等しいかだけ注意する)
+  ("Common Name"項目にはサーバのドメイン名かIPアドレスを指定しておいたほうが良いかも)
 > type server.crt >ssl_cert.pem
 > type server.key >>ssl_cert.pem
 
-"ssl_peer.pem"(�M���ς݃N���C�A���g�ؖ������X�g)�̍쐬�菇��
+"ssl_peer.pem"(信頼済みクライアント証明書リスト)の作成手順例
 > openssl genrsa -out client.key 2048
 > openssl req -new -key client.key -out client.csr
 > openssl x509 -req -days 3650 -sha256 -in client.csr -signkey client.key -out client.crt
 > type client.crt >ssl_peer.pem
 > openssl pkcs12 -export -inkey client.key -in client.crt -out edcb_key.p12 -name "edcb_key"
-  (��"edcb_key.p12"(�N���C�A���g�̔閧��)�̓u���E�U���ɃC���|�[�g����)
-  (�p�X���[�h����͂��邽�߂�"winpty openssl�`"�Ƃ���K�v�����邩������Ȃ�)
+  (↑"edcb_key.p12"(クライアントの秘密鍵)はブラウザ等にインポートする)
+  (パスワードを入力するために"winpty openssl～"とする必要があるかもしれない)
 
-"glpasswd"(�_�C�W�F�X�g�F�؃t�@�C��)�̊ȒP�ȍ���(���[�U��root�A�F�ؗ̈�mydomain.com�A�p�X���[�htest)
+"glpasswd"(ダイジェスト認証ファイル)の簡単な作り方(ユーザ名root、認証領域mydomain.com、パスワードtest)
 > set <nul /p "x=root:mydomain.com:test" | openssl md5
-  (�o�͂����32�����̃n�b�V���l�Ńp�X���[�h���㏑����)
+  (出力される32文字のハッシュ値でパスワードを上書き↓)
 > set <nul /p "x=root:mydomain.com:351eee77bbb11db9fef4870b0d78b061" >glpasswd
 
-Lua��mg.write()�ɂ��āA���ۂ̃u�[���A����Ԃ��悤�g�����Ă��܂�(�{�ƂɎ�荞�܂�܂���)�B
+Luaのmg.write()について、成否のブーリアンを返すよう拡張しています(本家に取り込まれました)。
 
-��Lua edcb�O���[�o���ϐ��̎d�l��
-�@�\��EpgTimerSrv�{�̂ɂ��郁�\�b�h�Ƃقړ����Ȃ̂�
-C++��ǂ߂�l��EpgTimerSrvMain.cpp�ɂ�������𒭂߂�Ɨǂ���������Ȃ��B
+■Lua edcbグローバル変数の仕様■
+機能はEpgTimerSrv本体にあるメソッドとほぼ同じなので
+C++を読める人はEpgTimerSrvMain.cppにある実装を眺めると良いかもしれない。
 
-ANSI�n��Lua�W�����C�u������⊮���邽�߁A�ȉ��̊֐���p�ӂ��Ă���B
+ANSI系のLua標準ライブラリを補完するため、以下の関数を用意している。
 edcb.os.execute
 edcb.os.remove
 edcb.os.rename
 edcb.io.open
 edcb.io.popen
-������UTF-8�����̂܂ܓn����ȊO�̋�����Lua�W�����C�u�����Ɠ����B
-�������Aedcb.io.*���Ԃ��t�@�C���n���h���͊ȗ����̂��ߍs�ǂݍ��݂̋@�\(lines�Ȃ�)���ȗ����Ă���B
-�܂��Aexecute/popen�̃v�����v�g��ʂ͏o�Ȃ����A�Ō�̈�����true���w�肷��Ε\���ł���B
-��Fedcb.os.execute('ping localhost',true)
+引数にUTF-8をそのまま渡せる以外の挙動はLua標準ライブラリと同じ。
+ただし、edcb.io.*が返すファイルハンドルは簡略化のため行読み込みの機能(linesなど)を省略している。
+また、execute/popenのプロンプト画面は出ないが、最後の引数にtrueを指定すれば表示できる。
+例：edcb.os.execute('ping localhost',true)
 
-[����̒�`]
-B:�u�[���A��
-I:����
-S:������
-TIME:�W�����C�u����os.date('*t')���Ԃ��e�[�u���Ɠ���
-<�e�[�u����>:��q�Œ�`����e�[�u��
-�`�̃��X�g:�Y����1����N�܂�N�́`��Y�������Ɋi�[�����e�[�u��
+[略語の定義]
+B:ブーリアン
+I:整数
+S:文字列
+TIME:標準ライブラリos.date('*t')が返すテーブルと同じ
+<テーブル名>:後述で定義するテーブル
+～のリスト:添え字1からNまでN個の～を添え字順に格納したテーブル
 
 htmlEscape:I
-  ������ԋp�l�̎��̎Q�ƕϊ����w������t���O(+1=amp,+2=lt,+4=gt,+8=quot,+16=apos)
-  �����l��0�B
-  �Ⴆ��edcb.htmlEscape=15�Ƃ����'<&"�e�X�g>'��'&lt;&amp;&quot;�e�X�g&gt;'�̂悤�ɕϊ������B
-  edcb.os.*/edcb.io.*�̋����ɂ͉e�����Ȃ��B
+  文字列返却値の実体参照変換を指示するフラグ(+1=amp,+2=lt,+4=gt,+8=quot,+16=apos)
+  初期値は0。
+  例えばedcb.htmlEscape=15とすると'<&"テスト>'は'&lt;&amp;&quot;テスト&gt;'のように変換される。
+  edcb.os.*/edcb.io.*の挙動には影響しない。
 
 serverRandom:S
-  EpgTimerSrv.exe�̋N�����ɕω�����256bit�̈Í��_�I����
+  EpgTimerSrv.exeの起動毎に変化する256bitの暗号論的乱数
 
-S GetGenreName( �啪��*256+������:I )
-  STD-B10�̃W�������w��̕�������擾����
-  �����ނ�0xFF�Ƃ���Ƒ啪�ނ̕����񂪕Ԃ�B
-  ���݂��Ȃ��Ƃ��󕶎���B
-  �Ⴆ��edcb.GetGenreName(0x0205)��'�O�����E����'���Ԃ�B
-  �啪�ނ�0x70���������TR-B15�́u�L�ш�CS�f�W�^�������g���p���v�̕����񂪕Ԃ�B
-  (����0x70�ɑ΂�����ʈ����͎����\�񌟍������ł����l)
-  �Ⴆ��edcb.GetGenreName(0x7205)��'�z���[�^�X�����['���Ԃ�B
+S GetGenreName( 大分類*256+中分類:I )
+  STD-B10のジャンル指定の文字列を取得する
+  中分類を0xFFとすると大分類の文字列が返る。
+  存在しないとき空文字列。
+  例えばedcb.GetGenreName(0x0205)は'グルメ・料理'が返る。
+  大分類に0x70を加えるとTR-B15の「広帯域CSデジタル放送拡張用情報」の文字列が返る。
+  (この0x70に対する特別扱いは自動予約検索条件でも同様)
+  例えばedcb.GetGenreName(0x7205)は'ホラー／スリラー'が返る。
 
-S GetComponentTypeName( �R���|�[�l���g���e*256+�R���|�[�l���g���:I )
-  STD-B10�̃R���|�[�l���g�L�q�q�̕�������擾����
-  ���݂��Ȃ��Ƃ��󕶎���B
-  �Ⴆ��edcb.GetComponentTypeName(0x01B1)��'�f��1080i(1125i)�A�A�X�y�N�g��4:3'���Ԃ�B
+S GetComponentTypeName( コンポーネント内容*256+コンポーネント種別:I )
+  STD-B10のコンポーネント記述子の文字列を取得する
+  存在しないとき空文字列。
+  例えばedcb.GetComponentTypeName(0x01B1)は'映像1080i(1125i)、アスペクト比4:3'が返る。
 
-S|nil Convert( to�����R�[�h:S, from�����R�[�h:S, �ϊ��Ώ�:S )
-  �����R�[�h�ϊ�����
-  ���p�ł��镶���R�[�h��'utf-8'�܂���'cp932'�̂݁B
-  �ϊ��Ɏ��s����Ƌ󕶎���A���p�ł��Ȃ������R�[�h���w�肷���nil���Ԃ�B
-  ��Fos.execute(edcb.Convert('cp932','utf-8','echo �\���|�� & pause'))
+S|nil Convert( to文字コード:S, from文字コード:S, 変換対象:S )
+  文字コード変換する
+  利用できる文字コードは'utf-8'または'cp932'のみ。
+  変換に失敗すると空文字列、利用できない文字コードを指定するとnilが返る。
+  例：os.execute(edcb.Convert('cp932','utf-8','echo 表が怖い & pause'))
 
-Sleep( �~���b:I )
-  �X���b�h�̎��s�𒆒f����
+Sleep( ミリ秒:I )
+  スレッドの実行を中断する
 
-S GetPrivateProfile( �Z�N�V����:S, �L�[:S, ����l:S|I|B, �t�@�C����:S )
-  Win32API��GetPrivateProfileString���Ă�
-  ����l��B�̂Ƃ���true=1�Afalse=0�ɕϊ������B
-  �t�@�C������EDCB�t�H���_�z���ɒu���ꂽini�t�@�C���𑊑Ύw�肷��B
-  ��Fv=0+edcb.GetPrivateProfile('SET','HttpPort',5510,'EpgTimerSrv.ini')
-  �t�@�C������'Setting\\'�Ŏn�܂�Ƃ��́u�ݒ�֌W�ۑ��t�H���_�v�Ƀ��_�C���N�g�����B
-  ����I�Ɉȉ��̈�����EDCB�t�H���_�̃p�X���Ԃ�B
+S GetPrivateProfile( セクション:S, キー:S, 既定値:S|I|B, ファイル名:S )
+  Win32APIのGetPrivateProfileStringを呼ぶ
+  既定値がBのときはtrue=1、false=0に変換される。
+  ファイル名はEDCBフォルダ配下に置かれたiniファイルを相対指定する。
+  例：v=0+edcb.GetPrivateProfile('SET','HttpPort',5510,'EpgTimerSrv.ini')
+  ファイル名が'Setting\\'で始まるときは「設定関係保存フォルダ」にリダイレクトされる。
+  特例的に以下の引数でEDCBフォルダのパスが返る。
   edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')
 
-B WritePrivateProfile( �Z�N�V����:S, �L�[:S|nil, �l:S|I|B|nil, �t�@�C����:S )
-  Win32API��WritePrivateProfileString���Ă�
-  �l��B�̂Ƃ���true=1�Afalse=0�ɕϊ������B
-  �L�[�܂��͒l��nil�̂Ƃ��̋�����WritePrivateProfileString�Ɠ����B
-  �t�@�C�����ɂ��Ă�GetPrivateProfile()�Ɠ����B
-  �������߂��Ƃ�true���Ԃ�B
+B WritePrivateProfile( セクション:S, キー:S|nil, 値:S|I|B|nil, ファイル名:S )
+  Win32APIのWritePrivateProfileStringを呼ぶ
+  値がBのときはtrue=1、false=0に変換される。
+  キーまたは値がnilのときの挙動はWritePrivateProfileStringと同じ。
+  ファイル名についてはGetPrivateProfile()と同じ。
+  書き込めたときtrueが返る。
 
 B ReloadEpg()
-  EPG�ēǂݍ��݂��J�n����
-  �J�n�ł����Ƃ�true���Ԃ�B
+  EPG再読み込みを開始する
+  開始できたときtrueが返る。
 
-ReloadSetting( �l�b�g���[�N�ݒ��ǂݍ��ނ�:B )
-  �ݒ���ēǂݍ��݂���
-  ������true�ɂ����EpgTimerSrv.ini�̈ȉ��̃L�[���ǂݍ��܂��(HTTP�T�[�o�͍ċN������)�B
+ReloadSetting( ネットワーク設定を読み込むか:B )
+  設定を再読み込みする
+  引数をtrueにするとEpgTimerSrv.iniの以下のキーも読み込まれる(HTTPサーバは再起動する)。
   EnableTCPSrv, TCP*, EnableHttpSrv, Http*, EnableDMS
 
 B EpgCapNow()
-  EPG�擾�J�n��v������
-  �v�����󂯓����ꂽ�Ƃ�true���Ԃ�B
+  EPG取得開始を要求する
+  要求が受け入れられたときtrueが返る。
 
-<�`�����l�����>�̃��X�g GetChDataList()
-  �`�����l���X�L�����œ����`�����l�����̃��X�g���擾����(onid>tsid>sid�\�[�g)
-  �܂�"Setting\ChSet5.txt"�̓��e�B
+<チャンネル情報>のリスト GetChDataList()
+  チャンネルスキャンで得たチャンネル情報のリストを取得する(onid>tsid>sidソート)
+  つまり"Setting\ChSet5.txt"の内容。
 
-<�T�[�r�X���>�̃��X�g|nil GetServiceList()
-  EPG�擾�œ����S�T�[�r�X�����擾����(onid>tsid>sid�\�[�g)
-  �v���Z�X�N�������nil(���s)�B
+<サービス情報>のリスト|nil GetServiceList()
+  EPG取得で得た全サービス情報を取得する(onid>tsid>sidソート)
+  プロセス起動直後はnil(失敗)。
 
-{minTime:TIME, maxTime:TIME}|nil GetEventMinMaxTime( �l�b�g���[�NID:I, TSID:I, �T�[�r�XID:I )
-{minTime:TIME, maxTime:TIME}|nil GetEventMinMaxTimeArchive( �l�b�g���[�NID:I, TSID:I, �T�[�r�XID:I )
-  �w��T�[�r�X�̑S�C�x���g�ɂ��čŏ��J�n���Ԃƍő�J�n���Ԃ��擾����
-  �J�n���Ԗ���łȂ��C�x���g��1���Ȃ����nil�B
-  *Archive()�͉ߋ��C�x���g���ΏہB
+{minTime:TIME, maxTime:TIME}|nil GetEventMinMaxTime( ネットワークID:I, TSID:I, サービスID:I )
+{minTime:TIME, maxTime:TIME}|nil GetEventMinMaxTimeArchive( ネットワークID:I, TSID:I, サービスID:I )
+  指定サービスの全イベントについて最小開始時間と最大開始時間を取得する
+  開始時間未定でないイベントが1つもなければnil。
+  *Archive()は過去イベントが対象。
 
-<�C�x���g���>�̃��X�g|nil EnumEventInfo( {onid:I|nil, tsid:I|nil, sid:I|nil}�̃��X�g [, {startTime:TIME|nil, durationSecond:I|nil} ] )
-<�C�x���g���>�̃��X�g|nil EnumEventInfoArchive( {onid:I|nil, tsid:I|nil, sid:I|nil}�̃��X�g [, {startTime:TIME|nil, durationSecond:I|nil} ] )
-  �w��T�[�r�X�̑S�C�x���g�����擾����(onid>tsid>sid>eid�\�[�g�A*Archive()�͖��\�[�g)
-  ���X�g�̂����ꂩ�Ƀ}�b�`�����T�[�r�X�ɂ��Ď擾����B
-  onid,tsid,sid�t�B�[���h���e�Xnil�Ƃ���ƁA�e�X���ׂĂ�ID�Ƀ}�b�`����B
-  �v���Z�X�N�������nil(���s)�B
-  ��2�����ɃC�x���g�̊J�n���Ԃ͈̔͂��w��ł���B
-  �E�J�n���Ԃ�startTime�ȏ�`startTime+durationSecond�����̃C�x���g�Ƀ}�b�`
-  �E��e�[�u���̂Ƃ��͊J�n���Ԗ���̃C�x���g�Ƀ}�b�`
-  *Archive()�͉ߋ��C�x���g���ΏہB���ė��p�̉\�������邽�߁A�ߋ��C�x���g��eid��ID�Ƃ��Ĉ����ׂ��łȂ��B
+<イベント情報>のリスト|nil EnumEventInfo( {onid:I|nil, tsid:I|nil, sid:I|nil}のリスト [, {startTime:TIME|nil, durationSecond:I|nil} ] )
+<イベント情報>のリスト|nil EnumEventInfoArchive( {onid:I|nil, tsid:I|nil, sid:I|nil}のリスト [, {startTime:TIME|nil, durationSecond:I|nil} ] )
+  指定サービスの全イベント情報を取得する(onid>tsid>sid>eidソート、*Archive()は未ソート)
+  リストのいずれかにマッチしたサービスについて取得する。
+  onid,tsid,sidフィールドを各々nilとすると、各々すべてのIDにマッチする。
+  プロセス起動直後はnil(失敗)。
+  第2引数にイベントの開始時間の範囲を指定できる。
+  ・開始時間がstartTime以上～startTime+durationSecond未満のイベントにマッチ
+  ・空テーブルのときは開始時間未定のイベントにマッチ
+  *Archive()は過去イベントが対象。※再利用の可能性があるため、過去イベントのeidをIDとして扱うべきでない。
 
-<�C�x���g���>�̃��X�g|nil SearchEpg( <�����\�񌟍�����> )
-<�C�x���g���>|nil SearchEpg( �l�b�g���[�NID:I, TSID:I, �T�[�r�XID:I, �C�x���gID:I )
-  �C�x���g������������
-  1�����̂Ƃ���<�����\�񌟍�����>�Ƀ}�b�`�����C�x���g���擾����B
-  4�����̂Ƃ��͎w��C�x���g���擾����B�Ȃ����nil���Ԃ�B
-  �v���Z�X�N�������nil(���s)�B
+<イベント情報>のリスト|nil SearchEpg( <自動予約検索条件> )
+<イベント情報>|nil SearchEpg( ネットワークID:I, TSID:I, サービスID:I, イベントID:I )
+  イベント情報を検索する
+  1引数のときは<自動予約検索条件>にマッチしたイベントを取得する。
+  4引数のときは指定イベントを取得する。なければnilが返る。
+  プロセス起動直後はnil(失敗)。
 
-B AddReserveData( <�\����> )
-  �\���ǉ�����
-  ���s����false�B
+B AddReserveData( <予約情報> )
+  予約を追加する
+  失敗時はfalse。
 
-B ChgReserveData( <�\����> )
-  �\���ύX����
-  ���s����false�B
+B ChgReserveData( <予約情報> )
+  予約を変更する
+  失敗時はfalse。
 
-DelReserveData( �\��ID:I )
-  �\����폜����
+DelReserveData( 予約ID:I )
+  予約を削除する
 
-<�\����>�̃��X�g GetReserveData()
-<�\����>|nil GetReserveData( �\��ID:I )
-  �\����擾����(reserveID�\�[�g)
-  �������̂Ƃ��͑S�\����擾����B
-  1�����̂Ƃ��͎w��\����擾����B�Ȃ����nil���Ԃ�B
+<予約情報>のリスト GetReserveData()
+<予約情報>|nil GetReserveData( 予約ID:I )
+  予約を取得する(reserveIDソート)
+  無引数のときは全予約を取得する。
+  1引数のときは指定予約を取得する。なければnilが返る。
 
-S|nil GetRecFilePath( �\��ID:I )
-  �\��̘^��t�@�C���p�X���擾����
-  �^�撆�łȂ������莋���\��ȂǂŎ擾�ł��Ȃ����nil���Ԃ�B
+S|nil GetRecFilePath( 予約ID:I )
+  予約の録画ファイルパスを取得する
+  録画中でなかったり視聴予約などで取得できなければnilが返る。
 
-<�^��ςݏ��>�̃��X�g GetRecFileInfo()
-<�^��ςݏ��>|nil GetRecFileInfo( ���ID:I )
-  �^��ςݏ����擾����(id�\�[�g)
-  �������̂Ƃ��͑S�����擾����B
-  1�����̂Ƃ��͎w������擾����B�Ȃ����nil���Ԃ�B
+<録画済み情報>のリスト GetRecFileInfo()
+<録画済み情報>|nil GetRecFileInfo( 情報ID:I )
+  録画済み情報を取得する(idソート)
+  無引数のときは全情報を取得する。
+  1引数のときは指定情報を取得する。なければnilが返る。
 
-<�^��ςݏ��>�̃��X�g GetRecFileInfoBasic()
-<�^��ςݏ��>|nil GetRecFileInfoBasic( ���ID:I )
-  ��{�I�Ș^��ςݏ����擾����(id�\�[�g)
-  programInfo��errInfo����ɋ󕶎���ɂȂ�ȊO��GetRecFileInfo()�Ɠ����B
-  programInfo��errInfo���擾���邽�߂̃t�@�C���A�N�Z�X�̃R�X�g�������B
-  ��F���̃��\�b�h�����݂���Ȃ炱����g���ă��X�g���擾����
+<録画済み情報>のリスト GetRecFileInfoBasic()
+<録画済み情報>|nil GetRecFileInfoBasic( 情報ID:I )
+  基本的な録画済み情報を取得する(idソート)
+  programInfoとerrInfoが常に空文字列になる以外はGetRecFileInfo()と同じ。
+  programInfoとerrInfoを取得するためのファイルアクセスのコストが無い。
+  例：このメソッドが存在するならこれを使ってリストを取得する
       a=edcb.GetRecFileInfoBasic and edcb.GetRecFileInfoBasic() or edcb.GetRecFileInfo()
 
-ChgProtectRecFileInfo( ���ID:I, �v���e�N�g:B )
-  �^��ςݏ��̃v���e�N�g��ύX����
+ChgProtectRecFileInfo( 情報ID:I, プロテクト:B )
+  録画済み情報のプロテクトを変更する
 
-DelRecFileInfo( ���ID:I )
-  �^��ςݏ����폜����
+DelRecFileInfo( 情報ID:I )
+  録画済み情報を削除する
 
-<�`���[�i�\����>�̃��X�g GetTunerReserveAll()
-  �`���[�i���Ƃ̗\��̊��蓖�ď����擾����(tunerID�\�[�g)
-  �������A���X�g�̍ŏI�v�f�̓`���[�i�s���̗\���\���B
+<チューナ予約情報>のリスト GetTunerReserveAll()
+  チューナごとの予約の割り当て情報を取得する(tunerIDソート)
+  ただし、リストの最終要素はチューナ不足の予約を表す。
 
-<�^��v���Z�b�g>�̃��X�g EnumRecPresetInfo()
-  �^��v���Z�b�g�����擾����(id�\�[�g)
-  ���Ȃ��Ƃ��f�t�H���g�v���Z�b�g(id==0)�͕K���Ԃ�B
-  �����͉��L[��1]�B�v���Z�b�g�̒񋟕��@�͔C�ӂȂ̂ŁA�K������������g���K�v�͂Ȃ��B
+<録画プリセット>のリスト EnumRecPresetInfo()
+  録画プリセット情報を取得する(idソート)
+  少なくともデフォルトプリセット(id==0)は必ず返る。
+  実装は下記[※1]。プリセットの提供方法は任意なので、必ずしもこれを使う必要はない。
 
-<�����\��o�^���>�̃��X�g EnumAutoAdd()
-  �����\��o�^�����擾����(dataID�\�[�g)
+<自動予約登録情報>のリスト EnumAutoAdd()
+  自動予約登録情報を取得する(dataIDソート)
 
-<�����\��(�v���O����)�o�^���>�̃��X�g EnumManuAdd()
-  �����\��(�v���O����)�o�^�����擾����(dataID�\�[�g)
+<自動予約(プログラム)登録情報>のリスト EnumManuAdd()
+  自動予約(プログラム)登録情報を取得する(dataIDソート)
 
-DelAutoAdd( �o�^ID:I )
-  �����\��o�^�����폜����
+DelAutoAdd( 登録ID:I )
+  自動予約登録情報を削除する
 
-DelManuAdd( �o�^ID:I )
-  �����\��(�v���O����)�o�^�����폜����
+DelManuAdd( 登録ID:I )
+  自動予約(プログラム)登録情報を削除する
 
-B AddOrChgAutoAdd( <�����\��o�^���> )
-  �����\��o�^����ǉ�/�ύX����
-  dataID�t�B�[���h��0�̂Ƃ��ǉ��̓���ɂȂ�B
-  ���s����false�B
+B AddOrChgAutoAdd( <自動予約登録情報> )
+  自動予約登録情報を追加/変更する
+  dataIDフィールドが0のとき追加の動作になる。
+  失敗時はfalse。
 
-B AddOrChgManuAdd( <�����\��(�v���O����)�o�^���> )
-  �����\��(�v���O����)�o�^����ǉ�/�ύX����
-  dataID�t�B�[���h��0�̂Ƃ��ǉ��̓���ɂȂ�B
-  ���s����false�B
+B AddOrChgManuAdd( <自動予約(プログラム)登録情報> )
+  自動予約(プログラム)登録情報を追加/変更する
+  dataIDフィールドが0のとき追加の動作になる。
+  失敗時はfalse。
 
-I GetNotifyUpdateCount( �ʒmID:I )
-  �X�V�ʒm�̃J�E���^���擾����
-  0����n�܂��ăC�x���g���������邽�т�1���������鐔�l���Ԃ�B
-  �擾�ł��Ȃ��ʒmID���w�肷���-1���Ԃ�B
-  �ʒmID:
-    1=EPG�f�[�^���X�V���ꂽ
-    2=�\���񂪍X�V���ꂽ
-    3=�^��ςݏ�񂪍X�V���ꂽ
-    4=�����\��o�^��񂪍X�V���ꂽ
-    5=�����\��(�v���O����)�o�^��񂪍X�V���ꂽ
+I GetNotifyUpdateCount( 通知ID:I )
+  更新通知のカウンタを取得する
+  0から始まってイベントが発生するたびに1だけ増える数値が返る。
+  取得できない通知IDを指定すると-1が返る。
+  通知ID:
+    1=EPGデータが更新された
+    2=予約情報が更新された
+    3=録画済み情報が更新された
+    4=自動予約登録情報が更新された
+    5=自動予約(プログラム)登録情報が更新された
 
-<�t�@�C�����>�̃��X�g ListDmsPublicFile()
-  �p�~
+<ファイル情報>のリスト ListDmsPublicFile()
+  廃止
 
-<�t�@�C�����>�̃��X�g|nil FindFile( �����p�^�[��:S, �擾��:I )
-  Win32API��FindFirstFile���Ă�
-  �擾����0�Ƃ���Ƃ��ׂĂ̌������ʂ��擾����B
-  1�ȏ�̌������ʂ�����Ƃ��̓��X�g�A����ȊO��nil���Ԃ�B
+<ファイル情報>のリスト|nil FindFile( 検索パターン:S, 取得数:I )
+  Win32APIのFindFirstFileを呼ぶ
+  取得数を0とするとすべての検索結果を取得する。
+  1つ以上の検索結果があるときはリスト、それ以外はnilが返る。
 
-[��1]
+[※1]
 edcb.EnumRecPresetInfo=function()
   local gp,p,d,r=edcb.GetPrivateProfile,'EpgTimerSrv.ini',{0},{}
-  --�y�v���Z�b�gID�̓J���}��؂��PresetID=1,2,3,�̂悤��(0�`3��4����ꍇ�B0�͕s�v)�ۑ�����Ă���z
+  --【プリセットIDはカンマ区切りでPresetID=1,2,3,のように(0～3の4つある場合。0は不要)保存されている】
   for v in gp('SET','PresetID','',p):gmatch('[0-9]+') do
     d[#d+1]=0+v
   end
   table.sort(d)
   for i=1,#d do
     if i==1 or d[i]~=d[i-1] then
-      --�yREC_DEF{�v���Z�b�gID}�Z�N�V�����z
+      --【REC_DEF{プリセットID}セクション】
       local n='REC_DEF'..(d[i]==0 and '' or d[i])
       local m=gp(n,'UseMargineFlag',0,p)~='0'
       r[#r+1]={
@@ -812,7 +812,7 @@ edcb.EnumRecPresetInfo=function()
           partialRecFolder={}
         }
       }
-      --�yREC_DEF_FOLDER{�v���Z�b�gID}�Z�N�V�����z
+      --【REC_DEF_FOLDER{プリセットID}セクション】
       n=n:gsub('EF','EF_FOLDER')
       for j=1,tonumber(gp(n,'Count',0,p)) or 0 do
         r[#r].recSetting.recFolderList[j]={
@@ -821,7 +821,7 @@ edcb.EnumRecPresetInfo=function()
           recNamePlugIn=gp(n,'RecNamePlugIn'..(j-1),'',p)
         }
       end
-      --�yREC_DEF_FOLDER_1SEG{�v���Z�b�gID}�Z�N�V�����z
+      --【REC_DEF_FOLDER_1SEG{プリセットID}セクション】
       n=n:gsub('ER','ER_1SEG')
       for j=1,tonumber(gp(n,'Count',0,p)) or 0 do
         r[#r].recSetting.partialRecFolder[j]={
@@ -835,59 +835,59 @@ edcb.EnumRecPresetInfo=function()
   return r
 end
 
-���e�[�u����`��
-<�`�����l�����>={
-  onid:I=�l�b�g���[�NID
+■テーブル定義■
+<チャンネル情報>={
+  onid:I=ネットワークID
   tsid:I=TSID
-  sid:I=�T�[�r�XID
-  serviceType:I=�T�[�r�X�^�C�v
-  partialFlag:B=�����M�T�[�r�X(�����Z�O)���ǂ���
-  serviceName:S=�T�[�r�X��
-  networkName:S=�l�b�g���[�N��
-  epgCapFlag:B=EPG�f�[�^�擾�Ώۂ��ǂ���
-  searchFlag:B=�������̃f�t�H���g�����ΏۃT�[�r�X���ǂ���
+  sid:I=サービスID
+  serviceType:I=サービスタイプ
+  partialFlag:B=限定受信サービス(ワンセグ)かどうか
+  serviceName:S=サービス名
+  networkName:S=ネットワーク名
+  epgCapFlag:B=EPGデータ取得対象かどうか
+  searchFlag:B=検索時のデフォルト検索対象サービスかどうか
 }
 
-<�T�[�r�X���>={
-  onid:I=�l�b�g���[�NID
+<サービス情報>={
+  onid:I=ネットワークID
   tsid:I=TSID
-  sid:I=�T�[�r�XID
-  service_type:I=�T�[�r�X�`�����
-  partialReceptionFlag:B=�����M�T�[�r�X(�����Z�O)���ǂ���
-  service_provider_name:S=���ƎҖ�
-  service_name:S=�T�[�r�X��
-  network_name:S=�l�b�g���[�N��
-  ts_name:S=TS��
-  remote_control_key_id:I=�����R���L�[����
+  sid:I=サービスID
+  service_type:I=サービス形式種別
+  partialReceptionFlag:B=限定受信サービス(ワンセグ)かどうか
+  service_provider_name:S=事業者名
+  service_name:S=サービス名
+  network_name:S=ネットワーク名
+  ts_name:S=TS名
+  remote_control_key_id:I=リモコンキー識別
 }
 
-<�C�x���g���>={
-  onid:I=�l�b�g���[�NID
+<イベント情報>={
+  onid:I=ネットワークID
   tsid:I=TSID
-  sid:I=�T�[�r�XID
-  eid:I=�C�x���gID
-  startTime:TIME|nil=�J�n����(�s���̂Ƃ�nil)
-  durationSecond:I|nil=������(�s���̂Ƃ�nil)
-  freeCAFlag:B=�m���X�N�����u���t���O
+  sid:I=サービスID
+  eid:I=イベントID
+  startTime:TIME|nil=開始時間(不明のときnil)
+  durationSecond:I|nil=総時間(不明のときnil)
+  freeCAFlag:B=ノンスクランブルフラグ
   shortInfo:{
-    event_name:S=�C�x���g��
-    text_char:S=���
-  }|nil=EPG��{���(�Ȃ��Ƃ�nil�A�ȉ����l)
+    event_name:S=イベント名
+    text_char:S=情報
+  }|nil=EPG基本情報(ないときnil、以下同様)
   extInfo:{
-    text_char:S=�ڍ׏��
-  }|nil=EPG�g�����
+    text_char:S=詳細情報
+  }|nil=EPG拡張情報
   contentInfoList:{
-    content_nibble:I=�啪��*256+������
-    user_nibble:I=�Ǝ��W�������啪��*256+�Ǝ��W������������
-  }�̃��X�g|nil=EPG�W���������
+    content_nibble:I=大分類*256+中分類
+    user_nibble:I=独自ジャンル大分類*256+独自ジャンル中分類
+  }のリスト|nil=EPGジャンル情報
   componentInfo:{
-    stream_content:I=�R���|�[�l���g���e
-    component_type:I=�R���|�[�l���g���
-    component_tag:I=�R���|�[�l���g�^�O
-    text_char:S=�R���|�[�l���g�L�q
-  }|nil=EPG�f�����
+    stream_content:I=コンポーネント内容
+    component_type:I=コンポーネント種別
+    component_tag:I=コンポーネントタグ
+    text_char:S=コンポーネント記述
+  }|nil=EPG映像情報
   audioInfoList:{
-    stream_content:I=�ȉ��ASTD-B10�����R���|�[�l���g�L�q�q���Q��
+    stream_content:I=以下、STD-B10音声コンポーネント記述子を参照
     component_type:I=*
     component_tag:I=*
     stream_type:I=*
@@ -897,151 +897,151 @@ end
     quality_indicator:I=*
     sampling_rate:I=*
     text_char:S=*
-  }�̃��X�g|nil=EPG�������
+  }のリスト|nil=EPG音声情報
   eventGroupInfo:{
-    group_type:I=�O���[�v��ʁB�K��1(�C�x���g���L)
-    eventDataList:{onid:I, tsid:I, sid:I, eid:I}�̃��X�g
-  }|nil=EPG�C�x���g�O���[�v���
+    group_type:I=グループ種別。必ず1(イベント共有)
+    eventDataList:{onid:I, tsid:I, sid:I, eid:I}のリスト
+  }|nil=EPGイベントグループ情報
   eventRelayInfo:{
-    group_type:I=�O���[�v���
-    eventDataList:{onid:I, tsid:I, sid:I, eid:I}�̃��X�g
-  }|nil=EPG�C�x���g�O���[�v(�����[)���
+    group_type:I=グループ種別
+    eventDataList:{onid:I, tsid:I, sid:I, eid:I}のリスト
+  }|nil=EPGイベントグループ(リレー)情報
 }
 
-<�\����>={
-  title:S=�ԑg��
-  startTime:TIME=�^��J�n����
-  durationSecond:I=�^�摍����
-  stationName:S=�T�[�r�X��
-  onid:I=�l�b�g���[�NID
+<予約情報>={
+  title:S=番組名
+  startTime:TIME=録画開始時間
+  durationSecond:I=録画総時間
+  stationName:S=サービス名
+  onid:I=ネットワークID
   tsid:I=TSID
-  sid:I=�T�[�r�XID
-  eid:I=�C�x���gID
-  comment:S=�R�����g
-  reserveID:I=�\��ID
-  overlapMode:I=���Ԃ���
-  startTimeEpg:TIME=�\�񎞂̊J�n����
-  recSetting:<�^��ݒ�>=�^��ݒ�
+  sid:I=サービスID
+  eid:I=イベントID
+  comment:S=コメント
+  reserveID:I=予約ID
+  overlapMode:I=かぶり状態
+  startTimeEpg:TIME=予約時の開始時間
+  recSetting:<録画設定>=録画設定
 }
 
-<�^��ݒ�>={
-  recMode:I=�^�惂�[�h
-  priority:I=�D��x
-  tuijyuuFlag:B=�C�x���g�����[�Ǐ]���邩�ǂ���
-  serviceMode:I=�����Ώۃf�[�^���[�h
-  pittariFlag:B=�҂�����?�^��
-  batFilePath:S=�^���BAT�t�@�C���p�X
-  suspendMode:I=�x�~���[�h
-  rebootFlag:B=�^���ċN������
-  startMargin:I|nil=�^��J�n���̃}�[�W��(�f�t�H���g�̂Ƃ�nil)
-  endMargin:I|nil=�^��I�����̃}�[�W��(�f�t�H���g�̂Ƃ�nil)
-  continueRecFlag:B=�㑱����T�[�r�X���A����t�@�C���Ř^��
-  partialRecFlag:I=����CH�ɕ�����M�T�[�r�X������ꍇ�A�����^�悷��(=1)����(=0)��
-  tunerID:I=�����I�Ɏg�pTuner���Œ�
+<録画設定>={
+  recMode:I=録画モード
+  priority:I=優先度
+  tuijyuuFlag:B=イベントリレー追従するかどうか
+  serviceMode:I=処理対象データモード
+  pittariFlag:B=ぴったり?録画
+  batFilePath:S=録画後BATファイルパス
+  suspendMode:I=休止モード
+  rebootFlag:B=録画後再起動する
+  startMargin:I|nil=録画開始時のマージン(デフォルトのときnil)
+  endMargin:I|nil=録画終了時のマージン(デフォルトのときnil)
+  continueRecFlag:B=後続同一サービス時、同一ファイルで録画
+  partialRecFlag:I=物理CHに部分受信サービスがある場合、同時録画する(=1)か否(=0)か
+  tunerID:I=強制的に使用Tunerを固定
   recFolderList={
-    recFolder:S=�^��t�H���_
-    writePlugIn:S=�o��PlugIn
-    recNamePlugIn:S=�t�@�C�����ϊ�PlugIn
-  }�̃��X�g=�^��t�H���_�p�X
+    recFolder:S=録画フォルダ
+    writePlugIn:S=出力PlugIn
+    recNamePlugIn:S=ファイル名変換PlugIn
+  }のリスト=録画フォルダパス
   partialRecFolder={
-    (recFolderList�Ɠ���)
-  }�̃��X�g=������M�T�[�r�X�^��̃t�H���_
+    (recFolderListと同じ)
+  }のリスト=部分受信サービス録画のフォルダ
 }
 
-<�^��ςݏ��>={
-  id:I=���ID
-  recFilePath:S=�^��t�@�C���p�X
-  title:S=�ԑg��
-  startTime:TIME=�J�n����
-  durationSecond:I=�^�掞��
-  serviceName:S=�T�[�r�X��
-  onid:I=�l�b�g���[�NID
+<録画済み情報>={
+  id:I=情報ID
+  recFilePath:S=録画ファイルパス
+  title:S=番組名
+  startTime:TIME=開始時間
+  durationSecond:I=録画時間
+  serviceName:S=サービス名
+  onid:I=ネットワークID
   tsid:I=TSID
-  sid:I=�T�[�r�XID
-  eid:I=�C�x���gID
-  drops:I=�h���b�v��
-  scrambles:I=�X�N�����u����
-  recStatus:I=�^�挋�ʂ̃X�e�[�^�X
-  startTimeEpg:TIME=�\�񎞂̊J�n����
-  comment:S=�R�����g
-  programInfo:S=.program.txt�t�@�C���̓��e
-  errInfo:S=.err�t�@�C���̓��e
-  protectFlag:B=�v���e�N�g
+  sid:I=サービスID
+  eid:I=イベントID
+  drops:I=ドロップ数
+  scrambles:I=スクランブル数
+  recStatus:I=録画結果のステータス
+  startTimeEpg:TIME=予約時の開始時間
+  comment:S=コメント
+  programInfo:S=.program.txtファイルの内容
+  errInfo:S=.errファイルの内容
+  protectFlag:B=プロテクト
 }
 
-<�`���[�i�\����>={
-  tunerID:I=�`���[�iID
-  tunerName:S=BonDriver�t�@�C����
-  reserveList:�\��ID:I�̃��X�g=���̃`���[�i�Ɋ��蓖�Ă�ꂽ�\��
+<チューナ予約情報>={
+  tunerID:I=チューナID
+  tunerName:S=BonDriverファイル名
+  reserveList:予約ID:Iのリスト=そのチューナに割り当てられた予約
 }
 
-<�^��v���Z�b�g>={
-  id:I=�v���Z�b�gID
-  name:S=�v���Z�b�g��
-  recSetting:<�^��ݒ�>=�v���Z�b�g�^��ݒ�
+<録画プリセット>={
+  id:I=プリセットID
+  name:S=プリセット名
+  recSetting:<録画設定>=プリセット録画設定
 }
 
-<�����\��o�^���>={
-  dataID:I=�o�^ID
-  addCount:I=�\��ǉ��J�E���g(�Q�l���x)�B�o�^����nil�ŗǂ�
-  searchInfo:<�����\�񌟍�����>=��������
-  recSetting:<�^��ݒ�>=�^��ݒ�
+<自動予約登録情報>={
+  dataID:I=登録ID
+  addCount:I=予約追加カウント(参考程度)。登録時はnilで良い
+  searchInfo:<自動予約検索条件>=検索条件
+  recSetting:<録画設定>=録画設定
 }
 
-<�����\�񌟍�����>={
-  ### �ȉ��̃v���p�e�B��EnumAutoAdd�Ȃǂ̎擾�n���\�b�h��nil�ɂȂ邱�Ƃ͂Ȃ�
-  andKey:S=�L�[���[�h
-  notKey:S=NOT�L�[���[�h
-  regExpFlag:B|nil=���K�\�����[�h(�ȗ���false)
-  titleOnlyFlag:B|nil=�ԑg���̂݌����Ώۂɂ���(�ȗ���false)
-  aimaiFlag:B|nil=�����܂��������[�h(�ȗ���false)
-  notContetFlag:B|nil=�ΏۃW������NOT����(�ȗ���false)
-  notDateFlag:B|nil=�Ώۊ���NOT����(�ȗ���false)
-  freeCAFlag:I|nil=�X�N�����u������(0=����Ȃ�(�ȗ���),1=�����̂�,2=�L���̂�)
-  chkRecEnd:B|nil=�^��ς��̃`�F�b�N����(�ȗ���false)
-  chkRecDay:I|nil=�^��ς��̃`�F�b�N�Ώۊ���(�ȗ���0)
-  chkRecNoService:B|nil=�^��σ`�F�b�N�ŃT�[�r�X�𖳎�����(�ȗ���false)
-  chkDurationMin:I|nil=�ԑg�ŏ���(��)(�ȗ���0)
-  chkDurationMax:I|nil=�ԑg�ő咷(��)(�ȗ���0)
+<自動予約検索条件>={
+  ### 以下のプロパティはEnumAutoAddなどの取得系メソッドでnilになることはない
+  andKey:S=キーワード
+  notKey:S=NOTキーワード
+  regExpFlag:B|nil=正規表現モード(省略時false)
+  titleOnlyFlag:B|nil=番組名のみ検索対象にする(省略時false)
+  aimaiFlag:B|nil=あいまい検索モード(省略時false)
+  notContetFlag:B|nil=対象ジャンルNOT扱い(省略時false)
+  notDateFlag:B|nil=対象期間NOT扱い(省略時false)
+  freeCAFlag:I|nil=スクランブル放送(0=限定なし(省略時),1=無料のみ,2=有料のみ)
+  chkRecEnd:B|nil=録画済かのチェックあり(省略時false)
+  chkRecDay:I|nil=録画済かのチェック対象期間(省略時0)
+  chkRecNoService:B|nil=録画済チェックでサービスを無視する(省略時false)
+  chkDurationMin:I|nil=番組最小長(分)(省略時0)
+  chkDurationMax:I|nil=番組最大長(分)(省略時0)
   contentList:{
-    content_nibble:I=�啪��*256+������
-    user_nibble:I|nil=�Ǝ��W�������啪��*256+�Ǝ��W������������(�ȗ���0)
-  }�̃��X�g=�ΏۃW������
+    content_nibble:I=大分類*256+中分類
+    user_nibble:I|nil=独自ジャンル大分類*256+独自ジャンル中分類(省略時0)
+  }のリスト=対象ジャンル
   dateList:{
-    startDayOfWeek:I=�����J�n�j��(0=��,1=��...)
-    startHour:I=�J�n��
-    startMin:I=�J�n��
-    endDayOfWeek:I=�����I���j��(0=��,1=��...)
-    endHour:I=�I����
-    endMin:I=�I����
-  }�̃��X�g|nil=�Ώۊ���(�ȗ����󃊃X�g)
+    startDayOfWeek:I=検索開始曜日(0=日,1=月...)
+    startHour:I=開始時
+    startMin:I=開始分
+    endDayOfWeek:I=検索終了曜日(0=日,1=月...)
+    endHour:I=終了時
+    endMin:I=終了分
+  }のリスト|nil=対象期間(省略時空リスト)
   serviceList:{
-    onid:I=�l�b�g���[�NID
+    onid:I=ネットワークID
     tsid:I=TSID
-    sid:I=�T�[�r�XID
-  }�̃��X�g|nil=�ΏۃT�[�r�X(�ȗ����󃊃X�g)
-  ### �ȉ��̃v���p�e�B�͎擾�n���\�b�h�ŏ��nil
-  network:I|nil=�Ώۃl�b�g���[�N(+1=�n�f�W,+2=BS,+4=CS1+CS2,+8=���̑��B�Y���T�[�r�X��serviceList�ɒǉ������B�݊��p�Ȃ̂Ŏg�p���Ȃ�����)
-  days:I|nil=�Ώۊ���(����������days*24���Ԉȓ��BSearchEpg�ȊO�ł͖��������)
-  days29:I|nil=�Ώۊ���(����������days*29���Ԉȓ��B�݊��p�Ȃ̂Ŏg�p���Ȃ����ƁBSearchEpg�ȊO�ł͖��������)
+    sid:I=サービスID
+  }のリスト|nil=対象サービス(省略時空リスト)
+  ### 以下のプロパティは取得系メソッドで常にnil
+  network:I|nil=対象ネットワーク(+1=地デジ,+2=BS,+4=CS1+CS2,+8=その他。該当サービスがserviceListに追加される。互換用なので使用しないこと)
+  days:I|nil=対象期間(現時刻からdays*24時間以内。SearchEpg以外では無視される)
+  days29:I|nil=対象期間(現時刻からdays*29時間以内。互換用なので使用しないこと。SearchEpg以外では無視される)
 }
 
-<�����\��(�v���O����)�o�^���>={
-  dataID:I=�o�^ID
-  dayOfWeekFlag:I=�Ώۗj��(+1=��,+2=��...)
-  startTime:I=�^��J�n����(00:00��0�Ƃ��ĕb�P��)
-  durationSecond:I=�^�摍����
-  title:S=�ԑg��
-  stationName:S=�T�[�r�X��
-  onid:I=�l�b�g���[�NID
+<自動予約(プログラム)登録情報>={
+  dataID:I=登録ID
+  dayOfWeekFlag:I=対象曜日(+1=日,+2=月...)
+  startTime:I=録画開始時間(00:00を0として秒単位)
+  durationSecond:I=録画総時間
+  title:S=番組名
+  stationName:S=サービス名
+  onid:I=ネットワークID
   tsid:I=TSID
-  sid:I=�T�[�r�XID
-  recSetting:<�^��ݒ�>=�^��ݒ�
+  sid:I=サービスID
+  recSetting:<録画設定>=録画設定
 }
 
-<�t�@�C�����>={
-  name:S=�t�@�C����
-  size:I=�t�@�C���T�C�Y
-  isdir:B=�f�B���N�g�����ǂ���
-  mtime:TIME=�C������
+<ファイル情報>={
+  name:S=ファイル名
+  size:I=ファイルサイズ
+  isdir:B=ディレクトリかどうか
+  mtime:TIME=修正時間
 }
