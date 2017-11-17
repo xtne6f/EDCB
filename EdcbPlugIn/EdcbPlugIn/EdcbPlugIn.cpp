@@ -337,7 +337,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (m_epgCapChkNext) {
 					while (!m_epgCapChList.empty()) {
 						SET_CH_INFO &chInfo = m_epgCapChList.front();
-						if (!m_epgCapChkONIDs[min(chInfo.ONID, _countof(m_epgCapChkONIDs) - 1)]) {
+						if (!m_epgCapChkONIDs[min<size_t>(chInfo.ONID, _countof(m_epgCapChkONIDs) - 1)]) {
 							TVTest::ChannelSelectInfo si = {};
 							si.Size = sizeof(si);
 							si.Space = -1;
@@ -375,7 +375,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					}
 					else {
 						SET_CH_INFO &chInfo = m_epgCapChList.front();
-						bool basicFlag = m_epgCapBasicOnlyONIDs[min(chInfo.ONID, _countof(m_epgCapBasicOnlyONIDs) - 1)];
+						bool basicFlag = m_epgCapBasicOnlyONIDs[min<size_t>(chInfo.ONID, _countof(m_epgCapBasicOnlyONIDs) - 1)];
 						vector<CH_DATA5> chkList = GetEpgCheckList(chInfo.ONID, chInfo.TSID, chInfo.SID, basicFlag);
 						if (chkList.empty()) {
 							m_epgCapChList.erase(m_epgCapChList.begin());
@@ -412,7 +412,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 								}
 							}
 							if (m_epgCapChkNext) {
-								m_epgCapChkONIDs[min(chInfo.ONID, _countof(m_epgCapChkONIDs) - 1)] = basicFlag;
+								m_epgCapChkONIDs[min<size_t>(chInfo.ONID, _countof(m_epgCapChkONIDs) - 1)] = basicFlag;
 								m_epgCapChList.erase(m_epgCapChList.begin());
 								saveEpgFile = true;
 							}
@@ -441,19 +441,19 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		case TIMER_EPGCAP_BACK:
 			if (m_epgCapBack) {
 				bool saveEpgFile = false;
-				if (GetTickCount() - m_epgCapBackStartTick > max(m_epgCapBackStartWaitSec, 15) * 1000) {
+				if (GetTickCount() - m_epgCapBackStartTick > max<DWORD>(m_epgCapBackStartWaitSec, 15) * 1000) {
 					WORD onid;
 					WORD tsid;
 					if (m_chChangeID != CH_CHANGE_OK || m_epgUtil.GetTSID(&onid, &tsid) != NO_ERR) {
 						m_epgCapBack = false;
 					}
-					else if (GetTickCount() - m_epgCapBackStartTick > m_epgCapTimeout * 60000 + max(m_epgCapBackStartWaitSec, 15) * 1000) {
+					else if (GetTickCount() - m_epgCapBackStartTick > m_epgCapTimeout * 60000 + max<DWORD>(m_epgCapBackStartWaitSec, 15) * 1000) {
 						// m_epgCapTimeoutï™à»è„Ç©Ç©Ç¡ÇƒÇ¢ÇÈÇ»ÇÁí‚é~
 						m_epgCapBack = false;
 						saveEpgFile = m_epgCapSaveTimeout;
 					}
 					else {
-						bool basicFlag = m_epgCapBackBasicOnlyONIDs[min(onid, _countof(m_epgCapBackBasicOnlyONIDs) - 1)];
+						bool basicFlag = m_epgCapBackBasicOnlyONIDs[min<size_t>(onid, _countof(m_epgCapBackBasicOnlyONIDs) - 1)];
 						vector<CH_DATA5> chkList = GetEpgCheckList(onid, tsid, -1, basicFlag);
 						if (chkList.empty()) {
 							m_epgCapBack = false;
