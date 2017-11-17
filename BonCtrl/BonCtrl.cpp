@@ -928,13 +928,13 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			chkNext = FALSE;
 			startCap = FALSE;
 			wait = 1000;
-			chkONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(chkONIDs) - 1)] = TRUE;
+			chkONIDs[min<size_t>(sys->epgCapChList[chkCount].ONID, _countof(chkONIDs) - 1)] = TRUE;
 			sys->epgSt_ch = sys->epgCapChList[chkCount];
 		}else{
 			DWORD tick = GetTickCount();
 			DWORD elapsed;
 			if( sys->tsOut.IsChUnknown(&elapsed) ){
-				startTime += min(tick - startTime, 1000);
+				startTime += min<DWORD>(tick - startTime, 1000);
 				if( elapsed > 15000 ){
 					//チャンネル切り替えがタイムアウトしたので無信号と判断
 					chkNext = TRUE;
@@ -953,13 +953,13 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 						startCap = TRUE;
 						wstring epgDataPath = L"";
 						GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID,
-						                   basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ? 0xFFFF : sys->epgCapChList[chkCount].TSID,
+						                   basicOnlyONIDs[min<size_t>(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ? 0xFFFF : sys->epgCapChList[chkCount].TSID,
 						                   epgDataPath);
 						sys->tsOut.StartSaveEPG(epgDataPath);
 						wait = 60*1000;
 					}else{
 						vector<EPGCAP_SERVICE_INFO> chkList;
-						if( basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ){
+						if( basicOnlyONIDs[min<size_t>(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ){
 							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID);
 						}else{
 							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID);
@@ -983,7 +983,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 								chkNext = TRUE;
 								if( status.first != EpgHEITAll &&
 								    status.first != EpgLEITAll &&
-								    (status.first != EpgBasicAll || basicOnlyONIDs[min(itr->ONID, _countof(basicOnlyONIDs) - 1)] == FALSE) ){
+								    (status.first != EpgBasicAll || basicOnlyONIDs[min<size_t>(itr->ONID, _countof(basicOnlyONIDs) - 1)] == FALSE) ){
 									chkNext = FALSE;
 									break;
 								}
@@ -1007,7 +1007,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 					return 0;
 				}
 				//1チャンネルのみ？
-				if( basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] &&
+				if( basicOnlyONIDs[min<size_t>(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] &&
 				    chkONIDs[sys->epgCapChList[chkCount].ONID] ){
 					chkCount++;
 					while( chkCount < sys->epgCapChList.size() ){

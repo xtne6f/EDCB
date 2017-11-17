@@ -1,3 +1,4 @@
+-- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=[=[
@@ -18,16 +19,7 @@ recFilePath=edcb.GetRecFilePath(id)
 edcb.htmlEscape=15
 r=edcb.GetReserveData(id)
 if r then
-  if recFilePath and NativeToDocumentPath(recFilePath) then
-    for i,ext in ipairs({'.mp4','.webm',''}) do
-      f=edcb.FindFile and edcb.FindFile(recFilePath..ext, 1)
-      if f then
-        video=NativeToDocumentPath(recFilePath)..ext
-        break
-      end
-    end
-  end
-  epgInfo=_ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
+  epgInfo=ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct=ct..'  <dl>\n'
     ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..string.gsub(epgInfo, '\r?\n', '<br>\n')
@@ -36,15 +28,33 @@ if r then
         ..string.format('TransportStreamID:%d(0x%04X)<br>', r.tsid, r.tsid)
         ..string.format('ServiceID:%d(0x%04X)<br>', r.sid, r.sid)
       )..'</dd>\n'
-  if video then
-    ct=ct..'    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)..'</a>\n'
-      ..'[<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>\n'
-    for i=1,9 do
-      ct=ct..'<a href="xcode.lua?'..(i*10)..'='..mg.url_encode(video)..'">'..i..'</a>\n'
+    ..'    <dt>ファイル</dt><dd>\n'
+  ref=recFilePath and NativeToDocumentPath(recFilePath)
+  if ref then
+    for i,ext in ipairs({'.mp4','.webm',''}) do
+      ff=edcb.FindFile and edcb.FindFile(recFilePath..ext,1)
+      if ff then
+        ct=ct..'<a href="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)..'</a>'
+        if ext=='' then
+          ct=ct..'\n[<a href="xcode.lua?0='..mg.url_encode(ref)..'">xcode.lua</a>'
+          for j=1,9 do
+            ct=ct..'\n<a href="xcode.lua?'..(j*10)..'='..mg.url_encode(ref)..'">'..j..'</a>'
+          end
+          fsec,fsize=0,0
+          f=edcb.io.open(recFilePath,'rb')
+          if f then
+            fsec,fsize=GetDurationSec(f)
+            f:close()
+          end
+          ct=ct..'\n<a href="xcode.lua?99='..mg.url_encode(ref)..'">('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)</a>]<br>\n'
+        else
+          ct=ct..' ('..math.floor(ff[1].size/1048576)..'M)<br>\n'
+        end
+      end
     end
-    ct=ct..'<a href="xcode.lua?99='..mg.url_encode(video)..'">(?M)</a>]</dd>\n'
   end
-  ct=ct..'    <dt>プログラム予約'..(r.eid==65535 and '' or '化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
+  ct=ct..'<br></dd>\n'
+    ..'    <dt>プログラム予約'..(r.eid==65535 and '' or '化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
     ..'</dt><dd>\n'
     ..'<form method="POST" action="reservechg.html?id='..r.reserveID
     ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'

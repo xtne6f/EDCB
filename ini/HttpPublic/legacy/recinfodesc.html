@@ -1,3 +1,4 @@
+-- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=[=[
@@ -18,29 +19,38 @@ w=edcb.GetRecFileInfo(id)
 edcb.htmlEscape=15
 v=edcb.GetRecFileInfo(id)
 if v then
-  if w and NativeToDocumentPath(w.recFilePath) then
-    for i,ext in ipairs({'.mp4','.webm',''}) do
-      f=edcb.FindFile and edcb.FindFile(w.recFilePath..ext, 1)
-      if f then
-        video=NativeToDocumentPath(w.recFilePath)..ext
-        break
-      end
-    end
-  end
   ct=ct..'  <dl>\n'
     ..'    <dt>番組名</dt><dd>'..FormatTimeAndDuration(v.startTime, v.durationSecond)..'<br>'..v.serviceName..'<br>'..v.title..'</dd>\n'
     ..'    <dt>結果</dt><dd>'..v.comment..'</dd>\n'
     ..'    <dt>ドロップ</dt><dd>'..v.drops..'</dd>\n'
     ..'    <dt>スクランブル</dt><dd>'..v.scrambles..'</dd>\n'
-  if video then
-    ct=ct..'    <dt>ファイル</dt><dd><a href="'..PathToRoot()..mg.url_encode(video):gsub('%%2f','/')..'">/'..edcb.Convert('utf-8', 'utf-8', video)..'</a>\n'
-      ..'[<a href="xcode.lua?0='..mg.url_encode(video)..'">xcode.lua</a>\n'
-    for i=1,9 do
-      ct=ct..'<a href="xcode.lua?'..(i*10)..'='..mg.url_encode(video)..'">'..i..'</a>\n'
+    ..'    <dt>ファイル</dt><dd>\n'
+  ref=w and NativeToDocumentPath(w.recFilePath)
+  if ref then
+    for i,ext in ipairs({'.mp4','.webm',''}) do
+      ff=edcb.FindFile and edcb.FindFile(w.recFilePath..ext,1)
+      if ff then
+        ct=ct..'<a href="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)..'</a>'
+        if ext=='' then
+          ct=ct..'\n[<a href="xcode.lua?0='..mg.url_encode(ref)..'">xcode.lua</a>'
+          for j=1,9 do
+            ct=ct..'\n<a href="xcode.lua?'..(j*10)..'='..mg.url_encode(ref)..'">'..j..'</a>'
+          end
+          fsec,fsize=0,0
+          f=edcb.io.open(w.recFilePath,'rb')
+          if f then
+            fsec,fsize=GetDurationSec(f)
+            f:close()
+          end
+          ct=ct..'] ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
+        else
+          ct=ct..' ('..math.floor(ff[1].size/1048576)..'M)<br>\n'
+        end
+      end
     end
-    ct=ct..'('..math.floor(f[1].size/1048576)..'M)]</dd>\n'
   end
-  ct=ct..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..DecorateUri(v.programInfo):gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
+  ct=ct..'<br></dd>\n'
+    ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..DecorateUri(v.programInfo):gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="recinfodel.html?id='..v.id..'"><div>\n'

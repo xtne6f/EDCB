@@ -222,7 +222,7 @@ DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_ST
 	head[1] = sendCmd->dataSize;
 	DWORD extSize = 0;
 	if( sendCmd->dataSize > 0 ){
-		extSize = min(sendCmd->dataSize, sizeof(head) - sizeof(DWORD)*2);
+		extSize = min(sendCmd->dataSize, (DWORD)(sizeof(head) - sizeof(DWORD)*2));
 		memcpy(head + 2, sendCmd->data.get(), extSize);
 	}
 	if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) == SOCKET_ERROR ||

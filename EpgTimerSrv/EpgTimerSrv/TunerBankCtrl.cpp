@@ -720,7 +720,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 	if( this->hTunerProcess == NULL ){
 		return false;
 	}
-	BYTE partialRecMode = reserve.recMode == RECMODE_VIEW ? 0 : min(reserve.partialRecMode, 2);
+	BYTE partialRecMode = reserve.recMode == RECMODE_VIEW ? 0 : min<BYTE>(reserve.partialRecMode, 2);
 	WORD partialSID = 0;
 	if( partialRecMode == 1 || partialRecMode == 2 ){
 		if( FindPartialService(reserve.onid, reserve.tsid, reserve.sid, &partialSID, NULL) == false ){

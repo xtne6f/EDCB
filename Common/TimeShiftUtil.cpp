@@ -409,7 +409,7 @@ __int64 CTimeShiftUtil::GetAvailableFileSize() const
 						}
 					}
 					//安定のため有効なデータの境目からさらに512KBだけ手前にする
-					liSize.QuadPart = max(pos - range / 2 - 512 * 1024, 0);
+					liSize.QuadPart = max(pos - range / 2 - 512 * 1024, 0LL);
 				}
 				if( file != this->seekFile ){
 					CloseHandle(file);

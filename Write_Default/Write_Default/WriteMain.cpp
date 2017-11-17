@@ -21,7 +21,7 @@ CWriteMain::CWriteMain(void)
 		this->teeCmd = GetPrivateProfileToString(L"SET", L"TeeCmd", L"", iniPath.c_str());
 		if( this->teeCmd.empty() == false ){
 			this->teeBuff.resize(GetPrivateProfileInt(L"SET", L"TeeSize", 770048, iniPath.c_str()));
-			this->teeBuff.resize(max(this->teeBuff.size(), 1));
+			this->teeBuff.resize(max<size_t>(this->teeBuff.size(), 1));
 			this->teeDelay = GetPrivateProfileInt(L"SET", L"TeeDelay", 0, iniPath.c_str());
 		}
 	}

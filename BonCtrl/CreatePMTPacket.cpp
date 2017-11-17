@@ -315,7 +315,7 @@ void CCreatePMTPacket::CreatePMT()
 	this->createPSI[6] = this->createVer<<1;
 	this->createPSI[6] |= 0xC1;
 
-	unsigned long ulCrc = CalcCrc32((int)this->createPSI.size()-1, &this->createPSI[1]);
+	DWORD ulCrc = CalcCrc32((int)this->createPSI.size()-1, &this->createPSI[1]);
 	this->createPSI.push_back(ulCrc>>24&0xFF);
 	this->createPSI.push_back(ulCrc>>16&0xFF);
 	this->createPSI.push_back(ulCrc>>8&0xFF);

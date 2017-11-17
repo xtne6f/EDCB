@@ -1,3 +1,5 @@
+-- vim:set ft=lua:
+-- このスクリプトは原作のREST API互換用で今は使われていません。配置する必要はありません。
 edcb.htmlEscape=15
 a=edcb.GetReserveData()
 ct={'<?xml version="1.0" encoding="UTF-8" ?'..'><entry><total>'..#a..'</total><index>0</index><count>'..#a..'</count><items>\r\n'}

@@ -221,7 +221,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 						loadElapsed += tick - loadTick;
 						loadTick = tick;
 						if( loadElapsed > 20 ){
-							Sleep(min(loadElapsed / 2, 100));
+							Sleep(min<DWORD>(loadElapsed / 2, 100));
 							loadElapsed = 0;
 							loadTick = GetTickCount();
 						}

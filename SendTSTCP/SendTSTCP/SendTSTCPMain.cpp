@@ -24,6 +24,8 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 {
 	UnInitialize();
 
+	CloseHandle(m_hStopSendEvent);
+
 	DeleteCriticalSection(&m_buffLock);
 	DeleteCriticalSection(&m_sendLock);
 
