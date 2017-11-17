@@ -9,10 +9,11 @@
 #include <memory>
 #include <algorithm>
 #include <tchar.h>
-#include <windows.h>
 #include <stdarg.h>
 #include <sal.h>
 
+using std::min;
+using std::max;
 using std::string;
 using std::wstring;
 using std::pair;

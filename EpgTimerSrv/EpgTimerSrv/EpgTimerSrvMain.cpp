@@ -1913,7 +1913,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 						const DWORD sowc = sizeof(WCHAR);
 						__int64 pos = count = count / sowc;
 						while( pos > 1 && n > 0 ){
-							DWORD dwRead = (DWORD)min(pos - 1, 4096);
+							DWORD dwRead = (DWORD)min(pos - 1, 4096LL);
 							WCHAR buff[4096];
 							if( _fseeki64(fp.get(), sowc * (pos - dwRead), SEEK_SET) || fread(buff, sowc, dwRead, fp.get()) != dwRead ){
 								break;

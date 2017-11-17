@@ -221,7 +221,7 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 		}
 
 		sectionSize = (((DWORD)tsPacket->data_byte[readSize+1]&0x0F) << 8 | tsPacket->data_byte[readSize+2]) + 3;
-		sectionBuff.assign(tsPacket->data_byte + readSize, tsPacket->data_byte + min(tsPacket->data_byteSize, readSize + sectionSize));
+		sectionBuff.assign(tsPacket->data_byte + readSize, tsPacket->data_byte + min((DWORD)tsPacket->data_byteSize, readSize + sectionSize));
 		if( sectionSize == sectionBuff.size() ){
 			//このパケットだけで完結。残りのペイロードを繰り越す
 			if( carryPacket.empty() == false && tsPacket->data_byte == &carryPacket.front() ){
@@ -239,7 +239,7 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 		}
 	}else{
 		//複数パケットにまたがっている
-		sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte, tsPacket->data_byte + min(tsPacket->data_byteSize, sectionSize - sectionBuff.size()));
+		sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte, tsPacket->data_byte + min((DWORD)tsPacket->data_byteSize, sectionSize - (DWORD)sectionBuff.size()));
 		if( sectionSize == sectionBuff.size() ){
 			return TRUE;
 		}else{

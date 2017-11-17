@@ -322,7 +322,7 @@ inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWOR
 		return FALSE;
 	}
 	//2未満のコマンドバージョンは2として扱う
-	ver = max(ver, 2);
+	ver = max(ver, (WORD)2);
 	DWORD readSize_;
 	return CtrlCmdUtilImpl_::ReadVALUE(ver, val, buff, buffSize, readSize ? readSize : &readSize_);
 }
@@ -331,7 +331,7 @@ template<class T>
 std::unique_ptr<BYTE[]> NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD& writeSize )
 {
 	//2未満のコマンドバージョンは2として扱う
-	ver = max(ver, 2);
+	ver = max(ver, (WORD)2);
 	DWORD buffSize = CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, ver) + CtrlCmdUtilImpl_::WriteVALUE(ver, NULL, 0, val);
 	std::unique_ptr<BYTE[]> buff(new BYTE[buffSize]);
 	CtrlCmdUtilImpl_::WriteVALUE(ver, buff.get(), CtrlCmdUtilImpl_::WriteVALUE(0, buff.get(), 0, ver), val);

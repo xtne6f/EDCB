@@ -218,7 +218,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					head[1] = stRes.dataSize;
 					DWORD extSize = 0;
 					if( stRes.dataSize > 0 ){
-						extSize = min(stRes.dataSize, sizeof(head) - sizeof(DWORD)*2);
+						extSize = min(stRes.dataSize, (DWORD)(sizeof(head) - sizeof(DWORD)*2));
 						memcpy(head + 2, stRes.data.get(), extSize);
 					}
 					//ブロッキングモードに変更
@@ -346,7 +346,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					head[1] = stRes.dataSize;
 					DWORD extSize = 0;
 					if( stRes.dataSize > 0 ){
-						extSize = min(stRes.dataSize, sizeof(head) - sizeof(DWORD)*2);
+						extSize = min(stRes.dataSize, (DWORD)(sizeof(head) - sizeof(DWORD)*2));
 						memcpy(head + 2, stRes.data.get(), extSize);
 					}
 					if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) == SOCKET_ERROR ||

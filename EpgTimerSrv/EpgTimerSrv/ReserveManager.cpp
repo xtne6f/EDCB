@@ -712,12 +712,12 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 				if( bank[i].startOrder > inItem.startOrder ){
 					//相手が遅れて開始するので自分の後方を削る
 					__int64 cutEndTime = max(min(inItem.cutEndTime, bank[i].cutStartTime), inItem.cutStartTime);
-					otherCosts[min(max(inItem.r->recSetting.priority, 1), 5) - 1] += inItem.cutEndTime - cutEndTime;
+					otherCosts[min(max<int>(inItem.r->recSetting.priority, 1), 5) - 1] += inItem.cutEndTime - cutEndTime;
 					inItem.cutEndTime = cutEndTime;
 				}else{
 					//前方を削る
 					__int64 cutStartTime = min(max(inItem.cutStartTime, bank[i].cutEndTime), inItem.cutEndTime);
-					otherCosts[min(max(inItem.r->recSetting.priority, 1), 5) - 1] += cutStartTime - inItem.cutStartTime;
+					otherCosts[min(max<int>(inItem.r->recSetting.priority, 1), 5) - 1] += cutStartTime - inItem.cutStartTime;
 					inItem.cutStartTime = cutStartTime;
 				}
 			}else{
@@ -725,14 +725,14 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 				if( inItem.startOrder > bank[i].startOrder ){
 					//相手の後方を削る
 					__int64 cutEndTime = max(min(bank[i].cutEndTime, inItem.cutStartTime), bank[i].cutStartTime);
-					otherCosts[min(max(bank[i].r->recSetting.priority, 1), 5) - 1] += bank[i].cutEndTime - cutEndTime;
+					otherCosts[min(max<int>(bank[i].r->recSetting.priority, 1), 5) - 1] += bank[i].cutEndTime - cutEndTime;
 					if( modifyBank ){
 						bank[i].cutEndTime = cutEndTime;
 					}
 				}else{
 					//前方を削る
 					_int64 cutStartTime = bank[i].started ? bank[i].cutEndTime : min(max(bank[i].cutStartTime, inItem.cutEndTime), bank[i].cutEndTime);
-					otherCosts[min(max(bank[i].r->recSetting.priority, 1), 5) - 1] += cutStartTime - bank[i].cutStartTime;
+					otherCosts[min(max<int>(bank[i].r->recSetting.priority, 1), 5) - 1] += cutStartTime - bank[i].cutStartTime;
 					if( modifyBank ){
 						bank[i].cutStartTime = cutStartTime;
 					}
@@ -745,7 +745,7 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 	__int64 cost = 0;
 	__int64 weight = 1;
 	for( int i = 0; i < 5; i++ ){
-		cost += min((otherCosts[i] + 10 * I64_1SEC - 1) / (10 * I64_1SEC), 5400 - 1) * weight;
+		cost += min((otherCosts[i] + 10 * I64_1SEC - 1) / (10 * I64_1SEC), 5400LL - 1) * weight;
 		weight *= 5400;
 	}
 	if( cost == 0 && overlapped ){
@@ -770,7 +770,7 @@ void CReserveManager::CalcEntireReserveTime(__int64* startTime, __int64* endTime
 	//開始マージンは元の予約終了時刻を超えて負であってはならない
 	startMargin = max(startMargin, startTime_ - endTime_);
 	//終了マージンは元の予約開始時刻を超えて負であってはならない
-	endMargin = max(endMargin, startTime_ - min(startMargin, 0) - endTime_);
+	endMargin = max(endMargin, startTime_ - min(startMargin, 0LL) - endTime_);
 	if( startTime != NULL ){
 		*startTime = startTime_ - startMargin;
 	}
@@ -1373,7 +1373,7 @@ DWORD CReserveManager::Check()
 			CheckTuijyuTuner();
 		}
 		__int64 idleMargin = GetNearestRecReserveTime() - GetNowI64Time();
-		this->batManager.SetIdleMargin((DWORD)min(max(idleMargin / I64_1SEC, 0), MAXDWORD));
+		this->batManager.SetIdleMargin((DWORD)min(max(idleMargin / I64_1SEC, 0LL), 0xFFFFFFFFLL));
 		this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
 
 		if( CheckEpgCap(isEpgCap) ){
@@ -1502,7 +1502,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							for( size_t i = 0; i < epgCapIDList.size(); i++ ){
 								if( this->tunerManager.IsSupportService(epgCapIDList[listIndex], addCh.ONID, addCh.TSID, addCh.SID) ){
 									epgCapChList[listIndex].push_back(addCh);
-									inONIDs[min(addCh.ONID, _countof(inONIDs) - 1)] = true;
+									inONIDs[min<size_t>(addCh.ONID, _countof(inONIDs) - 1)] = true;
 									listIndex = (listIndex + 1) % epgCapIDList.size();
 									break;
 								}

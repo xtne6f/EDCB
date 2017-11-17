@@ -696,7 +696,7 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &durMax );
 			if( durMin > 0 || durMax > 0 ){
 				WCHAR dur[32];
-				swprintf_s(dur, L"D!{%d}", (10000 + min(max(durMin, 0), 9999)) * 10000 + min(max(durMax, 0), 9999));
+				swprintf_s(dur, L"D!{%d}", (10000 + min(max((int)durMin, 0), 9999)) * 10000 + min(max((int)durMax, 0), 9999));
 				size_t durPos = val->andKey.compare(0, 7, L"^!{999}") ? 0 : 7;
 				durPos += val->andKey.compare(durPos, 7, L"C!{999}") ? 0 : 7;
 				val->andKey.insert(durPos, dur);
