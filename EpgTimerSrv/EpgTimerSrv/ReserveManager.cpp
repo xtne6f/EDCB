@@ -1558,7 +1558,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 					//ŽžŒv‡‚í‚¹(—vSE_SYSTEMTIME_NAME“ÁŒ )
 					__int64 delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
 					SYSTEMTIME setTime;
-					ConvertSystemTime(now + delay - 9 * 3600 * I64_1SEC, &setTime);
+					ConvertSystemTime(now + delay - I64_UTIL_TIMEZONE, &setTime);
 					LPCWSTR debug = L" err ";
 					if( SetSystemTime(&setTime) ){
 						debug = L" ";

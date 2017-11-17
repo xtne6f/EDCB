@@ -1139,7 +1139,7 @@ bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, 
 	}
 	if( *resumeTimer != NULL ){
 		LARGE_INTEGER liTime;
-		liTime.QuadPart = setTime - 9 * 3600 * I64_1SEC;
+		liTime.QuadPart = setTime - I64_UTIL_TIMEZONE;
 		if( SetWaitableTimer(*resumeTimer, &liTime, 0, NULL, NULL, TRUE) != FALSE ){
 			*resumeTime = setTime;
 			return true;
@@ -3646,7 +3646,7 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 					LuaHelp::reg_boolean(L, "isdir", (findList[i].dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
 					FILETIME ft = findList[i].ftLastWriteTime;
 					SYSTEMTIME st;
-					ConvertSystemTime(((__int64)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + 9 * 3600 * I64_1SEC, &st);
+					ConvertSystemTime(((__int64)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + I64_UTIL_TIMEZONE, &st);
 					LuaHelp::reg_time(L, "mtime", st);
 					lua_rawseti(L, -2, (int)i + 1);
 				}

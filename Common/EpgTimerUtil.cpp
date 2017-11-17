@@ -87,14 +87,18 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 		return text;
 	}
 
-	wstring time=L"ñ¢íË";
-	if( info->StartTimeFlag == TRUE && info->DurationFlag == TRUE ){
-		GetTimeString3(info->start_time, info->durationSec, time);
-	}else if( info->StartTimeFlag == TRUE && info->DurationFlag == FALSE ){
-		GetTimeString4(info->start_time, time);
-		time += L" Å` ñ¢íË";
+	text = L"ñ¢íË";
+	if( info->StartTimeFlag ){
+		SYSTEMTIME st = info->start_time;
+		Format(text, L"%04d/%02d/%02d(%s) %02d:%02d",
+		       st.wYear, st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
+		wstring time = L" Å` ñ¢íË";
+		if( info->DurationFlag ){
+			ConvertSystemTime(ConvertI64Time(st) + info->durationSec * I64_1SEC, &st);
+			Format(time, L"Å`%02d:%02d", st.wHour, st.wMinute);
+		}
+		text += time;
 	}
-	text += time;
 	text += L"\r\n";
 	if( serviceName != NULL ){
 		text += *serviceName;

@@ -79,9 +79,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		return 0;
 	}
 
-	FILETIME ftUtcNow;
-	GetSystemTimeAsFileTime(&ftUtcNow);
-	__int64 utcNow = (__int64)ftUtcNow.dwHighDateTime << 32 | ftUtcNow.dwLowDateTime;
+	__int64 utcNow = GetNowI64Time() - I64_UTIL_TIMEZONE;
 
 	//EPGƒtƒ@ƒCƒ‹‚ÌŒŸõ
 	vector<wstring> epgFileList;
