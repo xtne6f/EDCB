@@ -5,6 +5,12 @@
 #include "../../Common/TimeUtil.h"
 #include "../../Common/EpgTimerUtil.h"
 
+namespace
+{
+inline bool IsHighSurrogate(wchar_t c) { return L'\xD800' <= c && c <= L'\xDBFF'; }
+inline bool IsLowSurrogate(wchar_t c) { return L'\xDC00' <= c && c <= L'\xDFFF'; }
+}
+
 wstring CConvertMacro2::Convert(const wstring& macro, const PLUGIN_RESERVE_INFO* info)
 {
 	wstring convert;
@@ -197,18 +203,29 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			funcStack.push_back(L"Tr/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/");
 		}else if( func.compare(0, 2, L"Tr") == 0 && func.size() >= 3 ){
 			//•¶š’uŠ·(Tr/’uŠ·•¶šƒŠƒXƒg/’uŠ·Œã/)
-			size_t n = func.find(func[2], 3);
-			if( n == wstring::npos ){
+			for( size_t i = 2; i < func.size(); i += 2 ){
+				//Šî–{‘½Œ¾Œê–Ê‚ğ“ñd‰»
+				if( !IsHighSurrogate(func[i]) || i + 1 >= func.size() ){
+					func.insert(func.begin() + i, func[i]);
+				}
+			}
+			size_t n = func.find(wstring(func, 2, 2), 4);
+			if( n == wstring::npos || n % 2 ){
 				return FALSE;
 			}
-			if( func.find(func[2], n + 1) != 4 + (n - 3) * 2 ){
+			if( func.find(wstring(func, 2, 2), n + 2) != 6 + (n - 4) * 2 ){
 				return FALSE;
 			}
-			wstring cmp(func, 3, n - 3);
-			for( wstring::iterator itr = ret.begin(); itr != ret.end(); itr++ ){
-				size_t m = cmp.find(*itr);
-				if( m != wstring::npos ){
-					*itr = func[n + 1 + m];
+			wstring cmp(func, 4, n - 4);
+			for( size_t i = 0; i < ret.size(); ){
+				size_t len = IsHighSurrogate(ret[i]) && i + 1 < ret.size() ? 2 : 1;
+				size_t m = cmp.find(wstring(ret, i, len));
+				if( m != wstring::npos && m % 2 == 0 ){
+					size_t rlen = IsHighSurrogate(func[n + 2 + m]) ? 2 : 1;
+					ret.replace(i, len, wstring(func, n + 2 + m, rlen));
+					i += rlen;
+				}else{
+					i += len;
 				}
 			}
 		}else if( func.compare(0, 1, L"S") == 0 && func.size() >= 2 ){
@@ -231,20 +248,31 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 				return FALSE;
 			}
 			wstring cmp(func, 3, n - 3);
-			for( wstring::iterator itr = ret.begin(); itr != ret.end(); ){
-				if( cmp.find(*itr) != wstring::npos ){
-					itr = ret.erase(itr);
+			for( size_t i = 0; i < ret.size(); ){
+				size_t len = IsHighSurrogate(ret[i]) && i + 1 < ret.size() ? 2 : 1;
+				if( cmp.find(wstring(ret, i, len)) != wstring::npos ){
+					ret.erase(i, len);
 				}else{
-					itr++;
+					i += len;
 				}
 			}
 		}else if( func.compare(0, 4, L"Head") == 0 && func.size() >= 5 ){
 			//‘«Ø‚è(Head•¶š”[È—ª‹L†])
-			size_t n = ret.size();
 			wchar_t* p;
-			ret = ret.substr(0, (size_t)wcstol(&func.c_str()[4], &p, 10));
-			if( *p && !ret.empty() && ret.size() < n ){
-				ret.back() = *p;
+			size_t m = (size_t)wcstol(&func.c_str()[4], &p, 10);
+			if( m < ret.size() ){
+				ret.erase(m);
+				if( *p && !ret.empty() ){
+					ret.pop_back();
+				}else{
+					p = NULL;
+				}
+				if( !ret.empty() && IsHighSurrogate(ret.back()) ){
+					ret.pop_back();
+				}
+				if( p ){
+					ret.push_back(*p);
+				}
 			}
 		}else if( func.compare(0, 4, L"Tail") == 0 && func.size() >= 5 ){
 			//“ªØ‚è(Tail•¶š”[È—ª‹L†])
@@ -253,7 +281,15 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			if( m < ret.size() ){
 				ret.erase(0, ret.size() - m);
 				if( *p && !ret.empty() ){
-					ret[0] = *p;
+					ret.erase(ret.begin());
+				}else{
+					p = NULL;
+				}
+				if( !ret.empty() && IsLowSurrogate(ret[0]) ){
+					ret.erase(ret.begin());
+				}
+				if( p ){
+					ret.insert(ret.begin(), *p);
 				}
 			}
 		}else{
