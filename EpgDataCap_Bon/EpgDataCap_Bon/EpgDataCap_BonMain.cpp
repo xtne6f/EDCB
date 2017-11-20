@@ -563,7 +563,7 @@ BOOL CEpgDataCap_BonMain::StartRec(
 	ConvertSystemTime(GetNowI64Time(), &now);
 	for( int i = 0; GetTimeMacroName(i); i++ ){
 		wstring name;
-		AtoW(GetTimeMacroName(i), name);
+		UTF8toW(GetTimeMacroName(i), name);
 		Replace(fileName, L'$' + name + L'$', GetTimeMacroValue(i, now));
 	}
 	Replace(fileName, L"$ServiceName$", serviceName);

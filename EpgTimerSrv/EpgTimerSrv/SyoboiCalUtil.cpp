@@ -123,7 +123,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	auth += L":";
 	auth += pass;
 	string authA;
-	WtoA(auth, authA);
+	WtoUTF8(auth, authA);
 
 	DWORD destSize = 0;
 	Base64Enc(authA.c_str(), (DWORD)authA.size(), NULL, &destSize);

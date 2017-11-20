@@ -61,7 +61,7 @@ DWORD CSendTSTCPMain::AddSendAddr(
 		return FALSE;
 	}
 	SEND_INFO Item;
-	WtoA(lpcwszIP, Item.strIP);
+	WtoUTF8(lpcwszIP, Item.strIP);
 	Item.dwPort = dwPort;
 	if( SEND_TS_TCP_NOHEAD_PORT_MIN <= dwPort && dwPort <= SEND_TS_TCP_NOHEAD_PORT_MAX ){
 		//上位ワードが1のときはヘッダの送信が抑制される

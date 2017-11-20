@@ -74,7 +74,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 	if( !found && (var.compare(0, 1, L"S") == 0 || var.compare(0, 1, L"E") == 0) ){
 		for( int i = 0; GetTimeMacroName(i); i++ ){
 			wstring name;
-			AtoW(GetTimeMacroName(i), name);
+			UTF8toW(GetTimeMacroName(i), name);
 			if( var.compare(1, wstring::npos, name) == 0 ){
 				SYSTEMTIME st;
 				//曜日フィールドが正しくない時代があったので必ず変換する

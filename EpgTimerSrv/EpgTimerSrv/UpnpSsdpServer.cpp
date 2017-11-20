@@ -130,7 +130,7 @@ UINT WINAPI CUpnpSsdpServer::SsdpThread(LPVOID param)
 	}
 	debug += "\r\n";
 	wstring debugW;
-	AtoW(debug, debugW);
+	UTF8toW(debug, debugW);
 	OutputDebugString(debugW.c_str());
 
 	struct SSDP_REPLY_INFO {

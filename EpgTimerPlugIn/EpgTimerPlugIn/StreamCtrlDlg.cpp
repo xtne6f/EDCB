@@ -354,7 +354,7 @@ void CStreamCtrlDlg::EnumIP()
 			if(getnameinfo(uni->Address.lpSockaddr, uni->Address.iSockaddrLength
 			, host, sizeof(host), 0, 0, NI_NUMERICHOST/*NI_NAMEREQD*/) == 0){
 				wstring strW;
-				AtoW(host, strW);
+				UTF8toW(host, strW);
 				SendDlgItemMessage(this->hwnd , IDC_COMBO_IP, CB_ADDSTRING , 0 , (LPARAM)strW.c_str());
 			}
 		}
