@@ -23,10 +23,6 @@ namespace EpgTimer
     {
         private RecSettingData recSetting = new RecSettingData();
         private RecSettingData setDefSetting = new RecSettingData();
-        private List<TunerSelectInfo> tunerList = new List<TunerSelectInfo>();
-
-        private int lastSelectIndex = 0;
-        private Dictionary<UInt32, RecSettingData> presetList = new Dictionary<UInt32, RecSettingData>();
 
         private bool initLoad = false;
         public RecSettingView()
@@ -37,6 +33,7 @@ namespace EpgTimer
             {
                 Settings.GetDefRecSetting(0, ref recSetting);
 
+                var tunerList = new List<TunerSelectInfo>();
                 tunerList.Add(new TunerSelectInfo("自動", 0));
                 foreach (TunerReserveInfo info in CommonManager.Instance.DB.TunerReserveList.Values)
                 {
@@ -48,29 +45,11 @@ namespace EpgTimer
                 comboBox_tuner.ItemsSource = tunerList;
                 comboBox_tuner.SelectedIndex = 0;
 
-                RecPresetItem preDef = new RecPresetItem();
-                preDef.DisplayName = "デフォルト";
-                preDef.ID = 0;
-                RecSettingData defSet = new RecSettingData();
-                Settings.GetDefRecSetting(0, ref defSet);
-                presetList.Add(0, defSet);
-
-                comboBox_preSet.Items.Add(preDef);
-                comboBox_preSet.SelectedIndex = 0;
-                lastSelectIndex = 0;
-
                 foreach (RecPresetItem info in Settings.Instance.RecPresetList)
                 {
-                    if (presetList.ContainsKey(info.ID) == false)
-                    {
-                        RecSettingData setDatat = new RecSettingData();
-                        Settings.GetDefRecSetting(info.ID, ref setDatat);
-
-                        presetList.Add(info.ID, setDatat);
-
-                        comboBox_preSet.Items.Add(info);
-                    }
+                    comboBox_preSet.Items.Add(info);
                 }
+                comboBox_preSet.SelectedIndex = 0;
 
                 if (CommonManager.Instance.NWMode == true)
                 {
@@ -83,7 +62,7 @@ namespace EpgTimer
             }
         }
 
-        public void AddPreset(String name)
+        private void AddPreset(String name)
         {
             RecSettingData newSet = new RecSettingData();
             GetRecSetting(ref newSet);
@@ -92,34 +71,45 @@ namespace EpgTimer
             newInfo.DisplayName = name;
             newInfo.ID = 0;
 
-            while (presetList.ContainsKey(newInfo.ID) == true)
-            {
-                newInfo.ID++;
-            }
-
-            presetList.Add(newInfo.ID, newSet);
             int index = comboBox_preSet.Items.Add(newInfo);
-            SavePreset();
+            SavePreset(newInfo, newSet);
             comboBox_preSet.SelectedIndex = index;
 
         }
 
-        public void SavePreset()
+        private void SavePreset(object addOrChgTarget, RecSettingData addOrChgInfo)
         {
-            string saveID = "";
+            var saveList = new List<RecSettingData>();
             for (int i = 0; i < comboBox_preSet.Items.Count; i++)
             {
                 RecPresetItem preItem = comboBox_preSet.Items[i] as RecPresetItem;
-                if (preItem.ID == 0xFFFFFFFF)
+                if (preItem == addOrChgTarget)
                 {
-                    continue;
+                    // 追加または変更
+                    saveList.Add(addOrChgInfo);
+                    // IDを振りなおす
+                    preItem.ID = (uint)(saveList.Count - 1);
                 }
+                else if (preItem.ID != 0xFFFFFFFF)
+                {
+                    // 現在設定を維持
+                    var info = new RecSettingData();
+                    Settings.GetDefRecSetting(preItem.ID, ref info);
+                    saveList.Add(info);
+                    // IDを振りなおす
+                    preItem.ID = (uint)(saveList.Count - 1);
+                }
+            }
+
+            string saveID = "";
+            for (int i = 0; i < saveList.Count; i++)
+            {
                 String defName = "REC_DEF";
                 String defFolderName = "REC_DEF_FOLDER";
                 String defFolder1SegName = "REC_DEF_FOLDER_1SEG";
-                RecSettingData info = presetList[preItem.ID];
+                RecSettingData info = saveList[i];
 
-                preItem.ID = (UInt32)i;
+                RecPresetItem preItem = comboBox_preSet.Items.OfType<RecPresetItem>().First(a => a.ID == i);
                 if (preItem.ID != 0)
                 {
                     defName += preItem.ID.ToString();
@@ -162,7 +152,6 @@ namespace EpgTimer
                 IniFileHandler.WritePrivateProfileString(defName, "TunerID", info.TunerID.ToString(), SettingPath.TimerSrvIniPath);
             }
             IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
-            Settings.SaveToXmlFile();
         }
 
         public void SetViewMode(bool epgMode)
@@ -389,7 +378,6 @@ namespace EpgTimer
                         recSetting = new RecSettingData();
                         Settings.GetDefRecSetting(item.ID, ref recSetting);
                     }
-                    lastSelectIndex = comboBox_preSet.SelectedIndex;
                     UpdateView();
                 }
             }
@@ -635,12 +623,9 @@ namespace EpgTimer
                     }
                     else
                     {
-                        presetList.Remove(item.ID);
                         comboBox_preSet.Items.Remove(item);
-
-                        lastSelectIndex = -1;
                         comboBox_preSet.SelectedIndex = 0;
-                        SavePreset();
+                        SavePreset(null, null);
                     }
                 }
             }
@@ -703,11 +688,12 @@ namespace EpgTimer
                         RecSettingData newSet = new RecSettingData();
                         GetRecSetting(ref newSet);
                         item.DisplayName = name;
-                        presetList[item.ID] = newSet;
 
-                        SavePreset();
+                        SavePreset(item, newSet);
 
                         comboBox_preSet.Items.Refresh();
+                        comboBox_preSet.SelectedItem = null;
+                        comboBox_preSet.SelectedItem = item;
                     }
                 }
             }
