@@ -13,13 +13,14 @@ public:
 	bool ParseText(LPCWSTR path = NULL);
 	const map<K, V>& GetMap() const { return this->itemMap; }
 	const wstring& GetFilePath() const { return this->filePath; }
-	void SetFilePath(LPCWSTR path) { this->filePath = path; this->isUtf8 = false; }
+	void SetFilePath(LPCWSTR path) { this->filePath = path; this->isUtf8 = IsUtf8Default(); }
 protected:
 	bool SaveText() const;
 	virtual bool ParseLine(LPCWSTR parseLine, pair<K, V>& item) = 0;
 	virtual bool SaveLine(const pair<K, V>& item, wstring& saveLine) const { return false; }
 	virtual bool SaveFooterLine(wstring& saveLine) const { return false; }
 	virtual bool SelectIDToSave(vector<K>& sortList) const { return false; }
+	virtual bool IsUtf8Default() const { return false; }
 	map<K, V> itemMap;
 	wstring filePath;
 	bool isUtf8;
@@ -29,7 +30,7 @@ template <class K, class V>
 bool CParseText<K, V>::ParseText(LPCWSTR path)
 {
 	this->itemMap.clear();
-	this->isUtf8 = false;
+	this->isUtf8 = IsUtf8Default();
 	if( path != NULL ){
 		this->filePath = path;
 	}
@@ -53,6 +54,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 		Sleep(200 * retry);
 	}
 
+	this->isUtf8 = false;
 	bool checkBom = false;
 	vector<char> buf;
 	vector<WCHAR> parseBuf;
