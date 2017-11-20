@@ -52,6 +52,7 @@ public:
 		bool recView;
 		bool recNW;
 		bool pgInfoLog;
+		bool pgInfoLogAsUtf8;
 		bool dropLog;
 		bool recOverWrite;
 		int processPriority;

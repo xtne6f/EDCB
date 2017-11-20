@@ -41,6 +41,7 @@ void CTunerBankCtrl::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	this->recNW = s.recNW;
 	this->backPriority = s.backPriority;
 	this->saveProgramInfo = s.pgInfoLog;
+	this->saveProgramInfoAsUtf8 = s.pgInfoLogAsUtf8;
 	this->saveErrLog = s.dropLog;
 	this->recOverWrite = s.recOverWrite;
 	this->processPriority =
@@ -796,13 +797,19 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 		}
 	}
 	string outText;
-	WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
+	if( this->saveProgramInfoAsUtf8 ){
+		WtoUTF8(ConvertEpgInfoText2(&info, serviceName), outText);
+	}else{
+		WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
+	}
 
 	//※原作と異なりディレクトリの自動生成はしない
 	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(savePath.c_str(), append ? L"abN" : L"wbN"), fclose);
 	if( fp ){
 		if( append ){
 			fputs("\r\n-----------------------\r\n", fp.get());
+		}else if( this->saveProgramInfoAsUtf8 ){
+			fputs("\xEF\xBB\xBF", fp.get());
 		}
 		fputs(outText.c_str(), fp.get());
 	}

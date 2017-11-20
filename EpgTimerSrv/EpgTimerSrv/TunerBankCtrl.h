@@ -180,6 +180,7 @@ private:
 	bool recNW;
 	bool backPriority;
 	bool saveProgramInfo;
+	bool saveProgramInfoAsUtf8;
 	bool saveErrLog;
 	bool recOverWrite;
 	DWORD processPriority;
