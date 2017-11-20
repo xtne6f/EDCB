@@ -573,6 +573,8 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WCHAR buff[max(1024, MAX_PATH)] = {};
 	WCHAR key[32];
 
+	TouchFileAsUnicode(iniPath.c_str());
+
 	//[SET]セクションをファイル先頭に置くため最初にこれを書く
 	WritePrivateProfileInt(L"SET", L"NGEpgCapTime", GetDlgItemInt(this->hwndEpg, IDC_EDIT_SET_EPG_NG_CAP, NULL, FALSE), iniPath.c_str());
 
