@@ -101,6 +101,11 @@ namespace EpgTimer
                 }
             }
 
+            if (CommonManager.Instance.NWMode)
+            {
+                IniFileHandler.TouchFileAsUnicode(SettingPath.TimerSrvIniPath);
+            }
+
             string saveID = "";
             for (int i = 0; i < saveList.Count; i++)
             {

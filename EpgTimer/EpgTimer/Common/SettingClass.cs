@@ -49,6 +49,18 @@ namespace EpgTimer
             }
             return buff.ToString();
         }
+
+        public static void TouchFileAsUnicode(string path)
+        {
+            try
+            {
+                using (var fs = new FileStream(path, FileMode.CreateNew))
+                {
+                    fs.Write(new byte[] { 0xFF, 0xFE }, 0, 2);
+                }
+            }
+            catch { }
+        }
     }
 
     class SettingPath
