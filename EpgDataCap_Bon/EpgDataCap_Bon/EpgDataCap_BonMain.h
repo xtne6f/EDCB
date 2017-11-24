@@ -124,17 +124,13 @@ public:
 		);
 
 	//UDP送信の設定数を取得
-	DWORD GetCountUDP();
+	size_t GetCountUDP() { return this->setUdpSendList.size(); }
 	//TCP送信の設定数を取得
-	DWORD GetCountTCP();
+	size_t GetCountTCP() { return this->setTcpSendList.size(); }
 	//UDPの送信中先一覧取得
-	BOOL GetSendUDPList(
-		vector<NW_SEND_INFO>* sendList
-		);
+	vector<NW_SEND_INFO> GetSendUDPList() { return this->udpSendList; }
 	//TCPの送信中先一覧取得
-	BOOL GetSendTCPList(
-		vector<NW_SEND_INFO>* sendList
-		);
+	vector<NW_SEND_INFO> GetSendTCPList() { return this->tcpSendList; }
 
 	//指定サービスの現在or次のEPG情報を取得する
 	//戻り値：
@@ -239,9 +235,7 @@ public:
 		DWORD* space,
 		DWORD* ch,
 		ULONGLONG* drop,
-		ULONGLONG* scramble,
-		vector<NW_SEND_INFO>* sendUdpList,
-		vector<NW_SEND_INFO>* sendTcpList
+		ULONGLONG* scramble
 		);
 
 	void CtrlCmdCallbackInvoked();
@@ -255,10 +249,8 @@ protected:
 	vector<wstring> recFolderList;
 
 	DWORD nwCtrlID;
-	BOOL sendUdpFlag;
-	BOOL sendTcpFlag;
-	DWORD udpCount;
-	DWORD tcpCount;
+	vector<NW_SEND_INFO> setUdpSendList;
+	vector<NW_SEND_INFO> setTcpSendList;
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
 
@@ -283,9 +275,8 @@ protected:
 
 	DWORD recCtrlID;
 
-	wstring currentBonDriver;
 	int outCtrlID;
-	map<DWORD, DWORD> ctrlMap;
+	vector<DWORD> cmdCtrlList;
 
 	CMD_STREAM* cmdCapture;
 	CMD_STREAM* resCapture;

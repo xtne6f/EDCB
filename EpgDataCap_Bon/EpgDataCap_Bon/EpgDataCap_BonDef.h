@@ -1,7 +1,5 @@
 #pragma once
 
-#define MUTEX_TIME_SYNC_NAME			TEXT("Global\\EpgDataCap_Bon_TIME_SYNC")
-
 //GUIの表示状態
 #define GUI_NORMAL		0
 #define GUI_CANCEL_ONLY	1
@@ -30,6 +28,7 @@
 #define WM_BACK_EPGCAP_STOP		(WM_USER + 57)
 #define WM_RESERVE_REC_STANDBY	(WM_USER + 58)
 #define WM_INVOKE_CTRL_CMD		(WM_USER + 59)
+#define WM_VIEW_APP_OPEN		(WM_USER + 60)
 
 #define WM_TRAY_PUSHICON (WM_USER+101) //トレイアイコン押された
 #define TRAYICON_ID 200

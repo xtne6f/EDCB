@@ -10,8 +10,6 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 {
 	this->msgWnd = NULL;
 	this->nwCtrlID = 0;
-	this->sendUdpFlag = FALSE;
-	this->sendTcpFlag = FALSE;
 
 	this->overWriteFlag = FALSE;
 	this->enableScrambleFlag = TRUE;
@@ -30,7 +28,6 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 
 	this->recCtrlID = 0;
 
-	this->currentBonDriver = L"";
 	this->outCtrlID = -1;
 
 	this->cmdCapture = NULL;
@@ -80,8 +77,28 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	this->viewPath = GetPrivateProfileToString( L"SET", L"ViewPath", L"", appIniPath.c_str() );
 	this->viewOpt = GetPrivateProfileToString( L"SET", L"ViewOption", L"", appIniPath.c_str() );
 
-	this->udpCount = (DWORD)GetPrivateProfileInt( L"SET_UDP", L"Count", 0, appIniPath.c_str() );
-	this->tcpCount = (DWORD)GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
+	this->setUdpSendList.clear();
+	this->setTcpSendList.clear();
+	for( int tcp = 0; tcp < 2; tcp++ ){
+		int count = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", L"Count", 0, appIniPath.c_str());
+		for( int i = 0; i < count; i++ ){
+			NW_SEND_INFO item;
+			WCHAR key[64];
+			swprintf_s(key, L"IP%d", i);
+			item.ipString = GetPrivateProfileToString(tcp ? L"SET_TCP" : L"SET_UDP", key, L"2130706433", appIniPath.c_str());
+			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
+				item.ipString.erase(0, 1).pop_back();
+			}else{
+				UINT ip = _wtoi(item.ipString.c_str());
+				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
+			}
+			swprintf_s(key, L"Port%d", i);
+			item.port = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", key, tcp ? 2230 : 1234, appIniPath.c_str());
+			swprintf_s(key, L"BroadCast%d", i);
+			item.broadcastFlag = tcp ? 0 : GetPrivateProfileInt(L"SET_UDP", key, 0, appIniPath.c_str());
+			(tcp ? this->setTcpSendList : this->setUdpSendList).push_back(item);
+		}
+	}
 
 	if( this->nwCtrlID != 0 ){
 		if( this->allService == TRUE ){
@@ -100,7 +117,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	DWORD epgCapBackStartWaitSec = (DWORD)GetPrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str() );
 
 	this->bonCtrl.SetBackGroundEpgCap(epgCapLive, epgCapRec, epgCapBackBSBasic, epgCapBackCS1Basic, epgCapBackCS2Basic, epgCapBackCS3Basic, epgCapBackStartWaitSec);
-	if( this->sendTcpFlag == FALSE && this->sendUdpFlag == FALSE ){
+	if( this->udpSendList.empty() && this->tcpSendList.empty() ){
 		this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
 	}
 	this->bonCtrl.SetEMMMode(this->enableEMMFlag);
@@ -135,7 +152,6 @@ DWORD CEpgDataCap_BonMain::OpenBonDriver(
 		this->lastONID = 0xFFFF;
 		this->lastTSID = 0xFFFF;
 		this->lastSID = 0xFFFF;
-		this->currentBonDriver = bonDriverFile;
 		if( this->nwCtrlID == 0 ){
 			if( this->bonCtrl.CreateServiceCtrl(&this->nwCtrlID) == TRUE ){
 				this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
@@ -144,8 +160,6 @@ DWORD CEpgDataCap_BonMain::OpenBonDriver(
 		}else{
 			this->bonCtrl.ClearErrCount(this->nwCtrlID);
 		}
-	}else{
-		this->currentBonDriver = L"";
 	}
 	return ret;
 }
@@ -153,7 +167,6 @@ DWORD CEpgDataCap_BonMain::OpenBonDriver(
 //ロードしているBonDriverの開放
 void CEpgDataCap_BonMain::CloseBonDriver()
 {
-	this->currentBonDriver = L"";
 	this->bonCtrl.CloseBonDriver();
 }
 
@@ -299,45 +312,18 @@ BOOL CEpgDataCap_BonMain::SendUDP(
 {
 	this->udpSendList.clear();
 	if( enableFlag == TRUE ){
-		fs_path appIniPath = GetModuleIniPath();
-
-		int udpCount = GetPrivateProfileInt( L"SET_UDP", L"Count", 0, appIniPath.c_str() );
-		for( int i = 0; i < udpCount; i++ ){
-			NW_SEND_INFO item;
-
-			WCHAR key[64];
-			swprintf_s(key, L"IP%d", i);
-			item.ipString = GetPrivateProfileToString(L"SET_UDP", key, L"2130706433", appIniPath.c_str());
-			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
-				item.ipString.erase(0, 1).pop_back();
-			}else{
-				UINT ip = _wtoi(item.ipString.c_str());
-				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
-			}
-			swprintf_s(key, L"Port%d", i);
-			item.port = GetPrivateProfileInt( L"SET_UDP", key, 1234, appIniPath.c_str() );
-			swprintf_s(key, L"BroadCast%d", i);
-			item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key, 0, appIniPath.c_str() );
-
-			udpSendList.push_back(item);
-		}
+		this->udpSendList = this->setUdpSendList;
 	}
 
 	BOOL ret = TRUE;
-	if( udpSendList.size() == 0 ){
-		this->sendUdpFlag = FALSE;
+	if( this->udpSendList.empty() ){
 		if( this->nwCtrlID != 0 ){
 			this->bonCtrl.SendUdp(this->nwCtrlID,NULL);
-/*			if( this->sendUdpFlag == FALSE && this->sendTcpFlag == FALSE ){
-				this->bonCtrl.DeleteServiceCtrl(this->nwCtrlID);
-				this->nwCtrlID = 0;
-			}*/
 		}
 	}else{
-		this->sendUdpFlag = TRUE;
 		if( this->nwCtrlID == 0 ){
 			if( this->bonCtrl.CreateServiceCtrl(&this->nwCtrlID) == FALSE ){
-				this->sendTcpFlag = FALSE;
+				this->udpSendList.clear();
 				return FALSE;
 			}
 		}
@@ -366,44 +352,18 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 {
 	this->tcpSendList.clear();
 	if( enableFlag == TRUE ){
-		fs_path appIniPath = GetModuleIniPath();
-
-		int tcpCount = GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
-		for( int i = 0; i < tcpCount; i++ ){
-			NW_SEND_INFO item;
-
-			WCHAR key[64];
-			swprintf_s(key, L"IP%d", i);
-			item.ipString = GetPrivateProfileToString(L"SET_TCP", key, L"2130706433", appIniPath.c_str());
-			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
-				item.ipString.erase(0, 1).pop_back();
-			}else{
-				UINT ip = _wtoi(item.ipString.c_str());
-				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
-			}
-			swprintf_s(key, L"Port%d", i);
-			item.port = GetPrivateProfileInt( L"SET_TCP", key, 2230, appIniPath.c_str() );
-			item.broadcastFlag = 0;
-
-			tcpSendList.push_back(item);
-		}
+		this->tcpSendList = this->setTcpSendList;
 	}
 
 	BOOL ret = TRUE;
-	if( tcpSendList.size() == 0 ){
-		this->sendTcpFlag = FALSE;
+	if( this->tcpSendList.empty() ){
 		if( this->nwCtrlID != 0 ){
 			this->bonCtrl.SendTcp(this->nwCtrlID,NULL);
-/*			if( this->sendUdpFlag == FALSE && this->sendTcpFlag == FALSE ){
-				this->bonCtrl.DeleteServiceCtrl(this->nwCtrlID);
-				this->nwCtrlID = 0;
-			}*/
 		}
 	}else{
-		this->sendTcpFlag = TRUE;
 		if( this->nwCtrlID == 0 ){
 			if( this->bonCtrl.CreateServiceCtrl(&this->nwCtrlID) == FALSE ){
-				this->sendTcpFlag = FALSE;
+				this->tcpSendList.clear();
 				return FALSE;
 			}
 		}
@@ -419,44 +379,6 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 		ret = this->bonCtrl.SendTcp(this->nwCtrlID,&this->tcpSendList);
 	}
 	return ret;
-}
-
-//UDP送信の設定数を取得
-DWORD CEpgDataCap_BonMain::GetCountUDP()
-{
-	return this->udpCount;
-}
-
-//TCP送信の設定数を取得
-DWORD CEpgDataCap_BonMain::GetCountTCP()
-{
-	return this->tcpCount;
-}
-
-//UDPの送信中先一覧取得
-BOOL CEpgDataCap_BonMain::GetSendUDPList(
-	vector<NW_SEND_INFO>* sendList
-	)
-{
-	if( this->udpSendList.size() == 0 ){
-		return FALSE;
-	}
-	*sendList = this->udpSendList;
-
-	return TRUE;
-}
-
-//TCPの送信中先一覧取得
-BOOL CEpgDataCap_BonMain::GetSendTCPList(
-	vector<NW_SEND_INFO>* sendList
-	)
-{
-	if( this->tcpSendList.size() == 0 ){
-		return FALSE;
-	}
-	*sendList = this->tcpSendList;
-
-	return TRUE;
 }
 
 //指定サービスの現在or次のEPG情報を取得する
@@ -600,11 +522,10 @@ BOOL CEpgDataCap_BonMain::IsRec()
 //予約録画を停止する
 void CEpgDataCap_BonMain::StopReserveRec()
 {
-	map<DWORD,DWORD>::iterator itr;
-	for( itr = this->ctrlMap.begin(); itr != this->ctrlMap.end(); itr++ ){
-		this->bonCtrl.DeleteServiceCtrl(itr->second);
+	while( this->cmdCtrlList.empty() == false ){
+		this->bonCtrl.DeleteServiceCtrl(this->cmdCtrlList.back());
+		this->cmdCtrlList.pop_back();
 	}
-	this->ctrlMap.clear();
 }
 
 //チャンネルスキャンを開始する
@@ -682,19 +603,7 @@ CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetEpgCapStatus(
 void CEpgDataCap_BonMain::ViewAppOpen()
 {
 	if( this->viewPath.size() > 0 ){
-		PROCESS_INFORMATION pi;
-		STARTUPINFO si;
-		ZeroMemory(&si,sizeof(si));
-		si.cb=sizeof(si);
-
-		wstring strOpen;
-		Format(strOpen, L"\"%s\" %s", this->viewPath.c_str(), this->viewOpt.c_str());
-
-		vector<WCHAR> strBuff(strOpen.c_str(), strOpen.c_str() + strOpen.size() + 1);
-		if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
-			CloseHandle(pi.hThread);
-			CloseHandle(pi.hProcess);
-		}
+		ShellExecute(NULL, NULL, this->viewPath.c_str(), this->viewOpt.c_str(), NULL, SW_SHOWNORMAL);
 	}
 }
 
@@ -710,6 +619,35 @@ void CEpgDataCap_BonMain::StartServer()
 	OutputDebugString(eventName.c_str());
 	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
 		resParam->param = CMD_ERR;
+		//同期呼び出しが不要なコマンドはここで処理する
+		switch( cmdParam->param ){
+		case CMD2_VIEW_APP_SET_ID:
+			OutputDebugString(L"CMD2_VIEW_APP_SET_ID");
+			if( ReadVALUE(&this->outCtrlID, cmdParam->data, cmdParam->dataSize, NULL) ){
+				resParam->param = CMD_SUCCESS;
+			}
+			return;
+		case CMD2_VIEW_APP_GET_ID:
+			OutputDebugString(L"CMD2_VIEW_APP_GET_ID");
+			resParam->data = NewWriteVALUE(this->outCtrlID, resParam->dataSize);
+			resParam->param = CMD_SUCCESS;
+			return;
+		case CMD2_VIEW_APP_SET_STANDBY_REC:
+			OutputDebugString(L"CMD2_VIEW_APP_SET_STANDBY_REC");
+			{
+				DWORD val;
+				if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+					PostMessage(this->msgWnd, WM_RESERVE_REC_STANDBY, val, 0);
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+			return;
+		case CMD2_VIEW_APP_EXEC_VIEW_APP:
+			//原作は同期的
+			PostMessage(this->msgWnd, WM_VIEW_APP_OPEN, 0, 0);
+			resParam->param = CMD_SUCCESS;
+			return;
+		}
 		//CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ
 		//注意: CPipeServerがアクティブな間、ウィンドウは確実に存在しなければならない
 		this->cmdCapture = cmdParam;
@@ -730,13 +668,9 @@ BOOL CEpgDataCap_BonMain::GetViewStatusInfo(
 	DWORD* space,
 	DWORD* ch,
 	ULONGLONG* drop,
-	ULONGLONG* scramble,
-	vector<NW_SEND_INFO>* sendUdpList,
-	vector<NW_SEND_INFO>* sendTcpList
+	ULONGLONG* scramble
 	)
 {
-	*sendUdpList = this->udpSendList;
-	*sendTcpList = this->tcpSendList;
 	return this->bonCtrl.GetViewStatusInfo(this->nwCtrlID, signal, space, ch, drop, scramble);
 }
 
@@ -763,8 +697,9 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 	case CMD2_VIEW_APP_GET_BONDRIVER:
 		OutputDebugString(L"CMD2_VIEW_APP_GET_BONDRIVER");
 		{
-			if( sys->currentBonDriver.size() > 0 ){
-				resParam->data = NewWriteVALUE(sys->currentBonDriver, resParam->dataSize);
+			wstring bonFile;
+			if( sys->GetOpenBonDriver(&bonFile) ){
+				resParam->data = NewWriteVALUE(bonFile, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -811,7 +746,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 	case CMD2_VIEW_APP_GET_STATUS:
 		{
 			DWORD val = VIEW_APP_ST_NORMAL;
-			if( sys->currentBonDriver.size() == 0 ){
+			if( sys->GetOpenBonDriver(NULL) == FALSE ){
 				val = VIEW_APP_ST_ERR_BON;
 			}else if( sys->bonCtrl.IsRec() == TRUE ){
 				val = VIEW_APP_ST_REC;
@@ -833,11 +768,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 	case CMD2_VIEW_APP_CLOSE:
 		OutputDebugString(L"CMD2_VIEW_APP_CLOSE");
 		{
-			map<DWORD,DWORD>::iterator itr;
-			for( itr = sys->ctrlMap.begin(); itr != sys->ctrlMap.end(); itr++ ){
-				sys->bonCtrl.DeleteServiceCtrl(itr->second);
-			}
-			sys->ctrlMap.clear();
+			sys->StopReserveRec();
 			if( sys->recCtrlID != 0 ){
 				sys->bonCtrl.DeleteServiceCtrl(sys->recCtrlID);
 				sys->recCtrlID = 0;
@@ -850,37 +781,12 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			PostMessage(sys->msgWnd, WM_CLOSE, 0, 0);
 		}
 		break;
-	case CMD2_VIEW_APP_SET_ID:
-		OutputDebugString(L"CMD2_VIEW_APP_SET_ID");
-		{
-			if( ReadVALUE(&sys->outCtrlID, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				resParam->param = CMD_SUCCESS;
-			}
-		}
-		break;
-	case CMD2_VIEW_APP_GET_ID:
-		OutputDebugString(L"CMD2_VIEW_APP_GET_ID");
-		{
-			resParam->data = NewWriteVALUE(sys->outCtrlID, resParam->dataSize);
-			resParam->param = CMD_SUCCESS;
-		}
-		break;
-	case CMD2_VIEW_APP_SET_STANDBY_REC:
-		OutputDebugString(L"CMD2_VIEW_APP_SET_STANDBY_REC");
-		{
-			DWORD val = 0;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				resParam->param = CMD_SUCCESS;
-				PostMessage(sys->msgWnd, WM_RESERVE_REC_STANDBY, val, 0);
-			}
-		}
-		break;
 	case CMD2_VIEW_APP_CREATE_CTRL:
 		OutputDebugString(L"CMD2_VIEW_APP_CREATE_CTRL");
 		{
 			DWORD val = 0;
 			if( sys->bonCtrl.CreateServiceCtrl(&val) == TRUE ){
-				sys->ctrlMap.insert(pair<DWORD,DWORD>(val, val));
+				sys->cmdCtrlList.push_back(val);
 				resParam->data = NewWriteVALUE(val, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
@@ -892,16 +798,15 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			DWORD val = 0;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				if( sys->bonCtrl.DeleteServiceCtrl(val) == TRUE ){
-					map<DWORD,DWORD>::iterator itr;
-					itr = sys->ctrlMap.find(val);
-					if( itr != sys->ctrlMap.end() ){
-						sys->ctrlMap.erase(itr);
+					auto itr = std::find(sys->cmdCtrlList.begin(), sys->cmdCtrlList.end(), val);
+					if( itr != sys->cmdCtrlList.end() ){
+						sys->cmdCtrlList.erase(itr);
 					}
 					resParam->param = CMD_SUCCESS;
 
-					if( sys->ctrlMap.size() > 0 ){
+					if( sys->cmdCtrlList.empty() == false ){
 						WORD sid = 0xFFFF;
-						sys->bonCtrl.GetServiceID(sys->ctrlMap.begin()->first, &sid);
+						sys->bonCtrl.GetServiceID(sys->cmdCtrlList.front(), &sid);
 						sys->bonCtrl.SetServiceID(sys->nwCtrlID, sid);
 						if( sid != 0xFFFF ){
 							sys->lastSID = sid;
@@ -974,7 +879,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				if(sys->bonCtrl.EndSave(val.ctrlID) == TRUE){
 					resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
-					if( sys->ctrlMap.size() == 1 ){
+					if( sys->cmdCtrlList.size() == 1 ){
 						PostMessage(sys->msgWnd, WM_RESERVE_REC_STOP, 0, 0);
 					}
 				}
@@ -1036,11 +941,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				sys->bonCtrl.DeleteServiceCtrl(sys->recCtrlID);
 				sys->recCtrlID = 0;
 			}
-			map<DWORD,DWORD>::iterator itr;
-			for( itr = sys->ctrlMap.begin(); itr != sys->ctrlMap.end(); itr++ ){
-				sys->bonCtrl.DeleteServiceCtrl(itr->second);
-			}
-			sys->ctrlMap.clear();
+			sys->StopReserveRec();
 
 			resParam->param = ret;
 			PostMessage(sys->msgWnd, WM_RESERVE_REC_STOP, 0, 0);
@@ -1068,12 +969,6 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					resParam->param = CMD_SUCCESS;
 				}
 			}
-		}
-		break;
-	case CMD2_VIEW_APP_EXEC_VIEW_APP:
-		{
-			sys->ViewAppOpen();
-			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_REC_WRITE_SIZE:

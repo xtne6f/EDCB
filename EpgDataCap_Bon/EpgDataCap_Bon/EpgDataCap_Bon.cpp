@@ -13,11 +13,20 @@
 #include <share.h>
 #include <sys/stat.h>
 
-static FILE* g_debugLog;
-static CRITICAL_SECTION g_debugLogLock;
-static bool g_saveDebugLog;
+#ifndef SUPPRESS_OUTPUT_STACK_TRACE
+#include <tlhelp32.h>
+#include <dbghelp.h>
+#pragma comment(lib, "dbghelp.lib")
+#endif
 
-static void StartDebugLog()
+namespace
+{
+
+FILE* g_debugLog;
+CRITICAL_SECTION g_debugLogLock;
+bool g_saveDebugLog;
+
+void StartDebugLog()
 {
 	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0 ){
 		for( int i = 0; i < 100; i++ ){
@@ -47,7 +56,7 @@ static void StartDebugLog()
 	}
 }
 
-static void StopDebugLog()
+void StopDebugLog()
 {
 	if( g_saveDebugLog ){
 		OutputDebugString(L"****** LOG STOP ******\r\n");
@@ -61,11 +70,7 @@ static void StopDebugLog()
 // 例外によってアプリケーションが終了する直前にスタックトレースを"実行ファイル名.exe.err"に出力する
 // デバッグ情報(.pdbファイル)が存在すれば出力はより詳細になる
 
-#include <tlhelp32.h>
-#include <dbghelp.h>
-#pragma comment(lib, "dbghelp.lib")
-
-static void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
+void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 {
 	WCHAR path[MAX_PATH + 4];
 	path[GetModuleFileName(NULL, path, MAX_PATH)] = L'\0';
@@ -109,7 +114,7 @@ static void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 	}
 }
 
-static LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
+LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
 {
 	static struct {
 		LONG used;
@@ -156,8 +161,11 @@ static LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
 
 #endif // SUPPRESS_OUTPUT_STACK_TRACE
 
+// 唯一の CEpgDataCap_BonApp オブジェクトです。
 
-// CEpgDataCap_BonApp
+CEpgDataCap_BonApp theApp;
+
+}
 
 // CEpgDataCap_BonApp コンストラクション
 
@@ -166,12 +174,6 @@ CEpgDataCap_BonApp::CEpgDataCap_BonApp()
 	// TODO: この位置に構築用コードを追加してください。
 	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
 }
-
-
-// 唯一の CEpgDataCap_BonApp オブジェクトです。
-
-CEpgDataCap_BonApp theApp;
-
 
 // CEpgDataCap_BonApp 初期化
 
