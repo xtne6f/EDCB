@@ -201,45 +201,49 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			funcStack.push_back(L"Tr/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/");
 		}else if( func == L"ZtoH<alnum>" ){
 			funcStack.push_back(L"Tr/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/");
+		}else if( func == L"ToSJIS" ){
+			string retA;
+			WtoA(ret, retA);
+			AtoW(retA, ret);
 		}else if( func.compare(0, 2, L"Tr") == 0 && func.size() >= 3 ){
 			//•¶š’uŠ·(Tr/’uŠ·•¶šƒŠƒXƒg/’uŠ·Œã/)
-			for( size_t i = 2; i < func.size(); i += 2 ){
-				//Šî–{‘½Œ¾Œê–Ê‚ğ“ñd‰»
-				if( !IsHighSurrogate(func[i]) || i + 1 >= func.size() ){
-					func.insert(func.begin() + i, func[i]);
-				}
-			}
-			size_t n = func.find(wstring(func, 2, 2), 4);
-			if( n == wstring::npos || n % 2 ){
-				return FALSE;
-			}
-			if( func.find(wstring(func, 2, 2), n + 2) != 6 + (n - 4) * 2 ){
-				return FALSE;
-			}
-			wstring cmp(func, 4, n - 4);
-			for( size_t i = 0; i < ret.size(); ){
-				size_t len = IsHighSurrogate(ret[i]) && i + 1 < ret.size() ? 2 : 1;
-				size_t m = cmp.find(wstring(ret, i, len));
-				if( m != wstring::npos && m % 2 == 0 ){
-					size_t rlen = IsHighSurrogate(func[n + 2 + m]) ? 2 : 1;
-					ret.replace(i, len, wstring(func, n + 2 + m, rlen));
-					i += rlen;
-				}else{
-					i += len;
-				}
-			}
-		}else if( func.compare(0, 1, L"S") == 0 && func.size() >= 2 ){
-			//•¶š—ñ’uŠ·(S/’uŠ·•¶š—ñ/’uŠ·Œã/)
-			size_t n = func.find(func[1], 2);
+			size_t n = func.find(func[2], 3);
 			if( n == wstring::npos ){
 				return FALSE;
 			}
-			size_t m = func.find(func[1], n + 1);
-			if( m == wstring::npos ){
+			if( func.find(func[2], n + 1) != 4 + (n - 3) * 2 ){
 				return FALSE;
 			}
-			if( n > 2 ){
-				Replace(ret, func.substr(2, n - 2), func.substr(n + 1, m - n - 1));
+			wstring cmp(func, 3, n - 3);
+			for( wstring::iterator itr = ret.begin(); itr != ret.end(); itr++ ){
+				size_t m = cmp.find(*itr);
+				if( m != wstring::npos ){
+					*itr = func[n + 1 + m];
+				}
+			}
+		}else if( func.compare(0, 1, L"S") == 0 && func.size() >= 2 ){
+			//•¶š—ñ’uŠ·(S/’uŠ·•¶š—ñ/’uŠ·Œã/.../)
+			for( size_t i = 0; i < ret.size(); ){
+				for( size_t j = 2;; ){
+					size_t n = func.find(func[1], j);
+					if( n == wstring::npos ){
+						i++;
+						break;
+					}
+					size_t m = func.find(func[1], n + 1);
+					if( m == wstring::npos ){
+						return FALSE;
+					}
+					if( n > j && ret.compare(i, n - j, func, j, n - j) == 0 ){
+						ret.replace(i, n - j, func, n + 1, m - (n + 1));
+						if( ret.size() > 64 * 1024 ){
+							return FALSE;
+						}
+						i += m - (n + 1);
+						break;
+					}
+					j = m + 1;
+				}
 			}
 		}else if( func.compare(0, 2, L"Rm") == 0 && func.size() >= 3 ){
 			//•¶šíœ(Rm/íœ•¶šƒŠƒXƒg/)
@@ -248,12 +252,11 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 				return FALSE;
 			}
 			wstring cmp(func, 3, n - 3);
-			for( size_t i = 0; i < ret.size(); ){
-				size_t len = IsHighSurrogate(ret[i]) && i + 1 < ret.size() ? 2 : 1;
-				if( cmp.find(wstring(ret, i, len)) != wstring::npos ){
-					ret.erase(i, len);
+			for( wstring::iterator itr = ret.begin(); itr != ret.end(); ){
+				if( cmp.find(*itr) != wstring::npos ){
+					itr = ret.erase(itr);
 				}else{
-					i += len;
+					itr++;
 				}
 			}
 		}else if( func.compare(0, 4, L"Head") == 0 && func.size() >= 5 ){
@@ -297,6 +300,9 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 		}
 	}
 
+	if( convert.size() + ret.size() > 64 * 1024 ){
+		return FALSE;
+	}
 	convert += ret;
 
 	return TRUE;
