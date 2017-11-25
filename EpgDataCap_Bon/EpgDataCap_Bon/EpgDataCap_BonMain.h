@@ -180,13 +180,11 @@ public:
 
 	//チャンネルスキャンを開始する
 	//戻り値：
-	// エラーコード
-	DWORD StartChScan();
+	// TRUE（成功）、FALSE（失敗）
+	BOOL StartChScan() { return this->bonCtrl.StartChScan(); }
 
 	//チャンネルスキャンをキャンセルする
-	//戻り値：
-	// エラーコード
-	DWORD StopChScan();
+	void StopChScan() { this->bonCtrl.StopChScan(); }
 
 	//チャンネルスキャンの状態を取得する
 	//戻り値：
@@ -207,15 +205,11 @@ public:
 
 	//EPG取得を開始する
 	//戻り値：
-	// エラーコード
-	DWORD StartEpgCap(
-		);
+	// TRUE（成功）、FALSE（失敗）
+	BOOL StartEpgCap() { return this->bonCtrl.StartEpgCap(NULL); }
 
 	//EPG取得を停止する
-	//戻り値：
-	// エラーコード
-	DWORD StopEpgCap(
-		);
+	void StopEpgCap() { this->bonCtrl.StopEpgCap(); }
 
 	//EPG取得のステータスを取得する
 	//戻り値：

@@ -3,7 +3,6 @@
 #include "../Common/ErrDef.h"
 #include "../Common/TSPacketUtil.h"
 #include "../Common/StringUtil.h"
-#include "../Common/EpgDataCap3Util.h"
 
 #include "BonCtrlDef.h"
 #include "SendUDP.h"
@@ -14,16 +13,13 @@
 #include "CreatePMTPacket.h"
 #include "CreatePATPacket.h"
 #include "DropCount.h"
+#include <functional>
 
 class COneServiceUtil
 {
 public:
 	COneServiceUtil(void);
 	~COneServiceUtil(void);
-
-	void SetEpgUtil(
-		CEpgDataCap3Util* epgUtil
-		);
 
 	//処理対象ServiceIDを設定
 	//引数：
@@ -61,9 +57,11 @@ public:
 	//引数：
 	// data		[IN]TSデータ
 	// size		[IN]dataのサイズ
+	// funcGetPresent	[IN]EPGの現在番組IDを調べる関数
 	BOOL AddTSBuff(
 		BYTE* data,
-		DWORD size
+		DWORD size,
+		const std::function<int(WORD, WORD, WORD)>& funcGetPresent
 		);
 
 	void SetPmtPID(
@@ -185,8 +183,6 @@ public:
 		);
 protected:
 	WORD SID;
-
-	CEpgDataCap3Util* epgUtil;
 
 	BOOL enableScramble;
 

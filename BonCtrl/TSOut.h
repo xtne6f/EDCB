@@ -15,6 +15,7 @@
 #include "OneServiceUtil.h"
 #include "PMTUtil.h"
 #include "CATUtil.h"
+#include <functional>
 
 class CTSOut
 {
@@ -103,11 +104,9 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// serviceListSize			[OUT]serviceListの個数
-	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
+	// funcGetList		[IN]戻り値がNO_ERRのときサービス情報の個数とそのリストを引数として呼び出される関数
 	DWORD GetServiceListActual(
-		DWORD* serviceListSize,
-		SERVICE_INFO** serviceList
+		const std::function<void(DWORD, SERVICE_INFO*)>& funcGetList
 		);
 
 	//TSストリーム制御用コントロールを作成する
@@ -330,7 +329,9 @@ public:
 		);
 
 protected:
+	//objLock->epgUtilLockの順にロックする
 	CRITICAL_SECTION objLock;
+	CRITICAL_SECTION epgUtilLock;
 
 	CEpgDataCap3Util epgUtil;
 	CScrambleDecoderUtil decodeUtil;

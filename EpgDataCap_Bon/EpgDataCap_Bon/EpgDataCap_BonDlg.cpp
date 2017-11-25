@@ -948,7 +948,7 @@ DWORD CEpgDataCap_BonDlg::SelectService(WORD ONID, WORD TSID, WORD SID,	DWORD sp
 void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	if( this->main.StartChScan() != NO_ERR ){
+	if( this->main.StartChScan() == FALSE ){
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"チャンネルスキャンを開始できませんでした\r\n");
 		return;
 	}
@@ -960,7 +960,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 void CEpgDataCap_BonDlg::OnBnClickedButtonEpg()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	if( this->main.StartEpgCap() != NO_ERR ){
+	if( this->main.StartEpgCap() == FALSE ){
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得を開始できませんでした\r\n");
 		return;
 	}

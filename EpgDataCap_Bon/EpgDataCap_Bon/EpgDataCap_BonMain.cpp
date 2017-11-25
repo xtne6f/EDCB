@@ -209,9 +209,7 @@ DWORD CEpgDataCap_BonMain::SetCh(
 {
 	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
-		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
-			this->bonCtrl.StopEpgCap();
-		}
+		this->bonCtrl.StopEpgCap();
 		err = this->bonCtrl.SetCh(ONID, TSID, SID);
 		if( err == NO_ERR ){
 			this->lastONID = ONID;
@@ -247,9 +245,7 @@ DWORD CEpgDataCap_BonMain::SetCh(
 {
 	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
-		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
-			this->bonCtrl.StopEpgCap();
-		}
+		this->bonCtrl.StopEpgCap();
 		err = this->bonCtrl.SetCh(space, ch);
 		if( err == NO_ERR ){
 			this->lastONID = ONID;
@@ -528,22 +524,6 @@ void CEpgDataCap_BonMain::StopReserveRec()
 	}
 }
 
-//チャンネルスキャンを開始する
-//戻り値：
-// エラーコード
-DWORD CEpgDataCap_BonMain::StartChScan()
-{
-	return this->bonCtrl.StartChScan();
-}
-
-//チャンネルスキャンをキャンセルする
-//戻り値：
-// エラーコード
-DWORD CEpgDataCap_BonMain::StopChScan()
-{
-	return this->bonCtrl.StopChScan();
-}
-
 //チャンネルスキャンの状態を取得する
 //戻り値：
 // ステータス
@@ -562,29 +542,6 @@ CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetChScanStatus(
 	)
 {
 	return this->bonCtrl.GetChScanStatus(space, ch, chName, chkNum, totalNum);
-}
-
-//EPG取得を開始する
-//戻り値：
-// エラーコード
-DWORD CEpgDataCap_BonMain::StartEpgCap(
-	)
-{
-	vector<EPGCAP_SERVICE_INFO> chList;
-	this->bonCtrl.GetEpgCapService(&chList);
-	if( chList.size() == 0 ){
-		return ERR_FALSE;
-	}
-	return this->bonCtrl.StartEpgCap(&chList);
-}
-
-//EPG取得を停止する
-//戻り値：
-// エラーコード
-DWORD CEpgDataCap_BonMain::StopEpgCap(
-	)
-{
-	return this->bonCtrl.StopEpgCap();
 }
 
 //EPG取得のステータスを取得する
@@ -621,6 +578,36 @@ void CEpgDataCap_BonMain::StartServer()
 		resParam->param = CMD_ERR;
 		//同期呼び出しが不要なコマンドはここで処理する
 		switch( cmdParam->param ){
+		case CMD2_VIEW_APP_GET_BONDRIVER:
+			{
+				wstring bonFile;
+				if( this->bonCtrl.GetOpenBonDriver(&bonFile) ){
+					resParam->data = NewWriteVALUE(bonFile, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+			return;
+		case CMD2_VIEW_APP_GET_DELAY:
+			resParam->data = NewWriteVALUE(this->bonCtrl.GetTimeDelay(), resParam->dataSize);
+			resParam->param = CMD_SUCCESS;
+			return;
+		case CMD2_VIEW_APP_GET_STATUS:
+			{
+				DWORD val = VIEW_APP_ST_NORMAL;
+				BOOL chChgErr;
+				if( this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ){
+					val = VIEW_APP_ST_ERR_BON;
+				}else if( this->bonCtrl.IsRec() ){
+					val = VIEW_APP_ST_REC;
+				}else if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
+					val = VIEW_APP_ST_GET_EPG;
+				}else if( this->IsChChanging(&chChgErr) == FALSE && chChgErr ){
+					val = VIEW_APP_ST_ERR_CH_CHG;
+				}
+				resParam->data = NewWriteVALUE(val, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
+			}
+			return;
 		case CMD2_VIEW_APP_SET_ID:
 			OutputDebugString(L"CMD2_VIEW_APP_SET_ID");
 			if( ReadVALUE(&this->outCtrlID, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -638,6 +625,43 @@ void CEpgDataCap_BonMain::StartServer()
 				DWORD val;
 				if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 					PostMessage(this->msgWnd, WM_RESERVE_REC_STANDBY, val, 0);
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+			return;
+		case CMD2_VIEW_APP_REC_FILE_PATH:
+			OutputDebugString(L"CMD2_VIEW_APP_REC_FILE_PATH");
+			{
+				DWORD id;
+				if( ReadVALUE(&id, cmdParam->data, cmdParam->dataSize, NULL) ){
+					wstring saveFile;
+					BOOL subRec = FALSE;
+					this->bonCtrl.GetSaveFilePath(id, &saveFile, &subRec);
+					if( saveFile.size() > 0 ){
+						resParam->data = NewWriteVALUE(saveFile, resParam->dataSize);
+						resParam->param = CMD_SUCCESS;
+					}
+				}
+			}
+			return;
+		case CMD2_VIEW_APP_SEARCH_EVENT:
+			{
+				SEARCH_EPG_INFO_PARAM key;
+				EPGDB_EVENT_INFO epgInfo;
+				if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) &&
+				    this->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR ){
+					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+			return;
+		case CMD2_VIEW_APP_GET_EVENT_PF:
+			{
+				GET_EPG_PF_INFO_PARAM key;
+				EPGDB_EVENT_INFO epgInfo;
+				if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) &&
+				    this->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR ){
+					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
 			}
@@ -694,26 +718,14 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			}
 		}
 		break;
-	case CMD2_VIEW_APP_GET_BONDRIVER:
-		OutputDebugString(L"CMD2_VIEW_APP_GET_BONDRIVER");
-		{
-			wstring bonFile;
-			if( sys->GetOpenBonDriver(&bonFile) ){
-				resParam->data = NewWriteVALUE(bonFile, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
-			}
-		}
-		break;
 	case CMD2_VIEW_APP_SET_CH:
 		OutputDebugString(L"CMD2_VIEW_APP_SET_CH");
 		{
-			if( sys->bonCtrl.IsRec() == FALSE ){
-				if( sys->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
-					sys->bonCtrl.StopEpgCap();
-				}
+			{
 				SET_CH_INFO val;
 				if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 					if( sys->bonCtrl.IsRec() == FALSE ){
+						sys->bonCtrl.StopEpgCap();
 						if( val.useSID == TRUE ){
 							if(sys->SetCh(val.ONID, val.TSID, val.SID) == TRUE){
 								sys->lastONID = val.ONID;
@@ -733,36 +745,6 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					}
 				}
 			}
-		}
-		break;
-	case CMD2_VIEW_APP_GET_DELAY:
-		{
-			int val = sys->bonCtrl.GetTimeDelay();
-
-			resParam->data = NewWriteVALUE(val, resParam->dataSize);
-			resParam->param = CMD_SUCCESS;
-		}
-		break;
-	case CMD2_VIEW_APP_GET_STATUS:
-		{
-			DWORD val = VIEW_APP_ST_NORMAL;
-			if( sys->GetOpenBonDriver(NULL) == FALSE ){
-				val = VIEW_APP_ST_ERR_BON;
-			}else if( sys->bonCtrl.IsRec() == TRUE ){
-				val = VIEW_APP_ST_REC;
-			}else if( sys->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
-				val = VIEW_APP_ST_GET_EPG;
-			}else{
-				//VIEW_APP_ST_NORMAL
-				BOOL chChgErr = FALSE;
-				if(sys->IsChChanging(&chChgErr) == FALSE ){
-					if( chChgErr == TRUE ){
-						val = VIEW_APP_ST_ERR_CH_CHG;
-					}
-				}
-			}
-			resParam->data = NewWriteVALUE(val, resParam->dataSize);
-			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_CLOSE:
@@ -886,21 +868,6 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			}
 		}
 		break;
-	case CMD2_VIEW_APP_REC_FILE_PATH:
-		OutputDebugString(L"CMD2_VIEW_APP_REC_FILE_PATH");
-		{
-			DWORD val = 0;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				wstring saveFile = L"";
-				BOOL subRec;
-				sys->bonCtrl.GetSaveFilePath(val, &saveFile, &subRec);
-				if( saveFile.size() > 0 ){
-					resParam->data = NewWriteVALUE(saveFile, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
-				}
-			}
-		}
-		break;
 	case CMD2_VIEW_APP_EPGCAP_START:
 		OutputDebugString(L"CMD2_VIEW_APP_EPGCAP_START");
 		{
@@ -914,7 +881,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					item.SID = val[i].SID;
 					chList.push_back(item);
 				}
-				if( sys->bonCtrl.StartEpgCap(&chList) == NO_ERR ){
+				if( sys->bonCtrl.StartEpgCap(&chList) ){
 					PostMessage(sys->msgWnd, WM_RESERVE_EPGCAP_START, 0, 0);
 					
 					resParam->param = CMD_SUCCESS;
@@ -945,30 +912,6 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 
 			resParam->param = ret;
 			PostMessage(sys->msgWnd, WM_RESERVE_REC_STOP, 0, 0);
-		}
-		break;
-	case CMD2_VIEW_APP_SEARCH_EVENT:
-		{
-			SEARCH_EPG_INFO_PARAM key;
-			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				EPGDB_EVENT_INFO epgInfo;
-				if( sys->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == TRUE ){
-					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
-				}
-			}
-		}
-		break;
-	case CMD2_VIEW_APP_GET_EVENT_PF:
-		{
-			GET_EPG_PF_INFO_PARAM key;
-			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				EPGDB_EVENT_INFO epgInfo;
-				if( sys->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == TRUE ){
-					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
-				}
-			}
 		}
 		break;
 	case CMD2_VIEW_APP_REC_WRITE_SIZE:

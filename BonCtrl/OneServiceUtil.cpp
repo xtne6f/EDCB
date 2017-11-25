@@ -9,7 +9,6 @@ COneServiceUtil::COneServiceUtil(void)
 	this->pmtPID = 0xFFFF;
 
 	this->enableScramble = TRUE;
-	this->epgUtil = NULL;
 
 	this->pittariStart = FALSE;
 	this->pittariEndChk = FALSE;
@@ -22,14 +21,6 @@ COneServiceUtil::~COneServiceUtil(void)
 	SendUdp(NULL);
 	SendTcp(NULL);
 }
-
-void COneServiceUtil::SetEpgUtil(
-	CEpgDataCap3Util* epgUtil
-	)
-{
-	this->epgUtil = epgUtil;
-}
-
 
 //処理対象ServiceIDを設定
 //引数：
@@ -179,9 +170,11 @@ BOOL COneServiceUtil::SendTcp(
 //引数：
 // data		[IN]TSデータ
 // size		[IN]dataのサイズ
+// funcGetPresent	[IN]EPGの現在番組IDを調べる関数
 BOOL COneServiceUtil::AddTSBuff(
 	BYTE* data,
-	DWORD size
+	DWORD size,
+	const std::function<int(WORD, WORD, WORD)>& funcGetPresent
 	)
 {
 	BOOL ret = TRUE;
@@ -266,10 +259,10 @@ BOOL COneServiceUtil::AddTSBuff(
 			StratPittariRec();
 			this->lastPMTVer = createPmt.GetVersion();
 		}
-		if( this->epgUtil != NULL ){
-			EPG_EVENT_INFO* epgInfo;
-			if( this->epgUtil->GetEpgInfo( this->pittariONID, this->pittariTSID, this->pittariSID, FALSE, &epgInfo ) == NO_ERR ){
-				if( epgInfo->event_id == this->pittariEventID ){
+		if( funcGetPresent ){
+			int eventID = funcGetPresent(this->pittariONID, this->pittariTSID, this->pittariSID);
+			if( eventID >= 0 ){
+				if( eventID == this->pittariEventID ){
 					//ぴったり開始
 					StratPittariRec();
 					this->pittariStart = FALSE;
@@ -279,10 +272,10 @@ BOOL COneServiceUtil::AddTSBuff(
 		}
 	}
 	if( this->pittariEndChk == TRUE ){
-		if( this->epgUtil != NULL ){
-			EPG_EVENT_INFO* epgInfo;
-			if( this->epgUtil->GetEpgInfo( this->pittariONID, this->pittariTSID, this->pittariSID, FALSE, &epgInfo ) == NO_ERR ){
-				if( epgInfo->event_id != this->pittariEventID ){
+		if( funcGetPresent ){
+			int eventID = funcGetPresent(this->pittariONID, this->pittariTSID, this->pittariSID);
+			if( eventID >= 0 ){
+				if( eventID != this->pittariEventID ){
 					//ぴったり終了
 					StopPittariRec();
 					this->pittariEndChk = FALSE;
