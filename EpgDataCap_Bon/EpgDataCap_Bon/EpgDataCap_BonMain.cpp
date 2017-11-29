@@ -491,7 +491,7 @@ BOOL CEpgDataCap_BonMain::StartRec(
 	saveFolder.back().recFolder = this->recFolderList[0];
 	saveFolder.back().recFileName = fileName;
 
-	this->bonCtrl.StartSave(this->recCtrlID, L"padding.ts", this->overWriteFlag, FALSE, 0,0,0,0, 0, &saveFolder, &this->recFolderList);
+	this->bonCtrl.StartSave(this->recCtrlID, L"padding.ts", this->overWriteFlag, FALSE, 0,0,0,0, 0, saveFolder, this->recFolderList);
 
 	return TRUE;
 }
@@ -825,7 +825,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					overWrite = val.overWriteFlag;
 				}
 				sys->bonCtrl.ClearErrCount(val.ctrlID);
-				if(sys->bonCtrl.StartSave(val.ctrlID, val.fileName, overWrite, val.pittariFlag, val.pittariONID, val.pittariTSID, val.pittariSID, val.pittariEventID, val.createSize, &val.saveFolder, &sys->recFolderList) == TRUE){
+				if(sys->bonCtrl.StartSave(val.ctrlID, val.fileName, overWrite, val.pittariFlag, val.pittariONID, val.pittariTSID, val.pittariSID, val.pittariEventID, val.createSize, val.saveFolder, sys->recFolderList) ){
 					resParam->param = CMD_SUCCESS;
 					PostMessage(sys->msgWnd, WM_RESERVE_REC_START, 0, 0);
 				}

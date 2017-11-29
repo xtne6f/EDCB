@@ -36,14 +36,14 @@ CWriteTSFile::~CWriteTSFile(void)
 // saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 BOOL CWriteTSFile::StartSave(
 	const wstring& fileName,
-	BOOL overWriteFlag,
-	ULONGLONG createSize,
-	const vector<REC_FILE_SET_INFO>* saveFolder,
-	const vector<wstring>* saveFolderSub,
-	int maxBuffCount
+	BOOL overWriteFlag_,
+	ULONGLONG createSize_,
+	const vector<REC_FILE_SET_INFO>& saveFolder,
+	const vector<wstring>& saveFolderSub_,
+	int maxBuffCount_
 )
 {
-	if( saveFolder->size() == 0 ){
+	if( saveFolder.size() == 0 ){
 		OutputDebugString(L"CWriteTSFile::StartSave Err saveFolder 0\r\n");
 		return FALSE;
 	}
@@ -51,23 +51,22 @@ BOOL CWriteTSFile::StartSave(
 	if( this->outThread == NULL ){
 		this->fileList.clear();
 		this->mainSaveFilePath = L"";
-		this->overWriteFlag = overWriteFlag;
-		this->createSize = createSize;
-		this->maxBuffCount = maxBuffCount;
+		this->overWriteFlag = overWriteFlag_;
+		this->createSize = createSize_;
+		this->maxBuffCount = maxBuffCount_;
 		this->writeTotalSize = 0;
 		this->subRecFlag = FALSE;
-		const vector<REC_FILE_SET_INFO>& saveFolder_ = *saveFolder;
-		this->saveFolderSub = *saveFolderSub;
-		for( size_t i=0; i<saveFolder_.size(); i++ ){
+		this->saveFolderSub = saveFolderSub_;
+		for( size_t i=0; i<saveFolder.size(); i++ ){
 			this->fileList.push_back(std::unique_ptr<SAVE_INFO>(new SAVE_INFO));
 			SAVE_INFO& item = *this->fileList.back();
 			item.freeChk = FALSE;
-			item.writePlugIn = saveFolder_[i].writePlugIn;
+			item.writePlugIn = saveFolder[i].writePlugIn;
 			if( item.writePlugIn.size() == 0 ){
 				item.writePlugIn = L"Write_Default.dll";
 			}
-			item.recFolder = saveFolder_[i].recFolder;
-			item.recFileName = saveFolder_[i].recFileName;
+			item.recFolder = saveFolder[i].recFolder;
+			item.recFileName = saveFolder[i].recFileName;
 			if( item.recFileName.size() == 0 ){
 				item.recFileName = fileName;
 			}
@@ -373,11 +372,11 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 // subRecFlag		[OUT]サブ録画が発生したかどうか
 void CWriteTSFile::GetSaveFilePath(
 	wstring* filePath,
-	BOOL* subRecFlag
+	BOOL* subRecFlag_
 	)
 {
 	*filePath = this->mainSaveFilePath;
-	*subRecFlag = this->subRecFlag;
+	*subRecFlag_ = this->subRecFlag;
 }
 
 //録画中のファイルの出力サイズを取得する

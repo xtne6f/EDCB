@@ -46,15 +46,15 @@ BOOL CChSetUtil::SaveChSet(
 	}
 
 	//他で更新されてる可能性あるので再読み込み
-	CParseChText5 chText5;
-	chText5.ParseText(chSet5FilePath.c_str());
+	CParseChText5 mergeChText5;
+	mergeChText5.ParseText(chSet5FilePath.c_str());
 	//現在保持している情報を追加
 	map<LONGLONG, CH_DATA5>::const_iterator itr;
 	for( itr = this->chText5.GetMap().begin(); itr != this->chText5.GetMap().end(); itr++ ){
-		chText5.AddCh(itr->second);
+		mergeChText5.AddCh(itr->second);
 	}
 	//保存
-	if( chText5.SaveText() == false ){
+	if( mergeChText5.SaveText() == false ){
 		ret = FALSE;
 	}
 	//最新版を再読み込み

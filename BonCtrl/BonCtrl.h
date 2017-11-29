@@ -40,7 +40,7 @@ public:
 
 	void SetNoLogScramble(BOOL noLog);
 
-	void SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount);
+	void SetTsBuffMaxCount(DWORD tsBuffMaxCount_, int writeBuffMaxCount_);
 
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
@@ -198,7 +198,7 @@ public:
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 	BOOL StartSave(
 		DWORD id,
-		wstring fileName,
+		const wstring& fileName,
 		BOOL overWriteFlag,
 		BOOL pittariFlag,
 		WORD pittariONID,
@@ -206,8 +206,8 @@ public:
 		WORD pittariSID,
 		WORD pittariEventID,
 		ULONGLONG createSize,
-		vector<REC_FILE_SET_INFO>* saveFolder,
-		vector<wstring>* saveFolderSub
+		const vector<REC_FILE_SET_INFO>& saveFolder,
+		const vector<wstring>& saveFolderSub
 	);
 
 	//ファイル保存を終了する

@@ -12,7 +12,6 @@ COneServiceUtil::COneServiceUtil(void)
 
 	this->pittariStart = FALSE;
 	this->pittariEndChk = FALSE;
-	this->maxBuffCount = -1;
 }
 
 
@@ -26,16 +25,16 @@ COneServiceUtil::~COneServiceUtil(void)
 //ˆø”F
 // SID			[IN]ServiceID
 void COneServiceUtil::SetSID(
-	WORD SID
+	WORD SID_
 )
 {
-	if( this->SID != SID ){
+	if( this->SID != SID_ ){
 		this->pmtPID = 0xFFFF;
 		this->emmPIDMap.clear();
 
 		this->dropCount.Clear();
 	}
-	this->SID = SID;
+	this->SID = SID_;
 }
 
 //Ý’è‚³‚ê‚Ä‚éˆ—‘ÎÛ‚ÌServiceID‚ðŽæ“¾
@@ -306,15 +305,15 @@ BOOL COneServiceUtil::WriteData(BYTE* data, DWORD size)
 
 void COneServiceUtil::SetPmtPID(
 	WORD TSID,
-	WORD pmtPID
+	WORD pmtPID_
 	)
 {
-	if( this->pmtPID != pmtPID && this->SID != 0xFFFF){
-		_OutputDebugString(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID);
+	if( this->pmtPID != pmtPID_ && this->SID != 0xFFFF){
+		_OutputDebugString(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID_);
 		map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
 
 		CCreatePATPacket::PROGRAM_PID_INFO item;
-		item.PMTPID = pmtPID;
+		item.PMTPID = pmtPID_;
 		item.SID = this->SID;
 		PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
 		
@@ -324,7 +323,7 @@ void COneServiceUtil::SetPmtPID(
 		
 		createPat.SetParam(TSID, &PIDMap);
 
-		this->pmtPID = pmtPID;
+		this->pmtPID = pmtPID_;
 	}
 }
 
@@ -353,13 +352,13 @@ BOOL COneServiceUtil::StartSave(
 	const wstring& fileName,
 	BOOL overWriteFlag,
 	BOOL pittariFlag,
-	WORD pittariONID,
-	WORD pittariTSID,
-	WORD pittariSID,
-	WORD pittariEventID,
+	WORD pittariONID_,
+	WORD pittariTSID_,
+	WORD pittariSID_,
+	WORD pittariEventID_,
 	ULONGLONG createSize,
-	const vector<REC_FILE_SET_INFO>* saveFolder,
-	const vector<wstring>* saveFolderSub,
+	const vector<REC_FILE_SET_INFO>& saveFolder,
+	const vector<wstring>& saveFolderSub,
 	int maxBuffCount
 )
 {
@@ -377,16 +376,16 @@ BOOL COneServiceUtil::StartSave(
 		if( this->writeFile == NULL ){
 			OutputDebugString(L"*:StartSave pittariFlag");
 			this->pittariRecFilePath = L"";
-			this->fileName = fileName;
-			this->overWriteFlag = overWriteFlag;
-			this->createSize = createSize;
-			this->saveFolder = *saveFolder;
-			this->saveFolderSub = *saveFolderSub;
-			this->maxBuffCount = maxBuffCount;
-			this->pittariONID = pittariONID;
-			this->pittariTSID = pittariTSID;
-			this->pittariSID = pittariSID;
-			this->pittariEventID = pittariEventID;
+			this->pittariFileName = fileName;
+			this->pittariOverWriteFlag = overWriteFlag;
+			this->pittariCreateSize = createSize;
+			this->pittariSaveFolder = saveFolder;
+			this->pittariSaveFolderSub = saveFolderSub;
+			this->pittariMaxBuffCount = maxBuffCount;
+			this->pittariONID = pittariONID_;
+			this->pittariTSID = pittariTSID_;
+			this->pittariSID = pittariSID_;
+			this->pittariEventID = pittariEventID_;
 
 			this->lastPMTVer = 0xFFFF;
 
@@ -405,7 +404,8 @@ void COneServiceUtil::StratPittariRec()
 	if( this->writeFile == NULL ){
 		OutputDebugString(L"*:StratPittariRec");
 		this->writeFile.reset(new CWriteTSFile);
-		this->writeFile->StartSave(this->fileName, this->overWriteFlag, this->createSize, &this->saveFolder, &this->saveFolderSub, this->maxBuffCount);
+		this->writeFile->StartSave(this->pittariFileName, this->pittariOverWriteFlag, this->pittariCreateSize,
+		                           this->pittariSaveFolder, this->pittariSaveFolderSub, this->pittariMaxBuffCount);
 	}
 }
 

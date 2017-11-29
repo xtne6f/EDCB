@@ -66,7 +66,7 @@ public:
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	BOOL StartSaveEPG(
-		const wstring& epgFilePath
+		const wstring& epgFilePath_
 		);
 
 	//EPGデータの保存を終了する
@@ -190,8 +190,8 @@ public:
 		WORD pittariSID,
 		WORD pittariEventID,
 		ULONGLONG createSize,
-		const vector<REC_FILE_SET_INFO>* saveFolder,
-		const vector<wstring>* saveFolderSub,
+		const vector<REC_FILE_SET_INFO>& saveFolder,
+		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
 	);
 

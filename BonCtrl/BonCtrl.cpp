@@ -82,10 +82,10 @@ void CBonCtrl::SetNoLogScramble(BOOL noLog)
 	this->tsOut.SetNoLogScramble(noLog);
 }
 
-void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount)
+void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount_, int writeBuffMaxCount_)
 {
-	this->tsBuffMaxCount = tsBuffMaxCount;
-	this->writeBuffMaxCount = writeBuffMaxCount;
+	this->tsBuffMaxCount = tsBuffMaxCount_;
+	this->writeBuffMaxCount = writeBuffMaxCount_;
 }
 
 //BonDriverフォルダのBonDriver_*.dllを列挙
@@ -448,7 +448,7 @@ BOOL CBonCtrl::SendTcp(
 // saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 BOOL CBonCtrl::StartSave(
 	DWORD id,
-	wstring fileName,
+	const wstring& fileName,
 	BOOL overWriteFlag,
 	BOOL pittariFlag,
 	WORD pittariONID,
@@ -456,8 +456,8 @@ BOOL CBonCtrl::StartSave(
 	WORD pittariSID,
 	WORD pittariEventID,
 	ULONGLONG createSize,
-	vector<REC_FILE_SET_INFO>* saveFolder,
-	vector<wstring>* saveFolderSub
+	const vector<REC_FILE_SET_INFO>& saveFolder,
+	const vector<wstring>& saveFolderSub
 )
 {
 	BOOL ret = this->tsOut.StartSave(id, fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, writeBuffMaxCount);

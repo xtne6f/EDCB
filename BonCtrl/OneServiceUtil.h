@@ -25,7 +25,7 @@ public:
 	//引数：
 	// SID			[IN]ServiceID。0xFFFFで全サービス対象。
 	void SetSID(
-		WORD SID
+		WORD SID_
 	);
 
 	//設定されてる処理対象のServiceIDを取得
@@ -66,7 +66,7 @@ public:
 
 	void SetPmtPID(
 		WORD TSID,
-		WORD pmtPID
+		WORD pmtPID_
 		);
 
 	void SetEmmPID(
@@ -91,13 +91,13 @@ public:
 		const wstring& fileName,
 		BOOL overWriteFlag,
 		BOOL pittariFlag,
-		WORD pittariONID,
-		WORD pittariTSID,
-		WORD pittariSID,
-		WORD pittariEventID,
+		WORD pittariONID_,
+		WORD pittariTSID_,
+		WORD pittariSID_,
+		WORD pittariEventID_,
 		ULONGLONG createSize,
-		const vector<REC_FILE_SET_INFO>* saveFolder,
-		const vector<wstring>* saveFolderSub,
+		const vector<REC_FILE_SET_INFO>& saveFolder,
+		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
 	);
 
@@ -208,17 +208,17 @@ protected:
 
 	WORD lastPMTVer;
 
-	wstring fileName;
-	BOOL overWriteFlag;
-	ULONGLONG createSize;
-	vector<REC_FILE_SET_INFO> saveFolder;
-	vector<wstring> saveFolderSub;
+	wstring pittariFileName;
+	BOOL pittariOverWriteFlag;
+	ULONGLONG pittariCreateSize;
+	vector<REC_FILE_SET_INFO> pittariSaveFolder;
+	vector<wstring> pittariSaveFolderSub;
 	WORD pittariONID;
 	WORD pittariTSID;
 	WORD pittariSID;
 	WORD pittariEventID;
 	wstring pittariRecFilePath;
-	int maxBuffCount;
+	int pittariMaxBuffCount;
 
 protected:
 	BOOL WriteData(BYTE* data, DWORD size);

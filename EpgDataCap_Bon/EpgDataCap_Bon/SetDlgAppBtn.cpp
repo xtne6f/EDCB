@@ -30,6 +30,7 @@ BOOL CSetDlgAppBtn::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 BOOL CSetDlgAppBtn::OnInitDialog()
 {
 	// TODO:  Ç±Ç±Ç…èâä˙âªÇí«â¡ÇµÇƒÇ≠ÇæÇ≥Ç¢
+	fs_path appIniPath = GetModuleIniPath();
 	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, GetPrivateProfileToString( L"SET", L"ViewPath", L"", appIniPath.c_str() ).c_str());
 	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_OPT, GetPrivateProfileToString( L"SET", L"ViewOption", L"", appIniPath.c_str() ).c_str());
 
@@ -42,6 +43,7 @@ void CSetDlgAppBtn::SaveIni(void)
 	if( m_hWnd == NULL ){
 		return;
 	}
+	fs_path appIniPath = GetModuleIniPath();
 
 	WCHAR buff[512]=L"";
 	GetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, buff, 512);

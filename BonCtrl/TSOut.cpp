@@ -413,15 +413,15 @@ void CTSOut::CheckNeedPID()
 //戻り値：
 // TRUE（成功）、FALSE（失敗）
 BOOL CTSOut::StartSaveEPG(
-	const wstring& epgFilePath
+	const wstring& epgFilePath_
 	)
 {
 	CBlockLock lock(&this->objLock);
 	if( this->epgFile != NULL ){
 		return FALSE;
 	}
-	this->epgFilePath = epgFilePath;
-	this->epgTempFilePath = epgFilePath;
+	this->epgFilePath = epgFilePath_;
+	this->epgTempFilePath = epgFilePath_;
 	this->epgTempFilePath += L".tmp";
 
 	_OutputDebugString(L"★%s\r\n", this->epgFilePath.c_str());
@@ -836,8 +836,8 @@ BOOL CTSOut::StartSave(
 	WORD pittariSID,
 	WORD pittariEventID,
 	ULONGLONG createSize,
-	const vector<REC_FILE_SET_INFO>* saveFolder,
-	const vector<wstring>* saveFolderSub,
+	const vector<REC_FILE_SET_INFO>& saveFolder,
+	const vector<wstring>& saveFolderSub,
 	int maxBuffCount
 )
 {

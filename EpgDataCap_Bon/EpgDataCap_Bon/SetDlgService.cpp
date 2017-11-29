@@ -116,10 +116,6 @@ BOOL CSetDlgService::OnInitDialog()
 	if( chList.size() > 0 ){
 		ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_BON), 0);
 		ReloadList();
-
-		WCHAR text[512] = L"";
-		GetDlgItemText(m_hWnd, IDC_COMBO_BON, text, 512);
-		lastSelect = text;
 	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
