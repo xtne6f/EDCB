@@ -7,7 +7,7 @@ ct=[=[
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>EDCB Legacy WebUIについて - EDCB</title>
 </head>
 <body>
 <h1>EDCB Legacy WebUIについて</h1>
@@ -20,17 +20,20 @@ ct=[=[
   </p><p>
     番組表などにはEDCBの「EPG取得対象サービス」でチェックされたサービスのみ表示します。
   </p><p>
-    <a href="debuglog.lua?c=8192">デバッグ出力</a>(debuglog.lua)や<a href="reserve.html">予約一覧</a>のシステムスタンバイ機能(reserveaction.html)はデフォルトで無効化しています。<br>
+    <a href="debuglog.lua?c=8192">デバッグ出力</a>(debuglog.lua)や<a href="index.html">メニュー</a>(index.html)のシステムスタンバイ機能はデフォルトで無効化しています。<br>
     必要に応じてスクリプトを編集してコメントアウト(--ハイフン2つ)を解除してください。
   </p><p>
     xcode.luaやview.luaを利用する場合は、ffmpeg.exeやreadex.exeをEDCBフォルダ直下のToolsフォルダに用意してください。<br>
     詳細は各スクリプトのコメントを参照してください。
   </p><p>
+    スクリプトはLua 5.2を使用しています。<a href="https://www.lua.org/manual/5.2/">Lua 5.2 Reference Manual</a> (<a href="http://milkpot.sakura.ne.jp/lua/lua52_manual_ja.html">有志による日本語訳</a>)<br>
+    EDCBによる追加機能はDocument/Readme_Mod.txtの「Lua edcbグローバル変数の仕様」を参照してください。
+  </p><p>
     無保証です。セキュリティに気をつけてください。スクリプトの改変、再配布などすべて自由です。
   </p>
 </div>
 <div id="footer">
-  <a href="index.html">メニューへ</a>
+  <a href="index.html">メニュー</a>
 </div>
 </body>
 </html>

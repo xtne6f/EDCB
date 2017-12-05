@@ -7,7 +7,7 @@ ct=[=[
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>録画済み詳細 - EDCB</title>
 </head>
 <body>
 <h1>録画済み詳細</h1>
@@ -15,6 +15,16 @@ ct=[=[
 ]=]
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
+
+post=ReadPost()
+if post then
+  AssertCsrf(post)
+  if mg.get_var(post,'del') then
+    edcb.DelRecFileInfo(id)
+    ct=ct..'  <div id="result">削除しました</div>\n'
+  end
+end
+
 w=edcb.GetRecFileInfo(id)
 edcb.htmlEscape=15
 v=edcb.GetRecFileInfo(id)
@@ -53,8 +63,9 @@ if v then
     ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..DecorateUri(v.programInfo):gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
-    ..'<form method="POST" action="recinfodel.html?id='..v.id..'"><div>\n'
+    ..'<form method="POST" action="recinfodesc.html?id='..v.id..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="hidden" name="del" value="y">\n'
     ..'<input type="submit" value="削除"></div></form></dd>\n'
     ..'  </dl>\n'
 end
@@ -62,7 +73,7 @@ end
 ct=ct..[=[
 </div>
 <div id="footer">
-  <a href="recinfo.html">録画済み一覧へ</a>
+  <a href="recinfo.html">録画済み一覧</a>
 </div>
 </body>
 </html>

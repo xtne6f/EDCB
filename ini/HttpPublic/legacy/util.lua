@@ -64,8 +64,8 @@ function RecSettingTemplate(rs)
     ..'<option value="0"'..(not rs.pittariFlag and ' selected="selected"' or '')..'>しない'
     ..'<option value="1"'..(rs.pittariFlag and ' selected="selected"' or '')..'>する</select><br>\n'
     ..'録画マージン: <input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked="checked"')..'>デフォルト || '
-    ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or 0)..'"> '
-    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or 0)..'"><br>\n'
+    ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or 0)..'" size="5"> '
+    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or 0)..'" size="5"><br>\n'
     ..'指定サービス対象データ: <input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked="checked"' or '')..'>デフォルト || '
     ..'<input type="checkbox" name="serviceMode_1" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/16)%2~=0 and ' checked="checked"' or '')..'>字幕を含める '
     ..'<input type="checkbox" name="serviceMode_2" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/32)%2~=0 and ' checked="checked"' or '')..'>データカルーセルを含める<br>\n'
@@ -86,7 +86,7 @@ function RecSettingTemplate(rs)
   end
   s=s..'</select><br>\n'
     ..'録画後動作: <select name="suspendMode">'
-    ..'<option value="0"'..(rs.suspendMode==0 and ' selected="selected"' or '')..'>デフォルト設定を使用'
+    ..'<option value="0"'..(rs.suspendMode==0 and ' selected="selected"' or '')..'>デフォルト'
     ..'<option value="1"'..(rs.suspendMode==1 and ' selected="selected"' or '')..'>スタンバイ'
     ..'<option value="2"'..(rs.suspendMode==2 and ' selected="selected"' or '')..'>休止'
     ..'<option value="3"'..(rs.suspendMode==3 and ' selected="selected"' or '')..'>シャットダウン'
@@ -97,7 +97,7 @@ function RecSettingTemplate(rs)
 end
 
 function RecModeTextList()
-  return {'全サービス','指定サービスのみ','全サービス（デコード処理なし）','指定サービスのみ（デコード処理なし）','視聴','無効'}
+  return {'全サービス','指定サービス','全サービス（デコード処理なし）','指定サービス（デコード処理なし）','視聴','無効'}
 end
 
 function NetworkType(onid)

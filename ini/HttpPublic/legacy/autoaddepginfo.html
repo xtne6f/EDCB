@@ -1,40 +1,156 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+function AddOrChange(dataID,post)
+  local aa={dataID=dataID}
+  local presetID=GetVarInt(post,'presetID',0,65534)
+  if presetID then
+    for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+      if v.id==presetID then
+        aa.recSetting=v.recSetting
+        break
+      end
+    end
+  elseif dataID~=0 then
+    for i,v in ipairs(edcb.EnumAutoAdd()) do
+      if v.dataID==dataID then
+        aa.recSetting=v.recSetting
+        break
+      end
+    end
+  end
+  if aa.recSetting then
+    local useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
+    aa.recSetting={
+      batFilePath=aa.recSetting.batFilePath,
+      recFolderList=aa.recSetting.recFolderList,
+      partialRecFolder=aa.recSetting.partialRecFolder,
+      recMode=GetVarInt(post,'recMode',0,5),
+      tuijyuuFlag=GetVarInt(post,'tuijyuuFlag')==1,
+      priority=GetVarInt(post,'priority',1,5),
+      pittariFlag=GetVarInt(post,'pittariFlag')==1,
+      suspendMode=GetVarInt(post,'suspendMode',0,4),
+      rebootFlag=GetVarInt(post,'rebootFlag')==1,
+      startMargin=useMargin and GetVarInt(post,'startMargin',-6*3600,6*3600),
+      endMargin=useMargin and GetVarInt(post,'endMargin',-6*3600,6*3600),
+      serviceMode=GetVarInt(post,'serviceMode')==1 and 0 or
+        1+16*(GetVarInt(post,'serviceMode_1',0,1) or 0)+32*(GetVarInt(post,'serviceMode_2',0,1) or 0),
+      continueRecFlag=GetVarInt(post,'continueRecFlag')==1,
+      tunerID=GetVarInt(post,'tunerID'),
+      partialRecFlag=GetVarInt(post,'partialRecFlag',0,1) or 0
+    }
+    if aa.recSetting.recMode and
+       aa.recSetting.priority and
+       aa.recSetting.suspendMode and
+       (not useMargin or aa.recSetting.startMargin and aa.recSetting.endMargin) and
+       aa.recSetting.tunerID
+    then
+      aa.searchInfo={
+        andKey=mg.get_var(post,'andKey') or '',
+        notKey=mg.get_var(post,'notKey') or '',
+        regExpFlag=GetVarInt(post,'regExpFlag')==1,
+        titleOnlyFlag=GetVarInt(post,'titleOnlyFlag')==1,
+        aimaiFlag=GetVarInt(post,'aimaiFlag')==1,
+        notContetFlag=GetVarInt(post,'notContetFlag')==1,
+        notDateFlag=false,
+        freeCAFlag=GetVarInt(post,'freeCAFlag',0,2) or 0,
+        chkRecEnd=GetVarInt(post,'chkRecEnd')==1,
+        chkRecDay=GetVarInt(post,'chkRecDay') or 0,
+        chkRecNoService=GetVarInt(post,'chkRecNoService')==1,
+        chkDurationMin=GetVarInt(post,'chkDurationMin') or 0,
+        chkDurationMax=GetVarInt(post,'chkDurationMax') or 0
+      }
+      aa.searchInfo.contentList={}
+      for i=0,10000 do
+        local v=GetVarInt(post,'contentList',0,65535,i)
+        if not v then break end
+        table.insert(aa.searchInfo.contentList,{content_nibble=v})
+      end
+      aa.searchInfo.serviceList={}
+      for i=0,10000 do
+        local v=mg.get_var(post,'serviceList',i)
+        if not v then break end
+        local m={v:match('^(%d+)%-(%d+)%-(%d+)$')}
+        if #m==3 then
+          table.insert(aa.searchInfo.serviceList,{onid=0+m[1],tsid=0+m[2],sid=0+m[3]})
+        end
+      end
+      aa.searchInfo.dateList={}
+      for v in (mg.get_var(post,'dateList') or ''):gmatch('[^,]+') do
+        local m={v:match('^(.-)%-(%d+):(%d+)%-(.-)%-(%d+):(%d+)$')}
+        if #m==6 then
+          local dateInfo={
+            startDayOfWeek=({['日']=0,['月']=1,['火']=2,['水']=3,['木']=4,['金']=5,['土']=6})[m[1]],
+            endDayOfWeek=({['日']=0,['月']=1,['火']=2,['水']=3,['木']=4,['金']=5,['土']=6})[m[4]]
+          }
+          if dateInfo.startDayOfWeek and dateInfo.endDayOfWeek then
+            dateInfo.startHour=0+m[2]
+            dateInfo.startMin=0+m[3]
+            dateInfo.endHour=0+m[5]
+            dateInfo.endMin=0+m[6]
+            table.insert(aa.searchInfo.dateList,dateInfo)
+          end
+        end
+      end
+      return edcb.AddOrChgAutoAdd(aa)
+    end
+  end
+  return false
+end
+
 ct=[=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>EPG予約 - EDCB</title>
 </head>
 <body>
 ]=]
 
-edcb.htmlEscape=15
 aa={dataID=GetVarInt(mg.request_info.query_string,'id') or 0}
 if aa.dataID==0 then
   ct=ct..'<h1>EPG予約 新規条件追加</h1>\n<div id="main">\n'
-  aa.searchInfo={
-    andKey='',
-    notKey='',
-    regExpFlag=false,
-    titleOnlyFlag=false,
-    aimaiFlag=false,
-    notContetFlag=false,
-    freeCAFlag=0,
-    chkRecEnd=false,
-    chkRecDay=6,
-    chkRecNoService=false,
-    chkDurationMin=0,
-    chkDurationMax=0,
-    contentList={},
-    dateList={},
-    serviceList={}
-  }
+  post=ReadPost()
+  if post then
+    AssertCsrf(post)
+    if mg.get_var(post,'addchg') then
+      ct=ct..'  <div id="result">'..(AddOrChange(0,post) and '追加しました' or '入力値不正')..'</div>\n'
+    end
+  else
+    aa.searchInfo={
+      andKey='',
+      notKey='',
+      regExpFlag=false,
+      titleOnlyFlag=false,
+      aimaiFlag=false,
+      notContetFlag=false,
+      freeCAFlag=0,
+      chkRecEnd=false,
+      chkRecDay=6,
+      chkRecNoService=false,
+      chkDurationMin=0,
+      chkDurationMax=0,
+      contentList={},
+      dateList={},
+      serviceList={}
+    }
+  end
+  edcb.htmlEscape=15
 else
   ct=ct..'<h1>EPG予約 条件変更</h1>\n<div id="main">\n'
+  post=ReadPost()
+  if post then
+    AssertCsrf(post)
+    if mg.get_var(post,'addchg') then
+      ct=ct..'  <div id="result">'..(AddOrChange(aa.dataID,post) and '変更しました' or '入力値不正')..'</div>\n'
+    elseif mg.get_var(post,'del') then
+      edcb.DelAutoAdd(aa.dataID)
+      ct=ct..'  <div id="result">削除しました</div>\n'
+    end
+  end
+  edcb.htmlEscape=15
   for i,v in ipairs(edcb.EnumAutoAdd()) do
     if v.dataID==aa.dataID then
       aa=v
@@ -42,6 +158,7 @@ else
     end
   end
 end
+
 if aa.searchInfo then
   si=aa.searchInfo
   ct=ct..'  <dl>\n'
@@ -69,9 +186,10 @@ if aa.searchInfo then
   end
   ct=ct..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
     ..'    <dt>条件</dt><dd>\n'
-    ..'<form method="POST" action="autoaddepgaddchgkey.html?id='..aa.dataID..'">\n'
+    ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'">\n'
     ..'<div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
-    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'"></div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="hidden" name="addchg" value="y"></div>\n'
     ..'<div class="section"><h2>検索条件</h2>\n'
     ..'検索キーワード<input type="text" name="andKey" value="'..si.andKey..'" size="25"><br>\n'
     ..'NOTキーワード<input type="text" name="notKey" value="'..si.notKey..'" size="25"><br>\n'
@@ -142,8 +260,9 @@ if aa.searchInfo then
 
   if aa.dataID~=0 then
     ct=ct..'    <dt>-</dt><dd>\n'
-      ..'<form method="POST" action="autoaddepgdelkey.html?id='..aa.dataID..'"><div>\n'
+      ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'"><div>\n'
       ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+      ..'<input type="hidden" name="del" value="y">\n'
       ..'<input type="submit" value="削除"></div></form></dd>\n'
   end
   ct=ct..'  </dl>\n'
@@ -152,7 +271,7 @@ end
 ct=ct..[=[
 </div>
 <div id="footer">
-  <a href="autoaddepg.html">EPG予約一覧へ</a>
+  <a href="autoaddepg.html">EPG予約一覧</a>
 </div>
 </body>
 </html>
