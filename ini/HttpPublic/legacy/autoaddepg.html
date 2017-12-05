@@ -42,8 +42,12 @@ for i=pageIndex*PAGE_COUNT+1,math.min(#a,(pageIndex+1)*PAGE_COUNT) do
       end
     end
   end
-  table.insert(ctt, '    <tr><td><a href="autoaddepginfo.html?id='..a[i].dataID..'">'
-    ..v.andKey..'&nbsp;</a></td><td>'..v.notKey..'</td><td>'
+  --無効
+  disAndKey=v.andKey:match('^^!{999}(.*)')
+  --大小文字区別
+  andKey=(disAndKey or v.andKey):gsub('^C!{999}','(Aa) ')
+  table.insert(ctt, '    <tr'..(disAndKey and ' class="disabled"' or '')..'><td><a href="autoaddepginfo.html?id='..a[i].dataID..'">'
+    ..andKey..'&ensp;</a></td><td>'..v.notKey..'</td><td>'
     ..(#v.contentList>0 and edcb.GetGenreName(v.contentList[1].content_nibble)..(#v.contentList>1 and 'など' or '') or '')..'</td><td>'
     ..serviceName..(#v.serviceList>1 and 'など' or '')..'</td><td>'
     ..(RecModeTextList()[a[i].recSetting.recMode+1] or '')
