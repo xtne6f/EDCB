@@ -77,9 +77,8 @@ sid=tonumber(sid) or 0
 eid=tonumber(eid) or 0
 presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
 
-post=ReadPost()
+post=AssertPost()
 if post then
-  AssertCsrf(post)
   if mg.get_var(post,'addchg') then
     ct=ct..'  <div id="result">'..(AddReserve(onid,tsid,sid,eid,post) and '予約を追加しました' or '入力値不正')..'</div>\n'
   end

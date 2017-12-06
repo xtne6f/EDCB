@@ -54,9 +54,8 @@ ct=[=[
   </form>
 ]=]
 
-post=ReadPost()
+post=AssertPost()
 if post then
-  AssertCsrf(post)
   if mg.get_var(post,'suspend') then
     --ok=edcb.os.execute('start "SetSuspendState" powershell -NoProfile -Command "&{sleep 5;Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.Application]::SetSuspendState([Windows.Forms.PowerState]::Suspend,$false,$false)}"')
     ct=ct..'  <div id="result">スタンバイに移行'..(ok and 'します' or 'できません (スクリプトのコメントアウトを解除してください)')..'</div>\n'

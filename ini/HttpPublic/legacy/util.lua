@@ -263,7 +263,7 @@ function Deflate(ct)
 end
 
 --POSTメッセージボディをすべて読む
-function ReadPost()
+function AssertPost()
   local post, s
   if mg.request_info.request_method=='POST' then
     post=''
@@ -272,8 +272,9 @@ function ReadPost()
       post=post..(s or '')
     until not s
     if #post~=mg.request_info.content_length then
-      post=nil
+      post=''
     end
+    AssertCsrf(post)
   end
   return post
 end

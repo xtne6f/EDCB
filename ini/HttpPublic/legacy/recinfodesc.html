@@ -16,9 +16,8 @@ ct=[=[
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
 
-post=ReadPost()
+post=AssertPost()
 if post then
-  AssertCsrf(post)
   if mg.get_var(post,'del') then
     edcb.DelRecFileInfo(id)
     ct=ct..'  <div id="result">削除しました</div>\n'

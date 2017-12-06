@@ -87,9 +87,8 @@ ct=[=[
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
 
-post=ReadPost()
+post=AssertPost()
 if post then
-  AssertCsrf(post)
   if mg.get_var(post,'addchg') then
     ct=ct..'  <div id="result">'..(Change(id,post) and '変更しました' or '入力値不正')..'</div>\n'
   elseif mg.get_var(post,'del') then

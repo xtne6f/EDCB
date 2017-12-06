@@ -116,9 +116,8 @@ ct=[=[
 aa={dataID=GetVarInt(mg.request_info.query_string,'id') or 0}
 if aa.dataID==0 then
   ct=ct..'<h1>EPG予約 新規条件追加</h1>\n<div id="main">\n'
-  post=ReadPost()
+  post=AssertPost()
   if post then
-    AssertCsrf(post)
     if mg.get_var(post,'addchg') then
       ct=ct..'  <div id="result">'..(AddOrChange(0,post) and '追加しました' or '入力値不正')..'</div>\n'
     end
@@ -145,9 +144,8 @@ if aa.dataID==0 then
   edcb.htmlEscape=15
 else
   ct=ct..'<h1>EPG予約 条件変更</h1>\n<div id="main">\n'
-  post=ReadPost()
+  post=AssertPost()
   if post then
-    AssertCsrf(post)
     if mg.get_var(post,'addchg') then
       ct=ct..'  <div id="result">'..(AddOrChange(aa.dataID,post) and '変更しました' or '入力値不正')..'</div>\n'
     elseif mg.get_var(post,'del') then
