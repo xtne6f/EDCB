@@ -126,14 +126,14 @@ for i,v in ipairs(edcb.EnumRecPresetInfo()) do
   if v.id==presetID then
     preset=true
     rs=v.recSetting
-    ct=ct..'<option value="'..v.id..'" selected="selected">'..v.name..'\n'
+    ct=ct..'<option value="'..v.id..'" selected>'..v.name..'\n'
   else
     rs=rs or v.recSetting
     ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
   end
 end
 if r then
-  ct=ct..'<option value="65535"'..(preset and '' or ' selected="selected"')..'>予約時\n'
+  ct=ct..'<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
 end
 ct=ct..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
   ..'    <dt>録画設定<dt><dd>\n'
