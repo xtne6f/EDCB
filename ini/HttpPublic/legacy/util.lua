@@ -241,25 +241,15 @@ function Response(code,ctype,charset,cl)
     ..(mg.keep_alive(not not cl) and '\r\n' or '\r\nConnection: close\r\n')
 end
 
---可能ならコンテンツをzlib圧縮する(lua-zlib(zlib.dll)が必要)
+--可能ならコンテンツをgzip圧縮する(lua-zlib(zlib.dll)が必要)
 function Deflate(ct)
-  local zl
-  local trim
   for k,v in pairs(mg.request_info.http_headers) do
-    if not zl and k:lower()=='accept-encoding' and v:lower():find('deflate') then
-      local status, zlib = pcall(require, 'zlib')
-      if status then
-        zl=zlib.deflate()(ct, 'finish')
-      end
-    elseif k:lower()=='user-agent' and (v:find(' MSIE ') or v:find(' Trident/7%.') or v:find(' Edge/')) then
-      --RFC2616非準拠のブラウザはzlibヘッダを取り除く
-      trim=true
+    if k:lower()=='accept-encoding' and v:lower():find('gzip') then
+      local status,zlib = pcall(require,'zlib')
+      return status and zlib.deflate(6,31)(ct,'finish') or nil
     end
   end
-  if trim and zl and #zl >= 6 then
-    zl=zl:sub(3, #zl-4)
-  end
-  return zl
+  return nil
 end
 
 --POSTメッセージボディをすべて読む
