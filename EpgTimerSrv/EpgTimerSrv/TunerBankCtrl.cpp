@@ -1116,9 +1116,8 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 		ctrlCmd.SetConnectTimeOut(0);
 		//ЛNУЃКЃЧєВ№В≈Н≈Се30ХbВўВ«С“В¬
-		for( int i = 0; i < 300; i++ ){
-			Sleep(100);
-			if( WaitForSingleObject(this->hTunerProcess, 0) != WAIT_TIMEOUT ){
+		for( DWORD tick = GetTickCount(); GetTickCount() - tick < 30000; ){
+			if( WaitForSingleObject(this->hTunerProcess, 10) != WAIT_TIMEOUT ){
 				CloseTuner();
 				return false;
 			}else if( ctrlCmd.SendViewSetID(this->tunerID) == CMD_SUCCESS ){
