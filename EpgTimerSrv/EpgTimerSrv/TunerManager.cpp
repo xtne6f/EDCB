@@ -161,8 +161,8 @@ BOOL CTunerManager::GetCh(
 	DWORD* ch
 	) const
 {
-	map<DWORD, TUNER_INFO>::const_iterator itr;
-	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
+	map<DWORD, TUNER_INFO>::const_iterator itr = this->tunerMap.find(tunerID);
+	if( itr != this->tunerMap.end() ){
 		vector<CH_DATA4>::const_iterator itrCh;
 		for( itrCh = itr->second.chList.begin(); itrCh != itr->second.chList.end(); itrCh++ ){
 			if( itrCh->originalNetworkID == ONID && itrCh->transportStreamID == TSID && itrCh->serviceID == SID ){
