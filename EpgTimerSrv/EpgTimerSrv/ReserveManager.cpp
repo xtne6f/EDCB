@@ -1382,8 +1382,8 @@ DWORD CReserveManager::Check()
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_EPGCAP_END, L"");
 			return MAKELONG(0, CHECK_EPGCAP_END);
 		}else if( this->shutdownModePending >= 0 &&
-		          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == FALSE &&
-		          this->batPostManager.GetWorkCount() == 0 && this->batPostManager.IsWorking() == FALSE ){
+		          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == false &&
+		          this->batPostManager.GetWorkCount() == 0 && this->batPostManager.IsWorking() == false ){
 			//バッチ処理が完了した
 			int shutdownMode = this->shutdownModePending;
 			this->shutdownModePending = -1;
@@ -1404,8 +1404,7 @@ vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
 	CBlockLock lock(&this->managerLock);
 
 	//利用可能なチューナの抽出
-	vector<pair<vector<DWORD>, WORD>> tunerIDList;
-	this->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
+	vector<pair<vector<DWORD>, WORD>> tunerIDList = this->tunerManager.GetEnumEpgCapTuner();
 	vector<DWORD> epgCapIDList;
 	for( size_t i = 0; i < tunerIDList.size(); i++ ){
 		WORD epgCapMax = tunerIDList[i].second;
@@ -1710,14 +1709,12 @@ bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int
 vector<DWORD> CReserveManager::GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const
 {
 	//tunerManagerは排他制御の対象外
-	vector<DWORD> idList;
-	this->tunerManager.GetSupportServiceTuner(onid, tsid, sid, &idList);
-	return idList;
+	return this->tunerManager.GetSupportServiceTuner(onid, tsid, sid);
 }
 
 bool CReserveManager::GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const
 {
-	return this->tunerManager.GetCh(tunerID, onid, tsid, sid, space, ch) != FALSE;
+	return this->tunerManager.GetCh(tunerID, onid, tsid, sid, space, ch);
 }
 
 wstring CReserveManager::GetTunerBonFileName(DWORD tunerID) const

@@ -12,19 +12,19 @@
 
 extern DWORD g_compatFlags;
 
-CEpgDBManager::CEpgDBManager(void)
+CEpgDBManager::CEpgDBManager()
 {
 	InitializeCriticalSection(&this->epgMapLock);
 
 	this->epgMapRefLock = std::make_pair(0, &this->epgMapLock);
 	this->loadThread = NULL;
-	this->loadStop = FALSE;
-	this->loadForeground = FALSE;
-	this->initialLoadDone = FALSE;
+	this->loadStop = false;
+	this->loadForeground = false;
+	this->initialLoadDone = false;
 	this->archivePeriodSec = 0;
 }
 
-CEpgDBManager::~CEpgDBManager(void)
+CEpgDBManager::~CEpgDBManager()
 {
 	CancelLoadData(15000);
 
@@ -38,7 +38,7 @@ void CEpgDBManager::SetArchivePeriod(int periodSec)
 	this->archivePeriodSec = min(periodSec, 14 * 24 * 3600);
 }
 
-BOOL CEpgDBManager::ReloadEpgData(BOOL foreground)
+bool CEpgDBManager::ReloadEpgData(bool foreground)
 {
 	CancelLoadData(MAXDWORD);
 
@@ -46,19 +46,19 @@ BOOL CEpgDBManager::ReloadEpgData(BOOL foreground)
 
 	if( this->loadThread == NULL ){
 		//フォアグラウンド読み込みを中断した場合は引き継ぐ
-		if( this->loadForeground == FALSE ){
+		if( this->loadForeground == false ){
 			this->loadForeground = foreground;
 		}
 		//受信スレッド起動
 		this->loadThread = (HANDLE)_beginthreadex(NULL, 0, LoadThread, this, 0, NULL);
 		if( this->loadThread == NULL ){
-			this->loadForeground = FALSE;
-			return FALSE;
+			this->loadForeground = false;
+			return false;
 		}
 	}else{
 		//キャンセル後に他スレッドが割り込んだだけなので結果的には成功
 	}
-	return TRUE;
+	return true;
 }
 
 UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
@@ -68,14 +68,14 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	OutputDebugString(L"Start Load EpgData\r\n");
 	DWORD time = GetTickCount();
 
-	if( sys->loadForeground == FALSE ){
+	if( sys->loadForeground == false ){
 		//バックグラウンドに移行
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 	}
 	CEpgDataCap3Util epgUtil;
 	if( epgUtil.Initialize(FALSE) != NO_ERR ){
 		OutputDebugString(L"★EpgDataCap3.dllの初期化に失敗しました。\r\n");
-		sys->loadForeground = FALSE;
+		sys->loadForeground = false;
 		return 0;
 	}
 
@@ -136,7 +136,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 			}
 		}else{
 			BYTE readBuff[188*256];
-			BOOL swapped = FALSE;
+			bool swapped = false;
 			HANDLE file = INVALID_HANDLE_VALUE;
 			if( tmpError == NO_ERROR ){
 				//一時ファイルがあって書き込み中でない→コピー直前かもしれないので3秒待つ
@@ -147,7 +147,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 				if( masterFile != INVALID_HANDLE_VALUE ){
 					file = CreateFile((path + L".swp").c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 					if( file != INVALID_HANDLE_VALUE ){
-						swapped = TRUE;
+						swapped = true;
 						DWORD read;
 						while( ReadFile(masterFile, readBuff, sizeof(readBuff), &read, NULL) && read != 0 ){
 							DWORD written;
@@ -196,10 +196,10 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 				}
 				SetFilePointer(file, seekPos, 0, FILE_BEGIN);
 				//TOTを先頭に持ってきて送る(ストリームの時刻を確定させるため)
-				BOOL ignoreTOT = FALSE;
+				bool ignoreTOT = false;
 				while( ReadFile(file, readBuff, 188, &read, NULL) && read == 188 ){
 					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0x14 ){
-						ignoreTOT = TRUE;
+						ignoreTOT = true;
 						epgUtil.AddTSPacket(readBuff, 188);
 						break;
 					}
@@ -208,12 +208,12 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 				while( ReadFile(file, readBuff, sizeof(readBuff), &read, NULL) && read != 0 ){
 					for( DWORD i=0; i<read; i+=188 ){
 						if( ignoreTOT && ((readBuff[i+1] & 0x1F) << 8 | readBuff[i+2]) == 0x14 ){
-							ignoreTOT = FALSE;
+							ignoreTOT = false;
 						}else{
 							epgUtil.AddTSPacket(readBuff+i, 188);
 						}
 					}
-					if( sys->loadForeground == FALSE ){
+					if( sys->loadForeground == false ){
 						//処理速度がだいたい2/3になるように休む。I/O負荷軽減が狙い
 						DWORD tick = GetTickCount();
 						loadElapsed += tick - loadTick;
@@ -237,7 +237,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	DWORD serviceListSize = 0;
 	SERVICE_INFO* serviceList = NULL;
 	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == FALSE ){
-		sys->loadForeground = FALSE;
+		sys->loadForeground = false;
 		return 0;
 	}
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> nextMap;
@@ -305,7 +305,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		}
 	}
 
-	if( sys->loadForeground == FALSE ){
+	if( sys->loadForeground == false ){
 		//フォアグラウンドに復帰
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 	}
@@ -376,7 +376,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		}
 		Sleep(1);
 	}
-	if( sys->loadForeground == FALSE ){
+	if( sys->loadForeground == false ){
 		//バックグラウンドに移行
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 	}
@@ -397,7 +397,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	_OutputDebugString(L"End Load EpgData %dmsec\r\n", GetTickCount()-time);
 
-	sys->loadForeground = FALSE;
+	sys->loadForeground = false;
 	return 0;
 }
 
@@ -428,16 +428,16 @@ BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVEN
 	return TRUE;
 }
 
-BOOL CEpgDBManager::IsLoadingData() const
+bool CEpgDBManager::IsLoadingData() const
 {
 	CBlockLock lock(&this->epgMapLock);
-	return this->loadThread != NULL && WaitForSingleObject( this->loadThread, 0 ) == WAIT_TIMEOUT ? TRUE : FALSE;
+	return this->loadThread != NULL && WaitForSingleObject( this->loadThread, 0 ) == WAIT_TIMEOUT;
 }
 
-BOOL CEpgDBManager::IsInitialLoadingDataDone() const
+bool CEpgDBManager::IsInitialLoadingDataDone() const
 {
 	CBlockLock lock(&this->epgMapLock);
-	return this->initialLoadDone != FALSE || this->loadThread != NULL && IsLoadingData() == FALSE ? TRUE : FALSE;
+	return this->initialLoadDone || (this->loadThread != NULL && IsLoadingData() == false);
 }
 
 void CEpgDBManager::CancelLoadData(DWORD forceTimeout)
@@ -448,30 +448,30 @@ void CEpgDBManager::CancelLoadData(DWORD forceTimeout)
 			if( this->loadThread == NULL ){
 				return;
 			}else if( i == 0 ){
-				this->loadStop = TRUE;
-			}else if( this->loadStop == FALSE ){
+				this->loadStop = true;
+			}else if( this->loadStop == false ){
 				return;
-			}else if( IsLoadingData() == FALSE ){
+			}else if( IsLoadingData() == false ){
 				CloseHandle(this->loadThread);
 				this->loadThread = NULL;
-				this->loadStop = FALSE;
-				this->initialLoadDone = TRUE;
+				this->loadStop = false;
+				this->initialLoadDone = true;
 				return;
 			}
 		}
 		Sleep(10);
 	}
 	CBlockLock lock(&this->epgMapLock);
-	if( this->loadStop != FALSE && IsLoadingData() != FALSE ){
+	if( this->loadStop && IsLoadingData() ){
 		TerminateThread(this->loadThread, 0xffffffff);
 		CloseHandle(this->loadThread);
 		this->loadThread = NULL;
-		this->loadStop = FALSE;
-		this->initialLoadDone = TRUE;
+		this->loadStop = false;
+		this->initialLoadDone = true;
 	}
 }
 
-BOOL CEpgDBManager::SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result) const
+bool CEpgDBManager::SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result) const
 {
 	return SearchEpg(key, [=](vector<SEARCH_RESULT_EVENT>& val) {
 		result->reserve(result->size() + val.size());
@@ -494,11 +494,11 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 		return ;
 	}
 	wstring andKey = key->andKey;
-	BOOL caseFlag = FALSE;
+	bool caseFlag = false;
 	if( andKey.compare(0, 7, L"C!{999}") == 0 ){
 		//大小文字を区別するキーワードが指定されている
 		andKey.erase(0, 7);
-		caseFlag = TRUE;
+		caseFlag = true;
 	}
 	DWORD chkDurationMinSec = 0;
 	DWORD chkDurationMaxSec = MAXDWORD;
@@ -600,36 +600,36 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 							continue;
 						}
 						//ジャンル情報ない
-						BOOL findNo = FALSE;
+						bool findNo = false;
 						for( size_t j=0; j<key->contentList.size(); j++ ){
 							if( key->contentList[j].content_nibble_level_1 == 0xFF && 
 								key->contentList[j].content_nibble_level_2 == 0xFF
 								){
 									//ジャンルなしの指定あり
-									findNo = TRUE;
+									findNo = true;
 									break;
 							}
 						}
 						if( key->notContetFlag == 0 ){
-							if( findNo == FALSE ){
+							if( findNo == false ){
 								continue;
 							}
 						}else{
 							//NOT条件扱い
-							if( findNo == TRUE ){
+							if( findNo ){
 								continue;
 							}
 						}
 					}else{
-						BOOL equal = IsEqualContent(key->contentList, itrEvent->contentInfo->nibbleList);
+						bool equal = IsEqualContent(key->contentList, itrEvent->contentInfo->nibbleList);
 						if( key->notContetFlag == 0 ){
-							if( equal == FALSE ){
+							if( equal == false ){
 								//ジャンル違うので対象外
 								continue;
 							}
 						}else{
 							//NOT条件扱い
-							if( equal == TRUE ){
+							if( equal ){
 								continue;
 							}
 						}
@@ -652,15 +652,15 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 					if( itrEvent->audioInfo == NULL ){
 						continue;
 					}
-					BOOL findContent = FALSE;
+					bool findContent = false;
 					for( size_t j=0; j<itrEvent->audioInfo->componentList.size(); j++ ){
 						WORD type = itrEvent->audioInfo->componentList[j].stream_content << 8 | itrEvent->audioInfo->componentList[j].component_type;
 						if( std::find(key->audioList.begin(), key->audioList.end(), type) != key->audioList.end() ){
-							findContent = TRUE;
+							findContent = true;
 							break;
 						}
 					}
-					if( findContent == FALSE ){
+					if( findContent == false ){
 						continue;
 					}
 				}
@@ -671,15 +671,15 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 						//開始時間不明なので対象外
 						continue;
 					}
-					BOOL inTime = IsInDateTime(key->dateList, itrEvent->start_time);
+					bool inTime = IsInDateTime(key->dateList, itrEvent->start_time);
 					if( key->notDateFlag == 0 ){
-						if( inTime == FALSE ){
+						if( inTime == false ){
 							//時間範囲外なので対象外
 							continue;
 						}
 					}else{
 						//NOT条件扱い
-						if( inTime == TRUE ){
+						if( inTime ){
 							continue;
 						}
 					}
@@ -717,7 +717,7 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 					ConvertSearchText(targetWord);
 
 					if( notKeyList.size() != 0 ){
-						if( IsFindKeyword(key->regExpFlag, regExp, caseFlag, notKeyList, targetWord, FALSE) != FALSE ){
+						if( IsFindKeyword(key->regExpFlag != FALSE, regExp, caseFlag, notKeyList, targetWord, false) ){
 							//notキーワード見つかったので対象外
 							continue;
 						}
@@ -725,12 +725,12 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 					if( andKeyList.size() != 0 ){
 						if( key->regExpFlag == FALSE && key->aimaiFlag != 0 ){
 							//あいまい検索
-							if( IsFindLikeKeyword(caseFlag, andKeyList, targetWord, distForFind, &matchKey) == FALSE ){
+							if( IsFindLikeKeyword(caseFlag, andKeyList, targetWord, distForFind, &matchKey) == false ){
 								//andキーワード見つからなかったので対象外
 								continue;
 							}
 						}else{
-							if( IsFindKeyword(key->regExpFlag, regExp, caseFlag, andKeyList, targetWord, TRUE, &matchKey) == FALSE ){
+							if( IsFindKeyword(key->regExpFlag != FALSE, regExp, caseFlag, andKeyList, targetWord, true, &matchKey) == false ){
 								//andキーワード見つからなかったので対象外
 								continue;
 							}
@@ -760,7 +760,7 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 	}), result.end());
 }
 
-BOOL CEpgDBManager::IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData)
+bool CEpgDBManager::IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData)
 {
 	for( size_t i=0; i<searchKey.size(); i++ ){
 		EPGDB_CONTENT_DATA c = searchKey[i];
@@ -775,30 +775,30 @@ BOOL CEpgDBManager::IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, 
 			if( c.content_nibble_level_1 == eventData[j].content_nibble_level_1 ){
 				if( c.content_nibble_level_2 == 0xFF ){
 					//中分類すべて
-					return TRUE;
+					return true;
 				}
 				if( c.content_nibble_level_2 == eventData[j].content_nibble_level_2 ){
 					if( c.content_nibble_level_1 != 0x0E ){
 						//拡張でない
-						return TRUE;
+						return true;
 					}
 					if( c.user_nibble_1 == eventData[j].user_nibble_1 ){
 						if( c.user_nibble_2 == 0xFF ){
 							//拡張中分類すべて
-							return TRUE;
+							return true;
 						}
 						if( c.user_nibble_2 == eventData[j].user_nibble_2 ){
-							return TRUE;
+							return true;
 						}
 					}
 				}
 			}
 		}
 	}
-	return FALSE;
+	return false;
 }
 
-BOOL CEpgDBManager::IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time)
+bool CEpgDBManager::IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time)
 {
 	int weekMin = (time.wDayOfWeek * 24 + time.wHour) * 60 + time.wMinute;
 	for( size_t i=0; i<dateList.size(); i++ ){
@@ -806,19 +806,19 @@ BOOL CEpgDBManager::IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList,
 		int end = (dateList[i].endDayOfWeek * 24 + dateList[i].endHour) * 60 + dateList[i].endMin;
 		if( start >= end ){
 			if( start <= weekMin || weekMin <= end ){
-				return TRUE;
+				return true;
 			}
 		}else{
 			if( start <= weekMin && weekMin <= end ){
-				return TRUE;
+				return true;
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
-static wstring::const_iterator SearchKeyword(const wstring& str, const wstring& key, BOOL caseFlag)
+static wstring::const_iterator SearchKeyword(const wstring& str, const wstring& key, bool caseFlag)
 {
 	return caseFlag ?
 		std::search(str.begin(), str.end(), key.begin(), key.end()) :
@@ -826,10 +826,10 @@ static wstring::const_iterator SearchKeyword(const wstring& str, const wstring& 
 			[](wchar_t l, wchar_t r) { return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r); });
 }
 
-BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp,
-                                  BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, BOOL andMode, wstring* findKey)
+bool CEpgDBManager::IsFindKeyword(bool regExpFlag, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp,
+                                  bool caseFlag, const vector<wstring>& keyList, const wstring& word, bool andMode, wstring* findKey)
 {
-	if( regExpFlag == TRUE ){
+	if( regExpFlag ){
 		//正規表現モード
 		if( !regExp ){
 			void* pv;
@@ -861,19 +861,19 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, std::unique_ptr<IRegExp, decl
 								}
 							}
 						}
-						return TRUE;
+						return true;
 					}
 				}
 			}
 		}
-		return FALSE;
+		return false;
 	}else{
 		//通常
-		if( andMode == TRUE ){
+		if( andMode ){
 			for( size_t i=0; i<keyList.size(); i++ ){
 				if( SearchKeyword(word, keyList[i], caseFlag) == word.end() ){
 					//見つからなかったので終了
-					return FALSE;
+					return false;
 				}
 			}
 			if( findKey != NULL ){
@@ -884,20 +884,20 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, std::unique_ptr<IRegExp, decl
 					*findKey += keyList[i];
 				}
 			}
-			return TRUE;
+			return true;
 		}else{
 			for( size_t i=0; i<keyList.size(); i++ ){
 				if( SearchKeyword(word, keyList[i], caseFlag) != word.end() ){
 					//見つかったので終了
-					return TRUE;
+					return true;
 				}
 			}
-			return FALSE;
+			return false;
 		}
 	}
 }
 
-BOOL CEpgDBManager::IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, vector<int>& dist, wstring* findKey)
+bool CEpgDBManager::IsFindLikeKeyword(bool caseFlag, const vector<wstring>& keyList, const wstring& word, vector<int>& dist, wstring* findKey)
 {
 	for( vector<wstring>::const_iterator itr = keyList.begin(); itr != keyList.end(); itr++ ){
 		//編集距離がしきい値以下になる文字列が含まれるか調べる
@@ -907,13 +907,13 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>& keyL
 		for( size_t i = 1; i < curr; i++ ){
 			dist[i] = dist[i - 1] + 1;
 		}
-		BOOL matched = FALSE;
+		bool matched = false;
 		for( size_t i = 0; i < word.size(); i++ ){
 			wchar_t x = word[i];
 			for( size_t j = 0; j < itr->size(); j++ ){
 				wchar_t y = (*itr)[j];
 				if( caseFlag && x == y ||
-				    caseFlag == FALSE && (L'a' <= x && x <= L'z' ? x - L'a' + L'A' : x) == (L'a' <= y && y <= L'z' ? y - L'a' + L'A' : y) ){
+				    caseFlag == false && (L'a' <= x && x <= L'z' ? x - L'a' + L'A' : x) == (L'a' <= y && y <= L'z' ? y - L'a' + L'A' : y) ){
 					dist[curr + j + 1] = dist[l + j];
 				}else{
 					dist[curr + j + 1] = 1 + (dist[l + j] < dist[l + j + 1] ? min(dist[l + j], dist[curr + j]) : min(dist[l + j + 1], dist[curr + j]));
@@ -921,13 +921,13 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>& keyL
 			}
 			//75%をしきい値とする
 			if( dist[curr + itr->size()] * 4 <= (int)itr->size() ){
-				matched = TRUE;
+				matched = true;
 				break;
 			}
 			std::swap(l, curr);
 		}
-		if( matched == FALSE ){
-			return FALSE;
+		if( matched == false ){
+			return false;
 		}
 	}
 	if( findKey != NULL ){
@@ -938,24 +938,24 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>& keyL
 			*findKey += keyList[i];
 		}
 	}
-	return TRUE;
+	return true;
 }
 
-BOOL CEpgDBManager::GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const
+bool CEpgDBManager::GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const
 {
 	CRefLock lock(&this->epgMapRefLock);
 
 	if( this->epgMap.empty() ){
-		return FALSE;
+		return false;
 	}
 	list->reserve(list->size() + this->epgMap.size());
 	for( auto itr = this->epgMap.cbegin(); itr != this->epgMap.end(); itr++ ){
 		list->push_back(itr->second.serviceInfo);
 	}
-	return TRUE;
+	return true;
 }
 
-BOOL CEpgDBManager::SearchEpg(
+bool CEpgDBManager::SearchEpg(
 	WORD ONID,
 	WORD TSID,
 	WORD SID,
@@ -974,13 +974,13 @@ BOOL CEpgDBManager::SearchEpg(
 		                                [](const EPGDB_EVENT_INFO& a, const EPGDB_EVENT_INFO& b) { return a.event_id < b.event_id; });
 		if( itrInfo != itr->second.eventList.end() && itrInfo->event_id == EventID ){
 			result->DeepCopy(*itrInfo);
-			return TRUE;
+			return true;
 		}
 	}
-	return FALSE;
+	return false;
 }
 
-BOOL CEpgDBManager::SearchEpg(
+bool CEpgDBManager::SearchEpg(
 	WORD ONID,
 	WORD TSID,
 	WORD SID,
@@ -1000,15 +1000,15 @@ BOOL CEpgDBManager::SearchEpg(
 					durationSec == itrInfo->durationSec
 					){
 						result->DeepCopy(*itrInfo);
-						return TRUE;
+						return true;
 				}
 			}
 		}
 	}
-	return FALSE;
+	return false;
 }
 
-BOOL CEpgDBManager::SearchServiceName(
+bool CEpgDBManager::SearchServiceName(
 	WORD ONID,
 	WORD TSID,
 	WORD SID,
@@ -1021,9 +1021,9 @@ BOOL CEpgDBManager::SearchServiceName(
 	auto itr = this->epgMap.find(key);
 	if( itr != this->epgMap.end() ){
 		serviceName = itr->second.serviceInfo.service_name;
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 //検索対象や検索パターンから全半角の区別を取り除く(旧ConvertText.txtに相当)

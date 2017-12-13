@@ -16,19 +16,19 @@ CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 	this->tmpBatFilePath = GetModulePath().replace_filename(tmpBatFileName).native();
 	this->idleMargin = MAXDWORD;
 	this->nextBatMargin = 0;
-	this->batWorkExitingFlag = FALSE;
+	this->batWorkExitingFlag = false;
 
 	this->batWorkThread = NULL;
 	this->batWorkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
-CBatManager::~CBatManager(void)
+CBatManager::~CBatManager()
 {
 	if( this->batWorkThread != NULL ){
-		::SetEvent(this->batWorkStopEvent);
+		SetEvent(this->batWorkStopEvent);
 		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->batWorkThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->batWorkThread, 0xffffffff);
+		if ( WaitForSingleObject(this->batWorkThread, 15000) == WAIT_TIMEOUT ){
+			TerminateThread(this->batWorkThread, 0xffffffff);
 		}
 		CloseHandle(this->batWorkThread);
 		this->batWorkThread = NULL;
@@ -64,11 +64,11 @@ DWORD CBatManager::GetWorkCount() const
 	return (DWORD)this->workList.size();
 }
 
-BOOL CBatManager::IsWorking() const
+bool CBatManager::IsWorking() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	return this->batWorkThread != NULL && WaitForSingleObject(this->batWorkThread, 0) == WAIT_TIMEOUT ? TRUE : FALSE;
+	return this->batWorkThread != NULL && WaitForSingleObject(this->batWorkThread, 0) == WAIT_TIMEOUT;
 }
 
 void CBatManager::StartWork()
@@ -76,14 +76,14 @@ void CBatManager::StartWork()
 	CBlockLock lock(&this->managerLock);
 
 	//ワーカスレッドが終了しようとしているときはその完了を待つ
-	if( this->batWorkThread != NULL && this->batWorkExitingFlag != FALSE ){
+	if( this->batWorkThread != NULL && this->batWorkExitingFlag ){
 		WaitForSingleObject(this->batWorkThread, INFINITE);
 		CloseHandle(this->batWorkThread);
 		this->batWorkThread = NULL;
 	}
 	if( this->batWorkThread == NULL && this->workList.empty() == false && this->idleMargin >= this->nextBatMargin ){
 		ResetEvent(this->batWorkStopEvent);
-		this->batWorkExitingFlag = FALSE;
+		this->batWorkExitingFlag = false;
 		this->batWorkThread = (HANDLE)_beginthreadex(NULL, 0, BatWorkThread, this, 0, NULL);
 	}
 }
@@ -92,14 +92,14 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 {
 	CBatManager* sys = (CBatManager*)param;
 
-	while(1){
+	for(;;){
 		{
 			BAT_WORK_INFO work;
 			{
 				CBlockLock lock(&sys->managerLock);
 				if( sys->workList.empty() ){
 					//このフラグを立てたあとは二度とロックを確保してはいけない
-					sys->batWorkExitingFlag = TRUE;
+					sys->batWorkExitingFlag = true;
 					sys->nextBatMargin = 0;
 					break;
 				}else{
@@ -112,19 +112,19 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 				DWORD exBatMargin;
 				WORD exSW;
 				wstring exDirect;
-				if( CreateBatFile(work, work.batFilePath.c_str(), batFilePath.c_str(), exBatMargin, exSW, exDirect) != FALSE ){
+				if( CreateBatFile(work, work.batFilePath.c_str(), batFilePath.c_str(), exBatMargin, exSW, exDirect) ){
 					{
 						CBlockLock(&sys->managerLock);
 						if( sys->idleMargin < exBatMargin ){
 							//アイドル時間に余裕がないので中止
-							sys->batWorkExitingFlag = TRUE;
+							sys->batWorkExitingFlag = true;
 							sys->nextBatMargin = exBatMargin;
 							break;
 						}
 					}
 					bool executed = false;
 					HANDLE hProcess = NULL;
-					if( exDirect.empty() && sys->notifyManager.IsGUI() == FALSE ){
+					if( exDirect.empty() && sys->notifyManager.IsGUI() == false ){
 						//表示できないのでGUI経由で起動してみる
 						CSendCtrlCmd ctrlCmd;
 						vector<DWORD> registGUI = sys->notifyManager.GetRegistGUI();
@@ -189,12 +189,12 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 	return 0;
 }
 
-BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect)
+bool CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect)
 {
 	//バッチの作成
 	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(batSrcFilePath, L"rbN"), fclose);
 	if( !fp ){
-		return FALSE;
+		return false;
 	}
 
 	//拡張命令: BatMargin
@@ -220,7 +220,7 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 		if( exDirect.empty() && strstr(olbuff, "_EDCBX_DIRECT_") ){
 			exDirect = CreateEnvironment(info);
 			if( exDirect.empty() ){
-				return FALSE;
+				return false;
 			}
 		}
 		fileSize += (fileSize == 0 ? n : n - 64);
@@ -230,16 +230,16 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 		memcpy(olbuff, olbuff + 192, 64);
 	}
 	if( exDirect.empty() == false ){
-		return TRUE;
+		return true;
 	}
 
 	if( fileSize >= 64 * 1024 * 1024 ){
-		return FALSE;
+		return false;
 	}
 	vector<char> buff((size_t)fileSize + 1, '\0');
 	rewind(fp.get());
 	if( fread(&buff.front(), 1, buff.size() - 1, fp.get()) != buff.size() - 1 ){
-		return FALSE;
+		return false;
 	}
 	string strRead = &buff.front();
 
@@ -259,7 +259,7 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 			break;
 		}
 		wstring strValW;
-		if( ExpandMacro(strRead.substr(pos + 1, next - pos - 1), info, strValW) == FALSE ){
+		if( ExpandMacro(strRead.substr(pos + 1, next - pos - 1), info, strValW) == false ){
 			strWrite += '$';
 			pos++;
 		}else{
@@ -272,21 +272,21 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 
 	fp.reset(secure_wfopen(batFilePath, L"wbN"));
 	if( !fp || fputs(strWrite.c_str(), fp.get()) < 0 || fflush(fp.get()) != 0 ){
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
-BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite)
+bool CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite)
 {
 	for( size_t i = 0; i < info.macroList.size(); i++ ){
 		if( var == info.macroList[i].first ){
 			strWrite += info.macroList[i].second;
-			return TRUE;
+			return true;
 		}
 	}
-	return FALSE;
+	return false;
 }
 
 wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)

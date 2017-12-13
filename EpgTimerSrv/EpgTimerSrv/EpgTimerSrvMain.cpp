@@ -459,7 +459,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE,
 		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, false); },
 		                            !(ctx->sys->notifyManager.IsGUI()));
-		ctx->sys->epgDB.ReloadEpgData(TRUE);
+		ctx->sys->epgDB.ReloadEpgData(true);
 		SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 		SetTimer(hwnd, TIMER_SET_RESUME, 30000, NULL);
@@ -703,7 +703,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					OutputDebugString(L"Shutdown cancelled\r\n");
 				}
 			}
-			if( ctx->sys->epgDB.IsLoadingData() == FALSE ){
+			if( ctx->sys->epgDB.IsLoadingData() == false ){
 				DWORD tick = GetTickCount();
 				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
 				if( ctx->shutdownModePending ){
@@ -817,7 +817,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				switch( HIWORD(ret) ){
 				case CReserveManager::CHECK_EPGCAP_END:
 					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
-					ctx->sys->epgDB.ReloadEpgData(TRUE);
+					ctx->sys->epgDB.ReloadEpgData(true);
 					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 					ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 					ctx->rebootFlagPending = ctx->sys->setting.reboot;
@@ -826,7 +826,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				case CReserveManager::CHECK_NEED_SHUTDOWN:
 					//EPGリロードは暇なときだけ
 					if( ctx->sys->reserveManager.IsActive() == false ){
-						ctx->sys->epgDB.ReloadEpgData(TRUE);
+						ctx->sys->epgDB.ReloadEpgData(true);
 					}
 					//チェックは必須
 					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
@@ -1434,9 +1434,9 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 
 	switch( cmdParam->param ){
 	case CMD2_EPG_SRV_RELOAD_EPG:
-		if( sys->epgDB.IsLoadingData() != FALSE ){
+		if( sys->epgDB.IsLoadingData() ){
 			resParam->param = CMD_ERR_BUSY;
-		}else if( sys->epgDB.ReloadEpgData() != FALSE ){
+		}else if( sys->epgDB.ReloadEpgData() ){
 			PostMessage(sys->hwndMain, WM_APP_RELOAD_EPG_CHK, 0, 0);
 			resParam->param = CMD_SUCCESS;
 		}
@@ -1560,11 +1560,11 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_ENUM_SERVICE:
 		OutputDebugString(L"CMD2_EPG_SRV_ENUM_SERVICE\r\n");
-		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			vector<EPGDB_SERVICE_INFO> list;
-			if( sys->epgDB.GetServiceList(&list) != FALSE ){
+			if( sys->epgDB.GetServiceList(&list) ){
 				resParam->data = NewWriteVALUE(list, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
@@ -1572,7 +1572,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_ENUM_PG_INFO:
 		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_INFO\r\n");
-		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			LONGLONG serviceKey;
@@ -1586,7 +1586,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_ENUM_PG_ARC_INFO:
 		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ARC_INFO\r\n");
-		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			LONGLONG serviceKey;
@@ -1600,7 +1600,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_SEARCH_PG:
 		OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG\r\n");
-		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			vector<EPGDB_SEARCH_KEY_INFO> key;
@@ -1617,7 +1617,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_GET_PG_INFO:
 		OutputDebugString(L"CMD2_EPG_SRV_GET_PG_INFO\r\n");
-		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			ULONGLONG key;
@@ -1651,7 +1651,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}
 		break;
 	case CMD2_EPG_SRV_EPG_CAP_NOW:
-		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else if( sys->reserveManager.RequestStartEpgCap() ){
 			resParam->param = CMD_SUCCESS;
@@ -1818,7 +1818,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_ENUM_PG_ALL:
 		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ALL\r\n");
-		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			sys->epgDB.EnumEventAll([=](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) {
@@ -1832,7 +1832,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_ENUM_PG_ARC_ALL:
 		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ARC_ALL\r\n");
-		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			sys->epgDB.EnumArchiveEventAll([=](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) {
@@ -2438,14 +2438,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 	case CMD_EPG_SRV_SEARCH_PG_FIRST:
 		{
 			resParam->param = OLD_CMD_ERR;
-			if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+			if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
 				EPG_AUTO_ADD_DATA item;
 				if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
 					vector<EPGDB_SEARCH_KEY_INFO> key(1, item.searchInfo);
 					vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> val;
-					if( sys->epgDB.SearchEpg(&key, &val) != FALSE ){
+					if( sys->epgDB.SearchEpg(&key, &val) ){
 						sys->oldSearchList[tcpFlag].clear();
 						sys->oldSearchList[tcpFlag].resize(val.size());
 						for( size_t i = 0; i < val.size(); i++ ){
@@ -2566,7 +2566,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		if( g_compatFlags & 0x20 ){
 			//互換動作: 番組検索の追加コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG2\r\n");
-			if( this->epgDB.IsInitialLoadingDataDone() == FALSE ){
+			if( this->epgDB.IsInitialLoadingDataDone() == false ){
 				resParam.param = CMD_ERR_BUSY;
 			}else{
 				WORD ver;
@@ -2591,7 +2591,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		if( g_compatFlags & 0x20 ){
 			//互換動作: 番組検索の追加コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG_BYKEY2\r\n");
-			if( this->epgDB.IsInitialLoadingDataDone() == FALSE ){
+			if( this->epgDB.IsInitialLoadingDataDone() == false ){
 				resParam.param = CMD_ERR_BUSY;
 			}else{
 				WORD ver;
@@ -3016,7 +3016,7 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 int CEpgTimerSrvMain::LuaReloadEpg(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	if( ws.sys->epgDB.IsLoadingData() == FALSE && ws.sys->epgDB.ReloadEpgData() ){
+	if( ws.sys->epgDB.IsLoadingData() == false && ws.sys->epgDB.ReloadEpgData() ){
 		PostMessage(ws.sys->hwndMain, WM_APP_RELOAD_EPG_CHK, 0, 0);
 		lua_pushboolean(L, true);
 		return 1;
@@ -3067,7 +3067,7 @@ int CEpgTimerSrvMain::LuaGetServiceList(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	vector<EPGDB_SERVICE_INFO> list;
-	if( ws.sys->epgDB.GetServiceList(&list) != FALSE ){
+	if( ws.sys->epgDB.GetServiceList(&list) ){
 		lua_newtable(L);
 		for( size_t i = 0; i < list.size(); i++ ){
 			lua_newtable(L);
@@ -3213,7 +3213,7 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 4 ){
 		EPGDB_EVENT_INFO info;
-		if( ws.sys->epgDB.SearchEpg((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3), (WORD)lua_tointeger(L, 4), &info) != FALSE ){
+		if( ws.sys->epgDB.SearchEpg((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3), (WORD)lua_tointeger(L, 4), &info) ){
 			lua_newtable(ws.L);
 			PushEpgEventInfo(ws, info);
 			return 1;
@@ -3225,7 +3225,7 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 		//対象ネットワーク
 		vector<EPGDB_SERVICE_INFO> list;
 		int network = LuaHelp::get_int(L, "network");
-		if( network != 0 && ws.sys->epgDB.GetServiceList(&list) != FALSE ){
+		if( network != 0 && ws.sys->epgDB.GetServiceList(&list) ){
 			for( size_t i = 0; i < list.size(); i++ ){
 				WORD onid = list[i].ONID;
 				if( (network & 1) && 0x7880 <= onid && onid <= 0x7FE8 || //地デジ
@@ -3240,7 +3240,7 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 				}
 			}
 		}
-		BOOL ret = ws.sys->epgDB.SearchEpg(&keyList, [&ws](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
+		bool ret = ws.sys->epgDB.SearchEpg(&keyList, [&ws](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
 			SYSTEMTIME now;
 			ConvertSystemTime(GetNowI64Time(), &now);
 			now.wHour = 0;

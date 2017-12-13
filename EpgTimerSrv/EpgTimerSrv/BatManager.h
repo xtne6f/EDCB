@@ -10,13 +10,13 @@ class CBatManager
 {
 public:
 	CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName);
-	~CBatManager(void);
+	~CBatManager();
 
 	void AddBatWork(const BAT_WORK_INFO& info);
 	void SetIdleMargin(DWORD marginSec);
 
 	DWORD GetWorkCount() const;
-	BOOL IsWorking() const;
+	bool IsWorking() const;
 protected:
 	mutable CRITICAL_SECTION managerLock;
 
@@ -27,15 +27,15 @@ protected:
 
 	DWORD idleMargin;
 	DWORD nextBatMargin;
-	BOOL batWorkExitingFlag;
+	bool batWorkExitingFlag;
 	HANDLE batWorkThread;
 	HANDLE batWorkStopEvent;
 protected:
 	void StartWork();
 	static UINT WINAPI BatWorkThread(LPVOID param);
 
-	static BOOL CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect);
-	static BOOL ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite);
+	static bool CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect);
+	static bool ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite);
 	static wstring CreateEnvironment(const BAT_WORK_INFO& info);
 };
 

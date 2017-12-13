@@ -6,8 +6,8 @@
 class CNotifyManager
 {
 public:
-	CNotifyManager(void);
-	~CNotifyManager(void);
+	CNotifyManager();
+	~CNotifyManager();
 
 	void RegistGUI(DWORD processID);
 	void RegistTCP(const REGIST_TCP_INFO& info);
@@ -15,7 +15,7 @@ public:
 	void UnRegistTCP(const REGIST_TCP_INFO& info);
 	void SetNotifyWindow(HWND hwnd, UINT msgID);
 	vector<NOTIFY_SRV_INFO> RemoveSentList();
-	BOOL GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount);
+	bool GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount) const;
 
 	vector<DWORD> GetRegistGUI() const;
 	vector<REGIST_TCP_INFO> GetRegistTCP() const;
@@ -24,15 +24,15 @@ public:
 	void SetNotifySrvStatus(DWORD status);
 	void AddNotifyMsg(DWORD notifyID, wstring msg);
 
-	BOOL IsGUI() const { return guiFlag; }
-	void SetGUI(BOOL f) { guiFlag = f; }
+	bool IsGUI() const { return guiFlag; }
+	void SetGUI(bool f) { guiFlag = f; }
 
 protected:
 	mutable CRITICAL_SECTION managerLock;
 
 	HANDLE notifyEvent;
 	HANDLE notifyThread;
-	BOOL notifyStopFlag;
+	bool notifyStopFlag;
 	DWORD srvStatus;
 	DWORD notifyCount;
 	size_t notifyRemovePos;
@@ -41,7 +41,7 @@ protected:
 	vector<REGIST_TCP_INFO> registTCPList;
 	HWND hwndNotify;
 	UINT msgIDNotify;
-	BOOL guiFlag;
+	bool guiFlag;
 
 	vector<NOTIFY_SRV_INFO> notifyList;
 	vector<NOTIFY_SRV_INFO> notifySentList;
