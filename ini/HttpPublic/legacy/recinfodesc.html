@@ -1,8 +1,10 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+vtag=GetVarInt(mg.request_info.query_string,'vtag') or 0
+
 ct=[=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML]=]..(vtag==0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -33,17 +35,20 @@ if v then
     ..'    <dt>結果</dt><dd>'..v.comment..'</dd>\n'
     ..'    <dt>ドロップ</dt><dd>'..v.drops..'</dd>\n'
     ..'    <dt>スクランブル</dt><dd>'..v.scrambles..'</dd>\n'
-    ..'    <dt>ファイル</dt><dd>\n'
+    ..'    <dt>ファイル →<a href="recinfodesc.html?id='..v.id..(vtag==0 and '&amp;vtag=-1">Video' or '">DL')..'</a></dt><dd>\n'
   ref=w and NativeToDocumentPath(w.recFilePath)
   if ref then
     for i,ext in ipairs({'.mp4','.webm',''}) do
       ff=edcb.FindFile and edcb.FindFile(w.recFilePath..ext,1)
       if ff then
-        ct=ct..'<a href="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)..'</a>'
+        ct=ct..(vtag==i and '<video controls src="' or '<a href="')
+          ..(vtag~=0 and vtag~=i and 'recinfodesc.html?id='..v.id..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
+          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>')
         if ext=='' then
-          ct=ct..'\n[<a href="xcode.lua?0='..mg.url_encode(ref)..'">xcode.lua</a>'
-          for j=1,9 do
-            ct=ct..'\n<a href="xcode.lua?'..(j*10)..'='..mg.url_encode(ref)..'">'..j..'</a>'
+          for j=0,9 do
+            ct=ct..'\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
+              ..(vtag~=0 and vtag~=j+10 and 'recinfodesc.html?id='..v.id..'&amp;vtag='..(j+10) or 'xcode.lua?'..(j*10)..'='..mg.url_encode(ref))
+              ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>')
           end
           fsec,fsize=0,0
           f=edcb.io.open(w.recFilePath,'rb')
