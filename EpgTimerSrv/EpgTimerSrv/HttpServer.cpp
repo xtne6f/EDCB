@@ -6,6 +6,8 @@
 #include "civetweb.h"
 #include <io.h>
 #include <fcntl.h>
+#include <wincrypt.h>
+#pragma comment(lib, "Crypt32.lib")
 
 #define LUA_DLL_NAME L"lua52.dll"
 
@@ -242,6 +244,20 @@ bool CHttpServer::StopServer(bool checkOnly)
 	return true;
 }
 
+string CHttpServer::CreateRandom()
+{
+	char ret[65] = {};
+	HCRYPTPROV prov;
+	if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ){
+		unsigned __int64 r[4] = {};
+		if( CryptGenRandom(prov, sizeof(r), (BYTE*)r) ){
+			sprintf_s(ret, "%016I64x%016I64x%016I64x%016I64x", r[0], r[1], r[2], r[3]);
+		}
+		CryptReleaseContext(prov, 0);
+	}
+	return ret;
+}
+
 void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)
 {
 	const CHttpServer* sys = (CHttpServer*)mg_get_user_data(mg_get_context(conn));
@@ -337,13 +353,13 @@ SYSTEMTIME get_time(lua_State* L, const char* name)
 	lua_getfield(L, -1, name);
 	if( lua_istable(L, -1) ){
 		SYSTEMTIME st;
-		st.wYear = (WCHAR)get_int(L, "year");
-		st.wMonth = (WCHAR)get_int(L, "month");
-		st.wDay = (WCHAR)get_int(L, "day");
-		st.wHour = (WCHAR)get_int(L, "hour");
-		st.wMinute = (WCHAR)get_int(L, "min");
-		st.wSecond = (WCHAR)get_int(L, "sec");
-		st.wMilliseconds = (WCHAR)get_int(L, "msec");
+		st.wYear = (WORD)get_int(L, "year");
+		st.wMonth = (WORD)get_int(L, "month");
+		st.wDay = (WORD)get_int(L, "day");
+		st.wHour = (WORD)get_int(L, "hour");
+		st.wMinute = (WORD)get_int(L, "min");
+		st.wSecond = (WORD)get_int(L, "sec");
+		st.wMilliseconds = (WORD)get_int(L, "msec");
 		FILETIME ft;
 		if( SystemTimeToFileTime(&st, &ft) && FileTimeToSystemTime(&ft, &st) ){
 			ret = st;

@@ -26,6 +26,7 @@ public:
 	~CHttpServer();
 	bool StartServer(const SERVER_OPTIONS& op, const std::function<void(lua_State*)>& initProc);
 	bool StopServer(bool checkOnly = false);
+	static string CreateRandom();
 private:
 	static void InitLua(const mg_connection* conn, void* luaContext);
 	mg_context* mgContext;

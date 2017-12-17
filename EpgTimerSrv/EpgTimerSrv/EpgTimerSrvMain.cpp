@@ -10,7 +10,6 @@
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
-#include <wincrypt.h>
 #include <LM.h>
 #pragma comment (lib, "netapi32.lib")
 
@@ -854,14 +853,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					op = ctx->sys->httpOptions;
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() ){
-					HCRYPTPROV prov;
-					if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ){
-						unsigned __int64 r[4] = {};
-						if( CryptGenRandom(prov, sizeof(r), (BYTE*)r) ){
-							Format(ctx->sys->httpServerRandom, "%016I64x%016I64x%016I64x%016I64x", r[0], r[1], r[2], r[3]);
-						}
-						CryptReleaseContext(prov, 0);
-					}
+					ctx->sys->httpServerRandom = CHttpServer::CreateRandom();
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() == false ){
 					CEpgTimerSrvMain* sys = ctx->sys;
@@ -1454,7 +1446,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_REGIST_GUI:
 		{
-			DWORD processID = 0;
+			DWORD processID;
 			if( ReadVALUE(&processID, cmdParam->data, cmdParam->dataSize, NULL) ){
 				//CPipeServerの仕様的にこの時点で相手と通信できるとは限らない。接続待機用イベントが作成されるまで少し待つ
 				wstring eventName;
@@ -1474,7 +1466,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_UNREGIST_GUI:
 		{
-			DWORD processID = 0;
+			DWORD processID;
 			if( ReadVALUE(&processID, cmdParam->data, cmdParam->dataSize, NULL) ){
 				resParam->param = CMD_SUCCESS;
 				sys->notifyManager.UnRegistGUI(processID);
@@ -1507,13 +1499,11 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 	case CMD2_EPG_SRV_GET_RESERVE:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_GET_RESERVE\r\n");
-			DWORD reserveID;
-			if( ReadVALUE(&reserveID, cmdParam->data, cmdParam->dataSize, NULL) ){
-				RESERVE_DATA info;
-				if( sys->reserveManager.GetReserveData(reserveID, &info) ){
-					resParam->data = NewWriteVALUE(info, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
-				}
+			RESERVE_DATA info;
+			if( ReadVALUE(&info.reserveID, cmdParam->data, cmdParam->dataSize, NULL) &&
+			    sys->reserveManager.GetReserveData(info.reserveID, &info) ){
+				resParam->data = NewWriteVALUE(info, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -1645,10 +1635,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}
 		break;
 	case CMD2_EPG_SRV_REBOOT:
-		{
-			PostMessage(sys->hwndMain, WM_APP_REQUEST_REBOOT, 0, 0);
-			resParam->param = CMD_SUCCESS;
-		}
+		PostMessage(sys->hwndMain, WM_APP_REQUEST_REBOOT, 0, 0);
+		resParam->param = CMD_SUCCESS;
 		break;
 	case CMD2_EPG_SRV_EPG_CAP_NOW:
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
@@ -1970,11 +1958,9 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}
 		break;
 	case CMD2_EPG_SRV_NWTV_CLOSE:
-		{
-			OutputDebugString(L"CMD2_EPG_SRV_NWTV_CLOSE\r\n");
-			if( sys->reserveManager.CloseNWTV() ){
-				resParam->param = CMD_SUCCESS;
-			}
+		OutputDebugString(L"CMD2_EPG_SRV_NWTV_CLOSE\r\n");
+		if( sys->reserveManager.CloseNWTV() ){
+			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_EPG_SRV_NWTV_MODE:
@@ -2088,15 +2074,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_GET_RESERVE2\r\n");
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				DWORD reserveID;
-				if( ReadVALUE2(ver, &reserveID, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
-					RESERVE_DATA info;
-					if( sys->reserveManager.GetReserveData(reserveID, &info) ){
-						resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
-						resParam->param = CMD_SUCCESS;
-					}
-				}
+			RESERVE_DATA info;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &info.reserveID, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
+			    sys->reserveManager.GetReserveData(info.reserveID, &info) ){
+				resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2105,13 +2088,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_ADD_RESERVE2\r\n");
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				vector<RESERVE_DATA> list;
-				if( ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
-				    sys->reserveManager.AddReserveData(list) ){
-					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
-				}
+			vector<RESERVE_DATA> list;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
+			    sys->reserveManager.AddReserveData(list) ){
+				resParam->data = NewWriteVALUE(ver, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2120,13 +2102,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_CHG_RESERVE2\r\n");
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				vector<RESERVE_DATA> list;
-				if( ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
-				    sys->reserveManager.ChgReserveData(list) ){
-					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
-				}
+			vector<RESERVE_DATA> list;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
+			    sys->reserveManager.ChgReserveData(list) ){
+				resParam->data = NewWriteVALUE(ver, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2164,23 +2145,22 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_ADD_AUTO_ADD2\r\n");
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				vector<EPG_AUTO_ADD_DATA> val;
-				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
-					{
-						CBlockLock lock(&sys->autoAddLock);
-						vector<RESERVE_DATA> addList;
-						for( size_t i = 0; i < val.size(); i++ ){
-							val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
-							sys->AutoAddReserveEPG(val[i], addList);
-						}
-						sys->epgAutoAdd.SaveText();
-						sys->reserveManager.AddReserveData(addList);
+			vector<EPG_AUTO_ADD_DATA> val;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+				{
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
+					for( size_t i = 0; i < val.size(); i++ ){
+						val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
+						sys->AutoAddReserveEPG(val[i], addList);
 					}
-					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
-					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					sys->epgAutoAdd.SaveText();
+					sys->reserveManager.AddReserveData(addList);
 				}
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				resParam->data = NewWriteVALUE(ver, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2189,24 +2169,23 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_CHG_AUTO_ADD2\r\n");
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				vector<EPG_AUTO_ADD_DATA> val;
-				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
-					{
-						CBlockLock lock(&sys->autoAddLock);
-						vector<RESERVE_DATA> addList;
-						for( size_t i = 0; i < val.size(); i++ ){
-							if( sys->epgAutoAdd.ChgData(val[i]) ){
-								sys->AutoAddReserveEPG(val[i], addList);
-							}
+			vector<EPG_AUTO_ADD_DATA> val;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+				{
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
+					for( size_t i = 0; i < val.size(); i++ ){
+						if( sys->epgAutoAdd.ChgData(val[i]) ){
+							sys->AutoAddReserveEPG(val[i], addList);
 						}
-						sys->epgAutoAdd.SaveText();
-						sys->reserveManager.AddReserveData(addList);
 					}
-					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
-					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					sys->epgAutoAdd.SaveText();
+					sys->reserveManager.AddReserveData(addList);
 				}
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				resParam->data = NewWriteVALUE(ver, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2232,23 +2211,22 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_ADD_MANU_ADD2\r\n");
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				vector<MANUAL_AUTO_ADD_DATA> val;
-				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
-					{
-						CBlockLock lock(&sys->autoAddLock);
-						vector<RESERVE_DATA> addList;
-						for( size_t i = 0; i < val.size(); i++ ){
-							val[i].dataID = sys->manualAutoAdd.AddData(val[i]);
-							sys->AutoAddReserveProgram(val[i], addList);
-						}
-						sys->manualAutoAdd.SaveText();
-						sys->reserveManager.AddReserveData(addList);
+			vector<MANUAL_AUTO_ADD_DATA> val;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+				{
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
+					for( size_t i = 0; i < val.size(); i++ ){
+						val[i].dataID = sys->manualAutoAdd.AddData(val[i]);
+						sys->AutoAddReserveProgram(val[i], addList);
 					}
-					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
-					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					sys->manualAutoAdd.SaveText();
+					sys->reserveManager.AddReserveData(addList);
 				}
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				resParam->data = NewWriteVALUE(ver, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2257,24 +2235,23 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_CHG_MANU_ADD2\r\n");
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				vector<MANUAL_AUTO_ADD_DATA> val;
-				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
-					{
-						CBlockLock lock(&sys->autoAddLock);
-						vector<RESERVE_DATA> addList;
-						for( size_t i = 0; i < val.size(); i++ ){
-							if( sys->manualAutoAdd.ChgData(val[i]) ){
-								sys->AutoAddReserveProgram(val[i], addList);
-							}
+			vector<MANUAL_AUTO_ADD_DATA> val;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+				{
+					CBlockLock lock(&sys->autoAddLock);
+					vector<RESERVE_DATA> addList;
+					for( size_t i = 0; i < val.size(); i++ ){
+						if( sys->manualAutoAdd.ChgData(val[i]) ){
+							sys->AutoAddReserveProgram(val[i], addList);
 						}
-						sys->manualAutoAdd.SaveText();
-						sys->reserveManager.AddReserveData(addList);
 					}
-					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
-					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					sys->manualAutoAdd.SaveText();
+					sys->reserveManager.AddReserveData(addList);
 				}
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				resParam->data = NewWriteVALUE(ver, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2294,13 +2271,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				REC_FILE_INFO info;
-				if( ReadVALUE2(ver, &info.id, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
-				    sys->reserveManager.GetRecFileInfo(info.id, &info) ){
-					resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
-				}
+			REC_FILE_INFO info;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &info.id, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
+			    sys->reserveManager.GetRecFileInfo(info.id, &info) ){
+				resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2309,13 +2285,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_CHG_PROTECT_RECINFO2\r\n");
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				vector<REC_FILE_INFO> list;
-				if( ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
-					sys->reserveManager.ChgProtectRecFileInfo(list);
-					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
-				}
+			vector<REC_FILE_INFO> list;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+				sys->reserveManager.ChgProtectRecFileInfo(list);
+				resParam->data = NewWriteVALUE(ver, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -2323,16 +2298,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			WORD ver;
 			DWORD readSize;
-			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
-				DWORD count;
-				if( ReadVALUE2(ver, &count, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
-					NOTIFY_SRV_INFO info;
-					if( sys->notifyManager.GetNotify(&info, count) ){
-						resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
-						resParam->param = CMD_SUCCESS;
-					}else{
-						resParam->param = CMD_NO_RES;
-					}
+			DWORD count;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &count, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+				NOTIFY_SRV_INFO info;
+				if( sys->notifyManager.GetNotify(&info, count) ){
+					resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}else{
+					resParam->param = CMD_NO_RES;
 				}
 			}
 		}
@@ -2383,7 +2357,6 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 				resParam->param = OLD_CMD_SUCCESS;
 			}
 		}
-
 		break;
 	case CMD_EPG_SRV_ADD_AUTO_ADD:
 		{
