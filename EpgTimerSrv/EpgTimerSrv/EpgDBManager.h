@@ -26,11 +26,14 @@ public:
 
 	void SetArchivePeriod(int periodSec);
 
-	bool ReloadEpgData(bool foreground = false);
-
+	//同期的に呼び出すこと
+	void ReloadEpgData(bool foreground = false);
+	//同期的に呼び出すこと
 	bool IsLoadingData() const;
+	//同期的に呼び出すこと
+	void CancelLoadData(DWORD forceTimeout = 15000);
 
-	bool IsInitialLoadingDataDone() const;
+	bool IsInitialLoadingDataDone() const { return this->initialLoadDone; }
 
 	bool SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result) const;
 
@@ -152,7 +155,6 @@ protected:
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgArchive;
 protected:
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
-	void CancelLoadData(DWORD forceTimeout);
 	static UINT WINAPI LoadThread(LPVOID param);
 
 	void SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const;

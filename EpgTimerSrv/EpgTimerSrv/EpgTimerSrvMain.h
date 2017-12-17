@@ -123,6 +123,7 @@ private:
 
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;
+	map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator autoAddCheckItr;
 
 	//autoAddLock->settingLock‚Ì‡‚ÉƒƒbƒN‚·‚é
 	mutable CRITICAL_SECTION autoAddLock;

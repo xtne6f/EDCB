@@ -21,6 +21,7 @@ namespace
 
 enum {
 	WM_APP_RESET_SERVER = WM_APP,
+	WM_APP_RELOAD_EPG,
 	WM_APP_RELOAD_EPG_CHK,
 	WM_APP_REQUEST_SHUTDOWN,
 	WM_APP_REQUEST_REBOOT,
@@ -61,6 +62,9 @@ struct MAIN_WINDOW_CONTEXT {
 	bool rebootFlagPending;
 	DWORD shutdownPendingTick;
 	pair<HWND, pair<BYTE, bool>> queryShutdownContext;
+	DWORD autoAddCheckTick;
+	vector<RESERVE_DATA> autoAddCheckAddList;
+	bool autoAddCheckAddCountUpdated;
 	bool taskFlag;
 	bool showBalloonTip;
 	DWORD notifySrvStatus;
@@ -472,6 +476,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
 		ctx->pipeServer.StopServer();
+		ctx->sys->epgDB.CancelLoadData();
 		ctx->sys->reserveManager.Finalize();
 		OutputDebugString(L"*** Server finalized ***\r\n");
 		//タスクトレイから削除
@@ -510,9 +515,17 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
 		}
 		break;
+	case WM_APP_RELOAD_EPG:
+		//EPGリロードを開始
+		ctx->sys->epgDB.ReloadEpgData();
+		//FALL THROUGH!
 	case WM_APP_RELOAD_EPG_CHK:
 		//EPGリロード完了のチェックを開始
-		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 200, NULL);
+		{
+			CBlockLock lock(&ctx->sys->autoAddLock);
+			ctx->sys->autoAddCheckItr = ctx->sys->epgAutoAdd.GetMap().begin();
+		}
+		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 10, NULL);
 		KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
 		ctx->shutdownPendingTick = GetTickCount();
 		break;
@@ -703,38 +716,51 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 			}
 			if( ctx->sys->epgDB.IsLoadingData() == false ){
-				DWORD tick = GetTickCount();
+				{
+					CBlockLock lock(&ctx->sys->autoAddLock);
+					if( ctx->sys->autoAddCheckItr == ctx->sys->epgAutoAdd.GetMap().begin() ){
+						//自動予約登録処理を開始
+						ctx->autoAddCheckTick = GetTickCount();
+						ctx->autoAddCheckAddList.clear();
+						ctx->autoAddCheckAddCountUpdated = false;
+					}
+					for( DWORD tick = GetTickCount(); ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end(); ){
+						DWORD addCount = ctx->sys->autoAddCheckItr->second.addCount;
+						ctx->sys->AutoAddReserveEPG(ctx->sys->autoAddCheckItr->second, ctx->autoAddCheckAddList);
+						if( addCount != (ctx->sys->autoAddCheckItr++)->second.addCount ){
+							ctx->autoAddCheckAddCountUpdated = true;
+						}
+						if( GetTickCount() - tick > 200 ){
+							//タイムアウト
+							break;
+						}
+					}
+					if( ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end() ){
+						//まだあるので次の呼び出しまで中断
+						break;
+					}
+					//完了
+					for( auto itr = ctx->sys->manualAutoAdd.GetMap().cbegin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
+						ctx->sys->AutoAddReserveProgram(itr->second, ctx->autoAddCheckAddList);
+					}
+					if( ctx->autoAddCheckAddList.empty() == false ){
+						ctx->sys->reserveManager.AddReserveData(ctx->autoAddCheckAddList);
+					}
+					ctx->sys->autoAddCheckItr = ctx->sys->epgAutoAdd.GetMap().begin();
+				}
 				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
 				if( ctx->shutdownModePending ){
 					//このタイマはWM_TIMER以外でもKillTimer()するためメッセージキューに残った場合に対処するためシフト
 					ctx->shutdownPendingTick -= 100000;
 					SetTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING, 200, NULL);
 				}
-				//リロード終わったので自動予約登録処理を行う
-				ctx->sys->reserveManager.CheckTuijyu();
-				bool addCountUpdated = false;
-				{
-					CBlockLock lock(&ctx->sys->autoAddLock);
-					vector<RESERVE_DATA> addList;
-					for( auto itr = ctx->sys->epgAutoAdd.GetMap().cbegin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
-						DWORD addCount = itr->second.addCount;
-						ctx->sys->AutoAddReserveEPG(itr->second, addList);
-						if( addCount != itr->second.addCount ){
-							addCountUpdated = true;
-						}
-					}
-					for( auto itr = ctx->sys->manualAutoAdd.GetMap().cbegin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
-						ctx->sys->AutoAddReserveProgram(itr->second, addList);
-					}
-					if( addList.empty() == false ){
-						ctx->sys->reserveManager.AddReserveData(addList);
-					}
-				}
-				if( addCountUpdated ){
+				if( ctx->autoAddCheckAddCountUpdated ){
 					//予約登録数の変化を通知する
 					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				}
 				ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_EPGDATA);
+
+				ctx->sys->reserveManager.CheckTuijyu();
 
 				if( ctx->sys->useSyoboi ){
 					//しょぼいカレンダー対応
@@ -743,7 +769,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
 					syoboi.SendReserve(&reserveList, &tunerList);
 				}
-				_OutputDebugString(L"Done PostLoad EpgData %dmsec\r\n", GetTickCount() - tick);
+				_OutputDebugString(L"Done PostLoad EpgData %dmsec\r\n", GetTickCount() - ctx->autoAddCheckTick);
 			}
 			break;
 		case TIMER_QUERY_SHUTDOWN_PENDING:
@@ -1426,12 +1452,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 
 	switch( cmdParam->param ){
 	case CMD2_EPG_SRV_RELOAD_EPG:
-		if( sys->epgDB.IsLoadingData() ){
-			resParam->param = CMD_ERR_BUSY;
-		}else if( sys->epgDB.ReloadEpgData() ){
-			PostMessage(sys->hwndMain, WM_APP_RELOAD_EPG_CHK, 0, 0);
-			resParam->param = CMD_SUCCESS;
-		}
+		PostMessage(sys->hwndMain, WM_APP_RELOAD_EPG, 0, 0);
+		resParam->param = CMD_SUCCESS;
 		break;
 	case CMD2_EPG_SRV_RELOAD_SETTING:
 		sys->ReloadSetting();
@@ -1668,6 +1690,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
+						sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 						sys->AutoAddReserveEPG(val[i], addList);
 					}
 					sys->epgAutoAdd.SaveText();
@@ -1684,7 +1707,9 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				CBlockLock lock(&sys->autoAddLock);
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->epgAutoAdd.DelData(val[i]);
+					if( sys->epgAutoAdd.DelData(val[i]) ){
+						sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
+					}
 				}
 				sys->epgAutoAdd.SaveText();
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
@@ -1701,6 +1726,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						if( sys->epgAutoAdd.ChgData(val[i]) ){
+							sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 							sys->AutoAddReserveEPG(val[i], addList);
 						}
 					}
@@ -2153,6 +2179,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
+						sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 						sys->AutoAddReserveEPG(val[i], addList);
 					}
 					sys->epgAutoAdd.SaveText();
@@ -2177,6 +2204,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						if( sys->epgAutoAdd.ChgData(val[i]) ){
+							sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 							sys->AutoAddReserveEPG(val[i], addList);
 						}
 					}
@@ -2367,6 +2395,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					item.dataID = sys->epgAutoAdd.AddData(item);
+					sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 					sys->AutoAddReserveEPG(item, addList);
 					sys->epgAutoAdd.SaveText();
 					sys->reserveManager.AddReserveData(addList);
@@ -2382,7 +2411,9 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			EPG_AUTO_ADD_DATA item;
 			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
 				CBlockLock lock(&sys->autoAddLock);
-				sys->epgAutoAdd.DelData(item.dataID);
+				if( sys->epgAutoAdd.DelData(item.dataID) ){
+					sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
+				}
 				sys->epgAutoAdd.SaveText();
 				resParam->param = OLD_CMD_SUCCESS;
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
@@ -2398,6 +2429,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					if( sys->epgAutoAdd.ChgData(item) ){
+						sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 						sys->AutoAddReserveEPG(item, addList);
 					}
 					sys->epgAutoAdd.SaveText();
@@ -2989,12 +3021,8 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 int CEpgTimerSrvMain::LuaReloadEpg(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	if( ws.sys->epgDB.IsLoadingData() == false && ws.sys->epgDB.ReloadEpgData() ){
-		PostMessage(ws.sys->hwndMain, WM_APP_RELOAD_EPG_CHK, 0, 0);
-		lua_pushboolean(L, true);
-		return 1;
-	}
-	lua_pushboolean(L, false);
+	PostMessage(ws.sys->hwndMain, WM_APP_RELOAD_EPG, 0, 0);
+	lua_pushboolean(L, true);
 	return 1;
 }
 
@@ -3481,6 +3509,7 @@ int CEpgTimerSrvMain::LuaDelAutoAdd(lua_State* L)
 	if( lua_gettop(L) == 1 ){
 		CBlockLock lock(&ws.sys->autoAddLock);
 		if( ws.sys->epgAutoAdd.DelData((DWORD)lua_tointeger(L, -1)) ){
+			ws.sys->autoAddCheckItr = ws.sys->epgAutoAdd.GetMap().begin();
 			ws.sys->epgAutoAdd.SaveText();
 			ws.sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 		}
@@ -3522,6 +3551,7 @@ int CEpgTimerSrvMain::LuaAddOrChgAutoAdd(lua_State* L)
 						modified = ws.sys->epgAutoAdd.ChgData(item);
 					}
 					if( modified ){
+						ws.sys->autoAddCheckItr = ws.sys->epgAutoAdd.GetMap().begin();
 						vector<RESERVE_DATA> addList;
 						ws.sys->AutoAddReserveEPG(item, addList);
 						ws.sys->epgAutoAdd.SaveText();
