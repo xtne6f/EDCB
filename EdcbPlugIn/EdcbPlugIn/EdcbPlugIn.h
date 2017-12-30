@@ -10,12 +10,12 @@
 #include "../../Common/EpgDataCap3Util.h"
 #include "../../BonCtrl/DropCount.h"
 #include "../../Common/PathUtil.h"
+#include "../../Common/ThreadUtil.h"
 
 class CEdcbPlugIn : public TVTest::CTVTestPlugin
 {
 public:
 	CEdcbPlugIn();
-	~CEdcbPlugIn();
 	// プラグインの情報を返す
 	bool GetPluginInfo(TVTest::PluginInfo *pInfo);
 	// 初期化処理
@@ -62,13 +62,13 @@ private:
 	// 現在のBonDriverはチューナかどうか調べる
 	bool IsTunerBonDriver() const;
 	// EpgTimerSrvにEPG再読み込みを要求するスレッド
-	static UINT WINAPI ReloadEpgThread(void *param);
+	static void ReloadEpgThread(int param);
 	// ストリームコールバック(別スレッド)
 	static BOOL CALLBACK StreamCallback(BYTE *pData, void *pClientData);
 
 	CMyEventHandler m_handler;
-	CRITICAL_SECTION m_streamLock;
-	CRITICAL_SECTION m_statusLock;
+	recursive_mutex_ m_streamLock;
+	recursive_mutex_ m_statusLock;
 	HWND m_hwnd;
 	CPipeServer m_pipeServer;
 	vector<CH_DATA5> m_chSet5;
@@ -89,7 +89,7 @@ private:
 	enum { EPG_FILE_ST_NONE, EPG_FILE_ST_PAT, EPG_FILE_ST_TOT, EPG_FILE_ST_ALL } m_epgFileState;
 	__int64 m_epgFileTotPos;
 	wstring m_epgFilePath;
-	HANDLE m_epgReloadThread;
+	thread_ m_epgReloadThread;
 	DWORD m_epgCapTimeout;
 	bool m_epgCapSaveTimeout;
 	vector<SET_CH_INFO> m_epgCapChList;

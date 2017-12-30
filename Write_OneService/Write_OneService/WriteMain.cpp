@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "WriteMain.h"
-#include <process.h>
 #include "../../Common/PathUtil.h"
 #include "../../Common/TSPacketUtil.h"
 

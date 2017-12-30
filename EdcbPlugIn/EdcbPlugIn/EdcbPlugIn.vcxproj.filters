@@ -72,7 +72,7 @@
     <ClInclude Include="..\..\Common\TVTestPlugin.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\BlockLock.h">
+    <ClInclude Include="..\..\Common\ThreadUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\Common.h">

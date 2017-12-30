@@ -8,9 +8,7 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/TSPacketUtil.h"
-#include "../../Common/BlockLock.h"
 #include "../../Common/ParseTextInstances.h"
-#include <process.h>
 
 namespace
 {
@@ -134,21 +132,12 @@ CEdcbPlugIn::CEdcbPlugIn()
 	, m_statusCode(VIEW_APP_ST_ERR_BON)
 	, m_chChangeID(CH_CHANGE_OK)
 	, m_epgFile(nullptr, fclose)
-	, m_epgReloadThread(nullptr)
 	, m_epgCapBack(false)
 	, m_recCtrlCount(0)
 {
 	m_lastSetCh.useSID = FALSE;
 	std::fill_n(m_epgCapBasicOnlyONIDs, _countof(m_epgCapBasicOnlyONIDs), false);
 	std::fill_n(m_epgCapBackBasicOnlyONIDs, _countof(m_epgCapBackBasicOnlyONIDs), false);
-	InitializeCriticalSection(&m_streamLock);
-	InitializeCriticalSection(&m_statusLock);
-}
-
-CEdcbPlugIn::~CEdcbPlugIn()
-{
-	DeleteCriticalSection(&m_statusLock);
-	DeleteCriticalSection(&m_streamLock);
 }
 
 bool CEdcbPlugIn::GetPluginInfo(TVTest::PluginInfo *pInfo)
@@ -290,12 +279,11 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		m_pipeServer.StopServer();
 		SendMessage(hwnd, WM_EPGCAP_STOP, 0, 0);
 		m_pApp->SetStreamCallback(TVTest::STREAM_CALLBACK_REMOVE, StreamCallback);
-		if (m_epgReloadThread) {
-			if (WaitForSingleObject(m_epgReloadThread, 5000) == WAIT_TIMEOUT) {
-				TerminateThread(m_epgReloadThread, 0xFFFFFFFF);
+		if (m_epgReloadThread.joinable()) {
+			if (WaitForSingleObject(m_epgReloadThread.native_handle(), 5000) == WAIT_TIMEOUT) {
+				TerminateThread(m_epgReloadThread.native_handle(), 0xFFFFFFFF);
 			}
-			CloseHandle(m_epgReloadThread);
-			m_epgReloadThread = nullptr;
+			m_epgReloadThread.join();
 		}
 		m_hwnd = nullptr;
 		return 0;
@@ -508,12 +496,11 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					}
 					DeleteFile((m_epgFilePath + L".tmp").c_str());
 					if (saveEpgFile) {
-						if (m_epgReloadThread && WaitForSingleObject(m_epgReloadThread, 0) != WAIT_TIMEOUT) {
-							CloseHandle(m_epgReloadThread);
-							m_epgReloadThread = nullptr;
+						if (m_epgReloadThread.joinable() && WaitForSingleObject(m_epgReloadThread.native_handle(), 0) != WAIT_TIMEOUT) {
+							m_epgReloadThread.join();
 						}
-						if (!m_epgReloadThread) {
-							m_epgReloadThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, ReloadEpgThread, nullptr, 0, nullptr));
+						if (!m_epgReloadThread.joinable()) {
+							m_epgReloadThread = thread_(ReloadEpgThread, 0);
 						}
 					}
 				}
@@ -985,12 +972,11 @@ bool CEdcbPlugIn:: IsTunerBonDriver() const
 		[](wchar_t a, wchar_t b) { return towupper(a) == towupper(b); }) == m_nonTunerDrivers.end();
 }
 
-UINT WINAPI CEdcbPlugIn::ReloadEpgThread(void *param)
+void CEdcbPlugIn::ReloadEpgThread(int param)
 {
 	CSendCtrlCmd cmd;
 	cmd.SetConnectTimeOut(4000);
 	cmd.SendReloadEpg();
-	return 0;
 }
 
 BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
