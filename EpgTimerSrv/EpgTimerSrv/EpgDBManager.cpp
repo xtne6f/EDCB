@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "EpgDBManager.h"
-#include <process.h>
 
 #include "../../Common/CommonDef.h"
 #include "../../Common/TimeUtil.h"
@@ -17,7 +16,6 @@ CEpgDBManager::CEpgDBManager()
 	InitializeCriticalSection(&this->epgMapLock);
 
 	this->epgMapRefLock = std::make_pair(0, &this->epgMapLock);
-	this->loadThread = NULL;
 	this->loadStop = false;
 	this->loadForeground = false;
 	this->initialLoadDone = false;
@@ -40,23 +38,17 @@ void CEpgDBManager::SetArchivePeriod(int periodSec)
 
 void CEpgDBManager::ReloadEpgData(bool foreground)
 {
-	CancelLoadData(INFINITE);
+	CancelLoadData();
 
 	//フォアグラウンド読み込みを中断した場合は引き継ぐ
 	if( this->loadForeground == false ){
 		this->loadForeground = foreground;
 	}
-	this->loadThread = (HANDLE)_beginthreadex(NULL, 0, LoadThread, this, 0, NULL);
-	if( this->loadThread == NULL ){
-		this->loadForeground = false;
-		this->initialLoadDone = true;
-	}
+	this->loadThread = thread_(LoadThread, this);
 }
 
-UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
+void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 {
-	CEpgDBManager* sys = (CEpgDBManager*)param;
-
 	OutputDebugString(L"Start Load EpgData\r\n");
 	DWORD time = GetTickCount();
 
@@ -69,7 +61,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		OutputDebugString(L"★EpgDataCap3.dllの初期化に失敗しました。\r\n");
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
-		return 0;
+		return;
 	}
 
 	__int64 utcNow = GetNowI64Time() - I64_UTIL_TIMEZONE;
@@ -106,7 +98,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	for( vector<wstring>::iterator itr = epgFileList.begin(); itr != epgFileList.end(); itr++ ){
 		if( sys->loadStop ){
 			//キャンセルされた
-			return 0;
+			return;
 		}
 		//一時ファイルの状態を調べる。取得側のCreateFile(tmp)→CloseHandle(tmp)→CopyFile(tmp,master)→DeleteFile(tmp)の流れをある程度仮定
 		wstring path = itr->c_str() + 1;
@@ -232,7 +224,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == FALSE ){
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
-		return 0;
+		return;
 	}
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> nextMap;
 	for( const SERVICE_INFO* info = serviceList; info != serviceList + serviceListSize; info++ ){
@@ -393,7 +385,6 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	sys->loadForeground = false;
 	sys->initialLoadDone = true;
-	return 0;
 }
 
 BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param)
@@ -423,20 +414,16 @@ BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVEN
 	return TRUE;
 }
 
-bool CEpgDBManager::IsLoadingData() const
+bool CEpgDBManager::IsLoadingData()
 {
-	return this->loadThread && WaitForSingleObject(this->loadThread, 0) == WAIT_TIMEOUT;
+	return this->loadThread.joinable() && WaitForSingleObject(this->loadThread.native_handle(), 0) == WAIT_TIMEOUT;
 }
 
-void CEpgDBManager::CancelLoadData(DWORD forceTimeout)
+void CEpgDBManager::CancelLoadData()
 {
-	if( this->loadThread ){
+	if( this->loadThread.joinable() ){
 		this->loadStop = true;
-		if( WaitForSingleObject(this->loadThread, forceTimeout) == WAIT_TIMEOUT ){
-			TerminateThread(this->loadThread, 0xffffffff);
-		}
-		CloseHandle(this->loadThread);
-		this->loadThread = NULL;
+		this->loadThread.join();
 		this->loadStop = false;
 	}
 }

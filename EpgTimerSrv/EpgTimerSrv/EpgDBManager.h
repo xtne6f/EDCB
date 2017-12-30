@@ -3,6 +3,7 @@
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
 #include "../../Common/BlockLock.h"
+#include "../../Common/ThreadUtil.h"
 #include <objbase.h>
 #include <OleAuto.h>
 #include "RegExp.h"
@@ -29,9 +30,9 @@ public:
 	//同期的に呼び出すこと
 	void ReloadEpgData(bool foreground = false);
 	//同期的に呼び出すこと
-	bool IsLoadingData() const;
+	bool IsLoadingData();
 	//同期的に呼び出すこと
-	void CancelLoadData(DWORD forceTimeout = 15000);
+	void CancelLoadData();
 
 	bool IsInitialLoadingDataDone() const { return this->initialLoadDone; }
 
@@ -144,7 +145,7 @@ protected:
 	mutable CRITICAL_SECTION epgMapLock;
 	mutable pair<int, CRITICAL_SECTION*> epgMapRefLock;
 
-	HANDLE loadThread;
+	thread_ loadThread;
 	bool loadStop;
 	bool loadForeground;
 	bool initialLoadDone;
@@ -155,7 +156,7 @@ protected:
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgArchive;
 protected:
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
-	static UINT WINAPI LoadThread(LPVOID param);
+	static void LoadThread(CEpgDBManager* sys);
 
 	void SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const;
 	static bool IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);

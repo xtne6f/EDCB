@@ -171,6 +171,7 @@
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\StructDef.h" />
+    <ClInclude Include="..\..\Common\ThreadUtil.h" />
     <ClInclude Include="..\..\Common\TVTestPlugin.h" />
     <ClInclude Include="EpgTimerPlugIn.h" />
     <ClInclude Include="resource.h" />

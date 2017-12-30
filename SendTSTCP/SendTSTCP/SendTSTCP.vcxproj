@@ -167,6 +167,7 @@
     <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\InstanceManager.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
+    <ClInclude Include="..\..\Common\ThreadUtil.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SendTSTCP.h" />
     <ClInclude Include="SendTSTCPMain.h" />

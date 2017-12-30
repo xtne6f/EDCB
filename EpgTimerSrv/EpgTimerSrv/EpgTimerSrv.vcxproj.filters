@@ -197,6 +197,9 @@
     <ClInclude Include="..\..\Common\BlockLock.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\ThreadUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Common\InstanceManager.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>

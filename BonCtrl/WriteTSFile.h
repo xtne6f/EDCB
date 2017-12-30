@@ -3,6 +3,7 @@
 #include "../Common/StructDef.h"
 #include "../Common/ErrDef.h"
 #include "../Common/StringUtil.h"
+#include "../Common/ThreadUtil.h"
 #include "../Common/WritePlugInUtil.h"
 #include <list>
 
@@ -85,13 +86,13 @@ protected:
 		const wstring& chkFolderPath
 	);
 
-	static UINT WINAPI OutThread(LPVOID param);
+	static void OutThread(CWriteTSFile* sys);
 
 protected:
 	CRITICAL_SECTION outThreadLock;
 	std::list<vector<BYTE>> tsBuffList;
 
-	HANDLE outThread;
+	thread_ outThread;
 	BOOL outStopFlag;
 	BOOL outStartFlag;
 

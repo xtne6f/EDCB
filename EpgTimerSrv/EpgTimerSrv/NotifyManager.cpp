@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "NotifyManager.h"
-#include <process.h>
 
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -14,7 +13,6 @@ CNotifyManager::CNotifyManager()
 	InitializeCriticalSection(&this->managerLock);
 
 	this->notifyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	this->notifyThread = NULL;
 	this->notifyStopFlag = false;
 	this->srvStatus = 0;
 	this->notifyCount = 1;
@@ -25,15 +23,10 @@ CNotifyManager::CNotifyManager()
 
 CNotifyManager::~CNotifyManager()
 {
-	if( this->notifyThread != NULL ){
+	if( this->notifyThread.joinable() ){
 		this->notifyStopFlag = true;
 		SetEvent(this->notifyEvent);
-		// スレッド終了待ち
-		if ( WaitForSingleObject(this->notifyThread, 20000) == WAIT_TIMEOUT ){
-			TerminateThread(this->notifyThread, 0xffffffff);
-		}
-		CloseHandle(this->notifyThread);
-		this->notifyThread = NULL;
+		this->notifyThread.join();
 	}
 	if( this->notifyEvent != NULL ){
 		CloseHandle(this->notifyEvent);
@@ -210,15 +203,14 @@ void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
 
 void CNotifyManager::SendNotify()
 {
-	if( this->notifyThread == NULL ){
-		this->notifyThread = (HANDLE)_beginthreadex(NULL, 0, SendNotifyThread, this, 0, NULL);
+	if( this->notifyThread.joinable() == false ){
+		this->notifyThread = thread_(SendNotifyThread, this);
 	}
 	SetEvent(this->notifyEvent);
 }
 
-UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
+void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 {
-	CNotifyManager* sys = (CNotifyManager*)param;
 	bool wait1Sec = false;
 	bool waitNotify = false;
 	DWORD waitNotifyTick = 0;
@@ -333,6 +325,4 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 			}
 		}
 	}
-
-	return 0;
 }

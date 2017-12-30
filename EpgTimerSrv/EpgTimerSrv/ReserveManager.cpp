@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "ReserveManager.h"
-#include <process.h>
 #include "../../Common/PathUtil.h"
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/EpgTimerUtil.h"
@@ -18,7 +17,6 @@ CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& 
 	, shutdownModePending(-1)
 	, reserveModified(false)
 	, watchdogStopEvent(NULL)
-	, watchdogThread(NULL)
 {
 	InitializeCriticalSection(&this->managerLock);
 }
@@ -50,19 +48,15 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 
 	this->watchdogStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if( this->watchdogStopEvent ){
-		this->watchdogThread = (HANDLE)_beginthreadex(NULL, 0, WatchdogThread, this, 0, NULL);
+		this->watchdogThread = thread_(WatchdogThread, this);
 	}
 }
 
 void CReserveManager::Finalize()
 {
-	if( this->watchdogThread ){
+	if( this->watchdogThread.joinable() ){
 		SetEvent(this->watchdogStopEvent);
-		if( WaitForSingleObject(this->watchdogThread, 15000) == WAIT_TIMEOUT ){
-			TerminateThread(this->watchdogThread, 0xffffffff);
-		}
-		CloseHandle(this->watchdogThread);
-		this->watchdogThread = NULL;
+		this->watchdogThread.join();
 	}
 	if( this->watchdogStopEvent ){
 		CloseHandle(this->watchdogStopEvent);
@@ -1888,15 +1882,13 @@ vector<CH_DATA5> CReserveManager::GetChDataList() const
 	return list;
 }
 
-UINT WINAPI CReserveManager::WatchdogThread(LPVOID param)
+void CReserveManager::WatchdogThread(CReserveManager* sys)
 {
-	CReserveManager* sys = (CReserveManager*)param;
 	while( WaitForSingleObject(sys->watchdogStopEvent, 2000) == WAIT_TIMEOUT ){
 		for( auto itr = sys->tunerBankMap.cbegin(); itr != sys->tunerBankMap.end(); itr++ ){
 			itr->second->Watch();
 		}
 	}
-	return 0;
 }
 
 void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName)

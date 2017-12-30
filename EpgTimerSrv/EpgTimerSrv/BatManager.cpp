@@ -6,8 +6,6 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/BlockLock.h"
 
-#include <process.h>
-
 CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 	: notifyManager(notifyManager_)
 {
@@ -18,20 +16,14 @@ CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 	this->nextBatMargin = 0;
 	this->batWorkExitingFlag = false;
 
-	this->batWorkThread = NULL;
 	this->batWorkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 CBatManager::~CBatManager()
 {
-	if( this->batWorkThread != NULL ){
+	if( this->batWorkThread.joinable() ){
 		SetEvent(this->batWorkStopEvent);
-		// スレッド終了待ち
-		if ( WaitForSingleObject(this->batWorkThread, 15000) == WAIT_TIMEOUT ){
-			TerminateThread(this->batWorkThread, 0xffffffff);
-		}
-		CloseHandle(this->batWorkThread);
-		this->batWorkThread = NULL;
+		this->batWorkThread.join();
 	}
 	if( this->batWorkStopEvent != NULL ){
 		CloseHandle(this->batWorkStopEvent);
@@ -68,7 +60,7 @@ bool CBatManager::IsWorking() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	return this->batWorkThread != NULL && WaitForSingleObject(this->batWorkThread, 0) == WAIT_TIMEOUT;
+	return this->batWorkThread.joinable() && this->batWorkExitingFlag == false;
 }
 
 void CBatManager::StartWork()
@@ -76,22 +68,18 @@ void CBatManager::StartWork()
 	CBlockLock lock(&this->managerLock);
 
 	//ワーカスレッドが終了しようとしているときはその完了を待つ
-	if( this->batWorkThread != NULL && this->batWorkExitingFlag ){
-		WaitForSingleObject(this->batWorkThread, INFINITE);
-		CloseHandle(this->batWorkThread);
-		this->batWorkThread = NULL;
+	if( this->batWorkThread.joinable() && this->batWorkExitingFlag ){
+		this->batWorkThread.join();
 	}
-	if( this->batWorkThread == NULL && this->workList.empty() == false && this->idleMargin >= this->nextBatMargin ){
+	if( this->batWorkThread.joinable() == false && this->workList.empty() == false && this->idleMargin >= this->nextBatMargin ){
 		ResetEvent(this->batWorkStopEvent);
 		this->batWorkExitingFlag = false;
-		this->batWorkThread = (HANDLE)_beginthreadex(NULL, 0, BatWorkThread, this, 0, NULL);
+		this->batWorkThread = thread_(BatWorkThread, this);
 	}
 }
 
-UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
+void CBatManager::BatWorkThread(CBatManager* sys)
 {
-	CBatManager* sys = (CBatManager*)param;
-
 	for(;;){
 		{
 			BAT_WORK_INFO work;
@@ -185,8 +173,6 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 			sys->workList.erase(sys->workList.begin());
 		}
 	}
-
-	return 0;
 }
 
 bool CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect)

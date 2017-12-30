@@ -1,14 +1,8 @@
 #include "stdafx.h"
 #include "UpnpSsdpServer.h"
 #include "../../Common/StringUtil.h"
-#include <process.h>
 #include <iphlpapi.h>
 #pragma comment(lib, "iphlpapi.lib")
-
-CUpnpSsdpServer::CUpnpSsdpServer()
-	: ssdpThread(NULL)
-{
-}
 
 CUpnpSsdpServer::~CUpnpSsdpServer()
 {
@@ -20,17 +14,15 @@ bool CUpnpSsdpServer::Start(const vector<SSDP_TARGET_INFO>& targetList_)
 	Stop();
 	this->targetList = targetList_;
 	this->stopFlag = false;
-	this->ssdpThread = (HANDLE)_beginthreadex(NULL, 0, SsdpThread, this, 0, NULL);
-	return this->ssdpThread != NULL;
+	this->ssdpThread = thread_(SsdpThread, this);
+	return true;
 }
 
 void CUpnpSsdpServer::Stop()
 {
-	if( this->ssdpThread ){
+	if( this->ssdpThread.joinable() ){
 		this->stopFlag = true;
-		WaitForSingleObject(this->ssdpThread, INFINITE);
-		CloseHandle(this->ssdpThread);
-		this->ssdpThread = NULL;
+		this->ssdpThread.join();
 	}
 }
 
@@ -89,9 +81,8 @@ static bool GetInetAddr(unsigned long* addr, const char* host)
 	return false;
 }
 
-UINT WINAPI CUpnpSsdpServer::SsdpThread(LPVOID param)
+void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 {
-	CUpnpSsdpServer* sys = (CUpnpSsdpServer*)param;
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2, 0), &wsaData);
 
@@ -202,7 +193,6 @@ UINT WINAPI CUpnpSsdpServer::SsdpThread(LPVOID param)
 	sys->SendNotifyAliveOrByebye(true, nicList);
 
 	WSACleanup();
-	return 0;
 }
 
 string CUpnpSsdpServer::GetMSearchReply(const char* header, const char* host) const

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StructDef.h"
+#include "ThreadUtil.h"
 #include <functional>
 
 class CPipeServer
@@ -25,9 +26,9 @@ protected:
 	BOOL insecureFlag;
 
 	HANDLE stopEvent;
-	HANDLE workThread;
+	thread_ workThread;
 
 protected:
-	static UINT WINAPI ServerThread(LPVOID pParam);
+	static void ServerThread(CPipeServer* pSys);
 
 };

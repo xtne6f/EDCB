@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Common/ParseTextInstances.h"
+#include "../../Common/ThreadUtil.h"
 #include "EpgDBManager.h"
 #include "NotifyManager.h"
 #include "TunerManager.h"
@@ -121,7 +122,7 @@ private:
 	//次のEPG取得時刻を取得する
 	__int64 GetNextEpgCapTime(__int64 now, int* basicOnlyFlags = NULL) const;
 	//バンクを監視して必要ならチューナを強制終了するスレッド
-	static UINT WINAPI WatchdogThread(LPVOID param);
+	static void WatchdogThread(CReserveManager* sys);
 	//batPostManagerにバッチを追加する
 	void AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName);
 	//バッチに渡す日時マクロを追加する
@@ -166,5 +167,5 @@ private:
 	bool reserveModified;
 
 	HANDLE watchdogStopEvent;
-	HANDLE watchdogThread;
+	thread_ watchdogThread;
 };

@@ -204,6 +204,7 @@
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\StructDef.h" />
     <ClInclude Include="..\..\Common\TCPServer.h" />
+    <ClInclude Include="..\..\Common\ThreadUtil.h" />
     <ClInclude Include="..\..\Common\TimeShiftUtil.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />

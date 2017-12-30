@@ -2,6 +2,7 @@
 
 #include "../../Common/ErrDef.h"
 #include "../../Common/CommonDef.h"
+#include "../../Common/ThreadUtil.h"
 
 class CNotifyManager
 {
@@ -31,7 +32,7 @@ protected:
 	mutable CRITICAL_SECTION managerLock;
 
 	HANDLE notifyEvent;
-	HANDLE notifyThread;
+	thread_ notifyThread;
 	bool notifyStopFlag;
 	DWORD srvStatus;
 	DWORD notifyCount;
@@ -47,6 +48,6 @@ protected:
 	vector<NOTIFY_SRV_INFO> notifySentList;
 protected:
 	void SendNotify();
-	static UINT WINAPI SendNotifyThread(LPVOID param);
+	static void SendNotifyThread(CNotifyManager* sys);
 };
 

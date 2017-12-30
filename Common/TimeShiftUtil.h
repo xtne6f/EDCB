@@ -4,6 +4,7 @@
 #include "../BonCtrl/SendTCP.h"
 #include "../BonCtrl/CreatePATPacket.h"
 #include "TSPacketUtil.h"
+#include "ThreadUtil.h"
 
 class CTimeShiftUtil
 {
@@ -71,12 +72,12 @@ protected:
 	int seekJitter;
 	__int64 currentFilePos;
 
-	HANDLE readThread;
+	thread_ readThread;
 	BOOL readStopFlag;
 	HANDLE readFile;
 	HANDLE seekFile;
 protected:
-	static UINT WINAPI ReadThread(LPVOID param);
+	static void ReadThread(CTimeShiftUtil* sys);
 	__int64 GetAvailableFileSize() const;
 };
 
