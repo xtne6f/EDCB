@@ -1,12 +1,8 @@
 #include "stdafx.h"
 #include "TimeShiftUtil.h"
-#include "../../Common/BlockLock.h"
 
 CTimeShiftUtil::CTimeShiftUtil(void)
 {
-	InitializeCriticalSection(&this->utilLock);
-	InitializeCriticalSection(&this->ioLock);
-
 	this->readFile = INVALID_HANDLE_VALUE;
 	this->seekFile = INVALID_HANDLE_VALUE;
 
@@ -23,9 +19,6 @@ CTimeShiftUtil::~CTimeShiftUtil(void)
 
 	NWPLAY_PLAY_INFO val = {};
 	Send(&val);
-
-	DeleteCriticalSection(&this->ioLock);
-	DeleteCriticalSection(&this->utilLock);
 }
 
 BOOL CTimeShiftUtil::Send(

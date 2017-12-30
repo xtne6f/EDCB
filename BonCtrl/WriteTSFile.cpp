@@ -2,12 +2,9 @@
 #include "WriteTSFile.h"
 
 #include "../Common/PathUtil.h"
-#include "../Common/BlockLock.h"
 
 CWriteTSFile::CWriteTSFile(void)
 {
-	InitializeCriticalSection(&this->outThreadLock);
-
 	this->outStopFlag = FALSE;
 	this->outStartFlag = FALSE;
 	this->overWriteFlag = FALSE;
@@ -20,7 +17,6 @@ CWriteTSFile::CWriteTSFile(void)
 CWriteTSFile::~CWriteTSFile(void)
 {
 	EndSave();
-	DeleteCriticalSection(&this->outThreadLock);
 }
 
 //ファイル保存を開始する

@@ -4,13 +4,10 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/BlockLock.h"
 
 CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 	: notifyManager(notifyManager_)
 {
-	InitializeCriticalSection(&this->managerLock);
-
 	this->tmpBatFilePath = GetModulePath().replace_filename(tmpBatFileName).native();
 	this->idleMargin = MAXDWORD;
 	this->nextBatMargin = 0;
@@ -29,8 +26,6 @@ CBatManager::~CBatManager()
 		CloseHandle(this->batWorkStopEvent);
 		this->batWorkStopEvent = NULL;
 	}
-
-	DeleteCriticalSection(&this->managerLock);
 }
 
 void CBatManager::AddBatWork(const BAT_WORK_INFO& info)

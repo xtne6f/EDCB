@@ -19,7 +19,7 @@ public:
 	DWORD GetWorkCount() const;
 	bool IsWorking() const;
 protected:
-	mutable CRITICAL_SECTION managerLock;
+	mutable recursive_mutex_ managerLock;
 
 	CNotifyManager& notifyManager;
 	wstring tmpBatFilePath;

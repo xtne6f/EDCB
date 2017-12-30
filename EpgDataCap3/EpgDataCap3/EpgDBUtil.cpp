@@ -3,7 +3,6 @@
 
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
-#include "../../Common/BlockLock.h"
 #include "ARIB8CharDecode.h"
 
 //#define DEBUG_EIT
@@ -12,16 +11,6 @@ static char g_szDebugEIT[128];
 #endif
 
 namespace Desc = AribDescriptor;
-
-CEpgDBUtil::CEpgDBUtil(void)
-{
-	InitializeCriticalSection(&this->dbLock);
-}
-
-CEpgDBUtil::~CEpgDBUtil(void)
-{
-	DeleteCriticalSection(&this->dbLock);
-}
 
 void CEpgDBUtil::Clear()
 {
@@ -35,8 +24,6 @@ void CEpgDBUtil::SetStreamChangeEvent()
 
 BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTime)
 {
-	CBlockLock lock(&this->dbLock);
-
 	WORD original_network_id = (WORD)eit.GetNumber(Desc::original_network_id);
 	WORD transport_stream_id = (WORD)eit.GetNumber(Desc::transport_stream_id);
 	WORD service_id = (WORD)eit.GetNumber(Desc::service_id);
@@ -624,8 +611,6 @@ void CEpgDBUtil::AddEventRelay(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescrip
 
 void CEpgDBUtil::ClearSectionStatus()
 {
-	CBlockLock lock(&this->dbLock);
-
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
 		itr->second.lastTableID = 0;
@@ -653,8 +638,6 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatusService(
 	BOOL l_eitFlag
 	)
 {
-	CBlockLock lock(&this->dbLock);
-
 	map<ULONGLONG, SERVICE_EVENT_INFO>::const_iterator itr =
 		this->serviceEventMap.find(Create64Key(originalNetworkID, transportStreamID, serviceID));
 	if( itr != this->serviceEventMap.end() ){
@@ -677,8 +660,6 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatusService(
 
 EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 {
-	CBlockLock lock(&this->dbLock);
-
 	EPG_SECTION_STATUS status = EpgNoData;
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
@@ -718,8 +699,6 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 
 BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 {
-	CBlockLock lock(&this->dbLock);
-
 	wstring network_nameW = L"";
 
 	Desc::CDescriptor::CLoopPointer lp;
@@ -797,8 +776,6 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 
 BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 {
-	CBlockLock lock(&this->dbLock);
-
 	WORD ONID = 0xFFFF;
 	Desc::CDescriptor::CLoopPointer lp;
 	if( sit.EnterLoop(lp) ){
@@ -863,8 +840,6 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 
 BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 {
-	CBlockLock lock(&this->dbLock);
-
 	DWORD key = sdt.GetNumber(Desc::original_network_id) << 16 | sdt.GetNumber(Desc::transport_stream_id);
 	map<DWORD, DB_TS_INFO>::iterator itrTS;
 	itrTS = this->serviceInfoList.find(key);
@@ -932,8 +907,6 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 	EPG_EVENT_INFO** epgInfoList_
 	)
 {
-	CBlockLock lock(&this->dbLock);
-
 	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
@@ -1004,8 +977,6 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	LPVOID param
 	)
 {
-	CBlockLock lock(&this->dbLock);
-
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr =
 		this->serviceEventMap.find(Create64Key(originalNetworkID, transportStreamID, serviceID));
 	if( itr == this->serviceEventMap.end() ){
@@ -1078,8 +1049,6 @@ void CEpgDBUtil::GetServiceListEpgDB(
 	SERVICE_INFO** serviceList_
 	)
 {
-	CBlockLock lock(&this->dbLock);
-
 	*serviceListSize = (DWORD)this->serviceEventMap.size();
 	this->serviceDataList.reset(new SERVICE_INFO[*serviceListSize]);
 	this->serviceDBList.reset(new EPGDB_SERVICE_INFO[*serviceListSize]);
@@ -1129,8 +1098,6 @@ BOOL CEpgDBUtil::GetEpgInfo(
 	EPG_EVENT_INFO** epgInfo_
 	)
 {
-	CBlockLock lock(&this->dbLock);
-
 	this->epgInfo.db.clear();
 
 	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);
@@ -1178,8 +1145,6 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 	EPG_EVENT_INFO** epgInfo_
 	)
 {
-	CBlockLock lock(&this->dbLock);
-
 	this->searchEpgInfo.db.clear();
 
 	ULONGLONG key = Create64Key(originalNetworkID, transportStreamID, serviceID);

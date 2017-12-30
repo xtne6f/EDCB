@@ -54,8 +54,8 @@ public:
 	void SetFilePos(__int64 filePos);
 
 protected:
-	CRITICAL_SECTION utilLock;
-	CRITICAL_SECTION ioLock;
+	recursive_mutex_ utilLock;
+	recursive_mutex_ ioLock;
 	CSendUDP sendUdp;
 	CSendTCP sendTcp;
 	wstring sendUdpIP;

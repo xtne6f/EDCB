@@ -83,7 +83,7 @@ private:
 	static LRESULT CALLBACK DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	static class CInit { public: CInit(); } s_init;
-	CRITICAL_SECTION utilLock;
+	recursive_mutex_ utilLock;
 	wstring loadDllFolder;
 	wstring loadDllFileName;
 	wstring loadTunerName;

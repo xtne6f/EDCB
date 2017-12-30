@@ -4,12 +4,9 @@
 #include "../Common/CommonDef.h"
 #include "../Common/TimeUtil.h"
 #include "../Common/SendCtrlCmd.h"
-#include "../Common/BlockLock.h"
 
 CBonCtrl::CBonCtrl(void)
 {
-	InitializeCriticalSection(&this->buffLock);
-
     this->analyzeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     this->analyzeStopFlag = FALSE;
 
@@ -54,7 +51,6 @@ CBonCtrl::~CBonCtrl(void)
 		CloseHandle(this->analyzeEvent);
 		this->analyzeEvent = NULL;
 	}
-	DeleteCriticalSection(&this->buffLock);
 }
 
 //BonDriverフォルダを指定

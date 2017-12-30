@@ -3,14 +3,10 @@
 
 #include "../Common/TimeUtil.h"
 #include "../Common/EpgTimerUtil.h"
-#include "../Common/BlockLock.h"
 
 CTSOut::CTSOut(void)
 	: epgFile(NULL, fclose)
 {
-	InitializeCriticalSection(&this->objLock);
-	InitializeCriticalSection(&this->epgUtilLock);
-
 	this->chChangeState = CH_ST_INIT;
 	this->chChangeTime = 0;
 	this->lastONID = 0xFFFF;
@@ -30,8 +26,6 @@ CTSOut::CTSOut(void)
 CTSOut::~CTSOut(void)
 {
 	StopSaveEPG(FALSE);
-	DeleteCriticalSection(&this->epgUtilLock);
-	DeleteCriticalSection(&this->objLock);
 }
 
 void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)

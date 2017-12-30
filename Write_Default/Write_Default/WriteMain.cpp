@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "WriteMain.h"
-#include "../../Common/BlockLock.h"
 
 extern HINSTANCE g_instance;
 
@@ -23,14 +22,12 @@ CWriteMain::CWriteMain(void)
 			this->teeDelay = GetPrivateProfileInt(L"SET", L"TeeDelay", 0, iniPath.c_str());
 		}
 	}
-	InitializeCriticalSection(&this->wroteLock);
 }
 
 
 CWriteMain::~CWriteMain(void)
 {
 	Stop();
-	DeleteCriticalSection(&this->wroteLock);
 }
 
 BOOL CWriteMain::Start(

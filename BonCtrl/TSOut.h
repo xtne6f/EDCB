@@ -8,6 +8,7 @@
 #include "../Common/ErrDef.h"
 #include "../Common/EpgDataCap3Util.h"
 #include "../Common/TSPacketUtil.h"
+#include "../Common/ThreadUtil.h"
 
 #include "BonCtrlDef.h"
 #include "ScrambleDecoderUtil.h"
@@ -330,8 +331,8 @@ public:
 
 protected:
 	//objLock->epgUtilLock‚Ì‡‚ÉƒƒbƒN‚·‚é
-	CRITICAL_SECTION objLock;
-	CRITICAL_SECTION epgUtilLock;
+	recursive_mutex_ objLock;
+	recursive_mutex_ epgUtilLock;
 
 	CEpgDataCap3Util epgUtil;
 	CScrambleDecoderUtil decodeUtil;

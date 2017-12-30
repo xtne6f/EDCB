@@ -4,7 +4,6 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ReNamePlugInUtil.h"
-#include "../../Common/BlockLock.h"
 #include "../../Common/TimeUtil.h"
 #include <tlhelp32.h>
 
@@ -19,7 +18,6 @@ CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vecto
 	, delayTime(0)
 	, epgCapDelayTime(0)
 {
-	InitializeCriticalSection(&this->watchContext.lock);
 	this->watchContext.count = 0;
 }
 
@@ -28,7 +26,6 @@ CTunerBankCtrl::~CTunerBankCtrl()
 	if( this->hTunerProcess ){
 		CloseHandle(this->hTunerProcess);
 	}
-	DeleteCriticalSection(&this->watchContext.lock);
 }
 
 void CTunerBankCtrl::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)

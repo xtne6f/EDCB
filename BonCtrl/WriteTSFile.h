@@ -89,7 +89,7 @@ protected:
 	static void OutThread(CWriteTSFile* sys);
 
 protected:
-	CRITICAL_SECTION outThreadLock;
+	recursive_mutex_ outThreadLock;
 	std::list<vector<BYTE>> tsBuffList;
 
 	thread_ outThread;

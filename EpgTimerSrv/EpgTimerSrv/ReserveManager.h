@@ -18,7 +18,6 @@ public:
 		CHECK_RESERVE_MODIFIED,	//予約になんらかの変化があった
 	};
 	CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
-	~CReserveManager();
 	void Initialize(const CEpgTimerSrvSetting::SETTING& s);
 	void Finalize();
 	void ReloadSetting(const CEpgTimerSrvSetting::SETTING& s);
@@ -132,7 +131,7 @@ private:
 	//バッチに渡す録画済み情報マクロを追加する
 	static void AddRecInfoMacro(vector<pair<string, wstring>>& macroList, const REC_FILE_INFO& recInfo);
 
-	mutable CRITICAL_SECTION managerLock;
+	mutable recursive_mutex_ managerLock;
 
 	CNotifyManager& notifyManager;
 	CEpgDBManager& epgDBManager;

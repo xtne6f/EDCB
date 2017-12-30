@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BlockLock.h"
+#include "ThreadUtil.h"
 #include <map>
 #include <memory>
 
@@ -12,13 +12,7 @@ public:
 
 	CInstanceManager()
 	{
-		InitializeCriticalSection(&(this->m_lock));
 		this->m_nextID = 1;
-	}
-
-	~CInstanceManager()
-	{
-		DeleteCriticalSection(&(this->m_lock));
 	}
 
 	DWORD push(std::shared_ptr<T> ptr)
@@ -57,7 +51,7 @@ public:
 protected:
 	std::map<DWORD, std::shared_ptr<T> > m_list;
 	DWORD m_nextID;
-	CRITICAL_SECTION m_lock;
+	recursive_mutex_ m_lock;
 
 	DWORD getNextID()
 	{

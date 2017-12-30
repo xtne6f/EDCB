@@ -3,15 +3,12 @@
 
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/SendCtrlCmd.h"
-#include "../../Common/BlockLock.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 
 CNotifyManager::CNotifyManager()
 {
-	InitializeCriticalSection(&this->managerLock);
-
 	this->notifyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->notifyStopFlag = false;
 	this->srvStatus = 0;
@@ -33,8 +30,6 @@ CNotifyManager::~CNotifyManager()
 		this->notifyEvent = NULL;
 	}
 	for( size_t i = 0; i < this->registGUIList.size(); CloseHandle(this->registGUIList[i++].second) );
-
-	DeleteCriticalSection(&this->managerLock);
 }
 
 void CNotifyManager::RegistGUI(DWORD processID)

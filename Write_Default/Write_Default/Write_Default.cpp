@@ -7,8 +7,6 @@
 #include "WriteMain.h"
 #include "SettingDlg.h"
 #include "../../Common/InstanceManager.h"
-#include <tchar.h>
-using namespace std;
 
 CInstanceManager<CWriteMain> g_instMng;
 

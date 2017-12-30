@@ -2,7 +2,6 @@
 
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
-#include "../../Common/BlockLock.h"
 #include "../../Common/ThreadUtil.h"
 #include <objbase.h>
 #include <OleAuto.h>
@@ -130,7 +129,7 @@ protected:
 	class CRefLock
 	{
 	public:
-		CRefLock(pair<int, CRITICAL_SECTION*>* ref_) : ref(ref_) {
+		CRefLock(pair<int, recursive_mutex_*>* ref_) : ref(ref_) {
 			CBlockLock lock(ref->second);
 			++ref->first;
 		}
@@ -139,11 +138,11 @@ protected:
 			--ref->first;
 		}
 	private:
-		pair<int, CRITICAL_SECTION*>* ref;
+		pair<int, recursive_mutex_*>* ref;
 	};
 
-	mutable CRITICAL_SECTION epgMapLock;
-	mutable pair<int, CRITICAL_SECTION*> epgMapRefLock;
+	mutable recursive_mutex_ epgMapLock;
+	mutable pair<int, recursive_mutex_*> epgMapRefLock;
 
 	thread_ loadThread;
 	bool loadStop;

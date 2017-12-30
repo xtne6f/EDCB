@@ -63,8 +63,8 @@ protected:
 	HANDLE m_hStopSendEvent;
 	thread_ m_sendThread;
 
-	CRITICAL_SECTION m_sendLock;
-	CRITICAL_SECTION m_buffLock;
+	recursive_mutex_ m_sendLock;
+	recursive_mutex_ m_buffLock;
 
 	std::list<vector<BYTE>> m_TSBuff;
 

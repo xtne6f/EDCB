@@ -3,6 +3,7 @@
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
 #include "EpgTimerSrvSetting.h"
+#include "../../Common/ThreadUtil.h"
 
 //1つのチューナ(EpgDataCap_Bon.exe)を管理する
 //必ずオブジェクト生成→ReloadSetting()→…→破棄の順番で利用しなければならない
@@ -190,7 +191,7 @@ private:
 	wstring tsExt;
 
 	mutable struct WATCH_CONTEXT {
-		CRITICAL_SECTION lock;
+		recursive_mutex_ lock;
 		DWORD count;
 		DWORD tick;
 	} watchContext;

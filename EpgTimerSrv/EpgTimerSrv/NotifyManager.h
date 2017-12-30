@@ -29,7 +29,7 @@ public:
 	void SetGUI(bool f) { guiFlag = f; }
 
 protected:
-	mutable CRITICAL_SECTION managerLock;
+	mutable recursive_mutex_ managerLock;
 
 	HANDLE notifyEvent;
 	thread_ notifyThread;

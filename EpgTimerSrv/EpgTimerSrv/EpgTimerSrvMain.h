@@ -13,7 +13,6 @@ class CEpgTimerSrvMain
 {
 public:
 	CEpgTimerSrvMain();
-	~CEpgTimerSrvMain();
 	//メインループ処理(Taskモード)
 	static bool TaskMain();
 	//メインループ処理
@@ -126,8 +125,8 @@ private:
 	map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator autoAddCheckItr;
 
 	//autoAddLock->settingLockの順にロックする
-	mutable CRITICAL_SECTION autoAddLock;
-	mutable CRITICAL_SECTION settingLock;
+	mutable recursive_mutex_ autoAddLock;
+	mutable recursive_mutex_ settingLock;
 	HWND hwndMain;
 
 	bool residentFlag;

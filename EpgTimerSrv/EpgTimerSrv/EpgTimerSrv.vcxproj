@@ -183,7 +183,6 @@
     <ClInclude Include="..\..\BonCtrl\PacketInit.h" />
     <ClInclude Include="..\..\BonCtrl\SendTCP.h" />
     <ClInclude Include="..\..\BonCtrl\SendUDP.h" />
-    <ClInclude Include="..\..\Common\BlockLock.h" />
     <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />

@@ -13,8 +13,6 @@ extern DWORD g_compatFlags;
 
 CEpgDBManager::CEpgDBManager()
 {
-	InitializeCriticalSection(&this->epgMapLock);
-
 	this->epgMapRefLock = std::make_pair(0, &this->epgMapLock);
 	this->loadStop = false;
 	this->loadForeground = false;
@@ -25,8 +23,6 @@ CEpgDBManager::CEpgDBManager()
 CEpgDBManager::~CEpgDBManager()
 {
 	CancelLoadData();
-
-	DeleteCriticalSection(&this->epgMapLock);
 }
 
 void CEpgDBManager::SetArchivePeriod(int periodSec)

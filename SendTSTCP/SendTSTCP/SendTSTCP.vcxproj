@@ -162,7 +162,6 @@
     <None Include="SendTSTCP.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Common\BlockLock.h" />
     <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\InstanceManager.h" />

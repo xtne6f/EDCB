@@ -2,7 +2,6 @@
 #include "BonDriverUtil.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
-#include "../Common/BlockLock.h"
 #include "IBonDriver2.h"
 
 enum {
@@ -27,13 +26,11 @@ CBonDriverUtil::CInit::CInit()
 CBonDriverUtil::CBonDriverUtil(void)
 	: hwndDriver(NULL)
 {
-	InitializeCriticalSection(&this->utilLock);
 }
 
 CBonDriverUtil::~CBonDriverUtil(void)
 {
 	CloseBonDriver();
-	DeleteCriticalSection(&this->utilLock);
 }
 
 void CBonDriverUtil::SetBonDriverFolder(LPCWSTR bonDriverFolderPath)

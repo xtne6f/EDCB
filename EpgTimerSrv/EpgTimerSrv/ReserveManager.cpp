@@ -4,7 +4,6 @@
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/TimeUtil.h"
-#include "../../Common/BlockLock.h"
 
 CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: notifyManager(notifyManager_)
@@ -18,12 +17,6 @@ CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& 
 	, reserveModified(false)
 	, watchdogStopEvent(NULL)
 {
-	InitializeCriticalSection(&this->managerLock);
-}
-
-CReserveManager::~CReserveManager(void)
-{
-	DeleteCriticalSection(&this->managerLock);
 }
 
 void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)

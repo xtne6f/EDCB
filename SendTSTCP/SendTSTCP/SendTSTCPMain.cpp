@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "SendTSTCPMain.h"
-#include "../../Common/BlockLock.h"
 
 //SendTSTCPプロトコルのヘッダの送信を抑制する既定のポート範囲
 #define SEND_TS_TCP_NOHEAD_PORT_MIN 22000
@@ -9,9 +8,6 @@
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
 	m_hStopSendEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-	InitializeCriticalSection(&m_sendLock);
-	InitializeCriticalSection(&m_buffLock);
 
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
@@ -22,9 +18,6 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 	UnInitialize();
 
 	CloseHandle(m_hStopSendEvent);
-
-	DeleteCriticalSection(&m_buffLock);
-	DeleteCriticalSection(&m_sendLock);
 
 	WSACleanup();
 }

@@ -57,7 +57,7 @@ protected:
 	vector<BYTE> writeBuff;
 	DWORD writeBuffSize;
 	__int64 wrotePos;
-	CRITICAL_SECTION wroteLock;
+	recursive_mutex_ wroteLock;
 
 	HANDLE teeFile;
 	thread_ teeThread;

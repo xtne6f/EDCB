@@ -425,7 +425,7 @@ protected:
 	CTSOut tsOut;
 	CChSetUtil chUtil;
 
-	CRITICAL_SECTION buffLock;
+	recursive_mutex_ buffLock;
 	std::list<vector<BYTE>> tsBuffList;
 
 	thread_ analyzeThread;

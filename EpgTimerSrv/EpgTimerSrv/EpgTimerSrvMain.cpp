@@ -6,7 +6,6 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
-#include "../../Common/BlockLock.h"
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
@@ -110,14 +109,6 @@ CEpgTimerSrvMain::CEpgTimerSrvMain()
 	, nwtvTcp(false)
 {
 	memset(this->notifyUpdateCount, 0, sizeof(this->notifyUpdateCount));
-	InitializeCriticalSection(&this->autoAddLock);
-	InitializeCriticalSection(&this->settingLock);
-}
-
-CEpgTimerSrvMain::~CEpgTimerSrvMain()
-{
-	DeleteCriticalSection(&this->settingLock);
-	DeleteCriticalSection(&this->autoAddLock);
 }
 
 bool CEpgTimerSrvMain::TaskMain()
