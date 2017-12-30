@@ -1,16 +1,11 @@
 #include "stdafx.h"
 #include "WriteTSFile.h"
-#include <process.h>
 
 #include "../Common/PathUtil.h"
-#include "../Common/BlockLock.h"
 
 CWriteTSFile::CWriteTSFile(void)
 {
-	InitializeCriticalSection(&this->outThreadLock);
-
-    this->outThread = NULL;
-    this->outStopFlag = FALSE;
+	this->outStopFlag = FALSE;
 	this->outStartFlag = FALSE;
 	this->overWriteFlag = FALSE;
 	this->createSize = 0;
@@ -22,7 +17,6 @@ CWriteTSFile::CWriteTSFile(void)
 CWriteTSFile::~CWriteTSFile(void)
 {
 	EndSave();
-	DeleteCriticalSection(&this->outThreadLock);
 }
 
 //ファイル保存を開始する
@@ -36,38 +30,37 @@ CWriteTSFile::~CWriteTSFile(void)
 // saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 BOOL CWriteTSFile::StartSave(
 	const wstring& fileName,
-	BOOL overWriteFlag,
-	ULONGLONG createSize,
-	const vector<REC_FILE_SET_INFO>* saveFolder,
-	const vector<wstring>* saveFolderSub,
-	int maxBuffCount
+	BOOL overWriteFlag_,
+	ULONGLONG createSize_,
+	const vector<REC_FILE_SET_INFO>& saveFolder,
+	const vector<wstring>& saveFolderSub_,
+	int maxBuffCount_
 )
 {
-	if( saveFolder->size() == 0 ){
+	if( saveFolder.size() == 0 ){
 		OutputDebugString(L"CWriteTSFile::StartSave Err saveFolder 0\r\n");
 		return FALSE;
 	}
 	
-	if( this->outThread == NULL ){
+	if( this->outThread.joinable() == false ){
 		this->fileList.clear();
 		this->mainSaveFilePath = L"";
-		this->overWriteFlag = overWriteFlag;
-		this->createSize = createSize;
-		this->maxBuffCount = maxBuffCount;
+		this->overWriteFlag = overWriteFlag_;
+		this->createSize = createSize_;
+		this->maxBuffCount = maxBuffCount_;
 		this->writeTotalSize = 0;
 		this->subRecFlag = FALSE;
-		const vector<REC_FILE_SET_INFO>& saveFolder_ = *saveFolder;
-		this->saveFolderSub = *saveFolderSub;
-		for( size_t i=0; i<saveFolder_.size(); i++ ){
+		this->saveFolderSub = saveFolderSub_;
+		for( size_t i=0; i<saveFolder.size(); i++ ){
 			this->fileList.push_back(std::unique_ptr<SAVE_INFO>(new SAVE_INFO));
 			SAVE_INFO& item = *this->fileList.back();
 			item.freeChk = FALSE;
-			item.writePlugIn = saveFolder_[i].writePlugIn;
+			item.writePlugIn = saveFolder[i].writePlugIn;
 			if( item.writePlugIn.size() == 0 ){
 				item.writePlugIn = L"Write_Default.dll";
 			}
-			item.recFolder = saveFolder_[i].recFolder;
-			item.recFileName = saveFolder_[i].recFileName;
+			item.recFolder = saveFolder[i].recFolder;
+			item.recFileName = saveFolder[i].recFileName;
 			if( item.recFileName.size() == 0 ){
 				item.recFileName = fileName;
 			}
@@ -76,16 +69,13 @@ BOOL CWriteTSFile::StartSave(
 		//受信スレッド起動
 		this->outStopFlag = FALSE;
 		this->outStartFlag = FALSE;
-		this->outThread = (HANDLE)_beginthreadex(NULL, 0, OutThread, this, 0, NULL);
-		if( this->outThread ){
-			//保存開始まで待つ
-			while( WaitForSingleObject(this->outThread, 10) == WAIT_TIMEOUT && this->outStartFlag == FALSE );
-			if( this->outStartFlag ){
-				return TRUE;
-			}
-			CloseHandle(this->outThread);
-			this->outThread = NULL;
+		this->outThread = thread_(OutThread, this);
+		//保存開始まで待つ
+		while( WaitForSingleObject(this->outThread.native_handle(), 10) == WAIT_TIMEOUT && this->outStartFlag == FALSE );
+		if( this->outStartFlag ){
+			return TRUE;
 		}
+		this->outThread.join();
 	}
 
 	OutputDebugString(L"CWriteTSFile::StartSave Err 1\r\n");
@@ -147,14 +137,9 @@ BOOL CWriteTSFile::EndSave()
 {
 	BOOL ret = TRUE;
 
-	if( this->outThread != NULL ){
+	if( this->outThread.joinable() ){
 		this->outStopFlag = TRUE;
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->outThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->outThread, 0xffffffff);
-		}
-		CloseHandle(this->outThread);
-		this->outThread = NULL;
+		this->outThread.join();
 	}
 
 	this->tsBuffList.clear();
@@ -173,7 +158,7 @@ BOOL CWriteTSFile::AddTSBuff(
 	DWORD size
 	)
 {
-	if( data == NULL || size == 0 || this->outThread == NULL){
+	if( data == NULL || size == 0 || this->outThread.joinable() == false ){
 		return FALSE;
 	}
 
@@ -203,12 +188,11 @@ BOOL CWriteTSFile::AddTSBuff(
 	return ret;
 }
 
-UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
+void CWriteTSFile::OutThread(CWriteTSFile* sys)
 {
 	//プラグインがCOMを利用するかもしれないため
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
-	CWriteTSFile* sys = (CWriteTSFile*)param;
 	BOOL emptyFlag = TRUE;
 	for( size_t i=0; i<sys->fileList.size(); i++ ){
 		if( sys->fileList[i]->writeUtil.Initialize(GetModulePath().replace_filename(L"Write").append(sys->fileList[i]->writePlugIn).c_str()) == FALSE ){
@@ -264,7 +248,7 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 	if( emptyFlag ){
 		OutputDebugString(L"CWriteTSFile::StartSave Err fileList 0\r\n");
 		CoUninitialize();
-		return 0;
+		return;
 	}
 	sys->outStartFlag = TRUE;
 	std::list<vector<BYTE>> data;
@@ -364,7 +348,6 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 	}
 
 	CoUninitialize();
-	return 0;
 }
 
 //録画中のファイルのファイルパスを取得する
@@ -373,11 +356,11 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 // subRecFlag		[OUT]サブ録画が発生したかどうか
 void CWriteTSFile::GetSaveFilePath(
 	wstring* filePath,
-	BOOL* subRecFlag
+	BOOL* subRecFlag_
 	)
 {
 	*filePath = this->mainSaveFilePath;
-	*subRecFlag = this->subRecFlag;
+	*subRecFlag_ = this->subRecFlag;
 }
 
 //録画中のファイルの出力サイズを取得する

@@ -2,6 +2,7 @@
 
 #include "DecodeUtil.h"
 #include "EpgDBUtil.h"
+#include "../../Common/ThreadUtil.h"
 
 class CEpgDataCap3Main
 {
@@ -134,7 +135,7 @@ public:
 		);
 
 protected:
-	CRITICAL_SECTION utilLock;
+	recursive_mutex_ utilLock;
 
 	CDecodeUtil decodeUtilClass;
 	CEpgDBUtil epgDBUtilClass;

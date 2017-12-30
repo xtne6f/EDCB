@@ -3,6 +3,9 @@
 #define ARIB8CHAR_DECODE_H_IMPLEMENT_TABLE
 #include "ARIB8CharDecode.h"
 
+//CP932に存在しない文字も使用する場合はこのマクロを定義する
+//#define ARIB8CHAR_USE_UNICODE
+
 CARIB8CharDecode::CARIB8CharDecode(void)
 {
 }
@@ -965,24 +968,30 @@ BOOL CARIB8CharDecode::ToCustomFont( const BYTE bFirst, const BYTE bSecond )
 {
 	unsigned short usSrc = (unsigned short)(bFirst<<8) | bSecond;
 
+	GAIJI_TABLE t;
 	if( 0x7521 <= usSrc && usSrc <= 0x757E ){
-		m_strDecode +=GaijiTbl2[usSrc-0x7521].strChar;
+		t = GaijiTbl2[usSrc - 0x7521];
 	}else if( 0x7621 <= usSrc && usSrc <= 0x764B ){
-		m_strDecode +=GaijiTbl2[usSrc-0x7621+94].strChar;
+		t = GaijiTbl2[usSrc - 0x7621 + 94];
 	}else if( 0x7A4D <= usSrc && usSrc <= 0x7A74 ){
-		m_strDecode +=GaijiTable[usSrc-0x7A4D].strChar;
+		t = GaijiTable[usSrc - 0x7A4D];
 	}else if(0x7C21 <= usSrc && usSrc <= 0x7C7B ){
-		m_strDecode +=GaijiTable[usSrc-0x7C21+40].strChar;
+		t = GaijiTable[usSrc - 0x7C21 + 40];
 	}else if(0x7D21 <= usSrc && usSrc <= 0x7D5F ){
-		m_strDecode +=GaijiTable[usSrc-0x7D21+131].strChar;
+		t = GaijiTable[usSrc - 0x7D21 + 131];
 	}else if(0x7D6E <= usSrc && usSrc <= 0x7D6F ){
-		m_strDecode +=GaijiTable[usSrc-0x7D6E+194].strChar;
+		t = GaijiTable[usSrc - 0x7D6E + 194];
 	}else if(0x7E21 <= usSrc && usSrc <= 0x7E7D ){
-		m_strDecode +=GaijiTable[usSrc-0x7E21+196].strChar;
+		t = GaijiTable[usSrc - 0x7E21 + 196];
 	}else{
-		m_strDecode +=L'・';
+		m_strDecode += L'・';
 		return FALSE;
 	}
+#ifdef ARIB8CHAR_USE_UNICODE
+	m_strDecode += t.strCharUnicode;
+#else
+	m_strDecode += t.strChar;
+#endif
 
 	return TRUE;
 }

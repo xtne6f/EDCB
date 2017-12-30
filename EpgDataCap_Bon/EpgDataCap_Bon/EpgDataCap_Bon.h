@@ -20,5 +20,3 @@ public:
 public:
 	BOOL InitInstance();
 };
-
-extern CEpgDataCap_BonApp theApp;

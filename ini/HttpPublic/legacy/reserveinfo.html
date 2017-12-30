@@ -1,13 +1,86 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+function Change(id,post)
+  local r=edcb.GetReserveData(id)
+  if r then
+    if mg.get_var(post,'start-y') then
+      r.startTime={
+        year=GetVarInt(post,'start-y',1900,3000),
+        month=GetVarInt(post,'start-m',1,12),
+        day=GetVarInt(post,'start-d',1,31),
+        hour=GetVarInt(post,'start-h',0,23),
+        min=GetVarInt(post,'start-i',0,59),
+        sec=GetVarInt(post,'start-s',0,59)
+      }
+      local endHour=GetVarInt(post,'end-h',0,23)
+      local endMin=GetVarInt(post,'end-i',0,59)
+      local endSec=GetVarInt(post,'end-s',0,59)
+      --正当な日時か検査
+      if r.startTime.year and r.startTime.month and r.startTime.day and
+         r.startTime.hour and r.startTime.min and r.startTime.sec and
+         os.time(r.startTime) and endHour and endMin and endSec
+      then
+        --プログラム予約化
+        r.eid=65535
+        r.durationSecond=(endHour-r.startTime.hour)*3600+(endMin-r.startTime.min)*60+endSec-r.startTime.sec
+        r.durationSecond=r.durationSecond+(r.durationSecond<0 and 24*3600 or 0)
+        return edcb.ChgReserveData(r)
+      end
+    else
+      local presetID=GetVarInt(post,'presetID',0,65534)
+      if presetID then
+        r.recSetting=nil
+        for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+          if v.id==presetID then
+            r.recSetting=v.recSetting
+            break
+          end
+        end
+      end
+      if r.recSetting then
+        local useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
+        r.recSetting={
+          batFilePath=r.recSetting.batFilePath,
+          recFolderList=r.recSetting.recFolderList,
+          partialRecFolder=r.recSetting.partialRecFolder,
+          recMode=GetVarInt(post,'recMode',0,5),
+          tuijyuuFlag=GetVarInt(post,'tuijyuuFlag')==1,
+          priority=GetVarInt(post,'priority',1,5),
+          pittariFlag=GetVarInt(post,'pittariFlag')==1,
+          suspendMode=GetVarInt(post,'suspendMode',0,4),
+          rebootFlag=GetVarInt(post,'rebootFlag')==1,
+          startMargin=useMargin and GetVarInt(post,'startMargin',-6*3600,6*3600),
+          endMargin=useMargin and GetVarInt(post,'endMargin',-6*3600,6*3600),
+          serviceMode=GetVarInt(post,'serviceMode')==1 and 0 or
+            1+16*(GetVarInt(post,'serviceMode_1',0,1) or 0)+32*(GetVarInt(post,'serviceMode_2',0,1) or 0),
+          continueRecFlag=GetVarInt(post,'continueRecFlag')==1,
+          tunerID=GetVarInt(post,'tunerID'),
+          partialRecFlag=GetVarInt(post,'partialRecFlag',0,1) or 0
+        }
+        if r.recSetting.recMode and
+           r.recSetting.priority and
+           r.recSetting.suspendMode and
+           (not useMargin or r.recSetting.startMargin and r.recSetting.endMargin) and
+           r.recSetting.tunerID
+        then
+          return edcb.ChgReserveData(r)
+        end
+      end
+    end
+  end
+  return false
+end
+
+vtag=GetVarInt(mg.request_info.query_string,'vtag') or 0
+
 ct=[=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML]=]..(vtag==0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>予約詳細 - EDCB</title>
 </head>
 <body>
 <h1>予約詳細</h1>
@@ -15,6 +88,18 @@ ct=[=[
 ]=]
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
+
+post=AssertPost()
+if post then
+  if mg.get_var(post,'addchg') then
+    ct=ct..'  <div id="result">'..(Change(id,post) and '変更しました' or '入力値不正')..'</div>\n'
+  elseif mg.get_var(post,'del') then
+    rdel=edcb.GetReserveData(id)
+    edcb.DelReserveData(id)
+    ct=ct..'  <div id="result">削除しました</div>\n'
+  end
+end
+
 recFilePath=edcb.GetRecFilePath(id)
 edcb.htmlEscape=15
 r=edcb.GetReserveData(id)
@@ -28,17 +113,20 @@ if r then
         ..string.format('TransportStreamID:%d(0x%04X)<br>', r.tsid, r.tsid)
         ..string.format('ServiceID:%d(0x%04X)<br>', r.sid, r.sid)
       )..'</dd>\n'
-    ..'    <dt>ファイル</dt><dd>\n'
+    ..'    <dt>ファイル →<a href="reserveinfo.html?id='..r.reserveID..(vtag==0 and '&amp;vtag=-1">Video' or '">DL')..'</a></dt><dd>\n'
   ref=recFilePath and NativeToDocumentPath(recFilePath)
   if ref then
     for i,ext in ipairs({'.mp4','.webm',''}) do
       ff=edcb.FindFile and edcb.FindFile(recFilePath..ext,1)
       if ff then
-        ct=ct..'<a href="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)..'</a>'
+        ct=ct..(vtag==i and '<video controls src="' or '<a href="')
+          ..(vtag~=0 and vtag~=i and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
+          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>')
         if ext=='' then
-          ct=ct..'\n[<a href="xcode.lua?0='..mg.url_encode(ref)..'">xcode.lua</a>'
-          for j=1,9 do
-            ct=ct..'\n<a href="xcode.lua?'..(j*10)..'='..mg.url_encode(ref)..'">'..j..'</a>'
+          for j=0,9 do
+            ct=ct..'\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
+              ..(vtag~=0 and vtag~=j+10 and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..(j+10) or 'xcode.lua?'..(j*10)..'='..mg.url_encode(ref))
+              ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>')
           end
           fsec,fsize=0,0
           f=edcb.io.open(recFilePath,'rb')
@@ -46,7 +134,9 @@ if r then
             fsec,fsize=GetDurationSec(f)
             f:close()
           end
-          ct=ct..'\n<a href="xcode.lua?99='..mg.url_encode(ref)..'">('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)</a>]<br>\n'
+          ct=ct..'\n'..(vtag==99 and '<br><video controls src="' or '<a href="')
+            ..(vtag~=0 and vtag~=99 and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag=99' or 'xcode.lua?99='..mg.url_encode(ref))
+            ..'">('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)'..(vtag==99 and '</video>' or '</a>')..']<br>\n'
         else
           ct=ct..' ('..math.floor(ff[1].size/1048576)..'M)<br>\n'
         end
@@ -54,13 +144,20 @@ if r then
     end
   end
   ct=ct..'<br></dd>\n'
-    ..'    <dt>プログラム予約'..(r.eid==65535 and '' or '化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
+    ..'    <dt>'..(r.eid==65535 and '<strong>プログラム予約</strong>' or 'プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
     ..'</dt><dd>\n'
-    ..'<form method="POST" action="reservechg.html?id='..r.reserveID
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
     ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
-    ..'予約日時: <input type="text" name="startDate" value="'..string.format('%d/%d/%d', r.startTime.year, r.startTime.month, r.startTime.day)
-    ..'"> <input type="text" name="startTime" value="'..string.format('%d:%d:%d', r.startTime.hour, r.startTime.min, r.startTime.sec)
-    ..'"> ～ <input type="text" name="endTime" value="'..string.format('%d:%d:%d', math.floor(dur/3600)%24, math.floor(dur/60)%60, dur%60)
+    ..'<input type="hidden" name="addchg" value="y">\n'
+    ..'予約日時: <input type="text" size="4" name="start-y" value="'..r.startTime.year
+    ..'">/<input type="text" size="2" name="start-m" value="'..r.startTime.month
+    ..'">/<input type="text" size="2" name="start-d" value="'..r.startTime.day
+    ..'">&emsp;\n<input type="text" size="2" name="start-h" value="'..r.startTime.hour
+    ..'">:<input type="text" size="2" name="start-i" value="'..r.startTime.min
+    ..'">:<input type="text" size="2" name="start-s" value="'..r.startTime.sec
+    ..'"> ～\n<input type="text" size="2" name="end-h" value="'..math.floor(dur/3600)%24
+    ..'">:<input type="text" size="2" name="end-i" value="'..math.floor(dur/60)%60
+    ..'">:<input type="text" size="2" name="end-s" value="'..dur%60
     ..'"><br>\n'
     ..'<input type="submit" value="変更"></div></form></dd>\n'
     ..'    <dt>プリセット</dt><dd>\n'
@@ -73,29 +170,32 @@ if r then
     if v.id==presetID then
       preset=true
       rs=v.recSetting
-      ct=ct..'<option value="'..v.id..'" selected="selected">'..v.name..'\n'
+      ct=ct..'<option value="'..v.id..'" selected>'..v.name..'\n'
     else
       ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
     end
   end
-  ct=ct..'<option value="65535"'..(preset and '' or ' selected="selected"')..'>予約時\n'
+  ct=ct..'<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
     ..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
     ..'    <dt>録画設定</dt><dd>\n'
-    ..'<form method="POST" action="reservechg.html?id='..r.reserveID
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
     ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="hidden" name="addchg" value="y">\n'
     ..RecSettingTemplate(rs)..'<input type="submit" value="変更"></div></form></dd>\n'
     ..'    <dt>-</dt><dd>\n'
-    ..'<form method="POST" action="reservedel.html?id='..r.reserveID..'"><div>\n'
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="hidden" name="del" value="y">\n'
     ..'<input type="submit" value="削除"></div></form></dd>\n'
     ..'  </dl>\n'
 end
+r=r or rdel
 
 ct=ct..[=[
 </div>
 <div id="footer">
-  <a href="reserve.html">予約一覧へ</a>
+  <a href="reserve.html">予約一覧</a> <a href="epg.html">番組表</a> <a href="epglist.html]=]..(r and '?id='..r.onid..'-'..r.tsid..'-'..r.sid..'#now' or '')..[=[">リスト番組表</a>
 </div>
 </body>
 </html>

@@ -1,7 +1,5 @@
 #include "stdafx.h"
 #include "WriteMain.h"
-#include <process.h>
-#include "../../Common/BlockLock.h"
 
 extern HINSTANCE g_instance;
 
@@ -10,7 +8,6 @@ CWriteMain::CWriteMain(void)
 	this->file = INVALID_HANDLE_VALUE;
 	this->writeBuffSize = 0;
 	this->teeFile = INVALID_HANDLE_VALUE;
-	this->teeThread = NULL;
 
 	WCHAR dllPath[MAX_PATH];
 	DWORD ret = GetModuleFileName(g_instance, dllPath, MAX_PATH);
@@ -25,14 +22,12 @@ CWriteMain::CWriteMain(void)
 			this->teeDelay = GetPrivateProfileInt(L"SET", L"TeeDelay", 0, iniPath.c_str());
 		}
 	}
-	InitializeCriticalSection(&this->wroteLock);
 }
 
 
 CWriteMain::~CWriteMain(void)
 {
 	Stop();
-	DeleteCriticalSection(&this->wroteLock);
 }
 
 BOOL CWriteMain::Start(
@@ -83,7 +78,7 @@ BOOL CWriteMain::Start(
 		this->teeFile = CreateFile(this->savePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 		if( this->teeFile != INVALID_HANDLE_VALUE ){
 			this->teeThreadStopFlag = FALSE;
-			this->teeThread = (HANDLE)_beginthreadex(NULL, 0, TeeThread, this, 0, NULL);
+			this->teeThread = thread_(TeeThread, this);
 		}
 	}
 
@@ -109,13 +104,9 @@ BOOL CWriteMain::Stop(
 		CloseHandle(this->file);
 		this->file = INVALID_HANDLE_VALUE;
 	}
-	if( this->teeThread != NULL ){
+	if( this->teeThread.joinable() ){
 		this->teeThreadStopFlag = TRUE;
-		if( WaitForSingleObject(this->teeThread, 8000) == WAIT_TIMEOUT ){
-			TerminateThread(this->teeThread, 0xffffffff);
-		}
-		CloseHandle(this->teeThread);
-		this->teeThread = NULL;
+		this->teeThread.join();
 	}
 	if( this->teeFile != INVALID_HANDLE_VALUE ){
 		CloseHandle(this->teeFile);
@@ -186,9 +177,8 @@ BOOL CWriteMain::Write(
 	return FALSE;
 }
 
-UINT WINAPI CWriteMain::TeeThread(LPVOID param)
+void CWriteMain::TeeThread(CWriteMain* sys)
 {
-	CWriteMain* sys = (CWriteMain*)param;
 	wstring cmd = sys->teeCmd;
 	Replace(cmd, L"$FilePath$", sys->savePath);
 	vector<WCHAR> cmdBuff(cmd.c_str(), cmd.c_str() + cmd.size() + 1);
@@ -253,5 +243,4 @@ UINT WINAPI CWriteMain::TeeThread(LPVOID param)
 			CloseHandle(writePipe);
 		}
 	}
-	return 0;
 }

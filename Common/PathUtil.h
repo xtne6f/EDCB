@@ -76,6 +76,8 @@ BOOL IsExt(const fs_path& filePath, const WCHAR* ext);
 void CheckFileName(wstring& fileName, BOOL noChkYen = FALSE);
 void ChkFolderPath(fs_path& path);
 
+// 存在しなければBOM付きの空ファイルを作成する
+void TouchFileAsUnicode(LPCWSTR path);
 // 再帰的にディレクトリを生成する
 BOOL UtilCreateDirectories(const fs_path& path);
 // フォルダパスから実際のドライブパスを取得

@@ -27,7 +27,7 @@ BOOL CSendUDP::StartUpload( vector<NW_SEND_INFO>* List )
 	for( int i=0; i<(int)List->size(); i++ ){
 		SOCKET_DATA Item;
 		string ipA, strPort;
-		WtoA((*List)[i].ipString, ipA);
+		WtoUTF8((*List)[i].ipString, ipA);
 		Format(strPort, "%d", (WORD)(*List)[i].port);
 		struct addrinfo hints = {};
 		hints.ai_flags = AI_NUMERICHOST;

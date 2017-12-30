@@ -13,13 +13,13 @@ ct=[=[
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>リスト番組表 - EDCB</title>
 </head>
 <body>
 <h1>リスト番組表</h1>
 ]=]
 
-onid,tsid,sid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d+)%-(%d+)%-(%d+)$')
+onid,tsid,sid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
 onid=tonumber(onid) or 0
 tsid=tonumber(tsid) or 0
 sid=tonumber(sid) or 0
@@ -89,26 +89,12 @@ else
 end
 
 table.insert(ctt, [=[
-<div class="aside">
-  <form method="POST" action="epgaction.html?epgcap=y">
-    <div>
-      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-      <input type="submit" value="EPG取得">
-    </div>
-  </form>
-  <form method="POST" action="epgaction.html?reload=y">
-    <div>
-      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-      <input type="submit" value="EPG再読み込み">
-    </div>
-  </form>
-</div>
 <div id="footer">
-  <a href="]=]..(sid==0 and 'index.html">メニューへ' or 'epglist.html">サービスリストへ')..[=[</a>
+  <a href="]=]..(sid==0 and 'index.html">メニュー' or 'epglist.html">サービスリスト')..[=[</a>
 </div>
 </body>
 </html>
 ]=])
 ct=table.concat(ctt)
-zl=Deflate(ct)
-mg.write(Response(200, 'text/html', 'utf-8', zl and #zl or #ct)..(zl and 'Content-Encoding: deflate\r\n' or '')..'\r\n', zl or ct)
+gz=Deflate(ct)
+mg.write(Response(200, 'text/html', 'utf-8', #(gz or ct))..(gz and 'Content-Encoding: gzip\r\n' or '')..'\r\n', gz or ct)

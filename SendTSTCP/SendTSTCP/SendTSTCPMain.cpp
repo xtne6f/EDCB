@@ -1,8 +1,5 @@
 #include "stdafx.h"
 #include "SendTSTCPMain.h"
-#include "../../Common/BlockLock.h"
-
-#include <process.h>
 
 //SendTSTCPプロトコルのヘッダの送信を抑制する既定のポート範囲
 #define SEND_TS_TCP_NOHEAD_PORT_MIN 22000
@@ -11,10 +8,6 @@
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
 	m_hStopSendEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	m_hSendThread = NULL;
-
-	InitializeCriticalSection(&m_sendLock);
-	InitializeCriticalSection(&m_buffLock);
 
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
@@ -25,9 +18,6 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 	UnInitialize();
 
 	CloseHandle(m_hStopSendEvent);
-
-	DeleteCriticalSection(&m_buffLock);
-	DeleteCriticalSection(&m_sendLock);
 
 	WSACleanup();
 }
@@ -61,7 +51,7 @@ DWORD CSendTSTCPMain::AddSendAddr(
 		return FALSE;
 	}
 	SEND_INFO Item;
-	WtoA(lpcwszIP, Item.strIP);
+	WtoUTF8(lpcwszIP, Item.strIP);
 	Item.dwPort = dwPort;
 	if( SEND_TS_TCP_NOHEAD_PORT_MIN <= dwPort && dwPort <= SEND_TS_TCP_NOHEAD_PORT_MAX ){
 		//上位ワードが1のときはヘッダの送信が抑制される
@@ -105,13 +95,12 @@ DWORD CSendTSTCPMain::ClearSendAddr(
 DWORD CSendTSTCPMain::StartSend(
 	)
 {
-	if( m_hSendThread != NULL ){
+	if( m_sendThread.joinable() ){
 		return FALSE;
 	}
 
 	ResetEvent(m_hStopSendEvent);
-	m_hSendThread = (HANDLE)_beginthreadex(NULL, 0, SendThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-	ResumeThread(m_hSendThread);
+	m_sendThread = thread_(SendThread, this);
 
 	return TRUE;
 }
@@ -121,14 +110,9 @@ DWORD CSendTSTCPMain::StartSend(
 DWORD CSendTSTCPMain::StopSend(
 	)
 {
-	if( m_hSendThread != NULL ){
+	if( m_sendThread.joinable() ){
 		::SetEvent(m_hStopSendEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(m_hSendThread, 5000) == WAIT_TIMEOUT ){
-			::TerminateThread(m_hSendThread, 0xffffffff);
-		}
-		CloseHandle(m_hSendThread);
-		m_hSendThread = NULL;
+		m_sendThread.join();
 	}
 
 	CBlockLock lock(&m_sendLock);
@@ -153,7 +137,7 @@ DWORD CSendTSTCPMain::AddSendData(
 	)
 {
 
-	if( m_hSendThread != NULL ){
+	if( m_sendThread.joinable() ){
 		CBlockLock lock(&m_buffLock);
 		m_TSBuff.push_back(vector<BYTE>());
 		m_TSBuff.back().reserve(sizeof(DWORD) * 2 + dwSize);
@@ -177,9 +161,8 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 	return TRUE;
 }
 
-UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
+void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 {
-	CSendTSTCPMain* pSys = (CSendTSTCPMain*)pParam;
 	DWORD dwWait = 0;
 	DWORD dwCount = 0;
 	DWORD dwCheckConnectTick = GetTickCount();
@@ -278,5 +261,4 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 			}
 		}
 	}
-	return 0;
 }

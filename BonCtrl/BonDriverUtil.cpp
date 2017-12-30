@@ -2,9 +2,7 @@
 #include "BonDriverUtil.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
-#include "../Common/BlockLock.h"
 #include "IBonDriver2.h"
-#include <process.h>
 
 enum {
 	WM_GET_TS_STREAM = WM_APP,
@@ -28,13 +26,11 @@ CBonDriverUtil::CInit::CInit()
 CBonDriverUtil::CBonDriverUtil(void)
 	: hwndDriver(NULL)
 {
-	InitializeCriticalSection(&this->utilLock);
 }
 
 CBonDriverUtil::~CBonDriverUtil(void)
 {
 	CloseBonDriver();
-	DeleteCriticalSection(&this->utilLock);
 }
 
 void CBonDriverUtil::SetBonDriverFolder(LPCWSTR bonDriverFolderPath)
@@ -72,16 +68,14 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFile, void (*recvFunc_)(void
 	if( this->loadDllFolder.empty() == false && this->loadDllFileName.empty() == false ){
 		this->recvFunc = recvFunc_;
 		this->recvParam = recvParam_;
-		this->hDriverThread = (HANDLE)_beginthreadex(NULL, 0, DriverThread, this, 0, NULL);
-		if( this->hDriverThread ){
-			//Open処理が完了するまで待つ
-			while( WaitForSingleObject(this->hDriverThread, 10) == WAIT_TIMEOUT && this->hwndDriver == NULL );
-			if( this->hwndDriver ){
-				Sleep(openWait);
-				return true;
-			}
-			CloseHandle(this->hDriverThread);
+		this->driverThread = thread_(DriverThread, this);
+		//Open処理が完了するまで待つ
+		while( WaitForSingleObject(this->driverThread.native_handle(), 10) == WAIT_TIMEOUT && this->hwndDriver == NULL );
+		if( this->hwndDriver ){
+			Sleep(openWait);
+			return true;
 		}
+		this->driverThread.join();
 	}
 	return false;
 }
@@ -91,18 +85,16 @@ void CBonDriverUtil::CloseBonDriver()
 	CBlockLock lock(&this->utilLock);
 	if( this->hwndDriver ){
 		PostMessage(this->hwndDriver, WM_CLOSE, 0, 0);
-		WaitForSingleObject(this->hDriverThread, INFINITE);
-		CloseHandle(this->hDriverThread);
+		this->driverThread.join();
 		this->hwndDriver = NULL;
 	}
 }
 
-UINT WINAPI CBonDriverUtil::DriverThread(LPVOID param)
+void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 {
 	//BonDriverがCOMを利用するかもしれないため
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
-	CBonDriverUtil* sys = (CBonDriverUtil*)param;
 	IBonDriver* bonIF = NULL;
 	sys->bon2IF = NULL;
 	HMODULE hModule = LoadLibrary(fs_path(sys->loadDllFolder).append(sys->loadDllFileName).c_str());
@@ -155,7 +147,7 @@ UINT WINAPI CBonDriverUtil::DriverThread(LPVOID param)
 			FreeLibrary(hModule);
 		}
 		CoUninitialize();
-		return 0;
+		return;
 	}
 	//割り込み遅延への耐性はBonDriverのバッファ能力に依存するので、相対優先順位を上げておく
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
@@ -170,7 +162,6 @@ UINT WINAPI CBonDriverUtil::DriverThread(LPVOID param)
 	FreeLibrary(hModule);
 
 	CoUninitialize();
-	return 0;
 }
 
 LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

@@ -60,5 +60,4 @@ http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
   v4.5以降にClientプロファイルは存在しないので、<TargetFrameworkProfile>行は削除する
 
 ・プラットフォームツールセット:LLVM-vs2014( http://releases.llvm.org/ )に対応している
-  ソースコードのUTF-8変換が必要。リポジトリルートでPowerShell-v5を開いて以下を実行(DefaultとUTF8を入れかえると逆変換)
-  > ls *.h,*.cpp -Recurse -Exclude resource.h,targetver.h|foreach{$a=cat -Raw -Encoding Default $_;$a|Out-File -NoNewline -Encoding UTF8 $_}
+  ソースコードのUTF-8変換が必要。ConvToUTF8.batで変換できる(ConvToSJIS.batでShift_JISに逆変換)

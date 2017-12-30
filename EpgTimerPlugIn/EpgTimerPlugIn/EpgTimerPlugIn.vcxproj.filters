@@ -74,7 +74,7 @@
     <ClInclude Include="..\..\Common\Common.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\BlockLock.h">
+    <ClInclude Include="..\..\Common\ThreadUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
   </ItemGroup>

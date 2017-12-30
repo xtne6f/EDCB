@@ -4,6 +4,7 @@
 #include "../BonCtrl/SendTCP.h"
 #include "../BonCtrl/CreatePATPacket.h"
 #include "TSPacketUtil.h"
+#include "ThreadUtil.h"
 
 class CTimeShiftUtil
 {
@@ -53,8 +54,8 @@ public:
 	void SetFilePos(__int64 filePos);
 
 protected:
-	CRITICAL_SECTION utilLock;
-	CRITICAL_SECTION ioLock;
+	recursive_mutex_ utilLock;
+	recursive_mutex_ ioLock;
 	CSendUDP sendUdp;
 	CSendTCP sendTcp;
 	wstring sendUdpIP;
@@ -71,12 +72,12 @@ protected:
 	int seekJitter;
 	__int64 currentFilePos;
 
-	HANDLE readThread;
+	thread_ readThread;
 	BOOL readStopFlag;
 	HANDLE readFile;
 	HANDLE seekFile;
 protected:
-	static UINT WINAPI ReadThread(LPVOID param);
+	static void ReadThread(CTimeShiftUtil* sys);
 	__int64 GetAvailableFileSize() const;
 };
 

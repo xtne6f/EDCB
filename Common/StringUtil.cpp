@@ -127,7 +127,7 @@ void Replace(string& strBuff, const string& strOld, const string& strNew)
 
 void Replace(wstring& strBuff, const wstring& strOld, const wstring& strNew)
 {
-	string::size_type Pos = 0;
+	wstring::size_type Pos = 0;
 	wstring* strWork = &strBuff;
 	wstring strForAlias;
 
@@ -135,7 +135,7 @@ void Replace(wstring& strBuff, const wstring& strOld, const wstring& strNew)
 		strForAlias = strBuff;
 		strWork = &strForAlias;
 	}
-	while ((Pos = strWork->find(strOld,Pos)) != string::npos)
+	while ((Pos = strWork->find(strOld,Pos)) != wstring::npos)
 	{
 		strWork->replace(Pos,strOld.size(),strNew);
 		Pos += strNew.size();
@@ -212,7 +212,7 @@ BOOL Separate(const wstring& strIn, const WCHAR *sep, wstring& strLeft, wstring&
 {
 	wstring::size_type Pos = strIn.find(sep);
 	wstring strL(strIn, 0, Pos);
-	if( Pos == string::npos ){
+	if( Pos == wstring::npos ){
 		strRight = L"";
 		strLeft = strL;
 		return FALSE;

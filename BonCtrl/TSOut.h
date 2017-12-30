@@ -8,6 +8,7 @@
 #include "../Common/ErrDef.h"
 #include "../Common/EpgDataCap3Util.h"
 #include "../Common/TSPacketUtil.h"
+#include "../Common/ThreadUtil.h"
 
 #include "BonCtrlDef.h"
 #include "ScrambleDecoderUtil.h"
@@ -15,6 +16,7 @@
 #include "OneServiceUtil.h"
 #include "PMTUtil.h"
 #include "CATUtil.h"
+#include <functional>
 
 class CTSOut
 {
@@ -65,7 +67,7 @@ public:
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	BOOL StartSaveEPG(
-		const wstring& epgFilePath
+		const wstring& epgFilePath_
 		);
 
 	//EPGデータの保存を終了する
@@ -103,11 +105,9 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// serviceListSize			[OUT]serviceListの個数
-	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
+	// funcGetList		[IN]戻り値がNO_ERRのときサービス情報の個数とそのリストを引数として呼び出される関数
 	DWORD GetServiceListActual(
-		DWORD* serviceListSize,
-		SERVICE_INFO** serviceList
+		const std::function<void(DWORD, SERVICE_INFO*)>& funcGetList
 		);
 
 	//TSストリーム制御用コントロールを作成する
@@ -191,8 +191,8 @@ public:
 		WORD pittariSID,
 		WORD pittariEventID,
 		ULONGLONG createSize,
-		const vector<REC_FILE_SET_INFO>* saveFolder,
-		const vector<wstring>* saveFolderSub,
+		const vector<REC_FILE_SET_INFO>& saveFolder,
+		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
 	);
 
@@ -330,7 +330,9 @@ public:
 		);
 
 protected:
-	CRITICAL_SECTION objLock;
+	//objLock->epgUtilLockの順にロックする
+	recursive_mutex_ objLock;
+	recursive_mutex_ epgUtilLock;
 
 	CEpgDataCap3Util epgUtil;
 	CScrambleDecoderUtil decodeUtil;

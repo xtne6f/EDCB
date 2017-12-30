@@ -158,11 +158,11 @@
     <None Include="Write_PlugIn.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Common\BlockLock.h" />
     <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\InstanceManager.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
+    <ClInclude Include="..\..\Common\ThreadUtil.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SettingDlg.h" />
     <ClInclude Include="stdafx.h" />

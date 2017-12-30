@@ -17,8 +17,6 @@ public:
 	INT_PTR DoModal();
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 
-
-	void UnInit();
 	void SetInitBon(LPCWSTR bonFile);
 	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
 	void SetIniNW(BOOL networkFlag){ iniNetwork = networkFlag; };

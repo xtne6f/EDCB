@@ -31,6 +31,8 @@ BOOL CSetDlgEpg::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 BOOL CSetDlgEpg::OnInitDialog()
 {
 	// TODO:  Ç±Ç±Ç…èâä˙âªÇí«â¡ÇµÇƒÇ≠ÇæÇ≥Ç¢
+	fs_path commonIniPath = GetCommonIniPath();
+	fs_path appIniPath = GetModuleIniPath();
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BS), GetPrivateProfileInt( L"SET", L"BSBasicOnly", 1, commonIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_CS1), GetPrivateProfileInt( L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_CS2), GetPrivateProfileInt( L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str() ) );
@@ -72,6 +74,8 @@ void CSetDlgEpg::SaveIni(void)
 	if( m_hWnd == NULL ){
 		return;
 	}
+	fs_path commonIniPath = GetCommonIniPath();
+	fs_path appIniPath = GetModuleIniPath();
 
 	WritePrivateProfileInt( L"SET", L"BSBasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BS)), commonIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"CS1BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_CS1)), commonIniPath.c_str() );

@@ -1,40 +1,159 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+function AddOrChange(dataID,post)
+  local aa={dataID=dataID}
+  local presetID=GetVarInt(post,'presetID',0,65534)
+  if presetID then
+    for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+      if v.id==presetID then
+        aa.recSetting=v.recSetting
+        break
+      end
+    end
+  elseif dataID~=0 then
+    for i,v in ipairs(edcb.EnumAutoAdd()) do
+      if v.dataID==dataID then
+        aa.recSetting=v.recSetting
+        break
+      end
+    end
+  end
+  if aa.recSetting then
+    local useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
+    aa.recSetting={
+      batFilePath=aa.recSetting.batFilePath,
+      recFolderList=aa.recSetting.recFolderList,
+      partialRecFolder=aa.recSetting.partialRecFolder,
+      recMode=GetVarInt(post,'recMode',0,5),
+      tuijyuuFlag=GetVarInt(post,'tuijyuuFlag')==1,
+      priority=GetVarInt(post,'priority',1,5),
+      pittariFlag=GetVarInt(post,'pittariFlag')==1,
+      suspendMode=GetVarInt(post,'suspendMode',0,4),
+      rebootFlag=GetVarInt(post,'rebootFlag')==1,
+      startMargin=useMargin and GetVarInt(post,'startMargin',-6*3600,6*3600),
+      endMargin=useMargin and GetVarInt(post,'endMargin',-6*3600,6*3600),
+      serviceMode=GetVarInt(post,'serviceMode')==1 and 0 or
+        1+16*(GetVarInt(post,'serviceMode_1',0,1) or 0)+32*(GetVarInt(post,'serviceMode_2',0,1) or 0),
+      continueRecFlag=GetVarInt(post,'continueRecFlag')==1,
+      tunerID=GetVarInt(post,'tunerID'),
+      partialRecFlag=GetVarInt(post,'partialRecFlag',0,1) or 0
+    }
+    if aa.recSetting.recMode and
+       aa.recSetting.priority and
+       aa.recSetting.suspendMode and
+       (not useMargin or aa.recSetting.startMargin and aa.recSetting.endMargin) and
+       aa.recSetting.tunerID
+    then
+      aa.searchInfo={
+        --制御文字は消す
+        andKey=(GetVarInt(post,'disableFlag')==1 and '^!{999}' or '')
+          ..(GetVarInt(post,'caseFlag')==1 and 'C!{999}' or '')
+          ..(mg.get_var(post,'andKey') or ''):gsub('%c',''),
+        notKey=(mg.get_var(post,'notKey') or ''):gsub('%c',''),
+        regExpFlag=GetVarInt(post,'regExpFlag')==1,
+        titleOnlyFlag=GetVarInt(post,'titleOnlyFlag')==1,
+        aimaiFlag=GetVarInt(post,'aimaiFlag')==1,
+        notContetFlag=GetVarInt(post,'notContetFlag')==1,
+        notDateFlag=GetVarInt(post,'notDateFlag')==1,
+        freeCAFlag=GetVarInt(post,'freeCAFlag',0,2) or 0,
+        chkRecEnd=GetVarInt(post,'chkRecEnd')==1,
+        chkRecDay=GetVarInt(post,'chkRecDay') or 0,
+        chkRecNoService=GetVarInt(post,'chkRecNoService')==1,
+        chkDurationMin=GetVarInt(post,'chkDurationMin') or 0,
+        chkDurationMax=GetVarInt(post,'chkDurationMax') or 0
+      }
+      aa.searchInfo.contentList={}
+      for i=0,10000 do
+        local v=GetVarInt(post,'contentList',0,65535,i)
+        if not v then break end
+        table.insert(aa.searchInfo.contentList,{content_nibble=v})
+      end
+      aa.searchInfo.serviceList={}
+      for i=0,10000 do
+        local v=mg.get_var(post,'serviceList',i)
+        if not v then break end
+        local m={v:match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')}
+        if #m==3 then
+          table.insert(aa.searchInfo.serviceList,{onid=0+m[1],tsid=0+m[2],sid=0+m[3]})
+        end
+      end
+      aa.searchInfo.dateList={}
+      for v in (mg.get_var(post,'dateList') or ''):gmatch('[^,]+') do
+        local m={v:match('^ *([a-z][a-z])[a-z](%d?%d):(%d?%d)%-([a-z][a-z])[a-z](%d?%d):(%d?%d) *$')}
+        if #m==6 then
+          local dateInfo={
+            startDayOfWeek=({su=0,mo=1,tu=2,we=3,th=4,fr=5,sa=6})[m[1]],
+            startHour=0+m[2],
+            startMin=0+m[3],
+            endDayOfWeek=({su=0,mo=1,tu=2,we=3,th=4,fr=5,sa=6})[m[4]],
+            endHour=0+m[5],
+            endMin=0+m[6]
+          }
+          if dateInfo.startDayOfWeek and dateInfo.startHour<24 and dateInfo.startMin<60 and
+             dateInfo.endDayOfWeek and dateInfo.endHour<24 and dateInfo.endMin<60 then
+            table.insert(aa.searchInfo.dateList,dateInfo)
+          end
+        end
+      end
+      return edcb.AddOrChgAutoAdd(aa)
+    end
+  end
+  return false
+end
+
 ct=[=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>EPG予約 - EDCB</title>
 </head>
 <body>
 ]=]
 
-edcb.htmlEscape=15
 aa={dataID=GetVarInt(mg.request_info.query_string,'id') or 0}
 if aa.dataID==0 then
   ct=ct..'<h1>EPG予約 新規条件追加</h1>\n<div id="main">\n'
-  aa.searchInfo={
-    andKey='',
-    notKey='',
-    regExpFlag=false,
-    titleOnlyFlag=false,
-    aimaiFlag=false,
-    notContetFlag=false,
-    freeCAFlag=0,
-    chkRecEnd=false,
-    chkRecDay=6,
-    chkRecNoService=false,
-    chkDurationMin=0,
-    chkDurationMax=0,
-    contentList={},
-    dateList={},
-    serviceList={}
-  }
+  post=AssertPost()
+  if post then
+    if mg.get_var(post,'addchg') then
+      ct=ct..'  <div id="result">'..(AddOrChange(0,post) and '追加しました' or '入力値不正')..'</div>\n'
+    end
+  else
+    aa.searchInfo={
+      andKey='',
+      notKey='',
+      regExpFlag=false,
+      titleOnlyFlag=false,
+      aimaiFlag=false,
+      notContetFlag=false,
+      notDateFlag=false,
+      freeCAFlag=0,
+      chkRecEnd=false,
+      chkRecDay=6,
+      chkRecNoService=false,
+      chkDurationMin=0,
+      chkDurationMax=0,
+      contentList={},
+      dateList={},
+      serviceList={}
+    }
+  end
+  edcb.htmlEscape=15
 else
   ct=ct..'<h1>EPG予約 条件変更</h1>\n<div id="main">\n'
+  post=AssertPost()
+  if post then
+    if mg.get_var(post,'addchg') then
+      ct=ct..'  <div id="result">'..(AddOrChange(aa.dataID,post) and '変更しました' or '入力値不正')..'</div>\n'
+    elseif mg.get_var(post,'del') then
+      edcb.DelAutoAdd(aa.dataID)
+      ct=ct..'  <div id="result">削除しました</div>\n'
+    end
+  end
+  edcb.htmlEscape=15
   for i,v in ipairs(edcb.EnumAutoAdd()) do
     if v.dataID==aa.dataID then
       aa=v
@@ -42,6 +161,7 @@ else
     end
   end
 end
+
 if aa.searchInfo then
   si=aa.searchInfo
   ct=ct..'  <dl>\n'
@@ -58,34 +178,42 @@ if aa.searchInfo then
     if v.id==presetID then
       preset=true
       rs=v.recSetting
-      ct=ct..'<option value="'..v.id..'" selected="selected">'..v.name..'\n'
+      ct=ct..'<option value="'..v.id..'" selected>'..v.name..'\n'
     else
       rs=rs or v.recSetting
       ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
     end
   end
   if aa.dataID~=0 then
-    ct=ct..'<option value="65535"'..(preset and '' or ' selected="selected"')..'>予約時\n'
+    ct=ct..'<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
   end
+  --無効
+  disAndKey=si.andKey:match('^^!{999}(.*)')
+  --大小文字区別
+  caseAndKey=(disAndKey or si.andKey):match('^C!{999}(.*)')
   ct=ct..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
     ..'    <dt>条件</dt><dd>\n'
-    ..'<form method="POST" action="autoaddepgaddchgkey.html?id='..aa.dataID..'">\n'
+    ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'">\n'
     ..'<div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
-    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'"></div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="hidden" name="addchg" value="y"></div>\n'
     ..'<div class="section"><h2>検索条件</h2>\n'
-    ..'検索キーワード<input type="text" name="andKey" value="'..si.andKey..'" size="25"><br>\n'
-    ..'NOTキーワード<input type="text" name="notKey" value="'..si.notKey..'" size="25"><br>\n'
-    ..'<input type="checkbox" name="regExpFlag" value="1"'..(si.regExpFlag and ' checked="checked"' or '')..'>正規表現\n'
-    ..'<input type="checkbox" name="aimaiFlag" value="1"'..(si.aimaiFlag and ' checked="checked"' or '')..'>あいまい検索モード\n'
-    ..'<input type="checkbox" name="titleOnlyFlag" value="1"'..(si.titleOnlyFlag and ' checked="checked"' or '')..'>番組名のみ検索対象にする<br><br>\n'
-    ..'ジャンル絞り込み<br><select name="contentList" multiple size="5">\n'
+    ..'検索キーワード<br><input type="text" name="andKey" value="'..(caseAndKey or disAndKey or si.andKey)..'" style="width:95%"><br>\n'
+    ..'NOTキーワード<br><input type="text" name="notKey" value="'..si.notKey..'" style="width:95%"><br>\n'
+    ..'<input type="checkbox" name="regExpFlag" value="1"'..(si.regExpFlag and ' checked' or '')..'>正規表現モード&emsp;\n'
+    ..'<input type="checkbox" name="aimaiFlag" value="1"'..(si.aimaiFlag and ' checked' or '')..'>あいまい検索モード<br>\n'
+    ..'<input type="checkbox" name="titleOnlyFlag" value="1"'..(si.titleOnlyFlag and ' checked' or '')..'>番組名のみ検索対象にする<br>\n'
+    ..'<input type="checkbox" name="caseFlag" value="1"'..(caseAndKey and ' checked' or '')..'>大小文字区別<br>\n'
+    ..'<input type="checkbox" name="disableFlag" value="1"'..(disAndKey and ' checked' or '')..'>自動登録を無効にする<br><br>\n'
+    ..'ジャンル絞り込み（Ctrl+複数選択） <input type="checkbox" name="notContetFlag" value="1"'..(si.notContetFlag and ' checked' or '')..'>NOT扱い<br>\n'
+    ..'<select name="contentList" multiple size="5">\n'
   for _i,i in ipairs({0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,15}) do
     nibble1=edcb.GetGenreName(i*256+255)
     if nibble1~='' then
       ct=ct..'<option value="'..(i*256+255)..'"'
       for j,v in ipairs(si.contentList) do
         if v.content_nibble==i*256+255 then
-          ct=ct..' selected="selected"'
+          ct=ct..' selected'
           break
         end
       end
@@ -96,7 +224,7 @@ if aa.searchInfo then
           ct=ct..'<option value="'..(i*256+j)..'"'
           for k,v in ipairs(si.contentList) do
             if v.content_nibble==i*256+j then
-              ct=ct..' selected="selected"'
+              ct=ct..' selected'
               break
             end
           end
@@ -105,45 +233,45 @@ if aa.searchInfo then
       end
     end
   end
-  ct=ct..'</select><br>\n'
-    ..'<input type="checkbox" name="notContetFlag" value="1"'..(si.notContetFlag and ' checked="checked"' or '')..'>NOT扱い<br><br>\n'
-    ..'サービス絞り込み<br><select name="serviceList" multiple size="5">\n'
+  ct=ct..'</select><br><br>\n'
+    ..'サービス絞り込み（Ctrl+複数選択）<br><select name="serviceList" multiple size="5">\n'
   for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
     ct=ct..'<option value="'..v.onid..'-'..v.tsid..'-'..v.sid..'"'
     for j,w in ipairs(si.serviceList) do
       if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
-        ct=ct..' selected="selected"'
+        ct=ct..' selected'
         break
       end
     end
     ct=ct..'>('..NetworkType(v.onid)..') '..v.serviceName..'\n'
   end
-  ct=ct..'</select><br><br><br>\n'
-    ..'時間絞り込み<input type="text" name="dateList" value="'
+  ct=ct..'</select><br><br>\n'
+    ..'時間絞り込み <input type="checkbox" name="notDateFlag" value="1"'..(si.notDateFlag and ' checked' or '')..'>NOT扱い<br>\n'
+    ..'<input type="text" name="dateList" value="'
   for i,v in ipairs(si.dateList) do
-    ct=ct..(i==1 and '' or ',')
-      ..({'日','月','火','水','木','金','土',})[v.startDayOfWeek%7+1]..'-'..v.startHour..':'..v.startMin..'-'
-      ..({'日','月','火','水','木','金','土',})[v.endDayOfWeek%7+1]..'-'..v.endHour..':'..v.endMin
+    ct=ct..(i==1 and '' or ', ')
+      ..({'sun','mon','tue','wed','thu','fri','sat'})[v.startDayOfWeek%7+1]..v.startHour..':'..v.startMin..'-'
+      ..({'sun','mon','tue','wed','thu','fri','sat'})[v.endDayOfWeek%7+1]..v.endHour..':'..v.endMin
   end
-  ct=ct..'" size="25"><br>\n書式：[日～土]-HH:MM-[日～土]-HH:MM, （例：日-23:00-月-5:00,水-3:00-水-5:00）<br><br><br>\n'
+  ct=ct..'" style="width:95%"><br>\n書式: (sun|mon|tue|wed|thu|fri|sat)H:M-(...)H:M, （例: sun23:0-mon5:0, wed3:0-wed5:0）<br><br>\n'
     ..'スクランブル放送:\n<select name="freeCAFlag">\n'
-    ..'<option value="0"'..(si.freeCAFlag==0 and ' selected="selected"' or '')..'>無料、有料番組を対象とする'
-    ..'<option value="1"'..(si.freeCAFlag==1 and ' selected="selected"' or '')..'>無料番組を対象とする'
-    ..'<option value="2"'..(si.freeCAFlag==2 and ' selected="selected"' or '')..'>有料番組を対象とする'
-    ..'</select><br><br>\n'
+    ..'<option value="0"'..(si.freeCAFlag==0 and ' selected' or '')..'>無料、有料番組を対象とする'
+    ..'<option value="1"'..(si.freeCAFlag==1 and ' selected' or '')..'>無料番組を対象とする'
+    ..'<option value="2"'..(si.freeCAFlag==2 and ' selected' or '')..'>有料番組を対象とする'
+    ..'</select><br>\n'
   ct=ct..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
-    ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下<br>\n'
-    ..'※それぞれ0分で絞り込み無し<br><br>\n'
-  ct=ct..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked="checked"' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
-    ..'<input type="checkbox" name="chkRecNoService" value="1"'..(si.chkRecNoService and ' checked="checked"' or '')..'>全てのサービスで無効にする<br>\n'
-    ..'確認対象期間<input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
+    ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下（0で無制限）<br><br>\n'
+  ct=ct..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
+    ..'&emsp;<input type="checkbox" name="chkRecNoService" value="1"'..(si.chkRecNoService and ' checked' or '')..'>全てのサービスで無効にする<br>\n'
+    ..'&emsp;確認対象期間 <input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
     ..'</div><div class="section"><h2>録画設定</h2>\n'..RecSettingTemplate(rs)..'</div>\n'
     ..'<div><input type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'"></div></form></dd>\n'
 
   if aa.dataID~=0 then
     ct=ct..'    <dt>-</dt><dd>\n'
-      ..'<form method="POST" action="autoaddepgdelkey.html?id='..aa.dataID..'"><div>\n'
+      ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'"><div>\n'
       ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+      ..'<input type="hidden" name="del" value="y">\n'
       ..'<input type="submit" value="削除"></div></form></dd>\n'
   end
   ct=ct..'  </dl>\n'
@@ -152,7 +280,7 @@ end
 ct=ct..[=[
 </div>
 <div id="footer">
-  <a href="autoaddepg.html">EPG予約一覧へ</a>
+  <a href="autoaddepg.html">EPG予約一覧</a>
 </div>
 </body>
 </html>

@@ -6,7 +6,6 @@
 
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/BlockLock.h"
 
 #define WM_INVOKE_CTRL_CMD	(CStreamCtrlDlg::WM_CUSTOM + 0)
 #define WM_TT_SET_CTRL		(CStreamCtrlDlg::WM_CUSTOM + 1)
@@ -26,12 +25,6 @@ CEpgTimerPlugIn::CEpgTimerPlugIn()
 	this->nwModeCurrentCtrlID = 0;
 	this->fullScreen = FALSE;
 	this->showNormal = TRUE;
-	InitializeCriticalSection(&this->cmdLock);
-}
-
-CEpgTimerPlugIn::~CEpgTimerPlugIn()
-{
-	DeleteCriticalSection(&this->cmdLock);
 }
 
 // ƒvƒ‰ƒOƒCƒ“‚Ìî•ñ‚ð•Ô‚·

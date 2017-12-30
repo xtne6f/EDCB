@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "PathUtil.h"
+#include <stdio.h>
 
 namespace filesystem_
 {
@@ -342,6 +343,20 @@ void ChkFolderPath(fs_path& path)
 		// 一時的に下層を作って上がる
 		// TODO: remove_filename()の末尾区切りについて標準の仕様が揺れている。状況によってはparent_path()に変更すること
 		path.concat(L"\\a").remove_filename();
+	}
+}
+
+void TouchFileAsUnicode(LPCWSTR path)
+{
+	if( GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES ){
+		FILE* fp;
+		if( _wfopen_s(&fp, path, L"abN") == 0 && fp ){
+			_fseeki64(fp, 0, SEEK_END);
+			if( _ftelli64(fp) == 0 ){
+				fputwc(L'\xFEFF', fp);
+			}
+			fclose(fp);
+		}
 	}
 }
 

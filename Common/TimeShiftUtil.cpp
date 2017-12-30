@@ -1,14 +1,8 @@
 #include "stdafx.h"
 #include "TimeShiftUtil.h"
-#include "../../Common/BlockLock.h"
-#include <process.h>
 
 CTimeShiftUtil::CTimeShiftUtil(void)
 {
-	InitializeCriticalSection(&this->utilLock);
-	InitializeCriticalSection(&this->ioLock);
-
-    this->readThread = NULL;
 	this->readFile = INVALID_HANDLE_VALUE;
 	this->seekFile = INVALID_HANDLE_VALUE;
 
@@ -25,9 +19,6 @@ CTimeShiftUtil::~CTimeShiftUtil(void)
 
 	NWPLAY_PLAY_INFO val = {};
 	Send(&val);
-
-	DeleteCriticalSection(&this->ioLock);
-	DeleteCriticalSection(&this->utilLock);
 }
 
 BOOL CTimeShiftUtil::Send(
@@ -140,10 +131,10 @@ BOOL CTimeShiftUtil::StartTimeShift()
 	if( this->filePath.size() == 0 ){
 		return FALSE;
 	}else{
-		if( this->readThread == NULL ){
+		if( this->readThread.joinable() == false ){
 			//受信スレッド起動
 			this->readStopFlag = FALSE;
-			this->readThread = (HANDLE)_beginthreadex(NULL, 0, ReadThread, this, 0, NULL);
+			this->readThread = thread_(ReadThread, this);
 		}
 	}
 
@@ -154,14 +145,9 @@ BOOL CTimeShiftUtil::StopTimeShift()
 {
 	CBlockLock lock(&this->utilLock);
 
-	if( this->readThread != NULL ){
+	if( this->readThread.joinable() ){
 		this->readStopFlag = TRUE;
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->readThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->readThread, 0xffffffff);
-		}
-		CloseHandle(this->readThread);
-		this->readThread = NULL;
+		this->readThread.join();
 	}
 	if( this->seekFile != INVALID_HANDLE_VALUE ){
 		CloseHandle(this->seekFile);
@@ -174,9 +160,8 @@ BOOL CTimeShiftUtil::StopTimeShift()
 	return TRUE;
 }
 
-UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
+void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 {
-	CTimeShiftUtil* sys = (CTimeShiftUtil*)param;
 	BYTE buff[188*256];
 	CPacketInit packetInit;
 
@@ -185,14 +170,14 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 		sys->readFile = CreateFile(sys->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
 		                           NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 		if( sys->readFile == INVALID_HANDLE_VALUE ){
-			return FALSE;
+			return;
 		}
 		sys->seekFile = CreateFile(sys->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
 		                           NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if( sys->seekFile == INVALID_HANDLE_VALUE ){
 			CloseHandle(sys->readFile);
 			sys->readFile = INVALID_HANDLE_VALUE;
-			return FALSE;
+			return;
 		}
 	}
 
@@ -316,7 +301,7 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 	sys->readFile = INVALID_HANDLE_VALUE;
 
 	if( sys->readStopFlag == FALSE ){
-		return 0;
+		return;
 	}
 	//無効PAT送って次回送信時にリセットされるようにする
 	BYTE endBuff[188*512];
@@ -342,8 +327,6 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 	if( sys->sendTcpIP.empty() == false ){
 		sys->sendTcp.SendData(endBuff, 188*512);
 	}
-
-	return 0;
 }
 
 static BOOL IsDataAvailable(HANDLE file, __int64 pos, CPacketInit* packetInit)

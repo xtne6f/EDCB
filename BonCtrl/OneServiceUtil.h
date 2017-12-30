@@ -3,7 +3,6 @@
 #include "../Common/ErrDef.h"
 #include "../Common/TSPacketUtil.h"
 #include "../Common/StringUtil.h"
-#include "../Common/EpgDataCap3Util.h"
 
 #include "BonCtrlDef.h"
 #include "SendUDP.h"
@@ -14,6 +13,7 @@
 #include "CreatePMTPacket.h"
 #include "CreatePATPacket.h"
 #include "DropCount.h"
+#include <functional>
 
 class COneServiceUtil
 {
@@ -21,15 +21,11 @@ public:
 	COneServiceUtil(void);
 	~COneServiceUtil(void);
 
-	void SetEpgUtil(
-		CEpgDataCap3Util* epgUtil
-		);
-
 	//処理対象ServiceIDを設定
 	//引数：
 	// SID			[IN]ServiceID。0xFFFFで全サービス対象。
 	void SetSID(
-		WORD SID
+		WORD SID_
 	);
 
 	//設定されてる処理対象のServiceIDを取得
@@ -61,14 +57,16 @@ public:
 	//引数：
 	// data		[IN]TSデータ
 	// size		[IN]dataのサイズ
+	// funcGetPresent	[IN]EPGの現在番組IDを調べる関数
 	BOOL AddTSBuff(
 		BYTE* data,
-		DWORD size
+		DWORD size,
+		const std::function<int(WORD, WORD, WORD)>& funcGetPresent
 		);
 
 	void SetPmtPID(
 		WORD TSID,
-		WORD pmtPID
+		WORD pmtPID_
 		);
 
 	void SetEmmPID(
@@ -93,13 +91,13 @@ public:
 		const wstring& fileName,
 		BOOL overWriteFlag,
 		BOOL pittariFlag,
-		WORD pittariONID,
-		WORD pittariTSID,
-		WORD pittariSID,
-		WORD pittariEventID,
+		WORD pittariONID_,
+		WORD pittariTSID_,
+		WORD pittariSID_,
+		WORD pittariEventID_,
 		ULONGLONG createSize,
-		const vector<REC_FILE_SET_INFO>* saveFolder,
-		const vector<wstring>* saveFolderSub,
+		const vector<REC_FILE_SET_INFO>& saveFolder,
+		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
 	);
 
@@ -186,8 +184,6 @@ public:
 protected:
 	WORD SID;
 
-	CEpgDataCap3Util* epgUtil;
-
 	BOOL enableScramble;
 
 	vector<HANDLE> udpPortMutex;
@@ -212,17 +208,17 @@ protected:
 
 	WORD lastPMTVer;
 
-	wstring fileName;
-	BOOL overWriteFlag;
-	ULONGLONG createSize;
-	vector<REC_FILE_SET_INFO> saveFolder;
-	vector<wstring> saveFolderSub;
+	wstring pittariFileName;
+	BOOL pittariOverWriteFlag;
+	ULONGLONG pittariCreateSize;
+	vector<REC_FILE_SET_INFO> pittariSaveFolder;
+	vector<wstring> pittariSaveFolderSub;
 	WORD pittariONID;
 	WORD pittariTSID;
 	WORD pittariSID;
 	WORD pittariEventID;
 	wstring pittariRecFilePath;
-	int maxBuffCount;
+	int pittariMaxBuffCount;
 
 protected:
 	BOOL WriteData(BYTE* data, DWORD size);

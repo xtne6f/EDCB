@@ -50,6 +50,7 @@ void CSetDlgBasic::SaveIni()
 	if( m_hWnd == NULL ){
 		return;
 	}
+	fs_path commonIniPath = GetCommonIniPath();
 
 	WCHAR settingFolderPath[512] = L"";
 	GetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, settingFolderPath, 512);

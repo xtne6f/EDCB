@@ -5,6 +5,12 @@
 #include "../../Common/TimeUtil.h"
 #include "../../Common/EpgTimerUtil.h"
 
+namespace
+{
+inline bool IsHighSurrogate(wchar_t c) { return L'\xD800' <= c && c <= L'\xDBFF'; }
+inline bool IsLowSurrogate(wchar_t c) { return L'\xDC00' <= c && c <= L'\xDFFF'; }
+}
+
 wstring CConvertMacro2::Convert(const wstring& macro, const PLUGIN_RESERVE_INFO* info)
 {
 	wstring convert;
@@ -74,7 +80,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 	if( !found && (var.compare(0, 1, L"S") == 0 || var.compare(0, 1, L"E") == 0) ){
 		for( int i = 0; GetTimeMacroName(i); i++ ){
 			wstring name;
-			AtoW(GetTimeMacroName(i), name);
+			UTF8toW(GetTimeMacroName(i), name);
 			if( var.compare(1, wstring::npos, name) == 0 ){
 				SYSTEMTIME st;
 				//—j“úƒtƒB[ƒ‹ƒh‚ª³‚µ‚­‚È‚¢‘ã‚ª‚ ‚Á‚½‚Ì‚Å•K‚¸•ÏŠ·‚·‚é
@@ -195,6 +201,10 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			funcStack.push_back(L"Tr/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/");
 		}else if( func == L"ZtoH<alnum>" ){
 			funcStack.push_back(L"Tr/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/");
+		}else if( func == L"ToSJIS" ){
+			string retA;
+			WtoA(ret, retA);
+			AtoW(retA, ret);
 		}else if( func.compare(0, 2, L"Tr") == 0 && func.size() >= 3 ){
 			//•¶š’uŠ·(Tr/’uŠ·•¶šƒŠƒXƒg/’uŠ·Œã/)
 			size_t n = func.find(func[2], 3);
@@ -212,17 +222,28 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 				}
 			}
 		}else if( func.compare(0, 1, L"S") == 0 && func.size() >= 2 ){
-			//•¶š—ñ’uŠ·(S/’uŠ·•¶š—ñ/’uŠ·Œã/)
-			size_t n = func.find(func[1], 2);
-			if( n == wstring::npos ){
-				return FALSE;
-			}
-			size_t m = func.find(func[1], n + 1);
-			if( m == wstring::npos ){
-				return FALSE;
-			}
-			if( n > 2 ){
-				Replace(ret, func.substr(2, n - 2), func.substr(n + 1, m - n - 1));
+			//•¶š—ñ’uŠ·(S/’uŠ·•¶š—ñ/’uŠ·Œã/.../)
+			for( size_t i = 0; i < ret.size(); ){
+				for( size_t j = 2;; ){
+					size_t n = func.find(func[1], j);
+					if( n == wstring::npos ){
+						i++;
+						break;
+					}
+					size_t m = func.find(func[1], n + 1);
+					if( m == wstring::npos ){
+						return FALSE;
+					}
+					if( n > j && ret.compare(i, n - j, func, j, n - j) == 0 ){
+						ret.replace(i, n - j, func, n + 1, m - (n + 1));
+						if( ret.size() > 64 * 1024 ){
+							return FALSE;
+						}
+						i += m - (n + 1);
+						break;
+					}
+					j = m + 1;
+				}
 			}
 		}else if( func.compare(0, 2, L"Rm") == 0 && func.size() >= 3 ){
 			//•¶šíœ(Rm/íœ•¶šƒŠƒXƒg/)
@@ -240,11 +261,21 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			}
 		}else if( func.compare(0, 4, L"Head") == 0 && func.size() >= 5 ){
 			//‘«Ø‚è(Head•¶š”[È—ª‹L†])
-			size_t n = ret.size();
 			wchar_t* p;
-			ret = ret.substr(0, (size_t)wcstol(&func.c_str()[4], &p, 10));
-			if( *p && !ret.empty() && ret.size() < n ){
-				ret.back() = *p;
+			size_t m = (size_t)wcstol(&func.c_str()[4], &p, 10);
+			if( m < ret.size() ){
+				ret.erase(m);
+				if( *p && !ret.empty() ){
+					ret.pop_back();
+				}else{
+					p = NULL;
+				}
+				if( !ret.empty() && IsHighSurrogate(ret.back()) ){
+					ret.pop_back();
+				}
+				if( p ){
+					ret.push_back(*p);
+				}
 			}
 		}else if( func.compare(0, 4, L"Tail") == 0 && func.size() >= 5 ){
 			//“ªØ‚è(Tail•¶š”[È—ª‹L†])
@@ -253,7 +284,15 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			if( m < ret.size() ){
 				ret.erase(0, ret.size() - m);
 				if( *p && !ret.empty() ){
-					ret[0] = *p;
+					ret.erase(ret.begin());
+				}else{
+					p = NULL;
+				}
+				if( !ret.empty() && IsLowSurrogate(ret[0]) ){
+					ret.erase(ret.begin());
+				}
+				if( p ){
+					ret.insert(ret.begin(), *p);
 				}
 			}
 		}else{
@@ -261,6 +300,9 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 		}
 	}
 
+	if( convert.size() + ret.size() > 64 * 1024 ){
+		return FALSE;
+	}
 	convert += ret;
 
 	return TRUE;

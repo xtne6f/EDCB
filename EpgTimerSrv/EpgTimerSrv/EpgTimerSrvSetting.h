@@ -52,6 +52,7 @@ public:
 		bool recView;
 		bool recNW;
 		bool pgInfoLog;
+		bool pgInfoLogAsUtf8;
 		bool dropLog;
 		bool recOverWrite;
 		int processPriority;
@@ -66,6 +67,8 @@ private:
 	static vector<wstring> EnumRecNamePlugInFileName();
 	static bool GetDlgButtonCheck(HWND hwnd, int id);
 	static void SetDlgButtonCheck(HWND hwnd, int id, bool check);
+	static void GetWindowTextBuffer(HWND hwnd, vector<WCHAR>& buff);
+	static void GetListBoxTextBuffer(HWND hwnd, int index, vector<WCHAR>& buff);
 	static void AddListBoxItem(HWND hList, HWND hItem);
 	static void DeleteListBoxItem(HWND hList);
 	static void MoveListBoxItem(HWND hList, int step);

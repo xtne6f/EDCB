@@ -20,8 +20,8 @@ public:
 	// needCaption			[IN]字幕データを含めるかどうか（TRUE:含める、FALSE：含めない）
 	// needData				[IN]データカルーセルを含めるかどうか（TRUE:含める、FALSE：含めない）
 	void SetCreateMode(
-		BOOL needCaption,
-		BOOL needData
+		BOOL needCaption_,
+		BOOL needData_
 	);
 
 	//作成元となるPMTのパケットを入力

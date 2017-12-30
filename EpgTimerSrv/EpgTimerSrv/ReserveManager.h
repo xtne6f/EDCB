@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Common/ParseTextInstances.h"
+#include "../../Common/ThreadUtil.h"
 #include "EpgDBManager.h"
 #include "NotifyManager.h"
 #include "TunerManager.h"
@@ -17,7 +18,6 @@ public:
 		CHECK_RESERVE_MODIFIED,	//予約になんらかの変化があった
 	};
 	CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
-	~CReserveManager();
 	void Initialize(const CEpgTimerSrvSetting::SETTING& s);
 	void Finalize();
 	void ReloadSetting(const CEpgTimerSrvSetting::SETTING& s);
@@ -121,7 +121,7 @@ private:
 	//次のEPG取得時刻を取得する
 	__int64 GetNextEpgCapTime(__int64 now, int* basicOnlyFlags = NULL) const;
 	//バンクを監視して必要ならチューナを強制終了するスレッド
-	static UINT WINAPI WatchdogThread(LPVOID param);
+	static void WatchdogThread(CReserveManager* sys);
 	//batPostManagerにバッチを追加する
 	void AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName);
 	//バッチに渡す日時マクロを追加する
@@ -131,7 +131,7 @@ private:
 	//バッチに渡す録画済み情報マクロを追加する
 	static void AddRecInfoMacro(vector<pair<string, wstring>>& macroList, const REC_FILE_INFO& recInfo);
 
-	mutable CRITICAL_SECTION managerLock;
+	mutable recursive_mutex_ managerLock;
 
 	CNotifyManager& notifyManager;
 	CEpgDBManager& epgDBManager;
@@ -166,5 +166,5 @@ private:
 	bool reserveModified;
 
 	HANDLE watchdogStopEvent;
-	HANDLE watchdogThread;
+	thread_ watchdogThread;
 };

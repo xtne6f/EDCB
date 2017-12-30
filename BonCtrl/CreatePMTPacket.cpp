@@ -20,13 +20,13 @@ CCreatePMTPacket::CCreatePMTPacket(void)
 // needCaption			[IN]字幕データを含めるかどうか（TRUE:含める、FALSE：含めない）
 // needData				[IN]データカルーセルを含めるかどうか（TRUE:含める、FALSE：含めない）
 void CCreatePMTPacket::SetCreateMode(
-	BOOL needCaption,
-	BOOL needData
+	BOOL needCaption_,
+	BOOL needData_
 )
 {
-	if( this->needCaption != needCaption || this->needData != needData ){
-		this->needCaption = needCaption;
-		this->needData = needData;
+	if( this->needCaption != needCaption_ || this->needData != needData_ ){
+		this->needCaption = needCaption_;
+		this->needData = needData_;
 		CreatePMT();
 	}
 }

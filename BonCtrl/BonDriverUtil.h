@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Common/ThreadUtil.h"
+
 class IBonDriver2;
 
 class CBonDriverUtil
@@ -75,15 +77,13 @@ public:
 	wstring GetOpenBonDriverFileName();
 
 private:
-	CBonDriverUtil(const CBonDriverUtil&);
-	CBonDriverUtil& operator=(const CBonDriverUtil&);
 	//BonDriverにアクセスするワーカースレッド
-	static UINT WINAPI DriverThread(LPVOID param);
+	static void DriverThread(CBonDriverUtil* sys);
 	//ワーカースレッドのメッセージ専用ウィンドウプロシージャ
 	static LRESULT CALLBACK DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	static class CInit { public: CInit(); } s_init;
-	CRITICAL_SECTION utilLock;
+	recursive_mutex_ utilLock;
 	wstring loadDllFolder;
 	wstring loadDllFileName;
 	wstring loadTunerName;
@@ -92,7 +92,7 @@ private:
 	void (*recvFunc)(void*, BYTE*, DWORD, DWORD);
 	void* recvParam;
 	IBonDriver2* bon2IF;
-	HANDLE hDriverThread;
+	thread_ driverThread;
 	HWND hwndDriver;
 };
 

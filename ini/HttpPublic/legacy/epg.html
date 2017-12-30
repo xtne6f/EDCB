@@ -18,7 +18,7 @@ ct=[=[
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>番組表 - EDCB</title>
 </head>
 <body>
 <h1>番組表</h1>
@@ -159,26 +159,12 @@ for i,v in ipairs(st) do
 end
 
 table.insert(ctt, '</tr>\n'..rowTail..'  </table>\n</div>\n'..(#st==0 and '' or pageNav)..[=[
-<div class="aside">
-  <form method="POST" action="epgaction.html?epgcap=y">
-    <div>
-      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-      <input type="submit" value="EPG取得">
-    </div>
-  </form>
-  <form method="POST" action="epgaction.html?reload=y">
-    <div>
-      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-      <input type="submit" value="EPG再読み込み">
-    </div>
-  </form>
-</div>
 <div id="footer">
-  <a href="index.html">メニューへ</a>
+  <a href="index.html">メニュー</a>
 </div>
 </body>
 </html>
 ]=])
 ct=table.concat(ctt)
-zl=Deflate(ct)
-mg.write(Response(200, 'text/html', 'utf-8', zl and #zl or #ct)..(zl and 'Content-Encoding: deflate\r\n' or '')..'\r\n', zl or ct)
+gz=Deflate(ct)
+mg.write(Response(200, 'text/html', 'utf-8', #(gz or ct))..(gz and 'Content-Encoding: gzip\r\n' or '')..'\r\n', gz or ct)

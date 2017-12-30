@@ -380,9 +380,12 @@ wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, 
 			if( dwSize != 0 && dwSize != INVALID_FILE_SIZE ){
 				vector<char> buf(dwSize);
 				DWORD dwRead;
-				if( ReadFile(hFile, &buf.front(), dwSize, &dwRead, NULL) != FALSE && dwRead != 0 ){
-					string errInfoA(&buf.front(), &buf.front() + dwRead);
-					AtoW(errInfoA, info);
+				if( ReadFile(hFile, buf.data(), dwSize, &dwRead, NULL) ){
+					if( dwRead >= 3 && buf[0] == '\xEF' && buf[1] == '\xBB' && buf[2] == '\xBF' ){
+						UTF8toW(string(buf.begin() + 3, buf.begin() + dwRead), info);
+					}else{
+						AtoW(string(buf.begin(), buf.begin() + dwRead), info);
+					}
 				}
 			}
 			CloseHandle(hFile);

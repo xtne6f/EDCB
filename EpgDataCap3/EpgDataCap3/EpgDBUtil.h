@@ -7,9 +7,6 @@
 class CEpgDBUtil
 {
 public:
-	CEpgDBUtil(void);
-	~CEpgDBUtil(void);
-
 	BOOL AddEIT(WORD PID, const AribDescriptor::CDescriptor& eit, __int64 streamTime);
 
 	BOOL AddServiceListNIT(const AribDescriptor::CDescriptor& nit);
@@ -110,8 +107,6 @@ public:
 		);
 
 protected:
-	CRITICAL_SECTION dbLock;
-
 	struct SI_TAG{
 		BYTE tableID;		//データ追加時のtable_id
 		BYTE version;		//データ追加時のバージョン

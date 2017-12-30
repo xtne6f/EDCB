@@ -2,7 +2,7 @@
 
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
-#include "../../Common/BlockLock.h"
+#include "../../Common/ThreadUtil.h"
 #include <objbase.h>
 #include <OleAuto.h>
 #include "RegExp.h"
@@ -21,22 +21,25 @@ public:
 	};
 
 public:
-	CEpgDBManager(void);
-	~CEpgDBManager(void);
+	CEpgDBManager();
+	~CEpgDBManager();
 
 	void SetArchivePeriod(int periodSec);
 
-	BOOL ReloadEpgData(BOOL foreground = FALSE);
+	//同期的に呼び出すこと
+	void ReloadEpgData(bool foreground = false);
+	//同期的に呼び出すこと
+	bool IsLoadingData();
+	//同期的に呼び出すこと
+	void CancelLoadData();
 
-	BOOL IsLoadingData() const;
+	bool IsInitialLoadingDataDone() const { return this->initialLoadDone; }
 
-	BOOL IsInitialLoadingDataDone() const;
-
-	BOOL SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result) const;
+	bool SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result) const;
 
 	//P = [](vector<SEARCH_RESULT_EVENT>&) -> void
 	template<class P>
-	BOOL SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, P enumProc) const {
+	bool SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, P enumProc) const {
 		CRefLock lock(&this->epgMapRefLock);
 		vector<SEARCH_RESULT_EVENT> result;
 		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -48,44 +51,44 @@ public:
 		}
 		CoUninitialize();
 		enumProc(result);
-		return TRUE;
+		return true;
 	}
 
-	BOOL GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const;
+	bool GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const;
 
 	//P = [](const vector<EPGDB_EVENT_INFO>&) -> void
 	template<class P>
-	BOOL EnumEventInfo(LONGLONG serviceKey, P enumProc) const {
+	bool EnumEventInfo(LONGLONG serviceKey, P enumProc) const {
 		CRefLock lock(&this->epgMapRefLock);
 		map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>::const_iterator itr = this->epgMap.find(serviceKey);
 		if( itr == this->epgMap.end() || itr->second.eventList.empty() ){
-			return FALSE;
+			return false;
 		}
 		enumProc(itr->second.eventList);
-		return TRUE;
+		return true;
 	}
 
 	//P = [](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>&) -> void
 	template<class P>
-	BOOL EnumEventAll(P enumProc) const {
+	bool EnumEventAll(P enumProc) const {
 		CRefLock lock(&this->epgMapRefLock);
 		if( this->epgMap.empty() ){
-			return FALSE;
+			return false;
 		}
 		enumProc(this->epgMap);
-		return TRUE;
+		return true;
 	}
 
 	//P = [](const vector<EPGDB_EVENT_INFO>&) -> void
 	template<class P>
-	BOOL EnumArchiveEventInfo(LONGLONG serviceKey, P enumProc) const {
+	bool EnumArchiveEventInfo(LONGLONG serviceKey, P enumProc) const {
 		CRefLock lock(&this->epgMapRefLock);
 		map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>::const_iterator itr = this->epgArchive.find(serviceKey);
 		if( itr == this->epgArchive.end() ){
-			return FALSE;
+			return false;
 		}
 		enumProc(itr->second.eventList);
-		return TRUE;
+		return true;
 	}
 
 	//P = [](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>&) -> void
@@ -95,7 +98,7 @@ public:
 		enumProc(this->epgArchive);
 	}
 
-	BOOL SearchEpg(
+	bool SearchEpg(
 		WORD ONID,
 		WORD TSID,
 		WORD SID,
@@ -103,7 +106,7 @@ public:
 		EPGDB_EVENT_INFO* result
 		) const;
 
-	BOOL SearchEpg(
+	bool SearchEpg(
 		WORD ONID,
 		WORD TSID,
 		WORD SID,
@@ -112,7 +115,7 @@ public:
 		EPGDB_EVENT_INFO* result
 		) const;
 
-	BOOL SearchServiceName(
+	bool SearchServiceName(
 		WORD ONID,
 		WORD TSID,
 		WORD SID,
@@ -126,7 +129,7 @@ protected:
 	class CRefLock
 	{
 	public:
-		CRefLock(pair<int, CRITICAL_SECTION*>* ref_) : ref(ref_) {
+		CRefLock(pair<int, recursive_mutex_*>* ref_) : ref(ref_) {
 			CBlockLock lock(ref->second);
 			++ref->first;
 		}
@@ -135,16 +138,16 @@ protected:
 			--ref->first;
 		}
 	private:
-		pair<int, CRITICAL_SECTION*>* ref;
+		pair<int, recursive_mutex_*>* ref;
 	};
 
-	mutable CRITICAL_SECTION epgMapLock;
-	mutable pair<int, CRITICAL_SECTION*> epgMapRefLock;
+	mutable recursive_mutex_ epgMapLock;
+	mutable pair<int, recursive_mutex_*> epgMapRefLock;
 
-	HANDLE loadThread;
-	BOOL loadStop;
-	BOOL loadForeground;
-	BOOL initialLoadDone;
+	thread_ loadThread;
+	bool loadStop;
+	bool loadForeground;
+	bool initialLoadDone;
 	int archivePeriodSec;
 
 	//これらデータベースの読み取りにかぎりepgMapRefLockでアクセスできる。LoadThread以外では変更できない
@@ -152,15 +155,14 @@ protected:
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgArchive;
 protected:
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
-	void CancelLoadData(DWORD forceTimeout);
-	static UINT WINAPI LoadThread(LPVOID param);
+	static void LoadThread(CEpgDBManager* sys);
 
 	void SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const;
-	static BOOL IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);
-	static BOOL IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
-	static BOOL IsFindKeyword(BOOL regExpFlag, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp,
-	                          BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
-	static BOOL IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>& keyList, const wstring& word, vector<int>& dist, wstring* findKey = NULL);
+	static bool IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);
+	static bool IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
+	static bool IsFindKeyword(bool regExpFlag, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp,
+	                          bool caseFlag, const vector<wstring>& keyList, const wstring& word, bool andMode, wstring* findKey = NULL);
+	static bool IsFindLikeKeyword(bool caseFlag, const vector<wstring>& keyList, const wstring& word, vector<int>& dist, wstring* findKey = NULL);
 
 };
 

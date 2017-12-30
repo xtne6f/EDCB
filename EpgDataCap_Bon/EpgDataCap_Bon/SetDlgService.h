@@ -14,11 +14,6 @@ public:
 	~CSetDlgService();
 	BOOL Create(LPCTSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
-
-	void SetIniPath(wstring commonIniPath, wstring appIniPath){
-		this->commonIniPath = commonIniPath;
-		this->appIniPath = appIniPath;
-	};
 	void SaveIni(void);
 
 // ダイアログ データ
@@ -27,11 +22,7 @@ public:
 
 protected:
 	HWND m_hWnd;
-	wstring commonIniPath;
-	wstring appIniPath;
-
 	map<wstring, CParseChText4> chList;
-	wstring lastSelect;
 
 	BOOL FindBonFileName(wstring src, wstring& dllName);
 	void ReloadList();

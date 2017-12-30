@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "TCPServer.h"
-#include <process.h>
 #include "ErrDef.h"
 #include "CtrlCmdUtil.h"
 
@@ -8,8 +7,6 @@ CTCPServer::CTCPServer(void)
 {
 	m_hNotifyEvent = WSA_INVALID_EVENT;
 	m_stopFlag = FALSE;
-	m_hThread = NULL;
-
 	m_sock = INVALID_SOCKET;
 
 	WSAData wsaData;
@@ -30,7 +27,7 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 	}
 	string aclU;
 	WtoUTF8(acl, aclU);
-	if( m_hThread != NULL &&
+	if( m_thread.joinable() &&
 	    m_port == port &&
 	    m_ipv6 == ipv6 &&
 	    m_dwResponseTimeout == dwResponseTimeout &&
@@ -71,11 +68,9 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 		if( bind(m_sock, result->ai_addr, (int)result->ai_addrlen) != SOCKET_ERROR && listen(m_sock, 1) != SOCKET_ERROR ){
 			m_hNotifyEvent = WSACreateEvent();
 			if( m_hNotifyEvent != WSA_INVALID_EVENT ){
-				m_hThread = (HANDLE)_beginthreadex(NULL, 0, ServerThread, this, 0, NULL);
-				if( m_hThread != NULL ){
-					freeaddrinfo(result);
-					return true;
-				}
+				m_thread = thread_(ServerThread, this);
+				freeaddrinfo(result);
+				return true;
 			}
 		}
 		StopServer();
@@ -87,15 +82,10 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 
 void CTCPServer::StopServer()
 {
-	if( m_hThread != NULL ){
+	if( m_thread.joinable() ){
 		m_stopFlag = TRUE;
 		WSASetEvent(m_hNotifyEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(m_hThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(m_hThread, 0xffffffff);
-		}
-		CloseHandle(m_hThread);
-		m_hThread = NULL;
+		m_thread.join();
 	}
 	if( m_hNotifyEvent != WSA_INVALID_EVENT ){
 		WSACloseEvent(m_hNotifyEvent);
@@ -110,7 +100,7 @@ void CTCPServer::StopServer()
 
 void CTCPServer::NotifyUpdate()
 {
-	if( m_hThread != NULL ){
+	if( m_thread.joinable() ){
 		WSASetEvent(m_hNotifyEvent);
 	}
 }
@@ -182,10 +172,8 @@ static int RecvAll(SOCKET sock, char* buf, int len, int flags)
 	return n;
 }
 
-UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
+void CTCPServer::ServerThread(CTCPServer* pSys)
 {
-	CTCPServer* pSys = (CTCPServer*)pParam;
-
 	struct WAIT_INFO {
 		SOCKET sock;
 		CMD_STREAM* cmd;
@@ -377,6 +365,4 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 	}
 	WSAEventSelect(pSys->m_sock, NULL, 0);
 	WSACloseEvent(hEventList.back());
-
-	return 0;
 }

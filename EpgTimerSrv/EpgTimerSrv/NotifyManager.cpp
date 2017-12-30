@@ -1,47 +1,35 @@
 #include "stdafx.h"
 #include "NotifyManager.h"
-#include <process.h>
 
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/SendCtrlCmd.h"
-#include "../../Common/BlockLock.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 
-CNotifyManager::CNotifyManager(void)
+CNotifyManager::CNotifyManager()
 {
-	InitializeCriticalSection(&this->managerLock);
-
 	this->notifyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	this->notifyThread = NULL;
-	this->notifyStopFlag = FALSE;
+	this->notifyStopFlag = false;
 	this->srvStatus = 0;
 	this->notifyCount = 1;
 	this->notifyRemovePos = 0;
 	this->hwndNotify = NULL;
-	this->guiFlag = FALSE;
+	this->guiFlag = false;
 }
 
-CNotifyManager::~CNotifyManager(void)
+CNotifyManager::~CNotifyManager()
 {
-	if( this->notifyThread != NULL ){
-		this->notifyStopFlag = TRUE;
-		::SetEvent(this->notifyEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->notifyThread, 20000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->notifyThread, 0xffffffff);
-		}
-		CloseHandle(this->notifyThread);
-		this->notifyThread = NULL;
+	if( this->notifyThread.joinable() ){
+		this->notifyStopFlag = true;
+		SetEvent(this->notifyEvent);
+		this->notifyThread.join();
 	}
 	if( this->notifyEvent != NULL ){
 		CloseHandle(this->notifyEvent);
 		this->notifyEvent = NULL;
 	}
 	for( size_t i = 0; i < this->registGUIList.size(); CloseHandle(this->registGUIList[i++].second) );
-
-	DeleteCriticalSection(&this->managerLock);
 }
 
 void CNotifyManager::RegistGUI(DWORD processID)
@@ -116,7 +104,7 @@ vector<NOTIFY_SRV_INFO> CNotifyManager::RemoveSentList()
 	return list;
 }
 
-BOOL CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount)
+bool CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount) const
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -129,15 +117,15 @@ BOOL CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount)
 		//巡回カウンタは最後の通知と同値
 		status.param3 = this->notifyCount;
 		*info = status;
-		return TRUE;
+		return true;
 	}else if( this->notifySentList.empty() || targetCount - this->notifySentList.back().param3 < 0x80000000 ){
 		//存在するかどうかは即断できる
-		return FALSE;
+		return false;
 	}else{
 		//巡回カウンタがtargetCountよりも大きくなる最初の通知を返す
 		*info = *std::find_if(this->notifySentList.begin(), this->notifySentList.end(),
 		                      [=](const NOTIFY_SRV_INFO& a) { return targetCount - a.param3 >= 0x80000000; });
-		return TRUE;
+		return true;
 	}
 }
 
@@ -169,15 +157,9 @@ void CNotifyManager::AddNotify(DWORD status)
 		NOTIFY_SRV_INFO info;
 		ConvertSystemTime(GetNowI64Time(), &info.time);
 		info.notifyID = status;
-		BOOL find = FALSE;
-		for(size_t i=0; i<this->notifyList.size(); i++ ){
-			if( this->notifyList[i].notifyID == status ){
-				find = TRUE;
-				break;
-			}
-		}
 		//同じものがあるときは追加しない
-		if( find == FALSE ){
+		if( std::find_if(this->notifyList.begin(), this->notifyList.end(),
+		                 [=](const NOTIFY_SRV_INFO& a) { return a.notifyID == status; }) == this->notifyList.end() ){
 			this->notifyList.push_back(info);
 			SendNotify();
 		}
@@ -216,29 +198,27 @@ void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
 
 void CNotifyManager::SendNotify()
 {
-	if( this->notifyThread == NULL ){
-		this->notifyThread = (HANDLE)_beginthreadex(NULL, 0, SendNotifyThread, this, 0, NULL);
+	if( this->notifyThread.joinable() == false ){
+		this->notifyThread = thread_(SendNotifyThread, this);
 	}
 	SetEvent(this->notifyEvent);
 }
 
-UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
+void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 {
-	CNotifyManager* sys = (CNotifyManager*)param;
-	CSendCtrlCmd sendCtrl;
-	BOOL wait1Sec = FALSE;
-	BOOL waitNotify = FALSE;
+	bool wait1Sec = false;
+	bool waitNotify = false;
 	DWORD waitNotifyTick = 0;
-	while(1){
+	for(;;){
 		vector<DWORD> registGUI;
 		vector<REGIST_TCP_INFO> registTCP;
 		NOTIFY_SRV_INFO notifyInfo;
 
-		if( wait1Sec != FALSE ){
-			wait1Sec = FALSE;
+		if( wait1Sec ){
+			wait1Sec = false;
 			Sleep(1000);
 		}
-		if( ::WaitForSingleObject(sys->notifyEvent, INFINITE) != WAIT_OBJECT_0 || sys->notifyStopFlag != FALSE ){
+		if( WaitForSingleObject(sys->notifyEvent, INFINITE) != WAIT_OBJECT_0 || sys->notifyStopFlag ){
 			//キャンセルされた
 			break;
 		}
@@ -258,7 +238,7 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				}
 			}
 			registTCP = sys->GetRegistTCP();
-			if( waitNotify != FALSE && GetTickCount() - waitNotifyTick < 5000 ){
+			if( waitNotify && GetTickCount() - waitNotifyTick < 5000 ){
 				vector<NOTIFY_SRV_INFO>::const_iterator itrNotify;
 				for( itrNotify = sys->notifyList.begin(); itrNotify != sys->notifyList.end(); itrNotify++ ){
 					if( itrNotify->notifyID <= 100 ){
@@ -267,19 +247,19 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				}
 				if( itrNotify == sys->notifyList.end() ){
 					SetEvent(sys->notifyEvent);
-					wait1Sec = TRUE;
+					wait1Sec = true;
 					continue;
 				}
 				//NotifyID<=100の通知は遅延させず先に送る
 				notifyInfo = *itrNotify;
 				sys->notifyList.erase(itrNotify);
 			}else{
-				waitNotify = FALSE;
+				waitNotify = false;
 				notifyInfo = sys->notifyList[0];
 				sys->notifyList.erase(sys->notifyList.begin());
 				//NotifyID>100の通知は遅延させる
 				if( notifyInfo.notifyID > 100 ){
-					waitNotify = TRUE;
+					waitNotify = true;
 					waitNotifyTick = GetTickCount();
 				}
 			}
@@ -303,14 +283,15 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 			}
 		}
 
-		for( size_t i = 0; i < registGUI.size(); i++ ){
-			if( sys->notifyStopFlag != FALSE ){
-				//キャンセルされた
-				break;
-			}
-			{
-				sendCtrl.SetSendMode(FALSE);
-				sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
+		for( int tcp = 0; tcp < 2; tcp++ ){
+			for( size_t i = 0; sys->notifyStopFlag == false && i < (tcp ? registTCP.size() : registGUI.size()); i++ ){
+				CSendCtrlCmd sendCtrl;
+				if( tcp ){
+					sendCtrl.SetSendMode(TRUE);
+					sendCtrl.SetNWSetting(registTCP[i].ip, registTCP[i].port);
+				}else{
+					sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
+				}
 				sendCtrl.SetConnectTimeOut(10*1000);
 				DWORD err = sendCtrl.SendGUINotifyInfo2(notifyInfo);
 				if( err == CMD_NON_SUPPORT ){
@@ -331,45 +312,12 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 						break;
 					}
 				}
-			}
-		}
-
-		for( size_t i = 0; i < registTCP.size(); i++ ){
-			if( sys->notifyStopFlag != FALSE ){
-				//キャンセルされた
-				break;
-			}
-
-			sendCtrl.SetSendMode(TRUE);
-			sendCtrl.SetNWSetting(registTCP[i].ip, registTCP[i].port);
-			sendCtrl.SetConnectTimeOut(10*1000);
-
-			DWORD err = sendCtrl.SendGUINotifyInfo2(notifyInfo);
-			if( err == CMD_NON_SUPPORT ){
-				switch(notifyInfo.notifyID){
-				case NOTIFY_UPDATE_EPGDATA:
-					err = sendCtrl.SendGUIUpdateEpgData();
-					break;
-				case NOTIFY_UPDATE_RESERVE_INFO:
-				case NOTIFY_UPDATE_REC_INFO:
-				case NOTIFY_UPDATE_AUTOADD_EPG:
-				case NOTIFY_UPDATE_AUTOADD_MANUAL:
-					err = sendCtrl.SendGUIUpdateReserve();
-					break;
-				case NOTIFY_UPDATE_SRV_STATUS:
-					err = sendCtrl.SendGUIStatusChg((WORD)notifyInfo.param1);
-					break;
-				default:
-					break;
+				if( tcp && err != CMD_SUCCESS && err != CMD_NON_SUPPORT ){
+					//送信できなかったもの削除
+					_OutputDebugString(L"notifyErr %s:%d\r\n", registTCP[i].ip.c_str(), registTCP[i].port);
+					sys->UnRegistTCP(registTCP[i]);
 				}
-			}
-			if( err != CMD_SUCCESS && err != CMD_NON_SUPPORT){
-				//送信できなかったもの削除
-				_OutputDebugString(L"notifyErr %s:%d\r\n", registTCP[i].ip.c_str(), registTCP[i].port);
-				sys->UnRegistTCP(registTCP[i]);
 			}
 		}
 	}
-
-	return 0;
 }

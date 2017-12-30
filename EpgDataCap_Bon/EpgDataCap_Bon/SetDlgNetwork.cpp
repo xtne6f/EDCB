@@ -32,6 +32,7 @@ BOOL CSetDlgNetwork::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 BOOL CSetDlgNetwork::OnInitDialog()
 {
 	// TODO:  Ç±Ç±Ç…èâä˙âªÇí«â¡ÇµÇƒÇ≠ÇæÇ≥Ç¢
+	fs_path appIniPath = GetModuleIniPath();
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_SEC, GetPrivateProfileInt(L"SET", L"UDPWait", 4, appIniPath.c_str()), FALSE);
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_PACKET, GetPrivateProfileInt(L"SET", L"UDPPacket", 128, appIniPath.c_str()), FALSE);
 
@@ -102,6 +103,7 @@ void CSetDlgNetwork::SaveIni(void)
 	if( m_hWnd == NULL ){
 		return;
 	}
+	fs_path appIniPath = GetModuleIniPath();
 
 	WritePrivateProfileInt( L"SET", L"UDPWait", GetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_SEC, NULL, FALSE), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"UDPPacket", GetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_PACKET, NULL, FALSE), appIniPath.c_str() );

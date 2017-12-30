@@ -2,20 +2,15 @@
 #include "EpgDataCap3Main.h"
 
 #include "../../Common/TimeUtil.h"
-#include "../../Common/BlockLock.h"
 
 CEpgDataCap3Main::CEpgDataCap3Main(void)
 {
-	InitializeCriticalSection(&this->utilLock);
-
 	decodeUtilClass.SetEpgDB(&(this->epgDBUtilClass));
 }
 
 CEpgDataCap3Main::~CEpgDataCap3Main(void)
 {
 	decodeUtilClass.SetEpgDB(NULL);
-
-	DeleteCriticalSection(&this->utilLock);
 }
 
 //解析対象のTSパケット１つを読み込ませる

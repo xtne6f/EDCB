@@ -5,6 +5,7 @@
 #include <list>
 
 #include "../../Common/StringUtil.h"
+#include "../../Common/ThreadUtil.h"
 #pragma comment(lib, "Ws2_32.lib")
 
 class CSendTSTCPMain
@@ -60,10 +61,10 @@ public:
 
 protected:
 	HANDLE m_hStopSendEvent;
-	HANDLE m_hSendThread;
+	thread_ m_sendThread;
 
-	CRITICAL_SECTION m_sendLock;
-	CRITICAL_SECTION m_buffLock;
+	recursive_mutex_ m_sendLock;
+	recursive_mutex_ m_buffLock;
 
 	std::list<vector<BYTE>> m_TSBuff;
 
@@ -76,6 +77,6 @@ protected:
 	map<wstring, SEND_INFO> m_SendList;
 
 protected:
-	static UINT WINAPI SendThread(LPVOID pParam);
+	static void SendThread(CSendTSTCPMain* pSys);
 
 };

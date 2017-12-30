@@ -6,7 +6,7 @@
 #include "EpgTimerSrvMain.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ServiceUtil.h"
-#include "../../Common/BlockLock.h"
+#include "../../Common/ThreadUtil.h"
 
 #include "../../Common/CommonDef.h"
 #include <WinSvc.h>
@@ -17,7 +17,7 @@ namespace
 SERVICE_STATUS_HANDLE g_hStatusHandle;
 CEpgTimerSrvMain* g_pMain;
 FILE* g_debugLog;
-CRITICAL_SECTION g_debugLogLock;
+recursive_mutex_ g_debugLogLock;
 bool g_saveDebugLog;
 
 void StartDebugLog()
@@ -30,7 +30,6 @@ void StartDebugLog()
 			if( _ftelli64(g_debugLog) == 0 ){
 				fputwc(L'\xFEFF', g_debugLog);
 			}
-			InitializeCriticalSection(&g_debugLogLock);
 			g_saveDebugLog = true;
 			OutputDebugString(L"****** LOG START ******\r\n");
 		}
@@ -42,7 +41,6 @@ void StopDebugLog()
 	if( g_saveDebugLog ){
 		OutputDebugString(L"****** LOG STOP ******\r\n");
 		g_saveDebugLog = false;
-		DeleteCriticalSection(&g_debugLogLock);
 		fclose(g_debugLog);
 	}
 }

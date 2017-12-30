@@ -31,16 +31,6 @@ INT_PTR CSettingDlg::DoModal()
 BOOL CSettingDlg::OnInitDialog()
 {
 	// TODO:  Ç±Ç±Ç…èâä˙âªÇí«â¡ÇµÇƒÇ≠ÇæÇ≥Ç¢
-	wstring commonIniPath = GetCommonIniPath().native();
-	wstring appIniPath = GetModuleIniPath().native();
-
-	basicDlg.SetIniPath(commonIniPath, appIniPath);
-	appDlg.SetIniPath(commonIniPath, appIniPath);
-	epgDlg.SetIniPath(commonIniPath, appIniPath);
-	networkDlg.SetIniPath(commonIniPath, appIniPath);
-	appBtnDlg.SetIniPath(commonIniPath, appIniPath);
-	serviceDlg.SetIniPath(commonIniPath, appIniPath);
-
 	TCITEM Item;
 	Item.mask = TCIF_TEXT;
 

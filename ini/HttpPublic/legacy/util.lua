@@ -49,26 +49,26 @@ end
 function RecSettingTemplate(rs)
   local s='録画モード: <select name="recMode">'
   for i=1,#RecModeTextList() do
-    s=s..'<option value="'..(i-1)..'"'..(rs.recMode==i-1 and ' selected="selected"' or '')..'>'..RecModeTextList()[i]
+    s=s..'<option value="'..(i-1)..'"'..(rs.recMode==i-1 and ' selected' or '')..'>'..RecModeTextList()[i]
   end
   s=s..'</select><br>\n'
     ..'イベントリレー追従: <select name="tuijyuuFlag">'
-    ..'<option value="0"'..(not rs.tuijyuuFlag and ' selected="selected"' or '')..'>しない'
-    ..'<option value="1"'..(rs.tuijyuuFlag and ' selected="selected"' or '')..'>する</select><br>\n'
+    ..'<option value="0"'..(not rs.tuijyuuFlag and ' selected' or '')..'>しない'
+    ..'<option value="1"'..(rs.tuijyuuFlag and ' selected' or '')..'>する</select><br>\n'
     ..'優先度: <select name="priority">'
   for i=1,5 do
-    s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected="selected"' or '')..'>'..i
+    s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected' or '')..'>'..i
   end
   s=s..'</select><br>\n'
     ..'ぴったり（？）録画: <select name="pittariFlag">'
-    ..'<option value="0"'..(not rs.pittariFlag and ' selected="selected"' or '')..'>しない'
-    ..'<option value="1"'..(rs.pittariFlag and ' selected="selected"' or '')..'>する</select><br>\n'
-    ..'録画マージン: <input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked="checked"')..'>デフォルト || '
-    ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or 0)..'"> '
-    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or 0)..'"><br>\n'
-    ..'指定サービス対象データ: <input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked="checked"' or '')..'>デフォルト || '
-    ..'<input type="checkbox" name="serviceMode_1" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/16)%2~=0 and ' checked="checked"' or '')..'>字幕を含める '
-    ..'<input type="checkbox" name="serviceMode_2" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/32)%2~=0 and ' checked="checked"' or '')..'>データカルーセルを含める<br>\n'
+    ..'<option value="0"'..(not rs.pittariFlag and ' selected' or '')..'>しない'
+    ..'<option value="1"'..(rs.pittariFlag and ' selected' or '')..'>する</select><br>\n'
+    ..'録画マージン: <input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked')..'>デフォルト || '
+    ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or 0)..'" size="5"> '
+    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or 0)..'" size="5"><br>\n'
+    ..'指定サービス対象データ: <input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked' or '')..'>デフォルト || '
+    ..'<input type="checkbox" name="serviceMode_1" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/16)%2~=0 and ' checked' or '')..'>字幕を含める '
+    ..'<input type="checkbox" name="serviceMode_2" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/32)%2~=0 and ' checked' or '')..'>データカルーセルを含める<br>\n'
     ..'<table><tr><td>録画フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td><td>部分受信</td></tr>\n'
   for i,v in ipairs(rs.recFolderList) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>いいえ</td></tr>\n'
@@ -77,27 +77,27 @@ function RecSettingTemplate(rs)
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>はい</td></tr>\n'
   end
   s=s..'</table>（プリセットによる変更のみ対応）<br>\n'
-    ..'<input type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked="checked"' or '')..'>部分受信（ワンセグ）を別ファイルに同時出力する<br>\n'
-    ..'<input type="checkbox" name="continueRecFlag" value="1"'..(rs.continueRecFlag and ' checked="checked"' or '')..'>後ろの予約を同一ファイルで出力する<br>\n'
-    ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..(rs.tunerID==0 and ' selected="selected"' or '')..'>自動'
+    ..'<input type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked' or '')..'>部分受信（ワンセグ）を別ファイルに同時出力する<br>\n'
+    ..'<input type="checkbox" name="continueRecFlag" value="1"'..(rs.continueRecFlag and ' checked' or '')..'>後ろの予約を同一ファイルで出力する<br>\n'
+    ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..(rs.tunerID==0 and ' selected' or '')..'>自動'
   local a=edcb.GetTunerReserveAll()
   for i=1,#a-1 do
-    s=s..'<option value="'..a[i].tunerID..'"'..(a[i].tunerID==rs.tunerID and ' selected="selected"' or '')..string.format('>ID:%08X(', a[i].tunerID)..a[i].tunerName..')'
+    s=s..'<option value="'..a[i].tunerID..'"'..(a[i].tunerID==rs.tunerID and ' selected' or '')..string.format('>ID:%08X(', a[i].tunerID)..a[i].tunerName..')'
   end
   s=s..'</select><br>\n'
     ..'録画後動作: <select name="suspendMode">'
-    ..'<option value="0"'..(rs.suspendMode==0 and ' selected="selected"' or '')..'>デフォルト設定を使用'
-    ..'<option value="1"'..(rs.suspendMode==1 and ' selected="selected"' or '')..'>スタンバイ'
-    ..'<option value="2"'..(rs.suspendMode==2 and ' selected="selected"' or '')..'>休止'
-    ..'<option value="3"'..(rs.suspendMode==3 and ' selected="selected"' or '')..'>シャットダウン'
-    ..'<option value="4"'..(rs.suspendMode==4 and ' selected="selected"' or '')..'>何もしない</select> '
-    ..'<input type="checkbox" name="rebootFlag" value="1"'..(rs.rebootFlag and ' checked="checked"' or '')..'>復帰後再起動する<br>\n'
+    ..'<option value="0"'..(rs.suspendMode==0 and ' selected' or '')..'>デフォルト'
+    ..'<option value="1"'..(rs.suspendMode==1 and ' selected' or '')..'>スタンバイ'
+    ..'<option value="2"'..(rs.suspendMode==2 and ' selected' or '')..'>休止'
+    ..'<option value="3"'..(rs.suspendMode==3 and ' selected' or '')..'>シャットダウン'
+    ..'<option value="4"'..(rs.suspendMode==4 and ' selected' or '')..'>何もしない</select> '
+    ..'<input type="checkbox" name="rebootFlag" value="1"'..(rs.rebootFlag and ' checked' or '')..'>復帰後再起動する<br>\n'
     ..'録画後実行bat（プリセットによる変更のみ対応）: '..(#rs.batFilePath==0 and '（なし）' or rs.batFilePath)..'<br>\n'
   return s
 end
 
 function RecModeTextList()
-  return {'全サービス','指定サービスのみ','全サービス（デコード処理なし）','指定サービスのみ（デコード処理なし）','視聴','無効'}
+  return {'全サービス','指定サービス','全サービス（デコード処理なし）','指定サービス（デコード処理なし）','視聴','無効'}
 end
 
 function NetworkType(onid)
@@ -241,29 +241,19 @@ function Response(code,ctype,charset,cl)
     ..(mg.keep_alive(not not cl) and '\r\n' or '\r\nConnection: close\r\n')
 end
 
---可能ならコンテンツをzlib圧縮する(lua-zlib(zlib.dll)が必要)
+--可能ならコンテンツをgzip圧縮する(lua-zlib(zlib.dll)が必要)
 function Deflate(ct)
-  local zl
-  local trim
   for k,v in pairs(mg.request_info.http_headers) do
-    if not zl and k:lower()=='accept-encoding' and v:lower():find('deflate') then
-      local status, zlib = pcall(require, 'zlib')
-      if status then
-        zl=zlib.deflate()(ct, 'finish')
-      end
-    elseif k:lower()=='user-agent' and (v:find(' MSIE ') or v:find(' Trident/7%.') or v:find(' Edge/')) then
-      --RFC2616非準拠のブラウザはzlibヘッダを取り除く
-      trim=true
+    if k:lower()=='accept-encoding' and v:lower():find('gzip') then
+      local status,zlib = pcall(require,'zlib')
+      return status and zlib.deflate(6,31)(ct,'finish') or nil
     end
   end
-  if trim and zl and #zl >= 6 then
-    zl=zl:sub(3, #zl-4)
-  end
-  return zl
+  return nil
 end
 
 --POSTメッセージボディをすべて読む
-function ReadPost()
+function AssertPost()
   local post, s
   if mg.request_info.request_method=='POST' then
     post=''
@@ -272,8 +262,9 @@ function ReadPost()
       post=post..(s or '')
     until not s
     if #post~=mg.request_info.content_length then
-      post=nil
+      post=''
     end
+    AssertCsrf(post)
   end
   return post
 end

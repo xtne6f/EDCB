@@ -1,7 +1,5 @@
 #include "stdafx.h"
 #include "PipeServer.h"
-#include <process.h>
-
 #include "StringUtil.h"
 #include "CtrlCmdDef.h"
 #include "ErrDef.h"
@@ -12,22 +10,11 @@
 CPipeServer::CPipeServer(void)
 {
 	this->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	this->workThread = NULL;
 }
 
 CPipeServer::~CPipeServer(void)
 {
-	if( this->workThread != NULL ){
-		::SetEvent(this->stopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->workThread, 60000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->workThread, 0xffffffff);
-		}
-		CloseHandle(this->workThread);
-		this->workThread = NULL;
-	}
-	::CloseHandle(this->stopEvent);
-	this->stopEvent = NULL;
+	StopServer();
 }
 
 BOOL CPipeServer::StartServer(
@@ -40,7 +27,7 @@ BOOL CPipeServer::StartServer(
 	if( !cmdProc_ || eventName_ == NULL || pipeName_ == NULL ){
 		return FALSE;
 	}
-	if( this->workThread != NULL ){
+	if( this->workThread.joinable() ){
 		return FALSE;
 	}
 	this->cmdProc = cmdProc_;
@@ -49,29 +36,22 @@ BOOL CPipeServer::StartServer(
 	this->insecureFlag = insecureFlag_;
 
 	ResetEvent(this->stopEvent);
-	this->workThread = (HANDLE)_beginthreadex(NULL, 0, ServerThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-	ResumeThread(this->workThread);
+	this->workThread = thread_(ServerThread, this);
 
 	return TRUE;
 }
 
 BOOL CPipeServer::StopServer(BOOL checkOnlyFlag)
 {
-	if( this->workThread != NULL ){
+	if( this->workThread.joinable() ){
 		::SetEvent(this->stopEvent);
 		if( checkOnlyFlag ){
 			//終了チェックして結果を返すだけ
-			if( WaitForSingleObject(this->workThread, 0) == WAIT_TIMEOUT ){
+			if( WaitForSingleObject(this->workThread.native_handle(), 0) == WAIT_TIMEOUT ){
 				return FALSE;
 			}
-		}else{
-			//スレッド終了待ち
-			if( WaitForSingleObject(this->workThread, 60000) == WAIT_TIMEOUT ){
-				TerminateThread(this->workThread, 0xffffffff);
-			}
 		}
-		CloseHandle(this->workThread);
-		this->workThread = NULL;
+		this->workThread.join();
 	}
 	return TRUE;
 }
@@ -83,10 +63,8 @@ static DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
 	return dwRet;
 }
 
-UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
+void CPipeServer::ServerThread(CPipeServer* pSys)
 {
-	CPipeServer* pSys = (CPipeServer*)pParam;
-
 	HANDLE hPipe = INVALID_HANDLE_VALUE;
 	HANDLE hEventConnect = NULL;
 	HANDLE hEventArray[2];
@@ -181,5 +159,4 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 	if( hEventConnect ){
 		CloseHandle(hEventConnect);
 	}
-	return 0;
 }

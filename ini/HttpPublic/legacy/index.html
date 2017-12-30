@@ -1,13 +1,19 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+if not mg.request_info.uri:find('/$') and
+   not mg.request_info.uri:lower():find('%.html$') then
+  mg.write(Response(301, nil, nil, 0)..'Location: '..mg.request_info.uri..'/\r\n\r\n')
+  return
+end
+
 ct=[=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>EDCB</title>
 </head>
 <body>
 <h1>メニュー</h1>
@@ -24,15 +30,48 @@ ct=[=[
     <li><a href="]=]..PathToRoot()..[=[video/">/video/</a></li>
   </ul>
 </div>
+<div class="aside">
+  <form method="POST" action="index.html">
+    <div>
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="hidden" name="suspend" value="y">
+      <input type="submit" value="システムスタンバイ">
+    </div>
+  </form>
+  <form method="POST" action="index.html">
+    <div>
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="hidden" name="epgcap" value="y">
+      <input type="submit" value="EPG取得">
+    </div>
+  </form>
+  <form method="POST" action="index.html">
+    <div>
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="hidden" name="epgreload" value="y">
+      <input type="submit" value="EPG再読み込み">
+    </div>
+  </form>
+]=]
+
+post=AssertPost()
+if post then
+  if mg.get_var(post,'suspend') then
+    --ok=edcb.os.execute('start "SetSuspendState" powershell -NoProfile -Command "&{sleep 5;Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.Application]::SetSuspendState([Windows.Forms.PowerState]::Suspend,$false,$false)}"')
+    ct=ct..'  <div id="result">スタンバイに移行'..(ok and 'します' or 'できません (スクリプトのコメントアウトを解除してください)')..'</div>\n'
+  elseif mg.get_var(post,'epgcap') then
+    ct=ct..'  <div id="result">EPG取得を開始'..(edcb.EpgCapNow() and 'しました' or 'できませんでした')..'</div>\n'
+  elseif mg.get_var(post,'epgreload') then
+    ct=ct..'  <div id="result">EPG再読み込みを開始'..(edcb.ReloadEpg() and 'しました' or 'できませんでした')..'</div>\n'
+  end
+end
+
+ct=ct..[=[
+</div>
 <div id="footer">
   <a href="about.html">このWebUIについて</a>
 </div>
 </body>
 </html>
 ]=]
-if not mg.request_info.uri:find('/$') and
-   not mg.request_info.uri:lower():find('%.html$') then
-  mg.write(Response(301, nil, nil, 0)..'Location: '..mg.request_info.uri..'/\r\n\r\n')
-else
-  mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
-end
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

@@ -1,26 +1,88 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+function AddReserve(onid,tsid,sid,eid,post)
+  local r={onid=onid,tsid=tsid,sid=sid,eid=eid}
+  local presetID=GetVarInt(post,'presetID',0,65534)
+  if presetID then
+    for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+      if v.id==presetID then
+        r.recSetting=v.recSetting
+        break
+      end
+    end
+  end
+  if r.recSetting then
+    local useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
+    r.recSetting={
+      batFilePath=r.recSetting.batFilePath,
+      recFolderList=r.recSetting.recFolderList,
+      partialRecFolder=r.recSetting.partialRecFolder,
+      recMode=GetVarInt(post,'recMode',0,5),
+      tuijyuuFlag=GetVarInt(post,'tuijyuuFlag')==1,
+      priority=GetVarInt(post,'priority',1,5),
+      pittariFlag=GetVarInt(post,'pittariFlag')==1,
+      suspendMode=GetVarInt(post,'suspendMode',0,4),
+      rebootFlag=GetVarInt(post,'rebootFlag')==1,
+      startMargin=useMargin and GetVarInt(post,'startMargin',-6*3600,6*3600),
+      endMargin=useMargin and GetVarInt(post,'endMargin',-6*3600,6*3600),
+      serviceMode=GetVarInt(post,'serviceMode')==1 and 0 or
+        1+16*(GetVarInt(post,'serviceMode_1',0,1) or 0)+32*(GetVarInt(post,'serviceMode_2',0,1) or 0),
+      continueRecFlag=GetVarInt(post,'continueRecFlag')==1,
+      tunerID=GetVarInt(post,'tunerID'),
+      partialRecFlag=GetVarInt(post,'partialRecFlag',0,1) or 0
+    }
+    local ev=edcb.SearchEpg(onid,tsid,sid,eid)
+    if ev and ev.startTime and ev.durationSecond and
+       r.recSetting.recMode and
+       r.recSetting.priority and
+       r.recSetting.suspendMode and
+       (not useMargin or r.recSetting.startMargin and r.recSetting.endMargin) and
+       r.recSetting.tunerID
+    then
+      r.title=ev.shortInfo and ev.shortInfo.event_name or ''
+      r.startTime=ev.startTime
+      r.startTimeEpg=ev.startTime
+      r.durationSecond=ev.durationSecond
+      r.stationName=''
+      for i,v in ipairs(edcb.GetServiceList() or {}) do
+        if v.onid==onid and v.tsid==tsid and v.sid==sid then
+          r.stationName=v.service_name
+          break
+        end
+      end
+      return edcb.AddReserveData(r)
+    end
+  end
+  return false
+end
+
 ct=[=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="default.css">
-<title>EpgTimer</title>
+<title>番組詳細 - EDCB</title>
 </head>
 <body>
 <h1>番組詳細</h1>
 <div id="main">
-  <dl>
 ]=]
 
-onid,tsid,sid,eid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d+)%-(%d+)%-(%d+)%-(%d+)$')
+onid,tsid,sid,eid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
 onid=tonumber(onid) or 0
 tsid=tonumber(tsid) or 0
 sid=tonumber(sid) or 0
 eid=tonumber(eid) or 0
 presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
+
+post=AssertPost()
+if post then
+  if mg.get_var(post,'addchg') then
+    ct=ct..'  <div id="result">'..(AddReserve(onid,tsid,sid,eid,post) and '予約を追加しました' or '入力値不正')..'</div>\n'
+  end
+end
 
 r=nil
 edcb.htmlEscape=15
@@ -34,15 +96,23 @@ if not r and presetID==65535 then
   presetID=0
 end
 
-ct=ct..'    <dt>番組情報</dt><dd>\n'..ConvertEpgInfoText2(onid,tsid,sid,eid):gsub('\r?\n','<br>\n')..'</dd>\n'
+ct=ct..'  <dl>\n'
+  ..'    <dt>番組情報</dt><dd>\n'..ConvertEpgInfoText2(onid,tsid,sid,eid):gsub('\r?\n','<br>\n')..'</dd>\n'
 if r then
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct=ct..'    <dt>プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）</dt><dd>\n'
-    ..'<form method="POST" action="reservechg.html?id='..r.reserveID
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
     ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
-    ..'予約日時: <input type="text" name="startDate" value="'..string.format('%d/%d/%d', r.startTime.year, r.startTime.month, r.startTime.day)
-    ..'"> <input type="text" name="startTime" value="'..string.format('%d:%d:%d', r.startTime.hour, r.startTime.min, r.startTime.sec)
-    ..'"> ～ <input type="text" name="endTime" value="'..string.format('%d:%d:%d', math.floor(dur/3600)%24, math.floor(dur/60)%60, dur%60)
+    ..'<input type="hidden" name="addchg" value="y">\n'
+    ..'予約日時: <input type="text" size="4" name="start-y" value="'..r.startTime.year
+    ..'">/<input type="text" size="2" name="start-m" value="'..r.startTime.month
+    ..'">/<input type="text" size="2" name="start-d" value="'..r.startTime.day
+    ..'">&emsp;\n<input type="text" size="2" name="start-h" value="'..r.startTime.hour
+    ..'">:<input type="text" size="2" name="start-i" value="'..r.startTime.min
+    ..'">:<input type="text" size="2" name="start-s" value="'..r.startTime.sec
+    ..'"> ～\n<input type="text" size="2" name="end-h" value="'..math.floor(dur/3600)%24
+    ..'">:<input type="text" size="2" name="end-i" value="'..math.floor(dur/60)%60
+    ..'">:<input type="text" size="2" name="end-s" value="'..dur%60
     ..'"><br>\n'
     ..'<input type="submit" value="変更"></div></form></dd>\n'
 end
@@ -55,26 +125,28 @@ for i,v in ipairs(edcb.EnumRecPresetInfo()) do
   if v.id==presetID then
     preset=true
     rs=v.recSetting
-    ct=ct..'<option value="'..v.id..'" selected="selected">'..v.name..'\n'
+    ct=ct..'<option value="'..v.id..'" selected>'..v.name..'\n'
   else
     rs=rs or v.recSetting
     ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
   end
 end
 if r then
-  ct=ct..'<option value="65535"'..(preset and '' or ' selected="selected"')..'>予約時\n'
+  ct=ct..'<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
 end
 ct=ct..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
   ..'    <dt>録画設定<dt><dd>\n'
   ..'<form method="POST" action="'
-  ..(r and 'reservechg.html?id='..r.reserveID or 'reserveadd.html?onid='..onid..'&amp;tsid='..tsid..'&amp;sid='..sid..'&amp;eid='..eid)
+  ..(r and 'reserveinfo.html?id='..r.reserveID or 'epginfo.html?id='..onid..'-'..tsid..'-'..sid..'-'..eid)
   ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
   ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+  ..'<input type="hidden" name="addchg" value="y">\n'
   ..RecSettingTemplate(rs)..'<input type="submit" value="'..(r and '変更' or '追加')..'"></div></form></dd>\n'
 if r then
   ct=ct..'    <dt>-</dt><dd>\n'
-    ..'<form method="POST" action="reservedel.html?id='..r.reserveID..'"><div>\n'
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="hidden" name="del" value="y">\n'
     ..'<input type="submit" value="削除"></div></form></dd>\n'
 end
 
@@ -82,7 +154,7 @@ ct=ct..[=[
   </dl>
 </div>
 <div id="footer">
-  <a href="epg.html">番組表へ</a> <a href="epglist.html">リスト番組表へ</a>
+  <a href="epg.html">番組表</a> <a href="epglist.html?id=]=]..onid..'-'..tsid..'-'..sid..[=[#now">リスト番組表</a>
 </div>
 </body>
 </html>

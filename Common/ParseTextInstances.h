@@ -80,6 +80,7 @@ protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;
 	bool SelectIDToSave(vector<DWORD>& sortList) const;
+	bool IsUtf8Default() const { return true; }
 	//情報が削除される直前の補足作業
 	void OnDelRecInfo(const REC_FILE_INFO& item);
 	//このクラスのnextIDは永続的ではない
@@ -113,6 +114,7 @@ protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, PARSE_REC_INFO2_ITEM>& item);
 	bool SaveLine(const pair<DWORD, PARSE_REC_INFO2_ITEM>& item, wstring& saveLine) const;
 	bool SelectIDToSave(vector<DWORD>& sortList) const;
+	bool IsUtf8Default() const { return true; }
 	DWORD keepCount;
 };
 
@@ -142,6 +144,7 @@ protected:
 	bool SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring& saveLine) const;
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectIDToSave(vector<DWORD>& sortList) const;
+	bool IsUtf8Default() const { return true; }
 	//過去に追加したIDよりも大きな値。100000000(1億)IDで巡回する(ただし1日に1000ID消費しても200年以上かかるので考えるだけ無駄)
 	DWORD nextID;
 	DWORD saveNextID;
@@ -165,6 +168,7 @@ protected:
 	bool SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, wstring& saveLine) const;
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectIDToSave(vector<DWORD>& sortList) const;
+	bool IsUtf8Default() const { return true; }
 	DWORD nextID;
 	DWORD saveNextID;
 };
@@ -184,6 +188,7 @@ protected:
 	bool SaveLine(const pair<DWORD, MANUAL_AUTO_ADD_DATA>& item, wstring& saveLine) const;
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectIDToSave(vector<DWORD>& sortList) const;
+	bool IsUtf8Default() const { return true; }
 	DWORD nextID;
 	DWORD saveNextID;
 };

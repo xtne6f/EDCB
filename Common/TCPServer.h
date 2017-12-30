@@ -3,6 +3,7 @@
 #include "StringUtil.h"
 #include "CtrlCmdDef.h"
 #include "StructDef.h"
+#include "ThreadUtil.h"
 
 #include <functional>
 #include <winsock2.h>
@@ -29,11 +30,11 @@ protected:
 
 	WSAEVENT m_hNotifyEvent;
 	BOOL m_stopFlag;
-	HANDLE m_hThread;
+	thread_ m_thread;
 
 	SOCKET m_sock;
 	
 protected:
-	static UINT WINAPI ServerThread(LPVOID pParam);
+	static void ServerThread(CTCPServer* pSys);
 
 };

@@ -89,9 +89,10 @@
 #define IDC_CHECK_SET_REC_VIEW                  40320
 #define IDC_CHECK_SET_DROP_LOG                  40321
 #define IDC_CHECK_SET_PG_INFO_LOG               40322
-#define IDC_CHECK_SET_REC_NW                    40323
-#define IDC_CHECK_SET_KEEP_DISK                 40324
-#define IDC_CHECK_SET_REC_OVERWRITE             40325
+#define IDC_CHECK_SET_PG_INFO_LOG_AS_UTF8       40323
+#define IDC_CHECK_SET_REC_NW                    40324
+#define IDC_CHECK_SET_KEEP_DISK                 40325
+#define IDC_CHECK_SET_REC_OVERWRITE             40326
 #define IDC_CHECK_SET_BACK_PRIORITY             40400
 #define IDC_CHECK_SET_FIXED_TUNER_PRIORITY      40401
 #define IDC_CHECK_SET_REC_INFO_DEL_FILE         40402

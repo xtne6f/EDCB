@@ -193,7 +193,7 @@ DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_ST
 	}
 
 	string ipA, strPort;
-	WtoA(ip, ipA);
+	WtoUTF8(ip, ipA);
 	Format(strPort, "%d", port);
 
 	struct addrinfo hints = {};

@@ -30,6 +30,7 @@ BOOL CSetDlgApp::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 BOOL CSetDlgApp::OnInitDialog()
 {
 	// TODO:  Ç±Ç±Ç…èâä˙âªÇí«â¡ÇµÇƒÇ≠ÇæÇ≥Ç¢
+	fs_path appIniPath = GetModuleIniPath();
 
 	Button_SetCheck(GetDlgItem(IDC_CHECK_ALL_SERVICE), GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_ENABLE_DECODE), GetPrivateProfileInt(L"SET", L"Scramble", 1, appIniPath.c_str()));
@@ -62,6 +63,7 @@ void CSetDlgApp::SaveIni(void)
 	if( m_hWnd == NULL ){
 		return;
 	}
+	fs_path appIniPath = GetModuleIniPath();
 
 	WritePrivateProfileInt( L"SET", L"AllService", Button_GetCheck(GetDlgItem(IDC_CHECK_ALL_SERVICE)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"Scramble", Button_GetCheck(GetDlgItem(IDC_CHECK_ENABLE_DECODE)), appIniPath.c_str() );

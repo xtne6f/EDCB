@@ -1,11 +1,9 @@
 #include "stdafx.h"
 #include "ReserveManager.h"
-#include <process.h>
 #include "../../Common/PathUtil.h"
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/TimeUtil.h"
-#include "../../Common/BlockLock.h"
 
 CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: notifyManager(notifyManager_)
@@ -18,14 +16,7 @@ CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& 
 	, shutdownModePending(-1)
 	, reserveModified(false)
 	, watchdogStopEvent(NULL)
-	, watchdogThread(NULL)
 {
-	InitializeCriticalSection(&this->managerLock);
-}
-
-CReserveManager::~CReserveManager(void)
-{
-	DeleteCriticalSection(&this->managerLock);
 }
 
 void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
@@ -42,6 +33,7 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 	DWORD shiftID = GetPrivateProfileInt(L"SET", L"RecInfoShiftID", 100000, iniPath.c_str());
 	if( shiftID != 0 ){
 		this->recInfoText.SetNextID(shiftID + 1);
+		TouchFileAsUnicode(iniPath.c_str());
 		WritePrivateProfileInt(L"SET", L"RecInfoShiftID", shiftID % 900000 + 100000, iniPath.c_str());
 	}
 	this->recInfoText.ParseText(fs_path(settingPath).append(REC_INFO_TEXT_NAME).c_str());
@@ -49,19 +41,15 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 
 	this->watchdogStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if( this->watchdogStopEvent ){
-		this->watchdogThread = (HANDLE)_beginthreadex(NULL, 0, WatchdogThread, this, 0, NULL);
+		this->watchdogThread = thread_(WatchdogThread, this);
 	}
 }
 
 void CReserveManager::Finalize()
 {
-	if( this->watchdogThread ){
+	if( this->watchdogThread.joinable() ){
 		SetEvent(this->watchdogStopEvent);
-		if( WaitForSingleObject(this->watchdogThread, 15000) == WAIT_TIMEOUT ){
-			TerminateThread(this->watchdogThread, 0xffffffff);
-		}
-		CloseHandle(this->watchdogThread);
-		this->watchdogThread = NULL;
+		this->watchdogThread.join();
 	}
 	if( this->watchdogStopEvent ){
 		CloseHandle(this->watchdogStopEvent);
@@ -1381,8 +1369,8 @@ DWORD CReserveManager::Check()
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_EPGCAP_END, L"");
 			return MAKELONG(0, CHECK_EPGCAP_END);
 		}else if( this->shutdownModePending >= 0 &&
-		          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == FALSE &&
-		          this->batPostManager.GetWorkCount() == 0 && this->batPostManager.IsWorking() == FALSE ){
+		          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == false &&
+		          this->batPostManager.GetWorkCount() == 0 && this->batPostManager.IsWorking() == false ){
 			//バッチ処理が完了した
 			int shutdownMode = this->shutdownModePending;
 			this->shutdownModePending = -1;
@@ -1403,8 +1391,7 @@ vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
 	CBlockLock lock(&this->managerLock);
 
 	//利用可能なチューナの抽出
-	vector<pair<vector<DWORD>, WORD>> tunerIDList;
-	this->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
+	vector<pair<vector<DWORD>, WORD>> tunerIDList = this->tunerManager.GetEnumEpgCapTuner();
 	vector<DWORD> epgCapIDList;
 	for( size_t i = 0; i < tunerIDList.size(); i++ ){
 		WORD epgCapMax = tunerIDList[i].second;
@@ -1558,7 +1545,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 					//時計合わせ(要SE_SYSTEMTIME_NAME特権)
 					__int64 delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
 					SYSTEMTIME setTime;
-					ConvertSystemTime(now + delay - 9 * 3600 * I64_1SEC, &setTime);
+					ConvertSystemTime(now + delay - I64_UTIL_TIMEZONE, &setTime);
 					LPCWSTR debug = L" err ";
 					if( SetSystemTime(&setTime) ){
 						debug = L" ";
@@ -1709,14 +1696,12 @@ bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int
 vector<DWORD> CReserveManager::GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const
 {
 	//tunerManagerは排他制御の対象外
-	vector<DWORD> idList;
-	this->tunerManager.GetSupportServiceTuner(onid, tsid, sid, &idList);
-	return idList;
+	return this->tunerManager.GetSupportServiceTuner(onid, tsid, sid);
 }
 
 bool CReserveManager::GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const
 {
-	return this->tunerManager.GetCh(tunerID, onid, tsid, sid, space, ch) != FALSE;
+	return this->tunerManager.GetCh(tunerID, onid, tsid, sid, space, ch);
 }
 
 wstring CReserveManager::GetTunerBonFileName(DWORD tunerID) const
@@ -1890,15 +1875,13 @@ vector<CH_DATA5> CReserveManager::GetChDataList() const
 	return list;
 }
 
-UINT WINAPI CReserveManager::WatchdogThread(LPVOID param)
+void CReserveManager::WatchdogThread(CReserveManager* sys)
 {
-	CReserveManager* sys = (CReserveManager*)param;
 	while( WaitForSingleObject(sys->watchdogStopEvent, 2000) == WAIT_TIMEOUT ){
 		for( auto itr = sys->tunerBankMap.cbegin(); itr != sys->tunerBankMap.end(); itr++ ){
 			itr->second->Watch();
 		}
 	}
-	return 0;
 }
 
 void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName)

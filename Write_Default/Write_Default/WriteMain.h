@@ -2,6 +2,7 @@
 
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
+#include "../../Common/ThreadUtil.h"
 
 class CWriteMain
 {
@@ -56,15 +57,15 @@ protected:
 	vector<BYTE> writeBuff;
 	DWORD writeBuffSize;
 	__int64 wrotePos;
-	CRITICAL_SECTION wroteLock;
+	recursive_mutex_ wroteLock;
 
 	HANDLE teeFile;
-	HANDLE teeThread;
+	thread_ teeThread;
 	BOOL teeThreadStopFlag;
 	wstring teeCmd;
 	vector<BYTE> teeBuff;
 	DWORD teeDelay;
 
-	static UINT WINAPI TeeThread(LPVOID param);
+	static void TeeThread(CWriteMain* sys);
 };
 
