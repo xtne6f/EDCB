@@ -7,7 +7,6 @@
 class CPipeServer
 {
 public:
-	CPipeServer(void);
 	~CPipeServer(void);
 
 	BOOL StartServer(
@@ -25,7 +24,7 @@ protected:
 
 	BOOL insecureFlag;
 
-	HANDLE stopEvent;
+	CAutoResetEvent stopEvent;
 	thread_ workThread;
 
 protected:

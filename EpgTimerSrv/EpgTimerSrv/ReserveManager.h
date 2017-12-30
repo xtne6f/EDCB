@@ -165,6 +165,6 @@ private:
 	int shutdownModePending;
 	bool reserveModified;
 
-	HANDLE watchdogStopEvent;
+	CAutoResetEvent watchdogStopEvent;
 	thread_ watchdogThread;
 };

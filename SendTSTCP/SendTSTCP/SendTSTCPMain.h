@@ -60,7 +60,7 @@ public:
 
 
 protected:
-	HANDLE m_hStopSendEvent;
+	CAutoResetEvent m_stopSendEvent;
 	thread_ m_sendThread;
 
 	recursive_mutex_ m_sendLock;

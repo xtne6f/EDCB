@@ -15,7 +15,6 @@ CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& 
 	, epgCapWork(false)
 	, shutdownModePending(-1)
 	, reserveModified(false)
-	, watchdogStopEvent(NULL)
 {
 }
 
@@ -39,21 +38,14 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 	this->recInfoText.ParseText(fs_path(settingPath).append(REC_INFO_TEXT_NAME).c_str());
 	this->recInfo2Text.ParseText(fs_path(settingPath).append(REC_INFO2_TEXT_NAME).c_str());
 
-	this->watchdogStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if( this->watchdogStopEvent ){
-		this->watchdogThread = thread_(WatchdogThread, this);
-	}
+	this->watchdogThread = thread_(WatchdogThread, this);
 }
 
 void CReserveManager::Finalize()
 {
 	if( this->watchdogThread.joinable() ){
-		SetEvent(this->watchdogStopEvent);
+		this->watchdogStopEvent.Set();
 		this->watchdogThread.join();
-	}
-	if( this->watchdogStopEvent ){
-		CloseHandle(this->watchdogStopEvent);
-		this->watchdogStopEvent = NULL;
 	}
 	this->tunerBankMap.clear();
 }
@@ -1877,7 +1869,7 @@ vector<CH_DATA5> CReserveManager::GetChDataList() const
 
 void CReserveManager::WatchdogThread(CReserveManager* sys)
 {
-	while( WaitForSingleObject(sys->watchdogStopEvent, 2000) == WAIT_TIMEOUT ){
+	while( WaitForSingleObject(sys->watchdogStopEvent.Handle(), 2000) == WAIT_TIMEOUT ){
 		for( auto itr = sys->tunerBankMap.cbegin(); itr != sys->tunerBankMap.end(); itr++ ){
 			itr->second->Watch();
 		}

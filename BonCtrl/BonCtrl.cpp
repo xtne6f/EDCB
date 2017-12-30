@@ -7,16 +7,9 @@
 
 CBonCtrl::CBonCtrl(void)
 {
-    this->analyzeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    this->analyzeStopFlag = FALSE;
-
-    this->chScanStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->analyzeStopFlag = FALSE;
 	this->chScanIndexOrStatus = ST_STOP;
-
-	this->epgCapStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->epgCapIndexOrStatus = ST_STOP;
-
-	this->epgCapBackStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->enableLiveEpgCap = FALSE;
 	this->enableRecEpgCap = FALSE;
 
@@ -35,22 +28,6 @@ CBonCtrl::~CBonCtrl(void)
 	CloseBonDriver();
 
 	StopChScan();
-	if( this->chScanStopEvent != NULL ){
-		CloseHandle(this->chScanStopEvent);
-		this->chScanStopEvent = NULL;
-	}
-	if( this->epgCapStopEvent != NULL ){
-		CloseHandle(this->epgCapStopEvent);
-		this->epgCapStopEvent = NULL;
-	}
-	if( this->epgCapBackStopEvent != NULL ){
-		CloseHandle(this->epgCapBackStopEvent);
-		this->epgCapBackStopEvent = NULL;
-	}
-	if( this->analyzeEvent != NULL ){
-		CloseHandle(this->analyzeEvent);
-		this->analyzeEvent = NULL;
-	}
 }
 
 //BonDriverフォルダを指定
@@ -274,7 +251,7 @@ void CBonCtrl::CloseBonDriver()
 
 	if( this->analyzeThread.joinable() ){
 		this->analyzeStopFlag = TRUE;
-		::SetEvent(this->analyzeEvent);
+		this->analyzeEvent.Set();
 		this->analyzeThread.join();
 	}
 
@@ -309,7 +286,7 @@ void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
 		}
 	}
 	if( remain == 0 ){
-		SetEvent(sys->analyzeEvent);
+		sys->analyzeEvent.Set();
 	}
 }
 
@@ -335,7 +312,7 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 		if( data.empty() == false ){
 			sys->tsOut.AddTSBuff(&data.front().front(), (DWORD)data.front().size());
 		}else{
-			WaitForSingleObject(sys->analyzeEvent, 1000);
+			WaitForSingleObject(sys->analyzeEvent.Handle(), 1000);
 		}
 	}
 }
@@ -550,7 +527,7 @@ BOOL CBonCtrl::StartChScan()
 			}
 		}
 		//受信スレッド起動
-		ResetEvent(this->chScanStopEvent);
+		this->chScanStopEvent.Reset();
 		this->chScanThread = thread_(ChScanThread, this);
 		return TRUE;
 	}
@@ -562,7 +539,7 @@ BOOL CBonCtrl::StartChScan()
 void CBonCtrl::StopChScan()
 {
 	if( this->chScanThread.joinable() ){
-		::SetEvent(this->chScanStopEvent);
+		this->chScanStopEvent.Set();
 		this->chScanThread.join();
 	}
 }
@@ -638,7 +615,7 @@ void CBonCtrl::ChScanThread(CBonCtrl* sys)
 	DWORD startTime = 0;
 
 	while(1){
-		if( ::WaitForSingleObject(sys->chScanStopEvent, chkNext ? 0 : 1000) != WAIT_TIMEOUT ){
+		if( WaitForSingleObject(sys->chScanStopEvent.Handle(), chkNext ? 0 : 1000) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			sys->chScanIndexOrStatus = ST_CANCEL;
 			break;
@@ -738,7 +715,7 @@ BOOL CBonCtrl::StartEpgCap(
 		}
 		this->epgCapIndexOrStatus = 0;
 		//受信スレッド起動
-		ResetEvent(this->epgCapStopEvent);
+		this->epgCapStopEvent.Reset();
 		this->epgCapThread = thread_(EpgCapThread, this);
 		return TRUE;
 	}
@@ -751,7 +728,7 @@ void CBonCtrl::StopEpgCap(
 	)
 {
 	if( this->epgCapThread.joinable() ){
-		::SetEvent(this->epgCapStopEvent);
+		this->epgCapStopEvent.Set();
 		this->epgCapThread.join();
 	}
 }
@@ -803,7 +780,7 @@ void CBonCtrl::EpgCapThread(CBonCtrl* sys)
 	basicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, commonIniPath.c_str());
 
 	while(1){
-		if( ::WaitForSingleObject(sys->epgCapStopEvent, wait) != WAIT_TIMEOUT ){
+		if( WaitForSingleObject(sys->epgCapStopEvent.Handle(), wait) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			sys->epgCapIndexOrStatus = ST_CANCEL;
 			sys->tsOut.StopSaveEPG(FALSE);
@@ -984,7 +961,7 @@ void CBonCtrl::StartBackgroundEpgCap()
 	    (this->epgCapThread.joinable() == false || WaitForSingleObject(this->epgCapThread.native_handle(), 0) != WAIT_TIMEOUT) ){
 		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			//受信スレッド起動
-			ResetEvent(this->epgCapBackStopEvent);
+			this->epgCapBackStopEvent.Reset();
 			this->epgCapBackThread = thread_(EpgCapBackThread, this);
 		}
 	}
@@ -993,7 +970,7 @@ void CBonCtrl::StartBackgroundEpgCap()
 void CBonCtrl::StopBackgroundEpgCap()
 {
 	if( this->epgCapBackThread.joinable() ){
-		::SetEvent(this->epgCapBackStopEvent);
+		this->epgCapBackStopEvent.Set();
 		this->epgCapBackThread.join();
 	}
 }
@@ -1005,7 +982,7 @@ void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 10, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
 
-	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, sys->epgCapBackStartWaitSec*1000) != WAIT_TIMEOUT ){
+	if( WaitForSingleObject(sys->epgCapBackStopEvent.Handle(), sys->epgCapBackStartWaitSec*1000) != WAIT_TIMEOUT ){
 		//キャンセルされた
 		return;
 	}
@@ -1042,7 +1019,7 @@ void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 	GetEpgDataFilePath(ONID, basicOnly ? 0xFFFF : TSID, epgDataPath);
 	sys->tsOut.StartSaveEPG(epgDataPath);
 
-	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 60*1000) != WAIT_TIMEOUT ){
+	if( WaitForSingleObject(sys->epgCapBackStopEvent.Handle(), 60*1000) != WAIT_TIMEOUT ){
 		//キャンセルされた
 		sys->tsOut.StopSaveEPG(FALSE);
 		return;
@@ -1085,7 +1062,7 @@ void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 			}
 		}
 
-		if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 10*1000) != WAIT_TIMEOUT ){
+		if( WaitForSingleObject(sys->epgCapBackStopEvent.Handle(), 10*1000) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			sys->tsOut.StopSaveEPG(FALSE);
 			break;

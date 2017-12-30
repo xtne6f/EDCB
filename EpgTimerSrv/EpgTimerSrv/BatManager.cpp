@@ -12,19 +12,13 @@ CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 	this->idleMargin = MAXDWORD;
 	this->nextBatMargin = 0;
 	this->batWorkExitingFlag = false;
-
-	this->batWorkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 CBatManager::~CBatManager()
 {
 	if( this->batWorkThread.joinable() ){
-		SetEvent(this->batWorkStopEvent);
+		this->batWorkStopEvent.Set();
 		this->batWorkThread.join();
-	}
-	if( this->batWorkStopEvent != NULL ){
-		CloseHandle(this->batWorkStopEvent);
-		this->batWorkStopEvent = NULL;
 	}
 }
 
@@ -67,7 +61,7 @@ void CBatManager::StartWork()
 		this->batWorkThread.join();
 	}
 	if( this->batWorkThread.joinable() == false && this->workList.empty() == false && this->idleMargin >= this->nextBatMargin ){
-		ResetEvent(this->batWorkStopEvent);
+		this->batWorkStopEvent.Reset();
 		this->batWorkExitingFlag = false;
 		this->batWorkThread = thread_(BatWorkThread, this);
 	}
@@ -151,7 +145,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 					}
 					if( hProcess ){
 						//I—¹ŠÄŽ‹
-						HANDLE hEvents[2] = { sys->batWorkStopEvent, hProcess };
+						HANDLE hEvents[2] = { sys->batWorkStopEvent.Handle(), hProcess };
 						DWORD dwRet = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
 						CloseHandle(hProcess);
 						if( dwRet == WAIT_OBJECT_0 ){

@@ -7,11 +7,6 @@
 #define PIPE_TIMEOUT 500
 #define PIPE_CONNECT_OPEN_TIMEOUT 20000
 
-CPipeServer::CPipeServer(void)
-{
-	this->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-}
-
 CPipeServer::~CPipeServer(void)
 {
 	StopServer();
@@ -35,7 +30,7 @@ BOOL CPipeServer::StartServer(
 	this->pipeName = pipeName_;
 	this->insecureFlag = insecureFlag_;
 
-	ResetEvent(this->stopEvent);
+	this->stopEvent.Reset();
 	this->workThread = thread_(ServerThread, this);
 
 	return TRUE;
@@ -44,7 +39,7 @@ BOOL CPipeServer::StartServer(
 BOOL CPipeServer::StopServer(BOOL checkOnlyFlag)
 {
 	if( this->workThread.joinable() ){
-		::SetEvent(this->stopEvent);
+		this->stopEvent.Set();
 		if( checkOnlyFlag ){
 			//終了チェックして結果を返すだけ
 			if( WaitForSingleObject(this->workThread.native_handle(), 0) == WAIT_TIMEOUT ){
@@ -80,7 +75,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 		sa.lpSecurityDescriptor = &sd;
 	}
 	hEventConnect = CreateEvent(sa.nLength != 0 ? &sa : NULL, FALSE, FALSE, pSys->eventName.c_str());
-	hEventArray[0] = pSys->stopEvent;
+	hEventArray[0] = pSys->stopEvent.Handle();
 	hEventArray[1] = CreateEvent(NULL, FALSE, FALSE, NULL);
 	
 	if( hEventConnect && hEventArray[1] ){

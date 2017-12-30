@@ -7,8 +7,6 @@
 
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
-	m_hStopSendEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
 }
@@ -16,8 +14,6 @@ CSendTSTCPMain::CSendTSTCPMain(void)
 CSendTSTCPMain::~CSendTSTCPMain(void)
 {
 	UnInitialize();
-
-	CloseHandle(m_hStopSendEvent);
 
 	WSACleanup();
 }
@@ -99,7 +95,7 @@ DWORD CSendTSTCPMain::StartSend(
 		return FALSE;
 	}
 
-	ResetEvent(m_hStopSendEvent);
+	m_stopSendEvent.Reset();
 	m_sendThread = thread_(SendThread, this);
 
 	return TRUE;
@@ -111,7 +107,7 @@ DWORD CSendTSTCPMain::StopSend(
 	)
 {
 	if( m_sendThread.joinable() ){
-		::SetEvent(m_hStopSendEvent);
+		m_stopSendEvent.Set();
 		m_sendThread.join();
 	}
 
@@ -167,7 +163,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 	DWORD dwCount = 0;
 	DWORD dwCheckConnectTick = GetTickCount();
 	while(1){
-		if( ::WaitForSingleObject(pSys->m_hStopSendEvent, dwWait) != WAIT_TIMEOUT ){
+		if( WaitForSingleObject(pSys->m_stopSendEvent.Handle(), dwWait) != WAIT_TIMEOUT ){
 			//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
 			break;
 		}

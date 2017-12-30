@@ -9,7 +9,6 @@
 
 CNotifyManager::CNotifyManager()
 {
-	this->notifyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->notifyStopFlag = false;
 	this->srvStatus = 0;
 	this->notifyCount = 1;
@@ -22,12 +21,8 @@ CNotifyManager::~CNotifyManager()
 {
 	if( this->notifyThread.joinable() ){
 		this->notifyStopFlag = true;
-		SetEvent(this->notifyEvent);
+		this->notifyEvent.Set();
 		this->notifyThread.join();
-	}
-	if( this->notifyEvent != NULL ){
-		CloseHandle(this->notifyEvent);
-		this->notifyEvent = NULL;
 	}
 	for( size_t i = 0; i < this->registGUIList.size(); CloseHandle(this->registGUIList[i++].second) );
 }
@@ -201,7 +196,7 @@ void CNotifyManager::SendNotify()
 	if( this->notifyThread.joinable() == false ){
 		this->notifyThread = thread_(SendNotifyThread, this);
 	}
-	SetEvent(this->notifyEvent);
+	this->notifyEvent.Set();
 }
 
 void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
@@ -218,7 +213,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			wait1Sec = false;
 			Sleep(1000);
 		}
-		if( WaitForSingleObject(sys->notifyEvent, INFINITE) != WAIT_OBJECT_0 || sys->notifyStopFlag ){
+		if( WaitForSingleObject(sys->notifyEvent.Handle(), INFINITE) != WAIT_OBJECT_0 || sys->notifyStopFlag ){
 			//キャンセルされた
 			break;
 		}
@@ -246,7 +241,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 					}
 				}
 				if( itrNotify == sys->notifyList.end() ){
-					SetEvent(sys->notifyEvent);
+					sys->notifyEvent.Set();
 					wait1Sec = true;
 					continue;
 				}
@@ -265,7 +260,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			}
 			if( sys->notifyList.empty() == false ){
 				//次の通知がある
-				SetEvent(sys->notifyEvent);
+				sys->notifyEvent.Set();
 			}
 			//巡回カウンタをつける(0を避けるため奇数)
 			sys->notifyCount += 2;

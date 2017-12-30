@@ -31,7 +31,7 @@ public:
 protected:
 	mutable recursive_mutex_ managerLock;
 
-	HANDLE notifyEvent;
+	CAutoResetEvent notifyEvent;
 	thread_ notifyThread;
 	bool notifyStopFlag;
 	DWORD srvStatus;

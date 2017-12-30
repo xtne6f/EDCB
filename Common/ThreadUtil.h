@@ -78,4 +78,21 @@ private:
 	recursive_mutex_* m_mtx;
 };
 
+class CAutoResetEvent
+{
+public:
+	CAutoResetEvent(bool initialState = false) {
+		m_h = CreateEvent(nullptr, FALSE, initialState, nullptr);
+		if (!m_h) throw std::runtime_error("");
+	}
+	~CAutoResetEvent() { CloseHandle(m_h); }
+	void Set() { SetEvent(m_h); }
+	void Reset() { ResetEvent(m_h); }
+	HANDLE Handle() { return m_h; }
+private:
+	CAutoResetEvent(const CAutoResetEvent&);
+	CAutoResetEvent& operator=(const CAutoResetEvent&);
+	HANDLE m_h;
+};
+
 #endif
