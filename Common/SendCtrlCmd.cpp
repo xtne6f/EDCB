@@ -205,10 +205,22 @@ DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_ST
 		return CMD_ERR_INVALID_ARG;
 	}
 	SOCKET sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	if( sock != INVALID_SOCKET &&
-	    connect(sock, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR ){
-		closesocket(sock);
-		sock = INVALID_SOCKET;
+	if( sock != INVALID_SOCKET ){
+		fd_set wmask;
+		FD_ZERO(&wmask);
+		FD_SET(sock, &wmask);
+		struct timeval tv = {(long)(timeOut / 1000), 0};
+		//ノンブロッキングモードで接続待ち
+		unsigned long x = 1;
+		if( ioctlsocket(sock, FIONBIO, &x) == SOCKET_ERROR ||
+		    (connect(sock, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR &&
+		     (WSAGetLastError() != WSAEWOULDBLOCK || select((int)sock + 1, NULL, &wmask, NULL, &tv) != 1)) ){
+			closesocket(sock);
+			sock = INVALID_SOCKET;
+		}else{
+			x = 0;
+			ioctlsocket(sock, FIONBIO, &x);
+		}
 	}
 	freeaddrinfo(result);
 
