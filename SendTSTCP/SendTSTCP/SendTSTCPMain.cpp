@@ -4,6 +4,10 @@
 //SendTSTCPプロトコルのヘッダの送信を抑制する既定のポート範囲
 #define SEND_TS_TCP_NOHEAD_PORT_MIN 22000
 #define SEND_TS_TCP_NOHEAD_PORT_MAX 22999
+//送信バッファの最大数(サイズはAddSendData()の入力に依存)
+#define SEND_TS_TCP_BUFF_MAX 500
+//送信先(サーバ)接続のためのポーリング間隔
+#define SEND_TS_TCP_CONNECT_INTERVAL_MSEC 2000
 
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
@@ -13,27 +17,9 @@ CSendTSTCPMain::CSendTSTCPMain(void)
 
 CSendTSTCPMain::~CSendTSTCPMain(void)
 {
-	UnInitialize();
+	StopSend();
 
 	WSACleanup();
-}
-
-//DLLの初期化
-//戻り値：TRUE:成功、FALSE:失敗
-BOOL CSendTSTCPMain::Initialize(
-	)
-{
-	return TRUE;
-}
-
-//DLLの開放
-//戻り値：なし
-void CSendTSTCPMain::UnInitialize(
-	)
-{
-	StopSend();
-	ClearSendAddr();
-	ClearSendBuff();
 }
 
 //送信先を追加
@@ -55,14 +41,14 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	}
 	Item.sock = INVALID_SOCKET;
 	Item.bConnect = FALSE;
-	wstring strKey=L"";
-	Format(strKey, L"%s:%d", lpcwszIP, dwPort);
 
 	CBlockLock lock(&m_sendLock);
-	m_SendList.insert(pair<wstring, SEND_INFO>(strKey, Item));
+	if( std::find_if(m_SendList.begin(), m_SendList.end(), [&Item](const SEND_INFO& a) {
+	        return a.strIP == Item.strIP && (WORD)a.dwPort == (WORD)Item.dwPort; }) == m_SendList.end() ){
+		m_SendList.push_back(Item);
+	}
 
 	return TRUE;
-
 }
 
 //送信先クリア
@@ -70,20 +56,15 @@ DWORD CSendTSTCPMain::AddSendAddr(
 DWORD CSendTSTCPMain::ClearSendAddr(
 	)
 {
-	CBlockLock lock(&m_sendLock);
-
-	map<wstring, SEND_INFO>::iterator itr;
-	for( itr = m_SendList.begin(); itr != m_SendList.end(); itr++){
-		if( itr->second.sock != INVALID_SOCKET ){
-			closesocket(itr->second.sock);
-			itr->second.sock = INVALID_SOCKET;
-			itr->second.bConnect = FALSE;
-		}
+	if( m_sendThread.joinable() ){
+		StopSend();
+		m_SendList.clear();
+		StartSend();
+	}else{
+		m_SendList.clear();
 	}
-	m_SendList.clear();
 
 	return TRUE;
-
 }
 
 //データ送信を開始
@@ -111,17 +92,6 @@ DWORD CSendTSTCPMain::StopSend(
 		m_sendThread.join();
 	}
 
-	CBlockLock lock(&m_sendLock);
-	map<wstring, SEND_INFO>::iterator itr;
-	for( itr = m_SendList.begin(); itr != m_SendList.end(); itr++){
-		if( itr->second.sock != INVALID_SOCKET ){
-			shutdown(itr->second.sock,SD_BOTH);
-			closesocket(itr->second.sock);
-			itr->second.sock = INVALID_SOCKET;
-			itr->second.bConnect = FALSE;
-		}
-	}
-
 	return TRUE;
 }
 
@@ -132,15 +102,14 @@ DWORD CSendTSTCPMain::AddSendData(
 	DWORD dwSize
 	)
 {
-
 	if( m_sendThread.joinable() ){
-		CBlockLock lock(&m_buffLock);
+		CBlockLock lock(&m_sendLock);
 		m_TSBuff.push_back(vector<BYTE>());
 		m_TSBuff.back().reserve(sizeof(DWORD) * 2 + dwSize);
 		m_TSBuff.back().resize(sizeof(DWORD) * 2);
 		m_TSBuff.back().insert(m_TSBuff.back().end(), pbData, pbData + dwSize);
-		if( m_TSBuff.size() > 500 ){
-			for( ; m_TSBuff.size() > 250; m_TSBuff.pop_front() );
+		if( m_TSBuff.size() > SEND_TS_TCP_BUFF_MAX ){
+			for( ; m_TSBuff.size() > SEND_TS_TCP_BUFF_MAX / 2; m_TSBuff.pop_front() );
 		}
 	}
 	return TRUE;
@@ -151,7 +120,7 @@ DWORD CSendTSTCPMain::AddSendData(
 DWORD CSendTSTCPMain::ClearSendBuff(
 	)
 {
-	CBlockLock lock(&m_buffLock);
+	CBlockLock lock(&m_sendLock);
 	m_TSBuff.clear();
 
 	return TRUE;
@@ -159,102 +128,130 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 
 void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 {
-	DWORD dwWait = 0;
 	DWORD dwCount = 0;
 	DWORD dwCheckConnectTick = GetTickCount();
-	while(1){
-		if( WaitForSingleObject(pSys->m_stopSendEvent.Handle(), dwWait) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
-		}
-
+	for(;;){
 		DWORD tick = GetTickCount();
-		if( tick - dwCheckConnectTick > 1000 )
-		{
-		dwCheckConnectTick = tick;
-		CBlockLock lock(&pSys->m_sendLock);
+		if( tick - dwCheckConnectTick > SEND_TS_TCP_CONNECT_INTERVAL_MSEC ){
+			dwCheckConnectTick = tick;
+			CBlockLock lock(&pSys->m_sendLock);
 
-		map<wstring, SEND_INFO>::iterator itr;
-		for( itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++){
-			if( itr->second.bConnect == FALSE ){
-				if( itr->second.sock != INVALID_SOCKET && itr->second.bConnect == FALSE ){
-					fd_set rmask,wmask;
-					FD_ZERO(&rmask);
-					FD_SET(itr->second.sock,&rmask);
-					wmask=rmask;
-					struct timeval tv={0,0};
-					int rc=select((int)itr->second.sock+1,&rmask, &wmask, NULL, &tv);
-					if(rc==SOCKET_ERROR || rc == 0){
-						closesocket(itr->second.sock);
-						itr->second.sock = INVALID_SOCKET;
+			for( auto itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++ ){
+				if( itr->bConnect == FALSE && itr->sock != INVALID_SOCKET ){
+					fd_set wmask;
+					FD_ZERO(&wmask);
+					FD_SET(itr->sock, &wmask);
+					struct timeval tv = {0, 0};
+					if( select((int)itr->sock + 1, NULL, &wmask, NULL, &tv) == 1 ){
+						itr->bConnect = TRUE;
 					}else{
-						ULONG x = 0;
-						ioctlsocket(itr->second.sock,FIONBIO, &x);
-						itr->second.bConnect = TRUE;
+						closesocket(itr->sock);
+						itr->sock = INVALID_SOCKET;
 					}
-				}else{
+				}
+				if( itr->sock == INVALID_SOCKET ){
 					string strPort;
-					Format(strPort, "%d", (WORD)itr->second.dwPort);
+					Format(strPort, "%d", (WORD)itr->dwPort);
 					struct addrinfo hints = {};
 					hints.ai_flags = AI_NUMERICHOST;
 					hints.ai_socktype = SOCK_STREAM;
 					hints.ai_protocol = IPPROTO_TCP;
 					struct addrinfo* result;
-					if( getaddrinfo(itr->second.strIP.c_str(), strPort.c_str(), &hints, &result) != 0 ){
-						continue;
-					}
-					itr->second.sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-					if( itr->second.sock == INVALID_SOCKET ){
-						freeaddrinfo(result);
-						continue;
-					}
-					ULONG x = 1;
-					ioctlsocket(itr->second.sock,FIONBIO, &x);
-
-					if( connect(itr->second.sock, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR ){
-						if( WSAGetLastError() != WSAEWOULDBLOCK ){
-							closesocket(itr->second.sock);
-							itr->second.sock = INVALID_SOCKET;
+					if( getaddrinfo(itr->strIP.c_str(), strPort.c_str(), &hints, &result) == 0 ){
+						itr->sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+						if( itr->sock != INVALID_SOCKET ){
+							//ノンブロッキングモードへ
+							unsigned long x = 1;
+							if( ioctlsocket(itr->sock, FIONBIO, &x) == SOCKET_ERROR ){
+								closesocket(itr->sock);
+								itr->sock = INVALID_SOCKET;
+							}else if( connect(itr->sock, result->ai_addr, (int)result->ai_addrlen) != SOCKET_ERROR ){
+								itr->bConnect = TRUE;
+							}else if( WSAGetLastError() != WSAEWOULDBLOCK ){
+								closesocket(itr->sock);
+								itr->sock = INVALID_SOCKET;
+							}
 						}
+						freeaddrinfo(result);
 					}
-					freeaddrinfo(result);
 				}
 			}
-		}
 		} //m_sendLock
 
 		std::list<vector<BYTE>> item;
+		size_t sendListSizeOrStop;
 		{
-			CBlockLock lock(&pSys->m_buffLock);
+			CBlockLock lock(&pSys->m_sendLock);
 
 			if( pSys->m_TSBuff.empty() == false ){
 				item.splice(item.end(), pSys->m_TSBuff, pSys->m_TSBuff.begin());
 				DWORD dwCmd[2] = { dwCount, (DWORD)(item.back().size() - sizeof(DWORD) * 2) };
 				memcpy(&item.back().front(), dwCmd, sizeof(dwCmd));
 			}
-			dwWait = pSys->m_TSBuff.empty() ? 100 : 0;
-		} //m_buffLock
+			//途中で減ることはない
+			sendListSizeOrStop = pSys->m_SendList.size();
+		}
 
-		if( item.empty() == false ){
-			vector<BYTE>& buffSend = item.back();
-			CBlockLock lock(&pSys->m_sendLock);
-
-			map<wstring, SEND_INFO>::iterator itr;
-			for( itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++){
-				if( itr->second.bConnect == TRUE ){
-					size_t adjust = HIWORD(itr->second.dwPort) == 1 ? buffSend.size() - sizeof(DWORD)*2 : buffSend.size();
-					if( adjust > 0 && send(itr->second.sock, 
-						(char*)&buffSend.front() + (buffSend.size() - adjust),
-						(int)adjust,
-						0
-						) == SOCKET_ERROR){
-							closesocket(itr->second.sock);
-							itr->second.sock = INVALID_SOCKET;
-							itr->second.bConnect = FALSE;
+		if( item.empty() || sendListSizeOrStop == 0 ){
+			if( WaitForSingleObject(pSys->m_stopSendEvent.Handle(), item.empty() ? 100 : 0) != WAIT_TIMEOUT ){
+				//キャンセルされた
+				break;
+			}
+		}else{
+			for( size_t i = 0; i < sendListSizeOrStop; i++ ){
+				SOCKET sock = INVALID_SOCKET;
+				size_t adjust = item.back().size();
+				{
+					CBlockLock lock(&pSys->m_sendLock);
+					if( pSys->m_SendList[i].bConnect ){
+						sock = pSys->m_SendList[i].sock;
 					}
-					dwCount++;
+					if( pSys->m_SendList[i].dwPort >> 16 == 1 ){
+						adjust -= sizeof(DWORD) * 2;
+					}
+				}
+				for(;;){
+					if( WaitForSingleObject(pSys->m_stopSendEvent.Handle(), 0) != WAIT_TIMEOUT ){
+						//キャンセルされた
+						sendListSizeOrStop = 0;
+						break;
+					}
+					if( sock == INVALID_SOCKET ){
+						break;
+					}
+					if( adjust == 0 ||
+					    send(sock, (char*)(item.back().data() + item.back().size() - adjust), (int)adjust, 0) != SOCKET_ERROR ){
+						dwCount++;
+						break;
+					}
+					if( WSAGetLastError() != WSAEWOULDBLOCK ){
+						closesocket(sock);
+						CBlockLock lock(&pSys->m_sendLock);
+						pSys->m_SendList[i].sock = INVALID_SOCKET;
+						pSys->m_SendList[i].bConnect = FALSE;
+						break;
+					}
+					//すこし待つ
+					fd_set wmask;
+					FD_ZERO(&wmask);
+					FD_SET(sock, &wmask);
+					struct timeval tv10msec = {0, 10000};
+					select((int)sock + 1, NULL, &wmask, NULL, &tv10msec);
 				}
 			}
+			if( sendListSizeOrStop == 0 ){
+				break;
+			}
+		}
+	}
+
+	CBlockLock lock(&pSys->m_sendLock);
+	for( auto itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++ ){
+		if( itr->sock != INVALID_SOCKET ){
+			//未送信データが捨てられても問題ないのでshutdown()は省略
+			closesocket(itr->sock);
+			itr->sock = INVALID_SOCKET;
+			itr->bConnect = FALSE;
 		}
 	}
 }

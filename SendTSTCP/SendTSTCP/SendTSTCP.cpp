@@ -18,10 +18,7 @@ int WINAPI InitializeDLL(
 	int iID = -1;
 
 	try{
-		std::shared_ptr<CSendTSTCPMain> ptr = std::make_shared<CSendTSTCPMain>();
-		if( ptr->Initialize() != FALSE ){
-			iID = (int)g_instMng.push(ptr);
-		}
+		iID = (int)g_instMng.push(std::make_shared<CSendTSTCPMain>());
 	}catch( std::bad_alloc& ){
 	}
 
@@ -39,7 +36,6 @@ DWORD WINAPI UnInitializeDLL(
 	{
 		std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.pop(iID);
 		if( ptr != NULL ){
-			ptr->UnInitialize();
 			err = NO_ERR;
 		}
 	}
