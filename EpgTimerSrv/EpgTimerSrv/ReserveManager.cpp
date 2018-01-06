@@ -1879,10 +1879,12 @@ void CReserveManager::WatchdogThread(CReserveManager* sys)
 void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName)
 {
 	if( workList.empty() == false ){
-		workList[0].batFilePath = GetModulePath().replace_filename(fileName).native();
-		if( GetFileAttributes(workList[0].batFilePath.c_str()) != INVALID_FILE_ATTRIBUTES ){
+		fs_path batFilePath = GetModulePath().replace_filename(fileName);
+		//同名のPowerShellスクリプトでもよい
+		if( GetFileAttributes(batFilePath.c_str()) != INVALID_FILE_ATTRIBUTES ||
+		    GetFileAttributes(batFilePath.replace_extension(L".ps1").c_str()) != INVALID_FILE_ATTRIBUTES ){
 			for( size_t i = 0; i < workList.size(); i++ ){
-				workList[i].batFilePath = workList[0].batFilePath;
+				workList[i].batFilePath = batFilePath.native();
 				this->batPostManager.AddBatWork(workList[i]);
 			}
 		}
@@ -1901,21 +1903,29 @@ void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
 void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix)
 {
 	WCHAR v[64];
+	swprintf_s(v, L"%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
+	           startTime.wYear, startTime.wMonth, startTime.wDay, startTime.wHour, startTime.wMinute, startTime.wSecond,
+	           (I64_UTIL_TIMEZONE < 0 ? L'-' : L'+'),
+	           (int)((I64_UTIL_TIMEZONE < 0 ? -I64_UTIL_TIMEZONE : I64_UTIL_TIMEZONE) / I64_1SEC) / 3600,
+	           (int)((I64_UTIL_TIMEZONE < 0 ? -I64_UTIL_TIMEZONE : I64_UTIL_TIMEZONE) / I64_1SEC) / 60 % 60);
+	macroList.push_back(pair<string, wstring>(string("StartTime") + suffix, v));
 	for( string p = "S"; p != ""; p = (p == "S" ? "E" : "") ){
 		SYSTEMTIME t = startTime;
 		if( p == "E" ){
 			ConvertSystemTime(ConvertI64Time(t) + durationSecond * I64_1SEC, &t);
 		}
 		for( int i = 0; GetTimeMacroName(i); i++ ){
-			macroList.push_back(std::make_pair(p + GetTimeMacroName(i) + suffix, GetTimeMacroValue(i, t)));
+			//従来形式は#でコメントアウトしておく
+			macroList.push_back(std::make_pair('#' + p + GetTimeMacroName(i) + suffix, GetTimeMacroValue(i, t)));
 		}
 	}
-	swprintf_s(v, L"%02d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("DUHH") + suffix, v));
-	swprintf_s(v, L"%d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("DUH") + suffix, v));
-	swprintf_s(v, L"%02d", durationSecond % 3600 / 60);	macroList.push_back(pair<string, wstring>(string("DUMM") + suffix, v));
-	swprintf_s(v, L"%d", durationSecond % 3600 / 60);	macroList.push_back(pair<string, wstring>(string("DUM") + suffix, v));
-	swprintf_s(v, L"%02d", durationSecond % 60);		macroList.push_back(pair<string, wstring>(string("DUSS") + suffix, v));
-	swprintf_s(v, L"%d", durationSecond % 60);			macroList.push_back(pair<string, wstring>(string("DUS") + suffix, v));
+	swprintf_s(v, L"%u", durationSecond);				macroList.push_back(pair<string, wstring>(string("DurationSecond") + suffix, v));
+	swprintf_s(v, L"%02d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("#DUHH") + suffix, v));
+	swprintf_s(v, L"%d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("#DUH") + suffix, v));
+	swprintf_s(v, L"%02d", durationSecond % 3600 / 60);	macroList.push_back(pair<string, wstring>(string("#DUMM") + suffix, v));
+	swprintf_s(v, L"%d", durationSecond % 3600 / 60);	macroList.push_back(pair<string, wstring>(string("#DUM") + suffix, v));
+	swprintf_s(v, L"%02d", durationSecond % 60);		macroList.push_back(pair<string, wstring>(string("#DUSS") + suffix, v));
+	swprintf_s(v, L"%d", durationSecond % 60);			macroList.push_back(pair<string, wstring>(string("#DUS") + suffix, v));
 }
 
 void CReserveManager::AddReserveDataMacro(vector<pair<string, wstring>>& macroList, const RESERVE_DATA& data, LPCSTR suffix)
