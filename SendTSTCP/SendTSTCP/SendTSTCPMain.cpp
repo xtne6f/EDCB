@@ -219,16 +219,20 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					if( sock == INVALID_SOCKET ){
 						break;
 					}
-					if( adjust == 0 ||
-					    send(sock, (char*)(item.back().data() + item.back().size() - adjust), (int)adjust, 0) != SOCKET_ERROR ){
-						dwCount++;
-						break;
+					if( adjust != 0 ){
+						int ret = send(sock, (char*)(item.back().data() + item.back().size() - adjust), (int)adjust, 0);
+						if( ret == 0 || (ret == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) ){
+							closesocket(sock);
+							CBlockLock lock(&pSys->m_sendLock);
+							pSys->m_SendList[i].sock = INVALID_SOCKET;
+							pSys->m_SendList[i].bConnect = FALSE;
+							break;
+						}else if( ret != SOCKET_ERROR ){
+							adjust -= ret;
+						}
 					}
-					if( WSAGetLastError() != WSAEWOULDBLOCK ){
-						closesocket(sock);
-						CBlockLock lock(&pSys->m_sendLock);
-						pSys->m_SendList[i].sock = INVALID_SOCKET;
-						pSys->m_SendList[i].bConnect = FALSE;
+					if( adjust == 0 ){
+						dwCount++;
 						break;
 					}
 					//‚·‚±‚µ‘Ò‚Â
