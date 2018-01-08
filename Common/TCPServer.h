@@ -13,6 +13,11 @@
 class CTCPServer
 {
 public:
+	//応答が保留されているコマンドを再度呼ぶ(=NotifyUpdate()する)間隔
+	static const DWORD NOTIFY_INTERVAL = 2000;
+	//送受信タイムアウト
+	static const DWORD SND_RCV_TIMEOUT = 30000;
+
 	CTCPServer(void);
 	~CTCPServer(void);
 
@@ -29,12 +34,15 @@ protected:
 	string m_acl;
 
 	WSAEVENT m_hNotifyEvent;
-	BOOL m_stopFlag;
+	WSAEVENT m_hAcceptEvent;
+	bool m_stopFlag;
 	thread_ m_thread;
 
 	SOCKET m_sock;
 	
 protected:
+	static void SetBlockingMode(SOCKET sock);
+	static void SetNonBlockingMode(SOCKET sock, WSAEVENT hEvent, long lNetworkEvents);
 	static void ServerThread(CTCPServer* pSys);
 
 };

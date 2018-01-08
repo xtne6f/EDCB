@@ -220,6 +220,8 @@ DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_ST
 		}else{
 			x = 0;
 			ioctlsocket(sock, FIONBIO, &x);
+			setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&SND_RCV_TIMEOUT, sizeof(SND_RCV_TIMEOUT));
+			setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&SND_RCV_TIMEOUT, sizeof(SND_RCV_TIMEOUT));
 		}
 	}
 	freeaddrinfo(result);
@@ -237,8 +239,9 @@ DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_ST
 		extSize = min(sendCmd->dataSize, (DWORD)(sizeof(head) - sizeof(DWORD)*2));
 		memcpy(head + 2, sendCmd->data.get(), extSize);
 	}
-	if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) == SOCKET_ERROR ||
-	    sendCmd->dataSize > extSize && send(sock, (char*)sendCmd->data.get() + extSize, sendCmd->dataSize - extSize, 0) == SOCKET_ERROR ){
+	if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) != (int)(sizeof(DWORD)*2 + extSize) ||
+	    (sendCmd->dataSize > extSize &&
+	     send(sock, (char*)sendCmd->data.get() + extSize, sendCmd->dataSize - extSize, 0) != (int)(sendCmd->dataSize - extSize)) ){
 		closesocket(sock);
 		return CMD_ERR;
 	}
