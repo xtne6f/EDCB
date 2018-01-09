@@ -35,7 +35,7 @@ public:
 		m_h = nullptr;
 	}
 	void detach() {
-		if (!m_h) std::runtime_error("");
+		if (!m_h) throw std::runtime_error("");
 		CloseHandle(m_h);
 		m_h = nullptr;
 	}
