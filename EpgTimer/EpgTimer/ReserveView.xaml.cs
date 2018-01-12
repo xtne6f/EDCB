@@ -32,8 +32,6 @@ namespace EpgTimer
         string _lastHeaderClicked2 = null;
         ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-
         MainWindow _mainWindow;
 
         public ReserveView()
@@ -54,40 +52,6 @@ namespace EpgTimer
                     columnList[info.Tag].Width = info.Width;
                     gridView_reserve.Columns.Add(columnList[info.Tag]);
                 }
-                /*
-                if (Settings.Instance.ResColumnWidth0 != 0)
-                {
-                    gridView_reserve.Columns[0].Width = Settings.Instance.ResColumnWidth0;
-                }
-                if (Settings.Instance.ResColumnWidth1 != 0)
-                {
-                    gridView_reserve.Columns[1].Width = Settings.Instance.ResColumnWidth1;
-                }
-                if (Settings.Instance.ResColumnWidth2 != 0)
-                {
-                    gridView_reserve.Columns[2].Width = Settings.Instance.ResColumnWidth2;
-                }
-                if (Settings.Instance.ResColumnWidth3 != 0)
-                {
-                    gridView_reserve.Columns[3].Width = Settings.Instance.ResColumnWidth3;
-                }
-                if (Settings.Instance.ResColumnWidth4 != 0)
-                {
-                    gridView_reserve.Columns[4].Width = Settings.Instance.ResColumnWidth4;
-                }
-                if (Settings.Instance.ResColumnWidth5 != 0)
-                {
-                    gridView_reserve.Columns[5].Width = Settings.Instance.ResColumnWidth5;
-                }
-                if (Settings.Instance.ResColumnWidth6 != 0)
-                {
-                    gridView_reserve.Columns[6].Width = Settings.Instance.ResColumnWidth6;
-                }
-                if (Settings.Instance.ResColumnWidth7 != 0)
-                {
-                    gridView_reserve.Columns[7].Width = Settings.Instance.ResColumnWidth7;
-                }
-                */
             }
             catch (Exception ex)
             {
@@ -100,16 +64,6 @@ namespace EpgTimer
         {
             try
             {
-                /*
-                Settings.Instance.ResColumnWidth0 = gridView_reserve.Columns[0].Width;
-                Settings.Instance.ResColumnWidth1 = gridView_reserve.Columns[1].Width;
-                Settings.Instance.ResColumnWidth2 = gridView_reserve.Columns[2].Width;
-                Settings.Instance.ResColumnWidth3 = gridView_reserve.Columns[3].Width;
-                Settings.Instance.ResColumnWidth4 = gridView_reserve.Columns[4].Width;
-                Settings.Instance.ResColumnWidth5 = gridView_reserve.Columns[5].Width;
-                Settings.Instance.ResColumnWidth6 = gridView_reserve.Columns[6].Width;
-                Settings.Instance.ResColumnWidth7 = gridView_reserve.Columns[7].Width;
-                */
                 Settings.Instance.ReserveListColumn.Clear();
                 foreach (GridViewColumn info in gridView_reserve.Columns)
                 {
@@ -163,27 +117,11 @@ namespace EpgTimer
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     this.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
                     }), null);
                     return false;
                 }
@@ -401,18 +339,10 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -437,18 +367,10 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -499,18 +421,10 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -563,18 +477,10 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendDelReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -724,18 +630,10 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }
@@ -758,18 +656,10 @@ namespace EpgTimer
                 }
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
                     }
                 }
             }

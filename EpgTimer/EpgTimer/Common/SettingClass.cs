@@ -49,6 +49,18 @@ namespace EpgTimer
             }
             return buff.ToString();
         }
+
+        public static void TouchFileAsUnicode(string path)
+        {
+            try
+            {
+                using (var fs = new FileStream(path, FileMode.CreateNew))
+                {
+                    fs.Write(new byte[] { 0xFF, 0xFE }, 0, 2);
+                }
+            }
+            catch { }
+        }
     }
 
     class SettingPath
@@ -57,24 +69,25 @@ namespace EpgTimer
         {
             get
             {
-                string iniPath = ModulePath.TrimEnd('\\');
-                iniPath += "\\Common.ini";
-                return iniPath;
+                return Path.Combine(ModulePath, "Common.ini");
             }
         }
         public static string TimerSrvIniPath
         {
             get
             {
-                string iniPath = ModulePath.TrimEnd('\\');
-                iniPath += "\\EpgTimerSrv.ini";
-                return iniPath;
+                return Path.Combine(ModulePath, "EpgTimerSrv.ini");
             }
         }
         public static void CheckFolderPath(ref string folderPath)
         {
-            if( folderPath.LastIndexOf("\\") == folderPath.Length-1 ){
-                folderPath = folderPath.Remove(folderPath.Length - 1);
+            //過去にルートディレクトリ区切りを失った状態("C:"など)で設定などに保存していたので、これに対応する
+            if (folderPath.Length > 0 &&
+                folderPath[folderPath.Length - 1] != Path.DirectorySeparatorChar &&
+                folderPath[folderPath.Length - 1] != Path.AltDirectorySeparatorChar)
+            {
+                //一時的に下層を作って上がる
+                folderPath = Path.GetDirectoryName(folderPath + Path.DirectorySeparatorChar + "a") ?? folderPath;
             }
         }
         public static string ModulePath
@@ -104,6 +117,8 @@ namespace EpgTimer
         public int ForceHideBalloonTipSec { get; set; }
         public bool PlayDClick { get; set; }
         public bool ShowEpgCapServiceOnly { get; set; }
+        public bool SortServiceList { get; set; }
+        public bool ExitAfterProcessingArgs { get; set; }
         public double DragScroll { get; set; }
         public List<string> ContentColorList { get; set; }
         public List<UInt32> ContentCustColorList { get; set; }
@@ -113,7 +128,8 @@ namespace EpgTimer
         public string ReserveRectColorNo { get; set; }
         public string ReserveRectColorNoTuner { get; set; }
         public string ReserveRectColorWarning { get; set; }
-        public bool ReserveRectBackground { get; set; }
+        public int ReserveRectFillOpacity { get; set; }
+        public bool ReserveRectFillWithShadow { get; set; }
         public string TitleColor1 { get; set; }
         public string TitleColor2 { get; set; }
         public UInt32 TitleCustColor1 { get; set; }
@@ -121,20 +137,17 @@ namespace EpgTimer
         public string ServiceColor { get; set; }
         public UInt32 ServiceCustColor { get; set; }
         public bool EpgToolTip { get; set; }
+        public double EpgBorderLeftSize { get; set; }
+        public double EpgBorderTopSize { get; set; }
         public bool EpgTitleIndent { get; set; }
+        public string EpgReplacePattern { get; set; }
+        public string EpgReplacePatternTitle { get; set; }
         public bool EpgToolTipNoViewOnly { get; set; }
         public int EpgToolTipViewWait { get; set; }
         public bool EpgPopup { get; set; }
+        public bool EpgExtInfoPopup { get; set; }
         public bool EpgGradation { get; set; }
         public bool EpgGradationHeader { get; set; }
-        public double ResColumnWidth0 { get; set; }
-        public double ResColumnWidth1 { get; set; }
-        public double ResColumnWidth2 { get; set; }
-        public double ResColumnWidth3 { get; set; }
-        public double ResColumnWidth4 { get; set; }
-        public double ResColumnWidth5 { get; set; }
-        public double ResColumnWidth6 { get; set; }
-        public double ResColumnWidth7 { get; set; }
         public string ResColumnHead { get; set; }
         public ListSortDirection ResSortDirection { get; set; }
         public System.Windows.WindowState LastWindowState { get; set; }
@@ -142,6 +155,7 @@ namespace EpgTimer
         public double MainWndTop { get; set; }
         public double MainWndWidth { get; set; }
         public double MainWndHeight { get; set; }
+        public double SearchWndTabsHeight { get; set; }
         public bool CloseMin { get; set; }
         public bool WakeMin { get; set; }
         public bool ViewButtonShowAsTab { get; set; }
@@ -155,6 +169,8 @@ namespace EpgTimer
         public string Cust2BtnCmdOpt { get; set; }
         public List<string> AndKeyList { get; set; }
         public List<string> NotKeyList { get; set; }
+        public string SearchKeyAndKey { get; set; }
+        public string SearchKeyNotKey { get; set; }
         public bool SearchKeyRegExp { get; set; }
         public bool SearchKeyTitleOnly { get; set; }
         public bool SearchKeyAimaiFlag { get; set; }
@@ -189,13 +205,6 @@ namespace EpgTimer
                 return list;
             }
         }
-        public double RecInfoColumnWidth0 { get; set; }
-        public double RecInfoColumnWidth1 { get; set; }
-        public double RecInfoColumnWidth2 { get; set; }
-        public double RecInfoColumnWidth3 { get; set; }
-        public double RecInfoColumnWidth4 { get; set; }
-        public double RecInfoColumnWidth5 { get; set; }
-        public double RecInfoColumnWidth6 { get; set; }
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
         public string TvTestExe { get; set; }
@@ -216,24 +225,31 @@ namespace EpgTimer
         public bool NgAutoEpgLoadNW { get; set; }
         public Int32 TvTestOpenWait { get; set; }
         public Int32 TvTestChgBonWait { get; set; }
+        public byte ResDefColorA { get; set; }
         public byte ResDefColorR { get; set; }
         public byte ResDefColorG { get; set; }
         public byte ResDefColorB { get; set; }
+        public byte ResErrColorA { get; set; }
         public byte ResErrColorR { get; set; }
         public byte ResErrColorG { get; set; }
         public byte ResErrColorB { get; set; }
+        public byte ResWarColorA { get; set; }
         public byte ResWarColorR { get; set; }
         public byte ResWarColorG { get; set; }
         public byte ResWarColorB { get; set; }
+        public byte ResNoColorA { get; set; }
         public byte ResNoColorR { get; set; }
         public byte ResNoColorG { get; set; }
         public byte ResNoColorB { get; set; }
+        public byte RecEndDefColorA { get; set; }
         public byte RecEndDefColorR { get; set; }
         public byte RecEndDefColorG { get; set; }
         public byte RecEndDefColorB { get; set; }
+        public byte RecEndErrColorA { get; set; }
         public byte RecEndErrColorR { get; set; }
         public byte RecEndErrColorG { get; set; }
         public byte RecEndErrColorB { get; set; }
+        public byte RecEndWarColorA { get; set; }
         public byte RecEndWarColorR { get; set; }
         public byte RecEndWarColorG { get; set; }
         public byte RecEndWarColorB { get; set; }
@@ -263,6 +279,7 @@ namespace EpgTimer
         public bool MinHide { get; set; }
         public bool MouseScrollAuto { get; set; }
         public int NoStyle { get; set; }
+        public int NoSendClose { get; set; }
 
         public Settings()
         {
@@ -280,6 +297,8 @@ namespace EpgTimer
             NoToolTip = false;
             PlayDClick = false;
             ShowEpgCapServiceOnly = false;
+            SortServiceList = true;
+            ExitAfterProcessingArgs = false;
             DragScroll = 1.5;
             ContentColorList = new List<string>();
             ContentCustColorList = new List<uint>();
@@ -295,12 +314,18 @@ namespace EpgTimer
             TitleCustColor2 = 0xFFFFFFFF;
             ServiceColor = "LightSlateGray";
             ServiceCustColor = 0xFFFFFFFF;
-            ReserveRectBackground = false;
+            ReserveRectFillOpacity = 0;
+            ReserveRectFillWithShadow = true;
             EpgToolTip = false;
+            EpgBorderLeftSize = 2;
+            EpgBorderTopSize = 0.5;
             EpgTitleIndent = true;
+            EpgReplacePattern = "";
+            EpgReplacePatternTitle = "";
             EpgToolTipNoViewOnly = true;
             EpgToolTipViewWait = 1500;
             EpgPopup = true;
+            EpgExtInfoPopup = false;
             EpgGradation = true;
             EpgGradationHeader = true;
             ResColumnHead = "";
@@ -310,6 +335,7 @@ namespace EpgTimer
             MainWndTop = -100;
             MainWndWidth = -100;
             MainWndHeight = -100;
+            SearchWndTabsHeight = 0;
             CloseMin = false;
             WakeMin = false;
             ViewButtonShowAsTab = false;
@@ -323,6 +349,8 @@ namespace EpgTimer
             Cust2BtnCmdOpt = "";
             AndKeyList = new List<string>();
             NotKeyList = new List<string>();
+            SearchKeyAndKey = "";
+            SearchKeyNotKey = "";
             SearchKeyRegExp = false;
             SearchKeyTitleOnly = false;
             SearchKeyAimaiFlag = false;
@@ -354,24 +382,31 @@ namespace EpgTimer
             NgAutoEpgLoadNW = false;
             TvTestOpenWait = 2000;
             TvTestChgBonWait = 2000;
+            ResDefColorA = 0;
             ResDefColorR = 0xFF;
             ResDefColorG = 0xFF;
             ResDefColorB = 0xFF;
+            ResErrColorA = 0x80;
             ResErrColorR = 0xFF;
             ResErrColorG = 0;
             ResErrColorB = 0;
+            ResWarColorA = 0x80;
             ResWarColorR = 0xFF;
             ResWarColorG = 0xFF;
             ResWarColorB = 0;
+            ResNoColorA = 0x80;
             ResNoColorR = 0xA9;
             ResNoColorG = 0xA9;
             ResNoColorB = 0xA9;
+            RecEndDefColorA = 0;
             RecEndDefColorR = 0xFF;
             RecEndDefColorG = 0xFF;
             RecEndDefColorB = 0xFF;
+            RecEndErrColorA = 0x80;
             RecEndErrColorR = 0xFF;
             RecEndErrColorG = 0;
             RecEndErrColorB = 0;
+            RecEndWarColorA = 0x80;
             RecEndWarColorR = 0xFF;
             RecEndWarColorG = 0xFF;
             RecEndWarColorB = 0;
@@ -401,6 +436,54 @@ namespace EpgTimer
             MinHide = true;
             MouseScrollAuto = false;
             NoStyle = 0;
+            NoSendClose = 0;
+        }
+
+        public Settings DeepCloneStaticSettings()
+        {
+            var other = (Settings)MemberwiseClone();
+            other.CustomEpgTabList = CustomEpgTabList.Select(a => a.DeepClone()).ToList();
+            other.ContentColorList = ContentColorList.ToList();
+            other.ContentCustColorList = ContentCustColorList.ToList();
+            other.TimeColorList = TimeColorList.ToList();
+            other.TimeCustColorList = TimeCustColorList.ToList();
+            other.ViewButtonList = ViewButtonList.ToList();
+            other.TaskMenuList = TaskMenuList.ToList();
+            other.SearchKeyContentList = SearchKeyContentList.Select(a => a.DeepClone()).ToList();
+            other.SearchKeyDateItemList = SearchKeyDateItemList.Select(a => a.DeepClone()).ToList();
+            other.SearchKeyServiceList = SearchKeyServiceList.ToList();
+            other.IEpgStationList = IEpgStationList.Select(a => a.DeepClone()).ToList();
+            return other;
+        }
+
+        public void ShallowCopyDynamicSettingsTo(Settings dest)
+        {
+            //設定画面と関係なくその場で動的に更新されるプロパティ
+            dest.ResColumnHead = ResColumnHead;
+            dest.ResSortDirection = ResSortDirection;
+            dest.LastWindowState = LastWindowState;
+            dest.MainWndLeft = MainWndLeft;
+            dest.MainWndTop = MainWndTop;
+            dest.MainWndWidth = MainWndWidth;
+            dest.MainWndHeight = MainWndHeight;
+            dest.SearchWndTabsHeight = SearchWndTabsHeight;
+            dest.AndKeyList = AndKeyList;
+            dest.NotKeyList = NotKeyList;
+            dest.RecInfoColumnHead = RecInfoColumnHead;
+            dest.RecInfoSortDirection = RecInfoSortDirection;
+            dest.NWServerIP = NWServerIP;
+            dest.NWServerPort = NWServerPort;
+            dest.NWWaitPort = NWWaitPort;
+            dest.NWMacAdd = NWMacAdd;
+            dest.ReserveListColumn = ReserveListColumn;
+            dest.RecInfoListColumn = RecInfoListColumn;
+            dest.AutoAddEpgColumn = AutoAddEpgColumn;
+            dest.AutoAddManualColumn = AutoAddManualColumn;
+            dest.SearchWndLeft = SearchWndLeft;
+            dest.SearchWndTop = SearchWndTop;
+            dest.SearchWndWidth = SearchWndWidth;
+            dest.SearchWndHeight = SearchWndHeight;
+            dest.NotifyLogMax = NotifyLogMax;
         }
 
         [NonSerialized()]
@@ -411,7 +494,11 @@ namespace EpgTimer
             get
             {
                 if (_instance == null)
+                {
                     _instance = new Settings();
+                    //色設定関係
+                    _instance.SetColorSetting();
+                }
                 return _instance;
             }
             set { _instance = value; }
@@ -454,57 +541,9 @@ namespace EpgTimer
 
             try
             {
-                if (Instance.ContentColorList.Count == 0x10)//多分旧バージョンの互換用コード
-                {
-                    Instance.ContentColorList.Add("White");
-                }
-                else if (Instance.ContentColorList.Count != 0x11)
-                {
-                    //番組表のデフォルトの背景色
-                    Instance.ContentColorList.Clear();
-                    Instance.ContentColorList.Add("LightYellow");
-                    Instance.ContentColorList.Add("Lavender");
-                    Instance.ContentColorList.Add("LavenderBlush");
-                    Instance.ContentColorList.Add("MistyRose");
-                    Instance.ContentColorList.Add("Honeydew");
-                    Instance.ContentColorList.Add("LightCyan");
-                    Instance.ContentColorList.Add("PapayaWhip");
-                    Instance.ContentColorList.Add("Pink");
-                    Instance.ContentColorList.Add("LightYellow");
-                    Instance.ContentColorList.Add("PapayaWhip");
-                    Instance.ContentColorList.Add("AliceBlue");
-                    Instance.ContentColorList.Add("AliceBlue");
-                    Instance.ContentColorList.Add("White");
-                    Instance.ContentColorList.Add("White");
-                    Instance.ContentColorList.Add("White");
-                    Instance.ContentColorList.Add("WhiteSmoke");
-                    Instance.ContentColorList.Add("White");
-                }
-                if (Instance.ContentCustColorList.Count != 0x11 + 4)
-                {
-                    Instance.ContentCustColorList.Clear();
-                    for (int i = 0; i < 0x11+4; i++)
-                    {
-                        Instance.ContentCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.TimeColorList.Count != 4)
-                {
-                    //番組表の時間軸のデフォルトの背景色
-                    Instance.TimeColorList.Clear();
-                    Instance.TimeColorList.Add("MediumPurple");
-                    Instance.TimeColorList.Add("LightSeaGreen");
-                    Instance.TimeColorList.Add("LightSalmon");
-                    Instance.TimeColorList.Add("CornflowerBlue");
-                }
-                if (Instance.TimeCustColorList.Count != 4)
-                {
-                    Instance.TimeCustColorList.Clear();
-                    for (int i = 0; i < 4; i++)
-                    {
-                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
+                //色設定関係
+                Instance.SetColorSetting();
+
                 if (Instance.ViewButtonList.Count == 0)
                 {
                     if (nwMode == false)
@@ -693,46 +732,75 @@ namespace EpgTimer
 
         }
 
-        public static void GetDefSearchSetting(ref EpgSearchKeyInfo defKey)
+        public void GetDefSearchSetting(EpgSearchKeyInfo defKey)
         {
-            if (Settings.Instance.SearchKeyRegExp == true)
-            {
-                defKey.regExpFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyAimaiFlag == true)
-            {
-                defKey.aimaiFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyTitleOnly == true)
-            {
-                defKey.titleOnlyFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyNotContent == true)
-            {
-                defKey.notContetFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyNotDate == true)
-            {
-                defKey.notDateFlag = 1;
-            }
-            foreach (ContentKindInfo info in Settings.Instance.SearchKeyContentList)
+            defKey.andKey = SearchKeyAndKey;
+            defKey.notKey = SearchKeyNotKey;
+            defKey.regExpFlag = SearchKeyRegExp ? 1 : 0;
+            defKey.aimaiFlag = (byte)(SearchKeyAimaiFlag ? 1 : 0);
+            defKey.titleOnlyFlag = SearchKeyTitleOnly ? 1 : 0;
+            defKey.notContetFlag = (byte)(SearchKeyNotContent ? 1 : 0);
+            defKey.notDateFlag = (byte)(SearchKeyNotDate ? 1 : 0);
+            defKey.contentList.Clear();
+            foreach (ContentKindInfo info in SearchKeyContentList)
             {
                 EpgContentData item = new EpgContentData();
                 item.content_nibble_level_1 = info.Nibble1;
                 item.content_nibble_level_2 = info.Nibble2;
                 defKey.contentList.Add(item);
             }
-            foreach (DateItem info in Settings.Instance.SearchKeyDateItemList)
+            defKey.dateList.Clear();
+            defKey.dateList.AddRange(SearchKeyDateItemList.Select(a => a.DeepClone().DateInfo));
+            defKey.serviceList.Clear();
+            defKey.serviceList.AddRange(SearchKeyServiceList);
+            defKey.freeCAFlag = SearchKeyFreeCA;
+            defKey.chkRecEnd = SearchKeyChkRecEnd;
+            defKey.chkRecDay = SearchKeyChkRecDay;
+        }
+
+        private void SetColorSetting()
+        {
+            //番組表の背景色
+            if (ContentColorList.Count < 17)
             {
-                defKey.dateList.Add(info.DateInfo);
+                ContentColorList.AddRange((new string[] {
+                    "LightYellow",
+                    "Lavender",
+                    "LavenderBlush",
+                    "MistyRose",
+                    "Honeydew",
+                    "LightCyan",
+                    "PapayaWhip",
+                    "Pink",
+                    "LightYellow",
+                    "PapayaWhip",
+                    "AliceBlue",
+                    "AliceBlue",
+                    "White",
+                    "White",
+                    "White",
+                    "WhiteSmoke",
+                    "White" }).Skip(ContentColorList.Count));
             }
-            foreach (Int64 info in Settings.Instance.SearchKeyServiceList)
+            //番組表の背景カスタム色(+4は番組表の予約枠色)
+            if (ContentCustColorList.Count < 17 + 4)
             {
-                defKey.serviceList.Add(info);
+                ContentCustColorList.AddRange(Enumerable.Repeat(0xFFFFFFFF, 17 + 4 - ContentCustColorList.Count));
             }
-            defKey.freeCAFlag = Settings.Instance.SearchKeyFreeCA;
-            defKey.chkRecEnd = Settings.Instance.SearchKeyChkRecEnd;
-            defKey.chkRecDay = Settings.Instance.SearchKeyChkRecDay;
+
+            //番組表の時間軸のデフォルトの背景色
+            if (TimeColorList.Count < 4)
+            {
+                TimeColorList.AddRange((new string[] {
+                    "MediumPurple",
+                    "LightSeaGreen",
+                    "LightSalmon",
+                    "CornflowerBlue" }).Skip(TimeColorList.Count));
+            }
+            if (TimeCustColorList.Count < 4)
+            {
+                TimeCustColorList.AddRange(Enumerable.Repeat(0xFFFFFFFF, 4 - TimeCustColorList.Count));
+            }
         }
     }
 }

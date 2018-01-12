@@ -21,7 +21,7 @@ namespace EpgTimer
             StopServer();
         }
 
-        public bool StartServer(string strEventName, string strPipeName, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
+        public bool StartServer(string strEventName, string strPipeName, Func<uint, byte[], Tuple<ErrCode, byte[], uint>> pfnCmdProc)
         {
             if (pfnCmdProc == null || strEventName.Length == 0 || strPipeName.Length == 0)
             {
@@ -61,28 +61,17 @@ namespace EpgTimer
                             byte[] bHead = new byte[8];
                             if (pipe.Read(bHead, 0, 8) == 8)
                             {
-                                CMD_STREAM stCmd = new CMD_STREAM();
-                                stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
-                                stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                                stCmd.bData = stCmd.uiSize == 0 ? null : new byte[stCmd.uiSize];
-                                if (stCmd.uiSize == 0 || pipe.Read(stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length)
+                                uint cmdParam = BitConverter.ToUInt32(bHead, 0);
+                                byte[] cmdData = new byte[BitConverter.ToUInt32(bHead, 4)];
+                                if (cmdData.Length == 0 || pipe.Read(cmdData, 0, cmdData.Length) == cmdData.Length)
                                 {
-                                    CMD_STREAM stRes = new CMD_STREAM();
-                                    pfnCmdProc.Invoke(stCmd, stRes);
-                                    if (stRes.uiParam == (uint)ErrCode.CMD_NEXT)
+                                    Tuple<ErrCode, byte[], uint> res = pfnCmdProc.Invoke(cmdParam, cmdData);
+                                    BitConverter.GetBytes((uint)res.Item1).CopyTo(bHead, 0);
+                                    BitConverter.GetBytes(res.Item2 == null ? 0 : res.Item2.Length).CopyTo(bHead, 4);
+                                    pipe.Write(bHead, 0, 8);
+                                    if (res.Item2 != null && res.Item2.Length > 0)
                                     {
-                                        // Emun用の繰り返しは対応しない
-                                        throw new InvalidOperationException();
-                                    }
-                                    else if (stRes.uiParam != (uint)ErrCode.CMD_NO_RES)
-                                    {
-                                        BitConverter.GetBytes(stRes.uiParam).CopyTo(bHead, 0);
-                                        BitConverter.GetBytes(stRes.uiSize).CopyTo(bHead, 4);
-                                        pipe.Write(bHead, 0, 8);
-                                        if (stRes.uiSize != 0 && stRes.bData != null && stRes.bData.Length >= stRes.uiSize)
-                                        {
-                                            pipe.Write(stRes.bData, 0, (int)stRes.uiSize);
-                                        }
+                                        pipe.Write(res.Item2, 0, res.Item2.Length);
                                     }
                                 }
                             }

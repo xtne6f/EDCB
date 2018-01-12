@@ -105,20 +105,20 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = Brushes.White;
+                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
                 if (ReserveInfo != null)
                 {
                     if (ReserveInfo.RecSetting.RecMode == 5)
                     {
-                        color = Brushes.DarkGray;
+                        color = CommonManager.Instance.ResNoBackColor;
                     }
                     else if (ReserveInfo.OverlapMode == 2)
                     {
-                        color = Brushes.Red;
+                        color = CommonManager.Instance.ResErrBackColor;
                     }
                     else if (ReserveInfo.OverlapMode == 1)
                     {
-                        color = Brushes.Yellow;
+                        color = CommonManager.Instance.ResWarBackColor;
                     }
                 }
                 return color;

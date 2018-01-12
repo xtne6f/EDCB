@@ -70,32 +70,15 @@ namespace EpgTimer
             set;
         }
 
-        public void CopyTo(ref CustomEpgTabInfo dest)
+        public CustomEpgTabInfo DeepClone()
         {
-            dest.TabName = TabName;
-            dest.ViewMode = ViewMode;
-            dest.NeedTimeOnlyBasic = NeedTimeOnlyBasic;
-            dest.NeedTimeOnlyWeek = NeedTimeOnlyWeek;
-            dest.StartTimeWeek = StartTimeWeek;
-            dest.ViewServiceList = ViewServiceList.ToList();
-            dest.ViewContentKindList = ViewContentKindList.ToList();
-            dest.SearchMode = SearchMode;
-            dest.FilterEnded = FilterEnded;
-
-            dest.SearchKey.aimaiFlag = SearchKey.aimaiFlag;
-            dest.SearchKey.andKey = SearchKey.andKey;
-            dest.SearchKey.audioList = SearchKey.audioList.ToList();
-            dest.SearchKey.contentList = SearchKey.contentList.ToList();
-            dest.SearchKey.dateList = SearchKey.dateList.ToList();
-            dest.SearchKey.freeCAFlag = SearchKey.freeCAFlag;
-            dest.SearchKey.notContetFlag = SearchKey.notContetFlag;
-            dest.SearchKey.notDateFlag = SearchKey.notDateFlag;
-            dest.SearchKey.notKey = SearchKey.notKey;
-            dest.SearchKey.regExpFlag = SearchKey.regExpFlag;
-            dest.SearchKey.serviceList = SearchKey.serviceList.ToList();
-            dest.SearchKey.titleOnlyFlag = SearchKey.titleOnlyFlag;
-            dest.SearchKey.videoList = SearchKey.videoList.ToList();
+            var other = (CustomEpgTabInfo)MemberwiseClone();
+            other.ViewServiceList = ViewServiceList.ToList();
+            other.ViewContentKindList = ViewContentKindList.ToList();
+            other.SearchKey = SearchKey.DeepClone();
+            return other;
         }
+
         public override string ToString()
         {
             return TabName;

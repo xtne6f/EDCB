@@ -21,10 +21,14 @@ namespace EpgTimer
         public SettingWindow()
         {
             InitializeComponent();
+
+            DataContext = Settings.Instance.DeepCloneStaticSettings();
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
         {
+            Settings.Instance.ShallowCopyDynamicSettingsTo((Settings)DataContext);
+            Settings.Instance = (Settings)DataContext;
             setAppView.SaveSetting();
             setEpgView.SaveSetting();
             setOtherAppView.SaveSetting();

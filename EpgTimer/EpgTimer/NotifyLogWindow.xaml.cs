@@ -46,7 +46,7 @@ namespace EpgTimer
             listView_log.DataContext = null;
             logList.Clear();
             string notifyLog = "";
-            if (CommonManager.Instance.CtrlCmd.SendGetNotifyLog(Math.Max(Settings.Instance.NotifyLogMax, 1), ref notifyLog) == ErrCode.CMD_SUCCESS)
+            if (CommonManager.CreateSrvCtrl().SendGetNotifyLog(Math.Max(Settings.Instance.NotifyLogMax, 1), ref notifyLog) == ErrCode.CMD_SUCCESS)
             {
                 //サーバに保存されたログを使う
                 foreach (string text in notifyLog.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))

@@ -443,8 +443,6 @@ namespace EpgTimer
         private string pipeName = "EpgTimerSrvPipe";
         private System.Net.IPAddress ip = System.Net.IPAddress.Loopback;
         private uint port = 5678;
-        // TODO: 本来この排他用オブジェクトは不要だが、このクラスの利用側がマルチスレッドを考慮していないようなので念のため従来仕様に合わせる
-        private object thisLock = new object();
 
         /// <summary>コマンド送信方法の設定</summary>
         public void SetSendMode(bool tcpFlag)
@@ -454,20 +452,14 @@ namespace EpgTimer
         /// <summary>名前付きパイプモード時の接続先を設定</summary>
         public void SetPipeSetting(string eventName, string pipeName)
         {
-            lock (thisLock)
-            {
-                this.eventName = eventName;
-                this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
-            }
+            this.eventName = eventName;
+            this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
         }
         /// <summary>TCP/IPモード時の接続先を設定</summary>
         public void SetNWSetting(System.Net.IPAddress ip, uint port)
         {
-            lock (thisLock)
-            {
-                this.ip = ip;
-                this.port = port;
-            }
+            this.ip = ip;
+            this.port = port;
         }
         /// <summary>接続処理時のタイムアウト設定</summary>
         public void SetConnectTimeOut(int timeOut)
@@ -604,7 +596,6 @@ namespace EpgTimer
 
         private ErrCode SendPipe(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
-            lock (thisLock)
             {
                 // 接続待ち
                 try
@@ -668,14 +659,13 @@ namespace EpgTimer
 
         private ErrCode SendTCP(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
-            lock (thisLock)
             {
                 if (ip == null)
                 {
                     return ErrCode.CMD_ERR_CONNECT;
                 }
                 // 接続
-                using (var tcp = new System.Net.Sockets.TcpClient())
+                using (var tcp = new System.Net.Sockets.TcpClient(ip.AddressFamily))
                 {
                     try
                     {
