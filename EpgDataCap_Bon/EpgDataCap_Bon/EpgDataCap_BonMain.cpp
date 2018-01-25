@@ -34,6 +34,10 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 	this->resCapture = NULL;
 
 	this->openWait = 200;
+
+	if( CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION) ){
+		OutputDebugString(L"Granted SYNCHRONIZE|PROCESS_TERMINATE|PROCESS_SET_INFORMATION to " SERVICE_NAME L"\r\n");
+	}
 }
 
 

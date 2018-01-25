@@ -24,7 +24,9 @@ CNotifyManager::~CNotifyManager()
 		this->notifyEvent.Set();
 		this->notifyThread.join();
 	}
-	for( size_t i = 0; i < this->registGUIList.size(); CloseHandle(this->registGUIList[i++].second) );
+	while( this->registGUIList.empty() == false ){
+		UnRegistGUI(this->registGUIList.back().first);
+	}
 }
 
 void CNotifyManager::RegistGUI(DWORD processID)
@@ -33,18 +35,18 @@ void CNotifyManager::RegistGUI(DWORD processID)
 
 	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
 		if( this->registGUIList[i].first == processID ){
-			if( WaitForSingleObject(this->registGUIList[i].second, 0) == WAIT_TIMEOUT ){
+			if( this->registGUIList[i].second &&
+			    WaitForSingleObject(this->registGUIList[i].second, 0) == WAIT_TIMEOUT ){
 				return;
 			}
 			UnRegistGUI(this->registGUIList[i].first);
 			break;
 		}
 	}
+	//権限によってはNULLになるがプロセスID再利用の曖昧さを避けるためのもので必須ではない
 	HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, processID);
-	if( hProcess ){
-		this->registGUIList.push_back(std::make_pair(processID, hProcess));
-		SetNotifySrvStatus(0xFFFFFFFF);
-	}
+	this->registGUIList.push_back(std::make_pair(processID, hProcess));
+	SetNotifySrvStatus(0xFFFFFFFF);
 }
 
 void CNotifyManager::RegistTCP(const REGIST_TCP_INFO& info)
@@ -62,7 +64,9 @@ void CNotifyManager::UnRegistGUI(DWORD processID)
 
 	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
 		if( this->registGUIList[i].first == processID ){
-			CloseHandle(this->registGUIList[i].second);
+			if( this->registGUIList[i].second ){
+				CloseHandle(this->registGUIList[i].second);
+			}
 			this->registGUIList.erase(this->registGUIList.begin() + i);
 			break;
 		}
@@ -130,7 +134,8 @@ vector<DWORD> CNotifyManager::GetRegistGUI() const
 
 	vector<DWORD> list;
 	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
-		if( WaitForSingleObject(this->registGUIList[i].second, 0) == WAIT_TIMEOUT ){
+		if( this->registGUIList[i].second == NULL ||
+		    WaitForSingleObject(this->registGUIList[i].second, 0) == WAIT_TIMEOUT ){
 			list.push_back(this->registGUIList[i].first);
 		}
 	}
