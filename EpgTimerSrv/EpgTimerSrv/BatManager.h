@@ -30,12 +30,12 @@ protected:
 	DWORD nextBatMargin;
 	bool batWorkExitingFlag;
 	thread_ batWorkThread;
-	HANDLE batWorkStopEvent;
+	CAutoResetEvent batWorkStopEvent;
 protected:
 	void StartWork();
 	static void BatWorkThread(CBatManager* sys);
 
-	static bool CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect);
+	static bool CreateBatFile(BAT_WORK_INFO& info, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect);
 	static bool ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite);
 	static wstring CreateEnvironment(const BAT_WORK_INFO& info);
 };

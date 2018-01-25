@@ -77,7 +77,7 @@ BOOL CWriteMain::Start(
 	if( this->teeCmd.empty() == false ){
 		this->teeFile = CreateFile(this->savePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 		if( this->teeFile != INVALID_HANDLE_VALUE ){
-			this->teeThreadStopFlag = FALSE;
+			this->teeThreadStopEvent.Reset();
 			this->teeThread = thread_(TeeThread, this);
 		}
 	}
@@ -105,7 +105,7 @@ BOOL CWriteMain::Stop(
 		this->file = INVALID_HANDLE_VALUE;
 	}
 	if( this->teeThread.joinable() ){
-		this->teeThreadStopFlag = TRUE;
+		this->teeThreadStopEvent.Set();
 		this->teeThread.join();
 	}
 	if( this->teeFile != INVALID_HANDLE_VALUE ){
@@ -182,23 +182,23 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 	wstring cmd = sys->teeCmd;
 	Replace(cmd, L"$FilePath$", sys->savePath);
 	vector<WCHAR> cmdBuff(cmd.c_str(), cmd.c_str() + cmd.size() + 1);
+	//カレントは実行ファイルのあるフォルダ
+	fs_path currentDir = GetModulePath().parent_path();
 
-	{
-		//カレントは実行ファイルのあるフォルダ
-		fs_path currentDir = GetModulePath().parent_path();
+	HANDLE olEvents[] = { sys->teeThreadStopEvent.Handle(), CreateEvent(NULL, TRUE, FALSE, NULL) };
+	if( olEvents[1] ){
+		WCHAR pipeName[64];
+		swprintf_s(pipeName, L"\\\\.\\pipe\\anon_%08x_%08x", GetCurrentProcessId(), GetCurrentThreadId());
+		SECURITY_ATTRIBUTES sa = {};
+		sa.nLength = sizeof(sa);
+		sa.bInheritHandle = TRUE;
 
-		//標準入力にパイプしたプロセスを起動する
-		HANDLE tempPipe;
-		HANDLE writePipe;
-		if( CreatePipe(&tempPipe, &writePipe, NULL, 0) ){
-			HANDLE readPipe;
-			BOOL bRet = DuplicateHandle(GetCurrentProcess(), tempPipe, GetCurrentProcess(), &readPipe, 0, TRUE, DUPLICATE_SAME_ACCESS);
-			CloseHandle(tempPipe);
-			if( bRet ){
-				SECURITY_ATTRIBUTES sa;
-				sa.nLength = sizeof(sa);
-				sa.lpSecurityDescriptor = NULL;
-				sa.bInheritHandle = TRUE;
+		//出力を速やかに打ち切るために非同期書き込みのパイプを作成する。CreatePipe()は非同期にできない
+		HANDLE readPipe = CreateNamedPipe(pipeName, PIPE_ACCESS_INBOUND, 0, 1, 8192, 8192, NMPWAIT_USE_DEFAULT_WAIT, &sa);
+		if( readPipe != INVALID_HANDLE_VALUE ){
+			HANDLE writePipe = CreateFile(pipeName, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+			if( writePipe != INVALID_HANDLE_VALUE ){
+				//標準入力にパイプしたプロセスを起動する
 				STARTUPINFO si = {};
 				si.cb = sizeof(si);
 				si.dwFlags = STARTF_USESTDHANDLES;
@@ -207,7 +207,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				PROCESS_INFORMATION pi;
-				bRet = CreateProcess(NULL, &cmdBuff.front(), NULL, NULL, TRUE, BELOW_NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, NULL, currentDir.c_str(), &si, &pi);
+				BOOL bRet = CreateProcess(NULL, cmdBuff.data(), NULL, NULL, TRUE, BELOW_NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, NULL, currentDir.c_str(), &si, &pi);
 				CloseHandle(readPipe);
 				if( si.hStdOutput != INVALID_HANDLE_VALUE ){
 					CloseHandle(si.hStdOutput);
@@ -218,7 +218,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 				if( bRet ){
 					CloseHandle(pi.hThread);
 					CloseHandle(pi.hProcess);
-					while( sys->teeThreadStopFlag == FALSE ){
+					for(;;){
 						__int64 readablePos;
 						{
 							CBlockLock lock(&sys->wroteLock);
@@ -228,19 +228,38 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 						DWORD read;
 						if( SetFilePointerEx(sys->teeFile, liPos, &liPos, FILE_CURRENT) &&
 						    readablePos - liPos.QuadPart >= (__int64)sys->teeBuff.size() &&
-						    ReadFile(sys->teeFile, &sys->teeBuff.front(), (DWORD)sys->teeBuff.size(), &read, NULL) && read > 0 ){
-							DWORD write;
-							if( WriteFile(writePipe, &sys->teeBuff.front(), read, &write, NULL) == FALSE ){
+						    ReadFile(sys->teeFile, sys->teeBuff.data(), (DWORD)sys->teeBuff.size(), &read, NULL) && read > 0 ){
+							OVERLAPPED ol = {};
+							ol.hEvent = olEvents[1];
+							if( WriteFile(writePipe, sys->teeBuff.data(), read, NULL, &ol) == FALSE && GetLastError() != ERROR_IO_PENDING ){
+								//出力完了
+								break;
+							}
+							if( WaitForMultipleObjects(2, olEvents, FALSE, INFINITE) != WAIT_OBJECT_0 + 1 ){
+								//打ち切り
+								CancelIo(writePipe);
+								WaitForSingleObject(olEvents[1], INFINITE);
+								break;
+							}
+							DWORD xferred;
+							if( GetOverlappedResult(writePipe, &ol, &xferred, FALSE) == FALSE || xferred < read ){
+								//出力完了
 								break;
 							}
 						}else{
-							Sleep(100);
+							if( WaitForSingleObject(olEvents[0], 200) != WAIT_TIMEOUT ){
+								//打ち切り
+								break;
+							}
 						}
 					}
 					//プロセスは回収しない(標準入力が閉じられた後にどうするかはプロセスの判断に任せる)
 				}
+				CloseHandle(writePipe);
+			}else{
+				CloseHandle(readPipe);
 			}
-			CloseHandle(writePipe);
 		}
+		CloseHandle(olEvents[1]);
 	}
 }

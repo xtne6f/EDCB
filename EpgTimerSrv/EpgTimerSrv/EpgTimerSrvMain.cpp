@@ -216,6 +216,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 								}
 								sei.nShow = file.size() < 4 || _wcsicmp(file.c_str() + file.size() - 4, L".bat") ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
 								if( ShellExecuteEx(&sei) && sei.hProcess ){
+									CPipeServer::GrantServerAccessToKernelObject(sei.hProcess, SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION);
 									resParam->data = NewWriteVALUE(GetProcessId(sei.hProcess), resParam->dataSize);
 									resParam->param = CMD_SUCCESS;
 									CloseHandle(sei.hProcess);

@@ -7,9 +7,11 @@ if not edcb.FindFile(ffmpeg, 1) then ffmpeg='ffmpeg.exe' end
 -- ffmpeg変換オプション
 -- ※UDPの場合はローカルでの安定した送受信も求められるので、システムに余力を残して調整すべき
 -- libvpxの例:リアルタイム変換と画質が両立するようにビットレート-bと計算量-cpu-usedを調整する
-XOPT='-vcodec libvpx -b 896k -quality realtime -cpu-used 1 -vf yadif=0:-1:1 -s 512x288 -r 15000/1001 -acodec libvorbis -ab 128k -f webm -'
+XOPT='-vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 -vf yadif=0:-1:1 -s 512x288 -r 30000/1001 -acodec libvorbis -ab 128k -f webm -'
+--XOPT='-vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast -g 120 -vf yadif=0:-1:1 -s 512x288 -r 30000/1001 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
 -- 変換後の拡張子
 XEXT='.webm'
+--XEXT='.mp4'
 -- 転送開始前に変換しておく量(bytes)
 XPREPARE=nil
 

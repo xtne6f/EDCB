@@ -429,12 +429,12 @@ protected:
 	std::list<vector<BYTE>> tsBuffList;
 
 	thread_ analyzeThread;
-	HANDLE analyzeEvent;
+	CAutoResetEvent analyzeEvent;
 	BOOL analyzeStopFlag;
 
 	//チャンネルスキャン用
 	thread_ chScanThread;
-	HANDLE chScanStopEvent;
+	CAutoResetEvent chScanStopEvent;
 	struct CHK_CH_INFO {
 		DWORD space;
 		DWORD ch;
@@ -451,7 +451,7 @@ protected:
 
 	//EPG取得用
 	thread_ epgCapThread;
-	HANDLE epgCapStopEvent;
+	CAutoResetEvent epgCapStopEvent;
 	//取得中はconst操作のみ
 	vector<EPGCAP_SERVICE_INFO> epgCapChList;
 #if defined(_MSC_VER) && _MSC_VER < 1900
@@ -461,7 +461,7 @@ protected:
 #endif
 
 	thread_ epgCapBackThread;
-	HANDLE epgCapBackStopEvent;
+	CAutoResetEvent epgCapBackStopEvent;
 	BOOL enableLiveEpgCap;
 	BOOL enableRecEpgCap;
 

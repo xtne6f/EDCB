@@ -3,7 +3,6 @@
 
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
-#include "ARIB8CharDecode.h"
 
 //#define DEBUG_EIT
 #ifdef DEBUG_EIT
@@ -232,7 +231,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			}
 			if( serviceInfo->lastTableID == 0 ){
 				//リセット
-				memset(&serviceInfo->sectionList.front(), 0, sizeof(SECTION_FLAG_INFO) * 8);
+				memset(serviceInfo->sectionList, 0, sizeof(SECTION_FLAG_INFO) * 8);
 				for( int i = 1; i < 8; i++ ){
 					//第0テーブル以外のセクションを無視
 					memset(serviceInfo->sectionList[i].ignoreFlags, 0xFF, sizeof(serviceInfo->sectionList[0].ignoreFlags));
@@ -253,11 +252,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		//H-EIT
 		if( table_id > 0x4F ){
 			BYTE& lastTableID = table_id % 16 >= 8 ? serviceInfo->lastTableIDExt : serviceInfo->lastTableID;
-			vector<SECTION_FLAG_INFO>& sectionList = table_id % 16 >= 8 ? serviceInfo->sectionExtList : serviceInfo->sectionList;
-			if( sectionList.empty() ){
-				//拡張情報はないことも多いので遅延割り当て
-				sectionList.resize(8);
-			}
+			SECTION_FLAG_INFO* sectionList = table_id % 16 >= 8 ? serviceInfo->sectionExtList : serviceInfo->sectionList;
 			if( lastTableID != eit.GetNumber(Desc::last_table_id) ){
 				lastTableID = 0;
 			}else if( sectionList[table_id % 8].version != 0 &&
@@ -267,7 +262,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			}
 			if( lastTableID == 0 ){
 				//リセット
-				memset(&sectionList.front(), 0, sizeof(SECTION_FLAG_INFO) * 8);
+				memset(sectionList, 0, sizeof(SECTION_FLAG_INFO) * 8);
 				for( int i = eit.GetNumber(Desc::last_table_id) % 8 + 1; i < 8; i++ ){
 					//送られないテーブルのセクションを無視
 					memset(sectionList[i].ignoreFlags, 0xFF, sizeof(sectionList[0].ignoreFlags));
@@ -354,18 +349,17 @@ void CEpgDBUtil::AddShortEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescrip
 		eventInfo->shortInfo.reset(new EPGDB_SHORT_EVENT_INFO);
 	}
 	{
-		CARIB8CharDecode arib;
 		wstring event_name;
 		wstring text_char;
 		const BYTE* src;
 		DWORD srcSize;
 		src = eit.GetBinary(Desc::event_name_char, &srcSize, lp);
 		if( src && srcSize > 0 ){
-			arib.PSISI(src, srcSize, &event_name);
+			this->arib.PSISI(src, srcSize, &event_name);
 		}
 		src = eit.GetBinary(Desc::text_char, &srcSize, lp);
 		if( src && srcSize > 0 ){
-			arib.PSISI(src, srcSize, &text_char);
+			this->arib.PSISI(src, srcSize, &text_char);
 		}
 #ifdef DEBUG_EIT
 		text_char = g_szDebugEIT + text_char;
@@ -380,7 +374,6 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 {
 	{
 		BOOL foundFlag = FALSE;
-		CARIB8CharDecode arib;
 		wstring extendText;
 		vector<BYTE> itemBuff;
 		BOOL itemDescFlag = FALSE;
@@ -402,7 +395,7 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						if( src && srcSize > 0 ){
 							if( itemDescFlag == FALSE && itemBuff.size() > 0 ){
 								wstring buff;
-								arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
+								this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
 								buff += L"\r\n";
 								extendText += buff;
 								itemBuff.clear();
@@ -414,7 +407,7 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						if( src && srcSize > 0 ){
 							if( itemDescFlag && itemBuff.size() > 0 ){
 								wstring buff;
-								arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
+								this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
 								buff += L"\r\n";
 								extendText += buff;
 								itemBuff.clear();
@@ -429,7 +422,7 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 
 		if( itemBuff.size() > 0 ){
 			wstring buff;
-			arib.PSISI(&itemBuff.front(), (DWORD)itemBuff.size(), &buff);
+			this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
 			buff += L"\r\n";
 			extendText += buff;
 		}
@@ -480,12 +473,11 @@ void CEpgDBUtil::AddComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescript
 		eventInfo->componentInfo->component_type = (BYTE)eit.GetNumber(Desc::component_type, lp);
 		eventInfo->componentInfo->component_tag = (BYTE)eit.GetNumber(Desc::component_tag, lp);
 
-		CARIB8CharDecode arib;
 		wstring text_char;
 		DWORD srcSize;
 		const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
 		if( src && srcSize > 0 ){
-			arib.PSISI(src, srcSize, &text_char);
+			this->arib.PSISI(src, srcSize, &text_char);
 		}
 		eventInfo->componentInfo->text_char.swap(text_char);
 
@@ -529,13 +521,11 @@ BOOL CEpgDBUtil::AddAudioComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDes
 				item.quality_indicator = (BYTE)eit.GetNumber(Desc::quality_indicator, lp);
 				item.sampling_rate = (BYTE)eit.GetNumber(Desc::sampling_rate, lp);
 
-
-				CARIB8CharDecode arib;
 				wstring text_char;
 				DWORD srcSize;
 				const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
 				if( src && srcSize > 0 ){
-					arib.PSISI(src, srcSize, &text_char);
+					this->arib.PSISI(src, srcSize, &text_char);
 				}
 				item.text_char.swap(text_char);
 
@@ -618,10 +608,10 @@ void CEpgDBUtil::ClearSectionStatus()
 	}
 }
 
-BOOL CEpgDBUtil::CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList)
+BOOL CEpgDBUtil::CheckSectionAll(const SECTION_FLAG_INFO (&sectionList)[8])
 {
-	for( size_t i = 0; i < sectionList.size(); i++ ){
-		for( int j = 0; j < sizeof(sectionList[0].flags); j++ ){
+	for( size_t i = 0; i < 8; i++ ){
+		for( size_t j = 0; j < sizeof(sectionList[0].flags); j++ ){
 			if( (sectionList[i].flags[j] | sectionList[i].ignoreFlags[j]) != 0xFF ){
 				return FALSE;
 			}
@@ -708,8 +698,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 				DWORD srcSize;
 				const BYTE* src = nit.GetBinary(Desc::d_char, &srcSize, lp);
 				if( src && srcSize > 0 ){
-					CARIB8CharDecode arib;
-					arib.PSISI(src, srcSize, &network_nameW);
+					this->arib.PSISI(src, srcSize, &network_nameW);
 				}
 			}
 		}
@@ -748,8 +737,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 						DWORD srcSize;
 						const BYTE* src = nit.GetBinary(Desc::ts_name_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
-							CARIB8CharDecode arib;
-							arib.PSISI(src, srcSize, &itrFind->second.ts_name);
+							this->arib.PSISI(src, srcSize, &itrFind->second.ts_name);
 						}
 						itrFind->second.remote_control_key_id = (BYTE)nit.GetNumber(Desc::remote_control_key_id, lp2);
 					}
@@ -808,18 +796,17 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 				if( sit.EnterLoop(lp2) ){
 					for( DWORD j = 0; sit.SetLoopIndex(lp2, j); j++ ){
 						if( sit.GetNumber(Desc::descriptor_tag, lp2) == Desc::service_descriptor ){
-							CARIB8CharDecode arib;
 							wstring service_provider_name;
 							wstring service_name;
 							const BYTE* src;
 							DWORD srcSize;
 							src = sit.GetBinary(Desc::service_provider_name, &srcSize, lp2);
 							if( src && srcSize > 0 ){
-								arib.PSISI(src, srcSize, &service_provider_name);
+								this->arib.PSISI(src, srcSize, &service_provider_name);
 							}
 							src = sit.GetBinary(Desc::service_name, &srcSize, lp2);
 							if( src && srcSize > 0 ){
-								arib.PSISI(src, srcSize, &service_name);
+								this->arib.PSISI(src, srcSize, &service_name);
 							}
 							item.service_provider_name.swap(service_provider_name);
 							item.service_name.swap(service_name);
@@ -866,18 +853,17 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 						if( sdt.GetNumber(Desc::descriptor_tag, lp2) != Desc::service_descriptor ){
 							continue;
 						}
-						CARIB8CharDecode arib;
 						wstring service_provider_name;
 						wstring service_name;
 						const BYTE* src;
 						DWORD srcSize;
 						src = sdt.GetBinary(Desc::service_provider_name, &srcSize, lp2);
 						if( src && srcSize > 0 ){
-							arib.PSISI(src, srcSize, &service_provider_name);
+							this->arib.PSISI(src, srcSize, &service_provider_name);
 						}
 						src = sdt.GetBinary(Desc::service_name, &srcSize, lp2);
 						if( src && srcSize > 0 ){
-							arib.PSISI(src, srcSize, &service_name);
+							this->arib.PSISI(src, srcSize, &service_name);
 						}
 						item.service_provider_name.swap(service_provider_name);
 						item.service_name.swap(service_name);

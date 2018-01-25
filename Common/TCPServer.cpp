@@ -6,7 +6,7 @@
 CTCPServer::CTCPServer(void)
 {
 	m_hNotifyEvent = WSA_INVALID_EVENT;
-	m_stopFlag = FALSE;
+	m_hAcceptEvent = WSA_INVALID_EVENT;
 	m_sock = INVALID_SOCKET;
 
 	WSAData wsaData;
@@ -55,7 +55,6 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 		return false;
 	}
 
-	m_stopFlag = FALSE;
 	m_sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if( m_sock != INVALID_SOCKET ){
 		BOOL b = TRUE;
@@ -67,7 +66,9 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 		}
 		if( bind(m_sock, result->ai_addr, (int)result->ai_addrlen) != SOCKET_ERROR && listen(m_sock, 1) != SOCKET_ERROR ){
 			m_hNotifyEvent = WSACreateEvent();
-			if( m_hNotifyEvent != WSA_INVALID_EVENT ){
+			m_hAcceptEvent = WSACreateEvent();
+			if( m_hNotifyEvent != WSA_INVALID_EVENT && m_hAcceptEvent != WSA_INVALID_EVENT ){
+				m_stopFlag = false;
 				m_thread = thread_(ServerThread, this);
 				freeaddrinfo(result);
 				return true;
@@ -83,9 +84,13 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 void CTCPServer::StopServer()
 {
 	if( m_thread.joinable() ){
-		m_stopFlag = TRUE;
+		m_stopFlag = true;
 		WSASetEvent(m_hNotifyEvent);
 		m_thread.join();
+	}
+	if( m_hAcceptEvent != WSA_INVALID_EVENT ){
+		WSACloseEvent(m_hAcceptEvent);
+		m_hAcceptEvent = WSA_INVALID_EVENT;
 	}
 	if( m_hNotifyEvent != WSA_INVALID_EVENT ){
 		WSACloseEvent(m_hNotifyEvent);
@@ -172,6 +177,23 @@ static int RecvAll(SOCKET sock, char* buf, int len, int flags)
 	return n;
 }
 
+void CTCPServer::SetBlockingMode(SOCKET sock)
+{
+	WSAEventSelect(sock, NULL, 0);
+	unsigned long x = 0;
+	ioctlsocket(sock, FIONBIO, &x);
+	setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&SND_RCV_TIMEOUT, sizeof(SND_RCV_TIMEOUT));
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&SND_RCV_TIMEOUT, sizeof(SND_RCV_TIMEOUT));
+}
+
+void CTCPServer::SetNonBlockingMode(SOCKET sock, WSAEVENT hEvent, long lNetworkEvents)
+{
+	DWORD noTimeout = 0;
+	setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&noTimeout, sizeof(noTimeout));
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&noTimeout, sizeof(noTimeout));
+	WSAEventSelect(sock, hEvent, lNetworkEvents);
+}
+
 void CTCPServer::ServerThread(CTCPServer* pSys)
 {
 	struct WAIT_INFO {
@@ -182,11 +204,11 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 	vector<WAIT_INFO> waitList;
 	vector<WSAEVENT> hEventList;
 	hEventList.push_back(pSys->m_hNotifyEvent);
-	hEventList.push_back(WSACreateEvent());
+	hEventList.push_back(pSys->m_hAcceptEvent);
 	WSAEventSelect(pSys->m_sock, hEventList.back(), FD_ACCEPT);
 
-	while( pSys->m_stopFlag == FALSE ){
-		DWORD result = WSAWaitForMultipleEvents((DWORD)hEventList.size(), &hEventList[0], FALSE, waitList.empty() ? WSA_INFINITE : 2000, FALSE);
+	while( pSys->m_stopFlag == false ){
+		DWORD result = WSAWaitForMultipleEvents((DWORD)hEventList.size(), &hEventList[0], FALSE, waitList.empty() ? WSA_INFINITE : NOTIFY_INTERVAL, FALSE);
 		if( result == WSA_WAIT_EVENT_0 || result == WSA_WAIT_TIMEOUT ){
 			WSAResetEvent(hEventList[0]);
 			for( size_t i = 0; i < waitList.size(); i++ ){
@@ -210,15 +232,13 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						memcpy(head + 2, stRes.data.get(), extSize);
 					}
 					//ブロッキングモードに変更
-					WSAEventSelect(waitList[i].sock, NULL, 0);
-					ULONG x = 0;
-					ioctlsocket(waitList[i].sock, FIONBIO, &x);
-					if( send(waitList[i].sock, (const char*)head, sizeof(DWORD)*2 + extSize, 0) != SOCKET_ERROR ){
+					SetBlockingMode(waitList[i].sock);
+					if( send(waitList[i].sock, (const char*)head, sizeof(DWORD)*2 + extSize, 0) == (int)(sizeof(DWORD)*2 + extSize) ){
 						if( stRes.dataSize > extSize ){
 							send(waitList[i].sock, (const char*)stRes.data.get() + extSize, stRes.dataSize - extSize, 0);
 						}
 					}
-					WSAEventSelect(waitList[i].sock, hEventList[2 + i], FD_READ | FD_CLOSE);
+					SetNonBlockingMode(waitList[i].sock, hEventList[2 + i], FD_READ | FD_CLOSE);
 				}
 				shutdown(waitList[i].sock, SD_BOTH);
 				//タイムアウトか応答済み(ここでは閉じない)
@@ -271,9 +291,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 			}
 			if( sock != INVALID_SOCKET ){
 				//ブロッキングモードに変更
-				WSAEventSelect(sock, NULL, 0);
-				ULONG x = 0;
-				ioctlsocket(sock, FIONBIO, &x);
+				SetBlockingMode(sock);
 				for(;;){
 					CMD_STREAM stCmd;
 					CMD_STREAM stRes;
@@ -314,7 +332,8 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					if( stRes.param == CMD_NO_RES ){
 						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
 							//保留可能なコマンドは応答待ちリストに移動
-							if( hEventList.size() < WSA_MAXIMUM_WAIT_EVENTS ){
+							WSAEVENT hEvent;
+							if( hEventList.size() < WSA_MAXIMUM_WAIT_EVENTS && (hEvent = WSACreateEvent()) != WSA_INVALID_EVENT ){
 								WAIT_INFO waitInfo;
 								waitInfo.sock = sock;
 								waitInfo.cmd = new CMD_STREAM;
@@ -323,8 +342,8 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 								waitInfo.cmd->data.swap(stCmd.data);
 								waitInfo.tick = GetTickCount();
 								waitList.push_back(waitInfo);
-								hEventList.push_back(WSACreateEvent());
-								WSAEventSelect(sock, hEventList.back(), FD_READ | FD_CLOSE);
+								hEventList.push_back(hEvent);
+								SetNonBlockingMode(sock, hEvent, FD_READ | FD_CLOSE);
 								sock = INVALID_SOCKET;
 							}
 						}
@@ -337,17 +356,18 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						extSize = min(stRes.dataSize, (DWORD)(sizeof(head) - sizeof(DWORD)*2));
 						memcpy(head + 2, stRes.data.get(), extSize);
 					}
-					if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) == SOCKET_ERROR ||
-					    stRes.dataSize > extSize && send(sock, (char*)stRes.data.get() + extSize, stRes.dataSize - extSize, 0) == SOCKET_ERROR ){
+					if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) != (int)(sizeof(DWORD)*2 + extSize) ||
+					    (stRes.dataSize > extSize &&
+					     send(sock, (char*)stRes.data.get() + extSize, stRes.dataSize - extSize, 0) != (int)(stRes.dataSize - extSize)) ){
 						break;
 					}
 					if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
 						//Enum用の繰り返しではない
+						shutdown(sock, SD_BOTH);
 						break;
 					}
 				}
 				if( sock != INVALID_SOCKET ){
-					shutdown(sock, SD_BOTH);
 					closesocket(sock);
 				}
 			}
@@ -364,5 +384,4 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 		hEventList.pop_back();
 	}
 	WSAEventSelect(pSys->m_sock, NULL, 0);
-	WSACloseEvent(hEventList.back());
 }

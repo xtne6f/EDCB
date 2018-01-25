@@ -14,16 +14,6 @@ public:
 	CSendTSTCPMain(void);
 	~CSendTSTCPMain(void);
 
-	//DLLの初期化
-	//戻り値：TRUE:成功、FALSE:失敗
-	BOOL Initialize(
-		);
-
-	//DLLの開放
-	//戻り値：なし
-	void UnInitialize(
-		);
-
 	//送信先を追加
 	//戻り値：エラーコード
 	DWORD AddSendAddr(
@@ -60,11 +50,10 @@ public:
 
 
 protected:
-	HANDLE m_hStopSendEvent;
+	CAutoResetEvent m_stopSendEvent;
 	thread_ m_sendThread;
 
 	recursive_mutex_ m_sendLock;
-	recursive_mutex_ m_buffLock;
 
 	std::list<vector<BYTE>> m_TSBuff;
 
@@ -74,7 +63,7 @@ protected:
 		SOCKET sock;
 		BOOL bConnect;
 	};
-	map<wstring, SEND_INFO> m_SendList;
+	vector<SEND_INFO> m_SendList;
 
 protected:
 	static void SendThread(CSendTSTCPMain* pSys);

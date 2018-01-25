@@ -61,7 +61,7 @@ protected:
 
 	HANDLE teeFile;
 	thread_ teeThread;
-	BOOL teeThreadStopFlag;
+	CAutoResetEvent teeThreadStopEvent;
 	wstring teeCmd;
 	vector<BYTE> teeBuff;
 	DWORD teeDelay;

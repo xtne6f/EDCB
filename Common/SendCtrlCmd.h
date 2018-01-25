@@ -13,6 +13,9 @@ public:
 	~CSendCtrlCmd(void);
 
 #ifndef SEND_CTRL_CMD_NO_TCP
+	//送受信タイムアウト（接続先が要求を処理するのにかかる時間よりも十分に長く）
+	static const DWORD SND_RCV_TIMEOUT = 30000;
+
 	//コマンド送信方法の設定
 	//引数：
 	// tcpFlag		[IN] TRUE：TCP/IPモード、FALSE：名前付きパイプモード
