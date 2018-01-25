@@ -26,9 +26,6 @@ namespace EpgTimer
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
 
         private PipeServer pipeServer = null;
-        private string pipeName = "\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_";
-        private string pipeEventName = "Global\\EpgTimerGUI_Ctrl_BonConnect_";
-
         private bool closeFlag = false;
         private bool needUnRegist = true;
 
@@ -239,11 +236,11 @@ namespace EpgTimer
                 if (CommonManager.Instance.NWMode == false)
                 {
                     pipeServer = new PipeServer();
-                    pipeName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
-                    pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
                     //コールバックは別スレッドかもしれないので設定は予めキャプチャする
                     uint execBat = Settings.Instance.ExecBat;
-                    pipeServer.StartServer(pipeEventName, pipeName, (c, r) => OutsideCmdCallback(c, r, false, execBat));
+                    pipeServer.StartServer("Global\\EpgTimerGUI_Ctrl_BonConnect_" + System.Diagnostics.Process.GetCurrentProcess().Id,
+                                           "EpgTimerGUI_Ctrl_BonPipe_" + System.Diagnostics.Process.GetCurrentProcess().Id,
+                                           (c, r) => OutsideCmdCallback(c, r, false, execBat));
 
                     for (int i = 0; i < 150; i++)
                     {

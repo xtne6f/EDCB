@@ -29,7 +29,7 @@ namespace EpgTimer
                               string.Compare(IniFileHandler.GetPrivateProfileString("SET", "RecExePath", "", SettingPath.CommonIniPath), Settings.Instance.TvTestExe, true) == 0;
                 OpenTVTest(Settings.Instance.TvTestOpenWait, isView ? "View" : "TvTest");
                 var cmdTvTest = new CtrlCmdUtil();
-                cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, "\\\\.\\pipe\\" + processType + "_Ctrl_BonPipe_" + process.Id);
+                cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, processType + "_Ctrl_BonPipe_" + process.Id);
                 cmdTvTest.SetConnectTimeOut(1000);
 
                 if (Settings.Instance.NwTvMode == true)
@@ -158,7 +158,7 @@ namespace EpgTimer
 
                 OpenTVTest(1000, "TvTest");
                 var cmdTvTest = new CtrlCmdUtil();
-                cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id, "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + process.Id);
+                cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id, "TvTest_Ctrl_BonPipe_" + process.Id);
                 cmdTvTest.SetConnectTimeOut(1000);
 
                 TVTestStreamingInfo sendInfo = new TVTestStreamingInfo();
@@ -224,7 +224,7 @@ namespace EpgTimer
 
                 OpenTVTest(Settings.Instance.TvTestOpenWait, "TvTest");
                 var cmdTvTest = new CtrlCmdUtil();
-                cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id, "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + process.Id);
+                cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id, "TvTest_Ctrl_BonPipe_" + process.Id);
                 cmdTvTest.SetConnectTimeOut(1000);
 
                 UInt32 ip = 0x7F000001;
@@ -292,7 +292,7 @@ namespace EpgTimer
                     if (type == "View")
                     {
                         var cmdTvTest = new CtrlCmdUtil();
-                        cmdTvTest.SetPipeSetting("Global\\View_Ctrl_BonConnect_" + p.Id, "\\\\.\\pipe\\View_Ctrl_BonPipe_" + p.Id);
+                        cmdTvTest.SetPipeSetting("Global\\View_Ctrl_BonConnect_" + p.Id, "View_Ctrl_BonPipe_" + p.Id);
                         cmdTvTest.SetConnectTimeOut(1000);
                         int id = -1;
                         if (cmdTvTest.SendViewGetID(ref id) != ErrCode.CMD_SUCCESS || id >= 0)
@@ -312,7 +312,7 @@ namespace EpgTimer
             if (process != null && process.HasExited == false)
             {
                 var cmdTvTest = new CtrlCmdUtil();
-                cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, "\\\\.\\pipe\\" + processType + "_Ctrl_BonPipe_" + process.Id);
+                cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, processType + "_Ctrl_BonPipe_" + process.Id);
                 cmdTvTest.SetConnectTimeOut(1000);
                 cmdTvTest.SendViewAppClose();
             }

@@ -629,20 +629,15 @@ namespace EpgTimer
                         pipe.Write(data, 0, data.Length);
                     }
                     // 受信
-                    if (pipe.Read(head, 0, 8) != 8)
+                    if (ReadAll(pipe, head, 0, 8) != 8)
                     {
                         return ErrCode.CMD_ERR;
                     }
                     uint resParam = BitConverter.ToUInt32(head, 0);
                     var resData = new byte[BitConverter.ToUInt32(head, 4)];
-                    for (int n = 0; n < resData.Length; )
+                    if (ReadAll(pipe, resData, 0, resData.Length) != resData.Length)
                     {
-                        int m = pipe.Read(resData, n, resData.Length - n);
-                        if (m <= 0)
-                        {
-                            return ErrCode.CMD_ERR;
-                        }
-                        n += m;
+                        return ErrCode.CMD_ERR;
                     }
                     res = new MemoryStream(resData, false);
                     return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
