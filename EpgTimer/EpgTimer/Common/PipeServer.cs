@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Collections;
 using System.Threading;
 using System.IO.Pipes;
+using System.Security.AccessControl;
 
 namespace EpgTimer
 {
@@ -25,7 +26,32 @@ namespace EpgTimer
             m_StopFlag = false;
             m_PulseEvent = new AutoResetEvent(false);
             var eventConnect = new EventWaitHandle(false, EventResetMode.AutoReset, eventName);
-            var pipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            string trustee = "NT Service\\EpgTimer Service";
+            try
+            {
+                // "EpgTimer Service"のサービスセキュリティ識別子(Service-specific SID)に対するアクセス許可を追加する
+                EventWaitHandleSecurity sec = eventConnect.GetAccessControl();
+                sec.AddAccessRule(new EventWaitHandleAccessRule(trustee, EventWaitHandleRights.Synchronize, AccessControlType.Allow));
+                eventConnect.SetAccessControl(sec);
+            }
+            catch
+            {
+                trustee = null;
+            }
+            var pipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 1024, 1024,
+                                                 null, System.IO.HandleInheritability.None, trustee == null ? 0 : PipeAccessRights.ChangePermissions);
+            if (trustee != null)
+            {
+                try
+                {
+                    PipeSecurity sec = pipe.GetAccessControl();
+                    sec.AddAccessRule(new PipeAccessRule(trustee, PipeAccessRights.ReadWrite, AccessControlType.Allow));
+                    pipe.SetAccessControl(sec);
+                }
+                catch
+                {
+                }
+            }
 
             m_ServerThread = new Thread(new ThreadStart(() =>
             {

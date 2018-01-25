@@ -1028,13 +1028,27 @@ namespace EpgTimer
                                 try
                                 {
                                     //ShellExecute相当なので.batなどもそのまま与える
-                                    var process = System.Diagnostics.Process.Start(startInfo);
-                                    if (process != null)
+                                    using (var process = System.Diagnostics.Process.Start(startInfo))
                                     {
-                                        var w = new CtrlCmdWriter(new System.IO.MemoryStream());
-                                        w.Write(process.Id);
-                                        w.Stream.Close();
-                                        res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, w.Stream.ToArray(), 0);
+                                        if (process != null)
+                                        {
+                                            try
+                                            {
+                                                //"EpgTimer Service"のサービスセキュリティ識別子(Service-specific SID)に対するアクセス許可を追加する
+                                                var trustee = new System.Security.Principal.NTAccount("NT Service\\EpgTimer Service");
+                                                var trusteeSid = trustee.Translate(typeof(System.Security.Principal.SecurityIdentifier));
+                                                var sec = new KernelObjectSecurity(process.Handle);
+                                                //SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION
+                                                sec.AddAccessRule(new KernelObjectAccessRule(trusteeSid, 0x100000 | 0x01 | 0x0200,
+                                                                                             System.Security.AccessControl.AccessControlType.Allow));
+                                                sec.Persist(process.Handle);
+                                            }
+                                            catch { }
+                                            var w = new CtrlCmdWriter(new System.IO.MemoryStream());
+                                            w.Write(process.Id);
+                                            w.Stream.Close();
+                                            res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, w.Stream.ToArray(), 0);
+                                        }
                                     }
                                 }
                                 catch { }
