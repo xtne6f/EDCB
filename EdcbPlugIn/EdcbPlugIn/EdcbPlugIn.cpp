@@ -117,6 +117,9 @@ void CEdcbPlugIn::CMyEventHandler::OnStartupDone()
 		m_outer.m_pApp->AddLog(L"EpgTimerPlugIn‚ª“Ç‚Ýž‚Ü‚ê‚Ä‚¢‚é‚½‚ß³í“®ì‚µ‚Ü‚¹‚ñB", TVTest::LOG_TYPE_ERROR);
 	}
 	else {
+		if (CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION)) {
+			m_outer.m_pApp->AddLog(L"Granted SYNCHRONIZE|PROCESS_TERMINATE|PROCESS_SET_INFORMATION to " SERVICE_NAME);
+		}
 		wstring pid;
 		Format(pid, L"%d", GetCurrentProcessId());
 		CEdcbPlugIn *outer = &m_outer;
