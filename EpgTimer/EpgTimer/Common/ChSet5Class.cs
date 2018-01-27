@@ -13,16 +13,30 @@ namespace EpgTimer
             private set;
         }
 
+        public List<ChSet5Item> ChListOrderByIndex
+        {
+            get;
+            private set;
+        }
+
         public IEnumerable<ChSet5Item> ChListSelected
         {
             get
             {
-                bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
-                //ネットワーク種別優先かつ限定受信を分離したID順ソート
-                return ChList.Values.Where(item => (ignoreEpgCap || item.EpgCapFlag)).OrderBy(item => (
-                    (ulong)(IsDttv(item.ONID) ? 0 : IsBS(item.ONID) ? 1 : IsCS(item.ONID) ? 2 : 3) << 56 |
-                    (ulong)(IsDttv(item.ONID) && item.PartialFlag ? 1 : 0) << 48 |
-                    item.Key));
+                IEnumerable<ChSet5Item> ret = ChListOrderByIndex;
+                if (Settings.Instance.ShowEpgCapServiceOnly)
+                {
+                    ret = ret.Where(item => item.EpgCapFlag);
+                }
+                if (Settings.Instance.SortServiceList)
+                {
+                    //ネットワーク種別優先かつ限定受信を分離したID順ソート
+                    ret = ret.OrderBy(item => (
+                        (ulong)(IsDttv(item.ONID) ? 0 : IsBS(item.ONID) ? 1 : IsCS(item.ONID) ? 2 : 3) << 56 |
+                        (ulong)(IsDttv(item.ONID) && item.PartialFlag ? 1 : 0) << 48 |
+                        item.Key));
+                }
+                return ret;
             }
         }
         
@@ -40,6 +54,7 @@ namespace EpgTimer
         public ChSet5()
         {
             ChList = new Dictionary<UInt64, ChSet5Item>();
+            ChListOrderByIndex = new List<ChSet5Item>();
         }
 
         public static bool IsVideo(UInt16 ServiceType)
@@ -80,9 +95,9 @@ namespace EpgTimer
             try
             {
                 Instance.ChList.Clear();
-                while (reader.Peek() >= 0)
+                Instance.ChListOrderByIndex.Clear();
+                for (string buff = reader.ReadLine(); buff != null; buff = reader.ReadLine())
                 {
-                    string buff = reader.ReadLine();
                     if (buff.IndexOf(";") == 0)
                     {
                         //コメント行
@@ -103,10 +118,15 @@ namespace EpgTimer
                             item.EpgCapFlag = Convert.ToInt32(list[7]) != 0;
                             item.SearchFlag = Convert.ToInt32(list[8]) != 0;
                         }
-                        finally
+                        catch
                         {
-                            UInt64 key = ((UInt64)item.ONID) << 32 | ((UInt64)item.TSID) << 16 | ((UInt64)item.SID);
-                            Instance.ChList.Add(key, item);
+                            //不正
+                            continue;
+                        }
+                        if (Instance.ChList.ContainsKey(item.Key) == false)
+                        {
+                            Instance.ChList[item.Key] = item;
+                            Instance.ChListOrderByIndex.Add(item);
                         }
                     }
                 }

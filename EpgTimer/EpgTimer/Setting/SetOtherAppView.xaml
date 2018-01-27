@@ -1,42 +1,38 @@
 ﻿<UserControl x:Class="EpgTimer.Setting.SetOtherAppView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:EpgTimer"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="500" d:DesignWidth="780">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
+             d:DesignHeight="500" d:DesignWidth="780" d:DataContext="{d:DesignInstance local:Settings}" Loaded="UserControl_Loaded">
     <Grid>
         <TabControl Name="tabControl">
             <TabItem Header="TVTest連携" Name="tabItem_tvtest">
                 <Grid>
-                    <Label Content="※利用にはTVtestに EpgTimerPlugIn.tvtp か EdcbPlugIn.tvtp を追加しておく必要があります。" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" Foreground="Red" />
-                    <Label Content="TVTest.exeパス" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,48,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="456" />
+                    <Label Content="※利用にはTVtestに EpgTimerPlugIn.tvtp か EdcbPlugIn.tvtp を追加しておく必要があります。" Foreground="Red" HorizontalAlignment="Left" Margin="12,12,0,0" VerticalAlignment="Top" />
+                    <Label Content="TVTest.exeパス" HorizontalAlignment="Left" Margin="12,46,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,48,0,0" Name="textBox_exe" Text="{Binding TvTestExe}" VerticalAlignment="Top" Width="456" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" />
-                    <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label4" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,80,0,0" Name="textBox_cmd" VerticalAlignment="Top" Width="456" />
-                    <Label Content="※視聴に使用するBonDriverはEpgTimerSrv設定で選択します。" Height="28" HorizontalAlignment="Left" Margin="12,144,0,0" Name="label3" VerticalAlignment="Top" />
-                    <CheckBox Content="NetworkTVモード(録画用アプリやEpgTimerSrvからのUDP、TCP送信)で視聴する" Height="16" HorizontalAlignment="Left" Margin="12,187,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" />
-                    <CheckBox Content="UDP有効" Height="16" HorizontalAlignment="Left" Margin="44,240,0,0" Name="checkBox_nwUDP" VerticalAlignment="Top" />
-                    <CheckBox Content="TCP有効" Height="16" HorizontalAlignment="Left" Margin="134,240,0,0" Name="checkBox_nwTCP" VerticalAlignment="Top" />
-                    <Label Content="(BonDriverに関するオプションは自動的に付加されます)" Height="28" HorizontalAlignment="Left" Margin="134,110,0,0" Name="label5" VerticalAlignment="Top" />
-                    <Label Content="NetworkTVモードの送信方式 (追っかけ再生はNetworkTVモードで動作します。使用する場合はチェックしてください)" Height="28" HorizontalAlignment="Left" Margin="12,212,0,0" Name="label9" VerticalAlignment="Top" />
+                    <Label Content="コマンドライン引数" HorizontalAlignment="Left" Margin="12,80,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,80,0,0" Text="{Binding TvTestCmd}" VerticalAlignment="Top" Width="456" />
+                    <Label Content="※視聴に使用するBonDriverはEpgTimerSrv設定で選択します。" HorizontalAlignment="Left" Margin="12,144,0,0" VerticalAlignment="Top" />
+                    <CheckBox Content="NetworkTVモード(録画用アプリやEpgTimerSrvからのUDP、TCP送信)で視聴する" HorizontalAlignment="Left" IsChecked="{Binding NwTvMode}" Margin="12,187,0,0" VerticalAlignment="Top" />
+                    <CheckBox Content="UDP有効" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeUDP}" Margin="44,240,0,0" VerticalAlignment="Top" />
+                    <CheckBox Content="TCP有効" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeTCP}" Margin="134,240,0,0" VerticalAlignment="Top" />
+                    <Label Content="(BonDriverに関するオプションは自動的に付加されます)" HorizontalAlignment="Left" Margin="134,110,0,0" VerticalAlignment="Top" />
+                    <Label Content="NetworkTVモードの送信方式 (追っかけ再生はNetworkTVモードで動作します。使用する場合はチェックしてください)" HorizontalAlignment="Left" Margin="12,212,0,0" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
             <TabItem Header="ファイル再生" Name="tabItem_play">
                 <Grid>
-                    <Label Content="再生アプリのexeパス" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label6" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="138,8,0,0" Name="textBox_playExe" VerticalAlignment="Top" Width="456" />
+                    <Label Content="再生アプリのexeパス" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="138,8,0,0" Name="textBox_playExe" Text="{Binding FilePlayExe}" VerticalAlignment="Top" Width="456" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="600,8,0,0" Name="button_playExe" VerticalAlignment="Top" Width="56" Click="button_playExe_Click" />
-                    <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="16,38,0,0" Name="label7" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="138,38,0,0" Name="textBox_playCmd" VerticalAlignment="Top" Width="456" />
-                    <Label Content="($FilePath$:ファイルパス、$FileNameExt$:ファイル名、を指定できます)" Height="28" HorizontalAlignment="Left" Margin="138,68,0,0" Name="label8" VerticalAlignment="Top" />
-                    <CheckBox Content="追っかけ再生にも使用する" Height="16" HorizontalAlignment="Left" Margin="138,102,0,0" Name="checkBox_playOnAirWithExe" VerticalAlignment="Top" />
+                    <Label Content="コマンドライン引数" HorizontalAlignment="Left" Margin="16,38,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="138,38,0,0" Text="{Binding FilePlayCmd}" VerticalAlignment="Top" Width="456" />
+                    <Label Content="($FilePath$:ファイルパス、$FileNameExt$:ファイル名、を指定できます)" HorizontalAlignment="Left" Margin="138,68,0,0" VerticalAlignment="Top" />
+                    <CheckBox Content="追っかけ再生にも使用する" HorizontalAlignment="Left" IsChecked="{Binding FilePlayOnAirWithExe}" Margin="138,102,0,0" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
         </TabControl>

@@ -25,7 +25,6 @@ namespace EpgTimer
 
     class DBManager
     {
-        private CtrlCmdUtil cmd = null;
         private bool updateEpgData = true;
         private bool updateReserveInfo = true;
         private bool updateRecInfo = true;
@@ -75,11 +74,6 @@ namespace EpgTimer
         public Dictionary<UInt32, EpgAutoAddData> EpgAutoAddList
         {
             get { return epgAutoAddList; }
-        }
-
-        public DBManager(CtrlCmdUtil ctrlCmd)
-        {
-            cmd = ctrlCmd;
         }
 
         public void ClearAllDB()
@@ -170,21 +164,16 @@ namespace EpgTimer
                 {
                     if (noAutoReloadEpg == false || oneTimeReloadEpg)
                     {
-                        if (cmd == null)
-                        {
-                            ret = ErrCode.CMD_ERR;
-                        }
-                        else
                         {
                             serviceEventList.Clear();
                             serviceEventList = null;
                             serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
                             List<EpgServiceEventInfo> list = new List<EpgServiceEventInfo>();
-                            ret = (ErrCode)cmd.SendEnumPgAll(ref list);
+                            ret = CommonManager.CreateSrvCtrl().SendEnumPgAll(ref list);
                             if (ret == ErrCode.CMD_SUCCESS)
                             {
                                 var list2 = new List<EpgServiceEventInfo>();
-                                cmd.SendEnumPgArcAll(ref list2);
+                                CommonManager.CreateSrvCtrl().SendEnumPgArcAll(ref list2);
                                 foreach (EpgServiceEventInfo info in list)
                                 {
                                     UInt64 id = CommonManager.Create64Key(
@@ -220,11 +209,6 @@ namespace EpgTimer
             {
                 if (updateReserveInfo == true)
                 {
-                    if (cmd == null)
-                    {
-                        ret = ErrCode.CMD_ERR;
-                    }
-                    else
                     {
                         reserveList.Clear();
                         reserveList = null;
@@ -234,10 +218,10 @@ namespace EpgTimer
                         tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
                         List<ReserveData> list = new List<ReserveData>();
                         List<TunerReserveInfo> list2 = new List<TunerReserveInfo>();
-                        ret = (ErrCode)cmd.SendEnumReserve(ref list);
+                        ret = CommonManager.CreateSrvCtrl().SendEnumReserve(ref list);
                         if (ret == ErrCode.CMD_SUCCESS)
                         {
-                            ret = (ErrCode)cmd.SendEnumTunerReserve(ref list2);
+                            ret = CommonManager.CreateSrvCtrl().SendEnumTunerReserve(ref list2);
                             if (ret == ErrCode.CMD_SUCCESS)
                             {
                                 foreach (ReserveData info in list)
@@ -276,20 +260,15 @@ namespace EpgTimer
             {
                 if (updateRecInfo == true)
                 {
-                    if (cmd == null)
-                    {
-                        ret = ErrCode.CMD_ERR;
-                    }
-                    else
                     {
                         recFileInfo.Clear();
                         recFileInfo = null;
                         recFileInfo = new Dictionary<uint, RecFileInfo>();
                         List<RecFileInfo> list = new List<RecFileInfo>();
-                        ret = cmd.SendEnumRecInfoBasic(ref list);
+                        ret = CommonManager.CreateSrvCtrl().SendEnumRecInfoBasic(ref list);
                         if (ret == ErrCode.CMD_NON_SUPPORT)
                         {
-                            ret = cmd.SendEnumRecInfo(ref list);
+                            ret = CommonManager.CreateSrvCtrl().SendEnumRecInfo(ref list);
                         }
                         if (ret == ErrCode.CMD_SUCCESS)
                         {
@@ -322,11 +301,6 @@ namespace EpgTimer
             {
                 if (updatePlugInFile == true)
                 {
-                    if (cmd == null)
-                    {
-                        ret = ErrCode.CMD_ERR;
-                    }
-                    else
                     {
                         writePlugInList.Clear();
                         writePlugInList = null;
@@ -336,10 +310,10 @@ namespace EpgTimer
                         recNamePlugInList = new Dictionary<int, string>();
                         List<String> writeList = new List<string>();
                         List<String> recNameList = new List<string>();
-                        ret = (ErrCode)cmd.SendEnumPlugIn(2, ref writeList);
+                        ret = CommonManager.CreateSrvCtrl().SendEnumPlugIn(2, ref writeList);
                         if (ret == ErrCode.CMD_SUCCESS)
                         {
-                            ret = (ErrCode)cmd.SendEnumPlugIn(1, ref recNameList);
+                            ret = CommonManager.CreateSrvCtrl().SendEnumPlugIn(1, ref recNameList);
                             if (ret == ErrCode.CMD_SUCCESS)
                             {
                                 foreach (String info in writeList)
@@ -378,17 +352,12 @@ namespace EpgTimer
             {
                 if (updateAutoAddEpgInfo == true)
                 {
-                    if (cmd == null)
-                    {
-                        ret = ErrCode.CMD_ERR;
-                    }
-                    else
                     {
                         epgAutoAddList.Clear();
                         epgAutoAddList = null;
                         epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
                         List<EpgAutoAddData> list = new List<EpgAutoAddData>();
-                        ret = (ErrCode)cmd.SendEnumEpgAutoAdd(ref list);
+                        ret = CommonManager.CreateSrvCtrl().SendEnumEpgAutoAdd(ref list);
                         if (ret == ErrCode.CMD_SUCCESS)
                         {
                             foreach (EpgAutoAddData info in list)
@@ -421,17 +390,12 @@ namespace EpgTimer
             {
                 if (updateAutoAddManualInfo == true)
                 {
-                    if (cmd == null)
-                    {
-                        ret = ErrCode.CMD_ERR;
-                    }
-                    else
                     {
                         manualAutoAddList.Clear();
                         manualAutoAddList = null;
                         manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
                         List<ManualAutoAddData> list = new List<ManualAutoAddData>();
-                        ret = (ErrCode)cmd.SendEnumManualAdd(ref list);
+                        ret = CommonManager.CreateSrvCtrl().SendEnumManualAdd(ref list);
                         if (ret == ErrCode.CMD_SUCCESS)
                         {
                             foreach (ManualAutoAddData info in list)

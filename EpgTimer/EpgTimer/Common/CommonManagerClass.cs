@@ -11,11 +11,6 @@ namespace EpgTimer
 {
     class CommonManager
     {
-        public CtrlCmdUtil CtrlCmd
-        {
-            get;
-            set;
-        }
         public DBManager DB
         {
             get;
@@ -94,6 +89,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceUrlDictionary
+        {
+            get;
+            private set;
+        }
 
         private static CommonManager _instance;
         public static CommonManager Instance
@@ -109,10 +109,9 @@ namespace EpgTimer
 
         public CommonManager()
         {
-            CtrlCmd = new CtrlCmdUtil();
-            DB = new DBManager(CtrlCmd);
-            TVTestCtrl = new TVTestCtrlClass(CtrlCmd);
-            NW = new NWConnect(CtrlCmd);
+            DB = new DBManager();
+            TVTestCtrl = new TVTestCtrlClass();
+            NW = new NWConnect();
             {
                 ContentKindDictionary = new Dictionary<UInt16, ContentKindInfo>();
                 ContentKindDictionary.Add(0x00FF, new ContentKindInfo("ニュース／報道", "", 0x00, 0xFF));
@@ -372,6 +371,21 @@ namespace EpgTimer
             NotifyLogList = new List<NotifySrvInfo>();
             CustContentColorList = new List<Brush>();
             CustTimeColorList = new List<Brush>();
+            ReplaceUrlDictionary = CreateReplaceDictionary(",０,0,１,1,２,2,３,3,４,4,５,5,６,6,７,7,８,8,９,9" +
+                ",Ａ,A,Ｂ,B,Ｃ,C,Ｄ,D,Ｅ,E,Ｆ,F,Ｇ,G,Ｈ,H,Ｉ,I,Ｊ,J,Ｋ,K,Ｌ,L,Ｍ,M,Ｎ,N,Ｏ,O,Ｐ,P,Ｑ,Q,Ｒ,R,Ｓ,S,Ｔ,T,Ｕ,U,Ｖ,V,Ｗ,W,Ｘ,X,Ｙ,Y,Ｚ,Z" +
+                ",ａ,a,ｂ,b,ｃ,c,ｄ,d,ｅ,e,ｆ,f,ｇ,g,ｈ,h,ｉ,i,ｊ,j,ｋ,k,ｌ,l,ｍ,m,ｎ,n,ｏ,o,ｐ,p,ｑ,q,ｒ,r,ｓ,s,ｔ,t,ｕ,u,ｖ,v,ｗ,w,ｘ,x,ｙ,y,ｚ,z" +
+                ",！,!,＃,#,＄,$,％,%,＆,&,’,',（,(,）,),～,~,￣,~,＝,=,＠,@,；,;,：,:,？,?,＿,_,＋,+,－,-,＊,*,／,/,．,.");
+        }
+
+        public static CtrlCmdUtil CreateSrvCtrl()
+        {
+            var cmd = new CtrlCmdUtil();
+            if (Instance.NWMode)
+            {
+                cmd.SetSendMode(true);
+                cmd.SetNWSetting(Instance.NW.ConnectedIP, Instance.NW.ConnectedPort);
+            }
+            return cmd;
         }
 
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
@@ -384,6 +398,55 @@ namespace EpgTimer
         {
             UInt64 key = ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
             return key;
+        }
+
+        public static Dictionary<char, List<KeyValuePair<string, string>>> CreateReplaceDictionary(string pattern)
+        {
+            var ret = new Dictionary<char, List<KeyValuePair<string, string>>>();
+            if (pattern.Length > 0)
+            {
+                string[] arr = pattern.Substring(1).Split(pattern[0]);
+                for (int i = 0; i + 1 < arr.Length; i += 2)
+                {
+                    //先頭文字で仕分けする
+                    if (arr[i].Length > 0)
+                    {
+                        List<KeyValuePair<string, string>> bucket;
+                        if (ret.TryGetValue(arr[i][0], out bucket) == false)
+                        {
+                            ret[arr[i][0]] = bucket = new List<KeyValuePair<string, string>>();
+                        }
+                        bucket.Add(new KeyValuePair<string, string>(arr[i], arr[i + 1]));
+                    }
+                }
+                foreach (var bucket in ret)
+                {
+                    //最長一致のため
+                    bucket.Value.Sort((a, b) => b.Key.Length - a.Key.Length);
+                }
+            }
+            return ret;
+        }
+
+        public static string ReplaceText(string text, Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionary)
+        {
+            var ret = new StringBuilder(text.Length);
+            for (int i = 0; i < text.Length; )
+            {
+                List<KeyValuePair<string, string>> bucket;
+                if (replaceDictionary.TryGetValue(text[i], out bucket))
+                {
+                    int j = bucket.FindIndex(p => string.Compare(text, i, p.Key, 0, p.Key.Length, StringComparison.Ordinal) == 0);
+                    if (j >= 0)
+                    {
+                        ret.Append(bucket[j].Value);
+                        i += bucket[j].Key.Length;
+                        continue;
+                    }
+                }
+                ret.Append(text[i++]);
+            }
+            return ret.ToString();
         }
 
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
@@ -409,101 +472,22 @@ namespace EpgTimer
             return info;
         }
 
-        public static String ReplaceUrl(String url)
+        public static string GetErrCodeText(ErrCode err)
         {
-            string retText = url;
-
-            retText = retText.Replace("ａ", "a");
-            retText = retText.Replace("ｂ", "b");
-            retText = retText.Replace("ｃ", "c");
-            retText = retText.Replace("ｄ", "d");
-            retText = retText.Replace("ｅ", "e");
-            retText = retText.Replace("ｆ", "f");
-            retText = retText.Replace("ｇ", "g");
-            retText = retText.Replace("ｈ", "h");
-            retText = retText.Replace("ｉ", "i");
-            retText = retText.Replace("ｊ", "j");
-            retText = retText.Replace("ｋ", "k");
-            retText = retText.Replace("ｌ", "l");
-            retText = retText.Replace("ｍ", "m");
-            retText = retText.Replace("ｎ", "n");
-            retText = retText.Replace("ｏ", "o");
-            retText = retText.Replace("ｐ", "p");
-            retText = retText.Replace("ｑ", "q");
-            retText = retText.Replace("ｒ", "r");
-            retText = retText.Replace("ｓ", "s");
-            retText = retText.Replace("ｔ", "t");
-            retText = retText.Replace("ｕ", "u");
-            retText = retText.Replace("ｖ", "v");
-            retText = retText.Replace("ｗ", "w");
-            retText = retText.Replace("ｘ", "x");
-            retText = retText.Replace("ｙ", "y");
-            retText = retText.Replace("ｚ", "z");
-            retText = retText.Replace("Ａ", "A");
-            retText = retText.Replace("Ｂ", "B");
-            retText = retText.Replace("Ｃ", "C");
-            retText = retText.Replace("Ｄ", "D");
-            retText = retText.Replace("Ｅ", "E");
-            retText = retText.Replace("Ｆ", "F");
-            retText = retText.Replace("Ｇ", "G");
-            retText = retText.Replace("Ｈ", "H");
-            retText = retText.Replace("Ｉ", "I");
-            retText = retText.Replace("Ｊ", "J");
-            retText = retText.Replace("Ｋ", "K");
-            retText = retText.Replace("Ｌ", "L");
-            retText = retText.Replace("Ｍ", "M");
-            retText = retText.Replace("Ｎ", "N");
-            retText = retText.Replace("Ｏ", "O");
-            retText = retText.Replace("Ｐ", "P");
-            retText = retText.Replace("Ｑ", "Q");
-            retText = retText.Replace("Ｒ", "R");
-            retText = retText.Replace("Ｓ", "S");
-            retText = retText.Replace("Ｔ", "T");
-            retText = retText.Replace("Ｕ", "U");
-            retText = retText.Replace("Ｖ", "V");
-            retText = retText.Replace("Ｗ", "W");
-            retText = retText.Replace("Ｘ", "X");
-            retText = retText.Replace("Ｙ", "Y");
-            retText = retText.Replace("Ｚ", "Z");
-            retText = retText.Replace("＃", "#");
-            retText = retText.Replace("＄", "$");
-            retText = retText.Replace("％", "%");
-            retText = retText.Replace("＆", "&");
-            retText = retText.Replace("’", "'");
-            retText = retText.Replace("（", "(");
-            retText = retText.Replace("）", ")");
-            retText = retText.Replace("～", "~");
-            retText = retText.Replace("＝", "=");
-            retText = retText.Replace("｜", "|");
-            retText = retText.Replace("＾", "^");
-            retText = retText.Replace("￥", "\\");
-            retText = retText.Replace("＠", "@");
-            retText = retText.Replace("；", ";");
-            retText = retText.Replace("：", ":");
-            retText = retText.Replace("｀", "`");
-            retText = retText.Replace("｛", "{");
-            retText = retText.Replace("｝", "}");
-            retText = retText.Replace("＜", "<");
-            retText = retText.Replace("＞", ">");
-            retText = retText.Replace("？", "?");
-            retText = retText.Replace("＿", "_");
-            retText = retText.Replace("＋", "+");
-            retText = retText.Replace("－", "-");
-            retText = retText.Replace("＊", "*");
-            retText = retText.Replace("／", "/");
-            retText = retText.Replace("．", ".");
-            retText = retText.Replace("０", "0");
-            retText = retText.Replace("１", "1");
-            retText = retText.Replace("２", "2");
-            retText = retText.Replace("３", "3");
-            retText = retText.Replace("４", "4");
-            retText = retText.Replace("５", "5");
-            retText = retText.Replace("６", "6");
-            retText = retText.Replace("７", "7");
-            retText = retText.Replace("８", "8");
-            retText = retText.Replace("９", "9");
-
-            return retText;
+            switch (err)
+            {
+                case ErrCode.CMD_NON_SUPPORT:
+                    return "EpgTimerSrvがサポートしていないコマンドです。";
+                case ErrCode.CMD_ERR_CONNECT:
+                    return "EpgTimerSrvに接続できませんでした。";
+                case ErrCode.CMD_ERR_TIMEOUT:
+                    return "EpgTimerSrvとの接続にタイムアウトしました。";
+                case ErrCode.CMD_ERR_BUSY:
+                    //このエラーはコマンドによって解釈が異なる
+                    return null;
+                default:
+                    return null;
+            }
         }
 
         public String ConvertReserveText(ReserveData reserveInfo)
@@ -918,9 +902,9 @@ namespace EpgTimer
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
-                if (CtrlCmd.SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
                 {
-                    CtrlCmd.SendNwPlayClose(info.ctrlID);
+                    CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
                     if (info.filePath != "")
                     {
                         FilePlay(info.filePath);
@@ -967,263 +951,165 @@ namespace EpgTimer
             }
         }
 
-        public void ReloadCustContentColorList()
+        private static SolidColorBrush CreateCustColorBrush(string name, uint cust, byte a = 0xFF, int opacity = 100)
         {
-            try
+            SolidColorBrush brush;
+            if (name == "カスタム")
             {
-                CustContentColorList.Clear();
-                string name;
-                SolidColorBrush brush;
-                for (int i = 0; i < Settings.Instance.ContentColorList.Count; i++)
+                Color c = ColorDef.FromUInt(cust);
+                brush = new SolidColorBrush(Color.FromArgb((byte)(c.A * opacity / 100), c.R, c.G, c.B));
+                brush.Freeze();
+            }
+            else
+            {
+                brush = ColorDef.BrushFromName(name);
+                if (brush.Color.A != 0 && (a != 0xFF || opacity != 100))
                 {
-                    name = Settings.Instance.ContentColorList[i];
-                    brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                    if (Settings.Instance.EpgGradation == false)
-                    {
-                        if (brush == null)
-                        {
-                            (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[i]))).Freeze();
-                        }
-                        CustContentColorList.Add(brush);
-                    }
-                    else
-                    {
-                        CustContentColorList.Add(ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.ContentCustColorList[i]) : brush.Color));
-                    }
-                }
-                name = Settings.Instance.ReserveRectColorNormal;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x11]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorNo;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x12]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorNoTuner;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x13]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorWarning;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x14]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-
-                name = Settings.Instance.TitleColor1;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor1))).Freeze();
-                }
-                CustTitle1Color = brush;
-                name = Settings.Instance.TitleColor2;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor2))).Freeze();
-                }
-                CustTitle2Color = brush;
-                CustTimeColorList.Clear();
-                for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
-                {
-                    name = Settings.Instance.TimeColorList[i];
-                    brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                    if (Settings.Instance.EpgGradationHeader == false)
-                    {
-                        if (brush == null)
-                        {
-                            (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TimeCustColorList[i]))).Freeze();
-                        }
-                        CustTimeColorList.Add(brush);
-                    }
-                    else
-                    {
-                        CustTimeColorList.Add(ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.TimeCustColorList[i]) : brush.Color, 0.9, 1.1));
-                    }
-                }
-                name = Settings.Instance.ServiceColor;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (Settings.Instance.EpgGradationHeader == false)
-                {
-                    if (brush == null)
-                    {
-                        (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ServiceCustColor))).Freeze();
-                    }
-                    CustServiceColor = brush;
-                }
-                else
-                {
-                    CustServiceColor = ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.ServiceCustColor) : brush.Color, 1.0, 2.0);
+                    brush = new SolidColorBrush(Color.FromArgb((byte)(a * opacity / 100), brush.Color.R, brush.Color.G, brush.Color.B));
+                    brush.Freeze();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            return brush;
         }
 
+        public void ReloadCustContentColorList()
+        {
+            SolidColorBrush brush;
+            CustContentColorList.Clear();
+            List<uint> ccList = Settings.Instance.ContentCustColorList;
+            for (int i = 0; i < 17; i++)
+            {
+                brush = CreateCustColorBrush(Settings.Instance.ContentColorList[i], ccList[i]);
+                CustContentColorList.Add(Settings.Instance.EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+            }
 
-        private SolidColorBrush resDefBackColor = null;
+            //0→50で塗りつぶしの不透明度が上がる
+            int fillOpacity = Math.Min(Settings.Instance.ReserveRectFillOpacity, 50) * 2;
+            //50→100で枠の不透明度が下がる
+            int strokeOpacity = Math.Min(100 - Settings.Instance.ReserveRectFillOpacity, 50) * 2;
+            //予約枠が色名指定のときは少し透過(0xA0)する
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList[17], 0xA0, strokeOpacity));
+            //次要素は予約塗りつぶしのブラシ
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList[17], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList[18], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList[18], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList[19], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList[19], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList[20], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList[20], 0xA0, fillOpacity));
+
+            CustTitle1Color = CreateCustColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
+            CustTitle2Color = CreateCustColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
+
+            CustTimeColorList.Clear();
+            for (int i = 0; i < 4; i++)
+            {
+                brush = CreateCustColorBrush(Settings.Instance.TimeColorList[i], Settings.Instance.TimeCustColorList[i]);
+                CustTimeColorList.Add(Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+            }
+
+            brush = CreateCustColorBrush(Settings.Instance.ServiceColor, Settings.Instance.ServiceCustColor);
+            CustServiceColor = Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush;
+        }
+
+        private static SolidColorBrush GetOrCreateBrush(ref SolidColorBrush brush, byte a, byte r, byte g, byte b)
+        {
+            if (brush == null)
+            {
+                brush = new SolidColorBrush();
+                brush.Color = Color.FromArgb(a, r, g, b);
+                brush.Freeze();
+            }
+            return brush;
+        }
+
+        private SolidColorBrush _resDefBackColor;
         public SolidColorBrush ResDefBackColor
         {
             get
             {
-                if (resDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
-                    resDefBackColor = new SolidColorBrush();
-                    resDefBackColor.Color = item;
-                    resDefBackColor.Freeze();
-                }
-                return resDefBackColor;
+                return GetOrCreateBrush(ref _resDefBackColor, Settings.Instance.ResDefColorA, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
             }
         }
-        private SolidColorBrush resErrBackColor = null;
+
+        private SolidColorBrush _resErrBackColor;
         public SolidColorBrush ResErrBackColor
         {
             get
             {
-                if (resErrBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
-                    resErrBackColor = new SolidColorBrush();
-                    resErrBackColor.Color = item;
-                    resErrBackColor.Freeze();
-                }
-                return resErrBackColor;
+                return GetOrCreateBrush(ref _resErrBackColor, Settings.Instance.ResErrColorA, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
             }
         }
-        private SolidColorBrush resWarBackColor = null;
+
+        private SolidColorBrush _resWarBackColor;
         public SolidColorBrush ResWarBackColor
         {
             get
             {
-                if (resWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
-                    resWarBackColor = new SolidColorBrush();
-                    resWarBackColor.Color = item;
-                    resWarBackColor.Freeze();
-                }
-                return resWarBackColor;
+                return GetOrCreateBrush(ref _resWarBackColor, Settings.Instance.ResWarColorA, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
             }
         }
-        private SolidColorBrush resNoBackColor = null;
+
+        private SolidColorBrush _resNoBackColor;
         public SolidColorBrush ResNoBackColor
         {
             get
             {
-                if (resNoBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
-                    resNoBackColor = new SolidColorBrush();
-                    resNoBackColor.Color = item;
-                    resNoBackColor.Freeze();
-                }
-                return resNoBackColor;
+                return GetOrCreateBrush(ref _resNoBackColor, Settings.Instance.ResNoColorA, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
             }
         }
 
-        private SolidColorBrush recEndDefBackColor = null;
+        private SolidColorBrush _recEndDefBackColor;
         public SolidColorBrush RecEndDefBackColor
         {
             get
             {
-                if (recEndDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
-                    recEndDefBackColor = new SolidColorBrush();
-                    recEndDefBackColor.Color = item;
-                    recEndDefBackColor.Freeze();
-                }
-                return recEndDefBackColor;
+                return GetOrCreateBrush(ref _recEndDefBackColor, Settings.Instance.RecEndDefColorA, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
             }
         }
-        
-        private SolidColorBrush recEndErrBackColor = null;
+
+        private SolidColorBrush _recEndErrBackColor;
         public SolidColorBrush RecEndErrBackColor
         {
             get
             {
-                if( recEndErrBackColor == null ){
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
-                    recEndErrBackColor = new SolidColorBrush();
-                    recEndErrBackColor.Color = item;
-                    recEndErrBackColor.Freeze();
-                }
-                return recEndErrBackColor;
+                return GetOrCreateBrush(ref _recEndErrBackColor, Settings.Instance.RecEndErrColorA, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
             }
         }
 
-        private SolidColorBrush recEndWarBackColor = null;
+        private SolidColorBrush _recEndWarBackColor;
         public SolidColorBrush RecEndWarBackColor
         {
             get
             {
-                if (recEndWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
-                    recEndWarBackColor = new SolidColorBrush();
-                    recEndWarBackColor.Color = item;
-                    recEndWarBackColor.Freeze();
-                }
-                return recEndWarBackColor;
+                return GetOrCreateBrush(ref _recEndWarBackColor, Settings.Instance.RecEndWarColorA, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
             }
         }
 
-        private SolidColorBrush epgTipsBackColor = null;
+        private SolidColorBrush _epgTipsBackColor;
         public SolidColorBrush EpgTipsBackColor
         {
             get
             {
-                if (epgTipsBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
-                    epgTipsBackColor = new SolidColorBrush();
-                    epgTipsBackColor.Color = item;
-                    epgTipsBackColor.Freeze();
-                }
-                return epgTipsBackColor;
+                return GetOrCreateBrush(ref _epgTipsBackColor, 0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
             }
         }
-        private SolidColorBrush epgTipsForeColor = null;
+
+        private SolidColorBrush _epgTipsForeColor;
         public SolidColorBrush EpgTipsForeColor
         {
             get
             {
-                if (epgTipsForeColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
-                    epgTipsForeColor = new SolidColorBrush();
-                    epgTipsForeColor.Color = item;
-                    epgTipsForeColor.Freeze();
-                }
-                return epgTipsForeColor;
+                return GetOrCreateBrush(ref _epgTipsForeColor, 0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
             }
         }
-        private SolidColorBrush epgBackColor = null;
+
+        private SolidColorBrush _epgBackColor;
         public SolidColorBrush EpgBackColor
         {
             get
             {
-                if (epgBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgBackColorR, Settings.Instance.EpgBackColorG, Settings.Instance.EpgBackColorB);
-                    epgBackColor = new SolidColorBrush(item);
-                    epgBackColor.Freeze();
-                }
-                return epgBackColor;
+                return GetOrCreateBrush(ref _epgBackColor, 0xFF, Settings.Instance.EpgBackColorR, Settings.Instance.EpgBackColorG, Settings.Instance.EpgBackColorB);
             }
         }
     }

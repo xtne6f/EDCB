@@ -1,268 +1,176 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
 namespace EpgTimer
 {
-    class IEPGFileClass
+    static class IEPGFileClass
     {
-        public ReserveData AddInfo = new ReserveData();
-        public bool LoadTVPIDFile(String filePath)
+        public static ReserveData TryLoadTVPID(string filePath, IDictionary<ulong, ChSet5Item> chList)
         {
-            bool ret = false;
-            System.IO.StreamReader reader = null;
-            try
+            Dictionary<string, string> paramList = TryLoadParamList(filePath);
+            if (paramList != null &&
+                paramList.ContainsKey("station") &&
+                paramList.ContainsKey("version") &&
+                paramList["version"] == "2")
             {
-                Dictionary<String, String> paramList = new Dictionary<string, string>();
-                reader = (new System.IO.StreamReader(filePath, System.Text.Encoding.Default));
-                while (reader.Peek() >= 0)
+                // 放送種別とサービスID
+                string station = paramList["station"];
+                foreach (ChSet5Item info in chList.Values)
                 {
-                    string buff = reader.ReadLine();
-                    string[] value = buff.Split(':');
-                    if (value.Length > 1)
+                    ushort sid = 0;
+                    if (ChSet5.IsDttv(info.ONID) &&
+                        (station.StartsWith("DFS", StringComparison.Ordinal) || station.StartsWith("DOS", StringComparison.Ordinal)))
                     {
-                        if (value.Length == 2)
+                        ushort.TryParse(station.Substring(3), NumberStyles.HexNumber, null, out sid);
+                    }
+                    else if (ChSet5.IsBS(info.ONID) && station.StartsWith("BSDT", StringComparison.Ordinal) ||
+                             ChSet5.IsCS(info.ONID) && station.StartsWith("CSDT", StringComparison.Ordinal))
+                    {
+                        ushort.TryParse(station.Substring(4), out sid);
+                    }
+                    if (sid != 0 && sid == info.SID)
+                    {
+                        var addInfo = new ReserveData();
+                        addInfo.OriginalNetworkID = info.ONID;
+                        addInfo.TransportStreamID = info.TSID;
+                        addInfo.ServiceID = info.SID;
+                        addInfo.StationName = info.ServiceName;
+                        // 開始時間と長さ
+                        if (GetTimeValues(paramList, addInfo))
                         {
-                            paramList.Add(value[0], value[1].Trim());
-                        }
-                        else
-                        {
-                            string val = "";
-                            for (int i = 1; i < value.Length; i++)
+                            // イベントID(オプション)。なければプログラム予約
+                            addInfo.EventID = 0xFFFF;
+                            ushort eventID;
+                            if (paramList.ContainsKey("program-id") && ushort.TryParse(paramList["program-id"], out eventID))
                             {
-                                val += value[i];
-                                if (i + 1 < value.Length)
-                                {
-                                    val += ":";
-                                }
+                                addInfo.EventID = eventID;
                             }
-                            paramList.Add(value[0], val.Trim());
+                            // 番組名(オプション)
+                            if (paramList.ContainsKey("program-title"))
+                            {
+                                addInfo.Title = paramList["program-title"];
+                            }
+                            return addInfo;
                         }
+                        break;
                     }
                 }
-
-                if (String.Compare(paramList["version"], "2", true) == 0)
-                {
-                    bool find = false;
-                    if (paramList["station"].IndexOf("DFS") == 0)
-                    {
-                        UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(3), 16);
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
-                        {
-                            if (ChSet5.IsDttv(info.ONID) && info.SID == sid)
-                            {
-                                AddInfo.OriginalNetworkID = info.ONID;
-                                AddInfo.TransportStreamID = info.TSID;
-                                AddInfo.ServiceID = info.SID;
-                                AddInfo.StationName = info.ServiceName;
-
-                                AddInfo.EventID = Convert.ToUInt16(paramList["program-id"]);
-
-                                find = true;
-                                break;
-                            }
-                        }
-                    }
-                    else if (paramList["station"].IndexOf("BSDT") == 0)
-                    {
-                        UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(4));
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
-                        {
-                            if (ChSet5.IsBS(info.ONID) && info.SID == sid)
-                            {
-                                AddInfo.OriginalNetworkID = info.ONID;
-                                AddInfo.TransportStreamID = info.TSID;
-                                AddInfo.ServiceID = info.SID;
-                                AddInfo.StationName = info.ServiceName;
-
-                                AddInfo.EventID = Convert.ToUInt16(paramList["program-id"]);
-
-                                find = true;
-                                break;
-                            }
-                        }
-                    }
-                    else if (paramList["station"].IndexOf("CSDT") == 0)
-                    {
-                        UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(4));
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
-                        {
-                            if (ChSet5.IsCS(info.ONID) && info.SID == sid)
-                            {
-                                AddInfo.OriginalNetworkID = info.ONID;
-                                AddInfo.TransportStreamID = info.TSID;
-                                AddInfo.ServiceID = info.SID;
-                                AddInfo.StationName = info.ServiceName;
-
-                                AddInfo.EventID = Convert.ToUInt16(paramList["program-id"]);
-
-                                find = true;
-                                break;
-                            }
-                        }
-                    }
-                    else if (paramList["station"].IndexOf("DOS") == 0)
-                    {
-                        UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(3), 16);
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
-                        {
-                            if (ChSet5.IsDttv(info.ONID) && info.SID == sid)
-                            {
-                                AddInfo.OriginalNetworkID = info.ONID;
-                                AddInfo.TransportStreamID = info.TSID;
-                                AddInfo.ServiceID = info.SID;
-                                AddInfo.StationName = info.ServiceName;
-
-                                AddInfo.EventID = 0xFFFF;
-
-                                find = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (find == false)
-                    {
-                        throw new Exception();
-                    }
-                    AddInfo.Title = paramList["program-title"];
-
-                    int yy = Convert.ToInt32(paramList["year"]);
-                    int mm = Convert.ToInt32(paramList["month"]);
-                    int dd = Convert.ToInt32(paramList["date"]);
-                    string[] startTime = paramList["start"].Split(':');
-                    int startHH = Convert.ToInt32(startTime[0]);
-                    int startMM = Convert.ToInt32(startTime[1]);
-                    string[] endTime = paramList["end"].Split(':');
-                    int endHH = Convert.ToInt32(endTime[0]);
-                    int endMM = Convert.ToInt32(endTime[1]);
-
-                    DateTime start = new DateTime(yy, mm, dd, startHH, startMM, 0, DateTimeKind.Utc);
-                    DateTime end = new DateTime(yy, mm, dd, endHH, endMM, 0, DateTimeKind.Utc);
-                    if (end < start)
-                    {
-                        end = end.AddDays(1);
-                    }
-
-                    AddInfo.StartTime = start;
-                    AddInfo.StartTimeEpg = start;
-                    AddInfo.DurationSecond = (uint)((end - start).TotalSeconds);
-
-                    RecSettingData recSet = new RecSettingData();
-                    Settings.GetDefRecSetting(0, ref recSet);
-                    AddInfo.RecSetting = recSet;
-
-                    ret = true;
-                }
             }
-            catch
-            {
-            }
-            if (reader != null)
-            {
-                reader.Close();
-            }
-            return ret;
+            return null;
         }
 
-        public bool LoadTVPIFile(String filePath)
+        public static ReserveData TryLoadTVPI(string filePath, IDictionary<ulong, ChSet5Item> chList, IList<IEPGStationInfo> stationList)
         {
-            bool ret = false;
-            System.IO.StreamReader reader = null;
-            try
+            Dictionary<string, string> paramList = TryLoadParamList(filePath);
+            if (paramList != null &&
+                paramList.ContainsKey("station") &&
+                paramList.ContainsKey("version") &&
+                paramList["version"] == "1")
             {
-                Dictionary<String, String> paramList = new Dictionary<string, string>();
-                reader = (new System.IO.StreamReader(filePath, System.Text.Encoding.Default));
-                while (reader.Peek() >= 0)
+                // サービス名からサービスIDを探す
+                string station = paramList["station"];
+                var ci = new CultureInfo("ja-JP");
+                foreach (IEPGStationInfo staInfo in stationList)
                 {
-                    string buff = reader.ReadLine();
-                    string[] value = buff.Split(':');
-                    if (value.Length > 1)
+                    if (string.Compare(staInfo.StationName, station, ci, CompareOptions.IgnoreWidth | CompareOptions.IgnoreCase) == 0)
                     {
-                        if (value.Length == 2)
+                        ChSet5Item info;
+                        if (chList.TryGetValue(staInfo.Key, out info))
                         {
-                            paramList.Add(value[0], value[1].Trim());
-                        }
-                        else
-                        {
-                            string val = "";
-                            for (int i = 1; i < value.Length; i++)
+                            var addInfo = new ReserveData();
+                            addInfo.OriginalNetworkID = info.ONID;
+                            addInfo.TransportStreamID = info.TSID;
+                            addInfo.ServiceID = info.SID;
+                            addInfo.StationName = info.ServiceName;
+                            // 開始時間と長さ
+                            if (GetTimeValues(paramList, addInfo))
                             {
-                                val += value[i];
-                                if (i + 1 < value.Length)
+                                // 常にプログラム予約
+                                addInfo.EventID = 0xFFFF;
+                                // 番組名(オプション)
+                                if (paramList.ContainsKey("program-title"))
                                 {
-                                    val += ":";
+                                    addInfo.Title = paramList["program-title"];
                                 }
-                            }
-                            paramList.Add(value[0], val.Trim());
-                        }
-                    }
-                }
-
-                if (String.Compare(paramList["version"], "1", true) == 0)
-                {
-                    bool find = false;
-                    foreach (IEPGStationInfo info in Settings.Instance.IEpgStationList)
-                    {
-                        if( String.Compare(info.StationName, paramList["station"]) == 0){
-                            if (ChSet5.Instance.ChList.ContainsKey(info.Key) == true)
-                            {
-                                AddInfo.OriginalNetworkID = ChSet5.Instance.ChList[info.Key].ONID;
-                                AddInfo.TransportStreamID = ChSet5.Instance.ChList[info.Key].TSID;
-                                AddInfo.ServiceID = ChSet5.Instance.ChList[info.Key].SID;
-                                AddInfo.StationName = ChSet5.Instance.ChList[info.Key].ServiceName;
-
-                                AddInfo.EventID = 0xFFFF;
-                                find = true;
+                                return addInfo;
                             }
                             break;
                         }
                     }
+                }
+            }
+            return null;
+        }
 
-                    if (find == false)
+        private static Dictionary<string, string> TryLoadParamList(string filePath)
+        {
+            try
+            {
+                using (var reader = new System.IO.StreamReader(filePath, Encoding.GetEncoding(932)))
+                {
+                    var paramList = new Dictionary<string, string>();
+                    // 空行まで読む
+                    for (string buff = reader.ReadLine(); buff != null && buff.Length > 0; buff = reader.ReadLine())
                     {
-                        throw new Exception();
+                        int sepIndex = buff.IndexOf(':');
+                        if (sepIndex >= 0)
+                        {
+                            paramList[buff.Remove(sepIndex).Trim()] = buff.Substring(sepIndex + 1).Trim();
+                        }
                     }
-                    AddInfo.Title = paramList["program-title"];
-
-                    int yy = Convert.ToInt32(paramList["year"]);
-                    int mm = Convert.ToInt32(paramList["month"]);
-                    int dd = Convert.ToInt32(paramList["date"]);
-                    string[] startTime = paramList["start"].Split(':');
-                    int startHH = Convert.ToInt32(startTime[0]);
-                    int startMM = Convert.ToInt32(startTime[1]);
-                    string[] endTime = paramList["end"].Split(':');
-                    int endHH = Convert.ToInt32(endTime[0]);
-                    int endMM = Convert.ToInt32(endTime[1]);
-
-                    DateTime start = new DateTime(yy, mm, dd, startHH, startMM, 0, DateTimeKind.Utc);
-                    DateTime end = new DateTime(yy, mm, dd, endHH, endMM, 0, DateTimeKind.Utc);
-                    if (end < start)
-                    {
-                        end = end.AddDays(1);
-                    }
-
-                    AddInfo.StartTime = start;
-                    AddInfo.StartTimeEpg = start;
-                    AddInfo.DurationSecond = (uint)((end - start).TotalSeconds);
-
-                    RecSettingData recSet = new RecSettingData();
-                    Settings.GetDefRecSetting(0, ref recSet);
-                    AddInfo.RecSetting = recSet;
-                    AddInfo.RecSetting.TuijyuuFlag = 0;
-                    AddInfo.RecSetting.PartialRecFlag = 0;
-
-                    ret = true;
+                    return paramList;
                 }
             }
             catch
             {
+                return null;
             }
-            if (reader != null)
+        }
+
+        private static bool GetTimeValues(Dictionary<string, string> paramList, ReserveData addInfo)
+        {
+            if (paramList.ContainsKey("year") &&
+                paramList.ContainsKey("month") &&
+                paramList.ContainsKey("date") &&
+                paramList.ContainsKey("start") &&
+                paramList.ContainsKey("end") &&
+                paramList["start"].Split(':').Length >= 2 &&
+                paramList["end"].Split(':').Length >= 2)
             {
-                reader.Close();
+                ushort year, month, date, hour, min, endHour, endMin;
+                ushort.TryParse(paramList["year"], out year);
+                ushort.TryParse(paramList["month"], out month);
+                ushort.TryParse(paramList["date"], out date);
+                ushort.TryParse(paramList["start"].Split(':')[0], out hour);
+                ushort.TryParse(paramList["start"].Split(':')[1], out min);
+                ushort.TryParse(paramList["end"].Split(':')[0], out endHour);
+                ushort.TryParse(paramList["end"].Split(':')[1], out endMin);
+                if (1900 < year && year < 3000 && 1 <= month && month <= 12 && 1 <= date && date <= 31 &&
+                    hour < 30 && min < 60 && endHour < 30 && endMin < 60 && hour * 60 + min < (endHour + 24) * 60 + endMin)
+                {
+                    // 存在しない日付は翌月
+                    if (date > DateTime.DaysInMonth(year, month))
+                    {
+                        date -= (ushort)DateTime.DaysInMonth(year, month++);
+                    }
+                    // 24時以上は翌日
+                    var startTime = new DateTime(year, month, date, hour % 24, min, 0).AddDays(hour / 24);
+                    var endTime = new DateTime(year, month, date, endHour % 24, endMin, 0).AddDays(endHour / 24);
+                    // 開始時間より小さいときは翌日
+                    if (endTime < startTime)
+                    {
+                        endTime = endTime.AddDays(1);
+                    }
+                    addInfo.StartTime = startTime;
+                    addInfo.StartTimeEpg = startTime;
+                    addInfo.DurationSecond = (uint)(endTime - startTime).TotalSeconds;
+                    return true;
+                }
             }
-            return ret;
+            return false;
         }
     }
 }

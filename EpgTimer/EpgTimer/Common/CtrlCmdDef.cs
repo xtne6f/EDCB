@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace EpgTimer
 {
@@ -521,6 +522,10 @@ namespace EpgTimer
             r.Read(ref user_nibble_2);
             r.End();
         }
+        public EpgContentData DeepClone()
+        {
+            return (EpgContentData)MemberwiseClone();
+        }
     }
 
     /// <summary>EPGジャンル情報</summary>
@@ -1012,6 +1017,10 @@ namespace EpgTimer
             r.Read(ref endMin);
             r.End();
         }
+        public EpgSearchDateInfo DeepClone()
+        {
+            return (EpgSearchDateInfo)MemberwiseClone();
+        }
     }
 
     /// <summary>検索条件</summary>
@@ -1118,6 +1127,16 @@ namespace EpgTimer
                 }
             }
             r.End();
+        }
+        public EpgSearchKeyInfo DeepClone()
+        {
+            var other = (EpgSearchKeyInfo)MemberwiseClone();
+            other.contentList = contentList.Select(a => a.DeepClone()).ToList();
+            other.dateList = dateList.Select(a => a.DeepClone()).ToList();
+            other.serviceList = serviceList.ToList();
+            other.videoList = videoList.ToList();
+            other.audioList = audioList.ToList();
+            return other;
         }
     }
 
