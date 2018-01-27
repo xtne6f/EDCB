@@ -35,9 +35,6 @@
     <ClInclude Include="SendTSTCPMain.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="SendTSTCP.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\ErrDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>

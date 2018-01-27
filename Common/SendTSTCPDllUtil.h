@@ -77,7 +77,7 @@ protected:
 
 protected:
 	BOOL LoadDll(void);
-	BOOL UnLoadDll(void);
+	void UnLoadDll(void);
 };
 
 #endif
