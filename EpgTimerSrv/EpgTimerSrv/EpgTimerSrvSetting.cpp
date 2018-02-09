@@ -110,6 +110,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.tuijyuHour = GetPrivateProfileInt(L"SET", L"TuijyuHour", 3, iniPath);
 	s.backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath) != 0;
 	s.fixedTunerPriority = GetPrivateProfileInt(L"SET", L"FixedTunerPriority", 1, iniPath) != 0;
+	s.commentAutoAdd = GetPrivateProfileInt(L"SET", L"CommentAutoAdd", 0, iniPath) != 0;
 	s.autoDelRecInfo = GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniPath) != 0;
 	s.autoDelRecInfoNum = GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniPath);
 	s.recInfo2Max = GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniPath);
@@ -488,6 +489,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	hwnd = this->hwndReserve;
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY, setting.backPriority);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY, setting.fixedTunerPriority);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMMENT_AUTO_ADD, setting.commentAutoAdd);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY, setting.recInfoFolderOnly);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_DEL_FILE, GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_APPLY_EXT_TO, setting.applyExtToRecInfoDel);
@@ -752,6 +754,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	hwnd = this->hwndReserve;
 	WritePrivateProfileInt(L"SET", L"BackPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"FixedTunerPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"CommentAutoAdd", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMMENT_AUTO_ADD), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecInfoFolderOnly", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecInfoDelFile", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_DEL_FILE), commonIniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"ApplyExtToRecInfoDel", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_APPLY_EXT_TO), iniPath.c_str());
