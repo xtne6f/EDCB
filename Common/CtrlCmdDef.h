@@ -41,6 +41,7 @@
 #define CMD2_EPG_SRV_ENUM_TUNER_RESERVE		1016 //チューナーごとの予約ID一覧取得
 #define CMD2_EPG_SRV_ENUM_RECINFO			1017 //録画済み情報一覧取得
 #define CMD2_EPG_SRV_DEL_RECINFO			1018 //録画済み情報削除
+#define CMD2_EPG_SRV_CHG_PATH_RECINFO		1019 //録画済み情報のファイルパス変更
 
 //バージョン情報追加対応版
 #define CMD2_EPG_SRV_ENUM_RESERVE2			2011 //予約一覧取得

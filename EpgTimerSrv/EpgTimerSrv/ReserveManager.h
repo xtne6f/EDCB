@@ -40,6 +40,9 @@ public:
 	bool GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo = true) const;
 	//録画済み情報を削除する
 	void DelRecFileInfo(const vector<DWORD>& idList);
+	//録画済み情報のファイルパスを変更する
+	//infoList: 録画済み情報一覧(idとrecFilePathのみ参照)
+	void ChgPathRecFileInfo(const vector<REC_FILE_INFO>& infoList);
 	//録画済み情報のプロテクトを変更する
 	//infoList: 録画済み情報一覧(idとprotectFlagのみ参照)
 	void ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList);

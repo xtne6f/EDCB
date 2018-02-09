@@ -1619,6 +1619,16 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_CHG_PATH_RECINFO:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_CHG_PATH_RECINFO\r\n");
+			vector<REC_FILE_INFO> list;
+			if( ReadVALUE(&list, cmdParam->data, cmdParam->dataSize, NULL) ){
+				sys->reserveManager.ChgPathRecFileInfo(list);
+				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
 	case CMD2_EPG_SRV_ENUM_SERVICE:
 		OutputDebugString(L"CMD2_EPG_SRV_ENUM_SERVICE\r\n");
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){

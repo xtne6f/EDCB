@@ -461,6 +461,17 @@ void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
 	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 }
 
+void CReserveManager::ChgPathRecFileInfo(const vector<REC_FILE_INFO>& infoList)
+{
+	CBlockLock lock(&this->managerLock);
+
+	for( size_t i = 0; i < infoList.size(); i++ ){
+		this->recInfoText.ChgPathRecInfo(infoList[i].id, infoList[i].recFilePath.c_str());
+	}
+	this->recInfoText.SaveText();
+	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
+}
+
 void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList)
 {
 	CBlockLock lock(&this->managerLock);

@@ -63,6 +63,8 @@ public:
 	DWORD AddRecInfo(const REC_FILE_INFO& item);
 	//録画済み情報を削除する
 	bool DelRecInfo(DWORD id);
+	//ファイルパスを変更する
+	bool ChgPathRecInfo(DWORD id, LPCWSTR recFilePath);
 	//プロテクト情報を変更する
 	bool ChgProtectRecInfo(DWORD id, BYTE flag);
 	//録画済み情報に割り当てる次のIDを設定する
