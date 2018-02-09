@@ -265,6 +265,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_RECINFO = 1017,
         /// <summary>録画済み情報削除</summary>
         CMD_EPG_SRV_DEL_RECINFO = 1018,
+        /// <summary>録画済み情報のファイルパス変更</summary>
+        CMD_EPG_SRV_CHG_PATH_RECINFO = 1019,
         /// <summary>予約一覧取得</summary>
         CMD_EPG_SRV_ENUM_RESERVE2 = 2011,
         /// <summary>予約情報取得</summary>
@@ -498,6 +500,8 @@ namespace EpgTimer
         public ErrCode SendEnumTunerReserve(ref List<TunerReserveInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_TUNER_RESERVE, ref o); }
         /// <summary>録画済み情報を削除する</summary>
         public ErrCode SendDelRecInfo(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_RECINFO, val); }
+        /// <summary>録画済み情報のファイルパスを変更する</summary>
+        public ErrCode SendChgPathRecInfo(List<RecFileInfo> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_CHG_PATH_RECINFO, val); }
         /// <summary>サービス一覧を取得する</summary>
         public ErrCode SendEnumService(ref List<EpgServiceInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_SERVICE, ref o); }
         /// <summary>サービス指定で番組情報を一覧を取得する</summary>
