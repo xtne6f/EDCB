@@ -229,10 +229,19 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 					{
 						WORD val;
 						if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+							resParam->param = CMD_SUCCESS;
 							if( SD_MODE_STANDBY <= LOBYTE(val) && LOBYTE(val) <= SD_MODE_SHUTDOWN ){
+								fs_path srvIniPath = GetModulePath().replace_filename(EPG_TIMER_SERVICE_EXE).replace_extension(L".ini");
+								if( GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePC", 0, srvIniPath.c_str()) != 0 ){
+									DWORD noUsePCTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePCTime", 3, srvIniPath.c_str());
+									LASTINPUTINFO lii;
+									lii.cbSize = sizeof(lii);
+									if( noUsePCTime == 0 || (GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < noUsePCTime * 60 * 1000) ){
+										break;
+									}
+								}
 								PostMessage(hwnd, WM_APP_QUERY_SHUTDOWN, LOBYTE(val), HIBYTE(val));
 							}
-							resParam->param = CMD_SUCCESS;
 						}
 					}
 					break;
