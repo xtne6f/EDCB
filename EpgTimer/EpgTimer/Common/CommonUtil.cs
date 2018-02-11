@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace EpgTimer
 {
-    class CommonUtil
+    static class CommonUtil
     {
         [DllImport("user32.dll")]
         static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
@@ -14,7 +14,8 @@ namespace EpgTimer
         static extern uint GetTickCount();
 
         // Struct we'll need to pass to the function
-        internal struct LASTINPUTINFO
+        [StructLayout(LayoutKind.Sequential)]
+        struct LASTINPUTINFO
         {
             public uint cbSize;
             public uint dwTime;
@@ -37,6 +38,40 @@ namespace EpgTimer
                 IdleTicks = unchecked(GetTickCount() - LastInputInfo.dwTime);
             }
             return (int)(IdleTicks / 1000);
+        }
+
+        [DllImport("kernel32", CharSet = CharSet.Unicode)]
+        static extern IntPtr LoadLibrary(string lpFileName);
+
+        [DllImport("kernel32")]
+        static extern bool FreeLibrary(IntPtr hModule);
+
+        [DllImport("kernel32")]
+        static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
+
+        delegate void Setting(IntPtr parentWnd);
+
+        public static bool ShowPlugInSetting(string dllFilePath, IntPtr parentWnd)
+        {
+            IntPtr module = LoadLibrary(dllFilePath);
+            if (module != IntPtr.Zero)
+            {
+                try
+                {
+                    IntPtr func = GetProcAddress(module, "Setting");
+                    if (func != IntPtr.Zero)
+                    {
+                        Setting settingDelegate = (Setting)Marshal.GetDelegateForFunctionPointer(func, typeof(Setting));
+                        settingDelegate(parentWnd);
+                        return true;
+                    }
+                }
+                finally
+                {
+                    FreeLibrary(module);
+                }
+            }
+            return false;
         }
     }
 }

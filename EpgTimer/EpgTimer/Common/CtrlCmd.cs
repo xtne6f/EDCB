@@ -265,6 +265,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_RECINFO = 1017,
         /// <summary>録画済み情報削除</summary>
         CMD_EPG_SRV_DEL_RECINFO = 1018,
+        /// <summary>録画済み情報のファイルパス変更</summary>
+        CMD_EPG_SRV_CHG_PATH_RECINFO = 1019,
         /// <summary>予約一覧取得</summary>
         CMD_EPG_SRV_ENUM_RESERVE2 = 2011,
         /// <summary>予約情報取得</summary>
@@ -443,8 +445,6 @@ namespace EpgTimer
         private string pipeName = "EpgTimerSrvPipe";
         private System.Net.IPAddress ip = System.Net.IPAddress.Loopback;
         private uint port = 5678;
-        // TODO: 本来この排他用オブジェクトは不要だが、このクラスの利用側がマルチスレッドを考慮していないようなので念のため従来仕様に合わせる
-        private object thisLock = new object();
 
         /// <summary>コマンド送信方法の設定</summary>
         public void SetSendMode(bool tcpFlag)
@@ -454,20 +454,14 @@ namespace EpgTimer
         /// <summary>名前付きパイプモード時の接続先を設定</summary>
         public void SetPipeSetting(string eventName, string pipeName)
         {
-            lock (thisLock)
-            {
-                this.eventName = eventName;
-                this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
-            }
+            this.eventName = eventName;
+            this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
         }
         /// <summary>TCP/IPモード時の接続先を設定</summary>
         public void SetNWSetting(System.Net.IPAddress ip, uint port)
         {
-            lock (thisLock)
-            {
-                this.ip = ip;
-                this.port = port;
-            }
+            this.ip = ip;
+            this.port = port;
         }
         /// <summary>接続処理時のタイムアウト設定</summary>
         public void SetConnectTimeOut(int timeOut)
@@ -506,6 +500,8 @@ namespace EpgTimer
         public ErrCode SendEnumTunerReserve(ref List<TunerReserveInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_TUNER_RESERVE, ref o); }
         /// <summary>録画済み情報を削除する</summary>
         public ErrCode SendDelRecInfo(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_RECINFO, val); }
+        /// <summary>録画済み情報のファイルパスを変更する</summary>
+        public ErrCode SendChgPathRecInfo(List<RecFileInfo> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_CHG_PATH_RECINFO, val); }
         /// <summary>サービス一覧を取得する</summary>
         public ErrCode SendEnumService(ref List<EpgServiceInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_SERVICE, ref o); }
         /// <summary>サービス指定で番組情報を一覧を取得する</summary>
@@ -604,7 +600,6 @@ namespace EpgTimer
 
         private ErrCode SendPipe(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
-            lock (thisLock)
             {
                 // 接続待ち
                 try
@@ -638,20 +633,15 @@ namespace EpgTimer
                         pipe.Write(data, 0, data.Length);
                     }
                     // 受信
-                    if (pipe.Read(head, 0, 8) != 8)
+                    if (ReadAll(pipe, head, 0, 8) != 8)
                     {
                         return ErrCode.CMD_ERR;
                     }
                     uint resParam = BitConverter.ToUInt32(head, 0);
                     var resData = new byte[BitConverter.ToUInt32(head, 4)];
-                    for (int n = 0; n < resData.Length; )
+                    if (ReadAll(pipe, resData, 0, resData.Length) != resData.Length)
                     {
-                        int m = pipe.Read(resData, n, resData.Length - n);
-                        if (m <= 0)
-                        {
-                            return ErrCode.CMD_ERR;
-                        }
-                        n += m;
+                        return ErrCode.CMD_ERR;
                     }
                     res = new MemoryStream(resData, false);
                     return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
@@ -668,14 +658,13 @@ namespace EpgTimer
 
         private ErrCode SendTCP(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
-            lock (thisLock)
             {
                 if (ip == null)
                 {
                     return ErrCode.CMD_ERR_CONNECT;
                 }
                 // 接続
-                using (var tcp = new System.Net.Sockets.TcpClient())
+                using (var tcp = new System.Net.Sockets.TcpClient(ip.AddressFamily))
                 {
                     try
                     {

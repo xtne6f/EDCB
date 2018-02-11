@@ -51,6 +51,10 @@ namespace EpgTimer
                 return ContentName + (SubName == "" ? "" : " - " + SubName); 
             }
         }
+        public ContentKindInfo DeepClone()
+        {
+            return (ContentKindInfo)MemberwiseClone();
+        }
         public override string ToString()
         {
             if (Nibble2 == 0xFF)
