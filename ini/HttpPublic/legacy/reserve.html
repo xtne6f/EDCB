@@ -44,7 +44,15 @@ end
 ct=ct..table.concat(ctt)..[=[
   </table>
   <div class="aside">
-    <a href="view.lua">view.lua</a> (<a href="view.lua?n=10">tcp</a>) (<a href="view.lua?n=-1">term</a>)
+    <a href="view.lua">view.lua</a>]=]
+for i,v in ipairs(edcb.FindFile and edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
+  n=v.name:match('^[^_]+_(%d+)_%d+$')
+  if n then
+    ct=ct..' <a href="view.lua?n='..n..'">port'..n..'</a>'
+  end
+end
+ct=ct..[=[
+ (<a href="view.lua?n=-1">term</a>)
   </div>
 </div>
 <div id="footer">
