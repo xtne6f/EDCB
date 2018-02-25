@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{6B82030F-99FB-4D11-81E2-BAFD81A672BC}</ProjectGuid>
@@ -10,14 +10,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EpgTimer</RootNamespace>
     <AssemblyName>EpgTimer</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -27,7 +26,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\..\x86\Release\</OutputPath>
@@ -40,35 +39,29 @@
     <OutputPath>..\..\x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>..\..\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Resources\EpgTimer_Bon_Vista_blue_rev2.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\TaskIconBlue.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PresentationFramework.Aero" />
     <Reference Include="System" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -96,6 +89,8 @@
     <Compile Include="ConnectWindow.xaml.cs">
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DefineClass\KernelObjectSecurity.cs" />
+    <Compile Include="DefineClass\ValueConverter.cs" />
     <Compile Include="DefineClass\ListColumnInfo.cs" />
     <Compile Include="Setting\ColorSetWindow.xaml.cs">
       <DependentUpon>ColorSetWindow.xaml</DependentUpon>
@@ -111,7 +106,6 @@
     </Compile>
     <Compile Include="DefineClass\ManualAutoAddDataItem.cs" />
     <Compile Include="DefineClass\EpgAutoDataItem.cs" />
-    <Compile Include="DefineClass\EpgCaptime.cs" />
     <Compile Include="UserCtrlView\ManualAutoAddView.xaml.cs">
       <DependentUpon>ManualAutoAddView.xaml</DependentUpon>
     </Compile>
@@ -122,7 +116,6 @@
     <Compile Include="RecInfoView.xaml.cs">
       <DependentUpon>RecInfoView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DefineClass\ServiceItem2.cs" />
     <Compile Include="DefineClass\ServiceViewItem.cs" />
     <Compile Include="Setting\SetOtherAppView.xaml.cs">
       <DependentUpon>SetOtherAppView.xaml</DependentUpon>
@@ -156,8 +149,6 @@
     </Compile>
     <Compile Include="Common\CommonUtil.cs" />
     <Compile Include="Common\PipeServer.cs" />
-    <Compile Include="Common\RecNamePluginClass.cs" />
-    <Compile Include="Common\WritePlugInClass.cs" />
     <Compile Include="Common\ChSet5Class.cs" />
     <Compile Include="Common\ColorDefClass.cs" />
     <Compile Include="DefineClass\DateItem.cs" />
@@ -217,7 +208,6 @@
       <DependentUpon>SetEpgView.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\TunerSelectInfo.cs" />
-    <Compile Include="DefineClass\ViewMenuItem.cs" />
     <Page Include="AddManualAutoAddWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -446,34 +436,22 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\EpgTimer_Bon_Vista_blue_rev2.ico" />
+    <Resource Include="Resources\TaskIconBlue.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\EpgTimer_Bon_Vista_gray_rev2.ico" />
+    <Resource Include="Resources\TaskIconGray.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\EpgTimer_Bon_Vista_green_rev2.ico" />
+    <Resource Include="Resources\TaskIconGreen.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\EpgTimer_Bon_Vista_red_rev2.ico" />
+    <Resource Include="Resources\TaskIconRed.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\TaskIconBlue.ico" />
+    <Resource Include="Resources\key.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\TaskIconGray.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TaskIconGreen.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TaskIconRed.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\key.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\key_no.png" />
+    <Resource Include="Resources\key_no.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

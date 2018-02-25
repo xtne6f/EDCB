@@ -20,7 +20,6 @@ namespace EpgTimer
     /// </summary>
     public partial class ManualAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
 
@@ -102,27 +101,11 @@ namespace EpgTimer
                 resultList.Clear();
 
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     this.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
                     }), null);
                     return false;
                 }
@@ -162,7 +145,7 @@ namespace EpgTimer
                 {
                     dataIDList.Add(info.ManualAutoAddInfo.dataID);
                 }
-                cmd.SendDelManualAdd(dataIDList);
+                CommonManager.CreateSrvCtrl().SendDelManualAdd(dataIDList);
             }
         }
 
