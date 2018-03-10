@@ -19,7 +19,7 @@ CSetDlgEpg::~CSetDlgEpg()
 {
 }
 
-BOOL CSetDlgEpg::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
+BOOL CSetDlgEpg::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 {
 	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }

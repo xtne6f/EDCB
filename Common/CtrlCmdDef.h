@@ -5,16 +5,16 @@
 #define CONNECT_TIMEOUT 15*1000
 
 //パイプ名
-#define CMD2_EPG_SRV_PIPE _T("\\\\.\\pipe\\EpgTimerSrvPipe")
-#define CMD2_GUI_CTRL_PIPE _T("\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_") //+プロセスID
-#define CMD2_VIEW_CTRL_PIPE _T("\\\\.\\pipe\\View_Ctrl_BonPipe_") //+プロセスID
-#define CMD2_TVTEST_CTRL_PIPE _T("\\\\.\\pipe\\TvTest_Ctrl_BonPipe_") //+プロセスID
+#define CMD2_EPG_SRV_PIPE L"\\\\.\\pipe\\EpgTimerSrvPipe"
+#define CMD2_GUI_CTRL_PIPE L"\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_" //+プロセスID
+#define CMD2_VIEW_CTRL_PIPE L"\\\\.\\pipe\\View_Ctrl_BonPipe_" //+プロセスID
+#define CMD2_TVTEST_CTRL_PIPE L"\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" //+プロセスID
 
 //接続待機用イベント
-#define CMD2_EPG_SRV_EVENT_WAIT_CONNECT _T("Global\\EpgTimerSrvConnect")
-#define CMD2_GUI_CTRL_WAIT_CONNECT _T("Global\\EpgTimerGUI_Ctrl_BonConnect_") //+プロセスID
-#define CMD2_VIEW_CTRL_WAIT_CONNECT _T("Global\\View_Ctrl_BonConnect_") //+プロセスID
-#define CMD2_TVTEST_CTRL_WAIT_CONNECT _T("Global\\TvTest_Ctrl_BonConnect_") //+プロセスID
+#define CMD2_EPG_SRV_EVENT_WAIT_CONNECT L"Global\\EpgTimerSrvConnect"
+#define CMD2_GUI_CTRL_WAIT_CONNECT L"Global\\EpgTimerGUI_Ctrl_BonConnect_" //+プロセスID
+#define CMD2_VIEW_CTRL_WAIT_CONNECT L"Global\\View_Ctrl_BonConnect_" //+プロセスID
+#define CMD2_TVTEST_CTRL_WAIT_CONNECT L"Global\\TvTest_Ctrl_BonConnect_" //+プロセスID
 
 //コマンドバージョン
 //#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加

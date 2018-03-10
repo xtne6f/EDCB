@@ -30,7 +30,7 @@ CSetDlgService::~CSetDlgService()
 {
 }
 
-BOOL CSetDlgService::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
+BOOL CSetDlgService::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 {
 	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }

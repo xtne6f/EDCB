@@ -1,11 +1,11 @@
 #include <SDKDDKVer.h>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <tchar.h>
+#include <string.h>
 #include <LM.h>
 #pragma comment(lib, "netapi32.lib")
 
-static const TCHAR CLASS_NAME[] = TEXT("EpgTimerAdminProxy");
+static const WCHAR CLASS_NAME[] = L"EpgTimerAdminProxy";
 
 static bool g_denySetTime;
 
@@ -82,33 +82,33 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
 	static_cast<void>(hPrevInstance);
 	static_cast<void>(nCmdShow);
 
-	SetDllDirectory(TEXT(""));
+	SetDllDirectory(L"");
 
-	if (_tcsicmp(lpCmdLine, TEXT("/TestSetTime")) == 0) {
+	if (_wcsicmp(lpCmdLine, L"/TestSetTime") == 0) {
 		// 動作テスト: 現在時刻でシステム日時を設定する
-		LPCTSTR text = TEXT("Proxy not found.");
+		LPCWSTR text = L"Proxy not found.";
 		HWND hwnd = FindWindowEx(HWND_MESSAGE, nullptr, CLASS_NAME, nullptr);
 		if (hwnd) {
 			FILETIME ft;
 			GetSystemTimeAsFileTime(&ft);
 			LRESULT ret = SendMessage(hwnd, WM_APP_SETTIME, ft.dwLowDateTime, ft.dwHighDateTime);
-			text = (ret > 0 ? TEXT("Succeeded.") : ret < 0 ? TEXT("Failed.") : TEXT("Denied."));
+			text = (ret > 0 ? L"Succeeded." : ret < 0 ? L"Failed." : L"Denied.");
 		}
 		MessageBox(nullptr, text, CLASS_NAME, MB_OK);
 		return 0;
 	}
-	else if (_tcsicmp(lpCmdLine, TEXT("/TestNetFind")) == 0) {
+	else if (_wcsicmp(lpCmdLine, L"/TestNetFind") == 0) {
 		// 動作テスト: 拡張子.txtについて共有アクセスがあるかどうか調べる
-		LPCTSTR text = TEXT("Proxy not found.");
+		LPCWSTR text = L"Proxy not found.";
 		HWND hwnd = FindWindowEx(HWND_MESSAGE, nullptr, CLASS_NAME, nullptr);
 		if (hwnd) {
 			LRESULT ret = SendMessage(hwnd, WM_APP_NETFIND, 0x00747874, 0x00000000);
-			text = (ret > 0 ? TEXT("Succeeded.") : ret < 0 ? TEXT("Failed or no access.") : TEXT("Denied."));
+			text = (ret > 0 ? L"Succeeded." : ret < 0 ? L"Failed or no access." : L"Denied.");
 		}
 		MessageBox(nullptr, text, CLASS_NAME, MB_OK);
 		return 0;

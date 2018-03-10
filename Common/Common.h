@@ -8,7 +8,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include <tchar.h>
+#include <wchar.h>
 #include <stdarg.h>
 #include <sal.h>
 
@@ -40,17 +40,17 @@ using std::vector;
 
 #define PRINTF_FORMAT_SZ _In_z_ _Printf_format_string_
 
-inline void _OutputDebugString(PRINTF_FORMAT_SZ const TCHAR* format, ...)
+inline void _OutputDebugString(PRINTF_FORMAT_SZ const WCHAR* format, ...)
 {
 	// TODO: ‚±‚ÌŠÖ”–¼‚Í—\–ñ–¼ˆá”½‚Ìã‚É•´‚ç‚í‚µ‚¢‚Ì‚Å•ÏX‚·‚×‚«
 	va_list params;
 	va_start(params, format);
-	int length = _vsctprintf(format, params);
+	int length = _vscwprintf(format, params);
 	va_end(params);
 	if( length >= 0 ){
-		TCHAR* buff = new TCHAR[length + 1];
+		WCHAR* buff = new WCHAR[length + 1];
 		va_start(params, format);
-		_vstprintf_s(buff, length + 1, format, params);
+		vswprintf_s(buff, length + 1, format, params);
 		va_end(params);
 		OutputDebugString(buff);
 		delete[] buff;

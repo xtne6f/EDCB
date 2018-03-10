@@ -18,7 +18,7 @@ CSetDlgApp::~CSetDlgApp()
 {
 }
 
-BOOL CSetDlgApp::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
+BOOL CSetDlgApp::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 {
 	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }

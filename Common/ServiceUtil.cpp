@@ -8,12 +8,12 @@ BOOL IsInstallService(LPCWSTR lpcwszName)
 	SC_HANDLE hSrv = NULL;
 	hScm = OpenSCManagerW(0, 0, SC_MANAGER_CONNECT);
 	if(hScm == NULL){
-		OutputDebugString(_T("OpenSCManager failed"));
+		OutputDebugString(L"OpenSCManager failed");
 		return FALSE;
 	}
 	hSrv = OpenServiceW(hScm, lpcwszName, SERVICE_QUERY_STATUS);
 	if(hSrv == NULL){
-		OutputDebugString(_T("OpenService failed"));
+		OutputDebugString(L"OpenService failed");
 		CloseServiceHandle(hScm);
 		return FALSE;
 	}
@@ -30,12 +30,12 @@ BOOL IsStopService(LPCWSTR lpcwszName)
 	SC_HANDLE hSrv = NULL;
 	hScm = OpenSCManagerW(0, 0, SC_MANAGER_CONNECT);
 	if(hScm == NULL){
-		OutputDebugString(_T("OpenSCManager failed"));
+		OutputDebugString(L"OpenSCManager failed");
 		return FALSE;
 	}
 	hSrv = OpenServiceW(hScm, lpcwszName, SERVICE_QUERY_STATUS);
 	if(hSrv == NULL){
-		OutputDebugString(_T("OpenService failed"));
+		OutputDebugString(L"OpenService failed");
 		CloseServiceHandle(hScm);
 		return FALSE;
 	}
@@ -45,7 +45,7 @@ BOOL IsStopService(LPCWSTR lpcwszName)
 			bRet = TRUE;
 		}
 	}else{
-		OutputDebugString(_T("QueryServiceStatus failed"));
+		OutputDebugString(L"QueryServiceStatus failed");
 	}
 
 	CloseServiceHandle(hSrv);

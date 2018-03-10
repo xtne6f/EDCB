@@ -8,7 +8,7 @@ class CSetDlgBasic
 public:
 	CSetDlgBasic();   // 標準コンストラクター
 	~CSetDlgBasic();
-	BOOL Create(LPCTSTR lpszTemplateName, HWND hWndParent);
+	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 

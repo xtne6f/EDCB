@@ -176,9 +176,6 @@
     <ClInclude Include="EpgDataCap_BonMain.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="CmdLineUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\BonCtrl\ChSetUtil.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
@@ -305,9 +302,6 @@
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
     <ClCompile Include="EpgDataCap_BonMain.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdLineUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\ChSetUtil.cpp">

@@ -20,7 +20,7 @@ CSetDlgNetwork::~CSetDlgNetwork()
 {
 }
 
-BOOL CSetDlgNetwork::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
+BOOL CSetDlgNetwork::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 {
 	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
