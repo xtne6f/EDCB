@@ -22,7 +22,6 @@ namespace EpgTimer
     public partial class SearchWindow : Window
     {
         private List<SearchItem> resultList = new List<SearchItem>();
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         //string _lastHeaderClicked = null;
         //ListSortDirection _lastDirection = ListSortDirection.Ascending;
@@ -54,9 +53,14 @@ namespace EpgTimer
                 {
                     this.Height = Settings.Instance.SearchWndHeight;
                 }
+                if (Settings.Instance.SearchWndTabsHeight > 405)
+                {
+                    //操作不可能な値をセットしないよう努める
+                    grid_Tabs.Height = new GridLength(Math.Min(Settings.Instance.SearchWndTabsHeight, Height));
+                }
 
                 EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                Settings.GetDefSearchSetting(ref defKey);
+                Settings.Instance.GetDefSearchSetting(defKey);
 
                 searchKeyView.SetSearchKey(defKey);
             }
@@ -149,7 +153,7 @@ namespace EpgTimer
                 keyList.Add(key);
                 List<EpgEventInfo> list = new List<EpgEventInfo>();
 
-                cmd.SendSearchPg(keyList, ref list);
+                CommonManager.CreateSrvCtrl().SendSearchPg(keyList, ref list);
                 foreach (EpgEventInfo info in list)
                 {
                     SearchItem item = new SearchItem();
@@ -256,18 +260,10 @@ namespace EpgTimer
 
                     if (list.Count > 0)
                     {
-                        ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                        if (err == ErrCode.CMD_ERR_CONNECT)
-                        {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                        }
-                        if (err == ErrCode.CMD_ERR_TIMEOUT)
-                        {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                        }
+                        ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
                         if (err != ErrCode.CMD_SUCCESS)
                         {
-                            MessageBox.Show("予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
+                            MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
                         }
 
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
@@ -299,7 +295,7 @@ namespace EpgTimer
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
 
-                if (cmd.SendAddEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
+                if (CommonManager.CreateSrvCtrl().SendAddEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show("追加に失敗しました");
                 }
@@ -334,7 +330,7 @@ namespace EpgTimer
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
 
-                if (cmd.SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
+                if (CommonManager.CreateSrvCtrl().SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show("変更に失敗しました");
                 }
@@ -478,16 +474,11 @@ namespace EpgTimer
         //    }
         //}
 
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void Window_Closing(object sender, CancelEventArgs e)
         {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
-                {
-                    Settings.Instance.SearchWndWidth = this.Width;
-                    Settings.Instance.SearchWndHeight = this.Height;
-                }
-            }
+            Settings.Instance.SearchWndWidth = Width;
+            Settings.Instance.SearchWndHeight = Height;
+            Settings.Instance.SearchWndTabsHeight = grid_Tabs.Height.Value;
         }
 
         private void Window_LocationChanged(object sender, EventArgs e)
@@ -582,18 +573,10 @@ namespace EpgTimer
 
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendDelReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show("予約削除でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約削除でエラーが発生しました。");
                     }
                 }
                 //
@@ -640,18 +623,10 @@ namespace EpgTimer
                 {
                     try
                     {
-                        ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                        if (err == ErrCode.CMD_ERR_CONNECT)
-                        {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                        }
-                        if (err == ErrCode.CMD_ERR_TIMEOUT)
-                        {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                        }
+                        ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                         if (err != ErrCode.CMD_SUCCESS)
                         {
-                            MessageBox.Show("予約変更でエラーが発生しました。");
+                            MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                         }
 
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
@@ -685,18 +660,10 @@ namespace EpgTimer
                 {
                     try
                     {
-                        ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                        if (err == ErrCode.CMD_ERR_CONNECT)
-                        {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                        }
-                        if (err == ErrCode.CMD_ERR_TIMEOUT)
-                        {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                        }
+                        ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                         if (err != ErrCode.CMD_SUCCESS)
                         {
-                            MessageBox.Show("予約変更でエラーが発生しました。");
+                            MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                         }
 
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);

@@ -54,7 +54,7 @@ namespace EpgTimer
             comboBox_week_sh.SelectedIndex = 0;
             comboBox_week_sm.ItemsSource = Enumerable.Range(0, 60);
             comboBox_week_sm.SelectedIndex = 0;
-            radioButton_time.IsChecked = true;
+            radioButton_week.IsChecked = true;
 
             var serviceList = new List<ServiceItem>();
             foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
@@ -283,7 +283,7 @@ namespace EpgTimer
 
         private void button_date_add_Click(object sender, RoutedEventArgs e)
         {
-            if (radioButton_time.IsChecked == true)
+            if (radioButton_week.IsChecked == false)
             {
                 var info = new EpgSearchDateInfo();
                 info.startDayOfWeek = (byte)Math.Min(Math.Max(comboBox_time_sw.SelectedIndex, 0), 6);

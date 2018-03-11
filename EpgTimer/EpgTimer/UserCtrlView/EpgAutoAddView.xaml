@@ -6,9 +6,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
             <MenuItem Header="Andキーワード" Name="AndKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="Notキーワード" Name="NotKey" IsCheckable="True" Click="headerSelect_Click" />
@@ -30,24 +27,23 @@
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="130" />
-            </Grid.ColumnDefinitions>
-            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" AllowDrop="False" GridViewColumnHeader.Click="GridViewColumnHeader_Click" AlternationCount="2">
-                <ListView.Resources>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="ToolTipService.ShowDuration" Value="20000" />
-                        <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                        <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
-                        <Setter Property="Background" Value="{Binding BackColor}" />
-                        <Setter Property="BorderThickness" Value="5,0,0,1" />
-                        <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
-                        <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
-                        <EventSetter Event="PreviewMouseDown" Handler="listViewItem_PreviewMouseDown"/>
-                        <EventSetter Event="MouseEnter" Handler="listViewItem_MouseEnter"/>
-                        <!--<Style.Triggers>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="130" />
+        </Grid.ColumnDefinitions>
+        <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" AllowDrop="False" GridViewColumnHeader.Click="GridViewColumnHeader_Click" AlternationCount="2">
+            <ListView.Resources>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="ToolTipService.ShowDuration" Value="20000" />
+                    <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
+                    <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
+                    <Setter Property="Background" Value="{Binding BackColor}" />
+                    <Setter Property="BorderThickness" Value="5,0,0,1" />
+                    <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
+                    <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
+                    <EventSetter Event="PreviewMouseDown" Handler="listViewItem_PreviewMouseDown"/>
+                    <EventSetter Event="MouseEnter" Handler="listViewItem_MouseEnter"/>
+                    <!--<Style.Triggers>
                         <Trigger Property="ItemsControl.AlternationIndex" Value="0">
                             <Setter Property="BorderThickness" Value="5,0,0,1" />
                                 <Setter Property="BorderBrush" Value="CornflowerBlue" />
@@ -57,86 +53,85 @@
                                 <Setter Property="BorderBrush" Value="PaleVioletRed" />
                             </Trigger>
                     </Style.Triggers>-->
-                    </Style>
-                </ListView.Resources>
-                <ListView.View>
-                    <GridView x:Name="gridView_key">
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=AndKey}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Andキーワード" Tag="AndKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=NotKey}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Notキーワード" Tag="NotKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=RegExp}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="正規表現" Tag="RegExp" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="録画モード" Tag="RecMode" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="追従" Tag="Tuijyu" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=AddCount}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="登録対象数" Tag="AddCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkKey}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ネットワーク" Tag="NetworkKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceKey}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="サービス名" Tag="ServiceKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=KeyEnabled}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="有効" Tag="KeyEnabled" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-            <StackPanel Grid.Column="1" Name="stackPanel_button">
-                <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,5" Click="button_add_Click" />
-                <Button Content="削除" Height="23" Name="button_del" Margin="0,5,0,5" Click="button_del_Click" />
-                <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,5,0,5" Click="button_del2_Click" />
-                <Button Content="変更" Height="23" Name="button_change" Margin="0,5,0,10" Click="button_change_Click" />
-                <!--<Button Content="↑" Height="23" Name="button_up" Margin="0,20,0,5" Click="button_up_Click" Style="{StaticResource ButtonStyle1}" />-->
-                <!--<Button Content="↓" Height="23" Name="button_down" Margin="0,5,0,10" Click="button_down_Click" Style="{StaticResource ButtonStyle1}" />-->
-                <Button Content="↑" Height="23" Name="button_up" Margin="0,20,0,5" Click="button_up_Click2" ToolTip="Ctrl + ↑" />
-                <Button Content="↓" Height="23" Name="button_down" Margin="0,5,0,10" Click="button_down_Click2" ToolTip="Ctrl + ↓" />
-                <Button Content="並びを保存" Height="23" Name="button_saveItemOrder" Click="button_saveItemOrder_Click" ToolTip="Ctrl + S" IsEnabled="False" />
-                <TextBlock Height="55" Name="textBox_ItemOrderStatus" Text="" TextWrapping="Wrap" />
-                <Button Content="並びを元に戻す" Height="23" Name="button_reloadItem" Click="button_reloadItem_Click" ToolTip="Ctrl + R" IsEnabled="False" />
-            </StackPanel>
-        </Grid>
+                </Style>
+            </ListView.Resources>
+            <ListView.View>
+                <GridView x:Name="gridView_key">
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=AndKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="Andキーワード" Tag="AndKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=NotKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="Notキーワード" Tag="NotKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=RegExp}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="正規表現" Tag="RegExp" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画モード" Tag="RecMode" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="追従" Tag="Tuijyu" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=AddCount}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="登録対象数" Tag="AddCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ネットワーク" Tag="NetworkKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="サービス名" Tag="ServiceKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=KeyEnabled}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="有効" Tag="KeyEnabled" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <StackPanel Grid.Column="1" Name="stackPanel_button">
+            <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,5" Click="button_add_Click" />
+            <Button Content="削除" Height="23" Name="button_del" Margin="0,5,0,5" Click="button_del_Click" />
+            <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,5,0,5" Click="button_del2_Click" />
+            <Button Content="変更" Height="23" Name="button_change" Margin="0,5,0,10" Click="button_change_Click" />
+            <!--<Button Content="↑" Height="23" Name="button_up" Margin="0,20,0,5" Click="button_up_Click" Style="{StaticResource ButtonStyle1}" />-->
+            <!--<Button Content="↓" Height="23" Name="button_down" Margin="0,5,0,10" Click="button_down_Click" Style="{StaticResource ButtonStyle1}" />-->
+            <Button Content="↑" Height="23" Name="button_up" Margin="0,20,0,5" Click="button_up_Click2" ToolTip="Ctrl + ↑" />
+            <Button Content="↓" Height="23" Name="button_down" Margin="0,5,0,10" Click="button_down_Click2" ToolTip="Ctrl + ↓" />
+            <Button Content="並びを保存" Height="23" Name="button_saveItemOrder" Click="button_saveItemOrder_Click" ToolTip="Ctrl + S" IsEnabled="False" />
+            <TextBlock Height="55" Name="textBox_ItemOrderStatus" Text="" TextWrapping="Wrap" />
+            <Button Content="並びを元に戻す" Height="23" Name="button_reloadItem" Click="button_reloadItem_Click" ToolTip="Ctrl + R" IsEnabled="False" />
+        </StackPanel>
     </Grid>
 </UserControl>

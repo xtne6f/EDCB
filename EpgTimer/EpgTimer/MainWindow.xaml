@@ -4,46 +4,27 @@ TextOptions.TextFormattingMode="Display"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:EpgTimer"
         Title="EpgTimer" Height="480" Width="640" Loaded="Window_Loaded" Closing="Window_Closing" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" StateChanged="Window_StateChanged" PreviewDragEnter="Window_PreviewDragEnter" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" AllowDrop="True" FontSize="12">
-<!--
-    <Window.Resources>
-        <ResourceDictionary Source="/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml" />
-    </Window.Resources>
--->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30" Name="rowDefinition_row0" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
-            <StackPanel Name="stackPanel_button" Orientation="Horizontal" FlowDirection="LeftToRight"></StackPanel>
-        </Grid>
-
-
+        <StackPanel Name="stackPanel_button" Orientation="Horizontal" FlowDirection="LeftToRight" />
         <TabControl Name="tabControl_main" Grid.Row="1">
             <TabItem Header="予約一覧" Name="tabItem_reserve">
-                <Grid>
-                    <local:ReserveView x:Name="reserveView" />
-                </Grid>
+                <local:ReserveView x:Name="reserveView" />
             </TabItem>
             <TabItem Header="使用予定チューナー" Name="tabItem_tunerReserve">
-                <Grid>
-                    <local:TunerReserveMainView x:Name="tunerReserveView" />
-                </Grid>
+                <local:TunerReserveMainView x:Name="tunerReserveView" />
             </TabItem>
             <TabItem Header="録画済み一覧" Name="tabItem_recinfo">
-                <Grid>
-                    <local:RecInfoView x:Name="recInfoView" />
-                </Grid>
+                <local:RecInfoView x:Name="recInfoView" />
             </TabItem>
             <TabItem Header="自動予約登録" Name="tabItem_epgAutoAdd">
-                <Grid>
-                    <local:AutoAddView x:Name="autoAddView" />
-                </Grid>
+                <local:AutoAddView x:Name="autoAddView" />
             </TabItem>
             <TabItem Header="番組表" Name="tabItem_epg">
-                <Grid>
-                    <local:EpgDataView x:Name="epgView" />
-                </Grid>
+                <local:EpgDataView x:Name="epgView" />
             </TabItem>
         </TabControl>
     </Grid>

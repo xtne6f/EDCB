@@ -23,7 +23,7 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgMainView : UserControl
     {
-        public event ViewSettingClickHandler ViewSettingClick = null;
+        public event Action<object, CustomEpgTabInfo> ViewSettingClick;
 
         private CustomEpgTabInfo setViewInfo = null;
 
@@ -34,7 +34,6 @@ namespace EpgTimer
         private SortedList<DateTime, List<ProgramViewItem>> timeList = new SortedList<DateTime, List<ProgramViewItem>>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private DispatcherTimer nowViewTimer;
         private Line nowLine = null;
 
@@ -345,7 +344,8 @@ namespace EpgTimer
 
                 MenuItem menuItemNew = new MenuItem();
                 menuItemNew.Header = "簡易予約";
-                menuItemNew.Click += new RoutedEventHandler(cm_new_Click);
+                menuItemNew.DataContext = (uint)0;
+                menuItemNew.Click += new RoutedEventHandler(cm_add_preset_Click);
 
                 Separator separate = new Separator();
                 MenuItem menuItemAdd = new MenuItem();
@@ -358,20 +358,15 @@ namespace EpgTimer
                 menuItemAdd.Items.Add(menuItemAddDlg);
                 menuItemAdd.Items.Add(separate);
 
-                MenuItem menuItemPreset = new MenuItem();
-                menuItemPreset.Header = "プリセット (_Z)";
-
                 foreach (RecPresetItem info in Settings.Instance.RecPresetList)
                 {
                     MenuItem menuItem = new MenuItem();
                     menuItem.Header = info.DisplayName;
                     menuItem.DataContext = info.ID;
                     menuItem.Click += new RoutedEventHandler(cm_add_preset_Click);
-
-                    menuItemPreset.Items.Add(menuItem);
+                    menuItem.IsEnabled = program != null && program.Past == false;
+                    menuItemAdd.Items.Add(menuItem);
                 }
-
-                menuItemAdd.Items.Add(menuItemPreset);
 
                 Separator separate2 = new Separator();
                 MenuItem menuItemChg = new MenuItem();
@@ -469,10 +464,6 @@ namespace EpgTimer
                 menuItemViewSetDlg.Header = "表示設定";
                 menuItemViewSetDlg.Click += new RoutedEventHandler(cm_viewSet_Click);
 
-                MenuItem menuItemChgViewMode1 = new MenuItem();
-                menuItemChgViewMode1.Header = "標準モード (_1)";
-                menuItemChgViewMode1.DataContext = 0;
-                menuItemChgViewMode1.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
                 MenuItem menuItemChgViewMode2 = new MenuItem();
                 menuItemChgViewMode2.Header = "1週間モード (_2)";
                 menuItemChgViewMode2.DataContext = 1;
@@ -482,19 +473,6 @@ namespace EpgTimer
                 menuItemChgViewMode3.DataContext = 2;
                 menuItemChgViewMode3.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
 
-                if (setViewInfo.ViewMode == 1)
-                {
-                    menuItemChgViewMode2.IsChecked = true;
-                }
-                else if (setViewInfo.ViewMode == 2)
-                {
-                    menuItemChgViewMode3.IsChecked = true;
-                }
-                else
-                {
-                    menuItemChgViewMode1.IsChecked = true;
-                }
-                //menuItemView.Items.Add(menuItemChgViewMode1);
                 menuItemView.Items.Add(menuItemChgViewMode2);
                 menuItemView.Items.Add(menuItemChgViewMode3);
                 menuItemView.Items.Add(separate3);
@@ -528,7 +506,6 @@ namespace EpgTimer
                     {
                         menuItemNew.IsEnabled = program.Past == false;
                         menuItemAdd.IsEnabled = true;
-                        menuItemPreset.IsEnabled = program.Past == false;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
                         menuItemAutoAdd.IsEnabled = true;
@@ -614,18 +591,10 @@ namespace EpgTimer
 
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
+                ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
                 }
             }
             catch (Exception ex)
@@ -694,18 +663,10 @@ namespace EpgTimer
                 }
                 List<UInt32> list = new List<UInt32>();
                 list.Add(reserve.ReserveID);
-                ErrCode err = (ErrCode)cmd.SendDelReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
+                ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約削除でエラーが発生しました。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約削除でエラーが発生しました。");
                 }
             }
             catch (Exception ex)
@@ -738,18 +699,10 @@ namespace EpgTimer
                 reserve.RecSetting.RecMode = (byte)val;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約変更でエラーが発生しました。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                 }
             }
             catch (Exception ex)
@@ -782,18 +735,10 @@ namespace EpgTimer
                 reserve.RecSetting.Priority = (byte)val;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約変更でエラーが発生しました。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                 }
             }
             catch (Exception ex)
@@ -838,82 +783,6 @@ namespace EpgTimer
 
                 dlg.SetSearchDefKey(key);
                 dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 簡易予約イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_new_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                ProgramViewItem program = GetProgramItem(clickPos);
-                if (program == null)
-                {
-                    return;
-                }
-                EpgEventInfo eventInfo = program.EventInfo;
-                
-                if (eventInfo.StartTimeFlag == 0)
-                {
-                    MessageBox.Show("開始時間未定のため予約できません");
-                    return;
-                }
-
-                ReserveData reserveInfo = new ReserveData();
-                if (eventInfo.ShortInfo != null)
-                {
-                    reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                }
-
-                reserveInfo.StartTime = eventInfo.start_time;
-                reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                if (eventInfo.DurationFlag == 0)
-                {
-                    reserveInfo.DurationSecond = 10 * 60;
-                }
-                else
-                {
-                    reserveInfo.DurationSecond = eventInfo.durationSec;
-                }
-
-                UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                {
-                    reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                }
-                reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                reserveInfo.ServiceID = eventInfo.service_id;
-                reserveInfo.EventID = eventInfo.event_id;
-
-                RecSettingData setInfo = new RecSettingData();
-                Settings.GetDefRecSetting(0, ref setInfo);  //  デフォルトをとって来てくれる？
-                reserveInfo.RecSetting = setInfo;
-
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserveInfo);
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("簡易予約でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
-                }
             }
             catch (Exception ex)
             {
@@ -977,8 +846,7 @@ namespace EpgTimer
                 if (ViewSettingClick != null)
                 {
                     MenuItem item = sender as MenuItem;
-                    CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-                    setViewInfo.CopyTo(ref setInfo);
+                    CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     setInfo.ViewMode = (int)item.DataContext;
                     ProgramViewItem program = GetProgramItem(clickPos);
                     if (program != null)
@@ -1160,6 +1028,17 @@ namespace EpgTimer
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            var ps = PresentationSource.FromVisual(this);
+            if (ps != null)
+            {
+                //高DPI環境でProgramViewの位置を物理ピクセルに合わせるためにヘッダの幅を微調整する
+                //RootにUseLayoutRoundingを適用できれば不要だがボタン等が低品質になるので自力でやる
+                Point p = grid_PG.TransformToVisual(ps.RootVisual).Transform(new Point(40, 40));
+                Matrix m = ps.CompositionTarget.TransformToDevice;
+                grid_PG.ColumnDefinitions[0].Width = new GridLength(40 + Math.Floor(p.X * m.M11) / m.M11 - p.X);
+                grid_PG.RowDefinitions[0].Height = new GridLength(40 + Math.Floor(p.Y * m.M22) / m.M22 - p.Y);
+            }
+
             if (this.IsVisible == true)
             {
                 if (updateEpgData == true)
@@ -1195,7 +1074,7 @@ namespace EpgTimer
                     {
                         //番組情報の検索
                         var list = new List<EpgEventInfo>();
-                        cmd.SendSearchPg(new List<EpgSearchKeyInfo>() { setViewInfo.SearchKey }, ref list);
+                        CommonManager.CreateSrvCtrl().SendSearchPg(new List<EpgSearchKeyInfo>() { setViewInfo.SearchKey }, ref list);
                         //サービス毎のリストに変換
                         var serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
                         foreach (EpgEventInfo info in list)
@@ -1224,46 +1103,13 @@ namespace EpgTimer
                             }
                         }
                         ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                        if (err == ErrCode.CMD_ERR_CONNECT)
-                        {
-                            if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                                }), null);
-                            }
-                            return false;
-                        }
-                        if (err == ErrCode.CMD_ERR_BUSY)
-                        {
-                            /*if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
-                                }), null);
-                            }*/
-                            return false;
-                        }
-                        if (err == ErrCode.CMD_ERR_TIMEOUT)
-                        {
-                            if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                                }), null);
-                            }
-                            return false;
-                        }
                         if (err != ErrCode.CMD_SUCCESS)
                         {
-                            if (this.IsVisible == true)
+                            if (IsVisible && err != ErrCode.CMD_ERR_BUSY)
                             {
                                 this.Dispatcher.BeginInvoke(new Action(() =>
                                 {
-                                    MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
+                                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
                                 }), null);
                             }
                             return false;
@@ -1298,19 +1144,9 @@ namespace EpgTimer
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    return false;
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約情報の取得でエラーが発生しました。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約情報の取得でエラーが発生しました。");
                     return false;
                 }
 
@@ -1748,7 +1584,7 @@ namespace EpgTimer
                 {
                     //最低表示行数を適用
                     programList.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-                    double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+                    double minimum = Math.Floor((Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight);
                     double lastLeft = double.MinValue;
                     double lastBottom = 0;
                     foreach (ProgramViewItem item in programList)
