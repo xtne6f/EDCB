@@ -112,11 +112,11 @@ public:
 
 	//TSストリーム制御用コントロールを作成する
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗
+	// 制御識別ID
 	//引数：
-	// id			[OUT]制御識別ID
-	BOOL CreateServiceCtrl(
-		DWORD* id
+	// sendUdpTcp	[IN]UDP/TCP送信用にする
+	DWORD CreateServiceCtrl(
+		BOOL sendUdpTcp
 		);
 
 	//TSストリーム制御用コントロールを削除する

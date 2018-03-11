@@ -329,14 +329,14 @@ DWORD CBonCtrl::GetServiceList(
 
 //TSストリーム制御用コントロールを作成する
 //戻り値：
-// エラーコード
+// 制御識別ID
 //引数：
-// id			[OUT]制御識別ID
-BOOL CBonCtrl::CreateServiceCtrl(
-	DWORD* id
+// sendUdpTcp	[IN]UDP/TCP送信用にする
+DWORD CBonCtrl::CreateServiceCtrl(
+	BOOL sendUdpTcp
 	)
 {
-	return this->tsOut.CreateServiceCtrl(id);
+	return this->tsOut.CreateServiceCtrl(sendUdpTcp);
 }
 
 //TSストリーム制御用コントロールを作成する

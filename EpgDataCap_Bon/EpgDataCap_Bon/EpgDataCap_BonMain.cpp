@@ -158,10 +158,9 @@ DWORD CEpgDataCap_BonMain::OpenBonDriver(
 		this->lastTSID = 0xFFFF;
 		this->lastSID = 0xFFFF;
 		if( this->nwCtrlID == 0 ){
-			if( this->bonCtrl.CreateServiceCtrl(&this->nwCtrlID) == TRUE ){
-				this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
-				this->bonCtrl.SetServiceMode(this->nwCtrlID, this->needCaption, this->needData);
-			}
+			this->nwCtrlID = this->bonCtrl.CreateServiceCtrl(TRUE);
+			this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
+			this->bonCtrl.SetServiceMode(this->nwCtrlID, this->needCaption, this->needData);
 		}else{
 			this->bonCtrl.ClearErrCount(this->nwCtrlID);
 		}
@@ -316,30 +315,20 @@ BOOL CEpgDataCap_BonMain::SendUDP(
 		this->udpSendList = this->setUdpSendList;
 	}
 
-	BOOL ret = TRUE;
 	if( this->udpSendList.empty() ){
 		if( this->nwCtrlID != 0 ){
 			this->bonCtrl.SendUdp(this->nwCtrlID,NULL);
 		}
 	}else{
 		if( this->nwCtrlID == 0 ){
-			if( this->bonCtrl.CreateServiceCtrl(&this->nwCtrlID) == FALSE ){
-				this->udpSendList.clear();
-				return FALSE;
-			}
+			this->nwCtrlID = this->bonCtrl.CreateServiceCtrl(TRUE);
 		}
-		if( this->nwCtrlID != 0 ){
-			if( this->allService == TRUE ){
-				this->bonCtrl.SetServiceID(this->nwCtrlID, 0xFFFF);
-			}else{
-				this->bonCtrl.SetServiceID(this->nwCtrlID, this->lastSID);
-			}
-		}
+		this->bonCtrl.SetServiceID(this->nwCtrlID, (this->allService ? 0xFFFF : this->lastSID));
 		this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
 		this->bonCtrl.SetServiceMode(this->nwCtrlID, this->needCaption, this->needData);
-		ret = this->bonCtrl.SendUdp(this->nwCtrlID,&this->udpSendList);
+		return this->bonCtrl.SendUdp(this->nwCtrlID, &this->udpSendList);
 	}
-	return ret;
+	return TRUE;
 }
 
 //TCPで送信を行う
@@ -356,30 +345,20 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 		this->tcpSendList = this->setTcpSendList;
 	}
 
-	BOOL ret = TRUE;
 	if( this->tcpSendList.empty() ){
 		if( this->nwCtrlID != 0 ){
 			this->bonCtrl.SendTcp(this->nwCtrlID,NULL);
 		}
 	}else{
 		if( this->nwCtrlID == 0 ){
-			if( this->bonCtrl.CreateServiceCtrl(&this->nwCtrlID) == FALSE ){
-				this->tcpSendList.clear();
-				return FALSE;
-			}
+			this->nwCtrlID = this->bonCtrl.CreateServiceCtrl(TRUE);
 		}
-		if( this->nwCtrlID != 0 ){
-			if( this->allService == TRUE ){
-				this->bonCtrl.SetServiceID(this->nwCtrlID, 0xFFFF);
-			}else{
-				this->bonCtrl.SetServiceID(this->nwCtrlID, this->lastSID);
-			}
-		}
+		this->bonCtrl.SetServiceID(this->nwCtrlID, (this->allService ? 0xFFFF : this->lastSID));
 		this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
 		this->bonCtrl.SetServiceMode(this->nwCtrlID, this->needCaption, this->needData);
-		ret = this->bonCtrl.SendTcp(this->nwCtrlID,&this->tcpSendList);
+		return this->bonCtrl.SendTcp(this->nwCtrlID, &this->tcpSendList);
 	}
-	return ret;
+	return TRUE;
 }
 
 //指定サービスの現在or次のEPG情報を取得する
@@ -450,9 +429,7 @@ BOOL CEpgDataCap_BonMain::StartRec(
 		return FALSE;
 	}
 
-	if( this->bonCtrl.CreateServiceCtrl(&this->recCtrlID) == FALSE ){
-		return FALSE;
-	}
+	this->recCtrlID = this->bonCtrl.CreateServiceCtrl(FALSE);
 	if( this->allService == TRUE ){
 		this->bonCtrl.SetServiceID(this->recCtrlID, 0xFFFF);
 	}else{
@@ -762,12 +739,10 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 	case CMD2_VIEW_APP_CREATE_CTRL:
 		OutputDebugString(L"CMD2_VIEW_APP_CREATE_CTRL");
 		{
-			DWORD val = 0;
-			if( sys->bonCtrl.CreateServiceCtrl(&val) == TRUE ){
-				sys->cmdCtrlList.push_back(val);
-				resParam->data = NewWriteVALUE(val, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
-			}
+			DWORD val = sys->bonCtrl.CreateServiceCtrl(FALSE);
+			sys->cmdCtrlList.push_back(val);
+			resParam->data = NewWriteVALUE(val, resParam->dataSize);
+			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_DELETE_CTRL:

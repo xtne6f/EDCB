@@ -2,8 +2,9 @@
 #include "OneServiceUtil.h"
 
 
-COneServiceUtil::COneServiceUtil(void)
+COneServiceUtil::COneServiceUtil(BOOL sendUdpTcp_)
 {
+	this->sendUdpTcp = sendUdpTcp_;
 	this->SID = 0xFFFF;
 
 	this->pmtPID = 0xFFFF;
@@ -164,24 +165,33 @@ BOOL COneServiceUtil::SendTcp(
 }
 
 //出力用TSデータを送る
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
 //引数：
 // data		[IN]TSデータ
 // size		[IN]dataのサイズ
 // funcGetPresent	[IN]EPGの現在番組IDを調べる関数
-BOOL COneServiceUtil::AddTSBuff(
+void COneServiceUtil::AddTSBuff(
 	BYTE* data,
 	DWORD size,
 	const std::function<int(WORD, WORD, WORD)>& funcGetPresent
 	)
 {
-	BOOL ret = TRUE;
-	if( this->SID == 0xFFFF || this->sendTcp != NULL || this->sendUdp != NULL){
-		//全サービス扱い
-		if( data != NULL ){
-			ret = WriteData(data, size);
+	if( this->sendUdpTcp ){
+		if( size > 0 ){
+			if( this->sendUdp ){
+				this->sendUdp->SendData(data, size);
+			}
+			if( this->sendTcp ){
+				this->sendTcp->SendData(data, size);
+			}
 		}
+		this->dropCount.AddData(data, size);
+	}else if( this->SID == 0xFFFF ){
+		//全サービス扱い
+		if( this->writeFile ){
+			this->writeFile->AddTSBuff(data, size);
+		}
+		this->dropCount.AddData(data, size);
+
 		for( DWORD i=0; i<size; i+=188 ){
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data + i, 188) == TRUE ){
@@ -246,7 +256,10 @@ BOOL COneServiceUtil::AddTSBuff(
 		}
 
 		if( this->buff.empty() == false ){
-			ret = WriteData(&this->buff.front(), (DWORD)this->buff.size());
+			if( this->writeFile ){
+				this->writeFile->AddTSBuff(this->buff.data(), (DWORD)this->buff.size());
+			}
+			this->dropCount.AddData(this->buff.data(), (DWORD)this->buff.size());
 		}
 	}
 
@@ -282,25 +295,6 @@ BOOL COneServiceUtil::AddTSBuff(
 			}
 		}
 	}
-
-	return ret;
-}
-
-BOOL COneServiceUtil::WriteData(BYTE* data, DWORD size)
-{
-	if( this->sendUdp != NULL ){
-		this->sendUdp->SendData(data, size);
-	}
-	if( this->sendTcp != NULL ){
-		this->sendTcp->SendData(data, size);
-	}
-	if( this->writeFile != NULL ){
-		this->writeFile->AddTSBuff(data, size);
-	}
-
-	dropCount.AddData(data, size);
-
-	return TRUE;
 }
 
 void COneServiceUtil::SetPmtPID(

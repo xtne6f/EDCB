@@ -595,21 +595,21 @@ DWORD CTSOut::GetNextID()
 
 //TSストリーム制御用コントロールを作成する
 //戻り値：
-// エラーコード
+// 制御識別ID
 //引数：
-// id			[OUT]制御識別ID
-BOOL CTSOut::CreateServiceCtrl(
-	DWORD* id
+// sendUdpTcp	[IN]UDP/TCP送信用にする
+DWORD CTSOut::CreateServiceCtrl(
+	BOOL sendUdpTcp
 	)
 {
 	CBlockLock lock(&this->objLock);
 
-	*id = GetNextID();
-	auto itr = this->serviceUtilMap.insert(std::make_pair(*id, std::unique_ptr<COneServiceUtil>(new COneServiceUtil))).first;
+	auto itr = this->serviceUtilMap.insert(
+		std::make_pair(GetNextID(), std::unique_ptr<COneServiceUtil>(new COneServiceUtil(sendUdpTcp)))).first;
 	itr->second->SetBonDriver(bonFile);
 	itr->second->SetNoLogScramble(noLogScramble);
 
-	return TRUE;
+	return itr->first;
 }
 
 //TSストリーム制御用コントロールを削除する
