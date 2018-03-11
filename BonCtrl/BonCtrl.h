@@ -112,11 +112,6 @@ public:
 		WORD* TSID
 		);
 
-	//シグナルレベルの取得
-	//戻り値：
-	// シグナルレベル
-	float GetSignalLevel();
-
 	//サービス一覧を取得する
 	//戻り値：
 	// エラーコード
@@ -410,13 +405,16 @@ public:
 		DWORD backStartWaitSec
 		);
 
-	BOOL GetViewStatusInfo(
-		DWORD id,
-		float* signal,
-		DWORD* space,
-		DWORD* ch,
-		ULONGLONG* drop,
-		ULONGLONG* scramble
+	//現在のストリームの表示用のステータスを取得する
+	//※スレッドセーフ
+	//引数：
+	// signalLv		[OUT]シグナルレベル
+	// space		[OUT]物理CHのspace(不明のとき負)
+	// ch			[OUT]物理CHのch(不明のとき負)
+	void GetViewStatusInfo(
+		float* signalLv,
+		int* space,
+		int* ch
 		);
 
 protected:
@@ -428,6 +426,9 @@ protected:
 	recursive_mutex_ buffLock;
 	std::list<vector<BYTE>> tsBuffList;
 	std::list<vector<BYTE>> tsFreeList;
+	float statusSignalLv;
+	int viewSpace;
+	int viewCh;
 
 	thread_ analyzeThread;
 	CAutoResetEvent analyzeEvent;
@@ -483,7 +484,8 @@ protected:
 
 	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);
 
-	static void RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain);
+	void RecvCallback(BYTE* data, DWORD size, DWORD remain);
+	void StatusCallback(float signalLv, int space, int ch);
 	static void AnalyzeThread(CBonCtrl* sys);
 
 	static void ChScanThread(CBonCtrl* sys);

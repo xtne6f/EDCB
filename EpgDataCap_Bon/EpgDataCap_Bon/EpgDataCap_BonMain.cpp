@@ -415,14 +415,6 @@ DWORD CEpgDataCap_BonMain::GetEpgInfo(
 	return ret;
 }
 
-//シグナルレベルの取得
-//戻り値：
-// シグナルレベル
-float CEpgDataCap_BonMain::GetSignalLevel()
-{
-	return this->bonCtrl.GetSignalLevel();
-}
-
 //エラーカウントをクリアする
 void CEpgDataCap_BonMain::ClearErrCount(
 	)
@@ -691,15 +683,13 @@ BOOL CEpgDataCap_BonMain::StopServer(BOOL checkOnlyFlag)
 	return this->pipeServer.StopServer(checkOnlyFlag);
 }
 
-BOOL CEpgDataCap_BonMain::GetViewStatusInfo(
-	float* signal,
-	DWORD* space,
-	DWORD* ch,
-	ULONGLONG* drop,
-	ULONGLONG* scramble
+void CEpgDataCap_BonMain::GetViewStatusInfo(
+	float* signalLv,
+	int* space,
+	int* ch
 	)
 {
-	return this->bonCtrl.GetViewStatusInfo(this->nwCtrlID, signal, space, ch, drop, scramble);
+	this->bonCtrl.GetViewStatusInfo(signalLv, space, ch);
 }
 
 void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()

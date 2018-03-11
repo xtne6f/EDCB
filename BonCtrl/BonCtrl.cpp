@@ -7,6 +7,9 @@
 
 CBonCtrl::CBonCtrl(void)
 {
+	this->statusSignalLv = 0.0f;
+	this->viewSpace = -1;
+	this->viewCh = -1;
 	this->analyzeStopFlag = FALSE;
 	this->chScanIndexOrStatus = ST_STOP;
 	this->epgCapIndexOrStatus = ST_STOP;
@@ -76,7 +79,8 @@ DWORD CBonCtrl::OpenBonDriver(
 {
 	CloseBonDriver();
 	DWORD ret = ERR_FALSE;
-	if( this->bonUtil.OpenBonDriver(bonDriverFile, RecvCallback, this, openWait) ){
+	if( this->bonUtil.OpenBonDriver(bonDriverFile, [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain); },
+	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, openWait) ){
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		ret = NO_ERR;
 		//解析スレッド起動
@@ -232,16 +236,6 @@ BOOL CBonCtrl::GetStreamID(
 	return this->tsOut.GetStreamID(ONID, TSID);
 }
 
-//シグナルレベルの取得
-//戻り値：
-// シグナルレベル
-float CBonCtrl::GetSignalLevel()
-{
-	float ret = this->bonUtil.GetSignalLevel();
-	this->tsOut.SetSignalLevel(ret);
-	return ret;
-}
-
 //ロードしているBonDriverの開放
 void CBonCtrl::CloseBonDriver()
 {
@@ -261,36 +255,43 @@ void CBonCtrl::CloseBonDriver()
 	this->tsFreeList.clear();
 }
 
-void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
+void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain)
 {
-	CBonCtrl* sys = (CBonCtrl*)param;
 	BYTE* outData;
 	DWORD outSize;
-	if( data != NULL && size != 0 && sys->packetInit.GetTSData(data, size, &outData, &outSize) ){
-		CBlockLock lock(&sys->buffLock);
+	if( data != NULL && size != 0 && this->packetInit.GetTSData(data, size, &outData, &outSize) ){
+		CBlockLock lock(&this->buffLock);
 		while( outSize != 0 ){
-			if( sys->tsFreeList.empty() ){
+			if( this->tsFreeList.empty() ){
 				//バッファを増やす
-				if( sys->tsBuffList.size() > sys->tsBuffMaxCount ){
-					for( auto itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end(); (itr++)->clear() );
-					sys->tsFreeList.splice(sys->tsFreeList.end(), sys->tsBuffList);
+				if( this->tsBuffList.size() > this->tsBuffMaxCount ){
+					for( auto itr = this->tsBuffList.begin(); itr != this->tsBuffList.end(); (itr++)->clear() );
+					this->tsFreeList.splice(this->tsFreeList.end(), this->tsBuffList);
 				}else{
-					sys->tsFreeList.push_back(vector<BYTE>());
-					sys->tsFreeList.back().reserve(48128);
+					this->tsFreeList.push_back(vector<BYTE>());
+					this->tsFreeList.back().reserve(48128);
 				}
 			}
-			DWORD insertSize = min(48128 - (DWORD)sys->tsFreeList.front().size(), outSize);
-			sys->tsFreeList.front().insert(sys->tsFreeList.front().end(), outData, outData + insertSize);
-			if( sys->tsFreeList.front().size() == 48128 ){
-				sys->tsBuffList.splice(sys->tsBuffList.end(), sys->tsFreeList, sys->tsFreeList.begin());
+			DWORD insertSize = min(48128 - (DWORD)this->tsFreeList.front().size(), outSize);
+			this->tsFreeList.front().insert(this->tsFreeList.front().end(), outData, outData + insertSize);
+			if( this->tsFreeList.front().size() == 48128 ){
+				this->tsBuffList.splice(this->tsBuffList.end(), this->tsFreeList, this->tsFreeList.begin());
 			}
 			outData += insertSize;
 			outSize -= insertSize;
 		}
 	}
 	if( remain == 0 ){
-		sys->analyzeEvent.Set();
+		this->analyzeEvent.Set();
 	}
+}
+
+void CBonCtrl::StatusCallback(float signalLv, int space, int ch)
+{
+	CBlockLock lock(&this->buffLock);
+	this->statusSignalLv = signalLv;
+	this->viewSpace = space;
+	this->viewCh = ch;
 }
 
 void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
@@ -299,6 +300,7 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 
 	while( sys->analyzeStopFlag == FALSE ){
 		//バッファからデータ取り出し
+		float signalLv;
 		{
 			CBlockLock lock(&sys->buffLock);
 			if( data.empty() == false ){
@@ -309,7 +311,9 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 			if( sys->tsBuffList.empty() == false ){
 				data.splice(data.end(), sys->tsBuffList, sys->tsBuffList.begin());
 			}
+			signalLv = sys->statusSignalLv;
 		}
+		sys->tsOut.SetSignalLevel(signalLv);
 		if( data.empty() == false ){
 			sys->tsOut.AddTSBuff(&data.front().front(), (DWORD)data.front().size());
 		}else{
@@ -1071,25 +1075,14 @@ void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 	}
 }
 
-BOOL CBonCtrl::GetViewStatusInfo(
-	DWORD id,
-	float* signal,
-	DWORD* space,
-	DWORD* ch,
-	ULONGLONG* drop,
-	ULONGLONG* scramble
+void CBonCtrl::GetViewStatusInfo(
+	float* signalLv,
+	int* space,
+	int* ch
 	)
 {
-	BOOL ret = FALSE;
-
-	this->tsOut.GetErrCount(id, drop, scramble);
-
-	*signal = this->bonUtil.GetSignalLevel();
-	this->tsOut.SetSignalLevel(*signal);
-
-	if( this->bonUtil.GetNowCh(space, ch) ){
-		ret = TRUE;
-	}
-
-	return ret;
+	CBlockLock lock(&this->buffLock);
+	*signalLv = this->statusSignalLv;
+	*space = this->viewSpace;
+	*ch = this->viewCh;
 }

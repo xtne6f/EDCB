@@ -143,11 +143,6 @@ public:
 		wstring* epgInfo
 		);
 
-	//シグナルレベルの取得
-	//戻り値：
-	// シグナルレベル
-	float GetSignalLevel();
-
 	//エラーカウントをクリアする
 	void ClearErrCount(
 		);
@@ -224,12 +219,10 @@ public:
 	void StartServer();
 	BOOL StopServer(BOOL checkOnlyFlag = FALSE);
 
-	BOOL GetViewStatusInfo(
-		float* signal,
-		DWORD* space,
-		DWORD* ch,
-		ULONGLONG* drop,
-		ULONGLONG* scramble
+	void GetViewStatusInfo(
+		float* signalLv,
+		int* space,
+		int* ch
 		);
 
 	void CtrlCmdCallbackInvoked();
