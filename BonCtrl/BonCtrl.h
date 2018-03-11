@@ -427,6 +427,7 @@ protected:
 
 	recursive_mutex_ buffLock;
 	std::list<vector<BYTE>> tsBuffList;
+	std::list<vector<BYTE>> tsFreeList;
 
 	thread_ analyzeThread;
 	CAutoResetEvent analyzeEvent;

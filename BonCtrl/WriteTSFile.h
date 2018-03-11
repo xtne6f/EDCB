@@ -91,6 +91,7 @@ protected:
 protected:
 	recursive_mutex_ outThreadLock;
 	std::list<vector<BYTE>> tsBuffList;
+	std::list<vector<BYTE>> tsFreeList;
 
 	thread_ outThread;
 	BOOL outStopFlag;

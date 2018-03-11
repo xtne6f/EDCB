@@ -258,6 +258,7 @@ void CBonCtrl::CloseBonDriver()
 	this->bonUtil.CloseBonDriver();
 	this->packetInit.ClearBuff();
 	this->tsBuffList.clear();
+	this->tsFreeList.clear();
 }
 
 void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
@@ -267,20 +268,22 @@ void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
 	DWORD outSize;
 	if( data != NULL && size != 0 && sys->packetInit.GetTSData(data, size, &outData, &outSize) ){
 		CBlockLock lock(&sys->buffLock);
-		for( std::list<vector<BYTE>>::iterator itr = sys->tsBuffList.begin(); outSize != 0; itr++ ){
-			if( itr == sys->tsBuffList.end() ){
+		while( outSize != 0 ){
+			if( sys->tsFreeList.empty() ){
 				//バッファを増やす
 				if( sys->tsBuffList.size() > sys->tsBuffMaxCount ){
-					for( itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end(); (itr++)->clear() );
-					itr = sys->tsBuffList.begin();
+					for( auto itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end(); (itr++)->clear() );
+					sys->tsFreeList.splice(sys->tsFreeList.end(), sys->tsBuffList);
 				}else{
-					sys->tsBuffList.push_back(vector<BYTE>());
-					itr = sys->tsBuffList.end();
-					(--itr)->reserve(48128);
+					sys->tsFreeList.push_back(vector<BYTE>());
+					sys->tsFreeList.back().reserve(48128);
 				}
 			}
-			DWORD insertSize = min(48128 - (DWORD)itr->size(), outSize);
-			itr->insert(itr->end(), outData, outData + insertSize);
+			DWORD insertSize = min(48128 - (DWORD)sys->tsFreeList.front().size(), outSize);
+			sys->tsFreeList.front().insert(sys->tsFreeList.front().end(), outData, outData + insertSize);
+			if( sys->tsFreeList.front().size() == 48128 ){
+				sys->tsBuffList.splice(sys->tsBuffList.end(), sys->tsFreeList, sys->tsFreeList.begin());
+			}
 			outData += insertSize;
 			outSize -= insertSize;
 		}
@@ -301,11 +304,9 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 			if( data.empty() == false ){
 				//返却
 				data.front().clear();
-				std::list<vector<BYTE>>::iterator itr;
-				for( itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end() && itr->empty() == false; itr++ );
-				sys->tsBuffList.splice(itr, data);
+				sys->tsFreeList.splice(sys->tsFreeList.end(), data);
 			}
-			if( sys->tsBuffList.empty() == false && sys->tsBuffList.front().size() == 48128 ){
+			if( sys->tsBuffList.empty() == false ){
 				data.splice(data.end(), sys->tsBuffList, sys->tsBuffList.begin());
 			}
 		}
