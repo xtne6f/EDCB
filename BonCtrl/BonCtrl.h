@@ -41,8 +41,6 @@ public:
 
 	void SetNoLogScramble(BOOL noLog);
 
-	void SetTsBuffMaxCount(DWORD tsBuffMaxCount_, int writeBuffMaxCount_);
-
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
 	// 検索できたBonDriver一覧
@@ -55,7 +53,8 @@ public:
 	// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
 	DWORD OpenBonDriver(
 		LPCWSTR bonDriverFile,
-		int openWait = 200
+		int openWait,
+		DWORD tsBuffMaxCount
 		);
 
 	//ロードしているBonDriverの開放
@@ -192,6 +191,7 @@ public:
 	// createSize			[IN]ファイル作成時にディスクに予約する容量
 	// saveFolder			[IN]使用するフォルダ一覧
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+	// writeBuffMaxCount	[IN]出力バッファ上限
 	BOOL StartSave(
 		DWORD id,
 		const wstring& fileName,
@@ -203,7 +203,8 @@ public:
 		WORD pittariEventID,
 		ULONGLONG createSize,
 		const vector<REC_FILE_SET_INFO>& saveFolder,
-		const vector<wstring>& saveFolderSub
+		const vector<wstring>& saveFolderSub,
+		int writeBuffMaxCount
 	);
 
 	//ファイル保存を終了する
@@ -472,8 +473,6 @@ protected:
 	BOOL epgCapBackCS2Basic;
 	BOOL epgCapBackCS3Basic;
 	DWORD epgCapBackStartWaitSec;
-	DWORD tsBuffMaxCount;
-	int writeBuffMaxCount;
 protected:
 	DWORD ProcessSetCh(
 		DWORD space,
@@ -484,7 +483,7 @@ protected:
 
 	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);
 
-	void RecvCallback(BYTE* data, DWORD size, DWORD remain);
+	void RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMaxCount);
 	void StatusCallback(float signalLv, int space, int ch);
 	static void AnalyzeThread(CBonCtrl* sys);
 

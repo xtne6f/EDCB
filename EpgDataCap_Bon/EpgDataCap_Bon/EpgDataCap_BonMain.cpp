@@ -33,6 +33,8 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 	this->cmdCapture = NULL;
 	this->resCapture = NULL;
 
+	this->tsBuffMaxCount = 5000;
+	this->writeBuffMaxCount = -1;
 	this->openWait = 200;
 
 	if( CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION) ){
@@ -127,9 +129,8 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	this->bonCtrl.SetEMMMode(this->enableEMMFlag);
 	this->bonCtrl.SetNoLogScramble(GetPrivateProfileInt( L"SET", L"NoLogScramble", 0, appIniPath.c_str() ) != 0);
 
-	DWORD tsBuffMaxCount = (DWORD)GetPrivateProfileInt( L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str() );
-	int writeBuffMaxCount = GetPrivateProfileInt( L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str() );
-	this->bonCtrl.SetTsBuffMaxCount(tsBuffMaxCount, writeBuffMaxCount);
+	this->tsBuffMaxCount = (DWORD)GetPrivateProfileInt( L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str() );
+	this->writeBuffMaxCount = GetPrivateProfileInt( L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str() );
 
 	this->openWait = (DWORD)GetPrivateProfileInt( L"SET", L"OpenWait", 200, appIniPath.c_str() );
 }
@@ -151,7 +152,7 @@ DWORD CEpgDataCap_BonMain::OpenBonDriver(
 	LPCWSTR bonDriverFile
 )
 {
-	DWORD ret = this->bonCtrl.OpenBonDriver(bonDriverFile, this->openWait);
+	DWORD ret = this->bonCtrl.OpenBonDriver(bonDriverFile, this->openWait, this->tsBuffMaxCount);
 	if( ret == NO_ERR ){
 		this->lastONID = 0xFFFF;
 		this->lastTSID = 0xFFFF;
@@ -487,7 +488,8 @@ BOOL CEpgDataCap_BonMain::StartRec(
 	saveFolder.back().recFolder = this->recFolderList[0];
 	saveFolder.back().recFileName = fileName;
 
-	this->bonCtrl.StartSave(this->recCtrlID, L"padding.ts", this->overWriteFlag, FALSE, 0,0,0,0, 0, saveFolder, this->recFolderList);
+	this->bonCtrl.StartSave(this->recCtrlID, L"padding.ts", this->overWriteFlag, FALSE, 0, 0, 0, 0,
+	                        0, saveFolder, this->recFolderList, this->writeBuffMaxCount);
 
 	return TRUE;
 }
@@ -819,7 +821,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					overWrite = val.overWriteFlag;
 				}
 				sys->bonCtrl.ClearErrCount(val.ctrlID);
-				if(sys->bonCtrl.StartSave(val.ctrlID, val.fileName, overWrite, val.pittariFlag, val.pittariONID, val.pittariTSID, val.pittariSID, val.pittariEventID, val.createSize, val.saveFolder, sys->recFolderList) ){
+				if( sys->bonCtrl.StartSave(val.ctrlID, val.fileName, overWrite, val.pittariFlag, val.pittariONID, val.pittariTSID, val.pittariSID, val.pittariEventID,
+				                           val.createSize, val.saveFolder, sys->recFolderList, sys->writeBuffMaxCount) ){
 					resParam->param = CMD_SUCCESS;
 					PostMessage(sys->msgWnd, WM_RESERVE_REC_START, 0, 0);
 				}

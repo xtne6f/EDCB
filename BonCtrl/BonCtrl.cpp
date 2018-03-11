@@ -21,8 +21,6 @@ CBonCtrl::CBonCtrl(void)
 	this->epgCapBackCS2Basic = TRUE;
 	this->epgCapBackCS3Basic = FALSE;
 	this->epgCapBackStartWaitSec = 30;
-	this->tsBuffMaxCount = 5000;
-	this->writeBuffMaxCount = -1;
 }
 
 
@@ -53,12 +51,6 @@ void CBonCtrl::SetNoLogScramble(BOOL noLog)
 	this->tsOut.SetNoLogScramble(noLog);
 }
 
-void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount_, int writeBuffMaxCount_)
-{
-	this->tsBuffMaxCount = tsBuffMaxCount_;
-	this->writeBuffMaxCount = writeBuffMaxCount_;
-}
-
 //BonDriverフォルダのBonDriver_*.dllを列挙
 //戻り値：
 // 検索できたBonDriver一覧
@@ -74,12 +66,13 @@ vector<wstring> CBonCtrl::EnumBonDriver()
 // bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
 DWORD CBonCtrl::OpenBonDriver(
 	LPCWSTR bonDriverFile,
-	int openWait
+	int openWait,
+	DWORD tsBuffMaxCount
 )
 {
 	CloseBonDriver();
 	DWORD ret = ERR_FALSE;
-	if( this->bonUtil.OpenBonDriver(bonDriverFile, [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain); },
+	if( this->bonUtil.OpenBonDriver(bonDriverFile, [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
 	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, openWait) ){
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		ret = NO_ERR;
@@ -255,7 +248,7 @@ void CBonCtrl::CloseBonDriver()
 	this->tsFreeList.clear();
 }
 
-void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain)
+void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMaxCount)
 {
 	BYTE* outData;
 	DWORD outSize;
@@ -264,7 +257,7 @@ void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain)
 		while( outSize != 0 ){
 			if( this->tsFreeList.empty() ){
 				//バッファを増やす
-				if( this->tsBuffList.size() > this->tsBuffMaxCount ){
+				if( this->tsBuffList.size() > tsBuffMaxCount ){
 					for( auto itr = this->tsBuffList.begin(); itr != this->tsBuffList.end(); (itr++)->clear() );
 					this->tsFreeList.splice(this->tsFreeList.end(), this->tsBuffList);
 				}else{
@@ -418,6 +411,7 @@ BOOL CBonCtrl::SendTcp(
 // createSize			[IN]ファイル作成時にディスクに予約する容量
 // saveFolder			[IN]使用するフォルダ一覧
 // saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+// writeBuffMaxCount	[IN]出力バッファ上限
 BOOL CBonCtrl::StartSave(
 	DWORD id,
 	const wstring& fileName,
@@ -429,7 +423,8 @@ BOOL CBonCtrl::StartSave(
 	WORD pittariEventID,
 	ULONGLONG createSize,
 	const vector<REC_FILE_SET_INFO>& saveFolder,
-	const vector<wstring>& saveFolderSub
+	const vector<wstring>& saveFolderSub,
+	int writeBuffMaxCount
 )
 {
 	BOOL ret = this->tsOut.StartSave(id, fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, writeBuffMaxCount);

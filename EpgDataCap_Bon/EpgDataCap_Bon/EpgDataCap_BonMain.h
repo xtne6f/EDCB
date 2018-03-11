@@ -251,6 +251,8 @@ protected:
 	BOOL needCaption;
 	BOOL needData;
 
+	DWORD tsBuffMaxCount;
+	int writeBuffMaxCount;
 	int openWait;
 
 	wstring viewPath;
