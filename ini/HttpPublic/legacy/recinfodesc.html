@@ -3,7 +3,8 @@ dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 vtag=GetVarInt(mg.request_info.query_string,'vtag') or 0
 
-ct=[=[
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
 <!DOCTYPE HTML]=]..(vtag==0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
@@ -14,7 +15,7 @@ ct=[=[
 <body>
 <h1>録画済み詳細</h1>
 <div id="main">
-]=]
+]=])
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
 
@@ -22,7 +23,7 @@ post=AssertPost()
 if post then
   if mg.get_var(post,'del') then
     edcb.DelRecFileInfo(id)
-    ct=ct..'  <div id="result">削除しました</div>\n'
+    ct:Append('  <div id="result">削除しました</div>\n')
   end
 end
 
@@ -30,25 +31,25 @@ w=edcb.GetRecFileInfo(id)
 edcb.htmlEscape=15
 v=edcb.GetRecFileInfo(id)
 if v then
-  ct=ct..'  <dl>\n'
+  ct:Append('  <dl>\n'
     ..'    <dt>番組名</dt><dd>'..FormatTimeAndDuration(v.startTime, v.durationSecond)..'<br>'..v.serviceName..'<br>'..v.title..'</dd>\n'
     ..'    <dt>結果</dt><dd>'..v.comment..'</dd>\n'
     ..'    <dt>ドロップ</dt><dd>'..v.drops..'</dd>\n'
     ..'    <dt>スクランブル</dt><dd>'..v.scrambles..'</dd>\n'
-    ..'    <dt>ファイル →<a href="recinfodesc.html?id='..v.id..(vtag==0 and '&amp;vtag=-1">Video' or '">DL')..'</a></dt><dd>\n'
+    ..'    <dt>ファイル →<a href="recinfodesc.html?id='..v.id..(vtag==0 and '&amp;vtag=-1">Video' or '">DL')..'</a></dt><dd>\n')
   ref=w and NativeToDocumentPath(w.recFilePath)
   if ref then
     for i,ext in ipairs({'.mp4','.webm',''}) do
       ff=edcb.FindFile and edcb.FindFile(w.recFilePath..ext,1)
       if ff then
-        ct=ct..(vtag==i and '<video controls src="' or '<a href="')
+        ct:Append((vtag==i and '<video controls src="' or '<a href="')
           ..(vtag~=0 and vtag~=i and 'recinfodesc.html?id='..v.id..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
-          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>')
+          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>'))
         if ext=='' then
           for j=0,9 do
-            ct=ct..'\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
+            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
               ..(vtag~=0 and vtag~=j+10 and 'recinfodesc.html?id='..v.id..'&amp;vtag='..(j+10) or 'xcode.lua?'..(j*10)..'='..mg.url_encode(ref))
-              ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>')
+              ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>'))
           end
           fsec,fsize=0,0
           f=edcb.io.open(w.recFilePath,'rb')
@@ -56,14 +57,14 @@ if v then
             fsec,fsize=GetDurationSec(f)
             f:close()
           end
-          ct=ct..'] ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
+          ct:Append('] ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n')
         else
-          ct=ct..' ('..math.floor(ff[1].size/1048576)..'M)<br>\n'
+          ct:Append(' ('..math.floor(ff[1].size/1048576)..'M)<br>\n')
         end
       end
     end
   end
-  ct=ct..'<br></dd>\n'
+  ct:Append('<br></dd>\n'
     ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..DecorateUri(v.programInfo):gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
@@ -71,15 +72,16 @@ if v then
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="del" value="y">\n'
     ..'<input type="submit" value="削除"></div></form></dd>\n'
-    ..'  </dl>\n'
+    ..'  </dl>\n')
 end
 
-ct=ct..[=[
+ct:Append([=[
 </div>
 <div id="footer">
   <a href="recinfo.html">録画済み一覧</a>
 </div>
 </body>
 </html>
-]=]
-mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

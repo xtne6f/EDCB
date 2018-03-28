@@ -3,7 +3,8 @@ PAGE_COUNT=30
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-ct=[=[
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
@@ -14,44 +15,43 @@ ct=[=[
 <body>
 <h1>予約一覧</h1>
 <div class="page-nav">
-  ]=]
+  ]=])
 
 edcb.htmlEscape=15
 a=edcb.GetReserveData()
 table.sort(a, function(a,b) return os.time(a.startTime) < os.time(b.startTime) end)
 pageIndex=GetVarInt(mg.request_info.query_string,'page',0,100000) or 0
 for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
-  ct=ct..(i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"reserve.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+  ct:Append((i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"reserve.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> '))
 end
 
-ct=ct..[=[
+ct:Append([=[
 
 </div>
 <div id="main">
   <table>
-]=]
+]=])
 
-ctt={}
 for i=pageIndex*PAGE_COUNT+1,math.min(#a,(pageIndex+1)*PAGE_COUNT) do
   v=a[i]
-  table.insert(ctt, '    <tr'
+  ct:Append('    <tr'
     ..(v.recSetting.recMode==5 and ' class="disabled"' or v.overlapMode==1 and ' class="partially"' or v.overlapMode==2 and ' class="shortage"' or '')
     ..'><td><a href="reserveinfo.html?id='..v.reserveID..'">'
     ..FormatTimeAndDuration(v.startTime, v.durationSecond)
     ..'</a></td><td>'..v.stationName..'</td><td>'..v.title..'</td></tr>\n')
 end
 
-ct=ct..table.concat(ctt)..[=[
+ct:Append([=[
   </table>
   <div class="aside">
-    <a href="view.lua">view.lua</a>]=]
+    <a href="view.lua">view.lua</a>]=])
 for i,v in ipairs(edcb.FindFile and edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
   n=v.name:match('^[^_]+_(%d+)_%d+$')
   if n then
-    ct=ct..' <a href="view.lua?n='..n..'">port'..n..'</a>'
+    ct:Append(' <a href="view.lua?n='..n..'">port'..n..'</a>')
   end
 end
-ct=ct..[=[
+ct:Append([=[
  (<a href="view.lua?n=-1">term</a>)
   </div>
 </div>
@@ -60,5 +60,6 @@ ct=ct..[=[
 </div>
 </body>
 </html>
-]=]
-mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

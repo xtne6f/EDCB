@@ -57,7 +57,8 @@ function AddReserve(onid,tsid,sid,eid,post)
   return false
 end
 
-ct=[=[
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
@@ -68,7 +69,7 @@ ct=[=[
 <body>
 <h1>番組詳細</h1>
 <div id="main">
-]=]
+]=])
 
 onid,tsid,sid,eid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
 onid=tonumber(onid) or 0
@@ -80,7 +81,7 @@ presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
 post=AssertPost()
 if post then
   if mg.get_var(post,'addchg') then
-    ct=ct..'  <div id="result">'..(AddReserve(onid,tsid,sid,eid,post) and '予約を追加しました' or '入力値不正')..'</div>\n'
+    ct:Append('  <div id="result">'..(AddReserve(onid,tsid,sid,eid,post) and '予約を追加しました' or '入力値不正')..'</div>\n')
   end
 end
 
@@ -96,11 +97,11 @@ if not r and presetID==65535 then
   presetID=0
 end
 
-ct=ct..'  <dl>\n'
-  ..'    <dt>番組情報</dt><dd>\n'..ConvertEpgInfoText2(onid,tsid,sid,eid):gsub('\r?\n','<br>\n')..'</dd>\n'
+ct:Append('  <dl>\n'
+  ..'    <dt>番組情報</dt><dd>\n'..ConvertEpgInfoText2(onid,tsid,sid,eid):gsub('\r?\n','<br>\n')..'</dd>\n')
 if r then
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
-  ct=ct..'    <dt>プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）</dt><dd>\n'
+  ct:Append('    <dt>プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
     ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="addchg" value="y">\n'
@@ -114,43 +115,43 @@ if r then
     ..'">:<input type="text" size="2" name="end-i" value="'..math.floor(dur/60)%60
     ..'">:<input type="text" size="2" name="end-s" value="'..dur%60
     ..'"><br>\n'
-    ..'<input type="submit" value="変更"></div></form></dd>\n'
+    ..'<input type="submit" value="変更"></div></form></dd>\n')
 end
-ct=ct..'    <dt>プリセット<dt><dd>\n'
+ct:Append('    <dt>プリセット<dt><dd>\n'
   ..'<form action="epginfo.html"><div>'
-  ..'<input type="hidden" name="id" value="'..onid..'-'..tsid..'-'..sid..'-'..eid..'"><select name="presetID">\n'
+  ..'<input type="hidden" name="id" value="'..onid..'-'..tsid..'-'..sid..'-'..eid..'"><select name="presetID">\n')
 preset=false
 rs=r and r.recSetting or nil
 for i,v in ipairs(edcb.EnumRecPresetInfo()) do
   if v.id==presetID then
     preset=true
     rs=v.recSetting
-    ct=ct..'<option value="'..v.id..'" selected>'..v.name..'\n'
+    ct:Append('<option value="'..v.id..'" selected>'..v.name..'\n')
   else
     rs=rs or v.recSetting
-    ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
+    ct:Append('<option value="'..v.id..'">'..v.name..'\n')
   end
 end
 if r then
-  ct=ct..'<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
+  ct:Append('<option value="65535"'..(preset and '' or ' selected')..'>予約時\n')
 end
-ct=ct..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
+ct:Append('</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
   ..'    <dt>録画設定<dt><dd>\n'
   ..'<form method="POST" action="'
   ..(r and 'reserveinfo.html?id='..r.reserveID or 'epginfo.html?id='..onid..'-'..tsid..'-'..sid..'-'..eid)
   ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
   ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
   ..'<input type="hidden" name="addchg" value="y">\n'
-  ..RecSettingTemplate(rs)..'<input type="submit" value="'..(r and '変更' or '追加')..'"></div></form></dd>\n'
+  ..RecSettingTemplate(rs)..'<input type="submit" value="'..(r and '変更' or '追加')..'"></div></form></dd>\n')
 if r then
-  ct=ct..'    <dt>-</dt><dd>\n'
+  ct:Append('    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="del" value="y">\n'
-    ..'<input type="submit" value="削除"></div></form></dd>\n'
+    ..'<input type="submit" value="削除"></div></form></dd>\n')
 end
 
-ct=ct..[=[
+ct:Append([=[
   </dl>
 </div>
 <div id="footer">
@@ -158,5 +159,6 @@ ct=ct..[=[
 </div>
 </body>
 </html>
-]=]
-mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

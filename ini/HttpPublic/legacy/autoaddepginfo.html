@@ -102,7 +102,8 @@ function AddOrChange(dataID,post)
   return false
 end
 
-ct=[=[
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
@@ -111,15 +112,15 @@ ct=[=[
 <title>EPG予約 - EDCB</title>
 </head>
 <body>
-]=]
+]=])
 
 aa={dataID=GetVarInt(mg.request_info.query_string,'id') or 0}
 if aa.dataID==0 then
-  ct=ct..'<h1>EPG予約 新規条件追加</h1>\n<div id="main">\n'
+  ct:Append('<h1>EPG予約 新規条件追加</h1>\n<div id="main">\n')
   post=AssertPost()
   if post then
     if mg.get_var(post,'addchg') then
-      ct=ct..'  <div id="result">'..(AddOrChange(0,post) and '追加しました' or '入力値不正')..'</div>\n'
+      ct:Append('  <div id="result">'..(AddOrChange(0,post) and '追加しました' or '入力値不正')..'</div>\n')
     end
   else
     aa.searchInfo={
@@ -143,14 +144,14 @@ if aa.dataID==0 then
   end
   edcb.htmlEscape=15
 else
-  ct=ct..'<h1>EPG予約 条件変更</h1>\n<div id="main">\n'
+  ct:Append('<h1>EPG予約 条件変更</h1>\n<div id="main">\n')
   post=AssertPost()
   if post then
     if mg.get_var(post,'addchg') then
-      ct=ct..'  <div id="result">'..(AddOrChange(aa.dataID,post) and '変更しました' or '入力値不正')..'</div>\n'
+      ct:Append('  <div id="result">'..(AddOrChange(aa.dataID,post) and '変更しました' or '入力値不正')..'</div>\n')
     elseif mg.get_var(post,'del') then
       edcb.DelAutoAdd(aa.dataID)
-      ct=ct..'  <div id="result">削除しました</div>\n'
+      ct:Append('  <div id="result">削除しました</div>\n')
     end
   end
   edcb.htmlEscape=15
@@ -164,10 +165,10 @@ end
 
 if aa.searchInfo then
   si=aa.searchInfo
-  ct=ct..'  <dl>\n'
+  ct:Append('  <dl>\n'
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="autoaddepginfo.html"><div>\n'
-    ..'<input type="hidden" name="id" value="'..aa.dataID..'"><select name="presetID">\n'
+    ..'<input type="hidden" name="id" value="'..aa.dataID..'"><select name="presetID">\n')
   presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
   if aa.dataID==0 and presetID==65535 then
     presetID=0
@@ -178,20 +179,20 @@ if aa.searchInfo then
     if v.id==presetID then
       preset=true
       rs=v.recSetting
-      ct=ct..'<option value="'..v.id..'" selected>'..v.name..'\n'
+      ct:Append('<option value="'..v.id..'" selected>'..v.name..'\n')
     else
       rs=rs or v.recSetting
-      ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
+      ct:Append('<option value="'..v.id..'">'..v.name..'\n')
     end
   end
   if aa.dataID~=0 then
-    ct=ct..'<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
+    ct:Append('<option value="65535"'..(preset and '' or ' selected')..'>予約時\n')
   end
   --無効
   disAndKey=si.andKey:match('^^!{999}(.*)')
   --大小文字区別
   caseAndKey=(disAndKey or si.andKey):match('^C!{999}(.*)')
-  ct=ct..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
+  ct:Append('</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
     ..'    <dt>条件</dt><dd>\n'
     ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'">\n'
     ..'<div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
@@ -206,83 +207,84 @@ if aa.searchInfo then
     ..'<input type="checkbox" name="caseFlag" value="1"'..(caseAndKey and ' checked' or '')..'>大小文字区別<br>\n'
     ..'<input type="checkbox" name="disableFlag" value="1"'..(disAndKey and ' checked' or '')..'>自動登録を無効にする<br><br>\n'
     ..'ジャンル絞り込み（Ctrl+複数選択） <input type="checkbox" name="notContetFlag" value="1"'..(si.notContetFlag and ' checked' or '')..'>NOT扱い<br>\n'
-    ..'<select name="contentList" multiple size="5">\n'
+    ..'<select name="contentList" multiple size="5">\n')
   for _i,i in ipairs({0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,15}) do
     nibble1=edcb.GetGenreName(i*256+255)
     if nibble1~='' then
-      ct=ct..'<option value="'..(i*256+255)..'"'
+      ct:Append('<option value="'..(i*256+255)..'"')
       for j,v in ipairs(si.contentList) do
         if v.content_nibble==i*256+255 then
-          ct=ct..' selected'
+          ct:Append(' selected')
           break
         end
       end
-      ct=ct..'>'..nibble1..'\n'
+      ct:Append('>'..nibble1..'\n')
       for j=0,15 do
         nibble2=edcb.GetGenreName(i*256+j)
         if nibble2~='' then
-          ct=ct..'<option value="'..(i*256+j)..'"'
+          ct:Append('<option value="'..(i*256+j)..'"')
           for k,v in ipairs(si.contentList) do
             if v.content_nibble==i*256+j then
-              ct=ct..' selected'
+              ct:Append(' selected')
               break
             end
           end
-          ct=ct..'>　'..nibble2..'\n'
+          ct:Append('>　'..nibble2..'\n')
         end
       end
     end
   end
-  ct=ct..'</select><br><br>\n'
-    ..'サービス絞り込み（Ctrl+複数選択）<br><select name="serviceList" multiple size="5">\n'
+  ct:Append('</select><br><br>\n'
+    ..'サービス絞り込み（Ctrl+複数選択）<br><select name="serviceList" multiple size="5">\n')
   for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
-    ct=ct..'<option value="'..v.onid..'-'..v.tsid..'-'..v.sid..'"'
+    ct:Append('<option value="'..v.onid..'-'..v.tsid..'-'..v.sid..'"')
     for j,w in ipairs(si.serviceList) do
       if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
-        ct=ct..' selected'
+        ct:Append(' selected')
         break
       end
     end
-    ct=ct..'>('..NetworkType(v.onid)..') '..v.serviceName..'\n'
+    ct:Append('>('..NetworkType(v.onid)..') '..v.serviceName..'\n')
   end
-  ct=ct..'</select><br><br>\n'
+  ct:Append('</select><br><br>\n'
     ..'時間絞り込み <input type="checkbox" name="notDateFlag" value="1"'..(si.notDateFlag and ' checked' or '')..'>NOT扱い<br>\n'
-    ..'<input type="text" name="dateList" value="'
+    ..'<input type="text" name="dateList" value="')
   for i,v in ipairs(si.dateList) do
-    ct=ct..(i==1 and '' or ', ')
+    ct:Append((i==1 and '' or ', ')
       ..({'sun','mon','tue','wed','thu','fri','sat'})[v.startDayOfWeek%7+1]..v.startHour..':'..v.startMin..'-'
-      ..({'sun','mon','tue','wed','thu','fri','sat'})[v.endDayOfWeek%7+1]..v.endHour..':'..v.endMin
+      ..({'sun','mon','tue','wed','thu','fri','sat'})[v.endDayOfWeek%7+1]..v.endHour..':'..v.endMin)
   end
-  ct=ct..'" style="width:95%"><br>\n書式: (sun|mon|tue|wed|thu|fri|sat)H:M-(...)H:M, （例: sun23:0-mon5:0, wed3:0-wed5:0）<br><br>\n'
+  ct:Append('" style="width:95%"><br>\n書式: (sun|mon|tue|wed|thu|fri|sat)H:M-(...)H:M, （例: sun23:0-mon5:0, wed3:0-wed5:0）<br><br>\n'
     ..'スクランブル放送:\n<select name="freeCAFlag">\n'
     ..'<option value="0"'..(si.freeCAFlag==0 and ' selected' or '')..'>無料、有料番組を対象とする'
     ..'<option value="1"'..(si.freeCAFlag==1 and ' selected' or '')..'>無料番組を対象とする'
     ..'<option value="2"'..(si.freeCAFlag==2 and ' selected' or '')..'>有料番組を対象とする'
     ..'</select><br>\n'
-  ct=ct..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
+    ..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
     ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下（0で無制限）<br><br>\n'
-  ct=ct..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
+    ..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
     ..'&emsp;<input type="checkbox" name="chkRecNoService" value="1"'..(si.chkRecNoService and ' checked' or '')..'>全てのサービスで無効にする<br>\n'
     ..'&emsp;確認対象期間 <input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
     ..'</div><div class="section"><h2>録画設定</h2>\n'..RecSettingTemplate(rs)..'</div>\n'
-    ..'<div><input type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'"></div></form></dd>\n'
+    ..'<div><input type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'"></div></form></dd>\n')
 
   if aa.dataID~=0 then
-    ct=ct..'    <dt>-</dt><dd>\n'
+    ct:Append('    <dt>-</dt><dd>\n'
       ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'"><div>\n'
       ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
       ..'<input type="hidden" name="del" value="y">\n'
-      ..'<input type="submit" value="削除"></div></form></dd>\n'
+      ..'<input type="submit" value="削除"></div></form></dd>\n')
   end
-  ct=ct..'  </dl>\n'
+  ct:Append('  </dl>\n')
 end
 
-ct=ct..[=[
+ct:Append([=[
 </div>
 <div id="footer">
   <a href="autoaddepg.html">EPG予約一覧</a>
 </div>
 </body>
 </html>
-]=]
-mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

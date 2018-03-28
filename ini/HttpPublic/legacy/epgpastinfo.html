@@ -1,7 +1,8 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-ct=[=[
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
@@ -13,7 +14,7 @@ ct=[=[
 <h1>番組詳細</h1>
 <div id="main">
   <dl>
-]=]
+]=])
 
 onid,tsid,sid,startTime=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d+)$')
 onid=tonumber(onid) or 0
@@ -24,10 +25,10 @@ startTime=tonumber(startTime) or 0
 edcb.htmlEscape=15
 et=edcb.EnumEventInfoArchive({{onid=onid,tsid=tsid,sid=sid}}, {startTime=os.date('!*t',startTime), durationSecond=1})
 if et and #et~=0 then
-  ct=ct..'    <dt>番組情報</dt><dd>\n'..ConvertEpgInfoText2(et[1]):gsub('\r?\n','<br>\n')..'</dd>\n'
+  ct:Append('    <dt>番組情報</dt><dd>\n'..ConvertEpgInfoText2(et[1]):gsub('\r?\n','<br>\n')..'</dd>\n')
 end
 
-ct=ct..[=[
+ct:Append([=[
   </dl>
 </div>
 <div id="footer">
@@ -35,5 +36,6 @@ ct=ct..[=[
 </div>
 </body>
 </html>
-]=]
-mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
