@@ -33,8 +33,7 @@ namespace EpgTimer
                     RecInfo.ProtectFlag = Convert.ToByte(value);
                     List<RecFileInfo> list = new List<RecFileInfo>();
                     list.Add(RecInfo);
-                    CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-                    cmd.SendChgProtectRecInfo(list);
+                    CommonManager.CreateSrvCtrl().SendChgProtectRecInfo(list);
                 }
             }
             get
