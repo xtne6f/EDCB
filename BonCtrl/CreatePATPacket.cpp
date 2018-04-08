@@ -10,38 +10,18 @@ CCreatePATPacket::CCreatePATPacket(void)
 //作成PATのパラメータを設定
 //引数：
 // TSID				[IN]TransportStreamID
-// PIDMap			[IN]PMTのリスト
+// PIDList			[IN]PMTのPIDとServiceIDのリスト
 void CCreatePATPacket::SetParam(
 	WORD TSID_,
-	map<WORD, PROGRAM_PID_INFO>* PIDMap_
+	const vector<pair<WORD, WORD>>& PIDList_
 )
 {
 	//変更なければ変える必要なし
-	if( this->TSID == TSID_ && this->PIDMap.size() == PIDMap_->size() ){
-		if( this->PIDMap.size() != 0 ){
-			BOOL bChg = FALSE;
-			map<WORD, PROGRAM_PID_INFO>::iterator itr1;
-			map<WORD, PROGRAM_PID_INFO>::iterator itr2;
-			for( itr1 = this->PIDMap.begin(); itr1 != this->PIDMap.end(); itr1++ ){
-				itr2 = PIDMap_->find(itr1->first);
-				if( itr2 == PIDMap_->end() ){
-					bChg = TRUE;
-					break;
-				}else{
-					if( itr1->second.PMTPID != itr2->second.PMTPID ||
-					itr1->second.SID != itr2->second.SID ){
-						bChg = TRUE;
-						break;
-					}
-				}
-			}
-			if( bChg == FALSE ){
-				return ;
-			}
-		}
+	if( this->TSID == TSID_ && this->PIDList.empty() == false && this->PIDList == PIDList_ ){
+		return;
 	}
 	this->TSID = TSID_;
-	this->PIDMap = *PIDMap_;
+	this->PIDList = PIDList_;
 
 	this->version++;
 	if( this->version > 31 ){
@@ -82,7 +62,7 @@ void CCreatePATPacket::CreatePAT()
 {
 	//まずPSI作成
 	//pointer_field + last_section_numberまで+PID+CRCのサイズ
-	this->PSI.resize(1 + 8 + this->PIDMap.size()*4 + 4);
+	this->PSI.resize(1 + 8 + this->PIDList.size() * 4 + 4);
 
 	this->PSI[0] = 0;
 	this->PSI[1] = 0;
@@ -97,12 +77,12 @@ void CCreatePATPacket::CreatePAT()
 	this->PSI[8] = 0;
 
 	DWORD dwCreateSize = 0;
-	map<WORD, PROGRAM_PID_INFO>::iterator itr;
-	for( itr = this->PIDMap.begin(); itr != this->PIDMap.end(); itr++ ){
-		this->PSI[9+dwCreateSize] = (BYTE)((itr->second.SID&0xFF00)>>8);
-		this->PSI[9+dwCreateSize+1] = (BYTE)(itr->second.SID&0x00FF);
-		this->PSI[9+dwCreateSize+2] = (BYTE)((itr->second.PMTPID&0xFF00)>>8);
-		this->PSI[9+dwCreateSize+3] = (BYTE)(itr->second.PMTPID&0x00FF);
+	vector<pair<WORD, WORD>>::iterator itr;
+	for( itr = this->PIDList.begin(); itr != this->PIDList.end(); itr++ ){
+		this->PSI[9+dwCreateSize] = (BYTE)((itr->second&0xFF00)>>8);
+		this->PSI[9+dwCreateSize+1] = (BYTE)(itr->second&0x00FF);
+		this->PSI[9+dwCreateSize+2] = (BYTE)((itr->first&0xFF00)>>8);
+		this->PSI[9+dwCreateSize+3] = (BYTE)(itr->first&0x00FF);
 		dwCreateSize+=4;
 	}
 

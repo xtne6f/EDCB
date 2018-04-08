@@ -31,7 +31,7 @@ void COneServiceUtil::SetSID(
 {
 	if( this->SID != SID_ ){
 		this->pmtPID = 0xFFFF;
-		this->emmPIDMap.clear();
+		this->emmPIDList.clear();
 
 		this->dropCount.Clear();
 	}
@@ -244,9 +244,7 @@ void COneServiceUtil::AddTSBuff(
 							this->buff.insert(this->buff.end(), data + i, data + i + 188);
 						}else{
 							//EMMなら必要
-							map<WORD,WORD>::iterator itr;
-							itr = this->emmPIDMap.find(packet.PID);
-							if( itr != this->emmPIDMap.end() ){
+							if( std::binary_search(this->emmPIDList.begin(), this->emmPIDList.end(), packet.PID) ){
 								this->buff.insert(this->buff.end(), data + i, data + i + 188);
 							}
 						}
@@ -304,28 +302,21 @@ void COneServiceUtil::SetPmtPID(
 {
 	if( this->pmtPID != pmtPID_ && this->SID != 0xFFFF){
 		_OutputDebugString(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID_);
-		map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
-
-		CCreatePATPacket::PROGRAM_PID_INFO item;
-		item.PMTPID = pmtPID_;
-		item.SID = this->SID;
-		PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
-		
-		item.PMTPID = 0x0010;
-		item.SID = 0x00;
-		PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
-		
-		createPat.SetParam(TSID, &PIDMap);
+		vector<pair<WORD, WORD>> pidList;
+		pidList.push_back(pair<WORD, WORD>(0x10, 0));
+		pidList.push_back(pair<WORD, WORD>(pmtPID_, this->SID));
+		this->createPat.SetParam(TSID, pidList);
 
 		this->pmtPID = pmtPID_;
 	}
 }
 
 void COneServiceUtil::SetEmmPID(
-	const map<WORD,WORD>& PIDMap
+	const vector<WORD>& pidList
 	)
 {
-	this->emmPIDMap = PIDMap;
+	this->emmPIDList = pidList;
+	std::sort(this->emmPIDList.begin(), this->emmPIDList.end());
 }
 
 //ファイル保存を開始する
@@ -550,10 +541,11 @@ void COneServiceUtil::SetBonDriver(
 }
 
 void COneServiceUtil::SetPIDName(
-	const map<WORD, string>& pidName
+	WORD pid,
+	LPCSTR name
 	)
 {
-	this->dropCount.SetPIDName(&pidName);
+	this->dropCount.SetPIDName(pid, name);
 }
 
 void COneServiceUtil::SetNoLogScramble(

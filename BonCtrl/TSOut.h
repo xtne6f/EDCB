@@ -353,7 +353,7 @@ protected:
 	map<WORD, CPMTUtil> pmtUtilMap; //キーPMTのPID
 	CCATUtil catUtil;
 
-	map<WORD,WORD> needPIDMap; //キーPID
+	vector<WORD> needPIDList;
 
 	DWORD nextCtrlID;
 

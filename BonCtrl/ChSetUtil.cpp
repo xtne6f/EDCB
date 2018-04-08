@@ -201,7 +201,7 @@ void CChSetUtil::GetEpgCapService(
 	vector<EPGCAP_SERVICE_INFO>* chList
 	)
 {
-	map<ULONGLONG, ULONGLONG> addMap;
+	vector<pair<int, int>> addList;
 	map<DWORD, CH_DATA4>::const_iterator itrCh4;
 	for( itrCh4 = this->chText4.GetMap().begin(); itrCh4 != this->chText4.GetMap().end(); itrCh4++ ){
 		LONGLONG key = Create64Key(itrCh4->second.originalNetworkID, itrCh4->second.transportStreamID, itrCh4->second.serviceID);
@@ -209,18 +209,15 @@ void CChSetUtil::GetEpgCapService(
 		itrCh5 = this->chText5.GetMap().find(key);
 
 		if( itrCh5 != this->chText5.GetMap().end() ){
-			ULONGLONG addKey = ((ULONGLONG)itrCh4->second.space) << 32 | itrCh4->second.ch;
-			map<ULONGLONG, ULONGLONG>::iterator itrAdd;
-			itrAdd = addMap.find(addKey);
-			if( itrAdd == addMap.end() ){
-				if( itrCh5->second.epgCapFlag == TRUE ){
+			if( itrCh5->second.epgCapFlag == TRUE ){
+				if( std::find(addList.begin(), addList.end(), std::make_pair(itrCh4->second.space, itrCh4->second.ch)) == addList.end() ){
 					EPGCAP_SERVICE_INFO item;
 					item.ONID = itrCh5->second.originalNetworkID;
 					item.TSID = itrCh5->second.transportStreamID;
 					item.SID = itrCh5->second.serviceID;
 					chList->push_back(item);
 
-					addMap.insert(pair<ULONGLONG, ULONGLONG>(addKey,addKey));
+					addList.push_back(std::make_pair(itrCh4->second.space, itrCh4->second.ch));
 				}
 			}
 		}

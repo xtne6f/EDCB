@@ -19,11 +19,10 @@ public:
 	void SetBonDriver(const wstring& bonDriver);
 	void SetNoLog(BOOL noLogDrop, BOOL noLogScramble);
 
-	void SetPIDName(
-		const map<WORD, string>* pidName_
-		);
+	void SetPIDName(WORD pid, LPCSTR name);
 protected:
 	struct DROP_INFO {
+		WORD PID;
 		BYTE lastCounter;
 		BOOL duplicateFlag;
 		ULONGLONG total;
@@ -31,7 +30,7 @@ protected:
 		ULONGLONG scramble;
 	};
 
-	map<WORD, DROP_INFO> infoMap;
+	vector<DROP_INFO> infoList;
 	ULONGLONG drop;
 	ULONGLONG scramble;
 	string log;
@@ -41,7 +40,7 @@ protected:
 	float signalLv;
 	wstring bonFile;
 
-	map<WORD, string> pidName;
+	vector<pair<WORD, string>> pidName;
 protected:
 	void CheckCounter(const BYTE* packet, DROP_INFO* info);
 

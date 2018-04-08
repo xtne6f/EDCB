@@ -304,28 +304,26 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		return;
 	}
 	//無効PAT送って次回送信時にリセットされるようにする
-	BYTE endBuff[188*512];
-	memset(endBuff, 0xFF, 188*512);
-	map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
+	memset(buff, 0xFF, sizeof(buff));
 	CCreatePATPacket patUtil;
-	patUtil.SetParam(1, &PIDMap);
+	patUtil.SetParam(1, vector<pair<WORD, WORD>>());
 	BYTE* patBuff;
 	DWORD patSize=0;
 	patUtil.GetPacket(&patBuff, &patSize);
 
-	memcpy(endBuff, patBuff, patSize);
-	for( int i=patSize; i+3<188*512; i+=188){
-		endBuff[i] = 0x47;
-		endBuff[i+1] = 0x1F;
-		endBuff[i+2] = 0xFF;
-		endBuff[i+3] = 0x10;
+	memcpy(buff, patBuff, patSize);
+	for( DWORD i=patSize; i+3<sizeof(buff); i+=188 ){
+		buff[i] = 0x47;
+		buff[i+1] = 0x1F;
+		buff[i+2] = 0xFF;
+		buff[i+3] = 0x10;
 	}
 
 	if( sys->sendUdpIP.empty() == false ){
-		sys->sendUdp.SendData(endBuff, 188*512);
+		sys->sendUdp.SendData(buff, sizeof(buff));
 	}
 	if( sys->sendTcpIP.empty() == false ){
-		sys->sendTcp.SendData(endBuff, 188*512);
+		sys->sendTcp.SendData(buff, sizeof(buff));
 	}
 }
 

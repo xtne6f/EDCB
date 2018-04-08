@@ -189,7 +189,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						this->decodeBuff.insert(this->decodeBuff.end(), data + i, data + i + 188);
 					}else{
 						//指定サービス
-						if( packet.PID <= 0x30 || this->needPIDMap.count(packet.PID) != 0 ){
+						if( packet.PID <= 0x30 || std::binary_search(this->needPIDList.begin(), this->needPIDList.end(), packet.PID) ){
 							if( packet.PID == 0x0000 ){
 								//PATなので必要なサービスのみに絞る
 								BYTE* patBuff = NULL;
@@ -294,63 +294,20 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 
 void CTSOut::CheckNeedPID()
 {
-	this->needPIDMap.clear();
+	this->needPIDList.clear();
 	this->serviceOnlyFlag = TRUE;
 	//PAT作成用のPMTリスト
-	map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
+	vector<pair<WORD, WORD>> pidList;
 	//NITのPID追加しておく
-	PIDMap[0x10].PMTPID = 0x10;
-	PIDMap[0x10].SID = 0;
-
-	map<WORD, string> pidName;
-	map<WORD, CPMTUtil>::iterator itrPmt;
-	for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
-		string name = "";
-		Format(name, "PMT(ServiceID 0x%04X)", itrPmt->second.program_number);
-		pidName.insert(pair<WORD, string>(itrPmt->first, name));
-		map<WORD, WORD>::iterator itrPID;
-		for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
-			switch(itrPID->second){
-			case 0x00:
-				name = "ECM";
-				break;
-			case 0x02:
-				name = "MPEG2 VIDEO";
-				break;
-			case 0x0F:
-				name = "MPEG2 AAC";
-				break;
-			case 0x1B:
-				name = "MPEG4 VIDEO";
-				break;
-			case 0x04:
-				name = "MPEG2 AUDIO";
-				break;
-			case 0x24:
-				name = "HEVC VIDEO";
-				break;
-			case 0x06:
-				name = "\x8e\x9a\x96\x8b"; //(CP932)"字幕"
-				break;
-			case 0x0D:
-				name = "\x83\x66\x81\x5b\x83\x5e\x83\x4a\x83\x8b\x81\x5b\x83\x5a\x83\x8b"; //(CP932)"データカルーセル"
-				break;
-			default:
-				Format(name, "stream_type 0x%0X", itrPID->second);
-				break;
-			}
-			pidName.insert(pair<WORD, string>(itrPID->first, name));
-		}
-		pidName.insert(pair<WORD, string>(itrPmt->second.PCR_PID, "PCR"));
-		
-	}
+	pidList.push_back(pair<WORD, WORD>(0x10, 0));
 
 	//EMMのPID
-	{
-		map<WORD,WORD>::iterator itrPID;
-		for( itrPID = catUtil.PIDList.begin(); itrPID != catUtil.PIDList.end(); itrPID++ ){
-			this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
-			pidName.insert(pair<WORD, string>(itrPID->first, "EMM"));
+	for( vector<WORD>::const_iterator itr = this->catUtil.GetPIDList().begin(); itr != this->catUtil.GetPIDList().end(); itr++ ){
+		if( std::find(this->needPIDList.begin(), this->needPIDList.end(), *itr) == this->needPIDList.end() ){
+			this->needPIDList.push_back(*itr);
+		}
+		for( auto itrService = this->serviceUtilMap.begin(); itrService != this->serviceUtilMap.end(); itrService++ ){
+			itrService->second->SetPIDName(*itr, "EMM");
 		}
 	}
 
@@ -360,47 +317,74 @@ void CTSOut::CheckNeedPID()
 		if( itrService->second->GetSID() == 0xFFFF ){
 			//全サービス対象
 			this->serviceOnlyFlag = FALSE;
-			for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
-				//PAT作成用のPMTリスト作成
-				CCreatePATPacket::PROGRAM_PID_INFO item;
-				item.PMTPID = itrPmt->first;
-				item.SID = itrPmt->second.program_number;
-				PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
-
-				//PMT記載のPIDを登録
-				this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, (WORD)0));
-				map<WORD,WORD>::iterator itrPID;
-				for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
-					this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
-				}
-			}
-		}else{
-			for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
-				if( itrService->second->GetSID() == itrPmt->second.program_number ){
+		}
+		for( auto itrPmt = this->pmtUtilMap.cbegin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
+			if( itrService->second->GetSID() == 0xFFFF || itrService->second->GetSID() == itrPmt->second.GetProgramNumber() ){
+				if( itrService->second->GetSID() != 0xFFFF ){
 					//PMT発見
 					itrService->second->SetPmtPID(this->lastTSID, itrPmt->first);
-					itrService->second->SetEmmPID(catUtil.PIDList);
+					itrService->second->SetEmmPID(this->catUtil.GetPIDList());
+				}
+				//PAT作成用のPMTリスト作成
+				auto itr = std::lower_bound(pidList.begin() + 1, pidList.end(), pair<WORD, WORD>(itrPmt->first, 0));
+				if( itr == pidList.end() || itr->first != itrPmt->first ){
+					pidList.insert(itr, std::make_pair(itrPmt->first, itrPmt->second.GetProgramNumber()));
+				}
 
-
-					//PAT作成用のPMTリスト作成
-					CCreatePATPacket::PROGRAM_PID_INFO item2;
-					item2.PMTPID = itrPmt->first;
-					item2.SID = itrPmt->second.program_number;
-					PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item2.PMTPID,item2));
-					//_OutputDebugString(L"0x%04x, 0x%04x", itrPmt->first,itrPmt->second->program_number);
-					//PMT記載のPIDを登録
-					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, (WORD)0));
-					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->second.PCR_PID, (WORD)0));
-					map<WORD,WORD>::iterator itrPID;
-					for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
-						this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
+				//PMT記載のPIDを登録
+				if( std::find(this->needPIDList.begin(), this->needPIDList.end(), itrPmt->first) == this->needPIDList.end() ){
+					this->needPIDList.push_back(itrPmt->first);
+				}
+				if( std::find(this->needPIDList.begin(), this->needPIDList.end(), itrPmt->second.GetPcrPID()) == this->needPIDList.end() ){
+					this->needPIDList.push_back(itrPmt->second.GetPcrPID());
+				}
+				for( auto itrPID = itrPmt->second.GetPIDTypeList().cbegin(); itrPID != itrPmt->second.GetPIDTypeList().end(); itrPID++ ){
+					if( std::find(this->needPIDList.begin(), this->needPIDList.end(), itrPID->first) == this->needPIDList.end() ){
+						this->needPIDList.push_back(itrPID->first);
 					}
 				}
 			}
+
+			itrService->second->SetPIDName(itrPmt->second.GetPcrPID(), "PCR");
+			string name;
+			for( auto itrPID = itrPmt->second.GetPIDTypeList().cbegin(); itrPID != itrPmt->second.GetPIDTypeList().end(); itrPID++ ){
+				switch( itrPID->second ){
+				case 0x00:
+					name = "ECM";
+					break;
+				case 0x02:
+					name = "MPEG2 VIDEO";
+					break;
+				case 0x0F:
+					name = "MPEG2 AAC";
+					break;
+				case 0x1B:
+					name = "MPEG4 VIDEO";
+					break;
+				case 0x04:
+					name = "MPEG2 AUDIO";
+					break;
+				case 0x24:
+					name = "HEVC VIDEO";
+					break;
+				case 0x06:
+					name = "\x8e\x9a\x96\x8b"; //(CP932)"字幕"
+					break;
+				case 0x0D:
+					name = "\x83\x66\x81\x5b\x83\x5e\x83\x4a\x83\x8b\x81\x5b\x83\x5a\x83\x8b"; //(CP932)"データカルーセル"
+					break;
+				default:
+					Format(name, "stream_type 0x%0X", itrPID->second);
+					break;
+				}
+				itrService->second->SetPIDName(itrPID->first, name.c_str());
+			}
+			Format(name, "PMT(ServiceID 0x%04X)", itrPmt->second.GetProgramNumber());
+			itrService->second->SetPIDName(itrPmt->first, name.c_str());
 		}
-		itrService->second->SetPIDName(pidName);
 	}
-	this->patUtil.SetParam(this->lastTSID, &PIDMap);
+	std::sort(this->needPIDList.begin(), this->needPIDList.end());
+	this->patUtil.SetParam(this->lastTSID, pidList);
 }
 
 //EPGデータの保存を開始する

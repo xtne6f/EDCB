@@ -68,7 +68,7 @@ public:
 		);
 
 	void SetEmmPID(
-		const map<WORD,WORD>& PIDMap
+		const vector<WORD>& pidList
 		);
 
 	//ファイル保存を開始する
@@ -174,7 +174,8 @@ public:
 		const wstring& bonDriver
 		);
 	void SetPIDName(
-		const map<WORD, string>& pidName
+		WORD pid,
+		LPCSTR name
 		);
 	void SetNoLogScramble(
 		BOOL noLog
@@ -198,7 +199,7 @@ protected:
 	CCreatePMTPacket createPmt;
 
 	WORD pmtPID;
-	map<WORD,WORD> emmPIDMap;
+	vector<WORD> emmPIDList;
 
 	CDropCount dropCount;
 
