@@ -869,20 +869,22 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						else {
 							infoPath.append(fs_path(recCtrl.filePath).filename().concat(L".err").native());
 						}
-						map<WORD, string> pidNameMap;
+						vector<pair<WORD, string>> pidNameList;
 						TVTest::ServiceInfo si;
 						for (int i = 0; m_pApp->GetServiceInfo(i, &si); ++i) {
 							string name;
 							Format(name, "0x%04X-Video", si.ServiceID);
-							pidNameMap.insert(std::make_pair(si.VideoPID, name));
+							pidNameList.push_back(std::make_pair(si.VideoPID, name));
 							for (int j = 0; j < si.NumAudioPIDs; ++j) {
 								Format(name, "0x%04X-Audio(0x%02X)", si.ServiceID, si.AudioComponentType[j]);
-								pidNameMap.insert(std::make_pair(si.AudioPID[j], name));
+								pidNameList.push_back(std::make_pair(si.AudioPID[j], name));
 							}
 							Format(name, "0x%04X-Subtitle", si.ServiceID);
-							pidNameMap.insert(std::make_pair(si.SubtitlePID, name));
+							pidNameList.push_back(std::make_pair(si.SubtitlePID, name));
 						}
-						recCtrl.dropCount.SetPIDName(&pidNameMap);
+						for (size_t i = pidNameList.size(); i > 0; --i) {
+							recCtrl.dropCount.SetPIDName(pidNameList[i - 1].first, pidNameList[i - 1].second.c_str());
+						}
 						recCtrl.dropCount.SetBonDriver(m_currentBonDriver);
 						recCtrl.dropCount.SaveLog(infoPath.native());
 					}

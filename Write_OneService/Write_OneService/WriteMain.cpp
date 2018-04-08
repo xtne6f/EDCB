@@ -248,30 +248,25 @@ void CWriteMain::CheckNeedPID()
 	for( WORD i = 0; i <= 0x30; AddNeedPID(i++) );
 
 	//PAT作成用のPMTリスト
-	map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> pidMap;
+	vector<pair<WORD, WORD>> pidList;
 	//NITのPID追加しておく
-	CCreatePATPacket::PROGRAM_PID_INFO item;
-	item.PMTPID = 0x10;
-	item.SID = 0;
-	pidMap[item.PMTPID] = item;
+	pidList.push_back(pair<WORD, WORD>(0x10, 0));
 
 	//EMMのPID
-	for( map<WORD, WORD>::const_iterator itr = this->catUtil.PIDList.begin(); itr != this->catUtil.PIDList.end(); itr++ ){
-		AddNeedPID(itr->first);
+	for( vector<WORD>::const_iterator itr = this->catUtil.GetPIDList().begin(); itr != this->catUtil.GetPIDList().end(); itr++ ){
+		AddNeedPID(*itr);
 	}
 	for( map<WORD, CPMTUtil>::const_iterator itr = this->pmtUtilMap.begin(); itr != this->pmtUtilMap.end(); itr++ ){
-		if( itr->second.program_number == this->targetSID ){
+		if( itr->second.GetProgramNumber() == this->targetSID ){
 			//PAT作成用のPMTリスト作成
-			item.PMTPID = itr->first;
-			item.SID = itr->second.program_number;
-			pidMap[item.PMTPID] = item;
+			pidList.push_back(std::make_pair(itr->first, itr->second.GetProgramNumber()));
 			//指定サービスのPMT発見。PMT記載のPIDを登録
 			AddNeedPID(itr->first);
-			AddNeedPID(itr->second.PCR_PID);
-			for( map<WORD,WORD>::const_iterator jtr = itr->second.PIDList.begin(); jtr != itr->second.PIDList.end(); jtr++ ){
+			AddNeedPID(itr->second.GetPcrPID());
+			for( auto jtr = itr->second.GetPIDTypeList().cbegin(); jtr != itr->second.GetPIDTypeList().end(); jtr++ ){
 				AddNeedPID(jtr->first);
 			}
 		}
 	}
-	this->patUtil.SetParam(this->lastTSID, &pidMap);
+	this->patUtil.SetParam(this->lastTSID, pidList);
 }
