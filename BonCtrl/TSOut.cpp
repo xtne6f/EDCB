@@ -20,6 +20,7 @@ CTSOut::CTSOut(void)
 
 	this->nextCtrlID = 1;
 	this->noLogScramble = FALSE;
+	this->parseEpgPostProcess = FALSE;
 }
 
 
@@ -204,32 +205,8 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 							}
 						}
 					}
-					if( this->epgFile != NULL ){
-						if( packet.PID == 0 && packet.payload_unit_start_indicator ){
-							if( this->epgFileState == EPG_FILE_ST_NONE ){
-								this->epgFileState = EPG_FILE_ST_PAT;
-							}else if( this->epgFileState == EPG_FILE_ST_PAT ){
-								this->epgFileState = EPG_FILE_ST_TOT;
-								//番組情報が不足しないよう改めて蓄積状態をリセット
-								this->epgUtil.ClearSectionStatus();
-								//TOTを前倒しで書き込むための場所を確保
-								BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
-								memset(nullData + 4, 0xFF, 184);
-								this->epgFileTotPos = _ftelli64(this->epgFile.get());
-								fwrite(nullData, 1, 188, this->epgFile.get());
-							}
-						}
-						//まずPAT、次に(あれば)TOTを書き込む。この処理は必須ではないが番組情報をより確実かつ効率的に読み出せる
-						if( packet.PID == 0x14 && this->epgFileState == EPG_FILE_ST_TOT ){
-							this->epgFileState = EPG_FILE_ST_ALL;
-							if( this->epgFileTotPos >= 0 ){
-								_fseeki64(this->epgFile.get(), this->epgFileTotPos, SEEK_SET);
-							}
-							fwrite(data + i, 1, 188, this->epgFile.get());
-							_fseeki64(this->epgFile.get(), 0, SEEK_END);
-						}else if( packet.PID == 0 && this->epgFileState >= EPG_FILE_ST_PAT || packet.PID <= 0x30 && this->epgFileState >= EPG_FILE_ST_TOT ){
-							fwrite(data + i, 1, 188, this->epgFile.get());
-						}
+					if( packet.PID <= 0x30 && this->parseEpgPostProcess == FALSE ){
+						ParseEpgPacket(data + i, packet);
 					}
 				}
 			}
@@ -274,9 +251,12 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	}
 	
 	//デコード済みのデータを解析させる
-	{
+	if( this->parseEpgPostProcess ){
 		for( DWORD i=0; i<decodeSize; i+=188 ){
-			this->epgUtil.AddTSPacket(decodeData + i, 188);
+			CTSPacketUtil packet;
+			if( packet.Set188TS(decodeData + i, 188) && packet.PID <= 0x30 ){
+				ParseEpgPacket(decodeData + i, packet);
+			}
 		}
 	}
 
@@ -290,6 +270,38 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 			});
 		}
 	}
+}
+
+void CTSOut::ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet)
+{
+	if( this->epgFile ){
+		if( packet.PID == 0 && packet.payload_unit_start_indicator ){
+			if( this->epgFileState == EPG_FILE_ST_NONE ){
+				this->epgFileState = EPG_FILE_ST_PAT;
+			}else if( this->epgFileState == EPG_FILE_ST_PAT ){
+				this->epgFileState = EPG_FILE_ST_TOT;
+				//番組情報が不足しないよう改めて蓄積状態をリセット
+				this->epgUtil.ClearSectionStatus();
+				//TOTを前倒しで書き込むための場所を確保
+				BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
+				memset(nullData + 4, 0xFF, 184);
+				this->epgFileTotPos = _ftelli64(this->epgFile.get());
+				fwrite(nullData, 1, 188, this->epgFile.get());
+			}
+		}
+		//まずPAT、次に(あれば)TOTを書き込む。この処理は必須ではないが番組情報をより確実かつ効率的に読み出せる
+		if( packet.PID == 0x14 && this->epgFileState == EPG_FILE_ST_TOT ){
+			this->epgFileState = EPG_FILE_ST_ALL;
+			if( this->epgFileTotPos >= 0 ){
+				_fseeki64(this->epgFile.get(), this->epgFileTotPos, SEEK_SET);
+			}
+			fwrite(data, 1, 188, this->epgFile.get());
+			_fseeki64(this->epgFile.get(), 0, SEEK_END);
+		}else if( (packet.PID == 0 && this->epgFileState >= EPG_FILE_ST_PAT) || this->epgFileState >= EPG_FILE_ST_TOT ){
+			fwrite(data, 1, 188, this->epgFile.get());
+		}
+	}
+	this->epgUtil.AddTSPacket(data, 188);
 }
 
 void CTSOut::CheckNeedPID()
@@ -1042,4 +1054,13 @@ void CTSOut::SetNoLogScramble(
 		itr->second->SetNoLogScramble(noLog);
 	}
 	noLogScramble = noLog;
+}
+
+void CTSOut::SetParseEpgPostProcess(
+	BOOL parsePost
+	)
+{
+	CBlockLock lock(&this->objLock);
+
+	parseEpgPostProcess = parsePost;
 }

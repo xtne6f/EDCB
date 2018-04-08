@@ -329,6 +329,9 @@ public:
 		BOOL noLog
 		);
 
+	void SetParseEpgPostProcess(
+		BOOL parsePost
+		);
 protected:
 	//objLock->epgUtilLock‚Ì‡‚ÉƒƒbƒN‚·‚é
 	recursive_mutex_ objLock;
@@ -365,7 +368,10 @@ protected:
 
 	wstring bonFile;
 	BOOL noLogScramble;
+	BOOL parseEpgPostProcess;
 protected:
+	void ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet);
+
 	void CheckNeedPID();
 
 	DWORD GetNextID();

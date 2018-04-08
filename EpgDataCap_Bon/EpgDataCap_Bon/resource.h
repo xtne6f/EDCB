@@ -89,7 +89,7 @@
 #define IDC_EDIT_REC_FILENAME           1038
 #define IDC_BUTTON_CHK_VIDEO            1039
 #define IDC_CHECK_NO_LOG_SCRAMBLE       1039
-#define IDC_BUTTON_CHK_ALL2             1040
+#define IDC_CHECK_PARSE_EPG_POST_PROC   1040
 #define IDC_BUTTON_CHK_CLEAR            1040
 #define IDC_EDIT_CH                     1041
 #define IDC_BUTTON1                     1042

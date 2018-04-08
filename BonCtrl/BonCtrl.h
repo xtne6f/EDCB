@@ -37,9 +37,11 @@ public:
 		LPCWSTR bonDriverFolderPath
 		);
 
-	void SetEMMMode(BOOL enable);
+	void SetEMMMode(BOOL enable) { this->tsOut.SetEmm(enable); }
 
-	void SetNoLogScramble(BOOL noLog);
+	void SetNoLogScramble(BOOL noLog) { this->tsOut.SetNoLogScramble(noLog); }
+
+	void SetParseEpgPostProcess(BOOL parsePost) { this->tsOut.SetParseEpgPostProcess(parsePost); }
 
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
