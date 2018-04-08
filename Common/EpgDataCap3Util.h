@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Windows.h>
 #include "EpgDataCap3Def.h"
-#include "StructDef.h"
 
 //DLL‚Ì‰Šú‰»
 //–ß‚è’lF

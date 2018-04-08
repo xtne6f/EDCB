@@ -6,7 +6,6 @@
 #include "EpgDataCap_Bon.h"
 #include "EpgDataCap_BonDlg.h"
 
-#include "CmdLineUtil.h"
 #include "../../Common/ThreadUtil.h"
 #include <io.h>
 #include <fcntl.h>
@@ -193,39 +192,54 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 	SetUnhandledExceptionFilter(TopLevelExceptionFilter);
 #endif
 
-	// コマンドオプションを解析
-	CCmdLineUtil cCmdUtil;
-	int argc;
-	LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
-	if (argv != NULL) {
-		for (int i = 1; i < argc; i++) {
-			BOOL bFlag = argv[i][0] == L'-' || argv[i][0] == L'/' ? TRUE : FALSE;
-			cCmdUtil.ParseParam(&argv[i][bFlag ? 1 : 0], bFlag, i == argc - 1 ? TRUE : FALSE);
-		}
-		LocalFree(argv);
-	}
-
 	CEpgDataCap_BonDlg dlg;
-
-	map<wstring, wstring>::iterator itr;
 	dlg.SetIniMin(FALSE);
 	dlg.SetIniView(TRUE);
 	dlg.SetIniNW(TRUE);
-	for( itr = cCmdUtil.m_CmdList.begin(); itr != cCmdUtil.m_CmdList.end(); itr++ ){
-		if( CompareNoCase(itr->first, L"d") == 0 ){
-			dlg.SetInitBon(itr->second.c_str());
-			OutputDebugString(itr->second.c_str());
-		}else if( CompareNoCase(itr->first, L"min") == 0 ){
-			dlg.SetIniMin(TRUE);
-		}else if( CompareNoCase(itr->first, L"noview") == 0 ){
-			dlg.SetIniView(FALSE);
-		}else if( CompareNoCase(itr->first, L"nonw") == 0 ){
-			dlg.SetIniNW(FALSE);
-		}else if( CompareNoCase(itr->first, L"nwudp") == 0 ){
-			dlg.SetIniNWUDP(TRUE);
-		}else if( CompareNoCase(itr->first, L"nwtcp") == 0 ){
-			dlg.SetIniNWTCP(TRUE);
+
+	// コマンドオプションを解析
+	int argc;
+	LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
+	if (argv != NULL) {
+		LPCWSTR curr = L"";
+		LPCWSTR optUpperD = NULL;
+		LPCWSTR optLowerD = NULL;
+		for (int i = 1; i < argc; i++) {
+			if (argv[i][0] == L'-' || argv[i][0] == L'/') {
+				curr = L"";
+				if (wcscmp(argv[i] + 1, L"D") == 0 && optUpperD == NULL) {
+					curr = argv[i] + 1;
+					optUpperD = L"";
+				} else if (wcscmp(argv[i] + 1, L"d") == 0 && optLowerD == NULL) {
+					curr = argv[i] + 1;
+					optLowerD = L"";
+				} else if (_wcsicmp(argv[i] + 1, L"min") == 0) {
+					dlg.SetIniMin(TRUE);
+				} else if (_wcsicmp(argv[i] + 1, L"noview") == 0) {
+					dlg.SetIniView(FALSE);
+				} else if (_wcsicmp(argv[i] + 1, L"nonw") == 0) {
+					dlg.SetIniNW(FALSE);
+				} else if (_wcsicmp(argv[i] + 1, L"nwudp") == 0) {
+					dlg.SetIniNWUDP(TRUE);
+				} else if (_wcsicmp(argv[i] + 1, L"nwtcp") == 0) {
+					dlg.SetIniNWTCP(TRUE);
+				}
+			} else if (wcscmp(curr, L"D") == 0 && optUpperD && optUpperD[0] == L'\0') {
+				optUpperD = argv[i];
+			} else if (wcscmp(curr, L"d") == 0 && optLowerD && optLowerD[0] == L'\0') {
+				optLowerD = argv[i];
+			}
 		}
+		if (optUpperD) {
+			dlg.SetInitBon(optUpperD);
+			OutputDebugString(optUpperD);
+		}
+		// 原作の挙動に合わせるため
+		if (optLowerD) {
+			dlg.SetInitBon(optLowerD);
+			OutputDebugString(optLowerD);
+		}
+		LocalFree(argv);
 	}
 
 
@@ -246,9 +260,9 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 	return FALSE;
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
-	SetDllDirectory(TEXT(""));
+	SetDllDirectory(L"");
 	StartDebugLog();
 	//メインスレッドに対するCOMの初期化
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);

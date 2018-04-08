@@ -1,3 +1,6 @@
+--このサイズ以上のときページ圧縮する(nilのとき常に非圧縮)
+GZIP_THRESHOLD_BYTE=4096
+
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
 function ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
   local s, v = '', (type(onidOrEpg)=='table' and onidOrEpg or edcb.SearchEpg(onidOrEpg, tsid, sid, eid))
@@ -236,20 +239,55 @@ end
 --レスポンスを生成する
 function Response(code,ctype,charset,cl)
   return 'HTTP/1.1 '..code..' '..mg.get_response_code_text(code)
+    ..'\r\nX-Frame-Options: SAMEORIGIN'
     ..(ctype and '\r\nX-Content-Type-Options: nosniff\r\nContent-Type: '..ctype..(charset and '; charset='..charset or '') or '')
     ..(cl and '\r\nContent-Length: '..cl or '')
     ..(mg.keep_alive(not not cl) and '\r\n' or '\r\nConnection: close\r\n')
 end
 
---可能ならコンテンツをgzip圧縮する(lua-zlib(zlib.dll)が必要)
-function Deflate(ct)
-  for k,v in pairs(mg.request_info.http_headers) do
-    if k:lower()=='accept-encoding' and v:lower():find('gzip') then
-      local status,zlib = pcall(require,'zlib')
-      return status and zlib.deflate(6,31)(ct,'finish') or nil
+--コンテンツを連結するオブジェクトを生成する
+function CreateContentBuilder(thresh)
+  local self={ct={''},len=0,thresh_=thresh}
+  function self:Append(s)
+    if self.thresh_ and self.len+#s>=self.thresh_ and not self.stream_ then
+      self.stream_=true
+      --可能ならコンテンツをgzip圧縮する(lua-zlib(zlib.dll)が必要)
+      for k,v in pairs(mg.request_info.http_headers) do
+        if k:lower()=='accept-encoding' and v:lower():find('gzip') then
+          local status,zlib=pcall(require,'zlib')
+          if status then
+            self.stream_=zlib.deflate(6,31)
+            self.ct={'',(self.stream_(table.concat(self.ct)))}
+            self.len=#self.ct[2]
+            self.gzip=true
+          end
+          break
+        end
+      end
+    end
+    s=self.gzip and self.stream_(s) or s
+    if #s>0 then
+      self.ct[#self.ct+1]=s
+      self.len=self.len+#s
     end
   end
-  return nil
+  function self:Finish()
+    if self.gzip and self.stream_ then
+      self.ct[#self.ct+1]=self.stream_()
+      self.len=self.len+#self.ct[#self.ct]
+    end
+    self.stream_=nil
+  end
+  function self:Pop(s)
+    self:Finish()
+    self.ct[1]=s or ''
+    s=table.concat(self.ct)
+    self.ct={''}
+    self.len=0
+    self.gzip=nil
+    return s
+  end
+  return self
 end
 
 --POSTメッセージボディをすべて読む

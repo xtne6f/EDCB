@@ -282,18 +282,19 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				SetThreadExecutionState(ES_SYSTEM_REQUIRED);
 
 				int iLine = Edit_GetFirstVisibleLine(GetDlgItem(IDC_EDIT_STATUS));
-				float signal = 0;
-				DWORD space = 0;
-				DWORD ch = 0;
+				float signal;
+				int space;
+				int ch;
 				ULONGLONG drop = 0;
 				ULONGLONG scramble = 0;
 				vector<NW_SEND_INFO> udpSendList = this->main.GetSendUDPList();
 				vector<NW_SEND_INFO> tcpSendList = this->main.GetSendTCPList();
 
-				BOOL ret = this->main.GetViewStatusInfo(&signal, &space, &ch, &drop, &scramble);
+				this->main.GetViewStatusInfo(&signal, &space, &ch);
+				this->main.GetErrCount(&drop, &scramble);
 
 				wstring statusLog = L"";
-				if(ret==TRUE){
+				if( space >= 0 && ch >= 0 ){
 					Format(statusLog, L"Signal: %.02f Drop: %I64d Scramble: %I64d  space: %d ch: %d",signal, drop, scramble, space, ch);
 				}else{
 					Format(statusLog, L"Signal: %.02f Drop: %I64d Scramble: %I64d",signal, drop, scramble);

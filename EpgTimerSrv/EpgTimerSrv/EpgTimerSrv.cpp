@@ -46,31 +46,28 @@ void StopDebugLog()
 }
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance,
-                     HINSTANCE hPrevInstance,
-                     LPTSTR    lpCmdLine,
-                     int       nCmdShow)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
-	SetDllDirectory(_T(""));
+	SetDllDirectory(L"");
 
-	TCHAR szTask[] = _T("/task");
+	WCHAR szTask[] = L"/task";
 	if( _wcsicmp(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
 		//Taskモードを強制する
 		lpCmdLine = szTask;
 	}
-	if( lpCmdLine[0] == _T('-') || lpCmdLine[0] == _T('/') ){
-		if( _tcsicmp(_T("install"), lpCmdLine + 1) == 0 ){
+	if( lpCmdLine[0] == L'-' || lpCmdLine[0] == L'/' ){
+		if( _wcsicmp(L"install", lpCmdLine + 1) == 0 ){
 			return 0;
-		}else if( _tcsicmp(_T("remove"), lpCmdLine + 1) == 0 ){
+		}else if( _wcsicmp(L"remove", lpCmdLine + 1) == 0 ){
 			return 0;
-		}else if( _tcsicmp(_T("setting"), lpCmdLine + 1) == 0 ){
+		}else if( _wcsicmp(L"setting", lpCmdLine + 1) == 0 ){
 			//設定ダイアログを表示する
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvSetting setting;
 			setting.ShowDialog();
 			CoUninitialize();
 			return 0;
-		}else if( _tcsicmp(_T("task"), lpCmdLine + 1) == 0 ){
+		}else if( _wcsicmp(L"task", lpCmdLine + 1) == 0 ){
 			//Taskモード
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvMain::TaskMain();
@@ -90,7 +87,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 				CEpgTimerSrvMain* pMain = new CEpgTimerSrvMain;
 				if( pMain->Main(false) == false ){
-					OutputDebugString(_T("_tWinMain(): Failed to start\r\n"));
+					OutputDebugString(L"_tWinMain(): Failed to start\r\n");
 				}
 				delete pMain;
 				CoUninitialize();
@@ -109,7 +106,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 					{ NULL, NULL }
 				};
 				if( StartServiceCtrlDispatcher(dispatchTable) == FALSE ){
-					OutputDebugString(_T("_tWinMain(): StartServiceCtrlDispatcher failed\r\n"));
+					OutputDebugString(L"_tWinMain(): StartServiceCtrlDispatcher failed\r\n");
 				}
 				StopDebugLog();
 			}
@@ -128,14 +125,14 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			CloseServiceHandle(hScm);
 		}
 		if( started == false ){
-			OutputDebugString(_T("_tWinMain(): Failed to start\r\n"));
+			OutputDebugString(L"_tWinMain(): Failed to start\r\n");
 		}
 	}
 
 	return 0;
 }
 
-void WINAPI service_main(DWORD dwArgc, LPTSTR *lpszArgv)
+void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv)
 {
 	g_hStatusHandle = RegisterServiceCtrlHandlerEx(SERVICE_NAME, service_ctrl, NULL);
 	if( g_hStatusHandle != NULL ){
@@ -149,7 +146,7 @@ void WINAPI service_main(DWORD dwArgc, LPTSTR *lpszArgv)
 		ReportServiceStatus(SERVICE_RUNNING, SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN | SERVICE_ACCEPT_POWEREVENT, 0, 0);
 
 		if( g_pMain->Main(true) == false ){
-			OutputDebugString(_T("service_main(): Failed to start\r\n"));
+			OutputDebugString(L"service_main(): Failed to start\r\n");
 		}
 		delete g_pMain;
 		g_pMain = NULL;
@@ -170,13 +167,13 @@ DWORD WINAPI service_ctrl(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData
 		case SERVICE_CONTROL_POWEREVENT:
 			if( dwEventType == PBT_APMQUERYSUSPEND ){
 				//Vista以降は呼ばれない
-				OutputDebugString(_T("PBT_APMQUERYSUSPEND\r\n"));
+				OutputDebugString(L"PBT_APMQUERYSUSPEND\r\n");
 				if( g_pMain->IsSuspendOK() == false ){
-					OutputDebugString(_T("BROADCAST_QUERY_DENY\r\n"));
+					OutputDebugString(L"BROADCAST_QUERY_DENY\r\n");
 					return BROADCAST_QUERY_DENY;
 				}
 			}else if( dwEventType == PBT_APMRESUMESUSPEND ){
-				OutputDebugString(_T("PBT_APMRESUMESUSPEND\r\n"));
+				OutputDebugString(L"PBT_APMRESUMESUSPEND\r\n");
 			}
 			return NO_ERROR;
 		default:

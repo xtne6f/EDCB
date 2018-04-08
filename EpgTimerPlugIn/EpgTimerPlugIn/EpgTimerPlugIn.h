@@ -24,6 +24,7 @@ private:
 	CSendCtrlCmd cmd;
 	BOOL fullScreen;
 	BOOL showNormal;
+	BOOL grantServerAccess;
 	CStreamCtrlDlg ctrlDlg;
 	CMD_STREAM cmdCapture;
 	CMD_STREAM resCapture;

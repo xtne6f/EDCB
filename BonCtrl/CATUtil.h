@@ -7,12 +7,10 @@
 class CCATUtil
 {
 public:
-	map<WORD,WORD> PIDList;
-
-public:
 	CCATUtil(void);
 
 	BOOL AddPacket(CTSPacketUtil* packet);
+	const vector<WORD>& GetPIDList() const { return PIDList; }
 
 protected:
 	CTSBuffUtil buffUtil;
@@ -24,9 +22,9 @@ protected:
 	BYTE current_next_indicator;
 	BYTE section_number;
 	BYTE last_section_number;
+	vector<WORD> PIDList;
 
 protected:
-	void Clear();
 	BOOL DecodeCAT(BYTE* data, DWORD dataSize);
 };
 

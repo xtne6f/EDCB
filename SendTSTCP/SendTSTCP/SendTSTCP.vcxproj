@@ -168,7 +168,6 @@
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\ThreadUtil.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="SendTSTCP.h" />
     <ClInclude Include="SendTSTCPMain.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />

@@ -8,7 +8,7 @@ class CSetDlgAppBtn
 public:
 	CSetDlgAppBtn();   // 標準コンストラクター
 	~CSetDlgAppBtn();
-	BOOL Create(LPCTSTR lpszTemplateName, HWND hWndParent);
+	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 

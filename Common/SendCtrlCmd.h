@@ -58,13 +58,6 @@ public:
 		DWORD timeOut
 		);
 
-	//Program.txtを追加で再読み込みする
-	//戻り値：
-	// エラーコード
-	DWORD SendAddloadReserve(){
-		return SendCmdWithoutData(CMD2_EPG_SRV_ADDLOAD_RESERVE);
-	}
-
 	//EPGデータを再読み込みする
 	//戻り値：
 	// エラーコード
@@ -197,6 +190,15 @@ public:
 	// val				[IN]削除するID一覧
 	DWORD SendDelRecInfo(const vector<DWORD>& val){
 		return SendCmdData(CMD2_EPG_SRV_DEL_RECINFO, val);
+	}
+
+	//録画済み情報のファイルパスを変更する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]録画済み情報一覧
+	DWORD SendChgPathRecInfo(const vector<REC_FILE_INFO>& val){
+		return SendCmdData(CMD2_EPG_SRV_CHG_PATH_RECINFO, val);
 	}
 
 	//サービス一覧を取得する
@@ -578,40 +580,6 @@ public:
 	DWORD SendChgReserve2(const vector<RESERVE_DATA>& val){
 		return SendCmdData2(CMD2_EPG_SRV_CHG_RESERVE2, val);
 	}
-
-	//予約追加が可能か確認する
-	//戻り値：
-	// エラーコード
-	//引数：
-	// val				[IN]予約情報
-	// resVal			[OUT]追加可能かのステータス
-	DWORD SendAddChkReserve2(const RESERVE_DATA& val, WORD* resVal){
-		return SendAndReceiveCmdData2(CMD2_EPG_SRV_ADDCHK_RESERVE2, val, resVal);
-	}
-
-
-	//EPGデータファイルのタイムスタンプ取得
-	//戻り値：
-	// エラーコード
-	//引数：
-	// val				[IN]取得ファイル名
-	// resVal			[OUT]タイムスタンプ
-	DWORD SendGetEpgFileTime2(const wstring& val, LONGLONG* resVal){
-		return SendAndReceiveCmdData2(CMD2_EPG_SRV_GET_EPG_FILETIME2, val, resVal);
-	}
-
-	//EPGデータファイル取得
-	//戻り値：
-	// エラーコード
-	//引数：
-	// val			[IN]ファイル名
-	// resVal		[OUT]ファイルのバイナリデータ
-	// resValSize	[OUT]resValのサイズ
-	DWORD SendGetEpgFile2(
-		const wstring& val,
-		BYTE** resVal,
-		DWORD* resValSize
-		);
 
 	//自動予約登録条件一覧を取得する
 	//戻り値：

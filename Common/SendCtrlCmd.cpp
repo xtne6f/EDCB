@@ -285,28 +285,6 @@ DWORD CSendCtrlCmd::SendFileCopy(
 	return ret;
 }
 
-DWORD CSendCtrlCmd::SendGetEpgFile2(
-	const wstring& val,
-	BYTE** resVal,
-	DWORD* resValSize
-	)
-{
-	CMD_STREAM res;
-	DWORD ret = SendCmdData2(CMD2_EPG_SRV_GET_EPG_FILE2, val, &res);
-
-	if( ret == CMD_SUCCESS ){
-		WORD ver = 0;
-		DWORD readSize = 0;
-		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE || res.dataSize <= readSize ){
-			return CMD_ERR;
-		}
-		*resValSize = res.dataSize - readSize;
-		*resVal = res.data.release();
-		memmove(*resVal, *resVal + readSize, *resValSize);
-	}
-	return ret;
-}
-
 DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
 {
 	DWORD ret = CMD_ERR;

@@ -10,7 +10,7 @@ class CSetDlgNetwork
 public:
 	CSetDlgNetwork();   // 標準コンストラクター
 	~CSetDlgNetwork();
-	BOOL Create(LPCTSTR lpszTemplateName, HWND hWndParent);
+	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 

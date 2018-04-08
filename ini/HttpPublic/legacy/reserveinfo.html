@@ -74,7 +74,8 @@ end
 
 vtag=GetVarInt(mg.request_info.query_string,'vtag') or 0
 
-ct=[=[
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
 <!DOCTYPE HTML]=]..(vtag==0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
@@ -85,18 +86,18 @@ ct=[=[
 <body>
 <h1>予約詳細</h1>
 <div id="main">
-]=]
+]=])
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
 
 post=AssertPost()
 if post then
   if mg.get_var(post,'addchg') then
-    ct=ct..'  <div id="result">'..(Change(id,post) and '変更しました' or '入力値不正')..'</div>\n'
+    ct:Append('  <div id="result">'..(Change(id,post) and '変更しました' or '入力値不正')..'</div>\n')
   elseif mg.get_var(post,'del') then
     rdel=edcb.GetReserveData(id)
     edcb.DelReserveData(id)
-    ct=ct..'  <div id="result">削除しました</div>\n'
+    ct:Append('  <div id="result">削除しました</div>\n')
   end
 end
 
@@ -106,27 +107,27 @@ r=edcb.GetReserveData(id)
 if r then
   epgInfo=ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
-  ct=ct..'  <dl>\n'
+  ct:Append('  <dl>\n'
     ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..string.gsub(epgInfo, '\r?\n', '<br>\n')
       or FormatTimeAndDuration(r.startTime, r.durationSecond)..'<br>'..r.stationName..'<br>'..r.title..'<br><br>'
         ..string.format('OriginalNetworkID:%d(0x%04X)<br>', r.onid, r.onid)
         ..string.format('TransportStreamID:%d(0x%04X)<br>', r.tsid, r.tsid)
         ..string.format('ServiceID:%d(0x%04X)<br>', r.sid, r.sid)
       )..'</dd>\n'
-    ..'    <dt>ファイル →<a href="reserveinfo.html?id='..r.reserveID..(vtag==0 and '&amp;vtag=-1">Video' or '">DL')..'</a></dt><dd>\n'
+    ..'    <dt>ファイル →<a href="reserveinfo.html?id='..r.reserveID..(vtag==0 and '&amp;vtag=-1">Video' or '">DL')..'</a></dt><dd>\n')
   ref=recFilePath and NativeToDocumentPath(recFilePath)
   if ref then
     for i,ext in ipairs({'.mp4','.webm',''}) do
       ff=edcb.FindFile and edcb.FindFile(recFilePath..ext,1)
       if ff then
-        ct=ct..(vtag==i and '<video controls src="' or '<a href="')
+        ct:Append((vtag==i and '<video controls src="' or '<a href="')
           ..(vtag~=0 and vtag~=i and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
-          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>')
+          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>'))
         if ext=='' then
           for j=0,9 do
-            ct=ct..'\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
+            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
               ..(vtag~=0 and vtag~=j+10 and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..(j+10) or 'xcode.lua?'..(j*10)..'='..mg.url_encode(ref))
-              ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>')
+              ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>'))
           end
           fsec,fsize=0,0
           f=edcb.io.open(recFilePath,'rb')
@@ -134,16 +135,16 @@ if r then
             fsec,fsize=GetDurationSec(f)
             f:close()
           end
-          ct=ct..'\n'..(vtag==99 and '<br><video controls src="' or '<a href="')
+          ct:Append('\n'..(vtag==99 and '<br><video controls src="' or '<a href="')
             ..(vtag~=0 and vtag~=99 and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag=99' or 'xcode.lua?99='..mg.url_encode(ref))
-            ..'">('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)'..(vtag==99 and '</video>' or '</a>')..']<br>\n'
+            ..'">('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)'..(vtag==99 and '</video>' or '</a>')..']<br>\n')
         else
-          ct=ct..' ('..math.floor(ff[1].size/1048576)..'M)<br>\n'
+          ct:Append(' ('..math.floor(ff[1].size/1048576)..'M)<br>\n')
         end
       end
     end
   end
-  ct=ct..'<br></dd>\n'
+  ct:Append('<br></dd>\n'
     ..'    <dt>'..(r.eid==65535 and '<strong>プログラム予約</strong>' or 'プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
     ..'</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
@@ -162,7 +163,7 @@ if r then
     ..'<input type="submit" value="変更"></div></form></dd>\n'
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="reserveinfo.html"><div>\n'
-    ..'<input type="hidden" name="id" value="'..r.reserveID..'"><select name="presetID">\n'
+    ..'<input type="hidden" name="id" value="'..r.reserveID..'"><select name="presetID">\n')
   presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
   preset=false
   rs=r.recSetting
@@ -170,12 +171,12 @@ if r then
     if v.id==presetID then
       preset=true
       rs=v.recSetting
-      ct=ct..'<option value="'..v.id..'" selected>'..v.name..'\n'
+      ct:Append('<option value="'..v.id..'" selected>'..v.name..'\n')
     else
-      ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
+      ct:Append('<option value="'..v.id..'">'..v.name..'\n')
     end
   end
-  ct=ct..'<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
+  ct:Append('<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
     ..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
     ..'    <dt>録画設定</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
@@ -188,16 +189,17 @@ if r then
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="del" value="y">\n'
     ..'<input type="submit" value="削除"></div></form></dd>\n'
-    ..'  </dl>\n'
+    ..'  </dl>\n')
 end
 r=r or rdel
 
-ct=ct..[=[
+ct:Append([=[
 </div>
 <div id="footer">
   <a href="reserve.html">予約一覧</a> <a href="epg.html">番組表</a> <a href="epglist.html]=]..(r and '?id='..r.onid..'-'..r.tsid..'-'..r.sid..'#now' or '')..[=[">リスト番組表</a>
 </div>
 </body>
 </html>
-]=]
-mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

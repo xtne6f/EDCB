@@ -41,8 +41,6 @@ public:
 
 	void SetNoLogScramble(BOOL noLog);
 
-	void SetTsBuffMaxCount(DWORD tsBuffMaxCount_, int writeBuffMaxCount_);
-
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
 	// 検索できたBonDriver一覧
@@ -55,7 +53,8 @@ public:
 	// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
 	DWORD OpenBonDriver(
 		LPCWSTR bonDriverFile,
-		int openWait = 200
+		int openWait,
+		DWORD tsBuffMaxCount
 		);
 
 	//ロードしているBonDriverの開放
@@ -112,11 +111,6 @@ public:
 		WORD* TSID
 		);
 
-	//シグナルレベルの取得
-	//戻り値：
-	// シグナルレベル
-	float GetSignalLevel();
-
 	//サービス一覧を取得する
 	//戻り値：
 	// エラーコード
@@ -128,11 +122,11 @@ public:
 
 	//TSストリーム制御用コントロールを作成する
 	//戻り値：
-	// エラーコード
+	// 制御識別ID
 	//引数：
-	// id			[OUT]制御識別ID
-	BOOL CreateServiceCtrl(
-		DWORD* id
+	// sendUdpTcp	[IN]UDP/TCP送信用にする
+	DWORD CreateServiceCtrl(
+		BOOL sendUdpTcp
 		);
 
 	//TSストリーム制御用コントロールを作成する
@@ -197,6 +191,7 @@ public:
 	// createSize			[IN]ファイル作成時にディスクに予約する容量
 	// saveFolder			[IN]使用するフォルダ一覧
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+	// writeBuffMaxCount	[IN]出力バッファ上限
 	BOOL StartSave(
 		DWORD id,
 		const wstring& fileName,
@@ -208,7 +203,8 @@ public:
 		WORD pittariEventID,
 		ULONGLONG createSize,
 		const vector<REC_FILE_SET_INFO>& saveFolder,
-		const vector<wstring>& saveFolderSub
+		const vector<wstring>& saveFolderSub,
+		int writeBuffMaxCount
 	);
 
 	//ファイル保存を終了する
@@ -410,13 +406,16 @@ public:
 		DWORD backStartWaitSec
 		);
 
-	BOOL GetViewStatusInfo(
-		DWORD id,
-		float* signal,
-		DWORD* space,
-		DWORD* ch,
-		ULONGLONG* drop,
-		ULONGLONG* scramble
+	//現在のストリームの表示用のステータスを取得する
+	//※スレッドセーフ
+	//引数：
+	// signalLv		[OUT]シグナルレベル
+	// space		[OUT]物理CHのspace(不明のとき負)
+	// ch			[OUT]物理CHのch(不明のとき負)
+	void GetViewStatusInfo(
+		float* signalLv,
+		int* space,
+		int* ch
 		);
 
 protected:
@@ -427,6 +426,10 @@ protected:
 
 	recursive_mutex_ buffLock;
 	std::list<vector<BYTE>> tsBuffList;
+	std::list<vector<BYTE>> tsFreeList;
+	float statusSignalLv;
+	int viewSpace;
+	int viewCh;
 
 	thread_ analyzeThread;
 	CAutoResetEvent analyzeEvent;
@@ -470,8 +473,6 @@ protected:
 	BOOL epgCapBackCS2Basic;
 	BOOL epgCapBackCS3Basic;
 	DWORD epgCapBackStartWaitSec;
-	DWORD tsBuffMaxCount;
-	int writeBuffMaxCount;
 protected:
 	DWORD ProcessSetCh(
 		DWORD space,
@@ -482,7 +483,8 @@ protected:
 
 	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);
 
-	static void RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain);
+	void RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMaxCount);
+	void StatusCallback(float signalLv, int space, int ch);
 	static void AnalyzeThread(CBonCtrl* sys);
 
 	static void ChScanThread(CBonCtrl* sys);

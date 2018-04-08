@@ -18,7 +18,7 @@
 class COneServiceUtil
 {
 public:
-	COneServiceUtil(void);
+	COneServiceUtil(BOOL sendUdpTcp_);
 	~COneServiceUtil(void);
 
 	//処理対象ServiceIDを設定
@@ -52,13 +52,11 @@ public:
 		);
 
 	//出力用TSデータを送る
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// data		[IN]TSデータ
 	// size		[IN]dataのサイズ
 	// funcGetPresent	[IN]EPGの現在番組IDを調べる関数
-	BOOL AddTSBuff(
+	void AddTSBuff(
 		BYTE* data,
 		DWORD size,
 		const std::function<int(WORD, WORD, WORD)>& funcGetPresent
@@ -70,7 +68,7 @@ public:
 		);
 
 	void SetEmmPID(
-		const map<WORD,WORD>& PIDMap
+		const vector<WORD>& pidList
 		);
 
 	//ファイル保存を開始する
@@ -176,12 +174,14 @@ public:
 		const wstring& bonDriver
 		);
 	void SetPIDName(
-		const map<WORD, string>& pidName
+		WORD pid,
+		LPCSTR name
 		);
 	void SetNoLogScramble(
 		BOOL noLog
 		);
 protected:
+	BOOL sendUdpTcp;
 	WORD SID;
 
 	BOOL enableScramble;
@@ -199,7 +199,7 @@ protected:
 	CCreatePMTPacket createPmt;
 
 	WORD pmtPID;
-	map<WORD,WORD> emmPIDMap;
+	vector<WORD> emmPIDList;
 
 	CDropCount dropCount;
 
@@ -221,8 +221,6 @@ protected:
 	int pittariMaxBuffCount;
 
 protected:
-	BOOL WriteData(BYTE* data, DWORD size);
-
 	void StratPittariRec();
 	void StopPittariRec();
 };

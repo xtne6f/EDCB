@@ -5,10 +5,10 @@
 #include "IBonDriver2.h"
 
 enum {
-	WM_GET_TS_STREAM = WM_APP,
-	WM_SET_CH,
-	WM_GET_NOW_CH,
-	WM_GET_SIGNAL_LEVEL,
+	WM_APP_GET_TS_STREAM = WM_APP,
+	WM_APP_GET_STATUS,
+	WM_APP_SET_CH,
+	WM_APP_GET_NOW_CH,
 };
 
 CBonDriverUtil::CInit CBonDriverUtil::s_init;
@@ -60,14 +60,15 @@ vector<wstring> CBonDriverUtil::EnumBonDriver()
 	return list;
 }
 
-bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFile, void (*recvFunc_)(void*, BYTE*, DWORD, DWORD), void* recvParam_, int openWait)
+bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFile, const std::function<void(BYTE*, DWORD, DWORD)>& recvFunc_,
+                                   const std::function<void(float, int, int)>& statusFunc_, int openWait)
 {
 	CBlockLock lock(&this->utilLock);
 	CloseBonDriver();
 	this->loadDllFileName = bonDriverFile;
 	if( this->loadDllFolder.empty() == false && this->loadDllFileName.empty() == false ){
 		this->recvFunc = recvFunc_;
-		this->recvParam = recvParam_;
+		this->statusFunc = statusFunc_;
 		this->driverThread = thread_(DriverThread, this);
 		//Openˆ—‚ªŠ®—¹‚·‚é‚Ü‚Å‘Ò‚Â
 		while( WaitForSingleObject(this->driverThread.native_handle(), 10) == WAIT_TIMEOUT && this->hwndDriver == NULL );
@@ -175,18 +176,27 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		sys = (CBonDriverUtil*)((LPCREATESTRUCT)lParam)->lpCreateParams;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)sys);
 		SetTimer(hwnd, 1, 20, NULL);
+		sys->statusTimeout = 0;
 		return 0;
 	case WM_DESTROY:
+		if( sys->statusFunc ){
+			sys->statusFunc(0.0f, -1, -1);
+		}
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
 		PostQuitMessage(0);
 		return 0;
 	case WM_TIMER:
 		if( wParam == 1 ){
-			SendMessage(hwnd, WM_GET_TS_STREAM, 0, 0);
+			SendMessage(hwnd, WM_APP_GET_TS_STREAM, 0, 0);
+			//]—ˆ‚ÌŽæ“¾ŠÔŠu‚ªŠT‚Ë1•b‚È‚Ì‚ÅA‚»‚ê‚æ‚è‚â‚â’Z‚¢ŠÔŠu
+			if( ++sys->statusTimeout > 600 / 20 ){
+				SendMessage(hwnd, WM_APP_GET_STATUS, 0, 0);
+				sys->statusTimeout = 0;
+			}
 			return 0;
 		}
 		break;
-	case WM_GET_TS_STREAM:
+	case WM_APP_GET_TS_STREAM:
 		{
 			//TSƒXƒgƒŠ[ƒ€‚ðŽæ“¾
 			BYTE* data;
@@ -194,31 +204,38 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 			DWORD remain;
 			if( sys->bon2IF->GetTsStream(&data, &size, &remain) && data && size != 0 ){
 				if( sys->recvFunc ){
-					sys->recvFunc(sys->recvParam, data, size, 1);
+					sys->recvFunc(data, size, 1);
 				}
-				PostMessage(hwnd, WM_GET_TS_STREAM, 1, 0);
+				PostMessage(hwnd, WM_APP_GET_TS_STREAM, 1, 0);
 			}else if( wParam ){
 				//EDCB‚Í(“`““I‚É)GetTsStream‚Ìremain‚ð—˜—p‚µ‚È‚¢‚Ì‚ÅAŽó‚¯Žæ‚é‚à‚Ì‚ª‚È‚­‚È‚Á‚½‚çremain=0‚ð’m‚ç‚¹‚é
 				if( sys->recvFunc ){
-					sys->recvFunc(sys->recvParam, NULL, 0, 0);
+					sys->recvFunc(NULL, 0, 0);
 				}
 			}
 		}
 		return 0;
-	case WM_SET_CH:
+	case WM_APP_GET_STATUS:
+		if( sys->statusFunc ){
+			if( sys->initChSetFlag ){
+				sys->statusFunc(sys->bon2IF->GetSignalLevel(), sys->bon2IF->GetCurSpace(), sys->bon2IF->GetCurChannel());
+			}else{
+				sys->statusFunc(sys->bon2IF->GetSignalLevel(), -1, -1);
+			}
+		}
+		return 0;
+	case WM_APP_SET_CH:
 		if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
 			Sleep(500);
 			if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
 				return FALSE;
 			}
 		}
+		PostMessage(hwnd, WM_APP_GET_STATUS, 0, 0);
 		return TRUE;
-	case WM_GET_NOW_CH:
+	case WM_APP_GET_NOW_CH:
 		*(DWORD*)wParam = sys->bon2IF->GetCurSpace();
 		*(DWORD*)lParam = sys->bon2IF->GetCurChannel();
-		return 0;
-	case WM_GET_SIGNAL_LEVEL:
-		*(float*)lParam = sys->bon2IF->GetSignalLevel();
 		return 0;
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -250,12 +267,12 @@ bool CBonDriverUtil::SetCh(DWORD space, DWORD ch)
 			//2‰ñ–ÚˆÈ~‚Í•Ï‰»‚Ì‚ ‚éê‡‚¾‚¯ƒ`ƒƒƒ“ƒlƒ‹Ý’è‚·‚é
 			DWORD nowSpace = 0;
 			DWORD nowCh = 0;
-			SendMessage(this->hwndDriver, WM_GET_NOW_CH, (WPARAM)&nowSpace, (LPARAM)&nowCh);
+			SendMessage(this->hwndDriver, WM_APP_GET_NOW_CH, (WPARAM)&nowSpace, (LPARAM)&nowCh);
 			if( nowSpace == space && nowCh == ch ){
 				return true;
 			}
 		}
-		if( SendMessage(this->hwndDriver, WM_SET_CH, (WPARAM)space, (LPARAM)ch) ){
+		if( SendMessage(this->hwndDriver, WM_APP_SET_CH, (WPARAM)space, (LPARAM)ch) ){
 			this->initChSetFlag = true;
 			return true;
 		}
@@ -267,20 +284,10 @@ bool CBonDriverUtil::GetNowCh(DWORD* space, DWORD* ch)
 {
 	CBlockLock lock(&this->utilLock);
 	if( this->hwndDriver && this->initChSetFlag ){
-		SendMessage(this->hwndDriver, WM_GET_NOW_CH, (WPARAM)space, (LPARAM)ch);
+		SendMessage(this->hwndDriver, WM_APP_GET_NOW_CH, (WPARAM)space, (LPARAM)ch);
 		return true;
 	}
 	return false;
-}
-
-float CBonDriverUtil::GetSignalLevel()
-{
-	CBlockLock lock(&this->utilLock);
-	float fLevel = 0.0f;
-	if( this->hwndDriver ){
-		SendMessage(this->hwndDriver, WM_GET_SIGNAL_LEVEL, 0, (LPARAM)&fLevel);
-	}
-	return fLevel;
 }
 
 wstring CBonDriverUtil::GetOpenBonDriverFileName()

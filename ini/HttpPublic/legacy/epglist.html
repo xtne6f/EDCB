@@ -7,7 +7,8 @@ HIDE_SERVICES={
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-ct=[=[
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="ja">
 <head>
@@ -17,7 +18,7 @@ ct=[=[
 </head>
 <body>
 <h1>リスト番組表</h1>
-]=]
+]=])
 
 onid,tsid,sid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
 onid=tonumber(onid) or 0
@@ -45,11 +46,11 @@ if sid==0 then
       ('%04X%04X%04X%04X'):format(NetworkType(a.onid)=='地デジ' and a.remote_control_key_id or 0xFFFF, a.onid, a.tsid, a.sid)<
       ('%04X%04X%04X%04X'):format(NetworkType(b.onid)=='地デジ' and b.remote_control_key_id or 0xFFFF, b.onid, b.tsid, b.sid) end)
   end
-  ctt={ct..'<div class="nav">\n<ul>\n'}
+  ct:Append('<div class="nav">\n<ul>\n')
   for i,v in ipairs(st) do
-    table.insert(ctt, '<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'#now">'..v.service_name..'</a></li>\n')
+    ct:Append('<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'#now">'..v.service_name..'</a></li>\n')
   end
-  table.insert(ctt, '</ul>\n</div>\n')
+  ct:Append('</ul>\n</div>\n')
 else
   rt={}
   for i,v in ipairs(edcb.GetReserveData()) do
@@ -62,7 +63,7 @@ else
     table.insert(et, v)
   end
   table.sort(et, function(a,b) return (a.startTime and os.time(a.startTime) or 0)<(b.startTime and os.time(b.startTime) or 0) end)
-  ctt={ct..'<div id="main" class="epg-list">\n'}
+  ct:Append('<div id="main" class="epg-list">\n')
   for i,v in ipairs(et) do
     sub=v.eventGroupInfo and #v.eventGroupInfo.eventDataList==1 and (
       v.eventGroupInfo.eventDataList[1].onid~=v.onid or
@@ -75,7 +76,7 @@ else
         v.now=true
       end
       cont=v.contentInfoList and #v.contentInfoList>0 and math.floor(v.contentInfoList[1].content_nibble/256)%16 or 16
-      table.insert(ctt, '<div class="cont-'..cont..(v.past and ' past"' or '"')..(v.now and ' id="now"' or '')..'>'
+      ct:Append('<div class="cont-'..cont..(v.past and ' past"' or '"')..(v.now and ' id="now"' or '')..'>'
         ..(v.startTime and ('%02d%s %02d:%02d'):format(v.startTime.day, ({'日','月','火','水','木','金','土'})[v.startTime.wday], v.startTime.hour, v.startTime.min) or '不明')
         ..(not v.past and rt[('%04X%04X%04X%04X'):format(v.onid, v.tsid, v.sid, v.eid)] and ' <b>予</b>' or '')
         ..' <a href="'
@@ -85,16 +86,15 @@ else
         ..'</div>\n')
     end
   end
-  table.insert(ctt, '</div>\n')
+  ct:Append('</div>\n')
 end
 
-table.insert(ctt, [=[
+ct:Append([=[
 <div id="footer">
   <a href="]=]..(sid==0 and 'index.html">メニュー' or 'epglist.html">サービスリスト')..[=[</a>
 </div>
 </body>
 </html>
 ]=])
-ct=table.concat(ctt)
-gz=Deflate(ct)
-mg.write(Response(200, 'text/html', 'utf-8', #(gz or ct))..(gz and 'Content-Encoding: gzip\r\n' or '')..'\r\n', gz or ct)
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

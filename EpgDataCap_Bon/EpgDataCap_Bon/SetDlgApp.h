@@ -8,7 +8,7 @@ class CSetDlgApp
 public:
 	CSetDlgApp();   // 標準コンストラクター
 	~CSetDlgApp();
-	BOOL Create(LPCTSTR lpszTemplateName, HWND hWndParent);
+	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 

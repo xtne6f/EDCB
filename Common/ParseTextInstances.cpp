@@ -246,6 +246,16 @@ bool CParseRecInfoText::DelRecInfo(DWORD id)
 	return false;
 }
 
+bool CParseRecInfoText::ChgPathRecInfo(DWORD id, LPCWSTR recFilePath)
+{
+	map<DWORD, REC_FILE_INFO>::iterator itr = this->itemMap.find(id);
+	if( itr != this->itemMap.end() ){
+		itr->second.recFilePath = recFilePath;
+		return true;
+	}
+	return false;
+}
+
 bool CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
 {
 	map<DWORD, REC_FILE_INFO>::iterator itr = this->itemMap.find(id);

@@ -256,7 +256,6 @@
     <ClInclude Include="..\..\Common\TSBuffUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
     <ClInclude Include="..\..\Common\WritePlugInUtil.h" />
-    <ClInclude Include="CmdLineUtil.h" />
     <ClInclude Include="EpgDataCap_Bon.h" />
     <ClInclude Include="EpgDataCap_BonDef.h" />
     <ClInclude Include="EpgDataCap_BonDlg.h" />
@@ -301,7 +300,6 @@
     <ClCompile Include="..\..\Common\TSBuffUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
     <ClCompile Include="..\..\Common\WritePlugInUtil.cpp" />
-    <ClCompile Include="CmdLineUtil.cpp" />
     <ClCompile Include="EpgDataCap_Bon.cpp" />
     <ClCompile Include="EpgDataCap_BonDlg.cpp" />
     <ClCompile Include="EpgDataCap_BonMain.cpp" />

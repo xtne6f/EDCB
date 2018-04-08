@@ -2,7 +2,6 @@
 #include "ReserveManager.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ReNamePlugInUtil.h"
-#include "../../Common/EpgTimerUtil.h"
 #include "../../Common/TimeUtil.h"
 
 CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
@@ -457,6 +456,17 @@ void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
 
 	for( size_t i = 0; i < idList.size(); i++ ){
 		this->recInfoText.DelRecInfo(idList[i]);
+	}
+	this->recInfoText.SaveText();
+	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
+}
+
+void CReserveManager::ChgPathRecFileInfo(const vector<REC_FILE_INFO>& infoList)
+{
+	CBlockLock lock(&this->managerLock);
+
+	for( size_t i = 0; i < infoList.size(); i++ ){
+		this->recInfoText.ChgPathRecInfo(infoList[i].id, infoList[i].recFilePath.c_str());
 	}
 	this->recInfoText.SaveText();
 	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
@@ -1277,8 +1287,8 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			BAT_WORK_INFO batInfo;
 			AddRecInfoMacro(batInfo.macroList, item);
 			batInfo.macroList.push_back(pair<string, wstring>("AddKey",
-				itrRes->second.comment.compare(0, 8, L"EPGŽ©“®—\–ñ(") == 0 && itrRes->second.comment.size() >= 9 ?
-				itrRes->second.comment.substr(8, itrRes->second.comment.size() - 9) : wstring()));
+				itrRes->second.comment.compare(0, 8, L"EPGŽ©“®—\–ñ(") == 0 && itrRes->second.comment.find(L')') != wstring::npos ?
+				itrRes->second.comment.substr(8, itrRes->second.comment.find(L')') - 8) : wstring()));
 			if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->setting.errEndBatRun) &&
 			    item.recFilePath.empty() == false && itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
 				batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
@@ -1666,23 +1676,6 @@ bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) co
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
 		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, eid), 0));
 	return itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, eid);
-}
-
-bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const
-{
-	CBlockLock lock(&this->managerLock);
-
-	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
-
-	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, 0xFFFF), 0));
-	for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, 0xFFFF); itr++ ){
-		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
-		if( itrRes->second.durationSecond == durationSec && ConvertI64Time(itrRes->second.startTime) == startTime ){
-			return true;
-		}
-	}
-	return false;
 }
 
 vector<DWORD> CReserveManager::GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Common/EpgTimerUtil.h"
 #include "../../Common/ParseTextInstances.h"
 #include "../../Common/ThreadUtil.h"
 #include "EpgDBManager.h"
@@ -39,6 +40,9 @@ public:
 	bool GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo = true) const;
 	//録画済み情報を削除する
 	void DelRecFileInfo(const vector<DWORD>& idList);
+	//録画済み情報のファイルパスを変更する
+	//infoList: 録画済み情報一覧(idとrecFilePathのみ参照)
+	void ChgPathRecFileInfo(const vector<REC_FILE_INFO>& infoList);
 	//録画済み情報のプロテクトを変更する
 	//infoList: 録画済み情報一覧(idとprotectFlagのみ参照)
 	void ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList);
@@ -56,8 +60,19 @@ public:
 	__int64 GetSleepReturnTime(__int64 baseTime) const;
 	//指定イベントの予約が存在するかどうか
 	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const;
-	//指定時刻のプログラム予約があるかどうか
-	bool IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const;
+	//指定サービスのプログラム予約を抽出して検索する
+	template<class P>
+	bool FindProgramReserve(WORD onid, WORD tsid, WORD sid, P findProc) const {
+		CBlockLock lock(&this->managerLock);
+		const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
+		auto itr = std::lower_bound(sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, 0xFFFF), 0));
+		for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, 0xFFFF); itr++ ){
+			if( findProc(this->reserveText.GetMap().find(itr->second)->second) ){
+				return true;
+			}
+		}
+		return false;
+	}
 	//指定サービスを利用できるチューナID一覧を取得する
 	vector<DWORD> GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const;
 	bool GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const;

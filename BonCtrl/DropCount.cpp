@@ -23,22 +23,23 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 	if( data == NULL || size == 0 ){
 		return ;
 	}
+	DROP_INFO item = {};
 	for( DWORD i=0; i<size; i+=188 ){
 		BYTE sync_byte = data[i];
 		BYTE transport_error_indicator = data[i + 1] & 0x80;
 		if( sync_byte == 0x47 && transport_error_indicator == 0 ){
-			WORD pid = (data[i + 1] << 8 | data[i + 2]) & 0x1FFF;
-			map<WORD, DROP_INFO>::iterator itr;
-			itr = this->infoMap.find(pid);
-			if( itr == this->infoMap.end() ){
+			item.PID = (data[i + 1] << 8 | data[i + 2]) & 0x1FFF;
+			vector<DROP_INFO>::iterator itr;
+			itr = std::lower_bound(this->infoList.begin(), this->infoList.end(), item,
+			                       [](const DROP_INFO& a, const DROP_INFO& b) { return a.PID < b.PID; });
+			if( itr == this->infoList.end() || itr->PID != item.PID ){
 				BYTE continuity_counter = data[i + 3] & 0x0F;
-				DROP_INFO item = {};
 				item.lastCounter = (continuity_counter + 15) & 0x0F;
-				itr = this->infoMap.insert(pair<WORD, DROP_INFO>(pid, item)).first;
+				itr = this->infoList.insert(itr, item);
 			}
-			itr->second.total++;
-			if( pid != 0x1FFF ){
-				CheckCounter(data + i, &(itr->second));
+			itr->total++;
+			if( itr->PID != 0x1FFF ){
+				CheckCounter(data + i, &(*itr));
 			}
 		}
 	}
@@ -70,7 +71,7 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 
 void CDropCount::Clear()
 {
-	this->infoMap.clear();
+	this->infoList.clear();
 	this->drop = 0;
 	this->scramble = 0;
 	this->log.clear();
@@ -178,11 +179,10 @@ void CDropCount::SaveLog(const wstring& filePath)
 		std::unique_ptr<FILE, decltype(&fclose)> fp(fp_, fclose);
 		fprintf(fp.get(), "%s\r\n", this->log.c_str());
 
-		map<WORD, DROP_INFO>::iterator itr;
-		for( itr = this->infoMap.begin(); itr != this->infoMap.end(); itr++ ){
-			string desc = "";
-			map<WORD, string>::iterator itrPID;
-			switch(itr->first){
+		for( vector<DROP_INFO>::const_iterator itr = this->infoList.begin(); itr != this->infoList.end(); itr++ ){
+			LPCSTR desc = "";
+			vector<pair<WORD, string>>::const_iterator itrPID;
+			switch( itr->PID ){
 			case 0x0000:
 				desc = "PAT";
 				break;
@@ -241,16 +241,14 @@ void CDropCount::SaveLog(const wstring& filePath)
 				desc = "NULL";
 				break;
 			default:
-				{
-					itrPID = pidName.find(itr->first);
-					if(itrPID != pidName.end() ){
-						desc = itrPID->second;
-					}
+				itrPID = std::lower_bound(this->pidName.begin(), this->pidName.end(), std::make_pair(itr->PID, string()));
+				if( itrPID != this->pidName.end() && itrPID->first == itr->PID ){
+					desc = itrPID->second.c_str();
 				}
 				break;
 			}
 			fprintf(fp.get(), "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d  %s\r\n",
-				itr->first, itr->second.total, itr->second.drop, itr->second.scramble, desc.c_str() );
+			        itr->PID, itr->total, itr->drop, itr->scramble, desc);
 		}
 
 		string strA;
@@ -259,12 +257,12 @@ void CDropCount::SaveLog(const wstring& filePath)
 	}
 }
 
-void CDropCount::SetPIDName(
-	const map<WORD, string>* pidName_
-	)
+void CDropCount::SetPIDName(WORD pid, LPCSTR name)
 {
-	map<WORD, string>::const_iterator itrIn;
-	for(itrIn = pidName_->begin(); itrIn != pidName_->end(); itrIn++){
-		this->pidName[itrIn->first] = itrIn->second;
+	vector<pair<WORD, string>>::iterator itr;
+	itr = std::lower_bound(this->pidName.begin(), this->pidName.end(), std::make_pair(pid, string()));
+	if( itr == this->pidName.end() || itr->first != pid ){
+		itr = this->pidName.insert(itr, std::make_pair(pid, string()));
 	}
+	itr->second = name;
 }

@@ -2,8 +2,9 @@
 #include "OneServiceUtil.h"
 
 
-COneServiceUtil::COneServiceUtil(void)
+COneServiceUtil::COneServiceUtil(BOOL sendUdpTcp_)
 {
+	this->sendUdpTcp = sendUdpTcp_;
 	this->SID = 0xFFFF;
 
 	this->pmtPID = 0xFFFF;
@@ -30,7 +31,7 @@ void COneServiceUtil::SetSID(
 {
 	if( this->SID != SID_ ){
 		this->pmtPID = 0xFFFF;
-		this->emmPIDMap.clear();
+		this->emmPIDList.clear();
 
 		this->dropCount.Clear();
 	}
@@ -164,24 +165,33 @@ BOOL COneServiceUtil::SendTcp(
 }
 
 //出力用TSデータを送る
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
 //引数：
 // data		[IN]TSデータ
 // size		[IN]dataのサイズ
 // funcGetPresent	[IN]EPGの現在番組IDを調べる関数
-BOOL COneServiceUtil::AddTSBuff(
+void COneServiceUtil::AddTSBuff(
 	BYTE* data,
 	DWORD size,
 	const std::function<int(WORD, WORD, WORD)>& funcGetPresent
 	)
 {
-	BOOL ret = TRUE;
-	if( this->SID == 0xFFFF || this->sendTcp != NULL || this->sendUdp != NULL){
-		//全サービス扱い
-		if( data != NULL ){
-			ret = WriteData(data, size);
+	if( this->sendUdpTcp ){
+		if( size > 0 ){
+			if( this->sendUdp ){
+				this->sendUdp->SendData(data, size);
+			}
+			if( this->sendTcp ){
+				this->sendTcp->SendData(data, size);
+			}
 		}
+		this->dropCount.AddData(data, size);
+	}else if( this->SID == 0xFFFF ){
+		//全サービス扱い
+		if( this->writeFile ){
+			this->writeFile->AddTSBuff(data, size);
+		}
+		this->dropCount.AddData(data, size);
+
 		for( DWORD i=0; i<size; i+=188 ){
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data + i, 188) == TRUE ){
@@ -234,9 +244,7 @@ BOOL COneServiceUtil::AddTSBuff(
 							this->buff.insert(this->buff.end(), data + i, data + i + 188);
 						}else{
 							//EMMなら必要
-							map<WORD,WORD>::iterator itr;
-							itr = this->emmPIDMap.find(packet.PID);
-							if( itr != this->emmPIDMap.end() ){
+							if( std::binary_search(this->emmPIDList.begin(), this->emmPIDList.end(), packet.PID) ){
 								this->buff.insert(this->buff.end(), data + i, data + i + 188);
 							}
 						}
@@ -246,7 +254,10 @@ BOOL COneServiceUtil::AddTSBuff(
 		}
 
 		if( this->buff.empty() == false ){
-			ret = WriteData(&this->buff.front(), (DWORD)this->buff.size());
+			if( this->writeFile ){
+				this->writeFile->AddTSBuff(this->buff.data(), (DWORD)this->buff.size());
+			}
+			this->dropCount.AddData(this->buff.data(), (DWORD)this->buff.size());
 		}
 	}
 
@@ -282,25 +293,6 @@ BOOL COneServiceUtil::AddTSBuff(
 			}
 		}
 	}
-
-	return ret;
-}
-
-BOOL COneServiceUtil::WriteData(BYTE* data, DWORD size)
-{
-	if( this->sendUdp != NULL ){
-		this->sendUdp->SendData(data, size);
-	}
-	if( this->sendTcp != NULL ){
-		this->sendTcp->SendData(data, size);
-	}
-	if( this->writeFile != NULL ){
-		this->writeFile->AddTSBuff(data, size);
-	}
-
-	dropCount.AddData(data, size);
-
-	return TRUE;
 }
 
 void COneServiceUtil::SetPmtPID(
@@ -310,28 +302,21 @@ void COneServiceUtil::SetPmtPID(
 {
 	if( this->pmtPID != pmtPID_ && this->SID != 0xFFFF){
 		_OutputDebugString(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID_);
-		map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
-
-		CCreatePATPacket::PROGRAM_PID_INFO item;
-		item.PMTPID = pmtPID_;
-		item.SID = this->SID;
-		PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
-		
-		item.PMTPID = 0x0010;
-		item.SID = 0x00;
-		PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
-		
-		createPat.SetParam(TSID, &PIDMap);
+		vector<pair<WORD, WORD>> pidList;
+		pidList.push_back(pair<WORD, WORD>(0x10, 0));
+		pidList.push_back(pair<WORD, WORD>(pmtPID_, this->SID));
+		this->createPat.SetParam(TSID, pidList);
 
 		this->pmtPID = pmtPID_;
 	}
 }
 
 void COneServiceUtil::SetEmmPID(
-	const map<WORD,WORD>& PIDMap
+	const vector<WORD>& pidList
 	)
 {
-	this->emmPIDMap = PIDMap;
+	this->emmPIDList = pidList;
+	std::sort(this->emmPIDList.begin(), this->emmPIDList.end());
 }
 
 //ファイル保存を開始する
@@ -556,10 +541,11 @@ void COneServiceUtil::SetBonDriver(
 }
 
 void COneServiceUtil::SetPIDName(
-	const map<WORD, string>& pidName
+	WORD pid,
+	LPCSTR name
 	)
 {
-	this->dropCount.SetPIDName(&pidName);
+	this->dropCount.SetPIDName(pid, name);
 }
 
 void COneServiceUtil::SetNoLogScramble(

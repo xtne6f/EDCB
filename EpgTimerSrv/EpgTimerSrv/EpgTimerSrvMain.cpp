@@ -229,10 +229,19 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 					{
 						WORD val;
 						if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+							resParam->param = CMD_SUCCESS;
 							if( SD_MODE_STANDBY <= LOBYTE(val) && LOBYTE(val) <= SD_MODE_SHUTDOWN ){
+								fs_path srvIniPath = GetModulePath().replace_filename(EPG_TIMER_SERVICE_EXE).replace_extension(L".ini");
+								if( GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePC", 0, srvIniPath.c_str()) != 0 ){
+									DWORD noUsePCTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePCTime", 3, srvIniPath.c_str());
+									LASTINPUTINFO lii;
+									lii.cbSize = sizeof(lii);
+									if( noUsePCTime == 0 || (GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < noUsePCTime * 60 * 1000) ){
+										break;
+									}
+								}
 								PostMessage(hwnd, WM_APP_QUERY_SHUTDOWN, LOBYTE(val), HIBYTE(val));
 							}
-							resParam->param = CMD_SUCCESS;
 						}
 					}
 					break;
@@ -1289,15 +1298,55 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 	return false;
 }
 
+vector<RESERVE_DATA>& CEpgTimerSrvMain::PreChgReserveData(vector<RESERVE_DATA>& reserveList) const
+{
+	if( this->setting.commentAutoAdd ){
+		for( size_t i = 0; i < reserveList.size(); i++ ){
+			//プログラム予約化した自動予約か
+			if( reserveList[i].eventID == 0xFFFF && reserveList[i].comment.compare(0, 7, L"EPG自動予約") == 0 ){
+				size_t in = reserveList[i].comment.compare(7, 1, L"(") ? 6 : reserveList[i].comment.find(L')');
+				if( in != wstring::npos ){
+					RESERVE_DATA r;
+					if( this->reserveManager.GetReserveData(reserveList[i].reserveID, &r) ){
+						if( reserveList[i].comment.compare(in + 1, 1, L"#") ){
+							//プログラム予約化しようとしているときはイベントID注釈を入れる
+							if( r.originalNetworkID == reserveList[i].originalNetworkID &&
+							    r.transportStreamID == reserveList[i].transportStreamID &&
+							    r.serviceID == reserveList[i].serviceID &&
+							    r.eventID != 0xFFFF ){
+								WCHAR id[16];
+								swprintf_s(id, L"#%d", r.eventID);
+								reserveList[i].comment.insert(in + 1, id);
+							}
+						}else{
+							//サービスを変更しようとしているときはイベントID注釈を消す
+							if( r.originalNetworkID != reserveList[i].originalNetworkID ||
+							    r.transportStreamID != reserveList[i].transportStreamID ||
+							    r.serviceID != reserveList[i].serviceID ){
+								LPWSTR endp;
+								wcstoul(reserveList[i].comment.c_str() + in + 2, &endp, 10);
+								reserveList[i].comment.erase(in + 1, endp - (reserveList[i].comment.c_str() + in + 1));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return reserveList;
+}
+
 void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList)
 {
 	int addCount = 0;
-	int autoAddHour_;
-	bool chkGroupEvent_;
+	int autoAddHour;
+	bool chkGroupEvent;
+	bool commentAutoAdd;
 	{
 		CBlockLock lock(&this->settingLock);
-		autoAddHour_ = this->setting.autoAddHour;
-		chkGroupEvent_ = this->setting.chkGroupEvent;
+		autoAddHour = this->setting.autoAddHour;
+		chkGroupEvent = this->setting.chkGroupEvent;
+		commentAutoAdd = this->setting.commentAutoAdd;
 	}
 	__int64 now = GetNowI64Time();
 
@@ -1308,11 +1357,11 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 		const EPGDB_EVENT_INFO& info = resultList[i].info;
 		//時間未定でなく対象期間内かどうか
 		if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
-		    now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour_ * 60 * 60 * I64_1SEC ){
+		    now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour * 60 * 60 * I64_1SEC ){
 			addCount++;
 			if( this->reserveManager.IsFindReserve(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id) == false ){
 				bool found = false;
-				if( info.eventGroupInfo != NULL && chkGroupEvent_ ){
+				if( info.eventGroupInfo != NULL && chkGroupEvent ){
 					//イベントグループのチェックをする
 					for( size_t j = 0; found == false && j < info.eventGroupInfo->eventDataList.size(); j++ ){
 						//group_typeは必ず1(イベント共有)
@@ -1339,6 +1388,19 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					    setList[j].transportStreamID == info.transport_stream_id &&
 					    setList[j].serviceID == info.service_id &&
 					    setList[j].eventID == info.event_id ){
+						found = true;
+					}
+				}
+				if( found == false && commentAutoAdd ){
+					//プログラム予約化したもののイベントID注釈のチェックをする
+					if( this->reserveManager.FindProgramReserve(
+					    info.original_network_id, info.transport_stream_id, info.service_id, [&](const RESERVE_DATA& a) {
+					        return (a.comment.compare(0, 8, L"EPG自動予約#") == 0 &&
+					                wcstoul(a.comment.c_str() + 8, NULL, 10) == info.event_id) ||
+					               (a.comment.compare(0, 8, L"EPG自動予約(") == 0 &&
+					                a.comment.find(L')') != wstring::npos &&
+					                a.comment.compare(a.comment.find(L')') + 1, 1, L"#") == 0 &&
+					                wcstoul(a.comment.c_str() + a.comment.find(L')') + 2, NULL, 10) == info.event_id); }) ){
 						found = true;
 					}
 				}
@@ -1370,9 +1432,11 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					}
 					item.comment = L"EPG自動予約";
 					if( resultList[i].findKey.empty() == false ){
-						item.comment += L"(" + resultList[i].findKey + L")";
+						item.comment += L'(' + resultList[i].findKey;
 						Replace(item.comment, L"\r", L"");
 						Replace(item.comment, L"\n", L"");
+						Replace(item.comment, L")", L"）");
+						item.comment += L')';
 					}
 				}
 			}else if( data.searchInfo.chkRecEnd != 0 && this->reserveManager.IsFindRecEventInfo(info, data.searchInfo.chkRecDay) ){
@@ -1403,8 +1467,10 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 			__int64 startTime = baseStartTime + (data.startTime + i * 24 * 60 * 60) * I64_1SEC;
 			if( startTime > now ){
 				//同一時間の予約がすでにあるかチェック
-				if( this->reserveManager.IsFindProgramReserve(
-				    data.originalNetworkID, data.transportStreamID, data.serviceID, startTime, data.durationSecond) == false &&
+				if( this->reserveManager.FindProgramReserve(
+				    data.originalNetworkID, data.transportStreamID, data.serviceID, [&](const RESERVE_DATA& a) {
+				        return ConvertI64Time(a.startTime) == startTime &&
+				               a.durationSecond == data.durationSecond; }) == false &&
 				    std::find_if(setList.begin(), setList.end(), [&](const RESERVE_DATA& a) {
 				        return a.originalNetworkID == data.originalNetworkID &&
 				               a.transportStreamID == data.transportStreamID &&
@@ -1543,7 +1609,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			vector<RESERVE_DATA> list;
 			if( ReadVALUE(&list, cmdParam->data, cmdParam->dataSize, NULL) &&
-			    sys->reserveManager.ChgReserveData(list) ){
+			    sys->reserveManager.ChgReserveData(sys->PreChgReserveData(list)) ){
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1558,6 +1624,16 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			vector<DWORD> list;
 			if( ReadVALUE(&list, cmdParam->data, cmdParam->dataSize, NULL) ){
 				sys->reserveManager.DelRecFileInfo(list);
+				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_CHG_PATH_RECINFO:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_CHG_PATH_RECINFO\r\n");
+			vector<REC_FILE_INFO> list;
+			if( ReadVALUE(&list, cmdParam->data, cmdParam->dataSize, NULL) ){
+				sys->reserveManager.ChgPathRecFileInfo(list);
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -2123,7 +2199,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			vector<RESERVE_DATA> list;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
 			    ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
-			    sys->reserveManager.ChgReserveData(list) ){
+			    sys->reserveManager.ChgReserveData(sys->PreChgReserveData(list)) ){
 				resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
@@ -2373,7 +2449,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			resParam->param = OLD_CMD_ERR;
 			vector<RESERVE_DATA> list(1);
 			if( DeprecatedReadVALUE(&list.back(), cmdParam->data, cmdParam->dataSize) &&
-			    sys->reserveManager.ChgReserveData(list) ){
+			    sys->reserveManager.ChgReserveData(sys->PreChgReserveData(list)) ){
 				resParam->param = OLD_CMD_SUCCESS;
 			}
 		}
@@ -3289,7 +3365,7 @@ int CEpgTimerSrvMain::LuaChgReserveData(lua_State* L)
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 1 && lua_istable(L, -1) ){
 		vector<RESERVE_DATA> list(1);
-		if( FetchReserveData(ws, list.back()) && ws.sys->reserveManager.ChgReserveData(list) ){
+		if( FetchReserveData(ws, list.back()) && ws.sys->reserveManager.ChgReserveData(ws.sys->PreChgReserveData(list)) ){
 			lua_pushboolean(L, true);
 			return 1;
 		}

@@ -7,6 +7,9 @@
 
 CBonCtrl::CBonCtrl(void)
 {
+	this->statusSignalLv = 0.0f;
+	this->viewSpace = -1;
+	this->viewCh = -1;
 	this->analyzeStopFlag = FALSE;
 	this->chScanIndexOrStatus = ST_STOP;
 	this->epgCapIndexOrStatus = ST_STOP;
@@ -18,8 +21,6 @@ CBonCtrl::CBonCtrl(void)
 	this->epgCapBackCS2Basic = TRUE;
 	this->epgCapBackCS3Basic = FALSE;
 	this->epgCapBackStartWaitSec = 30;
-	this->tsBuffMaxCount = 5000;
-	this->writeBuffMaxCount = -1;
 }
 
 
@@ -50,12 +51,6 @@ void CBonCtrl::SetNoLogScramble(BOOL noLog)
 	this->tsOut.SetNoLogScramble(noLog);
 }
 
-void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount_, int writeBuffMaxCount_)
-{
-	this->tsBuffMaxCount = tsBuffMaxCount_;
-	this->writeBuffMaxCount = writeBuffMaxCount_;
-}
-
 //BonDriverフォルダのBonDriver_*.dllを列挙
 //戻り値：
 // 検索できたBonDriver一覧
@@ -71,12 +66,14 @@ vector<wstring> CBonCtrl::EnumBonDriver()
 // bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
 DWORD CBonCtrl::OpenBonDriver(
 	LPCWSTR bonDriverFile,
-	int openWait
+	int openWait,
+	DWORD tsBuffMaxCount
 )
 {
 	CloseBonDriver();
 	DWORD ret = ERR_FALSE;
-	if( this->bonUtil.OpenBonDriver(bonDriverFile, RecvCallback, this, openWait) ){
+	if( this->bonUtil.OpenBonDriver(bonDriverFile, [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
+	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, openWait) ){
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		ret = NO_ERR;
 		//解析スレッド起動
@@ -232,16 +229,6 @@ BOOL CBonCtrl::GetStreamID(
 	return this->tsOut.GetStreamID(ONID, TSID);
 }
 
-//シグナルレベルの取得
-//戻り値：
-// シグナルレベル
-float CBonCtrl::GetSignalLevel()
-{
-	float ret = this->bonUtil.GetSignalLevel();
-	this->tsOut.SetSignalLevel(ret);
-	return ret;
-}
-
 //ロードしているBonDriverの開放
 void CBonCtrl::CloseBonDriver()
 {
@@ -258,36 +245,46 @@ void CBonCtrl::CloseBonDriver()
 	this->bonUtil.CloseBonDriver();
 	this->packetInit.ClearBuff();
 	this->tsBuffList.clear();
+	this->tsFreeList.clear();
 }
 
-void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
+void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMaxCount)
 {
-	CBonCtrl* sys = (CBonCtrl*)param;
 	BYTE* outData;
 	DWORD outSize;
-	if( data != NULL && size != 0 && sys->packetInit.GetTSData(data, size, &outData, &outSize) ){
-		CBlockLock lock(&sys->buffLock);
-		for( std::list<vector<BYTE>>::iterator itr = sys->tsBuffList.begin(); outSize != 0; itr++ ){
-			if( itr == sys->tsBuffList.end() ){
+	if( data != NULL && size != 0 && this->packetInit.GetTSData(data, size, &outData, &outSize) ){
+		CBlockLock lock(&this->buffLock);
+		while( outSize != 0 ){
+			if( this->tsFreeList.empty() ){
 				//バッファを増やす
-				if( sys->tsBuffList.size() > sys->tsBuffMaxCount ){
-					for( itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end(); (itr++)->clear() );
-					itr = sys->tsBuffList.begin();
+				if( this->tsBuffList.size() > tsBuffMaxCount ){
+					for( auto itr = this->tsBuffList.begin(); itr != this->tsBuffList.end(); (itr++)->clear() );
+					this->tsFreeList.splice(this->tsFreeList.end(), this->tsBuffList);
 				}else{
-					sys->tsBuffList.push_back(vector<BYTE>());
-					itr = sys->tsBuffList.end();
-					(--itr)->reserve(48128);
+					this->tsFreeList.push_back(vector<BYTE>());
+					this->tsFreeList.back().reserve(48128);
 				}
 			}
-			DWORD insertSize = min(48128 - (DWORD)itr->size(), outSize);
-			itr->insert(itr->end(), outData, outData + insertSize);
+			DWORD insertSize = min(48128 - (DWORD)this->tsFreeList.front().size(), outSize);
+			this->tsFreeList.front().insert(this->tsFreeList.front().end(), outData, outData + insertSize);
+			if( this->tsFreeList.front().size() == 48128 ){
+				this->tsBuffList.splice(this->tsBuffList.end(), this->tsFreeList, this->tsFreeList.begin());
+			}
 			outData += insertSize;
 			outSize -= insertSize;
 		}
 	}
 	if( remain == 0 ){
-		sys->analyzeEvent.Set();
+		this->analyzeEvent.Set();
 	}
+}
+
+void CBonCtrl::StatusCallback(float signalLv, int space, int ch)
+{
+	CBlockLock lock(&this->buffLock);
+	this->statusSignalLv = signalLv;
+	this->viewSpace = space;
+	this->viewCh = ch;
 }
 
 void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
@@ -296,19 +293,20 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 
 	while( sys->analyzeStopFlag == FALSE ){
 		//バッファからデータ取り出し
+		float signalLv;
 		{
 			CBlockLock lock(&sys->buffLock);
 			if( data.empty() == false ){
 				//返却
 				data.front().clear();
-				std::list<vector<BYTE>>::iterator itr;
-				for( itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end() && itr->empty() == false; itr++ );
-				sys->tsBuffList.splice(itr, data);
+				sys->tsFreeList.splice(sys->tsFreeList.end(), data);
 			}
-			if( sys->tsBuffList.empty() == false && sys->tsBuffList.front().size() == 48128 ){
+			if( sys->tsBuffList.empty() == false ){
 				data.splice(data.end(), sys->tsBuffList, sys->tsBuffList.begin());
 			}
+			signalLv = sys->statusSignalLv;
 		}
+		sys->tsOut.SetSignalLevel(signalLv);
 		if( data.empty() == false ){
 			sys->tsOut.AddTSBuff(&data.front().front(), (DWORD)data.front().size());
 		}else{
@@ -331,14 +329,14 @@ DWORD CBonCtrl::GetServiceList(
 
 //TSストリーム制御用コントロールを作成する
 //戻り値：
-// エラーコード
+// 制御識別ID
 //引数：
-// id			[OUT]制御識別ID
-BOOL CBonCtrl::CreateServiceCtrl(
-	DWORD* id
+// sendUdpTcp	[IN]UDP/TCP送信用にする
+DWORD CBonCtrl::CreateServiceCtrl(
+	BOOL sendUdpTcp
 	)
 {
-	return this->tsOut.CreateServiceCtrl(id);
+	return this->tsOut.CreateServiceCtrl(sendUdpTcp);
 }
 
 //TSストリーム制御用コントロールを作成する
@@ -413,6 +411,7 @@ BOOL CBonCtrl::SendTcp(
 // createSize			[IN]ファイル作成時にディスクに予約する容量
 // saveFolder			[IN]使用するフォルダ一覧
 // saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+// writeBuffMaxCount	[IN]出力バッファ上限
 BOOL CBonCtrl::StartSave(
 	DWORD id,
 	const wstring& fileName,
@@ -424,7 +423,8 @@ BOOL CBonCtrl::StartSave(
 	WORD pittariEventID,
 	ULONGLONG createSize,
 	const vector<REC_FILE_SET_INFO>& saveFolder,
-	const vector<wstring>& saveFolderSub
+	const vector<wstring>& saveFolderSub,
+	int writeBuffMaxCount
 )
 {
 	BOOL ret = this->tsOut.StartSave(id, fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, writeBuffMaxCount);
@@ -1070,25 +1070,14 @@ void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 	}
 }
 
-BOOL CBonCtrl::GetViewStatusInfo(
-	DWORD id,
-	float* signal,
-	DWORD* space,
-	DWORD* ch,
-	ULONGLONG* drop,
-	ULONGLONG* scramble
+void CBonCtrl::GetViewStatusInfo(
+	float* signalLv,
+	int* space,
+	int* ch
 	)
 {
-	BOOL ret = FALSE;
-
-	this->tsOut.GetErrCount(id, drop, scramble);
-
-	*signal = this->bonUtil.GetSignalLevel();
-	this->tsOut.SetSignalLevel(*signal);
-
-	if( this->bonUtil.GetNowCh(space, ch) ){
-		ret = TRUE;
-	}
-
-	return ret;
+	CBlockLock lock(&this->buffLock);
+	*signalLv = this->statusSignalLv;
+	*space = this->viewSpace;
+	*ch = this->viewCh;
 }

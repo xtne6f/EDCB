@@ -61,9 +61,12 @@ protected:
 		string strIP;
 		DWORD dwPort;
 		SOCKET sock;
+		HANDLE pipe;
+		HANDLE olEvent;
+		OVERLAPPED ol;
 		BOOL bConnect;
 	};
-	vector<SEND_INFO> m_SendList;
+	std::list<SEND_INFO> m_SendList;
 
 protected:
 	static void SendThread(CSendTSTCPMain* pSys);

@@ -65,6 +65,7 @@ DWORD WINAPI UnInitializeEP(
 //解析対象のTSパケット１つを読み込ませる
 //戻り値：
 // エラーコード
+//引数：
 // id		[IN]識別ID InitializeEPの戻り値
 // data		[IN]TSパケット１つ
 // size		[IN]dataのサイズ（188でなければならない）
@@ -89,6 +90,7 @@ DWORD WINAPI AddTSPacketEP(
 //解析データの現在のストリームＩＤを取得する
 //戻り値：
 // エラーコード
+//引数：
 // id						[IN]識別ID
 // originalNetworkID		[OUT]現在のoriginalNetworkID
 // transportStreamID		[OUT]現在のtransportStreamID
@@ -227,6 +229,7 @@ DWORD WINAPI EnumEpgInfoListEP(
 //戻り値：
 // エラーコード
 //引数：
+// id						[IN]識別ID
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
 // serviceID				[IN]取得対象のServiceID
@@ -325,6 +328,14 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusEP(
 }
 
 //指定サービスのEPGデータの蓄積状態を取得する
+//戻り値：
+// ステータス
+//引数：
+// id						[IN]識別ID
+// originalNetworkID		[IN]取得対象のOriginalNetworkID
+// transportStreamID		[IN]取得対象のTransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// l_eitFlag				[IN]L-EITのステータスを取得
 EPG_SECTION_STATUS WINAPI GetSectionStatusServiceEP(
 	DWORD id,
 	WORD originalNetworkID,

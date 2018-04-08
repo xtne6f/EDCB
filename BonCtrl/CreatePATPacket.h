@@ -6,20 +6,15 @@
 class CCreatePATPacket
 {
 public:
-	struct PROGRAM_PID_INFO {
-		WORD SID;
-		WORD PMTPID;
-	};
-public:
 	CCreatePATPacket(void);
 
 	//作成PATのパラメータを設定
 	//引数：
 	// TSID				[IN]TransportStreamID
-	// PIDMap			[IN]PMTのリスト（キーPMTのPID）
+	// PIDList			[IN]PMTのPIDとServiceIDのリスト
 	void SetParam(
 		WORD TSID_,
-		map<WORD, PROGRAM_PID_INFO>* PIDMap_
+		const vector<pair<WORD, WORD>>& PIDList_
 	);
 
 	//作成PATのバッファポインタを取得
@@ -48,7 +43,7 @@ protected:
 	BYTE counter;
 
 	WORD TSID;
-	map<WORD, PROGRAM_PID_INFO> PIDMap; //キーPMTのPID
+	vector<pair<WORD, WORD>> PIDList;
 
 	vector<BYTE> packet;
 

@@ -176,7 +176,6 @@
     <ClInclude Include="ARIB8CharDecode.h" />
     <ClInclude Include="AribDescriptor.h" />
     <ClInclude Include="DecodeUtil.h" />
-    <ClInclude Include="EpgDataCap3.h" />
     <ClInclude Include="EpgDataCap3Main.h" />
     <ClInclude Include="EpgDBUtil.h" />
     <ClInclude Include="resource.h" />

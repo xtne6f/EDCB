@@ -9,7 +9,7 @@ CSendTSTCPDllUtil::CSendTSTCPDllUtil(void)
 
 CSendTSTCPDllUtil::~CSendTSTCPDllUtil(void)
 {
-	UnLoadDll();
+	UnInitialize();
 }
 
 BOOL CSendTSTCPDllUtil::LoadDll(void)
@@ -32,7 +32,6 @@ BOOL CSendTSTCPDllUtil::LoadDll(void)
 	m_hModule = ::LoadLibrary(L"SendTSTCP.dll");
 
 	if( m_hModule == NULL ){
-//		::MessageBox( NULL, L"EpgDataCap.dll ÇÃÉçÅ[ÉhÇ…é∏îsÇµÇ‹ÇµÇΩ", NULL, MB_OK);
 		return FALSE;
 	}
 
@@ -79,24 +78,17 @@ BOOL CSendTSTCPDllUtil::LoadDll(void)
 
 ERR_END:
 	if( bRet == FALSE ){
-		::FreeLibrary( m_hModule );
-		m_hModule=NULL;
-		::MessageBox( NULL, L"GetProcAddress Ç…é∏îsÇµÇ‹ÇµÇΩ", NULL, MB_OK);
+		UnLoadDll();
 	}
 	return bRet;
 }
 
-BOOL CSendTSTCPDllUtil::UnLoadDll(void)
+void CSendTSTCPDllUtil::UnLoadDll(void)
 {
 	if( m_hModule != NULL ){
-		if( m_iID != -1 ){
-			pfnUnInitializeDLL(m_iID);
-		}
 		::FreeLibrary( m_hModule );
-		m_iID = -1;
 	}
 	m_hModule=NULL;
-	return TRUE;
 }
 
 DWORD CSendTSTCPDllUtil::Initialize()
@@ -106,6 +98,7 @@ DWORD CSendTSTCPDllUtil::Initialize()
 	}
 	m_iID = pfnInitializeDLL();
 	if( m_iID == -1 ){
+		UnLoadDll();
 		return ERR_INIT;
 	}
 	return NO_ERR;
@@ -113,7 +106,7 @@ DWORD CSendTSTCPDllUtil::Initialize()
 
 void CSendTSTCPDllUtil::UnInitialize()
 {
-	if( m_hModule == NULL || m_iID == -1 ){
+	if( m_hModule == NULL ){
 		return ;
 	}
 	pfnUnInitializeDLL(m_iID);
