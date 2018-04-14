@@ -266,7 +266,7 @@ namespace EpgTimer
                             MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
                         }
 
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                         CommonManager.Instance.DB.ReloadReserveInfo();
                         SearchPg();
                     }
@@ -301,7 +301,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                     CommonManager.Instance.DB.ReloadReserveInfo();
                     SearchPg();
                 }
@@ -336,7 +336,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                     CommonManager.Instance.DB.ReloadReserveInfo();
                     SearchPg();
                 }
@@ -379,7 +379,7 @@ namespace EpgTimer
                 dlg.SetReserveInfo(reserveInfo);
                 if (dlg.ShowDialog() == true)
                 {
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                     CommonManager.Instance.DB.ReloadReserveInfo();
                     SearchPg();
                 }
@@ -399,7 +399,7 @@ namespace EpgTimer
                 dlg.SetEventInfo(eventInfo);
                 if (dlg.ShowDialog() == true)
                 {
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                     CommonManager.Instance.DB.ReloadReserveInfo();
                     SearchPg();
                 }
@@ -580,7 +580,7 @@ namespace EpgTimer
                     }
                 }
                 //
-                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                 CommonManager.Instance.DB.ReloadReserveInfo();
                 SearchPg();
                 //
@@ -629,7 +629,7 @@ namespace EpgTimer
                             MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                         }
 
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                         CommonManager.Instance.DB.ReloadReserveInfo();
                         SearchPg();
                     }
@@ -666,7 +666,7 @@ namespace EpgTimer
                             MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                         }
 
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                         CommonManager.Instance.DB.ReloadReserveInfo();
                         SearchPg();
                     }

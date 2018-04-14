@@ -29,14 +29,18 @@ namespace EpgTimer
             String plugInFile = "Write_Default.dll";
             String recNamePlugInFile = "";
 
-            ErrCode err = CommonManager.Instance.DB.ReloadPlugInFile();
+            var writeList = new List<string>();
+            ErrCode err = CommonManager.CreateSrvCtrl().SendEnumPlugIn(2, ref writeList);
             if (err != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "PlugIn一覧の取得でエラーが発生しました。");
             }
+            //こちらは空(CMD_ERR)でもよい
+            var recNameList = new List<string>();
+            CommonManager.CreateSrvCtrl().SendEnumPlugIn(1, ref recNameList);
 
             int select = 0;
-            foreach (string info in CommonManager.Instance.DB.WritePlugInList.Values)
+            foreach (string info in writeList)
             {
                 int index = comboBox_writePlugIn.Items.Add(info);
                 if (String.Compare(info, plugInFile, true) == 0)
@@ -51,7 +55,7 @@ namespace EpgTimer
 
             select = 0;
             comboBox_recNamePlugIn.Items.Add("なし");
-            foreach (string info in CommonManager.Instance.DB.RecNamePlugInList.Values)
+            foreach (string info in recNameList)
             {
                 int index = comboBox_recNamePlugIn.Items.Add(info);
                 if (String.Compare(info, recNamePlugInFile, true) == 0)

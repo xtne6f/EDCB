@@ -267,8 +267,8 @@ namespace EpgTimer
                 taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconBlue.ico");
 
                 CommonManager.Instance.DB.ReloadReserveInfo();
-                ReserveData item = new ReserveData();
-                if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
+                ReserveData item = CommonManager.Instance.DB.GetNextReserve();
+                if (item != null)
                 {
                     String timeView = item.StartTime.ToString("M/d(ddd) H:mm～");
                     DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
@@ -498,12 +498,11 @@ namespace EpgTimer
             {
                 ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932)));
             }
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.PlugInFile);
+            CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
+            CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.RecInfo);
+            CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddEpgInfo);
+            CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddManualInfo);
+            CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.EpgData);
             reserveView.UpdateReserveData();
             epgView.UpdateReserveData();
             tunerReserveView.UpdateReserveData();
@@ -1138,7 +1137,7 @@ namespace EpgTimer
             {
                 case UpdateNotifyItem.EpgData:
                     {
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.EpgData);
                         if (CommonManager.Instance.NWMode == false)
                         {
                             CommonManager.Instance.DB.ReloadEpgData();
@@ -1152,7 +1151,7 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.ReserveInfo:
                     {
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                         if (CommonManager.Instance.NWMode == false)
                         {
                             CommonManager.Instance.DB.ReloadReserveInfo();
@@ -1164,7 +1163,7 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.RecInfo:
                     {
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.RecInfo);
                         if (CommonManager.Instance.NWMode == false)
                         {
                             CommonManager.Instance.DB.ReloadrecFileInfo();
@@ -1174,7 +1173,7 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.AutoAddEpgInfo:
                     {
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddEpgInfo);
                         if (CommonManager.Instance.NWMode == false)
                         {
                             CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
@@ -1184,7 +1183,7 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
                     {
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddManualInfo);
                         if (CommonManager.Instance.NWMode == false)
                         {
                             CommonManager.Instance.DB.ReloadManualAutoAddInfo();
@@ -1235,9 +1234,8 @@ namespace EpgTimer
             }
 
             CommonManager.Instance.DB.ReloadReserveInfo();
-            ReserveData item = new ReserveData();
-
-            if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
+            ReserveData item = CommonManager.Instance.DB.GetNextReserve();
+            if (item != null)
             {
                 String timeView = item.StartTime.ToString("M/d(ddd) H:mm～");
                 DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);

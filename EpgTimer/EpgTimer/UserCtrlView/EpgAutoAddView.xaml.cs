@@ -230,7 +230,7 @@ namespace EpgTimer
                 if (dellist.Count > 0)
                 {
                     CommonManager.CreateSrvCtrl().SendDelReserve(dellist);
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
                     CommonManager.Instance.DB.ReloadReserveInfo();
                 }
                 
