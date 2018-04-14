@@ -236,7 +236,7 @@ namespace EpgTimer.EpgView
                         RenderText(detail, textDrawList, ItemFontNormal, sizeNormal,
                                    innerWidth - sizeTitle * 0.5 - indentNormal, innerHeight - LastItemRenderTextHeight,
                                    innerLeft + indentNormal, innerTop + LastItemRenderTextHeight, out useHeight, colorNormal, m, selfLeft);
-                        LastItemRenderTextHeight += useHeight;
+                        LastItemRenderTextHeight += useHeight + sizeNormal * 0.25;
                     }
                     LastItemRenderTextHeight = Math.Floor(LastItemRenderTextHeight + BorderTopSize + sizeNormal * 0.5);
                     LastItemRenderTextHeight = Math.Min(LastItemRenderTextHeight, info.Height);
@@ -258,8 +258,7 @@ namespace EpgTimer.EpgView
         {
             totalHeight = 0;
 
-            string[] lineText = text.Replace("\r", "").Split('\n');
-            foreach (string line in lineText)
+            for (int i = 0; i < text.Length; )
             {
                 if (totalHeight > maxHeight)
                 {
@@ -273,25 +272,25 @@ namespace EpgTimer.EpgView
                 double totalWidth = 0;
                 double originWidth = 0;
                 GlyphTypeface currentGlyphType = null;
-                for (int n = 0; n < line.Length; n++)
+                for (; i < text.Length && text[i] != '\r' && text[i] != '\n'; i++)
                 {
                     //この辞書検索が負荷の大部分を占めているのでテーブルルックアップする
-                    //ushort glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
+                    //ushort glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[text[i]];
                     //double width = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
-                    ushort glyphIndex = itemFont.NoCache ? (ushort)0 : itemFont.GlyphIndexCache[line[n]];
+                    ushort glyphIndex = itemFont.NoCache ? (ushort)0 : itemFont.GlyphIndexCache[text[i]];
                     double glyphWidth;
                     GlyphTypeface glyphType = itemFont.GlyphType;
                     if (glyphIndex == 0)
                     {
                         //NoCacheまたはキャッシュミス
                         int key = 0;
-                        if (char.IsSurrogatePair(line, n))
+                        if (char.IsSurrogatePair(text, i))
                         {
-                            key = char.ConvertToUtf32(line, n++);
+                            key = char.ConvertToUtf32(text, i++);
                         }
-                        else if (char.IsSurrogate(line[n]) == false)
+                        else if (char.IsSurrogate(text[i]) == false)
                         {
-                            key = line[n];
+                            key = text[i];
                         }
                         if (glyphType.CharacterToGlyphMap.TryGetValue(key, out glyphIndex) || itemFont.FallbackGlyphType == null)
                         {
@@ -355,6 +354,8 @@ namespace EpgTimer.EpgView
                     textDrawList.Add(new Tuple<Brush, GlyphRun>(fontColor, CreateGlyphRun(
                         x + originWidth, y + totalHeight, m, selfLeft, currentGlyphType, fontSize, glyphIndexes, advanceWidths)));
                 }
+                i = text.IndexOf('\n', i);
+                i = i < 0 ? text.Length : i + 1;
             }
             return true;
         }
