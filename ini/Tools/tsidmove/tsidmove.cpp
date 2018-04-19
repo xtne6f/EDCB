@@ -1,24 +1,34 @@
-// tsidmove: EDCBの予約、EPG自動予約、プログラム自動予約に含まれるTransportStreamIDの情報を変更する (2018-04-18)
+// tsidmove: EDCBの予約、EPG自動予約、プログラム自動予約に含まれるTransportStreamIDの情報を変更する (2018-04-19)
 // ※予約ファイル等にこのフォークと非互換の項目追加等されたフォークでは使いまわし不可能
 #include "stdafx.h"
 #include "../../../Common/CommonDef.h"
 #include "../../../Common/ParseTextInstances.h"
 #include "../../../Common/PathUtil.h"
 
+static const CH_DATA5 *CheckTSID(WORD onid, WORD tsid, WORD sid, const CParseChText5 &chText5)
+{
+	if (chText5.GetMap().count(static_cast<LONGLONG>(onid) << 32 | static_cast<DWORD>(tsid) << 16 | sid) == 0) {
+		// 見つからなかった
+		auto itr = std::find_if(chText5.GetMap().begin(), chText5.GetMap().end(),
+		                        [=](const pair<LONGLONG, CH_DATA5> &a) { return a.second.originalNetworkID == onid && a.second.serviceID == sid; });
+		if (itr != chText5.GetMap().end()) {
+			// TSIDを無視すれば見つかった
+			return &itr->second;
+		}
+	}
+	return nullptr;
+}
+
 int wmain(int argc, wchar_t **argv)
 {
 	_wsetlocale(LC_ALL, L"");
 
 	// --dray-run時は書き込みを一切しない
-	const bool dryrun = (argc == 5 && wcscmp(argv[1], L"--dry-run") == 0);
-	if (argc != 4 && !dryrun) {
-		_putws(L"Usage: tsidmove [--dry-run] {NetworkID} {before_TSID} {after_TSID}");
+	const bool dryrun = (argc >= 2 && wcscmp(argv[1], L"--dry-run") == 0);
+	if (argc != 2 || (!dryrun && wcscmp(argv[1], L"--run") != 0)) {
+		_putws(L"Usage: tsidmove --dry-run|--run");
 		return 2;
 	}
-	argv += (dryrun ? 2 : 1);
-	const WORD beforeONID = static_cast<WORD>(wcstol(*(argv++), nullptr, 0));
-	const WORD beforeTSID = static_cast<WORD>(wcstol(*(argv++), nullptr, 0));
-	const WORD afterTSID = static_cast<WORD>(wcstol(*(argv++), nullptr, 0));
 
 	// このツールはEDCBフォルダかその直下のフォルダに置かれているはず
 	fs_path iniPath = GetModulePath().replace_filename(L"Common.ini");
@@ -48,21 +58,6 @@ int wmain(int argc, wchar_t **argv)
 		return 1;
 	}
 
-	// ChSet5.txtは予め更新されていると仮定。矛盾をチェック
-	LPCWSTR targetName = nullptr;
-	for (auto itr = chText5.GetMap().cbegin(); itr != chText5.GetMap().end(); itr++) {
-		if (itr->second.originalNetworkID == beforeONID && itr->second.transportStreamID == beforeTSID) {
-			wprintf_s(L"Warning: 移動元のTSID=%d(0x%04x)「%s」がまだChSet5.txtに存在します。\n", beforeTSID, beforeTSID, itr->second.networkName.c_str());
-		}
-		if (itr->second.originalNetworkID == beforeONID && itr->second.transportStreamID == afterTSID) {
-			targetName = itr->second.networkName.c_str();
-		}
-	}
-	if (!targetName) {
-		wprintf_s(L"Error: 移動先のTSID=%d(0x%04x) がChSet5.txtに存在しません。\n", afterTSID, afterTSID);
-		return 1;
-	}
-
 	HANDLE hMutex = CreateMutex(nullptr, FALSE, EPG_TIMER_BON_SRV_MUTEX);
 	if (hMutex) {
 		if (GetLastError() == ERROR_ALREADY_EXISTS) {
@@ -76,10 +71,6 @@ int wmain(int argc, wchar_t **argv)
 	}
 	CloseHandle(hMutex);
 
-	wprintf_s(L"NetworkID=%d(0x%04x) の移動元TSID=%d(0x%04x) を移動先TSID=%d(0x%04x) に変更します。\n",
-	          beforeONID, beforeONID, beforeTSID, beforeTSID, afterTSID, afterTSID);
-	wprintf_s(L"チャンネル名は「%s」。\n\n", targetName);
-
 	wprintf_s(RESERVE_TEXT_NAME L"(予約ファイル)");
 	{
 		CParseReserveText text;
@@ -91,8 +82,12 @@ int wmain(int argc, wchar_t **argv)
 				auto itr = text.GetMap().cbegin();
 				std::advance(itr, i);
 				RESERVE_DATA r = itr->second;
-				if (r.originalNetworkID == beforeONID && r.transportStreamID == beforeTSID) {
-					r.transportStreamID = afterTSID;
+				const CH_DATA5 *ch = CheckTSID(r.originalNetworkID, r.transportStreamID, r.serviceID, chText5);
+				if (ch) {
+					wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%s)",
+					          r.reserveID, r.transportStreamID, r.transportStreamID,
+					          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
+					r.transportStreamID = ch->transportStreamID;
 					text.ChgReserve(r);
 					n++;
 				}
@@ -100,7 +95,7 @@ int wmain(int argc, wchar_t **argv)
 			if (n == 0) {
 				_putws(L"に変更はありません。");
 			} else {
-				wprintf_s(L"を%d項目変更します...\n", n);
+				wprintf_s(L"\n以上の%d項目変更します...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
 						_putws(L"成功。");
@@ -125,8 +120,12 @@ int wmain(int argc, wchar_t **argv)
 				EPG_AUTO_ADD_DATA a = itr->second;
 				bool modified = false;
 				for (auto jtr = a.searchInfo.serviceList.begin(); jtr != a.searchInfo.serviceList.end(); jtr++) {
-					if (((*jtr >> 32) & 0xFFFF) == beforeONID && ((*jtr >> 16) & 0xFFFF) == beforeTSID) {
-						*jtr = (*jtr & 0xFFFF0000FFFFLL) | (static_cast<DWORD>(afterTSID) << 16);
+					const CH_DATA5 *ch = CheckTSID(static_cast<WORD>(*jtr >> 32), static_cast<WORD>(*jtr >> 16), static_cast<WORD>(*jtr), chText5);
+					if (ch) {
+						wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%s)",
+						          a.dataID, static_cast<WORD>(*jtr >> 16), static_cast<WORD>(*jtr >> 16),
+						          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
+						*jtr = (*jtr & 0xFFFF0000FFFFLL) | (static_cast<DWORD>(ch->transportStreamID) << 16);
 						modified = true;
 					}
 				}
@@ -138,7 +137,7 @@ int wmain(int argc, wchar_t **argv)
 			if (n == 0) {
 				_putws(L"に変更はありません。");
 			} else {
-				wprintf_s(L"を%d項目変更します...\n", n);
+				wprintf_s(L"\n以上の%d項目変更します...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
 						_putws(L"成功。");
@@ -161,8 +160,12 @@ int wmain(int argc, wchar_t **argv)
 				auto itr = text.GetMap().cbegin();
 				std::advance(itr, i);
 				MANUAL_AUTO_ADD_DATA m = itr->second;
-				if (m.originalNetworkID == beforeONID && m.transportStreamID == beforeTSID) {
-					m.transportStreamID = afterTSID;
+				const CH_DATA5 *ch = CheckTSID(m.originalNetworkID, m.transportStreamID, m.serviceID, chText5);
+				if (ch) {
+					wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%s)",
+					          m.dataID, m.transportStreamID, m.transportStreamID,
+					          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
+					m.transportStreamID = ch->transportStreamID;
 					text.ChgData(m);
 					n++;
 				}
@@ -170,7 +173,7 @@ int wmain(int argc, wchar_t **argv)
 			if (n == 0) {
 				_putws(L"に変更はありません。");
 			} else {
-				wprintf_s(L"を%d項目変更します...\n", n);
+				wprintf_s(L"\n以上の%d項目変更します...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
 						_putws(L"成功。");
