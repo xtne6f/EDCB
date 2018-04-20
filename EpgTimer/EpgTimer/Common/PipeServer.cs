@@ -5,8 +5,8 @@ using System.Text;
 using System.ComponentModel;
 using System.Collections;
 using System.Threading;
-using System.Runtime.InteropServices;
 using System.IO.Pipes;
+using System.Security.AccessControl;
 
 namespace EpgTimer
 {
@@ -16,17 +16,8 @@ namespace EpgTimer
         private AutoResetEvent m_PulseEvent = null;
         private bool m_StopFlag = false;
 
-        ~PipeServer()
+        public bool StartServer(string eventName, string pipeName, Func<uint, byte[], Tuple<ErrCode, byte[], uint>> cmdProc)
         {
-            StopServer();
-        }
-
-        public bool StartServer(string strEventName, string strPipeName, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
-        {
-            if (pfnCmdProc == null || strEventName.Length == 0 || strPipeName.Length == 0)
-            {
-                return false;
-            }
             if (m_ServerThread != null)
             {
                 return false;
@@ -34,12 +25,38 @@ namespace EpgTimer
 
             m_StopFlag = false;
             m_PulseEvent = new AutoResetEvent(false);
+            var eventConnect = new EventWaitHandle(false, EventResetMode.AutoReset, eventName);
+            string trustee = "NT Service\\EpgTimer Service";
+            try
+            {
+                // "EpgTimer Service"のサービスセキュリティ識別子(Service-specific SID)に対するアクセス許可を追加する
+                EventWaitHandleSecurity sec = eventConnect.GetAccessControl();
+                sec.AddAccessRule(new EventWaitHandleAccessRule(trustee, EventWaitHandleRights.Synchronize, AccessControlType.Allow));
+                eventConnect.SetAccessControl(sec);
+            }
+            catch
+            {
+                trustee = null;
+            }
+            var pipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 1024, 1024,
+                                                 null, System.IO.HandleInheritability.None, trustee == null ? 0 : PipeAccessRights.ChangePermissions);
+            if (trustee != null)
+            {
+                try
+                {
+                    PipeSecurity sec = pipe.GetAccessControl();
+                    sec.AddAccessRule(new PipeAccessRule(trustee, PipeAccessRights.ReadWrite, AccessControlType.Allow));
+                    pipe.SetAccessControl(sec);
+                }
+                catch
+                {
+                }
+            }
+
             m_ServerThread = new Thread(new ThreadStart(() =>
             {
-                using (EventWaitHandle eventConnect = new EventWaitHandle(false, EventResetMode.AutoReset, strEventName))
-                using (NamedPipeServerStream pipe = new NamedPipeServerStream(
-                           strPipeName.Substring(strPipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0),
-                           PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
+                using (eventConnect)
+                using (pipe)
                 {
                     while (m_StopFlag == false)
                     {
@@ -59,30 +76,19 @@ namespace EpgTimer
                         if (pipe.IsConnected)
                         {
                             byte[] bHead = new byte[8];
-                            if (pipe.Read(bHead, 0, 8) == 8)
+                            if (ReadAll(pipe, bHead, 0, 8) == 8)
                             {
-                                CMD_STREAM stCmd = new CMD_STREAM();
-                                stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
-                                stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                                stCmd.bData = stCmd.uiSize == 0 ? null : new byte[stCmd.uiSize];
-                                if (stCmd.uiSize == 0 || pipe.Read(stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length)
+                                uint cmdParam = BitConverter.ToUInt32(bHead, 0);
+                                byte[] cmdData = new byte[BitConverter.ToUInt32(bHead, 4)];
+                                if (ReadAll(pipe, cmdData, 0, cmdData.Length) == cmdData.Length)
                                 {
-                                    CMD_STREAM stRes = new CMD_STREAM();
-                                    pfnCmdProc.Invoke(stCmd, stRes);
-                                    if (stRes.uiParam == (uint)ErrCode.CMD_NEXT)
+                                    Tuple<ErrCode, byte[], uint> res = cmdProc.Invoke(cmdParam, cmdData);
+                                    BitConverter.GetBytes((uint)res.Item1).CopyTo(bHead, 0);
+                                    BitConverter.GetBytes(res.Item2 == null ? 0 : res.Item2.Length).CopyTo(bHead, 4);
+                                    pipe.Write(bHead, 0, 8);
+                                    if (res.Item2 != null && res.Item2.Length > 0)
                                     {
-                                        // Emun用の繰り返しは対応しない
-                                        throw new InvalidOperationException();
-                                    }
-                                    else if (stRes.uiParam != (uint)ErrCode.CMD_NO_RES)
-                                    {
-                                        BitConverter.GetBytes(stRes.uiParam).CopyTo(bHead, 0);
-                                        BitConverter.GetBytes(stRes.uiSize).CopyTo(bHead, 4);
-                                        pipe.Write(bHead, 0, 8);
-                                        if (stRes.uiSize != 0 && stRes.bData != null && stRes.bData.Length >= stRes.uiSize)
-                                        {
-                                            pipe.Write(stRes.bData, 0, (int)stRes.uiSize);
-                                        }
+                                        pipe.Write(res.Item2, 0, res.Item2.Length);
                                     }
                                 }
                             }
@@ -105,9 +111,17 @@ namespace EpgTimer
                 m_PulseEvent.Set();
                 m_ServerThread.Join();
                 m_ServerThread = null;
+                m_PulseEvent.Dispose();
+                m_PulseEvent = null;
             }
         }
 
+        private static int ReadAll(NamedPipeServerStream s, byte[] buffer, int offset, int size)
+        {
+            int n = 0;
+            for (int m; n < size && (m = s.Read(buffer, offset + n, size - n)) > 0; n += m) ;
+            return n;
+        }
 
     }
 }

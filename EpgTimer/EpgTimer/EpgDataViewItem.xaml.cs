@@ -19,8 +19,6 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgDataViewItem : UserControl
     {
-        public event ViewSettingClickHandler ViewSettingClick = null;
-
         private CustomEpgTabInfo viewInfo = null;
         private Object viewCtrl = null;
         public EpgDataViewItem()
@@ -51,23 +49,6 @@ namespace EpgTimer
             }
             grid_main.Children.Clear();
             viewCtrl = null;
-        }
-
-        /// <summary>
-        /// 現在のEPGデータ表示モードの設定を取得する
-        /// </summary>
-        /// <param name="setInfo">[OUT]表示モードの設定値</param>
-        /// <returns></returns>
-        public bool GetViewMode(ref CustomEpgTabInfo setInfo)
-        {
-            if (viewInfo == null)
-            {
-                return false;
-            }
-
-            viewInfo.CopyTo(ref setInfo);
-
-            return true;
         }
 
         /// <summary>
@@ -132,7 +113,7 @@ namespace EpgTimer
                     //1週間表示
                     {
                         EpgWeekMainView item = new EpgWeekMainView();
-                        item.ViewSettingClick += new ViewSettingClickHandler(item_ViewSettingClick);
+                        item.ViewSettingClick += item_ViewSettingClick;
                         item.SetViewMode(setInfo);
                         grid_main.Children.Add(item);
                         viewCtrl = item;
@@ -142,7 +123,7 @@ namespace EpgTimer
                     //リスト表示
                     {
                         EpgListMainView item = new EpgListMainView();
-                        item.ViewSettingClick += new ViewSettingClickHandler(item_ViewSettingClick);
+                        item.ViewSettingClick += item_ViewSettingClick;
                         item.SetViewMode(setInfo);
                         grid_main.Children.Add(item);
                         viewCtrl = item;
@@ -152,7 +133,7 @@ namespace EpgTimer
                     //標準ラテ欄表示
                     {
                         EpgMainView item = new EpgMainView();
-                        item.ViewSettingClick += new ViewSettingClickHandler(item_ViewSettingClick);
+                        item.ViewSettingClick += item_ViewSettingClick;
                         item.SetViewMode(setInfo);
                         grid_main.Children.Add(item);
                         viewCtrl = item;
@@ -205,11 +186,30 @@ namespace EpgTimer
             }
         }
 
-        private void item_ViewSettingClick(object sender, object param)
+        private void item_ViewSettingClick(object sender, CustomEpgTabInfo param)
         {
-            if (ViewSettingClick != null)
+            if (param == null)
             {
-                ViewSettingClick(this, param);
+                if (Settings.Instance.UseCustomEpgView == false)
+                {
+                    MessageBox.Show("デフォルト表示では設定を変更することはできません。");
+                }
+                else
+                {
+                    var dlg = new EpgDataViewSettingWindow();
+                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                    dlg.SetDefSetting(viewInfo);
+                    if (dlg.ShowDialog() == true)
+                    {
+                        param = new CustomEpgTabInfo();
+                        dlg.GetSetting(ref param);
+                        SetViewMode(param);
+                    }
+                }
+            }
+            else
+            {
+                SetViewMode(param);
             }
         }
 

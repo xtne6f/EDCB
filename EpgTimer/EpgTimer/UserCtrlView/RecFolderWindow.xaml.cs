@@ -29,22 +29,18 @@ namespace EpgTimer
             String plugInFile = "Write_Default.dll";
             String recNamePlugInFile = "";
 
-            ErrCode err = CommonManager.Instance.DB.ReloadPlugInFile();
-            if (err == ErrCode.CMD_ERR_CONNECT)
-            {
-                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-            }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
-            {
-                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-            }
+            var writeList = new List<string>();
+            ErrCode err = CommonManager.CreateSrvCtrl().SendEnumPlugIn(2, ref writeList);
             if (err != ErrCode.CMD_SUCCESS)
             {
-                MessageBox.Show("PlugIn一覧の取得でエラーが発生しました。");
+                MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "PlugIn一覧の取得でエラーが発生しました。");
             }
+            //こちらは空(CMD_ERR)でもよい
+            var recNameList = new List<string>();
+            CommonManager.CreateSrvCtrl().SendEnumPlugIn(1, ref recNameList);
 
             int select = 0;
-            foreach (string info in CommonManager.Instance.DB.WritePlugInList.Values)
+            foreach (string info in writeList)
             {
                 int index = comboBox_writePlugIn.Items.Add(info);
                 if (String.Compare(info, plugInFile, true) == 0)
@@ -59,7 +55,7 @@ namespace EpgTimer
 
             select = 0;
             comboBox_recNamePlugIn.Items.Add("なし");
-            foreach (string info in CommonManager.Instance.DB.RecNamePlugInList.Values)
+            foreach (string info in recNameList)
             {
                 int index = comboBox_recNamePlugIn.Items.Add(info);
                 if (String.Compare(info, recNamePlugInFile, true) == 0)
@@ -124,12 +120,11 @@ namespace EpgTimer
             if (comboBox_writePlugIn.SelectedItem != null)
             {
                 string name = comboBox_writePlugIn.SelectedItem as string;
-                string filePath = SettingPath.ModulePath + "\\Write\\" + name;
+                string filePath = System.IO.Path.Combine(SettingPath.ModulePath, "Write\\" + name);
 
-                WritePlugInClass plugin = new WritePlugInClass();
                 HwndSource hwnd = (HwndSource)HwndSource.FromVisual(this);
 
-                plugin.Setting(filePath, hwnd.Handle);
+                CommonUtil.ShowPlugInSetting(filePath, hwnd.Handle);
             }
         }
 
@@ -140,12 +135,11 @@ namespace EpgTimer
                 string name = comboBox_recNamePlugIn.SelectedItem as string;
                 if (String.Compare(name, "なし", true) != 0)
                 {
-                    string filePath = SettingPath.ModulePath + "\\RecName\\" + name;
+                    string filePath = System.IO.Path.Combine(SettingPath.ModulePath, "RecName\\" + name);
 
-                    RecNamePluginClass plugin = new RecNamePluginClass();
                     HwndSource hwnd = (HwndSource)HwndSource.FromVisual(this);
 
-                    plugin.Setting(filePath, hwnd.Handle);
+                    CommonUtil.ShowPlugInSetting(filePath, hwnd.Handle);
                 }
             }
         }
