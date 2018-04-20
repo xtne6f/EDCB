@@ -1,4 +1,4 @@
-// tsidmove: EDCBの予約、EPG自動予約、プログラム自動予約に含まれるTransportStreamIDの情報を変更する (2018-04-19)
+// tsidmove: EDCBの予約、EPG自動予約、プログラム自動予約に含まれるTransportStreamIDの情報を変更する (2018-04-20)
 // ※予約ファイル等にこのフォークと非互換の項目追加等されたフォークでは使いまわし不可能
 #include "stdafx.h"
 #include "../../../Common/CommonDef.h"
@@ -56,6 +56,18 @@ int wmain(int argc, wchar_t **argv)
 	if (!chText5.ParseText(chSet5Path.c_str())) {
 		_putws(L"Error: ChSet5.txtを開けません。");
 		return 1;
+	}
+
+	for (auto itr = chText5.GetMap().cbegin(); itr != chText5.GetMap().end(); itr++) {
+		for (auto jtr = itr; ++jtr != chText5.GetMap().end(); ) {
+			if (itr->second.originalNetworkID == jtr->second.originalNetworkID &&
+			    itr->second.serviceID == jtr->second.serviceID) {
+				_putws(L"Warning: ChSet5.txtにTSID以外のIDが等しいサービスがあります。古い情報が残っていませんか？");
+				itr = chText5.GetMap().end();
+				itr--;
+				break;
+			}
+		}
 	}
 
 	HANDLE hMutex = CreateMutex(nullptr, FALSE, EPG_TIMER_BON_SRV_MUTEX);
