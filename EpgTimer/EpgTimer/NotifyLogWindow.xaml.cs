@@ -97,10 +97,6 @@ namespace EpgTimer
                     }
                 }
                 dataView.Refresh();
-
-                Settings.Instance.ResColumnHead = sortBy;
-                Settings.Instance.ResSortDirection = direction;
-
             }
             catch (Exception ex)
             {
