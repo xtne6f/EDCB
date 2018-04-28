@@ -47,6 +47,10 @@ namespace EpgTimer
                     gridView_reserve.Columns.Add(columnList[info.Tag]);
                 }
             }
+            if (Settings.Instance.ResHideButton)
+            {
+                stackPanel_button.Visibility = Visibility.Collapsed;
+            }
         }
 
 
@@ -470,26 +474,28 @@ namespace EpgTimer
 
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            try
+            foreach (object item in listView_reserve.ContextMenu.Items)
             {
-                foreach (MenuItem item in listView_reserve.ContextMenu.Items)
+                MenuItem menuItem = item as MenuItem;
+                if (menuItem != null)
                 {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
+                    if (menuItem.Name == "HideButton")
                     {
-                        if (info.Tag.CompareTo(item.Name) == 0)
+                        menuItem.IsChecked = Settings.Instance.ResHideButton;
+                    }
+                    else
+                    {
+                        menuItem.IsChecked = false;
+                        foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
                         {
-                            item.IsChecked = true;
-                            break;
+                            if (info.Tag == menuItem.Name)
+                            {
+                                menuItem.IsChecked = true;
+                                break;
+                            }
                         }
                     }
                 }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -522,6 +528,12 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        private void hideButton_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Instance.ResHideButton = ((MenuItem)sender).IsChecked;
+            stackPanel_button.Visibility = Settings.Instance.ResHideButton ? Visibility.Collapsed : Visibility.Visible;
         }
 
         void listView_reserve_KeyDown(object sender, KeyEventArgs e)

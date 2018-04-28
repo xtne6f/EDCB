@@ -42,6 +42,8 @@
             <MenuItem Header="結果" Name="Result" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
+            <Separator />
+            <MenuItem Header="ボタンを隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu">
             <MenuItem Header="録画情報" Click="button_recInfo_Click" />
@@ -55,7 +57,7 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="100" />
+            <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
         <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" >
             <ListView.Resources>
@@ -129,7 +131,7 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button">
+        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="100">
             <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
             <Button Content="再生" Height="23" Name="button_play" Margin="0,10,0,10" Click="button_play_Click" />
         </StackPanel>

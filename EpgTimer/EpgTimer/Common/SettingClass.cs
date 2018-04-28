@@ -150,6 +150,7 @@ namespace EpgTimer
         public bool EpgGradationHeader { get; set; }
         public string ResColumnHead { get; set; }
         public ListSortDirection ResSortDirection { get; set; }
+        public bool ResHideButton { get; set; }
         public System.Windows.WindowState LastWindowState { get; set; }
         public double MainWndLeft { get; set; }
         public double MainWndTop { get; set; }
@@ -207,6 +208,7 @@ namespace EpgTimer
         }
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
+        public bool RecInfoHideButton { get; set; }
         public string TvTestExe { get; set; }
         public string TvTestCmd { get; set; }
         public bool NwTvMode { get; set; }
@@ -330,6 +332,7 @@ namespace EpgTimer
             EpgGradationHeader = true;
             ResColumnHead = "";
             ResSortDirection = ListSortDirection.Ascending;
+            ResHideButton = false;
             LastWindowState = System.Windows.WindowState.Normal;
             MainWndLeft = -100;
             MainWndTop = -100;
@@ -364,6 +367,7 @@ namespace EpgTimer
             SearchKeyServiceList = new List<Int64>();
             RecInfoColumnHead = "";
             RecInfoSortDirection = ListSortDirection.Ascending;
+            RecInfoHideButton = false;
             TvTestExe = "";
             TvTestCmd = "";
             NwTvMode = false;
@@ -461,6 +465,7 @@ namespace EpgTimer
             //設定画面と関係なくその場で動的に更新されるプロパティ
             dest.ResColumnHead = ResColumnHead;
             dest.ResSortDirection = ResSortDirection;
+            dest.ResHideButton = ResHideButton;
             dest.LastWindowState = LastWindowState;
             dest.MainWndLeft = MainWndLeft;
             dest.MainWndTop = MainWndTop;
@@ -471,6 +476,7 @@ namespace EpgTimer
             dest.NotKeyList = NotKeyList;
             dest.RecInfoColumnHead = RecInfoColumnHead;
             dest.RecInfoSortDirection = RecInfoSortDirection;
+            dest.RecInfoHideButton = RecInfoHideButton;
             dest.NWServerIP = NWServerIP;
             dest.NWServerPort = NWServerPort;
             dest.NWWaitPort = NWWaitPort;

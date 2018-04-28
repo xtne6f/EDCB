@@ -46,6 +46,10 @@ namespace EpgTimer
                     gridView_recinfo.Columns.Add(columnList[info.Tag]);
                 }
             }
+            if (Settings.Instance.RecInfoHideButton)
+            {
+                stackPanel_button.Visibility = Visibility.Collapsed;
+            }
         }
 
         public void SaveSize()
@@ -362,26 +366,28 @@ namespace EpgTimer
 
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            try
+            foreach (object item in listView_recinfo.ContextMenu.Items)
             {
-                foreach (MenuItem item in listView_recinfo.ContextMenu.Items)
+                MenuItem menuItem = item as MenuItem;
+                if (menuItem != null)
                 {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
+                    if (menuItem.Name == "HideButton")
                     {
-                        if (info.Tag.CompareTo(item.Name) == 0)
+                        menuItem.IsChecked = Settings.Instance.RecInfoHideButton;
+                    }
+                    else
+                    {
+                        menuItem.IsChecked = false;
+                        foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
                         {
-                            item.IsChecked = true;
-                            break;
+                            if (info.Tag == menuItem.Name)
+                            {
+                                menuItem.IsChecked = true;
+                                break;
+                            }
                         }
                     }
                 }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -414,6 +420,12 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        private void hideButton_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Instance.RecInfoHideButton = ((MenuItem)sender).IsChecked;
+            stackPanel_button.Visibility = Settings.Instance.RecInfoHideButton ? Visibility.Collapsed : Visibility.Visible;
         }
     }
 }
