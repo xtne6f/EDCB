@@ -69,6 +69,10 @@ namespace EpgTimer
         {
             get { return RecInfo.RecFilePath; }
         }
+        public uint ID
+        {
+            get { return RecInfo.ID; }
+        }
         public SolidColorBrush BackColor
         {
             get

@@ -43,6 +43,10 @@ namespace EpgTimer
         {
             get { return EpgAutoAddInfo.searchInfo.regExpFlag == 1 ? "○" : "×"; }
         }
+        public String Aimai
+        {
+            get { return EpgAutoAddInfo.searchInfo.aimaiFlag == 1 ? "○" : "×"; }
+        }
         public String TitleOnly
         {
             get { return EpgAutoAddInfo.searchInfo.titleOnlyFlag == 1 ? "○" : "×"; }
@@ -224,6 +228,20 @@ namespace EpgTimer
         public String KeyEnabled
         {
             get { return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}") ? "いいえ" : "はい"; }
+        }
+
+        public String CaseSensitive
+        {
+            get
+            {
+                return System.Text.RegularExpressions.Regex.IsMatch(
+                           EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?C!\{999\}") ? "はい" : "いいえ";
+            }
+        }
+
+        public uint ID
+        {
+            get { return EpgAutoAddInfo.dataID; }
         }
 
         public SolidColorBrush BackColor

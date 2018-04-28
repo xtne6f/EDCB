@@ -13,6 +13,7 @@
             <MenuItem Header="サービス名" Name="StationName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
@@ -30,34 +31,39 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_key">
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=DayOfWeek}">
+                    <GridViewColumn DisplayMemberBinding="{Binding DayOfWeek}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="曜日" Tag="DayOfWeek" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Time}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Time}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="時間" Tag="Time" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Title}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Title}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="番組名" Tag="Title" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=StationName}">
+                    <GridViewColumn DisplayMemberBinding="{Binding StationName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="サービス名" Tag="StationName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
+                    <GridViewColumn DisplayMemberBinding="{Binding RecMode}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="録画モード" Tag="RecMode" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Priority}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding ID}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ID" Tag="ID" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

@@ -24,8 +24,7 @@ namespace EpgTimer
     public partial class ReserveView : UserControl
     {
         private bool RedrawReserve = true;
-        private List<ReserveItem> reserveList = new List<ReserveItem>();
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+        private Dictionary<string, GridViewColumn> columnList;
 
         string _lastHeaderClicked = null;
         ListSortDirection _lastDirection = ListSortDirection.Ascending;
@@ -38,44 +37,24 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            try
+            columnList = gridView_reserve.Columns.ToDictionary(info => (string)((GridViewColumnHeader)info.Header).Tag);
+            gridView_reserve.Columns.Clear();
+            foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
             {
-                foreach (GridViewColumn info in gridView_reserve.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_reserve.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
+                if (columnList.ContainsKey(info.Tag))
                 {
                     columnList[info.Tag].Width = info.Width;
                     gridView_reserve.Columns.Add(columnList[info.Tag]);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
 
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.ReserveListColumn.Clear();
-                foreach (GridViewColumn info in gridView_reserve.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.ReserveListColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            Settings.Instance.ReserveListColumn.Clear();
+            Settings.Instance.ReserveListColumn.AddRange(
+                gridView_reserve.Columns.Select(info => new ListColumnInfo((string)((GridViewColumnHeader)info.Header).Tag, info.Width)));
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -132,16 +111,7 @@ namespace EpgTimer
                     dataView.SortDescriptions.Clear();
                     dataView.Refresh();
                 }
-                listView_reserve.DataContext = null;
-                reserveList.Clear();
-
-                foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
-                {
-                    ReserveItem item = new ReserveItem(info);
-                    reserveList.Add(item);
-                }
-
-                listView_reserve.DataContext = reserveList;
+                listView_reserve.DataContext = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
                 if (_lastHeaderClicked != null)
                 {
                     //string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;

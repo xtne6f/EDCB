@@ -20,52 +20,30 @@ namespace EpgTimer
     /// </summary>
     public partial class ManualAutoAddView : UserControl
     {
-        private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
 
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+        private Dictionary<string, GridViewColumn> columnList;
 
         public ManualAutoAddView()
         {
             InitializeComponent();
-            try
+            columnList = gridView_key.Columns.ToDictionary(info => (string)((GridViewColumnHeader)info.Header).Tag);
+            gridView_key.Columns.Clear();
+            foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
             {
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_key.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
+                if (columnList.ContainsKey(info.Tag))
                 {
                     columnList[info.Tag].Width = info.Width;
                     gridView_key.Columns.Add(columnList[info.Tag]);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.AutoAddManualColumn.Clear();
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.AutoAddManualColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            Settings.Instance.AutoAddManualColumn.Clear();
+            Settings.Instance.AutoAddManualColumn.AddRange(
+                gridView_key.Columns.Select(info => new ListColumnInfo((string)((GridViewColumnHeader)info.Header).Tag, info.Width)));
         }
 
         /// <summary>
@@ -98,7 +76,6 @@ namespace EpgTimer
             try
             {
                 listView_key.DataContext = null;
-                resultList.Clear();
 
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
                 if (err != ErrCode.CMD_SUCCESS)
@@ -110,13 +87,7 @@ namespace EpgTimer
                     return false;
                 }
 
-                foreach (ManualAutoAddData info in CommonManager.Instance.DB.ManualAutoAddList.Values)
-                {
-                    ManualAutoAddDataItem item = new ManualAutoAddDataItem(info);
-                    resultList.Add(item);
-                }
-
-                listView_key.DataContext = resultList;
+                listView_key.DataContext = CommonManager.Instance.DB.ManualAutoAddList.Values.Select(info => new ManualAutoAddDataItem(info)).ToList();
             }
             catch (Exception ex)
             {

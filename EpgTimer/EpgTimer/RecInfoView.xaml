@@ -41,6 +41,7 @@
             <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="結果" Name="Result" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu">
             <MenuItem Header="録画情報" Click="button_recInfo_Click" />
@@ -76,48 +77,53 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding Path=IsProtect}" />
+                                <CheckBox IsChecked="{Binding IsProtect}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
+                    <GridViewColumn DisplayMemberBinding="{Binding StartTime}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
+                    <GridViewColumn DisplayMemberBinding="{Binding NetworkName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
+                    <GridViewColumn DisplayMemberBinding="{Binding ServiceName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
+                    <GridViewColumn DisplayMemberBinding="{Binding EventName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Drops}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Drops}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="Drop" Tag="Drops" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Scrambles}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Scrambles}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="Scramble" Tag="Scrambles" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Result}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Result}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="結果" Tag="Result" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=RecFilePath}">
+                    <GridViewColumn DisplayMemberBinding="{Binding RecFilePath}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="録画ファイル" Tag="RecFilePath" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding ID}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ID" Tag="ID" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

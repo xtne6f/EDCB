@@ -23,49 +23,28 @@ namespace EpgTimer
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
         private bool ReloadInfo = true;
 
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+        private Dictionary<string, GridViewColumn> columnList;
 
         public EpgAutoAddView()
         {
             InitializeComponent();
-            try
+            columnList = gridView_key.Columns.ToDictionary(info => (string)((GridViewColumnHeader)info.Header).Tag);
+            gridView_key.Columns.Clear();
+            foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
             {
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_key.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
+                if (columnList.ContainsKey(info.Tag))
                 {
                     columnList[info.Tag].Width = info.Width;
                     gridView_key.Columns.Add(columnList[info.Tag]);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.AutoAddEpgColumn.Clear();
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.AutoAddEpgColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            Settings.Instance.AutoAddEpgColumn.Clear();
+            Settings.Instance.AutoAddEpgColumn.AddRange(
+                gridView_key.Columns.Select(info => new ListColumnInfo((string)((GridViewColumnHeader)info.Header).Tag, info.Width)));
         }
 
         /// <summary>

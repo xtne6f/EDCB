@@ -23,8 +23,7 @@ namespace EpgTimer
     /// </summary>
     public partial class RecInfoView : UserControl
     {
-        private List<RecInfoItem> resultList = new List<RecInfoItem>();
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+        private Dictionary<string, GridViewColumn> columnList;
 
         private string _lastHeaderClicked = null;
         private ListSortDirection _lastDirection = ListSortDirection.Ascending;
@@ -37,44 +36,23 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            try
+            columnList = gridView_recinfo.Columns.ToDictionary(info => (string)((GridViewColumnHeader)info.Header).Tag);
+            gridView_recinfo.Columns.Clear();
+            foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
             {
-                foreach (GridViewColumn info in gridView_recinfo.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_recinfo.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
+                if (columnList.ContainsKey(info.Tag))
                 {
                     columnList[info.Tag].Width = info.Width;
                     gridView_recinfo.Columns.Add(columnList[info.Tag]);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.RecInfoListColumn.Clear();
-                foreach (GridViewColumn info in gridView_recinfo.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.RecInfoListColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            Settings.Instance.RecInfoListColumn.Clear();
+            Settings.Instance.RecInfoListColumn.AddRange(
+                gridView_recinfo.Columns.Select(info => new ListColumnInfo((string)((GridViewColumnHeader)info.Header).Tag, info.Width)));
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)
@@ -181,7 +159,6 @@ namespace EpgTimer
                     dataView.Refresh();
                 }
                 listView_recinfo.DataContext = null;
-                resultList.Clear();
 
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
                 if (err != ErrCode.CMD_SUCCESS)
@@ -193,13 +170,7 @@ namespace EpgTimer
                     return false;
                 }
 
-                foreach (RecFileInfo info in CommonManager.Instance.DB.RecFileInfo.Values)
-                {
-                    RecInfoItem item = new RecInfoItem(info);
-                    resultList.Add(item);
-                }
-
-                listView_recinfo.DataContext = resultList;
+                listView_recinfo.DataContext = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info)).ToList();
                 if (_lastHeaderClicked != null)
                 {
                     //GridViewColumnHeader columnHeader = _lastHeaderClicked.Header as GridViewColumnHeader;

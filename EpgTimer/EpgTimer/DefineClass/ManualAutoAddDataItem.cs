@@ -82,5 +82,10 @@ namespace EpgTimer
         {
             get { return ManualAutoAddInfo.recSetting.Priority; }
         }
+
+        public uint ID
+        {
+            get { return ManualAutoAddInfo.dataID; }
+        }
     }
 }

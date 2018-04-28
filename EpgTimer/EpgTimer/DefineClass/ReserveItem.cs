@@ -73,6 +73,22 @@ namespace EpgTimer
         {
             get { return ReserveInfo.RecFileNameList; }
         }
+        public String IsProgram
+        {
+            get { return ReserveInfo.EventID == 0xFFFF ? "はい" : "いいえ"; }
+        }
+        public String TunerID
+        {
+            get { return ReserveInfo.RecSetting.TunerID == 0 ? "自動" : "ID:" + ReserveInfo.RecSetting.TunerID.ToString("X8"); }
+        }
+        public String BatFilePath
+        {
+            get { return ReserveInfo.RecSetting.BatFilePath; }
+        }
+        public uint ID
+        {
+            get { return ReserveInfo.ReserveID; }
+        }
         public SolidColorBrush BackColor
         {
             get

@@ -10,15 +10,20 @@
             <MenuItem Header="Andキーワード" Name="AndKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="Notキーワード" Name="NotKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="正規表現" Name="RegExp" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="あいまい" Name="Aimai" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="番組名のみ" Name="TitleOnly" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="登録対象数" Name="AddCount" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="時間" Name="DateKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="有効" Name="KeyEnabled" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="大小文字区別" Name="CaseSensitive" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
@@ -57,64 +62,89 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_key">
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=AndKey}">
+                    <GridViewColumn DisplayMemberBinding="{Binding AndKey}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="Andキーワード" Tag="AndKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=NotKey}">
+                    <GridViewColumn DisplayMemberBinding="{Binding NotKey}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="Notキーワード" Tag="NotKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=RegExp}">
+                    <GridViewColumn DisplayMemberBinding="{Binding RegExp}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="正規表現" Tag="RegExp" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Aimai}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="あいまい" Tag="Aimai" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding TitleOnly}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="番組名のみ" Tag="TitleOnly" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding RecMode}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="録画モード" Tag="RecMode" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Priority}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Tuijyu}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="追従" Tag="Tuijyu" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=AddCount}">
+                    <GridViewColumn DisplayMemberBinding="{Binding AddCount}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="登録対象数" Tag="AddCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Pittari}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
+                    <GridViewColumn DisplayMemberBinding="{Binding DateKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="時間" Tag="DateKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding JyanruKey}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkKey}">
+                    <GridViewColumn DisplayMemberBinding="{Binding NetworkKey}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ネットワーク" Tag="NetworkKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceKey}">
+                    <GridViewColumn DisplayMemberBinding="{Binding ServiceKey}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="サービス名" Tag="ServiceKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=KeyEnabled}">
+                    <GridViewColumn DisplayMemberBinding="{Binding KeyEnabled}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="有効" Tag="KeyEnabled" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding CaseSensitive}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="大小文字区別" Tag="CaseSensitive" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding ID}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ID" Tag="ID" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>
