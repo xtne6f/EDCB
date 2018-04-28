@@ -59,46 +59,49 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_result">
-                    <GridViewColumn Header="" Width="30">
+                    <GridViewColumn Width="30">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Path=Reserved}" Foreground="Tomato" FontWeight="Bold" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Tag="Reserved" />
+                        </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left" Tag="StartTime" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramDuration}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="時間（長さ）" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="時間（長さ）" HorizontalContentAlignment="Left" Tag="ProgramDuration" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left" Tag="EventName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left" Tag="NetworkName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" Tag="ServiceName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramContent}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組内容" HorizontalContentAlignment="Left" />
+                            <GridViewColumnHeader Content="番組内容" HorizontalContentAlignment="Left" Tag="ProgramContent" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ジャンル" HorizontalContentAlignment="Left" />
+                            <GridViewColumnHeader Content="ジャンル" HorizontalContentAlignment="Left" Tag="JyanruKey" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

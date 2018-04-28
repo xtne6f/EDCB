@@ -84,10 +84,10 @@ namespace EpgTimer
 
         private void Sort(string sortBy, ListSortDirection direction)
         {
-            try
-            {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
 
+            using (dataView.DeferRefresh())
+            {
                 dataView.SortDescriptions.Clear();
 
                 SortDescription sd = new SortDescription(sortBy, direction);
@@ -100,15 +100,9 @@ namespace EpgTimer
                         dataView.SortDescriptions.Add(sd2);
                     }
                 }
-                dataView.Refresh();
 
                 Settings.Instance.RecInfoColumnHead = sortBy;
                 Settings.Instance.RecInfoSortDirection = direction;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -152,14 +146,6 @@ namespace EpgTimer
         {
             try
             {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
-                if (dataView != null)
-                {
-                    dataView.SortDescriptions.Clear();
-                    dataView.Refresh();
-                }
-                listView_recinfo.DataContext = null;
-
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
                 if (err != ErrCode.CMD_SUCCESS)
                 {
@@ -167,6 +153,7 @@ namespace EpgTimer
                     {
                         MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
                     }), null);
+                    listView_recinfo.DataContext = null;
                     return false;
                 }
 

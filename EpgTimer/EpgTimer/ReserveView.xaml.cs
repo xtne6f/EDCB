@@ -102,15 +102,10 @@ namespace EpgTimer
                     {
                         MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
                     }), null);
+                    listView_reserve.DataContext = null;
                     return false;
                 }
 
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
-                if (dataView != null)
-                {
-                    dataView.SortDescriptions.Clear();
-                    dataView.Refresh();
-                }
                 listView_reserve.DataContext = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
                 if (_lastHeaderClicked != null)
                 {
@@ -171,10 +166,10 @@ namespace EpgTimer
 
         private void Sort(string sortBy, ListSortDirection direction)
         {
-            try
-            {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
 
+            using (dataView.DeferRefresh())
+            {
                 dataView.SortDescriptions.Clear();
 
                 SortDescription sd = new SortDescription(sortBy, direction);
@@ -187,15 +182,9 @@ namespace EpgTimer
                         dataView.SortDescriptions.Add(sd2);
                     }
                 }
-                dataView.Refresh();
 
                 Settings.Instance.ResColumnHead = sortBy;
                 Settings.Instance.ResSortDirection = direction;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
