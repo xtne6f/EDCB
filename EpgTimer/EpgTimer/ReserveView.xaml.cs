@@ -674,7 +674,7 @@ namespace EpgTimer
             ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
             if (item1 != null)
             {
-                BlackoutWindow.selectedReserveItem = item1;
+                BlackoutWindow.selectedReserve = item1.ReserveInfo;
                 this._mainWindow.moveTo_tabItem_epg();
             }
         }

@@ -23,187 +23,63 @@ namespace EpgTimer
         public ReserveData ReserveInfo
         {
             get;
-            set;
+            private set;
         }
         public String EventName
         {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.Title;
-                }
-                return view;
-            }
+            get { return ReserveInfo.Title; }
         }
         public String ServiceName
         {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.StationName;
-                }
-                return view;
-            }
+            get { return ReserveInfo.StationName; }
         }
         public String NetworkName
         {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = CommonManager.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
-                }
-                return view;
-            }
+            get { return CommonManager.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID); }
         }
         public String StartTime
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                    view += endTime.ToString("HH:mm:ss");
-                }
-                return view;
+                return ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") +
+                       ReserveInfo.StartTime.AddSeconds(ReserveInfo.DurationSecond).ToString("HH:mm:ss");
             }
         }
         public String RecMode
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    switch (ReserveInfo.RecSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
+                return CommonManager.Instance.RecModeList.Length > ReserveInfo.RecSetting.RecMode ?
+                       CommonManager.Instance.RecModeList[ReserveInfo.RecSetting.RecMode] : "";
             }
         }
-        public String Priority
+        public byte Priority
         {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.RecSetting.Priority.ToString();
-                }
-                return view;
-            }
+            get { return ReserveInfo.RecSetting.Priority; }
         }
         public String Tuijyu
         {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.TuijyuuFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (ReserveInfo.RecSetting.TuijyuuFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
-            }
+            get { return ReserveInfo.RecSetting.TuijyuuFlag == 1 ? "する" : "しない"; }
         }
         public String Pittari
         {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.PittariFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (ReserveInfo.RecSetting.PittariFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
-            }
+            get { return ReserveInfo.RecSetting.PittariFlag == 1 ? "する" : "しない"; }
         }
         public String Comment
         {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.Comment.ToString();
-                }
-                return view;
-            }
+            get { return ReserveInfo.Comment; }
         }
         public List<String> RecFileName
         {
-            get
-            {
-                List<String> list = new List<string>();
-                if (ReserveInfo != null)
-                {
-                    list = ReserveInfo.RecFileNameList;
-                }
-                return list;
-            }
+            get { return ReserveInfo.RecFileNameList; }
         }
         public SolidColorBrush BackColor
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        color = CommonManager.Instance.ResNoBackColor;
-                    }
-                    else if (ReserveInfo.OverlapMode == 2)
-                    {
-                        color = CommonManager.Instance.ResErrBackColor;
-                    }
-                    else if (ReserveInfo.OverlapMode == 1)
-                    {
-                        color = CommonManager.Instance.ResWarBackColor;
-                    }
-                }
-                return color;
+                return ReserveInfo.RecSetting.RecMode == 5 ? CommonManager.Instance.ResNoBackColor :
+                       ReserveInfo.OverlapMode == 2 ? CommonManager.Instance.ResErrBackColor :
+                       ReserveInfo.OverlapMode == 1 ? CommonManager.Instance.ResWarBackColor : CommonManager.Instance.ResDefBackColor;
             }
         }
         public TextBlock ToolTipView
@@ -214,15 +90,8 @@ namespace EpgTimer
                 {
                     return null;
                 }
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertReserveText(ReserveInfo);
-                }
-
-
                 TextBlock block = new TextBlock();
-                block.Text = view;
+                block.Text = CommonManager.Instance.ConvertReserveText(ReserveInfo);
                 block.MaxWidth = 400;
                 block.TextWrapping = TextWrapping.Wrap;
                 return block;
@@ -254,56 +123,25 @@ namespace EpgTimer
         {
             get
             {
-                Brush color1 = Brushes.White;
-                if (this.EventInfo != null)
+                EpgEventInfo eventInfo = EventInfo;
+                if (eventInfo != null)
                 {
-                    if (this.EventInfo.ContentInfo != null)
+                    if (eventInfo.ContentInfo != null)
                     {
-                        if (this.EventInfo.ContentInfo.nibbleList.Count > 0)
+                        foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                         {
-                            try
+                            if (info.content_nibble_level_1 <= 0x0F && CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
                             {
-                                foreach (EpgContentData info1 in this.EventInfo.ContentInfo.nibbleList)
-                                {
-                                    if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
-                                    {
-                                        color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
-                                        break;
-                                    }
-                                }
-                            }
-                            catch
-                            {
+                                return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
                             }
                         }
-                        else
-                        {
-                            color1 = CommonManager.Instance.CustContentColorList[0x10];
-                        }
                     }
-                    else
+                    if (CommonManager.Instance.CustContentColorList.Count > 0x10)
                     {
-                        color1 = CommonManager.Instance.CustContentColorList[0x10];
+                        return CommonManager.Instance.CustContentColorList[0x10];
                     }
                 }
-
-                return color1;
-            }
-        }
-
-        /// <summary>
-        /// 番組詳細
-        /// </summary>
-        public string ProgramDetail
-        {
-            get
-            {
-                string text1 = "Unavailable (;_;)";
-                if (this.EventInfo != null)
-                {
-                    text1 = CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
-                }
-                return text1;
+                return null;
             }
         }
     }

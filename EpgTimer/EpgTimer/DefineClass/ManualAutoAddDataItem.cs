@@ -15,7 +15,7 @@ namespace EpgTimer
         public ManualAutoAddData ManualAutoAddInfo
         {
             get;
-            set;
+            private set;
         }
 
         public String DayOfWeek
@@ -23,35 +23,11 @@ namespace EpgTimer
             get
             {
                 String view = "";
-                if (ManualAutoAddInfo != null)
+                for (int i = 0; i < 7; i++)
                 {
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x01) != 0)
+                    if ((ManualAutoAddInfo.dayOfWeekFlag & (0x01 << i)) != 0)
                     {
-                        view += "日";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x02) != 0)
-                    {
-                        view += "月";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x04) != 0)
-                    {
-                        view += "火";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x08) != 0)
-                    {
-                        view += "水";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x10) != 0)
-                    {
-                        view += "木";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x20) != 0)
-                    {
-                        view += "金";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x40) != 0)
-                    {
-                        view += "土";
+                        view += CommonManager.Instance.DayOfWeekArray[i];
                     }
                 }
                 return view;
@@ -63,7 +39,6 @@ namespace EpgTimer
             get
             {
                 String view = "";
-                if (ManualAutoAddInfo != null)
                 {
                     UInt32 hh = ManualAutoAddInfo.startTime / (60 * 60);
                     UInt32 mm = (ManualAutoAddInfo.startTime % (60 * 60)) / 60;
@@ -86,76 +61,26 @@ namespace EpgTimer
 
         public String Title
         {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.title;
-                }
-                return view;
-            }
+            get { return ManualAutoAddInfo.title; }
         }
 
         public String StationName
         {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.stationName;
-                }
-                return view;
-            }
+            get { return ManualAutoAddInfo.stationName; }
         }
 
         public String RecMode
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    switch (ManualAutoAddInfo.recSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
+                return CommonManager.Instance.RecModeList.Length > ManualAutoAddInfo.recSetting.RecMode ?
+                       CommonManager.Instance.RecModeList[ManualAutoAddInfo.recSetting.RecMode] : "";
             }
         }
 
-        public String Priority
+        public byte Priority
         {
-            get
-            {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.recSetting.Priority.ToString();
-                }
-                return view;
-            }
+            get { return ManualAutoAddInfo.recSetting.Priority; }
         }
     }
 }

@@ -482,9 +482,7 @@ namespace EpgTimer
                                     }
                                 }
 
-                                SearchItem item = new SearchItem();
-                                item.EventInfo = eventInfo;
-                                item.Past = past;
+                                SearchItem item = new SearchItem(eventInfo, past);
                                 item.ServiceName = info.ServiceInfo.service_name;
 
                                 //予約チェック

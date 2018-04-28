@@ -156,8 +156,7 @@ namespace EpgTimer
                 CommonManager.CreateSrvCtrl().SendSearchPg(keyList, ref list);
                 foreach (EpgEventInfo info in list)
                 {
-                    SearchItem item = new SearchItem();
-                    item.EventInfo = info;
+                    SearchItem item = new SearchItem(info, false);
 
                     if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > DateTime.UtcNow.AddHours(9))
                     {
@@ -683,7 +682,7 @@ namespace EpgTimer
             SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
             if (item1 != null)
             {
-                BlackoutWindow.selectedSearchItem = item1;
+                BlackoutWindow.selectedEventInfo = item1.EventInfo;
                 MainWindow mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
                 {

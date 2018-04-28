@@ -22,145 +22,59 @@ namespace EpgTimer
         public RecFileInfo RecInfo
         {
             get;
-            set;
+            private set;
         }
         public bool IsProtect
         {
             set
             {
-                if (RecInfo != null)
-                {
-                    RecInfo.ProtectFlag = Convert.ToByte(value);
-                    List<RecFileInfo> list = new List<RecFileInfo>();
-                    list.Add(RecInfo);
-                    CommonManager.CreateSrvCtrl().SendChgProtectRecInfo(list);
-                }
+                RecInfo.ProtectFlag = Convert.ToByte(value);
+                CommonManager.CreateSrvCtrl().SendChgProtectRecInfo(new List<RecFileInfo>() { RecInfo });
             }
-            get
-            {
-                bool chk = false;
-                if (RecInfo != null)
-                {
-                    chk = RecInfo.ProtectFlag != 0;
-                }
-                return chk;
-            }
+            get { return RecInfo.ProtectFlag != 0; }
         }
         public String EventName
         {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Title;
-                }
-                return view;
-            }
+            get { return RecInfo.Title; }
         }
         public String ServiceName
         {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.ServiceName;
-                }
-                return view;
-            }
+            get { return RecInfo.ServiceName; }
         }
         public String StartTime
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                    view += endTime.ToString("HH:mm:ss");
-                }
-                return view;
+                return RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") +
+                       RecInfo.StartTime.AddSeconds(RecInfo.DurationSecond).ToString("HH:mm:ss");
             }
         }
-        public String Drops
+        public long Drops
         {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Drops.ToString();
-                }
-                return view;
-            }
+            get { return RecInfo.Drops; }
         }
-        public String Scrambles
+        public long Scrambles
         {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Scrambles.ToString();
-                }
-                return view;
-            }
+            get { return RecInfo.Scrambles; }
         }
         public String Result
         {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Comment;
-                }
-                return view;
-            }
+            get { return RecInfo.Comment; }
         }
         public String NetworkName
         {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = CommonManager.ConvertNetworkNameText(RecInfo.OriginalNetworkID);
-                }
-                return view;
-            }
+            get { return CommonManager.ConvertNetworkNameText(RecInfo.OriginalNetworkID); }
         }
         public String RecFilePath
         {
-            get
-            {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.RecFilePath;
-                }
-                return view;
-            }
+            get { return RecInfo.RecFilePath; }
         }
         public SolidColorBrush BackColor
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.RecEndDefBackColor;
-                if (RecInfo != null)
-                {
-                    if (RecInfo.Scrambles > 0)
-                    {
-                        color = CommonManager.Instance.RecEndWarBackColor;
-                    }
-                    if (RecInfo.Drops > 0)
-                    {
-                        color = CommonManager.Instance.RecEndErrBackColor;
-                    }
-                }
-                return color;
+                return RecInfo.Drops > 0 ? CommonManager.Instance.RecEndErrBackColor :
+                       RecInfo.Scrambles > 0 ? CommonManager.Instance.RecEndWarBackColor : CommonManager.Instance.RecEndDefBackColor;
             }
         }
         public TextBlock ToolTipView
@@ -172,11 +86,8 @@ namespace EpgTimer
                     return null;
                 }
                 String view = "";
-                if (RecInfo != null)
                 {
-                    view = RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                    view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
+                    view = StartTime + "\r\n";
 
                     view += ServiceName;
                     view += " (" + NetworkName + ")" + "\r\n";
@@ -191,8 +102,8 @@ namespace EpgTimer
                     view += "ServiceID : " + RecInfo.ServiceID.ToString() + " (0x" + RecInfo.ServiceID.ToString("X4") + ")\r\n";
                     view += "EventID : " + RecInfo.EventID.ToString() + " (0x" + RecInfo.EventID.ToString("X4") + ")\r\n";
                     view += "\r\n";
-                    view += "Drops : " + RecInfo.Drops.ToString() + "\r\n";
-                    view += "Scrambles : " + RecInfo.Scrambles.ToString() + "\r\n";
+                    view += "Drops : " + Drops + "\r\n";
+                    view += "Scrambles : " + Scrambles;
                 }
 
 

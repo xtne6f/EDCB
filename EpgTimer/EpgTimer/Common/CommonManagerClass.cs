@@ -25,6 +25,7 @@ namespace EpgTimer
         }
         public IDictionary<ushort, string> ComponentKindDictionary { get; private set; }
         public string[] DayOfWeekArray { get; private set; }
+        public string[] RecModeList { get; private set; }
         public bool NWMode { get; set; }
         public List<NotifySrvInfo> NotifyLogList { get; private set; }
         public NWConnect NW { get; private set; }
@@ -308,6 +309,7 @@ namespace EpgTimer
                 };
             }
             DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
+            RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
             CustContentColorList = new List<Brush>();
@@ -438,30 +440,7 @@ namespace EpgTimer
             DateTime endTime = reserveInfo.StartTime + TimeSpan.FromSeconds(reserveInfo.DurationSecond);
             view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
 
-            String recMode = "";
-            switch (reserveInfo.RecSetting.RecMode)
-            {
-                case 0:
-                    recMode = "全サービス";
-                    break;
-                case 1:
-                    recMode = "指定サービス";
-                    break;
-                case 2:
-                    recMode = "全サービス（デコード処理なし）";
-                    break;
-                case 3:
-                    recMode = "指定サービス（デコード処理なし）";
-                    break;
-                case 4:
-                    recMode = "視聴";
-                    break;
-                case 5:
-                    recMode = "無効";
-                    break;
-                default:
-                    break;
-            } 
+            String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
             String tuijyu = "";
             if (reserveInfo.RecSetting.TuijyuuFlag == 0)
             {

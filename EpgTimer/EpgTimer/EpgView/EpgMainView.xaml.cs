@@ -851,13 +851,11 @@ namespace EpgTimer
                     ProgramViewItem program = GetProgramItem(clickPos);
                     if (program != null)
                     {
-                        SearchItem searchitem = new SearchItem();
-                        searchitem.EventInfo = program.EventInfo;
-                        BlackoutWindow.selectedSearchItem = searchitem;
+                        BlackoutWindow.selectedEventInfo = program.EventInfo;
                     }
                     else
                     {
-                        BlackoutWindow.selectedSearchItem = null;
+                        BlackoutWindow.selectedEventInfo = null;
                     }
                     ViewSettingClick(this, setInfo);
                 }
@@ -1639,30 +1637,30 @@ namespace EpgTimer
         {
             if (this.IsVisible == false) { return; }
             //
-            if (BlackoutWindow.selectedReserveItem != null)
+            if (BlackoutWindow.selectedReserve != null)
             {
                 foreach (ReserveViewItem reserveViewItem1 in this.reserveList)
                 {
-                    if (reserveViewItem1.ReserveInfo.ReserveID == BlackoutWindow.selectedReserveItem.ReserveInfo.ReserveID)
+                    if (reserveViewItem1.ReserveInfo.ReserveID == BlackoutWindow.selectedReserve.ReserveID)
                     {
                         this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(reserveViewItem1.LeftPos - 100);
                         this.epgProgramView.scrollViewer.ScrollToVerticalOffset(reserveViewItem1.TopPos - 100);
                         break;
                     }
                 }
-                BlackoutWindow.selectedReserveItem = null;
+                BlackoutWindow.selectedReserve = null;
             }
-            else if (BlackoutWindow.selectedSearchItem != null)
+            else if (BlackoutWindow.selectedEventInfo != null)
             {
                 for (int i = 0; i < this.timeList.Count; i++)
                 {
                     foreach (ProgramViewItem item in this.timeList.Values[i])
                     {
                         if (item.Past == false &&
-                            item.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
-                            item.EventInfo.original_network_id == BlackoutWindow.selectedSearchItem.EventInfo.original_network_id &&
-                            item.EventInfo.service_id == BlackoutWindow.selectedSearchItem.EventInfo.service_id &&
-                            item.EventInfo.transport_stream_id == BlackoutWindow.selectedSearchItem.EventInfo.transport_stream_id)
+                            item.EventInfo.event_id == BlackoutWindow.selectedEventInfo.event_id &&
+                            item.EventInfo.original_network_id == BlackoutWindow.selectedEventInfo.original_network_id &&
+                            item.EventInfo.service_id == BlackoutWindow.selectedEventInfo.service_id &&
+                            item.EventInfo.transport_stream_id == BlackoutWindow.selectedEventInfo.transport_stream_id)
                         {
                             this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(item.LeftPos - 100);
                             this.epgProgramView.scrollViewer.ScrollToVerticalOffset(item.TopPos - 100);
@@ -1671,7 +1669,7 @@ namespace EpgTimer
                         }
                     }
                 }
-                BlackoutWindow.selectedSearchItem = null;
+                BlackoutWindow.selectedEventInfo = null;
             }
         }
     }

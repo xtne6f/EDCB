@@ -294,14 +294,14 @@ namespace EpgTimer
         void searchJumpTargetProgram()
         {
             UInt64 serviceKey_Target1 = 0;
-            if (BlackoutWindow.selectedReserveItem != null)
+            if (BlackoutWindow.selectedReserve != null)
             {
-                ReserveData reserveData1 = BlackoutWindow.selectedReserveItem.ReserveInfo;
+                ReserveData reserveData1 = BlackoutWindow.selectedReserve;
                 serviceKey_Target1 = CommonManager.Create64Key(reserveData1.OriginalNetworkID, reserveData1.TransportStreamID, reserveData1.ServiceID);
             }
-            else if (BlackoutWindow.selectedSearchItem != null)
+            else if (BlackoutWindow.selectedEventInfo != null)
             {
-                EpgEventInfo eventInfo1 = BlackoutWindow.selectedSearchItem.EventInfo;
+                EpgEventInfo eventInfo1 = BlackoutWindow.selectedEventInfo;
                 serviceKey_Target1 = CommonManager.Create64Key(eventInfo1.original_network_id, eventInfo1.transport_stream_id, eventInfo1.service_id);
             }
             foreach (TabItem tabItem1 in this.tabControl.Items)
