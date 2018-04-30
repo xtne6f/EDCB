@@ -35,7 +35,7 @@ namespace EpgTimer
             setEpgView.SaveSetting();
             setOtherAppView.SaveSetting();
 
-            Settings.SaveToXmlFile();
+            Settings.SaveToXmlFile(true);
             CommonManager.Instance.ReloadCustContentColorList();
 
             this.DialogResult = true;

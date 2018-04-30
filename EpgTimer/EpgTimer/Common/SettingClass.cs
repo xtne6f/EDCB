@@ -528,21 +528,9 @@ namespace EpgTimer
                     Instance = (Settings)(xs.Deserialize(fs));
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
-                {
-                    string backPath = path + ".back";
-                    if (System.IO.File.Exists(backPath) == true)
-                    {
-                        if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                        {
-                            _LoadFromXmlFile(backPath, nwMode);
-                            return;
-                        }
-                    }
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
+                //設定ファイルが存在しない、内容が異常、など
             }
 
             try
@@ -651,28 +639,33 @@ namespace EpgTimer
             }
         }
 
-        public static void SaveToXmlFile()
+        public static void SaveToXmlFile(bool notifyException = false)
         {
             try
             {
                 string path = GetSettingPath();
 
-                if (System.IO.File.Exists(path) == true)
-                {
-                    string backPath = path + ".back";
-                    System.IO.File.Copy(path, backPath, true);
-                }
-
-                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (var fs = new FileStream(path + ".back", FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     //シリアル化して書き込む
                     var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
                     xs.Serialize(fs, Instance);
                 }
+                try
+                {
+                    File.Replace(path + ".back", path, null);
+                }
+                catch (FileNotFoundException)
+                {
+                    File.Move(path + ".back", path);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                if (notifyException)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
             }
         }
 
