@@ -22,7 +22,7 @@
             <MenuItem Header="録画後実行bat" Name="BatFilePath" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
-            <MenuItem Header="ボタンを隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
+            <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
