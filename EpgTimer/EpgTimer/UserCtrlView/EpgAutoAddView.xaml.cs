@@ -181,7 +181,7 @@ namespace EpgTimer
                 foreach (EpgAutoDataItem item in autoaddlist)
                 {
                     EpgSearchKeyInfo key = item.EpgAutoAddInfo.searchInfo;
-                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);//無効解除
+                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? 7 : 0);//無効解除
                     keyList.Add(key);
                 }
 
@@ -250,15 +250,7 @@ namespace EpgTimer
             {
                 foreach (MenuItem item in listView_key.ContextMenu.Items)
                 {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
-                    {
-                        if (info.Tag.CompareTo(item.Name) == 0)
-                        {
-                            item.IsChecked = true;
-                            break;
-                        }
-                    }
+                    item.IsChecked = Settings.Instance.AutoAddEpgColumn.Any(info => info.Tag == item.Name);
                 }
 
 
@@ -284,7 +276,7 @@ namespace EpgTimer
                 {
                     foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
                     {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
+                        if (info.Tag == menuItem.Name)
                         {
                             Settings.Instance.AutoAddEpgColumn.Remove(info);
                             gridView_key.Columns.Remove(columnList[menuItem.Name]);

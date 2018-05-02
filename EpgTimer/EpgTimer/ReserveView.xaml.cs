@@ -114,7 +114,7 @@ namespace EpgTimer
                 if (_lastHeaderClicked != null)
                 {
                     //string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
-                    if (String.Compare(_lastHeaderClicked, "RecFileName") != 0)
+                    if (_lastHeaderClicked != "RecFileName")
                     {
                         Sort(_lastHeaderClicked, _lastDirection);
                     }
@@ -127,9 +127,9 @@ namespace EpgTimer
                     {
                         GridViewColumnHeader columnHeader = info.Header as GridViewColumnHeader;
                         string header = columnHeader.Tag as string;
-                        if (String.Compare(header, Settings.Instance.ResColumnHead, true) == 0)
+                        if (header == Settings.Instance.ResColumnHead)
                         {
-                            if (String.Compare(header, "RecFileName") != 0)
+                            if (header != "RecFileName")
                             {
                                 Sort(header, Settings.Instance.ResSortDirection);
 
@@ -145,7 +145,7 @@ namespace EpgTimer
                     {
                         GridViewColumnHeader columnHeader = gridView_reserve.Columns[0].Header as GridViewColumnHeader;
                         string header = columnHeader.Tag as string;
-                        if (String.Compare(header, "RecFileName") != 0)
+                        if (header != "RecFileName")
                         {
                             Sort(header, _lastDirection);
                             _lastHeaderClicked = header;
@@ -180,7 +180,7 @@ namespace EpgTimer
                 dataView.SortDescriptions.Add(sd);
                 if (_lastHeaderClicked2 != null)
                 {
-                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
+                    if (sortBy != _lastHeaderClicked2)
                     {
                         SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
                         dataView.SortDescriptions.Add(sd2);
@@ -202,12 +202,12 @@ namespace EpgTimer
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
                     string header = headerClicked.Tag as string;
-                    if (String.Compare(header, "RecFileName") == 0)
+                    if (header == "RecFileName")
                     {
                         return;
                     }
 
-                    if (String.Compare(header, _lastHeaderClicked) != 0)
+                    if (header != _lastHeaderClicked)
                     {
                         direction = ListSortDirection.Ascending;
                         _lastHeaderClicked2 = _lastHeaderClicked;
@@ -261,41 +261,11 @@ namespace EpgTimer
         {
             try
             {
-                MenuItem menuItem = sender as MenuItem;
+                byte recMode = byte.Parse(((MenuItem)sender).Name.Substring("recmode_".Length));
                 List<ReserveData> list = new List<ReserveData>();
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
                     ReserveData reserveInfo = item.ReserveInfo;
-
-                    byte recMode = 0;
-                    if (menuItem.Name.CompareTo("recmode_all") == 0)
-                    {
-                        recMode = 0;
-                    }
-                    else if (menuItem.Name.CompareTo("recmode_only") == 0)
-                    {
-                        recMode = 1;
-                    }
-                    else if (menuItem.Name.CompareTo("recmode_all_nodec") == 0)
-                    {
-                        recMode = 2;
-                    }
-                    else if (menuItem.Name.CompareTo("recmode_only_nodec") == 0)
-                    {
-                        recMode = 3;
-                    }
-                    else if (menuItem.Name.CompareTo("recmode_view") == 0)
-                    {
-                        recMode = 4;
-                    }
-                    else if (menuItem.Name.CompareTo("recmode_no") == 0)
-                    {
-                        recMode = 5;
-                    }
-                    else
-                    {
-                        return;
-                    }
                     reserveInfo.RecSetting.RecMode = recMode;
 
                     list.Add(reserveInfo);
@@ -347,37 +317,11 @@ namespace EpgTimer
         {
             try
             {
-                MenuItem menuItem = sender as MenuItem;
+                byte priority = byte.Parse(((MenuItem)sender).Name.Substring("priority_".Length));
                 List<ReserveData> list = new List<ReserveData>();
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
                     ReserveData reserveInfo = item.ReserveInfo;
-
-                    byte priority = 1;
-                    if (menuItem.Name.CompareTo("priority_1") == 0)
-                    {
-                        priority = 1;
-                    }
-                    else if (menuItem.Name.CompareTo("priority_2") == 0)
-                    {
-                        priority = 2;
-                    }
-                    else if (menuItem.Name.CompareTo("priority_3") == 0)
-                    {
-                        priority = 3;
-                    }
-                    else if (menuItem.Name.CompareTo("priority_4") == 0)
-                    {
-                        priority = 4;
-                    }
-                    else if (menuItem.Name.CompareTo("priority_5") == 0)
-                    {
-                        priority = 5;
-                    }
-                    else
-                    {
-                        return;
-                    }
                     reserveInfo.RecSetting.Priority = priority;
 
                     list.Add(reserveInfo);
@@ -514,7 +458,7 @@ namespace EpgTimer
                 {
                     foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
                     {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
+                        if (info.Tag == menuItem.Name)
                         {
                             Settings.Instance.ReserveListColumn.Remove(info);
                             gridView_reserve.Columns.Remove(columnList[menuItem.Name]);
@@ -676,12 +620,12 @@ namespace EpgTimer
             }
             foreach (object item in ((ContextMenu)sender).Items)
             {
-                if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更"))
+                if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更", StringComparison.Ordinal))
                 {
                     for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
                     {
                         MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
-                        if (subItem != null && subItem.Name == "recmode_all")
+                        if (subItem != null && subItem.Name == "recmode_0")
                         {
                             for (int j = 0; j <= 5; j++)
                             {

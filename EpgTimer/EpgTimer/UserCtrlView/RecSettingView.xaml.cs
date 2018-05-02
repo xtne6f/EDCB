@@ -288,7 +288,7 @@ namespace EpgTimer
                 {
                     int startSec = 0;
                     int startMinus = 1;
-                    if (textBox_margineStart.Text.IndexOf("-") == 0)
+                    if (textBox_margineStart.Text.StartsWith("-", StringComparison.Ordinal))
                     {
                         startMinus = -1;
                     }
@@ -311,7 +311,7 @@ namespace EpgTimer
 
                     int endSec = 0;
                     int endMinus = 1;
-                    if (textBox_margineEnd.Text.IndexOf("-") == 0)
+                    if (textBox_margineEnd.Text.StartsWith("-", StringComparison.Ordinal))
                     {
                         endMinus = -1;
                     }
@@ -567,9 +567,9 @@ namespace EpgTimer
                 foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
                     if (info.PartialRec == false &&
-                        String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
-                        String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
-                        String.Compare(setInfo.RecNamePlugIn, info.RecNamePlugIn, true) == 0)
+                        setInfo.RecFolder.Equals(info.RecFolder, StringComparison.OrdinalIgnoreCase) &&
+                        setInfo.WritePlugIn.Equals(info.WritePlugIn, StringComparison.OrdinalIgnoreCase) &&
+                        setInfo.RecNamePlugIn.Equals(info.RecNamePlugIn, StringComparison.OrdinalIgnoreCase))
                     {
                         MessageBox.Show("すでに追加されています");
                         return;
@@ -723,9 +723,9 @@ namespace EpgTimer
                 foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
                     if (info.PartialRec &&
-                        String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
-                        String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
-                        String.Compare(setInfo.RecNamePlugIn, info.RecNamePlugIn, true) == 0)
+                        setInfo.RecFolder.Equals(info.RecFolder, StringComparison.OrdinalIgnoreCase) &&
+                        setInfo.WritePlugIn.Equals(info.WritePlugIn, StringComparison.OrdinalIgnoreCase) &&
+                        setInfo.RecNamePlugIn.Equals(info.RecNamePlugIn, StringComparison.OrdinalIgnoreCase))
                     {
                         MessageBox.Show("すでに追加されています");
                         return;

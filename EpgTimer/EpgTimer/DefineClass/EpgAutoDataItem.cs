@@ -227,7 +227,7 @@ namespace EpgTimer
 
         public String KeyEnabled
         {
-            get { return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}") ? "いいえ" : "はい"; }
+            get { return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? "いいえ" : "はい"; }
         }
 
         public String CaseSensitive
@@ -248,7 +248,7 @@ namespace EpgTimer
         {
             get
             {
-                return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}") ?
+                return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ?
                        CommonManager.Instance.ResNoBackColor : CommonManager.Instance.ResDefBackColor;
             }
         }

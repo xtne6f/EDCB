@@ -163,15 +163,7 @@ namespace EpgTimer
             {
                 foreach (MenuItem item in listView_key.ContextMenu.Items)
                 {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
-                    {
-                        if (info.Tag.CompareTo(item.Name) == 0)
-                        {
-                            item.IsChecked = true;
-                            break;
-                        }
-                    }
+                    item.IsChecked = Settings.Instance.AutoAddManualColumn.Any(info => info.Tag == item.Name);
                 }
 
 
@@ -197,7 +189,7 @@ namespace EpgTimer
                 {
                     foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
                     {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
+                        if (info.Tag == menuItem.Name)
                         {
                             Settings.Instance.AutoAddManualColumn.Remove(info);
                             gridView_key.Columns.Remove(columnList[menuItem.Name]);

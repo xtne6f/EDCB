@@ -396,7 +396,7 @@ namespace EpgTimer
             for (int i = 0; i < tabControl_main.Items.Count; i++)
             {
                 TabItem ti = tabControl_main.Items.GetItemAt(i) as TabItem;
-                if (ti != null && ti.Tag is string && ((string)ti.Tag).StartsWith("PushLike"))
+                if (ti != null && ti.Tag is string && ((string)ti.Tag).StartsWith("PushLike", StringComparison.Ordinal))
                 {
                     tabControl_main.Items.Remove(ti);
                     i--;
@@ -404,7 +404,7 @@ namespace EpgTimer
             }
             foreach (string info in Settings.Instance.ViewButtonList)
             {
-                if (String.Compare(info, "（空白）") == 0)
+                if (info == "（空白）")
                 {
                     Label space = new Label();
                     space.Width = 15;
@@ -414,11 +414,11 @@ namespace EpgTimer
                 {
                     if (buttonList.ContainsKey(info) == true)
                     {
-                        if (String.Compare(info, "カスタム１") == 0)
+                        if (info == "カスタム１")
                         {
                             buttonList[info].Content = Settings.Instance.Cust1BtnName;
                         }
-                        if (String.Compare(info, "カスタム２") == 0)
+                        if (info == "カスタム２")
                         {
                             buttonList[info].Content = Settings.Instance.Cust2BtnName;
                         }

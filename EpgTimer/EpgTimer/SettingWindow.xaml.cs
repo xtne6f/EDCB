@@ -66,7 +66,7 @@ namespace EpgTimer
                         {
                             searchDefault += "  ID=0x" + id.ToString("X12") + " -> 0x" + item.Key.ToString("X12") + " (" + item.ServiceName + ")\r\n";
                         }
-                        else if (searchDefault.EndsWith(".\r\n") == false)
+                        else if (searchDefault.EndsWith(".\r\n", StringComparison.Ordinal) == false)
                         {
                             searchDefault += "  ...\r\n";
                         }
@@ -94,7 +94,7 @@ namespace EpgTimer
                             {
                                 viewService += "  ID=0x" + id.ToString("X12") + " -> 0x" + item.Key.ToString("X12") + " (" + item.ServiceName + ")\r\n";
                             }
-                            else if (viewService.EndsWith(".\r\n") == false)
+                            else if (viewService.EndsWith(".\r\n", StringComparison.Ordinal) == false)
                             {
                                 viewService += "  ...\r\n";
                             }
@@ -117,7 +117,7 @@ namespace EpgTimer
                             {
                                 searchKey += "  ID=0x" + id.ToString("X12") + " -> 0x" + item.Key.ToString("X12") + " (" + item.ServiceName + ")\r\n";
                             }
-                            else if (searchKey.EndsWith(".\r\n") == false)
+                            else if (searchKey.EndsWith(".\r\n", StringComparison.Ordinal) == false)
                             {
                                 searchKey += "  ...\r\n";
                             }
@@ -142,7 +142,7 @@ namespace EpgTimer
                         {
                             iepgStation += "  ID=0x" + info.Key.ToString("X12") + " -> 0x" + item.Key.ToString("X12") + " (" + item.ServiceName + ")\r\n";
                         }
-                        else if (iepgStation.EndsWith(".\r\n") == false)
+                        else if (iepgStation.EndsWith(".\r\n", StringComparison.Ordinal) == false)
                         {
                             iepgStation += "  ...\r\n";
                         }

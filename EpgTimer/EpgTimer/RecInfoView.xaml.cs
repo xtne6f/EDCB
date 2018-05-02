@@ -98,7 +98,7 @@ namespace EpgTimer
                 dataView.SortDescriptions.Add(sd);
                 if (_lastHeaderClicked2 != null)
                 {
-                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
+                    if (sortBy != _lastHeaderClicked2)
                     {
                         SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
                         dataView.SortDescriptions.Add(sd2);
@@ -120,7 +120,7 @@ namespace EpgTimer
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
                     string header = headerClicked.Tag as string;
-                    if (String.Compare(header, _lastHeaderClicked) != 0)
+                    if (header != _lastHeaderClicked)
                     {
                         direction = ListSortDirection.Ascending;
                         _lastHeaderClicked2 = _lastHeaderClicked;
@@ -175,7 +175,7 @@ namespace EpgTimer
                     {
                         GridViewColumnHeader columnHeader = info.Header as GridViewColumnHeader;
                         string header = columnHeader.Tag as string;
-                        if (String.Compare(header, Settings.Instance.RecInfoColumnHead, true) == 0)
+                        if (header == Settings.Instance.RecInfoColumnHead)
                         {
                             Sort(header, Settings.Instance.RecInfoSortDirection);
                             _lastHeaderClicked = header;
@@ -406,7 +406,7 @@ namespace EpgTimer
                 {
                     foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
                     {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
+                        if (info.Tag == menuItem.Name)
                         {
                             Settings.Instance.RecInfoListColumn.Remove(info);
                             gridView_recinfo.Columns.Remove(columnList[menuItem.Name]);

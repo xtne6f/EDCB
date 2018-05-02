@@ -78,7 +78,7 @@ namespace EpgTimer
             {
                 foreach (string info in comboBox_andKey.Items)
                 {
-                    if (string.Compare(key, info, true) == 0)
+                    if (key.Equals(info, StringComparison.OrdinalIgnoreCase))
                     {
                         comboBox_andKey.Items.Remove(info);
                         comboBox_andKey.Text = key;
@@ -92,7 +92,7 @@ namespace EpgTimer
             {
                 foreach (string info in comboBox_notKey.Items)
                 {
-                    if (string.Compare(key, info, true) == 0)
+                    if (key.Equals(info, StringComparison.OrdinalIgnoreCase))
                     {
                         comboBox_notKey.Items.Remove(info);
                         comboBox_notKey.Text = key;

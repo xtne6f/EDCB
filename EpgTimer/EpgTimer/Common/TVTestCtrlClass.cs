@@ -26,7 +26,7 @@ namespace EpgTimer
                 // TVTestのパスが録画用アプリと一致する場合はViewアプリとして扱う
                 bool isView = CommonManager.Instance.NWMode == false &&
                               Settings.Instance.NwTvMode == false &&
-                              string.Compare(IniFileHandler.GetPrivateProfileString("SET", "RecExePath", "", SettingPath.CommonIniPath), Settings.Instance.TvTestExe, true) == 0;
+                              Settings.Instance.TvTestExe.Equals(IniFileHandler.GetPrivateProfileString("SET", "RecExePath", "", SettingPath.CommonIniPath), StringComparison.OrdinalIgnoreCase);
                 OpenTVTest(Settings.Instance.TvTestOpenWait, isView ? "View" : "TvTest");
                 var cmdTvTest = new CtrlCmdUtil();
                 cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, processType + "_Ctrl_BonPipe_" + process.Id);
@@ -65,7 +65,7 @@ namespace EpgTimer
                                     System.Threading.Thread.Sleep(1000);
                                     continue;
                                 }
-                                if (String.Compare(val, nwBonDriver, true) != 0)
+                                if (val.Equals(nwBonDriver, StringComparison.OrdinalIgnoreCase) == false)
                                 {
                                     cmdTvTest.SendViewSetBonDrivere(nwBonDriver);
                                 }
@@ -100,7 +100,7 @@ namespace EpgTimer
                                     break;
                                 }
                             }
-                            if (String.Compare(val, chInfo.bonDriver, true) != 0)
+                            if (val.Equals(chInfo.bonDriver, StringComparison.OrdinalIgnoreCase) == false)
                             {
                                 if (cmdTvTest.SendViewSetBonDrivere(chInfo.bonDriver) == ErrCode.CMD_SUCCESS)
                                 {

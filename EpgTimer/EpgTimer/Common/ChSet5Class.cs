@@ -98,7 +98,7 @@ namespace EpgTimer
                 Instance.ChListOrderByIndex.Clear();
                 for (string buff = reader.ReadLine(); buff != null; buff = reader.ReadLine())
                 {
-                    if (buff.IndexOf(";") == 0)
+                    if (buff.StartsWith(";", StringComparison.Ordinal))
                     {
                         //コメント行
                     }
