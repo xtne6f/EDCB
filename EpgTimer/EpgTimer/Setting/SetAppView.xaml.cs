@@ -22,347 +22,136 @@ namespace EpgTimer.Setting
     /// </summary>
     public partial class SetAppView : UserControl
     {
-        private EpgSearchKeyInfo defSearchKey = new EpgSearchKeyInfo();
-
-        private List<ViewMenuItem> buttonItem = new List<ViewMenuItem>();
-        private List<ViewMenuItem> taskItem = new List<ViewMenuItem>();
-
-        private List<IEPGStationInfo> stationList = new List<IEPGStationInfo>();
-
         public SetAppView()
         {
             InitializeComponent();
-
-            if (CommonManager.Instance.NWMode == true)
-            {
-                checkBox_wakeReconnect.IsEnabled = true;
-                checkBox_suspendClose.IsEnabled = true;
-                checkBox_ngAutoEpgLoad.IsEnabled = true;
-                button_srvSetting.IsEnabled = false;
-            }
-
-            try
-            {
-                try
-                {
-                    checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
-                    checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
-                    checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
-                    checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
-                    checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
-                    checkBox_showEpgCapServiceOnly.IsChecked = Settings.Instance.ShowEpgCapServiceOnly;
-                    checkBox_NotNoStyle.IsChecked = Settings.Instance.NoStyle == 0;
-                    checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
-                    checkBox_minHide.IsChecked = Settings.Instance.MinHide;
-
-                    checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
-                    checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
-                    checkBox_ngAutoEpgLoad.IsChecked = Settings.Instance.NgAutoEpgLoadNW;
-                }
-                catch
-                {
-                }
-
-                button_shortCutAdd.Visibility = File.Exists(System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? Visibility.Hidden : Visibility.Visible;
-                button_shortCutDel.Visibility = button_shortCutAdd.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
-
-                Settings.GetDefSearchSetting(ref defSearchKey);
-
-                checkBox_showAsTab.IsChecked = Settings.Instance.ViewButtonShowAsTab;
-
-                buttonItem.Add(new ViewMenuItem("（空白）", false));
-                buttonItem.Add(new ViewMenuItem("設定", false));
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    buttonItem.Add(new ViewMenuItem("再接続", false));
-                }
-                buttonItem.Add(new ViewMenuItem("検索", false));
-                buttonItem.Add(new ViewMenuItem("スタンバイ", false));
-                buttonItem.Add(new ViewMenuItem("休止", false));
-                buttonItem.Add(new ViewMenuItem("EPG取得", false));
-                buttonItem.Add(new ViewMenuItem("EPG再読み込み", false));
-                buttonItem.Add(new ViewMenuItem("終了", false));
-                buttonItem.Add(new ViewMenuItem("カスタム１", false));
-                buttonItem.Add(new ViewMenuItem("カスタム２", false));
-                buttonItem.Add(new ViewMenuItem("NetworkTV終了", false));
-                buttonItem.Add(new ViewMenuItem("情報通知ログ", false));
-
-                taskItem.Add(new ViewMenuItem("（セパレータ）", false));
-                taskItem.Add(new ViewMenuItem("設定", false));
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    taskItem.Add(new ViewMenuItem("再接続", false));
-                }
-                taskItem.Add(new ViewMenuItem("スタンバイ", false));
-                taskItem.Add(new ViewMenuItem("休止", false));
-                taskItem.Add(new ViewMenuItem("EPG取得", false));
-                taskItem.Add(new ViewMenuItem("終了", false));
-
-                foreach (String info in Settings.Instance.ViewButtonList)
-                {
-                    //リストが空であることを示す特殊なアイテムを無視
-                    if (String.Compare(info, "（なし）") == 0)
-                    {
-                        continue;
-                    }
-                    //.NET的に同一文字列のStringを入れると選択動作がおかしくなるみたいなので毎回作成しておく
-                    listBox_viewBtn.Items.Add(new ViewMenuItem(info, true));
-                    if (String.Compare(info, "（空白）") != 0)
-                    {
-                        foreach (ViewMenuItem item in buttonItem)
-                        {
-                            if (String.Compare(info, item.MenuName) == 0)
-                            {
-                                item.IsSelected = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                foreach (String info in Settings.Instance.TaskMenuList)
-                {
-                    //.NET的に同一文字列のStringを入れると選択動作がおかしくなるみたいなので毎回作成しておく
-                    listBox_viewTask.Items.Add(new ViewMenuItem(info, true));
-                    if (String.Compare(info, "（セパレータ）") != 0)
-                    {
-                        foreach (ViewMenuItem item in taskItem)
-                        {
-                            if (String.Compare(info, item.MenuName) == 0)
-                            {
-                                item.IsSelected = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ReLoadButtonItem();
-                ReLoadTaskItem();
-
-                textBox_name1.Text = Settings.Instance.Cust1BtnName;
-                textBox_exe1.Text = Settings.Instance.Cust1BtnCmd;
-                textBox_opt1.Text = Settings.Instance.Cust1BtnCmdOpt;
-
-                textBox_name2.Text = Settings.Instance.Cust2BtnName;
-                textBox_exe2.Text = Settings.Instance.Cust2BtnCmd;
-                textBox_opt2.Text = Settings.Instance.Cust2BtnCmdOpt;
-
-                var serviceList = new List<ServiceViewItem>();
-                foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
-                {
-                    serviceList.Add(new ServiceViewItem(info));
-                }
-                listBox_service.ItemsSource = serviceList;
-
-                stationList = Settings.Instance.IEpgStationList.ToList();
-                ReLoadStation();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
-        private void ReLoadButtonItem()
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            listBox_itemBtn.Items.Clear();
-            foreach (ViewMenuItem info in buttonItem)
-            {
-                if (info.IsSelected == false)
-                {
-                    listBox_itemBtn.Items.Add(info);
-                }
-            }
-        }
+            checkBox_wakeReconnect.IsEnabled = CommonManager.Instance.NWMode;
+            checkBox_suspendClose.IsEnabled = CommonManager.Instance.NWMode;
+            checkBox_ngAutoEpgLoad.IsEnabled = CommonManager.Instance.NWMode;
+            button_srvSetting.IsEnabled = CommonManager.Instance.NWMode == false;
 
-        private void ReLoadTaskItem()
-        {
-            listBox_itemTask.Items.Clear();
-            foreach (ViewMenuItem info in taskItem)
+            button_shortCutAdd.Visibility = File.Exists(System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? Visibility.Hidden : Visibility.Visible;
+            button_shortCutDel.Visibility = button_shortCutAdd.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
+
+            var settings = (Settings)DataContext;
+            if (settings != null)
             {
-                if (info.IsSelected == false)
+                listBox_viewBtn.Items.Clear();
+                foreach (string item in settings.ViewButtonList)
                 {
-                    listBox_itemTask.Items.Add(info);
+                    // リストが空であることを示す特殊なアイテムを無視
+                    if (item != "（なし）")
+                    {
+                        listBox_viewBtn.Items.Add(item);
+                    }
                 }
+                OnUpdateViewButtonListBox(true);
+
+                listBox_viewTask.Items.Clear();
+                foreach (string item in settings.TaskMenuList)
+                {
+                    listBox_viewTask.Items.Add(item);
+                }
+                OnUpdateViewTaskListBox(true);
             }
+
+            listBox_service.ItemsSource = ChSet5.Instance.ChListSelected.Select(a => new ServiceViewItem(a));
         }
 
         public void SaveSetting()
         {
-            Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
-            Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
-            Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
-            Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
-            Settings.Instance.ShowEpgCapServiceOnly = (bool)checkBox_showEpgCapServiceOnly.IsChecked;
-            Settings.Instance.NoStyle = (checkBox_NotNoStyle.IsChecked == true ? 0 : 1);
-
-            if (checkBox_noToolTips.IsChecked == true)
-            {
-                Settings.Instance.NoToolTip = true;
-            }
-            else
-            {
-                Settings.Instance.NoToolTip = false;
-            }
-
-            if (checkBox_noBallonTips.IsChecked == true)
-            {
-                Settings.Instance.NoBallonTips = true;
-            }
-            else
-            {
-                Settings.Instance.NoBallonTips = false;
-            }
-            if (checkBox_playDClick.IsChecked == true)
-            {
-                Settings.Instance.PlayDClick = true;
-            }
-            else
-            {
-                Settings.Instance.PlayDClick = false;
-            }
-
-            if (checkBox_wakeReconnect.IsChecked == true)
-            {
-                Settings.Instance.WakeReconnectNW = true;
-            }
-            else
-            {
-                Settings.Instance.WakeReconnectNW = false;
-            }
-            if (checkBox_suspendClose.IsChecked == true)
-            {
-                Settings.Instance.SuspendCloseNW = true;
-            }
-            else
-            {
-                Settings.Instance.SuspendCloseNW = false;
-            }
-            if (checkBox_ngAutoEpgLoad.IsChecked == true)
-            {
-                Settings.Instance.NgAutoEpgLoadNW = true;
-            }
-            else
-            {
-                Settings.Instance.NgAutoEpgLoadNW = false;
-            }
-
-
-            if (defSearchKey.regExpFlag == 0)
-            {
-                Settings.Instance.SearchKeyRegExp = false;
-            }
-            else
-            {
-                Settings.Instance.SearchKeyRegExp = true;
-            }
-            if (defSearchKey.aimaiFlag == 0)
-            {
-                Settings.Instance.SearchKeyAimaiFlag = false;
-            }
-            else
-            {
-                Settings.Instance.SearchKeyAimaiFlag = true;
-            }
-            if (defSearchKey.titleOnlyFlag == 0)
-            {
-                Settings.Instance.SearchKeyTitleOnly = false;
-            }
-            else
-            {
-                Settings.Instance.SearchKeyTitleOnly = true;
-            }
-            if (defSearchKey.titleOnlyFlag == 0)
-            {
-                Settings.Instance.SearchKeyTitleOnly = false;
-            }
-            else
-            {
-                Settings.Instance.SearchKeyTitleOnly = true;
-            }
-            Settings.Instance.SearchKeyContentList.Clear();
-            foreach (EpgContentData info in defSearchKey.contentList)
-            {
-                ContentKindInfo item = new ContentKindInfo();
-                item.Nibble1 = info.content_nibble_level_1;
-                item.Nibble2 = info.content_nibble_level_2;
-                Settings.Instance.SearchKeyContentList.Add(item);
-            }
-            Settings.Instance.SearchKeyDateItemList.Clear();
-            foreach (EpgSearchDateInfo info in defSearchKey.dateList)
-            {
-                DateItem item = new DateItem();
-                item.DateInfo = info;
-                Settings.Instance.SearchKeyDateItemList.Add(item);
-            }
-            Settings.Instance.SearchKeyServiceList.Clear();
-            foreach (Int64 info in defSearchKey.serviceList)
-            {
-                Settings.Instance.SearchKeyServiceList.Add(info);
-            }
-
-            if (defSearchKey.notContetFlag == 0)
-            {
-                Settings.Instance.SearchKeyNotContent = false;
-            }
-            else
-            {
-                Settings.Instance.SearchKeyNotContent = true;
-            }
-            if (defSearchKey.notDateFlag == 0)
-            {
-                Settings.Instance.SearchKeyNotDate = false;
-            }
-            else
-            {
-                Settings.Instance.SearchKeyNotDate = true;
-            }
-            Settings.Instance.SearchKeyFreeCA = defSearchKey.freeCAFlag;
-            Settings.Instance.SearchKeyChkRecEnd = defSearchKey.chkRecEnd;
-            Settings.Instance.SearchKeyChkRecDay = defSearchKey.chkRecDay;
-
-            Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
-            Settings.Instance.ViewButtonList.Clear();
-            foreach (ViewMenuItem info in listBox_viewBtn.Items)
-            {
-                Settings.Instance.ViewButtonList.Add(info.MenuName);
-            }
-            if (Settings.Instance.ViewButtonList.Count == 0)
-            {
-                //リストが空であることを示す特殊なアイテムを追加
-                Settings.Instance.ViewButtonList.Add("（なし）");
-            }
-
-            Settings.Instance.TaskMenuList.Clear();
-            foreach (ViewMenuItem info in listBox_viewTask.Items)
-            {
-                Settings.Instance.TaskMenuList.Add(info.MenuName);
-            }
-
-            Settings.Instance.Cust1BtnName = textBox_name1.Text;
-            Settings.Instance.Cust1BtnCmd = textBox_exe1.Text;
-            Settings.Instance.Cust1BtnCmdOpt = textBox_opt1.Text;
-
-            Settings.Instance.Cust2BtnName = textBox_name2.Text;
-            Settings.Instance.Cust2BtnCmd = textBox_exe2.Text;
-            Settings.Instance.Cust2BtnCmdOpt = textBox_opt2.Text;
-
-            Settings.Instance.IEpgStationList = stationList.ToList();
         }
 
-        private void button_btnUp_Click(object sender, RoutedEventArgs e)
+        private void OnUpdateViewButtonListBox(bool updateAll)
         {
-            if (listBox_viewBtn.SelectedItem != null)
+            var itemList = new List<string> {
+                "（空白）", "設定", "検索", "スタンバイ", "休止", "EPG取得", "EPG再読み込み", "終了",
+                "カスタム１" , "カスタム２", "NetworkTV終了", "情報通知ログ"
+            };
+            if (CommonManager.Instance.NWMode)
             {
-                if (listBox_viewBtn.SelectedIndex >= 1)
+                itemList.Add("再接続");
+            }
+            // コンテキストを更新する
+            var viewButtonList = ((Settings)DataContext).ViewButtonList;
+            viewButtonList.Clear();
+            viewButtonList.AddRange(listBox_viewBtn.Items.OfType<string>());
+            if (viewButtonList.Count == 0)
+            {
+                // リストが空であることを示す特殊なアイテムを追加
+                viewButtonList.Add("（なし）");
+            }
+            if (updateAll)
+            {
+                listBox_itemBtn.Items.Clear();
+                foreach (string item in itemList)
                 {
-                    object temp = listBox_viewBtn.SelectedItem;
-                    int index = listBox_viewBtn.SelectedIndex;
-                    listBox_viewBtn.Items.RemoveAt(listBox_viewBtn.SelectedIndex);
-                    listBox_viewBtn.Items.Insert(index - 1, temp);
-                    listBox_viewBtn.SelectedIndex = index - 1;
+                    // 表示項目にないものだけ追加
+                    if (item == "（空白）" || viewButtonList.IndexOf(item) < 0)
+                    {
+                        listBox_itemBtn.Items.Add(item);
+                    }
                 }
+            }
+        }
+
+        private void OnUpdateViewTaskListBox(bool updateAll)
+        {
+            var itemList = new List<string> {
+                "（セパレータ）", "設定", "スタンバイ", "休止", "EPG取得", "終了"
+            };
+            if (CommonManager.Instance.NWMode)
+            {
+                itemList.Add("再接続");
+            }
+            // コンテキストを更新する
+            var taskMenuList = ((Settings)DataContext).TaskMenuList;
+            taskMenuList.Clear();
+            taskMenuList.AddRange(listBox_viewTask.Items.OfType<string>());
+            if (updateAll)
+            {
+                listBox_itemTask.Items.Clear();
+                foreach (string item in itemList)
+                {
+                    // 表示項目にないものだけ追加
+                    if (item == "（セパレータ）" || taskMenuList.IndexOf(item) < 0)
+                    {
+                        listBox_itemTask.Items.Add(item);
+                    }
+                }
+            }
+        }
+
+        private void button_up_Click(object sender, RoutedEventArgs e)
+        {
+            var listBox = (ListBox)((Button)sender).Tag;
+            int index = listBox.SelectedIndex;
+            if (index >= 1)
+            {
+                listBox.Items.Insert(index - 1, listBox.SelectedItem);
+                listBox.Items.RemoveAt(index + 1);
+                listBox.SelectedIndex = index - 1;
+                OnUpdateViewButtonListBox(false);
+                OnUpdateViewTaskListBox(false);
+            }
+        }
+
+        private void button_down_Click(object sender, RoutedEventArgs e)
+        {
+            var listBox = (ListBox)((Button)sender).Tag;
+            int index = listBox.SelectedIndex;
+            if (0 <= index && index < listBox.Items.Count - 1)
+            {
+                listBox.Items.Insert(index + 2, listBox.SelectedItem);
+                listBox.Items.RemoveAt(index);
+                listBox.SelectedIndex = index + 1;
+                OnUpdateViewButtonListBox(false);
+                OnUpdateViewTaskListBox(false);
             }
         }
 
@@ -370,36 +159,16 @@ namespace EpgTimer.Setting
         {
             if (listBox_viewBtn.SelectedItem != null)
             {
-                ViewMenuItem info = listBox_viewBtn.SelectedItem as ViewMenuItem;
-                if (String.Compare(info.MenuName, "設定") == 0)
+                if ((string)listBox_viewBtn.SelectedItem == "設定")
                 {
-                    bool found = false;
-                    foreach (ViewMenuItem item in listBox_viewTask.Items)
-                    {
-                        if ((found = item.MenuName == "設定") != false)
-                        {
-                            break;
-                        }
-                    }
-                    if (!found)
+                    if (listBox_viewTask.Items.OfType<string>().All(a => a != "設定"))
                     {
                         MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
                         return;
                     }
                 }
-                if (String.Compare(info.MenuName, "（空白）") != 0)
-                {
-                    foreach (ViewMenuItem item in buttonItem)
-                    {
-                        if (String.Compare(info.MenuName, item.MenuName) == 0)
-                        {
-                            item.IsSelected = false;
-                            break;
-                        }
-                    }
-                }
-                listBox_viewBtn.Items.Remove(info);
-                ReLoadButtonItem();
+                listBox_viewBtn.Items.RemoveAt(listBox_viewBtn.SelectedIndex);
+                OnUpdateViewButtonListBox(true);
             }
         }
 
@@ -407,43 +176,8 @@ namespace EpgTimer.Setting
         {
             if (listBox_itemBtn.SelectedItem != null)
             {
-                ViewMenuItem info = listBox_itemBtn.SelectedItem as ViewMenuItem;
-                if (String.Compare(info.MenuName, "（空白）") != 0)
-                {
-                    info.IsSelected = true;
-                }
-                listBox_viewBtn.Items.Add(new ViewMenuItem(info.MenuName, true));
-                ReLoadButtonItem();
-            }
-        }
-
-        private void button_btnDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_viewBtn.SelectedItem != null)
-            {
-                if (listBox_viewBtn.SelectedIndex < listBox_viewBtn.Items.Count - 1)
-                {
-                    object temp = listBox_viewBtn.SelectedItem;
-                    int index = listBox_viewBtn.SelectedIndex;
-                    listBox_viewBtn.Items.RemoveAt(listBox_viewBtn.SelectedIndex);
-                    listBox_viewBtn.Items.Insert(index + 1, temp);
-                    listBox_viewBtn.SelectedIndex = index + 1;
-                }
-            }
-        }
-
-        private void button_taskUp_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_viewTask.SelectedItem != null)
-            {
-                if (listBox_viewTask.SelectedIndex >= 1)
-                {
-                    object temp = listBox_viewTask.SelectedItem;
-                    int index = listBox_viewTask.SelectedIndex;
-                    listBox_viewTask.Items.RemoveAt(listBox_viewTask.SelectedIndex);
-                    listBox_viewTask.Items.Insert(index - 1, temp);
-                    listBox_viewTask.SelectedIndex = index - 1;
-                }
+                listBox_viewBtn.Items.Add(listBox_itemBtn.SelectedItem);
+                OnUpdateViewButtonListBox(true);
             }
         }
 
@@ -451,36 +185,16 @@ namespace EpgTimer.Setting
         {
             if (listBox_viewTask.SelectedItem != null)
             {
-                ViewMenuItem info = listBox_viewTask.SelectedItem as ViewMenuItem;
-                if (String.Compare(info.MenuName, "設定") == 0)
+                if ((string)listBox_viewTask.SelectedItem == "設定")
                 {
-                    bool found = false;
-                    foreach (ViewMenuItem item in listBox_viewBtn.Items)
-                    {
-                        if ((found = item.MenuName == "設定") != false)
-                        {
-                            break;
-                        }
-                    }
-                    if (!found)
+                    if (listBox_viewBtn.Items.OfType<string>().All(a => a != "設定"))
                     {
                         MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
                         return;
                     }
                 }
-                if (String.Compare(info.MenuName, "（セパレータ）") != 0)
-                {
-                    foreach (ViewMenuItem item in taskItem)
-                    {
-                        if (String.Compare(info.MenuName, item.MenuName) == 0)
-                        {
-                            item.IsSelected = false;
-                            break;
-                        }
-                    }
-                }
-                listBox_viewTask.Items.Remove(info);
-                ReLoadTaskItem();
+                listBox_viewTask.Items.RemoveAt(listBox_viewTask.SelectedIndex);
+                OnUpdateViewTaskListBox(true);
             }
         }
 
@@ -488,28 +202,8 @@ namespace EpgTimer.Setting
         {
             if (listBox_itemTask.SelectedItem != null)
             {
-                ViewMenuItem info = listBox_itemTask.SelectedItem as ViewMenuItem;
-                if (String.Compare(info.MenuName, "（セパレータ）") != 0)
-                {
-                    info.IsSelected = true;
-                }
-                listBox_viewTask.Items.Add(new ViewMenuItem(info.MenuName, true));
-                ReLoadTaskItem();
-            }
-        }
-
-        private void button_taskDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_viewTask.SelectedItem != null)
-            {
-                if (listBox_viewTask.SelectedIndex < listBox_viewTask.Items.Count - 1)
-                {
-                    object temp = listBox_viewTask.SelectedItem;
-                    int index = listBox_viewTask.SelectedIndex;
-                    listBox_viewTask.Items.RemoveAt(listBox_viewTask.SelectedIndex);
-                    listBox_viewTask.Items.Insert(index + 1, temp);
-                    listBox_viewTask.SelectedIndex = index + 1;
-                }
+                listBox_viewTask.Items.Add(listBox_itemTask.SelectedItem);
+                OnUpdateViewTaskListBox(true);
             }
         }
 
@@ -524,11 +218,41 @@ namespace EpgTimer.Setting
         {
             SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            var defSearchKey = new EpgSearchKeyInfo();
+            ((Settings)DataContext).GetDefSearchSetting(defSearchKey);
             dlg.SetDefSetting(defSearchKey);
 
             if (dlg.ShowDialog() == true)
             {
                 dlg.GetSetting(ref defSearchKey);
+                var settings = (Settings)DataContext;
+                settings.SearchKeyAndKey = defSearchKey.andKey;
+                settings.SearchKeyNotKey = defSearchKey.notKey;
+                settings.SearchKeyRegExp = defSearchKey.regExpFlag != 0;
+                settings.SearchKeyAimaiFlag = defSearchKey.aimaiFlag != 0;
+                settings.SearchKeyTitleOnly = defSearchKey.titleOnlyFlag != 0;
+                settings.SearchKeyContentList.Clear();
+                foreach (EpgContentData info in defSearchKey.contentList)
+                {
+                    var item = new ContentKindInfo();
+                    item.Nibble1 = info.content_nibble_level_1;
+                    item.Nibble2 = info.content_nibble_level_2;
+                    settings.SearchKeyContentList.Add(item);
+                }
+                settings.SearchKeyDateItemList.Clear();
+                foreach (EpgSearchDateInfo info in defSearchKey.dateList)
+                {
+                    var item = new DateItem();
+                    item.DateInfo = info;
+                    settings.SearchKeyDateItemList.Add(item);
+                }
+                settings.SearchKeyServiceList.Clear();
+                settings.SearchKeyServiceList.AddRange(defSearchKey.serviceList);
+                settings.SearchKeyNotContent = defSearchKey.notContetFlag != 0;
+                settings.SearchKeyNotDate = defSearchKey.notDateFlag != 0;
+                settings.SearchKeyFreeCA = defSearchKey.freeCAFlag;
+                settings.SearchKeyChkRecEnd = defSearchKey.chkRecEnd;
+                settings.SearchKeyChkRecDay = defSearchKey.chkRecDay;
             }
         }
 
@@ -626,6 +350,7 @@ namespace EpgTimer.Setting
             Nullable<bool> result = dlg.ShowDialog();
             if (result == true)
             {
+                textBox_exe1.Focus();
                 textBox_exe1.Text = dlg.FileName;
             }
         }
@@ -639,6 +364,7 @@ namespace EpgTimer.Setting
             Nullable<bool> result = dlg.ShowDialog();
             if (result == true)
             {
+                textBox_exe2.Focus();
                 textBox_exe2.Text = dlg.FileName;
             }
         }
@@ -649,7 +375,7 @@ namespace EpgTimer.Setting
             if (listBox_service.SelectedItem != null)
             {
                 ServiceViewItem item = listBox_service.SelectedItem as ServiceViewItem;
-                foreach (IEPGStationInfo info in stationList)
+                foreach (IEPGStationInfo info in ((Settings)DataContext).IEpgStationList)
                 {
                     if (info.Key == item.Key)
                     {
@@ -664,9 +390,10 @@ namespace EpgTimer.Setting
             if (listBox_service.SelectedItem != null)
             {
                 ServiceViewItem item = listBox_service.SelectedItem as ServiceViewItem;
-                foreach (IEPGStationInfo info in stationList)
+                foreach (IEPGStationInfo info in ((Settings)DataContext).IEpgStationList)
                 {
-                    if (String.Compare(info.StationName, textBox_station.Text) == 0)
+                    if (string.Compare(info.StationName, textBox_station.Text, new System.Globalization.CultureInfo("ja-JP"),
+                                       System.Globalization.CompareOptions.IgnoreWidth | System.Globalization.CompareOptions.IgnoreCase) == 0)
                     {
                         MessageBox.Show("すでに登録済みです");
                         return;
@@ -676,7 +403,7 @@ namespace EpgTimer.Setting
                 addItem.StationName = textBox_station.Text;
                 addItem.Key = item.Key;
 
-                stationList.Add(addItem);
+                ((Settings)DataContext).IEpgStationList.Add(addItem);
 
                 ReLoadStation();
             }
@@ -687,7 +414,7 @@ namespace EpgTimer.Setting
             if (listBox_iEPG.SelectedItem != null)
             {
                 IEPGStationInfo item = listBox_iEPG.SelectedItem as IEPGStationInfo;
-                stationList.Remove(item);
+                ((Settings)DataContext).IEpgStationList.Remove(item);
                 ReLoadStation();
             }
         }

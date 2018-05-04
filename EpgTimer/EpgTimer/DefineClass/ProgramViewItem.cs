@@ -63,41 +63,21 @@ namespace EpgTimer
         {
             get
             {
-                //return null;
-                Brush color = Brushes.White;
-                if (EventInfo != null)
+                if (EventInfo.ContentInfo != null)
                 {
-                    if (EventInfo.ContentInfo != null)
+                    foreach (EpgContentData info in EventInfo.ContentInfo.nibbleList)
                     {
-                        if (EventInfo.ContentInfo.nibbleList.Count > 0)
+                        if (info.content_nibble_level_1 <= 0x0F && CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
                         {
-                            try
-                            {
-                                foreach (EpgContentData info in EventInfo.ContentInfo.nibbleList)
-                                {
-                                    if (info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info.content_nibble_level_1)
-                                    {
-                                        color = CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
-                                        break;
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                            }
+                            return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
                         }
-                        else
-                        {
-                            color = CommonManager.Instance.CustContentColorList[0x10];
-                        }
-                    }
-                    else
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x10];
                     }
                 }
-
-                return color;
+                if (CommonManager.Instance.CustContentColorList.Count > 0x10)
+                {
+                    return CommonManager.Instance.CustContentColorList[0x10];
+                }
+                return Brushes.White;
             }
         }
     }

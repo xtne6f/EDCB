@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
 using System.Reflection;
@@ -8,10 +9,21 @@ namespace EpgTimer
 {
     public static class ColorDef
     {
+        public static SortedList<string, SolidColorBrush> BrushNames { get; private set; }
+
+        static ColorDef()
+        {
+            BrushNames = new SortedList<string, SolidColorBrush>();
+            foreach (PropertyInfo prop in typeof(Brushes).GetProperties())
+            {
+                BrushNames[prop.Name] = (SolidColorBrush)prop.GetValue(null, null);
+            }
+            BrushNames["カスタム"] = Brushes.Transparent;
+        }
+
         public static SolidColorBrush BrushFromName(string name)
         {
-            PropertyInfo prop = typeof(Brushes).GetProperty(name);
-            return prop == null ? Brushes.White : (SolidColorBrush)prop.GetValue(null, null);
+            return BrushNames.ContainsKey(name) ? BrushNames[name] : Brushes.White;
         }
         public static Color FromUInt(UInt32 value)
         {

@@ -94,6 +94,7 @@ namespace EpgTimer
         public MemoryStream Stream { get; private set; }
         public ushort Version { get; set; }
         private long tailPos;
+        private byte[] buff;
         public CtrlCmdReader(MemoryStream stream, ushort version = 0)
         {
             Stream = stream;
@@ -102,35 +103,52 @@ namespace EpgTimer
         }
         private byte[] ReadBytes(int size)
         {
-            var a = new byte[size];
-            if (Stream.Read(a, 0, size) != size)
+            if (buff == null || buff.Length < size)
+            {
+                buff = new byte[size];
+            }
+            if (Stream.Read(buff, 0, size) != size)
             {
                 // ストリームの内容が不正な場合はこの例外を投げるので、必要であれば利用側でcatchすること
                 // (CtrlCmdは通信相手を信頼できることが前提であるはずなので基本的に必要ない(と思う))
                 throw new EndOfStreamException();
             }
-            return a;
+            return buff;
+        }
+        /// <summary>ストリームから読み込む</summary>
+        public void Read(ref byte v) { v = ReadBytes(1)[0]; }
+        /// <summary>ストリームから読み込む</summary>
+        public void Read(ref ushort v) { v = BitConverter.ToUInt16(ReadBytes(2), 0); }
+        /// <summary>ストリームから読み込む</summary>
+        public void Read(ref int v) { v = BitConverter.ToInt32(ReadBytes(4), 0); }
+        /// <summary>ストリームから読み込む</summary>
+        public void Read(ref uint v) { v = BitConverter.ToUInt32(ReadBytes(4), 0); }
+        /// <summary>ストリームから読み込む</summary>
+        public void Read(ref long v) { v = BitConverter.ToInt64(ReadBytes(8), 0); }
+        /// <summary>ストリームから読み込む</summary>
+        public void Read(ref ulong v) { v = BitConverter.ToUInt64(ReadBytes(8), 0); }
+        /// <summary>ストリームから読み込む</summary>
+        public void Read(ref DateTime v)
+        {
+            byte[] a = ReadBytes(16);
+            v = new DateTime(BitConverter.ToUInt16(a, 0), BitConverter.ToUInt16(a, 2), BitConverter.ToUInt16(a, 6), BitConverter.ToUInt16(a, 8),
+                             BitConverter.ToUInt16(a, 10), BitConverter.ToUInt16(a, 12), BitConverter.ToUInt16(a, 14));
         }
         /// <summary>オブジェクトの型に従ってストリームから読み込む</summary>
-        public void Read<T>(ref T v)
+        public void Read<T>(ref T v) where T : class
         {
-            // このメソッドがジェネリックなのは単にこのBoxingのため
-            object o = v;
-            if (v is byte) o = ReadBytes(1)[0];
-            else if (v is ushort) o = BitConverter.ToUInt16(ReadBytes(2), 0);
-            else if (v is int) o = BitConverter.ToInt32(ReadBytes(4), 0);
-            else if (v is uint) o = BitConverter.ToUInt32(ReadBytes(4), 0);
-            else if (v is long) o = BitConverter.ToInt64(ReadBytes(8), 0);
-            else if (v is ulong) o = BitConverter.ToUInt64(ReadBytes(8), 0);
-            else if (v is ICtrlCmdReadWrite) ((ICtrlCmdReadWrite)o).Read(Stream, Version);
+            if (v is byte) v = (T)(object)ReadBytes(1)[0];
+            else if (v is ushort) v = (T)(object)BitConverter.ToUInt16(ReadBytes(2), 0);
+            else if (v is int) v = (T)(object)BitConverter.ToInt32(ReadBytes(4), 0);
+            else if (v is uint) v = (T)(object)BitConverter.ToUInt32(ReadBytes(4), 0);
+            else if (v is long) v = (T)(object)BitConverter.ToInt64(ReadBytes(8), 0);
+            else if (v is ulong) v = (T)(object)BitConverter.ToUInt64(ReadBytes(8), 0);
+            else if (v is ICtrlCmdReadWrite) ((ICtrlCmdReadWrite)v).Read(Stream, Version);
             else if (v is DateTime)
             {
-                var a = new ushort[8];
-                for (int i = 0; i < 8; i++)
-                {
-                    Read(ref a[i]);
-                }
-                o = new DateTime(a[0], a[1], a[3], a[4], a[5], a[6], a[7]);
+                byte[] a = ReadBytes(16);
+                v = (T)(object)new DateTime(BitConverter.ToUInt16(a, 0), BitConverter.ToUInt16(a, 2), BitConverter.ToUInt16(a, 6), BitConverter.ToUInt16(a, 8),
+                                            BitConverter.ToUInt16(a, 10), BitConverter.ToUInt16(a, 12), BitConverter.ToUInt16(a, 14));
             }
             else if (v is string)
             {
@@ -140,13 +158,13 @@ namespace EpgTimer
                 {
                     throw new EndOfStreamException("サイズフィールドの値が異常です");
                 }
-                o = "";
+                v = (T)(object)"";
                 if (size > 4)
                 {
                     byte[] a = ReadBytes(size - 4);
-                    if (a.Length > 2)
+                    if (size > 6)
                     {
-                        o = size <= 6 ? "" : Encoding.Unicode.GetString(a, 0, a.Length - 2);
+                        v = (T)(object)Encoding.Unicode.GetString(a, 0, size - 6);
                     }
                 }
             }
@@ -163,7 +181,7 @@ namespace EpgTimer
                 Read(ref count);
                 // ジェネリックList<T>のTを調べる
                 Type t = null;
-                foreach (Type u in o.GetType().GetInterfaces())
+                foreach (Type u in v.GetType().GetInterfaces())
                 {
                     if (u.IsGenericType && u.GetGenericTypeDefinition() == typeof(IList<>))
                     {
@@ -175,7 +193,7 @@ namespace EpgTimer
                 {
                     throw new ArgumentException();
                 }
-                var list = (System.Collections.IList)o;
+                var list = (System.Collections.IList)v;
                 for (int i = 0; i < count; i++)
                 {
                     // CreateInstanceは遅いとよく言われるが、ここで使う主要な型のほとんどはnew自体のコストのほうがずっと大きい
@@ -195,7 +213,6 @@ namespace EpgTimer
             {
                 throw new ArgumentException();
             }
-            v = (T)o;
         }
         /// <summary>C++構造体型オブジェクトの読み込みを開始する</summary>
         public void Begin()
@@ -265,6 +282,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_RECINFO = 1017,
         /// <summary>録画済み情報削除</summary>
         CMD_EPG_SRV_DEL_RECINFO = 1018,
+        /// <summary>録画済み情報のファイルパス変更</summary>
+        CMD_EPG_SRV_CHG_PATH_RECINFO = 1019,
         /// <summary>予約一覧取得</summary>
         CMD_EPG_SRV_ENUM_RESERVE2 = 2011,
         /// <summary>予約情報取得</summary>
@@ -443,8 +462,6 @@ namespace EpgTimer
         private string pipeName = "EpgTimerSrvPipe";
         private System.Net.IPAddress ip = System.Net.IPAddress.Loopback;
         private uint port = 5678;
-        // TODO: 本来この排他用オブジェクトは不要だが、このクラスの利用側がマルチスレッドを考慮していないようなので念のため従来仕様に合わせる
-        private object thisLock = new object();
 
         /// <summary>コマンド送信方法の設定</summary>
         public void SetSendMode(bool tcpFlag)
@@ -454,20 +471,14 @@ namespace EpgTimer
         /// <summary>名前付きパイプモード時の接続先を設定</summary>
         public void SetPipeSetting(string eventName, string pipeName)
         {
-            lock (thisLock)
-            {
-                this.eventName = eventName;
-                this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
-            }
+            this.eventName = eventName;
+            this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
         }
         /// <summary>TCP/IPモード時の接続先を設定</summary>
         public void SetNWSetting(System.Net.IPAddress ip, uint port)
         {
-            lock (thisLock)
-            {
-                this.ip = ip;
-                this.port = port;
-            }
+            this.ip = ip;
+            this.port = port;
         }
         /// <summary>接続処理時のタイムアウト設定</summary>
         public void SetConnectTimeOut(int timeOut)
@@ -506,6 +517,8 @@ namespace EpgTimer
         public ErrCode SendEnumTunerReserve(ref List<TunerReserveInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_TUNER_RESERVE, ref o); }
         /// <summary>録画済み情報を削除する</summary>
         public ErrCode SendDelRecInfo(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_RECINFO, val); }
+        /// <summary>録画済み情報のファイルパスを変更する</summary>
+        public ErrCode SendChgPathRecInfo(List<RecFileInfo> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_CHG_PATH_RECINFO, val); }
         /// <summary>サービス一覧を取得する</summary>
         public ErrCode SendEnumService(ref List<EpgServiceInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_SERVICE, ref o); }
         /// <summary>サービス指定で番組情報を一覧を取得する</summary>
@@ -604,7 +617,6 @@ namespace EpgTimer
 
         private ErrCode SendPipe(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
-            lock (thisLock)
             {
                 // 接続待ち
                 try
@@ -638,20 +650,15 @@ namespace EpgTimer
                         pipe.Write(data, 0, data.Length);
                     }
                     // 受信
-                    if (pipe.Read(head, 0, 8) != 8)
+                    if (ReadAll(pipe, head, 0, 8) != 8)
                     {
                         return ErrCode.CMD_ERR;
                     }
                     uint resParam = BitConverter.ToUInt32(head, 0);
                     var resData = new byte[BitConverter.ToUInt32(head, 4)];
-                    for (int n = 0; n < resData.Length; )
+                    if (ReadAll(pipe, resData, 0, resData.Length) != resData.Length)
                     {
-                        int m = pipe.Read(resData, n, resData.Length - n);
-                        if (m <= 0)
-                        {
-                            return ErrCode.CMD_ERR;
-                        }
-                        n += m;
+                        return ErrCode.CMD_ERR;
                     }
                     res = new MemoryStream(resData, false);
                     return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
@@ -668,14 +675,13 @@ namespace EpgTimer
 
         private ErrCode SendTCP(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
-            lock (thisLock)
             {
                 if (ip == null)
                 {
                     return ErrCode.CMD_ERR_CONNECT;
                 }
                 // 接続
-                using (var tcp = new System.Net.Sockets.TcpClient())
+                using (var tcp = new System.Net.Sockets.TcpClient(ip.AddressFamily))
                 {
                     try
                     {
