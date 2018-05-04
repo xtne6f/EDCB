@@ -88,6 +88,10 @@ namespace EpgTimer
 
         private void Sort(string sortBy, ListSortDirection direction)
         {
+            if (listView_recinfo.DataContext == null)
+            {
+                return;
+            }
             ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
 
             using (dataView.DeferRefresh())

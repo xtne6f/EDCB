@@ -408,6 +408,10 @@ namespace EpgTimer
 
         private void Sort()
         {
+            if (listView_result.DataContext == null)
+            {
+                return;
+            }
             ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
 
             using (dataView.DeferRefresh())
