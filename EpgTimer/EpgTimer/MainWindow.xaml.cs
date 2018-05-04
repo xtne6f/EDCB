@@ -23,8 +23,6 @@ namespace EpgTimer
         private System.Threading.Mutex mutex;
 
         private TaskTrayClass taskTray = new TaskTrayClass();
-        private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
-
         private PipeServer pipeServer = null;
         private bool closeFlag = false;
         private bool needUnRegist = true;
@@ -144,92 +142,6 @@ namespace EpgTimer
                     this.Height = Settings.Instance.MainWndHeight;
                 }
                 this.WindowState = Settings.Instance.LastWindowState;
-
-
-                //上のボタン
-                Button settingButton = new Button();
-                settingButton.MinWidth = 75;
-                settingButton.Margin = new Thickness(2, 2, 2, 5);
-                settingButton.Click += new RoutedEventHandler(settingButton_Click);
-                settingButton.Content = "設定";
-                buttonList.Add("設定", settingButton);
-
-                Button searchButton = new Button();
-                searchButton.MinWidth = 75;
-                searchButton.Margin = new Thickness(2, 2, 2, 5);
-                searchButton.Click += new RoutedEventHandler(searchButton_Click);
-                searchButton.Content = "検索";
-                buttonList.Add("検索", searchButton);
-
-                Button closeButton = new Button();
-                closeButton.MinWidth = 75;
-                closeButton.Margin = new Thickness(2, 2, 2, 5);
-                closeButton.Click += new RoutedEventHandler(closeButton_Click);
-                closeButton.Content = "終了";
-                buttonList.Add("終了", closeButton);
-
-                Button stanbyButton = new Button();
-                stanbyButton.MinWidth = 75;
-                stanbyButton.Margin = new Thickness(2, 2, 2, 5);
-                stanbyButton.Click += new RoutedEventHandler(standbyButton_Click);
-                stanbyButton.Content = "スタンバイ";
-                buttonList.Add("スタンバイ", stanbyButton);
-
-                Button suspendButton = new Button();
-                suspendButton.MinWidth = 75;
-                suspendButton.Margin = new Thickness(2, 2, 2, 5);
-                suspendButton.Click += new RoutedEventHandler(suspendButton_Click);
-                suspendButton.Content = "休止";
-                buttonList.Add("休止", suspendButton);
-
-                Button epgCapButton = new Button();
-                epgCapButton.MinWidth = 75;
-                epgCapButton.Margin = new Thickness(2, 2, 2, 5);
-                epgCapButton.Click += new RoutedEventHandler(epgCapButton_Click);
-                epgCapButton.Content = "EPG取得";
-                buttonList.Add("EPG取得", epgCapButton);
-
-                Button epgReloadButton = new Button();
-                epgReloadButton.MinWidth = 75;
-                epgReloadButton.Margin = new Thickness(2, 2, 2, 5);
-                epgReloadButton.Click += new RoutedEventHandler(epgReloadButton_Click);
-                epgReloadButton.Content = "EPG再読み込み";
-                buttonList.Add("EPG再読み込み", epgReloadButton);
-
-                Button custum1Button = new Button();
-                custum1Button.MinWidth = 75;
-                custum1Button.Margin = new Thickness(2, 2, 2, 5);
-                custum1Button.Click += new RoutedEventHandler(custum1Button_Click);
-                custum1Button.Content = "カスタム１";
-                buttonList.Add("カスタム１", custum1Button);
-
-                Button custum2Button = new Button();
-                custum2Button.MinWidth = 75;
-                custum2Button.Margin = new Thickness(2, 2, 2, 5);
-                custum2Button.Click += new RoutedEventHandler(custum2Button_Click);
-                custum2Button.Content = "カスタム２";
-                buttonList.Add("カスタム２", custum2Button);
-
-                Button nwTVEndButton = new Button();
-                nwTVEndButton.MinWidth = 75;
-                nwTVEndButton.Margin = new Thickness(2, 2, 2, 5);
-                nwTVEndButton.Click += new RoutedEventHandler(nwTVEndButton_Click);
-                nwTVEndButton.Content = "NetworkTV終了";
-                buttonList.Add("NetworkTV終了", nwTVEndButton);
-
-                Button logViewButton = new Button();
-                logViewButton.MinWidth = 75;
-                logViewButton.Margin = new Thickness(2, 2, 2, 5);
-                logViewButton.Click += new RoutedEventHandler(logViewButton_Click);
-                logViewButton.Content = "情報通知ログ";
-                buttonList.Add("情報通知ログ", logViewButton);
-
-                Button connectButton = new Button();
-                connectButton.MinWidth = 75;
-                connectButton.Margin = new Thickness(2, 2, 2, 5);
-                connectButton.Click += new RoutedEventHandler(connectButton_Click);
-                connectButton.Content = "再接続";
-                buttonList.Add("再接続", connectButton);
 
                 ResetButtonView();
 
@@ -392,7 +304,10 @@ namespace EpgTimer
 
         private void ResetButtonView()
         {
-            stackPanel_button.Children.Clear();
+            foreach (Button button in stackPanel_button.Children)
+            {
+                button.Visibility = Visibility.Collapsed;
+            }
             for (int i = 0; i < tabControl_main.Items.Count; i++)
             {
                 TabItem ti = tabControl_main.Items.GetItemAt(i) as TabItem;
@@ -402,33 +317,32 @@ namespace EpgTimer
                     i--;
                 }
             }
+            int space = 0;
             foreach (string info in Settings.Instance.ViewButtonList)
             {
                 if (info == "（空白）")
                 {
-                    Label space = new Label();
-                    space.Width = 15;
-                    stackPanel_button.Children.Add(space);
+                    space += 15;
                 }
                 else
                 {
-                    if (buttonList.ContainsKey(info) == true)
+                    var button = stackPanel_button.Children.Cast<Button>().FirstOrDefault(a => (string)(a.Tag ?? a.Content) == info);
+                    if (button != null)
                     {
                         if (info == "カスタム１")
                         {
-                            buttonList[info].Content = Settings.Instance.Cust1BtnName;
+                            button.Content = Settings.Instance.Cust1BtnName;
                         }
                         if (info == "カスタム２")
                         {
-                            buttonList[info].Content = Settings.Instance.Cust2BtnName;
+                            button.Content = Settings.Instance.Cust2BtnName;
                         }
-                        stackPanel_button.Children.Add(buttonList[info]);
 
                         if (Settings.Instance.ViewButtonShowAsTab)
                         {
                             //ボタン風のタブを追加する
                             TabItem ti = new TabItem();
-                            ti.Header = buttonList[info].Content;
+                            ti.Header = button.Content;
                             ti.Tag = "PushLike" + info;
                             ti.Background = null;
                             ti.BorderBrush = null;
@@ -437,17 +351,30 @@ namespace EpgTimer
                             {
                                 if (e.ChangedButton == MouseButton.Left)
                                 {
-                                    buttonList[((string)((TabItem)sender).Tag).Substring(8)].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                    button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                                     e.Handled = true;
                                 }
                             };
                             tabControl_main.Items.Add(ti);
                         }
+                        else
+                        {
+                            //必要なボタンだけ可視化
+                            stackPanel_button.Children.Remove(button);
+                            stackPanel_button.Children.Add(button);
+                            button.Margin = new Thickness(space, button.Margin.Top, button.Margin.Right, button.Margin.Bottom);
+                            button.Visibility = Visibility.Visible;
+                        }
+                        space = 0;
                     }
                 }
             }
-            //タブとして表示するかボタンが1つもないときは行を隠す
-            rowDefinition_row0.Height = new GridLength(Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? 0 : 30);
+            if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+            {
+                //検索ボタンは右端で動的に可視化することがある
+                var button = stackPanel_button.Children.Cast<Button>().First(a => (string)(a.Tag ?? a.Content) == "検索");
+                button.Margin = new Thickness(space, button.Margin.Top, button.Margin.Right, button.Margin.Bottom);
+            }
         }
 
         bool ConnectCmd(bool showDialog)
@@ -698,7 +625,8 @@ namespace EpgTimer
                     case Key.F:
                         if (e.IsRepeat == false)
                         {
-                            this.buttonList["検索"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            var button = stackPanel_button.Children.Cast<Button>().First(a => (string)(a.Tag ?? a.Content) == "検索");
+                            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         }
                         e.Handled = true;
                         break;
@@ -1256,16 +1184,19 @@ namespace EpgTimer
 
         public void EmphasizeSearchButton(bool emphasize)
         {
-            Button button1 = buttonList["検索"];
-            if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+            var button1 = stackPanel_button.Children.Cast<Button>().First(a => (string)(a.Tag ?? a.Content) == "検索");
+            if (Settings.Instance.ViewButtonShowAsTab == false &&
+                Settings.Instance.ViewButtonList.Contains("検索") == false)
             {
                 if (emphasize)
                 {
+                    stackPanel_button.Children.Remove(button1);
                     stackPanel_button.Children.Add(button1);
+                    button1.Visibility = Visibility.Visible;
                 }
                 else
                 {
-                    stackPanel_button.Children.Remove(button1);
+                    button1.Visibility = Visibility.Collapsed;
                 }
             }
 

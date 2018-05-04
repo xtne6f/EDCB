@@ -6,10 +6,23 @@ TextOptions.TextFormattingMode="Display"
         Title="EpgTimer" Height="480" Width="640" Loaded="Window_Loaded" Closing="Window_Closing" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" StateChanged="Window_StateChanged" PreviewDragEnter="Window_PreviewDragEnter" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" AllowDrop="True" FontSize="12">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="30" Name="rowDefinition_row0" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <StackPanel Name="stackPanel_button" Orientation="Horizontal" FlowDirection="LeftToRight" />
+        <StackPanel Margin="2,0,0,0" Name="stackPanel_button" Orientation="Horizontal">
+            <Button Click="settingButton_Click" Content="設定" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="searchButton_Click" Content="検索" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="closeButton_Click" Content="終了" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="standbyButton_Click" Content="スタンバイ" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="suspendButton_Click" Content="休止" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="epgCapButton_Click" Content="EPG取得" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="epgReloadButton_Click" Content="EPG再読み込み" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="custum1Button_Click" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Tag="カスタム１" Visibility="Collapsed" />
+            <Button Click="custum2Button_Click" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Tag="カスタム２" Visibility="Collapsed" />
+            <Button Click="nwTVEndButton_Click" Content="NetworkTV終了" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="logViewButton_Click" Content="情報通知ログ" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+            <Button Click="connectButton_Click" Content="再接続" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+        </StackPanel>
         <TabControl Name="tabControl_main" Grid.Row="1">
             <TabItem Header="予約一覧" Name="tabItem_reserve">
                 <local:ReserveView x:Name="reserveView" />
