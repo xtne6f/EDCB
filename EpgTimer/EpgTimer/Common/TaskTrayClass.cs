@@ -12,182 +12,165 @@ namespace EpgTimer
 {
     class TaskTrayClass : IDisposable
     {
-        private NotifyIcon notifyIcon = new NotifyIcon();
-        private Window targetWindow;
+        // NotifyIconの生成は初回のVisibleまで遅延
+        private NotifyIcon notifyIcon;
+        private string _text = "";
+        private Uri _iconUri;
+        private List<KeyValuePair<string, Action<string>>> _contextMenuList;
 
-        public string Text {
-            get { return notifyIcon.Text; }
+        public event EventHandler Click;
+
+        public string Text
+        {
+            get { return _text; }
             set
             {
-                if (value.Length > 63)
+                _text = value;
+                if (notifyIcon != null)
                 {
-                    notifyIcon.Text = value.Substring(0,60) + "...";
-                }
-                else
-                {
-                    notifyIcon.Text = value;
+                    notifyIcon.Text = Text.Length > 63 ? Text.Substring(0, 60) + "..." : Text;
                 }
             }
         }
-        public Icon Icon {
-            get { return notifyIcon.Icon; }
-            set { notifyIcon.Icon = value; }
+
+        public Uri IconUri
+        {
+            get { return _iconUri; }
+            set
+            {
+                _iconUri = value;
+                if (notifyIcon != null)
+                {
+                    if (IconUri != null)
+                    {
+                        using (var stream = System.Windows.Application.GetResourceStream(IconUri).Stream)
+                        {
+                            System.Drawing.Size size = SystemInformation.SmallIconSize;
+                            notifyIcon.Icon = new Icon(stream, (size.Width + 15) / 16 * 16, (size.Height + 15) / 16 * 16);
+                        }
+                    }
+                    else
+                    {
+                        notifyIcon.Icon = null;
+                    }
+                }
+            }
         }
-        public bool Visible{
-            get { return notifyIcon.Visible; }
-            set { notifyIcon.Visible = value; }
+
+        public List<KeyValuePair<string, Action<string>>> ContextMenuList
+        {
+            get { return _contextMenuList; }
+            set
+            {
+                _contextMenuList = value;
+                if (notifyIcon != null)
+                {
+                    if (ContextMenuList != null && ContextMenuList.Count > 0)
+                    {
+                        var menu = new ContextMenuStrip();
+                        foreach (var item in ContextMenuList)
+                        {
+                            if (item.Key != null)
+                            {
+                                var newcontitem = new ToolStripMenuItem();
+                                newcontitem.Text = item.Key;
+                                // CS4のforeachと互換するため明示的に捕捉
+                                var itemCap = item;
+                                newcontitem.Click += (sender, e) => itemCap.Value(itemCap.Key);
+                                menu.Items.Add(newcontitem);
+                            }
+                            else
+                            {
+                                menu.Items.Add(new ToolStripSeparator());
+                            }
+                        }
+                        notifyIcon.ContextMenuStrip = menu;
+                    }
+                    else
+                    {
+                        notifyIcon.ContextMenuStrip = null;
+                    }
+                }
+            }
         }
-        public WindowState LastViewState
+
+        public int ForceHideBalloonTipSec
         {
             get;
             set;
         }
-        public event EventHandler ContextMenuClick = null;
 
-        public TaskTrayClass(Window target)
+        public bool Visible
         {
-            Text = "";
-            notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
-            notifyIcon.Click += NotifyIcon_Click;
-            notifyIcon.BalloonTipClicked += NotifyIcon_Click;
-            // 接続先ウィンドウ
-            targetWindow = target;
-            LastViewState = targetWindow.WindowState;
-            // ウィンドウに接続
-            if (targetWindow != null) {
-                targetWindow.Closing += new System.ComponentModel.CancelEventHandler(target_Closing);
-            }
-            notifyIcon.ContextMenuStrip = new ContextMenuStrip();
-
-            // 指定タイムアウトでバルーンチップを強制的に閉じる
-            var balloonTimer = new System.Windows.Threading.DispatcherTimer();
-            balloonTimer.Tick += (sender, e) =>
+            get { return notifyIcon != null && notifyIcon.Visible; }
+            set
             {
-                if (notifyIcon.Visible)
+                if (notifyIcon != null)
                 {
-                    notifyIcon.Visible = false;
+                    notifyIcon.Visible = value;
+                }
+                else if (value)
+                {
+                    notifyIcon = new NotifyIcon();
+                    notifyIcon.Click += (sender, e) =>
+                    {
+                        MouseEventArgs mouseEvent = e as MouseEventArgs;
+                        if (mouseEvent != null && mouseEvent.Button == MouseButtons.Left)
+                        {
+                            // 左クリック
+                            if (Click != null)
+                            {
+                                Click(sender, e);
+                            }
+                        }
+                    };
+
+                    // 指定タイムアウトでバルーンチップを強制的に閉じる
+                    var balloonTimer = new System.Windows.Threading.DispatcherTimer();
+                    balloonTimer.Tick += (sender, e) =>
+                    {
+                        if (notifyIcon.Visible)
+                        {
+                            notifyIcon.Visible = false;
+                            notifyIcon.Visible = true;
+                        }
+                        balloonTimer.Stop();
+                    };
+                    notifyIcon.BalloonTipShown += (sender, e) =>
+                    {
+                        if (ForceHideBalloonTipSec > 0)
+                        {
+                            balloonTimer.Interval = TimeSpan.FromSeconds(ForceHideBalloonTipSec);
+                            balloonTimer.Start();
+                        }
+                    };
+                    notifyIcon.BalloonTipClicked += (sender, e) => balloonTimer.Stop();
+                    notifyIcon.BalloonTipClosed += (sender, e) => balloonTimer.Stop();
+
+                    // プロパティ反映のため
+                    Text = Text;
+                    IconUri = IconUri;
+                    ContextMenuList = ContextMenuList;
                     notifyIcon.Visible = true;
                 }
-                balloonTimer.Stop();
-            };
-            notifyIcon.BalloonTipShown += (sender, e) =>
-            {
-                if (Settings.Instance.ForceHideBalloonTipSec > 0)
-                {
-                    balloonTimer.Interval = TimeSpan.FromSeconds(Math.Max(Settings.Instance.ForceHideBalloonTipSec, 1));
-                    balloonTimer.Start();
-                }
-            };
-            notifyIcon.BalloonTipClicked += (sender, e) => balloonTimer.Stop();
-            notifyIcon.BalloonTipClosed += (sender, e) => balloonTimer.Stop();
-        }
-
-        public void SetContextMenu(List<Object> list)
-        {
-            if( list.Count == 0 )
-            {
-                notifyIcon.ContextMenuStrip = null;
-            }else{
-                ContextMenuStrip menu = new ContextMenuStrip();
-                foreach(Object item in list)
-                {
-                    ToolStripMenuItem newcontitem = new ToolStripMenuItem();
-                    if (item.ToString().Length > 0)
-                    {
-                        newcontitem.Tag = item;
-                        newcontitem.Text = item.ToString();
-                        newcontitem.Click +=new EventHandler(newcontitem_Click);
-                        menu.Items.Add(newcontitem);
-                    }
-                    else
-                    {
-                        menu.Items.Add(new ToolStripSeparator());
-                    }
-
-                }
-                notifyIcon.ContextMenuStrip = menu;
             }
         }
 
-        public void ShowBalloonTip(String title, String tips, Int32 timeOutMSec)
+        public void ShowBalloonTip(string title, string tips, int timeOutMSec)
         {
-            try
+            if (notifyIcon != null)
             {
-                if (title.Length > 0)
-                {
-                    notifyIcon.BalloonTipTitle = title;
-                }
-                else
-                {
-                    notifyIcon.BalloonTipTitle = " ";
-                }
-                if (tips.Length > 0)
-                {
-                    notifyIcon.BalloonTipText = tips;
-                }
-                else
-                {
-                    notifyIcon.BalloonTipText = " ";
-                }
-                notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
-                if (Settings.Instance.NoBallonTips == false)
-                {
-                    notifyIcon.ShowBalloonTip(timeOutMSec);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        void  newcontitem_Click(object sender, EventArgs e)
-        {
-            if (sender.GetType() == typeof(ToolStripMenuItem))
-            {
-                if (ContextMenuClick != null)
-                {
-                    ToolStripMenuItem item = sender as ToolStripMenuItem;
-                    ContextMenuClick(item.Tag, e);
-                }
+                notifyIcon.ShowBalloonTip(timeOutMSec, title, tips, ToolTipIcon.Info);
             }
         }
 
         public void Dispose()
         {
-            // ウィンドウから切断
-            if (targetWindow != null)
-            {
-                targetWindow.Closing -= new System.ComponentModel.CancelEventHandler(target_Closing);
-                targetWindow = null;
-            }
-        }
-
-        private void target_Closing(object sender, CancelEventArgs e)
-        {
-            if (e.Cancel == false)
+            if (notifyIcon != null)
             {
                 notifyIcon.Dispose();
                 notifyIcon = null;
             }
         }
-
-        private void NotifyIcon_Click(object sender, EventArgs e)
-        {
-            if (e.GetType() == typeof(MouseEventArgs))
-            {
-                MouseEventArgs mouseEvent = e as MouseEventArgs;
-                if (mouseEvent.Button == MouseButtons.Left)
-                {
-                    //左クリック
-                    if (targetWindow != null)
-                    {
-                        targetWindow.Show();
-                        targetWindow.WindowState = LastViewState;
-                        targetWindow.Activate();
-                    }
-                }
-            }
-        }   
     }
 }

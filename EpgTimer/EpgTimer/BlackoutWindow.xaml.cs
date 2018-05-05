@@ -15,12 +15,12 @@ namespace EpgTimer {
         /// <summary>
         /// 番組表への受け渡し
         /// </summary>
-        public static ReserveItem selectedReserveItem = null;
+        public static ReserveData selectedReserve = null;
 
         /// <summary>
         /// 
         /// </summary>
-        public static SearchItem selectedSearchItem = null;
+        public static EpgEventInfo selectedEventInfo = null;
 
         /// <summary>
         /// 番組表へジャンプした際に非表示にしたSearchWindow

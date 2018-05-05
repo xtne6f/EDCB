@@ -2,11 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="情報通知ログ" Height="400" Width="600" WindowStartupLocation="CenterOwner" Loaded="Window_Loaded">
-<!--
-    <Window.Resources>
-        <ResourceDictionary Source="/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml" />
-    </Window.Resources>
--->
+
     <Grid>
         <Button Content="クリア" Height="23" HorizontalAlignment="Left" Margin="12,12,0,0" Name="button_clear" VerticalAlignment="Top" Width="75" Click="button_clear_Click" />
         <ListView Name="listView_log" Margin="8,41,12,12" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
@@ -32,6 +28,6 @@
         </ListView>
         <Button Content="ファイルに保存する" Height="23" HorizontalAlignment="Left" Margin="112,12,0,0" Name="button_save" VerticalAlignment="Top" Width="130" Click="button_save_Click" />
         <Label Content="表示行数" Height="28" HorizontalAlignment="Left" Margin="260,10,0,0" VerticalAlignment="Top" IsEnabled="{Binding Path=IsEnabled, ElementName=textBox_logMax, UpdateSourceTrigger=PropertyChanged}" />
-        <TextBox Height="23" HorizontalAlignment="Left" Margin="330,12,0,0" Name="textBox_logMax" VerticalAlignment="Top" Width="60" TextChanged="textBox_logMax_TextChanged" />
+        <TextBox Height="23" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="330,12,0,0" Name="textBox_logMax" VerticalAlignment="Top" Width="60" TextChanged="textBox_logMax_TextChanged" />
     </Grid>
 </Window>

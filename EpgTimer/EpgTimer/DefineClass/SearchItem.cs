@@ -13,38 +13,29 @@ namespace EpgTimer
 {
     public class SearchItem
     {
-        private EpgEventInfo eventInfo = null;
-        private ReserveData reserveData = null;
-
+        public SearchItem(EpgEventInfo info, bool past)
+        {
+            EventInfo = info;
+            Past = past;
+        }
         public EpgEventInfo EventInfo
         {
-            get { return eventInfo; }
-            set { eventInfo = value; }
+            get;
+            private set;
         }
         public ReserveData ReserveInfo
         {
-            get { return reserveData; }
-            set { reserveData = value; }
+            get;
+            set;
         }
         public String EventName
         {
-            get
-            {
-                String view = "";
-                if (eventInfo != null)
-                {
-                    if (eventInfo.ShortInfo != null)
-                    {
-                        view = eventInfo.ShortInfo.event_name;
-                    }
-                }
-                return view;
-            }
+            get { return EventInfo.ShortInfo != null ? EventInfo.ShortInfo.event_name : ""; }
         }
         public bool Past
         {
             get;
-            set;
+            private set;
         }
         public String ServiceName
         {
@@ -53,72 +44,38 @@ namespace EpgTimer
         }
         public String NetworkName
         {
-            get
-            {
-                String view = "";
-                if (eventInfo != null)
-                {
-                    view = CommonManager.ConvertNetworkNameText(eventInfo.original_network_id);
-                }
-                return view;
-            }
+            get { return CommonManager.ConvertNetworkNameText(EventInfo.original_network_id); }
         }
         public String StartTime
         {
-            get
-            {
-                String view = "未定";
-                if (eventInfo != null)
-                {
-                    view = eventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
-                }
-                return view;
-            }
+            get { return EventInfo.StartTimeFlag != 0 ? EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss") : "未定"; }
         }
         public bool IsReserved
         {
-            get
-            {
-                if (reserveData == null)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
+            get { return ReserveInfo != null; }
         }
         public String Reserved
         {
-            get
-            {
-                String view = "";
-                if (IsReserved == true)
-                {
-                    view = "予";
-                }
-                return view;
-            }
+            get { return IsReserved ? "予" : ""; }
         }
         public SolidColorBrush BackColor
         {
             get
             {
-                SolidColorBrush color = Brushes.White;
+                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
                 if (ReserveInfo != null)
                 {
                     if (ReserveInfo.RecSetting.RecMode == 5)
                     {
-                        color = Brushes.DarkGray;
+                        color = CommonManager.Instance.ResNoBackColor;
                     }
                     else if (ReserveInfo.OverlapMode == 2)
                     {
-                        color = Brushes.Red;
+                        color = CommonManager.Instance.ResErrBackColor;
                     }
                     else if (ReserveInfo.OverlapMode == 1)
                     {
-                        color = Brushes.Yellow;
+                        color = CommonManager.Instance.ResWarBackColor;
                     }
                 }
                 return color;
@@ -132,14 +89,8 @@ namespace EpgTimer
                 {
                     return null;
                 }
-                String view = "";
-                if (eventInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                }
-
                 TextBlock block = new TextBlock();
-                block.Text = view;
+                block.Text = CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
                 block.MaxWidth = 400;
                 block.TextWrapping = TextWrapping.Wrap;
                 return block;
@@ -154,32 +105,8 @@ namespace EpgTimer
             get
             {
                 if (this.ReserveInfo == null) { return null; }
-                // ReserveItemクラスからコピペ
-                String view = "";
-                switch (ReserveInfo.RecSetting.RecMode)
-                {
-                    case 0:
-                        view = "全サービス";
-                        break;
-                    case 1:
-                        view = "指定サービス";
-                        break;
-                    case 2:
-                        view = "全サービス（デコード処理なし）";
-                        break;
-                    case 3:
-                        view = "指定サービス（デコード処理なし）";
-                        break;
-                    case 4:
-                        view = "視聴";
-                        break;
-                    case 5:
-                        view = "無効";
-                        break;
-                    default:
-                        break;
-                }
-                return view;
+                return CommonManager.Instance.RecModeList.Length > ReserveInfo.RecSetting.RecMode ?
+                       CommonManager.Instance.RecModeList[ReserveInfo.RecSetting.RecMode] : "";
             }
         }
 
@@ -187,13 +114,12 @@ namespace EpgTimer
         {
             get
             {
-                if (this.EventInfo == null) { return null; }
                 //
                 String view = "";
-                if (eventInfo != null && eventInfo.ContentInfo != null)
+                if (EventInfo.ContentInfo != null)
                 {
                     Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
-                    foreach (EpgContentData ecd1 in eventInfo.ContentInfo.nibbleList)
+                    foreach (EpgContentData ecd1 in EventInfo.ContentInfo.nibbleList)
                     {
                         int nibble1 = ecd1.content_nibble_level_1;
                         int nibble2 = ecd1.content_nibble_level_2;
@@ -250,7 +176,7 @@ namespace EpgTimer
         {
             get
             {
-                if (this.EventInfo == null || this.EventInfo.DurationFlag == 0) { return new TimeSpan(); }
+                if (EventInfo.DurationFlag == 0) { return new TimeSpan(); }
                 //
                 return TimeSpan.FromSeconds(this.EventInfo.durationSec);
             }
@@ -263,7 +189,6 @@ namespace EpgTimer
         {
             get
             {
-                if (this.EventInfo == null) { return null; }
                 if (this.EventInfo.ShortInfo == null) { return null; }
                 //
                 return this.EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
@@ -277,7 +202,6 @@ namespace EpgTimer
         {
             get
             {
-                if (this.EventInfo == null) { return null; }
                 //
                 return CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
             }
@@ -286,40 +210,21 @@ namespace EpgTimer
         {
             get
             {
-                Brush color1 = Brushes.White;
-                if (this.EventInfo != null)
+                if (EventInfo.ContentInfo != null)
                 {
-                    if (this.EventInfo.ContentInfo != null)
+                    foreach (EpgContentData info in EventInfo.ContentInfo.nibbleList)
                     {
-                        if (this.EventInfo.ContentInfo.nibbleList.Count > 0)
+                        if (info.content_nibble_level_1 <= 0x0F && CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
                         {
-                            try
-                            {
-                                foreach (EpgContentData info1 in this.EventInfo.ContentInfo.nibbleList)
-                                {
-                                    if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
-                                    {
-                                        color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
-                                        break;
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                            }
+                            return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
                         }
-                        else
-                        {
-                            color1 = CommonManager.Instance.CustContentColorList[0x10];
-                        }
-                    }
-                    else
-                    {
-                        color1 = CommonManager.Instance.CustContentColorList[0x10];
                     }
                 }
-
-                return color1;
+                if (CommonManager.Instance.CustContentColorList.Count > 0x10)
+                {
+                    return CommonManager.Instance.CustContentColorList[0x10];
+                }
+                return null;
             }
         }
     }
