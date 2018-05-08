@@ -146,7 +146,8 @@ namespace EpgTimer
                     {
                         foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                         {
-                            if (info.content_nibble_level_1 <= 0x0F && CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
+                            if ((info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F) &&
+                                CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
                             {
                                 return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
                             }

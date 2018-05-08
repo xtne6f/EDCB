@@ -370,7 +370,8 @@ namespace EpgTimer
             get
             {
                 if (EpgAutoAddInfo.searchInfo.contentList.Count > 0 &&
-                    EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1 <= 0x0F &&
+                    (EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1 <= 0x0B ||
+                     EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1 == 0x0F) &&
                     CommonManager.Instance.CustContentColorList.Count > EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1)
                 {
                     return CommonManager.Instance.CustContentColorList[EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1];
