@@ -20,7 +20,6 @@ namespace EpgTimer
     {
         private bool changeModeFlag = false;
         private ManualAutoAddData defKey = null;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         public AddManualAutoAddWindow()
         {
@@ -135,11 +134,11 @@ namespace EpgTimer
 
             if (changeModeFlag == true)
             {
-                cmd.SendChgManualAdd(val);
+                CommonManager.CreateSrvCtrl().SendChgManualAdd(val);
             }
             else
             {
-                cmd.SendAddManualAdd(val);
+                CommonManager.CreateSrvCtrl().SendAddManualAdd(val);
             }
             DialogResult = true;
         }

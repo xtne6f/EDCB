@@ -24,70 +24,38 @@ namespace EpgTimer
         public EpgAutoAddData EpgAutoAddInfo
         {
             get;
-            set;
+            private set;
         }
 
         public String AndKey
         {
             get
             {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    view = System.Text.RegularExpressions.Regex.Replace(
-                        EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
-                }
-                return view;
+                return System.Text.RegularExpressions.Regex.Replace(
+                           EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
             }
         }
         public String NotKey
         {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    view = EpgAutoAddInfo.searchInfo.notKey;
-                }
-                return view;
-            }
+            get { return EpgAutoAddInfo.searchInfo.notKey; }
         }
         public String RegExp
         {
-            get
-            {
-                String view = "×";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.regExpFlag == 1)
-                    {
-                        view = "○";
-                    }
-                }
-                return view;
-            }
+            get { return EpgAutoAddInfo.searchInfo.regExpFlag == 1 ? "○" : "×"; }
+        }
+        public String Aimai
+        {
+            get { return EpgAutoAddInfo.searchInfo.aimaiFlag == 1 ? "○" : "×"; }
         }
         public String TitleOnly
         {
-            get
-            {
-                String view = "×";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.titleOnlyFlag == 1)
-                    {
-                        view = "○";
-                    }
-                }
-                return view;
-            }
+            get { return EpgAutoAddInfo.searchInfo.titleOnlyFlag == 1 ? "○" : "×"; }
         }
         public String DateKey
         {
             get
             {
                 String view = "なし";
-                if (EpgAutoAddInfo != null)
                 {
                     if (EpgAutoAddInfo.searchInfo.dateList.Count == 1)
                     {
@@ -107,78 +75,21 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    switch (EpgAutoAddInfo.recSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
+                return CommonManager.Instance.RecModeList.Length > EpgAutoAddInfo.recSetting.RecMode ?
+                       CommonManager.Instance.RecModeList[EpgAutoAddInfo.recSetting.RecMode] : "";
             }
         }
-        public String Priority
+        public byte Priority
         {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    view = EpgAutoAddInfo.recSetting.Priority.ToString();
-                }
-                return view;
-            }
+            get { return EpgAutoAddInfo.recSetting.Priority; }
         }
         public String Tuijyu
         {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.recSetting.TuijyuuFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (EpgAutoAddInfo.recSetting.TuijyuuFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
-            }
+            get { return EpgAutoAddInfo.recSetting.TuijyuuFlag == 1 ? "する" : "しない"; }
         }
-        public String AddCount
+        public uint AddCount
         {
-            get
-            {
-                String view = "0";
-                if (EpgAutoAddInfo != null)
-                {
-                    view = EpgAutoAddInfo.addCount.ToString();
-                }
-                return view;
-            }
+            get { return EpgAutoAddInfo.addCount; }
         }
 
         public String JyanruKey
@@ -186,7 +97,6 @@ namespace EpgTimer
             get
             {
                 String view = "";
-                if (this.EpgAutoAddInfo != null)
                 {
                     Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
                     foreach (EpgContentData ecd1 in this.EpgAutoAddInfo.searchInfo.contentList)
@@ -228,10 +138,6 @@ namespace EpgTimer
                         }
                     }
                 }
-                else
-                {
-                    view = "なし";
-                }
                 return view;
             }
         }
@@ -244,7 +150,6 @@ namespace EpgTimer
             get
             {
                 String view = "";
-                if (EpgAutoAddInfo != null)
                 {
                     foreach (ulong service1 in EpgAutoAddInfo.searchInfo.serviceList)
                     {
@@ -290,7 +195,6 @@ namespace EpgTimer
             get
             {
                 String view1 = "";
-                if (this.EpgAutoAddInfo != null)
                 {
                     List<string> networkKeyList1 = new List<string>();
                     foreach (ulong service1 in this.EpgAutoAddInfo.searchInfo.serviceList)
@@ -318,57 +222,34 @@ namespace EpgTimer
 
         public String Pittari
         {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.recSetting.PittariFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (EpgAutoAddInfo.recSetting.PittariFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
-            }
+            get { return EpgAutoAddInfo.recSetting.PittariFlag == 1 ? "する" : "しない"; }
         }
 
         public String KeyEnabled
         {
+            get { return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? "いいえ" : "はい"; }
+        }
+
+        public String CaseSensitive
+        {
             get
             {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}"))
-                    {
-                        view = "いいえ";
-                    }
-                    else
-                    {
-                        view = "はい";
-                    }
-                }
-                return view;
+                return System.Text.RegularExpressions.Regex.IsMatch(
+                           EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?C!\{999\}") ? "はい" : "いいえ";
             }
+        }
+
+        public uint ID
+        {
+            get { return EpgAutoAddInfo.dataID; }
         }
 
         public SolidColorBrush BackColor
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}"))
-                    {
-                        color = CommonManager.Instance.ResNoBackColor;
-                    }
-                }
-                return color;
+                return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ?
+                       CommonManager.Instance.ResNoBackColor : CommonManager.Instance.ResDefBackColor;
             }
         }
 
@@ -381,7 +262,6 @@ namespace EpgTimer
                     return null;
                 }
                 String view = "";
-                if (EpgAutoAddInfo != null)
                 {
                     if (EpgAutoAddInfo.searchInfo != null)
                     {
@@ -489,24 +369,14 @@ namespace EpgTimer
         {
             get
             {
-                Brush color1 = Brushes.Gainsboro;
-                if (this.EpgAutoAddInfo.searchInfo.contentList.Count > 0)
+                if (EpgAutoAddInfo.searchInfo.contentList.Count > 0 &&
+                    (EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1 <= 0x0B ||
+                     EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1 == 0x0F) &&
+                    CommonManager.Instance.CustContentColorList.Count > EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1)
                 {
-                    byte content_nibble_level_1 = this.EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1;
-                    if (content_nibble_level_1 <= 0x0B || content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > content_nibble_level_1)
-                    {
-                        try
-                        {
-                            color1 = CommonManager.Instance.CustContentColorList[content_nibble_level_1];
-                        }
-                        catch
-                        {
-                            ;
-                        }
-                    }
+                    return CommonManager.Instance.CustContentColorList[EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1];
                 }
-
-                return color1;
+                return null;
             }
         }
 

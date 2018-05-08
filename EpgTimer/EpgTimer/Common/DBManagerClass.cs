@@ -25,13 +25,11 @@ namespace EpgTimer
 
     class DBManager
     {
-        private CtrlCmdUtil cmd = null;
         private bool updateEpgData = true;
         private bool updateReserveInfo = true;
         private bool updateRecInfo = true;
         private bool updateAutoAddEpgInfo = true;
         private bool updateAutoAddManualInfo = true;
-        private bool updatePlugInFile = true;
         private bool noAutoReloadEpg = false;
         private bool oneTimeReloadEpg = false;
 
@@ -39,8 +37,6 @@ namespace EpgTimer
         Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
         Dictionary<UInt32, TunerReserveInfo> tunerReserveList = new Dictionary<UInt32, TunerReserveInfo>();
         Dictionary<UInt32, RecFileInfo> recFileInfo = new Dictionary<UInt32, RecFileInfo>();
-        Dictionary<Int32, String> writePlugInList = new Dictionary<Int32, String>();
-        Dictionary<Int32, String> recNamePlugInList = new Dictionary<Int32, String>();
         Dictionary<UInt32, ManualAutoAddData> manualAutoAddList = new Dictionary<UInt32, ManualAutoAddData>();
         Dictionary<UInt32, EpgAutoAddData> epgAutoAddList = new Dictionary<UInt32, EpgAutoAddData>();
 
@@ -60,14 +56,6 @@ namespace EpgTimer
         {
             get { return recFileInfo; }
         }
-        public Dictionary<Int32, String> WritePlugInList
-        {
-            get { return writePlugInList; }
-        }
-        public Dictionary<Int32, String> RecNamePlugInList
-        {
-            get { return recNamePlugInList; }
-        }
         public Dictionary<UInt32, ManualAutoAddData> ManualAutoAddList
         {
             get { return manualAutoAddList; }
@@ -75,40 +63,6 @@ namespace EpgTimer
         public Dictionary<UInt32, EpgAutoAddData> EpgAutoAddList
         {
             get { return epgAutoAddList; }
-        }
-
-        public DBManager(CtrlCmdUtil ctrlCmd)
-        {
-            cmd = ctrlCmd;
-        }
-
-        public void ClearAllDB()
-        {
-            serviceEventList.Clear();
-            reserveList.Clear();
-            tunerReserveList.Clear();
-            recFileInfo.Clear();
-            writePlugInList.Clear();
-            recNamePlugInList.Clear();
-            manualAutoAddList.Clear();
-            epgAutoAddList.Clear();
-
-            serviceEventList = null;
-            serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
-            reserveList = null;
-            reserveList = new Dictionary<uint, ReserveData>();
-            tunerReserveList = null;
-            tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
-            recFileInfo = null;
-            recFileInfo = new Dictionary<uint, RecFileInfo>();
-            writePlugInList = null;
-            writePlugInList = new Dictionary<int, string>();
-            recNamePlugInList = null;
-            recNamePlugInList = new Dictionary<int, string>();
-            manualAutoAddList = null;
-            manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
-            epgAutoAddList = null;
-            epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
         }
 
         /// <summary>
@@ -129,31 +83,27 @@ namespace EpgTimer
         /// データの更新があったことを通知
         /// </summary>
         /// <param name="updateInfo">[IN]更新のあったデータのフラグ</param>
-        public void SetUpdateNotify(UInt32 updateInfo)
+        public void SetUpdateNotify(UpdateNotifyItem updateInfo)
         {
-            if (updateInfo == (UInt32)UpdateNotifyItem.EpgData)
+            if (updateInfo == UpdateNotifyItem.EpgData)
             {
                 updateEpgData = true;
             }
-            if (updateInfo == (UInt32)UpdateNotifyItem.ReserveInfo)
+            if (updateInfo == UpdateNotifyItem.ReserveInfo)
             {
                 updateReserveInfo = true;
             }
-            if (updateInfo == (UInt32)UpdateNotifyItem.RecInfo)
+            if (updateInfo == UpdateNotifyItem.RecInfo)
             {
                 updateRecInfo = true;
             }
-            if (updateInfo == (UInt32)UpdateNotifyItem.AutoAddEpgInfo)
+            if (updateInfo == UpdateNotifyItem.AutoAddEpgInfo)
             {
                 updateAutoAddEpgInfo = true;
             }
-            if (updateInfo == (UInt32)UpdateNotifyItem.AutoAddManualInfo)
+            if (updateInfo == UpdateNotifyItem.AutoAddManualInfo)
             {
                 updateAutoAddManualInfo = true;
-            }
-            if (updateInfo == (UInt32)UpdateNotifyItem.PlugInFile)
-            {
-                updatePlugInFile = true;
             }
         }
 
@@ -164,47 +114,41 @@ namespace EpgTimer
         public ErrCode ReloadEpgData()
         {
             ErrCode ret = ErrCode.CMD_SUCCESS;
-            try
+            if (updateEpgData)
             {
-                if (updateEpgData)
+                if (noAutoReloadEpg == false || oneTimeReloadEpg)
                 {
-                    if (noAutoReloadEpg == false || oneTimeReloadEpg)
+                    serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
+                    var list = new List<EpgServiceEventInfo>();
+                    var list2 = new List<EpgServiceEventInfo>();
+                    try
                     {
-                        if (cmd == null)
+                        ret = ErrCode.CMD_ERR;
+                        ret = CommonManager.CreateSrvCtrl().SendEnumPgAll(ref list);
+                        if (ret == ErrCode.CMD_SUCCESS)
                         {
                             ret = ErrCode.CMD_ERR;
-                        }
-                        else
-                        {
-                            serviceEventList.Clear();
-                            serviceEventList = null;
-                            serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
-                            List<EpgServiceEventInfo> list = new List<EpgServiceEventInfo>();
-                            ret = (ErrCode)cmd.SendEnumPgAll(ref list);
-                            if (ret == ErrCode.CMD_SUCCESS)
-                            {
-                                var list2 = new List<EpgServiceEventInfo>();
-                                cmd.SendEnumPgArcAll(ref list2);
-                                foreach (EpgServiceEventInfo info in list)
-                                {
-                                    UInt64 id = CommonManager.Create64Key(
-                                        info.serviceInfo.ONID,
-                                        info.serviceInfo.TSID,
-                                        info.serviceInfo.SID);
-                                    //対応する過去番組情報があれば付加する
-                                    int i = list2.FindIndex(info2 => id == CommonManager.Create64Key(info2.serviceInfo.ONID, info2.serviceInfo.TSID, info2.serviceInfo.SID));
-                                    serviceEventList.Add(id, new EpgServiceAllEventInfo(info.serviceInfo, info.eventList, i < 0 ? new List<EpgEventInfo>() : list2[i].eventList));
-                                }
-                                updateEpgData = false;
-                                oneTimeReloadEpg = false;
-                            }
+                            CommonManager.CreateSrvCtrl().SendEnumPgArcAll(ref list2);
+                            ret = ErrCode.CMD_SUCCESS;
                         }
                     }
+                    catch { }
+                    if (ret == ErrCode.CMD_SUCCESS)
+                    {
+                        foreach (EpgServiceEventInfo info in list)
+                        {
+                            ulong id = CommonManager.Create64Key(
+                                info.serviceInfo.ONID,
+                                info.serviceInfo.TSID,
+                                info.serviceInfo.SID);
+                            //対応する過去番組情報があれば付加する
+                            int i = list2.FindIndex(info2 => id == CommonManager.Create64Key(info2.serviceInfo.ONID, info2.serviceInfo.TSID, info2.serviceInfo.SID));
+                            serviceEventList.Add(id, new EpgServiceAllEventInfo(info.serviceInfo, info.eventList, i < 0 ? new List<EpgEventInfo>() : list2[i].eventList));
+                        }
+                        updateEpgData = false;
+                        oneTimeReloadEpg = false;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
             return ret;
         }
@@ -216,51 +160,35 @@ namespace EpgTimer
         public ErrCode ReloadReserveInfo()
         {
             ErrCode ret = ErrCode.CMD_SUCCESS;
-            try
+            if (updateReserveInfo)
             {
-                if (updateReserveInfo == true)
+                reserveList = new Dictionary<uint, ReserveData>();
+                tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
+                var list = new List<ReserveData>();
+                var list2 = new List<TunerReserveInfo>();
+                try
                 {
-                    if (cmd == null)
+                    ret = ErrCode.CMD_ERR;
+                    ret = CommonManager.CreateSrvCtrl().SendEnumReserve(ref list);
+                    if (ret == ErrCode.CMD_SUCCESS)
                     {
                         ret = ErrCode.CMD_ERR;
-                    }
-                    else
-                    {
-                        reserveList.Clear();
-                        reserveList = null;
-                        reserveList = new Dictionary<uint, ReserveData>();
-                        tunerReserveList.Clear();
-                        tunerReserveList = null;
-                        tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
-                        List<ReserveData> list = new List<ReserveData>();
-                        List<TunerReserveInfo> list2 = new List<TunerReserveInfo>();
-                        ret = (ErrCode)cmd.SendEnumReserve(ref list);
-                        if (ret == ErrCode.CMD_SUCCESS)
-                        {
-                            ret = (ErrCode)cmd.SendEnumTunerReserve(ref list2);
-                            if (ret == ErrCode.CMD_SUCCESS)
-                            {
-                                foreach (ReserveData info in list)
-                                {
-                                    reserveList.Add(info.ReserveID, info);
-                                }
-                                foreach (TunerReserveInfo info in list2)
-                                {
-                                    tunerReserveList.Add(info.tunerID, info);
-                                }
-                                updateReserveInfo = false;
-                            }
-                        }
-                        list.Clear();
-                        list2.Clear();
-                        list = null;
-                        list2 = null;
+                        ret = CommonManager.CreateSrvCtrl().SendEnumTunerReserve(ref list2);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                catch { }
+                if (ret == ErrCode.CMD_SUCCESS)
+                {
+                    foreach (ReserveData info in list)
+                    {
+                        reserveList.Add(info.ReserveID, info);
+                    }
+                    foreach (TunerReserveInfo info in list2)
+                    {
+                        tunerReserveList.Add(info.tunerID, info);
+                    }
+                    updateReserveInfo = false;
+                }
             }
             return ret;
         }
@@ -272,97 +200,29 @@ namespace EpgTimer
         public ErrCode ReloadrecFileInfo()
         {
             ErrCode ret = ErrCode.CMD_SUCCESS;
-            try
+            if (updateRecInfo)
             {
-                if (updateRecInfo == true)
+                recFileInfo = new Dictionary<uint, RecFileInfo>();
+                var list = new List<RecFileInfo>();
+                try
                 {
-                    if (cmd == null)
+                    ret = ErrCode.CMD_ERR;
+                    ret = CommonManager.CreateSrvCtrl().SendEnumRecInfoBasic(ref list);
+                    if (ret == ErrCode.CMD_NON_SUPPORT)
                     {
                         ret = ErrCode.CMD_ERR;
-                    }
-                    else
-                    {
-                        recFileInfo.Clear();
-                        recFileInfo = null;
-                        recFileInfo = new Dictionary<uint, RecFileInfo>();
-                        List<RecFileInfo> list = new List<RecFileInfo>();
-                        ret = cmd.SendEnumRecInfoBasic(ref list);
-                        if (ret == ErrCode.CMD_NON_SUPPORT)
-                        {
-                            ret = cmd.SendEnumRecInfo(ref list);
-                        }
-                        if (ret == ErrCode.CMD_SUCCESS)
-                        {
-                            foreach (RecFileInfo info in list)
-                            {
-                                recFileInfo.Add(info.ID, info);
-                            }
-                            updateRecInfo = false;
-                        }
-                        list.Clear();
-                        list = null;
+                        ret = CommonManager.CreateSrvCtrl().SendEnumRecInfo(ref list);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// PlugInFileの再読み込み指定があればする
-        /// </summary>
-        /// <returns></returns>
-        public ErrCode ReloadPlugInFile()
-        {
-            ErrCode ret = ErrCode.CMD_SUCCESS;
-            try
-            {
-                if (updatePlugInFile == true)
+                catch { }
+                if (ret == ErrCode.CMD_SUCCESS)
                 {
-                    if (cmd == null)
+                    foreach (RecFileInfo info in list)
                     {
-                        ret = ErrCode.CMD_ERR;
+                        recFileInfo.Add(info.ID, info);
                     }
-                    else
-                    {
-                        writePlugInList.Clear();
-                        writePlugInList = null;
-                        writePlugInList = new Dictionary<int, string>();
-                        recNamePlugInList.Clear();
-                        recNamePlugInList = null;
-                        recNamePlugInList = new Dictionary<int, string>();
-                        List<String> writeList = new List<string>();
-                        List<String> recNameList = new List<string>();
-                        ret = (ErrCode)cmd.SendEnumPlugIn(2, ref writeList);
-                        if (ret == ErrCode.CMD_SUCCESS)
-                        {
-                            ret = (ErrCode)cmd.SendEnumPlugIn(1, ref recNameList);
-                            if (ret == ErrCode.CMD_SUCCESS)
-                            {
-                                foreach (String info in writeList)
-                                {
-                                    writePlugInList.Add(writePlugInList.Count, info);
-                                }
-                                foreach (String info in recNameList)
-                                {
-                                    recNamePlugInList.Add(recNamePlugInList.Count, info);
-                                }
-                                updatePlugInFile = false;
-                            }
-                        }
-                        writeList.Clear();
-                        recNameList.Clear();
-                        writeList = null;
-                        recNameList = null;
-                    }
+                    updateRecInfo = false;
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
             return ret;
         }
@@ -374,37 +234,24 @@ namespace EpgTimer
         public ErrCode ReloadEpgAutoAddInfo()
         {
             ErrCode ret = ErrCode.CMD_SUCCESS;
-            try
+            if (updateAutoAddEpgInfo)
             {
-                if (updateAutoAddEpgInfo == true)
+                epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
+                var list = new List<EpgAutoAddData>();
+                try
                 {
-                    if (cmd == null)
-                    {
-                        ret = ErrCode.CMD_ERR;
-                    }
-                    else
-                    {
-                        epgAutoAddList.Clear();
-                        epgAutoAddList = null;
-                        epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
-                        List<EpgAutoAddData> list = new List<EpgAutoAddData>();
-                        ret = (ErrCode)cmd.SendEnumEpgAutoAdd(ref list);
-                        if (ret == ErrCode.CMD_SUCCESS)
-                        {
-                            foreach (EpgAutoAddData info in list)
-                            {
-                                epgAutoAddList.Add(info.dataID, info);
-                            }
-                            updateAutoAddEpgInfo = false;
-                        }
-                        list.Clear();
-                        list = null;
-                    }
+                    ret = ErrCode.CMD_ERR;
+                    ret = CommonManager.CreateSrvCtrl().SendEnumEpgAutoAdd(ref list);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                catch { }
+                if (ret == ErrCode.CMD_SUCCESS)
+                {
+                    foreach (EpgAutoAddData info in list)
+                    {
+                        epgAutoAddList.Add(info.dataID, info);
+                    }
+                    updateAutoAddEpgInfo = false;
+                }
             }
             return ret;
         }
@@ -417,68 +264,37 @@ namespace EpgTimer
         public ErrCode ReloadManualAutoAddInfo()
         {
             ErrCode ret = ErrCode.CMD_SUCCESS;
-            try
+            if (updateAutoAddManualInfo)
             {
-                if (updateAutoAddManualInfo == true)
+                manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
+                var list = new List<ManualAutoAddData>();
+                try
                 {
-                    if (cmd == null)
-                    {
-                        ret = ErrCode.CMD_ERR;
-                    }
-                    else
-                    {
-                        manualAutoAddList.Clear();
-                        manualAutoAddList = null;
-                        manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
-                        List<ManualAutoAddData> list = new List<ManualAutoAddData>();
-                        ret = (ErrCode)cmd.SendEnumManualAdd(ref list);
-                        if (ret == ErrCode.CMD_SUCCESS)
-                        {
-                            foreach (ManualAutoAddData info in list)
-                            {
-                                manualAutoAddList.Add(info.dataID, info);
-                            }
-                            updateAutoAddManualInfo = false;
-                        }
-                        list.Clear();
-                        list = null;
-                    }
+                    ret = ErrCode.CMD_ERR;
+                    ret = CommonManager.CreateSrvCtrl().SendEnumManualAdd(ref list);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                catch { }
+                if (ret == ErrCode.CMD_SUCCESS)
+                {
+                    foreach (ManualAutoAddData info in list)
+                    {
+                        manualAutoAddList.Add(info.dataID, info);
+                    }
+                    updateAutoAddManualInfo = false;
+                }
             }
             return ret;
         }
 
-        public bool GetNextReserve(ref ReserveData info)
+        public ReserveData GetNextReserve()
         {
-            bool ret = false;
-
-            SortedList<String, ReserveData> sortList = new SortedList<String, ReserveData>();
-            foreach (ReserveData resInfo in reserveList.Values)
+            DateTime now = DateTime.UtcNow.AddHours(9);
+            if (reserveList.Values.Any(a => a.RecSetting.RecMode != 5 && a.StartTime > now))
             {
-                if (resInfo.RecSetting.RecMode != 5)
-                {
-                    String key = resInfo.StartTime.ToString("yyyyMMddHHmmss");
-                    key += resInfo.ReserveID.ToString("X8");
-                    sortList.Add(key, resInfo);
-                }
+                return reserveList.Values.Where(a => a.RecSetting.RecMode != 5 && a.StartTime > now)
+                                         .Aggregate((a, b) => a.StartTime <= b.StartTime ? a : b);
             }
-
-            foreach (ReserveData resInfo in sortList.Values)
-            {
-                if (resInfo.StartTime > DateTime.UtcNow.AddHours(9))
-                {
-                    info = resInfo;
-                    ret = true;
-                    break;
-                }
-            }
-            sortList.Clear();
-            sortList = null;
-            return ret;
+            return null;
         }
     }
 }

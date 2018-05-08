@@ -2,11 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="予約登録" Height="580" Width="740" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner">
-<!--
-    <Window.Resources>
-        <ResourceDictionary Source="/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml" />
-    </Window.Resources>
--->
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="90" />
@@ -16,16 +12,12 @@
         <TextBox Name="textBox_info" IsReadOnly="True" TextWrapping="Wrap" />
         <TabControl Grid.Row="1" Name="tabControl" TabStripPlacement="Bottom" >
             <TabItem Header="予約" Name="tabItem_reserve">
-                <Grid>
-                    <my:RecSettingView x:Name="recSettingView" />
-                </Grid>
+                <my:RecSettingView x:Name="recSettingView" />
             </TabItem>
             <TabItem Header="番組詳細" Name="tabItem_program">
-                <Grid>
-                    <ScrollViewer Name="scrollViewer1">
-                        <RichTextBox Name="richTextBox_descInfo" IsReadOnly="True" />
-                    </ScrollViewer>
-                </Grid>
+                <ScrollViewer Name="scrollViewer1">
+                    <RichTextBox Name="richTextBox_descInfo" IsReadOnly="True" />
+                </ScrollViewer>
             </TabItem>
         </TabControl>
         <Button Grid.Row="2" Content="予約" Height="23" HorizontalAlignment="Left" Name="button_add_reserve" VerticalAlignment="Top" Width="91" Click="button_add_reserve_Click" Margin="30,8,0,0" ToolTip="Ctrl + Shift + A"/>
