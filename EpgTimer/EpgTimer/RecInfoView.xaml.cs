@@ -224,17 +224,6 @@ namespace EpgTimer
             }
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                if (ReloadInfoData() == true)
-                {
-                    ReloadInfo = false;
-                }
-            }
-        }
-
         private void listView_recinfo_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (listView_recinfo.SelectedItem != null)

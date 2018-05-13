@@ -26,24 +26,6 @@ namespace EpgTimer
             InitializeComponent();
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (RedrawEpg == true && this.IsVisible == true)
-                {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
         /// <summary>
         /// EPGデータの更新通知
         /// </summary>

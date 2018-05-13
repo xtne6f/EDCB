@@ -31,8 +31,6 @@ namespace EpgTimer
         string _lastHeaderClicked2 = null;
         ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
-        MainWindow _mainWindow;
-
         public ReserveView()
         {
             InitializeComponent();
@@ -59,16 +57,6 @@ namespace EpgTimer
             Settings.Instance.ReserveListColumn.Clear();
             Settings.Instance.ReserveListColumn.AddRange(
                 gridView_reserve.Columns.Select(info => new ListColumnInfo((string)((GridViewColumnHeader)info.Header).Tag, info.Width)));
-        }
-
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (RedrawReserve == true && this.IsVisible == true)
-            {
-                ReDrawReserveData();
-                RedrawReserve = false;
-            }
-            this._mainWindow = (MainWindow)Window.GetWindow(this);
         }
 
         /// <summary>
@@ -573,7 +561,7 @@ namespace EpgTimer
             if (item1 != null)
             {
                 BlackoutWindow.selectedReserve = item1.ReserveInfo;
-                this._mainWindow.moveTo_tabItem_epg();
+                ((MainWindow)Application.Current.MainWindow).moveTo_tabItem_epg();
             }
         }
 

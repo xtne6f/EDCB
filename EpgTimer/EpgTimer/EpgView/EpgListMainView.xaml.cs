@@ -88,27 +88,6 @@ namespace EpgTimer
             UpdateEpgData();
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (this.IsVisible == true)
-            {
-                if (updateEpgData == true)
-                {
-                    if (ReloadEpgData() == true)
-                    {
-                        updateEpgData = false;
-                        ReloadReserveData();
-                        updateReserveData = false;
-                    }
-                }
-                if (updateReserveData == true)
-                {
-                    ReloadReserveData();
-                    updateReserveData = false;
-                }
-            }
-        }
-
         /// <summary>
         /// EPGデータ更新通知
         /// </summary>

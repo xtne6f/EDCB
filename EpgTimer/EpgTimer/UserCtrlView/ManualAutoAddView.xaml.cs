@@ -57,15 +57,6 @@ namespace EpgTimer
                 ReloadInfo = false;
             }
         }
-        
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfoData();
-                ReloadInfo = false;
-            }
-        }
 
         private bool ReloadInfoData()
         {

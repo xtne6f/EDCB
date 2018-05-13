@@ -1011,24 +1011,6 @@ namespace EpgTimer
                 grid_PG.ColumnDefinitions[0].Width = new GridLength(40 + Math.Floor(p.X * m.M11) / m.M11 - p.X);
                 grid_PG.RowDefinitions[0].Height = new GridLength(40 + Math.Floor(p.Y * m.M22) / m.M22 - p.Y);
             }
-
-            if (this.IsVisible == true)
-            {
-                if (updateEpgData == true)
-                {
-                    if (ReloadEpgData() == true)
-                    {
-                        updateEpgData = false;
-                        ReloadReserveViewItem();
-                        updateReserveData = false;
-                    }
-                }
-                if (updateReserveData == true)
-                {
-                    ReloadReserveViewItem();
-                    updateReserveData = false;
-                }
-            }
         }
 
         private bool ReloadEpgData()
