@@ -148,17 +148,6 @@ namespace EpgTimer
 
                     if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > now)
                     {
-                        foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
-                        {
-                            if (info.original_network_id == info2.OriginalNetworkID &&
-                                info.transport_stream_id == info2.TransportStreamID &&
-                                info.service_id == info2.ServiceID &&
-                                info.event_id == info2.EventID)
-                            {
-                                item.ReserveInfo = info2;
-                                break;
-                            }
-                        }
                         UInt64 serviceKey = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
                         if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
                         {
@@ -169,6 +158,7 @@ namespace EpgTimer
                 }
 
                 listView_result.DataContext = resultList;
+                RefreshReserve();
                 Sort();
 
                 searchKeyView.SaveSearchLog();
@@ -176,6 +166,29 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void RefreshReserve()
+        {
+            if (listView_result.DataContext != null)
+            {
+                foreach (SearchItem item in (List<SearchItem>)listView_result.DataContext)
+                {
+                    item.ReserveInfo = null;
+                    foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
+                    {
+                        if (item.EventInfo.original_network_id == info.OriginalNetworkID &&
+                            item.EventInfo.transport_stream_id == info.TransportStreamID &&
+                            item.EventInfo.service_id == info.ServiceID &&
+                            item.EventInfo.event_id == info.EventID)
+                        {
+                            item.ReserveInfo = info;
+                            break;
+                        }
+                    }
+                }
+                CollectionViewSource.GetDefaultView(listView_result.DataContext).Refresh();
             }
         }
 
@@ -235,10 +248,6 @@ namespace EpgTimer
                         {
                             MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
                         }
-
-                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                        CommonManager.Instance.DB.ReloadReserveInfo();
-                        SearchPg();
                     }
                 }
             }
@@ -269,12 +278,6 @@ namespace EpgTimer
                 {
                     MessageBox.Show("追加に失敗しました");
                 }
-                else
-                {
-                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                    CommonManager.Instance.DB.ReloadReserveInfo();
-                    SearchPg();
-                }
             }
             catch (Exception ex)
             {
@@ -303,12 +306,6 @@ namespace EpgTimer
                 if (CommonManager.CreateSrvCtrl().SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show("変更に失敗しました");
-                }
-                else
-                {
-                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                    CommonManager.Instance.DB.ReloadReserveInfo();
-                    SearchPg();
                 }
             }
             catch (Exception ex)
@@ -347,12 +344,7 @@ namespace EpgTimer
                 ChgReserveWindow dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetReserveInfo(reserveInfo);
-                if (dlg.ShowDialog() == true)
-                {
-                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                    CommonManager.Instance.DB.ReloadReserveInfo();
-                    SearchPg();
-                }
+                dlg.ShowDialog();
             }
             catch (Exception ex)
             {
@@ -367,12 +359,7 @@ namespace EpgTimer
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetEventInfo(eventInfo);
-                if (dlg.ShowDialog() == true)
-                {
-                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                    CommonManager.Instance.DB.ReloadReserveInfo();
-                    SearchPg();
-                }
+                dlg.ShowDialog();
             }
             catch (Exception ex)
             {
@@ -430,6 +417,7 @@ namespace EpgTimer
             Settings.Instance.SearchWndWidth = Width;
             Settings.Instance.SearchWndHeight = Height;
             Settings.Instance.SearchWndTabsHeight = grid_Tabs.Height.Value;
+            CommonManager.Instance.DB.ReserveInfoChanged -= RefreshReserve;
         }
 
         private void Window_LocationChanged(object sender, EventArgs e)
@@ -496,6 +484,8 @@ namespace EpgTimer
             {
                 this.SearchPg();
             }
+            CommonManager.Instance.DB.ReserveInfoChanged -= RefreshReserve;
+            CommonManager.Instance.DB.ReserveInfoChanged += RefreshReserve;
         }
 
         void listView_result_KeyDown(object sender, KeyEventArgs e)
@@ -530,12 +520,6 @@ namespace EpgTimer
                         MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約削除でエラーが発生しました。");
                     }
                 }
-                //
-                CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                CommonManager.Instance.DB.ReloadReserveInfo();
-                SearchPg();
-                //
-                //listView_result.SelectedItem = null;
             }
         }
 
@@ -579,10 +563,6 @@ namespace EpgTimer
                         {
                             MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                         }
-
-                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                        CommonManager.Instance.DB.ReloadReserveInfo();
-                        SearchPg();
                     }
                     catch (Exception ex)
                     {
@@ -616,10 +596,6 @@ namespace EpgTimer
                         {
                             MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                         }
-
-                        CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                        CommonManager.Instance.DB.ReloadReserveInfo();
-                        SearchPg();
                     }
                     catch (Exception ex)
                     {

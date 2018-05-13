@@ -142,24 +142,24 @@ namespace EpgTimer
             }
         }
 
-        public void UpdateReserveData()
+        public void RefreshReserve()
         {
             if (viewCtrl != null)
             {
                 if (viewCtrl.GetType() == typeof(EpgListMainView))
                 {
                     EpgListMainView item = viewCtrl as EpgListMainView;
-                    item.UpdateReserveData();
+                    item.RefreshReserve();
                 }
                 else if (viewCtrl.GetType() == typeof(EpgMainView))
                 {
                     EpgMainView item = viewCtrl as EpgMainView;
-                    item.UpdateReserveData();
+                    item.RefreshReserve();
                 }
                 else if (viewCtrl.GetType() == typeof(EpgWeekMainView))
                 {
                     EpgWeekMainView item = viewCtrl as EpgWeekMainView;
-                    item.UpdateReserveData();
+                    item.RefreshReserve();
                 }
             }
         }

@@ -51,14 +51,10 @@ namespace EpgTimer
         /// </summary>
         public void UpdateInfo()
         {
-            if (this.IsVisible == true)
+            ReloadInfo = true;
+            if (IsVisible && ReloadInfoData())
             {
-                ReloadInfoData();
                 ReloadInfo = false;
-            }
-            else
-            {
-                ReloadInfo = true;
             }
         }
         

@@ -74,7 +74,6 @@ namespace EpgTimer
 
         public void SetViewMode(CustomEpgTabInfo setInfo)
         {
-            ClearInfo();
             setViewInfo = setInfo;
             this.viewCustServiceList = setInfo.ViewServiceList;
             this.viewCustContentKindList.Clear();
@@ -86,14 +85,7 @@ namespace EpgTimer
                 }
             }
 
-            if (ReloadEpgData() == true)
-            {
-                updateEpgData = false;
-                if (ReloadReserveData() == true)
-                {
-                    updateReserveData = false;
-                }
-            }
+            UpdateEpgData();
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -105,18 +97,14 @@ namespace EpgTimer
                     if (ReloadEpgData() == true)
                     {
                         updateEpgData = false;
-                        if (ReloadReserveData() == true)
-                        {
-                            updateReserveData = false;
-                        }
+                        ReloadReserveData();
+                        updateReserveData = false;
                     }
                 }
                 if (updateReserveData == true)
                 {
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
+                    ReloadReserveData();
+                    updateReserveData = false;
                 }
             }
         }
@@ -126,17 +114,15 @@ namespace EpgTimer
         /// </summary>
         public void UpdateEpgData()
         {
+            ClearInfo();
             updateEpgData = true;
-            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
+            if (IsVisible || (Settings.Instance.NgAutoEpgLoadNW == false && Settings.Instance.PrebuildEpg))
             {
-                ClearInfo();
                 if (ReloadEpgData() == true)
                 {
                     updateEpgData = false;
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
+                    ReloadReserveData();
+                    updateReserveData = false;
                 }
             }
         }
@@ -144,15 +130,13 @@ namespace EpgTimer
         /// <summary>
         /// 予約情報更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void RefreshReserve()
         {
             updateReserveData = true;
             if (this.IsVisible == true)
             {
-                if (ReloadReserveData() == true)
-                {
-                    updateReserveData = false;
-                }
+                ReloadReserveData();
+                updateReserveData = false;
             }
         }
 
@@ -216,38 +200,16 @@ namespace EpgTimer
             return true;
         }
 
-        private bool ReloadReserveData()
+        private void ReloadReserveData()
         {
-            try
+            if (setViewInfo.SearchMode)
             {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
-                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約情報の取得でエラーが発生しました。");
-                    return false;
-                }
-
-                if (setViewInfo.SearchMode == true)
-                {
-                    ReloadProgramViewItemForSearch();
-                }
-                else
-                {
-                    ReloadProgramViewItem();
-                }
+                ReloadProgramViewItemForSearch();
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                ReloadProgramViewItem();
             }
-            return true;
         }
 
         private void ReloadProgramViewItem()
@@ -1158,6 +1120,24 @@ namespace EpgTimer
         private void cm_new_Click(object sender, RoutedEventArgs e)
         {
             AddReserveFromPreset(0);
+        }
+
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (IsVisible)
+            {
+                if (updateEpgData && ReloadEpgData())
+                {
+                    updateEpgData = false;
+                    ReloadReserveData();
+                    updateReserveData = false;
+                }
+                if (updateReserveData)
+                {
+                    ReloadReserveData();
+                    updateReserveData = false;
+                }
+            }
         }
     }
 }

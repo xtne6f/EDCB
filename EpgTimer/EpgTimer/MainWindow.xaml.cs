@@ -33,10 +33,6 @@ namespace EpgTimer
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
 
             Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
-            if (CommonManager.Instance.NWMode == true)
-            {
-                CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-            }
             CommonManager.Instance.ReloadCustContentColorList();
 
             if (CheckCmdLine() && Settings.Instance.ExitAfterProcessingArgs)
@@ -178,19 +174,17 @@ namespace EpgTimer
                 };
                 taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconBlue.ico");
 
+                CommonManager.Instance.DB.EpgDataChanged += reserveView.RefreshEpgData;
+                CommonManager.Instance.DB.ReserveInfoChanged += epgView.RefreshReserve;
+                CommonManager.Instance.DB.ReserveInfoChanged += reserveView.Refresh;
+                CommonManager.Instance.DB.ReserveInfoChanged += tunerReserveView.Refresh;
+                if (Settings.Instance.NgAutoEpgLoadNW == false)
+                {
+                    //EPGデータを遅延更新しない
+                    CommonManager.Instance.DB.ReloadEpgData();
+                }
+                //予約情報は常に遅延更新しない
                 CommonManager.Instance.DB.ReloadReserveInfo();
-                ReserveData item = CommonManager.Instance.DB.GetNextReserve();
-                if (item != null)
-                {
-                    String timeView = item.StartTime.ToString("M/d(ddd) H:mm～");
-                    DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                    timeView += endTime.ToString("H:mm");
-                    taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
-                }
-                else
-                {
-                    taskTray.Text = "次の予約なし";
-                }
 
                 ResetTaskMenu();
             }
@@ -430,9 +424,13 @@ namespace EpgTimer
             CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddEpgInfo);
             CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddManualInfo);
             CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.EpgData);
-            reserveView.UpdateReserveData();
-            epgView.UpdateReserveData();
-            tunerReserveView.UpdateReserveData();
+            if (Settings.Instance.NgAutoEpgLoadNW == false)
+            {
+                //EPGデータを遅延更新しない
+                CommonManager.Instance.DB.ReloadEpgData();
+            }
+            //予約情報は常に遅延更新しない
+            CommonManager.Instance.DB.ReloadReserveInfo();
             autoAddView.UpdateAutoAddInfo();
             recInfoView.UpdateInfo();
             epgView.UpdateEpgData();
@@ -676,19 +674,13 @@ namespace EpgTimer
 
         void SettingCmd()
         {
-            SettingWindow setting = new SettingWindow();
             PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
+            if (topWindow != null && OwnedWindows.OfType<SettingWindow>().FirstOrDefault() == null)
             {
+                var setting = new SettingWindow();
                 setting.Owner = (Window)topWindow.RootVisual;
-            }
-            if (setting.ShowDialog() == true)
-            {
+                if (setting.ShowDialog() == true)
                 {
-                    if (CommonManager.Instance.NWMode == true)
-                    {
-                        CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-                    }
                     epgView.UpdateSetting();
                     ResetButtonView();
                     ResetTaskMenu();
@@ -754,10 +746,6 @@ namespace EpgTimer
 
         void EpgReloadCmd()
         {
-            if (CommonManager.Instance.NWMode == true)
-            {
-                CommonManager.Instance.DB.SetOneTimeReloadEpg();
-            }
             if (CommonManager.CreateSrvCtrl().SendReloadEpg() != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("EPG再読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
@@ -1066,56 +1054,39 @@ namespace EpgTimer
                 case UpdateNotifyItem.EpgData:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.EpgData);
-                        if (CommonManager.Instance.NWMode == false)
+                        if (Settings.Instance.NgAutoEpgLoadNW == false)
                         {
+                            //EPGデータを遅延更新しない
                             CommonManager.Instance.DB.ReloadEpgData();
                         }
-                        if (PresentationSource.FromVisual(Application.Current.MainWindow) != null)
-                        {
-                            epgView.UpdateEpgData();
-                        }
+                        epgView.UpdateEpgData();
+                        //録画予定ファイル名が変化しているかもしれない
+                        CommonManager.Instance.DB.ReloadReserveRecFileNameList();
                         GC.Collect();
                     }
                     break;
                 case UpdateNotifyItem.ReserveInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                        if (CommonManager.Instance.NWMode == false)
-                        {
-                            CommonManager.Instance.DB.ReloadReserveInfo();
-                        }
-                        reserveView.UpdateReserveData();
-                        epgView.UpdateReserveData();
-                        tunerReserveView.UpdateReserveData();
+                        //予約情報は常に遅延更新しない
+                        CommonManager.Instance.DB.ReloadReserveInfo();
                     }
                     break;
                 case UpdateNotifyItem.RecInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.RecInfo);
-                        if (CommonManager.Instance.NWMode == false)
-                        {
-                            CommonManager.Instance.DB.ReloadrecFileInfo();
-                        }
                         recInfoView.UpdateInfo();
                     }
                     break;
                 case UpdateNotifyItem.AutoAddEpgInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddEpgInfo);
-                        if (CommonManager.Instance.NWMode == false)
-                        {
-                            CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
-                        }
                         autoAddView.UpdateAutoAddInfo();
                     }
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddManualInfo);
-                        if (CommonManager.Instance.NWMode == false)
-                        {
-                            CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-                        }
                         autoAddView.UpdateAutoAddInfo();
                     }
                     break;
@@ -1161,7 +1132,6 @@ namespace EpgTimer
                     break;
             }
 
-            CommonManager.Instance.DB.ReloadReserveInfo();
             ReserveData item = CommonManager.Instance.DB.GetNextReserve();
             if (item != null)
             {

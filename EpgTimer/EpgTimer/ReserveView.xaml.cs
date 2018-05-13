@@ -65,10 +65,8 @@ namespace EpgTimer
         {
             if (RedrawReserve == true && this.IsVisible == true)
             {
-                if (ReDrawReserveData() == true)
-                {
-                    RedrawReserve = false;
-                }
+                ReDrawReserveData();
+                RedrawReserve = false;
             }
             this._mainWindow = (MainWindow)Window.GetWindow(this);
         }
@@ -76,40 +74,20 @@ namespace EpgTimer
         /// <summary>
         /// 予約情報の更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void Refresh()
         {
             RedrawReserve = true;
             if (this.IsVisible == true)
             {
-                if (ReDrawReserveData() == true)
-                {
-                    RedrawReserve = false;
-                }
+                ReDrawReserveData();
+                RedrawReserve = false;
             }
         }
 
-        private bool ReDrawReserveData()
+        private void ReDrawReserveData()
         {
             try
             {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
-                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
-                    }), null);
-                    listView_reserve.DataContext = null;
-                    return false;
-                }
-
                 listView_reserve.DataContext = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
                 if (_lastHeaderClicked != null)
                 {
@@ -159,13 +137,16 @@ namespace EpgTimer
                 {
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }), null);
-                return false;
             }
+        }
 
+        public void RefreshEpgData()
+        {
             // 枠線表示用
-            CommonManager.Instance.DB.ReloadEpgData();
-
-            return true;
+            if (listView_reserve.DataContext != null)
+            {
+                CollectionViewSource.GetDefaultView(listView_reserve.DataContext).Refresh();
+            }
         }
 
         private void Sort(string sortBy, ListSortDirection direction)
@@ -413,10 +394,8 @@ namespace EpgTimer
         {
             if (RedrawReserve == true && this.IsVisible == true)
             {
-                if (ReDrawReserveData() == true)
-                {
-                    RedrawReserve = false;
-                }
+                ReDrawReserveData();
+                RedrawReserve = false;
             }
         }
 

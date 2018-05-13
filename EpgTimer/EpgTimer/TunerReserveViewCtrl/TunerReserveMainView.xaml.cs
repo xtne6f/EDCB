@@ -532,53 +532,22 @@ namespace EpgTimer
             {
                 if (updateReserveData == true)
                 {
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
+                    ReloadReserveViewItem();
+                    updateReserveData = false;
                 }
             }
-        }
-
-        private bool ReloadReserveData()
-        {
-            try
-            {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                } 
-                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約情報の取得でエラーが発生しました。");
-                    return false;
-                }
-
-                ReloadReserveViewItem();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return true;
         }
 
         /// <summary>
         /// 予約情報更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void Refresh()
         {
             updateReserveData = true;
             if (this.IsVisible == true)
             {
-                if (ReloadReserveData() == true)
-                {
-                    updateReserveData = false;
-                }
+                ReloadReserveViewItem();
+                updateReserveData = false;
             }
         }
 
@@ -718,6 +687,15 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (updateReserveData && IsVisible)
+            {
+                ReloadReserveViewItem();
+                updateReserveData = false;
             }
         }
     }

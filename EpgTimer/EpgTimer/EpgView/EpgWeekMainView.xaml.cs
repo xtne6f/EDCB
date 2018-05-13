@@ -965,15 +965,7 @@ namespace EpgTimer
             }
             this.viewCustNeedTimeOnly = setInfo.NeedTimeOnlyWeek;
 
-            ClearInfo();
-            if (ReloadEpgData() == true)
-            {
-                updateEpgData = false;
-                if (ReloadReserveData() == true)
-                {
-                    updateReserveData = false;
-                }
-            }
+            UpdateEpgData();
         }
 
         /// <summary>
@@ -981,17 +973,15 @@ namespace EpgTimer
         /// </summary>
         public void UpdateEpgData()
         {
+            ClearInfo();
             updateEpgData = true;
-            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
+            if (IsVisible || (Settings.Instance.NgAutoEpgLoadNW == false && Settings.Instance.PrebuildEpg))
             {
-                ClearInfo();
                 if (ReloadEpgData() == true)
                 {
                     updateEpgData = false;
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
+                    ReloadReserveViewItem();
+                    updateReserveData = false;
                 }
             }
         }
@@ -999,15 +989,13 @@ namespace EpgTimer
         /// <summary>
         /// 予約情報更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void RefreshReserve()
         {
             updateReserveData = true;
             if (this.IsVisible == true)
             {
-                if (ReloadReserveData() == true)
-                {
-                    updateReserveData = false;
-                }
+                ReloadReserveViewItem();
+                updateReserveData = false;
             }
         }
 
@@ -1028,22 +1016,17 @@ namespace EpgTimer
             {
                 if (updateEpgData == true)
                 {
-                    ClearInfo();
                     if (ReloadEpgData() == true)
                     {
                         updateEpgData = false;
-                        if (ReloadReserveData() == true)
-                        {
-                            updateReserveData = false;
-                        }
+                        ReloadReserveViewItem();
+                        updateReserveData = false;
                     }
                 }
                 if (updateReserveData == true)
                 {
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
+                    ReloadReserveViewItem();
+                    updateReserveData = false;
                 }
             }
         }
@@ -1052,6 +1035,11 @@ namespace EpgTimer
         {
             try
             {
+                //EpgViewPanelがDPI倍率の情報を必要とするため
+                if (PresentationSource.FromVisual(Application.Current.MainWindow) == null)
+                {
+                    return false;
+                }
                 if (setViewInfo != null)
                 {
                     if (setViewInfo.SearchMode == true)
@@ -1084,33 +1072,6 @@ namespace EpgTimer
                     }
                     MoveNowTime();
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return true;
-        }
-
-        private bool ReloadReserveData()
-        {
-            try
-            {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
-                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約情報の取得でエラーが発生しました。");
-                    return false;
-                }
-
-                ReloadReserveViewItem();
             }
             catch (Exception ex)
             {
@@ -1651,6 +1612,18 @@ namespace EpgTimer
         private void UserControl_IsVisibleChanged_1(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (this.IsVisible == false) { return; }
+
+            if (updateEpgData && ReloadEpgData())
+            {
+                updateEpgData = false;
+                ReloadReserveViewItem();
+                updateReserveData = false;
+            }
+            if (updateReserveData)
+            {
+                ReloadReserveViewItem();
+                updateReserveData = false;
+            }
             // サービス選択
             UInt64 serviceKey_Target1 = 0;
             if (BlackoutWindow.selectedReserve != null)

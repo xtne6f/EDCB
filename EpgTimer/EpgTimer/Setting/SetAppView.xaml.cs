@@ -31,7 +31,6 @@ namespace EpgTimer.Setting
         {
             checkBox_wakeReconnect.IsEnabled = CommonManager.Instance.NWMode;
             checkBox_suspendClose.IsEnabled = CommonManager.Instance.NWMode;
-            checkBox_ngAutoEpgLoad.IsEnabled = CommonManager.Instance.NWMode;
             button_srvSetting.IsEnabled = CommonManager.Instance.NWMode == false;
 
             button_shortCutAdd.Visibility = File.Exists(System.IO.Path.Combine(

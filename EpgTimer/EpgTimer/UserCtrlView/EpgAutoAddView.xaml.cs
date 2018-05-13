@@ -54,14 +54,10 @@ namespace EpgTimer
         /// </summary>
         public void UpdateInfo()
         {
-            if (this.IsVisible == true)
+            ReloadInfo = true;
+            if (IsVisible && ReloadInfoData())
             {
-                ReloadInfoData();
                 ReloadInfo = false;
-            }
-            else
-            {
-                ReloadInfo = true;
             }
         }
 
@@ -211,8 +207,6 @@ namespace EpgTimer
                 if (dellist.Count > 0)
                 {
                     CommonManager.CreateSrvCtrl().SendDelReserve(dellist);
-                    CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
-                    CommonManager.Instance.DB.ReloadReserveInfo();
                 }
                 
             }

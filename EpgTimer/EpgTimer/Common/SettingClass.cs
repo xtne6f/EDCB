@@ -225,6 +225,7 @@ namespace EpgTimer
         public bool WakeReconnectNW { get; set; }
         public bool SuspendCloseNW { get; set; }
         public bool NgAutoEpgLoadNW { get; set; }
+        public bool PrebuildEpg { get; set; }
         public Int32 TvTestOpenWait { get; set; }
         public Int32 TvTestChgBonWait { get; set; }
         public byte ResDefColorA { get; set; }
@@ -384,6 +385,7 @@ namespace EpgTimer
             WakeReconnectNW = false;
             SuspendCloseNW = false;
             NgAutoEpgLoadNW = false;
+            PrebuildEpg = false;
             TvTestOpenWait = 2000;
             TvTestChgBonWait = 2000;
             ResDefColorA = 0;

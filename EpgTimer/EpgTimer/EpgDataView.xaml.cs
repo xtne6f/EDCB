@@ -49,30 +49,20 @@ namespace EpgTimer
         /// </summary>
         public void UpdateEpgData()
         {
-            try
+            RedrawEpg = true;
+            if (IsVisible || Settings.Instance.NgAutoEpgLoadNW == false)
             {
-                if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
+                if (ReDrawEpgData())
                 {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
+                    RedrawEpg = false;
                 }
-                else
-                {
-                    RedrawEpg = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
         /// <summary>
         /// 予約情報の更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void RefreshReserve()
         {
             try
             {
@@ -81,7 +71,7 @@ namespace EpgTimer
                     if (item.Content.GetType() == typeof(EpgDataViewItem))
                     {
                         EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.UpdateReserveData();
+                        view.RefreshReserve();
                     }
                 }
             }
@@ -110,7 +100,7 @@ namespace EpgTimer
                 //タブの削除
                 tabControl.Items.Clear();
 
-                ReDrawEpgData();
+                UpdateEpgData();
             }
             catch (Exception ex)
             {
@@ -145,7 +135,6 @@ namespace EpgTimer
                         }), null);
                         return false;
                     }
-                    CommonManager.Instance.DB.ReloadReserveInfo();
 
                     //デフォルト表示
                     for (int i = 0; i < 4; i++)

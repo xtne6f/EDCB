@@ -30,8 +30,6 @@ namespace EpgTimer
         private bool updateRecInfo = true;
         private bool updateAutoAddEpgInfo = true;
         private bool updateAutoAddManualInfo = true;
-        private bool noAutoReloadEpg = false;
-        private bool oneTimeReloadEpg = false;
 
         Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
         Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
@@ -65,19 +63,8 @@ namespace EpgTimer
             get { return epgAutoAddList; }
         }
 
-        /// <summary>
-        /// EPGデータの自動取得を行うかどうか（NW用）
-        /// </summary>
-        /// <param name="noReload"></param>
-        public void SetNoAutoReloadEPG(bool noReload)
-        {
-            noAutoReloadEpg = noReload;
-        }
-
-        public void SetOneTimeReloadEpg()
-        {
-            oneTimeReloadEpg = true;
-        }
+        public event Action EpgDataChanged;
+        public event Action ReserveInfoChanged;
 
         /// <summary>
         /// データの更新があったことを通知
@@ -116,7 +103,6 @@ namespace EpgTimer
             ErrCode ret = ErrCode.CMD_SUCCESS;
             if (updateEpgData)
             {
-                if (noAutoReloadEpg == false || oneTimeReloadEpg)
                 {
                     serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
                     var list = new List<EpgServiceEventInfo>();
@@ -146,8 +132,11 @@ namespace EpgTimer
                             serviceEventList.Add(id, new EpgServiceAllEventInfo(info.serviceInfo, info.eventList, i < 0 ? new List<EpgEventInfo>() : list2[i].eventList));
                         }
                         updateEpgData = false;
-                        oneTimeReloadEpg = false;
                     }
+                }
+                if (EpgDataChanged != null)
+                {
+                    EpgDataChanged();
                 }
             }
             return ret;
@@ -188,6 +177,61 @@ namespace EpgTimer
                         tunerReserveList.Add(info.tunerID, info);
                     }
                     updateReserveInfo = false;
+                }
+                if (ReserveInfoChanged != null)
+                {
+                    ReserveInfoChanged();
+                }
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// 予約情報の録画予定ファイル名のみ再読み込みする
+        /// </summary>
+        /// <returns></returns>
+        public ErrCode ReloadReserveRecFileNameList()
+        {
+            ErrCode ret = ErrCode.CMD_SUCCESS;
+            if (reserveList.Count > 0)
+            {
+                var list = new List<ReserveData>();
+                try
+                {
+                    ret = ErrCode.CMD_ERR;
+                    ret = CommonManager.CreateSrvCtrl().SendEnumReserve(ref list);
+                }
+                catch { }
+                if (ret == ErrCode.CMD_SUCCESS)
+                {
+                    bool changed = false;
+                    foreach (ReserveData info in list)
+                    {
+                        if (reserveList.ContainsKey(info.ReserveID))
+                        {
+                            if (reserveList[info.ReserveID].RecFileNameList.Count != info.RecFileNameList.Count)
+                            {
+                                reserveList[info.ReserveID].RecFileNameList = info.RecFileNameList;
+                                changed = true;
+                            }
+                            else
+                            {
+                                for (int i = 0; i < info.RecFileNameList.Count; i++)
+                                {
+                                    if (reserveList[info.ReserveID].RecFileNameList[i] != info.RecFileNameList[i])
+                                    {
+                                        reserveList[info.ReserveID].RecFileNameList = info.RecFileNameList;
+                                        changed = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (changed && ReserveInfoChanged != null)
+                    {
+                        ReserveInfoChanged();
+                    }
                 }
             }
             return ret;
