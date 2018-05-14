@@ -59,9 +59,7 @@ namespace EpgTimer
             var serviceList = new List<ServiceItem>();
             foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
             {
-                ServiceItem item = new ServiceItem();
-                item.ServiceInfo = CommonManager.ConvertChSet5To(info);
-                serviceList.Add(item);
+                serviceList.Add(new ServiceItem(CommonManager.ConvertChSet5To(info)));
             }
             listView_service.ItemsSource = serviceList;
         }

@@ -174,24 +174,21 @@ namespace EpgTimer
                     if (info.ViewMode == 1)
                     {
                         //1週間表示
-                        var epgView = new EpgWeekMainView();
-                        epgView.SetViewMode(info);
+                        var epgView = new EpgWeekMainView(info);
                         epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
                     }
                     else if (info.ViewMode == 2)
                     {
                         //リスト表示
-                        var epgView = new EpgListMainView();
-                        epgView.SetViewMode(info);
+                        var epgView = new EpgListMainView(info);
                         epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
                     }
                     else
                     {
                         //標準ラテ欄表示
-                        var epgView = new EpgMainView();
-                        epgView.SetViewMode(info);
+                        var epgView = new EpgMainView(info);
                         epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
                     }
@@ -217,7 +214,7 @@ namespace EpgTimer
                     //タブの生成
                     ret = CreateTabItem();
                 }
-                else
+                if (ret)
                 {
                     foreach (TabItem item in tabControl.Items)
                     {
@@ -342,8 +339,7 @@ namespace EpgTimer
                     if (info.ViewMode == 1)
                     {
                         //1週間表示
-                        var epgView = new EpgWeekMainView();
-                        epgView.SetViewMode(info);
+                        var epgView = new EpgWeekMainView(info);
                         epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
                         epgView.ScrollTo(scrollToTarget);
@@ -351,16 +347,14 @@ namespace EpgTimer
                     else if (info.ViewMode == 2)
                     {
                         //リスト表示
-                        var epgView = new EpgListMainView();
-                        epgView.SetViewMode(info);
+                        var epgView = new EpgListMainView(info);
                         epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
                     }
                     else
                     {
                         //標準ラテ欄表示
-                        var epgView = new EpgMainView();
-                        epgView.SetViewMode(info);
+                        var epgView = new EpgMainView(info);
                         epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
                         epgView.ScrollTo(scrollToTarget);

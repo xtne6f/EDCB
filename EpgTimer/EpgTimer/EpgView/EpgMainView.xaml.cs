@@ -28,9 +28,6 @@ namespace EpgTimer
 
         private CustomEpgTabInfo setViewInfo = null;
 
-        private List<UInt64> viewCustServiceList = null;
-        private Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
-        private bool viewCustNeedTimeOnly = false;
         private List<EpgServiceInfo> serviceList = new List<EpgServiceInfo>();
         private SortedList<DateTime, List<ProgramViewItem>> timeList = new SortedList<DateTime, List<ProgramViewItem>>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
@@ -41,28 +38,19 @@ namespace EpgTimer
         private bool updateEpgData = true;
         private bool updateReserveData = true;
 
-        public EpgMainView()
+        public EpgMainView(CustomEpgTabInfo setInfo)
         {
             InitializeComponent();
 
-            epgProgramView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
-            epgProgramView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
-            epgProgramView.LeftDoubleClick += new ProgramView.ProgramViewClickHandler(epgProgramView_LeftDoubleClick);
-            epgProgramView.RightClick += new ProgramView.ProgramViewClickHandler(epgProgramView_RightClick);
-            dateView.TimeButtonClick += new RoutedEventHandler(epgDateView_TimeButtonClick);
-
             nowViewTimer = new DispatcherTimer(DispatcherPriority.Normal);
             nowViewTimer.Tick += new EventHandler(WaitReDrawNowLine);
-
+            setViewInfo = setInfo;
         }
-
 
         /// <summary>
         /// 保持情報のクリア
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public bool ClearInfo()
+        public void ClearInfo()
         {
             nowViewTimer.Stop();
             if (nowLine != null)
@@ -78,18 +66,11 @@ namespace EpgTimer
             timeList.Clear();
             serviceList.Clear();
             reserveList.Clear();
-
-            serviceList = null;
-            serviceList = new List<EpgServiceInfo>();
-            reserveList = null;
-            reserveList = new List<ReserveViewItem>();
-
-            return true;
         }
 
         public bool HasService(ushort onid, ushort tsid, ushort sid)
         {
-            return setViewInfo != null && setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid));
+            return setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid));
         }
 
         /// <summary>
@@ -125,8 +106,6 @@ namespace EpgTimer
                     nowLine = new Line();
                     Canvas.SetZIndex(nowLine, 20);
                     nowLine.Stroke = new SolidColorBrush(Colors.Red);
-                    //nowLine.StrokeThickness = Settings.Instance.MinHeight * 2;
-                    //nowLine.Opacity = 0.5;
                     nowLine.StrokeThickness = 3;
                     nowLine.Opacity = 0.7;
                     nowLine.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
@@ -845,7 +824,8 @@ namespace EpgTimer
                     dlg.GetSetting(ref setInfo);
                     if (setInfo.ViewMode == setViewInfo.ViewMode)
                     {
-                        SetViewMode(setInfo);
+                        setViewInfo = setInfo;
+                        UpdateEpgData();
                     }
                     else if (ViewModeChangeRequested != null)
                     {
@@ -964,24 +944,6 @@ namespace EpgTimer
             }
         }
 
-        public void SetViewMode(CustomEpgTabInfo setInfo)
-        {
-            setViewInfo = setInfo;
-
-            this.viewCustServiceList = setInfo.ViewServiceList;
-            this.viewCustContentKindList.Clear();
-            if (setInfo.ViewContentKindList != null)
-            {
-                foreach (UInt16 val in setInfo.ViewContentKindList)
-                {
-                    this.viewCustContentKindList.Add(val, val);
-                }
-            }
-            this.viewCustNeedTimeOnly = setInfo.NeedTimeOnlyBasic;
-
-            UpdateEpgData();
-        }
-
         /// <summary>
         /// 現在ボタンクリックイベント呼び出し
         /// </summary>
@@ -1052,11 +1014,7 @@ namespace EpgTimer
             try
             {
                 //EpgViewPanelがDPI倍率の情報を必要とするため
-                if (PresentationSource.FromVisual(Application.Current.MainWindow) == null)
-                {
-                    return false;
-                }
-                if (setViewInfo != null)
+                if (PresentationSource.FromVisual(Application.Current.MainWindow) != null)
                 {
                     if (setViewInfo.SearchMode == true)
                     {
@@ -1104,20 +1062,19 @@ namespace EpgTimer
                         }
 
                         ReloadProgramViewItem(CommonManager.Instance.DB.ServiceEventList);
-
                     }
                     MoveNowTime();
+                    return true;
                 }
             }
             catch (Exception ex)
             {
-                this.Dispatcher.BeginInvoke(new Action(() =>
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }), null);
-                return false;
             }
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -1157,8 +1114,6 @@ namespace EpgTimer
         private void ReloadReserveViewItem()
         {
             reserveList.Clear();
-            reserveList = null;
-            reserveList = new List<ReserveViewItem>();
             try
             {
                 //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
@@ -1307,7 +1262,7 @@ namespace EpgTimer
                 //必要サービスの抽出
                 serviceList.Clear();
 
-                foreach (UInt64 id in viewCustServiceList)
+                foreach (ulong id in setViewInfo.ViewServiceList)
                 {
                     if (serviceEventList.ContainsKey(id) == true)
                     {
@@ -1318,6 +1273,8 @@ namespace EpgTimer
                         }
                     }
                 }
+                List<ushort> contentKindList = setViewInfo.ViewContentKindList.ToList();
+                contentKindList.Sort();
 
 
                 //必要番組の抽出と時間チェック
@@ -1381,13 +1338,13 @@ namespace EpgTimer
                             continue;
                         }
                         //ジャンル絞り込み
-                        if (this.viewCustContentKindList.Count > 0)
+                        if (contentKindList.Count > 0)
                         {
                             bool find = false;
                             if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                             {
                                 //ジャンル情報ない
-                                find = this.viewCustContentKindList.ContainsKey(0xFFFF);
+                                find = contentKindList.BinarySearch(0xFFFF) >= 0;
                             }
                             else
                             {
@@ -1401,12 +1358,12 @@ namespace EpgTimer
                                             ID1 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | 0xFF);
                                             ID2 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | contentInfo.user_nibble_2);
                                         }
-                                        if (this.viewCustContentKindList.ContainsKey(ID1) == true)
+                                        if (contentKindList.BinarySearch(ID1) >= 0)
                                         {
                                             find = true;
                                             break;
                                         }
-                                        else if (this.viewCustContentKindList.ContainsKey(ID2) == true)
+                                        else if (contentKindList.BinarySearch(ID2) >= 0)
                                         {
                                             find = true;
                                             break;
@@ -1501,7 +1458,7 @@ namespace EpgTimer
                 }
 
                 //必要時間のチェック
-                if (viewCustNeedTimeOnly == false)
+                if (setViewInfo.NeedTimeOnlyBasic == false)
                 {
                     //番組のない時間帯を追加
                     for (int i = 1; i < timeList.Count; i++)
@@ -1580,7 +1537,7 @@ namespace EpgTimer
                 {
                     dateTimeList.Add(item.Key);
                 }
-                timeView.SetTime(dateTimeList, viewCustNeedTimeOnly, false);
+                timeView.SetTime(dateTimeList, setViewInfo.NeedTimeOnlyBasic, false);
                 dateView.SetTime(dateTimeList);
                 serviceView.SetService(primeServiceList);
 

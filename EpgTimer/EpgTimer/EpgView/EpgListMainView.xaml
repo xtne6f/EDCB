@@ -20,7 +20,7 @@
                 <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
             </ScrollViewer>
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
+            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="Background" Value="{Binding BackColor}" />
@@ -102,7 +102,7 @@
                 </ListView.ContextMenu>
             </ListView>
         </Grid>
-        <ListView Margin="0,0,5,29" Name="listBox_service" ItemsSource="{Binding}">
+        <ListView Margin="0,0,5,29" Name="listBox_service">
             <ListView.View>
                 <GridView x:Name="gridView_service">
                     <GridViewColumn>

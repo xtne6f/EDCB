@@ -29,10 +29,6 @@ namespace EpgTimer
 
         private CustomEpgTabInfo setViewInfo = null;
 
-        private List<UInt64> viewCustServiceList = null;
-        private Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
-        private List<ServiceItem> serviceList = new List<ServiceItem>();
-
         string _lastHeaderClicked = null;
         ListSortDirection _lastDirection = ListSortDirection.Ascending;
         string _lastHeaderClicked2 = null;
@@ -41,21 +37,25 @@ namespace EpgTimer
         private Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
 
         private bool updateEpgData = true;
-        private bool updateReserveData = true;
 
         private Dictionary<UInt64, UInt64> lastChkSID = null;
 
-        public EpgListMainView()
+        public EpgListMainView(CustomEpgTabInfo setInfo)
         {
             InitializeComponent();
+
+            setViewInfo = setInfo;
         }
 
-        public bool ClearInfo()
+        /// <summary>
+        /// 保持情報のクリア
+        /// </summary>
+        public void ClearInfo()
         {
             if (lastChkSID != null && listBox_service.ItemsSource != null)
             {
                 lastChkSID.Clear();
-                foreach (ServiceItem info in serviceList)
+                foreach (ServiceItem info in listBox_service.ItemsSource)
                 {
                     if (info.IsSelected == true)
                     {
@@ -64,33 +64,14 @@ namespace EpgTimer
                 }
             }
             listBox_service.ItemsSource = null;
-            serviceList.Clear();
             listView_event.ItemsSource = null;
             serviceEventList.Clear();
             richTextBox_eventInfo.Document.Blocks.Clear();
-
-            return true;
         }
 
         public bool HasService(ushort onid, ushort tsid, ushort sid)
         {
-            return setViewInfo != null && setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid));
-        }
-
-        public void SetViewMode(CustomEpgTabInfo setInfo)
-        {
-            setViewInfo = setInfo;
-            this.viewCustServiceList = setInfo.ViewServiceList;
-            this.viewCustContentKindList.Clear();
-            if (setInfo.ViewContentKindList != null)
-            {
-                foreach (UInt16 val in setInfo.ViewContentKindList)
-                {
-                    this.viewCustContentKindList.Add(val, val);
-                }
-            }
-
-            UpdateEpgData();
+            return setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid));
         }
 
         /// <summary>
@@ -105,8 +86,6 @@ namespace EpgTimer
                 if (ReloadEpgData() == true)
                 {
                     updateEpgData = false;
-                    ReloadReserveData();
-                    updateReserveData = false;
                 }
             }
         }
@@ -116,11 +95,27 @@ namespace EpgTimer
         /// </summary>
         public void RefreshReserve()
         {
-            updateReserveData = true;
-            if (this.IsVisible == true)
+            if (listView_event.ItemsSource != null)
             {
-                ReloadReserveData();
-                updateReserveData = false;
+                foreach (SearchItem item in listView_event.ItemsSource)
+                {
+                    if (item.Past == false)
+                    {
+                        item.ReserveInfo = null;
+                        foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
+                        {
+                            if (item.EventInfo.original_network_id == info.OriginalNetworkID &&
+                                item.EventInfo.transport_stream_id == info.TransportStreamID &&
+                                item.EventInfo.service_id == info.ServiceID &&
+                                item.EventInfo.event_id == info.EventID)
+                            {
+                                item.ReserveInfo = info;
+                                break;
+                            }
+                        }
+                    }
+                }
+                CollectionViewSource.GetDefaultView(listView_event.ItemsSource).Refresh();
             }
         }
 
@@ -128,12 +123,11 @@ namespace EpgTimer
         {
             try
             {
-                if (setViewInfo != null)
                 {
                     if (lastChkSID != null && listBox_service.ItemsSource != null)
                     {
                         lastChkSID.Clear();
-                        foreach (ServiceItem info in serviceList)
+                        foreach (ServiceItem info in listBox_service.ItemsSource)
                         {
                             if (info.IsSelected == true)
                             {
@@ -142,11 +136,9 @@ namespace EpgTimer
                         }
                     }
                     listBox_service.ItemsSource = null;
-                    serviceList.Clear();
                     listView_event.ItemsSource = null;
                     serviceEventList.Clear();
 
-                    updateEpgData = false;
                     if (setViewInfo.SearchMode == true)
                     {
                         ReloadProgramViewItemForSearch();
@@ -176,24 +168,16 @@ namespace EpgTimer
                         ReloadProgramViewItem();
                     }
                 }
+                return true;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }), null);
             }
-            return true;
-        }
-
-        private void ReloadReserveData()
-        {
-            if (setViewInfo.SearchMode)
-            {
-                ReloadProgramViewItemForSearch();
-            }
-            else
-            {
-                ReloadProgramViewItem();
-            }
+            return false;
         }
 
         private void ReloadProgramViewItem()
@@ -203,7 +187,7 @@ namespace EpgTimer
                 if (lastChkSID != null && listBox_service.ItemsSource != null)
                 {
                     lastChkSID.Clear();
-                    foreach (ServiceItem info in serviceList)
+                    foreach (ServiceItem info in listBox_service.ItemsSource)
                     {
                         if (info.IsSelected == true)
                         {
@@ -212,14 +196,13 @@ namespace EpgTimer
                     }
                 } 
                 listBox_service.ItemsSource = null;
-                serviceList.Clear();
+                var serviceList = new List<ServiceItem>();
 
-                foreach (UInt64 id in viewCustServiceList)
+                foreach (ulong id in setViewInfo.ViewServiceList)
                 {
                     if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(id) == true)
                     {
-                        ServiceItem item = new ServiceItem();
-                        item.ServiceInfo = CommonManager.Instance.DB.ServiceEventList[id].serviceInfo;
+                        var item = new ServiceItem(CommonManager.Instance.DB.ServiceEventList[id].serviceInfo);
                         item.IsSelected = true;
                         if (lastChkSID != null)
                         {
@@ -253,7 +236,7 @@ namespace EpgTimer
                 if (lastChkSID != null && listBox_service.ItemsSource != null)
                 {
                     lastChkSID.Clear();
-                    foreach (ServiceItem info in serviceList)
+                    foreach (ServiceItem info in listBox_service.ItemsSource)
                     {
                         if (info.IsSelected == true)
                         {
@@ -262,7 +245,7 @@ namespace EpgTimer
                     }
                 }
                 listBox_service.ItemsSource = null;
-                serviceList.Clear();
+                var serviceList = new List<ServiceItem>();
 
                 //番組情報の検索
                 List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
@@ -288,12 +271,11 @@ namespace EpgTimer
                     serviceEventList[id].eventList.Add(eventInfo);
                 }
 
-                foreach (UInt64 id in viewCustServiceList)
+                foreach (ulong id in setViewInfo.ViewServiceList)
                 {
                     if (serviceEventList.ContainsKey(id) == true)
                     {
-                        ServiceItem item = new ServiceItem();
-                        item.ServiceInfo = serviceEventList[id].serviceInfo;
+                        var item = new ServiceItem(serviceEventList[id].serviceInfo);
                         item.IsSelected = true;
                         if (lastChkSID != null)
                         {
@@ -324,15 +306,7 @@ namespace EpgTimer
         {
             try
             {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_event.DataContext);
-                if (dataView != null)
-                {
-                    dataView.SortDescriptions.Clear();
-                    dataView.Refresh();
-                }
-                listView_event.DataContext = null;
-
-                //listView_event.ItemsSource = null;
+                listView_event.ItemsSource = null;
                 var programList = new List<SearchItem>();
 
                 Dictionary<UInt64, EpgServiceAllEventInfo> eventList = null;
@@ -344,9 +318,11 @@ namespace EpgTimer
                 {
                     eventList = CommonManager.Instance.DB.ServiceEventList;
                 }
+                List<ushort> contentKindList = setViewInfo.ViewContentKindList.ToList();
+                contentKindList.Sort();
 
                 DateTime now = DateTime.UtcNow.AddHours(9);
-                foreach (ServiceItem info in serviceList)
+                foreach (ServiceItem info in listBox_service.ItemsSource ?? Enumerable.Empty<object>())
                 {
                     if (info.IsSelected == true)
                     {
@@ -367,13 +343,13 @@ namespace EpgTimer
                                         continue;
                                 }
                                 //ジャンル絞り込み
-                                if (this.viewCustContentKindList.Count > 0)
+                                if (contentKindList.Count > 0)
                                 {
                                     bool find = false;
                                     if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                                     {
                                         //ジャンル情報ない
-                                        find = this.viewCustContentKindList.ContainsKey(0xFFFF);
+                                        find = contentKindList.BinarySearch(0xFFFF) >= 0;
                                     }
                                     else
                                     {
@@ -387,12 +363,12 @@ namespace EpgTimer
                                                     ID1 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | 0xFF);
                                                     ID2 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | contentInfo.user_nibble_2);
                                                 }
-                                                if (this.viewCustContentKindList.ContainsKey(ID1) == true)
+                                                if (contentKindList.BinarySearch(ID1) >= 0)
                                                 {
                                                     find = true;
                                                     break;
                                                 }
-                                                else if (this.viewCustContentKindList.ContainsKey(ID2) == true)
+                                                else if (contentKindList.BinarySearch(ID2) >= 0)
                                                 {
                                                     find = true;
                                                     break;
@@ -430,30 +406,13 @@ namespace EpgTimer
 
                                 SearchItem item = new SearchItem(eventInfo, past);
                                 item.ServiceName = info.ServiceInfo.service_name;
-
-                                //予約チェック
-                                if (past == false)
-                                {
-                                    foreach (ReserveData resInfo in CommonManager.Instance.DB.ReserveList.Values)
-                                    {
-                                        if (resInfo.OriginalNetworkID == eventInfo.original_network_id &&
-                                            resInfo.TransportStreamID == eventInfo.transport_stream_id &&
-                                            resInfo.ServiceID == eventInfo.service_id &&
-                                            resInfo.EventID == eventInfo.event_id)
-                                        {
-                                            item.ReserveInfo = resInfo;
-                                            break;
-                                        }
-                                    }
-                                }
-
                                 programList.Add(item);
                             }
                         }
                     }
                 }
-                //listView_event.DataContext = programList;
                 listView_event.ItemsSource = programList;
+                RefreshReserve();
 
                 if (_lastHeaderClicked != null)
                 {
@@ -485,24 +444,32 @@ namespace EpgTimer
 
         private void button_chkAll_Click(object sender, RoutedEventArgs e)
         {
-            listBox_service.ItemsSource = null;
-            foreach (ServiceItem info in serviceList)
+            var serviceList = listBox_service.ItemsSource;
+            if (serviceList != null)
             {
-                info.IsSelected = true;
+                listBox_service.ItemsSource = null;
+                foreach (ServiceItem info in serviceList)
+                {
+                    info.IsSelected = true;
+                }
+                listBox_service.ItemsSource = serviceList;
+                UpdateEventList();
             }
-            listBox_service.ItemsSource = serviceList;
-            UpdateEventList();
         }
 
         private void button_clearAll_Click(object sender, RoutedEventArgs e)
         {
-            listBox_service.ItemsSource = null;
-            foreach (ServiceItem info in serviceList)
+            var serviceList = listBox_service.ItemsSource;
+            if (serviceList != null)
             {
-                info.IsSelected = false;
+                listBox_service.ItemsSource = null;
+                foreach (ServiceItem info in serviceList)
+                {
+                    info.IsSelected = false;
+                }
+                listBox_service.ItemsSource = serviceList;
+                UpdateEventList();
             }
-            listBox_service.ItemsSource = serviceList;
-            UpdateEventList();
         }
 
         private void listView_event_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1001,7 +968,8 @@ namespace EpgTimer
                     dlg.GetSetting(ref setInfo);
                     if (setInfo.ViewMode == setViewInfo.ViewMode)
                     {
-                        SetViewMode(setInfo);
+                        setViewInfo = setInfo;
+                        UpdateEpgData();
                     }
                     else if (ViewModeChangeRequested != null)
                     {
@@ -1087,10 +1055,14 @@ namespace EpgTimer
 
         private void Sort(string sortBy, ListSortDirection direction)
         {
-            try
+            if (listView_event.ItemsSource == null)
             {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_event.ItemsSource);
+                return;
+            }
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_event.ItemsSource);
 
+            using (dataView.DeferRefresh())
+            {
                 dataView.SortDescriptions.Clear();
 
                 SortDescription sd = new SortDescription(sortBy, direction);
@@ -1103,15 +1075,6 @@ namespace EpgTimer
                         dataView.SortDescriptions.Add(sd2);
                     }
                 }
-                dataView.Refresh();
-
-                //Settings.Instance.ResColumnHead = sortBy;
-                //Settings.Instance.ResSortDirection = direction;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -1132,13 +1095,6 @@ namespace EpgTimer
                 if (updateEpgData && ReloadEpgData())
                 {
                     updateEpgData = false;
-                    ReloadReserveData();
-                    updateReserveData = false;
-                }
-                if (updateReserveData)
-                {
-                    ReloadReserveData();
-                    updateReserveData = false;
                 }
             }
         }
