@@ -705,14 +705,14 @@ namespace EpgTimer
 
         void SearchCmd()
         {
-            SearchWindow search = new SearchWindow();
             PresentationSource topWindow = PresentationSource.FromVisual(this);
             if (topWindow != null)
             {
+                var search = new SearchWindow();
                 search.Owner = (Window)topWindow.RootVisual;
+                search.SetViewMode(0);
+                search.ShowDialog();
             }
-            search.SetViewMode(0);
-            search.ShowDialog();
         }
 
         void closeButton_Click(object sender, RoutedEventArgs e)
@@ -1146,10 +1146,20 @@ namespace EpgTimer
             }
         }
 
-        public void moveTo_tabItem_epg()
+        public void SearchJumpTargetProgram(object target)
         {
-            new BlackoutWindow(this).showWindow(this.tabItem_epg.Header.ToString());
-            this.tabItem_epg.IsSelected = true;
+            grid_main.Effect = new System.Windows.Media.Effects.BlurEffect();
+            //効果がかかるまで遅延
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, new Action(() =>
+            {
+                tabItem_epg.IsSelected = true;
+                epgView.SearchJumpTargetProgram(target);
+                //ジャンプが済むまで遅延
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, new Action(() =>
+                {
+                    grid_main.Effect = null;
+                }));
+            }));
         }
 
         public void EmphasizeSearchButton(bool emphasize)

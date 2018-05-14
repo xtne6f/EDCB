@@ -438,11 +438,9 @@ namespace EpgTimer
                         moveItem(false);
                         break;
                     case Key.S:
-                        new BlackoutWindow(Window.GetWindow(this)).showWindow(this.button_saveItemOrder.Content.ToString());
                         this.saveItemOrder();
                         break;
                     case Key.R:
-                        new BlackoutWindow(Window.GetWindow(this)).showWindow(this.button_reloadItem.Content.ToString());
                         this.reloadItemOrder();
                         break;
                 }

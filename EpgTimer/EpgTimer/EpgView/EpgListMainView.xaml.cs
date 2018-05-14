@@ -25,7 +25,7 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgListMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo> ViewModeChangeRequested;
+        public event Action<object, CustomEpgTabInfo, object> ViewModeChangeRequested;
 
         private CustomEpgTabInfo setViewInfo = null;
 
@@ -1005,7 +1005,7 @@ namespace EpgTimer
                     }
                     else if (ViewModeChangeRequested != null)
                     {
-                        ViewModeChangeRequested(this, setInfo);
+                        ViewModeChangeRequested(this, setInfo, null);
                     }
                 }
             }
@@ -1036,7 +1036,7 @@ namespace EpgTimer
                     {
                         setInfo.ViewMode = 0;
                     }
-                    ViewModeChangeRequested(this, setInfo);
+                    ViewModeChangeRequested(this, setInfo, null);
                 }
             }
             catch (Exception ex)

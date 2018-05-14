@@ -20,6 +20,7 @@ namespace EpgTimer
     public partial class EpgDataView : UserControl
     {
         private bool RedrawEpg = true;
+        private object jumpTarget;
 
         public EpgDataView()
         {
@@ -240,59 +241,86 @@ namespace EpgTimer
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            try
+            if (IsVisible)
             {
-                if (RedrawEpg == true && this.IsVisible == true)
+                if (RedrawEpg)
                 {
                     if (ReDrawEpgData() == true)
                     {
                         RedrawEpg = false;
                     }
                 }
-                if (this.IsVisible)
+                if (jumpTarget != null)
                 {
-                    this.searchJumpTargetProgram();
+                    SearchJumpTargetProgram(jumpTarget);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
         /// <summary>
-        /// 予約一覧からのジャンプ先を番組表タブから探す
+        /// 予約または番組へジャンプする
         /// </summary>
-        void searchJumpTargetProgram()
+        public void SearchJumpTargetProgram(object target)
         {
+            jumpTarget = null;
+            if (IsVisible == false)
+            {
+                //Visibleになるまですこし待つ
+                jumpTarget = target;
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, new Action(() => jumpTarget = null));
+                return;
+            }
             ushort onid = 0;
             ushort tsid = 0;
             ushort sid = 0;
-            if (BlackoutWindow.selectedReserve != null)
+            //TODO: 難易度上がるがEventIDも見るべき
+            if (target is ReserveData)
             {
-                onid = BlackoutWindow.selectedReserve.OriginalNetworkID;
-                tsid = BlackoutWindow.selectedReserve.TransportStreamID;
-                sid = BlackoutWindow.selectedReserve.ServiceID;
+                onid = ((ReserveData)target).OriginalNetworkID;
+                tsid = ((ReserveData)target).TransportStreamID;
+                sid = ((ReserveData)target).ServiceID;
             }
-            else if (BlackoutWindow.selectedEventInfo != null)
+            else if (target is EpgEventInfo)
             {
-                onid = BlackoutWindow.selectedEventInfo.original_network_id;
-                tsid = BlackoutWindow.selectedEventInfo.transport_stream_id;
-                sid = BlackoutWindow.selectedEventInfo.service_id;
+                onid = ((EpgEventInfo)target).original_network_id;
+                tsid = ((EpgEventInfo)target).transport_stream_id;
+                sid = ((EpgEventInfo)target).service_id;
             }
             foreach (TabItem tabItem1 in this.tabControl.Items)
             {
-                if ((tabItem1.Content is EpgListMainView && ((EpgListMainView)tabItem1.Content).HasService(onid, tsid, sid)) ||
-                    (tabItem1.Content is EpgMainView && ((EpgMainView)tabItem1.Content).HasService(onid, tsid, sid)) ||
-                    (tabItem1.Content is EpgWeekMainView && ((EpgWeekMainView)tabItem1.Content).HasService(onid, tsid, sid)))
+                if (tabItem1.Content is EpgListMainView)
                 {
-                    tabItem1.IsSelected = true;
-                    break;
+                    var epgView = (EpgListMainView)tabItem1.Content;
+                    if (epgView.HasService(onid, tsid, sid))
+                    {
+                        tabItem1.IsSelected = true;
+                        break;
+                    }
+                }
+                else if (tabItem1.Content is EpgMainView)
+                {
+                    var epgView = (EpgMainView)tabItem1.Content;
+                    if (epgView.HasService(onid, tsid, sid))
+                    {
+                        tabItem1.IsSelected = true;
+                        epgView.ScrollTo(target);
+                        break;
+                    }
+                }
+                else if (tabItem1.Content is EpgWeekMainView)
+                {
+                    var epgView = (EpgWeekMainView)tabItem1.Content;
+                    if (epgView.HasService(onid, tsid, sid))
+                    {
+                        tabItem1.IsSelected = true;
+                        epgView.ScrollTo(target);
+                        break;
+                    }
                 }
             }
         }
 
-        private void item_ViewModeChangeRequested(object sender, CustomEpgTabInfo info)
+        private void item_ViewModeChangeRequested(object sender, CustomEpgTabInfo info, object scrollToTarget)
         {
             foreach (TabItem tabItem in tabControl.Items)
             {
@@ -318,6 +346,7 @@ namespace EpgTimer
                         epgView.SetViewMode(info);
                         epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
+                        epgView.ScrollTo(scrollToTarget);
                     }
                     else if (info.ViewMode == 2)
                     {
@@ -334,6 +363,7 @@ namespace EpgTimer
                         epgView.SetViewMode(info);
                         epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
+                        epgView.ScrollTo(scrollToTarget);
                     }
                     break;
                 }

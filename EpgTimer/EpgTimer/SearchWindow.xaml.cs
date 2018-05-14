@@ -439,20 +439,16 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.F:
-                        new BlackoutWindow(this).showWindow(this.button_search.Content.ToString());
                         this.button_search.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.S:
-                        new BlackoutWindow(this).showWindow(this.button_add_reserve.Content.ToString());
                         this.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.A:
-                        new BlackoutWindow(this).showWindow(this.button_add_epgAutoAdd.Content.ToString());
                         this.button_add_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         this.Close();
                         break;
                     case Key.C:
-                        new BlackoutWindow(this).showWindow(this.button_chg_epgAutoAdd.Content.ToString());
                         this.button_chg_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         this.Close();
                         break;
@@ -610,11 +606,10 @@ namespace EpgTimer
             SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
             if (item1 != null)
             {
-                BlackoutWindow.selectedEventInfo = item1.EventInfo;
                 MainWindow mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
                 {
-                    if (BlackoutWindow.unvisibleSearchWindow != null)
+                    if (mainWindow1.OwnedWindows.OfType<SearchWindow>().Count() > 1)
                     {
                         // 非表示で保存するSearchWindowを1つに限定するため
                         this.Close();
@@ -623,11 +618,8 @@ namespace EpgTimer
                     {
                         this.Hide();
                         mainWindow1.EmphasizeSearchButton(true);
-                        BlackoutWindow.unvisibleSearchWindow = this;
                     }
-                    mainWindow1.moveTo_tabItem_epg();
-                    mainWindow1.Hide(); // EpgDataView.UserControl_IsVisibleChangedイベントを発生させる
-                    mainWindow1.Show();
+                    mainWindow1.SearchJumpTargetProgram(item1.EventInfo);
                 }
             }
         }
@@ -637,10 +629,9 @@ namespace EpgTimer
             MainWindow mainWindow1 = this.Owner as MainWindow;
             if (this.IsVisible)
             {
-                if (BlackoutWindow.unvisibleSearchWindow == this)
+                if (mainWindow1.OwnedWindows.OfType<SearchWindow>().Count() <= 1)
                 {
                     mainWindow1.EmphasizeSearchButton(false);
-                    BlackoutWindow.unvisibleSearchWindow = null;
                 }
             }
         }

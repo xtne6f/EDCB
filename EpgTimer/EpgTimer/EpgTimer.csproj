@@ -80,9 +80,6 @@
     <Compile Include="AutoAddView.xaml.cs">
       <DependentUpon>AutoAddView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="BlackoutWindow.xaml.cs">
-      <DependentUpon>BlackoutWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Common\CtrlCmd.cs" />
     <Compile Include="Common\CtrlCmdDef.cs" />
     <Compile Include="ConnectWindow.xaml.cs">
@@ -211,10 +208,6 @@
     <Page Include="AutoAddView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="BlackoutWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
     </Page>
     <Page Include="ConnectWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

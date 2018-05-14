@@ -560,8 +560,7 @@ namespace EpgTimer
             ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
             if (item1 != null)
             {
-                BlackoutWindow.selectedReserve = item1.ReserveInfo;
-                ((MainWindow)Application.Current.MainWindow).moveTo_tabItem_epg();
+                ((MainWindow)Application.Current.MainWindow).SearchJumpTargetProgram(item1.ReserveInfo);
             }
         }
 

@@ -380,11 +380,9 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.C:
-                        new BlackoutWindow(this).showWindow(this.button_chg_reserve.Content.ToString());
                         this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.D:
-                        new BlackoutWindow(this).showWindow(this.button_del_reserve.Content.ToString());
                         this.button_del_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         break;
                 }

@@ -23,7 +23,8 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo> ViewModeChangeRequested;
+        public event Action<object, CustomEpgTabInfo, object> ViewModeChangeRequested;
+        private object scrollToTarget;
 
         private CustomEpgTabInfo setViewInfo = null;
 
@@ -848,7 +849,7 @@ namespace EpgTimer
                     }
                     else if (ViewModeChangeRequested != null)
                     {
-                        ViewModeChangeRequested(this, setInfo);
+                        ViewModeChangeRequested(this, setInfo, null);
                     }
                 }
             }
@@ -873,15 +874,7 @@ namespace EpgTimer
                     CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     setInfo.ViewMode = (int)item.DataContext;
                     ProgramViewItem program = GetProgramItem(clickPos);
-                    if (program != null)
-                    {
-                        BlackoutWindow.selectedEventInfo = program.EventInfo;
-                    }
-                    else
-                    {
-                        BlackoutWindow.selectedEventInfo = null;
-                    }
-                    ViewModeChangeRequested(this, setInfo);
+                    ViewModeChangeRequested(this, setInfo, (program != null ? program.EventInfo : null));
                 }
             }
             catch (Exception ex)
@@ -1614,31 +1607,45 @@ namespace EpgTimer
                 ReloadReserveViewItem();
                 updateReserveData = false;
             }
-            //
-            if (BlackoutWindow.selectedReserve != null)
+            if (scrollToTarget != null)
+            {
+                ScrollTo(scrollToTarget);
+            }
+        }
+
+        public void ScrollTo(object target)
+        {
+            scrollToTarget = null;
+            if (IsVisible == false)
+            {
+                //Visibleになるまですこし待つ
+                scrollToTarget = target;
+                Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() => scrollToTarget = null));
+                return;
+            }
+            if (target is ReserveData)
             {
                 foreach (ReserveViewItem reserveViewItem1 in this.reserveList)
                 {
-                    if (reserveViewItem1.ReserveInfo.ReserveID == BlackoutWindow.selectedReserve.ReserveID)
+                    if (reserveViewItem1.ReserveInfo.ReserveID == ((ReserveData)target).ReserveID)
                     {
                         this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(reserveViewItem1.LeftPos - 100);
                         this.epgProgramView.scrollViewer.ScrollToVerticalOffset(reserveViewItem1.TopPos - 100);
                         break;
                     }
                 }
-                BlackoutWindow.selectedReserve = null;
             }
-            else if (BlackoutWindow.selectedEventInfo != null)
+            else if (target is EpgEventInfo)
             {
                 for (int i = 0; i < this.timeList.Count; i++)
                 {
                     foreach (ProgramViewItem item in this.timeList.Values[i])
                     {
                         if (item.Past == false &&
-                            item.EventInfo.event_id == BlackoutWindow.selectedEventInfo.event_id &&
-                            item.EventInfo.original_network_id == BlackoutWindow.selectedEventInfo.original_network_id &&
-                            item.EventInfo.service_id == BlackoutWindow.selectedEventInfo.service_id &&
-                            item.EventInfo.transport_stream_id == BlackoutWindow.selectedEventInfo.transport_stream_id)
+                            item.EventInfo.event_id == ((EpgEventInfo)target).event_id &&
+                            item.EventInfo.original_network_id == ((EpgEventInfo)target).original_network_id &&
+                            item.EventInfo.service_id == ((EpgEventInfo)target).service_id &&
+                            item.EventInfo.transport_stream_id == ((EpgEventInfo)target).transport_stream_id)
                         {
                             this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(item.LeftPos - 100);
                             this.epgProgramView.scrollViewer.ScrollToVerticalOffset(item.TopPos - 100);
@@ -1647,7 +1654,6 @@ namespace EpgTimer
                         }
                     }
                 }
-                BlackoutWindow.selectedEventInfo = null;
             }
         }
     }
