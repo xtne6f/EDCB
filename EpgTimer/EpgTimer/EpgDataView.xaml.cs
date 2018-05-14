@@ -46,20 +46,20 @@ namespace EpgTimer
         /// </summary>
         public void RefreshReserve()
         {
-            try
+            foreach (TabItem item in tabControl.Items)
             {
-                foreach (TabItem item in tabControl.Items)
+                if (item.Content is EpgListMainView)
                 {
-                    if (item.Content.GetType() == typeof(EpgDataViewItem))
-                    {
-                        EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.RefreshReserve();
-                    }
+                    ((EpgListMainView)item.Content).RefreshReserve();
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                else if (item.Content is EpgMainView)
+                {
+                    ((EpgMainView)item.Content).RefreshReserve();
+                }
+                else if (item.Content is EpgWeekMainView)
+                {
+                    ((EpgWeekMainView)item.Content).RefreshReserve();
+                }
             }
         }
 
@@ -68,25 +68,27 @@ namespace EpgTimer
         /// </summary>
         public void UpdateSetting()
         {
-            try
             {
                 //まず表示中のタブのデータをクリア
                 foreach (TabItem item in tabControl.Items)
                 {
-                    if (item.Content.GetType() == typeof(EpgDataViewItem))
+                    if (item.Content is EpgListMainView)
                     {
-                        EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.ClearInfo();
+                        ((EpgListMainView)item.Content).ClearInfo();
+                    }
+                    else if (item.Content is EpgMainView)
+                    {
+                        ((EpgMainView)item.Content).ClearInfo();
+                    }
+                    else if (item.Content is EpgWeekMainView)
+                    {
+                        ((EpgWeekMainView)item.Content).ClearInfo();
                     }
                 }
                 //タブの削除
                 tabControl.Items.Clear();
 
                 UpdateEpgData();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -95,10 +97,11 @@ namespace EpgTimer
         /// </summary>
         private bool CreateTabItem()
         {
-            try
             {
+                List<CustomEpgTabInfo> defaultList = null;
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
+                    defaultList = new List<CustomEpgTabInfo>();
                     if (CommonManager.Instance.NWMode == true)
                     {
                         if (CommonManager.Instance.NW.IsConnected == false)
@@ -159,44 +162,44 @@ namespace EpgTimer
                         }
                         if (setInfo != null)
                         {
-                            EpgDataViewItem epgView = new EpgDataViewItem();
-                            epgView.SetViewMode(setInfo);
-                            TabItem tabItem = new TabItem();
-                            tabItem.Header = setInfo.TabName;
-                            tabItem.Content = epgView;
-                            tabControl.Items.Add(tabItem);
+                            defaultList.Add(setInfo);
                         }
                     }
-                    if (tabControl.Items.Count > 0)
-                    {
-                        tabControl.SelectedIndex = 0;
-                    }
                 }
-                else
+                foreach (CustomEpgTabInfo info in defaultList ?? Settings.Instance.CustomEpgTabList)
                 {
-                    //カスタム表示
-                    foreach (CustomEpgTabInfo info in Settings.Instance.CustomEpgTabList)
+                    var tabItem = new TabItem();
+                    tabItem.Header = info.TabName;
+                    if (info.ViewMode == 1)
                     {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
+                        //1週間表示
+                        var epgView = new EpgWeekMainView();
                         epgView.SetViewMode(info);
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = info.TabName;
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
                     }
-                    if (tabControl.Items.Count > 0)
+                    else if (info.ViewMode == 2)
                     {
-                        tabControl.SelectedIndex = 0;
+                        //リスト表示
+                        var epgView = new EpgListMainView();
+                        epgView.SetViewMode(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
                     }
+                    else
+                    {
+                        //標準ラテ欄表示
+                        var epgView = new EpgMainView();
+                        epgView.SetViewMode(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
+                    }
+                    tabControl.Items.Add(tabItem);
                 }
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
+                if (tabControl.Items.Count > 0)
                 {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-
+                    tabControl.SelectedIndex = 0;
+                }
             }
             return true;
         }
@@ -207,7 +210,6 @@ namespace EpgTimer
         private bool ReDrawEpgData()
         {
             bool ret = true;
-            try
             {
                 if (tabControl.Items.Count == 0)
                 {
@@ -216,23 +218,22 @@ namespace EpgTimer
                 }
                 else
                 {
-                    //まず表示中のタブのデータをクリア
                     foreach (TabItem item in tabControl.Items)
                     {
-                        if (item.Content.GetType() == typeof(EpgDataViewItem))
+                        if (item.Content is EpgListMainView)
                         {
-                            EpgDataViewItem view = item.Content as EpgDataViewItem;
-                            view.UpdateEpgData();
+                            ((EpgListMainView)item.Content).UpdateEpgData();
+                        }
+                        else if (item.Content is EpgMainView)
+                        {
+                            ((EpgMainView)item.Content).UpdateEpgData();
+                        }
+                        else if (item.Content is EpgWeekMainView)
+                        {
+                            ((EpgWeekMainView)item.Content).UpdateEpgData();
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
             }
             return ret;
         }
@@ -264,27 +265,77 @@ namespace EpgTimer
         /// </summary>
         void searchJumpTargetProgram()
         {
-            UInt64 serviceKey_Target1 = 0;
+            ushort onid = 0;
+            ushort tsid = 0;
+            ushort sid = 0;
             if (BlackoutWindow.selectedReserve != null)
             {
-                ReserveData reserveData1 = BlackoutWindow.selectedReserve;
-                serviceKey_Target1 = CommonManager.Create64Key(reserveData1.OriginalNetworkID, reserveData1.TransportStreamID, reserveData1.ServiceID);
+                onid = BlackoutWindow.selectedReserve.OriginalNetworkID;
+                tsid = BlackoutWindow.selectedReserve.TransportStreamID;
+                sid = BlackoutWindow.selectedReserve.ServiceID;
             }
             else if (BlackoutWindow.selectedEventInfo != null)
             {
-                EpgEventInfo eventInfo1 = BlackoutWindow.selectedEventInfo;
-                serviceKey_Target1 = CommonManager.Create64Key(eventInfo1.original_network_id, eventInfo1.transport_stream_id, eventInfo1.service_id);
+                onid = BlackoutWindow.selectedEventInfo.original_network_id;
+                tsid = BlackoutWindow.selectedEventInfo.transport_stream_id;
+                sid = BlackoutWindow.selectedEventInfo.service_id;
             }
             foreach (TabItem tabItem1 in this.tabControl.Items)
             {
-                EpgDataViewItem epgView1 = tabItem1.Content as EpgDataViewItem;
-                foreach (UInt64 serviceKey_OnTab1 in epgView1.ViewInfo.ViewServiceList)
+                if ((tabItem1.Content is EpgListMainView && ((EpgListMainView)tabItem1.Content).HasService(onid, tsid, sid)) ||
+                    (tabItem1.Content is EpgMainView && ((EpgMainView)tabItem1.Content).HasService(onid, tsid, sid)) ||
+                    (tabItem1.Content is EpgWeekMainView && ((EpgWeekMainView)tabItem1.Content).HasService(onid, tsid, sid)))
                 {
-                    if (serviceKey_Target1 == serviceKey_OnTab1)
+                    tabItem1.IsSelected = true;
+                    break;
+                }
+            }
+        }
+
+        private void item_ViewModeChangeRequested(object sender, CustomEpgTabInfo info)
+        {
+            foreach (TabItem tabItem in tabControl.Items)
+            {
+                if (tabItem.Content == sender)
+                {
+                    //情報クリア
+                    if (tabItem.Content is EpgListMainView)
                     {
-                        tabItem1.IsSelected = true;
-                        return;
+                        ((EpgListMainView)tabItem.Content).ClearInfo();
                     }
+                    else if (tabItem.Content is EpgMainView)
+                    {
+                        ((EpgMainView)tabItem.Content).ClearInfo();
+                    }
+                    else if (tabItem.Content is EpgWeekMainView)
+                    {
+                        ((EpgWeekMainView)tabItem.Content).ClearInfo();
+                    }
+                    if (info.ViewMode == 1)
+                    {
+                        //1週間表示
+                        var epgView = new EpgWeekMainView();
+                        epgView.SetViewMode(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
+                    }
+                    else if (info.ViewMode == 2)
+                    {
+                        //リスト表示
+                        var epgView = new EpgListMainView();
+                        epgView.SetViewMode(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
+                    }
+                    else
+                    {
+                        //標準ラテ欄表示
+                        var epgView = new EpgMainView();
+                        epgView.SetViewMode(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
+                    }
+                    break;
                 }
             }
         }

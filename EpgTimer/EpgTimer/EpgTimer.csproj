@@ -152,9 +152,6 @@
     <Compile Include="Common\ColorDefClass.cs" />
     <Compile Include="DefineClass\DateItem.cs" />
     <Compile Include="DefineClass\IEPGStationInfo.cs" />
-    <Compile Include="EpgDataViewItem.xaml.cs">
-      <DependentUpon>EpgDataViewItem.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UserCtrlView\EpgDataViewSetting.xaml.cs">
       <DependentUpon>EpgDataViewSetting.xaml</DependentUpon>
     </Compile>
@@ -280,10 +277,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ChgReserveWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="EpgDataViewItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

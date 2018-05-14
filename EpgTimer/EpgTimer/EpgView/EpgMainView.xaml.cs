@@ -23,7 +23,7 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo> ViewSettingClick;
+        public event Action<object, CustomEpgTabInfo> ViewModeChangeRequested;
 
         private CustomEpgTabInfo setViewInfo = null;
 
@@ -84,6 +84,11 @@ namespace EpgTimer
             reserveList = new List<ReserveViewItem>();
 
             return true;
+        }
+
+        public bool HasService(ushort onid, ushort tsid, ushort sid)
+        {
+            return setViewInfo != null && setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid));
         }
 
         /// <summary>
@@ -824,9 +829,28 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_viewSet_Click(object sender, RoutedEventArgs e)
         {
-            if (ViewSettingClick != null)
+            if (Settings.Instance.UseCustomEpgView == false)
             {
-                ViewSettingClick(this, null);
+                MessageBox.Show("デフォルト表示では設定を変更することはできません。");
+            }
+            else
+            {
+                var dlg = new EpgDataViewSettingWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                dlg.SetDefSetting(setViewInfo);
+                if (dlg.ShowDialog() == true)
+                {
+                    var setInfo = new CustomEpgTabInfo();
+                    dlg.GetSetting(ref setInfo);
+                    if (setInfo.ViewMode == setViewInfo.ViewMode)
+                    {
+                        SetViewMode(setInfo);
+                    }
+                    else if (ViewModeChangeRequested != null)
+                    {
+                        ViewModeChangeRequested(this, setInfo);
+                    }
+                }
             }
         }
 
@@ -843,7 +867,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                if (ViewSettingClick != null)
+                if (ViewModeChangeRequested != null)
                 {
                     MenuItem item = sender as MenuItem;
                     CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
@@ -857,7 +881,7 @@ namespace EpgTimer
                     {
                         BlackoutWindow.selectedEventInfo = null;
                     }
-                    ViewSettingClick(this, setInfo);
+                    ViewModeChangeRequested(this, setInfo);
                 }
             }
             catch (Exception ex)
