@@ -373,23 +373,33 @@ namespace EpgTimer
 
         public static string ReplaceText(string text, Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionary)
         {
-            var ret = new StringBuilder(text.Length);
-            for (int i = 0; i < text.Length; )
+            StringBuilder ret = null;
+            if (replaceDictionary.Count > 0)
             {
-                List<KeyValuePair<string, string>> bucket;
-                if (replaceDictionary.TryGetValue(text[i], out bucket))
+                for (int i = 0; i < text.Length; i++)
                 {
-                    int j = bucket.FindIndex(p => string.Compare(text, i, p.Key, 0, p.Key.Length, StringComparison.Ordinal) == 0);
-                    if (j >= 0)
+                    List<KeyValuePair<string, string>> bucket;
+                    if (replaceDictionary.TryGetValue(text[i], out bucket))
                     {
-                        ret.Append(bucket[j].Value);
-                        i += bucket[j].Key.Length;
-                        continue;
+                        int j = bucket.FindIndex(p => string.CompareOrdinal(text, i, p.Key, 0, p.Key.Length) == 0);
+                        if (j >= 0)
+                        {
+                            if (ret == null)
+                            {
+                                ret = new StringBuilder(text, 0, i, text.Length);
+                            }
+                            ret.Append(bucket[j].Value);
+                            i += bucket[j].Key.Length - 1;
+                            continue;
+                        }
+                    }
+                    if (ret != null)
+                    {
+                        ret.Append(text[i]);
                     }
                 }
-                ret.Append(text[i++]);
             }
-            return ret.ToString();
+            return ret != null ? ret.ToString() : text;
         }
 
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
