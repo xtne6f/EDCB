@@ -20,53 +20,30 @@ namespace EpgTimer
     /// </summary>
     public partial class ManualAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
 
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+        private Dictionary<string, GridViewColumn> columnList;
 
         public ManualAutoAddView()
         {
             InitializeComponent();
-            try
+            columnList = gridView_key.Columns.ToDictionary(info => (string)((GridViewColumnHeader)info.Header).Tag);
+            gridView_key.Columns.Clear();
+            foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
             {
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_key.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
+                if (columnList.ContainsKey(info.Tag))
                 {
                     columnList[info.Tag].Width = info.Width;
                     gridView_key.Columns.Add(columnList[info.Tag]);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.AutoAddManualColumn.Clear();
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.AutoAddManualColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            Settings.Instance.AutoAddManualColumn.Clear();
+            Settings.Instance.AutoAddManualColumn.AddRange(
+                gridView_key.Columns.Select(info => new ListColumnInfo((string)((GridViewColumnHeader)info.Header).Tag, info.Width)));
         }
 
         /// <summary>
@@ -74,22 +51,9 @@ namespace EpgTimer
         /// </summary>
         public void UpdateInfo()
         {
-            if (this.IsVisible == true)
+            ReloadInfo = true;
+            if (IsVisible && ReloadInfoData())
             {
-                ReloadInfoData();
-                ReloadInfo = false;
-            }
-            else
-            {
-                ReloadInfo = true;
-            }
-        }
-        
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfoData();
                 ReloadInfo = false;
             }
         }
@@ -99,41 +63,18 @@ namespace EpgTimer
             try
             {
                 listView_key.DataContext = null;
-                resultList.Clear();
 
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     this.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
                     }), null);
                     return false;
                 }
 
-                foreach (ManualAutoAddData info in CommonManager.Instance.DB.ManualAutoAddList.Values)
-                {
-                    ManualAutoAddDataItem item = new ManualAutoAddDataItem(info);
-                    resultList.Add(item);
-                }
-
-                listView_key.DataContext = resultList;
+                listView_key.DataContext = CommonManager.Instance.DB.ManualAutoAddList.Values.Select(info => new ManualAutoAddDataItem(info)).ToList();
             }
             catch (Exception ex)
             {
@@ -162,7 +103,7 @@ namespace EpgTimer
                 {
                     dataIDList.Add(info.ManualAutoAddInfo.dataID);
                 }
-                cmd.SendDelManualAdd(dataIDList);
+                CommonManager.CreateSrvCtrl().SendDelManualAdd(dataIDList);
             }
         }
 
@@ -209,15 +150,7 @@ namespace EpgTimer
             {
                 foreach (MenuItem item in listView_key.ContextMenu.Items)
                 {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
-                    {
-                        if (info.Tag.CompareTo(item.Name) == 0)
-                        {
-                            item.IsChecked = true;
-                            break;
-                        }
-                    }
+                    item.IsChecked = Settings.Instance.AutoAddManualColumn.Any(info => info.Tag == item.Name);
                 }
 
 
@@ -243,7 +176,7 @@ namespace EpgTimer
                 {
                     foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
                     {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
+                        if (info.Tag == menuItem.Name)
                         {
                             Settings.Instance.AutoAddManualColumn.Remove(info);
                             gridView_key.Columns.Remove(columnList[menuItem.Name]);

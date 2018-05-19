@@ -11,10 +11,6 @@ namespace EpgTimer
 {
     public class ReserveViewItem
     {
-        public ReserveViewItem()
-        {
-            TitleDrawErr = false;
-        }
         public ReserveViewItem(ReserveData info)
         {
             TitleDrawErr = false;
@@ -24,7 +20,7 @@ namespace EpgTimer
         public ReserveData ReserveInfo
         {
             get;
-            set;
+            private set;
         }
         public double Width
         {

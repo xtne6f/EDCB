@@ -20,28 +20,11 @@ namespace EpgTimer
     public partial class EpgDataView : UserControl
     {
         private bool RedrawEpg = true;
+        private object jumpTarget;
 
         public EpgDataView()
         {
             InitializeComponent();
-        }
-
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (RedrawEpg == true && this.IsVisible == true)
-                {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
@@ -49,45 +32,35 @@ namespace EpgTimer
         /// </summary>
         public void UpdateEpgData()
         {
-            try
+            RedrawEpg = true;
+            if (IsVisible || Settings.Instance.NgAutoEpgLoadNW == false)
             {
-                if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
+                if (ReDrawEpgData())
                 {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
+                    RedrawEpg = false;
                 }
-                else
-                {
-                    RedrawEpg = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
         /// <summary>
         /// 予約情報の更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void RefreshReserve()
         {
-            try
+            foreach (TabItem item in tabControl.Items)
             {
-                foreach (TabItem item in tabControl.Items)
+                if (item.Content is EpgListMainView)
                 {
-                    if (item.Content.GetType() == typeof(EpgDataViewItem))
-                    {
-                        EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.UpdateReserveData();
-                    }
+                    ((EpgListMainView)item.Content).RefreshReserve();
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                else if (item.Content is EpgMainView)
+                {
+                    ((EpgMainView)item.Content).RefreshReserve();
+                }
+                else if (item.Content is EpgWeekMainView)
+                {
+                    ((EpgWeekMainView)item.Content).RefreshReserve();
+                }
             }
         }
 
@@ -96,25 +69,27 @@ namespace EpgTimer
         /// </summary>
         public void UpdateSetting()
         {
-            try
             {
                 //まず表示中のタブのデータをクリア
                 foreach (TabItem item in tabControl.Items)
                 {
-                    if (item.Content.GetType() == typeof(EpgDataViewItem))
+                    if (item.Content is EpgListMainView)
                     {
-                        EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.ClearInfo();
+                        ((EpgListMainView)item.Content).ClearInfo();
+                    }
+                    else if (item.Content is EpgMainView)
+                    {
+                        ((EpgMainView)item.Content).ClearInfo();
+                    }
+                    else if (item.Content is EpgWeekMainView)
+                    {
+                        ((EpgWeekMainView)item.Content).ClearInfo();
                     }
                 }
                 //タブの削除
                 tabControl.Items.Clear();
 
-                ReDrawEpgData();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                UpdateEpgData();
             }
         }
 
@@ -123,51 +98,26 @@ namespace EpgTimer
         /// </summary>
         private bool CreateTabItem()
         {
-            try
             {
+                List<CustomEpgTabInfo> defaultList = null;
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
-                    if (CommonManager.Instance.NWMode == true)
+                    defaultList = new List<CustomEpgTabInfo>();
+                    if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
                     {
-                        if (CommonManager.Instance.NW.IsConnected == false)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                        }), null);
-                        return false;
-                    }
-                    if (err == ErrCode.CMD_ERR_BUSY)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
-                        }), null);
-                        return false;
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                        }), null);
-                        return false;
-                    }
                     if (err != ErrCode.CMD_SUCCESS)
                     {
                         this.Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
+                            MessageBox.Show(CommonManager.GetErrCodeText(err) ??
+                                (err == ErrCode.CMD_ERR_BUSY ? "EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）" :
+                                                               "EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。"));
                         }), null);
                         return false;
                     }
-                    CommonManager.Instance.DB.ReloadReserveInfo();
 
                     //デフォルト表示
                     for (int i = 0; i < 4; i++)
@@ -210,95 +160,43 @@ namespace EpgTimer
                         }
                         if (setInfo != null)
                         {
-                            EpgDataViewItem epgView = new EpgDataViewItem();
-                            epgView.SetViewMode(setInfo);
-                            epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-                            TabItem tabItem = new TabItem();
-                            tabItem.Header = setInfo.TabName;
-                            tabItem.Content = epgView;
-                            tabControl.Items.Add(tabItem);
+                            defaultList.Add(setInfo);
                         }
                     }
-                    if (tabControl.Items.Count > 0)
-                    {
-                        tabControl.SelectedIndex = 0;
-                    }
                 }
-                else
+                foreach (CustomEpgTabInfo info in defaultList ?? Settings.Instance.CustomEpgTabList)
                 {
-                    //カスタム表示
-                    foreach (CustomEpgTabInfo info in Settings.Instance.CustomEpgTabList)
+                    var tabItem = new TabItem();
+                    tabItem.Header = info.TabName;
+                    if (info.ViewMode == 1)
                     {
-                        EpgDataViewItem epgView = new EpgDataViewItem();
-                        epgView.SetViewMode(info);
-                        epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
-
-                        TabItem tabItem = new TabItem();
-                        tabItem.Header = info.TabName;
+                        //1週間表示
+                        var epgView = new EpgWeekMainView(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
                         tabItem.Content = epgView;
-                        tabControl.Items.Add(tabItem);
                     }
-                    if (tabControl.Items.Count > 0)
+                    else if (info.ViewMode == 2)
                     {
-                        tabControl.SelectedIndex = 0;
+                        //リスト表示
+                        var epgView = new EpgListMainView(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
                     }
+                    else
+                    {
+                        //標準ラテ欄表示
+                        var epgView = new EpgMainView(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
+                    }
+                    tabControl.Items.Add(tabItem);
                 }
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
+                if (tabControl.Items.Count > 0)
                 {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-
+                    tabControl.SelectedIndex = 0;
+                }
             }
             return true;
-        }
-
-        void epgView_ViewSettingClick(object sender, object param)
-        {
-            try
-            {
-                if (Settings.Instance.UseCustomEpgView == false)
-                {
-                    MessageBox.Show("デフォルト表示では設定を変更することはできません。");
-                }
-                else
-                {
-                    if (sender.GetType() == typeof(EpgDataViewItem))
-                    {
-                        if (param == null)
-                        {
-                            EpgDataViewItem item = sender as EpgDataViewItem;
-                            CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-                            item.GetViewMode(ref setInfo);
-
-                            EpgDataViewSettingWindow dlg = new EpgDataViewSettingWindow();
-                            PresentationSource topWindow = PresentationSource.FromVisual(this);
-                            if (topWindow != null)
-                            {
-                                dlg.Owner = (Window)topWindow.RootVisual;
-                            }
-                            dlg.SetDefSetting(setInfo);
-                            if (dlg.ShowDialog() == true)
-                            {
-                                dlg.GetSetting(ref setInfo);
-                                item.SetViewMode(setInfo);
-                            }
-                        }
-                        else
-                        {
-                            EpgDataViewItem item = sender as EpgDataViewItem;
-                            CustomEpgTabInfo setInfo = param as CustomEpgTabInfo;
-                            item.SetViewMode(setInfo);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
@@ -307,84 +205,158 @@ namespace EpgTimer
         private bool ReDrawEpgData()
         {
             bool ret = true;
-            try
             {
                 if (tabControl.Items.Count == 0)
                 {
                     //タブの生成
                     ret = CreateTabItem();
                 }
-                else
+                if (ret)
                 {
-                    //まず表示中のタブのデータをクリア
                     foreach (TabItem item in tabControl.Items)
                     {
-                        if (item.Content.GetType() == typeof(EpgDataViewItem))
+                        if (item.Content is EpgListMainView)
                         {
-                            EpgDataViewItem view = item.Content as EpgDataViewItem;
-                            view.UpdateEpgData();
+                            ((EpgListMainView)item.Content).UpdateEpgData();
+                        }
+                        else if (item.Content is EpgMainView)
+                        {
+                            ((EpgMainView)item.Content).UpdateEpgData();
+                        }
+                        else if (item.Content is EpgWeekMainView)
+                        {
+                            ((EpgWeekMainView)item.Content).UpdateEpgData();
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
             }
             return ret;
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            try
+            if (IsVisible)
             {
-                if (RedrawEpg == true && this.IsVisible == true)
+                if (RedrawEpg)
                 {
                     if (ReDrawEpgData() == true)
                     {
                         RedrawEpg = false;
                     }
                 }
-                if (this.IsVisible)
+                if (jumpTarget != null)
                 {
-                    this.searchJumpTargetProgram();
+                    SearchJumpTargetProgram(jumpTarget);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
         /// <summary>
-        /// 予約一覧からのジャンプ先を番組表タブから探す
+        /// 予約または番組へジャンプする
         /// </summary>
-        void searchJumpTargetProgram()
+        public void SearchJumpTargetProgram(object target)
         {
-            UInt64 serviceKey_Target1 = 0;
-            if (BlackoutWindow.selectedReserveItem != null)
+            jumpTarget = null;
+            if (IsVisible == false)
             {
-                ReserveData reserveData1 = BlackoutWindow.selectedReserveItem.ReserveInfo;
-                serviceKey_Target1 = CommonManager.Create64Key(reserveData1.OriginalNetworkID, reserveData1.TransportStreamID, reserveData1.ServiceID);
+                //Visibleになるまですこし待つ
+                jumpTarget = target;
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, new Action(() => jumpTarget = null));
+                return;
             }
-            else if (BlackoutWindow.selectedSearchItem != null)
+            ushort onid = 0;
+            ushort tsid = 0;
+            ushort sid = 0;
+            //TODO: 難易度上がるがEventIDも見るべき
+            if (target is ReserveData)
             {
-                EpgEventInfo eventInfo1 = BlackoutWindow.selectedSearchItem.EventInfo;
-                serviceKey_Target1 = CommonManager.Create64Key(eventInfo1.original_network_id, eventInfo1.transport_stream_id, eventInfo1.service_id);
+                onid = ((ReserveData)target).OriginalNetworkID;
+                tsid = ((ReserveData)target).TransportStreamID;
+                sid = ((ReserveData)target).ServiceID;
+            }
+            else if (target is EpgEventInfo)
+            {
+                onid = ((EpgEventInfo)target).original_network_id;
+                tsid = ((EpgEventInfo)target).transport_stream_id;
+                sid = ((EpgEventInfo)target).service_id;
             }
             foreach (TabItem tabItem1 in this.tabControl.Items)
             {
-                EpgDataViewItem epgView1 = tabItem1.Content as EpgDataViewItem;
-                foreach (UInt64 serviceKey_OnTab1 in epgView1.ViewInfo.ViewServiceList)
+                if (tabItem1.Content is EpgListMainView)
                 {
-                    if (serviceKey_Target1 == serviceKey_OnTab1)
+                    var epgView = (EpgListMainView)tabItem1.Content;
+                    if (epgView.HasService(onid, tsid, sid))
                     {
                         tabItem1.IsSelected = true;
-                        return;
+                        break;
                     }
+                }
+                else if (tabItem1.Content is EpgMainView)
+                {
+                    var epgView = (EpgMainView)tabItem1.Content;
+                    if (epgView.HasService(onid, tsid, sid))
+                    {
+                        tabItem1.IsSelected = true;
+                        epgView.ScrollTo(target);
+                        break;
+                    }
+                }
+                else if (tabItem1.Content is EpgWeekMainView)
+                {
+                    var epgView = (EpgWeekMainView)tabItem1.Content;
+                    if (epgView.HasService(onid, tsid, sid))
+                    {
+                        tabItem1.IsSelected = true;
+                        epgView.ScrollTo(target);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void item_ViewModeChangeRequested(object sender, CustomEpgTabInfo info, object scrollToTarget)
+        {
+            foreach (TabItem tabItem in tabControl.Items)
+            {
+                if (tabItem.Content == sender)
+                {
+                    //情報クリア
+                    if (tabItem.Content is EpgListMainView)
+                    {
+                        ((EpgListMainView)tabItem.Content).ClearInfo();
+                    }
+                    else if (tabItem.Content is EpgMainView)
+                    {
+                        ((EpgMainView)tabItem.Content).ClearInfo();
+                    }
+                    else if (tabItem.Content is EpgWeekMainView)
+                    {
+                        ((EpgWeekMainView)tabItem.Content).ClearInfo();
+                    }
+                    if (info.ViewMode == 1)
+                    {
+                        //1週間表示
+                        var epgView = new EpgWeekMainView(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
+                        epgView.ScrollTo(scrollToTarget);
+                    }
+                    else if (info.ViewMode == 2)
+                    {
+                        //リスト表示
+                        var epgView = new EpgListMainView(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
+                    }
+                    else
+                    {
+                        //標準ラテ欄表示
+                        var epgView = new EpgMainView(info);
+                        epgView.ViewModeChangeRequested += item_ViewModeChangeRequested;
+                        tabItem.Content = epgView;
+                        epgView.ScrollTo(scrollToTarget);
+                    }
+                    break;
                 }
             }
         }

@@ -11,31 +11,10 @@ namespace EpgTimer
 {
     class CommonManager
     {
-        public CtrlCmdUtil CtrlCmd
-        {
-            get;
-            set;
-        }
-        public DBManager DB
-        {
-            get;
-            set;
-        }
-        public TVTestCtrlClass TVTestCtrl
-        {
-            get;
-            set;
-        }
-        public System.Diagnostics.Process SrvSettingProcess
-        {
-            get;
-            set;
-        }
-        public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary
-        {
-            get;
-            set;
-        }
+        public DBManager DB { get; private set; }
+        public TVTestCtrlClass TVTestCtrl { get; private set; }
+        public System.Diagnostics.Process SrvSettingProcess { get; set; }
+        public IDictionary<ushort, ContentKindInfo> ContentKindDictionary { get; private set; }
         public IEnumerable<ContentKindInfo> ContentKindList
         {
             get
@@ -44,56 +23,19 @@ namespace EpgTimer
                 return ContentKindDictionary.Values.OrderBy(info => (info.Nibble1 == 0x0F ? 0xF0 : info.Nibble1) << 8 | (info.Nibble2 + 1) & 0xFF);
             }
         }
-        public Dictionary<UInt16, string> ComponentKindDictionary
-        {
-            get;
-            set;
-        }
-        public string[] DayOfWeekArray
-        {
-            get;
-            set;
-        }
-        public bool NWMode
-        {
-            get;
-            set;
-        }
-        public List<NotifySrvInfo> NotifyLogList
-        {
-            get;
-            set;
-        }
-        public NWConnect NW
-        {
-            get;
-            set;
-        }
-        public List<Brush> CustContentColorList
-        {
-            get;
-            set;
-        }
-        public SolidColorBrush CustTitle1Color
-        {
-            get;
-            set;
-        }
-        public SolidColorBrush CustTitle2Color
-        {
-            get;
-            set;
-        }
-        public List<Brush> CustTimeColorList
-        {
-            get;
-            set;
-        }
-        public Brush CustServiceColor
-        {
-            get;
-            set;
-        }
+        public IDictionary<ushort, string> ComponentKindDictionary { get; private set; }
+        public string[] DayOfWeekArray { get; private set; }
+        public string[] RecModeList { get; private set; }
+        public bool NWMode { get; set; }
+        public List<NotifySrvInfo> NotifyLogList { get; private set; }
+        public System.Net.IPAddress NWConnectedIP { get; set; }
+        public uint NWConnectedPort { get; set; }
+        public List<Brush> CustContentColorList { get; private set; }
+        public SolidColorBrush CustTitle1Color { get; private set; }
+        public SolidColorBrush CustTitle2Color { get; private set; }
+        public List<Brush> CustTimeColorList { get; private set; }
+        public Brush CustServiceColor { get; private set; }
+        public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceUrlDictionary { get; private set; }
 
         private static CommonManager _instance;
         public static CommonManager Instance
@@ -104,191 +46,190 @@ namespace EpgTimer
                     _instance = new CommonManager();
                 return _instance;
             }
-            set { _instance = value; }
         }
 
         public CommonManager()
         {
-            CtrlCmd = new CtrlCmdUtil();
-            DB = new DBManager(CtrlCmd);
-            TVTestCtrl = new TVTestCtrlClass(CtrlCmd);
-            NW = new NWConnect(CtrlCmd);
+            DB = new DBManager();
+            TVTestCtrl = new TVTestCtrlClass();
+
+            ContentKindDictionary = new SortedList<ushort, ContentKindInfo>(155)
             {
-                ContentKindDictionary = new Dictionary<UInt16, ContentKindInfo>();
-                ContentKindDictionary.Add(0x00FF, new ContentKindInfo("ニュース／報道", "", 0x00, 0xFF));
-                ContentKindDictionary.Add(0x0000, new ContentKindInfo("ニュース／報道", "定時・総合", 0x00, 0x00));
-                ContentKindDictionary.Add(0x0001, new ContentKindInfo("ニュース／報道", "天気", 0x00, 0x01));
-                ContentKindDictionary.Add(0x0002, new ContentKindInfo("ニュース／報道", "特集・ドキュメント", 0x00, 0x02));
-                ContentKindDictionary.Add(0x0003, new ContentKindInfo("ニュース／報道", "政治・国会", 0x00, 0x03));
-                ContentKindDictionary.Add(0x0004, new ContentKindInfo("ニュース／報道", "経済・市況", 0x00, 0x04));
-                ContentKindDictionary.Add(0x0005, new ContentKindInfo("ニュース／報道", "海外・国際", 0x00, 0x05));
-                ContentKindDictionary.Add(0x0006, new ContentKindInfo("ニュース／報道", "解説", 0x00, 0x06));
-                ContentKindDictionary.Add(0x0007, new ContentKindInfo("ニュース／報道", "討論・会談", 0x00, 0x07));
-                ContentKindDictionary.Add(0x0008, new ContentKindInfo("ニュース／報道", "報道特番", 0x00, 0x08));
-                ContentKindDictionary.Add(0x0009, new ContentKindInfo("ニュース／報道", "ローカル・地域", 0x00, 0x09));
-                ContentKindDictionary.Add(0x000A, new ContentKindInfo("ニュース／報道", "交通", 0x00, 0x0A));
-                ContentKindDictionary.Add(0x000F, new ContentKindInfo("ニュース／報道", "その他", 0x00, 0x0F));
+                { 0x0000, new ContentKindInfo("ニュース／報道", "定時・総合", 0x00, 0x00) },
+                { 0x0001, new ContentKindInfo("ニュース／報道", "天気", 0x00, 0x01) },
+                { 0x0002, new ContentKindInfo("ニュース／報道", "特集・ドキュメント", 0x00, 0x02) },
+                { 0x0003, new ContentKindInfo("ニュース／報道", "政治・国会", 0x00, 0x03) },
+                { 0x0004, new ContentKindInfo("ニュース／報道", "経済・市況", 0x00, 0x04) },
+                { 0x0005, new ContentKindInfo("ニュース／報道", "海外・国際", 0x00, 0x05) },
+                { 0x0006, new ContentKindInfo("ニュース／報道", "解説", 0x00, 0x06) },
+                { 0x0007, new ContentKindInfo("ニュース／報道", "討論・会談", 0x00, 0x07) },
+                { 0x0008, new ContentKindInfo("ニュース／報道", "報道特番", 0x00, 0x08) },
+                { 0x0009, new ContentKindInfo("ニュース／報道", "ローカル・地域", 0x00, 0x09) },
+                { 0x000A, new ContentKindInfo("ニュース／報道", "交通", 0x00, 0x0A) },
+                { 0x000F, new ContentKindInfo("ニュース／報道", "その他", 0x00, 0x0F) },
+                { 0x00FF, new ContentKindInfo("ニュース／報道", "", 0x00, 0xFF) },
 
-                ContentKindDictionary.Add(0x01FF, new ContentKindInfo("スポーツ", "", 0x01, 0xFF));
-                ContentKindDictionary.Add(0x0100, new ContentKindInfo("スポーツ", "スポーツニュース", 0x01, 0x00));
-                ContentKindDictionary.Add(0x0101, new ContentKindInfo("スポーツ", "野球", 0x01, 0x01));
-                ContentKindDictionary.Add(0x0102, new ContentKindInfo("スポーツ", "サッカー", 0x01, 0x02));
-                ContentKindDictionary.Add(0x0103, new ContentKindInfo("スポーツ", "ゴルフ", 0x01, 0x03));
-                ContentKindDictionary.Add(0x0104, new ContentKindInfo("スポーツ", "その他の球技", 0x01, 0x04));
-                ContentKindDictionary.Add(0x0105, new ContentKindInfo("スポーツ", "相撲・格闘技", 0x01, 0x05));
-                ContentKindDictionary.Add(0x0106, new ContentKindInfo("スポーツ", "オリンピック・国際大会", 0x01, 0x06));
-                ContentKindDictionary.Add(0x0107, new ContentKindInfo("スポーツ", "マラソン・陸上・水泳", 0x01, 0x07));
-                ContentKindDictionary.Add(0x0108, new ContentKindInfo("スポーツ", "モータースポーツ", 0x01, 0x08));
-                ContentKindDictionary.Add(0x0109, new ContentKindInfo("スポーツ", "マリン・ウィンタースポーツ", 0x01, 0x09));
-                ContentKindDictionary.Add(0x010A, new ContentKindInfo("スポーツ", "競馬・公営競技", 0x01, 0x0A));
-                ContentKindDictionary.Add(0x010F, new ContentKindInfo("スポーツ", "その他", 0x01, 0x0F));
+                { 0x0100, new ContentKindInfo("スポーツ", "スポーツニュース", 0x01, 0x00) },
+                { 0x0101, new ContentKindInfo("スポーツ", "野球", 0x01, 0x01) },
+                { 0x0102, new ContentKindInfo("スポーツ", "サッカー", 0x01, 0x02) },
+                { 0x0103, new ContentKindInfo("スポーツ", "ゴルフ", 0x01, 0x03) },
+                { 0x0104, new ContentKindInfo("スポーツ", "その他の球技", 0x01, 0x04) },
+                { 0x0105, new ContentKindInfo("スポーツ", "相撲・格闘技", 0x01, 0x05) },
+                { 0x0106, new ContentKindInfo("スポーツ", "オリンピック・国際大会", 0x01, 0x06) },
+                { 0x0107, new ContentKindInfo("スポーツ", "マラソン・陸上・水泳", 0x01, 0x07) },
+                { 0x0108, new ContentKindInfo("スポーツ", "モータースポーツ", 0x01, 0x08) },
+                { 0x0109, new ContentKindInfo("スポーツ", "マリン・ウィンタースポーツ", 0x01, 0x09) },
+                { 0x010A, new ContentKindInfo("スポーツ", "競馬・公営競技", 0x01, 0x0A) },
+                { 0x010F, new ContentKindInfo("スポーツ", "その他", 0x01, 0x0F) },
+                { 0x01FF, new ContentKindInfo("スポーツ", "", 0x01, 0xFF) },
 
-                ContentKindDictionary.Add(0x02FF, new ContentKindInfo("情報／ワイドショー", "", 0x02, 0xFF));
-                ContentKindDictionary.Add(0x0200, new ContentKindInfo("情報／ワイドショー", "芸能・ワイドショー", 0x02, 0x00));
-                ContentKindDictionary.Add(0x0201, new ContentKindInfo("情報／ワイドショー", "ファッション", 0x02, 0x01));
-                ContentKindDictionary.Add(0x0202, new ContentKindInfo("情報／ワイドショー", "暮らし・住まい", 0x02, 0x02));
-                ContentKindDictionary.Add(0x0203, new ContentKindInfo("情報／ワイドショー", "健康・医療", 0x02, 0x03));
-                ContentKindDictionary.Add(0x0204, new ContentKindInfo("情報／ワイドショー", "ショッピング・通販", 0x02, 0x04));
-                ContentKindDictionary.Add(0x0205, new ContentKindInfo("情報／ワイドショー", "グルメ・料理", 0x02, 0x05));
-                ContentKindDictionary.Add(0x0206, new ContentKindInfo("情報／ワイドショー", "イベント", 0x02, 0x06));
-                ContentKindDictionary.Add(0x0207, new ContentKindInfo("情報／ワイドショー", "番組紹介・お知らせ", 0x02, 0x07));
-                ContentKindDictionary.Add(0x020F, new ContentKindInfo("情報／ワイドショー", "その他", 0x02, 0x0F));
+                { 0x0200, new ContentKindInfo("情報／ワイドショー", "芸能・ワイドショー", 0x02, 0x00) },
+                { 0x0201, new ContentKindInfo("情報／ワイドショー", "ファッション", 0x02, 0x01) },
+                { 0x0202, new ContentKindInfo("情報／ワイドショー", "暮らし・住まい", 0x02, 0x02) },
+                { 0x0203, new ContentKindInfo("情報／ワイドショー", "健康・医療", 0x02, 0x03) },
+                { 0x0204, new ContentKindInfo("情報／ワイドショー", "ショッピング・通販", 0x02, 0x04) },
+                { 0x0205, new ContentKindInfo("情報／ワイドショー", "グルメ・料理", 0x02, 0x05) },
+                { 0x0206, new ContentKindInfo("情報／ワイドショー", "イベント", 0x02, 0x06) },
+                { 0x0207, new ContentKindInfo("情報／ワイドショー", "番組紹介・お知らせ", 0x02, 0x07) },
+                { 0x020F, new ContentKindInfo("情報／ワイドショー", "その他", 0x02, 0x0F) },
+                { 0x02FF, new ContentKindInfo("情報／ワイドショー", "", 0x02, 0xFF) },
 
-                ContentKindDictionary.Add(0x03FF, new ContentKindInfo("ドラマ", "", 0x03, 0xFF));
-                ContentKindDictionary.Add(0x0300, new ContentKindInfo("ドラマ", "国内ドラマ", 0x03, 0x00));
-                ContentKindDictionary.Add(0x0301, new ContentKindInfo("ドラマ", "海外ドラマ", 0x03, 0x01));
-                ContentKindDictionary.Add(0x0302, new ContentKindInfo("ドラマ", "時代劇", 0x03, 0x02));
-                ContentKindDictionary.Add(0x030F, new ContentKindInfo("ドラマ", "その他", 0x03, 0x0F));
+                { 0x0300, new ContentKindInfo("ドラマ", "国内ドラマ", 0x03, 0x00) },
+                { 0x0301, new ContentKindInfo("ドラマ", "海外ドラマ", 0x03, 0x01) },
+                { 0x0302, new ContentKindInfo("ドラマ", "時代劇", 0x03, 0x02) },
+                { 0x030F, new ContentKindInfo("ドラマ", "その他", 0x03, 0x0F) },
+                { 0x03FF, new ContentKindInfo("ドラマ", "", 0x03, 0xFF) },
 
-                ContentKindDictionary.Add(0x04FF, new ContentKindInfo("音楽", "", 0x04, 0xFF));
-                ContentKindDictionary.Add(0x0400, new ContentKindInfo("音楽", "国内ロック・ポップス", 0x04, 0x00));
-                ContentKindDictionary.Add(0x0401, new ContentKindInfo("音楽", "海外ロック・ポップス", 0x04, 0x01));
-                ContentKindDictionary.Add(0x0402, new ContentKindInfo("音楽", "クラシック・オペラ", 0x04, 0x02));
-                ContentKindDictionary.Add(0x0403, new ContentKindInfo("音楽", "ジャズ・フュージョン", 0x04, 0x03));
-                ContentKindDictionary.Add(0x0404, new ContentKindInfo("音楽", "歌謡曲・演歌", 0x04, 0x04));
-                ContentKindDictionary.Add(0x0405, new ContentKindInfo("音楽", "ライブ・コンサート", 0x04, 0x05));
-                ContentKindDictionary.Add(0x0406, new ContentKindInfo("音楽", "ランキング・リクエスト", 0x04, 0x06));
-                ContentKindDictionary.Add(0x0407, new ContentKindInfo("音楽", "カラオケ・のど自慢", 0x04, 0x07));
-                ContentKindDictionary.Add(0x0408, new ContentKindInfo("音楽", "民謡・邦楽", 0x04, 0x08));
-                ContentKindDictionary.Add(0x0409, new ContentKindInfo("音楽", "童謡・キッズ", 0x04, 0x09));
-                ContentKindDictionary.Add(0x040A, new ContentKindInfo("音楽", "民族音楽・ワールドミュージック", 0x04, 0x0A));
-                ContentKindDictionary.Add(0x040F, new ContentKindInfo("音楽", "その他", 0x04, 0x0F));
+                { 0x0400, new ContentKindInfo("音楽", "国内ロック・ポップス", 0x04, 0x00) },
+                { 0x0401, new ContentKindInfo("音楽", "海外ロック・ポップス", 0x04, 0x01) },
+                { 0x0402, new ContentKindInfo("音楽", "クラシック・オペラ", 0x04, 0x02) },
+                { 0x0403, new ContentKindInfo("音楽", "ジャズ・フュージョン", 0x04, 0x03) },
+                { 0x0404, new ContentKindInfo("音楽", "歌謡曲・演歌", 0x04, 0x04) },
+                { 0x0405, new ContentKindInfo("音楽", "ライブ・コンサート", 0x04, 0x05) },
+                { 0x0406, new ContentKindInfo("音楽", "ランキング・リクエスト", 0x04, 0x06) },
+                { 0x0407, new ContentKindInfo("音楽", "カラオケ・のど自慢", 0x04, 0x07) },
+                { 0x0408, new ContentKindInfo("音楽", "民謡・邦楽", 0x04, 0x08) },
+                { 0x0409, new ContentKindInfo("音楽", "童謡・キッズ", 0x04, 0x09) },
+                { 0x040A, new ContentKindInfo("音楽", "民族音楽・ワールドミュージック", 0x04, 0x0A) },
+                { 0x040F, new ContentKindInfo("音楽", "その他", 0x04, 0x0F) },
+                { 0x04FF, new ContentKindInfo("音楽", "", 0x04, 0xFF) },
 
-                ContentKindDictionary.Add(0x05FF, new ContentKindInfo("バラエティ", "", 0x05, 0xFF));
-                ContentKindDictionary.Add(0x0500, new ContentKindInfo("バラエティ", "クイズ", 0x05, 0x00));
-                ContentKindDictionary.Add(0x0501, new ContentKindInfo("バラエティ", "ゲーム", 0x05, 0x01));
-                ContentKindDictionary.Add(0x0502, new ContentKindInfo("バラエティ", "トークバラエティ", 0x05, 0x02));
-                ContentKindDictionary.Add(0x0503, new ContentKindInfo("バラエティ", "お笑い・コメディ", 0x05, 0x03));
-                ContentKindDictionary.Add(0x0504, new ContentKindInfo("バラエティ", "音楽バラエティ", 0x05, 0x04));
-                ContentKindDictionary.Add(0x0505, new ContentKindInfo("バラエティ", "旅バラエティ", 0x05, 0x05));
-                ContentKindDictionary.Add(0x0506, new ContentKindInfo("バラエティ", "料理バラエティ", 0x05, 0x06));
-                ContentKindDictionary.Add(0x050F, new ContentKindInfo("バラエティ", "その他", 0x05, 0x0F));
+                { 0x0500, new ContentKindInfo("バラエティ", "クイズ", 0x05, 0x00) },
+                { 0x0501, new ContentKindInfo("バラエティ", "ゲーム", 0x05, 0x01) },
+                { 0x0502, new ContentKindInfo("バラエティ", "トークバラエティ", 0x05, 0x02) },
+                { 0x0503, new ContentKindInfo("バラエティ", "お笑い・コメディ", 0x05, 0x03) },
+                { 0x0504, new ContentKindInfo("バラエティ", "音楽バラエティ", 0x05, 0x04) },
+                { 0x0505, new ContentKindInfo("バラエティ", "旅バラエティ", 0x05, 0x05) },
+                { 0x0506, new ContentKindInfo("バラエティ", "料理バラエティ", 0x05, 0x06) },
+                { 0x050F, new ContentKindInfo("バラエティ", "その他", 0x05, 0x0F) },
+                { 0x05FF, new ContentKindInfo("バラエティ", "", 0x05, 0xFF) },
 
-                ContentKindDictionary.Add(0x06FF, new ContentKindInfo("映画", "", 0x06, 0xFF));
-                ContentKindDictionary.Add(0x0600, new ContentKindInfo("映画", "洋画", 0x06, 0x00));
-                ContentKindDictionary.Add(0x0601, new ContentKindInfo("映画", "邦画", 0x06, 0x01));
-                ContentKindDictionary.Add(0x0602, new ContentKindInfo("映画", "アニメ", 0x06, 0x02));
-                ContentKindDictionary.Add(0x060F, new ContentKindInfo("映画", "その他", 0x06, 0x0F));
+                { 0x0600, new ContentKindInfo("映画", "洋画", 0x06, 0x00) },
+                { 0x0601, new ContentKindInfo("映画", "邦画", 0x06, 0x01) },
+                { 0x0602, new ContentKindInfo("映画", "アニメ", 0x06, 0x02) },
+                { 0x060F, new ContentKindInfo("映画", "その他", 0x06, 0x0F) },
+                { 0x06FF, new ContentKindInfo("映画", "", 0x06, 0xFF) },
 
-                ContentKindDictionary.Add(0x07FF, new ContentKindInfo("アニメ／特撮", "", 0x07, 0xFF));
-                ContentKindDictionary.Add(0x0700, new ContentKindInfo("アニメ／特撮", "国内アニメ", 0x07, 0x00));
-                ContentKindDictionary.Add(0x0701, new ContentKindInfo("アニメ／特撮", "海外アニメ", 0x07, 0x01));
-                ContentKindDictionary.Add(0x0702, new ContentKindInfo("アニメ／特撮", "特撮", 0x07, 0x02));
-                ContentKindDictionary.Add(0x070F, new ContentKindInfo("アニメ／特撮", "その他", 0x07, 0x0F));
+                { 0x0700, new ContentKindInfo("アニメ／特撮", "国内アニメ", 0x07, 0x00) },
+                { 0x0701, new ContentKindInfo("アニメ／特撮", "海外アニメ", 0x07, 0x01) },
+                { 0x0702, new ContentKindInfo("アニメ／特撮", "特撮", 0x07, 0x02) },
+                { 0x070F, new ContentKindInfo("アニメ／特撮", "その他", 0x07, 0x0F) },
+                { 0x07FF, new ContentKindInfo("アニメ／特撮", "", 0x07, 0xFF) },
 
-                ContentKindDictionary.Add(0x08FF, new ContentKindInfo("ドキュメンタリー／教養", "", 0x08, 0xFF));
-                ContentKindDictionary.Add(0x0800, new ContentKindInfo("ドキュメンタリー／教養", "社会・時事", 0x08, 0x00));
-                ContentKindDictionary.Add(0x0801, new ContentKindInfo("ドキュメンタリー／教養", "歴史・紀行", 0x08, 0x01));
-                ContentKindDictionary.Add(0x0802, new ContentKindInfo("ドキュメンタリー／教養", "自然・動物・環境", 0x08, 0x02));
-                ContentKindDictionary.Add(0x0803, new ContentKindInfo("ドキュメンタリー／教養", "宇宙・科学・医学", 0x08, 0x03));
-                ContentKindDictionary.Add(0x0804, new ContentKindInfo("ドキュメンタリー／教養", "カルチャー・伝統文化", 0x08, 0x04));
-                ContentKindDictionary.Add(0x0805, new ContentKindInfo("ドキュメンタリー／教養", "文学・文芸", 0x08, 0x05));
-                ContentKindDictionary.Add(0x0806, new ContentKindInfo("ドキュメンタリー／教養", "スポーツ", 0x08, 0x06));
-                ContentKindDictionary.Add(0x0807, new ContentKindInfo("ドキュメンタリー／教養", "ドキュメンタリー全般", 0x08, 0x07));
-                ContentKindDictionary.Add(0x0808, new ContentKindInfo("ドキュメンタリー／教養", "インタビュー・討論", 0x08, 0x08));
-                ContentKindDictionary.Add(0x080F, new ContentKindInfo("ドキュメンタリー／教養", "その他", 0x08, 0x0F));
+                { 0x0800, new ContentKindInfo("ドキュメンタリー／教養", "社会・時事", 0x08, 0x00) },
+                { 0x0801, new ContentKindInfo("ドキュメンタリー／教養", "歴史・紀行", 0x08, 0x01) },
+                { 0x0802, new ContentKindInfo("ドキュメンタリー／教養", "自然・動物・環境", 0x08, 0x02) },
+                { 0x0803, new ContentKindInfo("ドキュメンタリー／教養", "宇宙・科学・医学", 0x08, 0x03) },
+                { 0x0804, new ContentKindInfo("ドキュメンタリー／教養", "カルチャー・伝統文化", 0x08, 0x04) },
+                { 0x0805, new ContentKindInfo("ドキュメンタリー／教養", "文学・文芸", 0x08, 0x05) },
+                { 0x0806, new ContentKindInfo("ドキュメンタリー／教養", "スポーツ", 0x08, 0x06) },
+                { 0x0807, new ContentKindInfo("ドキュメンタリー／教養", "ドキュメンタリー全般", 0x08, 0x07) },
+                { 0x0808, new ContentKindInfo("ドキュメンタリー／教養", "インタビュー・討論", 0x08, 0x08) },
+                { 0x080F, new ContentKindInfo("ドキュメンタリー／教養", "その他", 0x08, 0x0F) },
+                { 0x08FF, new ContentKindInfo("ドキュメンタリー／教養", "", 0x08, 0xFF) },
 
-                ContentKindDictionary.Add(0x09FF, new ContentKindInfo("劇場／公演", "", 0x09, 0xFF));
-                ContentKindDictionary.Add(0x0900, new ContentKindInfo("劇場／公演", "現代劇・新劇", 0x09, 0x00));
-                ContentKindDictionary.Add(0x0901, new ContentKindInfo("劇場／公演", "ミュージカル", 0x09, 0x01));
-                ContentKindDictionary.Add(0x0902, new ContentKindInfo("劇場／公演", "ダンス・バレエ", 0x09, 0x02));
-                ContentKindDictionary.Add(0x0903, new ContentKindInfo("劇場／公演", "落語・演芸", 0x09, 0x03));
-                ContentKindDictionary.Add(0x0904, new ContentKindInfo("劇場／公演", "歌舞伎・古典", 0x09, 0x04));
-                ContentKindDictionary.Add(0x090F, new ContentKindInfo("劇場／公演", "その他", 0x09, 0x0F));
+                { 0x0900, new ContentKindInfo("劇場／公演", "現代劇・新劇", 0x09, 0x00) },
+                { 0x0901, new ContentKindInfo("劇場／公演", "ミュージカル", 0x09, 0x01) },
+                { 0x0902, new ContentKindInfo("劇場／公演", "ダンス・バレエ", 0x09, 0x02) },
+                { 0x0903, new ContentKindInfo("劇場／公演", "落語・演芸", 0x09, 0x03) },
+                { 0x0904, new ContentKindInfo("劇場／公演", "歌舞伎・古典", 0x09, 0x04) },
+                { 0x090F, new ContentKindInfo("劇場／公演", "その他", 0x09, 0x0F) },
+                { 0x09FF, new ContentKindInfo("劇場／公演", "", 0x09, 0xFF) },
 
-                ContentKindDictionary.Add(0x0AFF, new ContentKindInfo("趣味／教育", "", 0x0A, 0xFF));
-                ContentKindDictionary.Add(0x0A00, new ContentKindInfo("趣味／教育", "旅・釣り・アウトドア", 0x0A, 0x00));
-                ContentKindDictionary.Add(0x0A01, new ContentKindInfo("趣味／教育", "園芸・ペット・手芸", 0x0A, 0x01));
-                ContentKindDictionary.Add(0x0A02, new ContentKindInfo("趣味／教育", "音楽・美術・工芸", 0x0A, 0x02));
-                ContentKindDictionary.Add(0x0A03, new ContentKindInfo("趣味／教育", "囲碁・将棋", 0x0A, 0x03));
-                ContentKindDictionary.Add(0x0A04, new ContentKindInfo("趣味／教育", "麻雀・パチンコ", 0x0A, 0x04));
-                ContentKindDictionary.Add(0x0A05, new ContentKindInfo("趣味／教育", "車・オートバイ", 0x0A, 0x05));
-                ContentKindDictionary.Add(0x0A06, new ContentKindInfo("趣味／教育", "コンピュータ・ＴＶゲーム", 0x0A, 0x06));
-                ContentKindDictionary.Add(0x0A07, new ContentKindInfo("趣味／教育", "会話・語学", 0x0A, 0x07));
-                ContentKindDictionary.Add(0x0A08, new ContentKindInfo("趣味／教育", "幼児・小学生", 0x0A, 0x08));
-                ContentKindDictionary.Add(0x0A09, new ContentKindInfo("趣味／教育", "中学生・高校生", 0x0A, 0x09));
-                ContentKindDictionary.Add(0x0A0A, new ContentKindInfo("趣味／教育", "大学生・受験", 0x0A, 0x0A));
-                ContentKindDictionary.Add(0x0A0B, new ContentKindInfo("趣味／教育", "生涯教育・資格", 0x0A, 0x0B));
-                ContentKindDictionary.Add(0x0A0C, new ContentKindInfo("趣味／教育", "教育問題", 0x0A, 0x0C));
-                ContentKindDictionary.Add(0x0A0F, new ContentKindInfo("趣味／教育", "その他", 0x0A, 0x0F));
+                { 0x0A00, new ContentKindInfo("趣味／教育", "旅・釣り・アウトドア", 0x0A, 0x00) },
+                { 0x0A01, new ContentKindInfo("趣味／教育", "園芸・ペット・手芸", 0x0A, 0x01) },
+                { 0x0A02, new ContentKindInfo("趣味／教育", "音楽・美術・工芸", 0x0A, 0x02) },
+                { 0x0A03, new ContentKindInfo("趣味／教育", "囲碁・将棋", 0x0A, 0x03) },
+                { 0x0A04, new ContentKindInfo("趣味／教育", "麻雀・パチンコ", 0x0A, 0x04) },
+                { 0x0A05, new ContentKindInfo("趣味／教育", "車・オートバイ", 0x0A, 0x05) },
+                { 0x0A06, new ContentKindInfo("趣味／教育", "コンピュータ・ＴＶゲーム", 0x0A, 0x06) },
+                { 0x0A07, new ContentKindInfo("趣味／教育", "会話・語学", 0x0A, 0x07) },
+                { 0x0A08, new ContentKindInfo("趣味／教育", "幼児・小学生", 0x0A, 0x08) },
+                { 0x0A09, new ContentKindInfo("趣味／教育", "中学生・高校生", 0x0A, 0x09) },
+                { 0x0A0A, new ContentKindInfo("趣味／教育", "大学生・受験", 0x0A, 0x0A) },
+                { 0x0A0B, new ContentKindInfo("趣味／教育", "生涯教育・資格", 0x0A, 0x0B) },
+                { 0x0A0C, new ContentKindInfo("趣味／教育", "教育問題", 0x0A, 0x0C) },
+                { 0x0A0F, new ContentKindInfo("趣味／教育", "その他", 0x0A, 0x0F) },
+                { 0x0AFF, new ContentKindInfo("趣味／教育", "", 0x0A, 0xFF) },
 
-                ContentKindDictionary.Add(0x0BFF, new ContentKindInfo("福祉", "", 0x0B, 0xFF));
-                ContentKindDictionary.Add(0x0B00, new ContentKindInfo("福祉", "高齢者", 0x0B, 0x00));
-                ContentKindDictionary.Add(0x0B01, new ContentKindInfo("福祉", "障害者", 0x0B, 0x01));
-                ContentKindDictionary.Add(0x0B02, new ContentKindInfo("福祉", "社会福祉", 0x0B, 0x02));
-                ContentKindDictionary.Add(0x0B03, new ContentKindInfo("福祉", "ボランティア", 0x0B, 0x03));
-                ContentKindDictionary.Add(0x0B04, new ContentKindInfo("福祉", "手話", 0x0B, 0x04));
-                ContentKindDictionary.Add(0x0B05, new ContentKindInfo("福祉", "文字（字幕）", 0x0B, 0x05));
-                ContentKindDictionary.Add(0x0B06, new ContentKindInfo("福祉", "音声解説", 0x0B, 0x06));
-                ContentKindDictionary.Add(0x0B0F, new ContentKindInfo("福祉", "その他", 0x0B, 0x0F));
+                { 0x0B00, new ContentKindInfo("福祉", "高齢者", 0x0B, 0x00) },
+                { 0x0B01, new ContentKindInfo("福祉", "障害者", 0x0B, 0x01) },
+                { 0x0B02, new ContentKindInfo("福祉", "社会福祉", 0x0B, 0x02) },
+                { 0x0B03, new ContentKindInfo("福祉", "ボランティア", 0x0B, 0x03) },
+                { 0x0B04, new ContentKindInfo("福祉", "手話", 0x0B, 0x04) },
+                { 0x0B05, new ContentKindInfo("福祉", "文字（字幕）", 0x0B, 0x05) },
+                { 0x0B06, new ContentKindInfo("福祉", "音声解説", 0x0B, 0x06) },
+                { 0x0B0F, new ContentKindInfo("福祉", "その他", 0x0B, 0x0F) },
+                { 0x0BFF, new ContentKindInfo("福祉", "", 0x0B, 0xFF) },
 
-                ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
+                { 0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF) },
 
-                ContentKindDictionary.Add(0x70FF, new ContentKindInfo("スポーツ(CS)", "", 0x70, 0xFF));
-                ContentKindDictionary.Add(0x7000, new ContentKindInfo("スポーツ(CS)", "テニス", 0x70, 0x00));
-                ContentKindDictionary.Add(0x7001, new ContentKindInfo("スポーツ(CS)", "バスケットボール", 0x70, 0x01));
-                ContentKindDictionary.Add(0x7002, new ContentKindInfo("スポーツ(CS)", "ラグビー", 0x70, 0x02));
-                ContentKindDictionary.Add(0x7003, new ContentKindInfo("スポーツ(CS)", "アメリカンフットボール", 0x70, 0x03));
-                ContentKindDictionary.Add(0x7004, new ContentKindInfo("スポーツ(CS)", "ボクシング", 0x70, 0x04));
-                ContentKindDictionary.Add(0x7005, new ContentKindInfo("スポーツ(CS)", "プロレス", 0x70, 0x05));
-                ContentKindDictionary.Add(0x700F, new ContentKindInfo("スポーツ(CS)", "その他", 0x70, 0x0F));
+                { 0x7000, new ContentKindInfo("スポーツ(CS)", "テニス", 0x70, 0x00) },
+                { 0x7001, new ContentKindInfo("スポーツ(CS)", "バスケットボール", 0x70, 0x01) },
+                { 0x7002, new ContentKindInfo("スポーツ(CS)", "ラグビー", 0x70, 0x02) },
+                { 0x7003, new ContentKindInfo("スポーツ(CS)", "アメリカンフットボール", 0x70, 0x03) },
+                { 0x7004, new ContentKindInfo("スポーツ(CS)", "ボクシング", 0x70, 0x04) },
+                { 0x7005, new ContentKindInfo("スポーツ(CS)", "プロレス", 0x70, 0x05) },
+                { 0x700F, new ContentKindInfo("スポーツ(CS)", "その他", 0x70, 0x0F) },
+                { 0x70FF, new ContentKindInfo("スポーツ(CS)", "", 0x70, 0xFF) },
 
-                ContentKindDictionary.Add(0x71FF, new ContentKindInfo("洋画(CS)", "", 0x71, 0xFF));
-                ContentKindDictionary.Add(0x7100, new ContentKindInfo("洋画(CS)", "アクション", 0x71, 0x00));
-                ContentKindDictionary.Add(0x7101, new ContentKindInfo("洋画(CS)", "SF／ファンタジー", 0x71, 0x01));
-                ContentKindDictionary.Add(0x7102, new ContentKindInfo("洋画(CS)", "コメディー", 0x71, 0x02));
-                ContentKindDictionary.Add(0x7103, new ContentKindInfo("洋画(CS)", "サスペンス／ミステリー", 0x71, 0x03));
-                ContentKindDictionary.Add(0x7104, new ContentKindInfo("洋画(CS)", "恋愛／ロマンス", 0x71, 0x04));
-                ContentKindDictionary.Add(0x7105, new ContentKindInfo("洋画(CS)", "ホラー／スリラー", 0x71, 0x05));
-                ContentKindDictionary.Add(0x7106, new ContentKindInfo("洋画(CS)", "ウエスタン", 0x71, 0x06));
-                ContentKindDictionary.Add(0x7107, new ContentKindInfo("洋画(CS)", "ドラマ／社会派ドラマ", 0x71, 0x07));
-                ContentKindDictionary.Add(0x7108, new ContentKindInfo("洋画(CS)", "アニメーション", 0x71, 0x08));
-                ContentKindDictionary.Add(0x7109, new ContentKindInfo("洋画(CS)", "ドキュメンタリー", 0x71, 0x09));
-                ContentKindDictionary.Add(0x710A, new ContentKindInfo("洋画(CS)", "アドベンチャー／冒険", 0x71, 0x0A));
-                ContentKindDictionary.Add(0x710B, new ContentKindInfo("洋画(CS)", "ミュージカル／音楽映画", 0x71, 0x0B));
-                ContentKindDictionary.Add(0x710C, new ContentKindInfo("洋画(CS)", "ホームドラマ", 0x71, 0x0C));
-                ContentKindDictionary.Add(0x710F, new ContentKindInfo("洋画(CS)", "その他", 0x71, 0x0F));
+                { 0x7100, new ContentKindInfo("洋画(CS)", "アクション", 0x71, 0x00) },
+                { 0x7101, new ContentKindInfo("洋画(CS)", "SF／ファンタジー", 0x71, 0x01) },
+                { 0x7102, new ContentKindInfo("洋画(CS)", "コメディー", 0x71, 0x02) },
+                { 0x7103, new ContentKindInfo("洋画(CS)", "サスペンス／ミステリー", 0x71, 0x03) },
+                { 0x7104, new ContentKindInfo("洋画(CS)", "恋愛／ロマンス", 0x71, 0x04) },
+                { 0x7105, new ContentKindInfo("洋画(CS)", "ホラー／スリラー", 0x71, 0x05) },
+                { 0x7106, new ContentKindInfo("洋画(CS)", "ウエスタン", 0x71, 0x06) },
+                { 0x7107, new ContentKindInfo("洋画(CS)", "ドラマ／社会派ドラマ", 0x71, 0x07) },
+                { 0x7108, new ContentKindInfo("洋画(CS)", "アニメーション", 0x71, 0x08) },
+                { 0x7109, new ContentKindInfo("洋画(CS)", "ドキュメンタリー", 0x71, 0x09) },
+                { 0x710A, new ContentKindInfo("洋画(CS)", "アドベンチャー／冒険", 0x71, 0x0A) },
+                { 0x710B, new ContentKindInfo("洋画(CS)", "ミュージカル／音楽映画", 0x71, 0x0B) },
+                { 0x710C, new ContentKindInfo("洋画(CS)", "ホームドラマ", 0x71, 0x0C) },
+                { 0x710F, new ContentKindInfo("洋画(CS)", "その他", 0x71, 0x0F) },
+                { 0x71FF, new ContentKindInfo("洋画(CS)", "", 0x71, 0xFF) },
 
-                ContentKindDictionary.Add(0x72FF, new ContentKindInfo("邦画(CS)", "", 0x72, 0xFF));
-                ContentKindDictionary.Add(0x7200, new ContentKindInfo("邦画(CS)", "アクション", 0x72, 0x00));
-                ContentKindDictionary.Add(0x7201, new ContentKindInfo("邦画(CS)", "SF／ファンタジー", 0x72, 0x01));
-                ContentKindDictionary.Add(0x7202, new ContentKindInfo("邦画(CS)", "お笑い／コメディー", 0x72, 0x02));
-                ContentKindDictionary.Add(0x7203, new ContentKindInfo("邦画(CS)", "サスペンス／ミステリー", 0x72, 0x03));
-                ContentKindDictionary.Add(0x7204, new ContentKindInfo("邦画(CS)", "恋愛／ロマンス", 0x72, 0x04));
-                ContentKindDictionary.Add(0x7205, new ContentKindInfo("邦画(CS)", "ホラー／スリラー", 0x72, 0x05));
-                ContentKindDictionary.Add(0x7206, new ContentKindInfo("邦画(CS)", "青春／学園／アイドル", 0x72, 0x06));
-                ContentKindDictionary.Add(0x7207, new ContentKindInfo("邦画(CS)", "任侠／時代劇", 0x72, 0x07));
-                ContentKindDictionary.Add(0x7208, new ContentKindInfo("邦画(CS)", "アニメーション", 0x72, 0x08));
-                ContentKindDictionary.Add(0x7209, new ContentKindInfo("邦画(CS)", "ドキュメンタリー", 0x72, 0x09));
-                ContentKindDictionary.Add(0x720A, new ContentKindInfo("邦画(CS)", "アドベンチャー／冒険", 0x72, 0x0A));
-                ContentKindDictionary.Add(0x720B, new ContentKindInfo("邦画(CS)", "ミュージカル／音楽映画", 0x72, 0x0B));
-                ContentKindDictionary.Add(0x720C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x72, 0x0C));
-                ContentKindDictionary.Add(0x720F, new ContentKindInfo("邦画(CS)", "その他", 0x72, 0x0F));
+                { 0x7200, new ContentKindInfo("邦画(CS)", "アクション", 0x72, 0x00) },
+                { 0x7201, new ContentKindInfo("邦画(CS)", "SF／ファンタジー", 0x72, 0x01) },
+                { 0x7202, new ContentKindInfo("邦画(CS)", "お笑い／コメディー", 0x72, 0x02) },
+                { 0x7203, new ContentKindInfo("邦画(CS)", "サスペンス／ミステリー", 0x72, 0x03) },
+                { 0x7204, new ContentKindInfo("邦画(CS)", "恋愛／ロマンス", 0x72, 0x04) },
+                { 0x7205, new ContentKindInfo("邦画(CS)", "ホラー／スリラー", 0x72, 0x05) },
+                { 0x7206, new ContentKindInfo("邦画(CS)", "青春／学園／アイドル", 0x72, 0x06) },
+                { 0x7207, new ContentKindInfo("邦画(CS)", "任侠／時代劇", 0x72, 0x07) },
+                { 0x7208, new ContentKindInfo("邦画(CS)", "アニメーション", 0x72, 0x08) },
+                { 0x7209, new ContentKindInfo("邦画(CS)", "ドキュメンタリー", 0x72, 0x09) },
+                { 0x720A, new ContentKindInfo("邦画(CS)", "アドベンチャー／冒険", 0x72, 0x0A) },
+                { 0x720B, new ContentKindInfo("邦画(CS)", "ミュージカル／音楽映画", 0x72, 0x0B) },
+                { 0x720C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x72, 0x0C) },
+                { 0x720F, new ContentKindInfo("邦画(CS)", "その他", 0x72, 0x0F) },
+                { 0x72FF, new ContentKindInfo("邦画(CS)", "", 0x72, 0xFF) },
 
-                ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
-            }
+                { 0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF) }
+            };
+
             {
-                ComponentKindDictionary = new Dictionary<UInt16, string>()
+                ComponentKindDictionary = new SortedList<ushort, string>(75)
                 {
                     { 0x0101, "480i(525i)、アスペクト比4:3" },
                     { 0x0102, "480i(525i)、アスペクト比16:9 パンベクトルあり" },
@@ -368,10 +309,26 @@ namespace EpgTimer
                 };
             }
             DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
+            RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
             CustContentColorList = new List<Brush>();
             CustTimeColorList = new List<Brush>();
+            ReplaceUrlDictionary = CreateReplaceDictionary(",０,0,１,1,２,2,３,3,４,4,５,5,６,6,７,7,８,8,９,9" +
+                ",Ａ,A,Ｂ,B,Ｃ,C,Ｄ,D,Ｅ,E,Ｆ,F,Ｇ,G,Ｈ,H,Ｉ,I,Ｊ,J,Ｋ,K,Ｌ,L,Ｍ,M,Ｎ,N,Ｏ,O,Ｐ,P,Ｑ,Q,Ｒ,R,Ｓ,S,Ｔ,T,Ｕ,U,Ｖ,V,Ｗ,W,Ｘ,X,Ｙ,Y,Ｚ,Z" +
+                ",ａ,a,ｂ,b,ｃ,c,ｄ,d,ｅ,e,ｆ,f,ｇ,g,ｈ,h,ｉ,i,ｊ,j,ｋ,k,ｌ,l,ｍ,m,ｎ,n,ｏ,o,ｐ,p,ｑ,q,ｒ,r,ｓ,s,ｔ,t,ｕ,u,ｖ,v,ｗ,w,ｘ,x,ｙ,y,ｚ,z" +
+                ",！,!,＃,#,＄,$,％,%,＆,&,’,',（,(,）,),～,~,￣,~,＝,=,＠,@,；,;,：,:,？,?,＿,_,＋,+,－,-,＊,*,／,/,．,.");
+        }
+
+        public static CtrlCmdUtil CreateSrvCtrl()
+        {
+            var cmd = new CtrlCmdUtil();
+            if (Instance.NWMode)
+            {
+                cmd.SetSendMode(true);
+                cmd.SetNWSetting(Instance.NWConnectedIP, Instance.NWConnectedPort);
+            }
+            return cmd;
         }
 
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
@@ -384,6 +341,65 @@ namespace EpgTimer
         {
             UInt64 key = ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
             return key;
+        }
+
+        public static Dictionary<char, List<KeyValuePair<string, string>>> CreateReplaceDictionary(string pattern)
+        {
+            var ret = new Dictionary<char, List<KeyValuePair<string, string>>>();
+            if (pattern.Length > 0)
+            {
+                string[] arr = pattern.Substring(1).Split(pattern[0]);
+                for (int i = 0; i + 1 < arr.Length; i += 2)
+                {
+                    //先頭文字で仕分けする
+                    if (arr[i].Length > 0)
+                    {
+                        List<KeyValuePair<string, string>> bucket;
+                        if (ret.TryGetValue(arr[i][0], out bucket) == false)
+                        {
+                            ret[arr[i][0]] = bucket = new List<KeyValuePair<string, string>>();
+                        }
+                        bucket.Add(new KeyValuePair<string, string>(arr[i], arr[i + 1]));
+                    }
+                }
+                foreach (var bucket in ret)
+                {
+                    //最長一致のため
+                    bucket.Value.Sort((a, b) => b.Key.Length - a.Key.Length);
+                }
+            }
+            return ret;
+        }
+
+        public static string ReplaceText(string text, Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionary)
+        {
+            StringBuilder ret = null;
+            if (replaceDictionary.Count > 0)
+            {
+                for (int i = 0; i < text.Length; i++)
+                {
+                    List<KeyValuePair<string, string>> bucket;
+                    if (replaceDictionary.TryGetValue(text[i], out bucket))
+                    {
+                        int j = bucket.FindIndex(p => string.CompareOrdinal(text, i, p.Key, 0, p.Key.Length) == 0);
+                        if (j >= 0)
+                        {
+                            if (ret == null)
+                            {
+                                ret = new StringBuilder(text, 0, i, text.Length);
+                            }
+                            ret.Append(bucket[j].Value);
+                            i += bucket[j].Key.Length - 1;
+                            continue;
+                        }
+                    }
+                    if (ret != null)
+                    {
+                        ret.Append(text[i]);
+                    }
+                }
+            }
+            return ret != null ? ret.ToString() : text;
         }
 
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
@@ -409,101 +425,22 @@ namespace EpgTimer
             return info;
         }
 
-        public static String ReplaceUrl(String url)
+        public static string GetErrCodeText(ErrCode err)
         {
-            string retText = url;
-
-            retText = retText.Replace("ａ", "a");
-            retText = retText.Replace("ｂ", "b");
-            retText = retText.Replace("ｃ", "c");
-            retText = retText.Replace("ｄ", "d");
-            retText = retText.Replace("ｅ", "e");
-            retText = retText.Replace("ｆ", "f");
-            retText = retText.Replace("ｇ", "g");
-            retText = retText.Replace("ｈ", "h");
-            retText = retText.Replace("ｉ", "i");
-            retText = retText.Replace("ｊ", "j");
-            retText = retText.Replace("ｋ", "k");
-            retText = retText.Replace("ｌ", "l");
-            retText = retText.Replace("ｍ", "m");
-            retText = retText.Replace("ｎ", "n");
-            retText = retText.Replace("ｏ", "o");
-            retText = retText.Replace("ｐ", "p");
-            retText = retText.Replace("ｑ", "q");
-            retText = retText.Replace("ｒ", "r");
-            retText = retText.Replace("ｓ", "s");
-            retText = retText.Replace("ｔ", "t");
-            retText = retText.Replace("ｕ", "u");
-            retText = retText.Replace("ｖ", "v");
-            retText = retText.Replace("ｗ", "w");
-            retText = retText.Replace("ｘ", "x");
-            retText = retText.Replace("ｙ", "y");
-            retText = retText.Replace("ｚ", "z");
-            retText = retText.Replace("Ａ", "A");
-            retText = retText.Replace("Ｂ", "B");
-            retText = retText.Replace("Ｃ", "C");
-            retText = retText.Replace("Ｄ", "D");
-            retText = retText.Replace("Ｅ", "E");
-            retText = retText.Replace("Ｆ", "F");
-            retText = retText.Replace("Ｇ", "G");
-            retText = retText.Replace("Ｈ", "H");
-            retText = retText.Replace("Ｉ", "I");
-            retText = retText.Replace("Ｊ", "J");
-            retText = retText.Replace("Ｋ", "K");
-            retText = retText.Replace("Ｌ", "L");
-            retText = retText.Replace("Ｍ", "M");
-            retText = retText.Replace("Ｎ", "N");
-            retText = retText.Replace("Ｏ", "O");
-            retText = retText.Replace("Ｐ", "P");
-            retText = retText.Replace("Ｑ", "Q");
-            retText = retText.Replace("Ｒ", "R");
-            retText = retText.Replace("Ｓ", "S");
-            retText = retText.Replace("Ｔ", "T");
-            retText = retText.Replace("Ｕ", "U");
-            retText = retText.Replace("Ｖ", "V");
-            retText = retText.Replace("Ｗ", "W");
-            retText = retText.Replace("Ｘ", "X");
-            retText = retText.Replace("Ｙ", "Y");
-            retText = retText.Replace("Ｚ", "Z");
-            retText = retText.Replace("＃", "#");
-            retText = retText.Replace("＄", "$");
-            retText = retText.Replace("％", "%");
-            retText = retText.Replace("＆", "&");
-            retText = retText.Replace("’", "'");
-            retText = retText.Replace("（", "(");
-            retText = retText.Replace("）", ")");
-            retText = retText.Replace("～", "~");
-            retText = retText.Replace("＝", "=");
-            retText = retText.Replace("｜", "|");
-            retText = retText.Replace("＾", "^");
-            retText = retText.Replace("￥", "\\");
-            retText = retText.Replace("＠", "@");
-            retText = retText.Replace("；", ";");
-            retText = retText.Replace("：", ":");
-            retText = retText.Replace("｀", "`");
-            retText = retText.Replace("｛", "{");
-            retText = retText.Replace("｝", "}");
-            retText = retText.Replace("＜", "<");
-            retText = retText.Replace("＞", ">");
-            retText = retText.Replace("？", "?");
-            retText = retText.Replace("＿", "_");
-            retText = retText.Replace("＋", "+");
-            retText = retText.Replace("－", "-");
-            retText = retText.Replace("＊", "*");
-            retText = retText.Replace("／", "/");
-            retText = retText.Replace("．", ".");
-            retText = retText.Replace("０", "0");
-            retText = retText.Replace("１", "1");
-            retText = retText.Replace("２", "2");
-            retText = retText.Replace("３", "3");
-            retText = retText.Replace("４", "4");
-            retText = retText.Replace("５", "5");
-            retText = retText.Replace("６", "6");
-            retText = retText.Replace("７", "7");
-            retText = retText.Replace("８", "8");
-            retText = retText.Replace("９", "9");
-
-            return retText;
+            switch (err)
+            {
+                case ErrCode.CMD_NON_SUPPORT:
+                    return "EpgTimerSrvがサポートしていないコマンドです。";
+                case ErrCode.CMD_ERR_CONNECT:
+                    return "EpgTimerSrvに接続できませんでした。";
+                case ErrCode.CMD_ERR_TIMEOUT:
+                    return "EpgTimerSrvとの接続にタイムアウトしました。";
+                case ErrCode.CMD_ERR_BUSY:
+                    //このエラーはコマンドによって解釈が異なる
+                    return null;
+                default:
+                    return null;
+            }
         }
 
         public String ConvertReserveText(ReserveData reserveInfo)
@@ -513,30 +450,7 @@ namespace EpgTimer
             DateTime endTime = reserveInfo.StartTime + TimeSpan.FromSeconds(reserveInfo.DurationSecond);
             view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
 
-            String recMode = "";
-            switch (reserveInfo.RecSetting.RecMode)
-            {
-                case 0:
-                    recMode = "全サービス";
-                    break;
-                case 1:
-                    recMode = "指定サービス";
-                    break;
-                case 2:
-                    recMode = "全サービス（デコード処理なし）";
-                    break;
-                case 3:
-                    recMode = "指定サービス（デコード処理なし）";
-                    break;
-                case 4:
-                    recMode = "視聴";
-                    break;
-                case 5:
-                    recMode = "無効";
-                    break;
-                default:
-                    break;
-            } 
+            String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
             String tuijyu = "";
             if (reserveInfo.RecSetting.TuijyuuFlag == 0)
             {
@@ -918,9 +832,9 @@ namespace EpgTimer
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
-                if (CtrlCmd.SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
                 {
-                    CtrlCmd.SendNwPlayClose(info.ctrlID);
+                    CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
                     if (info.filePath != "")
                     {
                         FilePlay(info.filePath);
@@ -958,272 +872,174 @@ namespace EpgTimer
                 }
                 else
                 {
-                    TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
+                    TVTestCtrl.StartStreamingPlay(filePath, NWConnectedIP, NWConnectedPort);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        private static SolidColorBrush CreateCustColorBrush(string name, uint cust, byte a = 0xFF, int opacity = 100)
+        {
+            SolidColorBrush brush;
+            if (name == "カスタム")
+            {
+                Color c = ColorDef.FromUInt(cust);
+                brush = new SolidColorBrush(Color.FromArgb((byte)(c.A * opacity / 100), c.R, c.G, c.B));
+                brush.Freeze();
+            }
+            else
+            {
+                brush = ColorDef.BrushFromName(name);
+                if (brush.Color.A != 0 && (a != 0xFF || opacity != 100))
+                {
+                    brush = new SolidColorBrush(Color.FromArgb((byte)(a * opacity / 100), brush.Color.R, brush.Color.G, brush.Color.B));
+                    brush.Freeze();
+                }
+            }
+            return brush;
         }
 
         public void ReloadCustContentColorList()
         {
-            try
+            SolidColorBrush brush;
+            CustContentColorList.Clear();
+            List<uint> ccList = Settings.Instance.ContentCustColorList;
+            for (int i = 0; i < 17; i++)
             {
-                CustContentColorList.Clear();
-                string name;
-                SolidColorBrush brush;
-                for (int i = 0; i < Settings.Instance.ContentColorList.Count; i++)
-                {
-                    name = Settings.Instance.ContentColorList[i];
-                    brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                    if (Settings.Instance.EpgGradation == false)
-                    {
-                        if (brush == null)
-                        {
-                            (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[i]))).Freeze();
-                        }
-                        CustContentColorList.Add(brush);
-                    }
-                    else
-                    {
-                        CustContentColorList.Add(ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.ContentCustColorList[i]) : brush.Color));
-                    }
-                }
-                name = Settings.Instance.ReserveRectColorNormal;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x11]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorNo;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x12]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorNoTuner;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x13]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
-                name = Settings.Instance.ReserveRectColorWarning;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x14]))).Freeze();
-                }
-                CustContentColorList.Add(brush);
+                brush = CreateCustColorBrush(Settings.Instance.ContentColorList[i], ccList[i]);
+                CustContentColorList.Add(Settings.Instance.EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+            }
 
-                name = Settings.Instance.TitleColor1;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor1))).Freeze();
-                }
-                CustTitle1Color = brush;
-                name = Settings.Instance.TitleColor2;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (brush == null)
-                {
-                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor2))).Freeze();
-                }
-                CustTitle2Color = brush;
-                CustTimeColorList.Clear();
-                for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
-                {
-                    name = Settings.Instance.TimeColorList[i];
-                    brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                    if (Settings.Instance.EpgGradationHeader == false)
-                    {
-                        if (brush == null)
-                        {
-                            (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TimeCustColorList[i]))).Freeze();
-                        }
-                        CustTimeColorList.Add(brush);
-                    }
-                    else
-                    {
-                        CustTimeColorList.Add(ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.TimeCustColorList[i]) : brush.Color, 0.9, 1.1));
-                    }
-                }
-                name = Settings.Instance.ServiceColor;
-                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
-                if (Settings.Instance.EpgGradationHeader == false)
-                {
-                    if (brush == null)
-                    {
-                        (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ServiceCustColor))).Freeze();
-                    }
-                    CustServiceColor = brush;
-                }
-                else
-                {
-                    CustServiceColor = ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.ServiceCustColor) : brush.Color, 1.0, 2.0);
-                }
-            }
-            catch (Exception ex)
+            //0→50で塗りつぶしの不透明度が上がる
+            int fillOpacity = Math.Min(Settings.Instance.ReserveRectFillOpacity, 50) * 2;
+            //50→100で枠の不透明度が下がる
+            int strokeOpacity = Math.Min(100 - Settings.Instance.ReserveRectFillOpacity, 50) * 2;
+            //予約枠が色名指定のときは少し透過(0xA0)する
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList[17], 0xA0, strokeOpacity));
+            //次要素は予約塗りつぶしのブラシ
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList[17], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList[18], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList[18], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList[19], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList[19], 0xA0, fillOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList[20], 0xA0, strokeOpacity));
+            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList[20], 0xA0, fillOpacity));
+
+            CustTitle1Color = CreateCustColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
+            CustTitle2Color = CreateCustColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
+
+            CustTimeColorList.Clear();
+            for (int i = 0; i < 4; i++)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                brush = CreateCustColorBrush(Settings.Instance.TimeColorList[i], Settings.Instance.TimeCustColorList[i]);
+                CustTimeColorList.Add(Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
             }
+
+            brush = CreateCustColorBrush(Settings.Instance.ServiceColor, Settings.Instance.ServiceCustColor);
+            CustServiceColor = Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush;
         }
 
+        private static SolidColorBrush GetOrCreateBrush(ref SolidColorBrush brush, byte a, byte r, byte g, byte b)
+        {
+            if (brush == null)
+            {
+                brush = new SolidColorBrush();
+                brush.Color = Color.FromArgb(a, r, g, b);
+                brush.Freeze();
+            }
+            return brush;
+        }
 
-        private SolidColorBrush resDefBackColor = null;
+        private SolidColorBrush _resDefBackColor;
         public SolidColorBrush ResDefBackColor
         {
             get
             {
-                if (resDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
-                    resDefBackColor = new SolidColorBrush();
-                    resDefBackColor.Color = item;
-                    resDefBackColor.Freeze();
-                }
-                return resDefBackColor;
+                return GetOrCreateBrush(ref _resDefBackColor, Settings.Instance.ResDefColorA, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
             }
         }
-        private SolidColorBrush resErrBackColor = null;
+
+        private SolidColorBrush _resErrBackColor;
         public SolidColorBrush ResErrBackColor
         {
             get
             {
-                if (resErrBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
-                    resErrBackColor = new SolidColorBrush();
-                    resErrBackColor.Color = item;
-                    resErrBackColor.Freeze();
-                }
-                return resErrBackColor;
+                return GetOrCreateBrush(ref _resErrBackColor, Settings.Instance.ResErrColorA, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
             }
         }
-        private SolidColorBrush resWarBackColor = null;
+
+        private SolidColorBrush _resWarBackColor;
         public SolidColorBrush ResWarBackColor
         {
             get
             {
-                if (resWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
-                    resWarBackColor = new SolidColorBrush();
-                    resWarBackColor.Color = item;
-                    resWarBackColor.Freeze();
-                }
-                return resWarBackColor;
+                return GetOrCreateBrush(ref _resWarBackColor, Settings.Instance.ResWarColorA, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
             }
         }
-        private SolidColorBrush resNoBackColor = null;
+
+        private SolidColorBrush _resNoBackColor;
         public SolidColorBrush ResNoBackColor
         {
             get
             {
-                if (resNoBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
-                    resNoBackColor = new SolidColorBrush();
-                    resNoBackColor.Color = item;
-                    resNoBackColor.Freeze();
-                }
-                return resNoBackColor;
+                return GetOrCreateBrush(ref _resNoBackColor, Settings.Instance.ResNoColorA, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
             }
         }
 
-        private SolidColorBrush recEndDefBackColor = null;
+        private SolidColorBrush _recEndDefBackColor;
         public SolidColorBrush RecEndDefBackColor
         {
             get
             {
-                if (recEndDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
-                    recEndDefBackColor = new SolidColorBrush();
-                    recEndDefBackColor.Color = item;
-                    recEndDefBackColor.Freeze();
-                }
-                return recEndDefBackColor;
+                return GetOrCreateBrush(ref _recEndDefBackColor, Settings.Instance.RecEndDefColorA, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
             }
         }
-        
-        private SolidColorBrush recEndErrBackColor = null;
+
+        private SolidColorBrush _recEndErrBackColor;
         public SolidColorBrush RecEndErrBackColor
         {
             get
             {
-                if( recEndErrBackColor == null ){
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
-                    recEndErrBackColor = new SolidColorBrush();
-                    recEndErrBackColor.Color = item;
-                    recEndErrBackColor.Freeze();
-                }
-                return recEndErrBackColor;
+                return GetOrCreateBrush(ref _recEndErrBackColor, Settings.Instance.RecEndErrColorA, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
             }
         }
 
-        private SolidColorBrush recEndWarBackColor = null;
+        private SolidColorBrush _recEndWarBackColor;
         public SolidColorBrush RecEndWarBackColor
         {
             get
             {
-                if (recEndWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
-                    recEndWarBackColor = new SolidColorBrush();
-                    recEndWarBackColor.Color = item;
-                    recEndWarBackColor.Freeze();
-                }
-                return recEndWarBackColor;
+                return GetOrCreateBrush(ref _recEndWarBackColor, Settings.Instance.RecEndWarColorA, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
             }
         }
 
-        private SolidColorBrush epgTipsBackColor = null;
+        private SolidColorBrush _epgTipsBackColor;
         public SolidColorBrush EpgTipsBackColor
         {
             get
             {
-                if (epgTipsBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
-                    epgTipsBackColor = new SolidColorBrush();
-                    epgTipsBackColor.Color = item;
-                    epgTipsBackColor.Freeze();
-                }
-                return epgTipsBackColor;
+                return GetOrCreateBrush(ref _epgTipsBackColor, 0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
             }
         }
-        private SolidColorBrush epgTipsForeColor = null;
+
+        private SolidColorBrush _epgTipsForeColor;
         public SolidColorBrush EpgTipsForeColor
         {
             get
             {
-                if (epgTipsForeColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
-                    epgTipsForeColor = new SolidColorBrush();
-                    epgTipsForeColor.Color = item;
-                    epgTipsForeColor.Freeze();
-                }
-                return epgTipsForeColor;
+                return GetOrCreateBrush(ref _epgTipsForeColor, 0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
             }
         }
-        private SolidColorBrush epgBackColor = null;
+
+        private SolidColorBrush _epgBackColor;
         public SolidColorBrush EpgBackColor
         {
             get
             {
-                if (epgBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgBackColorR, Settings.Instance.EpgBackColorG, Settings.Instance.EpgBackColorB);
-                    epgBackColor = new SolidColorBrush(item);
-                    epgBackColor.Freeze();
-                }
-                return epgBackColor;
+                return GetOrCreateBrush(ref _epgBackColor, 0xFF, Settings.Instance.EpgBackColorR, Settings.Instance.EpgBackColorG, Settings.Instance.EpgBackColorB);
             }
         }
     }

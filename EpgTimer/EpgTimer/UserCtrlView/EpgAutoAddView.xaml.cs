@@ -20,53 +20,33 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
+        private List<EpgAutoDataItem> resultListMoved;
+        private string lastAscendingSortedHeader;
         private bool ReloadInfo = true;
 
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+        private Dictionary<string, GridViewColumn> columnList;
 
         public EpgAutoAddView()
         {
             InitializeComponent();
-            try
+            columnList = gridView_key.Columns.ToDictionary(info => (string)((GridViewColumnHeader)info.Header).Tag);
+            gridView_key.Columns.Clear();
+            foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
             {
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_key.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
+                if (columnList.ContainsKey(info.Tag))
                 {
                     columnList[info.Tag].Width = info.Width;
                     gridView_key.Columns.Add(columnList[info.Tag]);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.AutoAddEpgColumn.Clear();
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.AutoAddEpgColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            Settings.Instance.AutoAddEpgColumn.Clear();
+            Settings.Instance.AutoAddEpgColumn.AddRange(
+                gridView_key.Columns.Select(info => new ListColumnInfo((string)((GridViewColumnHeader)info.Header).Tag, info.Width)));
         }
 
         /// <summary>
@@ -74,22 +54,9 @@ namespace EpgTimer
         /// </summary>
         public void UpdateInfo()
         {
-            if (this.IsVisible == true)
+            ReloadInfo = true;
+            if (IsVisible && ReloadInfoData())
             {
-                ReloadInfoData();
-                ReloadInfo = false;
-            }
-            else
-            {
-                ReloadInfo = true;
-            }
-        }
-
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfoData();
                 ReloadInfo = false;
             }
         }
@@ -98,32 +65,16 @@ namespace EpgTimer
         {
             try
             {
-                listView_key.DataContext = null;
-                resultList.Clear();
+                resultList = new List<EpgAutoDataItem>();
 
                 ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     this.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
                     }), null);
+                    reloadItemOrder();
                     return false;
                 }
 
@@ -133,7 +84,7 @@ namespace EpgTimer
                     resultList.Add(item);
                 }
 
-                listView_key.DataContext = resultList;
+                reloadItemOrder();
             }
             catch (Exception ex)
             {
@@ -172,7 +123,7 @@ namespace EpgTimer
                     {
                         dataIDList.Add(info.EpgAutoAddInfo.dataID);
                     }
-                    cmd.SendDelEpgAutoAdd(dataIDList);
+                    CommonManager.CreateSrvCtrl().SendDelEpgAutoAdd(dataIDList);
                 }
             }
             catch (Exception ex)
@@ -217,11 +168,11 @@ namespace EpgTimer
                 foreach (EpgAutoDataItem item in autoaddlist)
                 {
                     EpgSearchKeyInfo key = item.EpgAutoAddInfo.searchInfo;
-                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);//無効解除
+                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? 7 : 0);//無効解除
                     keyList.Add(key);
                 }
 
-                cmd.SendSearchPg(keyList, ref list);
+                CommonManager.CreateSrvCtrl().SendSearchPg(keyList, ref list);
 
                 List<UInt32> dellist = new List<UInt32>();
 
@@ -246,9 +197,7 @@ namespace EpgTimer
 
                 if (dellist.Count > 0)
                 {
-                    cmd.SendDelReserve(dellist);
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                    CommonManager.Instance.DB.ReloadReserveInfo();
+                    CommonManager.CreateSrvCtrl().SendDelReserve(dellist);
                 }
                 
             }
@@ -260,102 +209,12 @@ namespace EpgTimer
 
         private void button_change_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (listView_key.SelectedItem != null)
-                {
-                    EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
-                    SearchWindow dlg = new SearchWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetViewMode(2);
-                    dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                    dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
-                    dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
-                    dlg.ShowDialog();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            showDialog();
         }
 
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            try
-            {
-                if (listView_key.SelectedItem != null)
-                {
-                    EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
-                    SearchWindow dlg = new SearchWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetViewMode(2);
-                    dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                    dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
-                    dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
-                    dlg.ShowDialog();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_up_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listView_key.SelectedIndex > 0 && listView_key.SelectedItem != null)
-                {
-                    EpgAutoDataItem info1 = listView_key.SelectedItem as EpgAutoDataItem;
-                    EpgAutoDataItem info2 = listView_key.Items.GetItemAt(listView_key.SelectedIndex - 1) as EpgAutoDataItem;
-
-                    UInt32 tempId = info1.EpgAutoAddInfo.dataID;
-                    info1.EpgAutoAddInfo.dataID = info2.EpgAutoAddInfo.dataID;
-                    info2.EpgAutoAddInfo.dataID = tempId;
-
-                    List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
-                    addList.Add(info1.EpgAutoAddInfo);
-                    addList.Add(info2.EpgAutoAddInfo);
-                    if (cmd.SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("変更に失敗しました");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_down_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listView_key.SelectedIndex + 1 < listView_key.Items.Count && listView_key.SelectedItem != null)
-                {
-                    EpgAutoDataItem info1 = listView_key.SelectedItem as EpgAutoDataItem;
-                    EpgAutoDataItem info2 = listView_key.Items.GetItemAt(listView_key.SelectedIndex + 1) as EpgAutoDataItem;
-
-                    UInt32 tempId = info1.EpgAutoAddInfo.dataID;
-                    info1.EpgAutoAddInfo.dataID = info2.EpgAutoAddInfo.dataID;
-                    info2.EpgAutoAddInfo.dataID = tempId;
-
-                    List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
-                    addList.Add(info1.EpgAutoAddInfo);
-                    addList.Add(info2.EpgAutoAddInfo);
-                    if (cmd.SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("変更に失敗しました");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            showDialog();
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -376,15 +235,7 @@ namespace EpgTimer
             {
                 foreach (MenuItem item in listView_key.ContextMenu.Items)
                 {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
-                    {
-                        if (info.Tag.CompareTo(item.Name) == 0)
-                        {
-                            item.IsChecked = true;
-                            break;
-                        }
-                    }
+                    item.IsChecked = Settings.Instance.AutoAddEpgColumn.Any(info => info.Tag == item.Name);
                 }
 
 
@@ -410,7 +261,7 @@ namespace EpgTimer
                 {
                     foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
                     {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
+                        if (info.Tag == menuItem.Name)
                         {
                             Settings.Instance.AutoAddEpgColumn.Remove(info);
                             gridView_key.Columns.Remove(columnList[menuItem.Name]);
@@ -432,30 +283,6 @@ namespace EpgTimer
         *
         ******************************************************/
 
-        bool _ItemOrderNotSaved = false;
-        enum itemMoveDirections { up, down };
-        EpgAutoDataItem dragItem = null;
-        GridViewSorter<EpgAutoDataItem> gridViewSorter = new GridViewSorter<EpgAutoDataItem>();
-
-        bool ItemOrderNotSaved
-        {
-            get { return this._ItemOrderNotSaved; }
-            set
-            {
-                this._ItemOrderNotSaved = value;
-                this.button_saveItemOrder.IsEnabled = value;
-                this.button_reloadItem.IsEnabled = value;
-                if (value)
-                {
-                    this.textBox_ItemOrderStatus.Text = "並びが変更されましたが、保存されていません。";
-                }
-                else
-                {
-                    this.textBox_ItemOrderStatus.Text = "";
-                }
-            }
-        }
-
         void deleteItem()
         {
             if (listView_key.SelectedItems.Count == 0) { return; }
@@ -472,7 +299,7 @@ namespace EpgTimer
                 string caption1 = "登録項目削除の確認";
                 if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
                 {
-                    cmd.SendDelEpgAutoAdd(dataIDList);
+                    CommonManager.CreateSrvCtrl().SendDelEpgAutoAdd(dataIDList);
                 }
             }
             catch (Exception ex)
@@ -502,75 +329,67 @@ namespace EpgTimer
             }
         }
 
-        void moveItem(EpgAutoDataItem item_Src1, EpgAutoDataItem item_Dst1)
-        {
-            int index_Src1 = resultList.IndexOf(item_Src1);
-            int index_Dst1 = resultList.IndexOf(item_Dst1);
-
-            resultList.Remove(item_Src1);
-            resultList.Insert(index_Dst1, item_Src1);
-            listView_key.SelectedItem = item_Src1;
-
-            listView_key.Items.Refresh();
-            this.ItemOrderNotSaved = true;
-            this.gridViewSorter.resetSortParams();
-        }
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="up0">true: up, false: down</param>
-        void moveItem(itemMoveDirections moveDirection0)
+        void moveItem(bool up0)
         {
             EpgAutoDataItem item_Src1 = listView_key.SelectedItem as EpgAutoDataItem;
             if (item_Src1 == null) { return; }
-            int index_Src1 = resultList.IndexOf(item_Src1);
+            int index_Src1 = (resultListMoved ?? resultList).IndexOf(item_Src1);
             int index_Dst1 = index_Src1 - 1;
-            if (moveDirection0 == itemMoveDirections.down)
+            if (up0 == false)
             {
                 index_Dst1 = index_Src1 + 1;
             }
-            if (0 <= index_Dst1 && index_Dst1 < resultList.Count)
+            if (0 <= index_Dst1 && index_Dst1 < (resultListMoved ?? resultList).Count)
             {
-                EpgAutoDataItem item_Dst1 = resultList[index_Dst1];
-                this.moveItem(item_Src1, item_Dst1);
+                resultListMoved = (resultListMoved ?? resultList).ToList();
+                resultListMoved.RemoveAt(index_Src1);
+                resultListMoved.Insert(index_Dst1, item_Src1);
+
+                lastAscendingSortedHeader = null;
+                listView_key.DataContext = resultListMoved;
+                button_saveItemOrder.IsEnabled = true;
+                button_reloadItem.IsEnabled = true;
+                textBox_ItemOrderStatus.Visibility = Visibility.Visible;
             }
         }
 
         void saveItemOrder()
         {
-            if (!this.ItemOrderNotSaved) { return; }
+            if (resultListMoved == null) { return; }
             //
             List<uint> dataIdList1 = new List<uint>();
-            foreach (EpgAutoDataItem item1 in this.resultList)
+            foreach (EpgAutoDataItem item1 in resultListMoved)
             {
                 dataIdList1.Add(item1.EpgAutoAddInfo.dataID);
             }
             dataIdList1.Sort();
             //
             List<EpgAutoAddData> addList1 = new List<EpgAutoAddData>();
-            for (int i1 = 0; i1 < this.resultList.Count; i1++)
+            for (int i1 = 0; i1 < resultListMoved.Count; i1++)
             {
-                EpgAutoDataItem item1 = this.resultList[i1];
+                EpgAutoDataItem item1 = resultListMoved[i1];
                 item1.EpgAutoAddInfo.dataID = dataIdList1[i1];
                 addList1.Add(item1.EpgAutoAddInfo);
 
             }
-            if (cmd.SendChgEpgAutoAdd(addList1) != ErrCode.CMD_SUCCESS)
+            if (CommonManager.CreateSrvCtrl().SendChgEpgAutoAdd(addList1) != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("変更に失敗しました");
-            }
-            else
-            {
-                this.ItemOrderNotSaved = false;
             }
         }
 
         void reloadItemOrder()
         {
-            this.ReloadInfoData();
-            this.ItemOrderNotSaved = false;
-            this.gridViewSorter.resetSortParams();
+            resultListMoved = null;
+            lastAscendingSortedHeader = null;
+            listView_key.DataContext = resultList;
+            button_saveItemOrder.IsEnabled = false;
+            button_reloadItem.IsEnabled = false;
+            textBox_ItemOrderStatus.Visibility = Visibility.Hidden;
         }
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
@@ -582,11 +401,16 @@ namespace EpgTimer
                 if (headerClicked1.Role != GridViewColumnHeaderRole.Padding)
                 {
                     // ソートの実行
-                    this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked1);
+                    bool desc = lastAscendingSortedHeader == (string)headerClicked1.Tag;
+                    lastAscendingSortedHeader = desc ? null : (string)headerClicked1.Tag;
+                    var p = typeof(EpgAutoDataItem).GetProperty((string)headerClicked1.Tag);
+                    resultListMoved = resultListMoved ?? resultList;
+                    resultListMoved = (desc ? resultListMoved.OrderByDescending(a => p.GetValue(a, null)) : resultListMoved.OrderBy(a => p.GetValue(a, null))).ToList();
                     // UI更新
-                    this.listView_key.Items.Refresh();
-                    //
-                    this.ItemOrderNotSaved = true;
+                    listView_key.DataContext = resultListMoved;
+                    button_saveItemOrder.IsEnabled = true;
+                    button_reloadItem.IsEnabled = true;
+                    textBox_ItemOrderStatus.Visibility = Visibility.Visible;
                 }
             }
         }
@@ -601,33 +425,6 @@ namespace EpgTimer
             this.reloadItemOrder();
         }
 
-        private void listViewItem_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                ListViewItem item1 = sender as ListViewItem;
-                this.dragItem = item1.Content as EpgAutoDataItem;
-            }
-        }
-
-        private void listViewItem_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (this.dragItem != null
-                && this.dragItem != sender)
-            {
-                if (Mouse.LeftButton == MouseButtonState.Released)
-                {
-                    this.dragItem = null;
-                }
-                else
-                {
-                    ListViewItem item1 = sender as ListViewItem;
-                    EpgAutoDataItem eadi1 = item1.Content as EpgAutoDataItem;
-                    this.moveItem(this.dragItem, eadi1);
-                }
-            }
-        }
-
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
@@ -635,17 +432,15 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.Up:
-                        this.moveItem(itemMoveDirections.up);
+                        moveItem(true);
                         break;
                     case Key.Down:
-                        this.moveItem(itemMoveDirections.down);
+                        moveItem(false);
                         break;
                     case Key.S:
-                        new BlackoutWindow(Window.GetWindow(this)).showWindow(this.button_saveItemOrder.Content.ToString());
                         this.saveItemOrder();
                         break;
                     case Key.R:
-                        new BlackoutWindow(Window.GetWindow(this)).showWindow(this.button_reloadItem.Content.ToString());
                         this.reloadItemOrder();
                         break;
                 }
@@ -668,12 +463,12 @@ namespace EpgTimer
 
         private void button_up_Click2(object sender, RoutedEventArgs e)
         {
-            this.moveItem(itemMoveDirections.up);
+            moveItem(true);
         }
 
         private void button_down_Click2(object sender, RoutedEventArgs e)
         {
-            this.moveItem(itemMoveDirections.down);
+            moveItem(false);
         }
 
     }
