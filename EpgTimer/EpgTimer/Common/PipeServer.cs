@@ -10,21 +10,13 @@ using System.Security.AccessControl;
 
 namespace EpgTimer
 {
-    public class PipeServer
+    public class PipeServer : IDisposable
     {
         private Thread m_ServerThread = null;
-        private AutoResetEvent m_PulseEvent = null;
-        private bool m_StopFlag = false;
+        private AutoResetEvent m_StopEvent = new AutoResetEvent(false);
 
-        public bool StartServer(string eventName, string pipeName, Func<uint, byte[], Tuple<ErrCode, byte[], uint>> cmdProc)
+        public PipeServer(string eventName, string pipeName, Func<uint, byte[], Tuple<ErrCode, byte[], uint>> cmdProc)
         {
-            if (m_ServerThread != null)
-            {
-                return false;
-            }
-
-            m_StopFlag = false;
-            m_PulseEvent = new AutoResetEvent(false);
             var eventConnect = new EventWaitHandle(false, EventResetMode.AutoReset, eventName);
             string trustee = "NT Service\\EpgTimer Service";
             try
@@ -58,21 +50,20 @@ namespace EpgTimer
                 using (eventConnect)
                 using (pipe)
                 {
-                    while (m_StopFlag == false)
+                    for (;;)
                     {
-                        pipe.BeginWaitForConnection(asyncResult =>
-                        {
-                            try
-                            {
-                                pipe.EndWaitForConnection(asyncResult);
-                                m_PulseEvent.Set();
-                            }
-                            catch (ObjectDisposedException)
-                            {
-                            }
-                        }, null);
+                        IAsyncResult ar = pipe.BeginWaitForConnection(null, null);
                         eventConnect.Set();
-                        m_PulseEvent.WaitOne();
+                        using (ar.AsyncWaitHandle)
+                        {
+                            if (WaitHandle.WaitAny(new WaitHandle[] { m_StopEvent, ar.AsyncWaitHandle }) != 1)
+                            {
+                                pipe.Dispose();
+                                ar.AsyncWaitHandle.WaitOne();
+                                break;
+                            }
+                            pipe.EndWaitForConnection(ar);
+                        }
                         if (pipe.IsConnected)
                         {
                             byte[] bHead = new byte[8];
@@ -99,20 +90,16 @@ namespace EpgTimer
                 }
             }));
             m_ServerThread.Start();
-
-            return true;
         }
 
-        public void StopServer()
+        public void Dispose()
         {
             if (m_ServerThread != null)
             {
-                m_StopFlag = true;
-                m_PulseEvent.Set();
+                m_StopEvent.Set();
                 m_ServerThread.Join();
                 m_ServerThread = null;
-                m_PulseEvent.Dispose();
-                m_PulseEvent = null;
+                m_StopEvent.Dispose();
             }
         }
 

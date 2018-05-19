@@ -173,13 +173,13 @@ namespace EpgTimer
                 else
                 {
                     sendInfo.serverIP = 0x7F000001;
-                    IPAddress srvIP = CommonManager.Instance.NW.ConnectedIP;
+                    IPAddress srvIP = CommonManager.Instance.NWConnectedIP;
                     if (srvIP != null && srvIP.GetAddressBytes().Length == 4)
                     {
                         byte[] oct = srvIP.GetAddressBytes();
                         sendInfo.serverIP = (uint)oct[0] << 24 | (uint)oct[1] << 16 | (uint)oct[2] << 8 | oct[3];
                     }
-                    sendInfo.serverPort = CommonManager.Instance.NW.ConnectedPort;
+                    sendInfo.serverPort = CommonManager.Instance.NWConnectedPort;
                 }
                 sendInfo.filePath = playInfo.filePath;
                 if (Settings.Instance.NwTvModeUDP == true)

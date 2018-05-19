@@ -1041,12 +1041,9 @@ namespace EpgTimer
                     }
                     else
                     {
-                        if (CommonManager.Instance.NWMode == true)
+                        if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
                         {
-                            if (CommonManager.Instance.NW.IsConnected == false)
-                            {
-                                return false;
-                            }
+                            return false;
                         }
                         ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                         if (err != ErrCode.CMD_SUCCESS)

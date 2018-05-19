@@ -103,12 +103,9 @@ namespace EpgTimer
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
                     defaultList = new List<CustomEpgTabInfo>();
-                    if (CommonManager.Instance.NWMode == true)
+                    if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
                     {
-                        if (CommonManager.Instance.NW.IsConnected == false)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (err != ErrCode.CMD_SUCCESS)

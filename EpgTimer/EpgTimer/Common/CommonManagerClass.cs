@@ -28,7 +28,8 @@ namespace EpgTimer
         public string[] RecModeList { get; private set; }
         public bool NWMode { get; set; }
         public List<NotifySrvInfo> NotifyLogList { get; private set; }
-        public NWConnect NW { get; private set; }
+        public System.Net.IPAddress NWConnectedIP { get; set; }
+        public uint NWConnectedPort { get; set; }
         public List<Brush> CustContentColorList { get; private set; }
         public SolidColorBrush CustTitle1Color { get; private set; }
         public SolidColorBrush CustTitle2Color { get; private set; }
@@ -51,7 +52,6 @@ namespace EpgTimer
         {
             DB = new DBManager();
             TVTestCtrl = new TVTestCtrlClass();
-            NW = new NWConnect();
 
             ContentKindDictionary = new SortedList<ushort, ContentKindInfo>(155)
             {
@@ -326,7 +326,7 @@ namespace EpgTimer
             if (Instance.NWMode)
             {
                 cmd.SetSendMode(true);
-                cmd.SetNWSetting(Instance.NW.ConnectedIP, Instance.NW.ConnectedPort);
+                cmd.SetNWSetting(Instance.NWConnectedIP, Instance.NWConnectedPort);
             }
             return cmd;
         }
@@ -872,7 +872,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
+                    TVTestCtrl.StartStreamingPlay(filePath, NWConnectedIP, NWConnectedPort);
                 }
             }
             catch (Exception ex)

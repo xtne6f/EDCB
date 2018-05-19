@@ -20,12 +20,12 @@ namespace EpgTimer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private System.Threading.Mutex mutex;
-
+        //MainWindowにIDisposableを実装するべき？
+        private Mutex mutex;
+        private NWConnect nwConnect = new NWConnect();
         private TaskTrayClass taskTray = new TaskTrayClass();
         private PipeServer pipeServer = null;
         private bool closeFlag = false;
-        private bool needUnRegist = true;
 
         public MainWindow()
         {
@@ -143,12 +143,11 @@ namespace EpgTimer
 
                 if (CommonManager.Instance.NWMode == false)
                 {
-                    pipeServer = new PipeServer();
                     //コールバックは別スレッドかもしれないので設定は予めキャプチャする
                     uint execBat = Settings.Instance.ExecBat;
-                    pipeServer.StartServer("Global\\EpgTimerGUI_Ctrl_BonConnect_" + System.Diagnostics.Process.GetCurrentProcess().Id,
-                                           "EpgTimerGUI_Ctrl_BonPipe_" + System.Diagnostics.Process.GetCurrentProcess().Id,
-                                           (c, r) => OutsideCmdCallback(c, r, false, execBat));
+                    pipeServer = new PipeServer("Global\\EpgTimerGUI_Ctrl_BonConnect_" + System.Diagnostics.Process.GetCurrentProcess().Id,
+                                                "EpgTimerGUI_Ctrl_BonPipe_" + System.Diagnostics.Process.GetCurrentProcess().Id,
+                                                (c, r) => OutsideCmdCallback(c, r, false, execBat));
 
                     for (int i = 0; i < 150; i++)
                     {
@@ -395,8 +394,11 @@ namespace EpgTimer
                 {
                     //コールバックは別スレッドかもしれないので設定は予めキャプチャする
                     uint execBat = Settings.Instance.ExecBat;
-                    if (CommonManager.Instance.NW.ConnectServer(address, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true, execBat)))
+                    CommonManager.Instance.NWConnectedIP = null;
+                    if (nwConnect.ConnectServer(address, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true, execBat)))
                     {
+                        CommonManager.Instance.NWConnectedIP = address;
+                        CommonManager.Instance.NWConnectedPort = Settings.Instance.NWServerPort;
                         connected = true;
                         break;
                     }
@@ -475,15 +477,16 @@ namespace EpgTimer
                         }
                         Settings.SaveToXmlFile();
                     }
-                    pipeServer.StopServer();
+                    pipeServer.Dispose();
                 }
                 else
                 {
-                    if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
+                    if (CommonManager.Instance.NWConnectedIP != null && Settings.Instance.NWWaitPort != 0)
                     {
                         CommonManager.CreateSrvCtrl().SendUnRegistTCP(Settings.Instance.NWWaitPort);
                     }
                     Settings.SaveToXmlFile();
+                    nwConnect.Dispose();
                 }
                 mutex.ReleaseMutex();
                 mutex.Close();
@@ -783,13 +786,15 @@ namespace EpgTimer
                 {
                     if (Settings.Instance.SuspendCloseNW == true)
                     {
-                        if (CommonManager.Instance.NW.IsConnected == true)
+                        if (CommonManager.Instance.NWConnectedIP != null)
                         {
-                            CommonManager.CreateSrvCtrl().SendUnRegistTCP(Settings.Instance.NWWaitPort);
+                            if (Settings.Instance.NWWaitPort != 0)
+                            {
+                                CommonManager.CreateSrvCtrl().SendUnRegistTCP(Settings.Instance.NWWaitPort);
+                            }
                             CommonManager.CreateSrvCtrl().SendSuspend(0xFF02);
-                            closeFlag = true;
-                            needUnRegist = false;
-                            Close();
+                            CommonManager.Instance.NWConnectedIP = null;
+                            CloseCmd();
                         }
                     }
                     else
@@ -831,13 +836,15 @@ namespace EpgTimer
                 {
                     if (Settings.Instance.SuspendCloseNW == true)
                     {
-                        if (CommonManager.Instance.NW.IsConnected == true)
+                        if (CommonManager.Instance.NWConnectedIP != null)
                         {
-                            CommonManager.CreateSrvCtrl().SendUnRegistTCP(Settings.Instance.NWWaitPort);
+                            if (Settings.Instance.NWWaitPort != 0)
+                            {
+                                CommonManager.CreateSrvCtrl().SendUnRegistTCP(Settings.Instance.NWWaitPort);
+                            }
                             CommonManager.CreateSrvCtrl().SendSuspend(0xFF01);
-                            closeFlag = true;
-                            needUnRegist = false;
-                            Close();
+                            CommonManager.Instance.NWConnectedIP = null;
+                            CloseCmd();
                         }
                     }
                     else
