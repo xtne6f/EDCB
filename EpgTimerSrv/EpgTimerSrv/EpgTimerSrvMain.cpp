@@ -2831,6 +2831,31 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 			return true;
 		}
 		break;
+	case CMD2_EPG_SRV_GET_PG_INFO_LIST:
+		if( g_compatFlags & 0x100 ){
+			//互換動作: 番組情報取得(指定IDリスト)コマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_GET_PG_INFO_LIST\r\n");
+			if( this->epgDB.IsInitialLoadingDataDone() == false ){
+				resParam.param = CMD_ERR_BUSY;
+			}else{
+				vector<__int64> idList;
+				if( ReadVALUE(&idList, cmdParam.data, cmdParam.dataSize, NULL) ){
+					vector<const EPGDB_EVENT_INFO*> valp;
+					vector<EPGDB_EVENT_INFO> val(idList.size());
+					ULONGLONG key;
+					for( size_t i = 0; i < idList.size(); i++ ){
+						key = (ULONGLONG)idList[i];
+						if( this->epgDB.SearchEpg(key >> 48 & 0xFFFF, key >> 32 & 0xFFFF, key >> 16 & 0xFFFF, key & 0xFFFF, &val[i]) ){
+							valp.push_back(&val[i]); //取得出来たものだけリストアップ
+						}
+					}
+					resParam.data = NewWriteVALUE(valp, resParam.dataSize);
+					resParam.param = CMD_SUCCESS;
+				}
+			}
+			return true;
+		}
+		break;
 	}
 	return false;
 }
