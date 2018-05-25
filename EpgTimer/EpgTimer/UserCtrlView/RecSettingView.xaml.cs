@@ -400,29 +400,20 @@ namespace EpgTimer
                 comboBox_priority.SelectedIndex = Math.Min(Math.Max((int)recSetting.Priority, 1), 5) - 1;
                 comboBox_tuijyu.SelectedIndex = recSetting.TuijyuuFlag != 0 ? 1 : 0;
 
-                if (recSetting.ServiceMode == 0)
+                if ((recSetting.ServiceMode & 0x01) == 0)
                 {
                     checkBox_serviceMode.IsChecked = true;
+                    if (CommonManager.Instance.DB.DefaultRecSetting != null)
+                    {
+                        checkBox_serviceCaption.IsChecked = (CommonManager.Instance.DB.DefaultRecSetting.ServiceMode & 0x10) != 0;
+                        checkBox_serviceData.IsChecked = (CommonManager.Instance.DB.DefaultRecSetting.ServiceMode & 0x20) != 0;
+                    }
                 }
                 else
                 {
                     checkBox_serviceMode.IsChecked = false;
-                    if ((recSetting.ServiceMode & 0x10) > 0)
-                    {
-                        checkBox_serviceCaption.IsChecked = true;
-                    }
-                    else
-                    {
-                        checkBox_serviceCaption.IsChecked = false;
-                    }
-                    if ((recSetting.ServiceMode & 0x20) > 0)
-                    {
-                        checkBox_serviceData.IsChecked = true;
-                    }
-                    else
-                    {
-                        checkBox_serviceData.IsChecked = false;
-                    }
+                    checkBox_serviceCaption.IsChecked = (recSetting.ServiceMode & 0x10) != 0;
+                    checkBox_serviceData.IsChecked = (recSetting.ServiceMode & 0x20) != 0;
                 }
 
                 comboBox_pittari.SelectedIndex = recSetting.PittariFlag != 0 ? 1 : 0;
@@ -444,39 +435,32 @@ namespace EpgTimer
                 {
                     checkBox_suspendDef.IsChecked = true;
                     checkBox_reboot.IsChecked = false;
+                    if (CommonManager.Instance.DB.DefaultRecSetting != null)
+                    {
+                        radioButton_standby.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.SuspendMode == 1;
+                        radioButton_supend.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.SuspendMode == 2;
+                        radioButton_shutdown.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.SuspendMode == 3;
+                        radioButton_non.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.SuspendMode == 4;
+                        checkBox_reboot.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.RebootFlag != 0;
+                    }
                 }
                 else
                 {
                     checkBox_suspendDef.IsChecked = false;
-
-                    if (recSetting.SuspendMode == 1)
-                    {
-                        radioButton_standby.IsChecked = true;
-                    }
-                    if (recSetting.SuspendMode == 2)
-                    {
-                        radioButton_supend.IsChecked = true;
-                    }
-                    if (recSetting.SuspendMode == 3)
-                    {
-                        radioButton_shutdown.IsChecked = true;
-                    }
-                    if (recSetting.SuspendMode == 4)
-                    {
-                        radioButton_non.IsChecked = true;
-                    }
-                    if (recSetting.RebootFlag == 1)
-                    {
-                        checkBox_reboot.IsChecked = true;
-                    }
-                    else
-                    {
-                        checkBox_reboot.IsChecked = false;
-                    }
+                    radioButton_standby.IsChecked = recSetting.SuspendMode == 1;
+                    radioButton_supend.IsChecked = recSetting.SuspendMode == 2;
+                    radioButton_shutdown.IsChecked = recSetting.SuspendMode == 3;
+                    radioButton_non.IsChecked = recSetting.SuspendMode == 4;
+                    checkBox_reboot.IsChecked = recSetting.RebootFlag != 0;
                 }
                 if (recSetting.UseMargineFlag == 0)
                 {
                     checkBox_margineDef.IsChecked = true;
+                    if (CommonManager.Instance.DB.DefaultRecSetting != null)
+                    {
+                        textBox_margineStart.Text = CommonManager.Instance.DB.DefaultRecSetting.StartMargine.ToString();
+                        textBox_margineEnd.Text = CommonManager.Instance.DB.DefaultRecSetting.EndMargine.ToString();
+                    }
                 }
                 else
                 {

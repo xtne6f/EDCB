@@ -1096,10 +1096,6 @@ namespace EpgTimer
                     selectID = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
                 }
 
-                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
                     UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
@@ -1119,36 +1115,23 @@ namespace EpgTimer
                         }
                         DateTime baseStartTime = startTime;
                         Int32 duration = (Int32)info.DurationSecond;
-                        if (info.RecSetting.UseMargineFlag == 1)
+                        //総時間60秒を下限に縮小方向のマージンを反映させる
+                        int startMargin = info.RecSetting.StartMargine;
+                        int endMargin = info.RecSetting.EndMargine;
+                        if (info.RecSetting.UseMargineFlag == 0)
                         {
-                            if (info.RecSetting.StartMargine < 0)
+                            startMargin = 0;
+                            endMargin = 0;
+                            if (CommonManager.Instance.DB.DefaultRecSetting != null)
                             {
-                                startTime = startTime.AddSeconds(info.RecSetting.StartMargine * -1);
-                                duration += info.RecSetting.StartMargine;
-                            }
-                            if (info.RecSetting.EndMargine < 0)
-                            {
-                                duration += info.RecSetting.EndMargine;
+                                startMargin = CommonManager.Instance.DB.DefaultRecSetting.StartMargine;
+                                endMargin = CommonManager.Instance.DB.DefaultRecSetting.EndMargine;
                             }
                         }
-                        else
-                        {
-                            if (defStartMargin < 0)
-                            {
-                                startTime = startTime.AddSeconds(defStartMargin * -1);
-                                duration += defStartMargin;
-                            }
-                            if (defEndMargin < 0)
-                            {
-                                duration += defEndMargin;
-                            }
-                        }
-                        DateTime EndTime;
-                        EndTime = startTime.AddSeconds(duration);
-                        //if ((duration / 60) < Settings.Instance.MinHeight)
-                        //{
-                        //    duration = (int)Settings.Instance.MinHeight;
-                        //}
+                        startMargin = Math.Max(startMargin, -(duration - 60));
+                        endMargin = Math.Max(endMargin, -Math.Min(startMargin, 0) - (duration - 60));
+                        startTime = startTime.AddSeconds(-Math.Min(startMargin, 0));
+                        duration += Math.Min(startMargin, 0) + Math.Min(endMargin, 0);
 
                         if (timeList.ContainsKey(chkStartTime) == false)
                         {

@@ -50,6 +50,11 @@ namespace EpgTimer
         {
             get { return tunerReserveList; }
         }
+        public RecSettingData DefaultRecSetting
+        {
+            get;
+            private set;
+        }
         public Dictionary<UInt32, RecFileInfo> RecFileInfo
         {
             get { return recFileInfo; }
@@ -153,6 +158,7 @@ namespace EpgTimer
             {
                 reserveList = new Dictionary<uint, ReserveData>();
                 tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
+                DefaultRecSetting = null;
                 var list = new List<ReserveData>();
                 var list2 = new List<TunerReserveInfo>();
                 try
@@ -163,6 +169,15 @@ namespace EpgTimer
                     {
                         ret = ErrCode.CMD_ERR;
                         ret = CommonManager.CreateSrvCtrl().SendEnumTunerReserve(ref list2);
+                        if (ret == ErrCode.CMD_SUCCESS)
+                        {
+                            //デフォルト値の情報を取得する
+                            var info = new ReserveData();
+                            if (CommonManager.CreateSrvCtrl().SendGetReserve(0x7FFFFFFF, ref info) == ErrCode.CMD_SUCCESS)
+                            {
+                                DefaultRecSetting = info.RecSetting;
+                            }
+                        }
                     }
                 }
                 catch { }
