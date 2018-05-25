@@ -62,16 +62,20 @@ function RecSettingTemplate(rs)
   for i=1,5 do
     s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected' or '')..'>'..i
   end
+  --デフォルト値
+  local rsdef=(edcb.GetReserveData(0x7FFFFFFF) or {}).recSetting
   s=s..'</select><br>\n'
     ..'ぴったり（？）録画: <select name="pittariFlag">'
     ..'<option value="0"'..(not rs.pittariFlag and ' selected' or '')..'>しない'
     ..'<option value="1"'..(rs.pittariFlag and ' selected' or '')..'>する</select><br>\n'
     ..'録画マージン: <input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked')..'>デフォルト || '
-    ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or 0)..'" size="5"> '
-    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or 0)..'" size="5"><br>\n'
+    ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or rsdef and rsdef.startMargin or 0)..'" size="5"> '
+    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or rsdef and rsdef.endMargin or 0)..'" size="5"><br>\n'
     ..'指定サービス対象データ: <input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked' or '')..'>デフォルト || '
-    ..'<input type="checkbox" name="serviceMode_1" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/16)%2~=0 and ' checked' or '')..'>字幕を含める '
-    ..'<input type="checkbox" name="serviceMode_2" value="1"'..(rs.serviceMode%2~=0 and math.floor(rs.serviceMode/32)%2~=0 and ' checked' or '')..'>データカルーセルを含める<br>\n'
+    ..'<input type="checkbox" name="serviceMode_1" value="1"'
+      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/16 or rsdef and rsdef.serviceMode/16 or 0)%2~=0 and ' checked' or '')..'>字幕を含める '
+    ..'<input type="checkbox" name="serviceMode_2" value="1"'
+      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/32 or rsdef and rsdef.serviceMode/32 or 0)%2~=0 and ' checked' or '')..'>データカルーセルを含める<br>\n'
     ..'<table><tr><td>録画フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td><td>部分受信</td></tr>\n'
   for i,v in ipairs(rs.recFolderList) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>いいえ</td></tr>\n'
@@ -89,12 +93,13 @@ function RecSettingTemplate(rs)
   end
   s=s..'</select><br>\n'
     ..'録画後動作: <select name="suspendMode">'
-    ..'<option value="0"'..(rs.suspendMode==0 and ' selected' or '')..'>デフォルト'
+    ..'<option value="0"'..(rs.suspendMode==0 and ' selected' or '')..'>'..(rsdef and ({'スタンバイ','休止','シャットダウン','何もしない'})[rsdef.suspendMode] or '')..'（デフォルト）'
     ..'<option value="1"'..(rs.suspendMode==1 and ' selected' or '')..'>スタンバイ'
     ..'<option value="2"'..(rs.suspendMode==2 and ' selected' or '')..'>休止'
     ..'<option value="3"'..(rs.suspendMode==3 and ' selected' or '')..'>シャットダウン'
     ..'<option value="4"'..(rs.suspendMode==4 and ' selected' or '')..'>何もしない</select> '
-    ..'<input type="checkbox" name="rebootFlag" value="1"'..(rs.rebootFlag and ' checked' or '')..'>復帰後再起動する<br>\n'
+    ..'<input type="checkbox" name="rebootFlag" value="1"'
+      ..((rs.suspendMode==0 and rsdef and rsdef.rebootFlag or rs.suspendMode~=0 and rs.rebootFlag) and ' checked' or '')..'>復帰後再起動する<br>\n'
     ..'録画後実行bat（プリセットによる変更のみ対応）: '..(#rs.batFilePath==0 and '（なし）' or rs.batFilePath)..'<br>\n'
   return s
 end

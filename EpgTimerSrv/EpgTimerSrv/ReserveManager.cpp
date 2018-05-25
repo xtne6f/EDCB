@@ -54,7 +54,6 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	CBlockLock lock(&this->managerLock);
 
 	fs_path commonIniPath = GetCommonIniPath();
-	fs_path viewIniPath = GetModulePath().replace_filename(L"EpgDataCap_Bon.ini");
 
 	this->chUtil.ParseText(GetSettingPath().append(L"ChSet5.txt").c_str());
 
@@ -67,8 +66,6 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	this->recInfoText.SetCustomDelExt(s.delExtList);
 
 	this->recInfo2Text.SetKeepCount(s.recInfo2Max);
-	this->defEnableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
-	this->defEnableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		itr->second->ReloadSetting(s);
@@ -258,9 +255,9 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				tr.recMode = r.recSetting.recMode;
 				tr.priority = r.recSetting.priority;
 				bool enableCaption = tr.enableCaption =
-					r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_CAP) != 0 : this->defEnableCaption;
+					r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_CAP) != 0 : this->setting.enableCaption;
 				bool enableData = tr.enableData =
-					r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_DATA) != 0 : this->defEnableData;
+					r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_DATA) != 0 : this->setting.enableData;
 				tr.pittari = r.recSetting.pittariFlag != 0;
 				tr.partialRecMode = r.recSetting.partialRecFlag;
 				tr.continueRecFlag = r.recSetting.continueRecFlag != 0;
@@ -660,8 +657,8 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 					tr.eid = r.eventID;
 					tr.recMode = r.recSetting.recMode;
 					tr.priority = r.recSetting.priority;
-					tr.enableCaption = r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_CAP) != 0 : this->defEnableCaption;
-					tr.enableData = r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_DATA) != 0 : this->defEnableData;
+					tr.enableCaption = r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_CAP) != 0 : this->setting.enableCaption;
+					tr.enableData = r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_DATA) != 0 : this->setting.enableData;
 					tr.pittari = r.recSetting.pittariFlag != 0;
 					tr.partialRecMode = r.recSetting.partialRecFlag;
 					tr.continueRecFlag = r.recSetting.continueRecFlag != 0;

@@ -37,6 +37,8 @@ private:
 	static void InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list);
 	void ReloadNetworkSetting();
 	void ReloadSetting(bool initialize = false);
+	//デフォルト指定可能なフィールドのデフォルト値を特別な予約情報(ID=0x7FFFFFFF)として取得する
+	RESERVE_DATA GetDefaultReserveData(__int64 startTime) const;
 	//現在の予約状態に応じた復帰タイマをセットする
 	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
 	//システムをシャットダウンする
