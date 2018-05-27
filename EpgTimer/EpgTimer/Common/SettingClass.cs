@@ -214,6 +214,7 @@ namespace EpgTimer
         public bool NwTvMode { get; set; }
         public bool NwTvModeUDP { get; set; }
         public bool NwTvModeTCP { get; set; }
+        public bool FilePlay { get; set; }
         public string FilePlayExe { get; set; }
         public string FilePlayCmd { get; set; }
         public bool FilePlayOnAirWithExe { get; set; }
@@ -375,9 +376,10 @@ namespace EpgTimer
             NwTvMode = false;
             NwTvModeUDP = false;
             NwTvModeTCP = false;
+            FilePlay = true;
             FilePlayExe = "";
             FilePlayCmd = "\"$FilePath$\"";
-            FilePlayOnAirWithExe = false;
+            FilePlayOnAirWithExe = true;
             IEpgStationList = new List<IEPGStationInfo>();
             NWServerIP = "";
             NWServerPort = 4510;

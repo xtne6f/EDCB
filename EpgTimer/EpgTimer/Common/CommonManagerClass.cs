@@ -828,7 +828,7 @@ namespace EpgTimer
 
         public void FilePlay(uint reserveID)
         {
-            if (Settings.Instance.FilePlayOnAirWithExe && (NWMode == false || Settings.Instance.FilePlayExe.Length != 0))
+            if (Settings.Instance.FilePlay && Settings.Instance.FilePlayOnAirWithExe)
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
@@ -853,12 +853,11 @@ namespace EpgTimer
         {
             try
             {
-                if (NWMode == false || Settings.Instance.FilePlayExe.Length != 0)
+                if (Settings.Instance.FilePlay)
                 {
-                    System.Diagnostics.Process process;
                     if (Settings.Instance.FilePlayExe.Length == 0)
                     {
-                        process = System.Diagnostics.Process.Start(filePath);
+                        using (System.Diagnostics.Process.Start(filePath)) { }
                     }
                     else
                     {
@@ -866,8 +865,7 @@ namespace EpgTimer
                         //'$'->'\t'は再帰的な展開を防ぐため
                         cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(filePath).Replace('$', '\t'));
                         cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
-                        process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
-
+                        using (System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine)) { }
                     }
                 }
                 else
