@@ -40,6 +40,8 @@ namespace EpgTimer.Setting
             var settings = (Settings)DataContext;
             if (settings != null)
             {
+                comboBox_startTab.SelectedItem =
+                    comboBox_startTab.Items.Cast<ComboBoxItem>().FirstOrDefault(a => (string)a.Tag == settings.StartTab) ?? comboBox_startTab.Items[0];
                 listBox_viewBtn.Items.Clear();
                 foreach (string item in settings.ViewButtonList)
                 {
@@ -421,6 +423,14 @@ namespace EpgTimer.Setting
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ReLoadStation();
+        }
+
+        private void comboBox_startTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (comboBox_startTab.SelectedItem != null)
+            {
+                ((Settings)DataContext).StartTab = (string)((ComboBoxItem)comboBox_startTab.SelectedItem).Tag;
+            }
         }
     }
 }

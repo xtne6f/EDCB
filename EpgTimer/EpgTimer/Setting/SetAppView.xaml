@@ -30,6 +30,15 @@
                     <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" HorizontalAlignment="Left" IsChecked="{Binding SuspendCloseNW}" Margin="351,103,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" />
                     <CheckBox Content="EPGデータを常に更新する" HorizontalAlignment="Left" IsChecked="{Binding NgAutoEpgLoadNW, Converter={StaticResource convert}, ConverterParameter=not}" Margin="351,125,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" />
                     <CheckBox Content="番組表を事前に構築しておく" HorizontalAlignment="Left" IsChecked="{Binding PrebuildEpg}" IsEnabled="{Binding IsChecked, ElementName=checkBox_ngAutoEpgLoad, UpdateSourceTrigger=PropertyChanged}" Margin="369,147,0,0" VerticalAlignment="Top" />
+                    <Label Content="初期表示画面" HorizontalAlignment="Left" Margin="351,169,0,0" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="369,200,0,0" Name="comboBox_startTab" SelectionChanged="comboBox_startTab_SelectionChanged" VerticalAlignment="Top" Width="220">
+                        <ComboBoxItem Content="予約一覧" Tag="ReserveView" />
+                        <ComboBoxItem Content="使用予定チューナー" Tag="TunerReserveView" />
+                        <ComboBoxItem Content="録画済み一覧" Tag="RecInfoView" />
+                        <ComboBoxItem Content="自動予約登録-EPG予約" Tag="EpgAutoAddView" />
+                        <ComboBoxItem Content="自動予約登録-プログラム予約" Tag="ManualAutoAddView" />
+                        <ComboBoxItem Content="番組表" Tag="EpgView" />
+                    </ComboBox>
                     <Button Content="スタートアップにEpgTimer.exeのショートカットを作成する" Height="23" HorizontalAlignment="Left" Margin="6,248,0,0" Name="button_shortCutAdd" VerticalAlignment="Top" Width="340" Click="button_shortCutAdd_Click" />
                     <Button Content="スタートアップからEpgTimer.exeのショートカットを削除する" Height="23" HorizontalAlignment="Left" Margin="6,248,0,0" Name="button_shortCutDel" VerticalAlignment="Top" Width="340" Click="button_shortCutDel_Click" />
                     <Button Content="EpgTimerSrv設定" Height="23" HorizontalAlignment="Left" Margin="6,288,0,0" Name="button_srvSetting" VerticalAlignment="Top" Width="150" Click="button_srvSetting_Click" />

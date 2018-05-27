@@ -186,6 +186,31 @@ namespace EpgTimer
                 CommonManager.Instance.DB.ReloadReserveInfo();
 
                 ResetTaskMenu();
+
+                //初期タブ選択
+                switch (Settings.Instance.StartTab)
+                {
+                    //case "ReserveView":
+                    //    this.tabItem_reserve.IsSelected = true;
+                    //    break;
+                    case "TunerReserveView":
+                        this.tabItem_tunerReserve.IsSelected = true;
+                        break;
+                    case "RecInfoView":
+                        this.tabItem_recinfo.IsSelected = true;
+                        break;
+                    case "EpgAutoAddView":
+                        this.tabItem_epgAutoAdd.IsSelected = true;
+                    //    this.autoAddView.tabItem_epg.IsSelected = true;
+                        break;
+                    case "ManualAutoAddView":
+                        this.tabItem_epgAutoAdd.IsSelected = true;
+                        this.autoAddView.tabItem_manual.IsSelected = true;
+                        break;
+                    case "EpgView":
+                        this.tabItem_epg.IsSelected = true;
+                        break;
+                }
             }
             catch (Exception ex)
             {

@@ -283,6 +283,7 @@ namespace EpgTimer
         public bool MouseScrollAuto { get; set; }
         public int NoStyle { get; set; }
         public int NoSendClose { get; set; }
+        public string StartTab { get; set; }
 
         public Settings()
         {
@@ -443,6 +444,7 @@ namespace EpgTimer
             MouseScrollAuto = false;
             NoStyle = 0;
             NoSendClose = 0;
+            StartTab = "ReserveView";
         }
 
         public Settings DeepCloneStaticSettings()
