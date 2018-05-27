@@ -60,30 +60,19 @@ namespace EpgTimer
 
         private bool ReloadInfoData()
         {
-            try
+            if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
             {
                 listView_key.DataContext = null;
-
-                ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
-                    }), null);
-                    return false;
-                }
-
-                listView_key.DataContext = CommonManager.Instance.DB.ManualAutoAddList.Values.Select(info => new ManualAutoAddDataItem(info)).ToList();
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
                 return false;
             }
+            ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
+            if (err != ErrCode.CMD_SUCCESS)
+            {
+                Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。")));
+                listView_key.DataContext = null;
+                return false;
+            }
+            listView_key.DataContext = CommonManager.Instance.DB.ManualAutoAddList.Values.Select(info => new ManualAutoAddDataItem(info)).ToList();
             return true;
         }
 

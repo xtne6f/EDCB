@@ -25,10 +25,7 @@ namespace EpgTimer
     {
         private bool RedrawReserve = true;
         private Dictionary<string, GridViewColumn> columnList;
-
-        string _lastHeaderClicked = null;
-        ListSortDirection _lastDirection = ListSortDirection.Ascending;
-        string _lastHeaderClicked2 = null;
+        string _lastHeaderClicked2 = "";
         ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
         public ReserveView()
@@ -74,58 +71,13 @@ namespace EpgTimer
 
         private void ReDrawReserveData()
         {
-            try
+            listView_reserve.DataContext = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
+
+            if (columnList.ContainsKey(Settings.Instance.ResColumnHead) == false || Settings.Instance.ResColumnHead == "RecFileName")
             {
-                listView_reserve.DataContext = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
-                if (_lastHeaderClicked != null)
-                {
-                    //string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
-                    if (_lastHeaderClicked != "RecFileName")
-                    {
-                        Sort(_lastHeaderClicked, _lastDirection);
-                    }
-
-                }
-                else
-                {
-                    bool sort = false;
-                    foreach (GridViewColumn info in gridView_reserve.Columns)
-                    {
-                        GridViewColumnHeader columnHeader = info.Header as GridViewColumnHeader;
-                        string header = columnHeader.Tag as string;
-                        if (header == Settings.Instance.ResColumnHead)
-                        {
-                            if (header != "RecFileName")
-                            {
-                                Sort(header, Settings.Instance.ResSortDirection);
-
-                                _lastHeaderClicked = header;
-                                _lastDirection = Settings.Instance.ResSortDirection;
-
-                            }
-                            sort = true;
-                            break;
-                        }
-                    }
-                    if (gridView_reserve.Columns.Count > 0 && sort == false)
-                    {
-                        GridViewColumnHeader columnHeader = gridView_reserve.Columns[0].Header as GridViewColumnHeader;
-                        string header = columnHeader.Tag as string;
-                        if (header != "RecFileName")
-                        {
-                            Sort(header, _lastDirection);
-                            _lastHeaderClicked = header;
-                        }
-                    }
-                }
+                Settings.Instance.ResColumnHead = "StartTime";
             }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-            }
+            Sort();
         }
 
         public void RefreshEpgData()
@@ -137,7 +89,7 @@ namespace EpgTimer
             }
         }
 
-        private void Sort(string sortBy, ListSortDirection direction)
+        private void Sort()
         {
             if (listView_reserve.DataContext == null)
             {
@@ -149,26 +101,17 @@ namespace EpgTimer
             {
                 dataView.SortDescriptions.Clear();
 
-                SortDescription sd = new SortDescription(sortBy, direction);
-                dataView.SortDescriptions.Add(sd);
-                if (_lastHeaderClicked2 != null)
+                dataView.SortDescriptions.Add(new SortDescription(Settings.Instance.ResColumnHead, Settings.Instance.ResSortDirection));
+                if (columnList.ContainsKey(_lastHeaderClicked2) && _lastHeaderClicked2 != "RecFileName")
                 {
-                    if (sortBy != _lastHeaderClicked2)
-                    {
-                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
-                        dataView.SortDescriptions.Add(sd2);
-                    }
+                    dataView.SortDescriptions.Add(new SortDescription(_lastHeaderClicked2, _lastDirection2));
                 }
-
-                Settings.Instance.ResColumnHead = sortBy;
-                Settings.Instance.ResSortDirection = direction;
             }
         }
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            ListSortDirection direction;
 
             if (headerClicked != null)
             {
@@ -180,28 +123,22 @@ namespace EpgTimer
                         return;
                     }
 
-                    if (header != _lastHeaderClicked)
+                    if (header != Settings.Instance.ResColumnHead)
                     {
-                        direction = ListSortDirection.Ascending;
-                        _lastHeaderClicked2 = _lastHeaderClicked;
-                        _lastDirection2 = _lastDirection;
+                        _lastHeaderClicked2 = Settings.Instance.ResColumnHead;
+                        _lastDirection2 = Settings.Instance.ResSortDirection;
+                        Settings.Instance.ResColumnHead = header;
+                        Settings.Instance.ResSortDirection = ListSortDirection.Ascending;
+                    }
+                    else if (Settings.Instance.ResSortDirection == ListSortDirection.Ascending)
+                    {
+                        Settings.Instance.ResSortDirection = ListSortDirection.Descending;
                     }
                     else
                     {
-                        if (_lastDirection == ListSortDirection.Ascending)
-                        {
-                            direction = ListSortDirection.Descending;
-                        }
-                        else
-                        {
-                            direction = ListSortDirection.Ascending;
-                        }
+                        Settings.Instance.ResSortDirection = ListSortDirection.Ascending;
                     }
-
-                    Sort(header, direction);
-
-                    _lastHeaderClicked = header;
-                    _lastDirection = direction;
+                    Sort();
                 }
             }
         }

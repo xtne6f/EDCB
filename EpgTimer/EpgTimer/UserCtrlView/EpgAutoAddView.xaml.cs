@@ -63,37 +63,22 @@ namespace EpgTimer
 
         private bool ReloadInfoData()
         {
-            try
+            if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
             {
                 resultList = new List<EpgAutoDataItem>();
-
-                ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
-                    }), null);
-                    reloadItemOrder();
-                    return false;
-                }
-
-                foreach (EpgAutoAddData info in CommonManager.Instance.DB.EpgAutoAddList.Values)
-                {
-                    EpgAutoDataItem item = new EpgAutoDataItem(info);
-                    resultList.Add(item);
-                }
-
                 reloadItemOrder();
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
                 return false;
             }
+            ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+            if (err != ErrCode.CMD_SUCCESS)
+            {
+                Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。")));
+                resultList = new List<EpgAutoDataItem>();
+                reloadItemOrder();
+                return false;
+            }
+            resultList = CommonManager.Instance.DB.EpgAutoAddList.Values.Select(info => new EpgAutoDataItem(info)).ToList();
+            reloadItemOrder();
             return true;
         }
 

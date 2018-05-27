@@ -24,10 +24,7 @@ namespace EpgTimer
     public partial class RecInfoView : UserControl
     {
         private Dictionary<string, GridViewColumn> columnList;
-
-        private string _lastHeaderClicked = null;
-        private ListSortDirection _lastDirection = ListSortDirection.Ascending;
-        private string _lastHeaderClicked2 = null;
+        private string _lastHeaderClicked2 = "";
         private ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
         private bool ReloadInfo = true;
@@ -86,7 +83,7 @@ namespace EpgTimer
             }
         }
 
-        private void Sort(string sortBy, ListSortDirection direction)
+        private void Sort()
         {
             if (listView_recinfo.DataContext == null)
             {
@@ -98,114 +95,64 @@ namespace EpgTimer
             {
                 dataView.SortDescriptions.Clear();
 
-                SortDescription sd = new SortDescription(sortBy, direction);
-                dataView.SortDescriptions.Add(sd);
-                if (_lastHeaderClicked2 != null)
+                dataView.SortDescriptions.Add(new SortDescription(Settings.Instance.RecInfoColumnHead, Settings.Instance.RecInfoSortDirection));
+                if (columnList.ContainsKey(_lastHeaderClicked2))
                 {
-                    if (sortBy != _lastHeaderClicked2)
-                    {
-                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
-                        dataView.SortDescriptions.Add(sd2);
-                    }
+                    dataView.SortDescriptions.Add(new SortDescription(_lastHeaderClicked2, _lastDirection2));
                 }
-
-                Settings.Instance.RecInfoColumnHead = sortBy;
-                Settings.Instance.RecInfoSortDirection = direction;
             }
         }
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            ListSortDirection direction;
 
             if (headerClicked != null)
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
                     string header = headerClicked.Tag as string;
-                    if (header != _lastHeaderClicked)
+                    if (header != Settings.Instance.RecInfoColumnHead)
                     {
-                        direction = ListSortDirection.Ascending;
-                        _lastHeaderClicked2 = _lastHeaderClicked;
-                        _lastDirection2 = _lastDirection;
+                        _lastHeaderClicked2 = Settings.Instance.RecInfoColumnHead;
+                        _lastDirection2 = Settings.Instance.RecInfoSortDirection;
+                        Settings.Instance.RecInfoColumnHead = header;
+                        Settings.Instance.RecInfoSortDirection = ListSortDirection.Ascending;
+                    }
+                    else if (Settings.Instance.RecInfoSortDirection == ListSortDirection.Ascending)
+                    {
+                        Settings.Instance.RecInfoSortDirection = ListSortDirection.Descending;
                     }
                     else
                     {
-                        if (_lastDirection == ListSortDirection.Ascending)
-                        {
-                            direction = ListSortDirection.Descending;
-                        }
-                        else
-                        {
-                            direction = ListSortDirection.Ascending;
-                        }
+                        Settings.Instance.RecInfoSortDirection = ListSortDirection.Ascending;
                     }
-
-                    Sort(header, direction);
-
-                    _lastHeaderClicked = header;
-                    _lastDirection = direction;
+                    Sort();
                 }
             }
         }
 
         public bool ReloadInfoData()
         {
-            try
+            if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
             {
-                ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
-                    }), null);
-                    listView_recinfo.DataContext = null;
-                    return false;
-                }
-
-                listView_recinfo.DataContext = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info)).ToList();
-                if (_lastHeaderClicked != null)
-                {
-                    //GridViewColumnHeader columnHeader = _lastHeaderClicked.Header as GridViewColumnHeader;
-                    //string header = columnHeader.Tag as string;
-                    Sort(_lastHeaderClicked, _lastDirection);
-                }
-                else
-                {
-                    bool sort = false;
-                    foreach (GridViewColumn info in gridView_recinfo.Columns)
-                    {
-                        GridViewColumnHeader columnHeader = info.Header as GridViewColumnHeader;
-                        string header = columnHeader.Tag as string;
-                        if (header == Settings.Instance.RecInfoColumnHead)
-                        {
-                            Sort(header, Settings.Instance.RecInfoSortDirection);
-                            _lastHeaderClicked = header;
-                            _lastDirection = Settings.Instance.RecInfoSortDirection;
-                            sort = true;
-                            break;
-                        }
-                    }
-                    if (gridView_recinfo.Columns.Count > 0 && sort == false)
-                    {
-                        GridViewColumnHeader columnHeader = gridView_recinfo.Columns[1].Header as GridViewColumnHeader;
-                        string header = columnHeader.Tag as string;
-
-                        Sort(header, _lastDirection);
-                        _lastHeaderClicked = header;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
+                listView_recinfo.DataContext = null;
                 return false;
-            } 
+            }
+            ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
+            if (err != ErrCode.CMD_SUCCESS)
+            {
+                Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。")));
+                listView_recinfo.DataContext = null;
+                return false;
+            }
+            listView_recinfo.DataContext = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info)).ToList();
+
+            if (columnList.ContainsKey(Settings.Instance.RecInfoColumnHead) == false)
+            {
+                Settings.Instance.RecInfoColumnHead = "StartTime";
+            }
+            Sort();
             return true;
         }
 
