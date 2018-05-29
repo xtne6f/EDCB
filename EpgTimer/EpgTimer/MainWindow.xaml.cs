@@ -22,6 +22,7 @@ namespace EpgTimer
     {
         //MainWindowにIDisposableを実装するべき？
         private Mutex mutex;
+        private string mutexName;
         private NWConnect nwConnect = new NWConnect();
         private TaskTrayClass taskTray = new TaskTrayClass();
         private PipeServer pipeServer = null;
@@ -39,7 +40,9 @@ namespace EpgTimer
             {
                 Environment.Exit(0);
             }
-            mutex = new Mutex(false, "Global\\EpgTimer_Bon" + (CommonManager.Instance.NWMode ? appName.Substring(8).ToUpperInvariant() : "2"));
+            mutexName = (CommonManager.Instance.NWMode ? "" : "2") +
+                        (appName.StartsWith("EpgTimer", StringComparison.OrdinalIgnoreCase) ? appName.Substring(8).ToUpperInvariant() : "");
+            mutex = new Mutex(false, "Global\\EpgTimer_Bon" + mutexName);
             if (!mutex.WaitOne(0, false))
             {
                 mutex.Close();
@@ -71,7 +74,8 @@ namespace EpgTimer
                 }
             }
 
-            if (CommonManager.Instance.NWMode == false)
+            //オリジナルのmutex名をもつEpgTimerか
+            if (mutexName == "2")
             {
                 try
                 {
@@ -490,18 +494,20 @@ namespace EpgTimer
 
                 if (CommonManager.Instance.NWMode == false)
                 {
+                    var cmd = CommonManager.CreateSrvCtrl();
+                    cmd.SetConnectTimeOut(3000);
+                    cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                    //オリジナルのmutex名をもつEpgTimerか
+                    if (mutexName == "2")
                     {
-                        var cmd = CommonManager.CreateSrvCtrl();
-                        cmd.SetConnectTimeOut(3000);
-                        cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
                         //実際にEpgTimerSrvを終了するかどうかは(現在は)EpgTimerSrvの判断で決まる
                         //このフラグはEpgTimerと原作のサービスモードのEpgTimerSrvを混用するなど特殊な状況を想定したもの
                         if (Settings.Instance.NoSendClose == 0)
                         {
                             cmd.SendClose();
                         }
-                        Settings.SaveToXmlFile();
                     }
+                    Settings.SaveToXmlFile();
                     pipeServer.Dispose();
                 }
                 else
