@@ -2897,6 +2897,8 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 		{ "AddOrChgManuAdd", LuaAddOrChgManuAdd },
 		{ "GetNotifyUpdateCount", LuaGetNotifyUpdateCount },
 		{ "FindFile", LuaFindFile },
+		{ "OpenNetworkTV", LuaOpenNetworkTV },
+		{ "CloseNetworkTV", LuaCloseNetworkTV },
 		{ NULL, NULL }
 	};
 	//必要な領域をヒントに与えて"edcb"メタテーブルを作成
@@ -3785,6 +3787,54 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 	}
 	lua_pushnil(L);
 	return 1;
+}
+
+int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 4 ){
+		SET_CH_INFO info;
+		info.useSID = TRUE;
+		info.ONID = (WORD)lua_tointeger(L, 2);
+		info.TSID = (WORD)lua_tointeger(L, 3);
+		info.SID = (WORD)lua_tointeger(L, 4);
+		info.useBonCh = FALSE;
+		int mode = (int)lua_tointeger(L, 1);
+		int lastMode;
+		vector<DWORD> idUseList;
+		{
+			CBlockLock lock(&ws.sys->settingLock);
+			lastMode = (ws.sys->nwtvUdp ? 1 : 0) + (ws.sys->nwtvTcp ? 2 : 0);
+			ws.sys->nwtvUdp = mode == 1 || mode == 3;
+			ws.sys->nwtvTcp = mode == 2 || mode == 3;
+			vector<DWORD> idList = ws.sys->reserveManager.GetSupportServiceTuner(info.ONID, info.TSID, info.SID);
+			for( int i = (int)idList.size() - 1; i >= 0; i-- ){
+				wstring bonDriver = ws.sys->reserveManager.GetTunerBonFileName(idList[i]);
+				for( size_t j = 0; j < ws.sys->setting.viewBonList.size(); j++ ){
+					if( CompareNoCase(ws.sys->setting.viewBonList[j], bonDriver) == 0 ){
+						idUseList.push_back(idList[i]);
+						break;
+					}
+				}
+			}
+		}
+		if( lastMode != mode ){
+			ws.sys->reserveManager.CloseNWTV();
+		}
+		if( ws.sys->reserveManager.SetNWTVCh((mode == 1 || mode == 3), (mode == 2 || mode == 3), info, idUseList) ){
+			lua_pushboolean(L, true);
+			return 1;
+		}
+	}
+	lua_pushboolean(L, false);
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaCloseNetworkTV(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	ws.sys->reserveManager.CloseNWTV();
+	return 0;
 }
 
 void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e)
