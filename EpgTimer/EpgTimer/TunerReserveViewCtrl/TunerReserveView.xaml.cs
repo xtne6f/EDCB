@@ -309,10 +309,16 @@ namespace EpgTimer.TunerReserveViewCtrl
 
         private void scrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
+            var ps = PresentationSource.FromVisual(this);
+            if (ps != null)
+            {
+                //スクロール位置を物理ピクセルに合わせる
+                Matrix m = ps.CompositionTarget.TransformToDevice;
+                scrollViewer.ScrollToHorizontalOffset(Math.Floor(scrollViewer.HorizontalOffset * m.M11) / m.M11);
+                scrollViewer.ScrollToVerticalOffset(Math.Floor(scrollViewer.VerticalOffset * m.M22) / m.M22);
+            }
             if (ScrollChanged != null)
             {
-                scrollViewer.ScrollToHorizontalOffset(Math.Floor(scrollViewer.HorizontalOffset));
-                scrollViewer.ScrollToVerticalOffset(Math.Floor(scrollViewer.VerticalOffset));
                 ScrollChanged(this, e);
             }
         }

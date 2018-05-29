@@ -46,7 +46,7 @@ namespace EpgTimer
             listView_log.DataContext = null;
             logList.Clear();
             string notifyLog = "";
-            if (CommonManager.Instance.CtrlCmd.SendGetNotifyLog(Math.Max(Settings.Instance.NotifyLogMax, 1), ref notifyLog) == ErrCode.CMD_SUCCESS)
+            if (CommonManager.CreateSrvCtrl().SendGetNotifyLog(Math.Max(Settings.Instance.NotifyLogMax, 1), ref notifyLog) == ErrCode.CMD_SUCCESS)
             {
                 //サーバに保存されたログを使う
                 foreach (string text in notifyLog.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
@@ -90,17 +90,13 @@ namespace EpgTimer
                 dataView.SortDescriptions.Add(sd);
                 if (_lastHeaderClicked2 != null)
                 {
-                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
+                    if (sortBy != _lastHeaderClicked2)
                     {
                         SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
                         dataView.SortDescriptions.Add(sd2);
                     }
                 }
                 dataView.Refresh();
-
-                Settings.Instance.ResColumnHead = sortBy;
-                Settings.Instance.ResSortDirection = direction;
-
             }
             catch (Exception ex)
             {
@@ -118,7 +114,7 @@ namespace EpgTimer
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
                     string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                    if (String.Compare(header, _lastHeaderClicked) != 0)
+                    if (header != _lastHeaderClicked)
                     {
                         direction = ListSortDirection.Ascending;
                         _lastHeaderClicked2 = _lastHeaderClicked;
