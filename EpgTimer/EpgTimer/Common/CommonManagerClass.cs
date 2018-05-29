@@ -845,7 +845,7 @@ namespace EpgTimer
             }
             else
             {
-                TVTestCtrl.StartTimeShift(reserveID);
+                TVTestCtrl.StartStreamingPlay(null, reserveID);
             }
         }
 
@@ -870,7 +870,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    TVTestCtrl.StartStreamingPlay(filePath, NWConnectedIP, NWConnectedPort);
+                    TVTestCtrl.StartStreamingPlay(filePath, 0);
                 }
             }
             catch (Exception ex)
