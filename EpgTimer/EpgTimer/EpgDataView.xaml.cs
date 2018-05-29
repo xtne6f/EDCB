@@ -110,12 +110,13 @@ namespace EpgTimer
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
+                        if (IsVisible && err != ErrCode.CMD_ERR_BUSY)
                         {
-                            MessageBox.Show(CommonManager.GetErrCodeText(err) ??
-                                (err == ErrCode.CMD_ERR_BUSY ? "EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）" :
-                                                               "EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。"));
-                        }), null);
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
+                            }));
+                        }
                         return false;
                     }
 
