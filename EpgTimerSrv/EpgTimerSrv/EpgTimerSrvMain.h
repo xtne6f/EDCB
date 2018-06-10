@@ -37,6 +37,8 @@ private:
 	static void InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list);
 	void ReloadNetworkSetting();
 	void ReloadSetting(bool initialize = false);
+	//デフォルト指定可能なフィールドのデフォルト値を特別な予約情報(ID=0x7FFFFFFF)として取得する
+	RESERVE_DATA GetDefaultReserveData(__int64 startTime) const;
 	//現在の予約状態に応じた復帰タイマをセットする
 	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
 	//システムをシャットダウンする
@@ -108,6 +110,8 @@ private:
 	static int LuaAddOrChgManuAdd(lua_State* L);
 	static int LuaGetNotifyUpdateCount(lua_State* L);
 	static int LuaFindFile(lua_State* L);
+	static int LuaOpenNetworkTV(lua_State* L);
+	static int LuaCloseNetworkTV(lua_State* L);
 	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
 	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);
 	static void PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_DATA& rs);

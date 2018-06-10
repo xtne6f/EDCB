@@ -209,6 +209,9 @@
     <ClInclude Include="..\..\Common\ThreadUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\ServiceFilter.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EpgDataCap_Bon.cpp">
@@ -327,6 +330,9 @@
     </ClCompile>
     <ClCompile Include="SetDlgService.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BonCtrl\ServiceFilter.cpp">
+      <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

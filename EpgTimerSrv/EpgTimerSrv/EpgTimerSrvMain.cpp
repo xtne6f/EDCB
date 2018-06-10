@@ -1117,6 +1117,9 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 {
 	fs_path iniPath = GetModuleIniPath();
 	CEpgTimerSrvSetting::SETTING s = CEpgTimerSrvSetting::LoadSetting(iniPath.c_str());
+	fs_path viewIniPath = GetModulePath().replace_filename(L"EpgDataCap_Bon.ini");
+	s.enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
+	s.enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
 	if( initialize ){
 		this->reserveManager.Initialize(s);
 	}else{
@@ -1136,6 +1139,24 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 		}
 	}
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
+}
+
+RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
+{
+	CBlockLock lock(&this->settingLock);
+
+	RESERVE_DATA r;
+	r.reserveID = 0x7FFFFFFF;
+	ConvertSystemTime(startTime, &r.startTime);
+	r.startTimeEpg = r.startTime;
+	r.recSetting.suspendMode = (this->setting.recEndMode + 3) % 4 + 1;
+	r.recSetting.rebootFlag = this->setting.reboot;
+	r.recSetting.useMargineFlag = 1;
+	r.recSetting.startMargine = this->setting.startMargin;
+	r.recSetting.endMargine = this->setting.endMargin;
+	r.recSetting.serviceMode = (this->setting.enableCaption ? RECSERVICEMODE_CAP : 0) |
+	                           (this->setting.enableData ? RECSERVICEMODE_DATA : 0) | RECSERVICEMODE_SET;
+	return r;
 }
 
 bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec)
@@ -1578,12 +1599,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_GET_RESERVE:
 		{
-			OutputDebugString(L"CMD2_EPG_SRV_GET_RESERVE\r\n");
 			RESERVE_DATA info;
-			if( ReadVALUE(&info.reserveID, cmdParam->data, cmdParam->dataSize, NULL) &&
-			    sys->reserveManager.GetReserveData(info.reserveID, &info) ){
-				resParam->data = NewWriteVALUE(info, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+			if( ReadVALUE(&info.reserveID, cmdParam->data, cmdParam->dataSize, NULL) ){
+				if( info.reserveID == 0x7FFFFFFF ){
+					resParam->data = NewWriteVALUE(sys->GetDefaultReserveData(GetNowI64Time() / I64_1SEC * I64_1SEC), resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}else if( sys->reserveManager.GetReserveData(info.reserveID, &info) ){
+					resParam->data = NewWriteVALUE(info, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -2165,15 +2189,18 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_GET_RESERVE2:
 		{
-			OutputDebugString(L"CMD2_EPG_SRV_GET_RESERVE2\r\n");
 			WORD ver;
 			DWORD readSize;
 			RESERVE_DATA info;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
-			    ReadVALUE2(ver, &info.reserveID, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
-			    sys->reserveManager.GetReserveData(info.reserveID, &info) ){
-				resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+			    ReadVALUE2(ver, &info.reserveID, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+				if( info.reserveID == 0x7FFFFFFF ){
+					resParam->data = NewWriteVALUE2WithVersion(ver, sys->GetDefaultReserveData(GetNowI64Time() / I64_1SEC * I64_1SEC), resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}else if( sys->reserveManager.GetReserveData(info.reserveID, &info) ){
+					resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -2804,6 +2831,31 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 			return true;
 		}
 		break;
+	case CMD2_EPG_SRV_GET_PG_INFO_LIST:
+		if( g_compatFlags & 0x100 ){
+			//互換動作: 番組情報取得(指定IDリスト)コマンドを実装する
+			OutputDebugString(L"CMD2_EPG_SRV_GET_PG_INFO_LIST\r\n");
+			if( this->epgDB.IsInitialLoadingDataDone() == false ){
+				resParam.param = CMD_ERR_BUSY;
+			}else{
+				vector<__int64> idList;
+				if( ReadVALUE(&idList, cmdParam.data, cmdParam.dataSize, NULL) ){
+					vector<const EPGDB_EVENT_INFO*> valp;
+					vector<EPGDB_EVENT_INFO> val(idList.size());
+					ULONGLONG key;
+					for( size_t i = 0; i < idList.size(); i++ ){
+						key = (ULONGLONG)idList[i];
+						if( this->epgDB.SearchEpg(key >> 48 & 0xFFFF, key >> 32 & 0xFFFF, key >> 16 & 0xFFFF, key & 0xFFFF, &val[i]) ){
+							valp.push_back(&val[i]); //取得出来たものだけリストアップ
+						}
+					}
+					resParam.data = NewWriteVALUE(valp, resParam.dataSize);
+					resParam.param = CMD_SUCCESS;
+				}
+			}
+			return true;
+		}
+		break;
 	}
 	return false;
 }
@@ -2845,6 +2897,8 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 		{ "AddOrChgManuAdd", LuaAddOrChgManuAdd },
 		{ "GetNotifyUpdateCount", LuaGetNotifyUpdateCount },
 		{ "FindFile", LuaFindFile },
+		{ "OpenNetworkTV", LuaOpenNetworkTV },
+		{ "CloseNetworkTV", LuaCloseNetworkTV },
 		{ NULL, NULL }
 	};
 	//必要な領域をヒントに与えて"edcb"メタテーブルを作成
@@ -3398,7 +3452,13 @@ int CEpgTimerSrvMain::LuaGetReserveData(lua_State* L)
 		return 1;
 	}else{
 		RESERVE_DATA r;
-		if( ws.sys->reserveManager.GetReserveData((DWORD)lua_tointeger(L, 1), &r) ){
+		r.reserveID = (DWORD)lua_tointeger(L, 1);
+		if( r.reserveID == 0x7FFFFFFF ){
+			lua_newtable(L);
+			//UNIXエポック+1日+タイムゾーン
+			PushReserveData(ws, ws.sys->GetDefaultReserveData(116445600000000000 + I64_UTIL_TIMEZONE));
+			return 1;
+		}else if( ws.sys->reserveManager.GetReserveData(r.reserveID, &r) ){
 			lua_newtable(L);
 			PushReserveData(ws, r);
 			return 1;
@@ -3727,6 +3787,54 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 	}
 	lua_pushnil(L);
 	return 1;
+}
+
+int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 4 ){
+		SET_CH_INFO info;
+		info.useSID = TRUE;
+		info.ONID = (WORD)lua_tointeger(L, 2);
+		info.TSID = (WORD)lua_tointeger(L, 3);
+		info.SID = (WORD)lua_tointeger(L, 4);
+		info.useBonCh = FALSE;
+		int mode = (int)lua_tointeger(L, 1);
+		int lastMode;
+		vector<DWORD> idUseList;
+		{
+			CBlockLock lock(&ws.sys->settingLock);
+			lastMode = (ws.sys->nwtvUdp ? 1 : 0) + (ws.sys->nwtvTcp ? 2 : 0);
+			ws.sys->nwtvUdp = mode == 1 || mode == 3;
+			ws.sys->nwtvTcp = mode == 2 || mode == 3;
+			vector<DWORD> idList = ws.sys->reserveManager.GetSupportServiceTuner(info.ONID, info.TSID, info.SID);
+			for( int i = (int)idList.size() - 1; i >= 0; i-- ){
+				wstring bonDriver = ws.sys->reserveManager.GetTunerBonFileName(idList[i]);
+				for( size_t j = 0; j < ws.sys->setting.viewBonList.size(); j++ ){
+					if( CompareNoCase(ws.sys->setting.viewBonList[j], bonDriver) == 0 ){
+						idUseList.push_back(idList[i]);
+						break;
+					}
+				}
+			}
+		}
+		if( lastMode != mode ){
+			ws.sys->reserveManager.CloseNWTV();
+		}
+		if( ws.sys->reserveManager.SetNWTVCh((mode == 1 || mode == 3), (mode == 2 || mode == 3), info, idUseList) ){
+			lua_pushboolean(L, true);
+			return 1;
+		}
+	}
+	lua_pushboolean(L, false);
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaCloseNetworkTV(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	ws.sys->reserveManager.CloseNWTV();
+	return 0;
 }
 
 void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e)

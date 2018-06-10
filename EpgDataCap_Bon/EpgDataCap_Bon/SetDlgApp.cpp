@@ -44,6 +44,7 @@ BOOL CSetDlgApp::OnInitDialog()
 	
 	Button_SetCheck(GetDlgItem(IDC_CHECK_EPGCAP_LIVE), GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_EPGCAP_REC), GetPrivateProfileInt(L"SET", L"EpgCapRec", 1, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC), GetPrivateProfileInt(L"SET", L"ParseEpgPostProcess", 0, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_TASKMIN), GetPrivateProfileInt(L"SET", L"MinTask", 0, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_OPENLAST), GetPrivateProfileInt(L"SET", L"OpenLast", 1, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_NO_LOG_SCRAMBLE), GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, appIniPath.c_str()));
@@ -78,6 +79,7 @@ void CSetDlgApp::SaveIni(void)
 
 	WritePrivateProfileInt( L"SET", L"EpgCapLive", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_LIVE)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"EpgCapRec", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_REC)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"ParseEpgPostProcess", Button_GetCheck(GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"MinTask", Button_GetCheck(GetDlgItem(IDC_CHECK_TASKMIN)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"OpenLast", Button_GetCheck(GetDlgItem(IDC_CHECK_OPENLAST)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"NoLogScramble", Button_GetCheck(GetDlgItem(IDC_CHECK_NO_LOG_SCRAMBLE)), appIniPath.c_str() );

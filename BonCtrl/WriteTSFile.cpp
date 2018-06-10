@@ -219,7 +219,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			}
 			//開始
 			path.append(sys->fileList[i]->recFileName);
-			BOOL startRes = sys->fileList[i]->writeUtil.StartSave(path.c_str(), sys->overWriteFlag, sys->createSize);
+			BOOL startRes = sys->fileList[i]->writeUtil.Start(path.c_str(), sys->overWriteFlag, sys->createSize);
 			if( startRes == FALSE ){
 				OutputDebugString(L"CWriteTSFile::StartSave Err 2\r\n");
 				//エラー時サブフォルダでリトライ
@@ -228,7 +228,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 					//空きなかったのでサブフォルダに録画
 					sys->subRecFlag = TRUE;
 					path = fs_path(folderPath).append(sys->fileList[i]->recFileName);
-					startRes = sys->fileList[i]->writeUtil.StartSave(path.c_str(), sys->overWriteFlag, sys->createSize);
+					startRes = sys->fileList[i]->writeUtil.Start(path.c_str(), sys->overWriteFlag, sys->createSize);
 				}
 			}
 			if( startRes == FALSE ){
@@ -236,10 +236,10 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			}else{
 				if( i == 0 ){
 					DWORD saveFilePathSize = 0;
-					if( sys->fileList[i]->writeUtil.GetSaveFilePath(NULL, &saveFilePathSize) && saveFilePathSize > 0 ){
+					if( sys->fileList[i]->writeUtil.GetSavePath(NULL, &saveFilePathSize) && saveFilePathSize > 0 ){
 						vector<WCHAR> saveFilePath(saveFilePathSize);
-						if( sys->fileList[i]->writeUtil.GetSaveFilePath(&saveFilePath.front(), &saveFilePathSize) ){
-							sys->mainSaveFilePath = &saveFilePath.front();
+						if( sys->fileList[i]->writeUtil.GetSavePath(saveFilePath.data(), &saveFilePathSize) ){
+							sys->mainSaveFilePath = saveFilePath.data();
 						}
 					}
 				}
@@ -276,7 +276,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 				{
 					if( sys->fileList[i] ){
 						DWORD write = 0;
-						if( sys->fileList[i]->writeUtil.AddTSBuff(&data.front().front(), dataSize, &write) == FALSE ){
+						if( sys->fileList[i]->writeUtil.Write(data.front().data(), dataSize, &write) == FALSE ){
 							//空きがなくなった
 							if( i == 0 ){
 								CBlockLock lock(&sys->outThreadLock);
@@ -285,7 +285,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 									sys->writeTotalSize = -(sys->writeTotalSize + 1);
 								}
 							}
-							sys->fileList[i]->writeUtil.StopSave();
+							sys->fileList[i]->writeUtil.Stop();
 
 							if( sys->fileList[i]->freeChk == TRUE ){
 								//次の空きを探す
@@ -294,14 +294,14 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 									fs_path recFilePath = fs_path(freeFolderPath).append(sys->fileList[i]->recFileName);
 
 									//開始
-									if( sys->fileList[i]->writeUtil.StartSave(recFilePath.c_str(), sys->overWriteFlag, 0) == FALSE ){
+									if( sys->fileList[i]->writeUtil.Start(recFilePath.c_str(), sys->overWriteFlag, 0) == FALSE ){
 										//失敗したので終わり
 										sys->fileList[i].reset();
 									}else{
 										sys->subRecFlag = TRUE;
 
 										if( dataSize > write ){
-											sys->fileList[i]->writeUtil.AddTSBuff(&data.front().front()+write, dataSize-write, &write);
+											sys->fileList[i]->writeUtil.Write(data.front().data()+write, dataSize-write, &write);
 										}
 									}
 								}
@@ -338,7 +338,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
 				if( sys->fileList[i] ){
 					DWORD write = 0;
-					sys->fileList[i]->writeUtil.AddTSBuff(&sys->tsBuffList.front().front(), (DWORD)sys->tsBuffList.front().size(), &write);
+					sys->fileList[i]->writeUtil.Write(sys->tsBuffList.front().data(), (DWORD)sys->tsBuffList.front().size(), &write);
 				}
 			}
 			sys->tsBuffList.pop_front();
@@ -346,7 +346,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	}
 	for( size_t i=0; i<sys->fileList.size(); i++ ){
 		if( sys->fileList[i] ){
-			sys->fileList[i]->writeUtil.StopSave();
+			sys->fileList[i]->writeUtil.Stop();
 			sys->fileList[i].reset();
 		}
 	}

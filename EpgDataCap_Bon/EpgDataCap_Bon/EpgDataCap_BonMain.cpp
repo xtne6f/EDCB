@@ -128,6 +128,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	}
 	this->bonCtrl.SetEMMMode(this->enableEMMFlag);
 	this->bonCtrl.SetNoLogScramble(GetPrivateProfileInt( L"SET", L"NoLogScramble", 0, appIniPath.c_str() ) != 0);
+	this->bonCtrl.SetParseEpgPostProcess(GetPrivateProfileInt( L"SET", L"ParseEpgPostProcess", 0, appIniPath.c_str() ) != 0);
 
 	this->tsBuffMaxCount = (DWORD)GetPrivateProfileInt( L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str() );
 	this->writeBuffMaxCount = GetPrivateProfileInt( L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str() );

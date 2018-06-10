@@ -41,16 +41,6 @@ void CBonCtrl::SetBonDriverFolder(
 	this->bonUtil.SetBonDriverFolder(bonDriverFolderPath);
 }
 
-void CBonCtrl::SetEMMMode(BOOL enable)
-{
-	this->tsOut.SetEmm(enable);
-}
-
-void CBonCtrl::SetNoLogScramble(BOOL noLog)
-{
-	this->tsOut.SetNoLogScramble(noLog);
-}
-
 //BonDriverフォルダのBonDriver_*.dllを列挙
 //戻り値：
 // 検索できたBonDriver一覧

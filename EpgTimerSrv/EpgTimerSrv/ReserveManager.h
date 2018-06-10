@@ -163,9 +163,6 @@ private:
 	map<DWORD, std::unique_ptr<CTunerBankCtrl>> tunerBankMap;
 
 	CEpgTimerSrvSetting::SETTING setting;
-	bool defEnableCaption;
-	bool defEnableData;
-
 	DWORD checkCount;
 	__int64 lastCheckEpgCap;
 	bool epgCapRequested;

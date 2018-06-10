@@ -233,6 +233,7 @@
     <ClInclude Include="..\..\BonCtrl\ScrambleDecoderUtil.h" />
     <ClInclude Include="..\..\BonCtrl\SendTCP.h" />
     <ClInclude Include="..\..\BonCtrl\SendUDP.h" />
+    <ClInclude Include="..\..\BonCtrl\ServiceFilter.h" />
     <ClInclude Include="..\..\BonCtrl\TSOut.h" />
     <ClInclude Include="..\..\BonCtrl\WriteTSFile.h" />
     <ClInclude Include="..\..\Common\Common.h" />
@@ -285,6 +286,7 @@
     <ClCompile Include="..\..\BonCtrl\ScrambleDecoderUtil.cpp" />
     <ClCompile Include="..\..\BonCtrl\SendTCP.cpp" />
     <ClCompile Include="..\..\BonCtrl\SendUDP.cpp" />
+    <ClCompile Include="..\..\BonCtrl\ServiceFilter.cpp" />
     <ClCompile Include="..\..\BonCtrl\TSOut.cpp" />
     <ClCompile Include="..\..\BonCtrl\WriteTSFile.cpp" />
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
