@@ -8,7 +8,6 @@ extern HINSTANCE g_instance;
 CWriteMain::CWriteMain()
 {
 	this->file = INVALID_HANDLE_VALUE;
-	this->writePlugin.hDll = NULL;
 
 	WCHAR dllPath[MAX_PATH];
 	DWORD ret = GetModuleFileName(g_instance, dllPath, MAX_PATH);
@@ -17,7 +16,10 @@ CWriteMain::CWriteMain()
 		wstring name = GetPrivateProfileToString(L"SET", L"WritePlugin", L"", iniPath.c_str());
 		if( name.empty() == false && name[0] != L';' ){
 			//出力プラグインを数珠繋ぎ
-			this->writePlugin.Initialize(fs_path(iniPath).replace_filename(name).c_str());
+			this->writePlugin.reset(new CWritePlugInUtil);
+			if( this->writePlugin->Initialize(fs_path(iniPath).replace_filename(name).c_str()) == FALSE ){
+				this->writePlugin.reset();
+			}
 		}
 	}
 }
@@ -25,10 +27,6 @@ CWriteMain::CWriteMain()
 CWriteMain::~CWriteMain()
 {
 	Stop();
-	if( this->writePlugin.hDll ){
-		this->writePlugin.pfnDeleteCtrl(this->writePlugin.id);
-		FreeLibrary(this->writePlugin.hDll);
-	}
 }
 
 BOOL CWriteMain::Start(
@@ -52,21 +50,21 @@ BOOL CWriteMain::Start(
 		}
 	}
 
-	if( this->writePlugin.hDll ){
-		if( this->writePlugin.pfnStartSave(this->writePlugin.id, this->savePath.c_str(), overWriteFlag, createSize) == FALSE ){
+	if( this->writePlugin ){
+		if( this->writePlugin->Start(this->savePath.c_str(), overWriteFlag, createSize) == FALSE ){
 			this->savePath = L"";
 			return FALSE;
 		}
 		vector<WCHAR> path;
 		DWORD pathSize = 0;
-		if( this->writePlugin.pfnGetSaveFilePath(this->writePlugin.id, NULL, &pathSize) && pathSize > 0 ){
+		if( this->writePlugin->GetSavePath(NULL, &pathSize) && pathSize > 0 ){
 			path.resize(pathSize);
-			if( this->writePlugin.pfnGetSaveFilePath(this->writePlugin.id, &path.front(), &pathSize) == FALSE ){
+			if( this->writePlugin->GetSavePath(&path.front(), &pathSize) == FALSE ){
 				path.clear();
 			}
 		}
 		if( path.empty() ){
-			this->writePlugin.pfnStopSave(this->writePlugin.id);
+			this->writePlugin->Stop();
 			this->savePath = L"";
 			return FALSE;
 		}
@@ -113,8 +111,8 @@ BOOL CWriteMain::Stop(
 		CloseHandle(this->file);
 		this->file = INVALID_HANDLE_VALUE;
 	}
-	if( this->writePlugin.hDll ){
-		this->writePlugin.pfnStopSave(this->writePlugin.id);
+	if( this->writePlugin ){
+		this->writePlugin->Stop();
 	}
 	return TRUE;
 }
@@ -131,12 +129,12 @@ BOOL CWriteMain::Write(
 	DWORD* writeSize
 	)
 {
-	if( (this->writePlugin.hDll || this->file != INVALID_HANDLE_VALUE) && data != NULL && size > 0 && writeSize != NULL ){
+	if( (this->writePlugin || this->file != INVALID_HANDLE_VALUE) && data != NULL && size > 0 && writeSize != NULL ){
 		*writeSize = 0;
 		if( this->targetSID == 0 ){
 			//全サービスなので何も弄らない
-			if( this->writePlugin.hDll ){
-				if( this->writePlugin.pfnAddTSBuff(this->writePlugin.id, data, size, writeSize) == FALSE ){
+			if( this->writePlugin ){
+				if( this->writePlugin->Write(data, size, writeSize) == FALSE ){
 					return FALSE;
 				}
 			}else{
@@ -214,8 +212,8 @@ BOOL CWriteMain::Write(
 				return TRUE;
 			}
 			DWORD write;
-			if( this->writePlugin.hDll ){
-				if( this->writePlugin.pfnAddTSBuff(this->writePlugin.id, &this->outBuff.front(), (DWORD)this->outBuff.size(), &write) == FALSE ){
+			if( this->writePlugin ){
+				if( this->writePlugin->Write(&this->outBuff.front(), (DWORD)this->outBuff.size(), &write) == FALSE ){
 					return FALSE;
 				}
 			}else{

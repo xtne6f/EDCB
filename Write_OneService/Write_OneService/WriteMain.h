@@ -2,6 +2,7 @@
 
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
+#include "../../Common/WritePlugInUtil.h"
 #include "../../BonCtrl/PacketInit.h"
 #include "../../BonCtrl/CreatePATPacket.h"
 #include "../../BonCtrl/CATUtil.h"
@@ -54,36 +55,8 @@ public:
 		);
 
 private:
-	struct WRITE_PLUGIN {
-		HMODULE hDll;
-		DWORD id;
-		BOOL (WINAPI *pfnCreateCtrl)(DWORD*);
-		BOOL (WINAPI *pfnDeleteCtrl)(DWORD);
-		BOOL (WINAPI *pfnStartSave)(DWORD,LPCWSTR,BOOL,ULONGLONG);
-		BOOL (WINAPI *pfnStopSave)(DWORD);
-		BOOL (WINAPI *pfnGetSaveFilePath)(DWORD,WCHAR*,DWORD*);
-		BOOL (WINAPI *pfnAddTSBuff)(DWORD,BYTE*,DWORD,DWORD*);
-		BOOL Initialize(LPCWSTR path) {
-			hDll = LoadLibrary(path);
-			if( hDll ){
-				if( (pfnCreateCtrl = (BOOL (WINAPI*)(DWORD*))(GetProcAddress(hDll, "CreateCtrl"))) != NULL &&
-				    (pfnDeleteCtrl = (BOOL (WINAPI*)(DWORD))(GetProcAddress(hDll, "DeleteCtrl"))) != NULL &&
-				    (pfnStartSave = (BOOL (WINAPI*)(DWORD,LPCWSTR,BOOL,ULONGLONG))(GetProcAddress(hDll, "StartSave"))) != NULL &&
-				    (pfnStopSave = (BOOL (WINAPI*)(DWORD))(GetProcAddress(hDll, "StopSave"))) != NULL &&
-				    (pfnGetSaveFilePath = (BOOL (WINAPI*)(DWORD,WCHAR*,DWORD*))(GetProcAddress(hDll, "GetSaveFilePath"))) != NULL &&
-				    (pfnAddTSBuff = (BOOL (WINAPI*)(DWORD,BYTE*,DWORD,DWORD*))(GetProcAddress(hDll, "AddTSBuff"))) != NULL ){
-					if( pfnCreateCtrl(&id) ){
-						return TRUE;
-					}
-				}
-				FreeLibrary(hDll);
-				hDll = NULL;
-			}
-			return FALSE;
-		}
-	};
 	HANDLE file;
-	WRITE_PLUGIN writePlugin;
+	std::unique_ptr<CWritePlugInUtil> writePlugin;
 	wstring savePath;
 	WORD targetSID;
 	WORD lastTSID;

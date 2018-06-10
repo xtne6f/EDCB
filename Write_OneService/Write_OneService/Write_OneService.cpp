@@ -3,7 +3,6 @@
 
 #include "stdafx.h"
 
-#include "Write_PlugIn.h"
 #include "WriteMain.h"
 #include "../../Common/InstanceManager.h"
 #include <shellapi.h>
@@ -13,6 +12,7 @@ CInstanceManager<CWriteMain> g_instMng;
 extern HINSTANCE g_instance;
 
 #define PLUGIN_NAME L"サービス指定出力 PlugIn"
+#define DLL_EXPORT extern "C" __declspec(dllexport)
 
 
 //PlugInの名前を取得する
@@ -23,6 +23,7 @@ extern HINSTANCE g_instance;
 //引数：
 // name						[OUT]名称
 // nameSize					[IN/OUT]nameのサイズ(WCHAR単位)
+DLL_EXPORT
 BOOL WINAPI GetPlugInName(
 	WCHAR* name,
 	DWORD* nameSize
@@ -52,6 +53,7 @@ BOOL WINAPI GetPlugInName(
 //PlugInで設定が必要な場合、設定用のダイアログなどを表示する
 //引数：
 // parentWnd				[IN]親ウインドウ
+DLL_EXPORT
 void WINAPI Setting(
 	HWND parentWnd
 	)
@@ -67,12 +69,42 @@ void WINAPI Setting(
 	}
 }
 
+//////////////////////////////////////////////////////////
+//基本的な保存時のAPIの呼ばれ方
+//CreateCtrl
+//↓
+//StartSave
+//↓
+//GetSaveFilePath
+//↓
+//AddTSBuff（ループ）
+//↓（録画時間終わった）
+//StopSave
+//↓
+//DeleteCtrl
+//
+//AddTSBuffでFALSEが返ってきた場合（空き容量なくなったなど）
+//AddTSBuff
+//↓（FALSE）
+//StopSave
+//↓
+//StartSave
+//↓
+//GetSaveFilePath
+//↓
+//AddTSBuff（ループ）
+//↓（録画時間終わった）
+//StopSave
+//↓
+//DeleteCtrl
+
 //複数保存対応のためインスタンスを新規に作成する
 //複数対応できない場合はこの時点でエラーとする
 //戻り値
 // TRUE（成功）、FALSE（失敗）
 //引数：
 // id				[OUT]識別ID
+DLL_EXPORT
 BOOL WINAPI CreateCtrl(
 	DWORD* id
 	)
@@ -96,6 +128,7 @@ BOOL WINAPI CreateCtrl(
 // TRUE（成功）、FALSE（失敗）
 //引数：
 // id				[IN]識別ID
+DLL_EXPORT
 BOOL WINAPI DeleteCtrl(
 	DWORD id
 	)
@@ -115,6 +148,7 @@ BOOL WINAPI DeleteCtrl(
 // fileName				[IN]保存ファイルフルパス（必要に応じて拡張子変えたりなど行う）
 // overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
 // createSize			[IN]入力予想容量（188バイトTSでの容量。即時録画時など総時間未定の場合は0。延長などの可能性もあるので目安程度）
+DLL_EXPORT
 BOOL WINAPI StartSave(
 	DWORD id,
 	LPCWSTR fileName,
@@ -135,6 +169,7 @@ BOOL WINAPI StartSave(
 // TRUE（成功）、FALSE（失敗）
 //引数：
 // id					[IN]識別ID
+DLL_EXPORT
 BOOL WINAPI StopSave(
 	DWORD id
 	)
@@ -156,6 +191,7 @@ BOOL WINAPI StopSave(
 // id					[IN]識別ID
 // filePath				[OUT]保存ファイルフルパス
 // filePathSize			[IN/OUT]filePathのサイズ(WCHAR単位)
+DLL_EXPORT
 BOOL WINAPI GetSaveFilePath(
 	DWORD id,
 	WCHAR* filePath,
@@ -190,6 +226,7 @@ BOOL WINAPI GetSaveFilePath(
 // data					[IN]TSデータ
 // size					[IN]dataのサイズ
 // writeSize			[OUT]保存に利用したサイズ
+DLL_EXPORT
 BOOL WINAPI AddTSBuff(
 	DWORD id,
 	BYTE* data,
