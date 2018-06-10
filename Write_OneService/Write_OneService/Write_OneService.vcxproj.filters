@@ -87,6 +87,9 @@
     <ClInclude Include="..\..\Common\WritePlugInUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\ServiceFilter.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -133,6 +136,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\WritePlugInUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BonCtrl\ServiceFilter.cpp">
+      <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

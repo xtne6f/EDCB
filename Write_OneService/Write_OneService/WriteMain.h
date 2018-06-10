@@ -4,9 +4,7 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/WritePlugInUtil.h"
 #include "../../BonCtrl/PacketInit.h"
-#include "../../BonCtrl/CreatePATPacket.h"
-#include "../../BonCtrl/CATUtil.h"
-#include "../../BonCtrl/PMTUtil.h"
+#include "../../BonCtrl/ServiceFilter.h"
 
 class CWriteMain
 {
@@ -61,13 +59,7 @@ private:
 	WORD targetSID;
 	WORD lastTSID;
 	CPacketInit packetInit;
-	CCreatePATPacket patUtil;
-	CCATUtil catUtil;
-	map<WORD, CPMTUtil> pmtUtilMap;
-	vector<WORD> needPIDList;
+	CServiceFilter serviceFilter;
 	vector<BYTE> outBuff;
-
-	void AddNeedPID(WORD pid);
-	void CheckNeedPID();
 };
 

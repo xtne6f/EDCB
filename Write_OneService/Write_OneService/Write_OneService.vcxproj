@@ -157,6 +157,7 @@
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h" />
     <ClInclude Include="..\..\BonCtrl\PacketInit.h" />
     <ClInclude Include="..\..\BonCtrl\PMTUtil.h" />
+    <ClInclude Include="..\..\BonCtrl\ServiceFilter.h" />
     <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\EpgDataCap3Def.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
@@ -179,6 +180,7 @@
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp" />
     <ClCompile Include="..\..\BonCtrl\PacketInit.cpp" />
     <ClCompile Include="..\..\BonCtrl\PMTUtil.cpp" />
+    <ClCompile Include="..\..\BonCtrl\ServiceFilter.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />

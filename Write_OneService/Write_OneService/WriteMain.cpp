@@ -97,9 +97,7 @@ BOOL CWriteMain::Start(
 
 	this->lastTSID = 0;
 	this->packetInit.ClearBuff();
-	this->catUtil = CCATUtil();
-	this->pmtUtilMap.clear();
-	CheckNeedPID();
+	this->serviceFilter.SetServiceID(this->targetSID == 0, vector<WORD>(1, this->targetSID));
 
 	return TRUE;
 }
@@ -153,57 +151,20 @@ BOOL CWriteMain::Write(
 			if( this->packetInit.GetTSData(data, size, &outData, &outSize) == FALSE ){
 				outSize = 0;
 			}
-			//※ここからBonCtrl/CTSOut::AddTSBuff()とほとんど同じ作業
 			this->outBuff.clear();
 			for( DWORD i = 0; i < outSize; i += 188 ){
 				CTSPacketUtil packet;
 				if( packet.Set188TS(outData + i, 188) ){
-					//指定サービスに必要なPIDを解析
-					if( packet.transport_scrambling_control == 0 ){
-						if( packet.PID == 1 ){
-							//CAT
-							if( this->catUtil.AddPacket(&packet) ){
-								CheckNeedPID();
-							}
-						}
-						if( packet.payload_unit_start_indicator && packet.data_byteSize > 0 ){
-							BYTE pointer = packet.data_byte[0];
-							if( 1 + pointer < packet.data_byteSize && packet.data_byte[1 + pointer] == 2 ){
-								//PMT
-								if( this->pmtUtilMap.count(packet.PID) == 0 ){
-									this->pmtUtilMap[packet.PID] = CPMTUtil();
-								}
-								if( this->pmtUtilMap[packet.PID].AddPacket(&packet) ){
-									CheckNeedPID();
-								}
-							}
-						}else{
-							//PMTの2パケット目かチェック
-							if( this->pmtUtilMap.count(packet.PID) != 0 ){
-								if( this->pmtUtilMap[packet.PID].AddPacket(&packet) ){
-									CheckNeedPID();
-								}
-							}
+					if( packet.PID == 0 && packet.payload_unit_start_indicator && 5 < packet.data_byteSize ){
+						//TSIDを取得
+						WORD tsid = packet.data_byte[4] << 8 | packet.data_byte[5];
+						if( this->lastTSID != tsid ){
+							this->lastTSID = tsid;
+							this->serviceFilter.Clear(tsid);
 						}
 					}
-					if( *std::lower_bound(this->needPIDList.begin(), this->needPIDList.end(), packet.PID) == packet.PID ){
-						if( packet.PID == 0 ){
-							//PATなので必要なサービスのみに絞る
-							if( packet.payload_unit_start_indicator ){
-								if( 5 < packet.data_byteSize ){
-									//TSIDを取得
-									this->lastTSID = packet.data_byte[4] << 8 | packet.data_byte[5];
-									CheckNeedPID();
-								}
-								BYTE* patBuff;
-								DWORD patBuffSize;
-								if( this->lastTSID != 0 && this->patUtil.GetPacket(&patBuff, &patBuffSize) ){
-									this->outBuff.insert(this->outBuff.end(), patBuff, patBuff + patBuffSize);
-								}
-							}
-						}else{
-							this->outBuff.insert(this->outBuff.end(), outData + i, outData + i + 188);
-						}
+					if( this->lastTSID != 0 ){
+						this->serviceFilter.FilterPacket(this->outBuff, outData + i, packet);
 					}
 				}
 			}
@@ -229,42 +190,4 @@ BOOL CWriteMain::Write(
 		}
 	}
 	return FALSE;
-}
-
-void CWriteMain::AddNeedPID(WORD pid)
-{
-	vector<WORD>::iterator itr = std::lower_bound(this->needPIDList.begin(), this->needPIDList.end(), pid);
-	if( *itr != pid ){
-		this->needPIDList.insert(itr, pid);
-	}
-}
-
-void CWriteMain::CheckNeedPID()
-{
-	//0xFFFFは番兵
-	this->needPIDList.assign(1, 0xFFFF);
-	for( WORD i = 0; i <= 0x30; AddNeedPID(i++) );
-
-	//PAT作成用のPMTリスト
-	vector<pair<WORD, WORD>> pidList;
-	//NITのPID追加しておく
-	pidList.push_back(pair<WORD, WORD>(0x10, 0));
-
-	//EMMのPID
-	for( vector<WORD>::const_iterator itr = this->catUtil.GetPIDList().begin(); itr != this->catUtil.GetPIDList().end(); itr++ ){
-		AddNeedPID(*itr);
-	}
-	for( map<WORD, CPMTUtil>::const_iterator itr = this->pmtUtilMap.begin(); itr != this->pmtUtilMap.end(); itr++ ){
-		if( itr->second.GetProgramNumber() == this->targetSID ){
-			//PAT作成用のPMTリスト作成
-			pidList.push_back(std::make_pair(itr->first, itr->second.GetProgramNumber()));
-			//指定サービスのPMT発見。PMT記載のPIDを登録
-			AddNeedPID(itr->first);
-			AddNeedPID(itr->second.GetPcrPID());
-			for( auto jtr = itr->second.GetPIDTypeList().cbegin(); jtr != itr->second.GetPIDTypeList().end(); jtr++ ){
-				AddNeedPID(jtr->first);
-			}
-		}
-	}
-	this->patUtil.SetParam(this->lastTSID, pidList);
 }
