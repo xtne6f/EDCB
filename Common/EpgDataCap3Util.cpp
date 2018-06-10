@@ -20,24 +20,6 @@ BOOL CEpgDataCap3Util::LoadDll(LPCWSTR loadDllFilePath)
 		return FALSE;
 	}
 
-	pfnInitializeEP3 = NULL;
-	pfnUnInitializeEP3 = NULL;
-	pfnAddTSPacketEP3 = NULL;
-	pfnGetTSIDEP3 = NULL;
-	pfnGetEpgInfoListEP3 = NULL;
-	pfnEnumEpgInfoListEP3 = NULL;
-	pfnClearSectionStatusEP3 = NULL;
-	pfnGetSectionStatusEP3 = NULL;
-	pfnGetSectionStatusServiceEP3 = NULL;
-	pfnGetServiceListActualEP3 = NULL;
-	pfnGetServiceListEpgDBEP3 = NULL;
-	pfnGetEpgInfoEP3 = NULL;
-	pfnSearchEpgInfoEP3 = NULL;
-	pfnGetTimeDelayEP3 = NULL;
-
-
-	BOOL ret = TRUE;
-
 	module = ::LoadLibrary(loadDllFilePath);
 
 	if( module == NULL ){
@@ -47,88 +29,63 @@ BOOL CEpgDataCap3Util::LoadDll(LPCWSTR loadDllFilePath)
 
 	pfnInitializeEP3 = ( InitializeEP3 ) ::GetProcAddress( module , "InitializeEP");
 	if( !pfnInitializeEP3 ){
-		OutputDebugString(L"InitializeEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnUnInitializeEP3 = ( UnInitializeEP3 ) ::GetProcAddress( module , "UnInitializeEP");
 	if( !pfnUnInitializeEP3 ){
-		OutputDebugString(L"UnInitializeEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnAddTSPacketEP3 = ( AddTSPacketEP3 ) ::GetProcAddress( module , "AddTSPacketEP");
 	if( !pfnAddTSPacketEP3 ){
-		OutputDebugString(L"AddTSPacketEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnGetTSIDEP3 = ( GetTSIDEP3 ) ::GetProcAddress( module , "GetTSIDEP");
 	if( !pfnGetTSIDEP3 ){
-		OutputDebugString(L"GetTSIDEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnGetEpgInfoListEP3 = ( GetEpgInfoListEP3 ) ::GetProcAddress( module , "GetEpgInfoListEP");
 	if( !pfnGetEpgInfoListEP3 ){
-		OutputDebugString(L"GetEpgInfoListEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnEnumEpgInfoListEP3 = ( EnumEpgInfoListEP3 ) ::GetProcAddress( module , "EnumEpgInfoListEP");
 
 	pfnClearSectionStatusEP3 = ( ClearSectionStatusEP3 ) ::GetProcAddress( module , "ClearSectionStatusEP");
 	if( !pfnClearSectionStatusEP3 ){
-		OutputDebugString(L"ClearSectionStatusEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnGetSectionStatusEP3 = ( GetSectionStatusEP3 ) ::GetProcAddress( module , "GetSectionStatusEP");
 	if( !pfnGetSectionStatusEP3 ){
-		OutputDebugString(L"GetSectionStatusEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnGetSectionStatusServiceEP3 = ( GetSectionStatusServiceEP3 ) ::GetProcAddress( module , "GetSectionStatusServiceEP");
 
 	pfnGetServiceListActualEP3 = ( GetServiceListActualEP3 ) ::GetProcAddress( module , "GetServiceListActualEP");
 	if( !pfnGetServiceListActualEP3 ){
-		OutputDebugString(L"GetServiceListActualEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnGetServiceListEpgDBEP3 = ( GetServiceListEpgDBEP3 ) ::GetProcAddress( module , "GetServiceListEpgDBEP");
 	if( !pfnGetServiceListEpgDBEP3 ){
-		OutputDebugString(L"GetServiceListEpgDBEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnGetEpgInfoEP3 = ( GetEpgInfoEP3 ) ::GetProcAddress( module , "GetEpgInfoEP");
 	if( !pfnGetEpgInfoEP3 ){
-		OutputDebugString(L"GetEpgInfoEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnSearchEpgInfoEP3 = ( SearchEpgInfoEP3 ) ::GetProcAddress( module , "SearchEpgInfoEP");
 	if( !pfnSearchEpgInfoEP3 ){
-		OutputDebugString(L"SearchEpgInfoEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
 	pfnGetTimeDelayEP3 = ( GetTimeDelayEP3 ) ::GetProcAddress( module , "GetTimeDelayEP");
 	if( !pfnGetTimeDelayEP3 ){
-		OutputDebugString(L"GetTimeDelayEPの GetProcAddress に失敗\r\n");
-		ret = FALSE;
 		goto ERR_END;
 	}
-
+	return TRUE;
 
 ERR_END:
-	if( ret == FALSE ){
-		::FreeLibrary( module );
-		module=NULL;
-	}
-	return ret;
+	_OutputDebugString(L"%sのロード中 GetProcAddress に失敗\r\n", loadDllFilePath);
+	::FreeLibrary( module );
+	module = NULL;
+	return FALSE;
 }
 
 BOOL CEpgDataCap3Util::UnLoadDll(void)
@@ -142,30 +99,9 @@ BOOL CEpgDataCap3Util::UnLoadDll(void)
 	}
 	module = NULL;
 
-	pfnInitializeEP3 = NULL;
-	pfnUnInitializeEP3 = NULL;
-	pfnAddTSPacketEP3 = NULL;
-	pfnGetTSIDEP3 = NULL;
-	pfnGetEpgInfoListEP3 = NULL;
-	pfnEnumEpgInfoListEP3 = NULL;
-	pfnClearSectionStatusEP3 = NULL;
-	pfnGetSectionStatusEP3 = NULL;
-	pfnGetSectionStatusServiceEP3 = NULL;
-	pfnGetServiceListActualEP3 = NULL;
-	pfnGetServiceListEpgDBEP3 = NULL;
-	pfnGetEpgInfoEP3 = NULL;
-	pfnSearchEpgInfoEP3 = NULL;
-	pfnGetTimeDelayEP3 = NULL;
-
 	return TRUE;
 }
 
-//DLLの初期化
-//戻り値：
-// エラーコード
-//引数：
-// asyncMode		[IN]TRUE:非同期モード、FALSE:同期モード
-// loadDllFilePath	[IN]ロードするDLLパス
 DWORD CEpgDataCap3Util::Initialize(
 	BOOL asyncFlag,
 	LPCWSTR loadDllFilePath
@@ -181,9 +117,6 @@ DWORD CEpgDataCap3Util::Initialize(
 	return err;
 }
 
-//DLLの開放
-//戻り値：
-// エラーコード
 DWORD CEpgDataCap3Util::UnInitialize(
 	)
 {
@@ -196,12 +129,6 @@ DWORD CEpgDataCap3Util::UnInitialize(
 	return err;
 }
 
-//解析対象のTSパケット１つを読み込ませる
-//戻り値：
-// エラーコード
-//引数：
-// data		[IN]TSパケット１つ
-// size		[IN]dataのサイズ（188、192あたりになるはず）
 DWORD CEpgDataCap3Util::AddTSPacket(
 	BYTE* data,
 	DWORD size
@@ -213,12 +140,6 @@ DWORD CEpgDataCap3Util::AddTSPacket(
 	return pfnAddTSPacketEP3(id, data, size);
 }
 
-//解析データの現在のストリームＩＤを取得する
-//戻り値：
-// エラーコード
-//引数：
-// originalNetworkID		[OUT]現在のoriginalNetworkID
-// transportStreamID		[OUT]現在のtransportStreamID
 DWORD CEpgDataCap3Util::GetTSID(
 	WORD* originalNetworkID,
 	WORD* transportStreamID
@@ -230,12 +151,6 @@ DWORD CEpgDataCap3Util::GetTSID(
 	return pfnGetTSIDEP3(id, originalNetworkID, transportStreamID);
 }
 
-//自ストリームのサービス一覧を取得する
-//戻り値：
-// エラーコード
-//引数：
-// serviceListSize			[OUT]serviceListの個数
-// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DWORD CEpgDataCap3Util::GetServiceListActual(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList
@@ -247,13 +162,6 @@ DWORD CEpgDataCap3Util::GetServiceListActual(
 	return pfnGetServiceListActualEP3(id, serviceListSize, serviceList);
 }
 
-//蓄積されたEPG情報のあるサービス一覧を取得する
-//SERVICE_EXT_INFOの情報はない
-//戻り値：
-// エラーコード
-//引数：
-// serviceListSize			[OUT]serviceListの個数
-// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DWORD CEpgDataCap3Util::GetServiceListEpgDB(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList
@@ -265,15 +173,6 @@ DWORD CEpgDataCap3Util::GetServiceListEpgDB(
 	return pfnGetServiceListEpgDBEP3(id, serviceListSize, serviceList);
 }
 
-//指定サービスの全EPG情報を取得する
-//戻り値：
-// エラーコード
-//引数：
-// originalNetworkID		[IN]取得対象のoriginalNetworkID
-// transportStreamID		[IN]取得対象のtransportStreamID
-// serviceID				[IN]取得対象のServiceID
-// epgInfoListSize			[OUT]epgInfoListの個数
-// epgInfoList				[OUT]EPG情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DWORD CEpgDataCap3Util::GetEpgInfoList(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -288,10 +187,6 @@ DWORD CEpgDataCap3Util::GetEpgInfoList(
 	return pfnGetEpgInfoListEP3(id, originalNetworkID, transportStreamID, serviceID, epgInfoListSize, epgInfoList);
 }
 
-//指定サービスの全EPG情報を列挙する
-//引数：
-// enumEpgInfoListProc		[IN]EPG情報のリストを取得するコールバック関数
-// param					[IN]コールバック引数
 DWORD CEpgDataCap3Util::EnumEpgInfoList(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -315,7 +210,6 @@ DWORD CEpgDataCap3Util::EnumEpgInfoList(
 	return pfnEnumEpgInfoListEP3(id, originalNetworkID, transportStreamID, serviceID, enumEpgInfoListProc, param);
 }
 
-//EPGデータの蓄積状態をリセットする
 void CEpgDataCap3Util::ClearSectionStatus()
 {
 	if( module == NULL || id == 0 ){
@@ -324,11 +218,6 @@ void CEpgDataCap3Util::ClearSectionStatus()
 	pfnClearSectionStatusEP3(id);
 }
 
-//EPGデータの蓄積状態を取得する
-//戻り値：
-// ステータス
-//引数：
-// l_eitFlag		[IN]L-EITのステータスを取得
 EPG_SECTION_STATUS CEpgDataCap3Util::GetSectionStatus(
 	BOOL l_eitFlag
 	)
@@ -339,7 +228,6 @@ EPG_SECTION_STATUS CEpgDataCap3Util::GetSectionStatus(
 	return pfnGetSectionStatusEP3(id, l_eitFlag);
 }
 
-//指定サービスのEPGデータの蓄積状態を取得する
 pair<EPG_SECTION_STATUS, BOOL> CEpgDataCap3Util::GetSectionStatusService(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -354,15 +242,6 @@ pair<EPG_SECTION_STATUS, BOOL> CEpgDataCap3Util::GetSectionStatusService(
 		pfnGetSectionStatusServiceEP3(id, originalNetworkID, transportStreamID, serviceID, l_eitFlag), TRUE);
 }
 
-//指定サービスの現在or次のEPG情報を取得する
-//戻り値：
-// エラーコード
-//引数：
-// originalNetworkID		[IN]取得対象のoriginalNetworkID
-// transportStreamID		[IN]取得対象のtransportStreamID
-// serviceID				[IN]取得対象のServiceID
-// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
-// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DWORD CEpgDataCap3Util::GetEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -377,16 +256,6 @@ DWORD CEpgDataCap3Util::GetEpgInfo(
 	return pfnGetEpgInfoEP3(id, originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo);
 }
 
-//指定イベントのEPG情報を取得する
-//戻り値：
-// エラーコード
-//引数：
-// originalNetworkID		[IN]取得対象のoriginalNetworkID
-// transportStreamID		[IN]取得対象のtransportStreamID
-// serviceID				[IN]取得対象のServiceID
-// EventID					[IN]取得対象のEventID
-// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
-// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DWORD CEpgDataCap3Util::SearchEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -402,9 +271,6 @@ DWORD CEpgDataCap3Util::SearchEpgInfo(
 	return pfnSearchEpgInfoEP3(id, originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
 }
 
-//PC時計を元としたストリーム時間との差を取得する
-//戻り値：
-// 差の秒数
 int CEpgDataCap3Util::GetTimeDelay(
 	)
 {
