@@ -12,10 +12,8 @@
 
 #include "BonCtrlDef.h"
 #include "ScrambleDecoderUtil.h"
-#include "CreatePATPacket.h"
+#include "ServiceFilter.h"
 #include "OneServiceUtil.h"
-#include "PMTUtil.h"
-#include "CATUtil.h"
 #include <functional>
 
 class CTSOut
@@ -339,7 +337,6 @@ protected:
 
 	CEpgDataCap3Util epgUtil;
 	CScrambleDecoderUtil decodeUtil;
-	CCreatePATPacket patUtil;
 
 	enum { CH_ST_INIT, CH_ST_WAIT_PAT, CH_ST_WAIT_PAT2, CH_ST_WAIT_ID, CH_ST_DONE } chChangeState;
 	DWORD chChangeTime;
@@ -350,13 +347,9 @@ protected:
 
 	BOOL enableDecodeFlag;
 	BOOL emmEnableFlag;
-	BOOL serviceOnlyFlag;
 
 	map<DWORD, std::unique_ptr<COneServiceUtil>> serviceUtilMap; //キー識別ID
-	map<WORD, CPMTUtil> pmtUtilMap; //キーPMTのPID
-	CCATUtil catUtil;
-
-	vector<WORD> needPIDList;
+	CServiceFilter serviceFilter;
 
 	DWORD nextCtrlID;
 
@@ -372,7 +365,7 @@ protected:
 protected:
 	void ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet);
 
-	void CheckNeedPID();
+	void UpdateServiceUtil(BOOL updateFilterSID);
 
 	DWORD GetNextID();
 
