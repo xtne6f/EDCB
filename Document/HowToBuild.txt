@@ -36,6 +36,7 @@ http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
 ・WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
   構成プロパティ→プラットフォームツールセットを"v140_xp"に切り替える必要がある
   （ソリューションエクスプローラ―上でCtrl+マウス選択を駆使すればまとめて切り替えられる）
+・SSE2非対応CPUで実行可能なファイルを作りたいときは、拡張命令セットを"拡張命令なし(/arch:IA32)"に切り替える
 
 2.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
 
