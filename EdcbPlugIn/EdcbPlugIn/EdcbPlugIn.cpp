@@ -73,6 +73,26 @@ bool CEdcbPlugIn::CMyEventHandler::OnChannelChange()
 	m_outer.m_chChangedAfterSetCh = true;
 	SendMessage(m_outer.m_hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
 	SendMessage(m_outer.m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
+	OnServiceChange();
+	return false;
+}
+
+bool CEdcbPlugIn::CMyEventHandler::OnServiceChange()
+{
+#ifdef SEND_PIPE_TEST
+	int index = m_outer.m_pApp->GetService();
+	TVTest::ServiceInfo si;
+	if (index >= 0 && m_outer.m_pApp->GetServiceInfo(index, &si)) {
+		CBlockLock lock(&m_outer.m_streamLock);
+		m_outer.m_serviceFilter.SetServiceID(false, vector<WORD>(1, si.ServiceID));
+	}
+#endif
+	return false;
+}
+
+bool CEdcbPlugIn::CMyEventHandler::OnServiceUpdate()
+{
+	OnServiceChange();
 	return false;
 }
 
@@ -187,6 +207,30 @@ bool CEdcbPlugIn::Initialize()
 	for (map<LONGLONG, CH_DATA5>::const_iterator it = chText5.GetMap().begin(); it != chText5.GetMap().end(); ++it) {
 		m_chSet5.push_back(it->second);
 	}
+#ifdef SEND_PIPE_TEST
+	m_sendPipe.reset(new CSendTSTCPDllUtil);
+	if (m_sendPipe->Initialize() == NO_ERR) {
+		int port = 0;
+		for (; port < 100; ++port) {
+			wstring name;
+			Format(name, L"%s1_%d", MUTEX_TCP_PORT_NAME, port);
+			m_sendPipeMutex = CreateMutex(nullptr, FALSE, name.c_str());
+			if (m_sendPipeMutex) {
+				if (GetLastError() != ERROR_ALREADY_EXISTS) {
+					m_pApp->AddLog(name.c_str());
+					break;
+				}
+				CloseHandle(m_sendPipeMutex);
+				m_sendPipeMutex = nullptr;
+			}
+		}
+		m_sendPipe->AddSendAddr(L"0.0.0.1", port);
+		m_sendPipe->StartSend();
+	}
+	else {
+		m_sendPipe.reset();
+	}
+#endif
 	// イベントコールバック関数を登録
 	m_pApp->SetEventCallback(CMyEventHandler::EventCallback, &m_handler);
 
@@ -209,6 +253,15 @@ bool CEdcbPlugIn::Finalize()
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+#ifdef SEND_PIPE_TEST
+	if (m_sendPipe) {
+		m_sendPipe->StopSend();
+		if (m_sendPipeMutex) {
+			CloseHandle(m_sendPipeMutex);
+		}
+		m_sendPipe.reset();
+	}
+#endif
 	m_epgUtil.UnInitialize();
 	return true;
 }
@@ -1001,6 +1054,9 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 					WORD tsid;
 					if (this_.m_epgUtil.GetTSID(&onid, &tsid) == NO_ERR && onid == HIWORD(this_.m_chChangeID) && tsid == LOWORD(this_.m_chChangeID)) {
 						this_.m_chChangeID = CH_CHANGE_OK;
+#ifdef SEND_PIPE_TEST
+						this_.m_serviceFilter.Clear(tsid);
+#endif
 					}
 					else if (GetTickCount() - this_.m_chChangeTick > 15000) {
 						// 15秒以上たってるなら切り替えエラー
@@ -1047,6 +1103,20 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 				it->second.dropCount.AddData(pData, 188);
 			}
 		}
+#ifdef SEND_PIPE_TEST
+		if (this_.m_sendPipe) {
+			if (this_.m_chChangeID == CH_CHANGE_OK) {
+				this_.m_serviceFilter.FilterPacket(this_.m_sendPipeBuf, pData, packet);
+				if (this_.m_sendPipeBuf.size() >= 48128) {
+					this_.m_sendPipe->AddSendData(this_.m_sendPipeBuf.data(), static_cast<DWORD>(this_.m_sendPipeBuf.size()));
+					this_.m_sendPipeBuf.clear();
+				}
+			}
+			else {
+				this_.m_sendPipeBuf.clear();
+			}
+		}
+#endif
 	}
 	return TRUE;
 }

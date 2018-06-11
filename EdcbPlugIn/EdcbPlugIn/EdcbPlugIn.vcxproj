@@ -157,7 +157,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\BonCtrl\BonCtrlDef.h" />
+    <ClInclude Include="..\..\BonCtrl\CATUtil.h" />
+    <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h" />
     <ClInclude Include="..\..\BonCtrl\DropCount.h" />
+    <ClInclude Include="..\..\BonCtrl\PMTUtil.h" />
+    <ClInclude Include="..\..\BonCtrl\ServiceFilter.h" />
     <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
@@ -171,10 +176,12 @@
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\PipeServer.h" />
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
+    <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\StructDef.h" />
     <ClInclude Include="..\..\Common\ThreadUtil.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
+    <ClInclude Include="..\..\Common\TSBuffUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
     <ClInclude Include="..\..\Common\TVTestPlugin.h" />
     <ClInclude Include="EdcbPlugIn.h" />
@@ -182,7 +189,11 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\BonCtrl\CATUtil.cpp" />
+    <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp" />
     <ClCompile Include="..\..\BonCtrl\DropCount.cpp" />
+    <ClCompile Include="..\..\BonCtrl\PMTUtil.cpp" />
+    <ClCompile Include="..\..\BonCtrl\ServiceFilter.cpp" />
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
@@ -190,8 +201,10 @@
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
     <ClCompile Include="..\..\Common\SendCtrlCmd.cpp" />
+    <ClCompile Include="..\..\Common\SendTSTCPDllUtil.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
+    <ClCompile Include="..\..\Common\TSBuffUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
     <ClCompile Include="EdcbPlugIn.cpp" />
     <ClCompile Include="stdafx.cpp">

@@ -1,5 +1,8 @@
 #pragma once
 
+// TVTestのフォルダにSendTSTCP.dllがあれば、EpgDataCap_Bonで送信先に"0.0.0.1:0"を設定したときと似たような動作をする
+//#define SEND_PIPE_TEST
+
 #ifndef interface
 #define interface struct
 #endif
@@ -11,6 +14,11 @@
 #include "../../BonCtrl/DropCount.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ThreadUtil.h"
+#ifdef SEND_PIPE_TEST
+#include "../../BonCtrl/BonCtrlDef.h"
+#include "../../BonCtrl/ServiceFilter.h"
+#include "../../Common/SendTSTCPDllUtil.h"
+#endif
 
 class CEdcbPlugIn : public TVTest::CTVTestPlugin
 {
@@ -30,6 +38,10 @@ private:
 		static LRESULT CALLBACK EventCallback(UINT ev, LPARAM lp1, LPARAM lp2, void *pc) { return static_cast<CMyEventHandler*>(pc)->HandleEvent(ev, lp1, lp2, pc); }
 		// チャンネルが変更された
 		bool OnChannelChange();
+		// サービスが変更された
+		bool OnServiceChange();
+		// サービスの構成が変化した
+		bool OnServiceUpdate();
 		// ドライバが変更された
 		bool OnDriverChange();
 		// 録画状態が変化した
@@ -104,4 +116,10 @@ private:
 	DWORD m_recCtrlCount;
 	map<DWORD, REC_CTRL> m_recCtrlMap;
 	wstring m_duplicateOriginalPath;
+#ifdef SEND_PIPE_TEST
+	std::unique_ptr<CSendTSTCPDllUtil> m_sendPipe;
+	HANDLE m_sendPipeMutex;
+	vector<BYTE> m_sendPipeBuf;
+	CServiceFilter m_serviceFilter;
+#endif
 };
