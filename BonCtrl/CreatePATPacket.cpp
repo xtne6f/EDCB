@@ -17,7 +17,7 @@ void CCreatePATPacket::SetParam(
 )
 {
 	//•ÏX‚È‚¯‚ê‚Î•Ï‚¦‚é•K—v‚È‚µ
-	if( this->TSID == TSID_ && this->PIDList.empty() == false && this->PIDList == PIDList_ ){
+	if( this->packet.empty() == false && this->TSID == TSID_ && this->PIDList == PIDList_ ){
 		return;
 	}
 	this->TSID = TSID_;
