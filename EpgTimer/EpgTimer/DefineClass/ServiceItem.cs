@@ -19,10 +19,14 @@ namespace EpgTimer
             }
         }
 
+        public ServiceItem(EpgServiceInfo info)
+        {
+            ServiceInfo = info;
+        }
         public EpgServiceInfo ServiceInfo
         {
             get;
-            set;
+            private set;
         }
         public bool IsSelected
         {

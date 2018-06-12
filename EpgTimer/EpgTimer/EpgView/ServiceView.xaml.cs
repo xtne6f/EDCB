@@ -40,6 +40,10 @@ namespace EpgTimer.EpgView
                 {
                     item.Text += "\r\n" + info.remote_control_key_id.ToString();
                 }
+                else if (info.ONID == 0x000A)
+                {
+                    item.Text += "\r\n" + info.network_name + " " + (info.SID & 0x3FF).ToString();
+                }
                 else
                 {
                     item.Text += "\r\n" + info.network_name + " " + info.SID.ToString();

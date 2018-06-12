@@ -23,11 +23,6 @@ namespace EpgTimer
     {
         private RecSettingData recSetting = new RecSettingData();
         private RecSettingData setDefSetting = new RecSettingData();
-        private List<TunerSelectInfo> tunerList = new List<TunerSelectInfo>();
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-
-        private int lastSelectIndex = 0;
-        private Dictionary<UInt32, RecSettingData> presetList = new Dictionary<UInt32, RecSettingData>();
 
         private bool initLoad = false;
         public RecSettingView()
@@ -38,6 +33,7 @@ namespace EpgTimer
             {
                 Settings.GetDefRecSetting(0, ref recSetting);
 
+                var tunerList = new List<TunerSelectInfo>();
                 tunerList.Add(new TunerSelectInfo("自動", 0));
                 foreach (TunerReserveInfo info in CommonManager.Instance.DB.TunerReserveList.Values)
                 {
@@ -49,29 +45,11 @@ namespace EpgTimer
                 comboBox_tuner.ItemsSource = tunerList;
                 comboBox_tuner.SelectedIndex = 0;
 
-                RecPresetItem preDef = new RecPresetItem();
-                preDef.DisplayName = "デフォルト";
-                preDef.ID = 0;
-                RecSettingData defSet = new RecSettingData();
-                Settings.GetDefRecSetting(0, ref defSet);
-                presetList.Add(0, defSet);
-
-                comboBox_preSet.Items.Add(preDef);
-                comboBox_preSet.SelectedIndex = 0;
-                lastSelectIndex = 0;
-
                 foreach (RecPresetItem info in Settings.Instance.RecPresetList)
                 {
-                    if (presetList.ContainsKey(info.ID) == false)
-                    {
-                        RecSettingData setDatat = new RecSettingData();
-                        Settings.GetDefRecSetting(info.ID, ref setDatat);
-
-                        presetList.Add(info.ID, setDatat);
-
-                        comboBox_preSet.Items.Add(info);
-                    }
+                    comboBox_preSet.Items.Add(info);
                 }
+                comboBox_preSet.SelectedIndex = 0;
 
                 if (CommonManager.Instance.NWMode == true)
                 {
@@ -84,7 +62,7 @@ namespace EpgTimer
             }
         }
 
-        public void AddPreset(String name)
+        private void AddPreset(String name)
         {
             RecSettingData newSet = new RecSettingData();
             GetRecSetting(ref newSet);
@@ -93,34 +71,50 @@ namespace EpgTimer
             newInfo.DisplayName = name;
             newInfo.ID = 0;
 
-            while (presetList.ContainsKey(newInfo.ID) == true)
-            {
-                newInfo.ID++;
-            }
-
-            presetList.Add(newInfo.ID, newSet);
             int index = comboBox_preSet.Items.Add(newInfo);
-            SavePreset();
+            SavePreset(newInfo, newSet);
             comboBox_preSet.SelectedIndex = index;
 
         }
 
-        public void SavePreset()
+        private void SavePreset(object addOrChgTarget, RecSettingData addOrChgInfo)
         {
-            string saveID = "";
+            var saveList = new List<RecSettingData>();
             for (int i = 0; i < comboBox_preSet.Items.Count; i++)
             {
                 RecPresetItem preItem = comboBox_preSet.Items[i] as RecPresetItem;
-                if (preItem.ID == 0xFFFFFFFF)
+                if (preItem == addOrChgTarget)
                 {
-                    continue;
+                    // 追加または変更
+                    saveList.Add(addOrChgInfo);
+                    // IDを振りなおす
+                    preItem.ID = (uint)(saveList.Count - 1);
                 }
+                else if (preItem.ID != 0xFFFFFFFF)
+                {
+                    // 現在設定を維持
+                    var info = new RecSettingData();
+                    Settings.GetDefRecSetting(preItem.ID, ref info);
+                    saveList.Add(info);
+                    // IDを振りなおす
+                    preItem.ID = (uint)(saveList.Count - 1);
+                }
+            }
+
+            if (CommonManager.Instance.NWMode)
+            {
+                IniFileHandler.TouchFileAsUnicode(SettingPath.TimerSrvIniPath);
+            }
+
+            string saveID = "";
+            for (int i = 0; i < saveList.Count; i++)
+            {
                 String defName = "REC_DEF";
                 String defFolderName = "REC_DEF_FOLDER";
                 String defFolder1SegName = "REC_DEF_FOLDER_1SEG";
-                RecSettingData info = presetList[preItem.ID];
+                RecSettingData info = saveList[i];
 
-                preItem.ID = (UInt32)i;
+                RecPresetItem preItem = comboBox_preSet.Items.OfType<RecPresetItem>().First(a => a.ID == i);
                 if (preItem.ID != 0)
                 {
                     defName += preItem.ID.ToString();
@@ -163,7 +157,6 @@ namespace EpgTimer
                 IniFileHandler.WritePrivateProfileString(defName, "TunerID", info.TunerID.ToString(), SettingPath.TimerSrvIniPath);
             }
             IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
-            Settings.SaveToXmlFile();
         }
 
         public void SetViewMode(bool epgMode)
@@ -295,7 +288,7 @@ namespace EpgTimer
                 {
                     int startSec = 0;
                     int startMinus = 1;
-                    if (textBox_margineStart.Text.IndexOf("-") == 0)
+                    if (textBox_margineStart.Text.StartsWith("-", StringComparison.Ordinal))
                     {
                         startMinus = -1;
                     }
@@ -318,7 +311,7 @@ namespace EpgTimer
 
                     int endSec = 0;
                     int endMinus = 1;
-                    if (textBox_margineEnd.Text.IndexOf("-") == 0)
+                    if (textBox_margineEnd.Text.StartsWith("-", StringComparison.Ordinal))
                     {
                         endMinus = -1;
                     }
@@ -390,7 +383,6 @@ namespace EpgTimer
                         recSetting = new RecSettingData();
                         Settings.GetDefRecSetting(item.ID, ref recSetting);
                     }
-                    lastSelectIndex = comboBox_preSet.SelectedIndex;
                     UpdateView();
                 }
             }
@@ -408,29 +400,20 @@ namespace EpgTimer
                 comboBox_priority.SelectedIndex = Math.Min(Math.Max((int)recSetting.Priority, 1), 5) - 1;
                 comboBox_tuijyu.SelectedIndex = recSetting.TuijyuuFlag != 0 ? 1 : 0;
 
-                if (recSetting.ServiceMode == 0)
+                if ((recSetting.ServiceMode & 0x01) == 0)
                 {
                     checkBox_serviceMode.IsChecked = true;
+                    if (CommonManager.Instance.DB.DefaultRecSetting != null)
+                    {
+                        checkBox_serviceCaption.IsChecked = (CommonManager.Instance.DB.DefaultRecSetting.ServiceMode & 0x10) != 0;
+                        checkBox_serviceData.IsChecked = (CommonManager.Instance.DB.DefaultRecSetting.ServiceMode & 0x20) != 0;
+                    }
                 }
                 else
                 {
                     checkBox_serviceMode.IsChecked = false;
-                    if ((recSetting.ServiceMode & 0x10) > 0)
-                    {
-                        checkBox_serviceCaption.IsChecked = true;
-                    }
-                    else
-                    {
-                        checkBox_serviceCaption.IsChecked = false;
-                    }
-                    if ((recSetting.ServiceMode & 0x20) > 0)
-                    {
-                        checkBox_serviceData.IsChecked = true;
-                    }
-                    else
-                    {
-                        checkBox_serviceData.IsChecked = false;
-                    }
+                    checkBox_serviceCaption.IsChecked = (recSetting.ServiceMode & 0x10) != 0;
+                    checkBox_serviceData.IsChecked = (recSetting.ServiceMode & 0x20) != 0;
                 }
 
                 comboBox_pittari.SelectedIndex = recSetting.PittariFlag != 0 ? 1 : 0;
@@ -452,39 +435,32 @@ namespace EpgTimer
                 {
                     checkBox_suspendDef.IsChecked = true;
                     checkBox_reboot.IsChecked = false;
+                    if (CommonManager.Instance.DB.DefaultRecSetting != null)
+                    {
+                        radioButton_standby.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.SuspendMode == 1;
+                        radioButton_supend.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.SuspendMode == 2;
+                        radioButton_shutdown.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.SuspendMode == 3;
+                        radioButton_non.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.SuspendMode == 4;
+                        checkBox_reboot.IsChecked = CommonManager.Instance.DB.DefaultRecSetting.RebootFlag != 0;
+                    }
                 }
                 else
                 {
                     checkBox_suspendDef.IsChecked = false;
-
-                    if (recSetting.SuspendMode == 1)
-                    {
-                        radioButton_standby.IsChecked = true;
-                    }
-                    if (recSetting.SuspendMode == 2)
-                    {
-                        radioButton_supend.IsChecked = true;
-                    }
-                    if (recSetting.SuspendMode == 3)
-                    {
-                        radioButton_shutdown.IsChecked = true;
-                    }
-                    if (recSetting.SuspendMode == 4)
-                    {
-                        radioButton_non.IsChecked = true;
-                    }
-                    if (recSetting.RebootFlag == 1)
-                    {
-                        checkBox_reboot.IsChecked = true;
-                    }
-                    else
-                    {
-                        checkBox_reboot.IsChecked = false;
-                    }
+                    radioButton_standby.IsChecked = recSetting.SuspendMode == 1;
+                    radioButton_supend.IsChecked = recSetting.SuspendMode == 2;
+                    radioButton_shutdown.IsChecked = recSetting.SuspendMode == 3;
+                    radioButton_non.IsChecked = recSetting.SuspendMode == 4;
+                    checkBox_reboot.IsChecked = recSetting.RebootFlag != 0;
                 }
                 if (recSetting.UseMargineFlag == 0)
                 {
                     checkBox_margineDef.IsChecked = true;
+                    if (CommonManager.Instance.DB.DefaultRecSetting != null)
+                    {
+                        textBox_margineStart.Text = CommonManager.Instance.DB.DefaultRecSetting.StartMargine.ToString();
+                        textBox_margineEnd.Text = CommonManager.Instance.DB.DefaultRecSetting.EndMargine.ToString();
+                    }
                 }
                 else
                 {
@@ -551,7 +527,7 @@ namespace EpgTimer
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.DefaultExt = ".bat";
-            dlg.Filter = "bat Files (.bat)|*.bat;|all Files(*.*)|*.*";
+            dlg.Filter = "batch Files(*.bat;*.ps1)|*.bat;*.ps1|all Files(*.*)|*.*";
 
             Nullable<bool> result = dlg.ShowDialog();
             if (result == true)
@@ -575,9 +551,9 @@ namespace EpgTimer
                 foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
                     if (info.PartialRec == false &&
-                        String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
-                        String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
-                        String.Compare(setInfo.RecNamePlugIn, info.RecNamePlugIn, true) == 0)
+                        setInfo.RecFolder.Equals(info.RecFolder, StringComparison.OrdinalIgnoreCase) &&
+                        setInfo.WritePlugIn.Equals(info.WritePlugIn, StringComparison.OrdinalIgnoreCase) &&
+                        setInfo.RecNamePlugIn.Equals(info.RecNamePlugIn, StringComparison.OrdinalIgnoreCase))
                     {
                         MessageBox.Show("すでに追加されています");
                         return;
@@ -636,12 +612,9 @@ namespace EpgTimer
                     }
                     else
                     {
-                        presetList.Remove(item.ID);
                         comboBox_preSet.Items.Remove(item);
-
-                        lastSelectIndex = -1;
                         comboBox_preSet.SelectedIndex = 0;
-                        SavePreset();
+                        SavePreset(null, null);
                     }
                 }
             }
@@ -704,11 +677,12 @@ namespace EpgTimer
                         RecSettingData newSet = new RecSettingData();
                         GetRecSetting(ref newSet);
                         item.DisplayName = name;
-                        presetList[item.ID] = newSet;
 
-                        SavePreset();
+                        SavePreset(item, newSet);
 
                         comboBox_preSet.Items.Refresh();
+                        comboBox_preSet.SelectedItem = null;
+                        comboBox_preSet.SelectedItem = item;
                     }
                 }
             }
@@ -733,9 +707,9 @@ namespace EpgTimer
                 foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
                     if (info.PartialRec &&
-                        String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
-                        String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
-                        String.Compare(setInfo.RecNamePlugIn, info.RecNamePlugIn, true) == 0)
+                        setInfo.RecFolder.Equals(info.RecFolder, StringComparison.OrdinalIgnoreCase) &&
+                        setInfo.WritePlugIn.Equals(info.WritePlugIn, StringComparison.OrdinalIgnoreCase) &&
+                        setInfo.RecNamePlugIn.Equals(info.RecNamePlugIn, StringComparison.OrdinalIgnoreCase))
                     {
                         MessageBox.Show("すでに追加されています");
                         return;
@@ -746,17 +720,5 @@ namespace EpgTimer
         }
 
 
-    }
-
-    public class RecSettingViewInverter : IValueConverter
-    {
-        public object Convert(object v, Type t, object p, System.Globalization.CultureInfo c)
-        {
-            return !(v is bool && (bool)v);
-        }
-        public object ConvertBack(object v, Type t, object p, System.Globalization.CultureInfo c)
-        {
-            return !(v is bool && (bool)v);
-        }
     }
 }

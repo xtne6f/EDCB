@@ -5,11 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="550">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
     <Grid>
         <TabControl Name="tabControl">
             <TabItem Header="表示設定" Name="tabItem_mode">
@@ -39,24 +34,16 @@
                                 <Label Content="サービス一覧" Height="28" HorizontalAlignment="Left" Margin="267,6,0,0" Name="label32" VerticalAlignment="Top" />
                                 <TabControl Height="186" HorizontalAlignment="Left" Margin="268,40,0,0" Name="tabControl2" VerticalAlignment="Top" Width="244">
                                     <TabItem Header="BS" Name="tabItem_bs">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_serviceBS_SelectionChanged" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_serviceBS_SelectionChanged" />
                                     </TabItem>
                                     <TabItem Header="CS" Name="tabItem_cs">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_serviceCS_SelectionChanged" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_serviceCS_SelectionChanged" />
                                     </TabItem>
                                     <TabItem Header="地デジ" Name="tabItem_tere">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceTere" SelectionChanged="listBox_serviceTere_SelectionChanged" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceTere" SelectionChanged="listBox_serviceTere_SelectionChanged" />
                                     </TabItem>
                                     <TabItem Header="その他" Name="tabItem_other">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_serviceOther_SelectionChanged" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_serviceOther_SelectionChanged" />
                                     </TabItem>
                                 </TabControl>
                                 <TextBox HorizontalAlignment="Left" IsReadOnly="True" Margin="10,238,0,6" Name="textBox_serviceView1" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" Width="247" Height="117" />

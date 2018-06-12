@@ -5,8 +5,6 @@ using System.Text;
 
 namespace EpgTimer
 {
-    public delegate void ViewSettingClickHandler(object sender, object param);
-
     public enum ErrCode : uint
     {
         CMD_SUCCESS = 1, //成功
@@ -29,7 +27,6 @@ namespace EpgTimer
         RecInfo = 3, //録画結果更新
         AutoAddEpgInfo = 4, //EPG自動予約登録更新
         AutoAddManualInfo = 5, //プログラム自動予約登録更新
-        PlugInFile = 6, //PlugIn系のファイル一覧更新
         SrvStatus = 100,
         PreRecStart = 101,
         RecStart = 102,
@@ -57,19 +54,4 @@ namespace EpgTimer
         BasicOnly = 1, //基本のみ
         ExtOnly = 2, //詳細のみ
     };
-
-    public class CMD_STREAM
-    {
-        public uint uiParam;
-        public uint uiSize;
-        public byte[] bData;
-
-        public CMD_STREAM()
-        {
-            uiParam = 0;
-            uiSize = 0;
-            bData = null;
-        }
-    }
-
 }

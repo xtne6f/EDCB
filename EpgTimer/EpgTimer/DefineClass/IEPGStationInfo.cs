@@ -17,6 +17,10 @@ namespace EpgTimer
             get;
             set;
         }
+        public IEPGStationInfo DeepClone()
+        {
+            return (IEPGStationInfo)MemberwiseClone();
+        }
         public override string ToString()
         {
             return StationName;

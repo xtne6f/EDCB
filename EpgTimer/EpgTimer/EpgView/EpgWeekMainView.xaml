@@ -4,18 +4,14 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" xmlns:local="clr-namespace:EpgTimer.EpgView" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged_1">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
+             xmlns:local="clr-namespace:EpgTimer.EpgView"
+             d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="45" />
+            <RowDefinition Height="40" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="40,12,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="227" SelectionChanged="comboBox_service_SelectionChanged" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="40,8,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="227" SelectionChanged="comboBox_service_SelectionChanged" />
         <Grid Grid.Row="1" Name="grid_PG">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="40" />
@@ -28,8 +24,8 @@
             <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" Click="button_now_Click" />
             <local:TimeView Grid.Row="1" x:Name="timeView" Margin="0,0,0,18"/>
             <local:WeekDayView Grid.Column="1" x:Name="weekDayView" Margin="0,0,18,0"/>
-            <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" />
+            <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" PreviewMouseWheel="epgProgramView_PreviewMouseWheel" RightClick="epgProgramView_RightClick" ScrollChanged="epgProgramView_ScrollChanged" />
         </Grid>
-    <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,12,0,0" Name="button1" VerticalAlignment="Top" Width="66" Click="button1_Click" />
+    <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,8,0,0" Name="button1" VerticalAlignment="Top" Width="66" Click="button1_Click" />
     </Grid>
 </UserControl>
