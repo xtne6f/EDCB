@@ -14,26 +14,15 @@ namespace EpgTimer
         public ChSet5Item ServiceInfo
         {
             get;
-            set;
+            private set;
         }
         public UInt64 Key
         {
-            get
-            {
-                UInt64 key = ((UInt64)ServiceInfo.ONID) << 32 | ((UInt64)ServiceInfo.TSID) << 16 | (UInt64)ServiceInfo.SID;
-                return key;
-            }
+            get { return ServiceInfo.Key; }
         }
         public override string ToString()
         {
-            if (ServiceInfo != null)
-            {
-                return ServiceInfo.ServiceName;
-            }
-            else
-            {
-                return "";
-            }
+            return ServiceInfo.ServiceName;
         }
         public String ToolTipView
         {
@@ -43,19 +32,12 @@ namespace EpgTimer
                 {
                     return null;
                 }
-                String viewTip = "";
-
-                if (ServiceInfo != null)
-                {
-                    viewTip =
-                        "service_name : " + ServiceInfo.ServiceName + "\r\n" +
-                        "service_type : " + ServiceInfo.ServiceType.ToString() + "(0x" + ServiceInfo.ServiceType.ToString("X2") + ")" + "\r\n" +
-                        "original_network_id : " + ServiceInfo.ONID.ToString() + "(0x" + ServiceInfo.ONID.ToString("X4") + ")" + "\r\n" +
-                        "transport_stream_id : " + ServiceInfo.TSID.ToString() + "(0x" + ServiceInfo.TSID.ToString("X4") + ")" + "\r\n" +
-                        "service_id : " + ServiceInfo.SID.ToString() + "(0x" + ServiceInfo.SID.ToString("X4") + ")" + "\r\n" +
-                        "partial_reception : " + (ServiceInfo.PartialFlag ? 1 : 0);
-                }
-                return viewTip;
+                return "service_name : " + ServiceInfo.ServiceName + "\r\n" +
+                       "service_type : " + ServiceInfo.ServiceType.ToString() + "(0x" + ServiceInfo.ServiceType.ToString("X2") + ")" + "\r\n" +
+                       "original_network_id : " + ServiceInfo.ONID.ToString() + "(0x" + ServiceInfo.ONID.ToString("X4") + ")" + "\r\n" +
+                       "transport_stream_id : " + ServiceInfo.TSID.ToString() + "(0x" + ServiceInfo.TSID.ToString("X4") + ")" + "\r\n" +
+                       "service_id : " + ServiceInfo.SID.ToString() + "(0x" + ServiceInfo.SID.ToString("X4") + ")" + "\r\n" +
+                       "partial_reception : " + (ServiceInfo.PartialFlag ? 1 : 0);
             }
         }
     }

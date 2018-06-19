@@ -117,29 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="EpgTimer_Bon_Vista_blue_rev2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\EpgTimer_Bon_Vista_blue_rev2.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="EpgTimer_Bon_Vista_gray_rev2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\EpgTimer_Bon_Vista_gray_rev2.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="EpgTimer_Bon_Vista_green_rev2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\EpgTimer_Bon_Vista_green_rev2.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="EpgTimer_Bon_Vista_red_rev2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\EpgTimer_Bon_Vista_red_rev2.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TaskIconBlue" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\TaskIconBlue.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TaskIconGray" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\TaskIconGray.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TaskIconGreen" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\TaskIconGreen.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TaskIconRed" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\TaskIconRed.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
 </root>

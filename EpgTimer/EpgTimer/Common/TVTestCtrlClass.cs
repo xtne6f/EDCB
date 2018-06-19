@@ -13,12 +13,6 @@ namespace EpgTimer
     {
         Process process = null;
         string processType;
-        private CtrlCmdUtil cmd = null;
-
-        public TVTestCtrlClass(CtrlCmdUtil ctrlCmd)
-        {
-            cmd = ctrlCmd;
-        }
 
         public bool SetLiveCh(UInt16 ONID, UInt16 TSID, UInt16 SID)
         {
@@ -29,13 +23,9 @@ namespace EpgTimer
                     MessageBox.Show("TVTest.exeのパスが設定されていません");
                     return false;
                 }
-                // TVTestのパスが録画用アプリと一致する場合はViewアプリとして扱う
-                bool isView = CommonManager.Instance.NWMode == false &&
-                              Settings.Instance.NwTvMode == false &&
-                              string.Compare(IniFileHandler.GetPrivateProfileString("SET", "RecExePath", "", SettingPath.CommonIniPath), Settings.Instance.TvTestExe, true) == 0;
-                OpenTVTest(Settings.Instance.TvTestOpenWait, isView ? "View" : "TvTest");
+                OpenTVTest(Settings.Instance.TvTestOpenWait, Settings.Instance.NwTvMode == false);
                 var cmdTvTest = new CtrlCmdUtil();
-                cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, "\\\\.\\pipe\\" + processType + "_Ctrl_BonPipe_" + process.Id);
+                cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, processType + "_Ctrl_BonPipe_" + process.Id);
                 cmdTvTest.SetConnectTimeOut(1000);
 
                 if (Settings.Instance.NwTvMode == true)
@@ -59,9 +49,9 @@ namespace EpgTimer
                         nwBonDriver = "BonDriver_TCP.dll";
                     }
                     
-                    if (cmd.SendNwTVMode(nwMode) == ErrCode.CMD_SUCCESS)
+                    if (CommonManager.CreateSrvCtrl().SendNwTVMode(nwMode) == ErrCode.CMD_SUCCESS)
                     {
-                        if (cmd.SendNwTVSetCh(chInfo) == ErrCode.CMD_SUCCESS)
+                        if (CommonManager.CreateSrvCtrl().SendNwTVSetCh(chInfo) == ErrCode.CMD_SUCCESS)
                         {
                             String val = "";
                             for (int i = 0; i < 10; i++)
@@ -71,7 +61,7 @@ namespace EpgTimer
                                     System.Threading.Thread.Sleep(1000);
                                     continue;
                                 }
-                                if (String.Compare(val, nwBonDriver, true) != 0)
+                                if (val.Equals(nwBonDriver, StringComparison.OrdinalIgnoreCase) == false)
                                 {
                                     cmdTvTest.SendViewSetBonDrivere(nwBonDriver);
                                 }
@@ -86,7 +76,7 @@ namespace EpgTimer
                         ((UInt64)TSID) << 16 |
                         ((UInt64)SID);
                     TvTestChChgInfo chInfo = new TvTestChChgInfo();
-                    ErrCode err = cmd.SendGetChgChTVTest(key, ref chInfo);
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendGetChgChTVTest(key, ref chInfo);
                     if (err == ErrCode.CMD_SUCCESS)
                     {
                         String val = "";
@@ -106,7 +96,7 @@ namespace EpgTimer
                                     break;
                                 }
                             }
-                            if (String.Compare(val, chInfo.bonDriver, true) != 0)
+                            if (val.Equals(chInfo.bonDriver, StringComparison.OrdinalIgnoreCase) == false)
                             {
                                 if (cmdTvTest.SendViewSetBonDrivere(chInfo.bonDriver) == ErrCode.CMD_SUCCESS)
                                 {
@@ -121,14 +111,9 @@ namespace EpgTimer
                             break;
                         }
                     }
-                    else if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバーに接続できませんでした");
-                        return false;
-                    }
                     else
                     {
-                        MessageBox.Show("指定サービスを受信できるBonDriverが設定されていません。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "指定サービスを受信できるBonDriverが設定されていません。");
                         return false;
                     }
                 }
@@ -142,7 +127,7 @@ namespace EpgTimer
             return true;
         }
 
-        public bool StartTimeShift(UInt32 reserveID)
+        public bool StartStreamingPlay(string filePath, uint reserveID)
         {
             try
             {
@@ -155,31 +140,39 @@ namespace EpgTimer
                 {
                     if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 0)
                     {
-                        MessageBox.Show("追っかけ再生を行うには、動作設定でネットワーク接続を許可する必要があります。");
+                        MessageBox.Show("動作設定でネットワーク接続を許可する必要があります。");
                         return false;
                     }
                 }
-                NWPlayTimeShiftInfo playInfo = new NWPlayTimeShiftInfo();
-                ErrCode err = cmd.SendNwTimeShiftOpen(reserveID, ref playInfo);
-                if (err == ErrCode.CMD_ERR_CONNECT)
+                var sendInfo = new TVTestStreamingInfo();
+                if (filePath == null)
                 {
-                    MessageBox.Show("サーバーに接続できませんでした");
-                    return false;
+                    var playInfo = new NWPlayTimeShiftInfo();
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref playInfo);
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "まだ録画が開始されていません。");
+                        return false;
+                    }
+                    sendInfo.ctrlID = playInfo.ctrlID;
+                    sendInfo.filePath = playInfo.filePath;
                 }
-                else if( err != ErrCode.CMD_SUCCESS )
+                else
                 {
-                    MessageBox.Show("まだ録画が開始されていません");
-                    return false;
+                    ErrCode err = CommonManager.CreateSrvCtrl().SendNwPlayOpen(filePath, ref sendInfo.ctrlID);
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "ファイルを開けませんでした。");
+                        return false;
+                    }
                 }
 
-                OpenTVTest(1000, "TvTest");
+                OpenTVTest(1000, false);
                 var cmdTvTest = new CtrlCmdUtil();
-                cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id, "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + process.Id);
+                cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id, "TvTest_Ctrl_BonPipe_" + process.Id);
                 cmdTvTest.SetConnectTimeOut(1000);
 
-                TVTestStreamingInfo sendInfo = new TVTestStreamingInfo();
                 sendInfo.enableMode = 1;
-                sendInfo.ctrlID = playInfo.ctrlID;
                 if (CommonManager.Instance.NWMode == false)
                 {
                     sendInfo.serverIP = 0x7F000001;
@@ -189,15 +182,14 @@ namespace EpgTimer
                 else
                 {
                     sendInfo.serverIP = 0x7F000001;
-                    IPAddress srvIP = CommonManager.Instance.NW.ConnectedIP;
+                    IPAddress srvIP = CommonManager.Instance.NWConnectedIP;
                     if (srvIP != null && srvIP.GetAddressBytes().Length == 4)
                     {
                         byte[] oct = srvIP.GetAddressBytes();
                         sendInfo.serverIP = (uint)oct[0] << 24 | (uint)oct[1] << 16 | (uint)oct[2] << 8 | oct[3];
                     }
-                    sendInfo.serverPort = CommonManager.Instance.NW.ConnectedPort;
+                    sendInfo.serverPort = CommonManager.Instance.NWConnectedPort;
                 }
-                sendInfo.filePath = playInfo.filePath;
                 if (Settings.Instance.NwTvModeUDP == true)
                 {
                     sendInfo.udpSend = 1;
@@ -220,87 +212,68 @@ namespace EpgTimer
             return true;
         }
 
-        public bool StartStreamingPlay(String filePath, IPAddress srvIP, UInt32 srvPort)
+        private void OpenTVTest(int openWait, bool acceptViewApp)
         {
-            try
+            if (process == null || process.HasExited || (acceptViewApp == false && processType == "View"))
             {
-                if (Settings.Instance.TvTestExe.Length == 0)
+                if (process != null)
                 {
-                    MessageBox.Show("TVTest.exeのパスが設定されていません");
-                    return false;
+                    process.Dispose();
                 }
-
-                UInt32 ctrlID = 0;
-                ErrCode err = cmd.SendNwPlayOpen(filePath, ref ctrlID);
-                if (err == ErrCode.CMD_ERR_CONNECT)
+                processType = "TvTest";
+                process = FindTVTestProcess(processType);
+                if (process == null && acceptViewApp)
                 {
-                    MessageBox.Show("サーバーに接続できませんでした");
-                    return false;
+                    processType = "View";
+                    process = FindTVTestProcess(processType);
                 }
-                else if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("まだ録画が開始されていません");
-                    return false;
-                }
-
-                OpenTVTest(Settings.Instance.TvTestOpenWait, "TvTest");
-                var cmdTvTest = new CtrlCmdUtil();
-                cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id, "\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" + process.Id);
-                cmdTvTest.SetConnectTimeOut(1000);
-
-                UInt32 ip = 0x7F000001;
-                if (srvIP != null && srvIP.GetAddressBytes().Length == 4)
-                {
-                    byte[] oct = srvIP.GetAddressBytes();
-                    ip = (uint)oct[0] << 24 | (uint)oct[1] << 16 | (uint)oct[2] << 8 | oct[3];
-                }
-
-                TVTestStreamingInfo sendInfo = new TVTestStreamingInfo();
-                sendInfo.enableMode = 1;
-                sendInfo.ctrlID = ctrlID;
-                sendInfo.serverIP = ip;
-                sendInfo.serverPort = srvPort;
-
-                if (Settings.Instance.NwTvModeUDP == true)
-                {
-                    sendInfo.udpSend = 1;
-                }
-                if (Settings.Instance.NwTvModeTCP == true)
-                {
-                    sendInfo.tcpSend = 1;
-                }
-                for (int i = 0; i < 10 && cmdTvTest.SendViewSetStreamingInfo(sendInfo) != ErrCode.CMD_SUCCESS; i++)
-                {
-                    System.Threading.Thread.Sleep(1000);
-                }
-
-                WakeupWindow(process.MainWindowHandle);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return true;
-        }
-
-
-        private void OpenTVTest(int openWait, string type)
-        {
-            if (process == null || process.HasExited || processType != type)
-            {
-                processType = type;
-                process = FindTVTestProcess(type);
                 if (process == null)
                 {
+                    // EpgTimerPlugInと仮定
+                    processType = "TvTest";
                     process = Process.Start(Settings.Instance.TvTestExe, Settings.Instance.TvTestCmd);
-                    System.Threading.Thread.Sleep(openWait);
+                    if (acceptViewApp)
+                    {
+                        for (int i = 0; i < 100; i++)
+                        {
+                            try
+                            {
+                                using (System.Threading.EventWaitHandle.OpenExisting(
+                                           "Global\\View_Ctrl_BonConnect_" + process.Id, System.Security.AccessControl.EventWaitHandleRights.Synchronize))
+                                {
+                                }
+                                // Viewアプリ(EdcbPlugIn)と判断
+                                processType = "View";
+                                break;
+                            }
+                            catch
+                            {
+                                try
+                                {
+                                    using (System.Threading.EventWaitHandle.OpenExisting(
+                                               "Global\\TvTest_Ctrl_BonConnect_" + process.Id, System.Security.AccessControl.EventWaitHandleRights.Synchronize))
+                                    {
+                                    }
+                                    break;
+                                }
+                                catch { }
+                            }
+                            System.Threading.Thread.Sleep(100);
+                            openWait -= 100;
+                        }
+                    }
+                    if (openWait > 0)
+                    {
+                        System.Threading.Thread.Sleep(openWait);
+                    }
                 }
             }
         }
 
         private static Process FindTVTestProcess(string type)
         {
-            foreach (Process p in Process.GetProcesses())
+            Process[] processes = Process.GetProcesses();
+            foreach (Process p in processes)
             {
                 // 原作と異なりプロセス名ではなく接続待機用イベントの有無で判断するので注意
                 try
@@ -309,11 +282,17 @@ namespace EpgTimer
                                "Global\\" + type + "_Ctrl_BonConnect_" + p.Id, System.Security.AccessControl.EventWaitHandleRights.Synchronize))
                     {
                     }
-                    // 識別用IDが設定されたViewアプリは除外する
                     if (type == "View")
                     {
+                        // TVTestではなさそうなViewアプリは除外する(※EpgDataCap_BonもViewアプリ)
+                        if (p.ProcessName.Equals(System.IO.Path.GetFileNameWithoutExtension(Settings.Instance.TvTestExe),
+                                                 StringComparison.OrdinalIgnoreCase) == false)
+                        {
+                            continue;
+                        }
+                        // 識別用IDが設定されたViewアプリは除外する
                         var cmdTvTest = new CtrlCmdUtil();
-                        cmdTvTest.SetPipeSetting("Global\\View_Ctrl_BonConnect_" + p.Id, "\\\\.\\pipe\\View_Ctrl_BonPipe_" + p.Id);
+                        cmdTvTest.SetPipeSetting("Global\\View_Ctrl_BonConnect_" + p.Id, "View_Ctrl_BonPipe_" + p.Id);
                         cmdTvTest.SetConnectTimeOut(1000);
                         int id = -1;
                         if (cmdTvTest.SendViewGetID(ref id) != ErrCode.CMD_SUCCESS || id >= 0)
@@ -321,26 +300,32 @@ namespace EpgTimer
                             continue;
                         }
                     }
+                    foreach (Process pp in processes.Where(pp => pp != p)) { pp.Dispose(); }
                     return p;
                 }
                 catch { }
             }
+            foreach (Process p in processes) { p.Dispose(); }
             return null;
         }
 
         public void CloseTVTest()
         {
-            if (process != null && process.HasExited == false)
+            if (process != null)
             {
-                var cmdTvTest = new CtrlCmdUtil();
-                cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, "\\\\.\\pipe\\" + processType + "_Ctrl_BonPipe_" + process.Id);
-                cmdTvTest.SetConnectTimeOut(1000);
-                cmdTvTest.SendViewAppClose();
+                if (process.HasExited == false)
+                {
+                    var cmdTvTest = new CtrlCmdUtil();
+                    cmdTvTest.SetPipeSetting("Global\\" + processType + "_Ctrl_BonConnect_" + process.Id, processType + "_Ctrl_BonPipe_" + process.Id);
+                    cmdTvTest.SetConnectTimeOut(1000);
+                    cmdTvTest.SendViewAppClose();
+                }
+                process.Dispose();
             }
             process = null;
             if (Settings.Instance.NwTvMode == true)
             {
-                cmd.SendNwTVClose();
+                CommonManager.CreateSrvCtrl().SendNwTVClose();
             }
         }
 

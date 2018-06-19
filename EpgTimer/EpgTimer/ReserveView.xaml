@@ -4,11 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged" FontSize="12">
+             d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
@@ -20,18 +17,24 @@
             <MenuItem Header="予約状況" Name="Comment" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="プログラム" Name="IsProgram" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="チューナー強制" Name="TunerID" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画後実行bat" Name="BatFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
+            <Separator />
+            <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="変更 (_C)">
                 <MenuItem Header="ダイアログ表示 (_X)" Click="button_change_Click" InputGestureText="Enter" />
                 <Separator/>
-                <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="recmode_Click" />
-                <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="recmode_Click" />
-                <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="recmode_Click" />
-                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="recmode_Click" />
-                <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="recmode_Click" />
-                <MenuItem Header="無効 (_5)" Name="recmode_no" Click="button_no_Click" />
+                <MenuItem Header="全サービス (_0)" Name="recmode_0" Click="recmode_Click" />
+                <MenuItem Header="指定サービス (_1)" Name="recmode_1" Click="recmode_Click" />
+                <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_2" Click="recmode_Click" />
+                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_3" Click="recmode_Click" />
+                <MenuItem Header="視聴 (_4)" Name="recmode_4" Click="recmode_Click" />
+                <MenuItem Header="無効 (_5)" Name="recmode_5" Click="button_no_Click" />
                 <Separator/>
                 <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
                     <MenuItem Header="1 (_1)" Name="priority_1" Click="priority_Click" />
@@ -44,12 +47,14 @@
             <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
             <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" InputGestureText="Ctrl + P" />
+            <Separator />
+            <MenuItem Header="プログラム予約追加" Click="button_add_manual_Click" />
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="130" />
+            <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
         <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening">
             <ListView.Resources>
@@ -66,42 +71,42 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_reserve">
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
+                    <GridViewColumn DisplayMemberBinding="{Binding StartTime}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}" >
+                    <GridViewColumn DisplayMemberBinding="{Binding NetworkName}" >
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
+                    <GridViewColumn DisplayMemberBinding="{Binding ServiceName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
+                    <GridViewColumn DisplayMemberBinding="{Binding EventName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
+                    <GridViewColumn DisplayMemberBinding="{Binding RecMode}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="録画モード" Tag="RecMode" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Priority}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Tuijyu}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="追従" Tag="Tuijyu" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Comment}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Comment}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="予約状況" Tag="Comment" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
@@ -112,47 +117,39 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding Path=RecFileName}" SelectedIndex="0"></ComboBox>
+                                <ComboBox ItemsSource="{Binding RecFileName}" SelectedIndex="0"></ComboBox>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Pittari}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding IsProgram}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="プログラム" Tag="IsProgram" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding TunerID}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="チューナー強制" Tag="TunerID" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding BatFilePath}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画後実行bat" Tag="BatFilePath" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding ID}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ID" Tag="ID" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
-            <!--
-            <ListView.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="削除" Click="button_del_Click" />
-                    <MenuItem Header="変更">
-                        <MenuItem Header="ダイアログ表示" Click="button_change_Click" />
-                        <Separator/>
-                        <MenuItem Header="録画モード">
-                            <MenuItem Header="全サービス" Name="recmode_all" Click="recmode_Click" />
-                            <MenuItem Header="指定サービス" Name="recmode_only" Click="recmode_Click" />
-                            <MenuItem Header="全サービス（デコード処理なし）" Name="recmode_all_nodec" Click="recmode_Click" />
-                            <MenuItem Header="指定サービス（デコード処理なし）" Name="recmode_only_nodec" Click="recmode_Click" />
-                            <MenuItem Header="視聴" Name="recmode_view" Click="recmode_Click" />
-                            <MenuItem Header="無効" Name="recmode_no" Click="button_no_Click" />
-                        </MenuItem>
-                        <MenuItem Header="優先度">
-                            <MenuItem Header="1" Name="priority_1" Click="priority_Click" />
-                            <MenuItem Header="2" Name="priority_2" Click="priority_Click" />
-                            <MenuItem Header="3" Name="priority_3" Click="priority_Click" />
-                            <MenuItem Header="4" Name="priority_4" Click="priority_Click" />
-                            <MenuItem Header="5" Name="priority_5" Click="priority_Click" />
-                        </MenuItem>
-                    </MenuItem>
-                    <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-                    <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" />
-                </ContextMenu>
-            </ListView.ContextMenu>
-            -->
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button">
+        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="130">
             <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" ToolTip="Delete" />
             <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" ToolTip="Enter" />
             <Button Content="無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" />
