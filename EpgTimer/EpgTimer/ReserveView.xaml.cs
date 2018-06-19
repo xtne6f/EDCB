@@ -71,7 +71,7 @@ namespace EpgTimer
 
         private void ReDrawReserveData()
         {
-            listView_reserve.DataContext = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
+            listView_reserve.ItemsSource = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
 
             if (columnList.ContainsKey(Settings.Instance.ResColumnHead) == false || Settings.Instance.ResColumnHead == "RecFileName")
             {
@@ -83,19 +83,19 @@ namespace EpgTimer
         public void RefreshEpgData()
         {
             // 枠線表示用
-            if (listView_reserve.DataContext != null)
+            if (listView_reserve.ItemsSource != null)
             {
-                CollectionViewSource.GetDefaultView(listView_reserve.DataContext).Refresh();
+                CollectionViewSource.GetDefaultView(listView_reserve.ItemsSource).Refresh();
             }
         }
 
         private void Sort()
         {
-            if (listView_reserve.DataContext == null)
+            if (listView_reserve.ItemsSource == null)
             {
                 return;
             }
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.ItemsSource);
 
             using (dataView.DeferRefresh())
             {

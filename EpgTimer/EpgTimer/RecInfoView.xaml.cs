@@ -85,11 +85,11 @@ namespace EpgTimer
 
         private void Sort()
         {
-            if (listView_recinfo.DataContext == null)
+            if (listView_recinfo.ItemsSource == null)
             {
                 return;
             }
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.ItemsSource);
 
             using (dataView.DeferRefresh())
             {
@@ -136,17 +136,17 @@ namespace EpgTimer
         {
             if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
             {
-                listView_recinfo.DataContext = null;
+                listView_recinfo.ItemsSource = null;
                 return false;
             }
             ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
             if (err != ErrCode.CMD_SUCCESS)
             {
                 Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。")));
-                listView_recinfo.DataContext = null;
+                listView_recinfo.ItemsSource = null;
                 return false;
             }
-            listView_recinfo.DataContext = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info)).ToList();
+            listView_recinfo.ItemsSource = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info)).ToList();
 
             if (columnList.ContainsKey(Settings.Instance.RecInfoColumnHead) == false)
             {

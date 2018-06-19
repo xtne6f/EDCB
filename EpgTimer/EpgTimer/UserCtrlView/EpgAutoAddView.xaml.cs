@@ -335,7 +335,7 @@ namespace EpgTimer
                 resultListMoved.Insert(index_Dst1, item_Src1);
 
                 lastAscendingSortedHeader = null;
-                listView_key.DataContext = resultListMoved;
+                listView_key.ItemsSource = resultListMoved;
                 button_saveItemOrder.IsEnabled = true;
                 button_reloadItem.IsEnabled = true;
                 textBox_ItemOrderStatus.Visibility = Visibility.Visible;
@@ -371,7 +371,7 @@ namespace EpgTimer
         {
             resultListMoved = null;
             lastAscendingSortedHeader = null;
-            listView_key.DataContext = resultList;
+            listView_key.ItemsSource = resultList;
             button_saveItemOrder.IsEnabled = false;
             button_reloadItem.IsEnabled = false;
             textBox_ItemOrderStatus.Visibility = Visibility.Hidden;
@@ -392,7 +392,7 @@ namespace EpgTimer
                     resultListMoved = resultListMoved ?? resultList;
                     resultListMoved = (desc ? resultListMoved.OrderByDescending(a => p.GetValue(a, null)) : resultListMoved.OrderBy(a => p.GetValue(a, null))).ToList();
                     // UI更新
-                    listView_key.DataContext = resultListMoved;
+                    listView_key.ItemsSource = resultListMoved;
                     button_saveItemOrder.IsEnabled = true;
                     button_reloadItem.IsEnabled = true;
                     textBox_ItemOrderStatus.Visibility = Visibility.Visible;
