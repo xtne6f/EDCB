@@ -143,12 +143,13 @@ namespace EpgTimer
 
             if (listView_log.ItemsSource != null && dlg.ShowDialog() == true)
             {
-                StreamWriter file = new StreamWriter(dlg.FileName, false, System.Text.Encoding.GetEncoding("shift_jis") );
-                foreach (NotifySrvInfoItem info in listView_log.ItemsSource)
+                using (var file = new StreamWriter(dlg.FileName, false, Encoding.Unicode))
                 {
-                    file.WriteLine(info);
+                    foreach (NotifySrvInfoItem info in listView_log.ItemsSource)
+                    {
+                        file.WriteLine(info);
+                    }
                 }
-                file.Close();
             }
         }
 
