@@ -62,9 +62,13 @@ namespace EpgTimer
             {
                 if (listView_recinfo.SelectedItems.Count > 0)
                 {
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "RecInfoDelFile", 0, SettingPath.CommonIniPath) == 1)
+                    if (Settings.Instance.ConfirmDelRecInfo)
                     {
-                        if (MessageBox.Show("録画ファイルが存在する場合は一緒に削除されます。\r\nよろしいですか？", "ファイル削除", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                        bool hasPath = listView_recinfo.SelectedItems.Cast<RecInfoItem>().Any(info => info.RecFilePath.Length > 0);
+                        if ((hasPath || Settings.Instance.ConfirmDelRecInfoAlways) &&
+                            MessageBox.Show(listView_recinfo.SelectedItems.Count + "項目を削除してよろしいですか?" +
+                                            (hasPath ? "\r\n\r\n「録画ファイルも削除する」設定が有効な場合、ファイルも削除されます。" : ""), "確認",
+                                            MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) != MessageBoxResult.OK)
                         {
                             return;
                         }
