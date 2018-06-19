@@ -964,10 +964,10 @@ namespace EpgTimer
             {
                 //高DPI環境でProgramViewの位置を物理ピクセルに合わせるためにヘッダの幅を微調整する
                 //RootにUseLayoutRoundingを適用できれば不要だがボタン等が低品質になるので自力でやる
-                Point p = grid_PG.TransformToVisual(ps.RootVisual).Transform(new Point(40, 40));
+                Point p = grid_PG.TransformToVisual(ps.RootVisual).Transform(new Point(40, 80));
                 Matrix m = ps.CompositionTarget.TransformToDevice;
                 grid_PG.ColumnDefinitions[0].Width = new GridLength(40 + Math.Floor(p.X * m.M11) / m.M11 - p.X);
-                grid_PG.RowDefinitions[0].Height = new GridLength(40 + Math.Floor(p.Y * m.M22) / m.M22 - p.Y);
+                grid_PG.RowDefinitions[1].Height = new GridLength(40 + Math.Floor(p.Y * m.M22) / m.M22 - p.Y);
             }
         }
 
