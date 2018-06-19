@@ -195,21 +195,27 @@ namespace EpgTimer
                 listBox_service.ItemsSource = null;
                 var serviceList = new List<ServiceItem>();
 
-                foreach (ulong id in setViewInfo.ViewServiceList)
+                for (int i = 0; i < setViewInfo.ViewServiceList.Count;)
                 {
-                    if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(id) == true)
+                    //TSIDが同じでSIDが逆順のときは正順にする
+                    int skip = i + 1;
+                    while (setViewInfo.ViewServiceList.Count > skip &&
+                           setViewInfo.ViewServiceList[skip] >> 16 == setViewInfo.ViewServiceList[skip - 1] >> 16 &&
+                           (setViewInfo.ViewServiceList[skip] & 0xFFFF) < (setViewInfo.ViewServiceList[skip - 1] & 0xFFFF))
                     {
-                        var item = new ServiceItem(CommonManager.Instance.DB.ServiceEventList[id].serviceInfo);
-                        item.IsSelected = true;
-                        if (lastChkSID != null)
-                        {
-                            if (lastChkSID.ContainsKey(id) == false)
-                            {
-                                item.IsSelected = false;
-                            }
-                        }
-                        serviceList.Add(item);
+                        skip++;
                     }
+                    for (int j = skip - 1; j >= i; j--)
+                    {
+                        ulong id = setViewInfo.ViewServiceList[j];
+                        if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(id))
+                        {
+                            var item = new ServiceItem(CommonManager.Instance.DB.ServiceEventList[id].serviceInfo);
+                            item.IsSelected = (lastChkSID == null || lastChkSID.ContainsKey(id));
+                            serviceList.Add(item);
+                        }
+                    }
+                    i = skip;
                 }
                 if (lastChkSID == null)
                 {
@@ -268,21 +274,27 @@ namespace EpgTimer
                     serviceEventList[id].eventList.Add(eventInfo);
                 }
 
-                foreach (ulong id in setViewInfo.ViewServiceList)
+                for (int i = 0; i < setViewInfo.ViewServiceList.Count;)
                 {
-                    if (serviceEventList.ContainsKey(id) == true)
+                    //TSIDが同じでSIDが逆順のときは正順にする
+                    int skip = i + 1;
+                    while (setViewInfo.ViewServiceList.Count > skip &&
+                           setViewInfo.ViewServiceList[skip] >> 16 == setViewInfo.ViewServiceList[skip - 1] >> 16 &&
+                           (setViewInfo.ViewServiceList[skip] & 0xFFFF) < (setViewInfo.ViewServiceList[skip - 1] & 0xFFFF))
                     {
-                        var item = new ServiceItem(serviceEventList[id].serviceInfo);
-                        item.IsSelected = true;
-                        if (lastChkSID != null)
-                        {
-                            if (lastChkSID.ContainsKey(id) == false)
-                            {
-                                item.IsSelected = false;
-                            }
-                        }
-                        serviceList.Add(item);
+                        skip++;
                     }
+                    for (int j = skip - 1; j >= i; j--)
+                    {
+                        ulong id = setViewInfo.ViewServiceList[j];
+                        if (serviceEventList.ContainsKey(id))
+                        {
+                            var item = new ServiceItem(serviceEventList[id].serviceInfo);
+                            item.IsSelected = (lastChkSID == null || lastChkSID.ContainsKey(id));
+                            serviceList.Add(item);
+                        }
+                    }
+                    i = skip;
                 }
                 if (lastChkSID == null)
                 {

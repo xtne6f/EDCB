@@ -1221,23 +1221,33 @@ namespace EpgTimer
                 }
                 comboBox_service.Items.Clear();
 
-                foreach (ulong id in setViewInfo.ViewServiceList)
+                for (int i = 0; i < setViewInfo.ViewServiceList.Count;)
                 {
-                    if (serviceEventList.ContainsKey(id) == false)
+                    //TSIDが同じでSIDが逆順のときは正順にする
+                    int skip = i + 1;
+                    while (setViewInfo.ViewServiceList.Count > skip &&
+                           setViewInfo.ViewServiceList[skip] >> 16 == setViewInfo.ViewServiceList[skip - 1] >> 16 &&
+                           (setViewInfo.ViewServiceList[skip] & 0xFFFF) < (setViewInfo.ViewServiceList[skip - 1] & 0xFFFF))
                     {
-                        //サービス情報ないので無効
-                        continue;
+                        skip++;
                     }
-
-                    ComboBoxItem item = new ComboBoxItem();
-                    item.Content = serviceEventList[id].serviceInfo.service_name;
-                    item.DataContext = serviceEventList[id].serviceInfo;
-                    int index = comboBox_service.Items.Add(item);
-                    if (selectID == id || selectID == 0)
+                    for (int j = skip - 1; j >= i; j--)
                     {
-                        selectIndex = index;
-                        selectID = id;
+                        ulong id = setViewInfo.ViewServiceList[j];
+                        if (serviceEventList.ContainsKey(id))
+                        {
+                            var item = new ComboBoxItem();
+                            item.Content = serviceEventList[id].serviceInfo.service_name;
+                            item.DataContext = serviceEventList[id].serviceInfo;
+                            comboBox_service.Items.Add(item);
+                            if (selectID == id || selectID == 0)
+                            {
+                                selectIndex = comboBox_service.Items.Count - 1;
+                                selectID = id;
+                            }
+                        }
                     }
+                    i = skip;
                 }
                 comboBox_service.SelectedIndex = selectIndex;
 
