@@ -3,6 +3,9 @@
 ONE_MIN_PX=2
 --番組の最低表示高さ
 MINIMUM_PX=12
+--サービスあたりの幅
+SERVICE_PX=150
+--時刻軸を入れる間隔
 TIME_COLUMN=3
 SORT_BY_REMOCON_KEY_ID=true
 HIDE_SERVICES={
@@ -35,12 +38,12 @@ baseTime=(baseDate*24+4)*3600
 
 rt={}
 for i,v in ipairs(edcb.GetReserveData()) do
-  rt[('%04X%04X%04X%04X'):format(v.onid, v.tsid, v.sid, v.eid)]=true
+  rt[v.onid..'-'..v.tsid..'-'..v.sid..'-'..v.eid]=true
 end
 
 showServices={}
 for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
-  if not HIDE_SERVICES[''..v.onid..'-'..v.tsid..'-'..v.sid] and (
+  if not HIDE_SERVICES[v.onid..'-'..v.tsid..'-'..v.sid] and (
      tab==0 and NetworkType(v.onid)=='地デジ' or
      tab==1 and NetworkType(v.onid)=='BS' or
      tab==2 and NetworkType(v.onid):find('^CS') or
@@ -54,7 +57,7 @@ maxTime=nil
 st={}
 edcb.htmlEscape=15
 for i,v in ipairs(edcb.GetServiceList() or {}) do
-  if showServices[''..v.onid..'-'..v.tsid..'-'..v.sid] then
+  if showServices[v.onid..'-'..v.tsid..'-'..v.sid] then
     table.insert(st, v)
     mmt=edcb.GetEventMinMaxTime(v.onid, v.tsid, v.sid)
     if mmt then
@@ -103,16 +106,20 @@ end
 pageNav=pageNav..'</div>\n'
 
 rowHead=''
+tcol=1
 for i,v in ipairs(st) do
-  if i%TIME_COLUMN==1 then rowHead=rowHead..'<td></td>\n' end
-  rowHead=rowHead..'<th>'..v.service_name..'</th>\n'
+  if tcol==1 then
+    rowHead=rowHead..'<td></td>\n'
+  end
+  tcol=(tcol<TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
+  rowHead=rowHead..'<th style="min-width:'..(SERVICE_PX-2)..'px;width:'..(SERVICE_PX-2)..'px">'..v.service_name..'</th>\n'
 end
 rowTail='<tr class="epg-row-tail">\n'..rowHead..'</tr>\n'
 rowHead='<tr class="epg-row-head">\n'..rowHead..'</tr>\n'
 
 colHead='<td class="epg-col-head">\n'
 for i=4,28 do
-  colHead=colHead..'<div class="t'..(i%24)..'"'
+  colHead=colHead..'<div class="t'..(i%24)..(i%24~=4 and i%24==(math.floor(now/3600)+9)%24 and ' tnow' or '')..'"'
     ..(i==11 and ' id="noon"' or i==17 and ' id="dusk"' or i==23 and ' id="night"' or '')
     ..' style="height:'..(ONE_MIN_PX*60)..'px">'..i..'</div>\n'
 end
@@ -120,12 +127,24 @@ colHead=colHead..'</td>\n'
 
 ct:Append(pageNav..'<div id="main">\n  <table class="epg-table">\n')
 ct:Append(rowHead..'<tr>\n')
+tcol=1
 for i,v in ipairs(st) do
-  if i%TIME_COLUMN==1 then
+  if tcol==1 then
     ct:Append(colHead)
     colHead=colHead:gsub(' id=[^ ]+', '')
   end
-  ct:Append('<td class="epg-col">\n')
+  tcol=(tcol<TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
+  if i==1 or v.onid~=st[i-1].onid or v.tsid~=st[i-1].tsid then
+    left=1
+    for j=i,#st+1 do
+      if j>#st or v.onid~=st[j].onid or v.tsid~=st[j].tsid then
+        ct:Append('<td colspan="'..(j-i)..'" class="epg-col">\n')
+        break
+      end
+    end
+  else
+    left=left+SERVICE_PX+2
+  end
   lastPx=0
   for j,w in ipairs(v.et) do
     startTime=os.time(w.startTime)+timezone
@@ -134,29 +153,48 @@ for i,v in ipairs(st) do
       w.durationSecond and startTime+w.durationSecond or (j<#v.et and os.time(v.et[j+1].startTime)+timezone or startTime) --終了時間未定
       )-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
     if startPx-lastPx>0 then
-      ct:Append('<div style="border:0;height:'..(startPx-lastPx)..'px"></div>\n')
       lastPx=startPx
     end
     endPx=lastPx+math.max(endPx-lastPx, MINIMUM_PX)
     if endPx-lastPx>2 then
-      cont=w.contentInfoList and #w.contentInfoList>0 and math.floor(w.contentInfoList[1].content_nibble/256)%16 or 16
-      sub=w.eventGroupInfo and #w.eventGroupInfo.eventDataList==1 and (
-        w.eventGroupInfo.eventDataList[1].onid~=w.onid or
-        w.eventGroupInfo.eventDataList[1].tsid~=w.tsid or
-        w.eventGroupInfo.eventDataList[1].sid~=w.sid or
-        w.eventGroupInfo.eventDataList[1].eid~=w.eid)
-      ct:Append('<div class="cont-'..cont..(w.past and ' past' or '')..'" style="height:'..(endPx-lastPx)..'px">'
-        ..(not w.past and rt[('%04X%04X%04X%04X'):format(w.onid, w.tsid, w.sid, w.eid)] and '<b>予</b> ' or '')
-        ..('%02d'):format(w.startTime.min)
-        ..(sub and '' or ' <a href="'
+      --貫かれるものでないか
+      if not w.eventGroupInfo or #w.eventGroupInfo.eventDataList~=1 or
+         w.eventGroupInfo.eventDataList[1].onid==w.onid and
+         w.eventGroupInfo.eventDataList[1].tsid==w.tsid and
+         w.eventGroupInfo.eventDataList[1].sid==w.sid and
+         w.eventGroupInfo.eventDataList[1].eid==w.eid then
+        --横にどれだけ貫くか
+        width=SERVICE_PX
+        for k=i+1,#st do
+          span=false
+          if v.onid==st[k].onid and v.tsid==st[k].tsid and w.eventGroupInfo then
+            for l,x in ipairs(w.eventGroupInfo.eventDataList) do
+              if v.onid==x.onid and v.tsid==x.tsid and st[k].sid==x.sid then
+                width=width+SERVICE_PX+2
+                span=true
+                break
+              end
+            end
+          end
+          if not span then
+            break
+          end
+        end
+        cont=w.contentInfoList and #w.contentInfoList>0 and math.floor(w.contentInfoList[1].content_nibble/256)%16 or 16
+        ct:Append('<div class="cont-'..cont..(w.past and ' past' or '')
+          ..'" style="height:'..(endPx-lastPx)..'px;left:'..left..'px;top:'..(lastPx+1)..'px;width:'..width..'px">'
+          ..(not w.past and rt[w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid] and '<b>予</b> ' or '')
+          ..('%02d'):format(w.startTime.min)..' <a href="'
           ..(w.past and 'epgpastinfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..(os.time(w.startTime)+timezone)
             or 'epginfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid)..'">'
-          ..(w.shortInfo and w.shortInfo.event_name or '&nbsp;')..'</a>')
-        ..'</div>\n')
+          ..(w.shortInfo and w.shortInfo.event_name or '&nbsp;')..'</a></div>\n')
+      end
       lastPx=endPx
     end
   end
-  ct:Append('</td>\n')
+  if i==#st or v.onid~=st[i+1].onid or v.tsid~=st[i+1].tsid then
+    ct:Append('</td>\n')
+  end
 end
 
 ct:Append('</tr>\n'..rowTail..'  </table>\n</div>\n'..(#st==0 and '' or pageNav)..[=[

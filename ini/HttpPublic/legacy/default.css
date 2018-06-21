@@ -65,16 +65,12 @@ th, td {
 
 .epg-row-head > th {
   border: 1px solid #aaa;
-  min-width: 148px;
   vertical-align: bottom;
-  width: 148px;
 }
 
 .epg-row-tail > th {
   border: 1px solid #aaa;
-  min-width: 148px;
   vertical-align: top;
-  width: 148px;
 }
 
 .epg-row-head > td, .epg-row-tail > td {
@@ -127,12 +123,20 @@ th, td {
   background: #283593;
 }
 
+.t17.tnow, .t18.tnow, .t19.tnow {
+  color: #ef6c00 !important;
+}
+
+.tnow {
+  color: #c62828 !important;
+}
+
 .epg-col {
   background: #aaa;
   border: 0;
   font-size: small;
+  position: relative;
   vertical-align: top;
-  width: 148px;
 }
 
 .epg-col > div {
@@ -142,7 +146,7 @@ th, td {
   box-sizing: border-box;
   color: #000;
   overflow: auto;
-  width: 150px;
+  position: absolute;
 }
 
 .epg-col > div > a:link {
