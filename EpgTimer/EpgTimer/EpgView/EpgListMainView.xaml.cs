@@ -633,7 +633,7 @@ namespace EpgTimer
                             {
                                 MenuItem menuItem = new MenuItem();
                                 menuItem.Header = info.DisplayName;
-                                menuItem.DataContext = info.ID;
+                                menuItem.Tag = info.ID;
                                 menuItem.Click += new RoutedEventHandler(cm_add_preset_Click);
                                 menuItem.IsEnabled = item.Past == false;
                                 cm_add.Items.Add(menuItem);
@@ -653,7 +653,7 @@ namespace EpgTimer
             var meun = sender as MenuItem;
             if (meun != null)
             {
-                AddReserveFromPreset((uint)meun.DataContext);
+                AddReserveFromPreset((uint)meun.Tag);
             }
         }
 
