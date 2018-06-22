@@ -22,7 +22,7 @@
         <Button Content="予約" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="126,6,0,0" Name="button_add_reserve" VerticalAlignment="Top" Width="75" Click="button_add_reserve_Click" ToolTip="Ctrl + Shift + S"/>
         <Button Content="自動予約登録条件に追加" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="244,6,0,0" Name="button_add_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_add_epgAutoAdd_Click" ToolTip="Ctrl + Shift + A"/>
         <Button Content="自動予約登録条件を変更" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="450,6,0,0" Name="button_chg_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_chg_epgAutoAdd_Click" ToolTip="Ctrl + Shift + C"/>
-        <ListView Grid.Row="2" Name="listView_result" Margin="10,39,10,10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
+        <ListView Grid.Row="2" Name="listView_result" Margin="10,39,10,10" SelectionMode="Extended" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
             <ListView.Resources>
                 <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
                     <MenuItem Header="ダイアログ表示" Click="MenuItem_Click_ShowDialog"  InputGestureText="Enter" />
@@ -35,11 +35,11 @@
                         <MenuItem Header="無効 (_5)" Tag="5" Click="MenuItem_Click_RecMode" />
                         <Separator/>
                         <MenuItem Name="cmdPri" Tag="優先度 {0} (_E)">
-                            <MenuItem Header="1 (_1)" Tag="1" Click="MenuItem_Click_Priority" />
-                            <MenuItem Header="2 (_2)" Tag="2" Click="MenuItem_Click_Priority" />
-                            <MenuItem Header="3 (_3)" Tag="3" Click="MenuItem_Click_Priority" />
-                            <MenuItem Header="4 (_4)" Tag="4" Click="MenuItem_Click_Priority" />
-                            <MenuItem Header="5 (_5)" Tag="5" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="_1" Tag="1" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="_2" Tag="2" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="_3" Tag="3" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="_4" Tag="4" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="_5" Tag="5" Click="MenuItem_Click_Priority" />
                         </MenuItem>
                     </MenuItem>
                     <MenuItem Name="cmdDlt" Header="予約削除" Click="MenuItem_Click_DeleteItem" />

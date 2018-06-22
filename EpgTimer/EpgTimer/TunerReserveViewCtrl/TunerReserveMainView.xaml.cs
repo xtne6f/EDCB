@@ -194,80 +194,38 @@ namespace EpgTimer
                 }
                 ContextMenu menu = new ContextMenu();
 
-                Separator separate2 = new Separator();
                 MenuItem menuItemChg = new MenuItem();
-                menuItemChg.Header = "予約変更";
+                menuItemChg.Header = "予約変更 (_C)";
                 MenuItem menuItemChgDlg = new MenuItem();
-                menuItemChgDlg.Header = "ダイアログ表示";
+                menuItemChgDlg.Header = "ダイアログ表示 (_X)";
                 menuItemChgDlg.Click += new RoutedEventHandler(cm_chg_Click);
 
                 menuItemChg.Items.Add(menuItemChgDlg);
-                menuItemChg.Items.Add(separate2);
+                menuItemChg.Items.Add(new Separator());
 
-                MenuItem menuItemChgRecMode0 = new MenuItem();
-                menuItemChgRecMode0.Header = "全サービス";
-                menuItemChgRecMode0.DataContext = 0;
-                menuItemChgRecMode0.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode1 = new MenuItem();
-                menuItemChgRecMode1.Header = "指定サービス";
-                menuItemChgRecMode1.DataContext = 1;
-                menuItemChgRecMode1.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode2 = new MenuItem();
-                menuItemChgRecMode2.Header = "全サービス（デコード処理なし）";
-                menuItemChgRecMode2.DataContext = 2;
-                menuItemChgRecMode2.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode3 = new MenuItem();
-                menuItemChgRecMode3.Header = "指定サービス（デコード処理なし）";
-                menuItemChgRecMode3.DataContext = 3;
-                menuItemChgRecMode3.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode4 = new MenuItem();
-                menuItemChgRecMode4.Header = "視聴";
-                menuItemChgRecMode4.DataContext = 4;
-                menuItemChgRecMode4.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode5 = new MenuItem();
-                menuItemChgRecMode5.Header = "無効";
-                menuItemChgRecMode5.DataContext = 5;
-                menuItemChgRecMode5.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-
-                menuItemChg.Items.Add(menuItemChgRecMode0);
-                menuItemChg.Items.Add(menuItemChgRecMode1);
-                menuItemChg.Items.Add(menuItemChgRecMode2);
-                menuItemChg.Items.Add(menuItemChgRecMode3);
-                menuItemChg.Items.Add(menuItemChgRecMode4);
-                menuItemChg.Items.Add(menuItemChgRecMode5);
-
+                for (byte i = 0; i < CommonManager.Instance.RecModeList.Length; i++)
+                {
+                    MenuItem menuItem = new MenuItem();
+                    menuItem.Header = CommonManager.Instance.RecModeList[i] + " (_" + i + ")";
+                    menuItem.Tag = i;
+                    menuItem.Click += new RoutedEventHandler(cm_chg_recmode_Click);
+                    menuItem.IsChecked = i == reserve.RecSetting.RecMode;
+                    menuItemChg.Items.Add(menuItem);
+                }
                 menuItemChg.Items.Add(new Separator());
 
                 MenuItem menuItemChgRecPri = new MenuItem();
-                menuItemChgRecPri.Tag = "優先度 {0}";
+                menuItemChgRecPri.Header = "優先度 " + reserve.RecSetting.Priority + " (_E)";
 
-                MenuItem menuItemChgRecPri1 = new MenuItem();
-                menuItemChgRecPri1.Header = "1";
-                menuItemChgRecPri1.DataContext = 1;
-                menuItemChgRecPri1.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                MenuItem menuItemChgRecPri2 = new MenuItem();
-                menuItemChgRecPri2.Header = "2";
-                menuItemChgRecPri2.DataContext = 2;
-                menuItemChgRecPri2.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                MenuItem menuItemChgRecPri3 = new MenuItem();
-                menuItemChgRecPri3.Header = "3";
-                menuItemChgRecPri3.DataContext = 3;
-                menuItemChgRecPri3.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                MenuItem menuItemChgRecPri4 = new MenuItem();
-                menuItemChgRecPri4.Header = "4";
-                menuItemChgRecPri4.DataContext = 4;
-                menuItemChgRecPri4.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                MenuItem menuItemChgRecPri5 = new MenuItem();
-                menuItemChgRecPri5.Header = "5";
-                menuItemChgRecPri5.DataContext = 5;
-                menuItemChgRecPri5.Click += new RoutedEventHandler(cm_chg_priority_Click);
-
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri1);
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri2);
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri3);
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri4);
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri5);
-
+                for (byte i = 1; i <= 5; i++)
+                {
+                    MenuItem menuItem = new MenuItem();
+                    menuItem.Header = "_" + i;
+                    menuItem.Tag = i;
+                    menuItem.Click += new RoutedEventHandler(cm_chg_priority_Click);
+                    menuItem.IsChecked = i == reserve.RecSetting.Priority;
+                    menuItemChgRecPri.Items.Add(menuItem);
+                }
                 menuItemChg.Items.Add(menuItemChgRecPri);
 
                 MenuItem menuItemDel = new MenuItem();
@@ -278,17 +236,8 @@ namespace EpgTimer
                 menuItemAutoAdd.Header = "自動予約登録";
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
                 MenuItem menuItemTimeshift = new MenuItem();
-                menuItemTimeshift.Header = "追っかけ再生";
+                menuItemTimeshift.Header = "追っかけ再生 (_P)";
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
-
-
-                menuItemChg.IsEnabled = true;
-                ((MenuItem)menuItemChg.Items[menuItemChg.Items.IndexOf(menuItemChgRecMode0) + Math.Min((int)reserve.RecSetting.RecMode, 5)]).IsChecked = true;
-                ((MenuItem)menuItemChgRecPri.Items[Math.Min((int)(reserve.RecSetting.Priority - 1), 4)]).IsChecked = true;
-                menuItemChgRecPri.Header = string.Format((string)menuItemChgRecPri.Tag, reserve.RecSetting.Priority);
-                menuItemDel.IsEnabled = true;
-                menuItemAutoAdd.IsEnabled = true;
-                menuItemTimeshift.IsEnabled = true;
 
                 menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
@@ -361,19 +310,12 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
                 ReserveData reserve = new ReserveData();
                 if (GetReserveItem(clickPos, ref reserve) == false)
                 {
                     return;
                 }
-                MenuItem item = sender as MenuItem;
-                Int32 val = (Int32)item.DataContext;
-                reserve.RecSetting.RecMode = (byte)val;
+                reserve.RecSetting.RecMode = (byte)((MenuItem)sender).Tag;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
                 ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
@@ -397,19 +339,12 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
                 ReserveData reserve = new ReserveData();
                 if (GetReserveItem(clickPos, ref reserve) == false)
                 {
                     return;
                 }
-                MenuItem item = sender as MenuItem;
-                Int32 val = (Int32)item.DataContext;
-                reserve.RecSetting.Priority = (byte)val;
+                reserve.RecSetting.Priority = (byte)((MenuItem)sender).Tag;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
                 ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);

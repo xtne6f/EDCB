@@ -59,7 +59,7 @@
                     <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="160,98,0,0" Name="checkBox_serviceMode" VerticalAlignment="Top" />
                     <CheckBox Content="字幕を含める" Height="16" HorizontalAlignment="Left" Margin="260,98,0,0" Name="checkBox_serviceCaption" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource convert}, ConverterParameter=not}" />
                     <CheckBox Content="データカルーセルを含める" Height="16" HorizontalAlignment="Left" Margin="370,98,0,0" Name="checkBox_serviceData" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource convert}, ConverterParameter=not}" />
-                    <ListView Height="79" Margin="11,125,109,0" Name="listView_recFolder" VerticalAlignment="Top" ItemsSource="{Binding}">
+                    <ListView Height="79" Margin="11,125,109,0" Name="listView_recFolder" VerticalAlignment="Top">
                         <ListView.View>
                             <GridView x:Name="gridView_recFolder">
                                 <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">
@@ -92,7 +92,7 @@
                     <CheckBox Content="部分受信（ワンセグ）を別ファイルに同時出力する" Height="16" HorizontalAlignment="Left" Margin="30,208,0,0" Name="checkBox_partial" VerticalAlignment="Top" />
                     <CheckBox Content="後ろの予約を同一ファイルで出力する" Height="16" HorizontalAlignment="Left" Margin="370,208,0,0" Name="checkBox_continueRec" VerticalAlignment="Top" />
                     <Label Content="使用チューナー強制指定" Height="28" HorizontalAlignment="Left" Margin="6,231,0,0" Name="label23" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="160,231,0,0" Name="comboBox_tuner" VerticalAlignment="Top" Width="370" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="160,231,0,0" Name="comboBox_tuner" VerticalAlignment="Top" Width="370" />
                     <Label Content="録画後動作" Height="28" HorizontalAlignment="Left" Margin="6,260,0,0" Name="label18" VerticalAlignment="Top" />
                     <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="90,265,0,0" Name="checkBox_suspendDef" VerticalAlignment="Top" />
                     <RadioButton Content="何もしない" Height="16" HorizontalAlignment="Left" Margin="185,265,0,0" Name="radioButton_non" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource convert}, ConverterParameter=not}" />
