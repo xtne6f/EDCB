@@ -2,12 +2,10 @@
 //
 
 #include "stdafx.h"
-#include "EpgTimerSrv.h"
 #include "EpgTimerSrvMain.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ServiceUtil.h"
 #include "../../Common/ThreadUtil.h"
-
 #include "../../Common/CommonDef.h"
 #include <WinSvc.h>
 #include <ObjBase.h>
@@ -44,6 +42,9 @@ void StopDebugLog()
 		fclose(g_debugLog);
 	}
 }
+
+//サービス動作用のメイン
+void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv);
 }
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -112,25 +113,18 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 			}
 			CloseHandle(hMutex);
 		}
-	}else{
-		//Stop状態なのでサービスの開始を要求
-		bool started = false;
-		SC_HANDLE hScm = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-		if( hScm != NULL ){
-			SC_HANDLE hSrv = OpenService(hScm, SERVICE_NAME, SERVICE_START);
-			if( hSrv != NULL ){
-				started = StartService(hSrv, 0, NULL) != FALSE;
-				CloseServiceHandle(hSrv);
-			}
-			CloseServiceHandle(hScm);
-		}
-		if( started == false ){
-			OutputDebugString(L"_tWinMain(): Failed to start\r\n");
-		}
 	}
 
 	return 0;
 }
+
+namespace
+{
+//サービスからのコマンドのコールバック
+DWORD WINAPI service_ctrl(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext);
+
+//サービスのステータス通知用
+void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD dwCheckPoint, DWORD dwWaitHint);
 
 void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv)
 {
@@ -195,6 +189,7 @@ void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD d
 	ss.dwWaitHint = dwWaitHint;
 
 	SetServiceStatus(g_hStatusHandle, &ss);
+}
 }
 
 void OutputDebugStringWrapper(LPCWSTR lpOutputString)

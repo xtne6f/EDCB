@@ -56,9 +56,6 @@
     <ClInclude Include="Resource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="EpgTimerSrv.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\ServiceUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
