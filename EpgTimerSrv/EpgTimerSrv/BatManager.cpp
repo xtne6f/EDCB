@@ -245,6 +245,16 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, LPCWSTR batFilePath, DWORD&
 			}
 		}
 	}
+	for( size_t i = 0; i < info.macroList.size(); i++ ){
+		for( size_t j = 0; j < info.macroList[i].second.size(); j++ ){
+			//制御文字とダブルクォートは置き換える
+			if( (L'\x1' <= info.macroList[i].second[j] && info.macroList[i].second[j] <= L'\x1f') || info.macroList[i].second[j] == L'\x7f' ){
+				info.macroList[i].second[j] = L'〓';
+			}else if( info.macroList[i].second[j] == L'"' ){
+				info.macroList[i].second[j] = L'”';
+			}
+		}
+	}
 	if( exDirectFlag ){
 		exDirect = CreateEnvironment(info);
 		return exDirect.empty() == false;

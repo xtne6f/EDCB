@@ -1156,6 +1156,8 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 	r.recSetting.endMargine = this->setting.endMargin;
 	r.recSetting.serviceMode = (this->setting.enableCaption ? RECSERVICEMODE_CAP : 0) |
 	                           (this->setting.enableData ? RECSERVICEMODE_DATA : 0) | RECSERVICEMODE_SET;
+	//*ˆÈ~‚ğBatFileTag‚Æ‚µ‚Äˆµ‚¤‚±‚Æ‚ğ¦‚·
+	r.recSetting.batFilePath = L"*";
 	return r;
 }
 

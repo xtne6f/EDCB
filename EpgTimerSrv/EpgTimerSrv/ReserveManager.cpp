@@ -176,7 +176,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 	bool modified = false;
 	__int64 minStartTime = LLONG_MAX;
 	__int64 now = GetNowI64Time();
-	vector<BAT_WORK_INFO> batWorkList;
+	vector<CBatManager::BAT_WORK_INFO> batWorkList;
 	for( size_t i = 0; i < reserveList.size(); i++ ){
 		RESERVE_DATA r = reserveList[i];
 		//すでに終了していないか
@@ -216,7 +216,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 
 	bool modified = false;
 	__int64 minStartTime = LLONG_MAX;
-	vector<BAT_WORK_INFO> batWorkList;
+	vector<CBatManager::BAT_WORK_INFO> batWorkList;
 	for( size_t i = 0; i < reserveList.size(); i++ ){
 		RESERVE_DATA r = reserveList[i];
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(r.reserveID);
@@ -1216,7 +1216,7 @@ void CReserveManager::CheckOverTimeReserve()
 
 void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, int* shutdownMode)
 {
-	vector<BAT_WORK_INFO> batWorkList;
+	vector<CBatManager::BAT_WORK_INFO> batWorkList;
 	bool modified = false;
 	for( auto itrRet = retList.cbegin(); itrRet != retList.end(); itrRet++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
@@ -1278,25 +1278,27 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 				item.recStatus = REC_END_STATUS_START_ERR;
 				break;
 			}
-			this->recInfoText.AddRecInfo(item);
+			item.id = this->recInfoText.AddRecInfo(item);
 
 			//バッチ処理追加
-			BAT_WORK_INFO batInfo;
+			CBatManager::BAT_WORK_INFO batInfo;
 			AddRecInfoMacro(batInfo.macroList, item);
 			batInfo.macroList.push_back(pair<string, wstring>("AddKey",
 				itrRes->second.comment.compare(0, 8, L"EPG自動予約(") == 0 && itrRes->second.comment.find(L')') != wstring::npos ?
 				itrRes->second.comment.substr(8, itrRes->second.comment.find(L')') - 8) : wstring()));
-			if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->setting.errEndBatRun) &&
-			    item.recFilePath.empty() == false && itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
-				batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
-				this->batManager.AddBatWork(batInfo);
-			}
+			batInfo.macroList.push_back(pair<string, wstring>("BatFileTag",
+				itrRes->second.recSetting.batFilePath.find(L'*') != wstring::npos ?
+				itrRes->second.recSetting.batFilePath.substr(itrRes->second.recSetting.batFilePath.find(L'*') + 1) : wstring()));
 			if( itrRet->type != CTunerBankCtrl::CHECK_ERR_PASS ){
-				batWorkList.resize(batWorkList.size() + 1);
-				batWorkList.back().macroList = batInfo.macroList;
+				batWorkList.push_back(batInfo);
 				if( shutdownMode ){
 					*shutdownMode = MAKEWORD(itrRes->second.recSetting.suspendMode, itrRes->second.recSetting.rebootFlag);
 				}
+			}
+			batInfo.batFilePath.assign(itrRes->second.recSetting.batFilePath, 0, itrRes->second.recSetting.batFilePath.find(L'*'));
+			if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->setting.errEndBatRun) &&
+			    item.recFilePath.empty() == false && batInfo.batFilePath.empty() == false && itrRet->continueRec == false ){
+				this->batManager.AddBatWork(batInfo);
 			}
 
 			this->reserveText.DelReserve(itrRes->first);
@@ -1341,7 +1343,7 @@ DWORD CReserveManager::Check()
 			CTunerBankCtrl::TR_STATE state = itrBank->second->GetState();
 			isRec = isRec || state == CTunerBankCtrl::TR_REC;
 			isEpgCap = isEpgCap || state == CTunerBankCtrl::TR_EPGCAP;
-			vector<BAT_WORK_INFO> batWorkList;
+			vector<CBatManager::BAT_WORK_INFO> batWorkList;
 			for( size_t i = 0; i < startedReserveIDList.size(); i++ ){
 				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(startedReserveIDList[i]);
 				if( itrRes != this->reserveText.GetMap().end() ){
@@ -1866,7 +1868,7 @@ void CReserveManager::WatchdogThread(CReserveManager* sys)
 	}
 }
 
-void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName)
+void CReserveManager::AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR fileName)
 {
 	if( workList.empty() == false ){
 		fs_path batFilePath = GetModulePath().replace_filename(fileName);
@@ -1884,7 +1886,7 @@ void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fi
 void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
 {
 	this->notifyManager.AddNotify(notifyID);
-	vector<BAT_WORK_INFO> workList(1);
+	vector<CBatManager::BAT_WORK_INFO> workList(1);
 	workList[0].macroList.push_back(pair<string, wstring>("NotifyID", L""));
 	Format(workList[0].macroList.back().second, L"%d", notifyID);
 	AddPostBatWork(workList, L"PostNotify.bat");
@@ -1935,12 +1937,16 @@ void CReserveManager::AddReserveDataMacro(vector<pair<string, wstring>>& macroLi
 	macroList.push_back(std::make_pair(string("Title") + suffix, data.title));
 	macroList.push_back(std::make_pair(string("ServiceName") + suffix, data.stationName));
 	macroList.push_back(std::make_pair(string("ReserveComment") + suffix, data.comment));
+	macroList.push_back(std::make_pair(string("BatFileTag") + suffix,
+		data.recSetting.batFilePath.find(L'*') != wstring::npos ?
+		data.recSetting.batFilePath.substr(data.recSetting.batFilePath.find(L'*') + 1) : wstring()));
 }
 
 void CReserveManager::AddRecInfoMacro(vector<pair<string, wstring>>& macroList, const REC_FILE_INFO& recInfo)
 {
 	WCHAR v[64];
 	AddTimeMacro(macroList, recInfo.startTime, recInfo.durationSecond, "");
+	swprintf_s(v, L"%d", recInfo.id);					macroList.push_back(pair<string, wstring>("RecInfoID", v));
 	swprintf_s(v, L"%d", recInfo.originalNetworkID);	macroList.push_back(pair<string, wstring>("ONID10", v));
 	swprintf_s(v, L"%d", recInfo.transportStreamID);	macroList.push_back(pair<string, wstring>("TSID10", v));
 	swprintf_s(v, L"%d", recInfo.serviceID);			macroList.push_back(pair<string, wstring>("SID10", v));
@@ -1958,18 +1964,16 @@ void CReserveManager::AddRecInfoMacro(vector<pair<string, wstring>>& macroList, 
 	fs_path path = recInfo.recFilePath;
 	macroList.push_back(pair<string, wstring>("FolderPath", path.parent_path().native()));
 	macroList.push_back(pair<string, wstring>("FileName", path.stem().native()));
-	wstring strVal = recInfo.title;
-	CheckFileName(strVal);
-	macroList.push_back(pair<string, wstring>("TitleF", strVal));
-	strVal = recInfo.title;
-	while( strVal.find(L'[') != wstring::npos && strVal.find(L']') != wstring::npos ){
+	macroList.push_back(pair<string, wstring>("TitleF", recInfo.title));
+	CheckFileName(macroList.back().second);
+	macroList.push_back(pair<string, wstring>("Title2", recInfo.title));
+	while( macroList.back().second.find(L'[') != wstring::npos && macroList.back().second.find(L']') != wstring::npos ){
 		wstring strSep1;
 		wstring strSep2;
-		Separate(strVal, L"[", strVal, strSep1);
+		Separate(macroList.back().second, L"[", macroList.back().second, strSep1);
 		Separate(strSep1, L"]", strSep2, strSep1);
-		strVal += strSep1;
+		macroList.back().second += strSep1;
 	}
-	macroList.push_back(pair<string, wstring>("Title2", strVal));
-	CheckFileName(strVal);
-	macroList.push_back(pair<string, wstring>("Title2F", strVal));
+	macroList.push_back(pair<string, wstring>("Title2F", macroList.back().second));
+	CheckFileName(macroList.back().second);
 }
