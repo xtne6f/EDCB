@@ -839,8 +839,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			break;
 		case TIMER_CHECK:
 			{
-				DWORD ret = ctx->sys->reserveManager.Check();
-				switch( HIWORD(ret) ){
+				pair<CReserveManager::CHECK_STATUS, int> ret = ctx->sys->reserveManager.Check();
+				switch( ret.first ){
 				case CReserveManager::CHECK_EPGCAP_END:
 					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 					ctx->sys->epgDB.ReloadEpgData(true);
@@ -857,8 +857,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					//チェックは必須
 					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 					//要求されたシャットダウン動作を試みる
-					ctx->shutdownModePending = LOBYTE(ret);
-					ctx->rebootFlagPending = HIBYTE(ret) != 0;
+					ctx->shutdownModePending = LOBYTE(ret.second);
+					ctx->rebootFlagPending = HIBYTE(ret.second) != 0;
 					if( ctx->shutdownModePending == SD_MODE_INVALID ){
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;

@@ -1326,65 +1326,63 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 	}
 }
 
-DWORD CReserveManager::Check()
+pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 {
-	{
-		this->checkCount++;
+	this->checkCount++;
 
-		bool isRec = false;
-		bool isEpgCap = false;
-		//tunerBankMapそのものは排他制御の対象外
-		for( auto itrBank = this->tunerBankMap.cbegin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
-			CBlockLock lock(&this->managerLock);
+	bool isRec = false;
+	bool isEpgCap = false;
+	//tunerBankMapそのものは排他制御の対象外
+	for( auto itrBank = this->tunerBankMap.cbegin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
+		CBlockLock lock(&this->managerLock);
 
-			// チューナの予約状態遷移を行い、予約終了をチェックする
-			vector<DWORD> startedReserveIDList;
-			vector<CTunerBankCtrl::CHECK_RESULT> retList = itrBank->second->Check(&startedReserveIDList);
-			CTunerBankCtrl::TR_STATE state = itrBank->second->GetState();
-			isRec = isRec || state == CTunerBankCtrl::TR_REC;
-			isEpgCap = isEpgCap || state == CTunerBankCtrl::TR_EPGCAP;
-			vector<CBatManager::BAT_WORK_INFO> batWorkList;
-			for( size_t i = 0; i < startedReserveIDList.size(); i++ ){
-				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(startedReserveIDList[i]);
-				if( itrRes != this->reserveText.GetMap().end() ){
-					batWorkList.resize(batWorkList.size() + 1);
-					AddReserveDataMacro(batWorkList.back().macroList, itrRes->second, "");
-				}
+		// チューナの予約状態遷移を行い、予約終了をチェックする
+		vector<DWORD> startedReserveIDList;
+		vector<CTunerBankCtrl::CHECK_RESULT> retList = itrBank->second->Check(&startedReserveIDList);
+		CTunerBankCtrl::TR_STATE state = itrBank->second->GetState();
+		isRec = isRec || state == CTunerBankCtrl::TR_REC;
+		isEpgCap = isEpgCap || state == CTunerBankCtrl::TR_EPGCAP;
+		vector<CBatManager::BAT_WORK_INFO> batWorkList;
+		for( size_t i = 0; i < startedReserveIDList.size(); i++ ){
+			map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(startedReserveIDList[i]);
+			if( itrRes != this->reserveText.GetMap().end() ){
+				batWorkList.resize(batWorkList.size() + 1);
+				AddReserveDataMacro(batWorkList.back().macroList, itrRes->second, "");
 			}
-			AddPostBatWork(batWorkList, L"PostRecStart.bat");
-			ProcessRecEnd(retList, &this->shutdownModePending);
 		}
-		if( this->checkCount % 30 == 0 ){
-			CheckAutoDel();
-			CheckOverTimeReserve();
-		}
-		if( this->checkCount % 3 == 0 ){
-			CheckTuijyuTuner();
-		}
-		__int64 idleMargin = GetNearestRecReserveTime() - GetNowI64Time();
-		this->batManager.SetIdleMargin((DWORD)min(max(idleMargin / I64_1SEC, 0LL), 0xFFFFFFFFLL));
-		this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
+		AddPostBatWork(batWorkList, L"PostRecStart.bat");
+		ProcessRecEnd(retList, &this->shutdownModePending);
+	}
+	if( this->checkCount % 30 == 0 ){
+		CheckAutoDel();
+		CheckOverTimeReserve();
+	}
+	if( this->checkCount % 3 == 0 ){
+		CheckTuijyuTuner();
+	}
+	__int64 idleMargin = GetNearestRecReserveTime() - GetNowI64Time();
+	this->batManager.SetIdleMargin((DWORD)min(max(idleMargin / I64_1SEC, 0LL), 0xFFFFFFFFLL));
+	this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
 
-		if( CheckEpgCap(isEpgCap) ){
-			//EPG取得が完了した
-			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_EPGCAP_END, L"");
-			return MAKELONG(0, CHECK_EPGCAP_END);
-		}else if( this->shutdownModePending >= 0 &&
-		          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == false &&
-		          this->batPostManager.GetWorkCount() == 0 && this->batPostManager.IsWorking() == false ){
-			//バッチ処理が完了した
-			int shutdownMode = this->shutdownModePending;
-			this->shutdownModePending = -1;
-			return MAKELONG(shutdownMode, CHECK_NEED_SHUTDOWN);
-		}else if( this->reserveModified ){
-			CBlockLock lock(&this->managerLock);
-			if( this->reserveModified ){
-				this->reserveModified = false;
-				return MAKELONG(0, CHECK_RESERVE_MODIFIED);
-			}
+	if( CheckEpgCap(isEpgCap) ){
+		//EPG取得が完了した
+		this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_EPGCAP_END, L"");
+		return std::make_pair(CHECK_EPGCAP_END, 0);
+	}else if( this->shutdownModePending >= 0 &&
+	          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == false &&
+	          this->batPostManager.GetWorkCount() == 0 && this->batPostManager.IsWorking() == false ){
+		//バッチ処理が完了した
+		int shutdownMode = this->shutdownModePending;
+		this->shutdownModePending = -1;
+		return std::make_pair(CHECK_NEED_SHUTDOWN, shutdownMode);
+	}else if( this->reserveModified ){
+		CBlockLock lock(&this->managerLock);
+		if( this->reserveModified ){
+			this->reserveModified = false;
+			return std::make_pair(CHECK_RESERVE_MODIFIED, 0);
 		}
 	}
-	return 0;
+	return std::make_pair(CHECK_NO_ACTION, 0);
 }
 
 vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
