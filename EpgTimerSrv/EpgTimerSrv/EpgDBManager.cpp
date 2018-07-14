@@ -225,7 +225,8 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> nextMap;
 	for( const SERVICE_INFO* info = serviceList; info != serviceList + serviceListSize; info++ ){
 		LONGLONG key = Create64Key(info->original_network_id, info->transport_stream_id, info->service_id);
-		EPGDB_SERVICE_EVENT_INFO& item = nextMap.insert(std::make_pair(key, EPGDB_SERVICE_EVENT_INFO())).first->second;
+		EPGDB_SERVICE_EVENT_INFO itemZero = {};
+		EPGDB_SERVICE_EVENT_INFO& item = nextMap.insert(std::make_pair(key, itemZero)).first->second;
 		item.serviceInfo.ONID = info->original_network_id;
 		item.serviceInfo.TSID = info->transport_stream_id;
 		item.serviceInfo.SID = info->service_id;

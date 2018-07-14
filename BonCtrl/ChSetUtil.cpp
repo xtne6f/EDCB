@@ -89,12 +89,14 @@ BOOL CChSetUtil::AddServiceInfo(
 	item4.originalNetworkID = serviceInfo->original_network_id;
 	item4.transportStreamID = serviceInfo->transport_stream_id;
 	item4.serviceID = serviceInfo->service_id;
+	item4.serviceType = 0;
+	item4.partialFlag = FALSE;
+	item4.useViewFlag = TRUE;
+	item4.remoconID = 0;
 	if( serviceInfo->extInfo != NULL ){
 		item4.serviceType = serviceInfo->extInfo->service_type;
 		item4.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
-		if( IsVideoServiceType(item4.serviceType) ){
-			item4.useViewFlag = TRUE;
-		}else{
+		if( IsVideoServiceType(item4.serviceType) == FALSE ){
 			item4.useViewFlag = FALSE;
 		}
 		item4.serviceName = serviceInfo->extInfo->service_name;
@@ -126,6 +128,10 @@ BOOL CChSetUtil::AddServiceInfo(
 	item5.originalNetworkID = serviceInfo->original_network_id;
 	item5.transportStreamID = serviceInfo->transport_stream_id;
 	item5.serviceID = serviceInfo->service_id;
+	item5.serviceType = 0;
+	item5.partialFlag = FALSE;
+	item5.epgCapFlag = TRUE;
+	item5.searchFlag = TRUE;
 	if( serviceInfo->extInfo != NULL ){
 		item5.serviceType = serviceInfo->extInfo->service_type;
 		item5.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
@@ -135,10 +141,7 @@ BOOL CChSetUtil::AddServiceInfo(
 		}else if( serviceInfo->extInfo->network_name != NULL){
 			item5.networkName = serviceInfo->extInfo->network_name;
 		}
-		if( IsVideoServiceType(item4.serviceType) ){
-			item5.epgCapFlag = TRUE;
-			item5.searchFlag = TRUE;
-		}else{
+		if( IsVideoServiceType(item4.serviceType) == FALSE ){
 			item5.epgCapFlag = FALSE;
 			item5.searchFlag = FALSE;
 		}

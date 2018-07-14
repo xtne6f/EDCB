@@ -109,7 +109,7 @@ bool CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount) const
 
 	if( targetCount == 0 ){
 		//Œ»Ý‚ÌsrvStatus‚ð•Ô‚·
-		NOTIFY_SRV_INFO status;
+		NOTIFY_SRV_INFO status = {};
 		status.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 		ConvertSystemTime(GetNowI64Time(), &status.time);
 		status.param1 = this->srvStatus;
@@ -153,16 +153,14 @@ void CNotifyManager::AddNotify(DWORD status)
 {
 	CBlockLock lock(&this->managerLock);
 
-	{
-		NOTIFY_SRV_INFO info;
-		ConvertSystemTime(GetNowI64Time(), &info.time);
-		info.notifyID = status;
-		//“¯‚¶‚à‚Ì‚ª‚ ‚é‚Æ‚«‚Í’Ç‰Á‚µ‚È‚¢
-		if( std::find_if(this->notifyList.begin(), this->notifyList.end(),
-		                 [=](const NOTIFY_SRV_INFO& a) { return a.notifyID == status; }) == this->notifyList.end() ){
-			this->notifyList.push_back(info);
-			SendNotify();
-		}
+	NOTIFY_SRV_INFO info = {};
+	ConvertSystemTime(GetNowI64Time(), &info.time);
+	info.notifyID = status;
+	//“¯‚¶‚à‚Ì‚ª‚ ‚é‚Æ‚«‚Í’Ç‰Á‚µ‚È‚¢
+	if( std::find_if(this->notifyList.begin(), this->notifyList.end(),
+	                 [=](const NOTIFY_SRV_INFO& a) { return a.notifyID == status; }) == this->notifyList.end() ){
+		this->notifyList.push_back(info);
+		SendNotify();
 	}
 }
 
@@ -171,7 +169,7 @@ void CNotifyManager::SetNotifySrvStatus(DWORD status)
 	CBlockLock lock(&this->managerLock);
 
 	if( status != this->srvStatus ){
-		NOTIFY_SRV_INFO info;
+		NOTIFY_SRV_INFO info = {};
 		info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 		ConvertSystemTime(GetNowI64Time(), &info.time);
 		info.param1 = this->srvStatus = (status == 0xFFFFFFFF ? this->srvStatus : status);
@@ -185,14 +183,12 @@ void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
 {
 	CBlockLock lock(&this->managerLock);
 
-	{
-		NOTIFY_SRV_INFO info;
-		info.notifyID = notifyID;
-		ConvertSystemTime(GetNowI64Time(), &info.time);
-		info.param4 = msg;
+	NOTIFY_SRV_INFO info = {};
+	info.notifyID = notifyID;
+	ConvertSystemTime(GetNowI64Time(), &info.time);
+	info.param4 = msg;
 
-		this->notifyList.push_back(info);
-	}
+	this->notifyList.push_back(info);
 	SendNotify();
 }
 

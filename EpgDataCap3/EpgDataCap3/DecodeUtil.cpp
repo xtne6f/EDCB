@@ -684,6 +684,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 			this->serviceDBList[count].ONID = (WORD)itr->second.GetNumber(Desc::original_network_id);
 			this->serviceDBList[count].TSID = (WORD)itr->second.GetNumber(Desc::transport_stream_id);
 			this->serviceDBList[count].SID = (WORD)itr->second.GetNumber(Desc::service_id, lp);
+			this->serviceDBList[count].service_type = 0;
 
 			Desc::CDescriptor::CLoopPointer lp2 = lp;
 			if( itr->second.EnterLoop(lp2) ){
@@ -772,6 +773,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 		this->serviceDBList[i].ONID = ONID;
 		this->serviceDBList[i].TSID = TSID;
 		this->serviceDBList[i].SID = (WORD)this->sitInfo->GetNumber(Desc::service_id, lp);
+		this->serviceDBList[i].service_type = 0;
 
 		Desc::CDescriptor::CLoopPointer lp2 = lp;
 		if( this->sitInfo->EnterLoop(lp2) ){
@@ -799,6 +801,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 		}
 
 		//トランスポートの情報は取得できない
+		this->serviceDBList[i].remote_control_key_id = 0;
 
 		this->serviceDBList[i].partialReceptionFlag = FALSE;
 		this->serviceList[i] = this->serviceAdapterList[i].Create(&this->serviceDBList[i]);

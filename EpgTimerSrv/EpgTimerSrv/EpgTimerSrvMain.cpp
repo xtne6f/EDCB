@@ -577,11 +577,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_APP_RECEIVE_NOTIFY:
 		//’Ê’m‚ðŽó‚¯Žæ‚é
 		{
-			vector<NOTIFY_SRV_INFO> list(1);
+			vector<NOTIFY_SRV_INFO> list;
 			if( wParam ){
 				//XV‚¾‚¯
-				list.back().notifyID = NOTIFY_UPDATE_SRV_STATUS;
-				list.back().param1 = ctx->notifySrvStatus;
+				NOTIFY_SRV_INFO status = {};
+				status.notifyID = NOTIFY_UPDATE_SRV_STATUS;
+				status.param1 = ctx->notifySrvStatus;
+				list.push_back(status);
 			}else{
 				list = ctx->sys->notifyManager.RemoveSentList();
 				ctx->tcpServer.NotifyUpdate();
@@ -1145,10 +1147,12 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 {
 	CBlockLock lock(&this->settingLock);
 
-	RESERVE_DATA r;
+	RESERVE_DATA r = {};
 	r.reserveID = 0x7FFFFFFF;
 	ConvertSystemTime(startTime, &r.startTime);
 	r.startTimeEpg = r.startTime;
+	r.recSetting.recMode = RECMODE_SERVICE;
+	r.recSetting.priority = 1;
 	r.recSetting.suspendMode = (this->setting.recEndMode + 3) % 4 + 1;
 	r.recSetting.rebootFlag = this->setting.reboot;
 	r.recSetting.useMargineFlag = 1;

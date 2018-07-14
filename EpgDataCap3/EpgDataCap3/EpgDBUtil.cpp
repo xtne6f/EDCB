@@ -787,7 +787,7 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 		lp = Desc::CDescriptor::CLoopPointer();
 		if( sit.EnterLoop(lp, 1) ){
 			for( DWORD i = 0; sit.SetLoopIndex(lp, i); i++ ){
-				EPGDB_SERVICE_INFO item;
+				EPGDB_SERVICE_INFO item = {};
 				item.ONID = ONID;
 				item.TSID = TSID;
 				item.SID = (WORD)sit.GetNumber(Desc::service_id, lp);
@@ -842,7 +842,7 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 			map<WORD, EPGDB_SERVICE_INFO>::iterator itrS;
 			itrS = itrTS->second.serviceList.find((WORD)sdt.GetNumber(Desc::service_id, lp));
 			if( itrS == itrTS->second.serviceList.end()){
-				EPGDB_SERVICE_INFO item;
+				EPGDB_SERVICE_INFO item = {};
 				item.ONID = key >> 16;
 				item.TSID = key & 0xFFFF;
 				item.SID = (WORD)sdt.GetNumber(Desc::service_id, lp);

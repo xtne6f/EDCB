@@ -678,6 +678,8 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notContetFlag );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notDateFlag );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->freeCAFlag );
+	val->chkRecEnd = 0;
+	val->chkRecDay = 6;
 	if( ver >= 3 ){
 		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecEnd );
 		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecDay );
@@ -952,6 +954,7 @@ BOOL ReadVALUE( WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, 
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &strPadding );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->programInfo );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->errInfo );
+	val->protectFlag = 0;
 	if( ver >= 4 ){
 		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->protectFlag );
 	}
@@ -1446,6 +1449,8 @@ BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const std::unique_ptr<BYTE[]>& buff
 		READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &val->recSetting.serviceMode );
 	}else{
 		val->recSetting.useMargineFlag = 0;
+		val->recSetting.startMargine = 0;
+		val->recSetting.endMargine = 0;
 		val->recSetting.serviceMode = 0;
 	}
 	val->overlapMode = 0;
@@ -1538,6 +1543,8 @@ BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>&
 		READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &val->recSetting.serviceMode );
 	}else{
 		val->recSetting.useMargineFlag = 0;
+		val->recSetting.startMargine = 0;
+		val->recSetting.endMargine = 0;
 		val->recSetting.serviceMode = 0;
 	}
 	if( pos < buffSize ){
@@ -1552,6 +1559,15 @@ BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>&
 	}else{
 		val->searchInfo.regExpFlag = 0;
 	}
+	val->searchInfo.aimaiFlag = 0;
+	val->searchInfo.notContetFlag = 0;
+	val->searchInfo.notDateFlag = 0;
+	val->searchInfo.freeCAFlag = 0;
+	val->searchInfo.chkRecEnd = 0;
+	val->searchInfo.chkRecDay = 6;
+	val->recSetting.continueRecFlag = 0;
+	val->recSetting.partialRecFlag = 0;
+	val->recSetting.tunerID = 0;
 	return TRUE;
 }
 
