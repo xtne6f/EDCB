@@ -240,7 +240,6 @@ typedef EPG_EVENT_DATA EPGDB_EVENT_DATA;
 
 //EPGイベントグループ情報
 struct EPGDB_EVENTGROUP_INFO {
-	BYTE group_type;
 	vector<EPGDB_EVENT_DATA> eventDataList;
 };
 
@@ -253,42 +252,30 @@ struct EPGDB_EVENT_INFO {
 	SYSTEMTIME start_time;					//開始時間
 	BYTE DurationFlag;						//durationの値が有効かどうか
 	DWORD durationSec;						//総時間（単位：秒）
-
-	std::unique_ptr<EPGDB_SHORT_EVENT_INFO> shortInfo;		//基本情報
-	std::unique_ptr<EPGDB_EXTENDED_EVENT_INFO> extInfo;		//拡張情報
-	std::unique_ptr<EPGDB_CONTEN_INFO> contentInfo;			//ジャンル情報
-	std::unique_ptr<EPGDB_COMPONENT_INFO> componentInfo;	//映像情報
-	std::unique_ptr<EPGDB_AUDIO_COMPONENT_INFO> audioInfo;	//音声情報
-	std::unique_ptr<EPGDB_EVENTGROUP_INFO> eventGroupInfo;	//イベントグループ情報
-	std::unique_ptr<EPGDB_EVENTGROUP_INFO> eventRelayInfo;	//イベントリレー情報
-
 	BYTE freeCAFlag;						//ノンスクランブルフラグ
+	bool hasShortInfo;
+	bool hasExtInfo;
+	bool hasContentInfo;
+	bool hasComponentInfo;
+	bool hasAudioInfo;
+	BYTE eventGroupInfoGroupType;
+	BYTE eventRelayInfoGroupType;
+	EPGDB_SHORT_EVENT_INFO shortInfo;		//基本情報
+	EPGDB_EXTENDED_EVENT_INFO extInfo;		//拡張情報
+	EPGDB_CONTEN_INFO contentInfo;			//ジャンル情報
+	EPGDB_COMPONENT_INFO componentInfo;		//映像情報
+	EPGDB_AUDIO_COMPONENT_INFO audioInfo;	//音声情報
+	EPGDB_EVENTGROUP_INFO eventGroupInfo;	//イベントグループ情報
+	EPGDB_EVENTGROUP_INFO eventRelayInfo;	//イベントリレー情報
 	EPGDB_EVENT_INFO(void) {
+		hasShortInfo = false;
+		hasExtInfo = false;
+		hasContentInfo = false;
+		hasComponentInfo = false;
+		hasAudioInfo = false;
+		eventGroupInfoGroupType = 0;
+		eventRelayInfoGroupType = 0;
 	};
-	void DeepCopy(const EPGDB_EVENT_INFO & o) {
-		original_network_id = o.original_network_id;
-		transport_stream_id = o.transport_stream_id;
-		service_id = o.service_id;
-		event_id = o.event_id;
-		StartTimeFlag = o.StartTimeFlag;
-		start_time = o.start_time;
-		DurationFlag = o.DurationFlag;
-		durationSec = o.durationSec;
-		freeCAFlag = o.freeCAFlag;
-		shortInfo.reset(o.shortInfo ? new EPGDB_SHORT_EVENT_INFO(*o.shortInfo) : NULL);
-		extInfo.reset(o.extInfo ? new EPGDB_EXTENDED_EVENT_INFO(*o.extInfo) : NULL);
-		contentInfo.reset(o.contentInfo ? new EPGDB_CONTEN_INFO(*o.contentInfo) : NULL);
-		componentInfo.reset(o.componentInfo ? new EPGDB_COMPONENT_INFO(*o.componentInfo) : NULL);
-		audioInfo.reset(o.audioInfo ? new EPGDB_AUDIO_COMPONENT_INFO(*o.audioInfo) : NULL);
-		eventGroupInfo.reset(o.eventGroupInfo ? new EPGDB_EVENTGROUP_INFO(*o.eventGroupInfo) : NULL);
-		eventRelayInfo.reset(o.eventRelayInfo ? new EPGDB_EVENTGROUP_INFO(*o.eventRelayInfo) : NULL);
-	};
-#if defined(_MSC_VER) && _MSC_VER < 1900
-	//暗黙ムーブ未対応の古いコンパイラに限りコピーを定義しておく
-	//コンテナで無駄なコピーが走らないように少しだけ考慮すべき(神経質になる必要はない)
-	EPGDB_EVENT_INFO(const EPGDB_EVENT_INFO & o) { DeepCopy(o); }
-	EPGDB_EVENT_INFO & operator= (const EPGDB_EVENT_INFO & o) { DeepCopy(o); return *this; }
-#endif
 };
 
 struct EPGDB_SERVICE_INFO {

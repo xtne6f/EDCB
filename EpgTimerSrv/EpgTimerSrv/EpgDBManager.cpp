@@ -395,9 +395,9 @@ BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVEN
 			for( DWORD i=0; i<epgInfoListSize; i++ ){
 				item->eventList.resize(item->eventList.size() + 1);
 				ConvertEpgInfo(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, &epgInfoList[i], &item->eventList.back());
-				if( item->eventList.back().shortInfo != NULL ){
+				if( item->eventList.back().hasShortInfo ){
 					//ごく稀にAPR(改行)を含むため
-					Replace(item->eventList.back().shortInfo->event_name, L"\r\n", L"");
+					Replace(item->eventList.back().shortInfo.event_name, L"\r\n", L"");
 				}
 				//実装上は既ソートだが仕様ではないので挿入ソートしておく
 				for( size_t j = item->eventList.size() - 1; j > 0 && item->eventList[j].event_id < item->eventList[j-1].event_id; j-- ){
@@ -431,7 +431,7 @@ bool CEpgDBManager::SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<S
 		result->reserve(result->size() + val.size());
 		for( vector<SEARCH_RESULT_EVENT>::iterator itr = val.begin(); itr != val.end(); itr++ ){
 			result->resize(result->size() + 1);
-			result->back().info.DeepCopy(*itr->info);
+			result->back().info = *itr->info;
 			result->back().findKey.swap(itr->findKey);
 		}
 	});
@@ -548,8 +548,8 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 				//ジャンル確認
 				if( key->contentList.size() > 0 ){
 					//ジャンル指定あるのでジャンルで絞り込み
-					if( itrEvent->contentInfo == NULL ){
-						if( itrEvent->shortInfo == NULL ){
+					if( itrEvent->hasContentInfo == false ){
+						if( itrEvent->hasShortInfo == false ){
 							//2つめのサービス？対象外とする
 							continue;
 						}
@@ -575,7 +575,7 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 							}
 						}
 					}else{
-						bool equal = IsEqualContent(key->contentList, itrEvent->contentInfo->nibbleList);
+						bool equal = IsEqualContent(key->contentList, itrEvent->contentInfo.nibbleList);
 						if( key->notContetFlag == 0 ){
 							if( equal == false ){
 								//ジャンル違うので対象外
@@ -592,10 +592,10 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 
 				//映像確認
 				if( key->videoList.size() > 0 ){
-					if( itrEvent->componentInfo == NULL ){
+					if( itrEvent->hasComponentInfo == false ){
 						continue;
 					}
-					WORD type = itrEvent->componentInfo->stream_content << 8 || itrEvent->componentInfo->component_type;
+					WORD type = itrEvent->componentInfo.stream_content << 8 || itrEvent->componentInfo.component_type;
 					if( std::find(key->videoList.begin(), key->videoList.end(), type) == key->videoList.end() ){
 						continue;
 					}
@@ -603,12 +603,12 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 
 				//音声確認
 				if( key->audioList.size() > 0 ){
-					if( itrEvent->audioInfo == NULL ){
+					if( itrEvent->hasAudioInfo == false ){
 						continue;
 					}
 					bool findContent = false;
-					for( size_t j=0; j<itrEvent->audioInfo->componentList.size(); j++ ){
-						WORD type = itrEvent->audioInfo->componentList[j].stream_content << 8 | itrEvent->audioInfo->componentList[j].component_type;
+					for( size_t j=0; j<itrEvent->audioInfo.componentList.size(); j++ ){
+						WORD type = itrEvent->audioInfo.componentList[j].stream_content << 8 | itrEvent->audioInfo.componentList[j].component_type;
 						if( std::find(key->audioList.begin(), key->audioList.end(), type) != key->audioList.end() ){
 							findContent = true;
 							break;
@@ -652,20 +652,20 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 				}
 
 				//キーワード確認
-				if( itrEvent->shortInfo == NULL ){
+				if( itrEvent->hasShortInfo == false ){
 					if( andKeyList.size() != 0 ){
 						//内容にかかわらず対象外
 						continue;
 					}
 				}else if( andKeyList.size() != 0 || notKeyList.size() != 0 ){
 					//検索対象の文字列作成
-					targetWord = itrEvent->shortInfo->event_name;
+					targetWord = itrEvent->shortInfo.event_name;
 					if( key->titleOnlyFlag == FALSE ){
 						targetWord += L"\r\n";
-						targetWord += itrEvent->shortInfo->text_char;
-						if( itrEvent->extInfo != NULL ){
+						targetWord += itrEvent->shortInfo.text_char;
+						if( itrEvent->hasExtInfo ){
 							targetWord += L"\r\n";
-							targetWord += itrEvent->extInfo->text_char;
+							targetWord += itrEvent->extInfo.text_char;
 						}
 					}
 					ConvertSearchText(targetWord);
@@ -927,7 +927,7 @@ bool CEpgDBManager::SearchEpg(
 		auto itrInfo = std::lower_bound(itr->second.eventList.begin(), itr->second.eventList.end(), infoKey,
 		                                [](const EPGDB_EVENT_INFO& a, const EPGDB_EVENT_INFO& b) { return a.event_id < b.event_id; });
 		if( itrInfo != itr->second.eventList.end() && itrInfo->event_id == EventID ){
-			result->DeepCopy(*itrInfo);
+			*result = *itrInfo;
 			return true;
 		}
 	}
@@ -953,7 +953,7 @@ bool CEpgDBManager::SearchEpg(
 				if( startTime == ConvertI64Time(itrInfo->start_time) &&
 					durationSec == itrInfo->durationSec
 					){
-						result->DeepCopy(*itrInfo);
+						*result = *itrInfo;
 						return true;
 				}
 			}

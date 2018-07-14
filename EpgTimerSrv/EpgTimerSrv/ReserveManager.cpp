@@ -805,8 +805,8 @@ void CReserveManager::CheckTuijyu()
 				}
 				RESERVE_DATA r = itr->second;
 				bool chgRes = false;
-				if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
-					r.title = info.shortInfo->event_name;
+				if( info.hasShortInfo && r.title != info.shortInfo.event_name ){
+					r.title = info.shortInfo.event_name;
 					chgRes = true;
 				}
 				if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
@@ -893,8 +893,8 @@ void CReserveManager::CheckTuijyuTuner()
 						}
 						RESERVE_DATA r = itrRes->second;
 						bool chgRes = false;
-						if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
-							r.title = info.shortInfo->event_name;
+						if( info.hasShortInfo && r.title != info.shortInfo.event_name ){
+							r.title = info.shortInfo.event_name;
 							if( r.reserveStatus != ADD_RESERVE_UNKNOWN_END ){
 								r.reserveStatus = ADD_RESERVE_CHG_PF;
 							}
@@ -942,18 +942,18 @@ void CReserveManager::CheckTuijyuTuner()
 							_OutputDebugString(L"●p/f 予約(ID=%d)を追従 %s\r\n", r.reserveID, msg.c_str());
 						}
 						//現在(present)についてはイベントリレーもチェック
-						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfo ){
+						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfoGroupType ){
 							//イベントリレーあり
-							vector<EPGDB_EVENT_DATA>::const_iterator itrR = info.eventRelayInfo->eventDataList.begin();
-							for( ; itrR != info.eventRelayInfo->eventDataList.end(); itrR++ ){
+							vector<EPGDB_EVENT_DATA>::const_iterator itrR = info.eventRelayInfo.eventDataList.begin();
+							for( ; itrR != info.eventRelayInfo.eventDataList.end(); itrR++ ){
 								if( IsFindReserve(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id, itrR->event_id) ){
 									//リレー済み
 									break;
 								}
 							}
-							if( itrR == info.eventRelayInfo->eventDataList.end() ){
+							if( itrR == info.eventRelayInfo.eventDataList.end() ){
 								OutputDebugString(L"EventRelayCheck\r\n");
-								for( itrR = info.eventRelayInfo->eventDataList.begin(); itrR != info.eventRelayInfo->eventDataList.end(); itrR++ ){
+								for( itrR = info.eventRelayInfo.eventDataList.begin(); itrR != info.eventRelayInfo.eventDataList.end(); itrR++ ){
 									map<LONGLONG, CH_DATA5>::const_iterator itrCh = this->chUtil.GetMap().find(
 										Create64Key(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id));
 									if( itrCh != this->chUtil.GetMap().end() && relayAddList.empty() ){
@@ -1012,7 +1012,7 @@ void CReserveManager::CheckTuijyuTuner()
 						for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
 							const EPGDB_EVENT_INFO& info = resPfVal[i];
 							if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
-							    r.title.empty() == false && info.shortInfo != NULL && r.title == info.shortInfo->event_name ){
+							    r.title.empty() == false && info.hasShortInfo && r.title == info.shortInfo.event_name ){
 								__int64 endTime = ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC;
 								if( endTime > ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
 									r.durationSecond = (DWORD)((endTime - ConvertI64Time(r.startTime)) / I64_1SEC) + 1;
@@ -1033,8 +1033,8 @@ void CReserveManager::CheckTuijyuTuner()
 							__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(r.startTime);
 							//EventIDの再使用に備えるため12時間以上の移動は対象外
 							if( -12 * 3600 * I64_1SEC <= startDiff && startDiff <= 12 * 3600 * I64_1SEC ){
-								if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
-									r.title = info.shortInfo->event_name;
+								if( info.hasShortInfo && r.title != info.shortInfo.event_name ){
+									r.title = info.shortInfo.event_name;
 									//EPG再読み込みで変更されないようにする
 									r.reserveStatus = ADD_RESERVE_CHG_PF2;
 									chgRes = true;
@@ -1761,9 +1761,9 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 	void* pv;
 	if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
 		std::unique_ptr<IRegExp, decltype(&CEpgDBManager::ComRelease)> regExp((IRegExp*)pv, CEpgDBManager::ComRelease);
-		if( info.shortInfo != NULL ){
+		if( info.hasShortInfo ){
 			typedef std::unique_ptr<OLECHAR, decltype(&SysFreeString)> OleCharPtr;
-			wstring infoEventName = info.shortInfo->event_name;
+			wstring infoEventName = info.shortInfo.event_name;
 			if( this->setting.recInfo2RegExp.empty() == false ){
 				OleCharPtr pattern(SysAllocString(this->setting.recInfo2RegExp.c_str()), SysFreeString);
 				OleCharPtr rplFrom(SysAllocString(infoEventName.c_str()), SysFreeString);

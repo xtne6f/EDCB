@@ -440,7 +440,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							//ŠJŽnŽžŠÔ‚©‚ç30•b‚Í‰ß‚¬‚Ä‚¢‚é‚Ì‚Å‚±‚Ì”Ô‘gî•ñ‚ª˜^‰æ’†‚Ì‚à‚Ì‚Ì‚Í‚¸
 							r.savedPgInfo = true;
 							r.epgStartTime = resVal.start_time;
-							r.epgEventName = resVal.shortInfo ? resVal.shortInfo->event_name : L"";
+							r.epgEventName = resVal.hasShortInfo ? resVal.shortInfo.event_name : L"";
 							//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
 							Replace(r.epgEventName, L"\r\n", L"");
 							if( this->saveProgramInfo ){
@@ -968,9 +968,9 @@ bool CTunerBankCtrl::SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal)
 		val.eventID = eid;
 		val.pfOnlyFlag = 0;
 		if( ctrlCmd.SendViewSearchEvent(val, resVal) == CMD_SUCCESS ){
-			if( resVal->shortInfo ){
+			if( resVal->hasShortInfo ){
 				//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
-				Replace(resVal->shortInfo->event_name, L"\r\n", L"");
+				Replace(resVal->shortInfo.event_name, L"\r\n", L"");
 			}
 			return true;
 		}
@@ -993,9 +993,9 @@ int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resV
 		val.pfNextFlag = pfNextFlag;
 		DWORD ret = ctrlCmd.SendViewGetEventPF(val, resVal);
 		if( ret == CMD_SUCCESS ){
-			if( resVal->shortInfo ){
+			if( resVal->hasShortInfo ){
 				//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
-				Replace(resVal->shortInfo->event_name, L"\r\n", L"");
+				Replace(resVal->shortInfo.event_name, L"\r\n", L"");
 			}
 			return 0;
 		}else if( ret == CMD_ERR && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 15000) ){
