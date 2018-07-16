@@ -33,15 +33,6 @@ static DWORD FinalizeField(wstring& str)
 	return tabCount;
 }
 
-vector<CH_DATA4*> CParseChText4::GetChDataList()
-{
-	vector<CH_DATA4*> chDataList;
-	for( map<DWORD, CH_DATA4>::iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		chDataList.push_back(&itr->second);
-	}
-	return chDataList;
-}
-
 DWORD CParseChText4::AddCh(const CH_DATA4& item)
 {
 	map<DWORD, CH_DATA4>::const_iterator itr =
@@ -49,15 +40,16 @@ DWORD CParseChText4::AddCh(const CH_DATA4& item)
 	return itr->first;
 }
 
-void CParseChText4::DelChService(int space, int ch, WORD serviceID)
+void CParseChText4::DelCh(DWORD key)
 {
-	map<DWORD, CH_DATA4>::const_iterator itr = this->itemMap.begin();
-	while( itr != this->itemMap.end() ){
-		if( itr->second.space == space && itr->second.ch == ch && itr->second.serviceID == serviceID ){
-			itr = this->itemMap.erase(itr);
-		}else{
-			itr++;
-		}
+	this->itemMap.erase(key);
+}
+
+void CParseChText4::SetUseViewFlag(DWORD key, BOOL useViewFlag)
+{
+	map<DWORD, CH_DATA4>::iterator itr = this->itemMap.find(key);
+	if( itr != this->itemMap.end() ){
+		itr->second.useViewFlag = useViewFlag;
 	}
 }
 
@@ -109,6 +101,7 @@ bool CParseChText4::SaveLine(const pair<DWORD, CH_DATA4>& item, wstring& saveLin
 
 LONGLONG CParseChText5::AddCh(const CH_DATA5& item)
 {
+	this->parsedOrder.clear();
 	LONGLONG key = (LONGLONG)item.originalNetworkID << 32 | (LONGLONG)item.transportStreamID << 16 | item.serviceID;
 	this->itemMap[key] = item;
 	return key;
@@ -144,6 +137,12 @@ bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 	item.second.epgCapFlag = _wtoi(NextToken(token)) != 0;
 	item.second.searchFlag = _wtoi(NextToken(token)) != 0;
 	item.first = (LONGLONG)item.second.originalNetworkID << 32 | (LONGLONG)item.second.transportStreamID << 16 | item.second.serviceID;
+	if( this->itemMap.empty() ){
+		this->parsedOrder.clear();
+	}
+	if( this->itemMap.count(item.first) == 0 ){
+		this->parsedOrder.push_back(item.first);
+	}
 	return true;
 }
 
@@ -161,6 +160,19 @@ bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& save
 		item.second.searchFlag
 		);
 	return FinalizeField(saveLine) == 8;
+}
+
+bool CParseChText5::SelectItemToSave(vector<map<LONGLONG, CH_DATA5>::const_iterator>& itemList) const
+{
+	//èÓïÒÇÃí«â¡Ç™Ç»ÇØÇÍÇŒì«Ç›çûÇ›èáÇà€éù
+	if( this->parsedOrder.size() == this->itemMap.size() ){
+		itemList.reserve(this->parsedOrder.size());
+		for( size_t i = 0; i < this->parsedOrder.size(); i++ ){
+			itemList.push_back(this->itemMap.find(this->parsedOrder[i]));
+		}
+		return true;
+	}
+	return false;
 }
 
 void CParseContentTypeText::GetMimeType(wstring ext, wstring& mimeType) const
@@ -345,29 +357,24 @@ bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring
 	return FinalizeField(saveLine) == 17;
 }
 
-bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseRecInfoText::SelectItemToSave(vector<map<DWORD, REC_FILE_INFO>::const_iterator>& itemList) const
 {
-	vector<const REC_FILE_INFO*> work;
-	work.reserve(this->itemMap.size());
+	itemList.reserve(this->itemMap.size());
 	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		work.push_back(&itr->second);
+		itemList.push_back(itr);
 	}
-	std::sort(work.begin(), work.end(), [](const REC_FILE_INFO* a, const REC_FILE_INFO* b) -> bool {
-		const SYSTEMTIME& sa = a->startTime;
-		const SYSTEMTIME& sb = b->startTime;
+	std::sort(itemList.begin(), itemList.end(), [](map<DWORD, REC_FILE_INFO>::const_iterator a, map<DWORD, REC_FILE_INFO>::const_iterator b) -> bool {
+		const SYSTEMTIME& sa = a->second.startTime;
+		const SYSTEMTIME& sb = b->second.startTime;
 		return sa.wYear < sb.wYear || sa.wYear == sb.wYear && (
 		       sa.wMonth < sb.wMonth || sa.wMonth == sb.wMonth && (
 		       sa.wDay < sb.wDay || sa.wDay == sb.wDay && (
 		       sa.wHour < sb.wHour || sa.wHour == sb.wHour && (
 		       sa.wMinute < sb.wMinute || sa.wMinute == sb.wMinute && (
 		       sa.wSecond < sb.wSecond || sa.wSecond == sb.wSecond && (
-		       a->originalNetworkID < b->originalNetworkID || a->originalNetworkID == b->originalNetworkID && (
-		       a->transportStreamID < b->transportStreamID)))))));
+		       a->second.originalNetworkID < b->second.originalNetworkID || a->second.originalNetworkID == b->second.originalNetworkID && (
+		       a->second.transportStreamID < b->second.transportStreamID)))))));
 	});
-	sortList.reserve(work.size());
-	for( size_t i = 0; i < work.size(); i++ ){
-		sortList.push_back(work[i]->id);
-	}
 	return true;
 }
 
@@ -495,16 +502,18 @@ bool CParseRecInfo2Text::SaveLine(const pair<DWORD, PARSE_REC_INFO2_ITEM>& item,
 	return FinalizeField(saveLine) == 5;
 }
 
-bool CParseRecInfo2Text::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseRecInfo2Text::SelectItemToSave(vector<map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator>& itemList) const
 {
 	map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr = this->itemMap.begin();
 	if( this->itemMap.size() > this->keepCount ){
 		advance(itr, this->itemMap.size() - this->keepCount);
+		itemList.reserve(this->keepCount);
+		for( ; itr != this->itemMap.end(); itr++ ){
+			itemList.push_back(itr);
+		}
+		return true;
 	}
-	for( ; itr != this->itemMap.end(); itr++ ){
-		sortList.push_back(itr->first);
-	}
-	return true;
+	return false;
 }
 
 DWORD CParseReserveText::AddReserve(const RESERVE_DATA& item)
@@ -740,14 +749,14 @@ bool CParseReserveText::SaveFooterLine(wstring& saveLine) const
 	return this->saveNextID != 0;
 }
 
-bool CParseReserveText::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseReserveText::SelectItemToSave(vector<map<DWORD, RESERVE_DATA>::const_iterator>& itemList) const
 {
 	if( this->saveNextID == 0 ){
 		//NextIDÉRÉÅÉìÉgÇ™ñ≥Ç©Ç¡ÇΩÇ∆Ç´ÇÕè]óàÇ«Ç®ÇËó\ñÒì˙éûèáÇ≈ï€ë∂Ç∑ÇÈ
 		vector<pair<LONGLONG, const RESERVE_DATA*>> sortItemList = GetReserveList();
 		vector<pair<LONGLONG, const RESERVE_DATA*>>::const_iterator itr;
 		for( itr = sortItemList.begin(); itr != sortItemList.end(); itr++ ){
-			sortList.push_back(itr->second->reserveID);
+			itemList.push_back(this->itemMap.find(itr->second->reserveID));
 		}
 		return true;
 	}
@@ -755,10 +764,10 @@ bool CParseReserveText::SelectIDToSave(vector<DWORD>& sortList) const
 		//IDèÑâÒíÜ
 		map<DWORD, RESERVE_DATA>::const_iterator itr;
 		for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		for( itr = this->itemMap.begin(); itr->first <= 50000000; itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		return true;
 	}
@@ -1051,15 +1060,15 @@ bool CParseEpgAutoAddText::SaveFooterLine(wstring& saveLine) const
 	return this->saveNextID != 0;
 }
 
-bool CParseEpgAutoAddText::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseEpgAutoAddText::SelectItemToSave(vector<map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator>& itemList) const
 {
 	if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
 		map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
 		for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		for( itr = this->itemMap.begin(); itr->first <= 50000000; itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		return true;
 	}
@@ -1227,15 +1236,15 @@ bool CParseManualAutoAddText::SaveFooterLine(wstring& saveLine) const
 	return this->saveNextID != 0;
 }
 
-bool CParseManualAutoAddText::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseManualAutoAddText::SelectItemToSave(vector<map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator>& itemList) const
 {
 	if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
 		map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr;
 		for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		for( itr = this->itemMap.begin(); itr->first <= 50000000; itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		return true;
 	}

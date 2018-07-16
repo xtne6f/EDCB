@@ -52,9 +52,10 @@ void CSetDlgService::OnBnClickedButtonChkVideo()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
-		CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0);
-		if( chSet != NULL ){
-			ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, CChSetUtil::IsVideoServiceType(chSet->serviceType));
+		map<wstring, pair<CParseChText4, bool>>::const_iterator itr = chList.find(GetCurrentChListKey());
+		if( itr != chList.end() ){
+			ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, CChSetUtil::IsVideoServiceType(
+				itr->second.first.GetMap().find((DWORD)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0))->second.serviceType));
 		}
 	}
 }
@@ -104,8 +105,8 @@ BOOL CSetDlgService::OnInitDialog()
 
 				bonFileName += L".dll";
 
-				if( chList.insert(std::make_pair(bonFileName, CParseChText4())).second ){
-					chList[bonFileName].ParseText(fs_path(path).append(findData.cFileName).c_str());
+				if( chList.insert(std::make_pair(bonFileName, std::make_pair(CParseChText4(), false))).second ){
+					chList[bonFileName].first.ParseText(fs_path(path).append(findData.cFileName).c_str());
 					ComboBox_AddString(GetDlgItem(IDC_COMBO_BON), bonFileName.c_str());
 				}
 			}
@@ -122,28 +123,31 @@ BOOL CSetDlgService::OnInitDialog()
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
 }
 
+wstring CSetDlgService::GetCurrentChListKey()
+{
+	WCHAR key[512];
+	if( GetDlgItemText(m_hWnd, IDC_COMBO_BON, key, 512) > 0 ){
+		return key;
+	}
+	return L"";
+}
+
 void CSetDlgService::ReloadList()
 {
 	HWND hItem = GetDlgItem(IDC_LIST_SERVICE);
 	ListView_DeleteAllItems(hItem);
 
-	WCHAR text[512] = L"";
-	GetDlgItemText(m_hWnd, IDC_COMBO_BON, text, 512);
-
-	wstring key = text;
-	map<wstring, CParseChText4>::iterator itr;
-	itr = chList.find(key);
-	if( itr != chList.end()){
-		vector<CH_DATA4*> chDataList = itr->second.GetChDataList();
-		for( vector<CH_DATA4*>::iterator itrCh = chDataList.begin(); itrCh != chDataList.end(); itrCh++ ){
+	map<wstring, pair<CParseChText4, bool>>::const_iterator itr = chList.find(GetCurrentChListKey());
+	if( itr != chList.end() ){
+		for( map<DWORD, CH_DATA4>::const_iterator itrCh = itr->second.first.GetMap().begin(); itrCh != itr->second.first.GetMap().end(); itrCh++ ){
 			LVITEM lvi;
 			lvi.mask = LVIF_TEXT | LVIF_PARAM;
 			lvi.iItem = ListView_GetItemCount(hItem);
 			lvi.iSubItem = 0;
-			lvi.pszText = (LPWSTR)(*itrCh)->serviceName.c_str();
-			lvi.lParam = (LPARAM)(*itrCh);
+			lvi.pszText = (LPWSTR)itrCh->second.serviceName.c_str();
+			lvi.lParam = (LPARAM)itrCh->first;
 			int index = ListView_InsertItem(hItem, &lvi);
-			ListView_SetCheckState(hItem, index, (*itrCh)->useViewFlag);
+			ListView_SetCheckState(hItem, index, itrCh->second.useViewFlag);
 		}
 	}
 	SetDlgItemText(m_hWnd, IDC_EDIT_CH, L"");
@@ -152,9 +156,14 @@ void CSetDlgService::ReloadList()
 void CSetDlgService::SynchronizeCheckState()
 {
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
-		CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0);
-		if( chSet != NULL ){
-			chSet->useViewFlag = ListView_GetCheckState(GetDlgItem(IDC_LIST_SERVICE), i);
+		map<wstring, pair<CParseChText4, bool>>::iterator itr = chList.find(GetCurrentChListKey());
+		if( itr != chList.end() ){
+			DWORD key = (DWORD)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0);
+			BOOL useViewFlag = ListView_GetCheckState(GetDlgItem(IDC_LIST_SERVICE), i);
+			if( itr->second.first.GetMap().find(key)->second.useViewFlag != useViewFlag ){
+				itr->second.first.SetUseViewFlag(key, useViewFlag);
+				itr->second.second = true;
+			}
 		}
 	}
 }
@@ -188,9 +197,11 @@ void CSetDlgService::SaveIni()
 
 	SynchronizeCheckState();
 
-	map<wstring, CParseChText4>::iterator itr;
-	for( itr = chList.begin(); itr != chList.end(); itr++ ){
-		itr->second.SaveText();
+	for( map<wstring, pair<CParseChText4, bool>>::const_iterator itr = chList.begin(); itr != chList.end(); itr++ ){
+		//変更したときだけ保存する
+		if( itr->second.second ){
+			itr->second.first.SaveText();
+		}
 	}
 }
 
@@ -213,20 +224,12 @@ void CSetDlgService::OnBnClickedButtonDel()
 	if( sel < 0 ){
 		return ;
 	}
-	CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), sel, 0);
-	if( chSet == NULL ){
-		return ;
-	}
 	if( MessageBox(m_hWnd, L"削除を行うと、再度チャンネルスキャンを行うまで項目が表示されなくなります。\r\nよろしいですか？",L"", MB_OKCANCEL) == IDOK ){
-		WCHAR text[512] = L"";
-		GetDlgItemText(m_hWnd, IDC_COMBO_BON, text, 512);
-
-		wstring key = text;
-		map<wstring, CParseChText4>::iterator itr;
-		itr = chList.find(key);
-		if( itr != chList.end()){
+		map<wstring, pair<CParseChText4, bool>>::iterator itr = chList.find(GetCurrentChListKey());
+		if( itr != chList.end() ){
 			SynchronizeCheckState();
-			itr->second.DelChService(chSet->space, chSet->ch, chSet->serviceID);
+			itr->second.first.DelCh((DWORD)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), sel, 0));
+			itr->second.second = true;
 			ReloadList();
 		}
 	}
@@ -240,10 +243,11 @@ void CSetDlgService::OnLbnSelchangeListService()
 	if( sel < 0 ){
 		return ;
 	}
-	CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), sel, 0);
-	if( chSet == NULL ){
+	map<wstring, pair<CParseChText4, bool>>::const_iterator itr = chList.find(GetCurrentChListKey());
+	if( itr == chList.end() ){
 		return ;
 	}
+	const CH_DATA4* chSet = &itr->second.first.GetMap().find((DWORD)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), sel, 0))->second;
 	wstring info = L"";
 	Format(info, L"space: %d ch: %d (%s)\r\nOriginalNetworkID: %d(0x%04X)\r\nTransportStreamID: %d(0x%04X)\r\nServiceID: %d(0x%04X)\r\nServiceType: %d(0x%02X)\r\n",
 		chSet->space,
