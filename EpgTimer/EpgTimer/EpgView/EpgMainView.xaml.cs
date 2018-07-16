@@ -1256,26 +1256,20 @@ namespace EpgTimer
                             }
                             else
                             {
+                                foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
                                 {
-                                    foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
+                                    int nibble1 = contentInfo.content_nibble_level_1;
+                                    int nibble2 = contentInfo.content_nibble_level_2;
+                                    if (nibble1 == 0x0E && nibble2 <= 0x01)
                                     {
-                                        UInt16 ID1 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | 0xFF);
-                                        UInt16 ID2 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | contentInfo.content_nibble_level_2);
-                                        if (ID2 == 0x0E01)
-                                        {
-                                            ID1 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | 0xFF);
-                                            ID2 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | contentInfo.user_nibble_2);
-                                        }
-                                        if (contentKindList.BinarySearch(ID1) >= 0)
-                                        {
-                                            find = true;
-                                            break;
-                                        }
-                                        else if (contentKindList.BinarySearch(ID2) >= 0)
-                                        {
-                                            find = true;
-                                            break;
-                                        }
+                                        nibble1 = contentInfo.user_nibble_1 | (0x60 + nibble2 * 16);
+                                        nibble2 = contentInfo.user_nibble_2;
+                                    }
+                                    if (contentKindList.BinarySearch((ushort)(nibble1 << 8 | 0xFF)) >= 0 ||
+                                        contentKindList.BinarySearch((ushort)(nibble1 << 8 | nibble2)) >= 0)
+                                    {
+                                        find = true;
+                                        break;
                                     }
                                 }
                             }
