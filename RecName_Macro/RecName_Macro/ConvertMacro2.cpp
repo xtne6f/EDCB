@@ -128,9 +128,9 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 		if( epgInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
 			BYTE nibble1 = epgInfo->contentInfo->nibbleList[0].content_nibble_level_1;
 			BYTE nibble2 = epgInfo->contentInfo->nibbleList[0].content_nibble_level_2;
-			if( nibble1 == 0x0E && nibble2 == 0x01 ){
-				//CSŠg’£—pî•ñ
-				nibble1 = epgInfo->contentInfo->nibbleList[0].user_nibble_1 | 0x70;
+			if( nibble1 == 0x0E && nibble2 <= 0x01 ){
+				//”Ô‘g•t‘®î•ñ‚Ü‚½‚ÍCSŠg’£—pî•ñ
+				nibble1 = epgInfo->contentInfo->nibbleList[0].user_nibble_1 | (0x60 + nibble2 * 16);
 			}
 			GetGenreName(nibble1, 0xFF, ret);
 			if( ret.empty() ){
@@ -141,9 +141,9 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 		if( epgInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
 			BYTE nibble1 = epgInfo->contentInfo->nibbleList[0].content_nibble_level_1;
 			BYTE nibble2 = epgInfo->contentInfo->nibbleList[0].content_nibble_level_2;
-			if( nibble1 == 0x0E && nibble2 == 0x01 ){
-				//CSŠg’£—pî•ñ
-				nibble1 = epgInfo->contentInfo->nibbleList[0].user_nibble_1 | 0x70;
+			if( nibble1 == 0x0E && nibble2 <= 0x01 ){
+				//”Ô‘g•t‘®î•ñ‚Ü‚½‚ÍCSŠg’£—pî•ñ
+				nibble1 = epgInfo->contentInfo->nibbleList[0].user_nibble_1 | (0x60 + nibble2 * 16);
 				nibble2 = epgInfo->contentInfo->nibbleList[0].user_nibble_2;
 			}
 			GetGenreName(nibble1, nibble2, ret);

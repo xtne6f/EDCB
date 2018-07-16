@@ -208,7 +208,7 @@ if aa.searchInfo then
     ..'<input type="checkbox" name="disableFlag" value="1"'..(disAndKey and ' checked' or '')..'>自動登録を無効にする<br><br>\n'
     ..'ジャンル絞り込み（Ctrl+複数選択） <input type="checkbox" name="notContetFlag" value="1"'..(si.notContetFlag and ' checked' or '')..'>NOT扱い<br>\n'
     ..'<select name="contentList" multiple size="5">\n')
-  for _i,i in ipairs({0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,15}) do
+  for _i,i in ipairs({0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,15,255}) do
     nibble1=edcb.GetGenreName(i*256+255)
     if nibble1~='' then
       ct:Append('<option value="'..(i*256+255)..'"')

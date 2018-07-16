@@ -718,12 +718,12 @@ bool CEpgDBManager::IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, 
 {
 	for( size_t i=0; i<searchKey.size(); i++ ){
 		EPGDB_CONTENT_DATA c = searchKey[i];
-		if( (c.content_nibble_level_1 & 0xF0) == 0x70 ){
-			//CSŠg’£—pî•ñ‚É•ÏŠ·‚·‚é
+		if( 0x60 <= c.content_nibble_level_1 && c.content_nibble_level_1 <= 0x7F ){
+			//”Ô‘g•t‘®î•ñ‚Ü‚½‚ÍCSŠg’£—pî•ñ‚É•ÏŠ·‚·‚é
 			c.user_nibble_1 = c.content_nibble_level_1 & 0x0F;
 			c.user_nibble_2 = c.content_nibble_level_2;
+			c.content_nibble_level_2 = (c.content_nibble_level_1 - 0x60) >> 4;
 			c.content_nibble_level_1 = 0x0E;
-			c.content_nibble_level_2 = 0x01;
 		}
 		for( size_t j=0; j<eventData.size(); j++ ){
 			if( c.content_nibble_level_1 == eventData[j].content_nibble_level_1 ){

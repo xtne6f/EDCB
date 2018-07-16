@@ -22,8 +22,9 @@ function ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
     if v.contentInfoList then
       s=s..'ジャンル : \n'
       for i,w in ipairs(v.contentInfoList) do
-        --0x0E01はCS拡張用情報
-        nibble=w.content_nibble==0x0E01 and w.user_nibble+0x7000 or w.content_nibble
+        --0x0E00は番組付属情報、0x0E01はCS拡張用情報
+        local nibble=w.content_nibble==0x0E00 and w.user_nibble+0x6000 or
+                     w.content_nibble==0x0E01 and w.user_nibble+0x7000 or w.content_nibble
         s=s..edcb.GetGenreName(math.floor(nibble/256)*256+255)..' - '..edcb.GetGenreName(nibble)..'\n'
       end
       s=s..'\n'

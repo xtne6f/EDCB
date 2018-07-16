@@ -140,7 +140,7 @@ struct KIND_INFO {
 
 LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
 {
-	KIND_INFO info = { key };
+	KIND_INFO info = { key, NULL };
 	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, [](const KIND_INFO& a, const KIND_INFO& b) { return a.key < b.key; });
 	return ret != arr + len && ret->key == key ? ret->str : NULL;
 }
@@ -277,6 +277,21 @@ void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
 	{ 0x0BFF, L"福祉" },
 
 	{ 0x0FFF, L"その他" },
+
+	{ 0x6000, L"中止の可能性あり" },
+	{ 0x6001, L"延長の可能性あり" },
+	{ 0x6002, L"中断の可能性あり" },
+	{ 0x6003, L"別話数放送の可能性あり" },
+	{ 0x6004, L"編成未定枠" },
+	{ 0x6005, L"繰り上げの可能性あり" },
+	{ 0x60FF, L"編成情報" },
+
+	{ 0x6100, L"中断ニュースあり" },
+	{ 0x6101, L"臨時サービスあり" },
+	{ 0x61FF, L"特性情報" },
+
+	{ 0x6200, L"3D映像あり" },
+	{ 0x62FF, L"3D映像" },
 
 	{ 0x7000, L"テニス" },
 	{ 0x7001, L"バスケットボール" },
@@ -425,9 +440,9 @@ wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& service
 		for( size_t i=0; i<info->contentInfo.nibbleList.size(); i++ ){
 			BYTE nibble1 = info->contentInfo.nibbleList[i].content_nibble_level_1;
 			BYTE nibble2 = info->contentInfo.nibbleList[i].content_nibble_level_2;
-			if( nibble1 == 0x0E && nibble2 == 0x01 ){
-				//CS拡張用情報
-				nibble1 = info->contentInfo.nibbleList[i].user_nibble_1 | 0x70;
+			if( nibble1 == 0x0E && nibble2 <= 0x01 ){
+				//番組付属情報またはCS拡張用情報
+				nibble1 = info->contentInfo.nibbleList[i].user_nibble_1 | (0x60 + nibble2 * 16);
 				nibble2 = info->contentInfo.nibbleList[i].user_nibble_2;
 			}
 			WCHAR buff[32];
