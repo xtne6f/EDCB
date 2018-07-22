@@ -164,7 +164,6 @@
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
     <ClInclude Include="ConvertMacro2.h" />
-    <ClInclude Include="RecName_PlugIn.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SettingDlg.h" />
     <ClInclude Include="stdafx.h" />

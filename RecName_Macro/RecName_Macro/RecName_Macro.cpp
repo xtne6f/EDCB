@@ -2,9 +2,6 @@
 //
 
 #include "stdafx.h"
-
-
-#include "RecName_PlugIn.h"
 #include "SettingDlg.h"
 #include "ConvertMacro2.h"
 #include "../../Common/PathUtil.h"
@@ -67,49 +64,16 @@ void WINAPI Setting(
 	}
 }
 
-//入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
+//入力された予約情報と変換パターンを元に、録画時のファイル名を作成する（拡張子含む）
 //recNameがNULL時は必要なサイズをrecNamesizeで返す
 //通常recNamesize=256で呼び出し
 //戻り値
 // TRUE（成功）、FALSE（失敗）
 //引数：
 // info						[IN]予約情報
+// pattern					[IN]変換パターン（デフォルトのときNULL）
 // recName					[OUT]名称
 // recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
-BOOL WINAPI ConvertRecName(
-	PLUGIN_RESERVE_INFO* info,
-	WCHAR* recName,
-	DWORD* recNamesize
-	)
-{
-	return ConvertRecName2(info, NULL, recName, recNamesize);
-}
-
-//入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
-//recNameがNULL時は必要なサイズをrecNamesizeで返す
-//通常recNamesize=256で呼び出し
-//戻り値
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// info						[IN]予約情報
-// epgInfo					[IN]番組情報（EPG予約で番組情報が存在する時、存在しない場合のNULL）
-// recName					[OUT]名称
-// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
-BOOL WINAPI ConvertRecName2(
-	PLUGIN_RESERVE_INFO* info,
-	EPG_EVENT_INFO* epgInfo,
-	WCHAR* recName,
-	DWORD* recNamesize
-	)
-{
-	PLUGIN_RESERVE_INFO infoEx;
-	memcpy(&infoEx, info, offsetof(PLUGIN_RESERVE_INFO, tunerID) + sizeof(infoEx.tunerID));
-	infoEx.reserveID = 0;
-	infoEx.epgInfo = epgInfo;
-	infoEx.sizeOfStruct = 0;
-	return ConvertRecName3(&infoEx, NULL, recName, recNamesize);
-}
-
 BOOL WINAPI ConvertRecName3(
 	PLUGIN_RESERVE_INFO* info,
 	const WCHAR* pattern,
@@ -144,4 +108,47 @@ BOOL WINAPI ConvertRecName3(
 	}
 
 	return TRUE;
+}
+
+//入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
+//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//通常recNamesize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// info						[IN]予約情報
+// epgInfo					[IN]番組情報（EPG予約で番組情報が存在する時、存在しない場合のNULL）
+// recName					[OUT]名称
+// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
+BOOL WINAPI ConvertRecName2(
+	PLUGIN_RESERVE_INFO* info,
+	EPG_EVENT_INFO* epgInfo,
+	WCHAR* recName,
+	DWORD* recNamesize
+	)
+{
+	PLUGIN_RESERVE_INFO infoEx;
+	memcpy(&infoEx, info, offsetof(PLUGIN_RESERVE_INFO, tunerID) + sizeof(infoEx.tunerID));
+	infoEx.reserveID = 0;
+	infoEx.epgInfo = epgInfo;
+	infoEx.sizeOfStruct = 0;
+	return ConvertRecName3(&infoEx, NULL, recName, recNamesize);
+}
+
+//入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
+//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//通常recNamesize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// info						[IN]予約情報
+// recName					[OUT]名称
+// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
+BOOL WINAPI ConvertRecName(
+	PLUGIN_RESERVE_INFO* info,
+	WCHAR* recName,
+	DWORD* recNamesize
+	)
+{
+	return ConvertRecName2(info, NULL, recName, recNamesize);
 }

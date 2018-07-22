@@ -2,6 +2,7 @@
 #include "EpgTimerSrvSetting.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
+#include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "resource.h"
 #include <windowsx.h>
@@ -853,14 +854,7 @@ void CEpgTimerSrvSetting::OnBnClickedSetRecNamePlugIn()
 	vector<WCHAR> name;
 	GetWindowTextBuffer(GetDlgItem(this->hwndReserve, IDC_COMBO_SET_RECNAME_PLUGIN), name);
 	if( name[0] ){
-		HMODULE hModule = LoadLibrary(GetModulePath().replace_filename(L"RecName").append(name.data()).c_str());
-		if( hModule ){
-			void (WINAPI* pfnSetting)(HWND) = (void (WINAPI*)(HWND))GetProcAddress(hModule, "Setting");
-			if( pfnSetting ){
-				pfnSetting(this->hwndTop);
-			}
-			FreeLibrary(hModule);
-		}
+		CReNamePlugInUtil::ShowSetting(GetModulePath().replace_filename(L"RecName").append(name.data()).c_str(), this->hwndTop);
 	}
 }
 

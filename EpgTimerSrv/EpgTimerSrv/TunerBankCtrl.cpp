@@ -1276,7 +1276,7 @@ wstring CTunerBankCtrl::ConvertRecName(
 		info.sizeOfStruct = 0;
 		WCHAR name[512];
 		DWORD size = 512;
-		if( CReNamePlugInUtil::ConvertRecName3(&info, recNamePlugIn, plugInPath.c_str(), name, &size) ){
+		if( CReNamePlugInUtil::Convert(&info, recNamePlugIn, plugInPath.c_str(), name, &size) ){
 			ret = name;
 			CheckFileName(ret, noChkYen);
 		}
