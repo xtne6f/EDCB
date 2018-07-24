@@ -157,7 +157,7 @@ namespace EpgTimer
                     }
                 }
 
-                listView_result.DataContext = resultList;
+                listView_result.ItemsSource = resultList;
                 RefreshReserve();
                 Sort();
 
@@ -171,9 +171,9 @@ namespace EpgTimer
 
         private void RefreshReserve()
         {
-            if (listView_result.DataContext != null)
+            if (listView_result.ItemsSource != null)
             {
-                foreach (SearchItem item in (List<SearchItem>)listView_result.DataContext)
+                foreach (SearchItem item in listView_result.ItemsSource)
                 {
                     item.ReserveInfo = null;
                     foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
@@ -188,7 +188,7 @@ namespace EpgTimer
                         }
                     }
                 }
-                CollectionViewSource.GetDefaultView(listView_result.DataContext).Refresh();
+                CollectionViewSource.GetDefaultView(listView_result.ItemsSource).Refresh();
             }
         }
 
@@ -395,11 +395,11 @@ namespace EpgTimer
 
         private void Sort()
         {
-            if (listView_result.DataContext == null)
+            if (listView_result.ItemsSource == null)
             {
                 return;
             }
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.ItemsSource);
 
             using (dataView.DeferRefresh())
             {

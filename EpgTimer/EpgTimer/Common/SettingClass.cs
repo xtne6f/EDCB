@@ -116,6 +116,8 @@ namespace EpgTimer
         public bool NoBallonTips { get; set; }
         public int ForceHideBalloonTipSec { get; set; }
         public bool PlayDClick { get; set; }
+        public bool ConfirmDelRecInfo { get; set; }
+        public bool ConfirmDelRecInfoAlways { get; set; }
         public bool ShowEpgCapServiceOnly { get; set; }
         public bool SortServiceList { get; set; }
         public bool ExitAfterProcessingArgs { get; set; }
@@ -301,6 +303,8 @@ namespace EpgTimer
             FontBoldTitle = true;
             NoToolTip = false;
             PlayDClick = false;
+            ConfirmDelRecInfo = true;
+            ConfirmDelRecInfoAlways = false;
             ShowEpgCapServiceOnly = false;
             SortServiceList = true;
             ExitAfterProcessingArgs = false;
