@@ -27,9 +27,9 @@
 #define CIVETWEB_LUA_H
 
 #define LUA_LIB
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
+#include "lua/lua.h"
+#include "lua/lauxlib.h"
+#include "lua/lualib.h"
 
 #ifndef LUA_VERSION_NUM
 #error "Unknown Lua version"
