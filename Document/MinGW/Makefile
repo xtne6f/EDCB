@@ -4,7 +4,9 @@ TARGETS = EpgDataCap_Bon.exe \
           EpgTimerPlugIn.tvtp \
           RecName_Macro.dll \
           SendTSTCP.dll \
-          Write_Default.dll
+          Write_Default.dll \
+          Write_OneService.dll \
+          EdcbPlugIn.tvtp
 
 # EpgTimerSrv.exe is also buildable, but has some problems about civetweb.c. Don't use.
 
