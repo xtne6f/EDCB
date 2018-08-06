@@ -718,7 +718,7 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 					}
 				}else{
 					//ëOï˚ÇçÌÇÈ
-					_int64 cutStartTime = bank[i].started ? bank[i].cutEndTime : min(max(bank[i].cutStartTime, inItem.cutEndTime), bank[i].cutEndTime);
+					__int64 cutStartTime = bank[i].started ? bank[i].cutEndTime : min(max(bank[i].cutStartTime, inItem.cutEndTime), bank[i].cutEndTime);
 					otherCosts[min(max<int>(bank[i].r->recSetting.priority, 1), 5) - 1] += cutStartTime - bank[i].cutStartTime;
 					if( modifyBank ){
 						bank[i].cutStartTime = cutStartTime;
@@ -775,7 +775,7 @@ wstring CReserveManager::GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo,
 	SYSTEMTIME stNewEnd;
 	ConvertSystemTime(ConvertI64Time(stNew) + newInfo.durationSecond * I64_1SEC, &stNewEnd);
 	wstring msg;
-	Format(msg, L"%s %04d/%02d/%02d %02d:%02dÅ`%02d:%02d\r\n%s\r\nEventID:0x%04X\r\nÅ´\r\n%s %04d/%02d/%02d %02d:%02dÅ`%02d:%02d\r\n%s\r\nEventID:0x%04X",
+	Format(msg, L"%s %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%s\r\nEventID:0x%04X\r\nÅ´\r\n%s %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%s\r\nEventID:0x%04X",
 		oldInfo.stationName.c_str(), stOld.wYear, stOld.wMonth, stOld.wDay, stOld.wHour, stOld.wMinute,
 		stOldEnd.wHour, stOldEnd.wMinute, oldInfo.title.c_str(), oldInfo.eventID,
 		newInfo.stationName.c_str(), stNew.wYear, stNew.wMonth, stNew.wDay, stNew.wHour, stNew.wMinute,
@@ -1310,7 +1310,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			SYSTEMTIME stEnd;
 			ConvertSystemTime(ConvertI64Time(st) + item.durationSecond * I64_1SEC, &stEnd);
 			wstring msg;
-			Format(msg, L"%s %04d/%02d/%02d %02d:%02dÅ`%02d:%02d\r\n%s\r\n%s",
+			Format(msg, L"%s %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%s\r\n%s",
 			       item.serviceName.c_str(), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute,
 			       stEnd.wHour, stEnd.wMinute, item.title.c_str(), item.GetComment());
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);

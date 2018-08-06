@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "StreamCtrlDlg.h"
-#include <Commctrl.h>
+#include <commctrl.h>
 
-#include <Iphlpapi.h>
+#include <iphlpapi.h>
 #pragma comment(lib, "IPHLPAPI.lib")
 
 

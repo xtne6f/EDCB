@@ -77,10 +77,10 @@ void CDropCount::Clear()
 	this->log.clear();
 	this->lastLogTime = 0;
 
-	if( this->lastLogDrop != MAXULONGLONG ){
+	if( this->lastLogDrop != ULLONG_MAX ){
 		this->lastLogDrop = 0;
 	}
-	if( this->lastLogScramble != MAXULONGLONG ){
+	if( this->lastLogScramble != ULLONG_MAX ){
 		this->lastLogScramble = 0;
 	}
 	this->signalLv = 0;
@@ -98,8 +98,8 @@ void CDropCount::SetBonDriver(const wstring& bonDriver)
 
 void CDropCount::SetNoLog(BOOL noLogDrop, BOOL noLogScramble)
 {
-	this->lastLogDrop = noLogDrop ? MAXULONGLONG : this->lastLogDrop == MAXULONGLONG ? 0 : this->lastLogDrop;
-	this->lastLogScramble = noLogScramble ? MAXULONGLONG : this->lastLogScramble == MAXULONGLONG ? 0 : this->lastLogScramble;
+	this->lastLogDrop = noLogDrop ? ULLONG_MAX : this->lastLogDrop == ULLONG_MAX ? 0 : this->lastLogDrop;
+	this->lastLogScramble = noLogScramble ? ULLONG_MAX : this->lastLogScramble == ULLONG_MAX ? 0 : this->lastLogScramble;
 }
 
 void CDropCount::GetCount(ULONGLONG* drop_, ULONGLONG* scramble_)
@@ -177,7 +177,7 @@ void CDropCount::SaveLog(const wstring& filePath)
 	FILE* fp_;
 	if( _wfopen_s(&fp_, filePath.c_str(), L"wbN") == 0 ){
 		std::unique_ptr<FILE, decltype(&fclose)> fp(fp_, fclose);
-		fprintf(fp.get(), "%s\r\n", this->log.c_str());
+		fprintf_s(fp.get(), "%s\r\n", this->log.c_str());
 
 		for( vector<DROP_INFO>::const_iterator itr = this->infoList.begin(); itr != this->infoList.end(); itr++ ){
 			LPCSTR desc = "";
@@ -247,13 +247,13 @@ void CDropCount::SaveLog(const wstring& filePath)
 				}
 				break;
 			}
-			fprintf(fp.get(), "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d  %s\r\n",
-			        itr->PID, itr->total, itr->drop, itr->scramble, desc);
+			fprintf_s(fp.get(), "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d  %s\r\n",
+			          itr->PID, itr->total, itr->drop, itr->scramble, desc);
 		}
 
 		string strA;
 		WtoA(L"Žg—pBonDriver : " + bonFile, strA);
-		fprintf(fp.get(), "\r\n%s\r\n", strA.c_str());
+		fprintf_s(fp.get(), "\r\n%s\r\n", strA.c_str());
 	}
 }
 

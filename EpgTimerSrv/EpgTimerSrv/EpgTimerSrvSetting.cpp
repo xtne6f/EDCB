@@ -6,7 +6,7 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "resource.h"
 #include <windowsx.h>
-#include <ShlObj.h>
+#include <shlobj.h>
 #include <commdlg.h>
 
 CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)

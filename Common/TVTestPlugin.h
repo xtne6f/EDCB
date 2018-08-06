@@ -211,7 +211,7 @@ namespace TVTest {
 
 // offsetof
 #define TVTEST_OFFSETOF(type,member) \
-	((size_t)((BYTE*)&((type*)0)->member-(BYTE*)(type*)0))
+	((size_t)&((type*)0)->member)
 
 // ƒvƒ‰ƒOƒCƒ“‚Ìí—Ş
 enum {

@@ -768,7 +768,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 	SYSTEMTIME st;
 	ConvertSystemTime(reserve.startTime, &st);
 	wstring msg;
-	Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d` %s", reserve.stationName.c_str(),
+	Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d\xFF5E %s", reserve.stationName.c_str(),
 	       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, reserve.title.c_str());
 	this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, msg);
 	return true;

@@ -7,11 +7,14 @@
 #include "SendTSTCPMain.h"
 #include "../../Common/InstanceManager.h"
 
+#define DLL_EXPORT extern "C" __declspec(dllexport)
+
 CInstanceManager<CSendTSTCPMain> g_instMng;
 
 
 //DLLの初期化
 //戻り値：識別ID（-1でエラー）
+DLL_EXPORT
 int WINAPI InitializeDLL(
 	)
 {
@@ -28,6 +31,7 @@ int WINAPI InitializeDLL(
 
 //DLLの開放
 //戻り値：エラーコード
+DLL_EXPORT
 DWORD WINAPI UnInitializeDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
@@ -45,6 +49,7 @@ DWORD WINAPI UnInitializeDLL(
 
 //送信先を追加
 //戻り値：エラーコード
+DLL_EXPORT
 DWORD WINAPI AddSendAddrDLL(
 	int iID, //[IN] InitializeDLLの戻り値
 	LPCWSTR lpcwszIP,
@@ -62,6 +67,7 @@ DWORD WINAPI AddSendAddrDLL(
 
 //送信先クリア
 //戻り値：エラーコード
+DLL_EXPORT
 DWORD WINAPI ClearSendAddrDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
@@ -77,6 +83,7 @@ DWORD WINAPI ClearSendAddrDLL(
 
 //データ送信を開始
 //戻り値：エラーコード
+DLL_EXPORT
 DWORD WINAPI StartSendDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
@@ -92,6 +99,7 @@ DWORD WINAPI StartSendDLL(
 
 //データ送信を停止
 //戻り値：エラーコード
+DLL_EXPORT
 DWORD WINAPI StopSendDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
@@ -107,6 +115,7 @@ DWORD WINAPI StopSendDLL(
 
 //データ送信を開始
 //戻り値：エラーコード
+DLL_EXPORT
 DWORD WINAPI AddSendDataDLL(
 	int iID, //[IN] InitializeDLLの戻り値
 	BYTE* pbData,
@@ -124,6 +133,7 @@ DWORD WINAPI AddSendDataDLL(
 
 //送信バッファをクリア
 //戻り値：エラーコード
+DLL_EXPORT
 DWORD WINAPI ClearSendBuffDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)

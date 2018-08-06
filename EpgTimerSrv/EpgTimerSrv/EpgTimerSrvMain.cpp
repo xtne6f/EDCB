@@ -9,7 +9,7 @@
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
-#include <LM.h>
+#include <lm.h>
 #pragma comment (lib, "netapi32.lib")
 
 //å›ä∑ìÆçÏÇÃÇΩÇﬂÇÃÉOÉçÅ[ÉoÉãÇ»ÉtÉâÉO(Ç±ÇÃéËñ@ÇÕ„YóÌÇ≈ÇÕÇ»Ç¢Ç™ç≈Ç‡ÉVÉìÉvÉãÇ»ÇÃÇ≈)
@@ -653,8 +653,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								SYSTEMTIME st = itr->time;
 								wstring log = wstring(nid.szInfoTitle) + L"] " + info;
 								Replace(log, L"\r\n", L"  ");
-								fwprintf(fp.get(), L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s\r\n",
-								         st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, log.c_str());
+								fwprintf_s(fp.get(), L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s\r\n",
+								           st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, log.c_str());
 							}
 						}
 						if( ctx->showBalloonTip ){
@@ -1043,7 +1043,7 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 		SYSTEMTIME endTime;
 		ConvertSystemTime(ConvertI64Time(list[i].startTime) + list[i].durationSecond * I64_1SEC, &endTime);
 		WCHAR text[128];
-		swprintf_s(text, L"%02d:%02dÅ`%02d:%02d%s %.31s Åy%.31sÅz",
+		swprintf_s(text, L"%02d:%02d-%02d:%02d%s %.31s Åy%.31sÅz",
 		           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
 		           list[i].recSetting.recMode == RECMODE_VIEW ? L"Å£" : L"",
 		           list[i].title.c_str(), list[i].stationName.c_str());

@@ -192,10 +192,10 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			}
 		}
 		if( func == L"HtoZ" ){
-			funcStack.push_back(L"Tr_ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~_@Ih”“•fij–{C|D^FGƒ„H—mnOQeobpP_");
+			funcStack.push_back(L"Tr_ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~_@Ih”“•fij–{C\xFF0DD^FGƒ„H—mnOQeobpP_");
 			funcStack.push_back(L"HtoZ<alnum>");
 		}else if( func == L"ZtoH" ){
-			funcStack.push_back(L"Tr_@Ih”“•fij–{C|D^FGƒ„H—mnOQeobpP_ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~_");
+			funcStack.push_back(L"Tr_@Ih”“•fij–{C\xFF0DD^FGƒ„H—mnOQeobpP_ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~_");
 			funcStack.push_back(L"ZtoH<alnum>");
 		}else if( func == L"HtoZ<alnum>" ){
 			funcStack.push_back(L"Tr/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/");

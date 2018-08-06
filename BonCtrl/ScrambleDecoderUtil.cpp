@@ -1,6 +1,68 @@
 #include "stdafx.h"
 #include "ScrambleDecoderUtil.h"
 
+#ifdef USE_IBONCAST
+namespace
+{
+IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOID* (WINAPI* funcCast)(LPCSTR, void*))
+{
+	HMODULE hModule = NULL;
+	if( funcCast == NULL ){
+		if( (hModule = LoadLibrary(L"IBonCast.dll")) == NULL ){
+			OutputDebugString(L"šIBonCast.dll‚ªƒ[ƒh‚Å‚«‚Ü‚¹‚ñ\r\n");
+			return NULL;
+		}
+		funcCast = (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(hModule, "Cast");
+	}
+	void* pBase;
+	const LPVOID* table;
+	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IB25Decoder@5", pBase)) == NULL ){
+		OutputDebugString(L"šCast‚ÉŽ¸”s‚µ‚Ü‚µ‚½\r\n");
+		if( hModule ){
+			FreeLibrary(hModule);
+		}
+		return NULL;
+	}
+
+	class CCastB : public IB25Decoder2
+	{
+	public:
+		CCastB(HMODULE h_, void* p_, const LPVOID* t_) : h(h_), p(p_), t(t_) {}
+		const BOOL Initialize(DWORD dwRound = 4) { return ((BOOL(*)(void*,DWORD))t[0])(p, dwRound); }
+		void Release() { ((void(*)(void*))t[1])(p); if( h ) FreeLibrary(h); delete this; }
+		const BOOL Decode(BYTE* pSrcBuf, const DWORD dwSrcSize, BYTE** ppDstBuf, DWORD* pdwDstSize) { return ((BOOL(*)(void*,BYTE*,DWORD,BYTE**,DWORD*))t[2])(p, pSrcBuf, dwSrcSize, ppDstBuf, pdwDstSize); }
+		const BOOL Flush(BYTE** ppDstBuf, DWORD* pdwDstSize) { return ((BOOL(*)(void*,BYTE**,DWORD*))t[3])(p, ppDstBuf, pdwDstSize); }
+		const BOOL Reset() { return ((BOOL(*)(void*))t[4])(p); }
+		void DiscardNullPacket(const bool bEnable = true) { ((void(*)(void*,BOOL))t[5])(p, bEnable); }
+		void DiscardScramblePacket(const bool bEnable = true) { ((void(*)(void*,BOOL))t[6])(p,bEnable); }
+		void EnableEmmProcess(const bool bEnable = true) { ((void(*)(void*,BOOL))t[7])(p,bEnable); }
+		const DWORD GetDescramblingState(const WORD wProgramID) const { return ((DWORD(*)(void*,WORD))t[8])(p, wProgramID); }
+		void ResetStatistics() { ((void(*)(void*))t[9])(p); }
+		const DWORD GetPacketStride() const { return ((DWORD(*)(void*))t[10])(p); }
+		const DWORD GetInputPacketNum(const WORD wPID = TS_INVALID_PID) const { return ((DWORD(*)(void*,WORD))t[11])(p, wPID); }
+		const DWORD GetOutputPacketNum(const WORD wPID = TS_INVALID_PID) const { return ((DWORD(*)(void*,WORD))t[12])(p, wPID); }
+		const DWORD GetSyncErrNum() const { return ((DWORD(*)(void*))t[13])(p); }
+		const DWORD GetFormatErrNum() const { return ((DWORD(*)(void*))t[14])(p); }
+		const DWORD GetTransportErrNum() const { return ((DWORD(*)(void*))t[15])(p); }
+		const DWORD GetContinuityErrNum(const WORD wPID = TS_INVALID_PID) const { return ((DWORD(*)(void*,WORD))t[16])(p, wPID); }
+		const DWORD GetScramblePacketNum(const WORD wPID = TS_INVALID_PID) const { return ((DWORD(*)(void*,WORD))t[17])(p, wPID); }
+		const DWORD GetEcmProcessNum() const { return ((DWORD(*)(void*))t[18])(p); }
+		const DWORD GetEmmProcessNum() const { return ((DWORD(*)(void*))t[19])(p); }
+	private:
+		HMODULE h;
+		void* p;
+		const LPVOID* t;
+	};
+
+	CCastB* b = new CCastB(hModule, pBase, table);
+	*if2 = NULL;
+	if( funcCast("IB25Decoder2@20", pBase) == table ){
+		*if2 = b;
+	}
+	return b;
+}
+}
+#endif
 
 CScrambleDecoderUtil::CScrambleDecoderUtil(void)
 {
@@ -33,14 +95,23 @@ BOOL CScrambleDecoderUtil::LoadDll(LPCWSTR dllPath)
 		ret = FALSE;
 		goto ERR_END;
 	}
+#ifdef USE_IBONCAST
+	if( (this->decodeIF = CastB(&this->decodeIF2, func, (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(this->module, "Cast"))) == NULL ){
+		ret = FALSE;
+		goto ERR_END;
+	}
+#else
 	this->decodeIF = func();
+#endif
 	if( this->decodeIF->Initialize() == FALSE ){
-		this->decodeIF->Release();
-		this->decodeIF = NULL;
 		ret = FALSE;
 	}else{
+#ifdef USE_IBONCAST
+		{
+#else
 		try{
 			this->decodeIF2 = dynamic_cast<IB25Decoder2 *>(this->decodeIF);
+#endif
 			if( this->decodeIF2 != NULL ){
 				//this->decodeIF2->EnableEmmProcess(false);
 				this->decodeIF2->DiscardNullPacket(true);
@@ -48,9 +119,11 @@ BOOL CScrambleDecoderUtil::LoadDll(LPCWSTR dllPath)
 				this->decodeIF2->EnableEmmProcess(this->emmEnable);
 			}
 		}
+#ifndef USE_IBONCAST
 		catch(std::__non_rtti_object){
 			this->decodeIF2 = NULL;
 		}
+#endif
 	}
 ERR_END:
 	if( ret == FALSE ){

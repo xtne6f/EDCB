@@ -1,8 +1,8 @@
-#include <SDKDDKVer.h>
+#include <sdkddkver.h>
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#include <windows.h>
 #include <string.h>
-#include <LM.h>
+#include <lm.h>
 #pragma comment(lib, "netapi32.lib")
 
 static const WCHAR CLASS_NAME[] = L"EpgTimerAdminProxy";
@@ -82,14 +82,22 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+#ifdef USE_WINMAIN_A
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#else
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+#endif
 {
 	static_cast<void>(hPrevInstance);
 	static_cast<void>(nCmdShow);
 
 	SetDllDirectory(L"");
 
+#ifdef USE_WINMAIN_A
+	if (_stricmp(lpCmdLine, "/TestSetTime") == 0) {
+#else
 	if (_wcsicmp(lpCmdLine, L"/TestSetTime") == 0) {
+#endif
 		// 動作テスト: 現在時刻でシステム日時を設定する
 		LPCWSTR text = L"Proxy not found.";
 		HWND hwnd = FindWindowEx(HWND_MESSAGE, nullptr, CLASS_NAME, nullptr);
@@ -102,7 +110,11 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		MessageBox(nullptr, text, CLASS_NAME, MB_OK);
 		return 0;
 	}
+#ifdef USE_WINMAIN_A
+	else if (_stricmp(lpCmdLine, "/TestNetFind") == 0) {
+#else
 	else if (_wcsicmp(lpCmdLine, L"/TestNetFind") == 0) {
+#endif
 		// 動作テスト: 拡張子.txtについて共有アクセスがあるかどうか調べる
 		LPCWSTR text = L"Proxy not found.";
 		HWND hwnd = FindWindowEx(HWND_MESSAGE, nullptr, CLASS_NAME, nullptr);

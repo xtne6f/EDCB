@@ -56,7 +56,7 @@
 
 static const WCHAR AsciiTable[]={
 	L'ÅI', L'Åh', L'Åî', L'Åê', L'Åì', L'Åï', L'Åf',
-	L'Åi', L'Åj', L'Åñ', L'Å{', L'ÅC', L'Å|', L'ÅD', L'Å^',
+	L'Åi', L'Åj', L'Åñ', L'Å{', L'ÅC', L'\xFF0D', L'ÅD', L'Å^',
 	L'ÇO', L'ÇP', L'ÇQ', L'ÇR', L'ÇS', L'ÇT', L'ÇU', L'ÇV',
 	L'ÇW', L'ÇX', L'ÅF', L'ÅG', L'ÅÉ', L'ÅÅ', L'ÅÑ', L'ÅH',
 	L'Åó', L'Ç`', L'Ça', L'Çb', L'Çc', L'Çd', L'Çe', L'Çf',
