@@ -9,7 +9,7 @@
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
-#include <LM.h>
+#include <lm.h>
 #pragma comment (lib, "netapi32.lib")
 
 //互換動作のためのグローバルなフラグ(この手法は綺麗ではないが最もシンプルなので)
@@ -577,11 +577,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_APP_RECEIVE_NOTIFY:
 		//通知を受け取る
 		{
-			vector<NOTIFY_SRV_INFO> list(1);
+			vector<NOTIFY_SRV_INFO> list;
 			if( wParam ){
 				//更新だけ
-				list.back().notifyID = NOTIFY_UPDATE_SRV_STATUS;
-				list.back().param1 = ctx->notifySrvStatus;
+				NOTIFY_SRV_INFO status = {};
+				status.notifyID = NOTIFY_UPDATE_SRV_STATUS;
+				status.param1 = ctx->notifySrvStatus;
+				list.push_back(status);
 			}else{
 				list = ctx->sys->notifyManager.RemoveSentList();
 				ctx->tcpServer.NotifyUpdate();
@@ -651,8 +653,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								SYSTEMTIME st = itr->time;
 								wstring log = wstring(nid.szInfoTitle) + L"] " + info;
 								Replace(log, L"\r\n", L"  ");
-								fwprintf(fp.get(), L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s\r\n",
-								         st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, log.c_str());
+								fwprintf_s(fp.get(), L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s\r\n",
+								           st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, log.c_str());
 							}
 						}
 						if( ctx->showBalloonTip ){
@@ -839,8 +841,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			break;
 		case TIMER_CHECK:
 			{
-				DWORD ret = ctx->sys->reserveManager.Check();
-				switch( HIWORD(ret) ){
+				pair<CReserveManager::CHECK_STATUS, int> ret = ctx->sys->reserveManager.Check();
+				switch( ret.first ){
 				case CReserveManager::CHECK_EPGCAP_END:
 					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 					ctx->sys->epgDB.ReloadEpgData(true);
@@ -857,8 +859,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					//チェックは必須
 					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 					//要求されたシャットダウン動作を試みる
-					ctx->shutdownModePending = LOBYTE(ret);
-					ctx->rebootFlagPending = HIBYTE(ret) != 0;
+					ctx->shutdownModePending = LOBYTE(ret.second);
+					ctx->rebootFlagPending = HIBYTE(ret.second) != 0;
 					if( ctx->shutdownModePending == SD_MODE_INVALID ){
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;
@@ -1041,7 +1043,7 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 		SYSTEMTIME endTime;
 		ConvertSystemTime(ConvertI64Time(list[i].startTime) + list[i].durationSecond * I64_1SEC, &endTime);
 		WCHAR text[128];
-		swprintf_s(text, L"%02d:%02d～%02d:%02d%s %.31s 【%.31s】",
+		swprintf_s(text, L"%02d:%02d-%02d:%02d%s %.31s 【%.31s】",
 		           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
 		           list[i].recSetting.recMode == RECMODE_VIEW ? L"▲" : L"",
 		           list[i].title.c_str(), list[i].stationName.c_str());
@@ -1145,10 +1147,12 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 {
 	CBlockLock lock(&this->settingLock);
 
-	RESERVE_DATA r;
+	RESERVE_DATA r = {};
 	r.reserveID = 0x7FFFFFFF;
 	ConvertSystemTime(startTime, &r.startTime);
 	r.startTimeEpg = r.startTime;
+	r.recSetting.recMode = RECMODE_SERVICE;
+	r.recSetting.priority = 1;
 	r.recSetting.suspendMode = (this->setting.recEndMode + 3) % 4 + 1;
 	r.recSetting.rebootFlag = this->setting.reboot;
 	r.recSetting.useMargineFlag = 1;
@@ -1156,6 +1160,8 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 	r.recSetting.endMargine = this->setting.endMargin;
 	r.recSetting.serviceMode = (this->setting.enableCaption ? RECSERVICEMODE_CAP : 0) |
 	                           (this->setting.enableData ? RECSERVICEMODE_DATA : 0) | RECSERVICEMODE_SET;
+	//*以降をBatFileTagとして扱うことを示す
+	r.recSetting.batFilePath = L"*";
 	return r;
 }
 
@@ -1382,11 +1388,11 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 			addCount++;
 			if( this->reserveManager.IsFindReserve(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id) == false ){
 				bool found = false;
-				if( info.eventGroupInfo != NULL && chkGroupEvent ){
+				if( info.eventGroupInfoGroupType && chkGroupEvent ){
 					//イベントグループのチェックをする
-					for( size_t j = 0; found == false && j < info.eventGroupInfo->eventDataList.size(); j++ ){
+					for( size_t j = 0; found == false && j < info.eventGroupInfo.eventDataList.size(); j++ ){
 						//group_typeは必ず1(イベント共有)
-						const EPGDB_EVENT_DATA& e = info.eventGroupInfo->eventDataList[j];
+						const EPGDB_EVENT_DATA& e = info.eventGroupInfo.eventDataList[j];
 						if( this->reserveManager.IsFindReserve(e.original_network_id, e.transport_stream_id, e.service_id, e.event_id) ){
 							found = true;
 							break;
@@ -1429,8 +1435,8 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					//まだ存在しないので追加対象
 					setList.resize(setList.size() + 1);
 					RESERVE_DATA& item = setList.back();
-					if( info.shortInfo != NULL ){
-						item.title = info.shortInfo->event_name;
+					if( info.hasShortInfo ){
+						item.title = info.shortInfo.event_name;
 					}
 					item.startTime = info.start_time;
 					item.startTimeEpg = item.startTime;
@@ -2549,7 +2555,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 						sys->oldSearchList[tcpFlag].clear();
 						sys->oldSearchList[tcpFlag].resize(val.size());
 						for( size_t i = 0; i < val.size(); i++ ){
-							sys->oldSearchList[tcpFlag][val.size() - i - 1].DeepCopy(val[i].info);
+							std::swap(sys->oldSearchList[tcpFlag][val.size() - i - 1], val[i].info);
 						}
 						if( sys->oldSearchList[tcpFlag].empty() == false ){
 							resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList[tcpFlag].back(), resParam->dataSize);
@@ -3851,87 +3857,87 @@ void CEpgTimerSrvMain::PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INF
 		LuaHelp::reg_int(L, "durationSecond", (int)e.durationSec);
 	}
 	LuaHelp::reg_boolean(L, "freeCAFlag", e.freeCAFlag != 0);
-	if( e.shortInfo ){
+	if( e.hasShortInfo ){
 		lua_pushstring(L, "shortInfo");
 		lua_createtable(L, 0, 2);
-		LuaHelp::reg_string(L, "event_name", ws.WtoUTF8(e.shortInfo->event_name));
-		LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.shortInfo->text_char));
+		LuaHelp::reg_string(L, "event_name", ws.WtoUTF8(e.shortInfo.event_name));
+		LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.shortInfo.text_char));
 		lua_rawset(L, -3);
 	}
-	if( e.extInfo ){
+	if( e.hasExtInfo ){
 		lua_pushstring(L, "extInfo");
 		lua_createtable(L, 0, 1);
-		LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.extInfo->text_char));
+		LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.extInfo.text_char));
 		lua_rawset(L, -3);
 	}
-	if( e.contentInfo ){
+	if( e.hasContentInfo ){
 		lua_pushstring(L, "contentInfoList");
 		lua_newtable(L);
-		for( size_t i = 0; i < e.contentInfo->nibbleList.size(); i++ ){
+		for( size_t i = 0; i < e.contentInfo.nibbleList.size(); i++ ){
 			lua_createtable(L, 0, 2);
-			LuaHelp::reg_int(L, "content_nibble", e.contentInfo->nibbleList[i].content_nibble_level_1 << 8 | e.contentInfo->nibbleList[i].content_nibble_level_2);
-			LuaHelp::reg_int(L, "user_nibble", e.contentInfo->nibbleList[i].user_nibble_1 << 8 | e.contentInfo->nibbleList[i].user_nibble_2);
+			LuaHelp::reg_int(L, "content_nibble", e.contentInfo.nibbleList[i].content_nibble_level_1 << 8 | e.contentInfo.nibbleList[i].content_nibble_level_2);
+			LuaHelp::reg_int(L, "user_nibble", e.contentInfo.nibbleList[i].user_nibble_1 << 8 | e.contentInfo.nibbleList[i].user_nibble_2);
 			lua_rawseti(L, -2, (int)i + 1);
 		}
 		lua_rawset(L, -3);
 	}
-	if( e.componentInfo ){
+	if( e.hasComponentInfo ){
 		lua_pushstring(L, "componentInfo");
 		lua_createtable(L, 0, 4);
-		LuaHelp::reg_int(L, "stream_content", e.componentInfo->stream_content);
-		LuaHelp::reg_int(L, "component_type", e.componentInfo->component_type);
-		LuaHelp::reg_int(L, "component_tag", e.componentInfo->component_tag);
-		LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.componentInfo->text_char));
+		LuaHelp::reg_int(L, "stream_content", e.componentInfo.stream_content);
+		LuaHelp::reg_int(L, "component_type", e.componentInfo.component_type);
+		LuaHelp::reg_int(L, "component_tag", e.componentInfo.component_tag);
+		LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.componentInfo.text_char));
 		lua_rawset(L, -3);
 	}
-	if( e.audioInfo ){
+	if( e.hasAudioInfo ){
 		lua_pushstring(L, "audioInfoList");
 		lua_newtable(L);
-		for( size_t i = 0; i < e.audioInfo->componentList.size(); i++ ){
+		for( size_t i = 0; i < e.audioInfo.componentList.size(); i++ ){
 			lua_createtable(L, 0, 10);
-			LuaHelp::reg_int(L, "stream_content", e.audioInfo->componentList[i].stream_content);
-			LuaHelp::reg_int(L, "component_type", e.audioInfo->componentList[i].component_type);
-			LuaHelp::reg_int(L, "component_tag", e.audioInfo->componentList[i].component_tag);
-			LuaHelp::reg_int(L, "stream_type", e.audioInfo->componentList[i].stream_type);
-			LuaHelp::reg_int(L, "simulcast_group_tag", e.audioInfo->componentList[i].simulcast_group_tag);
-			LuaHelp::reg_boolean(L, "ES_multi_lingual_flag", e.audioInfo->componentList[i].ES_multi_lingual_flag != 0);
-			LuaHelp::reg_boolean(L, "main_component_flag", e.audioInfo->componentList[i].main_component_flag != 0);
-			LuaHelp::reg_int(L, "quality_indicator", e.audioInfo->componentList[i].quality_indicator);
-			LuaHelp::reg_int(L, "sampling_rate", e.audioInfo->componentList[i].sampling_rate);
-			LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.audioInfo->componentList[i].text_char));
+			LuaHelp::reg_int(L, "stream_content", e.audioInfo.componentList[i].stream_content);
+			LuaHelp::reg_int(L, "component_type", e.audioInfo.componentList[i].component_type);
+			LuaHelp::reg_int(L, "component_tag", e.audioInfo.componentList[i].component_tag);
+			LuaHelp::reg_int(L, "stream_type", e.audioInfo.componentList[i].stream_type);
+			LuaHelp::reg_int(L, "simulcast_group_tag", e.audioInfo.componentList[i].simulcast_group_tag);
+			LuaHelp::reg_boolean(L, "ES_multi_lingual_flag", e.audioInfo.componentList[i].ES_multi_lingual_flag != 0);
+			LuaHelp::reg_boolean(L, "main_component_flag", e.audioInfo.componentList[i].main_component_flag != 0);
+			LuaHelp::reg_int(L, "quality_indicator", e.audioInfo.componentList[i].quality_indicator);
+			LuaHelp::reg_int(L, "sampling_rate", e.audioInfo.componentList[i].sampling_rate);
+			LuaHelp::reg_string(L, "text_char", ws.WtoUTF8(e.audioInfo.componentList[i].text_char));
 			lua_rawseti(L, -2, (int)i + 1);
 		}
 		lua_rawset(L, -3);
 	}
-	if( e.eventGroupInfo ){
+	if( e.eventGroupInfoGroupType ){
 		lua_pushstring(L, "eventGroupInfo");
 		lua_createtable(L, 0, 2);
-		LuaHelp::reg_int(L, "group_type", e.eventGroupInfo->group_type);
+		LuaHelp::reg_int(L, "group_type", e.eventGroupInfoGroupType);
 		lua_pushstring(L, "eventDataList");
 		lua_newtable(L);
-		for( size_t i = 0; i < e.eventGroupInfo->eventDataList.size(); i++ ){
+		for( size_t i = 0; i < e.eventGroupInfo.eventDataList.size(); i++ ){
 			lua_createtable(L, 0, 4);
-			LuaHelp::reg_int(L, "onid", e.eventGroupInfo->eventDataList[i].original_network_id);
-			LuaHelp::reg_int(L, "tsid", e.eventGroupInfo->eventDataList[i].transport_stream_id);
-			LuaHelp::reg_int(L, "sid", e.eventGroupInfo->eventDataList[i].service_id);
-			LuaHelp::reg_int(L, "eid", e.eventGroupInfo->eventDataList[i].event_id);
+			LuaHelp::reg_int(L, "onid", e.eventGroupInfo.eventDataList[i].original_network_id);
+			LuaHelp::reg_int(L, "tsid", e.eventGroupInfo.eventDataList[i].transport_stream_id);
+			LuaHelp::reg_int(L, "sid", e.eventGroupInfo.eventDataList[i].service_id);
+			LuaHelp::reg_int(L, "eid", e.eventGroupInfo.eventDataList[i].event_id);
 			lua_rawseti(L, -2, (int)i + 1);
 		}
 		lua_rawset(L, -3);
 		lua_rawset(L, -3);
 	}
-	if( e.eventRelayInfo ){
+	if( e.eventRelayInfoGroupType ){
 		lua_pushstring(L, "eventRelayInfo");
 		lua_createtable(L, 0, 2);
-		LuaHelp::reg_int(L, "group_type", e.eventRelayInfo->group_type);
+		LuaHelp::reg_int(L, "group_type", e.eventRelayInfoGroupType);
 		lua_pushstring(L, "eventDataList");
 		lua_newtable(L);
-		for( size_t i = 0; i < e.eventRelayInfo->eventDataList.size(); i++ ){
+		for( size_t i = 0; i < e.eventRelayInfo.eventDataList.size(); i++ ){
 			lua_createtable(L, 0, 4);
-			LuaHelp::reg_int(L, "onid", e.eventRelayInfo->eventDataList[i].original_network_id);
-			LuaHelp::reg_int(L, "tsid", e.eventRelayInfo->eventDataList[i].transport_stream_id);
-			LuaHelp::reg_int(L, "sid", e.eventRelayInfo->eventDataList[i].service_id);
-			LuaHelp::reg_int(L, "eid", e.eventRelayInfo->eventDataList[i].event_id);
+			LuaHelp::reg_int(L, "onid", e.eventRelayInfo.eventDataList[i].original_network_id);
+			LuaHelp::reg_int(L, "tsid", e.eventRelayInfo.eventDataList[i].transport_stream_id);
+			LuaHelp::reg_int(L, "sid", e.eventRelayInfo.eventDataList[i].service_id);
+			LuaHelp::reg_int(L, "eid", e.eventRelayInfo.eventDataList[i].event_id);
 			lua_rawseti(L, -2, (int)i + 1);
 		}
 		lua_rawset(L, -3);

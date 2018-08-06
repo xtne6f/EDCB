@@ -13,8 +13,9 @@
 class CReserveManager
 {
 public:
-	enum {
-		CHECK_EPGCAP_END = 1,	//EPG取得が完了した
+	enum CHECK_STATUS {
+		CHECK_NO_ACTION,
+		CHECK_EPGCAP_END,		//EPG取得が完了した
 		CHECK_NEED_SHUTDOWN,	//システムシャットダウンを試みる必要がある
 		CHECK_RESERVE_MODIFIED,	//予約になんらかの変化があった
 	};
@@ -50,8 +51,7 @@ public:
 	void CheckTuijyu();
 	//予約管理する
 	//概ね1秒ごとに呼ぶ
-	//戻り値: 0またはHIWORDにCHECK_*
-	DWORD Check();
+	pair<CHECK_STATUS, int> Check();
 	//EPG取得開始を要求する
 	bool RequestStartEpgCap();
 	//チューナ起動やEPG取得やバッチ処理が行われているか
@@ -138,7 +138,7 @@ private:
 	//バンクを監視して必要ならチューナを強制終了するスレッド
 	static void WatchdogThread(CReserveManager* sys);
 	//batPostManagerにバッチを追加する
-	void AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName);
+	void AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR fileName);
 	//バッチに渡す日時マクロを追加する
 	static void AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix);
 	//バッチに渡す予約情報マクロを追加する

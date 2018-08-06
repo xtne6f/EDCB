@@ -115,7 +115,6 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>RecName_PlugIn.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -151,7 +150,6 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <ModuleDefinitionFile>RecName_PlugIn.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -164,7 +162,6 @@
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
     <ClInclude Include="ConvertMacro2.h" />
-    <ClInclude Include="RecName_PlugIn.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SettingDlg.h" />
     <ClInclude Include="stdafx.h" />

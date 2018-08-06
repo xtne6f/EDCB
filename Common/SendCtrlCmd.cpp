@@ -220,8 +220,9 @@ DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_ST
 		}else{
 			x = 0;
 			ioctlsocket(sock, FIONBIO, &x);
-			setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&SND_RCV_TIMEOUT, sizeof(SND_RCV_TIMEOUT));
-			setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&SND_RCV_TIMEOUT, sizeof(SND_RCV_TIMEOUT));
+			DWORD to = SND_RCV_TIMEOUT;
+			setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&to, sizeof(to));
+			setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&to, sizeof(to));
 		}
 	}
 	freeaddrinfo(result);

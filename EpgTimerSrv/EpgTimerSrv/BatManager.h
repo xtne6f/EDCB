@@ -2,14 +2,13 @@
 #include "../../Common/ThreadUtil.h"
 #include "NotifyManager.h"
 
-struct BAT_WORK_INFO {
-	wstring batFilePath;
-	vector<pair<string, wstring>> macroList;
-};
-
 class CBatManager
 {
 public:
+	struct BAT_WORK_INFO {
+		wstring batFilePath;
+		vector<pair<string, wstring>> macroList;
+	};
 	CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName);
 	~CBatManager();
 

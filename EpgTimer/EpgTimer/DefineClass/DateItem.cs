@@ -15,6 +15,12 @@ namespace EpgTimer
             get;
             set;
         }
+        public DateItem DeepClone()
+        {
+            var other = new DateItem();
+            other.DateInfo = DateInfo == null ? null : DateInfo.DeepClone();
+            return other;
+        }
         public override string ToString()
         {
             if (DateInfo == null)

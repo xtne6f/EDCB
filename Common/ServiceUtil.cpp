@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "ServiceUtil.h"
-#include <WinSvc.h>
+#include <winsvc.h>
 
 BOOL IsInstallService(LPCWSTR lpcwszName)
 {

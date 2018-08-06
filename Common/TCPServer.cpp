@@ -182,8 +182,9 @@ void CTCPServer::SetBlockingMode(SOCKET sock)
 	WSAEventSelect(sock, NULL, 0);
 	unsigned long x = 0;
 	ioctlsocket(sock, FIONBIO, &x);
-	setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&SND_RCV_TIMEOUT, sizeof(SND_RCV_TIMEOUT));
-	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&SND_RCV_TIMEOUT, sizeof(SND_RCV_TIMEOUT));
+	DWORD to = SND_RCV_TIMEOUT;
+	setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&to, sizeof(to));
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&to, sizeof(to));
 }
 
 void CTCPServer::SetNonBlockingMode(SOCKET sock, WSAEVENT hEvent, long lNetworkEvents)

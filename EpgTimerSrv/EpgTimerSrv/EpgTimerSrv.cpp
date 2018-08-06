@@ -2,15 +2,14 @@
 //
 
 #include "stdafx.h"
-#include "EpgTimerSrv.h"
 #include "EpgTimerSrvMain.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ServiceUtil.h"
 #include "../../Common/ThreadUtil.h"
-
 #include "../../Common/CommonDef.h"
-#include <WinSvc.h>
-#include <ObjBase.h>
+#include <winsvc.h>
+#include <objbase.h>
+#include <shellapi.h>
 
 namespace
 {
@@ -44,30 +43,46 @@ void StopDebugLog()
 		fclose(g_debugLog);
 	}
 }
+
+//サービス動作用のメイン
+void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv);
 }
 
+#ifdef USE_WINMAIN_A
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#else
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+#endif
 {
 	SetDllDirectory(L"");
 
-	WCHAR szTask[] = L"/task";
+	WCHAR option[16] = {};
+	int argc;
+	LPWSTR* argv = CommandLineToArgvW(GetCommandLine(), &argc);
+	if( argv ){
+		if( argc >= 2 ){
+			wcsncpy_s(option, argv[1], _TRUNCATE);
+		}
+		LocalFree(argv);
+	}
+
 	if( _wcsicmp(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
 		//Taskモードを強制する
-		lpCmdLine = szTask;
+		wcscpy_s(option, L"/task");
 	}
-	if( lpCmdLine[0] == L'-' || lpCmdLine[0] == L'/' ){
-		if( _wcsicmp(L"install", lpCmdLine + 1) == 0 ){
+	if( option[0] == L'-' || option[0] == L'/' ){
+		if( _wcsicmp(L"install", option + 1) == 0 ){
 			return 0;
-		}else if( _wcsicmp(L"remove", lpCmdLine + 1) == 0 ){
+		}else if( _wcsicmp(L"remove", option + 1) == 0 ){
 			return 0;
-		}else if( _wcsicmp(L"setting", lpCmdLine + 1) == 0 ){
+		}else if( _wcsicmp(L"setting", option + 1) == 0 ){
 			//設定ダイアログを表示する
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvSetting setting;
 			setting.ShowDialog();
 			CoUninitialize();
 			return 0;
-		}else if( _wcsicmp(L"task", lpCmdLine + 1) == 0 ){
+		}else if( _wcsicmp(L"task", option + 1) == 0 ){
 			//Taskモード
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvMain::TaskMain();
@@ -112,25 +127,18 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 			}
 			CloseHandle(hMutex);
 		}
-	}else{
-		//Stop状態なのでサービスの開始を要求
-		bool started = false;
-		SC_HANDLE hScm = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-		if( hScm != NULL ){
-			SC_HANDLE hSrv = OpenService(hScm, SERVICE_NAME, SERVICE_START);
-			if( hSrv != NULL ){
-				started = StartService(hSrv, 0, NULL) != FALSE;
-				CloseServiceHandle(hSrv);
-			}
-			CloseServiceHandle(hScm);
-		}
-		if( started == false ){
-			OutputDebugString(L"_tWinMain(): Failed to start\r\n");
-		}
 	}
 
 	return 0;
 }
+
+namespace
+{
+//サービスからのコマンドのコールバック
+DWORD WINAPI service_ctrl(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext);
+
+//サービスのステータス通知用
+void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD dwCheckPoint, DWORD dwWaitHint);
 
 void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv)
 {
@@ -196,6 +204,7 @@ void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD d
 
 	SetServiceStatus(g_hStatusHandle, &ss);
 }
+}
 
 void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 {
@@ -204,10 +213,10 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 		CBlockLock lock(&g_debugLogLock);
 		SYSTEMTIME st;
 		GetLocalTime(&st);
-		fwprintf(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
-		         st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
-		         lpOutputString ? lpOutputString : L"",
-		         lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
+		fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
+		           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
+		           lpOutputString ? lpOutputString : L"",
+		           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
 		fflush(g_debugLog);
 	}
 	OutputDebugStringW(lpOutputString);

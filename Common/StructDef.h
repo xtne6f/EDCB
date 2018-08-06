@@ -36,21 +36,6 @@ struct REC_SETTING_DATA {
 	DWORD tunerID;				//強制的に使用Tunerを固定
 	//CMD_VER 2以降
 	vector<REC_FILE_SET_INFO> partialRecFolder;	//部分受信サービス録画のフォルダ
-	REC_SETTING_DATA(void) {
-		recMode = 1;
-		priority = 1;
-		tuijyuuFlag = 1;
-		serviceMode = 0;
-		pittariFlag = FALSE;
-		suspendMode = 0;
-		rebootFlag = FALSE;
-		useMargineFlag = FALSE;
-		startMargine = 10;
-		endMargine = 5;
-		continueRecFlag = 0;
-		partialRecFlag = 0;
-		tunerID = 0;
-	};
 };
 
 //登録予約情報
@@ -75,20 +60,6 @@ struct RESERVE_DATA {
 	//CMD_VER 5以降
 	vector<wstring> recFileNameList;	//録画予定ファイル名
 	//DWORD param1;					//将来用
-	RESERVE_DATA(void) {
-		SYSTEMTIME stZero = {};
-		startTime = stZero;
-		durationSecond = 0;
-		originalNetworkID = 0;
-		transportStreamID = 0;
-		serviceID = 0;
-		eventID = 0;
-		reserveID = 0;
-		presentFlag = 0;
-		overlapMode = 0;
-		startTimeEpg = stZero;
-		reserveStatus = 0;
-	};
 };
 
 enum REC_END_STATUS {
@@ -128,21 +99,6 @@ struct REC_FILE_INFO {
 	wstring errInfo;			//.errファイルの内容
 	//CMD_VER 4以降
 	BYTE protectFlag;
-	REC_FILE_INFO(void) {
-		id = 0;
-		SYSTEMTIME stZero = {};
-		startTime = stZero;
-		durationSecond = 0;
-		originalNetworkID = 0;
-		transportStreamID = 0;
-		serviceID = 0;
-		eventID = 0;
-		drops = 0;
-		scrambles = 0;
-		recStatus = 0;
-		startTimeEpg = stZero;
-		protectFlag = 0;
-	};
 	REC_FILE_INFO & operator= (const RESERVE_DATA & o) {
 		id = 0;
 		recFilePath = L"";
@@ -202,17 +158,6 @@ struct CH_DATA4 {
 	wstring chName;					//チャンネル名
 	wstring networkName;			//ts_name or network_name
 	BYTE remoconID;					//リモコンID
-	CH_DATA4(void) {
-		space = 0;
-		ch = 0;
-		originalNetworkID = 0;
-		transportStreamID = 0;
-		serviceID = 0;
-		serviceType = 0;
-		partialFlag = FALSE;
-		useViewFlag = TRUE;
-		remoconID = 0;
-	};
 };
 
 //全チューナーで認識したサービス一覧
@@ -226,15 +171,6 @@ struct CH_DATA5 {
 	wstring networkName;			//ts_name or network_name
 	BOOL epgCapFlag;				//EPGデータ取得対象かどうか
 	BOOL searchFlag;				//検索時のデフォルト検索対象サービスかどうか
-	CH_DATA5(void) {
-		originalNetworkID = 0;
-		transportStreamID = 0;
-		serviceID = 0;
-		serviceType = 0;
-		partialFlag = FALSE;
-		epgCapFlag = TRUE;
-		searchFlag = TRUE;
-	};
 };
 
 struct REGIST_TCP_INFO {
@@ -304,7 +240,6 @@ typedef EPG_EVENT_DATA EPGDB_EVENT_DATA;
 
 //EPGイベントグループ情報
 struct EPGDB_EVENTGROUP_INFO {
-	BYTE group_type;
 	vector<EPGDB_EVENT_DATA> eventDataList;
 };
 
@@ -317,42 +252,30 @@ struct EPGDB_EVENT_INFO {
 	SYSTEMTIME start_time;					//開始時間
 	BYTE DurationFlag;						//durationの値が有効かどうか
 	DWORD durationSec;						//総時間（単位：秒）
-
-	std::unique_ptr<EPGDB_SHORT_EVENT_INFO> shortInfo;		//基本情報
-	std::unique_ptr<EPGDB_EXTENDED_EVENT_INFO> extInfo;		//拡張情報
-	std::unique_ptr<EPGDB_CONTEN_INFO> contentInfo;			//ジャンル情報
-	std::unique_ptr<EPGDB_COMPONENT_INFO> componentInfo;	//映像情報
-	std::unique_ptr<EPGDB_AUDIO_COMPONENT_INFO> audioInfo;	//音声情報
-	std::unique_ptr<EPGDB_EVENTGROUP_INFO> eventGroupInfo;	//イベントグループ情報
-	std::unique_ptr<EPGDB_EVENTGROUP_INFO> eventRelayInfo;	//イベントリレー情報
-
 	BYTE freeCAFlag;						//ノンスクランブルフラグ
+	bool hasShortInfo;
+	bool hasExtInfo;
+	bool hasContentInfo;
+	bool hasComponentInfo;
+	bool hasAudioInfo;
+	BYTE eventGroupInfoGroupType;
+	BYTE eventRelayInfoGroupType;
+	EPGDB_SHORT_EVENT_INFO shortInfo;		//基本情報
+	EPGDB_EXTENDED_EVENT_INFO extInfo;		//拡張情報
+	EPGDB_CONTEN_INFO contentInfo;			//ジャンル情報
+	EPGDB_COMPONENT_INFO componentInfo;		//映像情報
+	EPGDB_AUDIO_COMPONENT_INFO audioInfo;	//音声情報
+	EPGDB_EVENTGROUP_INFO eventGroupInfo;	//イベントグループ情報
+	EPGDB_EVENTGROUP_INFO eventRelayInfo;	//イベントリレー情報
 	EPGDB_EVENT_INFO(void) {
+		hasShortInfo = false;
+		hasExtInfo = false;
+		hasContentInfo = false;
+		hasComponentInfo = false;
+		hasAudioInfo = false;
+		eventGroupInfoGroupType = 0;
+		eventRelayInfoGroupType = 0;
 	};
-	void DeepCopy(const EPGDB_EVENT_INFO & o) {
-		original_network_id = o.original_network_id;
-		transport_stream_id = o.transport_stream_id;
-		service_id = o.service_id;
-		event_id = o.event_id;
-		StartTimeFlag = o.StartTimeFlag;
-		start_time = o.start_time;
-		DurationFlag = o.DurationFlag;
-		durationSec = o.durationSec;
-		freeCAFlag = o.freeCAFlag;
-		shortInfo.reset(o.shortInfo ? new EPGDB_SHORT_EVENT_INFO(*o.shortInfo) : NULL);
-		extInfo.reset(o.extInfo ? new EPGDB_EXTENDED_EVENT_INFO(*o.extInfo) : NULL);
-		contentInfo.reset(o.contentInfo ? new EPGDB_CONTEN_INFO(*o.contentInfo) : NULL);
-		componentInfo.reset(o.componentInfo ? new EPGDB_COMPONENT_INFO(*o.componentInfo) : NULL);
-		audioInfo.reset(o.audioInfo ? new EPGDB_AUDIO_COMPONENT_INFO(*o.audioInfo) : NULL);
-		eventGroupInfo.reset(o.eventGroupInfo ? new EPGDB_EVENTGROUP_INFO(*o.eventGroupInfo) : NULL);
-		eventRelayInfo.reset(o.eventRelayInfo ? new EPGDB_EVENTGROUP_INFO(*o.eventRelayInfo) : NULL);
-	};
-#if defined(_MSC_VER) && _MSC_VER < 1900
-	//暗黙ムーブ未対応の古いコンパイラに限りコピーを定義しておく
-	//コンテナで無駄なコピーが走らないように少しだけ考慮すべき(神経質になる必要はない)
-	EPGDB_EVENT_INFO(const EPGDB_EVENT_INFO & o) { DeepCopy(o); }
-	EPGDB_EVENT_INFO & operator= (const EPGDB_EVENT_INFO & o) { DeepCopy(o); return *this; }
-#endif
 };
 
 struct EPGDB_SERVICE_INFO {
@@ -366,14 +289,6 @@ struct EPGDB_SERVICE_INFO {
 	wstring network_name;
 	wstring ts_name;
 	BYTE remote_control_key_id;
-	EPGDB_SERVICE_INFO(void) {
-		ONID = 0;
-		TSID = 0;
-		SID = 0;
-		service_type = 0;
-		partialReceptionFlag = 0;
-		remote_control_key_id = 0;
-	};
 };
 
 struct EPGDB_SERVICE_EVENT_INFO {
@@ -409,16 +324,6 @@ struct EPGDB_SEARCH_KEY_INFO {
 	//自動予約登録の条件専用
 	BYTE chkRecEnd;					//録画済かのチェックあり
 	WORD chkRecDay;					//録画済かのチェック対象期間（+20000=SID無視,+30000=TS|SID無視,+40000=ON|TS|SID無視）
-	EPGDB_SEARCH_KEY_INFO(void) {
-		regExpFlag = FALSE;
-		titleOnlyFlag = FALSE;
-		aimaiFlag = 0;
-		notContetFlag = 0;
-		notDateFlag = 0;
-		freeCAFlag = 0;
-		chkRecEnd = 0;
-		chkRecDay = 6;
-	};
 };
 
 //自動予約登録情報
@@ -549,12 +454,6 @@ struct NOTIFY_SRV_INFO {
 	wstring param4;		//パラメーター４（種類によって内容変更）
 	wstring param5;		//パラメーター５（種類によって内容変更）
 	wstring param6;		//パラメーター６（種類によって内容変更）
-	NOTIFY_SRV_INFO(void) {
-		notifyID = 0;
-		param1 = 0;
-		param2 = 0;
-		param3 = 0;
-	};
 };
 
 #endif

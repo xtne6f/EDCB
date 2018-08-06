@@ -121,4 +121,22 @@ typedef struct {
 	SERVICE_EXT_INFO* extInfo;	//詳細情報
 }SERVICE_INFO;
 
+//ファイル名プラグインの入力情報
+typedef struct {
+	SYSTEMTIME startTime;		//開始時間
+	DWORD durationSec;			//総時間（単位秒）
+	WCHAR eventName[512];		//番組名
+	WORD ONID;					//originai_network_id
+	WORD TSID;					//transport_stream_id
+	WORD SID;					//service_id
+	WORD EventID;				//evend_id（プログラム予約扱い時、0xFFFF）
+	WCHAR serviceName[256];		//サービス名
+	WCHAR bonDriverName[256];	//使用BonDriverファイル名
+	DWORD bonDriverID;			//EpgTimerSrv内部でのBonDriver識別ID
+	DWORD tunerID;				//EpgTimerSrv内部でのチューナー識別ID
+	DWORD reserveID;			//予約ID（ConvertRecName3で必須）
+	EPG_EVENT_INFO* epgInfo;	//番組情報（存在しないときNULL）（ConvertRecName3で必須）
+	DWORD sizeOfStruct;			//未使用（0または構造体サイズで初期化）（ConvertRecName3で必須）
+} PLUGIN_RESERVE_INFO;
+
 #endif

@@ -260,7 +260,11 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 	return FALSE;
 }
 
+#ifdef USE_WINMAIN_A
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#else
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+#endif
 {
 	SetDllDirectory(L"");
 	StartDebugLog();
@@ -279,10 +283,10 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 		CBlockLock lock(&g_debugLogLock);
 		SYSTEMTIME st;
 		GetLocalTime(&st);
-		fwprintf(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
-		         st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
-		         lpOutputString ? lpOutputString : L"",
-		         lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
+		fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
+		           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
+		           lpOutputString ? lpOutputString : L"",
+		           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
 		fflush(g_debugLog);
 	}
 	OutputDebugStringW(lpOutputString);

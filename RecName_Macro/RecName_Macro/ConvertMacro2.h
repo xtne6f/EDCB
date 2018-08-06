@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RecName_PlugIn.h"
+#include "../../Common/EpgDataCap3Def.h"
 
 class CConvertMacro2
 {

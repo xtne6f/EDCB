@@ -3,8 +3,10 @@
 #include "TimeUtil.h"
 #include "PathUtil.h"
 
+namespace
+{
 //タブ区切りの次のトークンに移動する
-static LPCWSTR NextToken(LPCWSTR* token)
+LPCWSTR NextToken(LPCWSTR* token)
 {
 	//tokenには現在のトークン先頭/末尾/次のトークン先頭を格納する
 	token[0] = token[2];
@@ -19,7 +21,7 @@ static LPCWSTR NextToken(LPCWSTR* token)
 }
 
 //改行をタブに、タブを空白に置換して、残ったタブの数を返す
-static DWORD FinalizeField(wstring& str)
+DWORD FinalizeField(wstring& str)
 {
 	DWORD tabCount = 0;
 	for( size_t i = 0; i < str.size(); i++ ){
@@ -33,13 +35,36 @@ static DWORD FinalizeField(wstring& str)
 	return tabCount;
 }
 
-vector<CH_DATA4*> CParseChText4::GetChDataList()
+bool ParseDateTime(LPCWSTR* token, SYSTEMTIME& st)
 {
-	vector<CH_DATA4*> chDataList;
-	for( map<DWORD, CH_DATA4>::iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		chDataList.push_back(&itr->second);
+	FILETIME ft;
+	st.wMilliseconds = 0;
+	return swscanf_s(NextToken(token), L"%hu/%hu/%hu", &st.wYear, &st.wMonth, &st.wDay) == 3 &&
+	       swscanf_s(NextToken(token), L"%hu:%hu:%hu", &st.wHour, &st.wMinute, &st.wSecond) == 3 &&
+	       SystemTimeToFileTime(&st, &ft) &&
+	       FileTimeToSystemTime(&ft, &st);
+}
+
+void ParseRecFolderList(LPCWSTR* token, vector<REC_FILE_SET_INFO>& list)
+{
+	for( int n = _wtoi(NextToken(token)); n > 0; n-- ){
+		NextToken(token);
+		list.resize(list.size() + 1);
+		list.back().recFolder.assign(token[0], token[1]);
 	}
-	return chDataList;
+	for( size_t i = 0; i < list.size(); ){
+		if( list[i].recFolder.empty() ){
+			list.erase(list.begin() + i);
+		}else{
+			Separate(list[i].recFolder, L"*", list[i].recFolder, list[i].writePlugIn);
+			Separate(list[i].writePlugIn, L"*", list[i].writePlugIn, list[i].recNamePlugIn);
+			if( list[i].writePlugIn.empty() ){
+				list[i].writePlugIn = L"Write_Default.dll";
+			}
+			i++;
+		}
+	}
+}
 }
 
 DWORD CParseChText4::AddCh(const CH_DATA4& item)
@@ -49,15 +74,16 @@ DWORD CParseChText4::AddCh(const CH_DATA4& item)
 	return itr->first;
 }
 
-void CParseChText4::DelChService(int space, int ch, WORD serviceID)
+void CParseChText4::DelCh(DWORD key)
 {
-	map<DWORD, CH_DATA4>::const_iterator itr = this->itemMap.begin();
-	while( itr != this->itemMap.end() ){
-		if( itr->second.space == space && itr->second.ch == ch && itr->second.serviceID == serviceID ){
-			itr = this->itemMap.erase(itr);
-		}else{
-			itr++;
-		}
+	this->itemMap.erase(key);
+}
+
+void CParseChText4::SetUseViewFlag(DWORD key, BOOL useViewFlag)
+{
+	map<DWORD, CH_DATA4>::iterator itr = this->itemMap.find(key);
+	if( itr != this->itemMap.end() ){
+		itr->second.useViewFlag = useViewFlag;
 	}
 }
 
@@ -109,6 +135,7 @@ bool CParseChText4::SaveLine(const pair<DWORD, CH_DATA4>& item, wstring& saveLin
 
 LONGLONG CParseChText5::AddCh(const CH_DATA5& item)
 {
+	this->parsedOrder.clear();
 	LONGLONG key = (LONGLONG)item.originalNetworkID << 32 | (LONGLONG)item.transportStreamID << 16 | item.serviceID;
 	this->itemMap[key] = item;
 	return key;
@@ -144,6 +171,12 @@ bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 	item.second.epgCapFlag = _wtoi(NextToken(token)) != 0;
 	item.second.searchFlag = _wtoi(NextToken(token)) != 0;
 	item.first = (LONGLONG)item.second.originalNetworkID << 32 | (LONGLONG)item.second.transportStreamID << 16 | item.second.serviceID;
+	if( this->itemMap.empty() ){
+		this->parsedOrder.clear();
+	}
+	if( this->itemMap.count(item.first) == 0 ){
+		this->parsedOrder.push_back(item.first);
+	}
 	return true;
 }
 
@@ -161,6 +194,19 @@ bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& save
 		item.second.searchFlag
 		);
 	return FinalizeField(saveLine) == 8;
+}
+
+bool CParseChText5::SelectItemToSave(vector<map<LONGLONG, CH_DATA5>::const_iterator>& itemList) const
+{
+	//情報の追加がなければ読み込み順を維持
+	if( this->parsedOrder.size() == this->itemMap.size() ){
+		itemList.reserve(this->parsedOrder.size());
+		for( size_t i = 0; i < this->parsedOrder.size(); i++ ){
+			itemList.push_back(this->itemMap.find(this->parsedOrder[i]));
+		}
+		return true;
+	}
+	return false;
 }
 
 void CParseContentTypeText::GetMimeType(wstring ext, wstring& mimeType) const
@@ -283,16 +329,9 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 	NextToken(token);
 	item.second.title.assign(token[0], token[1]);
 
-	FILETIME ft;
-	item.second.startTime.wMilliseconds = 0;
-	if( swscanf_s(NextToken(token), L"%hu/%hu/%hu", &item.second.startTime.wYear, &item.second.startTime.wMonth, &item.second.startTime.wDay) != 3 ||
-	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &item.second.startTime.wHour, &item.second.startTime.wMinute, &item.second.startTime.wSecond) != 3 ||
-	    SystemTimeToFileTime(&item.second.startTime, &ft) == FALSE ||
-	    FileTimeToSystemTime(&ft, &item.second.startTime) == FALSE ){
-		return false;
-	}
 	WORD wDuration[3];
-	if( swscanf_s(NextToken(token), L"%hu:%hu:%hu", &wDuration[0], &wDuration[1], &wDuration[2]) != 3 ){
+	if( ParseDateTime(token, item.second.startTime) == false ||
+	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &wDuration[0], &wDuration[1], &wDuration[2]) != 3 ){
 		return false;
 	}
 	item.second.durationSecond = (wDuration[0] * 60 + wDuration[1]) * 60 + wDuration[2];
@@ -307,11 +346,7 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 	item.second.scrambles = _wtoi64(NextToken(token));
 	item.second.recStatus = _wtoi(NextToken(token));
 
-	item.second.startTimeEpg.wMilliseconds = 0;
-	if( swscanf_s(NextToken(token), L"%hu/%hu/%hu", &item.second.startTimeEpg.wYear, &item.second.startTimeEpg.wMonth, &item.second.startTimeEpg.wDay) != 3 ||
-	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &item.second.startTimeEpg.wHour, &item.second.startTimeEpg.wMinute, &item.second.startTimeEpg.wSecond) != 3 ||
-	    SystemTimeToFileTime(&item.second.startTimeEpg, &ft) == FALSE ||
-	    FileTimeToSystemTime(&ft, &item.second.startTimeEpg) == FALSE ){
+	if( ParseDateTime(token, item.second.startTimeEpg) == false ){
 		return false;
 	}
 	NextToken(token);
@@ -345,29 +380,24 @@ bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring
 	return FinalizeField(saveLine) == 17;
 }
 
-bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseRecInfoText::SelectItemToSave(vector<map<DWORD, REC_FILE_INFO>::const_iterator>& itemList) const
 {
-	vector<const REC_FILE_INFO*> work;
-	work.reserve(this->itemMap.size());
+	itemList.reserve(this->itemMap.size());
 	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		work.push_back(&itr->second);
+		itemList.push_back(itr);
 	}
-	std::sort(work.begin(), work.end(), [](const REC_FILE_INFO* a, const REC_FILE_INFO* b) -> bool {
-		const SYSTEMTIME& sa = a->startTime;
-		const SYSTEMTIME& sb = b->startTime;
+	std::sort(itemList.begin(), itemList.end(), [](map<DWORD, REC_FILE_INFO>::const_iterator a, map<DWORD, REC_FILE_INFO>::const_iterator b) -> bool {
+		const SYSTEMTIME& sa = a->second.startTime;
+		const SYSTEMTIME& sb = b->second.startTime;
 		return sa.wYear < sb.wYear || sa.wYear == sb.wYear && (
 		       sa.wMonth < sb.wMonth || sa.wMonth == sb.wMonth && (
 		       sa.wDay < sb.wDay || sa.wDay == sb.wDay && (
 		       sa.wHour < sb.wHour || sa.wHour == sb.wHour && (
 		       sa.wMinute < sb.wMinute || sa.wMinute == sb.wMinute && (
 		       sa.wSecond < sb.wSecond || sa.wSecond == sb.wSecond && (
-		       a->originalNetworkID < b->originalNetworkID || a->originalNetworkID == b->originalNetworkID && (
-		       a->transportStreamID < b->transportStreamID)))))));
+		       a->second.originalNetworkID < b->second.originalNetworkID || a->second.originalNetworkID == b->second.originalNetworkID && (
+		       a->second.transportStreamID < b->second.transportStreamID)))))));
 	});
-	sortList.reserve(work.size());
-	for( size_t i = 0; i < work.size(); i++ ){
-		sortList.push_back(work[i]->id);
-	}
 	return true;
 }
 
@@ -468,12 +498,7 @@ bool CParseRecInfo2Text::ParseLine(LPCWSTR parseLine, pair<DWORD, PARSE_REC_INFO
 	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
 	item.second.serviceID = (WORD)_wtoi(NextToken(token));
 
-	FILETIME ft;
-	item.second.startTime.wMilliseconds = 0;
-	if( swscanf_s(NextToken(token), L"%hu/%hu/%hu", &item.second.startTime.wYear, &item.second.startTime.wMonth, &item.second.startTime.wDay) != 3 ||
-	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &item.second.startTime.wHour, &item.second.startTime.wMinute, &item.second.startTime.wSecond) != 3 ||
-	    SystemTimeToFileTime(&item.second.startTime, &ft) == FALSE ||
-	    FileTimeToSystemTime(&ft, &item.second.startTime) == FALSE ){
+	if( ParseDateTime(token, item.second.startTime) == false ){
 		return false;
 	}
 	NextToken(token);
@@ -495,16 +520,18 @@ bool CParseRecInfo2Text::SaveLine(const pair<DWORD, PARSE_REC_INFO2_ITEM>& item,
 	return FinalizeField(saveLine) == 5;
 }
 
-bool CParseRecInfo2Text::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseRecInfo2Text::SelectItemToSave(vector<map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator>& itemList) const
 {
 	map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr = this->itemMap.begin();
 	if( this->itemMap.size() > this->keepCount ){
 		advance(itr, this->itemMap.size() - this->keepCount);
+		itemList.reserve(this->keepCount);
+		for( ; itr != this->itemMap.end(); itr++ ){
+			itemList.push_back(itr);
+		}
+		return true;
 	}
-	for( ; itr != this->itemMap.end(); itr++ ){
-		sortList.push_back(itr->first);
-	}
-	return true;
+	return false;
 }
 
 DWORD CParseReserveText::AddReserve(const RESERVE_DATA& item)
@@ -574,16 +601,9 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 	}
 	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
-	FILETIME ft;
-	item.second.startTime.wMilliseconds = 0;
-	if( swscanf_s(NextToken(token), L"%hu/%hu/%hu", &item.second.startTime.wYear, &item.second.startTime.wMonth, &item.second.startTime.wDay) != 3 ||
-	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &item.second.startTime.wHour, &item.second.startTime.wMinute, &item.second.startTime.wSecond) != 3 ||
-	    SystemTimeToFileTime(&item.second.startTime, &ft) == FALSE ||
-	    FileTimeToSystemTime(&ft, &item.second.startTime) == FALSE ){
-		return false;
-	}
 	WORD wDuration[3];
-	if( swscanf_s(NextToken(token), L"%hu:%hu:%hu", &wDuration[0], &wDuration[1], &wDuration[2]) != 3 ){
+	if( ParseDateTime(token, item.second.startTime) == false ||
+	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &wDuration[0], &wDuration[1], &wDuration[2]) != 3 ){
 		return false;
 	}
 	item.second.durationSecond = (wDuration[0] * 60 + wDuration[1]) * 60 + wDuration[2];
@@ -613,7 +633,9 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 	NextToken(token);
 	item.second.comment.assign(token[0], token[1]);
 	NextToken(token);
-	vector<wstring> strRecFolderList(1, wstring(token[0], token[1]));
+	//録画フォルダパスの最初の要素だけここにある
+	item.second.recSetting.recFolderList.resize(1);
+	item.second.recSetting.recFolderList[0].recFolder.assign(token[0], token[1]);
 	item.second.recSetting.suspendMode = (BYTE)_wtoi(NextToken(token));
 	if( token[0] == token[1] ){
 		item.second.recSetting.suspendMode = 4;
@@ -626,45 +648,16 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 	item.second.recSetting.endMargine = _wtoi(NextToken(token));
 	item.second.recSetting.serviceMode = _wtoi(NextToken(token));
 
-	item.second.startTimeEpg.wMilliseconds = 0;
-	if( swscanf_s(NextToken(token), L"%hu/%hu/%hu", &item.second.startTimeEpg.wYear, &item.second.startTimeEpg.wMonth, &item.second.startTimeEpg.wDay) != 3 ||
-	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &item.second.startTimeEpg.wHour, &item.second.startTimeEpg.wMinute, &item.second.startTimeEpg.wSecond) != 3 ||
-	    SystemTimeToFileTime(&item.second.startTimeEpg, &ft) == FALSE ||
-	    FileTimeToSystemTime(&ft, &item.second.startTimeEpg) == FALSE ){
+	if( ParseDateTime(token, item.second.startTimeEpg) == false ){
 		return false;
 	}
-	for( DWORD recFolderNum = _wtoi(NextToken(token)); recFolderNum != 0; recFolderNum-- ){
-		NextToken(token);
-		strRecFolderList.push_back(wstring(token[0], token[1]));
-	}
-	for( size_t i = 0; i < strRecFolderList.size(); i++ ){
-		REC_FILE_SET_INFO folderItem;
-		if( strRecFolderList[i].empty() == false ){
-			Separate(strRecFolderList[i], L"*", folderItem.recFolder, folderItem.writePlugIn);
-			Separate(folderItem.writePlugIn, L"*", folderItem.writePlugIn, folderItem.recNamePlugIn);
-			if( folderItem.writePlugIn.empty() ){
-				folderItem.writePlugIn = L"Write_Default.dll";
-			}
-			item.second.recSetting.recFolderList.push_back(folderItem);
-		}
-	}
+	ParseRecFolderList(token, item.second.recSetting.recFolderList);
 	item.second.recSetting.continueRecFlag = _wtoi(NextToken(token)) != 0;
 	item.second.recSetting.partialRecFlag = _wtoi(NextToken(token)) != 0;
 	item.second.recSetting.tunerID = _wtoi(NextToken(token));
 	item.second.reserveStatus = _wtoi(NextToken(token));
 
-	for( DWORD recFolderNum = _wtoi(NextToken(token)); recFolderNum != 0; recFolderNum-- ){
-		REC_FILE_SET_INFO folderItem;
-		NextToken(token);
-		if( folderItem.recFolder.assign(token[0], token[1]).empty() == false ){
-			Separate(folderItem.recFolder, L"*", folderItem.recFolder, folderItem.writePlugIn);
-			Separate(folderItem.writePlugIn, L"*", folderItem.writePlugIn, folderItem.recNamePlugIn);
-			if( folderItem.writePlugIn.empty() ){
-				folderItem.writePlugIn = L"Write_Default.dll";
-			}
-			item.second.recSetting.partialRecFolder.push_back(folderItem);
-		}
-	}
+	ParseRecFolderList(token, item.second.recSetting.partialRecFolder);
 	item.second.presentFlag = 0;
 	item.second.overlapMode = 0;
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
@@ -740,14 +733,14 @@ bool CParseReserveText::SaveFooterLine(wstring& saveLine) const
 	return this->saveNextID != 0;
 }
 
-bool CParseReserveText::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseReserveText::SelectItemToSave(vector<map<DWORD, RESERVE_DATA>::const_iterator>& itemList) const
 {
 	if( this->saveNextID == 0 ){
 		//NextIDコメントが無かったときは従来どおり予約日時順で保存する
 		vector<pair<LONGLONG, const RESERVE_DATA*>> sortItemList = GetReserveList();
 		vector<pair<LONGLONG, const RESERVE_DATA*>>::const_iterator itr;
 		for( itr = sortItemList.begin(); itr != sortItemList.end(); itr++ ){
-			sortList.push_back(itr->second->reserveID);
+			itemList.push_back(this->itemMap.find(itr->second->reserveID));
 		}
 		return true;
 	}
@@ -755,10 +748,10 @@ bool CParseReserveText::SelectIDToSave(vector<DWORD>& sortList) const
 		//ID巡回中
 		map<DWORD, RESERVE_DATA>::const_iterator itr;
 		for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		for( itr = this->itemMap.begin(); itr->first <= 50000000; itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		return true;
 	}
@@ -918,18 +911,7 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 	item.second.recSetting.startMargine = _wtoi(NextToken(token));
 	item.second.recSetting.endMargine = _wtoi(NextToken(token));
 
-	for( DWORD recFolderNum = _wtoi(NextToken(token)); recFolderNum != 0; recFolderNum-- ){
-		REC_FILE_SET_INFO folderItem;
-		NextToken(token);
-		if( folderItem.recFolder.assign(token[0], token[1]).empty() == false ){
-			Separate(folderItem.recFolder, L"*", folderItem.recFolder, folderItem.writePlugIn);
-			Separate(folderItem.writePlugIn, L"*", folderItem.writePlugIn, folderItem.recNamePlugIn);
-			if( folderItem.writePlugIn.empty() ){
-				folderItem.writePlugIn = L"Write_Default.dll";
-			}
-			item.second.recSetting.recFolderList.push_back(folderItem);
-		}
-	}
+	ParseRecFolderList(token, item.second.recSetting.recFolderList);
 	item.second.recSetting.continueRecFlag = _wtoi(NextToken(token)) != 0;
 	item.second.recSetting.partialRecFlag = _wtoi(NextToken(token)) != 0;
 	item.second.recSetting.tunerID = _wtoi(NextToken(token));
@@ -938,18 +920,7 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 	item.second.searchInfo.notDateFlag = _wtoi(NextToken(token)) != 0;
 	item.second.searchInfo.freeCAFlag = (BYTE)_wtoi(NextToken(token));
 
-	for( DWORD recFolderNum = _wtoi(NextToken(token)); recFolderNum != 0; recFolderNum-- ){
-		REC_FILE_SET_INFO folderItem;
-		NextToken(token);
-		if( folderItem.recFolder.assign(token[0], token[1]).empty() == false ){
-			Separate(folderItem.recFolder, L"*", folderItem.recFolder, folderItem.writePlugIn);
-			Separate(folderItem.writePlugIn, L"*", folderItem.writePlugIn, folderItem.recNamePlugIn);
-			if( folderItem.writePlugIn.empty() ){
-				folderItem.writePlugIn = L"Write_Default.dll";
-			}
-			item.second.recSetting.partialRecFolder.push_back(folderItem);
-		}
-	}
+	ParseRecFolderList(token, item.second.recSetting.partialRecFolder);
 	item.second.searchInfo.chkRecEnd = _wtoi(NextToken(token)) != 0;
 	item.second.searchInfo.chkRecDay = (WORD)_wtoi(NextToken(token));
 	item.second.addCount = 0;
@@ -1051,15 +1022,15 @@ bool CParseEpgAutoAddText::SaveFooterLine(wstring& saveLine) const
 	return this->saveNextID != 0;
 }
 
-bool CParseEpgAutoAddText::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseEpgAutoAddText::SelectItemToSave(vector<map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator>& itemList) const
 {
 	if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
 		map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
 		for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		for( itr = this->itemMap.begin(); itr->first <= 50000000; itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		return true;
 	}
@@ -1141,34 +1112,12 @@ bool CParseManualAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, MANUAL_AU
 	item.second.recSetting.startMargine = _wtoi(NextToken(token));
 	item.second.recSetting.endMargine = _wtoi(NextToken(token));
 
-	for( DWORD recFolderNum = _wtoi(NextToken(token)); recFolderNum != 0; recFolderNum-- ){
-		REC_FILE_SET_INFO folderItem;
-		NextToken(token);
-		if( folderItem.recFolder.assign(token[0], token[1]).empty() == false ){
-			Separate(folderItem.recFolder, L"*", folderItem.recFolder, folderItem.writePlugIn);
-			Separate(folderItem.writePlugIn, L"*", folderItem.writePlugIn, folderItem.recNamePlugIn);
-			if( folderItem.writePlugIn.empty() ){
-				folderItem.writePlugIn = L"Write_Default.dll";
-			}
-			item.second.recSetting.recFolderList.push_back(folderItem);
-		}
-	}
+	ParseRecFolderList(token, item.second.recSetting.recFolderList);
 	item.second.recSetting.continueRecFlag = _wtoi(NextToken(token)) != 0;
 	item.second.recSetting.partialRecFlag = _wtoi(NextToken(token)) != 0;
 	item.second.recSetting.tunerID = _wtoi(NextToken(token));
 
-	for( DWORD recFolderNum = _wtoi(NextToken(token)); recFolderNum != 0; recFolderNum-- ){
-		REC_FILE_SET_INFO folderItem;
-		NextToken(token);
-		if( folderItem.recFolder.assign(token[0], token[1]).empty() == false ){
-			Separate(folderItem.recFolder, L"*", folderItem.recFolder, folderItem.writePlugIn);
-			Separate(folderItem.writePlugIn, L"*", folderItem.writePlugIn, folderItem.recNamePlugIn);
-			if( folderItem.writePlugIn.empty() ){
-				folderItem.writePlugIn = L"Write_Default.dll";
-			}
-			item.second.recSetting.partialRecFolder.push_back(folderItem);
-		}
-	}
+	ParseRecFolderList(token, item.second.recSetting.partialRecFolder);
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
 	return true;
 }
@@ -1227,15 +1176,15 @@ bool CParseManualAutoAddText::SaveFooterLine(wstring& saveLine) const
 	return this->saveNextID != 0;
 }
 
-bool CParseManualAutoAddText::SelectIDToSave(vector<DWORD>& sortList) const
+bool CParseManualAutoAddText::SelectItemToSave(vector<map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator>& itemList) const
 {
 	if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
 		map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr;
 		for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		for( itr = this->itemMap.begin(); itr->first <= 50000000; itr++ ){
-			sortList.push_back(itr->first);
+			itemList.push_back(itr);
 		}
 		return true;
 	}

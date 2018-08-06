@@ -6,51 +6,15 @@
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type ListBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
-    <Grid>
-        <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
-            <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown" MouseLeave="canvas_MouseLeave">
-                <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                <Canvas Canvas.ZIndex="20" x:Name="popupItem" IsHitTestVisible="False" Visibility="Hidden">
-                    <Grid x:Name="popupItemContainer">
-                        <Border BorderBrush="{Binding ElementName=epgViewPanel, Path=Background}" BorderThickness="0,0.5,1,0.5">
-                            <Border.Background>
-                                <Binding ElementName="popupItemContainer" Path="Background"/>
-                            </Border.Background>
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
-                            </Border.Effect>
-                        </Border>
-                        <StackPanel Orientation="Vertical" Margin="0.5">
-                            <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition x:Name="minGrid"/>
-                                <ColumnDefinition x:Name="infoGrid"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="minText" Grid.Column="0"/>
-                            <TextBlock x:Name="titleText" Grid.Column="1" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
-                            </Grid>
-                            <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
-                        </StackPanel>
-                    </Grid>
-                </Canvas>
-            </Canvas>
-        </ScrollViewer>            
-    </Grid>
+    <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
+        <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown" MouseLeave="canvas_MouseLeave">
+            <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <StackPanel IsHitTestVisible="False" Name="popupItem" UseLayoutRounding="True" Visibility="Hidden" ZIndex="20">
+                <StackPanel.Effect>
+                    <DropShadowEffect BlurRadius="12" Opacity="0.5" />
+                </StackPanel.Effect>
+                <local:EpgViewPanel x:Name="popupItemPanel" />
+            </StackPanel>
+        </Canvas>
+    </ScrollViewer>
 </UserControl>

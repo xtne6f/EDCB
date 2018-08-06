@@ -6,7 +6,7 @@
 
 //#define DEBUG_EIT
 #ifdef DEBUG_EIT
-static char g_szDebugEIT[128];
+static WCHAR g_szDebugEIT[128];
 #endif
 
 namespace Desc = AribDescriptor;
@@ -103,8 +103,8 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		}
 
 #ifdef DEBUG_EIT
-		sprintf_s(g_szDebugEIT, "%c%04x.%02x%02x.%02d.%d\r\n", table_id <= 0x4F ? 'P' : 'S',
-			eitEventInfo->event_id, table_id, section_number, version_number, siTag.time % 1000000);
+		swprintf_s(g_szDebugEIT, L"%c%04x.%02x%02x.%02d.%d\r\n", table_id <= 0x4F ? L'P' : L'S',
+		           event_id, table_id, section_number, version_number, siTag.time % 1000000);
 #endif
 		//[actual]と[other]は等価に扱う
 		//[p/f]と[schedule]は各々完全に独立してデータベースを作成する
@@ -290,84 +290,56 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 
 void CEpgDBUtil::AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lpParent, WORD onid, WORD tsid)
 {
-	BOOL foundShort = FALSE;
-	BOOL foundContent = FALSE;
-	BOOL foundComponent = FALSE;
-	BOOL foundGroup = FALSE;
-	BOOL foundRelay = FALSE;
+	eventInfo->hasShortInfo = false;
+	eventInfo->hasContentInfo = false;
+	eventInfo->hasComponentInfo = false;
+	eventInfo->eventGroupInfoGroupType = 0;
+	eventInfo->eventRelayInfoGroupType = 0;
 	Desc::CDescriptor::CLoopPointer lp = lpParent;
 	if( eit.EnterLoop(lp) ){
 		for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
 			switch( eit.GetNumber(Desc::descriptor_tag, lp) ){
 			case Desc::short_event_descriptor:
 				AddShortEvent(eventInfo, eit, lp);
-				foundShort = TRUE;
 				break;
 			case Desc::content_descriptor:
 				AddContent(eventInfo, eit, lp);
-				foundContent = TRUE;
 				break;
 			case Desc::component_descriptor:
 				AddComponent(eventInfo, eit, lp);
-				foundComponent = TRUE;
 				break;
 			case Desc::event_group_descriptor:
 				if( eit.GetNumber(Desc::group_type, lp) == 1 ){
 					AddEventGroup(eventInfo, eit, lp, onid, tsid);
-					foundGroup = TRUE;
 				}else if( eit.GetNumber(Desc::group_type, lp) == 2 || eit.GetNumber(Desc::group_type, lp) == 4 ){
 					AddEventRelay(eventInfo, eit, lp, onid, tsid);
-					foundRelay = TRUE;
 				}
 				break;
 			}
 		}
 	}
 	if( AddAudioComponent(eventInfo, eit, lpParent) == FALSE ){
-		eventInfo->audioInfo.reset();
-	}
-	if( foundShort == FALSE ){
-		eventInfo->shortInfo.reset();
-	}
-	if( foundContent == FALSE ){
-		eventInfo->contentInfo.reset();
-	}
-	if( foundComponent == FALSE ){
-		eventInfo->componentInfo.reset();
-	}
-	if( foundGroup == FALSE ){
-		eventInfo->eventGroupInfo.reset();
-	}
-	if( foundRelay == FALSE ){
-		eventInfo->eventRelayInfo.reset();
+		eventInfo->hasAudioInfo = false;
 	}
 }
 
 void CEpgDBUtil::AddShortEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lp)
 {
-	if( eventInfo->shortInfo == NULL ){
-		eventInfo->shortInfo.reset(new EPGDB_SHORT_EVENT_INFO);
+	eventInfo->hasShortInfo = true;
+	eventInfo->shortInfo.event_name.clear();
+	eventInfo->shortInfo.text_char.clear();
+	DWORD srcSize;
+	const BYTE* src = eit.GetBinary(Desc::event_name_char, &srcSize, lp);
+	if( src && srcSize > 0 ){
+		this->arib.PSISI(src, srcSize, &eventInfo->shortInfo.event_name);
 	}
-	{
-		wstring event_name;
-		wstring text_char;
-		const BYTE* src;
-		DWORD srcSize;
-		src = eit.GetBinary(Desc::event_name_char, &srcSize, lp);
-		if( src && srcSize > 0 ){
-			this->arib.PSISI(src, srcSize, &event_name);
-		}
-		src = eit.GetBinary(Desc::text_char, &srcSize, lp);
-		if( src && srcSize > 0 ){
-			this->arib.PSISI(src, srcSize, &text_char);
-		}
+	src = eit.GetBinary(Desc::text_char, &srcSize, lp);
+	if( src && srcSize > 0 ){
+		this->arib.PSISI(src, srcSize, &eventInfo->shortInfo.text_char);
+	}
 #ifdef DEBUG_EIT
-		text_char = g_szDebugEIT + text_char;
+	eventInfo->shortInfo.text_char = g_szDebugEIT + eventInfo->shortInfo.text_char;
 #endif
-
-		eventInfo->shortInfo->event_name.swap(event_name);
-		eventInfo->shortInfo->text_char.swap(text_char);
-	}
 }
 
 BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lpParent)
@@ -430,13 +402,11 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 		if( foundFlag == FALSE ){
 			return FALSE;
 		}
-		if( eventInfo->extInfo == NULL ){
-			eventInfo->extInfo.reset(new EPGDB_EXTENDED_EVENT_INFO);
-		}
+		eventInfo->hasExtInfo = true;
 #ifdef DEBUG_EIT
 		extendText = g_szDebugEIT + extendText;
 #endif
-		eventInfo->extInfo->text_char.swap(extendText);
+		eventInfo->extInfo.text_char.swap(extendText);
 	}
 
 	return TRUE;
@@ -444,43 +414,31 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 
 void CEpgDBUtil::AddContent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lp)
 {
-	if( eventInfo->contentInfo == NULL ){
-		eventInfo->contentInfo.reset(new EPGDB_CONTEN_INFO);
-	}
-	{
-		eventInfo->contentInfo->nibbleList.clear();
-		if( eit.EnterLoop(lp) ){
-			eventInfo->contentInfo->nibbleList.resize(eit.GetLoopSize(lp));
-			for( DWORD i=0; eit.SetLoopIndex(lp, i); i++ ){
-				EPG_CONTENT nibble;
-				nibble.content_nibble_level_1 = (BYTE)eit.GetNumber(Desc::content_nibble_level_1, lp);
-				nibble.content_nibble_level_2 = (BYTE)eit.GetNumber(Desc::content_nibble_level_2, lp);
-				nibble.user_nibble_1 = (BYTE)eit.GetNumber(Desc::user_nibble_1, lp);
-				nibble.user_nibble_2 = (BYTE)eit.GetNumber(Desc::user_nibble_2, lp);
-				eventInfo->contentInfo->nibbleList[i] = nibble;
-			}
+	eventInfo->hasContentInfo = true;
+	eventInfo->contentInfo.nibbleList.clear();
+	if( eit.EnterLoop(lp) ){
+		eventInfo->contentInfo.nibbleList.resize(eit.GetLoopSize(lp));
+		for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
+			EPG_CONTENT& nibble = eventInfo->contentInfo.nibbleList[i];
+			nibble.content_nibble_level_1 = (BYTE)eit.GetNumber(Desc::content_nibble_level_1, lp);
+			nibble.content_nibble_level_2 = (BYTE)eit.GetNumber(Desc::content_nibble_level_2, lp);
+			nibble.user_nibble_1 = (BYTE)eit.GetNumber(Desc::user_nibble_1, lp);
+			nibble.user_nibble_2 = (BYTE)eit.GetNumber(Desc::user_nibble_2, lp);
 		}
 	}
 }
 
 void CEpgDBUtil::AddComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lp)
 {
-	if( eventInfo->componentInfo == NULL ){
-		eventInfo->componentInfo.reset(new EPGDB_COMPONENT_INFO);
-	}
-	{
-		eventInfo->componentInfo->stream_content = (BYTE)eit.GetNumber(Desc::stream_content, lp);
-		eventInfo->componentInfo->component_type = (BYTE)eit.GetNumber(Desc::component_type, lp);
-		eventInfo->componentInfo->component_tag = (BYTE)eit.GetNumber(Desc::component_tag, lp);
-
-		wstring text_char;
-		DWORD srcSize;
-		const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
-		if( src && srcSize > 0 ){
-			this->arib.PSISI(src, srcSize, &text_char);
-		}
-		eventInfo->componentInfo->text_char.swap(text_char);
-
+	eventInfo->hasComponentInfo = true;
+	eventInfo->componentInfo.stream_content = (BYTE)eit.GetNumber(Desc::stream_content, lp);
+	eventInfo->componentInfo.component_type = (BYTE)eit.GetNumber(Desc::component_type, lp);
+	eventInfo->componentInfo.component_tag = (BYTE)eit.GetNumber(Desc::component_tag, lp);
+	eventInfo->componentInfo.text_char.clear();
+	DWORD srcSize;
+	const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
+	if( src && srcSize > 0 ){
+		this->arib.PSISI(src, srcSize, &eventInfo->componentInfo.text_char);
 	}
 }
 
@@ -499,16 +457,14 @@ BOOL CEpgDBUtil::AddAudioComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDes
 		if( listSize == 0 ){
 			return FALSE;
 		}
-		if( eventInfo->audioInfo == NULL ){
-			eventInfo->audioInfo.reset(new EPGDB_AUDIO_COMPONENT_INFO);
-		}
-		eventInfo->audioInfo->componentList.clear();
-		eventInfo->audioInfo->componentList.resize(listSize);
+		eventInfo->hasAudioInfo = true;
+		eventInfo->audioInfo.componentList.clear();
+		eventInfo->audioInfo.componentList.resize(listSize);
 
-		for( WORD i=0, j=0; j<eventInfo->audioInfo->componentList.size(); i++ ){
+		for( WORD i=0, j=0; j<eventInfo->audioInfo.componentList.size(); i++ ){
 			eit.SetLoopIndex(lp, i);
 			if( eit.GetNumber(Desc::descriptor_tag, lp) == Desc::audio_component_descriptor ){
-				EPGDB_AUDIO_COMPONENT_INFO_DATA& item = eventInfo->audioInfo->componentList[j++];
+				EPGDB_AUDIO_COMPONENT_INFO_DATA& item = eventInfo->audioInfo.componentList[j++];
 
 				item.stream_content = (BYTE)eit.GetNumber(Desc::stream_content, lp);
 				item.component_type = (BYTE)eit.GetNumber(Desc::component_type, lp);
@@ -521,14 +477,12 @@ BOOL CEpgDBUtil::AddAudioComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDes
 				item.quality_indicator = (BYTE)eit.GetNumber(Desc::quality_indicator, lp);
 				item.sampling_rate = (BYTE)eit.GetNumber(Desc::sampling_rate, lp);
 
-				wstring text_char;
+				item.text_char.clear();
 				DWORD srcSize;
 				const BYTE* src = eit.GetBinary(Desc::text_char, &srcSize, lp);
 				if( src && srcSize > 0 ){
-					this->arib.PSISI(src, srcSize, &text_char);
+					this->arib.PSISI(src, srcSize, &item.text_char);
 				}
-				item.text_char.swap(text_char);
-
 			}
 		}
 	}
@@ -538,64 +492,47 @@ BOOL CEpgDBUtil::AddAudioComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDes
 
 void CEpgDBUtil::AddEventGroup(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lp, WORD onid, WORD tsid)
 {
-	if( eventInfo->eventGroupInfo == NULL ){
-		eventInfo->eventGroupInfo.reset(new EPGDB_EVENTGROUP_INFO);
-	}
-	{
-		eventInfo->eventGroupInfo->group_type = (BYTE)eit.GetNumber(Desc::group_type, lp);
-		eventInfo->eventGroupInfo->eventDataList.clear();
-		if( eit.EnterLoop(lp) ){
-			eventInfo->eventGroupInfo->eventDataList.resize(eit.GetLoopSize(lp));
-			for( DWORD i=0; eit.SetLoopIndex(lp, i); i++ ){
-				EPG_EVENT_DATA item;
-				item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
-				item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
-				item.original_network_id = onid;
-				item.transport_stream_id = tsid;
-
-				eventInfo->eventGroupInfo->eventDataList[i] = item;
-			}
+	eventInfo->eventGroupInfoGroupType = 1;
+	eventInfo->eventGroupInfo.eventDataList.clear();
+	if( eit.EnterLoop(lp) ){
+		eventInfo->eventGroupInfo.eventDataList.resize(eit.GetLoopSize(lp));
+		for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
+			EPG_EVENT_DATA& item = eventInfo->eventGroupInfo.eventDataList[i];
+			item.original_network_id = onid;
+			item.transport_stream_id = tsid;
+			item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
+			item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
 		}
 	}
 }
 
 void CEpgDBUtil::AddEventRelay(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lp, WORD onid, WORD tsid)
 {
-	if( eventInfo->eventRelayInfo == NULL ){
-		eventInfo->eventRelayInfo.reset(new EPGDB_EVENTGROUP_INFO);
-	}
-	{
-		eventInfo->eventRelayInfo->group_type = (BYTE)eit.GetNumber(Desc::group_type, lp);
-		eventInfo->eventRelayInfo->eventDataList.clear();
-		if( eventInfo->eventRelayInfo->group_type == 0x02 ){
-			if( eit.EnterLoop(lp) ){
-				eventInfo->eventRelayInfo->eventDataList.resize(eit.GetLoopSize(lp));
-				for( DWORD i=0; eit.SetLoopIndex(lp, i); i++ ){
-					EPG_EVENT_DATA item;
-					item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
-					item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
-					item.original_network_id = onid;
-					item.transport_stream_id = tsid;
-
-					eventInfo->eventRelayInfo->eventDataList[i] = item;
-				}
-			}
-		}else{
-			if( eit.EnterLoop(lp, 1) ){
-				//他ネットワークへのリレー情報は第2ループにあるので、これは記述子のevent_countの値とは異なる
-				eventInfo->eventRelayInfo->eventDataList.resize(eit.GetLoopSize(lp));
-				for( DWORD i=0; eit.SetLoopIndex(lp, i); i++ ){
-					EPG_EVENT_DATA item;
-					item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
-					item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
-					item.original_network_id = (WORD)eit.GetNumber(Desc::original_network_id, lp);
-					item.transport_stream_id = (WORD)eit.GetNumber(Desc::transport_stream_id, lp);
-
-					eventInfo->eventRelayInfo->eventDataList[i] = item;
-				}
+	eventInfo->eventRelayInfoGroupType = (BYTE)eit.GetNumber(Desc::group_type, lp);
+	eventInfo->eventRelayInfo.eventDataList.clear();
+	if( eventInfo->eventRelayInfoGroupType == 2 ){
+		if( eit.EnterLoop(lp) ){
+			eventInfo->eventRelayInfo.eventDataList.resize(eit.GetLoopSize(lp));
+			for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
+				EPG_EVENT_DATA& item = eventInfo->eventRelayInfo.eventDataList[i];
+				item.original_network_id = onid;
+				item.transport_stream_id = tsid;
+				item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
+				item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
 			}
 		}
-
+	}else{
+		if( eit.EnterLoop(lp, 1) ){
+			//他ネットワークへのリレー情報は第2ループにあるので、これは記述子のevent_countの値とは異なる
+			eventInfo->eventRelayInfo.eventDataList.resize(eit.GetLoopSize(lp));
+			for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
+				EPG_EVENT_DATA& item = eventInfo->eventRelayInfo.eventDataList[i];
+				item.original_network_id = (WORD)eit.GetNumber(Desc::original_network_id, lp);
+				item.transport_stream_id = (WORD)eit.GetNumber(Desc::transport_stream_id, lp);
+				item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
+				item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
+			}
+		}
 	}
 }
 
@@ -787,7 +724,7 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 		lp = Desc::CDescriptor::CLoopPointer();
 		if( sit.EnterLoop(lp, 1) ){
 			for( DWORD i = 0; sit.SetLoopIndex(lp, i); i++ ){
-				EPGDB_SERVICE_INFO item;
+				EPGDB_SERVICE_INFO item = {};
 				item.ONID = ONID;
 				item.TSID = TSID;
 				item.SID = (WORD)sit.GetNumber(Desc::service_id, lp);
@@ -842,7 +779,7 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 			map<WORD, EPGDB_SERVICE_INFO>::iterator itrS;
 			itrS = itrTS->second.serviceList.find((WORD)sdt.GetNumber(Desc::service_id, lp));
 			if( itrS == itrTS->second.serviceList.end()){
-				EPGDB_SERVICE_INFO item;
+				EPGDB_SERVICE_INFO item = {};
 				item.ONID = key >> 16;
 				item.TSID = key & 0xFFFF;
 				item.SID = (WORD)sdt.GetNumber(Desc::service_id, lp);
@@ -919,32 +856,26 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 
 	map<WORD, EVENT_INFO>::iterator itrEvt = itr->second.eventMap.begin();
 	while( evtPF[0] || itrEvt != itr->second.eventMap.end() ){
-		EPGDB_EXTENDED_EVENT_INFO* extInfoSchedule = NULL;
-		EPGDB_EVENT_INFO* evt;
 		if( itrEvt == itr->second.eventMap.end() || evtPF[0] && evtPF[0]->event_id < itrEvt->first ){
 			//[p/f]を出力
-			evt = evtPF[0];
+			this->epgInfoList.db.push_back(*evtPF[0]);
 			evtPF[0] = evtPF[1];
 			evtPF[1] = NULL;
 		}else{
 			if( evtPF[0] && evtPF[0]->event_id == itrEvt->first ){
 				//両方あるときは[p/f]を優先
-				evt = evtPF[0];
+				this->epgInfoList.db.push_back(*evtPF[0]);
 				evtPF[0] = evtPF[1];
 				evtPF[1] = NULL;
-				if( evt->extInfo == NULL && itrEvt->second.db.extInfo ){
-					extInfoSchedule = itrEvt->second.db.extInfo.get();
+				if( this->epgInfoList.db.back().hasExtInfo == false && itrEvt->second.db.hasExtInfo ){
+					this->epgInfoList.db.back().hasExtInfo = true;
+					this->epgInfoList.db.back().extInfo = itrEvt->second.db.extInfo;
 				}
 			}else{
 				//[schedule]を出力
-				evt = &itrEvt->second.db;
+				this->epgInfoList.db.push_back(itrEvt->second.db);
 			}
 			itrEvt++;
-		}
-		this->epgInfoList.db.resize(this->epgInfoList.db.size() + 1);
-		this->epgInfoList.db.back().DeepCopy(*evt);
-		if( extInfoSchedule ){
-			this->epgInfoList.db.back().extInfo.reset(new EPGDB_EXTENDED_EVENT_INFO(*extInfoSchedule));
 		}
 	}
 
@@ -989,34 +920,29 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	map<WORD, EVENT_INFO>::iterator itrEvt = itr->second.eventMap.begin();
 	while( evtPF[0] || itrEvt != itr->second.eventMap.end() ){
 		//マスターを直接参照して構築する
-		EPGDB_EXTENDED_EVENT_INFO* extInfoSchedule = NULL;
-		EPGDB_EVENT_INFO* evt;
+		EPG_EVENT_INFO data;
+		EPG_EXTENDED_EVENT_INFO extInfo;
 		if( itrEvt == itr->second.eventMap.end() || evtPF[0] && evtPF[0]->event_id < itrEvt->first ){
 			//[p/f]を出力
-			evt = evtPF[0];
+			data = adapter.Create(evtPF[0]);
 			evtPF[0] = evtPF[1];
 			evtPF[1] = NULL;
 		}else{
 			if( evtPF[0] && evtPF[0]->event_id == itrEvt->first ){
 				//両方あるときは[p/f]を優先
-				evt = evtPF[0];
+				data = adapter.Create(evtPF[0]);
 				evtPF[0] = evtPF[1];
 				evtPF[1] = NULL;
-				if( evt->extInfo == NULL ){
-					extInfoSchedule = itrEvt->second.db.extInfo.get();
+				if( data.extInfo == NULL && itrEvt->second.db.hasExtInfo ){
+					extInfo.text_charLength = (WORD)itrEvt->second.db.extInfo.text_char.size();
+					extInfo.text_char = itrEvt->second.db.extInfo.text_char.c_str();
+					data.extInfo = &extInfo;
 				}
 			}else{
 				//[schedule]を出力
-				evt = &itrEvt->second.db;
+				data = adapter.Create(&itrEvt->second.db);
 			}
 			itrEvt++;
-		}
-		EPG_EVENT_INFO data = adapter.Create(evt);
-		EPG_EXTENDED_EVENT_INFO extInfo;
-		if( extInfoSchedule ){
-			extInfo.text_charLength = (WORD)extInfoSchedule->text_char.size();
-			extInfo.text_char = extInfoSchedule->text_char.c_str();
-			data.extInfo = &extInfo;
 		}
 		if( enumEpgInfoListProc(1, &data, param) == FALSE ){
 			return TRUE;
@@ -1095,16 +1021,15 @@ BOOL CEpgDBUtil::GetEpgInfo(
 	}
 
 	if( itr->second.nowEvent.empty() == false && nextFlag == FALSE ){
-		this->epgInfo.db.resize(1);
-		this->epgInfo.db.back().DeepCopy(itr->second.nowEvent.back().db);
+		this->epgInfo.db.push_back(itr->second.nowEvent.back().db);
 	}else if( itr->second.nextEvent.empty() == false && nextFlag == TRUE ){
-		this->epgInfo.db.resize(1);
-		this->epgInfo.db.back().DeepCopy(itr->second.nextEvent.back().db);
+		this->epgInfo.db.push_back(itr->second.nextEvent.back().db);
 	}
 	if( this->epgInfo.db.empty() == false ){
 		WORD eventID = this->epgInfo.db.back().event_id;
-		if( this->epgInfo.db.back().extInfo == NULL && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID].db.extInfo ){
-			this->epgInfo.db.back().extInfo.reset(new EPGDB_EXTENDED_EVENT_INFO(*itr->second.eventMap[eventID].db.extInfo));
+		if( this->epgInfo.db.back().hasExtInfo == false && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID].db.hasExtInfo ){
+			this->epgInfo.db.back().hasExtInfo = true;
+			this->epgInfo.db.back().extInfo = itr->second.eventMap[eventID].db.extInfo;
 		}
 		this->epgInfo.Update();
 		*epgInfo_ = this->epgInfo.data.get();
@@ -1142,15 +1067,14 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 	}
 
 	if( itr->second.nowEvent.empty() == false && itr->second.nowEvent.back().db.event_id == eventID ){
-		this->searchEpgInfo.db.resize(1);
-		this->searchEpgInfo.db.back().DeepCopy(itr->second.nowEvent.back().db);
+		this->searchEpgInfo.db.push_back(itr->second.nowEvent.back().db);
 	}else if( itr->second.nextEvent.empty() == false && itr->second.nextEvent.back().db.event_id == eventID ){
-		this->searchEpgInfo.db.resize(1);
-		this->searchEpgInfo.db.back().DeepCopy(itr->second.nextEvent.back().db);
+		this->searchEpgInfo.db.push_back(itr->second.nextEvent.back().db);
 	}
 	if( this->searchEpgInfo.db.empty() == false ){
-		if( this->searchEpgInfo.db.back().extInfo == NULL && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID].db.extInfo ){
-			this->searchEpgInfo.db.back().extInfo.reset(new EPGDB_EXTENDED_EVENT_INFO(*itr->second.eventMap[eventID].db.extInfo));
+		if( this->searchEpgInfo.db.back().hasExtInfo == false && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID].db.hasExtInfo ){
+			this->searchEpgInfo.db.back().hasExtInfo = true;
+			this->searchEpgInfo.db.back().extInfo = itr->second.eventMap[eventID].db.extInfo;
 		}
 		this->searchEpgInfo.Update();
 		*epgInfo_ = this->searchEpgInfo.data.get();
@@ -1160,8 +1084,7 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 		map<WORD, EVENT_INFO>::iterator itrEvent;
 		itrEvent = itr->second.eventMap.find(eventID);
 		if( itrEvent != itr->second.eventMap.end() ){
-			this->searchEpgInfo.db.resize(1);
-			this->searchEpgInfo.db.back().DeepCopy(itrEvent->second.db);
+			this->searchEpgInfo.db.push_back(itrEvent->second.db);
 			this->searchEpgInfo.Update();
 			*epgInfo_ = this->searchEpgInfo.data.get();
 			return TRUE;

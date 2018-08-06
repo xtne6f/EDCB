@@ -2,24 +2,23 @@
 
 #include "PathUtil.h"
 #include "StringUtil.h"
-#include <stdio.h>
 
 template <class K, class V>
 class CParseText
 {
 public:
 	CParseText() : isUtf8(false) {}
-	virtual ~CParseText() {}
 	bool ParseText(LPCWSTR path = NULL);
 	const map<K, V>& GetMap() const { return this->itemMap; }
 	const wstring& GetFilePath() const { return this->filePath; }
 	void SetFilePath(LPCWSTR path) { this->filePath = path; this->isUtf8 = IsUtf8Default(); }
 protected:
+	typedef CParseText<K, V> Base;
 	bool SaveText() const;
 	virtual bool ParseLine(LPCWSTR parseLine, pair<K, V>& item) = 0;
 	virtual bool SaveLine(const pair<K, V>& item, wstring& saveLine) const { return false; }
 	virtual bool SaveFooterLine(wstring& saveLine) const { return false; }
-	virtual bool SelectIDToSave(vector<K>& sortList) const { return false; }
+	virtual bool SelectItemToSave(vector<typename map<K, V>::const_iterator>& itemList) const { return false; }
 	virtual bool IsUtf8Default() const { return false; }
 	map<K, V> itemMap;
 	wstring filePath;
@@ -88,7 +87,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 				}
 				pair<K, V> item;
 				if( ParseLine(&parseBuf.front(), item) ){
-					this->itemMap.insert(item);
+					this->itemMap.insert(std::move(item));
 				}
 				if( eof ){
 					offset = i;
@@ -131,12 +130,11 @@ bool CParseText<K, V>::SaveText() const
 	}
 	wstring saveLine;
 	vector<char> saveBuf;
-	vector<K> idList;
-	if( SelectIDToSave(idList) ){
-		for( size_t i = 0; i < idList.size(); i++ ){
-			auto itr = this->itemMap.find(idList[i]);
+	vector<typename map<K, V>::const_iterator> itemList;
+	if( SelectItemToSave(itemList) ){
+		for( size_t i = 0; i < itemList.size(); i++ ){
 			saveLine.clear();
-			if( itr != this->itemMap.end() && SaveLine(*itr, saveLine) ){
+			if( SaveLine(*itemList[i], saveLine) ){
 				saveLine += L"\r\n";
 				size_t len;
 				if( this->isUtf8 ){

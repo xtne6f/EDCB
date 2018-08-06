@@ -38,7 +38,11 @@ using std::vector;
 //#undef NULL
 //#define NULL nullptr
 
+#ifdef _MSC_VER
 #define PRINTF_FORMAT_SZ _In_z_ _Printf_format_string_
+#else
+#define PRINTF_FORMAT_SZ
+#endif
 
 inline void _OutputDebugString(PRINTF_FORMAT_SZ const WCHAR* format, ...)
 {

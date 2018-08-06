@@ -445,16 +445,16 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_DATA* val, const BYTE* buff, DWORD buffSiz
 	return TRUE;
 }
 
-DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_EVENTGROUP_INFO& val )
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_EVENTGROUP_INFO& val, BYTE groupType )
 {
 	DWORD pos = buffOffset + sizeof(DWORD);
-	pos += WriteVALUE(ver, buff, pos, val.group_type);
+	pos += WriteVALUE(ver, buff, pos, groupType);
 	pos += WriteVALUE(ver, buff, pos, val.eventDataList);
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
 }
 
-BOOL ReadVALUE( WORD ver, EPGDB_EVENTGROUP_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( WORD ver, EPGDB_EVENTGROUP_INFO* val, BYTE* groupType, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	DWORD pos = 0;
 	DWORD size = 0;
@@ -464,7 +464,7 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENTGROUP_INFO* val, const BYTE* buff, DWORD bu
 		return FALSE;
 	}
 	buffSize = valSize;
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->group_type );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, groupType );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->eventDataList );
 	*readSize = valSize;
 	return TRUE;
@@ -481,13 +481,13 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_EVENT_INFO
 	pos += WriteVALUE(ver, buff, pos, val.start_time);
 	pos += WriteVALUE(ver, buff, pos, val.DurationFlag);
 	pos += WriteVALUE(ver, buff, pos, val.durationSec);
-	pos += val.shortInfo ? WriteVALUE(ver, buff, pos, *val.shortInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
-	pos += val.extInfo ? WriteVALUE(ver, buff, pos, *val.extInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
-	pos += val.contentInfo ? WriteVALUE(ver, buff, pos, *val.contentInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
-	pos += val.componentInfo ? WriteVALUE(ver, buff, pos, *val.componentInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
-	pos += val.audioInfo ? WriteVALUE(ver, buff, pos, *val.audioInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
-	pos += val.eventGroupInfo ? WriteVALUE(ver, buff, pos, *val.eventGroupInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
-	pos += val.eventRelayInfo ? WriteVALUE(ver, buff, pos, *val.eventRelayInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
+	pos += val.hasShortInfo ? WriteVALUE(ver, buff, pos, val.shortInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
+	pos += val.hasExtInfo ? WriteVALUE(ver, buff, pos, val.extInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
+	pos += val.hasContentInfo ? WriteVALUE(ver, buff, pos, val.contentInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
+	pos += val.hasComponentInfo ? WriteVALUE(ver, buff, pos, val.componentInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
+	pos += val.hasAudioInfo ? WriteVALUE(ver, buff, pos, val.audioInfo) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
+	pos += val.eventGroupInfoGroupType ? WriteVALUE(ver, buff, pos, val.eventGroupInfo, val.eventGroupInfoGroupType) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
+	pos += val.eventRelayInfoGroupType ? WriteVALUE(ver, buff, pos, val.eventRelayInfo, val.eventRelayInfoGroupType) : WriteVALUE(0, buff, pos, (DWORD)sizeof(DWORD));
 	pos += WriteVALUE(ver, buff, pos, val.freeCAFlag);
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
@@ -515,9 +515,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 	{
 		DWORD infoValSize;
 
-		val->shortInfo.reset(new EPGDB_SHORT_EVENT_INFO);
-		if( ReadVALUE(ver, val->shortInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
-			val->shortInfo = NULL;
+		val->hasShortInfo = true;
+		if( ReadVALUE(ver, &val->shortInfo, buff + pos, buffSize - pos, &size) == FALSE ){
+			val->hasShortInfo = false;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -526,9 +526,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		val->extInfo.reset(new EPGDB_EXTENDED_EVENT_INFO);
-		if( ReadVALUE(ver, val->extInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
-			val->extInfo = NULL;
+		val->hasExtInfo = true;
+		if( ReadVALUE(ver, &val->extInfo, buff + pos, buffSize - pos, &size) == FALSE ){
+			val->hasExtInfo = false;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -537,9 +537,10 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		val->contentInfo.reset(new EPGDB_CONTEN_INFO);
-		if( ReadVALUE(ver, val->contentInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
-			val->contentInfo = NULL;
+		val->hasContentInfo = true;
+		val->contentInfo.nibbleList.clear();
+		if( ReadVALUE(ver, &val->contentInfo, buff + pos, buffSize - pos, &size) == FALSE ){
+			val->hasContentInfo = false;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -548,9 +549,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		val->componentInfo.reset(new EPGDB_COMPONENT_INFO);
-		if( ReadVALUE(ver, val->componentInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
-			val->componentInfo = NULL;
+		val->hasComponentInfo = true;
+		if( ReadVALUE(ver, &val->componentInfo, buff + pos, buffSize - pos, &size) == FALSE ){
+			val->hasComponentInfo = false;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -559,9 +560,10 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		val->audioInfo.reset(new EPGDB_AUDIO_COMPONENT_INFO);
-		if( ReadVALUE(ver, val->audioInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
-			val->audioInfo = NULL;
+		val->hasAudioInfo = true;
+		val->audioInfo.componentList.clear();
+		if( ReadVALUE(ver, &val->audioInfo, buff + pos, buffSize - pos, &size) == FALSE ){
+			val->hasAudioInfo = false;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -570,9 +572,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		val->eventGroupInfo.reset(new EPGDB_EVENTGROUP_INFO);
-		if( ReadVALUE(ver, val->eventGroupInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
-			val->eventGroupInfo = NULL;
+		val->eventGroupInfo.eventDataList.clear();
+		if( ReadVALUE(ver, &val->eventGroupInfo, &val->eventGroupInfoGroupType, buff + pos, buffSize - pos, &size) == FALSE ){
+			val->eventGroupInfoGroupType = 0;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -581,9 +583,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		val->eventRelayInfo.reset(new EPGDB_EVENTGROUP_INFO);
-		if( ReadVALUE(ver, val->eventRelayInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
-			val->eventRelayInfo = NULL;
+		val->eventRelayInfo.eventDataList.clear();
+		if( ReadVALUE(ver, &val->eventRelayInfo, &val->eventRelayInfoGroupType, buff + pos, buffSize - pos, &size) == FALSE ){
+			val->eventRelayInfoGroupType = 0;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -678,6 +680,8 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notContetFlag );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->notDateFlag );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->freeCAFlag );
+	val->chkRecEnd = 0;
+	val->chkRecDay = 6;
 	if( ver >= 3 ){
 		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecEnd );
 		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecDay );
@@ -952,6 +956,7 @@ BOOL ReadVALUE( WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, 
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &strPadding );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->programInfo );
 	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->errInfo );
+	val->protectFlag = 0;
 	if( ver >= 4 ){
 		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->protectFlag );
 	}
@@ -1446,6 +1451,8 @@ BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const std::unique_ptr<BYTE[]>& buff
 		READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &val->recSetting.serviceMode );
 	}else{
 		val->recSetting.useMargineFlag = 0;
+		val->recSetting.startMargine = 0;
+		val->recSetting.endMargine = 0;
 		val->recSetting.serviceMode = 0;
 	}
 	val->overlapMode = 0;
@@ -1538,6 +1545,8 @@ BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>&
 		READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &val->recSetting.serviceMode );
 	}else{
 		val->recSetting.useMargineFlag = 0;
+		val->recSetting.startMargine = 0;
+		val->recSetting.endMargine = 0;
 		val->recSetting.serviceMode = 0;
 	}
 	if( pos < buffSize ){
@@ -1552,6 +1561,15 @@ BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>&
 	}else{
 		val->searchInfo.regExpFlag = 0;
 	}
+	val->searchInfo.aimaiFlag = 0;
+	val->searchInfo.notContetFlag = 0;
+	val->searchInfo.notDateFlag = 0;
+	val->searchInfo.freeCAFlag = 0;
+	val->searchInfo.chkRecEnd = 0;
+	val->searchInfo.chkRecDay = 6;
+	val->recSetting.continueRecFlag = 0;
+	val->recSetting.partialRecFlag = 0;
+	val->recSetting.tunerID = 0;
 	return TRUE;
 }
 
@@ -1564,39 +1582,39 @@ std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, DW
 	pos += WriteVALUE(0, buff, pos, val.transport_stream_id);
 	pos += WriteVALUE(0, buff, pos, val.service_id);
 	pos += WriteVALUE(0, buff, pos, val.event_id);
-	pos += WriteVALUE(0, buff, pos, val.shortInfo ? val.shortInfo->event_name : wstring(), true);
-	pos += WriteVALUE(0, buff, pos, val.shortInfo ? val.shortInfo->text_char : wstring(), true);
-	pos += WriteVALUE(0, buff, pos, val.extInfo ? val.extInfo->text_char : wstring(), true);
+	pos += WriteVALUE(0, buff, pos, val.hasShortInfo ? val.shortInfo.event_name : wstring(), true);
+	pos += WriteVALUE(0, buff, pos, val.hasShortInfo ? val.shortInfo.text_char : wstring(), true);
+	pos += WriteVALUE(0, buff, pos, val.hasExtInfo ? val.extInfo.text_char : wstring(), true);
 	SYSTEMTIME stZero = {};
 	pos += WriteVALUE(0, buff, pos, val.StartTimeFlag ? val.start_time : stZero);
 	pos += WriteVALUE(0, buff, pos, (DWORD)(val.DurationFlag ? val.durationSec : 0));
-	pos += WriteVALUE(0, buff, pos, (BYTE)(val.componentInfo ? val.componentInfo->component_type : 0));
-	pos += WriteVALUE(0, buff, pos, val.componentInfo ? val.componentInfo->text_char : wstring(), true);
-	const EPGDB_AUDIO_COMPONENT_INFO_DATA* ac = val.audioInfo && val.audioInfo->componentList.empty() == false ? &val.audioInfo->componentList[0] : NULL;
+	pos += WriteVALUE(0, buff, pos, (BYTE)(val.hasComponentInfo ? val.componentInfo.component_type : 0));
+	pos += WriteVALUE(0, buff, pos, val.hasComponentInfo ? val.componentInfo.text_char : wstring(), true);
+	const EPGDB_AUDIO_COMPONENT_INFO_DATA* ac = val.hasAudioInfo && val.audioInfo.componentList.empty() == false ? &val.audioInfo.componentList[0] : NULL;
 	pos += WriteVALUE(0, buff, pos, (BYTE)(ac ? ac->component_type : 0));
 	pos += WriteVALUE(0, buff, pos, (BYTE)(ac ? ac->ES_multi_lingual_flag : 0));
 	pos += WriteVALUE(0, buff, pos, (BYTE)(ac ? ac->main_component_flag : 0));
 	pos += WriteVALUE(0, buff, pos, (BYTE)(ac ? ac->sampling_rate : 0));
 	pos += WriteVALUE(0, buff, pos, ac ? ac->text_char : wstring(), true);
-	pos += WriteVALUE(0, buff, pos, (DWORD)(val.contentInfo ? val.contentInfo->nibbleList.size() : 0));
-	for( size_t i = 0; i < (val.contentInfo ? val.contentInfo->nibbleList.size() : 0); i++ ){
-		EPGDB_CONTENT_DATA data = val.contentInfo->nibbleList[i];
+	pos += WriteVALUE(0, buff, pos, (DWORD)(val.hasContentInfo ? val.contentInfo.nibbleList.size() : 0));
+	for( size_t i = 0; i < (val.hasContentInfo ? val.contentInfo.nibbleList.size() : 0); i++ ){
+		EPGDB_CONTENT_DATA data = val.contentInfo.nibbleList[i];
 		pos += WriteVALUE(0, buff, pos, data.content_nibble_level_1);
 		pos += WriteVALUE(0, buff, pos, data.content_nibble_level_2);
 		pos += WriteVALUE(0, buff, pos, data.user_nibble_1);
 		pos += WriteVALUE(0, buff, pos, data.user_nibble_2);
 	}
-	pos += WriteVALUE(0, buff, pos, (DWORD)(val.eventRelayInfo ? val.eventRelayInfo->eventDataList.size() : 0));
-	for( size_t i = 0; i < (val.eventRelayInfo ? val.eventRelayInfo->eventDataList.size() : 0); i++ ){
-		EPGDB_EVENT_DATA data = val.eventRelayInfo->eventDataList[i];
+	pos += WriteVALUE(0, buff, pos, (DWORD)(val.eventRelayInfoGroupType ? val.eventRelayInfo.eventDataList.size() : 0));
+	for( size_t i = 0; i < (val.eventRelayInfoGroupType ? val.eventRelayInfo.eventDataList.size() : 0); i++ ){
+		EPGDB_EVENT_DATA data = val.eventRelayInfo.eventDataList[i];
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.original_network_id);
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.transport_stream_id);
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.service_id);
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.event_id);
 	}
-	pos += WriteVALUE(0, buff, pos, (DWORD)(val.eventGroupInfo ? val.eventGroupInfo->eventDataList.size() : 0));
-	for( size_t i = 0; i < (val.eventGroupInfo ? val.eventGroupInfo->eventDataList.size() : 0); i++ ){
-		EPGDB_EVENT_DATA data = val.eventGroupInfo->eventDataList[i];
+	pos += WriteVALUE(0, buff, pos, (DWORD)(val.eventGroupInfoGroupType ? val.eventGroupInfo.eventDataList.size() : 0));
+	for( size_t i = 0; i < (val.eventGroupInfoGroupType ? val.eventGroupInfo.eventDataList.size() : 0); i++ ){
+		EPGDB_EVENT_DATA data = val.eventGroupInfo.eventDataList[i];
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.original_network_id);
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.transport_stream_id);
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.service_id);

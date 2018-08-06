@@ -27,9 +27,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\EpgDataCap_Bon.rc2">
-      <Filter>リソース ファイル</Filter>
-    </None>
     <None Include="res\EpgDataCap_Bon.ico">
       <Filter>リソース ファイル</Filter>
     </None>

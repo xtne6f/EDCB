@@ -1,4 +1,5 @@
 @echo 予約ファイルに含まれるTransportStreamIDの情報を変更します。
+@echo チャンネル再編などでTransportStreamIDが変更されたときに使います。
 @echo ChSet4.txtやChSet5.txtはあらかじめチャンネルスキャンなどで更新してください。
 @echo はじめに非破壊テストを行います。
 @pause

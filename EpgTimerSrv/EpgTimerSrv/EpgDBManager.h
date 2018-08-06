@@ -4,7 +4,7 @@
 #include "../../Common/EpgDataCap3Def.h"
 #include "../../Common/ThreadUtil.h"
 #include <objbase.h>
-#include <OleAuto.h>
+#include <oleauto.h>
 #include "RegExp.h"
 
 class CEpgDBManager

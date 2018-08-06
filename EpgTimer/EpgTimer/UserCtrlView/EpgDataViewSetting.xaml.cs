@@ -68,19 +68,7 @@ namespace EpgTimer
         /// <param name="setInfo"></param>
         public void SetSetting(CustomEpgTabInfo setInfo)
         {
-            searchKey.aimaiFlag = setInfo.SearchKey.aimaiFlag;
-            searchKey.andKey = setInfo.SearchKey.andKey;
-            searchKey.audioList = setInfo.SearchKey.audioList.ToList();
-            searchKey.contentList = setInfo.SearchKey.contentList.ToList();
-            searchKey.dateList = setInfo.SearchKey.dateList.ToList();
-            searchKey.freeCAFlag = setInfo.SearchKey.freeCAFlag;
-            searchKey.notContetFlag = setInfo.SearchKey.notContetFlag;
-            searchKey.notDateFlag = setInfo.SearchKey.notDateFlag;
-            searchKey.notKey = setInfo.SearchKey.notKey;
-            searchKey.regExpFlag = setInfo.SearchKey.regExpFlag;
-            searchKey.serviceList = setInfo.SearchKey.serviceList.ToList();
-            searchKey.titleOnlyFlag = setInfo.SearchKey.titleOnlyFlag;
-            searchKey.videoList = setInfo.SearchKey.videoList.ToList();
+            searchKey = setInfo.SearchKey.DeepClone();
 
             textBox_tabName.Text = setInfo.TabName;
             if (setInfo.ViewMode == 1)
@@ -213,19 +201,7 @@ namespace EpgTimer
                 info.FilterEnded = false;
             }
 
-            info.SearchKey.aimaiFlag = searchKey.aimaiFlag;
-            info.SearchKey.andKey = searchKey.andKey;
-            info.SearchKey.audioList = searchKey.audioList.ToList();
-            info.SearchKey.contentList = searchKey.contentList.ToList();
-            info.SearchKey.dateList = searchKey.dateList.ToList();
-            info.SearchKey.freeCAFlag = searchKey.freeCAFlag;
-            info.SearchKey.notContetFlag = searchKey.notContetFlag;
-            info.SearchKey.notDateFlag = searchKey.notDateFlag;
-            info.SearchKey.notKey = searchKey.notKey;
-            info.SearchKey.regExpFlag = searchKey.regExpFlag;
-            info.SearchKey.serviceList = searchKey.serviceList.ToList();
-            info.SearchKey.titleOnlyFlag = searchKey.titleOnlyFlag;
-            info.SearchKey.videoList = searchKey.videoList.ToList();
+            info.SearchKey = searchKey;
 
             info.ViewServiceList.Clear();
             foreach (ChSet5Item item in listBox_serviceView.Items)

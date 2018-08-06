@@ -440,7 +440,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							//ŠJŽnŽžŠÔ‚©‚ç30•b‚Í‰ß‚¬‚Ä‚¢‚é‚Ì‚Å‚±‚Ì”Ô‘gî•ñ‚ª˜^‰æ’†‚Ì‚à‚Ì‚Ì‚Í‚¸
 							r.savedPgInfo = true;
 							r.epgStartTime = resVal.start_time;
-							r.epgEventName = resVal.shortInfo ? resVal.shortInfo->event_name : L"";
+							r.epgEventName = resVal.hasShortInfo ? resVal.shortInfo.event_name : L"";
 							//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
 							Replace(r.epgEventName, L"\r\n", L"");
 							if( this->saveProgramInfo ){
@@ -768,7 +768,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 	SYSTEMTIME st;
 	ConvertSystemTime(reserve.startTime, &st);
 	wstring msg;
-	Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d` %s", reserve.stationName.c_str(),
+	Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d\xFF5E %s", reserve.stationName.c_str(),
 	       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, reserve.title.c_str());
 	this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, msg);
 	return true;
@@ -968,9 +968,9 @@ bool CTunerBankCtrl::SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal)
 		val.eventID = eid;
 		val.pfOnlyFlag = 0;
 		if( ctrlCmd.SendViewSearchEvent(val, resVal) == CMD_SUCCESS ){
-			if( resVal->shortInfo ){
+			if( resVal->hasShortInfo ){
 				//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
-				Replace(resVal->shortInfo->event_name, L"\r\n", L"");
+				Replace(resVal->shortInfo.event_name, L"\r\n", L"");
 			}
 			return true;
 		}
@@ -993,9 +993,9 @@ int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resV
 		val.pfNextFlag = pfNextFlag;
 		DWORD ret = ctrlCmd.SendViewGetEventPF(val, resVal);
 		if( ret == CMD_SUCCESS ){
-			if( resVal->shortInfo ){
+			if( resVal->hasShortInfo ){
 				//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
-				Replace(resVal->shortInfo->event_name, L"\r\n", L"");
+				Replace(resVal->shortInfo.event_name, L"\r\n", L"");
 			}
 			return 0;
 		}else if( ret == CMD_ERR && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 15000) ){
@@ -1276,7 +1276,7 @@ wstring CTunerBankCtrl::ConvertRecName(
 		info.sizeOfStruct = 0;
 		WCHAR name[512];
 		DWORD size = 512;
-		if( CReNamePlugInUtil::ConvertRecName3(&info, recNamePlugIn, plugInPath.c_str(), name, &size) ){
+		if( CReNamePlugInUtil::Convert(&info, recNamePlugIn, plugInPath.c_str(), name, &size) ){
 			ret = name;
 			CheckFileName(ret, noChkYen);
 		}

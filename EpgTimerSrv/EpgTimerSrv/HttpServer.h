@@ -1,5 +1,5 @@
 #pragma once
-#include "lua.hpp"
+#include "lua/lua.hpp"
 #include "UpnpSsdpServer.h"
 #include <functional>
 
