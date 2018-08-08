@@ -59,6 +59,10 @@ namespace EpgTimer
             var serviceList = new List<ServiceItem>();
             foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
             {
+                if (ChSet5.IsCS3(info.ONID))
+                {
+                    button_cs3.Visibility = Visibility.Visible;
+                }
                 serviceList.Add(new ServiceItem(CommonManager.ConvertChSet5To(info)));
             }
             listView_service.ItemsSource = serviceList;
@@ -415,6 +419,19 @@ namespace EpgTimer
             foreach (ServiceItem info in listView_service.Items)
             {
                 if (ChSet5.IsCS(info.ServiceInfo.ONID) &&
+                    ChSet5.IsCS3(info.ServiceInfo.ONID) == false &&
+                    ChSet5.IsVideo(info.ServiceInfo.service_type))
+                {
+                    info.IsSelected = true;
+                }
+            }
+        }
+
+        private void button_cs3_on_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                if (ChSet5.IsCS3(info.ServiceInfo.ONID) &&
                     ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
