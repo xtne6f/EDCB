@@ -7,7 +7,6 @@ MINIMUM_PX=12
 SERVICE_PX=150
 --時刻軸を入れる間隔
 TIME_COLUMN=3
-SORT_BY_REMOCON_KEY_ID=true
 HIDE_SERVICES={
   --非表示にしたいサービスを['ONID-TSID-SID']=true,のように指定
   --['1-2345-6789']=true,
@@ -28,7 +27,7 @@ ct:Append([=[
 <h1>番組表</h1>
 ]=])
 
-tab=GetVarInt(mg.request_info.query_string,'tab',0,3) or 0
+tab=GetVarInt(mg.request_info.query_string,'tab',0,4) or 0
 date=GetVarInt(mg.request_info.query_string,'date',-10000,1000) or 0
 --dateクエリは今日(深夜4時区切り)を基準(=0)とする
 now=os.time()
@@ -46,8 +45,9 @@ for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
   if not HIDE_SERVICES[v.onid..'-'..v.tsid..'-'..v.sid] and (
      tab==0 and NetworkType(v.onid)=='地デジ' or
      tab==1 and NetworkType(v.onid)=='BS' or
-     tab==2 and NetworkType(v.onid):find('^CS') or
-     tab==3 and NetworkType(v.onid)=='その他') then
+     tab==2 and NetworkType(v.onid):find('^CS[12]') or
+     tab==3 and NetworkType(v.onid)=='CS3' or
+     tab==4 and NetworkType(v.onid)=='その他') then
     showServices[v.onid..'-'..v.tsid..'-'..v.sid]=true
   end
 end
@@ -80,14 +80,10 @@ for i,v in ipairs(edcb.GetServiceList() or {}) do
   end
 end
 
-if SORT_BY_REMOCON_KEY_ID then
-  table.sort(st, function(a,b) return
-    ('%04X%04X%04X%04X'):format(a.remote_control_key_id, a.onid, a.tsid, a.sid)<
-    ('%04X%04X%04X%04X'):format(b.remote_control_key_id, b.onid, b.tsid, b.sid) end)
-end
+SortServiceListInplace(st)
 
 pageNav='<div class="page-nav">\n'
-for i,v in ipairs({'地デジ','BS','CS','その他'}) do
+for i,v in ipairs({'地デジ','BS','CS','CS3','その他'}) do
   pageNav=pageNav..'  '..(tab==i-1 and v or '<a href="epg.html?tab='..(i-1)..'&amp;date='..date..'">'..v..'</a>')..'\n'
 end
 pageNav=pageNav..'  ||\n'
