@@ -37,6 +37,12 @@
     <Filter Include="ヘッダー ファイル\lua">
       <UniqueIdentifier>{176e7939-f443-4594-a5ff-cc0509a5b531}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\lua\zlib1">
+      <UniqueIdentifier>{37498eec-3e6d-43bd-b9f9-7c71c73a7db2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\lua\zlib1">
+      <UniqueIdentifier>{523010e0-5ef3-4fbe-8643-5c9fe4cfa6ac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="small.ico">
@@ -266,6 +272,39 @@
     <ClInclude Include="lua\lua.hpp">
       <Filter>ヘッダー ファイル\lua</Filter>
     </ClInclude>
+    <ClInclude Include="lua\zlib1\inffast.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\inffixed.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\inflate.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\inftrees.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\trees.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\zconf.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\zlib.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\zutil.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\crc32.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\deflate.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\zlib1\gzguts.h">
+      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -468,6 +507,42 @@
     </ClCompile>
     <ClCompile Include="lua\ltable.c">
       <Filter>ソース ファイル\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\lua_zlib.c">
+      <Filter>ソース ファイル\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\inflate.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\inftrees.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\trees.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\uncompr.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\zutil.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\adler32.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\compress.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\crc32.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\deflate.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\infback.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\zlib1\inffast.c">
+      <Filter>ソース ファイル\lua\zlib1</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

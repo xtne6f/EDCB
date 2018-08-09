@@ -54,6 +54,18 @@ $(TARGET): $(addsuffix .obj, \
   lua__lundump.c \
   lua__lvm.c \
   lua__lzio.c \
+  lua__lua_zlib.c \
+  lua_zlib1__adler32.c \
+  lua_zlib1__compress.c \
+  lua_zlib1__crc32.c \
+  lua_zlib1__deflate.c \
+  lua_zlib1__infback.c \
+  lua_zlib1__inffast.c \
+  lua_zlib1__inflate.c \
+  lua_zlib1__inftrees.c \
+  lua_zlib1__trees.c \
+  lua_zlib1__uncompr.c \
+  lua_zlib1__zutil.c \
   BatManager.cpp \
   civetweb.c \
   EpgDBManager.cpp \
@@ -80,6 +92,8 @@ Common__%.cpp.obj: ../../Common/%.cpp
 %.cpp.obj: %.cpp
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 lua__%.c.obj: lua/%.c
+	$(CC) -c $(CPPFLAGS) -I./lua -I./lua/zlib1 -Os -o $@ $<
+lua_zlib1__%.c.obj: lua/zlib1/%.c
 	$(CC) -c $(CPPFLAGS) -Os -o $@ $<
 %.c.obj: %.c
 	$(CC) -c $(CPPFLAGS) -Os -o $@ $<
