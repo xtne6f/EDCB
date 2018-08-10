@@ -34,20 +34,34 @@ namespace EpgTimer
                 {
                     if (ChSet5.IsBS(info.ONID))
                     {
+                        tabItem_bs.Visibility = Visibility.Visible;
                         listBox_serviceBS.Items.Add(info);
+                    }
+                    else if (ChSet5.IsCS3(info.ONID))
+                    {
+                        tabItem_cs3.Visibility = Visibility.Visible;
+                        listBox_serviceCS3.Items.Add(info);
                     }
                     else if (ChSet5.IsCS(info.ONID))
                     {
+                        tabItem_cs.Visibility = Visibility.Visible;
                         listBox_serviceCS.Items.Add(info);
                     }
                     else if (ChSet5.IsDttv(info.ONID))
                     {
+                        tabItem_tere.Visibility = Visibility.Visible;
                         listBox_serviceTere.Items.Add(info);
                     }
                     else
                     {
+                        tabItem_other.Visibility = Visibility.Visible;
                         listBox_serviceOther.Items.Add(info);
                     }
+                }
+                TabItem item = tabControl2.Items.Cast<TabItem>().FirstOrDefault(a => a.Visibility == Visibility.Visible);
+                if (item != null)
+                {
+                    item.IsSelected = true;
                 }
                 listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
 
@@ -223,88 +237,20 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_addAll_Click(object sender, RoutedEventArgs e)
         {
-            try
+            ListBox target = tabItem_bs.IsSelected ? listBox_serviceBS :
+                             tabItem_cs.IsSelected ? listBox_serviceCS :
+                             tabItem_cs3.IsSelected ? listBox_serviceCS3 :
+                             tabItem_tere.IsSelected ? listBox_serviceTere :
+                             tabItem_other.IsSelected ? listBox_serviceOther : null;
+            if (target != null)
             {
-                if (tabItem_bs.IsSelected == true)
+                foreach (ChSet5Item info in target.Items)
                 {
-                    foreach (ChSet5Item info in listBox_serviceBS.Items)
+                    if (listBox_serviceView.Items.Cast<ChSet5Item>().All(info2 => info2.Key != info.Key))
                     {
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
+                        listBox_serviceView.Items.Add(info);
                     }
                 }
-                else if (tabItem_cs.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceCS.Items)
-                    {
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_tere.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceTere.Items)
-                    {
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_other.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceOther.Items)
-                    {
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -315,104 +261,20 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_addVideo_Click(object sender, RoutedEventArgs e)
         {
-            try
+            ListBox target = tabItem_bs.IsSelected ? listBox_serviceBS :
+                             tabItem_cs.IsSelected ? listBox_serviceCS :
+                             tabItem_cs3.IsSelected ? listBox_serviceCS3 :
+                             tabItem_tere.IsSelected ? listBox_serviceTere :
+                             tabItem_other.IsSelected ? listBox_serviceOther : null;
+            if (target != null)
             {
-                if (tabItem_bs.IsSelected == true)
+                foreach (ChSet5Item info in target.Items)
                 {
-                    foreach (ChSet5Item info in listBox_serviceBS.Items)
+                    if (ChSet5.IsVideo(info.ServiceType) && listBox_serviceView.Items.Cast<ChSet5Item>().All(info2 => info2.Key != info.Key))
                     {
-                        if (ChSet5.IsVideo(info.ServiceType) == false)
-                        {
-                            continue;
-                        }
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
+                        listBox_serviceView.Items.Add(info);
                     }
                 }
-                else if (tabItem_cs.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceCS.Items)
-                    {
-                        if (ChSet5.IsVideo(info.ServiceType) == false)
-                        {
-                            continue;
-                        }
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_tere.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceTere.Items)
-                    {
-                        if (ChSet5.IsVideo(info.ServiceType) == false)
-                        {
-                            continue;
-                        }
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_other.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceOther.Items)
-                    {
-                        if (ChSet5.IsVideo(info.ServiceType) == false)
-                        {
-                            continue;
-                        }
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -423,100 +285,22 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_add_Click(object sender, RoutedEventArgs e)
         {
-            try
+            ListBox target = tabItem_bs.IsSelected ? listBox_serviceBS :
+                             tabItem_cs.IsSelected ? listBox_serviceCS :
+                             tabItem_cs3.IsSelected ? listBox_serviceCS3 :
+                             tabItem_tere.IsSelected ? listBox_serviceTere :
+                             tabItem_other.IsSelected ? listBox_serviceOther : null;
+            if (target != null)
             {
-                if (tabItem_bs.IsSelected == true)
+                if (target.SelectedItem == null)
                 {
-                    if (listBox_serviceBS.SelectedItem == null)
-                    {
-                        MessageBox.Show("アイテムが選択されていません");
-                        return;
-                    }
-                    ChSet5Item info = listBox_serviceBS.SelectedItem as ChSet5Item;
-                    bool find = false;
-                    foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                    {
-                        if (info2.Key == info.Key)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_serviceView.Items.Add(info);
-                    }
+                    MessageBox.Show("アイテムが選択されていません");
+                    return;
                 }
-                else if (tabItem_cs.IsSelected == true)
+                if (listBox_serviceView.Items.Cast<ChSet5Item>().All(info => info.Key != ((ChSet5Item)target.SelectedItem).Key))
                 {
-                    if (listBox_serviceCS.SelectedItem == null)
-                    {
-                        MessageBox.Show("アイテムが選択されていません");
-                        return;
-                    }
-                    ChSet5Item info = listBox_serviceCS.SelectedItem as ChSet5Item;
-                    bool find = false;
-                    foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                    {
-                        if (info2.Key == info.Key)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_serviceView.Items.Add(info);
-                    }
+                    listBox_serviceView.Items.Add(target.SelectedItem);
                 }
-                else if (tabItem_tere.IsSelected == true)
-                {
-                    if (listBox_serviceTere.SelectedItem == null)
-                    {
-                        MessageBox.Show("アイテムが選択されていません");
-                        return;
-                    }
-                    ChSet5Item info = listBox_serviceTere.SelectedItem as ChSet5Item;
-                    bool find = false;
-                    foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                    {
-                        if (info2.Key == info.Key)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_serviceView.Items.Add(info);
-                    }
-                }
-                else if (tabItem_other.IsSelected == true)
-                {
-                    if (listBox_serviceOther.SelectedItem == null)
-                    {
-                        MessageBox.Show("アイテムが選択されていません");
-                        return;
-                    }
-                    ChSet5Item info = listBox_serviceOther.SelectedItem as ChSet5Item;
-                    bool find = false;
-                    foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                    {
-                        if (info2.Key == info.Key)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_serviceView.Items.Add(info);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -738,78 +522,22 @@ namespace EpgTimer
             textBox_serviceView1.Text = info.NetworkName + "\r\n";
             textBox_serviceView1.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
             textBox_serviceView1.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-            textBox_serviceView1.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
+            textBox_serviceView1.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")" +
+                                         (ChSet5.IsCS3(info.ONID) ? " " + (info.SID & 0x3FF) + "ch" : "") + "\r\n";
         }
 
-        private void listBox_serviceBS_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             textBox_serviceView2.Text = "";
-            if (tabItem_bs.IsSelected == true)
+            if (((ListBox)sender).SelectedItem != null)
             {
-                if (listBox_serviceBS.SelectedItem == null)
-                {
-                    return;
-                }
-                ChSet5Item info = listBox_serviceBS.SelectedItem as ChSet5Item;
+                var info = (ChSet5Item)((ListBox)sender).SelectedItem;
 
                 textBox_serviceView2.Text = info.NetworkName + "\r\n";
                 textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
                 textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
-            }
-        }
-
-        private void listBox_serviceCS_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView2.Text = "";
-            if (tabItem_cs.IsSelected == true)
-            {
-                if (listBox_serviceCS.SelectedItem == null)
-                {
-                    return;
-                }
-                ChSet5Item info = listBox_serviceCS.SelectedItem as ChSet5Item;
-
-                textBox_serviceView2.Text = info.NetworkName + "\r\n";
-                textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
-            }
-        }
-
-        private void listBox_serviceTere_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView2.Text = "";
-            if (tabItem_tere.IsSelected == true)
-            {
-                if (listBox_serviceTere.SelectedItem == null)
-                {
-                    return;
-                }
-                ChSet5Item info = listBox_serviceTere.SelectedItem as ChSet5Item;
-
-                textBox_serviceView2.Text = info.NetworkName + "\r\n";
-                textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
-            }
-        }
-
-        private void listBox_serviceOther_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView2.Text = "";
-            if (tabItem_other.IsSelected == true)
-            {
-                if (listBox_serviceOther.SelectedItem == null)
-                {
-                    return;
-                }
-                ChSet5Item info = listBox_serviceOther.SelectedItem as ChSet5Item;
-
-                textBox_serviceView2.Text = info.NetworkName + "\r\n";
-                textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
+                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")" +
+                                             (ChSet5.IsCS3(info.ONID) ? " " + (info.SID & 0x3FF) + "ch" : "") + "\r\n";
             }
         }
 
