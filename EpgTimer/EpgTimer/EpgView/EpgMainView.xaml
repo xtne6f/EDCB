@@ -6,25 +6,20 @@
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
-    <Grid>
+    <Grid Name="grid_PG">
         <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
             <RowDefinition Height="40" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <local:DateView Grid.Row="0" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" />
-        <Grid Grid.Row="1" Name="grid_PG">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="40" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="40" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" Click="button_now_Click" />
-            <local:TimeView Grid.Row="1" x:Name="timeView" Margin="0,0,0,18"/>
-            <local:ServiceView Grid.Column="1" x:Name="serviceView" Margin="0,0,18,0"/>
-            <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" PreviewMouseWheel="epgProgramView_PreviewMouseWheel" RightClick="epgProgramView_RightClick" ScrollChanged="epgProgramView_ScrollChanged" />
-        </Grid>            
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="40" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <local:DateView Grid.ColumnSpan="2" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" />
+        <Button Click="button_now_Click" Content="現在" Grid.Row="1" />
+        <local:TimeView Grid.Row="2" Margin="0,0,0,18" x:Name="timeView" />
+        <local:ServiceView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="serviceView" />
+        <local:ProgramView Grid.Column="1" Grid.Row="2" x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" PreviewMouseWheel="epgProgramView_PreviewMouseWheel" RightClick="epgProgramView_RightClick" ScrollChanged="epgProgramView_ScrollChanged" />
     </Grid>
 </UserControl>
