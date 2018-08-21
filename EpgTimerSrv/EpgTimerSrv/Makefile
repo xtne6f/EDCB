@@ -3,25 +3,6 @@ CPPFLAGS = -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=0
 WINDRES ?= windres
 
 $(TARGET): $(addsuffix .obj, \
-  BonCtrl__CreatePATPacket.cpp \
-  BonCtrl__PacketInit.cpp \
-  BonCtrl__SendTCP.cpp \
-  BonCtrl__SendUDP.cpp \
-  Common__CtrlCmdUtil.cpp \
-  Common__EpgDataCap3Util.cpp \
-  Common__EpgTimerUtil.cpp \
-  Common__ParseTextInstances.cpp \
-  Common__PathUtil.cpp \
-  Common__PipeServer.cpp \
-  Common__ReNamePlugInUtil.cpp \
-  Common__SendCtrlCmd.cpp \
-  Common__SendTSTCPDllUtil.cpp \
-  Common__ServiceUtil.cpp \
-  Common__StringUtil.cpp \
-  Common__TCPServer.cpp \
-  Common__TimeShiftUtil.cpp \
-  Common__TimeUtil.cpp \
-  Common__TSPacketUtil.cpp \
   lua__lapi.c \
   lua__lauxlib.c \
   lua__lbaselib.c \
@@ -54,6 +35,37 @@ $(TARGET): $(addsuffix .obj, \
   lua__lundump.c \
   lua__lvm.c \
   lua__lzio.c \
+  lua__lua_zlib.c \
+  lua_zlib1__adler32.c \
+  lua_zlib1__compress.c \
+  lua_zlib1__crc32.c \
+  lua_zlib1__deflate.c \
+  lua_zlib1__infback.c \
+  lua_zlib1__inffast.c \
+  lua_zlib1__inflate.c \
+  lua_zlib1__inftrees.c \
+  lua_zlib1__trees.c \
+  lua_zlib1__uncompr.c \
+  lua_zlib1__zutil.c \
+  BonCtrl__CreatePATPacket.cpp \
+  BonCtrl__PacketInit.cpp \
+  BonCtrl__SendTCP.cpp \
+  BonCtrl__SendUDP.cpp \
+  Common__CtrlCmdUtil.cpp \
+  Common__EpgDataCap3Util.cpp \
+  Common__EpgTimerUtil.cpp \
+  Common__ParseTextInstances.cpp \
+  Common__PathUtil.cpp \
+  Common__PipeServer.cpp \
+  Common__ReNamePlugInUtil.cpp \
+  Common__SendCtrlCmd.cpp \
+  Common__SendTSTCPDllUtil.cpp \
+  Common__ServiceUtil.cpp \
+  Common__StringUtil.cpp \
+  Common__TCPServer.cpp \
+  Common__TimeShiftUtil.cpp \
+  Common__TimeUtil.cpp \
+  Common__TSPacketUtil.cpp \
   BatManager.cpp \
   civetweb.c \
   EpgDBManager.cpp \
@@ -80,6 +92,8 @@ Common__%.cpp.obj: ../../Common/%.cpp
 %.cpp.obj: %.cpp
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 lua__%.c.obj: lua/%.c
+	$(CC) -c $(CPPFLAGS) -I./lua -I./lua/zlib1 -Os -o $@ $<
+lua_zlib1__%.c.obj: lua/zlib1/%.c
 	$(CC) -c $(CPPFLAGS) -Os -o $@ $<
 %.c.obj: %.c
 	$(CC) -c $(CPPFLAGS) -Os -o $@ $<

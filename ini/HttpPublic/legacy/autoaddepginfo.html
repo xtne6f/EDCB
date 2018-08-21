@@ -236,7 +236,7 @@ if aa.searchInfo then
   end
   ct:Append('</select><br><br>\n'
     ..'サービス絞り込み（Ctrl+複数選択）<br><select name="serviceList" multiple size="5">\n')
-  for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
+  for i,v in ipairs(SortServiceListInplace(SelectChDataList(edcb.GetChDataList()))) do
     ct:Append('<option value="'..v.onid..'-'..v.tsid..'-'..v.sid..'"')
     for j,w in ipairs(si.serviceList) do
       if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then

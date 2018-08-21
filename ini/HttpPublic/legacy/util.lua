@@ -116,19 +116,29 @@ end
 
 --表示するサービスを選択する
 function SelectChDataList(a)
-  local n,r=0,{}
+  local r={}
   for i,v in ipairs(a) do
     --EPG取得対象サービスのみ
     if v.epgCapFlag then
-      --地デジ優先ソート
-      if NetworkType(v.onid)=='地デジ' then
-        n=n+1
-        table.insert(r,n,v)
-      else
-        table.insert(r,v)
-      end
+      r[#r+1]=v
     end
   end
+  return r
+end
+
+--サービスをソートする
+function SortServiceListInplace(r)
+  local bsmin={}
+  for i,v in ipairs(r) do
+    if NetworkType(v.onid)=='BS' and (bsmin[v.tsid] or 65536)>v.sid then
+      bsmin[v.tsid]=v.sid
+    end
+  end
+  table.sort(r,function(a,b) return
+    ('%04X%04X%04X%04X'):format((NetworkType(a.onid)~='地デジ' and 65535 or a.remote_control_key_id or 0),
+                                a.onid,(NetworkType(a.onid)=='BS' and bsmin[a.tsid] or a.tsid),a.sid)<
+    ('%04X%04X%04X%04X'):format((NetworkType(b.onid)~='地デジ' and 65535 or b.remote_control_key_id or 0),
+                                b.onid,(NetworkType(b.onid)=='BS' and bsmin[b.tsid] or b.tsid),b.sid) end)
   return r
 end
 

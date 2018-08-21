@@ -116,14 +116,8 @@ mg_static_assert(sizeof(void *) >= sizeof(int), "data type size check");
  * Symbian is no longer maintained since 2014-01-01.
  * Recent versions of CivetWeb are no longer tested for Symbian.
  * It makes no sense, to support an abandoned operating system.
- * All remaining "#ifdef __SYMBIAN__" cases will be droped from
- * the code sooner or later.
  */
-#pragma message                                                                \
-    "Symbian is no longer maintained. CivetWeb will drop Symbian support."
-#define NO_SSL /* SSL is not supported */
-#define NO_CGI /* CGI is not supported */
-#define PATH_MAX FILENAME_MAX
+#error "Symbian is no longer maintained. CivetWeb no longer supports Symbian."
 #endif /* __SYMBIAN32__ */
 
 
@@ -313,23 +307,22 @@ mg_static_assert(MAX_WORKER_THREADS >= 1,
 mg_static_assert(sizeof(size_t) == 4 || sizeof(size_t) == 8,
                  "size_t data type size check");
 
-#if defined(_WIN32)                                                            \
-    && !defined(__SYMBIAN32__) /* WINDOWS / UNIX include block */
+#if defined(_WIN32) /* WINDOWS vs UNIX include block */
 #include <windows.h>
 #include <winsock2.h> /* DTL add for SO_EXCLUSIVE */
 #include <ws2tcpip.h>
 
 typedef const char *SOCK_OPT_TYPE;
 
-#if !defined(PATH_MAX)
+#if !defined(MG_PATH_MAX)
 #define W_PATH_MAX (MAX_PATH)
 /* at most three UTF-8 chars per wchar_t */
-#define PATH_MAX (W_PATH_MAX * 3)
+#define MG_PATH_MAX (W_PATH_MAX * 3)
 #else
-#define W_PATH_MAX ((PATH_MAX + 2) / 3)
+#define W_PATH_MAX ((MG_PATH_MAX + 2) / 3)
 #endif
 
-mg_static_assert(PATH_MAX >= 1, "path length must be a positive number");
+mg_static_assert(MG_PATH_MAX >= 1, "path length must be a positive number");
 
 #ifndef _IN_PORT_T
 #ifndef in_port_t
@@ -575,7 +568,7 @@ mg_fgets(char *buf, size_t size, struct mg_file *filep, char **p);
 
 /* POSIX dirent interface */
 struct dirent {
-	char d_name[PATH_MAX];
+	char d_name[MG_PATH_MAX];
 };
 
 typedef struct DIR {
@@ -600,8 +593,7 @@ struct pollfd {
 #pragma comment(lib, "Ws2_32.lib")
 #endif
 
-#else /* defined(_WIN32) && !defined(__SYMBIAN32__) -                          \
-         WINDOWS / UNIX include block */
+#else /* defined(_WIN32) - WINDOWS vs UNIX include block */
 
 #include <sys/wait.h>
 #include <sys/socket.h>
@@ -615,6 +607,8 @@ struct pollfd {
 #include <netdb.h>
 #include <netinet/tcp.h>
 typedef const void *SOCK_OPT_TYPE;
+
+#define MG_PATH_MAX PATH_MAX
 
 #if defined(ANDROID)
 typedef unsigned short int in_port_t;
@@ -675,8 +669,7 @@ typedef int SOCKET;
 #define socklen_t int
 #endif /* hpux */
 
-#endif /* defined(_WIN32) && !defined(__SYMBIAN32__) -                         \
-          WINDOWS / UNIX include block */
+#endif /* defined(_WIN32) - WINDOWS vs UNIX include block */
 
 /* va_copy should always be a macro, C99 and C++11 - DTL */
 #ifndef va_copy
@@ -951,7 +944,7 @@ stat(const char *name, struct stat *st)
 static pthread_mutex_t global_lock_mutex;
 
 
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 /* Forward declaration for Windows */
 FUNCTION_MAY_BE_UNUSED
 static int pthread_mutex_lock(pthread_mutex_t *mutex);
@@ -982,7 +975,7 @@ static int
 mg_atomic_inc(volatile int *addr)
 {
 	int ret;
-#if defined(_WIN32) && !defined(__SYMBIAN32__) && !defined(NO_ATOMICS)
+#if defined(_WIN32) && !defined(NO_ATOMICS)
 	/* Depending on the SDK, this function uses either
 	 * (volatile unsigned int *) or (volatile LONG *),
 	 * so whatever you use, the other SDK is likely to raise a warning. */
@@ -1005,7 +998,7 @@ static int
 mg_atomic_dec(volatile int *addr)
 {
 	int ret;
-#if defined(_WIN32) && !defined(__SYMBIAN32__) && !defined(NO_ATOMICS)
+#if defined(_WIN32) && !defined(NO_ATOMICS)
 	/* Depending on the SDK, this function uses either
 	 * (volatile unsigned int *) or (volatile LONG *),
 	 * so whatever you use, the other SDK is likely to raise a warning. */
@@ -1028,7 +1021,7 @@ static int64_t
 mg_atomic_add(volatile int64_t *addr, int64_t value)
 {
 	int64_t ret;
-#if defined(_WIN64) && !defined(__SYMBIAN32__) && !defined(NO_ATOMICS)
+#if defined(_WIN64) && !defined(NO_ATOMICS)
 	ret = InterlockedAdd64(addr, value);
 #elif defined(__GNUC__)                                                        \
     && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 0)))           \
@@ -1362,7 +1355,7 @@ static int thread_idx_max = 0;
 struct mg_workerTLS {
 	int is_master;
 	unsigned long thread_idx;
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 	HANDLE pthread_cond_helper_mutex;
 	struct mg_workerTLS *next_waiting_thread;
 #endif
@@ -4253,7 +4246,7 @@ mg_send_http_error(struct mg_connection *conn, int status, const char *fmt, ...)
 	}
 }
 
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 /* Create substitutes for POSIX functions in Win32. */
 
 #if defined(__MINGW32__)
@@ -4527,7 +4520,7 @@ path_to_unicode(const struct mg_connection *conn,
                 wchar_t *wbuf,
                 size_t wbuf_len)
 {
-	char buf[PATH_MAX], buf2[PATH_MAX];
+	char buf[MG_PATH_MAX], buf2[MG_PATH_MAX];
 	wchar_t wbuf2[W_PATH_MAX + 1];
 	DWORD long_len, err;
 	int (*fcompare)(const wchar_t *, const wchar_t *) = mg_wcscasecmp;
@@ -4997,8 +4990,8 @@ spawn_process(struct mg_connection *conn,
               const char *dir)
 {
 	HANDLE me;
-	char *p, *interp, full_interp[PATH_MAX], full_dir[PATH_MAX],
-	    cmdline[PATH_MAX], buf[PATH_MAX];
+	char *p, *interp, full_interp[MG_PATH_MAX], full_dir[MG_PATH_MAX],
+	    cmdline[MG_PATH_MAX], buf[MG_PATH_MAX];
 	int truncated;
 	struct mg_file file = STRUCT_FILE_INITIALIZER;
 	STARTUPINFOA si;
@@ -6649,7 +6642,7 @@ interpret_uri(struct mg_connection *conn, /* in/out: request (must be valid) */
 	const char *rewrite;
 	struct vec a, b;
 	int match_len;
-	char gz_path[PATH_MAX];
+	char gz_path[MG_PATH_MAX];
 	int truncated;
 #if !defined(NO_CGI) || defined(USE_LUA) || defined(USE_DUKTAPE)
 	char *tmp_str;
@@ -6814,7 +6807,7 @@ interpret_uri(struct mg_connection *conn, /* in/out: request (must be valid) */
 	/* Step 10: Script resources may handle sub-resources */
 	/* Support PATH_INFO for CGI scripts. */
 	tmp_str_len = strlen(filename);
-	tmp_str = (char *)mg_malloc_ctx(tmp_str_len + PATH_MAX + 1, conn->ctx);
+	tmp_str = (char *)mg_malloc_ctx(tmp_str_len + MG_PATH_MAX + 1, conn->ctx);
 	if (!tmp_str) {
 		/* Out of memory */
 		goto interpret_cleanup;
@@ -6851,7 +6844,7 @@ interpret_uri(struct mg_connection *conn, /* in/out: request (must be valid) */
 
 			if (allow_substitute_script_subresources) {
 				if (substitute_index_file(
-				        conn, tmp_str, tmp_str_len + PATH_MAX, filestat)) {
+				        conn, tmp_str, tmp_str_len + MG_PATH_MAX, filestat)) {
 
 					/* some intermediate directory has an index file */
 					if (extention_matches_script(conn, tmp_str)) {
@@ -7315,7 +7308,7 @@ open_auth_file(struct mg_connection *conn,
                struct mg_file *filep)
 {
 	if ((conn != NULL) && (conn->ctx != NULL)) {
-		char name[PATH_MAX];
+		char name[MG_PATH_MAX];
 		const char *p, *e, *gpass = conn->ctx->config[GLOBAL_PASSWORDS_FILE];
 		int truncated;
 
@@ -7719,7 +7712,7 @@ mg_check_digest_access_authentication(struct mg_connection *conn,
 static int
 check_authorization(struct mg_connection *conn, const char *path)
 {
-	char fname[PATH_MAX];
+	char fname[MG_PATH_MAX];
 	struct vec uri_vec, filename_vec;
 	const char *list;
 	struct mg_file file = STRUCT_FILE_INITIALIZER;
@@ -7850,7 +7843,7 @@ mg_modify_passwords_file(const char *fname,
                          const char *pass)
 {
 	int found, i;
-	char line[512], u[512] = "", d[512] = "", ha1[33], tmp[PATH_MAX + 8];
+	char line[512], u[512] = "", d[512] = "", ha1[33], tmp[MG_PATH_MAX + 8];
 	FILE *fp, *fp2;
 
 	found = 0;
@@ -7896,7 +7889,7 @@ mg_modify_passwords_file(const char *fname,
 	}
 
 	/* The maximum length of the path to the password file is limited */
-	if ((strlen(fname) + 4) >= PATH_MAX) {
+	if ((strlen(fname) + 4) >= MG_PATH_MAX) {
 		return 0;
 	}
 
@@ -8249,7 +8242,7 @@ print_dir_entry(struct de *de)
 	char size[64], mod[64];
 	struct tm *tm;
 
-	hrefsize = PATH_MAX * 3; /* worst case */
+	hrefsize = MG_PATH_MAX * 3; /* worst case */
 	href = (char *)mg_malloc(hrefsize * 2);
 	if (href == NULL) {
 		return -1;
@@ -8389,7 +8382,7 @@ scan_directory(struct mg_connection *conn,
                void *data,
                int (*cb)(struct de *, void *))
 {
-	char path[PATH_MAX];
+	char path[MG_PATH_MAX];
 	struct dirent *dp;
 	DIR *dirp;
 	struct de de;
@@ -8442,7 +8435,7 @@ scan_directory(struct mg_connection *conn,
 static int
 remove_directory(struct mg_connection *conn, const char *dir)
 {
-	char path[PATH_MAX];
+	char path[MG_PATH_MAX];
 	struct dirent *dp;
 	DIR *dirp;
 	struct de de;
@@ -8559,7 +8552,7 @@ handle_directory_request(struct mg_connection *conn, const char *dir)
 	struct dir_scan_data data = {NULL, 0, 128};
 	char date[64];
 	time_t curtime = time(NULL);
-	char uri_esc[PATH_MAX];
+	char uri_esc[MG_PATH_MAX];
 
 	if (!scan_directory(conn, dir, &data, dir_scan_callback)) {
 		mg_send_http_error(conn,
@@ -8801,7 +8794,7 @@ handle_static_file_request(struct mg_connection *conn,
 	int64_t cl, r1, r2;
 	struct vec mime_vec;
 	int n, truncated;
-	char gz_path[PATH_MAX];
+	char gz_path[MG_PATH_MAX];
 	const char *encoding = "";
 	const char *cors_orig_cfg = conn->ctx->config[ACCESS_CONTROL_ALLOW_ORIGIN];
 	const char *cors1, *cors2, *cors3;
@@ -9073,7 +9066,7 @@ mg_send_mime_file2(struct mg_connection *conn,
 static int
 put_dir(struct mg_connection *conn, const char *path)
 {
-	char buf[PATH_MAX];
+	char buf[MG_PATH_MAX];
 	const char *s, *p;
 	struct mg_file file = STRUCT_FILE_INITIALIZER;
 	size_t len;
@@ -10074,7 +10067,7 @@ handle_cgi_request(struct mg_connection *conn, const char *prog)
 	int headers_len, data_len, i, truncated;
 	int fdin[2] = {-1, -1}, fdout[2] = {-1, -1}, fderr[2] = {-1, -1};
 	const char *status, *status_text, *connection_state;
-	char *pbuf, dir[PATH_MAX], *p;
+	char *pbuf, dir[MG_PATH_MAX], *p;
 	struct mg_request_info ri;
 	struct cgi_environment blk;
 	FILE *in = NULL, *out = NULL, *err = NULL;
@@ -11019,7 +11012,7 @@ print_props(struct mg_connection *conn,
 static int
 print_dav_dir_entry(struct de *de, void *data)
 {
-	char href[PATH_MAX];
+	char href[MG_PATH_MAX];
 	int truncated;
 
 	struct mg_connection *conn = (struct mg_connection *)data;
@@ -11038,7 +11031,7 @@ print_dav_dir_entry(struct de *de, void *data)
 		size_t href_encoded_size;
 		char *href_encoded;
 
-		href_encoded_size = PATH_MAX * 3; /* worst case */
+		href_encoded_size = MG_PATH_MAX * 3; /* worst case */
 		href_encoded = (char *)mg_malloc(href_encoded_size);
 		if (href_encoded == NULL) {
 			return -1;
@@ -12434,7 +12427,7 @@ static void
 handle_request(struct mg_connection *conn)
 {
 	struct mg_request_info *ri = &conn->request_info;
-	char path[PATH_MAX];
+	char path[MG_PATH_MAX];
 	int uri_len, ssl_index;
 	int is_found = 0, is_script_resource = 0, is_websocket_request = 0,
 	    is_put_or_delete_request = 0, is_callback_resource = 0;
@@ -16119,7 +16112,7 @@ worker_thread_run(struct worker_thread_args *thread_args)
 
 	tls.is_master = 0;
 	tls.thread_idx = (unsigned)mg_atomic_inc(&thread_idx_max);
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 	tls.pthread_cond_helper_mutex = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 
@@ -16241,7 +16234,7 @@ worker_thread_run(struct worker_thread_args *thread_args)
 
 
 	pthread_setspecific(sTlsKey, NULL);
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 	CloseHandle(tls.pthread_cond_helper_mutex);
 #endif
 	pthread_mutex_destroy(&conn->mutex);
@@ -16395,7 +16388,7 @@ master_thread_run(void *thread_func_param)
 #endif
 
 /* Initialize thread local storage */
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 	tls.pthread_cond_helper_mutex = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 	tls.is_master = 1;
@@ -16478,7 +16471,7 @@ master_thread_run(void *thread_func_param)
 
 	DEBUG_TRACE("%s", "exiting");
 
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 	CloseHandle(tls.pthread_cond_helper_mutex);
 #endif
 	pthread_setspecific(sTlsKey, NULL);
@@ -16623,9 +16616,9 @@ mg_check_stop(struct mg_context *ctx)
 	mg_join_thread(mt);
 	free_context(ctx);
 
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 	(void)WSACleanup();
-#endif /* _WIN32 && !__SYMBIAN32__ */
+#endif /* _WIN32 */
 
 	return 1;
 }
@@ -16635,7 +16628,6 @@ static void
 get_system_name(char **sysName)
 {
 #if defined(_WIN32)
-#if !defined(__SYMBIAN32__)
 #if defined(_WIN32_WCE)
 	*sysName = mg_strdup("WinCE");
 #else
@@ -16672,9 +16664,6 @@ get_system_name(char **sysName)
 	*sysName = mg_strdup(name);
 #endif
 #else
-	*sysName = mg_strdup("Symbian");
-#endif
-#else
 	struct utsname name;
 	memset(&name, 0, sizeof(name));
 	uname(&name);
@@ -16697,10 +16686,10 @@ mg_start(const struct mg_callbacks *callbacks,
 
 	struct mg_workerTLS tls;
 
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 	WSADATA data;
 	WSAStartup(MAKEWORD(2, 2), &data);
-#endif /* _WIN32 && !__SYMBIAN32__ */
+#endif /* _WIN32 */
 
 	/* Allocate context and initialize reasonable general case defaults. */
 	if ((ctx = (struct mg_context *)mg_calloc(1, sizeof(*ctx))) == NULL) {
@@ -16719,7 +16708,7 @@ mg_start(const struct mg_callbacks *callbacks,
 
 	tls.is_master = -1;
 	tls.thread_idx = (unsigned)mg_atomic_inc(&thread_idx_max);
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 	tls.pthread_cond_helper_mutex = NULL;
 #endif
 	pthread_setspecific(sTlsKey, &tls);
@@ -16867,11 +16856,11 @@ mg_start(const struct mg_callbacks *callbacks,
 		return NULL;
 	}
 
-#if !defined(_WIN32) && !defined(__SYMBIAN32__)
+#if !defined(_WIN32)
 	/* Ignore SIGPIPE signal, so if browser cancels the request, it
 	 * won't kill the whole process. */
 	(void)signal(SIGPIPE, SIG_IGN);
-#endif /* !_WIN32 && !__SYMBIAN32__ */
+#endif /* !_WIN32 */
 
 	ctx->cfg_worker_threads = ((unsigned int)(workerthreadcount));
 	ctx->worker_threadids = (pthread_t *)mg_calloc_ctx(ctx->cfg_worker_threads,
@@ -17114,7 +17103,6 @@ mg_get_system_info_impl(char *buffer, int buflen)
 	/* System info */
 	{
 #if defined(_WIN32)
-#if !defined(__SYMBIAN32__)
 		DWORD dwVersion = 0;
 		DWORD dwMajorVersion = 0;
 		DWORD dwMinorVersion = 0;
@@ -17161,14 +17149,6 @@ mg_get_system_info_impl(char *buffer, int buflen)
 		if (system_info_length < buflen) {
 			strcat0(buffer, block);
 		}
-
-#else
-		mg_snprintf(NULL, NULL, block, sizeof(block), "%s - Symbian%s", eol);
-		system_info_length += (int)strlen(block);
-		if (system_info_length < buflen) {
-			strcat0(buffer, block);
-		}
-#endif
 #else
 		struct utsname name;
 		memset(&name, 0, sizeof(name));
@@ -17973,10 +17953,9 @@ mg_init_library(unsigned features)
 			return 0;
 		}
 
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 		InitializeCriticalSection(&global_log_file_lock);
-#endif /* _WIN32 && !__SYMBIAN32__ */
-#if !defined(_WIN32)
+#else
 		pthread_mutexattr_init(&pthread_mutex_attr);
 		pthread_mutexattr_settype(&pthread_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
 #endif
@@ -18005,10 +17984,10 @@ mg_init_library(unsigned features)
 
 	/* Start WinSock for Windows */
 	if (mg_init_library_called <= 0) {
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 		WSADATA data;
 		WSAStartup(MAKEWORD(2, 2), &data);
-#endif /* _WIN32 && !__SYMBIAN32__ */
+#endif /* _WIN32 */
 		mg_init_library_called = 1;
 	} else {
 		mg_init_library_called++;
@@ -18032,9 +18011,9 @@ mg_exit_library(void)
 
 	mg_init_library_called--;
 	if (mg_init_library_called == 0) {
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 		(void)WSACleanup();
-#endif /* _WIN32 && !__SYMBIAN32__ */
+#endif /* _WIN32 */
 #if !defined(NO_SSL)
 		if (mg_ssl_initialized) {
 			uninitialize_ssl();
@@ -18052,10 +18031,9 @@ mg_exit_library(void)
 #endif
 #endif
 
-#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#if defined(_WIN32)
 		(void)DeleteCriticalSection(&global_log_file_lock);
-#endif /* _WIN32 && !__SYMBIAN32__ */
-#if !defined(_WIN32)
+#else
 		(void)pthread_mutexattr_destroy(&pthread_mutex_attr);
 #endif
 

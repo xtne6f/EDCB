@@ -1,5 +1,4 @@
 -- vim:set ft=lua:
-SORT_BY_REMOCON_KEY_ID=true
 HIDE_SERVICES={
   --非表示にしたいサービスを['ONID-TSID-SID']=true,のように指定
   --['1-2345-6789']=true,
@@ -41,11 +40,7 @@ if sid==0 then
       table.insert(st, v)
     end
   end
-  if SORT_BY_REMOCON_KEY_ID then
-    table.sort(st, function(a,b) return
-      ('%04X%04X%04X%04X'):format(NetworkType(a.onid)=='地デジ' and a.remote_control_key_id or 0xFFFF, a.onid, a.tsid, a.sid)<
-      ('%04X%04X%04X%04X'):format(NetworkType(b.onid)=='地デジ' and b.remote_control_key_id or 0xFFFF, b.onid, b.tsid, b.sid) end)
-  end
+  SortServiceListInplace(st)
   ct:Append('<div class="nav">\n<ul>\n')
   for i,v in ipairs(st) do
     ct:Append('<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'#now">'..v.service_name..'</a></li>\n')

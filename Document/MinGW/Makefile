@@ -6,9 +6,8 @@ TARGETS = EpgDataCap_Bon.exe \
           SendTSTCP.dll \
           Write_Default.dll \
           Write_OneService.dll \
-          EdcbPlugIn.tvtp
-
-# EpgTimerSrv.exe is also buildable, but has some problems about civetweb.c. Don't use.
+          EdcbPlugIn.tvtp \
+          EpgTimerSrv.exe
 
 all: $(addsuffix .all, $(TARGETS))
 clean: $(addsuffix .clean, $(TARGETS))

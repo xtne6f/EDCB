@@ -2866,6 +2866,10 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 	return false;
 }
 
+#ifndef LUA_BUILD_AS_DLL
+extern "C" int luaopen_zlib(lua_State*);
+#endif
+
 void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 {
 	static const luaL_Reg closures[] = {
@@ -2987,6 +2991,11 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 		" end end"
 		" return r;"
 		"end");
+
+#ifndef LUA_BUILD_AS_DLL
+	//ëgÇ›çûÇ›ÇÃzlibÇÉçÅ[ÉhçœÇ›Ç…Ç∑ÇÈ
+	luaL_requiref(L, "zlib", luaopen_zlib, 0);
+#endif
 }
 
 #if 1

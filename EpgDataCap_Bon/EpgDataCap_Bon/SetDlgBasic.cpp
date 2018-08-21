@@ -84,47 +84,22 @@ void CSetDlgBasic::SaveIni()
 void CSetDlgBasic::OnBnClickedButtonRecPath()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	BROWSEINFO bi;
-	LPWSTR lpBuffer;
-	LPITEMIDLIST pidlRoot = NULL;
+	BROWSEINFO bi = {};
+	WCHAR buff[MAX_PATH] = {};
 	LPITEMIDLIST pidlBrowse;
-	LPMALLOC lpMalloc = NULL;
-
-	HRESULT hr = SHGetMalloc(&lpMalloc);
-	if(FAILED(hr)) return;
-
-	if ((lpBuffer = (LPWSTR) lpMalloc->Alloc(_MAX_PATH*2)) == NULL) {
-		return;
-	}
-	WCHAR recFolderPath[512];
-	if( GetDlgItemText(m_hWnd, IDC_EDIT_REC_FOLDER, recFolderPath, 512) <= 0 ){
-		recFolderPath[0] = L'\0';
-		if (!SUCCEEDED(SHGetSpecialFolderLocation( m_hWnd,CSIDL_DESKTOP,&pidlRoot ) )){ 
-			lpMalloc->Free(lpBuffer);
-			return;
-		}
-	}
 
 	bi.hwndOwner = m_hWnd;
-	bi.pidlRoot = pidlRoot;
-	bi.pszDisplayName = lpBuffer;
+	bi.pszDisplayName = buff;
 	bi.lpszTitle = L"録画ファイル保存フォルダを選択してください";
-	bi.ulFlags = 0;
-	bi.lpfn = NULL;
-	bi.lParam = (LPARAM)recFolderPath;
+	bi.ulFlags = BIF_NEWDIALOGSTYLE;
 
 	pidlBrowse = SHBrowseForFolder(&bi);
 	if (pidlBrowse != NULL) {  
-		if (SHGetPathFromIDList(pidlBrowse, lpBuffer)) {
-			SetDlgItemText(m_hWnd, IDC_EDIT_REC_FOLDER, lpBuffer);
+		if (SHGetPathFromIDList(pidlBrowse, buff)) {
+			SetDlgItemText(m_hWnd, IDC_EDIT_REC_FOLDER, buff);
 		}
-		lpMalloc->Free(pidlBrowse);
+		CoTaskMemFree(pidlBrowse);
 	}
-	if( pidlRoot != NULL ){
-		lpMalloc->Free(pidlRoot); 
-	}
-	lpMalloc->Free(lpBuffer);
-	lpMalloc->Release();
 }
 
 
@@ -209,47 +184,22 @@ void CSetDlgBasic::OnBnClickedButtonRecDown()
 void CSetDlgBasic::OnBnClickedButtonSetPath()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	BROWSEINFO bi;
-	LPWSTR lpBuffer;
-	LPITEMIDLIST pidlRoot = NULL;
+	BROWSEINFO bi = {};
+	WCHAR buff[MAX_PATH] = {};
 	LPITEMIDLIST pidlBrowse;
-	LPMALLOC lpMalloc = NULL;
-
-	HRESULT hr = SHGetMalloc(&lpMalloc);
-	if(FAILED(hr)) return;
-
-	if ((lpBuffer = (LPWSTR) lpMalloc->Alloc(_MAX_PATH*2)) == NULL) {
-		return;
-	}
-	WCHAR settingFolderPath[512];
-	if( GetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, settingFolderPath, 512) <= 0 ){
-		settingFolderPath[0] = L'\0';
-		if (!SUCCEEDED(SHGetSpecialFolderLocation( m_hWnd,CSIDL_DESKTOP,&pidlRoot ) )){ 
-			lpMalloc->Free(lpBuffer);
-			return;
-		}
-	}
 
 	bi.hwndOwner = m_hWnd;
-	bi.pidlRoot = pidlRoot;
-	bi.pszDisplayName = lpBuffer;
+	bi.pszDisplayName = buff;
 	bi.lpszTitle = L"設定関係保存フォルダを選択してください";
-	bi.ulFlags = 0;
-	bi.lpfn = NULL;
-	bi.lParam = (LPARAM)settingFolderPath;
+	bi.ulFlags = BIF_NEWDIALOGSTYLE;
 
 	pidlBrowse = SHBrowseForFolder(&bi);
 	if (pidlBrowse != NULL) {  
-		if (SHGetPathFromIDList(pidlBrowse, lpBuffer)) {
-			SetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, lpBuffer);
+		if (SHGetPathFromIDList(pidlBrowse, buff)) {
+			SetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, buff);
 		}
-		lpMalloc->Free(pidlBrowse);
+		CoTaskMemFree(pidlBrowse);
 	}
-	if( pidlRoot != NULL ){
-		lpMalloc->Free(pidlRoot); 
-	}
-	lpMalloc->Free(lpBuffer);
-	lpMalloc->Release();
 }
 
 

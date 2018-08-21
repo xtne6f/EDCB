@@ -1,32 +1,6 @@
-﻿[ビルド環境]
+﻿[ビルド]
 
-Visual Studio Express 2015 for Desktop または Express 2017 for Desktop をインストールする
-他のものは基本的に不要
-
-
-[ビルド環境(VisualStudio2010)]
-
-（以下を順番に入れる）
-
-Visual C++ 2010 Express
-http://go.microsoft.com/fwlink/?LinkId=190491
-
-Visual C# 2010 Express
-http://go.microsoft.com/fwlink/?LinkId=190492
-
-Visual Studio 2010 Service Pack 1（リンク切れ）
-http://www.microsoft.com/ja-jp/download/details.aspx?id=23691
-
-Windows SDK 7.1
-http://www.microsoft.com/en-us/download/details.aspx?id=8279
-# Visual C++ Compilers のチェックを外してインストールする。でないと失敗する
-# Visual C++ x86/x64 2010 Redistributable を事前にアンインストールしておく必要があるかもしれない
-
-Windows SDK 7.1 用 Microsoft Visual C++ 2010 Service Pack 1 コンパイラ更新プログラム
-http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
-
-
-[ビルド]
+0.Visual Studio Express 2015 for Desktop または Express 2017 for Desktop をインストールする
 
 1."Document\EDCB_ALL.VS2015.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
 
@@ -41,7 +15,38 @@ http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
 2.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
 
 
+[ビルド(MSYS2/Mingw-w64)]
+
+0.https://www.msys2.org/ の msys2-i686-日付.exe(32bitOS用) または msys2-x86_64-日付.exe(64bitOS用) をインストール
+  スタートメニューにある"MSYS2 MinGW 32-bit"を開き、起動した黒窓で以下を実行してmakeとgccをインストール
+  $ pacman -S make mingw-w64-i686-gcc
+
+1.つづけて以下を実行（この文書が"C:\EDCB\Document"にあると仮定）
+  $ cd /c/EDCB/Document/MinGW
+  $ make clean
+  $ make -j2
+
+（注意）
+・EpgTimerSrv.exeをビルドする場合はLua5.2のファイルも必要。[その他]を参照
+・EpgDataCap_Bon.exeについては、VC++でビルドされたBonDriverを使用するため、VC++でビルドされたIBonCast.dllが必要
+・EpgTimer.exeについては[その他]を参照
+
+
 [ビルド(VisualStudio2010)]
+
+0.以下を順番に入れる
+  Visual C++ 2010 Express
+  https://go.microsoft.com/fwlink/?LinkId=190491
+  Visual C# 2010 Express
+  https://go.microsoft.com/fwlink/?LinkId=190492
+  Visual Studio 2010 Service Pack 1（リンク切れ、たぶんWindowsUpdateで更新可能）
+  https://www.microsoft.com/ja-jp/download/details.aspx?id=23691
+  Windows SDK 7.1
+  https://www.microsoft.com/en-us/download/details.aspx?id=8279
+  # Visual C++ Compilers のチェックを外してインストールする。でないと失敗する
+  # Visual C++ x86/x64 2010 Redistributable を事前にアンインストールしておく必要があるかもしれない
+  Windows SDK 7.1 用 Microsoft Visual C++ 2010 Service Pack 1 コンパイラ更新プログラム
+  https://www.microsoft.com/ja-jp/download/details.aspx?id=4422
 
 1."Document\EDCB_VCALL.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
 
@@ -66,6 +71,13 @@ http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
   放置してもたぶん問題ないが、MSB3644の警告がでる場合は"EpgTimer\EpgTimer\EpgTimer.csproj"をメモ帳で開き
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   となっている部分をインストールされている.NETのバージョンに変更するか、v4.5のTargeting Packをインストールする
+
+・Lua5.2を組み込んだビルドもできる("EpgTimerSrv\EpgTimerSrv.sln"の[Release-withlua])
+  以下のファイルが必要
+  ・https://www.lua.org/ のlua-5.2.4.tar.gzのsrcフォルダの中身を"EpgTimerSrv\EpgTimerSrv\lua"に既存ファイルも含めて上書き
+  ・https://github.com/brimworks/lua-zlib/releases/ のv0.5.zipのlua_zlib.cを"EpgTimerSrv\EpgTimerSrv\lua"にコピー
+  ・https://zlib.net/ のzlib1211.zipの中身を"EpgTimerSrv\EpgTimerSrv\lua\zlib1"にコピー
+  ビルド中にWarningが多めにでるがコーディングスタイルの問題なので気にしない
 
 ・プラットフォームツールセット:LLVM-vs2014( http://releases.llvm.org/ )に対応している
   ソースコードのUTF-8変換が必要。ConvToUTF8.batで変換できる(ConvToSJIS.batでShift_JISに逆変換)
