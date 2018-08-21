@@ -3,25 +3,6 @@ CPPFLAGS = -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=0
 WINDRES ?= windres
 
 $(TARGET): $(addsuffix .obj, \
-  BonCtrl__CreatePATPacket.cpp \
-  BonCtrl__PacketInit.cpp \
-  BonCtrl__SendTCP.cpp \
-  BonCtrl__SendUDP.cpp \
-  Common__CtrlCmdUtil.cpp \
-  Common__EpgDataCap3Util.cpp \
-  Common__EpgTimerUtil.cpp \
-  Common__ParseTextInstances.cpp \
-  Common__PathUtil.cpp \
-  Common__PipeServer.cpp \
-  Common__ReNamePlugInUtil.cpp \
-  Common__SendCtrlCmd.cpp \
-  Common__SendTSTCPDllUtil.cpp \
-  Common__ServiceUtil.cpp \
-  Common__StringUtil.cpp \
-  Common__TCPServer.cpp \
-  Common__TimeShiftUtil.cpp \
-  Common__TimeUtil.cpp \
-  Common__TSPacketUtil.cpp \
   lua__lapi.c \
   lua__lauxlib.c \
   lua__lbaselib.c \
@@ -66,6 +47,25 @@ $(TARGET): $(addsuffix .obj, \
   lua_zlib1__trees.c \
   lua_zlib1__uncompr.c \
   lua_zlib1__zutil.c \
+  BonCtrl__CreatePATPacket.cpp \
+  BonCtrl__PacketInit.cpp \
+  BonCtrl__SendTCP.cpp \
+  BonCtrl__SendUDP.cpp \
+  Common__CtrlCmdUtil.cpp \
+  Common__EpgDataCap3Util.cpp \
+  Common__EpgTimerUtil.cpp \
+  Common__ParseTextInstances.cpp \
+  Common__PathUtil.cpp \
+  Common__PipeServer.cpp \
+  Common__ReNamePlugInUtil.cpp \
+  Common__SendCtrlCmd.cpp \
+  Common__SendTSTCPDllUtil.cpp \
+  Common__ServiceUtil.cpp \
+  Common__StringUtil.cpp \
+  Common__TCPServer.cpp \
+  Common__TimeShiftUtil.cpp \
+  Common__TimeUtil.cpp \
+  Common__TSPacketUtil.cpp \
   BatManager.cpp \
   civetweb.c \
   EpgDBManager.cpp \

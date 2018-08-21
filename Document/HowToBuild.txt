@@ -24,10 +24,10 @@
 1.つづけて以下を実行（この文書が"C:\EDCB\Document"にあると仮定）
   $ cd /c/EDCB/Document/MinGW
   $ make clean
-  $ make
+  $ make -j2
 
 （注意）
-・EpgTimerSrv.exeは今のところ正しくビルドできない
+・EpgTimerSrv.exeをビルドする場合はLua5.2のファイルも必要。[その他]を参照
 ・EpgDataCap_Bon.exeについては、VC++でビルドされたBonDriverを使用するため、VC++でビルドされたIBonCast.dllが必要
 ・EpgTimer.exeについては[その他]を参照
 
