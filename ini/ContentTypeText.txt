@@ -1,8 +1,6 @@
-.mp4	video/mp4
 .ts	video/mpeg
 ;.ts	video/vnd.dlna.mpeg-tts
-.mp3	audio/mpeg
+.m2t	video/mpeg
+.m2ts	video/mpeg
+.mts	video/mpeg
 .m4a	audio/mp4
-.jpg	image/jpeg
-.jpeg	image/jpeg
-
