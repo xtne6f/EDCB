@@ -65,13 +65,6 @@ namespace EpgTimer
 
     class SettingPath
     {
-        public static string CommonIniPath
-        {
-            get
-            {
-                return Path.Combine(ModulePath, "Common.ini");
-            }
-        }
         public static string TimerSrvIniPath
         {
             get
@@ -79,17 +72,7 @@ namespace EpgTimer
                 return Path.Combine(ModulePath, "EpgTimerSrv.ini");
             }
         }
-        public static void CheckFolderPath(ref string folderPath)
-        {
-            //過去にルートディレクトリ区切りを失った状態("C:"など)で設定などに保存していたので、これに対応する
-            if (folderPath.Length > 0 &&
-                folderPath[folderPath.Length - 1] != Path.DirectorySeparatorChar &&
-                folderPath[folderPath.Length - 1] != Path.AltDirectorySeparatorChar)
-            {
-                //一時的に下層を作って上がる
-                folderPath = Path.GetDirectoryName(folderPath + Path.DirectorySeparatorChar + "a") ?? folderPath;
-            }
-        }
+
         public static string ModulePath
         {
             get
@@ -185,29 +168,6 @@ namespace EpgTimer
         public byte SearchKeyFreeCA { get; set; }
         public byte SearchKeyChkRecEnd { get; set; }
         public UInt16 SearchKeyChkRecDay { get; set; }
-        [System.Xml.Serialization.XmlIgnore]
-        public List<RecPresetItem> RecPresetList
-        {
-            get
-            {
-                var list = new List<RecPresetItem>();
-                list.Add(new RecPresetItem());
-                list[0].DisplayName = "デフォルト";
-                list[0].ID = 0;
-                foreach (string s in IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath).Split(','))
-                {
-                    uint id;
-                    uint.TryParse(s, out id);
-                    if (list.Exists(p => p.ID == id) == false)
-                    {
-                        list.Add(new RecPresetItem());
-                        list.Last().DisplayName = IniFileHandler.GetPrivateProfileString("REC_DEF" + id, "SetName", "", SettingPath.TimerSrvIniPath);
-                        list.Last().ID = id;
-                    }
-                }
-                return list;
-            }
-        }
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
         public bool RecInfoHideButton { get; set; }
@@ -523,15 +483,11 @@ namespace EpgTimer
         /// <summary>
         /// 設定ファイルロード関数
         /// </summary>
-        public static void LoadFromXmlFile(bool nwMode = false)
-        {
-            _LoadFromXmlFile(GetSettingPath(), nwMode);
-        }
-        private static void _LoadFromXmlFile(string path, bool nwMode)
+        public static void LoadFromXmlFile(bool nwMode)
         {
             try
             {
-                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                using (var fs = new FileStream(GetSettingPath(), FileMode.Open, FileAccess.Read))
                 {
                     //読み込んで逆シリアル化する
                     var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
@@ -692,6 +648,26 @@ namespace EpgTimer
             string path = myAssembly.Location + ".xml";
 
             return path;
+        }
+
+        public static List<RecPresetItem> GetRecPresetList()
+        {
+            var list = new List<RecPresetItem>();
+            list.Add(new RecPresetItem());
+            list[0].DisplayName = "デフォルト";
+            list[0].ID = 0;
+            foreach (string s in IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath).Split(','))
+            {
+                uint id;
+                uint.TryParse(s, out id);
+                if (list.Exists(p => p.ID == id) == false)
+                {
+                    list.Add(new RecPresetItem());
+                    list.Last().DisplayName = IniFileHandler.GetPrivateProfileString("REC_DEF" + id, "SetName", "", SettingPath.TimerSrvIniPath);
+                    list.Last().ID = id;
+                }
+            }
+            return list;
         }
 
         public static void GetDefRecSetting(UInt32 presetID, ref RecSettingData defKey)

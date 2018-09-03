@@ -623,7 +623,7 @@ namespace EpgTimer
                             {
                                 cm_add.Items.RemoveAt(i);
                             }
-                            foreach (RecPresetItem info in Settings.Instance.RecPresetList)
+                            foreach (RecPresetItem info in Settings.GetRecPresetList())
                             {
                                 MenuItem menuItem = new MenuItem();
                                 menuItem.Header = info.DisplayName;

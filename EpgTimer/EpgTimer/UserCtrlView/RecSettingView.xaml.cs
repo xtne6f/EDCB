@@ -45,7 +45,7 @@ namespace EpgTimer
                 comboBox_tuner.ItemsSource = tunerList;
                 comboBox_tuner.SelectedIndex = 0;
 
-                foreach (RecPresetItem info in Settings.Instance.RecPresetList)
+                foreach (RecPresetItem info in Settings.GetRecPresetList())
                 {
                     comboBox_preSet.Items.Add(info);
                 }

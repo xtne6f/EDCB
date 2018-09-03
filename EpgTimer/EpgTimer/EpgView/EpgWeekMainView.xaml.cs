@@ -389,7 +389,7 @@ namespace EpgTimer
                 menuItemAdd.Items.Add(menuItemAddDlg);
                 menuItemAdd.Items.Add(new Separator());
 
-                foreach (RecPresetItem info in Settings.Instance.RecPresetList)
+                foreach (RecPresetItem info in Settings.GetRecPresetList())
                 {
                     MenuItem menuItem = new MenuItem();
                     menuItem.Header = info.DisplayName;
