@@ -267,7 +267,7 @@ namespace EpgTimer
             r.UseCustomEpgView          = ConvertXElem(x, w, "UseCustomEpgView", UseCustomEpgView, false);
             r.CustomEpgTabList          = ConvertXElements(x, w, "CustomEpgTabList", CustomEpgTabList).ToList();
             r.MinHeight                 = ConvertXElem(x, w, "MinHeight", MinHeight, 2);
-            r.MinimumHeight             = ConvertXElem(x, w, "MinimumHeight", MinimumHeight, 0);
+            r.MinimumHeight             = ConvertXElem(x, w, "MinimumHeight", MinimumHeight, 0.6);
             r.ServiceWidth              = ConvertXElem(x, w, "ServiceWidth", ServiceWidth, 150);
             r.ScrollSize                = ConvertXElem(x, w, "ScrollSize", ScrollSize, 240);
             r.FontName                  = ConvertXElem(x, w, "FontName", FontName, "メイリオ");
@@ -312,7 +312,7 @@ namespace EpgTimer
             r.EpgToolTipNoViewOnly      = ConvertXElem(x, w, "EpgToolTipNoViewOnly", EpgToolTipNoViewOnly, true);
             r.EpgToolTipViewWait        = (int)ConvertXElem(x, w, "EpgToolTipViewWait", EpgToolTipViewWait, 1500);
             r.EpgPopup                  = ConvertXElem(x, w, "EpgPopup", EpgPopup, true);
-            r.EpgExtInfoPopup           = ConvertXElem(x, w, "EpgExtInfoPopup", EpgExtInfoPopup, false);
+            r.EpgExtInfoPopup           = ConvertXElem(x, w, "EpgExtInfoPopup", EpgExtInfoPopup, true);
             r.EpgGradation              = ConvertXElem(x, w, "EpgGradation", EpgGradation, true);
             r.EpgGradationHeader        = ConvertXElem(x, w, "EpgGradationHeader", EpgGradationHeader, true);
             r.ResColumnHead             = ConvertXElem(x, w, "ResColumnHead", ResColumnHead, "");
@@ -432,7 +432,7 @@ namespace EpgTimer
             r.ShowTray                  = ConvertXElem(x, w, "ShowTray", ShowTray, true);
             r.MinHide                   = ConvertXElem(x, w, "MinHide", MinHide, true);
             r.MouseScrollAuto           = ConvertXElem(x, w, "MouseScrollAuto", MouseScrollAuto, false);
-            r.NoStyle                   = (int)ConvertXElem(x, w, "NoStyle", NoStyle, 0);
+            r.NoStyle                   = (int)ConvertXElem(x, w, "NoStyle", NoStyle, 1);
             r.NoSendClose               = (int)ConvertXElem(x, w, "NoSendClose", NoSendClose, 0);
             r.StartTab                  = ConvertXElem(x, w, "StartTab", StartTab, "ReserveView");
         }
