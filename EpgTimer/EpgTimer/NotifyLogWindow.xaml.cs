@@ -27,7 +27,6 @@ namespace EpgTimer
         string _lastHeaderClicked2 = null;
         ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
-        List<NotifySrvInfoItem> logList = new List<NotifySrvInfoItem>();
         public NotifyLogWindow()
         {
             InitializeComponent();
@@ -36,35 +35,19 @@ namespace EpgTimer
 
         private void ReloadList()
         {
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_log.DataContext);
-            if (dataView != null)
-            {
-                dataView.SortDescriptions.Clear();
-                dataView.Refresh();
-            }
-
-            listView_log.DataContext = null;
-            logList.Clear();
             string notifyLog = "";
             if (CommonManager.CreateSrvCtrl().SendGetNotifyLog(Math.Max(Settings.Instance.NotifyLogMax, 1), ref notifyLog) == ErrCode.CMD_SUCCESS)
             {
                 //サーバに保存されたログを使う
-                foreach (string text in notifyLog.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    logList.Add(new NotifySrvInfoItem(text));
-                }
+                listView_log.ItemsSource = notifyLog.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(text => new NotifySrvInfoItem(text)).ToList();
                 textBox_logMax.IsEnabled = true;
             }
             else
             {
                 //クライアントで蓄積したログを使う
-                foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
-                {
-                    logList.Add(new NotifySrvInfoItem(info));
-                }
+                listView_log.ItemsSource = CommonManager.Instance.NotifyLogList.Select(info => new NotifySrvInfoItem(info)).ToList();
                 textBox_logMax.IsEnabled = false;
             }
-            listView_log.DataContext = logList;
 
             if (_lastHeaderClicked != null)
             {
@@ -82,7 +65,7 @@ namespace EpgTimer
         {
             try
             {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_log.DataContext);
+                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_log.ItemsSource);
 
                 dataView.SortDescriptions.Clear();
 
@@ -158,15 +141,15 @@ namespace EpgTimer
             dlg.DefaultExt = ".txt";
             dlg.Filter = "txt Files (.txt)|*.txt;|all Files(*.*)|*.*";
 
-            Nullable<bool> result = dlg.ShowDialog();
-            if (result == true)
+            if (listView_log.ItemsSource != null && dlg.ShowDialog() == true)
             {
-                StreamWriter file = new StreamWriter(dlg.FileName, false, System.Text.Encoding.GetEncoding("shift_jis") );
-                foreach (NotifySrvInfoItem info in logList)
+                using (var file = new StreamWriter(dlg.FileName, false, Encoding.Unicode))
                 {
-                    file.WriteLine(info);
+                    foreach (NotifySrvInfoItem info in listView_log.ItemsSource)
+                    {
+                        file.WriteLine(info);
+                    }
                 }
-                file.Close();
             }
         }
 
