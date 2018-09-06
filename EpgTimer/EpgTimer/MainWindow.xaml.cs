@@ -527,25 +527,19 @@ namespace EpgTimer
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (this.WindowState == WindowState.Normal)
+            if (WindowState == WindowState.Normal && Visibility == Visibility.Visible)
             {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
-                {
-                    Settings.Instance.MainWndWidth = this.Width;
-                    Settings.Instance.MainWndHeight = this.Height;
-                }
+                Settings.Instance.MainWndWidth = Math.Max(Width, 51);
+                Settings.Instance.MainWndHeight = Math.Max(Height, 1);
             }
         }
 
         private void Window_LocationChanged(object sender, EventArgs e)
         {
-            if (this.WindowState == WindowState.Normal)
+            if (WindowState == WindowState.Normal && Visibility == Visibility.Visible)
             {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
-                {
-                    Settings.Instance.MainWndTop = this.Top;
-                    Settings.Instance.MainWndLeft = this.Left;
-                }
+                Settings.Instance.MainWndTop = Math.Max(Top, 0);
+                Settings.Instance.MainWndLeft = Math.Max(Left, -50);
             }
         }
 
