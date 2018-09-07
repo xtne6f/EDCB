@@ -109,21 +109,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.WakeMin == true)
-                {
-                    if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
-                    {
-                        this.Visibility = System.Windows.Visibility.Hidden;
-                    }
-                    else
-                    {
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            this.WindowState = System.Windows.WindowState.Minimized;
-                        }));
-                    }
-                }
-
                 //ウインドウ位置の復元
                 if (Settings.Instance.MainWndTop != -100)
                 {
@@ -141,7 +126,18 @@ namespace EpgTimer
                 {
                     this.Height = Settings.Instance.MainWndHeight;
                 }
-                this.WindowState = Settings.Instance.LastWindowState;
+                if (Settings.Instance.WakeMin)
+                {
+                    if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
+                    {
+                        Visibility = Visibility.Hidden;
+                    }
+                    WindowState = WindowState.Minimized;
+                }
+                else
+                {
+                    WindowState = Settings.Instance.LastWindowState;
+                }
 
                 ResetButtonView();
 
@@ -491,6 +487,15 @@ namespace EpgTimer
                 reserveView.SaveSize();
                 recInfoView.SaveSize();
                 autoAddView.SaveSize();
+                if (Visibility == Visibility.Visible)
+                {
+                    Rect r = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
+                    Settings.Instance.MainWndLeft = Math.Max(r.Left, -50);
+                    Settings.Instance.MainWndTop = Math.Max(r.Top, 0);
+                    Settings.Instance.MainWndWidth = Math.Max(r.Width, 51);
+                    Settings.Instance.MainWndHeight = Math.Max(r.Height, 1);
+                }
+                Settings.SaveToXmlFile();
 
                 if (CommonManager.Instance.NWMode == false)
                 {
@@ -507,7 +512,6 @@ namespace EpgTimer
                             cmd.SendClose();
                         }
                     }
-                    Settings.SaveToXmlFile();
                     pipeServer.Dispose();
                 }
                 else
@@ -516,36 +520,11 @@ namespace EpgTimer
                     {
                         CommonManager.CreateSrvCtrl().SendUnRegistTCP(Settings.Instance.NWWaitPort);
                     }
-                    Settings.SaveToXmlFile();
                     nwConnect.Dispose();
                 }
                 mutex.ReleaseMutex();
                 mutex.Close();
                 taskTray.Dispose();
-            }
-        }
-
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
-                {
-                    Settings.Instance.MainWndWidth = this.Width;
-                    Settings.Instance.MainWndHeight = this.Height;
-                }
-            }
-        }
-
-        private void Window_LocationChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
-                {
-                    Settings.Instance.MainWndTop = this.Top;
-                    Settings.Instance.MainWndLeft = this.Left;
-                }
             }
         }
 
@@ -555,12 +534,19 @@ namespace EpgTimer
             {
                 if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                 {
-                    this.Visibility = System.Windows.Visibility.Hidden;
+                    if (Visibility == Visibility.Visible)
+                    {
+                        //スナップ機能(半分最大化など)はWindowState.NormalだがRestoreBoundsはMaximize的に変化するため少し不正確
+                        Settings.Instance.MainWndLeft = Math.Max(RestoreBounds.Left, -50);
+                        Settings.Instance.MainWndTop = Math.Max(RestoreBounds.Top, 0);
+                        Settings.Instance.MainWndWidth = Math.Max(RestoreBounds.Width, 51);
+                        Settings.Instance.MainWndHeight = Math.Max(RestoreBounds.Height, 1);
+                        Visibility = Visibility.Hidden;
+                    }
                 }
             }
-            if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
+            else
             {
-                this.Visibility = System.Windows.Visibility.Visible;
                 Settings.Instance.LastWindowState = this.WindowState;
             }
         }

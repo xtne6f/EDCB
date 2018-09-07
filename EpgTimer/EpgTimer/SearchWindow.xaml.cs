@@ -33,14 +33,6 @@ namespace EpgTimer
             try
             {
                 //ウインドウ位置の復元
-                if (Settings.Instance.SearchWndTop != 0)
-                {
-                    this.Top = Settings.Instance.SearchWndTop;
-                }
-                if (Settings.Instance.SearchWndLeft != 0)
-                {
-                    this.Left = Settings.Instance.SearchWndLeft;
-                }
                 if (Settings.Instance.SearchWndWidth != 0)
                 {
                     this.Width = Settings.Instance.SearchWndWidth;
@@ -157,7 +149,7 @@ namespace EpgTimer
                     }
                 }
 
-                listView_result.DataContext = resultList;
+                listView_result.ItemsSource = resultList;
                 RefreshReserve();
                 Sort();
 
@@ -171,9 +163,9 @@ namespace EpgTimer
 
         private void RefreshReserve()
         {
-            if (listView_result.DataContext != null)
+            if (listView_result.ItemsSource != null)
             {
-                foreach (SearchItem item in (List<SearchItem>)listView_result.DataContext)
+                foreach (SearchItem item in listView_result.ItemsSource)
                 {
                     item.ReserveInfo = null;
                     foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
@@ -188,7 +180,7 @@ namespace EpgTimer
                         }
                     }
                 }
-                CollectionViewSource.GetDefaultView(listView_result.DataContext).Refresh();
+                CollectionViewSource.GetDefaultView(listView_result.ItemsSource).Refresh();
             }
         }
 
@@ -395,11 +387,11 @@ namespace EpgTimer
 
         private void Sort()
         {
-            if (listView_result.DataContext == null)
+            if (listView_result.ItemsSource == null)
             {
                 return;
             }
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.ItemsSource);
 
             using (dataView.DeferRefresh())
             {
@@ -418,18 +410,6 @@ namespace EpgTimer
             Settings.Instance.SearchWndHeight = Height;
             Settings.Instance.SearchWndTabsHeight = grid_Tabs.Height.Value;
             CommonManager.Instance.DB.ReserveInfoChanged -= RefreshReserve;
-        }
-
-        private void Window_LocationChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
-                {
-                    Settings.Instance.SearchWndTop = this.Top;
-                    Settings.Instance.SearchWndLeft = this.Left;
-                }
-            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
