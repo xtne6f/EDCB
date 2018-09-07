@@ -236,8 +236,6 @@ namespace EpgTimer
         public List<ListColumnInfo> RecInfoListColumn { get; set; }
         public List<ListColumnInfo> AutoAddEpgColumn { get; set; }
         public List<ListColumnInfo> AutoAddManualColumn { get; set; }
-        public double SearchWndLeft { get; set; }
-        public double SearchWndTop { get; set; }
         public double SearchWndWidth { get; set; }
         public double SearchWndHeight { get; set; }
         public int NotifyLogMax { get; set; }
@@ -424,8 +422,6 @@ namespace EpgTimer
             r.RecInfoListColumn         = ConvertXElements(x, w, "RecInfoListColumn", RecInfoListColumn).ToList();
             r.AutoAddEpgColumn          = ConvertXElements(x, w, "AutoAddEpgColumn", AutoAddEpgColumn).ToList();
             r.AutoAddManualColumn       = ConvertXElements(x, w, "AutoAddManualColumn", AutoAddManualColumn).ToList();
-            r.SearchWndLeft             = ConvertXElem(x, w, "SearchWndLeft", SearchWndLeft, 0);
-            r.SearchWndTop              = ConvertXElem(x, w, "SearchWndTop", SearchWndTop, 0);
             r.SearchWndWidth            = ConvertXElem(x, w, "SearchWndWidth", SearchWndWidth, 0);
             r.SearchWndHeight           = ConvertXElem(x, w, "SearchWndHeight", SearchWndHeight, 0);
             r.NotifyLogMax              = (int)ConvertXElem(x, w, "NotifyLogMax", NotifyLogMax, 100);
@@ -479,8 +475,6 @@ namespace EpgTimer
             dest.RecInfoListColumn = RecInfoListColumn;
             dest.AutoAddEpgColumn = AutoAddEpgColumn;
             dest.AutoAddManualColumn = AutoAddManualColumn;
-            dest.SearchWndLeft = SearchWndLeft;
-            dest.SearchWndTop = SearchWndTop;
             dest.SearchWndWidth = SearchWndWidth;
             dest.SearchWndHeight = SearchWndHeight;
             dest.NotifyLogMax = NotifyLogMax;

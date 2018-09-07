@@ -33,14 +33,6 @@ namespace EpgTimer
             try
             {
                 //ウインドウ位置の復元
-                if (Settings.Instance.SearchWndTop != 0)
-                {
-                    this.Top = Settings.Instance.SearchWndTop;
-                }
-                if (Settings.Instance.SearchWndLeft != 0)
-                {
-                    this.Left = Settings.Instance.SearchWndLeft;
-                }
                 if (Settings.Instance.SearchWndWidth != 0)
                 {
                     this.Width = Settings.Instance.SearchWndWidth;
@@ -418,18 +410,6 @@ namespace EpgTimer
             Settings.Instance.SearchWndHeight = Height;
             Settings.Instance.SearchWndTabsHeight = grid_Tabs.Height.Value;
             CommonManager.Instance.DB.ReserveInfoChanged -= RefreshReserve;
-        }
-
-        private void Window_LocationChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
-                {
-                    Settings.Instance.SearchWndTop = this.Top;
-                    Settings.Instance.SearchWndLeft = this.Left;
-                }
-            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
