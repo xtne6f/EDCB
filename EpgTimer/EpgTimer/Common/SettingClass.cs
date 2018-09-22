@@ -501,132 +501,130 @@ namespace EpgTimer
         /// </summary>
         public static void LoadFromXmlFile(bool nwMode)
         {
-            try
+            for (int retry = 0; ;)
             {
-                using (var fs = new FileStream(GetSettingPath(), FileMode.Open, FileAccess.Read))
+                try
                 {
-                    //読み込んで逆シリアル化する
-                    //var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
-                    //Instance = (Settings)xs.Deserialize(fs);
-                    //XmlSerializerがとても遅いので自力でやる(処理時間1/3ほど)
-                    var x = XDocument.Load(fs).Element("Settings");
-                    if (x != null)
+                    using (var fs = new FileStream(GetSettingPath(), FileMode.Open, FileAccess.Read))
                     {
-                        Instance = new Settings(x);
+                        //読み込んで逆シリアル化する
+                        //var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
+                        //Instance = (Settings)xs.Deserialize(fs);
+                        //XmlSerializerがとても遅いので自力でやる(処理時間1/3ほど)
+                        XElement x = XDocument.Load(fs).Element("Settings");
+                        if (x != null)
+                        {
+                            Instance = new Settings(x);
+                        }
                     }
+                    break;
                 }
-            }
-            catch
-            {
-                //設定ファイルが存在しない、内容が異常、など
+                catch (IOException)
+                {
+                    //FileNotFoundExceptionを含むので注意(File.Replace()の内部でNotFoundになる瞬間がある)
+                    if (++retry > 4)
+                    {
+                        break;
+                    }
+                    System.Threading.Thread.Sleep(200 * retry);
+                }
+                catch
+                {
+                    //内容が異常など
+                    break;
+                }
             }
 
-            try
-            {
-                //色設定関係
-                Instance.SetColorSetting();
+            //色設定関係
+            Instance.SetColorSetting();
 
-                if (Instance.ViewButtonList.Count == 0)
+            if (Instance.ViewButtonList.Count == 0)
+            {
+                if (nwMode)
                 {
-                    if (nwMode == false)
+                    Instance.ViewButtonList = new List<string>
                     {
-                        Instance.ViewButtonList.Add("設定");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("検索");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("スタンバイ");
-                        Instance.ViewButtonList.Add("休止");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("EPG取得");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("EPG再読み込み");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("終了");
-                    }
-                    else
+                        "設定", "（空白）", "再接続", "（空白）", "検索", "（空白）", "EPG取得", "（空白）", "EPG再読み込み", "（空白）", "終了"
+                    };
+                }
+                else
+                {
+                    Instance.ViewButtonList = new List<string>
                     {
-                        Instance.ViewButtonList.Add("設定");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("再接続");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("検索");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("EPG取得");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("EPG再読み込み");
-                        Instance.ViewButtonList.Add("（空白）");
-                        Instance.ViewButtonList.Add("終了");
-                    }
-                }
-                if (Instance.TaskMenuList.Count == 0)
-                {
-                    if (nwMode == false)
-                    {
-                        Instance.TaskMenuList.Add("設定");
-                        Instance.TaskMenuList.Add("（セパレータ）");
-                        Instance.TaskMenuList.Add("スタンバイ");
-                        Instance.TaskMenuList.Add("休止");
-                        Instance.TaskMenuList.Add("（セパレータ）");
-                        Instance.TaskMenuList.Add("終了");
-                    }
-                    else
-                    {
-                        Instance.TaskMenuList.Add("設定");
-                        Instance.TaskMenuList.Add("（セパレータ）");
-                        Instance.TaskMenuList.Add("再接続");
-                        Instance.TaskMenuList.Add("（セパレータ）");
-                        Instance.TaskMenuList.Add("終了");
-                    }
-                }
-                if (Instance.ReserveListColumn.Count == 0)
-                {
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo("RecFileName", double.NaN));
-                }
-                if (Instance.RecInfoListColumn.Count == 0)
-                {
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
-                }
-                if (Instance.AutoAddEpgColumn.Count == 0)
-                {
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                }
-                if (Instance.AutoAddManualColumn.Count == 0)
-                {
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                        "設定", "（空白）", "検索", "（空白）", "スタンバイ", "休止", "（空白）", "EPG取得", "（空白）", "EPG再読み込み", "（空白）", "終了"
+                    };
                 }
             }
-            catch (Exception ex)
+            if (Instance.TaskMenuList.Count == 0)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                if (nwMode)
+                {
+                    Instance.TaskMenuList = new List<string> { "設定", "（セパレータ）", "再接続", "（セパレータ）", "終了" };
+                }
+                else
+                {
+                    Instance.TaskMenuList = new List<string> { "設定", "（セパレータ）", "スタンバイ", "休止", "（セパレータ）", "終了" };
+                }
+            }
+            if (Instance.ReserveListColumn.Count == 0)
+            {
+                Instance.ReserveListColumn = new List<ListColumnInfo>
+                {
+                    new ListColumnInfo("StartTime", double.NaN),
+                    new ListColumnInfo("NetworkName", double.NaN),
+                    new ListColumnInfo("ServiceName", double.NaN),
+                    new ListColumnInfo("EventName", double.NaN),
+                    new ListColumnInfo("RecMode", double.NaN),
+                    new ListColumnInfo("Priority", double.NaN),
+                    new ListColumnInfo("Tuijyu", double.NaN),
+                    new ListColumnInfo("Comment", double.NaN),
+                    new ListColumnInfo("RecFileName", double.NaN)
+                };
+            }
+            if (Instance.RecInfoListColumn.Count == 0)
+            {
+                Instance.RecInfoListColumn = new List<ListColumnInfo>
+                {
+                    new ListColumnInfo("IsProtect", double.NaN),
+                    new ListColumnInfo("StartTime", double.NaN),
+                    new ListColumnInfo("NetworkName", double.NaN),
+                    new ListColumnInfo("ServiceName", double.NaN),
+                    new ListColumnInfo("EventName", double.NaN),
+                    new ListColumnInfo("Drops", double.NaN),
+                    new ListColumnInfo("Scrambles", double.NaN),
+                    new ListColumnInfo("Result", double.NaN),
+                    new ListColumnInfo("RecFilePath", double.NaN)
+                };
+            }
+            if (Instance.AutoAddEpgColumn.Count == 0)
+            {
+                Instance.AutoAddEpgColumn = new List<ListColumnInfo>
+                {
+                    new ListColumnInfo("AndKey", double.NaN),
+                    new ListColumnInfo("NotKey", double.NaN),
+                    new ListColumnInfo("RegExp", double.NaN),
+                    new ListColumnInfo("RecMode", double.NaN),
+                    new ListColumnInfo("Priority", double.NaN),
+                    new ListColumnInfo("Tuijyu", double.NaN)
+                };
+            }
+            if (Instance.AutoAddManualColumn.Count == 0)
+            {
+                Instance.AutoAddManualColumn = new List<ListColumnInfo>
+                {
+                    new ListColumnInfo("DayOfWeek", double.NaN),
+                    new ListColumnInfo("Time", double.NaN),
+                    new ListColumnInfo("Title", double.NaN),
+                    new ListColumnInfo("StationName", double.NaN),
+                    new ListColumnInfo("RecMode", double.NaN),
+                    new ListColumnInfo("Priority", double.NaN)
+                };
             }
         }
 
+        /// <summary>
+        /// 設定ファイルセーブ関数(プロセス間で排他すること)
+        /// </summary>
         public static void SaveToXmlFile(bool notifyException = false)
         {
             try
@@ -649,13 +647,26 @@ namespace EpgTimer
                     Instance.ConvertXElem(x, true);
                     (new XDocument(x)).Save(fs);
                 }
-                try
+                for (int retry = 0; ;)
                 {
-                    File.Replace(path + ".back", path, null);
-                }
-                catch (FileNotFoundException)
-                {
-                    File.Move(path + ".back", path);
+                    try
+                    {
+                        File.Replace(path + ".back", path, null);
+                        break;
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        File.Move(path + ".back", path);
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                        if (++retry > 4)
+                        {
+                            throw;
+                        }
+                        System.Threading.Thread.Sleep(200 * retry);
+                    }
                 }
             }
             catch (Exception ex)
