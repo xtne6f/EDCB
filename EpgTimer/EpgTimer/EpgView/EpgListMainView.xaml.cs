@@ -695,10 +695,7 @@ namespace EpgTimer
                 reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
                 reserveInfo.ServiceID = eventInfo.service_id;
                 reserveInfo.EventID = eventInfo.event_id;
-
-                RecSettingData setInfo = new RecSettingData();
-                Settings.GetDefRecSetting(presetID, ref setInfo);
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = Settings.CreateRecSetting(presetID);
 
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
@@ -967,8 +964,7 @@ namespace EpgTimer
                 dlg.SetDefSetting(setViewInfo);
                 if (dlg.ShowDialog() == true)
                 {
-                    var setInfo = new CustomEpgTabInfo();
-                    dlg.GetSetting(ref setInfo);
+                    var setInfo = dlg.GetSetting();
                     if (setInfo.ViewMode == setViewInfo.ViewMode)
                     {
                         setViewInfo = setInfo;

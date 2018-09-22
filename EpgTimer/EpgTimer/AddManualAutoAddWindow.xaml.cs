@@ -124,10 +124,7 @@ namespace EpgTimer
             defKey.originalNetworkID = chItem.ONID;
             defKey.transportStreamID = chItem.TSID;
             defKey.serviceID = chItem.SID;
-
-            RecSettingData recSet = new RecSettingData();
-            recSettingView.GetRecSetting(ref recSet);
-            defKey.recSetting = recSet;
+            defKey.recSetting = recSettingView.GetRecSetting();
 
             List<ManualAutoAddData> val = new List<ManualAutoAddData>();
             val.Add(defKey);

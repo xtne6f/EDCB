@@ -284,18 +284,13 @@ namespace EpgTimer
                 }
                 TimeSpan duration = endTime - reserveInfo.StartTime;
                 reserveInfo.DurationSecond = (uint)duration.TotalSeconds;
-
-                RecSettingData setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-                setInfo.TuijyuuFlag = 0;
-                setInfo.PittariFlag = 0;
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = recSettingView.GetRecSetting();
+                reserveInfo.RecSetting.TuijyuuFlag = 0;
+                reserveInfo.RecSetting.PittariFlag = 0;
             }
             else
             {
-                RecSettingData setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = recSettingView.GetRecSetting();
             }
             List<ReserveData> list = new List<ReserveData>();
             list.Add(reserveInfo);

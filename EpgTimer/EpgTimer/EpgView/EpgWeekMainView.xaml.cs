@@ -272,29 +272,18 @@ namespace EpgTimer
         /// マウス位置から予約情報を取得する
         /// </summary>
         /// <param name="cursorPos">[IN]マウス位置</param>
-        /// <param name="reserve">[OUT]予約情報</param>
-        /// <returns>falseで存在しない</returns>
-        private bool GetReserveItem(Point cursorPos, ref ReserveData reserve)
+        /// <returns>nullで存在しない</returns>
+        private ReserveData GetReserveItem(Point cursorPos)
         {
-            try
+            foreach (ReserveViewItem resInfo in reserveList)
             {
+                if (resInfo.LeftPos <= cursorPos.X && cursorPos.X < resInfo.LeftPos + resInfo.Width &&
+                    resInfo.TopPos <= cursorPos.Y && cursorPos.Y < resInfo.TopPos + resInfo.Height)
                 {
-                    foreach (ReserveViewItem resInfo in reserveList)
-                    {
-                        if (resInfo.LeftPos <= cursorPos.X && cursorPos.X < resInfo.LeftPos + resInfo.Width &&
-                            resInfo.TopPos <= cursorPos.Y && cursorPos.Y < resInfo.TopPos + resInfo.Height)
-                        {
-                            reserve = resInfo.ReserveInfo;
-                            return true;
-                        }
-                    }
+                    return resInfo.ReserveInfo;
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return false;
+            return null;
         }
 
         /// <summary>
@@ -331,8 +320,8 @@ namespace EpgTimer
             try
             {
                 //まず予約情報あるかチェック
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(cursorPos, ref reserve) == true)
+                ReserveData reserve = GetReserveItem(cursorPos);
+                if (reserve != null)
                 {
                     //予約変更ダイアログ表示
                     ChangeReserve(reserve);
@@ -364,11 +353,12 @@ namespace EpgTimer
             {
                 //右クリック表示メニューの作成
                 clickPos = cursorPos;
-                ReserveData reserve = new ReserveData();
+                ReserveData reserve = GetReserveItem(cursorPos);
                 ProgramViewItem program = null;
                 bool addMode = false;
-                if (GetReserveItem(cursorPos, ref reserve) == false)
+                if (reserve == null)
                 {
+                    reserve = new ReserveData();
                     program = GetProgramItem(cursorPos);
                     addMode = true;
                 }
@@ -564,10 +554,7 @@ namespace EpgTimer
                 reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
                 reserveInfo.ServiceID = eventInfo.service_id;
                 reserveInfo.EventID = eventInfo.event_id;
-
-                RecSettingData setInfo = new RecSettingData();
-                Settings.GetDefRecSetting(presetID, ref setInfo);
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = Settings.CreateRecSetting(presetID);
 
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
@@ -612,18 +599,10 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_Click(object sender, RoutedEventArgs e)
         {
-            try
+            ReserveData reserve = GetReserveItem(clickPos);
+            if (reserve != null)
             {
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
-                {
-                    return;
-                }
                 ChangeReserve(reserve);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -636,8 +615,8 @@ namespace EpgTimer
         {
             try
             {
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
+                ReserveData reserve = GetReserveItem(clickPos);
+                if (reserve == null)
                 {
                     return;
                 }
@@ -664,8 +643,8 @@ namespace EpgTimer
         {
             try
             {
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
+                ReserveData reserve = GetReserveItem(clickPos);
+                if (reserve == null)
                 {
                     return;
                 }
@@ -693,8 +672,8 @@ namespace EpgTimer
         {
             try
             {
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
+                ReserveData reserve = GetReserveItem(clickPos);
+                if (reserve == null)
                 {
                     return;
                 }
@@ -770,8 +749,8 @@ namespace EpgTimer
                     return;
                 }
 
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
+                ReserveData reserve = GetReserveItem(clickPos);
+                if (reserve == null)
                 {
                     return;
                 }
@@ -801,8 +780,7 @@ namespace EpgTimer
                 dlg.SetDefSetting(setViewInfo);
                 if (dlg.ShowDialog() == true)
                 {
-                    var setInfo = new CustomEpgTabInfo();
-                    dlg.GetSetting(ref setInfo);
+                    var setInfo = dlg.GetSetting();
                     if (setInfo.ViewMode == setViewInfo.ViewMode)
                     {
                         setViewInfo = setInfo;

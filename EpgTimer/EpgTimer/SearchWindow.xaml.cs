@@ -46,20 +46,11 @@ namespace EpgTimer
                     //操作不可能な値をセットしないよう努める
                     grid_Tabs.Height = new GridLength(Math.Min(Settings.Instance.SearchWndTabsHeight, Height));
                 }
-
-                EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                Settings.Instance.GetDefSearchSetting(defKey);
-
-                searchKeyView.SetSearchKey(defKey);
+                searchKeyView.SetSearchKey(Settings.Instance.CreateDefSearchSetting());
             }
             catch
             {
             }
-        }
-
-        public void GetSearchKey(ref EpgSearchKeyInfo key)
-        {
-            searchKeyView.GetSearchKey(ref key);
         }
 
         public void SetSearchDefKey(EpgSearchKeyInfo key)
@@ -124,8 +115,7 @@ namespace EpgTimer
             {
                 var resultList = new List<SearchItem>();
 
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref key);
+                EpgSearchKeyInfo key = searchKeyView.GetSearchKey();
                 key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? 7 : 0);
                 List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
 
@@ -191,8 +181,7 @@ namespace EpgTimer
                 if (listView_result.SelectedItem != null)
                 {
                     List<ReserveData> list = new List<ReserveData>();
-                    RecSettingData setInfo = new RecSettingData();
-                    recSettingView.GetRecSetting(ref setInfo);
+                    RecSettingData setInfo = recSettingView.GetRecSetting();
 
                     foreach (SearchItem item in listView_result.SelectedItems)
                     {
@@ -254,14 +243,8 @@ namespace EpgTimer
             try
             {
                 EpgAutoAddData addItem = new EpgAutoAddData();
-                EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref searchKey);
-
-                RecSettingData recSetKey = new RecSettingData();
-                recSettingView.GetRecSetting(ref recSetKey);
-
-                addItem.searchInfo = searchKey;
-                addItem.recSetting = recSetKey;
+                addItem.searchInfo = searchKeyView.GetSearchKey();
+                addItem.recSetting = recSettingView.GetRecSetting();
 
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
@@ -283,14 +266,8 @@ namespace EpgTimer
             {
                 EpgAutoAddData addItem = new EpgAutoAddData();
                 addItem.dataID = autoAddID;
-                EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref searchKey);
-
-                RecSettingData recSetKey = new RecSettingData();
-                recSettingView.GetRecSetting(ref recSetKey);
-
-                addItem.searchInfo = searchKey;
-                addItem.recSetting = recSetKey;
+                addItem.searchInfo = searchKeyView.GetSearchKey();
+                addItem.recSetting = recSettingView.GetRecSetting();
 
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);

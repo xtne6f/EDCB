@@ -609,7 +609,7 @@ namespace EpgTimer
                             info.DurationSecond = pgInfo.durationSec;
                         }
                     }
-                    Settings.GetDefRecSetting(0, ref info.RecSetting);
+                    info.RecSetting = Settings.CreateRecSetting(0);
                     addList.Add(info);
                 }
             }

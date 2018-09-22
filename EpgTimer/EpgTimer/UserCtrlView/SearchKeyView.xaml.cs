@@ -106,8 +106,9 @@ namespace EpgTimer
             SaveSearchLogSettings();
         }
 
-        public void GetSearchKey(ref EpgSearchKeyInfo key)
+        public EpgSearchKeyInfo GetSearchKey()
         {
+            var key = new EpgSearchKeyInfo();
             key.andKey = comboBox_andKey.Text;
             key.notKey = comboBox_notKey.Text;
             key.regExpFlag = checkBox_regExp.IsChecked == true ? 1 : 0;
@@ -129,7 +130,6 @@ namespace EpgTimer
                 key.andKey = "^!{999}" + key.andKey;
             }
 
-            key.contentList.Clear();
             if (listBox_content.IsEnabled)
             {
                 foreach (ContentKindInfo info in listBox_content.Items)
@@ -142,7 +142,6 @@ namespace EpgTimer
             }
             key.notContetFlag = (byte)(checkBox_notContent.IsChecked == true ? 1 : 0);
 
-            key.dateList.Clear();
             if (listBox_date.IsEnabled)
             {
                 foreach (DateItem info in listBox_date.Items)
@@ -152,7 +151,6 @@ namespace EpgTimer
             }
             key.notDateFlag = (byte)(checkBox_notDate.IsChecked == true ? 1 : 0);
 
-            key.serviceList.Clear();
             foreach (ServiceItem info in listView_service.Items)
             {
                 if (info.IsSelected)
@@ -168,6 +166,7 @@ namespace EpgTimer
             {
                 key.chkRecDay = (ushort)(key.chkRecDay % 10000 + 40000);
             }
+            return key;
         }
 
         public void SetSearchKey(EpgSearchKeyInfo key)

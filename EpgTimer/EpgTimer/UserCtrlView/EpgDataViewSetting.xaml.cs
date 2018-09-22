@@ -159,9 +159,9 @@ namespace EpgTimer
         /// <summary>
         /// 設定値の取得
         /// </summary>
-        /// <param name="setInfo"></param>
-        public void GetSetting(ref CustomEpgTabInfo info)
+        public CustomEpgTabInfo GetSetting()
         {
+            var info = new CustomEpgTabInfo();
             info.TabName = textBox_tabName.Text;
             if (radioButton_rate.IsChecked == true)
             {
@@ -217,17 +217,16 @@ namespace EpgTimer
 
             info.SearchKey = searchKey;
 
-            info.ViewServiceList.Clear();
             foreach (ChSet5Item item in listBox_serviceView.Items)
             {
                 info.ViewServiceList.Add(item.Key);
             }
 
-            info.ViewContentKindList.Clear();
             foreach (ContentKindInfo item in listBox_jyanruView.Items)
             {
                 info.ViewContentKindList.Add(item.ID);
             }
+            return info;
         }
 
         /// <summary>
@@ -552,7 +551,7 @@ namespace EpgTimer
             dlg.SetDefSetting(searchKey);
             if (dlg.ShowDialog() == true)
             {
-                dlg.GetSetting(ref searchKey);
+                searchKey = dlg.GetSetting();
             }
         }
 

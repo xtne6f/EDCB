@@ -706,8 +706,9 @@ namespace EpgTimer
             return list;
         }
 
-        public static void GetDefRecSetting(UInt32 presetID, ref RecSettingData defKey)
+        public static RecSettingData CreateRecSetting(uint presetID)
         {
+            var defKey = new RecSettingData();
             String defName = "REC_DEF";
             String defFolderName = "REC_DEF_FOLDER";
             String defFolder1SegName = "REC_DEF_FOLDER_1SEG";
@@ -757,11 +758,12 @@ namespace EpgTimer
             defKey.ContinueRecFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "ContinueRec", 0, SettingPath.TimerSrvIniPath);
             defKey.PartialRecFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "PartialRec", 0, SettingPath.TimerSrvIniPath);
             defKey.TunerID = (UInt32)IniFileHandler.GetPrivateProfileInt(defName, "TunerID", 0, SettingPath.TimerSrvIniPath);
-
+            return defKey;
         }
 
-        public void GetDefSearchSetting(EpgSearchKeyInfo defKey)
+        public EpgSearchKeyInfo CreateDefSearchSetting()
         {
+            var defKey = new EpgSearchKeyInfo();
             defKey.andKey = SearchKeyAndKey;
             defKey.notKey = SearchKeyNotKey;
             defKey.regExpFlag = SearchKeyRegExp ? 1 : 0;
@@ -769,7 +771,6 @@ namespace EpgTimer
             defKey.titleOnlyFlag = SearchKeyTitleOnly ? 1 : 0;
             defKey.notContetFlag = (byte)(SearchKeyNotContent ? 1 : 0);
             defKey.notDateFlag = (byte)(SearchKeyNotDate ? 1 : 0);
-            defKey.contentList.Clear();
             foreach (ContentKindInfo info in SearchKeyContentList)
             {
                 EpgContentData item = new EpgContentData();
@@ -777,13 +778,12 @@ namespace EpgTimer
                 item.content_nibble_level_2 = info.Nibble2;
                 defKey.contentList.Add(item);
             }
-            defKey.dateList.Clear();
             defKey.dateList.AddRange(SearchKeyDateItemList.Select(a => a.DeepClone().DateInfo));
-            defKey.serviceList.Clear();
             defKey.serviceList.AddRange(SearchKeyServiceList);
             defKey.freeCAFlag = SearchKeyFreeCA;
             defKey.chkRecEnd = SearchKeyChkRecEnd;
             defKey.chkRecDay = SearchKeyChkRecDay;
+            return defKey;
         }
 
         private void SetColorSetting()
