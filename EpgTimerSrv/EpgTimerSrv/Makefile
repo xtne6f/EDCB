@@ -84,7 +84,7 @@ $(TARGET): $(addsuffix .obj, \
   UpnpSsdpServer.cpp \
   EpgTimerSrv.rc \
   )
-	$(CXX) -mwindows -Wl,-s -static -o $@ $^ -lws2_32 -lole32 -lcomctl32 -lwinhttp -loleaut32 -lcrypt32 -liphlpapi -luuid -lnetapi32
+	$(CXX) -mwindows -Wl,-s -static-libgcc -static-libstdc++ -o $@ $^ -lws2_32 -lole32 -lcomctl32 -lwinhttp -loleaut32 -lcrypt32 -liphlpapi -luuid -lnetapi32
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 Common__%.cpp.obj: ../../Common/%.cpp

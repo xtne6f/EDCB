@@ -12,9 +12,6 @@
 #include <lm.h>
 #pragma comment (lib, "netapi32.lib")
 
-//互換動作のためのグローバルなフラグ(この手法は綺麗ではないが最もシンプルなので)
-DWORD g_compatFlags;
-
 namespace
 {
 
@@ -143,7 +140,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	this->notifyManager.SetGUI(!serviceFlag_);
 	this->residentFlag = serviceFlag_;
 
-	g_compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 0, GetModuleIniPath().c_str());
+	this->compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 0, GetModuleIniPath().c_str());
 
 	fs_path settingPath = GetSettingPath();
 	this->epgAutoAdd.ParseText(fs_path(settingPath).append(EPG_AUTO_ADD_TEXT_NAME).c_str());
@@ -1378,8 +1375,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 	__int64 now = GetNowI64Time();
 
 	vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> resultList;
-	vector<EPGDB_SEARCH_KEY_INFO> key(1, data.searchInfo);
-	this->epgDB.SearchEpg(&key, &resultList);
+	this->epgDB.SearchEpg(&data.searchInfo, 1, &resultList);
 	for( size_t i = 0; i < resultList.size(); i++ ){
 		const EPGDB_EVENT_INFO& info = resultList[i].info;
 		//時間未定でなく対象期間内かどうか
@@ -1715,7 +1711,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}else{
 			vector<EPGDB_SEARCH_KEY_INFO> key;
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) ){
-				sys->epgDB.SearchEpg(&key, [=](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
+				sys->epgDB.SearchEpg(key.data(), key.size(), [=](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
 					vector<const EPGDB_EVENT_INFO*> valp;
 					valp.reserve(val.size());
 					for( size_t i = 0; i < val.size(); valp.push_back(val[i++].info) );
@@ -2549,9 +2545,9 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			}else{
 				EPG_AUTO_ADD_DATA item;
 				if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
-					vector<EPGDB_SEARCH_KEY_INFO> key(1, item.searchInfo);
 					vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> val;
-					if( sys->epgDB.SearchEpg(&key, &val) ){
+					sys->epgDB.SearchEpg(&item.searchInfo, 1, &val);
+					{
 						sys->oldSearchList[tcpFlag].clear();
 						sys->oldSearchList[tcpFlag].resize(val.size());
 						for( size_t i = 0; i < val.size(); i++ ){
@@ -2592,7 +2588,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 
 	switch( cmdParam.param ){
 	case CMD2_EPG_SRV_ISREGIST_GUI_TCP:
-		if( g_compatFlags & 0x04 ){
+		if( this->compatFlags & 0x04 ){
 			//互換動作: TCP接続の登録状況確認コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_ISREGIST_GUI_TCP\r\n");
 			REGIST_TCP_INFO val;
@@ -2608,7 +2604,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		}
 		break;
 	case CMD2_EPG_SRV_PROFILE_UPDATE:
-		if( g_compatFlags & 0x08 ){
+		if( this->compatFlags & 0x08 ){
 			//互換動作: 設定更新通知コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_PROFILE_UPDATE\r\n");
 			wstring val = L"";
@@ -2619,7 +2615,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		}
 		break;
 	case CMD2_EPG_SRV_GET_NETWORK_PATH:
-		if( g_compatFlags & 0x10 ){
+		if( this->compatFlags & 0x10 ){
 			//互換動作: ネットワークパス取得コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_GET_NETWORK_PATH\r\n");
 			wstring path;
@@ -2669,7 +2665,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		}
 		break;
 	case CMD2_EPG_SRV_SEARCH_PG2:
-		if( g_compatFlags & 0x20 ){
+		if( this->compatFlags & 0x20 ){
 			//互換動作: 番組検索の追加コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG2\r\n");
 			if( this->epgDB.IsInitialLoadingDataDone() == false ){
@@ -2680,7 +2676,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 				if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) ){
 					vector<EPGDB_SEARCH_KEY_INFO> key;
 					if( ReadVALUE2(ver, &key, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
-						this->epgDB.SearchEpg(&key, [=, &resParam](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
+						this->epgDB.SearchEpg(key.data(), key.size(), [=, &resParam](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
 							vector<const EPGDB_EVENT_INFO*> valp;
 							valp.reserve(val.size());
 							for( size_t i = 0; i < val.size(); valp.push_back(val[i++].info) );
@@ -2694,7 +2690,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		}
 		break;
 	case CMD2_EPG_SRV_SEARCH_PG_BYKEY2:
-		if( g_compatFlags & 0x20 ){
+		if( this->compatFlags & 0x20 ){
 			//互換動作: 番組検索の追加コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG_BYKEY2\r\n");
 			if( this->epgDB.IsInitialLoadingDataDone() == false ){
@@ -2714,10 +2710,8 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 						dummy.event_id = 0;
 						GetSystemTime(&dummy.start_time);
 						for( size_t i = 0; i < key.size(); i++ ){
-							vector<EPGDB_SEARCH_KEY_INFO> byKey(1, key[i]);
-							if( this->epgDB.SearchEpg(&byKey, &byResult[i]) ){
-								for( size_t j = 0; j < byResult[i].size(); valp.push_back(&byResult[i][j++].info) );
-							}
+							this->epgDB.SearchEpg(&key[i], 1, &byResult[i]);
+							for( size_t j = 0; j < byResult[i].size(); valp.push_back(&byResult[i][j++].info) );
 							valp.push_back(&dummy);
 						}
 						resParam.data = NewWriteVALUE2WithVersion(ver, valp, resParam.dataSize);
@@ -2729,7 +2723,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		}
 		break;
 	case CMD2_EPG_SRV_GET_RECINFO_LIST2:
-		if( g_compatFlags & 0x40 ){
+		if( this->compatFlags & 0x40 ){
 			//互換動作: リスト指定の録画済み一覧取得コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_GET_RECINFO_LIST2\r\n");
 			WORD ver;
@@ -2762,7 +2756,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		}
 		break;
 	case CMD2_EPG_SRV_FILE_COPY2:
-		if( g_compatFlags & 0x80 ){
+		if( this->compatFlags & 0x80 ){
 			//互換動作: 指定ファイルをまとめて転送するコマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_FILE_COPY2\r\n");
 			WORD ver;
@@ -2838,7 +2832,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		}
 		break;
 	case CMD2_EPG_SRV_GET_PG_INFO_LIST:
-		if( g_compatFlags & 0x100 ){
+		if( this->compatFlags & 0x100 ){
 			//互換動作: 番組情報取得(指定IDリスト)コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_GET_PG_INFO_LIST\r\n");
 			if( this->epgDB.IsInitialLoadingDataDone() == false ){
@@ -3357,8 +3351,7 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 			return 1;
 		}
 	}else if( lua_gettop(L) == 1 && lua_istable(L, -1) ){
-		vector<EPGDB_SEARCH_KEY_INFO> keyList(1);
-		EPGDB_SEARCH_KEY_INFO& key = keyList.back();
+		EPGDB_SEARCH_KEY_INFO key;
 		FetchEpgSearchKeyInfo(ws, key);
 		//対象ネットワーク
 		vector<EPGDB_SERVICE_INFO> list;
@@ -3378,7 +3371,7 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 				}
 			}
 		}
-		bool ret = ws.sys->epgDB.SearchEpg(&keyList, [&ws](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
+		ws.sys->epgDB.SearchEpg(&key, 1, [&ws](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
 			SYSTEMTIME now;
 			ConvertSystemTime(GetNowI64Time(), &now);
 			now.wHour = 0;
@@ -3407,9 +3400,7 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 				}
 			}
 		});
-		if( ret ){
-			return 1;
-		}
+		return 1;
 	}
 	lua_pushnil(L);
 	return 1;

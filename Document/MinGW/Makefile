@@ -9,9 +9,13 @@ TARGETS = EpgDataCap_Bon.exe \
           EdcbPlugIn.tvtp \
           EpgTimerSrv.exe
 
-all: $(addsuffix .all, $(TARGETS))
-clean: $(addsuffix .clean, $(TARGETS))
+all: cp_dep $(addsuffix .all, $(TARGETS))
+clean: $(addsuffix .clean, $(TARGETS)) rm_dep
 %.all:
 	$(MAKE) -C ../../$(basename $*)/$(basename $*) TARGET=../../Document/MinGW/$*
 %.clean:
 	$(MAKE) -C ../../$(basename $*)/$(basename $*) TARGET=../../Document/MinGW/$* clean
+cp_dep:
+	cp -n $(MINGW_PREFIX)/bin/libwinpthread-1.dll .
+rm_dep:
+	$(RM) libwinpthread-1.dll

@@ -147,6 +147,7 @@ private:
 	bool nwtvUdp;
 	bool nwtvTcp;
 	DWORD notifyUpdateCount[6];
+	DWORD compatFlags;
 
 	vector<EPGDB_EVENT_INFO> oldSearchList[2];
 };

@@ -28,6 +28,8 @@
 
 （注意）
 ・EpgTimerSrv.exeをビルドする場合はLua5.2のファイルも必要。[その他]を参照
+・EpgTimerAdminProxy.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様でスタティックリンク
+  だとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダ、TVTestではTVTest.exeのフォルダに置く
 ・EpgDataCap_Bon.exeについては、VC++でビルドされたBonDriverを使用するため、VC++でビルドされたIBonCast.dllが必要
 ・EpgTimer.exeについては[その他]を参照
 

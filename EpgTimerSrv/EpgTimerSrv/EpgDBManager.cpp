@@ -9,8 +9,6 @@
 #include "../../Common/EpgDataCap3Util.h"
 #include "../../Common/CtrlCmdUtil.h"
 
-extern DWORD g_compatFlags;
-
 CEpgDBManager::CEpgDBManager()
 {
 	this->epgMapRefLock = std::make_pair(0, &this->epgMapLock);
@@ -425,9 +423,9 @@ void CEpgDBManager::CancelLoadData()
 	}
 }
 
-bool CEpgDBManager::SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result) const
+void CEpgDBManager::SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, vector<SEARCH_RESULT_EVENT_DATA>* result) const
 {
-	return SearchEpg(key, [=](vector<SEARCH_RESULT_EVENT>& val) {
+	SearchEpg(keys, keysSize, [=](vector<SEARCH_RESULT_EVENT>& val) {
 		result->reserve(result->size() + val.size());
 		for( vector<SEARCH_RESULT_EVENT>::iterator itr = val.begin(); itr != val.end(); itr++ ){
 			result->resize(result->size() + 1);
@@ -437,17 +435,13 @@ bool CEpgDBManager::SearchEpg(const vector<EPGDB_SEARCH_KEY_INFO>* key, vector<S
 	});
 }
 
-void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const
+void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const
 {
-	if( key == NULL ){
-		return ;
-	}
-	
-	if( key->andKey.compare(0, 7, L"^!{999}") == 0 ){
+	if( key.andKey.compare(0, 7, L"^!{999}") == 0 ){
 		//無効を示すキーワードが指定されているので検索しない
 		return ;
 	}
-	wstring andKey = key->andKey;
+	wstring andKey = key.andKey;
 	bool caseFlag = false;
 	if( andKey.compare(0, 7, L"C!{999}") == 0 ){
 		//大小文字を区別するキーワードが指定されている
@@ -466,53 +460,48 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 			chkDurationMaxSec = dur % 10000 == 0 ? MAXDWORD : dur % 10000 * 60;
 		}
 	}
-	if( andKey.size() == 0 && key->notKey.size() == 0 && key->contentList.size() == 0 && key->videoList.size() == 0 && key->audioList.size() == 0){
-		//キーワードもジャンル指定もないので検索しない
-		if( g_compatFlags & 0x02 ){
-			//互換動作: キーワードなしの検索を許可する
-		}else{
-			return;
-		}
-	}
-	
+
 	//キーワード分解
-	vector<wstring> andKeyList;
+	vector<vector<wstring>> andKeyList;
 	vector<wstring> notKeyList;
 
-	if( key->regExpFlag == FALSE ){
+	if( key.regExpFlag == FALSE ){
 		//正規表現ではないのでキーワードの分解
-		wstring buff = L"";
-		if( andKey.size() > 0 ){
-			wstring andBuff = andKey;
-			Replace(andBuff, L"　", L" ");
-			do{
-				Separate(andBuff, L" ", buff, andBuff);
+		Replace(andKey, L"　", L" ");
+		while( andKey.empty() == false ){
+			wstring buff;
+			Separate(andKey, L" ", buff, andKey);
+			if( buff == L"|" ){
+				//OR条件
+				andKeyList.push_back(vector<wstring>());
+			}else{
 				ConvertSearchText(buff);
-				if( buff.size() > 0 ){
-					andKeyList.push_back(buff);
+				if( buff.empty() == false ){
+					if( andKeyList.empty() ){
+						andKeyList.push_back(vector<wstring>());
+					}
+					andKeyList.back().push_back(buff);
 				}
-			}while( andBuff.size() != 0 );
+			}
 		}
-		
-		if( key->notKey.size() > 0 ){
-			wstring notBuff = key->notKey;
-			Replace(notBuff, L"　", L" ");
-			do{
-				Separate(notBuff, L" ", buff, notBuff);
-				ConvertSearchText(buff);
-				if( buff.size() > 0 ){
-					notKeyList.push_back(buff);
-				}
-			}while( notBuff.size() != 0 );
+		wstring notKey = key.notKey;
+		Replace(notKey, L"　", L" ");
+		while( notKey.empty() == false ){
+			wstring buff;
+			Separate(notKey, L" ", buff, notKey);
+			ConvertSearchText(buff);
+			if( buff.empty() == false ){
+				notKeyList.push_back(buff);
+			}
 		}
 	}else{
 		if( andKey.size() > 0 ){
-			andKeyList.push_back(andKey);
+			andKeyList.push_back(vector<wstring>(1, andKey));
 			//旧い処理では対象を全角空白のまま比較していたため正規表現も全角のケースが多い。特別に置き換える
-			Replace(andKeyList.back(), L"　", L" ");
+			Replace(andKeyList.back().back(), L"　", L" ");
 		}
-		if( key->notKey.size() > 0 ){
-			notKeyList.push_back(key->notKey);
+		if( key.notKey.size() > 0 ){
+			notKeyList.push_back(key.notKey);
 			Replace(notKeyList.back(), L"　", L" ");
 		}
 	}
@@ -526,19 +515,18 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 	vector<int> distForFind;
 	
 	//サービスごとに検索
-	for( size_t i=0; i<key->serviceList.size(); i++ ){
-		auto itrService = this->epgMap.find(key->serviceList[i]);
+	for( size_t i = 0; i < key.serviceList.size(); i++ ){
+		auto itrService = this->epgMap.find(key.serviceList[i]);
 		if( itrService != this->epgMap.end() ){
 			//サービス発見
 			for( auto itrEvent = itrService->second.eventList.cbegin(); itrEvent != itrService->second.eventList.end(); itrEvent++ ){
-				wstring matchKey;
-				if( key->freeCAFlag == 1 ){
+				if( key.freeCAFlag == 1 ){
 					//無料放送のみ
 					if( itrEvent->freeCAFlag != 0 ){
 						//有料放送
 						continue;
 					}
-				}else if( key->freeCAFlag == 2 ){
+				}else if( key.freeCAFlag == 2 ){
 					//有料放送のみ
 					if( itrEvent->freeCAFlag == 0 ){
 						//無料放送
@@ -546,7 +534,7 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 					}
 				}
 				//ジャンル確認
-				if( key->contentList.size() > 0 ){
+				if( key.contentList.size() > 0 ){
 					//ジャンル指定あるのでジャンルで絞り込み
 					if( itrEvent->hasContentInfo == false ){
 						if( itrEvent->hasShortInfo == false ){
@@ -555,16 +543,15 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 						}
 						//ジャンル情報ない
 						bool findNo = false;
-						for( size_t j=0; j<key->contentList.size(); j++ ){
-							if( key->contentList[j].content_nibble_level_1 == 0xFF && 
-								key->contentList[j].content_nibble_level_2 == 0xFF
-								){
-									//ジャンルなしの指定あり
-									findNo = true;
-									break;
+						for( size_t j = 0; j < key.contentList.size(); j++ ){
+							if( key.contentList[j].content_nibble_level_1 == 0xFF &&
+							    key.contentList[j].content_nibble_level_2 == 0xFF ){
+								//ジャンルなしの指定あり
+								findNo = true;
+								break;
 							}
 						}
-						if( key->notContetFlag == 0 ){
+						if( key.notContetFlag == 0 ){
 							if( findNo == false ){
 								continue;
 							}
@@ -575,8 +562,8 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 							}
 						}
 					}else{
-						bool equal = IsEqualContent(key->contentList, itrEvent->contentInfo.nibbleList);
-						if( key->notContetFlag == 0 ){
+						bool equal = IsEqualContent(key.contentList, itrEvent->contentInfo.nibbleList);
+						if( key.notContetFlag == 0 ){
 							if( equal == false ){
 								//ジャンル違うので対象外
 								continue;
@@ -591,25 +578,25 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 				}
 
 				//映像確認
-				if( key->videoList.size() > 0 ){
+				if( key.videoList.size() > 0 ){
 					if( itrEvent->hasComponentInfo == false ){
 						continue;
 					}
 					WORD type = itrEvent->componentInfo.stream_content << 8 || itrEvent->componentInfo.component_type;
-					if( std::find(key->videoList.begin(), key->videoList.end(), type) == key->videoList.end() ){
+					if( std::find(key.videoList.begin(), key.videoList.end(), type) == key.videoList.end() ){
 						continue;
 					}
 				}
 
 				//音声確認
-				if( key->audioList.size() > 0 ){
+				if( key.audioList.size() > 0 ){
 					if( itrEvent->hasAudioInfo == false ){
 						continue;
 					}
 					bool findContent = false;
 					for( size_t j=0; j<itrEvent->audioInfo.componentList.size(); j++ ){
 						WORD type = itrEvent->audioInfo.componentList[j].stream_content << 8 | itrEvent->audioInfo.componentList[j].component_type;
-						if( std::find(key->audioList.begin(), key->audioList.end(), type) != key->audioList.end() ){
+						if( std::find(key.audioList.begin(), key.audioList.end(), type) != key.audioList.end() ){
 							findContent = true;
 							break;
 						}
@@ -620,13 +607,13 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 				}
 
 				//時間確認
-				if( key->dateList.size() > 0 ){
+				if( key.dateList.size() > 0 ){
 					if( itrEvent->StartTimeFlag == FALSE ){
 						//開始時間不明なので対象外
 						continue;
 					}
-					bool inTime = IsInDateTime(key->dateList, itrEvent->start_time);
-					if( key->notDateFlag == 0 ){
+					bool inTime = IsInDateTime(key.dateList, itrEvent->start_time);
+					if( key.notDateFlag == 0 ){
 						if( inTime == false ){
 							//時間範囲外なので対象外
 							continue;
@@ -651,6 +638,9 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 					}
 				}
 
+				SEARCH_RESULT_EVENT addItem;
+				addItem.info = &(*itrEvent);
+
 				//キーワード確認
 				if( itrEvent->hasShortInfo == false ){
 					if( andKeyList.size() != 0 ){
@@ -660,7 +650,7 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 				}else if( andKeyList.size() != 0 || notKeyList.size() != 0 ){
 					//検索対象の文字列作成
 					targetWord = itrEvent->shortInfo.event_name;
-					if( key->titleOnlyFlag == FALSE ){
+					if( key.titleOnlyFlag == FALSE ){
 						targetWord += L"\r\n";
 						targetWord += itrEvent->shortInfo.text_char;
 						if( itrEvent->hasExtInfo ){
@@ -671,30 +661,36 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_
 					ConvertSearchText(targetWord);
 
 					if( notKeyList.size() != 0 ){
-						if( IsFindKeyword(key->regExpFlag != FALSE, regExp, caseFlag, notKeyList, targetWord, false) ){
+						if( IsFindKeyword(key.regExpFlag != FALSE, regExp, caseFlag, notKeyList, targetWord, false) ){
 							//notキーワード見つかったので対象外
 							continue;
 						}
 					}
 					if( andKeyList.size() != 0 ){
-						if( key->regExpFlag == FALSE && key->aimaiFlag != 0 ){
+						bool found = false;
+						if( key.regExpFlag == FALSE && key.aimaiFlag != 0 ){
 							//あいまい検索
-							if( IsFindLikeKeyword(caseFlag, andKeyList, targetWord, distForFind, &matchKey) == false ){
-								//andキーワード見つからなかったので対象外
-								continue;
+							for( size_t j = 0; j < andKeyList.size(); j++ ){
+								if( IsFindLikeKeyword(caseFlag, andKeyList[j], targetWord, distForFind, &addItem.findKey) ){
+									found = true;
+									break;
+								}
 							}
 						}else{
-							if( IsFindKeyword(key->regExpFlag != FALSE, regExp, caseFlag, andKeyList, targetWord, true, &matchKey) == false ){
-								//andキーワード見つからなかったので対象外
-								continue;
+							for( size_t j = 0; j < andKeyList.size(); j++ ){
+								if( IsFindKeyword(key.regExpFlag != FALSE, regExp, caseFlag, andKeyList[j], targetWord, true, &addItem.findKey) ){
+									found = true;
+									break;
+								}
 							}
+						}
+						if( found == false ){
+							//andキーワード見つからなかったので対象外
+							continue;
 						}
 					}
 				}
 
-				SEARCH_RESULT_EVENT addItem;
-				addItem.findKey = matchKey;
-				addItem.info = &(*itrEvent);
 				//resultSizeまで(既ソート)に存在しないときだけ追加
 				vector<SEARCH_RESULT_EVENT>::iterator itrResult = std::lower_bound(result.begin(), result.begin() + resultSize, addItem, compareResult);
 				if( itrResult == result.begin() + resultSize || compareResult(addItem, *itrResult) ){
