@@ -13,7 +13,7 @@ $(TARGET): $(addsuffix .obj, \
   StreamCtrlDlg.cpp \
   EpgTimerPlugIn.rc \
   )
-	$(CXX) -Wl,-s -Wl,--kill-at -static -shared -o $@ $^ -lws2_32 -liphlpapi
+	$(CXX) -Wl,-s -Wl,--kill-at -static-libgcc -static-libstdc++ -shared -o $@ $^ -lws2_32 -liphlpapi
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 Common__%.cpp.obj: ../../Common/%.cpp
