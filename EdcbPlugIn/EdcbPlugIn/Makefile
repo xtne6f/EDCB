@@ -23,7 +23,7 @@ $(TARGET): $(addsuffix .obj, \
   EdcbPlugIn.cpp \
   stdafx.cpp \
   )
-	$(CXX) -Wl,-s -Wl,--kill-at -static -shared -o $@ $^
+	$(CXX) -Wl,-s -Wl,--kill-at -static-libgcc -static-libstdc++ -shared -o $@ $^
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 Common__%.cpp.obj: ../../Common/%.cpp
