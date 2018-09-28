@@ -145,8 +145,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	}
 #endif
 
-	//"serve files" + "support Lua" + "support caching" + (セキュアポートを含むとき)"support HTTPS"
-	unsigned int feat = 1 + 32 + 128 + (ports.find('s') != string::npos ? 2 : 0);
+	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_LUA + MG_FEATURES_CACHE + (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
 	this->initedLibrary = true;
 	if( mg_init_library(feat) != feat ){
 		OutputDebugString(L"CHttpServer::StartServer(): Library initialization failed.\r\n");
