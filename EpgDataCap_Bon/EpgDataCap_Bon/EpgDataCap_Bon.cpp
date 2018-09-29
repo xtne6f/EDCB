@@ -261,6 +261,7 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 }
 
 #ifdef USE_WINMAIN_A
+__declspec(dllexport) //ASLR‚ð–³Œø‚É‚µ‚È‚¢‚½‚ß(CVE-2018-5392)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)

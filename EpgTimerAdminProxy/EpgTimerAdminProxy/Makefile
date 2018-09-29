@@ -5,7 +5,7 @@ WINDRES ?= windres
 $(TARGET): $(addsuffix .obj, \
   EpgTimerAdminProxy.cpp \
   )
-	$(CXX) -mwindows -Wl,-s -static -o $@ $^ -lnetapi32
+	$(CXX) -mwindows -Wl,-s -Wl,--dynamicbase -Wl,--nxcompat -static -o $@ $^ -lnetapi32
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 Common__%.cpp.obj: ../../Common/%.cpp
