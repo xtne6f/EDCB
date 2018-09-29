@@ -20,8 +20,6 @@ namespace EpgTimer
     /// </summary>
     public partial class RecFolderWindow : Window
     {
-        private RecFileSetInfo defSet = new RecFileSetInfo();
-
         public RecFolderWindow()
         {
             InitializeComponent();
@@ -98,11 +96,21 @@ namespace EpgTimer
             }
         }
 
-        public void GetSetting(ref RecFileSetInfo info)
+        public RecFileSetInfo GetSetting()
         {
-            info.RecFolder = defSet.RecFolder;
-            info.WritePlugIn = defSet.WritePlugIn;
-            info.RecNamePlugIn = defSet.RecNamePlugIn;
+            var info = new RecFileSetInfo();
+            info.RecFolder = textBox_recFolder.Text == "" ? "!Default" : textBox_recFolder.Text;
+            info.WritePlugIn = (string)comboBox_writePlugIn.SelectedItem;
+            info.RecNamePlugIn = (string)comboBox_recNamePlugIn.SelectedItem;
+            if (info.RecNamePlugIn == "なし")
+            {
+                info.RecNamePlugIn = "";
+            }
+            else if (textBox_recNameOption.Text != "")
+            {
+                info.RecNamePlugIn += '?' + textBox_recNameOption.Text;
+            }
+            return info;
         }
 
         private void button_folder_Click(object sender, RoutedEventArgs e)
@@ -146,17 +154,6 @@ namespace EpgTimer
 
         private void button_ok_Click(object sender, RoutedEventArgs e)
         {
-            defSet.RecFolder = textBox_recFolder.Text == "" ? "!Default" : textBox_recFolder.Text;
-            defSet.WritePlugIn = (String)comboBox_writePlugIn.SelectedItem;
-            defSet.RecNamePlugIn = (String)comboBox_recNamePlugIn.SelectedItem;
-            if (defSet.RecNamePlugIn == "なし")
-            {
-                defSet.RecNamePlugIn = "";
-            }
-            else if (textBox_recNameOption.Text.Length != 0)
-            {
-                defSet.RecNamePlugIn += '?' + textBox_recNameOption.Text;
-            }
             DialogResult = true;
         }
 
