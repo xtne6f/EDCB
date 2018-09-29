@@ -45,7 +45,7 @@ $(TARGET): $(addsuffix .obj, \
   stdafx.cpp \
   EpgDataCap_Bon.rc \
   )
-	$(CXX) -mwindows -Wl,-s -static-libgcc -static-libstdc++ -o $@ $^ -lws2_32 -lole32 -lcomctl32 -ldbghelp -lcomdlg32
+	$(CXX) -mwindows -Wl,-s -Wl,--dynamicbase -Wl,--nxcompat -static-libgcc -static-libstdc++ -o $@ $^ -lws2_32 -lole32 -lcomctl32 -ldbghelp -lcomdlg32
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 Common__%.cpp.obj: ../../Common/%.cpp
