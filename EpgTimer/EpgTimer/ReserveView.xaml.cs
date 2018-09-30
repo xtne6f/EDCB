@@ -71,7 +71,7 @@ namespace EpgTimer
 
         private void ReDrawReserveData()
         {
-            listView_reserve.DataContext = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
+            listView_reserve.ItemsSource = CommonManager.Instance.DB.ReserveList.Values.Select(info => new ReserveItem(info)).ToList();
 
             if (columnList.ContainsKey(Settings.Instance.ResColumnHead) == false || Settings.Instance.ResColumnHead == "RecFileName")
             {
@@ -83,19 +83,19 @@ namespace EpgTimer
         public void RefreshEpgData()
         {
             // 枠線表示用
-            if (listView_reserve.DataContext != null)
+            if (listView_reserve.ItemsSource != null)
             {
-                CollectionViewSource.GetDefaultView(listView_reserve.DataContext).Refresh();
+                CollectionViewSource.GetDefaultView(listView_reserve.ItemsSource).Refresh();
             }
         }
 
         private void Sort()
         {
-            if (listView_reserve.DataContext == null)
+            if (listView_reserve.ItemsSource == null)
             {
                 return;
             }
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.ItemsSource);
 
             using (dataView.DeferRefresh())
             {
@@ -410,33 +410,14 @@ namespace EpgTimer
                         this.button_change_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.Delete:
-                        this.deleteItem();
+                        if (listView_reserve.SelectedItems.Count > 0 &&
+                            MessageBox.Show(listView_reserve.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
+                                            MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
+                        {
+                            button_del_Click(listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        }
                         break;
                 }
-            }
-        }
-
-        void deleteItem()
-        {
-            if (listView_reserve.SelectedItems.Count == 0) { return; }
-            //
-            try
-            {
-                string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_reserve.SelectedItems.Count + "]" + "\n\n";
-                List<UInt32> dataIDList = new List<uint>();
-                foreach (ReserveItem info in listView_reserve.SelectedItems)
-                {
-                    text1 += " ・ " + info.ReserveInfo.Title + "\n";
-                }
-                string caption1 = "登録項目削除の確認";
-                if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
-                {
-                    this.button_del_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

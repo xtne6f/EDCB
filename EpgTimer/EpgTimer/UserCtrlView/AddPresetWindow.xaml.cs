@@ -18,7 +18,6 @@ namespace EpgTimer
     /// </summary>
     public partial class AddPresetWindow : Window
     {
-        private bool chgModeFlag = false;
         public AddPresetWindow()
         {
             InitializeComponent();
@@ -35,17 +34,18 @@ namespace EpgTimer
             {
                 button_add.Content = "追加";
             }
-            chgModeFlag = chgMode;
         }
 
-        public void SetName(String name)
+        public string PresetName
         {
-            textBox_name.Text = name;
-        }
-
-        public void GetName(ref String name)
-        {
-            name = textBox_name.Text;
+            get
+            {
+                return textBox_name.Text;
+            }
+            set
+            {
+                textBox_name.Text = value;
+            }
         }
 
         private void button_add_Click(object sender, RoutedEventArgs e)

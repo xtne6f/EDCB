@@ -27,17 +27,17 @@ namespace EpgTimer
 
             try
             {
-                comboBox_startHH.DataContext = Enumerable.Range(0, 24);
+                comboBox_startHH.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_startHH.SelectedIndex = 0;
-                comboBox_startMM.DataContext = Enumerable.Range(0, 60);
+                comboBox_startMM.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_startMM.SelectedIndex = 0;
-                comboBox_startSS.DataContext = Enumerable.Range(0, 60);
+                comboBox_startSS.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_startSS.SelectedIndex = 0;
-                comboBox_endHH.DataContext = Enumerable.Range(0, 24);
+                comboBox_endHH.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_endHH.SelectedIndex = 0;
-                comboBox_endMM.DataContext = Enumerable.Range(0, 60);
+                comboBox_endMM.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_endMM.SelectedIndex = 0;
-                comboBox_endSS.DataContext = Enumerable.Range(0, 60);
+                comboBox_endSS.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_endSS.SelectedIndex = 0;
 
                 comboBox_service.ItemsSource = ChSet5.Instance.ChListSelected;
@@ -124,10 +124,7 @@ namespace EpgTimer
             defKey.originalNetworkID = chItem.ONID;
             defKey.transportStreamID = chItem.TSID;
             defKey.serviceID = chItem.SID;
-
-            RecSettingData recSet = new RecSettingData();
-            recSettingView.GetRecSetting(ref recSet);
-            defKey.recSetting = recSet;
+            defKey.recSetting = recSettingView.GetRecSetting();
 
             List<ManualAutoAddData> val = new List<ManualAutoAddData>();
             val.Add(defKey);
