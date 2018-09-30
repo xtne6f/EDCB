@@ -197,6 +197,7 @@ namespace EpgTimer.Setting
                 if (dlg.ShowDialog() == true)
                 {
                     listBox_tab.SelectedItem = listBox_tab.Items[listBox_tab.SelectedIndex] = dlg.GetSetting();
+                    OnUpdateTabListBox();
                 }
             }
             else
