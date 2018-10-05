@@ -28,7 +28,7 @@ public:
 	//ƒ`ƒ…[ƒi–ˆ‚Ì—\–ñî•ñ‚ğæ“¾‚·‚é
 	vector<TUNER_RESERVE_INFO> GetTunerReserveAll() const;
 	//—\–ñî•ñ‚ğæ“¾‚·‚é
-	bool GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName = false) const;
+	bool GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName = false, CReNamePlugInUtil* util = NULL) const;
 	//—\–ñî•ñ‚ğ’Ç‰Á‚·‚é
 	bool AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus = false);
 	//—\–ñî•ñ‚ğ•ÏX‚·‚é

@@ -28,11 +28,14 @@ BOOL CReNamePlugInUtil::Convert(
 	)
 {
 	wstring pattern = dllPattern;
-	HMODULE hModule = LoadLibrary((dllFolder + pattern.substr(0, pattern.find('?'))).c_str());
+	wstring dllPath = dllFolder + pattern.substr(0, pattern.find('?'));
+	HMODULE hModule = LoadLibrary(dllPath.c_str());
 	if( hModule == NULL ){
-		OutputDebugString(L"dlのロードに失敗しました\r\n");
+		_OutputDebugString(L"%sのロードに失敗しました\r\n", dllPath.c_str());
 		return FALSE;
 	}
+	CloseConvert();
+	hModuleConvert = hModule;
 	pattern.erase(0, pattern.find('?'));
 	pattern.erase(0, 1);
 	ConvertRecName3RNP pfnConvertRecName3 = (ConvertRecName3RNP)GetProcAddress(hModule, "ConvertRecName3");
@@ -53,7 +56,13 @@ BOOL CReNamePlugInUtil::Convert(
 			}
 		}
 	}
-	FreeLibrary(hModule);
 	return ret;
 }
 
+void CReNamePlugInUtil::CloseConvert()
+{
+	if( hModuleConvert ){
+		FreeLibrary(hModuleConvert);
+		hModuleConvert = NULL;
+	}
+}

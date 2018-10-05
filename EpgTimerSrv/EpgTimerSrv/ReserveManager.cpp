@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "ReserveManager.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/TimeUtil.h"
 
 CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
@@ -79,9 +78,10 @@ vector<RESERVE_DATA> CReserveManager::GetReserveDataAll(bool getRecFileName) con
 
 	vector<RESERVE_DATA> list;
 	list.reserve(this->reserveText.GetMap().size());
+	CReNamePlugInUtil utilCache;
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		list.resize(list.size() + 1);
-		GetReserveData(itr->first, &list.back(), getRecFileName);
+		GetReserveData(itr->first, &list.back(), getRecFileName, &utilCache);
 	}
 	return list;
 }
@@ -140,7 +140,7 @@ vector<DWORD> CReserveManager::GetNoTunerReserveAll() const
 	return list;
 }
 
-bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName) const
+bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName, CReNamePlugInUtil* util) const
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -149,6 +149,10 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 		*reserveData = itr->second;
 		reserveData->recFileNameList.clear();
 		if( getRecFileName ){
+			CReNamePlugInUtil utilCache;
+			if( util == NULL ){
+				util = &utilCache;
+			}
 			RESERVE_DATA& r = *reserveData;
 			//recNamePlugInを展開して実ファイル名をセット
 			for( size_t i = 0; i <= r.recSetting.recFolderList.size(); i++ ){
@@ -160,7 +164,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 					r.recFileNameList.push_back(CTunerBankCtrl::ConvertRecName(
 						recNamePlugIn, r.startTime, r.durationSecond, r.title.c_str(), r.originalNetworkID, r.transportStreamID, r.serviceID, r.eventID,
 						r.stationName.c_str(), L"チューナー不明", 0xFFFFFFFF, r.reserveID, this->epgDBManager,
-						r.startTime, 0, this->setting.tsExt.c_str(), this->setting.noChkYen));
+						r.startTime, 0, this->setting.tsExt.c_str(), this->setting.noChkYen, *util));
 				}
 			}
 		}

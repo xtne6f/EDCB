@@ -5,6 +5,9 @@
 class CReNamePlugInUtil
 {
 public:
+	CReNamePlugInUtil() : hModuleConvert(NULL) {}
+	~CReNamePlugInUtil() { CloseConvert(); }
+
 	//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
 	//戻り値
 	// TRUE（成功）、FALSE（失敗）
@@ -29,7 +32,7 @@ public:
 	// dllFolder				[IN]プラグインDLLフォルダパス(dllPatternがそのまま連結される)
 	// recName					[OUT]名称
 	// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
-	static BOOL Convert(
+	BOOL Convert(
 		PLUGIN_RESERVE_INFO* info,
 		const WCHAR* dllPattern,
 		const WCHAR* dllFolder,
@@ -37,10 +40,16 @@ public:
 		DWORD* recNamesize
 		);
 
+	//Convert()で開いたリソースがあれば閉じる
+	void CloseConvert();
+
 private:
 	typedef void (WINAPI* SettingRNP)(HWND parentWnd);
 	typedef BOOL (WINAPI* ConvertRecNameRNP)(PLUGIN_RESERVE_INFO* info, WCHAR* recName, DWORD* recNamesize);
 	typedef BOOL (WINAPI* ConvertRecName2RNP)(PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, WCHAR* recName, DWORD* recNamesize);
 	typedef BOOL (WINAPI* ConvertRecName3RNP)(PLUGIN_RESERVE_INFO* info, const WCHAR* pattern, WCHAR* recName, DWORD* recNamesize);
-};
 
+	CReNamePlugInUtil(const CReNamePlugInUtil&);
+	CReNamePlugInUtil& operator=(const CReNamePlugInUtil&);
+	HMODULE hModuleConvert;
+};
