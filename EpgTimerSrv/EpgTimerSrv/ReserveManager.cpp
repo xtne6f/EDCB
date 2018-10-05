@@ -190,6 +190,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			if( setReserveStatus == false ){
 				r.reserveStatus = ADD_RESERVE_NORMAL;
 			}
+			r.ngTunerIDList.clear();
 			r.recFileNameList.clear();
 			r.reserveID = this->reserveText.AddReserve(r);
 			this->reserveModified = true;
@@ -231,6 +232,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			if( setReserveStatus == false ){
 				r.reserveStatus = itr->second.reserveStatus;
 			}
+			r.ngTunerIDList = itr->second.ngTunerIDList;
 			r.recFileNameList.clear();
 
 			if( r.recSetting.recMode == RECMODE_NO ){
@@ -598,7 +600,8 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 				item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
 				item.started = false;
 				item.r = itr->second;
-				if( itr->second->recSetting.tunerID != 0 ){
+				//NGチューナが追加されているときはチューナIDを固定しない
+				if( itr->second->recSetting.tunerID != 0 && itr->second->ngTunerIDList.empty() ){
 					//チューナID固定
 					map<DWORD, vector<CHK_RESERVE_DATA>>::iterator itrBank = bankResMap.find(itr->second->recSetting.tunerID); 
 					if( itrBank != bankResMap.end() &&
@@ -619,7 +622,9 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 					__int64 costMin = LLONG_MAX;
 					__int64 durationMin = 0;
 					for( map<DWORD, vector<CHK_RESERVE_DATA>>::iterator jtr = bankResMap.begin(); jtr != bankResMap.end(); jtr++ ){
-						if( this->tunerManager.IsSupportService(jtr->first, itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
+						//NGチューナを除く
+						if( std::find(itr->second->ngTunerIDList.begin(), itr->second->ngTunerIDList.end(), jtr->first) == itr->second->ngTunerIDList.end() &&
+						    this->tunerManager.IsSupportService(jtr->first, itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
 							CHK_RESERVE_DATA testItem = item;
 							__int64 cost = ChkInsertStatus(jtr->second, testItem, false);
 							if( cost < costMin ){
@@ -1218,13 +1223,20 @@ void CReserveManager::CheckOverTimeReserve()
 	}
 }
 
-void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, int* shutdownMode)
+void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, DWORD tunerID, int* shutdownMode)
 {
 	vector<CBatManager::BAT_WORK_INFO> batWorkList;
 	bool modified = false;
+	bool ngTunerAdded = false;
 	for( auto itrRet = retList.cbegin(); itrRet != retList.end(); itrRet++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
 		if( itrRes != this->reserveText.GetMap().end() ){
+			if( this->setting.retryOtherTuners && itrRet->type == CTunerBankCtrl::CHECK_ERR_OPEN ){
+				_OutputDebugString(L"●予約(ID=%d)にNGチューナー(ID=0x%08x)を追加します\r\n", itrRes->first, tunerID);
+				this->reserveText.AddNGTunerID(itrRes->first, tunerID);
+				ngTunerAdded = true;
+				continue;
+			}
 			if( itrRet->type == CTunerBankCtrl::CHECK_END && itrRet->recFilePath.empty() == false &&
 			    itrRet->drops < this->setting.recInfo2DropChk && itrRet->epgEventName.empty() == false ){
 				//録画済みとして登録
@@ -1320,6 +1332,12 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
 		}
 	}
+	if( ngTunerAdded ){
+		ReloadBankMap();
+		if( modified == false ){
+			AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		}
+	}
 	if( modified ){
 		this->reserveText.SaveText();
 		this->recInfoText.SaveText();
@@ -1355,7 +1373,7 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 			}
 		}
 		AddPostBatWork(batWorkList, L"PostRecStart.bat");
-		ProcessRecEnd(retList, &this->shutdownModePending);
+		ProcessRecEnd(retList, itrBank->first, &this->shutdownModePending);
 	}
 	if( this->checkCount % 30 == 0 ){
 		CheckAutoDel();

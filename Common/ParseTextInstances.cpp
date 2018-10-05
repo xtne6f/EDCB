@@ -573,6 +573,16 @@ bool CParseReserveText::SetOverlapMode(DWORD id, BYTE overlapMode)
 	return false;
 }
 
+bool CParseReserveText::AddNGTunerID(DWORD id, DWORD tunerID)
+{
+	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.find(id);
+	if( itr != this->itemMap.end() ){
+		itr->second.ngTunerIDList.push_back(tunerID);
+		return true;
+	}
+	return false;
+}
+
 bool CParseReserveText::DelReserve(DWORD id)
 {
 	if( this->itemMap.erase(id) != 0 ){

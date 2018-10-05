@@ -123,8 +123,9 @@ private:
 	//チューナ割り当てされていない古い予約を終了処理する
 	void CheckOverTimeReserve();
 	//予約終了を処理する
+	//tunerID: 終了したチューナID
 	//shutdownMode: 最後に処理した予約の録画後動作を記録
-	void ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, int* shutdownMode = NULL);
+	void ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, DWORD tunerID = 0, int* shutdownMode = NULL);
 	//EPG取得可能なチューナIDのリストを取得する
 	vector<DWORD> GetEpgCapTunerIDList(__int64 now) const;
 	//EPG取得処理を管理する

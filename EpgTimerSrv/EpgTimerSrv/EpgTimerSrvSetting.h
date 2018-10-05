@@ -37,6 +37,7 @@ public:
 		int tuijyuHour;
 		bool backPriority;
 		bool fixedTunerPriority;
+		bool retryOtherTuners;
 		bool commentAutoAdd;
 		bool autoDelRecInfo;
 		DWORD autoDelRecInfoNum;

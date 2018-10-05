@@ -165,6 +165,8 @@ public:
 	bool SetPresentFlag(DWORD id, BYTE presentFlag);
 	//overlapModeを変更する(イテレータに影響しない)
 	bool SetOverlapMode(DWORD id, BYTE overlapMode);
+	//ngTunerIDListに追加する(イテレータに影響しない)
+	bool AddNGTunerID(DWORD id, DWORD tunerID);
 	//予約情報を削除する
 	bool DelReserve(DWORD id);
 	//録画開始日時でソートされた予約一覧を取得する
