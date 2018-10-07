@@ -121,31 +121,45 @@ namespace EpgTimer
                     }
 
                     //デフォルト表示
-                    for (int i = 0; i < 4; i++)
+                    bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
+                    IEnumerable<EpgServiceInfo> sel = CommonManager.Instance.DB.ServiceEventList.Values.Select(info => info.serviceInfo).Where(info => {
+                        ulong key = CommonManager.Create64Key(info.ONID, info.TSID, info.SID);
+                        return ignoreEpgCap || ChSet5.Instance.ChList.ContainsKey(key) && ChSet5.Instance.ChList[key].EpgCapFlag;
+                    });
+                    //リモコンキー優先のID順ソート。BSはなるべくSID順
+                    var bsmin = new Dictionary<ushort, ushort>();
+                    foreach (EpgServiceInfo info in sel)
+                    {
+                        if (ChSet5.IsBS(info.ONID) && (bsmin.ContainsKey(info.TSID) == false || bsmin[info.TSID] > info.SID))
+                        {
+                            bsmin[info.TSID] = info.SID;
+                        }
+                    }
+                    sel = sel.OrderBy(info => (ulong)(ChSet5.IsDttv(info.ONID) ? (info.remote_control_key_id + 255) % 256 : 0) << 48 |
+                                              CommonManager.Create64Key(info.ONID, (ChSet5.IsBS(info.ONID) ? bsmin[info.TSID] : info.TSID), info.SID));
+                    for (int i = 0; i < 5; i++)
                     {
                         CustomEpgTabInfo setInfo = null;
-                        bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
-                        //リモコンキー優先のID順ソート
-                        foreach (EpgServiceAllEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values.Where(item => {
-                            ulong key = CommonManager.Create64Key(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID);
-                            return ignoreEpgCap || ChSet5.Instance.ChList.ContainsKey(key) && ChSet5.Instance.ChList[key].EpgCapFlag; }).OrderBy(item => (
-                            (ulong)(ChSet5.IsDttv(item.serviceInfo.ONID) ? (item.serviceInfo.remote_control_key_id + 255) % 256 : 0) << 48 |
-                            CommonManager.Create64Key(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID))))
+                        foreach (EpgServiceInfo info in sel)
                         {
                             string tabName = null;
-                            if (i == 0 && ChSet5.IsDttv(info.serviceInfo.ONID))
+                            if (i == 0 && ChSet5.IsDttv(info.ONID))
                             {
                                 tabName = "地デジ";
                             }
-                            else if (i == 1 && ChSet5.IsBS(info.serviceInfo.ONID))
+                            else if (i == 1 && ChSet5.IsBS(info.ONID))
                             {
                                 tabName = "BS";
                             }
-                            else if (i == 2 && ChSet5.IsCS(info.serviceInfo.ONID))
+                            else if (i == 2 && ChSet5.IsCS(info.ONID) && ChSet5.IsCS3(info.ONID) == false)
                             {
                                 tabName = "CS";
                             }
-                            else if (i == 3 && ChSet5.IsOther(info.serviceInfo.ONID))
+                            else if (i == 3 && ChSet5.IsCS3(info.ONID))
+                            {
+                                tabName = "CS3";
+                            }
+                            else if (i == 4 && ChSet5.IsOther(info.ONID))
                             {
                                 tabName = "その他";
                             }
@@ -156,7 +170,7 @@ namespace EpgTimer
                                     setInfo = new CustomEpgTabInfo();
                                     setInfo.TabName = tabName;
                                 }
-                                setInfo.ViewServiceList.Add(CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID));
+                                setInfo.ViewServiceList.Add(CommonManager.Create64Key(info.ONID, info.TSID, info.SID));
                             }
                         }
                         if (setInfo != null)

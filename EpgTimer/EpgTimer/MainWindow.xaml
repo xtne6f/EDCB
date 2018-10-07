@@ -3,7 +3,7 @@ TextOptions.TextFormattingMode="Display"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:EpgTimer"
-        Title="EpgTimer" Height="480" Width="640" Loaded="Window_Loaded" Closing="Window_Closing" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" StateChanged="Window_StateChanged" PreviewDragEnter="Window_PreviewDragEnter" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" AllowDrop="True" FontSize="12">
+        Title="EpgTimer" Height="480" Width="640" Loaded="Window_Loaded" Closing="Window_Closing" StateChanged="Window_StateChanged" PreviewDragEnter="Window_PreviewDragEnter" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" AllowDrop="True" FontSize="12">
     <Grid Name="grid_main">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
