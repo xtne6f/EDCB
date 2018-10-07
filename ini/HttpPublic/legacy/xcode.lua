@@ -40,7 +40,12 @@ if fpath then
   if fname:lower()==fnamets then
     f=edcb.io.open(fpath, 'rb')
     if f then
-      offset=math.floor((f:seek('end', 0) or 0) * offset / 99 / 188) * 188
+      fsec,fsize=GetDurationSec(f)
+      if offset~=0 and offset~=99 and fsec>0 and SeekSec(f,fsec*offset/99) then
+        offset=f:seek('cur',0) or 0
+      else
+        offset=math.floor(fsize*offset/99/188)*188
+      end
       if XCODE then
         f:close()
         -- 容量確保の可能性があるときは周期188+同期語0x47(188*256+0x47=48199)で対象ファイルを終端判定する
