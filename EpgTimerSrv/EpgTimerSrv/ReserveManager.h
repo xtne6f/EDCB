@@ -57,7 +57,8 @@ public:
 	//チューナ起動やEPG取得やバッチ処理が行われているか
 	bool IsActive() const;
 	//baseTime以後に録画またはEPG取得を開始する最小時刻を取得する
-	__int64 GetSleepReturnTime(__int64 baseTime) const;
+	//reserveData: 最小時刻の予約情報(ないときreserveID==0)
+	__int64 GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* reserveData = NULL) const;
 	//指定イベントの予約が存在するかどうか
 	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const;
 	//指定サービスのプログラム予約を抽出して検索する

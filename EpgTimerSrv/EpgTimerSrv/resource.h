@@ -128,20 +128,21 @@
 #define IDC_CHECK_SET_TIME_SYNC                 40508
 #define IDC_CHECK_SET_RESIDENT                  40509
 #define IDC_CHECK_SET_SHOW_TRAY                 40510
-#define IDC_CHECK_SET_BLINK_PRE_REC             40511
-#define IDC_CHECK_SET_NO_BALLOON_TIP            40512
-#define IDC_BUTTON_SET_STARTUP_ADD              40513
-#define IDC_BUTTON_SET_STARTUP_DEL              40514
-#define IDC_CHECK_SET_SAVE_NOTIFY_LOG           40515
-#define IDC_CHECK_SET_SAVE_DEBUG_LOG            40516
-#define IDC_CHECK_SET_COMPAT_TKNTREC            40517
-#define IDC_EDIT_SET_TS_EXT                     40518
-#define IDC_LIST_SET_VIEW_BON                   40519
-#define IDC_COMBO_SET_VIEW_BON                  40520
-#define IDC_BUTTON_SET_VIEW_BON_UP              40521
-#define IDC_BUTTON_SET_VIEW_BON_DN              40522
-#define IDC_BUTTON_SET_VIEW_BON_ADD             40523
-#define IDC_BUTTON_SET_VIEW_BON_DEL             40524
+#define IDC_CHECK_SET_NOTIFY_TIP_STYLE          40511
+#define IDC_CHECK_SET_BLINK_PRE_REC             40512
+#define IDC_CHECK_SET_NO_BALLOON_TIP            40513
+#define IDC_BUTTON_SET_STARTUP_ADD              40514
+#define IDC_BUTTON_SET_STARTUP_DEL              40515
+#define IDC_CHECK_SET_SAVE_NOTIFY_LOG           40516
+#define IDC_CHECK_SET_SAVE_DEBUG_LOG            40517
+#define IDC_CHECK_SET_COMPAT_TKNTREC            40518
+#define IDC_EDIT_SET_TS_EXT                     40519
+#define IDC_LIST_SET_VIEW_BON                   40520
+#define IDC_COMBO_SET_VIEW_BON                  40521
+#define IDC_BUTTON_SET_VIEW_BON_UP              40522
+#define IDC_BUTTON_SET_VIEW_BON_DN              40523
+#define IDC_BUTTON_SET_VIEW_BON_ADD             40524
+#define IDC_BUTTON_SET_VIEW_BON_DEL             40525
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

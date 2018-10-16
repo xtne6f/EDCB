@@ -1622,19 +1622,27 @@ bool CReserveManager::IsActive() const
 	return false;
 }
 
-__int64 CReserveManager::GetSleepReturnTime(__int64 baseTime) const
+__int64 CReserveManager::GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* reserveData) const
 {
 	CBlockLock lock(&this->managerLock);
 
 	//Å‚à‹ß‚¢—\–ñŠJn‚ğ“¾‚é
 	__int64 nextRec = LLONG_MAX;
+	const RESERVE_DATA* nextReserveData = NULL;
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		if( itr->second.recSetting.recMode != RECMODE_NO ){
 			__int64 startTime;
 			CalcEntireReserveTime(&startTime, NULL, itr->second);
-			if( startTime >= baseTime ){
-				nextRec = min(nextRec, startTime);
+			if( startTime >= baseTime && startTime < nextRec ){
+				nextRec = startTime;
+				nextReserveData = &itr->second;
 			}
+		}
+	}
+	if( reserveData ){
+		reserveData->reserveID = 0;
+		if( nextReserveData ){
+			*reserveData = *nextReserveData;
 		}
 	}
 	__int64 capTime = GetNextEpgCapTime(baseTime + 60 * I64_1SEC);
