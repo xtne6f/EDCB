@@ -11,6 +11,7 @@ public:
 		bool blinkPreRec;
 		bool noBalloonTip;
 		bool saveNotifyLog;
+		bool saveDebugLog;
 		DWORD wakeTime;
 		int autoAddHour;
 		bool chkGroupEvent;

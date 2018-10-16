@@ -31,5 +31,6 @@
 // APIフックによる高度なものでなく単なる置換。OutputDebugStringAやDLLからの呼び出しはラップされない
 void OutputDebugStringWrapper(LPCWSTR lpOutputString);
 #endif
+void SetSaveDebugLog(bool saveDebugLog);
 
 #include "../../Common/Common.h"

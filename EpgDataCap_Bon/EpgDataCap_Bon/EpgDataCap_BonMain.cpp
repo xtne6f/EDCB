@@ -56,8 +56,6 @@ void CEpgDataCap_BonMain::SetHwnd(HWND wnd)
 //Ý’è‚ðs‚¤
 void CEpgDataCap_BonMain::ReloadSetting()
 {
-	fs_path commonIniPath = GetCommonIniPath();
-
 	fs_path appIniPath = GetModuleIniPath();
 
 	this->bonCtrl.SetBonDriverFolder(GetModulePath().replace_filename(BON_DLL_FOLDER).c_str());
@@ -70,6 +68,8 @@ void CEpgDataCap_BonMain::ReloadSetting()
 			break;
 		}
 	}
+
+	SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, appIniPath.c_str()) != 0);
 
 	this->enableScrambleFlag = GetPrivateProfileInt( L"SET", L"Scramble", 1, appIniPath.c_str() );
 	this->enableEMMFlag = GetPrivateProfileInt( L"SET", L"EMM", 0, appIniPath.c_str() );

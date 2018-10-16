@@ -17,32 +17,6 @@ SERVICE_STATUS_HANDLE g_hStatusHandle;
 CEpgTimerSrvMain* g_pMain;
 FILE* g_debugLog;
 recursive_mutex_ g_debugLogLock;
-bool g_saveDebugLog;
-
-void StartDebugLog()
-{
-	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0 ){
-		fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvDebugLog.txt");
-		g_debugLog = shared_wfopen(logPath.c_str(), L"abN");
-		if( g_debugLog ){
-			_fseeki64(g_debugLog, 0, SEEK_END);
-			if( _ftelli64(g_debugLog) == 0 ){
-				fputwc(L'\xFEFF', g_debugLog);
-			}
-			g_saveDebugLog = true;
-			OutputDebugString(L"****** LOG START ******\r\n");
-		}
-	}
-}
-
-void StopDebugLog()
-{
-	if( g_saveDebugLog ){
-		OutputDebugString(L"****** LOG STOP ******\r\n");
-		g_saveDebugLog = false;
-		fclose(g_debugLog);
-	}
-}
 
 //サービス動作用のメイン
 void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv);
@@ -98,7 +72,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		HANDLE hMutex = CreateMutex(NULL, FALSE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
-				StartDebugLog();
+				SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
 				//メインスレッドに対するCOMの初期化
 				CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 				CEpgTimerSrvMain* pMain = new CEpgTimerSrvMain;
@@ -107,7 +81,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 				}
 				delete pMain;
 				CoUninitialize();
-				StopDebugLog();
+				SetSaveDebugLog(false);
 			}
 			CloseHandle(hMutex);
 		}
@@ -116,7 +90,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		HANDLE hMutex = CreateMutex(NULL, FALSE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
-				StartDebugLog();
+				SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
 				SERVICE_TABLE_ENTRY dispatchTable[] = {
 					{ SERVICE_NAME, service_main },
 					{ NULL, NULL }
@@ -124,7 +98,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 				if( StartServiceCtrlDispatcher(dispatchTable) == FALSE ){
 					OutputDebugString(L"_tWinMain(): StartServiceCtrlDispatcher failed\r\n");
 				}
-				StopDebugLog();
+				SetSaveDebugLog(false);
 			}
 			CloseHandle(hMutex);
 		}
@@ -209,16 +183,38 @@ void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD d
 
 void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 {
-	if( g_saveDebugLog ){
+	{
 		//デバッグ出力ログ保存
 		CBlockLock lock(&g_debugLogLock);
-		SYSTEMTIME st;
-		GetLocalTime(&st);
-		fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
-		           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
-		           lpOutputString ? lpOutputString : L"",
-		           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
-		fflush(g_debugLog);
+		if( g_debugLog ){
+			SYSTEMTIME st;
+			GetLocalTime(&st);
+			fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
+			           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
+			           lpOutputString ? lpOutputString : L"",
+			           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
+			fflush(g_debugLog);
+		}
 	}
 	OutputDebugStringW(lpOutputString);
+}
+
+void SetSaveDebugLog(bool saveDebugLog)
+{
+	CBlockLock lock(&g_debugLogLock);
+	if( g_debugLog == NULL && saveDebugLog ){
+		fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvDebugLog.txt");
+		g_debugLog = shared_wfopen(logPath.c_str(), L"abN");
+		if( g_debugLog ){
+			_fseeki64(g_debugLog, 0, SEEK_END);
+			if( _ftelli64(g_debugLog) == 0 ){
+				fputwc(L'\xFEFF', g_debugLog);
+			}
+			OutputDebugString(L"****** LOG START ******\r\n");
+		}
+	}else if( g_debugLog && saveDebugLog == false ){
+		OutputDebugString(L"****** LOG STOP ******\r\n");
+		fclose(g_debugLog);
+		g_debugLog = NULL;
+	}
 }

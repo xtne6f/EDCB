@@ -1125,6 +1125,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 		this->reserveManager.ReloadSetting(s);
 	}
 	this->epgDB.SetArchivePeriod(s.epgArchivePeriodHour * 3600);
+	SetSaveDebugLog(s.saveDebugLog);
 
 	CBlockLock lock(&this->settingLock);
 

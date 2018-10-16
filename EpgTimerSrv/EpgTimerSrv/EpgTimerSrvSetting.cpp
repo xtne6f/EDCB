@@ -17,6 +17,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.blinkPreRec = GetPrivateProfileInt(L"SET", L"BlinkPreRec", 0, iniPath) != 0;
 	s.noBalloonTip = GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath) != 0;
 	s.saveNotifyLog = GetPrivateProfileInt(L"SET", L"SaveNotifyLog", 0, iniPath) != 0;
+	s.saveDebugLog = GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath) != 0;
 	s.wakeTime = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath);
 	s.autoAddHour = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath) * 24 +
 	                GetPrivateProfileInt(L"SET", L"AutoAddHour", 0, iniPath);
@@ -540,7 +541,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BLINK_PRE_REC, setting.blinkPreRec);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP, setting.noBalloonTip);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_NOTIFY_LOG, setting.saveNotifyLog);
-	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG, GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG, setting.saveDebugLog);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMPAT_TKNTREC, GetPrivateProfileInt(L"SET", L"CompatFlags", 0, iniPath.c_str()) % 4096 == 4095);
 	SetDlgItemText(hwnd, IDC_EDIT_SET_TS_EXT, setting.tsExt.c_str());
 
