@@ -425,7 +425,7 @@ namespace EpgTimer
             r.SearchWndWidth            = ConvertXElem(x, w, "SearchWndWidth", SearchWndWidth, 0);
             r.SearchWndHeight           = ConvertXElem(x, w, "SearchWndHeight", SearchWndHeight, 0);
             r.NotifyLogMax              = (int)ConvertXElem(x, w, "NotifyLogMax", NotifyLogMax, 100);
-            r.ShowTray                  = ConvertXElem(x, w, "ShowTray", ShowTray, true);
+            r.ShowTray                  = ConvertXElem(x, w, "ShowTray", ShowTray, false);
             r.MinHide                   = ConvertXElem(x, w, "MinHide", MinHide, true);
             r.MouseScrollAuto           = ConvertXElem(x, w, "MouseScrollAuto", MouseScrollAuto, false);
             r.NoStyle                   = (int)ConvertXElem(x, w, "NoStyle", NoStyle, 1);
