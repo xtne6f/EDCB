@@ -4,7 +4,7 @@
 //
 #define IDC_MYICON                      2
 #define IDD_EPGTIMERSRV_DIALOG          102
-#define IDI_EPGTIMERSRV                 107
+#define IDI_ICON_GRAY                   107
 #define IDI_ICON_SEMI                   108
 #define IDI_ICON_BLUE                   109
 #define IDI_ICON_GREEN                  110
