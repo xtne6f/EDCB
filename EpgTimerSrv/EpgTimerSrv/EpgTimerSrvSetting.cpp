@@ -13,7 +13,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 {
 	SETTING s;
 	s.epgArchivePeriodHour = GetPrivateProfileInt(L"SET", L"EpgArchivePeriodHour", 0, iniPath);
-	s.residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath);
+	s.residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 2, iniPath);
 	s.notifyTipStyle = GetPrivateProfileInt(L"SET", L"NotifyTipStyle", 0, iniPath);
 	s.blinkPreRec = GetPrivateProfileInt(L"SET", L"BlinkPreRec", 0, iniPath) != 0;
 	s.noBalloonTip = GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath) != 0;
