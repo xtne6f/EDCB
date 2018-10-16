@@ -63,6 +63,7 @@ struct MAIN_WINDOW_CONTEXT {
 	bool autoAddCheckAddCountUpdated;
 	bool taskFlag;
 	bool showBalloonTip;
+	//0,1,2:NOTIFY_UPDATE_SRV_STATUSの値, 3:無効, 3<:点滅
 	DWORD notifySrvStatus;
 	__int64 notifyTipActiveTime;
 	RESERVE_DATA notifyTipReserve;
@@ -456,6 +457,10 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
 		ctx->sys->hwndMain = hwnd;
 		ctx->sys->ReloadSetting(true);
+		if( ctx->sys->reserveManager.GetTunerReserveAll().size() <= 1 ){
+			//チューナなし
+			ctx->notifySrvStatus = 3;
+		}
 		ctx->sys->ReloadNetworkSetting();
 		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE,
@@ -598,12 +603,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ||
 				    itr->notifyID == NOTIFY_UPDATE_PRE_REC_START && itr->param4.find(L'/') != wstring::npos &&
-				    (ctx->notifySrvStatus == 0 || ctx->notifySrvStatus > 2) && blinkPreRec ){
-					if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
-						ctx->notifySrvStatus = itr->param1;
-					}else{
-						ctx->notifySrvStatus = SRV_STATUS_PRE_REC;
-						SetTimer(hwnd, TIMER_INC_SRV_STATUS, 1000, NULL);
+				    (ctx->notifySrvStatus == 0 || ctx->notifySrvStatus > 3) && blinkPreRec ){
+					if( ctx->notifySrvStatus != 3 ){
+						if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
+							ctx->notifySrvStatus = itr->param1;
+						}else{
+							ctx->notifySrvStatus = SRV_STATUS_PRE_REC;
+							SetTimer(hwnd, TIMER_INC_SRV_STATUS, 1000, NULL);
+						}
 					}
 					if( ctx->taskFlag ){
 						NOTIFYICONDATA nid = {};
@@ -612,8 +619,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						nid.uID = 1;
 						nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
 						                          ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN :
+						                          ctx->notifySrvStatus == 3 ? IDI_ICON_GRAY :
 						                          ctx->notifySrvStatus % 2 ? IDI_ICON_SEMI : IDI_ICON_BLUE);
-						if( notifyTipStyle == 1 ){
+						if( ctx->notifySrvStatus == 3 ){
+							wcscpy_s(nid.szTip, L"チューナーがありません");
+						}else if( notifyTipStyle == 1 ){
 							wstring tip = L"次の予約なし";
 							if( ctx->notifyTipActiveTime != LLONG_MAX && ctx->notifyTipReserve.reserveID != 0 ){
 								SYSTEMTIME st = ctx->notifyTipReserve.startTime;
@@ -699,8 +709,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		//タスクトレイ関係
 		switch( LOWORD(lParam) ){
 		case WM_LBUTTONUP:
-			OpenGUI();
-			break;
+			if( ctx->notifySrvStatus != 3 ){
+				OpenGUI();
+				break;
+			}
+			//FALL THROUGH!
 		case WM_RBUTTONUP:
 			{
 				HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU_TRAY));
