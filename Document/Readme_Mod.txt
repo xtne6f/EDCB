@@ -5,9 +5,9 @@ HTTPサーバ機能は後述「CivetWebの組み込みについて」を参照�
 ではlocalhost以外からのアクセスを拒否するので注意してください。
 Unicode対応のため予約情報(Reserve.txtなど)の既定の文字コードを変更しました。後述
 「予約ファイル等のByteOrderMark付きUTF-8対応について」を参照してください。
-サービスとして使用しない場合、EpgTimer.exeやEpgTimerTask.exeの常駐を不要にできま
-す(EpgTimerSrv設定→その他)。この場合、EpgTimerSrv.exeがタスクトレイアイコンを表
-示し、スリープ確認ダイアログやチューナ・バッチを直接起動します。
+Windowsサービスとして使用しない場合、EpgTimer.exeやEpgTimerTask.exeは必須ではあ
+りません。EpgTimerSrv.exeがタスクトレイアイコンを表示し、スリープ確認ダイアログ
+やチューナー・バッチを直接起動します。
 EpgTimerTaskはEpgTimerSrvに統合しました。EpgTimerSrv.exeをコピーしてリネームする
 か、EpgTimerSrv.exeに/taskオプションをつけるとEpgTimerTaskとして動作します。
 
@@ -25,6 +25,11 @@ Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人�
 ◇twitter.dllの取り扱いについて
   twitter.dllは削除しました。無視してください。
 ◇基本的な使用準備
+  手順に大きな変更はないですが、チューナー数の設定はEpgTimerSrv.exeの起動だけで
+  もできます。タスクトレイに表示される時計アイコンを右クリック→「システム→Srv
+  設定」で設定してください。既定でEpgTimerSrvはEpgTimerに連動して終了しなくなっ
+  たので、設定を反映させるには右クリック→「Srv終了」で直接EpgTimerSrvを終了して
+  ください。
   Program Files等のOSが特別に管理するフォルダへの配置は避けてください。書き込み
   保護や仮想化、大規模アップデート時の退避処理によりトラブルを引き起こします。
 
@@ -90,6 +95,8 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         選択されている項目を、その検索条件にマッチする予約ごと削除します。
 
 ◇検索条件
+  ・検索キーワード
+    OR検索( | 前後スペース必須)もできます【追加】。改行入力機能は廃止しました。
   ・正規表現モード
     ConvertText.txtは廃止しました(後述)
   ・あいまい検索モード
@@ -120,6 +127,10 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
     ファイル名PlugInにオプションの文字列を指定できます【追加】。オプションの意味
     はPlugIn次第ですが、RecName_Macro.dllではマクロを指定します。オプションを指
     定しなければ従来動作です。対応していないPlugInではオプションは無視されます。
+  ・録画後実行bat
+    「*」以降の文字列を$BatFileTag$マクロとして参照できます【追加】。「"」は全角
+    「”」に置換されます。意図しない展開を防ぐため、バッチでは"$BatFileTag$"のよ
+    うに引用符で囲うなどしてください。
   ・録画マージン
     完全な録画を重視する場合、開始マージンは十分に確保してください。予約管理やPC
     の状態によって数秒から十数秒程度の遅延は起こり得ます。デフォルトの開始マージ
@@ -171,6 +182,11 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
       ・優先度が同じ場合、チューナー強制指定された予約を先に割り当てする【追加】
         概ね、原作の「デフォルトアルゴリズム」と「アルゴリズム2」の違いと考えて
         ください(現アルゴリズムについては後述Q&A参照)。
+      ・チューナーの起動に失敗したとき、ほかのチューナーで再試行する【追加】
+        録画結果が「チューナーのオープンに失敗」となる場合、そのチューナーを除い
+        て予約を再割り当てします(このとき使用チューナー強制指定は考慮しません)。
+        再割り当てできるチューナーがない場合、録画結果は「チューナー不足のため失
+        敗」になります。
       ・EPG自動予約をプログラム化したとき、再び追加されないようにする【追加】
         次のEPG再読み込みで同じ番組が追加されないよう予約状況に注釈を入れます。
       ・録画情報保存フォルダ指定時は録画ファイルと同じ場所を参照しない【追加】
@@ -264,8 +280,7 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         われるフォント)を1つだけ指定できます【追加】。
       ・表示
         ・最低表示行数【追加】
-          短時間の番組でも最低この行数だけ高さを確保します。短時間の番組が続くと
-          下にずれるので、実用的には0.8程度をお勧めします。
+          短時間の番組でも最低この行数(小数点使用可)だけ高さを確保します。
         ・タイトル(以外)の文字列置換リスト【追加】
           置換前文字列が長いものを優先します。例えば全角記号を半角にしたいときは
           /！/!/？/? のように指定します。特定文字列の絵文字化などにも使えます。
@@ -385,9 +400,9 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
 ◇Twitter機能
   Twitter機能は廃止しました。代わりにEpgTimerSrv.exeのあるフォルダに置かれた以下
   のバッチファイルを実行します【追加】。取得できるマクロは従来とだいたい同じです
-  (NEW系マクロは名前からNEWを取り除いています)。PostRecEnd(.bat|.ps1)以外は
-  $ReserveID$(予約ID)、$RecMode$(録画モード0=全サービス～4=視聴)、
-  $ReserveComment$(コメント)も取得できます。
+  (NEW系マクロは名前からNEWを取り除いています)。$BatFileTag$、およびPostRecEnd
+  (.bat|.ps1)に限り$RecInfoID$、これ以外に限り$ReserveID$(予約ID)、$RecMode$
+  (録画モード0=全サービス～4=視聴)、$ReserveComment$(コメント)も取得できます。
   ・PostAddReserve(.bat|.ps1) : 予約を追加したとき(無効を除く)
     ・EPG自動予約のとき$ReserveComment$は"EPG自動予約"という文字列で始まります
   ・PostChgReserve(.bat|.ps1) : 予約を変更したとき(無効を除く)
@@ -557,13 +572,10 @@ EpgTimer/EpgTimer/CommonフォルダのソースコードCtrlCmd.csとCtrlCmdDef
 HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetWebを組み込みました。
 有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。
 https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
-CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.10
+CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.11
 https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
 SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にssleay32.dllとlibeay32.dllが必要です。自ビルド(推奨)するか信頼できるどこかから入手してください。
 とりあえず https://www.openssl.org/community/binaries.html にある https://indy.fulgan.com/SSL/ で動作を確認しています。
-「DLNAのDMSぽい機能」はHTTPサーバに統合しました。
-iniフォルダにあるdlna以下を公開フォルダに置いてEpgTimerSrv.iniのEnableDMSキーを1にすると有効になります。
-
 EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動してください。
 以下のキー[=デフォルト]を利用できます:
 
@@ -611,6 +623,13 @@ HttpKeepAlive[=0]
   # 有効にする[=1]ときは以下に注意:
   # ・mg.keep_alive(true)メソッドを呼んだLuaスクリプトは持続的接続になるかもしれない。
   #   このメソッドがtrueを返したときは"Content-Length"を必ず送り、"Connection: close"しない
+EnableDMS[=0]
+  「DLNAのDMSぽい機能」を有効にするかどうか
+  # [=1]で有効
+  # UDPポート1900を使用し、UPnPのM-SEARCH応答と約16分間隔のNOTIFY通知をおこなう
+  # 有効になるのはDMSのUDP部分のみ。別途iniフォルダにあるdlna以下を公開フォルダに置く必要がある
+  # 通知する自機のUUIDは、公開フォルダの/dlna/dms/ddd.xmlから"<UDN>uuid:{UUID}</UDN>"を探してこれを使う
+  # 通知する自機のHTTPポート番号は、HttpPortキーの最後にみつかった':'より後ろか、キーの先頭にある数字を使う
 
 加えて、以下の設定をCivetWebのデフォルトから変更しています:
   ssi_pattern: "" (SSIは無効)
@@ -632,21 +651,18 @@ LANを越える場合は以下を参考に"ssl_peer.pem"または"glpasswd"を�
 CivetWebでセキュリティが確保されているだろうと判断できたのは認証処理までの不正アクセス耐性のみです。
 パス無しの公開サーバとしての利用はお勧めしません。
 
-"ssl_cert.pem"(秘密鍵+自己署名証明書)の作成手順は本家ドキュメントに従わないほうが良いです。暗号強度が
-「SSL/TLS暗号設定ガイドライン」(https://www.ipa.go.jp/security/vuln/ssl_crypt_config.html)を満たしていません。
-(作成手順例、鵜呑みにしないこと。bashの場合はtype→cat)
-> openssl genrsa -out server.key 2048
-> openssl req -new -key server.key -out server.csr
-> openssl x509 -req -days 3650 -sha256 -in server.csr -signkey server.key -out server.crt
+"ssl_cert.pem"(秘密鍵+自己署名証明書)の作成手順例
+※鵜呑みにしないこと。bashの場合はtype→cat
+※最近のブラウザはsubjectAltNameが必須のため、以下OpenSSLコマンドはバージョン1.1.1以降を使う
+> openssl req -new -newkey rsa:2048 -nodes -keyout server.key -out server.crt -x509 -days 3650 -sha256 -addext "subjectAltName = IP:127.0.0.1,IP:192.168.0.2,DNS:example.com"
+  (subjectAltNameは一例。自機のIPやドメインを並べる)
   (入力項目はデフォルトでOK。ブラウザの証明書例外追加時に"server.crt"と拇印が等しいかだけ注意する)
-  ("Common Name"項目にはサーバのドメイン名かIPアドレスを指定しておいたほうが良いかも)
 > type server.crt >ssl_cert.pem
 > type server.key >>ssl_cert.pem
 
 "ssl_peer.pem"(信頼済みクライアント証明書リスト)の作成手順例
-> openssl genrsa -out client.key 2048
-> openssl req -new -key client.key -out client.csr
-> openssl x509 -req -days 3650 -sha256 -in client.csr -signkey client.key -out client.crt
+> openssl req -new -newkey rsa:2048 -nodes -keyout client.key -out client.crt -x509 -days 3650 -sha256
+  (入力項目はデフォルトでOK)
 > type client.crt >ssl_peer.pem
 > openssl pkcs12 -export -inkey client.key -in client.crt -out edcb_key.p12 -name "edcb_key"
   (↑"edcb_key.p12"(クライアントの秘密鍵)はブラウザ等にインポートする)
@@ -694,10 +710,12 @@ serverRandom:S
 S GetGenreName( 大分類*256+中分類:I )
   STD-B10のジャンル指定の文字列を取得する
   中分類を0xFFとすると大分類の文字列が返る。
+  0xFFFFとすると自動予約検索条件の'なし'が返る。
   存在しないとき空文字列。
   例えばedcb.GetGenreName(0x0205)は'グルメ・料理'が返る。
+  大分類に0x60を加えるとTR-B14の「番組付属情報」の文字列が返る。
   大分類に0x70を加えるとTR-B15の「広帯域CSデジタル放送拡張用情報」の文字列が返る。
-  (この0x70に対する特別扱いは自動予約検索条件でも同様)
+  (これらの特別扱いは自動予約検索条件でも同様)
   例えばedcb.GetGenreName(0x7205)は'ホラー／スリラー'が返る。
 
 S GetComponentTypeName( コンポーネント内容*256+コンポーネント種別:I )
@@ -791,7 +809,8 @@ DelReserveData( 予約ID:I )
   予約を取得する(reserveIDソート)
   無引数のときは全予約を取得する。
   1引数のときは指定予約を取得する。なければnilが返る。
-  予約IDが0x7FFFFFFFのときは録画マージンなどのデフォルト値を取得する。未対応バージョンではnilが返る。
+  予約IDが0x7FFFFFFFのときは録画マージンなどのデフォルト値を取得する。未対応バージョンではnilが返る。recSetting.batFilePath
+  について、「*」以降をBatFileTagとして扱うバージョンでは'*'が返る。
 
 S|nil GetRecFilePath( 予約ID:I )
   予約の録画ファイルパスを取得する
