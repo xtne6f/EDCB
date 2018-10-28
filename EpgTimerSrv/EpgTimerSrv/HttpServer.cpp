@@ -178,7 +178,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 				if( n < 256 ){
 					break;
 				}
-				memcpy(olbuff, olbuff + 192, 64);
+				std::copy(olbuff + 192, olbuff + 256, olbuff);
 			}
 		}
 		if( notifyUuid.empty() == false ){

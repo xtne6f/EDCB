@@ -19,7 +19,6 @@
 
 // C ランタイム ヘッダー ファイル
 #include <stdlib.h>
-#include <memory.h>
 #include <stdio.h>
 
 static inline FILE* secure_wfopen(const wchar_t* name, const wchar_t* mode)

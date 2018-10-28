@@ -88,7 +88,7 @@ CEpgTimerSrvMain::CEpgTimerSrvMain()
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
-	memset(this->notifyUpdateCount, 0, sizeof(this->notifyUpdateCount));
+	std::fill_n(this->notifyUpdateCount, _countof(this->notifyUpdateCount), 0);
 }
 
 bool CEpgTimerSrvMain::TaskMain()

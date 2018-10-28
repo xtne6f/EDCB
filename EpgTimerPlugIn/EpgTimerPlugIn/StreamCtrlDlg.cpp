@@ -338,7 +338,6 @@ void CStreamCtrlDlg::EnumIP()
 	}
 
 	WSADATA data;
-	ZeroMemory(&data, sizeof(data));
 	WSAStartup(MAKEWORD(2, 2), &data);
 	// adpts 配列内の各アダプタ情報を一つずつ adpt に入れてみていきます。
 	for(PIP_ADAPTER_ADDRESSES adpt = adpts; adpt; adpt = adpt->Next){

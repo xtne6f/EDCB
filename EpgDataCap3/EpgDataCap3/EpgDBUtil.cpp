@@ -231,15 +231,16 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			}
 			if( serviceInfo->lastTableID == 0 ){
 				//リセット
-				memset(serviceInfo->sectionList, 0, sizeof(SECTION_FLAG_INFO) * 8);
+				SECTION_FLAG_INFO infoZero = {};
+				std::fill_n(serviceInfo->sectionList, 8, infoZero);
 				for( int i = 1; i < 8; i++ ){
 					//第0テーブル以外のセクションを無視
-					memset(serviceInfo->sectionList[i].ignoreFlags, 0xFF, sizeof(serviceInfo->sectionList[0].ignoreFlags));
+					std::fill_n(serviceInfo->sectionList[i].ignoreFlags, _countof(serviceInfo->sectionList[0].ignoreFlags), 0xFF);
 				}
 				serviceInfo->lastTableID = table_id;
 			}
 			//第0セグメント以外のセクションを無視
-			memset(serviceInfo->sectionList[0].ignoreFlags + 1, 0xFF, sizeof(serviceInfo->sectionList[0].ignoreFlags) - 1);
+			std::fill_n(serviceInfo->sectionList[0].ignoreFlags + 1, _countof(serviceInfo->sectionList[0].ignoreFlags) - 1, 0xFF);
 			//第0セグメントの送られないセクションを無視
 			for( int i = eit.GetNumber(Desc::segment_last_section_number) % 8 + 1; i < 8; i++ ){
 				serviceInfo->sectionList[0].ignoreFlags[0] |= 1 << i;
@@ -262,19 +263,20 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			}
 			if( lastTableID == 0 ){
 				//リセット
-				memset(sectionList, 0, sizeof(SECTION_FLAG_INFO) * 8);
+				SECTION_FLAG_INFO infoZero = {};
+				std::fill_n(sectionList, 8, infoZero);
 				for( int i = eit.GetNumber(Desc::last_table_id) % 8 + 1; i < 8; i++ ){
 					//送られないテーブルのセクションを無視
-					memset(sectionList[i].ignoreFlags, 0xFF, sizeof(sectionList[0].ignoreFlags));
+					std::fill_n(sectionList[i].ignoreFlags, _countof(sectionList[0].ignoreFlags), 0xFF);
 				}
 				lastTableID = (BYTE)eit.GetNumber(Desc::last_table_id);
 			}
 			//送られないセグメントのセクションを無視
-			memset(sectionList[table_id % 8].ignoreFlags + (BYTE)eit.GetNumber(Desc::last_section_number) / 8 + 1, 0xFF,
-				sizeof(sectionList[0].ignoreFlags) - (BYTE)eit.GetNumber(Desc::last_section_number) / 8 - 1);
+			std::fill_n(sectionList[table_id % 8].ignoreFlags + (BYTE)eit.GetNumber(Desc::last_section_number) / 8 + 1,
+			            _countof(sectionList[0].ignoreFlags) - (BYTE)eit.GetNumber(Desc::last_section_number) / 8 - 1, 0xFF);
 			if( table_id % 8 == 0 && streamTime > 0 ){
 				//放送済みセグメントのセクションを無視
-				memset(sectionList[0].ignoreFlags, 0xFF, streamTime / (3 * 60 * 60 * I64_1SEC) % 8);
+				std::fill_n(sectionList[0].ignoreFlags, streamTime / (3 * 60 * 60 * I64_1SEC) % 8, 0xFF);
 			}
 			//このセグメントの送られないセクションを無視
 			for( int i = eit.GetNumber(Desc::segment_last_section_number) % 8 + 1; i < 8; i++ ){
