@@ -23,45 +23,6 @@ namespace
 
 FILE* g_debugLog;
 recursive_mutex_ g_debugLogLock;
-bool g_saveDebugLog;
-
-void StartDebugLog()
-{
-	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0 ){
-		for( int i = 0; i < 100; i++ ){
-			//パスに添え字をつけて書き込み可能な最初のものに記録する
-			WCHAR logFileName[64];
-			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
-			fs_path logPath = GetModulePath().replace_filename(logFileName);
-			//やりたいことは_wfsopen(L"abN",_SH_DENYWR)だが_wfsopenには"N"オプションがなさそうなので低水準で開く
-			int fd;
-			if( _wsopen_s(&fd, logPath.c_str(), _O_APPEND | _O_BINARY | _O_CREAT | _O_NOINHERIT | _O_WRONLY, _SH_DENYWR, _S_IWRITE) == 0 ){
-				g_debugLog = _wfdopen(fd, L"ab");
-				if( g_debugLog == NULL ){
-					_close(fd);
-				}
-			}
-			if( g_debugLog ){
-				_fseeki64(g_debugLog, 0, SEEK_END);
-				if( _ftelli64(g_debugLog) == 0 ){
-					fputwc(L'\xFEFF', g_debugLog);
-				}
-				g_saveDebugLog = true;
-				OutputDebugString(L"****** LOG START ******\r\n");
-				break;
-			}
-		}
-	}
-}
-
-void StopDebugLog()
-{
-	if( g_saveDebugLog ){
-		OutputDebugString(L"****** LOG STOP ******\r\n");
-		g_saveDebugLog = false;
-		fclose(g_debugLog);
-	}
-}
 
 #ifndef SUPPRESS_OUTPUT_STACK_TRACE
 // 例外によってアプリケーションが終了する直前にスタックトレースを"実行ファイル名.exe.err"に出力する
@@ -268,27 +229,62 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 #endif
 {
 	SetDllDirectory(L"");
-	StartDebugLog();
+	SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
 	//メインスレッドに対するCOMの初期化
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	theApp.InitInstance();
 	CoUninitialize();
-	StopDebugLog();
+	SetSaveDebugLog(false);
 	return 0;
 }
 
 void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 {
-	if( g_saveDebugLog ){
+	{
 		//デバッグ出力ログ保存
 		CBlockLock lock(&g_debugLogLock);
-		SYSTEMTIME st;
-		GetLocalTime(&st);
-		fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
-		           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
-		           lpOutputString ? lpOutputString : L"",
-		           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
-		fflush(g_debugLog);
+		if( g_debugLog ){
+			SYSTEMTIME st;
+			GetLocalTime(&st);
+			fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
+			           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
+			           lpOutputString ? lpOutputString : L"",
+			           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
+			fflush(g_debugLog);
+		}
 	}
 	OutputDebugStringW(lpOutputString);
+}
+
+void SetSaveDebugLog(bool saveDebugLog)
+{
+	CBlockLock lock(&g_debugLogLock);
+	if( g_debugLog == NULL && saveDebugLog ){
+		for( int i = 0; i < 100; i++ ){
+			//パスに添え字をつけて書き込み可能な最初のものに記録する
+			WCHAR logFileName[64];
+			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
+			fs_path logPath = GetModulePath().replace_filename(logFileName);
+			//やりたいことは_wfsopen(L"abN",_SH_DENYWR)だが_wfsopenには"N"オプションがなさそうなので低水準で開く
+			int fd;
+			if( _wsopen_s(&fd, logPath.c_str(), _O_APPEND | _O_BINARY | _O_CREAT | _O_NOINHERIT | _O_WRONLY, _SH_DENYWR, _S_IWRITE) == 0 ){
+				g_debugLog = _wfdopen(fd, L"ab");
+				if( g_debugLog == NULL ){
+					_close(fd);
+				}
+			}
+			if( g_debugLog ){
+				_fseeki64(g_debugLog, 0, SEEK_END);
+				if( _ftelli64(g_debugLog) == 0 ){
+					fputwc(L'\xFEFF', g_debugLog);
+				}
+				OutputDebugString(L"****** LOG START ******\r\n");
+				break;
+			}
+		}
+	}else if( g_debugLog && saveDebugLog == false ){
+		OutputDebugString(L"****** LOG STOP ******\r\n");
+		fclose(g_debugLog);
+		g_debugLog = NULL;
+	}
 }

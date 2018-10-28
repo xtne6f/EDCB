@@ -13,10 +13,12 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 {
 	SETTING s;
 	s.epgArchivePeriodHour = GetPrivateProfileInt(L"SET", L"EpgArchivePeriodHour", 0, iniPath);
-	s.residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath);
+	s.residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 2, iniPath);
+	s.notifyTipStyle = GetPrivateProfileInt(L"SET", L"NotifyTipStyle", 0, iniPath);
 	s.blinkPreRec = GetPrivateProfileInt(L"SET", L"BlinkPreRec", 0, iniPath) != 0;
 	s.noBalloonTip = GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath) != 0;
 	s.saveNotifyLog = GetPrivateProfileInt(L"SET", L"SaveNotifyLog", 0, iniPath) != 0;
+	s.saveDebugLog = GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath) != 0;
 	s.wakeTime = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath);
 	s.autoAddHour = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath) * 24 +
 	                GetPrivateProfileInt(L"SET", L"AutoAddHour", 0, iniPath);
@@ -111,6 +113,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.tuijyuHour = GetPrivateProfileInt(L"SET", L"TuijyuHour", 3, iniPath);
 	s.backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath) != 0;
 	s.fixedTunerPriority = GetPrivateProfileInt(L"SET", L"FixedTunerPriority", 1, iniPath) != 0;
+	s.retryOtherTuners = GetPrivateProfileInt(L"SET", L"RetryOtherTuners", 0, iniPath) != 0;
 	s.commentAutoAdd = GetPrivateProfileInt(L"SET", L"CommentAutoAdd", 0, iniPath) != 0;
 	s.autoDelRecInfo = GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniPath) != 0;
 	s.autoDelRecInfoNum = GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniPath);
@@ -490,6 +493,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	hwnd = this->hwndReserve;
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY, setting.backPriority);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY, setting.fixedTunerPriority);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_RETRY_OTHER_TUNERS, setting.retryOtherTuners);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMMENT_AUTO_ADD, setting.commentAutoAdd);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY, setting.recInfoFolderOnly);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_DEL_FILE, GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
@@ -535,10 +539,11 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_TIME_SYNC, setting.timeSync);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_RESIDENT, setting.residentMode >= 1);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SHOW_TRAY, setting.residentMode != 1);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_NOTIFY_TIP_STYLE, setting.notifyTipStyle == 1);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BLINK_PRE_REC, setting.blinkPreRec);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP, setting.noBalloonTip);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_NOTIFY_LOG, setting.saveNotifyLog);
-	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG, GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG, setting.saveDebugLog);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMPAT_TKNTREC, GetPrivateProfileInt(L"SET", L"CompatFlags", 0, iniPath.c_str()) % 4096 == 4095);
 	SetDlgItemText(hwnd, IDC_EDIT_SET_TS_EXT, setting.tsExt.c_str());
 
@@ -755,6 +760,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	hwnd = this->hwndReserve;
 	WritePrivateProfileInt(L"SET", L"BackPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"FixedTunerPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"RetryOtherTuners", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_RETRY_OTHER_TUNERS), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"CommentAutoAdd", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMMENT_AUTO_ADD), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecInfoFolderOnly", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecInfoDelFile", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_DEL_FILE), commonIniPath.c_str());
@@ -813,6 +819,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WritePrivateProfileInt(L"SET", L"ResidentMode",
 	                       GetDlgButtonCheck(hwnd, IDC_CHECK_SET_RESIDENT) ?
 	                           (GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SHOW_TRAY) ? 2 : 1) : 0, iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"NotifyTipStyle", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_NOTIFY_TIP_STYLE), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"BlinkPreRec", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BLINK_PRE_REC), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"NoBalloonTip", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"SaveNotifyLog", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_NOTIFY_LOG), iniPath.c_str());
@@ -1177,8 +1184,11 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_NO_BALLOON_TIP), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			//FALL THROUGH!
 		case IDC_CHECK_SET_SHOW_TRAY:
-			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_BLINK_PRE_REC),
-			             GetDlgButtonCheck(hDlg, IDC_CHECK_SET_RESIDENT) && GetDlgButtonCheck(hDlg, IDC_CHECK_SET_SHOW_TRAY));
+			{
+				bool b = GetDlgButtonCheck(hDlg, IDC_CHECK_SET_RESIDENT) && GetDlgButtonCheck(hDlg, IDC_CHECK_SET_SHOW_TRAY);
+				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_NOTIFY_TIP_STYLE), b);
+				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_BLINK_PRE_REC), b);
+			}
 			break;
 		case IDC_BUTTON_SET_RECNAME_PLUGIN:
 			sys->OnBnClickedSetRecNamePlugIn();

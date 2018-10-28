@@ -19,7 +19,6 @@
 
 // C ランタイム ヘッダー ファイル
 #include <stdlib.h>
-#include <memory.h>
 #include <stdio.h>
 
 static inline FILE* secure_wfopen(const wchar_t* name, const wchar_t* mode)
@@ -54,5 +53,6 @@ static inline FILE* shared_wfopen(const wchar_t* name, const wchar_t* mode)
 // APIフックによる高度なものでなく単なる置換。OutputDebugStringAやDLLからの呼び出しはラップされない
 void OutputDebugStringWrapper(LPCWSTR lpOutputString);
 #endif
+void SetSaveDebugLog(bool saveDebugLog);
 
 #include "../../Common/Common.h"

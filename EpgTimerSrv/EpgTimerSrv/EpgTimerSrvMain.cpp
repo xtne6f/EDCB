@@ -63,8 +63,10 @@ struct MAIN_WINDOW_CONTEXT {
 	bool autoAddCheckAddCountUpdated;
 	bool taskFlag;
 	bool showBalloonTip;
+	//0,1,2:NOTIFY_UPDATE_SRV_STATUSの値, 3:無効, 3<:点滅
 	DWORD notifySrvStatus;
-	__int64 notifyActiveTime;
+	__int64 notifyTipActiveTime;
+	RESERVE_DATA notifyTipReserve;
 	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_)
 		: sys(sys_)
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
@@ -75,27 +77,8 @@ struct MAIN_WINDOW_CONTEXT {
 		, taskFlag(false)
 		, showBalloonTip(false)
 		, notifySrvStatus(0)
-		, notifyActiveTime(LLONG_MAX) {}
+		, notifyTipActiveTime(LLONG_MAX) {}
 };
-
-//必要なバッファを確保してGetPrivateProfileSection()を呼ぶ
-vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName)
-{
-	vector<WCHAR> buff(4096);
-	for(;;){
-		DWORD n = GetPrivateProfileSection(appName, &buff.front(), (DWORD)buff.size(), fileName);
-		if( n < buff.size() - 2 ){
-			buff.resize(n + 1);
-			break;
-		}
-		if( buff.size() >= 16 * 1024 * 1024 ){
-			buff.assign(1, L'\0');
-			break;
-		}
-		buff.resize(buff.size() * 2);
-	}
-	return buff;
-}
 
 }
 
@@ -105,7 +88,7 @@ CEpgTimerSrvMain::CEpgTimerSrvMain()
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
-	memset(this->notifyUpdateCount, 0, sizeof(this->notifyUpdateCount));
+	std::fill_n(this->notifyUpdateCount, _countof(this->notifyUpdateCount), 0);
 }
 
 bool CEpgTimerSrvMain::TaskMain()
@@ -455,6 +438,10 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
 		ctx->sys->hwndMain = hwnd;
 		ctx->sys->ReloadSetting(true);
+		if( ctx->sys->reserveManager.GetTunerReserveAll().size() <= 1 ){
+			//チューナなし
+			ctx->notifySrvStatus = 3;
+		}
 		ctx->sys->ReloadNetworkSetting();
 		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE,
@@ -586,14 +573,25 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				ctx->tcpServer.NotifyUpdate();
 			}
 			for( vector<NOTIFY_SRV_INFO>::const_iterator itr = list.begin(); itr != list.end(); itr++ ){
+				int notifyTipStyle;
+				bool blinkPreRec;
+				bool saveNotifyLog;
+				{
+					CBlockLock lock(&ctx->sys->settingLock);
+					notifyTipStyle = ctx->sys->setting.notifyTipStyle;
+					blinkPreRec = ctx->sys->setting.blinkPreRec;
+					saveNotifyLog = ctx->sys->setting.saveNotifyLog;
+				}
 				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ||
 				    itr->notifyID == NOTIFY_UPDATE_PRE_REC_START && itr->param4.find(L'/') != wstring::npos &&
-				    (ctx->notifySrvStatus == 0 || ctx->notifySrvStatus > 2) && ctx->sys->setting.blinkPreRec ){
-					if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
-						ctx->notifySrvStatus = itr->param1;
-					}else{
-						ctx->notifySrvStatus = SRV_STATUS_PRE_REC;
-						SetTimer(hwnd, TIMER_INC_SRV_STATUS, 1000, NULL);
+				    (ctx->notifySrvStatus == 0 || ctx->notifySrvStatus > 3) && blinkPreRec ){
+					if( ctx->notifySrvStatus != 3 ){
+						if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
+							ctx->notifySrvStatus = itr->param1;
+						}else{
+							ctx->notifySrvStatus = SRV_STATUS_PRE_REC;
+							SetTimer(hwnd, TIMER_INC_SRV_STATUS, 1000, NULL);
+						}
 					}
 					if( ctx->taskFlag ){
 						NOTIFYICONDATA nid = {};
@@ -602,10 +600,28 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						nid.uID = 1;
 						nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
 						                          ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN :
+						                          ctx->notifySrvStatus == 3 ? IDI_ICON_GRAY :
 						                          ctx->notifySrvStatus % 2 ? IDI_ICON_SEMI : IDI_ICON_BLUE);
-						if( ctx->notifyActiveTime != LLONG_MAX ){
+						if( ctx->notifySrvStatus == 3 ){
+							wcscpy_s(nid.szTip, L"チューナーがありません");
+						}else if( notifyTipStyle == 1 ){
+							wstring tip = L"次の予約なし";
+							if( ctx->notifyTipActiveTime != LLONG_MAX && ctx->notifyTipReserve.reserveID != 0 ){
+								SYSTEMTIME st = ctx->notifyTipReserve.startTime;
+								SYSTEMTIME stEnd;
+								ConvertSystemTime(ConvertI64Time(st) + ctx->notifyTipReserve.durationSecond * I64_1SEC, &stEnd);
+								Format(tip, L"次の予約：%s %d/%d(%s) %d:%02d-%d:%02d %s",
+								       ctx->notifyTipReserve.stationName.c_str(),
+								       st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute,
+								       stEnd.wHour, stEnd.wMinute, ctx->notifyTipReserve.title.c_str());
+								if( tip.size() > 95 ){
+									tip.replace(92, wstring::npos, L"...");
+								}
+							}
+							wcsncpy_s(nid.szTip, tip.c_str(), _TRUNCATE);
+						}else if( ctx->notifyTipActiveTime != LLONG_MAX ){
 							SYSTEMTIME st;
-							ConvertSystemTime(ctx->notifyActiveTime + 30 * I64_1SEC, &st);
+							ConvertSystemTime(ctx->notifyTipActiveTime + 30 * I64_1SEC, &st);
 							swprintf_s(nid.szTip, L"次の予約・取得：%d/%d(%s) %d:%02d",
 								st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 						}
@@ -638,7 +654,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					if( nid.szInfoTitle[0] ){
 						LPCWSTR info = itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"開始" :
 						               itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"終了" : itr->param4.c_str();
-						if( ctx->sys->setting.saveNotifyLog ){
+						if( saveNotifyLog ){
 							//通知情報ログ保存
 							fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvNotify.log");
 							std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(logPath.c_str(), L"abN"), fclose);
@@ -674,8 +690,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		//タスクトレイ関係
 		switch( LOWORD(lParam) ){
 		case WM_LBUTTONUP:
-			OpenGUI();
-			break;
+			if( ctx->notifySrvStatus != 3 ){
+				OpenGUI();
+				break;
+			}
+			//FALL THROUGH!
 		case WM_RBUTTONUP:
 			{
 				HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU_TRAY));
@@ -829,9 +848,16 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					_OutputDebugString(L"SetThreadExecutionState(0x%08x)\r\n", (DWORD)esFlags);
 				}
 				//チップヘルプの更新が必要かチェック
-				__int64 activeTime = ctx->sys->reserveManager.GetSleepReturnTime(GetNowI64Time());
-				if( activeTime != ctx->notifyActiveTime ){
-					ctx->notifyActiveTime = activeTime;
+				RESERVE_DATA r;
+				__int64 activeTime = ctx->sys->reserveManager.GetSleepReturnTime(GetNowI64Time(), &r);
+				if( activeTime != ctx->notifyTipActiveTime || activeTime != LLONG_MAX &&
+				    (r.reserveID != ctx->notifyTipReserve.reserveID ||
+				     ConvertI64Time(r.startTime) != ConvertI64Time(ctx->notifyTipReserve.startTime) ||
+				     r.durationSecond != ctx->notifyTipReserve.durationSecond ||
+				     r.stationName != ctx->notifyTipReserve.stationName ||
+				     r.title != ctx->notifyTipReserve.title) ){
+					ctx->notifyTipActiveTime = activeTime;
+					ctx->notifyTipReserve = std::move(r);
 					SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
 				}
 			}
@@ -1125,6 +1151,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 		this->reserveManager.ReloadSetting(s);
 	}
 	this->epgDB.SetArchivePeriod(s.epgArchivePeriodHour * 3600);
+	SetSaveDebugLog(s.saveDebugLog);
 
 	CBlockLock lock(&this->settingLock);
 
@@ -1136,6 +1163,9 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 			//タスクトレイに表示するかどうか
 			PostMessage(this->hwndMain, WM_APP_SHOW_TRAY, this->setting.residentMode >= 2, !this->setting.noBalloonTip);
 		}
+	}else if( this->setting.residentMode >= 2 ){
+		//チップヘルプを更新するため
+		PostMessage(this->hwndMain, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
 	}
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
 }

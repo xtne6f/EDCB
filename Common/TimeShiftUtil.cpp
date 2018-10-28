@@ -304,14 +304,14 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		return;
 	}
 	//無効PAT送って次回送信時にリセットされるようにする
-	memset(buff, 0xFF, sizeof(buff));
+	std::fill_n(buff, sizeof(buff), 0xFF);
 	CCreatePATPacket patUtil;
 	patUtil.SetParam(1, vector<pair<WORD, WORD>>());
 	BYTE* patBuff;
 	DWORD patSize=0;
 	patUtil.GetPacket(&patBuff, &patSize);
 
-	memcpy(buff, patBuff, patSize);
+	std::copy(patBuff, patBuff + patSize, buff);
 	for( DWORD i=patSize; i+3<sizeof(buff); i+=188 ){
 		buff[i] = 0x47;
 		buff[i+1] = 0x1F;

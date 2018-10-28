@@ -271,9 +271,18 @@ namespace TVTest {
 // エクスポート関数定義用
 #define TVTEST_EXPORT(type) extern "C" __declspec(dllexport) type WINAPI
 
-// offsetof
-#define TVTEST_OFFSETOF(type,member) \
-	((size_t)&((type*)0)->member)
+#ifdef offsetof
+#define TVTEST_OFFSETOF offsetof
+#else
+#define TVTEST_OFFSETOF(type, member) \
+	((size_t)((BYTE*)&((type*)0)->member-(BYTE*)(type*)0))
+#endif
+
+#ifdef interface
+#define TVTEST_COM_INTERFACE interface
+#else
+#define TVTEST_COM_INTERFACE struct
+#endif
 
 // プラグインの種類
 enum {
@@ -1973,7 +1982,7 @@ struct FilterGraphInfo {
 	DWORD Flags;							// 各種フラグ(現在は常に0)
 	BYTE VideoStreamType;					// 映像stream_type
 	BYTE Reserved[3];						// 予約
-	interface IGraphBuilder *pGraphBuilder;	// IGraphBuilder
+	TVTEST_COM_INTERFACE IGraphBuilder *pGraphBuilder;	// IGraphBuilder
 };
 
 // スタイル値の単位

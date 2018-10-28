@@ -57,6 +57,7 @@ struct RESERVE_DATA {
 	SYSTEMTIME startTimeEpg;		//予約時の開始時間
 	REC_SETTING_DATA recSetting;	//録画設定
 	DWORD reserveStatus;			//予約追加状態 内部で使用
+	vector<DWORD> ngTunerIDList;	//失敗したTunerIDのリスト。純粋に内部で使用
 	//CMD_VER 5以降
 	vector<wstring> recFileNameList;	//録画予定ファイル名
 	//DWORD param1;					//将来用

@@ -28,7 +28,7 @@ public:
 	//チューナ毎の予約情報を取得する
 	vector<TUNER_RESERVE_INFO> GetTunerReserveAll() const;
 	//予約情報を取得する
-	bool GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName = false) const;
+	bool GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName = false, CReNamePlugInUtil* util = NULL) const;
 	//予約情報を追加する
 	bool AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus = false);
 	//予約情報を変更する
@@ -57,7 +57,8 @@ public:
 	//チューナ起動やEPG取得やバッチ処理が行われているか
 	bool IsActive() const;
 	//baseTime以後に録画またはEPG取得を開始する最小時刻を取得する
-	__int64 GetSleepReturnTime(__int64 baseTime) const;
+	//reserveData: 最小時刻の予約情報(ないときreserveID==0)
+	__int64 GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* reserveData = NULL) const;
 	//指定イベントの予約が存在するかどうか
 	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const;
 	//指定サービスのプログラム予約を抽出して検索する
@@ -123,8 +124,9 @@ private:
 	//チューナ割り当てされていない古い予約を終了処理する
 	void CheckOverTimeReserve();
 	//予約終了を処理する
+	//tunerID: 終了したチューナID
 	//shutdownMode: 最後に処理した予約の録画後動作を記録
-	void ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, int* shutdownMode = NULL);
+	void ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, DWORD tunerID = 0, int* shutdownMode = NULL);
 	//EPG取得可能なチューナIDのリストを取得する
 	vector<DWORD> GetEpgCapTunerIDList(__int64 now) const;
 	//EPG取得処理を管理する

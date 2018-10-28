@@ -3,6 +3,7 @@
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
 #include "EpgTimerSrvSetting.h"
+#include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/ThreadUtil.h"
 
 //1つのチューナ(EpgDataCap_Bon.exe)を管理する
@@ -119,7 +120,7 @@ public:
 	static wstring ConvertRecName(
 		LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,
 		LPCWSTR serviceName, LPCWSTR bonDriverName, DWORD tunerID, DWORD reserveID, CEpgDBManager& epgDBManager_,
-		const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, LPCWSTR ext, bool noChkYen);
+		const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, LPCWSTR ext, bool noChkYen, CReNamePlugInUtil& util);
 	//バンクを監視して必要ならチューナを強制終了する
 	//概ね2秒ごとにワーカスレッドから呼ぶ
 	void Watch();

@@ -3,7 +3,6 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/TimeUtil.h"
 #include <tlhelp32.h>
 
@@ -820,6 +819,7 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) co
 	if( reserve.recMode == RECMODE_VIEW ){
 		return true;
 	}
+	CReNamePlugInUtil utilCache;
 	CSendCtrlCmd ctrlCmd;
 	ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 	bool isMainCtrl = true;
@@ -863,7 +863,7 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) co
 				param.saveFolder[j].recFileName = ConvertRecName(
 					param.saveFolder[j].recNamePlugIn.c_str(), st, reserve.durationSecond, reserve.title.c_str(), reserve.onid, reserve.tsid, sid, eid,
 					stationName.c_str(), this->bonFileName.c_str(), this->tunerID, reserve.reserveID, this->epgDBManager,
-					stDefault, param.ctrlID, this->tsExt.c_str(), this->recNameNoChkYen);
+					stDefault, param.ctrlID, this->tsExt.c_str(), this->recNameNoChkYen, utilCache);
 				param.saveFolder[j].recNamePlugIn.clear();
 			}
 			param.overWriteFlag = this->recOverWrite;
@@ -1245,7 +1245,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 wstring CTunerBankCtrl::ConvertRecName(
 	LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,
 	LPCWSTR serviceName, LPCWSTR bonDriverName, DWORD tunerID, DWORD reserveID, CEpgDBManager& epgDBManager_,
-	const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, LPCWSTR ext, bool noChkYen)
+	const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, LPCWSTR ext, bool noChkYen, CReNamePlugInUtil& util)
 {
 	wstring ret;
 	if( recNamePlugIn[0] ){
@@ -1276,7 +1276,7 @@ wstring CTunerBankCtrl::ConvertRecName(
 		info.sizeOfStruct = 0;
 		WCHAR name[512];
 		DWORD size = 512;
-		if( CReNamePlugInUtil::Convert(&info, recNamePlugIn, plugInPath.c_str(), name, &size) ){
+		if( util.Convert(&info, recNamePlugIn, plugInPath.c_str(), name, &size) ){
 			ret = name;
 			CheckFileName(ret, noChkYen);
 		}

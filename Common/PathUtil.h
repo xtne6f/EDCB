@@ -82,6 +82,8 @@ void TouchFileAsUnicode(LPCWSTR path);
 BOOL UtilCreateDirectories(const fs_path& path);
 // フォルダパスから実際のドライブパスを取得
 wstring GetChkDrivePath(const wstring& directoryPath);
+// 必要なバッファを確保してGetPrivateProfileSection()を呼ぶ
+vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName);
 wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDefault, LPCWSTR fileName);
 BOOL WritePrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int value, LPCWSTR fileName);
 

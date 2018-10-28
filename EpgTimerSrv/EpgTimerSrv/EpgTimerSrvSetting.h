@@ -8,9 +8,11 @@ public:
 	struct SETTING {
 		int epgArchivePeriodHour;
 		int residentMode;
+		int notifyTipStyle;
 		bool blinkPreRec;
 		bool noBalloonTip;
 		bool saveNotifyLog;
+		bool saveDebugLog;
 		DWORD wakeTime;
 		int autoAddHour;
 		bool chkGroupEvent;
@@ -37,6 +39,7 @@ public:
 		int tuijyuHour;
 		bool backPriority;
 		bool fixedTunerPriority;
+		bool retryOtherTuners;
 		bool commentAutoAdd;
 		bool autoDelRecInfo;
 		DWORD autoDelRecInfoNum;
