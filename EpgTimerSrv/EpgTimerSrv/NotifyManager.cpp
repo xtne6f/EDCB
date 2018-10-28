@@ -9,7 +9,6 @@
 
 CNotifyManager::CNotifyManager()
 {
-	this->notifyStopFlag = false;
 	this->srvStatus = 0;
 	this->notifyCount = 1;
 	this->notifyRemovePos = 0;
@@ -202,7 +201,6 @@ void CNotifyManager::SendNotify()
 
 void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 {
-	bool wait1Sec = false;
 	bool waitNotify = false;
 	DWORD waitNotifyTick = 0;
 	for(;;){
@@ -210,20 +208,19 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 		vector<REGIST_TCP_INFO> registTCP;
 		NOTIFY_SRV_INFO notifyInfo;
 
-		if( wait1Sec ){
-			wait1Sec = false;
-			Sleep(1000);
+		DWORD wait = INFINITE;
+		if( waitNotify ){
+			wait = GetTickCount() - waitNotifyTick;
+			wait = (wait < 5000 ? 5000 - wait : 0);
 		}
-		if( WaitForSingleObject(sys->notifyEvent.Handle(), INFINITE) != WAIT_OBJECT_0 || sys->notifyStopFlag ){
+		WaitForSingleObject(sys->notifyEvent.Handle(), wait);
+		if( sys->notifyStopFlag ){
 			//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
 			break;
 		}
 		//Œ»Ý‚Ìî•ñŽæ“¾
 		{
 			CBlockLock lock(&sys->managerLock);
-			if( sys->notifyList.empty() ){
-				continue;
-			}
 			registGUI = sys->GetRegistGUI();
 			for( size_t i = 0; i < sys->registGUIList.size(); ){
 				if( std::find(registGUI.begin(), registGUI.end(), sys->registGUIList[i].first) == registGUI.end() ){
@@ -235,15 +232,9 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			}
 			registTCP = sys->GetRegistTCP();
 			if( waitNotify && GetTickCount() - waitNotifyTick < 5000 ){
-				vector<NOTIFY_SRV_INFO>::const_iterator itrNotify;
-				for( itrNotify = sys->notifyList.begin(); itrNotify != sys->notifyList.end(); itrNotify++ ){
-					if( itrNotify->notifyID <= 100 ){
-						break;
-					}
-				}
+				vector<NOTIFY_SRV_INFO>::const_iterator itrNotify = std::find_if(
+					sys->notifyList.begin(), sys->notifyList.end(), [](const NOTIFY_SRV_INFO& info) { return info.notifyID <= 100; });
 				if( itrNotify == sys->notifyList.end() ){
-					sys->notifyEvent.Set();
-					wait1Sec = true;
 					continue;
 				}
 				//NotifyID<=100‚Ì’Ê’m‚Í’x‰„‚³‚¹‚¸æ‚É‘—‚é
@@ -251,6 +242,9 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 				sys->notifyList.erase(itrNotify);
 			}else{
 				waitNotify = false;
+				if( sys->notifyList.empty() ){
+					continue;
+				}
 				notifyInfo = sys->notifyList[0];
 				sys->notifyList.erase(sys->notifyList.begin());
 				//NotifyID>100‚Ì’Ê’m‚Í’x‰„‚³‚¹‚é

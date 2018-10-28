@@ -73,7 +73,7 @@ protected:
 	__int64 currentFilePos;
 
 	thread_ readThread;
-	BOOL readStopFlag;
+	atomic_bool_ readStopFlag;
 	HANDLE readFile;
 	HANDLE seekFile;
 protected:

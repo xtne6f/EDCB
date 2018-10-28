@@ -133,7 +133,7 @@ BOOL CTimeShiftUtil::StartTimeShift()
 	}else{
 		if( this->readThread.joinable() == false ){
 			//受信スレッド起動
-			this->readStopFlag = FALSE;
+			this->readStopFlag = false;
 			this->readThread = thread_(ReadThread, this);
 		}
 	}
@@ -146,7 +146,7 @@ BOOL CTimeShiftUtil::StopTimeShift()
 	CBlockLock lock(&this->utilLock);
 
 	if( this->readThread.joinable() ){
-		this->readStopFlag = TRUE;
+		this->readStopFlag = true;
 		this->readThread.join();
 	}
 	if( this->seekFile != INVALID_HANDLE_VALUE ){
@@ -198,7 +198,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 				//終端監視中
 				wait = 200;
 			}
-			for( ; wait > 0 && sys->readStopFlag == FALSE; wait -= 20 ){
+			for( ; wait > 0 && sys->readStopFlag == false; wait -= 20 ){
 				Sleep(20);
 			}
 			if( sys->readStopFlag ){
@@ -300,7 +300,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 	CloseHandle(sys->readFile);
 	sys->readFile = INVALID_HANDLE_VALUE;
 
-	if( sys->readStopFlag == FALSE ){
+	if( sys->readStopFlag == false ){
 		return;
 	}
 	//無効PAT送って次回送信時にリセットされるようにする

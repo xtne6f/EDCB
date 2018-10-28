@@ -94,8 +94,7 @@ protected:
 	std::list<vector<BYTE>> tsFreeList;
 
 	thread_ outThread;
-	BOOL outStopFlag;
-	BOOL outStartFlag;
+	atomic_bool_ outStopFlag;
 
 	struct SAVE_INFO {
 		CWritePlugInUtil writeUtil;

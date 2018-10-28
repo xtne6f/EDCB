@@ -523,7 +523,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//スリープ抑止解除
 				SetThreadExecutionState(ES_CONTINUOUS);
 				//rebootFlag時は(指定+5分前)に復帰
-				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->setting.wakeTime * 60 + (lParam ? 300 : 0)) ){
+				DWORD marginSec;
+				{
+					CBlockLock lock(&ctx->sys->settingLock);
+					marginSec = ctx->sys->setting.wakeTime * 60 + (lParam ? 300 : 0);
+				}
+				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, marginSec) ){
 					SetShutdown(wParam == SD_MODE_STANDBY ? 1 : 2);
 					if( lParam ){
 						//再起動問い合わせ
@@ -638,7 +643,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
 					//何もしない
 				}else if( itr->notifyID < _countof(ctx->sys->notifyUpdateCount) ){
-					//更新系の通知をカウント。書き込みがここだけかつDWORDなので排他はしない
+					//更新系の通知をカウント
 					ctx->sys->notifyUpdateCount[itr->notifyID]++;
 				}else{
 					NOTIFYICONDATA nid = {};
@@ -829,7 +834,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case TIMER_SET_RESUME:
 			{
 				//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
-				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->setting.wakeTime * 60);
+				DWORD marginSec;
+				{
+					CBlockLock lock(&ctx->sys->settingLock);
+					marginSec = ctx->sys->setting.wakeTime * 60;
+				}
+				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, marginSec);
 				//スリープ抑止
 				EXECUTION_STATE esFlags = ES_CONTINUOUS;
 				EXECUTION_STATE esLastFlags;
@@ -870,8 +880,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 					ctx->sys->epgDB.ReloadEpgData(true);
 					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
-					ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
-					ctx->rebootFlagPending = ctx->sys->setting.reboot;
+					{
+						CBlockLock lock(&ctx->sys->settingLock);
+						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
+						ctx->rebootFlagPending = ctx->sys->setting.reboot;
+					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
 				case CReserveManager::CHECK_NEED_SHUTDOWN:
@@ -885,6 +898,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					ctx->shutdownModePending = LOBYTE(ret.second);
 					ctx->rebootFlagPending = HIBYTE(ret.second) != 0;
 					if( ctx->shutdownModePending == SD_MODE_INVALID ){
+						CBlockLock lock(&ctx->sys->settingLock);
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					}
@@ -942,6 +956,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_S3:
 		case IDC_BUTTON_S4:
 			if( ctx->sys->IsSuspendOK() ){
+				CBlockLock lock(&ctx->sys->settingLock);
 				PostMessage(hwnd, WM_APP_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
 			}else{
 				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
@@ -1079,7 +1094,7 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 
 void CEpgTimerSrvMain::StopMain()
 {
-	volatile HWND hwndMain_ = this->hwndMain;
+	HWND hwndMain_ = this->hwndMain;
 	if( hwndMain_ ){
 		SendNotifyMessage(hwndMain_, WM_CLOSE, 0, 0);
 	}
@@ -1284,14 +1299,20 @@ bool CEpgTimerSrvMain::IsUserWorking() const
 bool CEpgTimerSrvMain::IsFindShareTSFile() const
 {
 	bool found = false;
-	if( this->setting.noShareFile ){
+	WCHAR ext[10] = {};
+	{
+		CBlockLock lock(&this->settingLock);
+		if( this->setting.noShareFile ){
+			wcsncpy_s(ext, this->setting.tsExt.c_str(), _TRUNCATE);
+		}
+	}
+	if( ext[0] ){
 		FILE_INFO_3* info;
 		DWORD entriesread;
 		DWORD totalentries;
 		if( NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&info, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
 			for( DWORD i = 0; i < entriesread; i++ ){
-				CBlockLock lock(&this->settingLock);
-				if( IsExt(info[i].fi3_pathname, this->setting.tsExt.c_str()) ){
+				if( IsExt(info[i].fi3_pathname, ext) ){
 					found = true;
 					break;
 				}
@@ -1301,11 +1322,6 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 			//代理プロセス経由で調べる
 			HWND hwnd = FindWindowEx(HWND_MESSAGE, NULL, L"EpgTimerAdminProxy", NULL);
 			if( hwnd ){
-				WCHAR ext[10] = {};
-				{
-					CBlockLock lock(&this->settingLock);
-					wcsncpy_s(ext, this->setting.tsExt.c_str(), _TRUNCATE);
-				}
 				DWORD wp = ext[1] | ext[2] << 8 | ext[3] << 16 | (DWORD)ext[4] << 24;
 				DWORD lp = ext[5] | ext[6] << 8 | ext[7] << 16 | (DWORD)ext[8] << 24;
 				DWORD_PTR result;
@@ -1354,7 +1370,12 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 
 vector<RESERVE_DATA>& CEpgTimerSrvMain::PreChgReserveData(vector<RESERVE_DATA>& reserveList) const
 {
-	if( this->setting.commentAutoAdd ){
+	bool commentAutoAdd;
+	{
+		CBlockLock lock(&this->settingLock);
+		commentAutoAdd = this->setting.commentAutoAdd;
+	}
+	if( commentAutoAdd ){
 		for( size_t i = 0; i < reserveList.size(); i++ ){
 			//プログラム予約化した自動予約か
 			if( reserveList[i].eventID == 0xFFFF && reserveList[i].comment.compare(0, 7, L"EPG自動予約") == 0 ){
@@ -1774,6 +1795,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			WORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->IsSuspendOK() ){
+				CBlockLock lock(&sys->settingLock);
 				//再起動フラグが0xFFのときはデフォルト動作に従う
 				PostMessage(sys->hwndMain, WM_APP_REQUEST_SHUTDOWN, LOBYTE(val), HIBYTE(val) == 0xFF ? sys->setting.reboot : (HIBYTE(val) != 0));
 				resParam->param = CMD_SUCCESS;
@@ -2009,26 +2031,22 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_GET_CHG_CH_TVTEST\r\n");
 			LONGLONG key;
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) ){
-				CBlockLock lock(&sys->settingLock);
 				TVTEST_CH_CHG_INFO info;
 				info.chInfo.useSID = TRUE;
 				info.chInfo.ONID = key >> 32 & 0xFFFF;
 				info.chInfo.TSID = key >> 16 & 0xFFFF;
 				info.chInfo.SID = key & 0xFFFF;
-				info.chInfo.useBonCh = FALSE;
 				vector<DWORD> idList = sys->reserveManager.GetSupportServiceTuner(info.chInfo.ONID, info.chInfo.TSID, info.chInfo.SID);
 				for( int i = (int)idList.size() - 1; i >= 0; i-- ){
 					info.bonDriver = sys->reserveManager.GetTunerBonFileName(idList[i]);
-					for( size_t j = 0; j < sys->setting.viewBonList.size(); j++ ){
-						if( CompareNoCase(sys->setting.viewBonList[j], info.bonDriver) == 0 ){
-							if( sys->reserveManager.IsOpenTuner(idList[i]) == false ){
-								info.chInfo.useBonCh = TRUE;
-								sys->reserveManager.GetTunerCh(idList[i], info.chInfo.ONID, info.chInfo.TSID, info.chInfo.SID, &info.chInfo.space, &info.chInfo.ch);
-							}
-							break;
-						}
+					{
+						CBlockLock lock(&sys->settingLock);
+						info.chInfo.useBonCh =
+							std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
+							             [&](const wstring& a) { return CompareNoCase(a, info.bonDriver) == 0; }) != sys->setting.viewBonList.end();
 					}
-					if( info.chInfo.useBonCh ){
+					if( info.chInfo.useBonCh && sys->reserveManager.IsOpenTuner(idList[i]) == false ){
+						sys->reserveManager.GetTunerCh(idList[i], info.chInfo.ONID, info.chInfo.TSID, info.chInfo.SID, &info.chInfo.space, &info.chInfo.ch);
 						resParam->data = NewWriteVALUE(info, resParam->dataSize);
 						resParam->param = CMD_SUCCESS;
 						break;
@@ -2038,8 +2056,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}
 		break;
 	case CMD2_EPG_SRV_GET_NOTIFY_LOG:
-		OutputDebugString(L"CMD2_EPG_SRV_GET_NOTIFY_LOG\r\n");
-		if( sys->setting.saveNotifyLog ){
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_GET_NOTIFY_LOG\r\n");
+			{
+				CBlockLock lock(&sys->settingLock);
+				if( sys->setting.saveNotifyLog == false ){
+					break;
+				}
+			}
 			int n;
 			if( ReadVALUE(&n, cmdParam->data, cmdParam->dataSize, NULL) ){
 				fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvNotify.log");
@@ -2089,19 +2113,25 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_NWTV_SET_CH\r\n");
 			SET_CH_INFO val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && val.useSID ){
-				CBlockLock lock(&sys->settingLock);
-				vector<DWORD> idList = sys->reserveManager.GetSupportServiceTuner(val.ONID, val.TSID, val.SID);
-				vector<DWORD> idUseList;
-				for( int i = (int)idList.size() - 1; i >= 0; i-- ){
-					wstring bonDriver = sys->reserveManager.GetTunerBonFileName(idList[i]);
-					for( size_t j = 0; j < sys->setting.viewBonList.size(); j++ ){
-						if( CompareNoCase(sys->setting.viewBonList[j], bonDriver) == 0 ){
-							idUseList.push_back(idList[i]);
-							break;
+				bool nwtvUdp;
+				bool nwtvTcp;
+				vector<DWORD> idUseList = sys->reserveManager.GetSupportServiceTuner(val.ONID, val.TSID, val.SID);
+				{
+					CBlockLock lock(&sys->settingLock);
+					nwtvUdp = sys->nwtvUdp;
+					nwtvTcp = sys->nwtvTcp;
+					for( size_t i = 0; i < idUseList.size(); ){
+						wstring bonDriver = sys->reserveManager.GetTunerBonFileName(idUseList[i]);
+						if( std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
+						                 [&](const wstring& a) { return CompareNoCase(a, bonDriver) == 0; }) == sys->setting.viewBonList.end() ){
+							idUseList.erase(idUseList.begin() + i);
+						}else{
+							i++;
 						}
 					}
+					std::reverse(idUseList.begin(), idUseList.end());
 				}
-				if( sys->reserveManager.SetNWTVCh(sys->nwtvUdp, sys->nwtvTcp, val, idUseList) ){
+				if( sys->reserveManager.SetNWTVCh(nwtvUdp, nwtvTcp, val, idUseList) ){
 					resParam->param = CMD_SUCCESS;
 				}
 			}
@@ -3837,22 +3867,22 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 		info.useBonCh = FALSE;
 		int mode = (int)lua_tointeger(L, 1);
 		int lastMode;
-		vector<DWORD> idUseList;
+		vector<DWORD> idUseList = ws.sys->reserveManager.GetSupportServiceTuner(info.ONID, info.TSID, info.SID);
 		{
 			CBlockLock lock(&ws.sys->settingLock);
 			lastMode = (ws.sys->nwtvUdp ? 1 : 0) + (ws.sys->nwtvTcp ? 2 : 0);
 			ws.sys->nwtvUdp = mode == 1 || mode == 3;
 			ws.sys->nwtvTcp = mode == 2 || mode == 3;
-			vector<DWORD> idList = ws.sys->reserveManager.GetSupportServiceTuner(info.ONID, info.TSID, info.SID);
-			for( int i = (int)idList.size() - 1; i >= 0; i-- ){
-				wstring bonDriver = ws.sys->reserveManager.GetTunerBonFileName(idList[i]);
-				for( size_t j = 0; j < ws.sys->setting.viewBonList.size(); j++ ){
-					if( CompareNoCase(ws.sys->setting.viewBonList[j], bonDriver) == 0 ){
-						idUseList.push_back(idList[i]);
-						break;
-					}
+			for( size_t i = 0; i < idUseList.size(); ){
+				wstring bonDriver = ws.sys->reserveManager.GetTunerBonFileName(idUseList[i]);
+				if( std::find_if(ws.sys->setting.viewBonList.begin(), ws.sys->setting.viewBonList.end(),
+				                 [&](const wstring& a) { return CompareNoCase(a, bonDriver) == 0; }) == ws.sys->setting.viewBonList.end() ){
+					idUseList.erase(idUseList.begin() + i);
+				}else{
+					i++;
 				}
 			}
+			std::reverse(idUseList.begin(), idUseList.end());
 		}
 		if( lastMode != mode ){
 			ws.sys->reserveManager.CloseNWTV();

@@ -33,7 +33,7 @@ protected:
 
 	CAutoResetEvent notifyEvent;
 	thread_ notifyThread;
-	bool notifyStopFlag;
+	atomic_bool_ notifyStopFlag;
 	DWORD srvStatus;
 	DWORD notifyCount;
 	size_t notifyRemovePos;

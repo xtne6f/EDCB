@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
 #include "../Common/StructDef.h"
 #include "../Common/EpgTimerUtil.h"
 #include "../Common/StringUtil.h"
@@ -12,9 +10,6 @@
 #include "TSOut.h"
 #include "ChSetUtil.h"
 #include <list>
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
-#include <atomic>
-#endif
 
 class CBonCtrl
 {
@@ -435,7 +430,7 @@ protected:
 
 	thread_ analyzeThread;
 	CAutoResetEvent analyzeEvent;
-	BOOL analyzeStopFlag;
+	atomic_bool_ analyzeStopFlag;
 
 	//チャンネルスキャン用
 	thread_ chScanThread;
@@ -448,22 +443,14 @@ protected:
 	};
 	//スキャン中はconst操作のみ
 	vector<CHK_CH_INFO> chScanChkList;
-#if defined(_MSC_VER) && _MSC_VER < 1900
-	LONG chScanIndexOrStatus;
-#else
-	std::atomic<int> chScanIndexOrStatus;
-#endif
+	atomic_int_ chScanIndexOrStatus;
 
 	//EPG取得用
 	thread_ epgCapThread;
 	CAutoResetEvent epgCapStopEvent;
 	//取得中はconst操作のみ
 	vector<EPGCAP_SERVICE_INFO> epgCapChList;
-#if defined(_MSC_VER) && _MSC_VER < 1900
-	LONG epgCapIndexOrStatus;
-#else
-	std::atomic<int> epgCapIndexOrStatus;
-#endif
+	atomic_int_ epgCapIndexOrStatus;
 
 	thread_ epgCapBackThread;
 	CAutoResetEvent epgCapBackStopEvent;

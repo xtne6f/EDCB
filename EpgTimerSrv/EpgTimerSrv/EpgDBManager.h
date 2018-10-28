@@ -144,9 +144,9 @@ protected:
 	mutable pair<int, recursive_mutex_*> epgMapRefLock;
 
 	thread_ loadThread;
-	bool loadStop;
+	atomic_bool_ loadStop;
 	bool loadForeground;
-	bool initialLoadDone;
+	atomic_bool_ initialLoadDone;
 	int archivePeriodSec;
 
 	//これらデータベースの読み取りにかぎりepgMapRefLockでアクセスできる。LoadThread以外では変更できない
