@@ -393,6 +393,24 @@ wstring GetChkDrivePath(const wstring& directoryPath)
 	return szMount;
 }
 
+vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName)
+{
+	vector<WCHAR> buff(4096);
+	for(;;){
+		DWORD n = GetPrivateProfileSection(appName, &buff.front(), (DWORD)buff.size(), fileName);
+		if( n < buff.size() - 2 ){
+			buff.resize(n + 1);
+			break;
+		}
+		if( buff.size() >= 16 * 1024 * 1024 ){
+			buff.assign(1, L'\0');
+			break;
+		}
+		buff.resize(buff.size() * 2);
+	}
+	return buff;
+}
+
 wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDefault, LPCWSTR fileName)
 {
 	WCHAR szBuff[512];
