@@ -1,18 +1,40 @@
 #pragma once
 
 #include "BonCtrlDef.h"
-#include "../Common/SendTSTCPDllUtil.h"
 
-class CSendTCP
+//final
+class CSendTCP : public CSendNW
 {
 public:
-	CSendTCP(void);
-	~CSendTCP(void);
+	CSendTCP() : m_hModule(NULL) {}
+	~CSendTCP() { UnInitialize(); }
+	bool Initialize();
+	void UnInitialize();
+	bool IsInitialized() const { return m_hModule != NULL; }
+	bool AddSendAddr(LPCWSTR ip, DWORD dwPort, bool broadcastFlag);
+	void ClearSendAddr();
+	bool StartSend();
+	void StopSend();
+	bool AddSendData(BYTE* pbBuff, DWORD dwSize);
+	void ClearSendBuff();
 
-	BOOL StartUpload( vector<NW_SEND_INFO>* List );
-	void SendData(BYTE* pbBuff, DWORD dwSize);
-	BOOL CloseUpload();
+private:
+	typedef int (WINAPI *InitializeDLL)();
+	typedef DWORD (WINAPI *UnInitializeDLL)(int iID);
+	typedef DWORD (WINAPI *AddSendAddrDLL)(int iID, LPCWSTR lpcwszIP, DWORD dwPort);
+	typedef DWORD (WINAPI *ClearSendAddrDLL)(int iID);
+	typedef DWORD (WINAPI *StartSendDLL)(int iID);
+	typedef DWORD (WINAPI *StopSendDLL)(int iID);
+	typedef DWORD (WINAPI *AddSendDataDLL)(int iID, BYTE* pbData, DWORD dwSize);
+	typedef DWORD (WINAPI *ClearSendBuffDLL)(int iID);
 
-protected:
-	CSendTSTCPDllUtil m_cTcp;
+	HMODULE m_hModule;
+	int m_iID;
+	UnInitializeDLL m_pfnUnInitializeDLL;
+	AddSendAddrDLL m_pfnAddSendAddrDLL;
+	ClearSendAddrDLL m_pfnClearSendAddrDLL;
+	StartSendDLL m_pfnStartSendDLL;
+	StopSendDLL m_pfnStopSendDLL;
+	AddSendDataDLL m_pfnAddSendDataDLL;
+	ClearSendBuffDLL m_pfnClearSendBuffDLL;
 };

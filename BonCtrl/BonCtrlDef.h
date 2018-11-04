@@ -13,6 +13,25 @@ typedef struct {
 	BOOL broadcastFlag;
 }NW_SEND_INFO;
 
+class CSendNW
+{
+public:
+	CSendNW() {}
+	virtual ~CSendNW() {}
+	virtual bool Initialize() = 0;
+	virtual void UnInitialize() = 0;
+	virtual bool IsInitialized() const = 0;
+	virtual bool AddSendAddr(LPCWSTR ip, DWORD dwPort, bool broadcastFlag) = 0;
+	virtual void ClearSendAddr() = 0;
+	virtual bool StartSend() = 0;
+	virtual void StopSend() = 0;
+	virtual bool AddSendData(BYTE* pbBuff, DWORD dwSize) = 0;
+	virtual void ClearSendBuff() {}
+private:
+	CSendNW(const CSendNW&);
+	CSendNW& operator=(const CSendNW&);
+};
+
 //EPG取得用サービス情報
 typedef struct {
 	WORD ONID;

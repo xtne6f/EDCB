@@ -5,17 +5,22 @@
 #include "BonCtrlDef.h"
 #include "../Common/StringUtil.h"
 
-class CSendUDP
+//final
+class CSendUDP : public CSendNW
 {
 public:
-	CSendUDP(void);
-	~CSendUDP(void);
+	CSendUDP() : m_initialized(false) {}
+	~CSendUDP() { UnInitialize(); }
+	bool Initialize();
+	void UnInitialize();
+	bool IsInitialized() const { return m_initialized; }
+	bool AddSendAddr(LPCWSTR ip, DWORD dwPort, bool broadcastFlag);
+	void ClearSendAddr();
+	bool StartSend();
+	void StopSend() { m_sending = false; }
+	bool AddSendData(BYTE* pbBuff, DWORD dwSize);
 
-	BOOL StartUpload( vector<NW_SEND_INFO>* List );
-	void SendData(BYTE* pbBuff, DWORD dwSize);
-	BOOL CloseUpload();
-
-protected:
+private:
 	struct SOCKET_DATA {
 		SOCKET sock;
 		struct sockaddr_storage addr;
@@ -24,5 +29,6 @@ protected:
 	vector<SOCKET_DATA> SockList;
 
 	UINT m_uiSendSize;
-
+	bool m_initialized;
+	bool m_sending;
 };

@@ -40,7 +40,9 @@ public:
 	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 	BOOL SendUdp(
 		vector<NW_SEND_INFO>* sendList
-		);
+		) {
+		return SendUdpTcp(sendList, this->sendUdp, this->udpPortMutex, MUTEX_UDP_PORT_NAME);
+	}
 
 	//TCPで送信を行う
 	//戻り値：
@@ -49,7 +51,9 @@ public:
 	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 	BOOL SendTcp(
 		vector<NW_SEND_INFO>* sendList
-		);
+		) {
+		return SendUdpTcp(sendList, this->sendTcp, this->tcpPortMutex, MUTEX_TCP_PORT_NAME);
+	}
 
 	//出力用TSデータを送る
 	//引数：
@@ -189,8 +193,8 @@ protected:
 	vector<HANDLE> udpPortMutex;
 	vector<HANDLE> tcpPortMutex;
 
-	std::unique_ptr<CSendUDP> sendUdp;
-	std::unique_ptr<CSendTCP> sendTcp;
+	CSendUDP sendUdp;
+	CSendTCP sendTcp;
 	std::unique_ptr<CWriteTSFile> writeFile;
 
 	vector<BYTE> buff;
@@ -221,6 +225,12 @@ protected:
 	int pittariMaxBuffCount;
 
 protected:
+	static BOOL SendUdpTcp(
+		vector<NW_SEND_INFO>* sendList,
+		CSendNW& sendNW,
+		vector<HANDLE>& portMutexList,
+		LPCWSTR mutexName
+		);
 	void StratPittariRec();
 	void StopPittariRec();
 };

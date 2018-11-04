@@ -32,72 +32,37 @@ BOOL CTimeShiftUtil::Send(
 	WCHAR ip[64];
 	swprintf_s(ip, L"%d.%d.%d.%d", val->ip >> 24, val->ip >> 16 & 0xFF, val->ip >> 8 & 0xFF, val->ip & 0xFF);
 
-	if( this->sendUdpIP.empty() == false && (val->udp == 0 || this->sendUdpIP != ip) ){
-		this->sendUdpIP.clear();
-		this->sendUdp.CloseUpload();
-		CloseHandle(this->udpPortMutex);
-	}
-	if( this->sendUdpIP.empty() && val->udp != 0 ){
-		NW_SEND_INFO item;
-		item.port = 1234;
-		item.ipString = ip;
-		item.broadcastFlag = FALSE;
+	for( int tcp = 0; tcp < 2; tcp++ ){
+		CSendNW* sendNW = (tcp ? (CSendNW*)&this->sendTcp : (CSendNW*)&this->sendUdp);
+		if( this->sendIP[tcp].empty() == false && ((tcp ? val->tcp : val->udp) == 0 || this->sendIP[tcp] != ip) ){
+			this->sendIP[tcp].clear();
+			sendNW->StopSend();
+			sendNW->UnInitialize();
+			CloseHandle(this->portMutex[tcp]);
+		}
+		if( this->sendIP[tcp].empty() == false || (tcp ? val->tcp : val->udp) == 0 ){
+			continue;
+		}
+		DWORD port = (tcp ? 2230 : 1234);
 		wstring mutexKey;
-		for( ; item.port < 1234 + 100; item.port++ ){
-			Format(mutexKey, L"%s%d_%d", MUTEX_UDP_PORT_NAME, val->ip, item.port);
-			this->udpPortMutex = CreateMutex(NULL, FALSE, mutexKey.c_str());
-			if( this->udpPortMutex ){
+		for( int i = 0; i < 100; i++, port++ ){
+			Format(mutexKey, L"%s%d_%d", (tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME), val->ip, port);
+			this->portMutex[tcp] = CreateMutex(NULL, FALSE, mutexKey.c_str());
+			if( this->portMutex[tcp] ){
 				if( GetLastError() != ERROR_ALREADY_EXISTS ){
 					break;
 				}
-				CloseHandle(this->udpPortMutex);
-				this->udpPortMutex = NULL;
+				CloseHandle(this->portMutex[tcp]);
+				this->portMutex[tcp] = NULL;
 			}
 		}
-		if( this->udpPortMutex ){
+		if( this->portMutex[tcp] ){
 			OutputDebugString((mutexKey + L"\r\n").c_str());
-			vector<NW_SEND_INFO> sendList(1, item);
-			this->sendUdp.StartUpload(&sendList);
-			this->sendUdpIP = ip;
-			this->sendUdpPort = item.port;
+			sendNW->Initialize();
+			sendNW->AddSendAddr(ip, port, false);
+			sendNW->StartSend();
+			this->sendIP[tcp] = ip;
 		}
-	}
-	if( this->sendUdpIP.empty() == false ){
-		val->udpPort = this->sendUdpPort;
-	}
-
-	if( this->sendTcpIP.empty() == false && (val->tcp == 0 || this->sendTcpIP != ip) ){
-		this->sendTcpIP.clear();
-		this->sendTcp.CloseUpload();
-		CloseHandle(this->tcpPortMutex);
-	}
-	if( this->sendTcpIP.empty() && val->tcp != 0 ){
-		NW_SEND_INFO item;
-		item.port = 2230;
-		item.ipString = ip;
-		item.broadcastFlag = FALSE;
-		wstring mutexKey;
-		for( ; item.port < 2230 + 100; item.port++ ){
-			Format(mutexKey, L"%s%d_%d", MUTEX_TCP_PORT_NAME, val->ip, item.port);
-			this->tcpPortMutex = CreateMutex(NULL, FALSE, mutexKey.c_str());
-			if( this->tcpPortMutex ){
-				if( GetLastError() != ERROR_ALREADY_EXISTS ){
-					break;
-				}
-				CloseHandle(this->tcpPortMutex);
-				this->tcpPortMutex = NULL;
-			}
-		}
-		if( this->tcpPortMutex ){
-			OutputDebugString((mutexKey + L"\r\n").c_str());
-			vector<NW_SEND_INFO> sendList(1, item);
-			this->sendTcp.StartUpload(&sendList);
-			this->sendTcpIP = ip;
-			this->sendTcpPort = item.port;
-		}
-	}
-	if( this->sendTcpIP.empty() == false ){
-		val->tcpPort = this->sendTcpPort;
 	}
 	return TRUE;
 }
@@ -286,12 +251,8 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 				}
 			}
 		}
-		if( sys->sendUdpIP.empty() == false ){
-			sys->sendUdp.SendData(data, dataSize);
-		}
-		if( sys->sendTcpIP.empty() == false ){
-			sys->sendTcp.SendData(data, dataSize);
-		}
+		sys->sendUdp.AddSendData(data, dataSize);
+		sys->sendTcp.AddSendData(data, dataSize);
 	}
 
 	CBlockLock lock(&sys->ioLock);
@@ -319,12 +280,8 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		buff[i+3] = 0x10;
 	}
 
-	if( sys->sendUdpIP.empty() == false ){
-		sys->sendUdp.SendData(buff, sizeof(buff));
-	}
-	if( sys->sendTcpIP.empty() == false ){
-		sys->sendTcp.SendData(buff, sizeof(buff));
-	}
+	sys->sendUdp.AddSendData(buff, sizeof(buff));
+	sys->sendTcp.AddSendData(buff, sizeof(buff));
 }
 
 static BOOL IsDataAvailable(HANDLE file, __int64 pos, CPacketInit* packetInit)
