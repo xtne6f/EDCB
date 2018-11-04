@@ -59,7 +59,6 @@ $(TARGET): $(addsuffix .obj, \
   Common__PipeServer.cpp \
   Common__ReNamePlugInUtil.cpp \
   Common__SendCtrlCmd.cpp \
-  Common__SendTSTCPDllUtil.cpp \
   Common__ServiceUtil.cpp \
   Common__StringUtil.cpp \
   Common__TCPServer.cpp \

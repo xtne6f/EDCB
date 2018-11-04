@@ -6,6 +6,34 @@
 #include <exception>
 #include <stdexcept>
 
+class atomic_int_
+{
+public:
+	atomic_int_() {}
+	atomic_int_(int val) : m_val(val) {}
+	int operator=(int val) { exchange(val); return val; }
+	operator int() const { return InterlockedExchangeAdd(&m_val, 0); }
+	int exchange(int val) { return InterlockedExchange(&m_val, val); }
+	int operator++(int) { return InterlockedIncrement(&m_val); }
+	int operator--(int) { return InterlockedDecrement(&m_val); }
+private:
+	atomic_int_(const atomic_int_&);
+	atomic_int_& operator=(const atomic_int_&);
+	mutable LONG m_val;
+};
+
+class atomic_bool_
+{
+public:
+	atomic_bool_() {}
+	atomic_bool_(bool val) : m_val(val) {}
+	bool operator=(bool val) { return !!(m_val = val); }
+	operator bool() const { return !!m_val; }
+	bool exchange(bool val) { return !!m_val.exchange(val); }
+private:
+	atomic_int_ m_val;
+};
+
 class thread_
 {
 public:
@@ -13,15 +41,17 @@ public:
 	template<class Arg> thread_(void(*f)(Arg), Arg arg) {
 		struct Th {
 			static UINT WINAPI func(void* p) {
-				Th th = *static_cast<Th*>(p);
-				InterlockedDecrement(&static_cast<Th*>(p)->b);
-				th.f(th.arg);
+				void(*thf)(Arg) = static_cast<Th*>(p)->f;
+				Arg tharg = static_cast<Th*>(p)->arg;
+				static_cast<Th*>(p)->b = false;
+				thf(tharg);
 				return 0;
 			}
-			LONG b;
+			Th(void(*thf)(Arg), Arg tharg) : b(true), f(thf), arg(tharg) {}
+			atomic_bool_ b;
 			void(*f)(Arg);
 			Arg arg;
-		} th = { 1, f, arg };
+		} th(f, arg);
 		m_h = reinterpret_cast<void*>(_beginthreadex(nullptr, 0, Th::func, &th, 0, nullptr));
 		if (!m_h) throw std::runtime_error("");
 		while (th.b) Sleep(0);

@@ -10,7 +10,6 @@ CBonCtrl::CBonCtrl(void)
 	this->statusSignalLv = 0.0f;
 	this->viewSpace = -1;
 	this->viewCh = -1;
-	this->analyzeStopFlag = FALSE;
 	this->chScanIndexOrStatus = ST_STOP;
 	this->epgCapIndexOrStatus = ST_STOP;
 	this->enableLiveEpgCap = FALSE;
@@ -67,7 +66,7 @@ DWORD CBonCtrl::OpenBonDriver(
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		ret = NO_ERR;
 		//解析スレッド起動
-		this->analyzeStopFlag = FALSE;
+		this->analyzeStopFlag = false;
 		this->analyzeThread = thread_(AnalyzeThread, this);
 
 		this->tsOut.SetBonDriver(bonFile);
@@ -227,7 +226,7 @@ void CBonCtrl::CloseBonDriver()
 	StopEpgCap();
 
 	if( this->analyzeThread.joinable() ){
-		this->analyzeStopFlag = TRUE;
+		this->analyzeStopFlag = true;
 		this->analyzeEvent.Set();
 		this->analyzeThread.join();
 	}
@@ -281,7 +280,7 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 {
 	std::list<vector<BYTE>> data;
 
-	while( sys->analyzeStopFlag == FALSE ){
+	while( sys->analyzeStopFlag == false ){
 		//バッファからデータ取り出し
 		float signalLv;
 		{
@@ -551,11 +550,7 @@ CBonCtrl::JOB_STATUS CBonCtrl::GetChScanStatus(
 	DWORD* totalNum
 	)
 {
-#if defined(_MSC_VER) && _MSC_VER < 1900
-	LONG indexOrStatus = InterlockedExchangeAdd(&this->chScanIndexOrStatus, 0);
-#else
 	int indexOrStatus = this->chScanIndexOrStatus;
-#endif
 	if( indexOrStatus < 0 ){
 		return (JOB_STATUS)indexOrStatus;
 	}
@@ -733,11 +728,7 @@ CBonCtrl::JOB_STATUS CBonCtrl::GetEpgCapStatus(
 	EPGCAP_SERVICE_INFO* info
 	)
 {
-#if defined(_MSC_VER) && _MSC_VER < 1900
-	LONG indexOrStatus = InterlockedExchangeAdd(&this->epgCapIndexOrStatus, 0);
-#else
 	int indexOrStatus = this->epgCapIndexOrStatus;
-#endif
 	if( indexOrStatus < 0 ){
 		return (JOB_STATUS)indexOrStatus;
 	}

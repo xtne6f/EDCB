@@ -23,10 +23,11 @@ protected:
 	vector<NW_SEND_INFO> tcpSendList;
 
 	BOOL OnInitDialog();
-	afx_msg void OnBnClickedButtonAddUdp();
-	afx_msg void OnBnClickedButtonDelUdp();
-	afx_msg void OnBnClickedButtonAddTcp();
-	afx_msg void OnBnClickedButtonDelTcp();
+	void OnBnClickedButtonAddUdp();
+	void OnBnClickedButtonDelUdp();
+	void OnBnClickedButtonAddTcp();
+	void OnBnClickedButtonDelTcp();
+	void OnBnClickedRadioTcp();
 	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	HWND GetDlgItem(int nID) const{ return ::GetDlgItem(m_hWnd, nID); }
 };

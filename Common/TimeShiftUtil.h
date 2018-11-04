@@ -58,12 +58,8 @@ protected:
 	recursive_mutex_ ioLock;
 	CSendUDP sendUdp;
 	CSendTCP sendTcp;
-	wstring sendUdpIP;
-	wstring sendTcpIP;
-	DWORD sendUdpPort;
-	DWORD sendTcpPort;
-	HANDLE udpPortMutex;
-	HANDLE tcpPortMutex;
+	wstring sendIP[2];
+	HANDLE portMutex[2];
 
 	wstring filePath;
 	WORD PCR_PID;
@@ -73,7 +69,7 @@ protected:
 	__int64 currentFilePos;
 
 	thread_ readThread;
-	BOOL readStopFlag;
+	atomic_bool_ readStopFlag;
 	HANDLE readFile;
 	HANDLE seekFile;
 protected:

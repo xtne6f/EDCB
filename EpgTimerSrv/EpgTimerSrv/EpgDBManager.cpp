@@ -292,7 +292,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	}
 	for(;;){
 		//データベースを排他する
-		if( sys->epgMapRefLock.first == 0 ){
+		{
 			CBlockLock lock(&sys->epgMapLock);
 			if( sys->epgMapRefLock.first == 0 ){
 				if( arcFromFile.empty() == false ){

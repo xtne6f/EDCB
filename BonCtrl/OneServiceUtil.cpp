@@ -46,30 +46,22 @@ WORD COneServiceUtil::GetSID()
 	return this->SID;
 }
 
-//UDPで送信を行う
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-BOOL COneServiceUtil::SendUdp(
-	vector<NW_SEND_INFO>* sendList
+BOOL COneServiceUtil::SendUdpTcp(
+	vector<NW_SEND_INFO>* sendList,
+	CSendNW& sendNW,
+	vector<HANDLE>& portMutexList,
+	LPCWSTR mutexName
 	)
 {
-	if( this->sendUdp != NULL ){
-		this->sendUdp->CloseUpload();
-	}
-
-	if(udpPortMutex.size() != 0){
-		for( int i=0; i<(int)udpPortMutex.size(); i++ ){
-			::CloseHandle(udpPortMutex[i]);
-		}
-		udpPortMutex.clear();
+	sendNW.StopSend();
+	sendNW.UnInitialize();
+	while( portMutexList.empty() == false ){
+		CloseHandle(portMutexList.back());
+		portMutexList.pop_back();
 	}
 
 	if( sendList != NULL ){
-		if( this->sendUdp == NULL ){
-			this->sendUdp.reset(new CSendUDP);
-		}
+		sendNW.Initialize();
 		for( size_t i=0; i<sendList->size(); i++ ){
 			wstring key = L"";
 			HANDLE portMutex;
@@ -78,9 +70,9 @@ BOOL COneServiceUtil::SendUdp(
 			for( int j = 0; j < 100; j++ ){
 				UINT u[4];
 				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-					Format(key, L"%s%d_%d", MUTEX_UDP_PORT_NAME, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
+					Format(key, L"%s%d_%d", mutexName, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
 				}else{
-					Format(key, L"%s%s_%d", MUTEX_UDP_PORT_NAME, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+					Format(key, L"%s%s_%d", mutexName, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
 				}
 				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		
@@ -91,74 +83,13 @@ BOOL COneServiceUtil::SendUdp(
 					(*sendList)[i].port++;
 				}else{
 					_OutputDebugString(L"%s\r\n", key.c_str());
-					this->udpPortMutex.push_back(portMutex);
+					portMutexList.push_back(portMutex);
 					break;
 				}
 			}
+			sendNW.AddSendAddr((*sendList)[i].ipString.c_str(), (*sendList)[i].port, (*sendList)[i].broadcastFlag != FALSE);
 		}
-
-		this->sendUdp->StartUpload(sendList);
-	}else{
-		this->sendUdp.reset();
-	}
-
-	return TRUE;
-}
-
-//TCPで送信を行う
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-BOOL COneServiceUtil::SendTcp(
-	vector<NW_SEND_INFO>* sendList
-	)
-{
-	if( this->sendTcp != NULL ){
-		this->sendTcp->CloseUpload();
-	}
-
-	if(tcpPortMutex.size() != 0){
-		for( int i=0; i<(int)tcpPortMutex.size(); i++ ){
-			::CloseHandle(tcpPortMutex[i]);
-		}
-		tcpPortMutex.clear();
-	}
-
-	if( sendList != NULL ){
-		if( this->sendTcp == NULL ){
-			this->sendTcp.reset(new CSendTCP);
-		}
-		for( size_t i=0; i<sendList->size(); i++ ){
-			wstring key = L"";
-			HANDLE portMutex;
-
-			//生成できなくても深刻ではないのでほどほどに打ち切る
-			for( int j = 0; j < 100; j++ ){
-				UINT u[4];
-				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-					Format(key, L"%s%d_%d", MUTEX_TCP_PORT_NAME, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
-				}else{
-					Format(key, L"%s%s_%d", MUTEX_TCP_PORT_NAME, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
-				}
-				portMutex = CreateMutex(NULL, FALSE, key.c_str());
-		
-				if( portMutex == NULL ){
-					(*sendList)[i].port++;
-				}else if( GetLastError() == ERROR_ALREADY_EXISTS ){
-					CloseHandle(portMutex);
-					(*sendList)[i].port++;
-				}else{
-					_OutputDebugString(L"%s\r\n", key.c_str());
-					this->tcpPortMutex.push_back(portMutex);
-					break;
-				}
-			}
-		}
-
-		this->sendTcp->StartUpload(sendList);
-	}else{
-		this->sendTcp.reset();
+		sendNW.StartSend();
 	}
 
 	return TRUE;
@@ -177,12 +108,8 @@ void COneServiceUtil::AddTSBuff(
 {
 	if( this->sendUdpTcp ){
 		if( size > 0 ){
-			if( this->sendUdp ){
-				this->sendUdp->SendData(data, size);
-			}
-			if( this->sendTcp ){
-				this->sendTcp->SendData(data, size);
-			}
+			this->sendUdp.AddSendData(data, size);
+			this->sendTcp.AddSendData(data, size);
 		}
 		this->dropCount.AddData(data, size);
 	}else if( this->SID == 0xFFFF ){

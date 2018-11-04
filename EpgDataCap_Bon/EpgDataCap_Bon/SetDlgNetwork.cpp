@@ -61,11 +61,10 @@ BOOL CSetDlgNetwork::OnInitDialog()
 		if( item.broadcastFlag == TRUE ){
 			add+= L" ブロードキャスト";
 		}
-		int index = ListBox_AddString(GetDlgItem(IDC_LIST_IP_UDP), add.c_str());
-		ListBox_SetItemData(GetDlgItem(IDC_LIST_IP_UDP), index, i);
+		ListBox_AddString(GetDlgItem(IDC_LIST_IP_UDP), add.c_str());
 	}
-	SetDlgItemText(m_hWnd, IDC_IPADDRESS_UDP, udpSendList.empty() ? L"127.0.0.1" : udpSendList.back().ipString.c_str());
-	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, udpSendList.empty() ? 1234 : udpSendList.back().port, FALSE);
+	SetDlgItemText(m_hWnd, IDC_IPADDRESS_UDP, L"127.0.0.1");
+	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, 1234, FALSE);
 
 	int tcpCount = GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
 	for( int i = 0; i < tcpCount; i++ ){
@@ -88,11 +87,11 @@ BOOL CSetDlgNetwork::OnInitDialog()
 
 		wstring add = L"";
 		Format(add, L"%s:%d",item.ipString.c_str(), item.port);
-		int index = ListBox_AddString(GetDlgItem(IDC_LIST_IP_TCP), add.c_str());
-		ListBox_SetItemData(GetDlgItem(IDC_LIST_IP_TCP), index, i);
+		ListBox_AddString(GetDlgItem(IDC_LIST_IP_TCP), add.c_str());
 	}
-	SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, tcpSendList.empty() ? L"127.0.0.1" : tcpSendList.back().ipString.c_str());
-	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, tcpSendList.empty() ? 2230 : tcpSendList.back().port, FALSE);
+	CheckRadioButton(m_hWnd, IDC_RADIO_TCP, IDC_RADIO_PIPE, IDC_RADIO_TCP);
+	SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"127.0.0.1");
+	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, 2230, FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -165,19 +164,14 @@ void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 		item.broadcastFlag = FALSE;
 	}
 
-	HWND hItem = GetDlgItem(IDC_LIST_IP_UDP);
-	for( int i=0; i<ListBox_GetCount(hItem); i++ ){
-		WCHAR buff[256]=L"";
-		int len = ListBox_GetTextLen(hItem, i);
-		if( 0 <= len && len < 256 ){
-			ListBox_GetText(hItem, i, buff);
-			if( CompareNoCase(add, buff) == 0 ){
-				return ;
-			}
+	for( size_t i = 0; i < udpSendList.size(); i++ ){
+		if( CompareNoCase(udpSendList[i].ipString, item.ipString) == 0 &&
+		    udpSendList[i].port == item.port &&
+		    udpSendList[i].broadcastFlag == item.broadcastFlag ){
+			return;
 		}
 	}
-	int index = ListBox_AddString(hItem, add.c_str());
-	ListBox_SetItemData(hItem, index, (int)udpSendList.size());
+	ListBox_AddString(GetDlgItem(IDC_LIST_IP_UDP), add.c_str());
 	udpSendList.push_back(item);
 }
 
@@ -188,24 +182,8 @@ void CSetDlgNetwork::OnBnClickedButtonDelUdp()
 	HWND hItem = GetDlgItem(IDC_LIST_IP_UDP);
 	int sel = ListBox_GetCurSel(hItem);
 	if( sel != LB_ERR ){
-		int index = (int)ListBox_GetItemData(hItem, sel);
-
-		vector<NW_SEND_INFO>::iterator itr;
-		itr = udpSendList.begin();
-		advance(itr, index);
-		udpSendList.erase(itr);
-
-		ListBox_ResetContent(hItem);
-
-		for( int i=0; i<(int)udpSendList.size(); i++ ){
-			wstring add = L"";
-			Format(add, L"%s:%d",udpSendList[i].ipString.c_str(), udpSendList[i].port);
-			if( udpSendList[i].broadcastFlag == TRUE ){
-				add+= L" ブロードキャスト";
-			}
-			index = ListBox_AddString(hItem, add.c_str());
-			ListBox_SetItemData(hItem, index, i);
-		}
+		ListBox_DeleteString(hItem, sel);
+		udpSendList.erase(udpSendList.begin() + sel);
 	}
 }
 
@@ -230,19 +208,13 @@ void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 	Format(add, L"%s:%d",item.ipString.c_str(), item.port);
 	item.broadcastFlag = FALSE;
 
-	HWND hItem = GetDlgItem(IDC_LIST_IP_TCP);
-	for( int i=0; i<ListBox_GetCount(hItem); i++ ){
-		WCHAR buff[256]=L"";
-		int len = ListBox_GetTextLen(hItem, i);
-		if( 0 <= len && len < 256 ){
-			ListBox_GetText(hItem, i, buff);
-			if( CompareNoCase(add, buff) == 0 ){
-				return ;
-			}
+	for( size_t i = 0; i < tcpSendList.size(); i++ ){
+		if( CompareNoCase(tcpSendList[i].ipString, item.ipString) == 0 &&
+		    tcpSendList[i].port == item.port ){
+			return;
 		}
 	}
-	int index = ListBox_AddString(hItem, add.c_str());
-	ListBox_SetItemData(hItem, index, (int)tcpSendList.size());
+	ListBox_AddString(GetDlgItem(IDC_LIST_IP_TCP), add.c_str());
 	tcpSendList.push_back(item);
 }
 
@@ -253,21 +225,26 @@ void CSetDlgNetwork::OnBnClickedButtonDelTcp()
 	HWND hItem = GetDlgItem(IDC_LIST_IP_TCP);
 	int sel = ListBox_GetCurSel(hItem);
 	if( sel != LB_ERR ){
-		int index = (int)ListBox_GetItemData(hItem, sel);
+		ListBox_DeleteString(hItem, sel);
+		tcpSendList.erase(tcpSendList.begin() + sel);
+	}
+}
 
-		vector<NW_SEND_INFO>::iterator itr;
-		itr = tcpSendList.begin();
-		advance(itr, index);
-		tcpSendList.erase(itr);
 
-		ListBox_ResetContent(hItem);
-
-		for( int i=0; i<(int)tcpSendList.size(); i++ ){
-			wstring add = L"";
-			Format(add, L"%s:%d",tcpSendList[i].ipString.c_str(), tcpSendList[i].port);
-			index = ListBox_AddString(hItem, add.c_str());
-			ListBox_SetItemData(hItem, index, i);
-		}
+void CSetDlgNetwork::OnBnClickedRadioTcp()
+{
+	if( Button_GetCheck(GetDlgItem(IDC_RADIO_SRV_PIPE)) == BST_CHECKED ){
+		EnableWindow(GetDlgItem(IDC_IPADDRESS_TCP), FALSE);
+		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"0.0.0.1");
+		SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, 0, FALSE);
+	}else if( Button_GetCheck(GetDlgItem(IDC_RADIO_PIPE)) == BST_CHECKED ){
+		EnableWindow(GetDlgItem(IDC_IPADDRESS_TCP), FALSE);
+		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"0.0.0.2");
+		SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, 0, FALSE);
+	}else{
+		EnableWindow(GetDlgItem(IDC_IPADDRESS_TCP), TRUE);
+		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"127.0.0.1");
+		SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, 2230, FALSE);
 	}
 }
 
@@ -300,6 +277,11 @@ INT_PTR CALLBACK CSetDlgNetwork::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 			break;
 		case IDC_BUTTON_DEL_TCP:
 			pSys->OnBnClickedButtonDelTcp();
+			break;
+		case IDC_RADIO_TCP:
+		case IDC_RADIO_SRV_PIPE:
+		case IDC_RADIO_PIPE:
+			pSys->OnBnClickedRadioTcp();
 			break;
 		}
 		break;

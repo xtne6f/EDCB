@@ -101,9 +101,6 @@
     <ClInclude Include="..\..\Common\SendCtrlCmd.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\StringUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -231,9 +228,6 @@
     </ClCompile>
     <ClCompile Include="SetDlgApp.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\SendTSTCPDllUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\StringUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>

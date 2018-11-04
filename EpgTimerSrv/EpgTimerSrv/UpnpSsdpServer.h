@@ -28,6 +28,6 @@ private:
 	string GetMSearchReply(const char* header, const char* host) const;
 	void SendNotifyAliveOrByebye(bool byebyeFlag, const vector<string>& nicList);
 	thread_ ssdpThread;
-	bool stopFlag;
+	atomic_bool_ stopFlag;
 	vector<SSDP_TARGET_INFO> targetList;
 };

@@ -35,7 +35,7 @@ protected:
 
 	WSAEVENT m_hNotifyEvent;
 	WSAEVENT m_hAcceptEvent;
-	bool m_stopFlag;
+	atomic_bool_ m_stopFlag;
 	thread_ m_thread;
 
 	SOCKET m_sock;

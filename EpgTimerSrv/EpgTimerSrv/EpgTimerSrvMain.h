@@ -135,7 +135,7 @@ private:
 	mutable recursive_mutex_ settingLock;
 	HWND hwndMain;
 
-	bool residentFlag;
+	atomic_bool_ residentFlag;
 	CEpgTimerSrvSetting::SETTING setting;
 	unsigned short tcpPort;
 	bool tcpIPv6;
@@ -143,10 +143,10 @@ private:
 	wstring tcpAccessControlList;
 	CHttpServer::SERVER_OPTIONS httpOptions;
 	string httpServerRandom;
-	bool useSyoboi;
+	atomic_bool_ useSyoboi;
 	bool nwtvUdp;
 	bool nwtvTcp;
-	DWORD notifyUpdateCount[6];
+	atomic_int_ notifyUpdateCount[6];
 	DWORD compatFlags;
 
 	vector<EPGDB_EVENT_INFO> oldSearchList[2];

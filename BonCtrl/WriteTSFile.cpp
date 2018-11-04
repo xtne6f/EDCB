@@ -5,8 +5,6 @@
 
 CWriteTSFile::CWriteTSFile(void)
 {
-	this->outStopFlag = FALSE;
-	this->outStartFlag = FALSE;
 	this->overWriteFlag = FALSE;
 	this->createSize = 0;
 	this->subRecFlag = FALSE;
@@ -67,12 +65,11 @@ BOOL CWriteTSFile::StartSave(
 		}
 
 		//受信スレッド起動
-		this->outStopFlag = FALSE;
-		this->outStartFlag = FALSE;
+		this->outStopFlag = true;
 		this->outThread = thread_(OutThread, this);
 		//保存開始まで待つ
-		while( WaitForSingleObject(this->outThread.native_handle(), 10) == WAIT_TIMEOUT && this->outStartFlag == FALSE );
-		if( this->outStartFlag ){
+		while( WaitForSingleObject(this->outThread.native_handle(), 10) == WAIT_TIMEOUT && this->outStopFlag );
+		if( this->outStopFlag == false ){
 			return TRUE;
 		}
 		this->outThread.join();
@@ -138,7 +135,7 @@ BOOL CWriteTSFile::EndSave()
 	BOOL ret = TRUE;
 
 	if( this->outThread.joinable() ){
-		this->outStopFlag = TRUE;
+		this->outStopFlag = true;
 		this->outThread.join();
 	}
 
@@ -253,10 +250,10 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 		CoUninitialize();
 		return;
 	}
-	sys->outStartFlag = TRUE;
+	sys->outStopFlag = false;
 	std::list<vector<BYTE>> data;
 
-	while( sys->outStopFlag == FALSE ){
+	while( sys->outStopFlag == false ){
 		//バッファからデータ取り出し
 		{
 			CBlockLock lock(&sys->outThreadLock);

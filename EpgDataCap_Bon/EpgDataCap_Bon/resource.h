@@ -75,8 +75,11 @@
 #define IDC_EDIT_WRITE_BUFF_MAX         1028
 #define IDC_CHECK_BACK_CS3              1028
 #define IDC_CHECK_ENABLE_DECODE         1029
+#define IDC_RADIO_TCP                   1029
 #define IDC_CHECK_OVER_WRITE            1030
+#define IDC_RADIO_SRV_PIPE              1030
 #define IDC_CHECK_ALL_SERVICE           1031
+#define IDC_RADIO_PIPE                  1031
 #define IDC_CHECK_EPGCAP_LIVE           1032
 #define IDC_CHECK2                      1033
 #define IDC_CHECK_EPGCAP_REC            1033
