@@ -14,7 +14,7 @@
 #ifdef SEND_PIPE_TEST
 #include "../../BonCtrl/BonCtrlDef.h"
 #include "../../BonCtrl/ServiceFilter.h"
-#include "../../Common/SendTSTCPDllUtil.h"
+#include "../../BonCtrl/SendTCP.h"
 #endif
 
 class CEdcbPlugIn : public TVTest::CTVTestPlugin
@@ -114,7 +114,7 @@ private:
 	map<DWORD, REC_CTRL> m_recCtrlMap;
 	wstring m_duplicateOriginalPath;
 #ifdef SEND_PIPE_TEST
-	std::unique_ptr<CSendTSTCPDllUtil> m_sendPipe;
+	CSendTCP m_sendPipe;
 	HANDLE m_sendPipeMutex;
 	vector<BYTE> m_sendPipeBuf;
 	CServiceFilter m_serviceFilter;

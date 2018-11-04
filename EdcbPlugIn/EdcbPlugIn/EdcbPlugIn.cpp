@@ -208,8 +208,7 @@ bool CEdcbPlugIn::Initialize()
 		m_chSet5.push_back(it->second);
 	}
 #ifdef SEND_PIPE_TEST
-	m_sendPipe.reset(new CSendTSTCPDllUtil);
-	if (m_sendPipe->Initialize() == NO_ERR) {
+	if (m_sendPipe.Initialize()) {
 		int port = 0;
 		for (; port < 100; ++port) {
 			wstring name;
@@ -224,11 +223,8 @@ bool CEdcbPlugIn::Initialize()
 				m_sendPipeMutex = nullptr;
 			}
 		}
-		m_sendPipe->AddSendAddr(L"0.0.0.1", port);
-		m_sendPipe->StartSend();
-	}
-	else {
-		m_sendPipe.reset();
+		m_sendPipe.AddSendAddr(L"0.0.0.1", port, false);
+		m_sendPipe.StartSend();
 	}
 #endif
 	// イベントコールバック関数を登録
@@ -254,12 +250,12 @@ bool CEdcbPlugIn::Finalize()
 		DispatchMessage(&msg);
 	}
 #ifdef SEND_PIPE_TEST
-	if (m_sendPipe) {
-		m_sendPipe->StopSend();
+	if (m_sendPipe.IsInitialized()) {
+		m_sendPipe.StopSend();
+		m_sendPipe.UnInitialize();
 		if (m_sendPipeMutex) {
 			CloseHandle(m_sendPipeMutex);
 		}
-		m_sendPipe.reset();
 	}
 #endif
 	m_epgUtil.UnInitialize();
@@ -1104,11 +1100,11 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 			}
 		}
 #ifdef SEND_PIPE_TEST
-		if (this_.m_sendPipe) {
+		if (this_.m_sendPipe.IsInitialized()) {
 			if (this_.m_chChangeID == CH_CHANGE_OK) {
 				this_.m_serviceFilter.FilterPacket(this_.m_sendPipeBuf, pData, packet);
 				if (this_.m_sendPipeBuf.size() >= 48128) {
-					this_.m_sendPipe->AddSendData(this_.m_sendPipeBuf.data(), static_cast<DWORD>(this_.m_sendPipeBuf.size()));
+					this_.m_sendPipe.AddSendData(this_.m_sendPipeBuf.data(), static_cast<DWORD>(this_.m_sendPipeBuf.size()));
 					this_.m_sendPipeBuf.clear();
 				}
 			}

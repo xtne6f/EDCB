@@ -7,6 +7,7 @@ $(TARGET): $(addsuffix .obj, \
   BonCtrl__CreatePATPacket.cpp \
   BonCtrl__DropCount.cpp \
   BonCtrl__PMTUtil.cpp \
+  BonCtrl__SendTCP.cpp \
   BonCtrl__ServiceFilter.cpp \
   Common__CtrlCmdUtil.cpp \
   Common__EpgDataCap3Util.cpp \
@@ -15,7 +16,6 @@ $(TARGET): $(addsuffix .obj, \
   Common__PathUtil.cpp \
   Common__PipeServer.cpp \
   Common__SendCtrlCmd.cpp \
-  Common__SendTSTCPDllUtil.cpp \
   Common__StringUtil.cpp \
   Common__TimeUtil.cpp \
   Common__TSBuffUtil.cpp \
