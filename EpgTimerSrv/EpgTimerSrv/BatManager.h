@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Common/ThreadUtil.h"
 #include "NotifyManager.h"
+#include <functional>
 
 class CBatManager
 {
@@ -12,8 +13,10 @@ public:
 	CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName);
 	~CBatManager();
 
+	void Finalize();
 	void AddBatWork(const BAT_WORK_INFO& info);
 	void SetIdleMargin(DWORD marginSec);
+	void SetCustomHandler(LPCWSTR ext, const std::function<void(BAT_WORK_INFO&, vector<char>&)>& handler);
 
 	DWORD GetWorkCount() const;
 	bool IsWorking() const;
@@ -24,7 +27,8 @@ protected:
 	wstring tmpBatFilePath;
 
 	vector<BAT_WORK_INFO> workList;
-
+	std::function<void(BAT_WORK_INFO&, vector<char>&)> customHandler;
+	wstring customExt;
 	DWORD idleMargin;
 	DWORD nextBatMargin;
 	bool batWorkExitingFlag;
@@ -34,7 +38,7 @@ protected:
 	void StartWork();
 	static void BatWorkThread(CBatManager* sys);
 
-	static bool CreateBatFile(BAT_WORK_INFO& info, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect);
+	bool CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, WORD& exSW, wstring& exDirect, vector<char>& buff) const;
 	static bool ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite);
 	static wstring CreateEnvironment(const BAT_WORK_INFO& info);
 };

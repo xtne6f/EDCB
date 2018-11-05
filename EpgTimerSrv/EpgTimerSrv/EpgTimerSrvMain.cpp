@@ -85,6 +85,7 @@ struct MAIN_WINDOW_CONTEXT {
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
 	, hwndMain(NULL)
+	, hLuaDll(NULL)
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
@@ -152,6 +153,10 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+	}
+	if( this->hLuaDll ){
+		FreeLibrary(this->hLuaDll);
+		this->hLuaDll = NULL;
 	}
 	return true;
 }
@@ -461,7 +466,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
 		ctx->pipeServer.StopServer();
-		ctx->sys->epgDB.CancelLoadData();
+		ctx->sys->stoppingFlag = true;
 		ctx->sys->reserveManager.Finalize();
 		OutputDebugString(L"*** Server finalized ***\r\n");
 		//タスクトレイから削除
@@ -923,7 +928,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() == false ){
 					CEpgTimerSrvMain* sys = ctx->sys;
-					ctx->httpServer.StartServer(op, [sys](lua_State* L) { return sys->InitLuaCallback(L); });
+					ctx->httpServer.StartServer(op, [sys](lua_State* L) { sys->InitLuaCallback(L, sys->httpServerRandom.c_str()); });
 				}
 			}
 			break;
@@ -1161,7 +1166,16 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	s.enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
 	s.enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
 	if( initialize ){
+		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
+#ifdef LUA_BUILD_AS_DLL
+		//存在を確認しているだけ
+		this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
+		if( this->hLuaDll )
+#endif
+		{
+			this->reserveManager.SetBatCustomHandler(L".lua", [this](CBatManager::BAT_WORK_INFO& work, vector<char>& buff) { DoLuaBat(work, buff); });
+		}
 	}else{
 		this->reserveManager.ReloadSetting(s);
 	}
@@ -2924,7 +2938,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 extern "C" int luaopen_zlib(lua_State*);
 #endif
 
-void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
+void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 {
 	static const luaL_Reg closures[] = {
 		{ "GetGenreName", LuaGetGenreName },
@@ -2950,6 +2964,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 		{ "GetRecFilePath", LuaGetRecFilePath },
 		{ "GetRecFileInfo", LuaGetRecFileInfo },
 		{ "GetRecFileInfoBasic", LuaGetRecFileInfoBasic },
+		{ "ChgPathRecFileInfo", LuaChgPathRecFileInfo },
 		{ "ChgProtectRecFileInfo", LuaChgProtectRecFileInfo },
 		{ "DelRecFileInfo", LuaDelRecFileInfo },
 		{ "GetTunerReserveAll", LuaGetTunerReserveAll },
@@ -2970,7 +2985,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	lua_pushlightuserdata(L, this);
 	luaL_setfuncs(L, closures, 1);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
-	LuaHelp::reg_string(L, "serverRandom", this->httpServerRandom.c_str());
+	LuaHelp::reg_string(L, "serverRandom", serverRandom);
 	//ファイルハンドルはDLLを越えて互換とは限らないので、"FILE*"メタテーブルも独自のものが必要
 	LuaHelp::f_createmeta(L);
 	//osライブラリに対するUTF-8補完
@@ -3052,6 +3067,33 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 #endif
 }
 
+void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff)
+{
+	lua_State* L = luaL_newstate();
+	if( L ){
+		luaL_openlibs(L);
+		InitLuaCallback(L, NULL);
+		lua_createtable(L, 0, 1 + (int)work.macroList.size());
+		string val;
+		WtoUTF8(work.batFilePath, val);
+		LuaHelp::reg_string(L, "ScriptPath", val.c_str());
+		for( size_t i = 0; i < work.macroList.size(); i++ ){
+			WtoUTF8(work.macroList[i].second, val);
+			LuaHelp::reg_string_(L, work.macroList[i].first.c_str(), work.macroList[i].first.size() + 1, val.c_str());
+		}
+		lua_setglobal(L, "env");
+		if( luaL_dostring(L, buff.data() + (strncmp(buff.data(), "\xEF\xBB\xBF", 3) ? 0 : 3)) != 0 ){
+			wstring werr;
+			LPCSTR err = lua_tostring(L, -1);
+			if( err ){
+				UTF8toW(err, werr);
+			}
+			_OutputDebugString(L"Error %s: %s\r\n", work.batFilePath.c_str(), werr.c_str());
+		}
+		lua_close(L);
+	}
+}
+
 #if 1
 //Lua-edcb空間のコールバック
 
@@ -3106,8 +3148,17 @@ int CEpgTimerSrvMain::LuaGetComponentTypeName(lua_State* L)
 
 int CEpgTimerSrvMain::LuaSleep(lua_State* L)
 {
-	Sleep((DWORD)lua_tointeger(L, 1));
-	return 0;
+	CLuaWorkspace ws(L);
+	DWORD wait = (DWORD)lua_tointeger(L, 1);
+	DWORD base = GetTickCount();
+	DWORD tick = base;
+	do{
+		//stoppingFlagでも必ず休む
+		Sleep(min<DWORD>(wait - (tick - base), 100));
+		tick = GetTickCount();
+	}while( wait > tick - base && ws.sys->stoppingFlag == false );
+	lua_pushboolean(L, ws.sys->stoppingFlag);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaConvert(lua_State* L)
@@ -3603,6 +3654,21 @@ int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
 		}
 	}
 	return 1;
+}
+
+int CEpgTimerSrvMain::LuaChgPathRecFileInfo(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 2 ){
+		LPCSTR path = lua_tostring(L, 2);
+		if( path ){
+			vector<REC_FILE_INFO> list(1);
+			list.front().id = (DWORD)lua_tointeger(L, 1);
+			UTF8toW(path, list.front().recFilePath);
+			ws.sys->reserveManager.ChgPathRecFileInfo(list);
+		}
+	}
+	return 0;
 }
 
 int CEpgTimerSrvMain::LuaChgProtectRecFileInfo(lua_State* L)

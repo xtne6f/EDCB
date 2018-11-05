@@ -96,6 +96,8 @@ public:
 	vector<CH_DATA5> GetChDataList() const;
 	//パラメータなしの通知を追加する
 	void AddNotifyAndPostBat(DWORD notifyID);
+	//バッチのカスタムハンドラを設定する
+	void SetBatCustomHandler(LPCWSTR ext, const std::function<void(CBatManager::BAT_WORK_INFO&, vector<char>&)>& handler);
 private:
 	struct CHK_RESERVE_DATA {
 		__int64 cutStartTime;

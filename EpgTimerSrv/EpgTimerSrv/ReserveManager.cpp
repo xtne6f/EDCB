@@ -41,6 +41,10 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 
 void CReserveManager::Finalize()
 {
+	//カスタムハンドラを止めるため
+	this->batManager.Finalize();
+	this->batPostManager.Finalize();
+	this->epgDBManager.CancelLoadData();
 	if( this->watchdogThread.joinable() ){
 		this->watchdogStopEvent.Set();
 		this->watchdogThread.join();
@@ -1900,9 +1904,10 @@ void CReserveManager::AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workLis
 {
 	if( workList.empty() == false ){
 		fs_path batFilePath = GetModulePath().replace_filename(fileName);
-		//同名のPowerShellスクリプトでもよい
+		//同名のPowerShellやLuaスクリプトでもよい
 		if( GetFileAttributes(batFilePath.c_str()) != INVALID_FILE_ATTRIBUTES ||
-		    GetFileAttributes(batFilePath.replace_extension(L".ps1").c_str()) != INVALID_FILE_ATTRIBUTES ){
+		    GetFileAttributes(batFilePath.replace_extension(L".ps1").c_str()) != INVALID_FILE_ATTRIBUTES ||
+		    GetFileAttributes(batFilePath.replace_extension(L".lua").c_str()) != INVALID_FILE_ATTRIBUTES ){
 			for( size_t i = 0; i < workList.size(); i++ ){
 				workList[i].batFilePath = batFilePath.native();
 				this->batPostManager.AddBatWork(workList[i]);
@@ -1918,6 +1923,12 @@ void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
 	workList[0].macroList.push_back(pair<string, wstring>("NotifyID", L""));
 	Format(workList[0].macroList.back().second, L"%d", notifyID);
 	AddPostBatWork(workList, L"PostNotify.bat");
+}
+
+void CReserveManager::SetBatCustomHandler(LPCWSTR ext, const std::function<void(CBatManager::BAT_WORK_INFO&, vector<char>&)>& handler)
+{
+	this->batManager.SetCustomHandler(ext, handler);
+	this->batPostManager.SetCustomHandler(ext, handler);
 }
 
 void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix)

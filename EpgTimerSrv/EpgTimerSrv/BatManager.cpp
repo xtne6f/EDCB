@@ -16,6 +16,11 @@ CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 
 CBatManager::~CBatManager()
 {
+	Finalize();
+}
+
+void CBatManager::Finalize()
+{
 	if( this->batWorkThread.joinable() ){
 		this->batWorkStopEvent.Set();
 		this->batWorkThread.join();
@@ -36,6 +41,14 @@ void CBatManager::SetIdleMargin(DWORD marginSec)
 
 	this->idleMargin = marginSec;
 	StartWork();
+}
+
+void CBatManager::SetCustomHandler(LPCWSTR ext, const std::function<void(BAT_WORK_INFO&, vector<char>&)>& handler)
+{
+	CBlockLock lock(&this->managerLock);
+
+	this->customHandler = handler;
+	this->customExt = ext;
 }
 
 DWORD CBatManager::GetWorkCount() const
@@ -69,36 +82,49 @@ void CBatManager::StartWork()
 
 void CBatManager::BatWorkThread(CBatManager* sys)
 {
-	for(;;){
+	while( WaitForSingleObject(sys->batWorkStopEvent.Handle(), 0) == WAIT_TIMEOUT ){
+		BAT_WORK_INFO work;
+		fs_path batFilePath;
+		std::function<void(BAT_WORK_INFO&, vector<char>&)> customHandler_;
 		{
-			BAT_WORK_INFO work;
-			{
-				CBlockLock lock(&sys->managerLock);
-				if( sys->workList.empty() ){
-					//このフラグを立てたあとは二度とロックを確保してはいけない
-					sys->batWorkExitingFlag = true;
-					sys->nextBatMargin = 0;
-					break;
+			CBlockLock lock(&sys->managerLock);
+			if( sys->workList.empty() ){
+				//このフラグを立てたあとは二度とロックを確保してはいけない
+				sys->batWorkExitingFlag = true;
+				sys->nextBatMargin = 0;
+				break;
+			}
+			work = sys->workList[0];
+			batFilePath = work.batFilePath;
+			if( !IsExt(batFilePath, L".bat") && !IsExt(batFilePath, L".ps1") ){
+				if( sys->customHandler && IsExt(batFilePath, sys->customExt.c_str()) ){
+					customHandler_ = sys->customHandler;
 				}else{
-					work = sys->workList[0];
+					batFilePath.clear();
 				}
 			}
+		}
 
-			fs_path batFilePath = work.batFilePath;
-			if( IsExt(batFilePath, L".bat") || IsExt(batFilePath, L".ps1") ){
-				DWORD exBatMargin;
-				WORD exSW;
-				wstring exDirect;
-				if( CreateBatFile(work, sys->tmpBatFilePath.c_str(), exBatMargin, exSW, exDirect) ){
-					{
-						CBlockLock(&sys->managerLock);
-						if( sys->idleMargin < exBatMargin ){
-							//アイドル時間に余裕がないので中止
-							sys->batWorkExitingFlag = true;
-							sys->nextBatMargin = exBatMargin;
-							break;
-						}
+		if( batFilePath.empty() == false ){
+			DWORD exBatMargin;
+			WORD exSW;
+			wstring exDirect;
+			vector<char> buff;
+			if( sys->CreateBatFile(work, exBatMargin, exSW, exDirect, buff) ){
+				{
+					CBlockLock(&sys->managerLock);
+					if( sys->idleMargin < exBatMargin ){
+						//アイドル時間に余裕がないので中止
+						sys->batWorkExitingFlag = true;
+						sys->nextBatMargin = exBatMargin;
+						break;
 					}
+				}
+				if( buff.empty() == false ){
+					if( customHandler_ ){
+						customHandler_(work, buff);
+					}
+				}else{
 					bool executed = false;
 					HANDLE hProcess = NULL;
 					if( exDirect.empty() && sys->notifyManager.IsGUI() == false ){
@@ -173,20 +199,20 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 							break;
 						}
 					}
-				}else{
-					_OutputDebugString(L"BATファイル作成エラー：%s\r\n", work.batFilePath.c_str());
 				}
 			}else{
-				_OutputDebugString(L"BAT拡張子エラー：%s\r\n", work.batFilePath.c_str());
+				_OutputDebugString(L"BATファイル作成エラー：%s\r\n", work.batFilePath.c_str());
 			}
-
-			CBlockLock lock(&sys->managerLock);
-			sys->workList.erase(sys->workList.begin());
+		}else{
+			_OutputDebugString(L"BAT拡張子エラー：%s\r\n", work.batFilePath.c_str());
 		}
+
+		CBlockLock lock(&sys->managerLock);
+		sys->workList.erase(sys->workList.begin());
 	}
 }
 
-bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect)
+bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, WORD& exSW, wstring& exDirect, vector<char>& buff) const
 {
 	//バッチの作成
 	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(info.batFilePath.c_str(), L"rbN"), fclose);
@@ -203,8 +229,11 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, LPCWSTR batFilePath, DWORD&
 	bool exDirectFlag = false;
 	//拡張命令: 日時についての変数をISO形式にする
 	bool exFormatTime = false;
+	//カスタムハンドラ用ファイルの中身
+	buff.clear();
 
-	if( IsExt(info.batFilePath, L".ps1") ){
+	fs_path batFilePath = info.batFilePath;
+	if( !IsExt(batFilePath, L".bat") ){
 		exDirectFlag = true;
 		exFormatTime = true;
 	}
@@ -255,7 +284,7 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, LPCWSTR batFilePath, DWORD&
 			}
 		}
 	}
-	if( exDirectFlag ){
+	if( exDirectFlag && (IsExt(batFilePath, L".bat") || IsExt(batFilePath, L".ps1")) ){
 		exDirect = CreateEnvironment(info);
 		return exDirect.empty() == false;
 	}
@@ -263,12 +292,17 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, LPCWSTR batFilePath, DWORD&
 	if( fileSize >= 64 * 1024 * 1024 ){
 		return false;
 	}
-	vector<char> buff((size_t)fileSize + 1, '\0');
+	buff.resize((size_t)fileSize + 1, '\0');
 	rewind(fp.get());
-	if( fread(&buff.front(), 1, buff.size() - 1, fp.get()) != buff.size() - 1 ){
+	if( fread(buff.data(), 1, buff.size() - 1, fp.get()) != buff.size() - 1 ){
 		return false;
 	}
-	string strRead = &buff.front();
+	if( exDirectFlag ){
+		//カスタムハンドラ
+		return true;
+	}
+	string strRead = buff.data();
+	buff.clear();
 
 	string strWrite;
 	for( size_t pos = 0;; ){
@@ -297,7 +331,7 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, LPCWSTR batFilePath, DWORD&
 		}
 	}
 
-	fp.reset(secure_wfopen(batFilePath, L"wbN"));
+	fp.reset(secure_wfopen(this->tmpBatFilePath.c_str(), L"wbN"));
 	if( !fp || fputs(strWrite.c_str(), fp.get()) < 0 || fflush(fp.get()) != 0 ){
 		return false;
 	}
