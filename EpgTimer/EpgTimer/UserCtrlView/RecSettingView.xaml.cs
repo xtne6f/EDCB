@@ -469,7 +469,7 @@ namespace EpgTimer
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.DefaultExt = ".bat";
-            dlg.Filter = "batch Files(*.bat;*.ps1)|*.bat;*.ps1|all Files(*.*)|*.*";
+            dlg.Filter = "batch Files(*.bat;*.ps1;*.lua)|*.bat;*.ps1;*.lua|all Files(*.*)|*.*";
 
             Nullable<bool> result = dlg.ShowDialog();
             if (result == true)
