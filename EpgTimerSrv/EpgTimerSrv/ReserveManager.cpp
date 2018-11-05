@@ -1395,8 +1395,8 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 		this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_EPGCAP_END, L"");
 		return std::make_pair(CHECK_EPGCAP_END, 0);
 	}else if( this->shutdownModePending >= 0 &&
-	          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == false &&
-	          this->batPostManager.GetWorkCount() == 0 && this->batPostManager.IsWorking() == false ){
+	          this->batManager.IsWorking() == false &&
+	          this->batPostManager.IsWorkingWithoutNotification() == false ){
 		//ƒoƒbƒ`ˆ—‚ªŠ®—¹‚µ‚½
 		int shutdownMode = this->shutdownModePending;
 		this->shutdownModePending = -1;
@@ -1614,8 +1614,8 @@ bool CReserveManager::IsActive() const
 	CBlockLock lock(&this->managerLock);
 
 	if( this->epgCapRequested || this->epgCapWork ||
-	    this->batManager.GetWorkCount() != 0 || this->batManager.IsWorking() ||
-	    this->batPostManager.GetWorkCount() != 0 || this->batPostManager.IsWorking() ){
+	    this->batManager.IsWorking() ||
+	    this->batPostManager.IsWorkingWithoutNotification() ){
 		return true;
 	}
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){

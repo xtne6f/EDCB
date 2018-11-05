@@ -18,8 +18,8 @@ public:
 	void SetIdleMargin(DWORD marginSec);
 	void SetCustomHandler(LPCWSTR ext, const std::function<void(BAT_WORK_INFO&, vector<char>&)>& handler);
 
-	DWORD GetWorkCount() const;
 	bool IsWorking() const;
+	bool IsWorkingWithoutNotification() const;
 protected:
 	mutable recursive_mutex_ managerLock;
 
@@ -33,12 +33,13 @@ protected:
 	DWORD nextBatMargin;
 	bool batWorkExitingFlag;
 	thread_ batWorkThread;
-	CAutoResetEvent batWorkStopEvent;
+	CAutoResetEvent batWorkEvent;
+	atomic_bool_ batWorkStopFlag;
 protected:
 	void StartWork();
 	static void BatWorkThread(CBatManager* sys);
 
-	bool CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, WORD& exSW, wstring& exDirect, vector<char>& buff) const;
+	bool CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& exNotifyInterval, WORD& exSW, wstring& exDirect, vector<char>& buff) const;
 	static bool ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite);
 	static wstring CreateEnvironment(const BAT_WORK_INFO& info);
 };

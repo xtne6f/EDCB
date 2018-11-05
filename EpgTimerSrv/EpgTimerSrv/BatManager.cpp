@@ -11,7 +11,6 @@ CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 	this->tmpBatFilePath = GetModulePath().replace_filename(tmpBatFileName).native();
 	this->idleMargin = MAXDWORD;
 	this->nextBatMargin = 0;
-	this->batWorkExitingFlag = false;
 }
 
 CBatManager::~CBatManager()
@@ -22,7 +21,8 @@ CBatManager::~CBatManager()
 void CBatManager::Finalize()
 {
 	if( this->batWorkThread.joinable() ){
-		this->batWorkStopEvent.Set();
+		this->batWorkStopFlag = true;
+		this->batWorkEvent.Set();
 		this->batWorkThread.join();
 	}
 }
@@ -51,18 +51,19 @@ void CBatManager::SetCustomHandler(LPCWSTR ext, const std::function<void(BAT_WOR
 	this->customExt = ext;
 }
 
-DWORD CBatManager::GetWorkCount() const
-{
-	CBlockLock lock(&this->managerLock);
-
-	return (DWORD)this->workList.size();
-}
-
 bool CBatManager::IsWorking() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	return this->batWorkThread.joinable() && this->batWorkExitingFlag == false;
+	return this->workList.empty() == false;
+}
+
+bool CBatManager::IsWorkingWithoutNotification() const
+{
+	CBlockLock lock(&this->managerLock);
+
+	return std::find_if(this->workList.begin(), this->workList.end(),
+	                    [](const BAT_WORK_INFO& a) { return a.macroList.empty() || a.macroList[0].first != "NotifyID"; }) != this->workList.end();
 }
 
 void CBatManager::StartWork()
@@ -73,16 +74,37 @@ void CBatManager::StartWork()
 	if( this->batWorkThread.joinable() && this->batWorkExitingFlag ){
 		this->batWorkThread.join();
 	}
-	if( this->batWorkThread.joinable() == false && this->workList.empty() == false && this->idleMargin >= this->nextBatMargin ){
-		this->batWorkStopEvent.Reset();
-		this->batWorkExitingFlag = false;
-		this->batWorkThread = thread_(BatWorkThread, this);
+	if( this->workList.empty() == false && this->idleMargin >= this->nextBatMargin ){
+		if( this->batWorkThread.joinable() ){
+			this->batWorkEvent.Set();
+		}else{
+			this->batWorkStopFlag = false;
+			this->batWorkExitingFlag = false;
+			this->batWorkThread = thread_(BatWorkThread, this);
+		}
 	}
 }
 
 void CBatManager::BatWorkThread(CBatManager* sys)
 {
-	while( WaitForSingleObject(sys->batWorkStopEvent.Handle(), 0) == WAIT_TIMEOUT ){
+	DWORD notifyWorkWait = 0;
+	BAT_WORK_INFO notifyWork;
+	for(;;){
+		while( notifyWorkWait && sys->batWorkStopFlag == false && sys->IsWorking() == false ){
+			DWORD tick = GetTickCount();
+			WaitForSingleObject(sys->batWorkEvent.Handle(), notifyWorkWait);
+			DWORD diff = GetTickCount() - tick;
+			notifyWorkWait -= min(diff, notifyWorkWait);
+			if( notifyWorkWait == 0 ){
+				CBlockLock lock(&sys->managerLock);
+				sys->workList.push_back(std::move(notifyWork));
+			}
+		}
+		if( sys->batWorkStopFlag ){
+			//中止
+			break;
+		}
+
 		BAT_WORK_INFO work;
 		fs_path batFilePath;
 		std::function<void(BAT_WORK_INFO&, vector<char>&)> customHandler_;
@@ -107,10 +129,11 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 
 		if( batFilePath.empty() == false ){
 			DWORD exBatMargin;
+			DWORD exNotifyInterval;
 			WORD exSW;
 			wstring exDirect;
 			vector<char> buff;
-			if( sys->CreateBatFile(work, exBatMargin, exSW, exDirect, buff) ){
+			if( sys->CreateBatFile(work, exBatMargin, exNotifyInterval, exSW, exDirect, buff) ){
 				{
 					CBlockLock(&sys->managerLock);
 					if( sys->idleMargin < exBatMargin ){
@@ -118,6 +141,13 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						sys->batWorkExitingFlag = true;
 						sys->nextBatMargin = exBatMargin;
 						break;
+					}
+					//NotifyInterval拡張: macroList[0]が"NotifyID"のとき、この値を"0"にして指定時間後に再発行する。idleMarginと併用不可
+					if( exNotifyInterval && notifyWorkWait == 0 &&
+					    sys->workList[0].macroList.empty() == false && sys->workList[0].macroList[0].first == "NotifyID" ){
+						notifyWorkWait = exNotifyInterval;
+						notifyWork = sys->workList[0];
+						notifyWork.macroList[0].second = L"0";
 					}
 				}
 				if( buff.empty() == false ){
@@ -191,13 +221,9 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 					}
 					if( hProcess ){
 						//終了監視
-						HANDLE hEvents[2] = { sys->batWorkStopEvent.Handle(), hProcess };
-						DWORD dwRet = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
+						HANDLE hEvents[2] = { sys->batWorkEvent.Handle(), hProcess };
+						while( WaitForMultipleObjects(2, hEvents, FALSE, INFINITE) == WAIT_OBJECT_0 && sys->batWorkStopFlag == false );
 						CloseHandle(hProcess);
-						if( dwRet == WAIT_OBJECT_0 ){
-							//中止
-							break;
-						}
 					}
 				}
 			}else{
@@ -212,7 +238,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 	}
 }
 
-bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, WORD& exSW, wstring& exDirect, vector<char>& buff) const
+bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& exNotifyInterval, WORD& exSW, wstring& exDirect, vector<char>& buff) const
 {
 	//バッチの作成
 	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(info.batFilePath.c_str(), L"rbN"), fclose);
@@ -222,6 +248,8 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, WORD& e
 
 	//拡張命令: BatMargin
 	exBatMargin = 0;
+	//拡張命令: NotifyInterval
+	exNotifyInterval = 0;
 	//拡張命令: ウィンドウ表示状態
 	exSW = SW_SHOWMINNOACTIVE;
 	//拡張命令: 環境渡しによる直接実行
@@ -244,6 +272,9 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, WORD& e
 		if( strstr(olbuff, "_EDCBX_BATMARGIN_=") ){
 			//一時的に断片を格納するかもしれないが最終的に正しければよい
 			exBatMargin = strtoul(strstr(olbuff, "_EDCBX_BATMARGIN_=") + 18, NULL, 10) * 60;
+		}
+		if( strstr(olbuff, "_EDCBX_NOTIFY_INTERVAL_=") ){
+			exNotifyInterval = strtoul(strstr(olbuff, "_EDCBX_NOTIFY_INTERVAL_=") + 24, NULL, 10) * 1000;
 		}
 		if( strstr(olbuff, "_EDCBX_HIDE_") ){
 			exSW = SW_HIDE;
