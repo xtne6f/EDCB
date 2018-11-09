@@ -92,14 +92,11 @@ BOOL CWriteTSFile::GetFreeFolder(
 {
 	BOOL ret = FALSE;
 
-	for( int i = 0; i < (int)this->saveFolderSub.size(); i++ ){
-		ULARGE_INTEGER stFree;
-		if( GetDiskFreeSpaceEx( GetChkDrivePath(this->saveFolderSub[i]).c_str(), &stFree, NULL, NULL ) != FALSE ){
-			if( stFree.QuadPart > needFreeSize ){
-				freeFolderPath = this->saveFolderSub[i];
-				ret = TRUE;
-				break;
-			}
+	for( size_t i = 0; i < this->saveFolderSub.size(); i++ ){
+		if( ChkFreeFolder(needFreeSize, this->saveFolderSub[i]) ){
+			freeFolderPath = this->saveFolderSub[i];
+			ret = TRUE;
+			break;
 		}
 	}
 	return ret;
@@ -127,22 +124,19 @@ BOOL CWriteTSFile::ChkFreeFolder(
 	return ret;
 }
 
-//ファイル保存を終了する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-BOOL CWriteTSFile::EndSave()
+BOOL CWriteTSFile::EndSave(BOOL* subRecFlag_)
 {
-	BOOL ret = TRUE;
-
 	if( this->outThread.joinable() ){
 		this->outStopFlag = true;
 		this->outThread.join();
+		if( subRecFlag_ ){
+			*subRecFlag_ = this->subRecFlag;
+		}
+		this->tsBuffList.clear();
+		this->tsFreeList.clear();
+		return TRUE;
 	}
-
-	this->tsBuffList.clear();
-	this->tsFreeList.clear();
-
-	return ret;
+	return FALSE;
 }
 
 //出力用TSデータを送る
@@ -351,17 +345,9 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	CoUninitialize();
 }
 
-//録画中のファイルのファイルパスを取得する
-//引数：
-// filePath			[OUT]保存ファイル名
-// subRecFlag		[OUT]サブ録画が発生したかどうか
-void CWriteTSFile::GetSaveFilePath(
-	wstring* filePath,
-	BOOL* subRecFlag_
-	)
+wstring CWriteTSFile::GetSaveFilePath()
 {
-	*filePath = this->mainSaveFilePath;
-	*subRecFlag_ = this->subRecFlag;
+	return this->mainSaveFilePath;
 }
 
 //録画中のファイルの出力サイズを取得する

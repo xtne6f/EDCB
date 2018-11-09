@@ -79,26 +79,11 @@ public:
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// fileName				[IN]保存ファイルパス
-	// overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
-	// pittariFlag			[IN]ぴったりモード（TRUE：する、FALSE：しない）
-	// pittariONID			[IN]ぴったりモードで録画するONID
-	// pittariTSID			[IN]ぴったりモードで録画するTSID
-	// pittariSID			[IN]ぴったりモードで録画するSID
-	// pittariEventID		[IN]ぴったりモードで録画するイベントID
-	// createSize			[IN]ファイル作成時にディスクに予約する容量
-	// saveFolder			[IN]使用するフォルダ一覧
+	// recParam				[IN]保存パラメータ（ctrlIDフィールドは無視）
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+	// maxBuffCount			[IN]出力バッファ上限
 	BOOL StartSave(
-		const wstring& fileName,
-		BOOL overWriteFlag,
-		BOOL pittariFlag,
-		WORD pittariONID_,
-		WORD pittariTSID_,
-		WORD pittariSID_,
-		WORD pittariEventID_,
-		ULONGLONG createSize,
-		const vector<REC_FILE_SET_INFO>& saveFolder,
+		const SET_CTRL_REC_PARAM& recParam,
 		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
 	);
@@ -106,7 +91,9 @@ public:
 	//ファイル保存を終了する
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
-	BOOL EndSave();
+	//引数：
+	// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
+	BOOL EndSave(BOOL* subRecFlag = NULL);
 
 	//録画中かどうか
 	//戻り値：
@@ -148,13 +135,9 @@ public:
 
 
 	//録画中のファイルのファイルパスを取得する
-	//引数：
-	// filePath			[OUT]保存ファイル名
-	// subRecFlag		[OUT]サブ録画が発生したかどうか
-	void GetSaveFilePath(
-		wstring* filePath,
-		BOOL* subRecFlag
-		);
+	//戻り値：
+	// ファイルパス
+	wstring GetSaveFilePath();
 
 	//ドロップとスクランブルのカウントを保存する
 	//引数：
@@ -195,7 +178,7 @@ protected:
 
 	CSendUDP sendUdp;
 	CSendTCP sendTcp;
-	std::unique_ptr<CWriteTSFile> writeFile;
+	CWriteTSFile writeFile;
 
 	vector<BYTE> buff;
 
@@ -207,21 +190,12 @@ protected:
 
 	CDropCount dropCount;
 
-	BOOL pittariStart;
-	BOOL pittariEndChk;
-
 	WORD lastPMTVer;
 
-	wstring pittariFileName;
-	BOOL pittariOverWriteFlag;
-	ULONGLONG pittariCreateSize;
-	vector<REC_FILE_SET_INFO> pittariSaveFolder;
+	enum { PITTARI_NONE, PITTARI_START, PITTARI_END_CHK, PITTARI_END } pittariState;
+	BOOL pittariSubRec;
+	SET_CTRL_REC_PARAM pittariRecParam;
 	vector<wstring> pittariSaveFolderSub;
-	WORD pittariONID;
-	WORD pittariTSID;
-	WORD pittariSID;
-	WORD pittariEventID;
-	wstring pittariRecFilePath;
 	int pittariMaxBuffCount;
 
 protected:

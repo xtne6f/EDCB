@@ -34,7 +34,12 @@ public:
 	//ファイル保存を終了する
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
-	BOOL EndSave();
+	//引数：
+	// subRecFlag			[OUT]成功のとき、サブ録画が発生したかどうか
+	BOOL EndSave(BOOL* subRecFlag_ = NULL);
+
+	//保存中かどうか
+	BOOL IsRec() { return this->outThread.joinable(); }
 
 	//出力用TSデータを送る
 	//戻り値：
@@ -48,13 +53,9 @@ public:
 		);
 
 	//録画中のファイルのファイルパスを取得する
-	//引数：
-	// filePath			[OUT]保存ファイル名
-	// subRecFlag		[OUT]サブ録画が発生したかどうか
-	void GetSaveFilePath(
-		wstring* filePath,
-		BOOL* subRecFlag_
-		);
+	//戻り値：
+	// ファイルパス
+	wstring GetSaveFilePath();
 
 	//録画中のファイルの出力サイズを取得する
 	//引数：

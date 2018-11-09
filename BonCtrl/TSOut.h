@@ -166,28 +166,11 @@ public:
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// id					[IN]制御識別ID
-	// fileName				[IN]保存ファイルパス
-	// overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
-	// pittariFlag			[IN]ぴったりモード（TRUE：する、FALSE：しない）
-	// pittariONID			[IN]ぴったりモードで録画するONID
-	// pittariTSID			[IN]ぴったりモードで録画するTSID
-	// pittariSID			[IN]ぴったりモードで録画するSID
-	// pittariEventID		[IN]ぴったりモードで録画するイベントID
-	// createSize			[IN]ファイル作成時にディスクに予約する容量
-	// saveFolder			[IN]使用するフォルダ一覧
+	// recParam				[IN]保存パラメータ
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+	// maxBuffCount			[IN]出力バッファ上限
 	BOOL StartSave(
-		DWORD id,
-		const wstring& fileName,
-		BOOL overWriteFlag,
-		BOOL pittariFlag,
-		WORD pittariONID,
-		WORD pittariTSID,
-		WORD pittariSID,
-		WORD pittariEventID,
-		ULONGLONG createSize,
-		const vector<REC_FILE_SET_INFO>& saveFolder,
+		const SET_CTRL_REC_PARAM& recParam,
 		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
 	);
@@ -197,8 +180,10 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// id			[IN]制御識別ID
+	// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
 	BOOL EndSave(
-		DWORD id
+		DWORD id,
+		BOOL* subRecFlag = NULL
 		);
 
 	//スクランブル解除処理の動作設定
@@ -294,14 +279,12 @@ public:
 	BOOL IsRec();
 
 	//録画中のファイルのファイルパスを取得する
+	//戻り値：
+	// ファイルパス
 	//引数：
 	// id					[IN]制御識別ID
-	// filePath				[OUT]保存ファイル名
-	// subRecFlag			[OUT]サブ録画が発生したかどうか
-	void GetSaveFilePath(
-		DWORD id,
-		wstring* filePath,
-		BOOL* subRecFlag
+	wstring GetSaveFilePath(
+		DWORD id
 		);
 
 	//ドロップとスクランブルのカウントを保存する

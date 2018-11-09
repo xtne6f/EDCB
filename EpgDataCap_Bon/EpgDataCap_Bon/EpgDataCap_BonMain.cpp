@@ -462,12 +462,21 @@ BOOL CEpgDataCap_BonMain::StartRec(
 	Replace(fileName, L"$ServiceName$", serviceName);
 	CheckFileName(fileName);
 
-	vector<REC_FILE_SET_INFO> saveFolder(1);
-	saveFolder.back().recFolder = this->recFolderList[0];
-	saveFolder.back().recFileName = fileName;
+	SET_CTRL_REC_PARAM recParam;
+	recParam.ctrlID = this->recCtrlID;
+	recParam.fileName = L"padding.ts";
+	recParam.overWriteFlag = this->overWriteFlag != FALSE;
+	recParam.createSize = 0;
+	recParam.saveFolder.resize(1);
+	recParam.saveFolder.back().recFolder = this->recFolderList[0];
+	recParam.saveFolder.back().recFileName = fileName;
+	recParam.pittariFlag = FALSE;
 
-	this->bonCtrl.StartSave(this->recCtrlID, L"padding.ts", this->overWriteFlag, FALSE, 0, 0, 0, 0,
-	                        0, saveFolder, this->recFolderList, this->writeBuffMaxCount);
+	if( this->bonCtrl.StartSave(recParam, this->recFolderList, this->writeBuffMaxCount) == FALSE ){
+		this->bonCtrl.DeleteServiceCtrl(this->recCtrlID);
+		this->recCtrlID = 0;
+		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -610,9 +619,7 @@ void CEpgDataCap_BonMain::StartServer()
 			{
 				DWORD id;
 				if( ReadVALUE(&id, cmdParam->data, cmdParam->dataSize, NULL) ){
-					wstring saveFile;
-					BOOL subRec = FALSE;
-					this->bonCtrl.GetSaveFilePath(id, &saveFile, &subRec);
+					wstring saveFile = this->bonCtrl.GetSaveFilePath(id);
 					if( saveFile.size() > 0 ){
 						resParam->data = NewWriteVALUE(saveFile, resParam->dataSize);
 						resParam->param = CMD_SUCCESS;
@@ -725,10 +732,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		OutputDebugString(L"CMD2_VIEW_APP_CLOSE");
 		{
 			sys->StopReserveRec();
-			if( sys->recCtrlID != 0 ){
-				sys->bonCtrl.DeleteServiceCtrl(sys->recCtrlID);
-				sys->recCtrlID = 0;
-			}
+			sys->StopRec();
 			if( sys->nwCtrlID != 0 ){
 				sys->bonCtrl.DeleteServiceCtrl(sys->nwCtrlID);
 				sys->nwCtrlID = 0;
@@ -792,13 +796,11 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		{
 			SET_CTRL_REC_PARAM val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				BOOL overWrite = sys->overWriteFlag;
-				if( val.overWriteFlag != 2 ){
-					overWrite = val.overWriteFlag;
+				if( val.overWriteFlag == 2 ){
+					val.overWriteFlag = sys->overWriteFlag != FALSE;
 				}
 				sys->bonCtrl.ClearErrCount(val.ctrlID);
-				if( sys->bonCtrl.StartSave(val.ctrlID, val.fileName, overWrite, val.pittariFlag, val.pittariONID, val.pittariTSID, val.pittariSID, val.pittariEventID,
-				                           val.createSize, val.saveFolder, sys->recFolderList, sys->writeBuffMaxCount) ){
+				if( sys->bonCtrl.StartSave(val, sys->recFolderList, sys->writeBuffMaxCount) ){
 					resParam->param = CMD_SUCCESS;
 					PostMessage(sys->msgWnd, WM_RESERVE_REC_START, 0, 0);
 				}
@@ -810,9 +812,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		{
 			SET_CTRL_REC_STOP_PARAM val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				wstring saveFile = L"";
-				BOOL subRec = FALSE;
-				sys->bonCtrl.GetSaveFilePath(val.ctrlID, &saveFile, &subRec);
+				wstring saveFile = sys->bonCtrl.GetSaveFilePath(val.ctrlID);
 				if( saveFile.size() > 0 && val.saveErrLog == 1 ){
 					fs_path infoPath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", GetCommonIniPath().c_str());
 
@@ -829,9 +829,10 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				resVal.recFilePath = saveFile;
 				resVal.drop = 0;
 				resVal.scramble = 0;
-				resVal.subRecFlag = (BYTE)subRec;
 				sys->bonCtrl.GetErrCount(val.ctrlID, &resVal.drop, &resVal.scramble);
-				if(sys->bonCtrl.EndSave(val.ctrlID) == TRUE){
+				BOOL subRec;
+				if( sys->bonCtrl.EndSave(val.ctrlID, &subRec) ){
+					resVal.subRecFlag = subRec != FALSE;
 					resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 					if( sys->cmdCtrlList.size() == 1 ){
@@ -873,17 +874,10 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 	case CMD2_VIEW_APP_REC_STOP_ALL:
 		OutputDebugString(L"CMD2_VIEW_APP_REC_STOP_ALL");
 		{
-			DWORD ret = CMD_SUCCESS;
-			if( sys->recCtrlID != 0 ){
-				if(sys->bonCtrl.EndSave(sys->recCtrlID) == FALSE ){
-					ret = CMD_ERR;
-				}
-				sys->bonCtrl.DeleteServiceCtrl(sys->recCtrlID);
-				sys->recCtrlID = 0;
-			}
+			sys->StopRec();
 			sys->StopReserveRec();
 
-			resParam->param = ret;
+			resParam->param = CMD_SUCCESS;
 			PostMessage(sys->msgWnd, WM_RESERVE_REC_STOP, 0, 0);
 		}
 		break;

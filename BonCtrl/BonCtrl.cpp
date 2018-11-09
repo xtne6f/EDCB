@@ -385,54 +385,25 @@ BOOL CBonCtrl::SendTcp(
 	return this->tsOut.SendTcp(id,sendList);
 }
 
-//ファイル保存を開始する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id					[IN]制御識別ID
-// fileName				[IN]保存ファイルパス
-// overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
-// pittariFlag			[IN]ぴったりモード（TRUE：する、FALSE：しない）
-// pittariONID			[IN]ぴったりモードで録画するONID
-// pittariTSID			[IN]ぴったりモードで録画するTSID
-// pittariSID			[IN]ぴったりモードで録画するSID
-// pittariEventID		[IN]ぴったりモードで録画するイベントID
-// createSize			[IN]ファイル作成時にディスクに予約する容量
-// saveFolder			[IN]使用するフォルダ一覧
-// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
-// writeBuffMaxCount	[IN]出力バッファ上限
 BOOL CBonCtrl::StartSave(
-	DWORD id,
-	const wstring& fileName,
-	BOOL overWriteFlag,
-	BOOL pittariFlag,
-	WORD pittariONID,
-	WORD pittariTSID,
-	WORD pittariSID,
-	WORD pittariEventID,
-	ULONGLONG createSize,
-	const vector<REC_FILE_SET_INFO>& saveFolder,
+	const SET_CTRL_REC_PARAM& recParam,
 	const vector<wstring>& saveFolderSub,
 	int writeBuffMaxCount
 )
 {
-	BOOL ret = this->tsOut.StartSave(id, fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, writeBuffMaxCount);
-
-	StartBackgroundEpgCap();
-
-	return ret;
+	if( this->tsOut.StartSave(recParam, saveFolderSub, writeBuffMaxCount) ){
+		StartBackgroundEpgCap();
+		return TRUE;
+	}
+	return FALSE;
 }
 
-//ファイル保存を終了する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id			[IN]制御識別ID
 BOOL CBonCtrl::EndSave(
-	DWORD id
+	DWORD id,
+	BOOL* subRecFlag
 	)
 {
-	return this->tsOut.EndSave(id);
+	return this->tsOut.EndSave(id, subRecFlag);
 }
 
 //スクランブル解除処理の動作設定
