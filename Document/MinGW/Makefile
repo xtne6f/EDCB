@@ -5,6 +5,8 @@ TARGETS = EpgDataCap_Bon.exe \
           RecName_Macro.dll \
           SendTSTCP.dll \
           Write_Default.dll \
+          Write_OneService.dll \
+          EdcbPlugIn.tvtp \
           EpgTimerSrv.exe
 
 all: cp_dep $(addsuffix .all, $(TARGETS))
