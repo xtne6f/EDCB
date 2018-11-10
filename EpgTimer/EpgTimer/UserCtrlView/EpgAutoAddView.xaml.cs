@@ -125,7 +125,7 @@ namespace EpgTimer
                             + "(無効の「自動予約登録項目」による予約も削除されます。)";
             string caption1 = "[予約ごと削除]の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, 
-                MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
+                MessageBoxImage.Question, MessageBoxResult.OK) != MessageBoxResult.OK)
             {
                 return;
             }
@@ -268,31 +268,6 @@ namespace EpgTimer
         *
         ******************************************************/
 
-        void deleteItem()
-        {
-            if (listView_key.SelectedItems.Count == 0) { return; }
-            //
-            try
-            {
-                string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_key.SelectedItems.Count + "]" + "\n\n";
-                List<UInt32> dataIDList = new List<uint>();
-                foreach (EpgAutoDataItem info in listView_key.SelectedItems)
-                {
-                    dataIDList.Add(info.EpgAutoAddInfo.dataID);
-                    text1 += "「" + info.AndKey + "」" + "\n";
-                }
-                string caption1 = "登録項目削除の確認";
-                if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
-                {
-                    CommonManager.CreateSrvCtrl().SendDelEpgAutoAdd(dataIDList);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
         void showDialog()
         {
             if (listView_key.SelectedItem == null) { return; }
@@ -335,7 +310,7 @@ namespace EpgTimer
                 resultListMoved.Insert(index_Dst1, item_Src1);
 
                 lastAscendingSortedHeader = null;
-                listView_key.DataContext = resultListMoved;
+                listView_key.ItemsSource = resultListMoved;
                 button_saveItemOrder.IsEnabled = true;
                 button_reloadItem.IsEnabled = true;
                 textBox_ItemOrderStatus.Visibility = Visibility.Visible;
@@ -371,7 +346,7 @@ namespace EpgTimer
         {
             resultListMoved = null;
             lastAscendingSortedHeader = null;
-            listView_key.DataContext = resultList;
+            listView_key.ItemsSource = resultList;
             button_saveItemOrder.IsEnabled = false;
             button_reloadItem.IsEnabled = false;
             textBox_ItemOrderStatus.Visibility = Visibility.Hidden;
@@ -392,7 +367,7 @@ namespace EpgTimer
                     resultListMoved = resultListMoved ?? resultList;
                     resultListMoved = (desc ? resultListMoved.OrderByDescending(a => p.GetValue(a, null)) : resultListMoved.OrderBy(a => p.GetValue(a, null))).ToList();
                     // UI更新
-                    listView_key.DataContext = resultListMoved;
+                    listView_key.ItemsSource = resultListMoved;
                     button_saveItemOrder.IsEnabled = true;
                     button_reloadItem.IsEnabled = true;
                     textBox_ItemOrderStatus.Visibility = Visibility.Visible;
@@ -438,7 +413,12 @@ namespace EpgTimer
                         this.showDialog();
                         break;
                     case Key.Delete:
-                        this.deleteItem();
+                        if (listView_key.SelectedItems.Count > 0 &&
+                            MessageBox.Show(listView_key.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
+                                            MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
+                        {
+                            button_del_Click(listView_key.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        }
                         break;
                 }
             }

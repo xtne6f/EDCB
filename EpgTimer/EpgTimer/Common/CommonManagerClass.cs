@@ -53,7 +53,7 @@ namespace EpgTimer
             DB = new DBManager();
             TVTestCtrl = new TVTestCtrlClass();
 
-            ContentKindDictionary = new SortedList<ushort, ContentKindInfo>(155)
+            ContentKindDictionary = new SortedList<ushort, ContentKindInfo>(167)
             {
                 { 0x0000, new ContentKindInfo("ニュース／報道", "定時・総合", 0x00, 0x00) },
                 { 0x0001, new ContentKindInfo("ニュース／報道", "天気", 0x00, 0x01) },
@@ -183,6 +183,21 @@ namespace EpgTimer
                 { 0x0BFF, new ContentKindInfo("福祉", "", 0x0B, 0xFF) },
 
                 { 0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF) },
+
+                { 0x6000, new ContentKindInfo("編成情報", "中止の可能性あり", 0x60, 0x00) },
+                { 0x6001, new ContentKindInfo("編成情報", "延長の可能性あり", 0x60, 0x01) },
+                { 0x6002, new ContentKindInfo("編成情報", "中断の可能性あり", 0x60, 0x02) },
+                { 0x6003, new ContentKindInfo("編成情報", "別話数放送の可能性あり", 0x60, 0x03) },
+                { 0x6004, new ContentKindInfo("編成情報", "編成未定枠", 0x60, 0x04) },
+                { 0x6005, new ContentKindInfo("編成情報", "繰り上げの可能性あり", 0x60, 0x05) },
+                { 0x60FF, new ContentKindInfo("編成情報", "", 0x60, 0xFF) },
+
+                { 0x6100, new ContentKindInfo("特性情報", "中断ニュースあり", 0x61, 0x00) },
+                { 0x6101, new ContentKindInfo("特性情報", "臨時サービスあり", 0x61, 0x01) },
+                { 0x61FF, new ContentKindInfo("特性情報", "", 0x61, 0xFF) },
+
+                { 0x6200, new ContentKindInfo("3D映像", "3D映像あり", 0x62, 0x00) },
+                { 0x62FF, new ContentKindInfo("3D映像", "", 0x62, 0xFF) },
 
                 { 0x7000, new ContentKindInfo("スポーツ(CS)", "テニス", 0x70, 0x00) },
                 { 0x7001, new ContentKindInfo("スポーツ(CS)", "バスケットボール", 0x70, 0x01) },
@@ -643,9 +658,9 @@ namespace EpgTimer
                         String content = "";
                         int nibble1 = info.content_nibble_level_1;
                         int nibble2 = info.content_nibble_level_2;
-                        if (nibble1 == 0x0E && nibble2 == 0x01)
+                        if (nibble1 == 0x0E && nibble2 <= 0x01)
                         {
-                            nibble1 = info.user_nibble_1 | 0x70;
+                            nibble1 = info.user_nibble_1 | (0x60 + nibble2 * 16);
                             nibble2 = info.user_nibble_2;
                         }
                         if (ContentKindDictionary.ContainsKey((ushort)(nibble1 << 8 | 0xFF)))

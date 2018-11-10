@@ -81,6 +81,18 @@ namespace EpgTimer
                        RecInfo.Scrambles > 0 ? CommonManager.Instance.RecEndWarBackColor : CommonManager.Instance.RecEndDefBackColor;
             }
         }
+        public SolidColorBrush ResultBackColor
+        {
+            get
+            {
+                return RecInfo.RecStatus == (uint)RecEndStatus.NORMAL ||
+                       RecInfo.RecStatus == (uint)RecEndStatus.CHG_TIME ||
+                       RecInfo.RecStatus == (uint)RecEndStatus.NEXT_START_END ? null :
+                       RecInfo.RecStatus == (uint)RecEndStatus.ERR_END ||
+                       RecInfo.RecStatus == (uint)RecEndStatus.END_SUBREC ||
+                       RecInfo.RecStatus == (uint)RecEndStatus.NOT_START_HEAD ? CommonManager.Instance.RecEndWarBackColor : CommonManager.Instance.RecEndErrBackColor;
+            }
+        }
         public TextBlock ToolTipView
         {
             get
