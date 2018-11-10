@@ -178,9 +178,7 @@ namespace EpgTimer.Setting
             }
             if (dlg.ShowDialog() == true)
             {
-                CustomEpgTabInfo info = new CustomEpgTabInfo();
-                dlg.GetSetting(ref info);
-                listBox_tab.Items.Add(info);
+                listBox_tab.Items.Add(dlg.GetSetting());
                 OnUpdateTabListBox();
             }
         }
@@ -195,12 +193,11 @@ namespace EpgTimer.Setting
                 {
                     dlg.Owner = (Window)topWindow.RootVisual;
                 }
-                CustomEpgTabInfo setInfo = listBox_tab.SelectedItem as CustomEpgTabInfo;
-                dlg.SetDefSetting(setInfo);
+                dlg.SetDefSetting((CustomEpgTabInfo)listBox_tab.SelectedItem);
                 if (dlg.ShowDialog() == true)
                 {
-                    dlg.GetSetting(ref setInfo);
-                    listBox_tab.Items.Refresh();
+                    listBox_tab.SelectedItem = listBox_tab.Items[listBox_tab.SelectedIndex] = dlg.GetSetting();
+                    OnUpdateTabListBox();
                 }
             }
             else
@@ -263,11 +260,13 @@ namespace EpgTimer.Setting
             ColorSetWindow dlg = new ColorSetWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             Color item = ((SolidColorBrush)((Button)sender).Background).Color;
-            dlg.SetColor(item);
+            dlg.A = item.A;
+            dlg.R = item.R;
+            dlg.G = item.G;
+            dlg.B = item.B;
             if (dlg.ShowDialog() == true)
             {
-                dlg.GetColor(ref item);
-                ((SolidColorBrush)((Button)sender).Background).Color = item;
+                ((SolidColorBrush)((Button)sender).Background).Color = Color.FromArgb(dlg.A, dlg.R, dlg.G, dlg.B);
                 OnUpdateColor();
             }
         }

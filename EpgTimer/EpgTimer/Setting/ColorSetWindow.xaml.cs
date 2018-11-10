@@ -23,22 +23,6 @@ namespace EpgTimer
             InitializeComponent();
         }
 
-        public void SetColor(Color argb)
-        {
-            R = argb.R;
-            G = argb.G;
-            B = argb.B;
-            A = argb.A;
-        }
-
-        public void GetColor(ref Color argb)
-        {
-            argb.R = R;
-            argb.G = G;
-            argb.B = B;
-            argb.A = A;
-        }
-
         public static readonly DependencyProperty RProperty = DependencyProperty.Register(
             "R", typeof(byte), typeof(ColorSetWindow), new PropertyMetadata(Colors.White.R, PropertyChanged));
 
@@ -77,9 +61,8 @@ namespace EpgTimer
 
         private static void PropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
-            var argb = Colors.White;
-            ((ColorSetWindow)sender).GetColor(ref argb);
-            ((ColorSetWindow)sender).rectangle_color.Fill = new SolidColorBrush(argb);
+            var win = (ColorSetWindow)sender;
+            win.rectangle_color.Fill = new SolidColorBrush(Color.FromArgb(win.A, win.R, win.G, win.B));
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
