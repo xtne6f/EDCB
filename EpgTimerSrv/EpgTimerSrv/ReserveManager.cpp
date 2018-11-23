@@ -1095,102 +1095,93 @@ void CReserveManager::CheckAutoDel() const
 	}
 
 	//ファイル削除可能なフォルダをドライブごとに仕分け
-	map<wstring, pair<ULONGLONG, vector<wstring>>> mountMap;
+	vector<pair<wstring, size_t>> mountList;
 	for( size_t i = 0; i < this->setting.delChkList.size(); i++ ){
 		wstring mountPath = GetChkDrivePath(this->setting.delChkList[i]);
-		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
-		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
-		if( itr == mountMap.end() ){
-			itr = mountMap.insert(std::make_pair(mountPath, std::make_pair(0ULL, vector<wstring>()))).first;
-		}
-		itr->second.second.push_back(this->setting.delChkList[i]);
-	}
-
-	//直近で必要になりそうな空き領域を概算する
-	LONGLONG now = GetNowI64Time();
-	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
-		__int64 startTime, endTime;
-		CalcEntireReserveTime(&startTime, &endTime, itr->second);
-		if( itr->second.recSetting.recMode != RECMODE_NO &&
-		    itr->second.recSetting.recMode != RECMODE_VIEW &&
-		    startTime < now + 2*60*60*I64_1SEC ){
-			//録画開始2時間前までの予約
-			vector<wstring> recFolderList;
-			if( itr->second.recSetting.recFolderList.empty() ){
-				//デフォルト
-				recFolderList.push_back(GetRecFolderPath().native());
-			}else{
-				//複数指定あり
-				for( size_t i = 0; i < itr->second.recSetting.recFolderList.size(); i++ ){
-					recFolderList.push_back(itr->second.recSetting.recFolderList[i].recFolder);
-					if( CompareNoCase(recFolderList.back(), L"!Default") == 0 ){
-						//注意: この置換は原作にはない
-						recFolderList.back() = GetRecFolderPath().native();
-					}
-				}
-			}
-			for( size_t i = 0; i < recFolderList.size(); i++ ){
-				wstring mountPath = GetChkDrivePath(recFolderList[i]);
-				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
-				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator jtr = mountMap.find(mountPath);
-				if( jtr != mountMap.end() ){
-					if( jtr->second.first == 0 ){
-						//延長や外部要因による空き領域減少に対処するため最低限の余裕をとる
-						jtr->second.first = 512*1024*1024;
-					}
-					//時計精度の関係で実際に録画が始まった後もしばらくこの条件を満たし、余分に確保されるかもしれない
-					//(厳密にやるのは簡単ではないので、従来通りゆるい実装にしておく)
-					if( now < startTime ){
-						DWORD bitrate = GetBitrateFromIni(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID);
-						jtr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
-					}
-				}
-			}
-		}
+		mountList.insert(std::find_if(mountList.begin(), mountList.end(),
+			[&](const pair<wstring, size_t>& a) { return CompareNoCase(a.first, mountPath) > 0; }), std::make_pair(mountPath, i));
 	}
 
 	//ドライブレベルでのチェック
-	for( map<wstring, pair<ULONGLONG, vector<wstring>>>::const_iterator itr = mountMap.begin(); itr != mountMap.end(); itr++ ){
+	__int64 now = GetNowI64Time();
+	for( auto itr = mountList.cbegin(); itr != mountList.end(); ){
+		//直近で必要になりそうな空き領域を概算する
+		ULONGLONG needSize = 0;
+		for( auto jtr = this->reserveText.GetMap().cbegin(); jtr != this->reserveText.GetMap().end(); jtr++ ){
+			__int64 startTime, endTime;
+			CalcEntireReserveTime(&startTime, &endTime, jtr->second);
+			if( jtr->second.recSetting.recMode != RECMODE_NO &&
+			    jtr->second.recSetting.recMode != RECMODE_VIEW &&
+			    startTime < now + 2 * 60 * 60 * I64_1SEC ){
+				//録画開始2時間前までの予約
+				const vector<REC_FILE_SET_INFO>& recFolderList = jtr->second.recSetting.recFolderList;
+				for( size_t i = 0; (i == 0 && recFolderList.empty()) || i < recFolderList.size(); i++ ){
+					wstring mountPath;
+					if( recFolderList.empty() || CompareNoCase(recFolderList[i].recFolder, L"!Default") == 0 ){
+						//デフォルト(注意: !Defaultの置換は原作にはない)
+						mountPath = GetChkDrivePath(GetRecFolderPath().native());
+					}else{
+						mountPath = GetChkDrivePath(recFolderList[i].recFolder);
+					}
+					if( CompareNoCase(mountPath, itr->first) == 0 ){
+						if( needSize == 0 ){
+							//延長や外部要因による空き領域減少に対処するため最低限の余裕をとる
+							needSize = 512 * 1024 * 1024;
+						}
+						//時計精度の関係で実際に録画が始まった後もしばらくこの条件を満たし、余分に確保されるかもしれない
+						//(厳密にやるのは簡単ではないので、従来通りゆるい実装にしておく)
+						if( now < startTime ){
+							DWORD bitrate = GetBitrateFromIni(jtr->second.originalNetworkID, jtr->second.transportStreamID, jtr->second.serviceID);
+							needSize += (ULONGLONG)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
+						}
+					}
+				}
+			}
+		}
+
+		auto itrEnd = std::find_if(itr + 1, mountList.cend(),
+		                           [=](const pair<wstring, size_t>& a) { return CompareNoCase(a.first, itr->first) != 0; });
 		ULARGE_INTEGER freeBytes;
-		if( itr->second.first > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) && freeBytes.QuadPart < itr->second.first ){
+		if( needSize > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) && freeBytes.QuadPart < needSize ){
 			//ドライブにある古いTS順に必要なだけ消す
-			LONGLONG needFreeSize = itr->second.first - freeBytes.QuadPart;
-			multimap<LONGLONG, pair<ULONGLONG, wstring>> tsFileMap;
-			for( size_t i = 0; i < itr->second.second.size(); i++ ){
-				wstring delFolder = itr->second.second[i];
+			__int64 needFreeSize = needSize - freeBytes.QuadPart;
+			vector<pair<WIN32_FIND_DATA, size_t>> findList;
+			for( auto itrSame = itr; itrSame != itrEnd; itrSame++ ){
 				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile(fs_path(delFolder).append(L'*' + this->setting.tsExt).c_str(), &findData);
+				HANDLE hFind = FindFirstFile(fs_path(this->setting.delChkList[itrSame->second]).append(L'*' + this->setting.tsExt).c_str(), &findData);
 				if( hFind != INVALID_HANDLE_VALUE ){
 					do{
 						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, this->setting.tsExt.c_str()) ){
-							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
-							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
-							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
-							item.second.second = fs_path(delFolder).append(findData.cFileName).native();
-							tsFileMap.insert(item);
+							findList.push_back(std::make_pair(findData, itrSame->second));
 						}
 					}while( FindNextFile(hFind, &findData) );
 					FindClose(hFind);
 				}
 			}
-			while( needFreeSize > 0 && tsFileMap.empty() == false ){
-				wstring delPath = tsFileMap.begin()->second.second;
+			while( needFreeSize > 0 && findList.empty() == false ){
+				//更新日時が古いもの
+				auto jtr = std::min_element(findList.begin(), findList.end(),
+					[](const pair<WIN32_FIND_DATA, size_t>& a, const pair<WIN32_FIND_DATA, size_t>& b) {
+						return ((__int64)a.first.ftLastWriteTime.dwHighDateTime << 32 | a.first.ftLastWriteTime.dwLowDateTime) <
+						       ((__int64)b.first.ftLastWriteTime.dwHighDateTime << 32 | b.first.ftLastWriteTime.dwLowDateTime); });
+				wstring delPath = fs_path(this->setting.delChkList[jtr->second]).append(jtr->first.cFileName).native();
 				if( this->recInfoText.GetMap().end() != std::find_if(this->recInfoText.GetMap().begin(), this->recInfoText.GetMap().end(),
 				        [&](const pair<DWORD, REC_FILE_INFO>& a) { return a.second.protectFlag && CompareNoCase(a.second.recFilePath, delPath) == 0; }) ){
 					//プロテクトされた録画済みファイルは消さない
 					_OutputDebugString(L"★No Delete(Protected) : %s\r\n", delPath.c_str());
 				}else{
 					DeleteFile(delPath.c_str());
-					needFreeSize -= tsFileMap.begin()->second.first;
+					needFreeSize -= (__int64)jtr->first.nFileSizeHigh << 32 | jtr->first.nFileSizeLow;
 					_OutputDebugString(L"★Auto Delete2 : %s\r\n", delPath.c_str());
 					for( size_t i = 0 ; i < this->setting.delExtList.size(); i++ ){
 						DeleteFile(fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
 						_OutputDebugString(L"★Auto Delete2 : %s\r\n", fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
 					}
 				}
-				tsFileMap.erase(tsFileMap.begin());
+				findList.erase(jtr);
 			}
 		}
+		itr = itrEnd;
 	}
 }
 
