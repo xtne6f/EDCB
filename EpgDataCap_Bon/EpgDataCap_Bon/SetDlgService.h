@@ -23,9 +23,9 @@ public:
 protected:
 	HWND m_hWnd;
 	map<wstring, pair<CParseChText4, bool>> chList;
+	wstring currentChListKey;
 
 	BOOL FindBonFileName(wstring src, wstring& dllName);
-	wstring GetCurrentChListKey();
 	void ReloadList();
 	void SynchronizeCheckState();
 
