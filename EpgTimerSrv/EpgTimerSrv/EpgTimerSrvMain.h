@@ -113,6 +113,7 @@ private:
 	static int LuaGetNotifyUpdateCount(lua_State* L);
 	static int LuaFindFile(lua_State* L);
 	static int LuaOpenNetworkTV(lua_State* L);
+	static int LuaIsOpenNetworkTV(lua_State* L);
 	static int LuaCloseNetworkTV(lua_State* L);
 	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
 	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);

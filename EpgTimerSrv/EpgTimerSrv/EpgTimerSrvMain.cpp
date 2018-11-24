@@ -2145,7 +2145,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					}
 					std::reverse(idUseList.begin(), idUseList.end());
 				}
-				if( sys->reserveManager.SetNWTVCh(nwtvUdp, nwtvTcp, val, idUseList) ){
+				if( sys->reserveManager.OpenNWTV(0, nwtvUdp, nwtvTcp, val, idUseList).first ){
 					resParam->param = CMD_SUCCESS;
 				}
 			}
@@ -2153,7 +2153,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 	case CMD2_EPG_SRV_NWTV_CLOSE:
 		OutputDebugString(L"CMD2_EPG_SRV_NWTV_CLOSE\r\n");
-		if( sys->reserveManager.CloseNWTV() ){
+		if( sys->reserveManager.CloseNWTV(0) ){
 			resParam->param = CMD_SUCCESS;
 		}
 		break;
@@ -2977,6 +2977,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ "GetNotifyUpdateCount", LuaGetNotifyUpdateCount },
 		{ "FindFile", LuaFindFile },
 		{ "OpenNetworkTV", LuaOpenNetworkTV },
+		{ "IsOpenNetworkTV", LuaIsOpenNetworkTV },
 		{ "CloseNetworkTV", LuaCloseNetworkTV },
 		{ NULL, NULL }
 	};
@@ -3924,7 +3925,7 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	if( lua_gettop(L) == 4 ){
+	if( lua_gettop(L) == 4 || lua_gettop(L) == 5 ){
 		SET_CH_INFO info;
 		info.useSID = TRUE;
 		info.ONID = (WORD)lua_tointeger(L, 2);
@@ -3932,13 +3933,10 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 		info.SID = (WORD)lua_tointeger(L, 4);
 		info.useBonCh = FALSE;
 		int mode = (int)lua_tointeger(L, 1);
-		int lastMode;
+		int nwtvID = (int)lua_tointeger(L, 5);
 		vector<DWORD> idUseList = ws.sys->reserveManager.GetSupportServiceTuner(info.ONID, info.TSID, info.SID);
 		{
 			CBlockLock lock(&ws.sys->settingLock);
-			lastMode = (ws.sys->nwtvUdp ? 1 : 0) + (ws.sys->nwtvTcp ? 2 : 0);
-			ws.sys->nwtvUdp = mode == 1 || mode == 3;
-			ws.sys->nwtvTcp = mode == 2 || mode == 3;
 			for( size_t i = 0; i < idUseList.size(); ){
 				wstring bonDriver = ws.sys->reserveManager.GetTunerBonFileName(idUseList[i]);
 				if( std::find_if(ws.sys->setting.viewBonList.begin(), ws.sys->setting.viewBonList.end(),
@@ -3950,13 +3948,27 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 			}
 			std::reverse(idUseList.begin(), idUseList.end());
 		}
-		if( lastMode != mode ){
-			ws.sys->reserveManager.CloseNWTV();
-		}
-		if( ws.sys->reserveManager.SetNWTVCh((mode == 1 || mode == 3), (mode == 2 || mode == 3), info, idUseList) ){
+		//すでに起動しているものの送信モードは変更しない
+		pair<bool, int> retAndProcessID =
+			ws.sys->reserveManager.OpenNWTV(nwtvID, (mode == 1 || mode == 3), (mode == 2 || mode == 3), info, idUseList);
+		if( retAndProcessID.first ){
 			lua_pushboolean(L, true);
-			return 1;
+			lua_pushinteger(L, retAndProcessID.second);
+			return 2;
 		}
+	}
+	lua_pushboolean(L, false);
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaIsOpenNetworkTV(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	pair<bool, int> retAndProcessID = ws.sys->reserveManager.IsOpenNWTV((int)lua_tointeger(L, 1));
+	if( retAndProcessID.first ){
+		lua_pushboolean(L, true);
+		lua_pushinteger(L, retAndProcessID.second);
+		return 2;
 	}
 	lua_pushboolean(L, false);
 	return 1;
@@ -3965,7 +3977,7 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 int CEpgTimerSrvMain::LuaCloseNetworkTV(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	ws.sys->reserveManager.CloseNWTV();
+	ws.sys->reserveManager.CloseNWTV((int)lua_tointeger(L, 1));
 	return 0;
 }
 

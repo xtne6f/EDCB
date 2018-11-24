@@ -1726,16 +1726,16 @@ bool CReserveManager::IsOpenTuner(DWORD tunerID) const
 	return itr != this->tunerBankMap.end() && itr->second->GetState() != CTunerBankCtrl::TR_IDLE;
 }
 
-bool CReserveManager::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList)
+pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList)
 {
 	CBlockLock lock(&this->managerLock);
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
-		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV ){
+		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV && itr->second->GetNWTVID() == id ){
 			//すでに起動しているので使えたら使う
 			if( this->tunerManager.IsSupportService(itr->first, chInfo.ONID, chInfo.TSID, chInfo.SID) ){
-				itr->second->SetNWTVCh(nwUdp, nwTcp, chInfo);
-				return true;
+				itr->second->OpenNWTV(id, nwUdp, nwTcp, chInfo);
+				return std::make_pair(true, itr->second->GetProcessID());
 			}
 			itr->second->CloseNWTV();
 			break;
@@ -1744,20 +1744,35 @@ bool CReserveManager::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInf
 	for( size_t i = 0; i < tunerIDList.size(); i++ ){
 		if( this->tunerManager.IsSupportService(tunerIDList[i], chInfo.ONID, chInfo.TSID, chInfo.SID) ){
 			auto itr = this->tunerBankMap.find(tunerIDList[i]);
-			if( itr != this->tunerBankMap.end() && itr->second->SetNWTVCh(nwUdp, nwTcp, chInfo) ){
-				return true;
+			//別IDのネットワークモードを邪魔しない
+			if( itr != this->tunerBankMap.end() &&
+			    itr->second->GetState() != CTunerBankCtrl::TR_NWTV &&
+			    itr->second->OpenNWTV(id, nwUdp, nwTcp, chInfo) ){
+				return std::make_pair(true, itr->second->GetProcessID());
 			}
 		}
 	}
-	return false;
+	return std::make_pair(false, 0);
 }
 
-bool CReserveManager::CloseNWTV()
+pair<bool, int> CReserveManager::IsOpenNWTV(int id) const
 {
 	CBlockLock lock(&this->managerLock);
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
-		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV ){
+		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV && itr->second->GetNWTVID() == id ){
+			return std::make_pair(true, itr->second->GetProcessID());
+		}
+	}
+	return std::make_pair(false, 0);
+}
+
+bool CReserveManager::CloseNWTV(int id)
+{
+	CBlockLock lock(&this->managerLock);
+
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV && itr->second->GetNWTVID() == id ){
 			itr->second->CloseNWTV();
 			return true;
 		}

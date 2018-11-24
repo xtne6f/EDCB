@@ -81,9 +81,11 @@ public:
 	bool IsOpenTuner(DWORD tunerID) const;
 	//ネットワークモードでチューナを起動しチャンネル設定する
 	//tunerIDList: 起動させるときはこのリストにあるチューナを候補にする
-	bool SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList);
+	pair<bool, int> OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList);
+	//ネットワークモードでチューナが起動しているか
+	pair<bool, int> IsOpenNWTV(int id) const;
 	//ネットワークモードのチューナを閉じる
-	bool CloseNWTV();
+	bool CloseNWTV(int id);
 	//予約が録画中であればその録画ファイル名を取得する
 	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
 	//指定EPGイベントは録画済みかどうか
