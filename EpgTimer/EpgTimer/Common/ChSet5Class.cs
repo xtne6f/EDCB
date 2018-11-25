@@ -30,11 +30,19 @@ namespace EpgTimer
                 }
                 if (Settings.Instance.SortServiceList)
                 {
-                    //ネットワーク種別優先かつ限定受信を分離したID順ソート
+                    //ネットワーク種別優先かつ限定受信を分離したID順ソート。BSはなるべくSID順
+                    var bsmin = new Dictionary<ushort, ushort>();
+                    foreach (ChSet5Item item in ret)
+                    {
+                        if (IsBS(item.ONID) && (bsmin.ContainsKey(item.TSID) == false || bsmin[item.TSID] > item.SID))
+                        {
+                            bsmin[item.TSID] = item.SID;
+                        }
+                    }
                     ret = ret.OrderBy(item => (
                         (ulong)(IsDttv(item.ONID) ? 0 : IsBS(item.ONID) ? 1 : IsCS(item.ONID) ? 2 : 3) << 56 |
                         (ulong)(IsDttv(item.ONID) && item.PartialFlag ? 1 : 0) << 48 |
-                        item.Key));
+                        CommonManager.Create64Key(item.ONID, (IsBS(item.ONID) ? bsmin[item.TSID] : item.TSID), item.SID)));
                 }
                 return ret;
             }
