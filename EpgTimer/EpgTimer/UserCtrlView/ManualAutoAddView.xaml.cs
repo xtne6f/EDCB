@@ -62,17 +62,17 @@ namespace EpgTimer
         {
             if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
             {
-                listView_key.DataContext = null;
+                listView_key.ItemsSource = null;
                 return false;
             }
             ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
             if (err != ErrCode.CMD_SUCCESS)
             {
                 Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。")));
-                listView_key.DataContext = null;
+                listView_key.ItemsSource = null;
                 return false;
             }
-            listView_key.DataContext = CommonManager.Instance.DB.ManualAutoAddList.Values.Select(info => new ManualAutoAddDataItem(info)).ToList();
+            listView_key.ItemsSource = CommonManager.Instance.DB.ManualAutoAddList.Values.Select(info => new ManualAutoAddDataItem(info)).ToList();
             return true;
         }
 

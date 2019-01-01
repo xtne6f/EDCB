@@ -62,9 +62,13 @@ namespace EpgTimer
             {
                 if (listView_recinfo.SelectedItems.Count > 0)
                 {
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "RecInfoDelFile", 0, SettingPath.CommonIniPath) == 1)
+                    if (Settings.Instance.ConfirmDelRecInfo)
                     {
-                        if (MessageBox.Show("録画ファイルが存在する場合は一緒に削除されます。\r\nよろしいですか？", "ファイル削除", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                        bool hasPath = listView_recinfo.SelectedItems.Cast<RecInfoItem>().Any(info => info.RecFilePath.Length > 0);
+                        if ((hasPath || Settings.Instance.ConfirmDelRecInfoAlways) &&
+                            MessageBox.Show(listView_recinfo.SelectedItems.Count + "項目を削除してよろしいですか?" +
+                                            (hasPath ? "\r\n\r\n「録画ファイルも削除する」設定が有効な場合、ファイルも削除されます。" : ""), "確認",
+                                            MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) != MessageBoxResult.OK)
                         {
                             return;
                         }
@@ -85,11 +89,11 @@ namespace EpgTimer
 
         private void Sort()
         {
-            if (listView_recinfo.DataContext == null)
+            if (listView_recinfo.ItemsSource == null)
             {
                 return;
             }
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.ItemsSource);
 
             using (dataView.DeferRefresh())
             {
@@ -136,17 +140,17 @@ namespace EpgTimer
         {
             if (CommonManager.Instance.NWMode && CommonManager.Instance.NWConnectedIP == null)
             {
-                listView_recinfo.DataContext = null;
+                listView_recinfo.ItemsSource = null;
                 return false;
             }
             ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
             if (err != ErrCode.CMD_SUCCESS)
             {
                 Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。")));
-                listView_recinfo.DataContext = null;
+                listView_recinfo.ItemsSource = null;
                 return false;
             }
-            listView_recinfo.DataContext = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info)).ToList();
+            listView_recinfo.ItemsSource = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info)).ToList();
 
             if (columnList.ContainsKey(Settings.Instance.RecInfoColumnHead) == false)
             {

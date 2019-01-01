@@ -35,10 +35,9 @@ namespace EpgTimer
         /// <summary>
         /// 設定値の取得
         /// </summary>
-        /// <param name="setInfo"></param>
-        public void GetSetting(ref CustomEpgTabInfo info)
+        public CustomEpgTabInfo GetSetting()
         {
-            epgDataViewSetting.GetSetting(ref info);
+            return epgDataViewSetting.GetSetting();
         }
 
 

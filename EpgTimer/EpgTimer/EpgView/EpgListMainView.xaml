@@ -81,11 +81,11 @@
                             <MenuItem Header="無効 (_5)" Name="recmode_no" Click="cm_chg_recmode_Click" />
                             <Separator/>
                             <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
-                                <MenuItem Header="1 (_1)" Name="priority_1" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="2 (_2)" Name="priority_2" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="3 (_3)" Name="priority_3" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="4 (_4)" Name="priority_4" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="5 (_5)" Name="priority_5" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_1" Name="priority_1" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_2" Name="priority_2" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_3" Name="priority_3" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_4" Name="priority_4" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_5" Name="priority_5" Click="cm_chg_priority_Click" />
                             </MenuItem>
                         </MenuItem>
                         <MenuItem x:Name="cm_del" Header="予約削除" Click="cm_del_Click" />

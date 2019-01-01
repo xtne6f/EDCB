@@ -129,10 +129,7 @@ namespace EpgTimer
                 reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
                 reserveInfo.ServiceID = eventInfo.service_id;
                 reserveInfo.EventID = eventInfo.event_id;
-
-                RecSettingData setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = recSettingView.GetRecSetting();
 
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
