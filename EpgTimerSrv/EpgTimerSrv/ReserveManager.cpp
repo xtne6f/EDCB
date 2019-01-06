@@ -959,7 +959,8 @@ void CReserveManager::CheckTuijyuTuner()
 							//イベントリレーあり
 							vector<EPGDB_EVENT_DATA>::const_iterator itrR = info.eventRelayInfo.eventDataList.begin();
 							for( ; itrR != info.eventRelayInfo.eventDataList.end(); itrR++ ){
-								if( IsFindReserve(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id, itrR->event_id) ){
+								if( IsFindReserve(itrR->original_network_id, itrR->transport_stream_id,
+								                  itrR->service_id, itrR->event_id, r.recSetting.tunerID) ){
 									//リレー済み
 									break;
 								}
@@ -1689,7 +1690,7 @@ __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) con
 	return (now / (60 * I64_1SEC) + minDiff) * (60 * I64_1SEC);
 }
 
-bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const
+bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID) const
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -1697,7 +1698,13 @@ bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) co
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
 		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, eid), 0));
-	return itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, eid);
+	for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, eid); itr++ ){
+		if( this->setting.separateFixedTuners == false ||
+		    this->reserveText.GetMap().find(itr->second)->second.recSetting.tunerID == tunerID ){
+			return true;
+		}
+	}
+	return false;
 }
 
 vector<DWORD> CReserveManager::GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const
@@ -1854,7 +1861,7 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 	return ret;
 }
 
-bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
+bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID)
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -1865,7 +1872,9 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, eid), 0));
 	for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, eid); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
-		if( itrRes->second.recSetting.recMode != RECMODE_NO && itrRes->second.comment.compare(0, 7, L"EPG自動予約") == 0 ){
+		if( itrRes->second.recSetting.recMode != RECMODE_NO &&
+		    itrRes->second.comment.compare(0, 7, L"EPG自動予約") == 0 &&
+		    (this->setting.separateFixedTuners == false || itrRes->second.recSetting.tunerID == tunerID) ){
 			chgList.push_back(itrRes->second);
 			chgList.back().recSetting.recMode = RECMODE_NO;
 		}

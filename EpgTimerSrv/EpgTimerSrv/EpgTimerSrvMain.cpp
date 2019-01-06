@@ -1430,11 +1430,13 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 	int addCount = 0;
 	int autoAddHour;
 	bool chkGroupEvent;
+	bool separateFixedTuners;
 	bool commentAutoAdd;
 	{
 		CBlockLock lock(&this->settingLock);
 		autoAddHour = this->setting.autoAddHour;
 		chkGroupEvent = this->setting.chkGroupEvent;
+		separateFixedTuners = this->setting.separateFixedTuners;
 		commentAutoAdd = this->setting.commentAutoAdd;
 	}
 	__int64 now = GetNowI64Time();
@@ -1447,14 +1449,16 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 		if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
 		    now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour * 60 * 60 * I64_1SEC ){
 			addCount++;
-			if( this->reserveManager.IsFindReserve(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id) == false ){
+			if( this->reserveManager.IsFindReserve(info.original_network_id, info.transport_stream_id,
+			                                       info.service_id, info.event_id, data.recSetting.tunerID) == false ){
 				bool found = false;
 				if( info.eventGroupInfoGroupType && chkGroupEvent ){
 					//イベントグループのチェックをする
 					for( size_t j = 0; found == false && j < info.eventGroupInfo.eventDataList.size(); j++ ){
 						//group_typeは必ず1(イベント共有)
 						const EPGDB_EVENT_DATA& e = info.eventGroupInfo.eventDataList[j];
-						if( this->reserveManager.IsFindReserve(e.original_network_id, e.transport_stream_id, e.service_id, e.event_id) ){
+						if( this->reserveManager.IsFindReserve(e.original_network_id, e.transport_stream_id,
+						                                       e.service_id, e.event_id, data.recSetting.tunerID) ){
 							found = true;
 							break;
 						}
@@ -1463,7 +1467,8 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 							if( setList[k].originalNetworkID == e.original_network_id &&
 							    setList[k].transportStreamID == e.transport_stream_id &&
 							    setList[k].serviceID == e.service_id &&
-							    setList[k].eventID == e.event_id ){
+							    setList[k].eventID == e.event_id &&
+							    (separateFixedTuners == false || setList[k].recSetting.tunerID == data.recSetting.tunerID) ){
 								found = true;
 								break;
 							}
@@ -1475,7 +1480,8 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					if( setList[j].originalNetworkID == info.original_network_id &&
 					    setList[j].transportStreamID == info.transport_stream_id &&
 					    setList[j].serviceID == info.service_id &&
-					    setList[j].eventID == info.event_id ){
+					    setList[j].eventID == info.event_id &&
+					    (separateFixedTuners == false || setList[j].recSetting.tunerID == data.recSetting.tunerID) ){
 						found = true;
 					}
 				}
@@ -1483,12 +1489,13 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					//プログラム予約化したもののイベントID注釈のチェックをする
 					if( this->reserveManager.FindProgramReserve(
 					    info.original_network_id, info.transport_stream_id, info.service_id, [&](const RESERVE_DATA& a) {
-					        return (a.comment.compare(0, 8, L"EPG自動予約#") == 0 &&
-					                wcstoul(a.comment.c_str() + 8, NULL, 10) == info.event_id) ||
-					               (a.comment.compare(0, 8, L"EPG自動予約(") == 0 &&
-					                a.comment.find(L')') != wstring::npos &&
-					                a.comment.compare(a.comment.find(L')') + 1, 1, L"#") == 0 &&
-					                wcstoul(a.comment.c_str() + a.comment.find(L')') + 2, NULL, 10) == info.event_id); }) ){
+					        return (separateFixedTuners == false || a.recSetting.tunerID == data.recSetting.tunerID) &&
+					               ((a.comment.compare(0, 8, L"EPG自動予約#") == 0 &&
+					                 wcstoul(a.comment.c_str() + 8, NULL, 10) == info.event_id) ||
+					                (a.comment.compare(0, 8, L"EPG自動予約(") == 0 &&
+					                 a.comment.find(L')') != wstring::npos &&
+					                 a.comment.compare(a.comment.find(L')') + 1, 1, L"#") == 0 &&
+					                 wcstoul(a.comment.c_str() + a.comment.find(L')') + 2, NULL, 10) == info.event_id)); }) ){
 						found = true;
 					}
 				}
@@ -1529,7 +1536,8 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 				}
 			}else if( data.searchInfo.chkRecEnd != 0 && this->reserveManager.IsFindRecEventInfo(info, data.searchInfo.chkRecDay) ){
 				//録画済みなので無効でない予約は無効にする
-				this->reserveManager.ChgAutoAddNoRec(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id);
+				this->reserveManager.ChgAutoAddNoRec(info.original_network_id, info.transport_stream_id,
+				                                     info.service_id, info.event_id, data.recSetting.tunerID);
 			}
 		}
 	}
