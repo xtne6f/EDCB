@@ -142,11 +142,11 @@ LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
 {
 	KIND_INFO info = { key, NULL };
 	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, [](const KIND_INFO& a, const KIND_INFO& b) { return a.key < b.key; });
-	return ret != arr + len && ret->key == key ? ret->str : NULL;
+	return ret != arr + len && ret->key == key ? ret->str : L"";
 }
 }
 
-void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
+LPCWSTR GetGenreName(BYTE nibble1, BYTE nibble2)
 {
 	static const KIND_INFO contentKindSortedArray[] = {
 	{ 0x0000, L"定時・総合" },
@@ -336,13 +336,10 @@ void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
 
 	{ 0xFFFF, L"なし" },
 	};
-	LPCWSTR retStr = SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
-	if( retStr != NULL ){
-		name = retStr;
-	}
+	return SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
 }
 
-void GetComponentTypeName(BYTE content, BYTE type, wstring& name)
+LPCWSTR GetComponentTypeName(BYTE content, BYTE type)
 {
 	static const KIND_INFO componentKindSortedArray[] = {
 	{ 0x0101, L"480i(525i)、アスペクト比4:3" },
@@ -421,10 +418,7 @@ void GetComponentTypeName(BYTE content, BYTE type, wstring& name)
 	{ 0x05E3, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
 	{ 0x05E4, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" },
 	};
-	LPCWSTR retStr = SearchKindInfoArray(content << 8 | type, componentKindSortedArray, _countof(componentKindSortedArray));
-	if( retStr != NULL ){
-		name = retStr;
-	}
+	return SearchKindInfoArray(content << 8 | type, componentKindSortedArray, _countof(componentKindSortedArray));
 }
 
 //EPG情報をTextに変換
@@ -437,88 +431,19 @@ wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& service
 
 	if( info->hasContentInfo ){
 		text+=L"ジャンル : \r\n";
-		for( size_t i=0; i<info->contentInfo.nibbleList.size(); i++ ){
-			BYTE nibble1 = info->contentInfo.nibbleList[i].content_nibble_level_1;
-			BYTE nibble2 = info->contentInfo.nibbleList[i].content_nibble_level_2;
-			if( nibble1 == 0x0E && nibble2 <= 0x01 ){
-				//番組付属情報またはCS拡張用情報
-				nibble1 = info->contentInfo.nibbleList[i].user_nibble_1 | (0x60 + nibble2 * 16);
-				nibble2 = info->contentInfo.nibbleList[i].user_nibble_2;
-			}
-			WCHAR buff[32];
-			wstring retStr;
-			GetGenreName(nibble1, 0xFF, retStr);
-			if( retStr.empty() == false ){
-				text+=retStr;
-				retStr = L"";
-				GetGenreName(nibble1, nibble2, retStr);
-				if( retStr.empty() == false ){
-					text+=L" - ";
-					text+=retStr;
-				}else if( nibble1 != 0x0F ){
-					swprintf_s(buff, L" - (0x%02X)", nibble2);
-					text += buff;
-				}
-			}else{
-				swprintf_s(buff, L"(0x%02X) - (0x%02X)", nibble1, nibble2);
-				text += buff;
-			}
-			text+=L"\r\n";
-		}
+		AppendEpgContentInfoText(text, *info);
 		text+=L"\r\n";
 	}
 
 	if( info->hasComponentInfo ){
 		text+=L"映像 : ";
-		wstring retStr;
-		GetComponentTypeName(info->componentInfo.stream_content, info->componentInfo.component_type, retStr);
-		if( retStr.empty() == false ){
-			text+=retStr;
-			if( info->componentInfo.text_char.empty() == false ){
-				text+=L"\r\n";
-				text+=info->componentInfo.text_char;
-			}
-		}
+		AppendEpgComponentInfoText(text, *info);
 		text+=L"\r\n";
 	}
 
 	if( info->hasAudioInfo ){
 		text+=L"音声 : ";
-		for( size_t i=0; i<info->audioInfo.componentList.size(); i++ ){
-			wstring retStr;
-			GetComponentTypeName(info->audioInfo.componentList[i].stream_content, info->audioInfo.componentList[i].component_type, retStr);
-			if( retStr.empty() == false ){
-				text+=retStr;
-				if( info->audioInfo.componentList[i].text_char.empty() == false ){
-					text+=L"\r\n";
-					text+=info->audioInfo.componentList[i].text_char;
-				}
-			}
-			text+=L"\r\n";
-
-			text+=L"サンプリングレート : ";
-			switch( info->audioInfo.componentList[i].sampling_rate ){
-				case 0x01:
-					text+= L"16kHz";
-					break;
-				case 0x02:
-					text+= L"22.05kHz";
-					break;
-				case 0x03:
-					text+= L"24kHz";
-					break;
-				case 0x05:
-					text+= L"32kHz";
-					break;
-				case 0x06:
-					text+= L"44.1kHz";
-					break;
-				case 0x07:
-					text+= L"48kHz";
-					break;
-			}
-			text+=L"\r\n";
-		}
+		AppendEpgAudioComponentInfoText(text, *info);
 	}
 
 	text+=L"\r\n";
@@ -606,6 +531,91 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 		if( src->eventRelayInfo->event_count > 0 ){
 			dest->eventRelayInfo.eventDataList.assign(
 				src->eventRelayInfo->eventDataList, src->eventRelayInfo->eventDataList + src->eventRelayInfo->event_count);
+		}
+	}
+}
+
+void AppendEpgContentInfoText(wstring& text, const EPGDB_EVENT_INFO& info)
+{
+	if( info.hasContentInfo ){
+		for( size_t i = 0; i < info.contentInfo.nibbleList.size(); i++ ){
+			BYTE nibble1 = info.contentInfo.nibbleList[i].content_nibble_level_1;
+			BYTE nibble2 = info.contentInfo.nibbleList[i].content_nibble_level_2;
+			if( nibble1 == 0x0E && nibble2 <= 0x01 ){
+				//番組付属情報またはCS拡張用情報
+				nibble1 = info.contentInfo.nibbleList[i].user_nibble_1 | (0x60 + nibble2 * 16);
+				nibble2 = info.contentInfo.nibbleList[i].user_nibble_2;
+			}
+			WCHAR buff[32];
+			LPCWSTR ret = GetGenreName(nibble1, 0xFF);
+			if( ret[0] ){
+				text += ret;
+				ret = GetGenreName(nibble1, nibble2);
+				if( ret[0] ){
+					text += L" - ";
+					text += ret;
+				}else if( nibble1 != 0x0F ){
+					swprintf_s(buff, L" - (0x%02X)", nibble2);
+					text += buff;
+				}
+			}else{
+				swprintf_s(buff, L"(0x%02X) - (0x%02X)", nibble1, nibble2);
+				text += buff;
+			}
+			text += L"\r\n";
+		}
+	}
+}
+
+void AppendEpgComponentInfoText(wstring& text, const EPGDB_EVENT_INFO& info)
+{
+	if( info.hasComponentInfo ){
+		LPCWSTR ret = GetComponentTypeName(info.componentInfo.stream_content, info.componentInfo.component_type);
+		if( ret[0] ){
+			text += ret;
+			if( info.componentInfo.text_char.empty() == false ){
+				text += L"\r\n";
+				text += info.componentInfo.text_char;
+			}
+		}
+	}
+}
+
+void AppendEpgAudioComponentInfoText(wstring& text, const EPGDB_EVENT_INFO& info)
+{
+	if( info.hasAudioInfo ){
+		for( size_t i = 0; i < info.audioInfo.componentList.size(); i++ ){
+			LPCWSTR ret = GetComponentTypeName(info.audioInfo.componentList[i].stream_content, info.audioInfo.componentList[i].component_type);
+			if( ret[0] ){
+				text += ret;
+				if( info.audioInfo.componentList[i].text_char.empty() == false ){
+					text += L"\r\n";
+					text += info.audioInfo.componentList[i].text_char;
+				}
+			}
+			text += L"\r\n";
+			text += L"サンプリングレート : ";
+			switch( info.audioInfo.componentList[i].sampling_rate ){
+				case 0x01:
+					text += L"16kHz";
+					break;
+				case 0x02:
+					text += L"22.05kHz";
+					break;
+				case 0x03:
+					text += L"24kHz";
+					break;
+				case 0x05:
+					text += L"32kHz";
+					break;
+				case 0x06:
+					text += L"44.1kHz";
+					break;
+				case 0x07:
+					text += L"48kHz";
+					break;
+			}
+			text += L"\r\n";
 		}
 	}
 }

@@ -435,7 +435,7 @@ void CEpgDBManager::SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize
 	});
 }
 
-void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const
+void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_RESULT_EVENT>& result) const
 {
 	if( key.andKey.compare(0, 7, L"^!{999}") == 0 ){
 		//無効を示すキーワードが指定されているので検索しない
@@ -462,10 +462,19 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_
 	}
 
 	//キーワード分解
-	vector<vector<wstring>> andKeyList;
-	vector<wstring> notKeyList;
+	vector<vector<pair<wstring, RegExpPtr>>> andKeyList;
+	vector<pair<wstring, RegExpPtr>> notKeyList;
 
-	if( key.regExpFlag == FALSE ){
+	if( key.regExpFlag ){
+		//正規表現の単独キーワード
+		if( andKey.empty() == false ){
+			andKeyList.push_back(vector<pair<wstring, RegExpPtr>>());
+			AddKeyword(andKeyList.back(), andKey, caseFlag, true, key.titleOnlyFlag != FALSE);
+		}
+		if( key.notKey.empty() == false ){
+			AddKeyword(notKeyList, key.notKey, caseFlag, true, key.titleOnlyFlag != FALSE);
+		}
+	}else{
 		//正規表現ではないのでキーワードの分解
 		Replace(andKey, L"　", L" ");
 		while( andKey.empty() == false ){
@@ -473,15 +482,12 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_
 			Separate(andKey, L" ", buff, andKey);
 			if( buff == L"|" ){
 				//OR条件
-				andKeyList.push_back(vector<wstring>());
-			}else{
-				ConvertSearchText(buff);
-				if( buff.empty() == false ){
-					if( andKeyList.empty() ){
-						andKeyList.push_back(vector<wstring>());
-					}
-					andKeyList.back().push_back(buff);
+				andKeyList.push_back(vector<pair<wstring, RegExpPtr>>());
+			}else if( buff.empty() == false ){
+				if( andKeyList.empty() ){
+					andKeyList.push_back(vector<pair<wstring, RegExpPtr>>());
 				}
+				AddKeyword(andKeyList.back(), std::move(buff), caseFlag, false, key.titleOnlyFlag != FALSE);
 			}
 		}
 		wstring notKey = key.notKey;
@@ -489,20 +495,9 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_
 		while( notKey.empty() == false ){
 			wstring buff;
 			Separate(notKey, L" ", buff, notKey);
-			ConvertSearchText(buff);
 			if( buff.empty() == false ){
-				notKeyList.push_back(buff);
+				AddKeyword(notKeyList, std::move(buff), caseFlag, false, key.titleOnlyFlag != FALSE);
 			}
-		}
-	}else{
-		if( andKey.size() > 0 ){
-			andKeyList.push_back(vector<wstring>(1, andKey));
-			//旧い処理では対象を全角空白のまま比較していたため正規表現も全角のケースが多い。特別に置き換える
-			Replace(andKeyList.back().back(), L"　", L" ");
-		}
-		if( key.notKey.size() > 0 ){
-			notKeyList.push_back(key.notKey);
-			Replace(notKeyList.back(), L"　", L" ");
 		}
 	}
 
@@ -647,47 +642,22 @@ void CEpgDBManager::SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_
 						//内容にかかわらず対象外
 						continue;
 					}
-				}else if( andKeyList.size() != 0 || notKeyList.size() != 0 ){
-					//検索対象の文字列作成
-					targetWord = itrEvent->shortInfo.event_name;
-					if( key.titleOnlyFlag == FALSE ){
-						targetWord += L"\r\n";
-						targetWord += itrEvent->shortInfo.text_char;
-						if( itrEvent->hasExtInfo ){
-							targetWord += L"\r\n";
-							targetWord += itrEvent->extInfo.text_char;
+				}
+				if( FindKeyword(notKeyList, *itrEvent, targetWord, distForFind, caseFlag, false, false) ){
+					//notキーワード見つかったので対象外
+					continue;
+				}
+				if( andKeyList.empty() == false ){
+					bool found = false;
+					for( size_t j = 0; j < andKeyList.size(); j++ ){
+						if( FindKeyword(andKeyList[j], *itrEvent, targetWord, distForFind, caseFlag, key.aimaiFlag != 0, true, &addItem.findKey) ){
+							found = true;
+							break;
 						}
 					}
-					ConvertSearchText(targetWord);
-
-					if( notKeyList.size() != 0 ){
-						if( IsFindKeyword(key.regExpFlag != FALSE, regExp, caseFlag, notKeyList, targetWord, false) ){
-							//notキーワード見つかったので対象外
-							continue;
-						}
-					}
-					if( andKeyList.size() != 0 ){
-						bool found = false;
-						if( key.regExpFlag == FALSE && key.aimaiFlag != 0 ){
-							//あいまい検索
-							for( size_t j = 0; j < andKeyList.size(); j++ ){
-								if( IsFindLikeKeyword(caseFlag, andKeyList[j], targetWord, distForFind, &addItem.findKey) ){
-									found = true;
-									break;
-								}
-							}
-						}else{
-							for( size_t j = 0; j < andKeyList.size(); j++ ){
-								if( IsFindKeyword(key.regExpFlag != FALSE, regExp, caseFlag, andKeyList[j], targetWord, true, &addItem.findKey) ){
-									found = true;
-									break;
-								}
-							}
-						}
-						if( found == false ){
-							//andキーワード見つからなかったので対象外
-							continue;
-						}
+					if( found == false ){
+						//andキーワード見つからなかったので対象外
+						continue;
 					}
 				}
 
@@ -768,39 +738,55 @@ bool CEpgDBManager::IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList,
 	return false;
 }
 
-static wstring::const_iterator SearchKeyword(const wstring& str, const wstring& key, bool caseFlag)
+bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList, const EPGDB_EVENT_INFO& info, wstring& word,
+                                vector<int>& dist, bool caseFlag, bool aimai, bool andFlag, wstring* findKey)
 {
-	return caseFlag ?
-		std::search(str.begin(), str.end(), key.begin(), key.end()) :
-		std::search(str.begin(), str.end(), key.begin(), key.end(),
-			[](wchar_t l, wchar_t r) { return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r); });
-}
-
-bool CEpgDBManager::IsFindKeyword(bool regExpFlag, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp,
-                                  bool caseFlag, const vector<wstring>& keyList, const wstring& word, bool andMode, wstring* findKey)
-{
-	if( regExpFlag ){
-		//正規表現モード
-		if( !regExp ){
-			void* pv;
-			if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
-				regExp.reset((IRegExp*)pv);
+	for( size_t i = 0; i < keyList.size(); i++ ){
+		const wstring& key = keyList[i].first;
+		if( i == 0 || key.compare(0, 7, keyList[i - 1].first) ){
+			//検索対象が変わったので作成
+			word.clear();
+			if( key.compare(0, 7, L":title:") == 0 ){
+				if( info.hasShortInfo ){
+					word += info.shortInfo.event_name;
+				}
+			}else if( key.compare(0, 7, L":event:") == 0 ){
+				if( info.hasShortInfo ){
+					word += info.shortInfo.event_name;
+					word += L"\r\n";
+					word += info.shortInfo.text_char;
+					if( info.hasExtInfo ){
+						word += L"\r\n";
+						word += info.extInfo.text_char;
+					}
+				}
+			}else if( key.compare(0, 7, L":genre:") == 0 ){
+				AppendEpgContentInfoText(word, info);
+			}else if( key.compare(0, 7, L":video:") == 0 ){
+				AppendEpgComponentInfoText(word, info);
+			}else if( key.compare(0, 7, L":audio:") == 0 ){
+				AppendEpgAudioComponentInfoText(word, info);
+			}else{
+				throw std::runtime_error("");
 			}
+			ConvertSearchText(word);
 		}
-		if( regExp && word.size() > 0 && keyList.size() > 0 ){
-			typedef std::unique_ptr<OLECHAR, decltype(&SysFreeString)> OleCharPtr;
-			OleCharPtr pattern(SysAllocString(keyList[0].c_str()), SysFreeString);
+
+		if( keyList[i].second ){
+			//正規表現
 			OleCharPtr target(SysAllocString(word.c_str()), SysFreeString);
-			if( pattern && target ){
+			if( target ){
 				IDispatch* pMatches;
-				if( SUCCEEDED(regExp->put_Global(VARIANT_TRUE)) &&
-				    SUCCEEDED(regExp->put_IgnoreCase(caseFlag ? VARIANT_FALSE : VARIANT_TRUE)) &&
-				    SUCCEEDED(regExp->put_Pattern(pattern.get())) &&
-				    SUCCEEDED(regExp->Execute(target.get(), &pMatches)) ){
+				if( SUCCEEDED(keyList[i].second->Execute(target.get(), &pMatches)) ){
 					std::unique_ptr<IMatchCollection, decltype(&ComRelease)> matches((IMatchCollection*)pMatches, ComRelease);
 					long count;
 					if( SUCCEEDED(matches->get_Count(&count)) && count > 0 ){
-						if( findKey != NULL ){
+						if( andFlag == false ){
+							//見つかったので終了
+							return true;
+						}
+						if( findKey && i + 1 == keyList.size() ){
+							//最終キーのマッチを記録
 							IDispatch* pMatch;
 							if( SUCCEEDED(matches->get_Item(0, &pMatch)) ){
 								std::unique_ptr<IMatch2, decltype(&ComRelease)> match((IMatch2*)pMatch, ComRelease);
@@ -811,84 +797,119 @@ bool CEpgDBManager::IsFindKeyword(bool regExpFlag, std::unique_ptr<IRegExp, decl
 								}
 							}
 						}
-						return true;
+					}else if( andFlag ){
+						//見つからなかったので終了
+						return false;
 					}
-				}
-			}
-		}
-		return false;
-	}else{
-		//通常
-		if( andMode ){
-			for( size_t i=0; i<keyList.size(); i++ ){
-				if( SearchKeyword(word, keyList[i], caseFlag) == word.end() ){
-					//見つからなかったので終了
+				}else if( andFlag ){
 					return false;
 				}
+			}else if( andFlag ){
+				return false;
 			}
-			if( findKey != NULL ){
-				for( size_t i=0; i<keyList.size(); i++ ){
-					if( findKey->size() > 0 ){
-						*findKey += L' ';
-					}
-					*findKey += keyList[i];
-				}
-			}
-			return true;
 		}else{
-			for( size_t i=0; i<keyList.size(); i++ ){
-				if( SearchKeyword(word, keyList[i], caseFlag) != word.end() ){
+			//通常
+			if( key.size() > 7 &&
+			    (aimai ? FindLikeKeyword(key, 7, word, dist, caseFlag) :
+			     caseFlag ? std::search(word.begin(), word.end(), key.begin() + 7, key.end()) != word.end() :
+			                std::search(word.begin(), word.end(), key.begin() + 7, key.end(),
+			                            [](wchar_t l, wchar_t r) { return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) ==
+			                                                              (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r); }) != word.end()) ){
+				if( andFlag == false ){
 					//見つかったので終了
 					return true;
 				}
+			}else if( andFlag ){
+				//見つからなかったので終了
+				return false;
 			}
-			return false;
 		}
 	}
-}
 
-bool CEpgDBManager::IsFindLikeKeyword(bool caseFlag, const vector<wstring>& keyList, const wstring& word, vector<int>& dist, wstring* findKey)
-{
-	for( vector<wstring>::const_iterator itr = keyList.begin(); itr != keyList.end(); itr++ ){
-		//編集距離がしきい値以下になる文字列が含まれるか調べる
-		size_t l = 0;
-		size_t curr = itr->size() + 1;
-		dist.assign(curr * 2, 0);
-		for( size_t i = 1; i < curr; i++ ){
-			dist[i] = dist[i - 1] + 1;
-		}
-		bool matched = false;
-		for( size_t i = 0; i < word.size(); i++ ){
-			wchar_t x = word[i];
-			for( size_t j = 0; j < itr->size(); j++ ){
-				wchar_t y = (*itr)[j];
-				if( caseFlag && x == y ||
-				    caseFlag == false && (L'a' <= x && x <= L'z' ? x - L'a' + L'A' : x) == (L'a' <= y && y <= L'z' ? y - L'a' + L'A' : y) ){
-					dist[curr + j + 1] = dist[l + j];
-				}else{
-					dist[curr + j + 1] = 1 + (dist[l + j] < dist[l + j + 1] ? min(dist[l + j], dist[curr + j]) : min(dist[l + j + 1], dist[curr + j]));
+	if( andFlag && findKey ){
+		//見つかったキーを記録
+		size_t n = findKey->size();
+		for( size_t i = 0; i < keyList.size(); i++ ){
+			if( keyList[i].second == NULL ){
+				if( n == 0 && findKey->empty() == false ){
+					*findKey += L' ';
+				}
+				findKey->insert(findKey->size() - n, keyList[i].first, 7, wstring::npos);
+				if( n != 0 ){
+					findKey->insert(findKey->end() - n, L' ');
 				}
 			}
-			//75%をしきい値とする
-			if( dist[curr + itr->size()] * 4 <= (int)itr->size() ){
-				matched = true;
-				break;
-			}
-			std::swap(l, curr);
-		}
-		if( matched == false ){
-			return false;
 		}
 	}
-	if( findKey != NULL ){
-		for( size_t i = 0; i < keyList.size(); i++ ){
-			if( findKey->size() > 0 ){
-				*findKey += L' ';
-			}
-			*findKey += keyList[i];
-		}
+	return andFlag;
+}
+
+bool CEpgDBManager::FindLikeKeyword(const wstring& key, size_t keyPos, const wstring& word, vector<int>& dist, bool caseFlag)
+{
+	//編集距離がしきい値以下になる文字列が含まれるか調べる
+	size_t l = 0;
+	size_t curr = key.size() - keyPos + 1;
+	dist.assign(curr * 2, 0);
+	for( size_t i = 1; i < curr; i++ ){
+		dist[i] = dist[i - 1] + 1;
 	}
-	return true;
+	for( size_t i = 0; i < word.size(); i++ ){
+		wchar_t x = word[i];
+		for( size_t j = 0; j < key.size() - keyPos; j++ ){
+			wchar_t y = key[j + keyPos];
+			if( caseFlag && x == y ||
+			    caseFlag == false && (L'a' <= x && x <= L'z' ? x - L'a' + L'A' : x) == (L'a' <= y && y <= L'z' ? y - L'a' + L'A' : y) ){
+				dist[curr + j + 1] = dist[l + j];
+			}else{
+				dist[curr + j + 1] = 1 + (dist[l + j] < dist[l + j + 1] ? min(dist[l + j], dist[curr + j]) : min(dist[l + j + 1], dist[curr + j]));
+			}
+		}
+		//75%をしきい値とする
+		if( dist[curr + key.size() - keyPos] * 4 <= (int)(key.size() - keyPos) ){
+			return true;
+		}
+		std::swap(l, curr);
+	}
+	return false;
+}
+
+void CEpgDBManager::AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstring key, bool caseFlag, bool regExp, bool titleOnly)
+{
+	keyList.push_back(std::make_pair(wstring(), RegExpPtr(NULL, ComRelease)));
+	if( regExp ){
+		key = (titleOnly ? L"::title:" : L"::event:") + key;
+	}
+	size_t regPrefix = key.compare(0, 2, L"::") ? 0 : 1;
+	if( key.compare(regPrefix, 7, L":title:") &&
+	    key.compare(regPrefix, 7, L":event:") &&
+	    key.compare(regPrefix, 7, L":genre:") &&
+	    key.compare(regPrefix, 7, L":video:") &&
+	    key.compare(regPrefix, 7, L":audio:") ){
+		//検索対象が不明なので指定する
+		key = (titleOnly ? L":title:" : L":event:") + key;
+	}else if( regPrefix != 0 ){
+		key.erase(0, 1);
+		//旧い処理では対象を全角空白のまま比較していたため正規表現も全角のケースが多い。特別に置き換える
+		Replace(key, L"　", L" ");
+		//RegExpオブジェクトを構築しておく
+		void* pv;
+		if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
+			keyList.back().second.reset((IRegExp*)pv);
+			OleCharPtr pattern(SysAllocString(key.c_str() + 7), SysFreeString);
+			if( pattern &&
+			    SUCCEEDED(keyList.back().second->put_Global(VARIANT_TRUE)) &&
+			    SUCCEEDED(keyList.back().second->put_IgnoreCase(caseFlag ? VARIANT_FALSE : VARIANT_TRUE)) &&
+			    SUCCEEDED(keyList.back().second->put_Pattern(pattern.get())) ){
+				keyList.back().first.swap(key);
+				return;
+			}
+			keyList.back().second.reset();
+		}
+		//空(常に不一致)にする
+		key.erase(7);
+	}
+	ConvertSearchText(key);
+	keyList.back().first.swap(key);
 }
 
 bool CEpgDBManager::GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const

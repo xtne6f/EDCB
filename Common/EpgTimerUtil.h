@@ -19,9 +19,12 @@ DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid);
 //EPGèÓïÒÇTextÇ…ïœä∑
 wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName = NULL, const wstring* extraText = NULL);
 wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& serviceName);
+void AppendEpgContentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);
+void AppendEpgComponentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);
+void AppendEpgAudioComponentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);
 
-void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name);
-void GetComponentTypeName(BYTE content, BYTE type, wstring& name);
+LPCWSTR GetGenreName(BYTE nibble1, BYTE nibble2);
+LPCWSTR GetComponentTypeName(BYTE content, BYTE type);
 
 void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
 

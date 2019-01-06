@@ -3130,7 +3130,7 @@ int CEpgTimerSrvMain::LuaGetGenreName(lua_State* L)
 	CLuaWorkspace ws(L);
 	wstring name;
 	if( lua_gettop(L) == 1 ){
-		GetGenreName(lua_tointeger(L, -1) >> 8 & 0xFF, lua_tointeger(L, -1) & 0xFF, name);
+		name = GetGenreName(lua_tointeger(L, -1) >> 8 & 0xFF, lua_tointeger(L, -1) & 0xFF);
 	}
 	lua_pushstring(L, ws.WtoUTF8(name));
 	return 1;
@@ -3141,7 +3141,7 @@ int CEpgTimerSrvMain::LuaGetComponentTypeName(lua_State* L)
 	CLuaWorkspace ws(L);
 	wstring name;
 	if( lua_gettop(L) == 1 ){
-		GetComponentTypeName(lua_tointeger(L, -1) >> 8 & 0xFF, lua_tointeger(L, -1) & 0xFF, name);
+		name = GetComponentTypeName(lua_tointeger(L, -1) >> 8 & 0xFF, lua_tointeger(L, -1) & 0xFF);
 	}
 	lua_pushstring(L, ws.WtoUTF8(name));
 	return 1;

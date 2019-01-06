@@ -43,11 +43,8 @@ public:
 		CRefLock lock(&this->epgMapRefLock);
 		vector<SEARCH_RESULT_EVENT> result;
 		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-		{
-			std::unique_ptr<IRegExp, void(*)(IUnknown*)> regExp(NULL, ComRelease);
-			for( size_t i = 0; i < keysSize; i++ ){
-				SearchEvent(keys[i], result, regExp);
-			}
+		for( size_t i = 0; i < keysSize; i++ ){
+			SearchEvent(keys[i], result);
 		}
 		CoUninitialize();
 		enumProc(result);
@@ -124,7 +121,10 @@ public:
 	static void ConvertSearchText(wstring& str);
 	static void ComRelease(IUnknown* p) { p->Release(); }
 
-protected:
+	typedef std::unique_ptr<IRegExp, decltype(&ComRelease)> RegExpPtr;
+	typedef std::unique_ptr<OLECHAR, decltype(&SysFreeString)> OleCharPtr;
+
+private:
 	class CRefLock
 	{
 	public:
@@ -152,16 +152,16 @@ protected:
 	//これらデータベースの読み取りにかぎりepgMapRefLockでアクセスできる。LoadThread以外では変更できない
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgMap;
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgArchive;
-protected:
+
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
 	static void LoadThread(CEpgDBManager* sys);
 
-	void SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_RESULT_EVENT>& result, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp) const;
+	void SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_RESULT_EVENT>& result) const;
 	static bool IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);
 	static bool IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
-	static bool IsFindKeyword(bool regExpFlag, std::unique_ptr<IRegExp, decltype(&ComRelease)>& regExp,
-	                          bool caseFlag, const vector<wstring>& keyList, const wstring& word, bool andMode, wstring* findKey = NULL);
-	static bool IsFindLikeKeyword(bool caseFlag, const vector<wstring>& keyList, const wstring& word, vector<int>& dist, wstring* findKey = NULL);
-
+	static bool FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList, const EPGDB_EVENT_INFO& info, wstring& word,
+	                        vector<int>& dist, bool caseFlag, bool aimai, bool andFlag, wstring* findKey = NULL);
+	static bool FindLikeKeyword(const wstring& key, size_t keyPos, const wstring& word, vector<int>& dist, bool caseFlag);
+	static void AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstring key, bool caseFlag, bool regExp, bool titleOnly);
 };
 

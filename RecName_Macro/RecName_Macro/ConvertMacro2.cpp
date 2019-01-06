@@ -132,7 +132,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 				//”Ô‘g•t‘®î•ñ‚Ü‚½‚ÍCSŠg’£—pî•ñ
 				nibble1 = epgInfo->contentInfo->nibbleList[0].user_nibble_1 | (0x60 + nibble2 * 16);
 			}
-			GetGenreName(nibble1, 0xFF, ret);
+			ret = GetGenreName(nibble1, 0xFF);
 			if( ret.empty() ){
 				Format(ret, L"(0x%02X)", nibble1);
 			}
@@ -146,7 +146,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 				nibble1 = epgInfo->contentInfo->nibbleList[0].user_nibble_1 | (0x60 + nibble2 * 16);
 				nibble2 = epgInfo->contentInfo->nibbleList[0].user_nibble_2;
 			}
-			GetGenreName(nibble1, nibble2, ret);
+			ret = GetGenreName(nibble1, nibble2);
 			if( ret.empty() && nibble1 != 0x0F ){
 				Format(ret, L"(0x%02X)", nibble2);
 			}
