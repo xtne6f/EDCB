@@ -464,10 +464,11 @@ void CEpgDBUtil::AddContent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor
 		eventInfo->contentInfo.nibbleList.resize(eit.GetLoopSize(lp));
 		for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
 			EPG_CONTENT& nibble = eventInfo->contentInfo.nibbleList[i];
-			nibble.content_nibble_level_1 = (BYTE)eit.GetNumber(Desc::content_nibble_level_1, lp);
-			nibble.content_nibble_level_2 = (BYTE)eit.GetNumber(Desc::content_nibble_level_2, lp);
-			nibble.user_nibble_1 = (BYTE)eit.GetNumber(Desc::user_nibble_1, lp);
-			nibble.user_nibble_2 = (BYTE)eit.GetNumber(Desc::user_nibble_2, lp);
+			DWORD n = eit.GetNumber(Desc::content_user_nibble, lp);
+			nibble.content_nibble_level_1 = (n >> 12) & 0x0F;
+			nibble.content_nibble_level_2 = (n >> 8) & 0x0F;
+			nibble.user_nibble_1 = (n >> 4) & 0x0F;
+			nibble.user_nibble_2 = n & 0x0F;
 		}
 	}
 }
