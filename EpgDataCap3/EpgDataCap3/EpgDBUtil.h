@@ -176,7 +176,8 @@ protected:
 	CARIB8CharDecode arib;
 protected:
 	void Clear();
-	
+
+	int GetCaptionInfo(const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
 	void AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent, WORD onid, WORD tsid);
 	void AddShortEvent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
 	BOOL AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent);

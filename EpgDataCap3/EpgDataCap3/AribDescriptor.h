@@ -306,7 +306,7 @@ namespace AribDescriptor
 		audio_component_descriptor					= 0xC4,
 		//hyperlink_descriptor						= 0xC5,
 		//target_region_descriptor					= 0xC6,
-		//data_content_descriptor					= 0xC7,
+		data_content_descriptor						= 0xC7,
 		//video_decode_control_descriptor			= 0xC8,
 		//Download_content_descriptor				= 0xC9,
 		ts_information_descriptor					= 0xCD,
@@ -345,7 +345,7 @@ namespace AribDescriptor
 		BYTE tag;
 		const short* parser;
 	};
-	extern const PARSER_PAIR parserMap[14];
+	extern const PARSER_PAIR parserMap[15];
 
 	class CDescriptor
 	{

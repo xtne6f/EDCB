@@ -882,7 +882,7 @@ const PARSER_PAIR parserMap[] = {
 	{ audio_component_descriptor,				audio_component_descriptor_p },
 	//{ hyperlink_descriptor,					hyperlink_descriptor_p },
 	//{ target_region_descriptor,				target_region_descriptor_p },
-	//{ data_content_descriptor,				data_content_descriptor_p },
+	{ data_content_descriptor,					data_content_descriptor_p },
 	//{ video_decode_control_descriptor,		video_decode_control_descriptor_p },
 	//{ Download_content_descriptor,			Download_content_descriptor_p },
 	{ ts_information_descriptor,				ts_information_descriptor_p },

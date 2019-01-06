@@ -4,6 +4,9 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 
+//字幕属性情報を映像情報のtext_charフィールドに追加しない場合はこのマクロを定義する
+//#define EPGDB_NO_ADD_CAPTION_TO_COMPONENT
+
 //#define DEBUG_EIT
 #ifdef DEBUG_EIT
 static WCHAR g_szDebugEIT[128];
@@ -290,6 +293,19 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 	return TRUE;
 }
 
+int CEpgDBUtil::GetCaptionInfo(const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lp)
+{
+	//セレクタ領域のarib_caption_info
+	DWORD infoSize;
+	const BYTE* info = eit.GetBinary(Desc::selector_byte, &infoSize, lp);
+	int flags = 0;
+	for( DWORD i = 0; info && i * 4 + 4 < infoSize && i < info[0]; i++ ){
+		//日本語(以外)の字幕がある
+		flags |= memcmp(info + i * 4 + 2, "jpn", 3) == 0 ? 1 : 2;
+	}
+	return flags;
+}
+
 void CEpgDBUtil::AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lpParent, WORD onid, WORD tsid)
 {
 	eventInfo->hasShortInfo = false;
@@ -299,6 +315,9 @@ void CEpgDBUtil::AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescript
 	eventInfo->eventRelayInfoGroupType = 0;
 	Desc::CDescriptor::CLoopPointer lp = lpParent;
 	if( eit.EnterLoop(lp) ){
+#ifndef EPGDB_NO_ADD_CAPTION_TO_COMPONENT
+		DWORD dataContentIndex = MAXDWORD;
+#endif
 		for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
 			switch( eit.GetNumber(Desc::descriptor_tag, lp) ){
 			case Desc::short_event_descriptor:
@@ -317,8 +336,31 @@ void CEpgDBUtil::AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescript
 					AddEventRelay(eventInfo, eit, lp, onid, tsid);
 				}
 				break;
+#ifndef EPGDB_NO_ADD_CAPTION_TO_COMPONENT
+			case Desc::data_content_descriptor:
+				if( eit.GetNumber(Desc::data_component_id, lp) == 0x0008 ){
+					dataContentIndex = i;
+				}
+				break;
+#endif
 			}
 		}
+#ifndef EPGDB_NO_ADD_CAPTION_TO_COMPONENT
+		if( eventInfo->hasComponentInfo && dataContentIndex != MAXDWORD ){
+			eit.SetLoopIndex(lp, dataContentIndex);
+			int flags = GetCaptionInfo(eit, lp);
+			//番組名で判断できないときだけ
+			if( (flags & 2) || ((flags & 1) && (eventInfo->hasShortInfo == false ||
+			        eventInfo->shortInfo.event_name.find(CARIB8CharDecode::TELETEXT_MARK) == wstring::npos)) ){
+				if( flags & 1 ){
+					eventInfo->componentInfo.text_char += L"[字]";
+				}
+				if( flags & 2 ){
+					eventInfo->componentInfo.text_char += L"[二字]";
+				}
+			}
+		}
+#endif
 	}
 	if( AddAudioComponent(eventInfo, eit, lpParent) == FALSE ){
 		eventInfo->hasAudioInfo = false;
