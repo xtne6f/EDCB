@@ -219,13 +219,11 @@ namespace EpgTimer.Setting
         {
             SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            var defSearchKey = new EpgSearchKeyInfo();
-            ((Settings)DataContext).GetDefSearchSetting(defSearchKey);
-            dlg.SetDefSetting(defSearchKey);
+            dlg.SetDefSetting(((Settings)DataContext).CreateDefSearchSetting());
 
             if (dlg.ShowDialog() == true)
             {
-                dlg.GetSetting(ref defSearchKey);
+                EpgSearchKeyInfo defSearchKey = dlg.GetSetting();
                 var settings = (Settings)DataContext;
                 settings.SearchKeyAndKey = defSearchKey.andKey;
                 settings.SearchKeyNotKey = defSearchKey.notKey;
