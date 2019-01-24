@@ -10,6 +10,9 @@
 class CWriteTSFile
 {
 public:
+	//フォルダに空きがあるとみなす最低容量
+	static const int FREE_FOLDER_MIN_BYTES = 200 * 1024 * 1024;
+
 	CWriteTSFile(void);
 	~CWriteTSFile(void);
 
@@ -65,27 +68,12 @@ public:
 		);
 
 protected:
-	//保存サブフォルダから空きのあるフォルダパスを取得
+	//指定フォルダの空き容量を取得する
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	// 空き容量
 	//引数：
-	// needFreeSize			[IN]最低必要な空きサイズ
-	// freeFolderPath		[OUT]見つかったフォルダ
-	BOOL GetFreeFolder(
-		ULONGLONG needFreeSize,
-		wstring& freeFolderPath
-	);
-
-	//指定フォルダの空きがあるかチェック
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	//引数：
-	// needFreeSize			[IN]最低必要な空きサイズ
-	// chkFolderPath		[IN]指定フォルダ
-	BOOL ChkFreeFolder(
-		ULONGLONG needFreeSize,
-		const wstring& chkFolderPath
-	);
+	// folderPath		[IN]指定フォルダ
+	static ULONGLONG GetFreeSize(const wstring& folderPath);
 
 	static void OutThread(CWriteTSFile* sys);
 
