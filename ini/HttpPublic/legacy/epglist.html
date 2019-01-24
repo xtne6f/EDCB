@@ -85,6 +85,14 @@ else
 end
 
 ct:Append([=[
+<div class="aside">
+  <form method="POST" action="view.lua"><div>
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="n" value="0">
+    <input type="hidden" name="s" value="]=]..onid..'-'..tsid..'-'..sid..[=[">
+    <input type="submit" value="view.lua -nwtv0]=]..(sid==0 and ' -term' or '')..[=[">
+  </div></form>
+</div>
 <div id="footer">
   <a href="]=]..(sid==0 and 'index.html">メニュー' or 'epglist.html">サービスリスト')..[=[</a>
 </div>
