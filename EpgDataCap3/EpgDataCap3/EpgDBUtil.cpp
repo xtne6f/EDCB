@@ -358,6 +358,9 @@ void CEpgDBUtil::AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescript
 				if( flags & 2 ){
 					eventInfo->componentInfo.text_char += L"[“ñŽš]";
 				}
+			}else if( flags == 0 && eventInfo->hasShortInfo &&
+			          eventInfo->shortInfo.event_name.find(CARIB8CharDecode::TELETEXT_MARK) != wstring::npos ){
+				eventInfo->componentInfo.text_char += L"[Žš–³]";
 			}
 		}
 #endif
