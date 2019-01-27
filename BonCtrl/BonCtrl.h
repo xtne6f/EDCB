@@ -351,7 +351,7 @@ public:
 	//引数：
 	// chList		[IN]EPG取得するチャンネル一覧(NULL可)
 	BOOL StartEpgCap(
-		vector<EPGCAP_SERVICE_INFO>* chList
+		const vector<SET_CH_INFO>* chList
 		);
 
 	//EPG取得を停止する
@@ -365,7 +365,7 @@ public:
 	//引数：
 	// info			[OUT]取得中のサービス
 	JOB_STATUS GetEpgCapStatus(
-		EPGCAP_SERVICE_INFO* info
+		SET_CH_INFO* info
 		);
 
 	//バックグラウンドでのEPG取得設定
@@ -431,7 +431,7 @@ protected:
 	thread_ epgCapThread;
 	CAutoResetEvent epgCapStopEvent;
 	//取得中はconst操作のみ
-	vector<EPGCAP_SERVICE_INFO> epgCapChList;
+	vector<SET_CH_INFO> epgCapChList;
 	atomic_int_ epgCapIndexOrStatus;
 
 	thread_ epgCapBackThread;

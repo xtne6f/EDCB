@@ -644,7 +644,7 @@ void CBonCtrl::ChScanThread(CBonCtrl* sys)
 //引数：
 // chList		[IN]EPG取得するチャンネル一覧(NULL可)
 BOOL CBonCtrl::StartEpgCap(
-	vector<EPGCAP_SERVICE_INFO>* chList
+	const vector<SET_CH_INFO>* chList
 	)
 {
 	if( this->tsOut.IsRec() == TRUE ){
@@ -660,10 +660,15 @@ BOOL CBonCtrl::StartEpgCap(
 	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 		this->epgCapIndexOrStatus = ST_COMPLETE;
 		if( chList ){
-			this->epgCapChList = *chList;
-		}else{
 			this->epgCapChList.clear();
-			this->chUtil.GetEpgCapService(&this->epgCapChList);
+			for( size_t i = 0; i < chList->size(); i++ ){
+				//SID指定のみ対応
+				if( (*chList)[i].useSID ){
+					this->epgCapChList.push_back((*chList)[i]);
+				}
+			}
+		}else{
+			this->epgCapChList = this->chUtil.GetEpgCapService();
 		}
 		if( this->epgCapChList.empty() ){
 			//取得するものがない
@@ -696,7 +701,7 @@ void CBonCtrl::StopEpgCap(
 //引数：
 // info			[OUT]取得中のサービス
 CBonCtrl::JOB_STATUS CBonCtrl::GetEpgCapStatus(
-	EPGCAP_SERVICE_INFO* info
+	SET_CH_INFO* info
 	)
 {
 	int indexOrStatus = this->epgCapIndexOrStatus;
@@ -778,7 +783,7 @@ void CBonCtrl::EpgCapThread(CBonCtrl* sys)
 						sys->tsOut.StartSaveEPG(epgDataPath);
 						wait = 60*1000;
 					}else{
-						vector<EPGCAP_SERVICE_INFO> chkList;
+						vector<SET_CH_INFO> chkList;
 						if( basicOnlyONIDs[min<size_t>(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ){
 							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID);
 						}else{
@@ -786,14 +791,14 @@ void CBonCtrl::EpgCapThread(CBonCtrl* sys)
 						}
 						//epgCapChListのサービスはEPG取得対象でなかったとしてもチェックしなければならない
 						chkList.push_back(sys->epgCapChList[chkCount]);
-						for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+						for( vector<SET_CH_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
 							if( itr->ONID == chkList.back().ONID && itr->TSID == chkList.back().TSID && itr->SID == chkList.back().SID ){
 								chkList.pop_back();
 								break;
 							}
 						}
 						//蓄積状態チェック
-						for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+						for( vector<SET_CH_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
 							BOOL leitFlag = sys->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
 							pair<EPG_SECTION_STATUS, BOOL> status = sys->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
 							if( status.second == FALSE ){
@@ -960,7 +965,7 @@ void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 	                 ONID == 6 && sys->epgCapBackCS1Basic ||
 	                 ONID == 7 && sys->epgCapBackCS2Basic ||
 	                 ONID == 10 && sys->epgCapBackCS3Basic;
-	vector<EPGCAP_SERVICE_INFO> chkList = sys->chUtil.GetEpgCapServiceAll(ONID, TSID);
+	vector<SET_CH_INFO> chkList = sys->chUtil.GetEpgCapServiceAll(ONID, TSID);
 	if( chkList.empty() == false && basicOnly ){
 		chkList = sys->chUtil.GetEpgCapServiceAll(ONID);
 	}
@@ -979,7 +984,7 @@ void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 	while(1){
 		//蓄積状態チェック
 		BOOL chkNext = FALSE;
-		for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+		for( vector<SET_CH_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
 			BOOL leitFlag = sys->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
 			pair<EPG_SECTION_STATUS, BOOL> status = sys->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
 			if( status.second == FALSE ){

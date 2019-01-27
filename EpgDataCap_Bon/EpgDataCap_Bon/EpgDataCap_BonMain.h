@@ -211,7 +211,7 @@ public:
 	// ステータス
 	//引数：
 	// info			[OUT]取得中のサービス
-	CBonCtrl::JOB_STATUS GetEpgCapStatus(EPGCAP_SERVICE_INFO* info);
+	CBonCtrl::JOB_STATUS GetEpgCapStatus(SET_CH_INFO* info);
 
 	//Viewアプリの起動を行う
 	void ViewAppOpen();

@@ -32,12 +32,4 @@ private:
 	CSendNW& operator=(const CSendNW&);
 };
 
-//EPG取得用サービス情報
-typedef struct {
-	WORD ONID;
-	WORD TSID;
-	WORD SID;
-}EPGCAP_SERVICE_INFO;
-
-
 #endif

@@ -49,14 +49,10 @@ public:
 		);
 
 	//EPG取得対象のサービス一覧を取得する
-	//引数：
-	// chList		[OUT]EPG取得するチャンネル一覧
-	void GetEpgCapService(
-		vector<EPGCAP_SERVICE_INFO>* chList
-		);
+	vector<SET_CH_INFO> GetEpgCapService();
 
 	//現在のチューナに限定されないEPG取得対象のサービス一覧を取得する
-	vector<EPGCAP_SERVICE_INFO> GetEpgCapServiceAll(
+	vector<SET_CH_INFO> GetEpgCapServiceAll(
 		int ONID = -1,
 		int TSID = -1
 		);

@@ -535,7 +535,7 @@ CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetChScanStatus(
 //引数：
 // info			[OUT]取得中のサービス
 CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetEpgCapStatus(
-	EPGCAP_SERVICE_INFO* info
+	SET_CH_INFO* info
 	)
 {
 	return this->bonCtrl.GetEpgCapStatus(info);
@@ -847,15 +847,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		{
 			vector<SET_CH_INFO> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				vector<EPGCAP_SERVICE_INFO> chList;
-				for( size_t i=0; i<val.size(); i++ ){
-					EPGCAP_SERVICE_INFO item;
-					item.ONID = val[i].ONID;
-					item.TSID = val[i].TSID;
-					item.SID = val[i].SID;
-					chList.push_back(item);
-				}
-				if( sys->bonCtrl.StartEpgCap(&chList) ){
+				if( sys->bonCtrl.StartEpgCap(&val) ){
 					PostMessage(sys->msgWnd, WM_RESERVE_EPGCAP_START, 0, 0);
 					
 					resParam->param = CMD_SUCCESS;
