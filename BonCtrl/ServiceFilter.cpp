@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ServiceFilter.h"
+#include "BonCtrlDef.h"
 
 CServiceFilter::CServiceFilter()
 {
@@ -73,7 +74,8 @@ void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPa
 					outData.insert(outData.end(), patBuff, patBuff + patBuffSize);
 				}
 			}
-		}else if( packet.PID <= 0x30 || std::binary_search(this->needPIDList.begin(), this->needPIDList.end(), packet.PID) ){
+		}else if( packet.PID < BON_SELECTIVE_PID ||
+		          std::binary_search(this->needPIDList.begin(), this->needPIDList.end(), packet.PID) ){
 			outData.insert(outData.end(), data, data + 188);
 		}
 	}

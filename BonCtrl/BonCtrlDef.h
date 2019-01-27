@@ -5,6 +5,8 @@
 #define MUTEX_TCP_PORT_NAME			L"Global\\EpgDataCap_Bon_TCP_PORT_"
 #define CHSET_SAVE_EVENT_WAIT		L"Global\\EpgTimer_ChSet"
 
+//間接指定がなければ通常必要でないPID範囲の下限
+#define BON_SELECTIVE_PID			0x0030
 
 //ネットワーク送信用設定
 typedef struct {

@@ -149,7 +149,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					if( this->serviceFilter.CatOrPmtUpdated() ){
 						UpdateServiceUtil(FALSE);
 					}
-					if( packet.PID <= 0x30 && this->parseEpgPostProcess == FALSE ){
+					if( packet.PID < BON_SELECTIVE_PID && this->parseEpgPostProcess == FALSE ){
 						ParseEpgPacket(data + i, packet);
 					}
 				}
@@ -198,7 +198,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	if( this->parseEpgPostProcess ){
 		for( DWORD i=0; i<decodeSize; i+=188 ){
 			CTSPacketUtil packet;
-			if( packet.Set188TS(decodeData + i, 188) && packet.PID <= 0x30 ){
+			if( packet.Set188TS(decodeData + i, 188) && packet.PID < BON_SELECTIVE_PID ){
 				ParseEpgPacket(decodeData + i, packet);
 			}
 		}

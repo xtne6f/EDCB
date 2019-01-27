@@ -159,19 +159,10 @@ void COneServiceUtil::AddTSBuff(
 					}
 				}else{
 					//その他
-					if( packet.PID < 0x0030 ){
-						//そのまま
+					if( packet.PID < BON_SELECTIVE_PID || createPmt.IsNeedPID(packet.PID) ||
+					    std::binary_search(this->emmPIDList.begin(), this->emmPIDList.end(), packet.PID) ){
+						//PMTで定義されてるかEMMなら必要
 						this->buff.insert(this->buff.end(), data + i, data + i + 188);
-					}else{
-						if( createPmt.IsNeedPID(packet.PID) == TRUE ){
-							//PMTで定義されてる
-							this->buff.insert(this->buff.end(), data + i, data + i + 188);
-						}else{
-							//EMMなら必要
-							if( std::binary_search(this->emmPIDList.begin(), this->emmPIDList.end(), packet.PID) ){
-								this->buff.insert(this->buff.end(), data + i, data + i + 188);
-							}
-						}
 					}
 				}
 			}
