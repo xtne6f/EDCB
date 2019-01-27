@@ -79,70 +79,28 @@ BOOL CWriteTSFile::StartSave(
 	return FALSE;
 }
 
-//保存サブフォルダから空きのあるフォルダパスを取得
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// needFreeSize			[IN]最低必要な空きサイズ
-// freeFolderPath		[OUT]見つかったフォルダ
-BOOL CWriteTSFile::GetFreeFolder(
-	ULONGLONG needFreeSize,
-	wstring& freeFolderPath
-)
+ULONGLONG CWriteTSFile::GetFreeSize(const wstring& folderPath)
 {
-	BOOL ret = FALSE;
-
-	for( int i = 0; i < (int)this->saveFolderSub.size(); i++ ){
-		ULARGE_INTEGER stFree;
-		if( GetDiskFreeSpaceEx( GetChkDrivePath(this->saveFolderSub[i]).c_str(), &stFree, NULL, NULL ) != FALSE ){
-			if( stFree.QuadPart > needFreeSize ){
-				freeFolderPath = this->saveFolderSub[i];
-				ret = TRUE;
-				break;
-			}
-		}
-	}
-	return ret;
-}
-
-//指定フォルダの空きがあるかチェック
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// needFreeSize			[IN]最低必要な空きサイズ
-// chkFolderPath		[IN]指定フォルダ
-BOOL CWriteTSFile::ChkFreeFolder(
-	ULONGLONG needFreeSize,
-	const wstring& chkFolderPath
-)
-{
-	BOOL ret = FALSE;
-
 	ULARGE_INTEGER stFree;
-	if( GetDiskFreeSpaceEx( GetChkDrivePath(chkFolderPath).c_str(), &stFree, NULL, NULL ) != FALSE ){
-		if( stFree.QuadPart > needFreeSize ){
-			ret = TRUE;
-		}
+	if( GetDiskFreeSpaceEx(GetChkDrivePath(folderPath).c_str(), &stFree, NULL, NULL) ){
+		return stFree.QuadPart;
 	}
-	return ret;
+	return 0;
 }
 
-//ファイル保存を終了する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-BOOL CWriteTSFile::EndSave()
+BOOL CWriteTSFile::EndSave(BOOL* subRecFlag_)
 {
-	BOOL ret = TRUE;
-
 	if( this->outThread.joinable() ){
 		this->outStopFlag = true;
 		this->outThread.join();
+		if( subRecFlag_ ){
+			*subRecFlag_ = this->subRecFlag;
+		}
+		this->tsBuffList.clear();
+		this->tsFreeList.clear();
+		return TRUE;
 	}
-
-	this->tsBuffList.clear();
-	this->tsFreeList.clear();
-
-	return ret;
+	return FALSE;
 }
 
 //出力用TSデータを送る
@@ -199,33 +157,35 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			OutputDebugString(L"CWriteTSFile::StartSave Err 3\r\n");
 			sys->fileList[i].reset();
 		}else{
-			fs_path path = sys->fileList[i]->recFolder;
-			ChkFolderPath(path);
-			if( CompareNoCase(sys->fileList[i]->writePlugIn, L"Write_Default.dll") == 0 ){
-				//デフォルトの場合は空き容量をあらかじめチェック
-				if( sys->createSize > 0 ){
-					if( sys->ChkFreeFolder(sys->createSize, path.native()) == FALSE ){
-						wstring folderPath;
-						if( sys->GetFreeFolder(sys->createSize, folderPath) ){
-							//空きなかったのでサブフォルダに録画
-							sys->subRecFlag = TRUE;
-							path = folderPath;
-						}
-					}
+			fs_path recFolder = sys->fileList[i]->recFolder;
+			ChkFolderPath(recFolder);
+			//空き容量をあらかじめチェック
+			BOOL isMainFree = GetFreeSize(recFolder.native()) > sys->createSize + FREE_FOLDER_MIN_BYTES;
+			if( isMainFree == FALSE ){
+				//空きのあるサブフォルダを探してみる
+				vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
+					[&](const wstring& a) { return CompareNoCase(a, recFolder.native()) &&
+					                               GetFreeSize(a) > sys->createSize + FREE_FOLDER_MIN_BYTES; });
+				if( itrFree != sys->saveFolderSub.end() ){
+					sys->subRecFlag = TRUE;
+					recFolder = *itrFree;
 				}
 			}
 			//開始
-			path.append(sys->fileList[i]->recFileName);
-			BOOL startRes = sys->fileList[i]->writeUtil.Start(path.c_str(), sys->overWriteFlag, sys->createSize);
+			BOOL startRes = sys->fileList[i]->writeUtil.Start(fs_path(recFolder).append(sys->fileList[i]->recFileName).c_str(),
+			                                                  sys->overWriteFlag, sys->createSize);
 			if( startRes == FALSE ){
 				OutputDebugString(L"CWriteTSFile::StartSave Err 2\r\n");
 				//エラー時サブフォルダでリトライ
-				wstring folderPath;
-				if( sys->GetFreeFolder(sys->createSize, folderPath) ){
-					//空きなかったのでサブフォルダに録画
-					sys->subRecFlag = TRUE;
-					path = fs_path(folderPath).append(sys->fileList[i]->recFileName);
-					startRes = sys->fileList[i]->writeUtil.Start(path.c_str(), sys->overWriteFlag, sys->createSize);
+				if( isMainFree ){
+					vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
+						[&](const wstring& a) { return CompareNoCase(a, recFolder.native()) &&
+						                               GetFreeSize(a) > sys->createSize + FREE_FOLDER_MIN_BYTES; });
+					if( itrFree != sys->saveFolderSub.end() ){
+						sys->subRecFlag = TRUE;
+						startRes = sys->fileList[i]->writeUtil.Start(fs_path(*itrFree).append(sys->fileList[i]->recFileName).c_str(),
+						                                             sys->overWriteFlag, sys->createSize);
+					}
 				}
 			}
 			if( startRes == FALSE ){
@@ -286,12 +246,12 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 
 							if( sys->fileList[i]->freeChk == TRUE ){
 								//次の空きを探す
-								wstring freeFolderPath = L"";
-								if( sys->GetFreeFolder(200*1024*1024, freeFolderPath) == TRUE ){
-									fs_path recFilePath = fs_path(freeFolderPath).append(sys->fileList[i]->recFileName);
-
+								vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
+									[](const wstring& a) { return GetFreeSize(a) > FREE_FOLDER_MIN_BYTES; });
+								if( itrFree != sys->saveFolderSub.end() ){
 									//開始
-									if( sys->fileList[i]->writeUtil.Start(recFilePath.c_str(), sys->overWriteFlag, 0) == FALSE ){
+									if( sys->fileList[i]->writeUtil.Start(fs_path(*itrFree).append(sys->fileList[i]->recFileName).c_str(),
+									                                      sys->overWriteFlag, 0) == FALSE ){
 										//失敗したので終わり
 										sys->fileList[i].reset();
 									}else{
@@ -351,17 +311,9 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	CoUninitialize();
 }
 
-//録画中のファイルのファイルパスを取得する
-//引数：
-// filePath			[OUT]保存ファイル名
-// subRecFlag		[OUT]サブ録画が発生したかどうか
-void CWriteTSFile::GetSaveFilePath(
-	wstring* filePath,
-	BOOL* subRecFlag_
-	)
+wstring CWriteTSFile::GetSaveFilePath()
 {
-	*filePath = this->mainSaveFilePath;
-	*subRecFlag_ = this->subRecFlag;
+	return this->mainSaveFilePath;
 }
 
 //録画中のファイルの出力サイズを取得する

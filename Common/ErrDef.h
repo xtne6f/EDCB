@@ -3,7 +3,6 @@
 
 #define ERR_FALSE		FALSE		//”Ä—pƒGƒ‰[
 #define NO_ERR			TRUE		//¬Œ÷
-#define ERR_INIT		10			//‰Šú‰»¸”s
 #define ERR_NOT_INIT	11			//–¢‰Šú‰»
 #define ERR_INVALID_ARG	14			//ˆø”‚ª–³Œø
 #define ERR_NOT_FIND	15			//î•ñ‚ªŒ©‚Â‚©‚ç‚È‚©‚Á‚½

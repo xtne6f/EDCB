@@ -114,6 +114,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath) != 0;
 	s.fixedTunerPriority = GetPrivateProfileInt(L"SET", L"FixedTunerPriority", 1, iniPath) != 0;
 	s.retryOtherTuners = GetPrivateProfileInt(L"SET", L"RetryOtherTuners", 0, iniPath) != 0;
+	s.separateFixedTuners = GetPrivateProfileInt(L"SET", L"SeparateFixedTuners", 0, iniPath) != 0;
 	s.commentAutoAdd = GetPrivateProfileInt(L"SET", L"CommentAutoAdd", 0, iniPath) != 0;
 	s.autoDelRecInfo = GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniPath) != 0;
 	s.autoDelRecInfoNum = GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniPath);
@@ -494,6 +495,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY, setting.backPriority);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY, setting.fixedTunerPriority);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_RETRY_OTHER_TUNERS, setting.retryOtherTuners);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SEPARATE_FIXED_TUNERS, setting.separateFixedTuners);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMMENT_AUTO_ADD, setting.commentAutoAdd);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY, setting.recInfoFolderOnly);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_DEL_FILE, GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
@@ -761,6 +763,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WritePrivateProfileInt(L"SET", L"BackPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BACK_PRIORITY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"FixedTunerPriority", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_FIXED_TUNER_PRIORITY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RetryOtherTuners", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_RETRY_OTHER_TUNERS), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"SeparateFixedTuners", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SEPARATE_FIXED_TUNERS), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"CommentAutoAdd", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMMENT_AUTO_ADD), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecInfoFolderOnly", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_FOLDER_ONLY), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecInfoDelFile", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_INFO_DEL_FILE), commonIniPath.c_str());

@@ -60,7 +60,7 @@ public:
 	//reserveData: 最小時刻の予約情報(ないときreserveID==0)
 	__int64 GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* reserveData = NULL) const;
 	//指定イベントの予約が存在するかどうか
-	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const;
+	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID) const;
 	//指定サービスのプログラム予約を抽出して検索する
 	template<class P>
 	bool FindProgramReserve(WORD onid, WORD tsid, WORD sid, P findProc) const {
@@ -81,21 +81,25 @@ public:
 	bool IsOpenTuner(DWORD tunerID) const;
 	//ネットワークモードでチューナを起動しチャンネル設定する
 	//tunerIDList: 起動させるときはこのリストにあるチューナを候補にする
-	bool SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList);
+	pair<bool, int> OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList);
+	//ネットワークモードでチューナが起動しているか
+	pair<bool, int> IsOpenNWTV(int id) const;
 	//ネットワークモードのチューナを閉じる
-	bool CloseNWTV();
+	bool CloseNWTV(int id);
 	//予約が録画中であればその録画ファイル名を取得する
 	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
 	//指定EPGイベントは録画済みかどうか
 	bool IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const;
 	//自動予約によって作成された指定イベントの予約を無効にする
-	bool ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid);
+	bool ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID);
 	//チャンネル情報を取得する
 	bool GetChData(WORD onid, WORD tsid, WORD sid, CH_DATA5* chData) const;
 	//チャンネル情報一覧を取得する
 	vector<CH_DATA5> GetChDataList() const;
 	//パラメータなしの通知を追加する
 	void AddNotifyAndPostBat(DWORD notifyID);
+	//バッチのカスタムハンドラを設定する
+	void SetBatCustomHandler(LPCWSTR ext, const std::function<void(CBatManager::BAT_WORK_INFO&, vector<char>&)>& handler);
 private:
 	struct CHK_RESERVE_DATA {
 		__int64 cutStartTime;

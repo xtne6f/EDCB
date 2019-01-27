@@ -108,7 +108,7 @@ DWORD CEpgDataCap3Util::Initialize(
 	)
 {
 	if( LoadDll(loadDllFilePath) == FALSE ){
-		return ERR_INIT;
+		return FALSE;
 	}
 	DWORD err = pfnInitializeEP3(asyncFlag, &id);
 	if( err != NO_ERR ){

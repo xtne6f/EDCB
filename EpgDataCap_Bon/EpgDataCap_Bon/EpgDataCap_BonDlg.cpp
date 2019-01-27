@@ -398,7 +398,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			break;
 		case TIMER_EPGCAP_STATSU:
 			{
-				EPGCAP_SERVICE_INFO info;
+				SET_CH_INFO info;
 				CBonCtrl::JOB_STATUS status = this->main.GetEpgCapStatus(&info);
 				if( status == CBonCtrl::ST_WORKING ){
 					int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));

@@ -13,19 +13,67 @@ XEXT='.webm'
 --XEXT='.mp4'
 -- 転送開始前に変換しておく量(bytes)
 XPREPARE=nil
+-- NetworkTVモードの名前付きパイプをFindFileで見つけられない場合(EpgTimerSrvのWindowsサービス化など？)に対応するか
+FIND_BY_OPEN=false
 
-n=math.floor(tonumber(mg.get_var(mg.request_info.query_string, 'n')) or 0)
-if n<0 then
-  -- プロセスが残っていたらすべて終わらせる
-  edcb.os.execute('wmic process where "name=\'ffmpeg.exe\' and commandline like \'%%SendTSTCP[_]%%[_]%%\'" call terminate >nul')
-elseif n<=65535 then
-  -- 前回のプロセスが残っていたら終わらせる
-  edcb.os.execute('wmic process where "name=\'ffmpeg.exe\' and commandline like \'%%SendTSTCP[_]'..n..'[_]%%\'" call terminate >nul')
-  -- 名前付きパイプがあれば開く
-  ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*', 1)
-  if ff and ff[1].name:find('^[^_]+_%d+_%d+$') then
-    f=edcb.io.popen('""'..ffmpeg..'" -f mpegts -i "\\\\.\\pipe\\'..ff[1].name..'" '..XOPT..'"', 'rb')
-    fname='view'..XEXT
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+post=AssertPost()
+if post then
+  n=math.floor(tonumber(mg.get_var(post,'n')) or 0)
+  onid,tsid,sid=(mg.get_var(post,'s') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
+  if onid then
+    onid=tonumber(onid) or 0
+    tsid=tonumber(tsid) or 0
+    sid=tonumber(sid) or 0
+    if sid==0 then
+      -- NetworkTVモードを終了
+      edcb.CloseNetworkTV(n)
+    else
+      -- NetworkTVモードを開始
+      ok,pid=edcb.OpenNetworkTV(2,onid,tsid,sid,n)
+      if ok then
+        -- 名前付きパイプができるまで待つ
+        for i=1,50 do
+          ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*_'..pid, 1)
+          if ff and ff[1].name:find('^[^_]+_%d+_%d+$') then
+            f=edcb.io.popen('""'..ffmpeg..'" -f mpegts -i "\\\\.\\pipe\\'..ff[1].name..'" '..XOPT..'"', 'rb')
+            fname='view'..XEXT
+            break
+          elseif FIND_BY_OPEN then
+            -- ポートを予想して開いてみる
+            for j=0,9 do
+              ff=edcb.io.open('\\\\.\\pipe\\SendTSTCP_'..j..'_'..pid, 'rb')
+              if ff then
+                ff:close()
+                -- 再び開けるようになるまで少しラグがある
+                edcb.Sleep(4000)
+                f=edcb.io.popen('""'..ffmpeg..'" -f mpegts -i "\\\\.\\pipe\\SendTSTCP_'..j..'_'..pid..'" '..XOPT..'"', 'rb')
+                fname='view'..XEXT
+                break
+              end
+            end
+            if ff then break end
+          end
+          edcb.Sleep(200)
+        end
+        if not f then
+          edcb.CloseNetworkTV(n)
+        end
+      end
+    end
+  elseif n<0 then
+    -- プロセスが残っていたらすべて終わらせる
+    edcb.os.execute('wmic process where "name=\'ffmpeg.exe\' and commandline like \'%%SendTSTCP[_]%%[_]%%\'" call terminate >nul')
+  elseif n<=65535 then
+    -- 前回のプロセスが残っていたら終わらせる
+    edcb.os.execute('wmic process where "name=\'ffmpeg.exe\' and commandline like \'%%SendTSTCP[_]'..n..'[_]%%\'" call terminate >nul')
+    -- 名前付きパイプがあれば開く
+    ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*', 1)
+    if ff and ff[1].name:find('^[^_]+_%d+_%d+$') then
+      f=edcb.io.popen('""'..ffmpeg..'" -f mpegts -i "\\\\.\\pipe\\'..ff[1].name..'" '..XOPT..'"', 'rb')
+      fname='view'..XEXT
+    end
   end
 end
 
@@ -49,4 +97,8 @@ else
     end
   end
   f:close()
+  if onid then
+    -- NetworkTVモードを終了
+    edcb.CloseNetworkTV(n)
+  end
 end

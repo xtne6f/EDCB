@@ -40,6 +40,7 @@ public:
 		bool backPriority;
 		bool fixedTunerPriority;
 		bool retryOtherTuners;
+		bool separateFixedTuners;
 		bool commentAutoAdd;
 		bool autoDelRecInfo;
 		DWORD autoDelRecInfoNum;

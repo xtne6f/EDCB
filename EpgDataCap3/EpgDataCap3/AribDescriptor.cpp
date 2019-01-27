@@ -25,7 +25,7 @@ namespace AribDescriptor
 //{参照},D_BINARY,{即値|参照}: 入力データを{即値|参照}サイズだけ{参照}にバイト列として格納
 //{参照},D_BINARY_TO_END:      D_BINARYと同様だが、できるだけ入力を消費する
 //
-//※D_BEGIN*,D_DESCRIPTOR_LOOP,D_BINARY*(==D_STRING*)はバイト(8bit)境界でのみ使用できる
+//※D_BEGIN*,D_DESCRIPTOR_LOOP,D_BINARY*はバイト(8bit)境界でのみ使用できる
 
 const short audio_component_descriptor_p[] = {
 	descriptor_tag, 8,
@@ -42,14 +42,15 @@ const short audio_component_descriptor_p[] = {
 		quality_indicator, 2,
 		sampling_rate, 3,
 		reserved, D_LOCAL, 1,
-		ISO_639_language_code, D_STRING, 24,
+		ISO_639_language_code, D_BINARY, 24,
 		D_BEGIN_IF, ES_multi_lingual_flag, 1, 1,
-			ISO_639_language_code_2, D_STRING, 24,
+			ISO_639_language_code_2, D_BINARY, 24,
 		D_END,
-		text_char, D_STRING_TO_END,
+		text_char, D_BINARY_TO_END,
 	D_END,
 	D_FIN,
 };
+#if 0
 const short AVC_timing_and_HRD_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -94,22 +95,22 @@ const short board_information_descriptor_p[] = {
 	descriptor_length, D_LOCAL, 8,
 	D_BEGIN, descriptor_length,
 		title_length, D_LOCAL, 8,
-		title_char, D_STRING, title_length,
+		title_char, D_BINARY, title_length,
 		text_length, D_LOCAL, 8,
-		text_char, D_STRING, text_length,
+		text_char, D_BINARY, text_length,
 	D_END,
 	D_FIN,
 };
 const short bouquet_name_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
-	d_char, D_STRING, descriptor_length,
+	d_char, D_BINARY, descriptor_length,
 	D_FIN,
 };
 const short broadcaster_name_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
-	d_char, D_STRING, descriptor_length,
+	d_char, D_BINARY, descriptor_length,
 	D_FIN,
 };
 const short CA_descriptor_p[] = {
@@ -131,6 +132,7 @@ const short CA_identifier_descriptor_p[] = {
 	D_END, D_END,
 	D_FIN,
 };
+#endif
 const short component_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -139,11 +141,12 @@ const short component_descriptor_p[] = {
 		stream_content, 4,
 		component_type, 8,
 		component_tag, 8,
-		ISO_639_language_code, D_STRING, 24,
-		text_char, D_STRING_TO_END,
+		ISO_639_language_code, D_BINARY, 24,
+		text_char, D_BINARY_TO_END,
 	D_END,
 	D_FIN,
 };
+#if 0
 const short component_group_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -163,7 +166,7 @@ const short component_group_descriptor_p[] = {
 				total_bit_rate, 8,
 			D_END,
 			text_length, D_LOCAL, 8,
-			text_char, D_STRING, text_length,
+			text_char, D_BINARY, text_length,
 		D_END,
 	D_END,
 	D_FIN,
@@ -195,17 +198,16 @@ const short content_availability_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 const short content_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
 	D_BEGIN, descriptor_length, D_BEGIN_FOR_TO_END,
-		content_nibble_level_1, 4,
-		content_nibble_level_2, 4,
-		user_nibble_1, 4,
-		user_nibble_2, 4,
+		content_user_nibble, 16,
 	D_END, D_END,
 	D_FIN,
 };
+#if 0
 const short country_availability_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -213,7 +215,7 @@ const short country_availability_descriptor_p[] = {
 		country_availability_flag, 1,
 		reserved, D_LOCAL, 7,
 		D_BEGIN_FOR_TO_END,
-			country_code, D_STRING, 24,
+			country_code, D_BINARY, 24,
 		D_END,
 	D_END,
 	D_FIN,
@@ -227,6 +229,7 @@ const short data_component_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 const short data_content_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -236,13 +239,16 @@ const short data_content_descriptor_p[] = {
 		selector_length, D_LOCAL, 8,
 		selector_byte, D_BINARY, selector_length,
 		num_of_component_ref, D_LOCAL, 8,
-		component_ref, D_BINARY, num_of_component_ref,
-		ISO_639_language_code, D_STRING, 24,
+		//component_ref, D_BINARY, num_of_component_ref,
+		component_ref, D_LOCAL, num_of_component_ref,
+		ISO_639_language_code, D_BINARY, 24,
 		text_length, D_LOCAL, 8,
-		text_char, D_STRING, text_length,
+		//text_char, D_BINARY, text_length,
+		text_char, D_LOCAL, text_length,
 	D_END,
 	D_FIN,
 };
+#if 0
 const short digital_copy_control_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -303,9 +309,9 @@ const short Download_content_descriptor_p[] = {
 		private_data_length, D_LOCAL, 8,
 		private_data_byte, D_BINARY, private_data_length,
 		D_BEGIN_IF, text_info_flag, 1, 1,
-			ISO_639_language_code, D_STRING, 24,
+			ISO_639_language_code, D_BINARY, 24,
 			text_length, D_LOCAL, 8,
-			text_char, D_STRING, text_length,
+			text_char, D_BINARY, text_length,
 		D_END,
 	D_END,
 	D_FIN,
@@ -326,6 +332,7 @@ const short emergency_information_descriptor_p[] = {
 	D_END, D_END,
 	D_FIN,
 };
+#endif
 const short event_group_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -350,6 +357,7 @@ const short event_group_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#if 0
 const short extended_broadcaster_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -384,25 +392,27 @@ const short extended_broadcaster_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 const short extended_event_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
 	D_BEGIN, descriptor_length,
 		descriptor_number, 4,
 		last_descriptor_number, 4,
-		ISO_639_language_code, D_STRING, 24,
+		ISO_639_language_code, D_BINARY, 24,
 		length_of_items, D_LOCAL, 8,
 		D_BEGIN, length_of_items, D_BEGIN_FOR_TO_END,
 			item_description_length, D_LOCAL, 8,
-			item_description_char, D_STRING, item_description_length,
+			item_description_char, D_BINARY, item_description_length,
 			item_length, D_LOCAL, 8,
-			item_char, D_STRING, item_length,
+			item_char, D_BINARY, item_length,
 		D_END, D_END,
 		text_length, D_LOCAL, 8,
-		text_char, D_STRING, text_length,
+		text_char, D_BINARY, text_length,
 	D_END,
 	D_FIN,
 };
+#if 0
 const short hierarchical_transmission_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -453,7 +463,7 @@ const short hyperlink_descriptor_p[] = {
 				D_END,
 			D_END,
 			D_BEGIN_IF, link_destination_type, 7, 7,
-				uri_char, D_STRING_TO_END,
+				uri_char, D_BINARY_TO_END,
 			D_END,
 			D_BEGIN_IF_NOT, link_destination_type, 1, 7,
 				reserved, D_LOCAL_TO_END,
@@ -495,7 +505,7 @@ const short local_time_offset_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
 	D_BEGIN, descriptor_length, D_BEGIN_FOR_TO_END,
-		country_code, D_STRING, 24,
+		country_code, D_BINARY, 24,
 		country_region_id, 6,
 		reserved, D_LOCAL, 1,
 		local_time_offset_polarity, 1,
@@ -563,11 +573,12 @@ const short mosaic_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 const short network_identification_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
 	D_BEGIN, descriptor_length,
-		country_code, D_STRING, 24,
+		country_code, D_BINARY, 24,
 		media_type, 16,
 		network_id, 16,
 		private_data, D_BINARY_TO_END,
@@ -577,9 +588,10 @@ const short network_identification_descriptor_p[] = {
 const short network_name_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
-	d_char, D_STRING, descriptor_length,
+	d_char, D_BINARY, descriptor_length,
 	D_FIN,
 };
+#if 0
 const short NVOD_reference_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -594,11 +606,12 @@ const short parental_rating_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
 	D_BEGIN, descriptor_length, D_BEGIN_FOR_TO_END,
-		country_code, D_STRING, 24,
+		country_code, D_BINARY, 24,
 		rating, 8,
 	D_END, D_END,
 	D_FIN,
 };
+#endif
 const short partial_reception_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -607,6 +620,7 @@ const short partial_reception_descriptor_p[] = {
 	D_END, D_END,
 	D_FIN,
 };
+#if 0
 const short partial_transport_stream_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -620,6 +634,7 @@ const short partial_transport_stream_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 const short partialTS_time_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -633,11 +648,13 @@ const short partialTS_time_descriptor_p[] = {
 		other_descriptor_status, 1,
 		jst_time_flag, 1,
 		D_BEGIN_IF, jst_time_flag, 1, 1,
-			jst_time, D_BINARY, 40,
+			jst_time_mjd, 16,
+			jst_time_bcd, 24,
 		D_END,
 	D_END,
 	D_FIN,
 };
+#if 0
 const short satellite_delivery_system_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -663,22 +680,24 @@ const short series_descriptor_p[] = {
 		expire_date, 16,
 		episode_number, 12,
 		last_episode_number, 12,
-		series_name_char, D_STRING_TO_END,
+		series_name_char, D_BINARY_TO_END,
 	D_END,
 	D_FIN,
 };
+#endif
 const short service_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
 	D_BEGIN, descriptor_length,
 		service_type, 8,
 		service_provider_name_length, D_LOCAL, 8,
-		service_provider_name, D_STRING, service_provider_name_length,
+		service_provider_name, D_BINARY, service_provider_name_length,
 		service_name_length, D_LOCAL, 8,
-		service_name, D_STRING, service_name_length,
+		service_name, D_BINARY, service_name_length,
 	D_END,
 	D_FIN,
 };
+#if 0
 const short service_group_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -697,6 +716,7 @@ const short service_group_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 const short service_list_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -710,14 +730,15 @@ const short short_event_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
 	D_BEGIN, descriptor_length,
-		ISO_639_language_code, D_STRING, 24,
+		ISO_639_language_code, D_BINARY, 24,
 		event_name_length, D_LOCAL, 8,
-		event_name_char, D_STRING, event_name_length,
+		event_name_char, D_BINARY, event_name_length,
 		text_length, D_LOCAL, 8,
-		text_char, D_STRING, text_length,
+		text_char, D_BINARY, text_length,
 	D_END,
 	D_FIN,
 };
+#if 0
 const short SI_parameter_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -812,6 +833,7 @@ const short time_shifted_service_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 const short ts_information_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -819,7 +841,7 @@ const short ts_information_descriptor_p[] = {
 		remote_control_key_id, 8,
 		length_of_ts_name, D_LOCAL, 6,
 		transmission_type_count, 2,
-		ts_name_char, D_STRING, length_of_ts_name,
+		ts_name_char, D_BINARY, length_of_ts_name,
 		D_BEGIN_FOR, transmission_type_count,
 			transmission_type_info, 8,
 			num_of_service, 8,
@@ -837,6 +859,7 @@ const short unknown_descriptor_p[] = {
 	reserved, D_LOCAL, descriptor_length,
 	D_FIN,
 };
+#if 0
 const short video_decode_control_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -848,6 +871,7 @@ const short video_decode_control_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 
 //注意: 利用されない記述子はコメントアウトしている(unknown_descriptor扱い)
 const PARSER_PAIR parserMap[] = {
@@ -882,7 +906,7 @@ const PARSER_PAIR parserMap[] = {
 	{ audio_component_descriptor,				audio_component_descriptor_p },
 	//{ hyperlink_descriptor,					hyperlink_descriptor_p },
 	//{ target_region_descriptor,				target_region_descriptor_p },
-	//{ data_content_descriptor,				data_content_descriptor_p },
+	{ data_content_descriptor,					data_content_descriptor_p },
 	//{ video_decode_control_descriptor,		video_decode_control_descriptor_p },
 	//{ Download_content_descriptor,			Download_content_descriptor_p },
 	{ ts_information_descriptor,				ts_information_descriptor_p },

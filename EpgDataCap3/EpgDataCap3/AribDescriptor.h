@@ -23,9 +23,7 @@ namespace AribDescriptor
 		D_LOCAL,
 		D_LOCAL_TO_END,
 		D_BINARY,
-		D_STRING = D_BINARY,
 		D_BINARY_TO_END,
-		D_STRING_TO_END = D_BINARY_TO_END,
 		D_IMMEDIATE_MAX = 0x1FFF,
 		reserved,
 		descriptor_tag,
@@ -84,10 +82,7 @@ namespace AribDescriptor
 		retention_mode,
 		retention_state,
 		encryption_mode,
-		content_nibble_level_1,
-		content_nibble_level_2,
-		user_nibble_1,
-		user_nibble_2,
+		content_user_nibble,
 		country_availability_flag,
 		country_code,
 		data_component_id,
@@ -192,7 +187,6 @@ namespace AribDescriptor
 		offset_flag,
 		other_descriptor_status,
 		jst_time_flag,
-		jst_time,
 		d_frequency,
 		orbital_position,
 		west_east_flag,
@@ -306,7 +300,7 @@ namespace AribDescriptor
 		audio_component_descriptor					= 0xC4,
 		//hyperlink_descriptor						= 0xC5,
 		//target_region_descriptor					= 0xC6,
-		//data_content_descriptor					= 0xC7,
+		data_content_descriptor						= 0xC7,
 		//video_decode_control_descriptor			= 0xC8,
 		//Download_content_descriptor				= 0xC9,
 		ts_information_descriptor					= 0xCD,
@@ -345,7 +339,7 @@ namespace AribDescriptor
 		BYTE tag;
 		const short* parser;
 	};
-	extern const PARSER_PAIR parserMap[14];
+	extern const PARSER_PAIR parserMap[15];
 
 	class CDescriptor
 	{

@@ -1011,14 +1011,22 @@ __int64 CTunerBankCtrl::DelayTime() const
 	return this->specialState == TR_EPGCAP ? this->epgCapDelayTime : this->delayTime;
 }
 
-bool CTunerBankCtrl::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo)
+bool CTunerBankCtrl::OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo)
 {
+	if( this->specialState == TR_EPGCAP ){
+		OutputDebugString(L"epg cancel\r\n");
+		//CSendCtrlCmd::SendViewEpgCapStop()‚Í‘—‚ç‚È‚¢(‘¦À‚Éƒ`ƒ…[ƒi•Â‚¶‚é‚Ì‚ÅˆÓ–¡‚ª‚È‚¢‚½‚ß)
+		CloseTuner();
+		this->specialState = TR_IDLE;
+	}
 	if( this->hTunerProcess == NULL ){
 		if( OpenTuner(true, true, nwUdp, nwTcp, false, &chInfo) ){
 			this->specialState = TR_NWTV;
+			this->nwtvID = id;
 			return true;
 		}
 	}else if( this->specialState == TR_NWTV ){
+		this->nwtvID = id;
 		CWatchBlock watchBlock(&this->watchContext);
 		CSendCtrlCmd ctrlCmd;
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);

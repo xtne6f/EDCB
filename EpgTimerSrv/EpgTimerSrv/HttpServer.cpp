@@ -9,8 +9,6 @@
 #include <wincrypt.h>
 #pragma comment(lib, "Crypt32.lib")
 
-#define LUA_DLL_NAME L"lua52.dll"
-
 namespace
 {
 const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
@@ -138,7 +136,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 
 #ifdef LUA_BUILD_AS_DLL
 	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
-	this->hLuaDll = LoadLibrary(LUA_DLL_NAME);
+	this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
 	if( this->hLuaDll == NULL ){
 		OutputDebugString(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.\r\n");
 		return false;

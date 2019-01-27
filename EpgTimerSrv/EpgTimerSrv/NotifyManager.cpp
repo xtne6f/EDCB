@@ -194,6 +194,7 @@ void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
 void CNotifyManager::SendNotify()
 {
 	if( this->notifyThread.joinable() == false ){
+		this->notifyStopFlag = false;
 		this->notifyThread = thread_(SendNotifyThread, this);
 	}
 	this->notifyEvent.Set();

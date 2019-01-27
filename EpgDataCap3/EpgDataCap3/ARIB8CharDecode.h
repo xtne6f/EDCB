@@ -620,8 +620,7 @@ struct CAPTION_DATA{
 class CARIB8CharDecode
 {
 public:
-	CARIB8CharDecode(void);
-	~CARIB8CharDecode(void);
+	static const WCHAR* TELETEXT_MARK;
 
 	//PSI/SI‚ð‘z’è‚µ‚½wstring‚Ö‚Ì•ÏŠ·
 	BOOL PSISI( const BYTE* pbSrc, DWORD dwSrcSize, wstring* strDec );

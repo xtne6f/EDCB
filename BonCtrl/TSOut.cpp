@@ -149,7 +149,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					if( this->serviceFilter.CatOrPmtUpdated() ){
 						UpdateServiceUtil(FALSE);
 					}
-					if( packet.PID <= 0x30 && this->parseEpgPostProcess == FALSE ){
+					if( packet.PID < BON_SELECTIVE_PID && this->parseEpgPostProcess == FALSE ){
 						ParseEpgPacket(data + i, packet);
 					}
 				}
@@ -198,7 +198,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	if( this->parseEpgPostProcess ){
 		for( DWORD i=0; i<decodeSize; i+=188 ){
 			CTSPacketUtil packet;
-			if( packet.Set188TS(decodeData + i, 188) && packet.PID <= 0x30 ){
+			if( packet.Set188TS(decodeData + i, 188) && packet.PID < BON_SELECTIVE_PID ){
 				ParseEpgPacket(decodeData + i, packet);
 			}
 		}
@@ -714,53 +714,25 @@ BOOL CTSOut::IsRec()
 	return FALSE;
 }
 
-//ファイル保存を開始する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id					[IN]制御識別ID
-// fileName				[IN]保存ファイルパス
-// overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
-// pittariFlag			[IN]ぴったりモード（TRUE：する、FALSE：しない）
-// pittariONID			[IN]ぴったりモードで録画するONID
-// pittariTSID			[IN]ぴったりモードで録画するTSID
-// pittariSID			[IN]ぴったりモードで録画するSID
-// pittariEventID		[IN]ぴったりモードで録画するイベントID
-// createSize			[IN]ファイル作成時にディスクに予約する容量
-// saveFolder			[IN]使用するフォルダ一覧
-// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 BOOL CTSOut::StartSave(
-	DWORD id,
-	const wstring& fileName,
-	BOOL overWriteFlag,
-	BOOL pittariFlag,
-	WORD pittariONID,
-	WORD pittariTSID,
-	WORD pittariSID,
-	WORD pittariEventID,
-	ULONGLONG createSize,
-	const vector<REC_FILE_SET_INFO>& saveFolder,
+	const SET_CTRL_REC_PARAM& recParam,
 	const vector<wstring>& saveFolderSub,
 	int maxBuffCount
 )
 {
 	CBlockLock lock(&this->objLock);
 
-	auto itr = serviceUtilMap.find(id);
+	auto itr = serviceUtilMap.find(recParam.ctrlID);
 	if( itr == serviceUtilMap.end() ){
 		return FALSE;
 	}
 
-	return itr->second->StartSave(fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, maxBuffCount);
+	return itr->second->StartSave(recParam, saveFolderSub, maxBuffCount);
 }
 
-//ファイル保存を終了する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id			[IN]制御識別ID
 BOOL CTSOut::EndSave(
-	DWORD id
+	DWORD id,
+	BOOL* subRecFlag
 	)
 {
 	CBlockLock lock(&this->objLock);
@@ -769,7 +741,7 @@ BOOL CTSOut::EndSave(
 		return FALSE;
 	}
 
-	return itr->second->EndSave();
+	return itr->second->EndSave(subRecFlag);
 }
 
 //スクランブル解除処理の動作設定
@@ -897,23 +869,17 @@ void CTSOut::ResetErrCount()
 	}
 }
 
-//録画中のファイルのファイルパスを取得する
-//引数：
-// id					[IN]制御識別ID
-// filePath				[OUT]保存ファイル名
-// subRecFlag			[OUT]サブ録画が発生したかどうか
-void CTSOut::GetSaveFilePath(
-	DWORD id,
-	wstring* filePath,
-	BOOL* subRecFlag
+wstring CTSOut::GetSaveFilePath(
+	DWORD id
 	)
 {
 	CBlockLock lock(&this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
-		itr->second->GetSaveFilePath(filePath, subRecFlag);
+		return itr->second->GetSaveFilePath();
 	}
+	return wstring();
 }
 
 //ドロップとスクランブルのカウントを保存する

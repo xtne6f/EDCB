@@ -6,13 +6,11 @@
 //CP932に存在しない文字も使用する場合はこのマクロを定義する
 //#define ARIB8CHAR_USE_UNICODE
 
-CARIB8CharDecode::CARIB8CharDecode(void)
-{
-}
-
-CARIB8CharDecode::~CARIB8CharDecode(void)
-{
-}
+#ifdef ARIB8CHAR_USE_UNICODE
+const WCHAR* CARIB8CharDecode::TELETEXT_MARK = GaijiTable[9].strCharUnicode;
+#else
+const WCHAR* CARIB8CharDecode::TELETEXT_MARK = GaijiTable[9].strChar;
+#endif
 
 void CARIB8CharDecode::InitPSISI(void)
 {

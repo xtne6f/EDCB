@@ -3,6 +3,8 @@
 #include "UpnpSsdpServer.h"
 #include <functional>
 
+#define LUA_DLL_NAME L"lua52.dll"
+
 struct mg_context;
 struct mg_connection;
 

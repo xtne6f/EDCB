@@ -10,6 +10,9 @@
 class CWriteTSFile
 {
 public:
+	//フォルダに空きがあるとみなす最低容量
+	static const int FREE_FOLDER_MIN_BYTES = 200 * 1024 * 1024;
+
 	CWriteTSFile(void);
 	~CWriteTSFile(void);
 
@@ -34,7 +37,12 @@ public:
 	//ファイル保存を終了する
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
-	BOOL EndSave();
+	//引数：
+	// subRecFlag			[OUT]成功のとき、サブ録画が発生したかどうか
+	BOOL EndSave(BOOL* subRecFlag_ = NULL);
+
+	//保存中かどうか
+	BOOL IsRec() { return this->outThread.joinable(); }
 
 	//出力用TSデータを送る
 	//戻り値：
@@ -48,13 +56,9 @@ public:
 		);
 
 	//録画中のファイルのファイルパスを取得する
-	//引数：
-	// filePath			[OUT]保存ファイル名
-	// subRecFlag		[OUT]サブ録画が発生したかどうか
-	void GetSaveFilePath(
-		wstring* filePath,
-		BOOL* subRecFlag_
-		);
+	//戻り値：
+	// ファイルパス
+	wstring GetSaveFilePath();
 
 	//録画中のファイルの出力サイズを取得する
 	//引数：
@@ -64,27 +68,12 @@ public:
 		);
 
 protected:
-	//保存サブフォルダから空きのあるフォルダパスを取得
+	//指定フォルダの空き容量を取得する
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	// 空き容量
 	//引数：
-	// needFreeSize			[IN]最低必要な空きサイズ
-	// freeFolderPath		[OUT]見つかったフォルダ
-	BOOL GetFreeFolder(
-		ULONGLONG needFreeSize,
-		wstring& freeFolderPath
-	);
-
-	//指定フォルダの空きがあるかチェック
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	//引数：
-	// needFreeSize			[IN]最低必要な空きサイズ
-	// chkFolderPath		[IN]指定フォルダ
-	BOOL ChkFreeFolder(
-		ULONGLONG needFreeSize,
-		const wstring& chkFolderPath
-	);
+	// folderPath		[IN]指定フォルダ
+	static ULONGLONG GetFreeSize(const wstring& folderPath);
 
 	static void OutThread(CWriteTSFile* sys);
 

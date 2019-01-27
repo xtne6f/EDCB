@@ -44,15 +44,29 @@ end
 ct:Append([=[
   </table>
   <div class="aside">
-    <a href="view.lua">view.lua</a>]=])
+    <form method="POST" action="view.lua"><div style="float:left">
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="submit" value="view.lua">
+    </div></form>
+]=])
 for i,v in ipairs(edcb.FindFile and edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
   n=v.name:match('^[^_]+_(%d+)_%d+$')
   if n then
-    ct:Append(' <a href="view.lua?n='..n..'">port'..n..'</a>')
+    ct:Append([=[
+    <form method="POST" action="view.lua"><div style="float:left">
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="hidden" name="n" value="]=]..n..[=[">
+      <input type="submit" value="-pipe]=]..n..[=[">
+    </div></form>
+]=])
   end
 end
 ct:Append([=[
- (<a href="view.lua?n=-1">term</a>)
+    <form method="POST" action="view.lua"><div>
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="hidden" name="n" value="-1">
+      <input type="submit" value="-term">
+    </div></form>
   </div>
 </div>
 <div id="footer">

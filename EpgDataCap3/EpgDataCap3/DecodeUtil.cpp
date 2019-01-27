@@ -18,7 +18,7 @@ static bool SDDecodeNIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::descriptor_length, Desc::D_LOCAL, 8,
 		Desc::D_BEGIN, Desc::descriptor_length,
 			Desc::reserved, 8,
-			Desc::d_char, Desc::D_STRING_TO_END,
+			Desc::d_char, Desc::D_BINARY_TO_END,
 		Desc::D_END,
 		Desc::D_FIN,
 	};
@@ -60,7 +60,7 @@ static bool SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::descriptor_length, Desc::D_LOCAL, 8,
 		Desc::D_BEGIN, Desc::descriptor_length,
 			Desc::service_type, 8,
-			Desc::service_name, Desc::D_STRING_TO_END,
+			Desc::service_name, Desc::D_BINARY_TO_END,
 		Desc::D_END,
 		Desc::D_FIN,
 	};
@@ -129,7 +129,7 @@ static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::descriptor_length, Desc::D_LOCAL, 8,
 		Desc::D_BEGIN, Desc::descriptor_length,
 			Desc::reserved, 8,
-			Desc::event_name_char, Desc::D_STRING_TO_END,
+			Desc::event_name_char, Desc::D_BINARY_TO_END,
 		Desc::D_END,
 		Desc::D_FIN,
 	};
@@ -142,7 +142,7 @@ static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 			Desc::component_type, 8,
 			Desc::component_tag, 8,
 			Desc::reserved, Desc::D_LOCAL, 8,
-			Desc::text_char, Desc::D_STRING_TO_END,
+			Desc::text_char, Desc::D_BINARY_TO_END,
 		Desc::D_END,
 		Desc::D_FIN,
 	};
@@ -533,12 +533,8 @@ void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 		for( DWORD i = 0; sit.SetLoopIndex(lp, i); i++ ){
 			if( sit.GetNumber(Desc::descriptor_tag, lp) == Desc::partialTS_time_descriptor ){
 				if( sit.GetNumber(Desc::jst_time_flag, lp) == 1 ){
-					DWORD timeBytesSize;
-					const BYTE* timeBytes = sit.GetBinary(Desc::jst_time, &timeBytesSize, lp);
-					if( timeBytes != NULL && timeBytesSize >= 5 ){
-						this->sitTime = MJDtoFILETIME(timeBytes[0] << 8 | timeBytes[1], timeBytes[2] << 16 | timeBytes[3] << 8 | timeBytes[4]);
-						this->sitTimeTick = GetTickCount();
-					}
+					this->sitTime = MJDtoFILETIME(sit.GetNumber(Desc::jst_time_mjd), sit.GetNumber(Desc::jst_time_bcd));
+					this->sitTimeTick = GetTickCount();
 				}
 			}
 		}

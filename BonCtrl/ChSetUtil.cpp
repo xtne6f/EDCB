@@ -195,16 +195,9 @@ BOOL CChSetUtil::GetCh(
 	return ret;
 }
 
-//EPG取得対象のサービス一覧を取得する
-//戻り値：
-// エラーコード
-//引数：
-// chList		[OUT]EPG取得するチャンネル一覧
-void CChSetUtil::GetEpgCapService(
-	vector<EPGCAP_SERVICE_INFO>* chList
-	)
+vector<SET_CH_INFO> CChSetUtil::GetEpgCapService()
 {
-	vector<pair<int, int>> addList;
+	vector<SET_CH_INFO> ret;
 	map<DWORD, CH_DATA4>::const_iterator itrCh4;
 	for( itrCh4 = this->chText4.GetMap().begin(); itrCh4 != this->chText4.GetMap().end(); itrCh4++ ){
 		LONGLONG key = Create64Key(itrCh4->second.originalNetworkID, itrCh4->second.transportStreamID, itrCh4->second.serviceID);
@@ -213,36 +206,42 @@ void CChSetUtil::GetEpgCapService(
 
 		if( itrCh5 != this->chText5.GetMap().end() ){
 			if( itrCh5->second.epgCapFlag == TRUE ){
-				if( std::find(addList.begin(), addList.end(), std::make_pair(itrCh4->second.space, itrCh4->second.ch)) == addList.end() ){
-					EPGCAP_SERVICE_INFO item;
+				SET_CH_INFO item;
+				item.useBonCh = TRUE;
+				item.space = itrCh4->second.space;
+				item.ch = itrCh4->second.ch;
+				if( std::find_if(ret.begin(), ret.end(), [&](const SET_CH_INFO& a) {
+				        return a.space == item.space && a.ch == item.ch; }) == ret.end() ){
+					item.useSID = TRUE;
 					item.ONID = itrCh5->second.originalNetworkID;
 					item.TSID = itrCh5->second.transportStreamID;
 					item.SID = itrCh5->second.serviceID;
-					chList->push_back(item);
-
-					addList.push_back(std::make_pair(itrCh4->second.space, itrCh4->second.ch));
+					ret.push_back(item);
 				}
 			}
 		}
 	}
+	return ret;
 }
 
-vector<EPGCAP_SERVICE_INFO> CChSetUtil::GetEpgCapServiceAll(
+vector<SET_CH_INFO> CChSetUtil::GetEpgCapServiceAll(
 	int ONID,
 	int TSID
 	)
 {
-	vector<EPGCAP_SERVICE_INFO> ret;
+	vector<SET_CH_INFO> ret;
 	map<LONGLONG, CH_DATA5>::const_iterator itrCh5;
 	for( itrCh5 = this->chText5.GetMap().begin(); itrCh5 != this->chText5.GetMap().end(); itrCh5++ ){
 		if( (ONID < 0 || itrCh5->second.originalNetworkID == ONID) &&
 			(TSID < 0 || itrCh5->second.transportStreamID == TSID) &&
 			itrCh5->second.epgCapFlag == TRUE
 			){
-			ret.push_back(EPGCAP_SERVICE_INFO());
+			ret.push_back(SET_CH_INFO());
+			ret.back().useSID = TRUE;
 			ret.back().ONID = itrCh5->second.originalNetworkID;
 			ret.back().TSID = itrCh5->second.transportStreamID;
 			ret.back().SID = itrCh5->second.serviceID;
+			ret.back().useBonCh = FALSE;
 		}
 	}
 	return ret;
