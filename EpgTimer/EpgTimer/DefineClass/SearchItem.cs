@@ -123,9 +123,9 @@ namespace EpgTimer
                     {
                         int nibble1 = ecd1.content_nibble_level_1;
                         int nibble2 = ecd1.content_nibble_level_2;
-                        if (nibble1 == 0x0E && nibble2 == 0x01)
+                        if (nibble1 == 0x0E && nibble2 <= 0x01)
                         {
-                            nibble1 = ecd1.user_nibble_1 | 0x70;
+                            nibble1 = ecd1.user_nibble_1 | (0x60 + nibble2 * 16);
                             nibble2 = ecd1.user_nibble_2;
                         }
                         if (nibbleDict1.ContainsKey(nibble1))

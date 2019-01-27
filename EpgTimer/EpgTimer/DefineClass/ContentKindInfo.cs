@@ -48,7 +48,7 @@ namespace EpgTimer
         {
             get
             {
-                return ContentName + (SubName == "" ? "" : " - " + SubName); 
+                return (ContentName ?? "") + (Nibble2 == 0xFF ? "" : " - " + (SubName ?? ""));
             }
         }
         public ContentKindInfo DeepClone()
@@ -57,14 +57,7 @@ namespace EpgTimer
         }
         public override string ToString()
         {
-            if (Nibble2 == 0xFF)
-            {
-                return ContentName;
-            }
-            else
-            {
-                return "  " + SubName;
-            }
+            return Nibble2 == 0xFF ? (ContentName ?? "") : "  " + (SubName ?? "");
         }
     }
 }

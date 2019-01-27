@@ -123,6 +123,7 @@
             <Button Click="button_dttv_on_Click" Content="+地デジ映像" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,106,10,0" VerticalAlignment="Top" Width="90" />
             <Button Click="button_bs_on_Click" Content="+BS映像" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,132,10,0" VerticalAlignment="Top" Width="90" />
             <Button Click="button_cs_on_Click" Content="+CS映像" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,158,10,0" VerticalAlignment="Top" Width="90" />
+            <Button Click="button_cs3_on_Click" Content="+CS3映像" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,184,10,0" Name="button_cs3" VerticalAlignment="Top" Visibility="Hidden" Width="90" />
         </Grid>
     </Grid>
 </UserControl>
