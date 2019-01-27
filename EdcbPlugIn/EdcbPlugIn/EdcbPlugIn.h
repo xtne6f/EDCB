@@ -11,8 +11,8 @@
 #include "../../BonCtrl/DropCount.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ThreadUtil.h"
-#ifdef SEND_PIPE_TEST
 #include "../../BonCtrl/BonCtrlDef.h"
+#ifdef SEND_PIPE_TEST
 #include "../../BonCtrl/ServiceFilter.h"
 #include "../../BonCtrl/SendTCP.h"
 #endif

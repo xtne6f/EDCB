@@ -1040,7 +1040,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 	if (packet.Set188TS(pData, 188)) {
 		CEdcbPlugIn &this_ = *static_cast<CEdcbPlugIn*>(pClientData);
 		CBlockLock lock(&this_.m_streamLock);
-		if (packet.PID <= 0x30) {
+		if (packet.PID < BON_SELECTIVE_PID) {
 			if (this_.m_chChangeID > CH_CHANGE_ERR) {
 				// チャンネル切り替え中
 				// 1秒間は切り替え前のパケット来る可能性を考慮して無視する
