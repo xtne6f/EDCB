@@ -15,11 +15,11 @@
 2.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
 
 
-[ビルド(MSYS2/Mingw-w64)]
+[ビルド(MSYS2/Mingw-w64)] ※VisualStudioのインストールが面倒な場合お勧め
 
 0.https://www.msys2.org/ の msys2-i686-日付.exe(32bitOS用) または msys2-x86_64-日付.exe(64bitOS用) をインストール
-  スタートメニューにある"MSYS2 MinGW 32-bit"を開き、起動した黒窓で以下を実行してmakeとgccをインストール
-  $ pacman -S make mingw-w64-i686-gcc
+  スタートメニューの"MSYS2 MinGW 32-bit"(x64ビルド時は64-bit)を開き、起動した黒窓で以下を実行してmakeとgccをインストール
+  $ pacman -S make mingw-w64-i686-gcc # x64ビルド時はmingw-w64-x86_64-gcc
 
 1.つづけて以下を実行（この文書が"C:\EDCB\Document"にあると仮定）
   $ cd /c/EDCB/Document/MinGW
@@ -81,5 +81,5 @@
   ・https://zlib.net/ のzlib1211.zipの中身を"EpgTimerSrv\EpgTimerSrv\lua\zlib1"にコピー
   ビルド中にWarningが多めにでるがコーディングスタイルの問題なので気にしない
 
-・プラットフォームツールセット:LLVM-vs2014( http://releases.llvm.org/ )に対応している
+・プラットフォームツールセット:LLVM-vs2014( https://releases.llvm.org/ , ver.7.0.0以降はMarketplaceに移動の模様)に対応している
   ソースコードのUTF-8変換が必要。ConvToUTF8.batで変換できる(ConvToSJIS.batでShift_JISに逆変換)
