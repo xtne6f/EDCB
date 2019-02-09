@@ -309,11 +309,9 @@ __int64 CTimeShiftUtil::GetAvailableFileSize() const
 		if( this->fileMode ){
 			//単純にファイルサイズを返す
 			if( this->seekFile == INVALID_HANDLE_VALUE ){
-				WIN32_FIND_DATA findData;
-				HANDLE find = FindFirstFile(this->filePath.c_str(), &findData);
-				if( find != INVALID_HANDLE_VALUE ){
-					FindClose(find);
-					return (__int64)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
+				WIN32_FILE_ATTRIBUTE_DATA attrData;
+				if( GetFileAttributesEx(this->filePath.c_str(), GetFileExInfoStandard, &attrData) ){
+					return (__int64)attrData.nFileSizeHigh << 32 | attrData.nFileSizeLow;
 				}
 			}else{
 				LARGE_INTEGER liSize;

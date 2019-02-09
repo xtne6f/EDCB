@@ -143,33 +143,29 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 vector<pair<wstring, wstring>> CEpgTimerSrvSetting::EnumBonFileName(LPCWSTR settingPath)
 {
 	vector<pair<wstring, wstring>> ret;
-	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile(fs_path(settingPath).append(L"*.ChSet4.txt").c_str(), &findData);
-	if( hFind != INVALID_HANDLE_VALUE ){
-		do{
-			if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-				wstring bon = findData.cFileName;
-				for( int depth = 0; bon.empty() == false; ){
-					if( bon.back() == L')' ){
-						depth++;
-					}else if( bon.back() == L'(' && depth > 0 ){
-						if( --depth == 0 ){
-							bon.pop_back();
-							break;
-						}
+	EnumFindFile(fs_path(settingPath).append(L"*.ChSet4.txt").c_str(), [&ret](WIN32_FIND_DATA& findData) -> bool {
+		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+			wstring bon = findData.cFileName;
+			for( int depth = 0; bon.empty() == false; ){
+				if( bon.back() == L')' ){
+					depth++;
+				}else if( bon.back() == L'(' && depth > 0 ){
+					if( --depth == 0 ){
+						bon.pop_back();
+						break;
 					}
-					bon.pop_back();
 				}
-				if( bon.empty() == false ){
-					bon += L".dll";
-					if( std::find_if(ret.begin(), ret.end(), [&](const pair<wstring, wstring>& a) { return CompareNoCase(a.first, bon) == 0; }) == ret.end() ){
-						ret.push_back(pair<wstring, wstring>(bon, findData.cFileName));
-					}
+				bon.pop_back();
+			}
+			if( bon.empty() == false ){
+				bon += L".dll";
+				if( std::find_if(ret.begin(), ret.end(), [&](const pair<wstring, wstring>& a) { return CompareNoCase(a.first, bon) == 0; }) == ret.end() ){
+					ret.push_back(pair<wstring, wstring>(bon, findData.cFileName));
 				}
 			}
-		}while( FindNextFile(hFind, &findData) );
-		FindClose(hFind);
-	}
+		}
+		return true;
+	});
 	return ret;
 }
 
@@ -186,16 +182,12 @@ wstring CEpgTimerSrvSetting::CheckTSExtension(const wstring& ext)
 vector<wstring> CEpgTimerSrvSetting::EnumRecNamePlugInFileName()
 {
 	vector<wstring> ret;
-	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile(GetModulePath().replace_filename(L"RecName\\RecName*.dll").c_str(), &findData);
-	if( hFind != INVALID_HANDLE_VALUE ){
-		do{
-			if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-				ret.push_back(findData.cFileName);
-			}
-		}while( FindNextFile(hFind, &findData) );
-		FindClose(hFind);
-	}
+	EnumFindFile(GetModulePath().replace_filename(L"RecName\\RecName*.dll").c_str(), [&ret](WIN32_FIND_DATA& findData) -> bool {
+		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+			ret.push_back(findData.cFileName);
+		}
+		return true;
+	});
 	return ret;
 }
 

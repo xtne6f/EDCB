@@ -65,25 +65,19 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	const fs_path settingPath = GetSettingPath();
 	const fs_path epgDataPath = fs_path(settingPath).append(EPG_SAVE_FOLDER);
 
-	WIN32_FIND_DATA findData;
-	HANDLE find;
-
 	//指定フォルダのファイル一覧取得
-	find = FindFirstFile(fs_path(epgDataPath).append(L"*_epg.dat").c_str(), &findData);
-	if( find != INVALID_HANDLE_VALUE ){
-		do{
-			__int64 fileTime = (__int64)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
-			if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && fileTime != 0 ){
-				//見つかったファイルを一覧に追加
-				//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
-				WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < utcNow ? L'0' :
-				               wcslen(findData.cFileName) < 12 || _wcsicmp(findData.cFileName + wcslen(findData.cFileName) - 12, L"ffff_epg.dat") ? L'1' : L'2';
-				wstring item = prefix + fs_path(epgDataPath).append(findData.cFileName).native();
-				epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
-			}
-		}while( FindNextFile(find, &findData) );
-		FindClose(find);
-	}
+	EnumFindFile(fs_path(epgDataPath).append(L"*_epg.dat").c_str(), [&](WIN32_FIND_DATA& findData) -> bool {
+		__int64 fileTime = (__int64)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
+		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && fileTime != 0 ){
+			//見つかったファイルを一覧に追加
+			//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
+			WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < utcNow ? L'0' :
+			               wcslen(findData.cFileName) < 12 || _wcsicmp(findData.cFileName + wcslen(findData.cFileName) - 12, L"ffff_epg.dat") ? L'1' : L'2';
+			wstring item = prefix + fs_path(epgDataPath).append(findData.cFileName).native();
+			epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
+		}
+		return true;
+	});
 
 	DWORD loadElapsed = 0;
 	DWORD loadTick = GetTickCount();

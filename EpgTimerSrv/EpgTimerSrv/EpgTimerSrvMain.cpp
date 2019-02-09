@@ -2031,17 +2031,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_PLUGIN\r\n");
 			WORD mode;
 			if( ReadVALUE(&mode, cmdParam->data, cmdParam->dataSize, NULL) && (mode == 1 || mode == 2) ){
-				WIN32_FIND_DATA findData;
-				//指定フォルダのファイル一覧取得
-				HANDLE hFind = FindFirstFile(GetModulePath().replace_filename(mode == 1 ? L"RecName\\RecName*.dll" : L"Write\\Write*.dll").c_str(), &findData);
-				if( hFind != INVALID_HANDLE_VALUE ){
-					vector<wstring> fileList;
-					do{
-						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".dll") ){
-							fileList.push_back(findData.cFileName);
-						}
-					}while( FindNextFile(hFind, &findData) );
-					FindClose(hFind);
+				vector<wstring> fileList;
+				EnumFindFile(GetModulePath().replace_filename(mode == 1 ? L"RecName\\RecName*.dll" : L"Write\\Write*.dll").c_str(),
+				             [&](WIN32_FIND_DATA& findData) -> bool {
+					if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".dll") ){
+						fileList.push_back(findData.cFileName);
+					}
+					return true;
+				});
+				if( fileList.empty() == false ){
 					resParam->data = NewWriteVALUE(fileList, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
@@ -3902,26 +3900,22 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 		if( pattern ){
 			wstring strPattern;
 			UTF8toW(pattern, strPattern);
-			WIN32_FIND_DATA findData;
-			HANDLE hFind = FindFirstFile(strPattern.c_str(), &findData);
-			if( hFind != INVALID_HANDLE_VALUE ){
-				vector<WIN32_FIND_DATA> findList;
-				do{
-					findList.push_back(findData);
-				}while( (n <= 0 || --n > 0) && FindNextFile(hFind, &findData) );
-				FindClose(hFind);
-				lua_createtable(L, (int)findList.size(), 0);
-				for( size_t i = 0; i < findList.size(); i++ ){
-					lua_createtable(L, 0, 4);
-					LuaHelp::reg_string(L, "name", ws.WtoUTF8(findList[i].cFileName));
-					LuaHelp::reg_int64(L, "size", (__int64)findList[i].nFileSizeHigh << 32 | findList[i].nFileSizeLow);
-					LuaHelp::reg_boolean(L, "isdir", (findList[i].dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
-					FILETIME ft = findList[i].ftLastWriteTime;
-					SYSTEMTIME st;
-					ConvertSystemTime(((__int64)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + I64_UTIL_TIMEZONE, &st);
-					LuaHelp::reg_time(L, "mtime", st);
-					lua_rawseti(L, -2, (int)i + 1);
+			int i = 0;
+			EnumFindFile(strPattern.c_str(), [&ws, &n, &i](WIN32_FIND_DATA& findData) -> bool {
+				if( i == 0 ){
+					lua_newtable(ws.L);
 				}
+				lua_createtable(ws.L, 0, 4);
+				LuaHelp::reg_string(ws.L, "name", ws.WtoUTF8(findData.cFileName));
+				LuaHelp::reg_int64(ws.L, "size", (__int64)findData.nFileSizeHigh << 32 | findData.nFileSizeLow);
+				LuaHelp::reg_boolean(ws.L, "isdir", (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+				SYSTEMTIME st;
+				ConvertSystemTime(((__int64)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime) + I64_UTIL_TIMEZONE, &st);
+				LuaHelp::reg_time(ws.L, "mtime", st);
+				lua_rawseti(ws.L, -2, ++i);
+				return n <= 0 || --n > 0;
+			});
+			if( i != 0 ){
 				return 1;
 			}
 		}

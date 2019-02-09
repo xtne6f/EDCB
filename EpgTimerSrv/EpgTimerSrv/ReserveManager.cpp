@@ -1148,16 +1148,13 @@ void CReserveManager::CheckAutoDel() const
 			__int64 needFreeSize = needSize - freeBytes.QuadPart;
 			vector<pair<WIN32_FIND_DATA, size_t>> findList;
 			for( auto itrSame = itr; itrSame != itrEnd; itrSame++ ){
-				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile(fs_path(this->setting.delChkList[itrSame->second]).append(L'*' + this->setting.tsExt).c_str(), &findData);
-				if( hFind != INVALID_HANDLE_VALUE ){
-					do{
-						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, this->setting.tsExt.c_str()) ){
-							findList.push_back(std::make_pair(findData, itrSame->second));
-						}
-					}while( FindNextFile(hFind, &findData) );
-					FindClose(hFind);
-				}
+				EnumFindFile(fs_path(this->setting.delChkList[itrSame->second]).append(L'*' + this->setting.tsExt).c_str(),
+				             [&](WIN32_FIND_DATA& findData) -> bool {
+					if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, this->setting.tsExt.c_str()) ){
+						findList.push_back(std::make_pair(findData, itrSame->second));
+					}
+					return true;
+				});
 			}
 			while( needFreeSize > 0 && findList.empty() == false ){
 				//XV“ú‚ªŒÃ‚¢‚à‚Ì
