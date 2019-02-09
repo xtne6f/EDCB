@@ -1756,9 +1756,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}else{
 			LONGLONG serviceKey;
 			if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL) ){
-				sys->epgDB.EnumEventInfo(serviceKey, [=](const vector<EPGDB_EVENT_INFO>& val) {
-					resParam->param = CMD_SUCCESS;
-					resParam->data = NewWriteVALUE(val, resParam->dataSize);
+				int keys[3] = { (WORD)(serviceKey >> 32), (WORD)(serviceKey >> 16), (WORD)serviceKey };
+				vector<const EPGDB_EVENT_INFO*> valp;
+				sys->epgDB.EnumEventInfo(keys, 3, 0, LLONG_MAX, [=, &valp](const EPGDB_EVENT_INFO* val) {
+					if( val ){
+						valp.push_back(val);
+					}else{
+						resParam->param = CMD_SUCCESS;
+						resParam->data = NewWriteVALUE(valp, resParam->dataSize);
+					}
 				});
 			}
 		}
@@ -1770,9 +1776,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}else{
 			LONGLONG serviceKey;
 			if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL) ){
-				sys->epgDB.EnumArchiveEventInfo(serviceKey, [=](const vector<EPGDB_EVENT_INFO>& val) {
-					resParam->param = CMD_SUCCESS;
-					resParam->data = NewWriteVALUE(val, resParam->dataSize);
+				int keys[3] = { (WORD)(serviceKey >> 32), (WORD)(serviceKey >> 16), (WORD)serviceKey };
+				vector<const EPGDB_EVENT_INFO*> valp;
+				sys->epgDB.EnumArchiveEventInfo(keys, 3, 0, LLONG_MAX, true, [=, &valp](const EPGDB_EVENT_INFO* val) {
+					if( val ){
+						valp.push_back(val);
+					}else{
+						resParam->param = CMD_SUCCESS;
+						resParam->data = NewWriteVALUE(valp, resParam->dataSize);
+					}
 				});
 			}
 		}
@@ -3353,28 +3365,18 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTimeProc(lua_State* L, bool archive)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 3 ){
-		__int64 minMaxTime[2] = { LLONG_MAX, LLONG_MIN };
-		__int64 serviceKey = Create64Key((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
-		auto enumProc = [&minMaxTime](const vector<EPGDB_EVENT_INFO>& val) -> void {
-			for( size_t i = 0; i < val.size(); i++ ){
-				if( val[i].StartTimeFlag ){
-					__int64 startTime = ConvertI64Time(val[i].start_time);
-					minMaxTime[0] = min(minMaxTime[0], startTime);
-					minMaxTime[1] = max(minMaxTime[1], startTime);
-				}
-			}
-		};
+		pair<__int64, __int64> ret;
 		if( archive ){
-			ws.sys->epgDB.EnumArchiveEventInfo(serviceKey, enumProc);
+			ret = ws.sys->epgDB.GetArchiveEventMinMaxTime((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
 		}else{
-			ws.sys->epgDB.EnumEventInfo(serviceKey, enumProc);
+			ret = ws.sys->epgDB.GetEventMinMaxTime((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
 		}
-		if( minMaxTime[0] != LLONG_MAX ){
+		if( ret.first != LLONG_MAX ){
 			lua_newtable(ws.L);
 			SYSTEMTIME st;
-			ConvertSystemTime(minMaxTime[0], &st);
+			ConvertSystemTime(ret.first, &st);
 			LuaHelp::reg_time(L, "minTime", st);
-			ConvertSystemTime(minMaxTime[1], &st);
+			ConvertSystemTime(ret.second, &st);
 			LuaHelp::reg_time(L, "maxTime", st);
 			return 1;
 		}
@@ -3420,39 +3422,21 @@ int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 			key.push_back(LuaHelp::isnil(L, "sid") ? -1 : LuaHelp::get_int(L, "sid"));
 			lua_pop(L, 1);
 		}
-		auto enumProc = [=, &ws, &key](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) -> void {
-			lua_newtable(ws.L);
-			int n = 0;
-			for( auto itr = val.cbegin(); itr != val.end(); itr++ ){
-				for( size_t i = 0; i + 2 < key.size(); i += 3 ){
-					if( (key[i] < 0 || key[i] == itr->second.serviceInfo.ONID) &&
-					    (key[i+1] < 0 || key[i+1] == itr->second.serviceInfo.TSID) &&
-					    (key[i+2] < 0 || key[i+2] == itr->second.serviceInfo.SID) ){
-						for( size_t j = 0; j < itr->second.eventList.size(); j++ ){
-							if( (enumStart != 0 || enumEnd != LLONG_MAX) && (enumStart != LLONG_MAX || itr->second.eventList[j].StartTimeFlag) ){
-								if( itr->second.eventList[j].StartTimeFlag == 0 ){
-									continue;
-								}
-								__int64 startTime = ConvertI64Time(itr->second.eventList[j].start_time);
-								if( startTime < enumStart || enumEnd <= startTime ){
-									continue;
-								}
-							}
-							lua_newtable(ws.L);
-							PushEpgEventInfo(ws, itr->second.eventList[j]);
-							lua_rawseti(ws.L, -2, ++n);
-						}
-						break;
-					}
-				}
+		lua_newtable(ws.L);
+		int i = 0;
+		auto enumProc = [&ws, &i](const EPGDB_EVENT_INFO* val) -> void {
+			if( val ){
+				lua_newtable(ws.L);
+				PushEpgEventInfo(ws, *val);
+				lua_rawseti(ws.L, -2, ++i);
 			}
 		};
 		if( archive ){
-			ws.sys->epgDB.EnumArchiveEventAll(enumProc);
-			return 1;
-		}else if( ws.sys->epgDB.EnumEventAll(enumProc) ){
-			return 1;
+			ws.sys->epgDB.EnumArchiveEventInfo(key.data(), key.size(), enumStart, enumEnd, false, enumProc);
+		}else{
+			ws.sys->epgDB.EnumEventInfo(key.data(), key.size(), enumStart, enumEnd, enumProc);
 		}
+		return 1;
 	}
 	lua_pushnil(L);
 	return 1;
