@@ -28,9 +28,9 @@ namespace EpgTimer
             searchKey.SetSearchKey(key);
         }
 
-        public void GetSetting(ref EpgSearchKeyInfo key)
+        public EpgSearchKeyInfo GetSetting()
         {
-            searchKey.GetSearchKey(ref key);
+            return searchKey.GetSearchKey();
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
