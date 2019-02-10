@@ -482,7 +482,10 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 							itrOld->eventList.push_back(std::move(itr->second.eventList[i]));
 						}else if( startTime > max(arcMin, oldMin) && startTime < arcMax ){
 							//Žc‚·
-							itr->second.eventList[j++] = std::move(itr->second.eventList[i]);
+							if( i != j ){
+								itr->second.eventList[j] = std::move(itr->second.eventList[i]);
+							}
+							j++;
 						}
 					}
 					if( j == 0 ){
