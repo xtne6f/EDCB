@@ -1108,23 +1108,6 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TUNER_RESERVE_IN
 	return pos - buffOffset;
 }
 
-BOOL ReadVALUE( WORD ver, TUNER_RESERVE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
-{
-	DWORD pos = 0;
-	DWORD size = 0;
-	DWORD valSize = 0;
-	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &valSize );
-	if( valSize < pos || buffSize < valSize ){
-		return FALSE;
-	}
-	buffSize = valSize;
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tunerID );
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->tunerName );
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->reserveList );
-	*readSize = valSize;
-	return TRUE;
-}
-
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REGIST_TCP_INFO& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD);
@@ -1182,22 +1165,6 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TVTEST_CH_CHG_IN
 	pos += WriteVALUE(ver, buff, pos, val.chInfo);
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
-}
-
-BOOL ReadVALUE( WORD ver, TVTEST_CH_CHG_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
-{
-	DWORD pos = 0;
-	DWORD size = 0;
-	DWORD valSize = 0;
-	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &valSize );
-	if( valSize < pos || buffSize < valSize ){
-		return FALSE;
-	}
-	buffSize = valSize;
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->bonDriver );
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chInfo );
-	*readSize = valSize;
-	return TRUE;
 }
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const NWPLAY_PLAY_INFO& val )
@@ -1260,21 +1227,6 @@ BOOL ReadVALUE( WORD ver, NWPLAY_POS_CMD* val, const BYTE* buff, DWORD buffSize,
 	return TRUE;
 }
 
-DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TVTEST_STREAMING_INFO& val )
-{
-	DWORD pos = buffOffset + sizeof(DWORD);
-	pos += WriteVALUE(ver, buff, pos, val.enableMode);
-	pos += WriteVALUE(ver, buff, pos, val.ctrlID);
-	pos += WriteVALUE(ver, buff, pos, val.serverIP);
-	pos += WriteVALUE(ver, buff, pos, val.serverPort);
-	pos += WriteVALUE(ver, buff, pos, val.filePath);
-	pos += WriteVALUE(ver, buff, pos, val.udpSend);
-	pos += WriteVALUE(ver, buff, pos, val.tcpSend);
-	pos += WriteVALUE(ver, buff, pos, val.timeShiftMode);
-	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
-	return pos - buffOffset;
-}
-
 BOOL ReadVALUE( WORD ver, TVTEST_STREAMING_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	DWORD pos = 0;
@@ -1304,22 +1256,6 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const NWPLAY_TIMESHIFT
 	pos += WriteVALUE(ver, buff, pos, val.filePath);
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
-}
-
-BOOL ReadVALUE( WORD ver, NWPLAY_TIMESHIFT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
-{
-	DWORD pos = 0;
-	DWORD size = 0;
-	DWORD valSize = 0;
-	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &valSize );
-	if( valSize < pos || buffSize < valSize ){
-		return FALSE;
-	}
-	buffSize = valSize;
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ctrlID );
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->filePath );
-	*readSize = valSize;
-	return TRUE;
 }
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const NOTIFY_SRV_INFO& val )

@@ -98,23 +98,21 @@ void CSendCtrlCmd::SetConnectTimeOut(
 	this->connectTimeOut = timeOut;
 }
 
-static DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
+namespace
+{
+DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
 {
 	DWORD dwRet = 0;
 	for( DWORD dwRead; dwRet < dwToRead && ReadFile(hFile, lpBuffer + dwRet, dwToRead - dwRet, &dwRead, NULL); dwRet += dwRead );
 	return dwRet;
 }
 
-DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName_, LPCWSTR eventName_, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res)
+DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, const CMD_STREAM* send, CMD_STREAM* res)
 {
-	if( pipeName_ == NULL || eventName_ == NULL || send == NULL || res == NULL ){
-		return CMD_ERR_INVALID_ARG;
-	}
-
 	//接続待ち
 	//CreateEvent()してはいけない。イベントを作成するのはサーバの仕事のはず
 	//CreateEvent()してしまうとサーバが終了した後は常にタイムアウトまで待たされることになる
-	HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName_);
+	HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName);
 	if( waitEvent == NULL ){
 		return CMD_ERR_CONNECT;
 	}
@@ -127,7 +125,7 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName_, LPCWSTR eventName_, DWORD timeOu
 	}
 
 	//接続
-	HANDLE pipe = CreateFile( pipeName_, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE pipe = CreateFile(pipeName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( pipe == INVALID_HANDLE_VALUE ){
 		_OutputDebugString(L"*+* ConnectPipe Err:%d\r\n", GetLastError());
 		return CMD_ERR_CONNECT;
@@ -171,7 +169,7 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName_, LPCWSTR eventName_, DWORD timeOu
 
 #ifndef SEND_CTRL_CMD_NO_TCP
 
-static int RecvAll(SOCKET sock, char* buf, int len, int flags)
+int RecvAll(SOCKET sock, char* buf, int len, int flags)
 {
 	int n = 0;
 	while( n < len ){
@@ -186,12 +184,8 @@ static int RecvAll(SOCKET sock, char* buf, int len, int flags)
 	return n;
 }
 
-DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
+DWORD SendTCP(const wstring& ip, DWORD port, DWORD timeOut, const CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
 {
-	if( sendCmd == NULL || resCmd == NULL ){
-		return CMD_ERR_INVALID_ARG;
-	}
-
 	string ipA, strPort;
 	WtoUTF8(ip, ipA);
 	Format(strPort, "%d", port);
@@ -220,7 +214,7 @@ DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_ST
 		}else{
 			x = 0;
 			ioctlsocket(sock, FIONBIO, &x);
-			DWORD to = SND_RCV_TIMEOUT;
+			DWORD to = CSendCtrlCmd::SND_RCV_TIMEOUT;
 			setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&to, sizeof(to));
 			setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&to, sizeof(to));
 		}
@@ -266,27 +260,9 @@ DWORD CSendCtrlCmd::SendTCP(const wstring& ip, DWORD port, DWORD timeOut, CMD_ST
 }
 
 #endif
-
-DWORD CSendCtrlCmd::SendFileCopy(
-	const wstring& val,
-	BYTE** resVal,
-	DWORD* resValSize
-	)
-{
-	CMD_STREAM res;
-	DWORD ret = SendCmdData(CMD2_EPG_SRV_FILE_COPY, val, &res);
-
-	if( ret == CMD_SUCCESS ){
-		if( res.dataSize == 0 ){
-			return CMD_ERR;
-		}
-		*resValSize = res.dataSize;
-		*resVal = res.data.release();
-	}
-	return ret;
 }
 
-DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
+DWORD CSendCtrlCmd::SendCmdStream(const CMD_STREAM* send, CMD_STREAM* res)
 {
 	DWORD ret = CMD_ERR;
 	CMD_STREAM tmpRes;
