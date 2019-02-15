@@ -297,6 +297,11 @@ struct EPGDB_SERVICE_EVENT_INFO {
 	vector<EPGDB_EVENT_INFO> eventList;
 };
 
+struct EPGDB_SERVICE_EVENT_INFO_PTR {
+	const EPGDB_SERVICE_INFO* serviceInfo;
+	vector<const EPGDB_EVENT_INFO*> eventList;
+};
+
 struct EPGDB_SEARCH_DATE_INFO {
 	BYTE startDayOfWeek;
 	WORD startHour;

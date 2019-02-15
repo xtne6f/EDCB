@@ -53,13 +53,13 @@ public:
 
 	bool GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const;
 
-	pair<__int64, __int64> GetEventMinMaxTime(WORD onid, WORD tsid, WORD sid) const {
+	pair<__int64, __int64> GetEventMinMaxTime(int onid, int tsid, int sid) const {
 		CRefLock lock(&this->epgMapRefLock);
 		return GetEventMinMaxTimeProc(onid, tsid, sid, false);
 	}
 
 	bool EnumEventInfo(int* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
-	                   const std::function<void(const EPGDB_EVENT_INFO*)>& enumProc) const {
+	                   const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc) const {
 		CRefLock lock(&this->epgMapRefLock);
 		return EnumEventInfoProc(keys, keysSize, enumStart, enumEnd, enumProc, false);
 	}
@@ -75,17 +75,10 @@ public:
 		return true;
 	}
 
-	pair<__int64, __int64> GetArchiveEventMinMaxTime(WORD onid, WORD tsid, WORD sid) const;
+	pair<__int64, __int64> GetArchiveEventMinMaxTime(int onid, int tsid, int sid) const;
 
-	bool EnumArchiveEventInfo(int* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, bool inmemory,
-	                          const std::function<void(const EPGDB_EVENT_INFO*)>& enumProc) const;
-
-	//P = [](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>&) -> void
-	template<class P>
-	void EnumArchiveEventAll(P enumProc) const {
-		CRefLock lock(&this->epgMapRefLock);
-		enumProc(this->epgArchive);
-	}
+	void EnumArchiveEventInfo(int* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, bool deletableBeforeEnumDone,
+	                          const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc) const;
 
 	bool SearchEpg(
 		WORD ONID,
@@ -157,8 +150,8 @@ private:
 	                        vector<int>& dist, bool caseFlag, bool aimai, bool andFlag, wstring* findKey = NULL);
 	static bool FindLikeKeyword(const wstring& key, size_t keyPos, const wstring& word, vector<int>& dist, bool caseFlag);
 	static void AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstring key, bool caseFlag, bool regExp, bool titleOnly);
-	pair<__int64, __int64> GetEventMinMaxTimeProc(WORD onid, WORD tsid, WORD sid, bool archive) const;
+	pair<__int64, __int64> GetEventMinMaxTimeProc(int onid, int tsid, int sid, bool archive) const;
 	bool EnumEventInfoProc(int* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
-	                       const std::function<void(const EPGDB_EVENT_INFO*)>& enumProc, bool archive) const;
+	                       const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc, bool archive) const;
 };
 

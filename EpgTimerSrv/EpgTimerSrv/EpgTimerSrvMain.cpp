@@ -1758,27 +1758,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL) ){
 				int keys[3] = { (WORD)(serviceKey >> 32), (WORD)(serviceKey >> 16), (WORD)serviceKey };
 				vector<const EPGDB_EVENT_INFO*> valp;
-				sys->epgDB.EnumEventInfo(keys, 3, 0, LLONG_MAX, [=, &valp](const EPGDB_EVENT_INFO* val) {
-					if( val ){
-						valp.push_back(val);
-					}else{
-						resParam->param = CMD_SUCCESS;
-						resParam->data = NewWriteVALUE(valp, resParam->dataSize);
-					}
-				});
-			}
-		}
-		break;
-	case CMD2_EPG_SRV_ENUM_PG_ARC_INFO:
-		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ARC_INFO\r\n");
-		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
-			resParam->param = CMD_ERR_BUSY;
-		}else{
-			LONGLONG serviceKey;
-			if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL) ){
-				int keys[3] = { (WORD)(serviceKey >> 32), (WORD)(serviceKey >> 16), (WORD)serviceKey };
-				vector<const EPGDB_EVENT_INFO*> valp;
-				sys->epgDB.EnumArchiveEventInfo(keys, 3, 0, LLONG_MAX, true, [=, &valp](const EPGDB_EVENT_INFO* val) {
+				sys->epgDB.EnumEventInfo(keys, 3, 0, LLONG_MAX, [=, &valp](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO*) {
 					if( val ){
 						valp.push_back(val);
 					}else{
@@ -2024,18 +2004,55 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			});
 		}
 		break;
-	case CMD2_EPG_SRV_ENUM_PG_ARC_ALL:
-		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ARC_ALL\r\n");
+	case CMD2_EPG_SRV_GET_PG_ARC_MINMAX:
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
-			sys->epgDB.EnumArchiveEventAll([=](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) {
-				vector<const EPGDB_SERVICE_EVENT_INFO*> valp;
-				valp.reserve(val.size());
-				for( auto itr = val.cbegin(); itr != val.end(); valp.push_back(&(itr++)->second) );
+			vector<__int64> key;
+			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) ){
+				vector<__int64> retList;
+				for( size_t i = 0; i + 2 < key.size(); i += 3 ){
+					pair<__int64, __int64> ret = sys->epgDB.GetArchiveEventMinMaxTime((int)key[i], (int)key[i + 1], (int)key[i + 2]);
+					retList.push_back(ret.first);
+					retList.push_back(ret.second);
+				}
 				resParam->param = CMD_SUCCESS;
-				resParam->data = NewWriteVALUE(valp, resParam->dataSize);
-			});
+				resParam->data = NewWriteVALUE(retList, resParam->dataSize);
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_ENUM_PG_ARC:
+		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ARC\r\n");
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
+			resParam->param = CMD_ERR_BUSY;
+		}else{
+			vector<__int64> keyAndRange;
+			if( ReadVALUE(&keyAndRange, cmdParam->data, cmdParam->dataSize, NULL) && keyAndRange.size() % 3 == 2 ){
+				vector<int> key(keyAndRange.size() / 3 * 3);
+				for( size_t i = 0; i < key.size(); i++ ){
+					key[i] = (int)keyAndRange[i];
+				}
+				vector<EPGDB_SERVICE_EVENT_INFO_PTR> ret;
+				vector<EPGDB_SERVICE_EVENT_INFO_PTR>::iterator itr = ret.end();
+				sys->epgDB.EnumArchiveEventInfo(key.data(), key.size(), keyAndRange[key.size()], keyAndRange[key.size() + 1], false,
+				                                [=, &ret, &itr](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO* si) {
+					if( val ){
+						if( itr == ret.end() || itr->serviceInfo != si ){
+							itr = std::find_if(ret.begin(), ret.end(), [si](const EPGDB_SERVICE_EVENT_INFO_PTR& a) {
+								return a.serviceInfo->ONID == si->ONID && a.serviceInfo->TSID == si->TSID && a.serviceInfo->SID == si->SID; });
+							if( itr == ret.end() ){
+								ret.push_back(EPGDB_SERVICE_EVENT_INFO_PTR());
+								itr = ret.end() - 1;
+							}
+							itr->serviceInfo = si;
+						}
+						itr->eventList.push_back(val);
+					}else{
+						resParam->param = CMD_SUCCESS;
+						resParam->data = NewWriteVALUE(ret, resParam->dataSize);
+					}
+				});
+			}
 		}
 		break;
 	case CMD2_EPG_SRV_ENUM_PLUGIN:
@@ -3372,7 +3389,7 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTimeProc(lua_State* L, bool archive)
 			ret = ws.sys->epgDB.GetEventMinMaxTime((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
 		}
 		if( ret.first != LLONG_MAX ){
-			lua_newtable(ws.L);
+			lua_newtable(L);
 			SYSTEMTIME st;
 			ConvertSystemTime(ret.first, &st);
 			LuaHelp::reg_time(L, "minTime", st);
@@ -3398,16 +3415,18 @@ int CEpgTimerSrvMain::LuaEnumEventInfoArchive(lua_State* L)
 int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 {
 	CLuaWorkspace ws(L);
-	if( lua_gettop(L) >= 1 && lua_istable(L, 1) ){
+	if( (lua_gettop(L) == 1 || lua_gettop(L) == 2) && lua_istable(L, 1) ){
 		vector<int> key;
 		__int64 enumStart = 0;
 		__int64 enumEnd = LLONG_MAX;
-		if( lua_gettop(L) == 2 && lua_istable(L, -1) ){
-			if( LuaHelp::isnil(L, "startTime") ){
-				enumStart = LLONG_MAX;
-			}else{
-				enumStart = ConvertI64Time(LuaHelp::get_time(L, "startTime"));
-				enumEnd = enumStart + LuaHelp::get_int(L, "durationSecond") * I64_1SEC;
+		if( lua_gettop(L) == 2 ){
+			if( lua_istable(L, -1) ){
+				if( LuaHelp::isnil(L, "startTime") ){
+					enumStart = LLONG_MAX;
+				}else{
+					enumStart = ConvertI64Time(LuaHelp::get_time(L, "startTime"));
+					enumEnd = enumStart + LuaHelp::get_int(L, "durationSecond") * I64_1SEC;
+				}
 			}
 			lua_pop(L, 1);
 		}
@@ -3422,9 +3441,9 @@ int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 			key.push_back(LuaHelp::isnil(L, "sid") ? -1 : LuaHelp::get_int(L, "sid"));
 			lua_pop(L, 1);
 		}
-		lua_newtable(ws.L);
+		lua_newtable(L);
 		int i = 0;
-		auto enumProc = [&ws, &i](const EPGDB_EVENT_INFO* val) -> void {
+		auto enumProc = [&ws, &i](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO*) -> void {
 			if( val ){
 				lua_newtable(ws.L);
 				PushEpgEventInfo(ws, *val);
@@ -3432,7 +3451,7 @@ int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 			}
 		};
 		if( archive ){
-			ws.sys->epgDB.EnumArchiveEventInfo(key.data(), key.size(), enumStart, enumEnd, false, enumProc);
+			ws.sys->epgDB.EnumArchiveEventInfo(key.data(), key.size(), enumStart, enumEnd, true, enumProc);
 		}else{
 			ws.sys->epgDB.EnumEventInfo(key.data(), key.size(), enumStart, enumEnd, enumProc);
 		}
