@@ -711,6 +711,23 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 	return TRUE;
 }
 
+BOOL ReadVALUE( WORD ver, SEARCH_PG_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &valSize );
+	if( valSize < pos || buffSize < valSize ){
+		return FALSE;
+	}
+	buffSize = valSize;
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->keyList );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enumStart );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->enumEnd );
+	*readSize = valSize;
+	return TRUE;
+}
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CH_INFO& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD);

@@ -11,17 +11,6 @@
 class CEpgDBManager
 {
 public:
-	struct SEARCH_RESULT_EVENT {
-		const EPGDB_EVENT_INFO* info;
-		wstring findKey;
-	};
-
-	struct SEARCH_RESULT_EVENT_DATA {
-		EPGDB_EVENT_INFO info;
-		wstring findKey;
-	};
-
-public:
 	CEpgDBManager();
 	~CEpgDBManager();
 
@@ -36,20 +25,11 @@ public:
 
 	bool IsInitialLoadingDataDone() const { return this->initialLoadDone; }
 
-	void SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, vector<SEARCH_RESULT_EVENT_DATA>* result) const;
+	void SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
+	               wstring* findKey, const std::function<void(const EPGDB_EVENT_INFO*, wstring*)>& enumProc) const;
 
-	//P = [](vector<SEARCH_RESULT_EVENT>&) -> void
-	template<class P>
-	void SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, P enumProc) const {
-		CRefLock lock(&this->epgMapRefLock);
-		vector<SEARCH_RESULT_EVENT> result;
-		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-		for( size_t i = 0; i < keysSize; i++ ){
-			SearchEvent(keys[i], result);
-		}
-		CoUninitialize();
-		enumProc(result);
-	}
+	void SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, bool deletableBeforeEnumDone,
+	                      wstring* findKey, const std::function<void(const EPGDB_EVENT_INFO*, wstring*)>& enumProc) const;
 
 	bool GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const;
 
@@ -111,6 +91,17 @@ public:
 	typedef std::unique_ptr<OLECHAR, decltype(&SysFreeString)> OleCharPtr;
 
 private:
+	struct SEARCH_CONTEXT {
+		bool caseFlag;
+		DWORD chkDurationMinSec;
+		DWORD chkDurationMaxSec;
+		vector<vector<pair<wstring, RegExpPtr>>> andKeyList;
+		vector<pair<wstring, RegExpPtr>> notKeyList;
+		const EPGDB_SEARCH_KEY_INFO* key;
+		wstring targetWord;
+		vector<int> distForFind;
+	};
+
 	class CRefLock
 	{
 	public:
@@ -143,7 +134,8 @@ private:
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
 	static void LoadThread(CEpgDBManager* sys);
 
-	void SearchEvent(const EPGDB_SEARCH_KEY_INFO& key, vector<SEARCH_RESULT_EVENT>& result) const;
+	static bool InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<int>& enumServiceKey, const EPGDB_SEARCH_KEY_INFO* key);
+	static bool IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EPGDB_EVENT_INFO* itrEvent, wstring* findKey);
 	static bool IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);
 	static bool IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
 	static bool FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList, const EPGDB_EVENT_INFO& info, wstring& word,

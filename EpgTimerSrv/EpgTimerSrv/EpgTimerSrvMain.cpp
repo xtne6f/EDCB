@@ -1427,7 +1427,6 @@ vector<RESERVE_DATA>& CEpgTimerSrvMain::PreChgReserveData(vector<RESERVE_DATA>& 
 
 void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList)
 {
-	int addCount = 0;
 	int autoAddHour;
 	bool chkGroupEvent;
 	bool separateFixedTuners;
@@ -1441,14 +1440,18 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 	}
 	__int64 now = GetNowI64Time();
 
-	vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> resultList;
-	this->epgDB.SearchEpg(&data.searchInfo, 1, &resultList);
+	wstring findKeyBuff;
+	vector<pair<EPGDB_EVENT_INFO, wstring>> resultList;
+	//時間未定でなく対象期間内のものだけ
+	this->epgDB.SearchEpg(&data.searchInfo, 1, now, now + autoAddHour * 60 * 60 * I64_1SEC, &findKeyBuff,
+	                      [&resultList](const EPGDB_EVENT_INFO* val, wstring* findKey) {
+		if( val && val->DurationFlag ){
+			resultList.push_back(std::make_pair(*val, *findKey));
+		}
+	});
 	for( size_t i = 0; i < resultList.size(); i++ ){
-		const EPGDB_EVENT_INFO& info = resultList[i].info;
-		//時間未定でなく対象期間内かどうか
-		if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
-		    now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour * 60 * 60 * I64_1SEC ){
-			addCount++;
+		const EPGDB_EVENT_INFO& info = resultList[i].first;
+		{
 			if( this->reserveManager.IsFindReserve(info.original_network_id, info.transport_stream_id,
 			                                       info.service_id, info.event_id, data.recSetting.tunerID) == false ){
 				bool found = false;
@@ -1526,8 +1529,8 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 						item.recSetting.recMode = RECMODE_NO;
 					}
 					item.comment = L"EPG自動予約";
-					if( resultList[i].findKey.empty() == false ){
-						item.comment += L'(' + resultList[i].findKey;
+					if( resultList[i].second.empty() == false ){
+						item.comment += L'(' + resultList[i].second;
 						Replace(item.comment, L"\r", L"");
 						Replace(item.comment, L"\n", L"");
 						Replace(item.comment, L")", L"）");
@@ -1543,7 +1546,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 	}
 	CBlockLock lock(&this->autoAddLock);
 	//addCountは参考程度の情報。保存もされないので更新を通知する必要はない
-	this->epgAutoAdd.SetAddCount(data.dataID, addCount);
+	this->epgAutoAdd.SetAddCount(data.dataID, (DWORD)resultList.size());
 }
 
 void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const
@@ -1776,12 +1779,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}else{
 			vector<EPGDB_SEARCH_KEY_INFO> key;
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) ){
-				sys->epgDB.SearchEpg(key.data(), key.size(), [=](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
-					vector<const EPGDB_EVENT_INFO*> valp;
-					valp.reserve(val.size());
-					for( size_t i = 0; i < val.size(); valp.push_back(val[i++].info) );
-					resParam->param = CMD_SUCCESS;
-					resParam->data = NewWriteVALUE(valp, resParam->dataSize);
+				vector<const EPGDB_EVENT_INFO*> valp;
+				sys->epgDB.SearchEpg(key.data(), key.size(), 0, LLONG_MAX, NULL, [=, &valp](const EPGDB_EVENT_INFO* val, wstring*) {
+					if( val ){
+						valp.push_back(val);
+					}else{
+						resParam->param = CMD_SUCCESS;
+						resParam->data = NewWriteVALUE(valp, resParam->dataSize);
+					}
 				});
 			}
 		}
@@ -2355,6 +2360,29 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		OutputDebugString(L"CMD2_EPG_SRV_GET_EPG_FILE2\r\n");
 		resParam->param = CMD_NON_SUPPORT;
 		break;
+	case CMD2_EPG_SRV_SEARCH_PG_ARC2:
+		OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG_ARC2\r\n");
+		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
+			resParam->param = CMD_ERR_BUSY;
+		}else{
+			WORD ver;
+			DWORD readSize;
+			SEARCH_PG_PARAM param;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) &&
+			    ReadVALUE2(ver, &param, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
+				vector<const EPGDB_EVENT_INFO*> valp;
+				sys->epgDB.SearchArchiveEpg(param.keyList.data(), param.keyList.size(), param.enumStart, param.enumEnd, false, NULL,
+				                            [=, &valp](const EPGDB_EVENT_INFO* val, wstring*) {
+					if( val ){
+						valp.push_back(val);
+					}else{
+						resParam->data = NewWriteVALUE2WithVersion(ver, valp, resParam->dataSize);
+						resParam->param = CMD_SUCCESS;
+					}
+				});
+			}
+		}
+		break;
 	case CMD2_EPG_SRV_ENUM_AUTO_ADD2:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_AUTO_ADD2\r\n");
@@ -2651,27 +2679,21 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			resParam->param = OLD_CMD_ERR;
 			if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 				resParam->param = CMD_ERR_BUSY;
-			}else{
-				EPG_AUTO_ADD_DATA item;
-				if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
-					vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> val;
-					sys->epgDB.SearchEpg(&item.searchInfo, 1, &val);
-					{
-						sys->oldSearchList[tcpFlag].clear();
-						sys->oldSearchList[tcpFlag].resize(val.size());
-						for( size_t i = 0; i < val.size(); i++ ){
-							std::swap(sys->oldSearchList[tcpFlag][val.size() - i - 1], val[i].info);
-						}
-						if( sys->oldSearchList[tcpFlag].empty() == false ){
-							resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList[tcpFlag].back(), resParam->dataSize);
-							sys->oldSearchList[tcpFlag].pop_back();
-							resParam->param = sys->oldSearchList[tcpFlag].empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
-						}
-					}
-				}
+				break;
 			}
+			EPG_AUTO_ADD_DATA item;
+			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) == FALSE ){
+				break;
+			}
+			sys->oldSearchList[tcpFlag].clear();
+			sys->epgDB.SearchEpg(&item.searchInfo, 1, 0, LLONG_MAX, NULL, [=](const EPGDB_EVENT_INFO* val, wstring*) {
+				if( val ){
+					sys->oldSearchList[tcpFlag].push_back(*val);
+				}
+			});
+			std::reverse(sys->oldSearchList[tcpFlag].begin(), sys->oldSearchList[tcpFlag].end());
 		}
-		break;
+		//FALL THROUGH!
 	case CMD_EPG_SRV_SEARCH_PG_NEXT:
 		{
 			resParam->param = OLD_CMD_ERR;
@@ -2782,17 +2804,18 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 			}else{
 				WORD ver;
 				DWORD readSize;
-				if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) ){
-					vector<EPGDB_SEARCH_KEY_INFO> key;
-					if( ReadVALUE2(ver, &key, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
-						this->epgDB.SearchEpg(key.data(), key.size(), [=, &resParam](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
-							vector<const EPGDB_EVENT_INFO*> valp;
-							valp.reserve(val.size());
-							for( size_t i = 0; i < val.size(); valp.push_back(val[i++].info) );
+				vector<EPGDB_SEARCH_KEY_INFO> key;
+				if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) &&
+				    ReadVALUE2(ver, &key, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
+					vector<const EPGDB_EVENT_INFO*> valp;
+					this->epgDB.SearchEpg(key.data(), key.size(), 0, LLONG_MAX, NULL, [=, &valp, &resParam](const EPGDB_EVENT_INFO* val, wstring*) {
+						if( val ){
+							valp.push_back(val);
+						}else{
 							resParam.data = NewWriteVALUE2WithVersion(ver, valp, resParam.dataSize);
 							resParam.param = CMD_SUCCESS;
-						});
-					}
+						}
+					});
 				}
 			}
 			return true;
@@ -2807,25 +2830,26 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 			}else{
 				WORD ver;
 				DWORD readSize;
-				if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) ){
-					vector<EPGDB_SEARCH_KEY_INFO> key;
-					if( ReadVALUE2(ver, &key, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
-						vector<vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> byResult(key.size());
-						vector<const EPGDB_EVENT_INFO*> valp;
-						EPGDB_EVENT_INFO dummy;
-						dummy.original_network_id = 0;
-						dummy.transport_stream_id = 0;
-						dummy.service_id = 0;
-						dummy.event_id = 0;
-						GetSystemTime(&dummy.start_time);
-						for( size_t i = 0; i < key.size(); i++ ){
-							this->epgDB.SearchEpg(&key[i], 1, &byResult[i]);
-							for( size_t j = 0; j < byResult[i].size(); valp.push_back(&byResult[i][j++].info) );
-							valp.push_back(&dummy);
-						}
-						resParam.data = NewWriteVALUE2WithVersion(ver, valp, resParam.dataSize);
-						resParam.param = CMD_SUCCESS;
+				vector<EPGDB_SEARCH_KEY_INFO> key;
+				if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) &&
+				    ReadVALUE2(ver, &key, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
+					vector<EPGDB_EVENT_INFO> byResult;
+					EPGDB_EVENT_INFO dummy;
+					dummy.original_network_id = 0;
+					dummy.transport_stream_id = 0;
+					dummy.service_id = 0;
+					dummy.event_id = 0;
+					GetSystemTime(&dummy.start_time);
+					for( size_t i = 0; i < key.size(); i++ ){
+						this->epgDB.SearchEpg(&key[i], 1, 0, LLONG_MAX, NULL, [&byResult](const EPGDB_EVENT_INFO* val, wstring*) {
+							if( val ){
+								byResult.push_back(*val);
+							}
+						});
+						byResult.push_back(dummy);
 					}
+					resParam.data = NewWriteVALUE2WithVersion(ver, byResult, resParam.dataSize);
+					resParam.param = CMD_SUCCESS;
 				}
 			}
 			return true;
@@ -2992,6 +3016,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ "EnumEventInfo", LuaEnumEventInfo },
 		{ "EnumEventInfoArchive", LuaEnumEventInfoArchive },
 		{ "SearchEpg", LuaSearchEpg },
+		{ "SearchEpgArchive", LuaSearchEpgArchive },
 		{ "AddReserveData", LuaAddReserveData },
 		{ "ChgReserveData", LuaChgReserveData },
 		{ "DelReserveData", LuaDelReserveData },
@@ -3463,15 +3488,38 @@ int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 
 int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 {
+	return LuaSearchEpgProc(L, false);
+}
+
+int CEpgTimerSrvMain::LuaSearchEpgArchive(lua_State* L)
+{
+	return LuaSearchEpgProc(L, true);
+}
+
+int CEpgTimerSrvMain::LuaSearchEpgProc(lua_State* L, bool archive)
+{
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 4 ){
 		EPGDB_EVENT_INFO info;
 		if( ws.sys->epgDB.SearchEpg((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3), (WORD)lua_tointeger(L, 4), &info) ){
-			lua_newtable(ws.L);
+			lua_newtable(L);
 			PushEpgEventInfo(ws, info);
 			return 1;
 		}
-	}else if( lua_gettop(L) == 1 && lua_istable(L, -1) ){
+	}else if( (lua_gettop(L) == 1 || lua_gettop(L) == 2) && lua_istable(L, 1) ){
+		__int64 enumStart = 0;
+		__int64 enumEnd = LLONG_MAX;
+		if( lua_gettop(L) == 2 ){
+			if( lua_istable(L, -1) ){
+				if( LuaHelp::isnil(L, "startTime") ){
+					enumStart = LLONG_MAX;
+				}else{
+					enumStart = ConvertI64Time(LuaHelp::get_time(L, "startTime"));
+					enumEnd = enumStart + LuaHelp::get_int(L, "durationSecond") * I64_1SEC;
+				}
+			}
+			lua_pop(L, 1);
+		}
 		EPGDB_SEARCH_KEY_INFO key;
 		FetchEpgSearchKeyInfo(ws, key);
 		//対象ネットワーク
@@ -3492,35 +3540,33 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 				}
 			}
 		}
-		ws.sys->epgDB.SearchEpg(&key, 1, [&ws](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& val) {
+		//対象期間
+		__int64 chkTime = LuaHelp::get_int(L, "days") * 24 * 60 * 60 * I64_1SEC;
+		if( chkTime > 0 ){
 			SYSTEMTIME now;
 			ConvertSystemTime(GetNowI64Time(), &now);
 			now.wHour = 0;
 			now.wMinute = 0;
 			now.wSecond = 0;
 			now.wMilliseconds = 0;
-			//対象期間
-			__int64 chkTime = LuaHelp::get_int(ws.L, "days") * 24 * 60 * 60 * I64_1SEC;
-			if( chkTime > 0 ){
-				chkTime += ConvertI64Time(now);
-			}else{
-				//たぶんバグだが互換のため
-				chkTime = LuaHelp::get_int(ws.L, "days29") * 29 * 60 * 60 * I64_1SEC;
-				if( chkTime > 0 ){
-					chkTime += ConvertI64Time(now);
-				}
+			chkTime += ConvertI64Time(now);
+			enumEnd = min(enumEnd, chkTime);
+		}
+		lua_newtable(L);
+		int i = 0;
+		auto enumProc = [&ws, &i](const EPGDB_EVENT_INFO* val, wstring*) -> void {
+			if( val ){
+				//イベントグループはチェックしないので注意
+				lua_newtable(ws.L);
+				PushEpgEventInfo(ws, *val);
+				lua_rawseti(ws.L, -2, ++i);
 			}
-			lua_newtable(ws.L);
-			int n = 0;
-			for( size_t i = 0; i < val.size(); i++ ){
-				if( chkTime <= 0 || val[i].info->StartTimeFlag != 0 && chkTime > ConvertI64Time(val[i].info->start_time) ){
-					//イベントグループはチェックしないので注意
-					lua_newtable(ws.L);
-					PushEpgEventInfo(ws, *val[i].info);
-					lua_rawseti(ws.L, -2, ++n);
-				}
-			}
-		});
+		};
+		if( archive ){
+			ws.sys->epgDB.SearchArchiveEpg(&key, 1, enumStart, enumEnd, true, NULL, enumProc);
+		}else{
+			ws.sys->epgDB.SearchEpg(&key, 1, enumStart, enumEnd, NULL, enumProc);
+		}
 		return 1;
 	}
 	lua_pushnil(L);

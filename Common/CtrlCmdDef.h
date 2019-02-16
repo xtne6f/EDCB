@@ -58,6 +58,7 @@
 #define CMD2_EPG_SRV_GET_EPG_FILE2			2032 //サーバー連携用　EPGデータファイル取得
 #define CMD2_EPG_SRV_SEARCH_PG2				2125 //番組検索
 #define CMD2_EPG_SRV_SEARCH_PG_BYKEY2		2127 //番組検索、キーごとのイベントを全て返す
+#define CMD2_EPG_SRV_SEARCH_PG_ARC2			2129 //過去番組検索
 #define CMD2_EPG_SRV_ENUM_AUTO_ADD2			2131 //自動予約登録の条件一覧取得
 #define CMD2_EPG_SRV_ADD_AUTO_ADD2			2132 //自動予約登録の条件追加
 #define CMD2_EPG_SRV_CHG_AUTO_ADD2			2134 //自動予約登録の条件変更

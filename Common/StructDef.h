@@ -332,6 +332,12 @@ struct EPGDB_SEARCH_KEY_INFO {
 	WORD chkRecDay;					//録画済かのチェック対象期間（+20000=SID無視,+30000=TS|SID無視,+40000=ON|TS|SID無視）
 };
 
+struct SEARCH_PG_PARAM {
+	vector<EPGDB_SEARCH_KEY_INFO> keyList;
+	__int64 enumStart;
+	__int64 enumEnd;
+};
+
 //自動予約登録情報
 struct EPG_AUTO_ADD_DATA {
 	DWORD dataID;

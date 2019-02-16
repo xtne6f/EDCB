@@ -135,6 +135,8 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<EPGDB_SEARCH_KEY_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( WORD ver, vector<EPGDB_SEARCH_KEY_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
+BOOL ReadVALUE( WORD ver, SEARCH_PG_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CH_INFO& val );
 BOOL ReadVALUE( WORD ver, SET_CH_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
