@@ -1757,11 +1757,10 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
-			LONGLONG serviceKey;
-			if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL) ){
-				int keys[3] = { (WORD)(serviceKey >> 32), (WORD)(serviceKey >> 16), (WORD)serviceKey };
+			__int64 serviceKey[2] = {};
+			if( ReadVALUE(serviceKey + 1, cmdParam->data, cmdParam->dataSize, NULL) ){
 				vector<const EPGDB_EVENT_INFO*> valp;
-				sys->epgDB.EnumEventInfo(keys, 3, 0, LLONG_MAX, [=, &valp](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO*) {
+				sys->epgDB.EnumEventInfo(serviceKey, 2, 0, LLONG_MAX, [=, &valp](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO*) {
 					if( val ){
 						valp.push_back(val);
 					}else{
@@ -2014,15 +2013,14 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			vector<__int64> key;
-			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) ){
-				vector<__int64> retList;
-				for( size_t i = 0; i + 2 < key.size(); i += 3 ){
-					pair<__int64, __int64> ret = sys->epgDB.GetArchiveEventMinMaxTime((int)key[i], (int)key[i + 1], (int)key[i + 2]);
-					retList.push_back(ret.first);
-					retList.push_back(ret.second);
+			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) && key.size() % 2 == 0 ){
+				for( size_t i = 0; i + 1 < key.size(); i += 2 ){
+					pair<__int64, __int64> ret = sys->epgDB.GetArchiveEventMinMaxTime(key[i], key[i + 1]);
+					key[i] = ret.first;
+					key[i + 1] = ret.second;
 				}
 				resParam->param = CMD_SUCCESS;
-				resParam->data = NewWriteVALUE(retList, resParam->dataSize);
+				resParam->data = NewWriteVALUE(key, resParam->dataSize);
 			}
 		}
 		break;
@@ -2032,14 +2030,10 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			vector<__int64> keyAndRange;
-			if( ReadVALUE(&keyAndRange, cmdParam->data, cmdParam->dataSize, NULL) && keyAndRange.size() % 3 == 2 ){
-				vector<int> key(keyAndRange.size() / 3 * 3);
-				for( size_t i = 0; i < key.size(); i++ ){
-					key[i] = (int)keyAndRange[i];
-				}
+			if( ReadVALUE(&keyAndRange, cmdParam->data, cmdParam->dataSize, NULL) && keyAndRange.size() >= 2 ){
 				vector<EPGDB_SERVICE_EVENT_INFO_PTR> ret;
 				vector<EPGDB_SERVICE_EVENT_INFO_PTR>::iterator itr = ret.end();
-				sys->epgDB.EnumArchiveEventInfo(key.data(), key.size(), keyAndRange[key.size()], keyAndRange[key.size() + 1], false,
+				sys->epgDB.EnumArchiveEventInfo(keyAndRange.data(), keyAndRange.size() - 2, *(keyAndRange.end() - 2), keyAndRange.back(), false,
 				                                [=, &ret, &itr](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO* si) {
 					if( val ){
 						if( itr == ret.end() || itr->serviceInfo != si ){
@@ -3408,10 +3402,15 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTimeProc(lua_State* L, bool archive)
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 3 ){
 		pair<__int64, __int64> ret;
+		DWORD onid = (DWORD)lua_tonumber(L, 1);
+		DWORD tsid = (DWORD)lua_tonumber(L, 2);
+		DWORD sid = (DWORD)lua_tonumber(L, 3);
 		if( archive ){
-			ret = ws.sys->epgDB.GetArchiveEventMinMaxTime((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
+			ret = ws.sys->epgDB.GetArchiveEventMinMaxTime(Create64Key((WORD)(onid >> 16), (WORD)(tsid >> 16), (WORD)(sid >> 16)),
+			                                              Create64Key((WORD)onid, (WORD)tsid, (WORD)sid));
 		}else{
-			ret = ws.sys->epgDB.GetEventMinMaxTime((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
+			ret = ws.sys->epgDB.GetEventMinMaxTime(Create64Key((WORD)(onid >> 16), (WORD)(tsid >> 16), (WORD)(sid >> 16)),
+			                                       Create64Key((WORD)onid, (WORD)tsid, (WORD)sid));
 		}
 		if( ret.first != LLONG_MAX ){
 			lua_newtable(L);
@@ -3441,7 +3440,7 @@ int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 {
 	CLuaWorkspace ws(L);
 	if( (lua_gettop(L) == 1 || lua_gettop(L) == 2) && lua_istable(L, 1) ){
-		vector<int> key;
+		vector<__int64> key;
 		__int64 enumStart = 0;
 		__int64 enumEnd = LLONG_MAX;
 		if( lua_gettop(L) == 2 ){
@@ -3461,9 +3460,11 @@ int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 				lua_pop(L, 1);
 				break;
 			}
-			key.push_back(LuaHelp::isnil(L, "onid") ? -1 : LuaHelp::get_int(L, "onid"));
-			key.push_back(LuaHelp::isnil(L, "tsid") ? -1 : LuaHelp::get_int(L, "tsid"));
-			key.push_back(LuaHelp::isnil(L, "sid") ? -1 : LuaHelp::get_int(L, "sid"));
+			DWORD onid = LuaHelp::isnil(L, "onid") ? 0xFFFFFFFF : (DWORD)LuaHelp::get_int64(L, "onid");
+			DWORD tsid = LuaHelp::isnil(L, "tsid") ? 0xFFFFFFFF : (DWORD)LuaHelp::get_int64(L, "tsid");
+			DWORD sid = LuaHelp::isnil(L, "sid") ? 0xFFFFFFFF : (DWORD)LuaHelp::get_int64(L, "sid");
+			key.push_back(Create64Key((WORD)(onid >> 16), (WORD)(tsid >> 16), (WORD)(sid >> 16)));
+			key.push_back(Create64Key((WORD)onid, (WORD)tsid, (WORD)sid));
 			lua_pop(L, 1);
 		}
 		lua_newtable(L);

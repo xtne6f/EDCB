@@ -338,6 +338,14 @@ int get_int(lua_State* L, const char* name)
 	return ret;
 }
 
+__int64 get_int64(lua_State* L, const char* name)
+{
+	lua_getfield(L, -1, name);
+	__int64 ret = (__int64)lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	return ret;
+}
+
 bool get_boolean(lua_State* L, const char* name)
 {
 	lua_getfield(L, -1, name);

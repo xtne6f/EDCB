@@ -53,6 +53,7 @@ namespace LuaHelp
 	bool isnil(lua_State* L, const char* name);
 	string get_string(lua_State* L, const char* name);
 	int get_int(lua_State* L, const char* name);
+	__int64 get_int64(lua_State* L, const char* name);
 	bool get_boolean(lua_State* L, const char* name);
 	SYSTEMTIME get_time(lua_State* L, const char* name);
 	int os_execute(lua_State* L);

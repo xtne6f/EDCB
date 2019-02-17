@@ -33,12 +33,12 @@ public:
 
 	bool GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const;
 
-	pair<__int64, __int64> GetEventMinMaxTime(int onid, int tsid, int sid) const {
+	pair<__int64, __int64> GetEventMinMaxTime(__int64 keyMask, __int64 key) const {
 		CRefLock lock(&this->epgMapRefLock);
-		return GetEventMinMaxTimeProc(onid, tsid, sid, false);
+		return GetEventMinMaxTimeProc(keyMask, key, false);
 	}
 
-	bool EnumEventInfo(int* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
+	bool EnumEventInfo(__int64* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
 	                   const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc) const {
 		CRefLock lock(&this->epgMapRefLock);
 		return EnumEventInfoProc(keys, keysSize, enumStart, enumEnd, enumProc, false);
@@ -55,9 +55,9 @@ public:
 		return true;
 	}
 
-	pair<__int64, __int64> GetArchiveEventMinMaxTime(int onid, int tsid, int sid) const;
+	pair<__int64, __int64> GetArchiveEventMinMaxTime(__int64 keyMask, __int64 key) const;
 
-	void EnumArchiveEventInfo(int* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, bool deletableBeforeEnumDone,
+	void EnumArchiveEventInfo(__int64* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, bool deletableBeforeEnumDone,
 	                          const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc) const;
 
 	bool SearchEpg(
@@ -134,7 +134,7 @@ private:
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
 	static void LoadThread(CEpgDBManager* sys);
 
-	static bool InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<int>& enumServiceKey, const EPGDB_SEARCH_KEY_INFO* key);
+	static bool InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>& enumServiceKey, const EPGDB_SEARCH_KEY_INFO* key);
 	static bool IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EPGDB_EVENT_INFO* itrEvent, wstring* findKey);
 	static bool IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);
 	static bool IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
@@ -142,8 +142,8 @@ private:
 	                        vector<int>& dist, bool caseFlag, bool aimai, bool andFlag, wstring* findKey = NULL);
 	static bool FindLikeKeyword(const wstring& key, size_t keyPos, const wstring& word, vector<int>& dist, bool caseFlag);
 	static void AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstring key, bool caseFlag, bool regExp, bool titleOnly);
-	pair<__int64, __int64> GetEventMinMaxTimeProc(int onid, int tsid, int sid, bool archive) const;
-	bool EnumEventInfoProc(int* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
+	pair<__int64, __int64> GetEventMinMaxTimeProc(__int64 keyMask, __int64 key, bool archive) const;
+	bool EnumEventInfoProc(__int64* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
 	                       const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc, bool archive) const;
 };
 
