@@ -1140,6 +1140,37 @@ namespace EpgTimer
         }
     }
 
+    public class SearchPgParam : ICtrlCmdReadWrite
+    {
+        public List<EpgSearchKeyInfo> keyList;
+        public long enumStart;
+        public long enumEnd;
+        public SearchPgParam()
+        {
+            keyList = new List<EpgSearchKeyInfo>();
+            enumStart = 0;
+            enumEnd = 0;
+        }
+        public void Write(MemoryStream s, ushort version)
+        {
+            var w = new CtrlCmdWriter(s, version);
+            w.Begin();
+            w.Write(keyList);
+            w.Write(enumStart);
+            w.Write(enumEnd);
+            w.End();
+        }
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref keyList);
+            r.Read(ref enumStart);
+            r.Read(ref enumEnd);
+            r.End();
+        }
+    }
+
     /// <summary>自動予約登録情報</summary>
     public class EpgAutoAddData : ICtrlCmdReadWrite
     {

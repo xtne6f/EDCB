@@ -119,7 +119,9 @@ namespace EpgTimer
                         if (ret == ErrCode.CMD_SUCCESS)
                         {
                             ret = ErrCode.CMD_ERR;
-                            CommonManager.CreateSrvCtrl().SendEnumPgArcAll(ref list2);
+                            //過去5日分を取得してみる(仮対応)
+                            CommonManager.CreateSrvCtrl().SendEnumPgArc(
+                                new List<long> { 0xFFFFFFFFFFFF, 0xFFFFFFFFFFFF, DateTime.UtcNow.AddHours(9).AddDays(-5).ToFileTime(), long.MaxValue }, ref list2);
                             ret = ErrCode.CMD_SUCCESS;
                         }
                     }
