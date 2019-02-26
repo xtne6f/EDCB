@@ -177,36 +177,27 @@ namespace EpgTimer
 
         private void listView_recinfo_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (listView_recinfo.SelectedItem != null)
+            if (Settings.Instance.PlayDClick)
             {
-                if (Settings.Instance.PlayDClick == false)
+                button_play_Click(sender, e);
+            }
+            else
+            {
+                button_recInfo_Click(sender, e);
+            }
+        }
+
+        private void listView_recinfo_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (Settings.Instance.PlayDClick)
                 {
-                    RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
-                    RecInfoDescWindow dlg = new RecInfoDescWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    RecFileInfo extraRecInfo = new RecFileInfo();
-                    if (CommonManager.CreateSrvCtrl().SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
-                    {
-                        info.RecInfo.ProgramInfo = extraRecInfo.ProgramInfo;
-                        info.RecInfo.ErrInfo = extraRecInfo.ErrInfo;
-                    }
-                    dlg.SetRecInfo(info.RecInfo);
-                    dlg.ShowDialog();
+                    button_play_Click(sender, e);
                 }
                 else
                 {
-                    RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
-                    if (info.RecInfo.RecFilePath.Length > 0)
-                    {
-                        try
-                        {
-                            CommonManager.Instance.FilePlay(info.RecInfo.RecFilePath);
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.Message);
-                        }
-                    }
+                    button_recInfo_Click(sender, e);
                 }
             }
         }
@@ -215,17 +206,10 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
-                if (info.RecInfo.RecFilePath.Length > 0)
+                RecFileInfo info = ((RecInfoItem)listView_recinfo.SelectedItem).RecInfo;
+                if (info.RecFilePath.Length > 0)
                 {
-                    try
-                    {
-                        CommonManager.Instance.FilePlay(info.RecInfo.RecFilePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
+                    CommonManager.Instance.FilePlay(info.RecFilePath);
                 }
             }
         }
@@ -266,16 +250,38 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                RecFileInfo info = ((RecInfoItem)listView_recinfo.SelectedItem).RecInfo;
                 RecInfoDescWindow dlg = new RecInfoDescWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 RecFileInfo extraRecInfo = new RecFileInfo();
-                if (CommonManager.CreateSrvCtrl().SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                if (CommonManager.CreateSrvCtrl().SendGetRecInfo(info.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
                 {
-                    info.RecInfo.ProgramInfo = extraRecInfo.ProgramInfo;
-                    info.RecInfo.ErrInfo = extraRecInfo.ErrInfo;
+                    info.ProgramInfo = extraRecInfo.ProgramInfo;
+                    info.ErrInfo = extraRecInfo.ErrInfo;
+                    if (info.ProgramInfo.Length == 0 && info.EventID != 0xFFFF)
+                    {
+                        //過去番組情報を探してみる
+                        var arcList = new List<EpgServiceEventInfo>();
+                        if (CommonManager.CreateSrvCtrl().SendEnumPgArc(new List<long> {
+                                0, (long)CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID),
+                                info.StartTime.ToFileTimeUtc(), info.StartTime.ToFileTimeUtc() + 1 }, ref arcList) == ErrCode.CMD_SUCCESS &&
+                            arcList.Count > 0 && arcList[0].eventList.Count > 0)
+                        {
+                            info.ProgramInfo = CommonManager.Instance.ConvertProgramText(arcList[0].eventList[0], EventInfoTextMode.All);
+                        }
+                        else
+                        {
+                            //番組情報を探してみる
+                            EpgEventInfo eventInfo = CommonManager.Instance.DB.GetPgInfo(info.OriginalNetworkID, info.TransportStreamID,
+                                                                                         info.ServiceID, info.EventID, false);
+                            if (eventInfo != null && eventInfo.StartTimeFlag != 0 && eventInfo.start_time == info.StartTime)
+                            {
+                                info.ProgramInfo = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
+                            }
+                        }
+                    }
                 }
-                dlg.SetRecInfo(info.RecInfo);
+                dlg.SetRecInfo(info);
                 dlg.ShowDialog();
             }
         }

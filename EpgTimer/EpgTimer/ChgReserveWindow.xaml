@@ -34,16 +34,11 @@
                 </Grid>
             </TabItem>
             <TabItem Header="番組詳細" Name="tabItem_program">
-                <Grid>
-                    <ScrollViewer Name="scrollViewer1">
-                        <!--<TextBox Name="textBox_descInfo" IsReadOnly="True" TextWrapping="Wrap" />-->
-                        <RichTextBox Name="richTextBox_descInfo" IsReadOnly="True" />
-                    </ScrollViewer>
-                </Grid>
+                <RichTextBox IsReadOnly="True" Name="richTextBox_descInfo" VerticalScrollBarVisibility="Auto" />
             </TabItem>
         </TabControl>
         <Button Grid.Row="1" Content="変更" Height="23" HorizontalAlignment="Left" Name="button_chg_reserve" VerticalAlignment="Top" Width="91" Click="button_chg_reserve_Click" Margin="30,8,0,0" ToolTip="Ctrl + Shift + C" />
         <Button Content="削除" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="160,8,0,0" Name="button_del_reserve" VerticalAlignment="Top" Width="91" Click="button_del_reserve_Click" ToolTip="Ctrl + Shift + D" />
-        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="290,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="91" Click="button_cancel_Click" ToolTip="Escape" />
+        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="290,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="91" Click="button_cancel_Click" />
     </Grid>
 </Window>

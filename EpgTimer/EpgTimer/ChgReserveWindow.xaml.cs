@@ -106,25 +106,8 @@ namespace EpgTimer
 
                 if (info.EventID != 0xFFFF)
                 {
-                    UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
-                    EpgEventInfo eventInfo = null;
-                    if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-                    {
-                        foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                        {
-                            if (eventChkInfo.event_id == info.EventID)
-                            {
-                                eventInfo = eventChkInfo;
-                                break;
-                            }
-                        }
-                    }
-                    if(eventInfo == null )
-                    {
-                        UInt64 pgId = CommonManager.Create64PgKey(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID, info.EventID);
-                        eventInfo = new EpgEventInfo();
-                        CommonManager.CreateSrvCtrl().SendGetPgInfo(pgId, ref eventInfo);
-                    }
+                    EpgEventInfo eventInfo = CommonManager.Instance.DB.GetPgInfo(info.OriginalNetworkID, info.TransportStreamID,
+                                                                                 info.ServiceID, info.EventID, false);
                     if (eventInfo != null)
                     {
                         String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
@@ -185,6 +168,10 @@ namespace EpgTimer
                 {
                     MessageBox.Show("予約が選択されていません");
                 }
+            }
+            if (tabControl.SelectedItem != null)
+            {
+                ((TabItem)tabControl.SelectedItem).Focus();
             }
         }
 
@@ -379,15 +366,6 @@ namespace EpgTimer
                         break;
                     case Key.D:
                         this.button_del_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                }
-            }
-            else
-            {
-                switch (e.Key)
-                {
-                    case Key.Escape:
-                        this.Close();
                         break;
                 }
             }

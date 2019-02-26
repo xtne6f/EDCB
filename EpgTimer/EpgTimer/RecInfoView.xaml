@@ -68,6 +68,7 @@
                     <Setter Property="Background" Value="{Binding BackColor}" />
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
+                    <EventSetter Event="KeyDown" Handler="listView_recinfo_KeyDown" />
                 </Style>
             </ListView.Resources>
             <ListView.View>

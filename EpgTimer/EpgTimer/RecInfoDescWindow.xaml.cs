@@ -32,22 +32,51 @@ namespace EpgTimer
             textBox_errLog.Text = info.ErrInfo;
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            tabItem_pgInfo.Focus();
+        }
+
         private void button_play_Click(object sender, RoutedEventArgs e)
         {
             if (recInfo != null)
             {
                 if (recInfo.RecFilePath.Length > 0)
                 {
-                    try
-                    {
-                        CommonManager.Instance.FilePlay(recInfo.RecFilePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
+                    CommonManager.Instance.FilePlay(recInfo.RecFilePath);
                 }
             }
-        }        
+        }
+
+        private void button_del_Click(object sender, RoutedEventArgs e)
+        {
+            if (recInfo != null)
+            {
+                if (Settings.Instance.ConfirmDelRecInfo)
+                {
+                    if ((recInfo.RecFilePath.Length > 0 || Settings.Instance.ConfirmDelRecInfoAlways) &&
+                        MessageBox.Show("削除してよろしいですか?" +
+                                        (recInfo.RecFilePath.Length > 0 ? "\r\n\r\n「録画ファイルも削除する」設定が有効な場合、ファイルも削除されます。" : ""), "確認",
+                                        MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) != MessageBoxResult.OK)
+                    {
+                        return;
+                    }
+                }
+                try
+                {
+                    CommonManager.CreateSrvCtrl().SendDelRecInfo(new List<uint>() { recInfo.ID });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+            }
+            DialogResult = false;
+        }
+
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
     }
 }

@@ -16,9 +16,7 @@
                 <RowDefinition Height="100" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <ScrollViewer Name="scrollViewer1">
-                <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
-            </ScrollViewer>
+            <RichTextBox IsReadOnly="True" Name="richTextBox_eventInfo" VerticalScrollBarVisibility="Auto" />
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
             <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
                 <ListView.Resources>

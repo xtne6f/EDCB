@@ -110,32 +110,16 @@ namespace EpgTimer
             }
         }
 
-        public EpgEventInfo EventInfo
-        {
-            get
-            {
-                EpgEventInfo eventInfo1 = null;
-                UInt64 key1 = CommonManager.Create64Key(ReserveInfo.OriginalNetworkID, ReserveInfo.TransportStreamID, ReserveInfo.ServiceID);
-                if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key1) == true)
-                {
-                    foreach (EpgEventInfo eventChkInfo1 in CommonManager.Instance.DB.ServiceEventList[key1].eventList)
-                    {
-                        if (eventChkInfo1.event_id == ReserveInfo.EventID)
-                        {
-                            eventInfo1 = eventChkInfo1;
-                            break;
-                        }
-                    }
-                }
-                return eventInfo1;
-            }
-        }
-
         public Brush BorderBrush
         {
             get
             {
-                EpgEventInfo eventInfo = EventInfo;
+                EpgEventInfo eventInfo = null;
+                if (ReserveInfo.EventID != 0xFFFF)
+                {
+                    eventInfo = CommonManager.Instance.DB.GetPgInfo(ReserveInfo.OriginalNetworkID, ReserveInfo.TransportStreamID,
+                                                                    ReserveInfo.ServiceID, ReserveInfo.EventID, true);
+                }
                 if (eventInfo != null)
                 {
                     if (eventInfo.ContentInfo != null)

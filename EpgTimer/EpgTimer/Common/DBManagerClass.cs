@@ -260,6 +260,35 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// 指定IDの番組情報を取得する。できるだけServiceEventListを利用する
+        /// </summary>
+        public EpgEventInfo GetPgInfo(ushort onid, ushort tsid, ushort sid, ushort eventID, bool cacheOnly)
+        {
+            var eventInfo = new EpgEventInfo();
+            EpgServiceAllEventInfo allInfo;
+            if (serviceEventList.TryGetValue(CommonManager.Create64Key(onid, tsid, sid), out allInfo))
+            {
+                //過去でない番組情報は必ずID順になっている
+                eventInfo.event_id = eventID;
+                int index = allInfo.eventList.BinarySearch(eventInfo, new EpgEventInfoComparer());
+                if (index >= 0)
+                {
+                    return allInfo.eventList[index];
+                }
+            }
+            try
+            {
+                if (cacheOnly == false &&
+                    CommonManager.CreateSrvCtrl().SendGetPgInfo(CommonManager.Create64PgKey(onid, tsid, sid, eventID), ref eventInfo) == ErrCode.CMD_SUCCESS)
+                {
+                    return eventInfo;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        /// <summary>
         /// 結果はCtrlCmdUtil.SendSearchPg()と同じだが、ServiceEventListを利用する
         /// </summary>
         public ErrCode SearchPg(List<EpgSearchKeyInfo> key, out List<EpgEventInfo> list)
