@@ -117,14 +117,19 @@ namespace EpgTimer
 
                 EpgSearchKeyInfo key = searchKeyView.GetSearchKey();
                 key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? 7 : 0);
-                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
-
-                keyList.Add(key);
-                List<EpgEventInfo> list = new List<EpgEventInfo>();
-
-                CommonManager.CreateSrvCtrl().SendSearchPg(keyList, ref list);
+                List<EpgEventInfo> list;
+                if (Settings.Instance.NgAutoEpgLoadNW)
+                {
+                    //EPGデータの遅延更新のため内部キャッシュは利用しない
+                    list = new List<EpgEventInfo>();
+                    CommonManager.CreateSrvCtrl().SendSearchPg(new List<EpgSearchKeyInfo>() { key }, ref list);
+                }
+                else
+                {
+                    CommonManager.Instance.DB.SearchPg(new List<EpgSearchKeyInfo>() { key }, out list);
+                }
                 DateTime now = DateTime.UtcNow.AddHours(9);
-                foreach (EpgEventInfo info in list)
+                foreach (EpgEventInfo info in list ?? Enumerable.Empty<EpgEventInfo>())
                 {
                     SearchItem item = new SearchItem(info, false);
 

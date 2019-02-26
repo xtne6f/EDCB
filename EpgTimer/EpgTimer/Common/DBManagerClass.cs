@@ -251,36 +251,79 @@ namespace EpgTimer
             return ret;
         }
 
+        private class EpgEventInfoComparer : IComparer<EpgEventInfo>
+        {
+            public int Compare(EpgEventInfo a, EpgEventInfo b)
+            {
+                return a.event_id - b.event_id;
+            }
+        }
+
+        /// <summary>
+        /// 結果はCtrlCmdUtil.SendSearchPg()と同じだが、ServiceEventListを利用する
+        /// </summary>
+        public ErrCode SearchPg(List<EpgSearchKeyInfo> key, out List<EpgEventInfo> list)
+        {
+            list = null;
+            List<EpgEventInfoMinimum> minList = null;
+            ErrCode ret = ReloadEpgData();
+            if (ret == ErrCode.CMD_SUCCESS)
+            {
+                ret = ErrCode.CMD_ERR;
+                minList = new List<EpgEventInfoMinimum>();
+                try
+                {
+                    ret = CommonManager.CreateSrvCtrl().SendSearchPgMinimum(key, ref minList);
+                }
+                catch { }
+            }
+            if (ret == ErrCode.CMD_SUCCESS)
+            {
+                list = new List<EpgEventInfo>(minList.Count);
+                var eventInfo = new EpgEventInfo();
+                var eventComparer = new EpgEventInfoComparer();
+                foreach (EpgEventInfoMinimum info in minList)
+                {
+                    //番組情報はserviceEventListに存在するはず
+                    EpgServiceAllEventInfo allInfo;
+                    if (serviceEventList.TryGetValue(CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id), out allInfo))
+                    {
+                        //過去でない番組情報は必ずID順になっている
+                        eventInfo.event_id = info.event_id;
+                        int index = allInfo.eventList.BinarySearch(eventInfo, eventComparer);
+                        if (index >= 0)
+                        {
+                            list.Add(allInfo.eventList[index]);
+                        }
+                    }
+                }
+            }
+            return ret;
+        }
+
         /// <summary>
         /// baseTimeから1週間分(EventBaseTimeをしきい値とし、このとき上限なし)のEPGデータを検索する
         /// </summary>
         public ErrCode SearchWeeklyEpgData(DateTime baseTime, EpgSearchKeyInfo key, out Dictionary<ulong, EpgServiceAllEventInfo> list)
         {
             list = null;
-            List<EpgEventInfo> eventList = null;
+            List<EpgEventInfo> eventList;
             List<EpgEventInfo> arcList = null;
-            ErrCode ret = ReloadEpgData();
+            ErrCode ret = SearchPg(new List<EpgSearchKeyInfo>() { key }, out eventList);
             if (ret == ErrCode.CMD_SUCCESS)
             {
                 ret = ErrCode.CMD_ERR;
                 baseTime = baseTime > EventBaseTime ? EventBaseTime : baseTime;
-                eventList = new List<EpgEventInfo>();
+                arcList = new List<EpgEventInfo>();
+                //1週間分の過去番組情報
+                var param = new SearchPgParam();
+                param.keyList = new List<EpgSearchKeyInfo>() { key };
+                param.enumStart = baseTime.ToFileTime();
+                param.enumEnd = baseTime.AddDays(baseTime < EventBaseTime ? 7 : 14).ToFileTime();
                 try
                 {
-                    //番組情報の検索
-                    ret = CommonManager.CreateSrvCtrl().SendSearchPg(new List<EpgSearchKeyInfo>() { key }, ref eventList);
-                    if (ret == ErrCode.CMD_SUCCESS)
-                    {
-                        ret = ErrCode.CMD_ERR;
-                        arcList = new List<EpgEventInfo>();
-                        //1週間分の過去番組情報
-                        var param = new SearchPgParam();
-                        param.keyList = new List<EpgSearchKeyInfo>() { key };
-                        param.enumStart = baseTime.ToFileTime();
-                        param.enumEnd = baseTime.AddDays(baseTime < EventBaseTime ? 7 : 14).ToFileTime();
-                        CommonManager.CreateSrvCtrl().SendSearchPgArc(param, ref arcList);
-                        ret = ErrCode.CMD_SUCCESS;
-                    }
+                    CommonManager.CreateSrvCtrl().SendSearchPgArc(param, ref arcList);
+                    ret = ErrCode.CMD_SUCCESS;
                 }
                 catch { }
             }
