@@ -19,22 +19,28 @@ namespace EpgTimer.EpgView
     /// </summary>
     public partial class DateView : UserControl
     {
-        public event RoutedEventHandler TimeButtonClick = null;
+        public event Action<DateTime> TimeButtonClick;
 
         public DateView()
         {
             InitializeComponent();
+            button_prev.Tag = DateTime.MinValue;
+            button_next.Tag = DateTime.MaxValue;
         }
 
         public void ClearInfo()
         {
+            button_prev.IsEnabled = false;
+            button_next.IsEnabled = false;
             uniformGrid_day.Children.Clear();
             uniformGrid_time.Children.Clear();
         }
 
-        public void SetTime(List<DateTime> timeList)
+        public void SetTime(bool enablePrev, bool enableNext, List<DateTime> timeList)
         {
             ClearInfo();
+            button_prev.IsEnabled = enablePrev;
+            button_next.IsEnabled = enableNext;
             if (timeList.Count > 0)
             {
                 DateTime startTime = timeList[0];
@@ -52,17 +58,16 @@ namespace EpgTimer.EpgView
                     {
                         day.Foreground = Brushes.Red;
                     }
-                    day.DataContext = itemTime;
-                    day.Click += new RoutedEventHandler(button_time_Click);
-
+                    day.Tag = itemTime;
+                    day.Click += button_time_Click;
                     uniformGrid_day.Children.Add(day);
 
                     for (int i = 6; i <= 18; i += 6)
                     {
                         Button hour = new Button();
                         hour.Content = i.ToString();
-                        hour.DataContext = itemTime.AddHours(i);
-                        hour.Click += new RoutedEventHandler(button_time_Click);
+                        hour.Tag = itemTime.AddHours(i);
+                        hour.Click += button_time_Click;
                         uniformGrid_time.Children.Add(hour);
                     }
 
@@ -77,7 +82,7 @@ namespace EpgTimer.EpgView
         {
             if (TimeButtonClick != null)
             {
-                TimeButtonClick(sender, e);
+                TimeButtonClick((DateTime)((Button)sender).Tag);
             }
         }
     }

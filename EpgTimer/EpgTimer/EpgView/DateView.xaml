@@ -11,9 +11,12 @@
             <RowDefinition Height="20" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="40" />
             <ColumnDefinition Name="columnDefinition" Width="*" />
         </Grid.ColumnDefinitions>
-        <UniformGrid Grid.Row="0" Name="uniformGrid_day" Rows="1" />
-        <UniformGrid Grid.Row="1" Name="uniformGrid_time" Rows="1" />
+        <Button Click="button_time_Click" Content="←" IsEnabled="False" Name="button_prev" />
+        <Button Click="button_time_Click" Content="→" Grid.Row="1" IsEnabled="False" Name="button_next" />
+        <UniformGrid Grid.Column="1" Name="uniformGrid_day" Rows="1" />
+        <UniformGrid Grid.Column="1" Grid.Row="1" Name="uniformGrid_time" Rows="1" />
     </Grid>
 </UserControl>

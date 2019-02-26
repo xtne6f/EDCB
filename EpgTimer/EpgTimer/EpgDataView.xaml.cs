@@ -112,10 +112,7 @@ namespace EpgTimer
                     {
                         if (IsVisible && err != ErrCode.CMD_ERR_BUSY)
                         {
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
-                            }));
+                            Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "EPGデータの取得でエラーが発生しました。")));
                         }
                         return false;
                     }
