@@ -446,6 +446,8 @@ namespace EpgTimer
                     return "EpgTimerSrvがサポートしていないコマンドです。";
                 case ErrCode.CMD_ERR_CONNECT:
                     return "EpgTimerSrvに接続できませんでした。";
+                case ErrCode.CMD_ERR_DISCONNECT:
+                    return "EpgTimerSrvとの接続がリセットされた可能性があります。";
                 case ErrCode.CMD_ERR_TIMEOUT:
                     return "EpgTimerSrvとの接続にタイムアウトしました。";
                 case ErrCode.CMD_ERR_BUSY:

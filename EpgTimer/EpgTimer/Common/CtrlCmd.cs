@@ -656,13 +656,13 @@ namespace EpgTimer
                     // 受信
                     if (ReadAll(pipe, head, 0, 8) != 8)
                     {
-                        return ErrCode.CMD_ERR;
+                        return ErrCode.CMD_ERR_DISCONNECT;
                     }
                     uint resParam = BitConverter.ToUInt32(head, 0);
                     var resData = new byte[BitConverter.ToUInt32(head, 4)];
                     if (ReadAll(pipe, resData, 0, resData.Length) != resData.Length)
                     {
-                        return ErrCode.CMD_ERR;
+                        return ErrCode.CMD_ERR_DISCONNECT;
                     }
                     res = new MemoryStream(resData, false);
                     return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
@@ -710,13 +710,13 @@ namespace EpgTimer
                         // 受信
                         if (ReadAll(ns, head, 0, 8) != 8)
                         {
-                            return ErrCode.CMD_ERR;
+                            return ErrCode.CMD_ERR_DISCONNECT;
                         }
                         uint resParam = BitConverter.ToUInt32(head, 0);
                         var resData = new byte[BitConverter.ToUInt32(head, 4)];
                         if (ReadAll(ns, resData, 0, resData.Length) != resData.Length)
                         {
-                            return ErrCode.CMD_ERR;
+                            return ErrCode.CMD_ERR_DISCONNECT;
                         }
                         res = new MemoryStream(resData, false);
                         return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
