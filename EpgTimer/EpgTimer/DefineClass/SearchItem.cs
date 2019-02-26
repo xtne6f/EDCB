@@ -48,7 +48,7 @@ namespace EpgTimer
         }
         public String StartTime
         {
-            get { return EventInfo.StartTimeFlag != 0 ? EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss") : "未定"; }
+            get { return EventInfo.StartTimeFlag != 0 ? EventInfo.start_time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss") : "未定"; }
         }
         public bool IsReserved
         {

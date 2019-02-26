@@ -39,11 +39,7 @@ namespace EpgTimer
         }
         public String StartTime
         {
-            get
-            {
-                return ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") +
-                       ReserveInfo.StartTime.AddSeconds(ReserveInfo.DurationSecond).ToString("HH:mm:ss");
-            }
+            get { return CommonManager.GetTimeDurationText(true, ReserveInfo.StartTime, true, ReserveInfo.DurationSecond); }
         }
         public String RecMode
         {

@@ -24,7 +24,6 @@ namespace EpgTimer
             }
         }
         public IDictionary<ushort, string> ComponentKindDictionary { get; private set; }
-        public string[] DayOfWeekArray { get; private set; }
         public string[] RecModeList { get; private set; }
         public bool NWMode { get; set; }
         public List<NotifySrvInfo> NotifyLogList { get; private set; }
@@ -323,7 +322,6 @@ namespace EpgTimer
                     { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
                 };
             }
-            DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
             RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
@@ -458,13 +456,19 @@ namespace EpgTimer
             }
         }
 
+        public static string GetTimeDurationText(bool timeFlag, DateTime time, bool durationFlag, uint durationSec)
+        {
+            if (timeFlag)
+            {
+                return time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss ～ ") +
+                       (durationFlag ? time.AddSeconds(durationSec).ToString("HH\\:mm\\:ss") : "未定");
+            }
+            return "未定";
+        }
+
         public String ConvertReserveText(ReserveData reserveInfo)
         {
-            String view = "";
-            view = reserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-            DateTime endTime = reserveInfo.StartTime + TimeSpan.FromSeconds(reserveInfo.DurationSecond);
-            view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
+            String view = GetTimeDurationText(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
             String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
             String tuijyu = "";
             if (reserveInfo.RecSetting.TuijyuuFlag == 0)
@@ -620,23 +624,8 @@ namespace EpgTimer
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
                 }
 
-                if (eventInfo.StartTimeFlag == 1)
-                {
-                    basicInfo += eventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                }
-                else
-                {
-                    basicInfo += "未定 ～ ";
-                }
-                if (eventInfo.DurationFlag == 1)
-                {
-                    DateTime endTime = eventInfo.start_time + TimeSpan.FromSeconds(eventInfo.durationSec);
-                    basicInfo += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-                }
-                else
-                {
-                    basicInfo += "未定\r\n";
-                }
+                basicInfo += GetTimeDurationText(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
+                                                 eventInfo.DurationFlag != 0, eventInfo.durationSec) + "\r\n";
 
                 if (eventInfo.ShortInfo != null)
                 {

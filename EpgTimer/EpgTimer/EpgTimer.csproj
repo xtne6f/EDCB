@@ -151,7 +151,6 @@
     <Compile Include="Common\PipeServer.cs" />
     <Compile Include="Common\ChSet5Class.cs" />
     <Compile Include="Common\ColorDefClass.cs" />
-    <Compile Include="DefineClass\DateItem.cs" />
     <Compile Include="DefineClass\IEPGStationInfo.cs" />
     <Compile Include="UserCtrlView\EpgDataViewSetting.xaml.cs">
       <DependentUpon>EpgDataViewSetting.xaml</DependentUpon>

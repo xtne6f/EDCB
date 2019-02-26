@@ -163,7 +163,7 @@ namespace EpgTimer
         public bool SearchKeyNotContent { get; set; }
         public bool SearchKeyNotDate { get; set; }
         public List<ContentKindInfo> SearchKeyContentList { get; set; }
-        public List<DateItem> SearchKeyDateItemList { get; set; }
+        public List<EpgSearchDateInfo> SearchKeyDateItemList { get; set; }
         public List<Int64> SearchKeyServiceList { get; set; }
         public byte SearchKeyFreeCA { get; set; }
         public byte SearchKeyChkRecEnd { get; set; }
@@ -347,7 +347,7 @@ namespace EpgTimer
             r.SearchKeyNotContent       = ConvertXElem(x, w, "SearchKeyNotContent", SearchKeyNotContent, false);
             r.SearchKeyNotDate          = ConvertXElem(x, w, "SearchKeyNotDate", SearchKeyNotDate, false);
             r.SearchKeyContentList      = ConvertXElements(x, w, "SearchKeyContentList", SearchKeyContentList).ToList();
-            r.SearchKeyDateItemList     = ConvertXElements(x, w, "SearchKeyDateItemList", SearchKeyDateItemList).ToList();
+            r.SearchKeyDateItemList     = ConvertXElements(x, w, "SearchKeyDateItemList", SearchKeyDateItemList, true).ToList();
             r.SearchKeyServiceList      = ConvertXElements(x, w, "SearchKeyServiceList",
                 (SearchKeyServiceList ?? Enumerable.Empty<long>()).Select(a => (double)a), "long").Select(a => (long)a).ToList();
             r.SearchKeyFreeCA           = (byte)ConvertXElem(x, w, "SearchKeyFreeCA", SearchKeyFreeCA, 0);
@@ -778,7 +778,7 @@ namespace EpgTimer
                 item.content_nibble_level_2 = info.Nibble2;
                 defKey.contentList.Add(item);
             }
-            defKey.dateList.AddRange(SearchKeyDateItemList.Select(a => a.DeepClone().DateInfo));
+            defKey.dateList.AddRange(SearchKeyDateItemList.Select(a => a.DeepClone()));
             defKey.serviceList.AddRange(SearchKeyServiceList);
             defKey.freeCAFlag = SearchKeyFreeCA;
             defKey.chkRecEnd = SearchKeyChkRecEnd;
@@ -911,9 +911,15 @@ namespace EpgTimer
             });
         }
 
-        private static IEnumerable<EpgSearchDateInfo> ConvertXElements(XElement x, bool w, string key, IEnumerable<EpgSearchDateInfo> list)
+        private static IEnumerable<EpgSearchDateInfo> ConvertXElements(XElement x, bool w, string key, IEnumerable<EpgSearchDateInfo> list, bool asDateItem)
         {
-            return ConvertXElements(x, w, key, list, "EpgSearchDateInfo", (xx, val) => {
+            return ConvertXElements(x, w, key, list, (asDateItem ? "DateItem" : "EpgSearchDateInfo"), (xx, val) => {
+                var xxDateItem = xx;
+                if (asDateItem)
+                {
+                    //旧DateItemクラスと互換をとる
+                    xx = w ? new XElement("DateInfo") : xxDateItem.Element("DateInfo");
+                }
                 var r = new EpgSearchDateInfo();
                 val = val ?? r;
                 r.startDayOfWeek = (byte)ConvertXElem(xx, w, "startDayOfWeek", val.startDayOfWeek, 0);
@@ -922,6 +928,10 @@ namespace EpgTimer
                 r.endDayOfWeek = (byte)ConvertXElem(xx, w, "endDayOfWeek", val.endDayOfWeek, 0);
                 r.endHour = (ushort)ConvertXElem(xx, w, "endHour", val.endHour, 0);
                 r.endMin = (ushort)ConvertXElem(xx, w, "endMin", val.endMin, 0);
+                if (asDateItem && w)
+                {
+                    xxDateItem.Add(xx);
+                }
                 return val;
             });
         }
@@ -948,7 +958,7 @@ namespace EpgTimer
                 r.SearchKey.regExpFlag = (int)ConvertXElem(xxx, w, "regExpFlag", val.SearchKey.regExpFlag, 0);
                 r.SearchKey.titleOnlyFlag = (int)ConvertXElem(xxx, w, "titleOnlyFlag", val.SearchKey.titleOnlyFlag, 0);
                 r.SearchKey.contentList = ConvertXElements(xxx, w, "contentList", val.SearchKey.contentList).ToList();
-                r.SearchKey.dateList = ConvertXElements(xxx, w, "dateList", val.SearchKey.dateList).ToList();
+                r.SearchKey.dateList = ConvertXElements(xxx, w, "dateList", val.SearchKey.dateList, false).ToList();
                 r.SearchKey.serviceList = ConvertXElements(xxx, w, "serviceList",
                     val.SearchKey.serviceList.Select(a => (double)a), "long").Select(a => (long)a).ToList();
                 r.SearchKey.videoList = ConvertXElements(xxx, w, "videoList",
@@ -966,26 +976,6 @@ namespace EpgTimer
                     xx.Add(xxx);
                 }
                 r.FilterEnded = ConvertXElem(xx, w, "FilterEnded", val.FilterEnded, false);
-                return val;
-            });
-        }
-
-        private static IEnumerable<DateItem> ConvertXElements(XElement x, bool w, string key, IEnumerable<DateItem> list)
-        {
-            return ConvertXElements(x, w, key, list, "DateItem", (xx, val) => {
-                var r = new DateItem() { DateInfo = new EpgSearchDateInfo() };
-                val = val ?? r;
-                var xxx = w ? new XElement("DateInfo") : xx.Element("DateInfo");
-                r.DateInfo.startDayOfWeek = (byte)ConvertXElem(xxx, w, "startDayOfWeek", val.DateInfo.startDayOfWeek, 0);
-                r.DateInfo.startHour = (ushort)ConvertXElem(xxx, w, "startHour", val.DateInfo.startHour, 0);
-                r.DateInfo.startMin = (ushort)ConvertXElem(xxx, w, "startMin", val.DateInfo.startMin, 0);
-                r.DateInfo.endDayOfWeek = (byte)ConvertXElem(xxx, w, "endDayOfWeek", val.DateInfo.endDayOfWeek, 0);
-                r.DateInfo.endHour = (ushort)ConvertXElem(xxx, w, "endHour", val.DateInfo.endHour, 0);
-                r.DateInfo.endMin = (ushort)ConvertXElem(xxx, w, "endMin", val.DateInfo.endMin, 0);
-                if (w)
-                {
-                    xx.Add(xxx);
-                }
                 return val;
             });
         }

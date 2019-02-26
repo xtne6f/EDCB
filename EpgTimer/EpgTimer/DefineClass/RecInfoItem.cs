@@ -43,11 +43,7 @@ namespace EpgTimer
         }
         public String StartTime
         {
-            get
-            {
-                return RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") +
-                       RecInfo.StartTime.AddSeconds(RecInfo.DurationSecond).ToString("HH:mm:ss");
-            }
+            get { return CommonManager.GetTimeDurationText(true, RecInfo.StartTime, true, RecInfo.DurationSecond); }
         }
         public long Drops
         {

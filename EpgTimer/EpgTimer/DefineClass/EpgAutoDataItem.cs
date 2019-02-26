@@ -55,20 +55,17 @@ namespace EpgTimer
         {
             get
             {
-                String view = "なし";
+                if (EpgAutoAddInfo.searchInfo.dateList.Count < 1)
                 {
-                    if (EpgAutoAddInfo.searchInfo.dateList.Count == 1)
-                    {
-                        EpgSearchDateInfo info = EpgAutoAddInfo.searchInfo.dateList[0];
-                        view = CommonManager.Instance.DayOfWeekArray[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                            " ～ " + CommonManager.Instance.DayOfWeekArray[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
-                    }
-                    else if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
-                    {
-                        view = "複数指定";
-                    }
+                    return "なし";
                 }
-                return view;
+                if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
+                {
+                    return "複数指定";
+                }
+                EpgSearchDateInfo info = EpgAutoAddInfo.searchInfo.dateList[0];
+                return (new DateTime(2000, 1, 2 + info.startDayOfWeek % 7, info.startHour % 24, info.startMin % 60, 0)).ToString("ddd HH\\:mm") +
+                       (new DateTime(2000, 1, 2 + info.endDayOfWeek % 7, info.endHour % 24, info.endMin % 60, 0)).ToString(" ～ ddd HH\\:mm");
             }
         }
         public String RecMode

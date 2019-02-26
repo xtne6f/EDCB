@@ -1159,10 +1159,8 @@ namespace EpgTimer
             ReserveData item = CommonManager.Instance.DB.GetNextReserve();
             if (item != null)
             {
-                String timeView = item.StartTime.ToString("M/d(ddd) H:mm～");
-                DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                timeView += endTime.ToString("H:mm");
-                taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
+                taskTray.Text = "次の予約：" + item.StationName + item.StartTime.ToString(" M\\/d(ddd) H\\:mm-") +
+                                item.StartTime.AddSeconds(item.DurationSecond).ToString("H\\:mm ") + item.Title;
             }
             else
             {

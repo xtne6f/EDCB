@@ -132,24 +132,8 @@ namespace EpgTimer.EpgView
 
                                 if (info != null)
                                 {
-                                    if (info.EventInfo.StartTimeFlag == 1)
-                                    {
-                                        viewTip += info.EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                    }
-                                    else
-                                    {
-                                        viewTip += "未定 ～ ";
-                                    }
-                                    if (info.EventInfo.DurationFlag == 1)
-                                    {
-                                        DateTime endTime = info.EventInfo.start_time + TimeSpan.FromSeconds(info.EventInfo.durationSec);
-                                        viewTip += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-                                    }
-                                    else
-                                    {
-                                        viewTip += "未定\r\n";
-                                    }
-
+                                    viewTip += CommonManager.GetTimeDurationText(info.EventInfo.StartTimeFlag != 0, info.EventInfo.start_time,
+                                                                                 info.EventInfo.DurationFlag != 0, info.EventInfo.durationSec) + "\r\n";
                                     if (info.EventInfo.ShortInfo != null)
                                     {
                                         viewTip += info.EventInfo.ShortInfo.event_name + "\r\n\r\n";
