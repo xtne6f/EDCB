@@ -39,7 +39,7 @@ namespace EpgTimer
 
         private bool updateEpgData = true;
 
-        private Dictionary<UInt64, UInt64> lastChkSID = null;
+        private Dictionary<ulong, bool> lastChkSID = new Dictionary<ulong, bool>();
 
         public EpgListMainView(CustomEpgTabInfo setInfo)
         {
@@ -53,15 +53,11 @@ namespace EpgTimer
         /// </summary>
         public void ClearInfo()
         {
-            if (lastChkSID != null && listBox_service.ItemsSource != null)
+            if (listBox_service.ItemsSource != null)
             {
-                lastChkSID.Clear();
                 foreach (ServiceItem info in listBox_service.ItemsSource)
                 {
-                    if (info.IsSelected == true)
-                    {
-                        lastChkSID.Add(info.ID, info.ID);
-                    }
+                    lastChkSID[info.ID] = info.IsSelected;
                 }
             }
             listBox_service.ItemsSource = null;
@@ -178,15 +174,11 @@ namespace EpgTimer
         {
             try
             {
-                if (lastChkSID != null && listBox_service.ItemsSource != null)
+                if (listBox_service.ItemsSource != null)
                 {
-                    lastChkSID.Clear();
                     foreach (ServiceItem info in listBox_service.ItemsSource)
                     {
-                        if (info.IsSelected == true)
-                        {
-                            lastChkSID.Add(info.ID, info.ID);
-                        }
+                        lastChkSID[info.ID] = info.IsSelected;
                     }
                 }
                 listBox_service.ItemsSource = null;
@@ -239,17 +231,12 @@ namespace EpgTimer
                         if (serviceEventList.ContainsKey(id))
                         {
                             var item = new ServiceItem(serviceEventList[id].serviceInfo);
-                            item.IsSelected = (lastChkSID == null || lastChkSID.ContainsKey(id));
+                            item.IsSelected = lastChkSID.ContainsKey(id) == false || lastChkSID[id];
                             serviceList.Add(item);
                         }
                     }
                     i = skip;
                 }
-                if (lastChkSID == null)
-                {
-                    lastChkSID = new Dictionary<ulong, ulong>();
-                }
-
                 listBox_service.ItemsSource = serviceList;
                 button_prev.IsEnabled = enablePrev;
                 button_next.IsEnabled = enableNext;
