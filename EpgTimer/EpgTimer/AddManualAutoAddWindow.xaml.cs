@@ -178,26 +178,15 @@ namespace EpgTimer
                     checkBox_week6.IsChecked = true;
                 }
 
-                UInt32 hh = defKey.startTime / (60 * 60);
-                UInt32 mm = (defKey.startTime % (60 * 60)) / 60;
-                UInt32 ss = defKey.startTime % 60;
+                DateTime startTime = (new DateTime(2000, 1, 2)).AddSeconds(defKey.startTime);
+                comboBox_startHH.SelectedIndex = startTime.Hour;
+                comboBox_startMM.SelectedIndex = startTime.Minute;
+                comboBox_startSS.SelectedIndex = startTime.Second;
 
-                comboBox_startHH.SelectedIndex = (int)hh;
-                comboBox_startMM.SelectedIndex = (int)mm;
-                comboBox_startSS.SelectedIndex = (int)ss;
-
-                UInt32 endTime = defKey.startTime + defKey.durationSecond;
-                if (endTime > 24 * 60 * 60)
-                {
-                    endTime -= 24 * 60 * 60;
-                }
-                hh = endTime / (60 * 60);
-                mm = (endTime % (60 * 60)) / 60;
-                ss = endTime % 60;
-
-                comboBox_endHH.SelectedIndex = (int)hh;
-                comboBox_endMM.SelectedIndex = (int)mm;
-                comboBox_endSS.SelectedIndex = (int)ss;
+                DateTime endTime = startTime.AddSeconds(defKey.durationSecond);
+                comboBox_endHH.SelectedIndex = endTime.Hour;
+                comboBox_endMM.SelectedIndex = endTime.Minute;
+                comboBox_endSS.SelectedIndex = endTime.Second;
 
                 textBox_title.Text = defKey.title;
 
