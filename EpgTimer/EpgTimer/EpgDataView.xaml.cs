@@ -118,61 +118,48 @@ namespace EpgTimer
                     }
 
                     //デフォルト表示
-                    bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
-                    IEnumerable<EpgServiceInfo> sel = CommonManager.Instance.DB.ServiceEventList.Values.Select(info => info.serviceInfo).Where(info => {
-                        ulong key = CommonManager.Create64Key(info.ONID, info.TSID, info.SID);
-                        return ignoreEpgCap || ChSet5.Instance.ChList.ContainsKey(key) && ChSet5.Instance.ChList[key].EpgCapFlag;
-                    });
-                    //リモコンキー優先のID順ソート。BSはなるべくSID順
-                    var bsmin = new Dictionary<ushort, ushort>();
-                    foreach (EpgServiceInfo info in sel)
-                    {
-                        if (ChSet5.IsBS(info.ONID) && (bsmin.ContainsKey(info.TSID) == false || bsmin[info.TSID] > info.SID))
-                        {
-                            bsmin[info.TSID] = info.SID;
-                        }
-                    }
-                    sel = sel.OrderBy(info => (ulong)(ChSet5.IsDttv(info.ONID) ? (info.remote_control_key_id + 255) % 256 : 0) << 48 |
-                                              CommonManager.Create64Key(info.ONID, (ChSet5.IsBS(info.ONID) ? bsmin[info.TSID] : info.TSID), info.SID));
                     for (int i = 0; i < 5; i++)
                     {
-                        CustomEpgTabInfo setInfo = null;
-                        foreach (EpgServiceInfo info in sel)
+                        var setInfo = new CustomEpgTabInfo();
+                        foreach (EpgServiceInfo info in CommonManager.Instance.DB.ServiceEventList.Values.Select(allInfo => allInfo.serviceInfo))
                         {
-                            string tabName = null;
+                            if (Settings.Instance.ShowEpgCapServiceOnly &&
+                                (ChSet5.Instance.ChList.ContainsKey(CommonManager.Create64Key(info.ONID, info.TSID, info.SID)) == false ||
+                                 ChSet5.Instance.ChList[CommonManager.Create64Key(info.ONID, info.TSID, info.SID)].EpgCapFlag == false))
+                            {
+                                continue;
+                            }
                             if (i == 0 && ChSet5.IsDttv(info.ONID))
                             {
-                                tabName = "地デジ";
+                                setInfo.TabName = "地デジ";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv);
                             }
                             else if (i == 1 && ChSet5.IsBS(info.ONID))
                             {
-                                tabName = "BS";
+                                setInfo.TabName = "BS";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceBS);
                             }
                             else if (i == 2 && ChSet5.IsCS(info.ONID) && ChSet5.IsCS3(info.ONID) == false)
                             {
-                                tabName = "CS";
+                                setInfo.TabName = "CS";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS);
                             }
                             else if (i == 3 && ChSet5.IsCS3(info.ONID))
                             {
-                                tabName = "CS3";
+                                setInfo.TabName = "CS3";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3);
                             }
                             else if (i == 4 && ChSet5.IsOther(info.ONID))
                             {
-                                tabName = "その他";
+                                setInfo.TabName = "その他";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceOther);
                             }
-                            if (tabName != null)
+                            else
                             {
-                                if (setInfo == null)
-                                {
-                                    setInfo = new CustomEpgTabInfo();
-                                    setInfo.TabName = tabName;
-                                }
-                                setInfo.ViewServiceList.Add(CommonManager.Create64Key(info.ONID, info.TSID, info.SID));
+                                continue;
                             }
-                        }
-                        if (setInfo != null)
-                        {
                             defaultList.Add(setInfo);
+                            break;
                         }
                     }
                 }

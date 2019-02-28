@@ -24,56 +24,34 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            try
+            comboBox_timeH_week.ItemsSource = Enumerable.Range(0, 24);
+            comboBox_timeH_week.SelectedIndex = 4;
+
+            for (int i = 0; i < 5; i++)
             {
-                comboBox_timeH_week.ItemsSource = Enumerable.Range(0, 24);
-                comboBox_timeH_week.SelectedIndex = 4;
-
-
+                ListBox target = i == 0 ? listBox_serviceTere :
+                                 i == 1 ? listBox_serviceBS :
+                                 i == 2 ? listBox_serviceCS :
+                                 i == 3 ? listBox_serviceCS3 : listBox_serviceOther;
+                target.Items.Add(new Tuple<string, ulong>("[" + ((TabItem)target.Parent).Header + "]",
+                                                          (ulong)(i == 0 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv :
+                                                                  i == 1 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceBS :
+                                                                  i == 2 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS :
+                                                                  i == 3 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 :
+                                                                  CustomEpgTabInfo.SpecialViewServices.ViewServiceOther)));
                 foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
                 {
-                    if (ChSet5.IsBS(info.ONID))
+                    if (i == 0 && ChSet5.IsDttv(info.ONID) ||
+                        i == 1 && ChSet5.IsBS(info.ONID) ||
+                        i == 2 && ChSet5.IsCS(info.ONID) ||
+                        i == 3 && ChSet5.IsCS3(info.ONID) ||
+                        i == 4 && ChSet5.IsOther(info.ONID))
                     {
-                        tabItem_bs.Visibility = Visibility.Visible;
-                        listBox_serviceBS.Items.Add(info);
-                    }
-                    else if (ChSet5.IsCS3(info.ONID))
-                    {
-                        tabItem_cs3.Visibility = Visibility.Visible;
-                        listBox_serviceCS3.Items.Add(info);
-                    }
-                    else if (ChSet5.IsCS(info.ONID))
-                    {
-                        tabItem_cs.Visibility = Visibility.Visible;
-                        listBox_serviceCS.Items.Add(info);
-                    }
-                    else if (ChSet5.IsDttv(info.ONID))
-                    {
-                        tabItem_tere.Visibility = Visibility.Visible;
-                        listBox_serviceTere.Items.Add(info);
-                    }
-                    else
-                    {
-                        tabItem_other.Visibility = Visibility.Visible;
-                        listBox_serviceOther.Items.Add(info);
+                        target.Items.Add(new Tuple<string, ulong>(info.ServiceName, info.Key));
                     }
                 }
-                TabItem item = tabControl2.Items.Cast<TabItem>().FirstOrDefault(a => a.Visibility == Visibility.Visible);
-                if (item != null)
-                {
-                    item.IsSelected = true;
-                }
-                listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
-
-                radioButton_rate.IsChecked = true;
-                radioButton_week.IsChecked = false;
-                radioButton_list.IsChecked = false;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
+            listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
         }
 
         /// <summary>
@@ -133,10 +111,13 @@ namespace EpgTimer
 
             foreach (UInt64 id in setInfo.ViewServiceList)
             {
-                if (ChSet5.Instance.ChList.ContainsKey(id) == true)
-                {
-                    listBox_serviceView.Items.Add(ChSet5.Instance.ChList[id]);
-                }
+                listBox_serviceView.Items.Add(
+                    id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv ? listBox_serviceTere.Items[0] :
+                    id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceBS ? listBox_serviceBS.Items[0] :
+                    id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS ? listBox_serviceCS.Items[0] :
+                    id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 ? listBox_serviceCS3.Items[0] :
+                    id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceOther ? listBox_serviceOther.Items[0] :
+                    new Tuple<string, ulong>(ChSet5.Instance.ChList.ContainsKey(id) ? ChSet5.Instance.ChList[id].ServiceName : "???", id));
             }
             foreach (UInt16 id in setInfo.ViewContentKindList)
             {
@@ -217,9 +198,9 @@ namespace EpgTimer
 
             info.SearchKey = searchKey;
 
-            foreach (ChSet5Item item in listBox_serviceView.Items)
+            foreach (Tuple<string, ulong> item in listBox_serviceView.Items)
             {
-                info.ViewServiceList.Add(item.Key);
+                info.ViewServiceList.Add(item.Item2);
             }
 
             foreach (ContentKindInfo item in listBox_jyanruView.Items)
@@ -243,9 +224,9 @@ namespace EpgTimer
                              tabItem_other.IsSelected ? listBox_serviceOther : null;
             if (target != null)
             {
-                foreach (ChSet5Item info in target.Items)
+                foreach (var info in target.Items.Cast<Tuple<string, ulong>>().Skip(1))
                 {
-                    if (listBox_serviceView.Items.Cast<ChSet5Item>().All(info2 => info2.Key != info.Key))
+                    if (listBox_serviceView.Items.Cast<Tuple<string, ulong>>().All(info2 => info2.Item2 != info.Item2))
                     {
                         listBox_serviceView.Items.Add(info);
                     }
@@ -267,9 +248,11 @@ namespace EpgTimer
                              tabItem_other.IsSelected ? listBox_serviceOther : null;
             if (target != null)
             {
-                foreach (ChSet5Item info in target.Items)
+                foreach (var info in target.Items.Cast<Tuple<string, ulong>>().Skip(1))
                 {
-                    if (ChSet5.IsVideo(info.ServiceType) && listBox_serviceView.Items.Cast<ChSet5Item>().All(info2 => info2.Key != info.Key))
+                    if (ChSet5.Instance.ChList.ContainsKey(info.Item2) &&
+                        ChSet5.IsVideo(ChSet5.Instance.ChList[info.Item2].ServiceType) &&
+                        listBox_serviceView.Items.Cast<Tuple<string, ulong>>().All(info2 => info2.Item2 != info.Item2))
                     {
                         listBox_serviceView.Items.Add(info);
                     }
@@ -296,9 +279,10 @@ namespace EpgTimer
                     MessageBox.Show("アイテムが選択されていません");
                     return;
                 }
-                if (listBox_serviceView.Items.Cast<ChSet5Item>().All(info => info.Key != ((ChSet5Item)target.SelectedItem).Key))
+                var info = (Tuple<string, ulong>)target.SelectedItem;
+                if (listBox_serviceView.Items.Cast<Tuple<string, ulong>>().All(info2 => info2.Item2 != info.Item2))
                 {
-                    listBox_serviceView.Items.Add(target.SelectedItem);
+                    listBox_serviceView.Items.Add(info);
                 }
             }
         }
@@ -508,36 +492,29 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-        
-        private void listBox_serviceView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView1.Text = "";
-            if (listBox_serviceView.SelectedItem == null)
-            {
-                return;
-            }
-            ChSet5Item info = listBox_serviceView.SelectedItem as ChSet5Item;
-
-            textBox_serviceView1.Text = info.NetworkName + "\r\n";
-            textBox_serviceView1.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-            textBox_serviceView1.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-            textBox_serviceView1.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")" +
-                                         (ChSet5.IsCS3(info.ONID) ? " " + (info.SID & 0x3FF) + "ch" : "") + "\r\n";
-        }
 
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            textBox_serviceView2.Text = "";
+            string text = "";
             if (((ListBox)sender).SelectedItem != null)
             {
-                var info = (ChSet5Item)((ListBox)sender).SelectedItem;
-
-                textBox_serviceView2.Text = info.NetworkName + "\r\n";
-                textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")" +
-                                             (ChSet5.IsCS3(info.ONID) ? " " + (info.SID & 0x3FF) + "ch" : "") + "\r\n";
+                var info = (Tuple<string, ulong>)((ListBox)sender).SelectedItem;
+                if (info.Item2 >> 48 != 0)
+                {
+                    text = info.Item1;
+                }
+                else
+                {
+                    ushort onid = (ushort)(info.Item2 >> 32);
+                    ushort tsid = (ushort)(info.Item2 >> 16);
+                    ushort sid = (ushort)info.Item2;
+                    text = (ChSet5.Instance.ChList.ContainsKey(info.Item2) ? ChSet5.Instance.ChList[info.Item2].NetworkName : "???") + "\r\n";
+                    text += "OriginalNetworkID : " + onid + " (0x" + onid.ToString("X4") + ")\r\n";
+                    text += "TransportStreamID : " + tsid + " (0x" + tsid.ToString("X4") + ")\r\n";
+                    text += "ServiceID : " + sid + " (0x" + sid.ToString("X4") + ")" + (ChSet5.IsCS3(onid) ? " " + (sid & 0x3FF) + "ch" : "");
+                }
             }
+            (sender == listBox_serviceView ? textBox_serviceView1 : textBox_serviceView2).Text = text;
         }
 
         private void button_searchKey_Click(object sender, RoutedEventArgs e)

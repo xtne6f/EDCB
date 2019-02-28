@@ -64,7 +64,13 @@ namespace EpgTimer
 
         public bool HasService(ushort onid, ushort tsid, ushort sid)
         {
-            return setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid));
+            return setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid)) ||
+                   setViewInfo.ViewServiceList.Contains(
+                       (ulong)(ChSet5.IsDttv(onid) ? CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv :
+                               ChSet5.IsBS(onid) ? CustomEpgTabInfo.SpecialViewServices.ViewServiceBS :
+                               ChSet5.IsCS(onid) ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS :
+                               ChSet5.IsCS3(onid) ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 :
+                               CustomEpgTabInfo.SpecialViewServices.ViewServiceOther));
         }
 
         /// <summary>
@@ -1067,12 +1073,31 @@ namespace EpgTimer
 
                 foreach (ulong id in setViewInfo.ViewServiceList)
                 {
-                    if (serviceEventList.ContainsKey(id) == true)
+                    //特殊なサービス指定の展開と重複除去
+                    IEnumerable<EpgServiceAllEventInfo> sel =
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv ?
+                            serviceEventList.Values.Where(info => ChSet5.IsDttv(info.serviceInfo.ONID)) :
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceBS ?
+                            serviceEventList.Values.Where(info => ChSet5.IsBS(info.serviceInfo.ONID)) :
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS ?
+                            serviceEventList.Values.Where(info => ChSet5.IsCS(info.serviceInfo.ONID)) :
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 ?
+                            serviceEventList.Values.Where(info => ChSet5.IsCS3(info.serviceInfo.ONID)) :
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceOther ?
+                            serviceEventList.Values.Where(info => ChSet5.IsOther(info.serviceInfo.ONID)) : null;
+                    if (sel == null)
                     {
-                        EpgServiceInfo serviceInfo = serviceEventList[id].serviceInfo;
-                        if (serviceList.Exists(i => i.ONID == serviceInfo.ONID && i.TSID == serviceInfo.TSID && i.SID == serviceInfo.SID) == false)
+                        if (serviceEventList.ContainsKey(id) && serviceList.Contains(serviceEventList[id].serviceInfo) == false)
                         {
-                            serviceList.Add(serviceInfo);
+                            serviceList.Add(serviceEventList[id].serviceInfo);
+                        }
+                        continue;
+                    }
+                    foreach (EpgServiceAllEventInfo info in DBManager.SelectServiceEventList(sel))
+                    {
+                        if (serviceList.Contains(info.serviceInfo) == false)
+                        {
+                            serviceList.Add(info.serviceInfo);
                         }
                     }
                 }

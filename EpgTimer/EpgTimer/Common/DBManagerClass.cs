@@ -401,6 +401,35 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// デフォルト表示のために番組情報のサービスを選択する
+        /// </summary>
+        public static IEnumerable<EpgServiceAllEventInfo> SelectServiceEventList(IEnumerable<EpgServiceAllEventInfo> sel)
+        {
+            if (Settings.Instance.ShowEpgCapServiceOnly)
+            {
+                sel = sel.Where(info =>
+                    ChSet5.Instance.ChList.ContainsKey(CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID)) &&
+                    ChSet5.Instance.ChList[CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID)].EpgCapFlag);
+            }
+            //リモコンキー優先のID順ソート。BSはなるべくSID順
+            var bsmin = new Dictionary<ushort, ushort>();
+            foreach (EpgServiceAllEventInfo info in sel)
+            {
+                if (ChSet5.IsBS(info.serviceInfo.ONID) &&
+                    (bsmin.ContainsKey(info.serviceInfo.TSID) == false || bsmin[info.serviceInfo.TSID] > info.serviceInfo.SID))
+                {
+                    bsmin[info.serviceInfo.TSID] = info.serviceInfo.SID;
+                }
+            }
+            sel = sel.OrderBy(info =>
+                (ulong)(ChSet5.IsDttv(info.serviceInfo.ONID) ? (info.serviceInfo.remote_control_key_id + 255) % 256 : 0) << 48 |
+                CommonManager.Create64Key(info.serviceInfo.ONID,
+                                          (ChSet5.IsBS(info.serviceInfo.ONID) ? bsmin[info.serviceInfo.TSID] : info.serviceInfo.TSID),
+                                          info.serviceInfo.SID));
+            return sel;
+        }
+
+        /// <summary>
         /// 予約情報の更新があれば再読み込みする
         /// </summary>
         /// <returns></returns>

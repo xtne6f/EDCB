@@ -7,6 +7,15 @@ namespace EpgTimer
 {
     public class CustomEpgTabInfo
     {
+        public enum SpecialViewServices : ulong
+        {
+            ViewServiceDttv = 0x1000000000000,
+            ViewServiceBS,
+            ViewServiceCS,
+            ViewServiceCS3,
+            ViewServiceOther,
+        }
+
         public CustomEpgTabInfo()
         {
             ViewServiceList = new List<UInt64>();

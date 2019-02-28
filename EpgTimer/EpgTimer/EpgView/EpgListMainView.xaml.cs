@@ -74,7 +74,13 @@ namespace EpgTimer
 
         public bool HasService(ushort onid, ushort tsid, ushort sid)
         {
-            return setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid));
+            return setViewInfo.ViewServiceList.Contains(CommonManager.Create64Key(onid, tsid, sid)) ||
+                   setViewInfo.ViewServiceList.Contains(
+                       (ulong)(ChSet5.IsDttv(onid) ? CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv :
+                               ChSet5.IsBS(onid) ? CustomEpgTabInfo.SpecialViewServices.ViewServiceBS :
+                               ChSet5.IsCS(onid) ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS :
+                               ChSet5.IsCS3(onid) ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 :
+                               CustomEpgTabInfo.SpecialViewServices.ViewServiceOther));
         }
 
         /// <summary>
@@ -186,19 +192,50 @@ namespace EpgTimer
                 listBox_service.ItemsSource = null;
                 var serviceList = new List<ServiceItem>();
 
-                for (int i = 0; i < setViewInfo.ViewServiceList.Count;)
+                //特殊なサービス指定の展開と重複除去
+                var viewIDList = new List<ulong>();
+                foreach (ulong id in setViewInfo.ViewServiceList)
+                {
+                    IEnumerable<EpgServiceAllEventInfo> sel =
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv ?
+                            serviceEventList.Values.Where(info => ChSet5.IsDttv(info.serviceInfo.ONID)) :
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceBS ?
+                            serviceEventList.Values.Where(info => ChSet5.IsBS(info.serviceInfo.ONID)) :
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS ?
+                            serviceEventList.Values.Where(info => ChSet5.IsCS(info.serviceInfo.ONID)) :
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 ?
+                            serviceEventList.Values.Where(info => ChSet5.IsCS3(info.serviceInfo.ONID)) :
+                        id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceOther ?
+                            serviceEventList.Values.Where(info => ChSet5.IsOther(info.serviceInfo.ONID)) : null;
+                    if (sel == null)
+                    {
+                        if (viewIDList.Contains(id) == false)
+                        {
+                            viewIDList.Add(id);
+                        }
+                        continue;
+                    }
+                    foreach (EpgServiceInfo info in DBManager.SelectServiceEventList(sel).Select(allInfo => allInfo.serviceInfo))
+                    {
+                        if (viewIDList.Contains(CommonManager.Create64Key(info.ONID, info.TSID, info.SID)) == false)
+                        {
+                            viewIDList.Add(CommonManager.Create64Key(info.ONID, info.TSID, info.SID));
+                        }
+                    }
+                }
+                for (int i = 0; i < viewIDList.Count;)
                 {
                     //TSIDが同じでSIDが逆順のときは正順にする
                     int skip = i + 1;
-                    while (setViewInfo.ViewServiceList.Count > skip &&
-                           setViewInfo.ViewServiceList[skip] >> 16 == setViewInfo.ViewServiceList[skip - 1] >> 16 &&
-                           (setViewInfo.ViewServiceList[skip] & 0xFFFF) < (setViewInfo.ViewServiceList[skip - 1] & 0xFFFF))
+                    while (viewIDList.Count > skip &&
+                           viewIDList[skip] >> 16 == viewIDList[skip - 1] >> 16 &&
+                           (viewIDList[skip] & 0xFFFF) < (viewIDList[skip - 1] & 0xFFFF))
                     {
                         skip++;
                     }
                     for (int j = skip - 1; j >= i; j--)
                     {
-                        ulong id = setViewInfo.ViewServiceList[j];
+                        ulong id = viewIDList[j];
                         if (serviceEventList.ContainsKey(id))
                         {
                             var item = new ServiceItem(serviceEventList[id].serviceInfo);
