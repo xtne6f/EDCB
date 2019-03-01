@@ -189,16 +189,10 @@ namespace EpgTimer
 
         private void listView_recinfo_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (e.Key == Key.Enter && e.IsRepeat == false)
             {
-                if (Settings.Instance.PlayDClick)
-                {
-                    button_play_Click(sender, e);
-                }
-                else
-                {
-                    button_recInfo_Click(sender, e);
-                }
+                //PlayDClickの切り替えはKeyDownが2回発生する(プロセス起動でフォーカス変化するため?)バギーな挙動があるので行わない
+                button_recInfo_Click(sender, e);
             }
         }
 

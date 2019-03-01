@@ -98,7 +98,7 @@ namespace EpgTimer
 
         private void tabItem_searchKey_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (e.Key == Key.Enter && e.IsRepeat == false)
             {
                 SearchPg();
             }
@@ -396,6 +396,10 @@ namespace EpgTimer
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
+            if (e.IsRepeat)
+            {
+                return;
+            }
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
                 switch (e.Key)

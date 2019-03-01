@@ -390,6 +390,10 @@ namespace EpgTimer
 
         void listView_reserve_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.IsRepeat)
+            {
+                return;
+            }
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
