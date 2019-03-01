@@ -418,7 +418,6 @@ namespace EpgTimer
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
         {
             EpgServiceInfo info = new EpgServiceInfo();
-            try
             {
                 info.ONID = item.ONID;
                 info.TSID = item.TSID;
@@ -431,10 +430,6 @@ namespace EpgTimer
                 info.service_type = (byte)item.ServiceType;
                 info.ts_name = item.NetworkName;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
             return info;
         }
 

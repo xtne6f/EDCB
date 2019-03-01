@@ -375,6 +375,11 @@ namespace EpgTimer
                                 continue;
                             }
                             allInfo = new EpgServiceAllEventInfo(CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]));
+                            if (serviceEventList.ContainsKey(id))
+                            {
+                                //リモコンキー情報を補完
+                                allInfo.serviceInfo.remote_control_key_id = serviceEventList[id].serviceInfo.remote_control_key_id;
+                            }
                             list.Add(id, allInfo);
                         }
                         allInfo.eventList.Add(info);
@@ -392,6 +397,11 @@ namespace EpgTimer
                             continue;
                         }
                         allInfo = new EpgServiceAllEventInfo(CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]));
+                        if (serviceEventList.ContainsKey(id))
+                        {
+                            //リモコンキー情報を補完
+                            allInfo.serviceInfo.remote_control_key_id = serviceEventList[id].serviceInfo.remote_control_key_id;
+                        }
                         list.Add(id, allInfo);
                     }
                     allInfo.eventArcList.Add(info);
