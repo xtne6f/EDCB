@@ -3402,9 +3402,9 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTimeProc(lua_State* L, bool archive)
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 3 ){
 		pair<__int64, __int64> ret;
-		DWORD onid = (DWORD)lua_tonumber(L, 1);
-		DWORD tsid = (DWORD)lua_tonumber(L, 2);
-		DWORD sid = (DWORD)lua_tonumber(L, 3);
+		__int64 onid = (__int64)min(max(lua_tonumber(L, 1), 0.0), 1e+16);
+		__int64 tsid = (__int64)min(max(lua_tonumber(L, 2), 0.0), 1e+16);
+		__int64 sid = (__int64)min(max(lua_tonumber(L, 3), 0.0), 1e+16);
 		if( archive ){
 			ret = ws.sys->epgDB.GetArchiveEventMinMaxTime(Create64Key((WORD)(onid >> 16), (WORD)(tsid >> 16), (WORD)(sid >> 16)),
 			                                              Create64Key((WORD)onid, (WORD)tsid, (WORD)sid));
