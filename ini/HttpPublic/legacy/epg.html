@@ -93,16 +93,16 @@ for i,v in ipairs(edcb.GetServiceList() or {}) do
 end
 
 --表示範囲の番組だけ取得する
+range={startTime=os.date('!*t',baseTime+date*24*3600),durationSecond=25*3600}
 if key and edcb.SearchEpgArchive then
-  et=edcb.SearchEpg(key, {startTime=os.date('!*t',baseTime+date*24*3600), durationSecond=25*3600})
-  for i,v in ipairs(edcb.SearchEpgArchive(key, {startTime=os.date('!*t',baseTime+date*24*3600), durationSecond=25*3600})) do
+  et=edcb.SearchEpg(key,range)
+  for i,v in ipairs(edcb.SearchEpgArchive(key,range)) do
     v.past=true
     et[#et+1]=v
   end
 else
-  et=edcb.EnumEventInfo(filterService, {startTime=os.date('!*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}
-  for i,v in ipairs(edcb.EnumEventInfoArchive and
-      edcb.EnumEventInfoArchive(filterService, {startTime=os.date('!*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}) do
+  et=edcb.EnumEventInfo(filterService,range) or {}
+  for i,v in ipairs(edcb.EnumEventInfoArchive and edcb.EnumEventInfoArchive(filterService,range) or {}) do
     v.past=true
     et[#et+1]=v
   end
@@ -137,7 +137,7 @@ pageNav=pageNav..'  ||\n'
 if minTime then
   for i=math.floor((minTime+timezone-4*3600)/(24*3600)),math.floor((maxTime+timezone-4*3600)/(24*3600)) do
     d=os.date('!*t', i*24*3600)
-    pageNav=pageNav..'  '..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;cust='..cust..'&amp;date='..(i-baseDate)..'">' or '')
+    pageNav=pageNav..'  '..(i==baseDate and '*' or '')..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;cust='..cust..'&amp;date='..(i-baseDate)..'">' or '')
       ..d.month..'/'..d.day..'('..({'日','月','火','水','木','金','土'})[d.wday]..')'..(i-baseDate~=date and '</a>\n' or '\n')
   end
 end
