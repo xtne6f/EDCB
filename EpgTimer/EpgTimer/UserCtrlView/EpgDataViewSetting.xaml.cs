@@ -294,17 +294,11 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_del_Click(object sender, RoutedEventArgs e)
         {
-            try
+            int index = listBox_serviceView.SelectedIndex;
+            if (index >= 0)
             {
-                listBox_serviceView.Items.RemoveAt(listBox_serviceView.SelectedIndex);
-                if (listBox_serviceView.Items.Count > 0)
-                {
-                    listBox_serviceView.SelectedIndex = 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                listBox_serviceView.Items.RemoveAt(index);
+                listBox_serviceView.SelectedIndex = Math.Min(index, listBox_serviceView.Items.Count - 1);
             }
         }
 
@@ -315,14 +309,7 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_delAll_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                listBox_serviceView.Items.Clear();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            listBox_serviceView.Items.Clear();
         }
 
         /// <summary>
@@ -332,7 +319,6 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_up_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 if (listBox_serviceView.SelectedItem != null)
                 {
@@ -346,10 +332,6 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
@@ -359,7 +341,6 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_down_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 if (listBox_serviceView.SelectedItem != null)
                 {
@@ -373,10 +354,6 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
@@ -386,28 +363,12 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_jyanru_addAll_Click(object sender, RoutedEventArgs e)
         {
-            try
+            foreach (ContentKindInfo info in listBox_jyanru.Items)
             {
-                foreach (ContentKindInfo info in listBox_jyanru.Items)
+                if (listBox_jyanruView.Items.Contains(info) == false)
                 {
-                    bool find = false;
-                    foreach (ContentKindInfo info2 in listBox_jyanruView.Items)
-                    {
-                        if (info2.ID == info.ID)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_jyanruView.Items.Add(info);
-                    }
+                    listBox_jyanruView.Items.Add(info);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -418,33 +379,16 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_jyanru_add_Click(object sender, RoutedEventArgs e)
         {
-            try
+            if (listBox_jyanru.SelectedItem != null)
             {
-                if (listBox_jyanru.SelectedItem != null)
+                if (listBox_jyanruView.Items.Contains(listBox_jyanru.SelectedItem) == false)
                 {
-                    ContentKindInfo info = listBox_jyanru.SelectedItem as ContentKindInfo;
-                    bool find = false;
-                    foreach (ContentKindInfo info2 in listBox_jyanruView.Items)
-                    {
-                        if (info2.ID == info.ID)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_jyanruView.Items.Add(info);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("アイテムが選択されていません");
+                    listBox_jyanruView.Items.Add(listBox_jyanru.SelectedItem);
                 }
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show("アイテムが選択されていません");
             }
         }
 
@@ -455,24 +399,11 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_jyanru_del_Click(object sender, RoutedEventArgs e)
         {
-            try
+            int index = listBox_jyanruView.SelectedIndex;
+            if (index >= 0)
             {
-                if (listBox_jyanruView.SelectedItem != null)
-                {
-                    listBox_jyanruView.Items.RemoveAt(listBox_jyanruView.SelectedIndex);
-                    if (listBox_jyanruView.Items.Count > 0)
-                    {
-                        listBox_jyanruView.SelectedIndex = 0;
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("アイテムが選択されていません");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                listBox_jyanruView.Items.RemoveAt(index);
+                listBox_jyanruView.SelectedIndex = Math.Min(index, listBox_jyanruView.Items.Count - 1);
             }
         }
 
@@ -483,14 +414,7 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_jyanru_delAll_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                listBox_jyanruView.Items.Clear();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            listBox_jyanruView.Items.Clear();
         }
 
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
