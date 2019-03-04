@@ -62,6 +62,7 @@ namespace EpgTimer
             serviceEventList.Clear();
             button_prev.IsEnabled = false;
             button_next.IsEnabled = false;
+            button_prev.Visibility = Visibility.Hidden;
             ReDrawNowLine();
         }
 
@@ -1126,6 +1127,7 @@ namespace EpgTimer
                 //UpdateProgramView();
                 button_prev.IsEnabled = enablePrev;
                 button_next.IsEnabled = enableNext;
+                button_prev.Visibility = enablePrev || enableNext ? Visibility.Visible : Visibility.Hidden;
             }
             catch (Exception ex)
             {

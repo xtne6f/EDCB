@@ -125,8 +125,8 @@ namespace EpgTimer
             if (updateEpgData)
             {
                 DateTime now = DateTime.UtcNow.AddHours(9);
-                //3日以上前の日曜0時
-                EventBaseTime = now.AddDays(-(int)now.AddDays(-3).DayOfWeek - 3) - now.TimeOfDay;
+                //6日以上前の日曜0時
+                EventBaseTime = now.AddDays(-(int)now.AddDays(-6).DayOfWeek - 6) - now.TimeOfDay;
                 EventMinTime = DateTime.MaxValue;
                 serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
                 var list = new List<EpgServiceEventInfo>();
@@ -146,6 +146,11 @@ namespace EpgTimer
                             {
                                 //全過去番組情報の最小開始時間
                                 EventMinTime = DateTime.FromFileTimeUtc(mm[0]);
+                                if (EventMinTime < EventBaseTime)
+                                {
+                                    //2日以上前の日曜0時
+                                    EventBaseTime = now.AddDays(-(int)now.AddDays(-2).DayOfWeek - 2) - now.TimeOfDay;
+                                }
                                 CommonManager.CreateSrvCtrl().SendEnumPgArc(
                                     new List<long> { 0xFFFFFFFFFFFF, 0xFFFFFFFFFFFF, EventBaseTime.ToFileTime(), now.AddDays(1).ToFileTime() }, ref arcList);
                             }

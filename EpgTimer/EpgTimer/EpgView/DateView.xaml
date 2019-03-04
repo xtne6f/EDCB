@@ -11,11 +11,11 @@
             <RowDefinition Height="20" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="40" />
+            <ColumnDefinition Width="auto" />
             <ColumnDefinition Name="columnDefinition" Width="*" />
         </Grid.ColumnDefinitions>
-        <Button Click="button_time_Click" Content="←" IsEnabled="False" Name="button_prev" />
-        <Button Click="button_time_Click" Content="→" Grid.Row="1" IsEnabled="False" Name="button_next" />
+        <Button Click="button_time_Click" Content="←" IsEnabled="False" Name="button_prev" Visibility="Collapsed"  Width="40" />
+        <Button Click="button_time_Click" Content="→" Grid.Row="1" IsEnabled="False" Name="button_next" Visibility="{Binding Visibility, ElementName=button_prev}" Width="40" />
         <UniformGrid Grid.Column="1" Name="uniformGrid_day" Rows="1" />
         <UniformGrid Grid.Column="1" Grid.Row="1" Name="uniformGrid_time" Rows="1" />
     </Grid>

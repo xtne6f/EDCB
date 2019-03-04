@@ -32,6 +32,7 @@ namespace EpgTimer.EpgView
         {
             button_prev.IsEnabled = false;
             button_next.IsEnabled = false;
+            button_prev.Visibility = Visibility.Collapsed;
             uniformGrid_day.Children.Clear();
             uniformGrid_time.Children.Clear();
         }
@@ -41,6 +42,7 @@ namespace EpgTimer.EpgView
             ClearInfo();
             button_prev.IsEnabled = enablePrev;
             button_next.IsEnabled = enableNext;
+            button_prev.Visibility = enablePrev || enableNext ? Visibility.Visible : Visibility.Collapsed;
             if (timeList.Count > 0)
             {
                 DateTime startTime = timeList[0];
