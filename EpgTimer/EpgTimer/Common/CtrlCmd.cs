@@ -306,6 +306,8 @@ namespace EpgTimer
         CMD_EPG_SRV_GET_EPG_FILETIME2 = 2031,
         /// <summary>サーバー連携用　EPGデータファイル取得</summary>
         CMD_EPG_SRV_GET_EPG_FILE2 = 2032,
+        /// <summary>過去番組検索</summary>
+        CMD_EPG_SRV_SEARCH_PG_ARC2 = 2129,
         /// <summary>自動予約登録の条件一覧取得</summary>
         CMD_EPG_SRV_ENUM_AUTO_ADD2 = 2131,
         /// <summary>自動予約登録の条件追加</summary>
@@ -320,6 +322,8 @@ namespace EpgTimer
         CMD_EPG_SRV_CHG_MANU_ADD2 = 2144,
         /// <summary>サーバーの情報変更通知を取得（ロングポーリング）</summary>
         CMD_EPG_SRV_GET_STATUS_NOTIFY2 = 2200,
+        /// <summary>過去番組情報の最小開始時間と最大開始時間を取得する</summary>
+        CMD_EPG_SRV_GET_PG_ARC_MINMAX = 1020,
         /// <summary>読み込まれたEPGデータのサービスの一覧取得</summary>
         CMD_EPG_SRV_ENUM_SERVICE = 1021,
         /// <summary>サービス指定で番組情報一覧を取得する</summary>
@@ -330,10 +334,8 @@ namespace EpgTimer
         CMD_EPG_SRV_SEARCH_PG = 1025,
         /// <summary>番組情報一覧取得</summary>
         CMD_EPG_SRV_ENUM_PG_ALL = 1026,
-        /// <summary>サービス指定で過去番組情報一覧を取得する</summary>
-        CMD_EPG_SRV_ENUM_PG_ARC_INFO = 1028,
-        /// <summary>過去番組情報一覧取得</summary>
-        CMD_EPG_SRV_ENUM_PG_ARC_ALL = 1029,
+        /// <summary>サービス指定と時間指定で過去番組情報一覧を取得する</summary>
+        CMD_EPG_SRV_ENUM_PG_ARC = 1030,
         /// <summary>自動予約登録の条件一覧取得</summary>
         CMD_EPG_SRV_ENUM_AUTO_ADD = 1031,
         /// <summary>自動予約登録の条件追加</summary>
@@ -519,20 +521,22 @@ namespace EpgTimer
         public ErrCode SendDelRecInfo(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_RECINFO, val); }
         /// <summary>録画済み情報のファイルパスを変更する</summary>
         public ErrCode SendChgPathRecInfo(List<RecFileInfo> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_CHG_PATH_RECINFO, val); }
+        /// <summary>過去番組情報の最小開始時間と最大開始時間を取得する</summary>
+        public ErrCode SendGetPgArcMinMax(List<long> key, ref List<long> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_PG_ARC_MINMAX, key, ref o); }
         /// <summary>サービス一覧を取得する</summary>
         public ErrCode SendEnumService(ref List<EpgServiceInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_SERVICE, ref o); }
         /// <summary>サービス指定で番組情報を一覧を取得する</summary>
         public ErrCode SendEnumPgInfo(ulong service, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_INFO, service, ref o); }
-        /// <summary>サービス指定で過去番組情報一覧を取得する</summary>
-        public ErrCode SendEnumPgArcInfo(ulong service, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_INFO, service, ref o); }
         /// <summary>指定イベントの番組情報を取得する</summary>
         public ErrCode SendGetPgInfo(ulong pgID, ref EpgEventInfo val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_PG_INFO, pgID, ref o); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
         public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_SEARCH_PG, key, ref o); }
+        /// <summary>指定キーワードで番組情報を検索する（IDのみ返す）</summary>
+        public ErrCode SendSearchPgMinimum(List<EpgSearchKeyInfo> key, ref List<EpgEventInfoMinimum> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_SEARCH_PG, key, ref o); }
         /// <summary>番組情報一覧を取得する</summary>
         public ErrCode SendEnumPgAll(ref List<EpgServiceEventInfo> val) { object o = val;  return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ALL, ref o); }
-        /// <summary>過去番組情報一覧取得</summary>
-        public ErrCode SendEnumPgArcAll(ref List<EpgServiceEventInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_ALL, ref o); }
+        /// <summary>サービス指定と時間指定で過去番組情報一覧を取得する</summary>
+        public ErrCode SendEnumPgArc(List<long> keyAndRange, ref List<EpgServiceEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC, keyAndRange, ref o); }
         /// <summary>自動予約登録条件を削除する</summary>
         public ErrCode SendDelEpgAutoAdd(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_AUTO_ADD, val); }
         /// <summary>プログラム予約自動登録の条件削除</summary>
@@ -568,6 +572,8 @@ namespace EpgTimer
         public ErrCode SendAddReserve(List<ReserveData> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_ADD_RESERVE2, val); }
         /// <summary>予約を変更する</summary>
         public ErrCode SendChgReserve(List<ReserveData> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_RESERVE2, val); }
+        /// <summary>過去番組検索</summary>
+        public ErrCode SendSearchPgArc(SearchPgParam param, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_SEARCH_PG_ARC2, param, ref o); }
         /// <summary>自動予約登録条件一覧を取得する</summary>
         public ErrCode SendEnumEpgAutoAdd(ref List<EpgAutoAddData> val) { object o = val; return ReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_ENUM_AUTO_ADD2, ref o); }
         /// <summary>自動予約登録条件を追加する</summary>
@@ -652,13 +658,13 @@ namespace EpgTimer
                     // 受信
                     if (ReadAll(pipe, head, 0, 8) != 8)
                     {
-                        return ErrCode.CMD_ERR;
+                        return ErrCode.CMD_ERR_DISCONNECT;
                     }
                     uint resParam = BitConverter.ToUInt32(head, 0);
                     var resData = new byte[BitConverter.ToUInt32(head, 4)];
                     if (ReadAll(pipe, resData, 0, resData.Length) != resData.Length)
                     {
-                        return ErrCode.CMD_ERR;
+                        return ErrCode.CMD_ERR_DISCONNECT;
                     }
                     res = new MemoryStream(resData, false);
                     return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
@@ -706,13 +712,13 @@ namespace EpgTimer
                         // 受信
                         if (ReadAll(ns, head, 0, 8) != 8)
                         {
-                            return ErrCode.CMD_ERR;
+                            return ErrCode.CMD_ERR_DISCONNECT;
                         }
                         uint resParam = BitConverter.ToUInt32(head, 0);
                         var resData = new byte[BitConverter.ToUInt32(head, 4)];
                         if (ReadAll(ns, resData, 0, resData.Length) != resData.Length)
                         {
-                            return ErrCode.CMD_ERR;
+                            return ErrCode.CMD_ERR_DISCONNECT;
                         }
                         res = new MemoryStream(resData, false);
                         return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;

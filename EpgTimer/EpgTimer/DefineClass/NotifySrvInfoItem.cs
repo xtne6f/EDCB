@@ -9,7 +9,7 @@ namespace EpgTimer
     {
         public NotifySrvInfoItem(NotifySrvInfo info)
         {
-            Time = info.time.ToString("yyyy/MM/dd HH:mm:ss.fff");
+            Time = info.time.ToString("yyyy\\/MM\\/dd HH\\:mm\\:ss.fff");
             UpdateNotifyItem notifyID = (UpdateNotifyItem)info.notifyID;
             Title = notifyID == UpdateNotifyItem.PreRecStart ? "予約録画開始準備" :
                     notifyID == UpdateNotifyItem.RecStart ? "録画開始" :

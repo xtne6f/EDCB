@@ -32,16 +32,15 @@ namespace EpgTimer.EpgView
 
         public void SetDay(System.Collections.SortedList dayList)
         {
-            try
+            stackPanel_day.Children.Clear();
+            if (Settings.Instance.ServiceWidth > 2)
             {
-                stackPanel_day.Children.Clear();
                 foreach (DateTime time in dayList.Values)
                 {
                     TextBlock item = new TextBlock();
 
                     item.Width = Settings.Instance.ServiceWidth - 2;
-                    item.Text = time.ToString("M/d\r\n(ddd)");
-
+                    item.Text = time.ToString("M\\/d\r\n(ddd)");
 
                     Color backgroundColor;
                     if (time.DayOfWeek == DayOfWeek.Saturday)
@@ -74,10 +73,6 @@ namespace EpgTimer.EpgView
                     item.FontWeight = FontWeights.Bold;
                     stackPanel_day.Children.Add(item);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
     }

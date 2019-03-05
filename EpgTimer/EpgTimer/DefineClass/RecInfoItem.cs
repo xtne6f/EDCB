@@ -43,11 +43,7 @@ namespace EpgTimer
         }
         public String StartTime
         {
-            get
-            {
-                return RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") +
-                       RecInfo.StartTime.AddSeconds(RecInfo.DurationSecond).ToString("HH:mm:ss");
-            }
+            get { return CommonManager.GetTimeDurationText(true, RecInfo.StartTime, true, RecInfo.DurationSecond); }
         }
         public long Drops
         {
@@ -79,6 +75,18 @@ namespace EpgTimer
             {
                 return RecInfo.Drops > 0 ? CommonManager.Instance.RecEndErrBackColor :
                        RecInfo.Scrambles > 0 ? CommonManager.Instance.RecEndWarBackColor : CommonManager.Instance.RecEndDefBackColor;
+            }
+        }
+        public SolidColorBrush ResultBackColor
+        {
+            get
+            {
+                return RecInfo.RecStatus == (uint)RecEndStatus.NORMAL ||
+                       RecInfo.RecStatus == (uint)RecEndStatus.CHG_TIME ||
+                       RecInfo.RecStatus == (uint)RecEndStatus.NEXT_START_END ? null :
+                       RecInfo.RecStatus == (uint)RecEndStatus.ERR_END ||
+                       RecInfo.RecStatus == (uint)RecEndStatus.END_SUBREC ||
+                       RecInfo.RecStatus == (uint)RecEndStatus.NOT_START_HEAD ? CommonManager.Instance.RecEndWarBackColor : CommonManager.Instance.RecEndErrBackColor;
             }
         }
         public TextBlock ToolTipView

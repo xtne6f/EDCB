@@ -24,7 +24,6 @@ namespace EpgTimer
             }
         }
         public IDictionary<ushort, string> ComponentKindDictionary { get; private set; }
-        public string[] DayOfWeekArray { get; private set; }
         public string[] RecModeList { get; private set; }
         public bool NWMode { get; set; }
         public List<NotifySrvInfo> NotifyLogList { get; private set; }
@@ -53,7 +52,7 @@ namespace EpgTimer
             DB = new DBManager();
             TVTestCtrl = new TVTestCtrlClass();
 
-            ContentKindDictionary = new SortedList<ushort, ContentKindInfo>(155)
+            ContentKindDictionary = new SortedList<ushort, ContentKindInfo>(167)
             {
                 { 0x0000, new ContentKindInfo("ニュース／報道", "定時・総合", 0x00, 0x00) },
                 { 0x0001, new ContentKindInfo("ニュース／報道", "天気", 0x00, 0x01) },
@@ -184,6 +183,21 @@ namespace EpgTimer
 
                 { 0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF) },
 
+                { 0x6000, new ContentKindInfo("編成情報", "中止の可能性あり", 0x60, 0x00) },
+                { 0x6001, new ContentKindInfo("編成情報", "延長の可能性あり", 0x60, 0x01) },
+                { 0x6002, new ContentKindInfo("編成情報", "中断の可能性あり", 0x60, 0x02) },
+                { 0x6003, new ContentKindInfo("編成情報", "別話数放送の可能性あり", 0x60, 0x03) },
+                { 0x6004, new ContentKindInfo("編成情報", "編成未定枠", 0x60, 0x04) },
+                { 0x6005, new ContentKindInfo("編成情報", "繰り上げの可能性あり", 0x60, 0x05) },
+                { 0x60FF, new ContentKindInfo("編成情報", "", 0x60, 0xFF) },
+
+                { 0x6100, new ContentKindInfo("特性情報", "中断ニュースあり", 0x61, 0x00) },
+                { 0x6101, new ContentKindInfo("特性情報", "臨時サービスあり", 0x61, 0x01) },
+                { 0x61FF, new ContentKindInfo("特性情報", "", 0x61, 0xFF) },
+
+                { 0x6200, new ContentKindInfo("3D映像", "3D映像あり", 0x62, 0x00) },
+                { 0x62FF, new ContentKindInfo("3D映像", "", 0x62, 0xFF) },
+
                 { 0x7000, new ContentKindInfo("スポーツ(CS)", "テニス", 0x70, 0x00) },
                 { 0x7001, new ContentKindInfo("スポーツ(CS)", "バスケットボール", 0x70, 0x01) },
                 { 0x7002, new ContentKindInfo("スポーツ(CS)", "ラグビー", 0x70, 0x02) },
@@ -308,7 +322,6 @@ namespace EpgTimer
                     { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
                 };
             }
-            DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
             RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
@@ -405,7 +418,6 @@ namespace EpgTimer
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
         {
             EpgServiceInfo info = new EpgServiceInfo();
-            try
             {
                 info.ONID = item.ONID;
                 info.TSID = item.TSID;
@@ -418,10 +430,6 @@ namespace EpgTimer
                 info.service_type = (byte)item.ServiceType;
                 info.ts_name = item.NetworkName;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
             return info;
         }
 
@@ -433,6 +441,8 @@ namespace EpgTimer
                     return "EpgTimerSrvがサポートしていないコマンドです。";
                 case ErrCode.CMD_ERR_CONNECT:
                     return "EpgTimerSrvに接続できませんでした。";
+                case ErrCode.CMD_ERR_DISCONNECT:
+                    return "EpgTimerSrvとの接続がリセットされた可能性があります。";
                 case ErrCode.CMD_ERR_TIMEOUT:
                     return "EpgTimerSrvとの接続にタイムアウトしました。";
                 case ErrCode.CMD_ERR_BUSY:
@@ -443,13 +453,19 @@ namespace EpgTimer
             }
         }
 
+        public static string GetTimeDurationText(bool timeFlag, DateTime time, bool durationFlag, uint durationSec)
+        {
+            if (timeFlag)
+            {
+                return time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss ～ ") +
+                       (durationFlag ? time.AddSeconds(durationSec).ToString("HH\\:mm\\:ss") : "未定");
+            }
+            return "未定";
+        }
+
         public String ConvertReserveText(ReserveData reserveInfo)
         {
-            String view = "";
-            view = reserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-            DateTime endTime = reserveInfo.StartTime + TimeSpan.FromSeconds(reserveInfo.DurationSecond);
-            view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
+            String view = GetTimeDurationText(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
             String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
             String tuijyu = "";
             if (reserveInfo.RecSetting.TuijyuuFlag == 0)
@@ -605,23 +621,8 @@ namespace EpgTimer
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
                 }
 
-                if (eventInfo.StartTimeFlag == 1)
-                {
-                    basicInfo += eventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                }
-                else
-                {
-                    basicInfo += "未定 ～ ";
-                }
-                if (eventInfo.DurationFlag == 1)
-                {
-                    DateTime endTime = eventInfo.start_time + TimeSpan.FromSeconds(eventInfo.durationSec);
-                    basicInfo += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-                }
-                else
-                {
-                    basicInfo += "未定\r\n";
-                }
+                basicInfo += GetTimeDurationText(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
+                                                 eventInfo.DurationFlag != 0, eventInfo.durationSec) + "\r\n";
 
                 if (eventInfo.ShortInfo != null)
                 {
@@ -643,9 +644,9 @@ namespace EpgTimer
                         String content = "";
                         int nibble1 = info.content_nibble_level_1;
                         int nibble2 = info.content_nibble_level_2;
-                        if (nibble1 == 0x0E && nibble2 == 0x01)
+                        if (nibble1 == 0x0E && nibble2 <= 0x01)
                         {
-                            nibble1 = info.user_nibble_1 | 0x70;
+                            nibble1 = info.user_nibble_1 | (0x60 + nibble2 * 16);
                             nibble2 = info.user_nibble_2;
                         }
                         if (ContentKindDictionary.ContainsKey((ushort)(nibble1 << 8 | 0xFF)))

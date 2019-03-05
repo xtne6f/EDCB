@@ -15,6 +15,11 @@
                 </StackPanel.Effect>
                 <local:EpgViewPanel x:Name="popupItemPanel" />
             </StackPanel>
+            <Line Canvas.ZIndex="20" IsHitTestVisible="False" Name="nowLine" Opacity="0.7" Stroke="Red" StrokeThickness="3" Visibility="Hidden">
+                <Line.Effect>
+                    <DropShadowEffect BlurRadius="10" />
+                </Line.Effect>
+            </Line>
         </Canvas>
     </ScrollViewer>
 </UserControl>

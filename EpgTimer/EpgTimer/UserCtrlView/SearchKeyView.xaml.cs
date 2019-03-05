@@ -38,13 +38,13 @@ namespace EpgTimer
             comboBox_content.SelectedIndex = 0;
 
             EnableDateListBox(false);
-            comboBox_time_sw.ItemsSource = CommonManager.Instance.DayOfWeekArray;
+            comboBox_time_sw.ItemsSource = Enumerable.Range(0, 7).Select(i => (new DateTime(2000, 1, 2 + i)).ToString("ddd"));
             comboBox_time_sw.SelectedIndex = 0;
             comboBox_time_sh.ItemsSource = Enumerable.Range(0, 24);
             comboBox_time_sh.SelectedIndex = 0;
             comboBox_time_sm.ItemsSource = Enumerable.Range(0, 60);
             comboBox_time_sm.SelectedIndex = 0;
-            comboBox_time_ew.ItemsSource = CommonManager.Instance.DayOfWeekArray;
+            comboBox_time_ew.ItemsSource = Enumerable.Range(0, 7).Select(i => (new DateTime(2000, 1, 2 + i)).ToString("ddd"));
             comboBox_time_ew.SelectedIndex = 6;
             comboBox_time_eh.ItemsSource = Enumerable.Range(0, 24);
             comboBox_time_eh.SelectedIndex = 23;
@@ -59,6 +59,10 @@ namespace EpgTimer
             var serviceList = new List<ServiceItem>();
             foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
             {
+                if (ChSet5.IsCS3(info.ONID))
+                {
+                    button_cs3.Visibility = Visibility.Visible;
+                }
                 serviceList.Add(new ServiceItem(CommonManager.ConvertChSet5To(info)));
             }
             listView_service.ItemsSource = serviceList;
@@ -102,8 +106,9 @@ namespace EpgTimer
             SaveSearchLogSettings();
         }
 
-        public void GetSearchKey(ref EpgSearchKeyInfo key)
+        public EpgSearchKeyInfo GetSearchKey()
         {
+            var key = new EpgSearchKeyInfo();
             key.andKey = comboBox_andKey.Text;
             key.notKey = comboBox_notKey.Text;
             key.regExpFlag = checkBox_regExp.IsChecked == true ? 1 : 0;
@@ -125,7 +130,6 @@ namespace EpgTimer
                 key.andKey = "^!{999}" + key.andKey;
             }
 
-            key.contentList.Clear();
             if (listBox_content.IsEnabled)
             {
                 foreach (ContentKindInfo info in listBox_content.Items)
@@ -138,17 +142,15 @@ namespace EpgTimer
             }
             key.notContetFlag = (byte)(checkBox_notContent.IsChecked == true ? 1 : 0);
 
-            key.dateList.Clear();
             if (listBox_date.IsEnabled)
             {
-                foreach (DateItem info in listBox_date.Items)
+                foreach (Tuple<string, EpgSearchDateInfo> info in listBox_date.Items)
                 {
-                    key.dateList.Add(info.DateInfo);
+                    key.dateList.Add(info.Item2);
                 }
             }
             key.notDateFlag = (byte)(checkBox_notDate.IsChecked == true ? 1 : 0);
 
-            key.serviceList.Clear();
             foreach (ServiceItem info in listView_service.Items)
             {
                 if (info.IsSelected)
@@ -164,6 +166,7 @@ namespace EpgTimer
             {
                 key.chkRecDay = (ushort)(key.chkRecDay % 10000 + 40000);
             }
+            return key;
         }
 
         public void SetSearchKey(EpgSearchKeyInfo key)
@@ -209,9 +212,9 @@ namespace EpgTimer
             listBox_date.Items.Clear();
             foreach (EpgSearchDateInfo info in key.dateList)
             {
-                DateItem item = new DateItem();
-                item.DateInfo = info;
-                listBox_date.Items.Add(item);
+                listBox_date.Items.Add(new Tuple<string, EpgSearchDateInfo>(
+                    (new DateTime(2000, 1, 2 + info.startDayOfWeek % 7, info.startHour % 24, info.startMin % 60, 0)).ToString("ddd HH\\:mm") +
+                    (new DateTime(2000, 1, 2 + info.endDayOfWeek % 7, info.endHour % 24, info.endMin % 60, 0)).ToString(" ～ ddd HH\\:mm"), info));
             }
             if (listBox_date.Items.Count == 0)
             {
@@ -263,12 +266,7 @@ namespace EpgTimer
         {
             if (listBox_content.IsEnabled && listBox_content.SelectedItem != null)
             {
-                var delList = new List<ContentKindInfo>(listBox_content.SelectedItems.Count);
-                foreach (ContentKindInfo info in listBox_content.SelectedItems)
-                {
-                    delList.Add(info);
-                }
-                foreach (ContentKindInfo info in delList)
+                foreach (object info in listBox_content.SelectedItems.Cast<object>().ToList())
                 {
                     listBox_content.Items.Remove(info);
                 }
@@ -281,54 +279,40 @@ namespace EpgTimer
 
         private void button_date_add_Click(object sender, RoutedEventArgs e)
         {
-            if (radioButton_week.IsChecked == false)
+            for (byte day = 0; day < 7; day++)
             {
                 var info = new EpgSearchDateInfo();
-                info.startDayOfWeek = (byte)Math.Min(Math.Max(comboBox_time_sw.SelectedIndex, 0), 6);
-                info.startHour = (ushort)Math.Min(Math.Max(comboBox_time_sh.SelectedIndex, 0), 23);
-                info.startMin = (ushort)Math.Min(Math.Max(comboBox_time_sm.SelectedIndex, 0), 59);
-                info.endDayOfWeek = (byte)Math.Min(Math.Max(comboBox_time_ew.SelectedIndex, 0), 6);
                 info.endHour = (ushort)Math.Min(Math.Max(comboBox_time_eh.SelectedIndex, 0), 23);
                 info.endMin = (ushort)Math.Min(Math.Max(comboBox_time_em.SelectedIndex, 0), 59);
-                EnableDateListBox(true);
-                var item = new DateItem();
-                item.DateInfo = info;
-                listBox_date.Items.Add(item);
-            }
-            else
-            {
-                int startHour = Math.Min(Math.Max(comboBox_week_sh.SelectedIndex, 0), 23);
-                int startMin = Math.Min(Math.Max(comboBox_week_sm.SelectedIndex, 0), 59);
-                int endHour = Math.Min(Math.Max(comboBox_time_eh.SelectedIndex, 0), 23);
-                int endMin = Math.Min(Math.Max(comboBox_time_em.SelectedIndex, 0), 59);
-                var Add_week = new Action<CheckBox, byte>((chbox, day) =>
+                if (radioButton_week.IsChecked == false)
                 {
-                    if (chbox.IsChecked != true) return;
-                    //
-                    var info = new EpgSearchDateInfo();
+                    info.startDayOfWeek = (byte)Math.Min(Math.Max(comboBox_time_sw.SelectedIndex, 0), 6);
+                    info.startHour = (ushort)Math.Min(Math.Max(comboBox_time_sh.SelectedIndex, 0), 23);
+                    info.startMin = (ushort)Math.Min(Math.Max(comboBox_time_sm.SelectedIndex, 0), 59);
+                    info.endDayOfWeek = (byte)Math.Min(Math.Max(comboBox_time_ew.SelectedIndex, 0), 6);
+                    day = 6;
+                }
+                else
+                {
+                    var chbox = (new CheckBox[] { checkBox_sun, checkBox_mon, checkBox_tue, checkBox_wed, checkBox_thu, checkBox_fri, checkBox_sat })[day];
+                    if (chbox.IsChecked != true)
+                    {
+                        continue;
+                    }
                     info.startDayOfWeek = day;
-                    info.startHour = (ushort)startHour;
-                    info.startMin = (ushort)startMin;
+                    info.startHour = (ushort)Math.Min(Math.Max(comboBox_week_sh.SelectedIndex, 0), 23);
+                    info.startMin = (ushort)Math.Min(Math.Max(comboBox_week_sm.SelectedIndex, 0), 59);
                     info.endDayOfWeek = info.startDayOfWeek;
-                    info.endHour = (ushort)endHour;
-                    info.endMin = (ushort)endMin;
-                    if (endHour * 60 + endMin < startHour * 60 + startMin)
+                    if (info.endHour * 60 + info.endMin < info.startHour * 60 + info.startMin)
                     {
                         //終了時間は翌日のものとみなす
                         info.endDayOfWeek = (byte)((info.endDayOfWeek + 1) % 7);
                     }
-                    EnableDateListBox(true);
-                    var item = new DateItem();
-                    item.DateInfo = info;
-                    listBox_date.Items.Add(item);
-                });
-                Add_week(checkBox_sun, 0);
-                Add_week(checkBox_mon, 1);
-                Add_week(checkBox_tue, 2);
-                Add_week(checkBox_wed, 3);
-                Add_week(checkBox_thu, 4);
-                Add_week(checkBox_fri, 5);
-                Add_week(checkBox_sat, 6);
+                }
+                EnableDateListBox(true);
+                listBox_date.Items.Add(new Tuple<string, EpgSearchDateInfo>(
+                    (new DateTime(2000, 1, 2 + info.startDayOfWeek, info.startHour, info.startMin, 0)).ToString("ddd HH\\:mm") +
+                    (new DateTime(2000, 1, 2 + info.endDayOfWeek, info.endHour, info.endMin, 0)).ToString(" ～ ddd HH\\:mm"), info));
             }
         }
 
@@ -336,12 +320,7 @@ namespace EpgTimer
         {
             if (listBox_date.IsEnabled && listBox_date.SelectedItem != null)
             {
-                var delList = new List<DateItem>(listBox_date.SelectedItems.Count);
-                foreach (DateItem info in listBox_date.SelectedItems)
-                {
-                    delList.Add(info);
-                }
-                foreach (DateItem info in delList)
+                foreach (object info in listBox_date.SelectedItems.Cast<object>().ToList())
                 {
                     listBox_date.Items.Remove(info);
                 }
@@ -415,6 +394,19 @@ namespace EpgTimer
             foreach (ServiceItem info in listView_service.Items)
             {
                 if (ChSet5.IsCS(info.ServiceInfo.ONID) &&
+                    ChSet5.IsCS3(info.ServiceInfo.ONID) == false &&
+                    ChSet5.IsVideo(info.ServiceInfo.service_type))
+                {
+                    info.IsSelected = true;
+                }
+            }
+        }
+
+        private void button_cs3_on_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                if (ChSet5.IsCS3(info.ServiceInfo.ONID) &&
                     ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
@@ -466,7 +458,7 @@ namespace EpgTimer
                 checkBox_notDate.IsEnabled = isEnabled;
                 if (isEnabled == false)
                 {
-                    listBox_date.Items.Add("(全期間)");
+                    listBox_date.Items.Add(new Tuple<string, EpgSearchDateInfo>("(全期間)", null));
                 }
             }
         }

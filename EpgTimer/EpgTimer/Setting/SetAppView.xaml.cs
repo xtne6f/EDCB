@@ -219,13 +219,11 @@ namespace EpgTimer.Setting
         {
             SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            var defSearchKey = new EpgSearchKeyInfo();
-            ((Settings)DataContext).GetDefSearchSetting(defSearchKey);
-            dlg.SetDefSetting(defSearchKey);
+            dlg.SetDefSetting(((Settings)DataContext).CreateDefSearchSetting());
 
             if (dlg.ShowDialog() == true)
             {
-                dlg.GetSetting(ref defSearchKey);
+                EpgSearchKeyInfo defSearchKey = dlg.GetSetting();
                 var settings = (Settings)DataContext;
                 settings.SearchKeyAndKey = defSearchKey.andKey;
                 settings.SearchKeyNotKey = defSearchKey.notKey;
@@ -241,12 +239,7 @@ namespace EpgTimer.Setting
                     settings.SearchKeyContentList.Add(item);
                 }
                 settings.SearchKeyDateItemList.Clear();
-                foreach (EpgSearchDateInfo info in defSearchKey.dateList)
-                {
-                    var item = new DateItem();
-                    item.DateInfo = info;
-                    settings.SearchKeyDateItemList.Add(item);
-                }
+                settings.SearchKeyDateItemList.AddRange(defSearchKey.dateList);
                 settings.SearchKeyServiceList.Clear();
                 settings.SearchKeyServiceList.AddRange(defSearchKey.serviceList);
                 settings.SearchKeyNotContent = defSearchKey.notContetFlag != 0;
