@@ -559,7 +559,7 @@ namespace EpgTimer
         private void Window_PreviewDrop(object sender, DragEventArgs e)
         {
             string[] filePath = e.Data.GetData(DataFormats.FileDrop, true) as string[];
-            SendAddReserveFromArgs(CommonManager.CreateSrvCtrl(), filePath);
+            if (filePath != null) SendAddReserveFromArgs(CommonManager.CreateSrvCtrl(), filePath);
         }
 
         private static void SendAddReserveFromArgs(CtrlCmdUtil cmd, IEnumerable<string> args)
