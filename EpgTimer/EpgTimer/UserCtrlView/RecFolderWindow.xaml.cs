@@ -115,11 +115,10 @@ namespace EpgTimer
 
         private void button_folder_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
-            dlg.Description = "フォルダ選択";
-            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            string path = CommonUtil.BrowseFolder(((HwndSource)PresentationSource.FromVisual(this)).Handle, "フォルダを選択してください");
+            if (path != null)
             {
-                textBox_recFolder.Text = dlg.SelectedPath;
+                textBox_recFolder.Text = path;
             }
         }
 
@@ -129,10 +128,7 @@ namespace EpgTimer
             {
                 string name = comboBox_writePlugIn.SelectedItem as string;
                 string filePath = System.IO.Path.Combine(SettingPath.ModulePath, "Write\\" + name);
-
-                HwndSource hwnd = (HwndSource)HwndSource.FromVisual(this);
-
-                CommonUtil.ShowPlugInSetting(filePath, hwnd.Handle);
+                CommonUtil.ShowPlugInSetting(filePath, ((HwndSource)PresentationSource.FromVisual(this)).Handle);
             }
         }
 
@@ -144,10 +140,7 @@ namespace EpgTimer
                 if (name != "なし")
                 {
                     string filePath = System.IO.Path.Combine(SettingPath.ModulePath, "RecName\\" + name);
-
-                    HwndSource hwnd = (HwndSource)HwndSource.FromVisual(this);
-
-                    CommonUtil.ShowPlugInSetting(filePath, hwnd.Handle);
+                    CommonUtil.ShowPlugInSetting(filePath, ((HwndSource)PresentationSource.FromVisual(this)).Handle);
                 }
             }
         }

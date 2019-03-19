@@ -286,9 +286,6 @@ namespace EpgTimer.Setting
             }
         }
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
         private void button_srvSetting_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -300,7 +297,7 @@ namespace EpgTimer.Setting
                 }
                 else
                 {
-                    SetForegroundWindow(CommonManager.Instance.SrvSettingProcess.MainWindowHandle);
+                    CommonUtil.SetForegroundWindow(CommonManager.Instance.SrvSettingProcess.MainWindowHandle);
                 }
             }
             catch (Exception ex)

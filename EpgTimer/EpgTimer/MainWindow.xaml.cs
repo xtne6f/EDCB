@@ -18,13 +18,13 @@ namespace EpgTimer
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, ITaskTrayClickHandler
     {
         //MainWindowにIDisposableを実装するべき？
         private Mutex mutex;
         private string mutexName;
         private NWConnect nwConnect = new NWConnect();
-        private TaskTrayClass taskTray = new TaskTrayClass();
+        private TaskTrayClass taskTray;
         private PipeServer pipeServer = null;
         private bool closeFlag = false;
 
@@ -165,13 +165,11 @@ namespace EpgTimer
                 }
 
                 //タスクトレイの表示
-                taskTray.Click += (sender, e) =>
-                {
-                    Show();
-                    WindowState = Settings.Instance.LastWindowState;
-                    Activate();
-                };
+                taskTray = new TaskTrayClass(this);
                 taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconBlue.ico");
+                taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                                       new Action(() => taskTray.Visible = Settings.Instance.ShowTray));
 
                 CommonManager.Instance.DB.EpgDataChanged += reserveView.RefreshEpgData;
                 CommonManager.Instance.DB.ReserveInfoChanged += epgView.RefreshReserve;
@@ -184,8 +182,6 @@ namespace EpgTimer
                 }
                 //予約情報は常に遅延更新しない
                 CommonManager.Instance.DB.ReloadReserveInfo();
-
-                ResetTaskMenu();
 
                 //初期タブ選択
                 switch (Settings.Instance.StartTab)
@@ -266,60 +262,6 @@ namespace EpgTimer
             return true;
         }
 
-        private void ResetTaskMenu()
-        {
-            var addList = new List<KeyValuePair<string, Action<string>>>();
-            foreach (string info in Settings.Instance.TaskMenuList)
-            {
-                if (info == "（セパレータ）")
-                {
-                    addList.Add(new KeyValuePair<string, Action<string>>(null, null));
-                }
-                else
-                {
-                    addList.Add(new KeyValuePair<string, Action<string>>(info, tag =>
-                    {
-                        if (tag == "設定")
-                        {
-                            //メインウィンドウが表示済みであることを前提にしている箇所があるため
-                            if (PresentationSource.FromVisual(this) == null)
-                            {
-                                Show();
-                                WindowState = Settings.Instance.LastWindowState;
-                            }
-                            SettingCmd();
-                        }
-                        else if (tag == "終了")
-                        {
-                            CloseCmd();
-                        }
-                        else if (tag == "スタンバイ")
-                        {
-                            StandbyCmd();
-                        }
-                        else if (tag == "休止")
-                        {
-                            SuspendCmd();
-                        }
-                        else if (tag == "EPG取得")
-                        {
-                            EpgCapCmd();
-                        }
-                        else if (tag == "再接続")
-                        {
-                            if (CommonManager.Instance.NWMode)
-                            {
-                                ConnectCmd(true);
-                            }
-                        }
-                    }));
-                }
-            }
-            taskTray.ContextMenuList = addList;
-            taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
-            taskTray.Visible = Settings.Instance.ShowTray;
-        }
-
         private void ResetButtonView()
         {
             foreach (Button button in stackPanel_button.Children)
@@ -392,6 +334,74 @@ namespace EpgTimer
                 //検索ボタンは右端で動的に可視化することがある
                 var button = stackPanel_button.Children.Cast<Button>().First(a => (string)(a.Tag ?? a.Content) == "検索");
                 button.Margin = new Thickness(space, button.Margin.Top, button.Margin.Right, button.Margin.Bottom);
+            }
+        }
+
+        public void TaskTrayLeftClick()
+        {
+            Show();
+            WindowState = Settings.Instance.LastWindowState;
+            Activate();
+        }
+
+        public void TaskTrayRightClick()
+        {
+            var menu = new ContextMenu();
+            foreach (string info in Settings.Instance.TaskMenuList)
+            {
+                if (info == "（セパレータ）")
+                {
+                    menu.Items.Add(new Separator());
+                    continue;
+                }
+                var item = new MenuItem();
+                if (info == "設定")
+                {
+                    item.Click += (sender, e) =>
+                    {
+                        //メインウィンドウが表示済みであることを前提にしている箇所があるため
+                        if (PresentationSource.FromVisual(this) == null)
+                        {
+                            Show();
+                            WindowState = Settings.Instance.LastWindowState;
+                        }
+                        SettingCmd();
+                    };
+                }
+                else if (info == "終了")
+                {
+                    item.Click += (sender, e) => CloseCmd();
+                }
+                else if (info == "スタンバイ")
+                {
+                    item.Click += (sender, e) => StandbyCmd();
+                }
+                else if (info == "休止")
+                {
+                    item.Click += (sender, e) => SuspendCmd();
+                }
+                else if (info == "EPG取得")
+                {
+                    item.Click += (sender, e) => EpgCapCmd();
+                }
+                else if (info == "再接続" && CommonManager.Instance.NWMode)
+                {
+                    item.Click += (sender, e) => ConnectCmd(true);
+                }
+                else
+                {
+                    continue;
+                }
+                item.Header = info;
+                menu.Items.Add(item);
+            }
+            menu.IsOpen = true;
+            var ps = PresentationSource.FromVisual(menu);
+            if (ps != null)
+            {
+                //Activate()したいがContextMenuからWindowを取得できないので仕方なく
+                CommonUtil.SetForegroundWindow(((System.Windows.Interop.HwndSource)ps).Handle);
+                menu.Focus();
             }
         }
 
@@ -703,7 +713,8 @@ namespace EpgTimer
                 {
                     epgView.UpdateSetting();
                     ResetButtonView();
-                    ResetTaskMenu();
+                    taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
+                    taskTray.Visible = Settings.Instance.ShowTray;
                 }
             }
         }

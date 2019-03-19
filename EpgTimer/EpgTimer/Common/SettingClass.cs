@@ -14,19 +14,19 @@ namespace EpgTimer
 {
     class IniFileHandler
     {
-        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
-        public static extern uint
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        private static extern uint
           GetPrivateProfileString(string lpAppName,
           string lpKeyName, string lpDefault,
           StringBuilder lpReturnedString, uint nSize,
           string lpFileName);
 
-        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         public static extern int
           GetPrivateProfileInt(string lpAppName,
           string lpKeyName, int nDefault, string lpFileName);
 
-        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         public static extern uint WritePrivateProfileString(
           string lpAppName,
           string lpKeyName,
