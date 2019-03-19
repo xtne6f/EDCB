@@ -121,6 +121,7 @@ namespace EpgTimer
         public bool EpgToolTipNoViewOnly { get; set; }
         public int EpgToolTipViewWait { get; set; }
         public bool EpgPopup { get; set; }
+        public bool EpgExtInfoTable { get; set; }
         public bool EpgExtInfoPopup { get; set; }
         public bool EpgGradation { get; set; }
         public bool EpgGradationHeader { get; set; }
@@ -324,6 +325,7 @@ namespace EpgTimer
                 rr.EpgToolTipNoViewOnly     = ConvertXElem(xx, w, "EpgToolTipNoViewOnly", val.EpgToolTipNoViewOnly, true);
                 rr.EpgToolTipViewWait       = (int)ConvertXElem(xx, w, "EpgToolTipViewWait", val.EpgToolTipViewWait, 1500);
                 rr.EpgPopup                 = ConvertXElem(xx, w, "EpgPopup", val.EpgPopup, true);
+                rr.EpgExtInfoTable          = ConvertXElem(xx, w, "EpgExtInfoTable", val.EpgExtInfoTable, false);
                 rr.EpgExtInfoPopup          = ConvertXElem(xx, w, "EpgExtInfoPopup", val.EpgExtInfoPopup, true);
                 rr.EpgGradation             = ConvertXElem(xx, w, "EpgGradation", val.EpgGradation, true);
                 rr.EpgGradationHeader       = ConvertXElem(xx, w, "EpgGradationHeader", val.EpgGradationHeader, true);

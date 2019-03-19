@@ -58,20 +58,26 @@ namespace EpgTimer.EpgView
                         item.Foreground = Brushes.Black;
                         backgroundColor = Colors.White;
                     }
+                    var gridItem = new System.Windows.Controls.Primitives.UniformGrid();
                     if (gradationHeader == false)
                     {
-                        item.Background = new SolidColorBrush(backgroundColor);
+                        gridItem.Background = new SolidColorBrush(backgroundColor);
+                        gridItem.Background.Freeze();
                     }
                     else
                     {
-                        item.Background = ColorDef.GradientBrush(backgroundColor, 0.8);
+                        gridItem.Background = ColorDef.GradientBrush(backgroundColor, 0.8);
                     }
 
-                    item.Margin = new Thickness(1, 1, 1, 1);
+                    gridItem.Margin = new Thickness(1, 1, 1, 1);
                     item.TextAlignment = TextAlignment.Center;
                     item.FontSize = 12;
                     item.FontWeight = FontWeights.Bold;
-                    stackPanel_day.Children.Add(item);
+                    // 単にCenterだとやや重い感じになるので上げる
+                    item.Padding = new Thickness(0, 0, 0, 4);
+                    item.VerticalAlignment = VerticalAlignment.Center;
+                    gridItem.Children.Add(item);
+                    stackPanel_day.Children.Add(gridItem);
                 }
             }
         }

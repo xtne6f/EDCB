@@ -33,6 +33,10 @@ namespace EpgTimer
         {
             return ((UInt32)c.A) << 24 | ((UInt32)c.R) << 16 | ((UInt32)c.G) << 8 | (UInt32)c.B;
         }
+        public static double GetLuminance(Color c)
+        {
+            return (0.298912 * c.R + 0.586611 * c.G + 0.114478 * c.B) / 255;
+        }
 
         public static LinearGradientBrush GradientBrush(Color color, double luminance = 0.94, double saturation = 1.2)
         {

@@ -1391,7 +1391,8 @@ namespace EpgTimer
 
                 SolidColorBrush serviceBrush = ColorDef.CustColorBrush(setViewInfo.EpgSetting.ServiceColor, setViewInfo.EpgSetting.ServiceCustColor);
                 serviceView.SetService(primeServiceList, setViewInfo.EpgSetting.ServiceWidth,
-                                       setViewInfo.EpgSetting.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(serviceBrush.Color) : serviceBrush);
+                                       setViewInfo.EpgSetting.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(serviceBrush.Color) : serviceBrush,
+                                       ColorDef.GetLuminance(serviceBrush.Color) > 0.55 ? Brushes.Black : Brushes.White);
 
                 ReDrawNowLine();
             }

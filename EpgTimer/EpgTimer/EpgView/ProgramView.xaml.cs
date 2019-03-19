@@ -404,7 +404,7 @@ namespace EpgTimer.EpgView
                     item.Width = programList.Item1;
                     Canvas.SetLeft(item, totalWidth);
                     item.Initialize(programList.Item2, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
-                                    EpgSetting.EpgTitleIndent, false,
+                                    EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoTable,
                                     dictTitle, dicNormal, itemFontTitle, itemFontNormal,
                                     EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal);
                     item.InvalidateVisual();
