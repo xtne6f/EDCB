@@ -29,7 +29,7 @@ namespace EpgTimer.EpgView
             stackPanel_service.Children.Clear();
         }
 
-        public void SetService(List<EpgServiceInfo> serviceList)
+        public void SetService(List<EpgServiceInfo> serviceList, double serviceWidth, Brush serviceBrush)
         {
             stackPanel_service.Children.Clear();
             foreach (EpgServiceInfo info in serviceList)
@@ -48,9 +48,9 @@ namespace EpgTimer.EpgView
                 {
                     item.Text += "\r\n" + info.network_name + " " + info.SID.ToString();
                 }
-                item.Width = Settings.Instance.ServiceWidth - 2;
+                item.Width = serviceWidth - 2;
                 item.Margin = new Thickness(1, 1, 1, 1);
-                item.Background = CommonManager.Instance.CustServiceColor;
+                item.Background = serviceBrush;
                 item.Foreground = Brushes.White;
                 item.TextAlignment = TextAlignment.Center;
                 item.FontSize = 12;

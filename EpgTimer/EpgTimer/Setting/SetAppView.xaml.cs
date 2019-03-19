@@ -25,10 +25,7 @@ namespace EpgTimer.Setting
         public SetAppView()
         {
             InitializeComponent();
-        }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
             checkBox_wakeReconnect.IsEnabled = CommonManager.Instance.NWMode;
             checkBox_suspendClose.IsEnabled = CommonManager.Instance.NWMode;
             button_srvSetting.IsEnabled = CommonManager.Instance.NWMode == false;
@@ -36,7 +33,11 @@ namespace EpgTimer.Setting
             button_shortCutAdd.Visibility = File.Exists(System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? Visibility.Hidden : Visibility.Visible;
             button_shortCutDel.Visibility = button_shortCutAdd.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
+            listBox_service.ItemsSource = ChSet5.Instance.ChListSelected.Select(a => new ServiceViewItem(a));
+        }
 
+        private void UserControl_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
             var settings = (Settings)DataContext;
             if (settings != null)
             {
@@ -60,12 +61,6 @@ namespace EpgTimer.Setting
                 }
                 OnUpdateViewTaskListBox(true);
             }
-
-            listBox_service.ItemsSource = ChSet5.Instance.ChListSelected.Select(a => new ServiceViewItem(a));
-        }
-
-        public void SaveSetting()
-        {
         }
 
         private void OnUpdateViewButtonListBox(bool updateAll)

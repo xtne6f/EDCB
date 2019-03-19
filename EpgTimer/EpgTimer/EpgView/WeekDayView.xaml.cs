@@ -30,16 +30,16 @@ namespace EpgTimer.EpgView
             stackPanel_day.Children.Clear();
         }
 
-        public void SetDay(System.Collections.SortedList dayList)
+        public void SetDay(List<DateTime> dayList, double serviceWidth, bool gradationHeader)
         {
             stackPanel_day.Children.Clear();
-            if (Settings.Instance.ServiceWidth > 2)
+            if (serviceWidth > 2)
             {
-                foreach (DateTime time in dayList.Values)
+                foreach (DateTime time in dayList)
                 {
                     TextBlock item = new TextBlock();
 
-                    item.Width = Settings.Instance.ServiceWidth - 2;
+                    item.Width = serviceWidth - 2;
                     item.Text = time.ToString("M\\/d\r\n(ddd)");
 
                     Color backgroundColor;
@@ -58,7 +58,7 @@ namespace EpgTimer.EpgView
                         item.Foreground = Brushes.Black;
                         backgroundColor = Colors.White;
                     }
-                    if (Settings.Instance.EpgGradationHeader == false)
+                    if (gradationHeader == false)
                     {
                         item.Background = new SolidColorBrush(backgroundColor);
                     }

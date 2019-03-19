@@ -246,7 +246,7 @@ namespace EpgTimer
             get
             {
                 return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ?
-                       CommonManager.Instance.ResNoBackColor : CommonManager.Instance.ResDefBackColor;
+                       Settings.BrushCache.ResNoBrush : Settings.BrushCache.ResDefBrush;
             }
         }
 
@@ -368,10 +368,9 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo.searchInfo.contentList.Count > 0 &&
                     (EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1 <= 0x0B ||
-                     EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1 == 0x0F) &&
-                    CommonManager.Instance.CustContentColorList.Count > EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1)
+                     EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1 == 0x0F))
                 {
-                    return CommonManager.Instance.CustContentColorList[EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1];
+                    return Settings.BrushCache.ContentBrushList[EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1];
                 }
                 return null;
             }

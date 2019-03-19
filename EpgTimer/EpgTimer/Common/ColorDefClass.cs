@@ -70,5 +70,26 @@ namespace EpgTimer
 
             return brush;
         }
+
+        public static SolidColorBrush CustColorBrush(string name, uint cust, byte a = 0xFF, int opacity = 100)
+        {
+            SolidColorBrush brush;
+            if (name == "カスタム")
+            {
+                Color c = FromUInt(cust);
+                brush = new SolidColorBrush(Color.FromArgb((byte)(c.A * opacity / 100), c.R, c.G, c.B));
+                brush.Freeze();
+            }
+            else
+            {
+                brush = BrushFromName(name);
+                if (brush.Color.A != 0 && (a != 0xFF || opacity != 100))
+                {
+                    brush = new SolidColorBrush(Color.FromArgb((byte)(a * opacity / 100), brush.Color.R, brush.Color.G, brush.Color.B));
+                    brush.Freeze();
+                }
+            }
+            return brush;
+        }
     }
 }

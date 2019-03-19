@@ -32,7 +32,7 @@ namespace EpgTimer.TunerReserveViewCtrl
         public void SetTime(List<DateTime> timeList, bool NeedTimeOnly)
         {
             stackPanel_time.Children.Clear();
-            double height = Settings.Instance.MinHeight;
+            double height = Settings.Instance.EpgSettingList[0].MinHeight;
             if (60 * height > 4)
             {
                 foreach (DateTime time in timeList)

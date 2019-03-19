@@ -214,8 +214,8 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                         double OffsetH = 0;
                         double OffsetV = 0;
-                        MoveX *= Settings.Instance.DragScroll;
-                        MoveY *= Settings.Instance.DragScroll;
+                        MoveX *= Settings.Instance.EpgSettingList[0].DragScroll;
+                        MoveY *= Settings.Instance.EpgSettingList[0].DragScroll;
                         OffsetH = lastDownHOffset + MoveX;
                         OffsetV = lastDownVOffset + MoveY;
                         if (OffsetH < 0)

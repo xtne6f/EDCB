@@ -9,6 +9,7 @@ using System.Xml.Linq;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Media;
 
 namespace EpgTimer
 {
@@ -82,28 +83,18 @@ namespace EpgTimer
         }
     }
 
-    public class Settings
+    public class EpgSetting
     {
-        public bool UseCustomEpgView { get; set; }
-        public List<CustomEpgTabInfo> CustomEpgTabList { get; set; }
         public double MinHeight { get; set; }
         public double MinimumHeight { get; set; }
         public double ServiceWidth { get; set; }
+        public bool MouseScrollAuto { get; set; }
         public double ScrollSize { get; set; }
         public string FontName { get; set; }
         public double FontSize { get; set; }
         public string FontNameTitle { get; set; }
         public double FontSizeTitle { get; set; }
         public bool FontBoldTitle { get; set; }
-        public bool NoToolTip { get; set; }
-        public bool NoBallonTips { get; set; }
-        public int ForceHideBalloonTipSec { get; set; }
-        public bool PlayDClick { get; set; }
-        public bool ConfirmDelRecInfo { get; set; }
-        public bool ConfirmDelRecInfoAlways { get; set; }
-        public bool ShowEpgCapServiceOnly { get; set; }
-        public bool SortServiceList { get; set; }
-        public bool ExitAfterProcessingArgs { get; set; }
         public double DragScroll { get; set; }
         public List<string> ContentColorList { get; set; }
         public List<UInt32> ContentCustColorList { get; set; }
@@ -133,6 +124,42 @@ namespace EpgTimer
         public bool EpgExtInfoPopup { get; set; }
         public bool EpgGradation { get; set; }
         public bool EpgGradationHeader { get; set; }
+        public byte EpgTipsBackColorR { get; set; }
+        public byte EpgTipsBackColorG { get; set; }
+        public byte EpgTipsBackColorB { get; set; }
+        public byte EpgTipsForeColorR { get; set; }
+        public byte EpgTipsForeColorG { get; set; }
+        public byte EpgTipsForeColorB { get; set; }
+        public byte EpgBackColorR { get; set; }
+        public byte EpgBackColorG { get; set; }
+        public byte EpgBackColorB { get; set; }
+        public bool EpgInfoSingleClick { get; set; }
+        public byte EpgInfoOpenMode { get; set; }
+        public EpgSetting DeepClone()
+        {
+            var other = (EpgSetting)MemberwiseClone();
+            other.ContentColorList = ContentColorList.ToList();
+            other.ContentCustColorList = ContentCustColorList.ToList();
+            other.TimeColorList = TimeColorList.ToList();
+            other.TimeCustColorList = TimeCustColorList.ToList();
+            return other;
+        }
+    }
+
+    public class Settings
+    {
+        public bool UseCustomEpgView { get; set; }
+        public List<CustomEpgTabInfo> CustomEpgTabList { get; set; }
+        public List<EpgSetting> EpgSettingList { get; set; }
+        public bool NoToolTip { get; set; }
+        public bool NoBallonTips { get; set; }
+        public int ForceHideBalloonTipSec { get; set; }
+        public bool PlayDClick { get; set; }
+        public bool ConfirmDelRecInfo { get; set; }
+        public bool ConfirmDelRecInfoAlways { get; set; }
+        public bool ShowEpgCapServiceOnly { get; set; }
+        public bool SortServiceList { get; set; }
+        public bool ExitAfterProcessingArgs { get; set; }
         public string ResColumnHead { get; set; }
         public ListSortDirection ResSortDirection { get; set; }
         public bool ResHideButton { get; set; }
@@ -219,17 +246,6 @@ namespace EpgTimer
         public byte RecEndWarColorR { get; set; }
         public byte RecEndWarColorG { get; set; }
         public byte RecEndWarColorB { get; set; }
-        public byte EpgTipsBackColorR { get; set; }
-        public byte EpgTipsBackColorG { get; set; }
-        public byte EpgTipsBackColorB { get; set; }
-        public byte EpgTipsForeColorR { get; set; }
-        public byte EpgTipsForeColorG { get; set; }
-        public byte EpgTipsForeColorB { get; set; }
-        public byte EpgBackColorR { get; set; }
-        public byte EpgBackColorG { get; set; }
-        public byte EpgBackColorB { get; set; }
-        public bool EpgInfoSingleClick { get; set; }
-        public byte EpgInfoOpenMode { get; set; }
         public UInt32 ExecBat { get; set; }
         public UInt32 SuspendChk { get; set; }
         public List<ListColumnInfo> ReserveListColumn { get; set; }
@@ -241,12 +257,11 @@ namespace EpgTimer
         public int NotifyLogMax { get; set; }
         public bool ShowTray { get; set; }
         public bool MinHide { get; set; }
-        public bool MouseScrollAuto { get; set; }
         public int NoStyle { get; set; }
         public int NoSendClose { get; set; }
         public string StartTab { get; set; }
 
-        public Settings()
+        private Settings()
         {
             //既定値をセットするため
             ConvertXElem(null, false);
@@ -264,15 +279,70 @@ namespace EpgTimer
             //絶対値がdoubleの有効桁数(52bit)をこえる整数を誤差なく扱いたい場合はConvertXElem()などにオーバーロードの追加が必要
             r.UseCustomEpgView          = ConvertXElem(x, w, "UseCustomEpgView", UseCustomEpgView, false);
             r.CustomEpgTabList          = ConvertXElements(x, w, "CustomEpgTabList", CustomEpgTabList).ToList();
-            r.MinHeight                 = ConvertXElem(x, w, "MinHeight", MinHeight, 2);
-            r.MinimumHeight             = ConvertXElem(x, w, "MinimumHeight", MinimumHeight, 0.6);
-            r.ServiceWidth              = ConvertXElem(x, w, "ServiceWidth", ServiceWidth, 150);
-            r.ScrollSize                = ConvertXElem(x, w, "ScrollSize", ScrollSize, 240);
-            r.FontName                  = ConvertXElem(x, w, "FontName", FontName, "メイリオ");
-            r.FontSize                  = ConvertXElem(x, w, "FontSize", FontSize, 12);
-            r.FontNameTitle             = ConvertXElem(x, w, "FontNameTitle", FontNameTitle, "メイリオ");
-            r.FontSizeTitle             = ConvertXElem(x, w, "FontSizeTitle", FontSizeTitle, 12);
-            r.FontBoldTitle             = ConvertXElem(x, w, "FontBoldTitle", FontBoldTitle, true);
+            r.EpgSettingList            = new List<EpgSetting>(3) { new EpgSetting(), new EpgSetting(), new EpgSetting() };
+            for (int i = 0; i < EpgSettingList.Count; i++)
+            {
+                //最初(デフォルト)のレイアウト設定は直下に置く
+                XElement xx = (i == 0 || x == null ? x : w ? new XElement("EpgSetting" + i) : x.Element("EpgSetting" + i));
+                EpgSetting rr = r.EpgSettingList[i];
+                EpgSetting val = EpgSettingList[i];
+                rr.MinHeight                = ConvertXElem(xx, w, "MinHeight", val.MinHeight, 2);
+                rr.MinimumHeight            = ConvertXElem(xx, w, "MinimumHeight", val.MinimumHeight, 0.6);
+                rr.ServiceWidth             = ConvertXElem(xx, w, "ServiceWidth", val.ServiceWidth, 150);
+                rr.MouseScrollAuto          = ConvertXElem(xx, w, "MouseScrollAuto", val.MouseScrollAuto, false);
+                rr.ScrollSize               = ConvertXElem(xx, w, "ScrollSize", val.ScrollSize, 240);
+                rr.FontName                 = ConvertXElem(xx, w, "FontName", val.FontName, "メイリオ");
+                rr.FontSize                 = ConvertXElem(xx, w, "FontSize", val.FontSize, 12);
+                rr.FontNameTitle            = ConvertXElem(xx, w, "FontNameTitle", val.FontNameTitle, "メイリオ");
+                rr.FontSizeTitle            = ConvertXElem(xx, w, "FontSizeTitle", val.FontSizeTitle, 12);
+                rr.FontBoldTitle            = ConvertXElem(xx, w, "FontBoldTitle", val.FontBoldTitle, true);
+                rr.DragScroll               = ConvertXElem(xx, w, "DragScroll", val.DragScroll, 1.5);
+                rr.ContentColorList         = ConvertXElements(xx, w, "ContentColorList", val.ContentColorList).ToList();
+                rr.ContentCustColorList     = ConvertXElements(xx, w, "ContentCustColorList",
+                    (val.ContentCustColorList ?? Enumerable.Empty<uint>()).Select(a => (double)a), "unsignedInt").Select(a => (uint)a).ToList();
+                rr.TimeColorList            = ConvertXElements(xx, w, "TimeColorList", val.TimeColorList).ToList();
+                rr.TimeCustColorList        = ConvertXElements(xx, w, "TimeCustColorList",
+                    (val.TimeCustColorList ?? Enumerable.Empty<uint>()).Select(a => (double)a), "unsignedInt").Select(a => (uint)a).ToList();
+                rr.ReserveRectColorNormal   = ConvertXElem(xx, w, "ReserveRectColorNormal", val.ReserveRectColorNormal, "Lime");
+                rr.ReserveRectColorNo       = ConvertXElem(xx, w, "ReserveRectColorNo", val.ReserveRectColorNo, "Black");
+                rr.ReserveRectColorNoTuner  = ConvertXElem(xx, w, "ReserveRectColorNoTuner", val.ReserveRectColorNoTuner, "Red");
+                rr.ReserveRectColorWarning  = ConvertXElem(xx, w, "ReserveRectColorWarning", val.ReserveRectColorWarning, "Yellow");
+                rr.ReserveRectFillOpacity   = (int)ConvertXElem(xx, w, "ReserveRectFillOpacity", val.ReserveRectFillOpacity, 0);
+                rr.ReserveRectFillWithShadow = ConvertXElem(xx, w, "ReserveRectFillWithShadow", val.ReserveRectFillWithShadow, true);
+                rr.TitleColor1              = ConvertXElem(xx, w, "TitleColor1", val.TitleColor1, "Black");
+                rr.TitleColor2              = ConvertXElem(xx, w, "TitleColor2", val.TitleColor2, "Black");
+                rr.TitleCustColor1          = (uint)ConvertXElem(xx, w, "TitleCustColor1", val.TitleCustColor1, 0xFFFFFFFF);
+                rr.TitleCustColor2          = (uint)ConvertXElem(xx, w, "TitleCustColor2", val.TitleCustColor2, 0xFFFFFFFF);
+                rr.ServiceColor             = ConvertXElem(xx, w, "ServiceColor", val.ServiceColor, "LightSlateGray");
+                rr.ServiceCustColor         = (uint)ConvertXElem(xx, w, "ServiceCustColor", val.ServiceCustColor, 0xFFFFFFFF);
+                rr.EpgToolTip               = ConvertXElem(xx, w, "EpgToolTip", val.EpgToolTip, false);
+                rr.EpgBorderLeftSize        = ConvertXElem(xx, w, "EpgBorderLeftSize", val.EpgBorderLeftSize, 2);
+                rr.EpgBorderTopSize         = ConvertXElem(xx, w, "EpgBorderTopSize", val.EpgBorderTopSize, 0.5);
+                rr.EpgTitleIndent           = ConvertXElem(xx, w, "EpgTitleIndent", val.EpgTitleIndent, true);
+                rr.EpgReplacePattern        = ConvertXElem(xx, w, "EpgReplacePattern", val.EpgReplacePattern, "");
+                rr.EpgReplacePatternTitle   = ConvertXElem(xx, w, "EpgReplacePatternTitle", val.EpgReplacePatternTitle, "");
+                rr.EpgToolTipNoViewOnly     = ConvertXElem(xx, w, "EpgToolTipNoViewOnly", val.EpgToolTipNoViewOnly, true);
+                rr.EpgToolTipViewWait       = (int)ConvertXElem(xx, w, "EpgToolTipViewWait", val.EpgToolTipViewWait, 1500);
+                rr.EpgPopup                 = ConvertXElem(xx, w, "EpgPopup", val.EpgPopup, true);
+                rr.EpgExtInfoPopup          = ConvertXElem(xx, w, "EpgExtInfoPopup", val.EpgExtInfoPopup, true);
+                rr.EpgGradation             = ConvertXElem(xx, w, "EpgGradation", val.EpgGradation, true);
+                rr.EpgGradationHeader       = ConvertXElem(xx, w, "EpgGradationHeader", val.EpgGradationHeader, true);
+                rr.EpgTipsBackColorR        = (byte)ConvertXElem(xx, w, "EpgTipsBackColorR", val.EpgTipsBackColorR, 0xD3);
+                rr.EpgTipsBackColorG        = (byte)ConvertXElem(xx, w, "EpgTipsBackColorG", val.EpgTipsBackColorG, 0xD3);
+                rr.EpgTipsBackColorB        = (byte)ConvertXElem(xx, w, "EpgTipsBackColorB", val.EpgTipsBackColorB, 0xD3);
+                rr.EpgTipsForeColorR        = (byte)ConvertXElem(xx, w, "EpgTipsForeColorR", val.EpgTipsForeColorR, 0);
+                rr.EpgTipsForeColorG        = (byte)ConvertXElem(xx, w, "EpgTipsForeColorG", val.EpgTipsForeColorG, 0);
+                rr.EpgTipsForeColorB        = (byte)ConvertXElem(xx, w, "EpgTipsForeColorB", val.EpgTipsForeColorB, 0);
+                rr.EpgBackColorR            = (byte)ConvertXElem(xx, w, "EpgBackColorR", val.EpgBackColorR, 0xA9);
+                rr.EpgBackColorG            = (byte)ConvertXElem(xx, w, "EpgBackColorG", val.EpgBackColorG, 0xA9);
+                rr.EpgBackColorB            = (byte)ConvertXElem(xx, w, "EpgBackColorB", val.EpgBackColorB, 0xA9);
+                rr.EpgInfoSingleClick       = ConvertXElem(xx, w, "EpgInfoSingleClick", val.EpgInfoSingleClick, false);
+                rr.EpgInfoOpenMode          = (byte)ConvertXElem(xx, w, "EpgInfoOpenMode", val.EpgInfoOpenMode, 0);
+                if (i != 0 && w)
+                {
+                    x.Add(xx);
+                }
+            }
             r.NoToolTip                 = ConvertXElem(x, w, "NoToolTip", NoToolTip, false);
             r.NoBallonTips              = ConvertXElem(x, w, "NoBallonTips", NoBallonTips, false);
             r.ForceHideBalloonTipSec    = (int)ConvertXElem(x, w, "ForceHideBalloonTipSec", ForceHideBalloonTipSec, 0);
@@ -282,37 +352,6 @@ namespace EpgTimer
             r.ShowEpgCapServiceOnly     = ConvertXElem(x, w, "ShowEpgCapServiceOnly", ShowEpgCapServiceOnly, false);
             r.SortServiceList           = ConvertXElem(x, w, "SortServiceList", SortServiceList, true);
             r.ExitAfterProcessingArgs   = ConvertXElem(x, w, "ExitAfterProcessingArgs", ExitAfterProcessingArgs, false);
-            r.DragScroll                = ConvertXElem(x, w, "DragScroll", DragScroll, 1.5);
-            r.ContentColorList          = ConvertXElements(x, w, "ContentColorList", ContentColorList).ToList();
-            r.ContentCustColorList      = ConvertXElements(x, w, "ContentCustColorList",
-                (ContentCustColorList ?? Enumerable.Empty<uint>()).Select(a => (double)a), "unsignedInt").Select(a => (uint)a).ToList();
-            r.TimeColorList             = ConvertXElements(x, w, "TimeColorList", TimeColorList).ToList();
-            r.TimeCustColorList         = ConvertXElements(x, w, "TimeCustColorList",
-                (TimeCustColorList ?? Enumerable.Empty<uint>()).Select(a => (double)a), "unsignedInt").Select(a => (uint)a).ToList();
-            r.ReserveRectColorNormal    = ConvertXElem(x, w, "ReserveRectColorNormal", ReserveRectColorNormal, "Lime");
-            r.ReserveRectColorNo        = ConvertXElem(x, w, "ReserveRectColorNo", ReserveRectColorNo, "Black");
-            r.ReserveRectColorNoTuner   = ConvertXElem(x, w, "ReserveRectColorNoTuner", ReserveRectColorNoTuner, "Red");
-            r.ReserveRectColorWarning   = ConvertXElem(x, w, "ReserveRectColorWarning", ReserveRectColorWarning, "Yellow");
-            r.ReserveRectFillOpacity    = (int)ConvertXElem(x, w, "ReserveRectFillOpacity", ReserveRectFillOpacity, 0);
-            r.ReserveRectFillWithShadow = ConvertXElem(x, w, "ReserveRectFillWithShadow", ReserveRectFillWithShadow, true);
-            r.TitleColor1               = ConvertXElem(x, w, "TitleColor1", TitleColor1, "Black");
-            r.TitleColor2               = ConvertXElem(x, w, "TitleColor2", TitleColor2, "Black");
-            r.TitleCustColor1           = (uint)ConvertXElem(x, w, "TitleCustColor1", TitleCustColor1, 0xFFFFFFFF);
-            r.TitleCustColor2           = (uint)ConvertXElem(x, w, "TitleCustColor2", TitleCustColor2, 0xFFFFFFFF);
-            r.ServiceColor              = ConvertXElem(x, w, "ServiceColor", ServiceColor, "LightSlateGray");
-            r.ServiceCustColor          = (uint)ConvertXElem(x, w, "ServiceCustColor", ServiceCustColor, 0xFFFFFFFF);
-            r.EpgToolTip                = ConvertXElem(x, w, "EpgToolTip", EpgToolTip, false);
-            r.EpgBorderLeftSize         = ConvertXElem(x, w, "EpgBorderLeftSize", EpgBorderLeftSize, 2);
-            r.EpgBorderTopSize          = ConvertXElem(x, w, "EpgBorderTopSize", EpgBorderTopSize, 0.5);
-            r.EpgTitleIndent            = ConvertXElem(x, w, "EpgTitleIndent", EpgTitleIndent, true);
-            r.EpgReplacePattern         = ConvertXElem(x, w, "EpgReplacePattern", EpgReplacePattern, "");
-            r.EpgReplacePatternTitle    = ConvertXElem(x, w, "EpgReplacePatternTitle", EpgReplacePatternTitle, "");
-            r.EpgToolTipNoViewOnly      = ConvertXElem(x, w, "EpgToolTipNoViewOnly", EpgToolTipNoViewOnly, true);
-            r.EpgToolTipViewWait        = (int)ConvertXElem(x, w, "EpgToolTipViewWait", EpgToolTipViewWait, 1500);
-            r.EpgPopup                  = ConvertXElem(x, w, "EpgPopup", EpgPopup, true);
-            r.EpgExtInfoPopup           = ConvertXElem(x, w, "EpgExtInfoPopup", EpgExtInfoPopup, true);
-            r.EpgGradation              = ConvertXElem(x, w, "EpgGradation", EpgGradation, true);
-            r.EpgGradationHeader        = ConvertXElem(x, w, "EpgGradationHeader", EpgGradationHeader, true);
             r.ResColumnHead             = ConvertXElem(x, w, "ResColumnHead", ResColumnHead, "");
             ListSortDirection sd;
             Enum.TryParse(ConvertXElem(x, w, "ResSortDirection", ResSortDirection.ToString(), ""), out sd);
@@ -405,17 +444,6 @@ namespace EpgTimer
             r.RecEndWarColorR           = (byte)ConvertXElem(x, w, "RecEndWarColorR", RecEndWarColorR, 0xFF);
             r.RecEndWarColorG           = (byte)ConvertXElem(x, w, "RecEndWarColorG", RecEndWarColorG, 0xFF);
             r.RecEndWarColorB           = (byte)ConvertXElem(x, w, "RecEndWarColorB", RecEndWarColorB, 0);
-            r.EpgTipsBackColorR         = (byte)ConvertXElem(x, w, "EpgTipsBackColorR", EpgTipsBackColorR, 0xD3);
-            r.EpgTipsBackColorG         = (byte)ConvertXElem(x, w, "EpgTipsBackColorG", EpgTipsBackColorG, 0xD3);
-            r.EpgTipsBackColorB         = (byte)ConvertXElem(x, w, "EpgTipsBackColorB", EpgTipsBackColorB, 0xD3);
-            r.EpgTipsForeColorR         = (byte)ConvertXElem(x, w, "EpgTipsForeColorR", EpgTipsForeColorR, 0);
-            r.EpgTipsForeColorG         = (byte)ConvertXElem(x, w, "EpgTipsForeColorG", EpgTipsForeColorG, 0);
-            r.EpgTipsForeColorB         = (byte)ConvertXElem(x, w, "EpgTipsForeColorB", EpgTipsForeColorB, 0);
-            r.EpgBackColorR             = (byte)ConvertXElem(x, w, "EpgBackColorR", EpgBackColorR, 0xA9);
-            r.EpgBackColorG             = (byte)ConvertXElem(x, w, "EpgBackColorG", EpgBackColorG, 0xA9);
-            r.EpgBackColorB             = (byte)ConvertXElem(x, w, "EpgBackColorB", EpgBackColorB, 0xA9);
-            r.EpgInfoSingleClick        = ConvertXElem(x, w, "EpgInfoSingleClick", EpgInfoSingleClick, false);
-            r.EpgInfoOpenMode           = (byte)ConvertXElem(x, w, "EpgInfoOpenMode", EpgInfoOpenMode, 0);
             r.ExecBat                   = (uint)ConvertXElem(x, w, "ExecBat", ExecBat, 0);
             r.SuspendChk                = (uint)ConvertXElem(x, w, "SuspendChk", SuspendChk, 0);
             r.ReserveListColumn         = ConvertXElements(x, w, "ReserveListColumn", ReserveListColumn).ToList();
@@ -427,7 +455,6 @@ namespace EpgTimer
             r.NotifyLogMax              = (int)ConvertXElem(x, w, "NotifyLogMax", NotifyLogMax, 100);
             r.ShowTray                  = ConvertXElem(x, w, "ShowTray", ShowTray, false);
             r.MinHide                   = ConvertXElem(x, w, "MinHide", MinHide, true);
-            r.MouseScrollAuto           = ConvertXElem(x, w, "MouseScrollAuto", MouseScrollAuto, false);
             r.NoStyle                   = (int)ConvertXElem(x, w, "NoStyle", NoStyle, 1);
             r.NoSendClose               = (int)ConvertXElem(x, w, "NoSendClose", NoSendClose, 0);
             r.StartTab                  = ConvertXElem(x, w, "StartTab", StartTab, "ReserveView");
@@ -437,10 +464,7 @@ namespace EpgTimer
         {
             var other = (Settings)MemberwiseClone();
             other.CustomEpgTabList = CustomEpgTabList.Select(a => a.DeepClone()).ToList();
-            other.ContentColorList = ContentColorList.ToList();
-            other.ContentCustColorList = ContentCustColorList.ToList();
-            other.TimeColorList = TimeColorList.ToList();
-            other.TimeCustColorList = TimeCustColorList.ToList();
+            other.EpgSettingList = EpgSettingList.Select(a => a.DeepClone()).ToList();
             other.ViewButtonList = ViewButtonList.ToList();
             other.TaskMenuList = TaskMenuList.ToList();
             other.SearchKeyContentList = SearchKeyContentList.Select(a => a.DeepClone()).ToList();
@@ -493,7 +517,24 @@ namespace EpgTimer
                 }
                 return _instance;
             }
-            set { _instance = value; }
+            set
+            {
+                _instance = value;
+                _brushCache = null;
+            }
+        }
+
+        private static SettingsBrushCache _brushCache;
+        public static SettingsBrushCache BrushCache
+        {
+            get
+            {
+                if (_brushCache == null)
+                {
+                    _brushCache = new SettingsBrushCache();
+                }
+                return _brushCache;
+            }
         }
 
         /// <summary>
@@ -788,10 +829,10 @@ namespace EpgTimer
 
         private void SetColorSetting()
         {
-            //番組表の背景色
-            if (ContentColorList.Count < 17)
+            foreach (EpgSetting epgSetting in EpgSettingList)
             {
-                ContentColorList.AddRange((new string[] {
+                //番組表の背景色
+                epgSetting.ContentColorList.AddRange((new string[] {
                     "LightYellow",
                     "Lavender",
                     "LavenderBlush",
@@ -808,26 +849,17 @@ namespace EpgTimer
                     "White",
                     "White",
                     "WhiteSmoke",
-                    "White" }).Skip(ContentColorList.Count));
-            }
-            //番組表の背景カスタム色(+4は番組表の予約枠色)
-            if (ContentCustColorList.Count < 17 + 4)
-            {
-                ContentCustColorList.AddRange(Enumerable.Repeat(0xFFFFFFFF, 17 + 4 - ContentCustColorList.Count));
-            }
+                    "White" }).Skip(Math.Min(epgSetting.ContentColorList.Count, 17)));
+                //番組表の背景カスタム色(+4は番組表の予約枠色)
+                epgSetting.ContentCustColorList.AddRange(Enumerable.Repeat(0xFFFFFFFF, Math.Max(17 + 4 - epgSetting.ContentCustColorList.Count, 0)));
 
-            //番組表の時間軸のデフォルトの背景色
-            if (TimeColorList.Count < 4)
-            {
-                TimeColorList.AddRange((new string[] {
+                //番組表の時間軸のデフォルトの背景色
+                epgSetting.TimeColorList.AddRange((new string[] {
                     "MediumPurple",
                     "LightSeaGreen",
                     "LightSalmon",
-                    "CornflowerBlue" }).Skip(TimeColorList.Count));
-            }
-            if (TimeCustColorList.Count < 4)
-            {
-                TimeCustColorList.AddRange(Enumerable.Repeat(0xFFFFFFFF, 4 - TimeCustColorList.Count));
+                    "CornflowerBlue" }).Skip(Math.Min(epgSetting.TimeColorList.Count, 4)));
+                epgSetting.TimeCustColorList.AddRange(Enumerable.Repeat(0xFFFFFFFF, Math.Max(4 - epgSetting.TimeCustColorList.Count, 0)));
             }
         }
 
@@ -942,6 +974,7 @@ namespace EpgTimer
                 var r = new CustomEpgTabInfo();
                 val = val ?? r;
                 r.TabName = ConvertXElem(xx, w, "TabName", val.TabName, "");
+                r.EpgSettingIndex = (int)ConvertXElem(xx, w, "EpgSettingIndex", val.EpgSettingIndex, 0);
                 r.ViewMode = (int)ConvertXElem(xx, w, "ViewMode", val.ViewMode, 0);
                 r.NeedTimeOnlyBasic = ConvertXElem(xx, w, "NeedTimeOnlyBasic", val.NeedTimeOnlyBasic, false);
                 r.NeedTimeOnlyWeek = ConvertXElem(xx, w, "NeedTimeOnlyWeek", val.NeedTimeOnlyWeek, false);
@@ -1011,6 +1044,80 @@ namespace EpgTimer
                 r.Width = ConvertXElem(xx, w, "Width", val.Width, 0);
                 return r;
             });
+        }
+
+        public class SettingsBrushCache
+        {
+            private List<Brush> _contentBrushList;
+            public List<Brush> ContentBrushList
+            {
+                get
+                {
+                    if (_contentBrushList == null)
+                    {
+                        _contentBrushList = new List<Brush>();
+                        for (int i = 0; i < Instance.EpgSettingList[0].ContentColorList.Count; i++)
+                        {
+                            SolidColorBrush brush = ColorDef.CustColorBrush(Instance.EpgSettingList[0].ContentColorList[i],
+                                                                            Instance.EpgSettingList[0].ContentCustColorList[i]);
+                            _contentBrushList.Add(Instance.EpgSettingList[0].EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+                        }
+                    }
+                    return _contentBrushList;
+                }
+            }
+
+            private static SolidColorBrush GetBrush(ref SolidColorBrush brush, byte a, byte r, byte g, byte b)
+            {
+                if (brush == null)
+                {
+                    brush = new SolidColorBrush(Color.FromArgb(a, r, g, b));
+                    brush.Freeze();
+                }
+                return brush;
+            }
+
+            private SolidColorBrush _resDefBrush;
+            public SolidColorBrush ResDefBrush
+            {
+                get { return GetBrush(ref _resDefBrush, Instance.ResDefColorA, Instance.ResDefColorR, Instance.ResDefColorG, Instance.ResDefColorB); }
+            }
+
+            private SolidColorBrush _resErrBrush;
+            public SolidColorBrush ResErrBrush
+            {
+                get { return GetBrush(ref _resErrBrush, Instance.ResErrColorA, Instance.ResErrColorR, Instance.ResErrColorG, Instance.ResErrColorB); }
+            }
+
+            private SolidColorBrush _resWarBrush;
+            public SolidColorBrush ResWarBrush
+            {
+                get { return GetBrush(ref _resWarBrush, Instance.ResWarColorA, Instance.ResWarColorR, Instance.ResWarColorG, Instance.ResWarColorB); }
+            }
+
+            private SolidColorBrush _resNoBrush;
+            public SolidColorBrush ResNoBrush
+            {
+                get { return GetBrush(ref _resNoBrush, Instance.ResNoColorA, Instance.ResNoColorR, Instance.ResNoColorG, Instance.ResNoColorB); }
+            }
+
+            private SolidColorBrush _recEndDefBrush;
+            public SolidColorBrush RecEndDefBrush
+            {
+                get { return GetBrush(ref _recEndDefBrush, Instance.RecEndDefColorA, Instance.RecEndDefColorR, Instance.RecEndDefColorG, Instance.RecEndDefColorB); }
+            }
+
+            private SolidColorBrush _recEndErrBrush;
+            public SolidColorBrush RecEndErrBrush
+            {
+                get { return GetBrush(ref _recEndErrBrush, Instance.RecEndErrColorA, Instance.RecEndErrColorR, Instance.RecEndErrColorG, Instance.RecEndErrColorB); }
+            }
+
+            private SolidColorBrush _recEndWarBrush;
+            public SolidColorBrush RecEndWarBrush
+            {
+                get { return GetBrush(ref _recEndWarBrush, Instance.RecEndWarColorA, Instance.RecEndWarColorR, Instance.RecEndWarColorG, Instance.RecEndWarColorB); }
+            }
         }
     }
 }

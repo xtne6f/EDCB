@@ -73,8 +73,8 @@ namespace EpgTimer
         {
             get
             {
-                return RecInfo.Drops > 0 ? CommonManager.Instance.RecEndErrBackColor :
-                       RecInfo.Scrambles > 0 ? CommonManager.Instance.RecEndWarBackColor : CommonManager.Instance.RecEndDefBackColor;
+                return RecInfo.Drops > 0 ? Settings.BrushCache.RecEndErrBrush :
+                       RecInfo.Scrambles > 0 ? Settings.BrushCache.RecEndWarBrush : Settings.BrushCache.RecEndDefBrush;
             }
         }
         public SolidColorBrush ResultBackColor
@@ -86,7 +86,7 @@ namespace EpgTimer
                        RecInfo.RecStatus == (uint)RecEndStatus.NEXT_START_END ? null :
                        RecInfo.RecStatus == (uint)RecEndStatus.ERR_END ||
                        RecInfo.RecStatus == (uint)RecEndStatus.END_SUBREC ||
-                       RecInfo.RecStatus == (uint)RecEndStatus.NOT_START_HEAD ? CommonManager.Instance.RecEndWarBackColor : CommonManager.Instance.RecEndErrBackColor;
+                       RecInfo.RecStatus == (uint)RecEndStatus.NOT_START_HEAD ? Settings.BrushCache.RecEndWarBrush : Settings.BrushCache.RecEndErrBrush;
             }
         }
         public TextBlock ToolTipView

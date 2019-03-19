@@ -62,23 +62,10 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        color = CommonManager.Instance.ResNoBackColor;
-                    }
-                    else if (ReserveInfo.OverlapMode == 2)
-                    {
-                        color = CommonManager.Instance.ResErrBackColor;
-                    }
-                    else if (ReserveInfo.OverlapMode == 1)
-                    {
-                        color = CommonManager.Instance.ResWarBackColor;
-                    }
-                }
-                return color;
+                return ReserveInfo == null ? Settings.BrushCache.ResDefBrush :
+                       ReserveInfo.RecSetting.RecMode == 5 ? Settings.BrushCache.ResNoBrush :
+                       ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
+                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
             }
         }
         public TextBlock ToolTipView
@@ -214,18 +201,13 @@ namespace EpgTimer
                 {
                     foreach (EpgContentData info in EventInfo.ContentInfo.nibbleList)
                     {
-                        if ((info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F) &&
-                            CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
+                        if (info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F)
                         {
-                            return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
+                            return Settings.BrushCache.ContentBrushList[info.content_nibble_level_1];
                         }
                     }
                 }
-                if (CommonManager.Instance.CustContentColorList.Count > 0x10)
-                {
-                    return CommonManager.Instance.CustContentColorList[0x10];
-                }
-                return null;
+                return Settings.BrushCache.ContentBrushList[0x10];
             }
         }
     }

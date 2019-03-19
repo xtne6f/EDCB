@@ -33,6 +33,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public int EpgSettingIndex
+        {
+            get;
+            set;
+        }
         public int ViewMode
         {
             get;
@@ -77,6 +82,15 @@ namespace EpgTimer
         {
             get;
             set;
+        }
+
+        [System.Xml.Serialization.XmlIgnore]
+        public EpgSetting EpgSetting
+        {
+            get
+            {
+                return Settings.Instance.EpgSettingList[Math.Min(Math.Max(EpgSettingIndex, 0), Settings.Instance.EpgSettingList.Count - 1)];
+            }
         }
 
         public CustomEpgTabInfo DeepClone()

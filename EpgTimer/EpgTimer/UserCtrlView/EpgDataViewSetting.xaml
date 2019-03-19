@@ -20,6 +20,12 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="58,8,0,0" Name="textBox_tabName" VerticalAlignment="Top" Width="200" />
                     <Label Content="表示モード" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label3" VerticalAlignment="Top" />
                     <CheckBox Content="終了済みの番組は表示しない" Height="16" HorizontalAlignment="Left" Margin="52,218,0,0" Name="checkBox_filterEnded" VerticalAlignment="Top" />
+                    <Label Content="レイアウト" Height="28" HorizontalAlignment="Left" Margin="6,240,0,0" VerticalAlignment="Top" />
+                    <StackPanel HorizontalAlignment="Left" Margin="27,274,0,0" Orientation="Horizontal" VerticalAlignment="Top">
+                        <RadioButton Content="デフォルト" Height="16" IsChecked="True" Margin="0,0,20,0" Name="radioButton_layoutDefault" />
+                        <RadioButton Content="サブ1" Height="16" Margin="0,0,20,0" Name="radioButton_layoutSub1" />
+                        <RadioButton Content="サブ2" Height="16" Name="radioButton_layoutSub2" />
+                    </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="表示条件" Name="tabItem_key">

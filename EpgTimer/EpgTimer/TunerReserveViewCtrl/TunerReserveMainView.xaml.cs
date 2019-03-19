@@ -91,7 +91,7 @@ namespace EpgTimer
                 if (sender.GetType() == typeof(TunerReserveView))
                 {
                     TunerReserveView view = sender as TunerReserveView;
-                    if (Settings.Instance.MouseScrollAuto == true)
+                    if (Settings.Instance.EpgSettingList[0].MouseScrollAuto)
                     {
                         view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - e.Delta);
                     }
@@ -100,18 +100,18 @@ namespace EpgTimer
                         if (e.Delta < 0)
                         {
                             //下方向
-                            view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset + Settings.Instance.ScrollSize);
+                            view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset + Settings.Instance.EpgSettingList[0].ScrollSize);
                         }
                         else
                         {
                             //上方向
-                            if (view.scrollViewer.VerticalOffset < Settings.Instance.ScrollSize)
+                            if (view.scrollViewer.VerticalOffset < Settings.Instance.EpgSettingList[0].ScrollSize)
                             {
                                 view.scrollViewer.ScrollToVerticalOffset(0);
                             }
                             else
                             {
-                                view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - Settings.Instance.ScrollSize);
+                                view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - Settings.Instance.EpgSettingList[0].ScrollSize);
                             }
                         }
                     }
@@ -491,10 +491,10 @@ namespace EpgTimer
                         }
 
                         var viewItem = new ReserveViewItem(reserveInfo);
-                        viewItem.Height = Math.Floor((endTime - startTime).TotalMinutes * Settings.Instance.MinHeight);
-                        if (viewItem.Height < Settings.Instance.MinHeight)
+                        viewItem.Height = Math.Floor((endTime - startTime).TotalMinutes * Settings.Instance.EpgSettingList[0].MinHeight);
+                        if (viewItem.Height < Settings.Instance.EpgSettingList[0].MinHeight)
                         {
-                            viewItem.Height = Settings.Instance.MinHeight;
+                            viewItem.Height = Settings.Instance.EpgSettingList[0].MinHeight;
                         }
                         viewItem.Width = 150;
                         viewItem.LeftPos = leftPos;
@@ -573,7 +573,7 @@ namespace EpgTimer
                     int index = timeList.BinarySearch(chkStartTime);
                     if (index >= 0)
                     {
-                        item.TopPos = (index * 60 + (startTime - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
+                        item.TopPos = (index * 60 + (startTime - chkStartTime).TotalMinutes) * Settings.Instance.EpgSettingList[0].MinHeight;
                     }
                 }
 
@@ -581,7 +581,7 @@ namespace EpgTimer
                 tunerReserveNameView.SetTunerInfo(tunerList);
                 tunerReserveView.SetReserveList(reserveList,
                     leftPos,
-                    timeList.Count * 60 * Settings.Instance.MinHeight);
+                    timeList.Count * 60 * Settings.Instance.EpgSettingList[0].MinHeight);
             }
             catch (Exception ex)
             {

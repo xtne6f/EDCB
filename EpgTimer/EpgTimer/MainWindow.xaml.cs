@@ -34,7 +34,6 @@ namespace EpgTimer
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
 
             Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
-            CommonManager.Instance.ReloadCustContentColorList();
 
             if (CheckCmdLine() && Settings.Instance.ExitAfterProcessingArgs)
             {

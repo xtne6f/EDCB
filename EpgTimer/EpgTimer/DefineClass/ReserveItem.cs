@@ -89,9 +89,9 @@ namespace EpgTimer
         {
             get
             {
-                return ReserveInfo.RecSetting.RecMode == 5 ? CommonManager.Instance.ResNoBackColor :
-                       ReserveInfo.OverlapMode == 2 ? CommonManager.Instance.ResErrBackColor :
-                       ReserveInfo.OverlapMode == 1 ? CommonManager.Instance.ResWarBackColor : CommonManager.Instance.ResDefBackColor;
+                return ReserveInfo.RecSetting.RecMode == 5 ? Settings.BrushCache.ResNoBrush :
+                       ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
+                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
             }
         }
         public TextBlock ToolTipView
@@ -126,17 +126,13 @@ namespace EpgTimer
                     {
                         foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                         {
-                            if ((info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F) &&
-                                CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
+                            if (info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F)
                             {
-                                return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
+                                return Settings.BrushCache.ContentBrushList[info.content_nibble_level_1];
                             }
                         }
                     }
-                    if (CommonManager.Instance.CustContentColorList.Count > 0x10)
-                    {
-                        return CommonManager.Instance.CustContentColorList[0x10];
-                    }
+                    return Settings.BrushCache.ContentBrushList[0x10];
                 }
                 return null;
             }

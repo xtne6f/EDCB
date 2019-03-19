@@ -5,15 +5,20 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="500" d:DesignWidth="780" d:DataContext="{d:DesignInstance local:Settings}" Loaded="UserControl_Loaded">
+             d:DesignHeight="500" d:DesignWidth="780" d:DataContext="{d:DesignInstance local:Settings}" DataContextChanged="UserControl_DataContextChanged">
     <UserControl.Resources>
         <local:BoolConverter x:Key="convert" />
     </UserControl.Resources>
     <Grid>
-        <TabControl Name="tabControl">
-            <TabItem Header="基本" Name="tabItem_basic">
-                <Grid>
-                    <GroupBox Header="フォント" Margin="6,6,6,0" Name="groupBox3" Height="102" VerticalAlignment="Top">
+        <TabControl>
+            <TabItem Header="基本">
+                <Grid DataContextChanged="grid_basic_DataContextChanged" Name="grid_basic">
+                    <Label Content="レイアウト" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                    <RadioButton Checked="radioButton_basicLayout_Checked" Content="デフォルト" Height="23" HorizontalAlignment="Left" IsChecked="True" Margin="80,8,0,0" Name="radioButton_basicLayoutDefault" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <RadioButton Checked="radioButton_basicLayout_Checked" Content="サブ1" Height="23" HorizontalAlignment="Left" Margin="150,8,0,0" Name="radioButton_basicLayoutSub1" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <RadioButton Checked="radioButton_basicLayout_Checked" Content="サブ2" Height="23" HorizontalAlignment="Left" Margin="220,8,0,0" Name="radioButton_basicLayoutSub2" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <Label Content="※デフォルトの設定の一部は番組表以外のレイアウトにも影響します。" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=radioButton_basicLayoutDefault}" Margin="310,6,0,0" VerticalAlignment="Top" />
+                    <GroupBox Header="フォント" Height="102" Margin="6,36,6,0" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="タイトル" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
                             <Label Content="フォント" HorizontalAlignment="Left" Margin="96,6,0,0" VerticalAlignment="Top" />
@@ -50,7 +55,7 @@
                             <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="表示" Height="248" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
+                    <GroupBox Header="表示" Height="248" Margin="6,144,6,0" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="マウススクロールサイズ" HorizontalAlignment="Left" Margin="11,6,0,0" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="165,6,0,0" Text="{Binding ScrollSize}" VerticalAlignment="Top" Width="55" />
@@ -86,9 +91,14 @@
                     </GroupBox>
                 </Grid>
             </TabItem>
-            <TabItem Header="色" Name="tabItem_color">
-                <Grid>
-                    <GroupBox Header="ジャンル別背景色" Height="267" Margin="6,6,6,0" Name="groupBox1" VerticalAlignment="Top" >
+            <TabItem Header="色">
+                <Grid DataContextChanged="grid_color_DataContextChanged" Name="grid_color">
+                    <Label Content="レイアウト" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                    <RadioButton Checked="radioButton_colorLayout_Checked" Content="デフォルト" Height="23" HorizontalAlignment="Left" IsChecked="True" Margin="80,8,0,0" Name="radioButton_colorLayoutDefault" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <RadioButton Checked="radioButton_colorLayout_Checked" Content="サブ1" Height="23" HorizontalAlignment="Left" Margin="150,8,0,0" Name="radioButton_colorLayoutSub1" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <RadioButton Checked="radioButton_colorLayout_Checked" Content="サブ2" Height="23" HorizontalAlignment="Left" Margin="220,8,0,0" Name="radioButton_colorLayoutSub2" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <Label Content="※デフォルトの設定の一部は番組表以外のレイアウトにも影響します。" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=radioButton_colorLayoutDefault}" Margin="310,6,0,0" VerticalAlignment="Top" />
+                    <GroupBox Header="ジャンル別背景色" Height="274" Margin="6,36,6,0" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="ニュース／報道" HorizontalAlignment="Left" Margin="12,27,0,0" VerticalAlignment="Top" />
                             <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,27,0,0" Name="comboBox0" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
@@ -112,8 +122,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="情報／ワイドショー" HorizontalAlignment="Left" Margin="12,57,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,57,0,0" Name="comboBox2" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="情報／ワイドショー" HorizontalAlignment="Left" Margin="12,55,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,55,0,0" Name="comboBox2" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -123,8 +133,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="ドラマ" HorizontalAlignment="Left" Margin="400,57,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,57,0,0" Name="comboBox3" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="ドラマ" HorizontalAlignment="Left" Margin="400,55,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,55,0,0" Name="comboBox3" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -134,8 +144,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="音楽" HorizontalAlignment="Left" Margin="12,91,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,91,0,0" Name="comboBox4" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="音楽" HorizontalAlignment="Left" Margin="12,83,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,83,0,0" Name="comboBox4" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -145,8 +155,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="バラエティ" HorizontalAlignment="Left" Margin="400,91,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,91,0,0" Name="comboBox5" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="バラエティ" HorizontalAlignment="Left" Margin="400,83,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,83,0,0" Name="comboBox5" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -156,8 +166,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="映画" HorizontalAlignment="Left" Margin="12,121,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,121,0,0" Name="comboBox6" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="映画" HorizontalAlignment="Left" Margin="12,111,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,111,0,0" Name="comboBox6" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -167,8 +177,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="アニメ／特撮" HorizontalAlignment="Left" Margin="400,121,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,121,0,0" Name="comboBox7" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="アニメ／特撮" HorizontalAlignment="Left" Margin="400,111,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,111,0,0" Name="comboBox7" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -178,8 +188,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="ドキュメンタリー／教養" HorizontalAlignment="Left" Margin="12,151,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,151,0,0" Name="comboBox8" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="ドキュメンタリー／教養" HorizontalAlignment="Left" Margin="12,139,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,139,0,0" Name="comboBox8" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -189,8 +199,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="劇場／公演" HorizontalAlignment="Left" Margin="400,151,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,151,0,0" Name="comboBox9" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="劇場／公演" HorizontalAlignment="Left" Margin="400,139,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,139,0,0" Name="comboBox9" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -200,8 +210,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="趣味／教育" HorizontalAlignment="Left" Margin="12,181,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,181,0,0" Name="comboBox10" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="趣味／教育" HorizontalAlignment="Left" Margin="12,167,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,167,0,0" Name="comboBox10" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -211,8 +221,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="福祉" HorizontalAlignment="Left" Margin="400,181,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,181,0,0" Name="comboBox11" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="福祉" HorizontalAlignment="Left" Margin="400,167,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,167,0,0" Name="comboBox11" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -222,8 +232,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="その他" HorizontalAlignment="Left" Margin="12,211,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,211,0,0" Name="comboBox12" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="その他" HorizontalAlignment="Left" Margin="12,195,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,195,0,0" Name="comboBox12" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -233,8 +243,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="なし" HorizontalAlignment="Left" Margin="400,211,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,211,0,0" Name="comboBox13" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="なし" HorizontalAlignment="Left" Margin="400,195,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,195,0,0" Name="comboBox13" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -244,28 +254,42 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,56,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,56,0,0" Name="button3" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,90,0,0" Name="button4" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,90,0,0" Name="button5" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,120,0,0" Name="button6" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,120,0,0" Name="button7" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,150,0,0" Name="button8" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,150,0,0" Name="button9" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,180,0,0" Name="button10" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,180,0,0" Name="button11" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,210,0,0" Name="button12" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,210,0,0" Name="button13" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Label Content="サービス背景" HorizontalAlignment="Left" Margin="12,223,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,223,0,0" Name="comboBox_service" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Background="{Binding Path=Value}" Width="20" />
+                                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Label Content="番組表背景" HorizontalAlignment="Left" Margin="400,223,0,0" VerticalAlignment="Top" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,55,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,55,0,0" Name="button3" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,83,0,0" Name="button4" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,83,0,0" Name="button5" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,111,0,0" Name="button6" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,111,0,0" Name="button7" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,139,0,0" Name="button8" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,139,0,0" Name="button9" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,167,0,0" Name="button10" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,167,0,0" Name="button11" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,195,0,0" Name="button12" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,195,0,0" Name="button13" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,223,0,0" Name="button_service" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,223,0,0" Name="button_epgBack" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Label Content="カスタム色" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
                             <Label Content="カスタム色" HorizontalAlignment="Left" Margin="624,0,0,0" VerticalAlignment="Top" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="予約枠" Height="147" Margin="0,279,12,0" Name="groupBox4" VerticalAlignment="Top" >
+                    <GroupBox Header="予約枠" Height="115" Margin="6,316,6,0" VerticalAlignment="Top">
                         <Grid>
-                            <Label Content="通常" HorizontalAlignment="Left" Margin="18,28,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="172,28,0,0" Name="comboBox_reserveNormal" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="通常" HorizontalAlignment="Left" Margin="12,6,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,6,0,0" Name="comboBox_reserveNormal" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -275,8 +299,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="無効" HorizontalAlignment="Left" Margin="406,28,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="504,28,0,0" Name="comboBox_reserveNo" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="無効" HorizontalAlignment="Left" Margin="400,6,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,6,0,0" Name="comboBox_reserveNo" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -286,8 +310,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="チューナー不足" HorizontalAlignment="Left" Margin="18,58,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="172,58,0,0" Name="comboBox_reserveNoTuner" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="チューナー不足" HorizontalAlignment="Left" Margin="12,34,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="166,34,0,0" Name="comboBox_reserveNoTuner" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -297,8 +321,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="一部実行" HorizontalAlignment="Left" Margin="406,58,0,0" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="504,58,0,0" Name="comboBox_reserveWarning" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
+                            <Label Content="一部実行" HorizontalAlignment="Left" Margin="400,34,0,0" VerticalAlignment="Top" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding Source={x:Static local:ColorDef.BrushNames}}" Margin="498,34,0,0" Name="comboBox_reserveWarning" SelectionChanged="comboBox_color_SelectionChanged" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -308,15 +332,13 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="塗りつぶしで表示 (不透明度)" HorizontalAlignment="Left" Margin="18,88,0,0" VerticalAlignment="Top" />
-                            <Slider AutoToolTipPlacement="TopLeft" Height="23" HorizontalAlignment="Left" LargeChange="10" Margin="211,92,0,0" Maximum="100" Minimum="0" SmallChange="1" Value="{Binding ReserveRectFillOpacity}" VerticalAlignment="Top" Width="145" />
-                            <CheckBox Content="影付きで塗りつぶす" HorizontalAlignment="Left" IsChecked="{Binding ReserveRectFillWithShadow}" Margin="363,96,0,0" VerticalAlignment="Top" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,27,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,28,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,57,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,57,0,0" Name="button17" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
-                            <Label Content="カスタム色" HorizontalAlignment="Left" Margin="298,0,0,0" VerticalAlignment="Top" />
-                            <Label Content="カスタム色" HorizontalAlignment="Left" Margin="630,0,0,0" VerticalAlignment="Top" />
+                            <Label Content="塗りつぶしで表示 (不透明度)" HorizontalAlignment="Left" Margin="12,63,0,0" VerticalAlignment="Top" />
+                            <Slider AutoToolTipPlacement="TopLeft" Height="23" HorizontalAlignment="Left" LargeChange="10" Margin="205,67,0,0" Maximum="100" Minimum="0" SmallChange="1" Value="{Binding ReserveRectFillOpacity}" VerticalAlignment="Top" Width="145" />
+                            <CheckBox Content="影付きで塗りつぶす" HorizontalAlignment="Left" IsChecked="{Binding ReserveRectFillWithShadow}" Margin="357,71,0,0" VerticalAlignment="Top" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,6,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,6,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="292,34,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
+                            <Button Height="24" HorizontalAlignment="Left" Margin="624,34,0,0" Name="button17" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                         </Grid>
                     </GroupBox>
                 </Grid>

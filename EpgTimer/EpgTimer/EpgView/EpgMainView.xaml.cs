@@ -45,6 +45,7 @@ namespace EpgTimer
             nowViewTimer = new DispatcherTimer(DispatcherPriority.Normal);
             nowViewTimer.Tick += (sender, e) => ReDrawNowLine();
             setViewInfo = setInfo;
+            epgProgramView.EpgSetting = setInfo.EpgSetting;
         }
 
         /// <summary>
@@ -92,13 +93,13 @@ namespace EpgTimer
                 {
                     if (chkNowTime == timeList.Keys[i])
                     {
-                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * Settings.Instance.MinHeight);
+                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * setViewInfo.EpgSetting.MinHeight);
                         break;
                     }
                     else if (chkNowTime < timeList.Keys[i])
                     {
                         //時間省かれてる
-                        posY = Math.Ceiling(i * 60 * Settings.Instance.MinHeight);
+                        posY = Math.Ceiling(i * 60 * setViewInfo.EpgSetting.MinHeight);
                         break;
                     }
                 }
@@ -149,7 +150,7 @@ namespace EpgTimer
                 if (sender.GetType() == typeof(ProgramView))
                 {
                     ProgramView view = sender as ProgramView;
-                    if (Settings.Instance.MouseScrollAuto == true)
+                    if (setViewInfo.EpgSetting.MouseScrollAuto)
                     {
                         view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - e.Delta);
                     }
@@ -158,18 +159,18 @@ namespace EpgTimer
                         if (e.Delta < 0)
                         {
                             //下方向
-                            view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset + Settings.Instance.ScrollSize);
+                            view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset + setViewInfo.EpgSetting.ScrollSize);
                         }
                         else
                         {
                             //上方向
-                            if (view.scrollViewer.VerticalOffset < Settings.Instance.ScrollSize)
+                            if (view.scrollViewer.VerticalOffset < setViewInfo.EpgSetting.ScrollSize)
                             {
                                 view.scrollViewer.ScrollToVerticalOffset(0);
                             }
                             else
                             {
-                                view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - Settings.Instance.ScrollSize);
+                                view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - setViewInfo.EpgSetting.ScrollSize);
                             }
                         }
                     }
@@ -207,7 +208,7 @@ namespace EpgTimer
         private ProgramViewItem GetProgramItem(Point cursorPos)
         {
             {
-                int timeIndex = (int)(cursorPos.Y / (60 * Settings.Instance.MinHeight));
+                int timeIndex = (int)(cursorPos.Y / (60 * setViewInfo.EpgSetting.MinHeight));
                 if (0 <= timeIndex && timeIndex < timeList.Count)
                 {
                     foreach (ProgramViewItem pgInfo in timeList.Values[timeIndex])
@@ -697,6 +698,7 @@ namespace EpgTimer
                     if (setInfo.ViewMode == setViewInfo.ViewMode)
                     {
                         setViewInfo = setInfo;
+                        epgProgramView.EpgSetting = setInfo.EpgSetting;
                         UpdateEpgData();
                     }
                     else if (ViewModeChangeRequested != null)
@@ -741,7 +743,7 @@ namespace EpgTimer
             {
                 ChgReserveWindow dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
+                dlg.SetOpenMode(setViewInfo.EpgSetting.EpgInfoOpenMode);
                 dlg.SetReserveInfo(reserveInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -764,7 +766,7 @@ namespace EpgTimer
             {
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
+                dlg.SetOpenMode(setViewInfo.EpgSetting.EpgInfoOpenMode);
                 dlg.SetReservable(reservable);
                 dlg.SetEventInfo(eventInfo);
                 if (dlg.ShowDialog() == true)
@@ -808,7 +810,7 @@ namespace EpgTimer
                 {
                     if (time <= timeList.Keys[i])
                     {
-                        double pos = Math.Max(i * 60 * Settings.Instance.MinHeight, 0);
+                        double pos = Math.Max(i * 60 * setViewInfo.EpgSetting.MinHeight, 0);
                         epgProgramView.scrollViewer.ScrollToVerticalOffset(Math.Ceiling(pos));
                         break;
                     }
@@ -857,7 +859,7 @@ namespace EpgTimer
             {
                 if (now <= timeList.Keys[i])
                 {
-                    double pos = Math.Max((i - 1) * 60 * Settings.Instance.MinHeight - 100, 0);
+                    double pos = Math.Max((i - 1) * 60 * setViewInfo.EpgSetting.MinHeight - 100, 0);
                     epgProgramView.scrollViewer.ScrollToVerticalOffset(Math.Ceiling(pos));
                     break;
                 }
@@ -978,7 +980,7 @@ namespace EpgTimer
                                 srvInfo.SID == info.ServiceID)
                             {
                                 ReserveViewItem viewItem = new ReserveViewItem(info);
-                                viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
+                                viewItem.LeftPos = setViewInfo.EpgSetting.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
 
                                 Int32 duration = (Int32)info.DurationSecond;
                                 DateTime startTime = info.StartTime;
@@ -1000,19 +1002,19 @@ namespace EpgTimer
                                 startTime = startTime.AddSeconds(-Math.Min(startMargin, 0));
                                 duration += Math.Min(startMargin, 0) + Math.Min(endMargin, 0);
 
-                                viewItem.Height = Math.Floor((duration / 60) * Settings.Instance.MinHeight);
-                                if (viewItem.Height < Settings.Instance.MinHeight)
+                                viewItem.Height = Math.Floor((duration / 60) * setViewInfo.EpgSetting.MinHeight);
+                                if (viewItem.Height < setViewInfo.EpgSetting.MinHeight)
                                 {
-                                    viewItem.Height = Settings.Instance.MinHeight;
+                                    viewItem.Height = setViewInfo.EpgSetting.MinHeight;
                                 }
-                                viewItem.Width = Settings.Instance.ServiceWidth / mergeNum;
+                                viewItem.Width = setViewInfo.EpgSetting.ServiceWidth / mergeNum;
 
                                 reserveList.Add(viewItem);
                                 DateTime chkTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
                                 if (timeList.ContainsKey(chkTime) == true)
                                 {
                                     bool modified = false;
-                                    if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF)
+                                    if (setViewInfo.EpgSetting.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF)
                                     {
                                         //予約情報から番組情報を特定し、枠表示位置を再設定する
                                         foreach (ProgramViewItem pgInfo in timeList[chkTime])
@@ -1026,7 +1028,7 @@ namespace EpgTimer
                                             {
                                                 viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - info.StartTime).TotalSeconds / info.DurationSecond;
                                                 viewItem.Width = pgInfo.Width;
-                                                viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, Settings.Instance.MinHeight);
+                                                viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, setViewInfo.EpgSetting.MinHeight);
                                                 modified = true;
                                                 break;
                                             }
@@ -1035,8 +1037,8 @@ namespace EpgTimer
                                     if (modified == false)
                                     {
                                         int index = timeList.IndexOfKey(chkTime);
-                                        viewItem.TopPos = index * 60 * Settings.Instance.MinHeight;
-                                        viewItem.TopPos += Math.Floor((startTime - chkTime).TotalMinutes * Settings.Instance.MinHeight);
+                                        viewItem.TopPos = index * 60 * setViewInfo.EpgSetting.MinHeight;
+                                        viewItem.TopPos += Math.Floor((startTime - chkTime).TotalMinutes * setViewInfo.EpgSetting.MinHeight);
                                         foreach (ProgramViewItem pgInfo in timeList.Values[index])
                                         {
                                             if (pgInfo.LeftPos == viewItem.LeftPos && pgInfo.TopPos <= viewItem.TopPos && viewItem.TopPos < pgInfo.TopPos + pgInfo.Height)
@@ -1104,6 +1106,14 @@ namespace EpgTimer
                 List<ushort> contentKindList = setViewInfo.ViewContentKindList.ToList();
                 contentKindList.Sort();
 
+                //ジャンル別の背景ブラシ
+                var contentBrushList = new List<Brush>();
+                for (int i = 0; i < setViewInfo.EpgSetting.ContentColorList.Count; i++)
+                {
+                    SolidColorBrush brush = ColorDef.CustColorBrush(setViewInfo.EpgSetting.ContentColorList[i],
+                                                                    setViewInfo.EpgSetting.ContentCustColorList[i]);
+                    contentBrushList.Add(setViewInfo.EpgSetting.EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+                }
 
                 //必要番組の抽出と時間チェック
                 List<EpgServiceInfo> primeServiceList = new List<EpgServiceInfo>();
@@ -1149,7 +1159,7 @@ namespace EpgTimer
                         if (--groupSpan <= 0)
                         {
                             groupSpan = spanCheckNum;
-                            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(Settings.Instance.ServiceWidth * groupSpan, new List<ProgramViewItem>()));
+                            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(setViewInfo.EpgSetting.ServiceWidth * groupSpan, new List<ProgramViewItem>()));
                         }
                         primeServiceList.Add(serviceList[mergePos]);
                     }
@@ -1248,10 +1258,21 @@ namespace EpgTimer
                         }
 
                         ProgramViewItem viewItem = new ProgramViewItem(eventInfo, past);
-                        viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
-                        viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
-                        viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
-                        //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
+                        viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * setViewInfo.EpgSetting.MinHeight) / 60;
+                        viewItem.Width = setViewInfo.EpgSetting.ServiceWidth * widthSpan / mergeNum;
+                        viewItem.LeftPos = setViewInfo.EpgSetting.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
+                        viewItem.ContentColor = contentBrushList[0x10];
+                        if (eventInfo.ContentInfo != null)
+                        {
+                            foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
+                            {
+                                if (info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F)
+                                {
+                                    viewItem.ContentColor = contentBrushList[info.content_nibble_level_1];
+                                    break;
+                                }
+                            }
+                        }
                         programGroupList[programGroupList.Count - 1].Item2.Add(viewItem);
                         programList.Add(viewItem);
 
@@ -1294,7 +1315,7 @@ namespace EpgTimer
                     //番組の表示位置設定
                     foreach (ProgramViewItem item in programList)
                     {
-                        item.TopPos = (item.EventInfo.start_time - timeList.Keys[0]).TotalMinutes * Settings.Instance.MinHeight;
+                        item.TopPos = (item.EventInfo.start_time - timeList.Keys[0]).TotalMinutes * setViewInfo.EpgSetting.MinHeight;
                     }
                 }
                 else
@@ -1311,16 +1332,16 @@ namespace EpgTimer
                         if (timeList.ContainsKey(chkStartTime) == true)
                         {
                             int index = timeList.IndexOfKey(chkStartTime);
-                            item.TopPos = (index * 60 + (item.EventInfo.start_time - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
+                            item.TopPos = (index * 60 + (item.EventInfo.start_time - chkStartTime).TotalMinutes) * setViewInfo.EpgSetting.MinHeight;
                         }
                     }
                 }
 
-                if (Settings.Instance.MinimumHeight > 0)
+                if (setViewInfo.EpgSetting.MinimumHeight > 0)
                 {
                     //最低表示行数を適用
                     programList.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-                    double minimum = Math.Floor((Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight);
+                    double minimum = Math.Floor((setViewInfo.EpgSetting.FontSizeTitle + 2) * setViewInfo.EpgSetting.MinimumHeight);
                     double lastLeft = double.MinValue;
                     double lastBottom = 0;
                     foreach (ProgramViewItem item in programList)
@@ -1343,8 +1364,8 @@ namespace EpgTimer
                 //必要時間リストと時間と番組の関連づけ
                 foreach (ProgramViewItem item in programList)
                 {
-                    int index = Math.Max((int)(item.TopPos / (60 * Settings.Instance.MinHeight)), 0);
-                    while (index < Math.Min((int)((item.TopPos + item.Height) / (60 * Settings.Instance.MinHeight)) + 1, timeList.Count))
+                    int index = Math.Max((int)(item.TopPos / (60 * setViewInfo.EpgSetting.MinHeight)), 0);
+                    while (index < Math.Min((int)((item.TopPos + item.Height) / (60 * setViewInfo.EpgSetting.MinHeight)) + 1, timeList.Count))
                     {
                         timeList.Values[index++].Add(item);
                     }
@@ -1352,16 +1373,25 @@ namespace EpgTimer
 
                 epgProgramView.SetProgramList(
                     programGroupList,
-                    timeList.Count * 60 * Settings.Instance.MinHeight);
+                    timeList.Count * 60 * setViewInfo.EpgSetting.MinHeight);
 
                 List<DateTime> dateTimeList = new List<DateTime>();
                 foreach (var item in timeList)
                 {
                     dateTimeList.Add(item.Key);
                 }
-                timeView.SetTime(dateTimeList, setViewInfo.NeedTimeOnlyBasic, false);
+                var timeBrushList = new List<Brush>();
+                for (int i = 0; i < setViewInfo.EpgSetting.TimeColorList.Count; i++)
+                {
+                    SolidColorBrush brush = ColorDef.CustColorBrush(setViewInfo.EpgSetting.TimeColorList[i], setViewInfo.EpgSetting.TimeCustColorList[i]);
+                    timeBrushList.Add(setViewInfo.EpgSetting.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+                }
+                timeView.SetTime(dateTimeList, setViewInfo.EpgSetting.MinHeight, setViewInfo.NeedTimeOnlyBasic, timeBrushList, false);
                 dateView.SetTime(enablePrev, enableNext, dateTimeList);
-                serviceView.SetService(primeServiceList);
+
+                SolidColorBrush serviceBrush = ColorDef.CustColorBrush(setViewInfo.EpgSetting.ServiceColor, setViewInfo.EpgSetting.ServiceCustColor);
+                serviceView.SetService(primeServiceList, setViewInfo.EpgSetting.ServiceWidth,
+                                       setViewInfo.EpgSetting.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(serviceBrush.Color) : serviceBrush);
 
                 ReDrawNowLine();
             }

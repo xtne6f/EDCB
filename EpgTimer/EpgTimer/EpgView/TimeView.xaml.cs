@@ -29,10 +29,9 @@ namespace EpgTimer.EpgView
             stackPanel_time.Children.Clear();
         }
 
-        public void SetTime(List<DateTime> timeList, bool NeedTimeOnly, bool weekMode)
+        public void SetTime(List<DateTime> timeList, double height, bool needTimeOnly, List<Brush> brushList, bool weekMode)
         {
             stackPanel_time.Children.Clear();
-            double height = Settings.Instance.MinHeight;
             if (60 * height > 1)
             {
                 foreach (DateTime time in timeList)
@@ -42,7 +41,7 @@ namespace EpgTimer.EpgView
 
                     if (weekMode == false)
                     {
-                        if (time.Hour % 3 == 0 || NeedTimeOnly == true)
+                        if (time.Hour % 3 == 0 || needTimeOnly)
                         {
                             item.Inlines.Add(new Run(time.ToString("M\\/d")));
                             item.Inlines.Add(new LineBreak());
@@ -79,7 +78,7 @@ namespace EpgTimer.EpgView
                     item.Inlines.Add(text);
 
                     item.Margin = new Thickness(1, 1, 1, 0);
-                    item.Background = CommonManager.Instance.CustTimeColorList[time.Hour / 6];
+                    item.Background = brushList[time.Hour / 6];
                     item.TextAlignment = TextAlignment.Center;
                     item.Foreground = Brushes.White;
                     item.FontSize = 12;
