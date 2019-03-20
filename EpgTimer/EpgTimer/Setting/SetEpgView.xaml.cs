@@ -58,10 +58,10 @@ namespace EpgTimer.Setting
             }
             else
             {
-                grid_basic.DataContext = settings.EpgSettingList[radioButton_basicLayoutSub1.IsChecked == true ? 1 :
-                                                                 radioButton_basicLayoutSub2.IsChecked == true ? 2 : 0];
-                grid_color.DataContext = settings.EpgSettingList[radioButton_colorLayoutSub1.IsChecked == true ? 1 :
-                                                                 radioButton_colorLayoutSub2.IsChecked == true ? 2 : 0];
+                grid_basic.DataContext = settings.EpgSettingList[radioButton_basicDesignSub1.IsChecked == true ? 1 :
+                                                                 radioButton_basicDesignSub2.IsChecked == true ? 2 : 0];
+                grid_color.DataContext = settings.EpgSettingList[radioButton_colorDesignSub1.IsChecked == true ? 1 :
+                                                                 radioButton_colorDesignSub2.IsChecked == true ? 2 : 0];
                 listBox_tab.Items.Clear();
                 foreach (CustomEpgTabInfo info in settings.CustomEpgTabList)
                 {
@@ -308,38 +308,38 @@ namespace EpgTimer.Setting
             OnUpdateColor();
         }
 
-        private void radioButton_basicLayout_Checked(object sender, RoutedEventArgs e)
+        private void radioButton_basicDesign_Checked(object sender, RoutedEventArgs e)
         {
             Settings settings = (Settings)DataContext;
             if (settings != null)
             {
-                grid_basic.DataContext = settings.EpgSettingList[radioButton_basicLayoutSub1.IsChecked == true ? 1 :
-                                                                 radioButton_basicLayoutSub2.IsChecked == true ? 2 : 0];
-                if (radioButton_colorLayoutDefault.IsChecked != radioButton_basicLayoutDefault.IsChecked ||
-                    radioButton_colorLayoutSub1.IsChecked != radioButton_basicLayoutSub1.IsChecked ||
-                    radioButton_colorLayoutSub2.IsChecked != radioButton_basicLayoutSub2.IsChecked)
+                grid_basic.DataContext = settings.EpgSettingList[radioButton_basicDesignSub1.IsChecked == true ? 1 :
+                                                                 radioButton_basicDesignSub2.IsChecked == true ? 2 : 0];
+                if (radioButton_colorDesignDefault.IsChecked != radioButton_basicDesignDefault.IsChecked ||
+                    radioButton_colorDesignSub1.IsChecked != radioButton_basicDesignSub1.IsChecked ||
+                    radioButton_colorDesignSub2.IsChecked != radioButton_basicDesignSub2.IsChecked)
                 {
-                    radioButton_colorLayoutDefault.IsChecked = radioButton_basicLayoutDefault.IsChecked;
-                    radioButton_colorLayoutSub1.IsChecked = radioButton_basicLayoutSub1.IsChecked;
-                    radioButton_colorLayoutSub2.IsChecked = radioButton_basicLayoutSub2.IsChecked;
+                    radioButton_colorDesignDefault.IsChecked = radioButton_basicDesignDefault.IsChecked;
+                    radioButton_colorDesignSub1.IsChecked = radioButton_basicDesignSub1.IsChecked;
+                    radioButton_colorDesignSub2.IsChecked = radioButton_basicDesignSub2.IsChecked;
                 }
             }
         }
 
-        private void radioButton_colorLayout_Checked(object sender, RoutedEventArgs e)
+        private void radioButton_colorDesign_Checked(object sender, RoutedEventArgs e)
         {
             Settings settings = (Settings)DataContext;
             if (settings != null)
             {
-                grid_color.DataContext = settings.EpgSettingList[radioButton_colorLayoutSub1.IsChecked == true ? 1 :
-                                                                 radioButton_colorLayoutSub2.IsChecked == true ? 2 : 0];
-                if (radioButton_basicLayoutDefault.IsChecked != radioButton_colorLayoutDefault.IsChecked ||
-                    radioButton_basicLayoutSub1.IsChecked != radioButton_colorLayoutSub1.IsChecked ||
-                    radioButton_basicLayoutSub2.IsChecked != radioButton_colorLayoutSub2.IsChecked)
+                grid_color.DataContext = settings.EpgSettingList[radioButton_colorDesignSub1.IsChecked == true ? 1 :
+                                                                 radioButton_colorDesignSub2.IsChecked == true ? 2 : 0];
+                if (radioButton_basicDesignDefault.IsChecked != radioButton_colorDesignDefault.IsChecked ||
+                    radioButton_basicDesignSub1.IsChecked != radioButton_colorDesignSub1.IsChecked ||
+                    radioButton_basicDesignSub2.IsChecked != radioButton_colorDesignSub2.IsChecked)
                 {
-                    radioButton_basicLayoutDefault.IsChecked = radioButton_colorLayoutDefault.IsChecked;
-                    radioButton_basicLayoutSub1.IsChecked = radioButton_colorLayoutSub1.IsChecked;
-                    radioButton_basicLayoutSub2.IsChecked = radioButton_colorLayoutSub2.IsChecked;
+                    radioButton_basicDesignDefault.IsChecked = radioButton_colorDesignDefault.IsChecked;
+                    radioButton_basicDesignSub1.IsChecked = radioButton_colorDesignSub1.IsChecked;
+                    radioButton_basicDesignSub2.IsChecked = radioButton_colorDesignSub2.IsChecked;
                 }
             }
         }

@@ -283,7 +283,7 @@ namespace EpgTimer
             r.EpgSettingList            = new List<EpgSetting>(3) { new EpgSetting(), new EpgSetting(), new EpgSetting() };
             for (int i = 0; i < EpgSettingList.Count; i++)
             {
-                //最初(デフォルト)のレイアウト設定は直下に置く
+                //最初(デフォルト)のデザイン設定は直下に置く
                 XElement xx = (i == 0 || x == null ? x : w ? new XElement("EpgSetting" + i) : x.Element("EpgSetting" + i));
                 EpgSetting rr = r.EpgSettingList[i];
                 EpgSetting val = EpgSettingList[i];

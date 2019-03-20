@@ -66,9 +66,9 @@ namespace EpgTimer
             radioButton_rate.IsChecked = setInfo.ViewMode != 1 && setInfo.ViewMode != 2;
             radioButton_week.IsChecked = setInfo.ViewMode == 1;
             radioButton_list.IsChecked = setInfo.ViewMode == 2;
-            radioButton_layoutDefault.IsChecked = setInfo.EpgSettingIndex != 1 && setInfo.EpgSettingIndex != 2;
-            radioButton_layoutSub1.IsChecked = setInfo.EpgSettingIndex == 1;
-            radioButton_layoutSub2.IsChecked = setInfo.EpgSettingIndex == 2;
+            radioButton_designDefault.IsChecked = setInfo.EpgSettingIndex != 1 && setInfo.EpgSettingIndex != 2;
+            radioButton_designSub1.IsChecked = setInfo.EpgSettingIndex == 1;
+            radioButton_designSub2.IsChecked = setInfo.EpgSettingIndex == 2;
 
             if (setInfo.NeedTimeOnlyBasic == true)
             {
@@ -134,8 +134,8 @@ namespace EpgTimer
             info.TabName = textBox_tabName.Text;
             info.ViewMode = radioButton_week.IsChecked == true ? 1 :
                             radioButton_list.IsChecked == true ? 2 : 0;
-            info.EpgSettingIndex = radioButton_layoutSub1.IsChecked == true ? 1 :
-                                   radioButton_layoutSub2.IsChecked == true ? 2 : 0;
+            info.EpgSettingIndex = radioButton_designSub1.IsChecked == true ? 1 :
+                                   radioButton_designSub2.IsChecked == true ? 2 : 0;
             if (checkBox_noTimeView_rate.IsChecked == true)
             {
                 info.NeedTimeOnlyBasic = true;

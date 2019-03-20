@@ -13,11 +13,11 @@
         <TabControl>
             <TabItem Header="基本">
                 <Grid DataContextChanged="grid_basic_DataContextChanged" Name="grid_basic">
-                    <Label Content="レイアウト" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
-                    <RadioButton Checked="radioButton_basicLayout_Checked" Content="デフォルト" Height="23" HorizontalAlignment="Left" IsChecked="True" Margin="80,8,0,0" Name="radioButton_basicLayoutDefault" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
-                    <RadioButton Checked="radioButton_basicLayout_Checked" Content="サブ1" Height="23" HorizontalAlignment="Left" Margin="150,8,0,0" Name="radioButton_basicLayoutSub1" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
-                    <RadioButton Checked="radioButton_basicLayout_Checked" Content="サブ2" Height="23" HorizontalAlignment="Left" Margin="220,8,0,0" Name="radioButton_basicLayoutSub2" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
-                    <Label Content="※デフォルトの設定の一部は番組表以外のレイアウトにも影響します。" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=radioButton_basicLayoutDefault}" Margin="310,6,0,0" VerticalAlignment="Top" />
+                    <Label Content="デザイン" HorizontalAlignment="Left" Margin="10,6,0,0" VerticalAlignment="Top" />
+                    <RadioButton Checked="radioButton_basicDesign_Checked" Content="デフォルト" Height="23" HorizontalAlignment="Left" IsChecked="True" Margin="80,8,0,0" Name="radioButton_basicDesignDefault" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <RadioButton Checked="radioButton_basicDesign_Checked" Content="サブ1" Height="23" HorizontalAlignment="Left" Margin="150,8,0,0" Name="radioButton_basicDesignSub1" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <RadioButton Checked="radioButton_basicDesign_Checked" Content="サブ2" Height="23" HorizontalAlignment="Left" Margin="220,8,0,0" Name="radioButton_basicDesignSub2" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <Label Content="※デフォルトデザインの設定の一部は番組表以外にも影響します。" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=radioButton_basicDesignDefault}" Margin="310,6,0,0" VerticalAlignment="Top" />
                     <GroupBox Header="フォント" Height="102" Margin="6,36,6,0" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="タイトル" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
@@ -94,11 +94,11 @@
             </TabItem>
             <TabItem Header="色">
                 <Grid DataContextChanged="grid_color_DataContextChanged" Name="grid_color">
-                    <Label Content="レイアウト" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
-                    <RadioButton Checked="radioButton_colorLayout_Checked" Content="デフォルト" Height="23" HorizontalAlignment="Left" IsChecked="True" Margin="80,8,0,0" Name="radioButton_colorLayoutDefault" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
-                    <RadioButton Checked="radioButton_colorLayout_Checked" Content="サブ1" Height="23" HorizontalAlignment="Left" Margin="150,8,0,0" Name="radioButton_colorLayoutSub1" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
-                    <RadioButton Checked="radioButton_colorLayout_Checked" Content="サブ2" Height="23" HorizontalAlignment="Left" Margin="220,8,0,0" Name="radioButton_colorLayoutSub2" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
-                    <Label Content="※デフォルトの設定の一部は番組表以外のレイアウトにも影響します。" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=radioButton_colorLayoutDefault}" Margin="310,6,0,0" VerticalAlignment="Top" />
+                    <Label Content="デザイン" HorizontalAlignment="Left" Margin="10,6,0,0" VerticalAlignment="Top" />
+                    <RadioButton Checked="radioButton_colorDesign_Checked" Content="デフォルト" Height="23" HorizontalAlignment="Left" IsChecked="True" Margin="80,8,0,0" Name="radioButton_colorDesignDefault" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <RadioButton Checked="radioButton_colorDesign_Checked" Content="サブ1" Height="23" HorizontalAlignment="Left" Margin="150,8,0,0" Name="radioButton_colorDesignSub1" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <RadioButton Checked="radioButton_colorDesign_Checked" Content="サブ2" Height="23" HorizontalAlignment="Left" Margin="220,8,0,0" Name="radioButton_colorDesignSub2" Style="{StaticResource {x:Type ToggleButton}}" VerticalAlignment="Top" Width="70" />
+                    <Label Content="※デフォルトデザインの設定の一部は番組表以外にも影響します。" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=radioButton_colorDesignDefault}" Margin="310,6,0,0" VerticalAlignment="Top" />
                     <GroupBox Header="ジャンル別背景色" Height="274" Margin="6,36,6,0" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="ニュース／報道" HorizontalAlignment="Left" Margin="12,27,0,0" VerticalAlignment="Top" />
