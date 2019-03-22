@@ -56,7 +56,7 @@ namespace EpgTimer
         }
         public String Reserved
         {
-            get { return IsReserved ? "予" : ""; }
+            get { return ReserveInfo == null ? "" : ReserveInfo.RecSetting.RecMode == 4 ? "視" :  "予"; }
         }
         public SolidColorBrush BackColor
         {

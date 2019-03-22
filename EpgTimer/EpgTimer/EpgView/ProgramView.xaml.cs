@@ -309,6 +309,10 @@ namespace EpgTimer.EpgView
                 Brush fillNo = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorNo, EpgSetting.ContentCustColorList[18], 0xA0, fillOpacity);
                 Brush fillNoTuner = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorNoTuner, EpgSetting.ContentCustColorList[19], 0xA0, fillOpacity);
                 Brush fillWarning = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorWarning, EpgSetting.ContentCustColorList[20], 0xA0, fillOpacity);
+                var blurEffect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+                blurEffect.Freeze();
+                var dashArray = new DoubleCollection() { 2.5, 1.5 };
+                dashArray.Freeze();
 
                 foreach (ReserveViewItem info in reserveList)
                 {
@@ -337,8 +341,13 @@ namespace EpgTimer.EpgView
                         fillRect.Fill = fillNormal;
                     }
 
-                    rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+                    rect.Effect = blurEffect;
                     rect.StrokeThickness = 3;
+                    if (info.ReserveInfo.RecSetting.RecMode == 4)
+                    {
+                        rect.StrokeDashArray = dashArray;
+                        rect.StrokeDashCap = PenLineCap.Round;
+                    }
                     rect.Width = info.Width;
                     rect.Height = info.Height;
                     rect.IsHitTestVisible = false;
