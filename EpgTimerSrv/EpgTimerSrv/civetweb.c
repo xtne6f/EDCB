@@ -512,12 +512,32 @@ typedef long off_t;
 
 #define ERRNO ((int)(GetLastError()))
 #define NO_SOCKLEN_T
+
+#if defined(OPENSSL_API_1_1)
+#if defined(_WIN64)
+#if !defined(SSL_LIB)
+#define SSL_LIB "libssl-1_1-x64.dll"
+#endif
+#if !defined(CRYPTO_LIB)
+#define CRYPTO_LIB "libcrypto-1_1-x64.dll"
+#endif
+#else
+#if !defined(SSL_LIB)
+#define SSL_LIB "libssl-1_1.dll"
+#endif
+#if !defined(CRYPTO_LIB)
+#define CRYPTO_LIB "libcrypto-1_1.dll"
+#endif
+#endif
+#else
 #if !defined(SSL_LIB)
 #define SSL_LIB "ssleay32.dll"
 #endif
 #if !defined(CRYPTO_LIB)
 #define CRYPTO_LIB "libeay32.dll"
 #endif
+#endif /* OPENSSL_API_1_1 */
+
 #define O_NONBLOCK (0)
 #if !defined(W_OK)
 #define W_OK (2) /* http://msdn.microsoft.com/en-us/library/1w06ktdy.aspx */
@@ -1760,16 +1780,20 @@ typedef struct x509 X509;
 #define SSL_VERIFY_PEER (1)
 #define SSL_VERIFY_FAIL_IF_NO_PEER_CERT (2)
 #define SSL_VERIFY_CLIENT_ONCE (4)
-#define SSL_OP_ALL ((long)(0x80000BFFUL))
-#define SSL_OP_NO_SSLv2 (0x01000000L)
-#define SSL_OP_NO_SSLv3 (0x02000000L)
-#define SSL_OP_NO_TLSv1 (0x04000000L)
-#define SSL_OP_NO_TLSv1_2 (0x08000000L)
-#define SSL_OP_NO_TLSv1_1 (0x10000000L)
-#define SSL_OP_SINGLE_DH_USE (0x00100000L)
-#define SSL_OP_CIPHER_SERVER_PREFERENCE (0x00400000L)
-#define SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION (0x00010000L)
-#define SSL_OP_NO_COMPRESSION (0x00020000L)
+
+#define SSL_OP_ALL (0x80000BFFul)
+
+#define SSL_OP_NO_SSLv2 (0x01000000ul)
+#define SSL_OP_NO_SSLv3 (0x02000000ul)
+#define SSL_OP_NO_TLSv1 (0x04000000ul)
+#define SSL_OP_NO_TLSv1_2 (0x08000000ul)
+#define SSL_OP_NO_TLSv1_1 (0x10000000ul)
+#define SSL_OP_NO_TLSv1_3 (0x20000000ul)
+#define SSL_OP_SINGLE_DH_USE (0x00100000ul)
+#define SSL_OP_CIPHER_SERVER_PREFERENCE (0x00400000ul)
+#define SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION (0x00010000ul)
+#define SSL_OP_NO_COMPRESSION (0x00020000ul)
+#define SSL_OP_NO_RENEGOTIATION (0x40000000ul)
 
 #define SSL_CB_HANDSHAKE_START (0x10)
 #define SSL_CB_HANDSHAKE_DONE (0x20)
@@ -1870,8 +1894,6 @@ struct ssl_func {
 	SSL_CTX_callback_ctrl(ctx,                                                 \
 	                      SSL_CTRL_SET_TLSEXT_SERVERNAME_CB,                   \
 	                      (void (*)(void))cb)
-#define SSL_CTX_set_tlsext_servername_arg(ctx, arg)                            \
-	SSL_CTX_ctrl(ctx, SSL_CTRL_SET_TLSEXT_SERVERNAME_ARG, 0, (void *)arg)
 
 #define X509_get_notBefore(x) ((x)->cert_info->validity->notBefore)
 #define X509_get_notAfter(x) ((x)->cert_info->validity->notAfter)
@@ -1902,6 +1924,7 @@ struct ssl_func {
 	(*(BIGNUM * (*)(const ASN1_INTEGER *ai, BIGNUM *bn)) crypto_sw[13].ptr)
 #define BN_free (*(void (*)(const BIGNUM *a))crypto_sw[14].ptr)
 #define CRYPTO_free (*(void (*)(void *addr))crypto_sw[15].ptr)
+#define ERR_clear_error (*(void (*)(void))crypto_sw[16].ptr)
 
 #define OPENSSL_free(a) CRYPTO_free(a)
 
@@ -1969,6 +1992,7 @@ static struct ssl_func crypto_sw[] = {{"ERR_get_error", NULL},
                                       {"ASN1_INTEGER_to_BN", NULL},
                                       {"BN_free", NULL},
                                       {"CRYPTO_free", NULL},
+                                      {"ERR_clear_error", NULL},
                                       {NULL, NULL}};
 #else
 
@@ -2039,8 +2063,6 @@ static struct ssl_func crypto_sw[] = {{"ERR_get_error", NULL},
 	SSL_CTX_callback_ctrl(ctx,                                                 \
 	                      SSL_CTRL_SET_TLSEXT_SERVERNAME_CB,                   \
 	                      (void (*)(void))cb)
-#define SSL_CTX_set_tlsext_servername_arg(ctx, arg)                            \
-	SSL_CTX_ctrl(ctx, SSL_CTRL_SET_TLSEXT_SERVERNAME_ARG, 0, (void *)arg)
 
 #define X509_get_notBefore(x) ((x)->cert_info->validity->notBefore)
 #define X509_get_notAfter(x) ((x)->cert_info->validity->notAfter)
@@ -2082,6 +2104,7 @@ static struct ssl_func crypto_sw[] = {{"ERR_get_error", NULL},
 	(*(BIGNUM * (*)(const ASN1_INTEGER *ai, BIGNUM *bn)) crypto_sw[21].ptr)
 #define BN_free (*(void (*)(const BIGNUM *a))crypto_sw[22].ptr)
 #define CRYPTO_free (*(void (*)(void *addr))crypto_sw[23].ptr)
+#define ERR_clear_error (*(void (*)(void))crypto_sw[24].ptr)
 
 #define OPENSSL_free(a) CRYPTO_free(a)
 
@@ -2156,6 +2179,7 @@ static struct ssl_func crypto_sw[] = {{"CRYPTO_num_locks", NULL},
                                       {"ASN1_INTEGER_to_BN", NULL},
                                       {"BN_free", NULL},
                                       {"CRYPTO_free", NULL},
+                                      {"ERR_clear_error", NULL},
                                       {NULL, NULL}};
 #endif /* OPENSSL_API_1_1 */
 #endif /* NO_SSL_DL */
@@ -2507,6 +2531,7 @@ struct mg_domain_context {
 	SSL_CTX *ssl_ctx;                 /* SSL context */
 	char *config[NUM_OPTIONS];        /* Civetweb configuration parameters */
 	struct mg_handler_info *handlers; /* linked list of uri handlers */
+	int64_t ssl_cert_last_mtime;
 
 	/* Server nonce */
 	uint64_t auth_nonce_mask;  /* Mask for all nonce values */
@@ -2551,7 +2576,7 @@ struct mg_context {
 
 	/* Thread related */
 	volatile int stop_flag;       /* Should we stop event loop */
-	pthread_mutex_t thread_mutex; /* Protects (max|num)_threads */
+	pthread_mutex_t thread_mutex; /* Protects client_socks or queue */
 
 	pthread_t masterthreadid; /* The master thread ID */
 	unsigned int
@@ -2592,7 +2617,8 @@ struct mg_context {
 #endif
 
 	/* Server nonce */
-	pthread_mutex_t nonce_mutex; /* Protects nonce_count */
+	pthread_mutex_t nonce_mutex; /* Protects ssl_ctx, ssl_cert_last_mtime,
+	                              * nonce_count, and next (linked list) */
 
 	/* Server callbacks */
 	struct mg_callbacks callbacks; /* User-defined callback function */
@@ -5933,6 +5959,7 @@ push_inner(struct mg_context *ctx,
 
 #if !defined(NO_SSL)
 		if (ssl != NULL) {
+			ERR_clear_error();
 			n = SSL_write(ssl, buf, len);
 			if (n <= 0) {
 				err = SSL_get_error(ssl, n);
@@ -5943,8 +5970,10 @@ push_inner(struct mg_context *ctx,
 					n = 0;
 				} else {
 					DEBUG_TRACE("SSL_write() failed, error %d", err);
+					ERR_clear_error();
 					return -2;
 				}
+				ERR_clear_error();
 			} else {
 				err = 0;
 			}
@@ -6096,9 +6125,6 @@ pull_inner(FILE *fp,
 #else
 	typedef size_t len_t;
 #endif
-#if !defined(NO_SSL)
-	int ssl_pending;
-#endif
 
 	/* We need an additional wait loop around this, because in some cases
 	 * with TLSwe may get data from the socket but not from SSL_read.
@@ -6123,46 +6149,34 @@ pull_inner(FILE *fp,
 		}
 
 #if !defined(NO_SSL)
-	} else if ((conn->ssl != NULL)
-	           && ((ssl_pending = SSL_pending(conn->ssl)) > 0)) {
-		/* We already know there is no more data buffered in conn->buf
-		 * but there is more available in the SSL layer. So don't poll
-		 * conn->client.sock yet. */
-		if (ssl_pending > len) {
-			ssl_pending = len;
-		}
-		nread = SSL_read(conn->ssl, buf, ssl_pending);
-		if (nread <= 0) {
-			err = SSL_get_error(conn->ssl, nread);
-			if ((err == SSL_ERROR_SYSCALL) && (nread == -1)) {
-				err = ERRNO;
-			} else if ((err == SSL_ERROR_WANT_READ)
-			           || (err == SSL_ERROR_WANT_WRITE)) {
-				nread = 0;
-			} else {
-				DEBUG_TRACE("SSL_read() failed, error %d", err);
-				return -1;
-			}
-		} else {
-			err = 0;
-		}
-
 	} else if (conn->ssl != NULL) {
-
+		int ssl_pending;
 		struct mg_pollfd pfd[1];
 		int pollres;
 
-		pfd[0].fd = conn->client.sock;
-		pfd[0].events = POLLIN;
-		pollres = mg_poll(pfd,
-		                  1,
-		                  (int)(timeout * 1000.0),
-		                  &(conn->phys_ctx->stop_flag));
-		if (conn->phys_ctx->stop_flag) {
-			return -2;
+		if ((ssl_pending = SSL_pending(conn->ssl)) > 0) {
+			/* We already know there is no more data buffered in conn->buf
+			 * but there is more available in the SSL layer. So don't poll
+			 * conn->client.sock yet. */
+			if (ssl_pending > len) {
+				ssl_pending = len;
+			}
+			pollres = 1;
+		} else {
+			pfd[0].fd = conn->client.sock;
+			pfd[0].events = POLLIN;
+			pollres = mg_poll(pfd,
+			                  1,
+			                  (int)(timeout * 1000.0),
+			                  &(conn->phys_ctx->stop_flag));
+			if (conn->phys_ctx->stop_flag) {
+				return -2;
+			}
 		}
 		if (pollres > 0) {
-			nread = SSL_read(conn->ssl, buf, len);
+			ERR_clear_error();
+			nread = SSL_read(conn->ssl, buf,
+			                 (ssl_pending > 0) ? ssl_pending : len);
 			if (nread <= 0) {
 				err = SSL_get_error(conn->ssl, nread);
 				if ((err == SSL_ERROR_SYSCALL) && (nread == -1)) {
@@ -6171,13 +6185,15 @@ pull_inner(FILE *fp,
 				           || (err == SSL_ERROR_WANT_WRITE)) {
 					nread = 0;
 				} else {
+					/* All errors should return -2 */
 					DEBUG_TRACE("SSL_read() failed, error %d", err);
+					ERR_clear_error();
 					return -2;
 				}
+				ERR_clear_error();
 			} else {
 				err = 0;
 			}
-
 		} else if (pollres < 0) {
 			/* Error */
 			return -2;
@@ -8167,10 +8183,10 @@ send_authorization_request(struct mg_connection *conn, const char *realm)
 		realm = conn->dom_ctx->config[AUTHENTICATION_DOMAIN];
 	}
 
-	(void)pthread_mutex_lock(&conn->phys_ctx->nonce_mutex);
+	mg_lock_context(conn->phys_ctx);
 	nonce += conn->dom_ctx->nonce_count;
 	++conn->dom_ctx->nonce_count;
-	(void)pthread_mutex_unlock(&conn->phys_ctx->nonce_mutex);
+	mg_unlock_context(conn->phys_ctx);
 
 	nonce ^= conn->dom_ctx->auth_nonce_mask;
 	conn->status_code = 401;
@@ -11643,7 +11659,7 @@ mg_unlock_connection(struct mg_connection *conn)
 void
 mg_lock_context(struct mg_context *ctx)
 {
-	if (ctx) {
+	if (ctx && (ctx->context_type == CONTEXT_SERVER)) {
 		(void)pthread_mutex_lock(&ctx->nonce_mutex);
 	}
 }
@@ -11651,7 +11667,7 @@ mg_lock_context(struct mg_context *ctx)
 void
 mg_unlock_context(struct mg_context *ctx)
 {
-	if (ctx) {
+	if (ctx && (ctx->context_type == CONTEXT_SERVER)) {
 		(void)pthread_mutex_unlock(&ctx->nonce_mutex);
 	}
 }
@@ -12694,7 +12710,9 @@ alloc_get_host(struct mg_connection *conn)
 					conn->dom_ctx = dom;
 					break;
 				}
+				mg_lock_context(conn->phys_ctx);
 				dom = dom->next;
+				mg_unlock_context(conn->phys_ctx);
 			}
 
 			DEBUG_TRACE("HTTP Host: %s", host);
@@ -14562,12 +14580,8 @@ static const char *ssl_error(void);
 static int
 refresh_trust(struct mg_connection *conn)
 {
-	static int reload_lock = 0;
-	static long int data_check = 0;
-	volatile int *p_reload_lock = (volatile int *)&reload_lock;
-
 	struct stat cert_buf;
-	long int t;
+	int64_t t = 0;
 	const char *pem;
 	const char *chain;
 	int should_verify_peer;
@@ -14586,13 +14600,13 @@ refresh_trust(struct mg_connection *conn)
 		chain = NULL;
 	}
 
-	t = data_check;
 	if (stat(pem, &cert_buf) != -1) {
-		t = (long int)cert_buf.st_mtime;
+		t = (int64_t)cert_buf.st_mtime;
 	}
 
-	if (data_check != t) {
-		data_check = t;
+	mg_lock_context(conn->phys_ctx);
+	if ((t != 0) && (conn->dom_ctx->ssl_cert_last_mtime != t)) {
+		conn->dom_ctx->ssl_cert_last_mtime = t;
 
 		should_verify_peer = 0;
 		if (conn->dom_ctx->config[SSL_DO_VERIFY_PEER] != NULL) {
@@ -14613,6 +14627,7 @@ refresh_trust(struct mg_connection *conn)
 			                                  ca_file,
 			                                  ca_path)
 			    != 1) {
+				mg_unlock_context(conn->phys_ctx);
 				mg_cry_ctx_internal(
 				    conn->phys_ctx,
 				    "SSL_CTX_load_verify_locations error: %s "
@@ -14625,18 +14640,13 @@ refresh_trust(struct mg_connection *conn)
 			}
 		}
 
-		if (1 == mg_atomic_inc(p_reload_lock)) {
-			if (ssl_use_pem_file(conn->phys_ctx, conn->dom_ctx, pem, chain)
-			    == 0) {
-				return 0;
-			}
-			*p_reload_lock = 0;
+		if (ssl_use_pem_file(conn->phys_ctx, conn->dom_ctx, pem, chain)
+		    == 0) {
+			mg_unlock_context(conn->phys_ctx);
+			return 0;
 		}
 	}
-	/* lock while cert is reloading */
-	while (*p_reload_lock) {
-		sleep(1);
-	}
+	mg_unlock_context(conn->phys_ctx);
 
 	return 1;
 }
@@ -14648,9 +14658,7 @@ static pthread_mutex_t *ssl_mutexes;
 
 static int
 sslize(struct mg_connection *conn,
-       SSL_CTX *s,
-       int (*func)(SSL *),
-       volatile int *stop_server)
+       int (*func)(SSL *))
 {
 	int ret, err;
 	int short_trust;
@@ -14672,16 +14680,21 @@ sslize(struct mg_connection *conn,
 		}
 	}
 
-	conn->ssl = SSL_new(s);
+	mg_lock_context(conn->phys_ctx);
+	conn->ssl = SSL_new(conn->dom_ctx->ssl_ctx);
+	mg_unlock_context(conn->phys_ctx);
 	if (conn->ssl == NULL) {
+		mg_cry_internal(conn, "sslize error: %s", ssl_error());
+#if !defined(OPENSSL_API_1_1)
+		ERR_remove_state(0);
+#endif
 		return 0;
 	}
 	SSL_set_app_data(conn->ssl, (char *)conn);
 
 	ret = SSL_set_fd(conn->ssl, conn->client.sock);
 	if (ret != 1) {
-		err = SSL_get_error(conn->ssl, ret);
-		mg_cry_internal(conn, "SSL error %i, destroying SSL context", err);
+		mg_cry_internal(conn, "sslize error: %s", ssl_error());
 		SSL_free(conn->ssl);
 		conn->ssl = NULL;
 /* Avoid CRYPTO_cleanup_all_ex_data(); See discussion:
@@ -14703,6 +14716,8 @@ sslize(struct mg_connection *conn,
 	 * see https://www.openssl.org/docs/manmaster/ssl/SSL_get_error.html
 	 * Here "func" could be SSL_connect or SSL_accept. */
 	for (i = 0; i <= timeout; i += 50) {
+		ERR_clear_error();
+		/* conn->dom_ctx may be changed here (see ssl_servername_callback) */
 		ret = func(conn->ssl);
 		if (ret != 1) {
 			err = SSL_get_error(conn->ssl, ret);
@@ -14710,7 +14725,7 @@ sslize(struct mg_connection *conn,
 			    || (err == SSL_ERROR_WANT_ACCEPT)
 			    || (err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)
 			    || (err == SSL_ERROR_WANT_X509_LOOKUP)) {
-				if (*stop_server) {
+				if (conn->phys_ctx->stop_flag) {
 					/* Don't wait if the server is going to be stopped. */
 					break;
 				}
@@ -14726,13 +14741,12 @@ sslize(struct mg_connection *conn,
 					pfd.events = ((err == SSL_ERROR_WANT_CONNECT)
 					              || (err == SSL_ERROR_WANT_WRITE)) ? POLLOUT
 					                                                : POLLIN;
-					mg_poll(&pfd, 1, 50, stop_server);
+					mg_poll(&pfd, 1, 50, &(conn->phys_ctx->stop_flag));
 				}
 
 			} else if (err == SSL_ERROR_SYSCALL) {
 				/* This is an IO error. Look at errno. */
-				err = errno;
-				mg_cry_internal(conn, "SSL syscall error %i", err);
+				mg_cry_internal(conn, "SSL syscall error %i", ERRNO);
 				break;
 
 			} else {
@@ -14746,6 +14760,7 @@ sslize(struct mg_connection *conn,
 			break;
 		}
 	}
+	ERR_clear_error();
 
 	if (ret != 1) {
 		SSL_free(conn->ssl);
@@ -15201,6 +15216,12 @@ ssl_get_protocol(int version_id)
 		ret |= SSL_OP_NO_TLSv1;
 	if (version_id > 3)
 		ret |= SSL_OP_NO_TLSv1_1;
+	if (version_id > 4)
+		ret |= SSL_OP_NO_TLSv1_2;
+#if defined(SSL_OP_NO_TLSv1_3)
+	if (version_id > 5)
+		ret |= SSL_OP_NO_TLSv1_3;
+#endif
 	return ret;
 }
 #else
@@ -15216,6 +15237,12 @@ ssl_get_protocol(int version_id)
 		ret |= SSL_OP_NO_TLSv1;
 	if (version_id > 3)
 		ret |= SSL_OP_NO_TLSv1_1;
+	if (version_id > 4)
+		ret |= SSL_OP_NO_TLSv1_2;
+#if defined(SSL_OP_NO_TLSv1_3)
+	if (version_id > 5)
+		ret |= SSL_OP_NO_TLSv1_3;
+#endif
 	return ret;
 }
 #endif /* OPENSSL_API_1_1 */
@@ -15250,10 +15277,6 @@ ssl_info_callback(SSL *ssl, int what, int ret)
 static int
 ssl_servername_callback(SSL *ssl, int *ad, void *arg)
 {
-	struct mg_context *ctx = (struct mg_context *)arg;
-	struct mg_domain_context *dom =
-	    (struct mg_domain_context *)ctx ? &(ctx->dd) : NULL;
-
 #if defined(GCC_DIAGNOSTIC)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
@@ -15269,11 +15292,13 @@ ssl_servername_callback(SSL *ssl, int *ad, void *arg)
 	const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
 	(void)ad;
+	(void)arg;
 
-	if ((ctx == NULL) || (conn->phys_ctx == ctx)) {
-		DEBUG_TRACE("%s", "internal error - assertion failed");
+	if ((conn == NULL) || (conn->phys_ctx == NULL)) {
+		DEBUG_ASSERT(0);
 		return SSL_TLSEXT_ERR_NOACK;
 	}
+	conn->dom_ctx = &(conn->phys_ctx->dd);
 
 	/* Old clients (Win XP) will not support SNI. Then, there
 	 * is no server name available in the request - we can
@@ -15283,31 +15308,36 @@ ssl_servername_callback(SSL *ssl, int *ad, void *arg)
 	 */
 	if ((servername == NULL) || (*servername == 0)) {
 		DEBUG_TRACE("%s", "SSL connection not supporting SNI");
-		conn->dom_ctx = &(ctx->dd);
+		mg_lock_context(conn->phys_ctx);
 		SSL_set_SSL_CTX(ssl, conn->dom_ctx->ssl_ctx);
+		mg_unlock_context(conn->phys_ctx);
 		return SSL_TLSEXT_ERR_NOACK;
 	}
 
 	DEBUG_TRACE("TLS connection to host %s", servername);
 
-	while (dom) {
-		if (!mg_strcasecmp(servername, dom->config[AUTHENTICATION_DOMAIN])) {
-
+	while (conn->dom_ctx) {
+		if (!mg_strcasecmp(servername,
+		                   conn->dom_ctx->config[AUTHENTICATION_DOMAIN])) {
 			/* Found matching domain */
 			DEBUG_TRACE("TLS domain %s found",
-			            dom->config[AUTHENTICATION_DOMAIN]);
-			SSL_set_SSL_CTX(ssl, dom->ssl_ctx);
-			conn->dom_ctx = dom;
-			return SSL_TLSEXT_ERR_OK;
+			            conn->dom_ctx->config[AUTHENTICATION_DOMAIN]);
+			break;
 		}
-		dom = dom->next;
+		mg_lock_context(conn->phys_ctx);
+		conn->dom_ctx = conn->dom_ctx->next;
+		mg_unlock_context(conn->phys_ctx);
 	}
 
-	/* Default domain */
-	DEBUG_TRACE("TLS default domain %s used",
-	            ctx->dd.config[AUTHENTICATION_DOMAIN]);
-	conn->dom_ctx = &(ctx->dd);
+	if (conn->dom_ctx == NULL) {
+		/* Default domain */
+		DEBUG_TRACE("TLS default domain %s used",
+		            conn->phys_ctx->dd.config[AUTHENTICATION_DOMAIN]);
+		conn->dom_ctx = &(conn->phys_ctx->dd);
+	}
+	mg_lock_context(conn->phys_ctx);
 	SSL_set_SSL_CTX(ssl, conn->dom_ctx->ssl_ctx);
+	mg_unlock_context(conn->phys_ctx);
 	return SSL_TLSEXT_ERR_OK;
 }
 
@@ -15357,6 +15387,11 @@ init_ssl_ctx_impl(struct mg_context *phys_ctx,
 	SSL_CTX_set_options(dom_ctx->ssl_ctx,
 	                    SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
 	SSL_CTX_set_options(dom_ctx->ssl_ctx, SSL_OP_NO_COMPRESSION);
+
+#if defined(SSL_OP_NO_RENEGOTIATION)
+	SSL_CTX_set_options(dom_ctx->ssl_ctx, SSL_OP_NO_RENEGOTIATION);
+#endif
+
 #if !defined(NO_SSL_DL)
 	SSL_CTX_set_ecdh_auto(dom_ctx->ssl_ctx, 1);
 #endif /* NO_SSL_DL */
@@ -15386,7 +15421,6 @@ init_ssl_ctx_impl(struct mg_context *phys_ctx,
 
 	SSL_CTX_set_tlsext_servername_callback(dom_ctx->ssl_ctx,
 	                                       ssl_servername_callback);
-	SSL_CTX_set_tlsext_servername_arg(dom_ctx->ssl_ctx, phys_ctx);
 
 #if defined(GCC_DIAGNOSTIC)
 #pragma GCC diagnostic pop
@@ -15708,55 +15742,6 @@ reset_per_request_attributes(struct mg_connection *conn)
 	conn->request_info.uri = NULL;
 #endif
 }
-
-
-#if 0
-/* Note: set_sock_timeout is not required for non-blocking sockets.
- * Leave this function here (commented out) for reference until
- * CivetWeb 1.9 is tested, and the tests confirme this function is
- * no longer required.
-*/
-static int
-set_sock_timeout(SOCKET sock, int milliseconds)
-{
-        int r0 = 0, r1, r2;
-
-#if defined(_WIN32)
-        /* Windows specific */
-
-        DWORD tv = (DWORD)milliseconds;
-
-#else
-        /* Linux, ... (not Windows) */
-
-        struct timeval tv;
-
-/* TCP_USER_TIMEOUT/RFC5482 (http://tools.ietf.org/html/rfc5482):
- * max. time waiting for the acknowledged of TCP data before the connection
- * will be forcefully closed and ETIMEDOUT is returned to the application.
- * If this option is not set, the default timeout of 20-30 minutes is used.
-*/
-/* #define TCP_USER_TIMEOUT (18) */
-
-#if defined(TCP_USER_TIMEOUT)
-        unsigned int uto = (unsigned int)milliseconds;
-        r0 = setsockopt(sock, 6, TCP_USER_TIMEOUT, (const void *)&uto, sizeof(uto));
-#endif
-
-        memset(&tv, 0, sizeof(tv));
-        tv.tv_sec = milliseconds / 1000;
-        tv.tv_usec = (milliseconds * 1000) % 1000000;
-
-#endif /* _WIN32 */
-
-        r1 = setsockopt(
-            sock, SOL_SOCKET, SO_RCVTIMEO, (SOCK_OPT_TYPE)&tv, sizeof(tv));
-        r2 = setsockopt(
-            sock, SOL_SOCKET, SO_SNDTIMEO, (SOCK_OPT_TYPE)&tv, sizeof(tv));
-
-        return r0 || r1 || r2;
-}
-#endif
 
 
 static int
@@ -16197,9 +16182,7 @@ mg_connect_client_impl(const struct mg_client_options *client_options,
 		}
 
 		if (!sslize(conn,
-		            conn->dom_ctx->ssl_ctx,
-		            SSL_connect,
-		            &(conn->phys_ctx->stop_flag))) {
+		            SSL_connect)) {
 			mg_snprintf(NULL,
 			            NULL, /* No truncation check for ebuf */
 			            ebuf,
@@ -16212,13 +16195,6 @@ mg_connect_client_impl(const struct mg_client_options *client_options,
 		}
 	}
 #endif
-
-	if (0 != set_non_blocking_mode(sock)) {
-		mg_cry_internal(conn,
-		                "Cannot set non-blocking mode for client %s:%i",
-		                client_options->host,
-		                client_options->port);
-	}
 
 	return conn;
 }
@@ -16748,9 +16724,6 @@ mg_get_response(struct mg_connection *conn,
 	if (timeout >= 0) {
 		mg_snprintf(conn, NULL, txt, sizeof(txt), "%i", timeout);
 		new_timeout = txt;
-		/* Not required for non-blocking sockets.
-		set_sock_timeout(conn->client.sock, timeout);
-		*/
 	} else {
 		new_timeout = NULL;
 	}
@@ -17508,9 +17481,7 @@ worker_thread_run(struct mg_connection *conn)
 #if !defined(NO_SSL)
 			/* HTTPS connection */
 			if (sslize(conn,
-			           conn->dom_ctx->ssl_ctx,
-			           SSL_accept,
-			           &(conn->phys_ctx->stop_flag))) {
+			           SSL_accept)) {
 				/* conn->dom_ctx is set in get_request */
 
 				/* Get SSL client certificate information (if set) */
@@ -17663,10 +17634,6 @@ accept_new_connection(const struct socket *listener, struct mg_context *ctx)
 				    strerror(ERRNO));
 			}
 		}
-
-		/* We are using non-blocking sockets. Thus, the
-		 * set_sock_timeout(so.sock, timeout);
-		 * call is no longer required. */
 
 		/* The "non blocking" property should already be
 		 * inherited from the parent socket. Set it for
@@ -18438,6 +18405,7 @@ mg_start_domain(struct mg_context *ctx, const char **options)
 		if (!strcasecmp(new_dom->config[AUTHENTICATION_DOMAIN],
 		                dom->config[AUTHENTICATION_DOMAIN])) {
 			/* Domain collision */
+			mg_unlock_context(ctx);
 			mg_cry_ctx_internal(ctx,
 			                    "domain %s already in use",
 			                    new_dom->config[AUTHENTICATION_DOMAIN]);
