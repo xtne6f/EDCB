@@ -9874,15 +9874,17 @@ static struct mg_http_method_info http_methods[] = {
      * to be useful for REST in case a "GET request with body" is
      * required. */
 
-#ifndef DENY_METHOD_SUBSCRIBE
     /* UPnP */
     {"SUBSCRIBE", 0, 0, 0, 0, 0},
     {"UNSUBSCRIBE", 0, 0, 0, 0, 0},
-#endif
 
     {NULL, 0, 0, 0, 0, 0}
     /* end of list */
 };
+
+
+/* UNOFFICIAL! */
+static int mg_x_allow_subscribe;
 
 
 static const struct mg_http_method_info *
@@ -9895,7 +9897,9 @@ get_http_method_info(const char *method)
 	const struct mg_http_method_info *m = http_methods;
 
 	while (m->name) {
-		if (!strcmp(m->name, method)) {
+		if (!strcmp(m->name, method)
+		    && (mg_x_allow_subscribe || (strcmp(method, "SUBSCRIBE")
+		                                 && strcmp(method, "UNSUBSCRIBE")))) {
 			return m;
 		}
 		m++;
@@ -19228,6 +19232,9 @@ mg_init_library(unsigned features)
 
 	unsigned features_to_init = mg_check_feature(features & 0xFFu);
 	unsigned features_inited = features_to_init;
+
+	/* UNOFFICIAL! */
+	mg_x_allow_subscribe = (features & MG_FEATURES_X_ALLOW_SUBSCRIBE) != 0;
 
 	if (mg_init_library_called <= 0) {
 		/* Not initialized yet */

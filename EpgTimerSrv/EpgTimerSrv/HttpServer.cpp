@@ -145,7 +145,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 
 	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_LUA + MG_FEATURES_CACHE + (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
 	this->initedLibrary = true;
-	if( mg_init_library(feat) != feat ){
+	if( mg_init_library(feat + (op.enableSsdpServer ? MG_FEATURES_X_ALLOW_SUBSCRIBE : 0)) != feat ){
 		OutputDebugString(L"CHttpServer::StartServer(): Library initialization failed.\r\n");
 		StopServer();
 		return false;
