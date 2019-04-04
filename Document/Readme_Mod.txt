@@ -5,9 +5,9 @@ HTTPサーバ機能は後述「CivetWebの組み込みについて」を参照�
 ではlocalhost以外からのアクセスを拒否するので注意してください。
 Unicode対応のため予約情報(Reserve.txtなど)の既定の文字コードを変更しました。後述
 「予約ファイル等のByteOrderMark付きUTF-8対応について」を参照してください。
-サービスとして使用しない場合、EpgTimer.exeやEpgTimerTask.exeの常駐を不要にできま
-す(EpgTimerSrv設定→その他)。この場合、EpgTimerSrv.exeがタスクトレイアイコンを表
-示し、スリープ確認ダイアログやチューナ・バッチを直接起動します。
+Windowsサービスとして使用しない場合、EpgTimer.exeやEpgTimerTask.exeは必須ではあ
+りません。EpgTimerSrv.exeがタスクトレイアイコンを表示し、スリープ確認ダイアログ
+やチューナー・バッチを直接起動します。
 EpgTimerTaskはEpgTimerSrvに統合しました。EpgTimerSrv.exeをコピーしてリネームする
 か、EpgTimerSrv.exeに/taskオプションをつけるとEpgTimerTaskとして動作します。
 
@@ -25,6 +25,11 @@ Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人�
 ◇twitter.dllの取り扱いについて
   twitter.dllは削除しました。無視してください。
 ◇基本的な使用準備
+  手順に大きな変更はないですが、チューナー数の設定はEpgTimerSrv.exeの起動だけで
+  もできます。タスクトレイに表示される時計アイコンを右クリック→「システム→Srv
+  設定」で設定してください。既定でEpgTimerSrvはEpgTimerに連動して終了しなくなっ
+  たので、設定を反映させるには右クリック→「Srv終了」で直接EpgTimerSrvを終了して
+  ください。
   Program Files等のOSが特別に管理するフォルダへの配置は避けてください。書き込み
   保護や仮想化、大規模アップデート時の退避処理によりトラブルを引き起こします。
 
@@ -56,11 +61,11 @@ Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人�
     ・TCP送信
       ポート番号が22000～22999の範囲では送信形式がplain(BonDriver_TCP.dllのため
       の特別なヘッダをつけない)になります【追加】。
-      送信先を0.0.0.1にすると、TCPではなく名前付きパイプ
+      送信先を0.0.0.1(SrvPipe)にすると、TCPではなく名前付きパイプ
       "\\.\pipe\SendTSTCP_{ポート番号}_{プロセスID}"として外部ツールなどの接続を
       待ち受けます【追加】。
-      送信先を0.0.0.2にすると、TCPではなくBonDriver_Pipe.dllに接続します【追加】
-      。ポート番号はPipe番号になります。
+      送信先を0.0.0.2(Pipe)にすると、BonDriver_Pipe.dllに接続します【追加】。ポ
+      ート番号はPipe番号になります。
 
 ◇例外発生時のスタックトレース出力について【追加】
 EpgDataCap_Bon.exeがなんらかの不具合で異常終了するとき、スタックトレースを
@@ -73,8 +78,7 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力します。ま�
 は多重起動できます。通常のEpgTimerも"EpgTimer～.exe"にリネームして多重起動できま
 すが、必ずEpgTimerSrvのあるフォルダに置いてください。また、リネームしたEpgTimer
 はEpgTimerSrvを連動して起動しません。
-録画済み番組情報"RecInfo2Data.bin"は"RecInfo2.txt"に移動しました。移行する場合は
-「同一番組無効登録」機能のための情報がリセットされるので注意してください。
+録画済み番組情報"RecInfo2Data.bin"は"RecInfo2.txt"に移動しました。
 OSのタイムゾーンの影響を受けなくなりました。予約管理や画面表示等すべて日本標準時
 (UTC+9時間)で行います。
 
@@ -90,8 +94,20 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         選択されている項目を、その検索条件にマッチする予約ごと削除します。
 
 ◇検索条件
+  ・検索キーワード
+    OR検索( | 前後スペース必須)もできます【追加】。改行入力機能は廃止しました。
+    検索対象をキーワード単位で指定できます(NOTキーワードも同様)【追加】。
+      :title:タイトル(「番組名のみ検索対象にする」がオンのときのデフォルト)
+      :event:タイトルと番組内容(同じくオフのときのデフォルト)
+      :genre:ジャンル(EpgTimerの番組詳細タブの「ジャンル:」に続く文字列)
+      :video:映像情報(「映像:」について同上)
+      :audio:音声情報(「音声:」について同上)
+    例えばタイトルか映像情報に"[字]"が含まれるものを検索する場合
+      :title:[字] | :video:[字]
+    とします。先頭の:を::にする(::title:など)と個別に正規表現モードになります。
   ・正規表現モード
-    ConvertText.txtは廃止しました(後述)
+    ConvertText.txtは廃止しました(後述)。全体を1つの正規表現とみなします。上述の
+    OR検索や検索対象の指定はできません。
   ・あいまい検索モード
     検索アルゴリズムを編集距離に基づくものに変更しました。編集距離がキーワード長
     の25%以下(1-3文字=距離0(普通の検索)、4-7文字=距離1、8-11文字=距離2...)になる
@@ -120,6 +136,10 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
     ファイル名PlugInにオプションの文字列を指定できます【追加】。オプションの意味
     はPlugIn次第ですが、RecName_Macro.dllではマクロを指定します。オプションを指
     定しなければ従来動作です。対応していないPlugInではオプションは無視されます。
+  ・録画後実行bat
+    「*」以降の文字列を$BatFileTag$マクロとして参照できます【追加】。「"」は全角
+    「”」に置換されます。意図しない展開を防ぐため、バッチでは"$BatFileTag$"のよ
+    うに引用符で囲うなどしてください。
   ・録画マージン
     完全な録画を重視する場合、開始マージンは十分に確保してください。予約管理やPC
     の状態によって数秒から十数秒程度の遅延は起こり得ます。デフォルトの開始マージ
@@ -171,6 +191,16 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
       ・優先度が同じ場合、チューナー強制指定された予約を先に割り当てする【追加】
         概ね、原作の「デフォルトアルゴリズム」と「アルゴリズム2」の違いと考えて
         ください(現アルゴリズムについては後述Q&A参照)。
+      ・チューナーの起動に失敗したとき、ほかのチューナーで再試行する【追加】
+        録画結果が「チューナーのオープンに失敗」となる場合、そのチューナーを除い
+        て予約を再割り当てします(このとき使用チューナー強制指定は考慮しません)。
+        再割り当てできるチューナーがない場合、録画結果は「チューナー不足のため失
+        敗」になります。
+      ・チューナー強制指定の値が異なるものを重複予約できるようにする【追加】
+        EPG自動予約とイベントリレー追従について、同一イベントIDの番組は重複予約
+        されませんが、チューナー強制指定が異なる予約に限ってこれを可能にします。
+        番組表などは重複予約を想定していない部分もある(重なって操作しにくいなど)
+        ので注意してください。
       ・EPG自動予約をプログラム化したとき、再び追加されないようにする【追加】
         次のEPG再読み込みで同じ番組が追加されないよう予約状況に注釈を入れます。
       ・録画情報保存フォルダ指定時は録画ファイルと同じ場所を参照しない【追加】
@@ -214,7 +244,8 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         特権については後述「EpgTimerAdminProxy.exeについて」も参照してください。
       ・EPG取得後も番組情報をX日前まで保存する【追加】
         EPG取得後は過去の番組情報が消えますが、これを"EpgArc.dat"というファイル
-        に保存して、番組表などに利用できるようにします。
+        に保存して、番組表などに利用できるようにします。∞を指定すると、さらに過
+        去の番組情報をEpgArc2フォルダに一週間単位で保存し続けます。
       ・EpgTimerSrvを常駐させる【追加】
         ・タスクトレイアイコンを表示する【追加】
         ・開始準備で点滅させる【追加】
@@ -247,7 +278,10 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
       ・引数つきで起動したとき(iEPG予約追加など)はすぐに終了する【追加】
         ・EpgTimer.exeにiEPGファイルを与えて起動したときの動作を変更します。
       ・テーマを適用する(要再起動)【追加】
-        「デザインをロードしない」の説明を参照してください (<NoStyle>に相当)。
+        EpgTimer.exe.xmlの<NoStyle>に相当します。オフでOSデフォルト、オンでVista
+        テーマになります。オンのときEpgTimerのあるフォルダにEpgTimer.exe.rd.xaml
+        があれば、そこに定義されたリソースを適用します【追加】。iniフォルダに簡
+        単なサンプルを用意したので参考にしてください。
       ・EPGデータを常に更新する(旧「EPGデータを自動的に読み込まない」相当)
         EpgTimerSrvのEPGデータをEpgTimerにダウンロードするのを、番組表を表示する
         タイミング(≒番組表タブを開くタイミング)まで遅らせるかどうか指定します。
@@ -264,8 +298,7 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         われるフォント)を1つだけ指定できます【追加】。
       ・表示
         ・最低表示行数【追加】
-          短時間の番組でも最低この行数だけ高さを確保します。短時間の番組が続くと
-          下にずれるので、実用的には0.8程度をお勧めします。
+          短時間の番組でも最低この行数(小数点使用可)だけ高さを確保します。
         ・タイトル(以外)の文字列置換リスト【追加】
           置換前文字列が長いものを優先します。例えば全角記号を半角にしたいときは
           /！/!/？/? のように指定します。特定文字列の絵文字化などにも使えます。
@@ -283,19 +316,26 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
     ●Twitter設定タブ
       廃止しました。
 
+◇録画ファイル自動削除の仕様
+  削除対象は前述「TSファイルの拡張子」をもつファイルです。作成日時ではなく更新日
+  時でソートし、開始2時間前までの予約に必要と予想される容量を確保します。
+
 ◇スタンバイ、休止状態への移行
   次の予約録画またはEPG取得に対して、動作設定で指定した"復帰処理開始時間"+8分、
   かつ抑制条件で指定した時間以上の開きがある場合に移行します。
 
 ◇録画後のバッチファイル実行の仕様
   バッチのプロセス優先度は"通常以下"(BELOW_NORMAL_PRIORITY_CLASS)で実行します。
-  PowerShellスクリプト(.ps1)も使用できます【追加】。
+  PowerShellスクリプト(.ps1)またはLuaスクリプト(.lua)(lua52.dllがある場合)も使用
+  できます【追加】。LuaスクリプトはEpgTimerSrv内部のスレッドで実行します。短時間
+  の処理への使用を想定していますが、処理時間が長くなる場合は後述「Lua edcbグロー
+  バル変数の仕様」のSleepの説明を確認してください。
   以下の拡張命令を利用できます【追加】。拡張命令はバッチファイル内のどこかに直接
   記述してください(remコメント等どんな形式でもOK)。
   _EDCBX_BATMARGIN_={bat実行条件(分)}
     このマージン以上録画予定がないときに実行開始します。デフォルトは0です。
   _EDCBX_HIDE_
-    ウィンドウを非表示にします。
+    ウィンドウを非表示にします。Luaスクリプトでは無意味(ウィンドウがない)です。
   _EDCBX_NORMAL_
     ウィンドウを最小化しません。
   _EDCBX_DIRECT_
@@ -305,12 +345,12 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
     また、以下を保証します:
       ・EpgTimerSrv.exeのあるフォルダに"EpgTimer_Bon_RecEnd.bat"を作らない
       ・EpgTimer.exeを経由する間接実行はしない
-      ・バッチのカレントディレクトリはそのバッチのあるフォルダになる
-    PowerShellスクリプトでは常に有効です。
+      ・カレントディレクトリはバッチのあるフォルダになる(Luaスクリプトを除く)
+    PowerShellとLuaスクリプトでは常に有効です。
   _EDCBX_FORMATTIME_
     日時についてのマクロ($SDYY$など)をISO8601形式の$StartTime$と$DurationSecond$
     に単純化します。
-    PowerShellスクリプトでは常に有効です(DateTime型で簡単に整形できるため)。
+    PowerShellとLuaスクリプトでは常に有効です(簡単に整形できるため)。
   取得できるマクロについては以下の3行のコマンドで確認すると手っ取り早いです。
     >rem _EDCBX_DIRECT_
     >set
@@ -318,6 +358,9 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
   (PowerShellの場合)
     >ls env:
     >Read-Host "Press enter to continue"
+  (Luaの場合。マクロはenvグローバル変数に格納)
+    >for k,v in pairs(env) do s=(s or '')..k..', ' end
+    >edcb.os.execute('start echo '..s)
 
 ◇マクロ
   RecName_Macro.dllについて、マクロを追加しました。【追加】
@@ -385,20 +428,23 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
 ◇Twitter機能
   Twitter機能は廃止しました。代わりにEpgTimerSrv.exeのあるフォルダに置かれた以下
   のバッチファイルを実行します【追加】。取得できるマクロは従来とだいたい同じです
-  (NEW系マクロは名前からNEWを取り除いています)。PostRecEnd(.bat|.ps1)以外は
-  $ReserveID$(予約ID)、$RecMode$(録画モード0=全サービス～4=視聴)、
-  $ReserveComment$(コメント)も取得できます。
-  ・PostAddReserve(.bat|.ps1) : 予約を追加したとき(無効を除く)
+  (NEW系マクロは名前からNEWを取り除いています)。$BatFileTag$、およびPostRecEndに
+  限り$RecInfoID$、これ以外に限り$ReserveID$(予約ID)、$RecMode$(録画モード0=全サ
+  ービス～4=視聴)、$ReserveComment$(コメント)も取得できます。
+  ・PostAddReserve(.bat|.ps1|.lua) : 予約を追加したとき(無効を除く)
     ・EPG自動予約のとき$ReserveComment$は"EPG自動予約"という文字列で始まります
-  ・PostChgReserve(.bat|.ps1) : 予約を変更したとき(無効を除く)
+  ・PostChgReserve(.bat|.ps1|.lua) : 予約を変更したとき(無効を除く)
     ・$SYMDHMNEW$～$SEYMDHM28NEW$は取得できません
-  ・PostRecStart(.bat|.ps1) : 録画を開始したとき
-  ・PostRecEnd(.bat|.ps1) : 録画を終了したとき
+  ・PostRecStart(.bat|.ps1|.lua) : 録画を開始したとき
+  ・PostRecEnd(.bat|.ps1|.lua) : 録画を終了したとき
     ・取得できるマクロは録画後バッチと完全に同じです
   また、イベント発生時に以下のバッチファイルを実行します。
-  ・PostNotify(.bat|.ps1) : 更新通知が送られたとき
+  ・PostNotify(.bat|.ps1|.lua) : 更新通知が送られたとき
     ・取得できるマクロは$NotifyID$のみです
       ・$NotifyID$(1=EPGデータ更新, 2=予約情報更新, 3=録画結果情報更新)
+    ・ほかのバッチと異なり、実行中でもスリープなどの録画後動作を抑制しません
+    ・以下の拡張命令により、$NotifyID$を0とした通知を定期的に送ることができます
+      _EDCBX_NOTIFY_INTERVAL_={通知間隔(秒)}
   バッチ仕様は録画後バッチと同じですが、_EDCBX_BATMARGIN_は無効です。また、
   _EDCBX_DIRECT_でないときの一時ファイル名は"EpgTimer_Bon_Post.bat"です。
   実行は直列に行います(互いに並列実行しない)。また、実行時点で各々の動作が完了し
@@ -478,14 +524,6 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
 ◇情報通知ログを自動的にファイルに保存する
   廃止しました。EpgTimerSrv側の保存機能を利用してください。
 
-◇デザインをロードしない
-  NoStyleが0のとき、EpgTimerのあるフォルダにEpgTimer.exe.rd.xamlがあれば、そこに
-  定義されたリソースを適用します【追加】。iniフォルダに簡単なサンプルを用意した
-  ので参考にしてください。
-
-◇番組表の背景色を変更【追加】
-  EpgTimer.exe.xmlの<EpgBackColorR/G/B>で変更できます。
-
 ◇同一番組無効登録で番組名の比較の際に無視する文字列を指定する【追加】
   [無]や[生]などのついた番組名も同一番組として扱いたい場合に利用することを想定し
   たもの。EpgTimerSrv.iniのSETにRecInfo2RegExpを追加することで指定可能です。文字
@@ -493,6 +531,11 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
   除したものが同一番組名判定に使われます。
   例：RecInfo2RegExp=\[[再無生]\]
       （[再]と[無]と[生]に対応）
+
+◇EpgDataCap3.dllの字幕属性情報への対応【追加】
+  番組名に字幕記号([字])がなく番組情報に字幕属性があるときは、映像情報の文字列
+  (:video:で検索できるもの)に[字]または[二字](外国語字幕)を追加します。反対に、
+  番組名に字幕記号があり、番組情報に字幕属性がないときは、[字無]を追加します。
 
 ◇スリープ抑止拡張【追加】
   設定→動作設定→録画動作→抑止条件→[PCを使用中の場合]にチェックを入れ、録画終
@@ -557,13 +600,10 @@ EpgTimer/EpgTimer/CommonフォルダのソースコードCtrlCmd.csとCtrlCmdDef
 HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetWebを組み込みました。
 有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。
 https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
-CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.10
+CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.11
 https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
-SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にssleay32.dllとlibeay32.dllが必要です。自ビルド(推奨)するか信頼できるどこかから入手してください。
-とりあえず https://www.openssl.org/community/binaries.html にある https://indy.fulgan.com/SSL/ で動作を確認しています。
-「DLNAのDMSぽい機能」はHTTPサーバに統合しました。
-iniフォルダにあるdlna以下を公開フォルダに置いてEpgTimerSrv.iniのEnableDMSキーを1にすると有効になります。
-
+SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にlibssl-1_1(-x64).dllとlibcrypto-1_1(-x64).dllが必要です。自ビルドするか信頼できるどこかから入手してください。
+https://www.openssl.org/community/binaries.html から辿った https://bintray.com/vszakats/generic/openssl (curlメンテナによるバイナリ)のopenssl-1.1.1*で動作を確認しています。
 EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動してください。
 以下のキー[=デフォルト]を利用できます:
 
@@ -601,16 +641,23 @@ HttpRequestTimeoutSec[=120]
 HttpSslCipherList[=HIGH:!aNULL:!MD5]
   使用するSSL/TLSの暗号スイートのリスト
   # CivetWebのssl_cipher_listに相当
-HttpSslProtocolVersion[=2]
+HttpSslProtocolVersion[=4]
   受け入れるSSL/TLSプロトコルのバージョン
   # CivetWebのssl_protocol_versionに相当
-  # 値が大きいほど安全。ガラケーなどでSSL3.0が必要な場合は1にする
+  # 値が大きいほど安全。TLS1.0が必要なら2にする。ガラケーなどでSSL3.0が必要なら1にする
 HttpKeepAlive[=0]
   Keep-Aliveを有効にするかどうか
   # CivetWebのenable_keep_aliveに相当
   # 有効にする[=1]ときは以下に注意:
   # ・mg.keep_alive(true)メソッドを呼んだLuaスクリプトは持続的接続になるかもしれない。
   #   このメソッドがtrueを返したときは"Content-Length"を必ず送り、"Connection: close"しない
+EnableDMS[=0]
+  「DLNAのDMSぽい機能」を有効にするかどうか
+  # [=1]で有効
+  # UDPポート1900を使用し、UPnPのM-SEARCH応答と約16分間隔のNOTIFY通知をおこなう
+  # 有効になるのはDMSのUDP部分のみ。別途iniフォルダにあるdlna以下を公開フォルダに置く必要がある
+  # 通知する自機のUUIDは、公開フォルダの/dlna/dms/ddd.xmlから"<UDN>uuid:{UUID}</UDN>"を探してこれを使う
+  # 通知する自機のHTTPポート番号は、HttpPortキーの最後にみつかった':'より後ろか、キーの先頭にある数字を使う
 
 加えて、以下の設定をCivetWebのデフォルトから変更しています:
   ssi_pattern: "" (SSIは無効)
@@ -632,21 +679,18 @@ LANを越える場合は以下を参考に"ssl_peer.pem"または"glpasswd"を�
 CivetWebでセキュリティが確保されているだろうと判断できたのは認証処理までの不正アクセス耐性のみです。
 パス無しの公開サーバとしての利用はお勧めしません。
 
-"ssl_cert.pem"(秘密鍵+自己署名証明書)の作成手順は本家ドキュメントに従わないほうが良いです。暗号強度が
-「SSL/TLS暗号設定ガイドライン」(https://www.ipa.go.jp/security/vuln/ssl_crypt_config.html)を満たしていません。
-(作成手順例、鵜呑みにしないこと。bashの場合はtype→cat)
-> openssl genrsa -out server.key 2048
-> openssl req -new -key server.key -out server.csr
-> openssl x509 -req -days 3650 -sha256 -in server.csr -signkey server.key -out server.crt
+"ssl_cert.pem"(秘密鍵+自己署名証明書)の作成手順例
+※鵜呑みにしないこと。bashの場合はtype→cat
+※最近のブラウザはsubjectAltNameが必須のため、以下OpenSSLコマンドはバージョン1.1.1以降を使う
+> openssl req -new -newkey rsa:2048 -nodes -keyout server.key -out server.crt -x509 -days 3650 -sha256 -addext "subjectAltName = IP:127.0.0.1,IP:192.168.0.2,DNS:example.com"
+  (subjectAltNameは一例。自機のIPやドメインを並べる)
   (入力項目はデフォルトでOK。ブラウザの証明書例外追加時に"server.crt"と拇印が等しいかだけ注意する)
-  ("Common Name"項目にはサーバのドメイン名かIPアドレスを指定しておいたほうが良いかも)
 > type server.crt >ssl_cert.pem
 > type server.key >>ssl_cert.pem
 
 "ssl_peer.pem"(信頼済みクライアント証明書リスト)の作成手順例
-> openssl genrsa -out client.key 2048
-> openssl req -new -key client.key -out client.csr
-> openssl x509 -req -days 3650 -sha256 -in client.csr -signkey client.key -out client.crt
+> openssl req -new -newkey rsa:2048 -nodes -keyout client.key -out client.crt -x509 -days 3650 -sha256
+  (入力項目はデフォルトでOK)
 > type client.crt >ssl_peer.pem
 > openssl pkcs12 -export -inkey client.key -in client.crt -out edcb_key.p12 -name "edcb_key"
   (↑"edcb_key.p12"(クライアントの秘密鍵)はブラウザ等にインポートする)
@@ -690,14 +734,17 @@ htmlEscape:I
 
 serverRandom:S
   EpgTimerSrv.exeの起動毎に変化する256bitの暗号論的乱数
+  バッチ実行時は存在しない
 
 S GetGenreName( 大分類*256+中分類:I )
   STD-B10のジャンル指定の文字列を取得する
   中分類を0xFFとすると大分類の文字列が返る。
+  0xFFFFとすると自動予約検索条件の'なし'が返る。
   存在しないとき空文字列。
   例えばedcb.GetGenreName(0x0205)は'グルメ・料理'が返る。
+  大分類に0x60を加えるとTR-B14の「番組付属情報」の文字列が返る。
   大分類に0x70を加えるとTR-B15の「広帯域CSデジタル放送拡張用情報」の文字列が返る。
-  (この0x70に対する特別扱いは自動予約検索条件でも同様)
+  (これらの特別扱いは自動予約検索条件でも同様)
   例えばedcb.GetGenreName(0x7205)は'ホラー／スリラー'が返る。
 
 S GetComponentTypeName( コンポーネント内容*256+コンポーネント種別:I )
@@ -711,8 +758,14 @@ S|nil Convert( to文字コード:S, from文字コード:S, 変換対象:S )
   変換に失敗すると空文字列、利用できない文字コードを指定するとnilが返る。
   例：os.execute(edcb.Convert('cp932','utf-8','echo 表が怖い & pause'))
 
-Sleep( ミリ秒:I )
+B Sleep( ミリ秒:I )
   スレッドの実行を中断する
+  バッチ実行時：EpgTimerSrvが終了しようとしているとき、このメソッドはtrueで速やかに返る。
+                バッチを長時間実行させたい場合は処理を分割し、このメソッドを利用して終了を妨げないようにする。
+                例：
+                repeat
+                  {なにか短時間で終わる処理}
+                until Sleep(0)
 
 S GetPrivateProfile( セクション:S, キー:S, 既定値:S|I|B, ファイル名:S )
   Win32APIのGetPrivateProfileStringを呼ぶ
@@ -756,24 +809,30 @@ B EpgCapNow()
   指定サービスの全イベントについて最小開始時間と最大開始時間を取得する
   開始時間未定でないイベントが1つもなければnil。
   *Archive()は過去イベントが対象。
+  (SearchEpgArchiveが存在するバージョン以降)IDの上位16bitにマッチのORマスクを付加できる。
 
-<イベント情報>のリスト|nil EnumEventInfo( {onid:I|nil, tsid:I|nil, sid:I|nil}のリスト [, {startTime:TIME|nil, durationSecond:I|nil} ] )
-<イベント情報>のリスト|nil EnumEventInfoArchive( {onid:I|nil, tsid:I|nil, sid:I|nil}のリスト [, {startTime:TIME|nil, durationSecond:I|nil} ] )
+<イベント情報>のリスト EnumEventInfo( {onid:I|nil, tsid:I|nil, sid:I|nil}のリスト [, {startTime:TIME|nil, durationSecond:I|nil} ] )
+<イベント情報>のリスト EnumEventInfoArchive( {onid:I|nil, tsid:I|nil, sid:I|nil}のリスト [, {startTime:TIME|nil, durationSecond:I|nil} ] )
   指定サービスの全イベント情報を取得する(onid>tsid>sid>eidソート、*Archive()は未ソート)
   リストのいずれかにマッチしたサービスについて取得する。
-  onid,tsid,sidフィールドを各々nilとすると、各々すべてのIDにマッチする。
-  プロセス起動直後はnil(失敗)。
+  ・onid,tsid,sidフィールドを各々nilとすると、各々すべてのIDにマッチする。
+  ・(SearchEpgArchiveが存在するバージョン以降)IDの上位16bitにマッチのORマスクを付加できる。
   第2引数にイベントの開始時間の範囲を指定できる。
   ・開始時間がstartTime以上～startTime+durationSecond未満のイベントにマッチ
   ・空テーブルのときは開始時間未定のイベントにマッチ
   *Archive()は過去イベントが対象。※再利用の可能性があるため、過去イベントのeidをIDとして扱うべきでない。
+                                  ※取得対象が月～年単位になりうるので、サービス指定も時間指定もない呼び出しは控えるべき。
+  以前はnilが返る場合があったが(SearchEpgArchiveが存在するバージョン以降)常にリストが返る。
 
-<イベント情報>のリスト|nil SearchEpg( <自動予約検索条件> )
+<イベント情報>のリスト SearchEpg( <自動予約検索条件> [, {startTime:TIME|nil, durationSecond:I|nil} ] )
+<イベント情報>のリスト SearchEpgArchive( <自動予約検索条件> [, {startTime:TIME|nil, durationSecond:I|nil} ] )
 <イベント情報>|nil SearchEpg( ネットワークID:I, TSID:I, サービスID:I, イベントID:I )
   イベント情報を検索する
-  1引数のときは<自動予約検索条件>にマッチしたイベントを取得する。
+  1～2引数のときは<自動予約検索条件>にマッチしたイベントを取得する。(onid>tsid>sid>eidソート、SearchEpgArchiveは未ソート)
+  (SearchEpgArchiveが存在するバージョン以降)第2引数にイベントの開始時間の範囲を指定できる。
+  SearchEpgArchive()は過去イベントが対象。※取得対象が月～年単位になりうるので、時間指定のない呼び出しは控えるべき。
+  以前はnilが返る場合があったが(SearchEpgArchiveが存在するバージョン以降)常にリストが返る。
   4引数のときは指定イベントを取得する。なければnilが返る。
-  プロセス起動直後はnil(失敗)。
 
 B AddReserveData( <予約情報> )
   予約を追加する
@@ -791,7 +850,8 @@ DelReserveData( 予約ID:I )
   予約を取得する(reserveIDソート)
   無引数のときは全予約を取得する。
   1引数のときは指定予約を取得する。なければnilが返る。
-  予約IDが0x7FFFFFFFのときは録画マージンなどのデフォルト値を取得する。未対応バージョンではnilが返る。
+  予約IDが0x7FFFFFFFのときは録画マージンなどのデフォルト値を取得する。未対応バージョンではnilが返る。recSetting.batFilePath
+  について、「*」以降をBatFileTagとして扱うバージョンでは'*'が返る。
 
 S|nil GetRecFilePath( 予約ID:I )
   予約の録画ファイルパスを取得する
@@ -810,6 +870,9 @@ S|nil GetRecFilePath( 予約ID:I )
   programInfoとerrInfoを取得するためのファイルアクセスのコストが無い。
   例：このメソッドが存在するならこれを使ってリストを取得する
       a=edcb.GetRecFileInfoBasic and edcb.GetRecFileInfoBasic() or edcb.GetRecFileInfo()
+
+ChgPathRecFileInfo( 情報ID:I, 録画ファイルパス:S )
+  録画済み情報の録画ファイルパスを変更する
 
 ChgProtectRecFileInfo( 情報ID:I, プロテクト:B )
   録画済み情報のプロテクトを変更する
@@ -867,14 +930,23 @@ I GetNotifyUpdateCount( 通知ID:I )
   取得数を0とするとすべての検索結果を取得する。
   1つ以上の検索結果があるときはリスト、それ以外はnilが返る。
 
-B OpenNetworkTV( 送信モード:I, ネットワークID:I, TSID:I, サービスID:I )
+B[,I] OpenNetworkTV( 送信モード:I, ネットワークID:I, TSID:I, サービスID:I [, NetworkTVID:I ] )
   NetworkTVモードを開始する、またはサービスを変更する
-  EpgTimerSrv設定の「視聴に使用するBonDriver」から使われていないチューナをさがして起動する。
-  送信モードにチューナのUDP(+1)/TCP(+2)オプションを指定する。
-  失敗時はfalse。
+  EpgTimerSrv設定の「視聴に使用するBonDriver」から使われていないチューナを優先度逆順に探して起動する。
+  NetworkTVモードの優先度は予約より低くEPG取得より高い。
+  送信モードにチューナのUDP(+1)/TCP(+2)オプションを指定する。開始済みチューナの送信モードは変化しない。
+  (IsOpenNetworkTVが存在するバージョン以降)NetworkTVIDを指定できる。省略時は0を指定したものとみなす。
+  NetworkTVIDは任意の整数で、大小に優劣はない。EpgTimerのNetworkTVモードでは0が使われる。
+  NetworkTVIDの異なるNetworkTVモードは干渉なく扱える。
+  失敗時はfalse。成功時はtrueと(IsOpenNetworkTVが存在するバージョン以降)チューナのプロセスIDを返す。
 
-CloseNetworkTV()
+B[,I] IsOpenNetworkTV( NetworkTVID:I )
+  NetworkTVモードが開始しているか
+  戻り値はOpenNetworkTVと同じ。
+
+CloseNetworkTV( [ NetworkTVID:I ] )
   NetworkTVモードを終了する
+  (IsOpenNetworkTVが存在するバージョン以降)NetworkTVIDを指定できる。省略時は0を指定したものとみなす。
 
 [※1]
 edcb.EnumRecPresetInfo=function()
@@ -1121,7 +1193,6 @@ end
   ### 以下のプロパティは取得系メソッドで常にnil
   network:I|nil=対象ネットワーク(+1=地デジ,+2=BS,+4=CS1+CS2,+8=その他。該当サービスがserviceListに追加される。互換用なので使用しないこと)
   days:I|nil=対象期間(現時刻からdays*24時間以内。SearchEpg以外では無視される)
-  days29:I|nil=対象期間(現時刻からdays*29時間以内。互換用なので使用しないこと。SearchEpg以外では無視される)
 }
 
 <自動予約(プログラム)登録情報>={
