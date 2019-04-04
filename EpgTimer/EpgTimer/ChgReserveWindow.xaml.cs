@@ -106,25 +106,8 @@ namespace EpgTimer
 
                 if (info.EventID != 0xFFFF)
                 {
-                    UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
-                    EpgEventInfo eventInfo = null;
-                    if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-                    {
-                        foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                        {
-                            if (eventChkInfo.event_id == info.EventID)
-                            {
-                                eventInfo = eventChkInfo;
-                                break;
-                            }
-                        }
-                    }
-                    if(eventInfo == null )
-                    {
-                        UInt64 pgId = CommonManager.Create64PgKey(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID, info.EventID);
-                        eventInfo = new EpgEventInfo();
-                        CommonManager.CreateSrvCtrl().SendGetPgInfo(pgId, ref eventInfo);
-                    }
+                    EpgEventInfo eventInfo = CommonManager.Instance.DB.GetPgInfo(info.OriginalNetworkID, info.TransportStreamID,
+                                                                                 info.ServiceID, info.EventID, false);
                     if (eventInfo != null)
                     {
                         String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
@@ -185,6 +168,10 @@ namespace EpgTimer
                 {
                     MessageBox.Show("予約が選択されていません");
                 }
+            }
+            if (tabControl.SelectedItem != null)
+            {
+                ((TabItem)tabControl.SelectedItem).Focus();
             }
         }
 
@@ -284,18 +271,13 @@ namespace EpgTimer
                 }
                 TimeSpan duration = endTime - reserveInfo.StartTime;
                 reserveInfo.DurationSecond = (uint)duration.TotalSeconds;
-
-                RecSettingData setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-                setInfo.TuijyuuFlag = 0;
-                setInfo.PittariFlag = 0;
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = recSettingView.GetRecSetting();
+                reserveInfo.RecSetting.TuijyuuFlag = 0;
+                reserveInfo.RecSetting.PittariFlag = 0;
             }
             else
             {
-                RecSettingData setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = recSettingView.GetRecSetting();
             }
             List<ReserveData> list = new List<ReserveData>();
             list.Add(reserveInfo);
@@ -384,15 +366,6 @@ namespace EpgTimer
                         break;
                     case Key.D:
                         this.button_del_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                }
-            }
-            else
-            {
-                switch (e.Key)
-                {
-                    case Key.Escape:
-                        this.Close();
                         break;
                 }
             }

@@ -48,7 +48,7 @@ namespace EpgTimer
         }
         public String StartTime
         {
-            get { return EventInfo.StartTimeFlag != 0 ? EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss") : "未定"; }
+            get { return EventInfo.StartTimeFlag != 0 ? EventInfo.start_time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss") : "未定"; }
         }
         public bool IsReserved
         {
@@ -56,29 +56,16 @@ namespace EpgTimer
         }
         public String Reserved
         {
-            get { return IsReserved ? "予" : ""; }
+            get { return ReserveInfo == null ? "" : ReserveInfo.RecSetting.RecMode == 4 ? "視" :  "予"; }
         }
         public SolidColorBrush BackColor
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        color = CommonManager.Instance.ResNoBackColor;
-                    }
-                    else if (ReserveInfo.OverlapMode == 2)
-                    {
-                        color = CommonManager.Instance.ResErrBackColor;
-                    }
-                    else if (ReserveInfo.OverlapMode == 1)
-                    {
-                        color = CommonManager.Instance.ResWarBackColor;
-                    }
-                }
-                return color;
+                return ReserveInfo == null ? Settings.BrushCache.ResDefBrush :
+                       ReserveInfo.RecSetting.RecMode == 5 ? Settings.BrushCache.ResNoBrush :
+                       ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
+                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
             }
         }
         public TextBlock ToolTipView
@@ -123,9 +110,9 @@ namespace EpgTimer
                     {
                         int nibble1 = ecd1.content_nibble_level_1;
                         int nibble2 = ecd1.content_nibble_level_2;
-                        if (nibble1 == 0x0E && nibble2 == 0x01)
+                        if (nibble1 == 0x0E && nibble2 <= 0x01)
                         {
-                            nibble1 = ecd1.user_nibble_1 | 0x70;
+                            nibble1 = ecd1.user_nibble_1 | (0x60 + nibble2 * 16);
                             nibble2 = ecd1.user_nibble_2;
                         }
                         if (nibbleDict1.ContainsKey(nibble1))
@@ -214,18 +201,13 @@ namespace EpgTimer
                 {
                     foreach (EpgContentData info in EventInfo.ContentInfo.nibbleList)
                     {
-                        if ((info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F) &&
-                            CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
+                        if (info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F)
                         {
-                            return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
+                            return Settings.BrushCache.ContentBrushList[info.content_nibble_level_1];
                         }
                     }
                 }
-                if (CommonManager.Instance.CustContentColorList.Count > 0x10)
-                {
-                    return CommonManager.Instance.CustContentColorList[0x10];
-                }
-                return null;
+                return Settings.BrushCache.ContentBrushList[0x10];
             }
         }
     }

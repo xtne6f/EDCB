@@ -7,6 +7,15 @@ namespace EpgTimer
 {
     public class CustomEpgTabInfo
     {
+        public enum SpecialViewServices : ulong
+        {
+            ViewServiceDttv = 0x1000000000000,
+            ViewServiceBS,
+            ViewServiceCS,
+            ViewServiceCS3,
+            ViewServiceOther,
+        }
+
         public CustomEpgTabInfo()
         {
             ViewServiceList = new List<UInt64>();
@@ -20,6 +29,11 @@ namespace EpgTimer
             FilterEnded = false;
         }
         public String TabName
+        {
+            get;
+            set;
+        }
+        public int EpgSettingIndex
         {
             get;
             set;
@@ -68,6 +82,15 @@ namespace EpgTimer
         {
             get;
             set;
+        }
+
+        [System.Xml.Serialization.XmlIgnore]
+        public EpgSetting EpgSetting
+        {
+            get
+            {
+                return Settings.Instance.EpgSettingList[Math.Min(Math.Max(EpgSettingIndex, 0), Settings.Instance.EpgSettingList.Count - 1)];
+            }
         }
 
         public CustomEpgTabInfo DeepClone()

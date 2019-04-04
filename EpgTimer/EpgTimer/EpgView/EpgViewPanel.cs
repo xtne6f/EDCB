@@ -73,7 +73,8 @@ namespace EpgTimer.EpgView
 
         public static readonly DependencyProperty BackgroundProperty =
             Panel.BackgroundProperty.AddOwner(typeof(EpgViewPanel));
-        private List<ProgramViewItem> items;
+        private double _borderLeftSize;
+        private double _borderTopSize;
         private List<List<Tuple<Brush, GlyphRun>>> textDrawLists;
         public Brush Background
         {
@@ -83,65 +84,8 @@ namespace EpgTimer.EpgView
 
         public List<ProgramViewItem> Items
         {
-            get
-            {
-                return items;
-            }
-            set
-            {
-                //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
-                items = null;
-                items = value;
-                CreateDrawTextList();
-            }
-        }
-
-        public double BorderLeftSize
-        {
             get;
-            set;
-        }
-
-        public double BorderTopSize
-        {
-            get;
-            set;
-        }
-
-        public bool IsTitleIndent
-        {
-            get;
-            set;
-        }
-
-        public bool ExtInfoMode
-        {
-            get;
-            set;
-        }
-
-        public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceDictionaryNormal
-        {
-            get;
-            set;
-        }
-
-        public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceDictionaryTitle
-        {
-            get;
-            set;
-        }
-
-        public ItemFont ItemFontNormal
-        {
-            get;
-            set;
-        }
-
-        public ItemFont ItemFontTitle
-        {
-            get;
-            set;
+            private set;
         }
 
         public double LastItemRenderTextHeight
@@ -150,52 +94,48 @@ namespace EpgTimer.EpgView
             private set;
         }
 
-        protected void CreateDrawTextList()
+        public void Initialize(List<ProgramViewItem> items, double borderLeftSize, double borderTopSize, bool isTitleIndent, bool extInfoMode,
+                               Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionaryTitle,
+                               Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionaryNormal,
+                               ItemFont itemFontTitle, ItemFont itemFontNormal, double sizeTitle, double sizeNormal, Brush brushTitle, Brush brushNormal)
         {
             LastItemRenderTextHeight = 0;
             textDrawLists = null;
-            Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
-
-            if (Items == null)
+            Items = items;
+            var ps = PresentationSource.FromVisual(Application.Current.MainWindow);
+            if (ps != null && itemFontTitle.GlyphType != null && itemFontNormal.GlyphType != null)
             {
-                return;
-            }
-            textDrawLists = new List<List<Tuple<Brush, GlyphRun>>>(Items.Count);
+                Matrix m = ps.CompositionTarget.TransformToDevice;
+                textDrawLists = new List<List<Tuple<Brush, GlyphRun>>>(Items.Count);
+                _borderLeftSize = borderLeftSize;
+                _borderTopSize = borderTopSize;
+                itemFontTitle.PrepareCache();
+                itemFontNormal.PrepareCache();
 
-            if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
-                ItemFontTitle == null || ItemFontTitle.GlyphType == null)
-            {
-                return;
-            }
-            ItemFontNormal.PrepareCache();
-            ItemFontTitle.PrepareCache();
-
-            {
+                //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
                 double selfLeft = Canvas.GetLeft(this);
-                double sizeTitle = Math.Max(Settings.Instance.FontSizeTitle, 1);
-                double sizeNormal = Math.Max(Settings.Instance.FontSize, 1);
+                sizeTitle = Math.Max(sizeTitle, 1);
+                sizeNormal = Math.Max(sizeNormal, 1);
                 double indentTitle = sizeTitle * 1.7;
-                double indentNormal = IsTitleIndent ? indentTitle : 2;
-                SolidColorBrush colorTitle = CommonManager.Instance.CustTitle1Color;
-                SolidColorBrush colorNormal = CommonManager.Instance.CustTitle2Color;
+                double indentNormal = isTitleIndent ? indentTitle : 2;
 
                 foreach (ProgramViewItem info in Items)
                 {
                     var textDrawList = new List<Tuple<Brush, GlyphRun>>();
                     textDrawLists.Add(textDrawList);
 
-                    double innerLeft = info.LeftPos + BorderLeftSize / 2;
+                    double innerLeft = info.LeftPos + borderLeftSize / 2;
                     //0.26は細枠線での微調整
-                    double innerTop = info.TopPos + BorderTopSize / 2 - 0.26;
-                    double innerWidth = info.Width - BorderLeftSize;
-                    double innerHeight = info.Height - BorderTopSize;
+                    double innerTop = info.TopPos + borderTopSize / 2 - 0.26;
+                    double innerWidth = info.Width - borderLeftSize;
+                    double innerHeight = info.Height - borderTopSize;
                     double useHeight;
 
                     //分
                     string min = (info.EventInfo.StartTimeFlag == 0 ? "?" : info.EventInfo.start_time.Minute.ToString("d02"));
-                    if (RenderText(min, textDrawList, ItemFontTitle, sizeTitle * 0.95,
+                    if (RenderText(min, textDrawList, itemFontTitle, sizeTitle * 0.95,
                                    innerWidth - 1, innerHeight,
-                                   innerLeft + 1, innerTop, out useHeight, colorTitle, m, selfLeft) == false)
+                                   innerLeft + 1, innerTop, out useHeight, brushTitle, m, selfLeft) == false)
                     {
                         info.TitleDrawErr = true;
                         LastItemRenderTextHeight = info.Height;
@@ -204,13 +144,13 @@ namespace EpgTimer.EpgView
 
                     //タイトル
                     string title = info.EventInfo.ShortInfo == null ? "" : info.EventInfo.ShortInfo.event_name;
-                    if (ReplaceDictionaryTitle != null)
+                    if (replaceDictionaryTitle != null)
                     {
-                        title = CommonManager.ReplaceText(title, ReplaceDictionaryTitle);
+                        title = CommonManager.ReplaceText(title, replaceDictionaryTitle);
                     }
-                    if (RenderText(title.Length > 0 ? title : " ", textDrawList, ItemFontTitle, sizeTitle,
+                    if (RenderText(title.Length > 0 ? title : " ", textDrawList, itemFontTitle, sizeTitle,
                                    innerWidth - sizeTitle * 0.5 - indentTitle, innerHeight,
-                                   innerLeft + indentTitle, innerTop, out useHeight, colorTitle, m, selfLeft) == false)
+                                   innerLeft + indentTitle, innerTop, out useHeight, brushTitle, m, selfLeft) == false)
                     {
                         info.TitleDrawErr = true;
                         LastItemRenderTextHeight = info.Height;
@@ -228,17 +168,17 @@ namespace EpgTimer.EpgView
                         //説明
                         string detail = info.EventInfo.ShortInfo.text_char;
                         //詳細
-                        detail += ExtInfoMode == false || info.EventInfo.ExtInfo == null ? "" : "\r\n\r\n" + info.EventInfo.ExtInfo.text_char;
-                        if (ReplaceDictionaryNormal != null)
+                        detail += extInfoMode == false || info.EventInfo.ExtInfo == null ? "" : "\r\n\r\n" + info.EventInfo.ExtInfo.text_char;
+                        if (replaceDictionaryNormal != null)
                         {
-                            detail = CommonManager.ReplaceText(detail, ReplaceDictionaryNormal);
+                            detail = CommonManager.ReplaceText(detail, replaceDictionaryNormal);
                         }
-                        RenderText(detail, textDrawList, ItemFontNormal, sizeNormal,
+                        RenderText(detail, textDrawList, itemFontNormal, sizeNormal,
                                    innerWidth - sizeTitle * 0.5 - indentNormal, innerHeight - LastItemRenderTextHeight,
-                                   innerLeft + indentNormal, innerTop + LastItemRenderTextHeight, out useHeight, colorNormal, m, selfLeft);
+                                   innerLeft + indentNormal, innerTop + LastItemRenderTextHeight, out useHeight, brushNormal, m, selfLeft);
                         LastItemRenderTextHeight += useHeight + sizeNormal * 0.25;
                     }
-                    LastItemRenderTextHeight = Math.Floor(LastItemRenderTextHeight + BorderTopSize + sizeNormal * 0.5);
+                    LastItemRenderTextHeight = Math.Floor(LastItemRenderTextHeight + borderTopSize + sizeNormal * 0.5);
                     LastItemRenderTextHeight = Math.Min(LastItemRenderTextHeight, info.Height);
                 }
             }
@@ -364,29 +304,25 @@ namespace EpgTimer.EpgView
         {
             dc.DrawRectangle(Background, null, new Rect(RenderSize));
 
-            if (Items == null || textDrawLists == null || Items.Count < textDrawLists.Count)
-            {
-                return;
-            }
-            
+            if (Items != null && textDrawLists != null && Items.Count >= textDrawLists.Count)
             {
                 double selfLeft = Canvas.GetLeft(this);
                 Brush bgBrush = Background;
                 //位置がずれないように枠線の幅が1より大きいときは両側で分け合う
-                double borderLeft = BorderLeftSize > 1 ? BorderLeftSize / 2 : BorderLeftSize;
-                double borderTop = BorderTopSize > 1 ? BorderTopSize / 2 : BorderTopSize;
+                double borderLeft = _borderLeftSize > 1 ? _borderLeftSize / 2 : _borderLeftSize;
+                double borderTop = _borderTopSize > 1 ? _borderTopSize / 2 : _borderTopSize;
                 for (int i = 0; i < textDrawLists.Count; i++)
                 {
                     ProgramViewItem info = Items[i];
                     double bgHeight = Math.Min(borderTop, info.Height);
-                    if (info.Width > BorderLeftSize && bgHeight > 0)
+                    if (info.Width > _borderLeftSize && bgHeight > 0)
                     {
-                        dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos, info.Width - BorderLeftSize, bgHeight));
-                        dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos + info.Height - bgHeight, info.Width - BorderLeftSize, bgHeight));
+                        dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos, info.Width - _borderLeftSize, bgHeight));
+                        dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos + info.Height - bgHeight, info.Width - _borderLeftSize, bgHeight));
                     }
-                    if (info.Width > BorderLeftSize && info.Height > BorderTopSize)
+                    if (info.Width > _borderLeftSize && info.Height > _borderTopSize)
                     {
-                        var textArea = new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos + borderTop, info.Width - BorderLeftSize, info.Height - BorderTopSize);
+                        var textArea = new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos + borderTop, info.Width - _borderLeftSize, info.Height - _borderTopSize);
                         dc.DrawRectangle(info.ContentColor, null, textArea);
                         dc.PushClip(new RectangleGeometry(textArea));
                         foreach (Tuple<Brush, GlyphRun> txtinfo in textDrawLists[i])

@@ -19,36 +19,39 @@ namespace EpgTimer.EpgView
     /// </summary>
     public partial class DateView : UserControl
     {
-        public event RoutedEventHandler TimeButtonClick = null;
+        public event Action<DateTime> TimeButtonClick;
 
         public DateView()
         {
             InitializeComponent();
+            button_prev.Tag = DateTime.MinValue;
+            button_next.Tag = DateTime.MaxValue;
         }
 
         public void ClearInfo()
         {
+            button_prev.IsEnabled = false;
+            button_next.IsEnabled = false;
+            button_prev.Visibility = Visibility.Collapsed;
             uniformGrid_day.Children.Clear();
             uniformGrid_time.Children.Clear();
         }
 
-        public void SetTime(List<DateTime> timeList)
+        public void SetTime(bool enablePrev, bool enableNext, List<DateTime> timeList)
         {
-            try
+            ClearInfo();
+            button_prev.IsEnabled = enablePrev;
+            button_next.IsEnabled = enableNext;
+            button_prev.Visibility = enablePrev || enableNext ? Visibility.Visible : Visibility.Collapsed;
+            if (timeList.Count > 0)
             {
-                ClearInfo();
-                if (timeList.Count == 0)
-                {
-                    return;
-                }
-
                 DateTime startTime = timeList[0];
                 DateTime endTime = timeList[timeList.Count - 1];
                 DateTime itemTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, 0, 0, 0);
                 while (itemTime < endTime)
                 {
                     Button day = new Button();
-                    day.Content = itemTime.ToString("M/d(ddd)");
+                    day.Content = itemTime.ToString("M\\/d(ddd)");
                     if (itemTime.DayOfWeek == DayOfWeek.Saturday)
                     {
                         day.Foreground = Brushes.Blue;
@@ -57,17 +60,16 @@ namespace EpgTimer.EpgView
                     {
                         day.Foreground = Brushes.Red;
                     }
-                    day.DataContext = itemTime;
-                    day.Click += new RoutedEventHandler(button_time_Click);
-
+                    day.Tag = itemTime;
+                    day.Click += button_time_Click;
                     uniformGrid_day.Children.Add(day);
 
                     for (int i = 6; i <= 18; i += 6)
                     {
                         Button hour = new Button();
                         hour.Content = i.ToString();
-                        hour.DataContext = itemTime.AddHours(i);
-                        hour.Click += new RoutedEventHandler(button_time_Click);
+                        hour.Tag = itemTime.AddHours(i);
+                        hour.Click += button_time_Click;
                         uniformGrid_time.Children.Add(hour);
                     }
 
@@ -76,17 +78,13 @@ namespace EpgTimer.EpgView
                 columnDefinition.MinWidth = uniformGrid_time.Children.Count * 15;
                 columnDefinition.MaxWidth = uniformGrid_time.Children.Count * 40;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         void button_time_Click(object sender, RoutedEventArgs e)
         {
             if (TimeButtonClick != null)
             {
-                TimeButtonClick(sender, e);
+                TimeButtonClick((DateTime)((Button)sender).Tag);
             }
         }
     }

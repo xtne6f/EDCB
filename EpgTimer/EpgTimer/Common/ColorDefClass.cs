@@ -33,6 +33,10 @@ namespace EpgTimer
         {
             return ((UInt32)c.A) << 24 | ((UInt32)c.R) << 16 | ((UInt32)c.G) << 8 | (UInt32)c.B;
         }
+        public static double GetLuminance(Color c)
+        {
+            return (0.298912 * c.R + 0.586611 * c.G + 0.114478 * c.B) / 255;
+        }
 
         public static LinearGradientBrush GradientBrush(Color color, double luminance = 0.94, double saturation = 1.2)
         {
@@ -68,6 +72,27 @@ namespace EpgTimer
             brush.GradientStops.Add(new GradientStop(color2, 1.0));
             brush.Freeze();
 
+            return brush;
+        }
+
+        public static SolidColorBrush CustColorBrush(string name, uint cust, byte a = 0xFF, int opacity = 100)
+        {
+            SolidColorBrush brush;
+            if (name == "カスタム")
+            {
+                Color c = FromUInt(cust);
+                brush = new SolidColorBrush(Color.FromArgb((byte)(c.A * opacity / 100), c.R, c.G, c.B));
+                brush.Freeze();
+            }
+            else
+            {
+                brush = BrushFromName(name);
+                if (brush.Color.A != 0 && (a != 0xFF || opacity != 100))
+                {
+                    brush = new SolidColorBrush(Color.FromArgb((byte)(a * opacity / 100), brush.Color.R, brush.Color.G, brush.Color.B));
+                    brush.Freeze();
+                }
+            }
             return brush;
         }
     }

@@ -31,12 +31,7 @@ namespace EpgTimer
         {
             Settings.Instance.ShallowCopyDynamicSettingsTo((Settings)DataContext);
             Settings.Instance = (Settings)DataContext;
-            setAppView.SaveSetting();
-            setEpgView.SaveSetting();
-            setOtherAppView.SaveSetting();
-
             Settings.SaveToXmlFile(true);
-            CommonManager.Instance.ReloadCustContentColorList();
 
             this.DialogResult = true;
         }

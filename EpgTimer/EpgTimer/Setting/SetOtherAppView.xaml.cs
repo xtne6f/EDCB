@@ -25,14 +25,6 @@ namespace EpgTimer.Setting
             InitializeComponent();
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-        }
-
-        public void SaveSetting()
-        {
-        }
-
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();

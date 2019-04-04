@@ -29,7 +29,7 @@ namespace EpgTimer.EpgView
             stackPanel_service.Children.Clear();
         }
 
-        public void SetService(List<EpgServiceInfo> serviceList)
+        public void SetService(List<EpgServiceInfo> serviceList, double serviceWidth, Brush serviceBrush, Brush textBrush)
         {
             stackPanel_service.Children.Clear();
             foreach (EpgServiceInfo info in serviceList)
@@ -48,15 +48,20 @@ namespace EpgTimer.EpgView
                 {
                     item.Text += "\r\n" + info.network_name + " " + info.SID.ToString();
                 }
-                item.Width = Settings.Instance.ServiceWidth - 2;
-                item.Margin = new Thickness(1, 1, 1, 1);
-                item.Background = CommonManager.Instance.CustServiceColor;
-                item.Foreground = Brushes.White;
+                item.Width = serviceWidth - 2;
                 item.TextAlignment = TextAlignment.Center;
                 item.FontSize = 12;
-                item.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);
-                item.DataContext = info;
-                stackPanel_service.Children.Add(item);
+                item.Foreground = textBrush;
+                // 単にCenterだとやや重い感じになるので上げる
+                item.Padding = new Thickness(0, 0, 0, 4);
+                item.VerticalAlignment = VerticalAlignment.Center;
+                var gridItem = new System.Windows.Controls.Primitives.UniformGrid();
+                gridItem.Margin = new Thickness(1, 1, 1, 1);
+                gridItem.Background = serviceBrush;
+                gridItem.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);
+                gridItem.Tag = info;
+                gridItem.Children.Add(item);
+                stackPanel_service.Children.Add(gridItem);
             }
         }
 
@@ -64,12 +69,8 @@ namespace EpgTimer.EpgView
         {
             if (e.ClickCount == 2)
             {
-                if (sender.GetType() == typeof(TextBlock))
-                {
-                    TextBlock item = sender as TextBlock;
-                    EpgServiceInfo serviceInfo = item.DataContext as EpgServiceInfo;
-                    CommonManager.Instance.TVTestCtrl.SetLiveCh(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
-                }
+                var info = (EpgServiceInfo)((FrameworkElement)sender).Tag;
+                CommonManager.Instance.TVTestCtrl.SetLiveCh(info.ONID, info.TSID, info.SID);
             }
         }
     }

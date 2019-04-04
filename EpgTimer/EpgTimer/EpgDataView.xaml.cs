@@ -112,56 +112,54 @@ namespace EpgTimer
                     {
                         if (IsVisible && err != ErrCode.CMD_ERR_BUSY)
                         {
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
-                            }));
+                            Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "EPGデータの取得でエラーが発生しました。")));
                         }
                         return false;
                     }
 
                     //デフォルト表示
-                    for (int i = 0; i < 4; i++)
+                    for (int i = 0; i < 5; i++)
                     {
-                        CustomEpgTabInfo setInfo = null;
-                        bool ignoreEpgCap = Settings.Instance.ShowEpgCapServiceOnly == false;
-                        //リモコンキー優先のID順ソート
-                        foreach (EpgServiceAllEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values.Where(item => {
-                            ulong key = CommonManager.Create64Key(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID);
-                            return ignoreEpgCap || ChSet5.Instance.ChList.ContainsKey(key) && ChSet5.Instance.ChList[key].EpgCapFlag; }).OrderBy(item => (
-                            (ulong)(ChSet5.IsDttv(item.serviceInfo.ONID) ? (item.serviceInfo.remote_control_key_id + 255) % 256 : 0) << 48 |
-                            CommonManager.Create64Key(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID))))
+                        var setInfo = new CustomEpgTabInfo();
+                        foreach (EpgServiceInfo info in CommonManager.Instance.DB.ServiceEventList.Values.Select(allInfo => allInfo.serviceInfo))
                         {
-                            string tabName = null;
-                            if (i == 0 && ChSet5.IsDttv(info.serviceInfo.ONID))
+                            if (Settings.Instance.ShowEpgCapServiceOnly &&
+                                (ChSet5.Instance.ChList.ContainsKey(CommonManager.Create64Key(info.ONID, info.TSID, info.SID)) == false ||
+                                 ChSet5.Instance.ChList[CommonManager.Create64Key(info.ONID, info.TSID, info.SID)].EpgCapFlag == false))
                             {
-                                tabName = "地デジ";
+                                continue;
                             }
-                            else if (i == 1 && ChSet5.IsBS(info.serviceInfo.ONID))
+                            if (i == 0 && ChSet5.IsDttv(info.ONID))
                             {
-                                tabName = "BS";
+                                setInfo.TabName = "地デジ";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv);
                             }
-                            else if (i == 2 && ChSet5.IsCS(info.serviceInfo.ONID))
+                            else if (i == 1 && ChSet5.IsBS(info.ONID))
                             {
-                                tabName = "CS";
+                                setInfo.TabName = "BS";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceBS);
                             }
-                            else if (i == 3 && ChSet5.IsOther(info.serviceInfo.ONID))
+                            else if (i == 2 && ChSet5.IsCS(info.ONID) && ChSet5.IsCS3(info.ONID) == false)
                             {
-                                tabName = "その他";
+                                setInfo.TabName = "CS";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS);
                             }
-                            if (tabName != null)
+                            else if (i == 3 && ChSet5.IsCS3(info.ONID))
                             {
-                                if (setInfo == null)
-                                {
-                                    setInfo = new CustomEpgTabInfo();
-                                    setInfo.TabName = tabName;
-                                }
-                                setInfo.ViewServiceList.Add(CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID));
+                                setInfo.TabName = "CS3";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3);
                             }
-                        }
-                        if (setInfo != null)
-                        {
+                            else if (i == 4 && ChSet5.IsOther(info.ONID))
+                            {
+                                setInfo.TabName = "その他";
+                                setInfo.ViewServiceList.Add((ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceOther);
+                            }
+                            else
+                            {
+                                continue;
+                            }
                             defaultList.Add(setInfo);
+                            break;
                         }
                     }
                 }

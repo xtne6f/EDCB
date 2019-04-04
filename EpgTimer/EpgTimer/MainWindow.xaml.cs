@@ -18,13 +18,13 @@ namespace EpgTimer
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, ITaskTrayClickHandler
     {
         //MainWindowにIDisposableを実装するべき？
         private Mutex mutex;
         private string mutexName;
         private NWConnect nwConnect = new NWConnect();
-        private TaskTrayClass taskTray = new TaskTrayClass();
+        private TaskTrayClass taskTray;
         private PipeServer pipeServer = null;
         private bool closeFlag = false;
 
@@ -34,7 +34,6 @@ namespace EpgTimer
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
 
             Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
-            CommonManager.Instance.ReloadCustContentColorList();
 
             if (CheckCmdLine() && Settings.Instance.ExitAfterProcessingArgs)
             {
@@ -109,21 +108,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.WakeMin == true)
-                {
-                    if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
-                    {
-                        this.Visibility = System.Windows.Visibility.Hidden;
-                    }
-                    else
-                    {
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            this.WindowState = System.Windows.WindowState.Minimized;
-                        }));
-                    }
-                }
-
                 //ウインドウ位置の復元
                 if (Settings.Instance.MainWndTop != -100)
                 {
@@ -141,7 +125,18 @@ namespace EpgTimer
                 {
                     this.Height = Settings.Instance.MainWndHeight;
                 }
-                this.WindowState = Settings.Instance.LastWindowState;
+                if (Settings.Instance.WakeMin)
+                {
+                    if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
+                    {
+                        Visibility = Visibility.Hidden;
+                    }
+                    WindowState = WindowState.Minimized;
+                }
+                else
+                {
+                    WindowState = Settings.Instance.LastWindowState;
+                }
 
                 ResetButtonView();
 
@@ -169,13 +164,11 @@ namespace EpgTimer
                 }
 
                 //タスクトレイの表示
-                taskTray.Click += (sender, e) =>
-                {
-                    Show();
-                    WindowState = Settings.Instance.LastWindowState;
-                    Activate();
-                };
+                taskTray = new TaskTrayClass(this);
                 taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconBlue.ico");
+                taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                                       new Action(() => taskTray.Visible = Settings.Instance.ShowTray));
 
                 CommonManager.Instance.DB.EpgDataChanged += reserveView.RefreshEpgData;
                 CommonManager.Instance.DB.ReserveInfoChanged += epgView.RefreshReserve;
@@ -188,8 +181,6 @@ namespace EpgTimer
                 }
                 //予約情報は常に遅延更新しない
                 CommonManager.Instance.DB.ReloadReserveInfo();
-
-                ResetTaskMenu();
 
                 //初期タブ選択
                 switch (Settings.Instance.StartTab)
@@ -270,60 +261,6 @@ namespace EpgTimer
             return true;
         }
 
-        private void ResetTaskMenu()
-        {
-            var addList = new List<KeyValuePair<string, Action<string>>>();
-            foreach (string info in Settings.Instance.TaskMenuList)
-            {
-                if (info == "（セパレータ）")
-                {
-                    addList.Add(new KeyValuePair<string, Action<string>>(null, null));
-                }
-                else
-                {
-                    addList.Add(new KeyValuePair<string, Action<string>>(info, tag =>
-                    {
-                        if (tag == "設定")
-                        {
-                            //メインウィンドウが表示済みであることを前提にしている箇所があるため
-                            if (PresentationSource.FromVisual(this) == null)
-                            {
-                                Show();
-                                WindowState = Settings.Instance.LastWindowState;
-                            }
-                            SettingCmd();
-                        }
-                        else if (tag == "終了")
-                        {
-                            CloseCmd();
-                        }
-                        else if (tag == "スタンバイ")
-                        {
-                            StandbyCmd();
-                        }
-                        else if (tag == "休止")
-                        {
-                            SuspendCmd();
-                        }
-                        else if (tag == "EPG取得")
-                        {
-                            EpgCapCmd();
-                        }
-                        else if (tag == "再接続")
-                        {
-                            if (CommonManager.Instance.NWMode)
-                            {
-                                ConnectCmd(true);
-                            }
-                        }
-                    }));
-                }
-            }
-            taskTray.ContextMenuList = addList;
-            taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
-            taskTray.Visible = Settings.Instance.ShowTray;
-        }
-
         private void ResetButtonView()
         {
             foreach (Button button in stackPanel_button.Children)
@@ -396,6 +333,74 @@ namespace EpgTimer
                 //検索ボタンは右端で動的に可視化することがある
                 var button = stackPanel_button.Children.Cast<Button>().First(a => (string)(a.Tag ?? a.Content) == "検索");
                 button.Margin = new Thickness(space, button.Margin.Top, button.Margin.Right, button.Margin.Bottom);
+            }
+        }
+
+        public void TaskTrayLeftClick()
+        {
+            Show();
+            WindowState = Settings.Instance.LastWindowState;
+            Activate();
+        }
+
+        public void TaskTrayRightClick()
+        {
+            var menu = new ContextMenu();
+            foreach (string info in Settings.Instance.TaskMenuList)
+            {
+                if (info == "（セパレータ）")
+                {
+                    menu.Items.Add(new Separator());
+                    continue;
+                }
+                var item = new MenuItem();
+                if (info == "設定")
+                {
+                    item.Click += (sender, e) =>
+                    {
+                        //メインウィンドウが表示済みであることを前提にしている箇所があるため
+                        if (PresentationSource.FromVisual(this) == null)
+                        {
+                            Show();
+                            WindowState = Settings.Instance.LastWindowState;
+                        }
+                        SettingCmd();
+                    };
+                }
+                else if (info == "終了")
+                {
+                    item.Click += (sender, e) => CloseCmd();
+                }
+                else if (info == "スタンバイ")
+                {
+                    item.Click += (sender, e) => StandbyCmd();
+                }
+                else if (info == "休止")
+                {
+                    item.Click += (sender, e) => SuspendCmd();
+                }
+                else if (info == "EPG取得")
+                {
+                    item.Click += (sender, e) => EpgCapCmd();
+                }
+                else if (info == "再接続" && CommonManager.Instance.NWMode)
+                {
+                    item.Click += (sender, e) => ConnectCmd(true);
+                }
+                else
+                {
+                    continue;
+                }
+                item.Header = info;
+                menu.Items.Add(item);
+            }
+            menu.IsOpen = true;
+            var ps = PresentationSource.FromVisual(menu);
+            if (ps != null)
+            {
+                //Activate()したいがContextMenuからWindowを取得できないので仕方なく
+                CommonUtil.SetForegroundWindow(((System.Windows.Interop.HwndSource)ps).Handle);
+                menu.Focus();
             }
         }
 
@@ -491,6 +496,15 @@ namespace EpgTimer
                 reserveView.SaveSize();
                 recInfoView.SaveSize();
                 autoAddView.SaveSize();
+                if (Visibility == Visibility.Visible)
+                {
+                    Rect r = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
+                    Settings.Instance.MainWndLeft = Math.Max(r.Left, -50);
+                    Settings.Instance.MainWndTop = Math.Max(r.Top, 0);
+                    Settings.Instance.MainWndWidth = Math.Max(r.Width, 51);
+                    Settings.Instance.MainWndHeight = Math.Max(r.Height, 1);
+                }
+                Settings.SaveToXmlFile();
 
                 if (CommonManager.Instance.NWMode == false)
                 {
@@ -507,7 +521,6 @@ namespace EpgTimer
                             cmd.SendClose();
                         }
                     }
-                    Settings.SaveToXmlFile();
                     pipeServer.Dispose();
                 }
                 else
@@ -516,36 +529,11 @@ namespace EpgTimer
                     {
                         CommonManager.CreateSrvCtrl().SendUnRegistTCP(Settings.Instance.NWWaitPort);
                     }
-                    Settings.SaveToXmlFile();
                     nwConnect.Dispose();
                 }
                 mutex.ReleaseMutex();
                 mutex.Close();
                 taskTray.Dispose();
-            }
-        }
-
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
-                {
-                    Settings.Instance.MainWndWidth = this.Width;
-                    Settings.Instance.MainWndHeight = this.Height;
-                }
-            }
-        }
-
-        private void Window_LocationChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
-                {
-                    Settings.Instance.MainWndTop = this.Top;
-                    Settings.Instance.MainWndLeft = this.Left;
-                }
             }
         }
 
@@ -555,12 +543,19 @@ namespace EpgTimer
             {
                 if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                 {
-                    this.Visibility = System.Windows.Visibility.Hidden;
+                    if (Visibility == Visibility.Visible)
+                    {
+                        //スナップ機能(半分最大化など)はWindowState.NormalだがRestoreBoundsはMaximize的に変化するため少し不正確
+                        Settings.Instance.MainWndLeft = Math.Max(RestoreBounds.Left, -50);
+                        Settings.Instance.MainWndTop = Math.Max(RestoreBounds.Top, 0);
+                        Settings.Instance.MainWndWidth = Math.Max(RestoreBounds.Width, 51);
+                        Settings.Instance.MainWndHeight = Math.Max(RestoreBounds.Height, 1);
+                        Visibility = Visibility.Hidden;
+                    }
                 }
             }
-            if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
+            else
             {
-                this.Visibility = System.Windows.Visibility.Visible;
                 Settings.Instance.LastWindowState = this.WindowState;
             }
         }
@@ -573,7 +568,7 @@ namespace EpgTimer
         private void Window_PreviewDrop(object sender, DragEventArgs e)
         {
             string[] filePath = e.Data.GetData(DataFormats.FileDrop, true) as string[];
-            SendAddReserveFromArgs(CommonManager.CreateSrvCtrl(), filePath);
+            if (filePath != null) SendAddReserveFromArgs(CommonManager.CreateSrvCtrl(), filePath);
         }
 
         private static void SendAddReserveFromArgs(CtrlCmdUtil cmd, IEnumerable<string> args)
@@ -623,7 +618,7 @@ namespace EpgTimer
                             info.DurationSecond = pgInfo.durationSec;
                         }
                     }
-                    Settings.GetDefRecSetting(0, ref info.RecSetting);
+                    info.RecSetting = Settings.CreateRecSetting(0);
                     addList.Add(info);
                 }
             }
@@ -717,7 +712,8 @@ namespace EpgTimer
                 {
                     epgView.UpdateSetting();
                     ResetButtonView();
-                    ResetTaskMenu();
+                    taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
+                    taskTray.Visible = Settings.Instance.ShowTray;
                 }
             }
         }
@@ -1173,10 +1169,8 @@ namespace EpgTimer
             ReserveData item = CommonManager.Instance.DB.GetNextReserve();
             if (item != null)
             {
-                String timeView = item.StartTime.ToString("M/d(ddd) H:mm～");
-                DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                timeView += endTime.ToString("H:mm");
-                taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
+                taskTray.Text = "次の予約：" + item.StationName + item.StartTime.ToString(" M\\/d(ddd) H\\:mm-") +
+                                item.StartTime.AddSeconds(item.DurationSecond).ToString("H\\:mm ") + item.Title;
             }
             else
             {
