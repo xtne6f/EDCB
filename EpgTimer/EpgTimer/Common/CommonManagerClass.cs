@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows;
-using System.Windows.Media;
-using System.Collections;
 using System.IO;
 
 namespace EpgTimer
@@ -24,17 +22,11 @@ namespace EpgTimer
             }
         }
         public IDictionary<ushort, string> ComponentKindDictionary { get; private set; }
-        public string[] DayOfWeekArray { get; private set; }
         public string[] RecModeList { get; private set; }
         public bool NWMode { get; set; }
         public List<NotifySrvInfo> NotifyLogList { get; private set; }
         public System.Net.IPAddress NWConnectedIP { get; set; }
         public uint NWConnectedPort { get; set; }
-        public List<Brush> CustContentColorList { get; private set; }
-        public SolidColorBrush CustTitle1Color { get; private set; }
-        public SolidColorBrush CustTitle2Color { get; private set; }
-        public List<Brush> CustTimeColorList { get; private set; }
-        public Brush CustServiceColor { get; private set; }
         public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceUrlDictionary { get; private set; }
 
         private static CommonManager _instance;
@@ -53,7 +45,7 @@ namespace EpgTimer
             DB = new DBManager();
             TVTestCtrl = new TVTestCtrlClass();
 
-            ContentKindDictionary = new SortedList<ushort, ContentKindInfo>(155)
+            ContentKindDictionary = new SortedList<ushort, ContentKindInfo>(167)
             {
                 { 0x0000, new ContentKindInfo("ニュース／報道", "定時・総合", 0x00, 0x00) },
                 { 0x0001, new ContentKindInfo("ニュース／報道", "天気", 0x00, 0x01) },
@@ -184,6 +176,21 @@ namespace EpgTimer
 
                 { 0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF) },
 
+                { 0x6000, new ContentKindInfo("編成情報", "中止の可能性あり", 0x60, 0x00) },
+                { 0x6001, new ContentKindInfo("編成情報", "延長の可能性あり", 0x60, 0x01) },
+                { 0x6002, new ContentKindInfo("編成情報", "中断の可能性あり", 0x60, 0x02) },
+                { 0x6003, new ContentKindInfo("編成情報", "別話数放送の可能性あり", 0x60, 0x03) },
+                { 0x6004, new ContentKindInfo("編成情報", "編成未定枠", 0x60, 0x04) },
+                { 0x6005, new ContentKindInfo("編成情報", "繰り上げの可能性あり", 0x60, 0x05) },
+                { 0x60FF, new ContentKindInfo("編成情報", "", 0x60, 0xFF) },
+
+                { 0x6100, new ContentKindInfo("特性情報", "中断ニュースあり", 0x61, 0x00) },
+                { 0x6101, new ContentKindInfo("特性情報", "臨時サービスあり", 0x61, 0x01) },
+                { 0x61FF, new ContentKindInfo("特性情報", "", 0x61, 0xFF) },
+
+                { 0x6200, new ContentKindInfo("3D映像", "3D映像あり", 0x62, 0x00) },
+                { 0x62FF, new ContentKindInfo("3D映像", "", 0x62, 0xFF) },
+
                 { 0x7000, new ContentKindInfo("スポーツ(CS)", "テニス", 0x70, 0x00) },
                 { 0x7001, new ContentKindInfo("スポーツ(CS)", "バスケットボール", 0x70, 0x01) },
                 { 0x7002, new ContentKindInfo("スポーツ(CS)", "ラグビー", 0x70, 0x02) },
@@ -308,12 +315,9 @@ namespace EpgTimer
                     { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
                 };
             }
-            DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
             RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
-            CustContentColorList = new List<Brush>();
-            CustTimeColorList = new List<Brush>();
             ReplaceUrlDictionary = CreateReplaceDictionary(",０,0,１,1,２,2,３,3,４,4,５,5,６,6,７,7,８,8,９,9" +
                 ",Ａ,A,Ｂ,B,Ｃ,C,Ｄ,D,Ｅ,E,Ｆ,F,Ｇ,G,Ｈ,H,Ｉ,I,Ｊ,J,Ｋ,K,Ｌ,L,Ｍ,M,Ｎ,N,Ｏ,O,Ｐ,P,Ｑ,Q,Ｒ,R,Ｓ,S,Ｔ,T,Ｕ,U,Ｖ,V,Ｗ,W,Ｘ,X,Ｙ,Y,Ｚ,Z" +
                 ",ａ,a,ｂ,b,ｃ,c,ｄ,d,ｅ,e,ｆ,f,ｇ,g,ｈ,h,ｉ,i,ｊ,j,ｋ,k,ｌ,l,ｍ,m,ｎ,n,ｏ,o,ｐ,p,ｑ,q,ｒ,r,ｓ,s,ｔ,t,ｕ,u,ｖ,v,ｗ,w,ｘ,x,ｙ,y,ｚ,z" +
@@ -405,7 +409,6 @@ namespace EpgTimer
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
         {
             EpgServiceInfo info = new EpgServiceInfo();
-            try
             {
                 info.ONID = item.ONID;
                 info.TSID = item.TSID;
@@ -418,10 +421,6 @@ namespace EpgTimer
                 info.service_type = (byte)item.ServiceType;
                 info.ts_name = item.NetworkName;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
             return info;
         }
 
@@ -433,6 +432,8 @@ namespace EpgTimer
                     return "EpgTimerSrvがサポートしていないコマンドです。";
                 case ErrCode.CMD_ERR_CONNECT:
                     return "EpgTimerSrvに接続できませんでした。";
+                case ErrCode.CMD_ERR_DISCONNECT:
+                    return "EpgTimerSrvとの接続がリセットされた可能性があります。";
                 case ErrCode.CMD_ERR_TIMEOUT:
                     return "EpgTimerSrvとの接続にタイムアウトしました。";
                 case ErrCode.CMD_ERR_BUSY:
@@ -443,13 +444,19 @@ namespace EpgTimer
             }
         }
 
+        public static string GetTimeDurationText(bool timeFlag, DateTime time, bool durationFlag, uint durationSec)
+        {
+            if (timeFlag)
+            {
+                return time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss ～ ") +
+                       (durationFlag ? time.AddSeconds(durationSec).ToString("HH\\:mm\\:ss") : "未定");
+            }
+            return "未定";
+        }
+
         public String ConvertReserveText(ReserveData reserveInfo)
         {
-            String view = "";
-            view = reserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-            DateTime endTime = reserveInfo.StartTime + TimeSpan.FromSeconds(reserveInfo.DurationSecond);
-            view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
+            String view = GetTimeDurationText(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
             String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
             String tuijyu = "";
             if (reserveInfo.RecSetting.TuijyuuFlag == 0)
@@ -605,23 +612,8 @@ namespace EpgTimer
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
                 }
 
-                if (eventInfo.StartTimeFlag == 1)
-                {
-                    basicInfo += eventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                }
-                else
-                {
-                    basicInfo += "未定 ～ ";
-                }
-                if (eventInfo.DurationFlag == 1)
-                {
-                    DateTime endTime = eventInfo.start_time + TimeSpan.FromSeconds(eventInfo.durationSec);
-                    basicInfo += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-                }
-                else
-                {
-                    basicInfo += "未定\r\n";
-                }
+                basicInfo += GetTimeDurationText(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
+                                                 eventInfo.DurationFlag != 0, eventInfo.durationSec) + "\r\n";
 
                 if (eventInfo.ShortInfo != null)
                 {
@@ -643,9 +635,9 @@ namespace EpgTimer
                         String content = "";
                         int nibble1 = info.content_nibble_level_1;
                         int nibble2 = info.content_nibble_level_2;
-                        if (nibble1 == 0x0E && nibble2 == 0x01)
+                        if (nibble1 == 0x0E && nibble2 <= 0x01)
                         {
-                            nibble1 = info.user_nibble_1 | 0x70;
+                            nibble1 = info.user_nibble_1 | (0x60 + nibble2 * 16);
                             nibble2 = info.user_nibble_2;
                         }
                         if (ContentKindDictionary.ContainsKey((ushort)(nibble1 << 8 | 0xFF)))
@@ -876,168 +868,6 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private static SolidColorBrush CreateCustColorBrush(string name, uint cust, byte a = 0xFF, int opacity = 100)
-        {
-            SolidColorBrush brush;
-            if (name == "カスタム")
-            {
-                Color c = ColorDef.FromUInt(cust);
-                brush = new SolidColorBrush(Color.FromArgb((byte)(c.A * opacity / 100), c.R, c.G, c.B));
-                brush.Freeze();
-            }
-            else
-            {
-                brush = ColorDef.BrushFromName(name);
-                if (brush.Color.A != 0 && (a != 0xFF || opacity != 100))
-                {
-                    brush = new SolidColorBrush(Color.FromArgb((byte)(a * opacity / 100), brush.Color.R, brush.Color.G, brush.Color.B));
-                    brush.Freeze();
-                }
-            }
-            return brush;
-        }
-
-        public void ReloadCustContentColorList()
-        {
-            SolidColorBrush brush;
-            CustContentColorList.Clear();
-            List<uint> ccList = Settings.Instance.ContentCustColorList;
-            for (int i = 0; i < 17; i++)
-            {
-                brush = CreateCustColorBrush(Settings.Instance.ContentColorList[i], ccList[i]);
-                CustContentColorList.Add(Settings.Instance.EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
-            }
-
-            //0→50で塗りつぶしの不透明度が上がる
-            int fillOpacity = Math.Min(Settings.Instance.ReserveRectFillOpacity, 50) * 2;
-            //50→100で枠の不透明度が下がる
-            int strokeOpacity = Math.Min(100 - Settings.Instance.ReserveRectFillOpacity, 50) * 2;
-            //予約枠が色名指定のときは少し透過(0xA0)する
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList[17], 0xA0, strokeOpacity));
-            //次要素は予約塗りつぶしのブラシ
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNormal, ccList[17], 0xA0, fillOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList[18], 0xA0, strokeOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNo, ccList[18], 0xA0, fillOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList[19], 0xA0, strokeOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorNoTuner, ccList[19], 0xA0, fillOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList[20], 0xA0, strokeOpacity));
-            CustContentColorList.Add(CreateCustColorBrush(Settings.Instance.ReserveRectColorWarning, ccList[20], 0xA0, fillOpacity));
-
-            CustTitle1Color = CreateCustColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
-            CustTitle2Color = CreateCustColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
-
-            CustTimeColorList.Clear();
-            for (int i = 0; i < 4; i++)
-            {
-                brush = CreateCustColorBrush(Settings.Instance.TimeColorList[i], Settings.Instance.TimeCustColorList[i]);
-                CustTimeColorList.Add(Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
-            }
-
-            brush = CreateCustColorBrush(Settings.Instance.ServiceColor, Settings.Instance.ServiceCustColor);
-            CustServiceColor = Settings.Instance.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush;
-        }
-
-        private static SolidColorBrush GetOrCreateBrush(ref SolidColorBrush brush, byte a, byte r, byte g, byte b)
-        {
-            if (brush == null)
-            {
-                brush = new SolidColorBrush();
-                brush.Color = Color.FromArgb(a, r, g, b);
-                brush.Freeze();
-            }
-            return brush;
-        }
-
-        private SolidColorBrush _resDefBackColor;
-        public SolidColorBrush ResDefBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _resDefBackColor, Settings.Instance.ResDefColorA, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
-            }
-        }
-
-        private SolidColorBrush _resErrBackColor;
-        public SolidColorBrush ResErrBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _resErrBackColor, Settings.Instance.ResErrColorA, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
-            }
-        }
-
-        private SolidColorBrush _resWarBackColor;
-        public SolidColorBrush ResWarBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _resWarBackColor, Settings.Instance.ResWarColorA, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
-            }
-        }
-
-        private SolidColorBrush _resNoBackColor;
-        public SolidColorBrush ResNoBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _resNoBackColor, Settings.Instance.ResNoColorA, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
-            }
-        }
-
-        private SolidColorBrush _recEndDefBackColor;
-        public SolidColorBrush RecEndDefBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _recEndDefBackColor, Settings.Instance.RecEndDefColorA, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
-            }
-        }
-
-        private SolidColorBrush _recEndErrBackColor;
-        public SolidColorBrush RecEndErrBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _recEndErrBackColor, Settings.Instance.RecEndErrColorA, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
-            }
-        }
-
-        private SolidColorBrush _recEndWarBackColor;
-        public SolidColorBrush RecEndWarBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _recEndWarBackColor, Settings.Instance.RecEndWarColorA, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
-            }
-        }
-
-        private SolidColorBrush _epgTipsBackColor;
-        public SolidColorBrush EpgTipsBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _epgTipsBackColor, 0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
-            }
-        }
-
-        private SolidColorBrush _epgTipsForeColor;
-        public SolidColorBrush EpgTipsForeColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _epgTipsForeColor, 0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
-            }
-        }
-
-        private SolidColorBrush _epgBackColor;
-        public SolidColorBrush EpgBackColor
-        {
-            get
-            {
-                return GetOrCreateBrush(ref _epgBackColor, 0xFF, Settings.Instance.EpgBackColorR, Settings.Instance.EpgBackColorG, Settings.Instance.EpgBackColorB);
             }
         }
     }

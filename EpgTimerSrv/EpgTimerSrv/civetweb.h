@@ -98,6 +98,9 @@ enum {
 	/* Will only work, if USE_ZLIB is set. */
 	MG_FEATURES_COMPRESSION = 0x200u,
 
+	/* UNOFFICIAL! Support UPnP SUBSCRIBE/UNSUBSCRIBE. */
+	MG_FEATURES_X_ALLOW_SUBSCRIBE = 0x10000u,
+
 	/* Collect server status information. */
 	/* Will only work, if USE_SERVER_STATS is set. */
 	MG_FEATURES_ALL = 0xFFFFu

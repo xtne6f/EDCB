@@ -73,5 +73,72 @@ namespace EpgTimer
             }
             return false;
         }
+
+        struct BROWSEINFO
+        {
+            public IntPtr hwndOwner;
+            public IntPtr pidlRoot;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszDisplayName;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string lpszTitle;
+            public uint ulFlags;
+            public IntPtr lpfn;
+            public IntPtr lParam;
+            public int iImage;
+        }
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        static extern IntPtr SHBrowseForFolder([In] ref BROWSEINFO lpbi);
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        static extern bool SHGetPathFromIDList(IntPtr pidl, StringBuilder pszPath);
+
+        public static string BrowseFolder(IntPtr hwndOwner, string title)
+        {
+            const int MAX_PATH = 260;
+            const uint BIF_NEWDIALOGSTYLE = 0x40;
+            var bi = new BROWSEINFO();
+            bi.hwndOwner = hwndOwner;
+            bi.pidlRoot = IntPtr.Zero;
+            bi.pszDisplayName = new string('\0', MAX_PATH);
+            bi.lpszTitle = title;
+            bi.ulFlags = BIF_NEWDIALOGSTYLE;
+            bi.lpfn = IntPtr.Zero;
+            bi.iImage = 0;
+            IntPtr pidl = SHBrowseForFolder(ref bi);
+            if (pidl != IntPtr.Zero)
+            {
+                try
+                {
+                    var buff = new StringBuilder(MAX_PATH);
+                    if (SHGetPathFromIDList(pidl, buff))
+                    {
+                        return buff.ToString();
+                    }
+                }
+                finally
+                {
+                    Marshal.FreeCoTaskMem(pidl);
+                }
+            }
+            return null;
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        static extern uint RegisterWindowMessage(string lpString);
+
+        static uint msgTaskbarCreated;
+        public static uint RegisterTaskbarCreatedWindowMessage()
+        {
+            if (msgTaskbarCreated == 0)
+            {
+                msgTaskbarCreated = RegisterWindowMessage("TaskbarCreated");
+            }
+            return msgTaskbarCreated;
+        }
+
+        [DllImport("user32.dll")]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
     }
 }

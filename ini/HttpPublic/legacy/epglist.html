@@ -23,8 +23,12 @@ onid,tsid,sid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?
 onid=tonumber(onid) or 0
 tsid=tonumber(tsid) or 0
 sid=tonumber(sid) or 0
+date=GetVarInt(mg.request_info.query_string,'date',-10000,0) or 0
+--dateクエリは今日(0時区切り)を基準(=0)とする
 now=os.time()
 timezone=now-os.time(os.date('!*t',now))
+baseDate=math.floor((now+9*3600)/(24*3600))
+baseTime=baseDate*24*3600
 
 if sid==0 then
   showServices={}
@@ -52,12 +56,15 @@ else
     rt[('%04X%04X%04X%04X'):format(v.onid, v.tsid, v.sid, v.eid)]=true
   end
   edcb.htmlEscape=15
-  et=edcb.EnumEventInfo({{onid=onid, tsid=tsid, sid=sid}}) or {}
-  for i,v in ipairs(edcb.EnumEventInfoArchive and edcb.EnumEventInfoArchive({{onid=onid, tsid=tsid, sid=sid}}) or {}) do
+  --前後2週間の番組だけ取得する
+  range={startTime=os.date('!*t',baseTime+(date-14)*24*3600),durationSecond=28*24*3600}
+  et=edcb.EnumEventInfo({{onid=onid,tsid=tsid,sid=sid}},range) or {}
+  for i,v in ipairs(edcb.EnumEventInfoArchive and edcb.EnumEventInfoArchive({{onid=onid,tsid=tsid,sid=sid}},range) or {}) do
     v.past=true
     table.insert(et, v)
   end
   table.sort(et, function(a,b) return (a.startTime and os.time(a.startTime) or 0)<(b.startTime and os.time(b.startTime) or 0) end)
+  ct:Append('<div class="page-nav">\n  <a href="epglist.html?id='..onid..'-'..tsid..'-'..sid..'&amp;date='..(date-28)..'#footer">↑↑</a>\n</div>\n')
   ct:Append('<div id="main" class="epg-list">\n')
   for i,v in ipairs(et) do
     sub=v.eventGroupInfo and #v.eventGroupInfo.eventDataList==1 and (
@@ -82,6 +89,9 @@ else
     end
   end
   ct:Append('</div>\n')
+  if date<0 then
+    ct:Append('<div class="page-nav">\n  <a href="epglist.html?id='..onid..'-'..tsid..'-'..sid..'&amp;date='..(date+28)..'">↓↓</a>\n</div>\n')
+  end
 end
 
 ct:Append([=[

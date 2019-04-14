@@ -73,7 +73,7 @@ namespace EpgTimer.EpgView
                     LeftDoubleClick(sender, lastPopupPos);
                 }
             }
-            else if (Settings.Instance.EpgInfoSingleClick)
+            else if (EpgSetting.EpgInfoSingleClick)
             {
                 toolTip.IsOpen = false;
             }
@@ -99,7 +99,7 @@ namespace EpgTimer.EpgView
             toolTipTimer.Stop();
             try
             {
-                if (Settings.Instance.EpgPopup || Settings.Instance.EpgToolTip == false)
+                if (EpgSetting.EpgPopup || EpgSetting.EpgToolTip == false)
                 {
                     return;
                 }
@@ -124,7 +124,7 @@ namespace EpgTimer.EpgView
                             if (info.LeftPos <= cursorPos.X && cursorPos.X < info.LeftPos + info.Width &&
                                 info.TopPos <= cursorPos.Y && cursorPos.Y < info.TopPos + info.Height)
                             {
-                                if (info.TitleDrawErr == false && Settings.Instance.EpgToolTipNoViewOnly == true)
+                                if (info.TitleDrawErr == false && EpgSetting.EpgToolTipNoViewOnly)
                                 {
                                     break;
                                 }
@@ -132,24 +132,8 @@ namespace EpgTimer.EpgView
 
                                 if (info != null)
                                 {
-                                    if (info.EventInfo.StartTimeFlag == 1)
-                                    {
-                                        viewTip += info.EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                    }
-                                    else
-                                    {
-                                        viewTip += "未定 ～ ";
-                                    }
-                                    if (info.EventInfo.DurationFlag == 1)
-                                    {
-                                        DateTime endTime = info.EventInfo.start_time + TimeSpan.FromSeconds(info.EventInfo.durationSec);
-                                        viewTip += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-                                    }
-                                    else
-                                    {
-                                        viewTip += "未定\r\n";
-                                    }
-
+                                    viewTip += CommonManager.GetTimeDurationText(info.EventInfo.StartTimeFlag != 0, info.EventInfo.start_time,
+                                                                                 info.EventInfo.DurationFlag != 0, info.EventInfo.durationSec) + "\r\n";
                                     if (info.EventInfo.ShortInfo != null)
                                     {
                                         viewTip += info.EventInfo.ShortInfo.event_name + "\r\n\r\n";
@@ -169,8 +153,8 @@ namespace EpgTimer.EpgView
                                 block.TextWrapping = TextWrapping.Wrap;
                                 block.Margin = new Thickness(2);
 
-                                block.Background = CommonManager.Instance.EpgTipsBackColor;
-                                block.Foreground = CommonManager.Instance.EpgTipsForeColor;
+                                block.Background = new SolidColorBrush(Color.FromRgb(EpgSetting.EpgTipsBackColorR, EpgSetting.EpgTipsBackColorG, EpgSetting.EpgTipsBackColorB));
+                                block.Foreground = new SolidColorBrush(Color.FromRgb(EpgSetting.EpgTipsForeColorR, EpgSetting.EpgTipsForeColorG, EpgSetting.EpgTipsForeColorB));
                                 border.Child = block;
                                 toolTip.Child = border;
                                 toolTip.IsOpen = true;
@@ -194,7 +178,7 @@ namespace EpgTimer.EpgView
 
         protected void PopupItem()
         {
-            if (Settings.Instance.EpgPopup == false) return;
+            if (EpgSetting.EpgPopup == false) return;
 
             ProgramViewItem info = null;
 
@@ -234,33 +218,43 @@ namespace EpgTimer.EpgView
             }
 
             //この番組だけのEpgViewPanelをつくる
-            popupItemPanel.Background = CommonManager.Instance.EpgBackColor;
+            popupItemPanel.Background = new SolidColorBrush(Color.FromRgb(EpgSetting.EpgBackColorR, EpgSetting.EpgBackColorG, EpgSetting.EpgBackColorB));
+            popupItemPanel.Background.Freeze();
             popupItemPanel.Width = info.Width;
-            popupItemPanel.BorderLeftSize = Settings.Instance.EpgBorderLeftSize;
-            popupItemPanel.BorderTopSize = Settings.Instance.EpgBorderTopSize;
-            popupItemPanel.IsTitleIndent = Settings.Instance.EpgTitleIndent;
-            popupItemPanel.ExtInfoMode = Settings.Instance.EpgExtInfoPopup;
-            popupItemPanel.ReplaceDictionaryNormal = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePattern);
-            popupItemPanel.ReplaceDictionaryTitle = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePatternTitle);
-            popupItemPanel.ItemFontNormal = new EpgViewPanel.ItemFont(Settings.Instance.FontName, false, true);
-            popupItemPanel.ItemFontTitle = new EpgViewPanel.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle, true);
+            var dictTitle = CommonManager.CreateReplaceDictionary(EpgSetting.EpgReplacePatternTitle);
+            var dicNormal = CommonManager.CreateReplaceDictionary(EpgSetting.EpgReplacePattern);
+            var itemFontTitle = new EpgViewPanel.ItemFont(EpgSetting.FontNameTitle, EpgSetting.FontBoldTitle, true);
+            var itemFontNormal = new EpgViewPanel.ItemFont(EpgSetting.FontName, false, true);
+            Brush brushTitle = ColorDef.CustColorBrush(EpgSetting.TitleColor1, EpgSetting.TitleCustColor1);
+            Brush brushNormal = ColorDef.CustColorBrush(EpgSetting.TitleColor2, EpgSetting.TitleCustColor2);
             Canvas.SetLeft(popupItemPanel, 0);
             var items = new List<ProgramViewItem>() { new ProgramViewItem(info.EventInfo, info.Past) };
             items[0].Width = info.Width;
+            items[0].ContentColor = info.ContentColor;
 
             //テキスト全体を表示できる高さを求める
             items[0].Height = 4096;
-            popupItemPanel.Items = items;
-            double renderHeight = popupItemPanel.LastItemRenderTextHeight;
-            popupItemPanel.Items = null;
-            items[0].Height = Math.Max(renderHeight, info.Height);
+            popupItemPanel.Initialize(items, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
+                                      EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
+                                      dictTitle, dicNormal, itemFontTitle, itemFontNormal,
+                                      EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal);
+            items[0].Height = Math.Max(popupItemPanel.LastItemRenderTextHeight, info.Height);
             popupItemPanel.Height = items[0].Height;
-            popupItemPanel.Items = items;
+            popupItemPanel.Initialize(items, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
+                                      EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
+                                      dictTitle, dicNormal, itemFontTitle, itemFontNormal,
+                                      EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal);
             popupItemPanel.InvalidateVisual();
 
             Canvas.SetLeft(popupItem, info.LeftPos);
             Canvas.SetTop(popupItem, info.TopPos);
             popupItem.Visibility = System.Windows.Visibility.Visible;
+        }
+
+        public EpgSetting EpgSetting
+        {
+            get;
+            set;
         }
 
         public void ClearInfo()
@@ -302,35 +296,58 @@ namespace EpgTimer.EpgView
                 }
                 reserveBorder.Clear();
 
+                //0→50で塗りつぶしの不透明度が上がる
+                int fillOpacity = Math.Min(EpgSetting.ReserveRectFillOpacity, 50) * 2;
+                //50→100で枠の不透明度が下がる
+                int strokeOpacity = Math.Min(100 - EpgSetting.ReserveRectFillOpacity, 50) * 2;
+                //予約枠が色名指定のときは少し透過(0xA0)する
+                Brush strokeNormal = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorNormal, EpgSetting.ContentCustColorList[17], 0xA0, strokeOpacity);
+                Brush strokeNo = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorNo, EpgSetting.ContentCustColorList[18], 0xA0, strokeOpacity);
+                Brush strokeNoTuner = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorNoTuner, EpgSetting.ContentCustColorList[19], 0xA0, strokeOpacity);
+                Brush strokeWarning = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorWarning, EpgSetting.ContentCustColorList[20], 0xA0, strokeOpacity);
+                Brush fillNormal = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorNormal, EpgSetting.ContentCustColorList[17], 0xA0, fillOpacity);
+                Brush fillNo = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorNo, EpgSetting.ContentCustColorList[18], 0xA0, fillOpacity);
+                Brush fillNoTuner = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorNoTuner, EpgSetting.ContentCustColorList[19], 0xA0, fillOpacity);
+                Brush fillWarning = ColorDef.CustColorBrush(EpgSetting.ReserveRectColorWarning, EpgSetting.ContentCustColorList[20], 0xA0, fillOpacity);
+                var blurEffect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+                blurEffect.Freeze();
+                var dashArray = new DoubleCollection() { 2.5, 1.5 };
+                dashArray.Freeze();
+
                 foreach (ReserveViewItem info in reserveList)
                 {
                     Rectangle rect = new Rectangle();
-                    Rectangle fillOnlyRect = Settings.Instance.ReserveRectFillWithShadow ? null : new Rectangle();
+                    Rectangle fillOnlyRect = EpgSetting.ReserveRectFillWithShadow ? null : new Rectangle();
                     Rectangle fillRect = fillOnlyRect ?? rect;
 
                     if (info.ReserveInfo.RecSetting.RecMode == 5)
                     {
-                        rect.Stroke = CommonManager.Instance.CustContentColorList[19];
-                        fillRect.Fill = CommonManager.Instance.CustContentColorList[20];
+                        rect.Stroke = strokeNo;
+                        fillRect.Fill = fillNo;
                     }
                     else if (info.ReserveInfo.OverlapMode == 2)
                     {
-                        rect.Stroke = CommonManager.Instance.CustContentColorList[21];
-                        fillRect.Fill = CommonManager.Instance.CustContentColorList[22];
+                        rect.Stroke = strokeNoTuner;
+                        fillRect.Fill = fillNoTuner;
                     }
                     else if (info.ReserveInfo.OverlapMode == 1)
                     {
-                        rect.Stroke = CommonManager.Instance.CustContentColorList[23];
-                        fillRect.Fill = CommonManager.Instance.CustContentColorList[24];
+                        rect.Stroke = strokeWarning;
+                        fillRect.Fill = fillWarning;
                     }
                     else
                     {
-                        rect.Stroke = CommonManager.Instance.CustContentColorList[17];
-                        fillRect.Fill = CommonManager.Instance.CustContentColorList[18];
+                        rect.Stroke = strokeNormal;
+                        fillRect.Fill = fillNormal;
                     }
 
-                    rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+                    rect.Effect = blurEffect;
                     rect.StrokeThickness = 3;
+                    if (info.ReserveInfo.RecSetting.RecMode == 4)
+                    {
+                        rect.StrokeDashArray = dashArray;
+                        rect.StrokeDashCap = PenLineCap.Round;
+                    }
                     rect.Width = info.Width;
                     rect.Height = info.Height;
                     rect.IsHitTestVisible = false;
@@ -378,27 +395,27 @@ namespace EpgTimer.EpgView
                         canvas.Children.RemoveAt(i--);
                     }
                 }
-                var itemFontNormal = new EpgViewPanel.ItemFont(Settings.Instance.FontName, false, false);
-                var itemFontTitle = new EpgViewPanel.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle, false);
-                epgViewPanel.Background = CommonManager.Instance.EpgBackColor;
-                epgViewPanel.ReplaceDictionaryNormal = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePattern);
-                epgViewPanel.ReplaceDictionaryTitle = CommonManager.CreateReplaceDictionary(Settings.Instance.EpgReplacePatternTitle);
+                var itemFontNormal = new EpgViewPanel.ItemFont(EpgSetting.FontName, false, false);
+                var itemFontTitle = new EpgViewPanel.ItemFont(EpgSetting.FontNameTitle, EpgSetting.FontBoldTitle, false);
+                var background = new SolidColorBrush(Color.FromRgb(EpgSetting.EpgBackColorR, EpgSetting.EpgBackColorG, EpgSetting.EpgBackColorB));
+                //フリーズしないとかなり重い
+                background.Freeze();
+                var dictTitle = CommonManager.CreateReplaceDictionary(EpgSetting.EpgReplacePatternTitle);
+                var dicNormal = CommonManager.CreateReplaceDictionary(EpgSetting.EpgReplacePattern);
+                Brush brushTitle = ColorDef.CustColorBrush(EpgSetting.TitleColor1, EpgSetting.TitleCustColor1);
+                Brush brushNormal = ColorDef.CustColorBrush(EpgSetting.TitleColor2, EpgSetting.TitleCustColor2);
                 double totalWidth = 0;
                 foreach (var programList in programGroupList)
                 {
                     EpgViewPanel item = new EpgViewPanel();
-                    item.Background = epgViewPanel.Background;
+                    item.Background = background;
                     item.Height = Math.Ceiling(height);
                     item.Width = programList.Item1;
-                    item.BorderLeftSize = Settings.Instance.EpgBorderLeftSize;
-                    item.BorderTopSize = Settings.Instance.EpgBorderTopSize;
-                    item.IsTitleIndent = Settings.Instance.EpgTitleIndent;
-                    item.ReplaceDictionaryNormal = epgViewPanel.ReplaceDictionaryNormal;
-                    item.ReplaceDictionaryTitle = epgViewPanel.ReplaceDictionaryTitle;
-                    item.ItemFontNormal = itemFontNormal;
-                    item.ItemFontTitle = itemFontTitle;
                     Canvas.SetLeft(item, totalWidth);
-                    item.Items = programList.Item2;
+                    item.Initialize(programList.Item2, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
+                                    EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoTable,
+                                    dictTitle, dicNormal, itemFontTitle, itemFontNormal,
+                                    EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal);
                     item.InvalidateVisual();
                     canvas.Children.Add(item);
                     totalWidth += programList.Item1;
@@ -431,8 +448,8 @@ namespace EpgTimer.EpgView
 
                         double OffsetH = 0;
                         double OffsetV = 0;
-                        MoveX *= Settings.Instance.DragScroll;
-                        MoveY *= Settings.Instance.DragScroll;
+                        MoveX *= EpgSetting.DragScroll;
+                        MoveY *= EpgSetting.DragScroll;
                         OffsetH = lastDownHOffset + MoveX;
                         OffsetV = lastDownVOffset + MoveY;
                         if (OffsetH < 0)
@@ -466,7 +483,7 @@ namespace EpgTimer.EpgView
                                 }
                             }
 
-                            toolTipTimer.Interval = TimeSpan.FromMilliseconds(Settings.Instance.EpgToolTipViewWait);
+                            toolTipTimer.Interval = TimeSpan.FromMilliseconds(EpgSetting.EpgToolTipViewWait);
                             toolTipTimer.Start();
                             PopupItem();
                             lastPopupPos = CursorPos;
@@ -517,7 +534,7 @@ namespace EpgTimer.EpgView
                 isDrag = false;
                 if (isDragMoved == false)
                 {
-                    if (Settings.Instance.EpgInfoSingleClick == true)
+                    if (EpgSetting.EpgInfoSingleClick)
                     {
                         Point cursorPos = Mouse.GetPosition(canvas);
                         if (LeftDoubleClick != null)
@@ -572,7 +589,7 @@ namespace EpgTimer.EpgView
 
         private void canvas_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (Settings.Instance.EpgPopup)
+            if (EpgSetting.EpgPopup)
             {
                 popupItem.Visibility = System.Windows.Visibility.Hidden;
                 lastPopupInfo = null;

@@ -27,10 +27,23 @@ if post then
   end
 end
 
-w=edcb.GetRecFileInfo(id)
+w=edcb.GetRecFileInfoBasic(id)
 edcb.htmlEscape=15
 v=edcb.GetRecFileInfo(id)
 if v then
+  if #v.programInfo==0 and v.eid~=65535 then
+    --過去番組情報を探してみる
+    ev=edcb.EnumEventInfoArchive and edcb.EnumEventInfoArchive({{onid=v.onid,tsid=v.tsid,sid=v.sid}},{startTime=v.startTime,durationSecond=1})
+    if ev and #ev>0 then
+      v.programInfo=ConvertEpgInfoText2(ev[1])
+    else
+      --番組情報を探してみる
+      ev=edcb.SearchEpg(v.onid,v.tsid,v.sid,v.eid)
+      if ev and ev.startTime and os.time(ev.startTime)==os.time(v.startTime) then
+        v.programInfo=ConvertEpgInfoText2(ev)
+      end
+    end
+  end
   ct:Append('  <dl>\n'
     ..'    <dt>番組名</dt><dd>'..FormatTimeAndDuration(v.startTime, v.durationSecond)..'<br>'..v.serviceName..'<br>'..v.title..'</dd>\n'
     ..'    <dt>結果</dt><dd>'..v.comment..'</dd>\n'

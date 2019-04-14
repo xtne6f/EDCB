@@ -33,14 +33,6 @@ namespace EpgTimer
             try
             {
                 //ウインドウ位置の復元
-                if (Settings.Instance.SearchWndTop != 0)
-                {
-                    this.Top = Settings.Instance.SearchWndTop;
-                }
-                if (Settings.Instance.SearchWndLeft != 0)
-                {
-                    this.Left = Settings.Instance.SearchWndLeft;
-                }
                 if (Settings.Instance.SearchWndWidth != 0)
                 {
                     this.Width = Settings.Instance.SearchWndWidth;
@@ -54,20 +46,11 @@ namespace EpgTimer
                     //操作不可能な値をセットしないよう努める
                     grid_Tabs.Height = new GridLength(Math.Min(Settings.Instance.SearchWndTabsHeight, Height));
                 }
-
-                EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                Settings.Instance.GetDefSearchSetting(defKey);
-
-                searchKeyView.SetSearchKey(defKey);
+                searchKeyView.SetSearchKey(Settings.Instance.CreateDefSearchSetting());
             }
             catch
             {
             }
-        }
-
-        public void GetSearchKey(ref EpgSearchKeyInfo key)
-        {
-            searchKeyView.GetSearchKey(ref key);
         }
 
         public void SetSearchDefKey(EpgSearchKeyInfo key)
@@ -115,7 +98,7 @@ namespace EpgTimer
 
         private void tabItem_searchKey_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (e.Key == Key.Enter && e.IsRepeat == false)
             {
                 SearchPg();
             }
@@ -132,17 +115,21 @@ namespace EpgTimer
             {
                 var resultList = new List<SearchItem>();
 
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref key);
+                EpgSearchKeyInfo key = searchKeyView.GetSearchKey();
                 key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? 7 : 0);
-                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
-
-                keyList.Add(key);
-                List<EpgEventInfo> list = new List<EpgEventInfo>();
-
-                CommonManager.CreateSrvCtrl().SendSearchPg(keyList, ref list);
+                List<EpgEventInfo> list;
+                if (Settings.Instance.NgAutoEpgLoadNW)
+                {
+                    //EPGデータの遅延更新のため内部キャッシュは利用しない
+                    list = new List<EpgEventInfo>();
+                    CommonManager.CreateSrvCtrl().SendSearchPg(new List<EpgSearchKeyInfo>() { key }, ref list);
+                }
+                else
+                {
+                    CommonManager.Instance.DB.SearchPg(new List<EpgSearchKeyInfo>() { key }, out list);
+                }
                 DateTime now = DateTime.UtcNow.AddHours(9);
-                foreach (EpgEventInfo info in list)
+                foreach (EpgEventInfo info in list ?? Enumerable.Empty<EpgEventInfo>())
                 {
                     SearchItem item = new SearchItem(info, false);
 
@@ -157,7 +144,7 @@ namespace EpgTimer
                     }
                 }
 
-                listView_result.DataContext = resultList;
+                listView_result.ItemsSource = resultList;
                 RefreshReserve();
                 Sort();
 
@@ -171,9 +158,9 @@ namespace EpgTimer
 
         private void RefreshReserve()
         {
-            if (listView_result.DataContext != null)
+            if (listView_result.ItemsSource != null)
             {
-                foreach (SearchItem item in (List<SearchItem>)listView_result.DataContext)
+                foreach (SearchItem item in listView_result.ItemsSource)
                 {
                     item.ReserveInfo = null;
                     foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
@@ -188,7 +175,7 @@ namespace EpgTimer
                         }
                     }
                 }
-                CollectionViewSource.GetDefaultView(listView_result.DataContext).Refresh();
+                CollectionViewSource.GetDefaultView(listView_result.ItemsSource).Refresh();
             }
         }
 
@@ -199,8 +186,7 @@ namespace EpgTimer
                 if (listView_result.SelectedItem != null)
                 {
                     List<ReserveData> list = new List<ReserveData>();
-                    RecSettingData setInfo = new RecSettingData();
-                    recSettingView.GetRecSetting(ref setInfo);
+                    RecSettingData setInfo = recSettingView.GetRecSetting();
 
                     foreach (SearchItem item in listView_result.SelectedItems)
                     {
@@ -262,14 +248,8 @@ namespace EpgTimer
             try
             {
                 EpgAutoAddData addItem = new EpgAutoAddData();
-                EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref searchKey);
-
-                RecSettingData recSetKey = new RecSettingData();
-                recSettingView.GetRecSetting(ref recSetKey);
-
-                addItem.searchInfo = searchKey;
-                addItem.recSetting = recSetKey;
+                addItem.searchInfo = searchKeyView.GetSearchKey();
+                addItem.recSetting = recSettingView.GetRecSetting();
 
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
@@ -291,14 +271,8 @@ namespace EpgTimer
             {
                 EpgAutoAddData addItem = new EpgAutoAddData();
                 addItem.dataID = autoAddID;
-                EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref searchKey);
-
-                RecSettingData recSetKey = new RecSettingData();
-                recSettingView.GetRecSetting(ref recSetKey);
-
-                addItem.searchInfo = searchKey;
-                addItem.recSetting = recSetKey;
+                addItem.searchInfo = searchKeyView.GetSearchKey();
+                addItem.recSetting = recSettingView.GetRecSetting();
 
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
@@ -395,11 +369,11 @@ namespace EpgTimer
 
         private void Sort()
         {
-            if (listView_result.DataContext == null)
+            if (listView_result.ItemsSource == null)
             {
                 return;
             }
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
+            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.ItemsSource);
 
             using (dataView.DeferRefresh())
             {
@@ -420,20 +394,12 @@ namespace EpgTimer
             CommonManager.Instance.DB.ReserveInfoChanged -= RefreshReserve;
         }
 
-        private void Window_LocationChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
-                {
-                    Settings.Instance.SearchWndTop = this.Top;
-                    Settings.Instance.SearchWndLeft = this.Left;
-                }
-            }
-        }
-
         protected override void OnKeyDown(KeyEventArgs e)
         {
+            if (e.IsRepeat)
+            {
+                return;
+            }
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
                 switch (e.Key)

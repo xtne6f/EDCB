@@ -89,6 +89,14 @@ namespace EpgTimer
             }
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (tabControl.SelectedItem != null)
+            {
+                ((TabItem)tabControl.SelectedItem).Focus();
+            }
+        }
+
         private void button_add_reserve_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -129,10 +137,7 @@ namespace EpgTimer
                 reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
                 reserveInfo.ServiceID = eventInfo.service_id;
                 reserveInfo.EventID = eventInfo.event_id;
-
-                RecSettingData setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = recSettingView.GetRecSetting();
 
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
@@ -167,15 +172,6 @@ namespace EpgTimer
                 {
                     case Key.A:
                         this.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                }
-            }
-            else
-            {
-                switch (e.Key)
-                {
-                    case Key.Escape:
-                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         break;
                 }
             }

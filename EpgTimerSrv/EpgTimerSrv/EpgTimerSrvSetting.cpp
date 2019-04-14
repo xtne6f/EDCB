@@ -143,33 +143,29 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 vector<pair<wstring, wstring>> CEpgTimerSrvSetting::EnumBonFileName(LPCWSTR settingPath)
 {
 	vector<pair<wstring, wstring>> ret;
-	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile(fs_path(settingPath).append(L"*.ChSet4.txt").c_str(), &findData);
-	if( hFind != INVALID_HANDLE_VALUE ){
-		do{
-			if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-				wstring bon = findData.cFileName;
-				for( int depth = 0; bon.empty() == false; ){
-					if( bon.back() == L')' ){
-						depth++;
-					}else if( bon.back() == L'(' && depth > 0 ){
-						if( --depth == 0 ){
-							bon.pop_back();
-							break;
-						}
+	EnumFindFile(fs_path(settingPath).append(L"*.ChSet4.txt").c_str(), [&ret](WIN32_FIND_DATA& findData) -> bool {
+		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+			wstring bon = findData.cFileName;
+			for( int depth = 0; bon.empty() == false; ){
+				if( bon.back() == L')' ){
+					depth++;
+				}else if( bon.back() == L'(' && depth > 0 ){
+					if( --depth == 0 ){
+						bon.pop_back();
+						break;
 					}
-					bon.pop_back();
 				}
-				if( bon.empty() == false ){
-					bon += L".dll";
-					if( std::find_if(ret.begin(), ret.end(), [&](const pair<wstring, wstring>& a) { return CompareNoCase(a.first, bon) == 0; }) == ret.end() ){
-						ret.push_back(pair<wstring, wstring>(bon, findData.cFileName));
-					}
+				bon.pop_back();
+			}
+			if( bon.empty() == false ){
+				bon += L".dll";
+				if( std::find_if(ret.begin(), ret.end(), [&](const pair<wstring, wstring>& a) { return CompareNoCase(a.first, bon) == 0; }) == ret.end() ){
+					ret.push_back(pair<wstring, wstring>(bon, findData.cFileName));
 				}
 			}
-		}while( FindNextFile(hFind, &findData) );
-		FindClose(hFind);
-	}
+		}
+		return true;
+	});
 	return ret;
 }
 
@@ -186,16 +182,12 @@ wstring CEpgTimerSrvSetting::CheckTSExtension(const wstring& ext)
 vector<wstring> CEpgTimerSrvSetting::EnumRecNamePlugInFileName()
 {
 	vector<wstring> ret;
-	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile(GetModulePath().replace_filename(L"RecName\\RecName*.dll").c_str(), &findData);
-	if( hFind != INVALID_HANDLE_VALUE ){
-		do{
-			if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-				ret.push_back(findData.cFileName);
-			}
-		}while( FindNextFile(hFind, &findData) );
-		FindClose(hFind);
-	}
+	EnumFindFile(GetModulePath().replace_filename(L"RecName\\RecName*.dll").c_str(), [&ret](WIN32_FIND_DATA& findData) -> bool {
+		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+			ret.push_back(findData.cFileName);
+		}
+		return true;
+	});
 	return ret;
 }
 
@@ -537,7 +529,8 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 		swprintf_s(val, L"%d", i);
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO_SET_EPG_ARCHIVE_PERIOD), val);
 	}
-	ComboBox_SetCurSel(GetDlgItem(hwnd, IDC_COMBO_SET_EPG_ARCHIVE_PERIOD), min(max(setting.epgArchivePeriodHour / 24, 0), 14));
+	ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO_SET_EPG_ARCHIVE_PERIOD), L"∞");
+	ComboBox_SetCurSel(GetDlgItem(hwnd, IDC_COMBO_SET_EPG_ARCHIVE_PERIOD), min(max(setting.epgArchivePeriodHour / 24, 0), 15));
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_TIME_SYNC, setting.timeSync);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_RESIDENT, setting.residentMode >= 1);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SHOW_TRAY, setting.residentMode != 1);
@@ -817,7 +810,9 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WritePrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", GetDlgItemInt(hwnd, IDC_EDIT_SET_TCP_RES_TO, NULL, FALSE), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"AutoDelRecInfo", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_AUTODEL_REC_INFO), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"AutoDelRecInfoNum", GetDlgItemInt(hwnd, IDC_EDIT_SET_AUTODEL_REC_INFO, NULL, FALSE), iniPath.c_str());
-	WritePrivateProfileInt(L"SET", L"EpgArchivePeriodHour", ComboBox_GetCurSel(GetDlgItem(hwnd, IDC_COMBO_SET_EPG_ARCHIVE_PERIOD)) * 24, iniPath.c_str());
+	//無制限は20000日(480000時間、整数秒で表せる大きな値)で表現する
+	int periodDay = ComboBox_GetCurSel(GetDlgItem(hwnd, IDC_COMBO_SET_EPG_ARCHIVE_PERIOD));
+	WritePrivateProfileInt(L"SET", L"EpgArchivePeriodHour", (periodDay > 14 ? 20000 : periodDay) * 24, iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"TimeSync", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_TIME_SYNC), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"ResidentMode",
 	                       GetDlgButtonCheck(hwnd, IDC_CHECK_SET_RESIDENT) ?

@@ -87,4 +87,21 @@ vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName);
 wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDefault, LPCWSTR fileName);
 BOOL WritePrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int value, LPCWSTR fileName);
 
+// FindFirstFile()‚ÌŒ‹‰Ê‚ð—ñ‹“‚·‚é
+template<class P>
+void EnumFindFile(LPCWSTR pattern, P enumProc)
+{
+	WIN32_FIND_DATA findData;
+	HANDLE hFind = FindFirstFile(pattern, &findData);
+	if( hFind != INVALID_HANDLE_VALUE ){
+		try{
+			while( enumProc(findData) && FindNextFile(hFind, &findData) );
+		}catch(...){
+			FindClose(hFind);
+			throw;
+		}
+		FindClose(hFind);
+	}
+}
+
 #endif

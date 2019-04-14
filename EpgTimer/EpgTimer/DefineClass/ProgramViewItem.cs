@@ -61,25 +61,8 @@ namespace EpgTimer
 
         public Brush ContentColor
         {
-            get
-            {
-                if (EventInfo.ContentInfo != null)
-                {
-                    foreach (EpgContentData info in EventInfo.ContentInfo.nibbleList)
-                    {
-                        if ((info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F) &&
-                            CommonManager.Instance.CustContentColorList.Count > info.content_nibble_level_1)
-                        {
-                            return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
-                        }
-                    }
-                }
-                if (CommonManager.Instance.CustContentColorList.Count > 0x10)
-                {
-                    return CommonManager.Instance.CustContentColorList[0x10];
-                }
-                return Brushes.White;
-            }
+            get;
+            set;
         }
     }
 }

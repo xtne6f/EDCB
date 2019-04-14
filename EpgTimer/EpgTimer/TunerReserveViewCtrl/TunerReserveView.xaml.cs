@@ -142,10 +142,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                             {
                                 if (info.TitleDrawErr == true)
                                 {
-                                    String view = "";
-                                    view = info.ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                    DateTime endTime = info.ReserveInfo.StartTime + TimeSpan.FromSeconds(info.ReserveInfo.DurationSecond);
-                                    view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
+                                    string view = CommonManager.GetTimeDurationText(true, info.ReserveInfo.StartTime,
+                                                                                    true, info.ReserveInfo.DurationSecond) + "\r\n";
                                     view += info.ReserveInfo.StationName;
                                     view += " (" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
@@ -216,8 +214,8 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                         double OffsetH = 0;
                         double OffsetV = 0;
-                        MoveX *= Settings.Instance.DragScroll;
-                        MoveY *= Settings.Instance.DragScroll;
+                        MoveX *= Settings.Instance.EpgSettingList[0].DragScroll;
+                        MoveY *= Settings.Instance.EpgSettingList[0].DragScroll;
                         OffsetH = lastDownHOffset + MoveX;
                         OffsetV = lastDownVOffset + MoveY;
                         if (OffsetH < 0)

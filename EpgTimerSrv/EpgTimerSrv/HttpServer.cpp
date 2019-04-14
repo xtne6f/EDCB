@@ -145,7 +145,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 
 	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_LUA + MG_FEATURES_CACHE + (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
 	this->initedLibrary = true;
-	if( mg_init_library(feat) != feat ){
+	if( mg_init_library(feat + (op.enableSsdpServer ? MG_FEATURES_X_ALLOW_SUBSCRIBE : 0)) != feat ){
 		OutputDebugString(L"CHttpServer::StartServer(): Library initialization failed.\r\n");
 		StopServer();
 		return false;
@@ -336,6 +336,15 @@ int get_int(lua_State* L, const char* name)
 	int ret = (int)lua_tointeger(L, -1);
 	lua_pop(L, 1);
 	return ret;
+}
+
+__int64 get_int64(lua_State* L, const char* name)
+{
+	lua_getfield(L, -1, name);
+	lua_Number ret = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	//®”‚ğ³‚µ‚­•\Œ»‚Å‚«‚È‚¢”ÍˆÍ‚Ì’l‚Í§ŒÀ‚·‚é
+	return (__int64)min(max(ret, -1e+16), 1e+16);
 }
 
 bool get_boolean(lua_State* L, const char* name)

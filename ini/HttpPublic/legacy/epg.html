@@ -7,10 +7,7 @@ MINIMUM_PX=12
 SERVICE_PX=150
 --時刻軸を入れる間隔
 TIME_COLUMN=3
-HIDE_SERVICES={
-  --非表示にしたいサービスを['ONID-TSID-SID']=true,のように指定
-  --['1-2345-6789']=true,
-}
+--番組を絞り込みたいときはNOTキーワードの先頭を"#EPG_CUST_1"にした自動EPG予約を作る
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
@@ -28,6 +25,7 @@ ct:Append([=[
 ]=])
 
 tab=GetVarInt(mg.request_info.query_string,'tab',0,4) or 0
+cust=GetVarInt(mg.request_info.query_string,'cust',0,1) or 1
 date=GetVarInt(mg.request_info.query_string,'date',-10000,1000) or 0
 --dateクエリは今日(深夜4時区切り)を基準(=0)とする
 now=os.time()
@@ -42,22 +40,43 @@ end
 
 showServices={}
 for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
-  if not HIDE_SERVICES[v.onid..'-'..v.tsid..'-'..v.sid] and (
-     tab==0 and NetworkType(v.onid)=='地デジ' or
+  if tab==0 and NetworkType(v.onid)=='地デジ' or
      tab==1 and NetworkType(v.onid)=='BS' or
      tab==2 and NetworkType(v.onid):find('^CS[12]') or
      tab==3 and NetworkType(v.onid)=='CS3' or
-     tab==4 and NetworkType(v.onid)=='その他') then
-    showServices[v.onid..'-'..v.tsid..'-'..v.sid]=true
+     tab==4 and NetworkType(v.onid)=='その他' then
+    showServices[v.onid..'-'..v.tsid..'-'..v.sid]=1
   end
 end
 
+if cust~=0 then
+  for i,v in ipairs(edcb.EnumAutoAdd()) do
+    if v.searchInfo.notKey:find('^#EPG_CUST_'..cust) then
+      key=v.searchInfo
+      key.andKey=key.andKey:gsub('^^!{999}','')
+      i=1
+      while i<=#key.serviceList do
+        if showServices[key.serviceList[i].onid..'-'..key.serviceList[i].tsid..'-'..key.serviceList[i].sid]==1 then
+          --サービス絞り込みにあるものは表示
+          showServices[key.serviceList[i].onid..'-'..key.serviceList[i].tsid..'-'..key.serviceList[i].sid]=2
+          i=i+1
+        else
+          --表示されないので検索対象から除外
+          table.remove(key.serviceList,i)
+        end
+      end
+      break
+    end
+  end
+end
+
+filterService={}
 minTime=nil
 maxTime=nil
 st={}
 edcb.htmlEscape=15
 for i,v in ipairs(edcb.GetServiceList() or {}) do
-  if showServices[v.onid..'-'..v.tsid..'-'..v.sid] then
+  if showServices[v.onid..'-'..v.tsid..'-'..v.sid]==(key and 2 or 1) then
     table.insert(st, v)
     mmt=edcb.GetEventMinMaxTime(v.onid, v.tsid, v.sid)
     if mmt then
@@ -69,22 +88,45 @@ for i,v in ipairs(edcb.GetServiceList() or {}) do
       minTime=minTime and os.time(mmt.minTime)>minTime and minTime or os.time(mmt.minTime)
       maxTime=maxTime and os.time(mmt.maxTime)<maxTime and maxTime or os.time(mmt.maxTime)
     end
-    --表示範囲の番組だけ取得する
-    st[#st].et=edcb.EnumEventInfo({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('!*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}
-    for j,w in ipairs(edcb.EnumEventInfoArchive and
-        edcb.EnumEventInfoArchive({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('!*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}) do
-      w.past=true
-      table.insert(st[#st].et, w)
-    end
-    table.sort(st[#st].et, function(a,b) return os.time(a.startTime)<os.time(b.startTime) end)
+    filterService[#filterService+1]={onid=v.onid, tsid=v.tsid, sid=v.sid}
   end
+end
+
+--表示範囲の番組だけ取得する
+range={startTime=os.date('!*t',baseTime+date*24*3600),durationSecond=25*3600}
+if key and edcb.SearchEpgArchive then
+  et=edcb.SearchEpg(key,range)
+  for i,v in ipairs(edcb.SearchEpgArchive(key,range)) do
+    v.past=true
+    et[#et+1]=v
+  end
+else
+  et=edcb.EnumEventInfo(filterService,range) or {}
+  for i,v in ipairs(edcb.EnumEventInfoArchive and edcb.EnumEventInfoArchive(filterService,range) or {}) do
+    v.past=true
+    et[#et+1]=v
+  end
+end
+
+for i,v in ipairs(st) do
+  v.et={}
+  for j,w in ipairs(et) do
+    if v.onid==w.onid and v.tsid==w.tsid and v.sid==w.sid then
+      v.et[#v.et+1]=w
+    end
+  end
+  table.sort(v.et, function(a,b) return os.time(a.startTime)<os.time(b.startTime) end)
 end
 
 SortServiceListInplace(st)
 
 pageNav='<div class="page-nav">\n'
 for i,v in ipairs({'地デジ','BS','CS','CS3','その他'}) do
-  pageNav=pageNav..'  '..(tab==i-1 and v or '<a href="epg.html?tab='..(i-1)..'&amp;date='..date..'">'..v..'</a>')..'\n'
+  pageNav=pageNav..'  '..(tab==i-1 and v or '<a href="epg.html?tab='..(i-1)..'&amp;cust='..cust..'&amp;date='..date..'">'..v..'</a>')..'\n'
+end
+pageNav=pageNav..'  ||\n'
+for i,v in ipairs({'すべて','カスタム'}) do
+  pageNav=pageNav..'  '..(cust==i-1 and v or '<a href="epg.html?tab='..tab..'&amp;cust='..(i-1)..'&amp;date='..date..'">'..v..'</a>')..'\n'
 end
 pageNav=pageNav..'  ||\n'
   ..'  <a href="#noon">昼</a>\n'
@@ -95,7 +137,7 @@ pageNav=pageNav..'  ||\n'
 if minTime then
   for i=math.floor((minTime+timezone-4*3600)/(24*3600)),math.floor((maxTime+timezone-4*3600)/(24*3600)) do
     d=os.date('!*t', i*24*3600)
-    pageNav=pageNav..'  '..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;date='..(i-baseDate)..'">' or '')
+    pageNav=pageNav..'  '..(i==baseDate and '*' or '')..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;cust='..cust..'&amp;date='..(i-baseDate)..'">' or '')
       ..d.month..'/'..d.day..'('..({'日','月','火','水','木','金','土'})[d.wday]..')'..(i-baseDate~=date and '</a>\n' or '\n')
   end
 end

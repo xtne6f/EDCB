@@ -58,6 +58,7 @@
 #define CMD2_EPG_SRV_GET_EPG_FILE2			2032 //サーバー連携用　EPGデータファイル取得
 #define CMD2_EPG_SRV_SEARCH_PG2				2125 //番組検索
 #define CMD2_EPG_SRV_SEARCH_PG_BYKEY2		2127 //番組検索、キーごとのイベントを全て返す
+#define CMD2_EPG_SRV_SEARCH_PG_ARC2			2129 //過去番組検索
 #define CMD2_EPG_SRV_ENUM_AUTO_ADD2			2131 //自動予約登録の条件一覧取得
 #define CMD2_EPG_SRV_ADD_AUTO_ADD2			2132 //自動予約登録の条件追加
 #define CMD2_EPG_SRV_CHG_AUTO_ADD2			2134 //自動予約登録の条件変更
@@ -66,14 +67,14 @@
 #define CMD2_EPG_SRV_CHG_MANU_ADD2			2144 //プログラム予約自動登録の条件変更
 #define CMD2_EPG_SRV_GET_STATUS_NOTIFY2		2200 //サーバーの情報変更通知を取得（ロングポーリング）
 
+#define CMD2_EPG_SRV_GET_PG_ARC_MINMAX		1020 //過去番組情報の最小開始時間と最大開始時間を取得する
 #define CMD2_EPG_SRV_ENUM_SERVICE			1021 //読み込まれたEPGデータのサービスの一覧取得
 #define CMD2_EPG_SRV_ENUM_PG_INFO			1022 //サービス指定で番組情報一覧を取得する
 #define CMD2_EPG_SRV_GET_PG_INFO			1023 //番組情報取得
 #define CMD2_EPG_SRV_GET_PG_INFO_LIST		1024 //番組情報取得(指定IDリスト)
 #define CMD2_EPG_SRV_SEARCH_PG				1025 //番組検索
 #define CMD2_EPG_SRV_ENUM_PG_ALL			1026 //番組情報一覧取得
-#define CMD2_EPG_SRV_ENUM_PG_ARC_INFO		1028 //サービス指定で過去番組情報一覧を取得する
-#define CMD2_EPG_SRV_ENUM_PG_ARC_ALL		1029 //過去番組情報一覧取得
+#define CMD2_EPG_SRV_ENUM_PG_ARC			1030 //サービス指定と時間指定で過去番組情報一覧を取得する
 
 #define CMD2_EPG_SRV_ENUM_AUTO_ADD			1031 //自動予約登録の条件一覧取得
 #define CMD2_EPG_SRV_ADD_AUTO_ADD			1032 //自動予約登録の条件追加

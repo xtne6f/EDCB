@@ -86,34 +86,24 @@ BOOL CSetDlgService::OnInitDialog()
 
 	const fs_path path = GetSettingPath();
 
-	WIN32_FIND_DATA findData;
-	HANDLE find;
-
 	//指定フォルダのファイル一覧取得
-	find = FindFirstFile(fs_path(path).append(L"*.ChSet4.txt").c_str(), &findData);
-	if ( find == INVALID_HANDLE_VALUE ) {
-		return FALSE;
-	}
-	do{
+	EnumFindFile(fs_path(path).append(L"*.ChSet4.txt").c_str(), [this, &path](WIN32_FIND_DATA& findData) -> bool {
 		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			//本当に拡張子DLL?
-			if( IsExt(findData.cFileName, L".txt") == TRUE ){
-				wstring bonFileName = L"";
-				wstring buff = findData.cFileName;
-
-				FindBonFileName(buff, bonFileName);
-
+			//本当に拡張子TXT?
+			if( IsExt(findData.cFileName, L".txt") ){
+				wstring bonFileName;
+				FindBonFileName(findData.cFileName, bonFileName);
 				bonFileName += L".dll";
 
 				if( chList.insert(std::make_pair(bonFileName, std::make_pair(CParseChText4(), false))).second ){
 					chList[bonFileName].first.ParseText(fs_path(path).append(findData.cFileName).c_str());
-					ComboBox_AddString(GetDlgItem(IDC_COMBO_BON), bonFileName.c_str());
+					ComboBox_AddString(this->GetDlgItem(IDC_COMBO_BON), bonFileName.c_str());
 				}
 			}
 		}
-	}while(FindNextFile(find, &findData));
+		return true;
+	});
 
-	FindClose(find);
 	if( chList.size() > 0 ){
 		ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_BON), 0);
 		OnCbnSelchangeComboBon();

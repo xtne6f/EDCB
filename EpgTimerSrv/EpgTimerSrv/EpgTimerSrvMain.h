@@ -92,6 +92,8 @@ private:
 	static int LuaEnumEventInfoArchive(lua_State* L);
 	static int LuaEnumEventInfoProc(lua_State* L, bool archive);
 	static int LuaSearchEpg(lua_State* L);
+	static int LuaSearchEpgArchive(lua_State* L);
+	static int LuaSearchEpgProc(lua_State* L, bool archive);
 	static int LuaAddReserveData(lua_State* L);
 	static int LuaChgReserveData(lua_State* L);
 	static int LuaDelReserveData(lua_State* L);
