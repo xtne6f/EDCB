@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "PathUtil.h"
-#include <stdio.h>
+#include <stdexcept>
 
 namespace filesystem_
 {

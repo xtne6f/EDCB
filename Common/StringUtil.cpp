@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "StringUtil.h"
+#include <stdexcept>
 
 namespace
 {

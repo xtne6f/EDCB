@@ -2,6 +2,7 @@
 #define INCLUDE_CTRL_CMD_UTIL_H
 
 #include "StructDef.h"
+#include <stdexcept>
 
 namespace CtrlCmdUtilImpl_
 {
