@@ -1,3 +1,30 @@
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  padding: 0.2em 0;
+}
+
+input {
+  font-size: medium;
+  margin: 0.1em;
+}
+
+select {
+  font-size: medium;
+  margin: 0.1em;
+}
+
 h1, h2 {
   font-size: medium;
 }
@@ -149,10 +176,6 @@ th, td {
   position: absolute;
 }
 
-.epg-col > div > a:link {
-  text-decoration: none;
-}
-
 .epg-col > div > b {
   background: #f00;
   color: #fff;
@@ -160,10 +183,6 @@ th, td {
 
 .epg-list > div {
   color: #000;
-}
-
-.epg-list > div > a:link {
-  text-decoration: none;
 }
 
 .epg-list > div > b {
