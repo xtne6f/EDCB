@@ -135,7 +135,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 			vector<char> buff;
 			if( sys->CreateBatFile(work, exBatMargin, exNotifyInterval, exSW, exDirect, buff) ){
 				{
-					CBlockLock(&sys->managerLock);
+					CBlockLock lock(&sys->managerLock);
 					if( sys->idleMargin < exBatMargin ){
 						//ƒAƒCƒhƒ‹ŽžŠÔ‚É—]—T‚ª‚È‚¢‚Ì‚Å’†Ž~
 						sys->batWorkExitingFlag = true;
