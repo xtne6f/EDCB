@@ -1,20 +1,18 @@
 ﻿<Window x:Class="EpgTimer.RecInfoDescWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="録画情報" Height="361" Width="557" WindowStartupLocation="CenterOwner">
+        Title="録画情報" Height="420" Width="640" Loaded="Window_Loaded" WindowStartupLocation="CenterOwner">
     <Grid>
-        <Button Content="再生" Height="23" HorizontalAlignment="Left" Margin="12,12,0,0" Name="button_play" VerticalAlignment="Top" Width="75" Click="button_play_Click" />
-        <TabControl Margin="0,41,0,0" Name="tabControl1">
+        <TabControl Margin="0,0,0,39">
             <TabItem Header="番組情報" Name="tabItem_pgInfo">
-                <ScrollViewer Name="scrollViewer1">
-                    <TextBox Name="textBox_pgInfo" IsReadOnly="True" TextWrapping="Wrap" />
-                </ScrollViewer>
+                <TextBox Name="textBox_pgInfo" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
             </TabItem>
             <TabItem Header="エラーログ" Name="tabItem_errLog">
-                <ScrollViewer Name="scrollViewer2">
-                    <TextBox Name="textBox_errLog" IsReadOnly="True" FontFamily="MS Gothic" />
-                </ScrollViewer>
+                <TextBox Name="textBox_errLog" IsReadOnly="True" FontFamily="MS Gothic" VerticalScrollBarVisibility="Auto" />
             </TabItem>
         </TabControl>
+        <Button Click="button_play_Click" Content="再生" Height="23" HorizontalAlignment="Left" Margin="30,0,0,8" VerticalAlignment="Bottom" Width="80" />
+        <Button Click="button_del_Click" Content="削除" Height="23" HorizontalAlignment="Left" Margin="118,0,0,8" VerticalAlignment="Bottom" Width="80" />
+        <Button Click="button_cancel_Click" Content="キャンセル" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="206,0,0,8" VerticalAlignment="Bottom" Width="80" />
     </Grid>
 </Window>

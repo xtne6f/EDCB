@@ -25,10 +25,7 @@ namespace EpgTimer.Setting
         public SetAppView()
         {
             InitializeComponent();
-        }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
             checkBox_wakeReconnect.IsEnabled = CommonManager.Instance.NWMode;
             checkBox_suspendClose.IsEnabled = CommonManager.Instance.NWMode;
             button_srvSetting.IsEnabled = CommonManager.Instance.NWMode == false;
@@ -36,7 +33,11 @@ namespace EpgTimer.Setting
             button_shortCutAdd.Visibility = File.Exists(System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? Visibility.Hidden : Visibility.Visible;
             button_shortCutDel.Visibility = button_shortCutAdd.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
+            listBox_service.ItemsSource = ChSet5.Instance.ChListSelected.Select(a => new ServiceViewItem(a));
+        }
 
+        private void UserControl_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
             var settings = (Settings)DataContext;
             if (settings != null)
             {
@@ -60,12 +61,6 @@ namespace EpgTimer.Setting
                 }
                 OnUpdateViewTaskListBox(true);
             }
-
-            listBox_service.ItemsSource = ChSet5.Instance.ChListSelected.Select(a => new ServiceViewItem(a));
-        }
-
-        public void SaveSetting()
-        {
         }
 
         private void OnUpdateViewButtonListBox(bool updateAll)
@@ -219,13 +214,11 @@ namespace EpgTimer.Setting
         {
             SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            var defSearchKey = new EpgSearchKeyInfo();
-            ((Settings)DataContext).GetDefSearchSetting(defSearchKey);
-            dlg.SetDefSetting(defSearchKey);
+            dlg.SetDefSetting(((Settings)DataContext).CreateDefSearchSetting());
 
             if (dlg.ShowDialog() == true)
             {
-                dlg.GetSetting(ref defSearchKey);
+                EpgSearchKeyInfo defSearchKey = dlg.GetSetting();
                 var settings = (Settings)DataContext;
                 settings.SearchKeyAndKey = defSearchKey.andKey;
                 settings.SearchKeyNotKey = defSearchKey.notKey;
@@ -241,12 +234,7 @@ namespace EpgTimer.Setting
                     settings.SearchKeyContentList.Add(item);
                 }
                 settings.SearchKeyDateItemList.Clear();
-                foreach (EpgSearchDateInfo info in defSearchKey.dateList)
-                {
-                    var item = new DateItem();
-                    item.DateInfo = info;
-                    settings.SearchKeyDateItemList.Add(item);
-                }
+                settings.SearchKeyDateItemList.AddRange(defSearchKey.dateList);
                 settings.SearchKeyServiceList.Clear();
                 settings.SearchKeyServiceList.AddRange(defSearchKey.serviceList);
                 settings.SearchKeyNotContent = defSearchKey.notContetFlag != 0;
@@ -293,9 +281,6 @@ namespace EpgTimer.Setting
             }
         }
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
         private void button_srvSetting_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -307,7 +292,7 @@ namespace EpgTimer.Setting
                 }
                 else
                 {
-                    SetForegroundWindow(CommonManager.Instance.SrvSettingProcess.MainWindowHandle);
+                    CommonUtil.SetForegroundWindow(CommonManager.Instance.SrvSettingProcess.MainWindowHandle);
                 }
             }
             catch (Exception ex)

@@ -40,20 +40,22 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
             Matrix m = ps.CompositionTarget.TransformToDevice;
 
-            var itemFontTitle = new EpgView.EpgViewPanel.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle, true);
-            var itemFontNormal = new EpgView.EpgViewPanel.ItemFont(Settings.Instance.FontName, false, true);
+            var itemFontTitle = new EpgView.EpgViewPanel.ItemFont(Settings.Instance.EpgSettingList[0].FontNameTitle, Settings.Instance.EpgSettingList[0].FontBoldTitle, true);
+            var itemFontNormal = new EpgView.EpgViewPanel.ItemFont(Settings.Instance.EpgSettingList[0].FontName, false, true);
             if (itemFontTitle.GlyphType == null || itemFontNormal.GlyphType == null)
             {
                 return;
             }
 
             {
-                double sizeTitle = Math.Max(Settings.Instance.FontSizeTitle, 1);
-                double sizeNormal = Math.Max(Settings.Instance.FontSize, 1);
+                double sizeTitle = Math.Max(Settings.Instance.EpgSettingList[0].FontSizeTitle, 1);
+                double sizeNormal = Math.Max(Settings.Instance.EpgSettingList[0].FontSize, 1);
                 double indentTitle = sizeTitle * 1.7;
                 double indentNormal = 2;
-                SolidColorBrush colorTitle = CommonManager.Instance.CustTitle1Color;
-                SolidColorBrush colorNormal = CommonManager.Instance.CustTitle2Color;
+                SolidColorBrush colorTitle = ColorDef.CustColorBrush(Settings.Instance.EpgSettingList[0].TitleColor1,
+                                                                     Settings.Instance.EpgSettingList[0].TitleCustColor1);
+                SolidColorBrush colorNormal = ColorDef.CustColorBrush(Settings.Instance.EpgSettingList[0].TitleColor2,
+                                                                      Settings.Instance.EpgSettingList[0].TitleCustColor2);
 
                 foreach (ReserveViewItem info in Items)
                 {

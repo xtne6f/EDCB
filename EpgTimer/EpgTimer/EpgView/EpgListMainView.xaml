@@ -16,9 +16,7 @@
                 <RowDefinition Height="100" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <ScrollViewer Name="scrollViewer1">
-                <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
-            </ScrollViewer>
+            <RichTextBox IsReadOnly="True" Name="richTextBox_eventInfo" VerticalScrollBarVisibility="Auto" />
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
             <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
                 <ListView.Resources>
@@ -81,11 +79,11 @@
                             <MenuItem Header="無効 (_5)" Name="recmode_no" Click="cm_chg_recmode_Click" />
                             <Separator/>
                             <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
-                                <MenuItem Header="1 (_1)" Name="priority_1" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="2 (_2)" Name="priority_2" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="3 (_3)" Name="priority_3" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="4 (_4)" Name="priority_4" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="5 (_5)" Name="priority_5" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_1" Name="priority_1" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_2" Name="priority_2" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_3" Name="priority_3" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_4" Name="priority_4" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="_5" Name="priority_5" Click="cm_chg_priority_Click" />
                             </MenuItem>
                         </MenuItem>
                         <MenuItem x:Name="cm_del" Header="予約削除" Click="cm_del_Click" />
@@ -102,7 +100,7 @@
                 </ListView.ContextMenu>
             </ListView>
         </Grid>
-        <ListView Margin="0,0,5,29" Name="listBox_service">
+        <ListView Margin="0,0,5,28" Name="listBox_service">
             <ListView.View>
                 <GridView x:Name="gridView_service">
                     <GridViewColumn>
@@ -123,7 +121,11 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <Button Content="全チェック" Height="23" HorizontalAlignment="Left" Name="button_chkAll" VerticalAlignment="Bottom" Width="75" Click="button_chkAll_Click" />
-        <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="80,0,0,0" Name="button_clearAll" VerticalAlignment="Bottom" Width="75" Click="button_clearAll_Click" />
+        <Button Click="button_time_Click" Content="←" Height="23" HorizontalAlignment="Left" IsEnabled="False" Name="button_prev" VerticalAlignment="Bottom" Width="23" />
+        <Button Click="button_time_Click" Content="→" Height="23" HorizontalAlignment="Left" IsEnabled="False" Margin="23,0,0,0" Name="button_next" VerticalAlignment="Bottom" Width="23" />
+        <UniformGrid Columns="2" Margin="51,0,0,0" Height="23" VerticalAlignment="Bottom">
+            <Button Click="button_chkAll_Click" Content="全チェック" Margin="0,0,0,0" Name="button_chkAll" />
+            <Button Click="button_clearAll_Click" Content="クリア" Margin="0,0,5,0" Name="button_clearAll" />
+        </UniformGrid>
     </Grid>
 </UserControl>

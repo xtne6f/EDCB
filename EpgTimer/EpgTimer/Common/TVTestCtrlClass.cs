@@ -337,11 +337,9 @@ namespace EpgTimer
                 ShowWindowAsync(windowHandle, SW_RESTORE);
             }
             // メイン・ウィンドウを最前面に表示する
-            SetForegroundWindow(windowHandle);
+            CommonUtil.SetForegroundWindow(windowHandle);
         }
         // 外部プロセスのメイン・ウィンドウを起動するためのWin32 API
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32.dll")]
         private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
         [DllImport("user32.dll")]

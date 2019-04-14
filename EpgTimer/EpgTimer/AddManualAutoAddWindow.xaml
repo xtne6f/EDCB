@@ -13,17 +13,17 @@
         <CheckBox Content="金" Height="16" HorizontalAlignment="Left" Margin="274,17,0,0" Name="checkBox_week5" VerticalAlignment="Top" />
         <CheckBox Content="土" Height="16" HorizontalAlignment="Left" Margin="309,17,0,0" Name="checkBox_week6" VerticalAlignment="Top" />
         <Label Content="録画時間" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="99,46,0,0" Name="comboBox_startHH" VerticalAlignment="Top" Width="46" ItemsSource="{Binding}" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="99,46,0,0" Name="comboBox_startHH" VerticalAlignment="Top" Width="46" />
         <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="157,46,0,0" Name="label3" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="187,46,0,0" Name="comboBox_startMM" VerticalAlignment="Top" Width="46" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="187,46,0,0" Name="comboBox_startMM" VerticalAlignment="Top" Width="46" />
         <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="244,46,0,0" Name="label4" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="274,46,0,0" Name="comboBox_startSS" VerticalAlignment="Top" Width="46" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="274,46,0,0" Name="comboBox_startSS" VerticalAlignment="Top" Width="46" />
         <Label Content="～" Height="28" HorizontalAlignment="Left" Margin="326,46,0,0" Name="label5" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="354,46,0,0" Name="comboBox_endHH" VerticalAlignment="Top" Width="46" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="354,46,0,0" Name="comboBox_endHH" VerticalAlignment="Top" Width="46" />
         <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="412,46,0,0" Name="label6" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="442,46,0,0" Name="comboBox_endMM" VerticalAlignment="Top" Width="46" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="442,46,0,0" Name="comboBox_endMM" VerticalAlignment="Top" Width="46" />
         <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="499,46,0,0" Name="label7" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="529,46,0,0" Name="comboBox_endSS" VerticalAlignment="Top" Width="46" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="529,46,0,0" Name="comboBox_endSS" VerticalAlignment="Top" Width="46" />
         <Label Content="番組名" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label8" VerticalAlignment="Top" />
         <TextBox Height="24" Margin="99,82,45,0" Name="textBox_title" VerticalAlignment="Top" />
         <Label Content="サービス" Height="28" HorizontalAlignment="Left" Margin="12,114,0,0" Name="label9" VerticalAlignment="Top" />

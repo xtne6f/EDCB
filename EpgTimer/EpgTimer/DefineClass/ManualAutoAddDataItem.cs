@@ -27,7 +27,7 @@ namespace EpgTimer
                 {
                     if ((ManualAutoAddInfo.dayOfWeekFlag & (0x01 << i)) != 0)
                     {
-                        view += CommonManager.Instance.DayOfWeekArray[i];
+                        view += (new DateTime(2000, 1, 2 + i)).ToString("ddd");
                     }
                 }
                 return view;
@@ -38,24 +38,8 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                {
-                    UInt32 hh = ManualAutoAddInfo.startTime / (60 * 60);
-                    UInt32 mm = (ManualAutoAddInfo.startTime % (60 * 60)) / 60;
-                    UInt32 ss = ManualAutoAddInfo.startTime % 60;
-                    view = hh.ToString() + ":" + mm.ToString() + ":" + ss.ToString();
-
-                    UInt32 endTime = ManualAutoAddInfo.startTime + ManualAutoAddInfo.durationSecond;
-                    if (endTime > 24 * 60 * 60)
-                    {
-                        endTime -= 24 * 60 * 60;
-                    }
-                    hh = endTime / (60 * 60);
-                    mm = (endTime % (60 * 60)) / 60;
-                    ss = endTime % 60;
-                    view += " ～ " + hh.ToString() + ":" + mm.ToString() + ":" + ss.ToString();
-                }
-                return view;
+                return (new DateTime(2000, 1, 2)).AddSeconds(ManualAutoAddInfo.startTime).ToString("HH\\:mm\\:ss ～ ") +
+                       (new DateTime(2000, 1, 2)).AddSeconds(ManualAutoAddInfo.startTime + ManualAutoAddInfo.durationSecond).ToString("HH\\:mm\\:ss");
             }
         }
 

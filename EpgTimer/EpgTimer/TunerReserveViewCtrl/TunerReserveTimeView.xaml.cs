@@ -31,60 +31,42 @@ namespace EpgTimer.TunerReserveViewCtrl
 
         public void SetTime(List<DateTime> timeList, bool NeedTimeOnly)
         {
-            try
+            stackPanel_time.Children.Clear();
+            double height = Settings.Instance.EpgSettingList[0].MinHeight;
+            if (60 * height > 4)
             {
-                stackPanel_time.Children.Clear();
                 foreach (DateTime time in timeList)
                 {
                     TextBlock item = new TextBlock();
-
-                    double height = Settings.Instance.MinHeight;
                     item.Height = (60 * height) - 4;
 
+                    string text = "";
                     if (time.Hour % 3 == 0 || NeedTimeOnly == true)
                     {
-                        if (height < 1)
+                        text += time.ToString("M\\/d\r\n");
+                        if (height >= 1)
                         {
-                            item.Text = time.ToString("M/d\r\nH");
-                        }
-                        else if (height < 1.5)
-                        {
-                            item.Text = time.ToString("M/d\r\n(ddd)\r\nH");
-                        }
-                        else
-                        {
-                            item.Text = time.ToString("M/d\r\n(ddd)\r\n\r\nH");
+                            text += time.ToString("(ddd)\r\n");
+                            if (height >= 1.5)
+                            {
+                                text += "\r\n";
+                            }
                         }
                     }
                     else
                     {
-                        if (height < 1)
+                        if (height >= 1)
                         {
-                            item.Text = time.Hour.ToString();
-                        }
-                        else if (height < 1.5)
-                        {
-                            item.Text = time.ToString("\r\nH");
-                        }
-                        else
-                        {
-                            item.Text = time.ToString("\r\n\r\n\r\nH");
+                            text += "\r\n";
+                            if (height >= 1.5)
+                            {
+                                text += "\r\n\r\n";
+                            }
                         }
                     }
-
-                    if (time.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        item.Foreground = Brushes.Blue;
-                    }
-                    else if (time.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        item.Foreground = Brushes.Red;
-                    }
-                    else
-                    {
-                        item.Foreground = Brushes.Black;
-                    }
-
+                    item.Text = text + time.Hour;
+                    item.Foreground = time.DayOfWeek == DayOfWeek.Saturday ? Brushes.Blue :
+                                      time.DayOfWeek == DayOfWeek.Sunday ? Brushes.Red : Brushes.Black;
                     item.Margin = new Thickness(2, 2, 2, 2);
                     item.Background = Brushes.AliceBlue;
                     item.TextAlignment = TextAlignment.Center;
@@ -92,11 +74,6 @@ namespace EpgTimer.TunerReserveViewCtrl
                     stackPanel_time.Children.Add(item);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
         }
 
         private void scrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

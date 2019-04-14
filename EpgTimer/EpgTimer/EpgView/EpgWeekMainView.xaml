@@ -6,26 +6,23 @@
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
-    <Grid>
+    <Grid Name="grid_PG">
         <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
             <RowDefinition Height="40" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="40,8,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="227" SelectionChanged="comboBox_service_SelectionChanged" />
-        <Grid Grid.Row="1" Name="grid_PG">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="40" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="40" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" Click="button_now_Click" />
-            <local:TimeView Grid.Row="1" x:Name="timeView" Margin="0,0,0,18"/>
-            <local:WeekDayView Grid.Column="1" x:Name="weekDayView" Margin="0,0,18,0"/>
-            <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" PreviewMouseWheel="epgProgramView_PreviewMouseWheel" RightClick="epgProgramView_RightClick" ScrollChanged="epgProgramView_ScrollChanged" />
-        </Grid>
-    <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,8,0,0" Name="button1" VerticalAlignment="Top" Width="66" Click="button1_Click" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="40" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Button Click="button_time_Click" Content="←" IsEnabled="False" Margin="0,0,0,20" Name="button_prev" Visibility="Hidden" />
+        <Button Click="button_time_Click" Content="→" IsEnabled="False" Margin="0,20,0,0" Name="button_next" Visibility="{Binding Visibility, ElementName=button_prev}" />
+        <ComboBox Grid.Column="1" Height="24" HorizontalAlignment="Left" Margin="8,8,0,0" Name="comboBox_service" SelectionChanged="comboBox_service_SelectionChanged" VerticalAlignment="Top" Width="219" />
+        <Button Content="標準モード" Grid.Column="1" Height="23" HorizontalAlignment="Left" Margin="233,8,0,0" VerticalAlignment="Top" Width="66" Click="button1_Click" />
+        <Button Click="button_now_Click" Content="現在" Grid.Row="1" />
+        <local:TimeView Grid.Row="2" Margin="0,0,0,18" x:Name="timeView" />
+        <local:WeekDayView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="weekDayView" />
+        <local:ProgramView Grid.Column="1" Grid.Row="2" x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" PreviewMouseWheel="epgProgramView_PreviewMouseWheel" RightClick="epgProgramView_RightClick" ScrollChanged="epgProgramView_ScrollChanged" />
     </Grid>
 </UserControl>
