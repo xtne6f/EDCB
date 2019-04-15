@@ -60,28 +60,18 @@ th, td {
   margin-bottom: 0.5em;
 }
 
-.scrambles {
+.warn, .scrambles, .partially {
   background: #ff8;
   color: #000;
 }
 
-.drops {
+.err, .drops, .shortage {
   background: #f88;
   color: #000;
 }
 
 .disabled {
   background: #ccc;
-  color: #000;
-}
-
-.partially {
-  background: #ff8;
-  color: #000;
-}
-
-.shortage {
-  background: #f88;
   color: #000;
 }
 
