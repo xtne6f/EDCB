@@ -85,6 +85,37 @@ namespace EpgTimer
         {
             get { return ReserveInfo.ReserveID; }
         }
+
+        private string _estimatedRecSize;
+        public string EstimatedRecSize
+        {
+            get
+            {
+                if (_estimatedRecSize == null)
+                {
+                    _estimatedRecSize = "";
+                    if (ReserveInfo.RecSetting.RecMode != 4)
+                    {
+                        int bitrate = 0;
+                        for (int i = 0; bitrate <= 0; i++)
+                        {
+                            string key = CommonManager.Create64Key((ushort)(i > 2 ? 0xFFFF : ReserveInfo.OriginalNetworkID),
+                                                                   (ushort)(i > 1 ? 0xFFFF : ReserveInfo.TransportStreamID),
+                                                                   (ushort)(i > 0 ? 0xFFFF : ReserveInfo.ServiceID)).ToString("X12");
+                            // NWModeではファイルが配置されないかもしれないが特別扱いはしない
+                            bitrate = IniFileHandler.GetPrivateProfileInt("BITRATE", key, 0, SettingPath.BitrateIniPath);
+                            bitrate = bitrate <= 0 && i == 3 ? 19456 : bitrate;
+                        }
+                        long margin = ReserveInfo.RecSetting.UseMargineFlag != 0 ? ReserveInfo.RecSetting.StartMargine + ReserveInfo.RecSetting.EndMargine :
+                                      CommonManager.Instance.DB.DefaultRecSetting != null ?
+                                          CommonManager.Instance.DB.DefaultRecSetting.StartMargine + CommonManager.Instance.DB.DefaultRecSetting.EndMargine : 0;
+                        _estimatedRecSize = ((double)Math.Max(bitrate / 8 * 1000 * (margin + ReserveInfo.DurationSecond), 0) / 1024 / 1024 / 1024).ToString("0.0GB").PadLeft(6);
+                    }
+                }
+                return _estimatedRecSize;
+            }
+        }
+
         public SolidColorBrush BackColor
         {
             get
