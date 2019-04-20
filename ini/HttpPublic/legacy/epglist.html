@@ -6,9 +6,11 @@ HIDE_SERVICES={
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
+
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML]=]..(vtag<0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -97,12 +99,22 @@ end
 
 ct:Append([=[
 <div class="aside">
+]=])
+if sid==0 then
+  ct:Append([=[
   <form method="POST" action="view.lua"><div>
-    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="ctok" value="]=]..CsrfToken('view.lua')..[=[">
     <input type="hidden" name="n" value="0">
     <input type="hidden" name="s" value="]=]..onid..'-'..tsid..'-'..sid..[=[">
     <input type="submit" value="view.lua -nwtv0]=]..(sid==0 and ' -term' or '')..[=[">
-  </div></form>
+  </div></form>]=])
+else
+  ct:Append((vtag==0 and '  <video autoplay controls src="' or '  <a href="')
+    ..'view.lua?ctok='..CsrfToken('view.lua')..'&amp;n=0&amp;s='..onid..'-'..tsid..'-'..sid..'">view.lua -nwtv0'
+    ..(vtag==0 and '</video>' or '</a> <a href="epglist.html?id='..onid..'-'..tsid..'-'..sid..'&amp;vtag=0#footer">(video)</a>'))
+end
+ct:Append([=[
+
 </div>
 <div id="footer">
   <a href="]=]..(sid==0 and 'index.html">メニュー' or 'epglist.html">サービスリスト')..[=[</a>

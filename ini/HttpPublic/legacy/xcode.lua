@@ -62,9 +62,11 @@ if fpath then
 end
 
 if not f then
-  mg.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n')
+  mg.write(Response(404,'text/html','utf-8')..'\r\n'
+    ..'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
+    ..'<title>xcode.lua</title><p><a href="index.html">メニュー</a></p>')
 else
-  mg.write('HTTP/1.1 200 OK\r\nContent-Type: '..mg.get_mime_type(fname)..'\r\nContent-Disposition: filename='..fname..'\r\nConnection: close\r\n\r\n')
+  mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
   retry=0
   while true do
     buf=f:read(XPREPARE or 48128)

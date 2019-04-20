@@ -56,12 +56,12 @@ if v then
     for i,ext in ipairs({'.mp4','.webm',''}) do
       ff=edcb.FindFile and edcb.FindFile(w.recFilePath..ext,1)
       if ff then
-        ct:Append((vtag==i and '<video controls src="' or '<a href="')
+        ct:Append((vtag==i and '<video autoplay controls src="' or '<a href="')
           ..(vtag~=0 and vtag~=i and 'recinfodesc.html?id='..v.id..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
           ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>'))
         if ext=='' then
           for j=0,9 do
-            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
+            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video autoplay controls src="' or '<a href="')
               ..(vtag~=0 and vtag~=j+10 and 'recinfodesc.html?id='..v.id..'&amp;vtag='..(j+10) or 'xcode.lua?'..(j*10)..'='..mg.url_encode(ref))
               ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>'))
           end

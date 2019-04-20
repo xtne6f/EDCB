@@ -19,8 +19,13 @@ FIND_BY_OPEN=false
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 post=AssertPost()
-if post then
-  n=math.floor(tonumber(mg.get_var(post,'n')) or 0)
+if not post then
+  -- POSTでなくてもよい
+  post=mg.request_info.query_string
+  AssertCsrf(post)
+end
+if true then
+  n=GetVarInt(post,'n') or 0
   onid,tsid,sid=(mg.get_var(post,'s') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
   if onid then
     onid=tonumber(onid) or 0
@@ -78,9 +83,11 @@ if post then
 end
 
 if not f then
-  mg.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n')
+  mg.write(Response(404,'text/html','utf-8')..'\r\n'
+    ..'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
+    ..'<title>view.lua</title><p><a href="index.html">メニュー</a></p>')
 else
-  mg.write('HTTP/1.1 200 OK\r\nContent-Type: '..mg.get_mime_type(fname)..'\r\nContent-Disposition: filename='..fname..'\r\nConnection: close\r\n\r\n')
+  mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
   while true do
     buf=f:read(XPREPARE or 48128)
     XPREPARE=nil

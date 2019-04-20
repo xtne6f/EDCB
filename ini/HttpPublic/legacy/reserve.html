@@ -3,9 +3,11 @@ PAGE_COUNT=50
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
+
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML]=]..(vtag<0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -74,29 +76,17 @@ ct:Append(pageNav)
 ct:Append([=[
 </div>
 <div class="aside">
-  <form method="POST" action="view.lua"><div style="float:left">
-    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-    <input type="submit" value="view.lua">
-  </div></form>
-]=])
+  view.lua]=])
 for i,v in ipairs(edcb.FindFile and edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
   n=v.name:match('^[^_]+_(%d+)_%d+$')
   if n then
-    ct:Append([=[
-  <form method="POST" action="view.lua"><div style="float:left">
-    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-    <input type="hidden" name="n" value="]=]..n..[=[">
-    <input type="submit" value="-pipe]=]..n..[=[">
-  </div></form>
-]=])
+    ct:Append((vtag..''==n and ' <video autoplay controls src="' or ' <a href="')
+      ..'view.lua?ctok='..CsrfToken('view.lua')..'&amp;n='..n..'">-pipe'..n
+      ..(vtag..''==n and '</video>' or '</a> <a href="reserve.html?vtag='..n..'#footer">(video)</a>'))
   end
 end
 ct:Append([=[
-  <form method="POST" action="view.lua"><div>
-    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-    <input type="hidden" name="n" value="-1">
-    <input type="submit" value="-term">
-  </div></form>
+ <a href="view.lua?ctok=]=]..CsrfToken('view.lua')..[=[&amp;n=-1">-term</a>
 </div>
 <div id="footer">
   <a href="index.html">メニュー</a>
