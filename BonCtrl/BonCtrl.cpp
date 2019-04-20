@@ -859,16 +859,16 @@ void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath
 	epgDataFilePath = GetSettingPath().append(EPG_SAVE_FOLDER).append(epgDataFilePath).native();
 }
 
-//ドロップとスクランブルのカウントを保存する
-//引数：
-// id					[IN]制御識別ID
-// filePath				[IN]保存ファイル名
 void CBonCtrl::SaveErrCount(
 	DWORD id,
-	wstring filePath
+	const wstring& filePath,
+	int dropSaveThresh,
+	int scrambleSaveThresh,
+	ULONGLONG& drop,
+	ULONGLONG& scramble
 	)
 {
-	this->tsOut.SaveErrCount(id, filePath);
+	this->tsOut.SaveErrCount(id, filePath, dropSaveThresh, scrambleSaveThresh, drop, scramble);
 }
 
 //録画中のファイルの出力サイズを取得する

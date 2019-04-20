@@ -289,9 +289,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				ULONGLONG scramble = 0;
 				vector<NW_SEND_INFO> udpSendList = this->main.GetSendUDPList();
 				vector<NW_SEND_INFO> tcpSendList = this->main.GetSendTCPList();
-
-				this->main.GetViewStatusInfo(&signal, &space, &ch);
-				this->main.GetErrCount(&drop, &scramble);
+				this->main.GetViewStatusInfo(&signal, &space, &ch, &drop, &scramble);
 
 				wstring statusLog = L"";
 				if( space >= 0 && ch >= 0 ){

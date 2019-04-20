@@ -102,16 +102,6 @@ void CDropCount::SetNoLog(BOOL noLogDrop, BOOL noLogScramble)
 	this->lastLogScramble = noLogScramble ? ULLONG_MAX : this->lastLogScramble == ULLONG_MAX ? 0 : this->lastLogScramble;
 }
 
-void CDropCount::GetCount(ULONGLONG* drop_, ULONGLONG* scramble_)
-{
-	if( drop_ != NULL ){
-		*drop_ = this->drop;
-	}
-	if( scramble_ != NULL ){
-		*scramble_ = this->scramble;
-	}
-}
-
 ULONGLONG CDropCount::GetDropCount()
 {
 	return this->drop;

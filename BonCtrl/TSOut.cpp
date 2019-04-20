@@ -882,20 +882,20 @@ wstring CTSOut::GetSaveFilePath(
 	return wstring();
 }
 
-//ドロップとスクランブルのカウントを保存する
-//引数：
-// id					[IN]制御識別ID
-// filePath				[IN]保存ファイル名
 void CTSOut::SaveErrCount(
 	DWORD id,
-	const wstring& filePath
+	const wstring& filePath,
+	int dropSaveThresh,
+	int scrambleSaveThresh,
+	ULONGLONG& drop,
+	ULONGLONG& scramble
 	)
 {
 	CBlockLock lock(&this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
-		itr->second->SaveErrCount(filePath);
+		itr->second->SaveErrCount(filePath, dropSaveThresh, scrambleSaveThresh, drop, scramble);
 	}
 }
 

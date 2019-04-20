@@ -253,9 +253,15 @@ public:
 	//引数：
 	// id					[IN]制御識別ID
 	// filePath				[IN]保存ファイル名
+	// dropSaveThresh		[IN]ドロップ数がこれ以上なら保存する
+	// drop					[OUT]ドロップ数
 	void SaveErrCount(
 		DWORD id,
-		wstring filePath
+		const wstring& filePath,
+		int dropSaveThresh,
+		int scrambleSaveThresh,
+		ULONGLONG& drop,
+		ULONGLONG& scramble
 		);
 
 	//録画中のファイルの出力サイズを取得する

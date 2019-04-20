@@ -142,8 +142,14 @@ public:
 	//ドロップとスクランブルのカウントを保存する
 	//引数：
 	// filePath			[IN]保存ファイル名
+	// dropSaveThresh	[IN]ドロップ数がこれ以上なら保存する
+	// drop				[OUT]ドロップ数
 	void SaveErrCount(
-		const wstring& filePath
+		const wstring& filePath,
+		int dropSaveThresh,
+		int scrambleSaveThresh,
+		ULONGLONG& drop,
+		ULONGLONG& scramble
 		);
 
 	void SetSignalLevel(

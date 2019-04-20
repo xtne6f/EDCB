@@ -95,11 +95,6 @@ public:
 		WORD* SID
 		);
 
-	//チャンネル変更中かどうか
-	//戻り値：
-	// TRUE（変更中）、FALSE（完了）
-	BOOL IsChChanging(BOOL* chChgErr);
-
 	//外部制御などでCH変更された場合にSIDのみ設定
 	void SetSID(
 		WORD SID
@@ -141,19 +136,6 @@ public:
 	DWORD GetEpgInfo(
 		BOOL nextFlag,
 		wstring* epgInfo
-		);
-
-	//エラーカウントをクリアする
-	void ClearErrCount(
-		);
-
-	//ドロップとスクランブルのカウントを取得する
-	//引数：
-	// drop				[OUT]ドロップ数
-	// scramble			[OUT]スクランブル数
-	void GetErrCount(
-		ULONGLONG* drop,
-		ULONGLONG* scramble
 		);
 
 	//録画を開始する
@@ -222,7 +204,9 @@ public:
 	void GetViewStatusInfo(
 		float* signalLv,
 		int* space,
-		int* ch
+		int* ch,
+		ULONGLONG* drop,
+		ULONGLONG* scramble
 		);
 
 	void CtrlCmdCallbackInvoked();
@@ -251,6 +235,8 @@ protected:
 	BOOL needCaption;
 	BOOL needData;
 
+	int dropSaveThresh;
+	int scrambleSaveThresh;
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
 	int openWait;

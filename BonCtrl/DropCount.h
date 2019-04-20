@@ -8,8 +8,6 @@ public:
 	void AddData(const BYTE* data, DWORD size);
 
 	void Clear();
-
-	void GetCount(ULONGLONG* drop_, ULONGLONG* scramble_);
 	ULONGLONG GetDropCount();
 	ULONGLONG GetScrambleCount();
 

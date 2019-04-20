@@ -351,7 +351,12 @@ void COneServiceUtil::ClearErrCount()
 // scramble			[OUT]スクランブル数
 void COneServiceUtil::GetErrCount(ULONGLONG* drop, ULONGLONG* scramble)
 {
-	this->dropCount.GetCount(drop, scramble);
+	if( drop ){
+		*drop = this->dropCount.GetDropCount();
+	}
+	if( scramble ){
+		*scramble = this->dropCount.GetScrambleCount();
+	}
 }
 
 wstring COneServiceUtil::GetSaveFilePath()
@@ -364,16 +369,20 @@ wstring COneServiceUtil::GetSaveFilePath()
 	return wstring();
 }
 
-//ドロップとスクランブルのカウントを保存する
-//引数：
-// filePath			[IN]保存ファイル名
 void COneServiceUtil::SaveErrCount(
-	const wstring& filePath
+	const wstring& filePath,
+	int dropSaveThresh,
+	int scrambleSaveThresh,
+	ULONGLONG& drop,
+	ULONGLONG& scramble
 	)
 {
-	this->dropCount.SaveLog(filePath);
+	GetErrCount(&drop, &scramble);
+	if( (dropSaveThresh >= 0 && drop >= (ULONGLONG)dropSaveThresh) ||
+	    (scrambleSaveThresh >= 0 && scramble >= (ULONGLONG)scrambleSaveThresh) ){
+		this->dropCount.SaveLog(filePath);
+	}
 }
-
 
 void COneServiceUtil::SetSignalLevel(
 	float signalLv
