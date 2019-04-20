@@ -319,6 +319,8 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				L"BonDriver_UDP.dll:BonDriver_TCP.dll:BonDriver_File.dll:BonDriver_RecTask.dll:BonDriver_TsTask.dll:"
 				L"BonDriver_NetworkPipe.dll:BonDriver_Pipe.dll:BonDriver_Pipe2.dll", iniPath.c_str()) + L':';
 			m_recNamePrefix = GetPrivateProfileToString(L"SET", L"RecNamePrefix", L"", iniPath.c_str());
+			m_dropSaveThresh = GetPrivateProfileInt(L"SET", L"DropSaveThresh", 0, iniPath.c_str());
+			m_scrambleSaveThresh = GetPrivateProfileInt(L"SET", L"ScrambleSaveThresh", -1, iniPath.c_str());
 			m_noLogScramble = GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, iniPath.c_str()) != 0;
 			m_epgCapBackStartWaitSec = GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, iniPath.c_str()) == 0 ? MAXDWORD :
 				GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, iniPath.c_str());
@@ -902,21 +904,27 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		{
 			SET_CTRL_REC_STOP_PARAM val;
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr) && m_recCtrlMap.count(val.ctrlID) != 0) {
-				REC_CTRL recCtrl;
+				SET_CTRL_REC_STOP_RES_PARAM resVal;
+				CDropCount dropCount;
+				DWORD duplicateTargetID;
 				{
 					CBlockLock lock(&m_streamLock);
-					std::swap(m_recCtrlMap[val.ctrlID].filePath, recCtrl.filePath);
-					std::swap(m_recCtrlMap[val.ctrlID].dropCount, recCtrl.dropCount);
-					recCtrl.duplicateTargetID = m_recCtrlMap[val.ctrlID].duplicateTargetID;
+					resVal.recFilePath.swap(m_recCtrlMap[val.ctrlID].filePath);
+					std::swap(m_recCtrlMap[val.ctrlID].dropCount, dropCount);
+					duplicateTargetID = m_recCtrlMap[val.ctrlID].duplicateTargetID;
 				}
-				if (!recCtrl.filePath.empty()) {
-					if (val.saveErrLog) {
+				if (!resVal.recFilePath.empty()) {
+					resVal.drop = dropCount.GetDropCount();
+					resVal.scramble = dropCount.GetScrambleCount();
+					resVal.subRecFlag = 0;
+					if (val.saveErrLog && ((m_dropSaveThresh >= 0 && resVal.drop >= (ULONGLONG)m_dropSaveThresh) ||
+					                       (m_scrambleSaveThresh >= 0 && resVal.scramble >= (ULONGLONG)m_scrambleSaveThresh))) {
 						fs_path infoPath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", fs_path(m_edcbDir).append(L"Common.ini").c_str());
 						if (infoPath.empty()) {
-							infoPath = recCtrl.filePath + L".err";
+							infoPath = resVal.recFilePath + L".err";
 						}
 						else {
-							infoPath.append(fs_path(recCtrl.filePath).filename().concat(L".err").native());
+							infoPath.append(fs_path(resVal.recFilePath).filename().concat(L".err").native());
 						}
 						vector<pair<WORD, string>> pidNameList;
 						TVTest::ServiceInfo si;
@@ -932,19 +940,14 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 							pidNameList.push_back(std::make_pair(si.SubtitlePID, name));
 						}
 						for (size_t i = pidNameList.size(); i > 0; --i) {
-							recCtrl.dropCount.SetPIDName(pidNameList[i - 1].first, pidNameList[i - 1].second.c_str());
+							dropCount.SetPIDName(pidNameList[i - 1].first, pidNameList[i - 1].second.c_str());
 						}
-						recCtrl.dropCount.SetBonDriver(m_currentBonDriver);
-						recCtrl.dropCount.SaveLog(infoPath.native());
+						dropCount.SetBonDriver(m_currentBonDriver);
+						dropCount.SaveLog(infoPath.native());
 					}
-					SET_CTRL_REC_STOP_RES_PARAM resVal;
-					resVal.recFilePath = recCtrl.filePath;
-					resVal.drop = recCtrl.dropCount.GetDropCount();
-					resVal.scramble = recCtrl.dropCount.GetScrambleCount();
-					resVal.subRecFlag = 0;
 					if (IsEdcbRecording()) {
 						// èdï°ò^âÊ
-						DuplicateSave(m_duplicateOriginalPath.c_str(), &recCtrl.duplicateTargetID, nullptr);
+						DuplicateSave(m_duplicateOriginalPath.c_str(), &duplicateTargetID, nullptr);
 					}
 					else {
 						// ç≈å„ÇÃò^âÊ

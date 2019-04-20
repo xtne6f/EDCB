@@ -88,6 +88,8 @@ private:
 	wstring m_nonTunerDrivers;
 	wstring m_currentBonDriver;
 	wstring m_recNamePrefix;
+	int m_dropSaveThresh;
+	int m_scrambleSaveThresh;
 	bool m_noLogScramble;
 	DWORD m_statusCode;
 	SET_CH_INFO m_lastSetCh;
