@@ -37,14 +37,32 @@ ct:Append([=[
   <table>
 ]=])
 
+rsdef=(edcb.GetReserveData(0x7FFFFFFF) or {}).recSetting
+rate={}
 for i=page*PAGE_COUNT+1,math.min(#a,(page+1)*PAGE_COUNT) do
   v=a[i]
+  size=nil
+  if v.recSetting.recMode~=4 then
+    --予想ファイルサイズ
+    for j=1,4 do
+      key=('%04X%04X%04X'):format((j>3 and 65535 or v.onid),(j>2 and 65535 or v.tsid),(j>1 and 65535 or v.sid))
+      rate[key]=rate[key] or tonumber(edcb.GetPrivateProfile('BITRATE',key,0,'Bitrate.ini')) or 0
+      if rate[key]>0 then
+        break
+      elseif j==4 then
+        rate[key]=19456
+      end
+    end
+    size=rate[key]/8*1000*math.max((v.recSetting.startMargin or rsdef and rsdef.startMargin or 0)+
+                                   (v.recSetting.endMargin or rsdef and rsdef.endMargin or 0)+v.durationSecond,0)
+  end
   cl=v.recSetting.recMode==5 and ' class="disabled"' or v.overlapMode==1 and ' class="partially"' or v.overlapMode==2 and ' class="shortage"' or ''
   ct:Append('    <tr><td><a href="reserveinfo.html?id='..v.reserveID..'">'
     ..FormatTimeAndDuration(v.startTime, v.durationSecond)
     ..'</a><td'..cl..'>'..v.stationName..'<td'..cl..'>'..v.title
     ..'<td'..cl..'>'..(RecModeTextList()[v.recSetting.recMode+1] or '')
-    ..'<td'..cl..'>'..v.recSetting.priority..'</tr>\n')
+    ..'<td'..cl..'>'..v.recSetting.priority
+    ..'<td'..cl..'>'..(size and ('%.1fG'):format(size/1024/1024/1024) or '')..'</tr>\n')
 end
 
 ct:Append([=[

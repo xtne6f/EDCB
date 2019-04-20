@@ -24,7 +24,7 @@ page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/PAGE_COUNT) or 0
 pageNav=''
 if #a>PAGE_COUNT then
   for i=math.max(page-1,1),math.min(math.max(page-1,1)+6,(#a+PAGE_COUNT-1)/PAGE_COUNT) do
-    pageNav=pageNav..(i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href="autoaddepg.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+    pageNav=pageNav..(i-1==page and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href="autoaddepg.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
   end
   pageNav=(page==0 and '|&lt;&lt; ' or '<a href="autoaddepg.html">|&lt;&lt;</a> ')..pageNav
     ..(page==math.floor((#a-1)/PAGE_COUNT) and '&gt;&gt;|' or '<a href="autoaddepg.html?page='..math.floor((#a-1)/PAGE_COUNT)..'">&gt;&gt;|</a>\n')
