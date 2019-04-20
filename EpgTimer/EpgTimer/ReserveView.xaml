@@ -20,6 +20,7 @@
             <MenuItem Header="プログラム" Name="IsProgram" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="チューナー強制" Name="TunerID" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画後実行bat" Name="BatFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="予想サイズ" Name="EstimatedRecSize" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
@@ -139,6 +140,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding BatFilePath}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="録画後実行bat" Tag="BatFilePath" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding EstimatedRecSize}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="予想サイズ" Tag="EstimatedRecSize" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding ID}">

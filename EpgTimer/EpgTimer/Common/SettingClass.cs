@@ -66,6 +66,14 @@ namespace EpgTimer
 
     class SettingPath
     {
+        public static string BitrateIniPath
+        {
+            get
+            {
+                return Path.Combine(ModulePath, "Bitrate.ini");
+            }
+        }
+
         public static string TimerSrvIniPath
         {
             get
