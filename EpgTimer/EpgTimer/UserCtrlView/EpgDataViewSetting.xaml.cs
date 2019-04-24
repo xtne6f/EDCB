@@ -51,7 +51,10 @@ namespace EpgTimer
                     }
                 }
             }
-            listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
+            foreach (ushort id in CommonManager.Instance.ContentKindList)
+            {
+                listBox_jyanru.Items.Add(new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });
+            }
         }
 
         /// <summary>
@@ -109,10 +112,8 @@ namespace EpgTimer
             }
             foreach (UInt16 id in setInfo.ViewContentKindList)
             {
-                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(id) == true)
-                {
-                    listBox_jyanruView.Items.Add(CommonManager.Instance.ContentKindDictionary[id]);
-                }
+                listBox_jyanruView.Items.Add(listBox_jyanru.Items.Cast<ContentKindInfo>().FirstOrDefault(info => info.ID == id) ??
+                                             new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });
             }
 
             if (setInfo.FilterEnded == true)
