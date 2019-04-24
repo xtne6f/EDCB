@@ -13,10 +13,11 @@ namespace EpgTimer
 {
     public class SearchItem
     {
-        public SearchItem(EpgEventInfo info, bool past)
+        public SearchItem(EpgEventInfo info, bool past, bool filtered)
         {
             EventInfo = info;
             Past = past;
+            Filtered = filtered;
         }
         public EpgEventInfo EventInfo
         {
@@ -33,6 +34,11 @@ namespace EpgTimer
             get { return EventInfo.ShortInfo != null ? EventInfo.ShortInfo.event_name : ""; }
         }
         public bool Past
+        {
+            get;
+            private set;
+        }
+        public bool Filtered
         {
             get;
             private set;
@@ -67,6 +73,10 @@ namespace EpgTimer
                        ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
                        ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
             }
+        }
+        public double Opacity
+        {
+            get { return Filtered ? 0.7 : 1.0; }
         }
         public TextBlock ToolTipView
         {

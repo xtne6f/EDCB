@@ -266,7 +266,7 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="番組表背景" HorizontalAlignment="Left" Margin="400,223,0,0" VerticalAlignment="Top" />
+                            <Label Content="番組表背景 (A値は強調表示用)" HorizontalAlignment="Left" Margin="400,223,0,0" VerticalAlignment="Top" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="292,55,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />

@@ -683,28 +683,21 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_viewSet_Click(object sender, RoutedEventArgs e)
         {
-            if (Settings.Instance.UseCustomEpgView == false)
+            var dlg = new EpgDataViewSettingWindow();
+            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.SetDefSetting(setViewInfo);
+            if (dlg.ShowDialog() == true)
             {
-                MessageBox.Show("デフォルト表示では設定を変更することはできません。");
-            }
-            else
-            {
-                var dlg = new EpgDataViewSettingWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetDefSetting(setViewInfo);
-                if (dlg.ShowDialog() == true)
+                var setInfo = dlg.GetSetting();
+                if (setInfo.ViewMode == setViewInfo.ViewMode)
                 {
-                    var setInfo = dlg.GetSetting();
-                    if (setInfo.ViewMode == setViewInfo.ViewMode)
-                    {
-                        setViewInfo = setInfo;
-                        epgProgramView.EpgSetting = setInfo.EpgSetting;
-                        UpdateEpgData();
-                    }
-                    else if (ViewModeChangeRequested != null)
-                    {
-                        ViewModeChangeRequested(this, setInfo, null);
-                    }
+                    setViewInfo = setInfo;
+                    epgProgramView.EpgSetting = setInfo.EpgSetting;
+                    UpdateEpgData();
+                }
+                else if (ViewModeChangeRequested != null)
+                {
+                    ViewModeChangeRequested(this, setInfo, null);
                 }
             }
         }
@@ -1106,15 +1099,6 @@ namespace EpgTimer
                 List<ushort> contentKindList = setViewInfo.ViewContentKindList.ToList();
                 contentKindList.Sort();
 
-                //ジャンル別の背景ブラシ
-                var contentBrushList = new List<Brush>();
-                for (int i = 0; i < setViewInfo.EpgSetting.ContentColorList.Count; i++)
-                {
-                    SolidColorBrush brush = ColorDef.CustColorBrush(setViewInfo.EpgSetting.ContentColorList[i],
-                                                                    setViewInfo.EpgSetting.ContentCustColorList[i]);
-                    contentBrushList.Add(setViewInfo.EpgSetting.EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
-                }
-
                 //必要番組の抽出と時間チェック
                 List<EpgServiceInfo> primeServiceList = new List<EpgServiceInfo>();
                 //番組表でまとめて描画する矩形の幅と番組集合のリスト
@@ -1176,16 +1160,17 @@ namespace EpgTimer
                             continue;
                         }
                         //ジャンル絞り込み
+                        bool filtered = false;
                         if (contentKindList.Count > 0)
                         {
-                            bool find = false;
                             if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                             {
                                 //ジャンル情報ない
-                                find = contentKindList.BinarySearch(0xFFFF) >= 0;
+                                filtered = contentKindList.BinarySearch(0xFFFF) < 0;
                             }
                             else
                             {
+                                filtered = true;
                                 foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
                                 {
                                     int nibble1 = contentInfo.content_nibble_level_1;
@@ -1198,12 +1183,12 @@ namespace EpgTimer
                                     if (contentKindList.BinarySearch((ushort)(nibble1 << 8 | 0xFF)) >= 0 ||
                                         contentKindList.BinarySearch((ushort)(nibble1 << 8 | nibble2)) >= 0)
                                     {
-                                        find = true;
+                                        filtered = false;
                                         break;
                                     }
                                 }
                             }
-                            if (find == false)
+                            if (filtered && setViewInfo.HighlightContentKind == false)
                             {
                                 //ジャンル見つからないので除外
                                 continue;
@@ -1257,22 +1242,10 @@ namespace EpgTimer
                             }
                         }
 
-                        ProgramViewItem viewItem = new ProgramViewItem(eventInfo, past);
+                        var viewItem = new ProgramViewItem(eventInfo, past, filtered);
                         viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * setViewInfo.EpgSetting.MinHeight) / 60;
                         viewItem.Width = setViewInfo.EpgSetting.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = setViewInfo.EpgSetting.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
-                        viewItem.ContentColor = contentBrushList[0x10];
-                        if (eventInfo.ContentInfo != null)
-                        {
-                            foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
-                            {
-                                if (info.content_nibble_level_1 <= 0x0B || info.content_nibble_level_1 == 0x0F)
-                                {
-                                    viewItem.ContentColor = contentBrushList[info.content_nibble_level_1];
-                                    break;
-                                }
-                            }
-                        }
                         programGroupList[programGroupList.Count - 1].Item2.Add(viewItem);
                         programList.Add(viewItem);
 

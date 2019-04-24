@@ -131,7 +131,7 @@ namespace EpgTimer
                 DateTime now = DateTime.UtcNow.AddHours(9);
                 foreach (EpgEventInfo info in list ?? Enumerable.Empty<EpgEventInfo>())
                 {
-                    SearchItem item = new SearchItem(info, false);
+                    var item = new SearchItem(info, false, false);
 
                     if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > now)
                     {

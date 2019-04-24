@@ -91,14 +91,8 @@ namespace EpgTimer
             }
             comboBox_timeH_week.SelectedIndex = setInfo.StartTimeWeek;
 
-            if (setInfo.SearchMode == true)
-            {
-                checkBox_searchMode.IsChecked = true;
-            }
-            else
-            {
-                checkBox_searchMode.IsChecked = false;
-            }
+            checkBox_highlightContentKind.IsChecked = setInfo.HighlightContentKind;
+            checkBox_searchMode.IsChecked = setInfo.SearchMode;
 
             foreach (UInt64 id in setInfo.ViewServiceList)
             {
@@ -155,14 +149,8 @@ namespace EpgTimer
             }
             info.StartTimeWeek = comboBox_timeH_week.SelectedIndex;
 
-            if (checkBox_searchMode.IsChecked == true)
-            {
-                info.SearchMode = true;
-            }
-            else
-            {
-                info.SearchMode = false;
-            }
+            info.HighlightContentKind = checkBox_highlightContentKind.IsChecked == true;
+            info.SearchMode = checkBox_searchMode.IsChecked == true;
 
             if (checkBox_filterEnded.IsChecked == true)
             {
