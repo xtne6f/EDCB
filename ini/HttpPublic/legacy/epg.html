@@ -154,7 +154,8 @@ for i,v in ipairs(st) do
     rowHead=rowHead..'<td></td>\n'
   end
   tcol=(tcol<TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
-  rowHead=rowHead..'<th style="min-width:'..(SERVICE_PX-2)..'px;width:'..(SERVICE_PX-2)..'px">'..v.service_name..'</th>\n'
+  rowHead=rowHead..'<th style="min-width:'..(SERVICE_PX-2)..'px;width:'..(SERVICE_PX-2)
+    ..'px"><img alt="" style="max-height:0.8em;width:auto" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</th>\n'
 end
 rowTail='<tr class="epg-row-tail">\n'..rowHead..'</tr>\n'
 rowHead='<tr class="epg-row-head">\n'..rowHead..'</tr>\n'

@@ -50,7 +50,8 @@ if sid==0 then
   SortServiceListInplace(st)
   ct:Append('<div class="nav">\n<ul>\n')
   for i,v in ipairs(st) do
-    ct:Append('<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'#now">'..v.service_name..'</a></li>\n')
+    ct:Append('<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid
+      ..'#now"><img alt="" style="max-height:0.8em;width:auto" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</a></li>\n')
   end
   ct:Append('</ul>\n</div>\n')
 else
