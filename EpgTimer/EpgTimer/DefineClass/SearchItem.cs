@@ -13,10 +13,11 @@ namespace EpgTimer
 {
     public class SearchItem
     {
-        public SearchItem(EpgEventInfo info, bool past)
+        public SearchItem(EpgEventInfo info, bool past, bool filtered)
         {
             EventInfo = info;
             Past = past;
+            Filtered = filtered;
         }
         public EpgEventInfo EventInfo
         {
@@ -33,6 +34,11 @@ namespace EpgTimer
             get { return EventInfo.ShortInfo != null ? EventInfo.ShortInfo.event_name : ""; }
         }
         public bool Past
+        {
+            get;
+            private set;
+        }
+        public bool Filtered
         {
             get;
             private set;
@@ -67,6 +73,10 @@ namespace EpgTimer
                        ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
                        ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
             }
+        }
+        public double Opacity
+        {
+            get { return Filtered ? 0.7 : 1.0; }
         }
         public TextBlock ToolTipView
         {
@@ -105,7 +115,7 @@ namespace EpgTimer
                 String view = "";
                 if (EventInfo.ContentInfo != null)
                 {
-                    Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
+                    // 小ジャンルを大ジャンルでまとめる
                     foreach (EpgContentData ecd1 in EventInfo.ContentInfo.nibbleList)
                     {
                         int nibble1 = ecd1.content_nibble_level_1;
@@ -115,40 +125,31 @@ namespace EpgTimer
                             nibble1 = ecd1.user_nibble_1 | (0x60 + nibble2 * 16);
                             nibble2 = ecd1.user_nibble_2;
                         }
-                        if (nibbleDict1.ContainsKey(nibble1))
+                        string name;
+                        if (CommonManager.Instance.ContentKindDictionary.TryGetValue((ushort)(nibble1 << 8 | 0xFF), out name) == false)
                         {
-                            nibbleDict1[nibble1].Add(nibble2);
+                            name = "(0x" + nibble1.ToString("X2") + ")";
                         }
-                        else
+                        string key = "[" + name + " - ";
+                        int i = view.IndexOf(key, StringComparison.Ordinal);
+                        if (i < 0)
                         {
-                            nibbleDict1.Add(nibble1, new List<int>() { nibble2 });
-                        }
-                    }
-                    foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
-                    {
-                        int nibble1 = kvp1.Key;
-                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                        //
-                        string smallCategory1 = "";
-                        foreach (int nibble2 in kvp1.Value)
-                        {
-                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                            if (nibble2 != 0xFF)
+                            key = "[" + name + "]";
+                            i = view.IndexOf(key, StringComparison.Ordinal);
+                            if (i < 0)
                             {
-                                if (smallCategory1 != "") { smallCategory1 += ", "; }
-                                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
-                                {
-                                    smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
-                                }
+                                view += (view.Length > 0 ? ", " : "") + key;
+                                i = view.Length - 1;
                             }
                         }
-                        //
-                        if (view != "") { view += ", "; }
-                        if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
+                        // "その他"でなければ
+                        if (nibble1 != 0x0F)
                         {
-                            view += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
-                            if (smallCategory1 != "") { view += " - " + smallCategory1; }
-                            view += "]";
+                            if (CommonManager.Instance.ContentKindDictionary.TryGetValue((ushort)(nibble1 << 8 | nibble2), out name) == false)
+                            {
+                                name = "(0x" + nibble2.ToString("X2") + ")";
+                            }
+                            view = view.Insert(view.IndexOf(']', i), (key[key.Length - 1] == ']' ? " - " : ", ") + name);
                         }
                     }
                 }
