@@ -85,7 +85,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding StartTime}">
+                    <GridViewColumn DisplayMemberBinding="{Binding StartTime, ConverterCulture=ja-JP}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
