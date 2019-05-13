@@ -193,7 +193,7 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 
 	if( CompareNoCase(dllPath, this->currentDll) != 0 ){
 		if( LoadDll(dllPath.c_str()) == FALSE ){
-			_OutputDebugString(L"★%s のロードに失敗しました。\r\n", dllPath.c_str());
+			_OutputDebugString(L"★%ls のロードに失敗しました。\r\n", dllPath.c_str());
 			this->currentDll = L"";
 		}else{
 			this->currentDll = dllPath;

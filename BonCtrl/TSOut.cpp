@@ -326,8 +326,8 @@ BOOL CTSOut::StartSaveEPG(
 	this->epgTempFilePath = epgFilePath_;
 	this->epgTempFilePath += L".tmp";
 
-	_OutputDebugString(L"š%s\r\n", this->epgFilePath.c_str());
-	_OutputDebugString(L"š%s\r\n", this->epgTempFilePath.c_str());
+	_OutputDebugString(L"š%ls\r\n", this->epgFilePath.c_str());
+	_OutputDebugString(L"š%ls\r\n", this->epgTempFilePath.c_str());
 
 	this->epgUtil.ClearSectionStatus();
 	this->epgFileState = EPG_FILE_ST_NONE;

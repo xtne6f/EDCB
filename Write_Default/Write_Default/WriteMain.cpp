@@ -39,7 +39,7 @@ BOOL CWriteMain::Start(
 	Stop();
 
 	this->savePath = fileName;
-	_OutputDebugString(L"šCWriteMain::Start CreateFile:%s\r\n", this->savePath.c_str());
+	_OutputDebugString(L"šCWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
 	UtilCreateDirectories(fs_path(this->savePath).parent_path());
 	this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( this->file == INVALID_HANDLE_VALUE ){
@@ -48,11 +48,11 @@ BOOL CWriteMain::Start(
 		fs_path ext = pathWoExt.extension();
 		pathWoExt.replace_extension();
 		for( int i = 1; ; i++ ){
-			Format(this->savePath, L"%s-(%d)%s", pathWoExt.c_str(), i, ext.c_str());
+			Format(this->savePath, L"%ls-(%d)%ls", pathWoExt.c_str(), i, ext.c_str());
 			this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 			if( this->file != INVALID_HANDLE_VALUE || i >= 999 ){
 				DWORD err = GetLastError();
-				_OutputDebugString(L"šCWriteMain::Start CreateFile:%s\r\n", this->savePath.c_str());
+				_OutputDebugString(L"šCWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
 				if( this->file != INVALID_HANDLE_VALUE ){
 					break;
 				}

@@ -246,7 +246,7 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 		if( g_debugLog ){
 			SYSTEMTIME st;
 			GetLocalTime(&st);
-			fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
+			fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %ls%ls",
 			           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
 			           lpOutputString ? lpOutputString : L"",
 			           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");

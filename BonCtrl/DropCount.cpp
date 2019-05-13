@@ -50,7 +50,7 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 			string logline;
 			SYSTEMTIME now;
 			ConvertSystemTime(GetNowI64Time(), &now);
-			Format(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%I64d Scramble:%I64d Signal: %.02f\r\n",
+			Format(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%lld Scramble:%lld Signal: %.02f\r\n",
 				now.wYear,
 				now.wMonth,
 				now.wDay,
@@ -237,7 +237,7 @@ void CDropCount::SaveLog(const wstring& filePath)
 				}
 				break;
 			}
-			fprintf_s(fp.get(), "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d  %s\r\n",
+			fprintf_s(fp.get(), "PID: 0x%04X  Total:%9lld  Drop:%9lld  Scramble: %9lld  %s\r\n",
 			          itr->PID, itr->total, itr->drop, itr->scramble, desc);
 		}
 

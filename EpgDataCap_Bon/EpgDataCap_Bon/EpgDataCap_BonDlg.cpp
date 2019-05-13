@@ -293,9 +293,9 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 				wstring statusLog = L"";
 				if( space >= 0 && ch >= 0 ){
-					Format(statusLog, L"Signal: %.02f Drop: %I64d Scramble: %I64d  space: %d ch: %d",signal, drop, scramble, space, ch);
+					Format(statusLog, L"Signal: %.02f Drop: %lld Scramble: %lld  space: %d ch: %d", signal, drop, scramble, space, ch);
 				}else{
-					Format(statusLog, L"Signal: %.02f Drop: %I64d Scramble: %I64d",signal, drop, scramble);
+					Format(statusLog, L"Signal: %.02f Drop: %lld Scramble: %lld", signal, drop, scramble);
 				}
 				statusLog += L"\r\n";
 
@@ -304,7 +304,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					udp = L"UDP送信：";
 					for( size_t i=0; i<udpSendList.size(); i++ ){
 						wstring buff;
-						Format(buff, L":%d%s ", udpSendList[i].port, udpSendList[i].broadcastFlag ? L"(Broadcast)" : L"");
+						Format(buff, L":%d%ls ", udpSendList[i].port, udpSendList[i].broadcastFlag ? L"(Broadcast)" : L"");
 						udp += udpSendList[i].ipString.find(L':') == wstring::npos ? udpSendList[i].ipString : L'[' + udpSendList[i].ipString + L']';
 						udp += buff;
 					}
@@ -347,7 +347,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				CBonCtrl::JOB_STATUS status = this->main.GetChScanStatus(&space, &ch, &chName, &chkNum, &totalNum);
 				if( status == CBonCtrl::ST_WORKING ){
 					wstring log;
-					Format(log, L"%s (%d/%d 残り約 %d 秒)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
+					Format(log, L"%ls (%d/%d 残り約 %d 秒)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 				}else if( status == CBonCtrl::ST_CANCEL ){
 					KillTimer(TIMER_CHSCAN_STATSU);
@@ -371,8 +371,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 							if( this->serviceList[i].originalNetworkID == this->serviceList[j].originalNetworkID &&
 								this->serviceList[i].transportStreamID == this->serviceList[j].transportStreamID &&
 								this->serviceList[i].serviceID == this->serviceList[j].serviceID ){
-									wstring log = L"";
-									Format(log, L"%s space:%d ch:%d <=> %s space:%d ch:%d\r\n",
+									wstring log;
+									Format(log, L"%ls space:%d ch:%d <=> %ls space:%d ch:%d\r\n",
 										this->serviceList[i].serviceName.c_str(),
 										this->serviceList[i].space,
 										this->serviceList[i].ch,
@@ -445,7 +445,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				this->main.GetOpenBonDriver(&bonFile);
 				WCHAR szBuff2[256]=L"";
 				GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff2, 256);
-				Format(buff, L"%s ： %s", bonFile.c_str(), szBuff2);
+				Format(buff, L"%ls ： %ls", bonFile.c_str(), szBuff2);
 
 				HICON setIcon = this->iconBlue;
 				if( this->main.IsRec() == TRUE ){
@@ -649,7 +649,7 @@ void CEpgDataCap_BonDlg::ChgIconStatus(){
 		this->main.GetOpenBonDriver(&bonFile);
 		WCHAR szBuff2[256]=L"";
 		GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff2, 256);
-		Format(buff, L"%s ： %s", bonFile.c_str(), szBuff2);
+		Format(buff, L"%ls ： %ls", bonFile.c_str(), szBuff2);
 
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
@@ -921,7 +921,7 @@ DWORD CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName, BOOL ini)
 	DWORD err = this->main.OpenBonDriver(fileName);
 	if( err != NO_ERR ){
 		wstring log;
-		Format(log, L"BonDriverのオープンができませんでした\r\n%s\r\n", fileName);
+		Format(log, L"BonDriverのオープンができませんでした\r\n%ls\r\n", fileName);
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 		BtnUpdate(GUI_OPEN_FAIL);
 	}else{

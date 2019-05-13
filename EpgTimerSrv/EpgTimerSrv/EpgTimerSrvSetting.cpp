@@ -681,7 +681,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 		if( wcslen(w) == 6 && wcslen(f) == 7 ){
 			swprintf_s(key, L"%d", num);
 			WCHAR val[32];
-			swprintf_s(val, L"%s%s", &w[1],
+			swprintf_s(val, L"%ls%ls", &w[1],
 			           w[0] == L'ŒŽ' ? L"w1" : w[0] == L'‰Î' ? L"w2" : w[0] == L'…' ? L"w3" : w[0] == L'–Ø' ? L"w4" :
 			           w[0] == L'‹à' ? L"w5" : w[0] == L'“y' ? L"w6" : w[0] == L'“ú' ? L"w7" : L"");
 			WritePrivateProfileString(L"EPG_CAP", key, val, iniPath.c_str());
@@ -881,7 +881,7 @@ void CEpgTimerSrvSetting::OnLbnSelchangeListSetEpgService()
 		auto itr = this->chSet.GetMap().cbegin();
 		std::advance(itr, sel);
 		WCHAR val[256];
-		swprintf_s(val, L"NetworkID : %d(0x%04X)\r\nTransportStreamID : %d(0x%04X)\r\nServiceID : %d(0x%04X) Type=%d%s",
+		swprintf_s(val, L"NetworkID : %d(0x%04X)\r\nTransportStreamID : %d(0x%04X)\r\nServiceID : %d(0x%04X) Type=%d%ls",
 		           itr->second.originalNetworkID, itr->second.originalNetworkID,
 		           itr->second.transportStreamID, itr->second.transportStreamID,
 		           itr->second.serviceID, itr->second.serviceID,
@@ -899,9 +899,9 @@ void CEpgTimerSrvSetting::AddEpgTime(bool check)
 		static const WCHAR week[9] = L" ŒŽ‰Î…–Ø‹à“y“ú";
 		static const WCHAR flag[3] = L"ÚŠî";
 		WCHAR weekMin[32];
-		swprintf_s(weekMin, L"%c%02d:%02d", week[wday % 8], hh, mm);
+		swprintf_s(weekMin, L"%lc%02d:%02d", week[wday % 8], hh, mm);
 		WCHAR flags[32];
-		swprintf_s(flags, L"%c,%c,%c,%c",
+		swprintf_s(flags, L"%lc,%lc,%lc,%lc",
 		           flag[GetDlgButtonCheck(this->hwndEpg, IDC_CHECK_SET_EPG_BS)],
 		           flag[GetDlgButtonCheck(this->hwndEpg, IDC_CHECK_SET_EPG_CS1)],
 		           flag[GetDlgButtonCheck(this->hwndEpg, IDC_CHECK_SET_EPG_CS2)],

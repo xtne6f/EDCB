@@ -72,8 +72,8 @@ void CSendCtrlCmd::SetPipeSetting(
 	DWORD pid
 	)
 {
-	Format(this->eventName, L"%s%d", eventName_, pid);
-	Format(this->pipeName, L"%s%d", pipeName_, pid);
+	Format(this->eventName, L"%ls%d", eventName_, pid);
+	Format(this->pipeName, L"%ls%d", pipeName_, pid);
 }
 
 //TCP/IPƒ‚[ƒh‚ÌÚ‘±æ‚ğİ’è

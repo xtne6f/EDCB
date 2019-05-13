@@ -189,7 +189,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 			if( tmpError != NO_ERROR && tmpError != ERROR_SHARING_VIOLATION ){
 				//1週間以上前かつ一時ファイルがないので削除
 				DeleteFile(path.c_str());
-				_OutputDebugString(L"★delete %s\r\n", path.c_str());
+				_OutputDebugString(L"★delete %ls\r\n", path.c_str());
 			}
 		}else{
 			BYTE readBuff[188*256];
@@ -231,7 +231,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				file = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			}
 			if( file == INVALID_HANDLE_VALUE ){
-				_OutputDebugString(L"Error %s\r\n", path.c_str());
+				_OutputDebugString(L"Error %ls\r\n", path.c_str());
 			}else{
 				//PATを送る(ストリームを確実にリセットするため)
 				DWORD seekPos = 0;

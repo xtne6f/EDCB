@@ -46,7 +46,7 @@ BOOL CTimeShiftUtil::Send(
 		DWORD port = (tcp ? 2230 : 1234);
 		wstring mutexKey;
 		for( int i = 0; i < 100; i++, port++ ){
-			Format(mutexKey, L"%s%d_%d", (tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME), val->ip, port);
+			Format(mutexKey, L"%ls%d_%d", (tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME), val->ip, port);
 			this->portMutex[tcp] = CreateMutex(NULL, FALSE, mutexKey.c_str());
 			if( this->portMutex[tcp] ){
 				if( GetLastError() != ERROR_ALREADY_EXISTS ){

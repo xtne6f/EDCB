@@ -90,7 +90,7 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 	text = L"–¢’è";
 	if( info->StartTimeFlag ){
 		SYSTEMTIME st = info->start_time;
-		Format(text, L"%04d/%02d/%02d(%s) %02d:%02d",
+		Format(text, L"%04d/%02d/%02d(%ls) %02d:%02d",
 		       st.wYear, st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 		wstring time = L" \xFF5E –¢’è";
 		if( info->DurationFlag ){

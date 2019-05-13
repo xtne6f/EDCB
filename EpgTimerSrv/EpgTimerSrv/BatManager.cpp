@@ -216,7 +216,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 							CloseHandle(pi.hThread);
 							hProcess = pi.hProcess;
 						}else{
-							_OutputDebugString(L"BAT起動エラー：%s\r\n", batFilePath.c_str());
+							_OutputDebugString(L"BAT起動エラー：%ls\r\n", batFilePath.c_str());
 						}
 					}
 					if( hProcess ){
@@ -227,10 +227,10 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 					}
 				}
 			}else{
-				_OutputDebugString(L"BATファイル作成エラー：%s\r\n", work.batFilePath.c_str());
+				_OutputDebugString(L"BATファイル作成エラー：%ls\r\n", work.batFilePath.c_str());
 			}
 		}else{
-			_OutputDebugString(L"BAT拡張子エラー：%s\r\n", work.batFilePath.c_str());
+			_OutputDebugString(L"BAT拡張子エラー：%ls\r\n", work.batFilePath.c_str());
 		}
 
 		CBlockLock lock(&sys->managerLock);

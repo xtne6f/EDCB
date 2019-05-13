@@ -106,7 +106,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		}
 
 #ifdef DEBUG_EIT
-		swprintf_s(g_szDebugEIT, L"%c%04x.%02x%02x.%02d.%d\r\n", table_id <= 0x4F ? L'P' : L'S',
+		swprintf_s(g_szDebugEIT, L"%lc%04x.%02x%02x.%02d.%d\r\n", table_id <= 0x4F ? L'P' : L'S',
 		           event_id, table_id, section_number, version_number, siTag.time % 1000000);
 #endif
 		//[actual]‚Æ[other]‚Í“™‰¿‚Éˆµ‚¤

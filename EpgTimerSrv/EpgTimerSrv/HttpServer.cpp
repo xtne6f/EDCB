@@ -250,7 +250,7 @@ string CHttpServer::CreateRandom()
 	if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ){
 		unsigned __int64 r[4] = {};
 		if( CryptGenRandom(prov, sizeof(r), (BYTE*)r) ){
-			sprintf_s(ret, "%016I64x%016I64x%016I64x%016I64x", r[0], r[1], r[2], r[3]);
+			sprintf_s(ret, "%016llx%016llx%016llx%016llx", r[0], r[1], r[2], r[3]);
 		}
 		CryptReleaseContext(prov, 0);
 	}

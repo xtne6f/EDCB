@@ -133,8 +133,8 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	std::replace(base64.begin(), base64.end(), L'\r', L'\0');
 	std::replace(base64.begin(), base64.end(), L'\n', L'\0');
 
-	wstring authHead = L"";
-	Format(authHead, L"Authorization: Basic %s\r\nContent-type: application/x-www-form-urlencoded\r\n", &base64.front());
+	wstring authHead;
+	Format(authHead, L"Authorization: Basic %ls\r\nContent-type: application/x-www-form-urlencoded\r\n", &base64.front());
 
 	//data
 	wstring dataParam;
@@ -165,7 +165,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 		srvChg.ChgText(stationName);
 
 		__int64 startTime = GetTimeStamp(info->startTime);
-		Format(param, L"%I64d\t%I64d\t%s\t%s\t%s\t\t0\t%d\n", startTime, startTime+info->durationSecond, device.c_str(), info->title.c_str(), stationName.c_str(), info->reserveID );
+		Format(param, L"%lld\t%lld\t%ls\t%ls\t%ls\t\t0\t%d\n", startTime, startTime+info->durationSecond, device.c_str(), info->title.c_str(), stationName.c_str(), info->reserveID );
 		dataParam+=param;
 	}
 
@@ -279,7 +279,7 @@ EXIT:
 		WinHttpCloseHandle(session);
 	}
 
-	_OutputDebugString(L"ÅöSyoboiCalUtil:SendRequest res:%s", result);
+	_OutputDebugString(L"ÅöSyoboiCalUtil:SendRequest res:%ls", result);
 
 	if( result[0] != L'1' ){
 		return FALSE;
