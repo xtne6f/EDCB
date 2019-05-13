@@ -17,7 +17,7 @@ public:
 	void SetBonDriver(const wstring& bonDriver);
 	void SetNoLog(BOOL noLogDrop, BOOL noLogScramble);
 
-	void SetPIDName(WORD pid, LPCSTR name);
+	void SetPIDName(WORD pid, const wstring& name);
 protected:
 	struct DROP_INFO {
 		WORD PID;

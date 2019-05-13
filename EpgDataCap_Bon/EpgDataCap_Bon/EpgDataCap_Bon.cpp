@@ -174,15 +174,15 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 				} else if (wcscmp(argv[i] + 1, L"d") == 0 && optLowerD == NULL) {
 					curr = argv[i] + 1;
 					optLowerD = L"";
-				} else if (_wcsicmp(argv[i] + 1, L"min") == 0) {
+				} else if (CompareNoCase(argv[i] + 1, L"min") == 0) {
 					dlg.SetIniMin(TRUE);
-				} else if (_wcsicmp(argv[i] + 1, L"noview") == 0) {
+				} else if (CompareNoCase(argv[i] + 1, L"noview") == 0) {
 					dlg.SetIniView(FALSE);
-				} else if (_wcsicmp(argv[i] + 1, L"nonw") == 0) {
+				} else if (CompareNoCase(argv[i] + 1, L"nonw") == 0) {
 					dlg.SetIniNW(FALSE);
-				} else if (_wcsicmp(argv[i] + 1, L"nwudp") == 0) {
+				} else if (CompareNoCase(argv[i] + 1, L"nwudp") == 0) {
 					dlg.SetIniNWUDP(TRUE);
-				} else if (_wcsicmp(argv[i] + 1, L"nwtcp") == 0) {
+				} else if (CompareNoCase(argv[i] + 1, L"nwtcp") == 0) {
 					dlg.SetIniNWTCP(TRUE);
 				}
 			} else if (wcscmp(curr, L"D") == 0 && optUpperD && optUpperD[0] == L'\0') {

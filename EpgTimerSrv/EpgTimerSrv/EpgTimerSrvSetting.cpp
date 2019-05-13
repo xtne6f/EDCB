@@ -599,7 +599,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	//基本設定
 	HWND hwnd = this->hwndBasic;
 	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_DATA_SAVE_PATH), buff);
-	if( _wcsicmp(settingPath.c_str(), buff.data()) == 0 ){
+	if( CompareNoCase(settingPath.c_str(), buff.data()) == 0 ){
 		//既定値なので記録しない
 		WritePrivateProfileString(L"SET", L"DataSavePath", NULL, commonIniPath.c_str());
 	}else{
@@ -608,7 +608,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 		ChkFolderPath(settingPath);
 	}
 	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_REC_EXE_PATH), buff);
-	if( _wcsicmp(GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").c_str(), buff.data()) == 0 ){
+	if( CompareNoCase(GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").c_str(), buff.data()) == 0 ){
 		//既定値なので記録しない
 		WritePrivateProfileString(L"SET", L"RecExePath", NULL, commonIniPath.c_str());
 	}else{
@@ -629,7 +629,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	int num = 0;
 	for( int i = 0; i < ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)); i++ ){
 		GetListBoxTextBuffer(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER), i, buff);
-		if( num == 0 && i + 1 >= ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)) && _wcsicmp(settingPath.c_str(), buff.data()) == 0 ){
+		if( num == 0 && i + 1 >= ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)) && CompareNoCase(settingPath.c_str(), buff.data()) == 0 ){
 			//既定値なので記録しない
 			break;
 		}
@@ -912,7 +912,7 @@ void CEpgTimerSrvSetting::AddEpgTime(bool check)
 		for( int i = 0; i < lvi.iItem; i++ ){
 			WCHAR buff[32] = {};
 			ListView_GetItemText(GetDlgItem(this->hwndEpg, IDC_LIST_SET_EPG_TIME), i, 0, buff, _countof(buff));
-			if( _wcsicmp(buff, weekMin) == 0 ){
+			if( wcscmp(buff, weekMin) == 0 ){
 				//すでにある
 				return;
 			}

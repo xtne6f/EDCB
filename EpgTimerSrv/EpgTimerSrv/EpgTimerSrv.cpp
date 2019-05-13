@@ -41,23 +41,23 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		LocalFree(argv);
 	}
 
-	if( _wcsicmp(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
+	if( CompareNoCase(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
 		//Taskモードを強制する
 		wcscpy_s(option, L"/task");
 	}
 	if( option[0] == L'-' || option[0] == L'/' ){
-		if( _wcsicmp(L"install", option + 1) == 0 ){
+		if( CompareNoCase(L"install", option + 1) == 0 ){
 			return 0;
-		}else if( _wcsicmp(L"remove", option + 1) == 0 ){
+		}else if( CompareNoCase(L"remove", option + 1) == 0 ){
 			return 0;
-		}else if( _wcsicmp(L"setting", option + 1) == 0 ){
+		}else if( CompareNoCase(L"setting", option + 1) == 0 ){
 			//設定ダイアログを表示する
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvSetting setting;
 			setting.ShowDialog();
 			CoUninitialize();
 			return 0;
-		}else if( _wcsicmp(L"task", option + 1) == 0 ){
+		}else if( CompareNoCase(L"task", option + 1) == 0 ){
 			//Taskモード
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvMain::TaskMain();

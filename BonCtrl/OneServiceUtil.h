@@ -168,7 +168,7 @@ public:
 		);
 	void SetPIDName(
 		WORD pid,
-		LPCSTR name
+		const wstring& name
 		);
 	void SetNoLogScramble(
 		BOOL noLog

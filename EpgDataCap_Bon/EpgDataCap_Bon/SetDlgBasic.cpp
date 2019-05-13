@@ -54,7 +54,7 @@ void CSetDlgBasic::SaveIni()
 
 	WCHAR settingFolderPath[512] = L"";
 	GetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, settingFolderPath, 512);
-	WritePrivateProfileString(L"SET", L"DataSavePath", _wcsicmp(settingFolderPath, GetDefSettingPath().c_str()) ? settingFolderPath : NULL, commonIniPath.c_str());
+	WritePrivateProfileString(L"SET", L"DataSavePath", CompareNoCase(settingFolderPath, GetDefSettingPath().c_str()) ? settingFolderPath : NULL, commonIniPath.c_str());
 	UtilCreateDirectories(settingFolderPath);
 
 	int iNum = ListBox_GetCount(GetDlgItem(IDC_LIST_REC_FOLDER));
@@ -64,7 +64,7 @@ void CSetDlgBasic::SaveIni()
 		if( 0 <= len && len < 512 ){
 			ListBox_GetText(GetDlgItem(IDC_LIST_REC_FOLDER), 0, folder);
 		}
-		if( _wcsicmp(folder, settingFolderPath) == 0 ){
+		if( CompareNoCase(folder, settingFolderPath) == 0 ){
 			iNum = 0;
 		}
 	}
@@ -121,7 +121,7 @@ void CSetDlgBasic::OnBnClickedButtonRecAdd()
 			ListBox_GetText(GetDlgItem(IDC_LIST_REC_FOLDER), i, folder);
 		}
 
-		if( _wcsicmp(recFolderPath, folder) == 0 ){
+		if( CompareNoCase(recFolderPath, folder) == 0 ){
 			findFlag = TRUE;
 			break;
 		}

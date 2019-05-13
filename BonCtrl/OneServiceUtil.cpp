@@ -416,7 +416,7 @@ void COneServiceUtil::SetBonDriver(
 
 void COneServiceUtil::SetPIDName(
 	WORD pid,
-	LPCSTR name
+	const wstring& name
 	)
 {
 	this->dropCount.SetPIDName(pid, name);

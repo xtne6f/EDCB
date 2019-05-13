@@ -25,13 +25,11 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 	if( !cmdProc ){
 		return false;
 	}
-	string aclU;
-	WtoUTF8(acl, aclU);
 	if( m_thread.joinable() &&
 	    m_port == port &&
 	    m_ipv6 == ipv6 &&
 	    m_dwResponseTimeout == dwResponseTimeout &&
-	    m_acl == aclU ){
+	    m_acl == acl ){
 		//cmdProcの変化は想定していない
 		return true;
 	}
@@ -40,10 +38,10 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 	m_port = port;
 	m_ipv6 = ipv6;
 	m_dwResponseTimeout = dwResponseTimeout;
-	m_acl = aclU;
+	m_acl = acl;
 
-	string strPort;
-	Format(strPort, "%d", m_port);
+	char szPort[16];
+	sprintf_s(szPort, "%d", m_port);
 	struct addrinfo hints = {};
 	hints.ai_flags = AI_PASSIVE;
 	hints.ai_family = m_ipv6 ? AF_INET6 : AF_INET;
@@ -51,7 +49,7 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 	hints.ai_protocol = IPPROTO_TCP;
 
 	struct addrinfo* result;
-	if( getaddrinfo(NULL, strPort.c_str(), &hints, &result) != 0 ){
+	if( getaddrinfo(NULL, szPort, &hints, &result) != 0 ){
 		return false;
 	}
 
@@ -110,29 +108,31 @@ void CTCPServer::NotifyUpdate()
 	}
 }
 
-static bool TestAcl(struct sockaddr* addr, string acl)
+static bool TestAcl(struct sockaddr* addr, wstring acl)
 {
 	//書式例: +192.168.0.0/16,-192.168.0.1
 	//書式例(IPv6): +fe80::/64,-::1
 	bool ret = false;
 	for(;;){
-		string val;
-		BOOL sep = Separate(acl, ",", val, acl);
-		if( val.empty() || val[0] != '+' && val[0] != '-' ){
+		wstring val;
+		bool sep = Separate(acl, L",", val, acl);
+		if( val.empty() || (val[0] != L'+' && val[0] != L'-') ){
 			//書式エラー
 			return false;
 		}
-		string m;
-		int mm = Separate(val, "/", val, m) ? atoi(m.c_str()) : addr->sa_family == AF_INET6 ? 128 : 32;
+		wstring m;
+		int mm = Separate(val, L"/", val, m) ? (int)wcstol(m.c_str(), NULL, 10) : addr->sa_family == AF_INET6 ? 128 : 32;
 		if( val.empty() || mm < 0 || mm > (addr->sa_family == AF_INET6 ? 128 : 32) ){
 			//書式エラー
 			return false;
 		}
+		string valU;
+		WtoUTF8(val, valU);
 		struct addrinfo hints = {};
 		hints.ai_flags = AI_NUMERICHOST;
 		hints.ai_family = addr->sa_family;
 		struct addrinfo* result;
-		if( getaddrinfo(val.c_str() + 1, NULL, &hints, &result) != 0 ){
+		if( getaddrinfo(valU.c_str() + 1, NULL, &hints, &result) != 0 ){
 			//書式エラー
 			return false;
 		}
@@ -156,7 +156,7 @@ static bool TestAcl(struct sockaddr* addr, string acl)
 			}
 		}
 		freeaddrinfo(result);
-		if( sep == FALSE ){
+		if( sep == false ){
 			return ret;
 		}
 	}

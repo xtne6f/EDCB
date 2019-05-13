@@ -199,7 +199,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 								if( exeCmd.size() > i + 2 ){
 									sei.lpParameters = exeCmd.erase(0, i + 2).c_str();
 								}
-								sei.nShow = file.size() < 4 || _wcsicmp(file.c_str() + file.size() - 4, L".bat") ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
+								sei.nShow = file.size() < 4 || CompareNoCase(file.c_str() + file.size() - 4, L".bat") ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
 								if( ShellExecuteEx(&sei) && sei.hProcess ){
 									CPipeServer::GrantServerAccessToKernelObject(sei.hProcess, SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION);
 									resParam->data = NewWriteVALUE(GetProcessId(sei.hProcess), resParam->dataSize);
@@ -2909,12 +2909,12 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 							if( IsExt(path, L".ini") ){
 								//ファイルロックを邪魔しないようAPI経由で読む
 								wstring strData = L"\xFEFF";
-								int appendModulePathState = _wcsicmp(path.filename().c_str(), L"Common.ini") == 0;
+								int appendModulePathState = CompareNoCase(path.filename().c_str(), L"Common.ini") == 0;
 								wstring sectionNames = GetPrivateProfileToString(NULL, NULL, NULL, path.c_str());
 								for( size_t j = 0; j < sectionNames.size() && sectionNames[j]; j += wcslen(sectionNames.c_str() + j) + 1 ){
 									LPCWSTR section = sectionNames.c_str() + j;
 									strData += wstring(L"[") + section + L"]\r\n";
-									if( appendModulePathState == 1 && _wcsicmp(section, L"SET") == 0 ){
+									if( appendModulePathState == 1 && CompareNoCase(section, L"SET") == 0 ){
 										//Common.iniに対する特例キー
 										strData += L"ModulePath=\"" + GetModulePath().parent_path().native() + L"\"\r\n";
 										appendModulePathState = 2;
@@ -3225,18 +3225,18 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 		LPCSTR src = lua_tostring(L, 3);
 		if( to && from && src ){
 			wstring wsrc;
-			if( _stricmp(from, "utf-8") == 0 ){
+			if( CompareNoCase(from, "utf-8") == 0 ){
 				UTF8toW(src, wsrc);
-			}else if( _stricmp(from, "cp932") == 0 ){
+			}else if( CompareNoCase(from, "cp932") == 0 ){
 				AtoW(src, wsrc);
 			}else{
 				lua_pushnil(L);
 				return 1;
 			}
-			if( _stricmp(to, "utf-8") == 0 ){
+			if( CompareNoCase(to, "utf-8") == 0 ){
 				lua_pushstring(L, ws.WtoUTF8(wsrc));
 				return 1;
-			}else if( _stricmp(to, "cp932") == 0 ){
+			}else if( CompareNoCase(to, "cp932") == 0 ){
 				UTF8toW(ws.WtoUTF8(wsrc), wsrc);
 				string dest;
 				WtoA(wsrc, dest);
@@ -3259,7 +3259,7 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 		LPCSTR file = lua_tostring(L, 4);
 		if( app && key && def && file ){
 			wstring path;
-			if( _stricmp(key, "ModulePath") == 0 && _stricmp(app, "SET") == 0 && _stricmp(file, "Common.ini") == 0 ){
+			if( CompareNoCase(key, "ModulePath") == 0 && CompareNoCase(app, "SET") == 0 && CompareNoCase(file, "Common.ini") == 0 ){
 				GetModuleFolderPath(path);
 				lua_pushstring(L, ws.WtoUTF8(path));
 			}else{
@@ -3271,7 +3271,7 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 				UTF8toW(key, strKey);
 				UTF8toW(def, strDef);
 				UTF8toW(file, strFile);
-				if( _wcsicmp(strFile.substr(0, 8).c_str(), L"Setting\\") == 0 ){
+				if( CompareNoCase(strFile.substr(0, 8), L"Setting\\") == 0 ){
 					strFile = GetSettingPath().append(strFile.substr(8)).native();
 				}else{
 					strFile = GetModulePath().replace_filename(strFile).native();
@@ -3302,7 +3302,7 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 			UTF8toW(key ? key : "", strKey);
 			UTF8toW(val ? val : "", strVal);
 			UTF8toW(file, strFile);
-			if( _wcsicmp(strFile.substr(0, 8).c_str(), L"Setting\\") == 0 ){
+			if( CompareNoCase(strFile.substr(0, 8), L"Setting\\") == 0 ){
 				strFile = GetSettingPath().append(strFile.substr(8)).native();
 			}else{
 				strFile = GetModulePath().replace_filename(strFile).native();

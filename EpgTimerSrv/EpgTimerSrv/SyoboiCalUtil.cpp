@@ -176,8 +176,9 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 
 	string utf8;
 	UrlEncodeUTF8(dataParam.c_str(), (DWORD)dataParam.size(), utf8);
-	string data;
-	Format(data, "slot=%d&data=%s",slot, utf8.c_str());
+	char szSlot[32];
+	sprintf_s(szSlot, "slot=%d&data=", slot);
+	string data = szSlot + utf8;
 
 	if( devcolors.size() > 0){
 		utf8 = "";

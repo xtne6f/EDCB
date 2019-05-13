@@ -47,10 +47,10 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 	if( tick - this->lastLogTime > 5000 ){
 		if( this->lastLogDrop < this->drop ||
 		    this->lastLogScramble < this->scramble ){
-			string logline;
 			SYSTEMTIME now;
 			ConvertSystemTime(GetNowI64Time(), &now);
-			Format(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%lld Scramble:%lld Signal: %.02f\r\n",
+			char logline[256];
+			sprintf_s(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%lld Scramble:%lld Signal: %.02f\r\n",
 				now.wYear,
 				now.wMonth,
 				now.wDay,
@@ -247,12 +247,12 @@ void CDropCount::SaveLog(const wstring& filePath)
 	}
 }
 
-void CDropCount::SetPIDName(WORD pid, LPCSTR name)
+void CDropCount::SetPIDName(WORD pid, const wstring& name)
 {
 	vector<pair<WORD, string>>::iterator itr;
 	itr = std::lower_bound(this->pidName.begin(), this->pidName.end(), std::make_pair(pid, string()));
 	if( itr == this->pidName.end() || itr->first != pid ){
 		itr = this->pidName.insert(itr, std::make_pair(pid, string()));
 	}
-	itr->second = name;
+	WtoA(name, itr->second);
 }

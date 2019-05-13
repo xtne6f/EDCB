@@ -63,16 +63,15 @@ inline void _OutputDebugString(PRINTF_FORMAT_SZ const WCHAR* format, ...)
 	// TODO: この関数名は予約名違反の上に紛らわしいので変更すべき
 	va_list params;
 	va_start(params, format);
-	int length = _vscwprintf(format, params);
+	// 長すぎる等エラー時は書式文字列の展開を省略する
+	WCHAR buff[1024];
+#ifdef _WIN32
+	const WCHAR* p = _vsnwprintf_s(buff, 1024, _TRUNCATE, format, params) < 0 ? format : buff;
+#else
+	const WCHAR* p = vswprintf(buff, 1024, format, params) < 0 ? format : buff;
+#endif
 	va_end(params);
-	if( length >= 0 ){
-		WCHAR* buff = new WCHAR[length + 1];
-		va_start(params, format);
-		vswprintf_s(buff, length + 1, format, params);
-		va_end(params);
-		OutputDebugString(buff);
-		delete[] buff;
-	}
+	OutputDebugString(p);
 }
 
 // 適切でない書式文字列の検出用
