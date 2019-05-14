@@ -1,0 +1,59 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>ストレージ - EDCB</title>
+</head>
+<body>
+<h1>ストレージ</h1>
+<div id="main">
+  <dl>
+]=])
+
+list={}
+n=tonumber(edcb.GetPrivateProfile('SET','RecFolderNum',0,'Common.ini'))
+if n<=0 then
+  --録画保存フォルダが未設定のときは設定関係保存フォルダになる
+  list[1]=edcb.GetPrivateProfile('SET','DataSavePath','','Common.ini')
+  if list[1]=='' then
+    list[1]=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Setting'
+  end
+end
+for i=0,n-1 do
+  list[#list+1]=edcb.GetPrivateProfile('SET','RecFolderPath'..i,'','Common.ini')
+end
+
+checked={}
+for i,v in ipairs(list) do
+  v=v:match('^%a:\\')
+  if v and not checked[v:upper()] then
+    checked[v:upper()]=true
+    free=nil
+    f=edcb.io.popen('fsutil volume diskfree '..v)
+    if f then
+      free,total,avail=f:read('*a'):match(':%s*(%d+).*:%s*(%d+).*:%s*(%d+)')
+      f:close()
+    end
+    ct:Append('    <dt>'..v..'</dt><dd>'..(free and
+      ('%.3f GB (avail: %.3f GB) / %.3f GB'):format(free/1024/1024/1024,avail/1024/1024/1024,total/1024/1024/1024) or '不明')..'</dd>\n')
+  end
+end
+
+ct:Append([=[
+  </dl>
+</div>
+<div id="footer">
+  <a href="index.html">メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

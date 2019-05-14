@@ -1,83 +1,5 @@
 #include "stdafx.h"
 #include "StringUtil.h"
-#include <stdexcept>
-
-namespace
-{
-
-size_t WtoMB(UINT codePage, const WCHAR *in, vector<char>& out, size_t outLenHint)
-{
-	if( out.size() < outLenHint + 1 ){
-		out.resize(outLenHint + 1);
-	}
-	size_t len = WideCharToMultiByte(codePage, 0, in, -1, &out.front(), (int)out.size(), NULL, NULL);
-	if( len == 0 ){
-		//rare case
-		len = WideCharToMultiByte(codePage, 0, in, -1, NULL, 0, NULL, NULL);
-		if( len < out.size() ){
-			len = 0;
-		}else{
-			out.resize(len);
-			len = WideCharToMultiByte(codePage, 0, in, -1, &out.front(), (int)out.size(), NULL, NULL);
-		}
-		if( len == 0 ){
-			out[0] = '\0';
-			len = 1;
-		}
-	}
-	return len - 1;
-}
-
-size_t MBtoW(UINT codePage, const char *in, vector<WCHAR>& out, size_t outLenHint)
-{
-	if( out.size() < outLenHint + 1 ){
-		out.resize(outLenHint + 1);
-	}
-	size_t len = MultiByteToWideChar(codePage, 0, in, -1, &out.front(), (int)out.size());
-	if( len == 0 ){
-		//rare case
-		len = MultiByteToWideChar(codePage, 0, in, -1, NULL, 0);
-		if( len < out.size() ){
-			len = 0;
-		}else{
-			out.resize(len);
-			len = MultiByteToWideChar(codePage, 0, in, -1, &out.front(), (int)out.size());
-		}
-		if( len == 0 ){
-			out[0] = L'\0';
-			len = 1;
-		}
-	}
-	return len - 1;
-}
-
-}
-
-void Format(string& strBuff, PRINTF_FORMAT_SZ const char *format, ...)
-{
-	va_list params;
-
-	va_start(params, format);
-	try{
-		int length = _vscprintf(format, params);
-		if( length < 0 ){
-			throw std::runtime_error("");
-		}else if( length < 64 ){
-			char szSmall[64];
-			vsprintf_s(szSmall, format, params);
-			strBuff = szSmall;
-		}else{
-			vector<char> buff(length + 1);
-			vsprintf_s(&buff.front(), buff.size(), format, params);
-			strBuff = &buff.front();
-		}
-	}catch(...){
-		va_end(params);
-		throw;
-	}
-
-	va_end(params);
-}
 
 void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...)
 {
@@ -86,17 +8,30 @@ void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...)
 	va_start(params, format);
 
 	try{
-		int length = _vscwprintf(format, params);
-		if( length < 0 ){
-			throw std::runtime_error("");
-		}else if( length < 64 ){
-			WCHAR szSmall[64];
-			vswprintf_s(szSmall, format, params);
-			strBuff = szSmall;
-		}else{
-			vector<WCHAR> buff(length + 1);
-			vswprintf_s(&buff.front(), buff.size(), format, params);
-			strBuff = &buff.front();
+		vector<WCHAR> buff;
+		WCHAR szSmall[256];
+		for(;;){
+			size_t s = buff.empty() ? 256 : buff.size();
+			WCHAR* p = buff.empty() ? szSmall : buff.data();
+			va_list copyParams;
+#ifdef va_copy
+			va_copy(copyParams, params);
+#else
+			copyParams = params;
+#endif
+#ifdef _WIN32
+			int n = _vsnwprintf_s(p, s, _TRUNCATE, format, copyParams);
+#else
+			//切り捨て以外のエラーでも-1が返る(無効なパラメーターハンドラはない)ので注意
+			int n = vswprintf(p, s, format, copyParams);
+#endif
+			va_end(copyParams);
+			if( n >= 0 ){
+				//戻り値nを使うのでレアケース("%c"に'\0'など)では原作と結果が異なる
+				strBuff.assign(p, n);
+				break;
+			}
+			buff.resize(s * 2);
 		}
 	}catch(...){
 		va_end(params);
@@ -104,26 +39,6 @@ void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...)
 	}
 
     va_end(params);
-}
-
-void Replace(string& strBuff, const string& strOld, const string& strNew)
-{
-	string::size_type Pos = 0;
-	string* strWork = &strBuff;
-	string strForAlias;
-
-	if( strWork == &strOld || strWork == &strNew ){
-		strForAlias = strBuff;
-		strWork = &strForAlias;
-	}
-	while ((Pos = strWork->find(strOld,Pos)) != string::npos)
-	{
-		strWork->replace(Pos,strOld.size(),strNew);
-		Pos += strNew.size();
-	}
-	if( strWork == &strForAlias ){
-		strBuff = strForAlias;
-	}
 }
 
 void Replace(wstring& strBuff, const wstring& strOld, const wstring& strNew)
@@ -142,94 +57,146 @@ void Replace(wstring& strBuff, const wstring& strOld, const wstring& strNew)
 		Pos += strNew.size();
 	}
 	if( strWork == &strForAlias ){
-		strBuff = strForAlias;
+		strBuff = std::move(strForAlias);
 	}
 }
 
-void WtoA(const wstring& strIn, string& strOut)
+size_t WtoA(const WCHAR* in, size_t inLen, vector<char>& out, UTIL_CONV_CODE code)
+{
+#ifdef _WIN32
+	if( code != UTIL_CONV_UTF8 ){
+		size_t n = WideCharToMultiByte((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, NULL, 0, NULL, NULL);
+		if( out.size() < n + 1 ){
+			out.resize(n + 1);
+		}
+		if( n ){
+			n = WideCharToMultiByte((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, out.data(), (int)n, NULL, NULL);
+		}
+		out[n] = '\0';
+		return strlen(out.data());
+	}
+#endif
+	if( out.size() < inLen * 3 + 1 ){
+		out.resize(inLen * 3 + 1);
+	}
+	size_t n = 0;
+	for( size_t i = 0; i < inLen && in[i]; ){
+		int x = (WORD)in[i++];
+		if( 0xD800 <= x && x < 0xE000 ){
+			if( x < 0xDC00 && 0xDC00 <= (WORD)in[i] && (WORD)in[i] < 0xE000 ){
+				x = 0x10000 + (x - 0xD800) * 0x400 + ((WORD)in[i++] - 0xDC00);
+				out[n++] = (char)(0xF0 | x >> 18);
+				out[n++] = (char)(0x80 | (x >> 12 & 0x3F));
+				out[n++] = (char)(0x80 | (x >> 6 & 0x3F));
+				out[n++] = (char)(0x80 | (x & 0x3F));
+				continue;
+			}
+			x = 0xFFFD;
+		}
+		if( x < 0x80 ){
+			out[n++] = (char)x;
+		}else if( x < 0x800 ){
+			out[n++] = (char)(0xC0 | x >> 6);
+			out[n++] = (char)(0x80 | (x & 0x3F));
+		}else{
+			out[n++] = (char)(0xE0 | x >> 12);
+			out[n++] = (char)(0x80 | (x >> 6 & 0x3F));
+			out[n++] = (char)(0x80 | (x & 0x3F));
+		}
+	}
+	out[n] = '\0';
+	return n;
+}
+
+size_t AtoW(const char* in, size_t inLen, vector<WCHAR>& out, UTIL_CONV_CODE code)
+{
+#ifdef _WIN32
+	if( code != UTIL_CONV_UTF8 ){
+		size_t n = MultiByteToWideChar((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, NULL, 0);
+		if( out.size() < n + 1 ){
+			out.resize(n + 1);
+		}
+		if( n ){
+			n = MultiByteToWideChar((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, out.data(), (int)n);
+		}
+		out[n] = L'\0';
+		return wcslen(out.data());
+	}
+#endif
+	if( out.size() < inLen + 1 ){
+		out.resize(inLen + 1);
+	}
+	size_t n = 0;
+	for( size_t i = 0; i < inLen && in[i]; ){
+		int x = (BYTE)in[i++];
+		if( 0xC2 <= x && x < 0xE0 && 0x80 <= (BYTE)in[i] && (BYTE)in[i] < 0xC0 ){
+			x = (x & 0x1F) << 6 | ((BYTE)in[i++] & 0x3F);
+		}else if( 0xE0 <= x && x < 0xF0 &&
+		          0x80 <= (BYTE)in[i] && (BYTE)in[i] < 0xC0 && ((x & 0x0F) || ((BYTE)in[i] & 0x20)) &&
+		          0x80 <= (BYTE)in[i + 1] && (BYTE)in[i + 1] < 0xC0 ){
+			x = (x & 0x0F) << 12 | ((BYTE)in[i] & 0x3F) << 6 | ((BYTE)in[i + 1] & 0x3F);
+			i += 2;
+		}else if( 0xF0 <= x && x < 0xF8 &&
+		          0x80 <= (BYTE)in[i] && (BYTE)in[i] < 0xC0 && ((x & 0x07) || ((BYTE)in[i] & 0x30)) &&
+		          0x80 <= (BYTE)in[i + 1] && (BYTE)in[i + 1] < 0xC0 &&
+		          0x80 <= (BYTE)in[i + 2] && (BYTE)in[i + 2] < 0xC0 ){
+			x = (x & 0x07) << 18 | ((BYTE)in[i] & 0x3F) << 12 | ((BYTE)in[i + 1] & 0x3F) << 6 | ((BYTE)in[i + 2] & 0x3F);
+			out[n++] = (WCHAR)((x - 0x10000) / 0x400 + 0xD800);
+			out[n++] = (WCHAR)((x - 0x10000) % 0x400 + 0xDC00);
+			i += 3;
+			continue;
+		}else if( x >= 0x80 ){
+			x = 0xFFFD;
+		}
+		out[n++] = (WCHAR)x;
+	}
+	out[n] = L'\0';
+	return n;
+}
+
+void WtoA(const wstring& strIn, string& strOut, UTIL_CONV_CODE code)
 {
 	vector<char> buff;
-	size_t len = WtoA(strIn.c_str(), strIn.size(), buff);
+	size_t len = WtoA(strIn.c_str(), strIn.size(), buff, code);
 	strOut.assign(&buff.front(), &buff.front() + len);
 }
 
-size_t WtoA(const WCHAR *in, size_t inLenHint, vector<char>& out)
-{
-	return WtoMB(932, in, out, inLenHint * 2);
-}
-
-void WtoUTF8(const wstring& strIn, string& strOut)
-{
-	vector<char> buff;
-	size_t len = WtoUTF8(strIn.c_str(), strIn.size(), buff);
-	strOut.assign(&buff.front(), &buff.front() + len);
-}
-
-size_t WtoUTF8(const WCHAR *in, size_t inLenHint, vector<char>& out)
-{
-	return WtoMB(CP_UTF8, in, out, inLenHint * 3);
-}
-
-void AtoW(const string& strIn, wstring& strOut)
+void AtoW(const string& strIn, wstring& strOut, UTIL_CONV_CODE code)
 {
 	vector<WCHAR> buff;
-	size_t len = AtoW(strIn.c_str(), strIn.size(), buff);
+	size_t len = AtoW(strIn.c_str(), strIn.size(), buff, code);
 	strOut.assign(&buff.front(), &buff.front() + len);
 }
 
-size_t AtoW(const char *in, size_t inLenHint, vector<WCHAR>& out)
+bool Separate(const wstring& strIn, const WCHAR* sep, wstring& strLeft, wstring& strRight)
 {
-	return MBtoW(932, in, out, inLenHint);
-}
-
-void UTF8toW(const string& strIn, wstring& strOut)
-{
-	vector<WCHAR> buff;
-	size_t len = UTF8toW(strIn.c_str(), strIn.size(), buff);
-	strOut.assign(&buff.front(), &buff.front() + len);
-}
-
-size_t UTF8toW(const char *in, size_t inLenHint, vector<WCHAR>& out)
-{
-	return MBtoW(CP_UTF8, in, out, inLenHint);
-}
-
-BOOL Separate(const string& strIn, const char *sep, string& strLeft, string& strRight)
-{
-	string::size_type Pos = strIn.find(sep);
-	string strL(strIn, 0, Pos);
-	if( Pos == string::npos ){
-		strRight = "";
-		strLeft = strL;
-		return FALSE;
+	wstring strL(strIn, 0, strIn.find(sep));
+	if( strL.size() == strIn.size() ){
+		strRight.clear();
+		strLeft = std::move(strL);
+		return false;
 	}
-	strRight = strIn.substr(Pos+strlen(sep));
-	strLeft = strL;
-	
-	return TRUE;
+	strRight = strIn.substr(strL.size() + wcslen(sep));
+	strLeft = std::move(strL);
+	return true;
 }
 
-BOOL Separate(const wstring& strIn, const WCHAR *sep, wstring& strLeft, wstring& strRight)
+int CompareNoCase(const char* s1, const char* s2)
 {
-	wstring::size_type Pos = strIn.find(sep);
-	wstring strL(strIn, 0, Pos);
-	if( Pos == wstring::npos ){
-		strRight = L"";
-		strLeft = strL;
-		return FALSE;
+	while( *s1 && ('a' <= *s1 && *s1 <= 'z' ? *s1 - 'a' + 'A' : *s1) ==
+	              ('a' <= *s2 && *s2 <= 'z' ? *s2 - 'a' + 'A' : *s2) ){
+		s1++;
+		s2++;
 	}
-	strRight = strIn.substr(Pos+wcslen(sep));
-	strLeft = strL;
-	
-	return TRUE;
+	return (unsigned char)*s1 - (unsigned char)*s2;
 }
 
-int CompareNoCase(const string& str1, const char *str2)
+int CompareNoCase(const WCHAR* s1, const WCHAR* s2)
 {
-	return _stricmp(str1.c_str(), str2);
-}
-
-int CompareNoCase(const wstring& str1, const WCHAR *str2)
-{
-	return _wcsicmp(str1.c_str(), str2);
+	while( *s1 && (L'a' <= *s1 && *s1 <= L'z' ? *s1 - L'a' + L'A' : *s1) ==
+	              (L'a' <= *s2 && *s2 <= L'z' ? *s2 - L'a' + L'A' : *s2) ){
+		s1++;
+		s2++;
+	}
+	return (WORD)*s1 - (WORD)*s2;
 }

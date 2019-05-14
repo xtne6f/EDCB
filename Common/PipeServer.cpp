@@ -43,22 +43,23 @@ BOOL CPipeServer::StartServer(
 		if( insecureFlag ){
 			//現在はSYNCHRONIZEでよいが以前のクライアントはCreateEvent()で開いていたのでGENERIC_ALLが必要
 			if( GrantAccessToKernelObject(this->hEventConnect, trusteeName, GENERIC_ALL) ){
-				_OutputDebugString(L"Granted GENERIC_ALL on %s to %s\r\n", eventName, trusteeName);
+				_OutputDebugString(L"Granted GENERIC_ALL on %ls to %ls\r\n", eventName, trusteeName);
 				writeDac = WRITE_DAC;
 			}
 		}else if( GrantServerAccessToKernelObject(this->hEventConnect, SYNCHRONIZE) ){
-			_OutputDebugString(L"Granted SYNCHRONIZE on %s to %s\r\n", eventName, SERVICE_NAME);
+			_OutputDebugString(L"Granted SYNCHRONIZE on %ls to %ls\r\n", eventName, SERVICE_NAME);
 			writeDac = WRITE_DAC;
 		}
 		this->hPipe = CreateNamedPipe(pipeName, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | writeDac, 0, 1, 8192, 8192, PIPE_TIMEOUT, NULL);
 		if( this->hPipe != INVALID_HANDLE_VALUE ){
 			if( insecureFlag ){
 				if( writeDac && GrantAccessToKernelObject(this->hPipe, trusteeName, GENERIC_READ | GENERIC_WRITE) ){
-					_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %s to %s\r\n", pipeName, trusteeName);
+					_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipeName, trusteeName);
 				}
 			}else if( writeDac && GrantServerAccessToKernelObject(this->hPipe, GENERIC_READ | GENERIC_WRITE) ){
-				_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %s to %s\r\n", pipeName, SERVICE_NAME);
+				_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipeName, SERVICE_NAME);
 			}
+			this->exitingFlag = false;
 			this->stopEvent.Reset();
 			this->workThread = thread_(ServerThread, this);
 			return TRUE;
@@ -74,7 +75,7 @@ BOOL CPipeServer::StopServer(BOOL checkOnlyFlag)
 		this->stopEvent.Set();
 		if( checkOnlyFlag ){
 			//終了チェックして結果を返すだけ
-			if( WaitForSingleObject(this->workThread.native_handle(), 0) == WAIT_TIMEOUT ){
+			if( this->exitingFlag == false ){
 				return FALSE;
 			}
 		}
@@ -128,6 +129,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 {
 	HANDLE hEventArray[] = { pSys->stopEvent.Handle(), CreateEvent(NULL, TRUE, FALSE, NULL) };
 	if( hEventArray[1] == NULL ){
+		pSys->exitingFlag = true;
 		return;
 	}
 
@@ -201,4 +203,5 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 	}
 
 	CloseHandle(hEventArray[1]);
+	pSys->exitingFlag = true;
 }

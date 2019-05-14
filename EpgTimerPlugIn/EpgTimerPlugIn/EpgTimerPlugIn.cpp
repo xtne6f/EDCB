@@ -74,8 +74,8 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 		wstring pipeName = L"";
 		wstring eventName = L"";
 
-		Format(pipeName, L"%s%d", CMD2_TVTEST_CTRL_PIPE, GetCurrentProcessId());
-		Format(eventName, L"%s%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, GetCurrentProcessId());
+		Format(pipeName, L"%ls%d", CMD2_TVTEST_CTRL_PIPE, GetCurrentProcessId());
+		Format(eventName, L"%ls%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, GetCurrentProcessId());
 
 		OutputDebugString(pipeName.c_str());
 		OutputDebugString(eventName.c_str());

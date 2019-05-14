@@ -788,7 +788,7 @@ wstring CReserveManager::GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo,
 	SYSTEMTIME stNewEnd;
 	ConvertSystemTime(ConvertI64Time(stNew) + newInfo.durationSecond * I64_1SEC, &stNewEnd);
 	wstring msg;
-	Format(msg, L"%s %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%s\r\nEventID:0x%04X\r\nÅ´\r\n%s %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%s\r\nEventID:0x%04X",
+	Format(msg, L"%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\nEventID:0x%04X\r\nÅ´\r\n%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\nEventID:0x%04X",
 		oldInfo.stationName.c_str(), stOld.wYear, stOld.wMonth, stOld.wDay, stOld.wHour, stOld.wMinute,
 		stOldEnd.wHour, stOldEnd.wMinute, oldInfo.title.c_str(), oldInfo.eventID,
 		newInfo.stationName.c_str(), stNew.wYear, stNew.wMonth, stNew.wDay, stNew.wHour, stNew.wMinute,
@@ -835,7 +835,7 @@ void CReserveManager::CheckTuijyu()
 					wstring msg = GetNotifyChgReserveMessage(itr->second, r);
 					this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_CHG_TUIJYU, msg);
 					Replace(msg, L"\r\n", L" ");
-					_OutputDebugString(L"Åúó\ñÒ(ID=%d)Çí«è] %s\r\n", r.reserveID, msg.c_str());
+					_OutputDebugString(L"Åúó\ñÒ(ID=%d)Çí«è] %ls\r\n", r.reserveID, msg.c_str());
 				}
 			}
 		}
@@ -952,7 +952,7 @@ void CReserveManager::CheckTuijyuTuner()
 							wstring msg = GetNotifyChgReserveMessage(itrRes->second, r);
 							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
 							Replace(msg, L"\r\n", L" ");
-							_OutputDebugString(L"Åúp/f ó\ñÒ(ID=%d)Çí«è] %s\r\n", r.reserveID, msg.c_str());
+							_OutputDebugString(L"Åúp/f ó\ñÒ(ID=%d)Çí«è] %ls\r\n", r.reserveID, msg.c_str());
 						}
 						//åªç›(present)Ç…Ç¬Ç¢ÇƒÇÕÉCÉxÉìÉgÉäÉåÅ[Ç‡É`ÉFÉbÉN
 						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfoGroupType ){
@@ -1073,7 +1073,7 @@ void CReserveManager::CheckTuijyuTuner()
 							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
 						}
 						Replace(msg, L"\r\n", L" ");
-						_OutputDebugString(L"Åúó\ñÒ(ID=%d)Çí«è] %s\r\n", r.reserveID, msg.c_str());
+						_OutputDebugString(L"Åúó\ñÒ(ID=%d)Çí«è] %ls\r\n", r.reserveID, msg.c_str());
 					}
 				}
 			}
@@ -1166,14 +1166,14 @@ void CReserveManager::CheckAutoDel() const
 				if( this->recInfoText.GetMap().end() != std::find_if(this->recInfoText.GetMap().begin(), this->recInfoText.GetMap().end(),
 				        [&](const pair<DWORD, REC_FILE_INFO>& a) { return a.second.protectFlag && CompareNoCase(a.second.recFilePath, delPath) == 0; }) ){
 					//ÉvÉçÉeÉNÉgÇ≥ÇÍÇΩò^âÊçœÇ›ÉtÉ@ÉCÉãÇÕè¡Ç≥Ç»Ç¢
-					_OutputDebugString(L"ÅöNo Delete(Protected) : %s\r\n", delPath.c_str());
+					_OutputDebugString(L"ÅöNo Delete(Protected) : %ls\r\n", delPath.c_str());
 				}else{
 					DeleteFile(delPath.c_str());
 					needFreeSize -= (__int64)jtr->first.nFileSizeHigh << 32 | jtr->first.nFileSizeLow;
-					_OutputDebugString(L"ÅöAuto Delete2 : %s\r\n", delPath.c_str());
+					_OutputDebugString(L"ÅöAuto Delete2 : %ls\r\n", delPath.c_str());
 					for( size_t i = 0 ; i < this->setting.delExtList.size(); i++ ){
 						DeleteFile(fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
-						_OutputDebugString(L"ÅöAuto Delete2 : %s\r\n", fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
+						_OutputDebugString(L"ÅöAuto Delete2 : %ls\r\n", fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
 					}
 				}
 				findList.erase(jtr);
@@ -1319,7 +1319,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			SYSTEMTIME stEnd;
 			ConvertSystemTime(ConvertI64Time(st) + item.durationSecond * I64_1SEC, &stEnd);
 			wstring msg;
-			Format(msg, L"%s %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%s\r\n%s",
+			Format(msg, L"%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\n%ls",
 			       item.serviceName.c_str(), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute,
 			       stEnd.wHour, stEnd.wMinute, item.title.c_str(), item.GetComment());
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
@@ -1574,7 +1574,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							}
 						}
 					}
-					_OutputDebugString(L"ÅöSetSystemTime%s%d\r\n", debug, (int)(delay / I64_1SEC));
+					_OutputDebugString(L"ÅöSetSystemTime%ls%d\r\n", debug, (int)(delay / I64_1SEC));
 					this->epgCapSetTimeSync = true;
 				}
 			}
@@ -1905,7 +1905,7 @@ vector<CH_DATA5> CReserveManager::GetChDataList() const
 
 void CReserveManager::WatchdogThread(CReserveManager* sys)
 {
-	while( WaitForSingleObject(sys->watchdogStopEvent.Handle(), 2000) == WAIT_TIMEOUT ){
+	while( sys->watchdogStopEvent.WaitOne(2000) == false ){
 		for( auto itr = sys->tunerBankMap.cbegin(); itr != sys->tunerBankMap.end(); itr++ ){
 			itr->second->Watch();
 		}
@@ -1946,7 +1946,7 @@ void CReserveManager::SetBatCustomHandler(LPCWSTR ext, const std::function<void(
 void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix)
 {
 	WCHAR v[64];
-	swprintf_s(v, L"%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
+	swprintf_s(v, L"%04d-%02d-%02dT%02d:%02d:%02d%lc%02d:%02d",
 	           startTime.wYear, startTime.wMonth, startTime.wDay, startTime.wHour, startTime.wMinute, startTime.wSecond,
 	           (I64_UTIL_TIMEZONE < 0 ? L'-' : L'+'),
 	           (int)((I64_UTIL_TIMEZONE < 0 ? -I64_UTIL_TIMEZONE : I64_UTIL_TIMEZONE) / I64_1SEC) / 3600,
@@ -2006,8 +2006,8 @@ void CReserveManager::AddRecInfoMacro(vector<pair<string, wstring>>& macroList, 
 	swprintf_s(v, L"%04X", recInfo.transportStreamID);	macroList.push_back(pair<string, wstring>("TSID16", v));
 	swprintf_s(v, L"%04X", recInfo.serviceID);			macroList.push_back(pair<string, wstring>("SID16", v));
 	swprintf_s(v, L"%04X", recInfo.eventID);			macroList.push_back(pair<string, wstring>("EID16", v));
-	swprintf_s(v, L"%I64d", recInfo.drops);				macroList.push_back(pair<string, wstring>("Drops", v));
-	swprintf_s(v, L"%I64d", recInfo.scrambles);			macroList.push_back(pair<string, wstring>("Scrambles", v));
+	swprintf_s(v, L"%lld", recInfo.drops);				macroList.push_back(pair<string, wstring>("Drops", v));
+	swprintf_s(v, L"%lld", recInfo.scrambles);			macroList.push_back(pair<string, wstring>("Scrambles", v));
 	macroList.push_back(pair<string, wstring>("Title", recInfo.title));
 	macroList.push_back(pair<string, wstring>("ServiceName", recInfo.serviceName));
 	macroList.push_back(pair<string, wstring>("Result", recInfo.GetComment()));

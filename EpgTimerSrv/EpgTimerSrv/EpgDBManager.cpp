@@ -139,6 +139,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		OutputDebugString(L"★EpgDataCap3.dllの初期化に失敗しました。\r\n");
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
+		sys->loadStop = true;
 		return;
 	}
 
@@ -156,7 +157,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 			//見つかったファイルを一覧に追加
 			//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
 			WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < utcNow ? L'0' :
-			               wcslen(findData.cFileName) < 12 || _wcsicmp(findData.cFileName + wcslen(findData.cFileName) - 12, L"ffff_epg.dat") ? L'1' : L'2';
+			               wcslen(findData.cFileName) < 12 || CompareNoCase(findData.cFileName + wcslen(findData.cFileName) - 12, L"ffff_epg.dat") ? L'1' : L'2';
 			wstring item = prefix + fs_path(epgDataPath).append(findData.cFileName).native();
 			epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
 		}
@@ -189,7 +190,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 			if( tmpError != NO_ERROR && tmpError != ERROR_SHARING_VIOLATION ){
 				//1週間以上前かつ一時ファイルがないので削除
 				DeleteFile(path.c_str());
-				_OutputDebugString(L"★delete %s\r\n", path.c_str());
+				_OutputDebugString(L"★delete %ls\r\n", path.c_str());
 			}
 		}else{
 			BYTE readBuff[188*256];
@@ -231,7 +232,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				file = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			}
 			if( file == INVALID_HANDLE_VALUE ){
-				_OutputDebugString(L"Error %s\r\n", path.c_str());
+				_OutputDebugString(L"Error %ls\r\n", path.c_str());
 			}else{
 				//PATを送る(ストリームを確実にリセットするため)
 				DWORD seekPos = 0;
@@ -296,6 +297,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == FALSE ){
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
+		sys->loadStop = true;
 		return;
 	}
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> nextMap;
@@ -561,6 +563,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 
 	sys->loadForeground = false;
 	sys->initialLoadDone = true;
+	sys->loadStop = true;
 }
 
 BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param)
@@ -592,7 +595,7 @@ BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVEN
 
 bool CEpgDBManager::IsLoadingData()
 {
-	return this->loadThread.joinable() && WaitForSingleObject(this->loadThread.native_handle(), 0) == WAIT_TIMEOUT;
+	return this->loadThread.joinable() && this->loadStop == false;
 }
 
 void CEpgDBManager::CancelLoadData()

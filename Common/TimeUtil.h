@@ -12,7 +12,7 @@ __int64 GetNowI64Time();
 
 __int64 ConvertI64Time( SYSTEMTIME Time );
 
-BOOL ConvertSystemTime( __int64 i64Time, SYSTEMTIME* Time );
+bool ConvertSystemTime(__int64 i64Time, SYSTEMTIME* Time);
 
 LPCSTR GetTimeMacroName(int index);
 

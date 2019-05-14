@@ -23,7 +23,7 @@ public:
 
 protected:
 	std::function<void(CMD_STREAM*, CMD_STREAM*)> cmdProc;
-
+	atomic_bool_ exitingFlag;
 	CAutoResetEvent stopEvent;
 	HANDLE hEventConnect;
 	HANDLE hPipe;

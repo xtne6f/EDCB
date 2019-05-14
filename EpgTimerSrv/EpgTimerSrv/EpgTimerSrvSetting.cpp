@@ -599,7 +599,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	//Šî–{Ý’è
 	HWND hwnd = this->hwndBasic;
 	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_DATA_SAVE_PATH), buff);
-	if( _wcsicmp(settingPath.c_str(), buff.data()) == 0 ){
+	if( CompareNoCase(settingPath.c_str(), buff.data()) == 0 ){
 		//Šù’è’l‚È‚Ì‚Å‹L˜^‚µ‚È‚¢
 		WritePrivateProfileString(L"SET", L"DataSavePath", NULL, commonIniPath.c_str());
 	}else{
@@ -608,7 +608,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 		ChkFolderPath(settingPath);
 	}
 	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_REC_EXE_PATH), buff);
-	if( _wcsicmp(GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").c_str(), buff.data()) == 0 ){
+	if( CompareNoCase(GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").c_str(), buff.data()) == 0 ){
 		//Šù’è’l‚È‚Ì‚Å‹L˜^‚µ‚È‚¢
 		WritePrivateProfileString(L"SET", L"RecExePath", NULL, commonIniPath.c_str());
 	}else{
@@ -629,7 +629,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	int num = 0;
 	for( int i = 0; i < ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)); i++ ){
 		GetListBoxTextBuffer(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER), i, buff);
-		if( num == 0 && i + 1 >= ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)) && _wcsicmp(settingPath.c_str(), buff.data()) == 0 ){
+		if( num == 0 && i + 1 >= ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)) && CompareNoCase(settingPath.c_str(), buff.data()) == 0 ){
 			//Šù’è’l‚È‚Ì‚Å‹L˜^‚µ‚È‚¢
 			break;
 		}
@@ -681,7 +681,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 		if( wcslen(w) == 6 && wcslen(f) == 7 ){
 			swprintf_s(key, L"%d", num);
 			WCHAR val[32];
-			swprintf_s(val, L"%s%s", &w[1],
+			swprintf_s(val, L"%ls%ls", &w[1],
 			           w[0] == L'ŒŽ' ? L"w1" : w[0] == L'‰Î' ? L"w2" : w[0] == L'…' ? L"w3" : w[0] == L'–Ø' ? L"w4" :
 			           w[0] == L'‹à' ? L"w5" : w[0] == L'“y' ? L"w6" : w[0] == L'“ú' ? L"w7" : L"");
 			WritePrivateProfileString(L"EPG_CAP", key, val, iniPath.c_str());
@@ -881,7 +881,7 @@ void CEpgTimerSrvSetting::OnLbnSelchangeListSetEpgService()
 		auto itr = this->chSet.GetMap().cbegin();
 		std::advance(itr, sel);
 		WCHAR val[256];
-		swprintf_s(val, L"NetworkID : %d(0x%04X)\r\nTransportStreamID : %d(0x%04X)\r\nServiceID : %d(0x%04X) Type=%d%s",
+		swprintf_s(val, L"NetworkID : %d(0x%04X)\r\nTransportStreamID : %d(0x%04X)\r\nServiceID : %d(0x%04X) Type=%d%ls",
 		           itr->second.originalNetworkID, itr->second.originalNetworkID,
 		           itr->second.transportStreamID, itr->second.transportStreamID,
 		           itr->second.serviceID, itr->second.serviceID,
@@ -899,9 +899,9 @@ void CEpgTimerSrvSetting::AddEpgTime(bool check)
 		static const WCHAR week[9] = L" ŒŽ‰Î…–Ø‹à“y“ú";
 		static const WCHAR flag[3] = L"ÚŠî";
 		WCHAR weekMin[32];
-		swprintf_s(weekMin, L"%c%02d:%02d", week[wday % 8], hh, mm);
+		swprintf_s(weekMin, L"%lc%02d:%02d", week[wday % 8], hh, mm);
 		WCHAR flags[32];
-		swprintf_s(flags, L"%c,%c,%c,%c",
+		swprintf_s(flags, L"%lc,%lc,%lc,%lc",
 		           flag[GetDlgButtonCheck(this->hwndEpg, IDC_CHECK_SET_EPG_BS)],
 		           flag[GetDlgButtonCheck(this->hwndEpg, IDC_CHECK_SET_EPG_CS1)],
 		           flag[GetDlgButtonCheck(this->hwndEpg, IDC_CHECK_SET_EPG_CS2)],
@@ -912,7 +912,7 @@ void CEpgTimerSrvSetting::AddEpgTime(bool check)
 		for( int i = 0; i < lvi.iItem; i++ ){
 			WCHAR buff[32] = {};
 			ListView_GetItemText(GetDlgItem(this->hwndEpg, IDC_LIST_SET_EPG_TIME), i, 0, buff, _countof(buff));
-			if( _wcsicmp(buff, weekMin) == 0 ){
+			if( wcscmp(buff, weekMin) == 0 ){
 				//‚·‚Å‚É‚ ‚é
 				return;
 			}

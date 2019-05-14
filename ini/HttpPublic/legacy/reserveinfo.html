@@ -80,6 +80,7 @@ ct:Append([=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
 <link rel="stylesheet" type="text/css" href="default.css">
 <title>予約詳細 - EDCB</title>
 </head>
@@ -120,12 +121,12 @@ if r then
     for i,ext in ipairs({'.mp4','.webm',''}) do
       ff=edcb.FindFile and edcb.FindFile(recFilePath..ext,1)
       if ff then
-        ct:Append((vtag==i and '<video controls src="' or '<a href="')
+        ct:Append((vtag==i and '<video autoplay controls src="' or '<a href="')
           ..(vtag~=0 and vtag~=i and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
           ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>'))
         if ext=='' then
           for j=0,9 do
-            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
+            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video autoplay controls src="' or '<a href="')
               ..(vtag~=0 and vtag~=j+10 and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..(j+10) or 'xcode.lua?'..(j*10)..'='..mg.url_encode(ref))
               ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>'))
           end
@@ -135,7 +136,7 @@ if r then
             fsec,fsize=GetDurationSec(f)
             f:close()
           end
-          ct:Append('\n'..(vtag==99 and '<br><video controls src="' or '<a href="')
+          ct:Append('\n'..(vtag==99 and '<br><video autoplay controls src="' or '<a href="')
             ..(vtag~=0 and vtag~=99 and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag=99' or 'xcode.lua?99='..mg.url_encode(ref))
             ..'">('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)'..(vtag==99 and '</video>' or '</a>')..']<br>\n')
         else

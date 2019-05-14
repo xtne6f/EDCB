@@ -63,6 +63,7 @@ ct:Append([=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
 <link rel="stylesheet" type="text/css" href="default.css">
 <title>番組詳細 - EDCB</title>
 </head>
@@ -103,7 +104,7 @@ if r then
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct:Append('    <dt>プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
-    ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken('reserveinfo.html')..'">\n'
     ..'<input type="hidden" name="addchg" value="y">\n'
     ..'予約日時: <input type="text" size="4" name="start-y" value="'..r.startTime.year
     ..'">/<input type="text" size="2" name="start-m" value="'..r.startTime.month
@@ -140,13 +141,13 @@ ct:Append('</select> <input type="submit" value="録画設定にロード"></div
   ..'<form method="POST" action="'
   ..(r and 'reserveinfo.html?id='..r.reserveID or 'epginfo.html?id='..onid..'-'..tsid..'-'..sid..'-'..eid)
   ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
-  ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+  ..'<input type="hidden" name="ctok" value="'..CsrfToken(r and 'reserveinfo.html')..'">\n'
   ..'<input type="hidden" name="addchg" value="y">\n'
   ..RecSettingTemplate(rs)..'<input type="submit" value="'..(r and '変更' or '追加')..'"></div></form></dd>\n')
 if r then
   ct:Append('    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
-    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken('reserveinfo.html')..'">\n'
     ..'<input type="hidden" name="del" value="y">\n'
     ..'<input type="submit" value="削除"></div></form></dd>\n')
 end

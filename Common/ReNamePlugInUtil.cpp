@@ -31,7 +31,7 @@ BOOL CReNamePlugInUtil::Convert(
 	wstring dllPath = dllFolder + pattern.substr(0, pattern.find('?'));
 	HMODULE hModule = LoadLibrary(dllPath.c_str());
 	if( hModule == NULL ){
-		_OutputDebugString(L"%sのロードに失敗しました\r\n", dllPath.c_str());
+		_OutputDebugString(L"%lsのロードに失敗しました\r\n", dllPath.c_str());
 		return FALSE;
 	}
 	CloseConvert();

@@ -1,5 +1,5 @@
 -- vim:set ft=lua:
-PAGE_COUNT=30
+PAGE_COUNT=50
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
@@ -9,6 +9,7 @@ ct:Append([=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
 <link rel="stylesheet" type="text/css" href="default.css">
 <title>録画済み一覧 - EDCB</title>
 </head>
@@ -20,29 +21,39 @@ ct:Append([=[
 edcb.htmlEscape=15
 a=edcb.GetRecFileInfoBasic()
 table.sort(a, function(a,b) return os.time(a.startTime) > os.time(b.startTime) end)
-pageIndex=GetVarInt(mg.request_info.query_string,'page',0,100000) or 0
-for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
-  ct:Append((i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"recinfo.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> '))
+page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/PAGE_COUNT) or 0
+pageNav=''
+if #a>PAGE_COUNT then
+  for i=math.max(page-1,1),math.min(math.max(page-1,1)+6,(#a+PAGE_COUNT-1)/PAGE_COUNT) do
+    pageNav=pageNav..(i-1==page and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href="recinfo.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+  end
+  pageNav=(page==0 and '|&lt;&lt; ' or '<a href="recinfo.html">|&lt;&lt;</a> ')..pageNav
+    ..(page==math.floor((#a-1)/PAGE_COUNT) and '&gt;&gt;|' or '<a href="recinfo.html?page='..math.floor((#a-1)/PAGE_COUNT)..'">&gt;&gt;|</a>\n')
 end
-
+ct:Append(pageNav)
 ct:Append([=[
-
 </div>
 <div id="main">
   <table>
 ]=])
 
-for i=pageIndex*PAGE_COUNT+1,math.min(#a,(pageIndex+1)*PAGE_COUNT) do
+for i=page*PAGE_COUNT+1,math.min(#a,(page+1)*PAGE_COUNT) do
   v=a[i]
-  ct:Append('    <tr'
-    ..(v.drops>0 and ' class="drops"' or v.scrambles>0 and ' class="scrambles"' or '')
-    ..'><td><a href="recinfodesc.html?id='..v.id..'">'
+  ct:Append('    <tr><td><a href="recinfodesc.html?id='..v.id..'">'
     ..FormatTimeAndDuration(v.startTime, v.durationSecond)
-    ..'</a></td><td>'..v.serviceName..'</td><td>'..v.title..'</td><td>'..v.comment..'</td></tr>\n')
+    ..'</a><td>'..v.serviceName..'<td>'..v.title
+    ..'<td'..(v.drops>0 and ' class="drops"' or v.scrambles>0 and ' class="scrambles"' or '')..'>'..v.drops..'/'..v.scrambles
+    ..'<td'..((v.recStatus==1 or v.recStatus==4 or v.recStatus==6) and '' or (v.recStatus==3 or v.recStatus==11 or v.recStatus==13) and ' class="warn"' or ' class="err"')
+    ..'>'..v.comment..'</tr>\n')
 end
 
 ct:Append([=[
   </table>
+</div>
+<div class="page-nav">
+  ]=])
+ct:Append(pageNav)
+ct:Append([=[
 </div>
 <div id="footer">
   <a href="index.html">メニュー</a>

@@ -31,7 +31,7 @@ protected:
 	unsigned short m_port;
 	bool m_ipv6;
 	DWORD m_dwResponseTimeout;
-	string m_acl;
+	wstring m_acl;
 
 	WSAEVENT m_hNotifyEvent;
 	WSAEVENT m_hAcceptEvent;

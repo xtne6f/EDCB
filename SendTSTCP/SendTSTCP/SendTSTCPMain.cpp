@@ -211,14 +211,14 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						}
 					}
 					if( itr->sock == INVALID_SOCKET ){
-						string strPort;
-						Format(strPort, "%d", (WORD)itr->dwPort);
+						char szPort[16];
+						sprintf_s(szPort, "%d", (WORD)itr->dwPort);
 						struct addrinfo hints = {};
 						hints.ai_flags = AI_NUMERICHOST;
 						hints.ai_socktype = SOCK_STREAM;
 						hints.ai_protocol = IPPROTO_TCP;
 						struct addrinfo* result;
-						if( getaddrinfo(itr->strIP.c_str(), strPort.c_str(), &hints, &result) == 0 ){
+						if( getaddrinfo(itr->strIP.c_str(), szPort, &hints, &result) == 0 ){
 							itr->sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 							if( itr->sock != INVALID_SOCKET ){
 								//ノンブロッキングモードへ
@@ -255,7 +255,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 		}
 
 		if( item.empty() || sendListSizeOrStop == 0 ){
-			if( WaitForSingleObject(pSys->m_stopSendEvent.Handle(), item.empty() ? 100 : 0) != WAIT_TIMEOUT ){
+			if( pSys->m_stopSendEvent.WaitOne(item.empty() ? 100 : 0) ){
 				//キャンセルされた
 				break;
 			}
@@ -317,7 +317,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					}
 				}
 				for(;;){
-					if( WaitForSingleObject(pSys->m_stopSendEvent.Handle(), 0) != WAIT_TIMEOUT ){
+					if( pSys->m_stopSendEvent.WaitOne(0) ){
 						//キャンセルされた
 						sendListSizeOrStop = 0;
 						break;

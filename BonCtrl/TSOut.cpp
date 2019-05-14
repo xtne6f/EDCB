@@ -259,7 +259,7 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 		}
 		//EMMのPID
 		for( auto itr = this->serviceFilter.CatUtil().GetPIDList().cbegin(); itr != this->serviceFilter.CatUtil().GetPIDList().end(); itr++ ){
-			itrService->second->SetPIDName(*itr, "EMM");
+			itrService->second->SetPIDName(*itr, L"EMM");
 		}
 		for( auto itrPmt = this->serviceFilter.PmtUtilMap().cbegin(); itrPmt != this->serviceFilter.PmtUtilMap().end(); itrPmt++ ){
 			if( itrService->second->GetSID() == itrPmt->second.GetProgramNumber() ){
@@ -268,42 +268,42 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 				itrService->second->SetEmmPID(this->serviceFilter.CatUtil().GetPIDList());
 			}
 
-			itrService->second->SetPIDName(itrPmt->second.GetPcrPID(), "PCR");
-			string name;
+			itrService->second->SetPIDName(itrPmt->second.GetPcrPID(), L"PCR");
+			wstring name;
 			for( auto itrPID = itrPmt->second.GetPIDTypeList().cbegin(); itrPID != itrPmt->second.GetPIDTypeList().end(); itrPID++ ){
 				switch( itrPID->second ){
 				case 0x00:
-					name = "ECM";
+					name = L"ECM";
 					break;
 				case 0x02:
-					name = "MPEG2 VIDEO";
+					name = L"MPEG2 VIDEO";
 					break;
 				case 0x0F:
-					name = "MPEG2 AAC";
+					name = L"MPEG2 AAC";
 					break;
 				case 0x1B:
-					name = "MPEG4 VIDEO";
+					name = L"MPEG4 VIDEO";
 					break;
 				case 0x04:
-					name = "MPEG2 AUDIO";
+					name = L"MPEG2 AUDIO";
 					break;
 				case 0x24:
-					name = "HEVC VIDEO";
+					name = L"HEVC VIDEO";
 					break;
 				case 0x06:
-					name = "\x8e\x9a\x96\x8b"; //(CP932)"字幕"
+					name = L"字幕";
 					break;
 				case 0x0D:
-					name = "\x83\x66\x81\x5b\x83\x5e\x83\x4a\x83\x8b\x81\x5b\x83\x5a\x83\x8b"; //(CP932)"データカルーセル"
+					name = L"データカルーセル";
 					break;
 				default:
-					Format(name, "stream_type 0x%0X", itrPID->second);
+					Format(name, L"stream_type 0x%0X", itrPID->second);
 					break;
 				}
-				itrService->second->SetPIDName(itrPID->first, name.c_str());
+				itrService->second->SetPIDName(itrPID->first, name);
 			}
-			Format(name, "PMT(ServiceID 0x%04X)", itrPmt->second.GetProgramNumber());
-			itrService->second->SetPIDName(itrPmt->first, name.c_str());
+			Format(name, L"PMT(ServiceID 0x%04X)", itrPmt->second.GetProgramNumber());
+			itrService->second->SetPIDName(itrPmt->first, name);
 		}
 	}
 	if( updateFilterSID ){
@@ -326,8 +326,8 @@ BOOL CTSOut::StartSaveEPG(
 	this->epgTempFilePath = epgFilePath_;
 	this->epgTempFilePath += L".tmp";
 
-	_OutputDebugString(L"★%s\r\n", this->epgFilePath.c_str());
-	_OutputDebugString(L"★%s\r\n", this->epgTempFilePath.c_str());
+	_OutputDebugString(L"★%ls\r\n", this->epgFilePath.c_str());
+	_OutputDebugString(L"★%ls\r\n", this->epgTempFilePath.c_str());
 
 	this->epgUtil.ClearSectionStatus();
 	this->epgFileState = EPG_FILE_ST_NONE;
@@ -882,20 +882,20 @@ wstring CTSOut::GetSaveFilePath(
 	return wstring();
 }
 
-//ドロップとスクランブルのカウントを保存する
-//引数：
-// id					[IN]制御識別ID
-// filePath				[IN]保存ファイル名
 void CTSOut::SaveErrCount(
 	DWORD id,
-	const wstring& filePath
+	const wstring& filePath,
+	int dropSaveThresh,
+	int scrambleSaveThresh,
+	ULONGLONG& drop,
+	ULONGLONG& scramble
 	)
 {
 	CBlockLock lock(&this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
-		itr->second->SaveErrCount(filePath);
+		itr->second->SaveErrCount(filePath, dropSaveThresh, scrambleSaveThresh, drop, scramble);
 	}
 }
 

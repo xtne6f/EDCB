@@ -23,7 +23,7 @@ BOOL CEpgDataCap3Util::LoadDll(LPCWSTR loadDllFilePath)
 	module = ::LoadLibrary(loadDllFilePath);
 
 	if( module == NULL ){
-		_OutputDebugString(L"%sのロードに失敗しました\r\n", loadDllFilePath);
+		_OutputDebugString(L"%lsのロードに失敗しました\r\n", loadDllFilePath);
 		return FALSE;
 	}
 
@@ -82,7 +82,7 @@ BOOL CEpgDataCap3Util::LoadDll(LPCWSTR loadDllFilePath)
 	return TRUE;
 
 ERR_END:
-	_OutputDebugString(L"%sのロード中 GetProcAddress に失敗\r\n", loadDllFilePath);
+	_OutputDebugString(L"%lsのロード中 GetProcAddress に失敗\r\n", loadDllFilePath);
 	::FreeLibrary( module );
 	module = NULL;
 	return FALSE;

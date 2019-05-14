@@ -41,6 +41,10 @@ BOOL CSetDlgEpg::OnInitDialog()
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS1), GetPrivateProfileInt( L"SET", L"EpgCapBackCS1BasicOnly", 1, appIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS2), GetPrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", 1, appIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS3), GetPrivateProfileInt( L"SET", L"EpgCapBackCS3BasicOnly", 0, appIniPath.c_str() ) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_EPGCAP_LIVE), GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, appIniPath.c_str()) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_EPGCAP_REC), GetPrivateProfileInt(L"SET", L"EpgCapRec", 1, appIniPath.c_str()) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC), GetPrivateProfileInt(L"SET", L"ParseEpgPostProcess", 0, appIniPath.c_str()) );
+	SetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str()), FALSE);
 
 	this->chSet.ParseText(GetSettingPath().append(L"ChSet5.txt").c_str());
 
@@ -85,6 +89,10 @@ void CSetDlgEpg::SaveIni(void)
 	WritePrivateProfileInt( L"SET", L"EpgCapBackCS1BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BACK_CS1)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BACK_CS2)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"EpgCapBackCS3BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BACK_CS3)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EpgCapLive", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_LIVE)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EpgCapRec", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_REC)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"ParseEpgPostProcess", Button_GetCheck(GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", GetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, NULL, FALSE), appIniPath.c_str() );
 
 	BOOL chSetModified = FALSE;
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){

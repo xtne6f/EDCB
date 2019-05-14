@@ -767,7 +767,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 	SYSTEMTIME st;
 	ConvertSystemTime(reserve.startTime, &st);
 	wstring msg;
-	Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d\xFF5E %s", reserve.stationName.c_str(),
+	Format(msg, L"%ls %04d/%02d/%02d %02d:%02d:%02d\xFF5E %ls", reserve.stationName.c_str(),
 	       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, reserve.title.c_str());
 	this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, msg);
 	return true;
@@ -888,7 +888,7 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) co
 		SYSTEMTIME st;
 		ConvertSystemTime(reserve.startTime, &st);
 		wstring msg;
-		Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d\r\n%s", reserve.stationName.c_str(),
+		Format(msg, L"%ls %04d/%02d/%02d %02d:%02d:%02d\r\n%ls", reserve.stationName.c_str(),
 		       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, reserve.title.c_str());
 		this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_START, msg);
 		return true;
@@ -1144,7 +1144,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 			}
 		}
 		TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
-		_OutputDebugString(L"CTunerBankCtrl::%s: Terminated TunerID=0x%08x\r\n", L"OpenTuner()", this->tunerID);
+		_OutputDebugString(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x\r\n", L"OpenTuner()", this->tunerID);
 		CloseTuner();
 	}
 	return false;
@@ -1161,7 +1161,7 @@ void CTunerBankCtrl::CloseTuner()
 			if( WaitForSingleObject(this->hTunerProcess, 30000) == WAIT_TIMEOUT ){
 				//ぶち殺す
 				TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
-				_OutputDebugString(L"CTunerBankCtrl::%s: Terminated TunerID=0x%08x\r\n", L"CloseTuner()", this->tunerID);
+				_OutputDebugString(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x\r\n", L"CloseTuner()", this->tunerID);
 			}
 		}
 		CBlockLock lock(&this->watchContext.lock);
@@ -1194,7 +1194,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 	for( size_t i = 0; closed == false && i < pidList.size(); i++ ){
 		//原作と異なりイメージ名ではなく接続待機用イベントの有無で判断するので注意
 		wstring eventName;
-		Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, pidList[i]);
+		Format(eventName, L"%ls%d", CMD2_VIEW_CTRL_WAIT_CONNECT, pidList[i]);
 		HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName.c_str());
 		if( waitEvent ){
 			CloseHandle(waitEvent);
@@ -1226,7 +1226,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 	//TVTestで使ってるものあるかチェック
 	for( size_t i = 0; closed == false && i < pidList.size(); i++ ){
 		wstring eventName;
-		Format(eventName, L"%s%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, pidList[i]);
+		Format(eventName, L"%ls%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, pidList[i]);
 		HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName.c_str());
 		if( waitEvent ){
 			CloseHandle(waitEvent);
@@ -1291,7 +1291,7 @@ wstring CTunerBankCtrl::ConvertRecName(
 	}
 	if( ret.empty() ){
 		const SYSTEMTIME& st = startTimeForDefault;
-		Format(ret, L"%04d%02d%02d%02d%02d%02X%02X%02d-%.159s%s",
+		Format(ret, L"%04d%02d%02d%02d%02d%02X%02X%02d-%.159ls%ls",
 		       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, HIWORD(tunerID), LOWORD(tunerID), ctrlID, eventName, ext);
 		CheckFileName(ret);
 	}
@@ -1307,7 +1307,7 @@ void CTunerBankCtrl::Watch()
 		if( this->hTunerProcess ){
 			//少なくともhTunerProcessはまだCloseHandle()されていない
 			TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
-			_OutputDebugString(L"CTunerBankCtrl::%s: Terminated TunerID=0x%08x\r\n", L"Watch()", this->tunerID);
+			_OutputDebugString(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x\r\n", L"Watch()", this->tunerID);
 		}
 	}
 }

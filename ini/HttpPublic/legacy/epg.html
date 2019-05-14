@@ -17,6 +17,7 @@ ct:Append([=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
 <link rel="stylesheet" type="text/css" href="default.css">
 <title>番組表 - EDCB</title>
 </head>
@@ -132,16 +133,19 @@ pageNav=pageNav..'  ||\n'
   ..'  <a href="#noon">昼</a>\n'
   ..'  <a href="#dusk">夕</a>\n'
   ..'  <a href="#night">夜</a>\n'
-  ..'  ||\n'
+  ..'</div>\n'
 
+pageNav2=''
 if minTime then
-  for i=math.floor((minTime+timezone-4*3600)/(24*3600)),math.floor((maxTime+timezone-4*3600)/(24*3600)) do
+  for i=math.max(baseDate+date-7,math.floor((minTime+timezone-4*3600)/(24*3600))),math.min(baseDate+date+7,math.floor((maxTime+timezone-4*3600)/(24*3600))) do
     d=os.date('!*t', i*24*3600)
-    pageNav=pageNav..'  '..(i==baseDate and '*' or '')..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;cust='..cust..'&amp;date='..(i-baseDate)..'">' or '')
-      ..d.month..'/'..d.day..'('..({'日','月','火','水','木','金','土'})[d.wday]..')'..(i-baseDate~=date and '</a>\n' or '\n')
+    pageNav2=pageNav2..'  '..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;cust='..cust..'&amp;date='..(i-baseDate)..'">' or '')
+      ..(i==baseDate and '<span style="text-decoration:underline">' or '')
+      ..(pageNav2=='' and d.month..'/' or '')..('%02d'):format(d.day)..({'日','月','火','水','木','金','土'})[d.wday]
+      ..(i==baseDate and '</span>' or '')..(i-baseDate~=date and '</a>\n' or '\n')
   end
+  pageNav2='<div class="page-nav">\n'..pageNav2..'</div>\n'
 end
-pageNav=pageNav..'</div>\n'
 
 rowHead=''
 tcol=1
@@ -150,7 +154,8 @@ for i,v in ipairs(st) do
     rowHead=rowHead..'<td></td>\n'
   end
   tcol=(tcol<TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
-  rowHead=rowHead..'<th style="min-width:'..(SERVICE_PX-2)..'px;width:'..(SERVICE_PX-2)..'px">'..v.service_name..'</th>\n'
+  rowHead=rowHead..'<th style="min-width:'..(SERVICE_PX-2)..'px;width:'..(SERVICE_PX-2)
+    ..'px"><img alt="" style="max-height:0.8em;width:auto" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</th>\n'
 end
 rowTail='<tr class="epg-row-tail">\n'..rowHead..'</tr>\n'
 rowHead='<tr class="epg-row-head">\n'..rowHead..'</tr>\n'
@@ -163,7 +168,7 @@ for i=4,28 do
 end
 colHead=colHead..'</td>\n'
 
-ct:Append(pageNav..'<div id="main">\n  <table class="epg-table">\n')
+ct:Append(pageNav..pageNav2..'<div id="main">\n  <table class="epg-table">\n')
 ct:Append(rowHead..'<tr>\n')
 tcol=1
 for i,v in ipairs(st) do
@@ -235,7 +240,7 @@ for i,v in ipairs(st) do
   end
 end
 
-ct:Append('</tr>\n'..rowTail..'  </table>\n</div>\n'..(#st==0 and '' or pageNav)..[=[
+ct:Append('</tr>\n'..rowTail..'  </table>\n</div>\n'..(#st==0 and '' or pageNav2..pageNav)..[=[
 <div id="footer">
   <a href="index.html">メニュー</a>
 </div>

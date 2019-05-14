@@ -9,6 +9,7 @@ ct:Append([=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
 <link rel="stylesheet" type="text/css" href="default.css">
 <title>録画済み詳細 - EDCB</title>
 </head>
@@ -31,7 +32,9 @@ w=edcb.GetRecFileInfoBasic(id)
 edcb.htmlEscape=15
 v=edcb.GetRecFileInfo(id)
 if v then
-  if #v.programInfo==0 and v.eid~=65535 then
+  if #v.programInfo>0 then
+    v.programInfo=DecorateUri(v.programInfo)
+  elseif v.eid~=65535 then
     --過去番組情報を探してみる
     ev=edcb.EnumEventInfoArchive and edcb.EnumEventInfoArchive({{onid=v.onid,tsid=v.tsid,sid=v.sid}},{startTime=v.startTime,durationSecond=1})
     if ev and #ev>0 then
@@ -55,12 +58,12 @@ if v then
     for i,ext in ipairs({'.mp4','.webm',''}) do
       ff=edcb.FindFile and edcb.FindFile(w.recFilePath..ext,1)
       if ff then
-        ct:Append((vtag==i and '<video controls src="' or '<a href="')
+        ct:Append((vtag==i and '<video autoplay controls src="' or '<a href="')
           ..(vtag~=0 and vtag~=i and 'recinfodesc.html?id='..v.id..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
           ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>'))
         if ext=='' then
           for j=0,9 do
-            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video controls src="' or '<a href="')
+            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video autoplay controls src="' or '<a href="')
               ..(vtag~=0 and vtag~=j+10 and 'recinfodesc.html?id='..v.id..'&amp;vtag='..(j+10) or 'xcode.lua?'..(j*10)..'='..mg.url_encode(ref))
               ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>'))
           end
@@ -78,8 +81,8 @@ if v then
     end
   end
   ct:Append('<br></dd>\n'
-    ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..DecorateUri(v.programInfo):gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
-    ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
+    ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..v.programInfo:gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
+    ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..v.errInfo:gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="recinfodesc.html?id='..v.id..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'

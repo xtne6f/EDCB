@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "PathUtil.h"
+#include "StringUtil.h"
 #include <stdexcept>
 
 namespace filesystem_
@@ -306,7 +307,7 @@ fs_path GetRecFolderPath(int index)
 
 BOOL IsExt(const fs_path& filePath, const WCHAR* ext)
 {
-	return _wcsicmp(filePath.extension().c_str(), ext) == 0;
+	return CompareNoCase(filePath.extension().c_str(), ext) == 0;
 }
 
 void CheckFileName(wstring& fileName, BOOL noChkYen)

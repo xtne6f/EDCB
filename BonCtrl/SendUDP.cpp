@@ -31,15 +31,16 @@ bool CSendUDP::AddSendAddr(LPCWSTR ip, DWORD dwPort, bool broadcastFlag)
 {
 	if( m_initialized ){
 		SOCKET_DATA Item;
-		string ipA, strPort;
+		string ipA;
 		WtoUTF8(ip, ipA);
-		Format(strPort, "%d", (WORD)dwPort);
+		char szPort[16];
+		sprintf_s(szPort, "%d", (WORD)dwPort);
 		struct addrinfo hints = {};
 		hints.ai_flags = AI_NUMERICHOST;
 		hints.ai_socktype = SOCK_DGRAM;
 		hints.ai_protocol = IPPROTO_UDP;
 		struct addrinfo* result;
-		if( getaddrinfo(ipA.c_str(), strPort.c_str(), &hints, &result) != 0 ){
+		if( getaddrinfo(ipA.c_str(), szPort, &hints, &result) != 0 ){
 			return false;
 		}
 		Item.addrlen = min(result->ai_addrlen, sizeof(Item.addr));

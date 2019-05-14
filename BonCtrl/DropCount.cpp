@@ -47,10 +47,10 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 	if( tick - this->lastLogTime > 5000 ){
 		if( this->lastLogDrop < this->drop ||
 		    this->lastLogScramble < this->scramble ){
-			string logline;
 			SYSTEMTIME now;
 			ConvertSystemTime(GetNowI64Time(), &now);
-			Format(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%I64d Scramble:%I64d Signal: %.02f\r\n",
+			char logline[256];
+			sprintf_s(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%lld Scramble:%lld Signal: %.02f\r\n",
 				now.wYear,
 				now.wMonth,
 				now.wDay,
@@ -100,16 +100,6 @@ void CDropCount::SetNoLog(BOOL noLogDrop, BOOL noLogScramble)
 {
 	this->lastLogDrop = noLogDrop ? ULLONG_MAX : this->lastLogDrop == ULLONG_MAX ? 0 : this->lastLogDrop;
 	this->lastLogScramble = noLogScramble ? ULLONG_MAX : this->lastLogScramble == ULLONG_MAX ? 0 : this->lastLogScramble;
-}
-
-void CDropCount::GetCount(ULONGLONG* drop_, ULONGLONG* scramble_)
-{
-	if( drop_ != NULL ){
-		*drop_ = this->drop;
-	}
-	if( scramble_ != NULL ){
-		*scramble_ = this->scramble;
-	}
 }
 
 ULONGLONG CDropCount::GetDropCount()
@@ -247,7 +237,7 @@ void CDropCount::SaveLog(const wstring& filePath)
 				}
 				break;
 			}
-			fprintf_s(fp.get(), "PID: 0x%04X  Total:%9I64d  Drop:%9I64d  Scramble: %9I64d  %s\r\n",
+			fprintf_s(fp.get(), "PID: 0x%04X  Total:%9lld  Drop:%9lld  Scramble: %9lld  %s\r\n",
 			          itr->PID, itr->total, itr->drop, itr->scramble, desc);
 		}
 
@@ -257,12 +247,12 @@ void CDropCount::SaveLog(const wstring& filePath)
 	}
 }
 
-void CDropCount::SetPIDName(WORD pid, LPCSTR name)
+void CDropCount::SetPIDName(WORD pid, const wstring& name)
 {
 	vector<pair<WORD, string>>::iterator itr;
 	itr = std::lower_bound(this->pidName.begin(), this->pidName.end(), std::make_pair(pid, string()));
 	if( itr == this->pidName.end() || itr->first != pid ){
 		itr = this->pidName.insert(itr, std::make_pair(pid, string()));
 	}
-	itr->second = name;
+	WtoA(name, itr->second);
 }

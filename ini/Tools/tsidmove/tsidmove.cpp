@@ -45,7 +45,7 @@ int wmain(int argc, wchar_t **argv)
 	if (settingPath.empty()) {
 		settingPath = fs_path(iniPath).replace_filename(L"Setting");
 	}
-	wprintf_s(L"\"%s\"フォルダをチェックしています...\n", settingPath.c_str());
+	wprintf_s(L"\"%ls\"フォルダをチェックしています...\n", settingPath.c_str());
 
 	fs_path chSet5Path = fs_path(settingPath).append(L"ChSet5.txt");
 	if (GetFileAttributes(chSet5Path.c_str()) == INVALID_FILE_ATTRIBUTES) {
@@ -96,7 +96,7 @@ int wmain(int argc, wchar_t **argv)
 				RESERVE_DATA r = itr->second;
 				const CH_DATA5 *ch = CheckTSID(r.originalNetworkID, r.transportStreamID, r.serviceID, chText5);
 				if (ch) {
-					wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%s)",
+					wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
 					          r.reserveID, r.transportStreamID, r.transportStreamID,
 					          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
 					r.transportStreamID = ch->transportStreamID;
@@ -134,7 +134,7 @@ int wmain(int argc, wchar_t **argv)
 				for (auto jtr = a.searchInfo.serviceList.begin(); jtr != a.searchInfo.serviceList.end(); jtr++) {
 					const CH_DATA5 *ch = CheckTSID(static_cast<WORD>(*jtr >> 32), static_cast<WORD>(*jtr >> 16), static_cast<WORD>(*jtr), chText5);
 					if (ch) {
-						wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%s)",
+						wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
 						          a.dataID, static_cast<WORD>(*jtr >> 16), static_cast<WORD>(*jtr >> 16),
 						          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
 						*jtr = (*jtr & 0xFFFF0000FFFFLL) | (static_cast<DWORD>(ch->transportStreamID) << 16);
@@ -174,7 +174,7 @@ int wmain(int argc, wchar_t **argv)
 				MANUAL_AUTO_ADD_DATA m = itr->second;
 				const CH_DATA5 *ch = CheckTSID(m.originalNetworkID, m.transportStreamID, m.serviceID, chText5);
 				if (ch) {
-					wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%s)",
+					wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
 					          m.dataID, m.transportStreamID, m.transportStreamID,
 					          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
 					m.transportStreamID = ch->transportStreamID;

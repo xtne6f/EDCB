@@ -50,18 +50,13 @@ DWORD CalcCrc32(int n, const BYTE* c)
 	return r;
 }
 
-FILETIME MJDtoFILETIME(DWORD mjd, DWORD bcdTime)
+__int64 MJDtoI64Time(DWORD mjd, DWORD bcdTime)
 {
 	DWORD h = (bcdTime >> 20 & 3) * 10 + (bcdTime >> 16 & 15);
 	DWORD m = (bcdTime >> 12 & 7) * 10 + (bcdTime >> 8 & 15);
 	DWORD s = (bcdTime >> 4 & 7) * 10 + (bcdTime & 15);
-	LARGE_INTEGER li;
 	//"1858-11-17"
-	li.QuadPart = 81377568000000000LL + (((mjd * 24 + h) * 60 + m) * 60LL + s) * 10000000LL;
-	FILETIME ft;
-	ft.dwLowDateTime = li.LowPart;
-	ft.dwHighDateTime = li.HighPart;
-	return ft;
+	return 81377568000000000 + (((mjd * 24 + h) * 60 + m) * 60LL + s) * 10000000;
 }
 
 DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid)
@@ -90,7 +85,7 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 	text = L"–¢’è";
 	if( info->StartTimeFlag ){
 		SYSTEMTIME st = info->start_time;
-		Format(text, L"%04d/%02d/%02d(%s) %02d:%02d",
+		Format(text, L"%04d/%02d/%02d(%ls) %02d:%02d",
 		       st.wYear, st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 		wstring time = L" \xFF5E –¢’è";
 		if( info->DurationFlag ){

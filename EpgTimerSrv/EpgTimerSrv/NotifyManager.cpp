@@ -214,7 +214,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			wait = GetTickCount() - waitNotifyTick;
 			wait = (wait < 5000 ? 5000 - wait : 0);
 		}
-		WaitForSingleObject(sys->notifyEvent.Handle(), wait);
+		sys->notifyEvent.WaitOne(wait);
 		if( sys->notifyStopFlag ){
 			//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
 			break;
@@ -305,7 +305,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 				}
 				if( tcp && err != CMD_SUCCESS && err != CMD_NON_SUPPORT ){
 					//‘—M‚Å‚«‚È‚©‚Á‚½‚à‚Ìíœ
-					_OutputDebugString(L"notifyErr %s:%d\r\n", registTCP[i].ip.c_str(), registTCP[i].port);
+					_OutputDebugString(L"notifyErr %ls:%d\r\n", registTCP[i].ip.c_str(), registTCP[i].port);
 					sys->UnRegistTCP(registTCP[i]);
 				}
 			}

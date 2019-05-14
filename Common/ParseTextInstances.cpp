@@ -37,12 +37,12 @@ DWORD FinalizeField(wstring& str)
 
 bool ParseDateTime(LPCWSTR* token, SYSTEMTIME& st)
 {
-	FILETIME ft;
+	__int64 t;
 	st.wMilliseconds = 0;
 	return swscanf_s(NextToken(token), L"%hu/%hu/%hu", &st.wYear, &st.wMonth, &st.wDay) == 3 &&
 	       swscanf_s(NextToken(token), L"%hu:%hu:%hu", &st.wHour, &st.wMinute, &st.wSecond) == 3 &&
-	       SystemTimeToFileTime(&st, &ft) &&
-	       FileTimeToSystemTime(&ft, &st);
+	       ((t = ConvertI64Time(st)) != 0) &&
+	       ConvertSystemTime(t, &st);
 }
 
 void ParseRecFolderList(LPCWSTR* token, vector<REC_FILE_SET_INFO>& list)
@@ -116,7 +116,7 @@ bool CParseChText4::ParseLine(LPCWSTR parseLine, pair<DWORD, CH_DATA4>& item)
 
 bool CParseChText4::SaveLine(const pair<DWORD, CH_DATA4>& item, wstring& saveLine) const
 {
-	Format(saveLine, L"%s\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d",
+	Format(saveLine, L"%ls\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d",
 		item.second.chName.c_str(),
 		item.second.serviceName.c_str(),
 		item.second.networkName.c_str(),
@@ -182,7 +182,7 @@ bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 
 bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& saveLine) const
 {
-	Format(saveLine, L"%s\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d",
+	Format(saveLine, L"%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d",
 		item.second.serviceName.c_str(),
 		item.second.networkName.c_str(),
 		item.second.originalNetworkID,
@@ -358,7 +358,7 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 
 bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const
 {
-	Format(saveLine, L"%s\n%s\n%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%s\n%d\n%d\n%d\n%d\n%I64d\n%I64d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%s\n%d\n",
+	Format(saveLine, L"%ls\n%ls\n%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%ls\n%d\n%d\n%d\n%d\n%lld\n%lld\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%ls\n%d\n",
 		item.second.recFilePath.c_str(),
 		item.second.title.c_str(),
 		item.second.startTime.wYear, item.second.startTime.wMonth, item.second.startTime.wDay,
@@ -509,7 +509,7 @@ bool CParseRecInfo2Text::ParseLine(LPCWSTR parseLine, pair<DWORD, PARSE_REC_INFO
 
 bool CParseRecInfo2Text::SaveLine(const pair<DWORD, PARSE_REC_INFO2_ITEM>& item, wstring& saveLine) const
 {
-	Format(saveLine, L"%d\n%d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%s",
+	Format(saveLine, L"%d\n%d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%ls",
 		item.second.originalNetworkID,
 		item.second.transportStreamID,
 		item.second.serviceID,
@@ -691,7 +691,7 @@ bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring&
 			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
 			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
 	}
-	Format(saveLine, L"%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%s\n%s\n%s\n%s\n%d\n%d\n%s\n%d\n%d\n%d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%d\n%s%d\n%d\n%d\n%d\n%d\n%s",
+	Format(saveLine, L"%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls\n%ls\n%ls\n%ls\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%d\n%ls%d\n%d\n%d\n%d\n%d\n%ls",
 		item.second.startTime.wYear, item.second.startTime.wMonth, item.second.startTime.wDay,
 		item.second.startTime.wHour, item.second.startTime.wMinute, item.second.startTime.wSecond,
 		item.second.durationSecond / 60 / 60, item.second.durationSecond / 60 % 60, item.second.durationSecond % 60,
@@ -901,7 +901,7 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 	wstring strService(token[0], token[1]);
 	for( size_t i = 0; i != wstring::npos; i = strService.find(L',', i + 1) ){
 		__int64 i64Ch = 0;
-		if( swscanf_s(&strService.c_str()[i == 0 ? 0 : i + 1], L"%I64X", &i64Ch) == 1 ){
+		if( swscanf_s(&strService.c_str()[i == 0 ? 0 : i + 1], L"%llx", &i64Ch) == 1 ){
 			item.second.searchInfo.serviceList.push_back(i64Ch & 0xFFFFFFFFFFFFLL);
 		}
 	}
@@ -969,7 +969,7 @@ bool CParseEpgAutoAddText::SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, 
 	wstring strService;
 	for( size_t i = 0; i < item.second.searchInfo.serviceList.size(); i++ ){
 		WCHAR s[64];
-		swprintf_s(s, L"%012I64X", item.second.searchInfo.serviceList[i]);
+		swprintf_s(s, L"%012llX", item.second.searchInfo.serviceList[i]);
 		if( i != 0 ){
 			strService += L',';
 		}
@@ -989,7 +989,7 @@ bool CParseEpgAutoAddText::SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, 
 			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
 			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
 	}
-	Format(saveLine, L"%d\n%s\n%s\n%d\n%d\n%s\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%s%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%s%d\n%d\n",
+	Format(saveLine, L"%d\n%ls\n%ls\n%d\n%d\n%ls\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n",
 		item.second.dataID,
 		item.second.searchInfo.andKey.c_str(),
 		item.second.searchInfo.notKey.c_str(),
@@ -1148,7 +1148,7 @@ bool CParseManualAutoAddText::SaveLine(const pair<DWORD, MANUAL_AUTO_ADD_DATA>& 
 			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
 			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
 	}
-	Format(saveLine, L"%d\n%d\n%d\n%d\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%s%d\n%d\n%d\n%d\n%s",
+	Format(saveLine, L"%d\n%d\n%d\n%d\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n%d\n%d\n%ls",
 		item.second.dataID,
 		item.second.dayOfWeekFlag,
 		item.second.startTime,

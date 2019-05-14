@@ -61,7 +61,7 @@ function RecSettingTemplate(rs)
     ..'<option value="1"'..(rs.tuijyuuFlag and ' selected' or '')..'>する</select><br>\n'
     ..'優先度: <select name="priority">'
   for i=1,5 do
-    s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected' or '')..'>'..i
+    s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected' or '')..'>'..i..(i==1 and ' (低)' or i==5 and ' (高)' or '')
   end
   --デフォルト値
   local rsdef=(edcb.GetReserveData(0x7FFFFFFF) or {}).recSetting
@@ -274,9 +274,16 @@ function SeekSec(f,sec)
   return false
 end
 
+--HTTP日付の文字列を取得する
+function ImfFixdate(t)
+  return ('%s, %02d %s %d %02d:%02d:%02d GMT'):format(({'Sun','Mon','Tue','Wed','Thu','Fri','Sat'})[t.wday],t.day,
+    ({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})[t.month],t.year,t.hour,t.min,t.sec)
+end
+
 --レスポンスを生成する
 function Response(code,ctype,charset,cl)
   return 'HTTP/1.1 '..code..' '..mg.get_response_code_text(code)
+    ..'\r\nDate: '..ImfFixdate(os.date('!*t'))
     ..'\r\nX-Frame-Options: SAMEORIGIN'
     ..(ctype and '\r\nX-Content-Type-Options: nosniff\r\nContent-Type: '..ctype..(charset and '; charset='..charset or '') or '')
     ..(cl and '\r\nContent-Length: '..cl or '')
@@ -356,9 +363,9 @@ end
 
 --CSRFトークンを取得する
 --※このトークンを含んだコンテンツを圧縮する場合はBREACH攻撃に少し気を配る
-function CsrfToken(t)
+function CsrfToken(m,t)
   --メッセージに時刻をつける
-  local m='legacy:'..(math.floor(os.time()/3600/12)+(t or 0))
+  m=(m or mg.script_name:match('[^\\/]*$'):lower())..'/legacy/'..(math.floor(os.time()/3600/12)+(t or 0))
   local kip,kop=('\54'):rep(48),('\92'):rep(48)
   for k in edcb.serverRandom:sub(1,32):gmatch('..') do
     kip=string.char(bit32.bxor(tonumber(k,16),54))..kip
@@ -371,5 +378,5 @@ end
 --CSRFトークンを検査する
 --※サーバに変更を加える要求(POSTに限らない)を処理する前にこれを呼ぶべき
 function AssertCsrf(qs)
-  assert(mg.get_var(qs,'ctok')==CsrfToken() or mg.get_var(qs,'ctok')==CsrfToken(-1))
+  assert(mg.get_var(qs,'ctok')==CsrfToken() or mg.get_var(qs,'ctok')==CsrfToken(nil,-1))
 end

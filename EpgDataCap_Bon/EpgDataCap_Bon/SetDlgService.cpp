@@ -227,8 +227,8 @@ void CSetDlgService::OnLbnSelchangeListService()
 		return ;
 	}
 	const CH_DATA4* chSet = &itr->second.first.GetMap().find((DWORD)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), sel, 0))->second;
-	wstring info = L"";
-	Format(info, L"space: %d ch: %d (%s)\r\nOriginalNetworkID: %d(0x%04X)\r\nTransportStreamID: %d(0x%04X)\r\nServiceID: %d(0x%04X)\r\nServiceType: %d(0x%02X)\r\n",
+	wstring info;
+	Format(info, L"space: %d ch: %d (%ls)\r\nOriginalNetworkID: %d(0x%04X)\r\nTransportStreamID: %d(0x%04X)\r\nServiceID: %d(0x%04X)\r\nServiceType: %d(0x%02X)\r\n",
 		chSet->space,
 		chSet->ch,
 		chSet->chName.c_str(),

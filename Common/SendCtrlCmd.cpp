@@ -72,8 +72,8 @@ void CSendCtrlCmd::SetPipeSetting(
 	DWORD pid
 	)
 {
-	Format(this->eventName, L"%s%d", eventName_, pid);
-	Format(this->pipeName, L"%s%d", pipeName_, pid);
+	Format(this->eventName, L"%ls%d", eventName_, pid);
+	Format(this->pipeName, L"%ls%d", pipeName_, pid);
 }
 
 //TCP/IPƒ‚[ƒhŽž‚ÌÚ‘±æ‚ðÝ’è
@@ -186,16 +186,17 @@ int RecvAll(SOCKET sock, char* buf, int len, int flags)
 
 DWORD SendTCP(const wstring& ip, DWORD port, DWORD timeOut, const CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
 {
-	string ipA, strPort;
+	string ipA;
 	WtoUTF8(ip, ipA);
-	Format(strPort, "%d", port);
+	char szPort[16];
+	sprintf_s(szPort, "%d", port);
 
 	struct addrinfo hints = {};
 	hints.ai_flags = AI_NUMERICHOST;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 	struct addrinfo* result;
-	if( getaddrinfo(ipA.c_str(), strPort.c_str(), &hints, &result) != 0 ){
+	if( getaddrinfo(ipA.c_str(), szPort, &hints, &result) != 0 ){
 		return CMD_ERR_INVALID_ARG;
 	}
 	SOCKET sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);

@@ -69,9 +69,9 @@ BOOL COneServiceUtil::SendUdpTcp(
 			for( int j = 0; j < 100; j++ ){
 				UINT u[4];
 				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-					Format(key, L"%s%d_%d", mutexName, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
+					Format(key, L"%ls%d_%d", mutexName, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
 				}else{
-					Format(key, L"%s%s_%d", mutexName, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+					Format(key, L"%ls%ls_%d", mutexName, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
 				}
 				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		
@@ -81,7 +81,7 @@ BOOL COneServiceUtil::SendUdpTcp(
 					CloseHandle(portMutex);
 					(*sendList)[i].port++;
 				}else{
-					_OutputDebugString(L"%s\r\n", key.c_str());
+					_OutputDebugString(L"%ls\r\n", key.c_str());
 					portMutexList.push_back(portMutex);
 					break;
 				}
@@ -351,7 +351,12 @@ void COneServiceUtil::ClearErrCount()
 // scramble			[OUT]スクランブル数
 void COneServiceUtil::GetErrCount(ULONGLONG* drop, ULONGLONG* scramble)
 {
-	this->dropCount.GetCount(drop, scramble);
+	if( drop ){
+		*drop = this->dropCount.GetDropCount();
+	}
+	if( scramble ){
+		*scramble = this->dropCount.GetScrambleCount();
+	}
 }
 
 wstring COneServiceUtil::GetSaveFilePath()
@@ -364,16 +369,20 @@ wstring COneServiceUtil::GetSaveFilePath()
 	return wstring();
 }
 
-//ドロップとスクランブルのカウントを保存する
-//引数：
-// filePath			[IN]保存ファイル名
 void COneServiceUtil::SaveErrCount(
-	const wstring& filePath
+	const wstring& filePath,
+	int dropSaveThresh,
+	int scrambleSaveThresh,
+	ULONGLONG& drop,
+	ULONGLONG& scramble
 	)
 {
-	this->dropCount.SaveLog(filePath);
+	GetErrCount(&drop, &scramble);
+	if( (dropSaveThresh >= 0 && drop >= (ULONGLONG)dropSaveThresh) ||
+	    (scrambleSaveThresh >= 0 && scramble >= (ULONGLONG)scrambleSaveThresh) ){
+		this->dropCount.SaveLog(filePath);
+	}
 }
-
 
 void COneServiceUtil::SetSignalLevel(
 	float signalLv
@@ -407,7 +416,7 @@ void COneServiceUtil::SetBonDriver(
 
 void COneServiceUtil::SetPIDName(
 	WORD pid,
-	LPCSTR name
+	const wstring& name
 	)
 {
 	this->dropCount.SetPIDName(pid, name);

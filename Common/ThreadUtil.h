@@ -1,7 +1,7 @@
 #ifndef INCLUDE_THREAD_UTIL_H
 #define INCLUDE_THREAD_UTIL_H
 
-#if 1
+#ifdef _WIN32
 #include <process.h>
 #include <exception>
 #include <stdexcept>
@@ -93,6 +93,13 @@ private:
 #else
 #include <thread>
 #include <mutex>
+#include <atomic>
+#include <stdexcept>
+#include <poll.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
+typedef std::atomic_int atomic_int_;
+typedef std::atomic_bool atomic_bool_;
 typedef std::thread thread_;
 typedef std::recursive_mutex recursive_mutex_;
 #endif
@@ -111,6 +118,7 @@ private:
 class CAutoResetEvent
 {
 public:
+#ifdef _WIN32
 	CAutoResetEvent(bool initialState = false) {
 		m_h = CreateEvent(nullptr, FALSE, initialState, nullptr);
 		if (!m_h) throw std::runtime_error("");
@@ -119,10 +127,35 @@ public:
 	void Set() { SetEvent(m_h); }
 	void Reset() { ResetEvent(m_h); }
 	HANDLE Handle() { return m_h; }
+	bool WaitOne(unsigned int timeout = 0xFFFFFFFF) { return WaitForSingleObject(m_h, timeout) == WAIT_OBJECT_0; }
+#else
+	CAutoResetEvent(bool initialState = false) {
+		m_efd = eventfd(0, EFD_CLOEXEC);
+		if (m_efd == -1) throw std::runtime_error("");
+	}
+	~CAutoResetEvent() { close(m_efd); }
+	void Set() { __int64 n = 1; write(m_efd, &n, sizeof(n)); }
+	void Reset() { WaitOne(0); }
+	int Handle() { return m_efd; }
+	bool WaitOne(unsigned int timeout = 0xFFFFFFFF) {
+		pollfd pfd;
+		pfd.fd = m_efd;
+		pfd.events = POLLIN;
+		if (poll(&pfd, 1, (int)timeout) > 0 && (pfd.revents & POLLIN)) {
+			__int64 n;
+			return read(m_efd, &n, sizeof(n)) == sizeof(n);
+		}
+		return false;
+	}
+#endif
 private:
 	CAutoResetEvent(const CAutoResetEvent&);
 	CAutoResetEvent& operator=(const CAutoResetEvent&);
+#ifdef _WIN32
 	HANDLE m_h;
+#else
+	int m_efd;
+#endif
 };
 
 #endif

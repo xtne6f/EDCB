@@ -41,23 +41,23 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		LocalFree(argv);
 	}
 
-	if( _wcsicmp(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
+	if( CompareNoCase(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
 		//Taskモードを強制する
 		wcscpy_s(option, L"/task");
 	}
 	if( option[0] == L'-' || option[0] == L'/' ){
-		if( _wcsicmp(L"install", option + 1) == 0 ){
+		if( CompareNoCase(L"install", option + 1) == 0 ){
 			return 0;
-		}else if( _wcsicmp(L"remove", option + 1) == 0 ){
+		}else if( CompareNoCase(L"remove", option + 1) == 0 ){
 			return 0;
-		}else if( _wcsicmp(L"setting", option + 1) == 0 ){
+		}else if( CompareNoCase(L"setting", option + 1) == 0 ){
 			//設定ダイアログを表示する
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvSetting setting;
 			setting.ShowDialog();
 			CoUninitialize();
 			return 0;
-		}else if( _wcsicmp(L"task", option + 1) == 0 ){
+		}else if( CompareNoCase(L"task", option + 1) == 0 ){
 			//Taskモード
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvMain::TaskMain();
@@ -189,7 +189,7 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 		if( g_debugLog ){
 			SYSTEMTIME st;
 			GetLocalTime(&st);
-			fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %s%s",
+			fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %ls%ls",
 			           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
 			           lpOutputString ? lpOutputString : L"",
 			           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");

@@ -83,11 +83,11 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 	for( DWORD i = 0; i < eventLoopSize; i++ ){
 		eit.SetLoopIndex(lp, i);
 		WORD event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
-		FILETIME start_time = {};
+		__int64 start_time = 0;
 		DWORD mjd = eit.GetNumber(Desc::start_time_mjd, lp);
 		DWORD bcd = eit.GetNumber(Desc::start_time_bcd, lp);
 		if( mjd != 0xFFFF || bcd != 0xFFFFFF ){
-			start_time = MJDtoFILETIME(mjd, bcd);
+			start_time = MJDtoI64Time(mjd, bcd);
 		}
 		DWORD duration = eit.GetNumber(Desc::d_duration, lp);
 		if( duration != 0xFFFFFF ){
@@ -106,7 +106,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		}
 
 #ifdef DEBUG_EIT
-		swprintf_s(g_szDebugEIT, L"%c%04x.%02x%02x.%02d.%d\r\n", table_id <= 0x4F ? L'P' : L'S',
+		swprintf_s(g_szDebugEIT, L"%lc%04x.%02x%02x.%02d.%d\r\n", table_id <= 0x4F ? L'P' : L'S',
 		           event_id, table_id, section_number, version_number, siTag.time % 1000000);
 #endif
 		//[actual]と[other]は等価に扱う
@@ -114,7 +114,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		if( table_id <= 0x4F && section_number <= 1 ){
 			//[p/f]
 			if( section_number == 0 ){
-				if( start_time.dwHighDateTime == 0 ){
+				if( start_time == 0 ){
 					OutputDebugString(L"Invalid EIT[p/f]\r\n");
 				}else if( serviceInfo->nowEvent.empty() || siTag.time >= serviceInfo->nowEvent.back().time ){
 					if( serviceInfo->nowEvent.empty() || serviceInfo->nowEvent.back().db.event_id != event_id ){
@@ -164,7 +164,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		}else if( PID != 0x0012 || table_id > 0x4F ){
 			//[schedule]もしくは(H-EITでないとき)[p/f after]
 			//TODO: イベント消滅には対応していない(クラス設計的に対応は厳しい)。EDCB的には実用上のデメリットはあまり無い
-			if( start_time.dwHighDateTime == 0 || duration == 0xFFFFFF ){
+			if( start_time == 0 || duration == 0xFFFFFF ){
 				OutputDebugString(L"Invalid EIT[schedule]\r\n");
 			}else{
 				itrEvent = serviceInfo->eventMap.find(event_id);
@@ -184,11 +184,11 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		if( eventInfo ){
 			//開始時間等はタイムスタンプのみを基準に更新
 			if( siTag.time >= eventInfo->time ){
-				eventInfo->db.StartTimeFlag = start_time.dwHighDateTime != 0;
+				eventInfo->db.StartTimeFlag = start_time != 0;
 				SYSTEMTIME stZero = {};
 				eventInfo->db.start_time = stZero;
 				if( eventInfo->db.StartTimeFlag ){
-					FileTimeToSystemTime(&start_time, &eventInfo->db.start_time);
+					ConvertSystemTime(start_time, &eventInfo->db.start_time);
 				}
 				eventInfo->db.DurationFlag = duration != 0xFFFFFF;
 				eventInfo->db.durationSec = duration != 0xFFFFFF ? duration : 0;

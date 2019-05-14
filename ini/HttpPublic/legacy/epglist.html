@@ -6,12 +6,15 @@ HIDE_SERVICES={
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
+
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML]=]..(vtag<0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
 <link rel="stylesheet" type="text/css" href="default.css">
 <title>リスト番組表 - EDCB</title>
 </head>
@@ -47,7 +50,8 @@ if sid==0 then
   SortServiceListInplace(st)
   ct:Append('<div class="nav">\n<ul>\n')
   for i,v in ipairs(st) do
-    ct:Append('<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'#now">'..v.service_name..'</a></li>\n')
+    ct:Append('<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid
+      ..'#now"><img alt="" style="max-height:0.8em;width:auto" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</a></li>\n')
   end
   ct:Append('</ul>\n</div>\n')
 else
@@ -79,7 +83,7 @@ else
       end
       cont=v.contentInfoList and #v.contentInfoList>0 and math.floor(v.contentInfoList[1].content_nibble/256)%16 or 16
       ct:Append('<div class="cont-'..cont..(v.past and ' past"' or '"')..(v.now and ' id="now"' or '')..'>'
-        ..(v.startTime and ('%02d%s %02d:%02d'):format(v.startTime.day, ({'日','月','火','水','木','金','土'})[v.startTime.wday], v.startTime.hour, v.startTime.min) or '不明')
+        ..(v.startTime and ('%02d/%02d%s %02d:%02d'):format(v.startTime.month, v.startTime.day, ({'日','月','火','水','木','金','土'})[v.startTime.wday], v.startTime.hour, v.startTime.min) or '不明')
         ..(not v.past and rt[('%04X%04X%04X%04X'):format(v.onid, v.tsid, v.sid, v.eid)] and ' <b>予</b>' or '')
         ..' <a href="'
           ..(v.past and 'epgpastinfo.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'-'..(os.time(v.startTime)+timezone)
@@ -96,12 +100,22 @@ end
 
 ct:Append([=[
 <div class="aside">
+]=])
+if sid==0 then
+  ct:Append([=[
   <form method="POST" action="view.lua"><div>
-    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="ctok" value="]=]..CsrfToken('view.lua')..[=[">
     <input type="hidden" name="n" value="0">
     <input type="hidden" name="s" value="]=]..onid..'-'..tsid..'-'..sid..[=[">
     <input type="submit" value="view.lua -nwtv0]=]..(sid==0 and ' -term' or '')..[=[">
-  </div></form>
+  </div></form>]=])
+else
+  ct:Append((vtag==0 and '  <video autoplay controls src="' or '  <a href="')
+    ..'view.lua?ctok='..CsrfToken('view.lua')..'&amp;n=0&amp;s='..onid..'-'..tsid..'-'..sid..'">view.lua -nwtv0'
+    ..(vtag==0 and '</video>' or '</a> <a href="epglist.html?id='..onid..'-'..tsid..'-'..sid..'&amp;vtag=0#footer">(video)</a>'))
+end
+ct:Append([=[
+
 </div>
 <div id="footer">
   <a href="]=]..(sid==0 and 'index.html">メニュー' or 'epglist.html">サービスリスト')..[=[</a>

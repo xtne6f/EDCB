@@ -376,13 +376,13 @@ void CStreamCtrlDlg::UpdateLog()
 	wstring IP = textBuff;
 
 	if( this->nwPlayInfo.udp == 1 ){
-		wstring udp = L"";
-		Format(udp, L"UDP送信：%s:%d\r\n", IP.c_str(), nwPlayInfo.udpPort);
+		wstring udp;
+		Format(udp, L"UDP送信：%ls:%d\r\n", IP.c_str(), nwPlayInfo.udpPort);
 		editLog += udp;
 	}
 	if( this->nwPlayInfo.tcp == 1 ){
-		wstring tcp = L"";
-		Format(tcp, L"TCP送信：%s:%d\r\n", IP.c_str(), nwPlayInfo.tcpPort);
+		wstring tcp;
+		Format(tcp, L"TCP送信：%ls:%d\r\n", IP.c_str(), nwPlayInfo.tcpPort);
 		editLog += tcp;
 	}
 	

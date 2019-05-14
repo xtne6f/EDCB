@@ -1,14 +1,17 @@
 -- vim:set ft=lua:
-PAGE_COUNT=30
+PAGE_COUNT=50
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
+
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML]=]..(vtag<0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
 <link rel="stylesheet" type="text/css" href="default.css">
 <title>予約一覧 - EDCB</title>
 </head>
@@ -20,54 +23,70 @@ ct:Append([=[
 edcb.htmlEscape=15
 a=edcb.GetReserveData()
 table.sort(a, function(a,b) return os.time(a.startTime) < os.time(b.startTime) end)
-pageIndex=GetVarInt(mg.request_info.query_string,'page',0,100000) or 0
-for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
-  ct:Append((i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"reserve.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> '))
+page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/PAGE_COUNT) or 0
+pageNav=''
+if #a>PAGE_COUNT then
+  for i=math.max(page-1,1),math.min(math.max(page-1,1)+6,(#a+PAGE_COUNT-1)/PAGE_COUNT) do
+    pageNav=pageNav..(i-1==page and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href="reserve.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+  end
+  pageNav=(page==0 and '|&lt;&lt; ' or '<a href="reserve.html">|&lt;&lt;</a> ')..pageNav
+    ..(page==math.floor((#a-1)/PAGE_COUNT) and '&gt;&gt;|' or '<a href="reserve.html?page='..math.floor((#a-1)/PAGE_COUNT)..'">&gt;&gt;|</a>\n')
 end
-
+ct:Append(pageNav)
 ct:Append([=[
-
 </div>
 <div id="main">
   <table>
 ]=])
 
-for i=pageIndex*PAGE_COUNT+1,math.min(#a,(pageIndex+1)*PAGE_COUNT) do
+rsdef=(edcb.GetReserveData(0x7FFFFFFF) or {}).recSetting
+rate={}
+for i=page*PAGE_COUNT+1,math.min(#a,(page+1)*PAGE_COUNT) do
   v=a[i]
-  ct:Append('    <tr'
-    ..(v.recSetting.recMode==5 and ' class="disabled"' or v.overlapMode==1 and ' class="partially"' or v.overlapMode==2 and ' class="shortage"' or '')
-    ..'><td><a href="reserveinfo.html?id='..v.reserveID..'">'
+  size=nil
+  if v.recSetting.recMode~=4 then
+    --予想ファイルサイズ
+    for j=1,4 do
+      key=('%04X%04X%04X'):format((j>3 and 65535 or v.onid),(j>2 and 65535 or v.tsid),(j>1 and 65535 or v.sid))
+      rate[key]=rate[key] or tonumber(edcb.GetPrivateProfile('BITRATE',key,0,'Bitrate.ini')) or 0
+      if rate[key]>0 then
+        break
+      elseif j==4 then
+        rate[key]=19456
+      end
+    end
+    size=rate[key]/8*1000*math.max((v.recSetting.startMargin or rsdef and rsdef.startMargin or 0)+
+                                   (v.recSetting.endMargin or rsdef and rsdef.endMargin or 0)+v.durationSecond,0)
+  end
+  cl=v.recSetting.recMode==5 and ' class="disabled"' or v.overlapMode==1 and ' class="partially"' or v.overlapMode==2 and ' class="shortage"' or ''
+  ct:Append('    <tr><td><a href="reserveinfo.html?id='..v.reserveID..'">'
     ..FormatTimeAndDuration(v.startTime, v.durationSecond)
-    ..'</a></td><td>'..v.stationName..'</td><td>'..v.title..'</td></tr>\n')
+    ..'</a><td'..cl..'>'..v.stationName..'<td'..cl..'>'..v.title
+    ..'<td'..cl..'>'..(RecModeTextList()[v.recSetting.recMode+1] or '')
+    ..'<td'..cl..'>'..v.recSetting.priority
+    ..'<td'..cl..'>'..(size and ('%.1fG'):format(size/1024/1024/1024) or '')..'</tr>\n')
 end
 
 ct:Append([=[
   </table>
-  <div class="aside">
-    <form method="POST" action="view.lua"><div style="float:left">
-      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-      <input type="submit" value="view.lua">
-    </div></form>
-]=])
+</div>
+<div class="page-nav">
+  ]=])
+ct:Append(pageNav)
+ct:Append([=[
+</div>
+<div class="aside">
+  view.lua]=])
 for i,v in ipairs(edcb.FindFile and edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
   n=v.name:match('^[^_]+_(%d+)_%d+$')
   if n then
-    ct:Append([=[
-    <form method="POST" action="view.lua"><div style="float:left">
-      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-      <input type="hidden" name="n" value="]=]..n..[=[">
-      <input type="submit" value="-pipe]=]..n..[=[">
-    </div></form>
-]=])
+    ct:Append((vtag..''==n and ' <video autoplay controls src="' or ' <a href="')
+      ..'view.lua?ctok='..CsrfToken('view.lua')..'&amp;n='..n..'">-pipe'..n
+      ..(vtag..''==n and '</video>' or '</a> <a href="reserve.html?vtag='..n..'#footer">(video)</a>'))
   end
 end
 ct:Append([=[
-    <form method="POST" action="view.lua"><div>
-      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
-      <input type="hidden" name="n" value="-1">
-      <input type="submit" value="-term">
-    </div></form>
-  </div>
+ <a href="view.lua?ctok=]=]..CsrfToken('view.lua')..[=[&amp;n=-1">-term</a>
 </div>
 <div id="footer">
   <a href="index.html">メニュー</a>

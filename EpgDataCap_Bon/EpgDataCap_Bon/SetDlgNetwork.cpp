@@ -56,8 +56,8 @@ BOOL CSetDlgNetwork::OnInitDialog()
 
 		udpSendList.push_back(item);
 
-		wstring add = L"";
-		Format(add, L"%s:%d",item.ipString.c_str(), item.port);
+		wstring add;
+		Format(add, L"%ls:%d",item.ipString.c_str(), item.port);
 		if( item.broadcastFlag == TRUE ){
 			add+= L" ブロードキャスト";
 		}
@@ -85,8 +85,8 @@ BOOL CSetDlgNetwork::OnInitDialog()
 
 		tcpSendList.push_back(item);
 
-		wstring add = L"";
-		Format(add, L"%s:%d",item.ipString.c_str(), item.port);
+		wstring add;
+		Format(add, L"%ls:%d",item.ipString.c_str(), item.port);
 		ListBox_AddString(GetDlgItem(IDC_LIST_IP_TCP), add.c_str());
 	}
 	CheckRadioButton(m_hWnd, IDC_RADIO_TCP, IDC_RADIO_PIPE, IDC_RADIO_TCP);
@@ -155,8 +155,8 @@ void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 		return;
 	}
 
-	wstring add = L"";
-	Format(add, L"%s:%d",item.ipString.c_str(), item.port);
+	wstring add;
+	Format(add, L"%ls:%d",item.ipString.c_str(), item.port);
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_BROADCAST)) != BST_UNCHECKED ){
 		add+= L" ブロードキャスト";
 		item.broadcastFlag = TRUE;
@@ -204,8 +204,8 @@ void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 		return;
 	}
 
-	wstring add = L"";
-	Format(add, L"%s:%d",item.ipString.c_str(), item.port);
+	wstring add;
+	Format(add, L"%ls:%d",item.ipString.c_str(), item.port);
 	item.broadcastFlag = FALSE;
 
 	for( size_t i = 0; i < tcpSendList.size(); i++ ){

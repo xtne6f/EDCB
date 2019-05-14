@@ -209,9 +209,9 @@ CDecodeUtil::CDecodeUtil(void)
 {
 	this->epgDBUtil = NULL;
 
-	this->totTime.dwHighDateTime = 0;
-	this->tdtTime.dwHighDateTime = 0;
-	this->sitTime.dwHighDateTime = 0;
+	this->totTime = 0;
+	this->tdtTime = 0;
+	this->sitTime = 0;
 }
 
 void CDecodeUtil::SetEpgDB(CEpgDBUtil* epgDBUtil_)
@@ -231,9 +231,9 @@ void CDecodeUtil::Clear()
 	this->bitInfo.reset();
 	this->sitInfo.reset();
 
-	this->totTime.dwHighDateTime = 0;
-	this->tdtTime.dwHighDateTime = 0;
-	this->sitTime.dwHighDateTime = 0;
+	this->totTime = 0;
+	this->tdtTime = 0;
+	this->sitTime = 0;
 
 	if( this->epgDBUtil != NULL ){
 		this->epgDBUtil->SetStreamChangeEvent();
@@ -259,9 +259,9 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	this->bitInfo.reset();
 	this->sitInfo.reset();
 
-	this->totTime.dwHighDateTime = 0;
-	this->tdtTime.dwHighDateTime = 0;
-	this->sitTime.dwHighDateTime = 0;
+	this->totTime = 0;
+	this->tdtTime = 0;
+	this->sitTime = 0;
 
 	if( this->epgDBUtil != NULL ){
 		this->epgDBUtil->SetStreamChangeEvent();
@@ -486,7 +486,7 @@ void CDecodeUtil::CheckSDT(WORD PID, const Desc::CDescriptor& sdt)
 
 void CDecodeUtil::CheckTDT(const Desc::CDescriptor& tdt)
 {
-	FILETIME time = MJDtoFILETIME(tdt.GetNumber(Desc::jst_time_mjd), tdt.GetNumber(Desc::jst_time_bcd));
+	__int64 time = MJDtoI64Time(tdt.GetNumber(Desc::jst_time_mjd), tdt.GetNumber(Desc::jst_time_bcd));
 	if( tdt.GetNumber(Desc::table_id) == 0x73 ){
 		//TOT
 		this->totTime = time;
@@ -500,9 +500,9 @@ void CDecodeUtil::CheckTDT(const Desc::CDescriptor& tdt)
 void CDecodeUtil::CheckEIT(WORD PID, const Desc::CDescriptor& eit)
 {
 	if( epgDBUtil != NULL ){
-		FILETIME time = {};
+		__int64 time = 0;
 		GetNowTime(&time);
-		epgDBUtil->AddEIT(PID, eit, (__int64)time.dwHighDateTime << 32 | time.dwLowDateTime);
+		epgDBUtil->AddEIT(PID, eit, time);
 	}
 }
 
@@ -529,11 +529,11 @@ void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 {
 	//時間計算
 	Desc::CDescriptor::CLoopPointer lp;
-	if( this->totTime.dwHighDateTime == 0 && this->tdtTime.dwHighDateTime == 0 && sit.EnterLoop(lp) ){
+	if( this->totTime == 0 && this->tdtTime == 0 && sit.EnterLoop(lp) ){
 		for( DWORD i = 0; sit.SetLoopIndex(lp, i); i++ ){
 			if( sit.GetNumber(Desc::descriptor_tag, lp) == Desc::partialTS_time_descriptor ){
 				if( sit.GetNumber(Desc::jst_time_flag, lp) == 1 ){
-					this->sitTime = MJDtoFILETIME(sit.GetNumber(Desc::jst_time_mjd), sit.GetNumber(Desc::jst_time_bcd));
+					this->sitTime = MJDtoI64Time(sit.GetNumber(Desc::jst_time_mjd), sit.GetNumber(Desc::jst_time_bcd));
 					this->sitTimeTick = GetTickCount();
 				}
 			}
@@ -814,7 +814,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 // time				[OUT]ストリーム内の現在の時間
 // tick				[OUT]timeを取得した時点のチックカウント
 BOOL CDecodeUtil::GetNowTime(
-	FILETIME* time,
+	__int64* time,
 	DWORD* tick
 	)
 {
@@ -822,15 +822,15 @@ BOOL CDecodeUtil::GetNowTime(
 	if( tick == NULL ){
 		tick = &tick_;
 	}
-	if( this->totTime.dwHighDateTime != 0 ){
+	if( this->totTime != 0 ){
 		*time = this->totTime;
 		*tick = this->totTimeTick;
 		return TRUE;
-	}else if( this->tdtTime.dwHighDateTime != 0 ){
+	}else if( this->tdtTime != 0 ){
 		*time = this->tdtTime;
 		*tick = this->tdtTimeTick;
 		return TRUE;
-	}else if( this->sitTime.dwHighDateTime != 0 ){
+	}else if( this->sitTime != 0 ){
 		*time = this->sitTime;
 		*tick = this->sitTimeTick;
 		return TRUE;

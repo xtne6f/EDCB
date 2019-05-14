@@ -179,8 +179,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
 			wstring pipeName;
 			wstring eventName;
-			Format(pipeName, L"%s%d", CMD2_GUI_CTRL_PIPE, GetCurrentProcessId());
-			Format(eventName, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, GetCurrentProcessId());
+			Format(pipeName, L"%ls%d", CMD2_GUI_CTRL_PIPE, GetCurrentProcessId());
+			Format(eventName, L"%ls%d", CMD2_GUI_CTRL_WAIT_CONNECT, GetCurrentProcessId());
 			ctx->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), [hwnd](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
 				resParam->param = CMD_ERR;
 				switch( cmdParam->param ){
@@ -199,7 +199,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 								if( exeCmd.size() > i + 2 ){
 									sei.lpParameters = exeCmd.erase(0, i + 2).c_str();
 								}
-								sei.nShow = file.size() < 4 || _wcsicmp(file.c_str() + file.size() - 4, L".bat") ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
+								sei.nShow = file.size() < 4 || CompareNoCase(file.c_str() + file.size() - 4, L".bat") ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
 								if( ShellExecuteEx(&sei) && sei.hProcess ){
 									CPipeServer::GrantServerAccessToKernelObject(sei.hProcess, SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION);
 									resParam->data = NewWriteVALUE(GetProcessId(sei.hProcess), resParam->dataSize);
@@ -620,7 +620,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								SYSTEMTIME st = ctx->notifyTipReserve.startTime;
 								SYSTEMTIME stEnd;
 								ConvertSystemTime(ConvertI64Time(st) + ctx->notifyTipReserve.durationSecond * I64_1SEC, &stEnd);
-								Format(tip, L"次の予約：%s %d/%d(%s) %d:%02d-%d:%02d %s",
+								Format(tip, L"次の予約：%ls %d/%d(%ls) %d:%02d-%d:%02d %ls",
 								       ctx->notifyTipReserve.stationName.c_str(),
 								       st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute,
 								       stEnd.wHour, stEnd.wMinute, ctx->notifyTipReserve.title.c_str());
@@ -632,7 +632,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						}else if( ctx->notifyTipActiveTime != LLONG_MAX ){
 							SYSTEMTIME st;
 							ConvertSystemTime(ctx->notifyTipActiveTime + 30 * I64_1SEC, &st);
-							swprintf_s(nid.szTip, L"次の予約・取得：%d/%d(%s) %d:%02d",
+							swprintf_s(nid.szTip, L"次の予約・取得：%d/%d(%ls) %d:%02d",
 								st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 						}
 						nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
@@ -676,7 +676,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								SYSTEMTIME st = itr->time;
 								wstring log = wstring(nid.szInfoTitle) + L"] " + info;
 								Replace(log, L"\r\n", L"  ");
-								fwprintf_s(fp.get(), L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s\r\n",
+								fwprintf_s(fp.get(), L"%d/%02d/%02d %02d:%02d:%02d.%03d [%ls\r\n",
 								           st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, log.c_str());
 							}
 						}
@@ -1086,7 +1086,7 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 		SYSTEMTIME endTime;
 		ConvertSystemTime(ConvertI64Time(list[i].startTime) + list[i].durationSecond * I64_1SEC, &endTime);
 		WCHAR text[128];
-		swprintf_s(text, L"%02d:%02d-%02d:%02d%s %.31s 【%.31s】",
+		swprintf_s(text, L"%02d:%02d-%02d:%02d%ls %.31ls 【%.31ls】",
 		           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
 		           list[i].recSetting.recMode == RECMODE_VIEW ? L"▲" : L"",
 		           list[i].title.c_str(), list[i].stationName.c_str());
@@ -1368,7 +1368,7 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 						//procent.szExeFileにプロセス名
 						wstring strExe = wstring(procent.szExeFile).substr(0, this->setting.noSuspendExeList[i].size());
 						if( CompareNoCase(strExe, this->setting.noSuspendExeList[i]) == 0 ){
-							_OutputDebugString(L"起動exe:%s\r\n", procent.szExeFile);
+							_OutputDebugString(L"起動exe:%ls\r\n", procent.szExeFile);
 							found = true;
 							break;
 						}
@@ -1629,7 +1629,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&processID, cmdParam->data, cmdParam->dataSize, NULL) ){
 				//CPipeServerの仕様的にこの時点で相手と通信できるとは限らない。接続待機用イベントが作成されるまで少し待つ
 				wstring eventName;
-				Format(eventName, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, processID);
+				Format(eventName, L"%ls%d", CMD2_GUI_CTRL_WAIT_CONNECT, processID);
 				for( int i = 0; i < 100; i++ ){
 					HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName.c_str());
 					if( waitEvent ){
@@ -2909,12 +2909,12 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 							if( IsExt(path, L".ini") ){
 								//ファイルロックを邪魔しないようAPI経由で読む
 								wstring strData = L"\xFEFF";
-								int appendModulePathState = _wcsicmp(path.filename().c_str(), L"Common.ini") == 0;
+								int appendModulePathState = CompareNoCase(path.filename().c_str(), L"Common.ini") == 0;
 								wstring sectionNames = GetPrivateProfileToString(NULL, NULL, NULL, path.c_str());
 								for( size_t j = 0; j < sectionNames.size() && sectionNames[j]; j += wcslen(sectionNames.c_str() + j) + 1 ){
 									LPCWSTR section = sectionNames.c_str() + j;
 									strData += wstring(L"[") + section + L"]\r\n";
-									if( appendModulePathState == 1 && _wcsicmp(section, L"SET") == 0 ){
+									if( appendModulePathState == 1 && CompareNoCase(section, L"SET") == 0 ){
 										//Common.iniに対する特例キー
 										strData += L"ModulePath=\"" + GetModulePath().parent_path().native() + L"\"\r\n";
 										appendModulePathState = 2;
@@ -3143,7 +3143,7 @@ void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& 
 			if( err ){
 				UTF8toW(err, werr);
 			}
-			_OutputDebugString(L"Error %s: %s\r\n", work.batFilePath.c_str(), werr.c_str());
+			_OutputDebugString(L"Error %ls: %ls\r\n", work.batFilePath.c_str(), werr.c_str());
 		}
 		lua_close(L);
 	}
@@ -3225,18 +3225,18 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 		LPCSTR src = lua_tostring(L, 3);
 		if( to && from && src ){
 			wstring wsrc;
-			if( _stricmp(from, "utf-8") == 0 ){
+			if( CompareNoCase(from, "utf-8") == 0 ){
 				UTF8toW(src, wsrc);
-			}else if( _stricmp(from, "cp932") == 0 ){
+			}else if( CompareNoCase(from, "cp932") == 0 ){
 				AtoW(src, wsrc);
 			}else{
 				lua_pushnil(L);
 				return 1;
 			}
-			if( _stricmp(to, "utf-8") == 0 ){
+			if( CompareNoCase(to, "utf-8") == 0 ){
 				lua_pushstring(L, ws.WtoUTF8(wsrc));
 				return 1;
-			}else if( _stricmp(to, "cp932") == 0 ){
+			}else if( CompareNoCase(to, "cp932") == 0 ){
 				UTF8toW(ws.WtoUTF8(wsrc), wsrc);
 				string dest;
 				WtoA(wsrc, dest);
@@ -3259,7 +3259,7 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 		LPCSTR file = lua_tostring(L, 4);
 		if( app && key && def && file ){
 			wstring path;
-			if( _stricmp(key, "ModulePath") == 0 && _stricmp(app, "SET") == 0 && _stricmp(file, "Common.ini") == 0 ){
+			if( CompareNoCase(key, "ModulePath") == 0 && CompareNoCase(app, "SET") == 0 && CompareNoCase(file, "Common.ini") == 0 ){
 				GetModuleFolderPath(path);
 				lua_pushstring(L, ws.WtoUTF8(path));
 			}else{
@@ -3271,7 +3271,7 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 				UTF8toW(key, strKey);
 				UTF8toW(def, strDef);
 				UTF8toW(file, strFile);
-				if( _wcsicmp(strFile.substr(0, 8).c_str(), L"Setting\\") == 0 ){
+				if( CompareNoCase(strFile.substr(0, 8), L"Setting\\") == 0 ){
 					strFile = GetSettingPath().append(strFile.substr(8)).native();
 				}else{
 					strFile = GetModulePath().replace_filename(strFile).native();
@@ -3302,7 +3302,7 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 			UTF8toW(key ? key : "", strKey);
 			UTF8toW(val ? val : "", strVal);
 			UTF8toW(file, strFile);
-			if( _wcsicmp(strFile.substr(0, 8).c_str(), L"Setting\\") == 0 ){
+			if( CompareNoCase(strFile.substr(0, 8), L"Setting\\") == 0 ){
 				strFile = GetSettingPath().append(strFile.substr(8)).native();
 			}else{
 				strFile = GetModulePath().replace_filename(strFile).native();
