@@ -160,7 +160,6 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			sys->fileList[i].reset();
 		}else{
 			fs_path recFolder = sys->fileList[i]->recFolder;
-			ChkFolderPath(recFolder);
 			//空き容量をあらかじめチェック
 			BOOL isMainFree = GetFreeSize(recFolder.native()) > sys->createSize + FREE_FOLDER_MIN_BYTES;
 			if( isMainFree == FALSE ){

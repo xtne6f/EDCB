@@ -794,7 +794,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				resVal.drop = 0;
 				resVal.scramble = 0;
 				if( resVal.recFilePath.empty() == false && val.saveErrLog ){
-					fs_path infoPath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", GetCommonIniPath().c_str());
+					fs_path infoPath = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", GetCommonIniPath().c_str());
 					if( infoPath.empty() ){
 						infoPath = resVal.recFilePath + L".err";
 					}else{

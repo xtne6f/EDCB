@@ -32,7 +32,7 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	// このツールはEDCBフォルダかその直下のフォルダに置かれているはず
-	fs_path iniPath = GetModulePath().replace_filename(L"Common.ini");
+	fs_path iniPath = GetCommonIniPath();
 	if (GetFileAttributes(iniPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
 		iniPath = iniPath.parent_path().replace_filename(L"Common.ini");
 		if (GetFileAttributes(iniPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
@@ -42,7 +42,7 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	// 「設定関係保存フォルダ」
-	fs_path settingPath = GetPrivateProfileToFolderPath(L"SET", L"DataSavePath", iniPath.c_str());
+	fs_path settingPath = GetPrivateProfileToString(L"SET", L"DataSavePath", L"", iniPath.c_str());
 	if (settingPath.empty()) {
 		settingPath = fs_path(iniPath).replace_filename(L"Setting");
 	}

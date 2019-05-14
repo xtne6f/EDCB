@@ -106,7 +106,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	for( int i = 0; i < count; i++ ){
 		WCHAR key[16];
 		swprintf_s(key, L"%d", i);
-		s.delChkList.push_back(GetPrivateProfileToFolderPath(L"DEL_CHK", key, iniPath).native());
+		s.delChkList.push_back(GetPrivateProfileToString(L"DEL_CHK", key, L"", iniPath));
 	}
 	s.startMargin = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath);
 	s.endMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath);
@@ -321,7 +321,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	}
 
 	const fs_path commonIniPath = GetCommonIniPath();
-	fs_path settingPath = GetPrivateProfileToFolderPath(L"SET", L"DataSavePath", commonIniPath.c_str());
+	fs_path settingPath = GetPrivateProfileToString(L"SET", L"DataSavePath", L"", commonIniPath.c_str());
 	if( settingPath.empty() ){
 		settingPath = GetDefSettingPath();
 		//Šù’è‚ÌÝ’èŠÖŒW•Û‘¶ƒtƒHƒ‹ƒ_‚ª‘¶Ý‚µ‚È‚¯‚ê‚Î“Á•Ê‚Éì‚é
@@ -330,7 +330,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 		}
 	}
 	const fs_path iniPath = GetModuleIniPath();
-	const fs_path viewAppIniPath = GetModulePath().replace_filename(L"ViewApp.ini");
+	const fs_path viewAppIniPath = fs_path(commonIniPath).replace_filename(L"ViewApp.ini");
 
 	SETTING setting = LoadSetting(iniPath.c_str());
 	this->chSet.ParseText(fs_path(settingPath).append(L"ChSet5.txt").c_str());
@@ -349,7 +349,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 		}
 		ListBox_AddString(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER), recPath.c_str());
 	}
-	SetDlgItemText(hwnd, IDC_EDIT_SET_REC_INFO_FOLDER, GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", commonIniPath.c_str()).c_str());
+	SetDlgItemText(hwnd, IDC_EDIT_SET_REC_INFO_FOLDER, GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", commonIniPath.c_str()).c_str());
 
 	vector<pair<wstring, wstring>> bonFileNameList = EnumBonFileName(settingPath.c_str());
 	vector<WORD> priorityList;
@@ -586,7 +586,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	const fs_path commonIniPath = GetCommonIniPath();
 	fs_path settingPath = GetDefSettingPath();
 	const fs_path iniPath = GetModuleIniPath();
-	const fs_path viewAppIniPath = GetModulePath().replace_filename(L"ViewApp.ini");
+	const fs_path viewAppIniPath = fs_path(commonIniPath).replace_filename(L"ViewApp.ini");
 
 	vector<WCHAR> buff;
 	WCHAR key[32];
@@ -605,7 +605,6 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	}else{
 		WritePrivateProfileString(L"SET", L"DataSavePath", buff.data(), commonIniPath.c_str());
 		settingPath = buff.data();
-		ChkFolderPath(settingPath);
 	}
 	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_REC_EXE_PATH), buff);
 	if( CompareNoCase(GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").c_str(), buff.data()) == 0 ){
@@ -978,9 +977,8 @@ void CEpgTimerSrvSetting::ToggleStartup(bool execute, bool add)
 		path.append(L"EpgTimerSrv.lnk");
 		if( GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES ){
 			if( execute && add ){
-				wstring moduleFolder;
-				GetModuleFolderPath(moduleFolder);
 				fs_path modulePath = GetModulePath();
+				fs_path moduleFolder = modulePath.parent_path();
 				{
 					IShellLink* psl;
 					if( CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)&psl) == S_OK ){

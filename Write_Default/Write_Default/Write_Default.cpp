@@ -58,10 +58,8 @@ void WINAPI Setting(
 	HWND parentWnd
 	)
 {
-	WCHAR dllPath[MAX_PATH];
-	DWORD ret = GetModuleFileName(g_instance, dllPath, MAX_PATH);
-	if( ret && ret < MAX_PATH ){
-		wstring iniPath = wstring(dllPath) + L".ini";
+	{
+		fs_path iniPath = GetModuleIniPath(g_instance);
 		wstring size = GetPrivateProfileToString(L"SET", L"Size", L"770048", iniPath.c_str());
 		wstring teeCmd = GetPrivateProfileToString(L"SET", L"TeeCmd", L"", iniPath.c_str());
 		wstring teeSize = GetPrivateProfileToString(L"SET", L"TeeSize", L"770048", iniPath.c_str());

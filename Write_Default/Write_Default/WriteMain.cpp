@@ -6,13 +6,9 @@ extern HINSTANCE g_instance;
 CWriteMain::CWriteMain(void)
 {
 	this->file = INVALID_HANDLE_VALUE;
-	this->writeBuffSize = 0;
 	this->teeFile = INVALID_HANDLE_VALUE;
-
-	WCHAR dllPath[MAX_PATH];
-	DWORD ret = GetModuleFileName(g_instance, dllPath, MAX_PATH);
-	if( ret && ret < MAX_PATH ){
-		wstring iniPath = wstring(dllPath) + L".ini";
+	{
+		fs_path iniPath = GetModuleIniPath(g_instance);
 		this->writeBuffSize = GetPrivateProfileInt(L"SET", L"Size", 770048, iniPath.c_str());
 		this->writeBuff.reserve(this->writeBuffSize);
 		this->teeCmd = GetPrivateProfileToString(L"SET", L"TeeCmd", L"", iniPath.c_str());

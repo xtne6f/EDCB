@@ -54,10 +54,8 @@ void WINAPI Setting(
 	HWND parentWnd
 	)
 {
-	WCHAR dllPath[512];
-	DWORD dwRet = GetModuleFileName(g_instance, dllPath, 512);
-	if( dwRet && dwRet < 512 ){
-		wstring iniPath = wstring(dllPath) + L".ini";
+	{
+		fs_path iniPath = GetModuleIniPath(g_instance);
 		wstring macro = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", iniPath.c_str());
 		CSettingDlg dlg;
 		if( dlg.CreateSettingDialog(g_instance, parentWnd, macro) == IDOK ){
@@ -90,12 +88,7 @@ BOOL WINAPI ConvertRecName3(
 	}
 	wstring buff;
 	if( pattern == NULL ){
-		buff = L"$Title$.ts";
-		WCHAR dllPath[512];
-		DWORD dwRet = GetModuleFileName(g_instance, dllPath, 512);
-		if( dwRet && dwRet < 512 ){
-			buff = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", (wstring(dllPath) + L".ini").c_str());
-		}
+		buff = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", GetModuleIniPath(g_instance).c_str());
 		pattern = buff.c_str();
 	}
 

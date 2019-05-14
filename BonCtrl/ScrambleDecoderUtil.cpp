@@ -150,11 +150,7 @@ void CScrambleDecoderUtil::UnLoadDll()
 BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 {
 	BOOL ret = FALSE;
-	wstring folderPath;
-	GetModuleFolderPath( folderPath );
-
-	wstring iniPath = folderPath;
-	iniPath += L"\\BonCtrl.ini";
+	fs_path iniPath = GetCommonIniPath().replace_filename(L"BonCtrl.ini");
 
 	wstring defKey = L"FFFFFFFF";
 	wstring networkDefKey = L"";
@@ -173,7 +169,7 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 	GetPrivateProfileString( L"SET", key.c_str(), L"", buff, 512, iniPath.c_str() );
 	loadDll = buff;
 
-	wstring dllPath = folderPath;
+	wstring dllPath = GetModulePath().parent_path().native();
 	if( loadDll.size() > 0 ){
 		dllPath += L"\\";
 		dllPath += loadDll;

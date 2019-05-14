@@ -45,11 +45,11 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	}
 	string accessLogPath;
 	//ログは_wfopen()されるのでWtoUTF8()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
-	WtoUTF8(GetModulePath().replace_filename(L"HttpAccess.log").native(), accessLogPath);
+	WtoUTF8(GetCommonIniPath().replace_filename(L"HttpAccess.log").native(), accessLogPath);
 	string errorLogPath;
-	WtoUTF8(GetModulePath().replace_filename(L"HttpError.log").native(), errorLogPath);
+	WtoUTF8(GetCommonIniPath().replace_filename(L"HttpError.log").native(), errorLogPath);
 
-	fs_path sslFsPath = GetModulePath().replace_filename(L"ssl_");
+	fs_path sslFsPath = GetCommonIniPath().replace_filename(L"ssl_");
 	//認証鍵は実質fopen()されるのでCP_ACP
 	string sslPathA;
 	wstring sslPath;
@@ -65,7 +65,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 
 	string globalAuthPath;
 	//グローバルパスワードは_wfopen()されるのでWtoUTF8()
-	fs_path globalAuthFsPath = GetModulePath().replace_filename(L"glpasswd");
+	fs_path globalAuthFsPath = GetCommonIniPath().replace_filename(L"glpasswd");
 	WtoUTF8(globalAuthFsPath.native(), globalAuthPath);
 
 	//Access Control List
@@ -86,7 +86,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 
 	//追加のMIMEタイプ
 	CParseContentTypeText contentType;
-	contentType.ParseText(GetModulePath().replace_filename(L"ContentTypeText.txt").c_str());
+	contentType.ParseText(GetCommonIniPath().replace_filename(L"ContentTypeText.txt").c_str());
 	wstring extraMimeW;
 	for( map<wstring, wstring>::const_iterator itr = contentType.GetMap().begin(); itr != contentType.GetMap().end(); itr++ ){
 		extraMimeW += itr->first + L'=' + itr->second + L',';

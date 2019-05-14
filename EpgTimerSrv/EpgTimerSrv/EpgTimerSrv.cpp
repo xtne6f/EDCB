@@ -203,7 +203,7 @@ void SetSaveDebugLog(bool saveDebugLog)
 {
 	CBlockLock lock(&g_debugLogLock);
 	if( g_debugLog == NULL && saveDebugLog ){
-		fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvDebugLog.txt");
+		fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvDebugLog.txt");
 		g_debugLog = shared_wfopen(logPath.c_str(), L"abN");
 		if( g_debugLog ){
 			_fseeki64(g_debugLog, 0, SEEK_END);

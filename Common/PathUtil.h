@@ -66,15 +66,17 @@ typedef filesystem_::path fs_path;
 
 fs_path GetDefSettingPath();
 fs_path GetSettingPath();
-void GetModuleFolderPath(wstring& strPath);
+#ifdef _WIN32
 fs_path GetModulePath(HMODULE hModule = NULL);
-fs_path GetPrivateProfileToFolderPath(LPCWSTR appName, LPCWSTR keyName, LPCWSTR fileName);
 fs_path GetModuleIniPath(HMODULE hModule = NULL);
+#else
+fs_path GetModulePath();
+fs_path GetModuleIniPath(LPCWSTR moduleName = NULL);
+#endif
 fs_path GetCommonIniPath();
 fs_path GetRecFolderPath(int index = 0);
 BOOL IsExt(const fs_path& filePath, const WCHAR* ext);
 void CheckFileName(wstring& fileName, BOOL noChkYen = FALSE);
-void ChkFolderPath(fs_path& path);
 
 // 存在しなければBOM付きの空ファイルを作成する
 void TouchFileAsUnicode(LPCWSTR path);

@@ -91,7 +91,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	_OutputDebugString(L"ÅöSyoboiCalUtil:SendReserve");
 
 	CParseServiceChgText srvChg;
-	srvChg.ParseText(GetModulePath().replace_filename(L"SyoboiCh.txt").c_str());
+	srvChg.ParseText(GetCommonIniPath().replace_filename(L"SyoboiCh.txt").c_str());
 
 	wstring proxyServerName;
 	wstring proxyUserName;

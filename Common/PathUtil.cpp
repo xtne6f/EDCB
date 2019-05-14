@@ -2,6 +2,9 @@
 #include "PathUtil.h"
 #include "StringUtil.h"
 #include <stdexcept>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 namespace filesystem_
 {
@@ -230,20 +233,16 @@ void path::first_element(const wstring& src, size_t& element_pos, size_t& elemen
 
 fs_path GetDefSettingPath()
 {
-	return GetModulePath().replace_filename(L"Setting");
+	return GetCommonIniPath().replace_filename(L"Setting");
 }
 
 fs_path GetSettingPath()
 {
-	fs_path path = GetPrivateProfileToFolderPath(L"SET", L"DataSavePath", GetCommonIniPath().c_str());
+	fs_path path = GetPrivateProfileToString(L"SET", L"DataSavePath", L"", GetCommonIniPath().c_str());
 	return path.empty() ? GetDefSettingPath() : path;
 }
 
-void GetModuleFolderPath(wstring& strPath)
-{
-	strPath = GetModulePath().parent_path().native();
-}
-
+#ifdef _WIN32
 fs_path GetModulePath(HMODULE hModule)
 {
 	WCHAR szPath[MAX_PATH];
@@ -258,24 +257,44 @@ fs_path GetModulePath(HMODULE hModule)
 	return path;
 }
 
-fs_path GetPrivateProfileToFolderPath(LPCWSTR appName, LPCWSTR keyName, LPCWSTR fileName)
-{
-	if( !appName || !keyName ){
-		return fs_path();
-	}
-	fs_path path(GetPrivateProfileToString(appName, keyName, L"", fileName));
-	ChkFolderPath(path);
-	return path;
-}
-
 fs_path GetModuleIniPath(HMODULE hModule)
 {
-	return GetModulePath(hModule).replace_extension(L".ini");
+	if( hModule ){
+		return GetModulePath(hModule).concat(L".ini");
+	}
+	return GetModulePath().replace_extension(L".ini");
 }
+#else
+fs_path GetModulePath()
+{
+	char szPath[1024];
+	if( readlink("/proc/self/exe", szPath, sizeof(szPath)) < 0 ){
+		throw std::runtime_error("");
+	}
+	wstring strPath;
+	UTF8toW(szPath, strPath);
+	fs_path path(strPath);
+	if( path.is_relative() || path.has_filename() == false ){
+		throw std::runtime_error("");
+	}
+	return path;
+}
+fs_path GetModuleIniPath(LPCWSTR moduleName)
+{
+	if( moduleName ){
+		return fs_path(EDCB_INI_ROOT).append(moduleName).concat(L".ini");
+	}
+	return fs_path(EDCB_INI_ROOT).append(GetModulePath().filename().native()).replace_extension(L".ini");
+}
+#endif
 
 fs_path GetCommonIniPath()
 {
+#ifdef _WIN32
 	return GetModulePath().replace_filename(L"Common.ini");
+#else
+	return fs_path(EDCB_INI_ROOT).append(L"Common.ini");
+#endif
 }
 
 fs_path GetRecFolderPath(int index)
@@ -286,14 +305,14 @@ fs_path GetRecFolderPath(int index)
 		// 必ず返す
 		fs_path path;
 		if( num > 0 ){
-			path = GetPrivateProfileToFolderPath(L"SET", L"RecFolderPath0", iniPath.c_str());
+			path = GetPrivateProfileToString(L"SET", L"RecFolderPath0", L"", iniPath.c_str());
 		}
 		return path.empty() ? GetSettingPath() : path;
 	}
 	for( int i = 1; i < num; i++ ){
 		WCHAR szKey[32];
 		swprintf_s(szKey, L"RecFolderPath%d", i);
-		fs_path path = GetPrivateProfileToFolderPath(L"SET", szKey, iniPath.c_str());
+		fs_path path = GetPrivateProfileToString(L"SET", szKey, L"", iniPath.c_str());
 		// 空要素は詰める
 		if( path.empty() == false ){
 			if( --index <= 0 ){
@@ -334,16 +353,6 @@ void CheckFileName(wstring& fileName, BOOL noChkYen)
 	// すべて'.'のときは全角に
 	if( fileName.find_first_not_of(L'.') == wstring::npos ){
 		for( size_t i = 0; i < fileName.size(); fileName[i++] = L'．' );
-	}
-}
-
-void ChkFolderPath(fs_path& path)
-{
-	// 過去にルートディレクトリ区切りを失った状態("C:"など)で設定などに保存していたので、これに対応する
-	if( path.empty() == false && path.native().back() != L'/' && path.native().back() != L'\\' ){
-		// 一時的に下層を作って上がる
-		// TODO: remove_filename()の末尾区切りについて標準の仕様が揺れている。状況によってはparent_path()に変更すること
-		path.concat(L"\\a").remove_filename();
 	}
 }
 

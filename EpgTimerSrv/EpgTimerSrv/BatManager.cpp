@@ -8,7 +8,7 @@
 CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 	: notifyManager(notifyManager_)
 {
-	this->tmpBatFilePath = GetModulePath().replace_filename(tmpBatFileName).native();
+	this->tmpBatFilePath = GetCommonIniPath().replace_filename(tmpBatFileName).native();
 	this->idleMargin = MAXDWORD;
 	this->nextBatMargin = 0;
 }

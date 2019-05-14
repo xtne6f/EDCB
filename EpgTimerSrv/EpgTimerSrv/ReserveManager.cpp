@@ -64,7 +64,7 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 
 	this->recInfoText.SetKeepCount(s.autoDelRecInfo ? s.autoDelRecInfoNum : UINT_MAX);
 	this->recInfoText.SetRecInfoDelFile(GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
-	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", commonIniPath.c_str()).c_str());
+	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", commonIniPath.c_str()).c_str());
 	this->recInfoText.CustomizeDelExt(s.applyExtToRecInfoDel);
 	this->recInfoText.SetCustomDelExt(s.delExtList);
 
@@ -1915,7 +1915,7 @@ void CReserveManager::WatchdogThread(CReserveManager* sys)
 void CReserveManager::AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR fileName)
 {
 	if( workList.empty() == false ){
-		fs_path batFilePath = GetModulePath().replace_filename(fileName);
+		fs_path batFilePath = GetCommonIniPath().replace_filename(fileName);
 		//同名のPowerShellやLuaスクリプトでもよい
 		if( GetFileAttributes(batFilePath.c_str()) != INVALID_FILE_ATTRIBUTES ||
 		    GetFileAttributes(batFilePath.replace_extension(L".ps1").c_str()) != INVALID_FILE_ATTRIBUTES ||

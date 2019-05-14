@@ -216,7 +216,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 						if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 							resParam->param = CMD_SUCCESS;
 							if( SD_MODE_STANDBY <= LOBYTE(val) && LOBYTE(val) <= SD_MODE_SHUTDOWN ){
-								fs_path srvIniPath = GetModulePath().replace_filename(EPG_TIMER_SERVICE_EXE).replace_extension(L".ini");
+								fs_path srvIniPath = GetCommonIniPath().replace_filename(EPG_TIMER_SERVICE_EXE).replace_extension(L".ini");
 								if( GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePC", 0, srvIniPath.c_str()) != 0 ){
 									DWORD noUsePCTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePCTime", 3, srvIniPath.c_str());
 									LASTINPUTINFO lii;
@@ -666,7 +666,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						               itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"終了" : itr->param4.c_str();
 						if( saveNotifyLog ){
 							//通知情報ログ保存
-							fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvNotify.log");
+							fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
 							std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(logPath.c_str(), L"abN"), fclose);
 							if( fp ){
 								_fseeki64(fp.get(), 0, SEEK_END);
@@ -1139,9 +1139,9 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 	this->httpOptions.ports.clear();
 	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
 	if( enableHttpSrv != 0 ){
-		this->httpOptions.rootPath = GetPrivateProfileToFolderPath(L"SET", L"HttpPublicFolder", iniPath.c_str()).native();
+		this->httpOptions.rootPath = GetPrivateProfileToString(L"SET", L"HttpPublicFolder", L"", iniPath.c_str());
 		if(this->httpOptions.rootPath.empty() ){
-			this->httpOptions.rootPath = GetModulePath().replace_filename(L"HttpPublic").native();
+			this->httpOptions.rootPath = GetCommonIniPath().replace_filename(L"HttpPublic").native();
 		}
 		this->httpOptions.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
 		this->httpOptions.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
@@ -1162,7 +1162,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 {
 	fs_path iniPath = GetModuleIniPath();
 	CEpgTimerSrvSetting::SETTING s = CEpgTimerSrvSetting::LoadSetting(iniPath.c_str());
-	fs_path viewIniPath = GetModulePath().replace_filename(L"EpgDataCap_Bon.ini");
+	fs_path viewIniPath = GetCommonIniPath().replace_filename(L"EpgDataCap_Bon.ini");
 	s.enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
 	s.enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
 	if( initialize ){
@@ -2114,7 +2114,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			}
 			int n;
 			if( ReadVALUE(&n, cmdParam->data, cmdParam->dataSize, NULL) ){
-				fs_path logPath = GetModulePath().replace_filename(L"EpgTimerSrvNotify.log");
+				fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
 				std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(logPath.c_str(), L"rbN"), fclose);
 				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 					__int64 count = _ftelli64(fp.get());
@@ -2903,7 +2903,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 						          CompareNoCase(list[i], L"BonCtrl.ini") == 0 ||
 						          CompareNoCase(list[i], L"ViewApp.ini") == 0 ||
 						          CompareNoCase(list[i], L"Bitrate.ini") == 0 ){
-							path = GetModulePath().replace_filename(list[i]);
+							path = GetCommonIniPath().replace_filename(list[i]);
 						}
 						if( path.empty() == false ){
 							if( IsExt(path, L".ini") ){
@@ -2916,7 +2916,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 									strData += wstring(L"[") + section + L"]\r\n";
 									if( appendModulePathState == 1 && CompareNoCase(section, L"SET") == 0 ){
 										//Common.iniに対する特例キー
-										strData += L"ModulePath=\"" + GetModulePath().parent_path().native() + L"\"\r\n";
+										strData += L"ModulePath=\"" + GetCommonIniPath().parent_path().native() + L"\"\r\n";
 										appendModulePathState = 2;
 									}
 									vector<WCHAR> buff = GetPrivateProfileSectionBuffer(section, path.c_str());
@@ -2930,7 +2930,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 								}
 								if( appendModulePathState == 1 ){
 									//Common.iniに対する特例キー
-									strData += L"[SET]\r\nModulePath=\"" + GetModulePath().parent_path().native() + L"\"\r\n";
+									strData += L"[SET]\r\nModulePath=\"" + GetCommonIniPath().parent_path().native() + L"\"\r\n";
 								}
 								if( strData.size() > 1 ){
 									//BOMつきUTF-16
@@ -3258,10 +3258,8 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 		LPCSTR def = lua_isboolean(L, 3) ? (lua_toboolean(L, 3) ? "1" : "0") : lua_tostring(L, 3);
 		LPCSTR file = lua_tostring(L, 4);
 		if( app && key && def && file ){
-			wstring path;
 			if( CompareNoCase(key, "ModulePath") == 0 && CompareNoCase(app, "SET") == 0 && CompareNoCase(file, "Common.ini") == 0 ){
-				GetModuleFolderPath(path);
-				lua_pushstring(L, ws.WtoUTF8(path));
+				lua_pushstring(L, ws.WtoUTF8(GetCommonIniPath().parent_path().native()));
 			}else{
 				wstring strApp;
 				wstring strKey;
@@ -3274,7 +3272,7 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 				if( CompareNoCase(strFile.substr(0, 8), L"Setting\\") == 0 ){
 					strFile = GetSettingPath().append(strFile.substr(8)).native();
 				}else{
-					strFile = GetModulePath().replace_filename(strFile).native();
+					strFile = GetCommonIniPath().replace_filename(strFile).native();
 				}
 				wstring buff = GetPrivateProfileToString(strApp.c_str(), strKey.c_str(), strDef.c_str(), strFile.c_str());
 				lua_pushstring(L, ws.WtoUTF8(buff));
@@ -3305,7 +3303,7 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 			if( CompareNoCase(strFile.substr(0, 8), L"Setting\\") == 0 ){
 				strFile = GetSettingPath().append(strFile.substr(8)).native();
 			}else{
-				strFile = GetModulePath().replace_filename(strFile).native();
+				strFile = GetCommonIniPath().replace_filename(strFile).native();
 			}
 			lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : NULL, val ? strVal.c_str() : NULL, strFile.c_str()));
 			return 1;

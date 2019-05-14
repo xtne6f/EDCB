@@ -775,7 +775,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 
 void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& info, bool append) const
 {
-	fs_path savePath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", GetCommonIniPath().c_str());
+	fs_path savePath = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", GetCommonIniPath().c_str());
 
 	if( savePath.empty() ){
 		savePath = fs_path(recPath).concat(L".program.txt");
@@ -1063,7 +1063,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		return false;
 	}
 	fs_path commonIniPath = GetCommonIniPath();
-	fs_path strIni = GetModulePath().replace_filename(L"ViewApp.ini");
+	fs_path strIni = fs_path(commonIniPath).replace_filename(L"ViewApp.ini");
 
 	wstring strExecute = GetPrivateProfileToString(L"SET", L"RecExePath", L"", commonIniPath.c_str());
 	if( strExecute.empty() ){
