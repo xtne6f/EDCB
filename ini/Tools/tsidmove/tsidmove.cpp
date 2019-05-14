@@ -4,6 +4,7 @@
 #include "../../../Common/CommonDef.h"
 #include "../../../Common/ParseTextInstances.h"
 #include "../../../Common/PathUtil.h"
+#include <locale.h>
 
 static const CH_DATA5 *CheckTSID(WORD onid, WORD tsid, WORD sid, const CParseChText5 &chText5)
 {
@@ -21,12 +22,12 @@ static const CH_DATA5 *CheckTSID(WORD onid, WORD tsid, WORD sid, const CParseChT
 
 int wmain(int argc, wchar_t **argv)
 {
-	_wsetlocale(LC_ALL, L"");
+	setlocale(LC_ALL, "");
 
 	// --dray-run時は書き込みを一切しない
 	const bool dryrun = (argc >= 2 && wcscmp(argv[1], L"--dry-run") == 0);
 	if (argc != 2 || (!dryrun && wcscmp(argv[1], L"--run") != 0)) {
-		_putws(L"Usage: tsidmove --dry-run|--run");
+		fputws(L"Usage: tsidmove --dry-run|--run\n", stdout);
 		return 2;
 	}
 
@@ -35,7 +36,7 @@ int wmain(int argc, wchar_t **argv)
 	if (GetFileAttributes(iniPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
 		iniPath = iniPath.parent_path().replace_filename(L"Common.ini");
 		if (GetFileAttributes(iniPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
-			_putws(L"Error: Common.iniが見つかりません。");
+			fputws(L"Error: Common.iniが見つかりません。\n", stdout);
 			return 1;
 		}
 	}
@@ -49,12 +50,12 @@ int wmain(int argc, wchar_t **argv)
 
 	fs_path chSet5Path = fs_path(settingPath).append(L"ChSet5.txt");
 	if (GetFileAttributes(chSet5Path.c_str()) == INVALID_FILE_ATTRIBUTES) {
-		_putws(L"Error: ChSet5.txtが見つかりません。");
+		fputws(L"Error: ChSet5.txtが見つかりません。\n", stdout);
 		return 1;
 	}
 	CParseChText5 chText5;
 	if (!chText5.ParseText(chSet5Path.c_str())) {
-		_putws(L"Error: ChSet5.txtを開けません。");
+		fputws(L"Error: ChSet5.txtを開けません。\n", stdout);
 		return 1;
 	}
 
@@ -62,7 +63,7 @@ int wmain(int argc, wchar_t **argv)
 		for (auto jtr = itr; ++jtr != chText5.GetMap().end(); ) {
 			if (itr->second.originalNetworkID == jtr->second.originalNetworkID &&
 			    itr->second.serviceID == jtr->second.serviceID) {
-				_putws(L"Warning: ChSet5.txtにTSID以外のIDが等しいサービスがあります。古い情報が残っていませんか？");
+				fputws(L"Warning: ChSet5.txtにTSID以外のIDが等しいサービスがあります。古い情報が残っていませんか？\n", stdout);
 				itr = chText5.GetMap().end();
 				itr--;
 				break;
@@ -78,16 +79,16 @@ int wmain(int argc, wchar_t **argv)
 		}
 	}
 	if (!hMutex) {
-		_putws(L"Error: EpgTimerSrv.exeを終了させてください。");
+		fputws(L"Error: EpgTimerSrv.exeを終了させてください。\n", stdout);
 		return 1;
 	}
 	CloseHandle(hMutex);
 
-	wprintf_s(RESERVE_TEXT_NAME L"(予約ファイル)");
+	fputws(RESERVE_TEXT_NAME L"(予約ファイル)", stdout);
 	{
 		CParseReserveText text;
 		if (!text.ParseText(fs_path(settingPath).append(RESERVE_TEXT_NAME).c_str())) {
-			_putws(L"をスキップします。");
+			fputws(L"をスキップします。\n", stdout);
 		} else {
 			int n = 0;
 			for (size_t i = 0; i < text.GetMap().size(); i++) {
@@ -105,25 +106,25 @@ int wmain(int argc, wchar_t **argv)
 				}
 			}
 			if (n == 0) {
-				_putws(L"に変更はありません。");
+				fputws(L"に変更はありません。\n", stdout);
 			} else {
 				wprintf_s(L"\n以上の%d項目変更します...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
-						_putws(L"成功。");
+						fputws(L"成功。\n", stdout);
 					} else {
-						_putws(L"Error: 失敗。");
+						fputws(L"Error: 失敗。\n", stdout);
 					}
 				}
 			}
 		}
 	}
 
-	wprintf_s(EPG_AUTO_ADD_TEXT_NAME L"(EPG自動予約ファイル)");
+	fputws(EPG_AUTO_ADD_TEXT_NAME L"(EPG自動予約ファイル)", stdout);
 	{
 		CParseEpgAutoAddText text;
 		if (!text.ParseText(fs_path(settingPath).append(EPG_AUTO_ADD_TEXT_NAME).c_str())) {
-			_putws(L"をスキップします。");
+			fputws(L"をスキップします。\n", stdout);
 		} else {
 			int n = 0;
 			for (size_t i = 0; i < text.GetMap().size(); i++) {
@@ -147,25 +148,25 @@ int wmain(int argc, wchar_t **argv)
 				}
 			}
 			if (n == 0) {
-				_putws(L"に変更はありません。");
+				fputws(L"に変更はありません。\n", stdout);
 			} else {
 				wprintf_s(L"\n以上の%d項目変更します...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
-						_putws(L"成功。");
+						fputws(L"成功。\n", stdout);
 					} else {
-						_putws(L"Error: 失敗。");
+						fputws(L"Error: 失敗。\n", stdout);
 					}
 				}
 			}
 		}
 	}
 
-	wprintf_s(MANUAL_AUTO_ADD_TEXT_NAME L"(プログラム自動予約ファイル)");
+	fputws(MANUAL_AUTO_ADD_TEXT_NAME L"(プログラム自動予約ファイル)", stdout);
 	{
 		CParseManualAutoAddText text;
 		if (!text.ParseText(fs_path(settingPath).append(MANUAL_AUTO_ADD_TEXT_NAME).c_str())) {
-			_putws(L"をスキップします。");
+			fputws(L"をスキップします。\n", stdout);
 		} else {
 			int n = 0;
 			for (size_t i = 0; i < text.GetMap().size(); i++) {
@@ -183,20 +184,20 @@ int wmain(int argc, wchar_t **argv)
 				}
 			}
 			if (n == 0) {
-				_putws(L"に変更はありません。");
+				fputws(L"に変更はありません。\n", stdout);
 			} else {
 				wprintf_s(L"\n以上の%d項目変更します...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
-						_putws(L"成功。");
+						fputws(L"成功。\n", stdout);
 					} else {
-						_putws(L"Error: 失敗。");
+						fputws(L"Error: 失敗。\n", stdout);
 					}
 				}
 			}
 		}
 	}
 
-	_putws(L"終了。");
+	fputws(L"終了。\n", stdout);
 	return 0;
 }
