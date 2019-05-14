@@ -212,7 +212,7 @@ bool CEdcbPlugIn::Initialize()
 		int port = 0;
 		for (; port < 100; ++port) {
 			wstring name;
-			Format(name, L"%s1_%d", MUTEX_TCP_PORT_NAME, port);
+			Format(name, L"%ls1_%d", MUTEX_TCP_PORT_NAME, port);
 			m_sendPipeMutex = CreateMutex(nullptr, FALSE, name.c_str());
 			if (m_sendPipeMutex) {
 				if (GetLastError() != ERROR_ALREADY_EXISTS) {
@@ -926,21 +926,20 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						else {
 							infoPath.append(fs_path(resVal.recFilePath).filename().concat(L".err").native());
 						}
-						vector<pair<WORD, string>> pidNameList;
+						vector<pair<WORD, wstring>> pidNameList;
 						TVTest::ServiceInfo si;
 						for (int i = 0; m_pApp->GetServiceInfo(i, &si); ++i) {
-							string name;
-							Format(name, "0x%04X-Video", si.ServiceID);
-							pidNameList.push_back(std::make_pair(si.VideoPID, name));
+							pidNameList.push_back(std::make_pair(si.VideoPID, wstring()));
+							Format(pidNameList.back().second, L"0x%04X-Video", si.ServiceID);
 							for (int j = 0; j < si.NumAudioPIDs; ++j) {
-								Format(name, "0x%04X-Audio(0x%02X)", si.ServiceID, si.AudioComponentType[j]);
-								pidNameList.push_back(std::make_pair(si.AudioPID[j], name));
+								pidNameList.push_back(std::make_pair(si.AudioPID[j], wstring()));
+								Format(pidNameList.back().second, L"0x%04X-Audio(0x%02X)", si.ServiceID, si.AudioComponentType[j]);
 							}
-							Format(name, "0x%04X-Subtitle", si.ServiceID);
-							pidNameList.push_back(std::make_pair(si.SubtitlePID, name));
+							pidNameList.push_back(std::make_pair(si.SubtitlePID, wstring()));
+							Format(pidNameList.back().second, L"0x%04X-Subtitle", si.ServiceID);
 						}
 						for (size_t i = pidNameList.size(); i > 0; --i) {
-							dropCount.SetPIDName(pidNameList[i - 1].first, pidNameList[i - 1].second.c_str());
+							dropCount.SetPIDName(pidNameList[i - 1].first, pidNameList[i - 1].second);
 						}
 						dropCount.SetBonDriver(m_currentBonDriver);
 						dropCount.SaveLog(infoPath.native());
