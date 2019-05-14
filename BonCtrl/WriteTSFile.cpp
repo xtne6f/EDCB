@@ -65,10 +65,11 @@ BOOL CWriteTSFile::StartSave(
 		}
 
 		//受信スレッド起動
-		this->outStopFlag = true;
+		this->outStopFlag = false;
+		this->outStopEvent.Reset();
 		this->outThread = thread_(OutThread, this);
 		//保存開始まで待つ
-		while( WaitForSingleObject(this->outThread.native_handle(), 10) == WAIT_TIMEOUT && this->outStopFlag );
+		this->outStopEvent.WaitOne();
 		if( this->outStopFlag == false ){
 			return TRUE;
 		}
@@ -92,6 +93,7 @@ BOOL CWriteTSFile::EndSave(BOOL* subRecFlag_)
 {
 	if( this->outThread.joinable() ){
 		this->outStopFlag = true;
+		this->outStopEvent.Set();
 		this->outThread.join();
 		if( subRecFlag_ ){
 			*subRecFlag_ = this->subRecFlag;
@@ -208,9 +210,11 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	if( emptyFlag ){
 		OutputDebugString(L"CWriteTSFile::StartSave Err fileList 0\r\n");
 		CoUninitialize();
+		sys->outStopFlag = true;
+		sys->outStopEvent.Set();
 		return;
 	}
-	sys->outStopFlag = false;
+	sys->outStopEvent.Set();
 	std::list<vector<BYTE>> data;
 
 	while( sys->outStopFlag == false ){
@@ -281,7 +285,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			}
 		}else{
 			//TODO: 厳密にはメッセージをディスパッチすべき(スレッド内で単純なCOMオブジェクトを扱う限りは(多分)問題ない)
-			Sleep(100);
+			sys->outStopEvent.WaitOne(100);
 		}
 	}
 

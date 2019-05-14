@@ -139,6 +139,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		OutputDebugString(L"šEpgDataCap3.dll‚Ì‰Šú‰»‚ÉŽ¸”s‚µ‚Ü‚µ‚½B\r\n");
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
+		sys->loadStop = true;
 		return;
 	}
 
@@ -296,6 +297,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == FALSE ){
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
+		sys->loadStop = true;
 		return;
 	}
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> nextMap;
@@ -561,6 +563,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 
 	sys->loadForeground = false;
 	sys->initialLoadDone = true;
+	sys->loadStop = true;
 }
 
 BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param)
@@ -592,7 +595,7 @@ BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVEN
 
 bool CEpgDBManager::IsLoadingData()
 {
-	return this->loadThread.joinable() && WaitForSingleObject(this->loadThread.native_handle(), 0) == WAIT_TIMEOUT;
+	return this->loadThread.joinable() && this->loadStop == false;
 }
 
 void CEpgDBManager::CancelLoadData()

@@ -84,6 +84,7 @@ protected:
 
 	thread_ outThread;
 	atomic_bool_ outStopFlag;
+	CAutoResetEvent outStopEvent;
 
 	struct SAVE_INFO {
 		CWritePlugInUtil writeUtil;

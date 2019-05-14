@@ -1905,7 +1905,7 @@ vector<CH_DATA5> CReserveManager::GetChDataList() const
 
 void CReserveManager::WatchdogThread(CReserveManager* sys)
 {
-	while( WaitForSingleObject(sys->watchdogStopEvent.Handle(), 2000) == WAIT_TIMEOUT ){
+	while( sys->watchdogStopEvent.WaitOne(2000) == false ){
 		for( auto itr = sys->tunerBankMap.cbegin(); itr != sys->tunerBankMap.end(); itr++ ){
 			itr->second->Watch();
 		}

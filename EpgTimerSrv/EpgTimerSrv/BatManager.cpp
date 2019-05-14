@@ -92,7 +92,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 	for(;;){
 		while( notifyWorkWait && sys->batWorkStopFlag == false && sys->IsWorking() == false ){
 			DWORD tick = GetTickCount();
-			WaitForSingleObject(sys->batWorkEvent.Handle(), notifyWorkWait);
+			sys->batWorkEvent.WaitOne(notifyWorkWait);
 			DWORD diff = GetTickCount() - tick;
 			notifyWorkWait -= min(diff, notifyWorkWait);
 			if( notifyWorkWait == 0 ){

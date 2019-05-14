@@ -255,7 +255,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 		}
 
 		if( item.empty() || sendListSizeOrStop == 0 ){
-			if( WaitForSingleObject(pSys->m_stopSendEvent.Handle(), item.empty() ? 100 : 0) != WAIT_TIMEOUT ){
+			if( pSys->m_stopSendEvent.WaitOne(item.empty() ? 100 : 0) ){
 				//キャンセルされた
 				break;
 			}
@@ -317,7 +317,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					}
 				}
 				for(;;){
-					if( WaitForSingleObject(pSys->m_stopSendEvent.Handle(), 0) != WAIT_TIMEOUT ){
+					if( pSys->m_stopSendEvent.WaitOne(0) ){
 						//キャンセルされた
 						sendListSizeOrStop = 0;
 						break;

@@ -59,6 +59,7 @@ BOOL CPipeServer::StartServer(
 			}else if( writeDac && GrantServerAccessToKernelObject(this->hPipe, GENERIC_READ | GENERIC_WRITE) ){
 				_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipeName, SERVICE_NAME);
 			}
+			this->exitingFlag = false;
 			this->stopEvent.Reset();
 			this->workThread = thread_(ServerThread, this);
 			return TRUE;
@@ -74,7 +75,7 @@ BOOL CPipeServer::StopServer(BOOL checkOnlyFlag)
 		this->stopEvent.Set();
 		if( checkOnlyFlag ){
 			//終了チェックして結果を返すだけ
-			if( WaitForSingleObject(this->workThread.native_handle(), 0) == WAIT_TIMEOUT ){
+			if( this->exitingFlag == false ){
 				return FALSE;
 			}
 		}
@@ -128,6 +129,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 {
 	HANDLE hEventArray[] = { pSys->stopEvent.Handle(), CreateEvent(NULL, TRUE, FALSE, NULL) };
 	if( hEventArray[1] == NULL ){
+		pSys->exitingFlag = true;
 		return;
 	}
 
@@ -201,4 +203,5 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 	}
 
 	CloseHandle(hEventArray[1]);
+	pSys->exitingFlag = true;
 }

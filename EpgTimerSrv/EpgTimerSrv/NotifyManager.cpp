@@ -214,7 +214,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			wait = GetTickCount() - waitNotifyTick;
 			wait = (wait < 5000 ? 5000 - wait : 0);
 		}
-		WaitForSingleObject(sys->notifyEvent.Handle(), wait);
+		sys->notifyEvent.WaitOne(wait);
 		if( sys->notifyStopFlag ){
 			//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
 			break;
