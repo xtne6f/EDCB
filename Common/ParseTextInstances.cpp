@@ -37,12 +37,12 @@ DWORD FinalizeField(wstring& str)
 
 bool ParseDateTime(LPCWSTR* token, SYSTEMTIME& st)
 {
-	FILETIME ft;
+	__int64 t;
 	st.wMilliseconds = 0;
 	return swscanf_s(NextToken(token), L"%hu/%hu/%hu", &st.wYear, &st.wMonth, &st.wDay) == 3 &&
 	       swscanf_s(NextToken(token), L"%hu:%hu:%hu", &st.wHour, &st.wMinute, &st.wSecond) == 3 &&
-	       SystemTimeToFileTime(&st, &ft) &&
-	       FileTimeToSystemTime(&ft, &st);
+	       ((t = ConvertI64Time(st)) != 0) &&
+	       ConvertSystemTime(t, &st);
 }
 
 void ParseRecFolderList(LPCWSTR* token, vector<REC_FILE_SET_INFO>& list)

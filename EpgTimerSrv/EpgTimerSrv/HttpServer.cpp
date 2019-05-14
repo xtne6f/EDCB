@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "HttpServer.h"
 #include "../../Common/StringUtil.h"
+#include "../../Common/TimeUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ParseTextInstances.h"
 #include "civetweb.h"
@@ -372,8 +373,8 @@ SYSTEMTIME get_time(lua_State* L, const char* name)
 		st.wMinute = (WORD)get_int(L, "min");
 		st.wSecond = (WORD)get_int(L, "sec");
 		st.wMilliseconds = (WORD)get_int(L, "msec");
-		FILETIME ft;
-		if( SystemTimeToFileTime(&st, &ft) && FileTimeToSystemTime(&ft, &st) ){
+		__int64 t = ConvertI64Time(st);
+		if( t != 0 && ConvertSystemTime(t, &st) ){
 			ret = st;
 		}
 	}

@@ -118,11 +118,8 @@ BOOL CEpgDataCap3Main::GetEpgInfo(
 
 	//TODO: こういう選別をライブラリ側で行うのは微妙に思うが、互換のため残しておく
 	__int64 nowTime;
-	FILETIME time;
-	if( this->decodeUtilClass.GetNowTime(&time) == FALSE ){
+	if( this->decodeUtilClass.GetNowTime(&nowTime) == FALSE ){
 		nowTime = GetNowI64Time();
-	}else{
-		nowTime = (__int64)time.dwHighDateTime << 32 | time.dwLowDateTime;
 	}
 	if( nextFlag == FALSE && (*epgInfo)->StartTimeFlag != FALSE && (*epgInfo)->DurationFlag != FALSE ){
 		if( nowTime < ConvertI64Time((*epgInfo)->start_time) || ConvertI64Time((*epgInfo)->start_time) + (*epgInfo)->durationSec * I64_1SEC < nowTime ){
@@ -202,11 +199,11 @@ int CEpgDataCap3Main::GetTimeDelay(
 	)
 {
 	CBlockLock lock(&this->utilLock);
-	FILETIME time;
+	__int64 time;
 	DWORD tick;
 	if( this->decodeUtilClass.GetNowTime(&time, &tick) == FALSE ){
 		return 0;
 	}
-	__int64 delay = ((__int64)time.dwHighDateTime << 32 | time.dwLowDateTime) + (GetTickCount() - tick) * (I64_1SEC / 1000) - GetNowI64Time();
+	__int64 delay = time + (GetTickCount() - tick) * (I64_1SEC / 1000) - GetNowI64Time();
 	return (int)(delay / I64_1SEC);
 }

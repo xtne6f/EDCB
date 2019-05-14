@@ -50,18 +50,13 @@ DWORD CalcCrc32(int n, const BYTE* c)
 	return r;
 }
 
-FILETIME MJDtoFILETIME(DWORD mjd, DWORD bcdTime)
+__int64 MJDtoI64Time(DWORD mjd, DWORD bcdTime)
 {
 	DWORD h = (bcdTime >> 20 & 3) * 10 + (bcdTime >> 16 & 15);
 	DWORD m = (bcdTime >> 12 & 7) * 10 + (bcdTime >> 8 & 15);
 	DWORD s = (bcdTime >> 4 & 7) * 10 + (bcdTime & 15);
-	LARGE_INTEGER li;
 	//"1858-11-17"
-	li.QuadPart = 81377568000000000LL + (((mjd * 24 + h) * 60 + m) * 60LL + s) * 10000000LL;
-	FILETIME ft;
-	ft.dwLowDateTime = li.LowPart;
-	ft.dwHighDateTime = li.HighPart;
-	return ft;
+	return 81377568000000000 + (((mjd * 24 + h) * 60 + m) * 60LL + s) * 10000000;
 }
 
 DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid)
