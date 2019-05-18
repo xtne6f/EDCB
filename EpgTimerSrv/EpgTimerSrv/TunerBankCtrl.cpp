@@ -238,7 +238,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		//ネットワークモードではGUIキープできないのでBonDriverが変更されるかもしれない
 		//BonDriverが変更されたチューナはこのバンクの管理下に置けないので、ネットワークモードを解除する
 		wstring bonDriver;
-		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) != 0 ){
+		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
+		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
 				CBlockLock lock(&this->watchContext.lock);
 				CloseHandle(this->hTunerProcess);
@@ -255,7 +256,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	}else if( this->hTunerProcess && this->tunerChLocked == false ){
 		//GUIキープされていないのでBonDriverが変更されるかもしれない
 		wstring bonDriver;
-		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) != 0 ){
+		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
+		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
 				CBlockLock lock(&this->watchContext.lock);
 				CloseHandle(this->hTunerProcess);
@@ -515,7 +517,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				//ネットワークモードを解除
 				wstring bonDriver;
 				DWORD status;
-				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) == 0 &&
+				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
+				    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) == 0 &&
 				    ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && (status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_ERR_CH_CHG) ){
 					//プロセスを引き継ぐ
 					this->tunerONID = r.onid;
@@ -1208,7 +1211,8 @@ bool CTunerBankCtrl::CloseOtherTuner()
 				int id;
 				DWORD status;
 				//録画中のものは奪わないので注意
-				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) == 0 &&
+				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
+				    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) == 0 &&
 				    ctrlCmd.SendViewGetID(&id) == CMD_SUCCESS && id == -1 &&
 				    ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS &&
 				    (status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_GET_EPG || status == VIEW_APP_ST_ERR_CH_CHG) ){
@@ -1236,7 +1240,8 @@ bool CTunerBankCtrl::CloseOtherTuner()
 				CSendCtrlCmd ctrlCmd;
 				ctrlCmd.SetPipeSetting(CMD2_TVTEST_CTRL_WAIT_CONNECT, CMD2_TVTEST_CTRL_PIPE, this->tunerPid);
 				wstring bonDriver;
-				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
+				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
+				    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) == 0 ){
 					ctrlCmd.SendViewAppClose();
 					WaitForSingleObject(this->hTunerProcess, 10000);
 					closed = true;
@@ -1257,7 +1262,7 @@ wstring CTunerBankCtrl::ConvertRecName(
 {
 	wstring ret;
 	if( recNamePlugIn[0] ){
-		fs_path plugInPath = GetModulePath().replace_filename(L"RecName\\");
+		wstring plugInPath = GetModulePath().replace_filename(L"RecName").native() + fs_path::preferred_separator;
 		PLUGIN_RESERVE_INFO info;
 		info.startTime = startTime;
 		info.durationSec = durationSec;

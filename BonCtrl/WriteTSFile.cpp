@@ -80,15 +80,6 @@ BOOL CWriteTSFile::StartSave(
 	return FALSE;
 }
 
-ULONGLONG CWriteTSFile::GetFreeSize(const wstring& folderPath)
-{
-	ULARGE_INTEGER stFree;
-	if( GetDiskFreeSpaceEx(GetChkDrivePath(folderPath).c_str(), &stFree, NULL, NULL) ){
-		return stFree.QuadPart;
-	}
-	return 0;
-}
-
 BOOL CWriteTSFile::EndSave(BOOL* subRecFlag_)
 {
 	if( this->outThread.joinable() ){
@@ -161,12 +152,13 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 		}else{
 			fs_path recFolder = sys->fileList[i]->recFolder;
 			//空き容量をあらかじめチェック
-			BOOL isMainFree = GetFreeSize(recFolder.native()) > sys->createSize + FREE_FOLDER_MIN_BYTES;
-			if( isMainFree == FALSE ){
+			__int64 freeBytes = UtilGetStorageFreeBytes(recFolder);
+			bool isMainUnknownOrFree = (freeBytes < 0 || freeBytes > (__int64)sys->createSize + FREE_FOLDER_MIN_BYTES);
+			if( isMainUnknownOrFree == false ){
 				//空きのあるサブフォルダを探してみる
 				vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
-					[&](const wstring& a) { return CompareNoCase(a, recFolder.native()) &&
-					                               GetFreeSize(a) > sys->createSize + FREE_FOLDER_MIN_BYTES; });
+					[&](const wstring& a) { return UtilComparePath(a.c_str(), recFolder.c_str()) &&
+					                               UtilGetStorageFreeBytes(a) > (__int64)sys->createSize + FREE_FOLDER_MIN_BYTES; });
 				if( itrFree != sys->saveFolderSub.end() ){
 					sys->subRecFlag = TRUE;
 					recFolder = *itrFree;
@@ -178,10 +170,10 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			if( startRes == FALSE ){
 				OutputDebugString(L"CWriteTSFile::StartSave Err 2\r\n");
 				//エラー時サブフォルダでリトライ
-				if( isMainFree ){
+				if( isMainUnknownOrFree ){
 					vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
-						[&](const wstring& a) { return CompareNoCase(a, recFolder.native()) &&
-						                               GetFreeSize(a) > sys->createSize + FREE_FOLDER_MIN_BYTES; });
+						[&](const wstring& a) { return UtilComparePath(a.c_str(), recFolder.c_str()) &&
+						                               UtilGetStorageFreeBytes(a) > (__int64)sys->createSize + FREE_FOLDER_MIN_BYTES; });
 					if( itrFree != sys->saveFolderSub.end() ){
 						sys->subRecFlag = TRUE;
 						startRes = sys->fileList[i]->writeUtil.Start(fs_path(*itrFree).append(sys->fileList[i]->recFileName).c_str(),
@@ -250,7 +242,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 							if( sys->fileList[i]->freeChk == TRUE ){
 								//次の空きを探す
 								vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
-									[](const wstring& a) { return GetFreeSize(a) > FREE_FOLDER_MIN_BYTES; });
+									[](const wstring& a) { return UtilGetStorageFreeBytes(a) > FREE_FOLDER_MIN_BYTES; });
 								if( itrFree != sys->saveFolderSub.end() ){
 									//開始
 									if( sys->fileList[i]->writeUtil.Start(fs_path(*itrFree).append(sys->fileList[i]->recFileName).c_str(),

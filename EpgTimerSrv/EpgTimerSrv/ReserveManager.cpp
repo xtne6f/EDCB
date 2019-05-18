@@ -30,7 +30,9 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 	DWORD shiftID = GetPrivateProfileInt(L"SET", L"RecInfoShiftID", 100000, iniPath.c_str());
 	if( shiftID != 0 ){
 		this->recInfoText.SetNextID(shiftID + 1);
-		TouchFileAsUnicode(iniPath.c_str());
+#ifdef _WIN32
+		TouchFileAsUnicode(iniPath);
+#endif
 		WritePrivateProfileInt(L"SET", L"RecInfoShiftID", shiftID % 900000 + 100000, iniPath.c_str());
 	}
 	this->recInfoText.ParseText(fs_path(settingPath).append(REC_INFO_TEXT_NAME).c_str());
@@ -1095,19 +1097,21 @@ void CReserveManager::CheckAutoDel() const
 		return;
 	}
 
-	//ファイル削除可能なフォルダをドライブごとに仕分け
-	vector<pair<wstring, size_t>> mountList;
+	//ファイル削除可能なフォルダのドライブを調べる
+	vector<wstring> mountList;
 	for( size_t i = 0; i < this->setting.delChkList.size(); i++ ){
-		wstring mountPath = GetChkDrivePath(this->setting.delChkList[i]);
-		mountList.insert(std::find_if(mountList.begin(), mountList.end(),
-			[&](const pair<wstring, size_t>& a) { return CompareNoCase(a.first, mountPath) > 0; }), std::make_pair(mountPath, i));
+		mountList.push_back(UtilGetStorageID(this->setting.delChkList[i]));
 	}
 
 	//ドライブレベルでのチェック
 	__int64 now = GetNowI64Time();
-	for( auto itr = mountList.cbegin(); itr != mountList.end(); ){
+	for( size_t checkIndex = 0; checkIndex < mountList.size(); checkIndex++ ){
+		if( mountList[checkIndex].empty() ){
+			//チェック済み
+			continue;
+		}
 		//直近で必要になりそうな空き領域を概算する
-		ULONGLONG needSize = 0;
+		__int64 needSize = 0;
 		for( auto jtr = this->reserveText.GetMap().cbegin(); jtr != this->reserveText.GetMap().end(); jtr++ ){
 			__int64 startTime, endTime;
 			CalcEntireReserveTime(&startTime, &endTime, jtr->second);
@@ -1120,11 +1124,11 @@ void CReserveManager::CheckAutoDel() const
 					wstring mountPath;
 					if( recFolderList.empty() || CompareNoCase(recFolderList[i].recFolder, L"!Default") == 0 ){
 						//デフォルト(注意: !Defaultの置換は原作にはない)
-						mountPath = GetChkDrivePath(GetRecFolderPath().native());
+						mountPath = UtilGetStorageID(GetRecFolderPath());
 					}else{
-						mountPath = GetChkDrivePath(recFolderList[i].recFolder);
+						mountPath = UtilGetStorageID(recFolderList[i].recFolder);
 					}
-					if( CompareNoCase(mountPath, itr->first) == 0 ){
+					if( CompareNoCase(mountPath, mountList[checkIndex]) == 0 ){
 						if( needSize == 0 ){
 							//延長や外部要因による空き領域減少に対処するため最低限の余裕をとる
 							needSize = 512 * 1024 * 1024;
@@ -1133,43 +1137,43 @@ void CReserveManager::CheckAutoDel() const
 						//(厳密にやるのは簡単ではないので、従来通りゆるい実装にしておく)
 						if( now < startTime ){
 							DWORD bitrate = GetBitrateFromIni(jtr->second.originalNetworkID, jtr->second.transportStreamID, jtr->second.serviceID);
-							needSize += (ULONGLONG)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
+							needSize += (__int64)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
 						}
 					}
 				}
 			}
 		}
 
-		auto itrEnd = std::find_if(itr + 1, mountList.cend(),
-		                           [=](const pair<wstring, size_t>& a) { return CompareNoCase(a.first, itr->first) != 0; });
-		ULARGE_INTEGER freeBytes;
-		if( needSize > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) && freeBytes.QuadPart < needSize ){
+		__int64 freeBytes = UtilGetStorageFreeBytes(this->setting.delChkList[checkIndex]);
+		if( freeBytes >= 0 && freeBytes < needSize ){
 			//ドライブにある古いTS順に必要なだけ消す
-			__int64 needFreeSize = needSize - freeBytes.QuadPart;
-			vector<pair<WIN32_FIND_DATA, size_t>> findList;
-			for( auto itrSame = itr; itrSame != itrEnd; itrSame++ ){
-				EnumFindFile(fs_path(this->setting.delChkList[itrSame->second]).append(L'*' + this->setting.tsExt).c_str(),
-				             [&](WIN32_FIND_DATA& findData) -> bool {
-					if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, this->setting.tsExt.c_str()) ){
-						findList.push_back(std::make_pair(findData, itrSame->second));
-					}
-					return true;
-				});
+			__int64 needFreeSize = needSize - freeBytes;
+			vector<pair<UTIL_FIND_DATA, size_t>> findList;
+			for( size_t i = checkIndex; i < mountList.size(); i++ ){
+				if( CompareNoCase(mountList[i], mountList[checkIndex]) == 0 ){
+					EnumFindFile(fs_path(this->setting.delChkList[i]).append(L'*' + this->setting.tsExt),
+					             [&](UTIL_FIND_DATA& findData) -> bool {
+						if( findData.isDir == false && UtilPathEndsWith(findData.fileName.c_str(), this->setting.tsExt.c_str()) ){
+							findList.push_back(std::make_pair(std::move(findData), i));
+						}
+						return true;
+					});
+				}
 			}
 			while( needFreeSize > 0 && findList.empty() == false ){
 				//更新日時が古いもの
 				auto jtr = std::min_element(findList.begin(), findList.end(),
-					[](const pair<WIN32_FIND_DATA, size_t>& a, const pair<WIN32_FIND_DATA, size_t>& b) {
-						return ((__int64)a.first.ftLastWriteTime.dwHighDateTime << 32 | a.first.ftLastWriteTime.dwLowDateTime) <
-						       ((__int64)b.first.ftLastWriteTime.dwHighDateTime << 32 | b.first.ftLastWriteTime.dwLowDateTime); });
-				wstring delPath = fs_path(this->setting.delChkList[jtr->second]).append(jtr->first.cFileName).native();
+					[](const pair<UTIL_FIND_DATA, size_t>& a, const pair<UTIL_FIND_DATA, size_t>& b) {
+						return a.first.lastWriteTime < b.first.lastWriteTime; });
+				fs_path delPath = fs_path(this->setting.delChkList[jtr->second]).append(jtr->first.fileName);
 				if( this->recInfoText.GetMap().end() != std::find_if(this->recInfoText.GetMap().begin(), this->recInfoText.GetMap().end(),
-				        [&](const pair<DWORD, REC_FILE_INFO>& a) { return a.second.protectFlag && CompareNoCase(a.second.recFilePath, delPath) == 0; }) ){
+				        [&](const pair<DWORD, REC_FILE_INFO>& a) {
+				            return a.second.protectFlag && UtilComparePath(a.second.recFilePath.c_str(), delPath.c_str()) == 0; }) ){
 					//プロテクトされた録画済みファイルは消さない
 					_OutputDebugString(L"★No Delete(Protected) : %ls\r\n", delPath.c_str());
 				}else{
 					DeleteFile(delPath.c_str());
-					needFreeSize -= (__int64)jtr->first.nFileSizeHigh << 32 | jtr->first.nFileSizeLow;
+					needFreeSize -= jtr->first.fileSize;
 					_OutputDebugString(L"★Auto Delete2 : %ls\r\n", delPath.c_str());
 					for( size_t i = 0 ; i < this->setting.delExtList.size(); i++ ){
 						DeleteFile(fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
@@ -1179,7 +1183,12 @@ void CReserveManager::CheckAutoDel() const
 				findList.erase(jtr);
 			}
 		}
-		itr = itrEnd;
+		//チェック済みにする
+		for( size_t i = checkIndex + 1; i < mountList.size(); i++ ){
+			if( CompareNoCase(mountList[i], mountList[checkIndex]) == 0 ){
+				mountList[i].clear();
+			}
+		}
 	}
 }
 
@@ -1917,9 +1926,9 @@ void CReserveManager::AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workLis
 	if( workList.empty() == false ){
 		fs_path batFilePath = GetCommonIniPath().replace_filename(fileName);
 		//同名のPowerShellやLuaスクリプトでもよい
-		if( GetFileAttributes(batFilePath.c_str()) != INVALID_FILE_ATTRIBUTES ||
-		    GetFileAttributes(batFilePath.replace_extension(L".ps1").c_str()) != INVALID_FILE_ATTRIBUTES ||
-		    GetFileAttributes(batFilePath.replace_extension(L".lua").c_str()) != INVALID_FILE_ATTRIBUTES ){
+		if( UtilFileExists(batFilePath).first ||
+		    UtilFileExists(batFilePath.replace_extension(L".ps1")).first ||
+		    UtilFileExists(batFilePath.replace_extension(L".lua")).first ){
 			for( size_t i = 0; i < workList.size(); i++ ){
 				workList[i].batFilePath = batFilePath.native();
 				this->batPostManager.AddBatWork(workList[i]);

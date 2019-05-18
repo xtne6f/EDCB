@@ -3,6 +3,10 @@
 #include "StringUtil.h"
 #include <stdexcept>
 #ifndef _WIN32
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <unistd.h>
 #endif
 
@@ -35,8 +39,12 @@ path& path::append(const wstring& source)
 // Note: An append is never performed if size()==0, so a returned 0 is unambiguous.
 size_t path::m_append_separator_if_needed()
 {
-	if (!m_pathname.empty() && m_pathname.back() != L':' && !is_dir_sep(m_pathname.back())) {
-		m_pathname += L'\\';
+	if (!m_pathname.empty() &&
+#ifdef _WIN32
+	    m_pathname.back() != L':' &&
+#endif
+	    !is_dir_sep(m_pathname.back())) {
+		m_pathname += preferred_separator;
 		return m_pathname.size() - 1;
 	}
 	return 0;
@@ -79,7 +87,9 @@ path path::root_name() const
 	first_element(m_pathname, itr_pos, itr_element_size);
 	return (itr_pos != m_pathname.size()
 		&& ((itr_element_size > 1 && is_dir_sep(m_pathname[itr_pos]) && is_dir_sep(m_pathname[itr_pos + 1]))
+#ifdef _WIN32
 			|| m_pathname[itr_pos + itr_element_size - 1] == L':'
+#endif
 		)) ? path(m_pathname.substr(itr_pos, itr_element_size)) : path();
 }
 
@@ -135,15 +145,17 @@ bool path::is_root_separator(const wstring& str, size_t pos)
 	if (pos == 0) {
 		return true;
 	}
+#ifdef _WIN32
 	//  "c:/" [...]
 	if (pos == 2 && is_letter(str[0]) && str[1] == L':') {
 		return true;
 	}
+#endif
 	//  "//" name "/"
 	if (pos < 3 || !is_dir_sep(str[0]) || !is_dir_sep(str[1])) {
 		return false;
 	}
-	return str.find_first_of(L"/\\", 2) == pos;
+	return str.find_first_of(separators(), 2) == pos;
 }
 
 // return 0 if str itself is filename (or empty)
@@ -158,10 +170,12 @@ size_t path::filename_pos(const wstring& str)
 		return str.size() - 1;
 	}
 	// set pos to start of last element
-	size_t pos(str.find_last_of(L"/\\", str.size() - 1));
+	size_t pos(str.find_last_of(separators(), str.size() - 1));
+#ifdef _WIN32
 	if (pos == wstring::npos && str.size() > 1) {
 		pos = str.find_last_of(L':', str.size() - 2);
 	}
+#endif
 	return (pos == wstring::npos // path itself must be a filename (or empty)
 		|| (pos == 1 && is_dir_sep(str[0]))) // or net
 			? 0 // so filename is entire string
@@ -171,22 +185,26 @@ size_t path::filename_pos(const wstring& str)
 // return npos if no root_directory found
 size_t path::root_directory_start(const wstring& str, size_t size)
 {
+#ifdef _WIN32
 	// case "c:/"
 	if (size > 2 && str[1] == L':' && is_dir_sep(str[2])) {
 		return 2;
 	}
+#endif
 	// case "//"
 	if (size == 2 && is_dir_sep(str[0]) && is_dir_sep(str[1])) {
 		return wstring::npos;
 	}
+#ifdef _WIN32
 	// case "\\?\"
 	if (size > 4 && is_dir_sep(str[0]) && is_dir_sep(str[1]) && str[2] == L'?' && is_dir_sep(str[3])) {
-		size_t pos(str.find_first_of(L"/\\", 4));
+		size_t pos(str.find_first_of(separators(), 4));
 		return pos < size ? pos : wstring::npos;
 	}
+#endif
 	// case "//net {/}"
 	if (size > 3 && is_dir_sep(str[0]) && is_dir_sep(str[1]) && !is_dir_sep(str[2])) {
-		size_t pos(str.find_first_of(L"/\\", 2));
+		size_t pos(str.find_first_of(separators(), 2));
 		return pos < size ? pos : wstring::npos;
 	}
 	// case "/"
@@ -221,11 +239,17 @@ void path::first_element(const wstring& src, size_t& element_pos, size_t& elemen
 	// at this point, we have either a plain name, a network name,
 	// or (on Windows only) a device name
 	// find the end
-	for (; cur < src.size() && src[cur] != L':' && !is_dir_sep(src[cur]); ++cur, ++element_size);
+	for (; cur < src.size()
+#ifdef _WIN32
+		&& src[cur] != L':'
+#endif
+		&& !is_dir_sep(src[cur]); ++cur, ++element_size);
+#ifdef _WIN32
 	// include device delimiter
 	if (cur < src.size() && src[cur] == L':') {
 		++element_size;
 	}
+#endif
 }
 
 } // namespace filesystem_
@@ -324,12 +348,23 @@ fs_path GetRecFolderPath(int index)
 	return fs_path();
 }
 
-BOOL IsExt(const fs_path& filePath, const WCHAR* ext)
+int UtilComparePath(LPCWSTR path1, LPCWSTR path2)
 {
-	return CompareNoCase(filePath.extension().c_str(), ext) == 0;
+#ifdef _WIN32
+	return CompareNoCase(path1, path2);
+#else
+	return wcscmp(path1, path2);
+#endif
 }
 
-void CheckFileName(wstring& fileName, BOOL noChkYen)
+bool UtilPathEndsWith(LPCWSTR path, LPCWSTR suffix)
+{
+	size_t n = wcslen(path);
+	size_t m = wcslen(suffix);
+	return n >= m && UtilComparePath(path + n - m, suffix) == 0;
+}
+
+void CheckFileName(wstring& fileName, bool noChkYen)
 {
 	static const WCHAR s[10] = L"\\/:*?\"<>|";
 	static const WCHAR r[10] = L"￥／：＊？”＜＞｜";
@@ -344,23 +379,24 @@ void CheckFileName(wstring& fileName, BOOL noChkYen)
 		}
 		// ".\"となるときはnoChkYenでも全角に
 		const WCHAR* p = wcschr(s, fileName[i]);
-		if( p && (noChkYen == FALSE || *p != L'\\' || (i > 0 && fileName[i - 1] == L'.')) ){
+		if( p && (noChkYen == false || *p != fs_path::preferred_separator || (i > 0 && fileName[i - 1] == L'.')) ){
 			fileName[i] = r[p - s];
 		}
 	}
 	// 冒頭'\'はトリム
-	fileName.erase(0, fileName.find_first_not_of(L'\\'));
+	fileName.erase(0, fileName.find_first_not_of(fs_path::preferred_separator));
 	// すべて'.'のときは全角に
 	if( fileName.find_first_not_of(L'.') == wstring::npos ){
 		for( size_t i = 0; i < fileName.size(); fileName[i++] = L'．' );
 	}
 }
 
-void TouchFileAsUnicode(LPCWSTR path)
+#ifdef _WIN32
+void TouchFileAsUnicode(const fs_path& path)
 {
-	if( GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES ){
+	if( UtilFileExists(path).first == false ){
 		FILE* fp;
-		if( _wfopen_s(&fp, path, L"abN") == 0 && fp ){
+		if( _wfopen_s(&fp, path.c_str(), L"abN") == 0 && fp ){
 			_fseeki64(fp, 0, SEEK_END);
 			if( _ftelli64(fp) == 0 ){
 				fputwc(L'\xFEFF', fp);
@@ -369,38 +405,125 @@ void TouchFileAsUnicode(LPCWSTR path)
 		}
 	}
 }
+#endif
 
-BOOL UtilCreateDirectories(const fs_path& path)
+pair<bool, bool> UtilFileExists(const fs_path& path, bool* mightExist)
+{
+#ifdef _WIN32
+	DWORD attr = GetFileAttributes(path.c_str());
+	if( attr != INVALID_FILE_ATTRIBUTES ){
+		return std::make_pair(true, (attr & FILE_ATTRIBUTE_DIRECTORY) == 0);
+	}
+	if( mightExist ){
+		DWORD err = GetLastError();
+		*mightExist = (err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND);
+	}
+#else
+	string strPath;
+	WtoUTF8(path.native(), strPath);
+	struct stat st;
+	if( stat(strPath.c_str(), &st) == 0 ){
+		return std::make_pair(true, S_ISDIR(st.st_mode) == 0);
+	}
+	if( mightExist ){
+		*mightExist = errno != ENOENT;
+	}
+#endif
+	return std::make_pair(false, false);
+}
+
+bool UtilCreateDirectory(const fs_path& path)
+{
+#ifdef _WIN32
+	return CreateDirectory(path.c_str(), NULL) != FALSE;
+#else
+	string strPath;
+	WtoUTF8(path.native(), strPath);
+	return mkdir(strPath.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0;
+#endif
+}
+
+bool UtilCreateDirectories(const fs_path& path)
 {
 	if( path.empty() || path.is_relative() && path.has_root_path() ){
 		// パスが不完全
-		return FALSE;
+		return false;
 	}
-	if( GetFileAttributes(path.c_str()) != INVALID_FILE_ATTRIBUTES ){
+	bool mightExist = false;
+	if( UtilFileExists(path, &mightExist).first ){
 		// 既存
-		return FALSE;
+		return false;
 	}
-	DWORD err = GetLastError();
-	if( err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND ){
+	if( mightExist ){
 		// 特殊な理由
-		_OutputDebugString(L"UtilCreateDirectories(): Error=%08x\r\n", err);
-		return FALSE;
+		OutputDebugString(L"UtilCreateDirectories(): Error\r\n");
+		return false;
 	}
 	UtilCreateDirectories(path.parent_path());
-	return CreateDirectory(path.c_str(), NULL);
+	return UtilCreateDirectory(path);
 }
 
-wstring GetChkDrivePath(const wstring& directoryPath)
+__int64 UtilGetStorageFreeBytes(const fs_path& directoryPath)
 {
+#ifdef _WIN32
+	ULARGE_INTEGER li;
+	return GetDiskFreeSpaceEx(UtilGetStorageID(directoryPath).c_str(), &li, NULL, NULL) ? (__int64)li.QuadPart : -1;
+#else
+	if( directoryPath.empty() || (directoryPath.is_relative() && directoryPath.has_root_path()) ){
+		// パスが不完全
+		return -1;
+	}
+	bool mightExist = false;
+	if( UtilFileExists(directoryPath, &mightExist).first ){
+		string strPath;
+		WtoUTF8(directoryPath.native(), strPath);
+		struct statvfs st;
+		return statvfs(strPath.c_str(), &st) == 0 ? (__int64)st.f_frsize * (__int64)st.f_bavail : -1;
+	}
+	if( mightExist ){
+		// 特殊な理由
+		OutputDebugString(L"UtilGetStorageFreeBytes(): Error\r\n");
+		return -1;
+	}
+	return UtilGetStorageFreeBytes(directoryPath.parent_path());
+#endif
+}
+
+wstring UtilGetStorageID(const fs_path& directoryPath)
+{
+#ifdef _WIN32
 	WCHAR szVolumePathName[MAX_PATH];
 	if( GetVolumePathName(directoryPath.c_str(), szVolumePathName, MAX_PATH) == FALSE ){
-		return directoryPath;
+		return directoryPath.native();
 	}
 	WCHAR szMount[MAX_PATH];
 	if( GetVolumeNameForVolumeMountPoint(szVolumePathName, szMount, MAX_PATH) == FALSE ){
 		return szVolumePathName;
 	}
 	return szMount;
+#else
+	wstring ret;
+	if( directoryPath.empty() || (directoryPath.is_relative() && directoryPath.has_root_path()) ){
+		// パスが不完全
+		return ret;
+	}
+	bool mightExist = false;
+	if( UtilFileExists(directoryPath, &mightExist).first ){
+		string strPath;
+		WtoUTF8(directoryPath.native(), strPath);
+		struct stat st;
+		if( stat(strPath.c_str(), &st) == 0 ){
+			Format(ret, L"%08X", (DWORD)st.st_dev);
+		}
+		return ret;
+	}
+	if( mightExist ){
+		// 特殊な理由
+		OutputDebugString(L"UtilGetStorageID(): Error\r\n");
+		return ret;
+	}
+	return UtilGetStorageID(directoryPath.parent_path());
+#endif
 }
 
 vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName)
@@ -441,4 +564,94 @@ BOOL WritePrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int value, LPCWSTR
 	WCHAR sz[32];
 	swprintf_s(sz, L"%d", value);
 	return WritePrivateProfileString(appName, keyName, sz, fileName);
+}
+
+void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DATA&)>& enumProc)
+{
+#ifdef _WIN32
+	WIN32_FIND_DATA findData;
+	HANDLE hFind = FindFirstFile(pattern.c_str(), &findData);
+	if( hFind != INVALID_HANDLE_VALUE ){
+		try{
+			UTIL_FIND_DATA ufd;
+			do{
+				ufd.isDir = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+				ufd.lastWriteTime = (__int64)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
+				ufd.fileSize = (__int64)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
+				ufd.fileName = findData.cFileName;
+			}while( enumProc(ufd) && FindNextFile(hFind, &findData) );
+		}catch(...){
+			FindClose(hFind);
+			throw;
+		}
+		FindClose(hFind);
+	}
+#else
+	string strPath;
+	fs_path pat = pattern.filename();
+	if( pat.native().find_first_of(L"*?") == wstring::npos ){
+		// 完全一致
+		WtoUTF8(pattern.native(), strPath);
+		struct stat st;
+		if( stat(strPath.c_str(), &st) == 0 ){
+			UTIL_FIND_DATA ufd;
+			ufd.isDir = S_ISDIR(st.st_mode) != 0;
+			ufd.lastWriteTime = (__int64)st.st_mtime * 10000000 + 116444736000000000;
+			ufd.fileSize = (__int64)st.st_size;
+			ufd.fileName = pat.native();
+			enumProc(ufd);
+		}
+	}else{
+		// ワイルドカード('*'3個まで)
+		fs_path parent = pattern.parent_path();
+		WtoUTF8(parent.native(), strPath);
+		DIR* dir = opendir(strPath.c_str());
+		if( dir ){
+			try{
+				UTIL_FIND_DATA ufd;
+				dirent* ent;
+				while( (ent = readdir(dir)) != NULL ){
+					UTF8toW(ent->d_name, ufd.fileName);
+					LPCWSTR p[4] = {pat.c_str(), NULL, NULL};
+					LPCWSTR t[4] = {ufd.fileName.c_str(), NULL, NULL};
+					size_t i = 0;
+					while( *p[i] || *t[i] ){
+						if( *p[i] == L'*' && (!p[i][1] || p[i][1] == L'*' || *t[i]) ){
+							if( i == 3 ){
+								break;
+							}
+							p[i + 1] = p[i] + 1;
+							t[i + 1] = t[i];
+							i++;
+						}else if( *p[i] != L'*' && *t[i] && (*p[i] == L'?' || *p[i] == *t[i]) ){
+							p[i]++;
+							t[i]++;
+						}else{
+							if( i == 0 ){
+								break;
+							}
+							t[--i]++;
+						}
+					}
+					if( !*p[i] && !*t[i] ){
+						WtoUTF8(fs_path(parent).append(ufd.fileName).native(), strPath);
+						struct stat st;
+						if( stat(strPath.c_str(), &st) == 0 ){
+							ufd.isDir = S_ISDIR(st.st_mode) != 0;
+							ufd.lastWriteTime = (__int64)st.st_mtime * 10000000 + 116444736000000000;
+							ufd.fileSize = (__int64)st.st_size;
+							if( enumProc(ufd) == false ){
+								break;
+							}
+						}
+					}
+				}
+			}catch(...){
+				closedir(dir);
+				throw;
+			}
+			closedir(dir);
+		}
+	}
+#endif
 }

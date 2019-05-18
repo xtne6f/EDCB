@@ -59,7 +59,9 @@ void WINAPI Setting(
 		wstring macro = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", iniPath.c_str());
 		CSettingDlg dlg;
 		if( dlg.CreateSettingDialog(g_instance, parentWnd, macro) == IDOK ){
-			TouchFileAsUnicode(iniPath.c_str());
+#ifdef _WIN32
+			TouchFileAsUnicode(iniPath);
+#endif
 			WritePrivateProfileString(L"SET", L"Macro", macro.c_str(), iniPath.c_str());
 		}
 	}

@@ -105,10 +105,10 @@ vector<wstring> CBonDriverUtil::EnumBonDriver()
 	vector<wstring> list;
 	if( this->loadDllFolder.empty() == false ){
 		//指定フォルダのファイル一覧取得
-		EnumFindFile(fs_path(this->loadDllFolder).append(L"BonDriver*.dll").c_str(), [&](WIN32_FIND_DATA& findData) -> bool {
-			if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+		EnumFindFile(fs_path(this->loadDllFolder).append(L"BonDriver*.dll"), [&](UTIL_FIND_DATA& findData) -> bool {
+			if( findData.isDir == false ){
 				//見つかったDLLを一覧に追加
-				list.push_back(findData.cFileName);
+				list.push_back(std::move(findData.fileName));
 			}
 			return true;
 		});

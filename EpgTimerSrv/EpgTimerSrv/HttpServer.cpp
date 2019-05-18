@@ -126,12 +126,13 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		options[opCount++] = "ssl_certificate";
 		options[opCount++] = sslCertPath.c_str();
 	}
-	if( GetFileAttributes(sslPeerFsPath.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
+	bool mightExist = false;
+	if( UtilFileExists(sslPeerFsPath, &mightExist).first || mightExist ){
 		//信頼済み証明書ファイルが「存在しないことを確信」できなければ有効にする
 		options[opCount++] = "ssl_verify_peer";
 		options[opCount++] = "yes";
 	}
-	if( GetFileAttributes(globalAuthFsPath.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
+	if( UtilFileExists(globalAuthFsPath, &mightExist).first || mightExist ){
 		//グローバルパスワードは「存在しないことを確信」できなければ指定しておく
 		options[opCount++] = "global_auth_file";
 		options[opCount++] = globalAuthPath.c_str();
@@ -166,7 +167,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	if( op.enableSsdpServer ){
 		//"<UDN>uuid:{UUID}</UDN>"が必要
 		string notifyUuid;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(fs_path(op.rootPath).append(L"dlna\\dms\\ddd.xml").c_str(), L"rbN"), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(fs_path(op.rootPath).append(L"dlna").append(L"dms").append(L"ddd.xml").c_str(), L"rbN"), fclose);
 		if( fp ){
 			char olbuff[257];
 			for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){

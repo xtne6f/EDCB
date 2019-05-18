@@ -199,7 +199,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 								if( exeCmd.size() > i + 2 ){
 									sei.lpParameters = exeCmd.erase(0, i + 2).c_str();
 								}
-								sei.nShow = file.size() < 4 || CompareNoCase(file.c_str() + file.size() - 4, L".bat") ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
+								sei.nShow = UtilPathEndsWith(file.c_str(), L".bat") ? SW_SHOWMINNOACTIVE : SW_SHOWNORMAL;
 								if( ShellExecuteEx(&sei) && sei.hProcess ){
 									CPipeServer::GrantServerAccessToKernelObject(sei.hProcess, SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION);
 									resParam->data = NewWriteVALUE(GetProcessId(sei.hProcess), resParam->dataSize);
@@ -1055,7 +1055,7 @@ HICON CEpgTimerSrvMain::LoadSmallIcon(int iconID)
 
 void CEpgTimerSrvMain::OpenGUI()
 {
-	if( GetFileAttributes(GetModulePath().replace_filename(L"EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
+	if( UtilFileExists(GetModulePath().replace_filename(L"EpgTimer.lnk")).first ){
 		//EpgTimer.lnk(ショートカット)を優先的に開く
 		ShellExecute(NULL, NULL, GetModulePath().replace_filename(L"EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
 	}else{
@@ -1326,7 +1326,7 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 		DWORD totalentries;
 		if( NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&info, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
 			for( DWORD i = 0; i < entriesread; i++ ){
-				if( IsExt(info[i].fi3_pathname, ext) ){
+				if( UtilPathEndsWith(info[i].fi3_pathname, ext) ){
 					found = true;
 					break;
 				}
@@ -1977,7 +1977,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 	case CMD2_EPG_SRV_FILE_COPY:
 		{
 			wstring val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && CompareNoCase(val, L"ChSet5.txt") == 0 ){
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && UtilComparePath(val.c_str(), L"ChSet5.txt") == 0 ){
 				fs_path path = GetSettingPath().append(L"ChSet5.txt");
 				std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(path.c_str(), L"rbN"), fclose);
 				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
@@ -2060,10 +2060,10 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			WORD mode;
 			if( ReadVALUE(&mode, cmdParam->data, cmdParam->dataSize, NULL) && (mode == 1 || mode == 2) ){
 				vector<wstring> fileList;
-				EnumFindFile(GetModulePath().replace_filename(mode == 1 ? L"RecName\\RecName*.dll" : L"Write\\Write*.dll").c_str(),
-				             [&](WIN32_FIND_DATA& findData) -> bool {
-					if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".dll") ){
-						fileList.push_back(findData.cFileName);
+				EnumFindFile(GetModulePath().replace_filename(mode == 1 ? fs_path(L"RecName").append(L"RecName*.dll") : fs_path(L"Write").append(L"Write*.dll")),
+				             [&](UTIL_FIND_DATA& findData) -> bool {
+					if( findData.isDir == false && UtilPathEndsWith(findData.fileName.c_str(), L".dll") ){
+						fileList.push_back(std::move(findData.fileName));
 					}
 					return true;
 				});
@@ -2091,7 +2091,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 						CBlockLock lock(&sys->settingLock);
 						info.chInfo.useBonCh =
 							std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
-							             [&](const wstring& a) { return CompareNoCase(a, info.bonDriver) == 0; }) != sys->setting.viewBonList.end();
+							             [&](const wstring& a) { return UtilComparePath(a.c_str(), info.bonDriver.c_str()) == 0; }) != sys->setting.viewBonList.end();
 					}
 					if( info.chInfo.useBonCh && sys->reserveManager.IsOpenTuner(idList[i]) == false ){
 						sys->reserveManager.GetTunerCh(idList[i], info.chInfo.ONID, info.chInfo.TSID, info.chInfo.SID, &info.chInfo.space, &info.chInfo.ch);
@@ -2171,7 +2171,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					for( size_t i = 0; i < idUseList.size(); ){
 						wstring bonDriver = sys->reserveManager.GetTunerBonFileName(idUseList[i]);
 						if( std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
-						                 [&](const wstring& a) { return CompareNoCase(a, bonDriver) == 0; }) == sys->setting.viewBonList.end() ){
+						                 [&](const wstring& a) { return UtilComparePath(a.c_str(), bonDriver.c_str()) == 0; }) == sys->setting.viewBonList.end() ){
 							idUseList.erase(idUseList.begin() + i);
 						}else{
 							i++;
@@ -2895,21 +2895,21 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 					for( size_t i = 0; i < list.size(); i++ ){
 						result[i].Name = list[i];
 						fs_path path;
-						if( CompareNoCase(list[i], L"ChSet5.txt") == 0 ){
+						if( UtilComparePath(list[i].c_str(), L"ChSet5.txt") == 0 ){
 							path = GetSettingPath().append(list[i]);
-						}else if( CompareNoCase(list[i], L"EpgTimerSrv.ini") == 0 ||
-						          CompareNoCase(list[i], L"Common.ini") == 0 ||
-						          CompareNoCase(list[i], L"EpgDataCap_Bon.ini") == 0 ||
-						          CompareNoCase(list[i], L"BonCtrl.ini") == 0 ||
-						          CompareNoCase(list[i], L"ViewApp.ini") == 0 ||
-						          CompareNoCase(list[i], L"Bitrate.ini") == 0 ){
+						}else if( UtilComparePath(list[i].c_str(), L"EpgTimerSrv.ini") == 0 ||
+						          UtilComparePath(list[i].c_str(), L"Common.ini") == 0 ||
+						          UtilComparePath(list[i].c_str(), L"EpgDataCap_Bon.ini") == 0 ||
+						          UtilComparePath(list[i].c_str(), L"BonCtrl.ini") == 0 ||
+						          UtilComparePath(list[i].c_str(), L"ViewApp.ini") == 0 ||
+						          UtilComparePath(list[i].c_str(), L"Bitrate.ini") == 0 ){
 							path = GetCommonIniPath().replace_filename(list[i]);
 						}
 						if( path.empty() == false ){
-							if( IsExt(path, L".ini") ){
+							if( UtilPathEndsWith(path.c_str(), L".ini") ){
 								//ファイルロックを邪魔しないようAPI経由で読む
 								wstring strData = L"\xFEFF";
-								int appendModulePathState = CompareNoCase(path.filename().c_str(), L"Common.ini") == 0;
+								int appendModulePathState = UtilComparePath(path.filename().c_str(), L"Common.ini") == 0;
 								wstring sectionNames = GetPrivateProfileToString(NULL, NULL, NULL, path.c_str());
 								for( size_t j = 0; j < sectionNames.size() && sectionNames[j]; j += wcslen(sectionNames.c_str() + j) + 1 ){
 									LPCWSTR section = sectionNames.c_str() + j;
@@ -3949,16 +3949,16 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 			wstring strPattern;
 			UTF8toW(pattern, strPattern);
 			int i = 0;
-			EnumFindFile(strPattern.c_str(), [&ws, &n, &i](WIN32_FIND_DATA& findData) -> bool {
+			EnumFindFile(strPattern, [&ws, &n, &i](UTIL_FIND_DATA& findData) -> bool {
 				if( i == 0 ){
 					lua_newtable(ws.L);
 				}
 				lua_createtable(ws.L, 0, 4);
-				LuaHelp::reg_string(ws.L, "name", ws.WtoUTF8(findData.cFileName));
-				LuaHelp::reg_int64(ws.L, "size", (__int64)findData.nFileSizeHigh << 32 | findData.nFileSizeLow);
-				LuaHelp::reg_boolean(ws.L, "isdir", (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+				LuaHelp::reg_string(ws.L, "name", ws.WtoUTF8(findData.fileName));
+				LuaHelp::reg_int64(ws.L, "size", findData.fileSize);
+				LuaHelp::reg_boolean(ws.L, "isdir", findData.isDir);
 				SYSTEMTIME st;
-				ConvertSystemTime(((__int64)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime) + I64_UTIL_TIMEZONE, &st);
+				ConvertSystemTime(findData.lastWriteTime + I64_UTIL_TIMEZONE, &st);
 				LuaHelp::reg_time(ws.L, "mtime", st);
 				lua_rawseti(ws.L, -2, ++i);
 				return n <= 0 || --n > 0;
@@ -3990,7 +3990,7 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 			for( size_t i = 0; i < idUseList.size(); ){
 				wstring bonDriver = ws.sys->reserveManager.GetTunerBonFileName(idUseList[i]);
 				if( std::find_if(ws.sys->setting.viewBonList.begin(), ws.sys->setting.viewBonList.end(),
-				                 [&](const wstring& a) { return CompareNoCase(a, bonDriver) == 0; }) == ws.sys->setting.viewBonList.end() ){
+				                 [&](const wstring& a) { return UtilComparePath(a.c_str(), bonDriver.c_str()) == 0; }) == ws.sys->setting.viewBonList.end() ){
 					idUseList.erase(idUseList.begin() + i);
 				}else{
 					i++;

@@ -51,7 +51,7 @@ FILE* OpenOldArchive(LPCWSTR dir, __int64 t, LPCWSTR mode, bool createNew = fals
 	ConvertSystemTime(t, &st);
 	WCHAR name[32];
 	swprintf_s(name, L"%04d%02d%02d.dat", st.wYear, st.wMonth, st.wDay);
-	if( createNew == false || GetFileAttributes(fs_path(dir).append(name).c_str()) == INVALID_FILE_ATTRIBUTES ){
+	if( createNew == false || UtilFileExists(fs_path(dir).append(name)).first == false ){
 		return secure_wfopen(fs_path(dir).append(name).c_str(), mode);
 	}
 	return NULL;
@@ -61,12 +61,12 @@ FILE* OpenOldArchive(LPCWSTR dir, __int64 t, LPCWSTR mode, bool createNew = fals
 vector<__int64> ListOldArchive(LPCWSTR dir)
 {
 	vector<__int64> timeList;
-	EnumFindFile(fs_path(dir).append(L"????????.dat").c_str(), [&](WIN32_FIND_DATA& findData) -> bool {
-		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && wcslen(findData.cFileName) == 12 ){
+	EnumFindFile(fs_path(dir).append(L"????????.dat"), [&](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.isDir == false && findData.fileName.size() == 12 ){
 			//日付(必ず日曜日)を解析
 			LPWSTR endp;
-			DWORD ymd = wcstoul(findData.cFileName, &endp, 10);
-			if( endp && endp - findData.cFileName == 8 && endp[0] == L'.' ){
+			DWORD ymd = wcstoul(findData.fileName.c_str(), &endp, 10);
+			if( endp && endp - findData.fileName.c_str() == 8 && endp[0] == L'.' ){
 				SYSTEMTIME st = {};
 				st.wYear = ymd / 10000 % 10000;
 				st.wMonth = ymd / 100 % 100;
@@ -151,14 +151,13 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	const fs_path epgDataPath = fs_path(settingPath).append(EPG_SAVE_FOLDER);
 
 	//指定フォルダのファイル一覧取得
-	EnumFindFile(fs_path(epgDataPath).append(L"*_epg.dat").c_str(), [&](WIN32_FIND_DATA& findData) -> bool {
-		__int64 fileTime = (__int64)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
-		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && fileTime != 0 ){
+	EnumFindFile(fs_path(epgDataPath).append(L"*_epg.dat"), [&](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.isDir == false && findData.lastWriteTime != 0 ){
 			//見つかったファイルを一覧に追加
 			//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
-			WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < utcNow ? L'0' :
-			               wcslen(findData.cFileName) < 12 || CompareNoCase(findData.cFileName + wcslen(findData.cFileName) - 12, L"ffff_epg.dat") ? L'1' : L'2';
-			wstring item = prefix + fs_path(epgDataPath).append(findData.cFileName).native();
+			WCHAR prefix = findData.lastWriteTime + 7 * 24 * 60 * 60 * I64_1SEC < utcNow ? L'0' :
+			               UtilPathEndsWith(findData.fileName.c_str(), L"ffff_epg.dat") ? L'2' :  L'1';
+			wstring item = prefix + fs_path(epgDataPath).append(findData.fileName).native();
 			epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
 		}
 		return true;
@@ -503,8 +502,8 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				//長期アーカイブ用ファイルに書き込む
 				if( epgOld.empty() == false ){
 					fs_path epgArcPath = fs_path(settingPath).append(EPG_ARCHIVE_FOLDER);
-					if( GetFileAttributes(epgArcPath.c_str()) == INVALID_FILE_ATTRIBUTES ){
-						CreateDirectory(epgArcPath.c_str(), NULL);
+					if( UtilFileExists(epgArcPath).first == false ){
+						UtilCreateDirectory(epgArcPath);
 					}
 					std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldMin, L"wbN", true), fclose);
 					if( fp ){

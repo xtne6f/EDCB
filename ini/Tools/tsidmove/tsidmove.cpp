@@ -33,9 +33,9 @@ int wmain(int argc, wchar_t **argv)
 
 	// このツールはEDCBフォルダかその直下のフォルダに置かれているはず
 	fs_path iniPath = GetCommonIniPath();
-	if (GetFileAttributes(iniPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
+	if (UtilFileExists(iniPath).first == false) {
 		iniPath = iniPath.parent_path().replace_filename(L"Common.ini");
-		if (GetFileAttributes(iniPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
+		if (UtilFileExists(iniPath).first == false) {
 			fputws(L"Error: Common.iniが見つかりません。\n", stdout);
 			return 1;
 		}
@@ -49,7 +49,7 @@ int wmain(int argc, wchar_t **argv)
 	wprintf_s(L"\"%ls\"フォルダをチェックしています...\n", settingPath.c_str());
 
 	fs_path chSet5Path = fs_path(settingPath).append(L"ChSet5.txt");
-	if (GetFileAttributes(chSet5Path.c_str()) == INVALID_FILE_ATTRIBUTES) {
+	if (UtilFileExists(chSet5Path).first == false) {
 		fputws(L"Error: ChSet5.txtが見つかりません。\n", stdout);
 		return 1;
 	}

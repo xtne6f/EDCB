@@ -143,9 +143,9 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 vector<pair<wstring, wstring>> CEpgTimerSrvSetting::EnumBonFileName(LPCWSTR settingPath)
 {
 	vector<pair<wstring, wstring>> ret;
-	EnumFindFile(fs_path(settingPath).append(L"*.ChSet4.txt").c_str(), [&ret](WIN32_FIND_DATA& findData) -> bool {
-		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			wstring bon = findData.cFileName;
+	EnumFindFile(fs_path(settingPath).append(L"*.ChSet4.txt"), [&ret](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.isDir == false ){
+			wstring bon = findData.fileName;
 			for( int depth = 0; bon.empty() == false; ){
 				if( bon.back() == L')' ){
 					depth++;
@@ -159,8 +159,9 @@ vector<pair<wstring, wstring>> CEpgTimerSrvSetting::EnumBonFileName(LPCWSTR sett
 			}
 			if( bon.empty() == false ){
 				bon += L".dll";
-				if( std::find_if(ret.begin(), ret.end(), [&](const pair<wstring, wstring>& a) { return CompareNoCase(a.first, bon) == 0; }) == ret.end() ){
-					ret.push_back(pair<wstring, wstring>(bon, findData.cFileName));
+				if( std::find_if(ret.begin(), ret.end(), [&](const pair<wstring, wstring>& a) {
+				        return UtilComparePath(a.first.c_str(), bon.c_str()) == 0; }) == ret.end() ){
+					ret.push_back(std::make_pair(std::move(bon), std::move(findData.fileName)));
 				}
 			}
 		}
@@ -182,9 +183,9 @@ wstring CEpgTimerSrvSetting::CheckTSExtension(const wstring& ext)
 vector<wstring> CEpgTimerSrvSetting::EnumRecNamePlugInFileName()
 {
 	vector<wstring> ret;
-	EnumFindFile(GetModulePath().replace_filename(L"RecName\\RecName*.dll").c_str(), [&ret](WIN32_FIND_DATA& findData) -> bool {
-		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			ret.push_back(findData.cFileName);
+	EnumFindFile(GetModulePath().replace_filename(L"RecName").append(L"RecName*.dll"), [&ret](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.isDir == false ){
+			ret.push_back(std::move(findData.fileName));
 		}
 		return true;
 	});
@@ -231,7 +232,7 @@ void CEpgTimerSrvSetting::AddListBoxItem(HWND hList, HWND hItem)
 	if( item.empty() == false ){
 		for( int i = 0; i < ListBox_GetCount(hList); i++ ){
 			GetListBoxTextBuffer(hList, i, buff);
-			if( CompareNoCase(item, buff.data()) == 0 ){
+			if( UtilComparePath(item.c_str(), buff.data()) == 0 ){
 				//すでにある
 				return;
 			}
@@ -325,8 +326,8 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	if( settingPath.empty() ){
 		settingPath = GetDefSettingPath();
 		//既定の設定関係保存フォルダが存在しなければ特別に作る
-		if( GetFileAttributes(settingPath.c_str()) == INVALID_FILE_ATTRIBUTES ){
-			CreateDirectory(settingPath.c_str(), NULL);
+		if( UtilFileExists(settingPath).first == false ){
+			UtilCreateDirectory(settingPath);
 		}
 	}
 	const fs_path iniPath = GetModuleIniPath();
@@ -504,7 +505,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	size_t plugInSel = plugInList.size();
 	for( size_t i = 0; i < plugInList.size(); i++ ){
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO_SET_RECNAME_PLUGIN), plugInList[i].c_str());
-		if( CompareNoCase(plugInList[i], setting.recNamePlugInFile) == 0 ){
+		if( UtilComparePath(plugInList[i].c_str(), setting.recNamePlugInFile.c_str()) == 0 ){
 			plugInSel = i;
 		}
 	}
@@ -590,16 +591,16 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 
 	vector<WCHAR> buff;
 	WCHAR key[32];
-
-	TouchFileAsUnicode(iniPath.c_str());
-
+#ifdef _WIN32
+	TouchFileAsUnicode(iniPath);
+#endif
 	//[SET]セクションをファイル先頭に置くため最初にこれを書く
 	WritePrivateProfileInt(L"SET", L"NGEpgCapTime", GetDlgItemInt(this->hwndEpg, IDC_EDIT_SET_EPG_NG_CAP, NULL, FALSE), iniPath.c_str());
 
 	//基本設定
 	HWND hwnd = this->hwndBasic;
 	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_DATA_SAVE_PATH), buff);
-	if( CompareNoCase(settingPath.c_str(), buff.data()) == 0 ){
+	if( UtilComparePath(settingPath.c_str(), buff.data()) == 0 ){
 		//既定値なので記録しない
 		WritePrivateProfileString(L"SET", L"DataSavePath", NULL, commonIniPath.c_str());
 	}else{
@@ -607,7 +608,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 		settingPath = buff.data();
 	}
 	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_REC_EXE_PATH), buff);
-	if( CompareNoCase(GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").c_str(), buff.data()) == 0 ){
+	if( UtilComparePath(GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").c_str(), buff.data()) == 0 ){
 		//既定値なので記録しない
 		WritePrivateProfileString(L"SET", L"RecExePath", NULL, commonIniPath.c_str());
 	}else{
@@ -628,7 +629,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	int num = 0;
 	for( int i = 0; i < ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)); i++ ){
 		GetListBoxTextBuffer(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER), i, buff);
-		if( num == 0 && i + 1 >= ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)) && CompareNoCase(settingPath.c_str(), buff.data()) == 0 ){
+		if( num == 0 && i + 1 >= ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)) && UtilComparePath(settingPath.c_str(), buff.data()) == 0 ){
 			//既定値なので記録しない
 			break;
 		}
@@ -975,7 +976,7 @@ void CEpgTimerSrvSetting::ToggleStartup(bool execute, bool add)
 	if( SHGetSpecialFolderPath(NULL, startupFolder, CSIDL_STARTUP, FALSE) ){
 		fs_path path = startupFolder;
 		path.append(L"EpgTimerSrv.lnk");
-		if( GetFileAttributes(path.c_str()) == INVALID_FILE_ATTRIBUTES ){
+		if( UtilFileExists(path).first == false ){
 			if( execute && add ){
 				fs_path modulePath = GetModulePath();
 				fs_path moduleFolder = modulePath.parent_path();
