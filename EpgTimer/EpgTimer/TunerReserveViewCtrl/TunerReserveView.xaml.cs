@@ -142,8 +142,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                             {
                                 if (info.TitleDrawErr == true)
                                 {
-                                    string view = CommonManager.GetTimeDurationText(true, info.ReserveInfo.StartTime,
-                                                                                    true, info.ReserveInfo.DurationSecond) + "\r\n";
+                                    string view = new CommonManager.TimeDuration(true, info.ReserveInfo.StartTime,
+                                                                                 true, info.ReserveInfo.DurationSecond) + "\r\n";
                                     view += info.ReserveInfo.StationName;
                                     view += " (" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")" + "\r\n";
 

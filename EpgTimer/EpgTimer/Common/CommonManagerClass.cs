@@ -456,19 +456,37 @@ namespace EpgTimer
             }
         }
 
-        public static string GetTimeDurationText(bool timeFlag, DateTime time, bool durationFlag, uint durationSec)
+        public class TimeDuration : IComparable<TimeDuration>, IComparable
         {
-            if (timeFlag)
+            public TimeDuration(bool timeFlag, DateTime time, bool durationFlag, double durationSec)
             {
-                return time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss ～ ") +
-                       (durationFlag ? time.AddSeconds(durationSec).ToString("HH\\:mm\\:ss") : "未定");
+                _time = timeFlag ? time : DateTime.MinValue;
+                _durationSec = durationFlag ? durationSec : double.MinValue;
             }
-            return "未定";
+            public override string ToString()
+            {
+                if (_time != DateTime.MinValue)
+                {
+                    return _time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss") + (double.IsNaN(_durationSec) ? "" :
+                           _durationSec != double.MinValue ? _time.AddSeconds(_durationSec).ToString(" ～ HH\\:mm\\:ss") : " ～ 未定");
+                }
+                return "未定";
+            }
+            public int CompareTo(TimeDuration other)
+            {
+                return other == null ? 1 : _time == other._time ? _durationSec.CompareTo(other._durationSec) : _time.CompareTo(other._time);
+            }
+            public int CompareTo(object other)
+            {
+                return CompareTo(other as TimeDuration);
+            }
+            private DateTime _time;
+            private double _durationSec;
         }
 
         public String ConvertReserveText(ReserveData reserveInfo)
         {
-            String view = GetTimeDurationText(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
+            String view = new TimeDuration(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
             String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
             String tuijyu = "";
             if (reserveInfo.RecSetting.TuijyuuFlag == 0)
@@ -624,8 +642,8 @@ namespace EpgTimer
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
                 }
 
-                basicInfo += GetTimeDurationText(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
-                                                 eventInfo.DurationFlag != 0, eventInfo.durationSec) + "\r\n";
+                basicInfo += new TimeDuration(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
+                                              eventInfo.DurationFlag != 0, eventInfo.durationSec) + "\r\n";
 
                 if (eventInfo.ShortInfo != null)
                 {

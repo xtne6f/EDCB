@@ -132,8 +132,8 @@ namespace EpgTimer.EpgView
 
                                 if (info != null)
                                 {
-                                    viewTip += CommonManager.GetTimeDurationText(info.EventInfo.StartTimeFlag != 0, info.EventInfo.start_time,
-                                                                                 info.EventInfo.DurationFlag != 0, info.EventInfo.durationSec) + "\r\n";
+                                    viewTip += new CommonManager.TimeDuration(info.EventInfo.StartTimeFlag != 0, info.EventInfo.start_time,
+                                                                              info.EventInfo.DurationFlag != 0, info.EventInfo.durationSec) + "\r\n";
                                     if (info.EventInfo.ShortInfo != null)
                                     {
                                         viewTip += info.EventInfo.ShortInfo.event_name + "\r\n\r\n";

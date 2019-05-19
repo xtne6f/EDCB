@@ -11,7 +11,7 @@ using System.Windows;
 
 namespace EpgTimer
 {
-    public class SearchItem
+    class SearchItem
     {
         public SearchItem(EpgEventInfo info, bool past, bool filtered)
         {
@@ -52,9 +52,9 @@ namespace EpgTimer
         {
             get { return CommonManager.ConvertNetworkNameText(EventInfo.original_network_id); }
         }
-        public String StartTime
+        public CommonManager.TimeDuration StartTime
         {
-            get { return EventInfo.StartTimeFlag != 0 ? EventInfo.start_time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss") : "未定"; }
+            get { return new CommonManager.TimeDuration(EventInfo.StartTimeFlag != 0, EventInfo.start_time, true, double.NaN); }
         }
         public bool IsReserved
         {

@@ -14,7 +14,7 @@ using System.Windows.Shapes;
 
 namespace EpgTimer
 {
-    public class ReserveItem
+    class ReserveItem
     {
         public ReserveItem(ReserveData item)
         {
@@ -37,9 +37,13 @@ namespace EpgTimer
         {
             get { return CommonManager.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID); }
         }
-        public String StartTime
+        public CommonManager.TimeDuration StartTime
         {
-            get { return CommonManager.GetTimeDurationText(true, ReserveInfo.StartTime, true, ReserveInfo.DurationSecond); }
+            get { return new CommonManager.TimeDuration(true, ReserveInfo.StartTime, true, ReserveInfo.DurationSecond); }
+        }
+        public TimeSpan Duration
+        {
+            get { return TimeSpan.FromSeconds(ReserveInfo.DurationSecond); }
         }
         public String RecMode
         {
