@@ -150,11 +150,7 @@ void CScrambleDecoderUtil::UnLoadDll()
 BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 {
 	BOOL ret = FALSE;
-	wstring folderPath;
-	GetModuleFolderPath( folderPath );
-
-	wstring iniPath = folderPath;
-	iniPath += L"\\BonCtrl.ini";
+	fs_path iniPath = GetCommonIniPath().replace_filename(L"BonCtrl.ini");
 
 	wstring defKey = L"FFFFFFFF";
 	wstring networkDefKey = L"";
@@ -162,18 +158,11 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 	Format(networkDefKey, L"%04XFFFF", ONID);
 	Format(key, L"%04X%04X", ONID, TSID);
 
-	wstring defDll = L"";
-	wstring networkDefDll = L"";
-	wstring loadDll = L"";
-	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"SET", defKey.c_str(), L"", buff, 512, iniPath.c_str() );
-	defDll = buff;
-	GetPrivateProfileString( L"SET", networkDefKey.c_str(), L"", buff, 512, iniPath.c_str() );
-	networkDefDll = buff;
-	GetPrivateProfileString( L"SET", key.c_str(), L"", buff, 512, iniPath.c_str() );
-	loadDll = buff;
+	wstring defDll = GetPrivateProfileToString(L"SET", defKey.c_str(), L"", iniPath.c_str());
+	wstring networkDefDll = GetPrivateProfileToString(L"SET", networkDefKey.c_str(), L"", iniPath.c_str());
+	wstring loadDll = GetPrivateProfileToString(L"SET", key.c_str(), L"", iniPath.c_str());
 
-	wstring dllPath = folderPath;
+	wstring dllPath = GetModulePath().parent_path().native();
 	if( loadDll.size() > 0 ){
 		dllPath += L"\\";
 		dllPath += loadDll;

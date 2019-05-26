@@ -87,16 +87,16 @@ BOOL CSetDlgService::OnInitDialog()
 	const fs_path path = GetSettingPath();
 
 	//指定フォルダのファイル一覧取得
-	EnumFindFile(fs_path(path).append(L"*.ChSet4.txt").c_str(), [this, &path](WIN32_FIND_DATA& findData) -> bool {
-		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+	EnumFindFile(fs_path(path).append(L"*.ChSet4.txt"), [this, &path](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.isDir == false ){
 			//本当に拡張子TXT?
-			if( IsExt(findData.cFileName, L".txt") ){
+			if( UtilPathEndsWith(findData.fileName.c_str(), L".txt") ){
 				wstring bonFileName;
-				FindBonFileName(findData.cFileName, bonFileName);
+				FindBonFileName(findData.fileName, bonFileName);
 				bonFileName += L".dll";
 
 				if( chList.insert(std::make_pair(bonFileName, std::make_pair(CParseChText4(), false))).second ){
-					chList[bonFileName].first.ParseText(fs_path(path).append(findData.cFileName).c_str());
+					chList[bonFileName].first.ParseText(fs_path(path).append(findData.fileName).c_str());
 					ComboBox_AddString(this->GetDlgItem(IDC_COMBO_BON), bonFileName.c_str());
 				}
 			}

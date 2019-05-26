@@ -29,8 +29,8 @@ struct REC_SETTING_DATA {
 	BYTE suspendMode;			//休止モード
 	BYTE rebootFlag;			//録画後再起動する
 	BYTE useMargineFlag;		//録画マージンを個別指定
-	INT startMargine;			//録画開始時のマージン
-	INT endMargine;				//録画終了時のマージン
+	int startMargine;			//録画開始時のマージン
+	int endMargine;				//録画終了時のマージン
 	BYTE continueRecFlag;		//後続同一サービス時、同一ファイルで録画
 	BYTE partialRecFlag;		//物理CHに部分受信サービスがある場合、同時録画するかどうか
 	DWORD tunerID;				//強制的に使用Tunerを固定

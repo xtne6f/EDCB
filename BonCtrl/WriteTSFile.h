@@ -68,13 +68,6 @@ public:
 		);
 
 protected:
-	//指定フォルダの空き容量を取得する
-	//戻り値：
-	// 空き容量
-	//引数：
-	// folderPath		[IN]指定フォルダ
-	static ULONGLONG GetFreeSize(const wstring& folderPath);
-
 	static void OutThread(CWriteTSFile* sys);
 
 protected:

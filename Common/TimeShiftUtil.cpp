@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TimeShiftUtil.h"
+#include "PathUtil.h"
 
 CTimeShiftUtil::CTimeShiftUtil(void)
 {
@@ -77,7 +78,7 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 	StopTimeShift();
 
 	this->PCR_PID = 0xFFFF;
-	if( GetFileAttributes(filePath_) == INVALID_FILE_ATTRIBUTES ){
+	if( UtilFileExists(filePath_).first == false ){
 		return FALSE;
 	}
 

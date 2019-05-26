@@ -561,7 +561,7 @@ void CBonCtrl::ChScanThread(CBonCtrl* sys)
 		return;
 	}
 
-	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
+	fs_path iniPath = GetCommonIniPath().replace_filename(L"BonCtrl.ini");
 
 	DWORD chChgTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ChChgTimeOut", 9, iniPath.c_str());
 	DWORD serviceChkTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ServiceChkTimeOut", 8, iniPath.c_str());
@@ -723,7 +723,7 @@ void CBonCtrl::EpgCapThread(CBonCtrl* sys)
 
 	BOOL chkONIDs[16] = {};
 
-	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
+	fs_path iniPath = GetCommonIniPath().replace_filename(L"BonCtrl.ini");
 
 	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 10, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
@@ -934,7 +934,7 @@ void CBonCtrl::StopBackgroundEpgCap()
 
 void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 {
-	fs_path iniPath = GetModulePath().replace_filename(L"BonCtrl.ini");
+	fs_path iniPath = GetCommonIniPath().replace_filename(L"BonCtrl.ini");
 
 	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 10, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());

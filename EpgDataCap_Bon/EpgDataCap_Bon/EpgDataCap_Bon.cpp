@@ -264,7 +264,7 @@ void SetSaveDebugLog(bool saveDebugLog)
 			//パスに添え字をつけて書き込み可能な最初のものに記録する
 			WCHAR logFileName[64];
 			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
-			fs_path logPath = GetModulePath().replace_filename(logFileName);
+			fs_path logPath = GetCommonIniPath().replace_filename(logFileName);
 			//やりたいことは_wfsopen(L"abN",_SH_DENYWR)だが_wfsopenには"N"オプションがなさそうなので低水準で開く
 			int fd;
 			if( _wsopen_s(&fd, logPath.c_str(), _O_APPEND | _O_BINARY | _O_CREAT | _O_NOINHERIT | _O_WRONLY, _SH_DENYWR, _S_IWRITE) == 0 ){

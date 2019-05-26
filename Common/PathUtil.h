@@ -1,6 +1,8 @@
 #ifndef INCLUDE_PATH_UTIL_H
 #define INCLUDE_PATH_UTIL_H
 
+#include <functional>
+
 namespace filesystem_
 {
 // Extract from Boost.Filesystem(1.64.0) www.boost.org/libs/filesystem
@@ -44,7 +46,13 @@ public:
 	bool has_stem() const { return !stem().empty(); }
 	bool has_extension() const { return !extension().empty(); }
 	bool is_relative() const { return !is_absolute(); }
+#ifdef _WIN32
 	bool is_absolute() const { return has_root_name() && has_root_directory(); }
+	static const wchar_t preferred_separator = L'\\';
+#else
+	bool is_absolute() const { return has_root_directory(); }
+	static const wchar_t preferred_separator = L'/';
+#endif
 private:
 	wstring m_pathname; // Windows: as input; backslashes NOT converted to slashes,
 	                    // slashes NOT converted to backslashes
@@ -55,8 +63,14 @@ private:
 	static size_t filename_pos(const wstring& str);
 	static size_t root_directory_start(const wstring& str, size_t size);
 	static void first_element(const wstring& src, size_t& element_pos, size_t& element_size);
+#ifdef _WIN32
+	static const wchar_t* separators() { return L"/\\"; }
 	static bool is_dir_sep(wchar_t c) { return c == L'/' || c == L'\\'; }
 	static bool is_letter(wchar_t c) { return (c >= L'a' && c <= L'z') || (c >= L'A' && c <= L'Z'); }
+#else
+	static const wchar_t* separators() { return L"/"; }
+	static bool is_dir_sep(wchar_t c) { return c == L'/'; }
+#endif
 };
 }
 
@@ -66,42 +80,46 @@ typedef filesystem_::path fs_path;
 
 fs_path GetDefSettingPath();
 fs_path GetSettingPath();
-void GetModuleFolderPath(wstring& strPath);
+#ifdef _WIN32
 fs_path GetModulePath(HMODULE hModule = NULL);
-fs_path GetPrivateProfileToFolderPath(LPCWSTR appName, LPCWSTR keyName, LPCWSTR fileName);
 fs_path GetModuleIniPath(HMODULE hModule = NULL);
+#else
+fs_path GetModulePath();
+fs_path GetModuleIniPath(LPCWSTR moduleName = NULL);
+#endif
 fs_path GetCommonIniPath();
 fs_path GetRecFolderPath(int index = 0);
-BOOL IsExt(const fs_path& filePath, const WCHAR* ext);
-void CheckFileName(wstring& fileName, BOOL noChkYen = FALSE);
-void ChkFolderPath(fs_path& path);
+int UtilComparePath(LPCWSTR path1, LPCWSTR path2);
+bool UtilPathEndsWith(LPCWSTR path, LPCWSTR suffix);
+void CheckFileName(wstring& fileName, bool noChkYen = false);
 
+#ifdef _WIN32
 // 存在しなければBOM付きの空ファイルを作成する
-void TouchFileAsUnicode(LPCWSTR path);
+void TouchFileAsUnicode(const fs_path& path);
+#endif
+// ファイルの存在を確認する。それがディレクトリでなければ第2返値もtrue
+pair<bool, bool> UtilFileExists(const fs_path& path, bool* mightExist = NULL);
+bool UtilCreateDirectory(const fs_path& path);
 // 再帰的にディレクトリを生成する
-BOOL UtilCreateDirectories(const fs_path& path);
-// フォルダパスから実際のドライブパスを取得
-wstring GetChkDrivePath(const wstring& directoryPath);
+bool UtilCreateDirectories(const fs_path& path);
+// フォルダがあるストレージの空き容量を取得する。失敗時は負値
+__int64 UtilGetStorageFreeBytes(const fs_path& directoryPath);
+// フォルダがあるストレージの識別子を取得する。失敗時は空
+wstring UtilGetStorageID(const fs_path& directoryPath);
+
 // 必要なバッファを確保してGetPrivateProfileSection()を呼ぶ
 vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName);
 wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDefault, LPCWSTR fileName);
 BOOL WritePrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int value, LPCWSTR fileName);
 
+struct UTIL_FIND_DATA {
+	bool isDir;
+	__int64 lastWriteTime;
+	__int64 fileSize;
+	wstring fileName;
+};
+
 // FindFirstFile()の結果を列挙する
-template<class P>
-void EnumFindFile(LPCWSTR pattern, P enumProc)
-{
-	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile(pattern, &findData);
-	if( hFind != INVALID_HANDLE_VALUE ){
-		try{
-			while( enumProc(findData) && FindNextFile(hFind, &findData) );
-		}catch(...){
-			FindClose(hFind);
-			throw;
-		}
-		FindClose(hFind);
-	}
-}
+void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DATA&)>& enumProc);
 
 #endif

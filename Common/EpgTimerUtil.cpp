@@ -61,7 +61,7 @@ __int64 MJDtoI64Time(DWORD mjd, DWORD bcdTime)
 
 DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid)
 {
-	fs_path iniPath = GetModulePath().replace_filename(L"Bitrate.ini");
+	fs_path iniPath = GetCommonIniPath().replace_filename(L"Bitrate.ini");
 
 	for( int i = 0; i < 4; i++ ){
 		WCHAR key[32];

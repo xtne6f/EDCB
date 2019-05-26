@@ -1652,18 +1652,26 @@ CDescriptor::DESCRIPTOR_PROPERTY::DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY&
 
 CDescriptor::DESCRIPTOR_PROPERTY& CDescriptor::DESCRIPTOR_PROPERTY::operator=(DESCRIPTOR_PROPERTY&& o) NOEXCEPT
 {
-	id = o.id;
-	std::swap(type, o.type);
-	if( type == TYPE_N ){
-		n = o.n;
-	}else if( type == TYPE_P ){
-		std::swap(pl, o.pl);
-	}else if( type & TYPE_B ){
-		if( (type & TYPE_MASK) >= sizeof(b) + 1 ){
-			std::swap(pb, o.pb);
-		}else{
-			memmove(b, o.b, sizeof(b));
+	if( this != &o ){
+		if( type == TYPE_P ){
+			delete pl;
+		}else if( (type & TYPE_B) && (type & TYPE_MASK) >= sizeof(b) + 1 ){
+			delete[] pb;
 		}
+		id = o.id;
+		type = o.type;
+		if( type == TYPE_N ){
+			n = o.n;
+		}else if( type == TYPE_P ){
+			pl = o.pl;
+		}else if( type & TYPE_B ){
+			if( (type & TYPE_MASK) >= sizeof(b) + 1 ){
+				pb = o.pb;
+			}else{
+				memcpy(b, o.b, sizeof(b));
+			}
+		}
+		o.type = TYPE_N;
 	}
 	return *this;
 }

@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <wchar.h>
 #include <stdarg.h>
+#include <limits.h>
+#include <string.h>
 
 using std::min;
 using std::max;

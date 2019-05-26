@@ -5,6 +5,7 @@
 #include "SettingDlg.h"
 #include "ConvertMacro2.h"
 #include "../../Common/PathUtil.h"
+#include <stddef.h>
 
 #define PLUGIN_NAME L"É}ÉNÉç PlugIn"
 #define DLL_EXPORT extern "C" __declspec(dllexport)
@@ -54,14 +55,14 @@ void WINAPI Setting(
 	HWND parentWnd
 	)
 {
-	WCHAR dllPath[512];
-	DWORD dwRet = GetModuleFileName(g_instance, dllPath, 512);
-	if( dwRet && dwRet < 512 ){
-		wstring iniPath = wstring(dllPath) + L".ini";
+	{
+		fs_path iniPath = GetModuleIniPath(g_instance);
 		wstring macro = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", iniPath.c_str());
 		CSettingDlg dlg;
 		if( dlg.CreateSettingDialog(g_instance, parentWnd, macro) == IDOK ){
-			TouchFileAsUnicode(iniPath.c_str());
+#ifdef _WIN32
+			TouchFileAsUnicode(iniPath);
+#endif
 			WritePrivateProfileString(L"SET", L"Macro", macro.c_str(), iniPath.c_str());
 		}
 	}
@@ -90,12 +91,7 @@ BOOL WINAPI ConvertRecName3(
 	}
 	wstring buff;
 	if( pattern == NULL ){
-		buff = L"$Title$.ts";
-		WCHAR dllPath[512];
-		DWORD dwRet = GetModuleFileName(g_instance, dllPath, 512);
-		if( dwRet && dwRet < 512 ){
-			buff = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", (wstring(dllPath) + L".ini").c_str());
-		}
+		buff = GetPrivateProfileToString(L"SET", L"Macro", L"$Title$.ts", GetModuleIniPath(g_instance).c_str());
 		pattern = buff.c_str();
 	}
 
