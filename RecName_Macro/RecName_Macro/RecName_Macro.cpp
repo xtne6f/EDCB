@@ -5,6 +5,7 @@
 #include "SettingDlg.h"
 #include "ConvertMacro2.h"
 #include "../../Common/PathUtil.h"
+#include <stddef.h>
 
 #define PLUGIN_NAME L"É}ÉNÉç PlugIn"
 #define DLL_EXPORT extern "C" __declspec(dllexport)
