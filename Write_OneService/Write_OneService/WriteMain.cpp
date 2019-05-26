@@ -9,15 +9,13 @@ CWriteMain::CWriteMain()
 {
 	this->file = INVALID_HANDLE_VALUE;
 
-	WCHAR dllPath[MAX_PATH];
-	DWORD ret = GetModuleFileName(g_instance, dllPath, MAX_PATH);
-	if( ret && ret < MAX_PATH ){
-		wstring iniPath = wstring(dllPath) + L".ini";
+	{
+		fs_path iniPath = GetModuleIniPath(g_instance);
 		wstring name = GetPrivateProfileToString(L"SET", L"WritePlugin", L"", iniPath.c_str());
 		if( name.empty() == false && name[0] != L';' ){
 			//出力プラグインを数珠繋ぎ
 			this->writePlugin.reset(new CWritePlugInUtil);
-			if( this->writePlugin->Initialize(fs_path(iniPath).replace_filename(name).c_str()) == FALSE ){
+			if( this->writePlugin->Initialize(GetModulePath(g_instance).replace_filename(name).c_str()) == FALSE ){
 				this->writePlugin.reset();
 			}
 		}

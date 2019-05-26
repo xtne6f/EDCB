@@ -179,7 +179,7 @@ bool CEdcbPlugIn::Initialize()
 		m_pApp->AddLog(L"TVTestのバージョンが古いため初期化できません。");
 		return false;
 	}
-	m_edcbDir = GetPrivateProfileToFolderPath(L"SET", L"EdcbFolderPath", GetModulePath(g_hinstDLL).replace_extension(L".ini").c_str()).native();
+	m_edcbDir = GetPrivateProfileToString(L"SET", L"EdcbFolderPath", L"", GetModulePath(g_hinstDLL).replace_extension(L".ini").c_str());
 	// 未指定のときはTVTestと同階層のEDCBフォルダ
 	if (m_edcbDir.empty()) {
 		fs_path altPath = GetModulePath().parent_path().parent_path();
@@ -840,7 +840,6 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 				if (recCtrl.filePath.empty() && !val.saveFolder.empty()) {
 					// saveFolderは最初の要素のみ使う
 					fs_path filePath = val.saveFolder[0].recFolder;
-					ChkFolderPath(filePath);
 					filePath.append(val.saveFolder[0].recFileName);
 					if (!m_recNamePrefix.empty()) {
 						// 対象サービスIDをファイル名に前置する
@@ -919,7 +918,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 					resVal.subRecFlag = 0;
 					if (val.saveErrLog && ((m_dropSaveThresh >= 0 && resVal.drop >= (ULONGLONG)m_dropSaveThresh) ||
 					                       (m_scrambleSaveThresh >= 0 && resVal.scramble >= (ULONGLONG)m_scrambleSaveThresh))) {
-						fs_path infoPath = GetPrivateProfileToFolderPath(L"SET", L"RecInfoFolder", fs_path(m_edcbDir).append(L"Common.ini").c_str());
+						fs_path infoPath = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", fs_path(m_edcbDir).append(L"Common.ini").c_str());
 						if (infoPath.empty()) {
 							infoPath = resVal.recFilePath + L".err";
 						}
@@ -1003,7 +1002,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 
 fs_path CEdcbPlugIn::GetEdcbSettingPath() const
 {
-	fs_path ret = GetPrivateProfileToFolderPath(L"SET", L"DataSavePath", fs_path(m_edcbDir).append(L"Common.ini").c_str());
+	fs_path ret = GetPrivateProfileToString(L"SET", L"DataSavePath", L"", fs_path(m_edcbDir).append(L"Common.ini").c_str());
 	if (ret.empty()) {
 		ret = fs_path(m_edcbDir).append(L"Setting");
 	}

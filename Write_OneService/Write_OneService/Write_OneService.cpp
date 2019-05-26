@@ -58,10 +58,8 @@ void WINAPI Setting(
 	HWND parentWnd
 	)
 {
-	WCHAR dllPath[MAX_PATH];
-	DWORD ret = GetModuleFileName(g_instance, dllPath, MAX_PATH);
-	if( ret && ret < MAX_PATH ){
-		wstring iniPath = wstring(dllPath) + L".ini";
+	{
+		fs_path iniPath = GetModuleIniPath(g_instance);
 		if( GetPrivateProfileToString(L"SET", L"WritePlugin", L"*", iniPath.c_str()) == L"*" ){
 			WritePrivateProfileString(L"SET", L"WritePlugin", L";Write_Default.dll", iniPath.c_str());
 		}
