@@ -76,6 +76,13 @@ size_t WtoA(const WCHAR* in, size_t inLen, vector<char>& out, UTIL_CONV_CODE cod
 		return strlen(out.data());
 	}
 #endif
+	//WideCharToMultiByte(CP_UTF8)と4bytes全数比較済み
+	//vector<char> c[2];
+	//for( DWORD w = 1; w; w++ ){
+	//    WtoA((WCHAR*)&w, 2, c[0], false);
+	//    WtoA((WCHAR*)&w, 2, c[1], true);
+	//    assert(strcmp(c[0].data(), c[1].data()) == 0);
+	//}
 	if( out.size() < inLen * 3 + 1 ){
 		out.resize(inLen * 3 + 1);
 	}
@@ -83,7 +90,7 @@ size_t WtoA(const WCHAR* in, size_t inLen, vector<char>& out, UTIL_CONV_CODE cod
 	for( size_t i = 0; i < inLen && in[i]; ){
 		int x = (WORD)in[i++];
 		if( 0xD800 <= x && x < 0xE000 ){
-			if( x < 0xDC00 && 0xDC00 <= (WORD)in[i] && (WORD)in[i] < 0xE000 ){
+			if( x < 0xDC00 && inLen > i && 0xDC00 <= (WORD)in[i] && (WORD)in[i] < 0xE000 ){
 				x = 0x10000 + (x - 0xD800) * 0x400 + ((WORD)in[i++] - 0xDC00);
 				out[n++] = (char)(0xF0 | x >> 18);
 				out[n++] = (char)(0x80 | (x >> 12 & 0x3F));
@@ -123,28 +130,49 @@ size_t AtoW(const char* in, size_t inLen, vector<WCHAR>& out, UTIL_CONV_CODE cod
 		return wcslen(out.data());
 	}
 #endif
+	//MultiByteToWideChar(CP_UTF8)と4bytes全数比較済み
+	//vector<WCHAR> w[2];
+	//for( DWORD c = 1; c; c++ ){
+	//    AtoW((char*)&c, 4, w[0], false);
+	//    AtoW((char*)&c, 4, w[1], true);
+	//    //連続する0xFFFDの数は不問
+	//    for( int i = 0; i < 2; i++ ){
+	//        for( int j = 0; w[i][j]; j++ ){
+	//            if( w[i][j] == 0xFFFD && w[i][j + 1] == 0xFFFD ){
+	//                w[i].erase(w[i].begin() + (j--));
+	//            }
+	//        }
+	//    }
+	//    assert(wcscmp(w[0].data(), w[1].data()) == 0);
+	//}
 	if( out.size() < inLen + 1 ){
 		out.resize(inLen + 1);
 	}
 	size_t n = 0;
 	for( size_t i = 0; i < inLen && in[i]; ){
 		int x = (BYTE)in[i++];
-		if( 0xC2 <= x && x < 0xE0 && 0x80 <= (BYTE)in[i] && (BYTE)in[i] < 0xC0 ){
+		if( 0xC2 <= x && x < 0xE0 && inLen > i && 0x80 <= (BYTE)in[i] && (BYTE)in[i] < 0xC0 ){
 			x = (x & 0x1F) << 6 | ((BYTE)in[i++] & 0x3F);
-		}else if( 0xE0 <= x && x < 0xF0 &&
+		}else if( 0xE0 <= x && x < 0xF0 && inLen - i > 1 &&
 		          0x80 <= (BYTE)in[i] && (BYTE)in[i] < 0xC0 && ((x & 0x0F) || ((BYTE)in[i] & 0x20)) &&
 		          0x80 <= (BYTE)in[i + 1] && (BYTE)in[i + 1] < 0xC0 ){
 			x = (x & 0x0F) << 12 | ((BYTE)in[i] & 0x3F) << 6 | ((BYTE)in[i + 1] & 0x3F);
 			i += 2;
-		}else if( 0xF0 <= x && x < 0xF8 &&
+			if( 0xD800 <= x && x < 0xE000 ){
+				x = 0xFFFD;
+			}
+		}else if( 0xF0 <= x && x < 0xF8 && inLen - i > 2 &&
 		          0x80 <= (BYTE)in[i] && (BYTE)in[i] < 0xC0 && ((x & 0x07) || ((BYTE)in[i] & 0x30)) &&
 		          0x80 <= (BYTE)in[i + 1] && (BYTE)in[i + 1] < 0xC0 &&
 		          0x80 <= (BYTE)in[i + 2] && (BYTE)in[i + 2] < 0xC0 ){
 			x = (x & 0x07) << 18 | ((BYTE)in[i] & 0x3F) << 12 | ((BYTE)in[i + 1] & 0x3F) << 6 | ((BYTE)in[i + 2] & 0x3F);
-			out[n++] = (WCHAR)((x - 0x10000) / 0x400 + 0xD800);
-			out[n++] = (WCHAR)((x - 0x10000) % 0x400 + 0xDC00);
 			i += 3;
-			continue;
+			if( x < 0x110000 ){
+				out[n++] = (WCHAR)((x - 0x10000) / 0x400 + 0xD800);
+				out[n++] = (WCHAR)((x - 0x10000) % 0x400 + 0xDC00);
+				continue;
+			}
+			x = 0xFFFD;
 		}else if( x >= 0x80 ){
 			x = 0xFFFD;
 		}
