@@ -132,8 +132,8 @@ namespace EpgTimer.EpgView
 
                                 if (info != null)
                                 {
-                                    viewTip += CommonManager.GetTimeDurationText(info.EventInfo.StartTimeFlag != 0, info.EventInfo.start_time,
-                                                                                 info.EventInfo.DurationFlag != 0, info.EventInfo.durationSec) + "\r\n";
+                                    viewTip += new CommonManager.TimeDuration(info.EventInfo.StartTimeFlag != 0, info.EventInfo.start_time,
+                                                                              info.EventInfo.DurationFlag != 0, info.EventInfo.durationSec) + "\r\n";
                                     if (info.EventInfo.ShortInfo != null)
                                     {
                                         viewTip += info.EventInfo.ShortInfo.event_name + "\r\n\r\n";
@@ -180,6 +180,7 @@ namespace EpgTimer.EpgView
         {
             if (EpgSetting.EpgPopup == false) return;
 
+            List<Brush> contentBrushList = null;
             ProgramViewItem info = null;
 
             Point cursorPos2 = Mouse.GetPosition(scrollViewer);
@@ -201,6 +202,7 @@ namespace EpgTimer.EpgView
                         {
                             if (item == lastPopupInfo) return;
 
+                            contentBrushList = childPanel.ContentBrushList;
                             info = item;
                             lastPopupInfo = info;
                             break;
@@ -228,22 +230,23 @@ namespace EpgTimer.EpgView
             Brush brushTitle = ColorDef.CustColorBrush(EpgSetting.TitleColor1, EpgSetting.TitleCustColor1);
             Brush brushNormal = ColorDef.CustColorBrush(EpgSetting.TitleColor2, EpgSetting.TitleCustColor2);
             Canvas.SetLeft(popupItemPanel, 0);
-            var items = new List<ProgramViewItem>() { new ProgramViewItem(info.EventInfo, info.Past) };
+            var items = new List<ProgramViewItem>() { new ProgramViewItem(info.EventInfo, info.Past, info.Filtered) };
             items[0].Width = info.Width;
-            items[0].ContentColor = info.ContentColor;
 
             //テキスト全体を表示できる高さを求める
             items[0].Height = 4096;
             popupItemPanel.Initialize(items, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
                                       EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
                                       dictTitle, dicNormal, itemFontTitle, itemFontNormal,
-                                      EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal);
+                                      EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
+                                      EpgSetting.EpgBackColorA, contentBrushList);
             items[0].Height = Math.Max(popupItemPanel.LastItemRenderTextHeight, info.Height);
             popupItemPanel.Height = items[0].Height;
             popupItemPanel.Initialize(items, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
                                       EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
                                       dictTitle, dicNormal, itemFontTitle, itemFontNormal,
-                                      EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal);
+                                      EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
+                                      EpgSetting.EpgBackColorA, contentBrushList);
             popupItemPanel.InvalidateVisual();
 
             Canvas.SetLeft(popupItem, info.LeftPos);
@@ -404,6 +407,13 @@ namespace EpgTimer.EpgView
                 var dicNormal = CommonManager.CreateReplaceDictionary(EpgSetting.EpgReplacePattern);
                 Brush brushTitle = ColorDef.CustColorBrush(EpgSetting.TitleColor1, EpgSetting.TitleCustColor1);
                 Brush brushNormal = ColorDef.CustColorBrush(EpgSetting.TitleColor2, EpgSetting.TitleCustColor2);
+                //ジャンル別の背景ブラシ
+                var contentBrushList = new List<Brush>();
+                for (int i = 0; i < EpgSetting.ContentColorList.Count; i++)
+                {
+                    SolidColorBrush brush = ColorDef.CustColorBrush(EpgSetting.ContentColorList[i], EpgSetting.ContentCustColorList[i]);
+                    contentBrushList.Add(EpgSetting.EpgGradation ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
+                }
                 double totalWidth = 0;
                 foreach (var programList in programGroupList)
                 {
@@ -415,7 +425,8 @@ namespace EpgTimer.EpgView
                     item.Initialize(programList.Item2, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
                                     EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoTable,
                                     dictTitle, dicNormal, itemFontTitle, itemFontNormal,
-                                    EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal);
+                                    EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
+                                    EpgSetting.EpgBackColorA, contentBrushList);
                     item.InvalidateVisual();
                     canvas.Children.Add(item);
                     totalWidth += programList.Item1;

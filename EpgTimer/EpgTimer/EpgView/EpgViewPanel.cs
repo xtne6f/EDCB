@@ -88,6 +88,18 @@ namespace EpgTimer.EpgView
             private set;
         }
 
+        public byte FilteredAlpha
+        {
+            get;
+            private set;
+        }
+
+        public List<Brush> ContentBrushList
+        {
+            get;
+            private set;
+        }
+
         public double LastItemRenderTextHeight
         {
             get;
@@ -97,11 +109,14 @@ namespace EpgTimer.EpgView
         public void Initialize(List<ProgramViewItem> items, double borderLeftSize, double borderTopSize, bool isTitleIndent, bool extInfoMode,
                                Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionaryTitle,
                                Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionaryNormal,
-                               ItemFont itemFontTitle, ItemFont itemFontNormal, double sizeTitle, double sizeNormal, Brush brushTitle, Brush brushNormal)
+                               ItemFont itemFontTitle, ItemFont itemFontNormal, double sizeTitle, double sizeNormal, Brush brushTitle, Brush brushNormal,
+                               byte filteredAlpha, List<Brush> contentBrushList)
         {
             LastItemRenderTextHeight = 0;
             textDrawLists = null;
             Items = items;
+            FilteredAlpha = filteredAlpha;
+            ContentBrushList = contentBrushList;
             var ps = PresentationSource.FromVisual(Application.Current.MainWindow);
             if (ps != null && itemFontTitle.GlyphType != null && itemFontNormal.GlyphType != null)
             {
@@ -304,10 +319,18 @@ namespace EpgTimer.EpgView
         {
             dc.DrawRectangle(Background, null, new Rect(RenderSize));
 
-            if (Items != null && textDrawLists != null && Items.Count >= textDrawLists.Count)
+            if (Items != null && textDrawLists != null && Items.Count >= textDrawLists.Count &&
+                ContentBrushList != null && ContentBrushList.Count >= 17)
             {
                 double selfLeft = Canvas.GetLeft(this);
                 Brush bgBrush = Background;
+                Brush filteredBrush = null;
+                if (bgBrush is SolidColorBrush)
+                {
+                    Color c = ((SolidColorBrush)bgBrush).Color;
+                    filteredBrush = new SolidColorBrush(Color.FromArgb(FilteredAlpha, c.R, c.G, c.B));
+                    filteredBrush.Freeze();
+                }
                 //位置がずれないように枠線の幅が1より大きいときは両側で分け合う
                 double borderLeft = _borderLeftSize > 1 ? _borderLeftSize / 2 : _borderLeftSize;
                 double borderTop = _borderTopSize > 1 ? _borderTopSize / 2 : _borderTopSize;
@@ -322,14 +345,30 @@ namespace EpgTimer.EpgView
                     }
                     if (info.Width > _borderLeftSize && info.Height > _borderTopSize)
                     {
+                        Brush contentBrush = ContentBrushList[0x10];
+                        if (info.EventInfo.ContentInfo != null)
+                        {
+                            foreach (EpgContentData nibble in info.EventInfo.ContentInfo.nibbleList)
+                            {
+                                if (nibble.content_nibble_level_1 <= 0x0B || nibble.content_nibble_level_1 == 0x0F)
+                                {
+                                    contentBrush = ContentBrushList[nibble.content_nibble_level_1];
+                                    break;
+                                }
+                            }
+                        }
                         var textArea = new Rect(info.LeftPos + borderLeft - selfLeft, info.TopPos + borderTop, info.Width - _borderLeftSize, info.Height - _borderTopSize);
-                        dc.DrawRectangle(info.ContentColor, null, textArea);
+                        dc.DrawRectangle(contentBrush, null, textArea);
                         dc.PushClip(new RectangleGeometry(textArea));
                         foreach (Tuple<Brush, GlyphRun> txtinfo in textDrawLists[i])
                         {
                             dc.DrawGlyphRun(txtinfo.Item1, txtinfo.Item2);
                         }
                         dc.Pop();
+                        if (info.Filtered && filteredBrush != null)
+                        {
+                            dc.DrawRectangle(filteredBrush, null, textArea);
+                        }
                     }
                 }
             }

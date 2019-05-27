@@ -11,10 +11,11 @@ namespace EpgTimer
 {
     public class ProgramViewItem
     {
-        public ProgramViewItem(EpgEventInfo info, bool past)
+        public ProgramViewItem(EpgEventInfo info, bool past, bool filtered)
         {
             EventInfo = info;
             Past = past;
+            Filtered = filtered;
         }
 
         public EpgEventInfo EventInfo
@@ -24,6 +25,12 @@ namespace EpgTimer
         }
 
         public bool Past
+        {
+            get;
+            private set;
+        }
+
+        public bool Filtered
         {
             get;
             private set;
@@ -54,12 +61,6 @@ namespace EpgTimer
         }
 
         public bool TitleDrawErr
-        {
-            get;
-            set;
-        }
-
-        public Brush ContentColor
         {
             get;
             set;

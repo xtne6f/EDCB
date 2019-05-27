@@ -34,7 +34,10 @@ namespace EpgTimer
             }
 
             EnableContentListBox(false);
-            comboBox_content.ItemsSource = CommonManager.Instance.ContentKindList;
+            foreach (ushort id in CommonManager.Instance.ContentKindList)
+            {
+                comboBox_content.Items.Add(new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });
+            }
             comboBox_content.SelectedIndex = 0;
 
             EnableDateListBox(false);
@@ -56,16 +59,14 @@ namespace EpgTimer
             comboBox_week_sm.SelectedIndex = 0;
             radioButton_week.IsChecked = true;
 
-            var serviceList = new List<ServiceItem>();
             foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
             {
                 if (ChSet5.IsCS3(info.ONID))
                 {
                     button_cs3.Visibility = Visibility.Visible;
                 }
-                serviceList.Add(new ServiceItem(CommonManager.ConvertChSet5To(info)));
+                listView_service.Items.Add(new ServiceItem(CommonManager.ConvertChSet5To(info)));
             }
-            listView_service.ItemsSource = serviceList;
         }
 
         public void FocusAndKey()
@@ -192,15 +193,13 @@ namespace EpgTimer
             foreach (EpgContentData item in key.contentList)
             {
                 ushort contentKey = (ushort)(item.content_nibble_level_1 << 8 | item.content_nibble_level_2);
-                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey))
-                {
-                    listBox_content.Items.Add(CommonManager.Instance.ContentKindDictionary[contentKey]);
-                }
-                else
+                ContentKindInfo info = comboBox_content.Items.Cast<ContentKindInfo>().FirstOrDefault(a => a.ID == contentKey);
+                if (info == null)
                 {
                     //未知のジャンル
-                    listBox_content.Items.Add(new ContentKindInfo("?", "?", item.content_nibble_level_1, item.content_nibble_level_2));
+                    info = new ContentKindInfo() { Nibble1 = item.content_nibble_level_1, Nibble2 = item.content_nibble_level_2 };
                 }
+                listBox_content.Items.Add(info);
             }
             if (listBox_content.Items.Count == 0)
             {
@@ -225,7 +224,7 @@ namespace EpgTimer
             var keySortedServiceList = new List<long>(key.serviceList);
             keySortedServiceList.Sort();
             ServiceItem firstSelected = null;
-            foreach (ServiceItem info in listView_service.ItemsSource)
+            foreach (ServiceItem info in listView_service.Items)
             {
                 info.IsSelected = keySortedServiceList.BinarySearch((long)info.ID) >= 0;
                 if (firstSelected == null && info.IsSelected)
@@ -250,13 +249,10 @@ namespace EpgTimer
             if (select != null)
             {
                 EnableContentListBox(true);
-                foreach (ContentKindInfo info in listBox_content.Items)
+                if (listBox_content.Items.Contains(select))
                 {
-                    if (select.Nibble1 == info.Nibble1 && select.Nibble2 == info.Nibble2)
-                    {
-                        MessageBox.Show("すでに追加されています");
-                        return;
-                    }
+                    MessageBox.Show("すでに追加されています");
+                    return;
                 }
                 listBox_content.Items.Add(select);
             }
@@ -444,7 +440,8 @@ namespace EpgTimer
                 checkBox_notContent.IsEnabled = isEnabled;
                 if (isEnabled == false)
                 {
-                    listBox_content.Items.Add(new ContentKindInfo("(全ジャンル)", "", 0xFF, 0xFF));
+                    //"(全ジャンル)"表示用の特殊値
+                    listBox_content.Items.Add(new ContentKindInfo() { Nibble1 = 0xFE, Nibble2 = 0xFF });
                 }
             }
         }
