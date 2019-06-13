@@ -38,11 +38,12 @@ for i,v in ipairs(list) do
     free=nil
     f=edcb.io.popen('fsutil volume diskfree '..v)
     if f then
-      free,total,avail=f:read('*a'):match(':%s*(%d+).*:%s*(%d+).*:%s*(%d+)')
+      --最近のfsutilは数値に桁区切りがつく
+      free,total,avail=f:read('*a'):gsub("[%s',.]",''):match(':(%d+).*:(%d+).*:(%d+)')
       f:close()
     end
     ct:Append('    <dt>'..v..'</dt><dd>'..(free and
-      ('%.3f GB (avail: %.3f GB) / %.3f GB'):format(free/1024/1024/1024,avail/1024/1024/1024,total/1024/1024/1024) or '不明')..'</dd>\n')
+      ('%.3f GiB (avail: %.3f GiB) / %.3f GiB'):format(free/1024/1024/1024,avail/1024/1024/1024,total/1024/1024/1024) or '不明')..'</dd>\n')
   end
 end
 
