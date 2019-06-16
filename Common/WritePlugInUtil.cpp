@@ -2,6 +2,10 @@
 #include "WritePlugInUtil.h"
 
 #include "ErrDef.h"
+#ifndef _WIN32
+#include "StringUtil.h"
+#include <dlfcn.h>
+#endif
 
 CWritePlugInUtil::CWritePlugInUtil(void)
 {
@@ -23,53 +27,39 @@ BOOL CWritePlugInUtil::Initialize(
 		return FALSE;
 	}
 
-	module = ::LoadLibrary(loadDllFilePath);
+#ifdef _WIN32
+	module = LoadLibrary(loadDllFilePath);
+	auto getProcAddr = [=](const char* name) { return GetProcAddress((HMODULE)module, name); };
+#else
+	string strPath;
+	WtoUTF8(loadDllFilePath, strPath);
+	module = dlopen(strPath.c_str(), RTLD_LAZY);
+	auto getProcAddr = [=](const char* name) { return dlsym(module, name); };
+#endif
 
 	if( module == NULL ){
 		return FALSE;
 	}
 
-	pfnGetPlugInNameWP = ( GetPlugInNameWP ) ::GetProcAddress( module , "GetPlugInName");
-	if( !pfnGetPlugInNameWP ){
-		goto ERR_END;
-	}
-	pfnSettingWP = ( SettingWP ) ::GetProcAddress( module , "Setting");
-	if( !pfnSettingWP ){
-		goto ERR_END;
-	}
-	pfnCreateCtrlWP = ( CreateCtrlWP ) ::GetProcAddress( module , "CreateCtrl");
-	if( !pfnCreateCtrlWP ){
-		goto ERR_END;
-	}
-	pfnDeleteCtrlWP = ( DeleteCtrlWP ) ::GetProcAddress( module , "DeleteCtrl");
-	if( !pfnDeleteCtrlWP ){
-		goto ERR_END;
-	}
-	pfnStartSaveWP = ( StartSaveWP ) ::GetProcAddress( module , "StartSave");
-	if( !pfnStartSaveWP ){
-		goto ERR_END;
-	}
-	pfnStopSaveWP = ( StopSaveWP ) ::GetProcAddress( module , "StopSave");
-	if( !pfnStopSaveWP ){
-		goto ERR_END;
-	}
-	pfnGetSaveFilePathWP = ( GetSaveFilePathWP ) ::GetProcAddress( module , "GetSaveFilePath");
-	if( !pfnGetSaveFilePathWP ){
-		goto ERR_END;
-	}
-	pfnAddTSBuffWP = ( AddTSBuffWP ) ::GetProcAddress( module , "AddTSBuff");
-	if( !pfnAddTSBuffWP ){
-		goto ERR_END;
-	}
-
-	if( pfnCreateCtrlWP(&this->id) == FALSE ){
+	CreateCtrlWP pfnCreateCtrlWP;
+	if( (pfnCreateCtrlWP = (CreateCtrlWP)getProcAddr("CreateCtrl")) != NULL &&
+	    (pfnGetPlugInNameWP = (GetPlugInNameWP)getProcAddr("GetPlugInName")) != NULL &&
+	    (pfnSettingWP = (SettingWP)getProcAddr("Setting")) != NULL &&
+	    (pfnDeleteCtrlWP = (DeleteCtrlWP)getProcAddr("DeleteCtrl")) != NULL &&
+	    (pfnStartSaveWP = (StartSaveWP)getProcAddr("StartSave")) != NULL &&
+	    (pfnStopSaveWP = (StopSaveWP)getProcAddr("StopSave")) != NULL &&
+	    (pfnGetSaveFilePathWP = (GetSaveFilePathWP)getProcAddr("GetSaveFilePath")) != NULL &&
+	    (pfnAddTSBuffWP = (AddTSBuffWP)getProcAddr("AddTSBuff")) != NULL ){
+		if( pfnCreateCtrlWP(&this->id) ){
+			return TRUE;
+		}
 		this->id = 0;
-		goto ERR_END;
 	}
-	return TRUE;
-
-ERR_END:
-	::FreeLibrary( module );
+#ifdef _WIN32
+	FreeLibrary((HMODULE)module);
+#else
+	dlclose(module);
+#endif
 	module = NULL;
 	return FALSE;
 }
@@ -79,7 +69,11 @@ void CWritePlugInUtil::UnInitialize()
 	if( module != NULL ){
 		pfnDeleteCtrlWP(this->id);
 		this->id = 0;
-		::FreeLibrary( module );
+#ifdef _WIN32
+		FreeLibrary((HMODULE)module);
+#else
+		dlclose(module);
+#endif
 	}
 	module = NULL;
 }

@@ -16,7 +16,7 @@ public:
 	// loadDllFilePath	[IN]ロードするDLLパス
 	DWORD Initialize(
 		BOOL asyncFlag,
-		LPCWSTR loadDllFilePath = L"EpgDataCap3.dll"
+		LPCWSTR loadDllFilePath = NULL
 		);
 
 	//DLLの開放
@@ -165,7 +165,7 @@ public:
 	int GetTimeDelay(
 		);
 
-protected:
+private:
 	typedef DWORD (WINAPI *InitializeEP3)(BOOL asyncFlag, DWORD* id);
 	typedef DWORD (WINAPI *UnInitializeEP3)(DWORD id);
 	typedef DWORD (WINAPI *AddTSPacketEP3)(DWORD id, BYTE* data, DWORD size);
@@ -182,10 +182,8 @@ protected:
 	typedef DWORD (WINAPI *SearchEpgInfoEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, WORD eventID, BYTE pfOnlyFlag, EPG_EVENT_INFO** epgInfo);
 	typedef int (WINAPI *GetTimeDelayEP3)(DWORD id);
 
-	HMODULE module;
+	void* module;
 	DWORD id;
-
-	InitializeEP3			pfnInitializeEP3;
 	UnInitializeEP3			pfnUnInitializeEP3;
 	AddTSPacketEP3			pfnAddTSPacketEP3;
 	GetTSIDEP3				pfnGetTSIDEP3;
@@ -200,8 +198,7 @@ protected:
 	SearchEpgInfoEP3		pfnSearchEpgInfoEP3;
 	GetTimeDelayEP3			pfnGetTimeDelayEP3;
 
-protected:
-	BOOL LoadDll(LPCWSTR loadDllFilePath);
-	BOOL UnLoadDll(void);
+	CEpgDataCap3Util(const CEpgDataCap3Util&);
+	CEpgDataCap3Util& operator=(const CEpgDataCap3Util&);
 };
 

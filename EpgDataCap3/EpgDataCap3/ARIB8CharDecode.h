@@ -677,6 +677,9 @@ protected:
 	DWORD m_dwWaitTime;
 
 	vector<CAPTION_DATA>* m_pCaptionList;
+#ifndef _WIN32
+	static const WCHAR m_jisTable[84 * 94 + 1];
+#endif
 protected:
 	void InitPSISI(void);
 	void InitCaption(void);

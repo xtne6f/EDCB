@@ -86,7 +86,7 @@ public:
 		DWORD* writeSize
 		);
 
-protected:
+private:
 	typedef BOOL (WINAPI *GetPlugInNameWP)(WCHAR* name, DWORD* nameSize);
 	typedef void (WINAPI *SettingWP)(HWND parentWnd);
 	typedef BOOL (WINAPI *CreateCtrlWP)(DWORD* id);
@@ -96,18 +96,18 @@ protected:
 	typedef BOOL (WINAPI *GetSaveFilePathWP)(DWORD id, WCHAR* filePath, DWORD* filePathSize);
 	typedef BOOL (WINAPI *AddTSBuffWP)(DWORD id, BYTE* data, DWORD size, DWORD* writeSize);
 
-	HMODULE module;
+	void* module;
 	DWORD id;
 
 	GetPlugInNameWP				pfnGetPlugInNameWP;
 	SettingWP					pfnSettingWP;
-	CreateCtrlWP				pfnCreateCtrlWP;
 	DeleteCtrlWP				pfnDeleteCtrlWP;
 	StartSaveWP					pfnStartSaveWP;
 	StopSaveWP					pfnStopSaveWP;
 	GetSaveFilePathWP			pfnGetSaveFilePathWP;
 	AddTSBuffWP					pfnAddTSBuffWP;
 
-protected:
+	CWritePlugInUtil(const CWritePlugInUtil&);
+	CWritePlugInUtil& operator=(const CWritePlugInUtil&);
 };
 

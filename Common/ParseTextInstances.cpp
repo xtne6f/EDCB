@@ -6,12 +6,12 @@
 namespace
 {
 //タブ区切りの次のトークンに移動する
-LPCWSTR NextToken(LPCWSTR* token)
+LPCWSTR NextToken(LPCWSTR* token, WCHAR extraDelimiter = L'\0')
 {
 	//tokenには現在のトークン先頭/末尾/次のトークン先頭を格納する
 	token[0] = token[2];
 	for( ; *token[2] != L'\0'; token[2]++ ){
-		if( *token[2] == L'\t' ){
+		if( *token[2] == L'\t' || *token[2] == extraDelimiter ){
 			token[1] = token[2]++;
 			return token[0];
 		}
@@ -35,19 +35,50 @@ DWORD FinalizeField(wstring& str)
 	return tabCount;
 }
 
-bool ParseDateTime(LPCWSTR* token, SYSTEMTIME& st)
+bool ParseDateTime(LPCWSTR* token, SYSTEMTIME& st, DWORD* duration = NULL)
 {
 	__int64 t;
 	st.wMilliseconds = 0;
-	return swscanf_s(NextToken(token), L"%hu/%hu/%hu", &st.wYear, &st.wMonth, &st.wDay) == 3 &&
-	       swscanf_s(NextToken(token), L"%hu:%hu:%hu", &st.wHour, &st.wMinute, &st.wSecond) == 3 &&
-	       ((t = ConvertI64Time(st)) != 0) &&
-	       ConvertSystemTime(t, &st);
+	for( int i = 0; i < (duration ? 3 : 2); i++ ){
+		NextToken(token);
+		LPWSTR endp0, endp1, endp2;
+		WORD w0 = (WORD)wcstoul(token[0], &endp0, 10);
+		if( endp0 == token[0] || *endp0 != (i == 0 ? L'/' : L':') ){
+			return false;
+		}
+		WORD w1 = (WORD)wcstoul(++endp0, &endp1, 10);
+		if( endp1 == endp0 || *endp1 != (i == 0 ? L'/' : L':') ){
+			return false;
+		}
+		WORD w2 = (WORD)wcstoul(++endp1, &endp2, 10);
+		if( endp2 == endp1 || endp2 > token[1] ){
+			return false;
+		}
+		if( i == 0 ){
+			st.wYear = w0;
+			st.wMonth = w1;
+			st.wDay = w2;
+		}else if( i == 1 ){
+			st.wHour = w0;
+			st.wMinute = w1;
+			st.wSecond = w2;
+		}else{
+			*duration = (w0 * 60 + w1) * 60 + w2;
+		}
+	}
+	return (t = ConvertI64Time(st)) != 0 && ConvertSystemTime(t, &st);
+}
+
+int NextTokenToInt(LPCWSTR* token)
+{
+	LPWSTR endp;
+	int n = (int)wcstol(NextToken(token), &endp, 10);
+	return endp > token[1] ? 0 : n;
 }
 
 void ParseRecFolderList(LPCWSTR* token, vector<REC_FILE_SET_INFO>& list)
 {
-	for( int n = _wtoi(NextToken(token)); n > 0; n-- ){
+	for( int n = NextTokenToInt(token); n > 0; n-- ){
 		NextToken(token);
 		list.resize(list.size() + 1);
 		list.back().recFolder.assign(token[0], token[1]);
@@ -101,15 +132,15 @@ bool CParseChText4::ParseLine(LPCWSTR parseLine, pair<DWORD, CH_DATA4>& item)
 	NextToken(token);
 	item.second.networkName.assign(token[0], token[1]);
 
-	item.second.space = _wtoi(NextToken(token));
-	item.second.ch = _wtoi(NextToken(token));
-	item.second.originalNetworkID = (WORD)_wtoi(NextToken(token));
-	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
-	item.second.serviceID = (WORD)_wtoi(NextToken(token));
-	item.second.serviceType = (WORD)_wtoi(NextToken(token));
-	item.second.partialFlag = _wtoi(NextToken(token)) != 0;
-	item.second.useViewFlag = _wtoi(NextToken(token)) != 0;
-	item.second.remoconID = (BYTE)_wtoi(NextToken(token));
+	item.second.space = NextTokenToInt(token);
+	item.second.ch = NextTokenToInt(token);
+	item.second.originalNetworkID = (WORD)NextTokenToInt(token);
+	item.second.transportStreamID = (WORD)NextTokenToInt(token);
+	item.second.serviceID = (WORD)NextTokenToInt(token);
+	item.second.serviceType = (WORD)NextTokenToInt(token);
+	item.second.partialFlag = NextTokenToInt(token) != 0;
+	item.second.useViewFlag = NextTokenToInt(token) != 0;
+	item.second.remoconID = (BYTE)NextTokenToInt(token);
 	item.first = this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1;
 	return true;
 }
@@ -163,13 +194,13 @@ bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 	NextToken(token);
 	item.second.networkName.assign(token[0], token[1]);
 
-	item.second.originalNetworkID = (WORD)_wtoi(NextToken(token));
-	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
-	item.second.serviceID = (WORD)_wtoi(NextToken(token));
-	item.second.serviceType = (WORD)_wtoi(NextToken(token));
-	item.second.partialFlag = _wtoi(NextToken(token)) != 0;
-	item.second.epgCapFlag = _wtoi(NextToken(token)) != 0;
-	item.second.searchFlag = _wtoi(NextToken(token)) != 0;
+	item.second.originalNetworkID = (WORD)NextTokenToInt(token);
+	item.second.transportStreamID = (WORD)NextTokenToInt(token);
+	item.second.serviceID = (WORD)NextTokenToInt(token);
+	item.second.serviceType = (WORD)NextTokenToInt(token);
+	item.second.partialFlag = NextTokenToInt(token) != 0;
+	item.second.epgCapFlag = NextTokenToInt(token) != 0;
+	item.second.searchFlag = NextTokenToInt(token) != 0;
 	item.first = (LONGLONG)item.second.originalNetworkID << 32 | (LONGLONG)item.second.transportStreamID << 16 | item.second.serviceID;
 	if( this->itemMap.empty() ){
 		this->parsedOrder.clear();
@@ -258,27 +289,28 @@ bool CParseServiceChgText::ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& 
 
 DWORD CParseRecInfoText::AddRecInfo(const REC_FILE_INFO& item)
 {
-	REC_FILE_INFO info = item;
-	info.id = this->nextID++;
-	this->itemMap[info.id] = info;
+	map<DWORD, REC_FILE_INFO>::iterator itr = this->itemMap.insert(std::make_pair(this->nextID, item)).first;
+	this->nextID = this->nextID % 100000000 + 1;
+	DWORD id = itr->second.id = itr->first;
 
 	//非プロテクトの要素数がkeepCount以下になるまで削除
-	DWORD protectCount = 0;
-	map<DWORD, REC_FILE_INFO>::const_iterator itr;
-	for( itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		if( itr->second.protectFlag != 0 ){
-			protectCount++;
+	if( this->keepCount < UINT_MAX ){
+		size_t protectCount = std::count_if(this->itemMap.begin(), this->itemMap.end(),
+			[](const pair<DWORD, REC_FILE_INFO>& a) { return a.second.protectFlag != 0; });
+		itr++;
+		while( this->itemMap.size() - protectCount > this->keepCount ){
+			if( itr == this->itemMap.end() ){
+				itr = this->itemMap.begin();
+			}
+			if( itr->second.protectFlag == 0 ){
+				OnDelRecInfo(itr->second);
+				itr = this->itemMap.erase(itr);
+			}else{
+				itr++;
+			}
 		}
 	}
-	for( itr = this->itemMap.begin(); itr != this->itemMap.end() && this->itemMap.size() - protectCount > this->keepCount; ){
-		if( itr->second.protectFlag == 0 ){
-			OnDelRecInfo(itr->second);
-			itr = this->itemMap.erase(itr);
-		}else{
-			itr++;
-		}
-	}
-	return info.id;
+	return id;
 }
 
 bool CParseRecInfoText::DelRecInfo(DWORD id)
@@ -319,7 +351,19 @@ void CParseRecInfoText::SetRecInfoFolder(LPCWSTR folder)
 
 bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item)
 {
-	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
+	if( this->saveNextID == 1 ){
+		this->saveNextID = 0;
+	}
+	if( parseLine[0] == L';' ){
+		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
+			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, NULL, 10);
+			if( nextID_ != 0 && nextID_ <= 100000000 ){
+				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
+			}
+			this->saveNextID = 2;
+		}
+		return false;
+	}else if( wcschr(parseLine, L'\t') == NULL ){
 		return false;
 	}
 	LPCWSTR token[3] = {NULL, NULL, parseLine};
@@ -329,36 +373,38 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 	NextToken(token);
 	item.second.title.assign(token[0], token[1]);
 
-	WORD wDuration[3];
-	if( ParseDateTime(token, item.second.startTime) == false ||
-	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &wDuration[0], &wDuration[1], &wDuration[2]) != 3 ){
+	if( ParseDateTime(token, item.second.startTime, &item.second.durationSecond) == false ){
 		return false;
 	}
-	item.second.durationSecond = (wDuration[0] * 60 + wDuration[1]) * 60 + wDuration[2];
-
 	NextToken(token);
 	item.second.serviceName.assign(token[0], token[1]);
-	item.second.originalNetworkID = (WORD)_wtoi(NextToken(token));
-	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
-	item.second.serviceID = (WORD)_wtoi(NextToken(token));
-	item.second.eventID = (WORD)_wtoi(NextToken(token));
-	item.second.drops = _wtoi64(NextToken(token));
-	item.second.scrambles = _wtoi64(NextToken(token));
-	item.second.recStatus = _wtoi(NextToken(token));
+	item.second.originalNetworkID = (WORD)NextTokenToInt(token);
+	item.second.transportStreamID = (WORD)NextTokenToInt(token);
+	item.second.serviceID = (WORD)NextTokenToInt(token);
+	item.second.eventID = (WORD)NextTokenToInt(token);
+	item.second.drops = _wcstoi64(NextToken(token), NULL, 10);
+	item.second.scrambles = _wcstoi64(NextToken(token), NULL, 10);
+	item.second.recStatus = (DWORD)NextTokenToInt(token);
 
 	if( ParseDateTime(token, item.second.startTimeEpg) == false ){
 		return false;
 	}
 	NextToken(token);
-	item.second.protectFlag = _wtoi(NextToken(token)) != 0;
-	item.second.id = this->nextID++;
-	item.first = item.second.id;
+	item.second.protectFlag = NextTokenToInt(token) != 0;
+	item.second.id = item.first = (DWORD)NextTokenToInt(token);
+	if( item.first == 0 || item.first > 100000000 || this->itemMap.count(item.first) ){
+		//新しいIDを与える
+		item.second.id = item.first = this->nextID;
+	}
+	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
 	return true;
 }
 
 bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const
 {
-	Format(saveLine, L"%ls\n%ls\n%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%ls\n%d\n%d\n%d\n%d\n%lld\n%lld\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%ls\n%d\n",
+	WCHAR id[32];
+	swprintf_s(id, L"%d", item.second.id);
+	Format(saveLine, L"%ls\n%ls\n%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%ls\n%d\n%d\n%d\n%d\n%lld\n%lld\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%ls\n%d\n%ls",
 		item.second.recFilePath.c_str(),
 		item.second.title.c_str(),
 		item.second.startTime.wYear, item.second.startTime.wMonth, item.second.startTime.wDay,
@@ -375,13 +421,38 @@ bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring
 		item.second.startTimeEpg.wYear, item.second.startTimeEpg.wMonth, item.second.startTimeEpg.wDay,
 		item.second.startTimeEpg.wHour, item.second.startTimeEpg.wMinute, item.second.startTimeEpg.wSecond,
 		item.second.GetComment(),
-		item.second.protectFlag
+		item.second.protectFlag,
+		this->saveNextID != 0 ? id : L""
 		);
 	return FinalizeField(saveLine) == 17;
 }
 
+bool CParseRecInfoText::SaveFooterLine(wstring& saveLine) const
+{
+	//次の読み込み時にnextIDを復元するためのフッタコメント
+	//このコメントはもし削除されても大きな問題はない
+	Format(saveLine, L";;NextID=%d", this->nextID);
+	//読み込み時にこのコメントが無かったときは保存しない
+	return this->saveNextID != 0;
+}
+
 bool CParseRecInfoText::SelectItemToSave(vector<map<DWORD, REC_FILE_INFO>::const_iterator>& itemList) const
 {
+	if( this->saveNextID != 0 ){
+		if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
+			//ID巡回中
+			map<DWORD, REC_FILE_INFO>::const_iterator itr;
+			for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
+				itemList.push_back(itr);
+			}
+			for( itr = this->itemMap.begin(); itr->first <= 50000000; itr++ ){
+				itemList.push_back(itr);
+			}
+			return true;
+		}
+		return false;
+	}
+	//NextIDコメントが無かったときは従来どおり開始日時順で保存する
 	itemList.reserve(this->itemMap.size());
 	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
 		itemList.push_back(itr);
@@ -406,29 +477,27 @@ wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, 
 	wstring info;
 	if( recFilePath[0] != L'\0' ){
 		//補足の録画情報ファイルを読み込む
-		DWORD shareAll = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
-		HANDLE hFile = INVALID_HANDLE_VALUE;
+		std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
 		if( resultOfGetRecInfoFolder.empty() || recInfoFolderOnly == false ){
-			hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			fp.reset(UtilOpenFile(fs_path(recFilePath).concat(extension), UTIL_SHARED_READ | UTIL_SH_DELETE));
 		}
-		if( hFile == INVALID_HANDLE_VALUE && resultOfGetRecInfoFolder.empty() == false ){
+		if( !fp && resultOfGetRecInfoFolder.empty() == false ){
 			fs_path infoPath = fs_path(resultOfGetRecInfoFolder).append(fs_path(recFilePath).filename().concat(extension).native());
-			hFile = CreateFile(infoPath.c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			fp.reset(UtilOpenFile(infoPath, UTIL_SHARED_READ | UTIL_SH_DELETE));
 		}
-		if( hFile != INVALID_HANDLE_VALUE ){
-			DWORD dwSize = GetFileSize(hFile, NULL);
-			if( dwSize != 0 && dwSize != INVALID_FILE_SIZE ){
-				vector<char> buf(dwSize);
-				DWORD dwRead;
-				if( ReadFile(hFile, buf.data(), dwSize, &dwRead, NULL) ){
-					if( dwRead >= 3 && buf[0] == '\xEF' && buf[1] == '\xBB' && buf[2] == '\xBF' ){
-						UTF8toW(string(buf.begin() + 3, buf.begin() + dwRead), info);
+		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
+			__int64 fileSize = _ftelli64(fp.get());
+			if( 0 < fileSize && fileSize < 1024 * 1024 ){
+				vector<char> buf((size_t)fileSize + 1, '\0');
+				rewind(fp.get());
+				if( fread(buf.data(), 1, (size_t)fileSize, fp.get()) == (size_t)fileSize ){
+					if( fileSize >= 3 && buf[0] == '\xEF' && buf[1] == '\xBB' && buf[2] == '\xBF' ){
+						UTF8toW(buf.data() + 3, info);
 					}else{
-						AtoW(string(buf.begin(), buf.begin() + dwRead), info);
+						AtoW(buf.data(), info);
 					}
 				}
 			}
-			CloseHandle(hFile);
 		}
 	}
 	return info;
@@ -494,9 +563,9 @@ bool CParseRecInfo2Text::ParseLine(LPCWSTR parseLine, pair<DWORD, PARSE_REC_INFO
 	}
 	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
-	item.second.originalNetworkID = (WORD)_wtoi(NextToken(token));
-	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
-	item.second.serviceID = (WORD)_wtoi(NextToken(token));
+	item.second.originalNetworkID = (WORD)NextTokenToInt(token);
+	item.second.transportStreamID = (WORD)NextTokenToInt(token);
+	item.second.serviceID = (WORD)NextTokenToInt(token);
 
 	if( ParseDateTime(token, item.second.startTime) == false ){
 		return false;
@@ -536,7 +605,7 @@ bool CParseRecInfo2Text::SelectItemToSave(vector<map<DWORD, PARSE_REC_INFO2_ITEM
 
 DWORD CParseReserveText::AddReserve(const RESERVE_DATA& item)
 {
-	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.insert(pair<DWORD, RESERVE_DATA>(this->nextID, item)).first;
+	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.insert(std::make_pair(this->nextID, item)).first;
 	this->nextID = this->nextID % 100000000 + 1;
 	this->sortByEventCache.clear();
 	return itr->second.reserveID = itr->first;
@@ -599,7 +668,7 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 	}
 	if( parseLine[0] == L';' ){
 		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
-			DWORD nextID_ = (DWORD)_wtoi(&parseLine[9]);
+			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, NULL, 10);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
@@ -611,29 +680,25 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 	}
 	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
-	WORD wDuration[3];
-	if( ParseDateTime(token, item.second.startTime) == false ||
-	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &wDuration[0], &wDuration[1], &wDuration[2]) != 3 ){
+	if( ParseDateTime(token, item.second.startTime, &item.second.durationSecond) == false ){
 		return false;
 	}
-	item.second.durationSecond = (wDuration[0] * 60 + wDuration[1]) * 60 + wDuration[2];
-
 	NextToken(token);
 	item.second.title.assign(token[0], token[1]);
 	NextToken(token);
 	item.second.stationName.assign(token[0], token[1]);
-	item.second.originalNetworkID = (WORD)_wtoi(NextToken(token));
-	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
-	item.second.serviceID = (WORD)_wtoi(NextToken(token));
-	item.second.eventID = (WORD)_wtoi(NextToken(token));
-	item.second.recSetting.priority = (BYTE)_wtoi(NextToken(token));
-	item.second.recSetting.tuijyuuFlag = _wtoi(NextToken(token)) != 0 && item.second.eventID != 0xFFFF;
-	item.second.reserveID = item.first = _wtoi(NextToken(token));
+	item.second.originalNetworkID = (WORD)NextTokenToInt(token);
+	item.second.transportStreamID = (WORD)NextTokenToInt(token);
+	item.second.serviceID = (WORD)NextTokenToInt(token);
+	item.second.eventID = (WORD)NextTokenToInt(token);
+	item.second.recSetting.priority = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.tuijyuuFlag = NextTokenToInt(token) != 0 && item.second.eventID != 0xFFFF;
+	item.second.reserveID = item.first = (DWORD)NextTokenToInt(token);
 	if( item.first == 0 || item.first > 100000000 ){
 		return false;
 	}
-	item.second.recSetting.recMode = (BYTE)_wtoi(NextToken(token));
-	item.second.recSetting.pittariFlag = _wtoi(NextToken(token)) != 0 && item.second.eventID != 0xFFFF;
+	item.second.recSetting.recMode = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.pittariFlag = NextTokenToInt(token) != 0 && item.second.eventID != 0xFFFF;
 	NextToken(token);
 	if( item.second.recSetting.batFilePath.assign(token[0], token[1]) == L"0" ){
 		item.second.recSetting.batFilePath.clear();
@@ -646,26 +711,23 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 	//録画フォルダパスの最初の要素だけここにある
 	item.second.recSetting.recFolderList.resize(1);
 	item.second.recSetting.recFolderList[0].recFolder.assign(token[0], token[1]);
-	item.second.recSetting.suspendMode = (BYTE)_wtoi(NextToken(token));
-	if( token[0] == token[1] ){
-		item.second.recSetting.suspendMode = 4;
-	}
-	item.second.recSetting.rebootFlag = _wtoi(NextToken(token)) != 0;
+	item.second.recSetting.suspendMode = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.rebootFlag = NextTokenToInt(token) != 0;
 	//廃止(旧recFilePath)
 	NextToken(token);
-	item.second.recSetting.useMargineFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.startMargine = _wtoi(NextToken(token));
-	item.second.recSetting.endMargine = _wtoi(NextToken(token));
-	item.second.recSetting.serviceMode = _wtoi(NextToken(token));
+	item.second.recSetting.useMargineFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.startMargine = NextTokenToInt(token);
+	item.second.recSetting.endMargine = NextTokenToInt(token);
+	item.second.recSetting.serviceMode = (DWORD)NextTokenToInt(token);
 
 	if( ParseDateTime(token, item.second.startTimeEpg) == false ){
 		return false;
 	}
 	ParseRecFolderList(token, item.second.recSetting.recFolderList);
-	item.second.recSetting.continueRecFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.partialRecFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.tunerID = _wtoi(NextToken(token));
-	item.second.reserveStatus = _wtoi(NextToken(token));
+	item.second.recSetting.continueRecFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.partialRecFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.tunerID = (DWORD)NextTokenToInt(token);
+	item.second.reserveStatus = (DWORD)NextTokenToInt(token);
 
 	ParseRecFolderList(token, item.second.recSetting.partialRecFolder);
 	item.second.presentFlag = 0;
@@ -736,10 +798,7 @@ bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring&
 
 bool CParseReserveText::SaveFooterLine(wstring& saveLine) const
 {
-	//次の読み込み時にnextIDを復元するためのフッタコメント
-	//このコメントはもし削除されても大きな問題はない
 	Format(saveLine, L";;NextID=%d", this->nextID);
-	//読み込み時にこのコメントが無かったときは保存しない
 	return this->saveNextID != 0;
 }
 
@@ -809,7 +868,7 @@ const vector<pair<ULONGLONG, DWORD>>& CParseReserveText::GetSortByEventList() co
 
 DWORD CParseEpgAutoAddText::AddData(const EPG_AUTO_ADD_DATA& item)
 {
-	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.insert(pair<DWORD, EPG_AUTO_ADD_DATA>(this->nextID, item)).first;
+	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.insert(std::make_pair(this->nextID, item)).first;
 	this->nextID = this->nextID % 100000000 + 1;
 	return itr->second.dataID = itr->first;
 }
@@ -846,7 +905,7 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 	}
 	if( parseLine[0] == L';' ){
 		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
-			DWORD nextID_ = (DWORD)_wtoi(&parseLine[9]);
+			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, NULL, 10);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
@@ -858,7 +917,7 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 	}
 	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
-	item.second.dataID = item.first = _wtoi(NextToken(token));
+	item.second.dataID = item.first = (DWORD)NextTokenToInt(token);
 	if( item.first == 0 || item.first > 100000000 ){
 		return false;
 	}
@@ -866,14 +925,15 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 	item.second.searchInfo.andKey.assign(token[0], token[1]);
 	NextToken(token);
 	item.second.searchInfo.notKey.assign(token[0], token[1]);
-	item.second.searchInfo.regExpFlag = _wtoi(NextToken(token)) != 0;
-	item.second.searchInfo.titleOnlyFlag = _wtoi(NextToken(token)) != 0;
-	NextToken(token);
-	wstring strContent(token[0], token[1]);
-	for( size_t i = 0; i != wstring::npos; i = strContent.find(L',', i + 1) ){
-		int flag = 0;
-		//注意: 互換のため"%d"
-		if( swscanf_s(&strContent.c_str()[i == 0 ? 0 : i + 1], L"%d", &flag) == 1 ){
+	item.second.searchInfo.regExpFlag = NextTokenToInt(token) != 0;
+	item.second.searchInfo.titleOnlyFlag = NextTokenToInt(token) != 0;
+
+	LPCWSTR subToken[3] = {};
+	for( subToken[2] = NextToken(token); NextToken(subToken, L',') < token[1]; ){
+		//注意: 互換のためwcstol
+		LPWSTR endp;
+		int flag = (int)wcstol(subToken[0], &endp, 10);
+		if( endp != subToken[0] && endp <= subToken[1] ){
 			EPGDB_CONTENT_DATA addItem;
 			addItem.content_nibble_level_1 = (BYTE)((DWORD)flag >> 24);
 			addItem.content_nibble_level_2 = (BYTE)((DWORD)flag >> 16);
@@ -882,11 +942,17 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 			item.second.searchInfo.contentList.push_back(addItem);
 		}
 	}
-	NextToken(token);
-	wstring strDate(token[0], token[1]);
-	for( size_t i = 0; i != wstring::npos; i = strDate.find(L',', i + 1) ){
+	for( subToken[2] = NextToken(token); NextToken(subToken, L',') < token[1]; ){
 		DWORD dwTime[4];
-		if( swscanf_s(&strDate.c_str()[i == 0 ? 0 : i + 1], L"%u-%u-%u-%u", &dwTime[0], &dwTime[1], &dwTime[2], &dwTime[3]) == 4 ){
+		for( int i = 0; i < 4; i++ ){
+			LPWSTR endp;
+			dwTime[i] = (DWORD)wcstoul(subToken[0], &endp, 10);
+			if( endp == subToken[0] || endp > subToken[1] || (i < 3 && *endp != L'-') ){
+				break;
+			}else if( i < 3 ){
+				subToken[0] = endp + 1;
+				continue;
+			}
 			EPGDB_SEARCH_DATE_INFO addItem;
 			addItem.startDayOfWeek = dwTime[0] % 7;
 			addItem.startHour = (dwTime[1] >> 16) % 24;
@@ -897,42 +963,38 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 			item.second.searchInfo.dateList.push_back(addItem);
 		}
 	}
-	NextToken(token);
-	wstring strService(token[0], token[1]);
-	for( size_t i = 0; i != wstring::npos; i = strService.find(L',', i + 1) ){
-		__int64 i64Ch = 0;
-		if( swscanf_s(&strService.c_str()[i == 0 ? 0 : i + 1], L"%llx", &i64Ch) == 1 ){
+	for( subToken[2] = NextToken(token); NextToken(subToken, L',') < token[1]; ){
+		LPWSTR endp;
+		__int64 i64Ch = _wcstoi64(subToken[0], &endp, 16);
+		if( endp != subToken[0] && endp <= subToken[1] ){
 			item.second.searchInfo.serviceList.push_back(i64Ch & 0xFFFFFFFFFFFFLL);
 		}
 	}
-	item.second.recSetting.recMode = (BYTE)_wtoi(NextToken(token));
-	item.second.recSetting.priority = (BYTE)_wtoi(NextToken(token));
-	item.second.recSetting.tuijyuuFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.serviceMode = _wtoi(NextToken(token));
-	item.second.recSetting.pittariFlag = _wtoi(NextToken(token)) != 0;
+	item.second.recSetting.recMode = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.priority = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.tuijyuuFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.serviceMode = (DWORD)NextTokenToInt(token);
+	item.second.recSetting.pittariFlag = NextTokenToInt(token) != 0;
 	NextToken(token);
 	item.second.recSetting.batFilePath.assign(token[0], token[1]);
-	item.second.recSetting.suspendMode = (BYTE)_wtoi(NextToken(token));
-	if( token[0] == token[1] ){
-		item.second.recSetting.suspendMode = 4;
-	}
-	item.second.recSetting.rebootFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.useMargineFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.startMargine = _wtoi(NextToken(token));
-	item.second.recSetting.endMargine = _wtoi(NextToken(token));
+	item.second.recSetting.suspendMode = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.rebootFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.useMargineFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.startMargine = NextTokenToInt(token);
+	item.second.recSetting.endMargine = NextTokenToInt(token);
 
 	ParseRecFolderList(token, item.second.recSetting.recFolderList);
-	item.second.recSetting.continueRecFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.partialRecFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.tunerID = _wtoi(NextToken(token));
-	item.second.searchInfo.aimaiFlag = _wtoi(NextToken(token)) != 0;
-	item.second.searchInfo.notContetFlag = _wtoi(NextToken(token)) != 0;
-	item.second.searchInfo.notDateFlag = _wtoi(NextToken(token)) != 0;
-	item.second.searchInfo.freeCAFlag = (BYTE)_wtoi(NextToken(token));
+	item.second.recSetting.continueRecFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.partialRecFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.tunerID = (DWORD)NextTokenToInt(token);
+	item.second.searchInfo.aimaiFlag = NextTokenToInt(token) != 0;
+	item.second.searchInfo.notContetFlag = NextTokenToInt(token) != 0;
+	item.second.searchInfo.notDateFlag = NextTokenToInt(token) != 0;
+	item.second.searchInfo.freeCAFlag = (BYTE)NextTokenToInt(token);
 
 	ParseRecFolderList(token, item.second.recSetting.partialRecFolder);
-	item.second.searchInfo.chkRecEnd = _wtoi(NextToken(token)) != 0;
-	item.second.searchInfo.chkRecDay = (WORD)_wtoi(NextToken(token));
+	item.second.searchInfo.chkRecEnd = NextTokenToInt(token) != 0;
+	item.second.searchInfo.chkRecDay = (WORD)NextTokenToInt(token);
 	item.second.addCount = 0;
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
 	return true;
@@ -1049,7 +1111,7 @@ bool CParseEpgAutoAddText::SelectItemToSave(vector<map<DWORD, EPG_AUTO_ADD_DATA>
 
 DWORD CParseManualAutoAddText::AddData(const MANUAL_AUTO_ADD_DATA& item)
 {
-	map<DWORD, MANUAL_AUTO_ADD_DATA>::iterator itr = this->itemMap.insert(pair<DWORD, MANUAL_AUTO_ADD_DATA>(this->nextID, item)).first;
+	map<DWORD, MANUAL_AUTO_ADD_DATA>::iterator itr = this->itemMap.insert(std::make_pair(this->nextID, item)).first;
 	this->nextID = this->nextID % 100000000 + 1;
 	itr->second.recSetting.pittariFlag = 0;
 	itr->second.recSetting.tuijyuuFlag = 0;
@@ -1080,7 +1142,7 @@ bool CParseManualAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, MANUAL_AU
 	}
 	if( parseLine[0] == L';' ){
 		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
-			DWORD nextID_ = (DWORD)_wtoi(&parseLine[9]);
+			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, NULL, 10);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
@@ -1092,40 +1154,37 @@ bool CParseManualAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, MANUAL_AU
 	}
 	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
-	item.second.dataID = item.first = _wtoi(NextToken(token));
+	item.second.dataID = item.first = (DWORD)NextTokenToInt(token);
 	if( item.first == 0 || item.first > 100000000 ){
 		return false;
 	}
-	item.second.dayOfWeekFlag = (BYTE)_wtoi(NextToken(token));
-	item.second.startTime = _wtoi(NextToken(token));
-	item.second.durationSecond = _wtoi(NextToken(token));
+	item.second.dayOfWeekFlag = (BYTE)NextTokenToInt(token);
+	item.second.startTime = (DWORD)NextTokenToInt(token);
+	item.second.durationSecond = (DWORD)NextTokenToInt(token);
 	NextToken(token);
 	item.second.title.assign(token[0], token[1]);
 	NextToken(token);
 	item.second.stationName.assign(token[0], token[1]);
-	item.second.originalNetworkID = (WORD)_wtoi(NextToken(token));
-	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
-	item.second.serviceID = (WORD)_wtoi(NextToken(token));
-	item.second.recSetting.recMode = (BYTE)_wtoi(NextToken(token));
-	item.second.recSetting.priority = (BYTE)_wtoi(NextToken(token));
-	item.second.recSetting.tuijyuuFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.serviceMode = _wtoi(NextToken(token));
-	item.second.recSetting.pittariFlag = _wtoi(NextToken(token)) != 0;
+	item.second.originalNetworkID = (WORD)NextTokenToInt(token);
+	item.second.transportStreamID = (WORD)NextTokenToInt(token);
+	item.second.serviceID = (WORD)NextTokenToInt(token);
+	item.second.recSetting.recMode = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.priority = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.tuijyuuFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.serviceMode = (DWORD)NextTokenToInt(token);
+	item.second.recSetting.pittariFlag = NextTokenToInt(token) != 0;
 	NextToken(token);
 	item.second.recSetting.batFilePath.assign(token[0], token[1]);
-	item.second.recSetting.suspendMode = (BYTE)_wtoi(NextToken(token));
-	if( token[0] == token[1] ){
-		item.second.recSetting.suspendMode = 4;
-	}
-	item.second.recSetting.rebootFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.useMargineFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.startMargine = _wtoi(NextToken(token));
-	item.second.recSetting.endMargine = _wtoi(NextToken(token));
+	item.second.recSetting.suspendMode = (BYTE)NextTokenToInt(token);
+	item.second.recSetting.rebootFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.useMargineFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.startMargine = NextTokenToInt(token);
+	item.second.recSetting.endMargine = NextTokenToInt(token);
 
 	ParseRecFolderList(token, item.second.recSetting.recFolderList);
-	item.second.recSetting.continueRecFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.partialRecFlag = _wtoi(NextToken(token)) != 0;
-	item.second.recSetting.tunerID = _wtoi(NextToken(token));
+	item.second.recSetting.continueRecFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.partialRecFlag = NextTokenToInt(token) != 0;
+	item.second.recSetting.tunerID = (DWORD)NextTokenToInt(token);
 
 	ParseRecFolderList(token, item.second.recSetting.partialRecFolder);
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;

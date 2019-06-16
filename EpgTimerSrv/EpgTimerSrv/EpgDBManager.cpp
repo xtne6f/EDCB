@@ -45,16 +45,13 @@ namespace
 {
 
 //長期アーカイブ用ファイルを開く
-FILE* OpenOldArchive(LPCWSTR dir, __int64 t, LPCWSTR mode, bool createNew = false)
+FILE* OpenOldArchive(LPCWSTR dir, __int64 t, int flags)
 {
 	SYSTEMTIME st;
 	ConvertSystemTime(t, &st);
 	WCHAR name[32];
 	swprintf_s(name, L"%04d%02d%02d.dat", st.wYear, st.wMonth, st.wDay);
-	if( createNew == false || UtilFileExists(fs_path(dir).append(name)).first == false ){
-		return secure_wfopen(fs_path(dir).append(name).c_str(), mode);
-	}
-	return NULL;
+	return UtilOpenFile(fs_path(dir).append(name), flags);
 }
 
 //存在する長期アーカイブの日付情報を昇順でリストする
@@ -136,7 +133,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	}
 	CEpgDataCap3Util epgUtil;
 	if( epgUtil.Initialize(FALSE) != NO_ERR ){
-		OutputDebugString(L"★EpgDataCap3.dllの初期化に失敗しました。\r\n");
+		OutputDebugString(L"★EpgDataCap3の初期化に失敗しました。\r\n");
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
 		sys->loadStop = true;
@@ -172,71 +169,75 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 			//キャンセルされた
 			return;
 		}
-		//一時ファイルの状態を調べる。取得側のCreateFile(tmp)→CloseHandle(tmp)→CopyFile(tmp,master)→DeleteFile(tmp)の流れをある程度仮定
-		wstring path = itr->c_str() + 1;
-		HANDLE tmpFile = CreateFile((path + L".tmp").c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		DWORD tmpError = GetLastError();
-		if( tmpFile != INVALID_HANDLE_VALUE ){
-			tmpError = NO_ERROR;
-			FILETIME ft;
-			if( GetFileTime(tmpFile, NULL, NULL, &ft) == FALSE || ((LONGLONG)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + 300*I64_1SEC < utcNow ){
-				//おそらく後始末されていない一時ファイルなので無視
-				tmpError = ERROR_FILE_NOT_FOUND;
-			}
-			CloseHandle(tmpFile);
-		}
+		fs_path path = itr->c_str() + 1;
 		if( (*itr)[0] == L'0' ){
-			if( tmpError != NO_ERROR && tmpError != ERROR_SHARING_VIOLATION ){
-				//1週間以上前かつ一時ファイルがないので削除
-				DeleteFile(path.c_str());
-				_OutputDebugString(L"★delete %ls\r\n", path.c_str());
-			}
+			//1週間以上前のファイルなので削除
+			DeleteFile(path.c_str());
+			_OutputDebugString(L"★delete %ls\r\n", path.c_str());
 		}else{
 			BYTE readBuff[188*256];
 			bool swapped = false;
-			HANDLE file = INVALID_HANDLE_VALUE;
-			if( tmpError == NO_ERROR ){
-				//一時ファイルがあって書き込み中でない→コピー直前かもしれないので3秒待つ
-				Sleep(3000);
-			}else if( tmpError == ERROR_SHARING_VIOLATION ){
-				//一時ファイルがあって書き込み中→もうすぐ上書きされるかもしれないのでできるだけ退避させる
-				HANDLE masterFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-				if( masterFile != INVALID_HANDLE_VALUE ){
-					file = CreateFile((path + L".swp").c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-					if( file != INVALID_HANDLE_VALUE ){
-						swapped = true;
-						DWORD read;
-						while( ReadFile(masterFile, readBuff, sizeof(readBuff), &read, NULL) && read != 0 ){
-							DWORD written;
-							WriteFile(file, readBuff, read, &written, NULL);
-						}
-						SetFilePointer(file, 0, 0, FILE_BEGIN);
-						tmpFile = CreateFile((path + L".tmp").c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-						if( tmpFile != INVALID_HANDLE_VALUE || GetLastError() != ERROR_SHARING_VIOLATION ){
-							//退避中に書き込みが終わった
-							if( tmpFile != INVALID_HANDLE_VALUE ){
-								CloseHandle(tmpFile);
-							}
-							CloseHandle(file);
-							file = INVALID_HANDLE_VALUE;
-						}
+			std::unique_ptr<FILE, decltype(&fclose)> file(NULL, fclose);
+			//一時ファイルの状態を調べる。取得側のCreateFile(tmp)→CloseHandle(tmp)→CopyFile(tmp,master)→DeleteFile(tmp)の流れをある程度仮定
+			bool mightExist = false;
+			if( UtilFileExists(fs_path(path).concat(L".tmp"), &mightExist).first || mightExist ){
+				//一時ファイルがある→もうすぐ上書きされるかもしれないので共有で開いて退避させる
+				_OutputDebugString(L"★lockless read %ls\r\n", path.c_str());
+				for( int retry = 0; retry < 25; retry++ ){
+					std::unique_ptr<FILE, decltype(&fclose)> masterFile(UtilOpenFile(path, UTIL_SHARED_READ), fclose);
+					if( !masterFile ){
+						Sleep(200);
+						continue;
 					}
-					CloseHandle(masterFile);
+					for( retry = 0; retry < 3; retry++ ){
+						file.reset(UtilOpenFile(fs_path(path).concat(L".swp"), UTIL_O_CREAT_RDWR));
+						if( file ){
+							swapped = true;
+							rewind(masterFile.get());
+							for( size_t n; (n = fread(readBuff, 1, sizeof(readBuff), masterFile.get())) != 0; ){
+								fwrite(readBuff, 1, n, file.get());
+							}
+							for( int i = 0; i < 25; i++ ){
+								//一時ファイルを読み込み共有で開ける→上書き中かもしれないので少し待つ
+								if( !std::unique_ptr<FILE, decltype(&fclose)>(UtilOpenFile(
+								        fs_path(path).concat(L".tmp"), UTIL_O_RDONLY | UTIL_SH_READ | UTIL_SH_DELETE), fclose) ){
+									break;
+								}
+								Sleep(200);
+							}
+							//退避中に上書きされていないことを確認する
+							bool matched = false;
+							rewind(masterFile.get());
+							rewind(file.get());
+							for(;;){
+								size_t n = fread(readBuff + sizeof(readBuff) / 2, 1, sizeof(readBuff) / 2, file.get());
+								if( n == 0 ){
+									matched = fread(readBuff, 1, sizeof(readBuff) / 2, masterFile.get()) == 0;
+									break;
+								}else if( fread(readBuff, 1, n, masterFile.get()) != n || memcmp(readBuff, readBuff + sizeof(readBuff) / 2, n) ){
+									break;
+								}
+							}
+							if( matched ){
+								rewind(file.get());
+								break;
+							}
+							file.reset();
+						}
+						Sleep(200);
+					}
+					break;
 				}
-				if( file == INVALID_HANDLE_VALUE ){
-					Sleep(3000);
-				}
+			}else{
+				//排他で開く
+				file.reset(UtilOpenFile(path, UTIL_SECURE_READ));
 			}
-			if( file == INVALID_HANDLE_VALUE ){
-				file = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-			}
-			if( file == INVALID_HANDLE_VALUE ){
+			if( !file ){
 				_OutputDebugString(L"Error %ls\r\n", path.c_str());
 			}else{
 				//PATを送る(ストリームを確実にリセットするため)
 				DWORD seekPos = 0;
-				DWORD read;
-				for( DWORD i=0; ReadFile(file, readBuff, 188, &read, NULL) && read == 188; i+=188 ){
+				for( DWORD i = 0; fread(readBuff, 1, 188, file.get()) == 188; i += 188 ){
 					//PID
 					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0 ){
 						//payload_unit_start_indicator
@@ -251,19 +252,19 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						epgUtil.AddTSPacket(readBuff, 188);
 					}
 				}
-				SetFilePointer(file, seekPos, 0, FILE_BEGIN);
+				_fseeki64(file.get(), seekPos, SEEK_SET);
 				//TOTを先頭に持ってきて送る(ストリームの時刻を確定させるため)
 				bool ignoreTOT = false;
-				while( ReadFile(file, readBuff, 188, &read, NULL) && read == 188 ){
+				while( fread(readBuff, 1, 188, file.get()) == 188 ){
 					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0x14 ){
 						ignoreTOT = true;
 						epgUtil.AddTSPacket(readBuff, 188);
 						break;
 					}
 				}
-				SetFilePointer(file, seekPos, 0, FILE_BEGIN);
-				while( ReadFile(file, readBuff, sizeof(readBuff), &read, NULL) && read != 0 ){
-					for( DWORD i=0; i<read; i+=188 ){
+				_fseeki64(file.get(), seekPos, SEEK_SET);
+				for( size_t n; (n = fread(readBuff, 1, sizeof(readBuff), file.get())) != 0; ){
+					for( size_t i = 0; i + 188 <= n; i += 188 ){
 						if( ignoreTOT && ((readBuff[i+1] & 0x1F) << 8 | readBuff[i+2]) == 0x14 ){
 							ignoreTOT = false;
 						}else{
@@ -282,10 +283,10 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						}
 					}
 				}
-				CloseHandle(file);
+				file.reset();
 			}
 			if( swapped ){
-				DeleteFile((path + L".swp").c_str());
+				DeleteFile(fs_path(path).concat(L".swp").c_str());
 			}
 		}
 	}
@@ -353,7 +354,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> arcFromFile;
 	if( arcMin < LLONG_MAX && sys->epgArchive.empty() ){
 		vector<BYTE> buff;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME).c_str(), L"rbN"), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME), UTIL_SECURE_READ), fclose);
 		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 			__int64 fileSize = _ftelli64(fp.get());
 			if( 0 < fileSize && fileSize < INT_MAX ){
@@ -398,7 +399,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		for( size_t i = 0; i < oldCache.front().size(); i++ ){
 			if( oldCache[1 + i].empty() ){
 				//キャッシュする
-				std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldCache.front()[i], L"rbN"), fclose);
+				std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldCache.front()[i], UTIL_SECURE_READ), fclose);
 				if( fp ){
 					ReadOldArchiveIndex(fp.get(), buff, oldCache[1 + i], NULL);
 				}
@@ -505,7 +506,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					if( UtilFileExists(epgArcPath).first == false ){
 						UtilCreateDirectory(epgArcPath);
 					}
-					std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldMin, L"wbN", true), fclose);
+					std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldMin, UTIL_O_EXCL_CREAT_WRONLY), fclose);
 					if( fp ){
 						DWORD buffSize;
 						vector<std::unique_ptr<BYTE[]>> buffList;
@@ -552,7 +553,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		for( auto itr = sys->epgArchive.cbegin(); itr != sys->epgArchive.end(); valp.push_back(&(itr++)->second) );
 		DWORD buffSize;
 		std::unique_ptr<BYTE[]> buff = NewWriteVALUE2WithVersion(5, valp, buffSize);
-		std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME).c_str(), L"wbN"), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME), UTIL_SECURE_WRITE), fclose);
 		if( fp ){
 			fwrite(buff.get(), 1, buffSize, fp.get());
 		}
@@ -1286,7 +1287,7 @@ void CEpgDBManager::EnumArchiveEventInfo(__int64* keys, size_t keysSize, __int64
 			if( epgArcPath.empty() ){
 				epgArcPath = GetSettingPath().append(EPG_ARCHIVE_FOLDER);
 			}
-			std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), *itr, L"rbN"), fclose);
+			std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), *itr, UTIL_SECURE_READ), fclose);
 			if( fp ){
 				DWORD headerSize;
 				ReadOldArchiveIndex(fp.get(), buff, index, &headerSize);

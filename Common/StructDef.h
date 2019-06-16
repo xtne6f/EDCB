@@ -75,7 +75,7 @@ enum REC_END_STATUS {
 	REC_END_STATUS_NOT_FIND_PF,		//録画中に番組情報を確認できませんでした
 	REC_END_STATUS_NOT_FIND_6H,		//指定時間番組情報が見つかりませんでした
 	REC_END_STATUS_END_SUBREC,		//録画終了（空き容量不足で別フォルダへの保存が発生）
-	REC_END_STATUS_ERR_RECSTART,	//録画開始処理に失敗しました（空き容量不足の可能性あり）
+	REC_END_STATUS_ERR_RECSTART,	//録画開始処理に失敗しました
 	REC_END_STATUS_NOT_START_HEAD,	//一部のみ録画が実行された可能性があります
 	REC_END_STATUS_ERR_CH_CHG,		//指定チャンネルのデータがBonDriverから出力されなかった可能性があります
 	REC_END_STATUS_ERR_END2,		//ファイル保存で致命的なエラーが発生した可能性があります
@@ -132,7 +132,7 @@ struct REC_FILE_INFO {
 			recStatus == REC_END_STATUS_NOT_FIND_PF ? L"録画中に番組情報を確認できませんでした" :
 			recStatus == REC_END_STATUS_NOT_FIND_6H ? L"指定時間番組情報が見つかりませんでした" :
 			recStatus == REC_END_STATUS_END_SUBREC ? L"録画終了（空き容量不足で別フォルダへの保存が発生）" :
-			recStatus == REC_END_STATUS_ERR_RECSTART ? L"録画開始処理に失敗しました（空き容量不足の可能性あり）" :
+			recStatus == REC_END_STATUS_ERR_RECSTART ? L"録画開始処理に失敗しました" :
 			recStatus == REC_END_STATUS_NOT_START_HEAD ? L"一部のみ録画が実行された可能性があります" :
 			recStatus == REC_END_STATUS_ERR_CH_CHG ? L"指定チャンネルのデータがBonDriverから出力されなかった可能性があります" :
 			recStatus == REC_END_STATUS_ERR_END2 ? L"ファイル保存で致命的なエラーが発生した可能性があります" : L"";

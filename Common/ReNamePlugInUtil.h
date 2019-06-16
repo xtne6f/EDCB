@@ -8,6 +8,7 @@ public:
 	CReNamePlugInUtil() : hModuleConvert(NULL) {}
 	~CReNamePlugInUtil() { CloseConvert(); }
 
+#ifdef _WIN32
 	//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
 	//戻り値
 	// TRUE（成功）、FALSE（失敗）
@@ -18,6 +19,7 @@ public:
 		const WCHAR* dllPath,
 		HWND parentWnd
 		);
+#endif
 
 	//入力された予約情報と変換パターンを元に、録画時のファイル名を作成する（拡張子含む）
 	//recNameがNULL時は必要なサイズをrecNamesizeで返す
@@ -44,12 +46,14 @@ public:
 	void CloseConvert();
 
 private:
+#ifdef _WIN32
 	typedef void (WINAPI* SettingRNP)(HWND parentWnd);
+#endif
 	typedef BOOL (WINAPI* ConvertRecNameRNP)(PLUGIN_RESERVE_INFO* info, WCHAR* recName, DWORD* recNamesize);
 	typedef BOOL (WINAPI* ConvertRecName2RNP)(PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, WCHAR* recName, DWORD* recNamesize);
 	typedef BOOL (WINAPI* ConvertRecName3RNP)(PLUGIN_RESERVE_INFO* info, const WCHAR* pattern, WCHAR* recName, DWORD* recNamesize);
 
 	CReNamePlugInUtil(const CReNamePlugInUtil&);
 	CReNamePlugInUtil& operator=(const CReNamePlugInUtil&);
-	HMODULE hModuleConvert;
+	void* hModuleConvert;
 };

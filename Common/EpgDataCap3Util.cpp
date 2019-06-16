@@ -2,6 +2,11 @@
 #include "EpgDataCap3Util.h"
 
 #include "ErrDef.h"
+#include "PathUtil.h"
+#ifndef _WIN32
+#include "StringUtil.h"
+#include <dlfcn.h>
+#endif
 
 CEpgDataCap3Util::CEpgDataCap3Util(void)
 {
@@ -11,95 +16,7 @@ CEpgDataCap3Util::CEpgDataCap3Util(void)
 
 CEpgDataCap3Util::~CEpgDataCap3Util(void)
 {
-	UnLoadDll();
-}
-
-BOOL CEpgDataCap3Util::LoadDll(LPCWSTR loadDllFilePath)
-{
-	if( module != NULL ){
-		return FALSE;
-	}
-
-	module = ::LoadLibrary(loadDllFilePath);
-
-	if( module == NULL ){
-		_OutputDebugString(L"%lsのロードに失敗しました\r\n", loadDllFilePath);
-		return FALSE;
-	}
-
-	pfnInitializeEP3 = ( InitializeEP3 ) ::GetProcAddress( module , "InitializeEP");
-	if( !pfnInitializeEP3 ){
-		goto ERR_END;
-	}
-	pfnUnInitializeEP3 = ( UnInitializeEP3 ) ::GetProcAddress( module , "UnInitializeEP");
-	if( !pfnUnInitializeEP3 ){
-		goto ERR_END;
-	}
-	pfnAddTSPacketEP3 = ( AddTSPacketEP3 ) ::GetProcAddress( module , "AddTSPacketEP");
-	if( !pfnAddTSPacketEP3 ){
-		goto ERR_END;
-	}
-	pfnGetTSIDEP3 = ( GetTSIDEP3 ) ::GetProcAddress( module , "GetTSIDEP");
-	if( !pfnGetTSIDEP3 ){
-		goto ERR_END;
-	}
-	pfnGetEpgInfoListEP3 = ( GetEpgInfoListEP3 ) ::GetProcAddress( module , "GetEpgInfoListEP");
-	if( !pfnGetEpgInfoListEP3 ){
-		goto ERR_END;
-	}
-	pfnEnumEpgInfoListEP3 = ( EnumEpgInfoListEP3 ) ::GetProcAddress( module , "EnumEpgInfoListEP");
-
-	pfnClearSectionStatusEP3 = ( ClearSectionStatusEP3 ) ::GetProcAddress( module , "ClearSectionStatusEP");
-	if( !pfnClearSectionStatusEP3 ){
-		goto ERR_END;
-	}
-	pfnGetSectionStatusEP3 = ( GetSectionStatusEP3 ) ::GetProcAddress( module , "GetSectionStatusEP");
-	if( !pfnGetSectionStatusEP3 ){
-		goto ERR_END;
-	}
-	pfnGetSectionStatusServiceEP3 = ( GetSectionStatusServiceEP3 ) ::GetProcAddress( module , "GetSectionStatusServiceEP");
-
-	pfnGetServiceListActualEP3 = ( GetServiceListActualEP3 ) ::GetProcAddress( module , "GetServiceListActualEP");
-	if( !pfnGetServiceListActualEP3 ){
-		goto ERR_END;
-	}
-	pfnGetServiceListEpgDBEP3 = ( GetServiceListEpgDBEP3 ) ::GetProcAddress( module , "GetServiceListEpgDBEP");
-	if( !pfnGetServiceListEpgDBEP3 ){
-		goto ERR_END;
-	}
-	pfnGetEpgInfoEP3 = ( GetEpgInfoEP3 ) ::GetProcAddress( module , "GetEpgInfoEP");
-	if( !pfnGetEpgInfoEP3 ){
-		goto ERR_END;
-	}
-	pfnSearchEpgInfoEP3 = ( SearchEpgInfoEP3 ) ::GetProcAddress( module , "SearchEpgInfoEP");
-	if( !pfnSearchEpgInfoEP3 ){
-		goto ERR_END;
-	}
-	pfnGetTimeDelayEP3 = ( GetTimeDelayEP3 ) ::GetProcAddress( module , "GetTimeDelayEP");
-	if( !pfnGetTimeDelayEP3 ){
-		goto ERR_END;
-	}
-	return TRUE;
-
-ERR_END:
-	_OutputDebugString(L"%lsのロード中 GetProcAddress に失敗\r\n", loadDllFilePath);
-	::FreeLibrary( module );
-	module = NULL;
-	return FALSE;
-}
-
-BOOL CEpgDataCap3Util::UnLoadDll(void)
-{
-	if( module != NULL ){
-		if( id != 0 ){
-			pfnUnInitializeEP3(id);
-		}
-		::FreeLibrary( module );
-		id = 0;
-	}
-	module = NULL;
-
-	return TRUE;
+	UnInitialize();
 }
 
 DWORD CEpgDataCap3Util::Initialize(
@@ -107,25 +24,69 @@ DWORD CEpgDataCap3Util::Initialize(
 	LPCWSTR loadDllFilePath
 	)
 {
-	if( LoadDll(loadDllFilePath) == FALSE ){
+	if( module != NULL ){
 		return FALSE;
 	}
-	DWORD err = pfnInitializeEP3(asyncFlag, &id);
-	if( err != NO_ERR ){
-		id = 0;
+#ifdef _WIN32
+	fs_path path = loadDllFilePath ? loadDllFilePath : GetModulePath().replace_filename(L"EpgDataCap3.dll");
+	module = LoadLibrary(path.c_str());
+	auto getProcAddr = [=](const char* name) { return GetProcAddress((HMODULE)module, name); };
+#else
+	fs_path path = loadDllFilePath ? loadDllFilePath : GetModulePath().replace_filename(L"EpgDataCap3.so");
+	string strPath;
+	WtoUTF8(path.native(), strPath);
+	module = dlopen(strPath.c_str(), RTLD_LAZY);
+	auto getProcAddr = [=](const char* name) { return dlsym(module, name); };
+#endif
+	DWORD err = FALSE;
+	if( module != NULL ){
+		InitializeEP3 pfnInitializeEP3;
+		if( (pfnInitializeEP3 = (InitializeEP3)getProcAddr("InitializeEP")) != NULL &&
+		    (pfnUnInitializeEP3 = (UnInitializeEP3)getProcAddr("UnInitializeEP")) != NULL &&
+		    (pfnAddTSPacketEP3 = (AddTSPacketEP3)getProcAddr("AddTSPacketEP")) != NULL &&
+		    (pfnGetTSIDEP3 = (GetTSIDEP3)getProcAddr("GetTSIDEP")) != NULL &&
+		    (pfnGetEpgInfoListEP3 = (GetEpgInfoListEP3)getProcAddr("GetEpgInfoListEP")) != NULL &&
+		    (pfnClearSectionStatusEP3 = (ClearSectionStatusEP3)getProcAddr("ClearSectionStatusEP")) != NULL &&
+		    (pfnGetSectionStatusEP3 = (GetSectionStatusEP3)getProcAddr("GetSectionStatusEP")) != NULL &&
+		    (pfnGetServiceListActualEP3 = (GetServiceListActualEP3)getProcAddr("GetServiceListActualEP")) != NULL &&
+		    (pfnGetServiceListEpgDBEP3 = (GetServiceListEpgDBEP3)getProcAddr("GetServiceListEpgDBEP")) != NULL &&
+		    (pfnGetEpgInfoEP3 = (GetEpgInfoEP3)getProcAddr("GetEpgInfoEP")) != NULL &&
+		    (pfnSearchEpgInfoEP3 = (SearchEpgInfoEP3)getProcAddr("SearchEpgInfoEP")) != NULL &&
+		    (pfnGetTimeDelayEP3 = (GetTimeDelayEP3)getProcAddr("GetTimeDelayEP")) != NULL ){
+			pfnEnumEpgInfoListEP3 = (EnumEpgInfoListEP3)getProcAddr("EnumEpgInfoListEP");
+			pfnGetSectionStatusServiceEP3 = (GetSectionStatusServiceEP3)getProcAddr("GetSectionStatusServiceEP");
+			err = pfnInitializeEP3(asyncFlag, &id);
+			if( err == NO_ERR ){
+				if( id != 0 ){
+					return err;
+				}
+				err = FALSE;
+			}
+			id = 0;
+		}
+		UnInitialize();
 	}
+	_OutputDebugString(L"%lsのロードに失敗しました\r\n", path.c_str());
 	return err;
 }
 
 DWORD CEpgDataCap3Util::UnInitialize(
 	)
 {
-	if( module == NULL || id == 0 ){
+	if( module == NULL ){
 		return ERR_NOT_INIT;
 	}
-	DWORD err = pfnUnInitializeEP3(id);
-	id = 0; // ← これがないと下の UnLoadDll で再度 UnInitializeEP が呼ばれる
-	UnLoadDll();
+	DWORD err = NO_ERR;
+	if( id != 0 ){
+		err = pfnUnInitializeEP3(id);
+		id = 0;
+	}
+#ifdef _WIN32
+	FreeLibrary((HMODULE)module);
+#else
+	dlclose(module);
+#endif
+	module = NULL;
 	return err;
 }
 

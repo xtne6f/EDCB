@@ -70,8 +70,8 @@ protected:
 
 	thread_ readThread;
 	atomic_bool_ readStopFlag;
-	HANDLE readFile;
-	HANDLE seekFile;
+	std::unique_ptr<FILE, decltype(&fclose)> readFile;
+	std::unique_ptr<FILE, decltype(&fclose)> seekFile;
 protected:
 	static void ReadThread(CTimeShiftUtil* sys);
 	__int64 GetAvailableFileSize() const;

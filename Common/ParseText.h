@@ -38,12 +38,11 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 	}
 	std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
 	for( int retry = 0;; ){
-		FILE* fp_;
-		errno_t err = _wfopen_s(&fp_, this->filePath.c_str(), L"rbN");
-		if( err == 0 ){
-			fp.reset(fp_);
+		bool mightExist = false;
+		fp.reset(UtilOpenFile(this->filePath, UTIL_SECURE_READ));
+		if( fp ){
 			break;
-		}else if( err == ENOENT ){
+		}else if( UtilFileExists(this->filePath, &mightExist).first == false && mightExist == false ){
 			return true;
 		}else if( ++retry > 5 ){
 			//6‰ñƒgƒ‰ƒC‚µ‚Ä‚»‚ê‚Å‚àƒ_ƒ‚È‚ç¸”s
@@ -113,9 +112,8 @@ bool CParseText<K, V>::SaveText() const
 	std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
 	for( int retry = 0;; ){
 		UtilCreateDirectories(fs_path(this->filePath).parent_path());
-		FILE* fp_;
-		if( _wfopen_s(&fp_, (this->filePath + L".tmp").c_str(), L"wbN") == 0 ){
-			fp.reset(fp_);
+		fp.reset(UtilOpenFile(this->filePath + L".tmp", UTIL_SECURE_WRITE));
+		if( fp ){
 			break;
 		}else if( ++retry > 5 ){
 			OutputDebugString(L"CParseText<>::SaveText(): Error: Cannot open file\r\n");
@@ -175,7 +173,13 @@ bool CParseText<K, V>::SaveText() const
 
 	if( ret ){
 		for( int retry = 0;; ){
+#ifdef _WIN32
 			if( MoveFileEx((this->filePath + L".tmp").c_str(), this->filePath.c_str(), MOVEFILE_REPLACE_EXISTING) ){
+#else
+			string strPath;
+			WtoUTF8(this->filePath, strPath);
+			if( rename((strPath + ".tmp").c_str(), strPath.c_str()) == 0 ){
+#endif
 				return true;
 			}else if( ++retry > 5 ){
 				OutputDebugString(L"CParseText<>::SaveText(): Error: Cannot open file\r\n");

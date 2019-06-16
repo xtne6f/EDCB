@@ -28,7 +28,7 @@ private:
 	typedef DWORD (WINAPI *AddSendDataDLL)(int iID, BYTE* pbData, DWORD dwSize);
 	typedef DWORD (WINAPI *ClearSendBuffDLL)(int iID);
 
-	HMODULE m_hModule;
+	void* m_hModule;
 	int m_iID;
 	UnInitializeDLL m_pfnUnInitializeDLL;
 	AddSendAddrDLL m_pfnAddSendAddrDLL;

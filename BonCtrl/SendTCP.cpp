@@ -1,28 +1,45 @@
 #include "stdafx.h"
 #include "SendTCP.h"
+#include "../Common/PathUtil.h"
+#ifndef _WIN32
+#include "../Common/StringUtil.h"
+#include <dlfcn.h>
+#endif
 
 bool CSendTCP::Initialize()
 {
 	if( m_hModule ){
 		return true;
 	}
-	m_hModule = LoadLibrary(L"SendTSTCP.dll");
+#ifdef _WIN32
+	m_hModule = LoadLibrary(GetModulePath().replace_filename(L"SendTSTCP.dll").c_str());
+	auto getProcAddr = [=](const char* name) { return GetProcAddress((HMODULE)m_hModule, name); };
+#else
+	string strPath;
+	WtoUTF8(GetModulePath().replace_filename(L"SendTSTCP.so").native(), strPath);
+	m_hModule = dlopen(strPath.c_str(), RTLD_LAZY);
+	auto getProcAddr = [=](const char* name) { return dlsym(m_hModule, name); };
+#endif
 	if( m_hModule ){
 		InitializeDLL pfnInitializeDLL;
-		if( (pfnInitializeDLL = (InitializeDLL)GetProcAddress(m_hModule, "InitializeDLL")) != NULL &&
-		    (m_pfnUnInitializeDLL = (UnInitializeDLL)GetProcAddress(m_hModule, "UnInitializeDLL")) != NULL &&
-		    (m_pfnAddSendAddrDLL = (AddSendAddrDLL)GetProcAddress(m_hModule, "AddSendAddrDLL")) != NULL &&
-		    (m_pfnClearSendAddrDLL = (ClearSendAddrDLL)GetProcAddress(m_hModule, "ClearSendAddrDLL")) != NULL &&
-		    (m_pfnStartSendDLL = (StartSendDLL)GetProcAddress(m_hModule, "StartSendDLL")) != NULL &&
-		    (m_pfnStopSendDLL = (StopSendDLL)GetProcAddress(m_hModule, "StopSendDLL")) != NULL &&
-		    (m_pfnAddSendDataDLL = (AddSendDataDLL)GetProcAddress(m_hModule, "AddSendDataDLL")) != NULL &&
-		    (m_pfnClearSendBuffDLL = (ClearSendBuffDLL)GetProcAddress(m_hModule, "ClearSendBuffDLL")) != NULL ){
+		if( (pfnInitializeDLL = (InitializeDLL)getProcAddr("InitializeDLL")) != NULL &&
+		    (m_pfnUnInitializeDLL = (UnInitializeDLL)getProcAddr("UnInitializeDLL")) != NULL &&
+		    (m_pfnAddSendAddrDLL = (AddSendAddrDLL)getProcAddr("AddSendAddrDLL")) != NULL &&
+		    (m_pfnClearSendAddrDLL = (ClearSendAddrDLL)getProcAddr("ClearSendAddrDLL")) != NULL &&
+		    (m_pfnStartSendDLL = (StartSendDLL)getProcAddr("StartSendDLL")) != NULL &&
+		    (m_pfnStopSendDLL = (StopSendDLL)getProcAddr("StopSendDLL")) != NULL &&
+		    (m_pfnAddSendDataDLL = (AddSendDataDLL)getProcAddr("AddSendDataDLL")) != NULL &&
+		    (m_pfnClearSendBuffDLL = (ClearSendBuffDLL)getProcAddr("ClearSendBuffDLL")) != NULL ){
 			m_iID = pfnInitializeDLL();
 			if( m_iID != -1 ){
 				return true;
 			}
 		}
-		FreeLibrary(m_hModule);
+#ifdef _WIN32
+		FreeLibrary((HMODULE)m_hModule);
+#else
+		dlclose(m_hModule);
+#endif
 		m_hModule = NULL;
 	}
 	return false;
@@ -32,7 +49,11 @@ void CSendTCP::UnInitialize()
 {
 	if( m_hModule ){
 		m_pfnUnInitializeDLL(m_iID);
-		FreeLibrary(m_hModule);
+#ifdef _WIN32
+		FreeLibrary((HMODULE)m_hModule);
+#else
+		dlclose(m_hModule);
+#endif
 		m_hModule = NULL;
 	}
 }

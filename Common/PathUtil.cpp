@@ -2,9 +2,13 @@
 #include "PathUtil.h"
 #include "StringUtil.h"
 #include <stdexcept>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#else
 #include <dirent.h>
 #include <errno.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
@@ -255,6 +259,85 @@ void path::first_element(const wstring& src, size_t& element_pos, size_t& elemen
 } // namespace filesystem_
 
 
+FILE* UtilOpenFile(const wstring& path, int flags)
+{
+#ifdef _WIN32
+	LPCWSTR mode = (flags & 31) == UTIL_O_RDONLY ? L"rb" :
+	               (flags & 31) == UTIL_O_RDWR ? L"r+b" :
+	               (flags & 31) == UTIL_O_CREAT_WRONLY ? L"wb" :
+	               (flags & 31) == UTIL_O_CREAT_RDWR ? L"w+b" :
+	               (flags & 31) == UTIL_O_CREAT_APPEND ? L"ab" :
+	               (flags & 31) == UTIL_O_EXCL_CREAT_WRONLY ? L"wb" :
+	               (flags & 31) == UTIL_O_EXCL_CREAT_RDWR ? L"w+b" :
+	               (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? L"ab" : NULL;
+	if( mode ){
+		// 共有モード制御のためAPIで開く
+		// 参考:後続が開くことのできる共有モードのパターン(双方向。*は未サポート)
+		// (RD,SH_READ)<=>(RD,SH_READ)
+		// (RD,SH_READ)<=>(RD,SH_RDWR)
+		// (RD,SH_RDWR)<=>(RD,SH_RDWR)
+		// (RD,SH_RDWR)<=>(WR,SH_READ)
+		// (RD,SH_RDWR)<=>(WR,SH_RDWR)*
+		// (WR,SH_RDWR)<=>(WR,SH_RDWR)*
+		HANDLE h = CreateFile(path.c_str(), ((flags & 1) ? GENERIC_READ : 0) | ((flags & 2) ? GENERIC_WRITE : 0),
+		                      ((flags & 32) ? FILE_SHARE_READ : 0) | ((flags & 64) ? FILE_SHARE_WRITE : 0) | ((flags & 128) ? FILE_SHARE_DELETE : 0),
+		                      NULL, (flags & 24) == 8 ? CREATE_ALWAYS : (flags & 24) == 16 ? OPEN_ALWAYS : (flags & 24) == 24 ? CREATE_NEW : OPEN_EXISTING,
+		                      FILE_ATTRIBUTE_NORMAL | ((flags & 256) ? FILE_FLAG_SEQUENTIAL_SCAN : 0), NULL);
+		if( h != INVALID_HANDLE_VALUE ){
+			int fd = _open_osfhandle((intptr_t)h, (flags & 4) ? _O_APPEND : 0);
+			if( fd != -1 ){
+				FILE* fp = _wfdopen(fd, mode);
+				if( fp ){
+					if( flags & 512 ){
+						setvbuf(fp, NULL, _IONBF, 0);
+					}
+					return fp;
+				}
+				_close(fd);
+			}else{
+				CloseHandle(h);
+			}
+		}
+	}
+#else
+	const char* mode = (flags & 31) == UTIL_O_RDONLY ? "re" :
+	                   (flags & 31) == UTIL_O_RDWR ? "r+e" :
+	                   (flags & 31) == UTIL_O_CREAT_WRONLY ? "we" :
+	                   (flags & 31) == UTIL_O_CREAT_RDWR ? "w+e" :
+	                   (flags & 31) == UTIL_O_CREAT_APPEND ? "ae" :
+	                   (flags & 31) == UTIL_O_EXCL_CREAT_WRONLY ? "wxe" :
+	                   (flags & 31) == UTIL_O_EXCL_CREAT_RDWR ? "w+xe" :
+	                   (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? "axe" : NULL;
+	if( mode ){
+		string strPath;
+		WtoUTF8(path, strPath);
+		FILE* fp = fopen(strPath.c_str(), mode);
+		if( fp ){
+			if( flags & 512 ){
+				setvbuf(fp, NULL, _IONBF, 0);
+			}
+			// flock()は勧告ロックに過ぎないので注意
+			// UTIL_SHARED_READは無ロック相当で、既にかかっている排他ロックを無視するので注意
+			if( ((flags & 32) && (flags & 64)) || flock(fileno(fp), ((flags & 32) ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0 ){
+				return fp;
+			}
+			// (ほぼないが)ファイル生成後にロックに失敗した場合のロールバックはしない
+			fclose(fp);
+		}
+	}
+#endif
+	return NULL;
+}
+
+#ifndef _WIN32
+BOOL DeleteFile(LPCWSTR path)
+{
+	string strPath;
+	WtoUTF8(path, strPath);
+	return remove(strPath.c_str()) == 0;
+}
+#endif
+
 fs_path GetDefSettingPath()
 {
 	return GetCommonIniPath().replace_filename(L"Setting");
@@ -394,15 +477,9 @@ void CheckFileName(wstring& fileName, bool noChkYen)
 #ifdef _WIN32
 void TouchFileAsUnicode(const fs_path& path)
 {
-	if( UtilFileExists(path).first == false ){
-		FILE* fp;
-		if( _wfopen_s(&fp, path.c_str(), L"abN") == 0 && fp ){
-			_fseeki64(fp, 0, SEEK_END);
-			if( _ftelli64(fp) == 0 ){
-				fputwc(L'\xFEFF', fp);
-			}
-			fclose(fp);
-		}
+	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_O_EXCL_CREAT_WRONLY), fclose);
+	if( fp ){
+		fputwc(L'\xFEFF', fp.get());
 	}
 }
 #endif

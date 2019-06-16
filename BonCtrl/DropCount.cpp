@@ -1,9 +1,8 @@
 #include "stdafx.h"
 #include "DropCount.h"
+#include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
 #include "../Common/TimeUtil.h"
-#include <stdio.h>
-
 
 CDropCount::CDropCount(void)
 {
@@ -164,9 +163,8 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 void CDropCount::SaveLog(const wstring& filePath)
 {
 	//※原作と異なりディレクトリの自動生成はしない
-	FILE* fp_;
-	if( _wfopen_s(&fp_, filePath.c_str(), L"wbN") == 0 ){
-		std::unique_ptr<FILE, decltype(&fclose)> fp(fp_, fclose);
+	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(filePath, UTIL_SECURE_WRITE), fclose);
+	if( fp ){
 		fprintf_s(fp.get(), "%s\r\n", this->log.c_str());
 
 		for( vector<DROP_INFO>::const_iterator itr = this->infoList.begin(); itr != this->infoList.end(); itr++ ){
