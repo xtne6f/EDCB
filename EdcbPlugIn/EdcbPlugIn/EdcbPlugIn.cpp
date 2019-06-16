@@ -430,8 +430,8 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							Format(name, L"%04X%04X_epg.dat", chInfo.ONID, basicFlag ? 0xFFFF : chInfo.TSID);
 							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
 							UtilCreateDirectories(fs_path(m_epgFilePath).parent_path());
-							FILE* epgFile;
-							if (_wfopen_s(&epgFile, (m_epgFilePath + L".tmp").c_str(), L"wbN") == 0) {
+							FILE* epgFile = UtilOpenFile(m_epgFilePath + L".tmp", UTIL_SECURE_WRITE);
+							if (epgFile) {
 								m_pApp->AddLog((L'Åö' + name).c_str());
 								CBlockLock lock(&m_streamLock);
 								m_epgFile.reset(epgFile);
@@ -507,8 +507,8 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							Format(name, L"%04X%04X_epg.dat", onid, basicFlag ? 0xFFFF : tsid);
 							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
 							UtilCreateDirectories(fs_path(m_epgFilePath).parent_path());
-							FILE* epgFile;
-							if (_wfopen_s(&epgFile, (m_epgFilePath + L".tmp").c_str(), L"wbN") == 0) {
+							FILE* epgFile = UtilOpenFile(m_epgFilePath + L".tmp", UTIL_SECURE_WRITE);
+							if (epgFile) {
 								m_pApp->AddLog((L'Åö' + name).c_str());
 								CBlockLock lock(&m_streamLock);
 								m_epgFile.reset(epgFile);

@@ -53,7 +53,7 @@ public:
 		);
 
 private:
-	HANDLE file;
+	std::unique_ptr<FILE, decltype(&fclose)> file;
 	std::unique_ptr<CWritePlugInUtil> writePlugin;
 	wstring savePath;
 	WORD targetSID;

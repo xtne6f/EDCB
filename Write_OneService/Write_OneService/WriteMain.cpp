@@ -6,9 +6,8 @@
 extern HINSTANCE g_instance;
 
 CWriteMain::CWriteMain()
+	: file(NULL, fclose)
 {
-	this->file = INVALID_HANDLE_VALUE;
-
 	{
 		fs_path iniPath = GetModuleIniPath(g_instance);
 		wstring name = GetPrivateProfileToString(L"SET", L"WritePlugin", L"", iniPath.c_str());
@@ -70,22 +69,20 @@ BOOL CWriteMain::Start(
 	}else{
 		_OutputDebugString(L"★CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
 		UtilCreateDirectories(fs_path(this->savePath).parent_path());
-		this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-		if( this->file == INVALID_HANDLE_VALUE ){
-			_OutputDebugString(L"★CWriteMain::Start Err:0x%08X\r\n", GetLastError());
+		this->file.reset(UtilOpenFile(this->savePath, (overWriteFlag ? UTIL_O_CREAT_WRONLY : UTIL_O_EXCL_CREAT_WRONLY) | UTIL_SH_READ | UTIL_F_IONBF));
+		if( !this->file ){
 			fs_path pathWoExt = this->savePath;
 			fs_path ext = pathWoExt.extension();
 			pathWoExt.replace_extension();
 			for( int i = 1; ; i++ ){
 				Format(this->savePath, L"%ls-(%d)%ls", pathWoExt.c_str(), i, ext.c_str());
-				this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-				if( this->file != INVALID_HANDLE_VALUE || i >= 999 ){
-					DWORD err = GetLastError();
+				this->file.reset(UtilOpenFile(this->savePath, (overWriteFlag ? UTIL_O_CREAT_WRONLY : UTIL_O_EXCL_CREAT_WRONLY) | UTIL_SH_READ | UTIL_F_IONBF));
+				if( this->file || i >= 999 ){
 					_OutputDebugString(L"★CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
-					if( this->file != INVALID_HANDLE_VALUE ){
+					if( this->file ){
 						break;
 					}
-					_OutputDebugString(L"★CWriteMain::Start Err:0x%08X\r\n", err);
+					OutputDebugString(L"★CWriteMain::Start Err\r\n");
 					this->savePath = L"";
 					return FALSE;
 				}
@@ -103,10 +100,7 @@ BOOL CWriteMain::Start(
 BOOL CWriteMain::Stop(
 	)
 {
-	if( this->file != INVALID_HANDLE_VALUE ){
-		CloseHandle(this->file);
-		this->file = INVALID_HANDLE_VALUE;
-	}
+	this->file.reset();
 	if( this->writePlugin ){
 		this->writePlugin->Stop();
 	}
@@ -125,7 +119,7 @@ BOOL CWriteMain::Write(
 	DWORD* writeSize
 	)
 {
-	if( (this->writePlugin || this->file != INVALID_HANDLE_VALUE) && data != NULL && size > 0 && writeSize != NULL ){
+	if( (this->writePlugin || this->file) && data != NULL && size > 0 && writeSize != NULL ){
 		*writeSize = 0;
 		if( this->targetSID == 0 ){
 			//全サービスなので何も弄らない
@@ -134,10 +128,10 @@ BOOL CWriteMain::Write(
 					return FALSE;
 				}
 			}else{
-				if( WriteFile(this->file, data, size, writeSize, NULL) == FALSE ){
-					_OutputDebugString(L"★WriteFile Err:0x%08X\r\n", GetLastError());
-					CloseHandle(this->file);
-					this->file = INVALID_HANDLE_VALUE;
+				*writeSize = (DWORD)fwrite(data, 1, size, this->file.get());
+				if( *writeSize == 0 ){
+					OutputDebugString(L"★CWriteMain::Write Err\r\n");
+					this->file.reset();
 					return FALSE;
 				}
 			}
@@ -176,10 +170,9 @@ BOOL CWriteMain::Write(
 					return FALSE;
 				}
 			}else{
-				if( WriteFile(this->file, &this->outBuff.front(), (DWORD)this->outBuff.size(), &write, NULL) == FALSE ){
-					_OutputDebugString(L"★WriteFile Err:0x%08X\r\n", GetLastError());
-					CloseHandle(this->file);
-					this->file = INVALID_HANDLE_VALUE;
+				if( fwrite(&this->outBuff.front(), 1, this->outBuff.size(), this->file.get()) == 0 ){
+					OutputDebugString(L"★CWriteMain::Write Err\r\n");
+					this->file.reset();
 					return FALSE;
 				}
 			}
