@@ -78,6 +78,32 @@ typedef filesystem_::path fs_path;
 //#include <filesystem>
 //typedef std::experimental::filesystem::path fs_path;
 
+enum {
+	UTIL_O_RDONLY = 1, // r
+	UTIL_O_RDWR = 3, // r+
+	UTIL_O_CREAT_WRONLY = 10, // w
+	UTIL_O_CREAT_RDWR = 11, // w+
+	UTIL_O_CREAT_APPEND = 22, // a
+	UTIL_O_EXCL_CREAT_WRONLY = 26, // wx
+	UTIL_O_EXCL_CREAT_RDWR = 27, // w+x
+	UTIL_O_EXCL_CREAT_APPEND = 30, // ax
+	UTIL_SH_READ = 32,
+	UTIL_SH_DELETE = 128,
+	UTIL_F_SEQUENTIAL = 256, // S
+	UTIL_F_IONBF = 512, // setvbuf(_IONBF)
+	UTIL_SECURE_WRITE = UTIL_O_CREAT_WRONLY, // fopen_s(w)
+	UTIL_SECURE_READ = UTIL_O_RDONLY | UTIL_SH_READ, // fopen_s(r)
+	UTIL_SHARED_READ = UTIL_O_RDONLY | UTIL_SH_READ | 64, // fopen(r)
+};
+
+// ファイルを開く(継承不能、共有モード制御可)
+FILE* UtilOpenFile(const wstring& path, int flags);
+inline FILE* UtilOpenFile(const fs_path& path, int flags) { return UtilOpenFile(path.native(), flags); }
+
+#ifndef _WIN32
+BOOL DeleteFile(LPCWSTR path);
+#endif
+
 fs_path GetDefSettingPath();
 fs_path GetSettingPath();
 #ifdef _WIN32

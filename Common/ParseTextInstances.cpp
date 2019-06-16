@@ -477,29 +477,27 @@ wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, 
 	wstring info;
 	if( recFilePath[0] != L'\0' ){
 		//ï‚ë´ÇÃò^âÊèÓïÒÉtÉ@ÉCÉãÇì«Ç›çûÇﬁ
-		DWORD shareAll = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
-		HANDLE hFile = INVALID_HANDLE_VALUE;
+		std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
 		if( resultOfGetRecInfoFolder.empty() || recInfoFolderOnly == false ){
-			hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			fp.reset(UtilOpenFile(fs_path(recFilePath).concat(extension), UTIL_SHARED_READ | UTIL_SH_DELETE));
 		}
-		if( hFile == INVALID_HANDLE_VALUE && resultOfGetRecInfoFolder.empty() == false ){
+		if( !fp && resultOfGetRecInfoFolder.empty() == false ){
 			fs_path infoPath = fs_path(resultOfGetRecInfoFolder).append(fs_path(recFilePath).filename().concat(extension).native());
-			hFile = CreateFile(infoPath.c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			fp.reset(UtilOpenFile(infoPath, UTIL_SHARED_READ | UTIL_SH_DELETE));
 		}
-		if( hFile != INVALID_HANDLE_VALUE ){
-			DWORD dwSize = GetFileSize(hFile, NULL);
-			if( dwSize != 0 && dwSize != INVALID_FILE_SIZE ){
-				vector<char> buf(dwSize);
-				DWORD dwRead;
-				if( ReadFile(hFile, buf.data(), dwSize, &dwRead, NULL) ){
-					if( dwRead >= 3 && buf[0] == '\xEF' && buf[1] == '\xBB' && buf[2] == '\xBF' ){
-						UTF8toW(string(buf.begin() + 3, buf.begin() + dwRead), info);
+		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
+			__int64 fileSize = _ftelli64(fp.get());
+			if( 0 < fileSize && fileSize < 1024 * 1024 ){
+				vector<char> buf((size_t)fileSize + 1, '\0');
+				rewind(fp.get());
+				if( fread(buf.data(), 1, (size_t)fileSize, fp.get()) == (size_t)fileSize ){
+					if( fileSize >= 3 && buf[0] == '\xEF' && buf[1] == '\xBB' && buf[2] == '\xBF' ){
+						UTF8toW(buf.data() + 3, info);
 					}else{
-						AtoW(string(buf.begin(), buf.begin() + dwRead), info);
+						AtoW(buf.data(), info);
 					}
 				}
 			}
-			CloseHandle(hFile);
 		}
 	}
 	return info;

@@ -193,7 +193,6 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 			           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
 			           lpOutputString ? lpOutputString : L"",
 			           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
-			fflush(g_debugLog);
 		}
 	}
 	OutputDebugStringW(lpOutputString);
@@ -204,12 +203,13 @@ void SetSaveDebugLog(bool saveDebugLog)
 	CBlockLock lock(&g_debugLogLock);
 	if( g_debugLog == NULL && saveDebugLog ){
 		fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvDebugLog.txt");
-		g_debugLog = shared_wfopen(logPath.c_str(), L"abN");
+		g_debugLog = UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ | UTIL_F_IONBF);
 		if( g_debugLog ){
-			_fseeki64(g_debugLog, 0, SEEK_END);
-			if( _ftelli64(g_debugLog) == 0 ){
-				fputwc(L'\xFEFF', g_debugLog);
-			}
+			fputwc(L'\xFEFF', g_debugLog);
+		}else{
+			g_debugLog = UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ | UTIL_F_IONBF);
+		}
+		if( g_debugLog ){
 			OutputDebugString(L"****** LOG START ******\r\n");
 		}
 	}else if( g_debugLog && saveDebugLog == false ){

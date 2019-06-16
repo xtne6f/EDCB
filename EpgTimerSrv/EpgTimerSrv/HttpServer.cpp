@@ -167,7 +167,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	if( op.enableSsdpServer ){
 		//"<UDN>uuid:{UUID}</UDN>"‚ª•K—v
 		string notifyUuid;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(shared_wfopen(fs_path(op.rootPath).append(L"dlna").append(L"dms").append(L"ddd.xml").c_str(), L"rbN"), fclose);
+		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(op.rootPath).append(L"dlna").append(L"dms").append(L"ddd.xml"), UTIL_SECURE_READ), fclose);
 		if( fp ){
 			char olbuff[257];
 			for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
@@ -708,7 +708,19 @@ int io_open(lua_State* L)
 		free(wfilename);
 		luaL_argerror(L, 2, "utf8towcsdup");
 	}
-	p->f = shared_wfopen(wfilename, wmode);
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#else
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+	p->f = _wfopen(wfilename, wmode);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#else
+#pragma warning(pop)
+#endif
 	nefree(wmode);
 	nefree(wfilename);
 	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;

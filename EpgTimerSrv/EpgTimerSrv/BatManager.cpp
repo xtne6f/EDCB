@@ -242,7 +242,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& exNotifyInterval, WORD& exSW, wstring& exDirect, vector<char>& buff) const
 {
 	//ÉoÉbÉ`ÇÃçÏê¨
-	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(info.batFilePath.c_str(), L"rbN"), fclose);
+	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(info.batFilePath, UTIL_SECURE_READ), fclose);
 	if( !fp ){
 		return false;
 	}
@@ -362,8 +362,8 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 		}
 	}
 
-	fp.reset(secure_wfopen(this->tmpBatFilePath.c_str(), L"wbN"));
-	if( !fp || fputs(strWrite.c_str(), fp.get()) < 0 || fflush(fp.get()) != 0 ){
+	fp.reset(UtilOpenFile(this->tmpBatFilePath, UTIL_SECURE_WRITE | UTIL_F_IONBF));
+	if( !fp || fputs(strWrite.c_str(), fp.get()) < 0 ){
 		return false;
 	}
 

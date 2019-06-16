@@ -803,7 +803,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	}
 
 	//※原作と異なりディレクトリの自動生成はしない
-	std::unique_ptr<FILE, decltype(&fclose)> fp(secure_wfopen(savePath.c_str(), append ? L"abN" : L"wbN"), fclose);
+	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(savePath, append ? UTIL_O_CREAT_APPEND : UTIL_SECURE_WRITE), fclose);
 	if( fp ){
 		if( append ){
 			fputs("\r\n-----------------------\r\n", fp.get());
