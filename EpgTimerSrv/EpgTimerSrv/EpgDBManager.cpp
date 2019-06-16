@@ -136,7 +136,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	}
 	CEpgDataCap3Util epgUtil;
 	if( epgUtil.Initialize(FALSE) != NO_ERR ){
-		OutputDebugString(L"šEpgDataCap3.dll‚Ì‰Šú‰»‚ÉŽ¸”s‚µ‚Ü‚µ‚½B\r\n");
+		OutputDebugString(L"šEpgDataCap3‚Ì‰Šú‰»‚ÉŽ¸”s‚µ‚Ü‚µ‚½B\r\n");
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
 		sys->loadStop = true;
