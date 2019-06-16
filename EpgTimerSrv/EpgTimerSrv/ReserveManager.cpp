@@ -26,15 +26,6 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 	this->reserveText.ParseText(fs_path(settingPath).append(RESERVE_TEXT_NAME).c_str());
 
 	ReloadSetting(s);
-	fs_path iniPath = GetModuleIniPath();
-	DWORD shiftID = GetPrivateProfileInt(L"SET", L"RecInfoShiftID", 100000, iniPath.c_str());
-	if( shiftID != 0 ){
-		this->recInfoText.SetNextID(shiftID + 1);
-#ifdef _WIN32
-		TouchFileAsUnicode(iniPath);
-#endif
-		WritePrivateProfileInt(L"SET", L"RecInfoShiftID", shiftID % 900000 + 100000, iniPath.c_str());
-	}
 	this->recInfoText.ParseText(fs_path(settingPath).append(REC_INFO_TEXT_NAME).c_str());
 	this->recInfo2Text.ParseText(fs_path(settingPath).append(REC_INFO2_TEXT_NAME).c_str());
 

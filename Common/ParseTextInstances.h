@@ -71,11 +71,11 @@ private:
 };
 
 //録画済み情報ファイル「RecInfo.txt」の読み込みと保存処理を行う
-//キーはREC_FILE_INFO::id(非0)
+//キーはREC_FILE_INFO::id(非0,永続的)
 class CParseRecInfoText : CParseText<DWORD, REC_FILE_INFO>
 {
 public:
-	CParseRecInfoText() : nextID(1), keepCount(UINT_MAX), recInfoDelFile(false), customizeDelExt(false) {}
+	CParseRecInfoText() : nextID(1), saveNextID(1), keepCount(UINT_MAX), recInfoDelFile(false), customizeDelExt(false) {}
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
@@ -89,8 +89,6 @@ public:
 	bool ChgPathRecInfo(DWORD id, LPCWSTR recFilePath);
 	//プロテクト情報を変更する
 	bool ChgProtectRecInfo(DWORD id, BYTE flag);
-	//録画済み情報に割り当てる次のIDを設定する
-	DWORD SetNextID(DWORD id) { return this->nextID = max(id, this->nextID); }
 	//AddRecInfo直後に残しておく非プロテクトの録画済み情報の個数を設定する
 	void SetKeepCount(DWORD n = UINT_MAX) { this->keepCount = n; }
 	void SetRecInfoDelFile(bool delFile) { this->recInfoDelFile = delFile; }
@@ -103,12 +101,14 @@ public:
 private:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;
+	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectItemToSave(vector<map<DWORD, REC_FILE_INFO>::const_iterator>& itemList) const;
 	bool IsUtf8Default() const { return true; }
 	//情報が削除される直前の補足作業
 	void OnDelRecInfo(const REC_FILE_INFO& item);
-	//このクラスのnextIDは永続的ではない
+	//過去に追加したIDよりも大きな値。100000000(1億)IDで巡回する(ただし1日に1000ID消費しても200年以上かかるので考えるだけ無駄)
 	DWORD nextID;
+	DWORD saveNextID;
 	DWORD keepCount;
 	bool recInfoDelFile;
 	bool customizeDelExt;
@@ -179,7 +179,6 @@ private:
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectItemToSave(vector<map<DWORD, RESERVE_DATA>::const_iterator>& itemList) const;
 	bool IsUtf8Default() const { return true; }
-	//過去に追加したIDよりも大きな値。100000000(1億)IDで巡回する(ただし1日に1000ID消費しても200年以上かかるので考えるだけ無駄)
 	DWORD nextID;
 	DWORD saveNextID;
 	mutable vector<pair<ULONGLONG, DWORD>> sortByEventCache;
