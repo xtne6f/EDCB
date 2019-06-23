@@ -76,7 +76,7 @@ protected:
 	std::list<vector<BYTE>> tsFreeList;
 
 	thread_ outThread;
-	atomic_bool_ outStopFlag;
+	atomic_int_ outStopState;
 	CAutoResetEvent outStopEvent;
 
 	struct SAVE_INFO {
