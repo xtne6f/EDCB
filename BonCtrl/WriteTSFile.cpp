@@ -65,12 +65,14 @@ BOOL CWriteTSFile::StartSave(
 		}
 
 		//受信スレッド起動
-		this->outStopFlag = false;
+		this->outStopState = 2;
 		this->outStopEvent.Reset();
 		this->outThread = thread_(OutThread, this);
 		//保存開始まで待つ
 		this->outStopEvent.WaitOne();
-		if( this->outStopFlag == false ){
+		//停止状態(1)でなければ開始状態(0)に移す
+		if( this->outStopState != 1 ){
+			this->outStopState = 0;
 			return TRUE;
 		}
 		this->outThread.join();
@@ -83,7 +85,7 @@ BOOL CWriteTSFile::StartSave(
 BOOL CWriteTSFile::EndSave(BOOL* subRecFlag_)
 {
 	if( this->outThread.joinable() ){
-		this->outStopFlag = true;
+		this->outStopState = 1;
 		this->outStopEvent.Set();
 		this->outThread.join();
 		if( subRecFlag_ ){
@@ -201,14 +203,16 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	if( emptyFlag ){
 		OutputDebugString(L"CWriteTSFile::StartSave Err fileList 0\r\n");
 		CoUninitialize();
-		sys->outStopFlag = true;
+		sys->outStopState = 1;
 		sys->outStopEvent.Set();
 		return;
 	}
 	sys->outStopEvent.Set();
+	//中間状態(2)でなくなるまで待つ
+	for( ; sys->outStopState == 2; Sleep(100) );
 	std::list<vector<BYTE>> data;
 
-	while( sys->outStopFlag == false ){
+	while( sys->outStopState == 0 ){
 		//バッファからデータ取り出し
 		{
 			CBlockLock lock(&sys->outThreadLock);
