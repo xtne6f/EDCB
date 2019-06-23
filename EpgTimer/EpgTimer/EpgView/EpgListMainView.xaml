@@ -122,8 +122,8 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <Button Click="button_time_Click" Content="←" Height="23" HorizontalAlignment="Left" IsEnabled="False" Name="button_prev" VerticalAlignment="Bottom" Width="23" />
-        <Button Click="button_time_Click" Content="→" Height="23" HorizontalAlignment="Left" IsEnabled="False" Margin="23,0,0,0" Name="button_next" VerticalAlignment="Bottom" Width="23" />
+        <Button Click="button_time_Click" Content="←" Height="23" HorizontalAlignment="Left" IsEnabled="False" MouseRightButtonUp="button_time_MouseRightButtonUp" Name="button_prev" VerticalAlignment="Bottom" Width="23" />
+        <Button Click="button_time_Click" Content="→" Height="23" HorizontalAlignment="Left" IsEnabled="False" Margin="23,0,0,0" MouseRightButtonUp="button_time_MouseRightButtonUp" Name="button_next" VerticalAlignment="Bottom" Width="23" />
         <UniformGrid Columns="2" Margin="51,0,0,0" Height="23" VerticalAlignment="Bottom">
             <Button Click="button_chkAll_Click" Content="全チェック" Margin="0,0,0,0" Name="button_chkAll" />
             <Button Click="button_clearAll_Click" Content="クリア" Margin="0,0,5,0" Name="button_clearAll" />

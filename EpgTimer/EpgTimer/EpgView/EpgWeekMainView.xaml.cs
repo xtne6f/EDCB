@@ -188,12 +188,12 @@ namespace EpgTimer
         }
 
         /// <summary>
-        /// 表示週変更
+        /// 表示する週を移動する
         /// </summary>
-        void button_time_Click(object sender, RoutedEventArgs e)
+        private bool MoveTime(DateTime time)
         {
             DateTime lastTime = baseTime;
-            baseTime = baseTime.AddDays(sender == button_prev ? -7 : 7);
+            baseTime = time;
             if (ReloadEpgData())
             {
                 updateEpgData = false;
@@ -203,11 +203,47 @@ namespace EpgTimer
                 {
                     epgProgramView.scrollViewer.ScrollToVerticalOffset(0);
                 }
+                return true;
             }
-            else
+            baseTime = lastTime;
+            return false;
+        }
+
+        /// <summary>
+        /// 表示週変更
+        /// </summary>
+        void button_time_Click(object sender, RoutedEventArgs e)
+        {
+            MoveTime(baseTime.AddDays(sender == button_prev ? -7 : 7));
+        }
+
+        /// <summary>
+        /// 表示週変更
+        /// </summary>
+        void button_time_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var menu = new ContextMenu();
+            bool prev = sender == button_prev;
+            for (int i = 1; i <= 15; i++)
             {
-                baseTime = lastTime;
+                var menuItem = new MenuItem();
+                int days = i * (prev ? -7 : 7);
+                menuItem.Click += (sender2, e2) => MoveTime(baseTime.AddDays(days));
+                menuItem.FontWeight = i == 1 ? FontWeights.Bold : FontWeights.Normal;
+                menuItem.Header = baseTime.AddDays(days).ToString("yyyy\\/MM\\/dd～");
+                if (prev ? baseTime.AddDays(days) <= CommonManager.Instance.DB.EventMinTime :
+                           baseTime.AddDays(days) >= CommonManager.Instance.DB.EventBaseTime)
+                {
+                    menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
+                    break;
+                }
+                if (i == 15)
+                {
+                    menuItem.Header += prev ? " ↓" : " ↑";
+                }
+                menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
             }
+            menu.IsOpen = true;
         }
 
         /// <summary>
@@ -231,18 +267,8 @@ namespace EpgTimer
                 {
                     return;
                 }
-                //表示する週を移動
-                DateTime lastTime = baseTime;
-                baseTime = CommonManager.Instance.DB.EventBaseTime;
-                if (ReloadEpgData())
+                if (MoveTime(CommonManager.Instance.DB.EventBaseTime) == false)
                 {
-                    updateEpgData = false;
-                    ReloadReserveViewItem();
-                    updateReserveData = false;
-                }
-                else
-                {
-                    baseTime = lastTime;
                     return;
                 }
             }

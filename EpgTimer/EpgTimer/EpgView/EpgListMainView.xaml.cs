@@ -97,6 +97,47 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// 表示週変更
+        /// </summary>
+        void button_time_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var menu = new ContextMenu();
+            bool prev = sender == button_prev;
+            for (int i = 1; i <= 15; i++)
+            {
+                var menuItem = new MenuItem();
+                int days = i * (prev ? -7 : 7);
+                menuItem.Click += (sender2, e2) =>
+                {
+                    DateTime lastTime = baseTime;
+                    baseTime = baseTime.AddDays(days);
+                    if (ReloadEpgData())
+                    {
+                        updateEpgData = false;
+                    }
+                    else
+                    {
+                        baseTime = lastTime;
+                    }
+                };
+                menuItem.FontWeight = i == 1 ? FontWeights.Bold : FontWeights.Normal;
+                menuItem.Header = baseTime.AddDays(days).ToString("yyyy\\/MM\\/dd～");
+                if (prev ? baseTime.AddDays(days) <= CommonManager.Instance.DB.EventMinTime :
+                           baseTime.AddDays(days) >= CommonManager.Instance.DB.EventBaseTime)
+                {
+                    menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
+                    break;
+                }
+                if (i == 15)
+                {
+                    menuItem.Header += prev ? " ↓" : " ↑";
+                }
+                menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
+            }
+            menu.IsOpen = true;
+        }
+
+        /// <summary>
         /// EPGデータ更新通知
         /// </summary>
         public void UpdateEpgData()
