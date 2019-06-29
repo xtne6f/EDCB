@@ -603,6 +603,7 @@ wstring UtilGetStorageID(const fs_path& directoryPath)
 #endif
 }
 
+#ifdef _WIN32
 vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName)
 {
 	vector<WCHAR> buff(4096);
@@ -620,9 +621,96 @@ vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName)
 	}
 	return buff;
 }
+#else
+int GetPrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int nDefault, LPCWSTR fileName)
+{
+	wstring ret = GetPrivateProfileToString(appName, keyName, L"", fileName);
+	LPWSTR endp;
+	int n = (int)wcstol(ret.c_str(), &endp, 10);
+	return endp != ret.c_str() ? n : nDefault;
+}
+
+BOOL WritePrivateProfileString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpString, LPCWSTR fileName)
+{
+	for( int retry = 0;; ){
+		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(wstring(fileName), UTIL_O_RDWR), fclose);
+		if( !fp ){
+			fp.reset(UtilOpenFile(wstring(fileName), UTIL_O_EXCL_CREAT_RDWR));
+		}
+		if( fp ){
+			string app, key, val, line, buff;
+			WtoUTF8(L'[' + wstring(appName) + L']', app);
+			WtoUTF8(keyName ? keyName : L"", key);
+			WtoUTF8(lpString ? lpString : L"", val);
+			bool isApp = false;
+			bool hasApp = false;
+			bool hasKey = false;
+			int c;
+			do{
+				c = fgetc(fp.get());
+				if( c >= 0 && (char)c && (char)c != '\n' ){
+					line += (char)c;
+					continue;
+				}
+				size_t n = line.find_last_not_of("\t\r ");
+				line.erase(n == string::npos ? 0 : n + 1);
+				line.erase(0, line.find_first_not_of("\t\r "));
+				bool isKey = false;
+				if( CompareNoCase(app, line) == 0 ){
+					hasApp = isApp = true;
+				}else if( line[0] == '[' ){
+					if( keyName && lpString && isApp && hasKey == false ){
+						buff += key + '=' + val + '\n';
+						hasKey = true;
+					}
+					isApp = false;
+				}else if( isApp && keyName && (n = line.find('=')) != string::npos ){
+					size_t m = line.find_last_not_of("\t\r =", n);
+					m = (m == string::npos ? 0 : m + 1);
+					char d = line[m];
+					line[m] = '\0';
+					hasKey = isKey = CompareNoCase(key, line.c_str()) == 0;
+					line[m] = d;
+					if( isKey && lpString ){
+						line.replace(n + 1, string::npos, val);
+					}
+				}
+				if( (isApp == false || keyName) && (isKey == false || lpString) && (c >= 0 || line.empty() == false) ){
+					buff += line;
+					buff += '\n';
+				}
+				line.clear();
+			}while( c >= 0 && (char)c );
+
+			if( keyName && lpString ){
+				if( hasApp == false ){
+					buff += app + '\n';
+				}
+				if( hasKey == false ){
+					buff += key + '=' + val + '\n';
+				}
+			}
+			if( ftruncate(fileno(fp.get()), 0) == 0 ){
+				rewind(fp.get());
+				if( fwrite(buff.c_str(), 1, buff.size(), fp.get()) == buff.size() && fflush(fp.get()) == 0 ){
+					return TRUE;
+				}
+			}
+			OutputDebugString(L"WritePrivateProfileString(): Error\r\n");
+			break;
+		}else if( ++retry > 1000 ){
+			OutputDebugString(L"WritePrivateProfileString(): Error: Cannot open file\r\n");
+			break;
+		}
+		Sleep(10);
+	}
+	return FALSE;
+}
+#endif
 
 wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDefault, LPCWSTR fileName)
 {
+#ifdef _WIN32
 	WCHAR szBuff[512];
 	DWORD n = GetPrivateProfileString(appName, keyName, lpDefault, szBuff, 512, fileName);
 	if( n >= 510 ){
@@ -634,6 +722,56 @@ wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDe
 		return wstring(buff.begin(), buff.begin() + n);
 	}
 	return wstring(szBuff, szBuff + n);
+#else
+	for( int retry = 0; appName && keyName; ){
+		bool mightExist = false;
+		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(wstring(fileName), UTIL_SECURE_READ), fclose);
+		if( fp ){
+			string app, key, line;
+			WtoUTF8(L'[' + wstring(appName) + L']', app);
+			WtoUTF8(keyName, key);
+			bool isApp = false;
+			int c;
+			do{
+				c = fgetc(fp.get());
+				if( c >= 0 && (char)c && (char)c != '\n' ){
+					line += (char)c;
+					continue;
+				}
+				size_t n = line.find_last_not_of("\t\r ");
+				line.erase(n == string::npos ? 0 : n + 1);
+				line.erase(0, line.find_first_not_of("\t\r "));
+				if( CompareNoCase(app, line) == 0 ){
+					isApp = true;
+				}else if( line[0] == '[' ){
+					isApp = false;
+				}else if( isApp && (n = line.find('=')) != string::npos ){
+					size_t m = line.find_last_not_of("\t\r =", n);
+					line[m == string::npos ? 0 : m + 1] = '\0';
+					if( CompareNoCase(key, line.c_str()) == 0 ){
+						line.erase(0, line.find_first_not_of("\t\r ", n + 1));
+						if( line.size() > 1 && (line[0] == '"' || line[0] == '\'') && line[0] == line.back() ){
+							line.pop_back();
+							line.erase(line.begin());
+						}
+						wstring ret;
+						UTF8toW(line, ret);
+						return ret;
+					}
+				}
+				line.clear();
+			}while( c >= 0 && (char)c );
+			break;
+		}else if( UtilFileExists(fileName, &mightExist).first == false && mightExist == false ){
+			break;
+		}else if( ++retry > 1000 ){
+			OutputDebugString(L"GetPrivateProfileToString(): Error: Cannot open file\r\n");
+			break;
+		}
+		Sleep(10);
+	}
+	return lpDefault ? lpDefault : L"";
+#endif
 }
 
 BOOL WritePrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int value, LPCWSTR fileName)
