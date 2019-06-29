@@ -27,10 +27,8 @@ public:
 	//名前付きパイプモード時の接続先を設定
 	//EpgTimerSrv.exeに対するコマンドは設定しなくても可（デフォルト値になっている）
 	//引数：
-	// eventName	[IN]排他制御用Eventの名前
 	// pipeName		[IN]接続パイプの名前
 	void SetPipeSetting(
-		LPCWSTR eventName_,
 		LPCWSTR pipeName_
 		);
 
@@ -38,10 +36,12 @@ public:
 	//引数：
 	// pid			[IN]プロセスID
 	void SetPipeSetting(
-		LPCWSTR eventName_,
 		LPCWSTR pipeName_,
 		DWORD pid
 		);
+
+	//接続先パイプが存在するか調べる
+	bool PipeExists();
 
 	//TCP/IPモード時の接続先を設定
 	//引数：
@@ -480,7 +480,6 @@ public:
 private:
 	BOOL tcpFlag;
 	DWORD connectTimeOut;
-	wstring eventName;
 	wstring pipeName;
 	wstring sendIP;
 	DWORD sendPort;

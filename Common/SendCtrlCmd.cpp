@@ -13,8 +13,6 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 	this->connectTimeOut = CONNECT_TIMEOUT;
 
 	this->pipeName = CMD2_EPG_SRV_PIPE;
-	this->eventName = CMD2_EPG_SRV_EVENT_WAIT_CONNECT;
-
 	this->sendIP = L"127.0.0.1";
 	this->sendPort = 5678;
 
@@ -39,7 +37,7 @@ void CSendCtrlCmd::SetSendMode(
 {
 	if( this->tcpFlag == FALSE && tcpFlag_ ){
 		WSAData wsaData;
-		WSAStartup(MAKEWORD(2, 0), &wsaData);
+		WSAStartup(MAKEWORD(2, 2), &wsaData);
 		this->tcpFlag = TRUE;
 	}else if( this->tcpFlag && tcpFlag_ == FALSE ){
 		WSACleanup();
@@ -52,14 +50,11 @@ void CSendCtrlCmd::SetSendMode(
 //名前付きパイプモード時の接続先を設定
 //EpgTimerSrv.exeに対するコマンドは設定しなくても可（デフォルト値になっている）
 //引数：
-// eventName	[IN]排他制御用Eventの名前
 // pipeName		[IN]接続パイプの名前
 void CSendCtrlCmd::SetPipeSetting(
-	LPCWSTR eventName_,
 	LPCWSTR pipeName_
 	)
 {
-	this->eventName = eventName_;
 	this->pipeName = pipeName_;
 }
 
@@ -67,13 +62,24 @@ void CSendCtrlCmd::SetPipeSetting(
 //引数：
 // pid			[IN]プロセスID
 void CSendCtrlCmd::SetPipeSetting(
-	LPCWSTR eventName_,
 	LPCWSTR pipeName_,
 	DWORD pid
 	)
 {
-	Format(this->eventName, L"%ls%d", eventName_, pid);
 	Format(this->pipeName, L"%ls%d", pipeName_, pid);
+}
+
+bool CSendCtrlCmd::PipeExists()
+{
+	if( this->pipeName.find(L"Pipe") != wstring::npos ){
+		HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE,
+		                             (L"Global\\" + this->pipeName).replace(7 + this->pipeName.find(L"Pipe"), 4, L"Connect").c_str());
+		if( waitEvent ){
+			CloseHandle(waitEvent);
+			return true;
+		}
+	}
+	return false;
 }
 
 //TCP/IPモード時の接続先を設定
@@ -107,12 +113,15 @@ DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
 	return dwRet;
 }
 
-DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, const CMD_STREAM* send, CMD_STREAM* res)
+DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CMD_STREAM* send, CMD_STREAM* res)
 {
 	//接続待ち
 	//CreateEvent()してはいけない。イベントを作成するのはサーバの仕事のはず
 	//CreateEvent()してしまうとサーバが終了した後は常にタイムアウトまで待たされることになる
-	HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName);
+	HANDLE waitEvent = NULL;
+	if( pipeName.find(L"Pipe") != wstring::npos ){
+		waitEvent = OpenEvent(SYNCHRONIZE, FALSE, (L"Global\\" + pipeName).replace(7 + pipeName.find(L"Pipe"), 4, L"Connect").c_str());
+	}
 	if( waitEvent == NULL ){
 		return CMD_ERR_CONNECT;
 	}
@@ -125,7 +134,7 @@ DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, const CMD_STR
 	}
 
 	//接続
-	HANDLE pipe = CreateFile(pipeName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE pipe = CreateFile((L"\\\\.\\pipe\\" + pipeName).c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( pipe == INVALID_HANDLE_VALUE ){
 		_OutputDebugString(L"*+* ConnectPipe Err:%d\r\n", GetLastError());
 		return CMD_ERR_CONNECT;
@@ -272,7 +281,7 @@ DWORD CSendCtrlCmd::SendCmdStream(const CMD_STREAM* send, CMD_STREAM* res)
 		res = &tmpRes;
 	}
 	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, send, res);
+		ret = SendPipe(this->pipeName, this->connectTimeOut, send, res);
 	}
 #ifndef SEND_CTRL_CMD_NO_TCP
 	else{

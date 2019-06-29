@@ -71,15 +71,10 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 			this->grantServerAccess = TRUE;
 		}
 
-		wstring pipeName = L"";
-		wstring eventName = L"";
-
+		wstring pipeName;
 		Format(pipeName, L"%ls%d", CMD2_TVTEST_CTRL_PIPE, GetCurrentProcessId());
-		Format(eventName, L"%ls%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, GetCurrentProcessId());
-
 		OutputDebugString(pipeName.c_str());
-		OutputDebugString(eventName.c_str());
-		this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
+		this->pipeServer.StartServer(pipeName, [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
 			// SendMessageTimeout()はメッセージ処理中でも容赦なくタイムアウトするのでコマンドデータを排他処理する
 			{
 				CBlockLock lock(&this->cmdLock);

@@ -281,7 +281,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 					sendCtrl.SetSendMode(TRUE);
 					sendCtrl.SetNWSetting(registTCP[i].ip, registTCP[i].port);
 				}else{
-					sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
+					sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_PIPE, registGUI[i]);
 				}
 				sendCtrl.SetConnectTimeOut(10*1000);
 				DWORD err = sendCtrl.SendGUINotifyInfo2(notifyInfo);

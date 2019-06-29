@@ -11,8 +11,7 @@ public:
 	~CPipeServer(void);
 
 	BOOL StartServer(
-		LPCWSTR eventName, 
-		LPCWSTR pipeName, 
+		const wstring& pipeName,
 		const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc_,
 		BOOL insecureFlag = FALSE
 		);

@@ -3,6 +3,7 @@
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
 #include "IBonDriver2.h"
+#include <objbase.h>
 
 namespace
 {

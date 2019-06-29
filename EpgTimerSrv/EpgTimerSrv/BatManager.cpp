@@ -163,7 +163,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						CSendCtrlCmd ctrlCmd;
 						vector<DWORD> registGUI = sys->notifyManager.GetRegistGUI();
 						for( size_t i = 0; i < registGUI.size(); i++ ){
-							ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
+							ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, registGUI[i]);
 							DWORD pid;
 							if( ctrlCmd.SendGUIExecute(L'"' + sys->tmpBatFilePath + L'"', &pid) == CMD_SUCCESS ){
 								//ハンドル開く前に終了するかもしれない

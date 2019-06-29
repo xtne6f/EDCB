@@ -2,6 +2,7 @@
 #include "WriteTSFile.h"
 
 #include "../Common/PathUtil.h"
+#include <objbase.h>
 
 CWriteTSFile::CWriteTSFile(void)
 {

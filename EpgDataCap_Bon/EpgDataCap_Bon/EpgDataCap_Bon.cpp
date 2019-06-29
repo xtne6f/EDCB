@@ -7,10 +7,8 @@
 #include "EpgDataCap_BonDlg.h"
 
 #include "../../Common/ThreadUtil.h"
-#include <io.h>
-#include <fcntl.h>
-#include <share.h>
-#include <sys/stat.h>
+#include <objbase.h>
+#include <shellapi.h>
 
 #ifndef SUPPRESS_OUTPUT_STACK_TRACE
 #include <tlhelp32.h>

@@ -16,7 +16,7 @@
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
 	WSAData wsaData;
-	WSAStartup(MAKEWORD(2,0), &wsaData);
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
 }
 
 CSendTSTCPMain::~CSendTSTCPMain(void)

@@ -10,7 +10,7 @@ CTCPServer::CTCPServer(void)
 	m_sock = INVALID_SOCKET;
 
 	WSAData wsaData;
-	WSAStartup(MAKEWORD(2,0), &wsaData);
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
 }
 
 CTCPServer::~CTCPServer(void)

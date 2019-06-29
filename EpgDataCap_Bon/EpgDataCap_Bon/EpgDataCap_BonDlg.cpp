@@ -7,6 +7,7 @@
 #include "EpgDataCap_BonDlg.h"
 
 #include "../../Common/TimeUtil.h"
+#include <shellapi.h>
 
 
 // CEpgDataCap_BonDlg ダイアログ

@@ -21,13 +21,12 @@ CPipeServer::~CPipeServer(void)
 }
 
 BOOL CPipeServer::StartServer(
-	LPCWSTR eventName, 
-	LPCWSTR pipeName, 
+	const wstring& pipeName,
 	const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc_,
 	BOOL insecureFlag
 )
 {
-	if( !cmdProc_ || eventName == NULL || pipeName == NULL ){
+	if( !cmdProc_ || pipeName.find(L"Pipe") == wstring::npos ){
 		return FALSE;
 	}
 	if( this->workThread.joinable() ){
@@ -36,28 +35,30 @@ BOOL CPipeServer::StartServer(
 	this->cmdProc = cmdProc_;
 
 	//原作仕様では同期的にパイプを生成しないので注意
-	this->hEventConnect = CreateEvent(NULL, FALSE, FALSE, eventName);
+	wstring eventName = (L"Global\\" + pipeName).replace(7 + pipeName.find(L"Pipe"), 4, L"Connect");
+	this->hEventConnect = CreateEvent(NULL, FALSE, FALSE, eventName.c_str());
 	if( this->hEventConnect && GetLastError() != ERROR_ALREADY_EXISTS ){
 		WCHAR trusteeName[] = L"NT AUTHORITY\\Authenticated Users";
 		DWORD writeDac = 0;
 		if( insecureFlag ){
 			//現在はSYNCHRONIZEでよいが以前のクライアントはCreateEvent()で開いていたのでGENERIC_ALLが必要
 			if( GrantAccessToKernelObject(this->hEventConnect, trusteeName, GENERIC_ALL) ){
-				_OutputDebugString(L"Granted GENERIC_ALL on %ls to %ls\r\n", eventName, trusteeName);
+				_OutputDebugString(L"Granted GENERIC_ALL on %ls to %ls\r\n", eventName.c_str(), trusteeName);
 				writeDac = WRITE_DAC;
 			}
 		}else if( GrantServerAccessToKernelObject(this->hEventConnect, SYNCHRONIZE) ){
-			_OutputDebugString(L"Granted SYNCHRONIZE on %ls to %ls\r\n", eventName, SERVICE_NAME);
+			_OutputDebugString(L"Granted SYNCHRONIZE on %ls to %ls\r\n", eventName.c_str(), SERVICE_NAME);
 			writeDac = WRITE_DAC;
 		}
-		this->hPipe = CreateNamedPipe(pipeName, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | writeDac, 0, 1, 8192, 8192, PIPE_TIMEOUT, NULL);
+		wstring pipePath = L"\\\\.\\pipe\\" + pipeName;
+		this->hPipe = CreateNamedPipe(pipePath.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | writeDac, 0, 1, 8192, 8192, PIPE_TIMEOUT, NULL);
 		if( this->hPipe != INVALID_HANDLE_VALUE ){
 			if( insecureFlag ){
 				if( writeDac && GrantAccessToKernelObject(this->hPipe, trusteeName, GENERIC_READ | GENERIC_WRITE) ){
-					_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipeName, trusteeName);
+					_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipePath.c_str(), trusteeName);
 				}
 			}else if( writeDac && GrantServerAccessToKernelObject(this->hPipe, GENERIC_READ | GENERIC_WRITE) ){
-				_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipeName, SERVICE_NAME);
+				_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipePath.c_str(), SERVICE_NAME);
 			}
 			this->exitingFlag = false;
 			this->stopEvent.Reset();
