@@ -12,7 +12,7 @@ public:
 	CSendCtrlCmd(void);
 	~CSendCtrlCmd(void);
 
-#ifndef SEND_CTRL_CMD_NO_TCP
+#if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 	//送受信タイムアウト（接続先が要求を処理するのにかかる時間よりも十分に長く）
 	static const DWORD SND_RCV_TIMEOUT = 30000;
 
@@ -486,7 +486,7 @@ private:
 
 	CSendCtrlCmd(const CSendCtrlCmd&);
 	CSendCtrlCmd& operator=(const CSendCtrlCmd&);
-	DWORD SendCmdStream(const CMD_STREAM* send, CMD_STREAM* res);
+	DWORD SendCmdStream(const CMD_STREAM* cmd, CMD_STREAM* res);
 	DWORD SendCmdWithoutData(DWORD param, CMD_STREAM* res = NULL);
 	DWORD SendCmdWithoutData2(DWORD param, CMD_STREAM* res = NULL);
 	template<class T> DWORD SendCmdData(DWORD param, const T& val, CMD_STREAM* res = NULL);
@@ -501,9 +501,9 @@ private:
 
 inline DWORD CSendCtrlCmd::SendCmdWithoutData(DWORD param, CMD_STREAM* res)
 {
-	CMD_STREAM send;
-	send.param = param;
-	return SendCmdStream(&send, res);
+	CMD_STREAM cmd;
+	cmd.param = param;
+	return SendCmdStream(&cmd, res);
 }
 
 inline DWORD CSendCtrlCmd::SendCmdWithoutData2(DWORD param, CMD_STREAM* res)
@@ -514,26 +514,26 @@ inline DWORD CSendCtrlCmd::SendCmdWithoutData2(DWORD param, CMD_STREAM* res)
 template<class T>
 DWORD CSendCtrlCmd::SendCmdData(DWORD param, const T& val, CMD_STREAM* res)
 {
-	CMD_STREAM send;
-	send.param = param;
-	send.data = NewWriteVALUE(val, send.dataSize);
-	if( send.data == NULL ){
+	CMD_STREAM cmd;
+	cmd.param = param;
+	cmd.data = NewWriteVALUE(val, cmd.dataSize);
+	if( cmd.data == NULL ){
 		return CMD_ERR;
 	}
-	return SendCmdStream(&send, res);
+	return SendCmdStream(&cmd, res);
 }
 
 template<class T>
 DWORD CSendCtrlCmd::SendCmdData2(DWORD param, const T& val, CMD_STREAM* res)
 {
 	WORD ver = CMD_VER;
-	CMD_STREAM send;
-	send.param = param;
-	send.data = NewWriteVALUE2WithVersion(ver, val, send.dataSize);
-	if( send.data == NULL ){
+	CMD_STREAM cmd;
+	cmd.param = param;
+	cmd.data = NewWriteVALUE2WithVersion(ver, val, cmd.dataSize);
+	if( cmd.data == NULL ){
 		return CMD_ERR;
 	}
-	return SendCmdStream(&send, res);
+	return SendCmdStream(&cmd, res);
 }
 
 template<class T>

@@ -1,11 +1,19 @@
 #include "stdafx.h"
 #include "SendCtrlCmd.h"
-#ifndef SEND_CTRL_CMD_NO_TCP
+#if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "Ws2_32.lib")
 #endif
 #include "StringUtil.h"
+#ifndef _WIN32
+#include "PathUtil.h"
+#include <poll.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
 
 CSendCtrlCmd::CSendCtrlCmd(void)
 {
@@ -21,12 +29,12 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 
 CSendCtrlCmd::~CSendCtrlCmd(void)
 {
-#ifndef SEND_CTRL_CMD_NO_TCP
+#if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 	SetSendMode(FALSE);
 #endif
 }
 
-#ifndef SEND_CTRL_CMD_NO_TCP
+#if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 
 //コマンド送信方法の設定
 //引数：
@@ -72,12 +80,16 @@ void CSendCtrlCmd::SetPipeSetting(
 bool CSendCtrlCmd::PipeExists()
 {
 	if( this->pipeName.find(L"Pipe") != wstring::npos ){
+#ifdef _WIN32
 		HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE,
 		                             (L"Global\\" + this->pipeName).replace(7 + this->pipeName.find(L"Pipe"), 4, L"Connect").c_str());
 		if( waitEvent ){
 			CloseHandle(waitEvent);
 			return true;
 		}
+#else
+		return UtilFileExists(EDCB_INI_ROOT + this->pipeName).first;
+#endif
 	}
 	return false;
 }
@@ -106,15 +118,9 @@ void CSendCtrlCmd::SetConnectTimeOut(
 
 namespace
 {
-DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
+DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CMD_STREAM* cmd, CMD_STREAM* res)
 {
-	DWORD dwRet = 0;
-	for( DWORD dwRead; dwRet < dwToRead && ReadFile(hFile, lpBuffer + dwRet, dwToRead - dwRet, &dwRead, NULL); dwRet += dwRead );
-	return dwRet;
-}
-
-DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CMD_STREAM* send, CMD_STREAM* res)
-{
+#ifdef _WIN32
 	//接続待ち
 	//CreateEvent()してはいけない。イベントを作成するのはサーバの仕事のはず
 	//CreateEvent()してしまうとサーバが終了した後は常にタイムアウトまで待たされることになる
@@ -139,44 +145,94 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CMD_STREAM* send, C
 		_OutputDebugString(L"*+* ConnectPipe Err:%d\r\n", GetLastError());
 		return CMD_ERR_CONNECT;
 	}
-
-	DWORD write = 0;
+	auto closeFile = [=]() { return CloseHandle(pipe); };
+#else
+	string sockPath;
+	WtoUTF8(EDCB_INI_ROOT + pipeName, sockPath);
+	sockaddr_un addr;
+	if( sockPath.size() >= sizeof(addr.sun_path) ){
+		return CMD_ERR_INVALID_ARG;
+	}
+	int sock = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+	if( sock < 0 ){
+		return CMD_ERR_CONNECT;
+	}
+	addr.sun_family = AF_UNIX;
+	strcpy(addr.sun_path, sockPath.c_str());
+	if( connect(sock, (sockaddr*)&addr, sizeof(addr)) != 0 ){
+		if( errno != EINPROGRESS ){
+			close(sock);
+			return CMD_ERR_CONNECT;
+		}
+		pollfd pfd;
+		pfd.fd = sock;
+		pfd.events = POLLOUT;
+		if( poll(&pfd, 1, timeOut) <= 0 || (pfd.revents & POLLOUT) == 0 ){
+			close(sock);
+			return CMD_ERR_TIMEOUT;
+		}
+	}
+	int x = 0;
+	ioctl(sock, FIONBIO, &x);
+	auto closeFile = [=]() { return close(sock); };
+#endif
 
 	//送信
 	DWORD head[2];
-	head[0] = send->param;
-	head[1] = send->dataSize;
-	if( WriteFile(pipe, head, sizeof(DWORD)*2, &write, NULL ) == FALSE ){
-		CloseHandle(pipe);
+	head[0] = cmd->param;
+	head[1] = cmd->dataSize;
+	DWORD n;
+#ifdef _WIN32
+	if( WriteFile(pipe, head, sizeof(head), &n, NULL) == FALSE ){
+#else
+	if( send(sock, head, sizeof(head), 0) != (int)sizeof(head) ){
+#endif
+		closeFile();
 		return CMD_ERR;
 	}
-	if( send->dataSize > 0 ){
-		if( WriteFile(pipe, send->data.get(), send->dataSize, &write, NULL ) == FALSE ){
-			CloseHandle(pipe);
+	if( cmd->dataSize > 0 ){
+#ifdef _WIN32
+		if( WriteFile(pipe, cmd->data.get(), cmd->dataSize, &n, NULL) == FALSE ){
+#else
+		if( send(sock, cmd->data.get(), cmd->dataSize, 0) != (int)cmd->dataSize ){
+#endif
+			closeFile();
 			return CMD_ERR;
 		}
 	}
 
 	//受信
-	if( ReadFileAll(pipe, (BYTE*)head, sizeof(head)) != sizeof(head) ){
-		CloseHandle(pipe);
+	n = 0;
+#ifdef _WIN32
+	for( DWORD m; n < sizeof(head) && ReadFile(pipe, (BYTE*)head + n, sizeof(head) - n, &m, NULL); n += m );
+#else
+	for( int m; n < sizeof(head) && (m = (int)recv(sock, (BYTE*)head + n, sizeof(head) - n, 0)) > 0; n += m );
+#endif
+	if( n != sizeof(head) ){
+		closeFile();
 		return CMD_ERR;
 	}
 	res->param = head[0];
 	res->dataSize = head[1];
 	if( res->dataSize > 0 ){
 		res->data.reset(new BYTE[res->dataSize]);
-		if( ReadFileAll(pipe, res->data.get(), res->dataSize) != res->dataSize ){
-			CloseHandle(pipe);
+		n = 0;
+#ifdef _WIN32
+		for( DWORD m; n < res->dataSize && ReadFile(pipe, res->data.get() + n, res->dataSize - n, &m, NULL); n += m );
+#else
+		for( int m; n < res->dataSize && (m = (int)recv(sock, res->data.get() + n, res->dataSize - n, 0)) > 0; n += m );
+#endif
+		if( n != res->dataSize ){
+			closeFile();
 			return CMD_ERR;
 		}
 	}
-	CloseHandle(pipe);
+	closeFile();
 
 	return res->param;
 }
 
-#ifndef SEND_CTRL_CMD_NO_TCP
+#if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 
 int RecvAll(SOCKET sock, char* buf, int len, int flags)
 {
@@ -272,7 +328,7 @@ DWORD SendTCP(const wstring& ip, DWORD port, DWORD timeOut, const CMD_STREAM* se
 #endif
 }
 
-DWORD CSendCtrlCmd::SendCmdStream(const CMD_STREAM* send, CMD_STREAM* res)
+DWORD CSendCtrlCmd::SendCmdStream(const CMD_STREAM* cmd, CMD_STREAM* res)
 {
 	DWORD ret = CMD_ERR;
 	CMD_STREAM tmpRes;
@@ -281,11 +337,11 @@ DWORD CSendCtrlCmd::SendCmdStream(const CMD_STREAM* send, CMD_STREAM* res)
 		res = &tmpRes;
 	}
 	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName, this->connectTimeOut, send, res);
+		ret = SendPipe(this->pipeName, this->connectTimeOut, cmd, res);
 	}
-#ifndef SEND_CTRL_CMD_NO_TCP
+#if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 	else{
-		ret = SendTCP(this->sendIP, this->sendPort, this->connectTimeOut, send, res);
+		ret = SendTCP(this->sendIP, this->sendPort, this->connectTimeOut, cmd, res);
 	}
 #endif
 

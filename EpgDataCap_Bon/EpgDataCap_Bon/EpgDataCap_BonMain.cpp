@@ -633,7 +633,7 @@ void CEpgDataCap_BonMain::StartServer()
 	});
 }
 
-BOOL CEpgDataCap_BonMain::StopServer(BOOL checkOnlyFlag)
+bool CEpgDataCap_BonMain::StopServer(bool checkOnlyFlag)
 {
 	return this->pipeServer.StopServer(checkOnlyFlag);
 }
