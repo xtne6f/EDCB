@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "UpnpSsdpServer.h"
 #include "../../Common/StringUtil.h"
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <iphlpapi.h>
 #pragma comment(lib, "iphlpapi.lib")
 
@@ -84,7 +86,7 @@ static bool GetInetAddr(unsigned long* addr, const char* host)
 void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 {
 	WSAData wsaData;
-	WSAStartup(MAKEWORD(2, 0), &wsaData);
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
 	vector<string> nicList = GetNICList();
 	SOCKET sockList[FD_SETSIZE];

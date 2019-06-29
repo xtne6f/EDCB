@@ -11,6 +11,8 @@
 #include <tlhelp32.h>
 #include <lm.h>
 #pragma comment (lib, "netapi32.lib")
+#include <commctrl.h>
+#pragma comment(lib, "comctl32.lib")
 
 namespace
 {
@@ -178,10 +180,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 			ctx = (TASK_MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
 			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
 			wstring pipeName;
-			wstring eventName;
 			Format(pipeName, L"%ls%d", CMD2_GUI_CTRL_PIPE, GetCurrentProcessId());
-			Format(eventName, L"%ls%d", CMD2_GUI_CTRL_WAIT_CONNECT, GetCurrentProcessId());
-			ctx->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), [hwnd](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
+			ctx->pipeServer.StartServer(pipeName, [hwnd](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
 				resParam->param = CMD_ERR;
 				switch( cmdParam->param ){
 				case CMD2_TIMER_GUI_VIEW_EXECUTE:
@@ -449,7 +449,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		ctx->sys->ReloadNetworkSetting();
 		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
-		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE,
+		ctx->pipeServer.StartServer(CMD2_EPG_SRV_PIPE,
 		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, false); },
 		                            !(ctx->sys->notifyManager.IsGUI()));
 		ctx->sys->epgDB.ReloadEpgData(true);
@@ -1284,7 +1284,7 @@ bool CEpgTimerSrvMain::QueryShutdown(BYTE rebootFlag, BYTE suspendMode)
 	CSendCtrlCmd ctrlCmd;
 	vector<DWORD> registGUI = this->notifyManager.GetRegistGUI();
 	for( size_t i = 0; i < registGUI.size(); i++ ){
-		ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
+		ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, registGUI[i]);
 		//通信できる限り常に成功するので、重複問い合わせを考慮する必要はない
 		if( suspendMode == 0 && ctrlCmd.SendGUIQueryReboot(rebootFlag) == CMD_SUCCESS ||
 		    suspendMode != 0 && ctrlCmd.SendGUIQuerySuspend(rebootFlag, suspendMode) == CMD_SUCCESS ){
@@ -1628,15 +1628,10 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			DWORD processID;
 			if( ReadVALUE(&processID, cmdParam->data, cmdParam->dataSize, NULL) ){
-				//CPipeServerの仕様的にこの時点で相手と通信できるとは限らない。接続待機用イベントが作成されるまで少し待つ
-				wstring eventName;
-				Format(eventName, L"%ls%d", CMD2_GUI_CTRL_WAIT_CONNECT, processID);
-				for( int i = 0; i < 100; i++ ){
-					HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName.c_str());
-					if( waitEvent ){
-						CloseHandle(waitEvent);
-						break;
-					}
+				//CPipeServerの仕様的にこの時点で相手と通信できるとは限らない。接続先パイプが作成されるまで少し待つ
+				CSendCtrlCmd cmd;
+				cmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, processID);
+				for( int i = 0; i < 100 && cmd.PipeExists() == false; i++ ){
 					Sleep(100);
 				}
 				resParam->param = CMD_SUCCESS;

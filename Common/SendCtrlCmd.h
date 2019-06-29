@@ -12,7 +12,7 @@ public:
 	CSendCtrlCmd(void);
 	~CSendCtrlCmd(void);
 
-#ifndef SEND_CTRL_CMD_NO_TCP
+#if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 	//送受信タイムアウト（接続先が要求を処理するのにかかる時間よりも十分に長く）
 	static const DWORD SND_RCV_TIMEOUT = 30000;
 
@@ -27,10 +27,8 @@ public:
 	//名前付きパイプモード時の接続先を設定
 	//EpgTimerSrv.exeに対するコマンドは設定しなくても可（デフォルト値になっている）
 	//引数：
-	// eventName	[IN]排他制御用Eventの名前
 	// pipeName		[IN]接続パイプの名前
 	void SetPipeSetting(
-		LPCWSTR eventName_,
 		LPCWSTR pipeName_
 		);
 
@@ -38,10 +36,12 @@ public:
 	//引数：
 	// pid			[IN]プロセスID
 	void SetPipeSetting(
-		LPCWSTR eventName_,
 		LPCWSTR pipeName_,
 		DWORD pid
 		);
+
+	//接続先パイプが存在するか調べる
+	bool PipeExists();
 
 	//TCP/IPモード時の接続先を設定
 	//引数：
@@ -480,14 +480,13 @@ public:
 private:
 	BOOL tcpFlag;
 	DWORD connectTimeOut;
-	wstring eventName;
 	wstring pipeName;
 	wstring sendIP;
 	DWORD sendPort;
 
 	CSendCtrlCmd(const CSendCtrlCmd&);
 	CSendCtrlCmd& operator=(const CSendCtrlCmd&);
-	DWORD SendCmdStream(const CMD_STREAM* send, CMD_STREAM* res);
+	DWORD SendCmdStream(const CMD_STREAM* cmd, CMD_STREAM* res);
 	DWORD SendCmdWithoutData(DWORD param, CMD_STREAM* res = NULL);
 	DWORD SendCmdWithoutData2(DWORD param, CMD_STREAM* res = NULL);
 	template<class T> DWORD SendCmdData(DWORD param, const T& val, CMD_STREAM* res = NULL);
@@ -502,9 +501,9 @@ private:
 
 inline DWORD CSendCtrlCmd::SendCmdWithoutData(DWORD param, CMD_STREAM* res)
 {
-	CMD_STREAM send;
-	send.param = param;
-	return SendCmdStream(&send, res);
+	CMD_STREAM cmd;
+	cmd.param = param;
+	return SendCmdStream(&cmd, res);
 }
 
 inline DWORD CSendCtrlCmd::SendCmdWithoutData2(DWORD param, CMD_STREAM* res)
@@ -515,26 +514,26 @@ inline DWORD CSendCtrlCmd::SendCmdWithoutData2(DWORD param, CMD_STREAM* res)
 template<class T>
 DWORD CSendCtrlCmd::SendCmdData(DWORD param, const T& val, CMD_STREAM* res)
 {
-	CMD_STREAM send;
-	send.param = param;
-	send.data = NewWriteVALUE(val, send.dataSize);
-	if( send.data == NULL ){
+	CMD_STREAM cmd;
+	cmd.param = param;
+	cmd.data = NewWriteVALUE(val, cmd.dataSize);
+	if( cmd.data == NULL ){
 		return CMD_ERR;
 	}
-	return SendCmdStream(&send, res);
+	return SendCmdStream(&cmd, res);
 }
 
 template<class T>
 DWORD CSendCtrlCmd::SendCmdData2(DWORD param, const T& val, CMD_STREAM* res)
 {
 	WORD ver = CMD_VER;
-	CMD_STREAM send;
-	send.param = param;
-	send.data = NewWriteVALUE2WithVersion(ver, val, send.dataSize);
-	if( send.data == NULL ){
+	CMD_STREAM cmd;
+	cmd.param = param;
+	cmd.data = NewWriteVALUE2WithVersion(ver, val, cmd.dataSize);
+	if( cmd.data == NULL ){
 		return CMD_ERR;
 	}
-	return SendCmdStream(&send, res);
+	return SendCmdStream(&cmd, res);
 }
 
 template<class T>

@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SetDlgAppBtn.h"
+#include <commdlg.h>
 
 
 // CSetDlgAppBtn ダイアログ

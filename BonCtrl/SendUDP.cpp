@@ -10,7 +10,7 @@ bool CSendUDP::Initialize()
 		return true;
 	}
 	WSAData wsaData;
-	if( WSAStartup(MAKEWORD(2, 0), &wsaData) == 0 ){
+	if( WSAStartup(MAKEWORD(2, 2), &wsaData) == 0 ){
 		m_initialized = true;
 		m_sending = false;
 		return true;

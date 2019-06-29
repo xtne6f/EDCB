@@ -5,16 +5,10 @@
 #define CONNECT_TIMEOUT 15*1000
 
 //パイプ名
-#define CMD2_EPG_SRV_PIPE L"\\\\.\\pipe\\EpgTimerSrvPipe"
-#define CMD2_GUI_CTRL_PIPE L"\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_" //+プロセスID
-#define CMD2_VIEW_CTRL_PIPE L"\\\\.\\pipe\\View_Ctrl_BonPipe_" //+プロセスID
-#define CMD2_TVTEST_CTRL_PIPE L"\\\\.\\pipe\\TvTest_Ctrl_BonPipe_" //+プロセスID
-
-//接続待機用イベント
-#define CMD2_EPG_SRV_EVENT_WAIT_CONNECT L"Global\\EpgTimerSrvConnect"
-#define CMD2_GUI_CTRL_WAIT_CONNECT L"Global\\EpgTimerGUI_Ctrl_BonConnect_" //+プロセスID
-#define CMD2_VIEW_CTRL_WAIT_CONNECT L"Global\\View_Ctrl_BonConnect_" //+プロセスID
-#define CMD2_TVTEST_CTRL_WAIT_CONNECT L"Global\\TvTest_Ctrl_BonConnect_" //+プロセスID
+#define CMD2_EPG_SRV_PIPE L"EpgTimerSrvPipe"
+#define CMD2_GUI_CTRL_PIPE L"EpgTimerGUI_Ctrl_BonPipe_" //+プロセスID
+#define CMD2_VIEW_CTRL_PIPE L"View_Ctrl_BonPipe_" //+プロセスID
+#define CMD2_TVTEST_CTRL_PIPE L"TvTest_Ctrl_BonPipe_" //+プロセスID
 
 //コマンドバージョン
 //#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加

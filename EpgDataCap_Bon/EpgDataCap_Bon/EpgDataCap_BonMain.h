@@ -199,7 +199,7 @@ public:
 	void ViewAppOpen();
 
 	void StartServer();
-	BOOL StopServer(BOOL checkOnlyFlag = FALSE);
+	bool StopServer(bool checkOnlyFlag = false);
 
 	void GetViewStatusInfo(
 		float* signalLv,
