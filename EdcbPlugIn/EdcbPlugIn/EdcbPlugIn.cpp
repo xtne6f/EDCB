@@ -140,10 +140,10 @@ void CEdcbPlugIn::CMyEventHandler::OnStartupDone()
 		if (CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION)) {
 			m_outer.m_pApp->AddLog(L"Granted SYNCHRONIZE|PROCESS_TERMINATE|PROCESS_SET_INFORMATION to " SERVICE_NAME);
 		}
-		wstring pid;
-		Format(pid, L"%d", GetCurrentProcessId());
+		wstring pipeName;
+		Format(pipeName, L"%ls%d", CMD2_VIEW_CTRL_PIPE, GetCurrentProcessId());
 		CEdcbPlugIn *outer = &m_outer;
-		m_outer.m_pipeServer.StartServer((CMD2_VIEW_CTRL_WAIT_CONNECT + pid).c_str(), (CMD2_VIEW_CTRL_PIPE + pid).c_str(),
+		m_outer.m_pipeServer.StartServer(pipeName,
 		                                 [outer](CMD_STREAM *cmdParam, CMD_STREAM *resParam) { outer->CtrlCmdCallback(cmdParam, resParam); });
 	}
 }
@@ -344,13 +344,13 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		return 0;
 	case WM_CLOSE:
 		// デッドロック回避のためメッセージポンプを維持しつつサーバを終わらせる
-		m_pipeServer.StopServer(TRUE);
+		m_pipeServer.StopServer(true);
 		SetTimer(hwnd, TIMER_TRY_STOP_SERVER, 10, nullptr);
 		return 0;
 	case WM_TIMER:
 		switch (wParam) {
 		case TIMER_TRY_STOP_SERVER:
-			if (m_pipeServer.StopServer(TRUE)) {
+			if (m_pipeServer.StopServer(true)) {
 				KillTimer(hwnd, TIMER_TRY_STOP_SERVER);
 				DestroyWindow(hwnd);
 			}
