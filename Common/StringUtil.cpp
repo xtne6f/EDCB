@@ -83,15 +83,26 @@ size_t WtoA(const WCHAR* in, size_t inLen, vector<char>& out, UTIL_CONV_CODE cod
 	//    WtoA((WCHAR*)&w, 2, c[1], true);
 	//    assert(strcmp(c[0].data(), c[1].data()) == 0);
 	//}
+#if WCHAR_MAX > 0xFFFF
+	if( out.size() < inLen * 4 + 1 ){
+		out.resize(inLen * 4 + 1);
+#else
 	if( out.size() < inLen * 3 + 1 ){
 		out.resize(inLen * 3 + 1);
+#endif
 	}
 	size_t n = 0;
 	for( size_t i = 0; i < inLen && in[i]; ){
+#if WCHAR_MAX > 0xFFFF
+		int x = in[i++];
+		if( x < 0 || 0x10000 <= x ){
+			if( 0x10000 <= x && x < 0x110000 ){
+#else
 		int x = (WORD)in[i++];
 		if( 0xD800 <= x && x < 0xE000 ){
 			if( x < 0xDC00 && inLen > i && 0xDC00 <= (WORD)in[i] && (WORD)in[i] < 0xE000 ){
 				x = 0x10000 + (x - 0xD800) * 0x400 + ((WORD)in[i++] - 0xDC00);
+#endif
 				out[n++] = (char)(0xF0 | x >> 18);
 				out[n++] = (char)(0x80 | (x >> 12 & 0x3F));
 				out[n++] = (char)(0x80 | (x >> 6 & 0x3F));
@@ -168,8 +179,12 @@ size_t AtoW(const char* in, size_t inLen, vector<WCHAR>& out, UTIL_CONV_CODE cod
 			x = (x & 0x07) << 18 | ((BYTE)in[i] & 0x3F) << 12 | ((BYTE)in[i + 1] & 0x3F) << 6 | ((BYTE)in[i + 2] & 0x3F);
 			i += 3;
 			if( x < 0x110000 ){
+#if WCHAR_MAX > 0xFFFF
+				out[n++] = (WCHAR)x;
+#else
 				out[n++] = (WCHAR)((x - 0x10000) / 0x400 + 0xD800);
 				out[n++] = (WCHAR)((x - 0x10000) % 0x400 + 0xDC00);
+#endif
 				continue;
 			}
 			x = 0xFFFD;
@@ -226,5 +241,5 @@ int CompareNoCase(const WCHAR* s1, const WCHAR* s2)
 		s1++;
 		s2++;
 	}
-	return (WORD)*s1 - (WORD)*s2;
+	return *s1 - *s2;
 }

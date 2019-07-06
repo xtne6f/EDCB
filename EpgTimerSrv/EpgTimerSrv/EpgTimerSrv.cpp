@@ -189,10 +189,18 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 		if( g_debugLog ){
 			SYSTEMTIME st;
 			GetLocalTime(&st);
-			fwprintf_s(g_debugLog, L"[%02d%02d%02d%02d%02d%02d.%03d] %ls%ls",
-			           st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
-			           lpOutputString ? lpOutputString : L"",
-			           lpOutputString && lpOutputString[0] && lpOutputString[wcslen(lpOutputString) - 1] == L'\n' ? L"" : L"<NOBR>\r\n");
+			WCHAR t[128];
+			int n = swprintf_s(t, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
+			                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+			fwrite(t, sizeof(WCHAR), n, g_debugLog);
+			size_t m = lpOutputString ? wcslen(lpOutputString) : 0;
+			if( m > 0 ){
+				fwrite(lpOutputString, sizeof(WCHAR), m, g_debugLog);
+			}
+			if( m == 0 || lpOutputString[m - 1] != L'\n' ){
+				fwrite(L"<NOBR>\r\n", sizeof(WCHAR), 8, g_debugLog);
+			}
+			fflush(g_debugLog);
 		}
 	}
 	OutputDebugStringW(lpOutputString);
@@ -203,11 +211,11 @@ void SetSaveDebugLog(bool saveDebugLog)
 	CBlockLock lock(&g_debugLogLock);
 	if( g_debugLog == NULL && saveDebugLog ){
 		fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvDebugLog.txt");
-		g_debugLog = UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ | UTIL_F_IONBF);
+		g_debugLog = UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ);
 		if( g_debugLog ){
-			fputwc(L'\xFEFF', g_debugLog);
+			fwrite(L"\xFEFF", sizeof(WCHAR), 1, g_debugLog);
 		}else{
-			g_debugLog = UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ | UTIL_F_IONBF);
+			g_debugLog = UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ);
 		}
 		if( g_debugLog ){
 			OutputDebugString(L"****** LOG START ******\r\n");

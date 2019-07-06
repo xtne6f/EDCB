@@ -669,16 +669,18 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 							fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
 							std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ), fclose);
 							if( fp ){
-								fputwc(L'\xFEFF', fp.get());
+								fwrite(L"\xFEFF", sizeof(WCHAR), 1, fp.get());
 							}else{
 								fp.reset(UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ));
 							}
 							if( fp ){
 								SYSTEMTIME st = itr->time;
-								wstring log = wstring(nid.szInfoTitle) + L"] " + info;
+								wstring log;
+								Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%ls] %ls\r_",
+								       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, nid.szInfoTitle, info);
 								Replace(log, L"\r\n", L"  ");
-								fwprintf_s(fp.get(), L"%d/%02d/%02d %02d:%02d:%02d.%03d [%ls\r\n",
-								           st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, log.c_str());
+								log.back() = L'\n';
+								fwrite(log.c_str(), sizeof(WCHAR), log.size(), fp.get());
 							}
 						}
 						if( ctx->showBalloonTip ){
