@@ -1,12 +1,19 @@
 #pragma once
 
+//正規表現エンジンをstd::wregexにする場合はこのマクロを定義する
+//#define EPGDB_STD_WREGEX
+
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
 #include "../../Common/ThreadUtil.h"
 #include <functional>
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 #include <objbase.h>
 #include <oleauto.h>
 #include "RegExp.h"
+#else
+#include <regex>
+#endif
 
 class CEpgDBManager
 {
@@ -85,10 +92,14 @@ public:
 		) const;
 
 	static void ConvertSearchText(wstring& str);
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 	static void ComRelease(IUnknown* p) { p->Release(); }
 
 	typedef std::unique_ptr<IRegExp, decltype(&ComRelease)> RegExpPtr;
 	typedef std::unique_ptr<OLECHAR, decltype(&SysFreeString)> OleCharPtr;
+#else
+	typedef std::unique_ptr<std::wregex> RegExpPtr;
+#endif
 
 private:
 	struct SEARCH_CONTEXT {

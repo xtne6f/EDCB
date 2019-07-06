@@ -1801,25 +1801,36 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 	CBlockLock lock(&this->managerLock);
 	bool ret = false;
 
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	void* pv;
 	if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
 		CEpgDBManager::RegExpPtr regExp((IRegExp*)pv, CEpgDBManager::ComRelease);
+#else
+	{
+		std::wregex re;
+#endif
 		if( info.hasShortInfo ){
-			typedef CEpgDBManager::OleCharPtr OleCharPtr;
 			wstring infoEventName = info.shortInfo.event_name;
 			if( this->setting.recInfo2RegExp.empty() == false ){
-				OleCharPtr pattern(SysAllocString(this->setting.recInfo2RegExp.c_str()), SysFreeString);
-				OleCharPtr rplFrom(SysAllocString(infoEventName.c_str()), SysFreeString);
-				OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
+				CEpgDBManager::OleCharPtr pattern(SysAllocString(this->setting.recInfo2RegExp.c_str()), SysFreeString);
+				CEpgDBManager::OleCharPtr rplFrom(SysAllocString(infoEventName.c_str()), SysFreeString);
+				CEpgDBManager::OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
 				BSTR rpl_;
 				if( pattern && rplFrom && rplTo &&
 				    SUCCEEDED(regExp->put_Global(VARIANT_TRUE)) &&
 				    SUCCEEDED(regExp->put_Pattern(pattern.get())) &&
 				    SUCCEEDED(regExp->Replace(rplFrom.get(), rplTo.get(), &rpl_)) ){
-					OleCharPtr rpl(rpl_, SysFreeString);
+					CEpgDBManager::OleCharPtr rpl(rpl_, SysFreeString);
 					infoEventName = SysStringLen(rpl.get()) ? rpl.get() : L"";
 				}else{
+#else
+				try{
+					re.assign(this->setting.recInfo2RegExp);
+					infoEventName = std::regex_replace(infoEventName, re, wstring());
+				}catch( std::regex_error& ){
+#endif
 					OutputDebugString(L"RecInfo2RegExp seems ill-formed\r\n");
 					infoEventName = L"";
 				}
@@ -1834,13 +1845,19 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 					    ConvertI64Time(itr->second.startTime) + chkDayActual*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
 						if( this->setting.recInfo2RegExp.empty() == false ){
-							OleCharPtr rplFrom(SysAllocString(eventName.c_str()), SysFreeString);
-							OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
+							CEpgDBManager::OleCharPtr rplFrom(SysAllocString(eventName.c_str()), SysFreeString);
+							CEpgDBManager::OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
 							BSTR rpl_;
 							if( rplFrom && rplTo && SUCCEEDED(regExp->Replace(rplFrom.get(), rplTo.get(), &rpl_)) ){
-								OleCharPtr rpl(rpl_, SysFreeString);
+								CEpgDBManager::OleCharPtr rpl(rpl_, SysFreeString);
 								eventName = SysStringLen(rpl.get()) ? rpl.get() : L"";
 							}else{
+#else
+							try{
+								eventName = std::regex_replace(eventName, re, wstring());
+							}catch( std::regex_error& ){
+#endif
 								eventName = L"";
 							}
 						}
@@ -1853,7 +1870,9 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 			}
 		}
 	}
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 	CoUninitialize();
+#endif
 
 	return ret;
 }
