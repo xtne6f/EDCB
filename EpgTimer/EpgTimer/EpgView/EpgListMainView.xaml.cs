@@ -158,23 +158,36 @@ namespace EpgTimer
         /// </summary>
         public void RefreshReserve()
         {
-            if (listView_event.ItemsSource != null)
+            var programList = listView_event.ItemsSource as List<SearchItem>;
+            if (programList != null)
             {
-                foreach (SearchItem item in listView_event.ItemsSource)
+                List<decimal> list = CommonManager.Instance.DB.ReserveList.Values.Select(a => CommonManager.Create64PgKey(
+                    a.OriginalNetworkID, a.TransportStreamID, a.ServiceID, a.EventID) * ((decimal)uint.MaxValue + 1) + a.ReserveID).ToList();
+                list.Sort();
+                for (int i = 0; i < programList.Count; i++)
                 {
-                    if (item.Past == false)
+                    SearchItem item = programList[i];
+                    if (item.Duplicate)
+                    {
+                        programList.RemoveAt(i--);
+                    }
+                    else if (item.Past == false)
                     {
                         item.ReserveInfo = null;
-                        foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
+                        decimal key = CommonManager.Create64PgKey(item.EventInfo.original_network_id, item.EventInfo.transport_stream_id,
+                                                                  item.EventInfo.service_id, item.EventInfo.event_id) * ((decimal)uint.MaxValue + 1);
+                        int index = list.BinarySearch(key);
+                        index = index < 0 ? ~index : index;
+                        for (; index < list.Count && list[index] <= key + uint.MaxValue; index++)
                         {
-                            if (item.EventInfo.original_network_id == info.OriginalNetworkID &&
-                                item.EventInfo.transport_stream_id == info.TransportStreamID &&
-                                item.EventInfo.service_id == info.ServiceID &&
-                                item.EventInfo.event_id == info.EventID)
+                            //予約情報が見つかった
+                            if (item.ReserveInfo != null)
                             {
-                                item.ReserveInfo = info;
-                                break;
+                                //さらに見つかった
+                                item = new SearchItem(item.EventInfo, false, item.Filtered, true) { ServiceName = item.ServiceName };
+                                programList.Insert(++i, item);
                             }
+                            item.ReserveInfo = CommonManager.Instance.DB.ReserveList[(uint)(list[index] % ((decimal)uint.MaxValue + 1))];
                         }
                     }
                 }
@@ -378,7 +391,7 @@ namespace EpgTimer
                                     }
                                 }
 
-                                var item = new SearchItem(eventInfo, past, filtered);
+                                var item = new SearchItem(eventInfo, past, filtered, false);
                                 item.ServiceName = info.ServiceInfo.service_name;
                                 programList.Add(item);
                             }
@@ -556,58 +569,37 @@ namespace EpgTimer
 
         private void listView_event_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            if (sender.GetType() == typeof(ListView))
+            var item = listView_event.SelectedItem as SearchItem;
+            if (item != null)
             {
-                try
+                cm_new.IsEnabled = item.IsReserved == false && item.Past == false;
+                cm_chg.IsEnabled = item.IsReserved;
+                cm_del.IsEnabled = item.IsReserved;
+                cm_timeshift.IsEnabled = item.IsReserved;
+                if (item.IsReserved)
                 {
-                    if (listView_event.SelectedItem != null)
+                    for (int i = 0; i <= 5; i++)
                     {
-                        SearchItem item = listView_event.SelectedItem as SearchItem;
-                        if (item.IsReserved == true)
-                        {
-                            cm_new.IsEnabled = false;
-                            cm_del.IsEnabled = true;
-                            cm_chg.IsEnabled = true;
-                            for (int i = 0; i <= 5; i++)
-                            {
-                                ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).IsChecked = (i == item.ReserveInfo.RecSetting.RecMode);
-                            }
-                            for (int i = 0; i < cm_pri.Items.Count; i++)
-                            {
-                                ((MenuItem)cm_pri.Items[i]).IsChecked = (i + 1 == item.ReserveInfo.RecSetting.Priority);
-                            }
-                            cm_pri.Header = string.Format((string)cm_pri.Tag, item.ReserveInfo.RecSetting.Priority);
-                            cm_add.IsEnabled = false;
-                            cm_autoadd.IsEnabled = true;
-                            cm_timeshift.IsEnabled = true;
-                        }
-                        else
-                        {
-                            cm_new.IsEnabled = item.Past == false;
-                            cm_del.IsEnabled = false;
-                            cm_chg.IsEnabled = false;
-                            cm_add.IsEnabled = true;
-                            cm_autoadd.IsEnabled = true;
-                            cm_timeshift.IsEnabled = false;
-                            for (int i = cm_add.Items.Count - 1; cm_add.Items[i] != cm_add_separator; i--)
-                            {
-                                cm_add.Items.RemoveAt(i);
-                            }
-                            foreach (RecPresetItem info in Settings.GetRecPresetList())
-                            {
-                                MenuItem menuItem = new MenuItem();
-                                menuItem.Header = info.DisplayName;
-                                menuItem.Tag = info.ID;
-                                menuItem.Click += new RoutedEventHandler(cm_add_preset_Click);
-                                menuItem.IsEnabled = item.Past == false;
-                                cm_add.Items.Add(menuItem);
-                            }
-                        }
+                        ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).IsChecked = (i == item.ReserveInfo.RecSetting.RecMode);
                     }
+                    for (int i = 0; i < cm_pri.Items.Count; i++)
+                    {
+                        ((MenuItem)cm_pri.Items[i]).IsChecked = (i + 1 == item.ReserveInfo.RecSetting.Priority);
+                    }
+                    cm_pri.Header = string.Format((string)cm_pri.Tag, item.ReserveInfo.RecSetting.Priority);
                 }
-                catch (Exception ex)
+                for (int i = cm_add.Items.Count - 1; cm_add.Items[i] != cm_add_separator; i--)
                 {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    cm_add.Items.RemoveAt(i);
+                }
+                foreach (RecPresetItem info in Settings.GetRecPresetList())
+                {
+                    var menuItem = new MenuItem();
+                    menuItem.Header = info.DisplayName;
+                    menuItem.Tag = info.ID;
+                    menuItem.Click += new RoutedEventHandler(cm_add_preset_Click);
+                    menuItem.IsEnabled = item.Past == false;
+                    cm_add.Items.Add(menuItem);
                 }
             }
         }
@@ -734,10 +726,7 @@ namespace EpgTimer
                 if (listView_event.SelectedItem != null)
                 {
                     SearchItem item = listView_event.SelectedItem as SearchItem;
-                    if (item.IsReserved == false)
-                    {
-                        AddReserve(item.EventInfo, item.Past == false);
-                    }
+                    AddReserve(item.EventInfo, item.Past == false);
                 }
             }
             catch (Exception ex)

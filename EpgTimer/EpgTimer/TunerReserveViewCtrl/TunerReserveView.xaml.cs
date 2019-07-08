@@ -28,7 +28,6 @@ namespace EpgTimer.TunerReserveViewCtrl
         public event ScrollChangedEventHandler ScrollChanged = null;
         public event ProgramViewClickHandler LeftDoubleClick = null;
         public event ProgramViewClickHandler RightClick = null;
-        private List<Rectangle> reserveBorder = new List<Rectangle>();
 
         private Point lastDownMousePos;
         private double lastDownHOffset;
@@ -65,12 +64,6 @@ namespace EpgTimer.TunerReserveViewCtrl
             toolTipTimer.Stop();
             toolTipOffTimer.Stop();
             toolTip.IsOpen = false;
-
-            foreach (Rectangle info in reserveBorder)
-            {
-                canvas.Children.Remove(info);
-            }
-            reserveBorder.Clear();
 
             reserveViewPanel.ReleaseMouseCapture();
             isDrag = false;

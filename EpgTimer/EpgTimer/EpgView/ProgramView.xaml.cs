@@ -25,7 +25,6 @@ namespace EpgTimer.EpgView
         public event ScrollChangedEventHandler ScrollChanged = null;
         public event ProgramViewClickHandler LeftDoubleClick = null;
         public event ProgramViewClickHandler RightClick = null;
-        private List<Rectangle> reserveBorder = new List<Rectangle>();
 
         private Point lastDownMousePos;
         private double lastDownHOffset;
@@ -267,20 +266,12 @@ namespace EpgTimer.EpgView
             lastPopupInfo = null;
             popupItem.Visibility = System.Windows.Visibility.Hidden;
 
-            foreach (Rectangle info in reserveBorder)
-            {
-                canvas.Children.Remove(info);
-            }
-            reserveBorder.Clear();
-            reserveBorder = null;
-            reserveBorder = new List<Rectangle>();
-
             canvas.ReleaseMouseCapture();
             isDrag = false;
 
             for (int i = 0; i < canvas.Children.Count; i++)
             {
-                if (canvas.Children[i] is EpgViewPanel)
+                if (canvas.Children[i] is EpgViewPanel || canvas.Children[i] is Rectangle)
                 {
                     canvas.Children.RemoveAt(i--);
                 }
@@ -293,11 +284,13 @@ namespace EpgTimer.EpgView
         {
             try
             {
-                foreach (Rectangle info in reserveBorder)
+                for (int i = 0; i < canvas.Children.Count; i++)
                 {
-                    canvas.Children.Remove(info);
+                    if (canvas.Children[i] is Rectangle)
+                    {
+                        canvas.Children.RemoveAt(i--);
+                    }
                 }
-                reserveBorder.Clear();
 
                 //0→50で塗りつぶしの不透明度が上がる
                 int fillOpacity = Math.Min(EpgSetting.ReserveRectFillOpacity, 50) * 2;
@@ -362,7 +355,6 @@ namespace EpgTimer.EpgView
                     Canvas.SetTop(rect, info.TopPos);
                     Canvas.SetZIndex(rect, 10);
                     canvas.Children.Add(rect);
-                    reserveBorder.Add(rect);
 
                     if (fillOnlyRect != null)
                     {
@@ -370,7 +362,6 @@ namespace EpgTimer.EpgView
                         Canvas.SetTop(fillOnlyRect, info.TopPos);
                         Canvas.SetZIndex(fillOnlyRect, 9);
                         canvas.Children.Add(fillOnlyRect);
-                        reserveBorder.Add(fillOnlyRect);
                     }
                 }
             }

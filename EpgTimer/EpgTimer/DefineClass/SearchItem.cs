@@ -13,11 +13,12 @@ namespace EpgTimer
 {
     class SearchItem
     {
-        public SearchItem(EpgEventInfo info, bool past, bool filtered)
+        public SearchItem(EpgEventInfo info, bool past, bool filtered, bool duplicate)
         {
             EventInfo = info;
             Past = past;
             Filtered = filtered;
+            Duplicate = duplicate;
         }
         public EpgEventInfo EventInfo
         {
@@ -39,6 +40,11 @@ namespace EpgTimer
             private set;
         }
         public bool Filtered
+        {
+            get;
+            private set;
+        }
+        public bool Duplicate
         {
             get;
             private set;

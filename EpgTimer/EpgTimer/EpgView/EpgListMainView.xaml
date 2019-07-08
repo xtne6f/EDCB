@@ -65,7 +65,7 @@
                 <ListView.ContextMenu>
                     <ContextMenu x:Name="listView_event_contextMenu">
                         <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" />
-                        <MenuItem x:Name="cm_add" Header="予約追加 (_C)">
+                        <MenuItem x:Name="cm_add" Header="予約追加 (_A)">
                             <MenuItem Header="ダイアログ表示 (_X)" Click="cm_add_Click" />
                             <Separator Name="cm_add_separator" />
                         </MenuItem>

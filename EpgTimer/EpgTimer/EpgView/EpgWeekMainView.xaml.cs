@@ -292,15 +292,10 @@ namespace EpgTimer
         /// <returns>nullで存在しない</returns>
         private ReserveData GetReserveItem(Point cursorPos)
         {
-            foreach (ReserveViewItem resInfo in reserveList)
-            {
-                if (resInfo.LeftPos <= cursorPos.X && cursorPos.X < resInfo.LeftPos + resInfo.Width &&
-                    resInfo.TopPos <= cursorPos.Y && cursorPos.Y < resInfo.TopPos + resInfo.Height)
-                {
-                    return resInfo.ReserveInfo;
-                }
-            }
-            return null;
+            //ヒットテストは逆順
+            ReserveViewItem ret = reserveList.FindLast(a => a.LeftPos <= cursorPos.X && cursorPos.X < a.LeftPos + a.Width &&
+                                                            a.TopPos <= cursorPos.Y && cursorPos.Y < a.TopPos + a.Height);
+            return ret == null ? null : ret.ReserveInfo;
         }
 
         /// <summary>
@@ -371,12 +366,11 @@ namespace EpgTimer
                 //右クリック表示メニューの作成
                 clickPos = cursorPos;
                 ReserveData reserve = GetReserveItem(cursorPos);
-                ProgramViewItem program = null;
+                ProgramViewItem program = GetProgramItem(cursorPos);
                 bool addMode = false;
                 if (reserve == null)
                 {
                     reserve = new ReserveData();
-                    program = GetProgramItem(cursorPos);
                     addMode = true;
                 }
                 ContextMenu menu = new ContextMenu();
@@ -387,7 +381,7 @@ namespace EpgTimer
                 menuItemNew.Click += new RoutedEventHandler(cm_add_preset_Click);
 
                 MenuItem menuItemAdd = new MenuItem();
-                menuItemAdd.Header = "予約追加 (_C)";
+                menuItemAdd.Header = (program != null && addMode == false ? "重複" : "") + "予約追加 (_A)";
 
                 MenuItem menuItemAddDlg = new MenuItem();
                 menuItemAddDlg.Header = "ダイアログ表示 (_X)";
@@ -410,6 +404,7 @@ namespace EpgTimer
                 menuItemChg.Header = "予約変更 (_C)";
                 MenuItem menuItemChgDlg = new MenuItem();
                 menuItemChgDlg.Header = "ダイアログ表示 (_X)";
+                menuItemChgDlg.Tag = reserve.ReserveID;
                 menuItemChgDlg.Click += new RoutedEventHandler(cm_chg_Click);
 
                 menuItemChg.Items.Add(menuItemChgDlg);
@@ -419,7 +414,7 @@ namespace EpgTimer
                 {
                     MenuItem menuItem = new MenuItem();
                     menuItem.Header = CommonManager.Instance.RecModeList[i] + " (_" + i + ")";
-                    menuItem.Tag = i;
+                    menuItem.Tag = new Tuple<byte, uint>(i, reserve.ReserveID);
                     menuItem.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                     menuItem.IsChecked = i == reserve.RecSetting.RecMode;
                     menuItemChg.Items.Add(menuItem);
@@ -433,7 +428,7 @@ namespace EpgTimer
                 {
                     MenuItem menuItem = new MenuItem();
                     menuItem.Header = "_" + i;
-                    menuItem.Tag = i;
+                    menuItem.Tag = new Tuple<byte, uint>(i, reserve.ReserveID);
                     menuItem.Click += new RoutedEventHandler(cm_chg_priority_Click);
                     menuItem.IsChecked = i == reserve.RecSetting.Priority;
                     menuItemChgRecPri.Items.Add(menuItem);
@@ -442,6 +437,7 @@ namespace EpgTimer
 
                 MenuItem menuItemDel = new MenuItem();
                 menuItemDel.Header = "予約削除";
+                menuItemDel.Tag = reserve.ReserveID;
                 menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
 
                 MenuItem menuItemAutoAdd = new MenuItem();
@@ -449,6 +445,7 @@ namespace EpgTimer
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
                 MenuItem menuItemTimeshift = new MenuItem();
                 menuItemTimeshift.Header = "追っかけ再生 (_P)";
+                menuItemTimeshift.Tag = reserve.ReserveID;
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
 
                 //表示モード
@@ -472,39 +469,13 @@ namespace EpgTimer
                 menuItemView.Items.Add(menuItemChgViewMode3);
                 menuItemView.Items.Add(new Separator());
                 menuItemView.Items.Add(menuItemViewSetDlg);
-                if (addMode && program == null)
-                {
-                    menuItemNew.IsEnabled = false;
-                    menuItemAdd.IsEnabled = false;
-                    menuItemChg.IsEnabled = false;
-                    menuItemDel.IsEnabled = false;
-                    menuItemAutoAdd.IsEnabled = false;
-                    menuItemTimeshift.IsEnabled = false;
-                    menuItemView.IsEnabled = true;
-                }
-                else
-                {
-                    if (addMode == false)
-                    {
-                        menuItemNew.IsEnabled = false;
-                        menuItemAdd.IsEnabled = false;
-                        menuItemChg.IsEnabled = true;
-                        menuItemDel.IsEnabled = true;
-                        menuItemAutoAdd.IsEnabled = true;
-                        menuItemTimeshift.IsEnabled = true;
-                        menuItemView.IsEnabled = true;
-                    }
-                    else
-                    {
-                        menuItemNew.IsEnabled = program.Past == false;
-                        menuItemAdd.IsEnabled = true;
-                        menuItemChg.IsEnabled = false;
-                        menuItemDel.IsEnabled = false;
-                        menuItemAutoAdd.IsEnabled = true;
-                        menuItemTimeshift.IsEnabled = false;
-                        menuItemView.IsEnabled = true;
-                    }
-                }
+
+                menuItemNew.IsEnabled = program != null && addMode && program.Past == false;
+                menuItemAdd.IsEnabled = program != null;
+                menuItemChg.IsEnabled = addMode == false;
+                menuItemDel.IsEnabled = addMode == false;
+                menuItemAutoAdd.IsEnabled = program != null;
+                menuItemTimeshift.IsEnabled = addMode == false;
 
                 menu.Items.Add(menuItemNew);
                 menu.Items.Add(menuItemAdd);
@@ -616,8 +587,8 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_Click(object sender, RoutedEventArgs e)
         {
-            ReserveData reserve = GetReserveItem(clickPos);
-            if (reserve != null)
+            ReserveData reserve;
+            if (CommonManager.Instance.DB.ReserveList.TryGetValue((uint)((MenuItem)sender).Tag, out reserve))
             {
                 ChangeReserve(reserve);
             }
@@ -632,14 +603,7 @@ namespace EpgTimer
         {
             try
             {
-                ReserveData reserve = GetReserveItem(clickPos);
-                if (reserve == null)
-                {
-                    return;
-                }
-                List<UInt32> list = new List<UInt32>();
-                list.Add(reserve.ReserveID);
-                ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(new List<uint>() { (uint)((MenuItem)sender).Tag });
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約削除でエラーが発生しました。");
@@ -660,12 +624,13 @@ namespace EpgTimer
         {
             try
             {
-                ReserveData reserve = GetReserveItem(clickPos);
-                if (reserve == null)
+                var recMode = (Tuple<byte, uint>)((MenuItem)sender).Tag;
+                ReserveData reserve;
+                if (CommonManager.Instance.DB.ReserveList.TryGetValue(recMode.Item2, out reserve) == false)
                 {
                     return;
                 }
-                reserve.RecSetting.RecMode = (byte)((MenuItem)sender).Tag;
+                reserve.RecSetting.RecMode = recMode.Item1;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
                 ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
@@ -689,12 +654,13 @@ namespace EpgTimer
         {
             try
             {
-                ReserveData reserve = GetReserveItem(clickPos);
-                if (reserve == null)
+                var priority = (Tuple<byte, uint>)((MenuItem)sender).Tag;
+                ReserveData reserve;
+                if (CommonManager.Instance.DB.ReserveList.TryGetValue(priority.Item2, out reserve) == false)
                 {
                     return;
                 }
-                reserve.RecSetting.Priority = (byte)((MenuItem)sender).Tag;
+                reserve.RecSetting.Priority = priority.Item1;
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
                 ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
@@ -761,17 +727,7 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
-                ReserveData reserve = GetReserveItem(clickPos);
-                if (reserve == null)
-                {
-                    return;
-                }
-                CommonManager.Instance.FilePlay(reserve.ReserveID);
+                CommonManager.Instance.FilePlay((uint)((MenuItem)sender).Tag);
             }
             catch (Exception ex)
             {
@@ -1054,6 +1010,21 @@ namespace EpgTimer
                         viewItem.LeftPos = setViewInfo.EpgSetting.ServiceWidth * Math.Max(dayList.BinarySearch(chkDay), 0);
 
                         reserveList.Add(viewItem);
+                    }
+                }
+            }
+            //ほかの枠を完全に覆ってしまう場合は少しだけ縮める
+            reserveList.Sort((a, b) => Math.Sign(a.LeftPos - b.LeftPos) * 2 + Math.Sign((int)a.ReserveInfo.ReserveID - (int)b.ReserveInfo.ReserveID));
+            for (int i = 1; i < reserveList.Count; i++)
+            {
+                for (int j = i - 1; j >= 0 && reserveList[j].LeftPos == reserveList[i].LeftPos; j--)
+                {
+                    if (reserveList[j].Width >= 18 &&
+                        reserveList[j].Width <= reserveList[i].Width &&
+                        reserveList[j].TopPos >= reserveList[i].TopPos &&
+                        reserveList[j].TopPos + reserveList[j].Height <= reserveList[i].TopPos + reserveList[i].Height)
+                    {
+                        reserveList[i].Width = reserveList[j].Width - 6;
                     }
                 }
             }
