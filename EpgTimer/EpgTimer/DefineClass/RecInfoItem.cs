@@ -13,7 +13,7 @@ using System.Windows.Shapes;
 
 namespace EpgTimer
 {
-    public class RecInfoItem
+    class RecInfoItem
     {
         public RecInfoItem(RecFileInfo item)
         {
@@ -41,9 +41,13 @@ namespace EpgTimer
         {
             get { return RecInfo.ServiceName; }
         }
-        public String StartTime
+        public CommonManager.TimeDuration StartTime
         {
-            get { return CommonManager.GetTimeDurationText(true, RecInfo.StartTime, true, RecInfo.DurationSecond); }
+            get { return new CommonManager.TimeDuration(true, RecInfo.StartTime, true, RecInfo.DurationSecond); }
+        }
+        public TimeSpan Duration
+        {
+            get { return TimeSpan.FromSeconds(RecInfo.DurationSecond); }
         }
         public long Drops
         {
