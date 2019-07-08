@@ -188,12 +188,20 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// 表示する週の(EventBaseTimeを上限とする)実際の値
+        /// </summary>
+        private DateTime ActualBaseTime()
+        {
+            return baseTime > CommonManager.Instance.DB.EventBaseTime ? CommonManager.Instance.DB.EventBaseTime : baseTime;
+        }
+
+        /// <summary>
         /// 表示する週を移動する
         /// </summary>
         private bool MoveTime(DateTime time)
         {
             DateTime lastTime = baseTime;
-            baseTime = time;
+            baseTime = time < CommonManager.Instance.DB.EventBaseTime ? time : DateTime.MaxValue;
             if (ReloadEpgData())
             {
                 updateEpgData = false;
@@ -214,7 +222,7 @@ namespace EpgTimer
         /// </summary>
         void button_time_Click(object sender, RoutedEventArgs e)
         {
-            MoveTime(baseTime.AddDays(sender == button_prev ? -7 : 7));
+            MoveTime(ActualBaseTime().AddDays(sender == button_prev ? -7 : 7));
         }
 
         /// <summary>
@@ -228,11 +236,11 @@ namespace EpgTimer
             {
                 var menuItem = new MenuItem();
                 int days = i * (prev ? -7 : 7);
-                menuItem.Click += (sender2, e2) => MoveTime(baseTime.AddDays(days));
+                menuItem.Click += (sender2, e2) => MoveTime(ActualBaseTime().AddDays(days));
                 menuItem.FontWeight = i == 1 ? FontWeights.Bold : FontWeights.Normal;
-                menuItem.Header = baseTime.AddDays(days).ToString("yyyy\\/MM\\/dd～");
-                if (prev ? baseTime.AddDays(days) <= CommonManager.Instance.DB.EventMinTime :
-                           baseTime.AddDays(days) >= CommonManager.Instance.DB.EventBaseTime)
+                menuItem.Header = ActualBaseTime().AddDays(days).ToString("yyyy\\/MM\\/dd～");
+                if (prev ? ActualBaseTime().AddDays(days) <= CommonManager.Instance.DB.EventMinTime :
+                           ActualBaseTime().AddDays(days) >= CommonManager.Instance.DB.EventBaseTime)
                 {
                     menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
                     break;
@@ -267,7 +275,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                if (MoveTime(CommonManager.Instance.DB.EventBaseTime) == false)
+                if (MoveTime(DateTime.MaxValue) == false)
                 {
                     return;
                 }
@@ -863,9 +871,8 @@ namespace EpgTimer
                 }
                 if (err == ErrCode.CMD_SUCCESS)
                 {
-                    baseTime = baseTime > CommonManager.Instance.DB.EventBaseTime ? CommonManager.Instance.DB.EventBaseTime : baseTime;
                     serviceEventList = list;
-                    ReloadProgramViewItem(baseTime > CommonManager.Instance.DB.EventMinTime, baseTime < CommonManager.Instance.DB.EventBaseTime);
+                    ReloadProgramViewItem(ActualBaseTime() > CommonManager.Instance.DB.EventMinTime, baseTime < CommonManager.Instance.DB.EventBaseTime);
                     MoveNowTime(false);
                     return true;
                 }
@@ -914,8 +921,7 @@ namespace EpgTimer
         private void ReloadReserveViewItem()
         {
             reserveList.Clear();
-            if (baseTime != DateTime.MaxValue && baseTime == CommonManager.Instance.DB.EventBaseTime &&
-                comboBox_service.SelectedItem != null)
+            if (comboBox_service.SelectedItem != null && baseTime >= CommonManager.Instance.DB.EventBaseTime)
             {
                 EpgServiceInfo selectInfo = (EpgServiceInfo)((ComboBoxItem)comboBox_service.SelectedItem).DataContext;
                 ulong selectID = CommonManager.Create64Key(selectInfo.ONID, selectInfo.TSID, selectInfo.SID);

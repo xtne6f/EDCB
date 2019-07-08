@@ -729,12 +729,20 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// 表示する週の(EventBaseTimeを上限とする)実際の値
+        /// </summary>
+        private DateTime ActualBaseTime()
+        {
+            return baseTime > CommonManager.Instance.DB.EventBaseTime ? CommonManager.Instance.DB.EventBaseTime : baseTime;
+        }
+
+        /// <summary>
         /// 表示する週を移動する
         /// </summary>
         private bool MoveTime(DateTime time)
         {
             DateTime lastTime = baseTime;
-            baseTime = time;
+            baseTime = time < CommonManager.Instance.DB.EventBaseTime ? time : DateTime.MaxValue;
             if (ReloadEpgData())
             {
                 updateEpgData = false;
@@ -757,7 +765,7 @@ namespace EpgTimer
         {
             if (time == DateTime.MinValue || time == DateTime.MaxValue)
             {
-                MoveTime(baseTime.AddDays(time == DateTime.MinValue ? -7 : 7));
+                MoveTime(ActualBaseTime().AddDays(time == DateTime.MinValue ? -7 : 7));
             }
             else
             {
@@ -786,11 +794,11 @@ namespace EpgTimer
                 {
                     var menuItem = new MenuItem();
                     int days = i * (prev ? -7 : 7);
-                    menuItem.Click += (sender, e) => MoveTime(baseTime.AddDays(days));
+                    menuItem.Click += (sender, e) => MoveTime(ActualBaseTime().AddDays(days));
                     menuItem.FontWeight = i == 1 ? FontWeights.Bold : FontWeights.Normal;
-                    menuItem.Header = baseTime.AddDays(days).ToString("yyyy\\/MM\\/dd～");
-                    if (prev ? baseTime.AddDays(days) <= CommonManager.Instance.DB.EventMinTime :
-                               baseTime.AddDays(days) >= CommonManager.Instance.DB.EventBaseTime)
+                    menuItem.Header = ActualBaseTime().AddDays(days).ToString("yyyy\\/MM\\/dd～");
+                    if (prev ? ActualBaseTime().AddDays(days) <= CommonManager.Instance.DB.EventMinTime :
+                               ActualBaseTime().AddDays(days) >= CommonManager.Instance.DB.EventBaseTime)
                     {
                         menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
                         break;
@@ -826,7 +834,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                if (MoveTime(CommonManager.Instance.DB.EventBaseTime) == false)
+                if (MoveTime(DateTime.MaxValue) == false)
                 {
                     return;
                 }
@@ -875,8 +883,7 @@ namespace EpgTimer
                 }
                 if (err == ErrCode.CMD_SUCCESS)
                 {
-                    baseTime = baseTime > CommonManager.Instance.DB.EventBaseTime ? CommonManager.Instance.DB.EventBaseTime : baseTime;
-                    ReloadProgramViewItem(list, baseTime > CommonManager.Instance.DB.EventMinTime, baseTime < CommonManager.Instance.DB.EventBaseTime);
+                    ReloadProgramViewItem(list, ActualBaseTime() > CommonManager.Instance.DB.EventMinTime, baseTime < CommonManager.Instance.DB.EventBaseTime);
                     MoveNowTime(false);
                     return true;
                 }
@@ -925,7 +932,7 @@ namespace EpgTimer
         private void ReloadReserveViewItem()
         {
             reserveList.Clear();
-            if (baseTime != DateTime.MaxValue && baseTime == CommonManager.Instance.DB.EventBaseTime)
+            if (serviceList.Count > 0 && baseTime >= CommonManager.Instance.DB.EventBaseTime)
             {
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
