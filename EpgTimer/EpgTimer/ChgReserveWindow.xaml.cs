@@ -298,10 +298,7 @@ namespace EpgTimer
                     MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約追加でエラーが発生しました。");
                 }
             }
-            if (this.Visibility == System.Windows.Visibility.Visible)
-            {
-                DialogResult = true;
-            }
+            DialogResult = true;
         }
 
         private void button_del_reserve_Click(object sender, RoutedEventArgs e)
