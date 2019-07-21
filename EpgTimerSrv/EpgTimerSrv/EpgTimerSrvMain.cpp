@@ -67,6 +67,7 @@ struct MAIN_WINDOW_CONTEXT {
 	bool showBalloonTip;
 	//0,1,2:NOTIFY_UPDATE_SRV_STATUSの値, 3:無効, 3<:点滅
 	DWORD notifySrvStatus;
+	DWORD notifyCount;
 	__int64 notifyTipActiveTime;
 	RESERVE_DATA notifyTipReserve;
 	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_)
@@ -79,6 +80,7 @@ struct MAIN_WINDOW_CONTEXT {
 		, taskFlag(false)
 		, showBalloonTip(false)
 		, notifySrvStatus(0)
+		, notifyCount(0)
 		, notifyTipActiveTime(LLONG_MAX) {}
 };
 
@@ -91,7 +93,6 @@ CEpgTimerSrvMain::CEpgTimerSrvMain()
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
-	std::fill_n(this->notifyUpdateCount, _countof(this->notifyUpdateCount), 0);
 }
 
 bool CEpgTimerSrvMain::TaskMain()
@@ -146,7 +147,6 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	if( CreateWindowEx(0, SERVICE_NAME, SERVICE_NAME, 0, 0, 0, 0, 0, NULL, NULL, GetModuleHandle(NULL), &ctx) == NULL ){
 		return false;
 	}
-	this->notifyManager.SetNotifyWindow(this->hwndMain, WM_APP_RECEIVE_NOTIFY);
 
 	//メッセージループ
 	MSG msg;
@@ -450,19 +450,21 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->ReloadNetworkSetting();
 		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_PIPE,
-		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, false); },
+		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, false, NULL); },
 		                            !(ctx->sys->notifyManager.IsGUI()));
 		ctx->sys->epgDB.ReloadEpgData(true);
 		SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 		SetTimer(hwnd, TIMER_SET_RESUME, 30000, NULL);
 		SetTimer(hwnd, TIMER_CHECK, 1000, NULL);
+		ctx->sys->notifyManager.SetNotifyCallback([hwnd]() { PostMessage(hwnd, WM_APP_RECEIVE_NOTIFY, FALSE, 0); });
 		OutputDebugString(L"*** Server initialized ***\r\n");
 		return 0;
 	case WM_DESTROY:
 		if( ctx->resumeTimer ){
 			CloseHandle(ctx->resumeTimer);
 		}
+		ctx->sys->notifyManager.SetNotifyCallback(NULL);
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
 		ctx->pipeServer.StopServer();
@@ -500,7 +502,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				ctx->tcpServer.StopServer();
 			}else{
 				ctx->tcpServer.StartServer(tcpPort_, tcpIPv6_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(),
-				                           [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, true); });
+				                           [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, true, clientIP); });
 			}
 			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
 		}
@@ -571,33 +573,34 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_APP_RECEIVE_NOTIFY:
 		//通知を受け取る
 		{
-			vector<NOTIFY_SRV_INFO> list;
+			NOTIFY_SRV_INFO info = {};
 			if( wParam ){
 				//更新だけ
-				NOTIFY_SRV_INFO status = {};
-				status.notifyID = NOTIFY_UPDATE_SRV_STATUS;
-				status.param1 = ctx->notifySrvStatus;
-				list.push_back(status);
+				info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
+				info.param1 = ctx->notifySrvStatus;
 			}else{
-				list = ctx->sys->notifyManager.RemoveSentList();
-				ctx->tcpServer.NotifyUpdate();
+				if( ctx->sys->notifyManager.GetNotify(&info, ctx->notifyCount) == false ){
+					//すべて受け取った
+					ctx->tcpServer.NotifyUpdate();
+					break;
+				}
+				ctx->notifyCount = info.param3;
+				PostMessage(hwnd, WM_APP_RECEIVE_NOTIFY, FALSE, 0);
 			}
-			for( vector<NOTIFY_SRV_INFO>::const_iterator itr = list.begin(); itr != list.end(); itr++ ){
+			if( info.notifyID == NOTIFY_UPDATE_SRV_STATUS ||
+			    (info.notifyID == NOTIFY_UPDATE_PRE_REC_START && info.param4.find(L'/') != wstring::npos &&
+			     (ctx->notifySrvStatus == 0 || ctx->notifySrvStatus > 3)) ){
 				int notifyTipStyle;
 				bool blinkPreRec;
-				bool saveNotifyLog;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
 					notifyTipStyle = ctx->sys->setting.notifyTipStyle;
 					blinkPreRec = ctx->sys->setting.blinkPreRec;
-					saveNotifyLog = ctx->sys->setting.saveNotifyLog;
 				}
-				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ||
-				    itr->notifyID == NOTIFY_UPDATE_PRE_REC_START && itr->param4.find(L'/') != wstring::npos &&
-				    (ctx->notifySrvStatus == 0 || ctx->notifySrvStatus > 3) && blinkPreRec ){
+				if( info.notifyID == NOTIFY_UPDATE_SRV_STATUS || blinkPreRec ){
 					if( ctx->notifySrvStatus != 3 ){
-						if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
-							ctx->notifySrvStatus = itr->param1;
+						if( info.notifyID == NOTIFY_UPDATE_SRV_STATUS ){
+							ctx->notifySrvStatus = info.param1;
 						}else{
 							ctx->notifySrvStatus = SRV_STATUS_PRE_REC;
 							SetTimer(hwnd, TIMER_INC_SRV_STATUS, 1000, NULL);
@@ -645,57 +648,19 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						}
 					}
 				}
-				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
-					//何もしない
-				}else if( itr->notifyID < _countof(ctx->sys->notifyUpdateCount) ){
-					//更新系の通知をカウント
-					ctx->sys->notifyUpdateCount[itr->notifyID]++;
-				}else{
-					NOTIFYICONDATA nid = {};
-					wcscpy_s(nid.szInfoTitle,
-						itr->notifyID == NOTIFY_UPDATE_PRE_REC_START ? L"予約録画開始準備" :
-						itr->notifyID == NOTIFY_UPDATE_REC_START ? L"録画開始" :
-						itr->notifyID == NOTIFY_UPDATE_REC_END ? L"録画終了" :
-						itr->notifyID == NOTIFY_UPDATE_REC_TUIJYU ? L"追従発生" :
-						itr->notifyID == NOTIFY_UPDATE_CHG_TUIJYU ? L"番組変更" :
-						itr->notifyID == NOTIFY_UPDATE_PRE_EPGCAP_START ? L"EPG取得" :
-						itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"EPG取得" :
-						itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"EPG取得" : L"");
-					if( nid.szInfoTitle[0] ){
-						LPCWSTR info = itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"開始" :
-						               itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"終了" : itr->param4.c_str();
-						if( saveNotifyLog ){
-							//通知情報ログ保存
-							fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
-							std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ), fclose);
-							if( fp ){
-								fwrite(L"\xFEFF", sizeof(WCHAR), 1, fp.get());
-							}else{
-								fp.reset(UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ));
-							}
-							if( fp ){
-								SYSTEMTIME st = itr->time;
-								wstring log;
-								Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%ls] %ls\r_",
-								       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, nid.szInfoTitle, info);
-								Replace(log, L"\r\n", L"  ");
-								log.back() = L'\n';
-								fwrite(log.c_str(), sizeof(WCHAR), log.size(), fp.get());
-							}
-						}
-						if( ctx->showBalloonTip ){
-							//バルーンチップ表示
-							nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-							nid.hWnd = hwnd;
-							nid.uID = 1;
-							nid.uFlags = NIF_INFO;
-							nid.dwInfoFlags = NIIF_INFO;
-							nid.uTimeout = 10000; //効果はない
-							wcsncpy_s(nid.szInfo, info, _TRUNCATE);
-							Shell_NotifyIcon(NIM_MODIFY, &nid);
-						}
-					}
-				}
+			}
+			if( ctx->showBalloonTip && CNotifyManager::ExtractTitleFromInfo(&info).first[0] ){
+				//バルーンチップ表示
+				NOTIFYICONDATA nid = {};
+				nid.cbSize = NOTIFYICONDATA_V2_SIZE;
+				nid.hWnd = hwnd;
+				nid.uID = 1;
+				nid.uFlags = NIF_INFO;
+				nid.dwInfoFlags = NIIF_INFO;
+				nid.uTimeout = 10000; //効果はない
+				wcsncpy_s(nid.szInfoTitle, CNotifyManager::ExtractTitleFromInfo(&info).first, _TRUNCATE);
+				wcsncpy_s(nid.szInfo, CNotifyManager::ExtractTitleFromInfo(&info).second, _TRUNCATE);
+				Shell_NotifyIcon(NIM_MODIFY, &nid);
 			}
 		}
 		break;
@@ -1168,6 +1133,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	fs_path viewIniPath = GetCommonIniPath().replace_filename(L"EpgDataCap_Bon.ini");
 	s.enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
 	s.enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
+	this->notifyManager.SetLogFilePath(s.saveNotifyLog ? GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log").c_str() : L"");
 	if( initialize ){
 		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
@@ -1600,13 +1566,13 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 	}
 }
 
-void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag)
+void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag, LPCWSTR clientIP)
 {
 	//この関数はPipeとTCPとで同時に呼び出されるかもしれない(各々が同時に複数呼び出すことはない)
 	resParam->dataSize = 0;
 	resParam->param = CMD_ERR;
 
-	if( sys->CtrlCmdProcessCompatible(*cmdParam, *resParam) ){
+	if( sys->CtrlCmdProcessCompatible(*cmdParam, *resParam, clientIP) ){
 		return;
 	}
 
@@ -1627,13 +1593,13 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}
 		break;
 	case CMD2_EPG_SRV_REGIST_GUI:
-		{
+		if( tcpFlag == false ){
 			DWORD processID;
 			if( ReadVALUE(&processID, cmdParam->data, cmdParam->dataSize, NULL) ){
-				//CPipeServerの仕様的にこの時点で相手と通信できるとは限らない。接続先パイプが作成されるまで少し待つ
+				//昔のCPipeServerは開始が同期的でなく、この時点で相手と通信できるとは限らない。接続先の作成まで少し待つ
 				CSendCtrlCmd cmd;
 				cmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, processID);
-				for( int i = 0; i < 100 && cmd.PipeExists() == false; i++ ){
+				for( int i = 0; i < 50 && cmd.PipeExists() == false; i++ ){
 					Sleep(100);
 				}
 				resParam->param = CMD_SUCCESS;
@@ -1642,29 +1608,37 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}
 		break;
 	case CMD2_EPG_SRV_UNREGIST_GUI:
-		{
+		if( tcpFlag == false ){
 			DWORD processID;
 			if( ReadVALUE(&processID, cmdParam->data, cmdParam->dataSize, NULL) ){
 				resParam->param = CMD_SUCCESS;
 				sys->notifyManager.UnRegistGUI(processID);
+				//登録解除後に通知しないよう、通知処理中なら少し待つ
+				if( sys->notifyManager.WaitForIdle(3000) == false ){
+					OutputDebugString(L"CMD2_EPG_SRV_UNREGIST_GUI/_TCP: WaitForIdle() timed out.\r\n");
+				}
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_REGIST_GUI_TCP:
-		{
-			REGIST_TCP_INFO val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+		if( clientIP ){
+			DWORD port;
+			if( ReadVALUE(&port, cmdParam->data, cmdParam->dataSize, NULL) ){
 				resParam->param = CMD_SUCCESS;
-				sys->notifyManager.RegistTCP(val);
+				sys->notifyManager.RegistTCP(clientIP, port);
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_UNREGIST_GUI_TCP:
-		{
-			REGIST_TCP_INFO val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+		if( clientIP ){
+			DWORD port;
+			if( ReadVALUE(&port, cmdParam->data, cmdParam->dataSize, NULL) ){
 				resParam->param = CMD_SUCCESS;
-				sys->notifyManager.UnRegistTCP(val);
+				sys->notifyManager.UnRegistTCP(clientIP, port);
+				//登録解除後に通知しないよう、通知処理中なら少し待つ
+				if( sys->notifyManager.WaitForIdle(3000) == false ){
+					OutputDebugString(L"CMD2_EPG_SRV_UNREGIST_GUI/_TCP: WaitForIdle() timed out.\r\n");
+				}
 			}
 		}
 		break;
@@ -2705,7 +2679,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 	}
 }
 
-bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam)
+bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam, LPCWSTR clientIP)
 {
 	//※この関数はtkntrec版( https://github.com/tkntrec/EDCB )を参考にした
 
@@ -2714,11 +2688,11 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		if( this->compatFlags & 0x04 ){
 			//互換動作: TCP接続の登録状況確認コマンドを実装する
 			OutputDebugString(L"CMD2_EPG_SRV_ISREGIST_GUI_TCP\r\n");
-			REGIST_TCP_INFO val;
-			if( ReadVALUE(&val, cmdParam.data, cmdParam.dataSize, NULL) ){
-				vector<REGIST_TCP_INFO> registTCP = this->notifyManager.GetRegistTCP();
-				BOOL registered = std::find_if(registTCP.begin(), registTCP.end(), [&val](const REGIST_TCP_INFO& a) {
-					return a.ip == val.ip && a.port == val.port;
+			DWORD port;
+			if( clientIP && ReadVALUE(&port, cmdParam.data, cmdParam.dataSize, NULL) ){
+				vector<pair<wstring, DWORD>> registTCP = this->notifyManager.GetRegistTCP();
+				BOOL registered = std::find_if(registTCP.begin(), registTCP.end(), [=](const pair<wstring, DWORD>& a) {
+					return a.first == clientIP && a.second == port;
 				}) != registTCP.end();
 				resParam.data = NewWriteVALUE(registered, resParam.dataSize);
 				resParam.param = CMD_SUCCESS;
@@ -3929,11 +3903,7 @@ int CEpgTimerSrvMain::LuaAddOrChgManuAdd(lua_State* L)
 int CEpgTimerSrvMain::LuaGetNotifyUpdateCount(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	int n = -1;
-	if( lua_gettop(L) == 1 && 1 <= lua_tointeger(L, 1) && lua_tointeger(L, 1) < (int)_countof(ws.sys->notifyUpdateCount) ){
-		n = ws.sys->notifyUpdateCount[lua_tointeger(L, 1)] & 0x7FFFFFFF;
-	}
-	lua_pushinteger(L, n);
+	lua_pushinteger(L, lua_gettop(L) == 1 ? ws.sys->notifyManager.GetNotifyUpdateCount((DWORD)lua_tointeger(L, 1)) : -1);
 	return 1;
 }
 

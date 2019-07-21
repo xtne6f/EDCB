@@ -58,8 +58,8 @@ private:
 	void AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList);
 	void AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const;
 	//外部制御コマンド関係
-	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
-	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam);
+	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag, LPCWSTR clientIP);
+	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam, LPCWSTR clientIP);
 	void InitLuaCallback(lua_State* L, LPCSTR serverRandom);
 	void DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff);
 	//Lua-edcb空間のコールバック
@@ -153,7 +153,6 @@ private:
 	atomic_bool_ useSyoboi;
 	bool nwtvUdp;
 	bool nwtvTcp;
-	atomic_int_ notifyUpdateCount[6];
 	DWORD compatFlags;
 
 	vector<EPGDB_EVENT_INFO> oldSearchList[2];

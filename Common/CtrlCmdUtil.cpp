@@ -1158,31 +1158,6 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TUNER_RESERVE_IN
 	return pos - buffOffset;
 }
 
-DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REGIST_TCP_INFO& val )
-{
-	DWORD pos = buffOffset + sizeof(DWORD);
-	pos += WriteVALUE(ver, buff, pos, val.ip);
-	pos += WriteVALUE(ver, buff, pos, val.port);
-	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
-	return pos - buffOffset;
-}
-
-BOOL ReadVALUE( WORD ver, REGIST_TCP_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
-{
-	DWORD pos = 0;
-	DWORD size = 0;
-	DWORD valSize = 0;
-	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &valSize );
-	if( valSize < pos || buffSize < valSize ){
-		return FALSE;
-	}
-	buffSize = valSize;
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ip );
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->port );
-	*readSize = valSize;
-	return TRUE;
-}
-
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EVENT_INFO& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD);

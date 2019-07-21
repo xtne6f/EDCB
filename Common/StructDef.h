@@ -174,11 +174,6 @@ struct CH_DATA5 {
 	BOOL searchFlag;				//検索時のデフォルト検索対象サービスかどうか
 };
 
-struct REGIST_TCP_INFO {
-	wstring ip;
-	DWORD port;
-};
-
 //コマンド送受信ストリーム
 struct CMD_STREAM {
 	DWORD param;	//送信時コマンド、受信時エラーコード

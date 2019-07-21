@@ -3,7 +3,6 @@
 #include "StringUtil.h"
 #include "CtrlCmdDef.h"
 #include "ErrDef.h"
-#include "CtrlCmdUtil.h"
 #ifndef _WIN32
 #include <netdb.h>
 #include <poll.h>
@@ -13,6 +12,7 @@
 
 typedef int SOCKET;
 static const int INVALID_SOCKET = -1;
+#define closesocket(sock) close(sock)
 #endif
 
 CTCPServer::CTCPServer(void)
@@ -35,7 +35,7 @@ CTCPServer::~CTCPServer(void)
 }
 
 bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTimeout, LPCWSTR acl,
-                             const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc)
+                             const std::function<void(CMD_STREAM*, CMD_STREAM*, LPCWSTR)>& cmdProc)
 {
 	if( !cmdProc ){
 		return false;
@@ -113,12 +113,11 @@ void CTCPServer::StopServer()
 		WSAEventSelect(m_sock, NULL, 0);
 		unsigned long x = 0;
 		ioctlsocket(m_sock, FIONBIO, &x);
-		closesocket(m_sock);
 #else
 		int x = 0;
 		ioctl(m_sock, FIONBIO, &x);
-		close(m_sock);
 #endif
+		closesocket(m_sock);
 		m_sock = INVALID_SOCKET;
 	}
 #ifdef _WIN32
@@ -310,7 +309,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					continue;
 				}
 				CMD_STREAM stRes;
-				pSys->m_cmdProc(&waitList[i]->cmd, &stRes);
+				pSys->m_cmdProc(&waitList[i]->cmd, &stRes, NULL);
 				if( stRes.param == CMD_NO_RES ){
 					//応答は保留された
 					if( GetTickCount() - waitList[i]->tick <= pSys->m_dwResponseTimeout ){
@@ -350,6 +349,12 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					sock = accept(pSys->m_sock, (struct sockaddr*)&client, &clientLen);
 				}
 			}
+#else
+		if( pfdList[1].revents & POLLIN ){
+			struct sockaddr_storage client = {};
+			socklen_t clientLen = sizeof(client);
+			int sock = accept4(pSys->m_sock, (struct sockaddr*)&client, &clientLen, SOCK_CLOEXEC);
+#endif
 			if( sock != INVALID_SOCKET ){
 				if( (pSys->m_ipv6 && client.ss_family != AF_INET6) || (pSys->m_ipv6 == false && client.ss_family != AF_INET) ){
 					OutputDebugString(L"IP protocol mismatch\r\n");
@@ -366,12 +371,6 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					sock = INVALID_SOCKET;
 				}
 			}
-#else
-		if( pfdList[1].revents & POLLIN ){
-			struct sockaddr_storage client = {};
-			socklen_t clientLen = sizeof(client);
-			int sock = accept4(pSys->m_sock, (struct sockaddr*)&client, &clientLen, SOCK_CLOEXEC);
-#endif
 			if( sock != INVALID_SOCKET ){
 				//ブロッキングモードに変更
 				SetBlockingMode(sock);
@@ -397,21 +396,18 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						}
 					}
 
-					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
-						REGIST_TCP_INFO setParam;
+					wstring clientIP;
+					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP ||
+					    stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP ||
+					    stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
+						//接続元IPを引数に添付
 						char ip[NI_MAXHOST];
-						if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 &&
-						    ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL) ){
-							UTF8toW(ip, setParam.ip);
-							stCmd.data = NewWriteVALUE(setParam, stCmd.dataSize);
-						}else{
-							//接続元IPの添付に失敗した
-							stCmd.dataSize = 0;
-							stCmd.data.reset();
+						if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 ){
+							UTF8toW(ip, clientIP);
 						}
 					}
 
-					pSys->m_cmdProc(&stCmd, &stRes);
+					pSys->m_cmdProc(&stCmd, &stRes, clientIP.empty() ? NULL : clientIP.c_str());
 					if( stRes.param == CMD_NO_RES ){
 						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
 							//保留可能なコマンドは応答待ちリストに移動
@@ -455,11 +451,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					}
 				}
 				if( sock != INVALID_SOCKET ){
-#ifdef _WIN32
 					closesocket(sock);
-#else
-					close(sock);
-#endif
 				}
 			}
 		}
@@ -472,11 +464,9 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 
 	while( waitList.empty() == false ){
 		SetBlockingMode(waitList.back()->sock);
-#ifdef _WIN32
 		closesocket(waitList.back()->sock);
+#ifdef _WIN32
 		WSACloseEvent(waitList.back()->hEvent);
-#else
-		close(waitList.back()->sock);
 #endif
 		waitList.pop_back();
 	}
