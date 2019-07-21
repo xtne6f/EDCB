@@ -144,7 +144,7 @@ private:
 	//バンクを監視して必要ならチューナを強制終了するスレッド
 	static void WatchdogThread(CReserveManager* sys);
 	//batPostManagerにバッチを追加する
-	void AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR fileName);
+	void AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR baseName);
 	//バッチに渡す日時マクロを追加する
 	static void AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix);
 	//バッチに渡す予約情報マクロを追加する

@@ -6,8 +6,8 @@
 CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: notifyManager(notifyManager_)
 	, epgDBManager(epgDBManager_)
-	, batManager(notifyManager_, L"EpgTimer_Bon_RecEnd.bat")
-	, batPostManager(notifyManager_, L"EpgTimer_Bon_Post.bat")
+	, batManager(notifyManager_, L"EpgTimer_Bon_RecEnd")
+	, batPostManager(notifyManager_, L"EpgTimer_Bon_Post")
 	, checkCount(0)
 	, epgCapRequested(false)
 	, epgCapWork(false)
@@ -206,7 +206,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
 		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
-		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
+		AddPostBatWork(batWorkList, L"PostAddReserve");
 		return true;
 	}
 	return false;
@@ -353,7 +353,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
 		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
-		AddPostBatWork(batWorkList, L"PostChgReserve.bat");
+		AddPostBatWork(batWorkList, L"PostChgReserve");
 		return true;
 	}
 	return false;
@@ -1337,7 +1337,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 		this->recInfo2Text.SaveText();
 		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 		AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
-		AddPostBatWork(batWorkList, L"PostRecEnd.bat");
+		AddPostBatWork(batWorkList, L"PostRecEnd");
 	}
 }
 
@@ -1365,7 +1365,7 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 				AddReserveDataMacro(batWorkList.back().macroList, itrRes->second, "");
 			}
 		}
-		AddPostBatWork(batWorkList, L"PostRecStart.bat");
+		AddPostBatWork(batWorkList, L"PostRecStart");
 		ProcessRecEnd(retList, itrBank->first, &this->shutdownModePending);
 	}
 	if( this->checkCount % 30 == 0 ){
@@ -1931,16 +1931,13 @@ void CReserveManager::WatchdogThread(CReserveManager* sys)
 	}
 }
 
-void CReserveManager::AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR fileName)
+void CReserveManager::AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR baseName)
 {
 	if( workList.empty() == false ){
-		fs_path batFilePath = GetCommonIniPath().replace_filename(fileName);
-		//同名のPowerShellやLuaスクリプトでもよい
-		if( UtilFileExists(batFilePath).first ||
-		    UtilFileExists(batFilePath.replace_extension(L".ps1")).first ||
-		    UtilFileExists(batFilePath.replace_extension(L".lua")).first ){
+		workList[0].batFilePath = this->batPostManager.FindExistingPath(GetCommonIniPath().replace_filename(baseName).c_str());
+		if( workList[0].batFilePath.empty() == false ){
 			for( size_t i = 0; i < workList.size(); i++ ){
-				workList[i].batFilePath = batFilePath.native();
+				workList[i].batFilePath = workList[0].batFilePath;
 				this->batPostManager.AddBatWork(workList[i]);
 			}
 		}
@@ -1953,7 +1950,7 @@ void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
 	vector<CBatManager::BAT_WORK_INFO> workList(1);
 	workList[0].macroList.push_back(pair<string, wstring>("NotifyID", L""));
 	Format(workList[0].macroList.back().second, L"%d", notifyID);
-	AddPostBatWork(workList, L"PostNotify.bat");
+	AddPostBatWork(workList, L"PostNotify");
 }
 
 void CReserveManager::SetBatCustomHandler(LPCWSTR ext, const std::function<void(CBatManager::BAT_WORK_INFO&, vector<char>&)>& handler)
