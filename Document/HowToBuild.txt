@@ -68,7 +68,7 @@
 [その他]
 
 ・EpgTimer.exeをビルドするだけならVisualStudioは不要(参考:2ch_EDCB/52/224)
-  必要なら.NET Framework v4.0以降をインストールして、EpgTimerフォルダでコマンドプロンプトを開いて以下を実行
+  必要なら.NET Framework v4.0以降をインストールして、EpgTimerフォルダでコマンドプロンプトを開いて以下を実行（またはx86build.batを実行）
   > C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe EpgTimer.sln /p:Configuration=Release /p:Platform=x86
   放置してもたぶん問題ないが、MSB3644の警告がでる場合は"EpgTimer\EpgTimer\EpgTimer.csproj"をメモ帳で開き
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
