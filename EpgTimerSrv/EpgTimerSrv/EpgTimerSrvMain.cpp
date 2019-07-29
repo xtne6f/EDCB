@@ -89,7 +89,9 @@ struct MAIN_WINDOW_CONTEXT {
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
 	, hwndMain(NULL)
+#ifdef LUA_BUILD_AS_DLL
 	, hLuaDll(NULL)
+#endif
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
@@ -156,10 +158,12 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			DispatchMessage(&msg);
 		}
 	}
+#ifdef LUA_BUILD_AS_DLL
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
 	}
+#endif
 	return true;
 }
 
@@ -1104,25 +1108,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->tcpIPv6 = GetPrivateProfileInt(L"SET", L"TCPIPv6", 0, iniPath.c_str()) != 0;
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
-	this->httpOptions.ports.clear();
-	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
-	if( enableHttpSrv != 0 ){
-		this->httpOptions.rootPath = GetPrivateProfileToString(L"SET", L"HttpPublicFolder", L"", iniPath.c_str());
-		if(this->httpOptions.rootPath.empty() ){
-			this->httpOptions.rootPath = GetCommonIniPath().replace_filename(L"HttpPublic").native();
-		}
-		this->httpOptions.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
-		this->httpOptions.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
-		this->httpOptions.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 5, iniPath.c_str());
-		this->httpOptions.requestTimeout = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath.c_str()) * 1000;
-		this->httpOptions.sslCipherList = GetPrivateProfileToString(L"SET", L"HttpSslCipherList", L"HIGH:!aNULL:!MD5", iniPath.c_str());
-		this->httpOptions.sslProtocolVersion = GetPrivateProfileInt(L"SET", L"HttpSslProtocolVersion", 4, iniPath.c_str());
-		this->httpOptions.keepAlive = GetPrivateProfileInt(L"SET", L"HttpKeepAlive", 0, iniPath.c_str()) != 0;
-		this->httpOptions.ports = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
-		this->httpOptions.saveLog = enableHttpSrv == 2;
-		this->httpOptions.enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
-	}
-
+	this->httpOptions = CHttpServer::LoadServerOptions(iniPath.c_str());
 	PostMessage(this->hwndMain, WM_APP_RESET_SERVER, 0, 0);
 }
 
@@ -3013,6 +2999,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 	luaL_setfuncs(L, closures, 1);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
 	LuaHelp::reg_string(L, "serverRandom", serverRandom);
+#ifdef _WIN32
 	//ファイルハンドルはDLLを越えて互換とは限らないので、"FILE*"メタテーブルも独自のものが必要
 	LuaHelp::f_createmeta(L);
 	//osライブラリに対するUTF-8補完
@@ -3034,7 +3021,14 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 	lua_pushliteral(L, "io");
 	luaL_newlib(L, iolib);
 	lua_rawset(L, -3);
+#endif
 	lua_setglobal(L, "edcb");
+#ifndef _WIN32
+	//UTF-8補完は不要(単なるエイリアス)
+	luaL_dostring(L,
+		"edcb.os=os;"
+		"edcb.io=io;");
+#endif
 	luaL_dostring(L,
 		"package.path=package.path:gsub(';%.[\\\\/][^;]*','');"
 		"package.cpath=package.cpath:gsub(';%.[\\\\/][^;]*','');"

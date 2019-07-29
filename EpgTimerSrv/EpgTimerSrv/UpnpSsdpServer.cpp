@@ -1,20 +1,34 @@
 #include "stdafx.h"
 #include "UpnpSsdpServer.h"
 #include "../../Common/StringUtil.h"
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
+#pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "iphlpapi.lib")
+#else
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+typedef int SOCKET;
+static const int INVALID_SOCKET = -1;
+#define closesocket(sock) close(sock)
+#endif
 
 CUpnpSsdpServer::~CUpnpSsdpServer()
 {
 	Stop();
 }
 
-bool CUpnpSsdpServer::Start(const vector<SSDP_TARGET_INFO>& targetList_)
+bool CUpnpSsdpServer::Start(const vector<SSDP_TARGET_INFO>& targetList_, int ifTypes, int initialWaitSec_)
 {
 	Stop();
 	this->targetList = targetList_;
+	this->ssdpIfTypes = ifTypes;
+	this->initialWaitSec = initialWaitSec_;
 	this->stopFlag = false;
 	this->ssdpThread = thread_(SsdpThread, this);
 	return true;
@@ -28,95 +42,104 @@ void CUpnpSsdpServer::Stop()
 	}
 }
 
-string CUpnpSsdpServer::GetUserAgent()
+namespace
 {
-	OSVERSIONINFO osvi;
-	osvi.dwOSVersionInfoSize = sizeof(osvi);
-	GetVersionEx(&osvi);
-	char ua[128];
-	sprintf_s(ua, "Windows/%d.%d UPnP/1.1 EpgTimerSrv/0.10", osvi.dwMajorVersion, osvi.dwMinorVersion);
-	return ua;
-}
+struct SSDP_NIC_INFO {
+	sockaddr_in addr;
+	string name;
+	SOCKET sock;
+};
 
-vector<string> CUpnpSsdpServer::GetNICList()
+vector<SSDP_NIC_INFO> GetNICList()
 {
-	vector<string> nicList(1, string("127.0.0.1"));
+	vector<SSDP_NIC_INFO> nicList;
+#ifdef _WIN32
 	//MSDN: "The recommended method ~ is to pre-allocate a 15KB working buffer pointed to by the AdapterAddresses parameter."
 	IP_ADAPTER_ADDRESSES adpts[16384 / sizeof(IP_ADAPTER_ADDRESSES)];
 	ULONG len = sizeof(adpts);
 	if( GetAdaptersAddresses(AF_INET, 0, 0, adpts, &len) == ERROR_SUCCESS ){
 		for( PIP_ADAPTER_ADDRESSES adpt = adpts; adpt; adpt = adpt->Next ){
-			if( adpt->PhysicalAddressLength != 0 &&
-			    adpt->IfType != IF_TYPE_SOFTWARE_LOOPBACK ){
-				for( PIP_ADAPTER_UNICAST_ADDRESS uni = adpt->FirstUnicastAddress; uni; uni = uni->Next ){
-					if( (uni->Flags & IP_ADAPTER_ADDRESS_DNS_ELIGIBLE) != 0 &&
-					    (uni->Flags & IP_ADAPTER_ADDRESS_TRANSIENT) == 0 ){
-						char host[NI_MAXHOST];
-						if( getnameinfo(uni->Address.lpSockaddr, uni->Address.iSockaddrLength, host, sizeof(host), NULL, 0, NI_NUMERICHOST) == 0 ){
-							if( std::find(nicList.begin(), nicList.end(), host) == nicList.end() ){
-								nicList.push_back(host);
-							}
-						}
-					}
+			for( PIP_ADAPTER_UNICAST_ADDRESS uni = adpt->FirstUnicastAddress; uni; uni = uni->Next ){
+				char host[NI_MAXHOST];
+				if( (uni->Flags & IP_ADAPTER_ADDRESS_TRANSIENT) == 0 &&
+				    uni->Address.lpSockaddr->sa_family == AF_INET &&
+				    getnameinfo(uni->Address.lpSockaddr, uni->Address.iSockaddrLength, host, sizeof(host), NULL, 0, NI_NUMERICHOST) == 0 ){
+					nicList.resize(nicList.size() + 1);
+					nicList.back().addr = *(sockaddr_in*)uni->Address.lpSockaddr;
+					nicList.back().name = host;
 				}
 			}
 		}
 	}
+#else
+	ifaddrs* ifap;
+	if( getifaddrs(&ifap) == 0 ){
+		for( ifaddrs* p = ifap; p; p = p->ifa_next ){
+			char host[NI_MAXHOST];
+			if( p->ifa_addr->sa_family == AF_INET &&
+			    getnameinfo(p->ifa_addr, sizeof(sockaddr_in), host, sizeof(host), NULL, 0, NI_NUMERICHOST) == 0 ){
+				nicList.resize(nicList.size() + 1);
+				nicList.back().addr = *(sockaddr_in*)p->ifa_addr;
+				nicList.back().name = host;
+			}
+		}
+		freeifaddrs(ifap);
+	}
+#endif
 	return nicList;
 }
 
-static bool GetInetAddr(unsigned long* addr, const char* host)
-{
-	*addr = htonl(INADDR_NONE);
-	addrinfo hints = {};
-	hints.ai_flags = AI_NUMERICHOST;
-	hints.ai_family = AF_INET;
-	addrinfo* result;
-	if( getaddrinfo(host, NULL, &hints, &result) == 0 ){
-		if( result->ai_addrlen >= sizeof(sockaddr_in) ){
-			*addr = ((sockaddr_in*)result->ai_addr)->sin_addr.s_addr;
-			freeaddrinfo(result);
-			return true;
-		}
-		freeaddrinfo(result);
-	}
-	return false;
+string GetMSearchReply(const char* header, const char* host, const vector<CUpnpSsdpServer::SSDP_TARGET_INFO>& targetList);
+void SendNotifyAliveOrByebye(bool byebyeFlag, const vector<SSDP_NIC_INFO>& nicList, const vector<CUpnpSsdpServer::SSDP_TARGET_INFO>& targetList);
 }
 
 void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 {
+	for( int i = 0; i < sys->initialWaitSec; i++ ){
+		Sleep(1000);
+		if( sys->stopFlag ){
+			return;
+		}
+	}
+#ifdef _WIN32
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
 
-	vector<string> nicList = GetNICList();
-	SOCKET sockList[FD_SETSIZE];
+	vector<SSDP_NIC_INFO> nicList = GetNICList();
 	string debug = "SSDP watching:";
 	//見つかったNIC全てで受信できるようにする
 	for( size_t i = 0; i < nicList.size(); ){
+		int ifType = ntohl(nicList[i].addr.sin_addr.s_addr) == INADDR_LOOPBACK ? SSDP_IF_LOOPBACK :
+		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 16) == 0xC0A8 ? SSDP_IF_C_PRIVATE :
+		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 20) == 0xAC1 ? SSDP_IF_B_PRIVATE :
+		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 24) == 0x0A ? SSDP_IF_A_PRIVATE :
+		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 16) == 0xA9FE ? SSDP_IF_LINKLOCAL : SSDP_IF_GLOBAL;
 		//SSDP待ち受けポート(UDP 1900)の作成
 		SOCKET sock;
-		if( i >= FD_SETSIZE || (sock = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET ){
+		if( (sys->ssdpIfTypes & ifType) == 0 || i >= FD_SETSIZE ||
+		    (sock = socket(AF_INET, SOCK_DGRAM
+#ifndef _WIN32
+		                       | SOCK_CLOEXEC
+#endif
+		                   , 0)) == INVALID_SOCKET ){
 			nicList.erase(nicList.begin() + i);
 		}else{
 			int opt = 1;
-			if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt)) == SOCKET_ERROR ){
+			if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt)) != 0 ){
 				OutputDebugString(L"SSDP setsockopt(SO_REUSEADDR) failed.\r\n");
 			}
-			sockaddr_in addr = {};
-			addr.sin_family = AF_INET;
-			addr.sin_addr.s_addr = htonl(INADDR_ANY);
-			addr.sin_port = htons(1900);
-			ip_mreq_source mreq = {};
-			mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-			if( GetInetAddr(&mreq.imr_sourceaddr.s_addr, nicList[i].c_str()) == false ||
-			    GetInetAddr(&mreq.imr_multiaddr.s_addr, "239.255.255.250") == false ||
-			    bind(sock, (const sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR ||
-			    setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (const char*)&mreq, sizeof(mreq)) == SOCKET_ERROR ){
+			nicList[i].addr.sin_port = htons(1900);
+			ip_mreq mreq = {};
+			mreq.imr_multiaddr.s_addr = htonl(0xEFFFFFFA); //239.255.255.250
+			mreq.imr_interface = nicList[i].addr.sin_addr;
+			if( bind(sock, (const sockaddr*)&nicList[i].addr, sizeof(nicList[i].addr)) != 0 ||
+			    setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (const char*)&mreq, sizeof(mreq)) != 0 ){
 				closesocket(sock);
 				nicList.erase(nicList.begin() + i);
 			}else{
-				debug += ' ' + nicList[i];
-				sockList[i] = sock;
+				debug += ' ' + nicList[i].name;
+				nicList[i].sock = sock;
 				i++;
 			}
 		}
@@ -129,42 +152,42 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 	struct SSDP_REPLY_INFO {
 		string msg;
 		sockaddr_in addr;
-		int addrLen;
 		DWORD jitter;
 	};
 	vector<SSDP_REPLY_INFO> replyList;
 	DWORD random = 0;
-	DWORD notifyTick = GetTickCount() - 1000 * (NOTIFY_INTERVAL_SEC - NOTIFY_FIRST_DELAY_SEC);
+	DWORD notifyTick = GetTickCount() - 1000 * NOTIFY_INTERVAL_SEC;
 	while( sys->stopFlag == false ){
 		fd_set ready;
 		FD_ZERO(&ready);
 		for( size_t i = 0; i < nicList.size(); i++ ){
-			FD_SET(sockList[i], &ready);
+			FD_SET(nicList[i].sock, &ready);
 		}
 		timeval to;
 		to.tv_sec = replyList.empty() ? 1 : 0;
 		to.tv_usec = 100000;
-		if( select(0, &ready, NULL, NULL, &to) == SOCKET_ERROR ){
+		if( select(0, &ready, NULL, NULL, &to) < 0 ){
 			break;
 		}
 		DWORD tick = GetTickCount();
 		random = (random << 31 | random >> 1) ^ tick;
 		for( size_t i = 0; i < nicList.size(); i++ ){
-			if( FD_ISSET(sockList[i], &ready) ){
+			if( FD_ISSET(nicList[i].sock, &ready) ){
 				char recvData[RECV_BUFF_SIZE];
-				sockaddr_in from;
-				int fromLen = sizeof(from);
-				int recvLen = recvfrom(sockList[i], recvData, RECV_BUFF_SIZE - 1, 0, (sockaddr*)&from, &fromLen);
-				if( recvLen < 0 || fromLen > sizeof(from) ){
+				SSDP_REPLY_INFO info;
+#ifdef _WIN32
+				int fromLen = sizeof(info.addr);
+#else
+				socklen_t fromLen = sizeof(info.addr);
+#endif
+				int recvLen = (int)recvfrom(nicList[i].sock, recvData, RECV_BUFF_SIZE - 1, 0, (sockaddr*)&info.addr, &fromLen);
+				if( recvLen < 0 || fromLen != sizeof(info.addr) ){
 					OutputDebugString(L"SSDP recvfrom() failed.\r\n");
 				}else{
 					recvData[recvLen] = '\0';
 					if( strncmp(recvData, "M-SEARCH ", 9) == 0 && replyList.size() < 100 ){
-						SSDP_REPLY_INFO info;
-						info.msg = sys->GetMSearchReply(recvData, nicList[i].c_str());
+						info.msg = GetMSearchReply(recvData, nicList[i].name.c_str(), sys->targetList);
 						if( info.msg.empty() == false ){
-							info.addr = from;
-							info.addrLen = fromLen;
 							//応答は1秒以内の揺らぎを入れる
 							info.jitter = tick - random % 1000;
 							replyList.push_back(info);
@@ -175,9 +198,13 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 		}
 		for( vector<SSDP_REPLY_INFO>::const_iterator itr = replyList.begin(); itr != replyList.end(); ){
 			if( tick - itr->jitter > 1000 ){
-				SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+				SOCKET sock = socket(AF_INET, SOCK_DGRAM
+#ifndef _WIN32
+				                         | SOCK_CLOEXEC
+#endif
+				                     , 0);
 				if( sock != INVALID_SOCKET ){
-					if( sendto(sock, itr->msg.c_str(), (int)itr->msg.size(), 0, (const sockaddr*)&itr->addr, itr->addrLen) != (int)itr->msg.size() ){
+					if( sendto(sock, itr->msg.c_str(), (int)itr->msg.size(), 0, (const sockaddr*)&itr->addr, sizeof(itr->addr)) != (int)itr->msg.size() ){
 						OutputDebugString(L"SSDP sendto() failed.\r\n");
 					}
 					closesocket(sock);
@@ -189,15 +216,23 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 		}
 		if( tick - notifyTick > 1000 * NOTIFY_INTERVAL_SEC ){
 			notifyTick = tick;
-			sys->SendNotifyAliveOrByebye(false, nicList);
+			SendNotifyAliveOrByebye(false, nicList, sys->targetList);
 		}
 	}
-	sys->SendNotifyAliveOrByebye(true, nicList);
+	SendNotifyAliveOrByebye(true, nicList, sys->targetList);
 
+	while( nicList.empty() == false ){
+		closesocket(nicList.back().sock);
+		nicList.pop_back();
+	}
+#ifdef _WIN32
 	WSACleanup();
+#endif
 }
 
-string CUpnpSsdpServer::GetMSearchReply(const char* header, const char* host) const
+namespace
+{
+string GetMSearchReply(const char* header, const char* host, const vector<CUpnpSsdpServer::SSDP_TARGET_INFO>& targetList)
 {
 	string resMsg;
 	header = strstr(header, "\r\n");
@@ -230,7 +265,7 @@ string CUpnpSsdpServer::GetMSearchReply(const char* header, const char* host) co
 			header = tail + 2;
 		}
 		if( CompareNoCase(man, "\"ssdp:discover\"") == 0 ){
-			for( vector<SSDP_TARGET_INFO>::const_iterator itr = this->targetList.begin(); itr != this->targetList.end(); itr++ ){
+			for( vector<CUpnpSsdpServer::SSDP_TARGET_INFO>::const_iterator itr = targetList.begin(); itr != targetList.end(); itr++ ){
 				if( CompareNoCase(itr->target, st) == 0 ){
 					string location = "http://" + string(host) + itr->location;
 					resMsg =
@@ -238,7 +273,7 @@ string CUpnpSsdpServer::GetMSearchReply(const char* header, const char* host) co
 						"CACHE-CONTROL: max-age = 1800\r\n"
 						"EXT:\r\n"
 						"LOCATION: " + location + "\r\n"
-						"SERVER: " + GetUserAgent() + "\r\n"
+						"SERVER: UnknownOS/1.0 UPnP/1.1 EpgTimerSrv/0.10\r\n"
 						"ST: " + itr->target + "\r\n"
 						"USN: " + itr->usn + "\r\n\r\n";
 					break;
@@ -249,21 +284,23 @@ string CUpnpSsdpServer::GetMSearchReply(const char* header, const char* host) co
 	return resMsg;
 }
 
-void CUpnpSsdpServer::SendNotifyAliveOrByebye(bool byebyeFlag, const vector<string>& nicList)
+void SendNotifyAliveOrByebye(bool byebyeFlag, const vector<SSDP_NIC_INFO>& nicList, const vector<CUpnpSsdpServer::SSDP_TARGET_INFO>& targetList)
 {
 	sockaddr_in addr = {};
 	addr.sin_family = AF_INET;
-	GetInetAddr(&addr.sin_addr.s_addr, "239.255.255.250");
+	addr.sin_addr.s_addr = htonl(0xEFFFFFFA); //239.255.255.250
 	addr.sin_port = htons(1900);
 	for( size_t i = 0; i < nicList.size(); i++ ){
-		SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+		SOCKET sock = socket(AF_INET, SOCK_DGRAM
+#ifndef _WIN32
+		                         | SOCK_CLOEXEC
+#endif
+		                     , 0);
 		if( sock != INVALID_SOCKET ){
-			unsigned long ipv4;
-			GetInetAddr(&ipv4, nicList[i].c_str());
 			int ttl = 3;
-			if( setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (const char*)&ipv4, sizeof(ipv4)) != SOCKET_ERROR &&
-			    setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (const char*)&ttl, sizeof(ttl)) != SOCKET_ERROR ){
-				for( vector<SSDP_TARGET_INFO>::const_iterator itr = this->targetList.begin(); itr != this->targetList.end(); itr++ ){
+			if( setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (const char*)&nicList[i].addr.sin_addr, sizeof(nicList[i].addr.sin_addr)) == 0 &&
+			    setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (const char*)&ttl, sizeof(ttl)) == 0 ){
+				for( vector<CUpnpSsdpServer::SSDP_TARGET_INFO>::const_iterator itr = targetList.begin(); itr != targetList.end(); itr++ ){
 					if( itr->notifyFlag ){
 						string sendMsg =
 							"NOTIFY * HTTP/1.1\r\n"
@@ -274,13 +311,13 @@ void CUpnpSsdpServer::SendNotifyAliveOrByebye(bool byebyeFlag, const vector<stri
 								"NTS: ssdp:byebye\r\n"
 								"USN: " + itr->usn + "\r\n\r\n";
 						}else{
-							string location = "http://" + nicList[i] + itr->location;
+							string location = "http://" + nicList[i].name + itr->location;
 							sendMsg +=
 								"CACHE-CONTROL: max-age = 1800\r\n"
 								"LOCATION: " + location + "\r\n"
 								"NT: " + itr->target + "\r\n"
 								"NTS: ssdp:alive\r\n"
-								"SERVER: " + GetUserAgent() + "\r\n"
+								"SERVER: UnknownOS/1.0 UPnP/1.1 EpgTimerSrv/0.10\r\n"
 								"USN: " + itr->usn + "\r\n\r\n";
 						}
 						if( sendto(sock, sendMsg.c_str(), (int)sendMsg.size(), 0, (const sockaddr*)&addr, sizeof(addr)) != (int)sendMsg.size() ){
@@ -293,4 +330,5 @@ void CUpnpSsdpServer::SendNotifyAliveOrByebye(bool byebyeFlag, const vector<stri
 			closesocket(sock);
 		}
 	}
+}
 }

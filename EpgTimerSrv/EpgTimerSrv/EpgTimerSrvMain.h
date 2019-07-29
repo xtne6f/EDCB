@@ -139,7 +139,9 @@ private:
 	mutable recursive_mutex_ autoAddLock;
 	mutable recursive_mutex_ settingLock;
 	HWND hwndMain;
+#ifdef LUA_BUILD_AS_DLL
 	HMODULE hLuaDll;
+#endif
 	atomic_bool_ stoppingFlag;
 
 	atomic_bool_ residentFlag;

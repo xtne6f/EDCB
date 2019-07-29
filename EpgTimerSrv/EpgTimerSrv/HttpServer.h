@@ -23,17 +23,22 @@ public:
 		bool keepAlive;
 		bool saveLog;
 		bool enableSsdpServer;
+		int ssdpIfTypes;
+		int ssdpInitialWaitSec;
 	};
 	CHttpServer();
 	~CHttpServer();
 	bool StartServer(const SERVER_OPTIONS& op, const std::function<void(lua_State*)>& initProc);
 	bool StopServer(bool checkOnly = false);
+	static SERVER_OPTIONS LoadServerOptions(LPCWSTR iniPath);
 	static string CreateRandom();
 private:
 	static void InitLua(const mg_connection* conn, void* luaContext);
 	mg_context* mgContext;
 	std::function<void(lua_State*)> initLuaProc;
+#ifdef LUA_BUILD_AS_DLL
 	HMODULE hLuaDll;
+#endif
 	bool initedLibrary;
 	CUpnpSsdpServer upnpSsdpServer;
 };
@@ -56,10 +61,12 @@ namespace LuaHelp
 	__int64 get_int64(lua_State* L, const char* name);
 	bool get_boolean(lua_State* L, const char* name);
 	SYSTEMTIME get_time(lua_State* L, const char* name);
+#ifdef _WIN32
 	int os_execute(lua_State* L);
 	int os_remove(lua_State* L);
 	int os_rename(lua_State* L);
 	int io_open(lua_State* L);
 	int io_popen(lua_State* L);
 	void f_createmeta(lua_State* L);
+#endif
 }
