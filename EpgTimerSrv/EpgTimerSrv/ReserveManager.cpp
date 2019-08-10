@@ -6,8 +6,8 @@
 CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: notifyManager(notifyManager_)
 	, epgDBManager(epgDBManager_)
-	, batManager(notifyManager_, L"EpgTimer_Bon_RecEnd.bat")
-	, batPostManager(notifyManager_, L"EpgTimer_Bon_Post.bat")
+	, batManager(notifyManager_, L"EpgTimer_Bon_RecEnd")
+	, batPostManager(notifyManager_, L"EpgTimer_Bon_Post")
 	, checkCount(0)
 	, epgCapRequested(false)
 	, epgCapWork(false)
@@ -206,7 +206,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
 		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
-		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
+		AddPostBatWork(batWorkList, L"PostAddReserve");
 		return true;
 	}
 	return false;
@@ -353,7 +353,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
 		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
-		AddPostBatWork(batWorkList, L"PostChgReserve.bat");
+		AddPostBatWork(batWorkList, L"PostChgReserve");
 		return true;
 	}
 	return false;
@@ -1337,7 +1337,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 		this->recInfo2Text.SaveText();
 		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 		AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
-		AddPostBatWork(batWorkList, L"PostRecEnd.bat");
+		AddPostBatWork(batWorkList, L"PostRecEnd");
 	}
 }
 
@@ -1365,7 +1365,7 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 				AddReserveDataMacro(batWorkList.back().macroList, itrRes->second, "");
 			}
 		}
-		AddPostBatWork(batWorkList, L"PostRecStart.bat");
+		AddPostBatWork(batWorkList, L"PostRecStart");
 		ProcessRecEnd(retList, itrBank->first, &this->shutdownModePending);
 	}
 	if( this->checkCount % 30 == 0 ){
@@ -1801,25 +1801,36 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 	CBlockLock lock(&this->managerLock);
 	bool ret = false;
 
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	void* pv;
 	if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
 		CEpgDBManager::RegExpPtr regExp((IRegExp*)pv, CEpgDBManager::ComRelease);
+#else
+	{
+		std::wregex re;
+#endif
 		if( info.hasShortInfo ){
-			typedef CEpgDBManager::OleCharPtr OleCharPtr;
 			wstring infoEventName = info.shortInfo.event_name;
 			if( this->setting.recInfo2RegExp.empty() == false ){
-				OleCharPtr pattern(SysAllocString(this->setting.recInfo2RegExp.c_str()), SysFreeString);
-				OleCharPtr rplFrom(SysAllocString(infoEventName.c_str()), SysFreeString);
-				OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
+				CEpgDBManager::OleCharPtr pattern(SysAllocString(this->setting.recInfo2RegExp.c_str()), SysFreeString);
+				CEpgDBManager::OleCharPtr rplFrom(SysAllocString(infoEventName.c_str()), SysFreeString);
+				CEpgDBManager::OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
 				BSTR rpl_;
 				if( pattern && rplFrom && rplTo &&
 				    SUCCEEDED(regExp->put_Global(VARIANT_TRUE)) &&
 				    SUCCEEDED(regExp->put_Pattern(pattern.get())) &&
 				    SUCCEEDED(regExp->Replace(rplFrom.get(), rplTo.get(), &rpl_)) ){
-					OleCharPtr rpl(rpl_, SysFreeString);
+					CEpgDBManager::OleCharPtr rpl(rpl_, SysFreeString);
 					infoEventName = SysStringLen(rpl.get()) ? rpl.get() : L"";
 				}else{
+#else
+				try{
+					re.assign(this->setting.recInfo2RegExp);
+					infoEventName = std::regex_replace(infoEventName, re, wstring());
+				}catch( std::regex_error& ){
+#endif
 					OutputDebugString(L"RecInfo2RegExp seems ill-formed\r\n");
 					infoEventName = L"";
 				}
@@ -1834,13 +1845,19 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 					    ConvertI64Time(itr->second.startTime) + chkDayActual*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
 						if( this->setting.recInfo2RegExp.empty() == false ){
-							OleCharPtr rplFrom(SysAllocString(eventName.c_str()), SysFreeString);
-							OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
+							CEpgDBManager::OleCharPtr rplFrom(SysAllocString(eventName.c_str()), SysFreeString);
+							CEpgDBManager::OleCharPtr rplTo(SysAllocString(L""), SysFreeString);
 							BSTR rpl_;
 							if( rplFrom && rplTo && SUCCEEDED(regExp->Replace(rplFrom.get(), rplTo.get(), &rpl_)) ){
-								OleCharPtr rpl(rpl_, SysFreeString);
+								CEpgDBManager::OleCharPtr rpl(rpl_, SysFreeString);
 								eventName = SysStringLen(rpl.get()) ? rpl.get() : L"";
 							}else{
+#else
+							try{
+								eventName = std::regex_replace(eventName, re, wstring());
+							}catch( std::regex_error& ){
+#endif
 								eventName = L"";
 							}
 						}
@@ -1853,7 +1870,9 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 			}
 		}
 	}
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 	CoUninitialize();
+#endif
 
 	return ret;
 }
@@ -1912,16 +1931,13 @@ void CReserveManager::WatchdogThread(CReserveManager* sys)
 	}
 }
 
-void CReserveManager::AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR fileName)
+void CReserveManager::AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR baseName)
 {
 	if( workList.empty() == false ){
-		fs_path batFilePath = GetCommonIniPath().replace_filename(fileName);
-		//同名のPowerShellやLuaスクリプトでもよい
-		if( UtilFileExists(batFilePath).first ||
-		    UtilFileExists(batFilePath.replace_extension(L".ps1")).first ||
-		    UtilFileExists(batFilePath.replace_extension(L".lua")).first ){
+		workList[0].batFilePath = this->batPostManager.FindExistingPath(GetCommonIniPath().replace_filename(baseName).c_str());
+		if( workList[0].batFilePath.empty() == false ){
 			for( size_t i = 0; i < workList.size(); i++ ){
-				workList[i].batFilePath = batFilePath.native();
+				workList[i].batFilePath = workList[0].batFilePath;
 				this->batPostManager.AddBatWork(workList[i]);
 			}
 		}
@@ -1934,7 +1950,7 @@ void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
 	vector<CBatManager::BAT_WORK_INFO> workList(1);
 	workList[0].macroList.push_back(pair<string, wstring>("NotifyID", L""));
 	Format(workList[0].macroList.back().second, L"%d", notifyID);
-	AddPostBatWork(workList, L"PostNotify.bat");
+	AddPostBatWork(workList, L"PostNotify");
 }
 
 void CReserveManager::SetBatCustomHandler(LPCWSTR ext, const std::function<void(CBatManager::BAT_WORK_INFO&, vector<char>&)>& handler)

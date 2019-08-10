@@ -5,10 +5,12 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/ParseTextInstances.h"
 #include "civetweb.h"
+#ifdef _WIN32
 #include <io.h>
 #include <fcntl.h>
 #include <wincrypt.h>
 #pragma comment(lib, "Crypt32.lib")
+#endif
 
 namespace
 {
@@ -20,7 +22,9 @@ const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 CHttpServer::CHttpServer()
 	: mgContext(NULL)
+#ifdef LUA_BUILD_AS_DLL
 	, hLuaDll(NULL)
+#endif
 	, initedLibrary(false)
 {
 }
@@ -38,11 +42,13 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	WtoUTF8(op.ports, ports);
 	string rootPathU;
 	WtoUTF8(op.rootPath, rootPathU);
+#ifdef _WIN32
 	//パスにASCII範囲外を含むのは(主にLuaが原因で)難ありなので蹴る
 	if( std::find_if(rootPathU.begin(), rootPathU.end(), [](char c) { return (c & 0x80) != 0; }) != rootPathU.end() ){
 		OutputDebugString(L"CHttpServer::StartServer(): path has unavailable chars.\r\n");
 		return false;
 	}
+#endif
 	string accessLogPath;
 	//ログは_wfopen()されるのでWtoUTF8()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
 	WtoUTF8(GetCommonIniPath().replace_filename(L"HttpAccess.log").native(), accessLogPath);
@@ -205,7 +211,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 				targetList[i].usn = notifyUuid + "::" + targetList[i].target;
 				targetList[i].notifyFlag = true;
 			}
-			this->upnpSsdpServer.Start(targetList);
+			this->upnpSsdpServer.Start(targetList, op.ssdpIfTypes, op.ssdpInitialWaitSec);
 		}else{
 			OutputDebugString(L"CHttpServer::StartServer(): invalid /dlna/dms/ddd.xml\r\n");
 		}
@@ -242,16 +248,46 @@ bool CHttpServer::StopServer(bool checkOnly)
 		mg_exit_library();
 		this->initedLibrary = false;
 	}
+#ifdef LUA_BUILD_AS_DLL
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
 	}
+#endif
 	return true;
+}
+
+CHttpServer::SERVER_OPTIONS CHttpServer::LoadServerOptions(LPCWSTR iniPath)
+{
+	SERVER_OPTIONS op;
+	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath);
+	if( enableHttpSrv != 0 ){
+		op.rootPath = GetPrivateProfileToString(L"SET", L"HttpPublicFolder", L"", iniPath);
+		if( op.rootPath.empty() ){
+			op.rootPath = GetCommonIniPath().replace_filename(L"HttpPublic").native();
+		}
+		op.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath);
+		op.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath);
+		op.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 5, iniPath);
+		op.requestTimeout = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath) * 1000;
+		op.sslCipherList = GetPrivateProfileToString(L"SET", L"HttpSslCipherList", L"HIGH:!aNULL:!MD5", iniPath);
+		op.sslProtocolVersion = GetPrivateProfileInt(L"SET", L"HttpSslProtocolVersion", 4, iniPath);
+		op.keepAlive = GetPrivateProfileInt(L"SET", L"HttpKeepAlive", 0, iniPath) != 0;
+		op.ports = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath);
+		op.saveLog = enableHttpSrv == 2;
+		op.enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath) != 0;
+		if( op.enableSsdpServer ){
+			op.ssdpIfTypes = GetPrivateProfileInt(L"SET", L"DmsIfTypes", CUpnpSsdpServer::SSDP_IF_LOOPBACK | CUpnpSsdpServer::SSDP_IF_C_PRIVATE, iniPath);
+			op.ssdpInitialWaitSec = GetPrivateProfileInt(L"SET", L"DmsInitialWaitSec", 20, iniPath);
+		}
+	}
+	return op;
 }
 
 string CHttpServer::CreateRandom()
 {
 	char ret[65] = {};
+#ifdef _WIN32
 	HCRYPTPROV prov;
 	if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ){
 		unsigned __int64 r[4] = {};
@@ -260,6 +296,15 @@ string CHttpServer::CreateRandom()
 		}
 		CryptReleaseContext(prov, 0);
 	}
+#else
+	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(L"/dev/urandom"), UTIL_SHARED_READ), fclose);
+	if( fp ){
+		unsigned long long r[4];
+		if( fread(r, 1, sizeof(r), fp.get()) == sizeof(r) ){
+			sprintf_s(ret, "%016llx%016llx%016llx%016llx", r[0], r[1], r[2], r[3]);
+		}
+	}
+#endif
 	return ret;
 }
 
@@ -383,6 +428,7 @@ SYSTEMTIME get_time(lua_State* L, const char* name)
 	return ret;
 }
 
+#ifdef _WIN32
 namespace
 {
 
@@ -819,5 +865,6 @@ void f_createmeta(lua_State* L)
 	luaL_setfuncs(L, flib, 0); //add file methods to new metatable
 	lua_pop(L, 1); //pop new metatable
 }
+#endif
 
 }

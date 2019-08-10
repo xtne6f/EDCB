@@ -1,9 +1,7 @@
 #pragma once
-#include "../BonCtrl/PacketInit.h"
 #include "../BonCtrl/SendUDP.h"
 #include "../BonCtrl/SendTCP.h"
-#include "../BonCtrl/CreatePATPacket.h"
-#include "TSPacketUtil.h"
+#include "StructDef.h"
 #include "ThreadUtil.h"
 
 class CTimeShiftUtil
@@ -14,10 +12,10 @@ public:
 
 	//UDP/TCP送信を行う
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	// 成功：valに開始ポート番号（終了or失敗：値は不変）
 	//引数：
 	// val		[IN/OUT]送信先情報
-	BOOL Send(
+	void Send(
 		NWPLAY_PLAY_INFO* val
 		);
 
@@ -38,9 +36,7 @@ public:
 	BOOL StartTimeShift();
 
 	//タイムシフト送信を停止する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	BOOL StopTimeShift();
+	void StopTimeShift();
 
 	//現在の送信位置と有効なファイルサイズを取得する
 	//引数：
@@ -58,8 +54,16 @@ protected:
 	recursive_mutex_ ioLock;
 	CSendUDP sendUdp;
 	CSendTCP sendTcp;
-	wstring sendIP[2];
-	HANDLE portMutex[2];
+	struct SEND_INFO {
+		wstring ip;
+		DWORD port;
+		wstring key;
+#ifdef _WIN32
+		HANDLE mutex;
+#else
+		FILE* mutex;
+#endif
+	} sendInfo[2];
 
 	wstring filePath;
 	WORD PCR_PID;

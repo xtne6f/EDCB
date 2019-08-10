@@ -158,9 +158,6 @@
     <ClInclude Include="..\..\BonCtrl\SendUDP.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="FileStreamingManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="NotifyManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -381,9 +378,6 @@
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\SendUDP.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="FileStreamingManager.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NotifyManager.cpp">
       <Filter>ソース ファイル</Filter>

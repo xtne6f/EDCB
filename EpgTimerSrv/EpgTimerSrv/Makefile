@@ -1,5 +1,5 @@
 TARGET ?= EpgTimerSrv.exe
-CPPFLAGS = -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=0x0600 -DUSE_WINMAIN_A -DUSE_LUA -DNO_CGI -DNO_POPEN -DOPENSSL_API_1_1
+CPPFLAGS = -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=0x0600 -DUSE_WINMAIN_A -DUSE_LUA -DNO_CGI -DNO_POPEN -DOPENSSL_API_1_1 #-DEPGDB_STD_WREGEX
 WINDRES ?= windres
 
 $(TARGET): $(addsuffix .obj, \
@@ -71,7 +71,6 @@ $(TARGET): $(addsuffix .obj, \
   EpgTimerSrv.cpp \
   EpgTimerSrvMain.cpp \
   EpgTimerSrvSetting.cpp \
-  FileStreamingManager.cpp \
   HttpServer.cpp \
   NotifyManager.cpp \
   RegExp.cpp \

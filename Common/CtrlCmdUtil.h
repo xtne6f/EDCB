@@ -184,9 +184,6 @@ inline BOOL ReadVALUE( WORD ver, vector<MANUAL_AUTO_ADD_DATA>* val, const BYTE* 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TUNER_RESERVE_INFO& val );
 inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<TUNER_RESERVE_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 
-DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REGIST_TCP_INFO& val );
-BOOL ReadVALUE( WORD ver, REGIST_TCP_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
-
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EVENT_INFO& val );
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EVENT_INFO_PTR& val );
 BOOL ReadVALUE( WORD ver, EPGDB_SERVICE_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );

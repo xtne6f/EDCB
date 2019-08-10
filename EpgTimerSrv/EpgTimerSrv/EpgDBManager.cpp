@@ -610,8 +610,11 @@ void CEpgDBManager::CancelLoadData()
 void CEpgDBManager::SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, wstring* findKey,
                               const std::function<void(const EPGDB_EVENT_INFO*, wstring*)>& enumProc) const
 {
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	try{
+	try
+#endif
+	{
 		std::unique_ptr<SEARCH_CONTEXT[]> ctxs(new SEARCH_CONTEXT[keysSize]);
 		size_t ctxsSize = 0;
 		vector<__int64> enumServiceKey;
@@ -634,18 +637,24 @@ void CEpgDBManager::SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize
 			//列挙なしで完了
 			enumProc(NULL, findKey);
 		}
-	}catch(...){
+	}
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
+	catch(...){
 		CoUninitialize();
 		throw;
 	}
 	CoUninitialize();
+#endif
 }
 
 void CEpgDBManager::SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, bool deletableBeforeEnumDone,
                                      wstring* findKey, const std::function<void(const EPGDB_EVENT_INFO*, wstring*)>& enumProc) const
 {
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	try{
+	try
+#endif
+	{
 		std::unique_ptr<SEARCH_CONTEXT[]> ctxs(new SEARCH_CONTEXT[keysSize]);
 		size_t ctxsSize = 0;
 		vector<__int64> enumServiceKey;
@@ -670,11 +679,14 @@ void CEpgDBManager::SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t k
 				}
 			});
 		}
-	}catch(...){
+	}
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
+	catch(...){
 		CoUninitialize();
 		throw;
 	}
 	CoUninitialize();
+#endif
 }
 
 bool CEpgDBManager::InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>& enumServiceKey, const EPGDB_SEARCH_KEY_INFO* key)
@@ -1016,6 +1028,7 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 
 		if( keyList[i].second ){
 			//正規表現
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 			OleCharPtr target(SysAllocString(word.c_str()), SysFreeString);
 			if( target ){
 				IDispatch* pMatches;
@@ -1046,6 +1059,18 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 				}else if( andFlag ){
 					return false;
 				}
+#else
+			std::wsmatch m;
+			if( std::regex_search(word, m, *keyList[i].second) ){
+				if( andFlag == false ){
+					//見つかったので終了
+					return true;
+				}
+				if( findKey && i + 1 == keyList.size() ){
+					//最終キーのマッチを記録
+					*findKey = m[0];
+				}
+#endif
 			}else if( andFlag ){
 				return false;
 			}
@@ -1117,7 +1142,11 @@ bool CEpgDBManager::FindLikeKeyword(const wstring& key, size_t keyPos, const wst
 
 void CEpgDBManager::AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstring key, bool caseFlag, bool regExp, bool titleOnly)
 {
-	keyList.push_back(std::make_pair(wstring(), RegExpPtr(NULL, ComRelease)));
+	keyList.push_back(std::make_pair(wstring(), RegExpPtr(
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
+		NULL, ComRelease
+#endif
+		)));
 	if( regExp ){
 		key = (titleOnly ? L"::title:" : L"::event:") + key;
 	}
@@ -1134,6 +1163,7 @@ void CEpgDBManager::AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstrin
 		//旧い処理では対象を全角空白のまま比較していたため正規表現も全角のケースが多い。特別に置き換える
 		Replace(key, L"　", L" ");
 		//RegExpオブジェクトを構築しておく
+#if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 		void* pv;
 		if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
 			keyList.back().second.reset((IRegExp*)pv);
@@ -1146,6 +1176,15 @@ void CEpgDBManager::AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstrin
 			}
 			keyList.back().second.reset();
 		}
+#else
+		try{
+			keyList.back().second.reset(new std::wregex(key.c_str() + 7,
+				caseFlag ? std::regex_constants::ECMAScript : std::regex_constants::ECMAScript | std::regex_constants::icase));
+			keyList.back().first.swap(key);
+			return;
+		}catch( std::regex_error& ){
+		}
+#endif
 		//空(常に不一致)にする
 		key.erase(7);
 	}

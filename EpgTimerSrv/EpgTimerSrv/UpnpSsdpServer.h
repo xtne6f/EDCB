@@ -11,7 +11,12 @@ class CUpnpSsdpServer
 public:
 	static const int RECV_BUFF_SIZE = 2048;
 	static const unsigned int NOTIFY_INTERVAL_SEC = 1000;
-	static const unsigned int NOTIFY_FIRST_DELAY_SEC = 5;
+	static const int SSDP_IF_LOOPBACK = 1;
+	static const int SSDP_IF_C_PRIVATE = 2;
+	static const int SSDP_IF_B_PRIVATE = 4;
+	static const int SSDP_IF_A_PRIVATE = 8;
+	static const int SSDP_IF_LINKLOCAL = 16;
+	static const int SSDP_IF_GLOBAL = 32;
 	struct SSDP_TARGET_INFO {
 		string target;
 		string location;
@@ -19,15 +24,13 @@ public:
 		bool notifyFlag;
 	};
 	~CUpnpSsdpServer();
-	bool Start(const vector<SSDP_TARGET_INFO>& targetList_);
+	bool Start(const vector<SSDP_TARGET_INFO>& targetList_, int ifTypes, int initialWaitSec_);
 	void Stop();
-	static string GetUserAgent();
 private:
-	static vector<string> GetNICList();
 	static void SsdpThread(CUpnpSsdpServer* sys);
-	string GetMSearchReply(const char* header, const char* host) const;
-	void SendNotifyAliveOrByebye(bool byebyeFlag, const vector<string>& nicList);
 	thread_ ssdpThread;
 	atomic_bool_ stopFlag;
 	vector<SSDP_TARGET_INFO> targetList;
+	int ssdpIfTypes;
+	int initialWaitSec;
 };

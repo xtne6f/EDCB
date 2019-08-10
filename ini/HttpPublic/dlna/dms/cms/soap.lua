@@ -20,14 +20,12 @@ if post then
     res=soapStart..'<u:GetProtocolInfoResponse'..xmlnsU..'><Source>AAC_ISO,JPEG_LRG,MP3</Source><Sink></Sink></u:GetProtocolInfoResponse>'..soapEnd
   end
   if res then
-    now=os.time()
-    nowGMT=os.date('!*t', now)
+    t=os.date('!*t')
     mg.write('HTTP/1.1 200 OK\r\n',
       'Content-Type: text/xml; charset="UTF-8"\r\n',
-      'Date: '..({'Sun','Mon','Tue','Wed','Thu','Fri','Sat'})[nowGMT.wday]..os.date('!, %d ', now)
-        ..({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})[nowGMT.month]
-        ..os.date('! %Y %H:%M:%S GMT\r\n', now),
-      'Server: '..mg.system:gsub(' ','/')..' UPnP/1.1 EpgTimerSrv/0.10\r\n',
+      ('Date: %s, %02d %s %d %02d:%02d:%02d GMT\r\n'):format(({'Sun','Mon','Tue','Wed','Thu','Fri','Sat'})[t.wday],t.day,
+        ({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})[t.month],t.year,t.hour,t.min,t.sec),
+      'Server: UnknownOS/1.0 UPnP/1.1 EpgTimerSrv/0.10\r\n',
       'Content-Length: '..#res..'\r\n',
       'Connection: close\r\n\r\n', res)
     ok=true

@@ -50,7 +50,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 			Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 		}
 		swprintf_s(key, L"Port%d", i);
-		item.port = GetPrivateProfileInt( L"SET_UDP", key, 1234, appIniPath.c_str() );
+		item.port = GetPrivateProfileInt( L"SET_UDP", key, BON_UDP_PORT_BEGIN, appIniPath.c_str() );
 		swprintf_s(key, L"BroadCast%d", i);
 		item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key, 0, appIniPath.c_str() );
 
@@ -64,7 +64,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 		ListBox_AddString(GetDlgItem(IDC_LIST_IP_UDP), add.c_str());
 	}
 	SetDlgItemText(m_hWnd, IDC_IPADDRESS_UDP, L"127.0.0.1");
-	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, 1234, FALSE);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, BON_UDP_PORT_BEGIN, FALSE);
 
 	int tcpCount = GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
 	for( int i = 0; i < tcpCount; i++ ){
@@ -80,7 +80,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 			Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 		}
 		swprintf_s(key, L"Port%d", i);
-		item.port = GetPrivateProfileInt( L"SET_TCP", key, 2230, appIniPath.c_str() );
+		item.port = GetPrivateProfileInt( L"SET_TCP", key, BON_TCP_PORT_BEGIN, appIniPath.c_str() );
 		item.broadcastFlag = 0;
 
 		tcpSendList.push_back(item);
@@ -91,7 +91,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 	}
 	CheckRadioButton(m_hWnd, IDC_RADIO_TCP, IDC_RADIO_PIPE, IDC_RADIO_TCP);
 	SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"127.0.0.1");
-	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, 2230, FALSE);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, BON_TCP_PORT_BEGIN, FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -244,7 +244,7 @@ void CSetDlgNetwork::OnBnClickedRadioTcp()
 	}else{
 		EnableWindow(GetDlgItem(IDC_IPADDRESS_TCP), TRUE);
 		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"127.0.0.1");
-		SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, 2230, FALSE);
+		SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, BON_TCP_PORT_BEGIN, FALSE);
 	}
 }
 

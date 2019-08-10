@@ -2,10 +2,11 @@
 
 #include "EpgDBManager.h"
 #include "ReserveManager.h"
-#include "FileStreamingManager.h"
 #include "NotifyManager.h"
 #include "HttpServer.h"
 #include "../../Common/ParseTextInstances.h"
+#include "../../Common/TimeShiftUtil.h"
+#include "../../Common/InstanceManager.h"
 
 //各種サーバと自動予約の管理をおこなう
 //必ずオブジェクト生成→Main()→…→破棄の順番で利用しなければならない
@@ -21,7 +22,7 @@ public:
 	//メイン処理停止
 	void StopMain();
 	//休止／スタンバイに移行して構わない状況かどうか
-	bool IsSuspendOK(); //const;
+	bool IsSuspendOK() const;
 private:
 	//メインウィンドウ(Taskモード)
 	static LRESULT CALLBACK TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -58,8 +59,8 @@ private:
 	void AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList);
 	void AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const;
 	//外部制御コマンド関係
-	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
-	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam);
+	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag, LPCWSTR clientIP);
+	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam, LPCWSTR clientIP);
 	void InitLuaCallback(lua_State* L, LPCSTR serverRandom);
 	void DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff);
 	//Lua-edcb空間のコールバック
@@ -129,7 +130,7 @@ private:
 	CEpgDBManager epgDB;
 	//reserveManagerはnotifyManagerとepgDBに依存するので、順序を入れ替えてはいけない
 	CReserveManager reserveManager;
-	CFileStreamingManager streamingManager;
+	CInstanceManager<CTimeShiftUtil> streamingManager;
 
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;
@@ -139,7 +140,9 @@ private:
 	mutable recursive_mutex_ autoAddLock;
 	mutable recursive_mutex_ settingLock;
 	HWND hwndMain;
+#ifdef LUA_BUILD_AS_DLL
 	HMODULE hLuaDll;
+#endif
 	atomic_bool_ stoppingFlag;
 
 	atomic_bool_ residentFlag;
@@ -153,7 +156,6 @@ private:
 	atomic_bool_ useSyoboi;
 	bool nwtvUdp;
 	bool nwtvTcp;
-	atomic_int_ notifyUpdateCount[6];
 	DWORD compatFlags;
 
 	vector<EPGDB_EVENT_INFO> oldSearchList[2];

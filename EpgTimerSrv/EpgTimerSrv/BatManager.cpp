@@ -4,11 +4,15 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
+#ifndef _WIN32
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
-CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
+CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR name)
 	: notifyManager(notifyManager_)
 {
-	this->tmpBatFilePath = GetCommonIniPath().replace_filename(tmpBatFileName).native();
+	this->managerName = name;
 	this->idleMargin = MAXDWORD;
 	this->nextBatMargin = 0;
 }
@@ -49,6 +53,27 @@ void CBatManager::SetCustomHandler(LPCWSTR ext, const std::function<void(BAT_WOR
 
 	this->customHandler = handler;
 	this->customExt = ext;
+}
+
+wstring CBatManager::FindExistingPath(LPCWSTR basePath) const
+{
+	fs_path path = basePath;
+#ifdef _WIN32
+	if( UtilFileExists(path.concat(L".bat")).first ||
+	    UtilFileExists(path.replace_extension(L".ps1")).first ){
+#else
+	if( UtilFileExists(path.concat(L".sh")).first ){
+#endif
+		return path.native();
+	}
+	{
+		CBlockLock lock(&this->managerLock);
+		if( !this->customHandler ){
+			return wstring();
+		}
+		path.replace_extension(this->customExt);
+	}
+	return UtilFileExists(path).first ? path.native() : wstring();
 }
 
 bool CBatManager::IsWorking() const
@@ -106,7 +131,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 		}
 
 		BAT_WORK_INFO work;
-		fs_path batFilePath;
+		bool workable = true;
 		std::function<void(BAT_WORK_INFO&, vector<char>&)> customHandler_;
 		{
 			CBlockLock lock(&sys->managerLock);
@@ -117,22 +142,25 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 				break;
 			}
 			work = sys->workList[0];
-			batFilePath = work.batFilePath;
-			if( !UtilPathEndsWith(batFilePath.c_str(), L".bat") &&
-			    !UtilPathEndsWith(batFilePath.c_str(), L".ps1") ){
-				if( sys->customHandler && UtilPathEndsWith(batFilePath.c_str(), sys->customExt.c_str()) ){
+#ifdef _WIN32
+			if( !UtilPathEndsWith(work.batFilePath.c_str(), L".bat") &&
+			    !UtilPathEndsWith(work.batFilePath.c_str(), L".ps1") ){
+#else
+			if( !UtilPathEndsWith(work.batFilePath.c_str(), L".sh") ){
+#endif
+				if( sys->customHandler && UtilPathEndsWith(work.batFilePath.c_str(), sys->customExt.c_str()) ){
 					customHandler_ = sys->customHandler;
 				}else{
-					batFilePath.clear();
+					workable = false;
 				}
 			}
 		}
 
-		if( batFilePath.empty() == false ){
+		if( workable ){
 			DWORD exBatMargin;
 			DWORD exNotifyInterval;
 			WORD exSW;
-			wstring exDirect;
+			bool exDirect;
 			vector<char> buff;
 			if( sys->CreateBatFile(work, exBatMargin, exNotifyInterval, exSW, exDirect, buff) ){
 				{
@@ -156,16 +184,17 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						customHandler_(work, buff);
 					}
 				}else{
+#ifdef _WIN32
 					bool executed = false;
 					HANDLE hProcess = NULL;
-					if( exDirect.empty() && sys->notifyManager.IsGUI() == false ){
+					if( exDirect == false && sys->notifyManager.IsGUI() == false ){
 						//表示できないのでGUI経由で起動してみる
 						CSendCtrlCmd ctrlCmd;
 						vector<DWORD> registGUI = sys->notifyManager.GetRegistGUI();
 						for( size_t i = 0; i < registGUI.size(); i++ ){
 							ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, registGUI[i]);
 							DWORD pid;
-							if( ctrlCmd.SendGUIExecute(L'"' + sys->tmpBatFilePath + L'"', &pid) == CMD_SUCCESS ){
+							if( ctrlCmd.SendGUIExecute(L'"' + work.batFilePath + L'"', &pid) == CMD_SUCCESS ){
 								//ハンドル開く前に終了するかもしれない
 								executed = true;
 								hProcess = OpenProcess(SYNCHRONIZE | PROCESS_SET_INFORMATION, FALSE, pid);
@@ -182,17 +211,11 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						si.cb = sizeof(si);
 						si.dwFlags = STARTF_USESHOWWINDOW;
 						si.wShowWindow = exSW;
-						fs_path batFolder;
-						if( exDirect.empty() ){
-							batFilePath = sys->tmpBatFilePath;
-						}else{
-							batFolder = batFilePath.parent_path();
-						}
 						fs_path exePath;
 						wstring strParam;
-						if( UtilPathEndsWith(batFilePath.c_str(), L".ps1") ){
+						if( UtilPathEndsWith(work.batFilePath.c_str(), L".ps1") ){
 							//PowerShell
-							strParam = L" -NoProfile -ExecutionPolicy RemoteSigned -File \"" + batFilePath.native() + L"\"";
+							strParam = L" -NoProfile -ExecutionPolicy RemoteSigned -File \"" + work.batFilePath + L"\"";
 							WCHAR szSystemRoot[MAX_PATH];
 							DWORD dwRet = GetEnvironmentVariable(L"SystemRoot", szSystemRoot, MAX_PATH);
 							if( dwRet && dwRet < MAX_PATH ){
@@ -201,7 +224,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 							}
 						}else{
 							//コマンドプロンプト
-							strParam = L" /c \"\"" + batFilePath.native() + L"\" \"";
+							strParam = L" /c \"\"" + work.batFilePath + L"\" \"";
 							WCHAR szComSpec[MAX_PATH];
 							DWORD dwRet = GetEnvironmentVariable(L"ComSpec", szComSpec, MAX_PATH);
 							if( dwRet && dwRet < MAX_PATH ){
@@ -211,13 +234,13 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						vector<WCHAR> strBuff(strParam.c_str(), strParam.c_str() + strParam.size() + 1);
 						if( exePath.empty() == false &&
 						    CreateProcess(exePath.c_str(), strBuff.data(), NULL, NULL, FALSE,
-						                  BELOW_NORMAL_PRIORITY_CLASS | (exDirect.empty() ? 0 : CREATE_UNICODE_ENVIRONMENT),
-						                  exDirect.empty() ? NULL : const_cast<LPWSTR>(exDirect.c_str()),
-						                  exDirect.empty() ? NULL : batFolder.c_str(), &si, &pi) != FALSE ){
+						                  BELOW_NORMAL_PRIORITY_CLASS | (exDirect ? CREATE_UNICODE_ENVIRONMENT : 0),
+						                  exDirect ? const_cast<LPWSTR>(CreateEnvironment(work).c_str()) : NULL,
+						                  exDirect ? fs_path(work.batFilePath).parent_path().c_str() : NULL, &si, &pi) ){
 							CloseHandle(pi.hThread);
 							hProcess = pi.hProcess;
 						}else{
-							_OutputDebugString(L"BAT起動エラー：%ls\r\n", batFilePath.c_str());
+							_OutputDebugString(L"BAT起動エラー：%ls\r\n", work.batFilePath.c_str());
 						}
 					}
 					if( hProcess ){
@@ -226,6 +249,30 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						while( WaitForMultipleObjects(2, hEvents, FALSE, INFINITE) == WAIT_OBJECT_0 && sys->batWorkStopFlag == false );
 						CloseHandle(hProcess);
 					}
+#else
+					string execPath;
+					WtoUTF8(work.batFilePath, execPath);
+					string execDir;
+					WtoUTF8(fs_path(work.batFilePath).parent_path().native(), execDir);
+					pid_t pid = fork();
+					if( pid == 0 ){
+						if( chdir(execDir.c_str()) == 0 ){
+							for( size_t i = 0; i < work.macroList.size(); i++ ){
+								string strVal;
+								WtoUTF8(work.macroList[i].second, strVal);
+								setenv(work.macroList[i].first.c_str(), strVal.c_str(), 0);
+							}
+							execl(execPath.c_str(), execPath.c_str(), NULL);
+						}
+						exit(EXIT_FAILURE);
+					}
+					if( pid != -1 ){
+						//終了監視(効率よい手法はないものか…)
+						while( sys->batWorkStopFlag == false && waitpid(pid, NULL, WNOHANG) == 0 ){
+							sys->batWorkEvent.WaitOne(200);
+						}
+					}
+#endif
 				}
 			}else{
 				_OutputDebugString(L"BATファイル作成エラー：%ls\r\n", work.batFilePath.c_str());
@@ -239,7 +286,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 	}
 }
 
-bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& exNotifyInterval, WORD& exSW, wstring& exDirect, vector<char>& buff) const
+bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& exNotifyInterval, WORD& exSW, bool& exDirect, vector<char>& buff) const
 {
 	//バッチの作成
 	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(info.batFilePath, UTIL_SECURE_READ), fclose);
@@ -251,20 +298,21 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 	exBatMargin = 0;
 	//拡張命令: NotifyInterval
 	exNotifyInterval = 0;
-	//拡張命令: ウィンドウ表示状態
-	exSW = SW_SHOWMINNOACTIVE;
 	//拡張命令: 環境渡しによる直接実行
-	exDirect = L"";
-	bool exDirectFlag = false;
-	//拡張命令: 日時についての変数をISO形式にする
-	bool exFormatTime = false;
+	exDirect = true;
 	//カスタムハンドラ用ファイルの中身
 	buff.clear();
+#ifdef _WIN32
+	//拡張命令: 日時についての変数をISO形式にする
+	bool exFormatTime = true;
+	//拡張命令: ウィンドウ表示状態
+	exSW = SW_SHOWMINNOACTIVE;
 
-	if( !UtilPathEndsWith(info.batFilePath.c_str(), L".bat") ){
-		exDirectFlag = true;
-		exFormatTime = true;
+	if( UtilPathEndsWith(info.batFilePath.c_str(), L".bat") ){
+		exDirect = false;
+		exFormatTime = false;
 	}
+#endif
 	__int64 fileSize = 0;
 	char olbuff[257];
 	for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
@@ -276,36 +324,42 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 		if( strstr(olbuff, "_EDCBX_NOTIFY_INTERVAL_=") ){
 			exNotifyInterval = strtoul(strstr(olbuff, "_EDCBX_NOTIFY_INTERVAL_=") + 24, NULL, 10) * 1000;
 		}
+#ifdef _WIN32
 		if( strstr(olbuff, "_EDCBX_HIDE_") ){
 			exSW = SW_HIDE;
 		}
 		if( strstr(olbuff, "_EDCBX_NORMAL_") ){
 			exSW = SW_SHOWNORMAL;
 		}
-		exDirectFlag = exDirectFlag || strstr(olbuff, "_EDCBX_DIRECT_");
+		exDirect = exDirect || strstr(olbuff, "_EDCBX_DIRECT_");
 		exFormatTime = exFormatTime || strstr(olbuff, "_EDCBX_FORMATTIME_");
+#endif
 		fileSize += (fileSize == 0 ? n : n - 64);
 		if( n < 256 ){
 			break;
 		}
 		std::copy(olbuff + 192, olbuff + 256, olbuff);
 	}
-	if( exFormatTime ){
-		//#でコメントアウトされているものを消す
-		info.macroList.erase(std::remove_if(info.macroList.begin(), info.macroList.end(),
-			[](const pair<string, wstring>& a) { return a.first.compare(0, 1, "#") == 0; }), info.macroList.end());
-	}else{
-		info.macroList.erase(std::remove_if(info.macroList.begin(), info.macroList.end(),
-			[](const pair<string, wstring>& a) { return a.first.compare(0, 9, "StartTime") == 0 || a.first.compare(0, 14, "DurationSecond") == 0; }),
-			info.macroList.end());
-		//コメントアウトを解除する
-		for( size_t i = 0; i < info.macroList.size(); i++ ){
+
+	for( size_t i = 0; i < info.macroList.size(); ){
+#ifdef _WIN32
+		if( exFormatTime == false ){
+			if( info.macroList[i].first.compare(0, 9, "StartTime") == 0 ||
+			    info.macroList[i].first.compare(0, 14, "DurationSecond") == 0 ){
+				info.macroList.erase(info.macroList.begin() + i);
+				continue;
+			}
+			//コメントアウトを解除する
 			if( info.macroList[i].first.compare(0, 1, "#") == 0 ){
 				info.macroList[i].first.erase(0, 1);
 			}
 		}
-	}
-	for( size_t i = 0; i < info.macroList.size(); i++ ){
+#endif
+		//コメントアウトされているものを消す
+		if( info.macroList[i].first.compare(0, 1, "#") == 0 ){
+			info.macroList.erase(info.macroList.begin() + i);
+			continue;
+		}
 		for( size_t j = 0; j < info.macroList[i].second.size(); j++ ){
 			//制御文字とダブルクォートは置き換える
 			if( (L'\x1' <= info.macroList[i].second[j] && info.macroList[i].second[j] <= L'\x1f') || info.macroList[i].second[j] == L'\x7f' ){
@@ -314,10 +368,14 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 				info.macroList[i].second[j] = L'”';
 			}
 		}
+		i++;
 	}
-	if( exDirectFlag && (UtilPathEndsWith(info.batFilePath.c_str(), L".bat") || UtilPathEndsWith(info.batFilePath.c_str(), L".ps1")) ){
-		exDirect = CreateEnvironment(info);
-		return exDirect.empty() == false;
+#ifdef _WIN32
+	if( exDirect && (UtilPathEndsWith(info.batFilePath.c_str(), L".bat") || UtilPathEndsWith(info.batFilePath.c_str(), L".ps1")) ){
+#else
+	if( UtilPathEndsWith(info.batFilePath.c_str(), L".sh") ){
+#endif
+		return true;
 	}
 
 	if( fileSize >= 64 * 1024 * 1024 ){
@@ -328,85 +386,78 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 	if( fread(buff.data(), 1, buff.size() - 1, fp.get()) != buff.size() - 1 ){
 		return false;
 	}
-	if( exDirectFlag ){
+#ifdef _WIN32
+	if( exDirect ){
 		//カスタムハンドラ
 		return true;
 	}
 	string strRead = buff.data();
 	buff.clear();
 
-	string strWrite;
 	for( size_t pos = 0;; ){
-		size_t next = strRead.find('$', pos);
-		if( next == string::npos ){
-			strWrite.append(strRead, pos, string::npos);
+		pos = strRead.find('$', pos);
+		if( pos == string::npos ){
 			break;
 		}
-		strWrite.append(strRead, pos, next - pos);
-		pos = next;
-
-		next = strRead.find('$', pos + 1);
+		size_t next = strRead.find('$', pos + 1);
 		if( next == string::npos ){
-			strWrite.append(strRead, pos, string::npos);
 			break;
 		}
-		wstring strValW;
-		if( ExpandMacro(strRead.substr(pos + 1, next - pos - 1), info, strValW) == false ){
-			strWrite += '$';
+		//"$マクロ$"があれば置換
+		auto itrMacro = std::find_if(info.macroList.begin(), info.macroList.end(),
+			[=, &strRead](const pair<string, wstring>& a) { return strRead.compare(pos + 1, next - pos - 1, a.first) == 0; });
+		if( itrMacro == info.macroList.end() ){
 			pos++;
 		}else{
 			string strValA;
-			WtoA(strValW, strValA);
-			strWrite += strValA;
-			pos = next + 1;
+			WtoA(itrMacro->second, strValA);
+			strRead.replace(pos, next - pos + 1, strValA);
+			pos += strValA.size();
 		}
 	}
 
-	fp.reset(UtilOpenFile(this->tmpBatFilePath, UTIL_SECURE_WRITE | UTIL_F_IONBF));
-	if( !fp || fputs(strWrite.c_str(), fp.get()) < 0 ){
+	//一時ファイルにコピー
+	info.batFilePath = GetCommonIniPath().replace_filename(this->managerName).concat(L".bat").native();
+	fp.reset(UtilOpenFile(info.batFilePath, UTIL_SECURE_WRITE | UTIL_F_IONBF));
+	if( !fp || fputs(strRead.c_str(), fp.get()) < 0 ){
 		return false;
 	}
+#endif
 
 	return true;
 }
 
-bool CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite)
-{
-	for( size_t i = 0; i < info.macroList.size(); i++ ){
-		if( var == info.macroList[i].first ){
-			strWrite += info.macroList[i].second;
-			return true;
-		}
-	}
-	return false;
-}
-
+#ifdef _WIN32
 wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
 {
 	wstring strEnv;
 	LPWCH env = GetEnvironmentStrings();
 	if( env ){
-		do{
-			wstring str(env + strEnv.size());
-			wstring strVar(str, 0, str.find(L'='));
-			wstring strMacroVar;
-			//競合する変数をエスケープ
-			for( size_t i = 0; i < info.macroList.size(); i++ ){
-				UTF8toW(info.macroList[i].first, strMacroVar);
-				if( CompareNoCase(strMacroVar, strVar) == 0 && strVar.empty() == false ){
-					str[0] = L'_';
-					break;
-				}
-			}
-			strEnv += str + L'\0';
-		}while( env[strEnv.size()] != L'\0' );
+		size_t n = 0;
+		while( env[n] ){
+			n += wcslen(env + n) + 1;
+		}
+		strEnv.assign(env, env + n);
 		FreeEnvironmentStrings(env);
 	}
 	for( size_t i = 0; i < info.macroList.size(); i++ ){
 		wstring strVar;
 		UTF8toW(info.macroList[i].first, strVar);
-		strEnv += strVar + L'=' + info.macroList[i].second;
-		strEnv += L'\0';
+		//競合する変数がなければ追加
+		bool unique = true;
+		for( size_t n = 0; unique && n < strEnv.size(); ){
+			size_t m = strEnv.find_first_of(L'\0', n);
+			if( m - n > strVar.size() && strEnv[n + strVar.size()] == L'=' ){
+				strEnv[n + strVar.size()] = L'\0';
+				unique = CompareNoCase(strVar, strEnv.c_str() + n) != 0;
+				strEnv[n + strVar.size()] = L'=';
+			}
+			n = m + 1;
+		}
+		if( unique ){
+			strEnv += strVar + L'=' + info.macroList[i].second + L'\0';
+		}
 	}
 	return strEnv;
 }
+#endif

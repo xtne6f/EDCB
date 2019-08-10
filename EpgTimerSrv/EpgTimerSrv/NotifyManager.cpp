@@ -6,13 +6,14 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
+#include "../../Common/PathUtil.h"
 
 CNotifyManager::CNotifyManager()
 {
 	this->srvStatus = 0;
 	this->notifyCount = 1;
-	this->notifyRemovePos = 0;
-	this->hwndNotify = NULL;
+	this->activeOrIdleCount = 0;
+	std::fill_n(this->notifyUpdateCount, _countof(this->notifyUpdateCount), 0);
 	this->guiFlag = false;
 }
 
@@ -23,37 +24,23 @@ CNotifyManager::~CNotifyManager()
 		this->notifyEvent.Set();
 		this->notifyThread.join();
 	}
-	while( this->registGUIList.empty() == false ){
-		UnRegistGUI(this->registGUIList.back().first);
-	}
 }
 
 void CNotifyManager::RegistGUI(DWORD processID)
 {
 	CBlockLock lock(&this->managerLock);
 
-	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
-		if( this->registGUIList[i].first == processID ){
-			if( this->registGUIList[i].second &&
-			    WaitForSingleObject(this->registGUIList[i].second, 0) == WAIT_TIMEOUT ){
-				return;
-			}
-			UnRegistGUI(this->registGUIList[i].first);
-			break;
-		}
-	}
-	//権限によってはNULLになるがプロセスID再利用の曖昧さを避けるためのもので必須ではない
-	HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, processID);
-	this->registGUIList.push_back(std::make_pair(processID, hProcess));
+	UnRegistGUI(processID);
+	this->registGUIList.push_back(processID);
 	SetNotifySrvStatus(0xFFFFFFFF);
 }
 
-void CNotifyManager::RegistTCP(const REGIST_TCP_INFO& info)
+void CNotifyManager::RegistTCP(LPCWSTR ip, DWORD port)
 {
 	CBlockLock lock(&this->managerLock);
 
-	UnRegistTCP(info);
-	this->registTCPList.push_back(info);
+	UnRegistTCP(ip, port);
+	this->registTCPList.push_back(std::make_pair(wstring(ip), port));
 	SetNotifySrvStatus(0xFFFFFFFF);
 }
 
@@ -62,44 +49,40 @@ void CNotifyManager::UnRegistGUI(DWORD processID)
 	CBlockLock lock(&this->managerLock);
 
 	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
-		if( this->registGUIList[i].first == processID ){
-			if( this->registGUIList[i].second ){
-				CloseHandle(this->registGUIList[i].second);
-			}
+		if( this->registGUIList[i] == processID ){
 			this->registGUIList.erase(this->registGUIList.begin() + i);
 			break;
 		}
 	}
 }
 
-void CNotifyManager::UnRegistTCP(const REGIST_TCP_INFO& info)
+void CNotifyManager::UnRegistTCP(LPCWSTR ip, DWORD port)
 {
 	CBlockLock lock(&this->managerLock);
 
 	for( size_t i = 0; i < this->registTCPList.size(); i++ ){
-		if( this->registTCPList[i].ip == info.ip && this->registTCPList[i].port == info.port ){
+		if( this->registTCPList[i].first == ip && this->registTCPList[i].second == port ){
 			this->registTCPList.erase(this->registTCPList.begin() + i);
 			break;
 		}
 	}
 }
 
-void CNotifyManager::SetNotifyWindow(HWND hwnd, UINT msgID)
+void CNotifyManager::SetNotifyCallback(const std::function<void()>& proc)
 {
 	CBlockLock lock(&this->managerLock);
 
-	this->hwndNotify = hwnd;
-	this->msgIDNotify = msgID;
-	SetNotifySrvStatus(0xFFFFFFFF);
+	this->notifyProc = proc;
+	if( proc ){
+		SetNotifySrvStatus(0xFFFFFFFF);
+	}
 }
 
-vector<NOTIFY_SRV_INFO> CNotifyManager::RemoveSentList()
+void CNotifyManager::SetLogFilePath(LPCWSTR path)
 {
 	CBlockLock lock(&this->managerLock);
 
-	vector<NOTIFY_SRV_INFO> list(this->notifySentList.begin() + this->notifyRemovePos, this->notifySentList.end());
-	this->notifyRemovePos = this->notifySentList.size();
-	return list;
+	this->logFilePath = path;
 }
 
 bool CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount) const
@@ -127,37 +110,76 @@ bool CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount) const
 	}
 }
 
+bool CNotifyManager::WaitForIdle(DWORD timeoutMsec) const
+{
+	DWORD count;
+	{
+		CBlockLock lock(&this->managerLock);
+		count = this->activeOrIdleCount;
+		if( count % 2 == 0 ){
+			//Idle
+			return true;
+		}
+	}
+	for( DWORD t = 1; t <= timeoutMsec; t += 10 ){
+		Sleep(10);
+		CBlockLock lock(&this->managerLock);
+		if( count != this->activeOrIdleCount ){
+			//1回以上Idleになった
+			return true;
+		}
+	}
+	return false;
+}
+
+int CNotifyManager::GetNotifyUpdateCount(DWORD notifyID) const
+{
+	if( 1 <= notifyID && notifyID < _countof(this->notifyUpdateCount) ){
+		CBlockLock lock(&this->managerLock);
+		return this->notifyUpdateCount[notifyID] & 0x7FFFFFFF;
+	}
+	return -1;
+}
+
+pair<LPCWSTR, LPCWSTR> CNotifyManager::ExtractTitleFromInfo(const NOTIFY_SRV_INFO* info)
+{
+	return std::make_pair(
+		info->notifyID == NOTIFY_UPDATE_PRE_REC_START ? L"予約録画開始準備" :
+		info->notifyID == NOTIFY_UPDATE_REC_START ? L"録画開始" :
+		info->notifyID == NOTIFY_UPDATE_REC_END ? L"録画終了" :
+		info->notifyID == NOTIFY_UPDATE_REC_TUIJYU ? L"追従発生" :
+		info->notifyID == NOTIFY_UPDATE_CHG_TUIJYU ? L"番組変更" :
+		info->notifyID == NOTIFY_UPDATE_PRE_EPGCAP_START ? L"EPG取得" :
+		info->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"EPG取得" :
+		info->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"EPG取得" : L"",
+		info->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"開始" :
+		info->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"終了" : info->param4.c_str());
+}
+
 vector<DWORD> CNotifyManager::GetRegistGUI() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	vector<DWORD> list;
-	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
-		if( this->registGUIList[i].second == NULL ||
-		    WaitForSingleObject(this->registGUIList[i].second, 0) == WAIT_TIMEOUT ){
-			list.push_back(this->registGUIList[i].first);
-		}
-	}
-	return list;
+	return this->registGUIList;
 }
 
-vector<REGIST_TCP_INFO> CNotifyManager::GetRegistTCP() const
+vector<pair<wstring, DWORD>> CNotifyManager::GetRegistTCP() const
 {
 	CBlockLock lock(&this->managerLock);
 
 	return this->registTCPList;
 }
 
-void CNotifyManager::AddNotify(DWORD status)
+void CNotifyManager::AddNotify(DWORD notifyID)
 {
 	CBlockLock lock(&this->managerLock);
 
 	NOTIFY_SRV_INFO info = {};
 	ConvertSystemTime(GetNowI64Time(), &info.time);
-	info.notifyID = status;
+	info.notifyID = notifyID;
 	//同じものがあるときは追加しない
 	if( std::find_if(this->notifyList.begin(), this->notifyList.end(),
-	                 [=](const NOTIFY_SRV_INFO& a) { return a.notifyID == status; }) == this->notifyList.end() ){
+	                 [=](const NOTIFY_SRV_INFO& a) { return a.notifyID == notifyID; }) == this->notifyList.end() ){
 		this->notifyList.push_back(info);
 		SendNotify();
 	}
@@ -178,7 +200,7 @@ void CNotifyManager::SetNotifySrvStatus(DWORD status)
 	}
 }
 
-void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
+void CNotifyManager::AddNotifyMsg(DWORD notifyID, const wstring& msg)
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -206,15 +228,16 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 	DWORD waitNotifyTick = 0;
 	for(;;){
 		vector<DWORD> registGUI;
-		vector<REGIST_TCP_INFO> registTCP;
+		vector<pair<wstring, DWORD>> registTCP;
 		NOTIFY_SRV_INFO notifyInfo;
+		wstring path;
 
-		DWORD wait = INFINITE;
 		if( waitNotify ){
-			wait = GetTickCount() - waitNotifyTick;
-			wait = (wait < 5000 ? 5000 - wait : 0);
+			DWORD wait = GetTickCount() - waitNotifyTick;
+			sys->notifyEvent.WaitOne(wait < 5000 ? 5000 - wait : 0);
+		}else{
+			sys->notifyEvent.WaitOne();
 		}
-		sys->notifyEvent.WaitOne(wait);
 		if( sys->notifyStopFlag ){
 			//キャンセルされた
 			break;
@@ -223,14 +246,6 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 		{
 			CBlockLock lock(&sys->managerLock);
 			registGUI = sys->GetRegistGUI();
-			for( size_t i = 0; i < sys->registGUIList.size(); ){
-				if( std::find(registGUI.begin(), registGUI.end(), sys->registGUIList[i].first) == registGUI.end() ){
-					//終了したGUIを削除
-					sys->UnRegistGUI(sys->registGUIList[i].first);
-				}else{
-					i++;
-				}
-			}
 			registTCP = sys->GetRegistTCP();
 			if( waitNotify && GetTickCount() - waitNotifyTick < 5000 ){
 				vector<NOTIFY_SRV_INFO>::const_iterator itrNotify = std::find_if(
@@ -261,16 +276,40 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			//巡回カウンタをつける(0を避けるため奇数)
 			sys->notifyCount += 2;
 			notifyInfo.param3 = sys->notifyCount;
-			//送信済みリストに追加してウィンドウメッセージで知らせる
+			//送信済みリストに追加
 			sys->notifySentList.push_back(notifyInfo);
 			if( sys->notifySentList.size() > 100 ){
 				sys->notifySentList.erase(sys->notifySentList.begin());
-				if( sys->notifyRemovePos != 0 ){
-					sys->notifyRemovePos--;
-				}
 			}
-			if( sys->hwndNotify != NULL ){
-				PostMessage(sys->hwndNotify, sys->msgIDNotify, 0, 0);
+			if( notifyInfo.notifyID < _countof(sys->notifyUpdateCount) ){
+				//更新系の通知をカウント
+				sys->notifyUpdateCount[notifyInfo.notifyID]++;
+			}
+			if( sys->notifyProc ){
+				//コールバックを呼ぶ(排他制御下なので注意)
+				sys->notifyProc();
+			}
+			path = sys->logFilePath;
+			sys->activeOrIdleCount++;
+		}
+
+		if( path.empty() == false && ExtractTitleFromInfo(&notifyInfo).first[0] ){
+			//ログ保存
+			std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ), fclose);
+			if( fp ){
+				fwrite(L"\xFEFF", sizeof(WCHAR), 1, fp.get());
+			}else{
+				fp.reset(UtilOpenFile(path, UTIL_O_CREAT_APPEND | UTIL_SH_READ));
+			}
+			if( fp ){
+				SYSTEMTIME st = notifyInfo.time;
+				wstring log;
+				Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%ls] %ls\r_",
+				       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
+				       ExtractTitleFromInfo(&notifyInfo).first, ExtractTitleFromInfo(&notifyInfo).second);
+				Replace(log, L"\r\n", L"  ");
+				log.back() = L'\n';
+				fwrite(log.c_str(), sizeof(WCHAR), log.size(), fp.get());
 			}
 		}
 
@@ -278,8 +317,13 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			for( size_t i = 0; sys->notifyStopFlag == false && i < (tcp ? registTCP.size() : registGUI.size()); i++ ){
 				CSendCtrlCmd sendCtrl;
 				if( tcp ){
+#ifdef _WIN32
 					sendCtrl.SetSendMode(TRUE);
-					sendCtrl.SetNWSetting(registTCP[i].ip, registTCP[i].port);
+					sendCtrl.SetNWSetting(registTCP[i].first, registTCP[i].second);
+#else
+					OutputDebugString(L"CNotifyManager: Notification by TCP/IP registration is not supported.\r\n");
+					continue;
+#endif
 				}else{
 					sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_PIPE, registGUI[i]);
 				}
@@ -305,10 +349,18 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 				}
 				if( tcp && err != CMD_SUCCESS && err != CMD_NON_SUPPORT ){
 					//送信できなかったもの削除
-					_OutputDebugString(L"notifyErr %ls:%d\r\n", registTCP[i].ip.c_str(), registTCP[i].port);
-					sys->UnRegistTCP(registTCP[i]);
+					_OutputDebugString(L"notifyErr %ls:%d\r\n", registTCP[i].first.c_str(), registTCP[i].second);
+					sys->UnRegistTCP(registTCP[i].first.c_str(), registTCP[i].second);
+				}
+				if( !tcp && err == CMD_ERR_CONNECT && sendCtrl.PipeExists() == false ){
+					//存在しないので削除
+					_OutputDebugString(L"notifyErr %ls:%d\r\n", L"PID", registGUI[i]);
+					sys->UnRegistGUI(registGUI[i]);
 				}
 			}
 		}
+
+		CBlockLock lock(&sys->managerLock);
+		sys->activeOrIdleCount++;
 	}
 }

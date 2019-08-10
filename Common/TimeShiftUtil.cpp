@@ -1,6 +1,13 @@
 #include "stdafx.h"
 #include "TimeShiftUtil.h"
 #include "PathUtil.h"
+#include "StringUtil.h"
+#include "TSPacketUtil.h"
+#include "../BonCtrl/PacketInit.h"
+#include "../BonCtrl/CreatePATPacket.h"
+#ifndef _WIN32
+#include <sys/stat.h>
+#endif
 
 CTimeShiftUtil::CTimeShiftUtil(void)
 	: readFile(NULL, fclose)
@@ -21,7 +28,7 @@ CTimeShiftUtil::~CTimeShiftUtil(void)
 	Send(&val);
 }
 
-BOOL CTimeShiftUtil::Send(
+void CTimeShiftUtil::Send(
 	NWPLAY_PLAY_INFO* val
 	)
 {
@@ -34,37 +41,65 @@ BOOL CTimeShiftUtil::Send(
 
 	for( int tcp = 0; tcp < 2; tcp++ ){
 		CSendNW* sendNW = (tcp ? (CSendNW*)&this->sendTcp : (CSendNW*)&this->sendUdp);
-		if( this->sendIP[tcp].empty() == false && ((tcp ? val->tcp : val->udp) == 0 || this->sendIP[tcp] != ip) ){
-			this->sendIP[tcp].clear();
+		SEND_INFO* info = this->sendInfo + tcp;
+		if( info->ip.empty() == false && ((tcp ? val->tcp : val->udp) == 0 || info->ip != ip) ){
+			//終了
+			info->ip.clear();
 			sendNW->StopSend();
 			sendNW->UnInitialize();
-			CloseHandle(this->portMutex[tcp]);
+#ifdef _WIN32
+			CloseHandle(info->mutex);
+#else
+			DeleteFile(info->key.c_str());
+			fclose(info->mutex);
+#endif
 		}
-		if( this->sendIP[tcp].empty() == false || (tcp ? val->tcp : val->udp) == 0 ){
+		if( (tcp ? val->tcp : val->udp) == 0 ){
 			continue;
 		}
-		DWORD port = (tcp ? 2230 : 1234);
-		wstring mutexKey;
-		for( int i = 0; i < 100; i++, port++ ){
-			Format(mutexKey, L"%ls%d_%d", (tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME), val->ip, port);
-			this->portMutex[tcp] = CreateMutex(NULL, FALSE, mutexKey.c_str());
-			if( this->portMutex[tcp] ){
+		if( info->ip.empty() == false ){
+			//開始済み。ポート番号を返す
+			(tcp ? val->tcpPort : val->udpPort) = info->port;
+			continue;
+		}
+		//引数のポート番号は使わない(原作挙動)。ip:0.0.0.1-255は特別扱い
+		info->port = (tcp ? (1 <= val->ip && val->ip <= 255 ? 0 : BON_TCP_PORT_BEGIN) : BON_UDP_PORT_BEGIN);
+		for( int i = 0; i < BON_NW_PORT_RANGE; i++, info->port++ ){
+#ifdef _WIN32
+			Format(info->key, L"Global\\%ls%d_%d", (tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME), val->ip, info->port);
+			info->mutex = CreateMutex(NULL, FALSE, info->key.c_str());
+			if( info->mutex ){
 				if( GetLastError() != ERROR_ALREADY_EXISTS ){
 					break;
 				}
-				CloseHandle(this->portMutex[tcp]);
-				this->portMutex[tcp] = NULL;
+				CloseHandle(info->mutex);
+				info->mutex = NULL;
 			}
+#else
+			Format(info->key, L"%ls%ls%u_%u.lock", EDCB_INI_ROOT, (tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME), val->ip, info->port);
+			info->mutex = UtilOpenFile(info->key, UTIL_SECURE_WRITE);
+			if( info->mutex ){
+				string strKey;
+				WtoUTF8(info->key, strKey);
+				struct stat st[2];
+				if( fstat(fileno(info->mutex), st) == 0 && stat(strKey.c_str(), st + 1) == 0 && st[0].st_ino == st[1].st_ino ){
+					break;
+				}
+				fclose(info->mutex);
+				info->mutex = NULL;
+			}
+#endif
 		}
-		if( this->portMutex[tcp] ){
-			OutputDebugString((mutexKey + L"\r\n").c_str());
+		if( info->mutex ){
+			//開始
+			OutputDebugString((info->key + L"\r\n").c_str());
 			sendNW->Initialize();
-			sendNW->AddSendAddr(ip, port, false);
+			sendNW->AddSendAddr(ip, info->port, false);
 			sendNW->StartSend();
-			this->sendIP[tcp] = ip;
+			info->ip = ip;
+			(tcp ? val->tcpPort : val->udpPort) = info->port;
 		}
 	}
-	return TRUE;
 }
 
 BOOL CTimeShiftUtil::OpenTimeShift(
@@ -106,7 +141,7 @@ BOOL CTimeShiftUtil::StartTimeShift()
 	return TRUE;
 }
 
-BOOL CTimeShiftUtil::StopTimeShift()
+void CTimeShiftUtil::StopTimeShift()
 {
 	CBlockLock lock(&this->utilLock);
 
@@ -116,7 +151,6 @@ BOOL CTimeShiftUtil::StopTimeShift()
 	}
 	this->seekFile.reset();
 	this->readFile.reset();
-	return TRUE;
 }
 
 void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)

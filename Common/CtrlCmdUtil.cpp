@@ -10,11 +10,32 @@ namespace CtrlCmdUtilImpl_
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const wstring& val, bool oldFormat )
 {
 	(void)ver;
+#if WCHAR_MAX > 0xFFFF
+	DWORD size = sizeof(DWORD);
+	for( size_t i = 0; i < val.size() + 1; i++ ){
+		size += (DWORD)((0x10000 <= val[i] && val[i] < 0x110000 ? 2 : 1) * sizeof(WORD));
+	}
+#else
 	DWORD size = (DWORD)((val.size() + 1) * sizeof(WCHAR) + sizeof(DWORD));
+#endif
 	if( buff != NULL ){
 		//全体のサイズ
-		WriteVALUE(0, buff, buffOffset, oldFormat ? size - (DWORD)sizeof(DWORD) : size);
-		memcpy(buff + buffOffset + sizeof(DWORD), val.c_str(), (val.size() + 1) * sizeof(WCHAR));
+		DWORD pos = buffOffset + WriteVALUE(0, buff, buffOffset, oldFormat ? size - (DWORD)sizeof(DWORD) : size);
+#if WCHAR_MAX > 0xFFFF
+		for( size_t i = 0; i < val.size() + 1; i++ ){
+			if( 0x10000 <= val[i] && val[i] < 0x110000 ){
+				WORD ww[2] = { (WORD)((val[i] - 0x10000) / 0x400 + 0xD800), (WORD)((val[i] - 0x10000) % 0x400 + 0xDC00) };
+				memcpy(buff + pos, ww, sizeof(ww));
+				pos += sizeof(ww);
+			}else{
+				WORD w = (WORD)val[i];
+				memcpy(buff + pos, &w, sizeof(w));
+				pos += sizeof(w);
+			}
+		}
+#else
+		memcpy(buff + pos, val.c_str(), (val.size() + 1) * sizeof(WCHAR));
+#endif
 	}
 	return size;
 }
@@ -36,11 +57,23 @@ BOOL ReadVALUE( WORD ver, wstring* val, const BYTE* buff, DWORD buffSize, DWORD*
 	}
 	
 	val->clear();
-	if( valSize > pos + sizeof(WCHAR) ){
-		val->reserve((valSize - pos) / sizeof(WCHAR) - 1);
+	if( valSize > pos + sizeof(WORD) ){
+		val->reserve((valSize - pos) / sizeof(WORD) - 1);
 	}
-	for( ; pos + 1 < valSize && (buff[pos] != 0 || buff[pos + 1] != 0); pos += 2 ){
-		val->push_back((WCHAR)(buff[pos] | buff[pos + 1] << 8));
+	while( pos + 1 < valSize && (buff[pos] || buff[pos + 1]) ){
+		union { WORD w; BYTE b[2]; } x;
+		x.b[0] = buff[pos++];
+		x.b[1] = buff[pos++];
+#if WCHAR_MAX > 0xFFFF
+		if( 0xD800 <= x.w && x.w < 0xDC00 && pos + 1 < valSize && (buff[pos] || buff[pos + 1]) ){
+			val->push_back(0x10000 + (x.w - 0xD800) * 0x400);
+			x.b[0] = buff[pos++];
+			x.b[1] = buff[pos++];
+			val->back() += x.w - 0xDC00;
+			continue;
+		}
+#endif
+		val->push_back(x.w);
 	}
 
 	*readSize = valSize;
@@ -1123,31 +1156,6 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TUNER_RESERVE_IN
 	pos += WriteVALUE(ver, buff, pos, val.reserveList);
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
-}
-
-DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REGIST_TCP_INFO& val )
-{
-	DWORD pos = buffOffset + sizeof(DWORD);
-	pos += WriteVALUE(ver, buff, pos, val.ip);
-	pos += WriteVALUE(ver, buff, pos, val.port);
-	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
-	return pos - buffOffset;
-}
-
-BOOL ReadVALUE( WORD ver, REGIST_TCP_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
-{
-	DWORD pos = 0;
-	DWORD size = 0;
-	DWORD valSize = 0;
-	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &valSize );
-	if( valSize < pos || buffSize < valSize ){
-		return FALSE;
-	}
-	buffSize = valSize;
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->ip );
-	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->port );
-	*readSize = valSize;
-	return TRUE;
 }
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EVENT_INFO& val )
