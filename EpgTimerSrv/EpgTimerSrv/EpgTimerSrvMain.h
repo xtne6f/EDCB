@@ -2,10 +2,11 @@
 
 #include "EpgDBManager.h"
 #include "ReserveManager.h"
-#include "FileStreamingManager.h"
 #include "NotifyManager.h"
 #include "HttpServer.h"
 #include "../../Common/ParseTextInstances.h"
+#include "../../Common/TimeShiftUtil.h"
+#include "../../Common/InstanceManager.h"
 
 //各種サーバと自動予約の管理をおこなう
 //必ずオブジェクト生成→Main()→…→破棄の順番で利用しなければならない
@@ -21,7 +22,7 @@ public:
 	//メイン処理停止
 	void StopMain();
 	//休止／スタンバイに移行して構わない状況かどうか
-	bool IsSuspendOK(); //const;
+	bool IsSuspendOK() const;
 private:
 	//メインウィンドウ(Taskモード)
 	static LRESULT CALLBACK TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -129,7 +130,7 @@ private:
 	CEpgDBManager epgDB;
 	//reserveManagerはnotifyManagerとepgDBに依存するので、順序を入れ替えてはいけない
 	CReserveManager reserveManager;
-	CFileStreamingManager streamingManager;
+	CInstanceManager<CTimeShiftUtil> streamingManager;
 
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;

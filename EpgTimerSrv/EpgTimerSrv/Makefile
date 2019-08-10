@@ -71,7 +71,6 @@ $(TARGET): $(addsuffix .obj, \
   EpgTimerSrv.cpp \
   EpgTimerSrvMain.cpp \
   EpgTimerSrvSetting.cpp \
-  FileStreamingManager.cpp \
   HttpServer.cpp \
   NotifyManager.cpp \
   RegExp.cpp \

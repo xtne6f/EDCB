@@ -102,7 +102,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 			}
 			swprintf_s(key, L"Port%d", i);
-			item.port = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", key, tcp ? 2230 : 1234, appIniPath.c_str());
+			item.port = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN, appIniPath.c_str());
 			swprintf_s(key, L"BroadCast%d", i);
 			item.broadcastFlag = tcp ? 0 : GetPrivateProfileInt(L"SET_UDP", key, 0, appIniPath.c_str());
 			(tcp ? this->setTcpSendList : this->setUdpSendList).push_back(item);

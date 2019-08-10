@@ -530,7 +530,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		if( ctx->sys->IsSuspendOK() ){
 			if( wParam == SD_MODE_STANDBY || wParam == SD_MODE_SUSPEND ){
 				//ストリーミングを終了する
-				ctx->sys->streamingManager.CloseAllFile();
+				ctx->sys->streamingManager.clear();
 				//スリープ抑止解除
 				SetThreadExecutionState(ES_CONTINUOUS);
 				//rebootFlag時は(指定+5分前)に復帰
@@ -1077,7 +1077,7 @@ void CEpgTimerSrvMain::StopMain()
 	}
 }
 
-bool CEpgTimerSrvMain::IsSuspendOK()
+bool CEpgTimerSrvMain::IsSuspendOK() const
 {
 	DWORD marginSec;
 	bool noFileStreaming;
@@ -1089,7 +1089,7 @@ bool CEpgTimerSrvMain::IsSuspendOK()
 	}
 	__int64 now = GetNowI64Time();
 	//シャットダウン可能で復帰が間に合うときだけ
-	return (noFileStreaming == false || this->streamingManager.IsStreaming() == FALSE) &&
+	return (noFileStreaming == false || this->streamingManager.empty()) &&
 	       this->reserveManager.IsActive() == false &&
 	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC &&
 	       IsFindNoSuspendExe() == false &&
@@ -2165,10 +2165,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_OPEN\r\n");
 			wstring val;
-			DWORD id;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->streamingManager.OpenFile(val.c_str(), &id) ){
-				resParam->data = NewWriteVALUE(id, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				std::shared_ptr<CTimeShiftUtil> util = std::make_shared<CTimeShiftUtil>();
+				if( util->OpenTimeShift(val.c_str(), TRUE) ){
+					resParam->data = NewWriteVALUE(sys->streamingManager.push(util), resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -2176,7 +2178,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_CLOSE\r\n");
 			DWORD val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->streamingManager.CloseFile(val) ){
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->streamingManager.pop(val) ){
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -2185,8 +2187,11 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_PLAY\r\n");
 			DWORD val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->streamingManager.StartSend(val) ){
-				resParam->param = CMD_SUCCESS;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				std::shared_ptr<CTimeShiftUtil> util = sys->streamingManager.find(val);
+				if( util && util->StartTimeShift() ){
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -2194,8 +2199,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_STOP\r\n");
 			DWORD val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->streamingManager.StopSend(val) ){
-				resParam->param = CMD_SUCCESS;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				std::shared_ptr<CTimeShiftUtil> util = sys->streamingManager.find(val);
+				if( util ){
+					util->StopTimeShift();
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -2203,9 +2212,13 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_GET_POS\r\n");
 			NWPLAY_POS_CMD val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->streamingManager.GetPos(&val) ){
-				resParam->data = NewWriteVALUE(val, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				std::shared_ptr<CTimeShiftUtil> util = sys->streamingManager.find(val.ctrlID);
+				if( util ){
+					util->GetFilePos(&val.currentPos, &val.totalPos);
+					resParam->data = NewWriteVALUE(val, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -2213,8 +2226,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_SET_POS\r\n");
 			NWPLAY_POS_CMD val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->streamingManager.SetPos(&val) ){
-				resParam->param = CMD_SUCCESS;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				std::shared_ptr<CTimeShiftUtil> util = sys->streamingManager.find(val.ctrlID);
+				if( util ){
+					util->SetFilePos(val.currentPos);
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -2222,9 +2239,13 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_SET_IP\r\n");
 			NWPLAY_PLAY_INFO val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->streamingManager.SetIP(&val) ){
-				resParam->data = NewWriteVALUE(val, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				std::shared_ptr<CTimeShiftUtil> util = sys->streamingManager.find(val.ctrlID);
+				if( util ){
+					util->Send(&val);
+					resParam->data = NewWriteVALUE(val, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -2234,10 +2255,13 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			DWORD val;
 			NWPLAY_TIMESHIFT_INFO resVal;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) &&
-			    sys->reserveManager.GetRecFilePath(val, resVal.filePath) &&
-			    sys->streamingManager.OpenTimeShift(resVal.filePath.c_str(), &resVal.ctrlID) ){
-				resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+			    sys->reserveManager.GetRecFilePath(val, resVal.filePath) ){
+				std::shared_ptr<CTimeShiftUtil> util = std::make_shared<CTimeShiftUtil>();
+				if( util->OpenTimeShift(resVal.filePath.c_str(), FALSE) ){
+					resVal.ctrlID = sys->streamingManager.push(util);
+					resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;

@@ -66,12 +66,12 @@ BOOL COneServiceUtil::SendUdpTcp(
 			HANDLE portMutex;
 
 			//¶¬‚Å‚«‚È‚­‚Ä‚à[‚Å‚Í‚È‚¢‚Ì‚Å‚Ù‚Ç‚Ù‚Ç‚É‘Å‚¿Ø‚é
-			for( int j = 0; j < 100; j++ ){
+			for( int j = 0; j < BON_NW_PORT_RANGE; j++ ){
 				UINT u[4];
 				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-					Format(key, L"%ls%d_%d", mutexName, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
+					Format(key, L"Global\\%ls%d_%d", mutexName, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
 				}else{
-					Format(key, L"%ls%ls_%d", mutexName, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+					Format(key, L"Global\\%ls%ls_%d", mutexName, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
 				}
 				portMutex = CreateMutex(NULL, FALSE, key.c_str());
 		

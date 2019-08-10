@@ -1,9 +1,16 @@
 #pragma once
 
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#pragma comment(lib, "Ws2_32.lib")
+#else
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
 #include "BonCtrlDef.h"
-#include "../Common/StringUtil.h"
 
 //final
 class CSendUDP : public CSendNW
@@ -22,13 +29,17 @@ public:
 
 private:
 	struct SOCKET_DATA {
+#ifdef _WIN32
 		SOCKET sock;
+#else
+		int sock;
+#endif
 		struct sockaddr_storage addr;
 		size_t addrlen;
 	};
-	vector<SOCKET_DATA> SockList;
+	vector<SOCKET_DATA> m_sockList;
 
-	UINT m_uiSendSize;
+	int m_sendSize;
 	bool m_initialized;
 	bool m_sending;
 };
