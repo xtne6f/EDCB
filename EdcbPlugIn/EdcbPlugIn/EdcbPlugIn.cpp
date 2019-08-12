@@ -210,9 +210,9 @@ bool CEdcbPlugIn::Initialize()
 #ifdef SEND_PIPE_TEST
 	if (m_sendPipe.Initialize()) {
 		int port = 0;
-		for (; port < 100; ++port) {
+		for (; port < BON_NW_PORT_RANGE; ++port) {
 			wstring name;
-			Format(name, L"%ls1_%d", MUTEX_TCP_PORT_NAME, port);
+			Format(name, L"Global\\%ls1_%d", MUTEX_TCP_PORT_NAME, port);
 			m_sendPipeMutex = CreateMutex(nullptr, FALSE, name.c_str());
 			if (m_sendPipeMutex) {
 				if (GetLastError() != ERROR_ALREADY_EXISTS) {
