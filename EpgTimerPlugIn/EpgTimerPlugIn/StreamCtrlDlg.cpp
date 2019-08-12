@@ -11,11 +11,7 @@
 CStreamCtrlDlg::CStreamCtrlDlg(void)
 {
 	this->hwnd = NULL;
-	this->cmd = NULL;
-	this->ctrlID = 0;
-	this->iniTCP = FALSE;
-	this->iniUDP = FALSE;
-	this->timeShiftMode = FALSE;
+	this->ctrlEnabled = FALSE;
 	this->callbackFunc = NULL;
 	this->callbackParam = NULL;
 }
@@ -24,15 +20,34 @@ CStreamCtrlDlg::~CStreamCtrlDlg(void)
 {
 }
 
-void CStreamCtrlDlg::SetCtrlCmd(CSendCtrlCmd* ctrlCmd, DWORD ctrlID_, BOOL chkUdp, BOOL chkTcp, BOOL play, BOOL timeShiftMode_)
+void CStreamCtrlDlg::SetCtrl(const TVTEST_STREAMING_INFO& info)
 {
-	this->cmd = ctrlCmd;
-	this->ctrlID = ctrlID_;
-	this->iniTCP = chkTcp;
-	this->iniUDP = chkUdp;
-	this->timeShiftMode = timeShiftMode_;
-	if( this->hwnd != NULL ){
-		PostMessage(this->hwnd, WM_RESET_GUI, play, 0);
+	if( this->ctrlEnabled && (info.enableMode == FALSE || info.ctrlID != this->ctrlID) ){
+		this->cmd.SendNwPlayClose(this->ctrlID);
+		StopTimer();
+		this->ctrlEnabled = FALSE;
+	}
+	if( this->ctrlEnabled == FALSE && info.enableMode ){
+		this->ctrlEnabled = TRUE;
+		this->ctrlID = info.ctrlID;
+		this->ctrlIsNetwork = info.serverIP != 1;
+		this->cmd.SetSendMode(this->ctrlIsNetwork);
+		if( this->ctrlIsNetwork ){
+			// ネットワーク接続を使う
+			wstring ip;
+			Format(ip, L"%d.%d.%d.%d", info.serverIP >> 24, (info.serverIP >> 16) & 0xFF, (info.serverIP >> 8) & 0xFF, info.serverIP & 0xFF);
+			this->cmd.SetNWSetting(ip, info.serverPort);
+		}
+		if( this->hwnd ){
+			EnableWindow(GetDlgItem(this->hwnd, IDC_CHECK_UDP), this->ctrlIsNetwork);
+			EnableWindow(GetDlgItem(this->hwnd, IDC_COMBO_IP), this->ctrlIsNetwork);
+			SendDlgItemMessage(this->hwnd, IDC_SLIDER_SEEK, TBM_SETPOS, TRUE, 0);
+			SendDlgItemMessage(this->hwnd, IDC_CHECK_UDP, BM_SETCHECK, info.udpSend ? BST_CHECKED : BST_UNCHECKED, 0);
+			SendDlgItemMessage(this->hwnd, IDC_CHECK_TCP, BM_SETCHECK, info.tcpSend ? BST_CHECKED : BST_UNCHECKED, 0);
+			SetNWModeSend();
+			this->cmd.SendNwPlayStart(this->ctrlID);
+			SetTimer(this->hwnd, 1000, 500, NULL);
+		}
 	}
 }
 
@@ -95,40 +110,42 @@ void CStreamCtrlDlg::StopFullScreenMouseChk()
 
 LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
-	static CStreamCtrlDlg* sys = NULL;
+	CStreamCtrlDlg* sys = (CStreamCtrlDlg*)GetWindowLongPtr(hDlgWnd, GWLP_USERDATA);
+	if( sys == NULL && msg != WM_INITDIALOG ){
+		return FALSE;
+	}
 	switch (msg) {
 		case WM_KEYDOWN:
 			break;
 		case WM_INITDIALOG:
+			SetWindowLongPtr(hDlgWnd, GWLP_USERDATA, lp);
 			sys = (CStreamCtrlDlg*)lp;
 			sys->hwnd = hDlgWnd;
 			sys->EnumIP();
 			SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"停止");
 			break;
         case WM_COMMAND:
-			if(sys != NULL ){
-				if( sys->cmd != NULL ){
+			{
+				if( sys->ctrlEnabled ){
 					switch (LOWORD(wp)) {
 					case IDC_BUTTON_PLAY:
 						sys->SetNWModeSend();
-						sys->cmd->SendNwPlayStart(sys->ctrlID);
+						sys->cmd.SendNwPlayStart(sys->ctrlID);
 						SetTimer(hDlgWnd, 1000, 500, NULL);
-						sys->UpdateLog();
 						break;
 					case IDC_BUTTON_STOP:
 						KillTimer(hDlgWnd, 1000);
-						sys->cmd->SendNwPlayStop(sys->ctrlID);
+						sys->cmd.SendNwPlayStop(sys->ctrlID);
 						SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"停止");
 						break;
 					case IDC_CHECK_UDP:
 					case IDC_CHECK_TCP:
 						sys->SetNWModeSend();
-						sys->UpdateLog();
 						break;
 					case IDC_BUTTON_CLOSE:
 						KillTimer(hDlgWnd, 1000);
 						KillTimer(hDlgWnd, 1010);
-						sys->cmd->SendNwPlayStop(sys->ctrlID);
+						sys->cmd.SendNwPlayStop(sys->ctrlID);
 						SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"停止");
 						SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_UDP), BM_SETCHECK, BST_UNCHECKED, 0);
 						SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_TCP), BM_SETCHECK, BST_UNCHECKED, 0);
@@ -187,14 +204,13 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 					}else{
 						ShowWindow(hDlgWnd, SW_HIDE);
 					}
-				}else if(wp == 1000){
-					KillTimer(hDlgWnd, 1000);
+				}else if( wp == 1000 && sys->ctrlEnabled ){
 					__int64 totalPos = 0;
 					__int64 filePos = 0;
 
 					NWPLAY_POS_CMD item;
 					item.ctrlID = sys->ctrlID;
-					sys->cmd->SendNwPlayGetPos(&item);
+					sys->cmd.SendNwPlayGetPos(&item);
 					totalPos = item.totalPos;
 					filePos = item.currentPos;
 
@@ -207,18 +223,17 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						int setPos = (int)(filePos/pos1);
 						SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_SETPOS, TRUE, (DWORD)setPos );
 					}
-					SetTimer(hDlgWnd, 1000, 500, NULL);
 				}
 			}
 			return FALSE;
 		case WM_HSCROLL:
-			if(sys != NULL ){
-				if( sys->cmd != NULL ){
+			{
+				if( sys->ctrlEnabled ){
 					switch(LOWORD(wp)){
 					case SB_THUMBTRACK:
 						KillTimer(hDlgWnd, 1000);
 
-						sys->cmd->SendNwPlayStop(sys->ctrlID);
+						sys->cmd.SendNwPlayStop(sys->ctrlID);
 						break;
 					case SB_LINELEFT:
 					case SB_LINERIGHT:
@@ -228,13 +243,13 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						{
 							KillTimer(hDlgWnd, 1000);
 
-							sys->cmd->SendNwPlayStop(sys->ctrlID);
+							sys->cmd.SendNwPlayStop(sys->ctrlID);
 
 							__int64 filePos = SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_GETPOS, 0, 0);
 
 							NWPLAY_POS_CMD item;
 							item.ctrlID = sys->ctrlID;
-							sys->cmd->SendNwPlayGetPos(&item);
+							sys->cmd.SendNwPlayGetPos(&item);
 
 							if( item.totalPos<10000 ){
 								SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_SETRANGEMAX, FALSE, (DWORD)item.totalPos );
@@ -247,8 +262,8 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 								item.currentPos = filePos;
 								//SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_SETPOS, TRUE, (DWORD)filePos );
 							}
-							sys->cmd->SendNwPlaySetPos(&item);
-							sys->cmd->SendNwPlayStart(sys->ctrlID);
+							sys->cmd.SendNwPlaySetPos(&item);
+							sys->cmd.SendNwPlayStart(sys->ctrlID);
 							SetTimer(hDlgWnd, 1000, 500, NULL);
 						}
 						break;
@@ -256,28 +271,6 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						break;
 					}
 					return FALSE;
-				}
-			}
-			break;
-		case WM_RESET_GUI:
-			{
-				SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_SETPOS, TRUE, 0 );
-				SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"停止");
-				if( sys->iniUDP == TRUE ){
-					SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_UDP), BM_SETCHECK, BST_CHECKED, 0);
-				}else{
-					SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_UDP), BM_SETCHECK, BST_UNCHECKED, 0);
-				}
-				if( sys->iniTCP == TRUE ){
-					SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_TCP), BM_SETCHECK, BST_CHECKED, 0);
-				}else{
-					SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_TCP), BM_SETCHECK, BST_UNCHECKED, 0);
-				}
-				if( wp == 1 ){
-					sys->SetNWModeSend();
-					sys->cmd->SendNwPlayStart(sys->ctrlID);
-					SetTimer(hDlgWnd, 1000, 500, NULL);
-					sys->UpdateLog();
 				}
 			}
 			break;
@@ -293,9 +286,10 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 
 void CStreamCtrlDlg::SetNWModeSend()
 {
-	WCHAR textBuff[512] = L"";
-	GetWindowText(GetDlgItem(this->hwnd, IDC_COMBO_IP), textBuff, 512);
-	
+	WCHAR textBuff[512] = L"0.0.0.2";
+	if( this->ctrlIsNetwork ){
+		GetDlgItemText(this->hwnd, IDC_COMBO_IP, textBuff, 512);
+	}
 	wstring strIP = textBuff;
 	wstring ip1;
 	wstring ip2;
@@ -305,20 +299,31 @@ void CStreamCtrlDlg::SetNWModeSend()
 	Separate(strIP, L".", ip2, strIP);
 	Separate(strIP, L".", ip3, ip4);
 
+	NWPLAY_PLAY_INFO nwPlayInfo;
 	nwPlayInfo.ctrlID = this->ctrlID;
-	nwPlayInfo.udp = (BYTE)SendMessage(GetDlgItem(this->hwnd, IDC_CHECK_UDP), BM_GETCHECK, 0, 0);
-	nwPlayInfo.tcp = (BYTE)SendMessage(GetDlgItem(this->hwnd, IDC_CHECK_TCP), BM_GETCHECK, 0, 0);
+	nwPlayInfo.udp = this->ctrlIsNetwork && SendDlgItemMessage(this->hwnd, IDC_CHECK_UDP, BM_GETCHECK, 0, 0) != 0;
+	nwPlayInfo.tcp = SendDlgItemMessage(this->hwnd, IDC_CHECK_TCP, BM_GETCHECK, 0, 0) != 0;
+	nwPlayInfo.udpPort = 65536;
+	nwPlayInfo.tcpPort = 65536;
 	nwPlayInfo.ip = _wtoi(ip1.c_str())<<24 | _wtoi(ip2.c_str())<<16 | _wtoi(ip3.c_str())<<8 | _wtoi(ip4.c_str());
-	this->cmd->SendNwPlaySetIP(&nwPlayInfo);
+	this->cmd.SendNwPlaySetIP(&nwPlayInfo);
 
-	DWORD udpPort = 0;
+	wstring editLog;
+	DWORD udpPort = 65536;
 	if( nwPlayInfo.udp == 1 ){
 		udpPort = nwPlayInfo.udpPort;
+		wstring udp;
+		Format(udp, L"UDP送信：%ls:%d\r\n", textBuff, udpPort);
+		editLog += udp;
 	}
-	DWORD tcpPort = 0;
+	DWORD tcpPort = 65536;
 	if( nwPlayInfo.tcp == 1 ){
 		tcpPort = nwPlayInfo.tcpPort;
+		wstring tcp;
+		Format(tcp, L"TCP送信：%ls:%d\r\n", textBuff, tcpPort);
+		editLog += tcp;
 	}
+	SetDlgItemText(this->hwnd, IDC_EDIT_LOG, editLog.empty() ? L"送信先なし" : editLog.c_str());
 	PostMessage(this->hwnd, WM_CHG_PORT, udpPort, tcpPort);
 }
 
@@ -365,31 +370,4 @@ void CStreamCtrlDlg::EnumIP()
 	if(SendDlgItemMessage(this->hwnd , IDC_COMBO_IP, CB_GETCOUNT , 0 , 0) > 0){
 		SendDlgItemMessage(this->hwnd , IDC_COMBO_IP, CB_SETCURSEL , 0 , 0);
 	}
-}
-
-void CStreamCtrlDlg::UpdateLog()
-{
-	wstring editLog = L"";
-
-	WCHAR textBuff[512] = L"";
-	GetWindowText(GetDlgItem(this->hwnd, IDC_COMBO_IP), textBuff, 512);
-	
-	wstring IP = textBuff;
-
-	if( this->nwPlayInfo.udp == 1 ){
-		wstring udp;
-		Format(udp, L"UDP送信：%ls:%d\r\n", IP.c_str(), nwPlayInfo.udpPort);
-		editLog += udp;
-	}
-	if( this->nwPlayInfo.tcp == 1 ){
-		wstring tcp;
-		Format(tcp, L"TCP送信：%ls:%d\r\n", IP.c_str(), nwPlayInfo.tcpPort);
-		editLog += tcp;
-	}
-	
-	if( editLog.size() == 0 ){
-		editLog = L"送信先なし";
-	}
-
-	SetWindowText(GetDlgItem(this->hwnd, IDC_EDIT_LOG), editLog.c_str());
 }

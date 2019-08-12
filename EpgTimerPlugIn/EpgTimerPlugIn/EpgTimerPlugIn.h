@@ -8,7 +8,6 @@
 #include "../../Common/ErrDef.h"
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/CtrlCmdUtil.h"
-#include "../../Common/SendCtrlCmd.h"
 #include "../../Common/ThreadUtil.h"
 
 #include "StreamCtrlDlg.h"
@@ -19,9 +18,7 @@ private:
 	CPipeServer pipeServer;
 
 	BOOL nwMode;
-	DWORD nwModeCurrentCtrlID;
 	TVTEST_STREAMING_INFO nwModeInfo;
-	CSendCtrlCmd cmd;
 	BOOL fullScreen;
 	BOOL showNormal;
 	BOOL grantServerAccess;
