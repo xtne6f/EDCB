@@ -213,6 +213,7 @@ namespace EpgTimer
         public bool NwTvMode { get; set; }
         public bool NwTvModeUDP { get; set; }
         public bool NwTvModeTCP { get; set; }
+        public bool NwTvModePipe { get; set; }
         public bool FilePlay { get; set; }
         public string FilePlayExe { get; set; }
         public string FilePlayCmd { get; set; }
@@ -413,6 +414,7 @@ namespace EpgTimer
             r.NwTvMode                  = ConvertXElem(x, w, "NwTvMode", NwTvMode, false);
             r.NwTvModeUDP               = ConvertXElem(x, w, "NwTvModeUDP", NwTvModeUDP, false);
             r.NwTvModeTCP               = ConvertXElem(x, w, "NwTvModeTCP", NwTvModeTCP, false);
+            r.NwTvModePipe              = ConvertXElem(x, w, "NwTvModePipe", NwTvModePipe, false);
             r.FilePlay                  = ConvertXElem(x, w, "FilePlay", FilePlay, true);
             r.FilePlayExe               = ConvertXElem(x, w, "FilePlayExe", FilePlayExe, "");
             r.FilePlayCmd               = ConvertXElem(x, w, "FilePlayCmd", FilePlayCmd, "\"$FilePath$\"");
