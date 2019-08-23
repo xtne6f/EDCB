@@ -55,19 +55,24 @@ namespace EpgTimer
         private void button_wake_Click(object sender, RoutedEventArgs e)
         {
             string[] mac = textBox_mac.Text.Split('-');
-            if( mac.Length != 6 )
+            if (mac.Length == 6)
             {
-                MessageBox.Show("書式は「xx-xx-xx-xx-xx-xx」です");
-                return;
+                byte[] macAddress = new byte[6];
+                for (int i = 0; i < 6; i++)
+                {
+                    if (byte.TryParse(mac[i], System.Globalization.NumberStyles.HexNumber, null, out macAddress[i]) == false)
+                    {
+                        macAddress = null;
+                        break;
+                    }
+                }
+                if (macAddress != null)
+                {
+                    NWConnect.SendMagicPacket(macAddress);
+                    return;
+                }
             }
-            Settings.Instance.NWMacAdd = textBox_mac.Text;
-
-            byte[] macAddress = new byte[6];
-            for( int i=0; i<6; i++)
-            {
-                macAddress[i] = Convert.ToByte(mac[i],16);
-            }
-            NWConnect.SendMagicPacket(macAddress);
+            MessageBox.Show("書式は「xx-xx-xx-xx-xx-xx」です");
         }
     }
 }
