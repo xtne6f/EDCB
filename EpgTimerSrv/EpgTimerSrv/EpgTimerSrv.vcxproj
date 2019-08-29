@@ -335,7 +335,6 @@
     <ClInclude Include="SyoboiCalUtil.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TunerBankCtrl.h" />
-    <ClInclude Include="TunerManager.h" />
     <ClInclude Include="UpnpSsdpServer.h" />
   </ItemGroup>
   <ItemGroup>
@@ -738,7 +737,6 @@
     </ClCompile>
     <ClCompile Include="SyoboiCalUtil.cpp" />
     <ClCompile Include="TunerBankCtrl.cpp" />
-    <ClCompile Include="TunerManager.cpp" />
     <ClCompile Include="UpnpSsdpServer.cpp" />
   </ItemGroup>
   <ItemGroup>

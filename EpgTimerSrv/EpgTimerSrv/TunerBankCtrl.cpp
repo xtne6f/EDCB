@@ -6,9 +6,10 @@
 #include "../../Common/TimeUtil.h"
 #include <tlhelp32.h>
 
-CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
+CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, WORD epgCapMax, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: tunerID(tunerID_)
 	, bonFileName(bonFileName_)
+	, epgCapMaxOfThisBon(epgCapMax)
 	, chList(chList_)
 	, notifyManager(notifyManager_)
 	, epgDBManager(epgDBManager_)

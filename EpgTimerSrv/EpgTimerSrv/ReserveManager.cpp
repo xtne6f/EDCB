@@ -18,11 +18,43 @@ CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& 
 
 void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 {
-	this->tunerManager.ReloadTuner();
-	this->tunerManager.GetEnumTunerBank(&this->tunerBankMap, this->notifyManager, this->epgDBManager);
-	this->lastCheckEpgCap = GetNowI64Time();
-
 	fs_path settingPath = GetSettingPath();
+	fs_path iniPath = GetModuleIniPath();
+
+	//チューナ一覧を構築
+	vector<pair<wstring, wstring>> nameList = CEpgTimerSrvSetting::EnumBonFileName(settingPath.c_str());
+	for( size_t i = 0; i < nameList.size(); i++ ){
+		WORD count = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"Count", 0, iniPath.c_str());
+		WORD priority = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"Priority", 0, iniPath.c_str());
+		if( count != 0 && priority != 0xFFFF ){
+			//カウント1以上のものだけ利用
+			WORD epgCount = 0;
+			if( GetPrivateProfileInt(nameList[i].first.c_str(), L"GetEpg", 1, iniPath.c_str()) != 0 ){
+				epgCount = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"EPGCount", 0, iniPath.c_str());
+				if( epgCount == 0 ){
+					epgCount = count;
+				}
+			}
+			DWORD tunerID = (DWORD)priority << 16 | 1;
+			if( this->tunerBankMap.count(tunerID) != 0 ){
+				OutputDebugString(L"CReserveManager::Initialize(): Duplicate bonID\r\n");
+			}else{
+				CParseChText4 chText4;
+				chText4.ParseText(fs_path(settingPath).append(nameList[i].second).c_str());
+				vector<CH_DATA4> chList;
+				chList.reserve(chUtil.GetMap().size());
+				for( map<DWORD, CH_DATA4>::const_iterator itr = chText4.GetMap().begin(); itr != chText4.GetMap().end(); itr++ ){
+					chList.push_back(itr->second);
+				}
+				for( WORD j = 0; j < count; j++, tunerID++ ){
+					this->tunerBankMap.insert(std::make_pair(tunerID, std::unique_ptr<CTunerBankCtrl>(new CTunerBankCtrl(
+						tunerID, nameList[i].first.c_str(), min(epgCount, count), chList, this->notifyManager, this->epgDBManager))));
+				}
+			}
+		}
+	}
+
+	this->lastCheckEpgCap = GetNowI64Time();
 	this->reserveText.ParseText(fs_path(settingPath).append(RESERVE_TEXT_NAME).c_str());
 
 	ReloadSetting(s);
@@ -92,7 +124,7 @@ vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		list.resize(list.size() + 1);
 		list.back().tunerID = itr->first;
-		this->tunerManager.GetBonFileName(itr->first, list.back().tunerName);
+		list.back().tunerName = itr->second->GetBonFileName();
 		list.back().reserveList = itr->second->GetReserveIDList();
 	}
 	list.resize(list.size() + 1);
@@ -602,7 +634,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 					//チューナID固定
 					map<DWORD, vector<CHK_RESERVE_DATA>>::iterator itrBank = bankResMap.find(itr->second->recSetting.tunerID); 
 					if( itrBank != bankResMap.end() &&
-					    this->tunerManager.IsSupportService(itrBank->first, itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
+					    this->tunerBankMap.find(itrBank->first)->second->GetCh(itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
 						CHK_RESERVE_DATA testItem = item;
 						ChkInsertStatus(itrBank->second, testItem, false);
 						if( testItem.cutEndTime - testItem.cutStartTime > CTunerBankCtrl::READY_MARGIN * I64_1SEC ){
@@ -621,7 +653,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 					for( map<DWORD, vector<CHK_RESERVE_DATA>>::iterator jtr = bankResMap.begin(); jtr != bankResMap.end(); jtr++ ){
 						//NGチューナを除く
 						if( std::find(itr->second->ngTunerIDList.begin(), itr->second->ngTunerIDList.end(), jtr->first) == itr->second->ngTunerIDList.end() &&
-						    this->tunerManager.IsSupportService(jtr->first, itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
+						    this->tunerBankMap.find(jtr->first)->second->GetCh(itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
 							CHK_RESERVE_DATA testItem = item;
 							__int64 cost = ChkInsertStatus(jtr->second, testItem, false);
 							if( cost < costMin ){
@@ -1400,18 +1432,22 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 	return std::make_pair(CHECK_NO_ACTION, 0);
 }
 
-vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
+vector<CTunerBankCtrl*> CReserveManager::GetEpgCapTunerList(__int64 now) const
 {
 	CBlockLock lock(&this->managerLock);
 
 	//利用可能なチューナの抽出
-	vector<pair<vector<DWORD>, WORD>> tunerIDList = this->tunerManager.GetEnumEpgCapTuner();
-	vector<DWORD> epgCapIDList;
-	for( size_t i = 0; i < tunerIDList.size(); i++ ){
-		WORD epgCapMax = tunerIDList[i].second;
+	vector<CTunerBankCtrl*> tunerList;
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); ){
+		DWORD bonID = itr->first >> 16;
+		WORD epgCapMax = itr->second->GetEpgCapMaxOfThisBon();
+		WORD epgCapCount = 0;
 		WORD ngCapCount = 0;
-		for( size_t j = 0; j < tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
-			auto itr = this->tunerBankMap.find(tunerIDList[i].first[j]);
+		WORD tunerCount = 0;
+		for( ; itr != this->tunerBankMap.end() && itr->first >> 16 == bonID; itr++, tunerCount++ ){
+			if( epgCapCount == epgCapMax ){
+				continue;
+			}
 			CTunerBankCtrl::TR_STATE state = itr->second->GetState();
 			__int64 minTime = itr->second->GetNearestReserveTime();
 			if( this->setting.ngEpgCapTime != 0 && (state != CTunerBankCtrl::TR_IDLE || minTime < now + this->setting.ngEpgCapTime * 60 * I64_1SEC) ){
@@ -1419,23 +1455,23 @@ vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
 				ngCapCount++;
 			}else if( state == CTunerBankCtrl::TR_IDLE && minTime > now + this->setting.ngEpgCapTunerTime * 60 * I64_1SEC ){
 				//使えるチューナ
-				epgCapIDList.push_back(itr->first);
-				epgCapMax--;
+				tunerList.push_back(itr->second.get());
+				epgCapCount++;
 			}
 		}
-		if( tunerIDList[i].second > tunerIDList[i].first.size() - ngCapCount ){
-			epgCapIDList.clear();
+		if( epgCapMax > tunerCount - ngCapCount ){
+			tunerList.clear();
 			break;
 		}
 	}
-	return epgCapIDList;
+	return tunerList;
 }
 
 bool CReserveManager::RequestStartEpgCap()
 {
 	CBlockLock lock(&this->managerLock);
 
-	if( this->epgCapRequested || this->epgCapWork || GetEpgCapTunerIDList(GetNowI64Time()).empty() ){
+	if( this->epgCapRequested || this->epgCapWork || GetEpgCapTunerList(GetNowI64Time()).empty() ){
 		return false;
 	}
 	this->epgCapRequested = true;
@@ -1454,8 +1490,8 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 			int basicOnlyFlags = -1;
 			__int64 capTime = this->epgCapRequested ? now : GetNextEpgCapTime(now, &basicOnlyFlags);
 			if( capTime <= now + 60 * I64_1SEC ){
-				vector<DWORD> epgCapIDList = GetEpgCapTunerIDList(now);
-				if( epgCapIDList.empty() == false ){
+				vector<CTunerBankCtrl*> tunerList = GetEpgCapTunerList(now);
+				if( tunerList.empty() == false ){
 					if( capTime > now ){
 						//取得開始1分前
 						//この通知はあくまで参考。開始しないのに通知する可能性も、その逆もありえる
@@ -1483,7 +1519,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 						LONGLONG lastKey = -1;
 						bool inONIDs[16] = {};
 						size_t listIndex = 0;
-						vector<vector<SET_CH_INFO>> epgCapChList(epgCapIDList.size());
+						vector<vector<SET_CH_INFO>> epgCapChList(tunerList.size());
 						for( map<LONGLONG, CH_DATA5>::const_iterator itr = this->chUtil.GetMap().begin(); itr != this->chUtil.GetMap().end(); itr++ ){
 							if( itr->second.epgCapFlag == FALSE ||
 							    lastKey >= 0 && lastKey == itr->first >> 16 ||
@@ -1500,18 +1536,18 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							addCh.SID = itr->second.serviceID;
 							addCh.useSID = TRUE;
 							addCh.useBonCh = FALSE;
-							for( size_t i = 0; i < epgCapIDList.size(); i++ ){
-								if( this->tunerManager.IsSupportService(epgCapIDList[listIndex], addCh.ONID, addCh.TSID, addCh.SID) ){
+							for( size_t i = 0; i < tunerList.size(); i++ ){
+								if( tunerList[listIndex]->GetCh(addCh.ONID, addCh.TSID, addCh.SID) ){
 									epgCapChList[listIndex].push_back(addCh);
 									inONIDs[min<size_t>(addCh.ONID, _countof(inONIDs) - 1)] = true;
-									listIndex = (listIndex + 1) % epgCapIDList.size();
+									listIndex = (listIndex + 1) % tunerList.size();
 									break;
 								}
-								listIndex = (listIndex + 1) % epgCapIDList.size();
+								listIndex = (listIndex + 1) % tunerList.size();
 							}
 						}
-						for( size_t i = 0; i < epgCapIDList.size(); i++ ){
-							this->tunerBankMap[epgCapIDList[i]]->StartEpgCap(epgCapChList[i]);
+						for( size_t i = 0; i < tunerList.size(); i++ ){
+							tunerList[i]->StartEpgCap(epgCapChList[i]);
 						}
 						this->epgCapWork = true;
 						this->epgCapSetTimeSync = false;
@@ -1706,20 +1742,38 @@ bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DW
 
 vector<DWORD> CReserveManager::GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const
 {
-	//tunerManagerは排他制御の対象外
-	return this->tunerManager.GetSupportServiceTuner(onid, tsid, sid);
+	//tunerBankMapそのものは排他制御の対象外
+	vector<DWORD> idList;
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetCh(onid, tsid, sid) ){
+			idList.push_back(itr->first);
+		}
+	}
+	return idList;
 }
 
 bool CReserveManager::GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const
 {
-	return this->tunerManager.GetCh(tunerID, onid, tsid, sid, space, ch);
+	auto itr = this->tunerBankMap.find(tunerID);
+	if( itr != this->tunerBankMap.end() ){
+		const CH_DATA4* chData = itr->second->GetCh(onid, tsid, sid);
+		if( chData ){
+			if( space ){
+				*space = chData->space;
+			}
+			if( ch ){
+				*ch = chData->ch;
+			}
+			return true;
+		}
+	}
+	return false;
 }
 
 wstring CReserveManager::GetTunerBonFileName(DWORD tunerID) const
 {
-	wstring bonFileName;
-	this->tunerManager.GetBonFileName(tunerID, bonFileName);
-	return bonFileName;
+	auto itr = this->tunerBankMap.find(tunerID);
+	return itr != this->tunerBankMap.end() ? itr->second->GetBonFileName() : wstring();
 }
 
 bool CReserveManager::IsOpenTuner(DWORD tunerID) const
@@ -1737,7 +1791,7 @@ pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, const 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV && itr->second->GetNWTVID() == id ){
 			//すでに起動しているので使えたら使う
-			if( this->tunerManager.IsSupportService(itr->first, chInfo.ONID, chInfo.TSID, chInfo.SID) ){
+			if( itr->second->GetCh(chInfo.ONID, chInfo.TSID, chInfo.SID) ){
 				itr->second->OpenNWTV(id, nwUdp, nwTcp, chInfo);
 				return std::make_pair(true, itr->second->GetProcessID());
 			}
@@ -1746,11 +1800,10 @@ pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, const 
 		}
 	}
 	for( size_t i = 0; i < tunerIDList.size(); i++ ){
-		if( this->tunerManager.IsSupportService(tunerIDList[i], chInfo.ONID, chInfo.TSID, chInfo.SID) ){
-			auto itr = this->tunerBankMap.find(tunerIDList[i]);
+		auto itr = this->tunerBankMap.find(tunerIDList[i]);
+		if( itr != this->tunerBankMap.end() && itr->second->GetCh(chInfo.ONID, chInfo.TSID, chInfo.SID) ){
 			//別IDのネットワークモードを邪魔しない
-			if( itr != this->tunerBankMap.end() &&
-			    itr->second->GetState() != CTunerBankCtrl::TR_NWTV &&
+			if( itr->second->GetState() != CTunerBankCtrl::TR_NWTV &&
 			    itr->second->OpenNWTV(id, nwUdp, nwTcp, chInfo) ){
 				return std::make_pair(true, itr->second->GetProcessID());
 			}

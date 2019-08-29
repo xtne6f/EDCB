@@ -104,9 +104,6 @@
     <ClInclude Include="..\..\Common\TimeUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="TunerManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -333,9 +330,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\TimeUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="TunerManager.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>

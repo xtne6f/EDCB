@@ -78,7 +78,6 @@ $(TARGET): $(addsuffix .obj, \
   stdafx.cpp \
   SyoboiCalUtil.cpp \
   TunerBankCtrl.cpp \
-  TunerManager.cpp \
   UpnpSsdpServer.cpp \
   EpgTimerSrv.rc \
   )
