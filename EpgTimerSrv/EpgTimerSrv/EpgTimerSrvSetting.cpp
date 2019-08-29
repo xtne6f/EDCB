@@ -2,12 +2,14 @@
 #include "EpgTimerSrvSetting.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
+#ifdef _WIN32
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "resource.h"
 #include <windowsx.h>
 #include <shlobj.h>
 #include <commdlg.h>
+#endif
 
 CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 {
@@ -34,7 +36,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	int count = GetPrivateProfileInt(L"NO_SUSPEND", L"Count", INT_MAX, iniPath);
 	if( count == INT_MAX ){
 		//ñ¢ê›íË
-		s.noSuspendExeList.push_back(L"EpgDataCap_Bon.exe");
+		s.noSuspendExeList.push_back(L"EpgDataCap_Bon");
 	}else{
 		for( int i = 0; i < count; i++ ){
 			WCHAR key[16];
@@ -71,11 +73,17 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 			WCHAR key[32];
 			swprintf_s(key, L"%d", i);
 			wstring buff = GetPrivateProfileToString(L"EPG_CAP", key, L"", iniPath);
-			//ójì˙éwíËê⁄îˆé´(w1=Mon,...,w7=Sun)
-			unsigned int hour, minute, wday = 0;
-			if( swscanf_s(buff.c_str(), L"%u:%uw%u", &hour, &minute, &wday) >= 2 ){
+			LPWSTR endp;
+			int hour = (int)(wcstoul(buff.c_str(), &endp, 10) % 24);
+			if( *endp == L':' ){
+				int minute = (int)(wcstoul(endp + 1, &endp, 10) % 60);
+				int wday = 0;
+				if( *endp == L'w' ){
+					//ójì˙éwíËê⁄îˆé´(w1=Mon,...,w7=Sun)
+					wday = (int)(wcstoul(endp + 1, NULL, 10) % 8);
+				}
 				s.epgCapTimeList.resize(s.epgCapTimeList.size() + 1);
-				s.epgCapTimeList.back().second.first = ((wday * 24 + hour) * 60 + minute) % (1440 * 8);
+				s.epgCapTimeList.back().second.first = (wday * 24 + hour) * 60 + minute;
 				//óLå¯Ç©
 				swprintf_s(key, L"%dSelect", i);
 				s.epgCapTimeList.back().first = GetPrivateProfileInt(L"EPG_CAP", key, 0, iniPath) != 0;
@@ -123,7 +131,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.recInfo2RegExp = GetPrivateProfileToString(L"SET", L"RecInfo2RegExp", L"", iniPath);
 	s.errEndBatRun = GetPrivateProfileInt(L"SET", L"ErrEndBatRun", 0, iniPath) != 0;
 	s.recNamePlugIn = GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniPath) != 0;
-	s.recNamePlugInFile = GetPrivateProfileToString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", iniPath);
+	s.recNamePlugInFile = GetPrivateProfileToString(L"SET", L"RecNamePlugInFile", L"", iniPath);
 	s.noChkYen = GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath) != 0;
 	s.delReserveMode = GetPrivateProfileInt(L"SET", L"DelReserveMode", 2, iniPath);
 	s.recAppWakeTime = GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath);
@@ -158,7 +166,11 @@ vector<pair<wstring, wstring>> CEpgTimerSrvSetting::EnumBonFileName(LPCWSTR sett
 				bon.pop_back();
 			}
 			if( bon.empty() == false ){
+#ifdef _WIN32
 				bon += L".dll";
+#else
+				bon += L".so";
+#endif
 				if( std::find_if(ret.begin(), ret.end(), [&](const pair<wstring, wstring>& a) {
 				        return UtilComparePath(a.first.c_str(), bon.c_str()) == 0; }) == ret.end() ){
 					ret.push_back(std::make_pair(std::move(bon), std::move(findData.fileName)));
@@ -179,6 +191,8 @@ wstring CEpgTimerSrvSetting::CheckTSExtension(const wstring& ext)
 	}
 	return ext;
 }
+
+#ifdef _WIN32
 
 vector<wstring> CEpgTimerSrvSetting::EnumRecNamePlugInFileName()
 {
@@ -510,7 +524,13 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 		}
 	}
 	if( plugInSel == plugInList.size() ){
-		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO_SET_RECNAME_PLUGIN), setting.recNamePlugInFile.c_str());
+		if( setting.recNamePlugInFile.empty() && plugInList.empty() == false ){
+			//ñ¢ê›íËÇ»ÇÃÇ≈êÊì™ÇÃåÛï‚Ç…Ç∑ÇÈ
+			plugInSel = 0;
+		}else{
+			//åÛï‚Çí«â¡
+			ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO_SET_RECNAME_PLUGIN), setting.recNamePlugInFile.c_str());
+		}
 	}
 	ComboBox_SetCurSel(GetDlgItem(hwnd, IDC_COMBO_SET_RECNAME_PLUGIN), plugInSel);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_CHK_YEN, setting.noChkYen);
@@ -1258,3 +1278,5 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 	}
 	return FALSE;
 }
+
+#endif //_WIN32
