@@ -63,8 +63,8 @@ public:
 		int processPriority;
 		bool keepDisk;
 		wstring tsExt;
-		bool enableCaption; //LoadSetting()‚Å‰Šú‰»‚³‚ê‚È‚¢
-		bool enableData; //LoadSetting()‚Å‰Šú‰»‚³‚ê‚È‚¢
+		bool enableCaption;
+		bool enableData;
 	};
 	static SETTING LoadSetting(LPCWSTR iniPath);
 	static vector<pair<wstring, wstring>> EnumBonFileName(LPCWSTR settingPath);

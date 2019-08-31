@@ -145,6 +145,8 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.processPriority = GetPrivateProfileInt(L"SET", L"ProcessPriority", 3, iniPath);
 	s.keepDisk = GetPrivateProfileInt(L"SET", L"KeepDisk", 1, iniPath) != 0;
 	s.tsExt = CheckTSExtension(GetPrivateProfileToString(L"SET", L"TSExt", L".ts", iniPath));
+	s.enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, iniPath) != 0;
+	s.enableData = GetPrivateProfileInt(L"SET", L"Data", 0, iniPath) != 0;
 	return s;
 }
 
@@ -496,6 +498,8 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_NW, setting.recNW);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_KEEP_DISK, setting.keepDisk);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_OVERWRITE, setting.recOverWrite);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_CAPTION, setting.enableCaption);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_DATA, setting.enableData);
 
 	//—\–ñî•ñŠÇ—
 	hwnd = this->hwndReserve;
@@ -770,6 +774,8 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WritePrivateProfileInt(L"SET", L"RecNW", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_NW), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"KeepDisk", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_KEEP_DISK), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecOverWrite", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_OVERWRITE), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"Caption", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_CAPTION), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"Data", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_DATA), iniPath.c_str());
 
 	//—\–ñî•ñŠÇ—
 	hwnd = this->hwndReserve;
