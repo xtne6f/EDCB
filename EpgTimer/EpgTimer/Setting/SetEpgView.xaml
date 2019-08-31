@@ -348,7 +348,7 @@
                 <Grid>
                     <RadioButton Content="デフォルト表示" HorizontalAlignment="Left" IsChecked="{Binding IsChecked, ElementName=radioButton_1_cust, Converter={StaticResource convert}, ConverterParameter=not}" Margin="6,6,0,0" VerticalAlignment="Top" />
                     <RadioButton Content="カスタマイズ表示" HorizontalAlignment="Left" IsChecked="{Binding UseCustomEpgView}" Name="radioButton_1_cust" Margin="6,28,0,0" VerticalAlignment="Top" />
-                    <GroupBox Header="カスタマイズ表示設定" Height="225" Margin="1,50,6,0" VerticalAlignment="Top" Width="763">
+                    <GroupBox Header="カスタマイズ表示設定" Height="225" IsEnabled="{Binding IsChecked, ElementName=radioButton_1_cust}" Margin="6,50,6,0" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="表示タブ" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
                             <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" />
