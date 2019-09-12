@@ -16,20 +16,20 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <CheckBox Content="プログラム予約化（一度プログラム予約化したものは元に戻せません。番組を特定できなくなるため追従もできません。）" Height="16" HorizontalAlignment="Left" Margin="12,12,0,0" Name="checkBox_program" VerticalAlignment="Top" Click="checkBox_program_Click" />
-                    <Label Content="番組名" Height="28" HorizontalAlignment="Left" Margin="12,34,0,0" Name="label1" VerticalAlignment="Top" />
-                    <TextBox Height="24" Margin="80,34,0,0" Name="textBox_title" VerticalAlignment="Top" HorizontalAlignment="Left" Width="270" />
-                    <Label Content="サービス" HorizontalAlignment="Left" Margin="364,34,0,0" Name="label2" Height="28" VerticalAlignment="Top" />
-                    <ComboBox Height="24" Margin="428,34,0,0" Name="comboBox_service" VerticalAlignment="Top" HorizontalAlignment="Left" Width="258" />
-                    <Label Content="開始日時" Height="28" HorizontalAlignment="Left" Margin="12,60,0,0" Name="label3" VerticalAlignment="Top" />
-                    <Label Content="終了日時" Height="28" HorizontalAlignment="Left" Margin="364,60,0,0" Name="label4" VerticalAlignment="Top" />
-                    <DatePicker Height="25" HorizontalAlignment="Left" Margin="80,61,0,0" Name="datePicker_start" VerticalAlignment="Top" Width="115" SelectedDateFormat="Short" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="200,62,0,0" Name="comboBox_sh" VerticalAlignment="Top" Width="44" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="247,62,0,0" Name="comboBox_sm" VerticalAlignment="Top" Width="44" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="294,62,0,0" Name="comboBox_ss" VerticalAlignment="Top" Width="44" />
-                    <DatePicker Height="25" HorizontalAlignment="Left" Margin="428,61,0,0" Name="datePicker_end" VerticalAlignment="Top" Width="115" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="548,62,0,0" Name="comboBox_eh" VerticalAlignment="Top" Width="44" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="595,62,0,0" Name="comboBox_em" VerticalAlignment="Top" Width="44" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="642,62,0,0" Name="comboBox_es" VerticalAlignment="Top" Width="44" />
+                    <Label Content="番組名" Height="28" HorizontalAlignment="Left" Margin="12,34,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="80,34,0,0" Name="textBox_title" VerticalAlignment="Top" Width="270" />
+                    <Label Content="サービス" HorizontalAlignment="Left" Margin="364,34,0,0" Height="28" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="428,34,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="258" />
+                    <Label Content="開始日時" Height="28" HorizontalAlignment="Left" Margin="12,60,0,0" VerticalAlignment="Top" />
+                    <Label Content="終了日時" Height="28" HorizontalAlignment="Left" Margin="364,60,0,0" VerticalAlignment="Top" />
+                    <DatePicker Height="25" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="80,61,0,0" Name="datePicker_start" VerticalAlignment="Top" Width="115" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="200,62,0,0" Name="comboBox_sh" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="247,62,0,0" Name="comboBox_sm" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="294,62,0,0" Name="comboBox_ss" VerticalAlignment="Top" Width="44" />
+                    <DatePicker Height="25" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="428,61,0,0" Name="datePicker_end" VerticalAlignment="Top" Width="115" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="548,62,0,0" Name="comboBox_eh" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="595,62,0,0" Name="comboBox_em" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_program}" Margin="642,62,0,0" Name="comboBox_es" VerticalAlignment="Top" Width="44" />
                     <my:RecSettingView x:Name="recSettingView" Grid.Row="1" />
                 </Grid>
             </TabItem>
