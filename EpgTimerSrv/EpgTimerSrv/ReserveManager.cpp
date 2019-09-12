@@ -1333,7 +1333,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			if( itrRet->type != CTunerBankCtrl::CHECK_ERR_PASS ){
 				batWorkList.push_back(batInfo);
 				if( shutdownMode ){
-					*shutdownMode = MAKEWORD(itrRes->second.recSetting.suspendMode, itrRes->second.recSetting.rebootFlag);
+					*shutdownMode = itrRes->second.recSetting.rebootFlag << 8 | itrRes->second.recSetting.suspendMode;
 				}
 			}
 			batInfo.batFilePath.assign(itrRes->second.recSetting.batFilePath, 0, itrRes->second.recSetting.batFilePath.find(L'*'));
@@ -1597,6 +1597,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 					SYSTEMTIME setTime;
 					ConvertSystemTime(now + delay - I64_UTIL_TIMEZONE, &setTime);
 					LPCWSTR debug = L" err ";
+#ifdef _WIN32
 					if( SetSystemTime(&setTime) ){
 						debug = L" ";
 					}else{
@@ -1610,6 +1611,14 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							}
 						}
 					}
+#else
+					char cmd[128];
+					sprintf_s(cmd, "/usr/bin/sudo -n /bin/date -s %d-%02d-%02dT%02d:%02d:%02dZ",
+					          setTime.wYear, setTime.wMonth, setTime.wDay, setTime.wHour, setTime.wMinute, setTime.wSecond);
+					if( system(cmd) == 0 ){
+						debug = L" ";
+					}
+#endif
 					_OutputDebugString(L"šSetSystemTime%ls%d\r\n", debug, (int)(delay / I64_1SEC));
 					this->epgCapSetTimeSync = true;
 				}

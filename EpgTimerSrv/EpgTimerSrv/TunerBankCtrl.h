@@ -178,8 +178,11 @@ private:
 	CNotifyManager& notifyManager;
 	CEpgDBManager& epgDBManager;
 	map<DWORD, TUNER_RESERVE_WORK> reserveMap;
-	HANDLE hTunerProcess;
 	DWORD tunerPid;
+#ifdef _WIN32
+	//tunerPidÇ™îÒ0Ç≈óLå¯ÅA0Ç≈ñ≥å¯
+	HANDLE hTunerProcess;
+#endif
 	WORD tunerONID;
 	WORD tunerTSID;
 	bool tunerChLocked;
@@ -202,7 +205,7 @@ private:
 	bool saveProgramInfoAsUtf8;
 	bool saveErrLog;
 	bool recOverWrite;
-	DWORD processPriority;
+	int processPriority;
 	bool keepDisk;
 	bool recNameNoChkYen;
 	wstring recNamePlugInFileName;
