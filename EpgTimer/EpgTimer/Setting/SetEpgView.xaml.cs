@@ -129,7 +129,8 @@ namespace EpgTimer.Setting
                 button12.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x0F]));
                 button13.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x10]));
                 button_service.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ServiceCustColor));
-                button_epgBack.Background = new SolidColorBrush(Color.FromRgb(epgSetting.EpgBackColorR, epgSetting.EpgBackColorG, epgSetting.EpgBackColorB));
+                button_epgBack.Background = new SolidColorBrush(Color.FromArgb(epgSetting.EpgBackColorA, epgSetting.EpgBackColorR,
+                                                                               epgSetting.EpgBackColorG, epgSetting.EpgBackColorB));
                 button14.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x11]));
                 button15.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x12]));
                 button16.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x13]));
@@ -184,6 +185,7 @@ namespace EpgTimer.Setting
                 epgSetting.ContentCustColorList[0x0F] = ColorDef.ToUInt(((SolidColorBrush)button12.Background).Color);
                 epgSetting.ContentCustColorList[0x10] = ColorDef.ToUInt(((SolidColorBrush)button13.Background).Color);
                 epgSetting.ServiceCustColor = ColorDef.ToUInt(((SolidColorBrush)button_service.Background).Color);
+                epgSetting.EpgBackColorA = ((SolidColorBrush)button_epgBack.Background).Color.A;
                 epgSetting.EpgBackColorR = ((SolidColorBrush)button_epgBack.Background).Color.R;
                 epgSetting.EpgBackColorG = ((SolidColorBrush)button_epgBack.Background).Color.G;
                 epgSetting.EpgBackColorB = ((SolidColorBrush)button_epgBack.Background).Color.B;

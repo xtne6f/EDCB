@@ -266,7 +266,7 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Label Content="番組表背景" HorizontalAlignment="Left" Margin="400,223,0,0" VerticalAlignment="Top" />
+                            <Label Content="番組表背景 (A値は強調表示用)" HorizontalAlignment="Left" Margin="400,223,0,0" VerticalAlignment="Top" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="292,55,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
@@ -348,7 +348,7 @@
                 <Grid>
                     <RadioButton Content="デフォルト表示" HorizontalAlignment="Left" IsChecked="{Binding IsChecked, ElementName=radioButton_1_cust, Converter={StaticResource convert}, ConverterParameter=not}" Margin="6,6,0,0" VerticalAlignment="Top" />
                     <RadioButton Content="カスタマイズ表示" HorizontalAlignment="Left" IsChecked="{Binding UseCustomEpgView}" Name="radioButton_1_cust" Margin="6,28,0,0" VerticalAlignment="Top" />
-                    <GroupBox Header="カスタマイズ表示設定" Height="225" Margin="1,50,6,0" VerticalAlignment="Top" Width="763">
+                    <GroupBox Header="カスタマイズ表示設定" Height="225" IsEnabled="{Binding IsChecked, ElementName=radioButton_1_cust}" Margin="6,50,6,0" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="表示タブ" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
                             <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" />

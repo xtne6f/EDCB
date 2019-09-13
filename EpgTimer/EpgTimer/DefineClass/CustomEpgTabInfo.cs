@@ -20,13 +20,9 @@ namespace EpgTimer
         {
             ViewServiceList = new List<UInt64>();
             ViewContentKindList = new List<UInt16>();
-            ViewMode = 0;
-            NeedTimeOnlyBasic = false;
-            NeedTimeOnlyWeek = false;
             StartTimeWeek = 4;
-            SearchMode = false;
+            HighlightContentKind = true;
             SearchKey = new EpgSearchKeyInfo();
-            FilterEnded = false;
         }
         public String TabName
         {
@@ -64,6 +60,11 @@ namespace EpgTimer
             set;
         }
         public List<UInt16> ViewContentKindList
+        {
+            get;
+            set;
+        }
+        public bool HighlightContentKind
         {
             get;
             set;
