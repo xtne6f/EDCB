@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.IO;
 using System.Threading;
@@ -15,7 +16,7 @@ namespace EpgTimer
         private Thread workerThread = null;
         private AutoResetEvent stopEvent = null;
 
-        public static void SendMagicPacket(byte[] physicalAddress)
+        public static bool SendMagicPacket(byte[] physicalAddress, out int ifCount, out int ifTotal)
         {
             byte[] dgram = new byte[6 + physicalAddress.Length * 16];
             for (int i = 0; i < 6; i++)
@@ -27,9 +28,22 @@ namespace EpgTimer
                 physicalAddress.CopyTo(dgram, 6 + physicalAddress.Length * i);
             }
 
-            foreach (var adapter in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+            ifCount = 0;
+            ifTotal = 0;
+            NetworkInterface[] adapters;
+            try
             {
-                if (adapter.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                adapters = NetworkInterface.GetAllNetworkInterfaces();
+            }
+            catch (NetworkInformationException)
+            {
+                return false;
+            }
+
+            foreach (NetworkInterface adapter in adapters)
+            {
+                if (adapter.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                    adapter.OperationalStatus == OperationalStatus.Up)
                 {
                     foreach (IPAddress addr in adapter.GetIPProperties().UnicastAddresses.Select(a => a.Address))
                     {
@@ -46,25 +60,38 @@ namespace EpgTimer
                                 //intended port, then the broadcast will be sent out on all interfaces to that port."だが恐らく嘘で、実際には1つのI/Fから送信される。
                                 //送信元I/Fを限定して個別に送信させるため、送信先をブロードキャストアドレスにするか、明示的にbindして送信元を示す必要がある。
                                 //送信元Portはエフェメラルでよい
-                                using (var client = new UdpClient(new IPEndPoint(addr, 0)))
+                                try
                                 {
-                                    client.EnableBroadcast = true;
-                                    //送信先Portは7か9が多い
-                                    client.Send(dgram, dgram.Length, new IPEndPoint(IPAddress.Broadcast, 9));
+                                    using (var client = new UdpClient(new IPEndPoint(addr, 0)))
+                                    {
+                                        client.EnableBroadcast = true;
+                                        //送信先Portは7か9が多い
+                                        client.Send(dgram, dgram.Length, new IPEndPoint(IPAddress.Broadcast, 9));
+                                    }
+                                    ifCount++;
                                 }
+                                catch (SocketException) { }
+                                ifTotal++;
                             }
                         }
                         else if (addr.AddressFamily == AddressFamily.InterNetworkV6 && addr.IsIPv6LinkLocal)
                         {
                             //同一リンク内
-                            using (var client = new UdpClient(new IPEndPoint(addr, 0)))
+                            try
                             {
-                                client.Send(dgram, dgram.Length, new IPEndPoint(IPAddress.Parse("ff02::1"), 9));
+                                using (var client = new UdpClient(new IPEndPoint(addr, 0)))
+                                {
+                                    client.Send(dgram, dgram.Length, new IPEndPoint(IPAddress.Parse("ff02::1"), 9));
+                                }
+                                ifCount++;
                             }
+                            catch (SocketException) { }
+                            ifTotal++;
                         }
                     }
                 }
             }
+            return true;
         }
 
         public bool ConnectServer(IPAddress srvIP, uint srvPort, uint waitPort, Func<uint, byte[], Tuple<ErrCode, byte[], uint>> cmdProc)

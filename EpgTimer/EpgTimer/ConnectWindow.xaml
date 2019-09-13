@@ -14,5 +14,6 @@
         <Label Content="MACアドレス" Height="28" HorizontalAlignment="Left" Margin="12,124,0,0" Name="label4" VerticalAlignment="Top" />
         <TextBox Height="24" HorizontalAlignment="Left" InputMethod.PreferredImeState="Off" Margin="102,126,0,0" Name="textBox_mac" VerticalAlignment="Top" Width="170" />
         <Label Content="（xx-xx-xx-xx-xx-xx）" Height="28" HorizontalAlignment="Left" Margin="283,124,0,0" Name="label5" VerticalAlignment="Top" />
+        <Label Content="" Height="28" HorizontalAlignment="Left" Margin="170,156,0,0" Name="label_wakeResult" VerticalAlignment="Top" />
     </Grid>
 </Window>

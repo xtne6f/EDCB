@@ -68,12 +68,21 @@ namespace EpgTimer
                 }
                 if (macAddress != null)
                 {
-                    NWConnect.SendMagicPacket(macAddress);
+                    int ifCount;
+                    int ifTotal;
+                    if (NWConnect.SendMagicPacket(macAddress, out ifCount, out ifTotal))
+                    {
+                        label_wakeResult.Content = (ifCount > 0 ? "送信しました" : "送信できませんでした") + "(" + ifCount + "/" + ifTotal + "interfaces)";
+                    }
+                    else
+                    {
+                        label_wakeResult.Content = "Error! 送信できません";
+                    }
                     Settings.Instance.NWMacAdd = textBox_mac.Text;
                     return;
                 }
             }
-            MessageBox.Show("書式は「xx-xx-xx-xx-xx-xx」です");
+            label_wakeResult.Content = "Error! 書式が異常です";
         }
     }
 }
