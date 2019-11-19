@@ -61,8 +61,6 @@ void CEpgDataCap_BonMain::ReloadSetting()
 {
 	fs_path appIniPath = GetModuleIniPath();
 
-	this->bonCtrl.SetBonDriverFolder(GetModulePath().replace_filename(BON_DLL_FOLDER).c_str());
-
 	this->recFolderList.clear();
 	for( int i = 0; ; i++ ){
 		this->recFolderList.push_back(GetRecFolderPath(i).native());
@@ -141,25 +139,12 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	this->openWait = (DWORD)GetPrivateProfileInt( L"SET", L"OpenWait", 200, appIniPath.c_str() );
 }
 
-//BonDriverフォルダのBonDriver_*.dllを列挙
-//戻り値：
-// 検索できたBonDriver一覧
-vector<wstring> CEpgDataCap_BonMain::EnumBonDriver()
-{
-	return this->bonCtrl.EnumBonDriver();
-}
-
-//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
-//戻り値：
-// エラーコード
-//引数：
-// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
-DWORD CEpgDataCap_BonMain::OpenBonDriver(
+BOOL CEpgDataCap_BonMain::OpenBonDriver(
 	LPCWSTR bonDriverFile
 )
 {
-	DWORD ret = this->bonCtrl.OpenBonDriver(bonDriverFile, this->openWait, this->tsBuffMaxCount);
-	if( ret == NO_ERR ){
+	BOOL ret = this->bonCtrl.OpenBonDriver(bonDriverFile, this->openWait, this->tsBuffMaxCount);
+	if( ret ){
 		this->lastONID = 0xFFFF;
 		this->lastTSID = 0xFFFF;
 		this->lastSID = 0xFFFF;
@@ -204,24 +189,15 @@ BOOL CEpgDataCap_BonMain::GetOpenBonDriver(
 	return this->bonCtrl.GetOpenBonDriver(bonDriverFile);
 }
 
-//チャンネル変更
-//戻り値：
-// エラーコード
-//引数：
-// ONID			[IN]変更チャンネルのorignal_network_id
-// TSID			[IN]変更チャンネルの物理transport_stream_id
-// SID			[IN]変更チャンネルの物理service_id
-DWORD CEpgDataCap_BonMain::SetCh(
+BOOL CEpgDataCap_BonMain::SetCh(
 	WORD ONID,
 	WORD TSID,
 	WORD SID
 	)
 {
-	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
 		this->bonCtrl.StopEpgCap();
-		err = this->bonCtrl.SetCh(ONID, TSID, SID);
-		if( err == NO_ERR ){
+		if( this->bonCtrl.SetCh(ONID, TSID, SID) ){
 			this->lastONID = ONID;
 			this->lastTSID = TSID;
 			this->lastSID = SID;
@@ -233,19 +209,13 @@ DWORD CEpgDataCap_BonMain::SetCh(
 					this->bonCtrl.SetServiceID(this->nwCtrlID, this->lastSID);
 				}
 			}
+			return TRUE;
 		}
 	}
-	return err;
+	return FALSE;
 }
 
-//チャンネル変更
-//戻り値：
-// エラーコード
-//引数：
-// SID			[IN]変更チャンネルのservice_id
-// SID			[IN]変更チャンネルのspace
-// SID			[IN]変更チャンネルのch
-DWORD CEpgDataCap_BonMain::SetCh(
+BOOL CEpgDataCap_BonMain::SetCh(
 	WORD ONID,
 	WORD TSID,
 	WORD SID,
@@ -253,11 +223,9 @@ DWORD CEpgDataCap_BonMain::SetCh(
 	DWORD ch
 	)
 {
-	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
 		this->bonCtrl.StopEpgCap();
-		err = this->bonCtrl.SetCh(space, ch);
-		if( err == NO_ERR ){
+		if( this->bonCtrl.SetCh(space, ch) ){
 			this->lastONID = ONID;
 			this->lastTSID = TSID;
 			this->lastSID = SID;
@@ -269,9 +237,10 @@ DWORD CEpgDataCap_BonMain::SetCh(
 					this->bonCtrl.SetServiceID(this->nwCtrlID, this->lastSID);
 				}
 			}
+			return TRUE;
 		}
 	}
-	return err;
+	return FALSE;
 }
 
 //現在のサービス取得
@@ -664,8 +633,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		{
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				sys->CloseBonDriver();
-				if( sys->OpenBonDriver(val.c_str()) == NO_ERR ){
+				if( sys->OpenBonDriver(val.c_str()) ){
 					resParam->param = CMD_SUCCESS;
 					PostMessage(sys->msgWnd, WM_CHG_TUNER, 0, 0);
 				}

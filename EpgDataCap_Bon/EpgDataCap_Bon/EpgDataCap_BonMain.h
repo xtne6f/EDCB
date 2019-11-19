@@ -16,18 +16,13 @@ public:
 
 	//設定を行う
 	void ReloadSetting();
-	
-	//BonDriverフォルダのBonDriver_*.dllを列挙
-	//戻り値：
-	// 検索できたBonDriver一覧
-	vector<wstring> EnumBonDriver();
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
-	DWORD OpenBonDriver(
+	// bonDriverFile	[IN]BonDriverのファイル名
+	BOOL OpenBonDriver(
 		LPCWSTR bonDriverFile
 		);
 
@@ -54,12 +49,12 @@ public:
 
 	//チャンネル変更
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// ONID			[IN]変更チャンネルのorignal_network_id
 	// TSID			[IN]変更チャンネルのtransport_stream_id
 	// SID			[IN]変更チャンネルのservice_id
-	DWORD SetCh(
+	BOOL SetCh(
 		WORD ONID,
 		WORD TSID,
 		WORD SID
@@ -67,14 +62,14 @@ public:
 
 	//チャンネル変更
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// ONID			[IN]変更チャンネルのorignal_network_id
 	// TSID			[IN]変更チャンネルのtransport_stream_id
 	// SID			[IN]変更チャンネルのservice_id
 	// space		[IN]変更チャンネルのspace
 	// ch			[IN]変更チャンネルのch
-	DWORD SetCh(
+	BOOL SetCh(
 		WORD ONID,
 		WORD TSID,
 		WORD SID,

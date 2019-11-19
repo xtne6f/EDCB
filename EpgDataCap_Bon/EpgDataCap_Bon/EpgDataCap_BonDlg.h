@@ -17,7 +17,7 @@ public:
 	INT_PTR DoModal();
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 
-	void SetInitBon(LPCWSTR bonFile);
+	void SetInitBon(LPCWSTR bonFile){ iniBonDriver = bonFile; }
 	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
 	void SetIniNW(BOOL networkFlag){ iniNetwork = networkFlag; };
 	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
@@ -38,12 +38,10 @@ protected:
 	BOOL ChgTipsTaskBar(HWND wnd, UINT id, HICON icon, wstring tips);
 	void ChgIconStatus();
 
-	void ReloadBonDriver();
-	void ReloadServiceList(BOOL ini = FALSE);
+	int ReloadServiceList(int selONID = -1, int selTSID = -1, int selSID = -1);
 	void ReloadNWSet();
-	DWORD SelectBonDriver(LPCWSTR fileName, BOOL ini = FALSE);
-	DWORD SelectService(WORD ONID, WORD TSID, WORD SID);
-	DWORD SelectService(WORD ONID, WORD TSID, WORD SID,	DWORD space, DWORD ch);
+	BOOL SelectBonDriver(LPCWSTR fileName);
+	BOOL SelectService(const CH_DATA4& chData);
 // 実装
 protected:
 	HWND m_hWnd;
@@ -57,24 +55,15 @@ protected:
 	HICON iconGray;
 	BOOL minTask;
 
-	wstring moduleIniPath;
-
 	wstring iniBonDriver;
-	int initONID;
-	int initTSID;
-	int initSID;
-	int initOpenWait;
-	int initChgWait;
 	BOOL iniMin;
 	BOOL iniView;
 	BOOL iniNetwork;
 	BOOL iniUDP;
 	BOOL iniTCP;
-	int openLastCh;
 
 	CEpgDataCap_BonMain main;
 
-	vector<wstring> bonList;
 	vector<CH_DATA4> serviceList;
 
 	// 生成された、メッセージ割り当て関数

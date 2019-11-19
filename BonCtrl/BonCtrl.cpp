@@ -30,41 +30,17 @@ CBonCtrl::~CBonCtrl(void)
 	StopChScan();
 }
 
-//BonDriverフォルダを指定
-//引数：
-// bonDriverFolderPath		[IN]BonDriverフォルダパス
-void CBonCtrl::SetBonDriverFolder(
-	LPCWSTR bonDriverFolderPath
-)
-{
-	this->bonUtil.SetBonDriverFolder(bonDriverFolderPath);
-}
-
-//BonDriverフォルダのBonDriver_*.dllを列挙
-//戻り値：
-// 検索できたBonDriver一覧
-vector<wstring> CBonCtrl::EnumBonDriver()
-{
-	return this->bonUtil.EnumBonDriver();
-}
-
-//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
-//戻り値：
-// エラーコード
-//引数：
-// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
-DWORD CBonCtrl::OpenBonDriver(
+BOOL CBonCtrl::OpenBonDriver(
 	LPCWSTR bonDriverFile,
 	int openWait,
 	DWORD tsBuffMaxCount
 )
 {
 	CloseBonDriver();
-	DWORD ret = ERR_FALSE;
-	if( this->bonUtil.OpenBonDriver(bonDriverFile, [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
+	if( this->bonUtil.OpenBonDriver(GetModulePath().replace_filename(BON_DLL_FOLDER).c_str(), bonDriverFile,
+	                                [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
 	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, openWait) ){
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
-		ret = NO_ERR;
 		//解析スレッド起動
 		this->analyzeStopFlag = false;
 		this->analyzeThread = thread_(AnalyzeThread, this);
@@ -75,9 +51,10 @@ DWORD CBonCtrl::OpenBonDriver(
 		CheckFileName(tunerName);
 		this->chUtil.LoadChSet(fs_path(settingPath).append(fs_path(bonFile).stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native(),
 		                       fs_path(settingPath).append(L"ChSet5.txt").native());
+		return TRUE;
 	}
 
-	return ret;
+	return FALSE;
 }
 
 //ロード中のBonDriverのファイル名を取得する（ロード成功しているかの判定）
@@ -103,53 +80,38 @@ BOOL CBonCtrl::GetOpenBonDriver(
 	return ret;
 }
 
-//チャンネル変更
-//戻り値：
-// エラーコード
-//引数：
-// space			[IN]変更チャンネルのSpace
-// ch				[IN]変更チャンネルの物理Ch
-DWORD CBonCtrl::SetCh(
+BOOL CBonCtrl::SetCh(
 	DWORD space,
 	DWORD ch
 )
 {
 	if( this->tsOut.IsRec() == TRUE ){
-		return ERR_FALSE;
+		return FALSE;
 	}
 
 	return ProcessSetCh(space, ch, FALSE, TRUE);
 }
 
-//チャンネル変更
-//戻り値：
-// エラーコード
-//引数：
-// ONID			[IN]変更チャンネルのorignal_network_id
-// TSID			[IN]変更チャンネルのtransport_stream_id
-// SID			[IN]変更チャンネルのservice_id
-DWORD CBonCtrl::SetCh(
+BOOL CBonCtrl::SetCh(
 	WORD ONID,
 	WORD TSID,
 	WORD SID
 )
 {
 	if( this->tsOut.IsRec() == TRUE ){
-		return ERR_FALSE;
+		return FALSE;
 	}
 
 	DWORD space=0;
 	DWORD ch=0;
-
-	DWORD ret = ERR_FALSE;
 	if( this->chUtil.GetCh( ONID, TSID, SID, space, ch ) == TRUE ){
-		ret = ProcessSetCh(space, ch, FALSE, TRUE);
+		return ProcessSetCh(space, ch, FALSE, TRUE);
 	}
 
-	return ret;
+	return FALSE;
 }
 
-DWORD CBonCtrl::ProcessSetCh(
+BOOL CBonCtrl::ProcessSetCh(
 	DWORD space,
 	DWORD ch,
 	BOOL chScan,
@@ -159,9 +121,9 @@ DWORD CBonCtrl::ProcessSetCh(
 	DWORD spaceNow=0;
 	DWORD chNow=0;
 
-	DWORD ret = ERR_FALSE;
+	BOOL ret = FALSE;
 	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
-		ret = NO_ERR;
+		ret = TRUE;
 		DWORD elapsed;
 		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow || this->tsOut.IsChUnknown(&elapsed) && elapsed > 15000 ){
 			if( restartEpgCapBack ){
@@ -169,7 +131,7 @@ DWORD CBonCtrl::ProcessSetCh(
 			}
 			this->tsOut.SetChChangeEvent(chScan);
 			_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-			ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
+			ret = this->bonUtil.SetCh(space, ch);
 
 			if( restartEpgCapBack ){
 				StartBackgroundEpgCap();

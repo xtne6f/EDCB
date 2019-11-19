@@ -94,34 +94,13 @@ CBonDriverUtil::~CBonDriverUtil(void)
 	CloseBonDriver();
 }
 
-void CBonDriverUtil::SetBonDriverFolder(LPCWSTR bonDriverFolderPath)
-{
-	CBlockLock lock(&this->utilLock);
-	this->loadDllFolder = bonDriverFolderPath;
-}
-
-vector<wstring> CBonDriverUtil::EnumBonDriver()
-{
-	CBlockLock lock(&this->utilLock);
-	vector<wstring> list;
-	if( this->loadDllFolder.empty() == false ){
-		//指定フォルダのファイル一覧取得
-		EnumFindFile(fs_path(this->loadDllFolder).append(L"BonDriver*.dll"), [&](UTIL_FIND_DATA& findData) -> bool {
-			if( findData.isDir == false ){
-				//見つかったDLLを一覧に追加
-				list.push_back(std::move(findData.fileName));
-			}
-			return true;
-		});
-	}
-	return list;
-}
-
-bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFile, const std::function<void(BYTE*, DWORD, DWORD)>& recvFunc_,
+bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFile,
+                                   const std::function<void(BYTE*, DWORD, DWORD)>& recvFunc_,
                                    const std::function<void(float, int, int)>& statusFunc_, int openWait)
 {
 	CBlockLock lock(&this->utilLock);
 	CloseBonDriver();
+	this->loadDllFolder = bonDriverFolder;
 	this->loadDllFileName = bonDriverFile;
 	if( this->loadDllFolder.empty() == false && this->loadDllFileName.empty() == false ){
 		this->recvFunc = recvFunc_;
@@ -325,15 +304,7 @@ bool CBonDriverUtil::SetCh(DWORD space, DWORD ch)
 {
 	CBlockLock lock(&this->utilLock);
 	if( this->hwndDriver ){
-		if( this->initChSetFlag ){
-			//2回目以降は変化のある場合だけチャンネル設定する
-			DWORD nowSpace = 0;
-			DWORD nowCh = 0;
-			SendMessage(this->hwndDriver, WM_APP_GET_NOW_CH, (WPARAM)&nowSpace, (LPARAM)&nowCh);
-			if( nowSpace == space && nowCh == ch ){
-				return true;
-			}
-		}
+		//同一チャンネル時の命令省略はしない。必要なら利用側で行うこと
 		if( SendMessage(this->hwndDriver, WM_APP_SET_CH, (WPARAM)space, (LPARAM)ch) ){
 			this->initChSetFlag = true;
 			return true;

@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "EpgDataCap_BonDlg.h"
-
+#include "../../Common/CommonDef.h"
 #include "../../Common/TimeUtil.h"
 #include <shellapi.h>
 
@@ -39,36 +39,11 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 
 	taskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 
-	this->moduleIniPath = GetModuleIniPath().native();
-
-	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
-	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );
-	this->initSID = GetPrivateProfileInt( L"Set", L"LastSID", -1, this->moduleIniPath.c_str() );
-	this->iniBonDriver = GetPrivateProfileToString( L"Set", L"LastBon", L"", this->moduleIniPath.c_str() );
-
 	iniView = FALSE;
 	iniNetwork = TRUE;
 	iniMin = FALSE;
 	this->iniUDP = FALSE;
 	this->iniTCP = FALSE;
-	
-	this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath.c_str() );
-	this->openLastCh = GetPrivateProfileInt( L"Set", L"OpenLast", 1, this->moduleIniPath.c_str() );
-	if( this->openLastCh == 0 ){
-		if( GetPrivateProfileInt( L"Set", L"OpenFix", 0, this->moduleIniPath.c_str() ) == 1){
-			this->initONID = GetPrivateProfileInt( L"Set", L"FixONID", -1, this->moduleIniPath.c_str() );
-			this->initTSID = GetPrivateProfileInt( L"Set", L"FixTSID", -1, this->moduleIniPath.c_str() );
-			this->initSID = GetPrivateProfileInt( L"Set", L"FixSID", -1, this->moduleIniPath.c_str() );
-			this->iniBonDriver = GetPrivateProfileToString( L"Set", L"FixBon", L"", this->moduleIniPath.c_str() );
-		}else{
-			this->initONID = -1;
-			this->initTSID = -1;
-			this->initSID = -1;
-			this->iniBonDriver = L"";
-		}
-	}
-	this->initOpenWait = 0;
-	this->initChgWait = 0;
 }
 
 INT_PTR CEpgDataCap_BonDlg::DoModal()
@@ -78,20 +53,6 @@ INT_PTR CEpgDataCap_BonDlg::DoModal()
 
 
 // CEpgDataCap_BonDlg メッセージ ハンドラー
-void CEpgDataCap_BonDlg::SetInitBon(LPCWSTR bonFile)
-{
-	iniBonDriver = bonFile;
-	if( GetPrivateProfileInt( iniBonDriver.c_str(), L"OpenFix", 0, this->moduleIniPath.c_str() ) == 1){
-		OutputDebugString(L"強制サービス指定 設定値ロード");
-		this->initONID = GetPrivateProfileInt( iniBonDriver.c_str(), L"FixONID", -1, this->moduleIniPath.c_str() );
-		this->initTSID = GetPrivateProfileInt( iniBonDriver.c_str(), L"FixTSID", -1, this->moduleIniPath.c_str() );
-		this->initSID = GetPrivateProfileInt( iniBonDriver.c_str(), L"FixSID", -1, this->moduleIniPath.c_str() );
-		this->initOpenWait = GetPrivateProfileInt( iniBonDriver.c_str(), L"OpenWait", 0, this->moduleIniPath.c_str() );
-		this->initChgWait = GetPrivateProfileInt( iniBonDriver.c_str(), L"ChgWait", 0, this->moduleIniPath.c_str() );
-		_OutputDebugString(L"%d,%d,%d,%d,%d",initONID,initTSID,initSID,initOpenWait,initChgWait );
-	}
-}
-
 BOOL CEpgDataCap_BonDlg::OnInitDialog()
 {
 	// このダイアログのアイコンを設定します。アプリケーションのメイン ウィンドウがダイアログでない場合、
@@ -105,52 +66,94 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	for( int i=0; i<24; i++ ){
 		WCHAR buff[32];
 		swprintf_s(buff, L"%d", i);
-		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_H), buff);
-		ComboBox_SetItemData(GetDlgItem(IDC_COMBO_REC_H), index, i);
+		ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_H), buff);
 	}
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_H), 0);
 
 	for( int i=0; i<60; i++ ){
 		WCHAR buff[32];
 		swprintf_s(buff, L"%d", i);
-		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_M), buff);
-		ComboBox_SetItemData(GetDlgItem(IDC_COMBO_REC_M), index, i);
+		ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_M), buff);
 	}
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_M), 0);
 
-	//BonDriverの一覧取得
-	ReloadBonDriver();
+	fs_path appIniPath = GetModuleIniPath();
 
-	//BonDriverのオープン
-	DWORD err = NO_ERR;
-	if( this->iniBonDriver.empty() == false ){
-		err = SelectBonDriver(this->iniBonDriver.c_str(), TRUE);
-		Sleep(this->initOpenWait);
-	}else{
-		if( this->bonList.empty() == false ){
-			err = SelectBonDriver(this->bonList.front().c_str());
-		}else{
-			err = ERR_FALSE;
-			WCHAR log[512 + 64] = L"";
-			GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-			wcscat_s(log, L"BonDriverが見つかりませんでした\r\n");
-			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
+	this->minTask = GetPrivateProfileInt(L"SET", L"MinTask", 0, appIniPath.c_str());
+	int initONID = -1;
+	int initTSID = -1;
+	int initSID = -1;
+	int initOpenWait = 0;
+	int initChgWait = 0;
+	if( this->iniBonDriver.empty() == false &&
+	    GetPrivateProfileInt(this->iniBonDriver.c_str(), L"OpenFix", 0, appIniPath.c_str()) ){
+		OutputDebugString(L"強制サービス指定 設定値ロード");
+		initONID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixONID", -1, appIniPath.c_str());
+		initTSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixTSID", -1, appIniPath.c_str());
+		initSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixSID", -1, appIniPath.c_str());
+		initOpenWait = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"OpenWait", 0, appIniPath.c_str());
+		initChgWait = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"ChgWait", 0, appIniPath.c_str());
+		_OutputDebugString(L"%d,%d,%d,%d,%d", initONID, initTSID, initSID, initOpenWait, initChgWait);
+	}else if( GetPrivateProfileInt(L"SET", L"OpenLast", 1, appIniPath.c_str()) ){
+		initONID = GetPrivateProfileInt(L"SET", L"LastONID", -1, appIniPath.c_str());
+		initTSID = GetPrivateProfileInt(L"SET", L"LastTSID", -1, appIniPath.c_str());
+		initSID = GetPrivateProfileInt(L"SET", L"LastSID", -1, appIniPath.c_str());
+		if( this->iniBonDriver.empty() ){
+			this->iniBonDriver = GetPrivateProfileToString(L"SET", L"LastBon", L"", appIniPath.c_str());
+		}
+	}else if( GetPrivateProfileInt(L"SET", L"OpenFix", 0, appIniPath.c_str()) ){
+		initONID = GetPrivateProfileInt(L"SET", L"FixONID", -1, appIniPath.c_str());
+		initTSID = GetPrivateProfileInt(L"SET", L"FixTSID", -1, appIniPath.c_str());
+		initSID = GetPrivateProfileInt(L"SET", L"FixSID", -1, appIniPath.c_str());
+		if( this->iniBonDriver.empty() ){
+			this->iniBonDriver = GetPrivateProfileToString(L"SET", L"FixBon", L"", appIniPath.c_str());
 		}
 	}
 
-	if( err == NO_ERR ){
-		//チャンネル変更
-		if( this->initONID != -1 && this->initTSID != -1 && this->initSID != -1 ){
-			SelectService((WORD)this->initONID, (WORD)this->initTSID, (WORD)this->initSID);
-			this->initONID = -1;
-			this->initTSID = -1;
-			this->initSID = -1;
-			Sleep(this->initChgWait);
+	//BonDriverの一覧取得
+	int bonIndex = -1;
+	wstring bon;
+	EnumFindFile(GetModulePath().replace_filename(BON_DLL_FOLDER).append(L"BonDriver*.dll"), [&](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.isDir == false ){
+			int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_TUNER), findData.fileName.c_str());
+			if( bonIndex < 0 || UtilComparePath(findData.fileName.c_str(), this->iniBonDriver.c_str()) == 0 ){
+				bonIndex = index;
+				bon = std::move(findData.fileName);
+			}
+		}
+		return true;
+	});
+	if( bonIndex >= 0 ){
+		ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_TUNER), bonIndex);
+	}
+
+	//BonDriverのオープン
+	int serviceIndex = -1;
+	if( this->iniBonDriver.empty() == false ){
+		//BonDriver指定時は一覧になくてもよい
+		if( SelectBonDriver(this->iniBonDriver.c_str()) ){
+			if( initOpenWait > 0 ){
+				Sleep(initOpenWait);
+			}
+			serviceIndex = ReloadServiceList(initONID, initTSID, initSID);
+		}
+	}else{
+		if( bonIndex >= 0 ){
+			//一覧で選択されたものをオープン
+			if( SelectBonDriver(bon.c_str()) ){
+				serviceIndex = ReloadServiceList();
+			}
 		}else{
-			int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
-			if( sel != CB_ERR ){
-				DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
-				SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
+			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"BonDriverが見つかりませんでした\r\n");
+			BtnUpdate(GUI_OPEN_FAIL);
+		}
+	}
+
+	if( serviceIndex >= 0 ){
+		//チャンネル変更
+		if( SelectService(this->serviceList[serviceIndex]) ){
+			if( initONID >= 0 && initTSID >= 0 && initSID >= 0 && initChgWait > 0 ){
+				Sleep(initChgWait);
 			}
 		}
 	}
@@ -158,13 +161,13 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	//ウインドウの復元
 	WINDOWPLACEMENT Pos;
 	Pos.length = sizeof(WINDOWPLACEMENT);
-	int left = GetPrivateProfileInt(L"SET_WINDOW", L"left", INT_MAX, this->moduleIniPath.c_str());
-	int top = GetPrivateProfileInt(L"SET_WINDOW", L"top", INT_MAX, this->moduleIniPath.c_str());
+	int left = GetPrivateProfileInt(L"SET_WINDOW", L"left", INT_MAX, appIniPath.c_str());
+	int top = GetPrivateProfileInt(L"SET_WINDOW", L"top", INT_MAX, appIniPath.c_str());
 	if( left != INT_MAX && top != INT_MAX && GetWindowPlacement(m_hWnd, &Pos) ){
 		Pos.flags = 0;
 		Pos.showCmd = this->iniMin ? SW_SHOWMINNOACTIVE : SW_SHOW;
-		int width = GetPrivateProfileInt(L"SET_WINDOW", L"width", 0, this->moduleIniPath.c_str());
-		int height = GetPrivateProfileInt(L"SET_WINDOW", L"height", 0, this->moduleIniPath.c_str());
+		int width = GetPrivateProfileInt(L"SET_WINDOW", L"width", 0, appIniPath.c_str());
+		int height = GetPrivateProfileInt(L"SET_WINDOW", L"height", 0, appIniPath.c_str());
 		if( width > 0 && height > 0 ){
 			Pos.rcNormalPosition.right = left + width;
 			Pos.rcNormalPosition.bottom = top + height;
@@ -189,8 +192,8 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 				Button_SetCheck(GetDlgItem(IDC_CHECK_TCP), BST_CHECKED);
 			}
 		}else{
-			Button_SetCheck(GetDlgItem(IDC_CHECK_UDP), GetPrivateProfileInt(L"SET", L"ChkUDP", 0, this->moduleIniPath.c_str()));
-			Button_SetCheck(GetDlgItem(IDC_CHECK_TCP), GetPrivateProfileInt(L"SET", L"ChkTCP", 0, this->moduleIniPath.c_str()));
+			Button_SetCheck(GetDlgItem(IDC_CHECK_UDP), GetPrivateProfileInt(L"SET", L"ChkUDP", 0, appIniPath.c_str()));
+			Button_SetCheck(GetDlgItem(IDC_CHECK_TCP), GetPrivateProfileInt(L"SET", L"ChkTCP", 0, appIniPath.c_str()));
 		}
 	}
 
@@ -236,10 +239,12 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	Pos.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(m_hWnd, &Pos);
 
-	WritePrivateProfileInt(L"SET_WINDOW", L"top", Pos.rcNormalPosition.top, this->moduleIniPath.c_str());
-	WritePrivateProfileInt(L"SET_WINDOW", L"left", Pos.rcNormalPosition.left, this->moduleIniPath.c_str());
-	WritePrivateProfileInt(L"SET_WINDOW", L"bottom", Pos.rcNormalPosition.bottom, this->moduleIniPath.c_str());
-	WritePrivateProfileInt(L"SET_WINDOW", L"right", Pos.rcNormalPosition.right, this->moduleIniPath.c_str());
+	fs_path appIniPath = GetModuleIniPath();
+
+	WritePrivateProfileInt(L"SET_WINDOW", L"top", Pos.rcNormalPosition.top, appIniPath.c_str());
+	WritePrivateProfileInt(L"SET_WINDOW", L"left", Pos.rcNormalPosition.left, appIniPath.c_str());
+	WritePrivateProfileInt(L"SET_WINDOW", L"bottom", Pos.rcNormalPosition.bottom, appIniPath.c_str());
+	WritePrivateProfileInt(L"SET_WINDOW", L"right", Pos.rcNormalPosition.right, appIniPath.c_str());
 
 	int selONID = -1;
 	int selTSID = -1;
@@ -255,12 +260,12 @@ void CEpgDataCap_BonDlg::OnDestroy()
 		selSID = this->serviceList[index].serviceID;
 	}
 
-	WritePrivateProfileInt(L"SET", L"LastONID", selONID, this->moduleIniPath.c_str());
-	WritePrivateProfileInt(L"SET", L"LastTSID", selTSID, this->moduleIniPath.c_str());
-	WritePrivateProfileInt(L"SET", L"LastSID", selSID, this->moduleIniPath.c_str());
-	WritePrivateProfileString(L"SET", L"LastBon", bon, this->moduleIniPath.c_str());
-	WritePrivateProfileInt(L"SET", L"ChkUDP", Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)), this->moduleIniPath.c_str());
-	WritePrivateProfileInt(L"SET", L"ChkTCP", Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)), this->moduleIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"LastONID", selONID, appIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"LastTSID", selTSID, appIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"LastSID", selSID, appIniPath.c_str());
+	WritePrivateProfileString(L"SET", L"LastBon", bon, appIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"ChkUDP", Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)), appIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"ChkTCP", Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)), appIniPath.c_str());
 
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 }
@@ -356,11 +361,9 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				}else if( status == CBonCtrl::ST_COMPLETE ){
 					KillTimer(TIMER_CHSCAN_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
-					ReloadServiceList();
-					int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
-					if( sel != CB_ERR ){
-						DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
-						SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
+					int index = ReloadServiceList();
+					if( index >= 0 ){
+						SelectService(this->serviceList[index]);
 					}
 					BtnUpdate(GUI_NORMAL);
 					ChgIconStatus();
@@ -400,20 +403,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				SET_CH_INFO info;
 				CBonCtrl::JOB_STATUS status = this->main.GetEpgCapStatus(&info);
 				if( status == CBonCtrl::ST_WORKING ){
-					int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
-					if( sel != CB_ERR ){
-						DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
-						if( info.ONID != this->serviceList[index].originalNetworkID ||
-							info.TSID != this->serviceList[index].transportStreamID ||
-							info.SID != this->serviceList[index].serviceID ){
-						}
-						this->initONID = info.ONID;
-						this->initTSID = info.TSID;
-						this->initSID = info.SID;
-						ReloadServiceList();
-						this->main.SetSID(info.SID);
-					}
-
+					ReloadServiceList(info.ONID, info.TSID, info.SID);
+					this->main.SetSID(info.SID);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
 				}else if( status == CBonCtrl::ST_CANCEL ){
 					KillTimer(TIMER_EPGCAP_STATSU);
@@ -528,8 +519,15 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		{
 			wstring bonDriver = L"";
 			this->main.GetOpenBonDriver(&bonDriver);
-			this->iniBonDriver = bonDriver.c_str();
-			ReloadBonDriver();
+			for( int i = 0; i < ComboBox_GetCount(GetDlgItem(IDC_COMBO_TUNER)); i++ ){
+				WCHAR buff[512];
+				if( ComboBox_GetLBTextLen(GetDlgItem(IDC_COMBO_TUNER), i) < 512 &&
+				    ComboBox_GetLBText(GetDlgItem(IDC_COMBO_TUNER), i, buff) > 0 &&
+				    UtilComparePath(buff, bonDriver.c_str()) == 0 ){
+					ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_TUNER), i);
+					break;
+				}
+			}
 			ChgIconStatus();
 		}
 		break;
@@ -539,10 +537,7 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 			WORD TSID;
 			WORD SID;
 			this->main.GetCh(&ONID, &TSID, &SID);
-			this->initONID = ONID;
-			this->initTSID = TSID;
-			this->initSID = SID;
-			ReloadServiceList();
+			ReloadServiceList(ONID, TSID, SID);
 			ChgIconStatus();
 		}
 		break;
@@ -787,12 +782,14 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboTuner()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	WCHAR buff[512];
 	if( GetWindowText(GetDlgItem(IDC_COMBO_TUNER), buff, 512) > 0 ){
-		SelectBonDriver(buff);
-
-		int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
-		if( sel != CB_ERR ){
-			DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
-			SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
+		if( SelectBonDriver(buff) ){
+			int index = ReloadServiceList();
+			if( index >= 0 ){
+				SelectService(this->serviceList[index]);
+			}
+		}else{
+			this->serviceList.clear();
+			ComboBox_ResetContent(GetDlgItem(IDC_COMBO_SERVICE));
 		}
 	}
 	ChgIconStatus();
@@ -805,7 +802,7 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboService()
 	int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 	if( sel != CB_ERR ){
 		DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
-		SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
+		SelectService(this->serviceList[index]);
 	}
 	ChgIconStatus();
 }
@@ -828,12 +825,9 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonSet()
 		WORD TSID;
 		WORD SID;
 		this->main.GetCh(&ONID, &TSID, &SID);
-		this->initONID = ONID;
-		this->initTSID = TSID;
-		this->initSID = SID;
-		ReloadServiceList();
+		ReloadServiceList(ONID, TSID, SID);
 		
-		this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath.c_str() );
+		this->minTask = GetPrivateProfileInt(L"SET", L"MinTask", 0, GetModuleIniPath().c_str());
 	}
 }
 
@@ -857,29 +851,7 @@ void CEpgDataCap_BonDlg::ReloadNWSet()
 	this->main.SendTCP(Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)));
 }
 
-void CEpgDataCap_BonDlg::ReloadBonDriver()
-{
-	this->bonList.clear();
-	ComboBox_ResetContent(GetDlgItem(IDC_COMBO_TUNER));
-
-	this->bonList = this->main.EnumBonDriver();
-
-	int selectIndex = 0;
-	vector<wstring>::iterator itr;
-	for( itr = this->bonList.begin(); itr != this->bonList.end(); itr++ ){
-		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_TUNER), itr->c_str());
-		if( this->iniBonDriver.empty() == false ){
-			if( this->iniBonDriver.compare(*itr) == 0 ){
-				selectIndex = index;
-			}
-		}
-	}
-	if( this->bonList.size() > 0){
-		ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_TUNER), selectIndex);
-	}
-}
-
-void CEpgDataCap_BonDlg::ReloadServiceList(BOOL ini)
+int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 {
 	this->serviceList.clear();
 	ComboBox_ResetContent(GetDlgItem(IDC_COMBO_SERVICE));
@@ -891,36 +863,36 @@ void CEpgDataCap_BonDlg::ReloadServiceList(BOOL ini)
 		wcscat_s(log, L"チャンネル情報の読み込みに失敗しました\r\n");
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 	}else{
-		int selectSel = 0;
+		int selectIndex = -1;
+		int selectSel = -1;
 		for( size_t i=0; i<this->serviceList.size(); i++ ){
+			if( selectIndex < 0 ||
+			    (this->serviceList[i].originalNetworkID == selONID &&
+			     this->serviceList[i].transportStreamID == selTSID &&
+			     this->serviceList[i].serviceID == selSID) ){
+				//一覧には表示しないがリストには存在する場合もある
+				selectIndex = (int)i;
+			}
 			if( this->serviceList[i].useViewFlag == TRUE ){
 				int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_SERVICE), this->serviceList[i].serviceName.c_str());
 				ComboBox_SetItemData(GetDlgItem(IDC_COMBO_SERVICE), index, i);
-				if( this->serviceList[i].originalNetworkID == this->initONID &&
-					this->serviceList[i].transportStreamID == this->initTSID &&
-					this->serviceList[i].serviceID == this->initSID ){
-						if( ini == FALSE ){
-							this->initONID = -1;
-							this->initTSID = -1;
-							this->initSID = -1;
-						}
-						selectSel = index;
+				if( selectSel < 0 || selectIndex == (int)i ){
+					selectSel = index;
 				}
 			}
 		}
-		if( ComboBox_GetCount(GetDlgItem(IDC_COMBO_SERVICE)) > 0 ){
+		if( selectSel >= 0 ){
 			ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_SERVICE), selectSel);
 		}
-
+		return selectIndex;
 	}
-
+	return -1;
 }
 
-DWORD CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName, BOOL ini)
+BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 {
-	this->main.CloseBonDriver();
-	DWORD err = this->main.OpenBonDriver(fileName);
-	if( err != NO_ERR ){
+	BOOL ret = this->main.OpenBonDriver(fileName);
+	if( ret == FALSE ){
 		wstring log;
 		Format(log, L"BonDriverのオープンができませんでした\r\n%ls\r\n", fileName);
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
@@ -929,20 +901,12 @@ DWORD CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName, BOOL ini)
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");
 		BtnUpdate(GUI_NORMAL);
 	}
-	ReloadServiceList(ini);
-	return err;
+	return ret;
 }
 
-DWORD CEpgDataCap_BonDlg::SelectService(WORD ONID, WORD TSID, WORD SID)
+BOOL CEpgDataCap_BonDlg::SelectService(const CH_DATA4& chData)
 {
-	DWORD err = this->main.SetCh(ONID, TSID, SID);
-	return err;
-}
-
-DWORD CEpgDataCap_BonDlg::SelectService(WORD ONID, WORD TSID, WORD SID,	DWORD space, DWORD ch)
-{
-	DWORD err = this->main.SetCh(ONID, TSID, SID, space, ch);
-	return err;
+	return this->main.SetCh(chData.originalNetworkID, chData.transportStreamID, chData.serviceID, chData.space, chData.ch);
 }
 
 void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()

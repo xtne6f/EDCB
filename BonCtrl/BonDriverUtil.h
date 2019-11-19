@@ -11,24 +11,14 @@ public:
 	CBonDriverUtil(void);
 	~CBonDriverUtil(void);
 
-	//BonDriverフォルダを指定
-	//引数：
-	// bonDriverFolderPath		[IN]BonDriverフォルダパス
-	void SetBonDriverFolder(
-		LPCWSTR bonDriverFolderPath
-		);
-
-	//BonDriverフォルダのBonDriver_*.dllを列挙
-	//戻り値：
-	// 検索できたBonDriver一覧
-	vector<wstring> EnumBonDriver();
-
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//引数：
-	// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
+	// bonDriverFolder	[IN]BonDriverのフォルダパス
+	// bonDriverFile	[IN]BonDriverのファイル名
 	// recvFunc_		[IN]ストリーム受信時のコールバック関数
 	// statusFunc_		[IN]ステータス(シグナルレベル,Space,Ch)取得時のコールバック関数
 	bool OpenBonDriver(
+		LPCWSTR bonDriverFolder,
 		LPCWSTR bonDriverFile,
 		const std::function<void(BYTE*, DWORD, DWORD)>& recvFunc_,
 		const std::function<void(float, int, int)>& statusFunc_,

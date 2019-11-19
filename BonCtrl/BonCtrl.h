@@ -25,30 +25,18 @@ public:
 	CBonCtrl(void);
 	~CBonCtrl(void);
 
-	//BonDriverフォルダを指定
-	//引数：
-	// bonDriverFolderPath		[IN]BonDriverフォルダパス
-	void SetBonDriverFolder(
-		LPCWSTR bonDriverFolderPath
-		);
-
 	void SetEMMMode(BOOL enable) { this->tsOut.SetEmm(enable); }
 
 	void SetNoLogScramble(BOOL noLog) { this->tsOut.SetNoLogScramble(noLog); }
 
 	void SetParseEpgPostProcess(BOOL parsePost) { this->tsOut.SetParseEpgPostProcess(parsePost); }
 
-	//BonDriverフォルダのBonDriver_*.dllを列挙
-	//戻り値：
-	// 検索できたBonDriver一覧
-	vector<wstring> EnumBonDriver();
-
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
-	DWORD OpenBonDriver(
+	// bonDriverFile	[IN]BonDriverのファイル名
+	BOOL OpenBonDriver(
 		LPCWSTR bonDriverFile,
 		int openWait,
 		DWORD tsBuffMaxCount
@@ -69,23 +57,23 @@ public:
 
 	//チャンネル変更
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// space			[IN]変更チャンネルのSpace
 	// ch				[IN]変更チャンネルの物理Ch
-	DWORD SetCh(
+	BOOL SetCh(
 		DWORD space,
 		DWORD ch
 		);
 
 	//チャンネル変更
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// ONID			[IN]変更チャンネルのorignal_network_id
 	// TSID			[IN]変更チャンネルのtransport_stream_id
 	// SID			[IN]変更チャンネルのservice_id
-	DWORD SetCh(
+	BOOL SetCh(
 		WORD ONID,
 		WORD TSID,
 		WORD SID
@@ -451,7 +439,7 @@ protected:
 	BOOL epgCapBackCS3Basic;
 	DWORD epgCapBackStartWaitSec;
 protected:
-	DWORD ProcessSetCh(
+	BOOL ProcessSetCh(
 		DWORD space,
 		DWORD ch,
 		BOOL chScan,
