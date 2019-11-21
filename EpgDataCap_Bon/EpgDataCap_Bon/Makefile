@@ -33,7 +33,6 @@ $(TARGET): $(addsuffix .obj, \
   Common__WritePlugInUtil.cpp \
   EpgDataCap_Bon.cpp \
   EpgDataCap_BonDlg.cpp \
-  EpgDataCap_BonMain.cpp \
   SetDlgApp.cpp \
   SetDlgAppBtn.cpp \
   SetDlgBasic.cpp \

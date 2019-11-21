@@ -10,6 +10,14 @@ CBonCtrl::CBonCtrl(void)
 	this->statusSignalLv = 0.0f;
 	this->viewSpace = -1;
 	this->viewCh = -1;
+
+	this->nwCtrlID = this->tsOut.CreateServiceCtrl(TRUE);
+	this->nwCtrlEnableScramble = TRUE;
+	this->nwCtrlNeedCaption = TRUE;
+	this->nwCtrlNeedData = FALSE;
+	this->nwCtrlAllService = FALSE;
+	this->nwCtrlServiceID = 0xFFFF;
+
 	this->chScanIndexOrStatus = ST_STOP;
 	this->epgCapIndexOrStatus = ST_STOP;
 	this->enableLiveEpgCap = FALSE;
@@ -28,6 +36,38 @@ CBonCtrl::~CBonCtrl(void)
 	CloseBonDriver();
 
 	StopChScan();
+}
+
+void CBonCtrl::ReloadSetting(
+	BOOL enableEmm,
+	BOOL noLogScramble,
+	BOOL parseEpgPostProcess,
+	BOOL enableScramble,
+	BOOL needCaption,
+	BOOL needData,
+	BOOL allService
+	)
+{
+	this->tsOut.SetEmm(enableEmm);
+	this->tsOut.SetNoLogScramble(noLogScramble);
+	this->tsOut.SetParseEpgPostProcess(parseEpgPostProcess);
+	this->nwCtrlEnableScramble = enableScramble;
+	this->nwCtrlNeedCaption = needCaption;
+	this->nwCtrlNeedData = needData;
+	this->nwCtrlAllService = allService;
+	this->tsOut.SetScramble(this->nwCtrlID, this->nwCtrlEnableScramble);
+	this->tsOut.SetServiceMode(this->nwCtrlID, this->nwCtrlNeedCaption, this->nwCtrlNeedData);
+	this->tsOut.SetServiceID(this->nwCtrlID, this->nwCtrlAllService ? 0xFFFF : this->nwCtrlServiceID);
+}
+
+void CBonCtrl::SetNWCtrlServiceID(
+	WORD serviceID
+	)
+{
+	if( this->nwCtrlServiceID != serviceID ){
+		this->nwCtrlServiceID = serviceID;
+		this->tsOut.SetServiceID(this->nwCtrlID, this->nwCtrlAllService ? 0xFFFF : this->nwCtrlServiceID);
+	}
 }
 
 BOOL CBonCtrl::OpenBonDriver(
@@ -51,6 +91,7 @@ BOOL CBonCtrl::OpenBonDriver(
 		CheckFileName(tunerName);
 		this->chUtil.LoadChSet(fs_path(settingPath).append(fs_path(bonFile).stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native(),
 		                       fs_path(settingPath).append(L"ChSet5.txt").native());
+		this->tsOut.ClearErrCount(this->nwCtrlID);
 		return TRUE;
 	}
 
@@ -82,30 +123,19 @@ BOOL CBonCtrl::GetOpenBonDriver(
 
 BOOL CBonCtrl::SetCh(
 	DWORD space,
-	DWORD ch
+	DWORD ch,
+	WORD serviceID
 )
 {
 	if( this->tsOut.IsRec() == TRUE ){
 		return FALSE;
 	}
+	StopEpgCap();
 
-	return ProcessSetCh(space, ch, FALSE, TRUE);
-}
-
-BOOL CBonCtrl::SetCh(
-	WORD ONID,
-	WORD TSID,
-	WORD SID
-)
-{
-	if( this->tsOut.IsRec() == TRUE ){
-		return FALSE;
-	}
-
-	DWORD space=0;
-	DWORD ch=0;
-	if( this->chUtil.GetCh( ONID, TSID, SID, space, ch ) == TRUE ){
-		return ProcessSetCh(space, ch, FALSE, TRUE);
+	if( ProcessSetCh(space, ch, FALSE, TRUE) ){
+		this->nwCtrlServiceID = serviceID;
+		this->tsOut.SetServiceID(this->nwCtrlID, this->nwCtrlAllService ? 0xFFFF : this->nwCtrlServiceID);
+		return TRUE;
 	}
 
 	return FALSE;
@@ -197,6 +227,7 @@ void CBonCtrl::CloseBonDriver()
 	this->packetInit.ClearBuff();
 	this->tsBuffList.clear();
 	this->tsFreeList.clear();
+	this->nwCtrlServiceID = 0xFFFF;
 }
 
 void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMaxCount)
@@ -278,16 +309,17 @@ DWORD CBonCtrl::GetServiceList(
 	return this->chUtil.GetEnumService(serviceList);
 }
 
-//TSストリーム制御用コントロールを作成する
-//戻り値：
-// 制御識別ID
-//引数：
-// sendUdpTcp	[IN]UDP/TCP送信用にする
 DWORD CBonCtrl::CreateServiceCtrl(
-	BOOL sendUdpTcp
+	BOOL duplicateNWCtrl
 	)
 {
-	return this->tsOut.CreateServiceCtrl(sendUdpTcp);
+	DWORD id = this->tsOut.CreateServiceCtrl(FALSE);
+	if( duplicateNWCtrl ){
+		this->tsOut.SetScramble(id, this->nwCtrlEnableScramble);
+		this->tsOut.SetServiceMode(id, this->nwCtrlNeedCaption, this->nwCtrlNeedData);
+		this->tsOut.SetServiceID(id, this->nwCtrlAllService ? 0xFFFF : this->nwCtrlServiceID);
+	}
+	return id;
 }
 
 //TSストリーム制御用コントロールを作成する
@@ -319,32 +351,18 @@ BOOL CBonCtrl::GetServiceID(
 	return this->tsOut.GetServiceID(id,serviceID);
 }
 
-//UDPで送信を行う
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id			[IN]制御識別ID
-// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。。
-BOOL CBonCtrl::SendUdp(
-	DWORD id,
+void CBonCtrl::SendUdp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	return this->tsOut.SendUdp(id,sendList);
+	this->tsOut.SendUdp(this->nwCtrlID, sendList);
 }
 
-//TCPで送信を行う
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id			[IN]制御識別ID
-// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-BOOL CBonCtrl::SendTcp(
-	DWORD id,
+void CBonCtrl::SendTcp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	return this->tsOut.SendTcp(id,sendList);
+	this->tsOut.SendTcp(this->nwCtrlID, sendList);
 }
 
 BOOL CBonCtrl::StartSave(
@@ -992,9 +1010,13 @@ void CBonCtrl::EpgCapBackThread(CBonCtrl* sys)
 void CBonCtrl::GetViewStatusInfo(
 	float* signalLv,
 	int* space,
-	int* ch
+	int* ch,
+	ULONGLONG* drop,
+	ULONGLONG* scramble
 	)
 {
+	this->tsOut.GetErrCount(this->nwCtrlID, drop, scramble);
+
 	CBlockLock lock(&this->buffLock);
 	*signalLv = this->statusSignalLv;
 	*space = this->viewSpace;

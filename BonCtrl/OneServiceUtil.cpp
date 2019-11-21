@@ -9,7 +9,7 @@ COneServiceUtil::COneServiceUtil(BOOL sendUdpTcp_)
 
 	this->pmtPID = 0xFFFF;
 
-	this->enableScramble = TRUE;
+	this->enableScramble = -1;
 
 	this->pittariState = PITTARI_NONE;
 }
@@ -17,6 +17,9 @@ COneServiceUtil::COneServiceUtil(BOOL sendUdpTcp_)
 
 COneServiceUtil::~COneServiceUtil(void)
 {
+	if( IsRec() ){
+		EndSave();
+	}
 	SendUdp(NULL);
 	SendTcp(NULL);
 }
@@ -304,27 +307,6 @@ BOOL COneServiceUtil::EndSave(BOOL* subRecFlag)
 BOOL COneServiceUtil::IsRec()
 {
 	return this->writeFile.IsRec() || this->pittariState != PITTARI_NONE;
-}
-
-//スクランブル解除処理の動作設定
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// enable		[IN] TRUE（処理する）、FALSE（処理しない）
-void COneServiceUtil::SetScramble(
-	BOOL enable
-	)
-{
-	this->enableScramble = enable;
-}
-
-//スクランブル解除処理を行うかどうか
-//戻り値：
-// TRUE（処理する）、FALSE（処理しない）
-BOOL COneServiceUtil::GetScramble(
-	)
-{
-	return this->enableScramble;
 }
 
 //字幕とデータ放送含めるかどうか

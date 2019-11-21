@@ -25,11 +25,24 @@ public:
 	CBonCtrl(void);
 	~CBonCtrl(void);
 
-	void SetEMMMode(BOOL enable) { this->tsOut.SetEmm(enable); }
+	void ReloadSetting(
+		BOOL enableEmm,
+		BOOL noLogScramble,
+		BOOL parseEpgPostProcess,
+		BOOL enableScramble,
+		BOOL needCaption,
+		BOOL needData,
+		BOOL allService
+		);
 
-	void SetNoLogScramble(BOOL noLog) { this->tsOut.SetNoLogScramble(noLog); }
+	//ネットワーク送信と統計の対象サービスIDを取得する
+	WORD GetNWCtrlServiceID() { return this->nwCtrlServiceID; }
 
-	void SetParseEpgPostProcess(BOOL parsePost) { this->tsOut.SetParseEpgPostProcess(parsePost); }
+	//ネットワーク送信と統計の対象サービスIDを設定する
+	//※GetStreamID()で受動的なチャンネル変化を検出した時などに使う
+	void SetNWCtrlServiceID(
+		WORD serviceID
+		);
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
@@ -61,22 +74,11 @@ public:
 	//引数：
 	// space			[IN]変更チャンネルのSpace
 	// ch				[IN]変更チャンネルの物理Ch
+	// serviceID		[IN]変更チャンネルのサービスID
 	BOOL SetCh(
 		DWORD space,
-		DWORD ch
-		);
-
-	//チャンネル変更
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	//引数：
-	// ONID			[IN]変更チャンネルのorignal_network_id
-	// TSID			[IN]変更チャンネルのtransport_stream_id
-	// SID			[IN]変更チャンネルのservice_id
-	BOOL SetCh(
-		WORD ONID,
-		WORD TSID,
-		WORD SID
+		DWORD ch,
+		WORD serviceID
 		);
 
 	//チャンネル変更中かどうか
@@ -109,9 +111,9 @@ public:
 	//戻り値：
 	// 制御識別ID
 	//引数：
-	// sendUdpTcp	[IN]UDP/TCP送信用にする
+	// duplicateNWCtrl		[IN]ネットワーク送信と統計用のものと同じ初期値を適用するかどうか
 	DWORD CreateServiceCtrl(
-		BOOL sendUdpTcp
+		BOOL duplicateNWCtrl
 		);
 
 	//TSストリーム制御用コントロールを作成する
@@ -140,24 +142,16 @@ public:
 		);
 
 	//UDPで送信を行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// id			[IN]制御識別ID
 	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-	BOOL SendUdp(
-		DWORD id,
+	void SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		);
 
 	//TCPで送信を行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// id			[IN]制御識別ID
 	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-	BOOL SendTcp(
-		DWORD id,
+	void SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		);
 
@@ -380,15 +374,18 @@ public:
 		);
 
 	//現在のストリームの表示用のステータスを取得する
-	//※スレッドセーフ
 	//引数：
 	// signalLv		[OUT]シグナルレベル
 	// space		[OUT]物理CHのspace(不明のとき負)
 	// ch			[OUT]物理CHのch(不明のとき負)
+	// drop			[OUT]ドロップ数
+	// scramble		[OUT]スクランブル数
 	void GetViewStatusInfo(
 		float* signalLv,
 		int* space,
-		int* ch
+		int* ch,
+		ULONGLONG* drop,
+		ULONGLONG* scramble
 		);
 
 protected:
@@ -403,6 +400,13 @@ protected:
 	float statusSignalLv;
 	int viewSpace;
 	int viewCh;
+
+	DWORD nwCtrlID;
+	BOOL nwCtrlEnableScramble;
+	BOOL nwCtrlNeedCaption;
+	BOOL nwCtrlNeedData;
+	BOOL nwCtrlAllService;
+	WORD nwCtrlServiceID;
 
 	thread_ analyzeThread;
 	CAutoResetEvent analyzeEvent;

@@ -14,7 +14,7 @@ CTSOut::CTSOut(void)
 
 	this->epgUtil.Initialize(FALSE);
 
-	this->enableDecodeFlag = TRUE;
+	this->enableDecodeFlag = FALSE;
 	this->emmEnableFlag = FALSE;
 
 	this->nextCtrlID = 1;
@@ -535,6 +535,7 @@ BOOL CTSOut::DeleteServiceCtrl(
 		return FALSE;
 	}
 
+	UpdateEnableDecodeFlag();
 	UpdateServiceUtil(TRUE);
 
 	return TRUE;
@@ -755,6 +756,39 @@ BOOL CTSOut::SetScramble(
 {
 	CBlockLock lock(&this->objLock);
 
+	auto itr = serviceUtilMap.find(id);
+	if( itr == serviceUtilMap.end() ){
+		return FALSE;
+	}
+
+	itr->second->SetScramble(enable);
+	UpdateEnableDecodeFlag();
+	return TRUE;
+}
+
+BOOL CTSOut::UpdateEnableDecodeFlag()
+{
+	BOOL sendUdpTcpOnly = TRUE;
+	BOOL enable = FALSE;
+	for( auto itr = this->serviceUtilMap.begin(); itr != this->serviceUtilMap.end(); itr++ ){
+		if( itr->second->GetScramble() >= 0 ){
+			if( itr->second->GetSendUdpTcp() ){
+				//UDP/TCP送信用だけのときはその設定値に従う
+				if( sendUdpTcpOnly && itr->second->GetScramble() ){
+					enable = TRUE;
+				}
+			}else{
+				//録画用のものがあるときはその設定値に従う
+				sendUdpTcpOnly = FALSE;
+				enable = FALSE;
+				if( itr->second->GetScramble() ){
+					enable = TRUE;
+					break;
+				}
+			}
+		}
+	}
+
 	try{
 		if( this->chChangeState == CH_ST_DONE ){
 			//チューニング済みで
@@ -770,23 +804,7 @@ BOOL CTSOut::SetScramble(
 		return FALSE;
 	}
 
-	auto itr = serviceUtilMap.find(id);
-	if( itr == serviceUtilMap.end() ){
-		return FALSE;
-	}
-
-	itr->second->SetScramble(enable);
-
-	BOOL enableScramble = FALSE;
-	for( itr = this->serviceUtilMap.begin(); itr != this->serviceUtilMap.end(); itr++ ){
-		if( itr->second->GetScramble() == TRUE ){
-			enableScramble = TRUE;
-			break;
-		}
-	}
-
-	this->enableDecodeFlag = enableScramble;
-
+	this->enableDecodeFlag = enable;
 	return TRUE;
 }
 

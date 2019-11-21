@@ -356,6 +356,8 @@ protected:
 
 	DWORD GetNextID();
 
+	BOOL UpdateEnableDecodeFlag();
+
 	void ResetErrCount();
 
 	void OnChChanged(WORD onid, WORD tsid);

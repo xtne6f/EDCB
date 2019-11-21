@@ -4,8 +4,9 @@
 
 #pragma once
 
+#include "../../BonCtrl/BonCtrl.h"
+#include "../../Common/PipeServer.h"
 #include "EpgDataCap_BonDef.h"
-#include "EpgDataCap_BonMain.h"
 #include "SettingDlg.h"
 
 // CEpgDataCap_BonDlg ダイアログ
@@ -15,7 +16,6 @@ class CEpgDataCap_BonDlg
 public:
 	CEpgDataCap_BonDlg();	// 標準コンストラクター
 	INT_PTR DoModal();
-	HWND GetSafeHwnd() const{ return m_hWnd; }
 
 	void SetInitBon(LPCWSTR bonFile){ iniBonDriver = bonFile; }
 	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
@@ -31,6 +31,7 @@ protected:
 	static UINT taskbarCreated;
 	static BOOL disableKeyboardHook;
 protected:
+	void ReloadSetting();
 	void BtnUpdate(DWORD guiMode);
 	//タスクトレイ
 	BOOL DeleteTaskBar(HWND wnd, UINT id);
@@ -42,6 +43,9 @@ protected:
 	void ReloadNWSet();
 	BOOL SelectBonDriver(LPCWSTR fileName);
 	BOOL SelectService(const CH_DATA4& chData);
+
+	void StartPipeServer();
+	void CtrlCmdCallbackInvoked();
 // 実装
 protected:
 	HWND m_hWnd;
@@ -54,6 +58,18 @@ protected:
 	HICON iconGreen;
 	HICON iconGray;
 	BOOL minTask;
+	wstring recFileName;
+	BOOL overWriteFlag;
+	wstring viewPath;
+	wstring viewOpt;
+	int dropSaveThresh;
+	int scrambleSaveThresh;
+	DWORD tsBuffMaxCount;
+	int writeBuffMaxCount;
+	int openWait;
+	vector<wstring> recFolderList;
+	vector<NW_SEND_INFO> setUdpSendList;
+	vector<NW_SEND_INFO> setTcpSendList;
 
 	wstring iniBonDriver;
 	BOOL iniMin;
@@ -62,9 +78,19 @@ protected:
 	BOOL iniUDP;
 	BOOL iniTCP;
 
-	CEpgDataCap_BonMain main;
+	CBonCtrl bonCtrl;
+	CPipeServer pipeServer;
+	int outCtrlID;
+	vector<DWORD> cmdCtrlList;
+	CMD_STREAM* cmdCapture;
+	CMD_STREAM* resCapture;
 
 	vector<CH_DATA4> serviceList;
+	WORD lastONID;
+	WORD lastTSID;
+	DWORD recCtrlID;
+	vector<NW_SEND_INFO> udpSendList;
+	vector<NW_SEND_INFO> tcpSendList;
 
 	// 生成された、メッセージ割り当て関数
 	BOOL OnInitDialog();

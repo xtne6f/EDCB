@@ -254,7 +254,6 @@
     <ClInclude Include="EpgDataCap_Bon.h" />
     <ClInclude Include="EpgDataCap_BonDef.h" />
     <ClInclude Include="EpgDataCap_BonDlg.h" />
-    <ClInclude Include="EpgDataCap_BonMain.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SetDlgApp.h" />
     <ClInclude Include="SetDlgAppBtn.h" />
@@ -297,7 +296,6 @@
     <ClCompile Include="..\..\Common\WritePlugInUtil.cpp" />
     <ClCompile Include="EpgDataCap_Bon.cpp" />
     <ClCompile Include="EpgDataCap_BonDlg.cpp" />
-    <ClCompile Include="EpgDataCap_BonMain.cpp" />
     <ClCompile Include="SetDlgApp.cpp" />
     <ClCompile Include="SetDlgAppBtn.cpp" />
     <ClCompile Include="SetDlgBasic.cpp" />
