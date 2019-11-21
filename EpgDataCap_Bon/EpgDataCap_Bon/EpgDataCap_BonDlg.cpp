@@ -128,6 +128,8 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	                            GetPrivateProfileInt(L"SET", L"Caption", 1, appIniPath.c_str()) != 0,
 	                            GetPrivateProfileInt(L"SET", L"Data", 0, appIniPath.c_str()) != 0,
 	                            GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()) != 0);
+
+	EnableWindow(GetDlgItem(IDC_BUTTON_VIEW), this->viewPath.empty() == false);
 }
 
 // CEpgDataCap_BonDlg メッセージ ハンドラー
@@ -705,7 +707,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
-			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			break;
 		case GUI_CANCEL_ONLY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -718,7 +719,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			break;
 		case GUI_OPEN_FAIL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, TRUE);
@@ -731,7 +731,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
-			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			break;
 		case GUI_REC:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -745,7 +744,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, TRUE);
 			Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			break;
 		case GUI_REC_SET_TIME:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -758,7 +756,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
 			ENABLE_ITEM(IDC_CHECK_REC_SET, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			break;
 		case GUI_OTHER_CTRL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -771,7 +768,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			break;
 		case GUI_REC_STANDBY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -784,7 +780,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
-			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			break;
 		default:
 			break;
