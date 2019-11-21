@@ -52,6 +52,8 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->lastONID = 0xFFFF;
 	this->lastTSID = 0xFFFF;
 	this->recCtrlID = 0;
+	this->chScanWorking = FALSE;
+	this->epgCapWorking = FALSE;
 
 	if( CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION) ){
 		OutputDebugString(L"Granted SYNCHRONIZE|PROCESS_TERMINATE|PROCESS_SET_INFORMATION to " SERVICE_NAME L"\r\n");
@@ -408,11 +410,29 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				wstring info = L"";
 				WORD onid;
 				WORD tsid;
-				EPGDB_EVENT_INFO eventInfo;
-				if( this->bonCtrl.GetStreamID(&onid, &tsid) &&
-				    this->bonCtrl.GetEpgInfo(onid, tsid, this->bonCtrl.GetNWCtrlServiceID(),
-				                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) == NO_ERR ){
-					info = ConvertEpgInfoText(&eventInfo);
+				//チャンネルスキャン中はサービス一覧などが安定しないため
+				if( this->chScanWorking == FALSE && this->bonCtrl.GetStreamID(&onid, &tsid) ){
+					//EPG取得中は別の検出ロジックがある
+					if( this->epgCapWorking == FALSE && (this->lastONID != onid || this->lastTSID != tsid) ){
+						//チャンネルが変化した
+						for( int i = 0; i < this->serviceList.size(); i++ ){
+							if( this->serviceList[i].originalNetworkID == onid &&
+							    this->serviceList[i].transportStreamID == tsid ){
+								int index = ReloadServiceList(onid, tsid, this->serviceList[i].serviceID);
+								if( index >= 0 ){
+									this->lastONID = onid;
+									this->lastTSID = tsid;
+									this->bonCtrl.SetNWCtrlServiceID(this->serviceList[index].serviceID);
+								}
+								break;
+							}
+						}
+					}
+					EPGDB_EVENT_INFO eventInfo;
+					if( this->bonCtrl.GetEpgInfo(onid, tsid, this->bonCtrl.GetNWCtrlServiceID(),
+					                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) == NO_ERR ){
+						info = ConvertEpgInfoText(&eventInfo);
+					}
 				}
 				WCHAR pgInfo[512] = L"";
 				GetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, pgInfo, 512);
@@ -420,9 +440,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
 				}
 			}
-			break;
-		case TIMER_CHSCAN_STATSU:
-			{
+
+			if( this->chScanWorking ){
 				DWORD space = 0;
 				DWORD ch = 0;
 				wstring chName = L"";
@@ -434,15 +453,15 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					Format(log, L"%ls (%d/%d 残り約 %d 秒)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 				}else if( status == CBonCtrl::ST_CANCEL ){
-					KillTimer(TIMER_CHSCAN_STATSU);
+					this->chScanWorking = FALSE;
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
 				}else if( status == CBonCtrl::ST_COMPLETE ){
-					KillTimer(TIMER_CHSCAN_STATSU);
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
+					this->chScanWorking = FALSE;
 					int index = ReloadServiceList();
 					if( index >= 0 ){
 						SelectService(this->serviceList[index]);
 					}
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
 					BtnUpdate(GUI_NORMAL);
 					ChgIconStatus();
 
@@ -472,12 +491,11 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						MessageBox(m_hWnd, log.c_str(), NULL, MB_OK);
 					}
 				}else{
-					KillTimer(TIMER_CHSCAN_STATSU);
+					this->chScanWorking = FALSE;
 				}
 			}
-			break;
-		case TIMER_EPGCAP_STATSU:
-			{
+
+			if( this->epgCapWorking ){
 				SET_CH_INFO info;
 				CBonCtrl::JOB_STATUS status = this->bonCtrl.GetEpgCapStatus(&info);
 				if( status == CBonCtrl::ST_WORKING ){
@@ -487,15 +505,15 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					this->bonCtrl.SetNWCtrlServiceID(info.SID);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
 				}else if( status == CBonCtrl::ST_CANCEL ){
-					KillTimer(TIMER_EPGCAP_STATSU);
+					this->epgCapWorking = FALSE;
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
 				}else if( status == CBonCtrl::ST_COMPLETE ){
-					KillTimer(TIMER_EPGCAP_STATSU);
+					this->epgCapWorking = FALSE;
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
 					BtnUpdate(GUI_NORMAL);
 					ChgIconStatus();
 				}else{
-					KillTimer(TIMER_EPGCAP_STATSU);
+					this->epgCapWorking = FALSE;
 				}
 			}
 			break;
@@ -857,8 +875,10 @@ int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 	if( ret != NO_ERR || this->serviceList.size() == 0 ){
 		WCHAR log[512 + 64] = L"";
 		GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-		wcscat_s(log, L"チャンネル情報の読み込みに失敗しました\r\n");
-		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
+		if( wcsstr(log, L"チャンネル情報の読み込みに失敗しました\r\n") == NULL ){
+			wcscat_s(log, L"チャンネル情報の読み込みに失敗しました\r\n");
+			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
+		}
 	}else{
 		int selectIndex = -1;
 		int selectSel = -1;
@@ -908,8 +928,10 @@ BOOL CEpgDataCap_BonDlg::SelectService(const CH_DATA4& chData)
 	if( this->bonCtrl.SetCh(chData.space, chData.ch, chData.serviceID) ){
 		this->lastONID = chData.originalNetworkID;
 		this->lastTSID = chData.transportStreamID;
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");
 		return TRUE;
 	}
+	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"チャンネル変更できませんでした\r\n");
 	return FALSE;
 }
 
@@ -920,7 +942,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"チャンネルスキャンを開始できませんでした\r\n");
 		return;
 	}
-	SetTimer(TIMER_CHSCAN_STATSU, 1000, NULL);
+	this->chScanWorking = TRUE;
 	BtnUpdate(GUI_CANCEL_ONLY);
 }
 
@@ -932,7 +954,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonEpg()
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得を開始できませんでした\r\n");
 		return;
 	}
-	SetTimer(TIMER_EPGCAP_STATSU, 1000, NULL);
+	this->epgCapWorking = TRUE;
 	BtnUpdate(GUI_CANCEL_ONLY);
 	ChgIconStatus();
 }
@@ -1012,9 +1034,9 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonCancel()
 	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
 
 	this->bonCtrl.StopChScan();
-	KillTimer(TIMER_CHSCAN_STATSU);
+	this->chScanWorking = FALSE;
 	this->bonCtrl.StopEpgCap();
-	KillTimer(TIMER_EPGCAP_STATSU);
+	this->epgCapWorking = FALSE;
 	if( this->recCtrlID != 0 ){
 		this->bonCtrl.DeleteServiceCtrl(this->recCtrlID);
 		this->recCtrlID = 0;
@@ -1547,7 +1569,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 			vector<SET_CH_INFO> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				if( this->bonCtrl.StartEpgCap(&val) ){
-					SetTimer(TIMER_EPGCAP_STATSU, 1000, NULL);
+					this->epgCapWorking = TRUE;
 					BtnUpdate(GUI_CANCEL_ONLY);
 					ChgIconStatus();
 					resParam->param = CMD_SUCCESS;

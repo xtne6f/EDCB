@@ -91,6 +91,8 @@ protected:
 	DWORD recCtrlID;
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
+	BOOL chScanWorking;
+	BOOL epgCapWorking;
 
 	// 生成された、メッセージ割り当て関数
 	BOOL OnInitDialog();

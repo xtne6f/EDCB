@@ -786,7 +786,13 @@ void CBonCtrl::CheckEpgCap()
 								}
 							}
 						}
-						if( this->epgCapChkNext ){
+						WORD onid;
+						WORD tsid;
+						if( this->tsOut.GetStreamID(&onid, &tsid) == FALSE || onid != ch.ONID || tsid != ch.TSID ){
+							//チャンネルが変化したので停止
+							this->tsOut.StopSaveEPG(FALSE);
+							this->epgCapChkNext = TRUE;
+						}else if( this->epgCapChkNext ){
 							this->tsOut.StopSaveEPG(TRUE);
 						}
 					}
@@ -926,8 +932,9 @@ void CBonCtrl::CheckEpgCapBack()
 				                 onid == 7 && this->epgCapBackCS2Basic ||
 				                 onid == 10 && this->epgCapBackCS3Basic;
 				this->epgCapChList = this->chUtil.GetEpgCapServiceAll(onid, basicOnly ? -1 : tsid);
-				if( std::find_if(this->epgCapChList.begin(), this->epgCapChList.end(),
-				                 [=](const SET_CH_INFO& a) { return a.TSID == tsid; }) != this->epgCapChList.end() ){
+				vector<SET_CH_INFO>::const_iterator itr = std::find_if(this->epgCapChList.begin(), this->epgCapChList.end(),
+				                                                       [=](const SET_CH_INFO& a) { return a.TSID == tsid; });
+				if( itr != this->epgCapChList.end() ){
 					//取得対象チャンネルなので取得開始
 					wstring epgDataPath;
 					GetEpgDataFilePath(onid, basicOnly ? 0xFFFF : tsid, epgDataPath);
@@ -938,7 +945,7 @@ void CBonCtrl::CheckEpgCapBack()
 						this->epgCapSetChState = 2;
 						this->epgCapTick = tick;
 						this->epgCapLastChkTick = tick;
-						this->epgCapBackIndexOrStatus = 0;
+						this->epgCapBackIndexOrStatus = (int)(itr - this->epgCapChList.begin());
 					}
 				}
 			}
@@ -979,7 +986,15 @@ void CBonCtrl::CheckEpgCapBack()
 			}
 		}
 
-		if( chkNext == TRUE ){
+		WORD onid;
+		WORD tsid;
+		if( this->tsOut.GetStreamID(&onid, &tsid) == FALSE ||
+		    onid != this->epgCapChList[this->epgCapBackIndexOrStatus].ONID ||
+		    tsid != this->epgCapChList[this->epgCapBackIndexOrStatus].TSID ){
+			//チャンネルが変化したので停止
+			this->tsOut.StopSaveEPG(FALSE);
+			this->epgCapBackIndexOrStatus = ST_STOP;
+		}else if( chkNext ){
 			this->tsOut.StopSaveEPG(TRUE);
 			CSendCtrlCmd cmd;
 			cmd.SetConnectTimeOut(1000);
