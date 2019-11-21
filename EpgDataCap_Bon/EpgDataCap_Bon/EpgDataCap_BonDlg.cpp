@@ -358,6 +358,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 		case TIMER_STATUS_UPDATE:
 			{
 				SetThreadExecutionState(ES_SYSTEM_REQUIRED);
+				this->bonCtrl.Check();
 
 				int iLine = Edit_GetFirstVisibleLine(GetDlgItem(IDC_EDIT_STATUS));
 				float signal;

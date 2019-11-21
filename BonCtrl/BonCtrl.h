@@ -16,10 +16,10 @@ class CBonCtrl
 public:
 	//チャンネルスキャン、EPG取得のステータス用
 	enum JOB_STATUS {
-		ST_STOP = -4,	//停止中
-		ST_WORKING,		//実行中
-		ST_COMPLETE,	//完了
-		ST_CANCEL,		//キャンセルされた
+		ST_STOP = -4,		//停止中
+		ST_COMPLETE = -3,	//完了
+		ST_CANCEL = -2,		//キャンセルされた
+		ST_WORKING = -1,	//実行中
 	};
 
 	CBonCtrl(void);
@@ -43,6 +43,10 @@ public:
 	void SetNWCtrlServiceID(
 		WORD serviceID
 		);
+
+	//EPG取得などの状態を更新する
+	//※概ね1秒ごとに呼ぶ
+	void Check();
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
@@ -413,27 +417,39 @@ protected:
 	atomic_bool_ analyzeStopFlag;
 
 	//チャンネルスキャン用
-	thread_ chScanThread;
-	CAutoResetEvent chScanStopEvent;
 	struct CHK_CH_INFO {
 		DWORD space;
 		DWORD ch;
 		wstring spaceName;
 		wstring chName;
 	};
-	//スキャン中はconst操作のみ
 	vector<CHK_CH_INFO> chScanChkList;
-	atomic_int_ chScanIndexOrStatus;
+	int chScanIndexOrStatus;
+	DWORD chScanChChgTimeOut;
+	DWORD chScanServiceChkTimeOut;
+	BOOL chScanChkNext;
+	DWORD chScanTick;
 
 	//EPG取得用
-	thread_ epgCapThread;
-	CAutoResetEvent epgCapStopEvent;
 	//取得中はconst操作のみ
 	vector<SET_CH_INFO> epgCapChList;
 	atomic_int_ epgCapIndexOrStatus;
+	BOOL epgCapBSBasic;
+	BOOL epgCapCS1Basic;
+	BOOL epgCapCS2Basic;
+	BOOL epgCapCS3Basic;
+	BOOL epgCapChkBS;
+	BOOL epgCapChkCS1;
+	BOOL epgCapChkCS2;
+	BOOL epgCapChkCS3;
+	BOOL epgCapChkNext;
+	int epgCapSetChState;
+	DWORD epgCapTimeOut;
+	BOOL epgCapSaveTimeOut;
+	DWORD epgCapTick;
+	DWORD epgCapLastChkTick;
 
-	thread_ epgCapBackThread;
-	CAutoResetEvent epgCapBackStopEvent;
+	int epgCapBackIndexOrStatus;
 	BOOL enableLiveEpgCap;
 	BOOL enableRecEpgCap;
 
@@ -446,8 +462,7 @@ protected:
 	BOOL ProcessSetCh(
 		DWORD space,
 		DWORD ch,
-		BOOL chScan,
-		BOOL restartEpgCapBack
+		BOOL chScan
 		);
 
 	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);
@@ -456,11 +471,11 @@ protected:
 	void StatusCallback(float signalLv, int space, int ch);
 	static void AnalyzeThread(CBonCtrl* sys);
 
-	static void ChScanThread(CBonCtrl* sys);
-	static void EpgCapThread(CBonCtrl* sys);
+	void CheckChScan();
+	void CheckEpgCap();
 
 	void StartBackgroundEpgCap();
 	void StopBackgroundEpgCap();
-	static void EpgCapBackThread(CBonCtrl* sys);
+	void CheckEpgCapBack();
 };
 
