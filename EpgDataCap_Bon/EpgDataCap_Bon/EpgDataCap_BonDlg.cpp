@@ -194,7 +194,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	wstring bon;
 	EnumFindFile(GetModulePath().replace_filename(BON_DLL_FOLDER).append(L"BonDriver*.dll"), [&](UTIL_FIND_DATA& findData) -> bool {
 		if( findData.isDir == false ){
-			int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_TUNER), findData.fileName.c_str());
+			int index = ComboBox_AddString(this->GetDlgItem(IDC_COMBO_TUNER), findData.fileName.c_str());
 			if( bonIndex < 0 || UtilComparePath(findData.fileName.c_str(), this->iniBonDriver.c_str()) == 0 ){
 				bonIndex = index;
 				bon = std::move(findData.fileName);
@@ -417,7 +417,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					//EPG取得中は別の検出ロジックがある
 					if( this->epgCapWorking == FALSE && (this->lastONID != onid || this->lastTSID != tsid) ){
 						//チャンネルが変化した
-						for( int i = 0; i < this->serviceList.size(); i++ ){
+						for( size_t i = 0; i < this->serviceList.size(); i++ ){
 							if( this->serviceList[i].originalNetworkID == onid &&
 							    this->serviceList[i].transportStreamID == tsid ){
 								int index = ReloadServiceList(onid, tsid, this->serviceList[i].serviceID);
@@ -1422,7 +1422,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 						resParam->param = CMD_SUCCESS;
 					}
 				}else if( val.useBonCh ){
-					for( int i = 0; i < this->serviceList.size(); i++ ){
+					for( size_t i = 0; i < this->serviceList.size(); i++ ){
 						if( (DWORD)this->serviceList[i].space == val.space &&
 						    (DWORD)this->serviceList[i].ch == val.ch ){
 							int index = ReloadServiceList(this->serviceList[i].originalNetworkID,
