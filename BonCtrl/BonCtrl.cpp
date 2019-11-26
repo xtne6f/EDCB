@@ -453,7 +453,7 @@ BOOL CBonCtrl::StartChScan()
 
 	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 		this->chScanChkList.clear();
-		vector<pair<wstring, vector<wstring>>> spaceList = this->bonUtil.GetOriginalChList();
+		const vector<pair<wstring, vector<wstring>>>& spaceList = this->bonUtil.GetOriginalChList();
 		for( size_t i = 0; i < spaceList.size(); i++ ){
 			for( size_t j = 0; j < spaceList[i].second.size(); j++ ){
 				if( spaceList[i].second[j].empty() == false ){

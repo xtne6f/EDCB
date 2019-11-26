@@ -98,7 +98,6 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFil
                                    const std::function<void(BYTE*, DWORD, DWORD)>& recvFunc_,
                                    const std::function<void(float, int, int)>& statusFunc_, int openWait)
 {
-	CBlockLock lock(&this->utilLock);
 	CloseBonDriver();
 	this->loadDllFolder = bonDriverFolder;
 	this->loadDllFileName = bonDriverFile;
@@ -107,7 +106,12 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFil
 		this->statusFunc = statusFunc_;
 		this->driverThread = thread_(DriverThread, this);
 		//Open処理が完了するまで待つ
-		while( WaitForSingleObject(this->driverThread.native_handle(), 10) == WAIT_TIMEOUT && this->hwndDriver == NULL );
+		while( WaitForSingleObject(this->driverThread.native_handle(), 10) == WAIT_TIMEOUT ){
+			CBlockLock lock(&this->utilLock);
+			if( this->hwndDriver ){
+				break;
+			}
+		}
 		if( this->hwndDriver ){
 			Sleep(openWait);
 			return true;
@@ -119,10 +123,12 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFil
 
 void CBonDriverUtil::CloseBonDriver()
 {
-	CBlockLock lock(&this->utilLock);
 	if( this->hwndDriver ){
 		PostMessage(this->hwndDriver, WM_CLOSE, 0, 0);
 		this->driverThread.join();
+		this->loadChList.clear();
+		this->loadTunerName.clear();
+		CBlockLock lock(&this->utilLock);
 		this->hwndDriver = NULL;
 	}
 }
@@ -173,9 +179,14 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 						sys->loadChList.back().second.push_back(chName);
 					}
 				}
-				sys->hwndDriver = CreateWindow(L"BonDriverUtilWorker", NULL, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandle(NULL), sys);
-				if( sys->hwndDriver == NULL ){
+				HWND hwnd = CreateWindow(L"BonDriverUtilWorker", NULL, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandle(NULL), sys);
+				if( hwnd == NULL ){
+					sys->loadChList.clear();
+					sys->loadTunerName.clear();
 					sys->bon2IF->CloseTuner();
+				}else{
+					CBlockLock lock(&sys->utilLock);
+					sys->hwndDriver = hwnd;
 				}
 			}
 		}
@@ -272,41 +283,25 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 				return FALSE;
 			}
 		}
+		sys->initChSetFlag = true;
 		PostMessage(hwnd, WM_APP_GET_STATUS, 0, 0);
 		return TRUE;
 	case WM_APP_GET_NOW_CH:
-		*(DWORD*)wParam = sys->bon2IF->GetCurSpace();
-		*(DWORD*)lParam = sys->bon2IF->GetCurChannel();
-		return 0;
+		if( sys->initChSetFlag ){
+			*(DWORD*)wParam = sys->bon2IF->GetCurSpace();
+			*(DWORD*)lParam = sys->bon2IF->GetCurChannel();
+			return TRUE;
+		}
+		return FALSE;
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-vector<pair<wstring, vector<wstring>>> CBonDriverUtil::GetOriginalChList()
-{
-	CBlockLock lock(&this->utilLock);
-	if( this->hwndDriver ){
-		return this->loadChList;
-	}
-	return vector<pair<wstring, vector<wstring>>>();
-}
-
-wstring CBonDriverUtil::GetTunerName()
-{
-	CBlockLock lock(&this->utilLock);
-	if( this->hwndDriver ){
-		return this->loadTunerName;
-	}
-	return L"";
-}
-
 bool CBonDriverUtil::SetCh(DWORD space, DWORD ch)
 {
-	CBlockLock lock(&this->utilLock);
 	if( this->hwndDriver ){
 		//同一チャンネル時の命令省略はしない。必要なら利用側で行うこと
 		if( SendMessage(this->hwndDriver, WM_APP_SET_CH, (WPARAM)space, (LPARAM)ch) ){
-			this->initChSetFlag = true;
 			return true;
 		}
 	}
@@ -315,10 +310,10 @@ bool CBonDriverUtil::SetCh(DWORD space, DWORD ch)
 
 bool CBonDriverUtil::GetNowCh(DWORD* space, DWORD* ch)
 {
-	CBlockLock lock(&this->utilLock);
-	if( this->hwndDriver && this->initChSetFlag ){
-		SendMessage(this->hwndDriver, WM_APP_GET_NOW_CH, (WPARAM)space, (LPARAM)ch);
-		return true;
+	if( this->hwndDriver ){
+		if( SendMessage(this->hwndDriver, WM_APP_GET_NOW_CH, (WPARAM)space, (LPARAM)ch) ){
+			return true;
+		}
 	}
 	return false;
 }
@@ -327,6 +322,7 @@ wstring CBonDriverUtil::GetOpenBonDriverFileName()
 {
 	CBlockLock lock(&this->utilLock);
 	if( this->hwndDriver ){
+		//Open中はconst
 		return this->loadDllFileName;
 	}
 	return L"";
