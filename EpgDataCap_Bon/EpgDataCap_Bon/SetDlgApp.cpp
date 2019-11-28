@@ -41,6 +41,8 @@ BOOL CSetDlgApp::OnInitDialog()
 	SetDlgItemText(m_hWnd, IDC_EDIT_REC_FILENAME,
 		GetPrivateProfileToString(L"SET", L"RecFileName", L"$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts", appIniPath.c_str()).c_str());
 	Button_SetCheck(GetDlgItem(IDC_CHECK_OVER_WRITE), GetPrivateProfileInt(L"SET", L"OverWrite", 0, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_MODIFY_TITLE_BAR), GetPrivateProfileInt(L"SET", L"ModifyTitleBarText", 0, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_OVERLAY_TASK_ICON), GetPrivateProfileInt(L"SET", L"OverlayTaskIcon", 1, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_TASKMIN), GetPrivateProfileInt(L"SET", L"MinTask", 0, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_OPENLAST), GetPrivateProfileInt(L"SET", L"OpenLast", 1, appIniPath.c_str()));
 	SetDlgItemInt(m_hWnd, IDC_EDIT_DROP_SAVE_THRESH, GetPrivateProfileInt(L"SET", L"DropSaveThresh", 0, appIniPath.c_str()), TRUE);
@@ -72,6 +74,8 @@ void CSetDlgApp::SaveIni(void)
 	GetDlgItemText(m_hWnd, IDC_EDIT_REC_FILENAME, recFileName, 512);
 	WritePrivateProfileString( L"SET", L"RecFileName", recFileName, appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"OverWrite", Button_GetCheck(GetDlgItem(IDC_CHECK_OVER_WRITE)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"ModifyTitleBarText", Button_GetCheck(GetDlgItem(IDC_CHECK_MODIFY_TITLE_BAR)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"OverlayTaskIcon", Button_GetCheck(GetDlgItem(IDC_OVERLAY_TASK_ICON)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"MinTask", Button_GetCheck(GetDlgItem(IDC_CHECK_TASKMIN)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"OpenLast", Button_GetCheck(GetDlgItem(IDC_CHECK_OPENLAST)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"DropSaveThresh", (int)GetDlgItemInt(m_hWnd, IDC_EDIT_DROP_SAVE_THRESH, NULL, TRUE), appIniPath.c_str() );

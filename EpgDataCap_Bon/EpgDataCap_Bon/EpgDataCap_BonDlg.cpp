@@ -10,6 +10,8 @@
 #include "../../Common/CtrlCmdUtil.h"
 #include "../../Common/TimeUtil.h"
 #include <shellapi.h>
+#include <objbase.h>
+#include "TaskbarList.h"
 
 
 // CEpgDataCap_BonDlg ダイアログ
@@ -30,12 +32,16 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), LIM_LARGE, &m_hIcon2) != S_OK ||
 	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_RED), LIM_SMALL, &iconRed) != S_OK ||
 	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), LIM_SMALL, &iconGreen) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), LIM_SMALL, &iconGray) != S_OK ){
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), LIM_SMALL, &iconGray) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_REC), LIM_SMALL, &iconOlRec) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_EPG), LIM_SMALL, &iconOlEpg) != S_OK ){
 		m_hIcon = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 		m_hIcon2 = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
 		iconRed = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_RED), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 		iconGreen = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 		iconGray = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		iconOlRec = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_REC), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		iconOlEpg = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_EPG), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 	}
 	iconBlue = m_hIcon;
 
@@ -70,6 +76,8 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	fs_path appIniPath = GetModuleIniPath();
 
 	SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, appIniPath.c_str()) != 0);
+	this->modifyTitleBarText = GetPrivateProfileInt(L"SET", L"ModifyTitleBarText", 0, appIniPath.c_str()) != 0;
+	this->overlayTaskIcon = GetPrivateProfileInt(L"SET", L"OverlayTaskIcon", 1, appIniPath.c_str()) != 0;
 	this->minTask = GetPrivateProfileInt(L"SET", L"MinTask", 0, appIniPath.c_str()) != 0;
 	this->recFileName = GetPrivateProfileToString(L"SET", L"RecFileName", L"$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts", appIniPath.c_str());
 	this->overWriteFlag = GetPrivateProfileInt(L"SET", L"OverWrite", 0, appIniPath.c_str()) != 0;
@@ -310,6 +318,9 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	KillTimer(RETRY_ADD_TRAY);
 	KillTimer(TIMER_CHG_TRAY);
 	DeleteTaskBar(m_hWnd, TRAYICON_ID);
+	if( this->overlayTaskIcon ){
+		SetOverlayIcon(NULL);
+	}
 
 	WINDOWPLACEMENT Pos;
 	Pos.length = sizeof(WINDOWPLACEMENT);
@@ -536,12 +547,6 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 		case RETRY_ADD_TRAY:
 			{
 				KillTimer(nIDEvent);
-				wstring buff=L"";
-				wstring bonFile = L"";
-				this->bonCtrl.GetOpenBonDriver(&bonFile);
-				WCHAR szBuff2[256]=L"";
-				GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff2, 256);
-				Format(buff, L"%ls ： %ls", bonFile.c_str(), szBuff2);
 
 				HICON setIcon = this->iconBlue;
 				if( this->bonCtrl.IsRec() ){
@@ -552,12 +557,43 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					setIcon = this->iconGray;
 				}
 		
-				if( nIDEvent == RETRY_ADD_TRAY ){
-					if( AddTaskBar(m_hWnd, WM_TRAY_PUSHICON, TRAYICON_ID, setIcon, buff) == FALSE ){
-						SetTimer(RETRY_ADD_TRAY, 5000, NULL);
+				if( this->modifyTitleBarText ){
+					WCHAR szTitle[256];
+					if( GetWindowText(m_hWnd, szTitle, 256) > 0 ){
+						wstring title = szTitle;
+						size_t sep = title.rfind(L" - ");
+						if( sep == wstring::npos ){
+							sep = title.rfind(L" ● ");
+							if( sep == wstring::npos ){
+								sep = title.rfind(L" ○ ");
+							}
+						}
+						if( sep == wstring::npos ){
+							title.insert(0, L" - ");
+							sep = 0;
+						}
+						title[sep + 1] = (setIcon == this->iconRed ? L'●' : setIcon == this->iconGreen ? L'○' : L'-');
+						if( title != szTitle ){
+							SetWindowText(m_hWnd, title.c_str());
+						}
 					}
-				}else{
-					ChgTipsTaskBar(m_hWnd, TRAYICON_ID, setIcon, buff);
+				}
+				if( this->overlayTaskIcon ){
+					SetOverlayIcon(setIcon == this->iconRed ? this->iconOlRec : setIcon == this->iconGreen ? this->iconOlEpg : NULL);
+				}
+				if( this->minTask && IsWindowVisible(m_hWnd) == FALSE ){
+					wstring bonFile;
+					this->bonCtrl.GetOpenBonDriver(&bonFile);
+					WCHAR szBuff[256] = L"";
+					GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff, 256);
+					wstring buff = bonFile + L" ： " + szBuff;
+					if( nIDEvent == RETRY_ADD_TRAY ){
+						if( AddTaskBar(m_hWnd, WM_TRAY_PUSHICON, TRAYICON_ID, setIcon, buff) == FALSE ){
+							SetTimer(RETRY_ADD_TRAY, 5000, NULL);
+						}
+					}else{
+						ChgTipsTaskBar(m_hWnd, TRAYICON_ID, setIcon, buff);
+					}
 				}
 			}
 			break;
@@ -605,9 +641,8 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 						this->iniMin = FALSE;
 						ShowWindow(m_hWnd, SW_RESTORE);
 						SetForegroundWindow(m_hWnd);
-						KillTimer(RETRY_ADD_TRAY);
-						KillTimer(TIMER_CHG_TRAY);
 						DeleteTaskBar(m_hWnd, TRAYICON_ID);
+						ChgIconStatus();
 					}
 					break ;
 				default :
@@ -676,16 +711,12 @@ BOOL CEpgDataCap_BonDlg::DeleteTaskBar(HWND wnd, UINT id)
 
 void CEpgDataCap_BonDlg::ChgIconStatus()
 {
-	if( this->minTask && IsWindowVisible(m_hWnd) == FALSE ){
-		SetTimer(TIMER_CHG_TRAY, 0, NULL);
-	}
+	SetTimer(TIMER_CHG_TRAY, 0, NULL);
 }
 
 LRESULT CEpgDataCap_BonDlg::OnTaskbarCreated(WPARAM, LPARAM)
 {
-	if( IsWindowVisible(m_hWnd) == FALSE && this->minTask == TRUE){
-		SetTimer(RETRY_ADD_TRAY, 0, NULL);
-	}
+	SetTimer(RETRY_ADD_TRAY, 0, NULL);
 
 	return 0;
 }
@@ -801,6 +832,7 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboTuner()
 		}else{
 			this->serviceList.clear();
 			ComboBox_ResetContent(GetDlgItem(IDC_COMBO_SERVICE));
+			UpdateTitleBarText();
 		}
 	}
 	ChgIconStatus();
@@ -815,6 +847,7 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboService()
 		DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
 		SelectService(this->serviceList[index]);
 	}
+	UpdateTitleBarText();
 	ChgIconStatus();
 }
 
@@ -861,6 +894,47 @@ void CEpgDataCap_BonDlg::ReloadNWSet()
 	}
 }
 
+void CEpgDataCap_BonDlg::SetOverlayIcon(HICON icon)
+{
+	void* pv;
+	if( SUCCEEDED(CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, &pv)) ){
+		((ITaskbarList3*)pv)->SetOverlayIcon(m_hWnd, icon, L"");
+		((ITaskbarList3*)pv)->Release();
+	}
+}
+
+void CEpgDataCap_BonDlg::UpdateTitleBarText()
+{
+	WCHAR szTitle[256];
+	if( GetWindowText(m_hWnd, szTitle, 256) > 0 ){
+		wstring title = szTitle;
+		size_t sep = title.rfind(L" - ");
+		if( sep == wstring::npos ){
+			sep = title.rfind(L" ● ");
+			if( sep == wstring::npos ){
+				sep = title.rfind(L" ○ ");
+			}
+		}
+		if( this->modifyTitleBarText ){
+			if( sep == wstring::npos ){
+				title.insert(0, L" - ");
+				sep = 0;
+			}
+			WCHAR szBuff[128];
+			if( GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff, 128) > 0 ){
+				title.replace(0, sep, szBuff);
+			}else{
+				title.erase(0, sep);
+			}
+		}else if( sep != wstring::npos ){
+			title.erase(0, sep + 3);
+		}
+		if( title != szTitle ){
+			SetWindowText(m_hWnd, title.c_str());
+		}
+	}
+}
+
 int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 {
 	this->serviceList.clear();
@@ -896,8 +970,10 @@ int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 		if( selectSel >= 0 ){
 			ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_SERVICE), selectSel);
 		}
+		UpdateTitleBarText();
 		return selectIndex;
 	}
+	UpdateTitleBarText();
 	return -1;
 }
 
@@ -1406,6 +1482,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 				}else{
 					this->serviceList.clear();
 					ComboBox_ResetContent(GetDlgItem(IDC_COMBO_SERVICE));
+					UpdateTitleBarText();
 				}
 			}
 		}
@@ -1552,8 +1629,8 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 					if( this->cmdCtrlList.size() == 1 ){
 						BtnUpdate(GUI_NORMAL);
 						SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"予約録画終了しました\r\n");
-						ChgIconStatus();
 					}
+					ChgIconStatus();
 				}
 			}
 		}

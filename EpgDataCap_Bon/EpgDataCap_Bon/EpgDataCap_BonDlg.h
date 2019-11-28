@@ -39,6 +39,8 @@ protected:
 	BOOL ChgTipsTaskBar(HWND wnd, UINT id, HICON icon, wstring tips);
 	void ChgIconStatus();
 
+	void SetOverlayIcon(HICON icon);
+	void UpdateTitleBarText();
 	int ReloadServiceList(int selONID = -1, int selTSID = -1, int selSID = -1);
 	void ReloadNWSet();
 	BOOL SelectBonDriver(LPCWSTR fileName);
@@ -57,6 +59,10 @@ protected:
 	HICON iconBlue;
 	HICON iconGreen;
 	HICON iconGray;
+	HICON iconOlRec;
+	HICON iconOlEpg;
+	BOOL modifyTitleBarText;
+	BOOL overlayTaskIcon;
 	BOOL minTask;
 	wstring recFileName;
 	BOOL overWriteFlag;

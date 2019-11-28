@@ -11,7 +11,9 @@
 #define IDD_DIALOG_SET_NW               131
 #define IDI_ICON_RED                    132
 #define IDD_DIALOG_SET_APP              132
+#define IDI_ICON_OVERLAY_EPG            133
 #define IDD_DIALOG_SET_EPG              133
+#define IDI_ICON_OVERLAY_REC            134
 #define IDD_DIALOG_SET_APPBTN           134
 #define IDD_DIALOG_SET_SERVICE          135
 #define IDC_COMBO_TUNER                 1000
@@ -96,6 +98,8 @@
 #define IDC_EDIT_CH                     1041
 #define IDC_EDIT_SCRAMBLE_SAVE_THRESH   1042
 #define IDC_BUTTON_DEL                  1042
+#define IDC_CHECK_MODIFY_TITLE_BAR      1043
+#define IDC_OVERLAY_TASK_ICON           1044
 #define IDC_EDIT_BACKSTART_WAITSEC      1044
 #define IDC_STATIC                      -1
 
