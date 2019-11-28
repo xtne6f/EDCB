@@ -76,7 +76,7 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramDuration}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="時間（長さ）" HorizontalContentAlignment="Left" Tag="ProgramDuration" />
+                            <GridViewColumnHeader Content="長さ" HorizontalContentAlignment="Left" Tag="ProgramDuration" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
