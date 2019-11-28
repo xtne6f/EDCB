@@ -3,6 +3,8 @@
 // Used by EpgDataCap_Bon.rc
 //
 #define IDD_EPGDATACAP_BON_DIALOG       102
+#define IDD_EPGDATACAP_BON_DIALOG_1     103
+#define IDD_EPGDATACAP_BON_DIALOG_2     104
 #define IDI_ICON_BLUE                   129
 #define IDD_DIALOG_SETTING              129
 #define IDI_ICON_GRAY                   130

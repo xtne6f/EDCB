@@ -68,7 +68,11 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 
 INT_PTR CEpgDataCap_BonDlg::DoModal()
 {
-	return DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD), NULL, DlgProc, (LPARAM)this);
+	int index = GetPrivateProfileInt(L"SET", L"DialogTemplate", 0, GetModuleIniPath().c_str());
+	return DialogBoxParam(GetModuleHandle(NULL),
+	                      MAKEINTRESOURCE(index == 1 ? IDD_EPGDATACAP_BON_DIALOG_1 :
+	                                      index == 2 ? IDD_EPGDATACAP_BON_DIALOG_2 : IDD),
+	                      NULL, DlgProc, (LPARAM)this);
 }
 
 void CEpgDataCap_BonDlg::ReloadSetting()
@@ -447,9 +451,9 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						info = ConvertEpgInfoText(&eventInfo);
 					}
 				}
-				WCHAR pgInfo[512] = L"";
-				GetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, pgInfo, 512);
-				if( info.substr(0, 511).compare(pgInfo) != 0 ){
+				vector<WCHAR> pgInfo(info.size() + 2);
+				GetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, pgInfo.data(), (int)pgInfo.size());
+				if( info != pgInfo.data() ){
 					SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
 				}
 			}
@@ -1189,11 +1193,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 	                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) == NO_ERR ){
 		info = ConvertEpgInfoText(&eventInfo);
 	}
-	WCHAR pgInfo[512] = L"";
-	GetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, pgInfo, 512);
-	if( info.substr(0, 511).compare(pgInfo) != 0 ){
-		SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
-	}
+	SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
 }
 
 
