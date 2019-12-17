@@ -91,6 +91,7 @@ private:
 	int m_dropSaveThresh;
 	int m_scrambleSaveThresh;
 	bool m_noLogScramble;
+	bool m_dropLogAsUtf8;
 	DWORD m_statusCode;
 	SET_CH_INFO m_lastSetCh;
 	bool m_chChangedAfterSetCh;

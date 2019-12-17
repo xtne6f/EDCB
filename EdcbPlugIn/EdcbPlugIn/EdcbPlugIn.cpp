@@ -322,6 +322,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			m_dropSaveThresh = GetPrivateProfileInt(L"SET", L"DropSaveThresh", 0, iniPath.c_str());
 			m_scrambleSaveThresh = GetPrivateProfileInt(L"SET", L"ScrambleSaveThresh", -1, iniPath.c_str());
 			m_noLogScramble = GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, iniPath.c_str()) != 0;
+			m_dropLogAsUtf8 = GetPrivateProfileInt(L"SET", L"DropLogAsUtf8", 0, iniPath.c_str()) != 0;
 			m_epgCapBackStartWaitSec = GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, iniPath.c_str()) == 0 ? MAXDWORD :
 				GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, iniPath.c_str());
 			m_epgCapBackBasicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"EpgCapBackBSBasicOnly", 1, iniPath.c_str()) != 0;
@@ -941,7 +942,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 							dropCount.SetPIDName(pidNameList[i - 1].first, pidNameList[i - 1].second);
 						}
 						dropCount.SetBonDriver(m_currentBonDriver);
-						dropCount.SaveLog(infoPath.native());
+						dropCount.SaveLog(infoPath.native(), m_dropLogAsUtf8);
 					}
 					if (IsEdcbRecording()) {
 						// èdï°ò^âÊ
