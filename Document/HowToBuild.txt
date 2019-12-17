@@ -1,14 +1,14 @@
 ﻿[ビルド]
 
-0.Visual Studio Express 2015 for Desktop または Express 2017 for Desktop をインストールする
+0.Visual Studio Express 2015/2017 for Desktop または2019までのVisual Studio Communityのどれかをインストールする
 
-1."Document\EDCB_ALL.VS2015.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
+1."Document\EDCB_ALL.VS2015.sln"を開き、ツールバーを[Release][Win32](x64ビルド時は[x64])にしてビルド→ソリューションのビルド
 
 （注意）
 ・Windows SDKのエラーが出る場合は、プロジェクト→ソリューションの再ターゲット
   で切り替える。ビルド可能なバージョンなら何でもいい
 ・WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
-  構成プロパティ→プラットフォームツールセットを"v140_xp"に切り替える必要がある
+  構成プロパティ→プラットフォームツールセットを"v140_xp"などに切り替える必要がある
   （ソリューションエクスプローラ―上でCtrl+マウス選択を駆使すればまとめて切り替えられる）
 ・SSE2非対応CPUで実行可能なファイルを作りたいときは、拡張命令セットを"拡張命令なし(/arch:IA32)"に切り替える
 
@@ -30,7 +30,7 @@
 ・EpgTimerSrv.exeをビルドする場合はLua5.2のファイルも必要。[その他]を参照
 ・EpgTimerAdminProxy.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様でスタティックリンク
   だとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダ、TVTestではTVTest.exeのフォルダに置く
-・EpgDataCap_Bon.exeについては、VC++でビルドされたBonDriverを使用するため、VC++でビルドされたIBonCast.dllが必要
+・EpgDataCap_Bon.exeについては、使用するBonDriverに特別な対応がされていない限り、VC++でビルドされたIBonCast.dllが必要
 ・EpgTimer.exeについては[その他]を参照
 
 
