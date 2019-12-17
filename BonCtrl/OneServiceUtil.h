@@ -148,10 +148,12 @@ public:
 	//ドロップとスクランブルのカウントを保存する
 	//引数：
 	// filePath			[IN]保存ファイル名
+	// asUtf8			[IN]UTF-8で保存するか
 	// dropSaveThresh	[IN]ドロップ数がこれ以上なら保存する
 	// drop				[OUT]ドロップ数
 	void SaveErrCount(
 		const wstring& filePath,
+		BOOL asUtf8,
 		int dropSaveThresh,
 		int scrambleSaveThresh,
 		ULONGLONG& drop,

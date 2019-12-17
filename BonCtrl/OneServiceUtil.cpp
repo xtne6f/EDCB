@@ -353,6 +353,7 @@ wstring COneServiceUtil::GetSaveFilePath()
 
 void COneServiceUtil::SaveErrCount(
 	const wstring& filePath,
+	BOOL asUtf8,
 	int dropSaveThresh,
 	int scrambleSaveThresh,
 	ULONGLONG& drop,
@@ -362,7 +363,7 @@ void COneServiceUtil::SaveErrCount(
 	GetErrCount(&drop, &scramble);
 	if( (dropSaveThresh >= 0 && drop >= (ULONGLONG)dropSaveThresh) ||
 	    (scrambleSaveThresh >= 0 && scramble >= (ULONGLONG)scrambleSaveThresh) ){
-		this->dropCount.SaveLog(filePath);
+		this->dropCount.SaveLog(filePath, asUtf8);
 	}
 }
 

@@ -51,12 +51,16 @@
 #define IDC_BUTTON_REC_PATH             1018
 #define IDC_BUTTON_ALL_CHK              1018
 #define IDC_BUTTON_DEL_UDP              1019
+#define IDC_CHECK_MODIFY_TITLE_BAR      1019
 #define IDC_BUTTON_VIDEO_CHK            1019
 #define IDC_EDIT_WAIT_SEC               1020
+#define IDC_CHECK_OVERLAY_TASK_ICON     1020
 #define IDC_BUTTON_ALL_CLEAR            1020
 #define IDC_EDIT_PORT_UDP               1021
+#define IDC_CHECK_TASKMIN               1021
 #define IDC_CHECK_BS                    1021
 #define IDC_CHECK_BROADCAST             1022
+#define IDC_COMBO_DIALOG_TEMPLATE       1022
 #define IDC_CHECK_CS1                   1022
 #define IDC_EDIT_WAIT_PACKET            1023
 #define IDC_CHECK_CS2                   1023
@@ -85,7 +89,6 @@
 #define IDC_RADIO_PIPE                  1031
 #define IDC_CHECK_EPGCAP_LIVE           1032
 #define IDC_CHECK_EPGCAP_REC            1033
-#define IDC_CHECK_TASKMIN               1034
 #define IDC_CHECK_EMM                   1035
 #define IDC_COMBO_BON                   1036
 #define IDC_CHECK_OPENLAST              1036
@@ -100,8 +103,7 @@
 #define IDC_EDIT_CH                     1041
 #define IDC_EDIT_SCRAMBLE_SAVE_THRESH   1042
 #define IDC_BUTTON_DEL                  1042
-#define IDC_CHECK_MODIFY_TITLE_BAR      1043
-#define IDC_OVERLAY_TASK_ICON           1044
+#define IDC_CHECK_DROP_LOG_AS_UTF8      1043
 #define IDC_EDIT_BACKSTART_WAITSEC      1044
 #define IDC_STATIC                      -1
 

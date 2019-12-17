@@ -89,6 +89,7 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	this->viewOpt = GetPrivateProfileToString(L"SET", L"ViewOption", L"", appIniPath.c_str());
 	this->dropSaveThresh = GetPrivateProfileInt(L"SET", L"DropSaveThresh", 0, appIniPath.c_str());
 	this->scrambleSaveThresh = GetPrivateProfileInt(L"SET", L"ScrambleSaveThresh", -1, appIniPath.c_str());
+	this->dropLogAsUtf8 = GetPrivateProfileInt(L"SET", L"DropLogAsUtf8", 0, appIniPath.c_str()) != 0;
 	this->tsBuffMaxCount = (DWORD)GetPrivateProfileInt(L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str());
 	this->writeBuffMaxCount = GetPrivateProfileInt(L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str());
 	this->openWait = GetPrivateProfileInt(L"SET", L"OpenWait", 200, appIniPath.c_str());
@@ -1616,8 +1617,8 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 					}else{
 						infoPath.append(fs_path(resVal.recFilePath).filename().concat(L".err").native());
 					}
-					this->bonCtrl.SaveErrCount(val.ctrlID, infoPath.native(), this->dropSaveThresh, this->scrambleSaveThresh,
-					                           resVal.drop, resVal.scramble);
+					this->bonCtrl.SaveErrCount(val.ctrlID, infoPath.native(), this->dropLogAsUtf8, this->dropSaveThresh,
+					                           this->scrambleSaveThresh, resVal.drop, resVal.scramble);
 				}else{
 					this->bonCtrl.GetErrCount(val.ctrlID, &resVal.drop, &resVal.scramble);
 				}

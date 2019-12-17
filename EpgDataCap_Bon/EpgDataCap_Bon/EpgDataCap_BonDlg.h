@@ -70,6 +70,7 @@ protected:
 	wstring viewOpt;
 	int dropSaveThresh;
 	int scrambleSaveThresh;
+	BOOL dropLogAsUtf8;
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
 	int openWait;

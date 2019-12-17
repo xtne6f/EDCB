@@ -11,7 +11,7 @@ public:
 	ULONGLONG GetDropCount();
 	ULONGLONG GetScrambleCount();
 
-	void SaveLog(const wstring& filePath);
+	void SaveLog(const wstring& filePath, BOOL asUtf8);
 
 	void SetSignal(float level);
 	void SetBonDriver(const wstring& bonDriver);
@@ -38,7 +38,7 @@ protected:
 	float signalLv;
 	wstring bonFile;
 
-	vector<pair<WORD, string>> pidName;
+	vector<pair<WORD, wstring>> pidName;
 protected:
 	void CheckCounter(const BYTE* packet, DROP_INFO* info);
 

@@ -42,6 +42,16 @@ BOOL CSetDlgBasic::OnInitDialog()
 		ListBox_AddString(GetDlgItem(IDC_LIST_REC_FOLDER), recPath.c_str());
 	}
 
+	fs_path appIniPath = GetModuleIniPath();
+	Button_SetCheck(GetDlgItem(IDC_CHECK_MODIFY_TITLE_BAR), GetPrivateProfileInt(L"SET", L"ModifyTitleBarText", 0, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_OVERLAY_TASK_ICON), GetPrivateProfileInt(L"SET", L"OverlayTaskIcon", 1, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_TASKMIN), GetPrivateProfileInt(L"SET", L"MinTask", 0, appIniPath.c_str()));
+	ComboBox_AddString(GetDlgItem(IDC_COMBO_DIALOG_TEMPLATE), L"MS UI Gothic");
+	ComboBox_AddString(GetDlgItem(IDC_COMBO_DIALOG_TEMPLATE), L"Meiryo UI");
+	ComboBox_AddString(GetDlgItem(IDC_COMBO_DIALOG_TEMPLATE), L"Yu Gothic UI");
+	int index = GetPrivateProfileInt(L"SET", L"DialogTemplate", 0, appIniPath.c_str());
+	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_DIALOG_TEMPLATE), min(max(index, 0), 2));
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
 }
@@ -80,6 +90,12 @@ void CSetDlgBasic::SaveIni()
 		}
 		WritePrivateProfileString(L"SET", key, folder, commonIniPath.c_str());
 	}
+
+	fs_path appIniPath = GetModuleIniPath();
+	WritePrivateProfileInt(L"SET", L"ModifyTitleBarText", Button_GetCheck(GetDlgItem(IDC_CHECK_MODIFY_TITLE_BAR)), appIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"OverlayTaskIcon", Button_GetCheck(GetDlgItem(IDC_CHECK_OVERLAY_TASK_ICON)), appIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"MinTask", Button_GetCheck(GetDlgItem(IDC_CHECK_TASKMIN)), appIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"DialogTemplate", ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_DIALOG_TEMPLATE)), appIniPath.c_str());
 }
 
 void CSetDlgBasic::OnBnClickedButtonRecPath()

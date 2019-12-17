@@ -291,11 +291,13 @@ public:
 	//引数：
 	// id					[IN]制御識別ID
 	// filePath				[IN]保存ファイル名
+	// asUtf8				[IN]UTF-8で保存するか
 	// dropSaveThresh		[IN]ドロップ数がこれ以上なら保存する
 	// drop					[OUT]ドロップ数
 	void SaveErrCount(
 		DWORD id,
 		const wstring& filePath,
+		BOOL asUtf8,
 		int dropSaveThresh,
 		int scrambleSaveThresh,
 		ULONGLONG& drop,

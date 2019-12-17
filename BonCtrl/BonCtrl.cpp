@@ -847,13 +847,14 @@ void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath
 void CBonCtrl::SaveErrCount(
 	DWORD id,
 	const wstring& filePath,
+	BOOL asUtf8,
 	int dropSaveThresh,
 	int scrambleSaveThresh,
 	ULONGLONG& drop,
 	ULONGLONG& scramble
 	)
 {
-	this->tsOut.SaveErrCount(id, filePath, dropSaveThresh, scrambleSaveThresh, drop, scramble);
+	this->tsOut.SaveErrCount(id, filePath, asUtf8, dropSaveThresh, scrambleSaveThresh, drop, scramble);
 }
 
 //録画中のファイルの出力サイズを取得する

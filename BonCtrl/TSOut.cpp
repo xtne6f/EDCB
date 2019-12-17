@@ -902,6 +902,7 @@ wstring CTSOut::GetSaveFilePath(
 void CTSOut::SaveErrCount(
 	DWORD id,
 	const wstring& filePath,
+	BOOL asUtf8,
 	int dropSaveThresh,
 	int scrambleSaveThresh,
 	ULONGLONG& drop,
@@ -912,7 +913,7 @@ void CTSOut::SaveErrCount(
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
-		itr->second->SaveErrCount(filePath, dropSaveThresh, scrambleSaveThresh, drop, scramble);
+		itr->second->SaveErrCount(filePath, asUtf8, dropSaveThresh, scrambleSaveThresh, drop, scramble);
 	}
 }
 
