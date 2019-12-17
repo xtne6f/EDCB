@@ -22,7 +22,6 @@ TVTest::CTVTestPlugin *CreatePluginClass()
 CEpgTimerPlugIn::CEpgTimerPlugIn()
 {
 	this->nwMode = FALSE;
-	this->nwModeCurrentCtrlID = 0;
 	this->fullScreen = FALSE;
 	this->showNormal = TRUE;
 	this->grantServerAccess = FALSE;
@@ -94,9 +93,6 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 			}
 		});
 
-		if( this->nwMode == TRUE ){
-			this->ctrlDlg.SetCtrlCmd(&this->cmd, this->nwModeInfo.ctrlID, this->nwModeInfo.udpSend, this->nwModeInfo.tcpSend, FALSE, this->nwModeInfo.timeShiftMode);
-		}
 		if( this->m_pApp->GetFullscreen() == true ){
 			this->fullScreen = TRUE;
 			this->ctrlDlg.StartFullScreenMouseChk();
@@ -124,7 +120,8 @@ bool CEpgTimerPlugIn::Finalize()
 	this->ctrlDlg.CloseStreamCtrlDialog();
 
 	if( this->nwMode ){
-		this->cmd.SendNwPlayClose(this->nwModeCurrentCtrlID);
+		this->nwModeInfo.enableMode = FALSE;
+		this->ctrlDlg.SetCtrl(this->nwModeInfo);
 		this->nwMode = FALSE;
 	}
 	return true;
@@ -191,7 +188,9 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 				if( sys->m_pApp->SetDriverName(val.c_str()) == TRUE ){
 					resParam->param = CMD_SUCCESS;
 				}
-				if( CompareNoCase(val, L"BonDriver_UDP.dll") == 0 || CompareNoCase(val, L"BonDriver_TCP.dll") == 0 ){
+				if( CompareNoCase(val, L"BonDriver_UDP.dll") == 0 ||
+				    CompareNoCase(val, L"BonDriver_TCP.dll") == 0 ||
+				    CompareNoCase(val, L"BonDriver_NetworkPipe.dll") == 0 ){
 					sys->m_pApp->SetChannel(0, 0);
 				}
 			}
@@ -354,25 +353,25 @@ LRESULT CALLBACK CEpgTimerPlugIn::StreamCtrlDlgCallback(HWND hwnd,UINT uMsg,WPAR
 				WCHAR buff[512] = L"";
 				sys->m_pApp->GetDriverFullPathName(buff, 512);
 				wstring bonName = fs_path(buff).filename().native();
-				if( lParam != 0){
-					if( CompareNoCase(bonName, L"BonDriver_TCP.dll") != 0 ){
-						sys->m_pApp->SetDriverName(L"BonDriver_TCP.dll");
+				DWORD udpPort = (DWORD)wParam;
+				DWORD tcpPort = (DWORD)lParam;
+				if( tcpPort < 65536 ){
+					if( CompareNoCase(bonName, tcpPort < 2230 ? L"BonDriver_NetworkPipe.dll" : L"BonDriver_TCP.dll") != 0 ){
+						sys->m_pApp->SetDriverName(tcpPort < 2230 ? L"BonDriver_NetworkPipe.dll" : L"BonDriver_TCP.dll");
 					}
-					DWORD ch = (DWORD)lParam-2230;
-					sys->m_pApp->SetChannel(0, ch);
-				}else
-				if( wParam != 0){
+					sys->m_pApp->SetChannel(0, (int)(tcpPort < 2230 ? tcpPort : tcpPort - 2230));
+				}else if( 1234 <= udpPort && udpPort < 65536 ){
 					if( CompareNoCase(bonName, L"BonDriver_UDP.dll") != 0 ){
 						sys->m_pApp->SetDriverName(L"BonDriver_UDP.dll");
 					}
-					DWORD ch = (DWORD)wParam-1234;
-					sys->m_pApp->SetChannel(0, ch);
+					sys->m_pApp->SetChannel(0, (int)(udpPort - 1234));
 				}
 			}
 			return TRUE;
 		case CStreamCtrlDlg::WM_PLAY_CLOSE:
 			if( sys->nwMode ){
-				sys->cmd.SendNwPlayClose(sys->nwModeCurrentCtrlID);
+				sys->nwModeInfo.enableMode = FALSE;
+				sys->ctrlDlg.SetCtrl(sys->nwModeInfo);
 				sys->nwMode = FALSE;
 				sys->ResetStreamingCtrlView();
 			}
@@ -381,27 +380,8 @@ LRESULT CALLBACK CEpgTimerPlugIn::StreamCtrlDlgCallback(HWND hwnd,UINT uMsg,WPAR
 			sys->CtrlCmdCallbackInvoked();
 			return TRUE;
 		case WM_TT_SET_CTRL:
-			if( sys->nwMode ){
-				sys->cmd.SendNwPlayClose(sys->nwModeCurrentCtrlID);
-				sys->ctrlDlg.StopTimer();
-				sys->nwMode = FALSE;
-			}
-			if( sys->nwModeInfo.enableMode == TRUE ){
-				sys->nwModeCurrentCtrlID = sys->nwModeInfo.ctrlID;
-				sys->nwMode = TRUE;
-
-				wstring ip = L"";
-				Format(ip, L"%d.%d.%d.%d",
-					(sys->nwModeInfo.serverIP&0xFF000000)>>24,
-					(sys->nwModeInfo.serverIP&0x00FF0000)>>16,
-					(sys->nwModeInfo.serverIP&0x0000FF00)>>8,
-					(sys->nwModeInfo.serverIP&0x000000FF));
-
-				sys->cmd.SetSendMode(TRUE);
-				sys->cmd.SetNWSetting(ip,sys->nwModeInfo.serverPort);
-				sys->cmd.SetConnectTimeOut(15*1000);
-				sys->ctrlDlg.SetCtrlCmd(&sys->cmd, sys->nwModeInfo.ctrlID, sys->nwModeInfo.udpSend, sys->nwModeInfo.tcpSend, TRUE, sys->nwModeInfo.timeShiftMode);
-			}
+			sys->ctrlDlg.SetCtrl(sys->nwModeInfo);
+			sys->nwMode = sys->nwModeInfo.enableMode ? TRUE : FALSE;
 			sys->ResetStreamingCtrlView();
 			return TRUE;
 		}

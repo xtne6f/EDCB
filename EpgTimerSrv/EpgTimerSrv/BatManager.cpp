@@ -232,14 +232,17 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 							}
 						}
 						vector<WCHAR> strBuff(strParam.c_str(), strParam.c_str() + strParam.size() + 1);
-						if( exePath.empty() == false &&
-						    CreateProcess(exePath.c_str(), strBuff.data(), NULL, NULL, FALSE,
-						                  BELOW_NORMAL_PRIORITY_CLASS | (exDirect ? CREATE_UNICODE_ENVIRONMENT : 0),
-						                  exDirect ? const_cast<LPWSTR>(CreateEnvironment(work).c_str()) : NULL,
-						                  exDirect ? fs_path(work.batFilePath).parent_path().c_str() : NULL, &si, &pi) ){
-							CloseHandle(pi.hThread);
-							hProcess = pi.hProcess;
-						}else{
+						//Ç±Ç±Ç≈íZóçï]âøÇ∑ÇÈÇ∆C4701(piÇ™ñ¢èâä˙âª)Ç…Ç»ÇÈÅBÇ®ÇªÇÁÇ≠ãUózê´
+						if( exePath.empty() == false ){
+							if( CreateProcess(exePath.c_str(), strBuff.data(), NULL, NULL, FALSE,
+							                  BELOW_NORMAL_PRIORITY_CLASS | (exDirect ? CREATE_UNICODE_ENVIRONMENT : 0),
+							                  exDirect ? const_cast<LPWSTR>(CreateEnvironment(work).c_str()) : NULL,
+							                  exDirect ? fs_path(work.batFilePath).parent_path().c_str() : NULL, &si, &pi) ){
+								CloseHandle(pi.hThread);
+								hProcess = pi.hProcess;
+							}
+						}
+						if( hProcess == NULL ){
 							_OutputDebugString(L"BATãNìÆÉGÉâÅ[ÅF%ls\r\n", work.batFilePath.c_str());
 						}
 					}

@@ -254,7 +254,6 @@
     <ClInclude Include="EpgDataCap_Bon.h" />
     <ClInclude Include="EpgDataCap_BonDef.h" />
     <ClInclude Include="EpgDataCap_BonDlg.h" />
-    <ClInclude Include="EpgDataCap_BonMain.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SetDlgApp.h" />
     <ClInclude Include="SetDlgAppBtn.h" />
@@ -265,6 +264,7 @@
     <ClInclude Include="SettingDlg.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="TaskbarList.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\BonCtrl\BonCtrl.cpp" />
@@ -297,7 +297,6 @@
     <ClCompile Include="..\..\Common\WritePlugInUtil.cpp" />
     <ClCompile Include="EpgDataCap_Bon.cpp" />
     <ClCompile Include="EpgDataCap_BonDlg.cpp" />
-    <ClCompile Include="EpgDataCap_BonMain.cpp" />
     <ClCompile Include="SetDlgApp.cpp" />
     <ClCompile Include="SetDlgAppBtn.cpp" />
     <ClCompile Include="SetDlgBasic.cpp" />
@@ -311,6 +310,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TaskbarList.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EpgDataCap_Bon.rc" />

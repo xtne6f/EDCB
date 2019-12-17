@@ -167,9 +167,6 @@
     <ClInclude Include="..\..\BonCtrl\WriteTSFile.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="EpgDataCap_BonMain.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\BonCtrl\ChSetUtil.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
@@ -205,6 +202,9 @@
     </ClInclude>
     <ClInclude Include="..\..\BonCtrl\ServiceFilter.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="TaskbarList.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -295,9 +295,6 @@
     <ClCompile Include="..\..\BonCtrl\WriteTSFile.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="EpgDataCap_BonMain.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\BonCtrl\ChSetUtil.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
@@ -324,6 +321,9 @@
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\ServiceFilter.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="TaskbarList.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

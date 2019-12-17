@@ -1116,9 +1116,6 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 {
 	fs_path iniPath = GetModuleIniPath();
 	CEpgTimerSrvSetting::SETTING s = CEpgTimerSrvSetting::LoadSetting(iniPath.c_str());
-	fs_path viewIniPath = GetCommonIniPath().replace_filename(L"EpgDataCap_Bon.ini");
-	s.enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
-	s.enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
 	this->notifyManager.SetLogFilePath(s.saveNotifyLog ? GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log").c_str() : L"");
 	if( initialize ){
 		this->stoppingFlag = false;

@@ -11,24 +11,14 @@ public:
 	CBonDriverUtil(void);
 	~CBonDriverUtil(void);
 
-	//BonDriverフォルダを指定
-	//引数：
-	// bonDriverFolderPath		[IN]BonDriverフォルダパス
-	void SetBonDriverFolder(
-		LPCWSTR bonDriverFolderPath
-		);
-
-	//BonDriverフォルダのBonDriver_*.dllを列挙
-	//戻り値：
-	// 検索できたBonDriver一覧
-	vector<wstring> EnumBonDriver();
-
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//引数：
-	// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
+	// bonDriverFolder	[IN]BonDriverのフォルダパス
+	// bonDriverFile	[IN]BonDriverのファイル名
 	// recvFunc_		[IN]ストリーム受信時のコールバック関数
 	// statusFunc_		[IN]ステータス(シグナルレベル,Space,Ch)取得時のコールバック関数
 	bool OpenBonDriver(
+		LPCWSTR bonDriverFolder,
 		LPCWSTR bonDriverFile,
 		const std::function<void(BYTE*, DWORD, DWORD)>& recvFunc_,
 		const std::function<void(float, int, int)>& statusFunc_,
@@ -43,12 +33,12 @@ public:
 	//戻り値：
 	// SpaceとChの一覧（リストの添え字がそのままチューナー空間やチャンネルの番号になる）
 	// ※原作はチャンネル名が空のものをスキップする仕様なので、利用側はこれに従ったほうが良いかもしれない
-	vector<pair<wstring, vector<wstring>>> GetOriginalChList();
+	const vector<pair<wstring, vector<wstring>>>& GetOriginalChList() { return this->loadChList; }
 
 	//BonDriverのチューナー名を取得
 	//戻り値：
 	// チューナー名
-	wstring GetTunerName();
+	const wstring& GetTunerName() { return this->loadTunerName; }
 
 	//チャンネル変更
 	//引数：
@@ -69,6 +59,7 @@ public:
 		);
 
 	//OpenしたBonDriverのファイル名を取得
+	//※スレッドセーフ
 	//戻り値：
 	// BonDriverのファイル名（拡張子含む）（emptyで未Open）
 	wstring GetOpenBonDriverFileName();

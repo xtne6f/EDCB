@@ -31,27 +31,6 @@ INT_PTR CSettingDlg::DoModal()
 BOOL CSettingDlg::OnInitDialog()
 {
 	// TODO:  ここに初期化を追加してください
-	TCITEM Item;
-	Item.mask = TCIF_TEXT;
-
-	Item.pszText = L"基本設定";
-	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 0, &Item);
-
-	Item.pszText = L"動作設定";
-	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 1, &Item);
-
-	Item.pszText = L"EPG取得設定";
-	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 2, &Item);
-
-	Item.pszText = L"サービス表示設定";
-	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 3, &Item);
-
-	Item.pszText = L"ネットワーク設定";
-	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 4, &Item);
-
-	Item.pszText = L"外部アプリケーション設定";
-	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 5, &Item);
-
 	basicDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_BASIC), GetSafeHwnd() );
 	appDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APP), GetSafeHwnd() );
 	epgDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_EPG), GetSafeHwnd() );
@@ -59,6 +38,23 @@ BOOL CSettingDlg::OnInitDialog()
 	appBtnDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APPBTN), GetSafeHwnd() );
 	serviceDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_SERVICE), GetSafeHwnd() );
 
+	HWND hwndItems[6] = {
+		basicDlg.GetSafeHwnd(),
+		appDlg.GetSafeHwnd(),
+		epgDlg.GetSafeHwnd(),
+		serviceDlg.GetSafeHwnd(),
+		networkDlg.GetSafeHwnd(),
+		appBtnDlg.GetSafeHwnd()
+	};
+
+	for( int i = 0; i < 6; i++ ){
+		WCHAR text[32] = {};
+		GetWindowText(hwndItems[i], text, 32);
+		TCITEM tci;
+		tci.mask = TCIF_TEXT;
+		tci.pszText = text;
+		TabCtrl_InsertItem(GetDlgItem(IDC_TAB), i, &tci);
+	}
 	RECT rc;
 	GetWindowRect(GetDlgItem(IDC_TAB), &rc);
 	TabCtrl_AdjustRect(GetDlgItem(IDC_TAB), FALSE, &rc);
@@ -69,12 +65,9 @@ BOOL CSettingDlg::OnInitDialog()
 
 	rc.right -= rc.left;
 	rc.bottom -= rc.top;
-	MoveWindow(basicDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
-	MoveWindow(appDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
-	MoveWindow(epgDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
-	MoveWindow(networkDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
-	MoveWindow(appBtnDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
-	MoveWindow(serviceDlg.GetSafeHwnd(), pt.x, pt.y, rc.right, rc.bottom, TRUE);
+	for( int i = 0; i < 6; i++ ){
+		MoveWindow(hwndItems[i], pt.x, pt.y, rc.right, rc.bottom, TRUE);
+	}
 
 	TabCtrl_SetCurSel(GetDlgItem(IDC_TAB), 0);
 	ShowWindow(basicDlg.GetSafeHwnd(), SW_SHOW);

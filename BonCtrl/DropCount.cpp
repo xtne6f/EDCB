@@ -160,16 +160,16 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 	info->lastCounter = continuity_counter;
 }
 
-void CDropCount::SaveLog(const wstring& filePath)
+void CDropCount::SaveLog(const wstring& filePath, BOOL asUtf8)
 {
 	//※原作と異なりディレクトリの自動生成はしない
 	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(filePath, UTIL_SECURE_WRITE), fclose);
 	if( fp ){
-		fprintf_s(fp.get(), "%s\r\n", this->log.c_str());
+		fprintf_s(fp.get(), "%s%s\r\n", asUtf8 ? "\xEF\xBB\xBF" : "", this->log.c_str());
 
+		string strA;
 		for( vector<DROP_INFO>::const_iterator itr = this->infoList.begin(); itr != this->infoList.end(); itr++ ){
 			LPCSTR desc = "";
-			vector<pair<WORD, string>>::const_iterator itrPID;
 			switch( itr->PID ){
 			case 0x0000:
 				desc = "PAT";
@@ -229,9 +229,11 @@ void CDropCount::SaveLog(const wstring& filePath)
 				desc = "NULL";
 				break;
 			default:
-				itrPID = std::lower_bound(this->pidName.begin(), this->pidName.end(), std::make_pair(itr->PID, string()));
+				vector<pair<WORD, wstring>>::const_iterator itrPID =
+					std::lower_bound(this->pidName.begin(), this->pidName.end(), std::make_pair(itr->PID, wstring()));
 				if( itrPID != this->pidName.end() && itrPID->first == itr->PID ){
-					desc = itrPID->second.c_str();
+					WtoA(itrPID->second, strA, asUtf8 ? UTIL_CONV_UTF8 : UTIL_CONV_DEFAULT);
+					desc = strA.c_str();
 				}
 				break;
 			}
@@ -239,18 +241,17 @@ void CDropCount::SaveLog(const wstring& filePath)
 			          itr->PID, itr->total, itr->drop, itr->scramble, desc);
 		}
 
-		string strA;
-		WtoA(L"使用BonDriver : " + bonFile, strA);
+		WtoA(L"使用BonDriver : " + bonFile, strA, asUtf8 ? UTIL_CONV_UTF8 : UTIL_CONV_DEFAULT);
 		fprintf_s(fp.get(), "\r\n%s\r\n", strA.c_str());
 	}
 }
 
 void CDropCount::SetPIDName(WORD pid, const wstring& name)
 {
-	vector<pair<WORD, string>>::iterator itr;
-	itr = std::lower_bound(this->pidName.begin(), this->pidName.end(), std::make_pair(pid, string()));
+	vector<pair<WORD, wstring>>::iterator itr =
+		std::lower_bound(this->pidName.begin(), this->pidName.end(), std::make_pair(pid, wstring()));
 	if( itr == this->pidName.end() || itr->first != pid ){
-		itr = this->pidName.insert(itr, std::make_pair(pid, string()));
+		itr = this->pidName.insert(itr, std::make_pair(pid, wstring()));
 	}
-	WtoA(name, itr->second);
+	itr->second = name;
 }

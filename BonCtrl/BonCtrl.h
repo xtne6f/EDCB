@@ -16,39 +16,44 @@ class CBonCtrl
 public:
 	//チャンネルスキャン、EPG取得のステータス用
 	enum JOB_STATUS {
-		ST_STOP = -4,	//停止中
-		ST_WORKING,		//実行中
-		ST_COMPLETE,	//完了
-		ST_CANCEL,		//キャンセルされた
+		ST_STOP = -4,		//停止中
+		ST_COMPLETE = -3,	//完了
+		ST_CANCEL = -2,		//キャンセルされた
+		ST_WORKING = -1,	//実行中
 	};
 
 	CBonCtrl(void);
 	~CBonCtrl(void);
 
-	//BonDriverフォルダを指定
-	//引数：
-	// bonDriverFolderPath		[IN]BonDriverフォルダパス
-	void SetBonDriverFolder(
-		LPCWSTR bonDriverFolderPath
+	void ReloadSetting(
+		BOOL enableEmm,
+		BOOL noLogScramble,
+		BOOL parseEpgPostProcess,
+		BOOL enableScramble,
+		BOOL needCaption,
+		BOOL needData,
+		BOOL allService
 		);
 
-	void SetEMMMode(BOOL enable) { this->tsOut.SetEmm(enable); }
+	//ネットワーク送信と統計の対象サービスIDを取得する
+	WORD GetNWCtrlServiceID() { return this->nwCtrlServiceID; }
 
-	void SetNoLogScramble(BOOL noLog) { this->tsOut.SetNoLogScramble(noLog); }
+	//ネットワーク送信と統計の対象サービスIDを設定する
+	//※GetStreamID()で受動的なチャンネル変化を検出した時などに使う
+	void SetNWCtrlServiceID(
+		WORD serviceID
+		);
 
-	void SetParseEpgPostProcess(BOOL parsePost) { this->tsOut.SetParseEpgPostProcess(parsePost); }
-
-	//BonDriverフォルダのBonDriver_*.dllを列挙
-	//戻り値：
-	// 検索できたBonDriver一覧
-	vector<wstring> EnumBonDriver();
+	//EPG取得などの状態を更新する
+	//※概ね1秒ごとに呼ぶ
+	void Check();
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
-	DWORD OpenBonDriver(
+	// bonDriverFile	[IN]BonDriverのファイル名
+	BOOL OpenBonDriver(
 		LPCWSTR bonDriverFile,
 		int openWait,
 		DWORD tsBuffMaxCount
@@ -69,26 +74,15 @@ public:
 
 	//チャンネル変更
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// space			[IN]変更チャンネルのSpace
 	// ch				[IN]変更チャンネルの物理Ch
-	DWORD SetCh(
+	// serviceID		[IN]変更チャンネルのサービスID
+	BOOL SetCh(
 		DWORD space,
-		DWORD ch
-		);
-
-	//チャンネル変更
-	//戻り値：
-	// エラーコード
-	//引数：
-	// ONID			[IN]変更チャンネルのorignal_network_id
-	// TSID			[IN]変更チャンネルのtransport_stream_id
-	// SID			[IN]変更チャンネルのservice_id
-	DWORD SetCh(
-		WORD ONID,
-		WORD TSID,
-		WORD SID
+		DWORD ch,
+		WORD serviceID
 		);
 
 	//チャンネル変更中かどうか
@@ -121,9 +115,9 @@ public:
 	//戻り値：
 	// 制御識別ID
 	//引数：
-	// sendUdpTcp	[IN]UDP/TCP送信用にする
+	// duplicateNWCtrl		[IN]ネットワーク送信と統計用のものと同じ初期値を適用するかどうか
 	DWORD CreateServiceCtrl(
-		BOOL sendUdpTcp
+		BOOL duplicateNWCtrl
 		);
 
 	//TSストリーム制御用コントロールを作成する
@@ -152,24 +146,16 @@ public:
 		);
 
 	//UDPで送信を行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// id			[IN]制御識別ID
 	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-	BOOL SendUdp(
-		DWORD id,
+	void SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		);
 
 	//TCPで送信を行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// id			[IN]制御識別ID
 	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-	BOOL SendTcp(
-		DWORD id,
+	void SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		);
 
@@ -253,11 +239,13 @@ public:
 	//引数：
 	// id					[IN]制御識別ID
 	// filePath				[IN]保存ファイル名
+	// asUtf8				[IN]UTF-8で保存するか
 	// dropSaveThresh		[IN]ドロップ数がこれ以上なら保存する
 	// drop					[OUT]ドロップ数
 	void SaveErrCount(
 		DWORD id,
 		const wstring& filePath,
+		BOOL asUtf8,
 		int dropSaveThresh,
 		int scrambleSaveThresh,
 		ULONGLONG& drop,
@@ -392,15 +380,18 @@ public:
 		);
 
 	//現在のストリームの表示用のステータスを取得する
-	//※スレッドセーフ
 	//引数：
 	// signalLv		[OUT]シグナルレベル
 	// space		[OUT]物理CHのspace(不明のとき負)
 	// ch			[OUT]物理CHのch(不明のとき負)
+	// drop			[OUT]ドロップ数
+	// scramble		[OUT]スクランブル数
 	void GetViewStatusInfo(
 		float* signalLv,
 		int* space,
-		int* ch
+		int* ch,
+		ULONGLONG* drop,
+		ULONGLONG* scramble
 		);
 
 protected:
@@ -416,32 +407,51 @@ protected:
 	int viewSpace;
 	int viewCh;
 
+	DWORD nwCtrlID;
+	BOOL nwCtrlEnableScramble;
+	BOOL nwCtrlNeedCaption;
+	BOOL nwCtrlNeedData;
+	BOOL nwCtrlAllService;
+	WORD nwCtrlServiceID;
+
 	thread_ analyzeThread;
 	CAutoResetEvent analyzeEvent;
 	atomic_bool_ analyzeStopFlag;
 
 	//チャンネルスキャン用
-	thread_ chScanThread;
-	CAutoResetEvent chScanStopEvent;
 	struct CHK_CH_INFO {
 		DWORD space;
 		DWORD ch;
 		wstring spaceName;
 		wstring chName;
 	};
-	//スキャン中はconst操作のみ
 	vector<CHK_CH_INFO> chScanChkList;
-	atomic_int_ chScanIndexOrStatus;
+	int chScanIndexOrStatus;
+	DWORD chScanChChgTimeOut;
+	DWORD chScanServiceChkTimeOut;
+	BOOL chScanChkNext;
+	DWORD chScanTick;
 
 	//EPG取得用
-	thread_ epgCapThread;
-	CAutoResetEvent epgCapStopEvent;
 	//取得中はconst操作のみ
 	vector<SET_CH_INFO> epgCapChList;
 	atomic_int_ epgCapIndexOrStatus;
+	BOOL epgCapBSBasic;
+	BOOL epgCapCS1Basic;
+	BOOL epgCapCS2Basic;
+	BOOL epgCapCS3Basic;
+	BOOL epgCapChkBS;
+	BOOL epgCapChkCS1;
+	BOOL epgCapChkCS2;
+	BOOL epgCapChkCS3;
+	BOOL epgCapChkNext;
+	int epgCapSetChState;
+	DWORD epgCapTimeOut;
+	BOOL epgCapSaveTimeOut;
+	DWORD epgCapTick;
+	DWORD epgCapLastChkTick;
 
-	thread_ epgCapBackThread;
-	CAutoResetEvent epgCapBackStopEvent;
+	int epgCapBackIndexOrStatus;
 	BOOL enableLiveEpgCap;
 	BOOL enableRecEpgCap;
 
@@ -451,11 +461,10 @@ protected:
 	BOOL epgCapBackCS3Basic;
 	DWORD epgCapBackStartWaitSec;
 protected:
-	DWORD ProcessSetCh(
+	BOOL ProcessSetCh(
 		DWORD space,
 		DWORD ch,
-		BOOL chScan,
-		BOOL restartEpgCapBack
+		BOOL chScan
 		);
 
 	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);
@@ -464,11 +473,11 @@ protected:
 	void StatusCallback(float signalLv, int space, int ch);
 	static void AnalyzeThread(CBonCtrl* sys);
 
-	static void ChScanThread(CBonCtrl* sys);
-	static void EpgCapThread(CBonCtrl* sys);
+	void CheckChScan();
+	void CheckEpgCap();
 
 	void StartBackgroundEpgCap();
 	void StopBackgroundEpgCap();
-	static void EpgCapBackThread(CBonCtrl* sys);
+	void CheckEpgCapBack();
 };
 

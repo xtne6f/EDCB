@@ -93,6 +93,8 @@
 #define IDC_CHECK_SET_REC_NW                    40324
 #define IDC_CHECK_SET_KEEP_DISK                 40325
 #define IDC_CHECK_SET_REC_OVERWRITE             40326
+#define IDC_CHECK_SET_CAPTION                   40327
+#define IDC_CHECK_SET_DATA                      40328
 #define IDC_CHECK_SET_BACK_PRIORITY             40400
 #define IDC_CHECK_SET_FIXED_TUNER_PRIORITY      40401
 #define IDC_CHECK_SET_RETRY_OTHER_TUNERS        40402

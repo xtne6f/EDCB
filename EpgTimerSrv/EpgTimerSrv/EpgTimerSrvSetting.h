@@ -63,14 +63,17 @@ public:
 		int processPriority;
 		bool keepDisk;
 		wstring tsExt;
-		bool enableCaption; //LoadSetting()Ç≈èâä˙âªÇ≥ÇÍÇ»Ç¢
-		bool enableData; //LoadSetting()Ç≈èâä˙âªÇ≥ÇÍÇ»Ç¢
+		bool enableCaption;
+		bool enableData;
 	};
 	static SETTING LoadSetting(LPCWSTR iniPath);
 	static vector<pair<wstring, wstring>> EnumBonFileName(LPCWSTR settingPath);
+#ifdef _WIN32
 	INT_PTR ShowDialog();
+#endif
 private:
 	static wstring CheckTSExtension(const wstring& ext);
+#ifdef _WIN32
 	static vector<wstring> EnumRecNamePlugInFileName();
 	static bool GetDlgButtonCheck(HWND hwnd, int id);
 	static void SetDlgButtonCheck(HWND hwnd, int id, bool check);
@@ -102,4 +105,5 @@ private:
 	HWND hwndOther;
 	HWND hwndChild[5];
 	CParseChText5 chSet;
+#endif
 };
