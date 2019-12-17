@@ -7,28 +7,24 @@
 extern "C" __declspec(dllexport) const LPVOID *WINAPI Cast(LPCSTR pType, void *pBase)
 {
 	if (lstrcmpA(pType, "IBonDriver@10") == 0 || lstrcmpA(pType, "IBonDriver2@17") == 0) {
-		struct S {
-			static BOOL F00(void *p) { return static_cast<IBonDriver*>(p)->OpenTuner(); }
-			static void F01(void *p) { static_cast<IBonDriver*>(p)->CloseTuner(); }
-			static BOOL F02(void *p, BYTE a0) { return static_cast<IBonDriver*>(p)->SetChannel(a0); }
-			static float F03(void *p) { return static_cast<IBonDriver*>(p)->GetSignalLevel(); }
-			static DWORD F04(void *p, DWORD a0) { return static_cast<IBonDriver*>(p)->WaitTsStream(a0); }
-			static DWORD F05(void *p) { return static_cast<IBonDriver*>(p)->GetReadyCount(); }
-			static BOOL F06(void *p, BYTE *a0, DWORD *a1, DWORD *a2) { return static_cast<IBonDriver*>(p)->GetTsStream(a0, a1, a2); }
-			static BOOL F07(void *p, BYTE **a0, DWORD *a1, DWORD *a2) { return static_cast<IBonDriver*>(p)->GetTsStream(a0, a1, a2); }
-			static void F08(void *p) { static_cast<IBonDriver*>(p)->PurgeTsStream(); }
-			static void F09(void *p) { static_cast<IBonDriver*>(p)->Release(); }
-			static LPCWSTR F10(void *p) { return static_cast<IBonDriver2*>(p)->GetTunerName(); }
-			static BOOL F11(void *p) { return static_cast<IBonDriver2*>(p)->IsTunerOpening(); }
-			static LPCWSTR F12(void *p, DWORD a0) { return static_cast<IBonDriver2*>(p)->EnumTuningSpace(a0); }
-			static LPCWSTR F13(void *p, DWORD a0, DWORD a1) { return static_cast<IBonDriver2*>(p)->EnumChannelName(a0, a1); }
-			static BOOL F14(void *p, DWORD a0, DWORD a1) { return static_cast<IBonDriver2*>(p)->SetChannel(a0, a1); }
-			static DWORD F15(void *p) { return static_cast<IBonDriver2*>(p)->GetCurSpace(); }
-			static DWORD F16(void *p) { return static_cast<IBonDriver2*>(p)->GetCurChannel(); }
-		};
 		static const LPVOID t[] = {
-			S::F00, S::F01, S::F02, S::F03, S::F04, S::F05, S::F06, S::F07, S::F08, S::F09,
-			S::F10, S::F11, S::F12, S::F13, S::F14, S::F15, S::F16
+			STRUCT_IBONDRIVER::F00,
+			STRUCT_IBONDRIVER::F01,
+			STRUCT_IBONDRIVER::F02,
+			STRUCT_IBONDRIVER::F03,
+			STRUCT_IBONDRIVER::F04,
+			STRUCT_IBONDRIVER::F05,
+			STRUCT_IBONDRIVER::F06,
+			STRUCT_IBONDRIVER::F07,
+			STRUCT_IBONDRIVER::F08,
+			STRUCT_IBONDRIVER::F09,
+			STRUCT_IBONDRIVER2::F10,
+			STRUCT_IBONDRIVER2::F11,
+			STRUCT_IBONDRIVER2::F12,
+			STRUCT_IBONDRIVER2::F13,
+			STRUCT_IBONDRIVER2::F14,
+			STRUCT_IBONDRIVER2::F15,
+			STRUCT_IBONDRIVER2::F16
 		};
 		if (lstrcmpA(pType, "IBonDriver2@17") == 0) {
 			if (dynamic_cast<IBonDriver2*>(static_cast<IBonDriver*>(pBase)) == nullptr) {
