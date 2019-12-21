@@ -46,7 +46,7 @@ namespace EpgTimer
                     if (Settings.Instance.NwTvModeTCP == true)
                     {
                         nwMode += 2;
-                        nwBonDriver = "BonDriver_TCP.dll";
+                        nwBonDriver = Settings.Instance.NwTvModePipe ? "BonDriver_NetworkPipe.dll" : "BonDriver_TCP.dll";
                     }
                     
                     if (CommonManager.CreateSrvCtrl().SendNwTVMode(nwMode) == ErrCode.CMD_SUCCESS)
@@ -136,7 +136,7 @@ namespace EpgTimer
                     MessageBox.Show("TVTest.exeのパスが設定されていません");
                     return false;
                 }
-                if (CommonManager.Instance.NWMode == false)
+                if (CommonManager.Instance.NWMode == false && (Settings.Instance.NwTvModeTCP == false || Settings.Instance.NwTvModePipe == false))
                 {
                     if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 0)
                     {
@@ -173,7 +173,13 @@ namespace EpgTimer
                 cmdTvTest.SetConnectTimeOut(1000);
 
                 sendInfo.enableMode = 1;
-                if (CommonManager.Instance.NWMode == false)
+                if (Settings.Instance.NwTvModeTCP && Settings.Instance.NwTvModePipe)
+                {
+                    // ネットワーク接続を使わない
+                    sendInfo.serverIP = 1;
+                    sendInfo.serverPort = 0;
+                }
+                else if (CommonManager.Instance.NWMode == false)
                 {
                     sendInfo.serverIP = 0x7F000001;
                     // 原作はここで自ホスト名を取得して解決したアドレスを格納している。(ないとは思うが)不具合があれば戻すこと

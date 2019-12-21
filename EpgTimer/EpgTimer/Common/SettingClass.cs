@@ -66,6 +66,14 @@ namespace EpgTimer
 
     class SettingPath
     {
+        public static string BitrateIniPath
+        {
+            get
+            {
+                return Path.Combine(ModulePath, "Bitrate.ini");
+            }
+        }
+
         public static string TimerSrvIniPath
         {
             get
@@ -131,6 +139,7 @@ namespace EpgTimer
         public byte EpgTipsForeColorR { get; set; }
         public byte EpgTipsForeColorG { get; set; }
         public byte EpgTipsForeColorB { get; set; }
+        public byte EpgBackColorA { get; set; }
         public byte EpgBackColorR { get; set; }
         public byte EpgBackColorG { get; set; }
         public byte EpgBackColorB { get; set; }
@@ -204,6 +213,7 @@ namespace EpgTimer
         public bool NwTvMode { get; set; }
         public bool NwTvModeUDP { get; set; }
         public bool NwTvModeTCP { get; set; }
+        public bool NwTvModePipe { get; set; }
         public bool FilePlay { get; set; }
         public string FilePlayExe { get; set; }
         public string FilePlayCmd { get; set; }
@@ -335,6 +345,7 @@ namespace EpgTimer
                 rr.EpgTipsForeColorR        = (byte)ConvertXElem(xx, w, "EpgTipsForeColorR", val.EpgTipsForeColorR, 0);
                 rr.EpgTipsForeColorG        = (byte)ConvertXElem(xx, w, "EpgTipsForeColorG", val.EpgTipsForeColorG, 0);
                 rr.EpgTipsForeColorB        = (byte)ConvertXElem(xx, w, "EpgTipsForeColorB", val.EpgTipsForeColorB, 0);
+                rr.EpgBackColorA            = (byte)ConvertXElem(xx, w, "EpgBackColorA", val.EpgBackColorA, 0x80);
                 rr.EpgBackColorR            = (byte)ConvertXElem(xx, w, "EpgBackColorR", val.EpgBackColorR, 0xA9);
                 rr.EpgBackColorG            = (byte)ConvertXElem(xx, w, "EpgBackColorG", val.EpgBackColorG, 0xA9);
                 rr.EpgBackColorB            = (byte)ConvertXElem(xx, w, "EpgBackColorB", val.EpgBackColorB, 0xA9);
@@ -403,6 +414,7 @@ namespace EpgTimer
             r.NwTvMode                  = ConvertXElem(x, w, "NwTvMode", NwTvMode, false);
             r.NwTvModeUDP               = ConvertXElem(x, w, "NwTvModeUDP", NwTvModeUDP, false);
             r.NwTvModeTCP               = ConvertXElem(x, w, "NwTvModeTCP", NwTvModeTCP, false);
+            r.NwTvModePipe              = ConvertXElem(x, w, "NwTvModePipe", NwTvModePipe, false);
             r.FilePlay                  = ConvertXElem(x, w, "FilePlay", FilePlay, true);
             r.FilePlayExe               = ConvertXElem(x, w, "FilePlayExe", FilePlayExe, "");
             r.FilePlayCmd               = ConvertXElem(x, w, "FilePlayCmd", FilePlayCmd, "\"$FilePath$\"");
@@ -985,6 +997,7 @@ namespace EpgTimer
                     val.ViewServiceList.Select(a => (double)a), "unsignedLong").Select(a => (ulong)a).ToList();
                 r.ViewContentKindList = ConvertXElements(xx, w, "ViewContentKindList",
                     val.ViewContentKindList.Select(a => (double)a), "unsignedShort").Select(a => (ushort)a).ToList();
+                r.HighlightContentKind = ConvertXElem(xx, w, "HighlightContentKind", val.HighlightContentKind, false);
                 r.SearchMode = ConvertXElem(xx, w, "SearchMode", val.SearchMode, false);
 
                 var xxx = w ? new XElement("SearchKey") : xx.Element("SearchKey");
