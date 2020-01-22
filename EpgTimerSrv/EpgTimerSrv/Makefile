@@ -82,11 +82,13 @@ $(TARGET): $(addsuffix .obj, \
   EpgTimerSrv.rc \
   )
 	$(CXX) -mwindows -Wl,-s -Wl,--dynamicbase -Wl,--nxcompat -static-libgcc -static-libstdc++ -o $@ $^ -lws2_32 -lole32 -lcomctl32 -lwinhttp -loleaut32 -lcrypt32 -liphlpapi -luuid -lnetapi32
-BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp
+BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp stdafx.h.gch
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
-Common__%.cpp.obj: ../../Common/%.cpp
+Common__%.cpp.obj: ../../Common/%.cpp stdafx.h.gch
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
-%.cpp.obj: %.cpp
+%.cpp.obj: %.cpp stdafx.h.gch
+	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
+stdafx.h.gch: stdafx.h
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 lua__%.c.obj: lua/%.c
 	$(CC) -c $(CPPFLAGS) -I./lua -I./lua/zlib1 -Os -o $@ $<
@@ -97,4 +99,4 @@ lua_zlib1__%.c.obj: lua/zlib1/%.c
 %.rc.obj: %.rc
 	iconv -f UTF-16LE -t UTF-8 $< | $(WINDRES) $(CPPFLAGS) -c 65001 -J rc -O coff -o $@
 clean:
-	$(RM) *.obj $(TARGET)
+	$(RM) stdafx.h.gch *.obj $(TARGET)

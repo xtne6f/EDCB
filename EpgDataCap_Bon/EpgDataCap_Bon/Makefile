@@ -45,13 +45,15 @@ $(TARGET): $(addsuffix .obj, \
   EpgDataCap_Bon.rc \
   )
 	$(CXX) -mwindows -Wl,-s -Wl,--dynamicbase -Wl,--nxcompat -static-libgcc -static-libstdc++ -o $@ $^ -lws2_32 -lole32 -lcomctl32 -ldbghelp -lcomdlg32
-BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp
+BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp stdafx.h.gch
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
-Common__%.cpp.obj: ../../Common/%.cpp
+Common__%.cpp.obj: ../../Common/%.cpp stdafx.h.gch
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
-%.cpp.obj: %.cpp
+%.cpp.obj: %.cpp stdafx.h.gch
+	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
+stdafx.h.gch: stdafx.h
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 %.rc.obj: %.rc
 	iconv -f UTF-16LE -t UTF-8 $< | $(WINDRES) $(CPPFLAGS) -c 65001 -J rc -O coff -o $@
 clean:
-	$(RM) *.obj $(TARGET)
+	$(RM) stdafx.h.gch *.obj $(TARGET)
