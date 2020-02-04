@@ -1075,7 +1075,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 							this_.m_epgUtil.ClearSectionStatus();
 							// TOT‚ğ‘O“|‚µ‚Å‘‚«‚Ş‚½‚ß‚ÌêŠ‚ğŠm•Û
 							BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
-							std::fill_n(nullData + 4, 184, 0xFF);
+							std::fill_n(nullData + 4, 184, (BYTE)0xFF);
 							this_.m_epgFileTotPos = _ftelli64(this_.m_epgFile.get());
 							fwrite(nullData, 1, 188, this_.m_epgFile.get());
 						}
