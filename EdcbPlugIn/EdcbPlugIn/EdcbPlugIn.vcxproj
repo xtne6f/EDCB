@@ -22,6 +22,7 @@
     <ProjectGuid>{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>EdcbPlugIn</RootNamespace>
+    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)' == '15.0'">10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

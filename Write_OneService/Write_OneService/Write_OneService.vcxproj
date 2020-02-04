@@ -22,6 +22,7 @@
     <ProjectGuid>{92EA5AE6-B81F-4BE4-809E-275F32F166EC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Write_OneService</RootNamespace>
+    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)' == '15.0'">10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
