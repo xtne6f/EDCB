@@ -22,6 +22,7 @@
     <ProjectGuid>{A690F4ED-0014-4346-AC5B-9FB4F2B3D05F}</ProjectGuid>
     <RootNamespace>EpgDataCap_Bon</RootNamespace>
     <Keyword>MFCProj</Keyword>
+    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)' == '15.0'">10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

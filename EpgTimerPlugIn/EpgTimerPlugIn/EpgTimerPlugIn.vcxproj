@@ -22,6 +22,7 @@
     <ProjectGuid>{90ECFC68-A7C2-4BDB-A6DD-C6736FCDEECB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>EpgTimerPlugIn</RootNamespace>
+    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)' == '15.0'">10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -22,6 +22,7 @@
     <ProjectGuid>{ACD276A5-9342-4DDB-8FF7-232D23302DF4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>RecName_Macro</RootNamespace>
+    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)' == '15.0'">10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -22,6 +22,7 @@
     <ProjectGuid>{2342998F-86F9-4819-8B01-6E9103F0DCD4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>EpgDataCap3</RootNamespace>
+    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)' == '15.0'">10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
