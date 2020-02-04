@@ -87,7 +87,7 @@ void CServiceFilter::CheckNeedPID()
 	//PATì¬—p‚ÌPMTƒŠƒXƒg
 	vector<pair<WORD, WORD>> pidList;
 	//NIT‚ÌPID’Ç‰Á‚µ‚Ä‚¨‚­
-	pidList.push_back(pair<WORD, WORD>(0x10, 0));
+	pidList.push_back(std::make_pair((WORD)0x10, (WORD)0));
 
 	//EMM‚ÌPID
 	for( auto itr = this->catUtil.GetPIDList().cbegin(); itr != this->catUtil.GetPIDList().end(); itr++ ){

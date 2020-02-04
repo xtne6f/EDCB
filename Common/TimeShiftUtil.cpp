@@ -284,7 +284,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		return;
 	}
 	//無効PAT送って次回送信時にリセットされるようにする
-	std::fill_n(buff, sizeof(buff), 0xFF);
+	std::fill_n(buff, sizeof(buff), (BYTE)0xFF);
 	CCreatePATPacket patUtil;
 	patUtil.SetParam(1, vector<pair<WORD, WORD>>());
 	BYTE* patBuff;
