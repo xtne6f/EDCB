@@ -219,8 +219,8 @@ void COneServiceUtil::SetPmtPID(
 	if( this->pmtPID != pmtPID_ && this->SID != 0xFFFF){
 		_OutputDebugString(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID_);
 		vector<pair<WORD, WORD>> pidList;
-		pidList.push_back(pair<WORD, WORD>(0x10, 0));
-		pidList.push_back(pair<WORD, WORD>(pmtPID_, this->SID));
+		pidList.push_back(std::make_pair((WORD)0x10, (WORD)0));
+		pidList.push_back(std::make_pair(pmtPID_, this->SID));
 		this->createPat.SetParam(TSID, pidList);
 
 		this->pmtPID = pmtPID_;

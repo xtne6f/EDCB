@@ -228,7 +228,7 @@ void CTSOut::ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet)
 				this->epgUtil.ClearSectionStatus();
 				//TOT‚ð‘O“|‚µ‚Å‘‚«ž‚Þ‚½‚ß‚ÌêŠ‚ðŠm•Û
 				BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
-				std::fill_n(nullData + 4, 184, 0xFF);
+				std::fill_n(nullData + 4, 184, (BYTE)0xFF);
 				this->epgFileTotPos = _ftelli64(this->epgFile.get());
 				fwrite(nullData, 1, 188, this->epgFile.get());
 			}

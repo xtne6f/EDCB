@@ -22,6 +22,7 @@
     <ProjectGuid>{631468C9-1AD7-4899-8BAB-D3D82CCD3A94}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>SendTSTCP</RootNamespace>
+    <WindowsTargetPlatformVersion Condition="'$(VisualStudioVersion)' == '15.0'">10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

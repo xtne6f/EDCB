@@ -32,6 +32,7 @@
   だとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダ、TVTestではTVTest.exeのフォルダに置く
 ・EpgDataCap_Bon.exeについては、使用するBonDriverに特別な対応がされていない限り、VC++でビルドされたIBonCast.dllが必要
 ・EpgTimer.exeについては[その他]を参照
+・ini/Toolsのreadexは $ gcc -Wl,-s -o readex.exe readex.c 、relayreadは $ gcc -Wl,-s -o relayread.exe relayread.c でビルドできる
 
 
 [ビルド(VisualStudio2010)]

@@ -371,6 +371,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				KillTimer( TIMER_INIT_DLG );
 				if( this->iniMin == TRUE && this->minTask == TRUE){
+					SetTimer(RETRY_ADD_TRAY, 0, NULL);
 				    ShowWindow(m_hWnd, SW_HIDE);
 				}
 			}
@@ -618,9 +619,9 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 {
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
-	if( nType == SIZE_MINIMIZED && this->minTask == TRUE){
+	if( nType == SIZE_MINIMIZED && this->iniMin == FALSE && this->minTask ){
 		SetTimer(RETRY_ADD_TRAY, 0, NULL);
-		if(!this->iniMin) ShowWindow(m_hWnd, SW_HIDE);
+		ShowWindow(m_hWnd, SW_HIDE);
 	}
 }
 
