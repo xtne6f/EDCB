@@ -2,51 +2,61 @@ TARGET ?= EpgTimerSrv.exe
 CPPFLAGS = -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=0x0600 -DUSE_WINMAIN_A -DUSE_LUA -DNO_CGI -DNO_POPEN -DOPENSSL_API_1_1 #-DEPGDB_STD_WREGEX
 WINDRES ?= windres
 
+ifdef withlua
+  SOURCES_LUA = \
+    lua__lapi.c \
+    lua__lauxlib.c \
+    lua__lbaselib.c \
+    lua__lbitlib.c \
+    lua__lcode.c \
+    lua__lcorolib.c \
+    lua__lctype.c \
+    lua__ldblib.c \
+    lua__ldebug.c \
+    lua__ldo.c \
+    lua__ldump.c \
+    lua__lfunc.c \
+    lua__lgc.c \
+    lua__linit.c \
+    lua__liolib.c \
+    lua__llex.c \
+    lua__lmathlib.c \
+    lua__lmem.c \
+    lua__loadlib.c \
+    lua__lobject.c \
+    lua__lopcodes.c \
+    lua__loslib.c \
+    lua__lparser.c \
+    lua__lstate.c \
+    lua__lstring.c \
+    lua__lstrlib.c \
+    lua__ltable.c \
+    lua__ltablib.c \
+    lua__ltm.c \
+    lua__lundump.c \
+    lua__lvm.c \
+    lua__lzio.c \
+    lua__lua_zlib.c \
+    lua_zlib1__adler32.c \
+    lua_zlib1__compress.c \
+    lua_zlib1__crc32.c \
+    lua_zlib1__deflate.c \
+    lua_zlib1__infback.c \
+    lua_zlib1__inffast.c \
+    lua_zlib1__inflate.c \
+    lua_zlib1__inftrees.c \
+    lua_zlib1__trees.c \
+    lua_zlib1__uncompr.c \
+    lua_zlib1__zutil.c
+  LIBS_LUA =
+else
+  CPPFLAGS += -DLUA_BUILD_AS_DLL
+  SOURCES_LUA =
+  LIBS_LUA = -llua52-mingw-lazy-$(MSYSTEM_CARCH)
+endif
+
 $(TARGET): $(addsuffix .obj, \
-  lua__lapi.c \
-  lua__lauxlib.c \
-  lua__lbaselib.c \
-  lua__lbitlib.c \
-  lua__lcode.c \
-  lua__lcorolib.c \
-  lua__lctype.c \
-  lua__ldblib.c \
-  lua__ldebug.c \
-  lua__ldo.c \
-  lua__ldump.c \
-  lua__lfunc.c \
-  lua__lgc.c \
-  lua__linit.c \
-  lua__liolib.c \
-  lua__llex.c \
-  lua__lmathlib.c \
-  lua__lmem.c \
-  lua__loadlib.c \
-  lua__lobject.c \
-  lua__lopcodes.c \
-  lua__loslib.c \
-  lua__lparser.c \
-  lua__lstate.c \
-  lua__lstring.c \
-  lua__lstrlib.c \
-  lua__ltable.c \
-  lua__ltablib.c \
-  lua__ltm.c \
-  lua__lundump.c \
-  lua__lvm.c \
-  lua__lzio.c \
-  lua__lua_zlib.c \
-  lua_zlib1__adler32.c \
-  lua_zlib1__compress.c \
-  lua_zlib1__crc32.c \
-  lua_zlib1__deflate.c \
-  lua_zlib1__infback.c \
-  lua_zlib1__inffast.c \
-  lua_zlib1__inflate.c \
-  lua_zlib1__inftrees.c \
-  lua_zlib1__trees.c \
-  lua_zlib1__uncompr.c \
-  lua_zlib1__zutil.c \
+  $(SOURCES_LUA) \
   BonCtrl__CreatePATPacket.cpp \
   BonCtrl__PacketInit.cpp \
   BonCtrl__SendTCP.cpp \
@@ -81,7 +91,7 @@ $(TARGET): $(addsuffix .obj, \
   UpnpSsdpServer.cpp \
   EpgTimerSrv.rc \
   )
-	$(CXX) -mwindows -Wl,-s -Wl,--dynamicbase -Wl,--nxcompat -static-libgcc -static-libstdc++ -o $@ $^ -lws2_32 -lole32 -lcomctl32 -lwinhttp -loleaut32 -lcrypt32 -liphlpapi -luuid -lnetapi32
+	$(CXX) -mwindows -Wl,-s -Wl,--dynamicbase -Wl,--nxcompat -static-libgcc -static-libstdc++ -o $@ $^ -L. $(LIBS_LUA) -lws2_32 -lole32 -lcomctl32 -lwinhttp -loleaut32 -lcrypt32 -liphlpapi -luuid -lnetapi32
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp stdafx.h.gch
 	$(CXX) -c $(CPPFLAGS) -finput-charset=CP932 -Os -o $@ $<
 Common__%.cpp.obj: ../../Common/%.cpp stdafx.h.gch
