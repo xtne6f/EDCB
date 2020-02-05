@@ -189,16 +189,6 @@ namespace EpgTimer
                 {
                     checkBox_program.IsChecked = false;
                     checkBox_program.IsEnabled = true;
-                    textBox_title.IsEnabled = false;
-                    comboBox_service.IsEnabled = false;
-                    datePicker_start.IsEnabled = false;
-                    comboBox_sh.IsEnabled = false;
-                    comboBox_sm.IsEnabled = false;
-                    comboBox_ss.IsEnabled = false;
-                    datePicker_end.IsEnabled = false;
-                    comboBox_eh.IsEnabled = false;
-                    comboBox_em.IsEnabled = false;
-                    comboBox_es.IsEnabled = false;
                     recSettingView.SetViewMode(true);
                 }
 
@@ -236,6 +226,29 @@ namespace EpgTimer
         {
             if (checkBox_program.IsChecked == true)
             {
+                var startTime = DateTime.MaxValue;
+                var endTime = DateTime.MinValue;
+                if (datePicker_start.SelectedDate != null && datePicker_end.SelectedDate != null)
+                {
+                    startTime = new DateTime(datePicker_start.SelectedDate.Value.Year,
+                                             datePicker_start.SelectedDate.Value.Month,
+                                             datePicker_start.SelectedDate.Value.Day,
+                                             comboBox_sh.SelectedIndex,
+                                             comboBox_sm.SelectedIndex,
+                                             comboBox_ss.SelectedIndex, 0, DateTimeKind.Utc);
+                    endTime = new DateTime(datePicker_end.SelectedDate.Value.Year,
+                                           datePicker_end.SelectedDate.Value.Month,
+                                           datePicker_end.SelectedDate.Value.Day,
+                                           comboBox_eh.SelectedIndex,
+                                           comboBox_em.SelectedIndex,
+                                           comboBox_es.SelectedIndex, 0, DateTimeKind.Utc);
+                }
+                if (startTime > endTime)
+                {
+                    MessageBox.Show("終了日時が開始日時より前です");
+                    return;
+                }
+
                 reserveInfo.Title = textBox_title.Text;
                 ChSet5Item ch = comboBox_service.SelectedItem as ChSet5Item;
 
@@ -245,30 +258,7 @@ namespace EpgTimer
                 reserveInfo.ServiceID = ch.SID;
                 reserveInfo.EventID = 0xFFFF;
 
-                reserveInfo.StartTime = new DateTime(datePicker_start.SelectedDate.Value.Year,
-                    datePicker_start.SelectedDate.Value.Month,
-                    datePicker_start.SelectedDate.Value.Day,
-                    comboBox_sh.SelectedIndex,
-                    comboBox_sm.SelectedIndex,
-                    comboBox_ss.SelectedIndex,
-                    0,
-                    DateTimeKind.Utc
-                    );
-
-                DateTime endTime = new DateTime(datePicker_end.SelectedDate.Value.Year,
-                    datePicker_end.SelectedDate.Value.Month,
-                    datePicker_end.SelectedDate.Value.Day,
-                    comboBox_eh.SelectedIndex,
-                    comboBox_em.SelectedIndex,
-                    comboBox_es.SelectedIndex,
-                    0,
-                    DateTimeKind.Utc
-                    );
-                if (reserveInfo.StartTime > endTime)
-                {
-                    MessageBox.Show("終了日時が開始日時より前です");
-                    return;
-                }
+                reserveInfo.StartTime = startTime;
                 TimeSpan duration = endTime - reserveInfo.StartTime;
                 reserveInfo.DurationSecond = (uint)duration.TotalSeconds;
                 reserveInfo.RecSetting = recSettingView.GetRecSetting();
@@ -298,10 +288,7 @@ namespace EpgTimer
                     MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約追加でエラーが発生しました。");
                 }
             }
-            if (this.Visibility == System.Windows.Visibility.Visible)
-            {
-                DialogResult = true;
-            }
+            DialogResult = true;
         }
 
         private void button_del_reserve_Click(object sender, RoutedEventArgs e)
@@ -323,34 +310,7 @@ namespace EpgTimer
 
         private void checkBox_program_Click(object sender, RoutedEventArgs e)
         {
-            if (checkBox_program.IsChecked == true)
-            {
-                textBox_title.IsEnabled = true;
-                comboBox_service.IsEnabled = true;
-                datePicker_start.IsEnabled = true;
-                comboBox_sh.IsEnabled = true;
-                comboBox_sm.IsEnabled = true;
-                comboBox_ss.IsEnabled = true;
-                datePicker_end.IsEnabled = true;
-                comboBox_eh.IsEnabled = true;
-                comboBox_em.IsEnabled = true;
-                comboBox_es.IsEnabled = true;
-                recSettingView.SetViewMode(false);
-            }
-            else
-            {
-                textBox_title.IsEnabled = false;
-                comboBox_service.IsEnabled = false;
-                datePicker_start.IsEnabled = false;
-                comboBox_sh.IsEnabled = false;
-                comboBox_sm.IsEnabled = false;
-                comboBox_ss.IsEnabled = false;
-                datePicker_end.IsEnabled = false;
-                comboBox_eh.IsEnabled = false;
-                comboBox_em.IsEnabled = false;
-                comboBox_es.IsEnabled = false;
-                recSettingView.SetViewMode(true);
-            }
+            recSettingView.SetViewMode(checkBox_program.IsChecked == false);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
