@@ -50,7 +50,8 @@ ifdef withlua
     lua_zlib1__zutil.c
   LIBS_LUA =
 else
-  CPPFLAGS += -DLUA_BUILD_AS_DLL
+  # Lazy loading fails with segfault if LUA_LIB undefined.
+  CPPFLAGS += -DLUA_BUILD_AS_DLL -DLUA_LIB
   SOURCES_LUA =
   LIBS_LUA = -llua52-mingw-lazy-$(MSYSTEM_CARCH)
 endif
