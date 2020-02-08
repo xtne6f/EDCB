@@ -26,7 +26,6 @@
 #ifndef CIVETWEB_LUA_H
 #define CIVETWEB_LUA_H
 
-#define LUA_LIB
 #include "lua/lauxlib.h"
 #include "lua/lua.h"
 #include "lua/lualib.h"
