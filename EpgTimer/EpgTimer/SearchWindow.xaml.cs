@@ -131,8 +131,7 @@ namespace EpgTimer
                 DateTime now = DateTime.UtcNow.AddHours(9);
                 foreach (EpgEventInfo info in list ?? Enumerable.Empty<EpgEventInfo>())
                 {
-                    SearchItem item = new SearchItem(info, false);
-
+                    var item = new SearchItem(info, false, false, false);
                     if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > now)
                     {
                         UInt64 serviceKey = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
@@ -158,20 +157,36 @@ namespace EpgTimer
 
         private void RefreshReserve()
         {
-            if (listView_result.ItemsSource != null)
+            var resultList = listView_result.ItemsSource as List<SearchItem>;
+            if (resultList != null)
             {
-                foreach (SearchItem item in listView_result.ItemsSource)
+                List<decimal> list = CommonManager.Instance.DB.ReserveList.Values.Select(a => CommonManager.Create64PgKey(
+                    a.OriginalNetworkID, a.TransportStreamID, a.ServiceID, a.EventID) * ((decimal)uint.MaxValue + 1) + a.ReserveID).ToList();
+                list.Sort();
+                for (int i = 0; i < resultList.Count; i++)
                 {
-                    item.ReserveInfo = null;
-                    foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
+                    SearchItem item = resultList[i];
+                    if (item.Duplicate)
                     {
-                        if (item.EventInfo.original_network_id == info.OriginalNetworkID &&
-                            item.EventInfo.transport_stream_id == info.TransportStreamID &&
-                            item.EventInfo.service_id == info.ServiceID &&
-                            item.EventInfo.event_id == info.EventID)
+                        resultList.RemoveAt(i--);
+                    }
+                    else
+                    {
+                        item.ReserveInfo = null;
+                        decimal key = CommonManager.Create64PgKey(item.EventInfo.original_network_id, item.EventInfo.transport_stream_id,
+                                                                  item.EventInfo.service_id, item.EventInfo.event_id) * ((decimal)uint.MaxValue + 1);
+                        int index = list.BinarySearch(key);
+                        index = index < 0 ? ~index : index;
+                        for (; index < list.Count && list[index] <= key + uint.MaxValue; index++)
                         {
-                            item.ReserveInfo = info;
-                            break;
+                            //予約情報が見つかった
+                            if (item.ReserveInfo != null)
+                            {
+                                //さらに見つかった
+                                item = new SearchItem(item.EventInfo, false, item.Filtered, true) { ServiceName = item.ServiceName };
+                                resultList.Insert(++i, item);
+                            }
+                            item.ReserveInfo = CommonManager.Instance.DB.ReserveList[(uint)(list[index] % ((decimal)uint.MaxValue + 1))];
                         }
                     }
                 }

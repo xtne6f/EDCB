@@ -10,17 +10,18 @@
         <TabControl Name="tabControl">
             <TabItem Header="TVTest連携" Name="tabItem_tvtest">
                 <Grid>
-                    <Label Content="※利用にはTVtestに EpgTimerPlugIn.tvtp か EdcbPlugIn.tvtp を追加しておく必要があります。" Foreground="Red" HorizontalAlignment="Left" Margin="12,12,0,0" VerticalAlignment="Top" />
-                    <Label Content="TVTest.exeパス" HorizontalAlignment="Left" Margin="12,46,0,0" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,48,0,0" Name="textBox_exe" Text="{Binding TvTestExe}" VerticalAlignment="Top" Width="456" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" />
-                    <Label Content="コマンドライン引数" HorizontalAlignment="Left" Margin="12,80,0,0" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,80,0,0" Text="{Binding TvTestCmd}" VerticalAlignment="Top" Width="456" />
+                    <Label Content="※利用にはTVTestに EpgTimerPlugIn.tvtp か EdcbPlugIn.tvtp を追加しておく必要があります。&#10;※NetworkTVモードには EpgTimerPlugIn.tvtp が必要です。" HorizontalAlignment="Left" Margin="12,8,0,0" VerticalAlignment="Top" />
+                    <Label Content="TVTest.exeパス" HorizontalAlignment="Left" Margin="12,54,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,56,0,0" Name="textBox_exe" Text="{Binding TvTestExe}" VerticalAlignment="Top" Width="456" />
+                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,56,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" />
+                    <Label Content="コマンドライン引数" HorizontalAlignment="Left" Margin="12,86,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,88,0,0" Text="{Binding TvTestCmd}" VerticalAlignment="Top" Width="456" />
                     <Label Content="※視聴に使用するBonDriverはEpgTimerSrv設定で選択します。" HorizontalAlignment="Left" Margin="12,144,0,0" VerticalAlignment="Top" />
                     <CheckBox Content="NetworkTVモード(録画用アプリやEpgTimerSrvからのUDP、TCP送信)で視聴する" HorizontalAlignment="Left" IsChecked="{Binding NwTvMode}" Margin="12,187,0,0" VerticalAlignment="Top" />
-                    <CheckBox Content="UDP有効" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeUDP}" Margin="44,240,0,0" VerticalAlignment="Top" />
-                    <CheckBox Content="TCP有効" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeTCP}" Margin="134,240,0,0" VerticalAlignment="Top" />
-                    <Label Content="(BonDriverに関するオプションは自動的に付加されます)" HorizontalAlignment="Left" Margin="134,110,0,0" VerticalAlignment="Top" />
+                    <CheckBox Content="UDP有効 (BonDriver__UDP.dll)" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeUDP}" Margin="44,240,0,0" VerticalAlignment="Top" />
+                    <CheckBox Content="TCP有効 (BonDriver__TCP.dll)" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeTCP}" Margin="44,262,0,0" Name="checkBox_nwTvModeTCP" VerticalAlignment="Top" />
+                    <CheckBox Content="Pipe方式 (BonDriver__NetworkPipe.dll) ※ローカル通信専用" HorizontalAlignment="Left" IsChecked="{Binding NwTvModePipe}" IsEnabled="{Binding IsChecked, ElementName=checkBox_nwTvModeTCP, UpdateSourceTrigger=PropertyChanged}" Margin="64,284,0,0" VerticalAlignment="Top" />
+                    <Label Content="(BonDriverに関するオプションは自動的に付加されます)" HorizontalAlignment="Left" Margin="134,114,0,0" VerticalAlignment="Top" />
                     <Label Content="NetworkTVモードの送信方式 (NetworkTVモードでファイル再生する場合もチェックが必要です)" HorizontalAlignment="Left" Margin="12,212,0,0" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
