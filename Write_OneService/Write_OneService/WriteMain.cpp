@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "WriteMain.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TSPacketUtil.h"
@@ -12,7 +12,7 @@ CWriteMain::CWriteMain()
 		fs_path iniPath = GetModuleIniPath(g_instance);
 		wstring name = GetPrivateProfileToString(L"SET", L"WritePlugin", L"", iniPath.c_str());
 		if( name.empty() == false && name[0] != L';' ){
-			//o—Íƒvƒ‰ƒOƒCƒ“‚ð”ŽìŒq‚¬
+			//å‡ºåŠ›ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã‚’æ•°ç ç¹‹ãŽ
 			this->writePlugin.reset(new CWritePlugInUtil);
 			if( this->writePlugin->Initialize(GetModulePath(g_instance).replace_filename(name).c_str()) == FALSE ){
 				this->writePlugin.reset();
@@ -38,7 +38,7 @@ BOOL CWriteMain::Start(
 	this->targetSID = 0;
 	fs_path name = fs_path(this->savePath).filename();
 	if( name.c_str()[0] == L'#' ){
-		//ƒtƒ@ƒCƒ‹–¼‚ª"#16i”4Œ…#"‚ÅŽn‚Ü‚é‚È‚ç‚±‚ê‚ðƒT[ƒrƒXID‚Æ‰ðŽß‚µ‚ÄŽæ‚èœ‚­
+		//ãƒ•ã‚¡ã‚¤ãƒ«åãŒ"#16é€²æ•°4æ¡#"ã§å§‹ã¾ã‚‹ãªã‚‰ã“ã‚Œã‚’ã‚µãƒ¼ãƒ“ã‚¹IDã¨è§£é‡ˆã—ã¦å–ã‚Šé™¤ã
 		WCHAR* endp;
 		WORD sid = (WORD)wcstol(name.c_str() + 1, &endp, 16);
 		if( endp - name.c_str() == 5 && *endp == L'#' ){
@@ -67,7 +67,7 @@ BOOL CWriteMain::Start(
 		}
 		this->savePath = &path.front();
 	}else{
-		_OutputDebugString(L"šCWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
+		_OutputDebugString(L"â˜…CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
 		UtilCreateDirectories(fs_path(this->savePath).parent_path());
 		this->file.reset(UtilOpenFile(this->savePath, (overWriteFlag ? UTIL_O_CREAT_WRONLY : UTIL_O_EXCL_CREAT_WRONLY) | UTIL_SH_READ | UTIL_F_IONBF));
 		if( !this->file ){
@@ -78,11 +78,11 @@ BOOL CWriteMain::Start(
 				Format(this->savePath, L"%ls-(%d)%ls", pathWoExt.c_str(), i, ext.c_str());
 				this->file.reset(UtilOpenFile(this->savePath, (overWriteFlag ? UTIL_O_CREAT_WRONLY : UTIL_O_EXCL_CREAT_WRONLY) | UTIL_SH_READ | UTIL_F_IONBF));
 				if( this->file || i >= 999 ){
-					_OutputDebugString(L"šCWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
+					_OutputDebugString(L"â˜…CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
 					if( this->file ){
 						break;
 					}
-					OutputDebugString(L"šCWriteMain::Start Err\r\n");
+					OutputDebugString(L"â˜…CWriteMain::Start Err\r\n");
 					this->savePath = L"";
 					return FALSE;
 				}
@@ -122,7 +122,7 @@ BOOL CWriteMain::Write(
 	if( (this->writePlugin || this->file) && data != NULL && size > 0 && writeSize != NULL ){
 		*writeSize = 0;
 		if( this->targetSID == 0 ){
-			//‘SƒT[ƒrƒX‚È‚Ì‚Å‰½‚à˜M‚ç‚È‚¢
+			//å…¨ã‚µãƒ¼ãƒ“ã‚¹ãªã®ã§ä½•ã‚‚å¼„ã‚‰ãªã„
 			if( this->writePlugin ){
 				if( this->writePlugin->Write(data, size, writeSize) == FALSE ){
 					return FALSE;
@@ -130,14 +130,14 @@ BOOL CWriteMain::Write(
 			}else{
 				*writeSize = (DWORD)fwrite(data, 1, size, this->file.get());
 				if( *writeSize == 0 ){
-					OutputDebugString(L"šCWriteMain::Write Err\r\n");
+					OutputDebugString(L"â˜…CWriteMain::Write Err\r\n");
 					this->file.reset();
 					return FALSE;
 				}
 			}
 			return TRUE;
 		}else{
-			//Žw’èƒT[ƒrƒX
+			//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹
 			BYTE* outData;
 			DWORD outSize;
 			if( this->packetInit.GetTSData(data, size, &outData, &outSize) == FALSE ){
@@ -148,7 +148,7 @@ BOOL CWriteMain::Write(
 				CTSPacketUtil packet;
 				if( packet.Set188TS(outData + i, 188) ){
 					if( packet.PID == 0 && packet.payload_unit_start_indicator && 5 < packet.data_byteSize ){
-						//TSID‚ðŽæ“¾
+						//TSIDã‚’å–å¾—
 						WORD tsid = packet.data_byte[4] << 8 | packet.data_byte[5];
 						if( this->lastTSID != tsid ){
 							this->lastTSID = tsid;
@@ -171,7 +171,7 @@ BOOL CWriteMain::Write(
 				}
 			}else{
 				if( fwrite(&this->outBuff.front(), 1, this->outBuff.size(), this->file.get()) == 0 ){
-					OutputDebugString(L"šCWriteMain::Write Err\r\n");
+					OutputDebugString(L"â˜…CWriteMain::Write Err\r\n");
 					this->file.reset();
 					return FALSE;
 				}

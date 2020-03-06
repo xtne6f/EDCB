@@ -1,4 +1,4 @@
-// EdcbPlugIn.cpp : DLL ƒAƒvƒŠƒP[ƒVƒ‡ƒ“—p‚ÉƒGƒNƒXƒ|[ƒg‚³‚ê‚éŠÖ”‚ğ’è‹`‚µ‚Ü‚·B
+ï»¿// EdcbPlugIn.cpp : DLL ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ç”¨ã«ã‚¨ã‚¯ã‚¹ãƒãƒ¼ãƒˆã•ã‚Œã‚‹é–¢æ•°ã‚’å®šç¾©ã—ã¾ã™ã€‚
 //
 
 #include "stdafx.h"
@@ -61,7 +61,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnChannelChange()
 	bool ret = m_outer.m_pApp->GetCurrentChannelInfo(&ci);
 	{
 		CBlockLock lock(&m_outer.m_streamLock);
-		// EpgDataCap3‚Í“à•”ƒƒ\ƒbƒh’PˆÊ‚ÅƒAƒgƒ~ƒbƒNBUnInitialize()’†‚Éƒ[ƒJ[ƒXƒŒƒbƒh‚ÉƒAƒNƒZƒX‚³‚¹‚È‚¢‚æ‚¤”r‘¼§Œä‚ª•K—v
+		// EpgDataCap3ã¯å†…éƒ¨ãƒ¡ã‚½ãƒƒãƒ‰å˜ä½ã§ã‚¢ãƒˆãƒŸãƒƒã‚¯ã€‚UnInitialize()ä¸­ã«ãƒ¯ãƒ¼ã‚«ãƒ¼ã‚¹ãƒ¬ãƒƒãƒ‰ã«ã‚¢ã‚¯ã‚»ã‚¹ã•ã›ãªã„ã‚ˆã†æ’ä»–åˆ¶å¾¡ãŒå¿…è¦
 		m_outer.m_epgUtil.UnInitialize();
 		m_outer.m_epgUtil.Initialize(FALSE, m_outer.m_epgUtilPath.c_str());
 		m_outer.m_chChangeID = CH_CHANGE_ERR;
@@ -103,7 +103,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnDriverChange()
 		WCHAR name[MAX_PATH];
 		m_outer.m_currentBonDriver = (m_outer.m_pApp->GetDriverName(name, _countof(name)) > 0 ? name : L"");
 	}
-	// ƒXƒgƒŠ[ƒ€ƒR[ƒ‹ƒoƒbƒN‚Íƒ`ƒ…[ƒig—p‚¾‚¯
+	// ã‚¹ãƒˆãƒªãƒ¼ãƒ ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã¯ãƒãƒ¥ãƒ¼ãƒŠä½¿ç”¨æ™‚ã ã‘
 	m_outer.m_pApp->SetStreamCallback(m_outer.IsTunerBonDriver() ? 0 : TVTest::STREAM_CALLBACK_REMOVE, StreamCallback, &m_outer);
 	m_outer.m_lastSetCh.useSID = FALSE;
 	SendMessage(m_outer.m_hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
@@ -115,7 +115,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnRecordStatusChange(int Status)
 {
 	if (Status == TVTest::RECORD_STATUS_NOTRECORDING) {
 		if (m_outer.IsEdcbRecording()) {
-			// ƒLƒƒƒ“ƒZƒ‹“®ì‚Æ‚İ‚È‚·
+			// ã‚­ãƒ£ãƒ³ã‚»ãƒ«å‹•ä½œã¨ã¿ãªã™
 			CBlockLock lock(&m_outer.m_streamLock);
 			for (map<DWORD, REC_CTRL>::iterator it = m_outer.m_recCtrlMap.begin(); it != m_outer.m_recCtrlMap.end(); ++it) {
 				if (!it->second.filePath.empty()) {
@@ -133,8 +133,8 @@ bool CEdcbPlugIn::CMyEventHandler::OnRecordStatusChange(int Status)
 void CEdcbPlugIn::CMyEventHandler::OnStartupDone()
 {
 	if (GetModuleHandle(GetModulePath(g_hinstDLL).replace_filename(L"EpgTimerPlugIn.tvtp").c_str())) {
-		// 1ƒvƒƒZƒX‚É•¡”ƒT[ƒo‚Í‘z’èŠO‚È‚Ì‚ÅŠJn‚µ‚È‚¢(‚±‚Ì”»’è•û–@‚ÍŠmÀ‚Å‚Í‚È‚¢)
-		m_outer.m_pApp->AddLog(L"EpgTimerPlugIn‚ª“Ç‚İ‚Ü‚ê‚Ä‚¢‚é‚½‚ß³í“®ì‚µ‚Ü‚¹‚ñB", TVTest::LOG_TYPE_ERROR);
+		// 1ãƒ—ãƒ­ã‚»ã‚¹ã«è¤‡æ•°ã‚µãƒ¼ãƒã¯æƒ³å®šå¤–ãªã®ã§é–‹å§‹ã—ãªã„(ã“ã®åˆ¤å®šæ–¹æ³•ã¯ç¢ºå®Ÿã§ã¯ãªã„)
+		m_outer.m_pApp->AddLog(L"EpgTimerPlugInãŒèª­ã¿è¾¼ã¾ã‚Œã¦ã„ã‚‹ãŸã‚æ­£å¸¸å‹•ä½œã—ã¾ã›ã‚“ã€‚", TVTest::LOG_TYPE_ERROR);
 	}
 	else {
 		if (CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION)) {
@@ -168,19 +168,19 @@ bool CEdcbPlugIn::GetPluginInfo(TVTest::PluginInfo *pInfo)
 	pInfo->Type = TVTest::PLUGIN_TYPE_NORMAL;
 	pInfo->Flags = TVTest::PLUGIN_FLAG_NOENABLEDDISABLED;
 	pInfo->pszPluginName = L"EDCB PlugIn";
-	pInfo->pszCopyright = L"‚è‚å‚¤‚¿‚ñ Copyright (C) 2010; Git-fork(xtne6f)";
-	pInfo->pszDescription = L"EpgDataCap_Bon‚Ì‚æ‚¤‚ÉU•‘‚¤";
+	pInfo->pszCopyright = L"ã‚Šã‚‡ã†ã¡ã‚“ Copyright (C) 2010; Git-fork(xtne6f)";
+	pInfo->pszDescription = L"EpgDataCap_Bonã®ã‚ˆã†ã«æŒ¯èˆã†";
 	return true;
 }
 
 bool CEdcbPlugIn::Initialize()
 {
 	if (m_pApp->GetVersion() < TVTest::MakeVersion(0, 9, 0)) {
-		m_pApp->AddLog(L"TVTest‚Ìƒo[ƒWƒ‡ƒ“‚ªŒÃ‚¢‚½‚ß‰Šú‰»‚Å‚«‚Ü‚¹‚ñB");
+		m_pApp->AddLog(L"TVTestã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ãŒå¤ã„ãŸã‚åˆæœŸåŒ–ã§ãã¾ã›ã‚“ã€‚");
 		return false;
 	}
 	m_edcbDir = GetPrivateProfileToString(L"SET", L"EdcbFolderPath", L"", GetModulePath(g_hinstDLL).replace_extension(L".ini").c_str());
-	// –¢w’è‚Ì‚Æ‚«‚ÍTVTest‚Æ“¯ŠK‘w‚ÌEDCBƒtƒHƒ‹ƒ_
+	// æœªæŒ‡å®šã®ã¨ãã¯TVTestã¨åŒéšå±¤ã®EDCBãƒ•ã‚©ãƒ«ãƒ€
 	if (m_edcbDir.empty()) {
 		fs_path altPath = GetModulePath().parent_path().parent_path();
 		if (altPath.is_absolute()) {
@@ -195,12 +195,12 @@ bool CEdcbPlugIn::Initialize()
 		}
 	}
 	if (m_edcbDir.empty() || m_epgUtilPath.empty()) {
-		m_pApp->AddLog(L"EpgDataCap3.dll‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB", TVTest::LOG_TYPE_ERROR);
+		m_pApp->AddLog(L"EpgDataCap3.dllãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚", TVTest::LOG_TYPE_ERROR);
 		return false;
 	}
 	CParseChText5 chText5;
 	if (!chText5.ParseText(GetEdcbSettingPath().append(L"ChSet5.txt").c_str())) {
-		m_pApp->AddLog(L"ChSet5.txt‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB", TVTest::LOG_TYPE_ERROR);
+		m_pApp->AddLog(L"ChSet5.txtãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚", TVTest::LOG_TYPE_ERROR);
 		return false;
 	}
 	m_chSet5.clear();
@@ -227,7 +227,7 @@ bool CEdcbPlugIn::Initialize()
 		m_sendPipe.StartSend();
 	}
 #endif
-	// ƒCƒxƒ“ƒgƒR[ƒ‹ƒoƒbƒNŠÖ”‚ğ“o˜^
+	// ã‚¤ãƒ™ãƒ³ãƒˆã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°ã‚’ç™»éŒ²
 	m_pApp->SetEventCallback(CMyEventHandler::EventCallback, &m_handler);
 
 	WNDCLASS wc = {};
@@ -344,7 +344,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		m_hwnd = nullptr;
 		return 0;
 	case WM_CLOSE:
-		// ƒfƒbƒhƒƒbƒN‰ñ”ğ‚Ì‚½‚ßƒƒbƒZ[ƒWƒ|ƒ“ƒv‚ğˆÛ‚µ‚Â‚ÂƒT[ƒo‚ğI‚í‚ç‚¹‚é
+		// ãƒ‡ãƒƒãƒ‰ãƒ­ãƒƒã‚¯å›é¿ã®ãŸã‚ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒãƒ³ãƒ—ã‚’ç¶­æŒã—ã¤ã¤ã‚µãƒ¼ãƒã‚’çµ‚ã‚ã‚‰ã›ã‚‹
 		m_pipeServer.StopServer(true);
 		SetTimer(hwnd, TIMER_TRY_STOP_SERVER, 10, nullptr);
 		return 0;
@@ -406,13 +406,13 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					bool saveEpgFile = false;
 					if (chChangeID != CH_CHANGE_OK) {
 						if (chChangeID == CH_CHANGE_ERR || GetTickCount() - m_epgCapStartTick > 15000) {
-							// ƒ`ƒƒƒ“ƒlƒ‹Ø‚è‘Ö‚¦ƒGƒ‰[‚©Ø‚è‘Ö‚¦‚É15•bˆÈã‚©‚©‚Á‚Ä‚é‚Ì‚Å–³M†‚Æ”»’f
+							// ãƒãƒ£ãƒ³ãƒãƒ«åˆ‡ã‚Šæ›¿ãˆã‚¨ãƒ©ãƒ¼ã‹åˆ‡ã‚Šæ›¿ãˆã«15ç§’ä»¥ä¸Šã‹ã‹ã£ã¦ã‚‹ã®ã§ç„¡ä¿¡å·ã¨åˆ¤æ–­
 							m_epgCapChList.erase(m_epgCapChList.begin());
 							m_epgCapChkNext = true;
 						}
 					}
 					else if (GetTickCount() - m_epgCapStartTick > m_epgCapTimeout * 60000) {
-						// m_epgCapTimeout•ªˆÈã‚©‚©‚Á‚Ä‚¢‚é‚È‚ç’â~
+						// m_epgCapTimeoutåˆ†ä»¥ä¸Šã‹ã‹ã£ã¦ã„ã‚‹ãªã‚‰åœæ­¢
 						m_epgCapChList.erase(m_epgCapChList.begin());
 						m_epgCapChkNext = true;
 						saveEpgFile = m_epgCapSaveTimeout;
@@ -426,14 +426,14 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							m_epgCapChkNext = true;
 						}
 						else if (!m_epgFile) {
-							// •Û‘¶ŠJn
+							// ä¿å­˜é–‹å§‹
 							wstring name;
 							Format(name, L"%04X%04X_epg.dat", chInfo.ONID, basicFlag ? 0xFFFF : chInfo.TSID);
 							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
 							UtilCreateDirectories(fs_path(m_epgFilePath).parent_path());
 							FILE* epgFile = UtilOpenFile(m_epgFilePath + L".tmp", UTIL_SECURE_WRITE);
 							if (epgFile) {
-								m_pApp->AddLog((L'š' + name).c_str());
+								m_pApp->AddLog((L'â˜…' + name).c_str());
 								CBlockLock lock(&m_streamLock);
 								m_epgFile.reset(epgFile);
 								m_epgFileState = EPG_FILE_ST_NONE;
@@ -441,7 +441,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							m_epgUtil.ClearSectionStatus();
 						}
 						else {
-							// ’~Ïó‘Ôƒ`ƒFƒbƒN
+							// è“„ç©çŠ¶æ…‹ãƒã‚§ãƒƒã‚¯
 							for (vector<CH_DATA5>::iterator it = chkList.begin(); it != chkList.end(); ++it) {
 								pair<EPG_SECTION_STATUS, BOOL> status = m_epgUtil.GetSectionStatusService(it->originalNetworkID, it->transportStreamID, it->serviceID, it->partialFlag);
 								if (!status.second) {
@@ -463,7 +463,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						}
 					}
 					if (m_epgCapChkNext && m_epgFile) {
-						// •Û‘¶I—¹
+						// ä¿å­˜çµ‚äº†
 						{
 							std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
 							CBlockLock lock(&m_streamLock);
@@ -477,7 +477,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				}
 			}
 			if (m_epgCapChList.empty()) {
-				// ‘S•”ƒ`ƒFƒbƒNI‚í‚Á‚½‚Ì‚ÅI—¹
+				// å…¨éƒ¨ãƒã‚§ãƒƒã‚¯çµ‚ã‚ã£ãŸã®ã§çµ‚äº†
 				KillTimer(hwnd, TIMER_EPGCAP);
 				SendMessage(hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
 			}
@@ -492,7 +492,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						m_epgCapBack = false;
 					}
 					else if (GetTickCount() - m_epgCapBackStartTick > m_epgCapTimeout * 60000 + max<DWORD>(m_epgCapBackStartWaitSec, 15) * 1000) {
-						// m_epgCapTimeout•ªˆÈã‚©‚©‚Á‚Ä‚¢‚é‚È‚ç’â~
+						// m_epgCapTimeoutåˆ†ä»¥ä¸Šã‹ã‹ã£ã¦ã„ã‚‹ãªã‚‰åœæ­¢
 						m_epgCapBack = false;
 						saveEpgFile = m_epgCapSaveTimeout;
 					}
@@ -503,14 +503,14 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							m_epgCapBack = false;
 						}
 						else if (!m_epgFile) {
-							// •Û‘¶ŠJn
+							// ä¿å­˜é–‹å§‹
 							wstring name;
 							Format(name, L"%04X%04X_epg.dat", onid, basicFlag ? 0xFFFF : tsid);
 							m_epgFilePath = GetEdcbSettingPath().append(EPG_SAVE_FOLDER).append(name).native();
 							UtilCreateDirectories(fs_path(m_epgFilePath).parent_path());
 							FILE* epgFile = UtilOpenFile(m_epgFilePath + L".tmp", UTIL_SECURE_WRITE);
 							if (epgFile) {
-								m_pApp->AddLog((L'š' + name).c_str());
+								m_pApp->AddLog((L'â˜…' + name).c_str());
 								CBlockLock lock(&m_streamLock);
 								m_epgFile.reset(epgFile);
 								m_epgFileState = EPG_FILE_ST_NONE;
@@ -518,7 +518,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							m_epgUtil.ClearSectionStatus();
 						}
 						else {
-							// ’~Ïó‘Ôƒ`ƒFƒbƒN
+							// è“„ç©çŠ¶æ…‹ãƒã‚§ãƒƒã‚¯
 							bool chkNext = false;
 							for (vector<CH_DATA5>::iterator it = chkList.begin(); it != chkList.end(); ++it) {
 								pair<EPG_SECTION_STATUS, BOOL> status = m_epgUtil.GetSectionStatusService(it->originalNetworkID, it->transportStreamID, it->serviceID, it->partialFlag);
@@ -541,7 +541,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					}
 				}
 				if (!m_epgCapBack && m_epgFile) {
-					// •Û‘¶I—¹
+					// ä¿å­˜çµ‚äº†
 					{
 						std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
 						CBlockLock lock(&m_streamLock);
@@ -624,7 +624,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	case WM_EPGCAP_BACK_STOP:
 		m_epgCapBack = false;
 		if (m_epgCapChList.empty() && m_epgFile) {
-			// •Û‘¶ƒLƒƒƒ“ƒZƒ‹
+			// ä¿å­˜ã‚­ãƒ£ãƒ³ã‚»ãƒ«
 			{
 				std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
 				CBlockLock lock(&m_streamLock);
@@ -683,7 +683,7 @@ void CEdcbPlugIn::CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam)
 		{
 			DWORD val;
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
-				// TODO: ‚Æ‚è‚ ‚¦‚¸–³‹
+				// TODO: ã¨ã‚Šã‚ãˆãšç„¡è¦–
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -732,11 +732,11 @@ void CEdcbPlugIn::CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam)
 		}
 		break;
 	case CMD2_VIEW_APP_EXEC_VIEW_APP:
-		// –³‹
+		// ç„¡è¦–
 		resParam->param = CMD_SUCCESS;
 		break;
 	default:
-		// “¯ŠúŒÄ‚Ño‚µ‚ª•K—v‚ÈƒRƒ}ƒ“ƒh
+		// åŒæœŸå‘¼ã³å‡ºã—ãŒå¿…è¦ãªã‚³ãƒãƒ³ãƒ‰
 		SendMessage(m_hwnd, WM_INVOKE_CTRL_CMD, reinterpret_cast<WPARAM>(cmdParam), reinterpret_cast<LPARAM>(resParam));
 		break;
 	}
@@ -777,7 +777,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						resParam->param = CMD_SUCCESS;
 					}
 				}
-				// ƒ`ƒ…[ƒi”Ô†w’è‚É‚Í–¢‘Î‰
+				// ãƒãƒ¥ãƒ¼ãƒŠç•ªå·æŒ‡å®šã«ã¯æœªå¯¾å¿œ
 			}
 		}
 		break;
@@ -785,7 +785,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		m_pApp->AddLog(L"CMD2_VIEW_APP_CREATE_CTRL");
 		resParam->data = NewWriteVALUE(++m_recCtrlCount, resParam->dataSize);
 		resParam->param = CMD_SUCCESS;
-		// TVTest‚Íƒ`ƒƒƒ“ƒlƒ‹‚ğƒƒbƒN‚Å‚«‚È‚¢‚Ì‚ÅACMD2_VIEW_APP_SET_CHŒã‚Éƒ†[ƒU‚É‚æ‚é•ÏX‚ª‚ ‚ê‚Î–ß‚µ‚Ä‚¨‚­
+		// TVTestã¯ãƒãƒ£ãƒ³ãƒãƒ«ã‚’ãƒ­ãƒƒã‚¯ã§ããªã„ã®ã§ã€CMD2_VIEW_APP_SET_CHå¾Œã«ãƒ¦ãƒ¼ã‚¶ã«ã‚ˆã‚‹å¤‰æ›´ãŒã‚ã‚Œã°æˆ»ã—ã¦ãŠã
 		if (m_lastSetCh.useSID && m_chChangedAfterSetCh && IsNotRecording()) {
 			m_pApp->AddLog(L"SetCh", TVTest::LOG_TYPE_WARNING);
 			TVTest::ChannelSelectInfo si = {};
@@ -819,11 +819,11 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 				}
 				if (!recCtrl.filePath.empty()) {
 					if (IsEdcbRecording()) {
-						// d•¡˜^‰æ
+						// é‡è¤‡éŒ²ç”»
 						DuplicateSave(m_duplicateOriginalPath.c_str(), &recCtrl.duplicateTargetID, nullptr);
 					}
 					else {
-						// ÅŒã‚Ì˜^‰æ
+						// æœ€å¾Œã®éŒ²ç”»
 						m_pApp->StopRecord();
 					}
 				}
@@ -836,14 +836,14 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		{
 			SET_CTRL_REC_PARAM val;
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr) && m_recCtrlMap.count(val.ctrlID) != 0) {
-				// overWriteFlag,pittariFlag,createSize‚Í–³‹
+				// overWriteFlag,pittariFlag,createSizeã¯ç„¡è¦–
 				REC_CTRL &recCtrl = m_recCtrlMap[val.ctrlID];
 				if (recCtrl.filePath.empty() && !val.saveFolder.empty()) {
-					// saveFolder‚ÍÅ‰‚Ì—v‘f‚Ì‚İg‚¤
+					// saveFolderã¯æœ€åˆã®è¦ç´ ã®ã¿ä½¿ã†
 					fs_path filePath = val.saveFolder[0].recFolder;
 					filePath.append(val.saveFolder[0].recFileName);
 					if (!m_recNamePrefix.empty()) {
-						// ‘ÎÛƒT[ƒrƒXID‚ğƒtƒ@ƒCƒ‹–¼‚É‘O’u‚·‚é
+						// å¯¾è±¡ã‚µãƒ¼ãƒ“ã‚¹IDã‚’ãƒ•ã‚¡ã‚¤ãƒ«åã«å‰ç½®ã™ã‚‹
 						wstring prefix = m_recNamePrefix;
 						wstring macro;
 						Format(macro, L"%d", recCtrl.sid);
@@ -854,7 +854,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						filePath.replace_filename(name);
 					}
 					if (IsEdcbRecording()) {
-						// d•¡˜^‰æ
+						// é‡è¤‡éŒ²ç”»
 						UtilCreateDirectories(filePath.parent_path());
 						wstring strFilePath = filePath.native();
 						if (DuplicateSave(m_duplicateOriginalPath.c_str(), &recCtrl.duplicateTargetID, &strFilePath)) {
@@ -864,14 +864,14 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 							resParam->param = CMD_SUCCESS;
 						}
 						else {
-							m_pApp->AddLog(L"d•¡˜^‰æŠJn‚É¸”s‚µ‚Ü‚µ‚½B", TVTest::LOG_TYPE_ERROR);
+							m_pApp->AddLog(L"é‡è¤‡éŒ²ç”»é–‹å§‹ã«å¤±æ•—ã—ã¾ã—ãŸã€‚", TVTest::LOG_TYPE_ERROR);
 						}
 					}
 					else {
-						// Å‰‚Ì˜^‰æ
+						// æœ€åˆã®éŒ²ç”»
 						TVTest::RecordInfo ri;
 						ri.Mask = TVTest::RECORD_MASK_FILENAME;
-						// ’uŠ·ƒL[ƒ[ƒh‚ğ“WŠJ‚³‚¹‚È‚¢‚½‚ß
+						// ç½®æ›ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ã‚’å±•é–‹ã•ã›ãªã„ãŸã‚
 						wstring strFilePath = filePath.native();
 						Replace(strFilePath, L"%", L"%%");
 						vector<WCHAR> buf(strFilePath.c_str(), strFilePath.c_str() + strFilePath.size() + 1);
@@ -945,11 +945,11 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						dropCount.SaveLog(infoPath.native(), m_dropLogAsUtf8);
 					}
 					if (IsEdcbRecording()) {
-						// d•¡˜^‰æ
+						// é‡è¤‡éŒ²ç”»
 						DuplicateSave(m_duplicateOriginalPath.c_str(), &duplicateTargetID, nullptr);
 					}
 					else {
-						// ÅŒã‚Ì˜^‰æ
+						// æœ€å¾Œã®éŒ²ç”»
 						m_pApp->StopRecord();
 					}
 					resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
@@ -1044,8 +1044,8 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 		CBlockLock lock(&this_.m_streamLock);
 		if (packet.PID < BON_SELECTIVE_PID) {
 			if (this_.m_chChangeID > CH_CHANGE_ERR) {
-				// ƒ`ƒƒƒ“ƒlƒ‹Ø‚è‘Ö‚¦’†
-				// 1•bŠÔ‚ÍØ‚è‘Ö‚¦‘O‚ÌƒpƒPƒbƒg—ˆ‚é‰Â”\«‚ğl—¶‚µ‚Ä–³‹‚·‚é
+				// ãƒãƒ£ãƒ³ãƒãƒ«åˆ‡ã‚Šæ›¿ãˆä¸­
+				// 1ç§’é–“ã¯åˆ‡ã‚Šæ›¿ãˆå‰ã®ãƒ‘ã‚±ãƒƒãƒˆæ¥ã‚‹å¯èƒ½æ€§ã‚’è€ƒæ…®ã—ã¦ç„¡è¦–ã™ã‚‹
 				if (GetTickCount() - this_.m_chChangeTick > 1000) {
 					this_.m_epgUtil.AddTSPacket(pData, 188);
 					WORD onid;
@@ -1057,7 +1057,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 #endif
 					}
 					else if (GetTickCount() - this_.m_chChangeTick > 15000) {
-						// 15•bˆÈã‚½‚Á‚Ä‚é‚È‚çØ‚è‘Ö‚¦ƒGƒ‰[
+						// 15ç§’ä»¥ä¸ŠãŸã£ã¦ã‚‹ãªã‚‰åˆ‡ã‚Šæ›¿ãˆã‚¨ãƒ©ãƒ¼
 						this_.m_chChangeID = CH_CHANGE_ERR;
 						SendNotifyMessage(this_.m_hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
 					}
@@ -1071,16 +1071,16 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 						}
 						else if (this_.m_epgFileState == EPG_FILE_ST_PAT) {
 							this_.m_epgFileState = EPG_FILE_ST_TOT;
-							// ”Ô‘gî•ñ‚ª•s‘«‚µ‚È‚¢‚æ‚¤‰ü‚ß‚Ä’~Ïó‘Ô‚ğƒŠƒZƒbƒg
+							// ç•ªçµ„æƒ…å ±ãŒä¸è¶³ã—ãªã„ã‚ˆã†æ”¹ã‚ã¦è“„ç©çŠ¶æ…‹ã‚’ãƒªã‚»ãƒƒãƒˆ
 							this_.m_epgUtil.ClearSectionStatus();
-							// TOT‚ğ‘O“|‚µ‚Å‘‚«‚Ş‚½‚ß‚ÌêŠ‚ğŠm•Û
+							// TOTã‚’å‰å€’ã—ã§æ›¸ãè¾¼ã‚€ãŸã‚ã®å ´æ‰€ã‚’ç¢ºä¿
 							BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
 							std::fill_n(nullData + 4, 184, (BYTE)0xFF);
 							this_.m_epgFileTotPos = _ftelli64(this_.m_epgFile.get());
 							fwrite(nullData, 1, 188, this_.m_epgFile.get());
 						}
 					}
-					// ‚Ü‚¸PATAŸ‚É(‚ ‚ê‚Î)TOT‚ğ‘‚«‚ŞB‚±‚Ìˆ—‚Í•K{‚Å‚Í‚È‚¢‚ª”Ô‘gî•ñ‚ğ‚æ‚èŠmÀ‚©‚ÂŒø—¦“I‚É“Ç‚İo‚¹‚é
+					// ã¾ãšPATã€æ¬¡ã«(ã‚ã‚Œã°)TOTã‚’æ›¸ãè¾¼ã‚€ã€‚ã“ã®å‡¦ç†ã¯å¿…é ˆã§ã¯ãªã„ãŒç•ªçµ„æƒ…å ±ã‚’ã‚ˆã‚Šç¢ºå®Ÿã‹ã¤åŠ¹ç‡çš„ã«èª­ã¿å‡ºã›ã‚‹
 					if (packet.PID == 0x14 && this_.m_epgFileState == EPG_FILE_ST_TOT) {
 						this_.m_epgFileState = EPG_FILE_ST_ALL;
 						if (this_.m_epgFileTotPos >= 0) {

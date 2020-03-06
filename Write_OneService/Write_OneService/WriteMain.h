@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
@@ -12,40 +12,40 @@ public:
 	CWriteMain();
 	~CWriteMain();
 
-	//�t�@�C���ۑ����J�n����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// fileName				[IN]�ۑ��t�@�C���t���p�X�i�K�v�ɉ����Ċg���q�ς�����ȂǍs���j
-	// overWriteFlag		[IN]����t�@�C�������ݎ��ɏ㏑�����邩�ǂ����iTRUE�F����AFALSE�F���Ȃ��j
-	// createSize			[IN]���͗\�z�e�ʁi188�o�C�gTS�ł̗e�ʁB�����^�掞�ȂǑ����Ԗ���̏ꍇ��0�B�����Ȃǂ̉\��������̂Ŗڈ����x�j
+	//ファイル保存を開始する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// fileName				[IN]保存ファイルフルパス（必要に応じて拡張子変えたりなど行う）
+	// overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
+	// createSize			[IN]入力予想容量（188バイトTSでの容量。即時録画時など総時間未定の場合は0。延長などの可能性もあるので目安程度）
 	BOOL Start(
 		LPCWSTR fileName,
 		BOOL overWriteFlag,
 		ULONGLONG createSize
 		);
 
-	//�t�@�C���ۑ����I������
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
+	//ファイル保存を終了する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
 	BOOL Stop(
 		);
 
-	//���ۂɕۑ����Ă���t�@�C���p�X���擾����i�Đ���o�b�`�����ɗ��p�����j
-	//�߂�l�F
-	// �ۑ��t�@�C���t���p�X
+	//実際に保存しているファイルパスを取得する（再生やバッチ処理に利用される）
+	//戻り値：
+	// 保存ファイルフルパス
 	wstring GetSavePath(
 		);
 
-	//�ۑ��pTS�f�[�^�𑗂�
-	//�󂫗e�ʕs���Ȃǂŏ����o�����s�����ꍇ�AwriteSize�̒l������
-	//�ēx�ۑ���������Ƃ��̑��M�J�n�n�_�����߂�
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// data					[IN]TS�f�[�^
-	// size					[IN]data�̃T�C�Y
-	// writeSize			[OUT]�ۑ��ɗ��p�����T�C�Y
+	//保存用TSデータを送る
+	//空き容量不足などで書き出し失敗した場合、writeSizeの値を元に
+	//再度保存処理するときの送信開始地点を決める
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// data					[IN]TSデータ
+	// size					[IN]dataのサイズ
+	// writeSize			[OUT]保存に利用したサイズ
 	BOOL Write(
 		BYTE* data,
 		DWORD size,

@@ -1,6 +1,6 @@
-#pragma once
+ï»¿#pragma once
 
-// TVTest‚ÌƒtƒHƒ‹ƒ_‚ÉSendTSTCP.dll‚ª‚ ‚ê‚ÎAEpgDataCap_Bon‚Å‘—Mæ‚É"0.0.0.1:0"‚ğİ’è‚µ‚½‚Æ‚«‚Æ—‚½‚æ‚¤‚È“®ì‚ğ‚·‚é
+// TVTestã®ãƒ•ã‚©ãƒ«ãƒ€ã«SendTSTCP.dllãŒã‚ã‚Œã°ã€EpgDataCap_Bonã§é€ä¿¡å…ˆã«"0.0.0.1:0"ã‚’è¨­å®šã—ãŸã¨ãã¨ä¼¼ãŸã‚ˆã†ãªå‹•ä½œã‚’ã™ã‚‹
 //#define SEND_PIPE_TEST
 
 #define TVTEST_PLUGIN_CLASS_IMPLEMENT
@@ -21,11 +21,11 @@ class CEdcbPlugIn : public TVTest::CTVTestPlugin
 {
 public:
 	CEdcbPlugIn();
-	// ƒvƒ‰ƒOƒCƒ“‚Ìî•ñ‚ğ•Ô‚·
+	// ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã®æƒ…å ±ã‚’è¿”ã™
 	bool GetPluginInfo(TVTest::PluginInfo *pInfo);
-	// ‰Šú‰»ˆ—
+	// åˆæœŸåŒ–å‡¦ç†
 	bool Initialize();
-	// I—¹ˆ—
+	// çµ‚äº†å‡¦ç†
 	bool Finalize();
 private:
 	class CMyEventHandler : public TVTest::CTVTestEventHandler
@@ -33,17 +33,17 @@ private:
 	public:
 		CMyEventHandler(CEdcbPlugIn &outer) : m_outer(outer) {}
 		static LRESULT CALLBACK EventCallback(UINT ev, LPARAM lp1, LPARAM lp2, void *pc) { return static_cast<CMyEventHandler*>(pc)->HandleEvent(ev, lp1, lp2, pc); }
-		// ƒ`ƒƒƒ“ƒlƒ‹‚ª•ÏX‚³‚ê‚½
+		// ãƒãƒ£ãƒ³ãƒãƒ«ãŒå¤‰æ›´ã•ã‚ŒãŸ
 		bool OnChannelChange();
-		// ƒT[ƒrƒX‚ª•ÏX‚³‚ê‚½
+		// ã‚µãƒ¼ãƒ“ã‚¹ãŒå¤‰æ›´ã•ã‚ŒãŸ
 		bool OnServiceChange();
-		// ƒT[ƒrƒX‚Ì\¬‚ª•Ï‰»‚µ‚½
+		// ã‚µãƒ¼ãƒ“ã‚¹ã®æ§‹æˆãŒå¤‰åŒ–ã—ãŸ
 		bool OnServiceUpdate();
-		// ƒhƒ‰ƒCƒo‚ª•ÏX‚³‚ê‚½
+		// ãƒ‰ãƒ©ã‚¤ãƒãŒå¤‰æ›´ã•ã‚ŒãŸ
 		bool OnDriverChange();
-		// ˜^‰æó‘Ô‚ª•Ï‰»‚µ‚½
+		// éŒ²ç”»çŠ¶æ…‹ãŒå¤‰åŒ–ã—ãŸ
 		bool OnRecordStatusChange(int Status);
-		// ‹N“®ˆ—‚ªI—¹‚µ‚½
+		// èµ·å‹•å‡¦ç†ãŒçµ‚äº†ã—ãŸ
 		void OnStartupDone();
 	private:
 		CEdcbPlugIn &m_outer;
@@ -56,23 +56,23 @@ private:
 		CDropCount dropCount;
 	};
 
-	// EPGæ“¾‘ÎÛ‚ÌƒT[ƒrƒXˆê——‚ğæ“¾‚·‚é
+	// EPGå–å¾—å¯¾è±¡ã®ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<CH_DATA5> GetEpgCheckList(WORD onid, WORD tsid, int sid, bool basicFlag) const;
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam);
 	void CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resParam);
-	// EDCB‚Ìİ’èŠÖŒW•Û‘¶ƒtƒHƒ‹ƒ_‚ÌƒpƒX‚ğæ“¾‚·‚é
+	// EDCBã®è¨­å®šé–¢ä¿‚ä¿å­˜ãƒ•ã‚©ãƒ«ãƒ€ã®ãƒ‘ã‚¹ã‚’å–å¾—ã™ã‚‹
 	fs_path GetEdcbSettingPath() const;
-	// ˜^‰æ’â~’†‚©‚Ç‚¤‚©’²‚×‚é
+	// éŒ²ç”»åœæ­¢ä¸­ã‹ã©ã†ã‹èª¿ã¹ã‚‹
 	bool IsNotRecording() const;
-	// EDCB‚Ì§Œä‰º‚Å˜^‰æ’†‚©‚Ç‚¤‚©’²‚×‚é
+	// EDCBã®åˆ¶å¾¡ä¸‹ã§éŒ²ç”»ä¸­ã‹ã©ã†ã‹èª¿ã¹ã‚‹
 	bool IsEdcbRecording() const;
-	// Œ»İ‚ÌBonDriver‚Íƒ`ƒ…[ƒi‚©‚Ç‚¤‚©’²‚×‚é
+	// ç¾åœ¨ã®BonDriverã¯ãƒãƒ¥ãƒ¼ãƒŠã‹ã©ã†ã‹èª¿ã¹ã‚‹
 	bool IsTunerBonDriver() const;
-	// EpgTimerSrv‚ÉEPGÄ“Ç‚İ‚İ‚ğ—v‹‚·‚éƒXƒŒƒbƒh
+	// EpgTimerSrvã«EPGå†èª­ã¿è¾¼ã¿ã‚’è¦æ±‚ã™ã‚‹ã‚¹ãƒ¬ãƒƒãƒ‰
 	static void ReloadEpgThread(int param);
-	// ƒXƒgƒŠ[ƒ€ƒR[ƒ‹ƒoƒbƒN(•ÊƒXƒŒƒbƒh)
+	// ã‚¹ãƒˆãƒªãƒ¼ãƒ ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯(åˆ¥ã‚¹ãƒ¬ãƒƒãƒ‰)
 	static BOOL CALLBACK StreamCallback(BYTE *pData, void *pClientData);
 
 	CMyEventHandler m_handler;

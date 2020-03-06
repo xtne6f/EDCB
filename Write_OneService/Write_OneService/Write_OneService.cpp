@@ -1,4 +1,4 @@
-// Write_OneService.cpp : DLL �A�v���P�[�V�����p�ɃG�N�X�|�[�g�����֐����`���܂��B
+﻿// Write_OneService.cpp : DLL アプリケーション用にエクスポートされる関数を定義します。
 //
 
 #include "stdafx.h"
@@ -11,18 +11,18 @@ CInstanceManager<CWriteMain> g_instMng;
 
 extern HINSTANCE g_instance;
 
-#define PLUGIN_NAME L"�T�[�r�X�w��o�� PlugIn"
+#define PLUGIN_NAME L"サービス指定出力 PlugIn"
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 
 
-//PlugIn�̖��O���擾����
-//name��NULL���͕K�v�ȃT�C�Y��nameSize�ŕԂ�
-//�ʏ�nameSize=256�ŌĂяo��
-//�߂�l
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// name						[OUT]����
-// nameSize					[IN/OUT]name�̃T�C�Y(WCHAR�P��)
+//PlugInの名前を取得する
+//nameがNULL時は必要なサイズをnameSizeで返す
+//通常nameSize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// name						[OUT]名称
+// nameSize					[IN/OUT]nameのサイズ(WCHAR単位)
 DLL_EXPORT
 BOOL WINAPI GetPlugInName(
 	WCHAR* name,
@@ -50,9 +50,9 @@ BOOL WINAPI GetPlugInName(
 	return TRUE;
 }
 
-//PlugIn�Őݒ肪�K�v�ȏꍇ�A�ݒ�p�̃_�C�A���O�Ȃǂ�\������
-//�����F
-// parentWnd				[IN]�e�E�C���h�E
+//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
+//引数：
+// parentWnd				[IN]親ウインドウ
 DLL_EXPORT
 void WINAPI Setting(
 	HWND parentWnd
@@ -68,40 +68,40 @@ void WINAPI Setting(
 }
 
 //////////////////////////////////////////////////////////
-//��{�I�ȕۑ�����API�̌Ă΂��
+//基本的な保存時のAPIの呼ばれ方
 //CreateCtrl
-//��
+//↓
 //StartSave
-//��
+//↓
 //GetSaveFilePath
-//��
-//AddTSBuff�i���[�v�j
-//���i�^�掞�ԏI������j
+//↓
+//AddTSBuff（ループ）
+//↓（録画時間終わった）
 //StopSave
-//��
+//↓
 //DeleteCtrl
 //
-//AddTSBuff��FALSE���Ԃ��Ă����ꍇ�i�󂫗e�ʂȂ��Ȃ����Ȃǁj
+//AddTSBuffでFALSEが返ってきた場合（空き容量なくなったなど）
 //AddTSBuff
-//���iFALSE�j
+//↓（FALSE）
 //StopSave
-//��
+//↓
 //StartSave
-//��
+//↓
 //GetSaveFilePath
-//��
-//AddTSBuff�i���[�v�j
-//���i�^�掞�ԏI������j
+//↓
+//AddTSBuff（ループ）
+//↓（録画時間終わった）
 //StopSave
-//��
+//↓
 //DeleteCtrl
 
-//�����ۑ��Ή��̂��߃C���X�^���X��V�K�ɍ쐬����
-//�����Ή��ł��Ȃ��ꍇ�͂��̎��_�ŃG���[�Ƃ���
-//�߂�l
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// id				[OUT]����ID
+//複数保存対応のためインスタンスを新規に作成する
+//複数対応できない場合はこの時点でエラーとする
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// id				[OUT]識別ID
 DLL_EXPORT
 BOOL WINAPI CreateCtrl(
 	DWORD* id
@@ -121,11 +121,11 @@ BOOL WINAPI CreateCtrl(
 	return TRUE;
 }
 
-//�C���X�^���X���폜����
-//�߂�l
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// id				[IN]����ID
+//インスタンスを削除する
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// id				[IN]識別ID
 DLL_EXPORT
 BOOL WINAPI DeleteCtrl(
 	DWORD id
@@ -138,14 +138,14 @@ BOOL WINAPI DeleteCtrl(
 	return TRUE;
 }
 
-//�t�@�C���ۑ����J�n����
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// id					[IN]����ID
-// fileName				[IN]�ۑ��t�@�C���t���p�X�i�K�v�ɉ����Ċg���q�ς�����ȂǍs���j
-// overWriteFlag		[IN]����t�@�C�������ݎ��ɏ㏑�����邩�ǂ����iTRUE�F����AFALSE�F���Ȃ��j
-// createSize			[IN]���͗\�z�e�ʁi188�o�C�gTS�ł̗e�ʁB�����^�掞�ȂǑ����Ԗ���̏ꍇ��0�B�����Ȃǂ̉\��������̂Ŗڈ����x�j
+//ファイル保存を開始する
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// id					[IN]識別ID
+// fileName				[IN]保存ファイルフルパス（必要に応じて拡張子変えたりなど行う）
+// overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
+// createSize			[IN]入力予想容量（188バイトTSでの容量。即時録画時など総時間未定の場合は0。延長などの可能性もあるので目安程度）
 DLL_EXPORT
 BOOL WINAPI StartSave(
 	DWORD id,
@@ -162,11 +162,11 @@ BOOL WINAPI StartSave(
 	return ptr->Start(fileName, overWriteFlag, createSize);
 }
 
-//�t�@�C���ۑ����I������
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// id					[IN]����ID
+//ファイル保存を終了する
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// id					[IN]識別ID
 DLL_EXPORT
 BOOL WINAPI StopSave(
 	DWORD id
@@ -180,15 +180,15 @@ BOOL WINAPI StopSave(
 	return ptr->Stop();
 }
 
-//���ۂɕۑ����Ă���t�@�C���p�X���擾����i�Đ���o�b�`�����ɗ��p�����j
-//filePath��NULL���͕K�v�ȃT�C�Y��filePathSize�ŕԂ�
-//�ʏ�filePathSize=512�ŌĂяo��
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// id					[IN]����ID
-// filePath				[OUT]�ۑ��t�@�C���t���p�X
-// filePathSize			[IN/OUT]filePath�̃T�C�Y(WCHAR�P��)
+//実際に保存しているファイルパスを取得する（再生やバッチ処理に利用される）
+//filePathがNULL時は必要なサイズをfilePathSizeで返す
+//通常filePathSize=512で呼び出し
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// id					[IN]識別ID
+// filePath				[OUT]保存ファイルフルパス
+// filePathSize			[IN/OUT]filePathのサイズ(WCHAR単位)
 DLL_EXPORT
 BOOL WINAPI GetSaveFilePath(
 	DWORD id,
@@ -214,16 +214,16 @@ BOOL WINAPI GetSaveFilePath(
 	return TRUE;
 }
 
-//�ۑ��pTS�f�[�^�𑗂�
-//�󂫗e�ʕs���Ȃǂŏ����o�����s�����ꍇ�AwriteSize�̒l������
-//�ēx�ۑ���������Ƃ��̑��M�J�n�n�_�����߂�
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// id					[IN]����ID
-// data					[IN]TS�f�[�^
-// size					[IN]data�̃T�C�Y
-// writeSize			[OUT]�ۑ��ɗ��p�����T�C�Y
+//保存用TSデータを送る
+//空き容量不足などで書き出し失敗した場合、writeSizeの値を元に
+//再度保存処理するときの送信開始地点を決める
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// id					[IN]識別ID
+// data					[IN]TSデータ
+// size					[IN]dataのサイズ
+// writeSize			[OUT]保存に利用したサイズ
 DLL_EXPORT
 BOOL WINAPI AddTSBuff(
 	DWORD id,
