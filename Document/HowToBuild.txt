@@ -24,19 +24,17 @@
 
 1.つづけて以下を実行（この文書が"C:\EDCB\Document"にあると仮定）
   $ cd /c/EDCB/Document/MinGW
-  $ make clean
-  $ make -j2
+  $ make
 
 （注意）
 ・EpgTimerSrv.exeにLuaを組み込む場合は、[その他]を参照し、makeの引数にwithlua=1をつけてビルドする
 ・Luaを組み込まない場合でHTTPサーバ機能などを使うときは、lua52.dllを別途 https://sourceforge.net/projects/luabinaries/ からダウンロードする
   ・EpgTimerSrv/liblua52-mingw-lazy-*.a は lua-5.2.4_Win{32|64}_dllw6_lib.zip から以下を実行して作成したインポートライブラリ
     $ dlltool -t zz -D lua52.dll -d lua52.def -y liblua52.a
-・EpgTimerAdminProxy.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様でスタティックリンク
-  だとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダ、TVTestではTVTest.exeのフォルダに置く
+・EpgTimerAdminProxy.exe、readex.exe、relayread.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様で
+  スタティックリンクだとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダ、TVTestではTVTest.exeのフォルダに置く
 ・EpgDataCap_Bon.exeについては、使用するBonDriverに特別な対応がされていない限り、VC++でビルドされたIBonCast.dllが必要
 ・EpgTimer.exeについては[その他]を参照
-・ini/Toolsのreadexは $ gcc -Wl,-s -o readex.exe readex.c 、relayreadは $ gcc -Wl,-s -o relayread.exe relayread.c でビルドできる
 
 
 [ビルド(VisualStudio2010)]
@@ -87,4 +85,3 @@
   ビルド中にWarningが多めにでるがコーディングスタイルの問題なので気にしない
 
 ・プラットフォームツールセット:LLVM-vs2014( https://releases.llvm.org/ , ver.7.0.0以降はMarketplaceに移動の模様)に対応している
-  ソースコードのUTF-8変換が必要。ConvToUTF8.batで変換できる(ConvToSJIS.batでShift_JISに逆変換)
