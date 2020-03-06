@@ -104,10 +104,7 @@ namespace EpgTimer
                 if (eventInfo.StartTimeFlag == 0)
                 {
                     MessageBox.Show("開始時間未定のため予約できません");
-                    if (this.Visibility == System.Windows.Visibility.Visible)
-                    {
-                        DialogResult = false;
-                    }
+                    return;
                 }
 
                 ReserveData reserveInfo = new ReserveData();
@@ -151,10 +148,7 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-            if (this.Visibility == System.Windows.Visibility.Visible)
-            {
-                DialogResult = true;
-            }
+            DialogResult = true;
         }
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)

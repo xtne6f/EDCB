@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 
 /* this ALWAYS GENERATED file contains the IIDs and CLSIDs */

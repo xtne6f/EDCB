@@ -1,4 +1,4 @@
-// EpgTimerPlugIn.cpp : DLL ƒAƒvƒŠƒP[ƒVƒ‡ƒ“—p‚ÉƒGƒNƒXƒ|[ƒg‚³‚ê‚éŠÖ”‚ğ’è‹`‚µ‚Ü‚·B
+ï»¿// EpgTimerPlugIn.cpp : DLL ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ç”¨ã«ã‚¨ã‚¯ã‚¹ãƒãƒ¼ãƒˆã•ã‚Œã‚‹é–¢æ•°ã‚’å®šç¾©ã—ã¾ã™ã€‚
 //
 
 #include "stdafx.h"
@@ -12,7 +12,7 @@
 
 extern HINSTANCE g_hinstDLL;
 
-// ƒvƒ‰ƒOƒCƒ“ƒNƒ‰ƒX‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‚ğ¶¬‚·‚é
+// ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã‚¯ãƒ©ã‚¹ã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆã™ã‚‹
 TVTest::CTVTestPlugin *CreatePluginClass()
 {
 	return new CEpgTimerPlugIn;
@@ -27,25 +27,25 @@ CEpgTimerPlugIn::CEpgTimerPlugIn()
 	this->grantServerAccess = FALSE;
 }
 
-// ƒvƒ‰ƒOƒCƒ“‚Ìî•ñ‚ğ•Ô‚·
+// ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã®æƒ…å ±ã‚’è¿”ã™
 bool CEpgTimerPlugIn::GetPluginInfo(TVTest::PluginInfo *pInfo)
 {
 	pInfo->Type           = TVTest::PLUGIN_TYPE_NORMAL;
 	pInfo->Flags          = 0;
 	pInfo->pszPluginName  = L"EpgTimer PlugIn";
-	pInfo->pszCopyright   = L"‚è‚å‚¤‚¿‚ñ Copyright (C) 2010";
-	pInfo->pszDescription = L"EpgTimerSrv‚©‚ç‚Ì§Œä—p";
+	pInfo->pszCopyright   = L"ã‚Šã‚‡ã†ã¡ã‚“ Copyright (C) 2010";
+	pInfo->pszDescription = L"EpgTimerSrvã‹ã‚‰ã®åˆ¶å¾¡ç”¨";
 	return true;
 }
 
 
-// ‰Šú‰»ˆ—
+// åˆæœŸåŒ–å‡¦ç†
 bool CEpgTimerPlugIn::Initialize()
 {
-	// ƒCƒxƒ“ƒgƒR[ƒ‹ƒoƒbƒNŠÖ”‚ğ“o˜^
+	// ã‚¤ãƒ™ãƒ³ãƒˆã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°ã‚’ç™»éŒ²
 	m_pApp->SetEventCallback(EventCallback, this);
 
-	// ƒ_ƒCƒAƒƒO‚ğŠmÀ‚É¶¬‚·‚é
+	// ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã‚’ç¢ºå®Ÿã«ç”Ÿæˆã™ã‚‹
 	if( !this->ctrlDlg.CreateStreamCtrlDialog(g_hinstDLL, this->m_pApp->GetAppWindow()) ){
 		return false;
 	}
@@ -61,7 +61,7 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 	if( enable == TRUE ){
 		OutputDebugString(L"EnablePlugin");
 		if(this->m_pApp->SetWindowMessageCallback(WindowMsgeCallback, this)==false){
-			OutputDebugString(L"œTVTest Version Err::SetWindowMessageCallback");
+			OutputDebugString(L"â—TVTest Version Err::SetWindowMessageCallback");
 		}
 		if( this->grantServerAccess == FALSE ){
 			if( CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION) ){
@@ -74,14 +74,14 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 		Format(pipeName, L"%ls%d", CMD2_TVTEST_CTRL_PIPE, GetCurrentProcessId());
 		OutputDebugString(pipeName.c_str());
 		this->pipeServer.StartServer(pipeName, [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
-			// SendMessageTimeout()‚ÍƒƒbƒZ[ƒWˆ—’†‚Å‚à—eÍ‚È‚­ƒ^ƒCƒ€ƒAƒEƒg‚·‚é‚Ì‚ÅƒRƒ}ƒ“ƒhƒf[ƒ^‚ğ”r‘¼ˆ—‚·‚é
+			// SendMessageTimeout()ã¯ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‡¦ç†ä¸­ã§ã‚‚å®¹èµ¦ãªãã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã™ã‚‹ã®ã§ã‚³ãƒãƒ³ãƒ‰ãƒ‡ãƒ¼ã‚¿ã‚’æ’ä»–å‡¦ç†ã™ã‚‹
 			{
 				CBlockLock lock(&this->cmdLock);
 				std::swap(this->cmdCapture.param, cmdParam->param);
 				std::swap(this->cmdCapture.dataSize, cmdParam->dataSize);
 				this->cmdCapture.data.swap(cmdParam->data);
 			}
-			// CtrlCmdCallbackInvoked()‚ğƒƒCƒ“ƒXƒŒƒbƒh‚ÅŒÄ‚Ô(ƒfƒbƒhƒƒbƒN–h~‚Ì‚½‚ßƒ^ƒCƒ€ƒAƒEƒg‚Â‚«)
+			// CtrlCmdCallbackInvoked()ã‚’ãƒ¡ã‚¤ãƒ³ã‚¹ãƒ¬ãƒƒãƒ‰ã§å‘¼ã¶(ãƒ‡ãƒƒãƒ‰ãƒ­ãƒƒã‚¯é˜²æ­¢ã®ãŸã‚ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã¤ã)
 			DWORD_PTR dwResult;
 			if( SendMessageTimeout(this->ctrlDlg.GetDlgHWND(), WM_INVOKE_CTRL_CMD, 0, 0, SMTO_NORMAL, 10000, &dwResult) ){
 				CBlockLock lock(&this->cmdLock);
@@ -110,7 +110,7 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 	return ;
 }
 
-// I—¹ˆ—
+// çµ‚äº†å‡¦ç†
 bool CEpgTimerPlugIn::Finalize()
 {
 	if( this->m_pApp->IsPluginEnabled() ){
@@ -127,8 +127,8 @@ bool CEpgTimerPlugIn::Finalize()
 	return true;
 }
 
-// ƒCƒxƒ“ƒgƒR[ƒ‹ƒoƒbƒNŠÖ”
-// ‰½‚©ƒCƒxƒ“ƒg‚ª‹N‚«‚é‚ÆŒÄ‚Î‚ê‚é
+// ã‚¤ãƒ™ãƒ³ãƒˆã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°
+// ä½•ã‹ã‚¤ãƒ™ãƒ³ãƒˆãŒèµ·ãã‚‹ã¨å‘¼ã°ã‚Œã‚‹
 LRESULT CALLBACK CEpgTimerPlugIn::EventCallback(UINT Event,LPARAM lParam1,LPARAM lParam2,void *pClientData)
 {
 	CEpgTimerPlugIn *pThis=static_cast<CEpgTimerPlugIn*>(pClientData);
@@ -244,7 +244,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 				}
 			}
 			if( sys->nwMode == TRUE ){
-				// ƒRƒ}ƒ“ƒhˆ—’†‚È‚Ì‚Å’¼ÚSendNwPlayClose()‚ğŒÄ‚Ô‚ÆƒAƒvƒŠƒP[ƒVƒ‡ƒ“ŠÔ‚ÅƒƒbƒN‚·‚é‹°‚ê‚ª‚ ‚é
+				// ã‚³ãƒãƒ³ãƒ‰å‡¦ç†ä¸­ãªã®ã§ç›´æ¥SendNwPlayClose()ã‚’å‘¼ã¶ã¨ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³é–“ã§ãƒ­ãƒƒã‚¯ã™ã‚‹æã‚ŒãŒã‚ã‚‹
 				PostMessage(sys->ctrlDlg.GetDlgHWND(), CStreamCtrlDlg::WM_PLAY_CLOSE, 0, 0);
 			}
 		}
@@ -261,7 +261,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 		{
 			if( ReadVALUE(&sys->nwModeInfo, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				resParam->param = CMD_SUCCESS;
-				// “Š‚°‚é‚¾‚¯
+				// æŠ•ã’ã‚‹ã ã‘
 				PostMessage(sys->ctrlDlg.GetDlgHWND(), WM_TT_SET_CTRL, 0, 0);
 			}
 		}

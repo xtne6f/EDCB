@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-#define TVTEST_PLUGIN_CLASS_IMPLEMENT	// �N���X�Ƃ��Ď���
+#define TVTEST_PLUGIN_CLASS_IMPLEMENT	// クラスとして実装
 #define TVTEST_PLUGIN_VERSION TVTEST_PLUGIN_VERSION_(0,0,13)
 #include "../../Common/TVTestPlugin.h"
 

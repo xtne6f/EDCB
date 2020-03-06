@@ -180,20 +180,13 @@ namespace EpgTimer
                 int count = 0;
                 Read(ref count);
                 // ジェネリックList<T>のTを調べる
-                Type t = null;
-                foreach (Type u in v.GetType().GetInterfaces())
-                {
-                    if (u.IsGenericType && u.GetGenericTypeDefinition() == typeof(IList<>))
-                    {
-                        t = u.GetGenericArguments()[0];
-                        break;
-                    }
-                }
-                if (t == null)
+                var list = (System.Collections.IList)v;
+                Type t = list.GetType();
+                if (t.IsGenericType == false || t.GetGenericTypeDefinition() != typeof(List<>))
                 {
                     throw new ArgumentException();
                 }
-                var list = (System.Collections.IList)v;
+                t = t.GetGenericArguments()[0];
                 for (int i = 0; i < count; i++)
                 {
                     // CreateInstanceは遅いとよく言われるが、ここで使う主要な型のほとんどはnew自体のコストのほうがずっと大きい

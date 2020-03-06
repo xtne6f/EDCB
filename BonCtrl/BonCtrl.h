@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../Common/StructDef.h"
 #include "../Common/EpgTimerUtil.h"
@@ -14,12 +14,12 @@
 class CBonCtrl
 {
 public:
-	//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“AEPGŽæ“¾‚ÌƒXƒe[ƒ^ƒX—p
+	//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ã€EPGå–å¾—ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ç”¨
 	enum JOB_STATUS {
-		ST_STOP = -4,		//’âŽ~’†
-		ST_COMPLETE = -3,	//Š®—¹
-		ST_CANCEL = -2,		//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
-		ST_WORKING = -1,	//ŽÀs’†
+		ST_STOP = -4,		//åœæ­¢ä¸­
+		ST_COMPLETE = -3,	//å®Œäº†
+		ST_CANCEL = -2,		//ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚ŒãŸ
+		ST_WORKING = -1,	//å®Ÿè¡Œä¸­
 	};
 
 	CBonCtrl(void);
@@ -35,66 +35,66 @@ public:
 		BOOL allService
 		);
 
-	//ƒlƒbƒgƒ[ƒN‘—M‚Æ“Œv‚Ì‘ÎÛƒT[ƒrƒXID‚ðŽæ“¾‚·‚é
+	//ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯é€ä¿¡ã¨çµ±è¨ˆã®å¯¾è±¡ã‚µãƒ¼ãƒ“ã‚¹IDã‚’å–å¾—ã™ã‚‹
 	WORD GetNWCtrlServiceID() { return this->nwCtrlServiceID; }
 
-	//ƒlƒbƒgƒ[ƒN‘—M‚Æ“Œv‚Ì‘ÎÛƒT[ƒrƒXID‚ðÝ’è‚·‚é
-	//¦GetStreamID()‚ÅŽó“®“I‚Èƒ`ƒƒƒ“ƒlƒ‹•Ï‰»‚ðŒŸo‚µ‚½Žž‚È‚Ç‚ÉŽg‚¤
+	//ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯é€ä¿¡ã¨çµ±è¨ˆã®å¯¾è±¡ã‚µãƒ¼ãƒ“ã‚¹IDã‚’è¨­å®šã™ã‚‹
+	//â€»GetStreamID()ã§å—å‹•çš„ãªãƒãƒ£ãƒ³ãƒãƒ«å¤‰åŒ–ã‚’æ¤œå‡ºã—ãŸæ™‚ãªã©ã«ä½¿ã†
 	void SetNWCtrlServiceID(
 		WORD serviceID
 		);
 
-	//EPGŽæ“¾‚È‚Ç‚Ìó‘Ô‚ðXV‚·‚é
-	//¦ŠT‚Ë1•b‚²‚Æ‚ÉŒÄ‚Ô
+	//EPGå–å¾—ãªã©ã®çŠ¶æ…‹ã‚’æ›´æ–°ã™ã‚‹
+	//â€»æ¦‚ã­1ç§’ã”ã¨ã«å‘¼ã¶
 	void Check();
 
-	//BonDriver‚ðƒ[ƒh‚µ‚Äƒ`ƒƒƒ“ƒlƒ‹î•ñ‚È‚Ç‚ðŽæ“¾iƒtƒ@ƒCƒ‹–¼‚ÅŽw’èj
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-	//ˆø”F
-	// bonDriverFile	[IN]BonDriver‚Ìƒtƒ@ƒCƒ‹–¼
+	//BonDriverã‚’ãƒ­ãƒ¼ãƒ‰ã—ã¦ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ãªã©ã‚’å–å¾—ï¼ˆãƒ•ã‚¡ã‚¤ãƒ«åã§æŒ‡å®šï¼‰
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+	//å¼•æ•°ï¼š
+	// bonDriverFile	[IN]BonDriverã®ãƒ•ã‚¡ã‚¤ãƒ«å
 	BOOL OpenBonDriver(
 		LPCWSTR bonDriverFile,
 		int openWait,
 		DWORD tsBuffMaxCount
 		);
 
-	//ƒ[ƒh‚µ‚Ä‚¢‚éBonDriver‚ÌŠJ•ú
+	//ãƒ­ãƒ¼ãƒ‰ã—ã¦ã„ã‚‹BonDriverã®é–‹æ”¾
 	void CloseBonDriver();
 
-	//ƒ[ƒh’†‚ÌBonDriver‚Ìƒtƒ@ƒCƒ‹–¼‚ðŽæ“¾‚·‚éiƒ[ƒh¬Œ÷‚µ‚Ä‚¢‚é‚©‚Ì”»’èj
-	//¦ƒXƒŒƒbƒhƒZ[ƒt
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jFFALSEiOpen‚ÉŽ¸”s‚µ‚Ä‚¢‚éj
-	//ˆø”F
-	// bonDriverFile		[OUT]BonDriver‚Ìƒtƒ@ƒCƒ‹–¼(NULL‰Â)
+	//ãƒ­ãƒ¼ãƒ‰ä¸­ã®BonDriverã®ãƒ•ã‚¡ã‚¤ãƒ«åã‚’å–å¾—ã™ã‚‹ï¼ˆãƒ­ãƒ¼ãƒ‰æˆåŠŸã—ã¦ã„ã‚‹ã‹ã®åˆ¤å®šï¼‰
+	//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ï¼šFALSEï¼ˆOpenã«å¤±æ•—ã—ã¦ã„ã‚‹ï¼‰
+	//å¼•æ•°ï¼š
+	// bonDriverFile		[OUT]BonDriverã®ãƒ•ã‚¡ã‚¤ãƒ«å(NULLå¯)
 	BOOL GetOpenBonDriver(
 		wstring* bonDriverFile
 		);
 
-	//ƒ`ƒƒƒ“ƒlƒ‹•ÏX
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-	//ˆø”F
-	// space			[IN]•ÏXƒ`ƒƒƒ“ƒlƒ‹‚ÌSpace
-	// ch				[IN]•ÏXƒ`ƒƒƒ“ƒlƒ‹‚Ì•¨—Ch
-	// serviceID		[IN]•ÏXƒ`ƒƒƒ“ƒlƒ‹‚ÌƒT[ƒrƒXID
+	//ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+	//å¼•æ•°ï¼š
+	// space			[IN]å¤‰æ›´ãƒãƒ£ãƒ³ãƒãƒ«ã®Space
+	// ch				[IN]å¤‰æ›´ãƒãƒ£ãƒ³ãƒãƒ«ã®ç‰©ç†Ch
+	// serviceID		[IN]å¤‰æ›´ãƒãƒ£ãƒ³ãƒãƒ«ã®ã‚µãƒ¼ãƒ“ã‚¹ID
 	BOOL SetCh(
 		DWORD space,
 		DWORD ch,
 		WORD serviceID
 		);
 
-	//ƒ`ƒƒƒ“ƒlƒ‹•ÏX’†‚©‚Ç‚¤‚©
-	//¦ƒXƒŒƒbƒhƒZ[ƒt
-	//–ß‚è’lF
-	// TRUEi•ÏX’†jAFALSEiŠ®—¹j
+	//ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´ä¸­ã‹ã©ã†ã‹
+	//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆå¤‰æ›´ä¸­ï¼‰ã€FALSEï¼ˆå®Œäº†ï¼‰
 	BOOL IsChChanging(BOOL* chChgErr);
 
-	//Œ»Ý‚ÌƒXƒgƒŠ[ƒ€‚ÌID‚ðŽæ“¾‚·‚é
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-	//ˆø”F
+	//ç¾åœ¨ã®ã‚¹ãƒˆãƒªãƒ¼ãƒ ã®IDã‚’å–å¾—ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+	//å¼•æ•°ï¼š
 	// ONID		[OUT]originalNetworkID
 	// TSID		[OUT]transportStreamID
 	BOOL GetStreamID(
@@ -102,39 +102,39 @@ public:
 		WORD* TSID
 		);
 
-	//ƒT[ƒrƒXˆê——‚ðŽæ“¾‚·‚é
-	//–ß‚è’lF
-	// ƒGƒ‰[ƒR[ƒh
-	//ˆø”F
-	// serviceList				[OUT]ƒT[ƒrƒXî•ñ‚ÌƒŠƒXƒg
+	//ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
+	//å¼•æ•°ï¼š
+	// serviceList				[OUT]ã‚µãƒ¼ãƒ“ã‚¹æƒ…å ±ã®ãƒªã‚¹ãƒˆ
 	DWORD GetServiceList(
 		vector<CH_DATA4>* serviceList
 		);
 
-	//TSƒXƒgƒŠ[ƒ€§Œä—pƒRƒ“ƒgƒ[ƒ‹‚ðì¬‚·‚é
-	//–ß‚è’lF
-	// §ŒäŽ¯•ÊID
-	//ˆø”F
-	// duplicateNWCtrl		[IN]ƒlƒbƒgƒ[ƒN‘—M‚Æ“Œv—p‚Ì‚à‚Ì‚Æ“¯‚¶‰Šú’l‚ð“K—p‚·‚é‚©‚Ç‚¤‚©
+	//TSã‚¹ãƒˆãƒªãƒ¼ãƒ åˆ¶å¾¡ç”¨ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã‚’ä½œæˆã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// åˆ¶å¾¡è­˜åˆ¥ID
+	//å¼•æ•°ï¼š
+	// duplicateNWCtrl		[IN]ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯é€ä¿¡ã¨çµ±è¨ˆç”¨ã®ã‚‚ã®ã¨åŒã˜åˆæœŸå€¤ã‚’é©ç”¨ã™ã‚‹ã‹ã©ã†ã‹
 	DWORD CreateServiceCtrl(
 		BOOL duplicateNWCtrl
 		);
 
-	//TSƒXƒgƒŠ[ƒ€§Œä—pƒRƒ“ƒgƒ[ƒ‹‚ðì¬‚·‚é
-	//–ß‚è’lF
-	// ƒGƒ‰[ƒR[ƒh
-	//ˆø”F
-	// id			[IN]§ŒäŽ¯•ÊID
+	//TSã‚¹ãƒˆãƒªãƒ¼ãƒ åˆ¶å¾¡ç”¨ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã‚’ä½œæˆã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
+	//å¼•æ•°ï¼š
+	// id			[IN]åˆ¶å¾¡è­˜åˆ¥ID
 	BOOL DeleteServiceCtrl(
 		DWORD id
 		);
 
-	//§Œä‘ÎÛ‚ÌƒT[ƒrƒX‚ðÝ’è‚·‚é
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”s
-	//ˆø”F
-	// id			[IN]§ŒäŽ¯•ÊID
-	// serviceID	[IN]‘ÎÛƒT[ƒrƒXIDA0xFFFF‚Å‘SƒT[ƒrƒX‘ÎÛ
+	//åˆ¶å¾¡å¯¾è±¡ã®ã‚µãƒ¼ãƒ“ã‚¹ã‚’è¨­å®šã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—
+	//å¼•æ•°ï¼š
+	// id			[IN]åˆ¶å¾¡è­˜åˆ¥ID
+	// serviceID	[IN]å¯¾è±¡ã‚µãƒ¼ãƒ“ã‚¹IDã€0xFFFFã§å…¨ã‚µãƒ¼ãƒ“ã‚¹å¯¾è±¡
 	BOOL SetServiceID(
 		DWORD id,
 		WORD serviceID
@@ -145,103 +145,103 @@ public:
 		WORD* serviceID
 		);
 
-	//UDP‚Å‘—M‚ðs‚¤
-	//ˆø”F
-	// sendList		[IN/OUT]‘—MæƒŠƒXƒgBNULL‚Å’âŽ~BPort‚ÍŽÀÛ‚É‘—M‚ÉŽg—p‚µ‚½Port‚ª•Ô‚éB
+	//UDPã§é€ä¿¡ã‚’è¡Œã†
+	//å¼•æ•°ï¼š
+	// sendList		[IN/OUT]é€ä¿¡å…ˆãƒªã‚¹ãƒˆã€‚NULLã§åœæ­¢ã€‚Portã¯å®Ÿéš›ã«é€ä¿¡ã«ä½¿ç”¨ã—ãŸPortãŒè¿”ã‚‹ã€‚
 	void SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		);
 
-	//TCP‚Å‘—M‚ðs‚¤
-	//ˆø”F
-	// sendList		[IN/OUT]‘—MæƒŠƒXƒgBNULL‚Å’âŽ~BPort‚ÍŽÀÛ‚É‘—M‚ÉŽg—p‚µ‚½Port‚ª•Ô‚éB
+	//TCPã§é€ä¿¡ã‚’è¡Œã†
+	//å¼•æ•°ï¼š
+	// sendList		[IN/OUT]é€ä¿¡å…ˆãƒªã‚¹ãƒˆã€‚NULLã§åœæ­¢ã€‚Portã¯å®Ÿéš›ã«é€ä¿¡ã«ä½¿ç”¨ã—ãŸPortãŒè¿”ã‚‹ã€‚
 	void SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		);
 
-	//ƒtƒ@ƒCƒ‹•Û‘¶‚ðŠJŽn‚·‚é
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-	//ˆø”F
-	// recParam				[IN]•Û‘¶ƒpƒ‰ƒ[ƒ^
-	// saveFolderSub		[IN]HDD‚Ì‹ó‚«‚ª‚È‚­‚È‚Á‚½ê‡‚ÉˆêŽž“I‚ÉŽg—p‚·‚éƒtƒHƒ‹ƒ_
-	// writeBuffMaxCount	[IN]o—Íƒoƒbƒtƒ@ãŒÀ
+	//ãƒ•ã‚¡ã‚¤ãƒ«ä¿å­˜ã‚’é–‹å§‹ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+	//å¼•æ•°ï¼š
+	// recParam				[IN]ä¿å­˜ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	// saveFolderSub		[IN]HDDã®ç©ºããŒãªããªã£ãŸå ´åˆã«ä¸€æ™‚çš„ã«ä½¿ç”¨ã™ã‚‹ãƒ•ã‚©ãƒ«ãƒ€
+	// writeBuffMaxCount	[IN]å‡ºåŠ›ãƒãƒƒãƒ•ã‚¡ä¸Šé™
 	BOOL StartSave(
 		const SET_CTRL_REC_PARAM& recParam,
 		const vector<wstring>& saveFolderSub,
 		int writeBuffMaxCount
 	);
 
-	//ƒtƒ@ƒCƒ‹•Û‘¶‚ðI—¹‚·‚é
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-	//ˆø”F
-	// id			[IN]§ŒäŽ¯•ÊID
-	// subRecFlag	[OUT]¬Œ÷‚Ì‚Æ‚«AƒTƒu˜^‰æ‚ª”­¶‚µ‚½‚©‚Ç‚¤‚©
+	//ãƒ•ã‚¡ã‚¤ãƒ«ä¿å­˜ã‚’çµ‚äº†ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+	//å¼•æ•°ï¼š
+	// id			[IN]åˆ¶å¾¡è­˜åˆ¥ID
+	// subRecFlag	[OUT]æˆåŠŸã®ã¨ãã€ã‚µãƒ–éŒ²ç”»ãŒç™ºç”Ÿã—ãŸã‹ã©ã†ã‹
 	BOOL EndSave(
 		DWORD id,
 		BOOL* subRecFlag = NULL
 		);
 
-	//ƒXƒNƒ‰ƒ“ƒuƒ‹‰ðœˆ—‚Ì“®ìÝ’è
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-	//ˆø”F
-	// id			[IN]§ŒäŽ¯•ÊID
-	// enable		[IN] TRUEiˆ—‚·‚éjAFALSEiˆ—‚µ‚È‚¢j
+	//ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«è§£é™¤å‡¦ç†ã®å‹•ä½œè¨­å®š
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+	//å¼•æ•°ï¼š
+	// id			[IN]åˆ¶å¾¡è­˜åˆ¥ID
+	// enable		[IN] TRUEï¼ˆå‡¦ç†ã™ã‚‹ï¼‰ã€FALSEï¼ˆå‡¦ç†ã—ãªã„ï¼‰
 	BOOL SetScramble(
 		DWORD id,
 		BOOL enable
 		);
 
-	//Žš–‹‚Æƒf[ƒ^•ú‘—ŠÜ‚ß‚é‚©‚Ç‚¤‚©
-	//ˆø”F
-	// id					[IN]§ŒäŽ¯•ÊID
-	// enableCaption		[IN]Žš–‹‚ð TRUEiŠÜ‚ß‚éjAFALSEiŠÜ‚ß‚È‚¢j
-	// enableData			[IN]ƒf[ƒ^•ú‘—‚ð TRUEiŠÜ‚ß‚éjAFALSEiŠÜ‚ß‚È‚¢j
+	//å­—å¹•ã¨ãƒ‡ãƒ¼ã‚¿æ”¾é€å«ã‚ã‚‹ã‹ã©ã†ã‹
+	//å¼•æ•°ï¼š
+	// id					[IN]åˆ¶å¾¡è­˜åˆ¥ID
+	// enableCaption		[IN]å­—å¹•ã‚’ TRUEï¼ˆå«ã‚ã‚‹ï¼‰ã€FALSEï¼ˆå«ã‚ãªã„ï¼‰
+	// enableData			[IN]ãƒ‡ãƒ¼ã‚¿æ”¾é€ã‚’ TRUEï¼ˆå«ã‚ã‚‹ï¼‰ã€FALSEï¼ˆå«ã‚ãªã„ï¼‰
 	void SetServiceMode(
 		DWORD id,
 		BOOL enableCaption,
 		BOOL enableData
 		);
 
-	//ƒGƒ‰[ƒJƒEƒ“ƒg‚ðƒNƒŠƒA‚·‚é
-	//ˆø”F
-	// id					[IN]§ŒäŽ¯•ÊID
+	//ã‚¨ãƒ©ãƒ¼ã‚«ã‚¦ãƒ³ãƒˆã‚’ã‚¯ãƒªã‚¢ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// id					[IN]åˆ¶å¾¡è­˜åˆ¥ID
 	void ClearErrCount(
 		DWORD id
 		);
 
-	//ƒhƒƒbƒv‚ÆƒXƒNƒ‰ƒ“ƒuƒ‹‚ÌƒJƒEƒ“ƒg‚ðŽæ“¾‚·‚é
-	//ˆø”F
-	// id					[IN]§ŒäŽ¯•ÊID
-	// drop					[OUT]ƒhƒƒbƒv”
-	// scramble				[OUT]ƒXƒNƒ‰ƒ“ƒuƒ‹”
+	//ãƒ‰ãƒ­ãƒƒãƒ—ã¨ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«ã®ã‚«ã‚¦ãƒ³ãƒˆã‚’å–å¾—ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// id					[IN]åˆ¶å¾¡è­˜åˆ¥ID
+	// drop					[OUT]ãƒ‰ãƒ­ãƒƒãƒ—æ•°
+	// scramble				[OUT]ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«æ•°
 	void GetErrCount(
 		DWORD id,
 		ULONGLONG* drop,
 		ULONGLONG* scramble
 		);
 
-	//˜^‰æ’†‚Ìƒtƒ@ƒCƒ‹‚Ìƒtƒ@ƒCƒ‹ƒpƒX‚ðŽæ“¾‚·‚é
-	//¦ƒXƒŒƒbƒhƒZ[ƒt
-	//–ß‚è’lF
-	// ƒtƒ@ƒCƒ‹ƒpƒX
-	//ˆø”F
-	// id					[IN]§ŒäŽ¯•ÊID
+	//éŒ²ç”»ä¸­ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ã‚’å–å¾—ã™ã‚‹
+	//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+	//æˆ»ã‚Šå€¤ï¼š
+	// ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹
+	//å¼•æ•°ï¼š
+	// id					[IN]åˆ¶å¾¡è­˜åˆ¥ID
 	wstring GetSaveFilePath(
 		DWORD id
 		) {
 		return this->tsOut.GetSaveFilePath(id);
 	}
 
-	//ƒhƒƒbƒv‚ÆƒXƒNƒ‰ƒ“ƒuƒ‹‚ÌƒJƒEƒ“ƒg‚ð•Û‘¶‚·‚é
-	//ˆø”F
-	// id					[IN]§ŒäŽ¯•ÊID
-	// filePath				[IN]•Û‘¶ƒtƒ@ƒCƒ‹–¼
-	// asUtf8				[IN]UTF-8‚Å•Û‘¶‚·‚é‚©
-	// dropSaveThresh		[IN]ƒhƒƒbƒv”‚ª‚±‚êˆÈã‚È‚ç•Û‘¶‚·‚é
-	// drop					[OUT]ƒhƒƒbƒv”
+	//ãƒ‰ãƒ­ãƒƒãƒ—ã¨ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«ã®ã‚«ã‚¦ãƒ³ãƒˆã‚’ä¿å­˜ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// id					[IN]åˆ¶å¾¡è­˜åˆ¥ID
+	// filePath				[IN]ä¿å­˜ãƒ•ã‚¡ã‚¤ãƒ«å
+	// asUtf8				[IN]UTF-8ã§ä¿å­˜ã™ã‚‹ã‹
+	// dropSaveThresh		[IN]ãƒ‰ãƒ­ãƒƒãƒ—æ•°ãŒã“ã‚Œä»¥ä¸Šãªã‚‰ä¿å­˜ã™ã‚‹
+	// drop					[OUT]ãƒ‰ãƒ­ãƒƒãƒ—æ•°
 	void SaveErrCount(
 		DWORD id,
 		const wstring& filePath,
@@ -252,25 +252,25 @@ public:
 		ULONGLONG& scramble
 		);
 
-	//˜^‰æ’†‚Ìƒtƒ@ƒCƒ‹‚Ìo—ÍƒTƒCƒY‚ðŽæ“¾‚·‚é
-	//ˆø”F
-	// id					[IN]§ŒäŽ¯•ÊID
-	// writeSize			[OUT]•Û‘¶ƒtƒ@ƒCƒ‹–¼
+	//éŒ²ç”»ä¸­ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®å‡ºåŠ›ã‚µã‚¤ã‚ºã‚’å–å¾—ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// id					[IN]åˆ¶å¾¡è­˜åˆ¥ID
+	// writeSize			[OUT]ä¿å­˜ãƒ•ã‚¡ã‚¤ãƒ«å
 	void GetRecWriteSize(
 		DWORD id,
 		__int64* writeSize
 		);
 
-	//Žw’èƒT[ƒrƒX‚ÌŒ»ÝorŽŸ‚ÌEPGî•ñ‚ðŽæ“¾‚·‚é
-	//¦ƒXƒŒƒbƒhƒZ[ƒt
-	//–ß‚è’lF
-	// ƒGƒ‰[ƒR[ƒh
-	//ˆø”F
-	// originalNetworkID		[IN]Žæ“¾‘ÎÛ‚ÌoriginalNetworkID
-	// transportStreamID		[IN]Žæ“¾‘ÎÛ‚ÌtransportStreamID
-	// serviceID				[IN]Žæ“¾‘ÎÛ‚ÌServiceID
-	// nextFlag					[IN]TRUEiŽŸ‚Ì”Ô‘gjAFALSEiŒ»Ý‚Ì”Ô‘gj
-	// epgInfo					[OUT]EPGî•ñ
+	//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®ç¾åœ¨oræ¬¡ã®EPGæƒ…å ±ã‚’å–å¾—ã™ã‚‹
+	//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+	//æˆ»ã‚Šå€¤ï¼š
+	// ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
+	//å¼•æ•°ï¼š
+	// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®originalNetworkID
+	// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®transportStreamID
+	// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+	// nextFlag					[IN]TRUEï¼ˆæ¬¡ã®ç•ªçµ„ï¼‰ã€FALSEï¼ˆç¾åœ¨ã®ç•ªçµ„ï¼‰
+	// epgInfo					[OUT]EPGæƒ…å ±
 	DWORD GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -281,17 +281,17 @@ public:
 		return this->tsOut.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo);
 	}
 
-	//Žw’èƒCƒxƒ“ƒg‚ÌEPGî•ñ‚ðŽæ“¾‚·‚é
-	//¦ƒXƒŒƒbƒhƒZ[ƒt
-	//–ß‚è’lF
-	// ƒGƒ‰[ƒR[ƒh
-	//ˆø”F
-	// originalNetworkID		[IN]Žæ“¾‘ÎÛ‚ÌoriginalNetworkID
-	// transportStreamID		[IN]Žæ“¾‘ÎÛ‚ÌtransportStreamID
-	// serviceID				[IN]Žæ“¾‘ÎÛ‚ÌServiceID
-	// eventID					[IN]Žæ“¾‘ÎÛ‚ÌEventID
-	// pfOnlyFlag				[IN]p/f‚©‚ç‚Ì‚ÝŒŸõ‚·‚é‚©‚Ç‚¤‚©
-	// epgInfo					[OUT]EPGî•ñ
+	//æŒ‡å®šã‚¤ãƒ™ãƒ³ãƒˆã®EPGæƒ…å ±ã‚’å–å¾—ã™ã‚‹
+	//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+	//æˆ»ã‚Šå€¤ï¼š
+	// ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
+	//å¼•æ•°ï¼š
+	// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®originalNetworkID
+	// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®transportStreamID
+	// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+	// eventID					[IN]å–å¾—å¯¾è±¡ã®EventID
+	// pfOnlyFlag				[IN]p/fã‹ã‚‰ã®ã¿æ¤œç´¢ã™ã‚‹ã‹ã©ã†ã‹
+	// epgInfo					[OUT]EPGæƒ…å ±
 	DWORD SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -303,34 +303,34 @@ public:
 		return this->tsOut.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
 	}
 	
-	//PCŽžŒv‚ðŒ³‚Æ‚µ‚½ƒXƒgƒŠ[ƒ€ŽžŠÔ‚Æ‚Ì·‚ðŽæ“¾‚·‚é
-	//¦ƒXƒŒƒbƒhƒZ[ƒt
-	//–ß‚è’lF
-	// ·‚Ì•b”
+	//PCæ™‚è¨ˆã‚’å…ƒã¨ã—ãŸã‚¹ãƒˆãƒªãƒ¼ãƒ æ™‚é–“ã¨ã®å·®ã‚’å–å¾—ã™ã‚‹
+	//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+	//æˆ»ã‚Šå€¤ï¼š
+	// å·®ã®ç§’æ•°
 	int GetTimeDelay() { return this->tsOut.GetTimeDelay(); }
 
-	//˜^‰æ’†‚©‚Ç‚¤‚©‚ðŽæ“¾‚·‚é
-	//¦ƒXƒŒƒbƒhƒZ[ƒt
-	// TRUEi˜^‰æ’†jAFALSEi˜^‰æ‚µ‚Ä‚¢‚È‚¢j
+	//éŒ²ç”»ä¸­ã‹ã©ã†ã‹ã‚’å–å¾—ã™ã‚‹
+	//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+	// TRUEï¼ˆéŒ²ç”»ä¸­ï¼‰ã€FALSEï¼ˆéŒ²ç”»ã—ã¦ã„ãªã„ï¼‰
 	BOOL IsRec() { return this->tsOut.IsRec(); }
 
-	//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“‚ðŠJŽn‚·‚é
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
+	//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ã‚’é–‹å§‹ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
 	BOOL StartChScan();
 
-	//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“‚ðƒLƒƒƒ“ƒZƒ‹‚·‚é
+	//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ã‚’ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã™ã‚‹
 	void StopChScan();
 
-	//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“‚Ìó‘Ô‚ðŽæ“¾‚·‚é
-	//–ß‚è’lF
-	// ƒXƒe[ƒ^ƒX
-	//ˆø”F
-	// space		[OUT]ƒXƒLƒƒƒ“’†‚Ì•¨—CH‚Ìspace
-	// ch			[OUT]ƒXƒLƒƒƒ“’†‚Ì•¨—CH‚Ìch
-	// chName		[OUT]ƒXƒLƒƒƒ“’†‚Ì•¨—CH‚Ì–¼‘O
-	// chkNum		[OUT]ƒ`ƒFƒbƒNÏ‚Ý‚Ì”
-	// totalNum		[OUT]ƒ`ƒFƒbƒN‘ÎÛ‚Ì‘”
+	//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ã®çŠ¶æ…‹ã‚’å–å¾—ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
+	//å¼•æ•°ï¼š
+	// space		[OUT]ã‚¹ã‚­ãƒ£ãƒ³ä¸­ã®ç‰©ç†CHã®space
+	// ch			[OUT]ã‚¹ã‚­ãƒ£ãƒ³ä¸­ã®ç‰©ç†CHã®ch
+	// chName		[OUT]ã‚¹ã‚­ãƒ£ãƒ³ä¸­ã®ç‰©ç†CHã®åå‰
+	// chkNum		[OUT]ãƒã‚§ãƒƒã‚¯æ¸ˆã¿ã®æ•°
+	// totalNum		[OUT]ãƒã‚§ãƒƒã‚¯å¯¾è±¡ã®ç·æ•°
 	JOB_STATUS GetChScanStatus(
 		DWORD* space,
 		DWORD* ch,
@@ -339,36 +339,36 @@ public:
 		DWORD* totalNum
 		);
 
-	//EPGŽæ“¾‚ðŠJŽn‚·‚é
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-	//ˆø”F
-	// chList		[IN]EPGŽæ“¾‚·‚éƒ`ƒƒƒ“ƒlƒ‹ˆê——(NULL‰Â)
+	//EPGå–å¾—ã‚’é–‹å§‹ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+	//å¼•æ•°ï¼š
+	// chList		[IN]EPGå–å¾—ã™ã‚‹ãƒãƒ£ãƒ³ãƒãƒ«ä¸€è¦§(NULLå¯)
 	BOOL StartEpgCap(
 		const vector<SET_CH_INFO>* chList
 		);
 
-	//EPGŽæ“¾‚ð’âŽ~‚·‚é
+	//EPGå–å¾—ã‚’åœæ­¢ã™ã‚‹
 	void StopEpgCap(
 		);
 
-	//EPGŽæ“¾‚ÌƒXƒe[ƒ^ƒX‚ðŽæ“¾‚·‚é
-	//¦info==NULL‚Ìê‡‚ÉŒÀ‚èƒXƒŒƒbƒhƒZ[ƒt
-	//–ß‚è’lF
-	// ƒXƒe[ƒ^ƒX
-	//ˆø”F
-	// info			[OUT]Žæ“¾’†‚ÌƒT[ƒrƒX
+	//EPGå–å¾—ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’å–å¾—ã™ã‚‹
+	//â€»info==NULLã®å ´åˆã«é™ã‚Šã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+	//æˆ»ã‚Šå€¤ï¼š
+	// ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
+	//å¼•æ•°ï¼š
+	// info			[OUT]å–å¾—ä¸­ã®ã‚µãƒ¼ãƒ“ã‚¹
 	JOB_STATUS GetEpgCapStatus(
 		SET_CH_INFO* info
 		);
 
-	//ƒoƒbƒNƒOƒ‰ƒEƒ“ƒh‚Å‚ÌEPGŽæ“¾Ý’è
-	//ˆø”F
-	// enableLive	[IN]Ž‹’®’†‚ÉŽæ“¾‚·‚é
-	// enableRec	[IN]˜^‰æ’†‚ÉŽæ“¾‚·‚é
-	// enableRec	[IN]EPGŽæ“¾‚·‚éƒ`ƒƒƒ“ƒlƒ‹ˆê——
-	// *Basic		[IN]‚Pƒ`ƒƒƒ“ƒlƒ‹‚©‚çŠî–{î•ñ‚Ì‚ÝŽæ“¾‚·‚é‚©‚Ç‚¤‚©
-	// backStartWaitSec	[IN]ChØ‚è‘Ö‚¦A˜^‰æŠJŽnŒãAƒoƒbƒNƒOƒ‰ƒEƒ“ƒh‚Å‚ÌEPGŽæ“¾‚ðŠJŽn‚·‚é‚Ü‚Å‚Ì•b”
+	//ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã§ã®EPGå–å¾—è¨­å®š
+	//å¼•æ•°ï¼š
+	// enableLive	[IN]è¦–è´ä¸­ã«å–å¾—ã™ã‚‹
+	// enableRec	[IN]éŒ²ç”»ä¸­ã«å–å¾—ã™ã‚‹
+	// enableRec	[IN]EPGå–å¾—ã™ã‚‹ãƒãƒ£ãƒ³ãƒãƒ«ä¸€è¦§
+	// *Basic		[IN]ï¼‘ãƒãƒ£ãƒ³ãƒãƒ«ã‹ã‚‰åŸºæœ¬æƒ…å ±ã®ã¿å–å¾—ã™ã‚‹ã‹ã©ã†ã‹
+	// backStartWaitSec	[IN]Chåˆ‡ã‚Šæ›¿ãˆã€éŒ²ç”»é–‹å§‹å¾Œã€ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã§ã®EPGå–å¾—ã‚’é–‹å§‹ã™ã‚‹ã¾ã§ã®ç§’æ•°
 	void SetBackGroundEpgCap(
 		BOOL enableLive,
 		BOOL enableRec,
@@ -379,13 +379,13 @@ public:
 		DWORD backStartWaitSec
 		);
 
-	//Œ»Ý‚ÌƒXƒgƒŠ[ƒ€‚Ì•\Ž¦—p‚ÌƒXƒe[ƒ^ƒX‚ðŽæ“¾‚·‚é
-	//ˆø”F
-	// signalLv		[OUT]ƒVƒOƒiƒ‹ƒŒƒxƒ‹
-	// space		[OUT]•¨—CH‚Ìspace(•s–¾‚Ì‚Æ‚«•‰)
-	// ch			[OUT]•¨—CH‚Ìch(•s–¾‚Ì‚Æ‚«•‰)
-	// drop			[OUT]ƒhƒƒbƒv”
-	// scramble		[OUT]ƒXƒNƒ‰ƒ“ƒuƒ‹”
+	//ç¾åœ¨ã®ã‚¹ãƒˆãƒªãƒ¼ãƒ ã®è¡¨ç¤ºç”¨ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’å–å¾—ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// signalLv		[OUT]ã‚·ã‚°ãƒŠãƒ«ãƒ¬ãƒ™ãƒ«
+	// space		[OUT]ç‰©ç†CHã®space(ä¸æ˜Žã®ã¨ãè² )
+	// ch			[OUT]ç‰©ç†CHã®ch(ä¸æ˜Žã®ã¨ãè² )
+	// drop			[OUT]ãƒ‰ãƒ­ãƒƒãƒ—æ•°
+	// scramble		[OUT]ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«æ•°
 	void GetViewStatusInfo(
 		float* signalLv,
 		int* space,
@@ -418,7 +418,7 @@ protected:
 	CAutoResetEvent analyzeEvent;
 	atomic_bool_ analyzeStopFlag;
 
-	//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“—p
+	//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ç”¨
 	struct CHK_CH_INFO {
 		DWORD space;
 		DWORD ch;
@@ -432,8 +432,8 @@ protected:
 	BOOL chScanChkNext;
 	DWORD chScanTick;
 
-	//EPGŽæ“¾—p
-	//Žæ“¾’†‚Íconst‘€ì‚Ì‚Ý
+	//EPGå–å¾—ç”¨
+	//å–å¾—ä¸­ã¯constæ“ä½œã®ã¿
 	vector<SET_CH_INFO> epgCapChList;
 	atomic_int_ epgCapIndexOrStatus;
 	BOOL epgCapBSBasic;

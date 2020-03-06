@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "TunerBankCtrl.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -38,8 +38,8 @@ CTunerBankCtrl::~CTunerBankCtrl()
 
 void CTunerBankCtrl::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 {
-	//ƒ‚ƒWƒ…[ƒ‹iniˆÈŠO‚Ìƒpƒ‰ƒ[ƒ^‚Í•K—v‚È‚Æ‚«‚É‚»‚Ìê‚Åæ“¾‚·‚é
-	//˜^‰æŠJn‚Ì‚¿‚å‚¤‚Çn•ª‘O‚¾‚Æ‹N“®‚Æ‘¼ƒ`ƒ…[ƒi˜^‰æŠJn‚ªáŠ±d‚È‚è‚â‚·‚­‚È‚é‚Ì‚Å‹Í‚©‚É‚¸‚ç‚·
+	//ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«iniä»¥å¤–ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã¯å¿…è¦ãªã¨ãã«ãã®å ´ã§å–å¾—ã™ã‚‹
+	//éŒ²ç”»é–‹å§‹ã®ã¡ã‚‡ã†ã©nåˆ†å‰ã ã¨èµ·å‹•ã¨ä»–ãƒãƒ¥ãƒ¼ãƒŠéŒ²ç”»é–‹å§‹ãŒè‹¥å¹²é‡ãªã‚Šã‚„ã™ããªã‚‹ã®ã§åƒ…ã‹ã«ãšã‚‰ã™
 	this->recWakeTime = max(s.recAppWakeTime * 60 - 3, READY_MARGIN) * I64_1SEC;
 	this->recMinWake = s.recMinWake;
 	this->recView = s.recView;
@@ -77,11 +77,11 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 	auto itr = this->reserveMap.find(reserve->reserveID);
 	if( itr != this->reserveMap.end() && itr->second.state != TR_IDLE ){
 		const TUNER_RESERVE& save = itr->second;
-		//•ÏX‚Å‚«‚È‚¢ƒtƒB[ƒ‹ƒh‚ğã‘‚«
+		//å¤‰æ›´ã§ããªã„ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã‚’ä¸Šæ›¸ã
 		reserve->onid = save.onid;
 		reserve->tsid = save.tsid;
 		reserve->sid = save.sid;
-		//ƒvƒƒOƒ‰ƒ€—\–ñ‚Ö‚Ì•ÏX‚Ì‚İ”F‚ß‚é
+		//ãƒ—ãƒ­ã‚°ãƒ©ãƒ äºˆç´„ã¸ã®å¤‰æ›´ã®ã¿èªã‚ã‚‹
 		if( reserve->eid != 0xFFFF ){
 			reserve->eid = save.eid;
 		}
@@ -93,7 +93,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 		reserve->partialRecMode = save.partialRecMode;
 		reserve->recFolder = save.recFolder;
 		reserve->partialRecFolder = save.partialRecFolder;
-		//Œã•ûˆÚ“®‚Í’ˆÓB‚È‚¨‘O•ûˆÚ“®‚Í‚Ç‚ê‚¾‚¯‘å‚«‚­‚Ä‚àŸ‚ÌCheck()‚Å—\–ñI—¹‚·‚é‚¾‚¯‚È‚Ì‚Å–â‘è‚È‚¢
+		//å¾Œæ–¹ç§»å‹•ã¯æ³¨æ„ã€‚ãªãŠå‰æ–¹ç§»å‹•ã¯ã©ã‚Œã ã‘å¤§ããã¦ã‚‚æ¬¡ã®Check()ã§äºˆç´„çµ‚äº†ã™ã‚‹ã ã‘ãªã®ã§å•é¡Œãªã„
 		if( reserve->startTime - reserve->startMargin > save.startTime - save.startMargin ){
 			__int64 now = GetNowI64Time() + this->delayTime;
 			if( reserve->startTime - reserve->startMargin - 60 * I64_1SEC > now ){
@@ -103,7 +103,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 		}
 		TUNER_RESERVE_WORK& r = itr->second;
 		static_cast<TUNER_RESERVE&>(r) = *reserve;
-		//“à•”ƒpƒ‰ƒ[ƒ^‚ğÄŒvZ
+		//å†…éƒ¨ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’å†è¨ˆç®—
 		r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | (r.reserveID & 0xFFFF);
 		r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
 		return true;
@@ -116,7 +116,7 @@ bool CTunerBankCtrl::DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList)
 	auto itr = this->reserveMap.find(reserveID);
 	if( itr != this->reserveMap.end() ){
 		if( itr->second.state != TR_IDLE ){
-			//tunerPid‚Í•K‚¸”ñ0
+			//tunerPidã¯å¿…ãšé0
 			CWatchBlock watchBlock(&this->watchContext);
 			CSendCtrlCmd ctrlCmd;
 			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
@@ -163,7 +163,7 @@ bool CTunerBankCtrl::DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList)
 				retList->push_back(ret);
 			}
 			if( itr->second.state == TR_REC ){
-				//˜^‰æI—¹‚É”º‚Á‚ÄGUIƒL[ƒv‚ª‰ğœ‚³‚ê‚½‚©‚à‚µ‚ê‚È‚¢
+				//éŒ²ç”»çµ‚äº†ã«ä¼´ã£ã¦GUIã‚­ãƒ¼ãƒ—ãŒè§£é™¤ã•ã‚ŒãŸã‹ã‚‚ã—ã‚Œãªã„
 				this->tunerResetLock = true;
 			}
 		}
@@ -205,10 +205,10 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	    waitpid(this->tunerPid, NULL, WNOHANG) != 0
 #endif
 	    ){
-		//ƒ`ƒ…[ƒi‚ª—\Šú‚¹‚¸•Â‚¶‚ç‚ê‚½
+		//ãƒãƒ¥ãƒ¼ãƒŠãŒäºˆæœŸã›ãšé–‰ã˜ã‚‰ã‚ŒãŸ
 		CloseTuner();
 		this->specialState = TR_IDLE;
-		//TR_IDLE‚Å‚È‚¢‘S—\–ñ‚ğ‘’‚é
+		//TR_IDLEã§ãªã„å…¨äºˆç´„ã‚’è‘¬ã‚‹
 		for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); ){
 			if( itr->second.state != TR_IDLE ){
 				CHECK_RESULT ret;
@@ -225,7 +225,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	CWatchBlock watchBlock(&this->watchContext);
 	CSendCtrlCmd ctrlCmd;
 	if( this->tunerPid ){
-		//ƒ`ƒ…[ƒi‹N“®‚É‚Í‚±‚ê‚ğÄ“xŒÄ‚Ô‚±‚Æ
+		//ãƒãƒ¥ãƒ¼ãƒŠèµ·å‹•æ™‚ã«ã¯ã“ã‚Œã‚’å†åº¦å‘¼ã¶ã“ã¨
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 	}
 
@@ -233,20 +233,20 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		DWORD status;
 		if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS ){
 			if( status != VIEW_APP_ST_GET_EPG ){
-				//æ“¾I‚í‚Á‚½
+				//å–å¾—çµ‚ã‚ã£ãŸ
 				OutputDebugString(L"epg end\r\n");
 				CloseTuner();
 				this->specialState = TR_IDLE;
 			}
 		}else{
-			//ƒGƒ‰[
+			//ã‚¨ãƒ©ãƒ¼
 			OutputDebugString(L"epg err\r\n");
 			CloseTuner();
 			this->specialState = TR_IDLE;
 		}
 	}else if( this->specialState == TR_NWTV ){
-		//ƒlƒbƒgƒ[ƒNƒ‚[ƒh‚Å‚ÍGUIƒL[ƒv‚Å‚«‚È‚¢‚Ì‚ÅBonDriver‚ª•ÏX‚³‚ê‚é‚©‚à‚µ‚ê‚È‚¢
-		//BonDriver‚ª•ÏX‚³‚ê‚½ƒ`ƒ…[ƒi‚Í‚±‚Ìƒoƒ“ƒN‚ÌŠÇ—‰º‚É’u‚¯‚È‚¢‚Ì‚ÅAƒlƒbƒgƒ[ƒNƒ‚[ƒh‚ğ‰ğœ‚·‚é
+		//ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ¢ãƒ¼ãƒ‰ã§ã¯GUIã‚­ãƒ¼ãƒ—ã§ããªã„ã®ã§BonDriverãŒå¤‰æ›´ã•ã‚Œã‚‹ã‹ã‚‚ã—ã‚Œãªã„
+		//BonDriverãŒå¤‰æ›´ã•ã‚ŒãŸãƒãƒ¥ãƒ¼ãƒŠã¯ã“ã®ãƒãƒ³ã‚¯ã®ç®¡ç†ä¸‹ã«ç½®ã‘ãªã„ã®ã§ã€ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ¢ãƒ¼ãƒ‰ã‚’è§£é™¤ã™ã‚‹
 		wstring bonDriver;
 		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
 		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
@@ -258,15 +258,15 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				this->tunerPid = 0;
 				this->specialState = TR_IDLE;
 			}else{
-				//ID”’D‚É¸”s‚µ‚½‚Ì‚ÅÁ‚¦‚Ä‚à‚ç‚¤‚µ‚©‚È‚¢
+				//IDå‰¥å¥ªã«å¤±æ•—ã—ãŸã®ã§æ¶ˆãˆã¦ã‚‚ã‚‰ã†ã—ã‹ãªã„
 				CloseNWTV();
 			}
-			//TODO: ”Ä—p‚ÌƒƒO—pƒƒbƒZ[ƒW‚ª‘¶İ‚µ‚È‚¢‚Ì‚ÅA‚â‚Ş‚ğ“¾‚¸NOTIFY_UPDATE_REC_END‚ÅŒx‚·‚é
+			//TODO: æ±ç”¨ã®ãƒ­ã‚°ç”¨ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒå­˜åœ¨ã—ãªã„ã®ã§ã€ã‚„ã‚€ã‚’å¾—ãšNOTIFY_UPDATE_REC_ENDã§è­¦å‘Šã™ã‚‹
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END,
-				L"BonDriver‚ª•ÏX‚³‚ê‚½‚½‚ßNetworkƒ‚[ƒh‚ğ‰ğœ‚µ‚Ü‚µ‚½\r\n•ÏX‚µ‚½BonDriver‚É˜^‰æ‚Ì—\’è‚ª‚È‚¢‚©’ˆÓ‚µ‚Ä‚­‚¾‚³‚¢");
+				L"BonDriverãŒå¤‰æ›´ã•ã‚ŒãŸãŸã‚Networkãƒ¢ãƒ¼ãƒ‰ã‚’è§£é™¤ã—ã¾ã—ãŸ\r\nå¤‰æ›´ã—ãŸBonDriverã«éŒ²ç”»ã®äºˆå®šãŒãªã„ã‹æ³¨æ„ã—ã¦ãã ã•ã„");
 		}
 	}else if( this->tunerPid && this->tunerChLocked == false ){
-		//GUIƒL[ƒv‚³‚ê‚Ä‚¢‚È‚¢‚Ì‚ÅBonDriver‚ª•ÏX‚³‚ê‚é‚©‚à‚µ‚ê‚È‚¢
+		//GUIã‚­ãƒ¼ãƒ—ã•ã‚Œã¦ã„ãªã„ã®ã§BonDriverãŒå¤‰æ›´ã•ã‚Œã‚‹ã‹ã‚‚ã—ã‚Œãªã„
 		wstring bonDriver;
 		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
 		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
@@ -277,10 +277,10 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 #endif
 				this->tunerPid = 0;
 			}else{
-				//ID”’D‚É¸”s‚µ‚½‚Ì‚ÅÁ‚¦‚Ä‚à‚ç‚¤‚µ‚©‚È‚¢
+				//IDå‰¥å¥ªã«å¤±æ•—ã—ãŸã®ã§æ¶ˆãˆã¦ã‚‚ã‚‰ã†ã—ã‹ãªã„
 				CloseTuner();
 			}
-			//TR_IDLE‚Å‚È‚¢‘S—\–ñ‚ğ‘’‚é
+			//TR_IDLEã§ãªã„å…¨äºˆç´„ã‚’è‘¬ã‚‹
 			for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); ){
 				if( itr->second.state != TR_IDLE ){
 					CHECK_RESULT ret;
@@ -298,10 +298,10 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	this->delayTime = 0;
 	this->epgCapDelayTime = 0;
 	if( this->tunerPid && this->specialState != TR_NWTV ){
-		//PCŒv‚Æ‚ÌŒë·æ“¾
+		//PCæ™‚è¨ˆã¨ã®èª¤å·®å–å¾—
 		int delaySec;
 		if( ctrlCmd.SendViewGetDelay(&delaySec) == CMD_SUCCESS ){
-			//Œë‚Á‚½’l‚ğ’Í‚ñ‚Å‚¨‚©‚µ‚È‚±‚Æ‚É‚È‚ç‚È‚¢‚æ‚¤AEPGæ“¾’†‚Ì’l‚Íó‘Ô‘JˆÚ‚ÌQl‚É‚µ‚È‚¢
+			//èª¤ã£ãŸå€¤ã‚’æ´ã‚“ã§ãŠã‹ã—ãªã“ã¨ã«ãªã‚‰ãªã„ã‚ˆã†ã€EPGå–å¾—ä¸­ã®å€¤ã¯çŠ¶æ…‹é·ç§»ã®å‚è€ƒã«ã—ãªã„
 			if( this->specialState == TR_EPGCAP ){
 				this->epgCapDelayTime = delaySec * I64_1SEC;
 			}else{
@@ -311,7 +311,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	}
 	__int64 now = GetNowI64Time() + this->delayTime;
 
-	//I—¹ŠÔ‚ğ‰ß‚¬‚½—\–ñ‚ğ‰ñû‚µATR_IDLE->TR_READYˆÈŠO‚Ì‘JˆÚ‚ğ‚·‚é
+	//çµ‚äº†æ™‚é–“ã‚’éããŸäºˆç´„ã‚’å›åã—ã€TR_IDLE->TR_READYä»¥å¤–ã®é·ç§»ã‚’ã™ã‚‹
 	vector<pair<__int64, DWORD>> idleList;
 	bool ngResetLock = false;
 	for( auto itrRes = this->reserveMap.begin(); itrRes != this->reserveMap.end(); ){
@@ -323,9 +323,9 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
 				ret.type = CHECK_ERR_PASS;
 			}
-			//ŠJn‡‚ª•b¸“x‚È‚Ì‚ÅA‘OŒãŠÖŒW‚ğŠmÀ‚É‚·‚é‚½‚ßŠJnŠÔ‚Í•K‚¸•b¸“x‚Åˆµ‚¤
+			//é–‹å§‹é †ãŒç§’ç²¾åº¦ãªã®ã§ã€å‰å¾Œé–¢ä¿‚ã‚’ç¢ºå®Ÿã«ã™ã‚‹ãŸã‚é–‹å§‹æ™‚é–“ã¯å¿…ãšç§’ç²¾åº¦ã§æ‰±ã†
 			else if( (r.startTime - r.startMargin - this->recWakeTime) / I64_1SEC < now / I64_1SEC ){
-				//˜^‰æŠJnrecWakeTime‘O`
+				//éŒ²ç”»é–‹å§‹recWakeTimeå‰ï½
 				idleList.push_back(std::make_pair(r.startOrder, r.reserveID));
 			}
 			break;
@@ -338,17 +338,17 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				}
 				ret.type = CHECK_ERR_PASS;
 			}
-			//ƒpƒCƒvƒRƒ}ƒ“ƒh‚É‚Íƒ`ƒƒƒ“ƒlƒ‹•ÏX‚ÌŠ®—¹‚ğ’²‚×‚éd‘g‚İ‚ª‚È‚¢‚Ì‚ÅA‘Ã“–‚ÈŠÔ‚¾‚¯‘Ò‚Â
+			//ãƒ‘ã‚¤ãƒ—ã‚³ãƒãƒ³ãƒ‰ã«ã¯ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´ã®å®Œäº†ã‚’èª¿ã¹ã‚‹ä»•çµ„ã¿ãŒãªã„ã®ã§ã€å¦¥å½“ãªæ™‚é–“ã ã‘å¾…ã¤
 			else if( GetTickCount() - this->tunerChChgTick > 5000 && r.startTime - r.startMargin < now ){
-				//˜^‰æŠJn`
+				//éŒ²ç”»é–‹å§‹ï½
 				if( RecStart(r, now) ){
-					//“r’†‚©‚çŠJn‚³‚ê‚½‚©
+					//é€”ä¸­ã‹ã‚‰é–‹å§‹ã•ã‚ŒãŸã‹
 					r.notStartHead = r.startTime - r.startMargin + 60 * I64_1SEC < now;
 					r.appendPgInfo = false;
 					r.savedPgInfo = false;
 					r.state = TR_REC;
 					if( r.recMode == RECMODE_VIEW ){
-						//‹’®—\–ñ‚Å‚È‚¢—\–ñ‚ª1‚Â‚Å‚à‚ ‚ê‚Îu‹’®ƒ‚[ƒhv‚É‚µ‚È‚¢
+						//è¦–è´äºˆç´„ã§ãªã„äºˆç´„ãŒ1ã¤ã§ã‚‚ã‚ã‚Œã°ã€Œè¦–è´ãƒ¢ãƒ¼ãƒ‰ã€ã«ã—ãªã„
 						auto itr = this->reserveMap.cbegin();
 						for( ; itr != this->reserveMap.end(); itr++ ){
 							if( itr->second.state != TR_IDLE && itr->second.recMode != RECMODE_VIEW ){
@@ -356,7 +356,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							}
 						}
 						if( itr == this->reserveMap.end() ){
-							//u‹’®ƒ‚[ƒhv‚É‚·‚é‚ÆGUIƒL[ƒv‚ª‰ğœ‚³‚ê‚Ä‚µ‚Ü‚¤‚½‚ßƒ`ƒƒƒ“ƒlƒ‹‚ğ”cˆ¬‚·‚é‚±‚Æ‚Í‚Å‚«‚È‚¢
+							//ã€Œè¦–è´ãƒ¢ãƒ¼ãƒ‰ã€ã«ã™ã‚‹ã¨GUIã‚­ãƒ¼ãƒ—ãŒè§£é™¤ã•ã‚Œã¦ã—ã¾ã†ãŸã‚ãƒãƒ£ãƒ³ãƒãƒ«ã‚’æŠŠæ¡ã™ã‚‹ã“ã¨ã¯ã§ããªã„
 							ctrlCmd.SendViewSetStandbyRec(2);
 							this->tunerChLocked = false;
 							if( this->recView ){
@@ -364,11 +364,11 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							}
 						}
 					}else{
-						//˜^‰æƒtƒ@ƒCƒ‹ƒpƒXæ“¾
+						//éŒ²ç”»ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹å–å¾—
 						for( int i = 0; i < 2; i++ ){
 							if( r.ctrlID[i] != 0 ){
-								//‚Ò‚Á‚½‚è˜^‰æ‚Íæ“¾¬Œ÷‚ª’x‚ê‚é
-								//‚½‚Æ‚¦ƒTƒu˜^‰æ‚ª”­¶‚µ‚Ä‚à‚±‚ÌƒRƒ}ƒ“ƒh‚Å“¾‚ç‚ê‚éƒpƒX‚Í•Ï‰»‚µ‚È‚¢
+								//ã´ã£ãŸã‚ŠéŒ²ç”»ã¯å–å¾—æˆåŠŸãŒé…ã‚Œã‚‹
+								//ãŸã¨ãˆã‚µãƒ–éŒ²ç”»ãŒç™ºç”Ÿã—ã¦ã‚‚ã“ã®ã‚³ãƒãƒ³ãƒ‰ã§å¾—ã‚‰ã‚Œã‚‹ãƒ‘ã‚¹ã¯å¤‰åŒ–ã—ãªã„
 								ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &r.recFilePath[i]);
 							}
 						}
@@ -377,17 +377,17 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 						startedReserveIDList->push_back(r.reserveID);
 					}
 				}else{
-					//ŠJn‚Å‚«‚È‚©‚Á‚½
+					//é–‹å§‹ã§ããªã‹ã£ãŸ
 					ret.type = CHECK_ERR_RECSTART;
 				}
 			}
 			break;
 		case TR_REC:
 			{
-				//ƒXƒe[ƒ^ƒXŠm”F
+				//ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ç¢ºèª
 				DWORD status;
 				if( r.recMode != RECMODE_VIEW && ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && status != VIEW_APP_ST_REC ){
-					//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½H
+					//ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚ŒãŸï¼Ÿ
 					ret.type = CHECK_END_CANCEL;
 					ret.recFilePath = r.ctrlID[0] != 0 ? r.recFilePath[0] : r.recFilePath[1];
 					ret.continueRec = false;
@@ -430,16 +430,16 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							isMainCtrl = false;
 						}
 					}
-					//˜^‰æI—¹‚É”º‚Á‚ÄGUIƒL[ƒv‚ª‰ğœ‚³‚ê‚½‚©‚à‚µ‚ê‚È‚¢
+					//éŒ²ç”»çµ‚äº†ã«ä¼´ã£ã¦GUIã‚­ãƒ¼ãƒ—ãŒè§£é™¤ã•ã‚ŒãŸã‹ã‚‚ã—ã‚Œãªã„
 					this->tunerResetLock = true;
 				}else{
-					//˜^‰æƒtƒ@ƒCƒ‹ƒpƒXæ“¾
+					//éŒ²ç”»ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹å–å¾—
 					for( int i = 0; i < 2; i++ ){
 						if( r.recMode != RECMODE_VIEW && r.ctrlID[i] != 0 && r.recFilePath[i].empty() ){
 							ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &r.recFilePath[i]);
 						}
 					}
-					//”Ô‘gî•ñŠm”F
+					//ç•ªçµ„æƒ…å ±ç¢ºèª
 					if( r.savedPgInfo == false && r.recMode != RECMODE_VIEW ){
 						GET_EPG_PF_INFO_PARAM val;
 						val.ONID = r.onid;
@@ -452,11 +452,11 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 						    ConvertI64Time(resVal.start_time) <= r.startTime + 30 * I64_1SEC &&
 						    r.startTime + 30 * I64_1SEC < ConvertI64Time(resVal.start_time) + resVal.durationSec * I64_1SEC &&
 						    (r.eid == 0xFFFF || r.eid == resVal.event_id) ){
-							//ŠJnŠÔ‚©‚ç30•b‚Í‰ß‚¬‚Ä‚¢‚é‚Ì‚Å‚±‚Ì”Ô‘gî•ñ‚ª˜^‰æ’†‚Ì‚à‚Ì‚Ì‚Í‚¸
+							//é–‹å§‹æ™‚é–“ã‹ã‚‰30ç§’ã¯éãã¦ã„ã‚‹ã®ã§ã“ã®ç•ªçµ„æƒ…å ±ãŒéŒ²ç”»ä¸­ã®ã‚‚ã®ã®ã¯ãš
 							r.savedPgInfo = true;
 							r.epgStartTime = resVal.start_time;
 							r.epgEventName = resVal.hasShortInfo ? resVal.shortInfo.event_name : L"";
-							//‚²‚­‹H‚ÉAPR(‰üs)‚ğŠÜ‚Ş‚½‚ß
+							//ã”ãç¨€ã«APR(æ”¹è¡Œ)ã‚’å«ã‚€ãŸã‚
 							Replace(r.epgEventName, L"\r\n", L"");
 							if( this->saveProgramInfo ){
 								for( int i = 0; i < 2; i++ ){
@@ -467,7 +467,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							}
 						}
 					}
-					//‚Ü‚¾˜^‰æ’†‚Ì—\–ñ‚ª‚ ‚é‚Ì‚ÅGUIƒL[ƒv‚ğÄİ’è‚µ‚Ä‚Í‚¢‚¯‚È‚¢
+					//ã¾ã éŒ²ç”»ä¸­ã®äºˆç´„ãŒã‚ã‚‹ã®ã§GUIã‚­ãƒ¼ãƒ—ã‚’å†è¨­å®šã—ã¦ã¯ã„ã‘ãªã„
 					ngResetLock = true;
 				}
 			}
@@ -482,17 +482,17 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		}
 	}
 
-	//TR_IDLE->TR_READY‚Ì‘JˆÚ‚ğ‘Ò‚Â—\–ñ‚ğŠJn‡‚É•À‚×‚é
+	//TR_IDLE->TR_READYã®é·ç§»ã‚’å¾…ã¤äºˆç´„ã‚’é–‹å§‹é †ã«ä¸¦ã¹ã‚‹
 	std::sort(idleList.begin(), idleList.end());
 
-	//TR_IDLE->TR_READY(TR_REC)‚Ì‘JˆÚ‚ğ‚·‚é
+	//TR_IDLE->TR_READY(TR_REC)ã®é·ç§»ã‚’ã™ã‚‹
 	for( vector<pair<__int64, DWORD>>::const_iterator itrIdle = idleList.begin(); itrIdle != idleList.end(); itrIdle++ ){
 		auto itrRes = this->reserveMap.find(itrIdle->second);
 		TUNER_RESERVE_WORK& r = itrRes->second;
 		CHECK_RESULT ret;
 		ret.type = 0;
 		if( this->tunerPid == 0 ){
-			//ƒ`ƒ…[ƒi‚ğ‹N“®‚·‚é
+			//ãƒãƒ¥ãƒ¼ãƒŠã‚’èµ·å‹•ã™ã‚‹
 			SET_CH_INFO initCh;
 			initCh.ONID = r.onid;
 			initCh.TSID = r.tsid;
@@ -510,44 +510,44 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 				r.retryOpenCount = 0;
 			}else if( ++r.retryOpenCount >= 4 || r.retryOpenCount == 2 && CloseOtherTuner() == false ){
-				//s2‰ñ¨‘¼ƒ`ƒ…[ƒiI—¹¬Œ÷‚³‚ç‚É2‰ñ¨‹N“®‚Å‚«‚È‚©‚Á‚½
+				//è©¦è¡Œ2å›â†’ä»–ãƒãƒ¥ãƒ¼ãƒŠçµ‚äº†æˆåŠŸæ™‚ã•ã‚‰ã«2å›â†’èµ·å‹•ã§ããªã‹ã£ãŸ
 				ret.type = CHECK_ERR_OPEN;
 			}
 		}else{
 			r.retryOpenCount = 0;
 		}
 		if( this->tunerPid && (r.startTime - r.startMargin) / I64_1SEC - READY_MARGIN < now / I64_1SEC ){
-			//˜^‰æŠJnREADY_MARGIN•b‘O`
-			//Œ´ì‚Å‚Í˜^‰æ§Œäì¬‚Í’Êí˜^‰æ60•b‘OAŠ„‚è‚İ˜^‰æ15•b‘O‚¾‚ª
-			//ì¬‚ğ‘O“|‚µ‚·‚é•K—v‚Í“Á‚É‚È‚¢‚Ì‚ÆAƒ`ƒƒƒ“ƒlƒ‹•ÏX‚©‚çEIT[p/f]æ“¾‚Ü‚Å‚ÌŠÔ‚ğŠm•Û‚Å‚«‚é‚æ‚¤‚±‚Ì•b”‚É‚µ‚½
+			//éŒ²ç”»é–‹å§‹READY_MARGINç§’å‰ï½
+			//åŸä½œã§ã¯éŒ²ç”»åˆ¶å¾¡ä½œæˆã¯é€šå¸¸éŒ²ç”»æ™‚60ç§’å‰ã€å‰²ã‚Šè¾¼ã¿éŒ²ç”»æ™‚15ç§’å‰ã ãŒ
+			//ä½œæˆã‚’å‰å€’ã—ã™ã‚‹å¿…è¦ã¯ç‰¹ã«ãªã„ã®ã¨ã€ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´ã‹ã‚‰EIT[p/f]å–å¾—ã¾ã§ã®æ™‚é–“ã‚’ç¢ºä¿ã§ãã‚‹ã‚ˆã†ã“ã®ç§’æ•°ã«ã—ãŸ
 			if( this->specialState == TR_EPGCAP ){
-				//EPGæ“¾‚ğƒLƒƒƒ“ƒZƒ‹(‘JˆÚ’†’f)
+				//EPGå–å¾—ã‚’ã‚­ãƒ£ãƒ³ã‚»ãƒ«(é·ç§»ä¸­æ–­)
 				OutputDebugString(L"epg cancel\r\n");
-				//CSendCtrlCmd::SendViewEpgCapStop()‚Í‘—‚ç‚È‚¢(‘¦À‚Éƒ`ƒ…[ƒi•Â‚¶‚é‚Ì‚ÅˆÓ–¡‚ª‚È‚¢‚½‚ß)
+				//CSendCtrlCmd::SendViewEpgCapStop()ã¯é€ã‚‰ãªã„(å³åº§ã«ãƒãƒ¥ãƒ¼ãƒŠé–‰ã˜ã‚‹ã®ã§æ„å‘³ãŒãªã„ãŸã‚)
 				CloseTuner();
 				this->specialState = TR_IDLE;
 				break;
 			}else if( this->specialState == TR_NWTV ){
-				//ƒlƒbƒgƒ[ƒNƒ‚[ƒh‚ğ‰ğœ
+				//ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ¢ãƒ¼ãƒ‰ã‚’è§£é™¤
 				wstring bonDriver;
 				DWORD status;
 				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
 				    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) == 0 &&
 				    ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && (status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_ERR_CH_CHG) ){
-					//ƒvƒƒZƒX‚ğˆø‚«Œp‚®
+					//ãƒ—ãƒ­ã‚»ã‚¹ã‚’å¼•ãç¶™ã
 					this->tunerONID = r.onid;
 					this->tunerTSID = r.tsid;
 					this->tunerChLocked = false;
 					this->tunerResetLock = false;
 					this->specialState = TR_IDLE;
 				}else{
-					//ƒlƒbƒgƒ[ƒNƒ‚[ƒhI—¹(‘JˆÚ’†’f)
+					//ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ¢ãƒ¼ãƒ‰çµ‚äº†(é·ç§»ä¸­æ–­)
 					CloseNWTV();
 					break;
 				}
 			}
 			if( this->tunerONID != r.onid || this->tunerTSID != r.tsid ){
-				//ƒ`ƒƒƒ“ƒlƒ‹ˆá‚¤‚Ì‚ÅATR_IDLE‚Å‚È‚¢‘S—\–ñ‚Ì—Dæ“x‚ğ”ä‚×‚é
+				//ãƒãƒ£ãƒ³ãƒãƒ«é•ã†ã®ã§ã€TR_IDLEã§ãªã„å…¨äºˆç´„ã®å„ªå…ˆåº¦ã‚’æ¯”ã¹ã‚‹
 				auto itr = this->reserveMap.cbegin();
 				for( ; itr != this->reserveMap.end(); itr++ ){
 					if( itr->second.state != TR_IDLE && itr->second.effectivePriority < r.effectivePriority ){
@@ -555,7 +555,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 					}
 				}
 				if( itr == this->reserveMap.end() ){
-					//TR_IDLE‚Å‚È‚¢‘S—\–ñ‚Í©•ª‚æ‚è‚àã‚¢‚Ì‚Å‘’‚é
+					//TR_IDLEã§ãªã„å…¨äºˆç´„ã¯è‡ªåˆ†ã‚ˆã‚Šã‚‚å¼±ã„ã®ã§è‘¬ã‚‹
 					for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
 						if( itr->second.state != TR_IDLE ){
 							CHECK_RESULT retOther;
@@ -605,14 +605,14 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			}
 			if( this->tunerONID == r.onid && this->tunerTSID == r.tsid ){
 				if( this->tunerChLocked == false ){
-					//ƒ`ƒƒƒ“ƒlƒ‹•ÏX
+					//ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´
 					SET_CH_INFO chgCh;
 					chgCh.ONID = r.onid;
 					chgCh.TSID = r.tsid;
 					chgCh.SID = r.sid;
 					chgCh.useSID = TRUE;
 					chgCh.useBonCh = FALSE;
-					//u—\–ñ˜^‰æ‘Ò‹@’†v
+					//ã€Œäºˆç´„éŒ²ç”»å¾…æ©Ÿä¸­ã€
 					ctrlCmd.SendViewSetStandbyRec(1);
 					if( ctrlCmd.SendViewSetCh(chgCh) == CMD_SUCCESS ){
 						this->tunerChLocked = true;
@@ -621,7 +621,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 					}
 				}
 				if( this->tunerChLocked ){
-					//“¯ˆêƒ`ƒƒƒ“ƒlƒ‹‚È‚Ì‚Å˜^‰æ§Œä‚ğì¬‚Å‚«‚é
+					//åŒä¸€ãƒãƒ£ãƒ³ãƒãƒ«ãªã®ã§éŒ²ç”»åˆ¶å¾¡ã‚’ä½œæˆã§ãã‚‹
 					bool continueRec = false;
 					for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 						if( itr->second.continueRecFlag &&
@@ -632,14 +632,14 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 						    itr->second.enableCaption == r.enableCaption &&
 						    itr->second.enableData == r.enableData &&
 						    itr->second.partialRecMode == r.partialRecMode ){
-							//˜A‘±˜^‰æ‚È‚Ì‚ÅA“¯ˆê§ŒäID‚Å˜^‰æŠJn‚³‚ê‚½‚±‚Æ‚É‚·‚éBTR_REC‚Ü‚Å‘JˆÚ‚·‚é‚Ì‚Å’ˆÓ
+							//é€£ç¶šéŒ²ç”»ãªã®ã§ã€åŒä¸€åˆ¶å¾¡IDã§éŒ²ç”»é–‹å§‹ã•ã‚ŒãŸã“ã¨ã«ã™ã‚‹ã€‚TR_RECã¾ã§é·ç§»ã™ã‚‹ã®ã§æ³¨æ„
 							r.state = TR_REC;
 							r.ctrlID[0] = itr->second.ctrlID[0];
 							r.ctrlID[1] = itr->second.ctrlID[1];
 							r.notStartHead = r.startTime - r.startMargin + 60 * I64_1SEC < now;
 							r.appendPgInfo = itr->second.appendPgInfo || itr->second.savedPgInfo;
 							r.savedPgInfo = false;
-							//ˆøŒp‚¬Œ³‚ğ‘’‚é
+							//å¼•ç¶™ãå…ƒã‚’è‘¬ã‚‹
 							CHECK_RESULT retOther;
 							retOther.type = CHECK_ERR_REC;
 							retOther.reserveID = itr->first;
@@ -668,7 +668,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 						if( CreateCtrl(&r.ctrlID[0], &r.ctrlID[1], r) ){
 							r.state = TR_READY;
 						}else{
-							//ì¬‚Å‚«‚È‚©‚Á‚½
+							//ä½œæˆã§ããªã‹ã£ãŸ
 							ret.type = CHECK_ERR_CTRL;
 						}
 					}
@@ -683,12 +683,12 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	}
 
 	if( IsNeedOpenTuner() == false ){
-		//ƒ`ƒ…[ƒi‚ª•K—v‚È‚­‚È‚Á‚½
+		//ãƒãƒ¥ãƒ¼ãƒŠãŒå¿…è¦ãªããªã£ãŸ
 		CloseTuner();
 	}
 	if( this->tunerPid && this->specialState == TR_IDLE && this->tunerResetLock ){
 		if( ngResetLock == false ){
-			//u—\–ñ˜^‰æ‘Ò‹@’†v
+			//ã€Œäºˆç´„éŒ²ç”»å¾…æ©Ÿä¸­ã€
 			ctrlCmd.SendViewSetStandbyRec(1);
 		}
 		this->tunerResetLock = false;
@@ -701,7 +701,7 @@ bool CTunerBankCtrl::IsNeedOpenTuner() const
 	if( this->specialState != TR_IDLE ){
 		return true;
 	}
-	//–ß‚è’l‚ÌU“®‚ğ–h‚®‚½‚ßdelayTime‚ğl—¶‚µ‚Ä‚Í‚¢‚¯‚È‚¢
+	//æˆ»ã‚Šå€¤ã®æŒ¯å‹•ã‚’é˜²ããŸã‚delayTimeã‚’è€ƒæ…®ã—ã¦ã¯ã„ã‘ãªã„
 	__int64 now = GetNowI64Time();
 	for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 		if( itr->second.state != TR_IDLE || (itr->second.startTime - itr->second.startMargin - this->recWakeTime) / I64_1SEC < now / I64_1SEC ){
@@ -752,7 +752,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 	}
 
 	if( partialRecMode == 2 ){
-		//•”•ªóM‚Ì‚İ
+		//éƒ¨åˆ†å—ä¿¡ã®ã¿
 		*ctrlID = 0;
 		*partialCtrlID = newID;
 	}else{
@@ -764,7 +764,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 	}
 	SET_CTRL_MODE param;
 	if( *ctrlID != 0 ){
-		//’Êí
+		//é€šå¸¸
 		param.ctrlID = *ctrlID;
 		param.SID = reserve.recMode == RECMODE_ALL || reserve.recMode == RECMODE_ALL_NOB25 ? 0xFFFF : reserve.sid;
 		param.enableScramble = reserve.recMode != RECMODE_ALL_NOB25 && reserve.recMode != RECMODE_SERVICE_NOB25;
@@ -773,7 +773,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 		ctrlCmd.SendViewSetCtrlMode(param);
 	}
 	if( *partialCtrlID != 0 ){
-		//•”•ªóM
+		//éƒ¨åˆ†å—ä¿¡
 		param.ctrlID = *partialCtrlID;
 		param.SID = partialSID;
 		param.enableScramble = reserve.recMode != RECMODE_ALL_NOB25 && reserve.recMode != RECMODE_SERVICE_NOB25;
@@ -816,7 +816,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 		WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
 	}
 
-	//¦Œ´ì‚ÆˆÙ‚È‚èƒfƒBƒŒƒNƒgƒŠ‚Ì©“®¶¬‚Í‚µ‚È‚¢
+	//â€»åŸä½œã¨ç•°ãªã‚Šãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®è‡ªå‹•ç”Ÿæˆã¯ã—ãªã„
 	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(savePath, append ? UTIL_O_CREAT_APPEND : UTIL_SECURE_WRITE), fclose);
 	if( fp ){
 		if( append ){
@@ -844,24 +844,24 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) co
 		if( reserve.ctrlID[i] != 0 ){
 			SET_CTRL_REC_PARAM param;
 			param.ctrlID = reserve.ctrlID[i];
-			//saveFolder[].recFileName‚ª‹ó‚Å‚È‚¢ŒÀ‚è‚±‚ÌƒtƒB[ƒ‹ƒh‚ª—˜—p‚³‚ê‚é‚±‚Æ‚Í‚È‚¢
+			//saveFolder[].recFileNameãŒç©ºã§ãªã„é™ã‚Šã“ã®ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ãŒåˆ©ç”¨ã•ã‚Œã‚‹ã“ã¨ã¯ãªã„
 			param.fileName = L"padding.ts";
-			//“¯o—Í—pƒtƒ@ƒCƒ‹–¼
+			//åŒæ™‚å‡ºåŠ›ç”¨ãƒ•ã‚¡ã‚¤ãƒ«å
 			param.saveFolder = i == 0 ? reserve.recFolder : reserve.partialRecFolder;
 			if( param.saveFolder.empty() ){
 				param.saveFolder.resize(1);
 				param.saveFolder[0].recFolder = L"!Default";
-				//Œ´ì‚Í‚±‚±‚ÅwritePlugInƒtƒB[ƒ‹ƒh‚É"RecWritePlugIn0"İ’èƒL[‚ğ‘ã“ü‚µ‚Ä‚¢‚½Bà–¾‚Í‚È‚­—˜“_‚àv‚¢‚Â‚©‚È‚¢‚Ì‚ÅÈ‚¢‚½
+				//åŸä½œã¯ã“ã“ã§writePlugInãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã«"RecWritePlugIn0"è¨­å®šã‚­ãƒ¼ã‚’ä»£å…¥ã—ã¦ã„ãŸã€‚èª¬æ˜ã¯ãªãåˆ©ç‚¹ã‚‚æ€ã„ã¤ã‹ãªã„ã®ã§çœã„ãŸ
 			}
 			for( size_t j = 0; j < param.saveFolder.size(); j++ ){
 				if( CompareNoCase(param.saveFolder[j].recFolder, L"!Default") == 0 ){
-					//’ˆÓ: ‚±‚Ì’uŠ·‚ÍŒ´ì‚É‚Í‚È‚¢
+					//æ³¨æ„: ã“ã®ç½®æ›ã¯åŸä½œã«ã¯ãªã„
 					param.saveFolder[j].recFolder = GetRecFolderPath().native();
 				}
 				if( param.saveFolder[j].recNamePlugIn.empty() ){
 					param.saveFolder[j].recNamePlugIn = this->recNamePlugInFileName;
 				}
-				//recNamePlugIn‚ğ“WŠJ‚µ‚ÄÀƒtƒ@ƒCƒ‹–¼‚ğƒZƒbƒg
+				//recNamePlugInã‚’å±•é–‹ã—ã¦å®Ÿãƒ•ã‚¡ã‚¤ãƒ«åã‚’ã‚»ãƒƒãƒˆ
 				WORD sid = reserve.sid;
 				WORD eid = reserve.eid;
 				wstring stationName = reserve.stationName;
@@ -942,12 +942,12 @@ __int64 CTunerBankCtrl::GetNearestReserveTime() const
 bool CTunerBankCtrl::StartEpgCap(const vector<SET_CH_INFO>& setChList)
 {
 	if( setChList.empty() == false && this->tunerPid == 0 ){
-		//EPGæ“¾‚É‚Â‚¢‚Ä‚Íƒ`ƒ…[ƒi‚ÌÄ—˜—p‚Í‚µ‚È‚¢
+		//EPGå–å¾—ã«ã¤ã„ã¦ã¯ãƒãƒ¥ãƒ¼ãƒŠã®å†åˆ©ç”¨ã¯ã—ãªã„
 		if( OpenTuner(this->recMinWake, true, false, false, true, NULL) ){
 			CWatchBlock watchBlock(&this->watchContext);
 			CSendCtrlCmd ctrlCmd;
 			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
-			//EPGæ“¾ŠJn
+			//EPGå–å¾—é–‹å§‹
 			if( ctrlCmd.SendViewEpgCapStart(setChList) == CMD_SUCCESS ){
 				this->specialState = TR_EPGCAP;
 				return true;
@@ -982,7 +982,7 @@ bool CTunerBankCtrl::SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal)
 		val.pfOnlyFlag = 0;
 		if( ctrlCmd.SendViewSearchEvent(val, resVal) == CMD_SUCCESS ){
 			if( resVal->hasShortInfo ){
-				//‚²‚­‹H‚ÉAPR(‰üs)‚ğŠÜ‚Ş‚½‚ß
+				//ã”ãç¨€ã«APR(æ”¹è¡Œ)ã‚’å«ã‚€ãŸã‚
 				Replace(resVal->shortInfo.event_name, L"\r\n", L"");
 			}
 			return true;
@@ -993,8 +993,8 @@ bool CTunerBankCtrl::SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal)
 
 int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resVal) const
 {
-	//ƒ`ƒƒƒ“ƒlƒ‹•ÏX‚ğ—v‹‚µ‚Ä‚©‚çÅ‰‚ÌEIT[p/f]‚ª“Í‚­‘Ã“–‚ÈŠÔ‚¾‚¯‘Ò‚Â
-	//TODO: ‹’®—\–ñ’†(=GUIƒL[ƒv‚³‚ê‚Ä‚¢‚È‚¢‚Æ‚«)‚Éƒ`ƒƒƒ“ƒlƒ‹•ÏX‚³‚ê‚é‚ÆÅV‚Ìî•ñ‚Å‚È‚­‚È‚é‰Â”\«‚ª‚ ‚éBŒ»d—l‚Å‚Í‰ğŒˆô‚È‚µ
+	//ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´ã‚’è¦æ±‚ã—ã¦ã‹ã‚‰æœ€åˆã®EIT[p/f]ãŒå±Šãå¦¥å½“ãªæ™‚é–“ã ã‘å¾…ã¤
+	//TODO: è¦–è´äºˆç´„ä¸­(=GUIã‚­ãƒ¼ãƒ—ã•ã‚Œã¦ã„ãªã„ã¨ã)ã«ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´ã•ã‚Œã‚‹ã¨æœ€æ–°ã®æƒ…å ±ã§ãªããªã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹ã€‚ç¾ä»•æ§˜ã§ã¯è§£æ±ºç­–ãªã—
 	if( this->tunerPid && this->specialState == TR_IDLE && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 8000) ){
 		CWatchBlock watchBlock(&this->watchContext);
 		CSendCtrlCmd ctrlCmd;
@@ -1007,14 +1007,14 @@ int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resV
 		DWORD ret = ctrlCmd.SendViewGetEventPF(val, resVal);
 		if( ret == CMD_SUCCESS ){
 			if( resVal->hasShortInfo ){
-				//‚²‚­‹H‚ÉAPR(‰üs)‚ğŠÜ‚Ş‚½‚ß
+				//ã”ãç¨€ã«APR(æ”¹è¡Œ)ã‚’å«ã‚€ãŸã‚
 				Replace(resVal->shortInfo.event_name, L"\r\n", L"");
 			}
 			return 0;
 		}else if( ret == CMD_ERR && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 15000) ){
 			return 1;
 		}
-		//Å‰‚ÌTOT‚ª“Í‚­‚Ü‚Å‚ÍA‚ ‚é‚Ì‚ÉÁ‚¦‚é‰Â”\«‚ª‚ ‚é
+		//æœ€åˆã®TOTãŒå±Šãã¾ã§ã¯ã€ã‚ã‚‹ã®ã«æ¶ˆãˆã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹
 	}
 	return 2;
 }
@@ -1028,7 +1028,7 @@ bool CTunerBankCtrl::OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO&
 {
 	if( this->specialState == TR_EPGCAP ){
 		OutputDebugString(L"epg cancel\r\n");
-		//CSendCtrlCmd::SendViewEpgCapStop()‚Í‘—‚ç‚È‚¢(‘¦À‚Éƒ`ƒ…[ƒi•Â‚¶‚é‚Ì‚ÅˆÓ–¡‚ª‚È‚¢‚½‚ß)
+		//CSendCtrlCmd::SendViewEpgCapStop()ã¯é€ã‚‰ãªã„(å³åº§ã«ãƒãƒ¥ãƒ¼ãƒŠé–‰ã˜ã‚‹ã®ã§æ„å‘³ãŒãªã„ãŸã‚)
 		CloseTuner();
 		this->specialState = TR_IDLE;
 	}
@@ -1098,8 +1098,8 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		strParam += nwTcp ? L" -nwtcp" : L"";
 	}
 
-	//Œ´ì‚ÆˆÙ‚È‚èƒCƒxƒ“ƒgƒIƒuƒWƒFƒNƒg"Global\\EpgTimerSrv_OpenTuner_Event"‚É‚æ‚é”r‘¼§Œä‚Í‚µ‚È‚¢
-	//‚Ü‚½AƒT[ƒrƒXƒ‚[ƒh‚Å‚È‚¢ŒÀ‚èGUIŒo—R‚Å‚È‚­’¼ÚCreateProcess()‚·‚é‚Ì‚Å’ˆÓ
+	//åŸä½œã¨ç•°ãªã‚Šã‚¤ãƒ™ãƒ³ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ"Global\\EpgTimerSrv_OpenTuner_Event"ã«ã‚ˆã‚‹æ’ä»–åˆ¶å¾¡ã¯ã—ãªã„
+	//ã¾ãŸã€ã‚µãƒ¼ãƒ“ã‚¹ãƒ¢ãƒ¼ãƒ‰ã§ãªã„é™ã‚ŠGUIçµŒç”±ã§ãªãç›´æ¥CreateProcess()ã™ã‚‹ã®ã§æ³¨æ„
 #ifdef _WIN32
 	DWORD dwPriority = this->processPriority == 0 ? REALTIME_PRIORITY_CLASS :
 	                   this->processPriority == 1 ? HIGH_PRIORITY_CLASS :
@@ -1107,14 +1107,14 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 	                   this->processPriority == 3 ? NORMAL_PRIORITY_CLASS :
 	                   this->processPriority == 4 ? BELOW_NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS;
 	if( this->notifyManager.IsGUI() == false ){
-		//•\¦‚Å‚«‚È‚¢‚Ì‚ÅGUIŒo—R‚Å‹N“®‚µ‚Ä‚İ‚é
+		//è¡¨ç¤ºã§ããªã„ã®ã§GUIçµŒç”±ã§èµ·å‹•ã—ã¦ã¿ã‚‹
 		CSendCtrlCmd ctrlCmd;
 		vector<DWORD> registGUI = this->notifyManager.GetRegistGUI();
 		for( size_t i = 0; i < registGUI.size(); i++ ){
 			ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, registGUI[i]);
 			DWORD pid;
 			if( ctrlCmd.SendGUIExecute(L'"' + strExecute + L'"' + strParam, &pid) == CMD_SUCCESS && pid ){
-				//ƒnƒ“ƒhƒ‹ŠJ‚­‘O‚ÉI—¹‚·‚é‚©‚à‚µ‚ê‚È‚¢
+				//ãƒãƒ³ãƒ‰ãƒ«é–‹ãå‰ã«çµ‚äº†ã™ã‚‹ã‹ã‚‚ã—ã‚Œãªã„
 				this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION, FALSE, pid);
 				if( this->hTunerProcess ){
 					this->tunerPid = pid;
@@ -1143,7 +1143,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 	vector<char*> argv;
 	argv.push_back((char*)execU.c_str());
 	for( size_t i = 0; i < paramU.size(); ){
-		//’Pƒ‚É‹ó”’‚Å•ª—£
+		//å˜ç´”ã«ç©ºç™½ã§åˆ†é›¢
 		size_t j = paramU.find(' ', i);
 		if( i != j ){
 			argv.push_back((char*)(paramU.c_str() + i));
@@ -1163,12 +1163,12 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 	}
 #endif
 	if( this->tunerPid ){
-		//ID‚ÌƒZƒbƒg
+		//IDã®ã‚»ãƒƒãƒˆ
 		CWatchBlock watchBlock(&this->watchContext);
 		CSendCtrlCmd ctrlCmd;
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 		ctrlCmd.SetConnectTimeOut(0);
-		//‹N“®Š®—¹‚Ü‚ÅÅ‘å30•b‚Ù‚Ç‘Ò‚Â
+		//èµ·å‹•å®Œäº†ã¾ã§æœ€å¤§30ç§’ã»ã©å¾…ã¤
 		for( DWORD tick = GetTickCount(); GetTickCount() - tick < 30000; ){
 #ifdef _WIN32
 			if( WaitForSingleObject(this->hTunerProcess, 10) != WAIT_TIMEOUT ){
@@ -1180,14 +1180,14 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 				return false;
 			}else if( ctrlCmd.SendViewSetID(this->tunerID) == CMD_SUCCESS ){
 				ctrlCmd.SetConnectTimeOut(CONNECT_TIMEOUT);
-				//‹N“®ƒXƒe[ƒ^ƒX‚ğŠm”F
+				//èµ·å‹•ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’ç¢ºèª
 				DWORD status;
 				if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && status == VIEW_APP_ST_ERR_BON ){
 					CloseTuner();
 					return false;
 				}
 				if( standbyRec ){
-					//u—\–ñ˜^‰æ‘Ò‹@’†v
+					//ã€Œäºˆç´„éŒ²ç”»å¾…æ©Ÿä¸­ã€
 					ctrlCmd.SendViewSetStandbyRec(1);
 				}
 				if( initCh ){
@@ -1221,7 +1221,7 @@ void CTunerBankCtrl::CloseTuner()
 			ctrlCmd.SendViewAppClose();
 #ifdef _WIN32
 			if( WaitForSingleObject(this->hTunerProcess, 30000) == WAIT_TIMEOUT ){
-				//‚Ô‚¿E‚·
+				//ã¶ã¡æ®ºã™
 				TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
 #else
 			int timeout = 30000;
@@ -1229,7 +1229,7 @@ void CTunerBankCtrl::CloseTuner()
 				Sleep(10);
 			}
 			if( timeout <= 0 ){
-				//‚Ô‚¿E‚·
+				//ã¶ã¡æ®ºã™
 				kill(this->tunerPid, 9);
 #endif
 				_OutputDebugString(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x\r\n", L"CloseTuner()", this->tunerID);
@@ -1250,7 +1250,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 		return false;
 	}
 	vector<DWORD> pidList;
-	//ToolhelpƒXƒiƒbƒvƒVƒ‡ƒbƒg‚ğì¬‚·‚é
+	//Toolhelpã‚¹ãƒŠãƒƒãƒ—ã‚·ãƒ§ãƒƒãƒˆã‚’ä½œæˆã™ã‚‹
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if( hSnapshot != INVALID_HANDLE_VALUE ){
 		PROCESSENTRY32 procent;
@@ -1264,27 +1264,27 @@ bool CTunerBankCtrl::CloseOtherTuner()
 	}
 	bool closed = false;
 
-	//‹N“®’†‚Åg‚¦‚é‚à‚Ì’T‚·
+	//èµ·å‹•ä¸­ã§ä½¿ãˆã‚‹ã‚‚ã®æ¢ã™
 	for( size_t i = 0; closed == false && i < pidList.size(); i++ ){
-		//Œ´ì‚ÆˆÙ‚È‚èƒCƒ[ƒW–¼‚Å‚Í‚È‚­Ú‘±æƒpƒCƒv‚Ì—L–³‚Å”»’f‚·‚é‚Ì‚Å’ˆÓ
+		//åŸä½œã¨ç•°ãªã‚Šã‚¤ãƒ¡ãƒ¼ã‚¸åã§ã¯ãªãæ¥ç¶šå…ˆãƒ‘ã‚¤ãƒ—ã®æœ‰ç„¡ã§åˆ¤æ–­ã™ã‚‹ã®ã§æ³¨æ„
 		CSendCtrlCmd ctrlCmd;
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, pidList[i]);
 		if( ctrlCmd.PipeExists() ){
-			//–œˆê‚ÌƒtƒŠ[ƒY‚É‘Îˆ‚·‚é‚½‚ßˆê“I‚É‚±‚Ìƒoƒ“ƒN‚ÌŠÇ—‰º‚É’u‚­
+			//ä¸‡ä¸€ã®ãƒ•ãƒªãƒ¼ã‚ºã«å¯¾å‡¦ã™ã‚‹ãŸã‚ä¸€æ™‚çš„ã«ã“ã®ãƒãƒ³ã‚¯ã®ç®¡ç†ä¸‹ã«ç½®ã
 			this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, FALSE, pidList[i]);
 			if( this->hTunerProcess ){
 				this->tunerPid = pidList[i];
 				wstring bonDriver;
 				int id;
 				DWORD status;
-				//˜^‰æ’†‚Ì‚à‚Ì‚Í’D‚í‚È‚¢‚Ì‚Å’ˆÓ
+				//éŒ²ç”»ä¸­ã®ã‚‚ã®ã¯å¥ªã‚ãªã„ã®ã§æ³¨æ„
 				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
 				    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) == 0 &&
 				    ctrlCmd.SendViewGetID(&id) == CMD_SUCCESS && id == -1 &&
 				    ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS &&
 				    (status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_GET_EPG || status == VIEW_APP_ST_ERR_CH_CHG) ){
 					ctrlCmd.SendViewAppClose();
-					//10•b‚¾‚¯I—¹‚ğ‘Ò‚Â
+					//10ç§’ã ã‘çµ‚äº†ã‚’å¾…ã¤
 					WaitForSingleObject(this->hTunerProcess, 10000);
 					closed = true;
 				}
@@ -1294,7 +1294,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 			}
 		}
 	}
-	//TVTest‚Åg‚Á‚Ä‚é‚à‚Ì‚ ‚é‚©ƒ`ƒFƒbƒN
+	//TVTestã§ä½¿ã£ã¦ã‚‹ã‚‚ã®ã‚ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 	for( size_t i = 0; closed == false && i < pidList.size(); i++ ){
 		CSendCtrlCmd ctrlCmd;
 		ctrlCmd.SetPipeSetting(CMD2_TVTEST_CTRL_PIPE, pidList[i]);
@@ -1371,13 +1371,13 @@ wstring CTunerBankCtrl::ConvertRecName(
 
 void CTunerBankCtrl::Watch()
 {
-	//ƒ`ƒ…[ƒi‚ªƒtƒŠ[ƒY‚·‚é‚æ‚¤‚È”ñí–‘Ô‚Å‚ÍCSendCtrlCmd‚Ìƒ^ƒCƒ€ƒAƒEƒg‚Í“–‚Ä‚É‚È‚ç‚È‚¢
-	//CWatchBlock‚ÅˆÍ‚í‚ê‚½‹æŠÔ‚ğ40•b‚Ìƒ^ƒCƒ€ƒAƒEƒg‚ÅŠÄ‹‚µ‚ÄA•K—v‚È‚ç‹­§I—¹‚·‚é
+	//ãƒãƒ¥ãƒ¼ãƒŠãŒãƒ•ãƒªãƒ¼ã‚ºã™ã‚‹ã‚ˆã†ãªéå¸¸äº‹æ…‹ã§ã¯CSendCtrlCmdã®ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã¯å½“ã¦ã«ãªã‚‰ãªã„
+	//CWatchBlockã§å›²ã‚ã‚ŒãŸåŒºé–“ã‚’40ç§’ã®ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã§ç›£è¦–ã—ã¦ã€å¿…è¦ãªã‚‰å¼·åˆ¶çµ‚äº†ã™ã‚‹
 	CBlockLock lock(&this->watchContext.lock);
 	if( this->watchContext.count != 0 && GetTickCount() - this->watchContext.tick > 40000 ){
 		if( this->tunerPid ){
 #ifdef _WIN32
-			//­‚È‚­‚Æ‚àhTunerProcess‚Í‚Ü‚¾CloseHandle()‚³‚ê‚Ä‚¢‚È‚¢
+			//å°‘ãªãã¨ã‚‚hTunerProcessã¯ã¾ã CloseHandle()ã•ã‚Œã¦ã„ãªã„
 			TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
 #else
 			kill(this->tunerPid, 9);

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "SendUDP.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
@@ -59,7 +59,7 @@ bool CSendUDP::AddSendAddr(LPCWSTR ip, DWORD dwPort, bool broadcastFlag)
 #endif
 			return false;
 		}
-		//ƒmƒ“ƒuƒƒbƒLƒ“ƒOƒ‚[ƒh‚Ö
+		//ãƒãƒ³ãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°ãƒ¢ãƒ¼ãƒ‰ã¸
 #ifdef _WIN32
 		ULONG x = 1;
 		if( ioctlsocket(Item.sock, FIONBIO, &x) != 0 ||
@@ -116,7 +116,7 @@ bool CSendUDP::AddSendData(BYTE* pbBuff, DWORD dwSize)
 		return false;
 	}
 	for( DWORD dwRead=0; dwRead<dwSize; ){
-		//ƒyƒCƒ[ƒh•ªŠ„BBonDriver_UDP‚É‘—‚éê‡‚ÍóMƒTƒCƒY48128ˆÈ‰º‚Å‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+		//ãƒšã‚¤ãƒ­ãƒ¼ãƒ‰åˆ†å‰²ã€‚BonDriver_UDPã«é€ã‚‹å ´åˆã¯å—ä¿¡ã‚µã‚¤ã‚º48128ä»¥ä¸‹ã§ãªã‘ã‚Œã°ãªã‚‰ãªã„
 		int iSendSize = (int)min((DWORD)max(m_sendSize, 188), dwSize - dwRead);
 		for( size_t i=0; i<m_sockList.size(); i++ ){
 			int iRet = (int)sendto(m_sockList[i].sock, (char*)(pbBuff + dwRead), iSendSize, 0, (sockaddr*)&m_sockList[i].addr, (int)m_sockList[i].addrlen);
@@ -126,8 +126,8 @@ bool CSendUDP::AddSendData(BYTE* pbBuff, DWORD dwSize)
 #else
 				if( errno == EAGAIN || errno == EWOULDBLOCK ){
 #endif
-					//‘—Mˆ—‚ª’Ç‚¢‚Â‚©‚¸SNDBUF_SIZE‚Åw’è‚µ‚½ƒoƒbƒtƒ@‚às‚«‚Ä‚µ‚Ü‚Á‚½
-					//‘Ñˆæ‚ª‘«‚è‚È‚¢‚Æ‚«‚Í‚Ç‚¤‘«‘~‚¢‚Ä‚àƒhƒƒbƒv‚·‚é‚µ‚©‚È‚¢‚Ì‚ÅASleep()‚É‚æ‚éƒtƒ[§Œä‚Í‚µ‚È‚¢
+					//é€ä¿¡å‡¦ç†ãŒè¿½ã„ã¤ã‹ãšSNDBUF_SIZEã§æŒ‡å®šã—ãŸãƒãƒƒãƒ•ã‚¡ã‚‚å°½ãã¦ã—ã¾ã£ãŸ
+					//å¸¯åŸŸãŒè¶³ã‚Šãªã„ã¨ãã¯ã©ã†è¶³æ»ã„ã¦ã‚‚ãƒ‰ãƒ­ãƒƒãƒ—ã™ã‚‹ã—ã‹ãªã„ã®ã§ã€Sleep()ã«ã‚ˆã‚‹ãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ã¯ã—ãªã„
 					OutputDebugString(L"Dropped\r\n");
 				}
 			}

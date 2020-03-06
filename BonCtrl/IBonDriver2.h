@@ -1,4 +1,4 @@
-// IBonDriver2.h: IBonDriver2 ƒNƒ‰ƒX‚ÌƒCƒ“ƒ^[ƒtƒFƒCƒX
+ï»¿// IBonDriver2.h: IBonDriver2 ã‚¯ãƒ©ã‚¹ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ã‚¤ã‚¹
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -13,7 +13,7 @@
 #include "IBonDriver.h"
 
 
-// –}ƒhƒ‰ƒCƒoƒCƒ“ƒ^ƒtƒF[ƒX2
+// å‡¡ãƒ‰ãƒ©ã‚¤ãƒã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹2
 class IBonDriver2 : public IBonDriver
 {
 public:
@@ -33,7 +33,7 @@ public:
 	virtual void Release(void) = 0;
 };
 
-// IBonDriver2->CŒÝŠ·\‘¢‘Ì
+// IBonDriver2->Cäº’æ›æ§‹é€ ä½“
 struct STRUCT_IBONDRIVER2
 {
 	STRUCT_IBONDRIVER st;
@@ -72,7 +72,7 @@ struct STRUCT_IBONDRIVER2
 	const DWORD GetCurSpace() { return st.pF15(p); } \
 	const DWORD GetCurChannel() { return st.pF16(p); }
 
-// CŒÝŠ·\‘¢‘Ì->IBonDriver2
+// Cäº’æ›æ§‹é€ ä½“->IBonDriver2
 class CBonStruct2Adapter : public IBonDriver2
 {
 public:

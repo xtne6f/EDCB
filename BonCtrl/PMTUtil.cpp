@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "PMTUtil.h"
 
 #include "../Common/EpgTimerUtil.h"
@@ -48,28 +48,28 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 
 	DWORD readSize = 0;
 	//////////////////////////////////////////////////////
-	//‰ðÍˆ—
+	//è§£æžå‡¦ç†
 	table_id = data[0];
 	section_syntax_indicator = (data[1]&0x80)>>7;
 	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
 	readSize+=3;
 
 	if( section_syntax_indicator != 1 ){
-		//ŒÅ’è’l‚ª‚¨‚©‚µ‚¢
+		//å›ºå®šå€¤ãŒãŠã‹ã—ã„
 		_OutputDebugString(L"CPMTUtil::section_syntax_indicator Err");
 		return FALSE;
 	}
 	if( table_id != 0x02 ){
-		//table_id‚ª‚¨‚©‚µ‚¢
+		//table_idãŒãŠã‹ã—ã„
 		_OutputDebugString(L"CPMTUtil::table_id Err");
 		return FALSE;
 	}
 	if( readSize+section_length > dataSize || section_length < 4){
-		//ƒTƒCƒYˆÙí
+		//ã‚µã‚¤ã‚ºç•°å¸¸
 		_OutputDebugString(L"CPMTUtil::section_length %d Err", section_length);
 		return FALSE;
 	}
-	//CRCƒ`ƒFƒbƒN
+	//CRCãƒã‚§ãƒƒã‚¯
 	if( CalcCrc32(3+section_length, data) != 0 ){
 		_OutputDebugString(L"CPMTUtil::crc32 Err");
 		return FALSE;

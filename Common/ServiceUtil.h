@@ -1,4 +1,4 @@
-#ifndef INCLUDE_SERVICE_UTIL_H
+﻿#ifndef INCLUDE_SERVICE_UTIL_H
 #define INCLUDE_SERVICE_UTIL_H
 
 BOOL IsInstallService(LPCWSTR lpcwszName);

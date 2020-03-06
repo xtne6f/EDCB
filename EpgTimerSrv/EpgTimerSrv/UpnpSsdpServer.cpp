@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "UpnpSsdpServer.h"
 #include "../../Common/StringUtil.h"
 #ifdef _WIN32
@@ -108,14 +108,14 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 
 	vector<SSDP_NIC_INFO> nicList = GetNICList();
 	string debug = "SSDP watching:";
-	//Œ©‚Â‚©‚Á‚½NIC‘S‚Ä‚ÅóM‚Å‚«‚é‚æ‚¤‚É‚·‚é
+	//è¦‹ã¤ã‹ã£ãŸNICå…¨ã¦ã§å—ä¿¡ã§ãã‚‹ã‚ˆã†ã«ã™ã‚‹
 	for( size_t i = 0; i < nicList.size(); ){
 		int ifType = ntohl(nicList[i].addr.sin_addr.s_addr) == INADDR_LOOPBACK ? SSDP_IF_LOOPBACK :
 		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 16) == 0xC0A8 ? SSDP_IF_C_PRIVATE :
 		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 20) == 0xAC1 ? SSDP_IF_B_PRIVATE :
 		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 24) == 0x0A ? SSDP_IF_A_PRIVATE :
 		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 16) == 0xA9FE ? SSDP_IF_LINKLOCAL : SSDP_IF_GLOBAL;
-		//SSDP‘Ò‚¿ó‚¯ƒ|[ƒg(UDP 1900)‚Ìì¬
+		//SSDPå¾…ã¡å—ã‘ãƒãƒ¼ãƒˆ(UDP 1900)ã®ä½œæˆ
 		SOCKET sock;
 		if( (sys->ssdpIfTypes & ifType) == 0 || i >= FD_SETSIZE ||
 		    (sock = socket(AF_INET, SOCK_DGRAM
@@ -188,7 +188,7 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 					if( strncmp(recvData, "M-SEARCH ", 9) == 0 && replyList.size() < 100 ){
 						info.msg = GetMSearchReply(recvData, nicList[i].name.c_str(), sys->targetList);
 						if( info.msg.empty() == false ){
-							//‰“š‚Í1•bˆÈ“à‚Ì—h‚ç‚¬‚ğ“ü‚ê‚é
+							//å¿œç­”ã¯1ç§’ä»¥å†…ã®æºã‚‰ãã‚’å…¥ã‚Œã‚‹
 							info.jitter = tick - random % 1000;
 							replyList.push_back(info);
 						}

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "EpgDBUtil.h"
 #include "../../Common/TSPacketUtil.h"
@@ -13,28 +13,28 @@ public:
 	void SetEpgDB(CEpgDBUtil* epgDBUtil_);
 	void AddTSData(BYTE* data);
 
-	//��̓f�[�^�̌��݂̃X�g���[���h�c���擾����
-	//�����F
-	// originalNetworkID		[OUT]���݂�originalNetworkID
-	// transportStreamID		[OUT]���݂�transportStreamID
+	//解析データの現在のストリームＩＤを取得する
+	//引数：
+	// originalNetworkID		[OUT]現在のoriginalNetworkID
+	// transportStreamID		[OUT]現在のtransportStreamID
 	BOOL GetTSID(
 		WORD* originalNetworkID,
 		WORD* transportStreamID
 		);
 
-	//���X�g���[���̃T�[�r�X�ꗗ���擾����
-	//�����F
-	// serviceListSize			[OUT]serviceList�̌�
-	// serviceList				[OUT]�T�[�r�X���̃��X�g�iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+	//自ストリームのサービス一覧を取得する
+	//引数：
+	// serviceListSize			[OUT]serviceListの個数
+	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL GetServiceListActual(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList_
 		);
 
-	//�X�g���[�����̌��݂̎��ԏ����擾����
-	//�����F
-	// time				[OUT]�X�g���[�����̌��݂̎���
-	// tick				[OUT]time���擾�������_�̃`�b�N�J�E���g
+	//ストリーム内の現在の時間情報を取得する
+	//引数：
+	// time				[OUT]ストリーム内の現在の時間
+	// tick				[OUT]timeを取得した時点のチックカウント
 	BOOL GetNowTime(
 		__int64* time,
 		DWORD* tick = NULL
@@ -45,8 +45,8 @@ protected:
 
 	AribDescriptor::CDescriptor tableBuff;
 
-	//PID���̃o�b�t�@�����O
-	//�L�[ PID
+	//PID毎のバッファリング
+	//キー PID
 	map<WORD, CTSBuffUtil> buffUtilMap;
 
 	std::unique_ptr<const AribDescriptor::CDescriptor> patInfo;
@@ -79,10 +79,10 @@ protected:
 	void CheckBIT(WORD PID, const AribDescriptor::CDescriptor& bit);
 	void CheckSIT(const AribDescriptor::CDescriptor& sit);
 
-	//���X�g���[���̃T�[�r�X�ꗗ��SIT����擾����
-	//�����F
-	// serviceListSize			[OUT]serviceList�̌�
-	// serviceList				[OUT]�T�[�r�X���̃��X�g�iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+	//自ストリームのサービス一覧をSITから取得する
+	//引数：
+	// serviceListSize			[OUT]serviceListの個数
+	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL GetServiceListSIT(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList_

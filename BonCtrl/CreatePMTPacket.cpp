@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "CreatePMTPacket.h"
 
 CCreatePMTPacket::CCreatePMTPacket(void)
@@ -15,10 +15,10 @@ CCreatePMTPacket::CCreatePMTPacket(void)
 	this->createCounter = 0;
 }
 
-//PMTì¬‚Ìƒ‚[ƒh
-//ˆø”F
-// needCaption			[IN]š–‹ƒf[ƒ^‚ğŠÜ‚ß‚é‚©‚Ç‚¤‚©iTRUE:ŠÜ‚ß‚éAFALSEFŠÜ‚ß‚È‚¢j
-// needData				[IN]ƒf[ƒ^ƒJƒ‹[ƒZƒ‹‚ğŠÜ‚ß‚é‚©‚Ç‚¤‚©iTRUE:ŠÜ‚ß‚éAFALSEFŠÜ‚ß‚È‚¢j
+//PMTä½œæˆæ™‚ã®ãƒ¢ãƒ¼ãƒ‰
+//å¼•æ•°ï¼š
+// needCaption			[IN]å­—å¹•ãƒ‡ãƒ¼ã‚¿ã‚’å«ã‚ã‚‹ã‹ã©ã†ã‹ï¼ˆTRUE:å«ã‚ã‚‹ã€FALSEï¼šå«ã‚ãªã„ï¼‰
+// needData				[IN]ãƒ‡ãƒ¼ã‚¿ã‚«ãƒ«ãƒ¼ã‚»ãƒ«ã‚’å«ã‚ã‚‹ã‹ã©ã†ã‹ï¼ˆTRUE:å«ã‚ã‚‹ã€FALSEï¼šå«ã‚ãªã„ï¼‰
 void CCreatePMTPacket::SetCreateMode(
 	BOOL needCaption_,
 	BOOL needData_
@@ -31,11 +31,11 @@ void CCreatePMTPacket::SetCreateMode(
 	}
 }
 
-//ì¬Œ³‚Æ‚È‚éPMT‚ÌƒpƒPƒbƒg‚ğ“ü—Í
-//–ß‚è’lF
-// ƒGƒ‰[ƒR[ƒh
-//ˆø”F
-// packet			//[IN] PMT‚ÌƒpƒPƒbƒg
+//ä½œæˆå…ƒã¨ãªã‚‹PMTã®ãƒ‘ã‚±ãƒƒãƒˆã‚’å…¥åŠ›
+//æˆ»ã‚Šå€¤ï¼š
+// ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
+//å¼•æ•°ï¼š
+// packet			//[IN] PMTã®ãƒ‘ã‚±ãƒƒãƒˆ
 DWORD CCreatePMTPacket::AddData(
 	CTSPacketUtil* packet
 )
@@ -81,28 +81,28 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 
 	DWORD readSize = 0;
 	//////////////////////////////////////////////////////
-	//‰ğÍˆ—
+	//è§£æå‡¦ç†
 	table_id = data[0];
 	section_syntax_indicator = (data[1]&0x80)>>7;
 	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
 	readSize+=3;
 
 	if( section_syntax_indicator != 1 ){
-		//ŒÅ’è’l‚ª‚¨‚©‚µ‚¢
+		//å›ºå®šå€¤ãŒãŠã‹ã—ã„
 		_OutputDebugString(L"CCreatePMTPacket::section_syntax_indicator Err");
 		return ERR_FALSE;
 	}
 	if( table_id != 0x02 ){
-		//table_id‚ª‚¨‚©‚µ‚¢
+		//table_idãŒãŠã‹ã—ã„
 		_OutputDebugString(L"CCreatePMTPacket::table_id Err");
 		return ERR_FALSE;
 	}
 	if( readSize+section_length > dataSize || section_length < 4){
-		//ƒTƒCƒYˆÙí
+		//ã‚µã‚¤ã‚ºç•°å¸¸
 		_OutputDebugString(L"CCreatePMTPacket::section_length Err");
 		return ERR_FALSE;
 	}
-	//CRCƒ`ƒFƒbƒN
+	//CRCãƒã‚§ãƒƒã‚¯
 	if( CalcCrc32(3+section_length, data) != 0 ){
 		_OutputDebugString(L"CCreatePMTPacket::CRC Err");
 		return ERR_FALSE;
@@ -128,7 +128,7 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 	}
 
 	if( this->lastPcrPID == PCR_PID && this->lastPgNumber == program_number && this->lastVersion == version_number ){
-		//ƒo[ƒWƒ‡ƒ““¯‚¶‚È‚Ì‚Å‚±‚êˆÈã•K—v‚È‚µ
+		//ãƒãƒ¼ã‚¸ãƒ§ãƒ³åŒã˜ãªã®ã§ã“ã‚Œä»¥ä¸Šå¿…è¦ãªã—
 		return ERR_NO_CHAGE;
 	}
 
@@ -136,14 +136,14 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 	this->lastPgNumber = program_number;
 	this->lastVersion = version_number;
 
-	//Ä‰ğÍ
+	//å†è§£æ
 	this->emmPIDList.clear();
 
 	//descriptor1
-	//ƒoƒCƒiƒŠ•”•ªƒRƒs[
+	//ãƒã‚¤ãƒŠãƒªéƒ¨åˆ†ã‚³ãƒ”ãƒ¼
 	this->firstDescBuff.assign(data, data + readSize + program_info_length);
 
-	//EMM‚ ‚é‚©‚¾‚¯ƒ`ƒFƒbƒN
+	//EMMã‚ã‚‹ã‹ã ã‘ãƒã‚§ãƒƒã‚¯
 	WORD infoRead = 0;
 	while(infoRead+1 < program_info_length){
 		BYTE descriptor_tag = data[readSize];
@@ -193,7 +193,7 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 					this->emmPIDList.push_back(CA_PID);
 				}
 			}else if( descriptor_tag == 0xC0 && descriptor_length >= 3 && infoRead+4 < (int)item->descBuff.size() ){
-				//ŠK‘w“`‘—‹Lqq
+				//éšå±¤ä¼é€è¨˜è¿°å­
 				item->quality = item->descBuff[2+infoRead]&0x01;
 				item->qualityPID = ((WORD)item->descBuff[2+infoRead+1]&0x1F)<<8 | item->descBuff[2+infoRead+2];
 			}
@@ -224,10 +224,10 @@ void CCreatePMTPacket::CreatePMT()
 		this->createVer = 0;
 	}
 
-	//ƒf[ƒ^ˆê——ƒ`ƒFƒbƒN
+	//ãƒ‡ãƒ¼ã‚¿ä¸€è¦§ãƒã‚§ãƒƒã‚¯
 	for( size_t i=0; i<secondDescBuff.size(); i++ ){
 		if( secondDescBuff[i].quality == 1 ){
-			//‚ŠK‘w‚ ‚è
+			//é«˜éšå±¤ã‚ã‚Š
 			if( secondDescBuff[i].stream_type == 0x02 ){
 				findVHighQ = TRUE;
 			}else if( secondDescBuff[i].stream_type == 0x0F ){
@@ -244,7 +244,7 @@ void CCreatePMTPacket::CreatePMT()
 
 	//pointer_field
 	this->createPSI.assign(1, 0);
-	//Å‰‚ÌDescriptorƒ‹[ƒv‚Ü‚ÅƒRƒs[
+	//æœ€åˆã®Descriptorãƒ«ãƒ¼ãƒ—ã¾ã§ã‚³ãƒ”ãƒ¼
 	this->createPSI.insert(this->createPSI.end(), this->firstDescBuff.begin(), this->firstDescBuff.end());
 
 	for( size_t i=0; i<secondDescBuff.size(); i++ ){
@@ -287,13 +287,13 @@ void CCreatePMTPacket::CreatePMT()
 				matched = TRUE;
 				break;
 			case 0x06:
-				//š–‹
+				//å­—å¹•
 				if( this->needCaption == TRUE ){
 					matched = TRUE;
 				}
 				break;
 			case 0x0D:
-				//ƒf[ƒ^ƒJƒ‹[ƒZƒ‹
+				//ãƒ‡ãƒ¼ã‚¿ã‚«ãƒ«ãƒ¼ã‚»ãƒ«
 				if( this->needData == TRUE ){
 					matched = TRUE;
 				}
@@ -311,7 +311,7 @@ void CCreatePMTPacket::CreatePMT()
 	this->createPSI[2] = (this->createPSI.size()+4-4)>>8&0x0F;
 	this->createPSI[2] |= 0xB0; 
 	this->createPSI[3] = (this->createPSI.size()+4-4)&0xFF;
-	//ƒo[ƒWƒ‡ƒ“
+	//ãƒãƒ¼ã‚¸ãƒ§ãƒ³
 	this->createPSI[6] = this->createVer<<1;
 	this->createPSI[6] |= 0xC1;
 
@@ -328,7 +328,7 @@ void CCreatePMTPacket::CreatePacket()
 {
 	this->createPacket.clear();
 
-	//TSƒpƒPƒbƒg‚ğì¬
+	//TSãƒ‘ã‚±ãƒƒãƒˆã‚’ä½œæˆ
 	for( size_t i = 0 ; i<this->createPSI.size(); i+=184 ){
 		this->createPacket.push_back(0x47);
 		this->createPacket.push_back((this->lastPmtPID >> 8 & 0x1F) | (i==0 ? 0x40 : 0x00));
@@ -339,11 +339,11 @@ void CCreatePMTPacket::CreatePacket()
 	}
 }
 
-//•K—v‚ÈPID‚©‚ğŠm”F
-//–ß‚è’lF
-// TRUEi•K—vjAFALSEi•s•K—vj
-//ˆø”F
-// PID				//[IN]Šm”F‚·‚éPID
+//å¿…è¦ãªPIDã‹ã‚’ç¢ºèª
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆå¿…è¦ï¼‰ã€FALSEï¼ˆä¸å¿…è¦ï¼‰
+//å¼•æ•°ï¼š
+// PID				//[IN]ç¢ºèªã™ã‚‹PID
 BOOL CCreatePMTPacket::IsNeedPID(
 	WORD PID
 )
@@ -361,13 +361,13 @@ BOOL CCreatePMTPacket::IsNeedPID(
 	return FALSE;
 }
 
-//ì¬PMT‚Ìƒoƒbƒtƒ@ƒ|ƒCƒ“ƒ^‚ğæ“¾
-//–ß‚è’lF
-// ì¬PMT‚Ìƒoƒbƒtƒ@ƒ|ƒCƒ“ƒ^
-//ˆø”F
-// buff					[OUT]ì¬‚µ‚½PMTƒpƒPƒbƒg‚Ö‚Ìƒ|ƒCƒ“ƒ^iŸ‰ñŒÄ‚Ño‚µ‚Ü‚Å—LŒøj
-// size					[OUT]buff‚ÌƒTƒCƒY
-// incrementFlag		[IN]TSƒpƒPƒbƒg‚ÌCounter‚ğƒCƒ“ƒNƒŠƒƒ“ƒg‚·‚é‚©‚Ç‚¤‚©iTRUE:‚·‚éAFALSEF‚µ‚È‚¢j
+//ä½œæˆPMTã®ãƒãƒƒãƒ•ã‚¡ãƒã‚¤ãƒ³ã‚¿ã‚’å–å¾—
+//æˆ»ã‚Šå€¤ï¼š
+// ä½œæˆPMTã®ãƒãƒƒãƒ•ã‚¡ãƒã‚¤ãƒ³ã‚¿
+//å¼•æ•°ï¼š
+// buff					[OUT]ä½œæˆã—ãŸPMTãƒ‘ã‚±ãƒƒãƒˆã¸ã®ãƒã‚¤ãƒ³ã‚¿ï¼ˆæ¬¡å›å‘¼ã³å‡ºã—æ™‚ã¾ã§æœ‰åŠ¹ï¼‰
+// size					[OUT]buffã®ã‚µã‚¤ã‚º
+// incrementFlag		[IN]TSãƒ‘ã‚±ãƒƒãƒˆã®Counterã‚’ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆã™ã‚‹ã‹ã©ã†ã‹ï¼ˆTRUE:ã™ã‚‹ã€FALSEï¼šã—ãªã„ï¼‰
 BOOL CCreatePMTPacket::GetPacket(
 	BYTE** buff,
 	DWORD* size,
@@ -386,7 +386,7 @@ BOOL CCreatePMTPacket::GetPacket(
 	return TRUE;
 }
 
-//“à•”î•ñ‚ğƒNƒŠƒA
+//å†…éƒ¨æƒ…å ±ã‚’ã‚¯ãƒªã‚¢
 void CCreatePMTPacket::Clear()
 {
 	this->lastPmtPID = 0xFFFF;

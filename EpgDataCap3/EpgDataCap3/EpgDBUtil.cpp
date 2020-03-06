@@ -1,10 +1,10 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "EpgDBUtil.h"
 
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 
-//š–‹‘®«î•ñ‚ğ‰f‘œî•ñ‚Ìtext_charƒtƒB[ƒ‹ƒh‚É’Ç‰Á‚µ‚È‚¢ê‡‚Í‚±‚Ìƒ}ƒNƒ‚ğ’è‹`‚·‚é
+//å­—å¹•å±æ€§æƒ…å ±ã‚’æ˜ åƒæƒ…å ±ã®text_charãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã«è¿½åŠ ã—ãªã„å ´åˆã¯ã“ã®ãƒã‚¯ãƒ­ã‚’å®šç¾©ã™ã‚‹
 //#define EPGDB_NO_ADD_CAPTION_TO_COMPONENT
 
 //#define DEBUG_EIT
@@ -21,7 +21,7 @@ void CEpgDBUtil::Clear()
 
 void CEpgDBUtil::SetStreamChangeEvent()
 {
-	//‚±‚±‚Å[p/f]‚ÌƒŠƒZƒbƒg‚Í‚µ‚È‚¢
+	//ã“ã“ã§[p/f]ã®ãƒªã‚»ãƒƒãƒˆã¯ã—ãªã„
 }
 
 BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTime)
@@ -31,7 +31,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 	WORD service_id = (WORD)eit.GetNumber(Desc::service_id);
 	ULONGLONG key = Create64Key(original_network_id, transport_stream_id, service_id);
 
-	//ƒT[ƒrƒX‚Ìmap‚ğæ“¾
+	//ã‚µãƒ¼ãƒ“ã‚¹ã®mapã‚’å–å¾—
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	SERVICE_EVENT_INFO* serviceInfo = NULL;
 
@@ -58,8 +58,8 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 	if( table_id <= 0x4F && section_number <= 1 ){
 		//[p/f]
 		if( siTag.time == 0 ){
-			//ƒ`ƒƒƒ“ƒlƒ‹•ÏX‚Ì‰“š«‚Ì‚½‚ßAƒ^ƒCƒ€ƒXƒ^ƒ“ƒv•s–¾‚Ì[p/f]‚ª—ˆ‚½‚çDBã‚Ì•s–¾‚Å‚È‚¢[p/f]‚ğƒNƒŠƒA‚·‚é
-			//EPGƒtƒ@ƒCƒ‹‚ğ“ü—Í‚·‚é‚Æ‚«‚ÍŒÃ‚¢[p/f]‚É‚æ‚éã‘‚«‚ª”­¶‚·‚é‚Ì‚ÅA—˜—p‘¤‚ÅŒn—ñ‚É‚·‚é‚©ƒ^ƒCƒ€ƒXƒ^ƒ“ƒv‚ğŠm’è‚³‚¹‚éH•v‚ª•K—v
+			//ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´æ™‚ã®å¿œç­”æ€§ã®ãŸã‚ã€ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—ä¸æ˜ã®[p/f]ãŒæ¥ãŸã‚‰DBä¸Šã®ä¸æ˜ã§ãªã„[p/f]ã‚’ã‚¯ãƒªã‚¢ã™ã‚‹
+			//EPGãƒ•ã‚¡ã‚¤ãƒ«ã‚’å…¥åŠ›ã™ã‚‹ã¨ãã¯å¤ã„[p/f]ã«ã‚ˆã‚‹ä¸Šæ›¸ããŒç™ºç”Ÿã™ã‚‹ã®ã§ã€åˆ©ç”¨å´ã§æ™‚ç³»åˆ—ã«ã™ã‚‹ã‹ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—ã‚’ç¢ºå®šã•ã›ã‚‹å·¥å¤«ãŒå¿…è¦
 			if( serviceInfo->nowEvent.empty() == false && serviceInfo->nowEvent.back().time != 0 ||
 			    serviceInfo->nextEvent.empty() == false && serviceInfo->nextEvent.back().time != 0 ){
 				serviceInfo->nowEvent.clear();
@@ -67,7 +67,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			}
 		}
 		if( eventLoopSize == 0 ){
-			//‹óƒZƒNƒVƒ‡ƒ“
+			//ç©ºã‚»ã‚¯ã‚·ãƒ§ãƒ³
 			if( section_number == 0 ){
 				if( serviceInfo->nowEvent.empty() == false && siTag.time >= serviceInfo->nowEvent.back().time ){
 					serviceInfo->nowEvent.clear();
@@ -79,7 +79,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			}
 		}
 	}
-	//ƒCƒxƒ“ƒg‚²‚Æ‚ÉXV•K—v‚ª”»’è
+	//ã‚¤ãƒ™ãƒ³ãƒˆã”ã¨ã«æ›´æ–°å¿…è¦ãŒåˆ¤å®š
 	for( DWORD i = 0; i < eventLoopSize; i++ ){
 		eit.SetLoopIndex(lp, i);
 		WORD event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
@@ -98,8 +98,8 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		EVENT_INFO* eventInfo = NULL;
 
 		if( eit.GetNumber(Desc::running_status, lp) == 1 || eit.GetNumber(Desc::running_status, lp) == 3 ){
-			//”ñÀs’†‚Ü‚½‚Í’â~’†
-			_OutputDebugString(L"š”ñÀs’†‚Ü‚½‚Í’â~’†ƒCƒxƒ“ƒg ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x\r\n",
+			//éå®Ÿè¡Œä¸­ã¾ãŸã¯åœæ­¢ä¸­
+			_OutputDebugString(L"â˜…éå®Ÿè¡Œä¸­ã¾ãŸã¯åœæ­¢ä¸­ã‚¤ãƒ™ãƒ³ãƒˆ ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x\r\n",
 				original_network_id,  transport_stream_id, service_id, event_id
 				);
 			continue;
@@ -109,8 +109,8 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		swprintf_s(g_szDebugEIT, L"%lc%04x.%02x%02x.%02d.%d\r\n", table_id <= 0x4F ? L'P' : L'S',
 		           event_id, table_id, section_number, version_number, siTag.time % 1000000);
 #endif
-		//[actual]‚Æ[other]‚Í“™‰¿‚Éˆµ‚¤
-		//[p/f]‚Æ[schedule]‚ÍŠeXŠ®‘S‚É“Æ—§‚µ‚Äƒf[ƒ^ƒx[ƒX‚ğì¬‚·‚é
+		//[actual]ã¨[other]ã¯ç­‰ä¾¡ã«æ‰±ã†
+		//[p/f]ã¨[schedule]ã¯å„ã€…å®Œå…¨ã«ç‹¬ç«‹ã—ã¦ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã‚’ä½œæˆã™ã‚‹
 		if( table_id <= 0x4F && section_number <= 1 ){
 			//[p/f]
 			if( section_number == 0 ){
@@ -118,7 +118,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 					OutputDebugString(L"Invalid EIT[p/f]\r\n");
 				}else if( serviceInfo->nowEvent.empty() || siTag.time >= serviceInfo->nowEvent.back().time ){
 					if( serviceInfo->nowEvent.empty() || serviceInfo->nowEvent.back().db.event_id != event_id ){
-						//ƒCƒxƒ“ƒg“ü‚ê‘Ö‚í‚è
+						//ã‚¤ãƒ™ãƒ³ãƒˆå…¥ã‚Œæ›¿ã‚ã‚Š
 						serviceInfo->nowEvent.clear();
 						if( serviceInfo->nextEvent.empty() == false && serviceInfo->nextEvent.back().db.event_id == event_id ){
 							serviceInfo->nowEvent.swap(serviceInfo->nextEvent);
@@ -162,8 +162,8 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 				}
 			}
 		}else if( PID != 0x0012 || table_id > 0x4F ){
-			//[schedule]‚à‚µ‚­‚Í(H-EIT‚Å‚È‚¢‚Æ‚«)[p/f after]
-			//TODO: ƒCƒxƒ“ƒgÁ–Å‚É‚Í‘Î‰‚µ‚Ä‚¢‚È‚¢(ƒNƒ‰ƒXİŒv“I‚É‘Î‰‚ÍŒµ‚µ‚¢)BEDCB“I‚É‚ÍÀ—pã‚ÌƒfƒƒŠƒbƒg‚Í‚ ‚Ü‚è–³‚¢
+			//[schedule]ã‚‚ã—ãã¯(H-EITã§ãªã„ã¨ã)[p/f after]
+			//TODO: ã‚¤ãƒ™ãƒ³ãƒˆæ¶ˆæ»…ã«ã¯å¯¾å¿œã—ã¦ã„ãªã„(ã‚¯ãƒ©ã‚¹è¨­è¨ˆçš„ã«å¯¾å¿œã¯å³ã—ã„)ã€‚EDCBçš„ã«ã¯å®Ÿç”¨ä¸Šã®ãƒ‡ãƒ¡ãƒªãƒƒãƒˆã¯ã‚ã¾ã‚Šç„¡ã„
 			if( start_time == 0 || duration == 0xFFFFFF ){
 				OutputDebugString(L"Invalid EIT[schedule]\r\n");
 			}else{
@@ -182,7 +182,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			}
 		}
 		if( eventInfo ){
-			//ŠJnŠÔ“™‚Íƒ^ƒCƒ€ƒXƒ^ƒ“ƒv‚Ì‚İ‚ğŠî€‚ÉXV
+			//é–‹å§‹æ™‚é–“ç­‰ã¯ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—ã®ã¿ã‚’åŸºæº–ã«æ›´æ–°
 			if( siTag.time >= eventInfo->time ){
 				eventInfo->db.StartTimeFlag = start_time != 0;
 				SYSTEMTIME stZero = {};
@@ -195,7 +195,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 				eventInfo->db.freeCAFlag = eit.GetNumber(Desc::free_CA_mode, lp) != 0;
 				eventInfo->time = siTag.time;
 			}
-			//‹Lqq‚Íƒe[ƒuƒ‹ƒo[ƒWƒ‡ƒ“‚à‰Á–¡‚µ‚ÄXV(’P‚ÉŒø—¦‚Ì‚½‚ß)
+			//è¨˜è¿°å­ã¯ãƒ†ãƒ¼ãƒ–ãƒ«ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚‚åŠ å‘³ã—ã¦æ›´æ–°(å˜ã«åŠ¹ç‡ã®ãŸã‚)
 			if( siTag.time >= eventInfo->tagExt.time ){
 				if( version_number != eventInfo->tagExt.version ||
 				    table_id != eventInfo->tagExt.tableID ||
@@ -207,10 +207,10 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 					eventInfo->tagExt.time = siTag.time;
 				}
 			}
-			//[schedule extended]ˆÈŠO
+			//[schedule extended]ä»¥å¤–
 			if( (table_id < 0x58 || 0x5F < table_id) && (table_id < 0x68 || 0x6F < table_id) ){
 				if( table_id > 0x4F && eventInfo->tagBasic.version != 0xFF && eventInfo->tagBasic.tableID <= 0x4F ){
-					//[schedule][p/f after]‚Æ‚à‰^—p‚·‚éƒT[ƒrƒX‚ª‚ ‚ê‚Î[p/f after]‚ğ—Dæ‚·‚é(¡‚Ì‚Æ‚±‚ëƒT[ƒrƒXŠK‘w‚ª•ª—£‚µ‚Ä‚¢‚é‚Ì‚Å‚ ‚è“¾‚È‚¢‚Í‚¸)
+					//[schedule][p/f after]ã¨ã‚‚é‹ç”¨ã™ã‚‹ã‚µãƒ¼ãƒ“ã‚¹ãŒã‚ã‚Œã°[p/f after]ã‚’å„ªå…ˆã™ã‚‹(ä»Šã®ã¨ã“ã‚ã‚µãƒ¼ãƒ“ã‚¹éšå±¤ãŒåˆ†é›¢ã—ã¦ã„ã‚‹ã®ã§ã‚ã‚Šå¾—ãªã„ã¯ãš)
 					_OutputDebugString(L"Conflicts EIT[schedule][p/f after] SID:0x%04x EventID:0x%04x\r\n", service_id, eventInfo->db.event_id);
 				}else if( siTag.time >= eventInfo->tagBasic.time ){
 					if( version_number != eventInfo->tagBasic.version ||
@@ -224,7 +224,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		}
 	}
 
-	//ƒZƒNƒVƒ‡ƒ“ƒXƒe[ƒ^ƒX
+	//ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
 	if( PID != 0x0012 ){
 		//L-EIT
 		if( table_id <= 0x4F ){
@@ -233,18 +233,18 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 				serviceInfo->lastTableID = 0;
 			}
 			if( serviceInfo->lastTableID == 0 ){
-				//ƒŠƒZƒbƒg
+				//ãƒªã‚»ãƒƒãƒˆ
 				SECTION_FLAG_INFO infoZero = {};
 				std::fill_n(serviceInfo->sectionList, 8, infoZero);
 				for( int i = 1; i < 8; i++ ){
-					//‘æ0ƒe[ƒuƒ‹ˆÈŠO‚ÌƒZƒNƒVƒ‡ƒ“‚ğ–³‹
+					//ç¬¬0ãƒ†ãƒ¼ãƒ–ãƒ«ä»¥å¤–ã®ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’ç„¡è¦–
 					std::fill_n(serviceInfo->sectionList[i].ignoreFlags, _countof(serviceInfo->sectionList[0].ignoreFlags), (BYTE)0xFF);
 				}
 				serviceInfo->lastTableID = table_id;
 			}
-			//‘æ0ƒZƒOƒƒ“ƒgˆÈŠO‚ÌƒZƒNƒVƒ‡ƒ“‚ğ–³‹
+			//ç¬¬0ã‚»ã‚°ãƒ¡ãƒ³ãƒˆä»¥å¤–ã®ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’ç„¡è¦–
 			std::fill_n(serviceInfo->sectionList[0].ignoreFlags + 1, _countof(serviceInfo->sectionList[0].ignoreFlags) - 1, (BYTE)0xFF);
-			//‘æ0ƒZƒOƒƒ“ƒg‚Ì‘—‚ç‚ê‚È‚¢ƒZƒNƒVƒ‡ƒ“‚ğ–³‹
+			//ç¬¬0ã‚»ã‚°ãƒ¡ãƒ³ãƒˆã®é€ã‚‰ã‚Œãªã„ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’ç„¡è¦–
 			for( int i = eit.GetNumber(Desc::segment_last_section_number) % 8 + 1; i < 8; i++ ){
 				serviceInfo->sectionList[0].ignoreFlags[0] |= 1 << i;
 			}
@@ -265,23 +265,23 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 				lastTableID = 0;
 			}
 			if( lastTableID == 0 ){
-				//ƒŠƒZƒbƒg
+				//ãƒªã‚»ãƒƒãƒˆ
 				SECTION_FLAG_INFO infoZero = {};
 				std::fill_n(sectionList, 8, infoZero);
 				for( int i = eit.GetNumber(Desc::last_table_id) % 8 + 1; i < 8; i++ ){
-					//‘—‚ç‚ê‚È‚¢ƒe[ƒuƒ‹‚ÌƒZƒNƒVƒ‡ƒ“‚ğ–³‹
+					//é€ã‚‰ã‚Œãªã„ãƒ†ãƒ¼ãƒ–ãƒ«ã®ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’ç„¡è¦–
 					std::fill_n(sectionList[i].ignoreFlags, _countof(sectionList[0].ignoreFlags), (BYTE)0xFF);
 				}
 				lastTableID = (BYTE)eit.GetNumber(Desc::last_table_id);
 			}
-			//‘—‚ç‚ê‚È‚¢ƒZƒOƒƒ“ƒg‚ÌƒZƒNƒVƒ‡ƒ“‚ğ–³‹
+			//é€ã‚‰ã‚Œãªã„ã‚»ã‚°ãƒ¡ãƒ³ãƒˆã®ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’ç„¡è¦–
 			std::fill_n(sectionList[table_id % 8].ignoreFlags + (BYTE)eit.GetNumber(Desc::last_section_number) / 8 + 1,
 			            _countof(sectionList[0].ignoreFlags) - (BYTE)eit.GetNumber(Desc::last_section_number) / 8 - 1, (BYTE)0xFF);
 			if( table_id % 8 == 0 && streamTime > 0 ){
-				//•ú‘—Ï‚İƒZƒOƒƒ“ƒg‚ÌƒZƒNƒVƒ‡ƒ“‚ğ–³‹
+				//æ”¾é€æ¸ˆã¿ã‚»ã‚°ãƒ¡ãƒ³ãƒˆã®ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’ç„¡è¦–
 				std::fill_n(sectionList[0].ignoreFlags, streamTime / (3 * 60 * 60 * I64_1SEC) % 8, (BYTE)0xFF);
 			}
-			//‚±‚ÌƒZƒOƒƒ“ƒg‚Ì‘—‚ç‚ê‚È‚¢ƒZƒNƒVƒ‡ƒ“‚ğ–³‹
+			//ã“ã®ã‚»ã‚°ãƒ¡ãƒ³ãƒˆã®é€ã‚‰ã‚Œãªã„ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’ç„¡è¦–
 			for( int i = eit.GetNumber(Desc::segment_last_section_number) % 8 + 1; i < 8; i++ ){
 				sectionList[table_id % 8].ignoreFlags[section_number / 8] |= 1 << i;
 			}
@@ -295,12 +295,12 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 
 int CEpgDBUtil::GetCaptionInfo(const Desc::CDescriptor& eit, Desc::CDescriptor::CLoopPointer lp)
 {
-	//ƒZƒŒƒNƒ^—Ìˆæ‚Ìarib_caption_info
+	//ã‚»ãƒ¬ã‚¯ã‚¿é ˜åŸŸã®arib_caption_info
 	DWORD infoSize;
 	const BYTE* info = eit.GetBinary(Desc::selector_byte, &infoSize, lp);
 	int flags = 0;
 	for( DWORD i = 0; info && i * 4 + 4 < infoSize && i < info[0]; i++ ){
-		//“ú–{Œê(ˆÈŠO)‚Ìš–‹‚ª‚ ‚é
+		//æ—¥æœ¬èª(ä»¥å¤–)ã®å­—å¹•ãŒã‚ã‚‹
 		flags |= memcmp(info + i * 4 + 2, "jpn", 3) == 0 ? 1 : 2;
 	}
 	return flags;
@@ -349,18 +349,18 @@ void CEpgDBUtil::AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescript
 		if( eventInfo->hasComponentInfo && dataContentIndex != MAXDWORD ){
 			eit.SetLoopIndex(lp, dataContentIndex);
 			int flags = GetCaptionInfo(eit, lp);
-			//”Ô‘g–¼‚Å”»’f‚Å‚«‚È‚¢‚Æ‚«‚¾‚¯
+			//ç•ªçµ„åã§åˆ¤æ–­ã§ããªã„ã¨ãã ã‘
 			if( (flags & 2) || ((flags & 1) && (eventInfo->hasShortInfo == false ||
 			        eventInfo->shortInfo.event_name.find(CARIB8CharDecode::TELETEXT_MARK) == wstring::npos)) ){
 				if( flags & 1 ){
-					eventInfo->componentInfo.text_char += L"[š]";
+					eventInfo->componentInfo.text_char += L"[å­—]";
 				}
 				if( flags & 2 ){
-					eventInfo->componentInfo.text_char += L"[“ñš]";
+					eventInfo->componentInfo.text_char += L"[äºŒå­—]";
 				}
 			}else if( flags == 0 && eventInfo->hasShortInfo &&
 			          eventInfo->shortInfo.event_name.find(CARIB8CharDecode::TELETEXT_MARK) != wstring::npos ){
-				eventInfo->componentInfo.text_char += L"[š–³]";
+				eventInfo->componentInfo.text_char += L"[å­—ç„¡]";
 			}
 		}
 #endif
@@ -396,7 +396,7 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 		wstring extendText;
 		vector<BYTE> itemBuff;
 		BOOL itemDescFlag = FALSE;
-		//text_length‚Í0‚Å‰^—p‚³‚ê‚é
+		//text_lengthã¯0ã§é‹ç”¨ã•ã‚Œã‚‹
 
 		Desc::CDescriptor::CLoopPointer lp = lpParent;
 		if( eit.EnterLoop(lp) ){
@@ -571,7 +571,7 @@ void CEpgDBUtil::AddEventRelay(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescrip
 		}
 	}else{
 		if( eit.EnterLoop(lp, 1) ){
-			//‘¼ƒlƒbƒgƒ[ƒN‚Ö‚ÌƒŠƒŒ[î•ñ‚Í‘æ2ƒ‹[ƒv‚É‚ ‚é‚Ì‚ÅA‚±‚ê‚Í‹Lqq‚Ìevent_count‚Ì’l‚Æ‚ÍˆÙ‚È‚é
+			//ä»–ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã¸ã®ãƒªãƒ¬ãƒ¼æƒ…å ±ã¯ç¬¬2ãƒ«ãƒ¼ãƒ—ã«ã‚ã‚‹ã®ã§ã€ã“ã‚Œã¯è¨˜è¿°å­ã®event_countã®å€¤ã¨ã¯ç•°ãªã‚‹
 			eventInfo->eventRelayInfo.eventDataList.resize(eit.GetLoopSize(lp));
 			for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
 				EPG_EVENT_DATA& item = eventInfo->eventRelayInfo.eventDataList[i];
@@ -617,14 +617,14 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatusService(
 		this->serviceEventMap.find(Create64Key(originalNetworkID, transportStreamID, serviceID));
 	if( itr != this->serviceEventMap.end() ){
 		if( l_eitFlag ){
-			//L-EIT‚Ìó‹µ
+			//L-EITã®çŠ¶æ³
 			if( itr->second.lastTableID != 0 && itr->second.lastTableID <= 0x4F ){
 				return CheckSectionAll(itr->second.sectionList) ? EpgLEITAll : EpgNeedData;
 			}
 		}else{
-			//H-EIT‚Ìó‹µ
+			//H-EITã®çŠ¶æ³
 			if( itr->second.lastTableID > 0x4F ){
-				//Šg’£î•ñ‚ª‚È‚¢ê‡‚àu‚½‚Ü‚Á‚½v‚Æ‚İ‚È‚·
+				//æ‹¡å¼µæƒ…å ±ãŒãªã„å ´åˆã‚‚ã€ŒãŸã¾ã£ãŸã€ã¨ã¿ãªã™
 				BOOL extFlag = itr->second.lastTableIDExt == 0 || CheckSectionAll(itr->second.sectionExtList);
 				return CheckSectionAll(itr->second.sectionList) ? (extFlag ? EpgHEITAll : EpgBasicAll) : (extFlag ? EpgExtendAll : EpgNeedData);
 			}
@@ -650,7 +650,7 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 					break;
 				}
 			}else{
-				//ƒT[ƒrƒXƒŠƒXƒg‚ ‚é‚È‚ç‰f‘œƒT[ƒrƒX‚Ì‚İ‘ÎÛ
+				//ã‚µãƒ¼ãƒ“ã‚¹ãƒªã‚¹ãƒˆã‚ã‚‹ãªã‚‰æ˜ åƒã‚µãƒ¼ãƒ“ã‚¹ã®ã¿å¯¾è±¡
 				map<ULONGLONG, BYTE>::iterator itrType;
 				itrType = this->serviceList.find(itr->first);
 				if( itrType != this->serviceList.end() ){
@@ -692,7 +692,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 	lp = Desc::CDescriptor::CLoopPointer();
 	if( nit.EnterLoop(lp, 1) ){
 		for( DWORD i = 0; nit.SetLoopIndex(lp, i); i++ ){
-			//ƒT[ƒrƒXî•ñXV—p
+			//ã‚µãƒ¼ãƒ“ã‚¹æƒ…å ±æ›´æ–°ç”¨
 			WORD onid = (WORD)nit.GetNumber(Desc::original_network_id, lp);
 			WORD tsid = (WORD)nit.GetNumber(Desc::transport_stream_id, lp);
 			map<DWORD, DB_TS_INFO>::iterator itrFind;
@@ -718,7 +718,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 						}
 					}
 					if( nit.GetNumber(Desc::descriptor_tag, lp2) == Desc::ts_information_descriptor && itrFind != this->serviceInfoList.end()){
-						//ts_name‚Æremote_control_key_id
+						//ts_nameã¨remote_control_key_id
 						DWORD srcSize;
 						const BYTE* src = nit.GetBinary(Desc::ts_name_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
@@ -727,7 +727,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 						itrFind->second.remote_control_key_id = (BYTE)nit.GetNumber(Desc::remote_control_key_id, lp2);
 					}
 					if( nit.GetNumber(Desc::descriptor_tag, lp2) == Desc::partial_reception_descriptor && itrFind != this->serviceInfoList.end()){
-						//•”•ªóMƒtƒ‰ƒO
+						//éƒ¨åˆ†å—ä¿¡ãƒ•ãƒ©ã‚°
 						Desc::CDescriptor::CLoopPointer lp3 = lp2;
 						if( nit.EnterLoop(lp3) ){
 							for( DWORD k=0; nit.SetLoopIndex(lp3, k); k++ ){
@@ -864,12 +864,12 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 	return TRUE;
 }
 
-//w’èƒT[ƒrƒX‚Ì‘SEPGî•ñ‚ğæ“¾‚·‚é
-// originalNetworkID		[IN]æ“¾‘ÎÛ‚ÌoriginalNetworkID
-// transportStreamID		[IN]æ“¾‘ÎÛ‚ÌtransportStreamID
-// serviceID				[IN]æ“¾‘ÎÛ‚ÌServiceID
-// epgInfoListSize			[OUT]epgInfoList‚ÌŒÂ”
-// epgInfoList				[OUT]EPGî•ñ‚ÌƒŠƒXƒgiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®å…¨EPGæƒ…å ±ã‚’å–å¾—ã™ã‚‹
+// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®originalNetworkID
+// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®transportStreamID
+// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+// epgInfoListSize			[OUT]epgInfoListã®å€‹æ•°
+// epgInfoList				[OUT]EPGæƒ…å ±ã®ãƒªã‚¹ãƒˆï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 BOOL CEpgDBUtil::GetEpgInfoList(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -905,13 +905,13 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 	map<WORD, EVENT_INFO>::iterator itrEvt = itr->second.eventMap.begin();
 	while( evtPF[0] || itrEvt != itr->second.eventMap.end() ){
 		if( itrEvt == itr->second.eventMap.end() || evtPF[0] && evtPF[0]->event_id < itrEvt->first ){
-			//[p/f]‚ğo—Í
+			//[p/f]ã‚’å‡ºåŠ›
 			this->epgInfoList.db.push_back(*evtPF[0]);
 			evtPF[0] = evtPF[1];
 			evtPF[1] = NULL;
 		}else{
 			if( evtPF[0] && evtPF[0]->event_id == itrEvt->first ){
-				//—¼•û‚ ‚é‚Æ‚«‚Í[p/f]‚ğ—Dæ
+				//ä¸¡æ–¹ã‚ã‚‹ã¨ãã¯[p/f]ã‚’å„ªå…ˆ
 				this->epgInfoList.db.push_back(*evtPF[0]);
 				evtPF[0] = evtPF[1];
 				evtPF[1] = NULL;
@@ -920,7 +920,7 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 					this->epgInfoList.db.back().extInfo = itrEvt->second.db.extInfo;
 				}
 			}else{
-				//[schedule]‚ğo—Í
+				//[schedule]ã‚’å‡ºåŠ›
 				this->epgInfoList.db.push_back(itrEvt->second.db);
 			}
 			itrEvt++;
@@ -933,7 +933,7 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 	return TRUE;
 }
 
-//w’èƒT[ƒrƒX‚Ì‘SEPGî•ñ‚ğ—ñ‹“‚·‚é
+//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®å…¨EPGæƒ…å ±ã‚’åˆ—æŒ™ã™ã‚‹
 BOOL CEpgDBUtil::EnumEpgInfoList(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -967,17 +967,17 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	CEpgEventInfoAdapter adapter;
 	map<WORD, EVENT_INFO>::iterator itrEvt = itr->second.eventMap.begin();
 	while( evtPF[0] || itrEvt != itr->second.eventMap.end() ){
-		//ƒ}ƒXƒ^[‚ğ’¼ÚQÆ‚µ‚Ä\’z‚·‚é
+		//ãƒã‚¹ã‚¿ãƒ¼ã‚’ç›´æ¥å‚ç…§ã—ã¦æ§‹ç¯‰ã™ã‚‹
 		EPG_EVENT_INFO data;
 		EPG_EXTENDED_EVENT_INFO extInfo;
 		if( itrEvt == itr->second.eventMap.end() || evtPF[0] && evtPF[0]->event_id < itrEvt->first ){
-			//[p/f]‚ğo—Í
+			//[p/f]ã‚’å‡ºåŠ›
 			data = adapter.Create(evtPF[0]);
 			evtPF[0] = evtPF[1];
 			evtPF[1] = NULL;
 		}else{
 			if( evtPF[0] && evtPF[0]->event_id == itrEvt->first ){
-				//—¼•û‚ ‚é‚Æ‚«‚Í[p/f]‚ğ—Dæ
+				//ä¸¡æ–¹ã‚ã‚‹ã¨ãã¯[p/f]ã‚’å„ªå…ˆ
 				data = adapter.Create(evtPF[0]);
 				evtPF[0] = evtPF[1];
 				evtPF[1] = NULL;
@@ -987,7 +987,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 					data.extInfo = &extInfo;
 				}
 			}else{
-				//[schedule]‚ğo—Í
+				//[schedule]ã‚’å‡ºåŠ›
 				data = adapter.Create(&itrEvt->second.db);
 			}
 			itrEvt++;
@@ -999,11 +999,11 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	return TRUE;
 }
 
-//’~Ï‚³‚ê‚½EPGî•ñ‚Ì‚ ‚éƒT[ƒrƒXˆê——‚ğæ“¾‚·‚é
-//SERVICE_EXT_INFO‚Ìî•ñ‚Í‚È‚¢ê‡‚ª‚ ‚é
-//ˆø”F
-// serviceListSize			[OUT]serviceList‚ÌŒÂ”
-// serviceList				[OUT]ƒT[ƒrƒXî•ñ‚ÌƒŠƒXƒgiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+//è“„ç©ã•ã‚ŒãŸEPGæƒ…å ±ã®ã‚ã‚‹ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
+//SERVICE_EXT_INFOã®æƒ…å ±ã¯ãªã„å ´åˆãŒã‚ã‚‹
+//å¼•æ•°ï¼š
+// serviceListSize			[OUT]serviceListã®å€‹æ•°
+// serviceList				[OUT]ã‚µãƒ¼ãƒ“ã‚¹æƒ…å ±ã®ãƒªã‚¹ãƒˆï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 void CEpgDBUtil::GetServiceListEpgDB(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList_
@@ -1043,13 +1043,13 @@ void CEpgDBUtil::GetServiceListEpgDB(
 	*serviceList_ = this->serviceDataList.get();
 }
 
-//w’èƒT[ƒrƒX‚ÌŒ»İorŸ‚ÌEPGî•ñ‚ğæ“¾‚·‚é
-//ˆø”F
-// originalNetworkID		[IN]æ“¾‘ÎÛ‚ÌoriginalNetworkID
-// transportStreamID		[IN]æ“¾‘ÎÛ‚ÌtransportStreamID
-// serviceID				[IN]æ“¾‘ÎÛ‚ÌServiceID
-// nextFlag					[IN]TRUEiŸ‚Ì”Ô‘gjAFALSEiŒ»İ‚Ì”Ô‘gj
-// epgInfo					[OUT]EPGî•ñiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®ç¾åœ¨oræ¬¡ã®EPGæƒ…å ±ã‚’å–å¾—ã™ã‚‹
+//å¼•æ•°ï¼š
+// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®originalNetworkID
+// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®transportStreamID
+// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+// nextFlag					[IN]TRUEï¼ˆæ¬¡ã®ç•ªçµ„ï¼‰ã€FALSEï¼ˆç¾åœ¨ã®ç•ªçµ„ï¼‰
+// epgInfo					[OUT]EPGæƒ…å ±ï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 BOOL CEpgDBUtil::GetEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -1087,14 +1087,14 @@ BOOL CEpgDBUtil::GetEpgInfo(
 	return FALSE;
 }
 
-//w’èƒCƒxƒ“ƒg‚ÌEPGî•ñ‚ğæ“¾‚·‚é
-//ˆø”F
-// originalNetworkID		[IN]æ“¾‘ÎÛ‚ÌoriginalNetworkID
-// transportStreamID		[IN]æ“¾‘ÎÛ‚ÌtransportStreamID
-// serviceID				[IN]æ“¾‘ÎÛ‚ÌServiceID
-// EventID					[IN]æ“¾‘ÎÛ‚ÌEventID
-// pfOnlyFlag				[IN]p/f‚©‚ç‚Ì‚İŒŸõ‚·‚é‚©‚Ç‚¤‚©
-// epgInfo					[OUT]EPGî•ñiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+//æŒ‡å®šã‚¤ãƒ™ãƒ³ãƒˆã®EPGæƒ…å ±ã‚’å–å¾—ã™ã‚‹
+//å¼•æ•°ï¼š
+// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®originalNetworkID
+// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®transportStreamID
+// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+// EventID					[IN]å–å¾—å¯¾è±¡ã®EventID
+// pfOnlyFlag				[IN]p/fã‹ã‚‰ã®ã¿æ¤œç´¢ã™ã‚‹ã‹ã©ã†ã‹
+// epgInfo					[OUT]EPGæƒ…å ±ï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 BOOL CEpgDBUtil::SearchEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "StringUtil.h"
 
 void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...)
@@ -22,12 +22,12 @@ void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...)
 #ifdef _WIN32
 			int n = _vsnwprintf_s(p, s, _TRUNCATE, format, copyParams);
 #else
-			//Ø‚èÌ‚ÄˆÈŠO‚ÌƒGƒ‰[‚Å‚à-1‚ª•Ô‚é(–³Œø‚Èƒpƒ‰ƒ[ƒ^[ƒnƒ“ƒhƒ‰‚Í‚È‚¢)‚Ì‚Å’ˆÓ
+			//åˆ‡ã‚Šæ¨ã¦ä»¥å¤–ã®ã‚¨ãƒ©ãƒ¼ã§ã‚‚-1ãŒè¿”ã‚‹(ç„¡åŠ¹ãªãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãƒãƒ³ãƒ‰ãƒ©ã¯ãªã„)ã®ã§æ³¨æ„
 			int n = vswprintf(p, s, format, copyParams);
 #endif
 			va_end(copyParams);
 			if( n >= 0 ){
-				//–ß‚è’ln‚ğg‚¤‚Ì‚ÅƒŒƒAƒP[ƒX("%c"‚É'\0'‚È‚Ç)‚Å‚ÍŒ´ì‚ÆŒ‹‰Ê‚ªˆÙ‚È‚é
+				//æˆ»ã‚Šå€¤nã‚’ä½¿ã†ã®ã§ãƒ¬ã‚¢ã‚±ãƒ¼ã‚¹("%c"ã«'\0'ãªã©)ã§ã¯åŸä½œã¨çµæœãŒç•°ãªã‚‹
 				strBuff.assign(p, n);
 				break;
 			}
@@ -76,7 +76,7 @@ size_t WtoA(const WCHAR* in, size_t inLen, vector<char>& out, UTIL_CONV_CODE cod
 		return strlen(out.data());
 	}
 #endif
-	//WideCharToMultiByte(CP_UTF8)‚Æ4bytes‘S””äŠrÏ‚İ
+	//WideCharToMultiByte(CP_UTF8)ã¨4byteså…¨æ•°æ¯”è¼ƒæ¸ˆã¿
 	//vector<char> c[2];
 	//for( DWORD w = 1; w; w++ ){
 	//    WtoA((WCHAR*)&w, 2, c[0], false);
@@ -141,12 +141,12 @@ size_t AtoW(const char* in, size_t inLen, vector<WCHAR>& out, UTIL_CONV_CODE cod
 		return wcslen(out.data());
 	}
 #endif
-	//MultiByteToWideChar(CP_UTF8)‚Æ4bytes‘S””äŠrÏ‚İ
+	//MultiByteToWideChar(CP_UTF8)ã¨4byteså…¨æ•°æ¯”è¼ƒæ¸ˆã¿
 	//vector<WCHAR> w[2];
 	//for( DWORD c = 1; c; c++ ){
 	//    AtoW((char*)&c, 4, w[0], false);
 	//    AtoW((char*)&c, 4, w[1], true);
-	//    //˜A‘±‚·‚é0xFFFD‚Ì”‚Í•s–â
+	//    //é€£ç¶šã™ã‚‹0xFFFDã®æ•°ã¯ä¸å•
 	//    for( int i = 0; i < 2; i++ ){
 	//        for( int j = 0; w[i][j]; j++ ){
 	//            if( w[i][j] == 0xFFFD && w[i][j + 1] == 0xFFFD ){

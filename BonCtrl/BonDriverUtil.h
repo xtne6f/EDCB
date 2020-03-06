@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Common/ThreadUtil.h"
 #include <functional>
@@ -11,12 +11,12 @@ public:
 	CBonDriverUtil(void);
 	~CBonDriverUtil(void);
 
-	//BonDriver�����[�h���ă`�����l�����Ȃǂ��擾�i�t�@�C�����Ŏw��j
-	//�����F
-	// bonDriverFolder	[IN]BonDriver�̃t�H���_�p�X
-	// bonDriverFile	[IN]BonDriver�̃t�@�C����
-	// recvFunc_		[IN]�X�g���[����M���̃R�[���o�b�N�֐�
-	// statusFunc_		[IN]�X�e�[�^�X(�V�O�i�����x��,Space,Ch)�擾���̃R�[���o�b�N�֐�
+	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
+	//引数：
+	// bonDriverFolder	[IN]BonDriverのフォルダパス
+	// bonDriverFile	[IN]BonDriverのファイル名
+	// recvFunc_		[IN]ストリーム受信時のコールバック関数
+	// statusFunc_		[IN]ステータス(シグナルレベル,Space,Ch)取得時のコールバック関数
 	bool OpenBonDriver(
 		LPCWSTR bonDriverFolder,
 		LPCWSTR bonDriverFile,
@@ -25,49 +25,49 @@ public:
 		int openWait
 		);
 
-	//���[�h���Ă���BonDriver�̊J��
+	//ロードしているBonDriverの開放
 	void CloseBonDriver();
 
-	//���[�h����BonDriver�̏��擾
-	//Space��Ch�̈ꗗ���擾����
-	//�߂�l�F
-	// Space��Ch�̈ꗗ�i���X�g�̓Y���������̂܂܃`���[�i�[��Ԃ�`�����l���̔ԍ��ɂȂ�j
-	// ������̓`�����l��������̂��̂��X�L�b�v����d�l�Ȃ̂ŁA���p���͂���ɏ]�����ق����ǂ���������Ȃ�
+	//ロードしたBonDriverの情報取得
+	//SpaceとChの一覧を取得する
+	//戻り値：
+	// SpaceとChの一覧（リストの添え字がそのままチューナー空間やチャンネルの番号になる）
+	// ※原作はチャンネル名が空のものをスキップする仕様なので、利用側はこれに従ったほうが良いかもしれない
 	const vector<pair<wstring, vector<wstring>>>& GetOriginalChList() { return this->loadChList; }
 
-	//BonDriver�̃`���[�i�[�����擾
-	//�߂�l�F
-	// �`���[�i�[��
+	//BonDriverのチューナー名を取得
+	//戻り値：
+	// チューナー名
 	const wstring& GetTunerName() { return this->loadTunerName; }
 
-	//�`�����l���ύX
-	//�����F
-	// space			[IN]�ύX�`�����l����Space
-	// ch				[IN]�ύX�`�����l���̕���Ch
+	//チャンネル変更
+	//引数：
+	// space			[IN]変更チャンネルのSpace
+	// ch				[IN]変更チャンネルの物理Ch
 	bool SetCh(
 		DWORD space,
 		DWORD ch
 		);
 
-	//���݂̃`�����l���擾
-	//�����F
-	// space			[IN]���݂̃`�����l����Space
-	// ch				[IN]���݂̃`�����l���̕���Ch
+	//現在のチャンネル取得
+	//引数：
+	// space			[IN]現在のチャンネルのSpace
+	// ch				[IN]現在のチャンネルの物理Ch
 	bool GetNowCh(
 		DWORD* space,
 		DWORD* ch
 		);
 
-	//Open����BonDriver�̃t�@�C�������擾
-	//���X���b�h�Z�[�t
-	//�߂�l�F
-	// BonDriver�̃t�@�C�����i�g���q�܂ށj�iempty�Ŗ�Open�j
+	//OpenしたBonDriverのファイル名を取得
+	//※スレッドセーフ
+	//戻り値：
+	// BonDriverのファイル名（拡張子含む）（emptyで未Open）
 	wstring GetOpenBonDriverFileName();
 
 private:
-	//BonDriver�ɃA�N�Z�X���郏�[�J�[�X���b�h
+	//BonDriverにアクセスするワーカースレッド
 	static void DriverThread(CBonDriverUtil* sys);
-	//���[�J�[�X���b�h�̃��b�Z�[�W��p�E�B���h�E�v���V�[�W��
+	//ワーカースレッドのメッセージ専用ウィンドウプロシージャ
 	static LRESULT CALLBACK DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	static class CInit { public: CInit(); } s_init;

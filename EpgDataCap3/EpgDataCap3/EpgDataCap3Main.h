@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "DecodeUtil.h"
 #include "EpgDBUtil.h"
@@ -10,48 +10,48 @@ public:
 	CEpgDataCap3Main(void);
 	~CEpgDataCap3Main(void);
 
-	//��͑Ώۂ�TS�p�P�b�g�P��ǂݍ��܂���
-	//�����F
-	// data		[IN]TS�p�P�b�g�P��
+	//解析対象のTSパケット１つを読み込ませる
+	//引数：
+	// data		[IN]TSパケット１つ
 	void AddTSPacket(
 		BYTE* data
 		);
 
-	//��̓f�[�^�̌��݂̃X�g���[���h�c���擾����
-	//�����F
-	// originalNetworkID		[OUT]���݂�originalNetworkID
-	// transportStreamID		[OUT]���݂�transportStreamID
+	//解析データの現在のストリームＩＤを取得する
+	//引数：
+	// originalNetworkID		[OUT]現在のoriginalNetworkID
+	// transportStreamID		[OUT]現在のtransportStreamID
 	BOOL GetTSID(
 		WORD* originalNetworkID,
 		WORD* transportStreamID
 		);
 
-	//���X�g���[���̃T�[�r�X�ꗗ���擾����
-	//�����F
-	// serviceListSize			[OUT]serviceList�̌�
-	// serviceList				[OUT]�T�[�r�X���̃��X�g�iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+	//自ストリームのサービス一覧を取得する
+	//引数：
+	// serviceListSize			[OUT]serviceListの個数
+	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL GetServiceListActual(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList
 		);
 
-	//�~�ς��ꂽEPG���̂���T�[�r�X�ꗗ���擾����
-	//SERVICE_EXT_INFO�̏��͂Ȃ��ꍇ������
-	//�����F
-	// serviceListSize			[OUT]serviceList�̌�
-	// serviceList				[OUT]�T�[�r�X���̃��X�g�iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+	//蓄積されたEPG情報のあるサービス一覧を取得する
+	//SERVICE_EXT_INFOの情報はない場合がある
+	//引数：
+	// serviceListSize			[OUT]serviceListの個数
+	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	void GetServiceListEpgDB(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList
 		);
 
-	//�w��T�[�r�X�̑SEPG�����擾����
-	//�����F
-	// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-	// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-	// serviceID				[IN]�擾�Ώۂ�ServiceID
-	// epgInfoListSize			[OUT]epgInfoList�̌�
-	// epgInfoList				[OUT]EPG���̃��X�g�iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+	//指定サービスの全EPG情報を取得する
+	//引数：
+	// originalNetworkID		[IN]取得対象のoriginalNetworkID
+	// transportStreamID		[IN]取得対象のtransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// epgInfoListSize			[OUT]epgInfoListの個数
+	// epgInfoList				[OUT]EPG情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL GetEpgInfoList(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -60,7 +60,7 @@ public:
 		EPG_EVENT_INFO** epgInfoList
 		);
 
-	//�w��T�[�r�X�̑SEPG����񋓂���
+	//指定サービスの全EPG情報を列挙する
 	BOOL EnumEpgInfoList(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -69,13 +69,13 @@ public:
 		LPVOID param
 		);
 
-	//�w��T�[�r�X�̌���or����EPG�����擾����
-	//�����F
-	// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-	// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-	// serviceID				[IN]�擾�Ώۂ�ServiceID
-	// nextFlag					[IN]TRUE�i���̔ԑg�j�AFALSE�i���݂̔ԑg�j
-	// epgInfo					[OUT]EPG���iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+	//指定サービスの現在or次のEPG情報を取得する
+	//引数：
+	// originalNetworkID		[IN]取得対象のoriginalNetworkID
+	// transportStreamID		[IN]取得対象のtransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
+	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -84,14 +84,14 @@ public:
 		EPG_EVENT_INFO** epgInfo
 		);
 
-	//�w��C�x���g��EPG�����擾����
-	//�����F
-	// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-	// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-	// serviceID				[IN]�擾�Ώۂ�ServiceID
-	// EventID					[IN]�擾�Ώۂ�EventID
-	// pfOnlyFlag				[IN]p/f����̂݌������邩�ǂ���
-	// epgInfo					[OUT]EPG���iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+	//指定イベントのEPG情報を取得する
+	//引数：
+	// originalNetworkID		[IN]取得対象のoriginalNetworkID
+	// transportStreamID		[IN]取得対象のtransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// EventID					[IN]取得対象のEventID
+	// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
+	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -101,26 +101,26 @@ public:
 		EPG_EVENT_INFO** epgInfo
 		);
 
-	//EPG�f�[�^�̒~�Ϗ�Ԃ����Z�b�g����
+	//EPGデータの蓄積状態をリセットする
 	void ClearSectionStatus();
 
-	//EPG�f�[�^�̒~�Ϗ�Ԃ��擾����
-	//�߂�l�F
-	// �X�e�[�^�X
-	//�����F
-	// l_eitFlag		[IN]L-EIT�̃X�e�[�^�X���擾
+	//EPGデータの蓄積状態を取得する
+	//戻り値：
+	// ステータス
+	//引数：
+	// l_eitFlag		[IN]L-EITのステータスを取得
 	EPG_SECTION_STATUS GetSectionStatus(
 		BOOL l_eitFlag
 		);
 
-	//�w��T�[�r�X��EPG�f�[�^�̒~�Ϗ�Ԃ��擾����
-	//�߂�l�F
-	// �X�e�[�^�X
-	//�����F
-	// originalNetworkID		[IN]�擾�Ώۂ�OriginalNetworkID
-	// transportStreamID		[IN]�擾�Ώۂ�TransportStreamID
-	// serviceID				[IN]�擾�Ώۂ�ServiceID
-	// l_eitFlag				[IN]L-EIT�̃X�e�[�^�X���擾
+	//指定サービスのEPGデータの蓄積状態を取得する
+	//戻り値：
+	// ステータス
+	//引数：
+	// originalNetworkID		[IN]取得対象のOriginalNetworkID
+	// transportStreamID		[IN]取得対象のTransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// l_eitFlag				[IN]L-EITのステータスを取得
 	EPG_SECTION_STATUS GetSectionStatusService(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -128,9 +128,9 @@ public:
 		BOOL l_eitFlag
 		);
 
-	//PC���v�����Ƃ����X�g���[�����ԂƂ̍����擾����
-	//�߂�l�F
-	// ���̕b��
+	//PC時計を元としたストリーム時間との差を取得する
+	//戻り値：
+	// 差の秒数
 	int GetTimeDelay(
 		);
 

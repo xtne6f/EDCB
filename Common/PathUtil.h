@@ -1,4 +1,4 @@
-#ifndef INCLUDE_PATH_UTIL_H
+ï»¿#ifndef INCLUDE_PATH_UTIL_H
 #define INCLUDE_PATH_UTIL_H
 
 #include <functional>
@@ -96,7 +96,7 @@ enum {
 	UTIL_SHARED_READ = UTIL_O_RDONLY | UTIL_SH_READ | 64, // fopen(r)
 };
 
-// ƒtƒ@ƒCƒ‹‚ğŠJ‚­(Œp³•s”\A‹¤—Lƒ‚[ƒh§Œä‰Â)
+// ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ã(ç¶™æ‰¿ä¸èƒ½ã€å…±æœ‰ãƒ¢ãƒ¼ãƒ‰åˆ¶å¾¡å¯)
 FILE* UtilOpenFile(const wstring& path, int flags);
 inline FILE* UtilOpenFile(const fs_path& path, int flags) { return UtilOpenFile(path.native(), flags); }
 
@@ -120,21 +120,21 @@ bool UtilPathEndsWith(LPCWSTR path, LPCWSTR suffix);
 void CheckFileName(wstring& fileName, bool noChkYen = false);
 
 #ifdef _WIN32
-// ‘¶İ‚µ‚È‚¯‚ê‚ÎBOM•t‚«‚Ì‹óƒtƒ@ƒCƒ‹‚ğì¬‚·‚é
+// å­˜åœ¨ã—ãªã‘ã‚Œã°BOMä»˜ãã®ç©ºãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆã™ã‚‹
 void TouchFileAsUnicode(const fs_path& path);
 #endif
-// ƒtƒ@ƒCƒ‹‚Ì‘¶İ‚ğŠm”F‚·‚éB‚»‚ê‚ªƒfƒBƒŒƒNƒgƒŠ‚Å‚È‚¯‚ê‚Î‘æ2•Ô’l‚àtrue
+// ãƒ•ã‚¡ã‚¤ãƒ«ã®å­˜åœ¨ã‚’ç¢ºèªã™ã‚‹ã€‚ãã‚ŒãŒãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã§ãªã‘ã‚Œã°ç¬¬2è¿”å€¤ã‚‚true
 pair<bool, bool> UtilFileExists(const fs_path& path, bool* mightExist = NULL);
 bool UtilCreateDirectory(const fs_path& path);
-// Ä‹A“I‚ÉƒfƒBƒŒƒNƒgƒŠ‚ğ¶¬‚·‚é
+// å†å¸°çš„ã«ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’ç”Ÿæˆã™ã‚‹
 bool UtilCreateDirectories(const fs_path& path);
-// ƒtƒHƒ‹ƒ_‚ª‚ ‚éƒXƒgƒŒ[ƒW‚Ì‹ó‚«—e—Ê‚ğæ“¾‚·‚éB¸”s‚Í•‰’l
+// ãƒ•ã‚©ãƒ«ãƒ€ãŒã‚ã‚‹ã‚¹ãƒˆãƒ¬ãƒ¼ã‚¸ã®ç©ºãå®¹é‡ã‚’å–å¾—ã™ã‚‹ã€‚å¤±æ•—æ™‚ã¯è² å€¤
 __int64 UtilGetStorageFreeBytes(const fs_path& directoryPath);
-// ƒtƒHƒ‹ƒ_‚ª‚ ‚éƒXƒgƒŒ[ƒW‚Ì¯•Êq‚ğæ“¾‚·‚éB¸”s‚Í‹ó
+// ãƒ•ã‚©ãƒ«ãƒ€ãŒã‚ã‚‹ã‚¹ãƒˆãƒ¬ãƒ¼ã‚¸ã®è­˜åˆ¥å­ã‚’å–å¾—ã™ã‚‹ã€‚å¤±æ•—æ™‚ã¯ç©º
 wstring UtilGetStorageID(const fs_path& directoryPath);
 
 #ifdef _WIN32
-// •K—v‚Èƒoƒbƒtƒ@‚ğŠm•Û‚µ‚ÄGetPrivateProfileSection()‚ğŒÄ‚Ô
+// å¿…è¦ãªãƒãƒƒãƒ•ã‚¡ã‚’ç¢ºä¿ã—ã¦GetPrivateProfileSection()ã‚’å‘¼ã¶
 vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName);
 #else
 int GetPrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int nDefault, LPCWSTR fileName);
@@ -150,7 +150,7 @@ struct UTIL_FIND_DATA {
 	wstring fileName;
 };
 
-// FindFirstFile()‚ÌŒ‹‰Ê‚ğ—ñ‹“‚·‚é
+// FindFirstFile()ã®çµæœã‚’åˆ—æŒ™ã™ã‚‹
 void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DATA&)>& enumProc);
 
 #endif

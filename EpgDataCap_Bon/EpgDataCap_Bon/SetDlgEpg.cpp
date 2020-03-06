@@ -1,4 +1,4 @@
-// SetDlgEpg.cpp : À‘•ƒtƒ@ƒCƒ‹
+ï»¿// SetDlgEpg.cpp : å®Ÿè£…ãƒ•ã‚¡ã‚¤ãƒ«
 //
 
 #include "stdafx.h"
@@ -7,7 +7,7 @@
 
 #include "../../BonCtrl/ChSetUtil.h"
 #include "../../Common/PathUtil.h"
-// CSetDlgEpg ƒ_ƒCƒAƒƒO
+// CSetDlgEpg ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 CSetDlgEpg::CSetDlgEpg()
 	: m_hWnd(NULL)
@@ -25,12 +25,12 @@ BOOL CSetDlgEpg::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 }
 
 
-// CSetDlgEpg ƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[
+// CSetDlgEpg ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼
 
 
 BOOL CSetDlgEpg::OnInitDialog()
 {
-	// TODO:  ‚±‚±‚É‰Šú‰»‚ğ’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢
+	// TODO:  ã“ã“ã«åˆæœŸåŒ–ã‚’è¿½åŠ ã—ã¦ãã ã•ã„
 	fs_path commonIniPath = GetCommonIniPath();
 	fs_path appIniPath = GetModuleIniPath();
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BS), GetPrivateProfileInt( L"SET", L"BSBasicOnly", 1, commonIniPath.c_str() ) );
@@ -48,7 +48,7 @@ BOOL CSetDlgEpg::OnInitDialog()
 
 	this->chSet.ParseText(GetSettingPath().append(L"ChSet5.txt").c_str());
 
-	//ƒŠƒXƒgƒrƒ…[‚Éƒ`ƒFƒbƒNƒ{ƒbƒNƒX‚Æ—ñ‚ğ‚Â‚­‚é
+	//ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼ã«ãƒã‚§ãƒƒã‚¯ãƒœãƒƒã‚¯ã‚¹ã¨åˆ—ã‚’ã¤ãã‚‹
 	HWND hItem = GetDlgItem(IDC_LIST_SERVICE);
 	ListView_SetExtendedListViewStyleEx(hItem, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
 	RECT rc;
@@ -70,7 +70,7 @@ BOOL CSetDlgEpg::OnInitDialog()
 	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	// —áŠO : OCX ƒvƒƒpƒeƒB ƒy[ƒW‚Í•K‚¸ FALSE ‚ğ•Ô‚µ‚Ü‚·B
+	// ä¾‹å¤– : OCX ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ ãƒšãƒ¼ã‚¸ã¯å¿…ãš FALSE ã‚’è¿”ã—ã¾ã™ã€‚
 }
 
 void CSetDlgEpg::SaveIni(void)
@@ -109,7 +109,7 @@ void CSetDlgEpg::SaveIni(void)
 				);
 		}
 	}
-	//ƒ`ƒFƒbƒN‚ğ‘€ì‚µ‚½‚Æ‚«‚¾‚¯•Û‘¶‚·‚é
+	//ãƒã‚§ãƒƒã‚¯ã‚’æ“ä½œã—ãŸã¨ãã ã‘ä¿å­˜ã™ã‚‹
 	if( chSetModified ){
 		this->chSet.SaveText();
 	}
@@ -118,7 +118,7 @@ void CSetDlgEpg::SaveIni(void)
 
 void CSetDlgEpg::OnBnClickedButtonAllChk()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, TRUE);
 	}
@@ -127,7 +127,7 @@ void CSetDlgEpg::OnBnClickedButtonAllChk()
 
 void CSetDlgEpg::OnBnClickedButtonVideoChk()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		map<LONGLONG, CH_DATA5>::const_iterator itr;
 		itr = this->chSet.GetMap().begin();
@@ -139,7 +139,7 @@ void CSetDlgEpg::OnBnClickedButtonVideoChk()
 
 void CSetDlgEpg::OnBnClickedButtonAllClear()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, FALSE);
 	}

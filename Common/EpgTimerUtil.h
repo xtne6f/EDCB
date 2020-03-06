@@ -1,22 +1,22 @@
-#ifndef INCLUDE_EPG_TIMER_UTIL_H
+ï»¿#ifndef INCLUDE_EPG_TIMER_UTIL_H
 #define INCLUDE_EPG_TIMER_UTIL_H
 
 #include "StructDef.h"
 #include "EpgDataCap3Def.h"
 
-//ƒ`ƒƒƒ“ƒlƒ‹‚ğ__int64‚Æ‚µ‚ÄƒL[‚É‚·‚é
+//ãƒãƒ£ãƒ³ãƒãƒ«ã‚’__int64ã¨ã—ã¦ã‚­ãƒ¼ã«ã™ã‚‹
 static inline LONGLONG Create64Key(WORD onid, WORD tsid, WORD sid) { return sid | (DWORD)tsid << 16 | (LONGLONG)onid << 32; }
-//EventID‚ğunsigned __int64‚Æ‚µ‚ÄƒL[‚É‚·‚é
+//EventIDã‚’unsigned __int64ã¨ã—ã¦ã‚­ãƒ¼ã«ã™ã‚‹
 static inline ULONGLONG Create64PgKey(WORD onid, WORD tsid, WORD sid, WORD eid) { return eid | (DWORD)sid << 16 | (ULONGLONG)tsid << 32 | (ULONGLONG)onid << 48; }
-//CRC32‚ğ‚à‚Æ‚ß‚é
+//CRC32ã‚’ã‚‚ã¨ã‚ã‚‹
 DWORD CalcCrc32(int n, const BYTE* c);
-//MJD->I64Time•ÏŠ·
+//MJD->I64Timeå¤‰æ›
 __int64 MJDtoI64Time(DWORD mjd, DWORD bcdTime);
 
-//iniƒtƒ@ƒCƒ‹‚©‚ç—\‘zƒrƒbƒgƒŒ[ƒg‚ğæ“¾‚·‚é
+//iniãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰äºˆæƒ³ãƒ“ãƒƒãƒˆãƒ¬ãƒ¼ãƒˆã‚’å–å¾—ã™ã‚‹
 DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid);
 
-//EPGî•ñ‚ğText‚É•ÏŠ·
+//EPGæƒ…å ±ã‚’Textã«å¤‰æ›
 wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName = NULL, const wstring* extraText = NULL);
 wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& serviceName);
 void AppendEpgContentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);
@@ -31,7 +31,7 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 class CEpgEventInfoAdapter
 {
 public:
-	//EPGDB_EVENT_INFO‚ğQÆ‚µ‚ÄEPG_EVENT_INFO‚ğ\’z‚·‚é
+	//EPGDB_EVENT_INFOã‚’å‚ç…§ã—ã¦EPG_EVENT_INFOã‚’æ§‹ç¯‰ã™ã‚‹
 	EPG_EVENT_INFO Create(EPGDB_EVENT_INFO* ref);
 private:
 	EPG_SHORT_EVENT_INFO shortInfo;
@@ -47,7 +47,7 @@ private:
 class CServiceInfoAdapter
 {
 public:
-	//EPGDB_SERVICE_INFO‚ğQÆ‚µ‚ÄSERVICE_INFO‚ğ\’z‚·‚é
+	//EPGDB_SERVICE_INFOã‚’å‚ç…§ã—ã¦SERVICE_INFOã‚’æ§‹ç¯‰ã™ã‚‹
 	SERVICE_INFO Create(const EPGDB_SERVICE_INFO* ref);
 private:
 	SERVICE_EXT_INFO extInfo;

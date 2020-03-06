@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Common/StructDef.h"
 #include "../Common/ErrDef.h"
@@ -10,21 +10,21 @@
 class CWriteTSFile
 {
 public:
-	//�t�H���_�ɋ󂫂�����Ƃ݂Ȃ��Œ�e��
+	//フォルダに空きがあるとみなす最低容量
 	static const int FREE_FOLDER_MIN_BYTES = 200 * 1024 * 1024;
 
 	CWriteTSFile(void);
 	~CWriteTSFile(void);
 
-	//�t�@�C���ۑ����J�n����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// fileName				[IN]�ۑ��t�@�C���p�X
-	// overWriteFlag		[IN]����t�@�C�������ݎ��ɏ㏑�����邩�ǂ����iTRUE�F����AFALSE�F���Ȃ��j
-	// createSize			[IN]�t�@�C���쐬���Ƀf�B�X�N�ɗ\�񂷂�e��
-	// saveFolder			[IN]�g�p����t�H���_�ꗗ
-	// saveFolderSub		[IN]HDD�̋󂫂��Ȃ��Ȃ����ꍇ�Ɉꎞ�I�Ɏg�p����t�H���_
+	//ファイル保存を開始する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// fileName				[IN]保存ファイルパス
+	// overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
+	// createSize			[IN]ファイル作成時にディスクに予約する容量
+	// saveFolder			[IN]使用するフォルダ一覧
+	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 	BOOL StartSave(
 		const wstring& fileName,
 		BOOL overWriteFlag_,
@@ -34,35 +34,35 @@ public:
 		int maxBuffCount_
 	);
 
-	//�t�@�C���ۑ����I������
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// subRecFlag			[OUT]�����̂Ƃ��A�T�u�^�悪�����������ǂ���
+	//ファイル保存を終了する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// subRecFlag			[OUT]成功のとき、サブ録画が発生したかどうか
 	BOOL EndSave(BOOL* subRecFlag_ = NULL);
 
-	//�ۑ������ǂ���
+	//保存中かどうか
 	BOOL IsRec() { return this->outThread.joinable(); }
 
-	//�o�͗pTS�f�[�^�𑗂�
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// data		[IN]TS�f�[�^
-	// size		[IN]data�̃T�C�Y
+	//出力用TSデータを送る
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// data		[IN]TSデータ
+	// size		[IN]dataのサイズ
 	BOOL AddTSBuff(
 		BYTE* data,
 		DWORD size
 		);
 
-	//�^�撆�̃t�@�C���̃t�@�C���p�X���擾����
-	//�߂�l�F
-	// �t�@�C���p�X
+	//録画中のファイルのファイルパスを取得する
+	//戻り値：
+	// ファイルパス
 	wstring GetSaveFilePath();
 
-	//�^�撆�̃t�@�C���̏o�̓T�C�Y���擾����
-	//�����F
-	// writeSize			[OUT]�ۑ��t�@�C����
+	//録画中のファイルの出力サイズを取得する
+	//引数：
+	// writeSize			[OUT]保存ファイル名
 	void GetRecWriteSize(
 		__int64* writeSize
 		);

@@ -1,4 +1,4 @@
-#ifndef INCLUDE_COMMON_DEF_H
+﻿#ifndef INCLUDE_COMMON_DEF_H
 #define INCLUDE_COMMON_DEF_H
 
 #include "ErrDef.h"
@@ -23,53 +23,53 @@
 #define EPG_TIMER_BON_SRV_MUTEX L"Global\\EpgTimer_Bon_Service"
 #define SERVICE_NAME L"EpgTimer Service"
 
-#define RECMODE_ALL 0 //�S�T�[�r�X
-#define RECMODE_SERVICE 1 //�w��T�[�r�X�̂�
-#define RECMODE_ALL_NOB25 2 //�S�T�[�r�X�iB25�����Ȃ��j
-#define RECMODE_SERVICE_NOB25 3 //�w��T�[�r�X�̂݁iB25�����Ȃ��j
-#define RECMODE_VIEW 4 //����
-#define RECMODE_NO 5 //����
+#define RECMODE_ALL 0 //全サービス
+#define RECMODE_SERVICE 1 //指定サービスのみ
+#define RECMODE_ALL_NOB25 2 //全サービス（B25処理なし）
+#define RECMODE_SERVICE_NOB25 3 //指定サービスのみ（B25処理なし）
+#define RECMODE_VIEW 4 //視聴
+#define RECMODE_NO 5 //無効
 
-#define RESERVE_EXECUTE 0 //���ʂɗ\����s
-#define RESERVE_PILED_UP 1 //�d�Ȃ��Ď��s�ł��Ȃ��\�񂠂�
-#define RESERVE_NO_EXECUTE 2 //�d�Ȃ��Ď��s�ł��Ȃ�
+#define RESERVE_EXECUTE 0 //普通に予約実行
+#define RESERVE_PILED_UP 1 //重なって実行できない予約あり
+#define RESERVE_NO_EXECUTE 2 //重なって実行できない
 
-#define RECSERVICEMODE_DEF	0x00000000	//�f�t�H���g�ݒ�
-#define RECSERVICEMODE_SET	0x00000001	//�ݒ�l�g�p
-#define RECSERVICEMODE_CAP	0x00000010	//�����f�[�^�܂�
-#define RECSERVICEMODE_DATA	0x00000020	//�f�[�^�J���[�Z���܂�
+#define RECSERVICEMODE_DEF	0x00000000	//デフォルト設定
+#define RECSERVICEMODE_SET	0x00000001	//設定値使用
+#define RECSERVICEMODE_CAP	0x00000010	//字幕データ含む
+#define RECSERVICEMODE_DATA	0x00000020	//データカルーセル含む
 
-//�\��ǉ����
-#define ADD_RESERVE_NORMAL		0x00	//�ʏ�
-#define ADD_RESERVE_RELAY		0x01	//�C�x���g�����[�Œǉ�
-#define ADD_RESERVE_NO_FIND		0x02	//6���ԒǏ]���[�h
-#define ADD_RESERVE_CHG_PF		0x04	//�ŐVEPG�ŕύX�ς�(p/f�`�F�b�N)
-#define ADD_RESERVE_CHG_PF2		0x08	//�ŐVEPG�ŕύX�ς�(�ʏ�`�F�b�N)
-#define ADD_RESERVE_NO_EPG		0x10	//EPG�Ȃ��ŉ����ς�
-#define ADD_RESERVE_UNKNOWN_END	0x20	//�I��������
+//予約追加状態
+#define ADD_RESERVE_NORMAL		0x00	//通常
+#define ADD_RESERVE_RELAY		0x01	//イベントリレーで追加
+#define ADD_RESERVE_NO_FIND		0x02	//6時間追従モード
+#define ADD_RESERVE_CHG_PF		0x04	//最新EPGで変更済み(p/fチェック)
+#define ADD_RESERVE_CHG_PF2		0x08	//最新EPGで変更済み(通常チェック)
+#define ADD_RESERVE_NO_EPG		0x10	//EPGなしで延長済み
+#define ADD_RESERVE_UNKNOWN_END	0x20	//終了未定状態
 
-//View�A�v���iEpgDataCap_Bon�j�̃X�e�[�^�X
-#define VIEW_APP_ST_NORMAL				0 //�ʏ���
-#define VIEW_APP_ST_ERR_BON				1 //BonDriver�̏������Ɏ��s
-#define VIEW_APP_ST_REC					2 //�^����
-#define VIEW_APP_ST_GET_EPG				3 //EPG�擾���
-#define VIEW_APP_ST_ERR_CH_CHG			4 //�`�����l���؂�ւ����s���
+//Viewアプリ（EpgDataCap_Bon）のステータス
+#define VIEW_APP_ST_NORMAL				0 //通常状態
+#define VIEW_APP_ST_ERR_BON				1 //BonDriverの初期化に失敗
+#define VIEW_APP_ST_REC					2 //録画状態
+#define VIEW_APP_ST_GET_EPG				3 //EPG取得状態
+#define VIEW_APP_ST_ERR_CH_CHG			4 //チャンネル切り替え失敗状態
 
 //NotifyID
-#define NOTIFY_UPDATE_EPGDATA		1		//EPG�f�[�^���X�V���ꂽ
-#define NOTIFY_UPDATE_RESERVE_INFO	2		//�\���񂪍X�V���ꂽ
-#define NOTIFY_UPDATE_REC_INFO	3			//�^�挋�ʏ�񂪍X�V���ꂽ
-#define NOTIFY_UPDATE_AUTOADD_EPG	4		//EPG�����\��o�^��񂪍X�V���ꂽ
-#define NOTIFY_UPDATE_AUTOADD_MANUAL	5	//�v���O���������\��o�^��񂪍X�V���ꂽ
-#define NOTIFY_UPDATE_PROFILE		51		//�ݒ�t�@�C��(ini)���X�V���ꂽ
-#define NOTIFY_UPDATE_SRV_STATUS	100		//Srv�̓���󋵂��ύX�iparam1:�X�e�[�^�X 0:�ʏ�A1:�^�撆�A2:EPG�擾���j
-#define NOTIFY_UPDATE_PRE_REC_START	101		//�^�揀���J�n�iparam4:���O�p���b�Z�[�W�j
-#define NOTIFY_UPDATE_REC_START		102		//�^��J�n�iparam4:���O�p���b�Z�[�W�j
-#define NOTIFY_UPDATE_REC_END		103		//�^��I���iparam4:���O�p���b�Z�[�W�j
-#define NOTIFY_UPDATE_REC_TUIJYU	104		//�^�撆�ɒǏ]�������iparam4:���O�p���b�Z�[�W�j
-#define NOTIFY_UPDATE_CHG_TUIJYU	105		//EPG�����\��o�^�ŒǏ]�������iparam4:���O�p���b�Z�[�W�j
-#define NOTIFY_UPDATE_PRE_EPGCAP_START	106	//EPG�擾�����J�n
-#define NOTIFY_UPDATE_EPGCAP_START	107		//EPG�擾�J�n
-#define NOTIFY_UPDATE_EPGCAP_END	108		//EPG�擾�I��
+#define NOTIFY_UPDATE_EPGDATA		1		//EPGデータが更新された
+#define NOTIFY_UPDATE_RESERVE_INFO	2		//予約情報が更新された
+#define NOTIFY_UPDATE_REC_INFO	3			//録画結果情報が更新された
+#define NOTIFY_UPDATE_AUTOADD_EPG	4		//EPG自動予約登録情報が更新された
+#define NOTIFY_UPDATE_AUTOADD_MANUAL	5	//プログラム自動予約登録情報が更新された
+#define NOTIFY_UPDATE_PROFILE		51		//設定ファイル(ini)が更新された
+#define NOTIFY_UPDATE_SRV_STATUS	100		//Srvの動作状況が変更（param1:ステータス 0:通常、1:録画中、2:EPG取得中）
+#define NOTIFY_UPDATE_PRE_REC_START	101		//録画準備開始（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_REC_START		102		//録画開始（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_REC_END		103		//録画終了（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_REC_TUIJYU	104		//録画中に追従が発生（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_CHG_TUIJYU	105		//EPG自動予約登録で追従が発生（param4:ログ用メッセージ）
+#define NOTIFY_UPDATE_PRE_EPGCAP_START	106	//EPG取得準備開始
+#define NOTIFY_UPDATE_EPGCAP_START	107		//EPG取得開始
+#define NOTIFY_UPDATE_EPGCAP_END	108		//EPG取得終了
 
 #endif

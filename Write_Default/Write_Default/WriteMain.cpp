@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "WriteMain.h"
 
 extern HINSTANCE g_instance;
@@ -35,11 +35,11 @@ BOOL CWriteMain::Start(
 	Stop();
 
 	this->savePath = fileName;
-	_OutputDebugString(L"šCWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
+	_OutputDebugString(L"â˜…CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
 	UtilCreateDirectories(fs_path(this->savePath).parent_path());
 	this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( this->file == INVALID_HANDLE_VALUE ){
-		_OutputDebugString(L"šCWriteMain::Start Err:0x%08X\r\n", GetLastError());
+		_OutputDebugString(L"â˜…CWriteMain::Start Err:0x%08X\r\n", GetLastError());
 		fs_path pathWoExt = this->savePath;
 		fs_path ext = pathWoExt.extension();
 		pathWoExt.replace_extension();
@@ -48,18 +48,18 @@ BOOL CWriteMain::Start(
 			this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 			if( this->file != INVALID_HANDLE_VALUE || i >= 999 ){
 				DWORD err = GetLastError();
-				_OutputDebugString(L"šCWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
+				_OutputDebugString(L"â˜…CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
 				if( this->file != INVALID_HANDLE_VALUE ){
 					break;
 				}
-				_OutputDebugString(L"šCWriteMain::Start Err:0x%08X\r\n", err);
+				_OutputDebugString(L"â˜…CWriteMain::Start Err:0x%08X\r\n", err);
 				this->savePath = L"";
 				return FALSE;
 			}
 		}
 	}
 
-	//ƒfƒBƒXƒN‚É—e—Ê‚ğŠm•Û
+	//ãƒ‡ã‚£ã‚¹ã‚¯ã«å®¹é‡ã‚’ç¢ºä¿
 	if( createSize > 0 ){
 		LARGE_INTEGER stPos;
 		stPos.QuadPart = createSize;
@@ -69,7 +69,7 @@ BOOL CWriteMain::Start(
 	}
 	this->wrotePos = 0;
 
-	//ƒRƒ}ƒ“ƒh‚É•ªŠòo—Í
+	//ã‚³ãƒãƒ³ãƒ‰ã«åˆ†å²å‡ºåŠ›
 	if( this->teeCmd.empty() == false ){
 		this->teeFile = CreateFile(this->savePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 		if( this->teeFile != INVALID_HANDLE_VALUE ){
@@ -88,13 +88,13 @@ BOOL CWriteMain::Stop(
 		if( this->writeBuff.empty() == false ){
 			DWORD write;
 			if( WriteFile(this->file, &this->writeBuff.front(), (DWORD)this->writeBuff.size(), &write, NULL) == FALSE ){
-				_OutputDebugString(L"šWriteFile Err:0x%08X\r\n", GetLastError());
+				_OutputDebugString(L"â˜…WriteFile Err:0x%08X\r\n", GetLastError());
 			}else{
 				this->writeBuff.erase(this->writeBuff.begin(), this->writeBuff.begin() + write);
 				CBlockLock lock(&this->wroteLock);
 				this->wrotePos += write;
 			}
-			//–¢o—Í‚Ìƒoƒbƒtƒ@‚ÍÄStart()‚É”õ‚¦‚ÄŒJ‚è‰z‚·
+			//æœªå‡ºåŠ›ã®ãƒãƒƒãƒ•ã‚¡ã¯å†Start()ã«å‚™ãˆã¦ç¹°ã‚Šè¶Šã™
 		}
 		SetEndOfFile(this->file);
 		CloseHandle(this->file);
@@ -127,16 +127,16 @@ BOOL CWriteMain::Write(
 	if( this->file != INVALID_HANDLE_VALUE && data != NULL && size > 0 ){
 		*writeSize = 0;
 		if( this->writeBuff.empty() == false ){
-			//‚Å‚«‚é‚¾‚¯ƒoƒbƒtƒ@‚ÉƒRƒs[BƒRƒs[Ï‚İƒf[ƒ^‚ÍŒÄ‚Ño‚µ‘¤‚É‚Æ‚Á‚Ä‚Íu•Û‘¶Ï‚İv‚Æ‚È‚é
+			//ã§ãã‚‹ã ã‘ãƒãƒƒãƒ•ã‚¡ã«ã‚³ãƒ”ãƒ¼ã€‚ã‚³ãƒ”ãƒ¼æ¸ˆã¿ãƒ‡ãƒ¼ã‚¿ã¯å‘¼ã³å‡ºã—å´ã«ã¨ã£ã¦ã¯ã€Œä¿å­˜æ¸ˆã¿ã€ã¨ãªã‚‹
 			*writeSize = min(size, this->writeBuffSize - (DWORD)this->writeBuff.size());
 			this->writeBuff.insert(this->writeBuff.end(), data, data + *writeSize);
 			data += *writeSize;
 			size -= *writeSize;
 			if( this->writeBuff.size() >= this->writeBuffSize ){
-				//ƒoƒbƒtƒ@‚ª–„‚Ü‚Á‚½‚Ì‚Åo—Í
+				//ãƒãƒƒãƒ•ã‚¡ãŒåŸ‹ã¾ã£ãŸã®ã§å‡ºåŠ›
 				DWORD write;
 				if( WriteFile(this->file, &this->writeBuff.front(), (DWORD)this->writeBuff.size(), &write, NULL) == FALSE ){
-					_OutputDebugString(L"šWriteFile Err:0x%08X\r\n", GetLastError());
+					_OutputDebugString(L"â˜…WriteFile Err:0x%08X\r\n", GetLastError());
 					SetEndOfFile(this->file);
 					CloseHandle(this->file);
 					this->file = INVALID_HANDLE_VALUE;
@@ -151,10 +151,10 @@ BOOL CWriteMain::Write(
 			}
 		}
 		if( size > this->writeBuffSize ){
-			//ƒoƒbƒtƒ@ƒTƒCƒY‚æ‚è‘å‚«‚¢‚Ì‚Å‚»‚Ì‚Ü‚Üo—Í
+			//ãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚ºã‚ˆã‚Šå¤§ãã„ã®ã§ãã®ã¾ã¾å‡ºåŠ›
 			DWORD write;
 			if( WriteFile(this->file, data, size, &write, NULL) == FALSE ){
-				_OutputDebugString(L"šWriteFile Err:0x%08X\r\n", GetLastError());
+				_OutputDebugString(L"â˜…WriteFile Err:0x%08X\r\n", GetLastError());
 				SetEndOfFile(this->file);
 				CloseHandle(this->file);
 				this->file = INVALID_HANDLE_VALUE;
@@ -164,7 +164,7 @@ BOOL CWriteMain::Write(
 			CBlockLock lock(&this->wroteLock);
 			this->wrotePos += write;
 		}else{
-			//ƒoƒbƒtƒ@‚ÉƒRƒs[
+			//ãƒãƒƒãƒ•ã‚¡ã«ã‚³ãƒ”ãƒ¼
 			*writeSize += size;
 			this->writeBuff.insert(this->writeBuff.end(), data, data + size);
 		}
@@ -178,7 +178,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 	wstring cmd = sys->teeCmd;
 	Replace(cmd, L"$FilePath$", sys->savePath);
 	vector<WCHAR> cmdBuff(cmd.c_str(), cmd.c_str() + cmd.size() + 1);
-	//ƒJƒŒƒ“ƒg‚ÍÀsƒtƒ@ƒCƒ‹‚Ì‚ ‚éƒtƒHƒ‹ƒ_
+	//ã‚«ãƒ¬ãƒ³ãƒˆã¯å®Ÿè¡Œãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚ã‚‹ãƒ•ã‚©ãƒ«ãƒ€
 	fs_path currentDir = GetModulePath().parent_path();
 
 	HANDLE olEvents[] = { sys->teeThreadStopEvent.Handle(), CreateEvent(NULL, TRUE, FALSE, NULL) };
@@ -189,17 +189,17 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 		sa.nLength = sizeof(sa);
 		sa.bInheritHandle = TRUE;
 
-		//o—Í‚ğ‘¬‚â‚©‚É‘Å‚¿Ø‚é‚½‚ß‚É”ñ“¯Šú‘‚«‚İ‚ÌƒpƒCƒv‚ğì¬‚·‚éBCreatePipe()‚Í”ñ“¯Šú‚É‚Å‚«‚È‚¢
+		//å‡ºåŠ›ã‚’é€Ÿã‚„ã‹ã«æ‰“ã¡åˆ‡ã‚‹ãŸã‚ã«éåŒæœŸæ›¸ãè¾¼ã¿ã®ãƒ‘ã‚¤ãƒ—ã‚’ä½œæˆã™ã‚‹ã€‚CreatePipe()ã¯éåŒæœŸã«ã§ããªã„
 		HANDLE readPipe = CreateNamedPipe(pipeName, PIPE_ACCESS_INBOUND, 0, 1, 8192, 8192, 0, &sa);
 		if( readPipe != INVALID_HANDLE_VALUE ){
 			HANDLE writePipe = CreateFile(pipeName, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 			if( writePipe != INVALID_HANDLE_VALUE ){
-				//•W€“ü—Í‚ÉƒpƒCƒv‚µ‚½ƒvƒƒZƒX‚ğ‹N“®‚·‚é
+				//æ¨™æº–å…¥åŠ›ã«ãƒ‘ã‚¤ãƒ—ã—ãŸãƒ—ãƒ­ã‚»ã‚¹ã‚’èµ·å‹•ã™ã‚‹
 				STARTUPINFO si = {};
 				si.cb = sizeof(si);
 				si.dwFlags = STARTF_USESTDHANDLES;
 				si.hStdInput = readPipe;
-				//•W€(ƒGƒ‰[)o—Í‚ÍnulƒfƒoƒCƒX‚ÉÌ‚Ä‚é
+				//æ¨™æº–(ã‚¨ãƒ©ãƒ¼)å‡ºåŠ›ã¯nulãƒ‡ãƒã‚¤ã‚¹ã«æ¨ã¦ã‚‹
 				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				PROCESS_INFORMATION pi;
@@ -228,28 +228,28 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 							OVERLAPPED ol = {};
 							ol.hEvent = olEvents[1];
 							if( WriteFile(writePipe, sys->teeBuff.data(), read, NULL, &ol) == FALSE && GetLastError() != ERROR_IO_PENDING ){
-								//o—ÍŠ®—¹
+								//å‡ºåŠ›å®Œäº†
 								break;
 							}
 							if( WaitForMultipleObjects(2, olEvents, FALSE, INFINITE) != WAIT_OBJECT_0 + 1 ){
-								//‘Å‚¿Ø‚è
+								//æ‰“ã¡åˆ‡ã‚Š
 								CancelIo(writePipe);
 								WaitForSingleObject(olEvents[1], INFINITE);
 								break;
 							}
 							DWORD xferred;
 							if( GetOverlappedResult(writePipe, &ol, &xferred, FALSE) == FALSE || xferred < read ){
-								//o—ÍŠ®—¹
+								//å‡ºåŠ›å®Œäº†
 								break;
 							}
 						}else{
 							if( WaitForSingleObject(olEvents[0], 200) != WAIT_TIMEOUT ){
-								//‘Å‚¿Ø‚è
+								//æ‰“ã¡åˆ‡ã‚Š
 								break;
 							}
 						}
 					}
-					//ƒvƒƒZƒX‚Í‰ñû‚µ‚È‚¢(•W€“ü—Í‚ª•Â‚¶‚ç‚ê‚½Œã‚É‚Ç‚¤‚·‚é‚©‚ÍƒvƒƒZƒX‚Ì”»’f‚É”C‚¹‚é)
+					//ãƒ—ãƒ­ã‚»ã‚¹ã¯å›åã—ãªã„(æ¨™æº–å…¥åŠ›ãŒé–‰ã˜ã‚‰ã‚ŒãŸå¾Œã«ã©ã†ã™ã‚‹ã‹ã¯ãƒ—ãƒ­ã‚»ã‚¹ã®åˆ¤æ–­ã«ä»»ã›ã‚‹)
 				}
 				CloseHandle(writePipe);
 			}else{

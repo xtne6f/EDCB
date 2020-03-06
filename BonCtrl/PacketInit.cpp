@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "PacketInit.h"
 
 CPacketInit::CPacketInit(void)
@@ -12,14 +12,14 @@ void CPacketInit::ClearBuff()
 	this->packetSize = 0;
 }
 
-//“ü—Íƒoƒbƒtƒ@‚ð188ƒoƒCƒg’PˆÊ‚ÌTS‚É•ÏŠ·‚µA188‚Ì”{”‚É‚È‚é‚æ‚¤‚É‚»‚ë‚¦‚é
-//–ß‚è’lF
-// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-//ˆø”F
-// inData			[IN]“ü—ÍTSƒf[ƒ^
-// inSize			[IN]inData‚ÌƒTƒCƒYiBYTE’PˆÊj
-// outData			[OUT]188ƒoƒCƒg‚É®—ñ‚µ‚½ƒoƒbƒtƒ@iŽŸ‰ñŒÄ‚Ño‚µ‚Ü‚Å•ÛŽj
-// outSize			[OUT]outData‚ÌƒTƒCƒYiBYTE’PˆÊj
+//å…¥åŠ›ãƒãƒƒãƒ•ã‚¡ã‚’188ãƒã‚¤ãƒˆå˜ä½ã®TSã«å¤‰æ›ã—ã€188ã®å€æ•°ã«ãªã‚‹ã‚ˆã†ã«ãã‚ãˆã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+//å¼•æ•°ï¼š
+// inData			[IN]å…¥åŠ›TSãƒ‡ãƒ¼ã‚¿
+// inSize			[IN]inDataã®ã‚µã‚¤ã‚ºï¼ˆBYTEå˜ä½ï¼‰
+// outData			[OUT]188ãƒã‚¤ãƒˆã«æ•´åˆ—ã—ãŸãƒãƒƒãƒ•ã‚¡ï¼ˆæ¬¡å›žå‘¼ã³å‡ºã—ã¾ã§ä¿æŒï¼‰
+// outSize			[OUT]outDataã®ã‚µã‚¤ã‚ºï¼ˆBYTEå˜ä½ï¼‰
 BOOL CPacketInit::GetTSData(
 	const BYTE* inData,
 	DWORD inSize,
@@ -32,10 +32,10 @@ BOOL CPacketInit::GetTSData(
 	}
 
 	if( this->packetSize != 0 ){
-		//“¯ŠúÏ‚Ý
+		//åŒæœŸæ¸ˆã¿
 		for( size_t i = (this->packetSize - this->nextStartBuff.size()) % this->packetSize; i < inSize; i += this->packetSize ){
 			if( inData[i] != 0x47 ){
-				//Ä“¯Šú‚ª•K—v
+				//å†åŒæœŸãŒå¿…è¦
 				this->packetSize = 0;
 				break;
 			}
@@ -44,7 +44,7 @@ BOOL CPacketInit::GetTSData(
 			if( this->nextStartBuff.size() + inSize < this->packetSize ){
 				this->outBuff.resize(1);
 				*outSize = 0;
-				//ŒJ‚è‰z‚·‚¾‚¯
+				//ç¹°ã‚Šè¶Šã™ã ã‘
 				this->nextStartBuff.insert(this->nextStartBuff.end(), inData, inData + inSize);
 			}else{
 				if( this->nextStartBuff.size() >= 188 ){
@@ -58,7 +58,7 @@ BOOL CPacketInit::GetTSData(
 					this->outBuff.insert(this->outBuff.end(), inData + inPos, inData + inPos + 188);
 				}
 				*outSize = (DWORD)this->outBuff.size();
-				//ŒJ‚è‰z‚·
+				//ç¹°ã‚Šè¶Šã™
 				this->nextStartBuff.assign(inData + inPos, inData + inSize);
 			}
 			*outData = &this->outBuff.front();
@@ -84,7 +84,7 @@ BOOL CPacketInit::GetTSData(
 					this->packetSize = 0;
 				}else if( pos < nss ){
 					this->nextStartBuff.erase(this->nextStartBuff.begin(), this->nextStartBuff.begin() + pos);
-					//“¯ŠúÏ‚Ý‚Ì‚Æ‚«‚ÌŒJ‚è‰z‚µƒTƒCƒY‚ÍƒpƒPƒbƒgƒTƒCƒY–¢–ž‚Å‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+					//åŒæœŸæ¸ˆã¿ã®ã¨ãã®ç¹°ã‚Šè¶Šã—ã‚µã‚¤ã‚ºã¯ãƒ‘ã‚±ãƒƒãƒˆã‚µã‚¤ã‚ºæœªæº€ã§ãªã‘ã‚Œã°ãªã‚‰ãªã„
 					if( this->nextStartBuff.size() >= this->packetSize ){
 						this->nextStartBuff.erase(this->nextStartBuff.begin(), this->nextStartBuff.begin() + this->packetSize);
 					}
@@ -97,7 +97,7 @@ BOOL CPacketInit::GetTSData(
 		}
 	}
 
-	//Ä“¯Šú‚ÉŽ¸”sB256ƒoƒCƒgˆÈ‰º‚Å‰Â”\‚È‚¾‚¯ŒJ‚è‰z‚µ‚Ä‚¨‚­
+	//å†åŒæœŸã«å¤±æ•—ã€‚256ãƒã‚¤ãƒˆä»¥ä¸‹ã§å¯èƒ½ãªã ã‘ç¹°ã‚Šè¶Šã—ã¦ãŠã
 	if( inSize >= 256 ){
 		this->nextStartBuff.assign(inData + inSize - 256, inData + inSize);
 	}else{

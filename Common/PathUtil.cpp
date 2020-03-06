@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "PathUtil.h"
 #include "StringUtil.h"
 #include <stdexcept>
@@ -271,8 +271,8 @@ FILE* UtilOpenFile(const wstring& path, int flags)
 	               (flags & 31) == UTIL_O_EXCL_CREAT_RDWR ? L"w+b" :
 	               (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? L"ab" : NULL;
 	if( mode ){
-		// ‹¤—Lƒ‚[ƒh§Œä‚Ì‚½‚ßAPI‚ÅŠJ‚­
-		// Ql:Œã‘±‚ªŠJ‚­‚±‚Æ‚Ì‚Å‚«‚é‹¤—Lƒ‚[ƒh‚Ìƒpƒ^[ƒ“(‘o•ûŒüB*‚Í–¢ƒTƒ|[ƒg)
+		// å…±æœ‰ãƒ¢ãƒ¼ãƒ‰åˆ¶å¾¡ã®ãŸã‚APIã§é–‹ã
+		// å‚è€ƒ:å¾Œç¶šãŒé–‹ãã“ã¨ã®ã§ãã‚‹å…±æœ‰ãƒ¢ãƒ¼ãƒ‰ã®ãƒ‘ã‚¿ãƒ¼ãƒ³(åŒæ–¹å‘ã€‚*ã¯æœªã‚µãƒãƒ¼ãƒˆ)
 		// (RD,SH_READ)<=>(RD,SH_READ)
 		// (RD,SH_READ)<=>(RD,SH_RDWR)
 		// (RD,SH_RDWR)<=>(RD,SH_RDWR)
@@ -316,12 +316,12 @@ FILE* UtilOpenFile(const wstring& path, int flags)
 			if( flags & 512 ){
 				setvbuf(fp, NULL, _IONBF, 0);
 			}
-			// flock()‚ÍŠ©ƒƒbƒN‚É‰ß‚¬‚È‚¢‚Ì‚Å’ˆÓ
-			// UTIL_SHARED_READ‚Í–³ƒƒbƒN‘Š“–‚ÅAŠù‚É‚©‚©‚Á‚Ä‚¢‚é”r‘¼ƒƒbƒN‚ğ–³‹‚·‚é‚Ì‚Å’ˆÓ
+			// flock()ã¯å‹§å‘Šãƒ­ãƒƒã‚¯ã«éããªã„ã®ã§æ³¨æ„
+			// UTIL_SHARED_READã¯ç„¡ãƒ­ãƒƒã‚¯ç›¸å½“ã§ã€æ—¢ã«ã‹ã‹ã£ã¦ã„ã‚‹æ’ä»–ãƒ­ãƒƒã‚¯ã‚’ç„¡è¦–ã™ã‚‹ã®ã§æ³¨æ„
 			if( ((flags & 32) && (flags & 64)) || flock(fileno(fp), ((flags & 32) ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0 ){
 				return fp;
 			}
-			// (‚Ù‚Ú‚È‚¢‚ª)ƒtƒ@ƒCƒ‹¶¬Œã‚ÉƒƒbƒN‚É¸”s‚µ‚½ê‡‚Ìƒ[ƒ‹ƒoƒbƒN‚Í‚µ‚È‚¢
+			// (ã»ã¼ãªã„ãŒ)ãƒ•ã‚¡ã‚¤ãƒ«ç”Ÿæˆå¾Œã«ãƒ­ãƒƒã‚¯ã«å¤±æ•—ã—ãŸå ´åˆã®ãƒ­ãƒ¼ãƒ«ãƒãƒƒã‚¯ã¯ã—ãªã„
 			fclose(fp);
 		}
 	}
@@ -409,7 +409,7 @@ fs_path GetRecFolderPath(int index)
 	fs_path iniPath = GetCommonIniPath();
 	int num = GetPrivateProfileInt(L"SET", L"RecFolderNum", 0, iniPath.c_str());
 	if( index <= 0 ){
-		// •K‚¸•Ô‚·
+		// å¿…ãšè¿”ã™
 		fs_path path;
 		if( num > 0 ){
 			path = GetPrivateProfileToString(L"SET", L"RecFolderPath0", L"", iniPath.c_str());
@@ -420,14 +420,14 @@ fs_path GetRecFolderPath(int index)
 		WCHAR szKey[32];
 		swprintf_s(szKey, L"RecFolderPath%d", i);
 		fs_path path = GetPrivateProfileToString(L"SET", szKey, L"", iniPath.c_str());
-		// ‹ó—v‘f‚Í‹l‚ß‚é
+		// ç©ºè¦ç´ ã¯è©°ã‚ã‚‹
 		if( path.empty() == false ){
 			if( --index <= 0 ){
 				return path;
 			}
 		}
 	}
-	// ”ÍˆÍŠO
+	// ç¯„å›²å¤–
 	return fs_path();
 }
 
@@ -450,27 +450,27 @@ bool UtilPathEndsWith(LPCWSTR path, LPCWSTR suffix)
 void CheckFileName(wstring& fileName, bool noChkYen)
 {
 	static const WCHAR s[10] = L"\\/:*?\"<>|";
-	static const WCHAR r[10] = L"^F–Hhƒ„b";
-	// ƒgƒŠƒ€
+	static const WCHAR r[10] = L"ï¿¥ï¼ï¼šï¼Šï¼Ÿâ€ï¼œï¼ï½œ";
+	// ãƒˆãƒªãƒ 
 	size_t j = fileName.find_last_not_of(L' ');
 	fileName.erase(j == wstring::npos ? 0 : j + 1);
 	fileName.erase(0, fileName.find_first_not_of(L' '));
 	for( size_t i = 0; i < fileName.size(); i++ ){
 		if( L'\x1' <= fileName[i] && fileName[i] <= L'\x1f' || fileName[i] == L'\x7f' ){
-			// §Œä•¶š
-			fileName[i] = L'¬';
+			// åˆ¶å¾¡æ–‡å­—
+			fileName[i] = L'ã€“';
 		}
-		// ".\"‚Æ‚È‚é‚Æ‚«‚ÍnoChkYen‚Å‚à‘SŠp‚É
+		// ".\"ã¨ãªã‚‹ã¨ãã¯noChkYenã§ã‚‚å…¨è§’ã«
 		const WCHAR* p = wcschr(s, fileName[i]);
 		if( p && (noChkYen == false || *p != fs_path::preferred_separator || (i > 0 && fileName[i - 1] == L'.')) ){
 			fileName[i] = r[p - s];
 		}
 	}
-	// –`“ª'\'‚ÍƒgƒŠƒ€
+	// å†’é ­'\'ã¯ãƒˆãƒªãƒ 
 	fileName.erase(0, fileName.find_first_not_of(fs_path::preferred_separator));
-	// ‚·‚×‚Ä'.'‚Ì‚Æ‚«‚Í‘SŠp‚É
+	// ã™ã¹ã¦'.'ã®ã¨ãã¯å…¨è§’ã«
 	if( fileName.find_first_not_of(L'.') == wstring::npos ){
-		for( size_t i = 0; i < fileName.size(); fileName[i++] = L'D' );
+		for( size_t i = 0; i < fileName.size(); fileName[i++] = L'ï¼' );
 	}
 }
 
@@ -523,16 +523,16 @@ bool UtilCreateDirectory(const fs_path& path)
 bool UtilCreateDirectories(const fs_path& path)
 {
 	if( path.empty() || path.is_relative() && path.has_root_path() ){
-		// ƒpƒX‚ª•sŠ®‘S
+		// ãƒ‘ã‚¹ãŒä¸å®Œå…¨
 		return false;
 	}
 	bool mightExist = false;
 	if( UtilFileExists(path, &mightExist).first ){
-		// Šù‘¶
+		// æ—¢å­˜
 		return false;
 	}
 	if( mightExist ){
-		// “Áê‚È——R
+		// ç‰¹æ®Šãªç†ç”±
 		OutputDebugString(L"UtilCreateDirectories(): Error\r\n");
 		return false;
 	}
@@ -547,7 +547,7 @@ __int64 UtilGetStorageFreeBytes(const fs_path& directoryPath)
 	return GetDiskFreeSpaceEx(UtilGetStorageID(directoryPath).c_str(), &li, NULL, NULL) ? (__int64)li.QuadPart : -1;
 #else
 	if( directoryPath.empty() || (directoryPath.is_relative() && directoryPath.has_root_path()) ){
-		// ƒpƒX‚ª•sŠ®‘S
+		// ãƒ‘ã‚¹ãŒä¸å®Œå…¨
 		return -1;
 	}
 	bool mightExist = false;
@@ -558,7 +558,7 @@ __int64 UtilGetStorageFreeBytes(const fs_path& directoryPath)
 		return statvfs(strPath.c_str(), &st) == 0 ? (__int64)st.f_frsize * (__int64)st.f_bavail : -1;
 	}
 	if( mightExist ){
-		// “Áê‚È——R
+		// ç‰¹æ®Šãªç†ç”±
 		OutputDebugString(L"UtilGetStorageFreeBytes(): Error\r\n");
 		return -1;
 	}
@@ -581,7 +581,7 @@ wstring UtilGetStorageID(const fs_path& directoryPath)
 #else
 	wstring ret;
 	if( directoryPath.empty() || (directoryPath.is_relative() && directoryPath.has_root_path()) ){
-		// ƒpƒX‚ª•sŠ®‘S
+		// ãƒ‘ã‚¹ãŒä¸å®Œå…¨
 		return ret;
 	}
 	bool mightExist = false;
@@ -595,7 +595,7 @@ wstring UtilGetStorageID(const fs_path& directoryPath)
 		return ret;
 	}
 	if( mightExist ){
-		// “Áê‚È——R
+		// ç‰¹æ®Šãªç†ç”±
 		OutputDebugString(L"UtilGetStorageID(): Error\r\n");
 		return ret;
 	}
@@ -805,7 +805,7 @@ void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DAT
 	string strPath;
 	fs_path pat = pattern.filename();
 	if( pat.native().find_first_of(L"*?") == wstring::npos ){
-		// Š®‘Sˆê’v
+		// å®Œå…¨ä¸€è‡´
 		WtoUTF8(pattern.native(), strPath);
 		struct stat st;
 		if( stat(strPath.c_str(), &st) == 0 ){
@@ -817,7 +817,7 @@ void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DAT
 			enumProc(ufd);
 		}
 	}else{
-		// ƒƒCƒ‹ƒhƒJ[ƒh('*'3ŒÂ‚Ü‚Å)
+		// ãƒ¯ã‚¤ãƒ«ãƒ‰ã‚«ãƒ¼ãƒ‰('*'3å€‹ã¾ã§)
 		fs_path parent = pattern.parent_path();
 		WtoUTF8(parent.native(), strPath);
 		DIR* dir = opendir(strPath.c_str());

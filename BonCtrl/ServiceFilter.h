@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 
 #include "CATUtil.h"
 #include "CreatePATPacket.h"
@@ -20,7 +20,7 @@ private:
 	bool catOrPmtUpdated;
 	vector<WORD> serviceIDList;
 	CCATUtil catUtil;
-	map<WORD, CPMTUtil> pmtUtilMap; //ÉLÅ[PMTÇÃPID
+	map<WORD, CPMTUtil> pmtUtilMap; //„Ç≠„ÉºPMT„ÅÆPID
 	vector<WORD> needPIDList;
 	CCreatePATPacket pat;
 

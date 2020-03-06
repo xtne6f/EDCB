@@ -1,4 +1,4 @@
-// SetDlgNetwork.cpp : À‘•ƒtƒ@ƒCƒ‹
+ï»¿// SetDlgNetwork.cpp : å®Ÿè£…ãƒ•ã‚¡ã‚¤ãƒ«
 //
 
 #include "stdafx.h"
@@ -8,7 +8,7 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
 
-// CSetDlgNetwork ƒ_ƒCƒAƒƒO
+// CSetDlgNetwork ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 CSetDlgNetwork::CSetDlgNetwork()
 	: m_hWnd(NULL)
@@ -26,12 +26,12 @@ BOOL CSetDlgNetwork::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 }
 
 
-// CSetDlgNetwork ƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[
+// CSetDlgNetwork ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼
 
 
 BOOL CSetDlgNetwork::OnInitDialog()
 {
-	// TODO:  ‚±‚±‚É‰Šú‰»‚ğ’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢
+	// TODO:  ã“ã“ã«åˆæœŸåŒ–ã‚’è¿½åŠ ã—ã¦ãã ã•ã„
 	fs_path appIniPath = GetModuleIniPath();
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_SEC, GetPrivateProfileInt(L"SET", L"UDPWait", 4, appIniPath.c_str()), FALSE);
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_PACKET, GetPrivateProfileInt(L"SET", L"UDPPacket", 128, appIniPath.c_str()), FALSE);
@@ -59,7 +59,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 		wstring add;
 		Format(add, L"%ls:%d",item.ipString.c_str(), item.port);
 		if( item.broadcastFlag == TRUE ){
-			add+= L" ƒuƒ[ƒhƒLƒƒƒXƒg";
+			add+= L" ãƒ–ãƒ­ãƒ¼ãƒ‰ã‚­ãƒ£ã‚¹ãƒˆ";
 		}
 		ListBox_AddString(GetDlgItem(IDC_LIST_IP_UDP), add.c_str());
 	}
@@ -94,7 +94,7 @@ BOOL CSetDlgNetwork::OnInitDialog()
 	SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, BON_TCP_PORT_BEGIN, FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	// —áŠO : OCX ƒvƒƒpƒeƒB ƒy[ƒW‚Í•K‚¸ FALSE ‚ğ•Ô‚µ‚Ü‚·B
+	// ä¾‹å¤– : OCX ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ ãƒšãƒ¼ã‚¸ã¯å¿…ãš FALSE ã‚’è¿”ã—ã¾ã™ã€‚
 }
 
 void CSetDlgNetwork::SaveIni(void)
@@ -141,7 +141,7 @@ void CSetDlgNetwork::SaveIni(void)
 
 void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	WCHAR szIP[64] = {};
 	GetDlgItemText(m_hWnd, IDC_IPADDRESS_UDP, szIP, 63);
 	UINT udpPort = GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, NULL, FALSE);
@@ -158,7 +158,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 	wstring add;
 	Format(add, L"%ls:%d",item.ipString.c_str(), item.port);
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_BROADCAST)) != BST_UNCHECKED ){
-		add+= L" ƒuƒ[ƒhƒLƒƒƒXƒg";
+		add+= L" ãƒ–ãƒ­ãƒ¼ãƒ‰ã‚­ãƒ£ã‚¹ãƒˆ";
 		item.broadcastFlag = TRUE;
 	}else{
 		item.broadcastFlag = FALSE;
@@ -178,7 +178,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 
 void CSetDlgNetwork::OnBnClickedButtonDelUdp()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	HWND hItem = GetDlgItem(IDC_LIST_IP_UDP);
 	int sel = ListBox_GetCurSel(hItem);
 	if( sel != LB_ERR ){
@@ -190,7 +190,7 @@ void CSetDlgNetwork::OnBnClickedButtonDelUdp()
 
 void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	WCHAR szIP[64] = {};
 	GetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, szIP, 63);
 	UINT tcpPort = GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, NULL, FALSE);
@@ -221,7 +221,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 
 void CSetDlgNetwork::OnBnClickedButtonDelTcp()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	HWND hItem = GetDlgItem(IDC_LIST_IP_TCP);
 	int sel = ListBox_GetCurSel(hItem);
 	if( sel != LB_ERR ){

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "TimeUtil.h"
 #ifndef _WIN32
 #include <time.h>
@@ -8,7 +8,7 @@
 LPCWSTR GetDayOfWeekName( WORD wDayOfWeek )
 {
 	static const WCHAR name[7][2] = {
-		L"“ú", L"Œ", L"‰Î", L"…", L"–Ø", L"‹à", L"“y"
+		L"æ—¥", L"æœˆ", L"ç«", L"æ°´", L"æœ¨", L"é‡‘", L"åœŸ"
 	};
 	return name[wDayOfWeek % 7];
 }

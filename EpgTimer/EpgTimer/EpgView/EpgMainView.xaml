@@ -16,7 +16,7 @@
             <ColumnDefinition Width="40" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <local:DateView Grid.ColumnSpan="2" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" />
+        <local:DateView Grid.ColumnSpan="2" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" TimeButtonRightClick="epgDateView_TimeButtonRightClick" />
         <Button Click="button_now_Click" Content="現在" Grid.Row="1" />
         <local:TimeView Grid.Row="2" Margin="0,0,0,18" x:Name="timeView" />
         <local:ServiceView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="serviceView" />

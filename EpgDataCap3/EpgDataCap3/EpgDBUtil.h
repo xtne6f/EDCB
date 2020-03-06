@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "ARIB8CharDecode.h"
 #include "AribDescriptor.h"
@@ -16,17 +16,17 @@ public:
 
 	void SetStreamChangeEvent();
 
-	//EPGƒf[ƒ^‚Ì’~Ïó‘Ô‚ğƒŠƒZƒbƒg‚·‚é
+	//EPGãƒ‡ãƒ¼ã‚¿ã®è“„ç©çŠ¶æ…‹ã‚’ãƒªã‚»ãƒƒãƒˆã™ã‚‹
 	void ClearSectionStatus();
 
-	//w’èƒT[ƒrƒX‚ÌEPGƒf[ƒ^‚Ì’~Ïó‘Ô‚ğæ“¾‚·‚é
-	//–ß‚è’lF
-	// ƒXƒe[ƒ^ƒX
-	//ˆø”F
-	// originalNetworkID		[IN]æ“¾‘ÎÛ‚ÌOriginalNetworkID
-	// transportStreamID		[IN]æ“¾‘ÎÛ‚ÌTransportStreamID
-	// serviceID				[IN]æ“¾‘ÎÛ‚ÌServiceID
-	// l_eitFlag				[IN]L-EIT‚ÌƒXƒe[ƒ^ƒX‚ğæ“¾
+	//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®EPGãƒ‡ãƒ¼ã‚¿ã®è“„ç©çŠ¶æ…‹ã‚’å–å¾—ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
+	//å¼•æ•°ï¼š
+	// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®OriginalNetworkID
+	// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®TransportStreamID
+	// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+	// l_eitFlag				[IN]L-EITã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’å–å¾—
 	EPG_SECTION_STATUS GetSectionStatusService(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -34,20 +34,20 @@ public:
 		BOOL l_eitFlag
 		);
 
-	//EPGƒf[ƒ^‚Ì’~Ïó‘Ô‚ğæ“¾‚·‚é
-	//–ß‚è’lF
-	// ƒXƒe[ƒ^ƒX
-	//ˆø”F
-	// l_eitFlag		[IN]L-EIT‚ÌƒXƒe[ƒ^ƒX‚ğæ“¾
+	//EPGãƒ‡ãƒ¼ã‚¿ã®è“„ç©çŠ¶æ…‹ã‚’å–å¾—ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
+	//å¼•æ•°ï¼š
+	// l_eitFlag		[IN]L-EITã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’å–å¾—
 	EPG_SECTION_STATUS GetSectionStatus(BOOL l_eitFlag);
 
-	//w’èƒT[ƒrƒX‚Ì‘SEPGî•ñ‚ğæ“¾‚·‚é
-	//ˆø”F
-	// originalNetworkID		[IN]æ“¾‘ÎÛ‚ÌoriginalNetworkID
-	// transportStreamID		[IN]æ“¾‘ÎÛ‚ÌtransportStreamID
-	// serviceID				[IN]æ“¾‘ÎÛ‚ÌServiceID
-	// epgInfoListSize			[OUT]epgInfoList‚ÌŒÂ”
-	// epgInfoList				[OUT]EPGî•ñ‚ÌƒŠƒXƒgiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+	//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®å…¨EPGæƒ…å ±ã‚’å–å¾—ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®originalNetworkID
+	// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®transportStreamID
+	// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+	// epgInfoListSize			[OUT]epgInfoListã®å€‹æ•°
+	// epgInfoList				[OUT]EPGæƒ…å ±ã®ãƒªã‚¹ãƒˆï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 	BOOL GetEpgInfoList(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -56,7 +56,7 @@ public:
 		EPG_EVENT_INFO** epgInfoList_
 		);
 
-	//w’èƒT[ƒrƒX‚Ì‘SEPGî•ñ‚ğ—ñ‹“‚·‚é
+	//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®å…¨EPGæƒ…å ±ã‚’åˆ—æŒ™ã™ã‚‹
 	BOOL EnumEpgInfoList(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -65,23 +65,23 @@ public:
 		LPVOID param
 		);
 
-	//’~Ï‚³‚ê‚½EPGî•ñ‚Ì‚ ‚éƒT[ƒrƒXˆê——‚ğæ“¾‚·‚é
-	//SERVICE_EXT_INFO‚Ìî•ñ‚Í‚È‚¢ê‡‚ª‚ ‚é
-	//ˆø”F
-	// serviceListSize			[OUT]serviceList‚ÌŒÂ”
-	// serviceList				[OUT]ƒT[ƒrƒXî•ñ‚ÌƒŠƒXƒgiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+	//è“„ç©ã•ã‚ŒãŸEPGæƒ…å ±ã®ã‚ã‚‹ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
+	//SERVICE_EXT_INFOã®æƒ…å ±ã¯ãªã„å ´åˆãŒã‚ã‚‹
+	//å¼•æ•°ï¼š
+	// serviceListSize			[OUT]serviceListã®å€‹æ•°
+	// serviceList				[OUT]ã‚µãƒ¼ãƒ“ã‚¹æƒ…å ±ã®ãƒªã‚¹ãƒˆï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 	void GetServiceListEpgDB(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList_
 		);
 
-	//w’èƒT[ƒrƒX‚ÌŒ»İorŸ‚ÌEPGî•ñ‚ğæ“¾‚·‚é
-	//ˆø”F
-	// originalNetworkID		[IN]æ“¾‘ÎÛ‚ÌoriginalNetworkID
-	// transportStreamID		[IN]æ“¾‘ÎÛ‚ÌtransportStreamID
-	// serviceID				[IN]æ“¾‘ÎÛ‚ÌServiceID
-	// nextFlag					[IN]TRUEiŸ‚Ì”Ô‘gjAFALSEiŒ»İ‚Ì”Ô‘gj
-	// epgInfo					[OUT]EPGî•ñiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+	//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®ç¾åœ¨oræ¬¡ã®EPGæƒ…å ±ã‚’å–å¾—ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®originalNetworkID
+	// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®transportStreamID
+	// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+	// nextFlag					[IN]TRUEï¼ˆæ¬¡ã®ç•ªçµ„ï¼‰ã€FALSEï¼ˆç¾åœ¨ã®ç•ªçµ„ï¼‰
+	// epgInfo					[OUT]EPGæƒ…å ±ï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 	BOOL GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -90,14 +90,14 @@ public:
 		EPG_EVENT_INFO** epgInfo_
 		);
 
-	//w’èƒCƒxƒ“ƒg‚ÌEPGî•ñ‚ğæ“¾‚·‚é
-	//ˆø”F
-	// originalNetworkID		[IN]æ“¾‘ÎÛ‚ÌoriginalNetworkID
-	// transportStreamID		[IN]æ“¾‘ÎÛ‚ÌtransportStreamID
-	// serviceID				[IN]æ“¾‘ÎÛ‚ÌServiceID
-	// EventID					[IN]æ“¾‘ÎÛ‚ÌEventID
-	// pfOnlyFlag				[IN]p/f‚©‚ç‚Ì‚İŒŸõ‚·‚é‚©‚Ç‚¤‚©
-	// epgInfo					[OUT]EPGî•ñiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+	//æŒ‡å®šã‚¤ãƒ™ãƒ³ãƒˆã®EPGæƒ…å ±ã‚’å–å¾—ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// originalNetworkID		[IN]å–å¾—å¯¾è±¡ã®originalNetworkID
+	// transportStreamID		[IN]å–å¾—å¯¾è±¡ã®transportStreamID
+	// serviceID				[IN]å–å¾—å¯¾è±¡ã®ServiceID
+	// EventID					[IN]å–å¾—å¯¾è±¡ã®EventID
+	// pfOnlyFlag				[IN]p/fã‹ã‚‰ã®ã¿æ¤œç´¢ã™ã‚‹ã‹ã©ã†ã‹
+	// epgInfo					[OUT]EPGæƒ…å ±ï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 	BOOL SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -109,20 +109,20 @@ public:
 
 protected:
 	struct SI_TAG{
-		BYTE tableID;		//ƒf[ƒ^’Ç‰Á‚Ìtable_id
-		BYTE version;		//ƒf[ƒ^’Ç‰Á‚Ìƒo[ƒWƒ‡ƒ“
-		DWORD time;			//ƒf[ƒ^‚Ìƒ^ƒCƒ€ƒXƒ^ƒ“ƒv(’PˆÊ‚Í10•b)
+		BYTE tableID;		//ãƒ‡ãƒ¼ã‚¿è¿½åŠ æ™‚ã®table_id
+		BYTE version;		//ãƒ‡ãƒ¼ã‚¿è¿½åŠ æ™‚ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³
+		DWORD time;			//ãƒ‡ãƒ¼ã‚¿ã®ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—(å˜ä½ã¯10ç§’)
 	};
 	struct EVENT_INFO{
 		DWORD time;
 		SI_TAG tagBasic;
 		SI_TAG tagExt;
-		EPGDB_EVENT_INFO db;	//ONID,TSID,SID‚Í–¢g—p
+		EPGDB_EVENT_INFO db;	//ONID,TSID,SIDã¯æœªä½¿ç”¨
 	};
 	struct SECTION_FLAG_INFO{
 		BYTE version;
-		BYTE flags[32];			//ƒZƒOƒƒ“ƒg(0`31)–ˆ‚ÌóMÏ‚İƒZƒNƒVƒ‡ƒ“(0`7)‚Ìƒtƒ‰ƒO
-		BYTE ignoreFlags[32];	//–³‹‚·‚é(‘—o‚³‚ê‚È‚¢)ƒZƒNƒVƒ‡ƒ“‚Ìƒtƒ‰ƒO
+		BYTE flags[32];			//ã‚»ã‚°ãƒ¡ãƒ³ãƒˆ(0ï½31)æ¯ã®å—ä¿¡æ¸ˆã¿ã‚»ã‚¯ã‚·ãƒ§ãƒ³(0ï½7)ã®ãƒ•ãƒ©ã‚°
+		BYTE ignoreFlags[32];	//ç„¡è¦–ã™ã‚‹(é€å‡ºã•ã‚Œãªã„)ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã®ãƒ•ãƒ©ã‚°
 	};
 	struct SERVICE_EVENT_INFO{
 		map<WORD, EVENT_INFO> eventMap;
@@ -130,7 +130,7 @@ protected:
 		vector<EVENT_INFO> nextEvent;
 		BYTE lastTableID;
 		BYTE lastTableIDExt;
-		SECTION_FLAG_INFO sectionList[8];	//“Y‚¦š‚Íƒe[ƒuƒ‹”Ô†(0`7)
+		SECTION_FLAG_INFO sectionList[8];	//æ·»ãˆå­—ã¯ãƒ†ãƒ¼ãƒ–ãƒ«ç•ªå·(0ï½7)
 		SECTION_FLAG_INFO sectionExtList[8];
 		SERVICE_EVENT_INFO(void){
 			lastTableID = 0;
@@ -144,7 +144,7 @@ protected:
 		wstring network_name;
 		wstring ts_name;
 		BYTE remote_control_key_id;
-		map<WORD, EPGDB_SERVICE_INFO> serviceList;	//network_name,ts_name,remote_control_key_id‚Í–¢g—p
+		map<WORD, EPGDB_SERVICE_INFO> serviceList;	//network_name,ts_name,remote_control_key_idã¯æœªä½¿ç”¨
 	};
 	map<DWORD, DB_TS_INFO> serviceInfoList;
 

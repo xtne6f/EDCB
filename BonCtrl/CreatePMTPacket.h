@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Common/ErrDef.h"
 #include "../Common/EpgTimerUtil.h"
@@ -8,54 +8,54 @@
 class CCreatePMTPacket
 {
 public:
-	//����TS�p�P�b�g����Ȃ��Ɖ�͂ł��Ȃ�
+	//次のTSパケット入れないと解析できない
 	static const DWORD ERR_NEED_NEXT_PACKET = 20;
-	//�o�[�W�����̕ύX�Ȃ����߉�͕s�v
+	//バージョンの変更ないため解析不要
 	static const DWORD ERR_NO_CHAGE = 30;
 
 	CCreatePMTPacket(void);
 
-	//PMT�쐬���̃��[�h
-	//�����F
-	// needCaption			[IN]�����f�[�^���܂߂邩�ǂ����iTRUE:�܂߂�AFALSE�F�܂߂Ȃ��j
-	// needData				[IN]�f�[�^�J���[�Z�����܂߂邩�ǂ����iTRUE:�܂߂�AFALSE�F�܂߂Ȃ��j
+	//PMT作成時のモード
+	//引数：
+	// needCaption			[IN]字幕データを含めるかどうか（TRUE:含める、FALSE：含めない）
+	// needData				[IN]データカルーセルを含めるかどうか（TRUE:含める、FALSE：含めない）
 	void SetCreateMode(
 		BOOL needCaption_,
 		BOOL needData_
 	);
 
-	//�쐬���ƂȂ�PMT�̃p�P�b�g�����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// packet			//[IN] PMT�̃p�P�b�g
+	//作成元となるPMTのパケットを入力
+	//戻り値：
+	// エラーコード
+	//引数：
+	// packet			//[IN] PMTのパケット
 	DWORD AddData(
 		CTSPacketUtil* packet
 	);
 
-	//�K�v��PID�����m�F
-	//�߂�l�F
-	// TRUE�i�K�v�j�AFALSE�i�s�K�v�j
-	//�����F
-	// PID				//[IN]�m�F����PID
+	//必要なPIDかを確認
+	//戻り値：
+	// TRUE（必要）、FALSE（不必要）
+	//引数：
+	// PID				//[IN]確認するPID
 	BOOL IsNeedPID(
 		WORD PID
 	);
 
-	//�쐬PMT�̃o�b�t�@�|�C���^���擾
-	//�߂�l�F
-	// �쐬PMT�̃o�b�t�@�|�C���^
-	//�����F
-	// buff					[OUT]�쐬����PMT�p�P�b�g�ւ̃|�C���^�i����Ăяo�����܂ŗL���j
-	// size					[OUT]buff�̃T�C�Y
-	// incrementFlag		[IN]TS�p�P�b�g��Counter���C���N�������g���邩�ǂ����iTRUE:����AFALSE�F���Ȃ��j
+	//作成PMTのバッファポインタを取得
+	//戻り値：
+	// 作成PMTのバッファポインタ
+	//引数：
+	// buff					[OUT]作成したPMTパケットへのポインタ（次回呼び出し時まで有効）
+	// size					[OUT]buffのサイズ
+	// incrementFlag		[IN]TSパケットのCounterをインクリメントするかどうか（TRUE:する、FALSE：しない）
 	BOOL GetPacket(
 		BYTE** buff,
 		DWORD* size,
 		BOOL incrementFlag = TRUE
 	);
 
-	//���������N���A
+	//内部情報をクリア
 	void Clear();
 
 	BYTE GetVersion();

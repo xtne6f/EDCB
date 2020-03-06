@@ -44,21 +44,3 @@ int wmain(int argc, wchar_t **argv)
 	fflush(stdout);
 	return 0;
 }
-
-#ifdef __MINGW32__
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <shellapi.h>
-
-int main(void)
-{
-	int argc;
-	wchar_t **argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	if (argv) {
-		int ret = wmain(argc, argv);
-		LocalFree(argv);
-		return ret;
-	}
-	return 1;
-}
-#endif

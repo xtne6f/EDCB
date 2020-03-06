@@ -1,4 +1,4 @@
-// SetDlgApp.cpp : À‘•ƒtƒ@ƒCƒ‹
+ï»¿// SetDlgApp.cpp : å®Ÿè£…ãƒ•ã‚¡ã‚¤ãƒ«
 //
 
 #include "stdafx.h"
@@ -6,7 +6,7 @@
 #include "SetDlgApp.h"
 
 
-// CSetDlgApp ƒ_ƒCƒAƒƒO
+// CSetDlgApp ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 CSetDlgApp::CSetDlgApp()
 	: m_hWnd(NULL)
@@ -24,12 +24,12 @@ BOOL CSetDlgApp::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 }
 
 
-// CSetDlgApp ƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[
+// CSetDlgApp ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼
 
 
 BOOL CSetDlgApp::OnInitDialog()
 {
-	// TODO:  ‚±‚±‚É‰Šú‰»‚ğ’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢
+	// TODO:  ã“ã“ã«åˆæœŸåŒ–ã‚’è¿½åŠ ã—ã¦ãã ã•ã„
 	fs_path appIniPath = GetModuleIniPath();
 
 	Button_SetCheck(GetDlgItem(IDC_CHECK_ALL_SERVICE), GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()));
@@ -52,7 +52,7 @@ BOOL CSetDlgApp::OnInitDialog()
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WRITE_BUFF_MAX, buffMax < 0 ? 0 : buffMax, FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	// —áŠO : OCX ƒvƒƒpƒeƒB ƒy[ƒW‚Í•K‚¸ FALSE ‚ğ•Ô‚µ‚Ü‚·B
+	// ä¾‹å¤– : OCX ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ ãƒšãƒ¼ã‚¸ã¯å¿…ãš FALSE ã‚’è¿”ã—ã¾ã™ã€‚
 }
 
 void CSetDlgApp::SaveIni(void)

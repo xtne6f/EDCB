@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "OneServiceUtil.h"
 
 
@@ -24,8 +24,8 @@ COneServiceUtil::~COneServiceUtil(void)
 	SendTcp(NULL);
 }
 
-//�����Ώ�ServiceID��ݒ�
-//�����F
+//処理対象ServiceIDを設定
+//引数：
 // SID			[IN]ServiceID
 void COneServiceUtil::SetSID(
 	WORD SID_
@@ -40,8 +40,8 @@ void COneServiceUtil::SetSID(
 	this->SID = SID_;
 }
 
-//�ݒ肳��Ă鏈���Ώۂ�ServiceID���擾
-//�߂�l�F
+//設定されてる処理対象のServiceIDを取得
+//戻り値：
 // ServiceID
 WORD COneServiceUtil::GetSID()
 {
@@ -68,7 +68,7 @@ BOOL COneServiceUtil::SendUdpTcp(
 			wstring key = L"";
 			HANDLE portMutex;
 
-			//�����ł��Ȃ��Ă��[���ł͂Ȃ��̂łقǂقǂɑł��؂�
+			//生成できなくても深刻ではないのでほどほどに打ち切る
 			for( int j = 0; j < BON_NW_PORT_RANGE; j++ ){
 				UINT u[4];
 				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
@@ -97,11 +97,11 @@ BOOL COneServiceUtil::SendUdpTcp(
 	return TRUE;
 }
 
-//�o�͗pTS�f�[�^�𑗂�
-//�����F
-// data		[IN]TS�f�[�^
-// size		[IN]data�̃T�C�Y
-// funcGetPresent	[IN]EPG�̌��ݔԑgID�𒲂ׂ�֐�
+//出力用TSデータを送る
+//引数：
+// data		[IN]TSデータ
+// size		[IN]dataのサイズ
+// funcGetPresent	[IN]EPGの現在番組IDを調べる関数
 void COneServiceUtil::AddTSBuff(
 	BYTE* data,
 	DWORD size,
@@ -115,7 +115,7 @@ void COneServiceUtil::AddTSBuff(
 		}
 		this->dropCount.AddData(data, size);
 	}else if( this->SID == 0xFFFF ){
-		//�S�T�[�r�X����
+		//全サービス扱い
 		this->writeFile.AddTSBuff(data, size);
 		this->dropCount.AddData(data, size);
 
@@ -152,19 +152,19 @@ void COneServiceUtil::AddTSBuff(
 							this->buff.insert(this->buff.end(), pmtBuff, pmtBuff + pmtBuffSize);
 						}else{
 							_OutputDebugString(L"createPmt.GetPacket Err");
-							//���̂܂�
+							//そのまま
 							this->buff.insert(this->buff.end(), data + i, data + i + 188);
 						}
 					}else if( err == FALSE ){
 						_OutputDebugString(L"createPmt.AddData Err");
-						//���̂܂�
+						//そのまま
 						this->buff.insert(this->buff.end(), data + i, data + i + 188);
 					}
 				}else{
-					//���̑�
+					//その他
 					if( packet.PID < BON_SELECTIVE_PID || createPmt.IsNeedPID(packet.PID) ||
 					    std::binary_search(this->emmPIDList.begin(), this->emmPIDList.end(), packet.PID) ){
-						//PMT�Œ�`����Ă邩EMM�Ȃ�K�v
+						//PMTで定義されてるかEMMなら必要
 						this->buff.insert(this->buff.end(), data + i, data + i + 188);
 					}
 				}
@@ -181,7 +181,7 @@ void COneServiceUtil::AddTSBuff(
 		if( this->lastPMTVer == 0xFFFF ){
 			this->lastPMTVer = createPmt.GetVersion();
 		}else if(this->lastPMTVer != createPmt.GetVersion()){
-			//�҂�����J�n
+			//ぴったり開始
 			StratPittariRec();
 			this->lastPMTVer = createPmt.GetVersion();
 		}
@@ -189,7 +189,7 @@ void COneServiceUtil::AddTSBuff(
 			int eventID = funcGetPresent(this->pittariRecParam.pittariONID, this->pittariRecParam.pittariTSID, this->pittariRecParam.pittariSID);
 			if( eventID >= 0 ){
 				if( eventID == this->pittariRecParam.pittariEventID ){
-					//�҂�����J�n
+					//ぴったり開始
 					StratPittariRec();
 					if( this->pittariState == PITTARI_START ){
 						this->pittariState = PITTARI_END_CHK;
@@ -203,7 +203,7 @@ void COneServiceUtil::AddTSBuff(
 			int eventID = funcGetPresent(this->pittariRecParam.pittariONID, this->pittariRecParam.pittariTSID, this->pittariRecParam.pittariSID);
 			if( eventID >= 0 ){
 				if( eventID != this->pittariRecParam.pittariEventID ){
-					//�҂�����I��
+					//ぴったり終了
 					StopPittariRec();
 				}
 			}
@@ -279,7 +279,7 @@ void COneServiceUtil::StopPittariRec()
 {
 	OutputDebugString(L"*:StopPittariRec");
 	this->pittariState = PITTARI_END;
-	//�����Ńt�@�C���p�X���擾���Ă���
+	//ここでファイルパスを取得しておく
 	this->pittariRecParam.fileName = this->writeFile.GetSaveFilePath();
 	this->writeFile.EndSave(&this->pittariSubRec);
 }
@@ -290,7 +290,7 @@ BOOL COneServiceUtil::EndSave(BOOL* subRecFlag)
 	if( this->writeFile.IsRec() ){
 		ret = this->writeFile.EndSave(subRecFlag);
 	}else if( this->pittariState != PITTARI_NONE ){
-		//�҂����胂�[�h�ł͓����I�ȊJ�n�I���Ƃ͈�v���Ȃ�
+		//ぴったりモードでは内部的な開始終了とは一致しない
 		if( subRecFlag ){
 			*subRecFlag = this->pittariState == PITTARI_END && this->pittariSubRec;
 		}
@@ -301,18 +301,18 @@ BOOL COneServiceUtil::EndSave(BOOL* subRecFlag)
 	return ret;
 }
 
-//�^�撆���ǂ���
-//�߂�l�F
-// TRUE�i�^�撆�j�AFALSE�i���Ă��Ȃ��j
+//録画中かどうか
+//戻り値：
+// TRUE（録画中）、FALSE（していない）
 BOOL COneServiceUtil::IsRec()
 {
 	return this->writeFile.IsRec() || this->pittariState != PITTARI_NONE;
 }
 
-//�����ƃf�[�^�����܂߂邩�ǂ���
-//�����F
-// enableCaption		[IN]������ TRUE�i�܂߂�j�AFALSE�i�܂߂Ȃ��j
-// enableData			[IN]�f�[�^������ TRUE�i�܂߂�j�AFALSE�i�܂߂Ȃ��j
+//字幕とデータ放送含めるかどうか
+//引数：
+// enableCaption		[IN]字幕を TRUE（含める）、FALSE（含めない）
+// enableData			[IN]データ放送を TRUE（含める）、FALSE（含めない）
 void COneServiceUtil::SetServiceMode(
 	BOOL enableCaption,
 	BOOL enableData
@@ -321,16 +321,16 @@ void COneServiceUtil::SetServiceMode(
 	createPmt.SetCreateMode(enableCaption, enableData);
 }
 
-//�G���[�J�E���g���N���A����
+//エラーカウントをクリアする
 void COneServiceUtil::ClearErrCount()
 {
 	this->dropCount.Clear();
 }
 
-//�h���b�v�ƃX�N�����u���̃J�E���g���擾����
-//�����F
-// drop				[OUT]�h���b�v��
-// scramble			[OUT]�X�N�����u����
+//ドロップとスクランブルのカウントを取得する
+//引数：
+// drop				[OUT]ドロップ数
+// scramble			[OUT]スクランブル数
 void COneServiceUtil::GetErrCount(ULONGLONG* drop, ULONGLONG* scramble)
 {
 	if( drop ){
@@ -374,9 +374,9 @@ void COneServiceUtil::SetSignalLevel(
 	this->dropCount.SetSignal(signalLv);
 }
 
-//�^�撆�̃t�@�C���̏o�̓T�C�Y���擾����
-//�����F
-// writeSize			[OUT]�o�̓T�C�Y
+//録画中のファイルの出力サイズを取得する
+//引数：
+// writeSize			[OUT]出力サイズ
 void COneServiceUtil::GetRecWriteSize(
 	__int64* writeSize
 	)

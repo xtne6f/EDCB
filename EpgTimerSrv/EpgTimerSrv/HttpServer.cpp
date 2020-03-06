@@ -1,4 +1,4 @@
-#include "stdafx.h"
+Ôªø#include "stdafx.h"
 #include "HttpServer.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
@@ -43,20 +43,20 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	string rootPathU;
 	WtoUTF8(op.rootPath, rootPathU);
 #ifdef _WIN32
-	//ÉpÉXÇ…ASCIIîÕàÕäOÇä‹ÇﬁÇÃÇÕ(éÂÇ…LuaÇ™å¥àˆÇ≈)ìÔÇ†ÇËÇ»ÇÃÇ≈èRÇÈ
+	//„Éë„Çπ„Å´ASCIIÁØÑÂõ≤Â§ñ„ÇíÂê´„ÇÄ„ÅÆ„ÅØ(‰∏ª„Å´Lua„ÅåÂéüÂõ†„Åß)Èõ£„ÅÇ„Çä„Å™„ÅÆ„ÅßËπ¥„Çã
 	if( std::find_if(rootPathU.begin(), rootPathU.end(), [](char c) { return (c & 0x80) != 0; }) != rootPathU.end() ){
 		OutputDebugString(L"CHttpServer::StartServer(): path has unavailable chars.\r\n");
 		return false;
 	}
 #endif
 	string accessLogPath;
-	//ÉçÉOÇÕ_wfopen()Ç≥ÇÍÇÈÇÃÇ≈WtoUTF8()ÅBcivetweb.cÇÃACCESS_LOG_FILEÇ∆ERROR_LOG_FILEÇÃàµÇ¢Ç…íçà”
+	//„É≠„Ç∞„ÅØ_wfopen()„Åï„Çå„Çã„ÅÆ„ÅßWtoUTF8()„ÄÇcivetweb.c„ÅÆACCESS_LOG_FILE„Å®ERROR_LOG_FILE„ÅÆÊâ±„ÅÑ„Å´Ê≥®ÊÑè
 	WtoUTF8(GetCommonIniPath().replace_filename(L"HttpAccess.log").native(), accessLogPath);
 	string errorLogPath;
 	WtoUTF8(GetCommonIniPath().replace_filename(L"HttpError.log").native(), errorLogPath);
 
 	fs_path sslFsPath = GetCommonIniPath().replace_filename(L"ssl_");
-	//îFèÿåÆÇÕé¿éøfopen()Ç≥ÇÍÇÈÇÃÇ≈CP_ACP
+	//Ë™çË®ºÈçµ„ÅØÂÆüË≥™fopen()„Åï„Çå„Çã„ÅÆ„ÅßCP_ACP
 	string sslPathA;
 	wstring sslPath;
 	WtoA(sslFsPath.native(), sslPathA, UTIL_CONV_ACP);
@@ -70,7 +70,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	fs_path sslPeerFsPath = sslFsPath.concat(L"peer.pem");
 
 	string globalAuthPath;
-	//ÉOÉçÅ[ÉoÉãÉpÉXÉèÅ[ÉhÇÕ_wfopen()Ç≥ÇÍÇÈÇÃÇ≈WtoUTF8()
+	//„Ç∞„É≠„Éº„Éê„É´„Éë„Çπ„ÉØ„Éº„Éâ„ÅØ_wfopen()„Åï„Çå„Çã„ÅÆ„ÅßWtoUTF8()
 	fs_path globalAuthFsPath = GetCommonIniPath().replace_filename(L"glpasswd");
 	WtoUTF8(globalAuthFsPath.native(), globalAuthPath);
 
@@ -90,7 +90,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	char sslProtocolVersion[16];
 	sprintf_s(sslProtocolVersion, "%d", op.sslProtocolVersion);
 
-	//í«â¡ÇÃMIMEÉ^ÉCÉv
+	//ËøΩÂä†„ÅÆMIME„Çø„Ç§„Éó
 	CParseContentTypeText contentType;
 	contentType.ParseText(GetCommonIniPath().replace_filename(L"ContentTypeText.txt").c_str());
 	wstring extraMimeW;
@@ -128,24 +128,24 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		options[opCount++] = authDomain.c_str();
 	}
 	if( ports.find('s') != string::npos ){
-		//ÉZÉLÉÖÉAÉ|Å[ÉgÇä‹ÇﬁÇÃÇ≈îFèÿåÆÇéwíËÇ∑ÇÈ
+		//„Çª„Ç≠„É•„Ç¢„Éù„Éº„Éà„ÇíÂê´„ÇÄ„ÅÆ„ÅßË™çË®ºÈçµ„ÇíÊåáÂÆö„Åô„Çã
 		options[opCount++] = "ssl_certificate";
 		options[opCount++] = sslCertPath.c_str();
 	}
 	bool mightExist = false;
 	if( UtilFileExists(sslPeerFsPath, &mightExist).first || mightExist ){
-		//êMóäçœÇ›èÿñæèëÉtÉ@ÉCÉãÇ™Åuë∂ç›ÇµÇ»Ç¢Ç±Ç∆ÇämêMÅvÇ≈Ç´Ç»ÇØÇÍÇŒóLå¯Ç…Ç∑ÇÈ
+		//‰ø°È†ºÊ∏à„ÅøË®ºÊòéÊõ∏„Éï„Ç°„Ç§„É´„Åå„ÄåÂ≠òÂú®„Åó„Å™„ÅÑ„Åì„Å®„ÇíÁ¢∫‰ø°„Äç„Åß„Åç„Å™„Åë„Çå„Å∞ÊúâÂäπ„Å´„Åô„Çã
 		options[opCount++] = "ssl_verify_peer";
 		options[opCount++] = "yes";
 	}
 	if( UtilFileExists(globalAuthFsPath, &mightExist).first || mightExist ){
-		//ÉOÉçÅ[ÉoÉãÉpÉXÉèÅ[ÉhÇÕÅuë∂ç›ÇµÇ»Ç¢Ç±Ç∆ÇämêMÅvÇ≈Ç´Ç»ÇØÇÍÇŒéwíËÇµÇƒÇ®Ç≠
+		//„Ç∞„É≠„Éº„Éê„É´„Éë„Çπ„ÉØ„Éº„Éâ„ÅØ„ÄåÂ≠òÂú®„Åó„Å™„ÅÑ„Åì„Å®„ÇíÁ¢∫‰ø°„Äç„Åß„Åç„Å™„Åë„Çå„Å∞ÊåáÂÆö„Åó„Å¶„Åä„Åè
 		options[opCount++] = "global_auth_file";
 		options[opCount++] = globalAuthPath.c_str();
 	}
 
 #ifdef LUA_BUILD_AS_DLL
-	//LuaÇÃDLLÇ™ñ≥Ç¢Ç∆Ç´ï™Ç©ÇËÇ…Ç≠Ç¢É^ÉCÉ~ÉìÉOÇ≈ÉGÉâÅ[Ç…Ç»ÇÈÇÃÇ≈éñëOÇ…ì«ÇÒÇ≈Ç®Ç≠(ïKê{Ç≈ÇÕÇ»Ç¢)
+	//Lua„ÅÆDLL„ÅåÁÑ°„ÅÑ„Å®„ÅçÂàÜ„Åã„Çä„Å´„Åè„ÅÑ„Çø„Ç§„Éü„É≥„Ç∞„Åß„Ç®„É©„Éº„Å´„Å™„Çã„ÅÆ„Åß‰∫ãÂâç„Å´Ë™≠„Çì„Åß„Åä„Åè(ÂøÖÈ†à„Åß„ÅØ„Å™„ÅÑ)
 	this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
 	if( this->hLuaDll == NULL ){
 		OutputDebugString(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.\r\n");
@@ -171,7 +171,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	}
 
 	if( op.enableSsdpServer ){
-		//"<UDN>uuid:{UUID}</UDN>"Ç™ïKóv
+		//"<UDN>uuid:{UUID}</UDN>"„ÅåÂøÖË¶Å
 		string notifyUuid;
 		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(op.rootPath).append(L"dlna").append(L"dms").append(L"ddd.xml"), UTIL_SECURE_READ), fclose);
 		if( fp ){
@@ -190,9 +190,9 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 			}
 		}
 		if( notifyUuid.empty() == false ){
-			//ç≈å„Ç…Ç›Ç¬Ç©Ç¡ÇΩ':'ÇÊÇËå„ÇÎÇ©êÊì™ÇatoiÇµÇΩåãâ Çí ímÉ|Å[ÉgÇ∆Ç∑ÇÈ
+			//ÊúÄÂæå„Å´„Åø„Å§„Åã„Å£„Åü':'„Çà„ÇäÂæå„Çç„ÅãÂÖàÈ†≠„Çíatoi„Åó„ÅüÁµêÊûú„ÇíÈÄöÁü•„Éù„Éº„Éà„Å®„Åô„Çã
 			int notifyPort = atoi(ports.c_str() + (ports.find_last_of(':') == string::npos ? 0 : ports.find_last_of(':') + 1)) & 0xFFFF;
-			//UPnPÇÃUDP(Port1900)ïîï™ÇíSìñÇ∑ÇÈÉTÅ[Éo
+			//UPnP„ÅÆUDP(Port1900)ÈÉ®ÂàÜ„ÇíÊãÖÂΩì„Åô„Çã„Çµ„Éº„Éê
 			LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
 			vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
 			targetList[0].target = notifyUuid;
@@ -228,7 +228,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 				return false;
 			}
 		}else{
-			//ê≥èÌÇ≈Ç†ÇÍÇŒmg_stop()ÇÕreqToÇí¥Ç¶Çƒë“ã@Ç∑ÇÈÇ±Ç∆ÇÕÇ»Ç¢
+			//Ê≠£Â∏∏„Åß„ÅÇ„Çå„Å∞mg_stop()„ÅØreqTo„ÇíË∂Ö„Åà„Å¶ÂæÖÊ©ü„Åô„Çã„Åì„Å®„ÅØ„Å™„ÅÑ
 			DWORD reqTo = atoi(mg_get_option(this->mgContext, "request_timeout_ms"));
 			DWORD tick = GetTickCount();
 			while( GetTickCount() - tick < reqTo + 10000 ){
@@ -394,7 +394,7 @@ __int64 get_int64(lua_State* L, const char* name)
 	lua_getfield(L, -1, name);
 	lua_Number ret = lua_tonumber(L, -1);
 	lua_pop(L, 1);
-	//êÆêîÇê≥ÇµÇ≠ï\åªÇ≈Ç´Ç»Ç¢îÕàÕÇÃílÇÕêßå¿Ç∑ÇÈ
+	//Êï¥Êï∞„ÇíÊ≠£„Åó„ÅèË°®Áèæ„Åß„Åç„Å™„ÅÑÁØÑÂõ≤„ÅÆÂÄ§„ÅØÂà∂Èôê„Åô„Çã
 	return (__int64)min(max(ret, -1e+16), 1e+16);
 }
 

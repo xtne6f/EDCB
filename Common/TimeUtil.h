@@ -1,4 +1,4 @@
-#ifndef INCLUDE_TIME_UTIL_H
+﻿#ifndef INCLUDE_TIME_UTIL_H
 #define INCLUDE_TIME_UTIL_H
 
 #include "StringUtil.h"

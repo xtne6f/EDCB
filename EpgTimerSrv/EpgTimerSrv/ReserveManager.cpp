@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "ReserveManager.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
@@ -21,13 +21,13 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 	fs_path settingPath = GetSettingPath();
 	fs_path iniPath = GetModuleIniPath();
 
-	//ƒ`ƒ…[ƒiˆê——‚ğ\’z
+	//ãƒãƒ¥ãƒ¼ãƒŠä¸€è¦§ã‚’æ§‹ç¯‰
 	vector<pair<wstring, wstring>> nameList = CEpgTimerSrvSetting::EnumBonFileName(settingPath.c_str());
 	for( size_t i = 0; i < nameList.size(); i++ ){
 		WORD count = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"Count", 0, iniPath.c_str());
 		WORD priority = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"Priority", 0, iniPath.c_str());
 		if( count != 0 && priority != 0xFFFF ){
-			//ƒJƒEƒ“ƒg1ˆÈã‚Ì‚à‚Ì‚¾‚¯—˜—p
+			//ã‚«ã‚¦ãƒ³ãƒˆ1ä»¥ä¸Šã®ã‚‚ã®ã ã‘åˆ©ç”¨
 			WORD epgCount = 0;
 			if( GetPrivateProfileInt(nameList[i].first.c_str(), L"GetEpg", 1, iniPath.c_str()) != 0 ){
 				epgCount = (WORD)GetPrivateProfileInt(nameList[i].first.c_str(), L"EPGCount", 0, iniPath.c_str());
@@ -66,7 +66,7 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 
 void CReserveManager::Finalize()
 {
-	//ƒJƒXƒ^ƒ€ƒnƒ“ƒhƒ‰‚ğ~‚ß‚é‚½‚ß
+	//ã‚«ã‚¹ã‚¿ãƒ ãƒãƒ³ãƒ‰ãƒ©ã‚’æ­¢ã‚ã‚‹ãŸã‚
 	this->batManager.Finalize();
 	this->batPostManager.Finalize();
 	this->epgDBManager.CancelLoadData();
@@ -129,10 +129,10 @@ vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 	}
 	list.resize(list.size() + 1);
 	list.back().tunerID = 0xFFFFFFFF;
-	list.back().tunerName = L"ƒ`ƒ…[ƒi[•s‘«";
+	list.back().tunerName = L"ãƒãƒ¥ãƒ¼ãƒŠãƒ¼ä¸è¶³";
 	vector<DWORD> &ngList = list.back().reserveList = GetNoTunerReserveAll();
 	for( size_t i = 0; i < ngList.size(); ){
-		//–³Œø—\–ñ‚Íuƒ`ƒ…[ƒi•s‘«v‚Å‚Í‚È‚¢
+		//ç„¡åŠ¹äºˆç´„ã¯ã€Œãƒãƒ¥ãƒ¼ãƒŠä¸è¶³ã€ã§ã¯ãªã„
 		if( this->reserveText.GetMap().find(ngList[i])->second.recSetting.recMode == RECMODE_NO ){
 			ngList.erase(ngList.begin() + i);
 		}else{
@@ -151,7 +151,7 @@ vector<DWORD> CReserveManager::GetNoTunerReserveAll() const
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		list.push_back(itr->first);
 	}
-	//‘S—\–ñ‚©‚çƒoƒ“ƒN‚É‘¶İ‚·‚é—\–ñ‚ğˆø‚­
+	//å…¨äºˆç´„ã‹ã‚‰ãƒãƒ³ã‚¯ã«å­˜åœ¨ã™ã‚‹äºˆç´„ã‚’å¼•ã
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		vector<DWORD> diffList = itr->second->GetReserveIDList();
 		size_t k = 0;
@@ -183,7 +183,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 				util = &utilCache;
 			}
 			RESERVE_DATA& r = *reserveData;
-			//recNamePlugIn‚ğ“WŠJ‚µ‚ÄÀƒtƒ@ƒCƒ‹–¼‚ğƒZƒbƒg
+			//recNamePlugInã‚’å±•é–‹ã—ã¦å®Ÿãƒ•ã‚¡ã‚¤ãƒ«åã‚’ã‚»ãƒƒãƒˆ
 			for( size_t i = 0; i <= r.recSetting.recFolderList.size(); i++ ){
 				if( i < r.recSetting.recFolderList.size() || r.recSetting.recFolderList.empty() ){
 					LPCWSTR recNamePlugIn = this->setting.recNamePlugIn ? this->setting.recNamePlugInFile.c_str() : L"";
@@ -192,7 +192,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 					}
 					r.recFileNameList.push_back(CTunerBankCtrl::ConvertRecName(
 						recNamePlugIn, r.startTime, r.durationSecond, r.title.c_str(), r.originalNetworkID, r.transportStreamID, r.serviceID, r.eventID,
-						r.stationName.c_str(), L"ƒ`ƒ…[ƒi[•s–¾", 0xFFFFFFFF, r.reserveID, this->epgDBManager,
+						r.stationName.c_str(), L"ãƒãƒ¥ãƒ¼ãƒŠãƒ¼ä¸æ˜", 0xFFFFFFFF, r.reserveID, this->epgDBManager,
 						r.startTime, 0, this->setting.tsExt.c_str(), this->setting.noChkYen, *util));
 				}
 			}
@@ -212,7 +212,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 	vector<CBatManager::BAT_WORK_INFO> batWorkList;
 	for( size_t i = 0; i < reserveList.size(); i++ ){
 		RESERVE_DATA r = reserveList[i];
-		//‚·‚Å‚ÉI—¹‚µ‚Ä‚¢‚È‚¢‚©
+		//ã™ã§ã«çµ‚äº†ã—ã¦ã„ãªã„ã‹
 		if( now < ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
 			r.presentFlag = FALSE;
 			r.overlapMode = RESERVE_EXECUTE;
@@ -255,7 +255,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		RESERVE_DATA r = reserveList[i];
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(r.reserveID);
 		if( itr != this->reserveText.GetMap().end() ){
-			//•ÏX‚Å‚«‚È‚¢ƒtƒB[ƒ‹ƒh‚ğã‘‚«
+			//å¤‰æ›´ã§ããªã„ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã‚’ä¸Šæ›¸ã
 			r.presentFlag = itr->second.presentFlag;
 			r.startTimeEpg = itr->second.startTimeEpg;
 			if( setReserveStatus == false ){
@@ -266,7 +266,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 
 			if( r.recSetting.recMode == RECMODE_NO ){
 				if( itr->second.recSetting.recMode != RECMODE_NO ){
-					//ƒoƒ“ƒN‚©‚çíœ
+					//ãƒãƒ³ã‚¯ã‹ã‚‰å‰Šé™¤
 					for( auto jtr = this->tunerBankMap.cbegin(); jtr != this->tunerBankMap.end(); jtr++ ){
 						if( jtr->second->DelReserve(r.reserveID) ){
 							break;
@@ -278,7 +278,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 					minStartTime = min(startTime, minStartTime);
 				}
 			}else{
-				//ƒoƒ“ƒN‚É“n‚·—\–ñî•ñ‚ğì¬
+				//ãƒãƒ³ã‚¯ã«æ¸¡ã™äºˆç´„æƒ…å ±ã‚’ä½œæˆ
 				CTunerBankCtrl::TUNER_RESERVE tr;
 				tr.reserveID = r.reserveID;
 				tr.title = r.title;
@@ -309,7 +309,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				auto jtr = this->tunerBankMap.cbegin();
 				for( ; jtr != this->tunerBankMap.end(); jtr++ ){
 					if( jtr->second->ChgCtrlReserve(&tr) ){
-						//‚±‚Ì—\–ñ‚Í‚±‚Ìƒoƒ“ƒN‚É‘Ò‹@ó‘Ô‚Å‘¶İ‚·‚é
+						//ã“ã®äºˆç´„ã¯ã“ã®ãƒãƒ³ã‚¯ã«å¾…æ©ŸçŠ¶æ…‹ã§å­˜åœ¨ã™ã‚‹
 						if( tr.onid != r.originalNetworkID ||
 						    tr.tsid != r.transportStreamID ||
 						    tr.sid != r.serviceID ||
@@ -318,11 +318,11 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 						    tr.durationSecond != r.durationSecond ||
 						    tr.startMargin != startMargin ||
 						    tr.endMargin != endMargin ){
-							//•K‚¸•ÏX‚·‚×‚«ƒtƒB[ƒ‹ƒh‚ğ•ÏX‚Å‚«‚È‚©‚Á‚½‚Ì‚Å‘Ò‹@ó‘Ô‚ğ‰ğœ‚·‚é
+							//å¿…ãšå¤‰æ›´ã™ã¹ããƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã‚’å¤‰æ›´ã§ããªã‹ã£ãŸã®ã§å¾…æ©ŸçŠ¶æ…‹ã‚’è§£é™¤ã™ã‚‹
 							jtr->second->DelReserve(r.reserveID);
 							bankDeleted = true;
 						}else{
-							//•K‚¸‚µ‚à•ÏX‚·‚é•K—v‚Ì‚È‚¢ƒtƒB[ƒ‹ƒh‚Í‘Ã‹¦‚·‚é
+							//å¿…ãšã—ã‚‚å¤‰æ›´ã™ã‚‹å¿…è¦ã®ãªã„ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã¯å¦¥å”ã™ã‚‹
 							r.title = tr.title;
 							r.stationName = tr.stationName;
 							r.recSetting.recMode = tr.recMode;
@@ -343,7 +343,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 					}
 				}
 				if( jtr == this->tunerBankMap.end() ){
-					//‚±‚Ì—\–ñ‚Í‘Ò‹@ó‘Ô‚Å‚Í‚È‚¢‚Ì‚Å’Pƒ‚Éíœ‚Æ’Ç‰Á‚ÅXV‚Å‚«‚é
+					//ã“ã®äºˆç´„ã¯å¾…æ©ŸçŠ¶æ…‹ã§ã¯ãªã„ã®ã§å˜ç´”ã«å‰Šé™¤ã¨è¿½åŠ ã§æ›´æ–°ã§ãã‚‹
 					for( jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
 						if( jtr->second->DelReserve(tr.reserveID) ){
 							jtr->second->AddReserve(tr);
@@ -352,7 +352,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 					}
 				}
 
-				//‚±‚ê‚ç‚ÌƒtƒB[ƒ‹ƒh‚É•Ï‰»‚ª‚È‚¯‚ê‚Îƒoƒ“ƒN”z’u‚ğÄ\’z‚·‚é•K—v‚Í‚È‚¢
+				//ã“ã‚Œã‚‰ã®ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã«å¤‰åŒ–ãŒãªã‘ã‚Œã°ãƒãƒ³ã‚¯é…ç½®ã‚’å†æ§‹ç¯‰ã™ã‚‹å¿…è¦ã¯ãªã„
 				if( bankDeleted ||
 				    r.originalNetworkID != itr->second.originalNetworkID ||
 				    r.transportStreamID != itr->second.transportStreamID ||
@@ -401,7 +401,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(idList[i]);
 		if( itr != this->reserveText.GetMap().end() ){
 			if( itr->second.recSetting.recMode != RECMODE_NO ){
-				//ƒoƒ“ƒN‚©‚çíœ
+				//ãƒãƒ³ã‚¯ã‹ã‚‰å‰Šé™¤
 				for( auto jtr = this->tunerBankMap.cbegin(); jtr != this->tunerBankMap.end(); jtr++ ){
 					if( jtr->second->DelReserve(idList[i], this->setting.delReserveMode == 0 ? NULL : &retList) ){
 						break;
@@ -414,7 +414,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 		}
 	}
 	for( auto itrRet = retList.begin(); itrRet != retList.end(); itrRet++ ){
-		//³íI—¹‚ğƒLƒƒƒ“ƒZƒ‹’†’f‚É·‚µ‘Ö‚¦‚é
+		//æ­£å¸¸çµ‚äº†ã‚’ã‚­ãƒ£ãƒ³ã‚»ãƒ«ä¸­æ–­ã«å·®ã—æ›¿ãˆã‚‹
 		if( this->setting.delReserveMode == 2 && itrRet->type == CTunerBankCtrl::CHECK_END ){
 			itrRet->type = CTunerBankCtrl::CHECK_END_CANCEL;
 		}
@@ -527,7 +527,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 
 	__int64 boundaryReloadTime = 0;
 
-	//reloadTime‚æ‚è‘O‚Ì—\–ñ‚ğŠJnŠÔ‹t‡‚Éƒ\[ƒg
+	//reloadTimeã‚ˆã‚Šå‰ã®äºˆç´„ã‚’é–‹å§‹æ™‚é–“é€†é †ã«ã‚½ãƒ¼ãƒˆ
 	multimap<__int64, const RESERVE_DATA*> sortTimeMap;
 	sortTimeMap.insert(std::make_pair(-reloadTime, (RESERVE_DATA*)NULL));
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
@@ -539,7 +539,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			}
 		}
 	}
-	//READY_MARGIN•bˆÈã‚Ì–³—\–ñŠÔ‘Ñ‚ğ’T‚·B–³—\–ñŠÔ‘Ñ‚æ‚èŒã‚ë‚¾‚¯‚ğÄŠ„‚è“–‚Ä‚·‚ê‚ÎOK
+	//READY_MARGINç§’ä»¥ä¸Šã®ç„¡äºˆç´„æ™‚é–“å¸¯ã‚’æ¢ã™ã€‚ç„¡äºˆç´„æ™‚é–“å¸¯ã‚ˆã‚Šå¾Œã‚ã ã‘ã‚’å†å‰²ã‚Šå½“ã¦ã™ã‚Œã°OK
 	for( multimap<__int64, const RESERVE_DATA*>::const_iterator itrRes, itrTime = sortTimeMap.begin(); itrTime != sortTimeMap.end(); itrTime++ ){
 		for( (itrRes = itrTime)++; itrRes != sortTimeMap.end(); itrRes++ ){
 			__int64 endTime;
@@ -554,15 +554,15 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 		}
 	}
 
-	//ŠJnÏ‚İ—\–ñƒŠƒXƒg
+	//é–‹å§‹æ¸ˆã¿äºˆç´„ãƒªã‚¹ãƒˆ
 	vector<pair<DWORD, vector<DWORD>>> startedResList;
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
-		//‘Ò‹@ó‘Ô‚É“ü‚Á‚Ä‚¢‚é‚à‚ÌˆÈŠOƒNƒŠƒA
+		//å¾…æ©ŸçŠ¶æ…‹ã«å…¥ã£ã¦ã„ã‚‹ã‚‚ã®ä»¥å¤–ã‚¯ãƒªã‚¢
 		itr->second->ClearNoCtrl(boundaryReloadTime);
 		startedResList.push_back(std::make_pair(itr->first, itr->second->GetReserveIDList()));
 	}
 
-	//boundaryReloadTime‚æ‚èŒã‚Ì—\–ñ‚ğŠJnŠÔ‹t‡‚Éƒ\[ƒg
+	//boundaryReloadTimeã‚ˆã‚Šå¾Œã®äºˆç´„ã‚’é–‹å§‹æ™‚é–“é€†é †ã«ã‚½ãƒ¼ãƒˆ
 	sortTimeMap.clear();
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		if( itr->second.recSetting.recMode != RECMODE_NO ){
@@ -574,7 +574,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			}
 		}
 	}
-	//—\–ñ‚ğ–³—\–ñŠÔ‘Ñ‚²‚Æ‚É‘g•ª‚¯‚µ‚Äƒoƒ“ƒN”z’u‚·‚é(‘g‚²‚Æ‚É“Æ—§‚µ‚Äˆ—‚Å‚«‚é‚Ì‚Å‘¬“x‚â”z’uˆÀ’è«‚ª‘‚·)
+	//äºˆç´„ã‚’ç„¡äºˆç´„æ™‚é–“å¸¯ã”ã¨ã«çµ„åˆ†ã‘ã—ã¦ãƒãƒ³ã‚¯é…ç½®ã™ã‚‹(çµ„ã”ã¨ã«ç‹¬ç«‹ã—ã¦å‡¦ç†ã§ãã‚‹ã®ã§é€Ÿåº¦ã‚„é…ç½®å®‰å®šæ€§ãŒå¢—ã™)
 	for( multimap<__int64, const RESERVE_DATA*>::const_iterator itrRes, itrTime = sortTimeMap.begin(); itrTime != sortTimeMap.end(); ){
 		for( (itrRes = itrTime)++; itrRes != sortTimeMap.end(); itrRes++ ){
 			__int64 endTime;
@@ -585,10 +585,10 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 		}
 		itrTime++;
 		if( itrRes == sortTimeMap.end() ){
-			//ƒoƒ“ƒN–¢Œˆ‚Ì—\–ñƒ}ƒbƒv
+			//ãƒãƒ³ã‚¯æœªæ±ºã®äºˆç´„ãƒãƒƒãƒ—
 			multimap<__int64, const RESERVE_DATA*> sortResMap;
 			for( itrRes = sortTimeMap.begin(); itrRes != itrTime; itrRes++ ){
-				//ƒoƒ“ƒNŒˆ’è‡‚ÌƒL[‚Íƒ`ƒ…[ƒiŒÅ’è—Dæƒrƒbƒg‚Â‚«ÀŒø—Dæ“x(—\–ñ—Dæ“x<<60|ƒ`ƒ…[ƒiŒÅ’è—Dæƒrƒbƒg<<59|ŠJn‡)
+				//ãƒãƒ³ã‚¯æ±ºå®šé †ã®ã‚­ãƒ¼ã¯ãƒãƒ¥ãƒ¼ãƒŠå›ºå®šå„ªå…ˆãƒ“ãƒƒãƒˆã¤ãå®ŸåŠ¹å„ªå…ˆåº¦(äºˆç´„å„ªå…ˆåº¦<<60|ãƒãƒ¥ãƒ¼ãƒŠå›ºå®šå„ªå…ˆãƒ“ãƒƒãƒˆ<<59|é–‹å§‹é †)
 				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | (itrRes->second->reserveID & 0xFFFF);
 				__int64 priority = (this->setting.backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
 				__int64 fixedBit = (this->setting.fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->setting.backPriority : !this->setting.backPriority;
@@ -596,22 +596,22 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			}
 			itrTime = sortTimeMap.erase(sortTimeMap.begin(), itrTime);
 
-			//ƒoƒ“ƒNŒˆ’è‚µ‚½—\–ñƒ}ƒbƒv
+			//ãƒãƒ³ã‚¯æ±ºå®šã—ãŸäºˆç´„ãƒãƒƒãƒ—
 			map<DWORD, vector<CHK_RESERVE_DATA>> bankResMap;
 			for( size_t i = 0; i < startedResList.size(); i++ ){
 				bankResMap.insert(std::make_pair(startedResList[i].first, vector<CHK_RESERVE_DATA>()));
-				//ŠJnÏ‚İ—\–ñ‚Í‚»‚Ì‚Ü‚Üƒoƒ“ƒNŒˆ’è
+				//é–‹å§‹æ¸ˆã¿äºˆç´„ã¯ãã®ã¾ã¾ãƒãƒ³ã‚¯æ±ºå®š
 				for( multimap<__int64, const RESERVE_DATA*>::const_iterator itr = sortResMap.begin(); itr != sortResMap.end(); ){
 					if( std::find(startedResList[i].second.begin(), startedResList[i].second.end(), itr->second->reserveID) != startedResList[i].second.end() ){
 						CHK_RESERVE_DATA item;
 						CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
 						item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
 						item.startOrder = abs(itr->first) & 0x07FFFFFFFFFFFFFF;
-						//ƒ`ƒ…[ƒiŒÅ’è—Dæƒrƒbƒg‚ğœ‹
+						//ãƒãƒ¥ãƒ¼ãƒŠå›ºå®šå„ªå…ˆãƒ“ãƒƒãƒˆã‚’é™¤å»
 						item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
 						item.started = true;
 						item.r = itr->second;
-						//ŠJnÏ‚İ—\–ñ‚Í‚·‚×‚Äƒoƒ“ƒN“à‚Å“¯ˆêƒ`ƒƒƒ“ƒlƒ‹‚È‚Ì‚ÅChkInsertStatus()‚Í•s—v
+						//é–‹å§‹æ¸ˆã¿äºˆç´„ã¯ã™ã¹ã¦ãƒãƒ³ã‚¯å†…ã§åŒä¸€ãƒãƒ£ãƒ³ãƒãƒ«ãªã®ã§ChkInsertStatus()ã¯ä¸è¦
 						bankResMap[startedResList[i].first].push_back(item);
 						sortResMap.erase(itr++);
 					}else{
@@ -625,20 +625,20 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 				CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
 				item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
 				item.startOrder = abs(itr->first) & 0x07FFFFFFFFFFFFFF;
-				//ƒ`ƒ…[ƒiŒÅ’è—Dæƒrƒbƒg‚ğœ‹
+				//ãƒãƒ¥ãƒ¼ãƒŠå›ºå®šå„ªå…ˆãƒ“ãƒƒãƒˆã‚’é™¤å»
 				item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
 				item.started = false;
 				item.r = itr->second;
-				//NGƒ`ƒ…[ƒi‚ª’Ç‰Á‚³‚ê‚Ä‚¢‚é‚Æ‚«‚Íƒ`ƒ…[ƒiID‚ğŒÅ’è‚µ‚È‚¢
+				//NGãƒãƒ¥ãƒ¼ãƒŠãŒè¿½åŠ ã•ã‚Œã¦ã„ã‚‹ã¨ãã¯ãƒãƒ¥ãƒ¼ãƒŠIDã‚’å›ºå®šã—ãªã„
 				if( itr->second->recSetting.tunerID != 0 && itr->second->ngTunerIDList.empty() ){
-					//ƒ`ƒ…[ƒiIDŒÅ’è
+					//ãƒãƒ¥ãƒ¼ãƒŠIDå›ºå®š
 					map<DWORD, vector<CHK_RESERVE_DATA>>::iterator itrBank = bankResMap.find(itr->second->recSetting.tunerID); 
 					if( itrBank != bankResMap.end() &&
 					    this->tunerBankMap.find(itrBank->first)->second->GetCh(itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
 						CHK_RESERVE_DATA testItem = item;
 						ChkInsertStatus(itrBank->second, testItem, false);
 						if( testItem.cutEndTime - testItem.cutStartTime > CTunerBankCtrl::READY_MARGIN * I64_1SEC ){
-							//˜^‰æŠÔ‚ª‚ ‚é
+							//éŒ²ç”»æ™‚é–“ãŒã‚ã‚‹
 							ChkInsertStatus(itrBank->second, item, true);
 							itrBank->second.push_back(item);
 							sortResMap.erase(itr++);
@@ -646,12 +646,12 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 						}
 					}
 				}else{
-					//‚à‚Á‚Æ‚à—Ç‚¢‚Æv‚í‚ê‚éƒoƒ“ƒN‚ÉŠ„‚è“–‚Ä‚é
+					//ã‚‚ã£ã¨ã‚‚è‰¯ã„ã¨æ€ã‚ã‚Œã‚‹ãƒãƒ³ã‚¯ã«å‰²ã‚Šå½“ã¦ã‚‹
 					map<DWORD, vector<CHK_RESERVE_DATA>>::iterator itrMin = bankResMap.end();
 					__int64 costMin = LLONG_MAX;
 					__int64 durationMin = 0;
 					for( map<DWORD, vector<CHK_RESERVE_DATA>>::iterator jtr = bankResMap.begin(); jtr != bankResMap.end(); jtr++ ){
-						//NGƒ`ƒ…[ƒi‚ğœ‚­
+						//NGãƒãƒ¥ãƒ¼ãƒŠã‚’é™¤ã
 						if( std::find(itr->second->ngTunerIDList.begin(), itr->second->ngTunerIDList.end(), jtr->first) == itr->second->ngTunerIDList.end() &&
 						    this->tunerBankMap.find(jtr->first)->second->GetCh(itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
 							CHK_RESERVE_DATA testItem = item;
@@ -664,7 +664,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 						}
 					}
 					if( itrMin != bankResMap.end() && durationMin > CTunerBankCtrl::READY_MARGIN * I64_1SEC ){
-						//˜^‰æŠÔ‚ª‚ ‚é
+						//éŒ²ç”»æ™‚é–“ãŒã‚ã‚‹
 						ChkInsertStatus(itrMin->second, item, true);
 						itrMin->second.push_back(item);
 						sortResMap.erase(itr++);
@@ -674,17 +674,17 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 				itr++;
 			}
 
-			//ÀÛ‚Éƒoƒ“ƒN‚É’Ç‰Á‚·‚é
+			//å®Ÿéš›ã«ãƒãƒ³ã‚¯ã«è¿½åŠ ã™ã‚‹
 			for( map<DWORD, vector<CHK_RESERVE_DATA>>::const_iterator itr = bankResMap.begin(); itr != bankResMap.end(); itr++ ){
 				for( size_t i = 0; i < itr->second.size(); i++ ){
 					const RESERVE_DATA& r = *itr->second[i].r;
 					__int64 startTime, endTime;
 					CalcEntireReserveTime(&startTime, &endTime, r);
-					//‚©‚Ô‚èó‘Ô‚ğ‹L˜^‚·‚é(Ql’ö“x‚Ìî•ñ)
+					//ã‹ã¶ã‚ŠçŠ¶æ…‹ã‚’è¨˜éŒ²ã™ã‚‹(å‚è€ƒç¨‹åº¦ã®æƒ…å ±)
 					this->reserveText.SetOverlapMode(r.reserveID,
 						itr->second[i].cutStartTime == startTime - CTunerBankCtrl::READY_MARGIN * I64_1SEC &&
 						itr->second[i].cutEndTime == endTime ? RESERVE_EXECUTE : RESERVE_PILED_UP);
-					//ƒoƒ“ƒN‚É“n‚·—\–ñî•ñ‚ğì¬
+					//ãƒãƒ³ã‚¯ã«æ¸¡ã™äºˆç´„æƒ…å ±ã‚’ä½œæˆ
 					CTunerBankCtrl::TUNER_RESERVE tr;
 					tr.reserveID = r.reserveID;
 					tr.title = r.title;
@@ -724,38 +724,38 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 
 	for( size_t i = 0; i < bank.size(); i++ ){
 		if( bank[i].r->originalNetworkID == inItem.r->originalNetworkID && bank[i].r->transportStreamID == inItem.r->transportStreamID ){
-			//“¯ˆêƒ`ƒƒƒ“ƒlƒ‹
+			//åŒä¸€ãƒãƒ£ãƒ³ãƒãƒ«
 			if( inItem.cutStartTime < bank[i].cutStartTime && bank[i].cutStartTime < inItem.cutEndTime ||
 			    inItem.cutStartTime < bank[i].cutEndTime && bank[i].cutEndTime < inItem.cutEndTime ||
 			    inItem.cutStartTime > bank[i].cutStartTime && bank[i].cutEndTime > inItem.cutEndTime ){
-				//d‚È‚è‚ª‚ ‚é
+				//é‡ãªã‚ŠãŒã‚ã‚‹
 				overlapped = true;
 			}
 		}else{
 			if( bank[i].effectivePriority < inItem.effectivePriority ){
-				//‘Šè‚ª‚—Dæ“x‚È‚Ì‚Å©•ª‚Ì—\–ñŠÔ‚ğí‚é
+				//ç›¸æ‰‹ãŒé«˜å„ªå…ˆåº¦ãªã®ã§è‡ªåˆ†ã®äºˆç´„æ™‚é–“ã‚’å‰Šã‚‹
 				if( bank[i].startOrder > inItem.startOrder ){
-					//‘Šè‚ª’x‚ê‚ÄŠJn‚·‚é‚Ì‚Å©•ª‚ÌŒã•û‚ğí‚é
+					//ç›¸æ‰‹ãŒé…ã‚Œã¦é–‹å§‹ã™ã‚‹ã®ã§è‡ªåˆ†ã®å¾Œæ–¹ã‚’å‰Šã‚‹
 					__int64 cutEndTime = max(min(inItem.cutEndTime, bank[i].cutStartTime), inItem.cutStartTime);
 					otherCosts[min(max<int>(inItem.r->recSetting.priority, 1), 5) - 1] += inItem.cutEndTime - cutEndTime;
 					inItem.cutEndTime = cutEndTime;
 				}else{
-					//‘O•û‚ğí‚é
+					//å‰æ–¹ã‚’å‰Šã‚‹
 					__int64 cutStartTime = min(max(inItem.cutStartTime, bank[i].cutEndTime), inItem.cutEndTime);
 					otherCosts[min(max<int>(inItem.r->recSetting.priority, 1), 5) - 1] += cutStartTime - inItem.cutStartTime;
 					inItem.cutStartTime = cutStartTime;
 				}
 			}else{
-				//‘Šè‚Ì—\–ñŠÔ‚ğí‚é
+				//ç›¸æ‰‹ã®äºˆç´„æ™‚é–“ã‚’å‰Šã‚‹
 				if( inItem.startOrder > bank[i].startOrder ){
-					//‘Šè‚ÌŒã•û‚ğí‚é
+					//ç›¸æ‰‹ã®å¾Œæ–¹ã‚’å‰Šã‚‹
 					__int64 cutEndTime = max(min(bank[i].cutEndTime, inItem.cutStartTime), bank[i].cutStartTime);
 					otherCosts[min(max<int>(bank[i].r->recSetting.priority, 1), 5) - 1] += bank[i].cutEndTime - cutEndTime;
 					if( modifyBank ){
 						bank[i].cutEndTime = cutEndTime;
 					}
 				}else{
-					//‘O•û‚ğí‚é
+					//å‰æ–¹ã‚’å‰Šã‚‹
 					__int64 cutStartTime = bank[i].started ? bank[i].cutEndTime : min(max(bank[i].cutStartTime, inItem.cutEndTime), bank[i].cutEndTime);
 					otherCosts[min(max<int>(bank[i].r->recSetting.priority, 1), 5) - 1] += cutStartTime - bank[i].cutStartTime;
 					if( modifyBank ){
@@ -766,7 +766,7 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 		}
 	}
 
-	//—Dæ“x‚²‚Æ‚Éd‚İ‚ğ‚Â‚¯‚ÄƒRƒXƒg‚ğZo
+	//å„ªå…ˆåº¦ã”ã¨ã«é‡ã¿ã‚’ã¤ã‘ã¦ã‚³ã‚¹ãƒˆã‚’ç®—å‡º
 	__int64 cost = 0;
 	__int64 weight = 1;
 	for( int i = 0; i < 5; i++ ){
@@ -774,7 +774,7 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 		weight *= 5400;
 	}
 	if( cost == 0 && overlapped ){
-		//TODO: ‚Æ‚è‚ ‚¦‚¸ˆê—¥‚É-10•b‚Æ‚·‚é‚ªAd‚È‚è“x‡‚ğƒRƒXƒg‚É”½‰f‚µ‚Ä‚à‚¢‚¢‚©‚à
+		//TODO: ã¨ã‚Šã‚ãˆãšä¸€å¾‹ã«-10ç§’ã¨ã™ã‚‹ãŒã€é‡ãªã‚Šåº¦åˆã‚’ã‚³ã‚¹ãƒˆã«åæ˜ ã—ã¦ã‚‚ã„ã„ã‹ã‚‚
 		cost = -1;
 	}
 	return cost;
@@ -792,9 +792,9 @@ void CReserveManager::CalcEntireReserveTime(__int64* startTime, __int64* endTime
 		startMargin = data.recSetting.startMargine * I64_1SEC;
 		endMargin = data.recSetting.endMargine * I64_1SEC;
 	}
-	//ŠJnƒ}[ƒWƒ“‚ÍŒ³‚Ì—\–ñI—¹‚ğ’´‚¦‚Ä•‰‚Å‚ ‚Á‚Ä‚Í‚È‚ç‚È‚¢
+	//é–‹å§‹ãƒãƒ¼ã‚¸ãƒ³ã¯å…ƒã®äºˆç´„çµ‚äº†æ™‚åˆ»ã‚’è¶…ãˆã¦è² ã§ã‚ã£ã¦ã¯ãªã‚‰ãªã„
 	startMargin = max(startMargin, startTime_ - endTime_);
-	//I—¹ƒ}[ƒWƒ“‚ÍŒ³‚Ì—\–ñŠJn‚ğ’´‚¦‚Ä•‰‚Å‚ ‚Á‚Ä‚Í‚È‚ç‚È‚¢
+	//çµ‚äº†ãƒãƒ¼ã‚¸ãƒ³ã¯å…ƒã®äºˆç´„é–‹å§‹æ™‚åˆ»ã‚’è¶…ãˆã¦è² ã§ã‚ã£ã¦ã¯ãªã‚‰ãªã„
 	endMargin = max(endMargin, startTime_ - min(startMargin, 0LL) - endTime_);
 	if( startTime != NULL ){
 		*startTime = startTime_ - startMargin;
@@ -813,7 +813,7 @@ wstring CReserveManager::GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo,
 	SYSTEMTIME stNewEnd;
 	ConvertSystemTime(ConvertI64Time(stNew) + newInfo.durationSecond * I64_1SEC, &stNewEnd);
 	wstring msg;
-	Format(msg, L"%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\nEventID:0x%04X\r\n«\r\n%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\nEventID:0x%04X",
+	Format(msg, L"%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\nEventID:0x%04X\r\nâ†“\r\n%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\nEventID:0x%04X",
 		oldInfo.stationName.c_str(), stOld.wYear, stOld.wMonth, stOld.wDay, stOld.wHour, stOld.wMinute,
 		stOldEnd.wHour, stOldEnd.wMinute, oldInfo.title.c_str(), oldInfo.eventID,
 		newInfo.stationName.c_str(), stNew.wYear, stNew.wMonth, stNew.wDay, stNew.wHour, stNew.wMinute,
@@ -828,17 +828,17 @@ void CReserveManager::CheckTuijyu()
 	vector<RESERVE_DATA> chgList;
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		if( itr->second.eventID == 0xFFFF || itr->second.reserveStatus != ADD_RESERVE_NORMAL ){
-			//ƒvƒƒOƒ‰ƒ€—\–ñA‚¨‚æ‚ÑÅVEPG(ƒ`ƒ…[ƒi‚©‚ç‚Ìî•ñ)‚Å•ÏXÏ‚İ‚Ì—\–ñ‚Í‘ÎÛŠO
+			//ãƒ—ãƒ­ã‚°ãƒ©ãƒ äºˆç´„ã€ãŠã‚ˆã³æœ€æ–°EPG(ãƒãƒ¥ãƒ¼ãƒŠã‹ã‚‰ã®æƒ…å ±)ã§å¤‰æ›´æ¸ˆã¿ã®äºˆç´„ã¯å¯¾è±¡å¤–
 			continue;
 		}
-		//Œ´ì‚ÆˆÙ‚È‚èrecMode==RECMODE_NO‚àˆµ‚¤B‚Ü‚½tuijyuuFlag‚ÍˆÓ–¡‚ª•Ï‰»‚µ‚Ä‚¢‚é‚Ì‚Å’ˆÓ
+		//åŸä½œã¨ç•°ãªã‚ŠrecMode==RECMODE_NOã‚‚æ‰±ã†ã€‚ã¾ãŸtuijyuuFlagã¯æ„å‘³ãŒå¤‰åŒ–ã—ã¦ã„ã‚‹ã®ã§æ³¨æ„
 		EPGDB_EVENT_INFO info;
 		if( this->epgDBManager.SearchEpg(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, itr->second.eventID, &info) ){
-			//ƒ}[ƒW‚Ì“s‡‚ÅEIT[p/f]—R—ˆ‚Ì–¢’è‚ÌƒCƒxƒ“ƒg‚ª¬‚¶‚é‚©‚à‚µ‚ê‚È‚¢‚ª‚±‚±‚Å‚Í–³‹‚·‚é
+			//ãƒãƒ¼ã‚¸ã®éƒ½åˆã§EIT[p/f]ç”±æ¥ã®æœªå®šæ™‚åˆ»ã®ã‚¤ãƒ™ãƒ³ãƒˆãŒæ··ã˜ã‚‹ã‹ã‚‚ã—ã‚Œãªã„ãŒã“ã“ã§ã¯ç„¡è¦–ã™ã‚‹
 			if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
 				__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(itr->second.startTime);
 				if( startDiff < -12 * 3600 * I64_1SEC || 12 * 3600 * I64_1SEC < startDiff ){
-					//EventID‚ÌÄg—p‚É”õ‚¦‚é‚½‚ß12ŠÔˆÈã‚ÌˆÚ“®‚Í‘ÎÛŠO
+					//EventIDã®å†ä½¿ç”¨ã«å‚™ãˆã‚‹ãŸã‚12æ™‚é–“ä»¥ä¸Šã®ç§»å‹•ã¯å¯¾è±¡å¤–
 					continue;
 				}
 				RESERVE_DATA r = itr->second;
@@ -860,7 +860,7 @@ void CReserveManager::CheckTuijyu()
 					wstring msg = GetNotifyChgReserveMessage(itr->second, r);
 					this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_CHG_TUIJYU, msg);
 					Replace(msg, L"\r\n", L" ");
-					_OutputDebugString(L"œ—\–ñ(ID=%d)‚ğ’Ç] %ls\r\n", r.reserveID, msg.c_str());
+					_OutputDebugString(L"â—äºˆç´„(ID=%d)ã‚’è¿½å¾“ %ls\r\n", r.reserveID, msg.c_str());
 				}
 			}
 		}
@@ -873,17 +873,17 @@ void CReserveManager::CheckTuijyu()
 void CReserveManager::CheckTuijyuTuner()
 {
 	vector<DWORD> chkChList;
-	//tunerBankMap‚»‚Ì‚à‚Ì‚Í”r‘¼§Œä‚Ì‘ÎÛŠO
+	//tunerBankMapãã®ã‚‚ã®ã¯æ’ä»–åˆ¶å¾¡ã®å¯¾è±¡å¤–
 	for( auto itrBank = this->tunerBankMap.cbegin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
 		CBlockLock lock(&this->managerLock);
 
 		WORD onid, tsid;
 		if( itrBank->second->GetCurrentChID(&onid, &tsid) == false ){
-			//‚±‚Ìƒ`ƒ…[ƒi‚Í‹N“®‚µ‚Ä‚¢‚È‚¢
+			//ã“ã®ãƒãƒ¥ãƒ¼ãƒŠã¯èµ·å‹•ã—ã¦ã„ãªã„
 			continue;
 		}
 		if( std::find(chkChList.begin(), chkChList.end(), (DWORD)onid << 16 | tsid) != chkChList.end() ){
-			//‚±‚Ìƒ`ƒƒƒ“ƒlƒ‹‚Íƒ`ƒFƒbƒNÏ‚İ
+			//ã“ã®ãƒãƒ£ãƒ³ãƒãƒ«ã¯ãƒã‚§ãƒƒã‚¯æ¸ˆã¿
 			continue;
 		}
 		chkChList.push_back((DWORD)onid << 16 | tsid);
@@ -894,7 +894,7 @@ void CReserveManager::CheckTuijyuTuner()
 		vector<pair<ULONGLONG, DWORD>>::const_iterator itrCache = std::lower_bound(
 			cacheList.begin(), cacheList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, 0, 0), 0));
 		for( ; itrCache != cacheList.end() && itrCache->first <= Create64PgKey(onid, tsid, 0xFFFF, 0xFFFF); ){
-			//‹N“®’†‚Ìƒ`ƒƒƒ“ƒlƒ‹‚Éˆê’v‚·‚é—\–ñ‚ğEIT[p/f]‚ÆÆ‡‚·‚é
+			//èµ·å‹•ä¸­ã®ãƒãƒ£ãƒ³ãƒãƒ«ã«ä¸€è‡´ã™ã‚‹äºˆç´„ã‚’EIT[p/f]ã¨ç…§åˆã™ã‚‹
 			WORD sid = itrCache->first >> 16 & 0xFFFF;
 			EPGDB_EVENT_INFO resPfVal[2];
 			int nowSuccess = itrBank->second->GetEventPF(sid, false, &resPfVal[0]);
@@ -904,13 +904,13 @@ void CReserveManager::CheckTuijyuTuner()
 				if( itrRes->second.eventID == 0xFFFF ||
 				    itrRes->second.recSetting.recMode == RECMODE_NO ||
 				    ConvertI64Time(itrRes->second.startTime) > GetNowI64Time() + 6 * 3600 * I64_1SEC ){
-					//ƒvƒƒOƒ‰ƒ€—\–ñA–³Œø—\–ñA‚¨‚æ‚Ñ6ŠÔˆÈãæ‚Ì—\–ñ‚Í‘ÎÛŠO
+					//ãƒ—ãƒ­ã‚°ãƒ©ãƒ äºˆç´„ã€ç„¡åŠ¹äºˆç´„ã€ãŠã‚ˆã³6æ™‚é–“ä»¥ä¸Šå…ˆã®äºˆç´„ã¯å¯¾è±¡å¤–
 					continue;
 				}
 				//ADD_RESERVE_NORMAL,RELAY
-				//„¥¨CHG_PF2
-				//„¤„Ÿ„©¨CHG_PF©„¢
-				//    „¤„Ÿ„¨¨UNKNOWN_END
+				//â”œâ†’CHG_PF2
+				//â””â”€â”¼â†’CHG_PFâ†â”
+				//    â””â”€â”´â†’UNKNOWN_END
 				bool pfFound = false;
 				bool pfUnknownEnd = false;
 				bool pfExplicitlyUnknownEnd = false;
@@ -919,15 +919,15 @@ void CReserveManager::CheckTuijyuTuner()
 					if( i == 1 && (info.StartTimeFlag == 0 || info.DurationFlag == 0) ){
 						pfUnknownEnd = true;
 						if( info.StartTimeFlag == 0 && info.DurationFlag == 0 ){
-							//–¢’èƒCƒxƒ“ƒg‚Ì‚Æ‚«‚ÍˆÈ~‚Ì•ú‘—–¢’è‚ª–¾¦‚³‚ê‚Ä‚¢‚é‚Æ‚İ‚È‚·(å‚ÉNHK)
+							//æœªå®šã‚¤ãƒ™ãƒ³ãƒˆã®ã¨ãã¯ä»¥é™ã®æ”¾é€æœªå®šãŒæ˜ç¤ºã•ã‚Œã¦ã„ã‚‹ã¨ã¿ãªã™(ä¸»ã«NHK)
 							pfExplicitlyUnknownEnd = true;
 						}
 					}
 					if( info.event_id == itrRes->second.eventID && (info.StartTimeFlag != 0 || info.DurationFlag != 0) ){
-						//Œ»İ(present)‚ÉŒ»‚ê‚½—\–ñ‚ª”Ô‘gI—¹Œã‚ÉŠÔ–¢’è’Ç]‚ÉˆÚs‚µ‚È‚¢‚æ‚¤‚É‚·‚é‚½‚ß(‹ŒSetChkPfInfo()‚É‘Š“–)
+						//ç¾åœ¨(present)ã«ç¾ã‚ŒãŸäºˆç´„ãŒç•ªçµ„çµ‚äº†å¾Œã«æ™‚é–“æœªå®šè¿½å¾“ã«ç§»è¡Œã—ãªã„ã‚ˆã†ã«ã™ã‚‹ãŸã‚(æ—§SetChkPfInfo()ã«ç›¸å½“)
 						if( i == 0 && itrRes->second.presentFlag == FALSE ){
 							this->reserveText.SetPresentFlag(itrRes->first, TRUE);
-							_OutputDebugString(L"œ—\–ñ(ID=%d)‚ÌEIT[present]‚ğŠm”F‚µ‚Ü‚µ‚½\r\n", itrRes->first);
+							_OutputDebugString(L"â—äºˆç´„(ID=%d)ã®EIT[present]ã‚’ç¢ºèªã—ã¾ã—ãŸ\r\n", itrRes->first);
 						}
 						RESERVE_DATA r = itrRes->second;
 						bool chgRes = false;
@@ -947,14 +947,14 @@ void CReserveManager::CheckTuijyuTuner()
 								chgRes = true;
 							}
 							if( info.DurationFlag == 0 ){
-								//Œp‘±ŠÔ–¢’èBI—¹‚Ü‚Å5•ª‚ğØ‚é—\–ñ‚Í5•ªL‚Î‚·
+								//ç¶™ç¶šæ™‚é–“æœªå®šã€‚çµ‚äº†ã¾ã§5åˆ†ã‚’åˆ‡ã‚‹äºˆç´„ã¯5åˆ†ä¼¸ã°ã™
 								__int64 endTime;
 								CalcEntireReserveTime(NULL, &endTime, r);
 								if( endTime < GetNowI64Time() + 300 * I64_1SEC ){
 									r.durationSecond += 300;
 									r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 									chgRes = true;
-									OutputDebugString(L"œp/f Œp‘±ŠÔ–¢’è‚ÌŒ»İ/ŸƒCƒxƒ“ƒg‚Ì—\–ñ‚ğ‰„’·‚µ‚Ü‚·\r\n");
+									OutputDebugString(L"â—p/f ç¶™ç¶šæ™‚é–“æœªå®šã®ç¾åœ¨/æ¬¡ã‚¤ãƒ™ãƒ³ãƒˆã®äºˆç´„ã‚’å»¶é•·ã—ã¾ã™\r\n");
 								}
 							}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
 								r.durationSecond = info.durationSec;
@@ -962,14 +962,14 @@ void CReserveManager::CheckTuijyuTuner()
 								chgRes = true;
 							}
 						}else{
-							//ŠJn–¢’èBŸ(following)‚©‚ÂI—¹‚Ü‚Å5•ª‚ğØ‚é—\–ñ‚Í5•ªL‚Î‚·
+							//é–‹å§‹æ™‚åˆ»æœªå®šã€‚æ¬¡(following)ã‹ã¤çµ‚äº†ã¾ã§5åˆ†ã‚’åˆ‡ã‚‹äºˆç´„ã¯5åˆ†ä¼¸ã°ã™
 							__int64 endTime;
 							CalcEntireReserveTime(NULL, &endTime, r);
 							if( i == 1 && endTime < GetNowI64Time() + 300 * I64_1SEC ){
 								r.durationSecond += 300;
 								r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 								chgRes = true;
-								OutputDebugString(L"œp/f ŠJn–¢’è‚ÌŸƒCƒxƒ“ƒg‚Ì—\–ñ‚ğ‰„’·‚µ‚Ü‚·\r\n");
+								OutputDebugString(L"â—p/f é–‹å§‹æ™‚åˆ»æœªå®šã®æ¬¡ã‚¤ãƒ™ãƒ³ãƒˆã®äºˆç´„ã‚’å»¶é•·ã—ã¾ã™\r\n");
 							}
 						}
 						if( chgRes ){
@@ -977,16 +977,16 @@ void CReserveManager::CheckTuijyuTuner()
 							wstring msg = GetNotifyChgReserveMessage(itrRes->second, r);
 							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
 							Replace(msg, L"\r\n", L" ");
-							_OutputDebugString(L"œp/f —\–ñ(ID=%d)‚ğ’Ç] %ls\r\n", r.reserveID, msg.c_str());
+							_OutputDebugString(L"â—p/f äºˆç´„(ID=%d)ã‚’è¿½å¾“ %ls\r\n", r.reserveID, msg.c_str());
 						}
-						//Œ»İ(present)‚É‚Â‚¢‚Ä‚ÍƒCƒxƒ“ƒgƒŠƒŒ[‚àƒ`ƒFƒbƒN
+						//ç¾åœ¨(present)ã«ã¤ã„ã¦ã¯ã‚¤ãƒ™ãƒ³ãƒˆãƒªãƒ¬ãƒ¼ã‚‚ãƒã‚§ãƒƒã‚¯
 						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfoGroupType ){
-							//ƒCƒxƒ“ƒgƒŠƒŒ[‚ ‚è
+							//ã‚¤ãƒ™ãƒ³ãƒˆãƒªãƒ¬ãƒ¼ã‚ã‚Š
 							vector<EPGDB_EVENT_DATA>::const_iterator itrR = info.eventRelayInfo.eventDataList.begin();
 							for( ; itrR != info.eventRelayInfo.eventDataList.end(); itrR++ ){
 								if( IsFindReserve(itrR->original_network_id, itrR->transport_stream_id,
 								                  itrR->service_id, itrR->event_id, r.recSetting.tunerID) ){
-									//ƒŠƒŒ[Ï‚İ
+									//ãƒªãƒ¬ãƒ¼æ¸ˆã¿
 									break;
 								}
 							}
@@ -996,10 +996,10 @@ void CReserveManager::CheckTuijyuTuner()
 									map<LONGLONG, CH_DATA5>::const_iterator itrCh = this->chUtil.GetMap().find(
 										Create64Key(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id));
 									if( itrCh != this->chUtil.GetMap().end() && relayAddList.empty() ){
-										//ƒŠƒŒ[‚Å‚«‚éƒ`ƒƒƒ“ƒlƒ‹”­Œ©
+										//ãƒªãƒ¬ãƒ¼ã§ãã‚‹ãƒãƒ£ãƒ³ãƒãƒ«ç™ºè¦‹
 										RESERVE_DATA rr;
-										rr.title = L"(ƒCƒxƒ“ƒgƒŠƒŒ[)" + r.title;
-										//ƒŠƒŒ[Œ³‚ÌI—¹ŠÔ‚ğƒŠƒŒ[æ‚ÌŠJnŠÔ‚Æ‚·‚é
+										rr.title = L"(ã‚¤ãƒ™ãƒ³ãƒˆãƒªãƒ¬ãƒ¼)" + r.title;
+										//ãƒªãƒ¬ãƒ¼å…ƒã®çµ‚äº†æ™‚é–“ã‚’ãƒªãƒ¬ãƒ¼å…ˆã®é–‹å§‹æ™‚é–“ã¨ã™ã‚‹
 										ConvertSystemTime(ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC, &rr.startTime);
 										rr.startTimeEpg = rr.startTime;
 										rr.durationSecond = 600;
@@ -1008,11 +1008,11 @@ void CReserveManager::CheckTuijyuTuner()
 										rr.transportStreamID = itrR->transport_stream_id;
 										rr.serviceID = itrR->service_id;
 										rr.eventID = itrR->event_id;
-										//˜^‰æİ’è‚ÍƒŠƒŒ[Œ³‚Ì—\–ñ‚ğŒp³
+										//éŒ²ç”»è¨­å®šã¯ãƒªãƒ¬ãƒ¼å…ƒã®äºˆç´„ã‚’ç¶™æ‰¿
 										rr.recSetting = r.recSetting;
 										rr.reserveStatus = ADD_RESERVE_RELAY;
 										relayAddList.push_back(rr);
-										OutputDebugString(L"šƒCƒxƒ“ƒgƒŠƒŒ[’Ç‰Á\r\n");
+										OutputDebugString(L"â˜…ã‚¤ãƒ™ãƒ³ãƒˆãƒªãƒ¬ãƒ¼è¿½åŠ \r\n");
 										break;
 									}
 								}
@@ -1022,32 +1022,32 @@ void CReserveManager::CheckTuijyuTuner()
 						break;
 					}
 				}
-				//EIT[p/f]‚É‚ ‚é‚à‚Ì‚âŒ»İ(present)‚ÉŒ»‚ê‚½‚±‚Æ‚Ì‚ ‚é—\–ñ‚ÍœŠO‚·‚é
+				//EIT[p/f]ã«ã‚ã‚‹ã‚‚ã®ã‚„ç¾åœ¨(present)ã«ç¾ã‚ŒãŸã“ã¨ã®ã‚ã‚‹äºˆç´„ã¯é™¤å¤–ã™ã‚‹
 				if( pfFound == false && itrRes->second.presentFlag == FALSE ){
 					RESERVE_DATA r = itrRes->second;
 					bool chgRes = false;
 					bool chgResStatusOnly = false;
 					if( pfUnknownEnd ){
-						//EIT[p/f]‚ÌŒp‘±ŠÔ–¢’èBˆÈ~‚Ì—\–ñ‚àŠÔ–¢’è‚Æ‚İ‚È‚µAI—¹‚Ü‚Å5•ª‚ğØ‚é—\–ñ‚Í5•ªL‚Î‚·
+						//EIT[p/f]ã®ç¶™ç¶šæ™‚é–“æœªå®šã€‚ä»¥é™ã®äºˆç´„ã‚‚æ™‚é–“æœªå®šã¨ã¿ãªã—ã€çµ‚äº†ã¾ã§5åˆ†ã‚’åˆ‡ã‚‹äºˆç´„ã¯5åˆ†ä¼¸ã°ã™
 						__int64 startTime, endTime;
 						CalcEntireReserveTime(&startTime, &endTime, r);
 						if( endTime - startTime < this->setting.tuijyuHour * 3600 * I64_1SEC && endTime < GetNowI64Time() + 300 * I64_1SEC ){
 							r.durationSecond += 300;
 							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 							chgRes = true;
-							OutputDebugString(L"œŠÔ–¢’è‚Ì’ÊíƒCƒxƒ“ƒg‚Ì—\–ñ‚ğ‰„’·‚µ‚Ü‚·\r\n");
+							OutputDebugString(L"â—æ™‚é–“æœªå®šã®é€šå¸¸ã‚¤ãƒ™ãƒ³ãƒˆã®äºˆç´„ã‚’å»¶é•·ã—ã¾ã™\r\n");
 						}
 						if( pfExplicitlyUnknownEnd && r.reserveStatus != ADD_RESERVE_UNKNOWN_END && ConvertI64Time(r.startTime) < GetNowI64Time() + 3600 * I64_1SEC ){
-							//–¾¦“I‚È•ú‘—–¢’è‚Ìê‡‚ÍŠJn‚Ü‚Å60•ª‚ğØ‚é“_‚ÅUNKNOWN_END‚É‚·‚é
-							//(‚±‚Ìè‡’l‚ÍŠÔ–¢’è‰ğÁŒã‚ÌEIT[p/f]‚ÉƒCƒxƒ“ƒgID•ÏX‚ÅŒ»‚ê‚é‰Â”\«‚ª‚ ‚è‚»‚¤‚È”ÍˆÍ‚Æ‚µ‚Ä“K“–‚ÉŒˆ‚ß‚½‚à‚Ì)
+							//æ˜ç¤ºçš„ãªæ”¾é€æœªå®šã®å ´åˆã¯é–‹å§‹ã¾ã§60åˆ†ã‚’åˆ‡ã‚‹æ™‚ç‚¹ã§UNKNOWN_ENDã«ã™ã‚‹
+							//(ã“ã®é–¾å€¤ã¯æ™‚é–“æœªå®šè§£æ¶ˆå¾Œã®EIT[p/f]ã«ã‚¤ãƒ™ãƒ³ãƒˆIDå¤‰æ›´ã§ç¾ã‚Œã‚‹å¯èƒ½æ€§ãŒã‚ã‚Šãã†ãªç¯„å›²ã¨ã—ã¦é©å½“ã«æ±ºã‚ãŸã‚‚ã®)
 							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 							chgRes = true;
 							chgResStatusOnly = true;
-							OutputDebugString(L"œŠÔ–¢’è‚Ì’ÊíƒCƒxƒ“ƒg‚Ì—\–ñ‚ğUNKNOWN_END‚É‚µ‚Ü‚·\r\n");
+							OutputDebugString(L"â—æ™‚é–“æœªå®šã®é€šå¸¸ã‚¤ãƒ™ãƒ³ãƒˆã®äºˆç´„ã‚’UNKNOWN_ENDã«ã—ã¾ã™\r\n");
 						}
 					}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END ){
-						//ƒCƒxƒ“ƒgID’¼‘O•ÏX‘Î‰(å‚ÉNHK)
-						//ŠÔ–¢’è‰ğÁŒã‚ÉUNKNOWN_END‚É‚È‚Á‚Ä‚¢‚é—\–ñ‚ÉŒÀ‚èAƒCƒxƒ“ƒg–¼‚ªŠ®‘Sˆê’v‚·‚éEIT[p/f]‚ª‘¶İ‚·‚ê‚ÎA‚»‚ÌƒCƒxƒ“ƒg‚ÌI—¹ŠÔ‚Ü‚Å—\–ñ‚ğL‚Î‚·
+						//ã‚¤ãƒ™ãƒ³ãƒˆIDç›´å‰å¤‰æ›´å¯¾å¿œ(ä¸»ã«NHK)
+						//æ™‚é–“æœªå®šè§£æ¶ˆå¾Œã«UNKNOWN_ENDã«ãªã£ã¦ã„ã‚‹äºˆç´„ã«é™ã‚Šã€ã‚¤ãƒ™ãƒ³ãƒˆåãŒå®Œå…¨ä¸€è‡´ã™ã‚‹EIT[p/f]ãŒå­˜åœ¨ã™ã‚Œã°ã€ãã®ã‚¤ãƒ™ãƒ³ãƒˆã®çµ‚äº†æ™‚é–“ã¾ã§äºˆç´„ã‚’ä¼¸ã°ã™
 						for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
 							const EPGDB_EVENT_INFO& info = resPfVal[i];
 							if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
@@ -1056,13 +1056,13 @@ void CReserveManager::CheckTuijyuTuner()
 								if( endTime > ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
 									r.durationSecond = (DWORD)((endTime - ConvertI64Time(r.startTime)) / I64_1SEC) + 1;
 									chgRes = true;
-									OutputDebugString(L"œŠÔ–¢’è‚Ì’ÊíƒCƒxƒ“ƒg‚Ì—\–ñ‚Æ“¯‚¶ƒCƒxƒ“ƒg–¼‚Ìp/f‚ªŒ©‚Â‚©‚è‚Ü‚µ‚½B—\–ñ‚ğ‰„’·‚µ‚Ü‚·\r\n");
+									OutputDebugString(L"â—æ™‚é–“æœªå®šã®é€šå¸¸ã‚¤ãƒ™ãƒ³ãƒˆã®äºˆç´„ã¨åŒã˜ã‚¤ãƒ™ãƒ³ãƒˆåã®p/fãŒè¦‹ã¤ã‹ã‚Šã¾ã—ãŸã€‚äºˆç´„ã‚’å»¶é•·ã—ã¾ã™\r\n");
 								}
 								break;
 							}
 						}
 					}
-					//EIT[p/f]‚ª³‚µ‚­æ“¾‚Å‚«‚éó‹µ‚ÅEIT[p/f]‚É‚È‚¢‚à‚Ì‚Í’Êíƒ`ƒFƒbƒN
+					//EIT[p/f]ãŒæ­£ã—ãå–å¾—ã§ãã‚‹çŠ¶æ³ã§EIT[p/f]ã«ãªã„ã‚‚ã®ã¯é€šå¸¸ãƒã‚§ãƒƒã‚¯
 					EPGDB_EVENT_INFO info;
 					if( nowSuccess != 2 && nextSuccess != 2 &&
 					    r.reserveStatus != ADD_RESERVE_CHG_PF &&
@@ -1070,11 +1070,11 @@ void CReserveManager::CheckTuijyuTuner()
 					    itrBank->second->SearchEpgInfo(sid, r.eventID, &info) ){
 						if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
 							__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(r.startTime);
-							//EventID‚ÌÄg—p‚É”õ‚¦‚é‚½‚ß12ŠÔˆÈã‚ÌˆÚ“®‚Í‘ÎÛŠO
+							//EventIDã®å†ä½¿ç”¨ã«å‚™ãˆã‚‹ãŸã‚12æ™‚é–“ä»¥ä¸Šã®ç§»å‹•ã¯å¯¾è±¡å¤–
 							if( -12 * 3600 * I64_1SEC <= startDiff && startDiff <= 12 * 3600 * I64_1SEC ){
 								if( info.hasShortInfo && r.title != info.shortInfo.event_name ){
 									r.title = info.shortInfo.event_name;
-									//EPGÄ“Ç‚İ‚İ‚Å•ÏX‚³‚ê‚È‚¢‚æ‚¤‚É‚·‚é
+									//EPGå†èª­ã¿è¾¼ã¿ã§å¤‰æ›´ã•ã‚Œãªã„ã‚ˆã†ã«ã™ã‚‹
 									r.reserveStatus = ADD_RESERVE_CHG_PF2;
 									chgRes = true;
 								}
@@ -1098,7 +1098,7 @@ void CReserveManager::CheckTuijyuTuner()
 							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
 						}
 						Replace(msg, L"\r\n", L" ");
-						_OutputDebugString(L"œ—\–ñ(ID=%d)‚ğ’Ç] %ls\r\n", r.reserveID, msg.c_str());
+						_OutputDebugString(L"â—äºˆç´„(ID=%d)ã‚’è¿½å¾“ %ls\r\n", r.reserveID, msg.c_str());
 					}
 				}
 			}
@@ -1120,20 +1120,20 @@ void CReserveManager::CheckAutoDel() const
 		return;
 	}
 
-	//ƒtƒ@ƒCƒ‹íœ‰Â”\‚ÈƒtƒHƒ‹ƒ_‚Ìƒhƒ‰ƒCƒu‚ğ’²‚×‚é
+	//ãƒ•ã‚¡ã‚¤ãƒ«å‰Šé™¤å¯èƒ½ãªãƒ•ã‚©ãƒ«ãƒ€ã®ãƒ‰ãƒ©ã‚¤ãƒ–ã‚’èª¿ã¹ã‚‹
 	vector<wstring> mountList;
 	for( size_t i = 0; i < this->setting.delChkList.size(); i++ ){
 		mountList.push_back(UtilGetStorageID(this->setting.delChkList[i]));
 	}
 
-	//ƒhƒ‰ƒCƒuƒŒƒxƒ‹‚Å‚Ìƒ`ƒFƒbƒN
+	//ãƒ‰ãƒ©ã‚¤ãƒ–ãƒ¬ãƒ™ãƒ«ã§ã®ãƒã‚§ãƒƒã‚¯
 	__int64 now = GetNowI64Time();
 	for( size_t checkIndex = 0; checkIndex < mountList.size(); checkIndex++ ){
 		if( mountList[checkIndex].empty() ){
-			//ƒ`ƒFƒbƒNÏ‚İ
+			//ãƒã‚§ãƒƒã‚¯æ¸ˆã¿
 			continue;
 		}
-		//’¼‹ß‚Å•K—v‚É‚È‚è‚»‚¤‚È‹ó‚«—Ìˆæ‚ğŠTZ‚·‚é
+		//ç›´è¿‘ã§å¿…è¦ã«ãªã‚Šãã†ãªç©ºãé ˜åŸŸã‚’æ¦‚ç®—ã™ã‚‹
 		__int64 needSize = 0;
 		for( auto jtr = this->reserveText.GetMap().cbegin(); jtr != this->reserveText.GetMap().end(); jtr++ ){
 			__int64 startTime, endTime;
@@ -1141,23 +1141,23 @@ void CReserveManager::CheckAutoDel() const
 			if( jtr->second.recSetting.recMode != RECMODE_NO &&
 			    jtr->second.recSetting.recMode != RECMODE_VIEW &&
 			    startTime < now + 2 * 60 * 60 * I64_1SEC ){
-				//˜^‰æŠJn2ŠÔ‘O‚Ü‚Å‚Ì—\–ñ
+				//éŒ²ç”»é–‹å§‹2æ™‚é–“å‰ã¾ã§ã®äºˆç´„
 				const vector<REC_FILE_SET_INFO>& recFolderList = jtr->second.recSetting.recFolderList;
 				for( size_t i = 0; (i == 0 && recFolderList.empty()) || i < recFolderList.size(); i++ ){
 					wstring mountPath;
 					if( recFolderList.empty() || CompareNoCase(recFolderList[i].recFolder, L"!Default") == 0 ){
-						//ƒfƒtƒHƒ‹ƒg(’ˆÓ: !Default‚Ì’uŠ·‚ÍŒ´ì‚É‚Í‚È‚¢)
+						//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ(æ³¨æ„: !Defaultã®ç½®æ›ã¯åŸä½œã«ã¯ãªã„)
 						mountPath = UtilGetStorageID(GetRecFolderPath());
 					}else{
 						mountPath = UtilGetStorageID(recFolderList[i].recFolder);
 					}
 					if( CompareNoCase(mountPath, mountList[checkIndex]) == 0 ){
 						if( needSize == 0 ){
-							//‰„’·‚âŠO•”—vˆö‚É‚æ‚é‹ó‚«—ÌˆæŒ¸­‚É‘Îˆ‚·‚é‚½‚ßÅ’áŒÀ‚Ì—]—T‚ğ‚Æ‚é
+							//å»¶é•·ã‚„å¤–éƒ¨è¦å› ã«ã‚ˆã‚‹ç©ºãé ˜åŸŸæ¸›å°‘ã«å¯¾å‡¦ã™ã‚‹ãŸã‚æœ€ä½é™ã®ä½™è£•ã‚’ã¨ã‚‹
 							needSize = 512 * 1024 * 1024;
 						}
-						//Œv¸“x‚ÌŠÖŒW‚ÅÀÛ‚É˜^‰æ‚ªn‚Ü‚Á‚½Œã‚à‚µ‚Î‚ç‚­‚±‚ÌğŒ‚ğ–‚½‚µA—]•ª‚ÉŠm•Û‚³‚ê‚é‚©‚à‚µ‚ê‚È‚¢
-						//(Œµ–§‚É‚â‚é‚Ì‚ÍŠÈ’P‚Å‚Í‚È‚¢‚Ì‚ÅA]—ˆ’Ê‚è‚ä‚é‚¢À‘•‚É‚µ‚Ä‚¨‚­)
+						//æ™‚è¨ˆç²¾åº¦ã®é–¢ä¿‚ã§å®Ÿéš›ã«éŒ²ç”»ãŒå§‹ã¾ã£ãŸå¾Œã‚‚ã—ã°ã‚‰ãã“ã®æ¡ä»¶ã‚’æº€ãŸã—ã€ä½™åˆ†ã«ç¢ºä¿ã•ã‚Œã‚‹ã‹ã‚‚ã—ã‚Œãªã„
+						//(å³å¯†ã«ã‚„ã‚‹ã®ã¯ç°¡å˜ã§ã¯ãªã„ã®ã§ã€å¾“æ¥é€šã‚Šã‚†ã‚‹ã„å®Ÿè£…ã«ã—ã¦ãŠã)
 						if( now < startTime ){
 							DWORD bitrate = GetBitrateFromIni(jtr->second.originalNetworkID, jtr->second.transportStreamID, jtr->second.serviceID);
 							needSize += (__int64)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
@@ -1169,7 +1169,7 @@ void CReserveManager::CheckAutoDel() const
 
 		__int64 freeBytes = UtilGetStorageFreeBytes(this->setting.delChkList[checkIndex]);
 		if( freeBytes >= 0 && freeBytes < needSize ){
-			//ƒhƒ‰ƒCƒu‚É‚ ‚éŒÃ‚¢TS‡‚É•K—v‚È‚¾‚¯Á‚·
+			//ãƒ‰ãƒ©ã‚¤ãƒ–ã«ã‚ã‚‹å¤ã„TSé †ã«å¿…è¦ãªã ã‘æ¶ˆã™
 			__int64 needFreeSize = needSize - freeBytes;
 			vector<pair<UTIL_FIND_DATA, size_t>> findList;
 			for( size_t i = checkIndex; i < mountList.size(); i++ ){
@@ -1184,7 +1184,7 @@ void CReserveManager::CheckAutoDel() const
 				}
 			}
 			while( needFreeSize > 0 && findList.empty() == false ){
-				//XV“ú‚ªŒÃ‚¢‚à‚Ì
+				//æ›´æ–°æ—¥æ™‚ãŒå¤ã„ã‚‚ã®
 				auto jtr = std::min_element(findList.begin(), findList.end(),
 					[](const pair<UTIL_FIND_DATA, size_t>& a, const pair<UTIL_FIND_DATA, size_t>& b) {
 						return a.first.lastWriteTime < b.first.lastWriteTime; });
@@ -1192,21 +1192,21 @@ void CReserveManager::CheckAutoDel() const
 				if( this->recInfoText.GetMap().end() != std::find_if(this->recInfoText.GetMap().begin(), this->recInfoText.GetMap().end(),
 				        [&](const pair<DWORD, REC_FILE_INFO>& a) {
 				            return a.second.protectFlag && UtilComparePath(a.second.recFilePath.c_str(), delPath.c_str()) == 0; }) ){
-					//ƒvƒƒeƒNƒg‚³‚ê‚½˜^‰æÏ‚İƒtƒ@ƒCƒ‹‚ÍÁ‚³‚È‚¢
-					_OutputDebugString(L"šNo Delete(Protected) : %ls\r\n", delPath.c_str());
+					//ãƒ—ãƒ­ãƒ†ã‚¯ãƒˆã•ã‚ŒãŸéŒ²ç”»æ¸ˆã¿ãƒ•ã‚¡ã‚¤ãƒ«ã¯æ¶ˆã•ãªã„
+					_OutputDebugString(L"â˜…No Delete(Protected) : %ls\r\n", delPath.c_str());
 				}else{
 					DeleteFile(delPath.c_str());
 					needFreeSize -= jtr->first.fileSize;
-					_OutputDebugString(L"šAuto Delete2 : %ls\r\n", delPath.c_str());
+					_OutputDebugString(L"â˜…Auto Delete2 : %ls\r\n", delPath.c_str());
 					for( size_t i = 0 ; i < this->setting.delExtList.size(); i++ ){
 						DeleteFile(fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
-						_OutputDebugString(L"šAuto Delete2 : %ls\r\n", fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
+						_OutputDebugString(L"â˜…Auto Delete2 : %ls\r\n", fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
 					}
 				}
 				findList.erase(jtr);
 			}
 		}
-		//ƒ`ƒFƒbƒNÏ‚İ‚É‚·‚é
+		//ãƒã‚§ãƒƒã‚¯æ¸ˆã¿ã«ã™ã‚‹
 		for( size_t i = checkIndex + 1; i < mountList.size(); i++ ){
 			if( CompareNoCase(mountList[i], mountList[checkIndex]) == 0 ){
 				mountList[i].clear();
@@ -1227,9 +1227,9 @@ void CReserveManager::CheckOverTimeReserve()
 		__int64 endTime;
 		CalcEntireReserveTime(NULL, &endTime, itr->second);
 		if( endTime < now ){
-			//I—¹ŠÔ‰ß‚¬‚Ä‚µ‚Ü‚Á‚Ä‚¢‚é
+			//çµ‚äº†æ™‚é–“éãã¦ã—ã¾ã£ã¦ã„ã‚‹
 			if( itr->second.recSetting.recMode != RECMODE_NO ){
-				//–³Œø‚Ì‚à‚Ì‚ÍŒ‹‰Ê‚Éc‚³‚È‚¢
+				//ç„¡åŠ¹ã®ã‚‚ã®ã¯çµæœã«æ®‹ã•ãªã„
 				REC_FILE_INFO item;
 				item = itr->second;
 				item.recStatus = REC_END_STATUS_NO_TUNER;
@@ -1257,14 +1257,14 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
 		if( itrRes != this->reserveText.GetMap().end() ){
 			if( this->setting.retryOtherTuners && itrRet->type == CTunerBankCtrl::CHECK_ERR_OPEN ){
-				_OutputDebugString(L"œ—\–ñ(ID=%d)‚ÉNGƒ`ƒ…[ƒi[(ID=0x%08x)‚ğ’Ç‰Á‚µ‚Ü‚·\r\n", itrRes->first, tunerID);
+				_OutputDebugString(L"â—äºˆç´„(ID=%d)ã«NGãƒãƒ¥ãƒ¼ãƒŠãƒ¼(ID=0x%08x)ã‚’è¿½åŠ ã—ã¾ã™\r\n", itrRes->first, tunerID);
 				this->reserveText.AddNGTunerID(itrRes->first, tunerID);
 				ngTunerAdded = true;
 				continue;
 			}
 			if( itrRet->type == CTunerBankCtrl::CHECK_END && itrRet->recFilePath.empty() == false &&
 			    itrRet->drops < this->setting.recInfo2DropChk && itrRet->epgEventName.empty() == false ){
-				//˜^‰æÏ‚İ‚Æ‚µ‚Ä“o˜^
+				//éŒ²ç”»æ¸ˆã¿ã¨ã—ã¦ç™»éŒ²
 				PARSE_REC_INFO2_ITEM item;
 				item.originalNetworkID = itrRes->second.originalNetworkID;
 				item.transportStreamID = itrRes->second.transportStreamID;
@@ -1321,11 +1321,11 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			}
 			item.id = this->recInfoText.AddRecInfo(item);
 
-			//ƒoƒbƒ`ˆ—’Ç‰Á
+			//ãƒãƒƒãƒå‡¦ç†è¿½åŠ 
 			CBatManager::BAT_WORK_INFO batInfo;
 			AddRecInfoMacro(batInfo.macroList, item);
 			batInfo.macroList.push_back(pair<string, wstring>("AddKey",
-				itrRes->second.comment.compare(0, 8, L"EPG©“®—\–ñ(") == 0 && itrRes->second.comment.find(L')') != wstring::npos ?
+				itrRes->second.comment.compare(0, 8, L"EPGè‡ªå‹•äºˆç´„(") == 0 && itrRes->second.comment.find(L')') != wstring::npos ?
 				itrRes->second.comment.substr(8, itrRes->second.comment.find(L')') - 8) : wstring()));
 			batInfo.macroList.push_back(pair<string, wstring>("BatFileTag",
 				itrRes->second.recSetting.batFilePath.find(L'*') != wstring::npos ?
@@ -1346,7 +1346,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			this->reserveModified = true;
 			modified = true;
 
-			//—\–ñI—¹‚ğ’Ê’m
+			//äºˆç´„çµ‚äº†ã‚’é€šçŸ¥
 			SYSTEMTIME st = item.startTime;
 			SYSTEMTIME stEnd;
 			ConvertSystemTime(ConvertI64Time(st) + item.durationSecond * I64_1SEC, &stEnd);
@@ -1379,11 +1379,11 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 
 	bool isRec = false;
 	bool isEpgCap = false;
-	//tunerBankMap‚»‚Ì‚à‚Ì‚Í”r‘¼§Œä‚Ì‘ÎÛŠO
+	//tunerBankMapãã®ã‚‚ã®ã¯æ’ä»–åˆ¶å¾¡ã®å¯¾è±¡å¤–
 	for( auto itrBank = this->tunerBankMap.cbegin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
 		CBlockLock lock(&this->managerLock);
 
-		// ƒ`ƒ…[ƒi‚Ì—\–ñó‘Ô‘JˆÚ‚ğs‚¢A—\–ñI—¹‚ğƒ`ƒFƒbƒN‚·‚é
+		// ãƒãƒ¥ãƒ¼ãƒŠã®äºˆç´„çŠ¶æ…‹é·ç§»ã‚’è¡Œã„ã€äºˆç´„çµ‚äº†ã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹
 		vector<DWORD> startedReserveIDList;
 		vector<CTunerBankCtrl::CHECK_RESULT> retList = itrBank->second->Check(&startedReserveIDList);
 		CTunerBankCtrl::TR_STATE state = itrBank->second->GetState();
@@ -1412,13 +1412,13 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 	this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
 
 	if( CheckEpgCap(isEpgCap) ){
-		//EPGæ“¾‚ªŠ®—¹‚µ‚½
+		//EPGå–å¾—ãŒå®Œäº†ã—ãŸ
 		this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_EPGCAP_END, L"");
 		return std::make_pair(CHECK_EPGCAP_END, 0);
 	}else if( this->shutdownModePending >= 0 &&
 	          this->batManager.IsWorking() == false &&
 	          this->batPostManager.IsWorkingWithoutNotification() == false ){
-		//ƒoƒbƒ`ˆ—‚ªŠ®—¹‚µ‚½
+		//ãƒãƒƒãƒå‡¦ç†ãŒå®Œäº†ã—ãŸ
 		int shutdownMode = this->shutdownModePending;
 		this->shutdownModePending = -1;
 		return std::make_pair(CHECK_NEED_SHUTDOWN, shutdownMode);
@@ -1436,7 +1436,7 @@ vector<CTunerBankCtrl*> CReserveManager::GetEpgCapTunerList(__int64 now) const
 {
 	CBlockLock lock(&this->managerLock);
 
-	//—˜—p‰Â”\‚Èƒ`ƒ…[ƒi‚Ì’Šo
+	//åˆ©ç”¨å¯èƒ½ãªãƒãƒ¥ãƒ¼ãƒŠã®æŠ½å‡º
 	vector<CTunerBankCtrl*> tunerList;
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); ){
 		DWORD bonID = itr->first >> 16;
@@ -1451,10 +1451,10 @@ vector<CTunerBankCtrl*> CReserveManager::GetEpgCapTunerList(__int64 now) const
 			CTunerBankCtrl::TR_STATE state = itr->second->GetState();
 			__int64 minTime = itr->second->GetNearestReserveTime();
 			if( this->setting.ngEpgCapTime != 0 && (state != CTunerBankCtrl::TR_IDLE || minTime < now + this->setting.ngEpgCapTime * 60 * I64_1SEC) ){
-				//Às‚µ‚¿‚á‚¢‚¯‚È‚¢
+				//å®Ÿè¡Œã—ã¡ã‚ƒã„ã‘ãªã„
 				ngCapCount++;
 			}else if( state == CTunerBankCtrl::TR_IDLE && minTime > now + this->setting.ngEpgCapTunerTime * 60 * I64_1SEC ){
-				//g‚¦‚éƒ`ƒ…[ƒi
+				//ä½¿ãˆã‚‹ãƒãƒ¥ãƒ¼ãƒŠ
 				tunerList.push_back(itr->second.get());
 				epgCapCount++;
 			}
@@ -1485,7 +1485,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 	bool doneEpgCap = false;
 	__int64 now = GetNowI64Time();
 	if( this->epgCapWork == false ){
-		//–ˆ•ª0•b‚ğŒ×‚®ƒ^ƒCƒ~ƒ“ƒO‚ÅEPGæ“¾‚Ìƒ`ƒFƒbƒN‚ğs‚¤
+		//æ¯åˆ†0ç§’ã‚’è·¨ãã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§EPGå–å¾—ã®ãƒã‚§ãƒƒã‚¯ã‚’è¡Œã†
 		if( this->epgCapRequested || now / (60 * I64_1SEC) > this->lastCheckEpgCap / (60 * I64_1SEC) ){
 			int basicOnlyFlags = -1;
 			__int64 capTime = this->epgCapRequested ? now : GetNextEpgCapTime(now, &basicOnlyFlags);
@@ -1493,19 +1493,19 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 				vector<CTunerBankCtrl*> tunerList = GetEpgCapTunerList(now);
 				if( tunerList.empty() == false ){
 					if( capTime > now ){
-						//æ“¾ŠJn1•ª‘O
-						//‚±‚Ì’Ê’m‚Í‚ ‚­‚Ü‚ÅQlBŠJn‚µ‚È‚¢‚Ì‚É’Ê’m‚·‚é‰Â”\«‚àA‚»‚Ì‹t‚à‚ ‚è‚¦‚é
-						this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_EPGCAP_START, L"æ“¾ŠJn‚P•ª‘O");
+						//å–å¾—é–‹å§‹1åˆ†å‰
+						//ã“ã®é€šçŸ¥ã¯ã‚ãã¾ã§å‚è€ƒã€‚é–‹å§‹ã—ãªã„ã®ã«é€šçŸ¥ã™ã‚‹å¯èƒ½æ€§ã‚‚ã€ãã®é€†ã‚‚ã‚ã‚Šãˆã‚‹
+						this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_EPGCAP_START, L"å–å¾—é–‹å§‹ï¼‘åˆ†å‰");
 					}else{
-						//æ“¾ŠJn
+						//å–å¾—é–‹å§‹
 						fs_path iniCommonPath = GetCommonIniPath();
 						int lastFlags = (GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, iniCommonPath.c_str()) != 0 ? 1 : 0) |
 						                (GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 2 : 0) |
 						                (GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 4 : 0) |
 						                (GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, iniCommonPath.c_str()) != 0 ? 8 : 0);
 						if( basicOnlyFlags >= 0 ){
-							//ˆê“I‚Éİ’è‚ğ•ÏX‚µ‚ÄEPGæ“¾ƒ`ƒ…[ƒi‘¤‚Ì‹““®‚ğ•Ï‚¦‚é
-							//TODO: ƒpƒCƒvƒRƒ}ƒ“ƒh‚ğŠg’£‚·‚×‚«
+							//ä¸€æ™‚çš„ã«è¨­å®šã‚’å¤‰æ›´ã—ã¦EPGå–å¾—ãƒãƒ¥ãƒ¼ãƒŠå´ã®æŒ™å‹•ã‚’å¤‰ãˆã‚‹
+							//TODO: ãƒ‘ã‚¤ãƒ—ã‚³ãƒãƒ³ãƒ‰ã‚’æ‹¡å¼µã™ã¹ã
 							this->epgCapBasicOnlyFlags = lastFlags;
 							WritePrivateProfileInt(L"SET", L"BSBasicOnly", (basicOnlyFlags & 1) != 0, iniCommonPath.c_str());
 							WritePrivateProfileInt(L"SET", L"CS1BasicOnly", (basicOnlyFlags & 2) != 0, iniCommonPath.c_str());
@@ -1515,7 +1515,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							this->epgCapBasicOnlyFlags = -1;
 							basicOnlyFlags = lastFlags;
 						}
-						//Šeƒ`ƒ…[ƒi‚ÉU‚è•ª‚¯
+						//å„ãƒãƒ¥ãƒ¼ãƒŠã«æŒ¯ã‚Šåˆ†ã‘
 						LONGLONG lastKey = -1;
 						bool inONIDs[16] = {};
 						size_t listIndex = 0;
@@ -1558,7 +1558,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 			}
 		}
 	}else{
-		//EPGæ“¾’†
+		//EPGå–å¾—ä¸­
 		if( this->setting.timeSync && this->epgCapSetTimeSync == false ){
 			DWORD tick = GetTickCount();
 			for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
@@ -1566,16 +1566,16 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 					__int64 delay = itr->second->DelayTime();
 					if( this->epgCapTimeSyncBase < 0 ){
 						if( delay < -10 * I64_1SEC || 10 * I64_1SEC < delay ){
-							//Œv‡‚í‚¹‚ª•K—v‚©‚à‚µ‚ê‚È‚¢B’x‰„ŠÔ‚ÌŠÏ‘ªŠJn
+							//æ™‚è¨ˆåˆã‚ã›ãŒå¿…è¦ã‹ã‚‚ã—ã‚Œãªã„ã€‚é…å»¶æ™‚é–“ã®è¦³æ¸¬é–‹å§‹
 							this->epgCapTimeSyncBase = now;
 							this->epgCapTimeSyncDelayMin = delay;
 							this->epgCapTimeSyncDelayMax = delay;
 							this->epgCapTimeSyncTick = tick;
 							this->epgCapTimeSyncQuality = 0;
-							OutputDebugString(L"šSetSystemTime start\r\n");
+							OutputDebugString(L"â˜…SetSystemTime start\r\n");
 						}
 					}else if( delay != 0 ){
-						//’x‰„ŠÔ‚Ì—h‚ç‚¬‚ğ‹L˜^‚·‚é(delay==0‚Í–¢æ“¾‚Æ‹æ•Ê‚Å‚«‚È‚¢‚Ì‚ÅœŠO)
+						//é…å»¶æ™‚é–“ã®æºã‚‰ãã‚’è¨˜éŒ²ã™ã‚‹(delay==0ã¯æœªå–å¾—ã¨åŒºåˆ¥ã§ããªã„ã®ã§é™¤å¤–)
 						this->epgCapTimeSyncDelayMin = min(delay, this->epgCapTimeSyncDelayMin);
 						this->epgCapTimeSyncDelayMax = max(delay, this->epgCapTimeSyncDelayMax);
 						this->epgCapTimeSyncQuality += tick - this->epgCapTimeSyncTick;
@@ -1587,12 +1587,12 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 				this->epgCapTimeSyncTick = tick;
 				if( now - this->epgCapTimeSyncBase < -3 * I64_1SEC || 3 * I64_1SEC < now - this->epgCapTimeSyncBase ||
 				    this->epgCapTimeSyncDelayMax - this->epgCapTimeSyncDelayMin > 10 * I64_1SEC ){
-					//•Ê‚ÌƒvƒƒZƒX‚ªŒv‡‚í‚¹‚µ‚½or—h‚ç‚¬‚·‚¬
+					//åˆ¥ã®ãƒ—ãƒ­ã‚»ã‚¹ãŒæ™‚è¨ˆåˆã‚ã›ã—ãŸoræºã‚‰ãã™ã
 					this->epgCapTimeSyncBase = -1;
-					OutputDebugString(L"šSetSystemTime cancel\r\n");
+					OutputDebugString(L"â˜…SetSystemTime cancel\r\n");
 				}else if( this->epgCapTimeSyncQuality > 150 * 1000 ){
-					//ŠT‚Ë2ƒ`ƒƒƒ“ƒlƒ‹ˆÈã‚Ì’x‰„ŠÔ‚ğŠÏ‘ª‚Å‚«‚½‚Í‚¸
-					//Œv‡‚í‚¹(—vSE_SYSTEMTIME_NAME“ÁŒ )
+					//æ¦‚ã­2ãƒãƒ£ãƒ³ãƒãƒ«ä»¥ä¸Šã®é…å»¶æ™‚é–“ã‚’è¦³æ¸¬ã§ããŸã¯ãš
+					//æ™‚è¨ˆåˆã‚ã›(è¦SE_SYSTEMTIME_NAMEç‰¹æ¨©)
 					__int64 delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
 					SYSTEMTIME setTime;
 					ConvertSystemTime(now + delay - I64_UTIL_TIMEZONE, &setTime);
@@ -1601,7 +1601,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 					if( SetSystemTime(&setTime) ){
 						debug = L" ";
 					}else{
-						//‘ã—ƒvƒƒZƒXŒo—R‚ÅŒv‡‚í‚¹‚ğ‚İ‚é
+						//ä»£ç†ãƒ—ãƒ­ã‚»ã‚¹çµŒç”±ã§æ™‚è¨ˆåˆã‚ã›ã‚’è©¦ã¿ã‚‹
 						HWND hwnd = FindWindowEx(HWND_MESSAGE, NULL, L"EpgTimerAdminProxy", NULL);
 						FILETIME ft;
 						if( hwnd && SystemTimeToFileTime(&setTime, &ft) ){
@@ -1619,15 +1619,15 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 						debug = L" ";
 					}
 #endif
-					_OutputDebugString(L"šSetSystemTime%ls%d\r\n", debug, (int)(delay / I64_1SEC));
+					_OutputDebugString(L"â˜…SetSystemTime%ls%d\r\n", debug, (int)(delay / I64_1SEC));
 					this->epgCapSetTimeSync = true;
 				}
 			}
 		}
 		if( isEpgCap == false ){
-			//EPGæ“¾’†‚Ìƒ`ƒ…[ƒi‚ª–³‚­‚È‚Á‚½‚Ì‚Åæ“¾Š®—¹
+			//EPGå–å¾—ä¸­ã®ãƒãƒ¥ãƒ¼ãƒŠãŒç„¡ããªã£ãŸã®ã§å–å¾—å®Œäº†
 			if( this->epgCapBasicOnlyFlags >= 0 ){
-				//EPGæ“¾ŠJn‚Ìİ’è‚ğ‘‚«–ß‚µ
+				//EPGå–å¾—é–‹å§‹æ™‚ã®è¨­å®šã‚’æ›¸ãæˆ»ã—
 				fs_path iniCommonPath = GetCommonIniPath();
 				WritePrivateProfileInt(L"SET", L"BSBasicOnly", (this->epgCapBasicOnlyFlags & 1) != 0, iniCommonPath.c_str());
 				WritePrivateProfileInt(L"SET", L"CS1BasicOnly", (this->epgCapBasicOnlyFlags & 2) != 0, iniCommonPath.c_str());
@@ -1664,7 +1664,7 @@ __int64 CReserveManager::GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* rese
 {
 	CBlockLock lock(&this->managerLock);
 
-	//Å‚à‹ß‚¢—\–ñŠJn‚ğ“¾‚é
+	//æœ€ã‚‚è¿‘ã„äºˆç´„é–‹å§‹æ™‚åˆ»ã‚’å¾—ã‚‹
 	__int64 nextRec = LLONG_MAX;
 	const RESERVE_DATA* nextReserveData = NULL;
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
@@ -1709,9 +1709,9 @@ __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) con
 
 	SYSTEMTIME st;
 	ConvertSystemTime(now, &st);
-	//Œ»İ‚É‘Î‚·‚é“ú—j“ú‚©‚ç‚ÌƒIƒtƒZƒbƒg(•ª)B•bˆÈ‰º‚ÌØ‚èÌ‚Ä‚É’ˆÓ
+	//ç¾åœ¨æ™‚åˆ»ã«å¯¾ã™ã‚‹æ—¥æ›œæ—¥ã‹ã‚‰ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ(åˆ†)ã€‚ç§’ä»¥ä¸‹ã®åˆ‡ã‚Šæ¨ã¦ã«æ³¨æ„
 	int baseTime = st.wDayOfWeek * 1440 + (int)(now / (60 * I64_1SEC) % 1440);
-	//baseTime‚Æ‚Ì·‚ªÅ¬‚ÌEPGæ“¾‚ğ’T‚·
+	//baseTimeã¨ã®å·®ãŒæœ€å°ã®EPGå–å¾—æ™‚åˆ»ã‚’æ¢ã™
 	int minDiff = INT_MAX;
 	int minVal = 0;
 	for( auto itr = this->setting.epgCapTimeList.cbegin(); itr != this->setting.epgCapTimeList.end(); itr++ ){
@@ -1751,7 +1751,7 @@ bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DW
 
 vector<DWORD> CReserveManager::GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const
 {
-	//tunerBankMap‚»‚Ì‚à‚Ì‚Í”r‘¼§Œä‚Ì‘ÎÛŠO
+	//tunerBankMapãã®ã‚‚ã®ã¯æ’ä»–åˆ¶å¾¡ã®å¯¾è±¡å¤–
 	vector<DWORD> idList;
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetCh(onid, tsid, sid) ){
@@ -1799,7 +1799,7 @@ pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, const 
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV && itr->second->GetNWTVID() == id ){
-			//‚·‚Å‚É‹N“®‚µ‚Ä‚¢‚é‚Ì‚Åg‚¦‚½‚çg‚¤
+			//ã™ã§ã«èµ·å‹•ã—ã¦ã„ã‚‹ã®ã§ä½¿ãˆãŸã‚‰ä½¿ã†
 			if( itr->second->GetCh(chInfo.ONID, chInfo.TSID, chInfo.SID) ){
 				itr->second->OpenNWTV(id, nwUdp, nwTcp, chInfo);
 				return std::make_pair(true, itr->second->GetProcessID());
@@ -1811,7 +1811,7 @@ pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, const 
 	for( size_t i = 0; i < tunerIDList.size(); i++ ){
 		auto itr = this->tunerBankMap.find(tunerIDList[i]);
 		if( itr != this->tunerBankMap.end() && itr->second->GetCh(chInfo.ONID, chInfo.TSID, chInfo.SID) ){
-			//•ÊID‚Ìƒlƒbƒgƒ[ƒNƒ‚[ƒh‚ğ×–‚‚µ‚È‚¢
+			//åˆ¥IDã®ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ¢ãƒ¼ãƒ‰ã‚’é‚ªé­”ã—ãªã„
 			if( itr->second->GetState() != CTunerBankCtrl::TR_NWTV &&
 			    itr->second->OpenNWTV(id, nwUdp, nwTcp, chInfo) ){
 				return std::make_pair(true, itr->second->GetProcessID());
@@ -1951,7 +1951,7 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid, 
 	for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, eid); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.recSetting.recMode != RECMODE_NO &&
-		    itrRes->second.comment.compare(0, 7, L"EPG©“®—\–ñ") == 0 &&
+		    itrRes->second.comment.compare(0, 7, L"EPGè‡ªå‹•äºˆç´„") == 0 &&
 		    (this->setting.separateFixedTuners == false || itrRes->second.recSetting.tunerID == tunerID) ){
 			chgList.push_back(itrRes->second);
 			chgList.back().recSetting.recMode = RECMODE_NO;
@@ -2036,7 +2036,7 @@ void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, con
 			ConvertSystemTime(ConvertI64Time(t) + durationSecond * I64_1SEC, &t);
 		}
 		for( int i = 0; GetTimeMacroName(i); i++ ){
-			//]—ˆŒ`®‚Í#‚ÅƒRƒƒ“ƒgƒAƒEƒg‚µ‚Ä‚¨‚­
+			//å¾“æ¥å½¢å¼ã¯#ã§ã‚³ãƒ¡ãƒ³ãƒˆã‚¢ã‚¦ãƒˆã—ã¦ãŠã
 			macroList.push_back(std::make_pair('#' + p + GetTimeMacroName(i) + suffix, GetTimeMacroValue(i, t)));
 		}
 	}

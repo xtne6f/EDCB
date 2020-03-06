@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../Common/StructDef.h"
 #include "../Common/EpgDataCap3Def.h"
@@ -11,22 +11,22 @@ class CChSetUtil
 public:
 	CChSetUtil(void);
 
-	//ƒ`ƒƒƒ“ƒlƒ‹Ý’èƒtƒ@ƒCƒ‹‚ð“Ç‚Ýž‚Þ
+	//ãƒãƒ£ãƒ³ãƒãƒ«è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€
 	BOOL LoadChSet(
 		const wstring& chSet4FilePath,
 		const wstring& chSet5FilePath
 		);
 
-	//ƒ`ƒƒƒ“ƒlƒ‹Ý’èƒtƒ@ƒCƒ‹‚ð•Û‘¶‚·‚é
+	//ãƒãƒ£ãƒ³ãƒãƒ«è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä¿å­˜ã™ã‚‹
 	BOOL SaveChSet(
 		const wstring& chSet4FilePath,
 		const wstring& chSet5FilePath
 		);
 
-	//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“—p‚ÉƒNƒŠƒA‚·‚é
+	//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ç”¨ã«ã‚¯ãƒªã‚¢ã™ã‚‹
 	BOOL Clear();
 
-	//ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚ð’Ç‰Á‚·‚é
+	//ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹
 	BOOL AddServiceInfo(
 		DWORD space,
 		DWORD ch,
@@ -34,12 +34,12 @@ public:
 		SERVICE_INFO* serviceInfo
 		);
 
-	//ƒT[ƒrƒXˆê——‚ðŽæ“¾‚·‚é
+	//ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	BOOL GetEnumService(
 		vector<CH_DATA4>* serviceList
 		);
 
-	//ID‚©‚ç•¨—ƒ`ƒƒƒ“ƒlƒ‹‚ðŒŸõ‚·‚é
+	//IDã‹ã‚‰ç‰©ç†ãƒãƒ£ãƒ³ãƒãƒ«ã‚’æ¤œç´¢ã™ã‚‹
 	BOOL GetCh(
 		WORD ONID,
 		WORD TSID,
@@ -48,29 +48,29 @@ public:
 		DWORD& ch
 		);
 
-	//EPGŽæ“¾‘ÎÛ‚ÌƒT[ƒrƒXˆê——‚ðŽæ“¾‚·‚é
+	//EPGå–å¾—å¯¾è±¡ã®ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<SET_CH_INFO> GetEpgCapService();
 
-	//Œ»Ý‚Ìƒ`ƒ…[ƒi‚ÉŒÀ’è‚³‚ê‚È‚¢EPGŽæ“¾‘ÎÛ‚ÌƒT[ƒrƒXˆê——‚ðŽæ“¾‚·‚é
+	//ç¾åœ¨ã®ãƒãƒ¥ãƒ¼ãƒŠã«é™å®šã•ã‚Œãªã„EPGå–å¾—å¯¾è±¡ã®ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<SET_CH_INFO> GetEpgCapServiceAll(
 		int ONID = -1,
 		int TSID = -1
 		);
 
-	//•”•ªŽóMƒT[ƒrƒX‚©‚Ç‚¤‚©
+	//éƒ¨åˆ†å—ä¿¡ã‚µãƒ¼ãƒ“ã‚¹ã‹ã©ã†ã‹
 	BOOL IsPartial(
 		WORD ONID,
 		WORD TSID,
 		WORD SID
 		);
 
-	//ƒT[ƒrƒXƒ^ƒCƒv‚ª‰f‘œƒT[ƒrƒX‚©‚Ç‚¤‚©
+	//ã‚µãƒ¼ãƒ“ã‚¹ã‚¿ã‚¤ãƒ—ãŒæ˜ åƒã‚µãƒ¼ãƒ“ã‚¹ã‹ã©ã†ã‹
 	static BOOL IsVideoServiceType(
 		WORD serviceType
 		){
-		return serviceType == 0x01 //ƒfƒWƒ^ƒ‹TV
-			|| serviceType == 0xA5 //ƒvƒƒ‚[ƒVƒ‡ƒ“‰f‘œ
-			|| serviceType == 0xAD //’´‚¸×“x4Kê—pTV
+		return serviceType == 0x01 //ãƒ‡ã‚¸ã‚¿ãƒ«TV
+			|| serviceType == 0xA5 //ãƒ—ãƒ­ãƒ¢ãƒ¼ã‚·ãƒ§ãƒ³æ˜ åƒ
+			|| serviceType == 0xAD //è¶…é«˜ç²¾ç´°åº¦4Kå°‚ç”¨TV
 			;
 	}
 

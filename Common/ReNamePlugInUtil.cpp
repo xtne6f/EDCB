@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "ReNamePlugInUtil.h"
 #ifndef _WIN32
 #include "StringUtil.h"
@@ -45,7 +45,7 @@ BOOL CReNamePlugInUtil::Convert(
 	auto getProcAddr = [=](const char* name) { return dlsym(hModule, name); };
 #endif
 	if( hModule == NULL ){
-		_OutputDebugString(L"%ls‚Ìƒ[ƒh‚É¸”s‚µ‚Ü‚µ‚½\r\n", dllPath.c_str());
+		_OutputDebugString(L"%lsã®ãƒ­ãƒ¼ãƒ‰ã«å¤±æ•—ã—ã¾ã—ãŸ\r\n", dllPath.c_str());
 		return FALSE;
 	}
 	CloseConvert();
@@ -65,7 +65,7 @@ BOOL CReNamePlugInUtil::Convert(
 			if( pfnConvertRecName ){
 				ret = pfnConvertRecName(info, recName, recNamesize);
 			}else{
-				OutputDebugString(L"ConvertRecName‚Ì GetProcAddress ‚É¸”s\r\n");
+				OutputDebugString(L"ConvertRecNameã® GetProcAddress ã«å¤±æ•—\r\n");
 				ret = FALSE;
 			}
 		}

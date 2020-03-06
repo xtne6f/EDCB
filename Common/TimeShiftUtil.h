@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "../BonCtrl/SendUDP.h"
 #include "../BonCtrl/SendTCP.h"
 #include "StructDef.h"
@@ -10,43 +10,43 @@ public:
 	CTimeShiftUtil(void);
 	~CTimeShiftUtil(void);
 
-	//UDP/TCP‘—M‚ðs‚¤
-	//–ß‚è’lF
-	// ¬Œ÷Fval‚ÉŠJŽnƒ|[ƒg”Ô†iI—¹orŽ¸”sF’l‚Í•s•Ïj
-	//ˆø”F
-	// val		[IN/OUT]‘—Mæî•ñ
+	//UDP/TCPé€ä¿¡ã‚’è¡Œã†
+	//æˆ»ã‚Šå€¤ï¼š
+	// æˆåŠŸï¼švalã«é–‹å§‹ãƒãƒ¼ãƒˆç•ªå·ï¼ˆçµ‚äº†orå¤±æ•—ï¼šå€¤ã¯ä¸å¤‰ï¼‰
+	//å¼•æ•°ï¼š
+	// val		[IN/OUT]é€ä¿¡å…ˆæƒ…å ±
 	void Send(
 		NWPLAY_PLAY_INFO* val
 		);
 
-	//ƒ^ƒCƒ€ƒVƒtƒg—pƒtƒ@ƒCƒ‹‚ðŠJ‚­
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
-	//ˆø”F
-	// filePath		[IN]ƒ^ƒCƒ€ƒVƒtƒg—pƒoƒbƒtƒ@ƒtƒ@ƒCƒ‹‚ÌƒpƒX
-	// fileMode		[IN]˜^‰æÏ‚Ýƒtƒ@ƒCƒ‹Ä¶ƒ‚[ƒh
+	//ã‚¿ã‚¤ãƒ ã‚·ãƒ•ãƒˆç”¨ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ã
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+	//å¼•æ•°ï¼š
+	// filePath		[IN]ã‚¿ã‚¤ãƒ ã‚·ãƒ•ãƒˆç”¨ãƒãƒƒãƒ•ã‚¡ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ‘ã‚¹
+	// fileMode		[IN]éŒ²ç”»æ¸ˆã¿ãƒ•ã‚¡ã‚¤ãƒ«å†ç”Ÿãƒ¢ãƒ¼ãƒ‰
 	BOOL OpenTimeShift(
 		LPCWSTR filePath_,
 		BOOL fileMode_
 		);
 
-	//ƒ^ƒCƒ€ƒVƒtƒg‘—M‚ðŠJŽn‚·‚é
-	//–ß‚è’lF
-	// TRUEi¬Œ÷jAFALSEiŽ¸”sj
+	//ã‚¿ã‚¤ãƒ ã‚·ãƒ•ãƒˆé€ä¿¡ã‚’é–‹å§‹ã™ã‚‹
+	//æˆ»ã‚Šå€¤ï¼š
+	// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
 	BOOL StartTimeShift();
 
-	//ƒ^ƒCƒ€ƒVƒtƒg‘—M‚ð’âŽ~‚·‚é
+	//ã‚¿ã‚¤ãƒ ã‚·ãƒ•ãƒˆé€ä¿¡ã‚’åœæ­¢ã™ã‚‹
 	void StopTimeShift();
 
-	//Œ»Ý‚Ì‘—MˆÊ’u‚Æ—LŒø‚Èƒtƒ@ƒCƒ‹ƒTƒCƒY‚ðŽæ“¾‚·‚é
-	//ˆø”F
-	// filePos		[OUT]ƒtƒ@ƒCƒ‹ˆÊ’u
-	// fileSize		[OUT]ƒtƒ@ƒCƒ‹ƒTƒCƒY
+	//ç¾åœ¨ã®é€ä¿¡ä½ç½®ã¨æœ‰åŠ¹ãªãƒ•ã‚¡ã‚¤ãƒ«ã‚µã‚¤ã‚ºã‚’å–å¾—ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// filePos		[OUT]ãƒ•ã‚¡ã‚¤ãƒ«ä½ç½®
+	// fileSize		[OUT]ãƒ•ã‚¡ã‚¤ãƒ«ã‚µã‚¤ã‚º
 	void GetFilePos(__int64* filePos, __int64* fileSize);
 
-	//‘—MŠJŽnˆÊ’u‚ð•ÏX‚·‚é
-	//ˆø”F
-	// filePos		[IN]ƒtƒ@ƒCƒ‹ˆÊ’u
+	//é€ä¿¡é–‹å§‹ä½ç½®ã‚’å¤‰æ›´ã™ã‚‹
+	//å¼•æ•°ï¼š
+	// filePos		[IN]ãƒ•ã‚¡ã‚¤ãƒ«ä½ç½®
 	void SetFilePos(__int64 filePos);
 
 protected:

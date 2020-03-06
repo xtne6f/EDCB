@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "DecodeUtil.h"
 
 #include "../../Common/StringUtil.h"
@@ -28,10 +28,10 @@ static bool SDDecodeNIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::reserved, Desc::D_LOCAL, Desc::descriptor_length,
 		Desc::D_FIN,
 	};
-	//‹Lqq‚ÍŠî–{“I‚Éunknownˆµ‚¢‚Æ‚·‚é
+	//è¨˜è¿°å­ã¯åŸºæœ¬çš„ã«unknownæ‰±ã„ã¨ã™ã‚‹
 	Desc::PARSER_PAIR parserList[256] = {};
 	for( BYTE i = 0, j = 0; i < 255; i++ ){
-		//‚½‚¾‚µƒT[ƒrƒXƒŠƒXƒg‹Lqq‚Íˆµ‚¤
+		//ãŸã ã—ã‚µãƒ¼ãƒ“ã‚¹ãƒªã‚¹ãƒˆè¨˜è¿°å­ã¯æ‰±ã†
 		if( i != Desc::service_list_descriptor ){
 			parserList[j].tag = i;
 			parserList[j++].parser = i == 0x82 ? parser0x82 : parserUnknown;
@@ -45,7 +45,7 @@ static bool SDDecodeNIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 	if( table.EnterLoop(lp) ){
 		for( DWORD i = 0; table.SetLoopIndex(lp, i); i++ ){
 			if( table.GetNumber(Desc::descriptor_tag, lp) == 0x82 && table.GetNumber(Desc::reserved, lp) == 1 ){
-				//“ú–{Œê”ÅHƒlƒbƒgƒ[ƒN‹Lqq‚ÉƒLƒƒƒXƒg
+				//æ—¥æœ¬èªç‰ˆï¼Ÿãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯è¨˜è¿°å­ã«ã‚­ãƒ£ã‚¹ãƒˆ
 				table.SetNumber(Desc::descriptor_tag, Desc::network_name_descriptor, lp);
 			}
 		}
@@ -79,7 +79,7 @@ static bool SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::reserved, Desc::D_LOCAL, Desc::descriptor_length,
 		Desc::D_FIN,
 	};
-	//‹Lqq‚ÍŠî–{“I‚Éunknownˆµ‚¢‚Æ‚·‚é
+	//è¨˜è¿°å­ã¯åŸºæœ¬çš„ã«unknownæ‰±ã„ã¨ã™ã‚‹
 	Desc::PARSER_PAIR parserList[256];
 	for( BYTE i = 0; i < 255; i++ ){
 		parserList[i].tag = i;
@@ -100,19 +100,19 @@ static bool SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 				DWORD service_type = 0;
 				for( DWORD j = 0; table.SetLoopIndex(lp2, j); j++ ){
 					if( table.GetNumber(Desc::descriptor_tag, lp2) == 0x82 ){
-						//ƒT[ƒrƒX–¼
+						//ã‚µãƒ¼ãƒ“ã‚¹å
 						if( table.GetNumber(Desc::service_type, lp2) == 1 ){
-							//“ú–{Œê”ÅH
+							//æ—¥æœ¬èªç‰ˆï¼Ÿ
 							lp0x82 = lp2;
 							found0x82 = true;
 						}
 					}else if( table.GetNumber(Desc::descriptor_tag, lp2) == 0x8A ){
-						//ƒT[ƒrƒXƒ^ƒCƒv
+						//ã‚µãƒ¼ãƒ“ã‚¹ã‚¿ã‚¤ãƒ—
 						service_type = table.GetNumber(Desc::service_type, lp2);
 					}
 				}
 				if( found0x82 ){
-					//ƒT[ƒrƒX‹Lqq‚ÉƒLƒƒƒXƒg
+					//ã‚µãƒ¼ãƒ“ã‚¹è¨˜è¿°å­ã«ã‚­ãƒ£ã‚¹ãƒˆ
 					table.SetNumber(Desc::descriptor_tag, Desc::service_descriptor, lp0x82);
 					table.SetNumber(Desc::service_type, service_type == 0x81 ? 0xA1 : service_type, lp0x82);
 				}
@@ -152,7 +152,7 @@ static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::reserved, Desc::D_LOCAL, Desc::descriptor_length,
 		Desc::D_FIN,
 	};
-	//‹Lqq‚ÍŠî–{“I‚Éunknownˆµ‚¢‚Æ‚·‚é
+	//è¨˜è¿°å­ã¯åŸºæœ¬çš„ã«unknownæ‰±ã„ã¨ã™ã‚‹
 	Desc::PARSER_PAIR parserList[256];
 	for( BYTE i = 0; i < 255; i++ ){
 		parserList[i].tag = i;
@@ -172,29 +172,29 @@ static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 				bool found0x82 = false;
 				for( DWORD j = 0; table.SetLoopIndex(lp2, j); j++ ){
 					if( table.GetNumber(Desc::descriptor_tag, lp2) == 0x82 ){
-						//”Ô‘g–¼
+						//ç•ªçµ„å
 						if( table.GetNumber(Desc::reserved, lp2) == 1 ){
-							//“ú–{Œê”ÅH
+							//æ—¥æœ¬èªç‰ˆï¼Ÿ
 							lp0x82 = lp2;
 							found0x82 = true;
 						}else if( table.GetNumber(Desc::reserved, lp2) == 2 && found0x82 == false ){
-							//‰pŒê”ÅH
+							//è‹±èªç‰ˆï¼Ÿ
 							lp0x82 = lp2;
 							found0x82 = true;
 						}
 					}else if( table.GetNumber(Desc::descriptor_tag, lp2) == 0x85 ){
-						//ƒRƒ“ƒ|[ƒlƒ“ƒg
+						//ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
 						if( table.GetNumber(Desc::stream_content, lp2) == 1 ){
-							//‰f‘œBƒRƒ“ƒ|[ƒlƒ“ƒg‹Lqq‚ÉƒLƒƒƒXƒg
+							//æ˜ åƒã€‚ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆè¨˜è¿°å­ã«ã‚­ãƒ£ã‚¹ãƒˆ
 							table.SetNumber(Desc::descriptor_tag, Desc::component_descriptor, lp2);
 						}else if( table.GetNumber(Desc::stream_content, lp2) == 2 ){
-							//‰¹ºB‰¹ºƒRƒ“ƒ|[ƒlƒ“ƒg‹Lqq‚ÉƒLƒƒƒXƒg
+							//éŸ³å£°ã€‚éŸ³å£°ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆè¨˜è¿°å­ã«ã‚­ãƒ£ã‚¹ãƒˆ
 							table.SetNumber(Desc::descriptor_tag, Desc::audio_component_descriptor, lp2);
 						}
 					}
 				}
 				if( found0x82 ){
-					//’ZŒ`®ƒCƒxƒ“ƒg‹Lqq‚ÉƒLƒƒƒXƒg
+					//çŸ­å½¢å¼ã‚¤ãƒ™ãƒ³ãƒˆè¨˜è¿°å­ã«ã‚­ãƒ£ã‚¹ãƒˆ
 					table.SetNumber(Desc::descriptor_tag, Desc::short_event_descriptor, lp0x82);
 				}
 			}
@@ -282,7 +282,7 @@ void CDecodeUtil::AddTSData(BYTE* data)
 			map<WORD, CTSBuffUtil>::iterator itr;
 			itr = this->buffUtilMap.find( tsPacket.PID );
 			if( itr == this->buffUtilMap.end() ){
-				//‚Ü‚¾PID‚ª‚È‚¢‚Ì‚ÅV‹K
+				//ã¾ã PIDãŒãªã„ã®ã§æ–°è¦
 				buffUtil = &this->buffUtilMap.insert(std::make_pair(tsPacket.PID, CTSBuffUtil())).first->second;
 			}else{
 				buffUtil = &itr->second;
@@ -368,18 +368,18 @@ void CDecodeUtil::AddTSData(BYTE* data)
 void CDecodeUtil::CheckPAT(WORD PID, const Desc::CDescriptor& pat)
 {
 	if( this->patInfo == NULL ){
-		//‰‰ñ
+		//åˆå›
 		this->patInfo.reset(new Desc::CDescriptor(pat));
 	}else{
 		if( this->patInfo->GetNumber(Desc::transport_stream_id) != pat.GetNumber(Desc::transport_stream_id) ){
-			//TSID•Ï‚í‚Á‚½‚Ì‚Åƒ`ƒƒƒ“ƒlƒ‹•Ï‚í‚Á‚½
+			//TSIDå¤‰ã‚ã£ãŸã®ã§ãƒãƒ£ãƒ³ãƒãƒ«å¤‰ã‚ã£ãŸ
 			ChangeTSIDClear(PID);
 			this->patInfo.reset(new Desc::CDescriptor(pat));
 		}else if( this->patInfo->GetNumber(Desc::version_number) != pat.GetNumber(Desc::version_number) ){
-			//ƒo[ƒWƒ‡ƒ“•Ï‚í‚Á‚½
+			//ãƒãƒ¼ã‚¸ãƒ§ãƒ³å¤‰ã‚ã£ãŸ
 			this->patInfo.reset(new Desc::CDescriptor(pat));
 		}else{
-			//•ÏX‚È‚µ
+			//å¤‰æ›´ãªã—
 		}
 	}
 }
@@ -391,18 +391,18 @@ void CDecodeUtil::CheckNIT(WORD PID, const Desc::CDescriptor& nit)
 	}
 
 	if( nit.GetNumber(Desc::table_id) == 0x40 ){
-		//©ƒlƒbƒgƒ[ƒN
+		//è‡ªãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯
 		BYTE section_number = (BYTE)nit.GetNumber(Desc::section_number);
 		if( this->nitActualInfo.empty() ){
-			//‰‰ñ
+			//åˆå›
 			this->nitActualInfo[section_number] = nit;
 		}else{
 			if( this->nitActualInfo.begin()->second.GetNumber(Desc::network_id) != nit.GetNumber(Desc::network_id) ){
-				//NID•Ï‚í‚Á‚½‚Ì‚Åƒlƒbƒgƒ[ƒN•Ï‚í‚Á‚½
+				//NIDå¤‰ã‚ã£ãŸã®ã§ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯å¤‰ã‚ã£ãŸ
 				ChangeTSIDClear(PID);
 				this->nitActualInfo[section_number] = nit;
 			}else if( this->nitActualInfo.begin()->second.GetNumber(Desc::version_number) != nit.GetNumber(Desc::version_number) ){
-				//ƒo[ƒWƒ‡ƒ“•Ï‚í‚Á‚½
+				//ãƒãƒ¼ã‚¸ãƒ§ãƒ³å¤‰ã‚ã£ãŸ
 				this->nitActualInfo.clear();
 				this->nitActualInfo[section_number] = nit;
 			}else{
@@ -411,29 +411,29 @@ void CDecodeUtil::CheckNIT(WORD PID, const Desc::CDescriptor& nit)
 					Desc::CDescriptor::CLoopPointer lpLast, lp;
 					if( itr->second.EnterLoop(lpLast, 1) && nit.EnterLoop(lp, 1) && itr->first == section_number ){
 						if( itr->second.GetNumber(Desc::original_network_id, lpLast) != nit.GetNumber(Desc::original_network_id, lp) ){
-							//ONID•Ï‚í‚Á‚½‚Ì‚Åƒlƒbƒgƒ[ƒN•Ï‚í‚Á‚½
+							//ONIDå¤‰ã‚ã£ãŸã®ã§ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯å¤‰ã‚ã£ãŸ
 							ChangeTSIDClear(PID);
 							this->nitActualInfo[section_number] = nit;
 						}else{
 							if( itr->second.GetNumber(Desc::transport_stream_id, lpLast) != nit.GetNumber(Desc::transport_stream_id, lp) ){
-								//TSID•Ï‚í‚Á‚½‚Ì‚Åƒlƒbƒgƒ[ƒN•Ï‚í‚Á‚½
+								//TSIDå¤‰ã‚ã£ãŸã®ã§ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯å¤‰ã‚ã£ãŸ
 								ChangeTSIDClear(PID);
 								this->nitActualInfo[section_number] = nit;
 							}else{
-								//•Ï‰»‚È‚µ
+								//å¤‰åŒ–ãªã—
 								if( this->nitActualInfo.count(section_number) == 0 ){
 									this->nitActualInfo[section_number] = nit;
 								}
 							}
 						}
 					}else{
-						//•Ï‰»‚È‚µ
+						//å¤‰åŒ–ãªã—
 						if( this->nitActualInfo.count(section_number) == 0 ){
 							this->nitActualInfo[section_number] = nit;
 						}
 					}
 				}else{
-					//•Ï‰»‚È‚µ
+					//å¤‰åŒ–ãªã—
 					if( this->nitActualInfo.count(section_number) == 0 ){
 						this->nitActualInfo[section_number] = nit;
 					}
@@ -441,8 +441,8 @@ void CDecodeUtil::CheckNIT(WORD PID, const Desc::CDescriptor& nit)
 			}
 		}
 	}else if( nit.GetNumber(Desc::table_id) == 0x41 ){
-		//‘¼ƒlƒbƒgƒ[ƒN
-		//“Á‚Éˆµ‚¤•K—v«‚È‚µ
+		//ä»–ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯
+		//ç‰¹ã«æ‰±ã†å¿…è¦æ€§ãªã—
 	}
 }
 
@@ -453,34 +453,34 @@ void CDecodeUtil::CheckSDT(WORD PID, const Desc::CDescriptor& sdt)
 	}
 
 	if( sdt.GetNumber(Desc::table_id) == 0x42 ){
-		//©ƒXƒgƒŠ[ƒ€
+		//è‡ªã‚¹ãƒˆãƒªãƒ¼ãƒ 
 		BYTE section_number = (BYTE)sdt.GetNumber(Desc::section_number);
 		if( this->sdtActualInfo.empty() ){
-			//‰‰ñ
+			//åˆå›
 			this->sdtActualInfo[section_number] = sdt;
 		}else{
 			if( this->sdtActualInfo.begin()->second.GetNumber(Desc::original_network_id) != sdt.GetNumber(Desc::original_network_id) ){
-				//ONID•Ï‚í‚Á‚½‚Ì‚Åƒlƒbƒgƒ[ƒN•Ï‚í‚Á‚½
+				//ONIDå¤‰ã‚ã£ãŸã®ã§ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯å¤‰ã‚ã£ãŸ
 				ChangeTSIDClear(PID);
 				this->sdtActualInfo[section_number] = sdt;
 			}else if( this->sdtActualInfo.begin()->second.GetNumber(Desc::transport_stream_id) != sdt.GetNumber(Desc::transport_stream_id) ){
-				//TSID•Ï‚í‚Á‚½‚Ì‚Åƒ`ƒƒƒ“ƒlƒ‹•Ï‚í‚Á‚½
+				//TSIDå¤‰ã‚ã£ãŸã®ã§ãƒãƒ£ãƒ³ãƒãƒ«å¤‰ã‚ã£ãŸ
 				ChangeTSIDClear(PID);
 				this->sdtActualInfo[section_number] = sdt;
 			}else if( this->sdtActualInfo.begin()->second.GetNumber(Desc::version_number) != sdt.GetNumber(Desc::version_number) ){
-				//ƒo[ƒWƒ‡ƒ“•Ï‚í‚Á‚½
+				//ãƒãƒ¼ã‚¸ãƒ§ãƒ³å¤‰ã‚ã£ãŸ
 				this->sdtActualInfo.clear();
 				this->sdtActualInfo[section_number] = sdt;
 			}else{
-				//•Ï‰»‚È‚µ
+				//å¤‰åŒ–ãªã—
 				if( this->sdtActualInfo.count(section_number) == 0 ){
 					this->sdtActualInfo[section_number] = sdt;
 				}
 			}
 		}
 	}else if( sdt.GetNumber(Desc::table_id) == 0x46 ){
-		//‘¼ƒXƒgƒŠ[ƒ€
-		//“Á‚Éˆµ‚¤•K—v«‚È‚µ
+		//ä»–ã‚¹ãƒˆãƒªãƒ¼ãƒ 
+		//ç‰¹ã«æ‰±ã†å¿…è¦æ€§ãªã—
 	}
 }
 
@@ -509,25 +509,25 @@ void CDecodeUtil::CheckEIT(WORD PID, const Desc::CDescriptor& eit)
 void CDecodeUtil::CheckBIT(WORD PID, const Desc::CDescriptor& bit)
 {
 	if( this->bitInfo == NULL ){
-		//‰‰ñ
+		//åˆå›
 		this->bitInfo.reset(new Desc::CDescriptor(bit));
 	}else{
 		if( this->bitInfo->GetNumber(Desc::original_network_id) != bit.GetNumber(Desc::original_network_id) ){
-			//ONID•Ï‚í‚Á‚½‚Ì‚Åƒlƒbƒgƒ[ƒN•Ï‚í‚Á‚½
+			//ONIDå¤‰ã‚ã£ãŸã®ã§ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯å¤‰ã‚ã£ãŸ
 			ChangeTSIDClear(PID);
 			this->bitInfo.reset(new Desc::CDescriptor(bit));
 		}else if( this->bitInfo->GetNumber(Desc::version_number) != bit.GetNumber(Desc::version_number) ){
-			//ƒo[ƒWƒ‡ƒ“•Ï‚í‚Á‚½
+			//ãƒãƒ¼ã‚¸ãƒ§ãƒ³å¤‰ã‚ã£ãŸ
 			this->bitInfo.reset(new Desc::CDescriptor(bit));
 		}else{
-			//•Ï‰»‚È‚µ
+			//å¤‰åŒ–ãªã—
 		}
 	}
 }
 
 void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 {
-	//ŠÔŒvZ
+	//æ™‚é–“è¨ˆç®—
 	Desc::CDescriptor::CLoopPointer lp;
 	if( this->totTime == 0 && this->tdtTime == 0 && sit.EnterLoop(lp) ){
 		for( DWORD i = 0; sit.SetLoopIndex(lp, i); i++ ){
@@ -547,21 +547,21 @@ void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 	}
 
 	if( this->sitInfo == NULL ){
-		//‰‰ñ
+		//åˆå›
 		this->sitInfo.reset(new Desc::CDescriptor(sit));
 	}else{
 		if( this->sitInfo->GetNumber(Desc::version_number) != sit.GetNumber(Desc::version_number) ){
-			//ƒo[ƒWƒ‡ƒ“•Ï‚í‚Á‚½
+			//ãƒãƒ¼ã‚¸ãƒ§ãƒ³å¤‰ã‚ã£ãŸ
 			this->sitInfo.reset(new Desc::CDescriptor(sit));
 		}else{
-			//•Ï‰»‚È‚µ
+			//å¤‰åŒ–ãªã—
 		}
 	}
 }
 
-//‰ğÍƒf[ƒ^‚ÌŒ»İ‚ÌƒXƒgƒŠ[ƒ€‚h‚c‚ğæ“¾‚·‚é
-// originalNetworkID		[OUT]Œ»İ‚ÌoriginalNetworkID
-// transportStreamID		[OUT]Œ»İ‚ÌtransportStreamID
+//è§£æãƒ‡ãƒ¼ã‚¿ã®ç¾åœ¨ã®ã‚¹ãƒˆãƒªãƒ¼ãƒ ï¼©ï¼¤ã‚’å–å¾—ã™ã‚‹
+// originalNetworkID		[OUT]ç¾åœ¨ã®originalNetworkID
+// transportStreamID		[OUT]ç¾åœ¨ã®transportStreamID
 BOOL CDecodeUtil::GetTSID(
 	WORD* originalNetworkID,
 	WORD* transportStreamID
@@ -588,10 +588,10 @@ BOOL CDecodeUtil::GetTSID(
 	return FALSE;
 }
 
-//©ƒXƒgƒŠ[ƒ€‚ÌƒT[ƒrƒXˆê——‚ğæ“¾‚·‚é
-//ˆø”F
-// serviceListSize			[OUT]serviceList‚ÌŒÂ”
-// serviceList				[OUT]ƒT[ƒrƒXî•ñ‚ÌƒŠƒXƒgiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+//è‡ªã‚¹ãƒˆãƒªãƒ¼ãƒ ã®ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
+//å¼•æ•°ï¼š
+// serviceListSize			[OUT]serviceListã®å€‹æ•°
+// serviceList				[OUT]ã‚µãƒ¼ãƒ“ã‚¹æƒ…å ±ã®ãƒªã‚¹ãƒˆï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 BOOL CDecodeUtil::GetServiceListActual(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList_
@@ -729,10 +729,10 @@ BOOL CDecodeUtil::GetServiceListActual(
 	return TRUE;
 }
 
-//©ƒXƒgƒŠ[ƒ€‚ÌƒT[ƒrƒXˆê——‚ğSIT‚©‚çæ“¾‚·‚é
-//ˆø”F
-// serviceListSize			[OUT]serviceList‚ÌŒÂ”
-// serviceList				[OUT]ƒT[ƒrƒXî•ñ‚ÌƒŠƒXƒgiDLL“à‚Å©“®“I‚Édelete‚·‚éBŸ‚Éæ“¾‚ğs‚¤‚Ü‚Å—LŒøj
+//è‡ªã‚¹ãƒˆãƒªãƒ¼ãƒ ã®ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’SITã‹ã‚‰å–å¾—ã™ã‚‹
+//å¼•æ•°ï¼š
+// serviceListSize			[OUT]serviceListã®å€‹æ•°
+// serviceList				[OUT]ã‚µãƒ¼ãƒ“ã‚¹æƒ…å ±ã®ãƒªã‚¹ãƒˆï¼ˆDLLå†…ã§è‡ªå‹•çš„ã«deleteã™ã‚‹ã€‚æ¬¡ã«å–å¾—ã‚’è¡Œã†ã¾ã§æœ‰åŠ¹ï¼‰
 BOOL CDecodeUtil::GetServiceListSIT(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList_
@@ -763,7 +763,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	this->serviceDBList.reset(new EPGDB_SERVICE_INFO[*serviceListSize]);
 	this->serviceAdapterList.reset(new CServiceInfoAdapter[*serviceListSize]);
 
-	//ƒT[ƒrƒXƒŠƒXƒg
+	//ã‚µãƒ¼ãƒ“ã‚¹ãƒªã‚¹ãƒˆ
 	for( DWORD i=0; i<*serviceListSize; i++ ){
 		this->sitInfo->SetLoopIndex(lp, i);
 		this->serviceDBList[i].ONID = ONID;
@@ -796,7 +796,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 			}
 		}
 
-		//ƒgƒ‰ƒ“ƒXƒ|[ƒg‚Ìî•ñ‚Íæ“¾‚Å‚«‚È‚¢
+		//ãƒˆãƒ©ãƒ³ã‚¹ãƒãƒ¼ãƒˆã®æƒ…å ±ã¯å–å¾—ã§ããªã„
 		this->serviceDBList[i].remote_control_key_id = 0;
 
 		this->serviceDBList[i].partialReceptionFlag = FALSE;
@@ -809,10 +809,10 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	return TRUE;
 }
 
-//ƒXƒgƒŠ[ƒ€“à‚ÌŒ»İ‚ÌŠÔî•ñ‚ğæ“¾‚·‚é
-//ˆø”F
-// time				[OUT]ƒXƒgƒŠ[ƒ€“à‚ÌŒ»İ‚ÌŠÔ
-// tick				[OUT]time‚ğæ“¾‚µ‚½“_‚Ìƒ`ƒbƒNƒJƒEƒ“ƒg
+//ã‚¹ãƒˆãƒªãƒ¼ãƒ å†…ã®ç¾åœ¨ã®æ™‚é–“æƒ…å ±ã‚’å–å¾—ã™ã‚‹
+//å¼•æ•°ï¼š
+// time				[OUT]ã‚¹ãƒˆãƒªãƒ¼ãƒ å†…ã®ç¾åœ¨ã®æ™‚é–“
+// tick				[OUT]timeã‚’å–å¾—ã—ãŸæ™‚ç‚¹ã®ãƒãƒƒã‚¯ã‚«ã‚¦ãƒ³ãƒˆ
 BOOL CDecodeUtil::GetNowTime(
 	__int64* time,
 	DWORD* tick

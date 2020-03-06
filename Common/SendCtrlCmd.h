@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "StructDef.h"
 
@@ -13,99 +13,99 @@ public:
 	~CSendCtrlCmd(void);
 
 #if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
-	//����M�^�C���A�E�g�i�ڑ��悪�v������������̂ɂ����鎞�Ԃ����\���ɒ����j
+	//送受信タイムアウト（接続先が要求を処理するのにかかる時間よりも十分に長く）
 	static const DWORD SND_RCV_TIMEOUT = 30000;
 
-	//�R�}���h���M���@�̐ݒ�
-	//�����F
-	// tcpFlag		[IN] TRUE�FTCP/IP���[�h�AFALSE�F���O�t���p�C�v���[�h
+	//コマンド送信方法の設定
+	//引数：
+	// tcpFlag		[IN] TRUE：TCP/IPモード、FALSE：名前付きパイプモード
 	void SetSendMode(
 		BOOL tcpFlag_
 		);
 #endif
 
-	//���O�t���p�C�v���[�h���̐ڑ����ݒ�
-	//EpgTimerSrv.exe�ɑ΂���R�}���h�͐ݒ肵�Ȃ��Ă��i�f�t�H���g�l�ɂȂ��Ă���j
-	//�����F
-	// pipeName		[IN]�ڑ��p�C�v�̖��O
+	//名前付きパイプモード時の接続先を設定
+	//EpgTimerSrv.exeに対するコマンドは設定しなくても可（デフォルト値になっている）
+	//引数：
+	// pipeName		[IN]接続パイプの名前
 	void SetPipeSetting(
 		LPCWSTR pipeName_
 		);
 
-	//���O�t���p�C�v���[�h���̐ڑ����ݒ�i�ڔ��Ƀv���Z�XID�𔺂��^�C�v�j
-	//�����F
-	// pid			[IN]�v���Z�XID
+	//名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
+	//引数：
+	// pid			[IN]プロセスID
 	void SetPipeSetting(
 		LPCWSTR pipeName_,
 		DWORD pid
 		);
 
-	//�ڑ���p�C�v�����݂��邩���ׂ�
+	//接続先パイプが存在するか調べる
 	bool PipeExists();
 
-	//TCP/IP���[�h���̐ڑ����ݒ�
-	//�����F
-	// ip			[IN]�ڑ���IP
-	// port			[IN]�ڑ���|�[�g
+	//TCP/IPモード時の接続先を設定
+	//引数：
+	// ip			[IN]接続先IP
+	// port			[IN]接続先ポート
 	void SetNWSetting(
 		const wstring& ip,
 		DWORD port
 		);
 
-	//�ڑ��������̃^�C���A�E�g�ݒ�
-	// timeOut		[IN]�^�C���A�E�g�l�i�P�ʁFms�j
+	//接続処理時のタイムアウト設定
+	// timeOut		[IN]タイムアウト値（単位：ms）
 	void SetConnectTimeOut(
 		DWORD timeOut
 		);
 
-	//EPG�f�[�^���ēǂݍ��݂���
-	//�߂�l�F
-	// �G���[�R�[�h
+	//EPGデータを再読み込みする
+	//戻り値：
+	// エラーコード
 	DWORD SendReloadEpg(){
 		return SendCmdWithoutData(CMD2_EPG_SRV_RELOAD_EPG);
 	}
 
-	//�ݒ�����ēǂݍ��݂���
-	//�߂�l�F
-	// �G���[�R�[�h
+	//設定情報を再読み込みする
+	//戻り値：
+	// エラーコード
 	DWORD SendReloadSetting(){
 		return SendCmdWithoutData(CMD2_EPG_SRV_RELOAD_SETTING);
 	}
 
-	//EpgTimerSrv.exe�̃p�C�v�ڑ�GUI�Ƃ��ăv���Z�X��o�^����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// processID			[IN]�v���Z�XID
+	//EpgTimerSrv.exeのパイプ接続GUIとしてプロセスを登録する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// processID			[IN]プロセスID
 	DWORD SendRegistGUI(DWORD processID){
 		return SendCmdData(CMD2_EPG_SRV_REGIST_GUI, processID);
 	}
 
-	//EpgTimerSrv.exe�̃p�C�v�ڑ�GUI�o�^����������
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// processID			[IN]�v���Z�XID
+	//EpgTimerSrv.exeのパイプ接続GUI登録を解除する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// processID			[IN]プロセスID
 	DWORD SendUnRegistGUI(DWORD processID){
 		return SendCmdData(CMD2_EPG_SRV_UNREGIST_GUI, processID);
 	}
 
-	//�\��ꗗ���擾����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val			[OUT]�\��ꗗ
+	//予約一覧を取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]予約一覧
 	DWORD SendEnumReserve(
 		vector<RESERVE_DATA>* val
 		){
 		return ReceiveCmdData(CMD2_EPG_SRV_ENUM_RESERVE, val);
 	}
 
-	//�\����폜����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val				[IN]�폜����\��ID�ꗗ
+	//予約を削除する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]削除する予約ID一覧
 	DWORD SendDelReserve(const vector<DWORD>& val){
 		return SendCmdData(CMD2_EPG_SRV_DEL_RESERVE, val);
 	}
@@ -124,116 +124,116 @@ public:
 		return SendCmdWithoutData(CMD2_EPG_SRV_REBOOT);
 	}
 
-	//�ݒ�t�@�C��(ini)�̍X�V��ʒm������
-	//�߂�l�F
-	//�����F
+	//設定ファイル(ini)の更新を通知させる
+	//戻り値：
+	//引数：
 	// val			[IN]Sender
-	// �G���[�R�[�h
+	// エラーコード
 	DWORD SendProfileUpdate(
 		const wstring& val
 		){
 		return SendCmdData(CMD2_EPG_SRV_PROFILE_UPDATE, val);
 	}
 
-	//�X�g���[���z�M�p�t�@�C�������
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val				[IN]����pCtrlID
+	//ストリーム配信用ファイルを閉じる
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]制御用CtrlID
 	DWORD SendNwPlayClose(
 		DWORD val
 		){
 		return SendCmdData(CMD2_EPG_SRV_NWPLAY_CLOSE, val);
 	}
 
-	//�X�g���[���z�M�J�n
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val				[IN]����pCtrlID
+	//ストリーム配信開始
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]制御用CtrlID
 	DWORD SendNwPlayStart(
 		DWORD val
 		){
 		return SendCmdData(CMD2_EPG_SRV_NWPLAY_PLAY, val);
 	}
 
-	//�X�g���[���z�M��~
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val				[IN]����pCtrlID
+	//ストリーム配信停止
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]制御用CtrlID
 	DWORD SendNwPlayStop(
 		DWORD val
 		){
 		return SendCmdData(CMD2_EPG_SRV_NWPLAY_STOP, val);
 	}
 
-	//�X�g���[���z�M�Ō��݂̑��M�ʒu�Ƒ��t�@�C���T�C�Y���擾����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val				[IN/OUT]�T�C�Y���
+	//ストリーム配信で現在の送信位置と総ファイルサイズを取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN/OUT]サイズ情報
 	DWORD SendNwPlayGetPos(
 		NWPLAY_POS_CMD* val
 		){
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_GET_POS, *val, val);
 	}
 
-	//�X�g���[���z�M�ő��M�ʒu���V�[�N����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val				[IN]�T�C�Y���
+	//ストリーム配信で送信位置をシークする
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]サイズ情報
 	DWORD SendNwPlaySetPos(
 		const NWPLAY_POS_CMD* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_NWPLAY_SET_POS, *val);
 	}
 
-	//�X�g���[���z�M�ő��M���ݒ肷��
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val				[IN/OUT]�T�C�Y���
+	//ストリーム配信で送信先を設定する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN/OUT]サイズ情報
 	DWORD SendNwPlaySetIP(
 		NWPLAY_PLAY_INFO* val
 		){
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_SET_IP, *val, val);
 	}
 
-//�^�C�}�[GUI�iEpgTimer_Bon.exe�j�p
+//タイマーGUI（EpgTimer_Bon.exe）用
 
-	//�\��ꗗ�̏�񂪍X�V���ꂽ
-	//�߂�l�F
-	// �G���[�R�[�h
+	//予約一覧の情報が更新された
+	//戻り値：
+	// エラーコード
 	DWORD SendGUIUpdateReserve(
 		){
 		return SendCmdWithoutData(CMD2_TIMER_GUI_UPDATE_RESERVE);
 	}
 
-	//EPG�f�[�^�̍ēǂݍ��݂���������
-	//�߂�l�F
-	// �G���[�R�[�h
+	//EPGデータの再読み込みが完了した
+	//戻り値：
+	// エラーコード
 	DWORD SendGUIUpdateEpgData(
 		){
 		return SendCmdWithoutData(CMD2_TIMER_GUI_UPDATE_EPGDATA);
 	}
 
-	//���X�V��ʒm����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val				[IN]�ʒm���
+	//情報更新を通知する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]通知情報
 	DWORD SendGUINotifyInfo2(const NOTIFY_SRV_INFO& val){
 		return SendCmdData2(CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2, val);
 	}
 
-	//View�A�v���iEpgDataCap_Bon.exe�j���N��
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// exeCmd			[IN]�R�}���h���C��
-	// PID				[OUT]�N������exe��PID
+	//Viewアプリ（EpgDataCap_Bon.exe）を起動
+	//戻り値：
+	// エラーコード
+	//引数：
+	// exeCmd			[IN]コマンドライン
+	// PID				[OUT]起動したexeのPID
 	DWORD SendGUIExecute(
 		const wstring& exeCmd,
 		DWORD* PID
@@ -241,9 +241,9 @@ public:
 		return SendAndReceiveCmdData(CMD2_TIMER_GUI_VIEW_EXECUTE, exeCmd, PID);
 	}
 
-	//�X�^���o�C�A�x�~�A�V���b�g�_�E���ɓ����Ă������̊m�F�����[�U�[�ɍs��
-	//�߂�l�F
-	// �G���[�R�[�h
+	//スタンバイ、休止、シャットダウンに入っていいかの確認をユーザーに行う
+	//戻り値：
+	// エラーコード
 	DWORD SendGUIQuerySuspend(
 		BYTE rebootFlag,
 		BYTE suspendMode
@@ -251,20 +251,20 @@ public:
 		return SendCmdData(CMD2_TIMER_GUI_QUERY_SUSPEND, (WORD)(rebootFlag<<8|suspendMode));
 	}
 
-	//PC�ċN���ɓ����Ă������̊m�F�����[�U�[�ɍs��
-	//�߂�l�F
-	// �G���[�R�[�h
+	//PC再起動に入っていいかの確認をユーザーに行う
+	//戻り値：
+	// エラーコード
 	DWORD SendGUIQueryReboot(
 		BYTE rebootFlag
 		){
 		return SendCmdData(CMD2_TIMER_GUI_QUERY_REBOOT, (WORD)(rebootFlag<<8));
 	}
 
-	//�T�[�o�[�̃X�e�[�^�X�ύX�ʒm
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// status			[IN]�X�e�[�^�X
+	//サーバーのステータス変更通知
+	//戻り値：
+	// エラーコード
+	//引数：
+	// status			[IN]ステータス
 	DWORD SendGUIStatusChg(
 		WORD status
 		){
@@ -272,64 +272,64 @@ public:
 	}
 
 
-//View�A�v���iEpgDataCap_Bon.exe�j�p
+//Viewアプリ（EpgDataCap_Bon.exe）用
 
-	//�g�p����BonDriver�̃t�@�C�������擾
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// bonDriver			[OUT]BonDriver�t�@�C����
+	//使用中のBonDriverのファイル名を取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// bonDriver			[OUT]BonDriverファイル名
 	DWORD SendViewGetBonDrivere(
 		wstring* bonDriver
 		){
 		return ReceiveCmdData(CMD2_VIEW_APP_GET_BONDRIVER, bonDriver);
 	}
 
-	//�`�����l���؂�ւ�
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// chInfo				[IN]�`�����l�����
+	//チャンネル切り替え
+	//戻り値：
+	// エラーコード
+	//引数：
+	// chInfo				[IN]チャンネル情報
 	DWORD SendViewSetCh(
 		const SET_CH_INFO& chInfo
 		){
 		return SendCmdData(CMD2_VIEW_APP_SET_CH, chInfo);
 	}
 
-	//�����g�̎��Ԃ�PC���Ԃ̌덷�擾
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// delaySec				[OUT]�덷�i�b�j
+	//放送波の時間とPC時間の誤差取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// delaySec				[OUT]誤差（秒）
 	DWORD SendViewGetDelay(
 		int* delaySec
 		){
 		return ReceiveCmdData(CMD2_VIEW_APP_GET_DELAY, delaySec);
 	}
 
-	//���݂̏�Ԃ��擾
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// status				[OUT]���
+	//現在の状態を取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// status				[OUT]状態
 	DWORD SendViewGetStatus(
 		DWORD* status
 		){
 		return ReceiveCmdData(CMD2_VIEW_APP_GET_STATUS, status);
 	}
 
-	//�A�v���P�[�V�����̏I��
-	//�߂�l�F
-	// �G���[�R�[�h
+	//アプリケーションの終了
+	//戻り値：
+	// エラーコード
 	DWORD SendViewAppClose(
 		){
 		return SendCmdWithoutData(CMD2_VIEW_APP_CLOSE);
 	}
 
-	//���ʗpID�̐ݒ�
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
+	//識別用IDの設定
+	//戻り値：
+	// エラーコード
+	//引数：
 	// id				[IN]ID
 	DWORD SendViewSetID(
 		int id
@@ -337,10 +337,10 @@ public:
 		return SendCmdData(CMD2_VIEW_APP_SET_ID, id);
 	}
 
-	//���ʗpID�̎擾
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
+	//識別用IDの取得
+	//戻り値：
+	// エラーコード
+	//引数：
 	// id				[OUT]ID
 	DWORD SendViewGetID(
 		int* id
@@ -348,65 +348,65 @@ public:
 		return ReceiveCmdData(CMD2_VIEW_APP_GET_ID, id);
 	}
 
-	//�\��^��p��GUI�L�[�v
-	//�߂�l�F
-	// �G���[�R�[�h
+	//予約録画用にGUIキープ
+	//戻り値：
+	// エラーコード
 	DWORD SendViewSetStandbyRec(
 		DWORD keepFlag
 		){
 		return SendCmdData(CMD2_VIEW_APP_SET_STANDBY_REC, keepFlag);
 	}
 
-	//�X�g���[������p�R���g���[���쐬
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// ctrlID				[OUT]����ID
+	//ストリーム制御用コントロール作成
+	//戻り値：
+	// エラーコード
+	//引数：
+	// ctrlID				[OUT]制御ID
 	DWORD SendViewCreateCtrl(
 		DWORD* ctrlID
 		){
 		return ReceiveCmdData(CMD2_VIEW_APP_CREATE_CTRL, ctrlID);
 	}
 
-	//�X�g���[������p�R���g���[���폜
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// ctrlID				[IN]����ID
+	//ストリーム制御用コントロール削除
+	//戻り値：
+	// エラーコード
+	//引数：
+	// ctrlID				[IN]制御ID
 	DWORD SendViewDeleteCtrl(
 		DWORD ctrlID
 		){
 		return SendCmdData(CMD2_VIEW_APP_DELETE_CTRL, ctrlID);
 	}
 
-	//����R���g���[���̐ݒ�
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val					[IN]�ݒ�l
+	//制御コントロールの設定
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val					[IN]設定値
 	DWORD SendViewSetCtrlMode(
 		const SET_CTRL_MODE& val
 		){
 		return SendCmdData(CMD2_VIEW_APP_SET_CTRLMODE, val);
 	}
 
-	//�^�揈���J�n
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val					[IN]�ݒ�l
+	//録画処理開始
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val					[IN]設定値
 	DWORD SendViewStartRec(
 		const SET_CTRL_REC_PARAM& val
 		){
 		return SendCmdData(CMD2_VIEW_APP_REC_START_CTRL, val);
 	}
 
-	//�^�揈����~
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val					[IN]�ݒ�l
-	// resVal				[OUT]�h���b�v��
+	//録画処理停止
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val					[IN]設定値
+	// resVal				[OUT]ドロップ数
 	DWORD SendViewStopRec(
 		const SET_CTRL_REC_STOP_PARAM& val,
 		SET_CTRL_REC_STOP_RES_PARAM* resVal
@@ -414,11 +414,11 @@ public:
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_REC_STOP_CTRL, val, resVal);
 	}
 
-	//�^�撆�̃t�@�C���p�X���擾
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val					[OUT]�t�@�C���p�X
+	//録画中のファイルパスを取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val					[OUT]ファイルパス
 	DWORD SendViewGetRecFilePath(
 		DWORD ctrlID,
 		wstring* resVal
@@ -426,30 +426,30 @@ public:
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_REC_FILE_PATH, ctrlID, resVal);
 	}
 
-	//EPG�擾�J�n
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// val					[IN]�擾�`�����l�����X�g
+	//EPG取得開始
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val					[IN]取得チャンネルリスト
 	DWORD SendViewEpgCapStart(
 		const vector<SET_CH_INFO>& val
 		){
 		return SendCmdData(CMD2_VIEW_APP_EPGCAP_START, val);
 	}
 
-	//EPG�擾�L�����Z��
-	//�߂�l�F
-	// �G���[�R�[�h
+	//EPG取得キャンセル
+	//戻り値：
+	// エラーコード
 	DWORD SendViewEpgCapStop(
 		){
 		return SendCmdWithoutData(CMD2_VIEW_APP_EPGCAP_STOP);
 	}
 
-	//EPG�f�[�^�̌���
-	//�߂�l�F
-	// �G���[�R�[�h
-	// val					[IN]�擾�ԑg
-	// resVal				[OUT]�ԑg���
+	//EPGデータの検索
+	//戻り値：
+	// エラーコード
+	// val					[IN]取得番組
+	// resVal				[OUT]番組情報
 	DWORD SendViewSearchEvent(
 		const SEARCH_EPG_INFO_PARAM& val,
 		EPGDB_EVENT_INFO* resVal
@@ -457,11 +457,11 @@ public:
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_SEARCH_EVENT, val, resVal);
 	}
 
-	//����or���̔ԑg�����擾����
-	//�߂�l�F
-	// �G���[�R�[�h
-	// val					[IN]�擾�ԑg
-	// resVal				[OUT]�ԑg���
+	//現在or次の番組情報を取得する
+	//戻り値：
+	// エラーコード
+	// val					[IN]取得番組
+	// resVal				[OUT]番組情報
 	DWORD SendViewGetEventPF(
 		const GET_EPG_PF_INFO_PARAM& val,
 		EPGDB_EVENT_INFO* resVal
@@ -469,9 +469,9 @@ public:
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_GET_EVENT_PF, val, resVal);
 	}
 
-	//View�{�^���o�^�A�v���N��
-	//�߂�l�F
-	// �G���[�R�[�h
+	//Viewボタン登録アプリ起動
+	//戻り値：
+	// エラーコード
 	DWORD SendViewExecViewApp(
 		){
 		return SendCmdWithoutData(CMD2_VIEW_APP_EXEC_VIEW_APP);
@@ -497,7 +497,7 @@ private:
 	template<class T, class U> DWORD SendAndReceiveCmdData2(DWORD param, const T& val, U* resVal);
 };
 
-#if 1 //�C�����C��/�e���v���[�g��`
+#if 1 //インライン/テンプレート定義
 
 inline DWORD CSendCtrlCmd::SendCmdWithoutData(DWORD param, CMD_STREAM* res)
 {

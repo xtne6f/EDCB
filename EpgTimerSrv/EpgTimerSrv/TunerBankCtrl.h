@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
@@ -6,47 +6,47 @@
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/ThreadUtil.h"
 
-//1�̃`���[�i(EpgDataCap_Bon.exe)���Ǘ�����
-//�K���I�u�W�F�N�g������ReloadSetting()���c���j���̏��Ԃŗ��p���Ȃ���΂Ȃ�Ȃ�
-//�X���b�h�Z�[�t�ł͂Ȃ�
+//1つのチューナ(EpgDataCap_Bon.exe)を管理する
+//必ずオブジェクト生成→ReloadSetting()→…→破棄の順番で利用しなければならない
+//スレッドセーフではない
 class CTunerBankCtrl
 {
 public:
-	//�^��J�n�O�ɘ^�搧����쐬����^�C�~���O(�b)
+	//録画開始前に録画制御を作成するタイミング(秒)
 	static const int READY_MARGIN = 20;
 
 	enum TR_STATE {
 		TR_IDLE,
-		TR_OPEN,	//�`���[�i�N���ς�(GetState()�̂ݎg�p)
-		TR_READY,	//�^�搧��쐬�ς�
-		TR_REC,		//�^�撆
-		TR_EPGCAP,	//EPG�擾��(GetState()��specialState�Ŏg�p)
-		TR_NWTV,	//�l�b�g���[�N���[�h�ŋN����(GetState()��specialState�Ŏg�p)
+		TR_OPEN,	//チューナ起動済み(GetState()のみ使用)
+		TR_READY,	//録画制御作成済み
+		TR_REC,		//録画中
+		TR_EPGCAP,	//EPG取得中(GetState()とspecialStateで使用)
+		TR_NWTV,	//ネットワークモードで起動中(GetState()とspecialStateで使用)
 	};
 	enum {
-		CHECK_END = 1,				//����I��
-		CHECK_END_CANCEL,			//�L�����Z���ɂ��^�悪���f����
-		CHECK_END_NOT_FIND_PF,		//p/f�ɔԑg���m�F�ł��Ȃ�����
-		CHECK_END_NEXT_START_END,	//���̗\��J�n�̂��ߏI��
-		CHECK_END_END_SUBREC,		//�T�u�t�H���_�ւ̘^�悪��������
-		CHECK_END_NOT_START_HEAD,	//�ꕔ�̂ݘ^�悳�ꂽ
-		CHECK_ERR_RECEND,			//�^��I�������Ɏ��s����
-		CHECK_ERR_REC,				//�\�������^�悪���f����
-		CHECK_ERR_RECSTART,			//�^��J�n�Ɏ��s����
-		CHECK_ERR_CTRL,				//�^�搧��̍쐬�Ɏ��s����
-		CHECK_ERR_OPEN,				//�`���[�i�̃I�[�v�����ł��Ȃ�����
-		CHECK_ERR_PASS,				//�I�����Ԃ��߂��Ă���
+		CHECK_END = 1,				//正常終了
+		CHECK_END_CANCEL,			//キャンセルにより録画が中断した
+		CHECK_END_NOT_FIND_PF,		//p/fに番組情報確認できなかった
+		CHECK_END_NEXT_START_END,	//次の予約開始のため終了
+		CHECK_END_END_SUBREC,		//サブフォルダへの録画が発生した
+		CHECK_END_NOT_START_HEAD,	//一部のみ録画された
+		CHECK_ERR_RECEND,			//録画終了処理に失敗した
+		CHECK_ERR_REC,				//予期せず録画が中断した
+		CHECK_ERR_RECSTART,			//録画開始に失敗した
+		CHECK_ERR_CTRL,				//録画制御の作成に失敗した
+		CHECK_ERR_OPEN,				//チューナのオープンができなかった
+		CHECK_ERR_PASS,				//終了時間が過ぎていた
 	};
 	struct CHECK_RESULT {
 		DWORD type;
 		DWORD reserveID;
-		//�ȉ���type<=CHECK_END_NOT_START_HEAD�̂Ƃ��L��
+		//以下はtype<=CHECK_END_NOT_START_HEADのとき有効
 		wstring recFilePath;
 		bool continueRec;
-		//continueRec(�A���^��J�n�ɂ��I��)�̂Ƃ�drops��scrambles�͏��0
+		//continueRec(連続録画開始による終了)のときdropsとscramblesは常に0
 		__int64 drops;
 		__int64 scrambles;
-		//�ȉ���type==CHECK_END�̂Ƃ��L��
+		//以下はtype==CHECK_ENDのとき有効
 		SYSTEMTIME epgStartTime;
 		wstring epgEventName;
 	};
@@ -60,14 +60,14 @@ public:
 		WORD tsid;
 		WORD sid;
 		WORD eid;
-		BYTE recMode; //RECMODE_ALL�`RECMODE_VIEW
+		BYTE recMode; //RECMODE_ALL～RECMODE_VIEW
 		BYTE priority;
 		bool enableCaption;
 		bool enableData;
 		bool pittari;
 		BYTE partialRecMode;
 		bool continueRecFlag;
-		//�}�[�W���̓f�t�H���g�l�K�p�ς݂Ƃ��邱��
+		//マージンはデフォルト値適用済みとすること
 		__int64 startMargin;
 		__int64 endMargin;
 		vector<REC_FILE_SET_INFO> recFolder;
@@ -78,75 +78,75 @@ public:
 	~CTunerBankCtrl();
 	void ReloadSetting(const CEpgTimerSrvSetting::SETTING& s);
 
-	//�h���C�o�t�@�C�������擾(�s�ϒl)
+	//ドライバファイル名を取得(不変値)
 	const wstring& GetBonFileName() const { return this->bonFileName; }
-	//���̃`���[�i�Ɠ����h���C�o�̃`���[�i��EPG�擾�Ɏg����ő吔���擾(�s�ϒl)
+	//このチューナと同じドライバのチューナをEPG取得に使える最大数を取得(不変値)
 	WORD GetEpgCapMaxOfThisBon() const { return this->epgCapMaxOfThisBon; }
-	//�T�[�r�X�����擾(�s�ϒl)
+	//サービス情報を取得(不変値)
 	const CH_DATA4* GetCh(WORD onid, WORD tsid, WORD sid) const {
 		auto itr = std::find_if(this->chList.begin(), this->chList.end(), [=](const CH_DATA4& a) {
 			return a.originalNetworkID == onid && a.transportStreamID == tsid && a.serviceID == sid; });
 		return itr == this->chList.end() ? NULL : &*itr;
 	}
-	//�\���ǉ�����
+	//予約を追加する
 	bool AddReserve(const TUNER_RESERVE& reserve);
-	//�ҋ@��Ԃɓ����Ă���\���ύX����
-	//�ύX�ł��Ȃ��t�B�[���h�͓K�X�C�������
-	//�J�n���Ԃ̌���ړ��͒��ӂ��K�v�B����ړ��̌��ʑҋ@��Ԃ𖾂炩�ɔ����Ă��܂��ꍇ��startTime��startMargin���C�������
+	//待機状態に入っている予約を変更する
+	//変更できないフィールドは適宜修正される
+	//開始時間の後方移動は注意が必要。後方移動の結果待機状態を明らかに抜けてしまう場合はstartTimeとstartMarginが修正される
 	bool ChgCtrlReserve(TUNER_RESERVE* reserve);
-	//�\����폜����
-	//retList: �^�撆�ł���ΏI�����ʂ�ǉ�
+	//予約を削除する
+	//retList: 録画中であれば終了結果を追加
 	bool DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList = NULL);
-	//�J�n���Ԃ�startTime�ȏ�̑ҋ@��Ԃɓ����Ă��Ȃ����ׂĂ̗\����N���A����
+	//開始時間がstartTime以上の待機状態に入っていないすべての予約をクリアする
 	void ClearNoCtrl(__int64 startTime = 0);
-	//�\��ID�ꗗ���擾����(�\�[�g�ς�)
+	//予約ID一覧を取得する(ソート済み)
 	vector<DWORD> GetReserveIDList() const;
-	//�`���[�i�̏�ԑJ�ڂ������Ȃ��A�I�������\����擾����
-	//�T��1�b���ƂɌĂ�
-	//startedReserveIDList: TR_REC�ɑJ�ڂ����\��ID�ꗗ
+	//チューナの状態遷移をおこない、終了した予約を取得する
+	//概ね1秒ごとに呼ぶ
+	//startedReserveIDList: TR_RECに遷移した予約ID一覧
 	vector<CHECK_RESULT> Check(vector<DWORD>* startedReserveIDList = NULL);
-	//�`���[�i�S�̂Ƃ��Ă̏�Ԃ��擾����
+	//チューナ全体としての状態を取得する
 	TR_STATE GetState() const;
-	//�v���Z�XID���擾����(GetState()��TR_IDLE�̂Ƃ��s��)
+	//プロセスIDを取得する(GetState()がTR_IDLEのとき不定)
 	int GetProcessID() const { return this->tunerPid; }
-	//�l�b�g���[�N���[�hID���擾����(GetState()��TR_NWTV�łȂ��Ƃ��s��)
+	//ネットワークモードIDを取得する(GetState()がTR_NWTVでないとき不定)
 	int GetNWTVID() const { return this->nwtvID; }
-	//�\��J�n�̍ŏ��������擾����
+	//予約開始の最小時刻を取得する
 	__int64 GetNearestReserveTime() const;
-	//EPG�擾���J�n����
+	//EPG取得を開始する
 	bool StartEpgCap(const vector<SET_CH_INFO>& setChList);
-	//�N�����̃`���[�i�̃`�����l�����擾����
+	//起動中のチューナのチャンネルを取得する
 	bool GetCurrentChID(WORD* onid, WORD* tsid) const;
-	//�N�����̃`���[�i����EPG�f�[�^�̌���
+	//起動中のチューナからEPGデータの検索
 	bool SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal) const;
-	//�N�����̃`���[�i���猻��or���̔ԑg�����擾����
-	//�߂�l: 0=����,1=���s(�ԑg���͂Ȃ�),2=���s(�擾�ł��Ȃ�)
+	//起動中のチューナから現在or次の番組情報を取得する
+	//戻り値: 0=成功,1=失敗(番組情報はない),2=失敗(取得できない)
 	int GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resVal) const;
-	//�����g�����ɑ΂���V�X�e�������̒x�����Ԃ��擾����
+	//放送波時刻に対するシステム時刻の遅延時間を取得する
 	__int64 DelayTime() const;
-	//�l�b�g���[�N���[�h�Ń`���[�i���N�����`�����l���ݒ肷��
+	//ネットワークモードでチューナを起動しチャンネル設定する
 	bool OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo);
-	//�l�b�g���[�N���[�h�̃`���[�i�����
+	//ネットワークモードのチューナを閉じる
 	void CloseNWTV();
-	//�\�񂪘^�撆�ł���΂��̘^��t�@�C�������擾����
+	//予約が録画中であればその録画ファイル名を取得する
 	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
-	//�\��������ƂɃt�@�C�����𐶐�����
+	//予約情報をもとにファイル名を生成する
 	static wstring ConvertRecName(
 		LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,
 		LPCWSTR serviceName, LPCWSTR bonDriverName, DWORD tunerID, DWORD reserveID, CEpgDBManager& epgDBManager_,
 		const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, LPCWSTR ext, bool noChkYen, CReNamePlugInUtil& util);
-	//�o���N���Ď����ĕK�v�Ȃ�`���[�i�������I������
-	//�T��2�b���ƂɃ��[�J�X���b�h����Ă�
+	//バンクを監視して必要ならチューナを強制終了する
+	//概ね2秒ごとにワーカスレッドから呼ぶ
 	void Watch();
 private:
 	struct TUNER_RESERVE_WORK : TUNER_RESERVE {
-		__int64 startOrder; //�J�n��(�\��̑O��֌W�����߂�)
-		__int64 effectivePriority; //�����D��x(�\��̗D��x�����߂�B�������ق������D��x)
+		__int64 startOrder; //開始順(予約の前後関係を決める)
+		__int64 effectivePriority; //実効優先度(予約の優先度を決める。小さいほうが高優先度)
 		TR_STATE state;
 		int retryOpenCount;
-		//�ȉ���state!=TR_IDLE�̂Ƃ��L��
-		DWORD ctrlID[2]; //�v�f1�͕�����M�^�搧��
-		//�ȉ���state==TR_REC�̂Ƃ��L��
+		//以下はstate!=TR_IDLEのとき有効
+		DWORD ctrlID[2]; //要素1は部分受信録画制御
+		//以下はstate==TR_RECのとき有効
 		wstring recFilePath[2];
 		bool notStartHead;
 		bool appendPgInfo;
@@ -154,21 +154,21 @@ private:
 		SYSTEMTIME epgStartTime;
 		wstring epgEventName;
 	};
-	//�`���[�i����Ă͂����Ȃ���Ԃ��ǂ���
+	//チューナを閉じてはいけない状態かどうか
 	bool IsNeedOpenTuner() const;
-	//������M�T�[�r�X��T��
+	//部分受信サービスを探す
 	bool FindPartialService(WORD onid, WORD tsid, WORD sid, WORD* partialSID, wstring* serviceName) const;
-	//�`���[�i�ɘ^�搧����쐬����
+	//チューナに録画制御を作成する
 	bool CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER_RESERVE& reserve) const;
-	//�^��t�@�C���ɑΉ�����ԑg���t�@�C����ۑ�����
+	//録画ファイルに対応する番組情報ファイルを保存する
 	void SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& info, bool append) const;
-	//�`���[�i�ɘ^����J�n������
+	//チューナに録画を開始させる
 	bool RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) const;
-	//�`���[�i���N������
+	//チューナを起動する
 	bool OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh);
-	//�`���[�i�����
+	//チューナを閉じる
 	void CloseTuner();
-	//���̃o���N��BonDriver���g�p���Ă���v���Z�X��1��������
+	//このバンクのBonDriverを使用しているプロセスを1つだけ閉じる
 	bool CloseOtherTuner();
 
 	const DWORD tunerID;
@@ -180,7 +180,7 @@ private:
 	map<DWORD, TUNER_RESERVE_WORK> reserveMap;
 	DWORD tunerPid;
 #ifdef _WIN32
-	//tunerPid����0�ŗL���A0�Ŗ���
+	//tunerPidが非0で有効、0で無効
 	HANDLE hTunerProcess;
 #endif
 	WORD tunerONID;
@@ -188,12 +188,12 @@ private:
 	bool tunerChLocked;
 	bool tunerResetLock;
 	DWORD tunerChChgTick;
-	//EPG�擾�����l�b�g���[�N���[�h���ۂ�
+	//EPG取得中かネットワークモードか否か
 	TR_STATE specialState;
-	//�����g�����ɑ΂���V�X�e�������̒x������
+	//放送波時刻に対するシステム時刻の遅延時間
 	__int64 delayTime;
 	__int64 epgCapDelayTime;
-	//�l�b�g���[�N���[�hID
+	//ネットワークモードID
 	int nwtvID;
 
 	__int64 recWakeTime;

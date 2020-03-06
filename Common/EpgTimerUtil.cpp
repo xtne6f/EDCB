@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "EpgTimerUtil.h"
 
 #include "PathUtil.h"
@@ -74,7 +74,7 @@ DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid)
 	return 19 * 1024;
 }
 
-//EPGî•ñ‚ðText‚É•ÏŠ·
+//EPGæƒ…å ±ã‚’Textã«å¤‰æ›
 wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName, const wstring* extraText)
 {
 	wstring text;
@@ -82,12 +82,12 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 		return text;
 	}
 
-	text = L"–¢’è";
+	text = L"æœªå®š";
 	if( info->StartTimeFlag ){
 		SYSTEMTIME st = info->start_time;
 		Format(text, L"%04d/%02d/%02d(%ls) %02d:%02d",
 		       st.wYear, st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
-		wstring time = L" \xFF5E –¢’è";
+		wstring time = L" \xFF5E æœªå®š";
 		if( info->DurationFlag ){
 			ConvertSystemTime(ConvertI64Time(st) + info->durationSec * I64_1SEC, &st);
 			Format(time, L"\xFF5E%02d:%02d", st.wHour, st.wMinute);
@@ -108,7 +108,7 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 	}
 
 	if( info->hasExtInfo ){
-		text += L"Ú×î•ñ\r\n";
+		text += L"è©³ç´°æƒ…å ±\r\n";
 		text += info->extInfo.text_char;
 		text += L"\r\n\r\n";
 	}
@@ -144,192 +144,192 @@ LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
 LPCWSTR GetGenreName(BYTE nibble1, BYTE nibble2)
 {
 	static const KIND_INFO contentKindSortedArray[] = {
-	{ 0x0000, L"’èŽžE‘‡" },
-	{ 0x0001, L"“V‹C" },
-	{ 0x0002, L"“ÁWEƒhƒLƒ…ƒƒ“ƒg" },
-	{ 0x0003, L"­Ž¡E‘‰ï" },
-	{ 0x0004, L"ŒoÏEŽs‹µ" },
-	{ 0x0005, L"ŠCŠOE‘Û" },
-	{ 0x0006, L"‰ðà" },
-	{ 0x0007, L"“¢˜_E‰ï’k" },
-	{ 0x0008, L"•ñ“¹“Á”Ô" },
-	{ 0x0009, L"ƒ[ƒJƒ‹E’nˆæ" },
-	{ 0x000A, L"Œð’Ê" },
-	{ 0x000F, L"‚»‚Ì‘¼" },
-	{ 0x00FF, L"ƒjƒ…[ƒX^•ñ“¹" },
+	{ 0x0000, L"å®šæ™‚ãƒ»ç·åˆ" },
+	{ 0x0001, L"å¤©æ°—" },
+	{ 0x0002, L"ç‰¹é›†ãƒ»ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆ" },
+	{ 0x0003, L"æ”¿æ²»ãƒ»å›½ä¼š" },
+	{ 0x0004, L"çµŒæ¸ˆãƒ»å¸‚æ³" },
+	{ 0x0005, L"æµ·å¤–ãƒ»å›½éš›" },
+	{ 0x0006, L"è§£èª¬" },
+	{ 0x0007, L"è¨Žè«–ãƒ»ä¼šè«‡" },
+	{ 0x0008, L"å ±é“ç‰¹ç•ª" },
+	{ 0x0009, L"ãƒ­ãƒ¼ã‚«ãƒ«ãƒ»åœ°åŸŸ" },
+	{ 0x000A, L"äº¤é€š" },
+	{ 0x000F, L"ãã®ä»–" },
+	{ 0x00FF, L"ãƒ‹ãƒ¥ãƒ¼ã‚¹ï¼å ±é“" },
 
-	{ 0x0100, L"ƒXƒ|[ƒcƒjƒ…[ƒX" },
-	{ 0x0101, L"–ì‹…" },
-	{ 0x0102, L"ƒTƒbƒJ[" },
-	{ 0x0103, L"ƒSƒ‹ƒt" },
-	{ 0x0104, L"‚»‚Ì‘¼‚Ì‹…‹Z" },
-	{ 0x0105, L"‘Š–oEŠi“¬‹Z" },
-	{ 0x0106, L"ƒIƒŠƒ“ƒsƒbƒNE‘Û‘å‰ï" },
-	{ 0x0107, L"ƒ}ƒ‰ƒ\ƒ“E—¤ãE…‰j" },
-	{ 0x0108, L"ƒ‚[ƒ^[ƒXƒ|[ƒc" },
-	{ 0x0109, L"ƒ}ƒŠƒ“EƒEƒBƒ“ƒ^[ƒXƒ|[ƒc" },
-	{ 0x010A, L"‹£”nEŒö‰c‹£‹Z" },
-	{ 0x010F, L"‚»‚Ì‘¼" },
-	{ 0x01FF, L"ƒXƒ|[ƒc" },
+	{ 0x0100, L"ã‚¹ãƒãƒ¼ãƒ„ãƒ‹ãƒ¥ãƒ¼ã‚¹" },
+	{ 0x0101, L"é‡Žçƒ" },
+	{ 0x0102, L"ã‚µãƒƒã‚«ãƒ¼" },
+	{ 0x0103, L"ã‚´ãƒ«ãƒ•" },
+	{ 0x0104, L"ãã®ä»–ã®çƒæŠ€" },
+	{ 0x0105, L"ç›¸æ’²ãƒ»æ ¼é—˜æŠ€" },
+	{ 0x0106, L"ã‚ªãƒªãƒ³ãƒ”ãƒƒã‚¯ãƒ»å›½éš›å¤§ä¼š" },
+	{ 0x0107, L"ãƒžãƒ©ã‚½ãƒ³ãƒ»é™¸ä¸Šãƒ»æ°´æ³³" },
+	{ 0x0108, L"ãƒ¢ãƒ¼ã‚¿ãƒ¼ã‚¹ãƒãƒ¼ãƒ„" },
+	{ 0x0109, L"ãƒžãƒªãƒ³ãƒ»ã‚¦ã‚£ãƒ³ã‚¿ãƒ¼ã‚¹ãƒãƒ¼ãƒ„" },
+	{ 0x010A, L"ç«¶é¦¬ãƒ»å…¬å–¶ç«¶æŠ€" },
+	{ 0x010F, L"ãã®ä»–" },
+	{ 0x01FF, L"ã‚¹ãƒãƒ¼ãƒ„" },
 
-	{ 0x0200, L"Œ|”\EƒƒCƒhƒVƒ‡[" },
-	{ 0x0201, L"ƒtƒ@ƒbƒVƒ‡ƒ“" },
-	{ 0x0202, L"•é‚ç‚µEZ‚Ü‚¢" },
-	{ 0x0203, L"Œ’NEˆã—Ã" },
-	{ 0x0204, L"ƒVƒ‡ƒbƒsƒ“ƒOE’Ê”Ì" },
-	{ 0x0205, L"ƒOƒ‹ƒE—¿—" },
-	{ 0x0206, L"ƒCƒxƒ“ƒg" },
-	{ 0x0207, L"”Ô‘gÐ‰îE‚¨’m‚ç‚¹" },
-	{ 0x020F, L"‚»‚Ì‘¼" },
-	{ 0x02FF, L"î•ñ^ƒƒCƒhƒVƒ‡[" },
+	{ 0x0200, L"èŠ¸èƒ½ãƒ»ãƒ¯ã‚¤ãƒ‰ã‚·ãƒ§ãƒ¼" },
+	{ 0x0201, L"ãƒ•ã‚¡ãƒƒã‚·ãƒ§ãƒ³" },
+	{ 0x0202, L"æš®ã‚‰ã—ãƒ»ä½ã¾ã„" },
+	{ 0x0203, L"å¥åº·ãƒ»åŒ»ç™‚" },
+	{ 0x0204, L"ã‚·ãƒ§ãƒƒãƒ”ãƒ³ã‚°ãƒ»é€šè²©" },
+	{ 0x0205, L"ã‚°ãƒ«ãƒ¡ãƒ»æ–™ç†" },
+	{ 0x0206, L"ã‚¤ãƒ™ãƒ³ãƒˆ" },
+	{ 0x0207, L"ç•ªçµ„ç´¹ä»‹ãƒ»ãŠçŸ¥ã‚‰ã›" },
+	{ 0x020F, L"ãã®ä»–" },
+	{ 0x02FF, L"æƒ…å ±ï¼ãƒ¯ã‚¤ãƒ‰ã‚·ãƒ§ãƒ¼" },
 
-	{ 0x0300, L"‘“àƒhƒ‰ƒ}" },
-	{ 0x0301, L"ŠCŠOƒhƒ‰ƒ}" },
-	{ 0x0302, L"Žž‘ãŒ€" },
-	{ 0x030F, L"‚»‚Ì‘¼" },
-	{ 0x03FF, L"ƒhƒ‰ƒ}" },
+	{ 0x0300, L"å›½å†…ãƒ‰ãƒ©ãƒž" },
+	{ 0x0301, L"æµ·å¤–ãƒ‰ãƒ©ãƒž" },
+	{ 0x0302, L"æ™‚ä»£åŠ‡" },
+	{ 0x030F, L"ãã®ä»–" },
+	{ 0x03FF, L"ãƒ‰ãƒ©ãƒž" },
 
-	{ 0x0400, L"‘“àƒƒbƒNEƒ|ƒbƒvƒX" },
-	{ 0x0401, L"ŠCŠOƒƒbƒNEƒ|ƒbƒvƒX" },
-	{ 0x0402, L"ƒNƒ‰ƒVƒbƒNEƒIƒyƒ‰" },
-	{ 0x0403, L"ƒWƒƒƒYEƒtƒ…[ƒWƒ‡ƒ“" },
-	{ 0x0404, L"‰Ì—w‹ÈE‰‰‰Ì" },
-	{ 0x0405, L"ƒ‰ƒCƒuEƒRƒ“ƒT[ƒg" },
-	{ 0x0406, L"ƒ‰ƒ“ƒLƒ“ƒOEƒŠƒNƒGƒXƒg" },
-	{ 0x0407, L"ƒJƒ‰ƒIƒPE‚Ì‚ÇŽ©–" },
-	{ 0x0408, L"–¯—wE–MŠy" },
-	{ 0x0409, L"“¶—wEƒLƒbƒY" },
-	{ 0x040A, L"–¯‘°‰¹ŠyEƒ[ƒ‹ƒhƒ~ƒ…[ƒWƒbƒN" },
-	{ 0x040F, L"‚»‚Ì‘¼" },
-	{ 0x04FF, L"‰¹Šy" },
+	{ 0x0400, L"å›½å†…ãƒ­ãƒƒã‚¯ãƒ»ãƒãƒƒãƒ—ã‚¹" },
+	{ 0x0401, L"æµ·å¤–ãƒ­ãƒƒã‚¯ãƒ»ãƒãƒƒãƒ—ã‚¹" },
+	{ 0x0402, L"ã‚¯ãƒ©ã‚·ãƒƒã‚¯ãƒ»ã‚ªãƒšãƒ©" },
+	{ 0x0403, L"ã‚¸ãƒ£ã‚ºãƒ»ãƒ•ãƒ¥ãƒ¼ã‚¸ãƒ§ãƒ³" },
+	{ 0x0404, L"æ­Œè¬¡æ›²ãƒ»æ¼”æ­Œ" },
+	{ 0x0405, L"ãƒ©ã‚¤ãƒ–ãƒ»ã‚³ãƒ³ã‚µãƒ¼ãƒˆ" },
+	{ 0x0406, L"ãƒ©ãƒ³ã‚­ãƒ³ã‚°ãƒ»ãƒªã‚¯ã‚¨ã‚¹ãƒˆ" },
+	{ 0x0407, L"ã‚«ãƒ©ã‚ªã‚±ãƒ»ã®ã©è‡ªæ…¢" },
+	{ 0x0408, L"æ°‘è¬¡ãƒ»é‚¦æ¥½" },
+	{ 0x0409, L"ç«¥è¬¡ãƒ»ã‚­ãƒƒã‚º" },
+	{ 0x040A, L"æ°‘æ—éŸ³æ¥½ãƒ»ãƒ¯ãƒ¼ãƒ«ãƒ‰ãƒŸãƒ¥ãƒ¼ã‚¸ãƒƒã‚¯" },
+	{ 0x040F, L"ãã®ä»–" },
+	{ 0x04FF, L"éŸ³æ¥½" },
 
-	{ 0x0500, L"ƒNƒCƒY" },
-	{ 0x0501, L"ƒQ[ƒ€" },
-	{ 0x0502, L"ƒg[ƒNƒoƒ‰ƒGƒeƒB" },
-	{ 0x0503, L"‚¨Î‚¢EƒRƒƒfƒB" },
-	{ 0x0504, L"‰¹Šyƒoƒ‰ƒGƒeƒB" },
-	{ 0x0505, L"—·ƒoƒ‰ƒGƒeƒB" },
-	{ 0x0506, L"—¿—ƒoƒ‰ƒGƒeƒB" },
-	{ 0x050F, L"‚»‚Ì‘¼" },
-	{ 0x05FF, L"ƒoƒ‰ƒGƒeƒB" },
+	{ 0x0500, L"ã‚¯ã‚¤ã‚º" },
+	{ 0x0501, L"ã‚²ãƒ¼ãƒ " },
+	{ 0x0502, L"ãƒˆãƒ¼ã‚¯ãƒãƒ©ã‚¨ãƒ†ã‚£" },
+	{ 0x0503, L"ãŠç¬‘ã„ãƒ»ã‚³ãƒ¡ãƒ‡ã‚£" },
+	{ 0x0504, L"éŸ³æ¥½ãƒãƒ©ã‚¨ãƒ†ã‚£" },
+	{ 0x0505, L"æ—…ãƒãƒ©ã‚¨ãƒ†ã‚£" },
+	{ 0x0506, L"æ–™ç†ãƒãƒ©ã‚¨ãƒ†ã‚£" },
+	{ 0x050F, L"ãã®ä»–" },
+	{ 0x05FF, L"ãƒãƒ©ã‚¨ãƒ†ã‚£" },
 
-	{ 0x0600, L"—m‰æ" },
-	{ 0x0601, L"–M‰æ" },
-	{ 0x0602, L"ƒAƒjƒ" },
-	{ 0x060F, L"‚»‚Ì‘¼" },
-	{ 0x06FF, L"‰f‰æ" },
+	{ 0x0600, L"æ´‹ç”»" },
+	{ 0x0601, L"é‚¦ç”»" },
+	{ 0x0602, L"ã‚¢ãƒ‹ãƒ¡" },
+	{ 0x060F, L"ãã®ä»–" },
+	{ 0x06FF, L"æ˜ ç”»" },
 
-	{ 0x0700, L"‘“àƒAƒjƒ" },
-	{ 0x0701, L"ŠCŠOƒAƒjƒ" },
-	{ 0x0702, L"“ÁŽB" },
-	{ 0x070F, L"‚»‚Ì‘¼" },
-	{ 0x07FF, L"ƒAƒjƒ^“ÁŽB" },
+	{ 0x0700, L"å›½å†…ã‚¢ãƒ‹ãƒ¡" },
+	{ 0x0701, L"æµ·å¤–ã‚¢ãƒ‹ãƒ¡" },
+	{ 0x0702, L"ç‰¹æ’®" },
+	{ 0x070F, L"ãã®ä»–" },
+	{ 0x07FF, L"ã‚¢ãƒ‹ãƒ¡ï¼ç‰¹æ’®" },
 
-	{ 0x0800, L"ŽÐ‰ïEŽžŽ–" },
-	{ 0x0801, L"—ðŽjE‹Is" },
-	{ 0x0802, L"Ž©‘RE“®•¨EŠÂ‹«" },
-	{ 0x0803, L"‰F’ˆE‰ÈŠwEˆãŠw" },
-	{ 0x0804, L"ƒJƒ‹ƒ`ƒƒ[E“`“•¶‰»" },
-	{ 0x0805, L"•¶ŠwE•¶Œ|" },
-	{ 0x0806, L"ƒXƒ|[ƒc" },
-	{ 0x0807, L"ƒhƒLƒ…ƒƒ“ƒ^ƒŠ[‘S”Ê" },
-	{ 0x0808, L"ƒCƒ“ƒ^ƒrƒ…[E“¢˜_" },
-	{ 0x080F, L"‚»‚Ì‘¼" },
-	{ 0x08FF, L"ƒhƒLƒ…ƒƒ“ƒ^ƒŠ[^‹³—{" },
+	{ 0x0800, L"ç¤¾ä¼šãƒ»æ™‚äº‹" },
+	{ 0x0801, L"æ­´å²ãƒ»ç´€è¡Œ" },
+	{ 0x0802, L"è‡ªç„¶ãƒ»å‹•ç‰©ãƒ»ç’°å¢ƒ" },
+	{ 0x0803, L"å®‡å®™ãƒ»ç§‘å­¦ãƒ»åŒ»å­¦" },
+	{ 0x0804, L"ã‚«ãƒ«ãƒãƒ£ãƒ¼ãƒ»ä¼çµ±æ–‡åŒ–" },
+	{ 0x0805, L"æ–‡å­¦ãƒ»æ–‡èŠ¸" },
+	{ 0x0806, L"ã‚¹ãƒãƒ¼ãƒ„" },
+	{ 0x0807, L"ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ã‚¿ãƒªãƒ¼å…¨èˆ¬" },
+	{ 0x0808, L"ã‚¤ãƒ³ã‚¿ãƒ“ãƒ¥ãƒ¼ãƒ»è¨Žè«–" },
+	{ 0x080F, L"ãã®ä»–" },
+	{ 0x08FF, L"ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ã‚¿ãƒªãƒ¼ï¼æ•™é¤Š" },
 
-	{ 0x0900, L"Œ»‘ãŒ€EVŒ€" },
-	{ 0x0901, L"ƒ~ƒ…[ƒWƒJƒ‹" },
-	{ 0x0902, L"ƒ_ƒ“ƒXEƒoƒŒƒG" },
-	{ 0x0903, L"—ŽŒêE‰‰Œ|" },
-	{ 0x0904, L"‰Ì•‘ŠêEŒÃ“T" },
-	{ 0x090F, L"‚»‚Ì‘¼" },
-	{ 0x09FF, L"Œ€ê^Œö‰‰" },
+	{ 0x0900, L"ç¾ä»£åŠ‡ãƒ»æ–°åŠ‡" },
+	{ 0x0901, L"ãƒŸãƒ¥ãƒ¼ã‚¸ã‚«ãƒ«" },
+	{ 0x0902, L"ãƒ€ãƒ³ã‚¹ãƒ»ãƒãƒ¬ã‚¨" },
+	{ 0x0903, L"è½èªžãƒ»æ¼”èŠ¸" },
+	{ 0x0904, L"æ­Œèˆžä¼Žãƒ»å¤å…¸" },
+	{ 0x090F, L"ãã®ä»–" },
+	{ 0x09FF, L"åŠ‡å ´ï¼å…¬æ¼”" },
 
-	{ 0x0A00, L"—·E’Þ‚èEƒAƒEƒgƒhƒA" },
-	{ 0x0A01, L"‰€Œ|EƒyƒbƒgEŽèŒ|" },
-	{ 0x0A02, L"‰¹ŠyE”üpEHŒ|" },
-	{ 0x0A03, L"ˆÍŒéE«Šû" },
-	{ 0x0A04, L"–ƒEƒpƒ`ƒ“ƒR" },
-	{ 0x0A05, L"ŽÔEƒI[ƒgƒoƒC" },
-	{ 0x0A06, L"ƒRƒ“ƒsƒ…[ƒ^E‚s‚uƒQ[ƒ€" },
-	{ 0x0A07, L"‰ï˜bEŒêŠw" },
-	{ 0x0A08, L"—cŽ™E¬Šw¶" },
-	{ 0x0A09, L"’†Šw¶E‚Z¶" },
-	{ 0x0A0A, L"‘åŠw¶EŽóŒ±" },
-	{ 0x0A0B, L"¶ŠU‹³ˆçEŽ‘Ši" },
-	{ 0x0A0C, L"‹³ˆç–â‘è" },
-	{ 0x0A0F, L"‚»‚Ì‘¼" },
-	{ 0x0AFF, L"Žï–¡^‹³ˆç" },
+	{ 0x0A00, L"æ—…ãƒ»é‡£ã‚Šãƒ»ã‚¢ã‚¦ãƒˆãƒ‰ã‚¢" },
+	{ 0x0A01, L"åœ’èŠ¸ãƒ»ãƒšãƒƒãƒˆãƒ»æ‰‹èŠ¸" },
+	{ 0x0A02, L"éŸ³æ¥½ãƒ»ç¾Žè¡“ãƒ»å·¥èŠ¸" },
+	{ 0x0A03, L"å›²ç¢ãƒ»å°†æ£‹" },
+	{ 0x0A04, L"éº»é›€ãƒ»ãƒ‘ãƒãƒ³ã‚³" },
+	{ 0x0A05, L"è»Šãƒ»ã‚ªãƒ¼ãƒˆãƒã‚¤" },
+	{ 0x0A06, L"ã‚³ãƒ³ãƒ”ãƒ¥ãƒ¼ã‚¿ãƒ»ï¼´ï¼¶ã‚²ãƒ¼ãƒ " },
+	{ 0x0A07, L"ä¼šè©±ãƒ»èªžå­¦" },
+	{ 0x0A08, L"å¹¼å…ãƒ»å°å­¦ç”Ÿ" },
+	{ 0x0A09, L"ä¸­å­¦ç”Ÿãƒ»é«˜æ ¡ç”Ÿ" },
+	{ 0x0A0A, L"å¤§å­¦ç”Ÿãƒ»å—é¨“" },
+	{ 0x0A0B, L"ç”Ÿæ¶¯æ•™è‚²ãƒ»è³‡æ ¼" },
+	{ 0x0A0C, L"æ•™è‚²å•é¡Œ" },
+	{ 0x0A0F, L"ãã®ä»–" },
+	{ 0x0AFF, L"è¶£å‘³ï¼æ•™è‚²" },
 
-	{ 0x0B00, L"‚—îŽÒ" },
-	{ 0x0B01, L"áŠQŽÒ" },
-	{ 0x0B02, L"ŽÐ‰ï•ŸŽƒ" },
-	{ 0x0B03, L"ƒ{ƒ‰ƒ“ƒeƒBƒA" },
-	{ 0x0B04, L"Žè˜b" },
-	{ 0x0B05, L"•¶ŽšiŽš–‹j" },
-	{ 0x0B06, L"‰¹º‰ðà" },
-	{ 0x0B0F, L"‚»‚Ì‘¼" },
-	{ 0x0BFF, L"•ŸŽƒ" },
+	{ 0x0B00, L"é«˜é½¢è€…" },
+	{ 0x0B01, L"éšœå®³è€…" },
+	{ 0x0B02, L"ç¤¾ä¼šç¦ç¥‰" },
+	{ 0x0B03, L"ãƒœãƒ©ãƒ³ãƒ†ã‚£ã‚¢" },
+	{ 0x0B04, L"æ‰‹è©±" },
+	{ 0x0B05, L"æ–‡å­—ï¼ˆå­—å¹•ï¼‰" },
+	{ 0x0B06, L"éŸ³å£°è§£èª¬" },
+	{ 0x0B0F, L"ãã®ä»–" },
+	{ 0x0BFF, L"ç¦ç¥‰" },
 
-	{ 0x0FFF, L"‚»‚Ì‘¼" },
+	{ 0x0FFF, L"ãã®ä»–" },
 
-	{ 0x6000, L"’†Ž~‚Ì‰Â”\«‚ ‚è" },
-	{ 0x6001, L"‰„’·‚Ì‰Â”\«‚ ‚è" },
-	{ 0x6002, L"’†’f‚Ì‰Â”\«‚ ‚è" },
-	{ 0x6003, L"•Ê˜b”•ú‘—‚Ì‰Â”\«‚ ‚è" },
-	{ 0x6004, L"•Ò¬–¢’è˜g" },
-	{ 0x6005, L"ŒJ‚èã‚°‚Ì‰Â”\«‚ ‚è" },
-	{ 0x60FF, L"•Ò¬î•ñ" },
+	{ 0x6000, L"ä¸­æ­¢ã®å¯èƒ½æ€§ã‚ã‚Š" },
+	{ 0x6001, L"å»¶é•·ã®å¯èƒ½æ€§ã‚ã‚Š" },
+	{ 0x6002, L"ä¸­æ–­ã®å¯èƒ½æ€§ã‚ã‚Š" },
+	{ 0x6003, L"åˆ¥è©±æ•°æ”¾é€ã®å¯èƒ½æ€§ã‚ã‚Š" },
+	{ 0x6004, L"ç·¨æˆæœªå®šæž " },
+	{ 0x6005, L"ç¹°ã‚Šä¸Šã’ã®å¯èƒ½æ€§ã‚ã‚Š" },
+	{ 0x60FF, L"ç·¨æˆæƒ…å ±" },
 
-	{ 0x6100, L"’†’fƒjƒ…[ƒX‚ ‚è" },
-	{ 0x6101, L"—ÕŽžƒT[ƒrƒX‚ ‚è" },
-	{ 0x61FF, L"“Á«î•ñ" },
+	{ 0x6100, L"ä¸­æ–­ãƒ‹ãƒ¥ãƒ¼ã‚¹ã‚ã‚Š" },
+	{ 0x6101, L"è‡¨æ™‚ã‚µãƒ¼ãƒ“ã‚¹ã‚ã‚Š" },
+	{ 0x61FF, L"ç‰¹æ€§æƒ…å ±" },
 
-	{ 0x6200, L"3D‰f‘œ‚ ‚è" },
-	{ 0x62FF, L"3D‰f‘œ" },
+	{ 0x6200, L"3Dæ˜ åƒã‚ã‚Š" },
+	{ 0x62FF, L"3Dæ˜ åƒ" },
 
-	{ 0x7000, L"ƒeƒjƒX" },
-	{ 0x7001, L"ƒoƒXƒPƒbƒgƒ{[ƒ‹" },
-	{ 0x7002, L"ƒ‰ƒOƒr[" },
-	{ 0x7003, L"ƒAƒƒŠƒJƒ“ƒtƒbƒgƒ{[ƒ‹" },
-	{ 0x7004, L"ƒ{ƒNƒVƒ“ƒO" },
-	{ 0x7005, L"ƒvƒƒŒƒX" },
-	{ 0x700F, L"‚»‚Ì‘¼" },
-	{ 0x70FF, L"ƒXƒ|[ƒc(CS)" },
+	{ 0x7000, L"ãƒ†ãƒ‹ã‚¹" },
+	{ 0x7001, L"ãƒã‚¹ã‚±ãƒƒãƒˆãƒœãƒ¼ãƒ«" },
+	{ 0x7002, L"ãƒ©ã‚°ãƒ“ãƒ¼" },
+	{ 0x7003, L"ã‚¢ãƒ¡ãƒªã‚«ãƒ³ãƒ•ãƒƒãƒˆãƒœãƒ¼ãƒ«" },
+	{ 0x7004, L"ãƒœã‚¯ã‚·ãƒ³ã‚°" },
+	{ 0x7005, L"ãƒ—ãƒ­ãƒ¬ã‚¹" },
+	{ 0x700F, L"ãã®ä»–" },
+	{ 0x70FF, L"ã‚¹ãƒãƒ¼ãƒ„(CS)" },
 
-	{ 0x7100, L"ƒAƒNƒVƒ‡ƒ“" },
-	{ 0x7101, L"SF^ƒtƒ@ƒ“ƒ^ƒW[" },
-	{ 0x7102, L"ƒRƒƒfƒB[" },
-	{ 0x7103, L"ƒTƒXƒyƒ“ƒX^ƒ~ƒXƒeƒŠ[" },
-	{ 0x7104, L"—öˆ¤^ƒƒ}ƒ“ƒX" },
-	{ 0x7105, L"ƒzƒ‰[^ƒXƒŠƒ‰[" },
-	{ 0x7106, L"ƒEƒGƒXƒ^ƒ“" },
-	{ 0x7107, L"ƒhƒ‰ƒ}^ŽÐ‰ï”hƒhƒ‰ƒ}" },
-	{ 0x7108, L"ƒAƒjƒ[ƒVƒ‡ƒ“" },
-	{ 0x7109, L"ƒhƒLƒ…ƒƒ“ƒ^ƒŠ[" },
-	{ 0x710A, L"ƒAƒhƒxƒ“ƒ`ƒƒ[^–`Œ¯" },
-	{ 0x710B, L"ƒ~ƒ…[ƒWƒJƒ‹^‰¹Šy‰f‰æ" },
-	{ 0x710C, L"ƒz[ƒ€ƒhƒ‰ƒ}" },
-	{ 0x710F, L"‚»‚Ì‘¼" },
-	{ 0x71FF, L"—m‰æ(CS)" },
+	{ 0x7100, L"ã‚¢ã‚¯ã‚·ãƒ§ãƒ³" },
+	{ 0x7101, L"SFï¼ãƒ•ã‚¡ãƒ³ã‚¿ã‚¸ãƒ¼" },
+	{ 0x7102, L"ã‚³ãƒ¡ãƒ‡ã‚£ãƒ¼" },
+	{ 0x7103, L"ã‚µã‚¹ãƒšãƒ³ã‚¹ï¼ãƒŸã‚¹ãƒ†ãƒªãƒ¼" },
+	{ 0x7104, L"æ‹æ„›ï¼ãƒ­ãƒžãƒ³ã‚¹" },
+	{ 0x7105, L"ãƒ›ãƒ©ãƒ¼ï¼ã‚¹ãƒªãƒ©ãƒ¼" },
+	{ 0x7106, L"ã‚¦ã‚¨ã‚¹ã‚¿ãƒ³" },
+	{ 0x7107, L"ãƒ‰ãƒ©ãƒžï¼ç¤¾ä¼šæ´¾ãƒ‰ãƒ©ãƒž" },
+	{ 0x7108, L"ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³" },
+	{ 0x7109, L"ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ã‚¿ãƒªãƒ¼" },
+	{ 0x710A, L"ã‚¢ãƒ‰ãƒ™ãƒ³ãƒãƒ£ãƒ¼ï¼å†’é™º" },
+	{ 0x710B, L"ãƒŸãƒ¥ãƒ¼ã‚¸ã‚«ãƒ«ï¼éŸ³æ¥½æ˜ ç”»" },
+	{ 0x710C, L"ãƒ›ãƒ¼ãƒ ãƒ‰ãƒ©ãƒž" },
+	{ 0x710F, L"ãã®ä»–" },
+	{ 0x71FF, L"æ´‹ç”»(CS)" },
 
-	{ 0x7200, L"ƒAƒNƒVƒ‡ƒ“" },
-	{ 0x7201, L"SF^ƒtƒ@ƒ“ƒ^ƒW[" },
-	{ 0x7202, L"‚¨Î‚¢^ƒRƒƒfƒB[" },
-	{ 0x7203, L"ƒTƒXƒyƒ“ƒX^ƒ~ƒXƒeƒŠ[" },
-	{ 0x7204, L"—öˆ¤^ƒƒ}ƒ“ƒX" },
-	{ 0x7205, L"ƒzƒ‰[^ƒXƒŠƒ‰[" },
-	{ 0x7206, L"Ât^Šw‰€^ƒAƒCƒhƒ‹" },
-	{ 0x7207, L"”C‹ ^Žž‘ãŒ€" },
-	{ 0x7208, L"ƒAƒjƒ[ƒVƒ‡ƒ“" },
-	{ 0x7209, L"ƒhƒLƒ…ƒƒ“ƒ^ƒŠ[" },
-	{ 0x720A, L"ƒAƒhƒxƒ“ƒ`ƒƒ[^–`Œ¯" },
-	{ 0x720B, L"ƒ~ƒ…[ƒWƒJƒ‹^‰¹Šy‰f‰æ" },
-	{ 0x720C, L"ƒz[ƒ€ƒhƒ‰ƒ}" },
-	{ 0x720F, L"‚»‚Ì‘¼" },
-	{ 0x72FF, L"–M‰æ(CS)" },
+	{ 0x7200, L"ã‚¢ã‚¯ã‚·ãƒ§ãƒ³" },
+	{ 0x7201, L"SFï¼ãƒ•ã‚¡ãƒ³ã‚¿ã‚¸ãƒ¼" },
+	{ 0x7202, L"ãŠç¬‘ã„ï¼ã‚³ãƒ¡ãƒ‡ã‚£ãƒ¼" },
+	{ 0x7203, L"ã‚µã‚¹ãƒšãƒ³ã‚¹ï¼ãƒŸã‚¹ãƒ†ãƒªãƒ¼" },
+	{ 0x7204, L"æ‹æ„›ï¼ãƒ­ãƒžãƒ³ã‚¹" },
+	{ 0x7205, L"ãƒ›ãƒ©ãƒ¼ï¼ã‚¹ãƒªãƒ©ãƒ¼" },
+	{ 0x7206, L"é’æ˜¥ï¼å­¦åœ’ï¼ã‚¢ã‚¤ãƒ‰ãƒ«" },
+	{ 0x7207, L"ä»»ä¾ ï¼æ™‚ä»£åŠ‡" },
+	{ 0x7208, L"ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³" },
+	{ 0x7209, L"ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ã‚¿ãƒªãƒ¼" },
+	{ 0x720A, L"ã‚¢ãƒ‰ãƒ™ãƒ³ãƒãƒ£ãƒ¼ï¼å†’é™º" },
+	{ 0x720B, L"ãƒŸãƒ¥ãƒ¼ã‚¸ã‚«ãƒ«ï¼éŸ³æ¥½æ˜ ç”»" },
+	{ 0x720C, L"ãƒ›ãƒ¼ãƒ ãƒ‰ãƒ©ãƒž" },
+	{ 0x720F, L"ãã®ä»–" },
+	{ 0x72FF, L"é‚¦ç”»(CS)" },
 
-	{ 0xFFFF, L"‚È‚µ" },
+	{ 0xFFFF, L"ãªã—" },
 	};
 	return SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
 }
@@ -337,86 +337,86 @@ LPCWSTR GetGenreName(BYTE nibble1, BYTE nibble2)
 LPCWSTR GetComponentTypeName(BYTE content, BYTE type)
 {
 	static const KIND_INFO componentKindSortedArray[] = {
-	{ 0x0101, L"480i(525i)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x0102, L"480i(525i)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x0103, L"480i(525i)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x0104, L"480i(525i)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x0191, L"2160pAƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x0192, L"2160pAƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x0193, L"2160pAƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x0194, L"2160pAƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x01A1, L"480p(525p)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x01A2, L"480p(525p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x01A3, L"480p(525p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x01A4, L"480p(525p)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x01B1, L"1080i(1125i)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x01B2, L"1080i(1125i)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x01B3, L"1080i(1125i)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x01B4, L"1080i(1125i)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x01C1, L"720p(750p)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x01C2, L"720p(750p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x01C3, L"720p(750p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x01C4, L"720p(750p)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x01D1, L"240p ƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x01D2, L"240p ƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x01D3, L"240p ƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x01D4, L"240p ƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x01E1, L"1080p(1125p)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x01E2, L"1080p(1125p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x01E3, L"1080p(1125p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x01E4, L"1080p(1125p)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x0201, L"1/0ƒ‚[ƒhiƒVƒ“ƒOƒ‹ƒ‚ƒmj" },
-	{ 0x0202, L"1/0{1/0ƒ‚[ƒhiƒfƒ…ƒAƒ‹ƒ‚ƒmj" },
-	{ 0x0203, L"2/0ƒ‚[ƒhiƒXƒeƒŒƒIj" },
-	{ 0x0204, L"2/1ƒ‚[ƒh" },
-	{ 0x0205, L"3/0ƒ‚[ƒh" },
-	{ 0x0206, L"2/2ƒ‚[ƒh" },
-	{ 0x0207, L"3/1ƒ‚[ƒh" },
-	{ 0x0208, L"3/2ƒ‚[ƒh" },
-	{ 0x0209, L"3/2{LFEƒ‚[ƒhi3/2.1ƒ‚[ƒhj" },
-	{ 0x020A, L"3/3.1ƒ‚[ƒh" },
-	{ 0x020B, L"2/0/0-2/0/2-0.1ƒ‚[ƒh" },
-	{ 0x020C, L"5/2.1ƒ‚[ƒh" },
-	{ 0x020D, L"3/2/2.1ƒ‚[ƒh" },
-	{ 0x020E, L"2/0/0-3/0/2-0.1ƒ‚[ƒh" },
-	{ 0x020F, L"0/2/0-3/0/2-0.1ƒ‚[ƒh" },
-	{ 0x0210, L"2/0/0-3/2/3-0.2ƒ‚[ƒh" },
-	{ 0x0211, L"3/3/3-5/2/3-3/0/0.2ƒ‚[ƒh" },
-	{ 0x0240, L"Ž‹ŠoáŠQŽÒ—p‰¹º‰ðà" },
-	{ 0x0241, L"’®ŠoáŠQŽÒ—p‰¹º" },
-	{ 0x0501, L"H.264|MPEG-4 AVCA480i(525i)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x0502, L"H.264|MPEG-4 AVCA480i(525i)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x0503, L"H.264|MPEG-4 AVCA480i(525i)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x0504, L"H.264|MPEG-4 AVCA480i(525i)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x0591, L"H.264|MPEG-4 AVCA2160pAƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x0592, L"H.264|MPEG-4 AVCA2160pAƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x0593, L"H.264|MPEG-4 AVCA2160pAƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x0594, L"H.264|MPEG-4 AVCA2160pAƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x05A1, L"H.264|MPEG-4 AVCA480p(525p)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x05A2, L"H.264|MPEG-4 AVCA480p(525p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x05A3, L"H.264|MPEG-4 AVCA480p(525p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x05A4, L"H.264|MPEG-4 AVCA480p(525p)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x05B1, L"H.264|MPEG-4 AVCA1080i(1125i)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x05B2, L"H.264|MPEG-4 AVCA1080i(1125i)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x05B3, L"H.264|MPEG-4 AVCA1080i(1125i)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x05B4, L"H.264|MPEG-4 AVCA1080i(1125i)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x05C1, L"H.264|MPEG-4 AVCA720p(750p)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x05C2, L"H.264|MPEG-4 AVCA720p(750p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x05C3, L"H.264|MPEG-4 AVCA720p(750p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x05C4, L"H.264|MPEG-4 AVCA720p(750p)AƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x05D1, L"H.264|MPEG-4 AVCA240p ƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x05D2, L"H.264|MPEG-4 AVCA240p ƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x05D3, L"H.264|MPEG-4 AVCA240p ƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x05D4, L"H.264|MPEG-4 AVCA240p ƒAƒXƒyƒNƒg”ä > 16:9" },
-	{ 0x05E1, L"H.264|MPEG-4 AVCA1080p(1125p)AƒAƒXƒyƒNƒg”ä4:3" },
-	{ 0x05E2, L"H.264|MPEG-4 AVCA1080p(1125p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚ ‚è" },
-	{ 0x05E3, L"H.264|MPEG-4 AVCA1080p(1125p)AƒAƒXƒyƒNƒg”ä16:9 ƒpƒ“ƒxƒNƒgƒ‹‚È‚µ" },
-	{ 0x05E4, L"H.264|MPEG-4 AVCA1080p(1125p)AƒAƒXƒyƒNƒg”ä > 16:9" },
+	{ 0x0101, L"480i(525i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x0102, L"480i(525i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x0103, L"480i(525i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x0104, L"480i(525i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x0191, L"2160pã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x0192, L"2160pã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x0193, L"2160pã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x0194, L"2160pã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x01A1, L"480p(525p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x01A2, L"480p(525p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x01A3, L"480p(525p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x01A4, L"480p(525p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x01B1, L"1080i(1125i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x01B2, L"1080i(1125i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x01B3, L"1080i(1125i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x01B4, L"1080i(1125i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x01C1, L"720p(750p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x01C2, L"720p(750p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x01C3, L"720p(750p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x01C4, L"720p(750p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x01D1, L"240p ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x01D2, L"240p ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x01D3, L"240p ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x01D4, L"240p ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x01E1, L"1080p(1125p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x01E2, L"1080p(1125p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x01E3, L"1080p(1125p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x01E4, L"1080p(1125p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x0201, L"1/0ãƒ¢ãƒ¼ãƒ‰ï¼ˆã‚·ãƒ³ã‚°ãƒ«ãƒ¢ãƒŽï¼‰" },
+	{ 0x0202, L"1/0ï¼‹1/0ãƒ¢ãƒ¼ãƒ‰ï¼ˆãƒ‡ãƒ¥ã‚¢ãƒ«ãƒ¢ãƒŽï¼‰" },
+	{ 0x0203, L"2/0ãƒ¢ãƒ¼ãƒ‰ï¼ˆã‚¹ãƒ†ãƒ¬ã‚ªï¼‰" },
+	{ 0x0204, L"2/1ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x0205, L"3/0ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x0206, L"2/2ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x0207, L"3/1ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x0208, L"3/2ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x0209, L"3/2ï¼‹LFEãƒ¢ãƒ¼ãƒ‰ï¼ˆ3/2.1ãƒ¢ãƒ¼ãƒ‰ï¼‰" },
+	{ 0x020A, L"3/3.1ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x020B, L"2/0/0-2/0/2-0.1ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x020C, L"5/2.1ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x020D, L"3/2/2.1ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x020E, L"2/0/0-3/0/2-0.1ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x020F, L"0/2/0-3/0/2-0.1ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x0210, L"2/0/0-3/2/3-0.2ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x0211, L"3/3/3-5/2/3-3/0/0.2ãƒ¢ãƒ¼ãƒ‰" },
+	{ 0x0240, L"è¦–è¦šéšœå®³è€…ç”¨éŸ³å£°è§£èª¬" },
+	{ 0x0241, L"è´è¦šéšœå®³è€…ç”¨éŸ³å£°" },
+	{ 0x0501, L"H.264|MPEG-4 AVCã€480i(525i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x0502, L"H.264|MPEG-4 AVCã€480i(525i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x0503, L"H.264|MPEG-4 AVCã€480i(525i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x0504, L"H.264|MPEG-4 AVCã€480i(525i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x0591, L"H.264|MPEG-4 AVCã€2160pã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x0592, L"H.264|MPEG-4 AVCã€2160pã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x0593, L"H.264|MPEG-4 AVCã€2160pã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x0594, L"H.264|MPEG-4 AVCã€2160pã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x05A1, L"H.264|MPEG-4 AVCã€480p(525p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x05A2, L"H.264|MPEG-4 AVCã€480p(525p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x05A3, L"H.264|MPEG-4 AVCã€480p(525p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x05A4, L"H.264|MPEG-4 AVCã€480p(525p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x05B1, L"H.264|MPEG-4 AVCã€1080i(1125i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x05B2, L"H.264|MPEG-4 AVCã€1080i(1125i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x05B3, L"H.264|MPEG-4 AVCã€1080i(1125i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x05B4, L"H.264|MPEG-4 AVCã€1080i(1125i)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x05C1, L"H.264|MPEG-4 AVCã€720p(750p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x05C2, L"H.264|MPEG-4 AVCã€720p(750p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x05C3, L"H.264|MPEG-4 AVCã€720p(750p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x05C4, L"H.264|MPEG-4 AVCã€720p(750p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x05D1, L"H.264|MPEG-4 AVCã€240p ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x05D2, L"H.264|MPEG-4 AVCã€240p ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x05D3, L"H.264|MPEG-4 AVCã€240p ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x05D4, L"H.264|MPEG-4 AVCã€240p ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
+	{ 0x05E1, L"H.264|MPEG-4 AVCã€1080p(1125p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”4:3" },
+	{ 0x05E2, L"H.264|MPEG-4 AVCã€1080p(1125p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ã‚ã‚Š" },
+	{ 0x05E3, L"H.264|MPEG-4 AVCã€1080p(1125p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”16:9 ãƒ‘ãƒ³ãƒ™ã‚¯ãƒˆãƒ«ãªã—" },
+	{ 0x05E4, L"H.264|MPEG-4 AVCã€1080p(1125p)ã€ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” > 16:9" },
 	};
 	return SearchKindInfoArray(content << 8 | type, componentKindSortedArray, _countof(componentKindSortedArray));
 }
 
-//EPGî•ñ‚ðText‚É•ÏŠ·
+//EPGæƒ…å ±ã‚’Textã«å¤‰æ›
 wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& serviceName)
 {
 	wstring text;
@@ -425,19 +425,19 @@ wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& service
 	}
 
 	if( info->hasContentInfo ){
-		text+=L"ƒWƒƒƒ“ƒ‹ : \r\n";
+		text+=L"ã‚¸ãƒ£ãƒ³ãƒ« : \r\n";
 		AppendEpgContentInfoText(text, *info);
 		text+=L"\r\n";
 	}
 
 	if( info->hasComponentInfo ){
-		text+=L"‰f‘œ : ";
+		text+=L"æ˜ åƒ : ";
 		AppendEpgComponentInfoText(text, *info);
 		text+=L"\r\n";
 	}
 
 	if( info->hasAudioInfo ){
-		text+=L"‰¹º : ";
+		text+=L"éŸ³å£° : ";
 		AppendEpgAudioComponentInfoText(text, *info);
 	}
 
@@ -445,11 +445,11 @@ wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& service
 	if (!(0x7880 <= info->original_network_id && info->original_network_id <= 0x7FE8)){
 		if (info->freeCAFlag == 0)
         {
-            text += L"–³—¿•ú‘—\r\n";
+            text += L"ç„¡æ–™æ”¾é€\r\n";
         }
         else
         {
-            text += L"—L—¿•ú‘—\r\n";
+            text += L"æœ‰æ–™æ”¾é€\r\n";
         }
         text += L"\r\n";
     }
@@ -537,7 +537,7 @@ void AppendEpgContentInfoText(wstring& text, const EPGDB_EVENT_INFO& info)
 			BYTE nibble1 = info.contentInfo.nibbleList[i].content_nibble_level_1;
 			BYTE nibble2 = info.contentInfo.nibbleList[i].content_nibble_level_2;
 			if( nibble1 == 0x0E && nibble2 <= 0x01 ){
-				//”Ô‘g•t‘®î•ñ‚Ü‚½‚ÍCSŠg’£—pî•ñ
+				//ç•ªçµ„ä»˜å±žæƒ…å ±ã¾ãŸã¯CSæ‹¡å¼µç”¨æƒ…å ±
 				nibble1 = info.contentInfo.nibbleList[i].user_nibble_1 | (0x60 + nibble2 * 16);
 				nibble2 = info.contentInfo.nibbleList[i].user_nibble_2;
 			}
@@ -589,7 +589,7 @@ void AppendEpgAudioComponentInfoText(wstring& text, const EPGDB_EVENT_INFO& info
 				}
 			}
 			text += L"\r\n";
-			text += L"ƒTƒ“ƒvƒŠƒ“ƒOƒŒ[ƒg : ";
+			text += L"ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ãƒ¬ãƒ¼ãƒˆ : ";
 			switch( info.audioInfo.componentList[i].sampling_rate ){
 				case 0x01:
 					text += L"16kHz";
@@ -703,8 +703,8 @@ SERVICE_INFO CServiceInfoAdapter::Create(const EPGDB_SERVICE_INFO* ref)
 	extInfo.service_provider_name = r.service_provider_name.c_str();
 	extInfo.service_name = r.service_name.c_str();
 	extInfo.network_name = r.network_name.c_str();
-	//ŒÝŠ·‚Ì‚½‚ßts_name‚Í–¢Žæ“¾‚â‹ó•¶Žš—ñ‚Ì‚Æ‚«NULL‚Æ‚·‚×‚«
-	//(service_name‚ÍNULL‚É‚µ‚Ä‚Í‚¢‚¯‚È‚¢BBonCtrl/ChSetUtil.cpp‚ðŽQÆ)
+	//äº’æ›ã®ãŸã‚ts_nameã¯æœªå–å¾—ã‚„ç©ºæ–‡å­—åˆ—ã®ã¨ãNULLã¨ã™ã¹ã
+	//(service_nameã¯NULLã«ã—ã¦ã¯ã„ã‘ãªã„ã€‚BonCtrl/ChSetUtil.cppã‚’å‚ç…§)
 	extInfo.ts_name = r.ts_name.empty() ? NULL : r.ts_name.c_str();
 	extInfo.remote_control_key_id = r.remote_control_key_id;
 	dest.extInfo = &extInfo;

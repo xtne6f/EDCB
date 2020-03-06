@@ -51,7 +51,10 @@ namespace EpgTimer
                     }
                 }
             }
-            listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
+            foreach (ushort id in CommonManager.Instance.ContentKindList)
+            {
+                listBox_jyanru.Items.Add(new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });
+            }
         }
 
         /// <summary>
@@ -88,14 +91,8 @@ namespace EpgTimer
             }
             comboBox_timeH_week.SelectedIndex = setInfo.StartTimeWeek;
 
-            if (setInfo.SearchMode == true)
-            {
-                checkBox_searchMode.IsChecked = true;
-            }
-            else
-            {
-                checkBox_searchMode.IsChecked = false;
-            }
+            checkBox_highlightContentKind.IsChecked = setInfo.HighlightContentKind;
+            checkBox_searchMode.IsChecked = setInfo.SearchMode;
 
             foreach (UInt64 id in setInfo.ViewServiceList)
             {
@@ -109,10 +106,8 @@ namespace EpgTimer
             }
             foreach (UInt16 id in setInfo.ViewContentKindList)
             {
-                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(id) == true)
-                {
-                    listBox_jyanruView.Items.Add(CommonManager.Instance.ContentKindDictionary[id]);
-                }
+                listBox_jyanruView.Items.Add(listBox_jyanru.Items.Cast<ContentKindInfo>().FirstOrDefault(info => info.ID == id) ??
+                                             new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });
             }
 
             if (setInfo.FilterEnded == true)
@@ -154,14 +149,8 @@ namespace EpgTimer
             }
             info.StartTimeWeek = comboBox_timeH_week.SelectedIndex;
 
-            if (checkBox_searchMode.IsChecked == true)
-            {
-                info.SearchMode = true;
-            }
-            else
-            {
-                info.SearchMode = false;
-            }
+            info.HighlightContentKind = checkBox_highlightContentKind.IsChecked == true;
+            info.SearchMode = checkBox_searchMode.IsChecked == true;
 
             if (checkBox_filterEnded.IsChecked == true)
             {

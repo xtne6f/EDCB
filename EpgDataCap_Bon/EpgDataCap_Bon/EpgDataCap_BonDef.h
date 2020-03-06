@@ -1,6 +1,6 @@
-#pragma once
+ï»¿#pragma once
 
-//GUI‚Ì•\¦ó‘Ô
+//GUIã®è¡¨ç¤ºçŠ¶æ…‹
 #define GUI_NORMAL		0
 #define GUI_CANCEL_ONLY	1
 #define GUI_OPEN_FAIL	3
@@ -9,7 +9,7 @@
 #define GUI_OTHER_CTRL	6
 #define GUI_REC_STANDBY	7
 
-//“à•”ƒ^ƒCƒ}[
+//å†…éƒ¨ã‚¿ã‚¤ãƒãƒ¼
 #define TIMER_STATUS_UPDATE		1000
 #define TIMER_REC_END			1003
 #define TIMER_CHG_TRAY			1005
@@ -20,6 +20,6 @@
 #define WM_INVOKE_CTRL_CMD		(WM_APP + 59)
 #define WM_VIEW_APP_OPEN		(WM_APP + 60)
 
-#define WM_TRAY_PUSHICON (WM_APP+101) //ƒgƒŒƒCƒAƒCƒRƒ“‰Ÿ‚³‚ê‚½
+#define WM_TRAY_PUSHICON (WM_APP+101) //ãƒˆãƒ¬ã‚¤ã‚¢ã‚¤ã‚³ãƒ³æŠ¼ã•ã‚ŒãŸ
 #define TRAYICON_ID 200
 

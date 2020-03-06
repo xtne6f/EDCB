@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "EpgTimerSrvMain.h"
 #include "SyoboiCalUtil.h"
 #include "../../Common/PipeServer.h"
@@ -65,7 +65,7 @@ struct MAIN_WINDOW_CONTEXT {
 	bool autoAddCheckAddCountUpdated;
 	bool taskFlag;
 	bool showBalloonTip;
-	//0,1,2:NOTIFY_UPDATE_SRV_STATUS‚Ì’l, 3:–³Œø, 3<:“_–Å
+	//0,1,2:NOTIFY_UPDATE_SRV_STATUSã®å€¤, 3:ç„¡åŠ¹, 3<:ç‚¹æ»…
 	DWORD notifySrvStatus;
 	DWORD notifyCount;
 	__int64 notifyTipActiveTime;
@@ -99,7 +99,7 @@ CEpgTimerSrvMain::CEpgTimerSrvMain()
 
 bool CEpgTimerSrvMain::TaskMain()
 {
-	//”ñ•\¦‚ÌƒƒCƒ“ƒEƒBƒ“ƒhƒE‚ğì¬
+	//éè¡¨ç¤ºã®ãƒ¡ã‚¤ãƒ³ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’ä½œæˆ
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.lpfnWndProc = TaskMainWndProc;
@@ -113,7 +113,7 @@ bool CEpgTimerSrvMain::TaskMain()
 	if( CreateWindowEx(0, wc.lpszClassName, wc.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL, wc.hInstance, &ctx) == NULL ){
 		return false;
 	}
-	//ƒƒbƒZ[ƒWƒ‹[ƒv
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ«ãƒ¼ãƒ—
 	MSG msg;
 	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
 		if( ctx.queryShutdownContext.first == NULL || IsDialogMessage(ctx.queryShutdownContext.first, &msg) == FALSE ){
@@ -135,7 +135,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	this->epgAutoAdd.ParseText(fs_path(settingPath).append(EPG_AUTO_ADD_TEXT_NAME).c_str());
 	this->manualAutoAdd.ParseText(fs_path(settingPath).append(MANUAL_AUTO_ADD_TEXT_NAME).c_str());
 
-	//”ñ•\¦‚ÌƒƒCƒ“ƒEƒBƒ“ƒhƒE‚ğì¬
+	//éè¡¨ç¤ºã®ãƒ¡ã‚¤ãƒ³ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’ä½œæˆ
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.lpfnWndProc = MainWndProc;
@@ -150,7 +150,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 		return false;
 	}
 
-	//ƒƒbƒZ[ƒWƒ‹[ƒv
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ«ãƒ¼ãƒ—
 	MSG msg;
 	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
 		if( ctx.queryShutdownContext.first == NULL || IsDialogMessage(ctx.queryShutdownContext.first, &msg) == FALSE ){
@@ -192,7 +192,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 					{
 						wstring exeCmd;
 						if( ReadVALUE(&exeCmd, cmdParam->data, cmdParam->dataSize, NULL) && exeCmd.compare(0, 1, L"\"") == 0 ){
-							//Œ`®‚Í("FileName")‚©("FileName" Arguments..)‚Ì‚Ç‚¿‚ç‚©B‚Ù‚©‚Í‹‘”Û‚µ‚Ä‚æ‚¢
+							//å½¢å¼ã¯("FileName")ã‹("FileName" Arguments..)ã®ã©ã¡ã‚‰ã‹ã€‚ã»ã‹ã¯æ‹’å¦ã—ã¦ã‚ˆã„
 							size_t i = exeCmd.find(L'"', 1);
 							if( i >= 2 && (exeCmd.size() == i + 1 || exeCmd[i + 1] == L' ') ){
 								wstring file(exeCmd, 1, i - 1);
@@ -261,7 +261,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 			for( int timeout = 0; cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS; timeout += 100 ){
 				Sleep(100);
 				if( timeout > CONNECT_TIMEOUT ){
-					MessageBox(hwnd, L"ƒT[ƒrƒX‚Ì‹N“®‚ğŠm”F‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B", NULL, MB_ICONERROR);
+					MessageBox(hwnd, L"ã‚µãƒ¼ãƒ“ã‚¹ã®èµ·å‹•ã‚’ç¢ºèªã§ãã¾ã›ã‚“ã§ã—ãŸã€‚", NULL, MB_ICONERROR);
 					PostMessage(hwnd, WM_CLOSE, 0, 0);
 					break;
 				}
@@ -274,7 +274,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 			CSendCtrlCmd cmd;
 			cmd.SendUnRegistGUI(GetCurrentProcessId());
 			ctx->pipeServer.StopServer();
-			//ƒ^ƒXƒNƒgƒŒƒC‚©‚çíœ
+			//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤ã‹ã‚‰å‰Šé™¤
 			NOTIFYICONDATA nid = {};
 			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
 			nid.hWnd = hwnd;
@@ -309,7 +309,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 		}
 		return TRUE;
 	case WM_APP_RECEIVE_NOTIFY:
-		//’Ê’m‚ğó‚¯æ‚é
+		//é€šçŸ¥ã‚’å—ã‘å–ã‚‹
 		{
 			if( wParam == FALSE ){
 				ctx->notifySrvStatus = (DWORD)lParam;
@@ -330,7 +330,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 		}
 		break;
 	case WM_APP_TRAY_PUSHICON:
-		//ƒ^ƒXƒNƒgƒŒƒCŠÖŒW
+		//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤é–¢ä¿‚
 		switch( LOWORD(lParam) ){
 		case WM_LBUTTONUP:
 			OpenGUI();
@@ -372,7 +372,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 			mii.cbSize = sizeof(mii);
 			mii.fMask = MIIM_ID | MIIM_DATA;
 			if( GetMenuItemInfo((HMENU)lParam, LOWORD(wParam), FALSE, &mii) ){
-				//WM_COMMAND‚Å‚Íæ“¾‚Å‚«‚È‚¢‚Ì‚ÅA‚±‚±‚Å‘I‘ğ“à—e‚ğ‹L˜^‚·‚é
+				//WM_COMMANDã§ã¯å–å¾—ã§ããªã„ã®ã§ã€ã“ã“ã§é¸æŠå†…å®¹ã‚’è¨˜éŒ²ã™ã‚‹
 				SetProp(hwnd, L"PopupSel", (HANDLE)(UINT_PTR)mii.wID);
 				SetProp(hwnd, L"PopupSelData", (HANDLE)mii.dwItemData);
 			}
@@ -390,12 +390,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 				if(cmd.SendChkSuspend() == CMD_SUCCESS ){
 					cmd.SendSuspend(LOWORD(wParam) == IDC_BUTTON_S3 ? 0xFF01 : 0xFF02);
 				}else{
-					MessageBox(hwnd, L"ˆÚs‚Å‚«‚éó‘Ô‚Å‚Í‚ ‚è‚Ü‚¹‚ñB\r\ni‚à‚¤‚·‚®—\–ñ‚ªn‚Ü‚éB‚Ü‚½‚Í—}§ğŒ‚Ìexe‚ª‹N“®‚µ‚Ä‚¢‚éB‚È‚Çj", NULL, MB_ICONERROR);
+					MessageBox(hwnd, L"ç§»è¡Œã§ãã‚‹çŠ¶æ…‹ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚\r\nï¼ˆã‚‚ã†ã™ãäºˆç´„ãŒå§‹ã¾ã‚‹ã€‚ã¾ãŸã¯æŠ‘åˆ¶æ¡ä»¶ã®exeãŒèµ·å‹•ã—ã¦ã„ã‚‹ã€‚ãªã©ï¼‰", NULL, MB_ICONERROR);
 				}
 			}
 			break;
 		case IDC_BUTTON_END:
-			if( MessageBox(hwnd, SERVICE_NAME L" (Task) ‚ğI—¹‚µ‚Ü‚·iƒT[ƒrƒX‚ÍI—¹‚µ‚Ü‚¹‚ñjB", L"Šm”F", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
+			if( MessageBox(hwnd, SERVICE_NAME L" (Task) ã‚’çµ‚äº†ã—ã¾ã™ï¼ˆã‚µãƒ¼ãƒ“ã‚¹ã¯çµ‚äº†ã—ã¾ã›ã‚“ï¼‰ã€‚", L"ç¢ºèª", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
 				SendMessage(hwnd, WM_CLOSE, 0, 0);
 			}
 			break;
@@ -404,7 +404,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 			break;
 		default:
 			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
-				//u—\–ñíœv
+				//ã€Œäºˆç´„å‰Šé™¤ã€
 				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
 					CSendCtrlCmd cmd;
 					cmd.SendDelReserve(vector<DWORD>(1, (DWORD)(UINT_PTR)GetProp(hwnd, L"PopupSelData")));
@@ -415,7 +415,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM 
 		break;
 	default:
 		if( uMsg == ctx->msgTaskbarCreated ){
-			//ƒVƒFƒ‹‚ÌÄ‹N“®
+			//ã‚·ã‚§ãƒ«ã®å†èµ·å‹•æ™‚
 			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
 		}
 		break;
@@ -448,11 +448,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->hwndMain = hwnd;
 		ctx->sys->ReloadSetting(true);
 		if( ctx->sys->reserveManager.GetTunerReserveAll().size() <= 1 ){
-			//ƒ`ƒ…[ƒi‚È‚µ
+			//ãƒãƒ¥ãƒ¼ãƒŠãªã—
 			ctx->notifySrvStatus = 3;
 		}
 		ctx->sys->ReloadNetworkSetting();
-		//ƒT[ƒrƒXƒ‚[ƒh‚Å‚Í”CˆÓƒAƒNƒZƒX‰Â”\‚ÈƒpƒCƒv‚ğ¶¬‚·‚éBó‹µ‚É‚æ‚Á‚Ä‚ÍƒZƒLƒ…ƒŠƒeƒBƒŠƒXƒN‚È‚Ì‚Å’ˆÓ
+		//ã‚µãƒ¼ãƒ“ã‚¹ãƒ¢ãƒ¼ãƒ‰ã§ã¯ä»»æ„ã‚¢ã‚¯ã‚»ã‚¹å¯èƒ½ãªãƒ‘ã‚¤ãƒ—ã‚’ç”Ÿæˆã™ã‚‹ã€‚çŠ¶æ³ã«ã‚ˆã£ã¦ã¯ã‚»ã‚­ãƒ¥ãƒªãƒ†ã‚£ãƒªã‚¹ã‚¯ãªã®ã§æ³¨æ„
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_PIPE,
 		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, false, NULL); },
 		                            !(ctx->sys->notifyManager.IsGUI()));
@@ -475,7 +475,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->stoppingFlag = true;
 		ctx->sys->reserveManager.Finalize();
 		OutputDebugString(L"*** Server finalized ***\r\n");
-		//ƒ^ƒXƒNƒgƒŒƒC‚©‚çíœ
+		//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤ã‹ã‚‰å‰Šé™¤
 		SendMessage(hwnd, WM_APP_SHOW_TRAY, FALSE, FALSE);
 		ctx->sys->hwndMain = NULL;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
@@ -490,7 +490,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		return 0;
 	case WM_APP_RESET_SERVER:
 		{
-			//ƒT[ƒoƒŠƒZƒbƒgˆ—
+			//ã‚µãƒ¼ãƒãƒªã‚»ãƒƒãƒˆå‡¦ç†
 			unsigned short tcpPort_;
 			bool tcpIPv6_;
 			DWORD tcpResTo;
@@ -512,11 +512,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		break;
 	case WM_APP_RELOAD_EPG:
-		//EPGƒŠƒ[ƒh‚ğŠJn
+		//EPGãƒªãƒ­ãƒ¼ãƒ‰ã‚’é–‹å§‹
 		ctx->sys->epgDB.ReloadEpgData();
 		//FALL THROUGH!
 	case WM_APP_RELOAD_EPG_CHK:
-		//EPGƒŠƒ[ƒhŠ®—¹‚Ìƒ`ƒFƒbƒN‚ğŠJn
+		//EPGãƒªãƒ­ãƒ¼ãƒ‰å®Œäº†ã®ãƒã‚§ãƒƒã‚¯ã‚’é–‹å§‹
 		{
 			CBlockLock lock(&ctx->sys->autoAddLock);
 			ctx->sys->autoAddCheckItr = ctx->sys->epgAutoAdd.GetMap().begin();
@@ -526,14 +526,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->shutdownPendingTick = GetTickCount();
 		break;
 	case WM_APP_REQUEST_SHUTDOWN:
-		//ƒVƒƒƒbƒgƒ_ƒEƒ“ˆ—
+		//ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å‡¦ç†
 		if( ctx->sys->IsSuspendOK() ){
 			if( wParam == SD_MODE_STANDBY || wParam == SD_MODE_SUSPEND ){
-				//ƒXƒgƒŠ[ƒ~ƒ“ƒO‚ğI—¹‚·‚é
+				//ã‚¹ãƒˆãƒªãƒ¼ãƒŸãƒ³ã‚°ã‚’çµ‚äº†ã™ã‚‹
 				ctx->sys->streamingManager.clear();
-				//ƒXƒŠ[ƒv—}~‰ğœ
+				//ã‚¹ãƒªãƒ¼ãƒ—æŠ‘æ­¢è§£é™¤
 				SetThreadExecutionState(ES_CONTINUOUS);
-				//rebootFlag‚Í(w’è+5•ª‘O)‚É•œ‹A
+				//rebootFlagæ™‚ã¯(æŒ‡å®š+5åˆ†å‰)ã«å¾©å¸°
 				DWORD marginSec;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
@@ -542,7 +542,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, marginSec) ){
 					SetShutdown(wParam == SD_MODE_STANDBY ? 1 : 2);
 					if( lParam ){
-						//Ä‹N“®–â‚¢‡‚í‚¹
+						//å†èµ·å‹•å•ã„åˆã‚ã›
 						if( SendMessage(hwnd, WM_APP_QUERY_SHUTDOWN, SD_MODE_INVALID, TRUE) == FALSE ){
 							SetShutdown(4);
 						}
@@ -554,12 +554,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		break;
 	case WM_APP_REQUEST_REBOOT:
-		//Ä‹N“®
+		//å†èµ·å‹•
 		SetShutdown(4);
 		break;
 	case WM_APP_QUERY_SHUTDOWN:
 		if( ctx->sys->notifyManager.IsGUI() ){
-			//’¼Úq‚Ë‚é
+			//ç›´æ¥å°‹ã­ã‚‹
 			if( ctx->queryShutdownContext.first == NULL ){
 				INITCOMMONCONTROLSEX icce;
 				icce.dwSize = sizeof(icce);
@@ -570,21 +570,21 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
 			}
 		}else if( ctx->sys->QueryShutdown(lParam != FALSE, (BYTE)wParam) == false ){
-			//GUIŒo—R‚Å–â‚¢‡‚í‚¹ŠJn‚Å‚«‚È‚©‚Á‚½
+			//GUIçµŒç”±ã§å•ã„åˆã‚ã›é–‹å§‹ã§ããªã‹ã£ãŸ
 			return FALSE;
 		}
 		return TRUE;
 	case WM_APP_RECEIVE_NOTIFY:
-		//’Ê’m‚ğó‚¯æ‚é
+		//é€šçŸ¥ã‚’å—ã‘å–ã‚‹
 		{
 			NOTIFY_SRV_INFO info = {};
 			if( wParam ){
-				//XV‚¾‚¯
+				//æ›´æ–°ã ã‘
 				info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 				info.param1 = ctx->notifySrvStatus;
 			}else{
 				if( ctx->sys->notifyManager.GetNotify(&info, ctx->notifyCount) == false ){
-					//‚·‚×‚Äó‚¯æ‚Á‚½
+					//ã™ã¹ã¦å—ã‘å–ã£ãŸ
 					ctx->tcpServer.NotifyUpdate();
 					break;
 				}
@@ -620,14 +620,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						                          ctx->notifySrvStatus == 3 ? IDI_ICON_GRAY :
 						                          ctx->notifySrvStatus % 2 ? IDI_ICON_SEMI : IDI_ICON_BLUE);
 						if( ctx->notifySrvStatus == 3 ){
-							wcscpy_s(nid.szTip, L"ƒ`ƒ…[ƒi[‚ª‚ ‚è‚Ü‚¹‚ñ");
+							wcscpy_s(nid.szTip, L"ãƒãƒ¥ãƒ¼ãƒŠãƒ¼ãŒã‚ã‚Šã¾ã›ã‚“");
 						}else if( notifyTipStyle == 1 ){
-							wstring tip = L"Ÿ‚Ì—\–ñ‚È‚µ";
+							wstring tip = L"æ¬¡ã®äºˆç´„ãªã—";
 							if( ctx->notifyTipActiveTime != LLONG_MAX && ctx->notifyTipReserve.reserveID != 0 ){
 								SYSTEMTIME st = ctx->notifyTipReserve.startTime;
 								SYSTEMTIME stEnd;
 								ConvertSystemTime(ConvertI64Time(st) + ctx->notifyTipReserve.durationSecond * I64_1SEC, &stEnd);
-								Format(tip, L"Ÿ‚Ì—\–ñF%ls %d/%d(%ls) %d:%02d-%d:%02d %ls",
+								Format(tip, L"æ¬¡ã®äºˆç´„ï¼š%ls %d/%d(%ls) %d:%02d-%d:%02d %ls",
 								       ctx->notifyTipReserve.stationName.c_str(),
 								       st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute,
 								       stEnd.wHour, stEnd.wMinute, ctx->notifyTipReserve.title.c_str());
@@ -639,7 +639,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						}else if( ctx->notifyTipActiveTime != LLONG_MAX ){
 							SYSTEMTIME st;
 							ConvertSystemTime(ctx->notifyTipActiveTime + 30 * I64_1SEC, &st);
-							swprintf_s(nid.szTip, L"Ÿ‚Ì—\–ñEæ“¾F%d/%d(%ls) %d:%02d",
+							swprintf_s(nid.szTip, L"æ¬¡ã®äºˆç´„ãƒ»å–å¾—ï¼š%d/%d(%ls) %d:%02d",
 								st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 						}
 						nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
@@ -654,14 +654,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 			}
 			if( ctx->showBalloonTip && CNotifyManager::ExtractTitleFromInfo(&info).first[0] ){
-				//ƒoƒ‹[ƒ“ƒ`ƒbƒv•\¦
+				//ãƒãƒ«ãƒ¼ãƒ³ãƒãƒƒãƒ—è¡¨ç¤º
 				NOTIFYICONDATA nid = {};
 				nid.cbSize = NOTIFYICONDATA_V2_SIZE;
 				nid.hWnd = hwnd;
 				nid.uID = 1;
 				nid.uFlags = NIF_INFO;
 				nid.dwInfoFlags = NIIF_INFO;
-				nid.uTimeout = 10000; //Œø‰Ê‚Í‚È‚¢
+				nid.uTimeout = 10000; //åŠ¹æœã¯ãªã„
 				wcsncpy_s(nid.szInfoTitle, CNotifyManager::ExtractTitleFromInfo(&info).first, _TRUNCATE);
 				wcsncpy_s(nid.szInfo, CNotifyManager::ExtractTitleFromInfo(&info).second, _TRUNCATE);
 				Shell_NotifyIcon(NIM_MODIFY, &nid);
@@ -669,7 +669,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		break;
 	case WM_APP_TRAY_PUSHICON:
-		//ƒ^ƒXƒNƒgƒŒƒCŠÖŒW
+		//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤é–¢ä¿‚
 		switch( LOWORD(lParam) ){
 		case WM_LBUTTONUP:
 			if( ctx->notifySrvStatus != 3 ){
@@ -692,7 +692,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		break;
 	case WM_APP_SHOW_TRAY:
-		//ƒ^ƒXƒNƒgƒŒƒC‚É•\¦/”ñ•\¦‚·‚é
+		//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤ã«è¡¨ç¤º/éè¡¨ç¤ºã™ã‚‹
 		if( ctx->taskFlag && wParam == FALSE ){
 			NOTIFYICONDATA nid = {};
 			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
@@ -710,7 +710,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		switch( wParam ){
 		case TIMER_RELOAD_EPG_CHK_PENDING:
 			if( GetTickCount() - ctx->shutdownPendingTick > 30000 ){
-				//30•bˆÈ“à‚ÉƒVƒƒƒbƒgƒ_ƒEƒ“–â‚¢‡‚í‚¹‚Å‚«‚È‚¯‚ê‚ÎƒLƒƒƒ“ƒZƒ‹
+				//30ç§’ä»¥å†…ã«ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å•ã„åˆã‚ã›ã§ããªã‘ã‚Œã°ã‚­ãƒ£ãƒ³ã‚»ãƒ«
 				if( ctx->shutdownModePending ){
 					ctx->shutdownModePending = SD_MODE_INVALID;
 					OutputDebugString(L"Shutdown cancelled\r\n");
@@ -720,7 +720,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				{
 					CBlockLock lock(&ctx->sys->autoAddLock);
 					if( ctx->sys->autoAddCheckItr == ctx->sys->epgAutoAdd.GetMap().begin() ){
-						//©“®—\–ñ“o˜^ˆ—‚ğŠJn
+						//è‡ªå‹•äºˆç´„ç™»éŒ²å‡¦ç†ã‚’é–‹å§‹
 						ctx->autoAddCheckTick = GetTickCount();
 						ctx->autoAddCheckAddList.clear();
 						ctx->autoAddCheckAddCountUpdated = false;
@@ -732,15 +732,15 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 							ctx->autoAddCheckAddCountUpdated = true;
 						}
 						if( GetTickCount() - tick > 200 ){
-							//ƒ^ƒCƒ€ƒAƒEƒg
+							//ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆ
 							break;
 						}
 					}
 					if( ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end() ){
-						//‚Ü‚¾‚ ‚é‚Ì‚ÅŸ‚ÌŒÄ‚Ño‚µ‚Ü‚Å’†’f
+						//ã¾ã ã‚ã‚‹ã®ã§æ¬¡ã®å‘¼ã³å‡ºã—ã¾ã§ä¸­æ–­
 						break;
 					}
-					//Š®—¹
+					//å®Œäº†
 					for( auto itr = ctx->sys->manualAutoAdd.GetMap().cbegin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
 						ctx->sys->AutoAddReserveProgram(itr->second, ctx->autoAddCheckAddList);
 					}
@@ -751,12 +751,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
 				if( ctx->shutdownModePending ){
-					//‚±‚Ìƒ^ƒCƒ}‚ÍWM_TIMERˆÈŠO‚Å‚àKillTimer()‚·‚é‚½‚ßƒƒbƒZ[ƒWƒLƒ…[‚Éc‚Á‚½ê‡‚É‘Îˆ‚·‚é‚½‚ßƒVƒtƒg
+					//ã“ã®ã‚¿ã‚¤ãƒã¯WM_TIMERä»¥å¤–ã§ã‚‚KillTimer()ã™ã‚‹ãŸã‚ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚­ãƒ¥ãƒ¼ã«æ®‹ã£ãŸå ´åˆã«å¯¾å‡¦ã™ã‚‹ãŸã‚ã‚·ãƒ•ãƒˆ
 					ctx->shutdownPendingTick -= 100000;
 					SetTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING, 200, NULL);
 				}
 				if( ctx->autoAddCheckAddCountUpdated ){
-					//—\–ñ“o˜^”‚Ì•Ï‰»‚ğ’Ê’m‚·‚é
+					//äºˆç´„ç™»éŒ²æ•°ã®å¤‰åŒ–ã‚’é€šçŸ¥ã™ã‚‹
 					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				}
 				ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_EPGDATA);
@@ -764,7 +764,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				ctx->sys->reserveManager.CheckTuijyu();
 
 				if( ctx->sys->useSyoboi ){
-					//‚µ‚å‚Ú‚¢ƒJƒŒƒ“ƒ_[‘Î‰
+					//ã—ã‚‡ã¼ã„ã‚«ãƒ¬ãƒ³ãƒ€ãƒ¼å¯¾å¿œ
 					CSyoboiCalUtil syoboi;
 					vector<RESERVE_DATA> reserveList = ctx->sys->reserveManager.GetReserveDataAll();
 					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
@@ -776,7 +776,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case TIMER_QUERY_SHUTDOWN_PENDING:
 			if( GetTickCount() - ctx->shutdownPendingTick >= 100000 ){
 				if( GetTickCount() - ctx->shutdownPendingTick - 100000 > 30000 ){
-					//30•bˆÈ“à‚ÉƒVƒƒƒbƒgƒ_ƒEƒ“–â‚¢‡‚í‚¹‚Å‚«‚È‚¯‚ê‚ÎƒLƒƒƒ“ƒZƒ‹
+					//30ç§’ä»¥å†…ã«ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å•ã„åˆã‚ã›ã§ããªã‘ã‚Œã°ã‚­ãƒ£ãƒ³ã‚»ãƒ«
 					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->shutdownModePending ){
 						ctx->shutdownModePending = SD_MODE_INVALID;
@@ -786,7 +786,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->sys->IsUserWorking() == false &&
 					    SD_MODE_STANDBY <= ctx->shutdownModePending &&  ctx->shutdownModePending <= SD_MODE_SHUTDOWN ){
-						//ƒVƒƒƒbƒgƒ_ƒEƒ“–â‚¢‡‚í‚¹
+						//ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å•ã„åˆã‚ã›
 						if( SendMessage(hwnd, WM_APP_QUERY_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending) == FALSE ){
 							SendMessage(hwnd, WM_APP_REQUEST_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending);
 						}
@@ -800,7 +800,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			SendMessage(hwnd, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
 			break;
 		case TIMER_INC_SRV_STATUS:
-			//Å‘å20•b
+			//æœ€å¤§20ç§’
 			if( SRV_STATUS_PRE_REC <= ctx->notifySrvStatus && ctx->notifySrvStatus < SRV_STATUS_PRE_REC + 20 ){
 				ctx->notifySrvStatus++;
 				SendMessage(hwnd, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
@@ -810,14 +810,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			break;
 		case TIMER_SET_RESUME:
 			{
-				//•œ‹Aƒ^ƒCƒ}XV(powercfg /waketimers‚ÅƒfƒoƒbƒO‰Â”\)
+				//å¾©å¸°ã‚¿ã‚¤ãƒæ›´æ–°(powercfg /waketimersã§ãƒ‡ãƒãƒƒã‚°å¯èƒ½)
 				DWORD marginSec;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
 					marginSec = ctx->sys->setting.wakeTime * 60;
 				}
 				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, marginSec);
-				//ƒXƒŠ[ƒv—}~
+				//ã‚¹ãƒªãƒ¼ãƒ—æŠ‘æ­¢
 				EXECUTION_STATE esFlags = ES_CONTINUOUS;
 				EXECUTION_STATE esLastFlags;
 				if( ctx->shutdownModePending == SD_MODE_INVALID && ctx->sys->IsSuspendOK() ){
@@ -826,7 +826,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					esFlags |= ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED;
 					esLastFlags = SetThreadExecutionState(esFlags);
 					if( esLastFlags == 0 ){
-						//AwayMode–¢‘Î‰
+						//AwayModeæœªå¯¾å¿œ
 						esFlags = ES_CONTINUOUS | ES_SYSTEM_REQUIRED;
 						esLastFlags = SetThreadExecutionState(esFlags);
 					}
@@ -834,7 +834,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				if( esLastFlags != esFlags ){
 					_OutputDebugString(L"SetThreadExecutionState(0x%08x)\r\n", (DWORD)esFlags);
 				}
-				//ƒ`ƒbƒvƒwƒ‹ƒv‚ÌXV‚ª•K—v‚©ƒ`ƒFƒbƒN
+				//ãƒãƒƒãƒ—ãƒ˜ãƒ«ãƒ—ã®æ›´æ–°ãŒå¿…è¦ã‹ãƒã‚§ãƒƒã‚¯
 				RESERVE_DATA r;
 				__int64 activeTime = ctx->sys->reserveManager.GetSleepReturnTime(GetNowI64Time(), &r);
 				if( activeTime != ctx->notifyTipActiveTime || activeTime != LLONG_MAX &&
@@ -854,7 +854,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				pair<CReserveManager::CHECK_STATUS, int> ret = ctx->sys->reserveManager.Check();
 				switch( ret.first ){
 				case CReserveManager::CHECK_EPGCAP_END:
-					//EPGƒŠƒ[ƒhŠ®—¹Œã‚ÉƒfƒtƒHƒ‹ƒg‚ÌƒVƒƒƒbƒgƒ_ƒEƒ““®ì‚ğ‚İ‚é
+					//EPGãƒªãƒ­ãƒ¼ãƒ‰å®Œäº†å¾Œã«ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å‹•ä½œã‚’è©¦ã¿ã‚‹
 					ctx->sys->epgDB.ReloadEpgData(true);
 					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 					{
@@ -865,13 +865,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
 				case CReserveManager::CHECK_NEED_SHUTDOWN:
-					//EPGƒŠƒ[ƒh‚Í‰É‚È‚Æ‚«‚¾‚¯
+					//EPGãƒªãƒ­ãƒ¼ãƒ‰ã¯æš‡ãªã¨ãã ã‘
 					if( ctx->sys->reserveManager.IsActive() == false ){
 						ctx->sys->epgDB.ReloadEpgData(true);
 					}
-					//ƒ`ƒFƒbƒN‚Í•K{
+					//ãƒã‚§ãƒƒã‚¯ã¯å¿…é ˆ
 					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
-					//—v‹‚³‚ê‚½ƒVƒƒƒbƒgƒ_ƒEƒ““®ì‚ğ‚İ‚é
+					//è¦æ±‚ã•ã‚ŒãŸã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å‹•ä½œã‚’è©¦ã¿ã‚‹
 					ctx->shutdownModePending = LOBYTE(ret.second);
 					ctx->rebootFlagPending = HIBYTE(ret.second) != 0;
 					if( ctx->shutdownModePending == SD_MODE_INVALID ){
@@ -919,7 +919,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			mii.cbSize = sizeof(mii);
 			mii.fMask = MIIM_ID | MIIM_DATA;
 			if( GetMenuItemInfo((HMENU)lParam, LOWORD(wParam), FALSE, &mii) ){
-				//WM_COMMAND‚Å‚Íæ“¾‚Å‚«‚È‚¢‚Ì‚ÅA‚±‚±‚Å‘I‘ğ“à—e‚ğ‹L˜^‚·‚é
+				//WM_COMMANDã§ã¯å–å¾—ã§ããªã„ã®ã§ã€ã“ã“ã§é¸æŠå†…å®¹ã‚’è¨˜éŒ²ã™ã‚‹
 				SetProp(hwnd, L"PopupSel", (HANDLE)(UINT_PTR)mii.wID);
 				SetProp(hwnd, L"PopupSelData", (HANDLE)mii.dwItemData);
 			}
@@ -936,11 +936,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				CBlockLock lock(&ctx->sys->settingLock);
 				PostMessage(hwnd, WM_APP_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
 			}else{
-				MessageBox(hwnd, L"ˆÚs‚Å‚«‚éó‘Ô‚Å‚Í‚ ‚è‚Ü‚¹‚ñB\r\ni‚à‚¤‚·‚®—\–ñ‚ªn‚Ü‚éB‚Ü‚½‚Í—}§ğŒ‚Ìexe‚ª‹N“®‚µ‚Ä‚¢‚éB‚È‚Çj", NULL, MB_ICONERROR);
+				MessageBox(hwnd, L"ç§»è¡Œã§ãã‚‹çŠ¶æ…‹ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚\r\nï¼ˆã‚‚ã†ã™ãäºˆç´„ãŒå§‹ã¾ã‚‹ã€‚ã¾ãŸã¯æŠ‘åˆ¶æ¡ä»¶ã®exeãŒèµ·å‹•ã—ã¦ã„ã‚‹ã€‚ãªã©ï¼‰", NULL, MB_ICONERROR);
 			}
 			break;
 		case IDC_BUTTON_END:
-			if( MessageBox(hwnd, SERVICE_NAME L" ‚ğI—¹‚µ‚Ü‚·B", L"Šm”F", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
+			if( MessageBox(hwnd, SERVICE_NAME L" ã‚’çµ‚äº†ã—ã¾ã™ã€‚", L"ç¢ºèª", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
 				SendMessage(hwnd, WM_CLOSE, 0, 0);
 			}
 			break;
@@ -949,7 +949,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			break;
 		default:
 			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
-				//u—\–ñíœv
+				//ã€Œäºˆç´„å‰Šé™¤ã€
 				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
 					ctx->sys->reserveManager.DelReserveData(vector<DWORD>(1, (DWORD)(UINT_PTR)GetProp(hwnd, L"PopupSelData")));
 				}
@@ -959,7 +959,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		break;
 	default:
 		if( uMsg == ctx->msgTaskbarCreated ){
-			//ƒVƒFƒ‹‚ÌÄ‹N“®
+			//ã‚·ã‚§ãƒ«ã®å†èµ·å‹•æ™‚
 			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
 		}
 		break;
@@ -977,9 +977,9 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)ctx);
 		ctx->first = hDlg;
 		SetDlgItemText(hDlg, IDC_STATIC_SHUTDOWN,
-			ctx->second.first == SD_MODE_STANDBY ? L"ƒXƒ^ƒ“ƒoƒC‚ÉˆÚs‚µ‚Ü‚·B" :
-			ctx->second.first == SD_MODE_SUSPEND ? L"‹x~‚ÉˆÚs‚µ‚Ü‚·B" :
-			ctx->second.first == SD_MODE_SHUTDOWN ? L"ƒVƒƒƒbƒgƒ_ƒEƒ“‚µ‚Ü‚·B" : L"Ä‹N“®‚µ‚Ü‚·B");
+			ctx->second.first == SD_MODE_STANDBY ? L"ã‚¹ã‚¿ãƒ³ãƒã‚¤ã«ç§»è¡Œã—ã¾ã™ã€‚" :
+			ctx->second.first == SD_MODE_SUSPEND ? L"ä¼‘æ­¢ã«ç§»è¡Œã—ã¾ã™ã€‚" :
+			ctx->second.first == SD_MODE_SHUTDOWN ? L"ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³ã—ã¾ã™ã€‚" : L"å†èµ·å‹•ã—ã¾ã™ã€‚");
 		SetTimer(hDlg, 1, 1000, NULL);
 		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETRANGE, 0, MAKELONG(0, ctx->second.first == SD_MODE_INVALID ? 30 : 15));
 		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS, ctx->second.first == SD_MODE_INVALID ? 30 : 15, 0);
@@ -997,10 +997,10 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 		switch( LOWORD(wParam) ){
 		case IDOK:
 			if( ctx->second.first == SD_MODE_INVALID ){
-				//Ä‹N“®
+				//å†èµ·å‹•
 				PostMessage(GetParent(hDlg), WM_APP_REQUEST_REBOOT, 0, 0);
 			}else{
-				//ƒXƒ^ƒ“ƒoƒC‹x~‚Ü‚½‚Í“dŒ¹’f
+				//ã‚¹ã‚¿ãƒ³ãƒã‚¤ä¼‘æ­¢ã¾ãŸã¯é›»æºæ–­
 				PostMessage(GetParent(hDlg), WM_APP_REQUEST_SHUTDOWN, ctx->second.first, ctx->second.second);
 			}
 			//FALL THROUGH!
@@ -1028,10 +1028,10 @@ HICON CEpgTimerSrvMain::LoadSmallIcon(int iconID)
 void CEpgTimerSrvMain::OpenGUI()
 {
 	if( UtilFileExists(GetModulePath().replace_filename(L"EpgTimer.lnk")).first ){
-		//EpgTimer.lnk(ƒVƒ‡[ƒgƒJƒbƒg)‚ğ—Dæ“I‚ÉŠJ‚­
+		//EpgTimer.lnk(ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆ)ã‚’å„ªå…ˆçš„ã«é–‹ã
 		ShellExecute(NULL, NULL, GetModulePath().replace_filename(L"EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
 	}else{
-		//EpgTimer.exe‚ª‚ ‚ê‚Î‹N“®
+		//EpgTimer.exeãŒã‚ã‚Œã°èµ·å‹•
 		ShellExecute(NULL, NULL, GetModulePath().replace_filename(L"EpgTimer.exe").c_str(), NULL, NULL, SW_SHOWNORMAL);
 	}
 }
@@ -1047,7 +1047,7 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 	});
 	while( GetMenuItemCount(hMenu) > 0 && DeleteMenu(hMenu, 0, MF_BYPOSITION) );
 	if( list.empty() ){
-		InsertMenu(hMenu, 0, MF_GRAYED | MF_BYPOSITION, IDC_MENU_RESERVE, L"(24ŠÔˆÈ“à‚É—\–ñ‚È‚µ)");
+		InsertMenu(hMenu, 0, MF_GRAYED | MF_BYPOSITION, IDC_MENU_RESERVE, L"(24æ™‚é–“ä»¥å†…ã«äºˆç´„ãªã—)");
 	}
 	for( UINT i = 0; i < list.size() && i <= IDC_MENU_RESERVE_MAX - IDC_MENU_RESERVE; i++ ){
 		MENUITEMINFO mii;
@@ -1058,12 +1058,12 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 		SYSTEMTIME endTime;
 		ConvertSystemTime(ConvertI64Time(list[i].startTime) + list[i].durationSecond * I64_1SEC, &endTime);
 		WCHAR text[128];
-		swprintf_s(text, L"%02d:%02d-%02d:%02d%ls %.31ls y%.31lsz",
+		swprintf_s(text, L"%02d:%02d-%02d:%02d%ls %.31ls ã€%.31lsã€‘",
 		           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
-		           list[i].recSetting.recMode == RECMODE_VIEW ? L"£" : L"",
+		           list[i].recSetting.recMode == RECMODE_VIEW ? L"â–²" : L"",
 		           list[i].title.c_str(), list[i].stationName.c_str());
-		std::replace(text, text + wcslen(text), L'@', L' ');
-		std::replace(text, text + wcslen(text), L'&', L'•');
+		std::replace(text, text + wcslen(text), L'ã€€', L' ');
+		std::replace(text, text + wcslen(text), L'&', L'ï¼†');
 		mii.dwTypeData = text;
 		InsertMenuItem(hMenu, i, TRUE, &mii);
 	}
@@ -1083,12 +1083,12 @@ bool CEpgTimerSrvMain::IsSuspendOK() const
 	bool noFileStreaming;
 	{
 		CBlockLock lock(&this->settingLock);
-		//rebootFlag‚Ì•œ‹Aƒ}[ƒWƒ“‚ğŠî€‚É3•ª—]—T‚ğ‰Á‚¦‚½‚à‚Ì‚Æ—}§ğŒ‚Ì‚Ç‚¿‚ç‚©‘å‚«‚¢‚Ù‚¤
+		//rebootFlagæ™‚ã®å¾©å¸°ãƒãƒ¼ã‚¸ãƒ³ã‚’åŸºæº–ã«3åˆ†ä½™è£•ã‚’åŠ ãˆãŸã‚‚ã®ã¨æŠ‘åˆ¶æ¡ä»¶ã®ã©ã¡ã‚‰ã‹å¤§ãã„ã»ã†
 		marginSec = max(this->setting.wakeTime + 5 + 3, this->setting.noStandbyTime) * 60;
 		noFileStreaming = this->setting.noFileStreaming;
 	}
 	__int64 now = GetNowI64Time();
-	//ƒVƒƒƒbƒgƒ_ƒEƒ“‰Â”\‚Å•œ‹A‚ªŠÔ‚É‡‚¤‚Æ‚«‚¾‚¯
+	//ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å¯èƒ½ã§å¾©å¸°ãŒé–“ã«åˆã†ã¨ãã ã‘
 	return (noFileStreaming == false || this->streamingManager.empty()) &&
 	       this->reserveManager.IsActive() == false &&
 	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC &&
@@ -1121,7 +1121,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
 #ifdef LUA_BUILD_AS_DLL
-		//‘¶İ‚ğŠm”F‚µ‚Ä‚¢‚é‚¾‚¯
+		//å­˜åœ¨ã‚’ç¢ºèªã—ã¦ã„ã‚‹ã ã‘
 		this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
 		if( this->hLuaDll )
 #endif
@@ -1139,13 +1139,13 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	this->setting = std::move(s);
 	if( this->residentFlag == false ){
 		if( this->setting.residentMode >= 1 ){
-			//í’“‚·‚é(CMD2_EPG_SRV_CLOSE‚ğ–³‹)
+			//å¸¸é§ã™ã‚‹(CMD2_EPG_SRV_CLOSEã‚’ç„¡è¦–)
 			this->residentFlag = true;
-			//ƒ^ƒXƒNƒgƒŒƒC‚É•\¦‚·‚é‚©‚Ç‚¤‚©
+			//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤ã«è¡¨ç¤ºã™ã‚‹ã‹ã©ã†ã‹
 			PostMessage(this->hwndMain, WM_APP_SHOW_TRAY, this->setting.residentMode >= 2, !this->setting.noBalloonTip);
 		}
 	}else if( this->setting.residentMode >= 2 ){
-		//ƒ`ƒbƒvƒwƒ‹ƒv‚ğXV‚·‚é‚½‚ß
+		//ãƒãƒƒãƒ—ãƒ˜ãƒ«ãƒ—ã‚’æ›´æ–°ã™ã‚‹ãŸã‚
 		PostMessage(this->hwndMain, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
 	}
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
@@ -1168,7 +1168,7 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 	r.recSetting.endMargine = this->setting.endMargin;
 	r.recSetting.serviceMode = (this->setting.enableCaption ? RECSERVICEMODE_CAP : 0) |
 	                           (this->setting.enableData ? RECSERVICEMODE_DATA : 0) | RECSERVICEMODE_SET;
-	//*ˆÈ~‚ğBatFileTag‚Æ‚µ‚Äˆµ‚¤‚±‚Æ‚ğ¦‚·
+	//*ä»¥é™ã‚’BatFileTagã¨ã—ã¦æ‰±ã†ã“ã¨ã‚’ç¤ºã™
 	r.recSetting.batFilePath = L"*";
 	return r;
 }
@@ -1185,7 +1185,7 @@ bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, 
 	}
 	__int64 setTime = returnTime - marginSec * I64_1SEC;
 	if( *resumeTimer != NULL && *resumeTime == setTime ){
-		//“¯‚ÅƒZƒbƒgÏ‚İ
+		//åŒæ™‚åˆ»ã§ã‚»ãƒƒãƒˆæ¸ˆã¿
 		return true;
 	}
 	if( *resumeTimer == NULL ){
@@ -1216,16 +1216,16 @@ void CEpgTimerSrvMain::SetShutdown(BYTE shutdownMode)
 		CloseHandle(hToken);
 	}
 	if( shutdownMode == 1 ){
-		//ƒXƒ^ƒ“ƒoƒC(“¯Šú)
+		//ã‚¹ã‚¿ãƒ³ãƒã‚¤(åŒæœŸ)
 		SetSystemPowerState(TRUE, FALSE);
 	}else if( shutdownMode == 2 ){
-		//‹x~(“¯Šú)
+		//ä¼‘æ­¢(åŒæœŸ)
 		SetSystemPowerState(FALSE, FALSE);
 	}else if( shutdownMode == 3 ){
-		//“dŒ¹’f(”ñ“¯Šú)
+		//é›»æºæ–­(éåŒæœŸ)
 		ExitWindowsEx(EWX_POWEROFF, 0);
 	}else if( shutdownMode == 4 ){
-		//Ä‹N“®(”ñ“¯Šú)
+		//å†èµ·å‹•(éåŒæœŸ)
 		ExitWindowsEx(EWX_REBOOT, 0);
 	}
 }
@@ -1236,7 +1236,7 @@ bool CEpgTimerSrvMain::QueryShutdown(BYTE rebootFlag, BYTE suspendMode)
 	vector<DWORD> registGUI = this->notifyManager.GetRegistGUI();
 	for( size_t i = 0; i < registGUI.size(); i++ ){
 		ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, registGUI[i]);
-		//’ÊM‚Å‚«‚éŒÀ‚èí‚É¬Œ÷‚·‚é‚Ì‚ÅAd•¡–â‚¢‡‚í‚¹‚ğl—¶‚·‚é•K—v‚Í‚È‚¢
+		//é€šä¿¡ã§ãã‚‹é™ã‚Šå¸¸ã«æˆåŠŸã™ã‚‹ã®ã§ã€é‡è¤‡å•ã„åˆã‚ã›ã‚’è€ƒæ…®ã™ã‚‹å¿…è¦ã¯ãªã„
 		if( suspendMode == 0 && ctrlCmd.SendGUIQueryReboot(rebootFlag) == CMD_SUCCESS ||
 		    suspendMode != 0 && ctrlCmd.SendGUIQuerySuspend(rebootFlag, suspendMode) == CMD_SUCCESS ){
 			return true;
@@ -1249,14 +1249,14 @@ bool CEpgTimerSrvMain::IsUserWorking() const
 {
 	CBlockLock lock(&this->settingLock);
 
-	//ÅI“ü—Íæ“¾
+	//æœ€çµ‚å…¥åŠ›æ™‚åˆ»å–å¾—
 	LASTINPUTINFO lii;
 	lii.cbSize = sizeof(LASTINPUTINFO);
 	if( this->setting.noUsePC ){
 		if( this->setting.noUsePCTime != 0 ){
 			return GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < this->setting.noUsePCTime * 60 * 1000;
 		}
-		//è‡’l‚ª0‚Ì‚Æ‚«‚Íí‚Ég—p’†ˆµ‚¢
+		//é–¾å€¤ãŒ0ã®ã¨ãã¯å¸¸ã«ä½¿ç”¨ä¸­æ‰±ã„
 		return true;
 	}
 	return false;
@@ -1285,7 +1285,7 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 			}
 			NetApiBufferFree(info);
 		}else{
-			//‘ã—ƒvƒƒZƒXŒo—R‚Å’²‚×‚é
+			//ä»£ç†ãƒ—ãƒ­ã‚»ã‚¹çµŒç”±ã§èª¿ã¹ã‚‹
 			HWND hwnd = FindWindowEx(HWND_MESSAGE, NULL, L"EpgTimerAdminProxy", NULL);
 			if( hwnd ){
 				DWORD wp = ext[1] | ext[2] << 8 | ext[3] << 16 | (DWORD)ext[4] << 24;
@@ -1297,7 +1297,7 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 			}
 		}
 		if( found ){
-			OutputDebugString(L"‹¤—LƒtƒHƒ‹ƒ_TSƒAƒNƒZƒX\r\n");
+			OutputDebugString(L"å…±æœ‰ãƒ•ã‚©ãƒ«ãƒ€TSã‚¢ã‚¯ã‚»ã‚¹\r\n");
 		}
 	}
 	return found;
@@ -1308,7 +1308,7 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 	CBlockLock lock(&this->settingLock);
 
 	if( this->setting.noSuspendExeList.empty() == false ){
-		//ToolhelpƒXƒiƒbƒvƒVƒ‡ƒbƒg‚ğì¬‚·‚é
+		//Toolhelpã‚¹ãƒŠãƒƒãƒ—ã‚·ãƒ§ãƒƒãƒˆã‚’ä½œæˆã™ã‚‹
 		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 		if( hSnapshot != INVALID_HANDLE_VALUE ){
 			bool found = false;
@@ -1317,10 +1317,10 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 			if( Process32First(hSnapshot, &procent) != FALSE ){
 				do{
 					for( size_t i = 0; i < this->setting.noSuspendExeList.size(); i++ ){
-						//procent.szExeFile‚ÉƒvƒƒZƒX–¼
+						//procent.szExeFileã«ãƒ—ãƒ­ã‚»ã‚¹å
 						wstring strExe = wstring(procent.szExeFile).substr(0, this->setting.noSuspendExeList[i].size());
 						if( CompareNoCase(strExe, this->setting.noSuspendExeList[i]) == 0 ){
-							_OutputDebugString(L"‹N“®exe:%ls\r\n", procent.szExeFile);
+							_OutputDebugString(L"èµ·å‹•exe:%ls\r\n", procent.szExeFile);
 							found = true;
 							break;
 						}
@@ -1343,14 +1343,14 @@ vector<RESERVE_DATA>& CEpgTimerSrvMain::PreChgReserveData(vector<RESERVE_DATA>& 
 	}
 	if( commentAutoAdd ){
 		for( size_t i = 0; i < reserveList.size(); i++ ){
-			//ƒvƒƒOƒ‰ƒ€—\–ñ‰»‚µ‚½©“®—\–ñ‚©
-			if( reserveList[i].eventID == 0xFFFF && reserveList[i].comment.compare(0, 7, L"EPG©“®—\–ñ") == 0 ){
+			//ãƒ—ãƒ­ã‚°ãƒ©ãƒ äºˆç´„åŒ–ã—ãŸè‡ªå‹•äºˆç´„ã‹
+			if( reserveList[i].eventID == 0xFFFF && reserveList[i].comment.compare(0, 7, L"EPGè‡ªå‹•äºˆç´„") == 0 ){
 				size_t in = reserveList[i].comment.compare(7, 1, L"(") ? 6 : reserveList[i].comment.find(L')');
 				if( in != wstring::npos ){
 					RESERVE_DATA r;
 					if( this->reserveManager.GetReserveData(reserveList[i].reserveID, &r) ){
 						if( reserveList[i].comment.compare(in + 1, 1, L"#") ){
-							//ƒvƒƒOƒ‰ƒ€—\–ñ‰»‚µ‚æ‚¤‚Æ‚µ‚Ä‚¢‚é‚Æ‚«‚ÍƒCƒxƒ“ƒgID’ß‚ğ“ü‚ê‚é
+							//ãƒ—ãƒ­ã‚°ãƒ©ãƒ äºˆç´„åŒ–ã—ã‚ˆã†ã¨ã—ã¦ã„ã‚‹ã¨ãã¯ã‚¤ãƒ™ãƒ³ãƒˆIDæ³¨é‡ˆã‚’å…¥ã‚Œã‚‹
 							if( r.originalNetworkID == reserveList[i].originalNetworkID &&
 							    r.transportStreamID == reserveList[i].transportStreamID &&
 							    r.serviceID == reserveList[i].serviceID &&
@@ -1360,7 +1360,7 @@ vector<RESERVE_DATA>& CEpgTimerSrvMain::PreChgReserveData(vector<RESERVE_DATA>& 
 								reserveList[i].comment.insert(in + 1, id);
 							}
 						}else{
-							//ƒT[ƒrƒX‚ğ•ÏX‚µ‚æ‚¤‚Æ‚µ‚Ä‚¢‚é‚Æ‚«‚ÍƒCƒxƒ“ƒgID’ß‚ğÁ‚·
+							//ã‚µãƒ¼ãƒ“ã‚¹ã‚’å¤‰æ›´ã—ã‚ˆã†ã¨ã—ã¦ã„ã‚‹ã¨ãã¯ã‚¤ãƒ™ãƒ³ãƒˆIDæ³¨é‡ˆã‚’æ¶ˆã™
 							if( r.originalNetworkID != reserveList[i].originalNetworkID ||
 							    r.transportStreamID != reserveList[i].transportStreamID ||
 							    r.serviceID != reserveList[i].serviceID ){
@@ -1394,7 +1394,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 
 	wstring findKeyBuff;
 	vector<pair<EPGDB_EVENT_INFO, wstring>> resultList;
-	//ŠÔ–¢’è‚Å‚È‚­‘ÎÛŠúŠÔ“à‚Ì‚à‚Ì‚¾‚¯
+	//æ™‚é–“æœªå®šã§ãªãå¯¾è±¡æœŸé–“å†…ã®ã‚‚ã®ã ã‘
 	this->epgDB.SearchEpg(&data.searchInfo, 1, now, now + autoAddHour * 60 * 60 * I64_1SEC, &findKeyBuff,
 	                      [&resultList](const EPGDB_EVENT_INFO* val, wstring* findKey) {
 		if( val && val->DurationFlag ){
@@ -1408,16 +1408,16 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 			                                       info.service_id, info.event_id, data.recSetting.tunerID) == false ){
 				bool found = false;
 				if( info.eventGroupInfoGroupType && chkGroupEvent ){
-					//ƒCƒxƒ“ƒgƒOƒ‹[ƒv‚Ìƒ`ƒFƒbƒN‚ğ‚·‚é
+					//ã‚¤ãƒ™ãƒ³ãƒˆã‚°ãƒ«ãƒ¼ãƒ—ã®ãƒã‚§ãƒƒã‚¯ã‚’ã™ã‚‹
 					for( size_t j = 0; found == false && j < info.eventGroupInfo.eventDataList.size(); j++ ){
-						//group_type‚Í•K‚¸1(ƒCƒxƒ“ƒg‹¤—L)
+						//group_typeã¯å¿…ãš1(ã‚¤ãƒ™ãƒ³ãƒˆå…±æœ‰)
 						const EPGDB_EVENT_DATA& e = info.eventGroupInfo.eventDataList[j];
 						if( this->reserveManager.IsFindReserve(e.original_network_id, e.transport_stream_id,
 						                                       e.service_id, e.event_id, data.recSetting.tunerID) ){
 							found = true;
 							break;
 						}
-						//’Ç‰Á‘O—\–ñ‚Ìƒ`ƒFƒbƒN‚ğ‚·‚é
+						//è¿½åŠ å‰äºˆç´„ã®ãƒã‚§ãƒƒã‚¯ã‚’ã™ã‚‹
 						for( size_t k = 0; k < setList.size(); k++ ){
 							if( setList[k].originalNetworkID == e.original_network_id &&
 							    setList[k].transportStreamID == e.transport_stream_id &&
@@ -1430,7 +1430,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 						}
 					}
 				}
-				//’Ç‰Á‘O—\–ñ‚Ìƒ`ƒFƒbƒN‚ğ‚·‚é
+				//è¿½åŠ å‰äºˆç´„ã®ãƒã‚§ãƒƒã‚¯ã‚’ã™ã‚‹
 				for( size_t j = 0; found == false && j < setList.size(); j++ ){
 					if( setList[j].originalNetworkID == info.original_network_id &&
 					    setList[j].transportStreamID == info.transport_stream_id &&
@@ -1441,13 +1441,13 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					}
 				}
 				if( found == false && commentAutoAdd ){
-					//ƒvƒƒOƒ‰ƒ€—\–ñ‰»‚µ‚½‚à‚Ì‚ÌƒCƒxƒ“ƒgID’ß‚Ìƒ`ƒFƒbƒN‚ğ‚·‚é
+					//ãƒ—ãƒ­ã‚°ãƒ©ãƒ äºˆç´„åŒ–ã—ãŸã‚‚ã®ã®ã‚¤ãƒ™ãƒ³ãƒˆIDæ³¨é‡ˆã®ãƒã‚§ãƒƒã‚¯ã‚’ã™ã‚‹
 					if( this->reserveManager.FindProgramReserve(
 					    info.original_network_id, info.transport_stream_id, info.service_id, [&](const RESERVE_DATA& a) {
 					        return (separateFixedTuners == false || a.recSetting.tunerID == data.recSetting.tunerID) &&
-					               ((a.comment.compare(0, 8, L"EPG©“®—\–ñ#") == 0 &&
+					               ((a.comment.compare(0, 8, L"EPGè‡ªå‹•äºˆç´„#") == 0 &&
 					                 wcstoul(a.comment.c_str() + 8, NULL, 10) == info.event_id) ||
-					                (a.comment.compare(0, 8, L"EPG©“®—\–ñ(") == 0 &&
+					                (a.comment.compare(0, 8, L"EPGè‡ªå‹•äºˆç´„(") == 0 &&
 					                 a.comment.find(L')') != wstring::npos &&
 					                 a.comment.compare(a.comment.find(L')') + 1, 1, L"#") == 0 &&
 					                 wcstoul(a.comment.c_str() + a.comment.find(L')') + 2, NULL, 10) == info.event_id)); }) ){
@@ -1455,7 +1455,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					}
 				}
 				if( found == false ){
-					//‚Ü‚¾‘¶İ‚µ‚È‚¢‚Ì‚Å’Ç‰Á‘ÎÛ
+					//ã¾ã å­˜åœ¨ã—ãªã„ã®ã§è¿½åŠ å¯¾è±¡
 					setList.resize(setList.size() + 1);
 					RESERVE_DATA& item = setList.back();
 					if( info.hasShortInfo ){
@@ -1464,7 +1464,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					item.startTime = info.start_time;
 					item.startTimeEpg = item.startTime;
 					item.durationSecond = info.durationSec;
-					//ƒT[ƒrƒX–¼‚Íƒ`ƒƒƒ“ƒlƒ‹î•ñ‚Ì‚à‚Ì‚ğ—Dæ‚·‚é
+					//ã‚µãƒ¼ãƒ“ã‚¹åã¯ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã®ã‚‚ã®ã‚’å„ªå…ˆã™ã‚‹
 					CH_DATA5 chData;
 					if( this->reserveManager.GetChData(info.original_network_id, info.transport_stream_id, info.service_id, &chData) ){
 						item.stationName = chData.serviceName;
@@ -1480,24 +1480,24 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					if( data.searchInfo.chkRecEnd != 0 && this->reserveManager.IsFindRecEventInfo(info, data.searchInfo.chkRecDay) ){
 						item.recSetting.recMode = RECMODE_NO;
 					}
-					item.comment = L"EPG©“®—\–ñ";
+					item.comment = L"EPGè‡ªå‹•äºˆç´„";
 					if( resultList[i].second.empty() == false ){
 						item.comment += L'(' + resultList[i].second;
 						Replace(item.comment, L"\r", L"");
 						Replace(item.comment, L"\n", L"");
-						Replace(item.comment, L")", L"j");
+						Replace(item.comment, L")", L"ï¼‰");
 						item.comment += L')';
 					}
 				}
 			}else if( data.searchInfo.chkRecEnd != 0 && this->reserveManager.IsFindRecEventInfo(info, data.searchInfo.chkRecDay) ){
-				//˜^‰æÏ‚İ‚È‚Ì‚Å–³Œø‚Å‚È‚¢—\–ñ‚Í–³Œø‚É‚·‚é
+				//éŒ²ç”»æ¸ˆã¿ãªã®ã§ç„¡åŠ¹ã§ãªã„äºˆç´„ã¯ç„¡åŠ¹ã«ã™ã‚‹
 				this->reserveManager.ChgAutoAddNoRec(info.original_network_id, info.transport_stream_id,
 				                                     info.service_id, info.event_id, data.recSetting.tunerID);
 			}
 		}
 	}
 	CBlockLock lock(&this->autoAddLock);
-	//addCount‚ÍQl’ö“x‚Ìî•ñB•Û‘¶‚à‚³‚ê‚È‚¢‚Ì‚ÅXV‚ğ’Ê’m‚·‚é•K—v‚Í‚È‚¢
+	//addCountã¯å‚è€ƒç¨‹åº¦ã®æƒ…å ±ã€‚ä¿å­˜ã‚‚ã•ã‚Œãªã„ã®ã§æ›´æ–°ã‚’é€šçŸ¥ã™ã‚‹å¿…è¦ã¯ãªã„
 	this->epgAutoAdd.SetAddCount(data.dataID, (DWORD)resultList.size());
 }
 
@@ -1513,11 +1513,11 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 	__int64 baseStartTime = ConvertI64Time(baseTime);
 
 	for( int i = 0; i < 8; i++ ){
-		//¡“ú‚©‚ç8“ú•ª‚ğ’²‚×‚é
+		//ä»Šæ—¥ã‹ã‚‰8æ—¥åˆ†ã‚’èª¿ã¹ã‚‹
 		if( data.dayOfWeekFlag >> ((i + baseTime.wDayOfWeek) % 7) & 1 ){
 			__int64 startTime = baseStartTime + (data.startTime + i * 24 * 60 * 60) * I64_1SEC;
 			if( startTime > now ){
-				//“¯ˆêŠÔ‚Ì—\–ñ‚ª‚·‚Å‚É‚ ‚é‚©ƒ`ƒFƒbƒN
+				//åŒä¸€æ™‚é–“ã®äºˆç´„ãŒã™ã§ã«ã‚ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 				if( this->reserveManager.FindProgramReserve(
 				    data.originalNetworkID, data.transportStreamID, data.serviceID, [&](const RESERVE_DATA& a) {
 				        return ConvertI64Time(a.startTime) == startTime &&
@@ -1529,7 +1529,7 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 				               a.eventID == 0xFFFF &&
 				               ConvertI64Time(a.startTime) == startTime &&
 				               a.durationSecond == data.durationSecond; }) == setList.end() ){
-					//Œ©‚Â‚©‚ç‚È‚©‚Á‚½‚Ì‚Å—\–ñ’Ç‰Á
+					//è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸã®ã§äºˆç´„è¿½åŠ 
 					setList.resize(setList.size() + 1);
 					RESERVE_DATA& item = setList.back();
 					item.title = data.title;
@@ -1542,7 +1542,7 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 					item.serviceID = data.serviceID;
 					item.eventID = 0xFFFF;
 					item.recSetting = data.recSetting;
-					item.comment = L"ƒvƒƒOƒ‰ƒ€©“®—\–ñ";
+					item.comment = L"ãƒ—ãƒ­ã‚°ãƒ©ãƒ è‡ªå‹•äºˆç´„";
 				}
 			}
 		}
@@ -1551,7 +1551,7 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 
 void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag, LPCWSTR clientIP)
 {
-	//‚±‚ÌŠÖ”‚ÍPipe‚ÆTCP‚Æ‚Å“¯‚ÉŒÄ‚Ño‚³‚ê‚é‚©‚à‚µ‚ê‚È‚¢(ŠeX‚ª“¯‚É•¡”ŒÄ‚Ño‚·‚±‚Æ‚Í‚È‚¢)
+	//ã“ã®é–¢æ•°ã¯Pipeã¨TCPã¨ã§åŒæ™‚ã«å‘¼ã³å‡ºã•ã‚Œã‚‹ã‹ã‚‚ã—ã‚Œãªã„(å„ã€…ãŒåŒæ™‚ã«è¤‡æ•°å‘¼ã³å‡ºã™ã“ã¨ã¯ãªã„)
 	resParam->dataSize = 0;
 	resParam->param = CMD_ERR;
 
@@ -1579,7 +1579,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		if( tcpFlag == false ){
 			DWORD processID;
 			if( ReadVALUE(&processID, cmdParam->data, cmdParam->dataSize, NULL) ){
-				//Ì‚ÌCPipeServer‚ÍŠJn‚ª“¯Šú“I‚Å‚È‚­A‚±‚Ì“_‚Å‘Šè‚Æ’ÊM‚Å‚«‚é‚Æ‚ÍŒÀ‚ç‚È‚¢BÚ‘±æ‚Ìì¬‚Ü‚Å­‚µ‘Ò‚Â
+				//æ˜”ã®CPipeServerã¯é–‹å§‹ãŒåŒæœŸçš„ã§ãªãã€ã“ã®æ™‚ç‚¹ã§ç›¸æ‰‹ã¨é€šä¿¡ã§ãã‚‹ã¨ã¯é™ã‚‰ãªã„ã€‚æ¥ç¶šå…ˆã®ä½œæˆã¾ã§å°‘ã—å¾…ã¤
 				CSendCtrlCmd cmd;
 				cmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, processID);
 				for( int i = 0; i < 50 && cmd.PipeExists() == false; i++ ){
@@ -1596,7 +1596,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&processID, cmdParam->data, cmdParam->dataSize, NULL) ){
 				resParam->param = CMD_SUCCESS;
 				sys->notifyManager.UnRegistGUI(processID);
-				//“o˜^‰ğœŒã‚É’Ê’m‚µ‚È‚¢‚æ‚¤A’Ê’mˆ—’†‚È‚ç­‚µ‘Ò‚Â
+				//ç™»éŒ²è§£é™¤å¾Œã«é€šçŸ¥ã—ãªã„ã‚ˆã†ã€é€šçŸ¥å‡¦ç†ä¸­ãªã‚‰å°‘ã—å¾…ã¤
 				if( sys->notifyManager.WaitForIdle(3000) == false ){
 					OutputDebugString(L"CMD2_EPG_SRV_UNREGIST_GUI/_TCP: WaitForIdle() timed out.\r\n");
 				}
@@ -1618,7 +1618,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&port, cmdParam->data, cmdParam->dataSize, NULL) ){
 				resParam->param = CMD_SUCCESS;
 				sys->notifyManager.UnRegistTCP(clientIP, port);
-				//“o˜^‰ğœŒã‚É’Ê’m‚µ‚È‚¢‚æ‚¤A’Ê’mˆ—’†‚È‚ç­‚µ‘Ò‚Â
+				//ç™»éŒ²è§£é™¤å¾Œã«é€šçŸ¥ã—ãªã„ã‚ˆã†ã€é€šçŸ¥å‡¦ç†ä¸­ãªã‚‰å°‘ã—å¾…ã¤
 				if( sys->notifyManager.WaitForIdle(3000) == false ){
 					OutputDebugString(L"CMD2_EPG_SRV_UNREGIST_GUI/_TCP: WaitForIdle() timed out.\r\n");
 				}
@@ -1769,7 +1769,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			WORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->IsSuspendOK() ){
 				CBlockLock lock(&sys->settingLock);
-				//Ä‹N“®ƒtƒ‰ƒO‚ª0xFF‚Ì‚Æ‚«‚ÍƒfƒtƒHƒ‹ƒg“®ì‚É]‚¤
+				//å†èµ·å‹•ãƒ•ãƒ©ã‚°ãŒ0xFFã®ã¨ãã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå‹•ä½œã«å¾“ã†
 				PostMessage(sys->hwndMain, WM_APP_REQUEST_SHUTDOWN, LOBYTE(val), HIBYTE(val) == 0xFF ? sys->setting.reboot : (HIBYTE(val) != 0));
 				resParam->param = CMD_SUCCESS;
 			}
@@ -2074,7 +2074,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 					__int64 count = _ftelli64(fp.get());
 					if( count >= 0 ){
-						//––”ö‚©‚çns‚¾‚¯–ß‚Á‚½ˆÊ’u‚ğ‚³‚ª‚·
+						//æœ«å°¾ã‹ã‚‰nè¡Œã ã‘æˆ»ã£ãŸä½ç½®ã‚’ã•ãŒã™
 						const DWORD sowc = sizeof(WCHAR);
 						__int64 pos = count = count / sowc;
 						while( pos > 1 && n > 0 ){
@@ -2086,13 +2086,13 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 							for( ; dwRead > 0; pos-- ){
 								if( buff[--dwRead] == L'\n' ){
 									if( count > pos ){
-										//•K—vs”‚É’B‚µ‚½‚©‘å‚«‚·‚¬‚éê‡‚ÍŠ®—¹
+										//å¿…è¦è¡Œæ•°ã«é”ã—ãŸã‹å¤§ãã™ãã‚‹å ´åˆã¯å®Œäº†
 										if( --n <= 0 || count - pos >= 32 * 1024 * 1024 ){
 											n = 0;
 											break;
 										}
 									}
-									//count‚Í––”ö‰üs‚ÌˆÊ’u‚ÅŒÅ’è
+									//countã¯æœ«å°¾æ”¹è¡Œã®ä½ç½®ã§å›ºå®š
 								}else if( count == pos ){
 									count--;
 								}
@@ -2264,13 +2264,13 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 
 	////////////////////////////////////////////////////////////
-	//CMD_VER‘Î‰ƒRƒ}ƒ“ƒh
+	//CMD_VERå¯¾å¿œã‚³ãƒãƒ³ãƒ‰
 	case CMD2_EPG_SRV_ENUM_RESERVE2:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RESERVE2\r\n");
 			WORD ver;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, NULL) ){
-				//ver>=5‚Å‚Í˜^‰æ—\’èƒtƒ@ƒCƒ‹–¼‚à•Ô‚·
+				//ver>=5ã§ã¯éŒ²ç”»äºˆå®šãƒ•ã‚¡ã‚¤ãƒ«åã‚‚è¿”ã™
 				resParam->data = NewWriteVALUE2WithVersion(ver, sys->reserveManager.GetReserveDataAll(ver >= 5), resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
@@ -2548,7 +2548,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		break;
 #if 1
 	////////////////////////////////////////////////////////////
-	//‹Œƒo[ƒWƒ‡ƒ“ŒİŠ·ƒRƒ}ƒ“ƒh
+	//æ—§ãƒãƒ¼ã‚¸ãƒ§ãƒ³äº’æ›ã‚³ãƒãƒ³ãƒ‰
 	case CMD_EPG_SRV_GET_RESERVE_INFO:
 		{
 			resParam->param = OLD_CMD_ERR;
@@ -2677,7 +2677,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			}
 		}
 		break;
-	//‹Œƒo[ƒWƒ‡ƒ“ŒİŠ·ƒRƒ}ƒ“ƒh‚±‚±‚Ü‚Å
+	//æ—§ãƒãƒ¼ã‚¸ãƒ§ãƒ³äº’æ›ã‚³ãƒãƒ³ãƒ‰ã“ã“ã¾ã§
 #endif
 	default:
 		_OutputDebugString(L"err default cmd %d\r\n", cmdParam->param);
@@ -2688,12 +2688,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 
 bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam, LPCWSTR clientIP)
 {
-	//¦‚±‚ÌŠÖ”‚Ítkntrec”Å( https://github.com/tkntrec/EDCB )‚ğQl‚É‚µ‚½
+	//â€»ã“ã®é–¢æ•°ã¯tkntrecç‰ˆ( https://github.com/tkntrec/EDCB )ã‚’å‚è€ƒã«ã—ãŸ
 
 	switch( cmdParam.param ){
 	case CMD2_EPG_SRV_ISREGIST_GUI_TCP:
 		if( this->compatFlags & 0x04 ){
-			//ŒİŠ·“®ì: TCPÚ‘±‚Ì“o˜^ó‹µŠm”FƒRƒ}ƒ“ƒh‚ğÀ‘•‚·‚é
+			//äº’æ›å‹•ä½œ: TCPæ¥ç¶šã®ç™»éŒ²çŠ¶æ³ç¢ºèªã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè£…ã™ã‚‹
 			OutputDebugString(L"CMD2_EPG_SRV_ISREGIST_GUI_TCP\r\n");
 			DWORD port;
 			if( clientIP && ReadVALUE(&port, cmdParam.data, cmdParam.dataSize, NULL) ){
@@ -2709,10 +2709,10 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		break;
 	case CMD2_EPG_SRV_PROFILE_UPDATE:
 		if( this->compatFlags & 0x08 ){
-			//ŒİŠ·“®ì: İ’èXV’Ê’mƒRƒ}ƒ“ƒh‚ğÀ‘•‚·‚é
+			//äº’æ›å‹•ä½œ: è¨­å®šæ›´æ–°é€šçŸ¥ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè£…ã™ã‚‹
 			OutputDebugString(L"CMD2_EPG_SRV_PROFILE_UPDATE\r\n");
 			wstring val = L"";
-			ReadVALUE(&val, cmdParam.data, cmdParam.dataSize, NULL); //¸”s‚µ‚Ä‚à\‚í‚È‚¢
+			ReadVALUE(&val, cmdParam.data, cmdParam.dataSize, NULL); //å¤±æ•—ã—ã¦ã‚‚æ§‹ã‚ãªã„
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PROFILE, val);
 			resParam.param = CMD_SUCCESS;
 			return true;
@@ -2720,12 +2720,12 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		break;
 	case CMD2_EPG_SRV_GET_NETWORK_PATH:
 		if( this->compatFlags & 0x10 ){
-			//ŒİŠ·“®ì: ƒlƒbƒgƒ[ƒNƒpƒXæ“¾ƒRƒ}ƒ“ƒh‚ğÀ‘•‚·‚é
+			//äº’æ›å‹•ä½œ: ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ‘ã‚¹å–å¾—ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè£…ã™ã‚‹
 			OutputDebugString(L"CMD2_EPG_SRV_GET_NETWORK_PATH\r\n");
 			wstring path;
 			if( ReadVALUE(&path, cmdParam.data, cmdParam.dataSize, NULL) ){
 				wstring netPath;
-				//UNCƒpƒX‚Í‚»‚Ì‚Ü‚Ü•Ô‚·
+				//UNCãƒ‘ã‚¹ã¯ãã®ã¾ã¾è¿”ã™
 				if( path.compare(0, 2, L"\\\\") == 0 ){
 					netPath = path;
 				}else{
@@ -2738,7 +2738,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 							break;
 						}
 						for( PSHARE_INFO_502 p = bufPtr; p < bufPtr + er; p++ ){
-							//‹¤—L–¼‚ª$‚ÅI‚í‚é‚Ì‚Í‰B‚µ‹¤—L
+							//å…±æœ‰åãŒ$ã§çµ‚ã‚ã‚‹ã®ã¯éš ã—å…±æœ‰
 							if( p->shi502_netname[0] && p->shi502_netname[wcslen(p->shi502_netname) - 1] != L'$' ){
 								wstring shiPath = p->shi502_path;
 								if( shiPath.empty() == false && shiPath.back() == L'\\' ){
@@ -2747,7 +2747,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 								if( path.size() >= shiPath.size() &&
 								    CompareNoCase(shiPath, path.substr(0, shiPath.size())) == 0 &&
 								    (path.size() == shiPath.size() || path[shiPath.size()] == L'\\') ){
-									//‹¤—LƒpƒX‚»‚Ì‚à‚Ì‚©”z‰º‚É‚ ‚é
+									//å…±æœ‰ãƒ‘ã‚¹ãã®ã‚‚ã®ã‹é…ä¸‹ã«ã‚ã‚‹
 									WCHAR computerName[MAX_COMPUTERNAME_LENGTH + 1];
 									DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
 									if( GetComputerName(computerName, &len) ){
@@ -2770,7 +2770,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		break;
 	case CMD2_EPG_SRV_SEARCH_PG2:
 		if( this->compatFlags & 0x20 ){
-			//ŒİŠ·“®ì: ”Ô‘gŒŸõ‚Ì’Ç‰ÁƒRƒ}ƒ“ƒh‚ğÀ‘•‚·‚é
+			//äº’æ›å‹•ä½œ: ç•ªçµ„æ¤œç´¢ã®è¿½åŠ ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè£…ã™ã‚‹
 			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG2\r\n");
 			if( this->epgDB.IsInitialLoadingDataDone() == false ){
 				resParam.param = CMD_ERR_BUSY;
@@ -2796,7 +2796,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		break;
 	case CMD2_EPG_SRV_SEARCH_PG_BYKEY2:
 		if( this->compatFlags & 0x20 ){
-			//ŒİŠ·“®ì: ”Ô‘gŒŸõ‚Ì’Ç‰ÁƒRƒ}ƒ“ƒh‚ğÀ‘•‚·‚é
+			//äº’æ›å‹•ä½œ: ç•ªçµ„æ¤œç´¢ã®è¿½åŠ ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè£…ã™ã‚‹
 			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG_BYKEY2\r\n");
 			if( this->epgDB.IsInitialLoadingDataDone() == false ){
 				resParam.param = CMD_ERR_BUSY;
@@ -2830,7 +2830,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		break;
 	case CMD2_EPG_SRV_GET_RECINFO_LIST2:
 		if( this->compatFlags & 0x40 ){
-			//ŒİŠ·“®ì: ƒŠƒXƒgw’è‚Ì˜^‰æÏ‚İˆê——æ“¾ƒRƒ}ƒ“ƒh‚ğÀ‘•‚·‚é
+			//äº’æ›å‹•ä½œ: ãƒªã‚¹ãƒˆæŒ‡å®šã®éŒ²ç”»æ¸ˆã¿ä¸€è¦§å–å¾—ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè£…ã™ã‚‹
 			OutputDebugString(L"CMD2_EPG_SRV_GET_RECINFO_LIST2\r\n");
 			WORD ver;
 			DWORD readSize;
@@ -2863,7 +2863,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		break;
 	case CMD2_EPG_SRV_FILE_COPY2:
 		if( this->compatFlags & 0x80 ){
-			//ŒİŠ·“®ì: w’èƒtƒ@ƒCƒ‹‚ğ‚Ü‚Æ‚ß‚Ä“]‘—‚·‚éƒRƒ}ƒ“ƒh‚ğÀ‘•‚·‚é
+			//äº’æ›å‹•ä½œ: æŒ‡å®šãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã¾ã¨ã‚ã¦è»¢é€ã™ã‚‹ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè£…ã™ã‚‹
 			OutputDebugString(L"CMD2_EPG_SRV_FILE_COPY2\r\n");
 			WORD ver;
 			DWORD readSize;
@@ -2886,7 +2886,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 						}
 						if( path.empty() == false ){
 							if( UtilPathEndsWith(path.c_str(), L".ini") ){
-								//ƒtƒ@ƒCƒ‹ƒƒbƒN‚ğ×–‚‚µ‚È‚¢‚æ‚¤APIŒo—R‚Å“Ç‚Ş
+								//ãƒ•ã‚¡ã‚¤ãƒ«ãƒ­ãƒƒã‚¯ã‚’é‚ªé­”ã—ãªã„ã‚ˆã†APIçµŒç”±ã§èª­ã‚€
 								wstring strData = L"\xFEFF";
 								int appendModulePathState = UtilComparePath(path.filename().c_str(), L"Common.ini") == 0;
 								wstring sectionNames = GetPrivateProfileToString(NULL, NULL, NULL, path.c_str());
@@ -2894,7 +2894,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 									LPCWSTR section = sectionNames.c_str() + j;
 									strData += wstring(L"[") + section + L"]\r\n";
 									if( appendModulePathState == 1 && CompareNoCase(section, L"SET") == 0 ){
-										//Common.ini‚É‘Î‚·‚é“Á—áƒL[
+										//Common.iniã«å¯¾ã™ã‚‹ç‰¹ä¾‹ã‚­ãƒ¼
 										strData += L"ModulePath=\"" + GetCommonIniPath().parent_path().native() + L"\"\r\n";
 										appendModulePathState = 2;
 									}
@@ -2908,11 +2908,11 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 									}
 								}
 								if( appendModulePathState == 1 ){
-									//Common.ini‚É‘Î‚·‚é“Á—áƒL[
+									//Common.iniã«å¯¾ã™ã‚‹ç‰¹ä¾‹ã‚­ãƒ¼
 									strData += L"[SET]\r\nModulePath=\"" + GetCommonIniPath().parent_path().native() + L"\"\r\n";
 								}
 								if( strData.size() > 1 ){
-									//BOM‚Â‚«UTF-16
+									//BOMã¤ãUTF-16
 									result[i].Data.assign((const BYTE*)strData.c_str(), (const BYTE*)(strData.c_str() + strData.size()));
 								}
 							}else{
@@ -2939,7 +2939,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 		break;
 	case CMD2_EPG_SRV_GET_PG_INFO_LIST:
 		if( this->compatFlags & 0x100 ){
-			//ŒİŠ·“®ì: ”Ô‘gî•ñæ“¾(w’èIDƒŠƒXƒg)ƒRƒ}ƒ“ƒh‚ğÀ‘•‚·‚é
+			//äº’æ›å‹•ä½œ: ç•ªçµ„æƒ…å ±å–å¾—(æŒ‡å®šIDãƒªã‚¹ãƒˆ)ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè£…ã™ã‚‹
 			OutputDebugString(L"CMD2_EPG_SRV_GET_PG_INFO_LIST\r\n");
 			if( this->epgDB.IsInitialLoadingDataDone() == false ){
 				resParam.param = CMD_ERR_BUSY;
@@ -2952,7 +2952,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 					for( size_t i = 0; i < idList.size(); i++ ){
 						key = (ULONGLONG)idList[i];
 						if( this->epgDB.SearchEpg(key >> 48 & 0xFFFF, key >> 32 & 0xFFFF, key >> 16 & 0xFFFF, key & 0xFFFF, &val[i]) ){
-							valp.push_back(&val[i]); //æ“¾o—ˆ‚½‚à‚Ì‚¾‚¯ƒŠƒXƒgƒAƒbƒv
+							valp.push_back(&val[i]); //å–å¾—å‡ºæ¥ãŸã‚‚ã®ã ã‘ãƒªã‚¹ãƒˆã‚¢ãƒƒãƒ—
 						}
 					}
 					resParam.data = NewWriteVALUE(valp, resParam.dataSize);
@@ -3014,16 +3014,16 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ "CloseNetworkTV", LuaCloseNetworkTV },
 		{ NULL, NULL }
 	};
-	//•K—v‚È—Ìˆæ‚ğƒqƒ“ƒg‚É—^‚¦‚Ä"edcb"ƒƒ^ƒe[ƒuƒ‹‚ğì¬
+	//å¿…è¦ãªé ˜åŸŸã‚’ãƒ’ãƒ³ãƒˆã«ä¸ãˆã¦"edcb"ãƒ¡ã‚¿ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’ä½œæˆ
 	lua_createtable(L, 0, _countof(closures) - 1 + 2 + 2 + 1);
 	lua_pushlightuserdata(L, this);
 	luaL_setfuncs(L, closures, 1);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
 	LuaHelp::reg_string(L, "serverRandom", serverRandom);
 #ifdef _WIN32
-	//ƒtƒ@ƒCƒ‹ƒnƒ“ƒhƒ‹‚ÍDLL‚ğ‰z‚¦‚ÄŒİŠ·‚Æ‚ÍŒÀ‚ç‚È‚¢‚Ì‚ÅA"FILE*"ƒƒ^ƒe[ƒuƒ‹‚à“Æ©‚Ì‚à‚Ì‚ª•K—v
+	//ãƒ•ã‚¡ã‚¤ãƒ«ãƒãƒ³ãƒ‰ãƒ«ã¯DLLã‚’è¶Šãˆã¦äº’æ›ã¨ã¯é™ã‚‰ãªã„ã®ã§ã€"FILE*"ãƒ¡ã‚¿ãƒ†ãƒ¼ãƒ–ãƒ«ã‚‚ç‹¬è‡ªã®ã‚‚ã®ãŒå¿…è¦
 	LuaHelp::f_createmeta(L);
-	//osƒ‰ƒCƒuƒ‰ƒŠ‚É‘Î‚·‚éUTF-8•âŠ®
+	//osãƒ©ã‚¤ãƒ–ãƒ©ãƒªã«å¯¾ã™ã‚‹UTF-8è£œå®Œ
 	static const luaL_Reg oslib[] = {
 		{ "execute", LuaHelp::os_execute },
 		{ "remove", LuaHelp::os_remove },
@@ -3033,7 +3033,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 	lua_pushliteral(L, "os");
 	luaL_newlib(L, oslib);
 	lua_rawset(L, -3);
-	//ioƒ‰ƒCƒuƒ‰ƒŠ‚É‘Î‚·‚éUTF-8•âŠ®
+	//ioãƒ©ã‚¤ãƒ–ãƒ©ãƒªã«å¯¾ã™ã‚‹UTF-8è£œå®Œ
 	static const luaL_Reg iolib[] = {
 		{ "open", LuaHelp::io_open },
 		{ "popen", LuaHelp::io_popen },
@@ -3045,7 +3045,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 #endif
 	lua_setglobal(L, "edcb");
 #ifndef _WIN32
-	//UTF-8•âŠ®‚Í•s—v(’P‚È‚éƒGƒCƒŠƒAƒX)
+	//UTF-8è£œå®Œã¯ä¸è¦(å˜ãªã‚‹ã‚¨ã‚¤ãƒªã‚¢ã‚¹)
 	luaL_dostring(L,
 		"edcb.os=os;"
 		"edcb.io=io;");
@@ -3104,7 +3104,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		"end");
 
 #ifndef LUA_BUILD_AS_DLL
-	//‘g‚İ‚İ‚Ìzlib‚ğƒ[ƒhÏ‚İ‚É‚·‚é
+	//çµ„ã¿è¾¼ã¿ã®zlibã‚’ãƒ­ãƒ¼ãƒ‰æ¸ˆã¿ã«ã™ã‚‹
 	luaL_requiref(L, "zlib", luaopen_zlib, 0);
 #endif
 }
@@ -3137,7 +3137,7 @@ void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& 
 }
 
 #if 1
-//Lua-edcb‹óŠÔ‚ÌƒR[ƒ‹ƒoƒbƒN
+//Lua-edcbç©ºé–“ã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯
 
 CEpgTimerSrvMain::CLuaWorkspace::CLuaWorkspace(lua_State* L_)
 	: L(L_)
@@ -3195,7 +3195,7 @@ int CEpgTimerSrvMain::LuaSleep(lua_State* L)
 	DWORD base = GetTickCount();
 	DWORD tick = base;
 	do{
-		//stoppingFlag‚Å‚à•K‚¸‹x‚Ş
+		//stoppingFlagã§ã‚‚å¿…ãšä¼‘ã‚€
 		Sleep(min<DWORD>(wait - (tick - base), 100));
 		tick = GetTickCount();
 	}while( wait > tick - base && ws.sys->stoppingFlag == false );
@@ -3508,16 +3508,16 @@ int CEpgTimerSrvMain::LuaSearchEpgProc(lua_State* L, bool archive)
 		}
 		EPGDB_SEARCH_KEY_INFO key;
 		FetchEpgSearchKeyInfo(ws, key);
-		//‘ÎÛƒlƒbƒgƒ[ƒN
+		//å¯¾è±¡ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯
 		vector<EPGDB_SERVICE_INFO> list;
 		int network = LuaHelp::get_int(L, "network");
 		if( network != 0 && ws.sys->epgDB.GetServiceList(&list) ){
 			for( size_t i = 0; i < list.size(); i++ ){
 				WORD onid = list[i].ONID;
-				if( (network & 1) && 0x7880 <= onid && onid <= 0x7FE8 || //’nƒfƒW
+				if( (network & 1) && 0x7880 <= onid && onid <= 0x7FE8 || //åœ°ãƒ‡ã‚¸
 				    (network & 2) && onid == 4 || //BS
 				    (network & 4) && (onid == 6 || onid == 7) || //CS
-				    (network & 8) && ((onid < 0x7880 || 0x7FE8 < onid) && onid != 4 && onid != 6 && onid != 7) //‚»‚Ì‘¼
+				    (network & 8) && ((onid < 0x7880 || 0x7FE8 < onid) && onid != 4 && onid != 6 && onid != 7) //ãã®ä»–
 				    ){
 					LONGLONG id = Create64Key(onid, list[i].TSID, list[i].SID);
 					if( std::find(key.serviceList.begin(), key.serviceList.end(), id) == key.serviceList.end() ){
@@ -3526,7 +3526,7 @@ int CEpgTimerSrvMain::LuaSearchEpgProc(lua_State* L, bool archive)
 				}
 			}
 		}
-		//‘ÎÛŠúŠÔ
+		//å¯¾è±¡æœŸé–“
 		__int64 chkTime = LuaHelp::get_int(L, "days") * 24 * 60 * 60 * I64_1SEC;
 		if( chkTime > 0 ){
 			SYSTEMTIME now;
@@ -3542,7 +3542,7 @@ int CEpgTimerSrvMain::LuaSearchEpgProc(lua_State* L, bool archive)
 		int i = 0;
 		auto enumProc = [&ws, &i](const EPGDB_EVENT_INFO* val, wstring*) -> void {
 			if( val ){
-				//ƒCƒxƒ“ƒgƒOƒ‹[ƒv‚Íƒ`ƒFƒbƒN‚µ‚È‚¢‚Ì‚Å’ˆÓ
+				//ã‚¤ãƒ™ãƒ³ãƒˆã‚°ãƒ«ãƒ¼ãƒ—ã¯ãƒã‚§ãƒƒã‚¯ã—ãªã„ã®ã§æ³¨æ„
 				lua_newtable(ws.L);
 				PushEpgEventInfo(ws, *val);
 				lua_rawseti(ws.L, -2, ++i);
@@ -3614,7 +3614,7 @@ int CEpgTimerSrvMain::LuaGetReserveData(lua_State* L)
 		r.reserveID = (DWORD)lua_tointeger(L, 1);
 		if( r.reserveID == 0x7FFFFFFF ){
 			lua_newtable(L);
-			//UNIXƒGƒ|ƒbƒN+1“ú+ƒ^ƒCƒ€ƒ][ƒ“
+			//UNIXã‚¨ãƒãƒƒã‚¯+1æ—¥+ã‚¿ã‚¤ãƒ ã‚¾ãƒ¼ãƒ³
 			PushReserveData(ws, ws.sys->GetDefaultReserveData(116445600000000000 + I64_UTIL_TIMEZONE));
 			return 1;
 		}else if( ws.sys->reserveManager.GetReserveData(r.reserveID, &r) ){
@@ -3981,7 +3981,7 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 			}
 			std::reverse(idUseList.begin(), idUseList.end());
 		}
-		//‚·‚Å‚É‹N“®‚µ‚Ä‚¢‚é‚à‚Ì‚Ì‘—Mƒ‚[ƒh‚Í•ÏX‚µ‚È‚¢
+		//ã™ã§ã«èµ·å‹•ã—ã¦ã„ã‚‹ã‚‚ã®ã®é€ä¿¡ãƒ¢ãƒ¼ãƒ‰ã¯å¤‰æ›´ã—ãªã„
 		pair<bool, int> retAndProcessID =
 			ws.sys->reserveManager.OpenNWTV(nwtvID, (mode == 1 || mode == 3), (mode == 2 || mode == 3), info, idUseList);
 		if( retAndProcessID.first ){
@@ -4382,5 +4382,5 @@ void CEpgTimerSrvMain::FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY
 	lua_pop(L, 1);
 }
 
-//Lua-edcb‹óŠÔ‚ÌƒR[ƒ‹ƒoƒbƒN‚±‚±‚Ü‚Å
+//Lua-edcbç©ºé–“ã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã“ã“ã¾ã§
 #endif

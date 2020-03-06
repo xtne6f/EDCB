@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "ServiceFilter.h"
 #include "BonCtrlDef.h"
 
@@ -28,7 +28,7 @@ void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPa
 {
 	this->catOrPmtUpdated = false;
 
-	//w’èƒT[ƒrƒX‚É•K—v‚ÈPID‚ğ‰ğÍ
+	//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã«å¿…è¦ãªPIDã‚’è§£æ
 	if( packet.transport_scrambling_control == 0 ){
 		//CAT
 		if( packet.PID == 1 && this->catUtil.AddPacket(&packet) ){
@@ -51,7 +51,7 @@ void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPa
 				}
 			}
 		}else{
-			//PMT‚Ì2ƒpƒPƒbƒg–Ú‚©ƒ`ƒFƒbƒN
+			//PMTã®2ãƒ‘ã‚±ãƒƒãƒˆç›®ã‹ãƒã‚§ãƒƒã‚¯
 			map<WORD, CPMTUtil>::iterator itr = this->pmtUtilMap.find(packet.PID);
 			if( itr != this->pmtUtilMap.end() && itr->second.AddPacket(&packet) ){
 				this->catOrPmtUpdated = true;
@@ -61,12 +61,12 @@ void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPa
 	}
 
 	if( this->allServicesFlag ){
-		//‘SƒT[ƒrƒX
+		//å…¨ã‚µãƒ¼ãƒ“ã‚¹
 		outData.insert(outData.end(), data, data + 188);
 	}else{
-		//w’èƒT[ƒrƒX
+		//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹
 		if( packet.PID == 0 ){
-			//PAT‚È‚Ì‚Å•K—v‚ÈƒT[ƒrƒX‚Ì‚İ‚Éi‚é
+			//PATãªã®ã§å¿…è¦ãªã‚µãƒ¼ãƒ“ã‚¹ã®ã¿ã«çµã‚‹
 			if( packet.payload_unit_start_indicator ){
 				BYTE* patBuff;
 				DWORD patBuffSize;
@@ -84,12 +84,12 @@ void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPa
 void CServiceFilter::CheckNeedPID()
 {
 	this->needPIDList.clear();
-	//PATì¬—p‚ÌPMTƒŠƒXƒg
+	//PATä½œæˆç”¨ã®PMTãƒªã‚¹ãƒˆ
 	vector<pair<WORD, WORD>> pidList;
-	//NIT‚ÌPID’Ç‰Á‚µ‚Ä‚¨‚­
+	//NITã®PIDè¿½åŠ ã—ã¦ãŠã
 	pidList.push_back(std::make_pair((WORD)0x10, (WORD)0));
 
-	//EMM‚ÌPID
+	//EMMã®PID
 	for( auto itr = this->catUtil.GetPIDList().cbegin(); itr != this->catUtil.GetPIDList().end(); itr++ ){
 		if( std::find(this->needPIDList.begin(), this->needPIDList.end(), *itr) == this->needPIDList.end() ){
 			this->needPIDList.push_back(*itr);
@@ -99,9 +99,9 @@ void CServiceFilter::CheckNeedPID()
 	for( auto itr = this->pmtUtilMap.cbegin(); itr != this->pmtUtilMap.end(); itr++ ){
 		if( this->allServicesFlag ||
 		    std::find(this->serviceIDList.begin(), this->serviceIDList.end(), itr->second.GetProgramNumber()) != this->serviceIDList.end() ){
-			//PATì¬—p‚ÌPMTƒŠƒXƒgì¬
+			//PATä½œæˆç”¨ã®PMTãƒªã‚¹ãƒˆä½œæˆ
 			pidList.push_back(std::make_pair(itr->first, itr->second.GetProgramNumber()));
-			//PMT‹LÚ‚ÌPID‚ğ“o˜^
+			//PMTè¨˜è¼‰ã®PIDã‚’ç™»éŒ²
 			if( std::find(this->needPIDList.begin(), this->needPIDList.end(), itr->first) == this->needPIDList.end() ){
 				this->needPIDList.push_back(itr->first);
 			}

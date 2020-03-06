@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "TSOut.h"
 
 #include "../Common/TimeUtil.h"
@@ -39,7 +39,7 @@ void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 
 	if( resetEpgUtil == TRUE ){
 		CBlockLock lock2(&this->epgUtilLock);
-		//EpgDataCap3�͓������\�b�h�P�ʂŃA�g�~�b�N�B�������ȊO��objLock��epgUtilLock�̂ǂ��炩���l������΂悢
+		//EpgDataCap3は内部メソッド単位でアトミック。初期化以外はobjLockかepgUtilLockのどちらかを獲得すればよい
 		this->epgUtil.UnInitialize();
 		this->epgUtil.Initialize(FALSE);
 	}
@@ -78,10 +78,10 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 	this->epgUtil.ClearSectionStatus();
 
 	if( this->enableDecodeFlag != FALSE || this->emmEnableFlag != FALSE ){
-		//�X�N�����u��������EMM�������ݒ肳��Ă���ꍇ�������s
+		//スクランブル解除かEMM処理が設定されている場合だけ実行
 		if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
-			OutputDebugString(L"����Decode DLL load err [CTSOut::OnChChanged()]\r\n");
-			//�Ď��s�͈Ӗ����Ȃ������Ȃ̂Ŕp�~
+			OutputDebugString(L"★★Decode DLL load err [CTSOut::OnChChanged()]\r\n");
+			//再試行は意味がなさそうなので廃止
 		}
 		this->decodeUtil.SetEmm(this->emmEnableFlag);
 	}
@@ -92,7 +92,7 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 
 void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 {
-	//data�͓����ς݂����̃T�C�Y��188�̐����{�ł��邱��
+	//dataは同期済みかつそのサイズは188の整数倍であること
 
 	CBlockLock lock(&this->objLock);
 	if( dataSize == 0 || data == NULL ){
@@ -100,7 +100,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	}
 	DWORD tick = GetTickCount();
 	if( this->chChangeState == CH_ST_WAIT_PAT && tick - this->chChangeTime < 1000 ){
-		//1�b�Ԃ̓`�����l���؂�ւ��O�̃p�P�b�g����\�����l�����Ė�������
+		//1秒間はチャンネル切り替え前のパケット来る可能性を考慮して無視する
 		return;
 	}
 	this->decodeBuff.clear();
@@ -112,13 +112,13 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data + i, 188) == TRUE ){
 				if( this->chChangeState != CH_ST_DONE ){
-					//�`�����l���؂�ւ���
+					//チャンネル切り替え中
 					if( packet.transport_scrambling_control != 0 ){
-						//�X�N�����u���p�P�b�g�Ȃ̂ŉ�͂ł��Ȃ�
+						//スクランブルパケットなので解析できない
 						continue;
 					}
 					this->epgUtil.AddTSPacket(data + i, 188);
-					//GetTSID()���؂�ւ��O�̒l��Ԃ��Ȃ��悤��PAT��҂�
+					//GetTSID()が切り替え前の値を返さないようにPATを待つ
 					if( this->chChangeState == CH_ST_WAIT_PAT ){
 						if( packet.PID == 0 && packet.payload_unit_start_indicator ){
 							this->chChangeState = CH_ST_WAIT_PAT2;
@@ -133,13 +133,13 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						WORD tsid;
 						if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
 							if( this->chChangeState == CH_ST_INIT ){
-								_OutputDebugString(L"��Ch Init 0x%04X 0x%04X\r\n", onid, tsid);
+								_OutputDebugString(L"★Ch Init 0x%04X 0x%04X\r\n", onid, tsid);
 								OnChChanged(onid, tsid);
 							}else if( onid != this->lastONID || tsid != this->lastTSID ){
-								_OutputDebugString(L"��Ch Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+								_OutputDebugString(L"★Ch Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
 								OnChChanged(onid, tsid);
 							}else if( tick - this->chChangeTime > 7000 ){
-								OutputDebugString(L"��Ch NoChange\r\n");
+								OutputDebugString(L"★Ch NoChange\r\n");
 								OnChChanged(onid, tsid);
 							}
 						}
@@ -160,7 +160,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 			WORD tsid;
 			if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
 				if( onid != this->lastONID || tsid != this->lastTSID ){
-					_OutputDebugString(L"��Ch Unexpected Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+					_OutputDebugString(L"★Ch Unexpected Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
 					OnChChanged(onid, tsid);
 				}
 			}
@@ -169,10 +169,10 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	try{
 		if( this->decodeBuff.empty() == false ){
 			if( this->enableDecodeFlag ){
-				//�f�R�[�h�K�v
+				//デコード必要
 
 				if( decodeUtil.Decode(&this->decodeBuff.front(), (DWORD)this->decodeBuff.size(), &decodeData, &decodeSize) == FALSE ){
-					//�f�R�[�h���s
+					//デコード失敗
 					decodeData = &this->decodeBuff.front();
 					decodeSize = (DWORD)this->decodeBuff.size();
 				}else{
@@ -182,19 +182,19 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					}
 				}
 			}else{
-				//�f�R�[�h�̕K�v�Ȃ�
+				//デコードの必要なし
 				decodeData = &this->decodeBuff.front();
 				decodeSize = (DWORD)this->decodeBuff.size();
 			}
 		}
 	}catch(...){
-		_OutputDebugString(L"����CTSOut::AddTSBuff Exception2");
-		//�f�R�[�h���s
+		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception2");
+		//デコード失敗
 		decodeData = &this->decodeBuff.front();
 		decodeSize = (DWORD)this->decodeBuff.size();
 	}
 	
-	//�f�R�[�h�ς݂̃f�[�^����͂�����
+	//デコード済みのデータを解析させる
 	if( this->parseEpgPostProcess ){
 		for( DWORD i=0; i<decodeSize; i+=188 ){
 			CTSPacketUtil packet;
@@ -204,7 +204,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 		}
 	}
 
-	//�e�T�[�r�X�����Ƀf�[�^�n��
+	//各サービス処理にデータ渡す
 	{
 		for( auto itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
 			itrService->second->AddTSBuff(decodeData, decodeSize, [this](WORD onid, WORD tsid, WORD sid) -> int {
@@ -224,16 +224,16 @@ void CTSOut::ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet)
 				this->epgFileState = EPG_FILE_ST_PAT;
 			}else if( this->epgFileState == EPG_FILE_ST_PAT ){
 				this->epgFileState = EPG_FILE_ST_TOT;
-				//�ԑg��񂪕s�����Ȃ��悤���߂Ē~�Ϗ�Ԃ����Z�b�g
+				//番組情報が不足しないよう改めて蓄積状態をリセット
 				this->epgUtil.ClearSectionStatus();
-				//TOT��O�|���ŏ������ނ��߂̏ꏊ���m��
+				//TOTを前倒しで書き込むための場所を確保
 				BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
 				std::fill_n(nullData + 4, 184, (BYTE)0xFF);
 				this->epgFileTotPos = _ftelli64(this->epgFile.get());
 				fwrite(nullData, 1, 188, this->epgFile.get());
 			}
 		}
-		//�܂�PAT�A����(�����)TOT���������ށB���̏����͕K�{�ł͂Ȃ����ԑg�������m���������I�ɓǂݏo����
+		//まずPAT、次に(あれば)TOTを書き込む。この処理は必須ではないが番組情報をより確実かつ効率的に読み出せる
 		if( packet.PID == 0x14 && this->epgFileState == EPG_FILE_ST_TOT ){
 			this->epgFileState = EPG_FILE_ST_ALL;
 			if( this->epgFileTotPos >= 0 ){
@@ -252,18 +252,18 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 {
 	vector<WORD> filterSIDList;
 
-	//�e�T�[�r�X��PMT��T��
+	//各サービスのPMTを探す
 	for( auto itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
 		if( updateFilterSID ){
 			filterSIDList.push_back(itrService->second->GetSID());
 		}
-		//EMM��PID
+		//EMMのPID
 		for( auto itr = this->serviceFilter.CatUtil().GetPIDList().cbegin(); itr != this->serviceFilter.CatUtil().GetPIDList().end(); itr++ ){
 			itrService->second->SetPIDName(*itr, L"EMM");
 		}
 		for( auto itrPmt = this->serviceFilter.PmtUtilMap().cbegin(); itrPmt != this->serviceFilter.PmtUtilMap().end(); itrPmt++ ){
 			if( itrService->second->GetSID() == itrPmt->second.GetProgramNumber() ){
-				//PMT����
+				//PMT発見
 				itrService->second->SetPmtPID(this->lastTSID, itrPmt->first);
 				itrService->second->SetEmmPID(this->serviceFilter.CatUtil().GetPIDList());
 			}
@@ -291,10 +291,10 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 					name = L"HEVC VIDEO";
 					break;
 				case 0x06:
-					name = L"����";
+					name = L"字幕";
 					break;
 				case 0x0D:
-					name = L"�f�[�^�J���[�Z��";
+					name = L"データカルーセル";
 					break;
 				default:
 					Format(name, L"stream_type 0x%0X", itrPID->second);
@@ -311,9 +311,9 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 	}
 }
 
-//EPG�f�[�^�̕ۑ����J�n����
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
+//EPGデータの保存を開始する
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
 BOOL CTSOut::StartSaveEPG(
 	const wstring& epgFilePath_
 	)
@@ -326,8 +326,8 @@ BOOL CTSOut::StartSaveEPG(
 	this->epgTempFilePath = epgFilePath_;
 	this->epgTempFilePath += L".tmp";
 
-	_OutputDebugString(L"��%ls\r\n", this->epgFilePath.c_str());
-	_OutputDebugString(L"��%ls\r\n", this->epgTempFilePath.c_str());
+	_OutputDebugString(L"★%ls\r\n", this->epgFilePath.c_str());
+	_OutputDebugString(L"★%ls\r\n", this->epgTempFilePath.c_str());
 
 	this->epgUtil.ClearSectionStatus();
 	this->epgFileState = EPG_FILE_ST_NONE;
@@ -342,7 +342,7 @@ BOOL CTSOut::StartSaveEPG(
 	return TRUE;
 }
 
-//EPG�f�[�^�̕ۑ����I������
+//EPGデータの保存を終了する
 void CTSOut::StopSaveEPG(
 	BOOL copy
 	)
@@ -360,11 +360,11 @@ void CTSOut::StopSaveEPG(
 	DeleteFile(this->epgTempFilePath.c_str());
 }
 
-//EPG�f�[�^�̒~�Ϗ�Ԃ��擾����
-//�߂�l�F
-// �X�e�[�^�X
-//�����F
-// l_eitFlag		[IN]L-EIT�̃X�e�[�^�X���擾
+//EPGデータの蓄積状態を取得する
+//戻り値：
+// ステータス
+//引数：
+// l_eitFlag		[IN]L-EITのステータスを取得
 EPG_SECTION_STATUS CTSOut::GetSectionStatus(
 	BOOL l_eitFlag
 	)
@@ -374,7 +374,7 @@ EPG_SECTION_STATUS CTSOut::GetSectionStatus(
 	return this->epgUtil.GetSectionStatus(l_eitFlag);
 }
 
-//�w��T�[�r�X��EPG�f�[�^�̒~�Ϗ�Ԃ��擾����
+//指定サービスのEPGデータの蓄積状態を取得する
 pair<EPG_SECTION_STATUS, BOOL> CTSOut::GetSectionStatusService(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -387,11 +387,11 @@ pair<EPG_SECTION_STATUS, BOOL> CTSOut::GetSectionStatusService(
 	return this->epgUtil.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
 }
 
-//EMM�����̓���ݒ�
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// enable		[IN] TRUE�i��������j�AFALSE�i�������Ȃ��j
+//EMM処理の動作設定
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// enable		[IN] TRUE（処理する）、FALSE（処理しない）
 BOOL CTSOut::SetEmm(
 	BOOL enable
 	)
@@ -400,12 +400,12 @@ BOOL CTSOut::SetEmm(
 
 	try{
 		if( this->chChangeState == CH_ST_DONE ){
-			//�`���[�j���O�ς݂�
+			//チューニング済みで
 			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
-				//�ŏ��� EMM �������ݒ肳���ꍇ�� DLL ��ǂݍ���
-				//�X�N�����u���������ݒ肳��Ă���ꍇ�͓ǂݍ��ݍς݂Ȃ̂ŏ��O
+				//最初に EMM 処理が設定される場合は DLL を読み込む
+				//スクランブル解除が設定されている場合は読み込み済みなので除外
 				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
-					OutputDebugString(L"����Decode DLL load err [CTSOut::SetEmm()]\r\n");
+					OutputDebugString(L"★★Decode DLL load err [CTSOut::SetEmm()]\r\n");
 				}
 			}
 		}
@@ -417,9 +417,9 @@ BOOL CTSOut::SetEmm(
 	return this->decodeUtil.SetEmm(enable);
 }
 
-//EMM�������s������
-//�߂�l�F
-// ������
+//EMM処理を行った数
+//戻り値：
+// 処理数
 DWORD CTSOut::GetEmmCount()
 {
 	CBlockLock lock(&this->objLock);
@@ -427,11 +427,11 @@ DWORD CTSOut::GetEmmCount()
 	return this->decodeUtil.GetEmmCount();
 }
 
-//DLL�̃��[�h��Ԃ��擾
-//�߂�l�F
-// TRUE�i���[�h�ɐ������Ă���j�AFALSE�i���[�h�Ɏ��s���Ă���j
-//�����F
-// loadErrDll		[OUT]���[�h�Ɏ��s����DLL�t�@�C����
+//DLLのロード状態を取得
+//戻り値：
+// TRUE（ロードに成功している）、FALSE（ロードに失敗している）
+//引数：
+// loadErrDll		[OUT]ロードに失敗したDLLファイル名
 BOOL CTSOut::GetLoadStatus(
 	wstring& loadErrDll
 	)
@@ -441,11 +441,11 @@ BOOL CTSOut::GetLoadStatus(
 	return this->decodeUtil.GetLoadStatus(loadErrDll);
 }
 
-//���X�g���[���̃T�[�r�X�ꗗ���擾����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// funcGetList		[IN]�߂�l��NO_ERR�̂Ƃ��T�[�r�X���̌��Ƃ��̃��X�g�������Ƃ��ČĂяo�����֐�
+//自ストリームのサービス一覧を取得する
+//戻り値：
+// エラーコード
+//引数：
+// funcGetList		[IN]戻り値がNO_ERRのときサービス情報の個数とそのリストを引数として呼び出される関数
 DWORD CTSOut::GetServiceListActual(
 	const std::function<void(DWORD, SERVICE_INFO*)>& funcGetList
 	)
@@ -461,8 +461,8 @@ DWORD CTSOut::GetServiceListActual(
 	return ret;
 }
 
-//���Ɏg�p���鐧��ID���擾����
-//�߂�l�F
+//次に使用する制御IDを取得する
+//戻り値：
 // id
 DWORD CTSOut::GetNextID()
 {
@@ -470,16 +470,16 @@ DWORD CTSOut::GetNextID()
 
 	auto itr = this->serviceUtilMap.find(this->nextCtrlID);
 	if( itr == this->serviceUtilMap.end() ){
-		//���݂��Ȃ�ID�Ȃ̂ł��̂܂܎g�p
+		//存在しないIDなのでそのまま使用
 		nextID = this->nextCtrlID;
 		this->nextCtrlID++;
 		if( this->nextCtrlID == 0 || this->nextCtrlID == 0xFFFFFFFF){
 			this->nextCtrlID = 1;
 		}
 	}else{
-		//��������H
+		//一周した？
 		for( DWORD i=1; i<0xFFFFFFFF; i++ ){
-			//�P���珇�Ԃɑ��݂��Ȃ�ID���m�F
+			//１から順番に存在しないIDを確認
 			itr = this->serviceUtilMap.find(this->nextCtrlID);
 			if( itr == this->serviceUtilMap.end() ){
 				nextID = this->nextCtrlID;
@@ -500,11 +500,11 @@ DWORD CTSOut::GetNextID()
 	return nextID;
 }
 
-//TS�X�g���[������p�R���g���[�����쐬����
-//�߂�l�F
-// ���䎯��ID
-//�����F
-// sendUdpTcp	[IN]UDP/TCP���M�p�ɂ���
+//TSストリーム制御用コントロールを作成する
+//戻り値：
+// 制御識別ID
+//引数：
+// sendUdpTcp	[IN]UDP/TCP送信用にする
 DWORD CTSOut::CreateServiceCtrl(
 	BOOL sendUdpTcp
 	)
@@ -520,11 +520,11 @@ DWORD CTSOut::CreateServiceCtrl(
 	return itr->first;
 }
 
-//TS�X�g���[������p�R���g���[�����폜����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id			[IN]���䎯��ID
+//TSストリーム制御用コントロールを削除する
+//戻り値：
+// エラーコード
+//引数：
+// id			[IN]制御識別ID
 BOOL CTSOut::DeleteServiceCtrl(
 	DWORD id
 	)
@@ -541,12 +541,12 @@ BOOL CTSOut::DeleteServiceCtrl(
 	return TRUE;
 }
 
-//����Ώۂ̃T�[�r�X��ݒ肷��
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s
-//�����F
-// id			[IN]���䎯��ID
-// serviceID	[IN]�ΏۃT�[�r�XID
+//制御対象のサービスを設定する
+//戻り値：
+// TRUE（成功）、FALSE（失敗
+//引数：
+// id			[IN]制御識別ID
+// serviceID	[IN]対象サービスID
 BOOL CTSOut::SetServiceID(
 	DWORD id,
 	WORD serviceID
@@ -583,12 +583,12 @@ BOOL CTSOut::GetServiceID(
 	return TRUE;
 }
 
-//UDP�ő��M���s��
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// id			[IN]���䎯��ID
-// sendList		[IN/OUT]���M�惊�X�g�BNULL�Œ�~�BPort�͎��ۂɑ��M�Ɏg�p����Port���Ԃ�B
+//UDPで送信を行う
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// id			[IN]制御識別ID
+// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 BOOL CTSOut::SendUdp(
 	DWORD id,
 	vector<NW_SEND_INFO>* sendList
@@ -606,12 +606,12 @@ BOOL CTSOut::SendUdp(
 	return TRUE;
 }
 
-//TCP�ő��M���s��
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// id			[IN]���䎯��ID
-// sendList		[IN/OUT]���M�惊�X�g�BNULL�Œ�~�BPort�͎��ۂɑ��M�Ɏg�p����Port���Ԃ�B
+//TCPで送信を行う
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// id			[IN]制御識別ID
+// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 BOOL CTSOut::SendTcp(
 	DWORD id,
 	vector<NW_SEND_INFO>* sendList
@@ -629,15 +629,15 @@ BOOL CTSOut::SendTcp(
 	return TRUE;
 }
 
-//�w��T�[�r�X�̌���or����EPG�����擾����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-// serviceID				[IN]�擾�Ώۂ�ServiceID
-// nextFlag					[IN]TRUE�i���̔ԑg�j�AFALSE�i���݂̔ԑg�j
-// epgInfo					[OUT]EPG���
+//指定サービスの現在or次のEPG情報を取得する
+//戻り値：
+// エラーコード
+//引数：
+// originalNetworkID		[IN]取得対象のoriginalNetworkID
+// transportStreamID		[IN]取得対象のtransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
+// epgInfo					[OUT]EPG情報
 DWORD CTSOut::GetEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -657,16 +657,16 @@ DWORD CTSOut::GetEpgInfo(
 	return err;
 }
 
-//�w��C�x���g��EPG�����擾����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-// serviceID				[IN]�擾�Ώۂ�ServiceID
-// eventID					[IN]�擾�Ώۂ�EventID
-// pfOnlyFlag				[IN]p/f����̂݌������邩�ǂ���
-// epgInfo					[OUT]EPG���
+//指定イベントのEPG情報を取得する
+//戻り値：
+// エラーコード
+//引数：
+// originalNetworkID		[IN]取得対象のoriginalNetworkID
+// transportStreamID		[IN]取得対象のtransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// eventID					[IN]取得対象のEventID
+// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
+// epgInfo					[OUT]EPG情報
 DWORD CTSOut::SearchEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
@@ -687,9 +687,9 @@ DWORD CTSOut::SearchEpgInfo(
 	return err;
 }
 
-//PC���v�����Ƃ����X�g���[�����ԂƂ̍����擾����
-//�߂�l�F
-// ���̕b��
+//PC時計を元としたストリーム時間との差を取得する
+//戻り値：
+// 差の秒数
 int CTSOut::GetTimeDelay(
 	)
 {
@@ -698,9 +698,9 @@ int CTSOut::GetTimeDelay(
 	return this->epgUtil.GetTimeDelay();
 }
 
-//�^�撆���ǂ���
-//�߂�l�F
-// TRUE�i�^�撆�j�AFALSE�i���Ă��Ȃ��j
+//録画中かどうか
+//戻り値：
+// TRUE（録画中）、FALSE（していない）
 BOOL CTSOut::IsRec()
 {
 	CBlockLock lock(&this->objLock);
@@ -744,11 +744,11 @@ BOOL CTSOut::EndSave(
 	return itr->second->EndSave(subRecFlag);
 }
 
-//�X�N�����u�����������̓���ݒ�
-//�߂�l�F
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// enable		[IN] TRUE�i��������j�AFALSE�i�������Ȃ��j
+//スクランブル解除処理の動作設定
+//戻り値：
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// enable		[IN] TRUE（処理する）、FALSE（処理しない）
 BOOL CTSOut::SetScramble(
 	DWORD id,
 	BOOL enable
@@ -773,12 +773,12 @@ BOOL CTSOut::UpdateEnableDecodeFlag()
 	for( auto itr = this->serviceUtilMap.begin(); itr != this->serviceUtilMap.end(); itr++ ){
 		if( itr->second->GetScramble() >= 0 ){
 			if( itr->second->GetSendUdpTcp() ){
-				//UDP/TCP���M�p�����̂Ƃ��͂��̐ݒ�l�ɏ]��
+				//UDP/TCP送信用だけのときはその設定値に従う
 				if( sendUdpTcpOnly && itr->second->GetScramble() ){
 					enable = TRUE;
 				}
 			}else{
-				//�^��p�̂��̂�����Ƃ��͂��̐ݒ�l�ɏ]��
+				//録画用のものがあるときはその設定値に従う
 				sendUdpTcpOnly = FALSE;
 				enable = FALSE;
 				if( itr->second->GetScramble() ){
@@ -791,12 +791,12 @@ BOOL CTSOut::UpdateEnableDecodeFlag()
 
 	try{
 		if( this->chChangeState == CH_ST_DONE ){
-			//�`���[�j���O�ς݂�
+			//チューニング済みで
 			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
-				//�ŏ��ɃX�N�����u���������ݒ肳���ꍇ�� DLL ���ēǂݍ��݂���
-				//EMM �������ݒ肳��Ă���ꍇ�͓ǂݍ��ݍς݂Ȃ̂ŏ��O
+				//最初にスクランブル解除が設定される場合は DLL を再読み込みする
+				//EMM 処理が設定されている場合は読み込み済みなので除外
 				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
-					OutputDebugString(L"����Decode DLL load err [CTSOut::SetScramble()]\r\n");
+					OutputDebugString(L"★★Decode DLL load err [CTSOut::SetScramble()]\r\n");
 				}
 			}
 		}
@@ -808,11 +808,11 @@ BOOL CTSOut::UpdateEnableDecodeFlag()
 	return TRUE;
 }
 
-//�����ƃf�[�^�����܂߂邩�ǂ���
-//�����F
-// id					[IN]���䎯��ID
-// enableCaption		[IN]������ TRUE�i�܂߂�j�AFALSE�i�܂߂Ȃ��j
-// enableData			[IN]�f�[�^������ TRUE�i�܂߂�j�AFALSE�i�܂߂Ȃ��j
+//字幕とデータ放送含めるかどうか
+//引数：
+// id					[IN]制御識別ID
+// enableCaption		[IN]字幕を TRUE（含める）、FALSE（含めない）
+// enableData			[IN]データ放送を TRUE（含める）、FALSE（含めない）
 void CTSOut::SetServiceMode(
 	DWORD id,
 	BOOL enableCaption,
@@ -827,9 +827,9 @@ void CTSOut::SetServiceMode(
 	}
 }
 
-//�G���[�J�E���g���N���A����
-//�����F
-// id				[IN]���䎯��ID
+//エラーカウントをクリアする
+//引数：
+// id				[IN]制御識別ID
 void CTSOut::ClearErrCount(
 	DWORD id
 	)
@@ -842,11 +842,11 @@ void CTSOut::ClearErrCount(
 	}
 }
 
-//�h���b�v�ƃX�N�����u���̃J�E���g���擾����
-//�����F
-// id				[IN]���䎯��ID
-// drop				[OUT]�h���b�v��
-// scramble			[OUT]�X�N�����u����
+//ドロップとスクランブルのカウントを取得する
+//引数：
+// id				[IN]制御識別ID
+// drop				[OUT]ドロップ数
+// scramble			[OUT]スクランブル数
 void CTSOut::GetErrCount(
 	DWORD id,
 	ULONGLONG* drop,
@@ -862,10 +862,10 @@ void CTSOut::GetErrCount(
 }
 
 
-//�^�撆�̃t�@�C���̏o�̓T�C�Y���擾����
-//�����F
-// id					[IN]���䎯��ID
-// writeSize			[OUT]�o�̓T�C�Y
+//録画中のファイルの出力サイズを取得する
+//引数：
+// id					[IN]制御識別ID
+// writeSize			[OUT]出力サイズ
 void CTSOut::GetRecWriteSize(
 	DWORD id,
 	__int64* writeSize

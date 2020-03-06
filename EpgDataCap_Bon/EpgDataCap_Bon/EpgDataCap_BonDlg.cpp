@@ -1,5 +1,5 @@
-
-// EpgDataCap_BonDlg.cpp : ŽÀ‘•ƒtƒ@ƒCƒ‹
+ï»¿
+// EpgDataCap_BonDlg.cpp : å®Ÿè£…ãƒ•ã‚¡ã‚¤ãƒ«
 //
 
 #include "stdafx.h"
@@ -14,7 +14,7 @@
 #include "TaskbarList.h"
 
 
-// CEpgDataCap_BonDlg ƒ_ƒCƒAƒƒO
+// CEpgDataCap_BonDlg ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 
 UINT CEpgDataCap_BonDlg::taskbarCreated = 0;
@@ -145,15 +145,15 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	EnableWindow(GetDlgItem(IDC_BUTTON_VIEW), this->viewPath.empty() == false);
 }
 
-// CEpgDataCap_BonDlg ƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[
+// CEpgDataCap_BonDlg ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼
 BOOL CEpgDataCap_BonDlg::OnInitDialog()
 {
-	// ‚±‚Ìƒ_ƒCƒAƒƒO‚ÌƒAƒCƒRƒ“‚ðÝ’è‚µ‚Ü‚·BƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒƒCƒ“ ƒEƒBƒ“ƒhƒE‚ªƒ_ƒCƒAƒƒO‚Å‚È‚¢ê‡A
-	//  Framework ‚ÍA‚±‚ÌÝ’è‚ðŽ©“®“I‚És‚¢‚Ü‚·B
-	SendMessage(m_hWnd, WM_SETICON, ICON_BIG, (LPARAM)m_hIcon2);	// ‘å‚«‚¢ƒAƒCƒRƒ“‚ÌÝ’è
-	SendMessage(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)m_hIcon);	// ¬‚³‚¢ƒAƒCƒRƒ“‚ÌÝ’è
+	// ã“ã®ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®ã‚¢ã‚¤ã‚³ãƒ³ã‚’è¨­å®šã—ã¾ã™ã€‚ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ãƒ¡ã‚¤ãƒ³ ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãŒãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã§ãªã„å ´åˆã€
+	//  Framework ã¯ã€ã“ã®è¨­å®šã‚’è‡ªå‹•çš„ã«è¡Œã„ã¾ã™ã€‚
+	SendMessage(m_hWnd, WM_SETICON, ICON_BIG, (LPARAM)m_hIcon2);	// å¤§ãã„ã‚¢ã‚¤ã‚³ãƒ³ã®è¨­å®š
+	SendMessage(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)m_hIcon);	// å°ã•ã„ã‚¢ã‚¤ã‚³ãƒ³ã®è¨­å®š
 
-	// TODO: ‰Šú‰»‚ð‚±‚±‚É’Ç‰Á‚µ‚Ü‚·B
+	// TODO: åˆæœŸåŒ–ã‚’ã“ã“ã«è¿½åŠ ã—ã¾ã™ã€‚
 	ReloadSetting();
 
 	for( int i=0; i<24; i++ ){
@@ -179,7 +179,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	int initChgWait = 0;
 	if( this->iniBonDriver.empty() == false &&
 	    GetPrivateProfileInt(this->iniBonDriver.c_str(), L"OpenFix", 0, appIniPath.c_str()) ){
-		OutputDebugString(L"‹­§ƒT[ƒrƒXŽw’è Ý’è’lƒ[ƒh");
+		OutputDebugString(L"å¼·åˆ¶ã‚µãƒ¼ãƒ“ã‚¹æŒ‡å®š è¨­å®šå€¤ãƒ­ãƒ¼ãƒ‰");
 		initONID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixONID", -1, appIniPath.c_str());
 		initTSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixTSID", -1, appIniPath.c_str());
 		initSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixSID", -1, appIniPath.c_str());
@@ -202,7 +202,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		}
 	}
 
-	//BonDriver‚Ìˆê——Žæ“¾
+	//BonDriverã®ä¸€è¦§å–å¾—
 	int bonIndex = -1;
 	wstring bon;
 	EnumFindFile(GetModulePath().replace_filename(BON_DLL_FOLDER).append(L"BonDriver*.dll"), [&](UTIL_FIND_DATA& findData) -> bool {
@@ -219,10 +219,10 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_TUNER), bonIndex);
 	}
 
-	//BonDriver‚ÌƒI[ƒvƒ“
+	//BonDriverã®ã‚ªãƒ¼ãƒ—ãƒ³
 	int serviceIndex = -1;
 	if( this->iniBonDriver.empty() == false ){
-		//BonDriverŽw’èŽž‚Íˆê——‚É‚È‚­‚Ä‚à‚æ‚¢
+		//BonDriveræŒ‡å®šæ™‚ã¯ä¸€è¦§ã«ãªãã¦ã‚‚ã‚ˆã„
 		if( SelectBonDriver(this->iniBonDriver.c_str()) ){
 			if( initOpenWait > 0 ){
 				Sleep(initOpenWait);
@@ -231,18 +231,18 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		}
 	}else{
 		if( bonIndex >= 0 ){
-			//ˆê——‚Å‘I‘ð‚³‚ê‚½‚à‚Ì‚ðƒI[ƒvƒ“
+			//ä¸€è¦§ã§é¸æŠžã•ã‚ŒãŸã‚‚ã®ã‚’ã‚ªãƒ¼ãƒ—ãƒ³
 			if( SelectBonDriver(bon.c_str()) ){
 				serviceIndex = ReloadServiceList();
 			}
 		}else{
-			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"BonDriver‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½\r\n");
+			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"BonDriverãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã§ã—ãŸ\r\n");
 			BtnUpdate(GUI_OPEN_FAIL);
 		}
 	}
 
 	if( serviceIndex >= 0 ){
-		//ƒ`ƒƒƒ“ƒlƒ‹•ÏX
+		//ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´
 		if( SelectService(this->serviceList[serviceIndex]) ){
 			if( initONID >= 0 && initTSID >= 0 && initSID >= 0 && initChgWait > 0 ){
 				Sleep(initChgWait);
@@ -250,7 +250,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		}
 	}
 
-	//ƒEƒCƒ“ƒhƒE‚Ì•œŒ³
+	//ã‚¦ã‚¤ãƒ³ãƒ‰ã‚¦ã®å¾©å…ƒ
 	WINDOWPLACEMENT Pos;
 	Pos.length = sizeof(WINDOWPLACEMENT);
 	int left = GetPrivateProfileInt(L"SET_WINDOW", L"left", INT_MAX, appIniPath.c_str());
@@ -292,19 +292,19 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 
 	StartPipeServer();
 
-	return TRUE;  // ƒtƒH[ƒJƒX‚ðƒRƒ“ƒgƒ[ƒ‹‚ÉÝ’è‚µ‚½ê‡‚ðœ‚«ATRUE ‚ð•Ô‚µ‚Ü‚·B
+	return TRUE;  // ãƒ•ã‚©ãƒ¼ã‚«ã‚¹ã‚’ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã«è¨­å®šã—ãŸå ´åˆã‚’é™¤ãã€TRUE ã‚’è¿”ã—ã¾ã™ã€‚
 }
 
 
 void CEpgDataCap_BonDlg::OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed)
 {
-	// TODO: ‚±‚±‚ÉƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚·‚é‚©AŠù’è‚Ìˆ—‚ðŒÄ‚Ño‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã™ã‚‹ã‹ã€æ—¢å®šã®å‡¦ç†ã‚’å‘¼ã³å‡ºã—ã¾ã™ã€‚
 	if( nID == SC_CLOSE ){
 		if( this->bonCtrl.IsRec() ){
 			WCHAR caption[128] = L"";
 			GetWindowText(m_hWnd, caption, 128);
 			disableKeyboardHook = TRUE;
-			int result = MessageBox( m_hWnd, L"˜^‰æ’†‚Å‚·‚ªI—¹‚µ‚Ü‚·‚©H", caption, MB_YESNO | MB_ICONQUESTION );
+			int result = MessageBox( m_hWnd, L"éŒ²ç”»ä¸­ã§ã™ãŒçµ‚äº†ã—ã¾ã™ã‹ï¼Ÿ", caption, MB_YESNO | MB_ICONQUESTION );
 			disableKeyboardHook = FALSE;
 			if( result == IDNO ){
 				*pbProcessed = TRUE;
@@ -359,13 +359,13 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	WritePrivateProfileInt(L"SET", L"ChkUDP", Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)), appIniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"ChkTCP", Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)), appIniPath.c_str());
 
-	// TODO: ‚±‚±‚ÉƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 }
 
 
 void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 {
-	// TODO: ‚±‚±‚ÉƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚·‚é‚©AŠù’è‚Ìˆ—‚ðŒÄ‚Ño‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã™ã‚‹ã‹ã€æ—¢å®šã®å‡¦ç†ã‚’å‘¼ã³å‡ºã—ã¾ã™ã€‚
 	switch(nIDEvent){
 		case TIMER_INIT_DLG:
 			{
@@ -399,7 +399,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 				wstring udp = L"";
 				if( udpSendList.size() > 0 ){
-					udp = L"UDP‘—MF";
+					udp = L"UDPé€ä¿¡ï¼š";
 					for( size_t i=0; i<udpSendList.size(); i++ ){
 						wstring buff;
 						Format(buff, L":%d%ls ", udpSendList[i].port, udpSendList[i].broadcastFlag ? L"(Broadcast)" : L"");
@@ -412,7 +412,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 				wstring tcp = L"";
 				if( tcpSendList.size() > 0 ){
-					tcp = L"TCP‘—MF";
+					tcp = L"TCPé€ä¿¡ï¼š";
 					for( size_t i=0; i<tcpSendList.size(); i++ ){
 						wstring buff;
 						Format(buff, L":%d ", tcpSendList[i].port);
@@ -429,11 +429,11 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				wstring info = L"";
 				WORD onid;
 				WORD tsid;
-				//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“’†‚ÍƒT[ƒrƒXˆê——‚È‚Ç‚ªˆÀ’è‚µ‚È‚¢‚½‚ß
+				//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ä¸­ã¯ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ãªã©ãŒå®‰å®šã—ãªã„ãŸã‚
 				if( this->chScanWorking == FALSE && this->bonCtrl.GetStreamID(&onid, &tsid) ){
-					//EPGŽæ“¾’†‚Í•Ê‚ÌŒŸoƒƒWƒbƒN‚ª‚ ‚é
+					//EPGå–å¾—ä¸­ã¯åˆ¥ã®æ¤œå‡ºãƒ­ã‚¸ãƒƒã‚¯ãŒã‚ã‚‹
 					if( this->epgCapWorking == FALSE && (this->lastONID != onid || this->lastTSID != tsid) ){
-						//ƒ`ƒƒƒ“ƒlƒ‹‚ª•Ï‰»‚µ‚½
+						//ãƒãƒ£ãƒ³ãƒãƒ«ãŒå¤‰åŒ–ã—ãŸ
 						for( size_t i = 0; i < this->serviceList.size(); i++ ){
 							if( this->serviceList[i].originalNetworkID == onid &&
 							    this->serviceList[i].transportStreamID == tsid ){
@@ -469,22 +469,22 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				CBonCtrl::JOB_STATUS status = this->bonCtrl.GetChScanStatus(&space, &ch, &chName, &chkNum, &totalNum);
 				if( status == CBonCtrl::ST_WORKING ){
 					wstring log;
-					Format(log, L"%ls (%d/%d Žc‚è–ñ %d •b)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
+					Format(log, L"%ls (%d/%d æ®‹ã‚Šç´„ %d ç§’)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 				}else if( status == CBonCtrl::ST_CANCEL ){
 					this->chScanWorking = FALSE;
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚Ü‚µ‚½\r\n");
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚Œã¾ã—ãŸ\r\n");
 				}else if( status == CBonCtrl::ST_COMPLETE ){
 					this->chScanWorking = FALSE;
 					int index = ReloadServiceList();
 					if( index >= 0 ){
 						SelectService(this->serviceList[index]);
 					}
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"I—¹‚µ‚Ü‚µ‚½\r\n");
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"çµ‚äº†ã—ã¾ã—ãŸ\r\n");
 					BtnUpdate(GUI_NORMAL);
 					ChgIconStatus();
 
-					//“¯‚¶ƒT[ƒrƒX‚ª•Ê‚Ì•¨—ƒ`ƒƒƒ“ƒlƒ‹‚É‚ ‚é‚©ƒ`ƒFƒbƒN
+					//åŒã˜ã‚µãƒ¼ãƒ“ã‚¹ãŒåˆ¥ã®ç‰©ç†ãƒãƒ£ãƒ³ãƒãƒ«ã«ã‚ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 					wstring msg = L"";
 					for( size_t i=0; i<this->serviceList.size(); i++ ){
 						for( size_t j=i+1; j<this->serviceList.size(); j++ ){
@@ -505,7 +505,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						}
 					}
 					if( msg.size() > 0){
-						wstring log = L"“¯ˆêƒT[ƒrƒX‚ª•¡”‚Ì•¨—ƒ`ƒƒƒ“ƒlƒ‹‚ÅŒŸo‚³‚ê‚Ü‚µ‚½B\r\nŽóMŠÂ‹«‚Ì‚æ‚¢•¨—ƒ`ƒƒƒ“ƒlƒ‹‚ÌƒT[ƒrƒX‚Ì‚ÝŽc‚·‚æ‚¤‚ÉÝ’è‚ðs‚Á‚Ä‚­‚¾‚³‚¢B\r\n³í‚É˜^‰æ‚Å‚«‚È‚¢‰Â”\«‚ªo‚Ä‚«‚Ü‚·B\r\n\r\n";
+						wstring log = L"åŒä¸€ã‚µãƒ¼ãƒ“ã‚¹ãŒè¤‡æ•°ã®ç‰©ç†ãƒãƒ£ãƒ³ãƒãƒ«ã§æ¤œå‡ºã•ã‚Œã¾ã—ãŸã€‚\r\nå—ä¿¡ç’°å¢ƒã®ã‚ˆã„ç‰©ç†ãƒãƒ£ãƒ³ãƒãƒ«ã®ã‚µãƒ¼ãƒ“ã‚¹ã®ã¿æ®‹ã™ã‚ˆã†ã«è¨­å®šã‚’è¡Œã£ã¦ãã ã•ã„ã€‚\r\næ­£å¸¸ã«éŒ²ç”»ã§ããªã„å¯èƒ½æ€§ãŒå‡ºã¦ãã¾ã™ã€‚\r\n\r\n";
 						log += msg;
 						MessageBox(m_hWnd, log.c_str(), NULL, MB_OK);
 					}
@@ -522,13 +522,13 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					this->lastONID = info.ONID;
 					this->lastTSID = info.TSID;
 					this->bonCtrl.SetNWCtrlServiceID(info.SID);
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPGŽæ“¾’†\r\n");
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPGå–å¾—ä¸­\r\n");
 				}else if( status == CBonCtrl::ST_CANCEL ){
 					this->epgCapWorking = FALSE;
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚Ü‚µ‚½\r\n");
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚Œã¾ã—ãŸ\r\n");
 				}else if( status == CBonCtrl::ST_COMPLETE ){
 					this->epgCapWorking = FALSE;
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"I—¹‚µ‚Ü‚µ‚½\r\n");
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"çµ‚äº†ã—ã¾ã—ãŸ\r\n");
 					BtnUpdate(GUI_NORMAL);
 					ChgIconStatus();
 				}else{
@@ -543,7 +543,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					this->recCtrlID = 0;
 				}
 				KillTimer(TIMER_REC_END);
-				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"˜^‰æ’âŽ~‚µ‚Ü‚µ‚½\r\n");
+				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"éŒ²ç”»åœæ­¢ã—ã¾ã—ãŸ\r\n");
 				BtnUpdate(GUI_NORMAL);
 				Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
 				ChgIconStatus();
@@ -569,16 +569,16 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						wstring title = szTitle;
 						size_t sep = title.rfind(L" - ");
 						if( sep == wstring::npos ){
-							sep = title.rfind(L" œ ");
+							sep = title.rfind(L" â— ");
 							if( sep == wstring::npos ){
-								sep = title.rfind(L" › ");
+								sep = title.rfind(L" â—‹ ");
 							}
 						}
 						if( sep == wstring::npos ){
 							title.insert(0, L" - ");
 							sep = 0;
 						}
-						title[sep + 1] = (setIcon == this->iconRed ? L'œ' : setIcon == this->iconGreen ? L'›' : L'-');
+						title[sep + 1] = (setIcon == this->iconRed ? L'â—' : setIcon == this->iconGreen ? L'â—‹' : L'-');
 						if( title != szTitle ){
 							SetWindowText(m_hWnd, title.c_str());
 						}
@@ -592,7 +592,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					this->bonCtrl.GetOpenBonDriver(&bonFile);
 					WCHAR szBuff[256] = L"";
 					GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff, 256);
-					wstring buff = bonFile + L" F " + szBuff;
+					wstring buff = bonFile + L" ï¼š " + szBuff;
 					if( nIDEvent == RETRY_ADD_TRAY ){
 						if( AddTaskBar(m_hWnd, WM_TRAY_PUSHICON, TRAYICON_ID, setIcon, buff) == FALSE ){
 							SetTimer(RETRY_ADD_TRAY, 5000, NULL);
@@ -618,7 +618,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 {
-	// TODO: ‚±‚±‚ÉƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( nType == SIZE_MINIMIZED && this->iniMin == FALSE && this->minTask ){
 		SetTimer(RETRY_ADD_TRAY, 0, NULL);
 		ShowWindow(m_hWnd, SW_HIDE);
@@ -628,7 +628,7 @@ void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 
 LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	// TODO: ‚±‚±‚É“Á’è‚ÈƒR[ƒh‚ð’Ç‰Á‚·‚é‚©A‚à‚µ‚­‚ÍŠî–{ƒNƒ‰ƒX‚ðŒÄ‚Ño‚µ‚Ä‚­‚¾‚³‚¢B
+	// TODO: ã“ã“ã«ç‰¹å®šãªã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã™ã‚‹ã‹ã€ã‚‚ã—ãã¯åŸºæœ¬ã‚¯ãƒ©ã‚¹ã‚’å‘¼ã³å‡ºã—ã¦ãã ã•ã„ã€‚
 	switch(message){
 	case WM_INVOKE_CTRL_CMD:
 		CtrlCmdCallbackInvoked();
@@ -640,7 +640,7 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_TRAY_PUSHICON:
 		{
-			//ƒ^ƒXƒNƒgƒŒƒCŠÖŒW
+			//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤é–¢ä¿‚
 			switch(LOWORD(lParam)){
 				case WM_LBUTTONDOWN:
 					{
@@ -827,7 +827,7 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 
 void CEpgDataCap_BonDlg::OnCbnSelchangeComboTuner()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	WCHAR buff[512];
 	if( GetWindowText(GetDlgItem(IDC_COMBO_TUNER), buff, 512) > 0 ){
 		if( SelectBonDriver(buff) ){
@@ -847,7 +847,7 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboTuner()
 
 void CEpgDataCap_BonDlg::OnCbnSelchangeComboService()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 	if( sel != CB_ERR ){
 		DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
@@ -860,7 +860,7 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboService()
 
 void CEpgDataCap_BonDlg::OnBnClickedButtonSet()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	CSettingDlg setDlg(m_hWnd);
 	disableKeyboardHook = TRUE;
 	INT_PTR result = setDlg.DoModal();
@@ -916,9 +916,9 @@ void CEpgDataCap_BonDlg::UpdateTitleBarText()
 		wstring title = szTitle;
 		size_t sep = title.rfind(L" - ");
 		if( sep == wstring::npos ){
-			sep = title.rfind(L" œ ");
+			sep = title.rfind(L" â— ");
 			if( sep == wstring::npos ){
-				sep = title.rfind(L" › ");
+				sep = title.rfind(L" â—‹ ");
 			}
 		}
 		if( this->modifyTitleBarText ){
@@ -950,8 +950,8 @@ int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 	if( ret != NO_ERR || this->serviceList.size() == 0 ){
 		WCHAR log[512 + 64] = L"";
 		GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-		if( wcsstr(log, L"ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚Ì“Ç‚Ýž‚Ý‚ÉŽ¸”s‚µ‚Ü‚µ‚½\r\n") == NULL ){
-			wcscat_s(log, L"ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚Ì“Ç‚Ýž‚Ý‚ÉŽ¸”s‚µ‚Ü‚µ‚½\r\n");
+		if( wcsstr(log, L"ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã®èª­ã¿è¾¼ã¿ã«å¤±æ•—ã—ã¾ã—ãŸ\r\n") == NULL ){
+			wcscat_s(log, L"ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã®èª­ã¿è¾¼ã¿ã«å¤±æ•—ã—ã¾ã—ãŸ\r\n");
 			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 		}
 	}else{
@@ -962,7 +962,7 @@ int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 			    (this->serviceList[i].originalNetworkID == selONID &&
 			     this->serviceList[i].transportStreamID == selTSID &&
 			     this->serviceList[i].serviceID == selSID) ){
-				//ˆê——‚É‚Í•\Ž¦‚µ‚È‚¢‚ªƒŠƒXƒg‚É‚Í‘¶Ý‚·‚éê‡‚à‚ ‚é
+				//ä¸€è¦§ã«ã¯è¡¨ç¤ºã—ãªã„ãŒãƒªã‚¹ãƒˆã«ã¯å­˜åœ¨ã™ã‚‹å ´åˆã‚‚ã‚ã‚‹
 				selectIndex = (int)i;
 			}
 			if( this->serviceList[i].useViewFlag == TRUE ){
@@ -990,7 +990,7 @@ BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 	BOOL ret = this->bonCtrl.OpenBonDriver(fileName, this->openWait, this->tsBuffMaxCount);
 	if( ret == FALSE ){
 		wstring log;
-		Format(log, L"BonDriver‚ÌƒI[ƒvƒ“‚ª‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½\r\n%ls\r\n", fileName);
+		Format(log, L"BonDriverã®ã‚ªãƒ¼ãƒ—ãƒ³ãŒã§ãã¾ã›ã‚“ã§ã—ãŸ\r\n%ls\r\n", fileName);
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 		BtnUpdate(GUI_OPEN_FAIL);
 	}else{
@@ -1008,15 +1008,15 @@ BOOL CEpgDataCap_BonDlg::SelectService(const CH_DATA4& chData)
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");
 		return TRUE;
 	}
-	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ƒ`ƒƒƒ“ƒlƒ‹•ÏX‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½\r\n");
+	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´ã§ãã¾ã›ã‚“ã§ã—ãŸ\r\n");
 	return FALSE;
 }
 
 void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( this->bonCtrl.StartChScan() == FALSE ){
-		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“‚ðŠJŽn‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½\r\n");
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ã‚’é–‹å§‹ã§ãã¾ã›ã‚“ã§ã—ãŸ\r\n");
 		return;
 	}
 	this->chScanWorking = TRUE;
@@ -1026,9 +1026,9 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 
 void CEpgDataCap_BonDlg::OnBnClickedButtonEpg()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( this->bonCtrl.StartEpgCap(NULL) == FALSE ){
-		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPGŽæ“¾‚ðŠJŽn‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½\r\n");
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPGå–å¾—ã‚’é–‹å§‹ã§ãã¾ã›ã‚“ã§ã—ãŸ\r\n");
 		return;
 	}
 	this->epgCapWorking = TRUE;
@@ -1039,12 +1039,12 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonEpg()
 
 void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( this->bonCtrl.IsRec() || this->recCtrlID != 0 ){
 		return;
 	}
 
-	//‘¦Žž˜^‰æ
+	//å³æ™‚éŒ²ç”»
 	this->recCtrlID = this->bonCtrl.CreateServiceCtrl(TRUE);
 	wstring serviceName;
 	Format(serviceName, L"%04X", this->bonCtrl.GetNWCtrlServiceID());
@@ -1079,7 +1079,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 	if( this->bonCtrl.StartSave(recParam, this->recFolderList, this->writeBuffMaxCount) == FALSE ){
 		this->bonCtrl.DeleteServiceCtrl(this->recCtrlID);
 		this->recCtrlID = 0;
-		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"˜^‰æ‚ðŠJŽn‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½\r\n");
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"éŒ²ç”»ã‚’é–‹å§‹ã§ãã¾ã›ã‚“ã§ã—ãŸ\r\n");
 		return;
 	}
 	SYSTEMTIME end;
@@ -1088,7 +1088,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_H), end.wHour);
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_M), end.wMinute);
 
-	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"˜^‰æ’†\r\n");
+	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"éŒ²ç”»ä¸­\r\n");
 
 	BtnUpdate(GUI_REC);
 	ChgIconStatus();
@@ -1097,18 +1097,18 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 
 void CEpgDataCap_BonDlg::OnBnClickedButtonCancel()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( this->bonCtrl.IsRec() ){
 		WCHAR caption[128] = L"";
 		GetWindowText(m_hWnd, caption, 128);
 		disableKeyboardHook = TRUE;
-		int result = MessageBox( m_hWnd, L"˜^‰æ‚ð’âŽ~‚µ‚Ü‚·‚©H", caption, MB_YESNO | MB_ICONQUESTION );
+		int result = MessageBox( m_hWnd, L"éŒ²ç”»ã‚’åœæ­¢ã—ã¾ã™ã‹ï¼Ÿ", caption, MB_YESNO | MB_ICONQUESTION );
 		disableKeyboardHook = FALSE;
 		if( result == IDNO ){
 			return ;
 		}
 	}
-	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚Ü‚µ‚½\r\n");
+	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚Œã¾ã—ãŸ\r\n");
 
 	this->bonCtrl.StopChScan();
 	this->chScanWorking = FALSE;
@@ -1131,14 +1131,14 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonCancel()
 
 void CEpgDataCap_BonDlg::OnBnClickedButtonView()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	SendMessage(m_hWnd, WM_VIEW_APP_OPEN, 0, 0);
 }
 
 
 void CEpgDataCap_BonDlg::OnBnClickedCheckUdp()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)) ){
 		this->udpSendList = this->setUdpSendList;
 	}else{
@@ -1150,7 +1150,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckUdp()
 
 void CEpgDataCap_BonDlg::OnBnClickedCheckTcp()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)) ){
 		this->tcpSendList = this->setTcpSendList;
 	}else{
@@ -1162,7 +1162,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckTcp()
 
 void CEpgDataCap_BonDlg::OnBnClickedCheckRecSet()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_REC_SET)) != BST_UNCHECKED ){
 		BtnUpdate(GUI_REC_SET_TIME);
 
@@ -1185,7 +1185,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckRecSet()
 
 void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	wstring info = L"";
 	WORD onid;
 	WORD tsid;
@@ -1201,7 +1201,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 
 BOOL CEpgDataCap_BonDlg::OnQueryEndSession()
 {
-	// TODO:  ‚±‚±‚É“Á’è‚ÈƒNƒGƒŠ‚ÌI—¹ƒZƒbƒVƒ‡ƒ“ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢B
+	// TODO:  ã“ã“ã«ç‰¹å®šãªã‚¯ã‚¨ãƒªã®çµ‚äº†ã‚»ãƒƒã‚·ãƒ§ãƒ³ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¦ãã ã•ã„ã€‚
 	if( this->bonCtrl.IsRec() ){
 		ShowWindow(m_hWnd, SW_SHOW);
 		return FALSE;
@@ -1212,7 +1212,7 @@ BOOL CEpgDataCap_BonDlg::OnQueryEndSession()
 
 void CEpgDataCap_BonDlg::OnEndSession(BOOL bEnding)
 {
-	// TODO: ‚±‚±‚ÉƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ð’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	if( bEnding == TRUE ){
 		while( this->cmdCtrlList.empty() == false ){
 			this->bonCtrl.DeleteServiceCtrl(this->cmdCtrlList.back());
@@ -1228,7 +1228,7 @@ void CEpgDataCap_BonDlg::OnEndSession(BOOL bEnding)
 
 LRESULT CALLBACK CEpgDataCap_BonDlg::KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-	//Enter,Esc‚ð–³Ž‹‚·‚é
+	//Enter,Escã‚’ç„¡è¦–ã™ã‚‹
 	if( disableKeyboardHook == FALSE && nCode == HC_ACTION && (wParam == VK_RETURN || wParam == VK_ESCAPE) && (lParam & (1 << 30)) == 0 ){
 		return TRUE;
 	}
@@ -1320,7 +1320,7 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 				pSys->bonCtrl.DeleteServiceCtrl(pSys->recCtrlID);
 				pSys->recCtrlID = 0;
 			}
-			//ƒfƒbƒhƒƒbƒN‰ñ”ð‚Ì‚½‚ßƒƒbƒZ[ƒWƒ|ƒ“ƒv‚ðˆÛŽ‚µ‚Â‚ÂƒT[ƒo‚ðI‚í‚ç‚¹‚é
+			//ãƒ‡ãƒƒãƒ‰ãƒ­ãƒƒã‚¯å›žé¿ã®ãŸã‚ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒãƒ³ãƒ—ã‚’ç¶­æŒã—ã¤ã¤ã‚µãƒ¼ãƒã‚’çµ‚ã‚ã‚‰ã›ã‚‹
 			pSys->pipeServer.StopServer(true);
 			pSys->SetTimer(TIMER_TRY_STOP_SERVER, 20, NULL);
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 0);
@@ -1356,7 +1356,7 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 	OutputDebugString(pipeName.c_str());
 	this->pipeServer.StartServer(pipeName, [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
 		resParam->param = CMD_ERR;
-		//“¯ŠúŒÄ‚Ño‚µ‚ª•s—v‚ÈƒRƒ}ƒ“ƒh‚Í‚±‚±‚Åˆ—‚·‚é
+		//åŒæœŸå‘¼ã³å‡ºã—ãŒä¸è¦ãªã‚³ãƒžãƒ³ãƒ‰ã¯ã“ã“ã§å‡¦ç†ã™ã‚‹
 		switch( cmdParam->param ){
 		case CMD2_VIEW_APP_GET_BONDRIVER:
 			{
@@ -1440,13 +1440,13 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 			}
 			return;
 		case CMD2_VIEW_APP_EXEC_VIEW_APP:
-			//Œ´ì‚Í“¯Šú“I
+			//åŽŸä½œã¯åŒæœŸçš„
 			PostMessage(m_hWnd, WM_VIEW_APP_OPEN, 0, 0);
 			resParam->param = CMD_SUCCESS;
 			return;
 		}
-		//CtrlCmdCallbackInvoked()‚ðƒƒCƒ“ƒXƒŒƒbƒh‚ÅŒÄ‚Ô
-		//’ˆÓ: CPipeServer‚ªƒAƒNƒeƒBƒu‚ÈŠÔAƒEƒBƒ“ƒhƒE‚ÍŠmŽÀ‚É‘¶Ý‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+		//CtrlCmdCallbackInvoked()ã‚’ãƒ¡ã‚¤ãƒ³ã‚¹ãƒ¬ãƒƒãƒ‰ã§å‘¼ã¶
+		//æ³¨æ„: CPipeServerãŒã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªé–“ã€ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã¯ç¢ºå®Ÿã«å­˜åœ¨ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
 		this->cmdCapture = cmdParam;
 		this->resCapture = resParam;
 		SendMessage(m_hWnd, WM_INVOKE_CTRL_CMD, 0, 0);
@@ -1469,7 +1469,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				if( SelectBonDriver(val.c_str()) ){
 					ReloadServiceList();
-					//‰Â”\‚È‚çˆê——‚Ì•\Ž¦‚ð“¯Šú‚µ‚Ä‚¨‚­
+					//å¯èƒ½ãªã‚‰ä¸€è¦§ã®è¡¨ç¤ºã‚’åŒæœŸã—ã¦ãŠã
 					for( int i = 0; i < ComboBox_GetCount(GetDlgItem(IDC_COMBO_TUNER)); i++ ){
 						WCHAR buff[512];
 						if( ComboBox_GetLBTextLen(GetDlgItem(IDC_COMBO_TUNER), i) < 512 &&
@@ -1525,10 +1525,10 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				if( val == 1 ){
 					BtnUpdate(GUI_REC_STANDBY);
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"—\–ñ˜^‰æ‘Ò‹@’†\r\n");
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"äºˆç´„éŒ²ç”»å¾…æ©Ÿä¸­\r\n");
 				}else if( val == 2 ){
 					BtnUpdate(GUI_NORMAL);
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"Ž‹’®ƒ‚[ƒh\r\n");
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"è¦–è´ãƒ¢ãƒ¼ãƒ‰\r\n");
 				}else{
 					BtnUpdate(GUI_NORMAL);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");
@@ -1592,8 +1592,8 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 					BtnUpdate(GUI_OTHER_CTRL);
 					WCHAR log[512 + 64] = L"";
 					GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-					if( wcsstr(log, L"—\–ñ˜^‰æ’†\r\n") == NULL ){
-						wcscat_s(log, L"—\–ñ˜^‰æ’†\r\n");
+					if( wcsstr(log, L"äºˆç´„éŒ²ç”»ä¸­\r\n") == NULL ){
+						wcscat_s(log, L"äºˆç´„éŒ²ç”»ä¸­\r\n");
 						SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 					}
 					ChgIconStatus();
@@ -1630,7 +1630,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 					resParam->param = CMD_SUCCESS;
 					if( this->cmdCtrlList.size() == 1 ){
 						BtnUpdate(GUI_NORMAL);
-						SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"—\–ñ˜^‰æI—¹‚µ‚Ü‚µ‚½\r\n");
+						SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"äºˆç´„éŒ²ç”»çµ‚äº†ã—ã¾ã—ãŸ\r\n");
 					}
 					ChgIconStatus();
 				}
@@ -1668,7 +1668,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 			this->recCtrlID = 0;
 		}
 		BtnUpdate(GUI_NORMAL);
-		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"—\–ñ˜^‰æI—¹‚µ‚Ü‚µ‚½\r\n");
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"äºˆç´„éŒ²ç”»çµ‚äº†ã—ã¾ã—ãŸ\r\n");
 		ChgIconStatus();
 		resParam->param = CMD_SUCCESS;
 		break;

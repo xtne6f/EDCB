@@ -1,5 +1,5 @@
-
-// EpgDataCap_BonDlg.h : ƒwƒbƒ_[ ƒtƒ@ƒCƒ‹
+ï»¿
+// EpgDataCap_BonDlg.h : ãƒ˜ãƒƒãƒ€ãƒ¼ ãƒ•ã‚¡ã‚¤ãƒ«
 //
 
 #pragma once
@@ -9,12 +9,12 @@
 #include "EpgDataCap_BonDef.h"
 #include "SettingDlg.h"
 
-// CEpgDataCap_BonDlg ƒ_ƒCƒAƒƒO
+// CEpgDataCap_BonDlg ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 class CEpgDataCap_BonDlg
 {
-// ƒRƒ“ƒXƒgƒ‰ƒNƒVƒ‡ƒ“
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚·ãƒ§ãƒ³
 public:
-	CEpgDataCap_BonDlg();	// •W€ƒRƒ“ƒXƒgƒ‰ƒNƒ^[
+	CEpgDataCap_BonDlg();	// æ¨™æº–ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ¼
 	INT_PTR DoModal();
 
 	void SetInitBon(LPCWSTR bonFile){ iniBonDriver = bonFile; }
@@ -24,7 +24,7 @@ public:
 	void SetIniNWUDP(BOOL udpFlag){ iniUDP = udpFlag; };
 	void SetIniNWTCP(BOOL tcpFlag){ iniTCP = tcpFlag; };
 
-// ƒ_ƒCƒAƒƒO ƒf[ƒ^
+// ãƒ€ã‚¤ã‚¢ãƒ­ã‚° ãƒ‡ãƒ¼ã‚¿
 	enum { IDD = IDD_EPGDATACAP_BON_DIALOG };
 
 protected:
@@ -33,7 +33,7 @@ protected:
 protected:
 	void ReloadSetting();
 	void BtnUpdate(DWORD guiMode);
-	//ƒ^ƒXƒNƒgƒŒƒC
+	//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤
 	BOOL DeleteTaskBar(HWND wnd, UINT id);
 	BOOL AddTaskBar(HWND wnd, UINT msg, UINT id, HICON icon, wstring tips);
 	BOOL ChgTipsTaskBar(HWND wnd, UINT id, HICON icon, wstring tips);
@@ -48,7 +48,7 @@ protected:
 
 	void StartPipeServer();
 	void CtrlCmdCallbackInvoked();
-// À‘•
+// å®Ÿè£…
 protected:
 	HWND m_hWnd;
 	HHOOK m_hKeyboardHook;
@@ -101,7 +101,7 @@ protected:
 	BOOL chScanWorking;
 	BOOL epgCapWorking;
 
-	// ¶¬‚³‚ê‚½AƒƒbƒZ[ƒWŠ„‚è“–‚ÄŠÖ”
+	// ç”Ÿæˆã•ã‚ŒãŸã€ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‰²ã‚Šå½“ã¦é–¢æ•°
 	BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed);
 	afx_msg void OnDestroy();

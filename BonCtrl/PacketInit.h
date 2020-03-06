@@ -1,18 +1,18 @@
-#pragma once
+﻿#pragma once
 
 class CPacketInit
 {
 public:
 	CPacketInit(void);
 
-	//���̓o�b�t�@��188�o�C�g�P�ʂ�TS�ɕϊ����A188�̔{���ɂȂ�悤�ɂ��낦��
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// inData			[IN]����TS�f�[�^
-	// inSize			[IN]inData�̃T�C�Y�iBYTE�P�ʁj
-	// outData			[OUT]188�o�C�g�ɐ��񂵂��o�b�t�@�i����Ăяo���܂ŕێ��j
-	// outSize			[OUT]outData�̃T�C�Y�iBYTE�P�ʁj
+	//入力バッファを188バイト単位のTSに変換し、188の倍数になるようにそろえる
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// inData			[IN]入力TSデータ
+	// inSize			[IN]inDataのサイズ（BYTE単位）
+	// outData			[OUT]188バイトに整列したバッファ（次回呼び出しまで保持）
+	// outSize			[OUT]outDataのサイズ（BYTE単位）
 	BOOL GetTSData(
 		const BYTE* inData,
 		DWORD inSize,
@@ -20,7 +20,7 @@ public:
 		DWORD* outSize
 		);
 
-	//�����o�b�t�@�̃N���A
+	//内部バッファのクリア
 	void ClearBuff();
 
 protected:

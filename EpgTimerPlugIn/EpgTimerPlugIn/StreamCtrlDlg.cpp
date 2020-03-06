@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "resource.h"
 #include "StreamCtrlDlg.h"
 #include <commctrl.h>
@@ -33,7 +33,7 @@ void CStreamCtrlDlg::SetCtrl(const TVTEST_STREAMING_INFO& info)
 		this->ctrlIsNetwork = info.serverIP != 1;
 		this->cmd.SetSendMode(this->ctrlIsNetwork);
 		if( this->ctrlIsNetwork ){
-			// ƒlƒbƒgƒ[ƒNÚ‘±‚ðŽg‚¤
+			// ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯æŽ¥ç¶šã‚’ä½¿ã†
 			wstring ip;
 			Format(ip, L"%d.%d.%d.%d", info.serverIP >> 24, (info.serverIP >> 16) & 0xFF, (info.serverIP >> 8) & 0xFF, info.serverIP & 0xFF);
 			this->cmd.SetNWSetting(ip, info.serverPort);
@@ -122,7 +122,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 			sys = (CStreamCtrlDlg*)lp;
 			sys->hwnd = hDlgWnd;
 			sys->EnumIP();
-			SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"’âŽ~");
+			SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"åœæ­¢");
 			break;
         case WM_COMMAND:
 			{
@@ -136,7 +136,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 					case IDC_BUTTON_STOP:
 						KillTimer(hDlgWnd, 1000);
 						sys->cmd.SendNwPlayStop(sys->ctrlID);
-						SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"’âŽ~");
+						SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"åœæ­¢");
 						break;
 					case IDC_CHECK_UDP:
 					case IDC_CHECK_TCP:
@@ -146,7 +146,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						KillTimer(hDlgWnd, 1000);
 						KillTimer(hDlgWnd, 1010);
 						sys->cmd.SendNwPlayStop(sys->ctrlID);
-						SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"’âŽ~");
+						SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"åœæ­¢");
 						SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_UDP), BM_SETCHECK, BST_UNCHECKED, 0);
 						SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_TCP), BM_SETCHECK, BST_UNCHECKED, 0);
 						sys->SetNWModeSend();
@@ -313,49 +313,49 @@ void CStreamCtrlDlg::SetNWModeSend()
 	if( nwPlayInfo.udp == 1 ){
 		udpPort = nwPlayInfo.udpPort;
 		wstring udp;
-		Format(udp, L"UDP‘—MF%ls:%d\r\n", textBuff, udpPort);
+		Format(udp, L"UDPé€ä¿¡ï¼š%ls:%d\r\n", textBuff, udpPort);
 		editLog += udp;
 	}
 	DWORD tcpPort = 65536;
 	if( nwPlayInfo.tcp == 1 ){
 		tcpPort = nwPlayInfo.tcpPort;
 		wstring tcp;
-		Format(tcp, L"TCP‘—MF%ls:%d\r\n", textBuff, tcpPort);
+		Format(tcp, L"TCPé€ä¿¡ï¼š%ls:%d\r\n", textBuff, tcpPort);
 		editLog += tcp;
 	}
-	SetDlgItemText(this->hwnd, IDC_EDIT_LOG, editLog.empty() ? L"‘—Mæ‚È‚µ" : editLog.c_str());
+	SetDlgItemText(this->hwnd, IDC_EDIT_LOG, editLog.empty() ? L"é€ä¿¡å…ˆãªã—" : editLog.c_str());
 	PostMessage(this->hwnd, WM_CHG_PORT, udpPort, tcpPort);
 }
 
 void CStreamCtrlDlg::EnumIP()
 {
-	ULONG len = 0;   // —ñ‹“‚É•K—v‚ÈƒoƒCƒg”‚Å‚·B
+	ULONG len = 0;   // åˆ—æŒ™ã«å¿…è¦ãªãƒã‚¤ãƒˆæ•°ã§ã™ã€‚
 	DWORD ret = GetAdaptersAddresses(AF_UNSPEC, 0, 0, 0, &len);
-	if(ret != ERROR_BUFFER_OVERFLOW) return;   // ƒƒ‚ƒŠ•s‘«ˆÈŠO‚ÌƒGƒ‰[‚È‚ç§Œä‚ð•Ô‚µ‚Ü‚·B
+	if(ret != ERROR_BUFFER_OVERFLOW) return;   // ãƒ¡ãƒ¢ãƒªä¸è¶³ä»¥å¤–ã®ã‚¨ãƒ©ãƒ¼ãªã‚‰åˆ¶å¾¡ã‚’è¿”ã—ã¾ã™ã€‚
 
-	// —v‹‚³‚ê‚½ƒoƒCƒg” len •ª‚Ìƒƒ‚ƒŠ‚ð adpts ‚É—pˆÓ‚µ‚Ü‚·B
+	// è¦æ±‚ã•ã‚ŒãŸãƒã‚¤ãƒˆæ•° len åˆ†ã®ãƒ¡ãƒ¢ãƒªã‚’ adpts ã«ç”¨æ„ã—ã¾ã™ã€‚
 	PIP_ADAPTER_ADDRESSES adpts = (PIP_ADAPTER_ADDRESSES)new BYTE[len];
-	if(adpts == 0) return;      // ƒƒ‚ƒŠ‚ð—pˆÓ‚Å‚«‚È‚¯‚ê‚Î§Œä‚ð•Ô‚µ‚Ü‚·B
+	if(adpts == 0) return;      // ãƒ¡ãƒ¢ãƒªã‚’ç”¨æ„ã§ããªã‘ã‚Œã°åˆ¶å¾¡ã‚’è¿”ã—ã¾ã™ã€‚
 
-	ret = GetAdaptersAddresses(AF_INET, 0, 0, adpts, &len);   // adpts ‚Éî•ñ‚ð—ñ‹“‚µ‚Ü‚·B
-	if(ret != ERROR_SUCCESS){   // ƒAƒ_ƒvƒ^‚ð—ñ‹“‚Å‚«‚È‚©‚Á‚½‚ç§Œä‚ð•Ô‚µ‚Ü‚·B
+	ret = GetAdaptersAddresses(AF_INET, 0, 0, adpts, &len);   // adpts ã«æƒ…å ±ã‚’åˆ—æŒ™ã—ã¾ã™ã€‚
+	if(ret != ERROR_SUCCESS){   // ã‚¢ãƒ€ãƒ—ã‚¿ã‚’åˆ—æŒ™ã§ããªã‹ã£ãŸã‚‰åˆ¶å¾¡ã‚’è¿”ã—ã¾ã™ã€‚
 		delete [] adpts;
 		return;
 	}
 
 	WSADATA data;
 	WSAStartup(MAKEWORD(2, 2), &data);
-	// adpts ”z—ñ“à‚ÌŠeƒAƒ_ƒvƒ^î•ñ‚ðˆê‚Â‚¸‚Â adpt ‚É“ü‚ê‚Ä‚Ý‚Ä‚¢‚«‚Ü‚·B
+	// adpts é…åˆ—å†…ã®å„ã‚¢ãƒ€ãƒ—ã‚¿æƒ…å ±ã‚’ä¸€ã¤ãšã¤ adpt ã«å…¥ã‚Œã¦ã¿ã¦ã„ãã¾ã™ã€‚
 	for(PIP_ADAPTER_ADDRESSES adpt = adpts; adpt; adpt = adpt->Next){
-		if(adpt->PhysicalAddressLength == 0) continue;            // ƒf[ƒ^ƒŠƒ“ƒN‘w‚ðŽ‚½‚È‚¢‚È‚ç
-		if(adpt->IfType == IF_TYPE_SOFTWARE_LOOPBACK) continue;   // ƒ‹[ƒvƒoƒbƒN ƒAƒhƒŒƒX‚È‚ç
-		// adpt ƒAƒ_ƒvƒ^î•ñ‚Ì IP ƒAƒhƒŒƒX‚ðˆê‚Â‚¸‚Â uni ‚É“ü‚ê‚Ä‚Ý‚Ä‚¢‚«‚Ü‚·B
+		if(adpt->PhysicalAddressLength == 0) continue;            // ãƒ‡ãƒ¼ã‚¿ãƒªãƒ³ã‚¯å±¤ã‚’æŒãŸãªã„ãªã‚‰
+		if(adpt->IfType == IF_TYPE_SOFTWARE_LOOPBACK) continue;   // ãƒ«ãƒ¼ãƒ—ãƒãƒƒã‚¯ ã‚¢ãƒ‰ãƒ¬ã‚¹ãªã‚‰
+		// adpt ã‚¢ãƒ€ãƒ—ã‚¿æƒ…å ±ã® IP ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ä¸€ã¤ãšã¤ uni ã«å…¥ã‚Œã¦ã¿ã¦ã„ãã¾ã™ã€‚
 		for(PIP_ADAPTER_UNICAST_ADDRESS uni = adpt->FirstUnicastAddress; uni; uni = uni->Next){
-			// DNS ‚É‘Î‚µ‚Ä“KØ‚ÈƒAƒhƒŒƒX‚Å‚È‚¢iƒvƒ‰ƒCƒx[ƒg‚È‚Çj‚È‚ç‚Î
-			if(~(uni->Flags) & IP_ADAPTER_ADDRESS_DNS_ELIGIBLE) continue;   // ŽŸ‚ÌƒAƒhƒŒƒX‚Ö
-			// ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ªŽg‚¤‚×‚«‚Å‚È‚¢ƒAƒhƒŒƒX‚È‚ç
-			if(uni->Flags & IP_ADAPTER_ADDRESS_TRANSIENT) continue;         // ŽŸ‚ÌƒAƒhƒŒƒX‚Ö
-			char host[NI_MAXHOST + 1] = {'\0'};   // host ‚Éu0.0.0.0vŒ`Ž®‚Ì•¶Žš—ñ‚ðŽæ“¾‚µ‚Ü‚·B
+			// DNS ã«å¯¾ã—ã¦é©åˆ‡ãªã‚¢ãƒ‰ãƒ¬ã‚¹ã§ãªã„ï¼ˆãƒ—ãƒ©ã‚¤ãƒ™ãƒ¼ãƒˆãªã©ï¼‰ãªã‚‰ã°
+			if(~(uni->Flags) & IP_ADAPTER_ADDRESS_DNS_ELIGIBLE) continue;   // æ¬¡ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã¸
+			// ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãŒä½¿ã†ã¹ãã§ãªã„ã‚¢ãƒ‰ãƒ¬ã‚¹ãªã‚‰
+			if(uni->Flags & IP_ADAPTER_ADDRESS_TRANSIENT) continue;         // æ¬¡ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã¸
+			char host[NI_MAXHOST + 1] = {'\0'};   // host ã«ã€Œ0.0.0.0ã€å½¢å¼ã®æ–‡å­—åˆ—ã‚’å–å¾—ã—ã¾ã™ã€‚
 			if(getnameinfo(uni->Address.lpSockaddr, uni->Address.iSockaddrLength
 			, host, sizeof(host), 0, 0, NI_NUMERICHOST/*NI_NAMEREQD*/) == 0){
 				wstring strW;

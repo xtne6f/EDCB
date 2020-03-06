@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "lua/lua.hpp"
 #include "UpnpSsdpServer.h"
 #include <functional>

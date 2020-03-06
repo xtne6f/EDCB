@@ -1,18 +1,18 @@
-#pragma once
+ï»¿#pragma once
 
 
-// CSetDlgApp ƒ_ƒCƒAƒƒO
+// CSetDlgApp ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 class CSetDlgApp
 {
 public:
-	CSetDlgApp();   // •W€ƒRƒ“ƒXƒgƒ‰ƒNƒ^[
+	CSetDlgApp();   // æ¨™æº–ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ¼
 	~CSetDlgApp();
 	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 
-// ƒ_ƒCƒAƒƒO ƒf[ƒ^
+// ãƒ€ã‚¤ã‚¢ãƒ­ã‚° ãƒ‡ãƒ¼ã‚¿
 	enum { IDD = IDD_DIALOG_SET_APP };
 
 protected:

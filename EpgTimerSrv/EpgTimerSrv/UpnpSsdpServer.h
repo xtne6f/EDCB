@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Common/ThreadUtil.h"
 
-//UPnP��UDP(Port1900)������S������T�[�o
-//UPnPCtrl�t�H���_�ɂ���C����x�[�X(?)�̃R�[�h��C++�ōĎ�����������
-//��UPnPCtrl�t�H���_�͕s�v�̂��ߍ폜�ς݁B�K�v�Ȃ�ȑO�̃R�~�b�g���Q��
-//  UPnP(DLNA)��HTTP�����╶���񏈗��Ȃǂ��قڃX�^���h�A�����Ŏ�������Ă���
+//UPnPのUDP(Port1900)部分を担当するサーバ
+//UPnPCtrlフォルダにあるC言語ベース(?)のコードをC++で再実装したもの
+//※UPnPCtrlフォルダは不要のため削除済み。必要なら以前のコミットを参照
+//  UPnP(DLNA)のHTTP応答や文字列処理などがほぼスタンドアロンで実装されていた
 class CUpnpSsdpServer
 {
 public:

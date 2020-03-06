@@ -8,6 +8,7 @@
     <UserControl.Resources>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="長さ" Name="Duration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名" Name="EventName" IsCheckable="True" Click="headerSelect_Click" />
@@ -20,6 +21,7 @@
             <MenuItem Header="プログラム" Name="IsProgram" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="チューナー強制" Name="TunerID" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画後実行bat" Name="BatFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="予想サイズ" Name="EstimatedRecSize" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
@@ -74,6 +76,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding StartTime}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Duration}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="長さ" Tag="Duration" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding NetworkName}" >
@@ -139,6 +146,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding BatFilePath}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="録画後実行bat" Tag="BatFilePath" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding EstimatedRecSize}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="予想サイズ" Tag="EstimatedRecSize" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding ID}">

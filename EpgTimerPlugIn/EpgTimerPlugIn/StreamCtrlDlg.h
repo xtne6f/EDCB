@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/StringUtil.h"

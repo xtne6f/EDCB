@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "NotifyManager.h"
 
 #include "../../Common/CtrlCmdDef.h"
@@ -90,20 +90,20 @@ bool CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount) const
 	CBlockLock lock(&this->managerLock);
 
 	if( targetCount == 0 ){
-		//Œ»İ‚ÌsrvStatus‚ğ•Ô‚·
+		//ç¾åœ¨ã®srvStatusã‚’è¿”ã™
 		NOTIFY_SRV_INFO status = {};
 		status.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 		ConvertSystemTime(GetNowI64Time(), &status.time);
 		status.param1 = this->srvStatus;
-		//„‰ñƒJƒEƒ“ƒ^‚ÍÅŒã‚Ì’Ê’m‚Æ“¯’l
+		//å·¡å›ã‚«ã‚¦ãƒ³ã‚¿ã¯æœ€å¾Œã®é€šçŸ¥ã¨åŒå€¤
 		status.param3 = this->notifyCount;
 		*info = status;
 		return true;
 	}else if( this->notifySentList.empty() || targetCount - this->notifySentList.back().param3 < 0x80000000 ){
-		//‘¶İ‚·‚é‚©‚Ç‚¤‚©‚Í‘¦’f‚Å‚«‚é
+		//å­˜åœ¨ã™ã‚‹ã‹ã©ã†ã‹ã¯å³æ–­ã§ãã‚‹
 		return false;
 	}else{
-		//„‰ñƒJƒEƒ“ƒ^‚ªtargetCount‚æ‚è‚à‘å‚«‚­‚È‚éÅ‰‚Ì’Ê’m‚ğ•Ô‚·
+		//å·¡å›ã‚«ã‚¦ãƒ³ã‚¿ãŒtargetCountã‚ˆã‚Šã‚‚å¤§ãããªã‚‹æœ€åˆã®é€šçŸ¥ã‚’è¿”ã™
 		*info = *std::find_if(this->notifySentList.begin(), this->notifySentList.end(),
 		                      [=](const NOTIFY_SRV_INFO& a) { return targetCount - a.param3 >= 0x80000000; });
 		return true;
@@ -125,7 +125,7 @@ bool CNotifyManager::WaitForIdle(DWORD timeoutMsec) const
 		Sleep(10);
 		CBlockLock lock(&this->managerLock);
 		if( count != this->activeOrIdleCount ){
-			//1‰ñˆÈãIdle‚É‚È‚Á‚½
+			//1å›ä»¥ä¸ŠIdleã«ãªã£ãŸ
 			return true;
 		}
 	}
@@ -144,16 +144,16 @@ int CNotifyManager::GetNotifyUpdateCount(DWORD notifyID) const
 pair<LPCWSTR, LPCWSTR> CNotifyManager::ExtractTitleFromInfo(const NOTIFY_SRV_INFO* info)
 {
 	return std::make_pair(
-		info->notifyID == NOTIFY_UPDATE_PRE_REC_START ? L"—\–ñ˜^‰æŠJn€”õ" :
-		info->notifyID == NOTIFY_UPDATE_REC_START ? L"˜^‰æŠJn" :
-		info->notifyID == NOTIFY_UPDATE_REC_END ? L"˜^‰æI—¹" :
-		info->notifyID == NOTIFY_UPDATE_REC_TUIJYU ? L"’Ç]”­¶" :
-		info->notifyID == NOTIFY_UPDATE_CHG_TUIJYU ? L"”Ô‘g•ÏX" :
-		info->notifyID == NOTIFY_UPDATE_PRE_EPGCAP_START ? L"EPGæ“¾" :
-		info->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"EPGæ“¾" :
-		info->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"EPGæ“¾" : L"",
-		info->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"ŠJn" :
-		info->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"I—¹" : info->param4.c_str());
+		info->notifyID == NOTIFY_UPDATE_PRE_REC_START ? L"äºˆç´„éŒ²ç”»é–‹å§‹æº–å‚™" :
+		info->notifyID == NOTIFY_UPDATE_REC_START ? L"éŒ²ç”»é–‹å§‹" :
+		info->notifyID == NOTIFY_UPDATE_REC_END ? L"éŒ²ç”»çµ‚äº†" :
+		info->notifyID == NOTIFY_UPDATE_REC_TUIJYU ? L"è¿½å¾“ç™ºç”Ÿ" :
+		info->notifyID == NOTIFY_UPDATE_CHG_TUIJYU ? L"ç•ªçµ„å¤‰æ›´" :
+		info->notifyID == NOTIFY_UPDATE_PRE_EPGCAP_START ? L"EPGå–å¾—" :
+		info->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"EPGå–å¾—" :
+		info->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"EPGå–å¾—" : L"",
+		info->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"é–‹å§‹" :
+		info->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"çµ‚äº†" : info->param4.c_str());
 }
 
 vector<DWORD> CNotifyManager::GetRegistGUI() const
@@ -177,7 +177,7 @@ void CNotifyManager::AddNotify(DWORD notifyID)
 	NOTIFY_SRV_INFO info = {};
 	ConvertSystemTime(GetNowI64Time(), &info.time);
 	info.notifyID = notifyID;
-	//“¯‚¶‚à‚Ì‚ª‚ ‚é‚Æ‚«‚Í’Ç‰Á‚µ‚È‚¢
+	//åŒã˜ã‚‚ã®ãŒã‚ã‚‹ã¨ãã¯è¿½åŠ ã—ãªã„
 	if( std::find_if(this->notifyList.begin(), this->notifyList.end(),
 	                 [=](const NOTIFY_SRV_INFO& a) { return a.notifyID == notifyID; }) == this->notifyList.end() ){
 		this->notifyList.push_back(info);
@@ -239,10 +239,10 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			sys->notifyEvent.WaitOne();
 		}
 		if( sys->notifyStopFlag ){
-			//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
+			//ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚ŒãŸ
 			break;
 		}
-		//Œ»İ‚Ìî•ñæ“¾
+		//ç¾åœ¨ã®æƒ…å ±å–å¾—
 		{
 			CBlockLock lock(&sys->managerLock);
 			registGUI = sys->GetRegistGUI();
@@ -253,7 +253,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 				if( itrNotify == sys->notifyList.end() ){
 					continue;
 				}
-				//NotifyID<=100‚Ì’Ê’m‚Í’x‰„‚³‚¹‚¸æ‚É‘—‚é
+				//NotifyID<=100ã®é€šçŸ¥ã¯é…å»¶ã•ã›ãšå…ˆã«é€ã‚‹
 				notifyInfo = *itrNotify;
 				sys->notifyList.erase(itrNotify);
 			}else{
@@ -263,30 +263,30 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 				}
 				notifyInfo = sys->notifyList[0];
 				sys->notifyList.erase(sys->notifyList.begin());
-				//NotifyID>100‚Ì’Ê’m‚Í’x‰„‚³‚¹‚é
+				//NotifyID>100ã®é€šçŸ¥ã¯é…å»¶ã•ã›ã‚‹
 				if( notifyInfo.notifyID > 100 ){
 					waitNotify = true;
 					waitNotifyTick = GetTickCount();
 				}
 			}
 			if( sys->notifyList.empty() == false ){
-				//Ÿ‚Ì’Ê’m‚ª‚ ‚é
+				//æ¬¡ã®é€šçŸ¥ãŒã‚ã‚‹
 				sys->notifyEvent.Set();
 			}
-			//„‰ñƒJƒEƒ“ƒ^‚ğ‚Â‚¯‚é(0‚ğ”ğ‚¯‚é‚½‚ßŠï”)
+			//å·¡å›ã‚«ã‚¦ãƒ³ã‚¿ã‚’ã¤ã‘ã‚‹(0ã‚’é¿ã‘ã‚‹ãŸã‚å¥‡æ•°)
 			sys->notifyCount += 2;
 			notifyInfo.param3 = sys->notifyCount;
-			//‘—MÏ‚İƒŠƒXƒg‚É’Ç‰Á
+			//é€ä¿¡æ¸ˆã¿ãƒªã‚¹ãƒˆã«è¿½åŠ 
 			sys->notifySentList.push_back(notifyInfo);
 			if( sys->notifySentList.size() > 100 ){
 				sys->notifySentList.erase(sys->notifySentList.begin());
 			}
 			if( notifyInfo.notifyID < _countof(sys->notifyUpdateCount) ){
-				//XVŒn‚Ì’Ê’m‚ğƒJƒEƒ“ƒg
+				//æ›´æ–°ç³»ã®é€šçŸ¥ã‚’ã‚«ã‚¦ãƒ³ãƒˆ
 				sys->notifyUpdateCount[notifyInfo.notifyID]++;
 			}
 			if( sys->notifyProc ){
-				//ƒR[ƒ‹ƒoƒbƒN‚ğŒÄ‚Ô(”r‘¼§Œä‰º‚È‚Ì‚Å’ˆÓ)
+				//ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã‚’å‘¼ã¶(æ’ä»–åˆ¶å¾¡ä¸‹ãªã®ã§æ³¨æ„)
 				sys->notifyProc();
 			}
 			path = sys->logFilePath;
@@ -294,7 +294,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 		}
 
 		if( path.empty() == false && ExtractTitleFromInfo(&notifyInfo).first[0] ){
-			//ƒƒO•Û‘¶
+			//ãƒ­ã‚°ä¿å­˜
 			std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ), fclose);
 			if( fp ){
 				fwrite(L"\xFEFF", sizeof(WCHAR), 1, fp.get());
@@ -348,12 +348,12 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 					}
 				}
 				if( tcp && err != CMD_SUCCESS && err != CMD_NON_SUPPORT ){
-					//‘—M‚Å‚«‚È‚©‚Á‚½‚à‚Ìíœ
+					//é€ä¿¡ã§ããªã‹ã£ãŸã‚‚ã®å‰Šé™¤
 					_OutputDebugString(L"notifyErr %ls:%d\r\n", registTCP[i].first.c_str(), registTCP[i].second);
 					sys->UnRegistTCP(registTCP[i].first.c_str(), registTCP[i].second);
 				}
 				if( !tcp && err == CMD_ERR_CONNECT && sendCtrl.PipeExists() == false ){
-					//‘¶İ‚µ‚È‚¢‚Ì‚Åíœ
+					//å­˜åœ¨ã—ãªã„ã®ã§å‰Šé™¤
 					_OutputDebugString(L"notifyErr %ls:%d\r\n", L"PID", registGUI[i]);
 					sys->UnRegistGUI(registGUI[i]);
 				}

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef NOEXCEPT
 #if !defined(_MSC_VER) || _MSC_VER >= 1900

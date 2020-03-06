@@ -6,80 +6,70 @@
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="550">
     <Grid>
-        <TabControl Name="tabControl">
-            <TabItem Header="表示設定" Name="tabItem_mode">
+        <TabControl>
+            <TabItem Header="表示設定">
                 <Grid>
-                    <RadioButton Content="標準モード" Height="16" HorizontalAlignment="Left" IsChecked="True" Margin="27,74,0,0" Name="radioButton_rate" VerticalAlignment="Top" />
-                    <RadioButton Content="1週間モード" Height="16" HorizontalAlignment="Left" IsChecked="False" Margin="27,118,0,0" Name="radioButton_week" VerticalAlignment="Top" />
-                    <RadioButton Content="リスト表示モード" Height="16" HorizontalAlignment="Left" IsChecked="False" Margin="27,196,0,0" Name="radioButton_list" VerticalAlignment="Top" />
-                    <CheckBox Content="番組のない時間帯は表示しない" Height="16" HorizontalAlignment="Left" Margin="52,96,0,0" Name="checkBox_noTimeView_rate" VerticalAlignment="Top" />
-                    <CheckBox Content="番組のない時間帯は表示しない" Height="16" HorizontalAlignment="Left" Margin="52,140,0,0" Name="checkBox_noTimeView_week" VerticalAlignment="Top" />
-                    <Label Content="表示開始時間" Height="28" HorizontalAlignment="Left" Margin="52,162,0,0" Name="label1" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="140,162,0,0" Name="comboBox_timeH_week" VerticalAlignment="Top" Width="51" />
-                    <Label Content="タブ名" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label2" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="58,8,0,0" Name="textBox_tabName" VerticalAlignment="Top" Width="200" />
-                    <Label Content="表示モード" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label3" VerticalAlignment="Top" />
-                    <CheckBox Content="終了済みの番組は表示しない" Height="16" HorizontalAlignment="Left" Margin="52,218,0,0" Name="checkBox_filterEnded" VerticalAlignment="Top" />
-                    <Label Content="デザイン" Height="28" HorizontalAlignment="Left" Margin="6,240,0,0" VerticalAlignment="Top" />
-                    <StackPanel HorizontalAlignment="Left" Margin="27,274,0,0" Orientation="Horizontal" VerticalAlignment="Top">
+                    <RadioButton Content="標準モード" Height="16" HorizontalAlignment="Left" IsChecked="True" Margin="10,10,0,0" Name="radioButton_rate" VerticalAlignment="Top" />
+                    <RadioButton Content="1週間モード" Height="16" HorizontalAlignment="Left" IsChecked="False" Margin="10,52,0,0" Name="radioButton_week" VerticalAlignment="Top" />
+                    <RadioButton Content="リスト表示モード" Height="16" HorizontalAlignment="Left" IsChecked="False" Margin="10,122,0,0" Name="radioButton_list" VerticalAlignment="Top" />
+                    <CheckBox Content="番組のない時間帯は表示しない" Height="16" HorizontalAlignment="Left" Margin="32,30,0,0" Name="checkBox_noTimeView_rate" VerticalAlignment="Top" />
+                    <CheckBox Content="番組のない時間帯は表示しない" Height="16" HorizontalAlignment="Left" Margin="32,72,0,0" Name="checkBox_noTimeView_week" VerticalAlignment="Top" />
+                    <Label Content="表示開始時間" Height="28" HorizontalAlignment="Left" Margin="32,92,0,0" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="124,94,0,0" Name="comboBox_timeH_week" VerticalAlignment="Top" Width="58" />
+                    <CheckBox Content="終了済みの番組は表示しない" Height="16" HorizontalAlignment="Left" Margin="32,142,0,0" Name="checkBox_filterEnded" VerticalAlignment="Top" />
+                    <Label Content="タブ名" Height="28" HorizontalAlignment="Left" Margin="264,6,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="318,8,0,0" Name="textBox_tabName" Text="NewTab" VerticalAlignment="Top" Width="200" />
+                    <Label Content="デザイン" Height="28" HorizontalAlignment="Left" Margin="264,42,0,0" VerticalAlignment="Top" />
+                    <StackPanel HorizontalAlignment="Left" Margin="288,72,0,0" Orientation="Horizontal" VerticalAlignment="Top">
                         <RadioButton Content="デフォルト" Height="16" IsChecked="True" Margin="0,0,20,0" Name="radioButton_designDefault" />
                         <RadioButton Content="サブ1" Height="16" Margin="0,0,20,0" Name="radioButton_designSub1" />
                         <RadioButton Content="サブ2" Height="16" Name="radioButton_designSub2" />
                     </StackPanel>
+                    <Label Content="表示ジャンル (項目なしで全ジャンル)" Height="28" HorizontalAlignment="Left" Margin="10,170,0,0" VerticalAlignment="Top" />
+                    <ListBox DisplayMemberPath="ListBoxView" HorizontalAlignment="Left" Margin="10,200,0,30" Name="listBox_jyanruView" Width="238" />
+                    <Label Content="ジャンル一覧" Height="28" HorizontalAlignment="Left" Margin="318,170,0,0" VerticalAlignment="Top" />
+                    <ListBox HorizontalAlignment="Left" Margin="318,200,0,30" Name="listBox_jyanru" Width="200" />
+                    <Button Click="button_jyanru_addAll_Click" Content="全追加" Height="23" HorizontalAlignment="Left" Margin="254,200,0,0" VerticalAlignment="Top" Width="58" />
+                    <Button Click="button_jyanru_add_Click" Content="追加" Height="23" HorizontalAlignment="Left" Margin="254,228,0,0" VerticalAlignment="Top" Width="58" />
+                    <Button Click="button_jyanru_del_Click" Content="削除" Height="23" HorizontalAlignment="Left" Margin="254,256,0,0" VerticalAlignment="Top" Width="58" />
+                    <Button Click="button_jyanru_delAll_Click" Content="全削除" Height="23" HorizontalAlignment="Left" Margin="254,284,0,0" VerticalAlignment="Top" Width="58" />
+                    <CheckBox Content="表示ジャンルの番組を強調表示する (表示ジャンル以外を薄くする)" Height="16" HorizontalAlignment="Left" IsChecked="True" Margin="10,0,0,6" Name="checkBox_highlightContentKind" VerticalAlignment="Bottom" />
                 </Grid>
             </TabItem>
-            <TabItem Header="表示条件" Name="tabItem_key">
+            <TabItem Header="表示条件">
                 <Grid>
-                    <Button Content="検索条件" Height="23" HorizontalAlignment="Left" Margin="184,6,0,0" Name="button_searchKey" VerticalAlignment="Top" Width="75" Click="button_searchKey_Click" />
-                    <CheckBox Content="検索による絞り込みを行う" Height="16" HorizontalAlignment="Left" Margin="6,9,0,0" Name="checkBox_searchMode" VerticalAlignment="Top" />
-                    <TabControl Margin="6,65,6,6" Name="tabControl1" >
-                        <TabItem Header="表示サービス" Name="tabItem_service">
-                            <Grid>
-                                <Label Content="表示サービス (同一TSでSIDを逆順にすると結合)" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label31" VerticalAlignment="Top" />
-                                <ListBox DisplayMemberPath="Item1" HorizontalAlignment="Left" Margin="6,40,0,120" Name="listBox_serviceView" SelectionChanged="listBox_service_SelectionChanged" Width="134" />
-                                <Label Content="サービス一覧" Height="28" HorizontalAlignment="Left" Margin="280,6,0,0" Name="label32" VerticalAlignment="Top" />
-                                <TabControl HorizontalAlignment="Left" Margin="268,40,0,120" Width="244">
-                                    <TabItem Header="地デジ" Name="tabItem_tere">
-                                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceTere" SelectionChanged="listBox_service_SelectionChanged" />
-                                    </TabItem>
-                                    <TabItem Header="BS" Name="tabItem_bs">
-                                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" />
-                                    </TabItem>
-                                    <TabItem Header="CS" Name="tabItem_cs">
-                                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" />
-                                    </TabItem>
-                                    <TabItem Header="CS3" Name="tabItem_cs3">
-                                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceCS3" SelectionChanged="listBox_service_SelectionChanged" />
-                                    </TabItem>
-                                    <TabItem Header="その他" Name="tabItem_other">
-                                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" />
-                                    </TabItem>
-                                </TabControl>
-                                <TextBox Height="100" HorizontalAlignment="Left" IsReadOnly="True" Margin="6,0,0,10" Name="textBox_serviceView1" TextWrapping="Wrap" VerticalAlignment="Bottom" Width="244" />
-                                <TextBox Height="100" HorizontalAlignment="Left" IsReadOnly="True" Margin="268,0,0,10" Name="textBox_serviceView2" TextWrapping="Wrap" VerticalAlignment="Bottom" Width="244" />
-                                <Button Content="全追加" Height="23" HorizontalAlignment="Left" Margin="146,29,0,0" Name="button_service_addAll" VerticalAlignment="Top" Width="58" Click="button_service_addAll_Click" />
-                                <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="146,87,0,0" Name="button_service_add" VerticalAlignment="Top" Width="58" Click="button_service_add_Click" />
-                                <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="146,116,0,0" Name="button_service_del" VerticalAlignment="Top" Width="58" Click="button_service_del_Click" />
-                                <Button Content="全削除" Height="23" HorizontalAlignment="Left" Margin="146,145,0,0" Name="button_service_delAll" VerticalAlignment="Top" Width="58" Click="button_service_delAll_Click" />
-                                <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="146,174,0,0" Name="button_service_up" VerticalAlignment="Top" Width="58" Click="button_service_up_Click" />
-                                <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="146,203,0,0" Name="button_service_down" VerticalAlignment="Top" Width="58" Click="button_service_down_Click" />
-                                <Button Content="映像のみ全追加" Height="23" HorizontalAlignment="Left" Margin="146,58,0,0" Name="button_service_addVideo" VerticalAlignment="Top" Width="111" Click="button_service_addVideo_Click" />
-                            </Grid>
+                    <CheckBox Content="検索による絞り込みを行う" Height="16" HorizontalAlignment="Left" Margin="10,9,0,0" Name="checkBox_searchMode" VerticalAlignment="Top" />
+                    <Button Click="button_searchKey_Click" Content="検索条件" Height="23" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_searchMode}" Margin="188,6,0,0" VerticalAlignment="Top" Width="75" />
+                    <Label Content="(表示サービスは並び順のために設定が必要です。)" Height="28" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_searchMode}" Margin="24,30,0,0" VerticalAlignment="Top" />
+                    <Label Content="表示サービス (同一TSでSIDを逆順にすると結合)" Height="28" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" />
+                    <ListBox DisplayMemberPath="Item1" HorizontalAlignment="Left" Margin="10,90,0,120" Name="listBox_serviceView" SelectionChanged="listBox_service_SelectionChanged" Width="160" />
+                    <Label Content="サービス一覧" Height="28" HorizontalAlignment="Left" Margin="288,60,0,0" VerticalAlignment="Top" />
+                    <TabControl HorizontalAlignment="Left" Margin="288,90,0,120" Width="230">
+                        <TabItem Header="地デジ" Name="tabItem_tere">
+                            <ListBox DisplayMemberPath="Item1" Name="listBox_serviceTere" SelectionChanged="listBox_service_SelectionChanged" />
                         </TabItem>
-                        <TabItem Header="表示ジャンル" Name="tabItem_content">
-                            <Grid>
-                                <Label Content="表示ジャンル(項目なしで全ジャンル)" Height="28" HorizontalAlignment="Left" Margin="10,10,0,0" Name="label30" VerticalAlignment="Top" />
-                                <ListBox HorizontalAlignment="Left" Margin="10,44,0,6" Name="listBox_jyanruView" Width="171" />
-                                <Label Content="ジャンル一覧" Height="28" HorizontalAlignment="Left" Margin="248,10,0,0" Name="label33" VerticalAlignment="Top" />
-                                <ListBox HorizontalAlignment="Left" Margin="251,44,0,6" Name="listBox_jyanru" Width="183" />
-                                <Button Content="全追加" Height="23" HorizontalAlignment="Left" Margin="187,134,0,0" Name="button_jyanru_addAll" VerticalAlignment="Top" Width="58" Click="button_jyanru_addAll_Click" />
-                                <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="187,163,0,0" Name="button_jyanru_add" VerticalAlignment="Top" Width="58" Click="button_jyanru_add_Click" />
-                                <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="187,192,0,0" Name="button_jyanru_del" VerticalAlignment="Top" Width="58" Click="button_jyanru_del_Click" />
-                                <Button Content="全削除" Height="23" HorizontalAlignment="Left" Margin="187,221,0,0" Name="button_jyanru_delAll" VerticalAlignment="Top" Width="58" Click="button_jyanru_delAll_Click" />
-                            </Grid>
+                        <TabItem Header="BS" Name="tabItem_bs">
+                            <ListBox DisplayMemberPath="Item1" Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" />
+                        </TabItem>
+                        <TabItem Header="CS" Name="tabItem_cs">
+                            <ListBox DisplayMemberPath="Item1" Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" />
+                        </TabItem>
+                        <TabItem Header="CS3" Name="tabItem_cs3">
+                            <ListBox DisplayMemberPath="Item1" Name="listBox_serviceCS3" SelectionChanged="listBox_service_SelectionChanged" />
+                        </TabItem>
+                        <TabItem Header="その他" Name="tabItem_other">
+                            <ListBox DisplayMemberPath="Item1" Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" />
                         </TabItem>
                     </TabControl>
-                    <Label Content="(表示ジャンルは検索条件のものを使用。表示サービスは並び順のために設定が必要です。)" Height="28" HorizontalAlignment="Left" Margin="6,31,0,0" Name="label4" VerticalAlignment="Top" />
+                    <TextBox Height="100" HorizontalAlignment="Left" IsReadOnly="True" Margin="10,0,0,10" Name="textBox_serviceView1" TextWrapping="Wrap" VerticalAlignment="Bottom" Width="230" />
+                    <TextBox Height="100" HorizontalAlignment="Left" IsReadOnly="True" Margin="288,0,0,10" Name="textBox_serviceView2" TextWrapping="Wrap" VerticalAlignment="Bottom" Width="230" />
+                    <Button Click="button_service_addAll_Click" Content="全追加" Height="23" HorizontalAlignment="Left" Margin="176,90,0,0" VerticalAlignment="Top" Width="58" />
+                    <Button Click="button_service_addVideo_Click" Content="映像のみ全追加" Height="23" HorizontalAlignment="Left" Margin="176,118,0,0" VerticalAlignment="Top" Width="106" />
+                    <Button Click="button_service_add_Click" Content="追加" Height="23" HorizontalAlignment="Left" Margin="176,146,0,0" VerticalAlignment="Top" Width="58" />
+                    <Button Click="button_service_del_Click" Content="削除" Height="23" HorizontalAlignment="Left" Margin="176,174,0,0" VerticalAlignment="Top" Width="58" />
+                    <Button Click="button_service_delAll_Click" Content="全削除" Height="23" HorizontalAlignment="Left" Margin="176,202,0,0" VerticalAlignment="Top" Width="58" />
+                    <Button Click="button_service_up_Click" Content="↑" Height="23" HorizontalAlignment="Left" Margin="176,230,0,0" VerticalAlignment="Top" Width="58" />
+                    <Button Click="button_service_down_Click" Content="↓" Height="23" HorizontalAlignment="Left" Margin="176,258,0,0" VerticalAlignment="Top" Width="58" />
                 </Grid>
             </TabItem>
         </TabControl>

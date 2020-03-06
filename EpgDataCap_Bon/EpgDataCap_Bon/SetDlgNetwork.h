@@ -1,20 +1,20 @@
-#pragma once
+ï»¿#pragma once
 
 
 #include "../../BonCtrl/BonCtrlDef.h"
 
-// CSetDlgNetwork ƒ_ƒCƒAƒƒO
+// CSetDlgNetwork ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 class CSetDlgNetwork
 {
 public:
-	CSetDlgNetwork();   // •W€ƒRƒ“ƒXƒgƒ‰ƒNƒ^[
+	CSetDlgNetwork();   // æ¨™æº–ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ¼
 	~CSetDlgNetwork();
 	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 
-// ƒ_ƒCƒAƒƒO ƒf[ƒ^
+// ãƒ€ã‚¤ã‚¢ãƒ­ã‚° ãƒ‡ãƒ¼ã‚¿
 	enum { IDD = IDD_DIALOG_SET_NW };
 
 protected:

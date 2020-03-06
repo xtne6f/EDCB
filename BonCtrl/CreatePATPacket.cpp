@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "CreatePATPacket.h"
 
 CCreatePATPacket::CCreatePATPacket(void)
@@ -7,16 +7,16 @@ CCreatePATPacket::CCreatePATPacket(void)
 	this->counter = 0;
 }
 
-//ì¬PAT‚Ìƒpƒ‰ƒ[ƒ^‚ğİ’è
-//ˆø”F
+//ä½œæˆPATã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¨­å®š
+//å¼•æ•°ï¼š
 // TSID				[IN]TransportStreamID
-// PIDList			[IN]PMT‚ÌPID‚ÆServiceID‚ÌƒŠƒXƒg
+// PIDList			[IN]PMTã®PIDã¨ServiceIDã®ãƒªã‚¹ãƒˆ
 void CCreatePATPacket::SetParam(
 	WORD TSID_,
 	const vector<pair<WORD, WORD>>& PIDList_
 )
 {
-	//•ÏX‚È‚¯‚ê‚Î•Ï‚¦‚é•K—v‚È‚µ
+	//å¤‰æ›´ãªã‘ã‚Œã°å¤‰ãˆã‚‹å¿…è¦ãªã—
 	if( this->packet.empty() == false && this->TSID == TSID_ && this->PIDList == PIDList_ ){
 		return;
 	}
@@ -31,12 +31,12 @@ void CCreatePATPacket::SetParam(
 	CreatePAT();
 }
 
-//ì¬PAT‚Ìƒoƒbƒtƒ@ƒ|ƒCƒ“ƒ^‚ğæ“¾
-//–ß‚è’lFì¬PAT‚Ìƒoƒbƒtƒ@ƒ|ƒCƒ“ƒ^
+//ä½œæˆPATã®ãƒãƒƒãƒ•ã‚¡ãƒã‚¤ãƒ³ã‚¿ã‚’å–å¾—
+//æˆ»ã‚Šå€¤ï¼šä½œæˆPATã®ãƒãƒƒãƒ•ã‚¡ãƒã‚¤ãƒ³ã‚¿
 BOOL CCreatePATPacket::GetPacket(
-	BYTE** pbBuff,				//[OUT] ì¬‚µ‚½PATƒpƒPƒbƒg‚Ö‚Ìƒ|ƒCƒ“ƒ^iŸ‰ñŒÄ‚Ño‚µ‚Ü‚Å—LŒøj
-	DWORD* pdwSize,				//[OUT] pbBuff‚ÌƒTƒCƒY
-	BOOL incrementFlag			//[IN] TSƒpƒPƒbƒg‚ÌCounter‚ğƒCƒ“ƒNƒŠƒƒ“ƒg‚·‚é‚©‚Ç‚¤‚©iTRUE:‚·‚éAFALSEF‚µ‚È‚¢j
+	BYTE** pbBuff,				//[OUT] ä½œæˆã—ãŸPATãƒ‘ã‚±ãƒƒãƒˆã¸ã®ãƒã‚¤ãƒ³ã‚¿ï¼ˆæ¬¡å›å‘¼ã³å‡ºã—æ™‚ã¾ã§æœ‰åŠ¹ï¼‰
+	DWORD* pdwSize,				//[OUT] pbBuffã®ã‚µã‚¤ã‚º
+	BOOL incrementFlag			//[IN] TSãƒ‘ã‚±ãƒƒãƒˆã®Counterã‚’ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆã™ã‚‹ã‹ã©ã†ã‹ï¼ˆTRUE:ã™ã‚‹ã€FALSEï¼šã—ãªã„ï¼‰
 )
 {
 	if( incrementFlag == TRUE ){
@@ -51,7 +51,7 @@ BOOL CCreatePATPacket::GetPacket(
 	return TRUE;
 }
 
-//ì¬PAT‚Ìƒoƒbƒtƒ@‚ğƒNƒŠƒA
+//ä½œæˆPATã®ãƒãƒƒãƒ•ã‚¡ã‚’ã‚¯ãƒªã‚¢
 void CCreatePATPacket::Clear()
 {
 	this->packet.clear();
@@ -60,8 +60,8 @@ void CCreatePATPacket::Clear()
 
 void CCreatePATPacket::CreatePAT()
 {
-	//‚Ü‚¸PSIì¬
-	//pointer_field + last_section_number‚Ü‚Å+PID+CRC‚ÌƒTƒCƒY
+	//ã¾ãšPSIä½œæˆ
+	//pointer_field + last_section_numberã¾ã§+PID+CRCã®ã‚µã‚¤ã‚º
 	this->PSI.resize(1 + 8 + this->PIDList.size() * 4 + 4);
 
 	this->PSI[0] = 0;
@@ -99,7 +99,7 @@ void CCreatePATPacket::CreatePacket()
 {
 	this->packet.clear();
 
-	//TSƒpƒPƒbƒg‚ğì¬
+	//TSãƒ‘ã‚±ãƒƒãƒˆã‚’ä½œæˆ
 	for( size_t i = 0 ; i<this->PSI.size(); i+=184 ){
 		this->packet.push_back(0x47);
 		this->packet.push_back(i==0 ? 0x60 : 0x00);

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "WriteTSFile.h"
 
 #include "../Common/PathUtil.h"
@@ -18,15 +18,15 @@ CWriteTSFile::~CWriteTSFile(void)
 	EndSave();
 }
 
-//ƒtƒ@ƒCƒ‹•Û‘¶‚ğŠJn‚·‚é
-//–ß‚è’lF
-// TRUEi¬Œ÷jAFALSEi¸”sj
-//ˆø”F
-// fileName				[IN]•Û‘¶ƒtƒ@ƒCƒ‹–¼
-// overWriteFlag		[IN]“¯ˆêƒtƒ@ƒCƒ‹–¼‘¶İ‚Éã‘‚«‚·‚é‚©‚Ç‚¤‚©iTRUEF‚·‚éAFALSEF‚µ‚È‚¢j
-// createSize			[IN]ƒtƒ@ƒCƒ‹ì¬‚ÉƒfƒBƒXƒN‚É—\–ñ‚·‚é—e—Ê
-// saveFolder			[IN]g—p‚·‚éƒtƒHƒ‹ƒ_ˆê——
-// saveFolderSub		[IN]HDD‚Ì‹ó‚«‚ª‚È‚­‚È‚Á‚½ê‡‚Éˆê“I‚Ég—p‚·‚éƒtƒHƒ‹ƒ_
+//ãƒ•ã‚¡ã‚¤ãƒ«ä¿å­˜ã‚’é–‹å§‹ã™ã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+//å¼•æ•°ï¼š
+// fileName				[IN]ä¿å­˜ãƒ•ã‚¡ã‚¤ãƒ«å
+// overWriteFlag		[IN]åŒä¸€ãƒ•ã‚¡ã‚¤ãƒ«åå­˜åœ¨æ™‚ã«ä¸Šæ›¸ãã™ã‚‹ã‹ã©ã†ã‹ï¼ˆTRUEï¼šã™ã‚‹ã€FALSEï¼šã—ãªã„ï¼‰
+// createSize			[IN]ãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆæ™‚ã«ãƒ‡ã‚£ã‚¹ã‚¯ã«äºˆç´„ã™ã‚‹å®¹é‡
+// saveFolder			[IN]ä½¿ç”¨ã™ã‚‹ãƒ•ã‚©ãƒ«ãƒ€ä¸€è¦§
+// saveFolderSub		[IN]HDDã®ç©ºããŒãªããªã£ãŸå ´åˆã«ä¸€æ™‚çš„ã«ä½¿ç”¨ã™ã‚‹ãƒ•ã‚©ãƒ«ãƒ€
 BOOL CWriteTSFile::StartSave(
 	const wstring& fileName,
 	BOOL overWriteFlag_,
@@ -65,13 +65,13 @@ BOOL CWriteTSFile::StartSave(
 			}
 		}
 
-		//óMƒXƒŒƒbƒh‹N“®
+		//å—ä¿¡ã‚¹ãƒ¬ãƒƒãƒ‰èµ·å‹•
 		this->outStopState = 2;
 		this->outStopEvent.Reset();
 		this->outThread = thread_(OutThread, this);
-		//•Û‘¶ŠJn‚Ü‚Å‘Ò‚Â
+		//ä¿å­˜é–‹å§‹ã¾ã§å¾…ã¤
 		this->outStopEvent.WaitOne();
-		//’â~ó‘Ô(1)‚Å‚È‚¯‚ê‚ÎŠJnó‘Ô(0)‚ÉˆÚ‚·
+		//åœæ­¢çŠ¶æ…‹(1)ã§ãªã‘ã‚Œã°é–‹å§‹çŠ¶æ…‹(0)ã«ç§»ã™
 		if( this->outStopState != 1 ){
 			this->outStopState = 0;
 			return TRUE;
@@ -99,12 +99,12 @@ BOOL CWriteTSFile::EndSave(BOOL* subRecFlag_)
 	return FALSE;
 }
 
-//o—Í—pTSƒf[ƒ^‚ğ‘—‚é
-//–ß‚è’lF
-// TRUEi¬Œ÷jAFALSEi¸”sj
-//ˆø”F
-// data		[IN]TSƒf[ƒ^
-// size		[IN]data‚ÌƒTƒCƒY
+//å‡ºåŠ›ç”¨TSãƒ‡ãƒ¼ã‚¿ã‚’é€ã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+//å¼•æ•°ï¼š
+// data		[IN]TSãƒ‡ãƒ¼ã‚¿
+// size		[IN]dataã®ã‚µã‚¤ã‚º
 BOOL CWriteTSFile::AddTSBuff(
 	BYTE* data,
 	DWORD size
@@ -120,9 +120,9 @@ BOOL CWriteTSFile::AddTSBuff(
 		CBlockLock lock(&this->outThreadLock);
 		while( size != 0 ){
 			if( this->tsFreeList.empty() ){
-				//ƒoƒbƒtƒ@‚ğ‘‚â‚·
+				//ãƒãƒƒãƒ•ã‚¡ã‚’å¢—ã‚„ã™
 				if( this->maxBuffCount > 0 && this->tsBuffList.size() > (size_t)this->maxBuffCount ){
-					_OutputDebugString(L"šwriteBuffList MaxOver");
+					_OutputDebugString(L"â˜…writeBuffList MaxOver");
 					for( auto itr = this->tsBuffList.begin(); itr != this->tsBuffList.end(); (itr++)->clear() );
 					this->tsFreeList.splice(this->tsFreeList.end(), this->tsBuffList);
 				}else{
@@ -144,7 +144,7 @@ BOOL CWriteTSFile::AddTSBuff(
 
 void CWriteTSFile::OutThread(CWriteTSFile* sys)
 {
-	//ƒvƒ‰ƒOƒCƒ“‚ªCOM‚ğ—˜—p‚·‚é‚©‚à‚µ‚ê‚È‚¢‚½‚ß
+	//ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ãŒCOMã‚’åˆ©ç”¨ã™ã‚‹ã‹ã‚‚ã—ã‚Œãªã„ãŸã‚
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	BOOL emptyFlag = TRUE;
@@ -154,11 +154,11 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			sys->fileList[i].reset();
 		}else{
 			fs_path recFolder = sys->fileList[i]->recFolder;
-			//‹ó‚«—e—Ê‚ğ‚ ‚ç‚©‚¶‚ßƒ`ƒFƒbƒN
+			//ç©ºãå®¹é‡ã‚’ã‚ã‚‰ã‹ã˜ã‚ãƒã‚§ãƒƒã‚¯
 			__int64 freeBytes = UtilGetStorageFreeBytes(recFolder);
 			bool isMainUnknownOrFree = (freeBytes < 0 || freeBytes > (__int64)sys->createSize + FREE_FOLDER_MIN_BYTES);
 			if( isMainUnknownOrFree == false ){
-				//‹ó‚«‚Ì‚ ‚éƒTƒuƒtƒHƒ‹ƒ_‚ğ’T‚µ‚Ä‚İ‚é
+				//ç©ºãã®ã‚ã‚‹ã‚µãƒ–ãƒ•ã‚©ãƒ«ãƒ€ã‚’æ¢ã—ã¦ã¿ã‚‹
 				vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
 					[&](const wstring& a) { return UtilComparePath(a.c_str(), recFolder.c_str()) &&
 					                               UtilGetStorageFreeBytes(a) > (__int64)sys->createSize + FREE_FOLDER_MIN_BYTES; });
@@ -167,12 +167,12 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 					recFolder = *itrFree;
 				}
 			}
-			//ŠJn
+			//é–‹å§‹
 			BOOL startRes = sys->fileList[i]->writeUtil.Start(fs_path(recFolder).append(sys->fileList[i]->recFileName).c_str(),
 			                                                  sys->overWriteFlag, sys->createSize);
 			if( startRes == FALSE ){
 				OutputDebugString(L"CWriteTSFile::StartSave Err 2\r\n");
-				//ƒGƒ‰[ƒTƒuƒtƒHƒ‹ƒ_‚ÅƒŠƒgƒ‰ƒC
+				//ã‚¨ãƒ©ãƒ¼æ™‚ã‚µãƒ–ãƒ•ã‚©ãƒ«ãƒ€ã§ãƒªãƒˆãƒ©ã‚¤
 				if( isMainUnknownOrFree ){
 					vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
 						[&](const wstring& a) { return UtilComparePath(a.c_str(), recFolder.c_str()) &&
@@ -209,16 +209,16 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 		return;
 	}
 	sys->outStopEvent.Set();
-	//’†ŠÔó‘Ô(2)‚Å‚È‚­‚È‚é‚Ü‚Å‘Ò‚Â
+	//ä¸­é–“çŠ¶æ…‹(2)ã§ãªããªã‚‹ã¾ã§å¾…ã¤
 	for( ; sys->outStopState == 2; Sleep(100) );
 	std::list<vector<BYTE>> data;
 
 	while( sys->outStopState == 0 ){
-		//ƒoƒbƒtƒ@‚©‚çƒf[ƒ^æ‚èo‚µ
+		//ãƒãƒƒãƒ•ã‚¡ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿å–ã‚Šå‡ºã—
 		{
 			CBlockLock lock(&sys->outThreadLock);
 			if( data.empty() == false ){
-				//•Ô‹p
+				//è¿”å´
 				data.front().clear();
 				sys->tsFreeList.splice(sys->tsFreeList.end(), data);
 			}
@@ -234,25 +234,25 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 					if( sys->fileList[i] ){
 						DWORD write = 0;
 						if( sys->fileList[i]->writeUtil.Write(data.front().data(), dataSize, &write) == FALSE ){
-							//‹ó‚«‚ª‚È‚­‚È‚Á‚½
+							//ç©ºããŒãªããªã£ãŸ
 							if( i == 0 ){
 								CBlockLock lock(&sys->outThreadLock);
 								if( sys->writeTotalSize >= 0 ){
-									//o—ÍƒTƒCƒY‚Ì‰ÁZ‚ğ’â~‚·‚é
+									//å‡ºåŠ›ã‚µã‚¤ã‚ºã®åŠ ç®—ã‚’åœæ­¢ã™ã‚‹
 									sys->writeTotalSize = -(sys->writeTotalSize + 1);
 								}
 							}
 							sys->fileList[i]->writeUtil.Stop();
 
 							if( sys->fileList[i]->freeChk == TRUE ){
-								//Ÿ‚Ì‹ó‚«‚ğ’T‚·
+								//æ¬¡ã®ç©ºãã‚’æ¢ã™
 								vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
 									[](const wstring& a) { return UtilGetStorageFreeBytes(a) > FREE_FOLDER_MIN_BYTES; });
 								if( itrFree != sys->saveFolderSub.end() ){
-									//ŠJn
+									//é–‹å§‹
 									if( sys->fileList[i]->writeUtil.Start(fs_path(*itrFree).append(sys->fileList[i]->recFileName).c_str(),
 									                                      sys->overWriteFlag, 0) == FALSE ){
-										//¸”s‚µ‚½‚Ì‚ÅI‚í‚è
+										//å¤±æ•—ã—ãŸã®ã§çµ‚ã‚ã‚Š
 										sys->fileList[i].reset();
 									}else{
 										sys->subRecFlag = TRUE;
@@ -263,12 +263,12 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 									}
 								}
 							}else{
-								//¸”s‚µ‚½‚Ì‚ÅI‚í‚è
+								//å¤±æ•—ã—ãŸã®ã§çµ‚ã‚ã‚Š
 								sys->fileList[i].reset();
 							}
 						}else{
-							//Œ´ì‚Å‚Í¬”Û‚É‚©‚©‚í‚ç‚¸writeTotalSize‚ÉdataSize‚ğ‰ÁZ‚µ‚Ä‚¢‚é‚ª
-							//o—ÍƒTƒCƒY‚Ì—˜—pƒP[ƒX“I‚É‚ÍmainSaveFilePath‚Æˆê’v‚³‚¹‚È‚¢‚Æ‚¨‚©‚µ‚¢‚Æv‚¤‚Ì‚ÅA‚»‚Ì‚æ‚¤‚É•ÏX‚µ‚½
+							//åŸä½œã§ã¯æˆå¦ã«ã‹ã‹ã‚ã‚‰ãšwriteTotalSizeã«dataSizeã‚’åŠ ç®—ã—ã¦ã„ã‚‹ãŒ
+							//å‡ºåŠ›ã‚µã‚¤ã‚ºã®åˆ©ç”¨ã‚±ãƒ¼ã‚¹çš„ã«ã¯mainSaveFilePathã¨ä¸€è‡´ã•ã›ãªã„ã¨ãŠã‹ã—ã„ã¨æ€ã†ã®ã§ã€ãã®ã‚ˆã†ã«å¤‰æ›´ã—ãŸ
 							if( i == 0 ){
 								CBlockLock lock(&sys->outThreadLock);
 								if( sys->writeTotalSize >= 0 ){
@@ -280,12 +280,12 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 				}
 			}
 		}else{
-			//TODO: Œµ–§‚É‚ÍƒƒbƒZ[ƒW‚ğƒfƒBƒXƒpƒbƒ`‚·‚×‚«(ƒXƒŒƒbƒh“à‚Å’Pƒ‚ÈCOMƒIƒuƒWƒFƒNƒg‚ğˆµ‚¤ŒÀ‚è‚Í(‘½•ª)–â‘è‚È‚¢)
+			//TODO: å³å¯†ã«ã¯ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’ãƒ‡ã‚£ã‚¹ãƒ‘ãƒƒãƒã™ã¹ã(ã‚¹ãƒ¬ãƒƒãƒ‰å†…ã§å˜ç´”ãªCOMã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æ‰±ã†é™ã‚Šã¯(å¤šåˆ†)å•é¡Œãªã„)
 			sys->outStopEvent.WaitOne(100);
 		}
 	}
 
-	//c‚Á‚Ä‚¢‚éƒoƒbƒtƒ@‚ğ‘‚«o‚µ
+	//æ®‹ã£ã¦ã„ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚’æ›¸ãå‡ºã—
 	{
 		CBlockLock lock(&sys->outThreadLock);
 		if( sys->tsFreeList.empty() == false && sys->tsFreeList.front().empty() == false ){
@@ -316,9 +316,9 @@ wstring CWriteTSFile::GetSaveFilePath()
 	return this->mainSaveFilePath;
 }
 
-//˜^‰æ’†‚Ìƒtƒ@ƒCƒ‹‚Ìo—ÍƒTƒCƒY‚ğæ“¾‚·‚é
-//ˆø”F
-// writeSize			[OUT]•Û‘¶ƒtƒ@ƒCƒ‹–¼
+//éŒ²ç”»ä¸­ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®å‡ºåŠ›ã‚µã‚¤ã‚ºã‚’å–å¾—ã™ã‚‹
+//å¼•æ•°ï¼š
+// writeSize			[OUT]ä¿å­˜ãƒ•ã‚¡ã‚¤ãƒ«å
 void CWriteTSFile::GetRecWriteSize(
 	__int64* writeSize
 	)

@@ -1,6 +1,6 @@
-#pragma once
+ï»¿#pragma once
 
-// MFC‚ÅŽg‚¤Žž—p
+// MFCã§ä½¿ã†æ™‚ç”¨
 /*#ifdef _DEBUG
 #undef new
 #endif
@@ -11,23 +11,23 @@
 
 #include "ColorDef.h"
 
-//•¶Žš•„†W‡
-//GƒZƒbƒg
-#define MF_JIS_KANJI1 0x39 //JISŒÝŠ·Š¿Žš1–Ê
-#define MF_JIS_KANJI2 0x3A //JISŒÝŠ·Š¿Žš2–Ê
-#define MF_KIGOU 0x3B //’Ç‰Á‹L†
-#define MF_ASCII 0x4A //‰p”
-#define MF_HIRA  0x30 //•½‰¼–¼
-#define MF_KANA  0x31 //•Ð‰¼–¼
-#define MF_KANJI 0x42 //Š¿Žš
-#define MF_MOSAIC_A 0x32 //ƒ‚ƒUƒCƒNA
-#define MF_MOSAIC_B 0x33 //ƒ‚ƒUƒCƒNB
-#define MF_MOSAIC_C 0x34 //ƒ‚ƒUƒCƒNC
-#define MF_MOSAIC_D 0x35 //ƒ‚ƒUƒCƒND
-#define MF_PROP_ASCII 0x36 //ƒvƒƒ|[ƒVƒ‡ƒiƒ‹‰p”
-#define MF_PROP_HIRA  0x37 //ƒvƒƒ|[ƒVƒ‡ƒiƒ‹•½‰¼–¼
-#define MF_PROP_KANA  0x38 //ƒvƒƒ|[ƒVƒ‡ƒiƒ‹•Ð‰¼–¼
-#define MF_JISX_KANA 0x49 //JIX X0201•Ð‰¼–¼
+//æ–‡å­—ç¬¦å·é›†åˆ
+//Gã‚»ãƒƒãƒˆ
+#define MF_JIS_KANJI1 0x39 //JISäº’æ›æ¼¢å­—1é¢
+#define MF_JIS_KANJI2 0x3A //JISäº’æ›æ¼¢å­—2é¢
+#define MF_KIGOU 0x3B //è¿½åŠ è¨˜å·
+#define MF_ASCII 0x4A //è‹±æ•°
+#define MF_HIRA  0x30 //å¹³ä»®å
+#define MF_KANA  0x31 //ç‰‡ä»®å
+#define MF_KANJI 0x42 //æ¼¢å­—
+#define MF_MOSAIC_A 0x32 //ãƒ¢ã‚¶ã‚¤ã‚¯A
+#define MF_MOSAIC_B 0x33 //ãƒ¢ã‚¶ã‚¤ã‚¯B
+#define MF_MOSAIC_C 0x34 //ãƒ¢ã‚¶ã‚¤ã‚¯C
+#define MF_MOSAIC_D 0x35 //ãƒ¢ã‚¶ã‚¤ã‚¯D
+#define MF_PROP_ASCII 0x36 //ãƒ—ãƒ­ãƒãƒ¼ã‚·ãƒ§ãƒŠãƒ«è‹±æ•°
+#define MF_PROP_HIRA  0x37 //ãƒ—ãƒ­ãƒãƒ¼ã‚·ãƒ§ãƒŠãƒ«å¹³ä»®å
+#define MF_PROP_KANA  0x38 //ãƒ—ãƒ­ãƒãƒ¼ã‚·ãƒ§ãƒŠãƒ«ç‰‡ä»®å
+#define MF_JISX_KANA 0x49 //JIX X0201ç‰‡ä»®å
 //DRCS
 #define MF_DRCS_0 0x40 //DRCS-0
 #define MF_DRCS_1 0x41 //DRCS-1
@@ -45,70 +45,70 @@
 #define MF_DRCS_13 0x4D //DRCS-13
 #define MF_DRCS_14 0x4E //DRCS-14
 #define MF_DRCS_15 0x4F //DRCS-15
-#define MF_MACRO 0x70 //ƒ}ƒNƒ
+#define MF_MACRO 0x70 //ãƒžã‚¯ãƒ­
 
-//•„†W‡‚Ì•ª—Þ
-#define MF_MODE_G 1 //GƒZƒbƒg
+//ç¬¦å·é›†åˆã®åˆ†é¡ž
+#define MF_MODE_G 1 //Gã‚»ãƒƒãƒˆ
 #define MF_MODE_DRCS 2 //DRCS
-#define MF_MODE_OTHER 3 //‚»‚Ì‘¼
+#define MF_MODE_OTHER 3 //ãã®ä»–
 
 #ifdef ARIB8CHAR_DECODE_H_IMPLEMENT_TABLE
 
 static const WCHAR AsciiTable[]={
-	L'I', L'h', L'”', L'', L'“', L'•', L'f',
-	L'i', L'j', L'–', L'{', L'C', L'\xFF0D', L'D', L'^',
-	L'‚O', L'‚P', L'‚Q', L'‚R', L'‚S', L'‚T', L'‚U', L'‚V',
-	L'‚W', L'‚X', L'F', L'G', L'ƒ', L'', L'„', L'H',
-	L'—', L'‚`', L'‚a', L'‚b', L'‚c', L'‚d', L'‚e', L'‚f',
-	L'‚g', L'‚h', L'‚i', L'‚j', L'‚k', L'‚l', L'‚m', L'‚n',
-	L'‚o', L'‚p', L'‚q', L'‚r', L'‚s', L'‚t', L'‚u', L'‚v',
-	L'‚w', L'‚x', L'‚y', L'm', L'', L'n', L'O', L'Q',
-	L'e', L'‚', L'‚‚', L'‚ƒ', L'‚„', L'‚…', L'‚†', L'‚‡',
-	L'‚ˆ', L'‚‰', L'‚Š', L'‚‹', L'‚Œ', L'‚', L'‚Ž', L'‚',
-	L'‚', L'‚‘', L'‚’', L'‚“', L'‚”', L'‚•', L'‚–', L'‚—',
-	L'‚˜', L'‚™', L'‚š', L'o', L'b', L'p', L'P'
+	L'ï¼', L'â€', L'ï¼ƒ', L'ï¼„', L'ï¼…', L'ï¼†', L'â€™',
+	L'ï¼ˆ', L'ï¼‰', L'ï¼Š', L'ï¼‹', L'ï¼Œ', L'\xFF0D', L'ï¼Ž', L'ï¼',
+	L'ï¼', L'ï¼‘', L'ï¼’', L'ï¼“', L'ï¼”', L'ï¼•', L'ï¼–', L'ï¼—',
+	L'ï¼˜', L'ï¼™', L'ï¼š', L'ï¼›', L'ï¼œ', L'ï¼', L'ï¼ž', L'ï¼Ÿ',
+	L'ï¼ ', L'ï¼¡', L'ï¼¢', L'ï¼£', L'ï¼¤', L'ï¼¥', L'ï¼¦', L'ï¼§',
+	L'ï¼¨', L'ï¼©', L'ï¼ª', L'ï¼«', L'ï¼¬', L'ï¼­', L'ï¼®', L'ï¼¯',
+	L'ï¼°', L'ï¼±', L'ï¼²', L'ï¼³', L'ï¼´', L'ï¼µ', L'ï¼¶', L'ï¼·',
+	L'ï¼¸', L'ï¼¹', L'ï¼º', L'ï¼»', L'ï¿¥', L'ï¼½', L'ï¼¾', L'ï¼¿',
+	L'â€˜', L'ï½', L'ï½‚', L'ï½ƒ', L'ï½„', L'ï½…', L'ï½†', L'ï½‡',
+	L'ï½ˆ', L'ï½‰', L'ï½Š', L'ï½‹', L'ï½Œ', L'ï½', L'ï½Ž', L'ï½',
+	L'ï½', L'ï½‘', L'ï½’', L'ï½“', L'ï½”', L'ï½•', L'ï½–', L'ï½—',
+	L'ï½˜', L'ï½™', L'ï½š', L'ï½›', L'ï½œ', L'ï½', L'ï¿£'
 };
 static const WCHAR HiraTable[]={
-	L'‚Ÿ', L'‚ ', L'‚¡', L'‚¢', L'‚£', L'‚¤', L'‚¥',
-	L'‚¦', L'‚§', L'‚¨', L'‚©', L'‚ª', L'‚«', L'‚¬', L'‚­',
-	L'‚®', L'‚¯', L'‚°', L'‚±', L'‚²', L'‚³', L'‚´', L'‚µ',
-	L'‚¶', L'‚·', L'‚¸', L'‚¹', L'‚º', L'‚»', L'‚¼', L'‚½',
-	L'‚¾', L'‚¿', L'‚À', L'‚Á', L'‚Â', L'‚Ã', L'‚Ä', L'‚Å',
-	L'‚Æ', L'‚Ç', L'‚È', L'‚É', L'‚Ê', L'‚Ë', L'‚Ì', L'‚Í',
-	L'‚Î', L'‚Ï', L'‚Ð', L'‚Ñ', L'‚Ò', L'‚Ó', L'‚Ô', L'‚Õ',
-	L'‚Ö', L'‚×', L'‚Ø', L'‚Ù', L'‚Ú', L'‚Û', L'‚Ü', L'‚Ý',
-	L'‚Þ', L'‚ß', L'‚à', L'‚á', L'‚â', L'‚ã', L'‚ä', L'‚å',
-	L'‚æ', L'‚ç', L'‚è', L'‚é', L'‚ê', L'‚ë', L'‚ì', L'‚í',
-	L'‚î', L'‚ï', L'‚ð', L'‚ñ', L'@', L'@', L'@', L'T',
-	L'U', L'[', L'B', L'u', L'v', L'A', L'E'
+	L'ã', L'ã‚', L'ãƒ', L'ã„', L'ã…', L'ã†', L'ã‡',
+	L'ãˆ', L'ã‰', L'ãŠ', L'ã‹', L'ãŒ', L'ã', L'ãŽ', L'ã',
+	L'ã', L'ã‘', L'ã’', L'ã“', L'ã”', L'ã•', L'ã–', L'ã—',
+	L'ã˜', L'ã™', L'ãš', L'ã›', L'ãœ', L'ã', L'ãž', L'ãŸ',
+	L'ã ', L'ã¡', L'ã¢', L'ã£', L'ã¤', L'ã¥', L'ã¦', L'ã§',
+	L'ã¨', L'ã©', L'ãª', L'ã«', L'ã¬', L'ã­', L'ã®', L'ã¯',
+	L'ã°', L'ã±', L'ã²', L'ã³', L'ã´', L'ãµ', L'ã¶', L'ã·',
+	L'ã¸', L'ã¹', L'ãº', L'ã»', L'ã¼', L'ã½', L'ã¾', L'ã¿',
+	L'ã‚€', L'ã‚', L'ã‚‚', L'ã‚ƒ', L'ã‚„', L'ã‚…', L'ã‚†', L'ã‚‡',
+	L'ã‚ˆ', L'ã‚‰', L'ã‚Š', L'ã‚‹', L'ã‚Œ', L'ã‚', L'ã‚Ž', L'ã‚',
+	L'ã‚', L'ã‚‘', L'ã‚’', L'ã‚“', L'ã€€', L'ã€€', L'ã€€', L'ã‚',
+	L'ã‚ž', L'ãƒ¼', L'ã€‚', L'ã€Œ', L'ã€', L'ã€', L'ãƒ»'
 };
 static const WCHAR KanaTable[]={
-	L'ƒ@', L'ƒA', L'ƒB', L'ƒC', L'ƒD', L'ƒE', L'ƒF',
-	L'ƒG', L'ƒH', L'ƒI', L'ƒJ', L'ƒK', L'ƒL', L'ƒM', L'ƒN',
-	L'ƒO', L'ƒP', L'ƒQ', L'ƒR', L'ƒS', L'ƒT', L'ƒU', L'ƒV',
-	L'ƒW', L'ƒX', L'ƒY', L'ƒZ', L'ƒ[', L'ƒ\', L'ƒ]', L'ƒ^',
-	L'ƒ_', L'ƒ`', L'ƒa', L'ƒb', L'ƒc', L'ƒd', L'ƒe', L'ƒf',
-	L'ƒg', L'ƒh', L'ƒi', L'ƒj', L'ƒk', L'ƒl', L'ƒm', L'ƒn',
-	L'ƒo', L'ƒp', L'ƒq', L'ƒr', L'ƒs', L'ƒt', L'ƒu', L'ƒv',
-	L'ƒw', L'ƒx', L'ƒy', L'ƒz', L'ƒ{', L'ƒ|', L'ƒ}', L'ƒ~',
-	L'ƒ€', L'ƒ', L'ƒ‚', L'ƒƒ', L'ƒ„', L'ƒ…', L'ƒ†', L'ƒ‡',
-	L'ƒˆ', L'ƒ‰', L'ƒŠ', L'ƒ‹', L'ƒŒ', L'ƒ', L'ƒŽ', L'ƒ',
-	L'ƒ', L'ƒ‘', L'ƒ’', L'ƒ“', L'ƒ”', L'ƒ•', L'ƒ–', L'R',
-	L'S', L'[', L'B', L'u', L'v', L'A', L'E'
+	L'ã‚¡', L'ã‚¢', L'ã‚£', L'ã‚¤', L'ã‚¥', L'ã‚¦', L'ã‚§',
+	L'ã‚¨', L'ã‚©', L'ã‚ª', L'ã‚«', L'ã‚¬', L'ã‚­', L'ã‚®', L'ã‚¯',
+	L'ã‚°', L'ã‚±', L'ã‚²', L'ã‚³', L'ã‚´', L'ã‚µ', L'ã‚¶', L'ã‚·',
+	L'ã‚¸', L'ã‚¹', L'ã‚º', L'ã‚»', L'ã‚¼', L'ã‚½', L'ã‚¾', L'ã‚¿',
+	L'ãƒ€', L'ãƒ', L'ãƒ‚', L'ãƒƒ', L'ãƒ„', L'ãƒ…', L'ãƒ†', L'ãƒ‡',
+	L'ãƒˆ', L'ãƒ‰', L'ãƒŠ', L'ãƒ‹', L'ãƒŒ', L'ãƒ', L'ãƒŽ', L'ãƒ',
+	L'ãƒ', L'ãƒ‘', L'ãƒ’', L'ãƒ“', L'ãƒ”', L'ãƒ•', L'ãƒ–', L'ãƒ—',
+	L'ãƒ˜', L'ãƒ™', L'ãƒš', L'ãƒ›', L'ãƒœ', L'ãƒ', L'ãƒž', L'ãƒŸ',
+	L'ãƒ ', L'ãƒ¡', L'ãƒ¢', L'ãƒ£', L'ãƒ¤', L'ãƒ¥', L'ãƒ¦', L'ãƒ§',
+	L'ãƒ¨', L'ãƒ©', L'ãƒª', L'ãƒ«', L'ãƒ¬', L'ãƒ­', L'ãƒ®', L'ãƒ¯',
+	L'ãƒ°', L'ãƒ±', L'ãƒ²', L'ãƒ³', L'ãƒ´', L'ãƒµ', L'ãƒ¶', L'ãƒ½',
+	L'ãƒ¾', L'ãƒ¼', L'ã€‚', L'ã€Œ', L'ã€', L'ã€', L'ãƒ»'
 };
 static const WCHAR JisXKanaTable[]={
-	L'B', L'u', L'v', L'A', L'E', L'ƒ’', L'ƒ@',
-	L'ƒB', L'ƒD', L'ƒF', L'ƒH', L'ƒƒ', L'ƒ…', L'ƒ‡', L'ƒb',
-	L'[', L'ƒA', L'ƒC', L'ƒE', L'ƒG', L'ƒI', L'ƒJ', L'ƒL',
-	L'ƒN', L'ƒP', L'ƒR', L'ƒT', L'ƒV', L'ƒX', L'ƒZ', L'ƒ\',
-	L'ƒ^', L'ƒ`', L'ƒc', L'ƒe', L'ƒg', L'ƒi', L'ƒj', L'ƒk',
-	L'ƒl', L'ƒm', L'ƒn', L'ƒq', L'ƒt', L'ƒw', L'ƒz', L'ƒ}',
-	L'ƒ~', L'ƒ€', L'ƒ', L'ƒ‚', L'ƒ„', L'ƒ†', L'ƒˆ', L'ƒ‰',
-	L'ƒŠ', L'ƒ‹', L'ƒŒ', L'ƒ', L'ƒ', L'ƒ“', L'J', L'K',
-	L'E', L'E', L'E', L'E', L'E', L'E', L'E', L'E',
-	L'E', L'E', L'E', L'E', L'E', L'E', L'E', L'E',
-	L'E', L'E', L'E', L'E', L'E', L'E', L'E', L'E',
-	L'E', L'E', L'E', L'E', L'E', L'E', L'E'
+	L'ã€‚', L'ã€Œ', L'ã€', L'ã€', L'ãƒ»', L'ãƒ²', L'ã‚¡',
+	L'ã‚£', L'ã‚¥', L'ã‚§', L'ã‚©', L'ãƒ£', L'ãƒ¥', L'ãƒ§', L'ãƒƒ',
+	L'ãƒ¼', L'ã‚¢', L'ã‚¤', L'ã‚¦', L'ã‚¨', L'ã‚ª', L'ã‚«', L'ã‚­',
+	L'ã‚¯', L'ã‚±', L'ã‚³', L'ã‚µ', L'ã‚·', L'ã‚¹', L'ã‚»', L'ã‚½',
+	L'ã‚¿', L'ãƒ', L'ãƒ„', L'ãƒ†', L'ãƒˆ', L'ãƒŠ', L'ãƒ‹', L'ãƒŒ',
+	L'ãƒ', L'ãƒŽ', L'ãƒ', L'ãƒ’', L'ãƒ•', L'ãƒ˜', L'ãƒ›', L'ãƒž',
+	L'ãƒŸ', L'ãƒ ', L'ãƒ¡', L'ãƒ¢', L'ãƒ¤', L'ãƒ¦', L'ãƒ¨', L'ãƒ©',
+	L'ãƒª', L'ãƒ«', L'ãƒ¬', L'ãƒ­', L'ãƒ¯', L'ãƒ³', L'ã‚›', L'ã‚œ',
+	L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»',
+	L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»',
+	L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»',
+	L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»', L'ãƒ»'
 };
 
 struct GAIJI_TABLE{
@@ -120,96 +120,96 @@ static const GAIJI_TABLE GaijiTable[]={
 	{L"\x2491", L"10."},
 	{L"\x2492", L"11."},
 	{L"\x2493", L"12."},
-	{L"\xD83C\xDD4A", L"[HV]"}, //90‹æ48“_
+	{L"\xD83C\xDD4A", L"[HV]"}, //90åŒº48ç‚¹
 	{L"\xD83C\xDD4C", L"[SD]"},
-	{L"\xD83C\xDD3F", L"[‚o]"},
-	{L"\xD83C\xDD46", L"[‚v]"},
+	{L"\xD83C\xDD3F", L"[ï¼°]"},
+	{L"\xD83C\xDD46", L"[ï¼·]"},
 	{L"\xD83C\xDD4B", L"[MV]"},
-	{L"\xD83C\xDE10", L"[Žè]"},
-	{L"\xD83C\xDE11", L"[Žš]"},
-	{L"\xD83C\xDE12", L"[‘o]"},
-	{L"\xD83C\xDE13", L"[ƒf]"},
-	{L"\xD83C\xDD42", L"[‚r]"},
-	{L"\xD83C\xDE14", L"[“ñ]"},
-	{L"\xD83C\xDE15", L"[‘½]"},
-	{L"\xD83C\xDE16", L"[‰ð]"},
+	{L"\xD83C\xDE10", L"[æ‰‹]"},
+	{L"\xD83C\xDE11", L"[å­—]"},
+	{L"\xD83C\xDE12", L"[åŒ]"},
+	{L"\xD83C\xDE13", L"[ãƒ‡]"},
+	{L"\xD83C\xDD42", L"[ï¼³]"},
+	{L"\xD83C\xDE14", L"[äºŒ]"},
+	{L"\xD83C\xDE15", L"[å¤š]"},
+	{L"\xD83C\xDE16", L"[è§£]"},
 	{L"\xD83C\xDD4D", L"[SS]"},
-	{L"\xD83C\xDD31", L"[‚a]"},
-	{L"\xD83C\xDD3D", L"[‚m]"},//
-	{L"\x2B1B", L"¡"},//90‹æ64“_
-	{L"\x2B24", L"œ"},
-	{L"\xD83C\xDE17", L"[“V]"},
-	{L"\xD83C\xDE18", L"[Œð]"},
-	{L"\xD83C\xDE19", L"[‰f]"},
-	{L"\xD83C\xDE1A", L"[–³]"},
-	{L"\xD83C\xDE1B", L"[—¿]"},
-	{L"\x26BF", L"[E]"},
-	{L"\xD83C\xDE1C", L"[‘O]"},
-	{L"\xD83C\xDE1D", L"[Œã]"},
-	{L"\xD83C\xDE1E", L"[Ä]"},
-	{L"\xD83C\xDE1F", L"[V]"},
-	{L"\xD83C\xDE20", L"[‰]"},
-	{L"\xD83C\xDE21", L"[I]"},
-	{L"\xD83C\xDE22", L"[¶]"},
-	{L"\xD83C\xDE23", L"[”Ì]"},
-	{L"\xD83C\xDE24", L"[º]"},//90‹æ80“_
-	{L"\xD83C\xDE25", L"[]"},
+	{L"\xD83C\xDD31", L"[ï¼¢]"},
+	{L"\xD83C\xDD3D", L"[ï¼®]"},//
+	{L"\x2B1B", L"â– "},//90åŒº64ç‚¹
+	{L"\x2B24", L"â—"},
+	{L"\xD83C\xDE17", L"[å¤©]"},
+	{L"\xD83C\xDE18", L"[äº¤]"},
+	{L"\xD83C\xDE19", L"[æ˜ ]"},
+	{L"\xD83C\xDE1A", L"[ç„¡]"},
+	{L"\xD83C\xDE1B", L"[æ–™]"},
+	{L"\x26BF", L"[ãƒ»]"},
+	{L"\xD83C\xDE1C", L"[å‰]"},
+	{L"\xD83C\xDE1D", L"[å¾Œ]"},
+	{L"\xD83C\xDE1E", L"[å†]"},
+	{L"\xD83C\xDE1F", L"[æ–°]"},
+	{L"\xD83C\xDE20", L"[åˆ]"},
+	{L"\xD83C\xDE21", L"[çµ‚]"},
+	{L"\xD83C\xDE22", L"[ç”Ÿ]"},
+	{L"\xD83C\xDE23", L"[è²©]"},
+	{L"\xD83C\xDE24", L"[å£°]"},//90åŒº80ç‚¹
+	{L"\xD83C\xDE25", L"[å¹]"},
 	{L"\xD83C\xDD4E", L"[PPV]"},
-	{L"\x3299", L"(”é)"},
-	{L"\xD83C\xDE00", L"‚Ù‚©"},
-	//91‹æ‚Í”ò‚Î‚·
-	{L"\x27A1", L"¨"},//92‹æ1“_
-	{L"\x2B05", L"©"},
-	{L"\x2B06", L"ª"},
-	{L"\x2B07", L"«"},
-	{L"\x2B2F", L"›"},
-	{L"\x2B2E", L"œ"},
-	{L"”N", L"”N"},
-	{L"ŒŽ", L"ŒŽ"},
-	{L"“ú", L"“ú"},
-	{L"‰~", L"‰~"},
+	{L"\x3299", L"(ç§˜)"},
+	{L"\xD83C\xDE00", L"ã»ã‹"},
+	//91åŒºã¯é£›ã°ã™
+	{L"\x27A1", L"â†’"},//92åŒº1ç‚¹
+	{L"\x2B05", L"â†"},
+	{L"\x2B06", L"â†‘"},
+	{L"\x2B07", L"â†“"},
+	{L"\x2B2F", L"â—‹"},
+	{L"\x2B2E", L"â—"},
+	{L"å¹´", L"å¹´"},
+	{L"æœˆ", L"æœˆ"},
+	{L"æ—¥", L"æ—¥"},
+	{L"å††", L"å††"},
 	{L"\x33A1", L"m^2"},
 	{L"\x33A5", L"m^3"},
 	{L"\x339D", L"cm"},
 	{L"\x33A0", L"cm^2"},
 	{L"\x33A4", L"cm^3"},
-	{L"\xD83C\xDD00", L"‚O."},//92‹æ16“_
-	{L"\x2488", L"‚P."},
-	{L"\x2489", L"‚Q."},
-	{L"\x248A", L"‚R."},
-	{L"\x248B", L"‚S."},
-	{L"\x248C", L"‚T."},
-	{L"\x248D", L"‚U."},
-	{L"\x248E", L"‚V."},
-	{L"\x248F", L"‚W."},
-	{L"\x2490", L"‚X."},
-	{L"Ž", L"Ž"},
-	{L"•›", L"•›"},
-	{L"Œ³", L"Œ³"},
-	{L"ŒÌ", L"ŒÌ"},
-	{L"‘O", L"‘O"},
-	{L"V", L"V"},
-	{L"\xD83C\xDD01", L"‚O,"},//92‹æ32“_
-	{L"\xD83C\xDD02", L"‚P,"},
-	{L"\xD83C\xDD03", L"‚Q,"},
-	{L"\xD83C\xDD04", L"‚R,"},
-	{L"\xD83C\xDD05", L"‚S,"},
-	{L"\xD83C\xDD06", L"‚T,"},
-	{L"\xD83C\xDD07", L"‚U,"},
-	{L"\xD83C\xDD08", L"‚V,"},
-	{L"\xD83C\xDD09", L"‚W,"},
-	{L"\xD83C\xDD0A", L"‚X,"},
-	{L"\x3233", L"[ŽÐ]"},
-	{L"\x3236", L"[à]"},
-	{L"\x3232", L"[—L]"},
-	{L"\x3231", L"[Š”]"},
-	{L"\x3239", L"[‘ã]"},
-	{L"\x3244", L"(–â)"},
-	{L"\x25B6", L"£"},//92‹æ48“_
-	{L"\x25C0", L"¥"},
-	{L"\x3016", L"y"},
-	{L"\x3017", L"z"},
-	{L"\x27D0", L"ž"},
+	{L"\xD83C\xDD00", L"ï¼."},//92åŒº16ç‚¹
+	{L"\x2488", L"ï¼‘."},
+	{L"\x2489", L"ï¼’."},
+	{L"\x248A", L"ï¼“."},
+	{L"\x248B", L"ï¼”."},
+	{L"\x248C", L"ï¼•."},
+	{L"\x248D", L"ï¼–."},
+	{L"\x248E", L"ï¼—."},
+	{L"\x248F", L"ï¼˜."},
+	{L"\x2490", L"ï¼™."},
+	{L"æ°", L"æ°"},
+	{L"å‰¯", L"å‰¯"},
+	{L"å…ƒ", L"å…ƒ"},
+	{L"æ•…", L"æ•…"},
+	{L"å‰", L"å‰"},
+	{L"æ–°", L"æ–°"},
+	{L"\xD83C\xDD01", L"ï¼,"},//92åŒº32ç‚¹
+	{L"\xD83C\xDD02", L"ï¼‘,"},
+	{L"\xD83C\xDD03", L"ï¼’,"},
+	{L"\xD83C\xDD04", L"ï¼“,"},
+	{L"\xD83C\xDD05", L"ï¼”,"},
+	{L"\xD83C\xDD06", L"ï¼•,"},
+	{L"\xD83C\xDD07", L"ï¼–,"},
+	{L"\xD83C\xDD08", L"ï¼—,"},
+	{L"\xD83C\xDD09", L"ï¼˜,"},
+	{L"\xD83C\xDD0A", L"ï¼™,"},
+	{L"\x3233", L"[ç¤¾]"},
+	{L"\x3236", L"[è²¡]"},
+	{L"\x3232", L"[æœ‰]"},
+	{L"\x3231", L"[æ ª]"},
+	{L"\x3239", L"[ä»£]"},
+	{L"\x3244", L"(å•)"},
+	{L"\x25B6", L"â–²"},//92åŒº48ç‚¹
+	{L"\x25C0", L"â–¼"},
+	{L"\x3016", L"ã€"},
+	{L"\x3017", L"ã€‘"},
+	{L"\x27D0", L"â—‡"},
 	{L"\x00B2", L"^2"},
 	{L"\x00B3", L"^3"},
 	{L"\xD83C\xDD2D", L"(CD)"},
@@ -220,12 +220,12 @@ static const GAIJI_TABLE GaijiTable[]={
 	{L"mb)", L"mb)"},
 	{L"(hp)", L"(hp)"},
 	{L"(br)", L"(br)"},
-	{L"(‚)", L"(‚)"},
-	{L"(‚“)", L"(‚“)"},//92‹æ64“_
+	{L"(ï½)", L"(ï½)"},
+	{L"(ï½“)", L"(ï½“)"},//92åŒº64ç‚¹
 	{L"(ms)", L"(ms)"},
-	{L"(‚”)", L"(‚”)"},
+	{L"(ï½”)", L"(ï½”)"},
 	{L"(bs)", L"(bs)"},
-	{L"(‚‚)", L"(‚‚)"},
+	{L"(ï½‚)", L"(ï½‚)"},
 	{L"(tb)", L"(tb)"},
 	{L"(tp)", L"(tp)"},
 	{L"(ds)", L"(ds)"},
@@ -237,56 +237,56 @@ static const GAIJI_TABLE GaijiTable[]={
 	{L"y)", L"y)"},
 	{L"(sa", L"(sa"},
 	{L"x)", L"x)"},
-	{L"(sy", L"(sy"},//92‹æ80“_
+	{L"(sy", L"(sy"},//92åŒº80ç‚¹
 	{L"n)", L"n)"},
 	{L"(or", L"(or"},
 	{L"g)", L"g)"},
 	{L"(pe", L"(pe"},
 	{L"r)", L"r)"},
-	{L"\xD83C\xDD2C", L"(‚q)"},
-	{L"\xD83C\xDD2B", L"(‚b)"},
-	{L"\x3247", L"(âµ)"},
-	{L"\xD83C\xDD90", L"‚c‚i"},
-	{L"\xD83C\xDE26", L"[‰‰]"},
+	{L"\xD83C\xDD2C", L"(ï¼²)"},
+	{L"\xD83C\xDD2B", L"(ï¼£)"},
+	{L"\x3247", L"(ç®)"},
+	{L"\xD83C\xDD90", L"ï¼¤ï¼ª"},
+	{L"\xD83C\xDE26", L"[æ¼”]"},
 	{L"\x213B", L"Fax"},
-	{L"\x322A", L"(ŒŽ)"},//93‹æ1“_
-	{L"\x322B", L"(‰Î)"},
-	{L"\x322C", L"(…)"},
-	{L"\x322D", L"(–Ø)"},
-	{L"\x322E", L"(‹à)"},
-	{L"\x322F", L"(“y)"},
-	{L"\x3230", L"(“ú)"},
-	{L"\x3237", L"(j)"},
-	{L"‡", L"‡"},
-	{L"‡Ž", L"‡Ž"},
-	{L"‡", L"‡"},
-	{L"‡~", L"‡~"},
+	{L"\x322A", L"(æœˆ)"},//93åŒº1ç‚¹
+	{L"\x322B", L"(ç«)"},
+	{L"\x322C", L"(æ°´)"},
+	{L"\x322D", L"(æœ¨)"},
+	{L"\x322E", L"(é‡‘)"},
+	{L"\x322F", L"(åœŸ)"},
+	{L"\x3230", L"(æ—¥)"},
+	{L"\x3237", L"(ç¥)"},
+	{L"ã¾", L"ã¾"},
+	{L"ã½", L"ã½"},
+	{L"ã¼", L"ã¼"},
+	{L"ã»", L"ã»"},
 	{L"\x2116", L"No."},
 	{L"\x2121", L"Tel"},
-	{L"\x3036", L"(§)"},
-	{L"\x26BE", L"()()"},//93‹æ16“_
-	{L"\xD83C\xDE40", L"[–{]"},
-	{L"\xD83C\xDE41", L"[ŽO]"},
-	{L"\xD83C\xDE42", L"[“ñ]"},
-	{L"\xD83C\xDE43", L"[ˆÀ]"},
-	{L"\xD83C\xDE44", L"[“_]"},
-	{L"\xD83C\xDE45", L"[‘Å]"},
-	{L"\xD83C\xDE46", L"[“]"},
-	{L"\xD83C\xDE47", L"[Ÿ]"},
-	{L"\xD83C\xDE48", L"[”s]"},
-	{L"\xD83C\xDD2A", L"[‚r]"},
-	{L"\xD83C\xDE27", L"[“Š]"},
-	{L"\xD83C\xDE28", L"[•ß]"},
-	{L"\xD83C\xDE29", L"[ˆê]"},
-	{L"\xD83C\xDE14", L"[“ñ]"},
-	{L"\xD83C\xDE2A", L"[ŽO]"},
-	{L"\xD83C\xDE2B", L"[—V]"},//93‹æ32“_
-	{L"\xD83C\xDE2C", L"[¶]"},
-	{L"\xD83C\xDE2D", L"[’†]"},
-	{L"\xD83C\xDE2E", L"[‰E]"},
-	{L"\xD83C\xDE2F", L"[Žw]"},
-	{L"\xD83C\xDE30", L"[‘–]"},
-	{L"\xD83C\xDE31", L"[‘Å]"},
+	{L"\x3036", L"(ã€’)"},
+	{L"\x26BE", L"()()"},//93åŒº16ç‚¹
+	{L"\xD83C\xDE40", L"[æœ¬]"},
+	{L"\xD83C\xDE41", L"[ä¸‰]"},
+	{L"\xD83C\xDE42", L"[äºŒ]"},
+	{L"\xD83C\xDE43", L"[å®‰]"},
+	{L"\xD83C\xDE44", L"[ç‚¹]"},
+	{L"\xD83C\xDE45", L"[æ‰“]"},
+	{L"\xD83C\xDE46", L"[ç›—]"},
+	{L"\xD83C\xDE47", L"[å‹]"},
+	{L"\xD83C\xDE48", L"[æ•—]"},
+	{L"\xD83C\xDD2A", L"[ï¼³]"},
+	{L"\xD83C\xDE27", L"[æŠ•]"},
+	{L"\xD83C\xDE28", L"[æ•]"},
+	{L"\xD83C\xDE29", L"[ä¸€]"},
+	{L"\xD83C\xDE14", L"[äºŒ]"},
+	{L"\xD83C\xDE2A", L"[ä¸‰]"},
+	{L"\xD83C\xDE2B", L"[éŠ]"},//93åŒº32ç‚¹
+	{L"\xD83C\xDE2C", L"[å·¦]"},
+	{L"\xD83C\xDE2D", L"[ä¸­]"},
+	{L"\xD83C\xDE2E", L"[å³]"},
+	{L"\xD83C\xDE2F", L"[æŒ‡]"},
+	{L"\xD83C\xDE30", L"[èµ°]"},
+	{L"\xD83C\xDE31", L"[æ‰“]"},
 	{L"\x2113", L"l"},
 	{L"\x338F", L"kg"},
 	{L"\x3390", L"Hz"},
@@ -294,9 +294,9 @@ static const GAIJI_TABLE GaijiTable[]={
 	{L"\x339E", L"km"},
 	{L"\x33A2", L"km^2"},
 	{L"\x3371", L"hPa"},
-	{L"E", L"E"},
-	{L"E", L"E"},
-	{L"\x00BD", L"1/2"},//93‹æ48“_
+	{L"ãƒ»", L"ãƒ»"},
+	{L"ãƒ»", L"ãƒ»"},
+	{L"\x00BD", L"1/2"},//93åŒº48ç‚¹
 	{L"\x2189", L"0/3"},
 	{L"\x2153", L"1/3"},
 	{L"\x2154", L"2/3"},
@@ -312,97 +312,97 @@ static const GAIJI_TABLE GaijiTable[]={
 	{L"\x215B", L"1/8"},
 	{L"\x2151", L"1/9"},
 	{L"\x2152", L"1/10"},
-	{L"\x203C", L"!!"},//93‹æ78“_
+	{L"\x203C", L"!!"},//93åŒº78ç‚¹
 	{L"\x2049", L"!?"},
-	{L"‡T", L"‡T"},//94‹æ1“_
-	{L"‡U", L"‡U"},
-	{L"‡V", L"‡V"},
-	{L"‡W", L"‡W"},
-	{L"‡X", L"‡X"},
-	{L"‡Y", L"‡Y"},
-	{L"‡Z", L"‡Z"},
-	{L"‡[", L"‡["},
-	{L"‡\", L"‡\"},
-	{L"‡]", L"‡]"},
+	{L"â… ", L"â… "},//94åŒº1ç‚¹
+	{L"â…¡", L"â…¡"},
+	{L"â…¢", L"â…¢"},
+	{L"â…£", L"â…£"},
+	{L"â…¤", L"â…¤"},
+	{L"â…¥", L"â…¥"},
+	{L"â…¦", L"â…¦"},
+	{L"â…§", L"â…§"},
+	{L"â…¨", L"â…¨"},
+	{L"â…©", L"â…©"},
 	{L"\x216A", L"XI"},
 	{L"\x216B", L"XII"},
-	{L"‡P", L"‡P"},
-	{L"‡Q", L"‡Q"},
-	{L"‡R", L"‡R"},
-	{L"‡S", L"‡S"},//94‹æ16“_
-	{L"\x2474", L"(‚P)"},
-	{L"\x2475", L"(‚Q)"},
-	{L"\x2476", L"(‚R)"},
-	{L"\x2477", L"(‚S)"},
-	{L"\x2478", L"(‚T)"},
-	{L"\x2479", L"(‚U)"},
-	{L"\x247A", L"(‚V)"},
-	{L"\x247B", L"(‚W)"},
-	{L"\x247C", L"(‚X)"},
+	{L"â‘°", L"â‘°"},
+	{L"â‘±", L"â‘±"},
+	{L"â‘²", L"â‘²"},
+	{L"â‘³", L"â‘³"},//94åŒº16ç‚¹
+	{L"\x2474", L"(ï¼‘)"},
+	{L"\x2475", L"(ï¼’)"},
+	{L"\x2476", L"(ï¼“)"},
+	{L"\x2477", L"(ï¼”)"},
+	{L"\x2478", L"(ï¼•)"},
+	{L"\x2479", L"(ï¼–)"},
+	{L"\x247A", L"(ï¼—)"},
+	{L"\x247B", L"(ï¼˜)"},
+	{L"\x247C", L"(ï¼™)"},
 	{L"\x247D", L"(10)"},
 	{L"\x247E", L"(11)"},
 	{L"\x247F", L"(12)"},
 	{L"\x3251", L"(21)"},
 	{L"\x3252", L"(22)"},
 	{L"\x3253", L"(23)"},
-	{L"\x3254", L"(24)"},//94‹æ32“_
-	{L"\xD83C\xDD10", L"(‚`)"},
-	{L"\xD83C\xDD11", L"(‚a)"},
-	{L"\xD83C\xDD12", L"(‚b)"},
-	{L"\xD83C\xDD13", L"(‚c)"},
-	{L"\xD83C\xDD14", L"(‚d)"},
-	{L"\xD83C\xDD15", L"(‚e)"},
-	{L"\xD83C\xDD16", L"(‚f)"},
-	{L"\xD83C\xDD17", L"(‚g)"},
-	{L"\xD83C\xDD18", L"(‚h)"},
-	{L"\xD83C\xDD19", L"(‚i)"},
-	{L"\xD83C\xDD1A", L"(‚j)"},
-	{L"\xD83C\xDD1B", L"(‚k)"},
-	{L"\xD83C\xDD1C", L"(‚l)"},
-	{L"\xD83C\xDD1D", L"(‚m)"},
-	{L"\xD83C\xDD1E", L"(‚n)"},
-	{L"\xD83C\xDD1F", L"(‚o)"},//94‹æ48“_
-	{L"\xD83C\xDD20", L"(‚p)"},
-	{L"\xD83C\xDD21", L"(‚q)"},
-	{L"\xD83C\xDD22", L"(‚r)"},
-	{L"\xD83C\xDD23", L"(‚s)"},
-	{L"\xD83C\xDD24", L"(‚t)"},
-	{L"\xD83C\xDD25", L"(‚u)"},
-	{L"\xD83C\xDD26", L"(‚v)"},
-	{L"\xD83C\xDD27", L"(‚w)"},
-	{L"\xD83C\xDD28", L"(‚x)"},
-	{L"\xD83C\xDD29", L"(‚y)"},
+	{L"\x3254", L"(24)"},//94åŒº32ç‚¹
+	{L"\xD83C\xDD10", L"(ï¼¡)"},
+	{L"\xD83C\xDD11", L"(ï¼¢)"},
+	{L"\xD83C\xDD12", L"(ï¼£)"},
+	{L"\xD83C\xDD13", L"(ï¼¤)"},
+	{L"\xD83C\xDD14", L"(ï¼¥)"},
+	{L"\xD83C\xDD15", L"(ï¼¦)"},
+	{L"\xD83C\xDD16", L"(ï¼§)"},
+	{L"\xD83C\xDD17", L"(ï¼¨)"},
+	{L"\xD83C\xDD18", L"(ï¼©)"},
+	{L"\xD83C\xDD19", L"(ï¼ª)"},
+	{L"\xD83C\xDD1A", L"(ï¼«)"},
+	{L"\xD83C\xDD1B", L"(ï¼¬)"},
+	{L"\xD83C\xDD1C", L"(ï¼­)"},
+	{L"\xD83C\xDD1D", L"(ï¼®)"},
+	{L"\xD83C\xDD1E", L"(ï¼¯)"},
+	{L"\xD83C\xDD1F", L"(ï¼°)"},//94åŒº48ç‚¹
+	{L"\xD83C\xDD20", L"(ï¼±)"},
+	{L"\xD83C\xDD21", L"(ï¼²)"},
+	{L"\xD83C\xDD22", L"(ï¼³)"},
+	{L"\xD83C\xDD23", L"(ï¼´)"},
+	{L"\xD83C\xDD24", L"(ï¼µ)"},
+	{L"\xD83C\xDD25", L"(ï¼¶)"},
+	{L"\xD83C\xDD26", L"(ï¼·)"},
+	{L"\xD83C\xDD27", L"(ï¼¸)"},
+	{L"\xD83C\xDD28", L"(ï¼¹)"},
+	{L"\xD83C\xDD29", L"(ï¼º)"},
 	{L"\x3255", L"(25)"},
 	{L"\x3256", L"(26)"},
 	{L"\x3257", L"(27)"},
 	{L"\x3258", L"(28)"},
 	{L"\x3259", L"(29)"},
-	{L"\x325A", L"(30)"},//94‹æ64“_
-	{L"‡@", L"‡@"},
-	{L"‡A", L"‡A"},
-	{L"‡B", L"‡B"},
-	{L"‡C", L"‡C"},
-	{L"‡D", L"‡D"},
-	{L"‡E", L"‡E"},
-	{L"‡F", L"‡F"},
-	{L"‡G", L"‡G"},
-	{L"‡H", L"‡H"},
-	{L"‡I", L"‡I"},
-	{L"‡J", L"‡J"},
-	{L"‡K", L"‡K"},
-	{L"‡L", L"‡L"},
-	{L"‡M", L"‡M"},
-	{L"‡N", L"‡N"},
-	{L"‡O", L"‡O"},//94‹æ80“_
-	{L"\x2776", L"(‚P)"},
-	{L"\x2777", L"(‚Q)"},
-	{L"\x2778", L"(‚R)"},
-	{L"\x2779", L"(‚S)"},
-	{L"\x277A", L"(‚T)"},
-	{L"\x277B", L"(‚U)"},
-	{L"\x277C", L"(‚V)"},
-	{L"\x277D", L"(‚W)"},
-	{L"\x277E", L"(‚X)"},
+	{L"\x325A", L"(30)"},//94åŒº64ç‚¹
+	{L"â‘ ", L"â‘ "},
+	{L"â‘¡", L"â‘¡"},
+	{L"â‘¢", L"â‘¢"},
+	{L"â‘£", L"â‘£"},
+	{L"â‘¤", L"â‘¤"},
+	{L"â‘¥", L"â‘¥"},
+	{L"â‘¦", L"â‘¦"},
+	{L"â‘§", L"â‘§"},
+	{L"â‘¨", L"â‘¨"},
+	{L"â‘©", L"â‘©"},
+	{L"â‘ª", L"â‘ª"},
+	{L"â‘«", L"â‘«"},
+	{L"â‘¬", L"â‘¬"},
+	{L"â‘­", L"â‘­"},
+	{L"â‘®", L"â‘®"},
+	{L"â‘¯", L"â‘¯"},//94åŒº80ç‚¹
+	{L"\x2776", L"(ï¼‘)"},
+	{L"\x2777", L"(ï¼’)"},
+	{L"\x2778", L"(ï¼“)"},
+	{L"\x2779", L"(ï¼”)"},
+	{L"\x277A", L"(ï¼•)"},
+	{L"\x277B", L"(ï¼–)"},
+	{L"\x277C", L"(ï¼—)"},
+	{L"\x277D", L"(ï¼˜)"},
+	{L"\x277E", L"(ï¼™)"},
 	{L"\x277F", L"(10)"},
 	{L"\x24EB", L"(11)"},
 	{L"\x24EC", L"(12)"},
@@ -410,146 +410,146 @@ static const GAIJI_TABLE GaijiTable[]={
 };
 
 static const GAIJI_TABLE GaijiTbl2[]={
-	{L"\x3402", L"¬"},
-	{L"\xD840\xDD58", L"’à"},
-	{L"\x4EFD", L"¬"},
-	{L"\x4EFF", L"œf"},
-	{L"úq", L"úq"},
-	{L"úa", L"úa"},
-	{L"\x509C", L"œs"},
-	{L"\x511E", L"¬"},
-	{L"\x51BC", L"¬"},
-	{L"\x351F", L"¬"}, //10
-	{L"úŠ", L"úŠ"},
-	{L"\x5361", L"¬"},
-	{L"\x536C", L"¬"},
-	{L"û¥", L"û¥"},
-	{L"\xD842\xDFB7", L"‹g"},
-	{L"\x544D", L"¬"},
-	{L"\x5496", L"¬"},
-	{L"ú‘", L"ú‘"},
-	{L"ú“", L"ú“"},
-	{L"\x550E", L"¬"}, //20
-	{L"\x554A", L"¬"},
-	{L"\x5672", L"¬"},
-	{L"\x56E4", L"¬"},
-	{L"\x5733", L"¬"},
-	{L"\x5734", L"¬"},
-	{L"úœ", L"úœ"},
-	{L"\x5880", L"¬"},
-	{L"\x59E4", L"¬"},
-	{L"\x5A23", L"¬"},
-	{L"\x5A55", L"¬"}, //30
-	{L"úª", L"úª"},
-	{L"ú±", L"ú±"},
-	{L"\x37E2", L"¬"},
-	{L"\x5EAC", L"¬"},
-	{L"ú¸", L"ú¸"},
-	{L"úg", L"úg"},
-	{L"úº", L"úº"},
-	{L"\x6017", L"¬"},
-	{L"\xFA6B", L"Œb"},
-	{L"úÅ", L"úÅ"}, //40
-	{L"úÔ", L"úÔ"},
-	{L"\x66C8", L"¬"},
-	{L"Œ", L"Œ"},
-	{L"úÞ", L"úÞ"},
-	{L"úf", L"úf"},
-	{L"úã", L"úã"},
-	{L"\x9FC4", L"¬"},
-	{L"\x6911", L"¬"},
-	{L"\x693B", L"¬"},
-	{L"\x6A45", L"¬"}, //50
-	{L"\x6A91", L"¬"},
-	{L"‹ù", L"‹ù"},
-	{L"\xD84C\xDFCC", L"¬"},
-	{L"\xD84C\xDFFE", L"¬"},
-	{L"\xD84D\xDDC4", L"¬"},
-	{L"\x6BF1", L"¬"},
-	{L"\x6CE0", L"—â"},
-	{L"\x6D2E", L"¬"},
-	{L"\xFA45", L"ŠC"},
-	{L"\x6DBF", L"¬"}, //60
-	{L"\x6DCA", L"¬"},
-	{L"ûC", L"ûC"},
-	{L"\xFA46", L""},
-	{L"\x6F5E", L"¬"},
-	{L"\x6FF9", L"¬"},
-	{L"\x7064", L"¬"},
-	{L"\xFA6C", L"¬"},
-	{L"\xD850\xDEEE", L"¬"},
-	{L"ûW", L"ûW"},
-	{L"ûY", L"ûY"}, //70
-	{L"\x7200", L"¬"},
-	{L"\x739F", L"¬"},
-	{L"\x73A8", L"¬"},
-	{L"ûa", L"ûa"},
-	{L"ûb", L"ûb"},
-	{L"\x741B", L"¬"},
-	{L"\x7421", L"¬"},
-	{L"\xFA4A", L"‘ô"},
-	{L"ûg", L"ûg"},
-	{L"ûh", L"ûh"}, //80
-	{L"\x742C", L"¬"},
-	{L"\x7439", L"¬"},
-	{L"\x744B", L"¬"},
-	{L"\x3EDA", L"¬"},
-	{L"\x7575", L"á`"},
-	{L"\x7581", L"¬"},
-	{L"\x7772", L"¬"},
-	{L"\x4093", L"¬"},
-	{L"\x78C8", L"¬"},
-	{L"\x78E0", L"¬"}, //90
-	{L"‹_", L"‹_"},
-	{L"âX", L"âX"},
-	{L"\x9FC6", L"¬"},
-	{L"\x4103", L"¬"},
-	{L"\x9FC5", L"¬"},
-	{L"\x79DA", L"¬"},
-	{L"\x7A1E", L"¬"},
-	{L"\x7B7F", L"¬"},
-	{L"\x7C31", L"¬"},
-	{L"\x4264", L"¬"}, //100
-	{L"\x7D8B", L"¬"},
-	{L"û‘", L"û‘"},
-	{L"\x8118", L"¬"},
-	{L"\x813A", L"¬"},
-	{L"\xFA6D", L"ŠÚ"},
-	{L"\x82AE", L"¬"},
-	{L"Š‹", L"Š‹"},
-	{L"ú`", L"ú`"},
-	{L"–H", L"–H"},
-	{L"û›", L"û›"}, //110
-	{L"\x85CE", L"¬"},
-	{L"I", L"I"},
-	{L"\x87EC", L"ä"},
-	{L"\x880B", L"¬"},
-	{L"û¢", L"û¢"},
-	{L"Šp", L"Šp"},
-	{L"ûª", L"ûª"},
-	{L"\x8DCE", L"¬"},
-	{L"’Ò", L"’Ò"},
-	{L"\x8FF6", L"¬"}, //120
-	{L"\x90DD", L"¬"},
-	{L"û¹", L"û¹"},
-	{L"“A", L"“A"},
-	{L"\x91B2", L"¬"},
-	{L"\x9233", L"¬"},
-	{L"ú_", L"ú_"},
-	{L"ûØ", L"ûØ"},
-	{L"ú^", L"ú^"},
-	{L"ûè", L"ûè"},
-	{L"\x96DE", L"¬"}, //130
-	{L"éL", L"éL"},
-	{L"\x9940", L"¬"},
-	{L"ûü", L"ûü"},
-	{L"ŽI", L"ŽI"},
-	{L"\x9DD7", L"‰¨"},
-	{L"\x9EB4", L""},
-	{L"\x9EB5", L"–Ë"}
+	{L"\x3402", L"ã€“"},
+	{L"\xD840\xDD58", L"äº­"},
+	{L"\x4EFD", L"ã€“"},
+	{L"\x4EFF", L"å½·"},
+	{L"ä¾š", L"ä¾š"},
+	{L"ä¿‰", L"ä¿‰"},
+	{L"\x509C", L"å¾­"},
+	{L"\x511E", L"ã€“"},
+	{L"\x51BC", L"ã€“"},
+	{L"\x351F", L"ã€“"}, //10
+	{L"åŒ‡", L"åŒ‡"},
+	{L"\x5361", L"ã€“"},
+	{L"\x536C", L"ã€“"},
+	{L"è©¹", L"è©¹"},
+	{L"\xD842\xDFB7", L"å‰"},
+	{L"\x544D", L"ã€“"},
+	{L"\x5496", L"ã€“"},
+	{L"å’œ", L"å’œ"},
+	{L"å’©", L"å’©"},
+	{L"\x550E", L"ã€“"}, //20
+	{L"\x554A", L"ã€“"},
+	{L"\x5672", L"ã€“"},
+	{L"\x56E4", L"ã€“"},
+	{L"\x5733", L"ã€“"},
+	{L"\x5734", L"ã€“"},
+	{L"ï¨", L"ï¨"},
+	{L"\x5880", L"ã€“"},
+	{L"\x59E4", L"ã€“"},
+	{L"\x5A23", L"ã€“"},
+	{L"\x5A55", L"ã€“"}, //30
+	{L"å¯¬", L"å¯¬"},
+	{L"ï¨‘", L"ï¨‘"},
+	{L"\x37E2", L"ã€“"},
+	{L"\x5EAC", L"ã€“"},
+	{L"å¼´", L"å¼´"},
+	{L"å½…", L"å½…"},
+	{L"å¾·", L"å¾·"},
+	{L"\x6017", L"ã€“"},
+	{L"\xFA6B", L"æµ"},
+	{L"æ„°", L"æ„°"}, //40
+	{L"æ˜¤", L"æ˜¤"},
+	{L"\x66C8", L"ã€“"},
+	{L"æ›™", L"æ›™"},
+	{L"æ›º", L"æ›º"},
+	{L"æ›»", L"æ›»"},
+	{L"æ¡’", L"æ¡’"},
+	{L"\x9FC4", L"ã€“"},
+	{L"\x6911", L"ã€“"},
+	{L"\x693B", L"ã€“"},
+	{L"\x6A45", L"ã€“"}, //50
+	{L"\x6A91", L"ã€“"},
+	{L"æ«›", L"æ«›"},
+	{L"\xD84C\xDFCC", L"ã€“"},
+	{L"\xD84C\xDFFE", L"ã€“"},
+	{L"\xD84D\xDDC4", L"ã€“"},
+	{L"\x6BF1", L"ã€“"},
+	{L"\x6CE0", L"å†·"},
+	{L"\x6D2E", L"ã€“"},
+	{L"\xFA45", L"æµ·"},
+	{L"\x6DBF", L"ã€“"}, //60
+	{L"\x6DCA", L"ã€“"},
+	{L"æ·¸", L"æ·¸"},
+	{L"\xFA46", L"æ¸š"},
+	{L"\x6F5E", L"ã€“"},
+	{L"\x6FF9", L"ã€“"},
+	{L"\x7064", L"ã€“"},
+	{L"\xFA6C", L"ã€“"},
+	{L"\xD850\xDEEE", L"ã€“"},
+	{L"ç…‡", L"ç…‡"},
+	{L"ç‡", L"ç‡"}, //70
+	{L"\x7200", L"ã€“"},
+	{L"\x739F", L"ã€“"},
+	{L"\x73A8", L"ã€“"},
+	{L"ç‰", L"ç‰"},
+	{L"ç–", L"ç–"},
+	{L"\x741B", L"ã€“"},
+	{L"\x7421", L"ã€“"},
+	{L"\xFA4A", L"ç¢"},
+	{L"ç¦", L"ç¦"},
+	{L"çª", L"çª"}, //80
+	{L"\x742C", L"ã€“"},
+	{L"\x7439", L"ã€“"},
+	{L"\x744B", L"ã€“"},
+	{L"\x3EDA", L"ã€“"},
+	{L"\x7575", L"ç•«"},
+	{L"\x7581", L"ã€“"},
+	{L"\x7772", L"ã€“"},
+	{L"\x4093", L"ã€“"},
+	{L"\x78C8", L"ã€“"},
+	{L"\x78E0", L"ã€“"}, //90
+	{L"ç¥‡", L"ç¥‡"},
+	{L"ç¦®", L"ç¦®"},
+	{L"\x9FC6", L"ã€“"},
+	{L"\x4103", L"ã€“"},
+	{L"\x9FC5", L"ã€“"},
+	{L"\x79DA", L"ã€“"},
+	{L"\x7A1E", L"ã€“"},
+	{L"\x7B7F", L"ã€“"},
+	{L"\x7C31", L"ã€“"},
+	{L"\x4264", L"ã€“"}, //100
+	{L"\x7D8B", L"ã€“"},
+	{L"ç¾¡", L"ç¾¡"},
+	{L"\x8118", L"ã€“"},
+	{L"\x813A", L"ã€“"},
+	{L"\xFA6D", L"èˆ˜"},
+	{L"\x82AE", L"ã€“"},
+	{L"è‘›", L"è‘›"},
+	{L"è“œ", L"è“œ"},
+	{L"è“¬", L"è“¬"},
+	{L"è•™", L"è•™"}, //110
+	{L"\x85CE", L"ã€“"},
+	{L"è•", L"è•"},
+	{L"\x87EC", L"è‰"},
+	{L"\x880B", L"ã€“"},
+	{L"è£µ", L"è£µ"},
+	{L"è§’", L"è§’"},
+	{L"è«¶", L"è«¶"},
+	{L"\x8DCE", L"ã€“"},
+	{L"è¾»", L"è¾»"},
+	{L"\x8FF6", L"ã€“"}, //120
+	{L"\x90DD", L"ã€“"},
+	{L"é„§", L"é„§"},
+	{L"é„­", L"é„­"},
+	{L"\x91B2", L"ã€“"},
+	{L"\x9233", L"ã€“"},
+	{L"éŠˆ", L"éŠˆ"},
+	{L"éŒ¡", L"éŒ¡"},
+	{L"éˆ", L"éˆ"},
+	{L"é–’", L"é–’"},
+	{L"\x96DE", L"ã€“"}, //130
+	{L"é¤ƒ", L"é¤ƒ"},
+	{L"\x9940", L"ã€“"},
+	{L"é«™", L"é«™"},
+	{L"é¯–", L"é¯–"},
+	{L"\x9DD7", L"é´Ž"},
+	{L"\x9EB4", L"éº¹"},
+	{L"\x9EB5", L"éºº"}
 };
 
-//ƒfƒtƒHƒ‹ƒgƒ}ƒNƒ•¶(NUL‚ÍŒø‰Ê‚ª‚È‚¢‚Æ‹K’è‚³‚ê‚Ä‚¢‚é)
+//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆãƒžã‚¯ãƒ­æ–‡(NULã¯åŠ¹æžœãŒãªã„ã¨è¦å®šã•ã‚Œã¦ã„ã‚‹)
 static const BYTE DefaultMacro[][20]={
 	{ 0x1B,0x24,0x39,0x1B,0x29,0x4A,0x1B,0x2A,0x30,0x1B,0x2B,0x20,0x70,0x0F,0x1B,0x7D },
 	{ 0x1B,0x24,0x39,0x1B,0x29,0x31,0x1B,0x2A,0x30,0x1B,0x2B,0x20,0x70,0x0F,0x1B,0x7D },
@@ -571,7 +571,7 @@ static const BYTE DefaultMacro[][20]={
 
 #endif //ARIB8CHAR_DECODE_H_IMPLEMENT_TABLE
 
-//•¶ŽšƒTƒCƒY
+//æ–‡å­—ã‚µã‚¤ã‚º
 typedef enum{
 	STR_SMALL = 0, //SSZ
 	STR_MEDIUM, //MSZ
@@ -622,16 +622,16 @@ class CARIB8CharDecode
 public:
 	static const WCHAR* TELETEXT_MARK;
 
-	//PSI/SI‚ð‘z’è‚µ‚½wstring‚Ö‚Ì•ÏŠ·
+	//PSI/SIã‚’æƒ³å®šã—ãŸwstringã¸ã®å¤‰æ›
 	BOOL PSISI( const BYTE* pbSrc, DWORD dwSrcSize, wstring* strDec );
-	//Žš–‹‚ð‘z’è‚µ‚½wstring‚Ö‚Ì•ÏŠ·
+	//å­—å¹•ã‚’æƒ³å®šã—ãŸwstringã¸ã®å¤‰æ›
 	BOOL Caption( const BYTE* pbSrc, DWORD dwSrcSize, vector<CAPTION_DATA>* pCaptionList );
 
 protected:
 	struct MF_MODE{
-		int iMF; //•¶Žš•„†W‡
-		int iMode; //•„†W‡‚Ì•ª—Þ
-		int iByte; //“Ç‚Ýž‚ÝƒoƒCƒg”
+		int iMF; //æ–‡å­—ç¬¦å·é›†åˆ
+		int iMode; //ç¬¦å·é›†åˆã®åˆ†é¡ž
+		int iByte; //èª­ã¿è¾¼ã¿ãƒã‚¤ãƒˆæ•°
 	};
 
 	BOOL m_bPSI;
@@ -643,12 +643,12 @@ protected:
 	MF_MODE* m_GL;
 	MF_MODE* m_GR;
 
-	//ƒfƒR[ƒh‚µ‚½•¶Žš—ñ
+	//ãƒ‡ã‚³ãƒ¼ãƒ‰ã—ãŸæ–‡å­—åˆ—
 	wstring m_strDecode;
-	//•¶ŽšƒTƒCƒY
+	//æ–‡å­—ã‚µã‚¤ã‚º
 	STRING_SIZE m_emStrSize;
 
-	//CLUT‚ÌƒCƒ“ƒfƒbƒNƒX
+	//CLUTã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 	BYTE m_bCharColorIndex;
 	BYTE m_bBackColorIndex;
 	BYTE m_bRasterColorIndex;
@@ -660,7 +660,7 @@ protected:
 	BOOL m_bItalic;
 	BYTE m_bFlushMode;
 
-	//•\Ž¦‘Ž®
+	//è¡¨ç¤ºæ›¸å¼
 	WORD m_wSWFMode;
 	WORD m_wClientX;
 	WORD m_wClientY;
@@ -691,13 +691,13 @@ protected:
 	void CreateCaptionCharData(CAPTION_CHAR_DATA* pItem);
 	void CheckModify(void);
 
-	//§Œä•„†
+	//åˆ¶å¾¡ç¬¦å·
 	BOOL C0( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize );
 	BOOL C1( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize );
 	BOOL GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize, const MF_MODE* mode );
-	//ƒGƒXƒP[ƒvƒV[ƒPƒ“ƒX
+	//ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹
 	BOOL ESC( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize );
-	//‚QƒoƒCƒg•¶Žš•ÏŠ·
+	//ï¼’ãƒã‚¤ãƒˆæ–‡å­—å¤‰æ›
 	BOOL ToSJIS( const BYTE bFirst, const BYTE bSecond );
 	BOOL ToCustomFont( const BYTE bFirst, const BYTE bSecond );
 

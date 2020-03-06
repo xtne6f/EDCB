@@ -1,4 +1,4 @@
-// RecName_Macro.cpp : DLL �A�v���P�[�V�����p�ɃG�N�X�|�[�g�����֐����`���܂��B
+﻿// RecName_Macro.cpp : DLL アプリケーション用にエクスポートされる関数を定義します。
 //
 
 #include "stdafx.h"
@@ -7,19 +7,19 @@
 #include "../../Common/PathUtil.h"
 #include <stddef.h>
 
-#define PLUGIN_NAME L"�}�N�� PlugIn"
+#define PLUGIN_NAME L"マクロ PlugIn"
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 
 extern HINSTANCE g_instance;
 
-//PlugIn�̖��O���擾����
-//name��NULL���͕K�v�ȃT�C�Y��nameSize�ŕԂ�
-//�ʏ�nameSize=256�ŌĂяo��
-//�߂�l
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// name						[OUT]����
-// nameSize					[IN/OUT]name�̃T�C�Y(WCHAR�P��)
+//PlugInの名前を取得する
+//nameがNULL時は必要なサイズをnameSizeで返す
+//通常nameSize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// name						[OUT]名称
+// nameSize					[IN/OUT]nameのサイズ(WCHAR単位)
 DLL_EXPORT
 BOOL WINAPI GetPlugInName(
 	WCHAR* name,
@@ -47,9 +47,9 @@ BOOL WINAPI GetPlugInName(
 	return TRUE;
 }
 
-//PlugIn�Őݒ肪�K�v�ȏꍇ�A�ݒ�p�̃_�C�A���O�Ȃǂ�\������
-//�����F
-// parentWnd				[IN]�e�E�C���h�E
+//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
+//引数：
+// parentWnd				[IN]親ウインドウ
 DLL_EXPORT
 void WINAPI Setting(
 	HWND parentWnd
@@ -68,16 +68,16 @@ void WINAPI Setting(
 	}
 }
 
-//���͂��ꂽ�\����ƕϊ��p�^�[�������ɁA�^�掞�̃t�@�C�������쐬����i�g���q�܂ށj
-//recName��NULL���͕K�v�ȃT�C�Y��recNamesize�ŕԂ�
-//�ʏ�recNamesize=256�ŌĂяo��
-//�߂�l
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// info						[IN]�\����
-// pattern					[IN]�ϊ��p�^�[���i�f�t�H���g�̂Ƃ�NULL�j
-// recName					[OUT]����
-// recNamesize				[IN/OUT]name�̃T�C�Y(WCHAR�P��)
+//入力された予約情報と変換パターンを元に、録画時のファイル名を作成する（拡張子含む）
+//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//通常recNamesize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// info						[IN]予約情報
+// pattern					[IN]変換パターン（デフォルトのときNULL）
+// recName					[OUT]名称
+// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
 DLL_EXPORT
 BOOL WINAPI ConvertRecName3(
 	PLUGIN_RESERVE_INFO* info,
@@ -110,16 +110,16 @@ BOOL WINAPI ConvertRecName3(
 	return TRUE;
 }
 
-//���͂��ꂽ�\��������ɁA�^�掞�̃t�@�C�������쐬����i�g���q�܂ށj
-//recName��NULL���͕K�v�ȃT�C�Y��recNamesize�ŕԂ�
-//�ʏ�recNamesize=256�ŌĂяo��
-//�߂�l
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// info						[IN]�\����
-// epgInfo					[IN]�ԑg���iEPG�\��Ŕԑg��񂪑��݂��鎞�A���݂��Ȃ��ꍇ��NULL�j
-// recName					[OUT]����
-// recNamesize				[IN/OUT]name�̃T�C�Y(WCHAR�P��)
+//入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
+//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//通常recNamesize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// info						[IN]予約情報
+// epgInfo					[IN]番組情報（EPG予約で番組情報が存在する時、存在しない場合のNULL）
+// recName					[OUT]名称
+// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
 DLL_EXPORT
 BOOL WINAPI ConvertRecName2(
 	PLUGIN_RESERVE_INFO* info,
@@ -136,15 +136,15 @@ BOOL WINAPI ConvertRecName2(
 	return ConvertRecName3(&infoEx, NULL, recName, recNamesize);
 }
 
-//���͂��ꂽ�\��������ɁA�^�掞�̃t�@�C�������쐬����i�g���q�܂ށj
-//recName��NULL���͕K�v�ȃT�C�Y��recNamesize�ŕԂ�
-//�ʏ�recNamesize=256�ŌĂяo��
-//�߂�l
-// TRUE�i�����j�AFALSE�i���s�j
-//�����F
-// info						[IN]�\����
-// recName					[OUT]����
-// recNamesize				[IN/OUT]name�̃T�C�Y(WCHAR�P��)
+//入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
+//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//通常recNamesize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// info						[IN]予約情報
+// recName					[OUT]名称
+// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
 DLL_EXPORT
 BOOL WINAPI ConvertRecName(
 	PLUGIN_RESERVE_INFO* info,

@@ -20,6 +20,7 @@ namespace EpgTimer.EpgView
     public partial class DateView : UserControl
     {
         public event Action<DateTime> TimeButtonClick;
+        public event Action<DateTime> TimeButtonRightClick;
 
         public DateView()
         {
@@ -85,6 +86,14 @@ namespace EpgTimer.EpgView
             if (TimeButtonClick != null)
             {
                 TimeButtonClick((DateTime)((Button)sender).Tag);
+            }
+        }
+
+        void button_time_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (TimeButtonRightClick != null)
+            {
+                TimeButtonRightClick((DateTime)((Button)sender).Tag);
             }
         }
     }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Common/ErrDef.h"
 #include "../Common/TSBuffUtil.h"
