@@ -1,10 +1,10 @@
-
-// EpgDataCap_Bon.h : PROJECT_NAME ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒƒCƒ“ ƒwƒbƒ_[ ƒtƒ@ƒCƒ‹‚Å‚·B
+ï»¿
+// EpgDataCap_Bon.h : PROJECT_NAME ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ãƒ¡ã‚¤ãƒ³ ãƒ˜ãƒƒãƒ€ãƒ¼ ãƒ•ã‚¡ã‚¤ãƒ«ã§ã™ã€‚
 //
 
 #pragma once
 
-#include "resource.h"		// ƒƒCƒ“ ƒVƒ“ƒ{ƒ‹
+#include "resource.h"		// ãƒ¡ã‚¤ãƒ³ ã‚·ãƒ³ãƒœãƒ«
 #include "../../Common/PathUtil.h"
 #include <windowsx.h>
 #include <commctrl.h>
@@ -12,7 +12,7 @@
 
 
 // CEpgDataCap_BonApp:
-// ‚±‚ÌƒNƒ‰ƒX‚ÌŽÀ‘•‚É‚Â‚¢‚Ä‚ÍAEpgDataCap_Bon.cpp ‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢B
+// ã“ã®ã‚¯ãƒ©ã‚¹ã®å®Ÿè£…ã«ã¤ã„ã¦ã¯ã€EpgDataCap_Bon.cpp ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 //
 
 class CEpgDataCap_BonApp

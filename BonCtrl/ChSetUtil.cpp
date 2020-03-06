@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "ChSetUtil.h"
 
 #include "../Common/EpgTimerUtil.h"
@@ -7,7 +7,7 @@ CChSetUtil::CChSetUtil(void)
 {
 }
 
-//ƒ`ƒƒƒ“ƒlƒ‹İ’èƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Ş
+//ãƒãƒ£ãƒ³ãƒãƒ«è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€
 BOOL CChSetUtil::LoadChSet(
 	const wstring& chSet4FilePath,
 	const wstring& chSet5FilePath
@@ -23,13 +23,13 @@ BOOL CChSetUtil::LoadChSet(
 	return ret;
 }
 
-//ƒ`ƒƒƒ“ƒlƒ‹İ’èƒtƒ@ƒCƒ‹‚ğ•Û‘¶‚·‚é
+//ãƒãƒ£ãƒ³ãƒãƒ«è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä¿å­˜ã™ã‚‹
 BOOL CChSetUtil::SaveChSet(
 	const wstring& chSet4FilePath,
 	const wstring& chSet5FilePath
 	)
 {
-	//Ú‘±‘Ò‚¿
+	//æ¥ç¶šå¾…ã¡
 	HANDLE waitEvent = CreateEvent(NULL, FALSE, TRUE, CHSET_SAVE_EVENT_WAIT);
 	if( waitEvent == NULL ){
 		return FALSE;
@@ -45,19 +45,19 @@ BOOL CChSetUtil::SaveChSet(
 		ret = FALSE;
 	}
 
-	//‘¼‚ÅXV‚³‚ê‚Ä‚é‰Â”\«‚ ‚é‚Ì‚ÅÄ“Ç‚İ‚İ
+	//ä»–ã§æ›´æ–°ã•ã‚Œã¦ã‚‹å¯èƒ½æ€§ã‚ã‚‹ã®ã§å†èª­ã¿è¾¼ã¿
 	CParseChText5 mergeChText5;
 	mergeChText5.ParseText(chSet5FilePath.c_str());
-	//Œ»İ•Û‚µ‚Ä‚¢‚éî•ñ‚ğ’Ç‰Á
+	//ç¾åœ¨ä¿æŒã—ã¦ã„ã‚‹æƒ…å ±ã‚’è¿½åŠ 
 	map<LONGLONG, CH_DATA5>::const_iterator itr;
 	for( itr = this->chText5.GetMap().begin(); itr != this->chText5.GetMap().end(); itr++ ){
 		mergeChText5.AddCh(itr->second);
 	}
-	//•Û‘¶
+	//ä¿å­˜
 	if( mergeChText5.SaveText() == false ){
 		ret = FALSE;
 	}
-	//ÅV”Å‚ğÄ“Ç‚İ‚İ
+	//æœ€æ–°ç‰ˆã‚’å†èª­ã¿è¾¼ã¿
 	this->chText5.ParseText(chSet5FilePath.c_str());
 
 	SetEvent(waitEvent);
@@ -66,7 +66,7 @@ BOOL CChSetUtil::SaveChSet(
 	return ret;
 }
 
-//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“—p‚ÉƒNƒŠƒA‚·‚é
+//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ç”¨ã«ã‚¯ãƒªã‚¢ã™ã‚‹
 BOOL CChSetUtil::Clear()
 {
 	this->chText4.ParseText(L"");
@@ -74,7 +74,7 @@ BOOL CChSetUtil::Clear()
 	return TRUE;
 }
 
-//ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚ğ’Ç‰Á‚·‚é
+//ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹
 BOOL CChSetUtil::AddServiceInfo(
 	DWORD space,
 	DWORD ch,
@@ -153,7 +153,7 @@ BOOL CChSetUtil::AddServiceInfo(
 }
 
 
-//ƒT[ƒrƒXˆê——‚ğæ“¾‚·‚é
+//ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 BOOL CChSetUtil::GetEnumService(
 	vector<CH_DATA4>* serviceList
 	)
@@ -168,7 +168,7 @@ BOOL CChSetUtil::GetEnumService(
 	return TRUE;
 }
 
-//ID‚©‚ç•¨—ƒ`ƒƒƒ“ƒlƒ‹‚ğŒŸõ‚·‚é
+//IDã‹ã‚‰ç‰©ç†ãƒãƒ£ãƒ³ãƒãƒ«ã‚’æ¤œç´¢ã™ã‚‹
 BOOL CChSetUtil::GetCh(
 	WORD ONID,
 	WORD TSID,
@@ -185,7 +185,7 @@ BOOL CChSetUtil::GetCh(
 				ret = TRUE;
 				space = itr->second.space;
 				ch = itr->second.ch;
-				//SID‚ª“¯‚¶‚à‚Ì‚ğ—Dæ‚·‚é
+				//SIDãŒåŒã˜ã‚‚ã®ã‚’å„ªå…ˆã™ã‚‹
 				if( itr->second.serviceID == SID ){
 					break;
 				}

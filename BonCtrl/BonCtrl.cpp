@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "BonCtrl.h"
 
 #include "../Common/CommonDef.h"
@@ -89,7 +89,7 @@ BOOL CBonCtrl::OpenBonDriver(
 	                                [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
 	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, openWait) ){
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
-		//‰ğÍƒXƒŒƒbƒh‹N“®
+		//è§£æã‚¹ãƒ¬ãƒƒãƒ‰èµ·å‹•
 		this->analyzeStopFlag = false;
 		this->analyzeThread = thread_(AnalyzeThread, this);
 
@@ -106,12 +106,12 @@ BOOL CBonCtrl::OpenBonDriver(
 	return FALSE;
 }
 
-//ƒ[ƒh’†‚ÌBonDriver‚Ìƒtƒ@ƒCƒ‹–¼‚ğæ“¾‚·‚éiƒ[ƒh¬Œ÷‚µ‚Ä‚¢‚é‚©‚Ì”»’èj
-//¦ƒXƒŒƒbƒhƒZ[ƒt
-//–ß‚è’lF
-// TRUEi¬Œ÷jFFALSEiOpen‚É¸”s‚µ‚Ä‚¢‚éj
-//ˆø”F
-// bonDriverFile		[OUT]BonDriver‚Ìƒtƒ@ƒCƒ‹–¼(NULL‰Â)
+//ãƒ­ãƒ¼ãƒ‰ä¸­ã®BonDriverã®ãƒ•ã‚¡ã‚¤ãƒ«åã‚’å–å¾—ã™ã‚‹ï¼ˆãƒ­ãƒ¼ãƒ‰æˆåŠŸã—ã¦ã„ã‚‹ã‹ã®åˆ¤å®šï¼‰
+//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆæˆåŠŸï¼‰ï¼šFALSEï¼ˆOpenã«å¤±æ•—ã—ã¦ã„ã‚‹ï¼‰
+//å¼•æ•°ï¼š
+// bonDriverFile		[OUT]BonDriverã®ãƒ•ã‚¡ã‚¤ãƒ«å(NULLå¯)
 BOOL CBonCtrl::GetOpenBonDriver(
 	wstring* bonDriverFile
 	)
@@ -175,10 +175,10 @@ BOOL CBonCtrl::ProcessSetCh(
 	return ret;
 }
 
-//ƒ`ƒƒƒ“ƒlƒ‹•ÏX’†‚©‚Ç‚¤‚©
-//¦ƒXƒŒƒbƒhƒZ[ƒt
-//–ß‚è’lF
-// TRUEi•ÏX’†jAFALSEiŠ®—¹j
+//ãƒãƒ£ãƒ³ãƒãƒ«å¤‰æ›´ä¸­ã‹ã©ã†ã‹
+//â€»ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆå¤‰æ›´ä¸­ï¼‰ã€FALSEï¼ˆå®Œäº†ï¼‰
 BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
 {
 	if( chChgErr != NULL ){
@@ -187,7 +187,7 @@ BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
 	DWORD elapsed;
 	if( this->tsOut.IsChUnknown(&elapsed) && elapsed != MAXDWORD ){
 		if( elapsed > 15000 ){
-			//ƒ^ƒCƒ€ƒAƒEƒg‚µ‚½
+			//ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã—ãŸ
 			if( chChgErr != NULL ){
 				*chChgErr = TRUE;
 			}
@@ -198,10 +198,10 @@ BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
 	return FALSE;
 }
 
-//Œ»İ‚ÌƒXƒgƒŠ[ƒ€‚ÌID‚ğæ“¾‚·‚é
-//–ß‚è’lF
-// TRUEi¬Œ÷jAFALSEi¸”sj
-//ˆø”F
+//ç¾åœ¨ã®ã‚¹ãƒˆãƒªãƒ¼ãƒ ã®IDã‚’å–å¾—ã™ã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+//å¼•æ•°ï¼š
 // ONID		[OUT]originalNetworkID
 // TSID		[OUT]transportStreamID
 BOOL CBonCtrl::GetStreamID(
@@ -212,7 +212,7 @@ BOOL CBonCtrl::GetStreamID(
 	return this->tsOut.GetStreamID(ONID, TSID);
 }
 
-//ƒ[ƒh‚µ‚Ä‚¢‚éBonDriver‚ÌŠJ•ú
+//ãƒ­ãƒ¼ãƒ‰ã—ã¦ã„ã‚‹BonDriverã®é–‹æ”¾
 void CBonCtrl::CloseBonDriver()
 {
 	StopBackgroundEpgCap();
@@ -240,7 +240,7 @@ void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMa
 		CBlockLock lock(&this->buffLock);
 		while( outSize != 0 ){
 			if( this->tsFreeList.empty() ){
-				//ƒoƒbƒtƒ@‚ğ‘‚â‚·
+				//ãƒãƒƒãƒ•ã‚¡ã‚’å¢—ã‚„ã™
 				if( this->tsBuffList.size() > tsBuffMaxCount ){
 					for( auto itr = this->tsBuffList.begin(); itr != this->tsBuffList.end(); (itr++)->clear() );
 					this->tsFreeList.splice(this->tsFreeList.end(), this->tsBuffList);
@@ -276,12 +276,12 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 	std::list<vector<BYTE>> data;
 
 	while( sys->analyzeStopFlag == false ){
-		//ƒoƒbƒtƒ@‚©‚çƒf[ƒ^æ‚èo‚µ
+		//ãƒãƒƒãƒ•ã‚¡ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿å–ã‚Šå‡ºã—
 		float signalLv;
 		{
 			CBlockLock lock(&sys->buffLock);
 			if( data.empty() == false ){
-				//•Ô‹p
+				//è¿”å´
 				data.front().clear();
 				sys->tsFreeList.splice(sys->tsFreeList.end(), data);
 			}
@@ -299,11 +299,11 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 	}
 }
 
-//ƒT[ƒrƒXˆê——‚ğæ“¾‚·‚é
-//–ß‚è’lF
-// ƒGƒ‰[ƒR[ƒh
-//ˆø”F
-// serviceList				[OUT]ƒT[ƒrƒXî•ñ‚ÌƒŠƒXƒg
+//ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
+//å¼•æ•°ï¼š
+// serviceList				[OUT]ã‚µãƒ¼ãƒ“ã‚¹æƒ…å ±ã®ãƒªã‚¹ãƒˆ
 DWORD CBonCtrl::GetServiceList(
 	vector<CH_DATA4>* serviceList
 	)
@@ -324,11 +324,11 @@ DWORD CBonCtrl::CreateServiceCtrl(
 	return id;
 }
 
-//TSƒXƒgƒŠ[ƒ€§Œä—pƒRƒ“ƒgƒ[ƒ‹‚ğì¬‚·‚é
-//–ß‚è’lF
-// ƒGƒ‰[ƒR[ƒh
-//ˆø”F
-// id			[IN]§Œä¯•ÊID
+//TSã‚¹ãƒˆãƒªãƒ¼ãƒ åˆ¶å¾¡ç”¨ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã‚’ä½œæˆã™ã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
+//å¼•æ•°ï¼š
+// id			[IN]åˆ¶å¾¡è­˜åˆ¥ID
 BOOL CBonCtrl::DeleteServiceCtrl(
 	DWORD id
 	)
@@ -336,7 +336,7 @@ BOOL CBonCtrl::DeleteServiceCtrl(
 	return this->tsOut.DeleteServiceCtrl(id);
 }
 
-//§Œä‘ÎÛ‚ÌƒT[ƒrƒX‚ğİ’è‚·‚é
+//åˆ¶å¾¡å¯¾è±¡ã®ã‚µãƒ¼ãƒ“ã‚¹ã‚’è¨­å®šã™ã‚‹
 BOOL CBonCtrl::SetServiceID(
 	DWORD id,
 	WORD serviceID
@@ -388,11 +388,11 @@ BOOL CBonCtrl::EndSave(
 	return this->tsOut.EndSave(id, subRecFlag);
 }
 
-//ƒXƒNƒ‰ƒ“ƒuƒ‹‰ğœˆ—‚Ì“®ìİ’è
-//–ß‚è’lF
-// TRUEi¬Œ÷jAFALSEi¸”sj
-//ˆø”F
-// enable		[IN] TRUEiˆ—‚·‚éjAFALSEiˆ—‚µ‚È‚¢j
+//ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«è§£é™¤å‡¦ç†ã®å‹•ä½œè¨­å®š
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+//å¼•æ•°ï¼š
+// enable		[IN] TRUEï¼ˆå‡¦ç†ã™ã‚‹ï¼‰ã€FALSEï¼ˆå‡¦ç†ã—ãªã„ï¼‰
 BOOL CBonCtrl::SetScramble(
 	DWORD id,
 	BOOL enable
@@ -401,11 +401,11 @@ BOOL CBonCtrl::SetScramble(
 	return this->tsOut.SetScramble(id, enable);
 }
 
-//š–‹‚Æƒf[ƒ^•ú‘—ŠÜ‚ß‚é‚©‚Ç‚¤‚©
-//ˆø”F
-// id					[IN]§Œä¯•ÊID
-// enableCaption		[IN]š–‹‚ğ TRUEiŠÜ‚ß‚éjAFALSEiŠÜ‚ß‚È‚¢j
-// enableData			[IN]ƒf[ƒ^•ú‘—‚ğ TRUEiŠÜ‚ß‚éjAFALSEiŠÜ‚ß‚È‚¢j
+//å­—å¹•ã¨ãƒ‡ãƒ¼ã‚¿æ”¾é€å«ã‚ã‚‹ã‹ã©ã†ã‹
+//å¼•æ•°ï¼š
+// id					[IN]åˆ¶å¾¡è­˜åˆ¥ID
+// enableCaption		[IN]å­—å¹•ã‚’ TRUEï¼ˆå«ã‚ã‚‹ï¼‰ã€FALSEï¼ˆå«ã‚ãªã„ï¼‰
+// enableData			[IN]ãƒ‡ãƒ¼ã‚¿æ”¾é€ã‚’ TRUEï¼ˆå«ã‚ã‚‹ï¼‰ã€FALSEï¼ˆå«ã‚ãªã„ï¼‰
 void CBonCtrl::SetServiceMode(
 	DWORD id,
 	BOOL enableCaption,
@@ -415,7 +415,7 @@ void CBonCtrl::SetServiceMode(
 	this->tsOut.SetServiceMode(id, enableCaption, enableData);
 }
 
-//ƒGƒ‰[ƒJƒEƒ“ƒg‚ğƒNƒŠƒA‚·‚é
+//ã‚¨ãƒ©ãƒ¼ã‚«ã‚¦ãƒ³ãƒˆã‚’ã‚¯ãƒªã‚¢ã™ã‚‹
 void CBonCtrl::ClearErrCount(
 	DWORD id
 	)
@@ -423,10 +423,10 @@ void CBonCtrl::ClearErrCount(
 	this->tsOut.ClearErrCount(id);
 }
 
-//ƒhƒƒbƒv‚ÆƒXƒNƒ‰ƒ“ƒuƒ‹‚ÌƒJƒEƒ“ƒg‚ğæ“¾‚·‚é
-//ˆø”F
-// drop				[OUT]ƒhƒƒbƒv”
-// scramble			[OUT]ƒXƒNƒ‰ƒ“ƒuƒ‹”
+//ãƒ‰ãƒ­ãƒƒãƒ—ã¨ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«ã®ã‚«ã‚¦ãƒ³ãƒˆã‚’å–å¾—ã™ã‚‹
+//å¼•æ•°ï¼š
+// drop				[OUT]ãƒ‰ãƒ­ãƒƒãƒ—æ•°
+// scramble			[OUT]ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«æ•°
 void CBonCtrl::GetErrCount(
 	DWORD id,
 	ULONGLONG* drop,
@@ -436,9 +436,9 @@ void CBonCtrl::GetErrCount(
 	this->tsOut.GetErrCount(id, drop, scramble);
 }
 
-//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“‚ğŠJn‚·‚é
-//–ß‚è’lF
-// TRUEi¬Œ÷jAFALSEi¸”sj
+//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ã‚’é–‹å§‹ã™ã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
 BOOL CBonCtrl::StartChScan()
 {
 	if( this->tsOut.IsRec() == TRUE ){
@@ -468,18 +468,18 @@ BOOL CBonCtrl::StartChScan()
 		}
 		this->chScanIndexOrStatus = ST_WORKING;
 		if( this->chScanChkList.empty() ){
-			//ƒXƒLƒƒƒ“‚·‚é‚à‚Ì‚ª‚È‚¢BST_COMPLETE‚É‘JˆÚ
+			//ã‚¹ã‚­ãƒ£ãƒ³ã™ã‚‹ã‚‚ã®ãŒãªã„ã€‚ST_COMPLETEã«é·ç§»
 			CheckChScan();
 			return TRUE;
 		}
-		//ƒXƒLƒƒƒ“ŠJn
+		//ã‚¹ã‚­ãƒ£ãƒ³é–‹å§‹
 		return TRUE;
 	}
 
 	return FALSE;
 }
 
-//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“‚ğƒLƒƒƒ“ƒZƒ‹‚·‚é
+//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ã‚’ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã™ã‚‹
 void CBonCtrl::StopChScan()
 {
 	if( this->chScanIndexOrStatus >= ST_WORKING ){
@@ -494,15 +494,15 @@ void CBonCtrl::StopChScan()
 	}
 }
 
-//ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“‚Ìó‘Ô‚ğæ“¾‚·‚é
-//–ß‚è’lF
-// ƒXƒe[ƒ^ƒX
-//ˆø”F
-// space		[OUT]ƒXƒLƒƒƒ“’†‚Ì•¨—CH‚Ìspace
-// ch			[OUT]ƒXƒLƒƒƒ“’†‚Ì•¨—CH‚Ìch
-// chName		[OUT]ƒXƒLƒƒƒ“’†‚Ì•¨—CH‚Ì–¼‘O
-// chkNum		[OUT]ƒ`ƒFƒbƒNÏ‚İ‚Ì”
-// totalNum		[OUT]ƒ`ƒFƒbƒN‘ÎÛ‚Ì‘”
+//ãƒãƒ£ãƒ³ãƒãƒ«ã‚¹ã‚­ãƒ£ãƒ³ã®çŠ¶æ…‹ã‚’å–å¾—ã™ã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
+//å¼•æ•°ï¼š
+// space		[OUT]ã‚¹ã‚­ãƒ£ãƒ³ä¸­ã®ç‰©ç†CHã®space
+// ch			[OUT]ã‚¹ã‚­ãƒ£ãƒ³ä¸­ã®ç‰©ç†CHã®ch
+// chName		[OUT]ã‚¹ã‚­ãƒ£ãƒ³ä¸­ã®ç‰©ç†CHã®åå‰
+// chkNum		[OUT]ãƒã‚§ãƒƒã‚¯æ¸ˆã¿ã®æ•°
+// totalNum		[OUT]ãƒã‚§ãƒƒã‚¯å¯¾è±¡ã®ç·æ•°
 CBonCtrl::JOB_STATUS CBonCtrl::GetChScanStatus(
 	DWORD* space,
 	DWORD* ch,
@@ -552,22 +552,22 @@ void CBonCtrl::CheckChScan()
 			DWORD elapsed;
 			if( this->tsOut.IsChUnknown(&elapsed) ){
 				if( elapsed > this->chScanChChgTimeOut * 1000 ){
-					//ƒ`ƒƒƒ“ƒlƒ‹Ø‚è‘Ö‚¦‚ÉchChgTimeOut•bˆÈã‚©‚©‚Á‚Ä‚é‚Ì‚Å–³M†‚Æ”»’f
-					OutputDebugString(L"šAutoScan Ch Change timeout\r\n");
+					//ãƒãƒ£ãƒ³ãƒãƒ«åˆ‡ã‚Šæ›¿ãˆã«chChgTimeOutç§’ä»¥ä¸Šã‹ã‹ã£ã¦ã‚‹ã®ã§ç„¡ä¿¡å·ã¨åˆ¤æ–­
+					OutputDebugString(L"â˜…AutoScan Ch Change timeout\r\n");
 					this->chScanChkNext = TRUE;
 				}
 			}else{
 				if( GetTickCount() - this->chScanTick > (this->chScanChChgTimeOut + this->chScanServiceChkTimeOut) * 1000 ){
-					//ƒ`ƒƒƒ“ƒlƒ‹Ø‚è‘Ö‚¦¬Œ÷‚µ‚½‚¯‚ÇƒT[ƒrƒXˆê——‚Æ‚ê‚È‚¢‚Ì‚Å–³M†‚Æ”»’f
-					OutputDebugString(L"šAutoScan GetService timeout\r\n");
+					//ãƒãƒ£ãƒ³ãƒãƒ«åˆ‡ã‚Šæ›¿ãˆæˆåŠŸã—ãŸã‘ã©ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã¨ã‚Œãªã„ã®ã§ç„¡ä¿¡å·ã¨åˆ¤æ–­
+					OutputDebugString(L"â˜…AutoScan GetService timeout\r\n");
 					this->chScanChkNext = TRUE;
 				}else{
-					//ƒT[ƒrƒXˆê——‚Ìæ“¾‚ğs‚¤
+					//ã‚µãƒ¼ãƒ“ã‚¹ä¸€è¦§ã®å–å¾—ã‚’è¡Œã†
 					this->tsOut.GetServiceListActual([=](DWORD serviceListSize, SERVICE_INFO* serviceList) {
 						if( serviceListSize > 0 ){
-							//ˆê——‚Ìæ“¾‚ª‚Å‚«‚½
+							//ä¸€è¦§ã®å–å¾—ãŒã§ããŸ
 							for( int currSID = 0; currSID < 0x10000; ){
-								//ServiceID‡‚É’Ç‰Á
+								//ServiceIDé †ã«è¿½åŠ 
 								int nextSID = 0x10000;
 								for( DWORD i = 0; i < serviceListSize; i++ ){
 									WORD serviceID = serviceList[i].service_id;
@@ -592,10 +592,10 @@ void CBonCtrl::CheckChScan()
 		}
 
 		if( this->chScanChkNext ){
-			//Ÿ‚Ìƒ`ƒƒƒ“ƒlƒ‹‚Ö
+			//æ¬¡ã®ãƒãƒ£ãƒ³ãƒãƒ«ã¸
 			chkCount++;
 			if( this->chScanChkList.size() <= (size_t)chkCount ){
-				//‘S•”ƒ`ƒFƒbƒNI‚í‚Á‚½‚Ì‚ÅI—¹
+				//å…¨éƒ¨ãƒã‚§ãƒƒã‚¯çµ‚ã‚ã£ãŸã®ã§çµ‚äº†
 				fs_path bonFile = this->bonUtil.GetOpenBonDriverFileName();
 				wstring tunerName = this->bonUtil.GetTunerName();
 				CheckFileName(tunerName);
@@ -615,11 +615,11 @@ void CBonCtrl::CheckChScan()
 	}
 }
 
-//EPGæ“¾‚ğŠJn‚·‚é
-//–ß‚è’lF
-// TRUEi¬Œ÷jAFALSEi¸”sj
-//ˆø”F
-// chList		[IN]EPGæ“¾‚·‚éƒ`ƒƒƒ“ƒlƒ‹ˆê——(NULL‰Â)
+//EPGå–å¾—ã‚’é–‹å§‹ã™ã‚‹
+//æˆ»ã‚Šå€¤ï¼š
+// TRUEï¼ˆæˆåŠŸï¼‰ã€FALSEï¼ˆå¤±æ•—ï¼‰
+//å¼•æ•°ï¼š
+// chList		[IN]EPGå–å¾—ã™ã‚‹ãƒãƒ£ãƒ³ãƒãƒ«ä¸€è¦§(NULLå¯)
 BOOL CBonCtrl::StartEpgCap(
 	const vector<SET_CH_INFO>* chList
 	)
@@ -638,7 +638,7 @@ BOOL CBonCtrl::StartEpgCap(
 		if( chList ){
 			this->epgCapChList.clear();
 			for( size_t i = 0; i < chList->size(); i++ ){
-				//SIDw’è‚Ì‚İ‘Î‰
+				//SIDæŒ‡å®šã®ã¿å¯¾å¿œ
 				if( (*chList)[i].useSID ){
 					this->epgCapChList.push_back((*chList)[i]);
 				}
@@ -647,11 +647,11 @@ BOOL CBonCtrl::StartEpgCap(
 			this->epgCapChList = this->chUtil.GetEpgCapService();
 		}
 		if( this->epgCapChList.empty() ){
-			//æ“¾‚·‚é‚à‚Ì‚ª‚È‚¢
+			//å–å¾—ã™ã‚‹ã‚‚ã®ãŒãªã„
 			this->epgCapIndexOrStatus = ST_COMPLETE;
 			return TRUE;
 		}
-		//æ“¾ŠJn
+		//å–å¾—é–‹å§‹
 		this->epgCapIndexOrStatus = ST_WORKING;
 		return TRUE;
 	}
@@ -659,7 +659,7 @@ BOOL CBonCtrl::StartEpgCap(
 	return FALSE;
 }
 
-//EPGæ“¾‚ğ’â~‚·‚é
+//EPGå–å¾—ã‚’åœæ­¢ã™ã‚‹
 void CBonCtrl::StopEpgCap(
 	)
 {
@@ -669,12 +669,12 @@ void CBonCtrl::StopEpgCap(
 	}
 }
 
-//EPGæ“¾‚ÌƒXƒe[ƒ^ƒX‚ğæ“¾‚·‚é
-//¦info==NULL‚Ìê‡‚ÉŒÀ‚èƒXƒŒƒbƒhƒZ[ƒt
-//–ß‚è’lF
-// ƒXƒe[ƒ^ƒX
-//ˆø”F
-// info			[OUT]æ“¾’†‚ÌƒT[ƒrƒX
+//EPGå–å¾—ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’å–å¾—ã™ã‚‹
+//â€»info==NULLã®å ´åˆã«é™ã‚Šã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•
+//æˆ»ã‚Šå€¤ï¼š
+// ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
+//å¼•æ•°ï¼š
+// info			[OUT]å–å¾—ä¸­ã®ã‚µãƒ¼ãƒ“ã‚¹
 CBonCtrl::JOB_STATUS CBonCtrl::GetEpgCapStatus(
 	SET_CH_INFO* info
 	)
@@ -700,7 +700,7 @@ void CBonCtrl::CheckEpgCap()
 			fs_path iniPath = GetCommonIniPath().replace_filename(L"BonCtrl.ini");
 			this->epgCapTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 10, iniPath.c_str());
 			this->epgCapSaveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str()) != 0;
-			//Common.ini‚Íˆê”Ê‚ÉŠO•”ƒvƒƒZƒX‚ª•ÏX‚·‚é‰Â”\«‚Ì‚ ‚é(‚Í‚¸‚Ì)‚à‚Ì‚È‚Ì‚ÅA—˜—p‚Ì’¼‘O‚Éƒ`ƒFƒbƒN‚·‚é
+			//Common.iniã¯ä¸€èˆ¬ã«å¤–éƒ¨ãƒ—ãƒ­ã‚»ã‚¹ãŒå¤‰æ›´ã™ã‚‹å¯èƒ½æ€§ã®ã‚ã‚‹(ã¯ãšã®)ã‚‚ã®ãªã®ã§ã€åˆ©ç”¨ã®ç›´å‰ã«ãƒã‚§ãƒƒã‚¯ã™ã‚‹
 			fs_path commonIniPath = GetCommonIniPath();
 			this->epgCapBSBasic = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str()) != 0;
 			this->epgCapCS1Basic = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str()) != 0;
@@ -717,31 +717,31 @@ void CBonCtrl::CheckEpgCap()
 			DWORD elapsed;
 			if( this->tsOut.IsChUnknown(&elapsed) ){
 				if( this->epgCapSetChState != 0 || elapsed > 15000 ){
-					//ƒ`ƒƒƒ“ƒlƒ‹Ø‚è‘Ö‚¦‚ªƒ^ƒCƒ€ƒAƒEƒg‚µ‚½‚Ì‚Å–³M†‚Æ”»’f
+					//ãƒãƒ£ãƒ³ãƒãƒ«åˆ‡ã‚Šæ›¿ãˆãŒã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã—ãŸã®ã§ç„¡ä¿¡å·ã¨åˆ¤æ–­
 					this->tsOut.StopSaveEPG(FALSE);
 					this->epgCapChkNext = TRUE;
 				}
 			}else{
 				DWORD tick = GetTickCount();
 				if( this->epgCapSetChState == 0 ){
-					//Ø‚è‘Ö‚¦Š®—¹
+					//åˆ‡ã‚Šæ›¿ãˆå®Œäº†
 					this->epgCapSetChState = 1;
 					this->epgCapTick = tick;
 				}
 				if( tick - this->epgCapTick > this->epgCapTimeOut * 60 * 1000 ){
-					//timeOut•ªˆÈã‚©‚©‚Á‚Ä‚¢‚é‚È‚ç’â~
+					//timeOutåˆ†ä»¥ä¸Šã‹ã‹ã£ã¦ã„ã‚‹ãªã‚‰åœæ­¢
 					this->tsOut.StopSaveEPG(this->epgCapSaveTimeOut);
 					this->epgCapChkNext = TRUE;
-					_OutputDebugString(L"++%d•ª‚ÅEPGæ“¾Š®—¹‚¹‚¸ or Ch•ÏX‚ÅƒGƒ‰[", this->epgCapTimeOut);
+					_OutputDebugString(L"++%dåˆ†ã§EPGå–å¾—å®Œäº†ã›ãš or Chå¤‰æ›´ã§ã‚¨ãƒ©ãƒ¼", this->epgCapTimeOut);
 				}else if( tick - this->epgCapTick > 5000 ){
 					SET_CH_INFO ch = this->epgCapChList[chkCount];
 					BOOL basicOnly = ch.ONID == 4 && this->epgCapBSBasic ||
 					                 ch.ONID == 6 && this->epgCapCS1Basic ||
 					                 ch.ONID == 7 && this->epgCapCS2Basic ||
 					                 ch.ONID == 10 && this->epgCapCS3Basic;
-					//Ø‚è‘Ö‚¦Š®—¹‚©‚ç5•bˆÈã‰ß‚¬‚Ä‚¢‚é‚Ì‚Åæ“¾ˆ—
+					//åˆ‡ã‚Šæ›¿ãˆå®Œäº†ã‹ã‚‰5ç§’ä»¥ä¸Šéãã¦ã„ã‚‹ã®ã§å–å¾—å‡¦ç†
 					if( this->epgCapSetChState == 1 ){
-						//æ“¾ŠJn
+						//å–å¾—é–‹å§‹
 						wstring epgDataPath = L"";
 						GetEpgDataFilePath(ch.ONID, basicOnly ? 0xFFFF : ch.TSID, epgDataPath);
 						if( this->tsOut.StartSaveEPG(epgDataPath) ){
@@ -760,16 +760,16 @@ void CBonCtrl::CheckEpgCap()
 							this->epgCapChkNext = TRUE;
 						}
 					}else if( tick - this->epgCapLastChkTick > (DWORD)(this->epgCapSetChState == 2 ? 60 : 10) * 1000 ){
-						//Å’á60•b‚Íæ“¾‚µAˆÈŒã10•b‚²‚Æ‚Éƒ`ƒFƒbƒN
+						//æœ€ä½60ç§’ã¯å–å¾—ã—ã€ä»¥å¾Œ10ç§’ã”ã¨ã«ãƒã‚§ãƒƒã‚¯
 						this->epgCapSetChState = 3;
 						this->epgCapLastChkTick = tick;
 						vector<SET_CH_INFO> chkList = this->chUtil.GetEpgCapServiceAll(ch.ONID, basicOnly ? -1 : ch.TSID);
-						//epgCapChList‚ÌƒT[ƒrƒX‚ÍEPGæ“¾‘ÎÛ‚Å‚È‚©‚Á‚½‚Æ‚µ‚Ä‚àƒ`ƒFƒbƒN‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+						//epgCapChListã®ã‚µãƒ¼ãƒ“ã‚¹ã¯EPGå–å¾—å¯¾è±¡ã§ãªã‹ã£ãŸã¨ã—ã¦ã‚‚ãƒã‚§ãƒƒã‚¯ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
 						if( std::find_if(chkList.begin(), chkList.end(), [=](const SET_CH_INFO& a) {
 						        return a.ONID == ch.ONID && a.TSID == ch.TSID && a.SID == ch.SID; }) == chkList.end() ){
 							chkList.push_back(ch);
 						}
-						//’~Ïó‘Ôƒ`ƒFƒbƒN
+						//è“„ç©çŠ¶æ…‹ãƒã‚§ãƒƒã‚¯
 						for( vector<SET_CH_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
 							BOOL leitFlag = this->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
 							pair<EPG_SECTION_STATUS, BOOL> status = this->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
@@ -789,7 +789,7 @@ void CBonCtrl::CheckEpgCap()
 						WORD onid;
 						WORD tsid;
 						if( this->tsOut.GetStreamID(&onid, &tsid) == FALSE || onid != ch.ONID || tsid != ch.TSID ){
-							//ƒ`ƒƒƒ“ƒlƒ‹‚ª•Ï‰»‚µ‚½‚Ì‚Å’â~
+							//ãƒãƒ£ãƒ³ãƒãƒ«ãŒå¤‰åŒ–ã—ãŸã®ã§åœæ­¢
 							this->tsOut.StopSaveEPG(FALSE);
 							this->epgCapChkNext = TRUE;
 						}else if( this->epgCapChkNext ){
@@ -801,10 +801,10 @@ void CBonCtrl::CheckEpgCap()
 		}
 
 		if( this->epgCapChkNext ){
-			//Ÿ‚Ìƒ`ƒƒƒ“ƒlƒ‹‚Ö
+			//æ¬¡ã®ãƒãƒ£ãƒ³ãƒãƒ«ã¸
 			chkCount++;
 			if( this->epgCapChList.size() <= (size_t)chkCount ){
-				//‘S•”ƒ`ƒFƒbƒNI‚í‚Á‚½‚Ì‚ÅI—¹
+				//å…¨éƒ¨ãƒã‚§ãƒƒã‚¯çµ‚ã‚ã£ãŸã®ã§çµ‚äº†
 				this->epgCapIndexOrStatus = ST_COMPLETE;
 				return;
 			}
@@ -820,7 +820,7 @@ void CBonCtrl::CheckEpgCap()
 					chkCount++;
 				}
 				if( this->epgCapChList.size() <= (size_t)chkCount ){
-					//‘S•”ƒ`ƒFƒbƒNI‚í‚Á‚½‚Ì‚ÅI—¹
+					//å…¨éƒ¨ãƒã‚§ãƒƒã‚¯çµ‚ã‚ã£ãŸã®ã§çµ‚äº†
 					this->epgCapIndexOrStatus = ST_COMPLETE;
 					return;
 				}
@@ -857,10 +857,10 @@ void CBonCtrl::SaveErrCount(
 	this->tsOut.SaveErrCount(id, filePath, asUtf8, dropSaveThresh, scrambleSaveThresh, drop, scramble);
 }
 
-//˜^‰æ’†‚Ìƒtƒ@ƒCƒ‹‚Ìo—ÍƒTƒCƒY‚ğæ“¾‚·‚é
-//ˆø”F
-// id					[IN]§Œä¯•ÊID
-// writeSize			[OUT]•Û‘¶ƒtƒ@ƒCƒ‹–¼
+//éŒ²ç”»ä¸­ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®å‡ºåŠ›ã‚µã‚¤ã‚ºã‚’å–å¾—ã™ã‚‹
+//å¼•æ•°ï¼š
+// id					[IN]åˆ¶å¾¡è­˜åˆ¥ID
+// writeSize			[OUT]ä¿å­˜ãƒ•ã‚¡ã‚¤ãƒ«å
 void CBonCtrl::GetRecWriteSize(
 	DWORD id,
 	__int64* writeSize
@@ -869,13 +869,13 @@ void CBonCtrl::GetRecWriteSize(
 	this->tsOut.GetRecWriteSize(id, writeSize);
 }
 
-//ƒoƒbƒNƒOƒ‰ƒEƒ“ƒh‚Å‚ÌEPGæ“¾İ’è
-//ˆø”F
-// enableLive	[IN]‹’®’†‚Éæ“¾‚·‚é
-// enableRec	[IN]˜^‰æ’†‚Éæ“¾‚·‚é
-// enableRec	[IN]EPGæ“¾‚·‚éƒ`ƒƒƒ“ƒlƒ‹ˆê——
-// *Basic		[IN]‚Pƒ`ƒƒƒ“ƒlƒ‹‚©‚çŠî–{î•ñ‚Ì‚İæ“¾‚·‚é‚©‚Ç‚¤‚©
-// backStartWaitSec	[IN]ChØ‚è‘Ö‚¦A˜^‰æŠJnŒãAƒoƒbƒNƒOƒ‰ƒEƒ“ƒh‚Å‚ÌEPGæ“¾‚ğŠJn‚·‚é‚Ü‚Å‚Ì•b”
+//ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã§ã®EPGå–å¾—è¨­å®š
+//å¼•æ•°ï¼š
+// enableLive	[IN]è¦–è´ä¸­ã«å–å¾—ã™ã‚‹
+// enableRec	[IN]éŒ²ç”»ä¸­ã«å–å¾—ã™ã‚‹
+// enableRec	[IN]EPGå–å¾—ã™ã‚‹ãƒãƒ£ãƒ³ãƒãƒ«ä¸€è¦§
+// *Basic		[IN]ï¼‘ãƒãƒ£ãƒ³ãƒãƒ«ã‹ã‚‰åŸºæœ¬æƒ…å ±ã®ã¿å–å¾—ã™ã‚‹ã‹ã©ã†ã‹
+// backStartWaitSec	[IN]Chåˆ‡ã‚Šæ›¿ãˆã€éŒ²ç”»é–‹å§‹å¾Œã€ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã§ã®EPGå–å¾—ã‚’é–‹å§‹ã™ã‚‹ã¾ã§ã®ç§’æ•°
 void CBonCtrl::SetBackGroundEpgCap(
 	BOOL enableLive,
 	BOOL enableRec,
@@ -923,7 +923,7 @@ void CBonCtrl::CheckEpgCapBack()
 {
 	DWORD tick = GetTickCount();
 	if( this->epgCapBackIndexOrStatus == ST_WORKING ){
-		//æ“¾‘Ò‹@’†
+		//å–å¾—å¾…æ©Ÿä¸­
 		if( tick - this->epgCapTick > this->epgCapBackStartWaitSec * 1000 ){
 			WORD onid;
 			WORD tsid;
@@ -936,7 +936,7 @@ void CBonCtrl::CheckEpgCapBack()
 				vector<SET_CH_INFO>::const_iterator itr = std::find_if(this->epgCapChList.begin(), this->epgCapChList.end(),
 				                                                       [=](const SET_CH_INFO& a) { return a.TSID == tsid; });
 				if( itr != this->epgCapChList.end() ){
-					//æ“¾‘ÎÛƒ`ƒƒƒ“ƒlƒ‹‚È‚Ì‚Åæ“¾ŠJn
+					//å–å¾—å¯¾è±¡ãƒãƒ£ãƒ³ãƒãƒ«ãªã®ã§å–å¾—é–‹å§‹
 					wstring epgDataPath;
 					GetEpgDataFilePath(onid, basicOnly ? 0xFFFF : tsid, epgDataPath);
 					if( this->tsOut.StartSaveEPG(epgDataPath) ){
@@ -960,7 +960,7 @@ void CBonCtrl::CheckEpgCapBack()
 		return;
 	}
 
-	//æ“¾’†BÅ’á60•b‚Íæ“¾‚µAˆÈŒã10•b‚²‚Æ‚Éƒ`ƒFƒbƒN
+	//å–å¾—ä¸­ã€‚æœ€ä½60ç§’ã¯å–å¾—ã—ã€ä»¥å¾Œ10ç§’ã”ã¨ã«ãƒã‚§ãƒƒã‚¯
 	if( tick - this->epgCapLastChkTick > (DWORD)(this->epgCapSetChState == 2 ? 60 : 10) * 1000 ){
 		this->epgCapSetChState = 3;
 		this->epgCapLastChkTick = tick;
@@ -968,7 +968,7 @@ void CBonCtrl::CheckEpgCapBack()
 		                 this->epgCapChList[0].ONID == 6 && this->epgCapBackCS1Basic ||
 		                 this->epgCapChList[0].ONID == 7 && this->epgCapBackCS2Basic ||
 		                 this->epgCapChList[0].ONID == 10 && this->epgCapBackCS3Basic;
-		//’~Ïó‘Ôƒ`ƒFƒbƒN
+		//è“„ç©çŠ¶æ…‹ãƒã‚§ãƒƒã‚¯
 		BOOL chkNext = FALSE;
 		for( vector<SET_CH_INFO>::const_iterator itr = this->epgCapChList.begin(); itr != this->epgCapChList.end(); itr++ ){
 			BOOL leitFlag = this->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
@@ -992,7 +992,7 @@ void CBonCtrl::CheckEpgCapBack()
 		if( this->tsOut.GetStreamID(&onid, &tsid) == FALSE ||
 		    onid != this->epgCapChList[this->epgCapBackIndexOrStatus].ONID ||
 		    tsid != this->epgCapChList[this->epgCapBackIndexOrStatus].TSID ){
-			//ƒ`ƒƒƒ“ƒlƒ‹‚ª•Ï‰»‚µ‚½‚Ì‚Å’â~
+			//ãƒãƒ£ãƒ³ãƒãƒ«ãŒå¤‰åŒ–ã—ãŸã®ã§åœæ­¢
 			this->tsOut.StopSaveEPG(FALSE);
 			this->epgCapBackIndexOrStatus = ST_STOP;
 		}else if( chkNext ){
@@ -1003,12 +1003,12 @@ void CBonCtrl::CheckEpgCapBack()
 			this->epgCapBackIndexOrStatus = ST_STOP;
 		}else{
 			if( tick - this->epgCapTick > this->epgCapTimeOut * 60 * 1000 ){
-				//timeOut•ªˆÈã‚©‚©‚Á‚Ä‚¢‚é‚È‚ç’â~
+				//timeOutåˆ†ä»¥ä¸Šã‹ã‹ã£ã¦ã„ã‚‹ãªã‚‰åœæ­¢
 				this->tsOut.StopSaveEPG(this->epgCapSaveTimeOut);
 				CSendCtrlCmd cmd;
 				cmd.SetConnectTimeOut(1000);
 				cmd.SendReloadEpg();
-				_OutputDebugString(L"++%d•ª‚ÅEPGæ“¾Š®—¹‚¹‚¸ or Ch•ÏX‚ÅƒGƒ‰[", this->epgCapTimeOut);
+				_OutputDebugString(L"++%dåˆ†ã§EPGå–å¾—å®Œäº†ã›ãš or Chå¤‰æ›´ã§ã‚¨ãƒ©ãƒ¼", this->epgCapTimeOut);
 				this->epgCapBackIndexOrStatus = ST_STOP;
 			}
 		}

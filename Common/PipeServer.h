@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "StructDef.h"
 #include "ThreadUtil.h"
@@ -18,7 +18,7 @@ public:
 	bool StopServer(bool checkOnlyFlag = false);
 
 #ifdef _WIN32
-	//SERVICE_NAME‚ÌƒT[ƒrƒXƒZƒLƒ…ƒŠƒeƒB¯•Êq(Service-specific SID)‚É‘Î‚·‚éƒAƒNƒZƒX‹–‰Â‚ğ’Ç‰Á‚·‚é
+	//SERVICE_NAMEã®ã‚µãƒ¼ãƒ“ã‚¹ã‚»ã‚­ãƒ¥ãƒªãƒ†ã‚£è­˜åˆ¥å­(Service-specific SID)ã«å¯¾ã™ã‚‹ã‚¢ã‚¯ã‚»ã‚¹è¨±å¯ã‚’è¿½åŠ ã™ã‚‹
 	static BOOL GrantServerAccessToKernelObject(HANDLE handle, DWORD permissions);
 #endif
 

@@ -1,4 +1,4 @@
-#ifndef INCLUDE_THREAD_UTIL_H
+﻿#ifndef INCLUDE_THREAD_UTIL_H
 #define INCLUDE_THREAD_UTIL_H
 
 #ifdef _WIN32

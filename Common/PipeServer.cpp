@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "PipeServer.h"
 #include "StringUtil.h"
 #include "CtrlCmdDef.h"
@@ -48,7 +48,7 @@ bool CPipeServer::StartServer(
 	}
 	this->cmdProc = cmdProc_;
 
-	//Œ´ìd—l‚Å‚Í“¯Šú“I‚ÉƒpƒCƒv‚ğ¶¬‚µ‚È‚¢‚Ì‚Å’ˆÓ
+	//åŸä½œä»•æ§˜ã§ã¯åŒæœŸçš„ã«ãƒ‘ã‚¤ãƒ—ã‚’ç”Ÿæˆã—ãªã„ã®ã§æ³¨æ„
 #ifdef _WIN32
 	wstring eventName = (L"Global\\" + pipeName).replace(7 + pipeName.find(L"Pipe"), 4, L"Connect");
 	this->hEventConnect = CreateEvent(NULL, FALSE, FALSE, eventName.c_str());
@@ -56,7 +56,7 @@ bool CPipeServer::StartServer(
 		WCHAR trusteeName[] = L"NT AUTHORITY\\Authenticated Users";
 		DWORD writeDac = 0;
 		if( insecureFlag ){
-			//Œ»İ‚ÍSYNCHRONIZE‚Å‚æ‚¢‚ªˆÈ‘O‚ÌƒNƒ‰ƒCƒAƒ“ƒg‚ÍCreateEvent()‚ÅŠJ‚¢‚Ä‚¢‚½‚Ì‚ÅGENERIC_ALL‚ª•K—v
+			//ç¾åœ¨ã¯SYNCHRONIZEã§ã‚ˆã„ãŒä»¥å‰ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã¯CreateEvent()ã§é–‹ã„ã¦ã„ãŸã®ã§GENERIC_ALLãŒå¿…è¦
 			if( GrantAccessToKernelObject(this->hEventConnect, trusteeName, GENERIC_ALL) ){
 				_OutputDebugString(L"Granted GENERIC_ALL on %ls to %ls\r\n", eventName.c_str(), trusteeName);
 				writeDac = WRITE_DAC;
@@ -113,7 +113,7 @@ bool CPipeServer::StopServer(bool checkOnlyFlag)
 	if( this->workThread.joinable() ){
 		this->stopEvent.Set();
 		if( checkOnlyFlag ){
-			//I—¹ƒ`ƒFƒbƒN‚µ‚ÄŒ‹‰Ê‚ğ•Ô‚·‚¾‚¯
+			//çµ‚äº†ãƒã‚§ãƒƒã‚¯ã—ã¦çµæœã‚’è¿”ã™ã ã‘
 			if( this->exitingFlag == false ){
 				return false;
 			}
@@ -185,7 +185,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 			if( err == ERROR_PIPE_CONNECTED ){
 				SetEvent(hEventArray[1]);
 			}else if( err != ERROR_IO_PENDING ){
-				//ƒGƒ‰[
+				//ã‚¨ãƒ©ãƒ¼
 				break;
 			}
 		}
@@ -193,7 +193,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 
 		DWORD dwRes;
 		for( int t = 0; (dwRes = WaitForMultipleObjects(2, hEventArray, FALSE, 10000)) == WAIT_TIMEOUT; ){
-			//ƒNƒ‰ƒCƒAƒ“ƒg‚ªÚ‘±‘Ò‚¿ƒCƒxƒ“ƒg‚ğŠl“¾‚µ‚½‚Ü‚ÜƒpƒCƒv‚ÉÚ‘±‚µ‚È‚©‚Á‚½ê‡‚ÉÚ‘±•s”\‚É‚È‚é‚Ì‚ğ–h‚®
+			//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒæ¥ç¶šå¾…ã¡ã‚¤ãƒ™ãƒ³ãƒˆã‚’ç²å¾—ã—ãŸã¾ã¾ãƒ‘ã‚¤ãƒ—ã«æ¥ç¶šã—ãªã‹ã£ãŸå ´åˆã«æ¥ç¶šä¸èƒ½ã«ãªã‚‹ã®ã‚’é˜²ã
 			if( WaitForSingleObject(pSys->hEventConnect, 0) == WAIT_OBJECT_0 || t >= PIPE_CONNECT_OPEN_TIMEOUT ){
 				SetEvent(pSys->hEventConnect);
 				t = 0;
@@ -207,7 +207,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 			WaitForSingleObject(hEventArray[1], INFINITE);
 			break;
 		}else if( dwRes == WAIT_OBJECT_0+1 ){
-			//ƒRƒ}ƒ“ƒhóM
+			//ã‚³ãƒãƒ³ãƒ‰å—ä¿¡
 			DWORD dwWrite = 0;
 			DWORD head[2];
 			for(;;){
@@ -242,7 +242,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 				}
 				FlushFileBuffers(pSys->hPipe);
 				if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
-					//Enum—p‚ÌŒJ‚è•Ô‚µ‚Å‚Í‚È‚¢
+					//Enumç”¨ã®ç¹°ã‚Šè¿”ã—ã§ã¯ãªã„
 					break;
 				}
 			}
@@ -255,13 +255,13 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 		pfds[1].fd = pSys->srvSock;
 		pfds[1].events = POLLIN;
 		if( poll(pfds, 2, -1) < 0 ){
-			//ƒGƒ‰[
+			//ã‚¨ãƒ©ãƒ¼
 			break;
 		}else if( pfds[0].revents & POLLIN ){
 			//STOP
 			break;
 		}else if( pfds[1].revents & POLLIN ){
-			//ƒRƒ}ƒ“ƒhóM
+			//ã‚³ãƒãƒ³ãƒ‰å—ä¿¡
 			int sock = accept4(pSys->srvSock, NULL, NULL, SOCK_CLOEXEC);
 			if( sock >= 0 ){
 				for(;;){
@@ -296,7 +296,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 						}
 					}
 					if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
-						//Enum—p‚ÌŒJ‚è•Ô‚µ‚Å‚Í‚È‚¢
+						//Enumç”¨ã®ç¹°ã‚Šè¿”ã—ã§ã¯ãªã„
 						break;
 					}
 				}

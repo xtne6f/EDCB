@@ -1,19 +1,19 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../../Common/ParseTextInstances.h"
 
-// CSetDlgEpg ƒ_ƒCƒAƒƒO
+// CSetDlgEpg ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 class CSetDlgEpg
 {
 public:
-	CSetDlgEpg();   // •W€ƒRƒ“ƒXƒgƒ‰ƒNƒ^[
+	CSetDlgEpg();   // æ¨™æº–ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ¼
 	~CSetDlgEpg();
 	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 
-// ƒ_ƒCƒAƒƒO ƒf[ƒ^
+// ãƒ€ã‚¤ã‚¢ãƒ­ã‚° ãƒ‡ãƒ¼ã‚¿
 	enum { IDD = IDD_DIALOG_SET_EPG };
 	
 protected:

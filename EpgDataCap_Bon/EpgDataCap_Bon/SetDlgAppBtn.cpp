@@ -1,4 +1,4 @@
-// SetDlgAppBtn.cpp : À‘•ƒtƒ@ƒCƒ‹
+ï»¿// SetDlgAppBtn.cpp : å®Ÿè£…ãƒ•ã‚¡ã‚¤ãƒ«
 //
 
 #include "stdafx.h"
@@ -7,7 +7,7 @@
 #include <commdlg.h>
 
 
-// CSetDlgAppBtn ƒ_ƒCƒAƒƒO
+// CSetDlgAppBtn ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 CSetDlgAppBtn::CSetDlgAppBtn()
 	: m_hWnd(NULL)
@@ -25,18 +25,18 @@ BOOL CSetDlgAppBtn::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 }
 
 
-// CSetDlgAppBtn ƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[
+// CSetDlgAppBtn ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼
 
 
 BOOL CSetDlgAppBtn::OnInitDialog()
 {
-	// TODO:  ‚±‚±‚É‰Šú‰»‚ğ’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢
+	// TODO:  ã“ã“ã«åˆæœŸåŒ–ã‚’è¿½åŠ ã—ã¦ãã ã•ã„
 	fs_path appIniPath = GetModuleIniPath();
 	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, GetPrivateProfileToString( L"SET", L"ViewPath", L"", appIniPath.c_str() ).c_str());
 	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_OPT, GetPrivateProfileToString( L"SET", L"ViewOption", L"", appIniPath.c_str() ).c_str());
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	// —áŠO : OCX ƒvƒƒpƒeƒB ƒy[ƒW‚Í•K‚¸ FALSE ‚ğ•Ô‚µ‚Ü‚·B
+	// ä¾‹å¤– : OCX ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ ãƒšãƒ¼ã‚¸ã¯å¿…ãš FALSE ã‚’è¿”ã—ã¾ã™ã€‚
 }
 
 void CSetDlgAppBtn::SaveIni(void)
@@ -55,7 +55,7 @@ void CSetDlgAppBtn::SaveIni(void)
 
 void CSetDlgAppBtn::OnBnClickedButtonViewExe()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	WCHAR strFile[MAX_PATH]=L"";
 	OPENFILENAME ofn = {};
 	ofn.lStructSize = sizeof (OPENFILENAME);

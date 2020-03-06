@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "TSBuffUtil.h"
 
 CTSBuffUtil::CTSBuffUtil()
@@ -23,23 +23,23 @@ void CTSBuffUtil::Clear()
 BOOL CTSBuffUtil::CheckCounter(CTSPacketUtil* tsPacket)
 {
 	if( tsPacket->PID == 0x1FFF ){
-		//NULLƒpƒPƒbƒgŽž‚ÍˆÓ–¡‚È‚µ
+		//NULLãƒ‘ã‚±ãƒƒãƒˆæ™‚ã¯æ„å‘³ãªã—
 		this->duplicateFlag = FALSE;
 		return TRUE;
 	}
 	if( this->lastPID != 0xFFFF || this->lastCounter != 0xFF ){
 		if( this->lastPID != tsPacket->PID ){
-			//PID•ÏX‚³‚ê‚½‚Ì‚Å•s˜A‘±
+			//PIDå¤‰æ›´ã•ã‚ŒãŸã®ã§ä¸é€£ç¶š
 			this->duplicateFlag = FALSE;
 			return FALSE;
 		}else{
 			if( tsPacket->adaptation_field_control == 0x00 || tsPacket->adaptation_field_control == 0x02 ){
-				//ƒyƒCƒ[ƒh‚ª‘¶Ý‚µ‚È‚¢ê‡‚ÍˆÓ–¡‚È‚µ
+				//ãƒšã‚¤ãƒ­ãƒ¼ãƒ‰ãŒå­˜åœ¨ã—ãªã„å ´åˆã¯æ„å‘³ãªã—
 				this->duplicateFlag = FALSE;
 				if( tsPacket->adaptation_field_control == 0x02 || tsPacket->adaptation_field_control == 0x03 ){
 					if( tsPacket->transport_scrambling_control == 0 ){
 						if(tsPacket->discontinuity_indicator == 1){
-							//•s˜A‘±‚Ì”»’è‚ª•K—v
+							//ä¸é€£ç¶šã®åˆ¤å®šãŒå¿…è¦
 							return FALSE;
 						}else{
 							return TRUE;
@@ -55,11 +55,11 @@ BOOL CTSBuffUtil::CheckCounter(CTSPacketUtil* tsPacket)
 				if( tsPacket->adaptation_field_control == 0x01 || tsPacket->adaptation_field_control == 0x03 ){
 					if( tsPacket->transport_scrambling_control == 0 ){
 						if( this->duplicateFlag == FALSE ){
-							//d‘—Hˆê‰ž˜A‘±‚Æ”»’è
+							//é‡é€ï¼Ÿä¸€å¿œé€£ç¶šã¨åˆ¤å®š
 							this->duplicateFlag = TRUE;
 							if( tsPacket->adaptation_field_control == 0x02 || tsPacket->adaptation_field_control == 0x03 ){
 								if(tsPacket->discontinuity_indicator == 1){
-									//•s˜A‘±‚Ì”»’è‚ª•K—v
+									//ä¸é€£ç¶šã®åˆ¤å®šãŒå¿…è¦
 									return FALSE;
 								}else{
 									return TRUE;
@@ -68,7 +68,7 @@ BOOL CTSBuffUtil::CheckCounter(CTSPacketUtil* tsPacket)
 								return TRUE;
 							}
 						}else{
-							//‘O‰ñd‘—‚Æ”»’f‚µ‚Ä‚é‚Ì‚Å•s˜A‘±
+							//å‰å›žé‡é€ã¨åˆ¤æ–­ã—ã¦ã‚‹ã®ã§ä¸é€£ç¶š
 							this->duplicateFlag = FALSE;
 							return FALSE;
 						}
@@ -79,7 +79,7 @@ BOOL CTSBuffUtil::CheckCounter(CTSPacketUtil* tsPacket)
 			}
 			if( this->lastCounter+1 != tsPacket->continuity_counter ){
 				if( this->lastCounter != 0x0F && tsPacket->continuity_counter != 0x00 ){
-					//ƒJƒEƒ“ƒ^[‚ª”ò‚ñ‚¾‚Ì‚Å•s˜A‘±
+					//ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼ãŒé£›ã‚“ã ã®ã§ä¸é€£ç¶š
 					return FALSE;
 				}
 			}
@@ -94,25 +94,25 @@ DWORD CTSBuffUtil::Add188TS(CTSPacketUtil* tsPacket)
 		return FALSE;
 	}
 
-	//ƒoƒbƒtƒ@‚ð‚·‚×‚ÄŽó‚¯Žæ‚é
+	//ãƒãƒƒãƒ•ã‚¡ã‚’ã™ã¹ã¦å—ã‘å–ã‚‹
 	BYTE* sectionData;
 	DWORD dataSize;
 	while( GetSectionBuff(&sectionData, &dataSize) != FALSE );
 
-	//ƒJƒEƒ“ƒ^[ƒ`ƒFƒbƒN
+	//ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼ãƒã‚§ãƒƒã‚¯
 	if( CheckCounter(tsPacket) == FALSE ){
 		Clear();
 	}
-	//ƒXƒNƒ‰ƒ“ƒuƒ‹‚Ìƒ`ƒFƒbƒN
+	//ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«ã®ãƒã‚§ãƒƒã‚¯
 	if( tsPacket->transport_scrambling_control != 0 ){
-		//ƒXƒNƒ‰ƒ“ƒuƒ‹ƒpƒPƒbƒg‚È‚Ì‚Å‰ðÍ‚Å‚«‚È‚¢
+		//ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«ãƒ‘ã‚±ãƒƒãƒˆãªã®ã§è§£æžã§ããªã„
 		Clear();
 		return ERR_NOT_SUPPORT;
 	}
 
 	if( tsPacket->payload_unit_start_indicator == 1 ){
 		if( tsPacket->data_byteSize < 3 ){
-			//ƒTƒCƒY‚ª¬‚³‚·‚¬‚é
+			//ã‚µã‚¤ã‚ºãŒå°ã•ã™ãŽã‚‹
 			return FALSE;
 		}
 		if(tsPacket->data_byte[0] == 0x00 && tsPacket->data_byte[1] == 0x00 && tsPacket->data_byte[2] == 0x01){
@@ -135,14 +135,14 @@ DWORD CTSBuffUtil::Add188TS(CTSPacketUtil* tsPacket)
 	}
 
 	if( this->lastPID == 0xFFFF && this->lastCounter == 0xFF ){
-		//‰‰ñ
+		//åˆå›ž
 		if( tsPacket->payload_unit_start_indicator == 1 ){
 			//PSI
 			this->lastPID = tsPacket->PID;
 			this->lastCounter = tsPacket->continuity_counter;
 			return AddSectionBuff(tsPacket);
 		}else{
-			//ƒXƒ^[ƒgˆÊ’u‚Å‚Í‚È‚¢
+			//ã‚¹ã‚¿ãƒ¼ãƒˆä½ç½®ã§ã¯ãªã„
 			return ERR_ADD_NEXT;
 		}
 	}else{
@@ -156,7 +156,7 @@ DWORD CTSBuffUtil::Add188TS(CTSPacketUtil* tsPacket)
 BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
 {
 	if( sectionSize == 0 && carryPacket.empty() == false ){
-		//ŒJ‚è‰z‚µƒpƒPƒbƒg‚ðˆ—
+		//ç¹°ã‚Šè¶Šã—ãƒ‘ã‚±ãƒƒãƒˆã‚’å‡¦ç†
 		CTSPacketUtil tsPacket;
 		tsPacket.payload_unit_start_indicator = 1;
 		tsPacket.data_byteSize = (BYTE)carryPacket.size();
@@ -166,14 +166,14 @@ BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
 		}
 	}
 	if( sectionSize == 0 || sectionSize != sectionBuff.size() ){
-		//sectionBuff‚ÍGetÏ‚Ý‚©ì¬“r’†
+		//sectionBuffã¯Getæ¸ˆã¿ã‹ä½œæˆé€”ä¸­
 		carryPacket.clear();
 		return FALSE;
 	}
 
 	*sectionData = &sectionBuff.front();
 	*dataSize = sectionSize;
-	//sectionBuff‚ªGetÏ‚Ý‚Å‚ ‚é‚±‚Æ‚ðŽ¦‚·
+	//sectionBuffãŒGetæ¸ˆã¿ã§ã‚ã‚‹ã“ã¨ã‚’ç¤ºã™
 	sectionSize = 0;
 
 	return TRUE;
@@ -191,42 +191,42 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 	if( tsPacket->payload_unit_start_indicator == 1 ){
 		BYTE pointer_field = tsPacket->data_byte[0];
 		if( pointer_field + 1 > tsPacket->data_byteSize ){
-			//ƒTƒCƒY‚ª¬‚³‚·‚¬‚é
-			_OutputDebugString(L"špsi size err PID 0x%04X\r\n", tsPacket->PID);
+			//ã‚µã‚¤ã‚ºãŒå°ã•ã™ãŽã‚‹
+			_OutputDebugString(L"â˜…psi size err PID 0x%04X\r\n", tsPacket->PID);
 			sectionSize = 0;
 			return FALSE;
 		}
 		if( sectionSize != 0 && sectionSize != sectionBuff.size() ){
 			if( sectionSize - sectionBuff.size() == pointer_field ){
 				sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte + 1, tsPacket->data_byte + 1 + pointer_field);
-				//Žc‚è‚ÌƒyƒCƒ[ƒh‚ðŒJ‚è‰z‚·
+				//æ®‹ã‚Šã®ãƒšã‚¤ãƒ­ãƒ¼ãƒ‰ã‚’ç¹°ã‚Šè¶Šã™
 				carryPacket.assign(1, 0);
 				carryPacket.insert(carryPacket.end(), tsPacket->data_byte + 1 + pointer_field, tsPacket->data_byte + tsPacket->data_byteSize);
 				return TRUE;
 			}else{
-				//ƒTƒCƒY‚ª‚¨‚©‚µ‚¢‚Ì‚ÅƒNƒŠƒA
-				_OutputDebugString(L"špsi section size err PID 0x%04X\r\n", tsPacket->PID);
+				//ã‚µã‚¤ã‚ºãŒãŠã‹ã—ã„ã®ã§ã‚¯ãƒªã‚¢
+				_OutputDebugString(L"â˜…psi section size err PID 0x%04X\r\n", tsPacket->PID);
 				sectionSize = 0;
 			}
 		}
 		BYTE readSize = pointer_field + 1;
 
-		//ƒ}ƒ‹ƒ`ƒZƒNƒVƒ‡ƒ“ƒ`ƒFƒbƒN
+		//ãƒžãƒ«ãƒã‚»ã‚¯ã‚·ãƒ§ãƒ³ãƒã‚§ãƒƒã‚¯
 		if( readSize + 2 >= tsPacket->data_byteSize ||
 		    tsPacket->data_byte[readSize] == 0xFF &&
 		    tsPacket->data_byte[readSize+1] == 0xFF &&
 		    tsPacket->data_byte[readSize+2] == 0xFF ){
-			//Žc‚è‚ÍƒXƒ^ƒbƒtƒBƒ“ƒOƒoƒCƒg
+			//æ®‹ã‚Šã¯ã‚¹ã‚¿ãƒƒãƒ•ã‚£ãƒ³ã‚°ãƒã‚¤ãƒˆ
 			return ERR_ADD_NEXT;
 		}
 
 		sectionSize = (((DWORD)tsPacket->data_byte[readSize+1]&0x0F) << 8 | tsPacket->data_byte[readSize+2]) + 3;
 		sectionBuff.assign(tsPacket->data_byte + readSize, tsPacket->data_byte + min((DWORD)tsPacket->data_byteSize, readSize + sectionSize));
 		if( sectionSize == sectionBuff.size() ){
-			//‚±‚ÌƒpƒPƒbƒg‚¾‚¯‚ÅŠ®Œ‹BŽc‚è‚ÌƒyƒCƒ[ƒh‚ðŒJ‚è‰z‚·
+			//ã“ã®ãƒ‘ã‚±ãƒƒãƒˆã ã‘ã§å®Œçµã€‚æ®‹ã‚Šã®ãƒšã‚¤ãƒ­ãƒ¼ãƒ‰ã‚’ç¹°ã‚Šè¶Šã™
 			if( carryPacket.empty() == false && tsPacket->data_byte == &carryPacket.front() ){
 				carryPacket.erase(carryPacket.begin() + readSize, carryPacket.begin() + readSize + sectionSize);
-				//ƒ}ƒ‹ƒ`ƒZƒNƒVƒ‡ƒ“‚É‚æ‚é˜A‘±ŒJ‚è‰z‚µ‚Å‚ ‚é‚±‚Æ‚ðŽ¦‚·“Á•Ê‚È–ß‚è’l
+				//ãƒžãƒ«ãƒã‚»ã‚¯ã‚·ãƒ§ãƒ³ã«ã‚ˆã‚‹é€£ç¶šç¹°ã‚Šè¶Šã—ã§ã‚ã‚‹ã“ã¨ã‚’ç¤ºã™ç‰¹åˆ¥ãªæˆ»ã‚Šå€¤
 				return 2;
 			}else{
 				carryPacket.assign(1, 0);
@@ -234,11 +234,11 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 				return TRUE;
 			}
 		}else{
-			//ŽŸ‚ÌƒpƒPƒbƒg•K—v
+			//æ¬¡ã®ãƒ‘ã‚±ãƒƒãƒˆå¿…è¦
 			return ERR_ADD_NEXT;
 		}
 	}else{
-		//•¡”ƒpƒPƒbƒg‚É‚Ü‚½‚ª‚Á‚Ä‚¢‚é
+		//è¤‡æ•°ãƒ‘ã‚±ãƒƒãƒˆã«ã¾ãŸãŒã£ã¦ã„ã‚‹
 		sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte, tsPacket->data_byte + min((DWORD)tsPacket->data_byteSize, sectionSize - (DWORD)sectionBuff.size()));
 		if( sectionSize == sectionBuff.size() ){
 			return TRUE;

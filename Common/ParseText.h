@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "PathUtil.h"
 #include "StringUtil.h"
@@ -45,7 +45,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 		}else if( UtilFileExists(this->filePath, &mightExist).first == false && mightExist == false ){
 			return true;
 		}else if( ++retry > 5 ){
-			//6‰ñƒgƒ‰ƒC‚µ‚Ä‚»‚ê‚Å‚àƒ_ƒ‚È‚ç¸”s
+			//6å›ãƒˆãƒ©ã‚¤ã—ã¦ãã‚Œã§ã‚‚ãƒ€ãƒ¡ãªã‚‰å¤±æ•—
 			OutputDebugString(L"CParseText<>::ParseText(): Error: Cannot open file\r\n");
 			return false;
 		}
@@ -57,7 +57,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 	vector<char> buf;
 	vector<WCHAR> parseBuf;
 	for(;;){
-		//4KB’PˆÊ‚Å“Ç‚İ‚Ş
+		//4KBå˜ä½ã§èª­ã¿è¾¼ã‚€
 		buf.resize(buf.size() + 4096);
 		size_t n = fread(&buf.front() + buf.size() - 4096, 1, 4096, fp.get());
 		if( n == 0 ){
@@ -73,7 +73,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 				buf.erase(buf.begin(), buf.begin() + 3);
 			}
 		}
-		//Š®‘S‚É“Ç‚İ‚Ü‚ê‚½s‚ğ‚Å‚«‚é‚¾‚¯‰ğÍ
+		//å®Œå…¨ã«èª­ã¿è¾¼ã¾ã‚ŒãŸè¡Œã‚’ã§ãã‚‹ã ã‘è§£æ
 		size_t offset = 0;
 		for( size_t i = 0; i < buf.size(); i++ ){
 			bool eof = buf[i] == '\0';

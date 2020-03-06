@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "TSPacketUtil.h"
 
@@ -8,10 +8,10 @@ public:
 	static const DWORD ERR_ADD_NEXT = 100;
 	static const DWORD ERR_NOT_SUPPORT = 101;
 
-	//PES(Packetized Elementary Stream)‘Î‰‚Í”p~‚µ‚½
+	//PES(Packetized Elementary Stream)å¯¾å¿œã¯å»ƒæ­¢ã—ãŸ
 	CTSBuffUtil();
 
-	//Add188TS()‚ªTRUE‚ğ•Ô‚¹‚ÎGetSectionBuff()‚Í1‰ñˆÈã¬Œ÷‚·‚éB‚±‚Ì‚Æ‚«ó‚¯æ‚ç‚È‚©‚Á‚½ƒoƒbƒtƒ@‚ÍŸ‚ÌAdd188TS()‚ÅÁ‚¦‚é
+	//Add188TS()ãŒTRUEã‚’è¿”ã›ã°GetSectionBuff()ã¯1å›ä»¥ä¸ŠæˆåŠŸã™ã‚‹ã€‚ã“ã®ã¨ãå—ã‘å–ã‚‰ãªã‹ã£ãŸãƒãƒƒãƒ•ã‚¡ã¯æ¬¡ã®Add188TS()ã§æ¶ˆãˆã‚‹
 	DWORD Add188TS(CTSPacketUtil* tsPacket);
 	BOOL GetSectionBuff(BYTE** sectionData, DWORD* dataSize);
 

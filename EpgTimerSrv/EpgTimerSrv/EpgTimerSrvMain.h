@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "EpgDBManager.h"
 #include "ReserveManager.h"
@@ -8,62 +8,62 @@
 #include "../../Common/TimeShiftUtil.h"
 #include "../../Common/InstanceManager.h"
 
-//ŠeíƒT[ƒo‚Æ©“®—\–ñ‚ÌŠÇ—‚ğ‚¨‚±‚È‚¤
-//•K‚¸ƒIƒuƒWƒFƒNƒg¶¬¨Main()¨c¨”jŠü‚Ì‡”Ô‚Å—˜—p‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+//å„ç¨®ã‚µãƒ¼ãƒã¨è‡ªå‹•äºˆç´„ã®ç®¡ç†ã‚’ãŠã“ãªã†
+//å¿…ãšã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆâ†’Main()â†’â€¦â†’ç ´æ£„ã®é †ç•ªã§åˆ©ç”¨ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
 class CEpgTimerSrvMain
 {
 public:
 	CEpgTimerSrvMain();
-	//ƒƒCƒ“ƒ‹[ƒvˆ—(Taskƒ‚[ƒh)
+	//ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—å‡¦ç†(Taskãƒ¢ãƒ¼ãƒ‰)
 	static bool TaskMain();
-	//ƒƒCƒ“ƒ‹[ƒvˆ—
-	//serviceFlag_: ƒT[ƒrƒX‚Æ‚µ‚Ä‚Ì‹N“®‚©‚Ç‚¤‚©
+	//ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—å‡¦ç†
+	//serviceFlag_: ã‚µãƒ¼ãƒ“ã‚¹ã¨ã—ã¦ã®èµ·å‹•ã‹ã©ã†ã‹
 	bool Main(bool serviceFlag_);
-	//ƒƒCƒ“ˆ—’â~
+	//ãƒ¡ã‚¤ãƒ³å‡¦ç†åœæ­¢
 	void StopMain();
-	//‹x~^ƒXƒ^ƒ“ƒoƒC‚ÉˆÚs‚µ‚Ä\‚í‚È‚¢ó‹µ‚©‚Ç‚¤‚©
+	//ä¼‘æ­¢ï¼ã‚¹ã‚¿ãƒ³ãƒã‚¤ã«ç§»è¡Œã—ã¦æ§‹ã‚ãªã„çŠ¶æ³ã‹ã©ã†ã‹
 	bool IsSuspendOK() const;
 private:
-	//ƒƒCƒ“ƒEƒBƒ“ƒhƒE(Taskƒ‚[ƒh)
+	//ãƒ¡ã‚¤ãƒ³ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦(Taskãƒ¢ãƒ¼ãƒ‰)
 	static LRESULT CALLBACK TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	//ƒƒCƒ“ƒEƒBƒ“ƒhƒE
+	//ãƒ¡ã‚¤ãƒ³ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦
 	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	//ƒVƒƒƒbƒgƒ_ƒEƒ“–â‚¢‡‚í‚¹ƒ_ƒCƒAƒƒO
+	//ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å•ã„åˆã‚ã›ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	//ƒAƒCƒRƒ“‚ğ“Ç‚İ‚Ş
+	//ã‚¢ã‚¤ã‚³ãƒ³ã‚’èª­ã¿è¾¼ã‚€
 	static HICON LoadSmallIcon(int iconID);
-	//GUI(EpgTimer)‚ğ‹N“®‚·‚é
+	//GUI(EpgTimer)ã‚’èµ·å‹•ã™ã‚‹
 	static void OpenGUI();
-	//u—\–ñíœvƒ|ƒbƒvƒAƒbƒv‚ğì¬‚·‚é
+	//ã€Œäºˆç´„å‰Šé™¤ã€ãƒãƒƒãƒ—ã‚¢ãƒƒãƒ—ã‚’ä½œæˆã™ã‚‹
 	static void InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list);
 	void ReloadNetworkSetting();
 	void ReloadSetting(bool initialize = false);
-	//ƒfƒtƒHƒ‹ƒgw’è‰Â”\‚ÈƒtƒB[ƒ‹ƒh‚ÌƒfƒtƒHƒ‹ƒg’l‚ğ“Á•Ê‚È—\–ñî•ñ(ID=0x7FFFFFFF)‚Æ‚µ‚Äæ“¾‚·‚é
+	//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆæŒ‡å®šå¯èƒ½ãªãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã‚’ç‰¹åˆ¥ãªäºˆç´„æƒ…å ±(ID=0x7FFFFFFF)ã¨ã—ã¦å–å¾—ã™ã‚‹
 	RESERVE_DATA GetDefaultReserveData(__int64 startTime) const;
-	//Œ»İ‚Ì—\–ñó‘Ô‚É‰‚¶‚½•œ‹Aƒ^ƒCƒ}‚ğƒZƒbƒg‚·‚é
+	//ç¾åœ¨ã®äºˆç´„çŠ¶æ…‹ã«å¿œã˜ãŸå¾©å¸°ã‚¿ã‚¤ãƒã‚’ã‚»ãƒƒãƒˆã™ã‚‹
 	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
-	//ƒVƒXƒeƒ€‚ğƒVƒƒƒbƒgƒ_ƒEƒ“‚·‚é
+	//ã‚·ã‚¹ãƒ†ãƒ ã‚’ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³ã™ã‚‹
 	static void SetShutdown(BYTE shutdownMode);
-	//GUI‚ÉƒVƒƒƒbƒgƒ_ƒEƒ“‰Â”\‚©‚Ç‚¤‚©‚Ì–â‚¢‡‚í‚¹‚ğŠJn‚³‚¹‚é
-	//suspendMode==0:Ä‹N“®(í‚ÉrebootFlag==1‚Æ‚·‚é)
-	//suspendMode!=0:ƒXƒ^ƒ“ƒoƒC‹x~‚Ü‚½‚Í“dŒ¹’f
+	//GUIã«ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³å¯èƒ½ã‹ã©ã†ã‹ã®å•ã„åˆã‚ã›ã‚’é–‹å§‹ã•ã›ã‚‹
+	//suspendMode==0:å†èµ·å‹•(å¸¸ã«rebootFlag==1ã¨ã™ã‚‹)
+	//suspendMode!=0:ã‚¹ã‚¿ãƒ³ãƒã‚¤ä¼‘æ­¢ã¾ãŸã¯é›»æºæ–­
 	bool QueryShutdown(BYTE rebootFlag, BYTE suspendMode);
-	//ƒ†[ƒU[‚ªPC‚ğg—p’†‚©‚Ç‚¤‚©
+	//ãƒ¦ãƒ¼ã‚¶ãƒ¼ãŒPCã‚’ä½¿ç”¨ä¸­ã‹ã©ã†ã‹
 	bool IsUserWorking() const;
-	//‹¤—LƒtƒHƒ‹ƒ_‚ÌTSƒtƒ@ƒCƒ‹‚ÉƒAƒNƒZƒX‚ª‚ ‚é‚©‚Ç‚¤‚©
+	//å…±æœ‰ãƒ•ã‚©ãƒ«ãƒ€ã®TSãƒ•ã‚¡ã‚¤ãƒ«ã«ã‚¢ã‚¯ã‚»ã‚¹ãŒã‚ã‚‹ã‹ã©ã†ã‹
 	bool IsFindShareTSFile() const;
-	//—}§ğŒ‚ÌƒvƒƒZƒX‚ª‹N“®‚µ‚Ä‚¢‚é‚©‚Ç‚¤‚©
+	//æŠ‘åˆ¶æ¡ä»¶ã®ãƒ—ãƒ­ã‚»ã‚¹ãŒèµ·å‹•ã—ã¦ã„ã‚‹ã‹ã©ã†ã‹
 	bool IsFindNoSuspendExe() const;
-	//•ÏX’¼‘O‚Ì—\–ñ‚ğ’²®‚·‚é
+	//å¤‰æ›´ç›´å‰ã®äºˆç´„ã‚’èª¿æ•´ã™ã‚‹
 	vector<RESERVE_DATA>& PreChgReserveData(vector<RESERVE_DATA>& reserveList) const;
 	void AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList);
 	void AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const;
-	//ŠO•”§ŒäƒRƒ}ƒ“ƒhŠÖŒW
+	//å¤–éƒ¨åˆ¶å¾¡ã‚³ãƒãƒ³ãƒ‰é–¢ä¿‚
 	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag, LPCWSTR clientIP);
 	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam, LPCWSTR clientIP);
 	void InitLuaCallback(lua_State* L, LPCSTR serverRandom);
 	void DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff);
-	//Lua-edcb‹óŠÔ‚ÌƒR[ƒ‹ƒoƒbƒN
+	//Lua-edcbç©ºé–“ã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯
 	class CLuaWorkspace
 	{
 	public:
@@ -128,7 +128,7 @@ private:
 
 	CNotifyManager notifyManager;
 	CEpgDBManager epgDB;
-	//reserveManager‚ÍnotifyManager‚ÆepgDB‚ÉˆË‘¶‚·‚é‚Ì‚ÅA‡˜‚ğ“ü‚ê‘Ö‚¦‚Ä‚Í‚¢‚¯‚È‚¢
+	//reserveManagerã¯notifyManagerã¨epgDBã«ä¾å­˜ã™ã‚‹ã®ã§ã€é †åºã‚’å…¥ã‚Œæ›¿ãˆã¦ã¯ã„ã‘ãªã„
 	CReserveManager reserveManager;
 	CInstanceManager<CTimeShiftUtil> streamingManager;
 
@@ -136,7 +136,7 @@ private:
 	CParseManualAutoAddText manualAutoAdd;
 	map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator autoAddCheckItr;
 
-	//autoAddLock->settingLock‚Ì‡‚ÉƒƒbƒN‚·‚é
+	//autoAddLock->settingLockã®é †ã«ãƒ­ãƒƒã‚¯ã™ã‚‹
 	mutable recursive_mutex_ autoAddLock;
 	mutable recursive_mutex_ settingLock;
 	HWND hwndMain;

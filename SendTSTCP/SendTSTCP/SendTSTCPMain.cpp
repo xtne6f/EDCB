@@ -1,16 +1,16 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "SendTSTCPMain.h"
 
-//SendTSTCP�v���g�R���̃w�b�_�̑��M��}���������̃|�[�g�͈�
+//SendTSTCPプロトコルのヘッダの送信を抑制する既定のポート範囲
 #define SEND_TS_TCP_NOHEAD_PORT_MIN 22000
 #define SEND_TS_TCP_NOHEAD_PORT_MAX 22999
-//���M�悪0.0.0.1�̂Ƃ��҂��󂯂閼�O�t���p�C�v��
+//送信先が0.0.0.1のとき待ち受ける名前付きパイプ名
 #define SEND_TS_TCP_0001_PIPE_NAME L"\\\\.\\pipe\\SendTSTCP_%d_%u"
-//���M�悪0.0.0.2�̂Ƃ��J�����O�t���p�C�v��
+//送信先が0.0.0.2のとき開く名前付きパイプ名
 #define SEND_TS_TCP_0002_PIPE_NAME L"\\\\.\\pipe\\BonDriver_Pipe%02d"
-//���M�o�b�t�@�̍ő吔(�T�C�Y��AddSendData()�̓��͂Ɉˑ�)
+//送信バッファの最大数(サイズはAddSendData()の入力に依存)
 #define SEND_TS_TCP_BUFF_MAX 500
-//���M��(�T�[�o)�ڑ��̂��߂̃|�[�����O�Ԋu
+//送信先(サーバ)接続のためのポーリング間隔
 #define SEND_TS_TCP_CONNECT_INTERVAL_MSEC 2000
 
 CSendTSTCPMain::CSendTSTCPMain(void)
@@ -26,8 +26,8 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 	WSACleanup();
 }
 
-//���M���ǉ�
-//�߂�l�F�G���[�R�[�h
+//送信先を追加
+//戻り値：エラーコード
 DWORD CSendTSTCPMain::AddSendAddr(
 	LPCWSTR lpcwszIP,
 	DWORD dwPort
@@ -40,7 +40,7 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	WtoUTF8(lpcwszIP, Item.strIP);
 	Item.dwPort = dwPort;
 	if( SEND_TS_TCP_NOHEAD_PORT_MIN <= dwPort && dwPort <= SEND_TS_TCP_NOHEAD_PORT_MAX ){
-		//��ʃ��[�h��1�̂Ƃ��̓w�b�_�̑��M���}�������
+		//上位ワードが1のときはヘッダの送信が抑制される
 		Item.dwPort |= 0x10000;
 	}
 	Item.sock = INVALID_SOCKET;
@@ -57,8 +57,8 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	return TRUE;
 }
 
-//���M��N���A
-//�߂�l�F�G���[�R�[�h
+//送信先クリア
+//戻り値：エラーコード
 DWORD CSendTSTCPMain::ClearSendAddr(
 	)
 {
@@ -73,8 +73,8 @@ DWORD CSendTSTCPMain::ClearSendAddr(
 	return TRUE;
 }
 
-//�f�[�^���M���J�n
-//�߂�l�F�G���[�R�[�h
+//データ送信を開始
+//戻り値：エラーコード
 DWORD CSendTSTCPMain::StartSend(
 	)
 {
@@ -88,8 +88,8 @@ DWORD CSendTSTCPMain::StartSend(
 	return TRUE;
 }
 
-//�f�[�^���M���~
-//�߂�l�F�G���[�R�[�h
+//データ送信を停止
+//戻り値：エラーコード
 DWORD CSendTSTCPMain::StopSend(
 	)
 {
@@ -101,8 +101,8 @@ DWORD CSendTSTCPMain::StopSend(
 	return TRUE;
 }
 
-//�f�[�^���M���J�n
-//�߂�l�F�G���[�R�[�h
+//データ送信を開始
+//戻り値：エラーコード
 DWORD CSendTSTCPMain::AddSendData(
 	BYTE* pbData,
 	DWORD dwSize
@@ -121,8 +121,8 @@ DWORD CSendTSTCPMain::AddSendData(
 	return TRUE;
 }
 
-//���M�o�b�t�@���N���A
-//�߂�l�F�G���[�R�[�h
+//送信バッファをクリア
+//戻り値：エラーコード
 DWORD CSendTSTCPMain::ClearSendBuff(
 	)
 {
@@ -154,7 +154,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					}
 				}
 				if( itr->strIP == "0.0.0.1" ){
-					//�T�[�o�Ƃ��Ė��O�t���p�C�v�ő҂���
+					//サーバとして名前付きパイプで待ち受け
 					if( itr->olEvent == NULL ){
 						itr->olEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 					}
@@ -184,7 +184,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						}
 					}
 				}else if( itr->strIP == "0.0.0.2" ){
-					//�N���C�A���g�Ƃ��Ė��O�t���p�C�v���J��
+					//クライアントとして名前付きパイプを開く
 					if( itr->olEvent == NULL ){
 						itr->olEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 					}
@@ -197,7 +197,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						}
 					}
 				}else{
-					//�N���C�A���g�Ƃ���TCP�Őڑ�
+					//クライアントとしてTCPで接続
 					if( itr->sock != INVALID_SOCKET && itr->bConnect == FALSE ){
 						fd_set wmask;
 						FD_ZERO(&wmask);
@@ -221,7 +221,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						if( getaddrinfo(itr->strIP.c_str(), szPort, &hints, &result) == 0 ){
 							itr->sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 							if( itr->sock != INVALID_SOCKET ){
-								//�m���u���b�L���O���[�h��
+								//ノンブロッキングモードへ
 								unsigned long x = 1;
 								if( ioctlsocket(itr->sock, FIONBIO, &x) == SOCKET_ERROR ){
 									closesocket(itr->sock);
@@ -250,13 +250,13 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 				DWORD dwCmd[2] = { dwCount, (DWORD)(item.back().size() - sizeof(DWORD) * 2) };
 				memcpy(&item.back().front(), dwCmd, sizeof(dwCmd));
 			}
-			//�r���Ō��邱�Ƃ͂Ȃ�
+			//途中で減ることはない
 			sendListSizeOrStop = pSys->m_SendList.size();
 		}
 
 		if( item.empty() || sendListSizeOrStop == 0 ){
 			if( pSys->m_stopSendEvent.WaitOne(item.empty() ? 100 : 0) ){
-				//�L�����Z�����ꂽ
+				//キャンセルされた
 				break;
 			}
 		}else{
@@ -275,7 +275,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					adjust -= sizeof(DWORD) * 2;
 				}
 				if( itr->pipe != INVALID_HANDLE_VALUE && itr->bConnect && adjust != 0 ){
-					//���O�t���p�C�v�ɏ�������
+					//名前付きパイプに書き込む
 					OVERLAPPED olZero = {};
 					itr->ol = olZero;
 					itr->ol.hEvent = itr->olEvent;
@@ -286,7 +286,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					    GetLastError() != ERROR_IO_PENDING ){
 						bClose = TRUE;
 					}else if( WaitForMultipleObjects(2, olEvents, FALSE, INFINITE) != WAIT_OBJECT_0 + 1 ){
-						//�L�����Z�����ꂽ
+						//キャンセルされた
 						CancelIo(itr->pipe);
 						WaitForSingleObject(itr->olEvent, INFINITE);
 						sendListSizeOrStop = 0;
@@ -295,7 +295,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					}
 					if( bClose ){
 						if( itr->strIP == "0.0.0.1" ){
-							//�Ăё҂���
+							//再び待ち受け
 							DisconnectNamedPipe(itr->pipe);
 							itr->bConnect = FALSE;
 							itr->ol = olZero;
@@ -318,7 +318,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 				}
 				for(;;){
 					if( pSys->m_stopSendEvent.WaitOne(0) ){
-						//�L�����Z�����ꂽ
+						//キャンセルされた
 						sendListSizeOrStop = 0;
 						break;
 					}
@@ -340,7 +340,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						dwCount++;
 						break;
 					}
-					//�������҂�
+					//すこし待つ
 					fd_set wmask;
 					FD_ZERO(&wmask);
 					FD_SET(itr->sock, &wmask);
@@ -357,7 +357,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 	CBlockLock lock(&pSys->m_sendLock);
 	for( auto itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++ ){
 		if( itr->sock != INVALID_SOCKET ){
-			//�����M�f�[�^���̂Ă��Ă����Ȃ��̂�shutdown()�͏ȗ�
+			//未送信データが捨てられても問題ないのでshutdown()は省略
 			closesocket(itr->sock);
 			itr->sock = INVALID_SOCKET;
 		}
@@ -366,7 +366,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 				if( itr->bConnect ){
 					DisconnectNamedPipe(itr->pipe);
 				}else{
-					//�҂��󂯂��L�����Z��
+					//待ち受けをキャンセル
 					CancelIo(itr->pipe);
 					WaitForSingleObject(itr->olEvent, INFINITE);
 				}

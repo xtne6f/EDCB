@@ -1,4 +1,4 @@
-// EpgTimerSrv.cpp : ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒGƒ“ƒgƒŠ ƒ|ƒCƒ“ƒg‚ğ’è‹`‚µ‚Ü‚·B
+ï»¿// EpgTimerSrv.cpp : ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ã‚¨ãƒ³ãƒˆãƒª ãƒã‚¤ãƒ³ãƒˆã‚’å®šç¾©ã—ã¾ã™ã€‚
 //
 
 #include "stdafx.h"
@@ -18,12 +18,12 @@ CEpgTimerSrvMain* g_pMain;
 FILE* g_debugLog;
 recursive_mutex_ g_debugLogLock;
 
-//ƒT[ƒrƒX“®ì—p‚ÌƒƒCƒ“
+//ã‚µãƒ¼ãƒ“ã‚¹å‹•ä½œç”¨ã®ãƒ¡ã‚¤ãƒ³
 void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv);
 }
 
 #ifdef USE_WINMAIN_A
-__declspec(dllexport) //ASLR‚ğ–³Œø‚É‚µ‚È‚¢‚½‚ß(CVE-2018-5392)
+__declspec(dllexport) //ASLRã‚’ç„¡åŠ¹ã«ã—ãªã„ãŸã‚(CVE-2018-5392)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -42,7 +42,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 	}
 
 	if( CompareNoCase(GetModulePath().stem().c_str(), L"EpgTimerTask") == 0 ){
-		//Taskƒ‚[ƒh‚ğ‹­§‚·‚é
+		//Taskãƒ¢ãƒ¼ãƒ‰ã‚’å¼·åˆ¶ã™ã‚‹
 		wcscpy_s(option, L"/task");
 	}
 	if( option[0] == L'-' || option[0] == L'/' ){
@@ -51,14 +51,14 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		}else if( CompareNoCase(L"remove", option + 1) == 0 ){
 			return 0;
 		}else if( CompareNoCase(L"setting", option + 1) == 0 ){
-			//İ’èƒ_ƒCƒAƒƒO‚ğ•\¦‚·‚é
+			//è¨­å®šãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã‚’è¡¨ç¤ºã™ã‚‹
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvSetting setting;
 			setting.ShowDialog();
 			CoUninitialize();
 			return 0;
 		}else if( CompareNoCase(L"task", option + 1) == 0 ){
-			//Taskƒ‚[ƒh
+			//Taskãƒ¢ãƒ¼ãƒ‰
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			CEpgTimerSrvMain::TaskMain();
 			CoUninitialize();
@@ -68,12 +68,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 
 
 	if( IsInstallService(SERVICE_NAME) == FALSE ){
-		//•’Ê‚Éexe‚Æ‚µ‚Ä‹N“®‚ğs‚¤
+		//æ™®é€šã«exeã¨ã—ã¦èµ·å‹•ã‚’è¡Œã†
 		HANDLE hMutex = CreateMutex(NULL, FALSE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
 				SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
-				//ƒƒCƒ“ƒXƒŒƒbƒh‚É‘Î‚·‚éCOM‚Ì‰Šú‰»
+				//ãƒ¡ã‚¤ãƒ³ã‚¹ãƒ¬ãƒƒãƒ‰ã«å¯¾ã™ã‚‹COMã®åˆæœŸåŒ–
 				CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 				CEpgTimerSrvMain* pMain = new CEpgTimerSrvMain;
 				if( pMain->Main(false) == false ){
@@ -86,7 +86,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 			CloseHandle(hMutex);
 		}
 	}else if( IsStopService(SERVICE_NAME) == FALSE ){
-		//ƒT[ƒrƒX‚Æ‚µ‚ÄÀs
+		//ã‚µãƒ¼ãƒ“ã‚¹ã¨ã—ã¦å®Ÿè¡Œ
 		HANDLE hMutex = CreateMutex(NULL, FALSE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
@@ -109,10 +109,10 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 
 namespace
 {
-//ƒT[ƒrƒX‚©‚ç‚ÌƒRƒ}ƒ“ƒh‚ÌƒR[ƒ‹ƒoƒbƒN
+//ã‚µãƒ¼ãƒ“ã‚¹ã‹ã‚‰ã®ã‚³ãƒãƒ³ãƒ‰ã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯
 DWORD WINAPI service_ctrl(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext);
 
-//ƒT[ƒrƒX‚ÌƒXƒe[ƒ^ƒX’Ê’m—p
+//ã‚µãƒ¼ãƒ“ã‚¹ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹é€šçŸ¥ç”¨
 void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD dwCheckPoint, DWORD dwWaitHint);
 
 void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv)
@@ -121,9 +121,9 @@ void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv)
 	if( g_hStatusHandle != NULL ){
 		ReportServiceStatus(SERVICE_START_PENDING, 0, 1, 10000);
 
-		//ƒƒCƒ“ƒXƒŒƒbƒh‚É‘Î‚·‚éCOM‚Ì‰Šú‰»
+		//ãƒ¡ã‚¤ãƒ³ã‚¹ãƒ¬ãƒƒãƒ‰ã«å¯¾ã™ã‚‹COMã®åˆæœŸåŒ–
 		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-		//‚±‚±‚Å‚Í’Pƒ‚È(ŠÔ‚Ì‚©‚©‚ç‚È‚¢)‰Šú‰»‚Ì‚İs‚¤
+		//ã“ã“ã§ã¯å˜ç´”ãª(æ™‚é–“ã®ã‹ã‹ã‚‰ãªã„)åˆæœŸåŒ–ã®ã¿è¡Œã†
 		g_pMain = new CEpgTimerSrvMain;
 
 		ReportServiceStatus(SERVICE_RUNNING, SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN | SERVICE_ACCEPT_POWEREVENT, 0, 0);
@@ -149,7 +149,7 @@ DWORD WINAPI service_ctrl(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData
 			return NO_ERROR;
 		case SERVICE_CONTROL_POWEREVENT:
 			if( dwEventType == PBT_APMQUERYSUSPEND ){
-				//VistaˆÈ~‚ÍŒÄ‚Î‚ê‚È‚¢
+				//Vistaä»¥é™ã¯å‘¼ã°ã‚Œãªã„
 				OutputDebugString(L"PBT_APMQUERYSUSPEND\r\n");
 				if( g_pMain->IsSuspendOK() == false ){
 					OutputDebugString(L"BROADCAST_QUERY_DENY\r\n");
@@ -184,7 +184,7 @@ void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD d
 void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 {
 	{
-		//ƒfƒoƒbƒOo—ÍƒƒO•Û‘¶
+		//ãƒ‡ãƒãƒƒã‚°å‡ºåŠ›ãƒ­ã‚°ä¿å­˜
 		CBlockLock lock(&g_debugLogLock);
 		if( g_debugLog ){
 			SYSTEMTIME st;

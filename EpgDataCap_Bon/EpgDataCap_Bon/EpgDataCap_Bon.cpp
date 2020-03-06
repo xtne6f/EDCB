@@ -1,5 +1,5 @@
-
-// EpgDataCap_Bon.cpp : �A�v���P�[�V�����̃N���X������`���܂��B
+﻿
+// EpgDataCap_Bon.cpp : アプリケーションのクラス動作を定義します。
 //
 
 #include "stdafx.h"
@@ -23,8 +23,8 @@ FILE* g_debugLog;
 recursive_mutex_ g_debugLogLock;
 
 #ifndef SUPPRESS_OUTPUT_STACK_TRACE
-// ��O�ɂ���ăA�v���P�[�V�������I�����钼�O�ɃX�^�b�N�g���[�X��"���s�t�@�C����.exe.err"�ɏo�͂���
-// �f�o�b�O���(.pdb�t�@�C��)�����݂���Ώo�͂͂��ڍׂɂȂ�
+// 例外によってアプリケーションが終了する直前にスタックトレースを"実行ファイル名.exe.err"に出力する
+// デバッグ情報(.pdbファイル)が存在すれば出力はより詳細になる
 
 void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 {
@@ -57,7 +57,7 @@ void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 				do{
 					char moduleA[256] = {};
 					for( int i = 0; i == 0 || i < 255 && moduleA[i - 1]; i++ ){
-						//�����������Ă��\��Ȃ�
+						//文字化けしても構わない
 						moduleA[i] = (char)modent.szModule[i];
 					}
 					len = sprintf_s(buff, "0x%p - 0x%p = %s\r\n", modent.modBaseAddr, modent.modBaseAddr + modent.modBaseSize - 1, moduleA);
@@ -117,31 +117,31 @@ LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
 
 #endif // SUPPRESS_OUTPUT_STACK_TRACE
 
-// �B��� CEpgDataCap_BonApp �I�u�W�F�N�g�ł��B
+// 唯一の CEpgDataCap_BonApp オブジェクトです。
 
 CEpgDataCap_BonApp theApp;
 
 }
 
-// CEpgDataCap_BonApp �R���X�g���N�V����
+// CEpgDataCap_BonApp コンストラクション
 
 CEpgDataCap_BonApp::CEpgDataCap_BonApp()
 {
-	// TODO: ���̈ʒu�ɍ\�z�p�R�[�h��ǉ����Ă��������B
-	// ������ InitInstance ���̏d�v�ȏ��������������ׂċL�q���Ă��������B
+	// TODO: この位置に構築用コードを追加してください。
+	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
 }
 
-// CEpgDataCap_BonApp ������
+// CEpgDataCap_BonApp 初期化
 
 BOOL CEpgDataCap_BonApp::InitInstance()
 {
-	// �A�v���P�[�V���� �}�j�t�F�X�g�� visual �X�^�C����L���ɂ��邽�߂ɁA
-	// ComCtl32.dll Version 6 �ȍ~�̎g�p���w�肷��ꍇ�́A
-	// Windows XP �� InitCommonControlsEx() ���K�v�ł��B�����Ȃ���΁A�E�B���h�E�쐬�͂��ׂĎ��s���܂��B
+	// アプリケーション マニフェストが visual スタイルを有効にするために、
+	// ComCtl32.dll Version 6 以降の使用を指定する場合は、
+	// Windows XP に InitCommonControlsEx() が必要です。さもなければ、ウィンドウ作成はすべて失敗します。
 	INITCOMMONCONTROLSEX InitCtrls;
 	InitCtrls.dwSize = sizeof(InitCtrls);
-	// �A�v���P�[�V�����Ŏg�p���邷�ׂẴR���� �R���g���[�� �N���X���܂߂�ɂ́A
-	// �����ݒ肵�܂��B
+	// アプリケーションで使用するすべてのコモン コントロール クラスを含めるには、
+	// これを設定します。
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
 
@@ -156,7 +156,7 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 	dlg.SetIniView(TRUE);
 	dlg.SetIniNW(TRUE);
 
-	// �R�}���h�I�v�V���������
+	// コマンドオプションを解析
 	int argc;
 	LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
 	if (argv != NULL) {
@@ -193,7 +193,7 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 			dlg.SetInitBon(optUpperD);
 			OutputDebugString(optUpperD);
 		}
-		// ����̋����ɍ��킹�邽��
+		// 原作の挙動に合わせるため
 		if (optLowerD) {
 			dlg.SetInitBon(optLowerD);
 			OutputDebugString(optLowerD);
@@ -205,22 +205,22 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{
-		// TODO: �_�C�A���O�� <OK> �ŏ����ꂽ���̃R�[�h��
-		//  �L�q���Ă��������B
+		// TODO: ダイアログが <OK> で消された時のコードを
+		//  記述してください。
 	}
 	else if (nResponse == IDCANCEL)
 	{
-		// TODO: �_�C�A���O�� <�L�����Z��> �ŏ����ꂽ���̃R�[�h��
-		//  �L�q���Ă��������B
+		// TODO: ダイアログが <キャンセル> で消された時のコードを
+		//  記述してください。
 	}
 
-	// �_�C�A���O�͕����܂����B�A�v���P�[�V�����̃��b�Z�[�W �|���v���J�n���Ȃ���
-	//  �A�v���P�[�V�������I�����邽�߂� FALSE ��Ԃ��Ă��������B
+	// ダイアログは閉じられました。アプリケーションのメッセージ ポンプを開始しないで
+	//  アプリケーションを終了するために FALSE を返してください。
 	return FALSE;
 }
 
 #ifdef USE_WINMAIN_A
-__declspec(dllexport) //ASLR�𖳌��ɂ��Ȃ�����(CVE-2018-5392)
+__declspec(dllexport) //ASLRを無効にしないため(CVE-2018-5392)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -228,7 +228,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 {
 	SetDllDirectory(L"");
 	SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
-	//���C���X���b�h�ɑ΂���COM�̏�����
+	//メインスレッドに対するCOMの初期化
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	theApp.InitInstance();
 	CoUninitialize();
@@ -239,7 +239,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 {
 	{
-		//�f�o�b�O�o�̓��O�ۑ�
+		//デバッグ出力ログ保存
 		CBlockLock lock(&g_debugLogLock);
 		if( g_debugLog ){
 			SYSTEMTIME st;
@@ -266,7 +266,7 @@ void SetSaveDebugLog(bool saveDebugLog)
 	CBlockLock lock(&g_debugLogLock);
 	if( g_debugLog == NULL && saveDebugLog ){
 		for( int i = 0; i < 100; i++ ){
-			//�p�X�ɓY���������ď������݉\�ȍŏ��̂��̂ɋL�^����
+			//パスに添え字をつけて書き込み可能な最初のものに記録する
 			WCHAR logFileName[64];
 			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
 			fs_path logPath = GetCommonIniPath().replace_filename(logFileName);

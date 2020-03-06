@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Common/StructDef.h"
 #include "../Common/PathUtil.h"
@@ -23,10 +23,10 @@ public:
 	void SetChChangeEvent(BOOL resetEpgUtil = FALSE);
 	BOOL IsChUnknown(DWORD* elapsedTime = NULL);
 
-	//���݂̃X�g���[����ID���擾����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
+	//現在のストリームのIDを取得する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
 	// ONID		[OUT]originalNetworkID
 	// TSID		[OUT]transportStreamID
 	BOOL GetStreamID(
@@ -36,60 +36,60 @@ public:
 
 	void AddTSBuff(BYTE* data, DWORD dataSize);
 
-	//EMM�����̓���ݒ�
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// enable		[IN] TRUE�i��������j�AFALSE�i�������Ȃ��j
+	//EMM処理の動作設定
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// enable		[IN] TRUE（処理する）、FALSE（処理しない）
 	BOOL SetEmm(
 		BOOL enable
 		);
 
-	//EMM�������s������
-	//�߂�l�F
-	// ������
+	//EMM処理を行った数
+	//戻り値：
+	// 処理数
 	DWORD GetEmmCount();
 
-	//DLL�̃��[�h��Ԃ��擾
-	//�߂�l�F
-	// TRUE�i���[�h�ɐ������Ă���j�AFALSE�i���[�h�Ɏ��s���Ă���j
-	//�����F
-	// loadErrDll		[OUT]���[�h�Ɏ��s����DLL�t�@�C����
+	//DLLのロード状態を取得
+	//戻り値：
+	// TRUE（ロードに成功している）、FALSE（ロードに失敗している）
+	//引数：
+	// loadErrDll		[OUT]ロードに失敗したDLLファイル名
 	BOOL GetLoadStatus(
 		wstring& loadErrDll
 		);
 
-	//EPG�f�[�^�̕ۑ����J�n����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
+	//EPGデータの保存を開始する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
 	BOOL StartSaveEPG(
 		const wstring& epgFilePath_
 		);
 
-	//EPG�f�[�^�̕ۑ����I������
-	//�����F
-	// copy			[IN]tmp����R�s�[�����s�����ǂ���
+	//EPGデータの保存を終了する
+	//引数：
+	// copy			[IN]tmpからコピー処理行うかどうか
 	void StopSaveEPG(
 		BOOL copy
 		);
 
-	//EPG�f�[�^�̒~�Ϗ�Ԃ��擾����
-	//�߂�l�F
-	// �X�e�[�^�X
-	//�����F
-	// l_eitFlag		[IN]L-EIT�̃X�e�[�^�X���擾
+	//EPGデータの蓄積状態を取得する
+	//戻り値：
+	// ステータス
+	//引数：
+	// l_eitFlag		[IN]L-EITのステータスを取得
 	EPG_SECTION_STATUS GetSectionStatus(
 		BOOL l_eitFlag
 		);
 
-	//�w��T�[�r�X��EPG�f�[�^�̒~�Ϗ�Ԃ��擾����
-	//�߂�l�F
-	// �X�e�[�^�X,�擾�ł������ǂ���
-	//�����F
-	// originalNetworkID		[IN]�擾�Ώۂ�OriginalNetworkID
-	// transportStreamID		[IN]�擾�Ώۂ�TransportStreamID
-	// serviceID				[IN]�擾�Ώۂ�ServiceID
-	// l_eitFlag				[IN]L-EIT�̃X�e�[�^�X���擾
+	//指定サービスのEPGデータの蓄積状態を取得する
+	//戻り値：
+	// ステータス,取得できたかどうか
+	//引数：
+	// originalNetworkID		[IN]取得対象のOriginalNetworkID
+	// transportStreamID		[IN]取得対象のTransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// l_eitFlag				[IN]L-EITのステータスを取得
 	pair<EPG_SECTION_STATUS, BOOL> GetSectionStatusService(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -97,39 +97,39 @@ public:
 		BOOL l_eitFlag
 		);
 
-	//���X�g���[���̃T�[�r�X�ꗗ���擾����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// funcGetList		[IN]�߂�l��NO_ERR�̂Ƃ��T�[�r�X���̌��Ƃ��̃��X�g�������Ƃ��ČĂяo�����֐�
+	//自ストリームのサービス一覧を取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// funcGetList		[IN]戻り値がNO_ERRのときサービス情報の個数とそのリストを引数として呼び出される関数
 	DWORD GetServiceListActual(
 		const std::function<void(DWORD, SERVICE_INFO*)>& funcGetList
 		);
 
-	//TS�X�g���[������p�R���g���[�����쐬����
-	//�߂�l�F
-	// ���䎯��ID
-	//�����F
-	// sendUdpTcp	[IN]UDP/TCP���M�p�ɂ���
+	//TSストリーム制御用コントロールを作成する
+	//戻り値：
+	// 制御識別ID
+	//引数：
+	// sendUdpTcp	[IN]UDP/TCP送信用にする
 	DWORD CreateServiceCtrl(
 		BOOL sendUdpTcp
 		);
 
-	//TS�X�g���[������p�R���g���[�����폜����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s
-	//�����F
-	// id			[IN]���䎯��ID
+	//TSストリーム制御用コントロールを削除する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗
+	//引数：
+	// id			[IN]制御識別ID
 	BOOL DeleteServiceCtrl(
 		DWORD id
 		);
 
-	//����Ώۂ̃T�[�r�X��ݒ肷��
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s
-	//�����F
-	// id			[IN]���䎯��ID
-	// serviceID	[IN]�ΏۃT�[�r�XID�A0xFFFF�őS�T�[�r�X�Ώ�
+	//制御対象のサービスを設定する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗
+	//引数：
+	// id			[IN]制御識別ID
+	// serviceID	[IN]対象サービスID、0xFFFFで全サービス対象
 	BOOL SetServiceID(
 		DWORD id,
 		WORD serviceID
@@ -140,106 +140,106 @@ public:
 		WORD* serviceID
 		);
 
-	//UDP�ő��M���s��
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// id			[IN]���䎯��ID
-	// sendList		[IN/OUT]���M�惊�X�g�BNULL�Œ�~�BPort�͎��ۂɑ��M�Ɏg�p����Port���Ԃ�B
+	//UDPで送信を行う
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// id			[IN]制御識別ID
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 	BOOL SendUdp(
 		DWORD id,
 		vector<NW_SEND_INFO>* sendList
 		);
 
-	//TCP�ő��M���s��
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// id			[IN]���䎯��ID
-	// sendList		[IN/OUT]���M�惊�X�g�BNULL�Œ�~�BPort�͎��ۂɑ��M�Ɏg�p����Port���Ԃ�B
+	//TCPで送信を行う
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// id			[IN]制御識別ID
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 	BOOL SendTcp(
 		DWORD id,
 		vector<NW_SEND_INFO>* sendList
 		);
 
-	//�t�@�C���ۑ����J�n����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// recParam				[IN]�ۑ��p�����[�^
-	// saveFolderSub		[IN]HDD�̋󂫂��Ȃ��Ȃ����ꍇ�Ɉꎞ�I�Ɏg�p����t�H���_
-	// maxBuffCount			[IN]�o�̓o�b�t�@���
+	//ファイル保存を開始する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// recParam				[IN]保存パラメータ
+	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+	// maxBuffCount			[IN]出力バッファ上限
 	BOOL StartSave(
 		const SET_CTRL_REC_PARAM& recParam,
 		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
 	);
 
-	//�t�@�C���ۑ����I������
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// id			[IN]���䎯��ID
-	// subRecFlag	[OUT]�����̂Ƃ��A�T�u�^�悪�����������ǂ���
+	//ファイル保存を終了する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// id			[IN]制御識別ID
+	// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
 	BOOL EndSave(
 		DWORD id,
 		BOOL* subRecFlag = NULL
 		);
 
-	//�X�N�����u�����������̓���ݒ�
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// enable		[IN] TRUE�i��������j�AFALSE�i�������Ȃ��j
+	//スクランブル解除処理の動作設定
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// enable		[IN] TRUE（処理する）、FALSE（処理しない）
 	BOOL SetScramble(
 		DWORD id,
 		BOOL enable
 		);
 
-	//�����ƃf�[�^�����܂߂邩�ǂ���
-	//�����F
-	// id					[IN]���䎯��ID
-	// enableCaption		[IN]������ TRUE�i�܂߂�j�AFALSE�i�܂߂Ȃ��j
-	// enableData			[IN]�f�[�^������ TRUE�i�܂߂�j�AFALSE�i�܂߂Ȃ��j
+	//字幕とデータ放送含めるかどうか
+	//引数：
+	// id					[IN]制御識別ID
+	// enableCaption		[IN]字幕を TRUE（含める）、FALSE（含めない）
+	// enableData			[IN]データ放送を TRUE（含める）、FALSE（含めない）
 	void SetServiceMode(
 		DWORD id,
 		BOOL enableCaption,
 		BOOL enableData
 		);
 
-	//�G���[�J�E���g���N���A����
+	//エラーカウントをクリアする
 	void ClearErrCount(
 		DWORD id
 		);
 
-	//�h���b�v�ƃX�N�����u���̃J�E���g���擾����
-	//�����F
-	// drop				[OUT]�h���b�v��
-	// scramble			[OUT]�X�N�����u����
+	//ドロップとスクランブルのカウントを取得する
+	//引数：
+	// drop				[OUT]ドロップ数
+	// scramble			[OUT]スクランブル数
 	void GetErrCount(
 		DWORD id,
 		ULONGLONG* drop,
 		ULONGLONG* scramble
 		);
 
-	//�^�撆�̃t�@�C���̏o�̓T�C�Y���擾����
-	//�����F
-	// id					[IN]���䎯��ID
-	// writeSize			[OUT]�o�̓T�C�Y
+	//録画中のファイルの出力サイズを取得する
+	//引数：
+	// id					[IN]制御識別ID
+	// writeSize			[OUT]出力サイズ
 	void GetRecWriteSize(
 		DWORD id,
 		__int64* writeSize
 		);
 
-	//�w��T�[�r�X�̌���or����EPG�����擾����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-	// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-	// serviceID				[IN]�擾�Ώۂ�ServiceID
-	// nextFlag					[IN]TRUE�i���̔ԑg�j�AFALSE�i���݂̔ԑg�j
-	// epgInfo					[OUT]EPG���
+	//指定サービスの現在or次のEPG情報を取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// originalNetworkID		[IN]取得対象のoriginalNetworkID
+	// transportStreamID		[IN]取得対象のtransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
+	// epgInfo					[OUT]EPG情報
 	DWORD GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -248,16 +248,16 @@ public:
 		EPGDB_EVENT_INFO* epgInfo
 		);
 	
-	//�w��C�x���g��EPG�����擾����
-	//�߂�l�F
-	// �G���[�R�[�h
-	//�����F
-	// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-	// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-	// serviceID				[IN]�擾�Ώۂ�ServiceID
-	// eventID					[IN]�擾�Ώۂ�EventID
-	// pfOnlyFlag				[IN]p/f����̂݌������邩�ǂ���
-	// epgInfo					[OUT]EPG���
+	//指定イベントのEPG情報を取得する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// originalNetworkID		[IN]取得対象のoriginalNetworkID
+	// transportStreamID		[IN]取得対象のtransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// eventID					[IN]取得対象のEventID
+	// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
+	// epgInfo					[OUT]EPG情報
 	DWORD SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
@@ -267,33 +267,33 @@ public:
 		EPGDB_EVENT_INFO* epgInfo
 		);
 
-	//PC���v�����Ƃ����X�g���[�����ԂƂ̍����擾����
-	//�߂�l�F
-	// ���̕b��
+	//PC時計を元としたストリーム時間との差を取得する
+	//戻り値：
+	// 差の秒数
 	int GetTimeDelay(
 		);
 	
-	//�^�撆���ǂ���
-	//�߂�l�F
-	// TRUE�i�^�撆�j�AFALSE�i���Ă��Ȃ��j
+	//録画中かどうか
+	//戻り値：
+	// TRUE（録画中）、FALSE（していない）
 	BOOL IsRec();
 
-	//�^�撆�̃t�@�C���̃t�@�C���p�X���擾����
-	//�߂�l�F
-	// �t�@�C���p�X
-	//�����F
-	// id					[IN]���䎯��ID
+	//録画中のファイルのファイルパスを取得する
+	//戻り値：
+	// ファイルパス
+	//引数：
+	// id					[IN]制御識別ID
 	wstring GetSaveFilePath(
 		DWORD id
 		);
 
-	//�h���b�v�ƃX�N�����u���̃J�E���g��ۑ�����
-	//�����F
-	// id					[IN]���䎯��ID
-	// filePath				[IN]�ۑ��t�@�C����
-	// asUtf8				[IN]UTF-8�ŕۑ����邩
-	// dropSaveThresh		[IN]�h���b�v��������ȏ�Ȃ�ۑ�����
-	// drop					[OUT]�h���b�v��
+	//ドロップとスクランブルのカウントを保存する
+	//引数：
+	// id					[IN]制御識別ID
+	// filePath				[IN]保存ファイル名
+	// asUtf8				[IN]UTF-8で保存するか
+	// dropSaveThresh		[IN]ドロップ数がこれ以上なら保存する
+	// drop					[OUT]ドロップ数
 	void SaveErrCount(
 		DWORD id,
 		const wstring& filePath,
@@ -320,7 +320,7 @@ public:
 		BOOL parsePost
 		);
 protected:
-	//objLock->epgUtilLock�̏��Ƀ��b�N����
+	//objLock->epgUtilLockの順にロックする
 	recursive_mutex_ objLock;
 	recursive_mutex_ epgUtilLock;
 
@@ -337,7 +337,7 @@ protected:
 	BOOL enableDecodeFlag;
 	BOOL emmEnableFlag;
 
-	map<DWORD, std::unique_ptr<COneServiceUtil>> serviceUtilMap; //�L�[����ID
+	map<DWORD, std::unique_ptr<COneServiceUtil>> serviceUtilMap; //キー識別ID
 	CServiceFilter serviceFilter;
 
 	DWORD nextCtrlID;

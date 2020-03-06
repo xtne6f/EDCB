@@ -1,4 +1,4 @@
-#include "stdafx.h"
+Ôªø#include "stdafx.h"
 #include "SendCtrlCmd.h"
 #if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 #include <winsock2.h>
@@ -36,9 +36,9 @@ CSendCtrlCmd::~CSendCtrlCmd(void)
 
 #if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 
-//ÉRÉ}ÉìÉhëóêMï˚ñ@ÇÃê›íË
-//à¯êîÅF
-// tcpFlag		[IN] TRUEÅFTCP/IPÉÇÅ[ÉhÅAFALSEÅFñºëOïtÇ´ÉpÉCÉvÉÇÅ[Éh
+//„Ç≥„Éû„É≥„ÉâÈÄÅ‰ø°ÊñπÊ≥ï„ÅÆË®≠ÂÆö
+//ÂºïÊï∞Ôºö
+// tcpFlag		[IN] TRUEÔºöTCP/IP„É¢„Éº„Éâ„ÄÅFALSEÔºöÂêçÂâç‰ªò„Åç„Éë„Ç§„Éó„É¢„Éº„Éâ
 void CSendCtrlCmd::SetSendMode(
 	BOOL tcpFlag_
 	)
@@ -55,10 +55,10 @@ void CSendCtrlCmd::SetSendMode(
 
 #endif
 
-//ñºëOïtÇ´ÉpÉCÉvÉÇÅ[ÉhéûÇÃê⁄ë±êÊÇê›íË
-//EpgTimerSrv.exeÇ…ëŒÇ∑ÇÈÉRÉ}ÉìÉhÇÕê›íËÇµÇ»Ç≠ÇƒÇ‡â¬ÅiÉfÉtÉHÉãÉgílÇ…Ç»Ç¡ÇƒÇ¢ÇÈÅj
-//à¯êîÅF
-// pipeName		[IN]ê⁄ë±ÉpÉCÉvÇÃñºëO
+//ÂêçÂâç‰ªò„Åç„Éë„Ç§„Éó„É¢„Éº„ÉâÊôÇ„ÅÆÊé•Á∂öÂÖà„ÇíË®≠ÂÆö
+//EpgTimerSrv.exe„Å´ÂØæ„Åô„Çã„Ç≥„Éû„É≥„Éâ„ÅØË®≠ÂÆö„Åó„Å™„Åè„Å¶„ÇÇÂèØÔºà„Éá„Éï„Ç©„É´„ÉàÂÄ§„Å´„Å™„Å£„Å¶„ÅÑ„ÇãÔºâ
+//ÂºïÊï∞Ôºö
+// pipeName		[IN]Êé•Á∂ö„Éë„Ç§„Éó„ÅÆÂêçÂâç
 void CSendCtrlCmd::SetPipeSetting(
 	LPCWSTR pipeName_
 	)
@@ -66,9 +66,9 @@ void CSendCtrlCmd::SetPipeSetting(
 	this->pipeName = pipeName_;
 }
 
-//ñºëOïtÇ´ÉpÉCÉvÉÇÅ[ÉhéûÇÃê⁄ë±êÊÇê›íËÅiê⁄îˆÇ…ÉvÉçÉZÉXIDÇî∫Ç§É^ÉCÉvÅj
-//à¯êîÅF
-// pid			[IN]ÉvÉçÉZÉXID
+//ÂêçÂâç‰ªò„Åç„Éë„Ç§„Éó„É¢„Éº„ÉâÊôÇ„ÅÆÊé•Á∂öÂÖà„ÇíË®≠ÂÆöÔºàÊé•Â∞æ„Å´„Éó„É≠„Çª„ÇπID„Çí‰º¥„ÅÜ„Çø„Ç§„ÉóÔºâ
+//ÂºïÊï∞Ôºö
+// pid			[IN]„Éó„É≠„Çª„ÇπID
 void CSendCtrlCmd::SetPipeSetting(
 	LPCWSTR pipeName_,
 	DWORD pid
@@ -94,10 +94,10 @@ bool CSendCtrlCmd::PipeExists()
 	return false;
 }
 
-//TCP/IPÉÇÅ[ÉhéûÇÃê⁄ë±êÊÇê›íË
-//à¯êîÅF
-// ip			[IN]ê⁄ë±êÊIP
-// port			[IN]ê⁄ë±êÊÉ|Å[Ég
+//TCP/IP„É¢„Éº„ÉâÊôÇ„ÅÆÊé•Á∂öÂÖà„ÇíË®≠ÂÆö
+//ÂºïÊï∞Ôºö
+// ip			[IN]Êé•Á∂öÂÖàIP
+// port			[IN]Êé•Á∂öÂÖà„Éù„Éº„Éà
 void CSendCtrlCmd::SetNWSetting(
 	const wstring& ip,
 	DWORD port
@@ -107,8 +107,8 @@ void CSendCtrlCmd::SetNWSetting(
 	this->sendPort = port;
 }
 
-//ê⁄ë±èàóùéûÇÃÉ^ÉCÉÄÉAÉEÉgê›íË
-// timeOut		[IN]É^ÉCÉÄÉAÉEÉgílÅiíPà ÅFmsÅj
+//Êé•Á∂öÂá¶ÁêÜÊôÇ„ÅÆ„Çø„Ç§„É†„Ç¢„Ç¶„ÉàË®≠ÂÆö
+// timeOut		[IN]„Çø„Ç§„É†„Ç¢„Ç¶„ÉàÂÄ§ÔºàÂçò‰ΩçÔºömsÔºâ
 void CSendCtrlCmd::SetConnectTimeOut(
 	DWORD timeOut
 	)
@@ -121,9 +121,9 @@ namespace
 DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CMD_STREAM* cmd, CMD_STREAM* res)
 {
 #ifdef _WIN32
-	//ê⁄ë±ë“Çø
-	//CreateEvent()ÇµÇƒÇÕÇ¢ÇØÇ»Ç¢ÅBÉCÉxÉìÉgÇçÏê¨Ç∑ÇÈÇÃÇÕÉTÅ[ÉoÇÃédéñÇÃÇÕÇ∏
-	//CreateEvent()ÇµÇƒÇµÇ‹Ç§Ç∆ÉTÅ[ÉoÇ™èIóπÇµÇΩå„ÇÕèÌÇ…É^ÉCÉÄÉAÉEÉgÇ‹Ç≈ë“ÇΩÇ≥ÇÍÇÈÇ±Ç∆Ç…Ç»ÇÈ
+	//Êé•Á∂öÂæÖ„Å°
+	//CreateEvent()„Åó„Å¶„ÅØ„ÅÑ„Åë„Å™„ÅÑ„ÄÇ„Ç§„Éô„É≥„Éà„Çí‰ΩúÊàê„Åô„Çã„ÅÆ„ÅØ„Çµ„Éº„Éê„ÅÆ‰ªï‰∫ã„ÅÆ„ÅØ„Åö
+	//CreateEvent()„Åó„Å¶„Åó„Åæ„ÅÜ„Å®„Çµ„Éº„Éê„ÅåÁµÇ‰∫Ü„Åó„ÅüÂæå„ÅØÂ∏∏„Å´„Çø„Ç§„É†„Ç¢„Ç¶„Éà„Åæ„ÅßÂæÖ„Åü„Åï„Çå„Çã„Åì„Å®„Å´„Å™„Çã
 	HANDLE waitEvent = NULL;
 	if( pipeName.find(L"Pipe") != wstring::npos ){
 		waitEvent = OpenEvent(SYNCHRONIZE, FALSE, (L"Global\\" + pipeName).replace(7 + pipeName.find(L"Pipe"), 4, L"Connect").c_str());
@@ -139,7 +139,7 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CMD_STREAM* cmd, CM
 		return CMD_ERR_CONNECT;
 	}
 
-	//ê⁄ë±
+	//Êé•Á∂ö
 	HANDLE pipe = CreateFile((L"\\\\.\\pipe\\" + pipeName).c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( pipe == INVALID_HANDLE_VALUE ){
 		_OutputDebugString(L"*+* ConnectPipe Err:%d\r\n", GetLastError());
@@ -177,7 +177,7 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CMD_STREAM* cmd, CM
 	auto closeFile = [=]() { return close(sock); };
 #endif
 
-	//ëóêM
+	//ÈÄÅ‰ø°
 	DWORD head[2];
 	head[0] = cmd->param;
 	head[1] = cmd->dataSize;
@@ -201,7 +201,7 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CMD_STREAM* cmd, CM
 		}
 	}
 
-	//éÛêM
+	//Âèó‰ø°
 	n = 0;
 #ifdef _WIN32
 	for( DWORD m; n < sizeof(head) && ReadFile(pipe, (BYTE*)head + n, sizeof(head) - n, &m, NULL); n += m );
@@ -270,7 +270,7 @@ DWORD SendTCP(const wstring& ip, DWORD port, DWORD timeOut, const CMD_STREAM* se
 		FD_ZERO(&wmask);
 		FD_SET(sock, &wmask);
 		struct timeval tv = {(long)(timeOut / 1000), 0};
-		//ÉmÉìÉuÉçÉbÉLÉìÉOÉÇÅ[ÉhÇ≈ê⁄ë±ë“Çø
+		//„Éé„É≥„Éñ„É≠„ÉÉ„Ç≠„É≥„Ç∞„É¢„Éº„Éâ„ÅßÊé•Á∂öÂæÖ„Å°
 		unsigned long x = 1;
 		if( ioctlsocket(sock, FIONBIO, &x) == SOCKET_ERROR ||
 		    (connect(sock, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR &&
@@ -291,7 +291,7 @@ DWORD SendTCP(const wstring& ip, DWORD port, DWORD timeOut, const CMD_STREAM* se
 		return CMD_ERR_CONNECT;
 	}
 
-	//ëóêM
+	//ÈÄÅ‰ø°
 	DWORD head[256];
 	head[0] = sendCmd->param;
 	head[1] = sendCmd->dataSize;
@@ -306,7 +306,7 @@ DWORD SendTCP(const wstring& ip, DWORD port, DWORD timeOut, const CMD_STREAM* se
 		closesocket(sock);
 		return CMD_ERR;
 	}
-	//éÛêM
+	//Âèó‰ø°
 	if( RecvAll(sock, (char*)head, sizeof(DWORD)*2, 0) != sizeof(DWORD)*2 ){
 		closesocket(sock);
 		return CMD_ERR;

@@ -1,4 +1,4 @@
-// SettingDlg.cpp : À‘•ƒtƒ@ƒCƒ‹
+ï»¿// SettingDlg.cpp : å®Ÿè£…ãƒ•ã‚¡ã‚¤ãƒ«
 //
 
 #include "stdafx.h"
@@ -6,7 +6,7 @@
 #include "SettingDlg.h"
 
 
-// CSettingDlg ƒ_ƒCƒAƒƒO
+// CSettingDlg ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 CSettingDlg::CSettingDlg(HWND hWndOwner)
 	: m_hWnd(NULL)
@@ -25,12 +25,12 @@ INT_PTR CSettingDlg::DoModal()
 }
 
 
-// CSettingDlg ƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[
+// CSettingDlg ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼
 
 
 BOOL CSettingDlg::OnInitDialog()
 {
-	// TODO:  ‚±‚±‚É‰Šú‰»‚ğ’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢
+	// TODO:  ã“ã“ã«åˆæœŸåŒ–ã‚’è¿½åŠ ã—ã¦ãã ã•ã„
 	basicDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_BASIC), GetSafeHwnd() );
 	appDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APP), GetSafeHwnd() );
 	epgDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_EPG), GetSafeHwnd() );
@@ -73,13 +73,13 @@ BOOL CSettingDlg::OnInitDialog()
 	ShowWindow(basicDlg.GetSafeHwnd(), SW_SHOW);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	// —áŠO : OCX ƒvƒƒpƒeƒB ƒy[ƒW‚Í•K‚¸ FALSE ‚ğ•Ô‚µ‚Ü‚·B
+	// ä¾‹å¤– : OCX ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ ãƒšãƒ¼ã‚¸ã¯å¿…ãš FALSE ã‚’è¿”ã—ã¾ã™ã€‚
 }
 
 
 void CSettingDlg::OnBnClickedOk()
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	basicDlg.SaveIni();
 	appDlg.SaveIni();
 	epgDlg.SaveIni();
@@ -91,7 +91,7 @@ void CSettingDlg::OnBnClickedOk()
 
 void CSettingDlg::OnTcnSelchangingTab(NMHDR *pNMHDR, LRESULT *pResult)
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	int index = TabCtrl_GetCurSel(GetDlgItem(IDC_TAB));
 	switch(index){
 		case 0:
@@ -121,7 +121,7 @@ void CSettingDlg::OnTcnSelchangingTab(NMHDR *pNMHDR, LRESULT *pResult)
 
 void CSettingDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 {
-	// TODO: ‚±‚±‚ÉƒRƒ“ƒgƒ[ƒ‹’Ê’mƒnƒ“ƒhƒ‰[ ƒR[ƒh‚ğ’Ç‰Á‚µ‚Ü‚·B
+	// TODO: ã“ã“ã«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«é€šçŸ¥ãƒãƒ³ãƒ‰ãƒ©ãƒ¼ ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã—ã¾ã™ã€‚
 	int index = TabCtrl_GetCurSel(GetDlgItem(IDC_TAB));
 	switch(index){
 		case 0:

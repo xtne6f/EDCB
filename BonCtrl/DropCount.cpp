@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "DropCount.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
@@ -123,32 +123,32 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 	}
 	
 	if( adaptation_field_control == 0x00 || adaptation_field_control == 0x02 ){
-		//ƒyƒCƒ[ƒh‚ª‘¶İ‚µ‚È‚¢ê‡‚ÍˆÓ–¡‚È‚µ
+		//ãƒšã‚¤ãƒ­ãƒ¼ãƒ‰ãŒå­˜åœ¨ã—ãªã„å ´åˆã¯æ„å‘³ãªã—
 		info->duplicateFlag = FALSE;
 	}else{
 		BYTE adaptation_field_length = packet[4];
 		BYTE discontinuity_indicator = packet[5] & 0x80;
 		if( info->lastCounter == continuity_counter ){
 			if( adaptation_field_control == 0x01 || adaptation_field_length == 0 || discontinuity_indicator == 0 ){
-				//¦Œµ–§‚É‚Íd‘—”»’è‚Í‘OƒpƒPƒbƒg‚Æ‚ÌŠ®‘S”äŠr‚à‚·‚×‚«
+				//â€»å³å¯†ã«ã¯é‡é€åˆ¤å®šã¯å‰ãƒ‘ã‚±ãƒƒãƒˆã¨ã®å®Œå…¨æ¯”è¼ƒã‚‚ã™ã¹ã
 				if( info->duplicateFlag == FALSE ){
-					//d‘—Hˆê‰˜A‘±‚Æ”»’è
+					//é‡é€ï¼Ÿä¸€å¿œé€£ç¶šã¨åˆ¤å®š
 					info->duplicateFlag = TRUE;
 				}else{
-					//‘O‰ñd‘—‚Æ”»’f‚µ‚Ä‚é‚Ì‚Å•s˜A‘±
+					//å‰å›é‡é€ã¨åˆ¤æ–­ã—ã¦ã‚‹ã®ã§ä¸é€£ç¶š
 					info->drop++;
 					this->drop++;
 				}
 			}else{
-				//•s˜A‘±‚Ì”»’è‚¾‚ª³í
+				//ä¸é€£ç¶šã®åˆ¤å®šã ãŒæ­£å¸¸
 				info->duplicateFlag = FALSE;
 			}
 		}else{
-			//¦Œ´ì‚Í‚½‚Ô‚ñlastCounter==15‚Ü‚½‚Ícontinuity_counter==0‚Ì‚Æ‚«‚Ì˜A‘±”»’è‚ªƒoƒO‚Á‚Ä‚¢‚½
+			//â€»åŸä½œã¯ãŸã¶ã‚“lastCounter==15ã¾ãŸã¯continuity_counter==0ã®ã¨ãã®é€£ç¶šåˆ¤å®šãŒãƒã‚°ã£ã¦ã„ãŸ
 			if( ((info->lastCounter + 1) & 0x0F) != continuity_counter ){
 				if( adaptation_field_control == 0x01 || adaptation_field_length == 0 || discontinuity_indicator == 0 ){
-					//ƒJƒEƒ“ƒ^[‚ª”ò‚ñ‚¾‚Ì‚Å•s˜A‘±
-					//¦Œ´ì‚Í‚±‚±‚Å·•ª‚ğ‰ÁZ‚·‚é
+					//ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼ãŒé£›ã‚“ã ã®ã§ä¸é€£ç¶š
+					//â€»åŸä½œã¯ã“ã“ã§å·®åˆ†ã‚’åŠ ç®—ã™ã‚‹
 					info->drop++;
 					this->drop++;
 				}
@@ -162,7 +162,7 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 
 void CDropCount::SaveLog(const wstring& filePath, BOOL asUtf8)
 {
-	//¦Œ´ì‚ÆˆÙ‚È‚èƒfƒBƒŒƒNƒgƒŠ‚Ì©“®¶¬‚Í‚µ‚È‚¢
+	//â€»åŸä½œã¨ç•°ãªã‚Šãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®è‡ªå‹•ç”Ÿæˆã¯ã—ãªã„
 	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(filePath, UTIL_SECURE_WRITE), fclose);
 	if( fp ){
 		fprintf_s(fp.get(), "%s%s\r\n", asUtf8 ? "\xEF\xBB\xBF" : "", this->log.c_str());
@@ -241,7 +241,7 @@ void CDropCount::SaveLog(const wstring& filePath, BOOL asUtf8)
 			          itr->PID, itr->total, itr->drop, itr->scramble, desc);
 		}
 
-		WtoA(L"g—pBonDriver : " + bonFile, strA, asUtf8 ? UTIL_CONV_UTF8 : UTIL_CONV_DEFAULT);
+		WtoA(L"ä½¿ç”¨BonDriver : " + bonFile, strA, asUtf8 ? UTIL_CONV_UTF8 : UTIL_CONV_DEFAULT);
 		fprintf_s(fp.get(), "\r\n%s\r\n", strA.c_str());
 	}
 }

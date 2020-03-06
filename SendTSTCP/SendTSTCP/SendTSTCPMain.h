@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -14,37 +14,37 @@ public:
 	CSendTSTCPMain(void);
 	~CSendTSTCPMain(void);
 
-	//‘—Mæ‚ð’Ç‰Á
-	//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+	//é€ä¿¡å…ˆã‚’è¿½åŠ 
+	//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 	DWORD AddSendAddr(
 		LPCWSTR lpcwszIP,
 		DWORD dwPort
 		);
 
-	//‘—MæƒNƒŠƒA
-	//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+	//é€ä¿¡å…ˆã‚¯ãƒªã‚¢
+	//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 	DWORD ClearSendAddr(
 		);
 
-	//ƒf[ƒ^‘—M‚ðŠJŽn
-	//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+	//ãƒ‡ãƒ¼ã‚¿é€ä¿¡ã‚’é–‹å§‹
+	//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 	DWORD StartSend(
 		);
 
-	//ƒf[ƒ^‘—M‚ð’âŽ~
-	//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+	//ãƒ‡ãƒ¼ã‚¿é€ä¿¡ã‚’åœæ­¢
+	//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 	DWORD StopSend(
 		);
 
-	//ƒf[ƒ^‘—M‚ðŠJŽn
-	//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+	//ãƒ‡ãƒ¼ã‚¿é€ä¿¡ã‚’é–‹å§‹
+	//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 	DWORD AddSendData(
 		BYTE* pbData,
 		DWORD dwSize
 		);
 
-	//‘—Mƒoƒbƒtƒ@‚ðƒNƒŠƒA
-	//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+	//é€ä¿¡ãƒãƒƒãƒ•ã‚¡ã‚’ã‚¯ãƒªã‚¢
+	//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 	DWORD ClearSendBuff(
 		);
 

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "CtrlCmdUtil.h"
 
 namespace CtrlCmdUtilImpl_
@@ -19,7 +19,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const wstring& val, bo
 	DWORD size = (DWORD)((val.size() + 1) * sizeof(WCHAR) + sizeof(DWORD));
 #endif
 	if( buff != NULL ){
-		//‘S‘Ì‚ÌƒTƒCƒY
+		//å…¨ä½“ã®ã‚µã‚¤ã‚º
 		DWORD pos = buffOffset + WriteVALUE(0, buff, buffOffset, oldFormat ? size - (DWORD)sizeof(DWORD) : size);
 #if WCHAR_MAX > 0xFFFF
 		for( size_t i = 0; i < val.size() + 1; i++ ){
@@ -46,10 +46,10 @@ BOOL ReadVALUE( WORD ver, wstring* val, const BYTE* buff, DWORD buffSize, DWORD*
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	//‘S‘Ì‚ÌƒTƒCƒY
+	//å…¨ä½“ã®ã‚µã‚¤ã‚º
 	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &valSize );
 	if( oldFormat ){
-		//‹ŒŒ`®‚ÍƒTƒCƒYƒtƒB[ƒ‹ƒh©g‚ÌƒTƒCƒY‚ğŠÜ‚Ü‚È‚¢
+		//æ—§å½¢å¼ã¯ã‚µã‚¤ã‚ºãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰è‡ªèº«ã®ã‚µã‚¤ã‚ºã‚’å«ã¾ãªã„
 		valSize += sizeof(DWORD);
 	}
 	if( valSize < pos || buffSize < valSize ){
@@ -721,7 +721,7 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 	}
 	if( ver >= 5 ){
 		if( buffSize - pos >= 5 ){
-			//˜^‰æÏƒ`ƒFƒbƒN‚ÉŠÖ‚·‚é’Ç‰Á‚ÌƒtƒB[ƒ‹ƒh‚ª‚ ‚é
+			//éŒ²ç”»æ¸ˆãƒã‚§ãƒƒã‚¯ã«é–¢ã™ã‚‹è¿½åŠ ã®ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ãŒã‚ã‚‹
 			BYTE recNoService;
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &recNoService );
 			if( recNoService ){
@@ -1332,7 +1332,7 @@ BOOL ReadVALUE( WORD ver, NOTIFY_SRV_INFO* val, const BYTE* buff, DWORD buffSize
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-//‹Œƒo[ƒWƒ‡ƒ“ƒRƒ}ƒ“ƒh‘—M—pƒoƒCƒiƒŠì¬ŠÖ”
+//æ—§ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚³ãƒãƒ³ãƒ‰é€ä¿¡ç”¨ãƒã‚¤ãƒŠãƒªä½œæˆé–¢æ•°
 std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const RESERVE_DATA& val, DWORD& writeSize, std::unique_ptr<BYTE[]>&& buff_ )
 {
 	using namespace CtrlCmdUtilImpl_;
@@ -1407,7 +1407,7 @@ BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const std::unique_ptr<BYTE[]>& buff
 	}
 	WORD wRead;
 	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &wRead );
-	//‹Œ¨V‚Ì‚İ‚È‚º‚©‚±‚Ì”’l•ÏŠ·‚ª“ü‚é(ŒİŠ·‚Ì‚½‚ßC³‚µ‚È‚¢)
+	//æ—§â†’æ–°ã®ã¿ãªãœã‹ã“ã®æ•°å€¤å¤‰æ›ãŒå…¥ã‚‹(äº’æ›ã®ãŸã‚ä¿®æ­£ã—ãªã„)
 	val->recSetting.suspendMode = (wRead == 0 ? 4 : wRead == 4 ? 0 : wRead) & 0xFF;
 	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &dwRead );
 	val->recSetting.rebootFlag = dwRead != 0;
@@ -1449,7 +1449,7 @@ BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>&
 	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &iJanru );
 	if( iJanru != -1 ){
 		EPGDB_CONTENT_DATA content;
-		//Œ´ì‚ÆˆÙ‚È‚èuser_nibble‚Å‚È‚­content_nibble‚É•ÏŠ·‚·‚é‚Ì‚Å’ˆÓ
+		//åŸä½œã¨ç•°ãªã‚Šuser_nibbleã§ãªãcontent_nibbleã«å¤‰æ›ã™ã‚‹ã®ã§æ³¨æ„
 		content.content_nibble_level_1 = iJanru & 0xFF;
 		content.content_nibble_level_2 = 0xFF;
 		content.user_nibble_1 = 0;

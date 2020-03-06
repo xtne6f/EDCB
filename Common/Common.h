@@ -1,8 +1,8 @@
-#pragma once
+ï»¿#pragma once
 
-// ‚·‚×‚Ä‚ÌƒvƒƒWƒFƒNƒg‚É“K—p‚³‚ê‚é’Ç‰Áƒwƒbƒ_‚¨‚æ‚Ñ’è‹`
+// ã™ã¹ã¦ã®ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆã«é©ç”¨ã•ã‚Œã‚‹è¿½åŠ ãƒ˜ãƒƒãƒ€ãŠã‚ˆã³å®šç¾©
 
-// wprintfŠÖ”Œn‚ğ‹KŠi€‹’‚É‚·‚é(VC14ˆÈ~)BƒƒCƒh•¶š—ñ‚É‚Í%s‚Å‚È‚­%ls‚È‚Ç‚ğg‚¤‚±‚Æ
+// wprintfé–¢æ•°ç³»ã‚’è¦æ ¼æº–æ‹ ã«ã™ã‚‹(VC14ä»¥é™)ã€‚ãƒ¯ã‚¤ãƒ‰æ–‡å­—åˆ—ã«ã¯%sã§ãªã%lsãªã©ã‚’ä½¿ã†ã“ã¨
 #define _CRT_STDIO_ISO_WIDE_SPECIFIERS
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -40,7 +40,7 @@ using std::vector;
 #endif
 #endif
 
-// “KØ‚Å‚È‚¢NULL‚ÌŒŸo—p
+// é©åˆ‡ã§ãªã„NULLã®æ¤œå‡ºç”¨
 //#undef NULL
 //#define NULL nullptr
 
@@ -54,18 +54,18 @@ using std::vector;
 #ifdef WRAP_OUTPUT_DEBUG_STRING
 #undef OutputDebugString
 #define OutputDebugString OutputDebugStringWrapper
-// OutputDebugStringW‚Ìƒ‰ƒbƒp[ŠÖ”
-// APIƒtƒbƒN‚É‚æ‚é‚“x‚È‚à‚Ì‚Å‚È‚­’P‚È‚é’uŠ·BOutputDebugStringA‚âDLL‚©‚ç‚ÌŒÄ‚Ño‚µ‚Íƒ‰ƒbƒv‚³‚ê‚È‚¢
+// OutputDebugStringWã®ãƒ©ãƒƒãƒ‘ãƒ¼é–¢æ•°
+// APIãƒ•ãƒƒã‚¯ã«ã‚ˆã‚‹é«˜åº¦ãªã‚‚ã®ã§ãªãå˜ãªã‚‹ç½®æ›ã€‚OutputDebugStringAã‚„DLLã‹ã‚‰ã®å‘¼ã³å‡ºã—ã¯ãƒ©ãƒƒãƒ—ã•ã‚Œãªã„
 void OutputDebugStringWrapper(LPCWSTR lpOutputString);
 void SetSaveDebugLog(bool saveDebugLog);
 #endif
 
 inline void _OutputDebugString(PRINTF_FORMAT_SZ const WCHAR* format, ...)
 {
-	// TODO: ‚±‚ÌŠÖ”–¼‚Í—\–ñ–¼ˆá”½‚Ìã‚É•´‚ç‚í‚µ‚¢‚Ì‚Å•ÏX‚·‚×‚«
+	// TODO: ã“ã®é–¢æ•°åã¯äºˆç´„åé•åã®ä¸Šã«ç´›ã‚‰ã‚ã—ã„ã®ã§å¤‰æ›´ã™ã¹ã
 	va_list params;
 	va_start(params, format);
-	// ’·‚·‚¬‚é“™ƒGƒ‰[‚Í‘®•¶š—ñ‚Ì“WŠJ‚ğÈ—ª‚·‚é
+	// é•·ã™ãã‚‹ç­‰ã‚¨ãƒ©ãƒ¼æ™‚ã¯æ›¸å¼æ–‡å­—åˆ—ã®å±•é–‹ã‚’çœç•¥ã™ã‚‹
 	WCHAR buff[1024];
 #ifdef _WIN32
 	const WCHAR* p = _vsnwprintf_s(buff, 1024, _TRUNCATE, format, params) < 0 ? format : buff;
@@ -76,5 +76,5 @@ inline void _OutputDebugString(PRINTF_FORMAT_SZ const WCHAR* format, ...)
 	OutputDebugString(p);
 }
 
-// “KØ‚Å‚È‚¢‘®•¶š—ñ‚ÌŒŸo—p
+// é©åˆ‡ã§ãªã„æ›¸å¼æ–‡å­—åˆ—ã®æ¤œå‡ºç”¨
 //#define _OutputDebugString(...) (void)wprintf_s(__VA_ARGS__)

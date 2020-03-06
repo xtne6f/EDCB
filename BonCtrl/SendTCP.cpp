@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "SendTCP.h"
 #include "../Common/PathUtil.h"
 #ifndef _WIN32

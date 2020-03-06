@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Common/ErrDef.h"
 #include "../Common/TSPacketUtil.h"
@@ -21,50 +21,50 @@ public:
 	COneServiceUtil(BOOL sendUdpTcp_);
 	~COneServiceUtil(void);
 
-	//UDP/TCP���M�p���ǂ����i�s�ϒl�j
+	//UDP/TCP送信用かどうか（不変値）
 	BOOL GetSendUdpTcp() {
 		return this->sendUdpTcp;
 	}
 
-	//�����Ώ�ServiceID��ݒ�
-	//�����F
-	// SID			[IN]ServiceID�B0xFFFF�őS�T�[�r�X�ΏہB
+	//処理対象ServiceIDを設定
+	//引数：
+	// SID			[IN]ServiceID。0xFFFFで全サービス対象。
 	void SetSID(
 		WORD SID_
 	);
 
-	//�ݒ肳��Ă鏈���Ώۂ�ServiceID���擾
-	//�߂�l�F
+	//設定されてる処理対象のServiceIDを取得
+	//戻り値：
 	// ServiceID
 	WORD GetSID();
 
-	//UDP�ő��M���s��
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// sendList		[IN/OUT]���M�惊�X�g�BNULL�Œ�~�BPort�͎��ۂɑ��M�Ɏg�p����Port���Ԃ�B
+	//UDPで送信を行う
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 	BOOL SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		) {
 		return SendUdpTcp(sendList, this->sendUdp, this->udpPortMutex, MUTEX_UDP_PORT_NAME);
 	}
 
-	//TCP�ő��M���s��
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// sendList		[IN/OUT]���M�惊�X�g�BNULL�Œ�~�BPort�͎��ۂɑ��M�Ɏg�p����Port���Ԃ�B
+	//TCPで送信を行う
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 	BOOL SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		) {
 		return SendUdpTcp(sendList, this->sendTcp, this->tcpPortMutex, MUTEX_TCP_PORT_NAME);
 	}
 
-	//�o�͗pTS�f�[�^�𑗂�
-	//�����F
-	// data		[IN]TS�f�[�^
-	// size		[IN]data�̃T�C�Y
-	// funcGetPresent	[IN]EPG�̌��ݔԑgID�𒲂ׂ�֐�
+	//出力用TSデータを送る
+	//引数：
+	// data		[IN]TSデータ
+	// size		[IN]dataのサイズ
+	// funcGetPresent	[IN]EPGの現在番組IDを調べる関数
 	void AddTSBuff(
 		BYTE* data,
 		DWORD size,
@@ -80,77 +80,77 @@ public:
 		const vector<WORD>& pidList
 		);
 
-	//�t�@�C���ۑ����J�n����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// recParam				[IN]�ۑ��p�����[�^�ictrlID�t�B�[���h�͖����j
-	// saveFolderSub		[IN]HDD�̋󂫂��Ȃ��Ȃ����ꍇ�Ɉꎞ�I�Ɏg�p����t�H���_
-	// maxBuffCount			[IN]�o�̓o�b�t�@���
+	//ファイル保存を開始する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// recParam				[IN]保存パラメータ（ctrlIDフィールドは無視）
+	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+	// maxBuffCount			[IN]出力バッファ上限
 	BOOL StartSave(
 		const SET_CTRL_REC_PARAM& recParam,
 		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
 	);
 
-	//�t�@�C���ۑ����I������
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// subRecFlag	[OUT]�����̂Ƃ��A�T�u�^�悪�����������ǂ���
+	//ファイル保存を終了する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
 	BOOL EndSave(BOOL* subRecFlag = NULL);
 
-	//�^�撆���ǂ���
-	//�߂�l�F
-	// TRUE�i�^�撆�j�AFALSE�i���Ă��Ȃ��j
+	//録画中かどうか
+	//戻り値：
+	// TRUE（録画中）、FALSE（していない）
 	BOOL IsRec();
 
-	//�X�N�����u�����������̓���ݒ�
-	//�����F
-	// enable		[IN] TRUE�i��������j�AFALSE�i�������Ȃ��j
+	//スクランブル解除処理の動作設定
+	//引数：
+	// enable		[IN] TRUE（処理する）、FALSE（処理しない）
 	void SetScramble(
 		BOOL enable
 		) {
 		this->enableScramble = enable != FALSE;
 	}
 
-	//�X�N�����u�������������s�����ǂ���
-	//�߂�l�F
-	// ���i��������j�A0�i�������Ȃ��j�A���i���ݒ�j
+	//スクランブル解除処理を行うかどうか
+	//戻り値：
+	// 正（処理する）、0（処理しない）、負（未設定）
 	int GetScramble() {
 		return this->enableScramble;
 	}
 
-	//�����ƃf�[�^�����܂߂邩�ǂ���
-	//�����F
-	// enableCaption		[IN]������ TRUE�i�܂߂�j�AFALSE�i�܂߂Ȃ��j
-	// enableData			[IN]�f�[�^������ TRUE�i�܂߂�j�AFALSE�i�܂߂Ȃ��j
+	//字幕とデータ放送含めるかどうか
+	//引数：
+	// enableCaption		[IN]字幕を TRUE（含める）、FALSE（含めない）
+	// enableData			[IN]データ放送を TRUE（含める）、FALSE（含めない）
 	void SetServiceMode(
 		BOOL enableCaption,
 		BOOL enableData
 		);
 
-	//�G���[�J�E���g���N���A����
+	//エラーカウントをクリアする
 	void ClearErrCount();
 
-	//�h���b�v�ƃX�N�����u���̃J�E���g���擾����
-	//�����F
-	// drop				[OUT]�h���b�v��
-	// scramble			[OUT]�X�N�����u����
+	//ドロップとスクランブルのカウントを取得する
+	//引数：
+	// drop				[OUT]ドロップ数
+	// scramble			[OUT]スクランブル数
 	void GetErrCount(ULONGLONG* drop, ULONGLONG* scramble);
 
 
-	//�^�撆�̃t�@�C���̃t�@�C���p�X���擾����
-	//�߂�l�F
-	// �t�@�C���p�X
+	//録画中のファイルのファイルパスを取得する
+	//戻り値：
+	// ファイルパス
 	wstring GetSaveFilePath();
 
-	//�h���b�v�ƃX�N�����u���̃J�E���g��ۑ�����
-	//�����F
-	// filePath			[IN]�ۑ��t�@�C����
-	// asUtf8			[IN]UTF-8�ŕۑ����邩
-	// dropSaveThresh	[IN]�h���b�v��������ȏ�Ȃ�ۑ�����
-	// drop				[OUT]�h���b�v��
+	//ドロップとスクランブルのカウントを保存する
+	//引数：
+	// filePath			[IN]保存ファイル名
+	// asUtf8			[IN]UTF-8で保存するか
+	// dropSaveThresh	[IN]ドロップ数がこれ以上なら保存する
+	// drop				[OUT]ドロップ数
 	void SaveErrCount(
 		const wstring& filePath,
 		BOOL asUtf8,
@@ -164,9 +164,9 @@ public:
 		float signalLv
 		);
 
-	//�^�撆�̃t�@�C���̏o�̓T�C�Y���擾����
-	//�����F
-	// writeSize			[OUT]�o�̓T�C�Y
+	//録画中のファイルの出力サイズを取得する
+	//引数：
+	// writeSize			[OUT]出力サイズ
 	void GetRecWriteSize(
 		__int64* writeSize
 		);

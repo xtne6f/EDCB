@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "EpgDBManager.h"
 
 #include "../../Common/CommonDef.h"
@@ -34,7 +34,7 @@ void CEpgDBManager::ReloadEpgData(bool foreground)
 {
 	CancelLoadData();
 
-	//ƒtƒHƒAƒOƒ‰ƒEƒ“ƒh“Ç‚İ‚İ‚ğ’†’f‚µ‚½ê‡‚Íˆø‚«Œp‚®
+	//ãƒ•ã‚©ã‚¢ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰èª­ã¿è¾¼ã¿ã‚’ä¸­æ–­ã—ãŸå ´åˆã¯å¼•ãç¶™ã
 	if( this->loadForeground == false ){
 		this->loadForeground = foreground;
 	}
@@ -44,7 +44,7 @@ void CEpgDBManager::ReloadEpgData(bool foreground)
 namespace
 {
 
-//’·ŠúƒA[ƒJƒCƒu—pƒtƒ@ƒCƒ‹‚ğŠJ‚­
+//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ã
 FILE* OpenOldArchive(LPCWSTR dir, __int64 t, int flags)
 {
 	SYSTEMTIME st;
@@ -54,13 +54,13 @@ FILE* OpenOldArchive(LPCWSTR dir, __int64 t, int flags)
 	return UtilOpenFile(fs_path(dir).append(name), flags);
 }
 
-//‘¶İ‚·‚é’·ŠúƒA[ƒJƒCƒu‚Ì“ú•tî•ñ‚ğ¸‡‚ÅƒŠƒXƒg‚·‚é
+//å­˜åœ¨ã™ã‚‹é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã®æ—¥ä»˜æƒ…å ±ã‚’æ˜‡é †ã§ãƒªã‚¹ãƒˆã™ã‚‹
 vector<__int64> ListOldArchive(LPCWSTR dir)
 {
 	vector<__int64> timeList;
 	EnumFindFile(fs_path(dir).append(L"????????.dat"), [&](UTIL_FIND_DATA& findData) -> bool {
 		if( findData.isDir == false && findData.fileName.size() == 12 ){
-			//“ú•t(•K‚¸“ú—j“ú)‚ğ‰ğÍ
+			//æ—¥ä»˜(å¿…ãšæ—¥æ›œæ—¥)ã‚’è§£æ
 			LPWSTR endp;
 			DWORD ymd = wcstoul(findData.fileName.c_str(), &endp, 10);
 			if( endp && endp - findData.fileName.c_str() == 8 && endp[0] == L'.' ){
@@ -80,7 +80,7 @@ vector<__int64> ListOldArchive(LPCWSTR dir)
 	return timeList;
 }
 
-//’·ŠúƒA[ƒJƒCƒu—pƒtƒ@ƒCƒ‹‚ÌƒCƒ“ƒfƒbƒNƒX—Ìˆæ‚ğ“Ç‚Ş
+//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹é ˜åŸŸã‚’èª­ã‚€
 void ReadOldArchiveIndex(FILE* fp, vector<BYTE>& buff, vector<__int64>& index, DWORD* headerSize)
 {
 	rewind(fp);
@@ -97,7 +97,7 @@ void ReadOldArchiveIndex(FILE* fp, vector<BYTE>& buff, vector<__int64>& index, D
 	}
 }
 
-//’·ŠúƒA[ƒJƒCƒu—pƒtƒ@ƒCƒ‹‚Ì“Á’èˆÊ’u‚ÌEPGƒf[ƒ^‚ğ“Ç‚Ş
+//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ã®ç‰¹å®šä½ç½®ã®EPGãƒ‡ãƒ¼ã‚¿ã‚’èª­ã‚€
 void ReadOldArchiveEventInfo(FILE* fp, const vector<__int64>& index, size_t indexPos, DWORD headerSize, vector<BYTE>& buff, EPGDB_SERVICE_EVENT_INFO& info)
 {
 	buff.clear();
@@ -128,12 +128,12 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	DWORD time = GetTickCount();
 
 	if( sys->loadForeground == false ){
-		//ƒoƒbƒNƒOƒ‰ƒEƒ“ƒh‚ÉˆÚs
+		//ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã«ç§»è¡Œ
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 	}
 	CEpgDataCap3Util epgUtil;
 	if( epgUtil.Initialize(FALSE) != NO_ERR ){
-		OutputDebugString(L"šEpgDataCap3‚Ì‰Šú‰»‚É¸”s‚µ‚Ü‚µ‚½B\r\n");
+		OutputDebugString(L"â˜…EpgDataCap3ã®åˆæœŸåŒ–ã«å¤±æ•—ã—ã¾ã—ãŸã€‚\r\n");
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
 		sys->loadStop = true;
@@ -142,16 +142,16 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 
 	__int64 utcNow = GetNowI64Time() - I64_UTIL_TIMEZONE;
 
-	//EPGƒtƒ@ƒCƒ‹‚ÌŒŸõ
+	//EPGãƒ•ã‚¡ã‚¤ãƒ«ã®æ¤œç´¢
 	vector<wstring> epgFileList;
 	const fs_path settingPath = GetSettingPath();
 	const fs_path epgDataPath = fs_path(settingPath).append(EPG_SAVE_FOLDER);
 
-	//w’èƒtƒHƒ‹ƒ_‚Ìƒtƒ@ƒCƒ‹ˆê——æ“¾
+	//æŒ‡å®šãƒ•ã‚©ãƒ«ãƒ€ã®ãƒ•ã‚¡ã‚¤ãƒ«ä¸€è¦§å–å¾—
 	EnumFindFile(fs_path(epgDataPath).append(L"*_epg.dat"), [&](UTIL_FIND_DATA& findData) -> bool {
 		if( findData.isDir == false && findData.lastWriteTime != 0 ){
-			//Œ©‚Â‚©‚Á‚½ƒtƒ@ƒCƒ‹‚ğˆê——‚É’Ç‰Á
-			//–¼‘O‡B‚½‚¾‚µTSID==0xFFFF‚Ìê‡‚Í“¯‚¶ƒ`ƒƒƒ“ƒlƒ‹‚Ì˜A‘±‚É‚æ‚èƒXƒgƒŠ[ƒ€‚ªƒNƒŠƒA‚³‚ê‚È‚¢‰Â”\«‚ª‚ ‚é‚Ì‚ÅŒã‚ë‚É‚Ü‚Æ‚ß‚é
+			//è¦‹ã¤ã‹ã£ãŸãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä¸€è¦§ã«è¿½åŠ 
+			//åå‰é †ã€‚ãŸã ã—TSID==0xFFFFã®å ´åˆã¯åŒã˜ãƒãƒ£ãƒ³ãƒãƒ«ã®é€£ç¶šã«ã‚ˆã‚Šã‚¹ãƒˆãƒªãƒ¼ãƒ ãŒã‚¯ãƒªã‚¢ã•ã‚Œãªã„å¯èƒ½æ€§ãŒã‚ã‚‹ã®ã§å¾Œã‚ã«ã¾ã¨ã‚ã‚‹
 			WCHAR prefix = findData.lastWriteTime + 7 * 24 * 60 * 60 * I64_1SEC < utcNow ? L'0' :
 			               UtilPathEndsWith(findData.fileName.c_str(), L"ffff_epg.dat") ? L'2' :  L'1';
 			wstring item = prefix + fs_path(epgDataPath).append(findData.fileName).native();
@@ -163,26 +163,26 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	DWORD loadElapsed = 0;
 	DWORD loadTick = GetTickCount();
 
-	//EPGƒtƒ@ƒCƒ‹‚Ì‰ğÍ
+	//EPGãƒ•ã‚¡ã‚¤ãƒ«ã®è§£æ
 	for( vector<wstring>::iterator itr = epgFileList.begin(); itr != epgFileList.end(); itr++ ){
 		if( sys->loadStop ){
-			//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
+			//ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚ŒãŸ
 			return;
 		}
 		fs_path path = itr->c_str() + 1;
 		if( (*itr)[0] == L'0' ){
-			//1TŠÔˆÈã‘O‚Ìƒtƒ@ƒCƒ‹‚È‚Ì‚Åíœ
+			//1é€±é–“ä»¥ä¸Šå‰ã®ãƒ•ã‚¡ã‚¤ãƒ«ãªã®ã§å‰Šé™¤
 			DeleteFile(path.c_str());
-			_OutputDebugString(L"šdelete %ls\r\n", path.c_str());
+			_OutputDebugString(L"â˜…delete %ls\r\n", path.c_str());
 		}else{
 			BYTE readBuff[188*256];
 			bool swapped = false;
 			std::unique_ptr<FILE, decltype(&fclose)> file(NULL, fclose);
-			//ˆêƒtƒ@ƒCƒ‹‚Ìó‘Ô‚ğ’²‚×‚éBæ“¾‘¤‚ÌCreateFile(tmp)¨CloseHandle(tmp)¨CopyFile(tmp,master)¨DeleteFile(tmp)‚Ì—¬‚ê‚ğ‚ ‚é’ö“x‰¼’è
+			//ä¸€æ™‚ãƒ•ã‚¡ã‚¤ãƒ«ã®çŠ¶æ…‹ã‚’èª¿ã¹ã‚‹ã€‚å–å¾—å´ã®CreateFile(tmp)â†’CloseHandle(tmp)â†’CopyFile(tmp,master)â†’DeleteFile(tmp)ã®æµã‚Œã‚’ã‚ã‚‹ç¨‹åº¦ä»®å®š
 			bool mightExist = false;
 			if( UtilFileExists(fs_path(path).concat(L".tmp"), &mightExist).first || mightExist ){
-				//ˆêƒtƒ@ƒCƒ‹‚ª‚ ‚é¨‚à‚¤‚·‚®ã‘‚«‚³‚ê‚é‚©‚à‚µ‚ê‚È‚¢‚Ì‚Å‹¤—L‚ÅŠJ‚¢‚Ä‘Ş”ğ‚³‚¹‚é
-				_OutputDebugString(L"šlockless read %ls\r\n", path.c_str());
+				//ä¸€æ™‚ãƒ•ã‚¡ã‚¤ãƒ«ãŒã‚ã‚‹â†’ã‚‚ã†ã™ãä¸Šæ›¸ãã•ã‚Œã‚‹ã‹ã‚‚ã—ã‚Œãªã„ã®ã§å…±æœ‰ã§é–‹ã„ã¦é€€é¿ã•ã›ã‚‹
+				_OutputDebugString(L"â˜…lockless read %ls\r\n", path.c_str());
 				for( int retry = 0; retry < 25; retry++ ){
 					std::unique_ptr<FILE, decltype(&fclose)> masterFile(UtilOpenFile(path, UTIL_SHARED_READ), fclose);
 					if( !masterFile ){
@@ -198,14 +198,14 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 								fwrite(readBuff, 1, n, file.get());
 							}
 							for( int i = 0; i < 25; i++ ){
-								//ˆêƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚İ‹¤—L‚ÅŠJ‚¯‚é¨ã‘‚«’†‚©‚à‚µ‚ê‚È‚¢‚Ì‚Å­‚µ‘Ò‚Â
+								//ä¸€æ™‚ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã¿å…±æœ‰ã§é–‹ã‘ã‚‹â†’ä¸Šæ›¸ãä¸­ã‹ã‚‚ã—ã‚Œãªã„ã®ã§å°‘ã—å¾…ã¤
 								if( !std::unique_ptr<FILE, decltype(&fclose)>(UtilOpenFile(
 								        fs_path(path).concat(L".tmp"), UTIL_O_RDONLY | UTIL_SH_READ | UTIL_SH_DELETE), fclose) ){
 									break;
 								}
 								Sleep(200);
 							}
-							//‘Ş”ğ’†‚Éã‘‚«‚³‚ê‚Ä‚¢‚È‚¢‚±‚Æ‚ğŠm”F‚·‚é
+							//é€€é¿ä¸­ã«ä¸Šæ›¸ãã•ã‚Œã¦ã„ãªã„ã“ã¨ã‚’ç¢ºèªã™ã‚‹
 							bool matched = false;
 							rewind(masterFile.get());
 							rewind(file.get());
@@ -229,13 +229,13 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					break;
 				}
 			}else{
-				//”r‘¼‚ÅŠJ‚­
+				//æ’ä»–ã§é–‹ã
 				file.reset(UtilOpenFile(path, UTIL_SECURE_READ));
 			}
 			if( !file ){
 				_OutputDebugString(L"Error %ls\r\n", path.c_str());
 			}else{
-				//PAT‚ğ‘—‚é(ƒXƒgƒŠ[ƒ€‚ğŠmÀ‚ÉƒŠƒZƒbƒg‚·‚é‚½‚ß)
+				//PATã‚’é€ã‚‹(ã‚¹ãƒˆãƒªãƒ¼ãƒ ã‚’ç¢ºå®Ÿã«ãƒªã‚»ãƒƒãƒˆã™ã‚‹ãŸã‚)
 				DWORD seekPos = 0;
 				for( DWORD i = 0; fread(readBuff, 1, 188, file.get()) == 188; i += 188 ){
 					//PID
@@ -253,7 +253,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					}
 				}
 				_fseeki64(file.get(), seekPos, SEEK_SET);
-				//TOT‚ğæ“ª‚É‚Á‚Ä‚«‚Ä‘—‚é(ƒXƒgƒŠ[ƒ€‚Ì‚ğŠm’è‚³‚¹‚é‚½‚ß)
+				//TOTã‚’å…ˆé ­ã«æŒã£ã¦ãã¦é€ã‚‹(ã‚¹ãƒˆãƒªãƒ¼ãƒ ã®æ™‚åˆ»ã‚’ç¢ºå®šã•ã›ã‚‹ãŸã‚)
 				bool ignoreTOT = false;
 				while( fread(readBuff, 1, 188, file.get()) == 188 ){
 					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0x14 ){
@@ -272,7 +272,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						}
 					}
 					if( sys->loadForeground == false ){
-						//ˆ—‘¬“x‚ª‚¾‚¢‚½‚¢2/3‚É‚È‚é‚æ‚¤‚É‹x‚ŞBI/O•‰‰×ŒyŒ¸‚ª‘_‚¢
+						//å‡¦ç†é€Ÿåº¦ãŒã ã„ãŸã„2/3ã«ãªã‚‹ã‚ˆã†ã«ä¼‘ã‚€ã€‚I/Oè² è·è»½æ¸›ãŒç‹™ã„
 						DWORD tick = GetTickCount();
 						loadElapsed += tick - loadTick;
 						loadTick = tick;
@@ -291,7 +291,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		}
 	}
 
-	//EPGƒf[ƒ^‚ğæ“¾
+	//EPGãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
 	DWORD serviceListSize = 0;
 	SERVICE_INFO* serviceList = NULL;
 	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == FALSE ){
@@ -336,13 +336,13 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	{
 		CBlockLock lock(&sys->epgMapLock);
 		if( sys->archivePeriodSec > 0 ){
-			//ƒA[ƒJƒCƒu‚·‚é
+			//ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã™ã‚‹
 			arcMin = arcMax - sys->archivePeriodSec * I64_1SEC;
 			if( sys->archivePeriodSec > 14 * 24 * 3600 ){
-				//’·ŠúƒA[ƒJƒCƒu‚·‚é
+				//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã™ã‚‹
 				SYSTEMTIME st;
 				ConvertSystemTime(arcMax - 14 * 24 * 3600 * I64_1SEC, &st);
-				//‘ÎÛ‚Í2TˆÈã‘O‚Ì“ú—j0‚©‚ç1TŠÔ
+				//å¯¾è±¡ã¯2é€±ä»¥ä¸Šå‰ã®æ—¥æ›œ0æ™‚ã‹ã‚‰1é€±é–“
 				oldMin = arcMax - ((((14 + st.wDayOfWeek) * 24 + st.wHour) * 60 + st.wMinute) * 60 + st.wSecond) * I64_1SEC;
 				oldMax = oldMin + 7 * 24 * 3600 * I64_1SEC;
 			}
@@ -350,7 +350,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	}
 	arcMax += 3600 * I64_1SEC;
 
-	//‰‰ñ‚ÍƒA[ƒJƒCƒuƒtƒ@ƒCƒ‹‚©‚ç“Ç‚İ‚Ş
+	//åˆå›ã¯ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰èª­ã¿è¾¼ã‚€
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> arcFromFile;
 	if( arcMin < LLONG_MAX && sys->epgArchive.empty() ){
 		vector<BYTE> buff;
@@ -379,18 +379,18 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		}
 	}
 
-	//’·ŠúƒA[ƒJƒCƒu‚ÌƒCƒ“ƒfƒbƒNƒX—Ìˆæ‚ğƒLƒƒƒbƒVƒ…
+	//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹é ˜åŸŸã‚’ã‚­ãƒ£ãƒƒã‚·ãƒ¥
 	vector<vector<__int64>> oldCache;
 	if( oldMin > LLONG_MIN ){
 		fs_path epgArcPath = fs_path(settingPath).append(EPG_ARCHIVE_FOLDER);
-		//ƒLƒƒƒbƒVƒ…‚Ìæ“ª‚Í“ú•tî•ñ
+		//ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã®å…ˆé ­ã¯æ—¥ä»˜æƒ…å ±
 		oldCache.push_back(ListOldArchive(epgArcPath.c_str()));
 		oldCache.resize(1 + oldCache.front().size());
 		if( sys->epgOldIndexCache.empty() == false ){
 			for( size_t i = 0; i < sys->epgOldIndexCache.front().size(); i++ ){
 				size_t j = std::lower_bound(oldCache.front().begin(), oldCache.front().end(), sys->epgOldIndexCache.front()[i]) - oldCache.front().begin();
 				if( j != oldCache.front().size() && oldCache.front()[j] == sys->epgOldIndexCache.front()[i] ){
-					//ƒLƒƒƒbƒVƒ…Ï‚İ‚Ì‚à‚Ì‚ğŒp³
+					//ã‚­ãƒ£ãƒƒã‚·ãƒ¥æ¸ˆã¿ã®ã‚‚ã®ã‚’ç¶™æ‰¿
 					oldCache[1 + j] = sys->epgOldIndexCache[1 + i];
 				}
 			}
@@ -398,7 +398,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		vector<BYTE> buff;
 		for( size_t i = 0; i < oldCache.front().size(); i++ ){
 			if( oldCache[1 + i].empty() ){
-				//ƒLƒƒƒbƒVƒ…‚·‚é
+				//ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã™ã‚‹
 				std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldCache.front()[i], UTIL_SECURE_READ), fclose);
 				if( fp ){
 					ReadOldArchiveIndex(fp.get(), buff, oldCache[1 + i], NULL);
@@ -408,18 +408,18 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	}
 
 	if( sys->loadForeground == false ){
-		//ƒtƒHƒAƒOƒ‰ƒEƒ“ƒh‚É•œ‹A
+		//ãƒ•ã‚©ã‚¢ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã«å¾©å¸°
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 	}
 	for(;;){
-		//ƒf[ƒ^ƒx[ƒX‚ğ”r‘¼‚·‚é
+		//ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã‚’æ’ä»–ã™ã‚‹
 		{
 			CBlockLock lock(&sys->epgMapLock);
 			if( sys->epgMapRefLock.first == 0 ){
 				if( arcFromFile.empty() == false ){
 					sys->epgArchive.swap(arcFromFile);
 				}
-				//ƒCƒxƒ“ƒg‚ğƒA[ƒJƒCƒu‚ÉˆÚ“®‚·‚é
+				//ã‚¤ãƒ™ãƒ³ãƒˆã‚’ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã«ç§»å‹•ã™ã‚‹
 				for( auto itr = sys->epgMap.begin(); arcMin < LLONG_MAX && itr != sys->epgMap.end(); itr++ ){
 					auto itrArc = sys->epgArchive.find(itr->first);
 					if( itrArc != sys->epgArchive.end() ){
@@ -431,7 +431,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						    ConvertI64Time(itr->second.eventList[i].start_time) < arcMax &&
 						    ConvertI64Time(itr->second.eventList[i].start_time) > arcMin ){
 							if( itrArc == sys->epgArchive.end() ){
-								//ƒT[ƒrƒX‚ğ’Ç‰Á
+								//ã‚µãƒ¼ãƒ“ã‚¹ã‚’è¿½åŠ 
 								itrArc = sys->epgArchive.insert(std::make_pair(itr->first, EPGDB_SERVICE_EVENT_INFO())).first;
 								itrArc->second.serviceInfo = std::move(itr->second.serviceInfo);
 							}
@@ -440,14 +440,14 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					}
 				}
 
-				//EPGƒf[ƒ^‚ğXV‚·‚é
+				//EPGãƒ‡ãƒ¼ã‚¿ã‚’æ›´æ–°ã™ã‚‹
 				sys->epgMap.swap(nextMap);
 
-				//ƒA[ƒJƒCƒu‚©‚ç•s—v‚ÈƒCƒxƒ“ƒg‚ğÁ‚·
+				//ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã‹ã‚‰ä¸è¦ãªã‚¤ãƒ™ãƒ³ãƒˆã‚’æ¶ˆã™
 				for( auto itr = sys->epgMap.cbegin(); arcMin < LLONG_MAX && itr != sys->epgMap.end(); itr++ ){
 					auto itrArc = sys->epgArchive.find(itr->first);
 					if( itrArc != sys->epgArchive.end() ){
-						//åƒf[ƒ^ƒx[ƒX‚ÌÅŒÃ‚æ‚èV‚µ‚¢‚à‚Ì‚Í•s—v
+						//ä¸»ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã®æœ€å¤ã‚ˆã‚Šæ–°ã—ã„ã‚‚ã®ã¯ä¸è¦
 						__int64 minStart = LLONG_MAX;
 						for( size_t i = 0; i < itr->second.eventList.size(); i++ ){
 							if( itr->second.eventList[i].StartTimeFlag && ConvertI64Time(itr->second.eventList[i].start_time) < minStart ){
@@ -459,7 +459,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						}), itrArc->second.eventList.end());
 					}
 				}
-				//ƒA[ƒJƒCƒu‚©‚çŒÃ‚¢ƒCƒxƒ“ƒg‚ğÁ‚·
+				//ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã‹ã‚‰å¤ã„ã‚¤ãƒ™ãƒ³ãƒˆã‚’æ¶ˆã™
 				vector<EPGDB_SERVICE_EVENT_INFO> epgOld;
 				vector<__int64> oldIndex;
 				for( auto itr = sys->epgArchive.begin(); itr != sys->epgArchive.end(); ){
@@ -468,9 +468,9 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					for( size_t i = 0; i < itr->second.eventList.size(); i++ ){
 						__int64 startTime = ConvertI64Time(itr->second.eventList[i].start_time);
 						if( startTime < oldMax && startTime >= oldMin ){
-							//‹Œ¢‘ã‚ÉˆÚ“®‚·‚é
+							//æ—§ä¸–ä»£ã«ç§»å‹•ã™ã‚‹
 							if( itrOld == epgOld.end() ){
-								//ƒT[ƒrƒX‚ğ’Ç‰Á
+								//ã‚µãƒ¼ãƒ“ã‚¹ã‚’è¿½åŠ 
 								epgOld.push_back(EPGDB_SERVICE_EVENT_INFO());
 								itrOld = epgOld.end() - 1;
 								itrOld->serviceInfo = itr->second.serviceInfo;
@@ -479,12 +479,12 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 								oldIndex.push_back(LLONG_MAX);
 								oldIndex.push_back(0);
 							}
-							//ŠJnŠÔ‚ÌÅ¬’l‚ÆÅ‘å’l
+							//é–‹å§‹æ™‚é–“ã®æœ€å°å€¤ã¨æœ€å¤§å€¤
 							*(oldIndex.end() - 2) = min(*(oldIndex.end() - 2), startTime - oldMin);
 							*(oldIndex.end() - 1) = max(*(oldIndex.end() - 1), startTime - oldMin);
 							itrOld->eventList.push_back(std::move(itr->second.eventList[i]));
 						}else if( startTime > max(arcMin, oldMin) && startTime < arcMax ){
-							//c‚·
+							//æ®‹ã™
 							if( i != j ){
 								itr->second.eventList[j] = std::move(itr->second.eventList[i]);
 							}
@@ -492,7 +492,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						}
 					}
 					if( j == 0 ){
-						//‹ó‚ÌƒT[ƒrƒX‚ğÁ‚·
+						//ç©ºã®ã‚µãƒ¼ãƒ“ã‚¹ã‚’æ¶ˆã™
 						sys->epgArchive.erase(itr++);
 					}else{
 						itr->second.eventList.erase(itr->second.eventList.begin() + j, itr->second.eventList.end());
@@ -500,7 +500,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					}
 				}
 
-				//’·ŠúƒA[ƒJƒCƒu—pƒtƒ@ƒCƒ‹‚É‘‚«‚Ş
+				//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ã«æ›¸ãè¾¼ã‚€
 				if( epgOld.empty() == false ){
 					fs_path epgArcPath = fs_path(settingPath).append(EPG_ARCHIVE_FOLDER);
 					if( UtilFileExists(epgArcPath).first == false ){
@@ -512,7 +512,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						vector<std::unique_ptr<BYTE[]>> buffList;
 						buffList.reserve(epgOld.size());
 						while( epgOld.empty() == false ){
-							//ƒT[ƒrƒX’PˆÊ‚Å‘‚«‚İAƒV[ƒN‚Å‚«‚é‚æ‚¤‚ÉƒCƒ“ƒfƒbƒNƒX‚ğì‚é
+							//ã‚µãƒ¼ãƒ“ã‚¹å˜ä½ã§æ›¸ãè¾¼ã¿ã€ã‚·ãƒ¼ã‚¯ã§ãã‚‹ã‚ˆã†ã«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ä½œã‚‹
 							buffList.push_back(NewWriteVALUE2WithVersion(5, epgOld.back(), buffSize));
 							epgOld.pop_back();
 							oldIndex[epgOld.size() * 4] = buffSize;
@@ -524,7 +524,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 							buffList.pop_back();
 						}
 						if( oldCache.empty() == false ){
-							//ƒLƒƒƒbƒVƒ…‚É’Ç‰Á
+							//ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«è¿½åŠ 
 							size_t i = std::lower_bound(oldCache.front().begin(), oldCache.front().end(), oldMin) - oldCache.front().begin();
 							if( i == oldCache.front().size() || oldCache.front()[i] != oldMin ){
 								oldCache.front().insert(oldCache.front().begin() + i, oldMin);
@@ -541,12 +541,12 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		Sleep(1);
 	}
 	if( sys->loadForeground == false ){
-		//ƒoƒbƒNƒOƒ‰ƒEƒ“ƒh‚ÉˆÚs
+		//ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã«ç§»è¡Œ
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 	}
 	nextMap.clear();
 
-	//ƒA[ƒJƒCƒuƒtƒ@ƒCƒ‹‚É‘‚«‚Ş
+	//ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ãƒ•ã‚¡ã‚¤ãƒ«ã«æ›¸ãè¾¼ã‚€
 	if( arcMin < LLONG_MAX ){
 		vector<const EPGDB_SERVICE_EVENT_INFO*> valp;
 		valp.reserve(sys->epgArchive.size());
@@ -578,10 +578,10 @@ BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVEN
 				item->eventList.resize(item->eventList.size() + 1);
 				ConvertEpgInfo(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, &epgInfoList[i], &item->eventList.back());
 				if( item->eventList.back().hasShortInfo ){
-					//‚²‚­‹H‚ÉAPR(‰üs)‚ğŠÜ‚Ş‚½‚ß
+					//ã”ãç¨€ã«APR(æ”¹è¡Œ)ã‚’å«ã‚€ãŸã‚
 					Replace(item->eventList.back().shortInfo.event_name, L"\r\n", L"");
 				}
-				//À‘•ã‚ÍŠùƒ\[ƒg‚¾‚ªd—l‚Å‚Í‚È‚¢‚Ì‚Å‘}“üƒ\[ƒg‚µ‚Ä‚¨‚­
+				//å®Ÿè£…ä¸Šã¯æ—¢ã‚½ãƒ¼ãƒˆã ãŒä»•æ§˜ã§ã¯ãªã„ã®ã§æŒ¿å…¥ã‚½ãƒ¼ãƒˆã—ã¦ãŠã
 				for( size_t j = item->eventList.size() - 1; j > 0 && item->eventList[j].event_id < item->eventList[j-1].event_id; j-- ){
 					std::swap(item->eventList[j], item->eventList[j-1]);
 				}
@@ -630,11 +630,11 @@ void CEpgDBManager::SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize
 					enumProc(info, findKey);
 				}
 			}else{
-				//—ñ‹“Š®—¹
+				//åˆ—æŒ™å®Œäº†
 				enumProc(NULL, findKey);
 			}
 		}) == false ){
-			//—ñ‹“‚È‚µ‚ÅŠ®—¹
+			//åˆ—æŒ™ãªã—ã§å®Œäº†
 			enumProc(NULL, findKey);
 		}
 	}
@@ -664,7 +664,7 @@ void CEpgDBManager::SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t k
 			}
 		}
 		if( ctxsSize == 0 ){
-			//—ñ‹“‚È‚µ‚ÅŠ®—¹
+			//åˆ—æŒ™ãªã—ã§å®Œäº†
 			enumProc(NULL, findKey);
 		}else{
 			EnumArchiveEventInfo(enumServiceKey.data(), enumServiceKey.size(), enumStart, enumEnd, deletableBeforeEnumDone,
@@ -674,7 +674,7 @@ void CEpgDBManager::SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t k
 						enumProc(info, findKey);
 					}
 				}else{
-					//—ñ‹“Š®—¹
+					//åˆ—æŒ™å®Œäº†
 					enumProc(NULL, findKey);
 				}
 			});
@@ -692,13 +692,13 @@ void CEpgDBManager::SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t k
 bool CEpgDBManager::InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>& enumServiceKey, const EPGDB_SEARCH_KEY_INFO* key)
 {
 	if( key->andKey.compare(0, 7, L"^!{999}") == 0 ){
-		//–³Œø‚ğ¦‚·ƒL[ƒ[ƒh‚ªw’è‚³‚ê‚Ä‚¢‚é‚Ì‚ÅŒŸõ‚µ‚È‚¢
+		//ç„¡åŠ¹ã‚’ç¤ºã™ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ãŒæŒ‡å®šã•ã‚Œã¦ã„ã‚‹ã®ã§æ¤œç´¢ã—ãªã„
 		return false;
 	}
 	wstring andKey = key->andKey;
 	ctx.caseFlag = false;
 	if( andKey.compare(0, 7, L"C!{999}") == 0 ){
-		//‘å¬•¶š‚ğ‹æ•Ê‚·‚éƒL[ƒ[ƒh‚ªw’è‚³‚ê‚Ä‚¢‚é
+		//å¤§å°æ–‡å­—ã‚’åŒºåˆ¥ã™ã‚‹ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ãŒæŒ‡å®šã•ã‚Œã¦ã„ã‚‹
 		andKey.erase(0, 7);
 		ctx.caseFlag = true;
 	}
@@ -708,19 +708,19 @@ bool CEpgDBManager::InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>
 		LPWSTR endp;
 		DWORD dur = wcstoul(andKey.c_str() + 3, &endp, 10);
 		if( endp - andKey.c_str() == 12 && endp[0] == L'}' ){
-			//”Ô‘g’·‚ği‚è‚ŞƒL[ƒ[ƒh‚ªw’è‚³‚ê‚Ä‚¢‚é
+			//ç•ªçµ„é•·ã‚’çµã‚Šè¾¼ã‚€ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ãŒæŒ‡å®šã•ã‚Œã¦ã„ã‚‹
 			andKey.erase(0, 13);
 			ctx.chkDurationMinSec = dur / 10000 % 10000 * 60;
 			ctx.chkDurationMaxSec = dur % 10000 == 0 ? MAXDWORD : dur % 10000 * 60;
 		}
 	}
 
-	//ƒL[ƒ[ƒh•ª‰ğ
+	//ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰åˆ†è§£
 	ctx.andKeyList.clear();
 	ctx.notKeyList.clear();
 
 	if( key->regExpFlag ){
-		//³‹K•\Œ»‚Ì’P“ÆƒL[ƒ[ƒh
+		//æ­£è¦è¡¨ç¾ã®å˜ç‹¬ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰
 		if( andKey.empty() == false ){
 			ctx.andKeyList.push_back(vector<pair<wstring, RegExpPtr>>());
 			AddKeyword(ctx.andKeyList.back(), andKey, ctx.caseFlag, true, key->titleOnlyFlag != FALSE);
@@ -729,13 +729,13 @@ bool CEpgDBManager::InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>
 			AddKeyword(ctx.notKeyList, key->notKey, ctx.caseFlag, true, key->titleOnlyFlag != FALSE);
 		}
 	}else{
-		//³‹K•\Œ»‚Å‚Í‚È‚¢‚Ì‚ÅƒL[ƒ[ƒh‚Ì•ª‰ğ
-		Replace(andKey, L"@", L" ");
+		//æ­£è¦è¡¨ç¾ã§ã¯ãªã„ã®ã§ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ã®åˆ†è§£
+		Replace(andKey, L"ã€€", L" ");
 		while( andKey.empty() == false ){
 			wstring buff;
 			Separate(andKey, L" ", buff, andKey);
 			if( buff == L"|" ){
-				//ORğŒ
+				//ORæ¡ä»¶
 				ctx.andKeyList.push_back(vector<pair<wstring, RegExpPtr>>());
 			}else if( buff.empty() == false ){
 				if( ctx.andKeyList.empty() ){
@@ -745,7 +745,7 @@ bool CEpgDBManager::InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>
 			}
 		}
 		wstring notKey = key->notKey;
-		Replace(notKey, L"@", L" ");
+		Replace(notKey, L"ã€€", L" ");
 		while( notKey.empty() == false ){
 			wstring buff;
 			Separate(notKey, L" ", buff, notKey);
@@ -777,37 +777,37 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 	for( size_t i = 0; i < ctxsSize; i++ ){
 		SEARCH_CONTEXT& ctx = ctxs[i];
 		const EPGDB_SEARCH_KEY_INFO& key = *ctx.key;
-		//ŒŸõƒL[‚ª•¡”‚ ‚éê‡‚ÍƒT[ƒrƒX‚àŠm”F
+		//æ¤œç´¢ã‚­ãƒ¼ãŒè¤‡æ•°ã‚ã‚‹å ´åˆã¯ã‚µãƒ¼ãƒ“ã‚¹ã‚‚ç¢ºèª
 		if( ctxsSize < 2 || std::find(key.serviceList.begin(), key.serviceList.end(),
 		        Create64Key(itrEvent->original_network_id, itrEvent->transport_stream_id, itrEvent->service_id)) != key.serviceList.end() ){
 			{
 				if( key.freeCAFlag == 1 ){
-					//–³—¿•ú‘—‚Ì‚İ
+					//ç„¡æ–™æ”¾é€ã®ã¿
 					if( itrEvent->freeCAFlag != 0 ){
-						//—L—¿•ú‘—
+						//æœ‰æ–™æ”¾é€
 						continue;
 					}
 				}else if( key.freeCAFlag == 2 ){
-					//—L—¿•ú‘—‚Ì‚İ
+					//æœ‰æ–™æ”¾é€ã®ã¿
 					if( itrEvent->freeCAFlag == 0 ){
-						//–³—¿•ú‘—
+						//ç„¡æ–™æ”¾é€
 						continue;
 					}
 				}
-				//ƒWƒƒƒ“ƒ‹Šm”F
+				//ã‚¸ãƒ£ãƒ³ãƒ«ç¢ºèª
 				if( key.contentList.size() > 0 ){
-					//ƒWƒƒƒ“ƒ‹w’è‚ ‚é‚Ì‚ÅƒWƒƒƒ“ƒ‹‚Åi‚è‚İ
+					//ã‚¸ãƒ£ãƒ³ãƒ«æŒ‡å®šã‚ã‚‹ã®ã§ã‚¸ãƒ£ãƒ³ãƒ«ã§çµã‚Šè¾¼ã¿
 					if( itrEvent->hasContentInfo == false ){
 						if( itrEvent->hasShortInfo == false ){
-							//2‚Â‚ß‚ÌƒT[ƒrƒXH‘ÎÛŠO‚Æ‚·‚é
+							//2ã¤ã‚ã®ã‚µãƒ¼ãƒ“ã‚¹ï¼Ÿå¯¾è±¡å¤–ã¨ã™ã‚‹
 							continue;
 						}
-						//ƒWƒƒƒ“ƒ‹î•ñ‚È‚¢
+						//ã‚¸ãƒ£ãƒ³ãƒ«æƒ…å ±ãªã„
 						bool findNo = false;
 						for( size_t j = 0; j < key.contentList.size(); j++ ){
 							if( key.contentList[j].content_nibble_level_1 == 0xFF &&
 							    key.contentList[j].content_nibble_level_2 == 0xFF ){
-								//ƒWƒƒƒ“ƒ‹‚È‚µ‚Ìw’è‚ ‚è
+								//ã‚¸ãƒ£ãƒ³ãƒ«ãªã—ã®æŒ‡å®šã‚ã‚Š
 								findNo = true;
 								break;
 							}
@@ -817,7 +817,7 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 								continue;
 							}
 						}else{
-							//NOTğŒˆµ‚¢
+							//NOTæ¡ä»¶æ‰±ã„
 							if( findNo ){
 								continue;
 							}
@@ -826,11 +826,11 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 						bool equal = IsEqualContent(key.contentList, itrEvent->contentInfo.nibbleList);
 						if( key.notContetFlag == 0 ){
 							if( equal == false ){
-								//ƒWƒƒƒ“ƒ‹ˆá‚¤‚Ì‚Å‘ÎÛŠO
+								//ã‚¸ãƒ£ãƒ³ãƒ«é•ã†ã®ã§å¯¾è±¡å¤–
 								continue;
 							}
 						}else{
-							//NOTğŒˆµ‚¢
+							//NOTæ¡ä»¶æ‰±ã„
 							if( equal ){
 								continue;
 							}
@@ -838,7 +838,7 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 					}
 				}
 
-				//‰f‘œŠm”F
+				//æ˜ åƒç¢ºèª
 				if( key.videoList.size() > 0 ){
 					if( itrEvent->hasComponentInfo == false ){
 						continue;
@@ -849,7 +849,7 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 					}
 				}
 
-				//‰¹ºŠm”F
+				//éŸ³å£°ç¢ºèª
 				if( key.audioList.size() > 0 ){
 					if( itrEvent->hasAudioInfo == false ){
 						continue;
@@ -867,29 +867,29 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 					}
 				}
 
-				//ŠÔŠm”F
+				//æ™‚é–“ç¢ºèª
 				if( key.dateList.size() > 0 ){
 					if( itrEvent->StartTimeFlag == FALSE ){
-						//ŠJnŠÔ•s–¾‚È‚Ì‚Å‘ÎÛŠO
+						//é–‹å§‹æ™‚é–“ä¸æ˜ãªã®ã§å¯¾è±¡å¤–
 						continue;
 					}
 					bool inTime = IsInDateTime(key.dateList, itrEvent->start_time);
 					if( key.notDateFlag == 0 ){
 						if( inTime == false ){
-							//ŠÔ”ÍˆÍŠO‚È‚Ì‚Å‘ÎÛŠO
+							//æ™‚é–“ç¯„å›²å¤–ãªã®ã§å¯¾è±¡å¤–
 							continue;
 						}
 					}else{
-						//NOTğŒˆµ‚¢
+						//NOTæ¡ä»¶æ‰±ã„
 						if( inTime ){
 							continue;
 						}
 					}
 				}
 
-				//”Ô‘g’·‚Åi‚è‚İ
+				//ç•ªçµ„é•·ã§çµã‚Šè¾¼ã¿
 				if( itrEvent->DurationFlag == FALSE ){
-					//•s–¾‚È‚Ì‚Åi‚è‚İ‚³‚ê‚Ä‚¢‚ê‚Î‘ÎÛŠO
+					//ä¸æ˜ãªã®ã§çµã‚Šè¾¼ã¿ã•ã‚Œã¦ã„ã‚Œã°å¯¾è±¡å¤–
 					if( 0 < ctx.chkDurationMinSec || ctx.chkDurationMaxSec < MAXDWORD ){
 						continue;
 					}
@@ -903,15 +903,15 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 					findKey->clear();
 				}
 
-				//ƒL[ƒ[ƒhŠm”F
+				//ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ç¢ºèª
 				if( itrEvent->hasShortInfo == false ){
 					if( ctx.andKeyList.empty() == false ){
-						//“à—e‚É‚©‚©‚í‚ç‚¸‘ÎÛŠO
+						//å†…å®¹ã«ã‹ã‹ã‚ã‚‰ãšå¯¾è±¡å¤–
 						continue;
 					}
 				}
 				if( FindKeyword(ctx.notKeyList, *itrEvent, ctx.targetWord, ctx.distForFind, ctx.caseFlag, false, false) ){
-					//notƒL[ƒ[ƒhŒ©‚Â‚©‚Á‚½‚Ì‚Å‘ÎÛŠO
+					//notã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰è¦‹ã¤ã‹ã£ãŸã®ã§å¯¾è±¡å¤–
 					continue;
 				}
 				if( ctx.andKeyList.empty() == false ){
@@ -923,7 +923,7 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 						}
 					}
 					if( found == false ){
-						//andƒL[ƒ[ƒhŒ©‚Â‚©‚ç‚È‚©‚Á‚½‚Ì‚Å‘ÎÛŠO
+						//andã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸã®ã§å¯¾è±¡å¤–
 						continue;
 					}
 				}
@@ -939,7 +939,7 @@ bool CEpgDBManager::IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, 
 	for( size_t i=0; i<searchKey.size(); i++ ){
 		EPGDB_CONTENT_DATA c = searchKey[i];
 		if( 0x60 <= c.content_nibble_level_1 && c.content_nibble_level_1 <= 0x7F ){
-			//”Ô‘g•t‘®î•ñ‚Ü‚½‚ÍCSŠg’£—pî•ñ‚É•ÏŠ·‚·‚é
+			//ç•ªçµ„ä»˜å±æƒ…å ±ã¾ãŸã¯CSæ‹¡å¼µç”¨æƒ…å ±ã«å¤‰æ›ã™ã‚‹
 			c.user_nibble_1 = c.content_nibble_level_1 & 0x0F;
 			c.user_nibble_2 = c.content_nibble_level_2;
 			c.content_nibble_level_2 = (c.content_nibble_level_1 - 0x60) >> 4;
@@ -948,17 +948,17 @@ bool CEpgDBManager::IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, 
 		for( size_t j=0; j<eventData.size(); j++ ){
 			if( c.content_nibble_level_1 == eventData[j].content_nibble_level_1 ){
 				if( c.content_nibble_level_2 == 0xFF ){
-					//’†•ª—Ş‚·‚×‚Ä
+					//ä¸­åˆ†é¡ã™ã¹ã¦
 					return true;
 				}
 				if( c.content_nibble_level_2 == eventData[j].content_nibble_level_2 ){
 					if( c.content_nibble_level_1 != 0x0E ){
-						//Šg’£‚Å‚È‚¢
+						//æ‹¡å¼µã§ãªã„
 						return true;
 					}
 					if( c.user_nibble_1 == eventData[j].user_nibble_1 ){
 						if( c.user_nibble_2 == 0xFF ){
-							//Šg’£’†•ª—Ş‚·‚×‚Ä
+							//æ‹¡å¼µä¸­åˆ†é¡ã™ã¹ã¦
 							return true;
 						}
 						if( c.user_nibble_2 == eventData[j].user_nibble_2 ){
@@ -998,7 +998,7 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 	for( size_t i = 0; i < keyList.size(); i++ ){
 		const wstring& key = keyList[i].first;
 		if( i == 0 || key.compare(0, 7, keyList[i - 1].first) ){
-			//ŒŸõ‘ÎÛ‚ª•Ï‚í‚Á‚½‚Ì‚Åì¬
+			//æ¤œç´¢å¯¾è±¡ãŒå¤‰ã‚ã£ãŸã®ã§ä½œæˆ
 			word.clear();
 			if( key.compare(0, 7, L":title:") == 0 ){
 				if( info.hasShortInfo ){
@@ -1027,7 +1027,7 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 		}
 
 		if( keyList[i].second ){
-			//³‹K•\Œ»
+			//æ­£è¦è¡¨ç¾
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 			OleCharPtr target(SysAllocString(word.c_str()), SysFreeString);
 			if( target ){
@@ -1037,11 +1037,11 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 					long count;
 					if( SUCCEEDED(matches->get_Count(&count)) && count > 0 ){
 						if( andFlag == false ){
-							//Œ©‚Â‚©‚Á‚½‚Ì‚ÅI—¹
+							//è¦‹ã¤ã‹ã£ãŸã®ã§çµ‚äº†
 							return true;
 						}
 						if( findKey && i + 1 == keyList.size() ){
-							//ÅIƒL[‚Ìƒ}ƒbƒ`‚ğ‹L˜^
+							//æœ€çµ‚ã‚­ãƒ¼ã®ãƒãƒƒãƒã‚’è¨˜éŒ²
 							IDispatch* pMatch;
 							if( SUCCEEDED(matches->get_Item(0, &pMatch)) ){
 								std::unique_ptr<IMatch2, decltype(&ComRelease)> match((IMatch2*)pMatch, ComRelease);
@@ -1053,7 +1053,7 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 							}
 						}
 					}else if( andFlag ){
-						//Œ©‚Â‚©‚ç‚È‚©‚Á‚½‚Ì‚ÅI—¹
+						//è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸã®ã§çµ‚äº†
 						return false;
 					}
 				}else if( andFlag ){
@@ -1063,11 +1063,11 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 			std::wsmatch m;
 			if( std::regex_search(word, m, *keyList[i].second) ){
 				if( andFlag == false ){
-					//Œ©‚Â‚©‚Á‚½‚Ì‚ÅI—¹
+					//è¦‹ã¤ã‹ã£ãŸã®ã§çµ‚äº†
 					return true;
 				}
 				if( findKey && i + 1 == keyList.size() ){
-					//ÅIƒL[‚Ìƒ}ƒbƒ`‚ğ‹L˜^
+					//æœ€çµ‚ã‚­ãƒ¼ã®ãƒãƒƒãƒã‚’è¨˜éŒ²
 					*findKey = m[0];
 				}
 #endif
@@ -1075,7 +1075,7 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 				return false;
 			}
 		}else{
-			//’Êí
+			//é€šå¸¸
 			if( key.size() > 7 &&
 			    (aimai ? FindLikeKeyword(key, 7, word, dist, caseFlag) :
 			     caseFlag ? std::search(word.begin(), word.end(), key.begin() + 7, key.end()) != word.end() :
@@ -1083,18 +1083,18 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 			                            [](wchar_t l, wchar_t r) { return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) ==
 			                                                              (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r); }) != word.end()) ){
 				if( andFlag == false ){
-					//Œ©‚Â‚©‚Á‚½‚Ì‚ÅI—¹
+					//è¦‹ã¤ã‹ã£ãŸã®ã§çµ‚äº†
 					return true;
 				}
 			}else if( andFlag ){
-				//Œ©‚Â‚©‚ç‚È‚©‚Á‚½‚Ì‚ÅI—¹
+				//è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸã®ã§çµ‚äº†
 				return false;
 			}
 		}
 	}
 
 	if( andFlag && findKey ){
-		//Œ©‚Â‚©‚Á‚½ƒL[‚ğ‹L˜^
+		//è¦‹ã¤ã‹ã£ãŸã‚­ãƒ¼ã‚’è¨˜éŒ²
 		size_t n = findKey->size();
 		for( size_t i = 0; i < keyList.size(); i++ ){
 			if( keyList[i].second == NULL ){
@@ -1113,7 +1113,7 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 
 bool CEpgDBManager::FindLikeKeyword(const wstring& key, size_t keyPos, const wstring& word, vector<int>& dist, bool caseFlag)
 {
-	//•ÒW‹——£‚ª‚µ‚«‚¢’lˆÈ‰º‚É‚È‚é•¶š—ñ‚ªŠÜ‚Ü‚ê‚é‚©’²‚×‚é
+	//ç·¨é›†è·é›¢ãŒã—ãã„å€¤ä»¥ä¸‹ã«ãªã‚‹æ–‡å­—åˆ—ãŒå«ã¾ã‚Œã‚‹ã‹èª¿ã¹ã‚‹
 	size_t l = 0;
 	size_t curr = key.size() - keyPos + 1;
 	dist.assign(curr * 2, 0);
@@ -1131,7 +1131,7 @@ bool CEpgDBManager::FindLikeKeyword(const wstring& key, size_t keyPos, const wst
 				dist[curr + j + 1] = 1 + (dist[l + j] < dist[l + j + 1] ? min(dist[l + j], dist[curr + j]) : min(dist[l + j + 1], dist[curr + j]));
 			}
 		}
-		//75%‚ğ‚µ‚«‚¢’l‚Æ‚·‚é
+		//75%ã‚’ã—ãã„å€¤ã¨ã™ã‚‹
 		if( dist[curr + key.size() - keyPos] * 4 <= (int)(key.size() - keyPos) ){
 			return true;
 		}
@@ -1156,13 +1156,13 @@ void CEpgDBManager::AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstrin
 	    key.compare(regPrefix, 7, L":genre:") &&
 	    key.compare(regPrefix, 7, L":video:") &&
 	    key.compare(regPrefix, 7, L":audio:") ){
-		//ŒŸõ‘ÎÛ‚ª•s–¾‚È‚Ì‚Åw’è‚·‚é
+		//æ¤œç´¢å¯¾è±¡ãŒä¸æ˜ãªã®ã§æŒ‡å®šã™ã‚‹
 		key = (titleOnly ? L":title:" : L":event:") + key;
 	}else if( regPrefix != 0 ){
 		key.erase(0, 1);
-		//‹Œ‚¢ˆ—‚Å‚Í‘ÎÛ‚ğ‘SŠp‹ó”’‚Ì‚Ü‚Ü”äŠr‚µ‚Ä‚¢‚½‚½‚ß³‹K•\Œ»‚à‘SŠp‚ÌƒP[ƒX‚ª‘½‚¢B“Á•Ê‚É’u‚«Š·‚¦‚é
-		Replace(key, L"@", L" ");
-		//RegExpƒIƒuƒWƒFƒNƒg‚ğ\’z‚µ‚Ä‚¨‚­
+		//æ—§ã„å‡¦ç†ã§ã¯å¯¾è±¡ã‚’å…¨è§’ç©ºç™½ã®ã¾ã¾æ¯”è¼ƒã—ã¦ã„ãŸãŸã‚æ­£è¦è¡¨ç¾ã‚‚å…¨è§’ã®ã‚±ãƒ¼ã‚¹ãŒå¤šã„ã€‚ç‰¹åˆ¥ã«ç½®ãæ›ãˆã‚‹
+		Replace(key, L"ã€€", L" ");
+		//RegExpã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æ§‹ç¯‰ã—ã¦ãŠã
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 		void* pv;
 		if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
@@ -1185,7 +1185,7 @@ void CEpgDBManager::AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstrin
 		}catch( std::regex_error& ){
 		}
 #endif
-		//‹ó(í‚É•sˆê’v)‚É‚·‚é
+		//ç©º(å¸¸ã«ä¸ä¸€è‡´)ã«ã™ã‚‹
 		key.erase(7);
 	}
 	ConvertSearchText(key);
@@ -1239,7 +1239,7 @@ pair<__int64, __int64> CEpgDBManager::GetArchiveEventMinMaxTime(__int64 keyMask,
 	pair<__int64, __int64> ret = GetEventMinMaxTimeProc(keyMask, key, true);
 	if( this->epgOldIndexCache.empty() == false ){
 		const vector<__int64>& timeList = this->epgOldIndexCache.front();
-		//’·ŠúƒA[ƒJƒCƒu‚ÌÅ¬ŠJnŠÔ‚ğ’²‚×‚é
+		//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã®æœ€å°é–‹å§‹æ™‚é–“ã‚’èª¿ã¹ã‚‹
 		bool found = false;
 		for( size_t i = 0; found == false && i < timeList.size(); i++ ){
 			const vector<__int64>& index = this->epgOldIndexCache[1 + i];
@@ -1250,7 +1250,7 @@ pair<__int64, __int64> CEpgDBManager::GetArchiveEventMinMaxTime(__int64 keyMask,
 				}
 			}
 		}
-		//’·ŠúƒA[ƒJƒCƒu‚ÌÅ‘åŠJnŠÔ‚ğ’²‚×‚é
+		//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã®æœ€å¤§é–‹å§‹æ™‚é–“ã‚’èª¿ã¹ã‚‹
 		found = false;
 		for( size_t i = timeList.size(); found == false && i > 0; i-- ){
 			const vector<__int64>& index = this->epgOldIndexCache[i];
@@ -1282,7 +1282,7 @@ bool CEpgDBManager::EnumEventInfoProc(__int64* keys, size_t keysSize, __int64 en
 		for( size_t i = 0; i + 1 < keysSize; i += 2 ){
 			if( (itr->first | keys[i]) == keys[i + 1] ){
 				for( auto jtr = itr->second.eventList.begin(); jtr != itr->second.eventList.end(); jtr++ ){
-					//”ñƒA[ƒJƒCƒu‚Å‚ÍŠÔ–¢’èŠÜ‚Ş—ñ‹“‚ÆŠÔ–¢’è‚Ì‚İ—ñ‹“‚Ì“Á•Êˆµ‚¢‚ª‚ ‚é
+					//éã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã§ã¯æ™‚é–“æœªå®šå«ã‚€åˆ—æŒ™ã¨æ™‚é–“æœªå®šã®ã¿åˆ—æŒ™ã®ç‰¹åˆ¥æ‰±ã„ãŒã‚ã‚‹
 					if( archive || ((enumStart != 0 || enumEnd != LLONG_MAX) && (enumStart != LLONG_MAX || jtr->StartTimeFlag)) ){
 						if( jtr->StartTimeFlag == 0 ){
 							continue;
@@ -1298,7 +1298,7 @@ bool CEpgDBManager::EnumEventInfoProc(__int64* keys, size_t keysSize, __int64 en
 			}
 		}
 	}
-	//—ñ‹“Š®—¹
+	//åˆ—æŒ™å®Œäº†
 	enumProc(NULL, NULL);
 	return true;
 }
@@ -1310,10 +1310,10 @@ void CEpgDBManager::EnumArchiveEventInfo(__int64* keys, size_t keysSize, __int64
 
 	std::list<EPGDB_SERVICE_EVENT_INFO> infoPool;
 	if( enumStart < enumEnd && this->epgOldIndexCache.size() > 1 ){
-		//’·ŠúƒA[ƒJƒCƒu‚à“Ç‚ŞBdeletableBeforeEnumDone‚Í—ñ‹“’†‚Å‚ ‚Á‚Ä‚àˆÈ‘O‚É—ñ‹“‚³‚ê‚½ƒf[ƒ^‚Ì¶‘¶‚Í•ÛØ‚µ‚È‚¢
+		//é•·æœŸã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ã‚‚èª­ã‚€ã€‚deletableBeforeEnumDoneæ™‚ã¯åˆ—æŒ™ä¸­ã§ã‚ã£ã¦ã‚‚ä»¥å‰ã«åˆ—æŒ™ã•ã‚ŒãŸãƒ‡ãƒ¼ã‚¿ã®ç”Ÿå­˜ã¯ä¿è¨¼ã—ãªã„
 		fs_path epgArcPath;
 		const vector<__int64>& timeList = this->epgOldIndexCache.front();
-		//‘ÎÛŠúŠÔ‚¾‚¯“Ç‚ß‚ÎOK
+		//å¯¾è±¡æœŸé–“ã ã‘èª­ã‚ã°OK
 		auto itr = std::upper_bound(timeList.begin(), timeList.end(), enumStart);
 		if( itr != timeList.begin() && enumStart < *(itr - 1) + 7 * 24 * 3600 * I64_1SEC ){
 			itr--;
@@ -1333,7 +1333,7 @@ void CEpgDBManager::EnumArchiveEventInfo(__int64* keys, size_t keysSize, __int64
 				for( size_t i = 0; i + 3 < index.size(); i += 4 ){
 					for( size_t j = 0; j + 1 < keysSize; j += 2 ){
 						if( (index[i + 1] | keys[j]) == keys[j + 1] ){
-							//‘ÎÛƒT[ƒrƒX‚¾‚¯“Ç‚ß‚ÎOK
+							//å¯¾è±¡ã‚µãƒ¼ãƒ“ã‚¹ã ã‘èª­ã‚ã°OK
 							EPGDB_SERVICE_EVENT_INFO* pi = &info;
 							if( deletableBeforeEnumDone == false ){
 								infoPool.push_back(EPGDB_SERVICE_EVENT_INFO());
@@ -1356,7 +1356,7 @@ void CEpgDBManager::EnumArchiveEventInfo(__int64* keys, size_t keysSize, __int64
 		}
 	}
 	if( EnumEventInfoProc(keys, keysSize, enumStart, enumEnd, enumProc, true) == false ){
-		//—ñ‹“Š®—¹
+		//åˆ—æŒ™å®Œäº†
 		enumProc(NULL, NULL);
 	}
 }
@@ -1432,51 +1432,51 @@ bool CEpgDBManager::SearchServiceName(
 	return false;
 }
 
-//ŒŸõ‘ÎÛ‚âŒŸõƒpƒ^[ƒ“‚©‚ç‘S”¼Šp‚Ì‹æ•Ê‚ğæ‚èœ‚­(‹ŒConvertText.txt‚É‘Š“–)
-//ConvertText.txt‚ÆˆÙ‚È‚è”¼Šp‘÷“_ƒJƒi‚ğ(ˆÓ}’Ê‚è)’uŠ·‚·‚é“_AmnCD‘SŠp‹ó”’‚ğ’uŠ·‚·‚é“_A\(U+2015)‚îƒ‚ïƒ‘ƒ¤(U+0396)‚ğ’uŠ·‚µ‚È‚¢“_‚É’ˆÓ
+//æ¤œç´¢å¯¾è±¡ã‚„æ¤œç´¢ãƒ‘ã‚¿ãƒ¼ãƒ³ã‹ã‚‰å…¨åŠè§’ã®åŒºåˆ¥ã‚’å–ã‚Šé™¤ã(æ—§ConvertText.txtã«ç›¸å½“)
+//ConvertText.txtã¨ç•°ãªã‚ŠåŠè§’æ¿ç‚¹ã‚«ãƒŠã‚’(æ„å›³é€šã‚Š)ç½®æ›ã™ã‚‹ç‚¹ã€ï¼»ï¼½ï¼Œï¼å…¨è§’ç©ºç™½ã‚’ç½®æ›ã™ã‚‹ç‚¹ã€â€•(U+2015)ã‚ãƒ°ã‚‘ãƒ±Î–(U+0396)ã‚’ç½®æ›ã—ãªã„ç‚¹ã«æ³¨æ„
 void CEpgDBManager::ConvertSearchText(wstring& str)
 {
-	//‘SŠp‰p”‚¨‚æ‚Ñ‚±‚Ìƒe[ƒuƒ‹‚É‚ ‚é•¶š—ñ‚ğ’uŠ·‚·‚é
-	//Å‰‚Ì•¶š(UTF-16)‚ğƒL[‚Æ‚µ‚Äƒ\[ƒgÏ‚İB“¯ˆêƒL[“à‚Ì‡˜‚Íƒ}ƒbƒ`‚Ì—Dæ‡
+	//å…¨è§’è‹±æ•°ãŠã‚ˆã³ã“ã®ãƒ†ãƒ¼ãƒ–ãƒ«ã«ã‚ã‚‹æ–‡å­—åˆ—ã‚’ç½®æ›ã™ã‚‹
+	//æœ€åˆã®æ–‡å­—(UTF-16)ã‚’ã‚­ãƒ¼ã¨ã—ã¦ã‚½ãƒ¼ãƒˆæ¸ˆã¿ã€‚åŒä¸€ã‚­ãƒ¼å†…ã®é †åºã¯ãƒãƒƒãƒã®å„ªå…ˆé †
 	static const WCHAR convertFrom[][2] = {
-		L"f", L"h", L"@",
-		L"I", L"”", L"", L"“", L"•", L"i", L"j", L"–", L"{", L"C", L"\xFF0D", L"D", L"^",
-		L"F", L"G", L"ƒ", L"", L"„", L"H", L"—", L"m", L"n", L"O", L"Q", L"M", L"o", L"b", L"p", L"\xFF5E",
-		L"¡", L"¢", L"£", L"¤", L"¥", L"¦", L"§", L"¨", L"©", L"ª", L"«", L"¬", L"­", L"®", L"¯", L"°", L"±", L"²", L"³", L"´", L"µ",
-		{L'¶', L'Ş'}, L"¶", {L'·', L'Ş'}, L"·", {L'¸', L'Ş'}, L"¸", {L'¹', L'Ş'}, L"¹", {L'º', L'Ş'}, L"º",
-		{L'»', L'Ş'}, L"»", {L'¼', L'Ş'}, L"¼", {L'½', L'Ş'}, L"½", {L'¾', L'Ş'}, L"¾", {L'¿', L'Ş'}, L"¿",
-		{L'À', L'Ş'}, L"À", {L'Á', L'Ş'}, L"Á", {L'Â', L'Ş'}, L"Â", {L'Ã', L'Ş'}, L"Ã", {L'Ä', L'Ş'}, L"Ä",
-		L"Å", L"Æ", L"Ç", L"È", L"É",
-		{L'Ê', L'Ş'}, {L'Ê', L'ß'}, L"Ê", {L'Ë', L'Ş'}, {L'Ë', L'ß'}, L"Ë", {L'Ì', L'Ş'}, {L'Ì', L'ß'}, L"Ì",
-		{L'Í', L'Ş'}, {L'Í', L'ß'}, L"Í", {L'Î', L'Ş'}, {L'Î', L'ß'}, L"Î",
-		L"Ï", L"Ğ", L"Ñ", L"Ò", L"Ó", L"Ô", L"Õ", L"Ö", L"×", L"Ø", L"Ù", L"Ú", L"Û", L"Ü", L"İ", L"Ş", L"ß",
-		L"",
+		L"â€™", L"â€", L"ã€€",
+		L"ï¼", L"ï¼ƒ", L"ï¼„", L"ï¼…", L"ï¼†", L"ï¼ˆ", L"ï¼‰", L"ï¼Š", L"ï¼‹", L"ï¼Œ", L"\xFF0D", L"ï¼", L"ï¼",
+		L"ï¼š", L"ï¼›", L"ï¼œ", L"ï¼", L"ï¼", L"ï¼Ÿ", L"ï¼ ", L"ï¼»", L"ï¼½", L"ï¼¾", L"ï¼¿", L"ï½€", L"ï½›", L"ï½œ", L"ï½", L"\xFF5E",
+		L"ï½¡", L"ï½¢", L"ï½£", L"ï½¤", L"ï½¥", L"ï½¦", L"ï½§", L"ï½¨", L"ï½©", L"ï½ª", L"ï½«", L"ï½¬", L"ï½­", L"ï½®", L"ï½¯", L"ï½°", L"ï½±", L"ï½²", L"ï½³", L"ï½´", L"ï½µ",
+		{L'ï½¶', L'ï¾'}, L"ï½¶", {L'ï½·', L'ï¾'}, L"ï½·", {L'ï½¸', L'ï¾'}, L"ï½¸", {L'ï½¹', L'ï¾'}, L"ï½¹", {L'ï½º', L'ï¾'}, L"ï½º",
+		{L'ï½»', L'ï¾'}, L"ï½»", {L'ï½¼', L'ï¾'}, L"ï½¼", {L'ï½½', L'ï¾'}, L"ï½½", {L'ï½¾', L'ï¾'}, L"ï½¾", {L'ï½¿', L'ï¾'}, L"ï½¿",
+		{L'ï¾€', L'ï¾'}, L"ï¾€", {L'ï¾', L'ï¾'}, L"ï¾", {L'ï¾‚', L'ï¾'}, L"ï¾‚", {L'ï¾ƒ', L'ï¾'}, L"ï¾ƒ", {L'ï¾„', L'ï¾'}, L"ï¾„",
+		L"ï¾…", L"ï¾†", L"ï¾‡", L"ï¾ˆ", L"ï¾‰",
+		{L'ï¾Š', L'ï¾'}, {L'ï¾Š', L'ï¾Ÿ'}, L"ï¾Š", {L'ï¾‹', L'ï¾'}, {L'ï¾‹', L'ï¾Ÿ'}, L"ï¾‹", {L'ï¾Œ', L'ï¾'}, {L'ï¾Œ', L'ï¾Ÿ'}, L"ï¾Œ",
+		{L'ï¾', L'ï¾'}, {L'ï¾', L'ï¾Ÿ'}, L"ï¾", {L'ï¾', L'ï¾'}, {L'ï¾', L'ï¾Ÿ'}, L"ï¾",
+		L"ï¾", L"ï¾", L"ï¾‘", L"ï¾’", L"ï¾“", L"ï¾”", L"ï¾•", L"ï¾–", L"ï¾—", L"ï¾˜", L"ï¾™", L"ï¾š", L"ï¾›", L"ï¾œ", L"ï¾", L"ï¾", L"ï¾Ÿ",
+		L"ï¿¥",
 	};
 	static const WCHAR convertTo[] = {
 		L'\'', L'"', L' ',
 		L'!', L'#', L'$', L'%', L'&', L'(', L')', L'*', L'+', L',', L'-', L'.', L'/',
 		L':', L';', L'<', L'=', L'>', L'?', L'@', L'[', L']', L'^', L'_', L'`', L'{', L'|', L'}', L'~',
-		L'B', L'u', L'v', L'A', L'E', L'ƒ’', L'ƒ@', L'ƒB', L'ƒD', L'ƒF', L'ƒH', L'ƒƒ', L'ƒ…', L'ƒ‡', L'ƒb', L'[', L'ƒA', L'ƒC', L'ƒE', L'ƒG', L'ƒI',
-		L'ƒK', L'ƒJ', L'ƒM', L'ƒL', L'ƒO', L'ƒN', L'ƒQ', L'ƒP', L'ƒS', L'ƒR',
-		L'ƒU', L'ƒT', L'ƒW', L'ƒV', L'ƒY', L'ƒX', L'ƒ[', L'ƒZ', L'ƒ]', L'ƒ\',
-		L'ƒ_', L'ƒ^', L'ƒa', L'ƒ`', L'ƒd', L'ƒc', L'ƒf', L'ƒe', L'ƒh', L'ƒg',
-		L'ƒi', L'ƒj', L'ƒk', L'ƒl', L'ƒm',
-		L'ƒo', L'ƒp', L'ƒn', L'ƒr', L'ƒs', L'ƒq', L'ƒu', L'ƒv', L'ƒt',
-		L'ƒx', L'ƒy', L'ƒw', L'ƒ{', L'ƒ|', L'ƒz',
-		L'ƒ}', L'ƒ~', L'ƒ€', L'ƒ', L'ƒ‚', L'ƒ„', L'ƒ†', L'ƒˆ', L'ƒ‰', L'ƒŠ', L'ƒ‹', L'ƒŒ', L'ƒ', L'ƒ', L'ƒ“', L'J', L'K',
+		L'ã€‚', L'ã€Œ', L'ã€', L'ã€', L'ãƒ»', L'ãƒ²', L'ã‚¡', L'ã‚£', L'ã‚¥', L'ã‚§', L'ã‚©', L'ãƒ£', L'ãƒ¥', L'ãƒ§', L'ãƒƒ', L'ãƒ¼', L'ã‚¢', L'ã‚¤', L'ã‚¦', L'ã‚¨', L'ã‚ª',
+		L'ã‚¬', L'ã‚«', L'ã‚®', L'ã‚­', L'ã‚°', L'ã‚¯', L'ã‚²', L'ã‚±', L'ã‚´', L'ã‚³',
+		L'ã‚¶', L'ã‚µ', L'ã‚¸', L'ã‚·', L'ã‚º', L'ã‚¹', L'ã‚¼', L'ã‚»', L'ã‚¾', L'ã‚½',
+		L'ãƒ€', L'ã‚¿', L'ãƒ‚', L'ãƒ', L'ãƒ…', L'ãƒ„', L'ãƒ‡', L'ãƒ†', L'ãƒ‰', L'ãƒˆ',
+		L'ãƒŠ', L'ãƒ‹', L'ãƒŒ', L'ãƒ', L'ãƒ',
+		L'ãƒ', L'ãƒ‘', L'ãƒ', L'ãƒ“', L'ãƒ”', L'ãƒ’', L'ãƒ–', L'ãƒ—', L'ãƒ•',
+		L'ãƒ™', L'ãƒš', L'ãƒ˜', L'ãƒœ', L'ãƒ', L'ãƒ›',
+		L'ãƒ', L'ãƒŸ', L'ãƒ ', L'ãƒ¡', L'ãƒ¢', L'ãƒ¤', L'ãƒ¦', L'ãƒ¨', L'ãƒ©', L'ãƒª', L'ãƒ«', L'ãƒ¬', L'ãƒ­', L'ãƒ¯', L'ãƒ³', L'ã‚›', L'ã‚œ',
 		L'\\',
 	};
 
 	for( wstring::iterator itr = str.begin(), itrEnd = str.end(); itr != itrEnd; itr++ ){
-		//’ˆÓ: ‚±‚ê‚Í•„†ˆÊ’u‚Ì˜A‘±«‚ğ—˜—p‚µ‚Äƒe[ƒuƒ‹QÆ‚ğŒ¸‚ç‚·‚½‚ß‚ÌğŒBã‹L‚Ìƒe[ƒuƒ‹‚ğ˜M‚éê‡‚Í‚±‚±‚ğŠm”F‚·‚é‚±‚Æ
+		//æ³¨æ„: ã“ã‚Œã¯ç¬¦å·ä½ç½®ã®é€£ç¶šæ€§ã‚’åˆ©ç”¨ã—ã¦ãƒ†ãƒ¼ãƒ–ãƒ«å‚ç…§ã‚’æ¸›ã‚‰ã™ãŸã‚ã®æ¡ä»¶ã€‚ä¸Šè¨˜ã®ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’å¼„ã‚‹å ´åˆã¯ã“ã“ã‚’ç¢ºèªã™ã‚‹ã“ã¨
 		WCHAR c = *itr;
-		if( (L'I' <= c && c <= L'') || c == L'@' || c == L'f' || c == L'h' ){
-			if( L'‚O' <= c && c <= L'‚X' ){
-				*itr = c - L'‚O' + L'0';
-			}else if( L'‚`' <= c && c <= L'‚y' ){
-				*itr = c - L'‚`' + L'A';
-			}else if( L'‚' <= c && c <= L'‚š' ){
-				*itr = c - L'‚' + L'a';
+		if( (L'ï¼' <= c && c <= L'ï¿¥') || c == L'ã€€' || c == L'â€™' || c == L'â€' ){
+			if( L'ï¼' <= c && c <= L'ï¼™' ){
+				*itr = c - L'ï¼' + L'0';
+			}else if( L'ï¼¡' <= c && c <= L'ï¼º' ){
+				*itr = c - L'ï¼¡' + L'A';
+			}else if( L'ï½' <= c && c <= L'ï½š' ){
+				*itr = c - L'ï½' + L'a';
 			}else{
 				const WCHAR (*f)[2] = std::lower_bound(convertFrom, convertFrom + _countof(convertFrom), &*itr,
 				                                       [](LPCWSTR a, LPCWSTR b) { return (unsigned short)a[0] < (unsigned short)b[0]; });
@@ -1487,7 +1487,7 @@ void CEpgDBManager::ConvertSearchText(wstring& str)
 					}else if( itr + 1 != itrEnd && *(itr + 1) == (*f)[1] ){
 						size_t i = itrEnd - itr - 1;
 						str.replace(itr, itr + 2, 1, convertTo[f - convertFrom]);
-						//ƒCƒeƒŒ[ƒ^‚ğÄ—LŒø‰»
+						//ã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿ã‚’å†æœ‰åŠ¹åŒ–
 						itrEnd = str.end();
 						itr = itrEnd - i;
 						break;

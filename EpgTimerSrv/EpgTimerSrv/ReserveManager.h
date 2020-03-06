@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/ParseTextInstances.h"
@@ -8,60 +8,60 @@
 #include "TunerBankCtrl.h"
 #include "BatManager.h"
 
-//—\–ñ‚ğŠÇ—‚µƒ`ƒ…[ƒi‚ÉŠ„‚è“–‚Ä‚é
-//•K‚¸ƒIƒuƒWƒFƒNƒg¶¬¨Initialize()¨c¨Finalize()¨”jŠü‚Ì‡”Ô‚Å—˜—p‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+//äºˆç´„ã‚’ç®¡ç†ã—ãƒãƒ¥ãƒ¼ãƒŠã«å‰²ã‚Šå½“ã¦ã‚‹
+//å¿…ãšã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆâ†’Initialize()â†’â€¦â†’Finalize()â†’ç ´æ£„ã®é †ç•ªã§åˆ©ç”¨ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
 class CReserveManager
 {
 public:
 	enum CHECK_STATUS {
 		CHECK_NO_ACTION,
-		CHECK_EPGCAP_END,		//EPGæ“¾‚ªŠ®—¹‚µ‚½
-		CHECK_NEED_SHUTDOWN,	//ƒVƒXƒeƒ€ƒVƒƒƒbƒgƒ_ƒEƒ“‚ğ‚İ‚é•K—v‚ª‚ ‚é
-		CHECK_RESERVE_MODIFIED,	//—\–ñ‚É‚È‚ñ‚ç‚©‚Ì•Ï‰»‚ª‚ ‚Á‚½
+		CHECK_EPGCAP_END,		//EPGå–å¾—ãŒå®Œäº†ã—ãŸ
+		CHECK_NEED_SHUTDOWN,	//ã‚·ã‚¹ãƒ†ãƒ ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³ã‚’è©¦ã¿ã‚‹å¿…è¦ãŒã‚ã‚‹
+		CHECK_RESERVE_MODIFIED,	//äºˆç´„ã«ãªã‚“ã‚‰ã‹ã®å¤‰åŒ–ãŒã‚ã£ãŸ
 	};
 	CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
 	void Initialize(const CEpgTimerSrvSetting::SETTING& s);
 	void Finalize();
 	void ReloadSetting(const CEpgTimerSrvSetting::SETTING& s);
-	//—\–ñî•ñˆê——‚ğæ“¾‚·‚é
+	//äºˆç´„æƒ…å ±ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<RESERVE_DATA> GetReserveDataAll(bool getRecFileName = false) const;
-	//ƒ`ƒ…[ƒi–ˆ‚Ì—\–ñî•ñ‚ğæ“¾‚·‚é
+	//ãƒãƒ¥ãƒ¼ãƒŠæ¯ã®äºˆç´„æƒ…å ±ã‚’å–å¾—ã™ã‚‹
 	vector<TUNER_RESERVE_INFO> GetTunerReserveAll() const;
-	//—\–ñî•ñ‚ğæ“¾‚·‚é
+	//äºˆç´„æƒ…å ±ã‚’å–å¾—ã™ã‚‹
 	bool GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName = false, CReNamePlugInUtil* util = NULL) const;
-	//—\–ñî•ñ‚ğ’Ç‰Á‚·‚é
+	//äºˆç´„æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹
 	bool AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus = false);
-	//—\–ñî•ñ‚ğ•ÏX‚·‚é
+	//äºˆç´„æƒ…å ±ã‚’å¤‰æ›´ã™ã‚‹
 	bool ChgReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus = false);
-	//—\–ñî•ñ‚ğíœ‚·‚é
+	//äºˆç´„æƒ…å ±ã‚’å‰Šé™¤ã™ã‚‹
 	void DelReserveData(const vector<DWORD>& idList);
-	//˜^‰æÏ‚İî•ñˆê——‚ğæ“¾‚·‚é
+	//éŒ²ç”»æ¸ˆã¿æƒ…å ±ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<REC_FILE_INFO> GetRecFileInfoAll(bool getExtraInfo = true) const;
-	//˜^‰æÏ‚İî•ñ‚ğæ“¾‚·‚é
+	//éŒ²ç”»æ¸ˆã¿æƒ…å ±ã‚’å–å¾—ã™ã‚‹
 	bool GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo = true) const;
-	//˜^‰æÏ‚İî•ñ‚ğíœ‚·‚é
+	//éŒ²ç”»æ¸ˆã¿æƒ…å ±ã‚’å‰Šé™¤ã™ã‚‹
 	void DelRecFileInfo(const vector<DWORD>& idList);
-	//˜^‰æÏ‚İî•ñ‚Ìƒtƒ@ƒCƒ‹ƒpƒX‚ğ•ÏX‚·‚é
-	//infoList: ˜^‰æÏ‚İî•ñˆê——(id‚ÆrecFilePath‚Ì‚İQÆ)
+	//éŒ²ç”»æ¸ˆã¿æƒ…å ±ã®ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ã‚’å¤‰æ›´ã™ã‚‹
+	//infoList: éŒ²ç”»æ¸ˆã¿æƒ…å ±ä¸€è¦§(idã¨recFilePathã®ã¿å‚ç…§)
 	void ChgPathRecFileInfo(const vector<REC_FILE_INFO>& infoList);
-	//˜^‰æÏ‚İî•ñ‚ÌƒvƒƒeƒNƒg‚ğ•ÏX‚·‚é
-	//infoList: ˜^‰æÏ‚İî•ñˆê——(id‚ÆprotectFlag‚Ì‚İQÆ)
+	//éŒ²ç”»æ¸ˆã¿æƒ…å ±ã®ãƒ—ãƒ­ãƒ†ã‚¯ãƒˆã‚’å¤‰æ›´ã™ã‚‹
+	//infoList: éŒ²ç”»æ¸ˆã¿æƒ…å ±ä¸€è¦§(idã¨protectFlagã®ã¿å‚ç…§)
 	void ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList);
-	//EIT[schedule]‚ğ‚à‚Æ‚É’Ç]ˆ—‚·‚é
+	//EIT[schedule]ã‚’ã‚‚ã¨ã«è¿½å¾“å‡¦ç†ã™ã‚‹
 	void CheckTuijyu();
-	//—\–ñŠÇ—‚·‚é
-	//ŠT‚Ë1•b‚²‚Æ‚ÉŒÄ‚Ô
+	//äºˆç´„ç®¡ç†ã™ã‚‹
+	//æ¦‚ã­1ç§’ã”ã¨ã«å‘¼ã¶
 	pair<CHECK_STATUS, int> Check();
-	//EPGæ“¾ŠJn‚ğ—v‹‚·‚é
+	//EPGå–å¾—é–‹å§‹ã‚’è¦æ±‚ã™ã‚‹
 	bool RequestStartEpgCap();
-	//ƒ`ƒ…[ƒi‹N“®‚âEPGæ“¾‚âƒoƒbƒ`ˆ—‚ªs‚í‚ê‚Ä‚¢‚é‚©
+	//ãƒãƒ¥ãƒ¼ãƒŠèµ·å‹•ã‚„EPGå–å¾—ã‚„ãƒãƒƒãƒå‡¦ç†ãŒè¡Œã‚ã‚Œã¦ã„ã‚‹ã‹
 	bool IsActive() const;
-	//baseTimeˆÈŒã‚É˜^‰æ‚Ü‚½‚ÍEPGæ“¾‚ğŠJn‚·‚éÅ¬‚ğæ“¾‚·‚é
-	//reserveData: Å¬‚Ì—\–ñî•ñ(‚È‚¢‚Æ‚«reserveID==0)
+	//baseTimeä»¥å¾Œã«éŒ²ç”»ã¾ãŸã¯EPGå–å¾—ã‚’é–‹å§‹ã™ã‚‹æœ€å°æ™‚åˆ»ã‚’å–å¾—ã™ã‚‹
+	//reserveData: æœ€å°æ™‚åˆ»ã®äºˆç´„æƒ…å ±(ãªã„ã¨ãreserveID==0)
 	__int64 GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* reserveData = NULL) const;
-	//w’èƒCƒxƒ“ƒg‚Ì—\–ñ‚ª‘¶İ‚·‚é‚©‚Ç‚¤‚©
+	//æŒ‡å®šã‚¤ãƒ™ãƒ³ãƒˆã®äºˆç´„ãŒå­˜åœ¨ã™ã‚‹ã‹ã©ã†ã‹
 	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID) const;
-	//w’èƒT[ƒrƒX‚ÌƒvƒƒOƒ‰ƒ€—\–ñ‚ğ’Šo‚µ‚ÄŒŸõ‚·‚é
+	//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã®ãƒ—ãƒ­ã‚°ãƒ©ãƒ äºˆç´„ã‚’æŠ½å‡ºã—ã¦æ¤œç´¢ã™ã‚‹
 	template<class P>
 	bool FindProgramReserve(WORD onid, WORD tsid, WORD sid, P findProc) const {
 		CBlockLock lock(&this->managerLock);
@@ -74,31 +74,31 @@ public:
 		}
 		return false;
 	}
-	//w’èƒT[ƒrƒX‚ğ—˜—p‚Å‚«‚éƒ`ƒ…[ƒiIDˆê——‚ğæ“¾‚·‚é
+	//æŒ‡å®šã‚µãƒ¼ãƒ“ã‚¹ã‚’åˆ©ç”¨ã§ãã‚‹ãƒãƒ¥ãƒ¼ãƒŠIDä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<DWORD> GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const;
 	bool GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const;
 	wstring GetTunerBonFileName(DWORD tunerID) const;
 	bool IsOpenTuner(DWORD tunerID) const;
-	//ƒlƒbƒgƒ[ƒNƒ‚[ƒh‚Åƒ`ƒ…[ƒi‚ğ‹N“®‚µƒ`ƒƒƒ“ƒlƒ‹İ’è‚·‚é
-	//tunerIDList: ‹N“®‚³‚¹‚é‚Æ‚«‚Í‚±‚ÌƒŠƒXƒg‚É‚ ‚éƒ`ƒ…[ƒi‚ğŒó•â‚É‚·‚é
+	//ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ¢ãƒ¼ãƒ‰ã§ãƒãƒ¥ãƒ¼ãƒŠã‚’èµ·å‹•ã—ãƒãƒ£ãƒ³ãƒãƒ«è¨­å®šã™ã‚‹
+	//tunerIDList: èµ·å‹•ã•ã›ã‚‹ã¨ãã¯ã“ã®ãƒªã‚¹ãƒˆã«ã‚ã‚‹ãƒãƒ¥ãƒ¼ãƒŠã‚’å€™è£œã«ã™ã‚‹
 	pair<bool, int> OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList);
-	//ƒlƒbƒgƒ[ƒNƒ‚[ƒh‚Åƒ`ƒ…[ƒi‚ª‹N“®‚µ‚Ä‚¢‚é‚©
+	//ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ¢ãƒ¼ãƒ‰ã§ãƒãƒ¥ãƒ¼ãƒŠãŒèµ·å‹•ã—ã¦ã„ã‚‹ã‹
 	pair<bool, int> IsOpenNWTV(int id) const;
-	//ƒlƒbƒgƒ[ƒNƒ‚[ƒh‚Ìƒ`ƒ…[ƒi‚ğ•Â‚¶‚é
+	//ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ¢ãƒ¼ãƒ‰ã®ãƒãƒ¥ãƒ¼ãƒŠã‚’é–‰ã˜ã‚‹
 	bool CloseNWTV(int id);
-	//—\–ñ‚ª˜^‰æ’†‚Å‚ ‚ê‚Î‚»‚Ì˜^‰æƒtƒ@ƒCƒ‹–¼‚ğæ“¾‚·‚é
+	//äºˆç´„ãŒéŒ²ç”»ä¸­ã§ã‚ã‚Œã°ãã®éŒ²ç”»ãƒ•ã‚¡ã‚¤ãƒ«åã‚’å–å¾—ã™ã‚‹
 	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
-	//w’èEPGƒCƒxƒ“ƒg‚Í˜^‰æÏ‚İ‚©‚Ç‚¤‚©
+	//æŒ‡å®šEPGã‚¤ãƒ™ãƒ³ãƒˆã¯éŒ²ç”»æ¸ˆã¿ã‹ã©ã†ã‹
 	bool IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const;
-	//©“®—\–ñ‚É‚æ‚Á‚Äì¬‚³‚ê‚½w’èƒCƒxƒ“ƒg‚Ì—\–ñ‚ğ–³Œø‚É‚·‚é
+	//è‡ªå‹•äºˆç´„ã«ã‚ˆã£ã¦ä½œæˆã•ã‚ŒãŸæŒ‡å®šã‚¤ãƒ™ãƒ³ãƒˆã®äºˆç´„ã‚’ç„¡åŠ¹ã«ã™ã‚‹
 	bool ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID);
-	//ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚ğæ“¾‚·‚é
+	//ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã‚’å–å¾—ã™ã‚‹
 	bool GetChData(WORD onid, WORD tsid, WORD sid, CH_DATA5* chData) const;
-	//ƒ`ƒƒƒ“ƒlƒ‹î•ñˆê——‚ğæ“¾‚·‚é
+	//ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<CH_DATA5> GetChDataList() const;
-	//ƒpƒ‰ƒ[ƒ^‚È‚µ‚Ì’Ê’m‚ğ’Ç‰Á‚·‚é
+	//ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãªã—ã®é€šçŸ¥ã‚’è¿½åŠ ã™ã‚‹
 	void AddNotifyAndPostBat(DWORD notifyID);
-	//ƒoƒbƒ`‚ÌƒJƒXƒ^ƒ€ƒnƒ“ƒhƒ‰‚ğİ’è‚·‚é
+	//ãƒãƒƒãƒã®ã‚«ã‚¹ã‚¿ãƒ ãƒãƒ³ãƒ‰ãƒ©ã‚’è¨­å®šã™ã‚‹
 	void SetBatCustomHandler(LPCWSTR ext, const std::function<void(CBatManager::BAT_WORK_INFO&, vector<char>&)>& handler);
 private:
 	struct CHK_RESERVE_DATA {
@@ -109,47 +109,47 @@ private:
 		bool started;
 		const RESERVE_DATA* r;
 	};
-	//ƒ`ƒ…[ƒi‚ÉŠ„‚è“–‚Ä‚ç‚ê‚Ä‚¢‚È‚¢—\–ñˆê——‚ğæ“¾‚·‚é
+	//ãƒãƒ¥ãƒ¼ãƒŠã«å‰²ã‚Šå½“ã¦ã‚‰ã‚Œã¦ã„ãªã„äºˆç´„ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<DWORD> GetNoTunerReserveAll() const;
-	//—\–ñ‚ğƒ`ƒ…[ƒi‚ÉŠ„‚è“–‚Ä‚é
-	//reloadTime: ‚È‚ñ‚ç‚©‚Ì•ÏX‚ª‚ ‚Á‚½Å¬—\–ñˆÊ’u
+	//äºˆç´„ã‚’ãƒãƒ¥ãƒ¼ãƒŠã«å‰²ã‚Šå½“ã¦ã‚‹
+	//reloadTime: ãªã‚“ã‚‰ã‹ã®å¤‰æ›´ãŒã‚ã£ãŸæœ€å°äºˆç´„ä½ç½®
 	void ReloadBankMap(__int64 reloadTime = 0);
-	//‚ ‚é—\–ñ‚ğƒoƒ“ƒN‚É’Ç‰Á‚µ‚½‚Æ‚«‚É”­¶‚·‚éƒRƒXƒg(’PˆÊ:10•b)‚ğŒvZ‚·‚é
-	//–ß‚è’l: d‚È‚è‚ª–³‚¯‚ê‚Î0A•Êƒ`ƒƒƒ“ƒlƒ‹‚Ìd‚È‚è‚ª‚ ‚ê‚Îd‚È‚è‚Ì•b”‚¾‚¯‰ÁZA“¯ˆêƒ`ƒƒƒ“ƒlƒ‹‚Ì‚İ‚Ìd‚È‚è‚ª‚ ‚ê‚Î-1
+	//ã‚ã‚‹äºˆç´„ã‚’ãƒãƒ³ã‚¯ã«è¿½åŠ ã—ãŸã¨ãã«ç™ºç”Ÿã™ã‚‹ã‚³ã‚¹ãƒˆ(å˜ä½:10ç§’)ã‚’è¨ˆç®—ã™ã‚‹
+	//æˆ»ã‚Šå€¤: é‡ãªã‚ŠãŒç„¡ã‘ã‚Œã°0ã€åˆ¥ãƒãƒ£ãƒ³ãƒãƒ«ã®é‡ãªã‚ŠãŒã‚ã‚Œã°é‡ãªã‚Šã®ç§’æ•°ã ã‘åŠ ç®—ã€åŒä¸€ãƒãƒ£ãƒ³ãƒãƒ«ã®ã¿ã®é‡ãªã‚ŠãŒã‚ã‚Œã°-1
 	__int64 ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const;
-	//ƒ}[ƒWƒ“‚ğl—¶‚µ‚½—\–ñ‚ğŒvZ‚·‚é(í‚ÉendTime>=startTime)
+	//ãƒãƒ¼ã‚¸ãƒ³ã‚’è€ƒæ…®ã—ãŸäºˆç´„æ™‚åˆ»ã‚’è¨ˆç®—ã™ã‚‹(å¸¸ã«endTime>=startTime)
 	void CalcEntireReserveTime(__int64* startTime, __int64* endTime, const RESERVE_DATA& data) const;
-	//’Ç]’Ê’m—pƒƒbƒZ[ƒW‚ğæ“¾‚·‚é
+	//è¿½å¾“é€šçŸ¥ç”¨ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å–å¾—ã™ã‚‹
 	static wstring GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo, const RESERVE_DATA& newInfo);
-	//ÅVEPG(ƒ`ƒ…[ƒi‚©‚ç‚Ìî•ñ)‚ğ‚à‚Æ‚É’Ç]ˆ—‚·‚é
+	//æœ€æ–°EPG(ãƒãƒ¥ãƒ¼ãƒŠã‹ã‚‰ã®æƒ…å ±)ã‚’ã‚‚ã¨ã«è¿½å¾“å‡¦ç†ã™ã‚‹
 	void CheckTuijyuTuner();
-	//ƒfƒBƒXƒN‚Ì‹ó‚«—e—Ê‚ğ’²‚×‚Ä•K—v‚È‚ç©“®íœ‚·‚é
+	//ãƒ‡ã‚£ã‚¹ã‚¯ã®ç©ºãå®¹é‡ã‚’èª¿ã¹ã¦å¿…è¦ãªã‚‰è‡ªå‹•å‰Šé™¤ã™ã‚‹
 	void CheckAutoDel() const;
-	//ƒ`ƒ…[ƒiŠ„‚è“–‚Ä‚³‚ê‚Ä‚¢‚È‚¢ŒÃ‚¢—\–ñ‚ğI—¹ˆ—‚·‚é
+	//ãƒãƒ¥ãƒ¼ãƒŠå‰²ã‚Šå½“ã¦ã•ã‚Œã¦ã„ãªã„å¤ã„äºˆç´„ã‚’çµ‚äº†å‡¦ç†ã™ã‚‹
 	void CheckOverTimeReserve();
-	//—\–ñI—¹‚ğˆ—‚·‚é
-	//tunerID: I—¹‚µ‚½ƒ`ƒ…[ƒiID
-	//shutdownMode: ÅŒã‚Éˆ—‚µ‚½—\–ñ‚Ì˜^‰æŒã“®ì‚ğ‹L˜^
+	//äºˆç´„çµ‚äº†ã‚’å‡¦ç†ã™ã‚‹
+	//tunerID: çµ‚äº†ã—ãŸãƒãƒ¥ãƒ¼ãƒŠID
+	//shutdownMode: æœ€å¾Œã«å‡¦ç†ã—ãŸäºˆç´„ã®éŒ²ç”»å¾Œå‹•ä½œã‚’è¨˜éŒ²
 	void ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, DWORD tunerID = 0, int* shutdownMode = NULL);
-	//EPGæ“¾‰Â”\‚Èƒ`ƒ…[ƒi‚ÌƒŠƒXƒg‚ğæ“¾‚·‚é
+	//EPGå–å¾—å¯èƒ½ãªãƒãƒ¥ãƒ¼ãƒŠã®ãƒªã‚¹ãƒˆã‚’å–å¾—ã™ã‚‹
 	vector<CTunerBankCtrl*> GetEpgCapTunerList(__int64 now) const;
-	//EPGæ“¾ˆ—‚ğŠÇ—‚·‚é
-	//isEpgCap: EPGæ“¾’†‚Ìƒ`ƒ…[ƒi‚ª–³‚¯‚ê‚Îfalse
-	//–ß‚è’l: EPGæ“¾‚ªŠ®—¹‚µ‚½uŠÔ‚Étrue
+	//EPGå–å¾—å‡¦ç†ã‚’ç®¡ç†ã™ã‚‹
+	//isEpgCap: EPGå–å¾—ä¸­ã®ãƒãƒ¥ãƒ¼ãƒŠãŒç„¡ã‘ã‚Œã°false
+	//æˆ»ã‚Šå€¤: EPGå–å¾—ãŒå®Œäº†ã—ãŸç¬é–“ã«true
 	bool CheckEpgCap(bool isEpgCap);
-	//—\–ñŠJn(‹’®‚ğœ‚­)‚ÌÅ¬‚ğæ“¾‚·‚é
+	//äºˆç´„é–‹å§‹(è¦–è´ã‚’é™¤ã)ã®æœ€å°æ™‚åˆ»ã‚’å–å¾—ã™ã‚‹
 	__int64 GetNearestRecReserveTime() const;
-	//Ÿ‚ÌEPGæ“¾‚ğæ“¾‚·‚é
+	//æ¬¡ã®EPGå–å¾—æ™‚åˆ»ã‚’å–å¾—ã™ã‚‹
 	__int64 GetNextEpgCapTime(__int64 now, int* basicOnlyFlags = NULL) const;
-	//ƒoƒ“ƒN‚ğŠÄ‹‚µ‚Ä•K—v‚È‚çƒ`ƒ…[ƒi‚ğ‹­§I—¹‚·‚éƒXƒŒƒbƒh
+	//ãƒãƒ³ã‚¯ã‚’ç›£è¦–ã—ã¦å¿…è¦ãªã‚‰ãƒãƒ¥ãƒ¼ãƒŠã‚’å¼·åˆ¶çµ‚äº†ã™ã‚‹ã‚¹ãƒ¬ãƒƒãƒ‰
 	static void WatchdogThread(CReserveManager* sys);
-	//batPostManager‚Éƒoƒbƒ`‚ğ’Ç‰Á‚·‚é
+	//batPostManagerã«ãƒãƒƒãƒã‚’è¿½åŠ ã™ã‚‹
 	void AddPostBatWork(vector<CBatManager::BAT_WORK_INFO>& workList, LPCWSTR baseName);
-	//ƒoƒbƒ`‚É“n‚·“úƒ}ƒNƒ‚ğ’Ç‰Á‚·‚é
+	//ãƒãƒƒãƒã«æ¸¡ã™æ—¥æ™‚ãƒã‚¯ãƒ­ã‚’è¿½åŠ ã™ã‚‹
 	static void AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix);
-	//ƒoƒbƒ`‚É“n‚·—\–ñî•ñƒ}ƒNƒ‚ğ’Ç‰Á‚·‚é
+	//ãƒãƒƒãƒã«æ¸¡ã™äºˆç´„æƒ…å ±ãƒã‚¯ãƒ­ã‚’è¿½åŠ ã™ã‚‹
 	static void AddReserveDataMacro(vector<pair<string, wstring>>& macroList, const RESERVE_DATA& data, LPCSTR suffix);
-	//ƒoƒbƒ`‚É“n‚·˜^‰æÏ‚İî•ñƒ}ƒNƒ‚ğ’Ç‰Á‚·‚é
+	//ãƒãƒƒãƒã«æ¸¡ã™éŒ²ç”»æ¸ˆã¿æƒ…å ±ãƒã‚¯ãƒ­ã‚’è¿½åŠ ã™ã‚‹
 	static void AddRecInfoMacro(vector<pair<string, wstring>>& macroList, const REC_FILE_INFO& recInfo);
 
 	mutable recursive_mutex_ managerLock;

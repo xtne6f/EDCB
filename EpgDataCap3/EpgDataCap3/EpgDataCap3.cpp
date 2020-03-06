@@ -1,4 +1,4 @@
-// EpgDataCap3.cpp : DLL �A�v���P�[�V�����p�ɃG�N�X�|�[�g�����֐����`���܂��B
+﻿// EpgDataCap3.cpp : DLL アプリケーション用にエクスポートされる関数を定義します。
 //
 
 #include "stdafx.h"
@@ -11,12 +11,12 @@
 
 CInstanceManager<CEpgDataCap3Main> g_instMng;
 
-//DLL�̏�����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// asyncFlag		[IN]�\��i�K��FALSE��n�����Ɓj
-// id				[OUT]����ID
+//DLLの初期化
+//戻り値：
+// エラーコード
+//引数：
+// asyncFlag		[IN]予約（必ずFALSEを渡すこと）
+// id				[OUT]識別ID
 DLL_EXPORT
 DWORD WINAPI InitializeEP(
 	BOOL asyncFlag,
@@ -43,11 +43,11 @@ DWORD WINAPI InitializeEP(
 	return err;
 }
 
-//DLL�̊J��
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id		[IN]����ID InitializeEP�̖߂�l
+//DLLの開放
+//戻り値：
+// エラーコード
+//引数：
+// id		[IN]識別ID InitializeEPの戻り値
 DLL_EXPORT
 DWORD WINAPI UnInitializeEP(
 	DWORD id
@@ -66,13 +66,13 @@ DWORD WINAPI UnInitializeEP(
 	return err;
 }
 
-//��͑Ώۂ�TS�p�P�b�g�P��ǂݍ��܂���
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id		[IN]����ID InitializeEP�̖߂�l
-// data		[IN]TS�p�P�b�g�P��
-// size		[IN]data�̃T�C�Y�i188�łȂ���΂Ȃ�Ȃ��j
+//解析対象のTSパケット１つを読み込ませる
+//戻り値：
+// エラーコード
+//引数：
+// id		[IN]識別ID InitializeEPの戻り値
+// data		[IN]TSパケット１つ
+// size		[IN]dataのサイズ（188でなければならない）
 DLL_EXPORT
 DWORD WINAPI AddTSPacketEP(
 	DWORD id,
@@ -92,13 +92,13 @@ DWORD WINAPI AddTSPacketEP(
 	return NO_ERR;
 }
 
-//��̓f�[�^�̌��݂̃X�g���[���h�c���擾����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id						[IN]����ID
-// originalNetworkID		[OUT]���݂�originalNetworkID
-// transportStreamID		[OUT]���݂�transportStreamID
+//解析データの現在のストリームＩＤを取得する
+//戻り値：
+// エラーコード
+//引数：
+// id						[IN]識別ID
+// originalNetworkID		[OUT]現在のoriginalNetworkID
+// transportStreamID		[OUT]現在のtransportStreamID
 DLL_EXPORT
 DWORD WINAPI GetTSIDEP(
 	DWORD id,
@@ -117,13 +117,13 @@ DWORD WINAPI GetTSIDEP(
 	return ptr->GetTSID(originalNetworkID, transportStreamID);
 }
 
-//���X�g���[���̃T�[�r�X�ꗗ���擾����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id						[IN]����ID
-// serviceListSize			[OUT]serviceList�̌�
-// serviceList				[OUT]�T�[�r�X���̃��X�g�iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+//自ストリームのサービス一覧を取得する
+//戻り値：
+// エラーコード
+//引数：
+// id						[IN]識別ID
+// serviceListSize			[OUT]serviceListの個数
+// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DLL_EXPORT
 DWORD WINAPI GetServiceListActualEP(
 	DWORD id,
@@ -142,14 +142,14 @@ DWORD WINAPI GetServiceListActualEP(
 	return ptr->GetServiceListActual(serviceListSize, serviceList);
 }
 
-//�~�ς��ꂽEPG���̂���T�[�r�X�ꗗ���擾����
-//SERVICE_EXT_INFO�̏��͂Ȃ��ꍇ������
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id						[IN]����ID
-// serviceListSize			[OUT]serviceList�̌�
-// serviceList				[OUT]�T�[�r�X���̃��X�g�iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+//蓄積されたEPG情報のあるサービス一覧を取得する
+//SERVICE_EXT_INFOの情報はない場合がある
+//戻り値：
+// エラーコード
+//引数：
+// id						[IN]識別ID
+// serviceListSize			[OUT]serviceListの個数
+// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DLL_EXPORT
 DWORD WINAPI GetServiceListEpgDBEP(
 	DWORD id,
@@ -169,16 +169,16 @@ DWORD WINAPI GetServiceListEpgDBEP(
 	return NO_ERR;
 }
 
-//�w��T�[�r�X�̑SEPG�����擾����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id						[IN]����ID
-// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-// serviceID				[IN]�擾�Ώۂ�ServiceID
-// epgInfoListSize			[OUT]epgInfoList�̌�
-// epgInfoList				[OUT]EPG���̃��X�g�iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+//指定サービスの全EPG情報を取得する
+//戻り値：
+// エラーコード
+//引数：
+// id						[IN]識別ID
+// originalNetworkID		[IN]取得対象のoriginalNetworkID
+// transportStreamID		[IN]取得対象のtransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// epgInfoListSize			[OUT]epgInfoListの個数
+// epgInfoList				[OUT]EPG情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DLL_EXPORT
 DWORD WINAPI GetEpgInfoListEP(
 	DWORD id,
@@ -203,14 +203,14 @@ DWORD WINAPI GetEpgInfoListEP(
 	return NO_ERR;
 }
 
-//�w��T�[�r�X�̑SEPG����񋓂���
-//�d�l��GetEpgInfoListEP()���p���A�߂�l��NO_ERR�̂Ƃ��R�[���o�b�N����������
-//����R�[���o�b�N��epgInfoListSize�ɑSEPG���̌��AepgInfoList��NULL������
-//���񂩂��epgInfoListSize�ɗ񋓂��Ƃ�EPG���̌�������
-//FALSE��Ԃ��Ɨ񋓂𒆎~�ł���
-//�����F
-// enumEpgInfoListEPProc	[IN]EPG���̃��X�g���擾����R�[���o�b�N�֐�
-// param					[IN]�R�[���o�b�N����
+//指定サービスの全EPG情報を列挙する
+//仕様はGetEpgInfoListEP()を継承、戻り値がNO_ERRのときコールバックが発生する
+//初回コールバックでepgInfoListSizeに全EPG情報の個数、epgInfoListにNULLが入る
+//次回からはepgInfoListSizeに列挙ごとのEPG情報の個数が入る
+//FALSEを返すと列挙を中止できる
+//引数：
+// enumEpgInfoListEPProc	[IN]EPG情報のリストを取得するコールバック関数
+// param					[IN]コールバック引数
 DLL_EXPORT
 DWORD WINAPI EnumEpgInfoListEP(
 	DWORD id,
@@ -235,16 +235,16 @@ DWORD WINAPI EnumEpgInfoListEP(
 	return NO_ERR;
 }
 
-//�w��T�[�r�X�̌���or����EPG�����擾����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id						[IN]����ID
-// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-// serviceID				[IN]�擾�Ώۂ�ServiceID
-// nextFlag					[IN]TRUE�i���̔ԑg�j�AFALSE�i���݂̔ԑg�j
-// epgInfo					[OUT]EPG���iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+//指定サービスの現在or次のEPG情報を取得する
+//戻り値：
+// エラーコード
+//引数：
+// id						[IN]識別ID
+// originalNetworkID		[IN]取得対象のoriginalNetworkID
+// transportStreamID		[IN]取得対象のtransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
+// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DLL_EXPORT
 DWORD WINAPI GetEpgInfoEP(
 	DWORD id,
@@ -269,17 +269,17 @@ DWORD WINAPI GetEpgInfoEP(
 	return NO_ERR;
 }
 
-//�w��C�x���g��EPG�����擾����
-//�߂�l�F
-// �G���[�R�[�h
-//�����F
-// id						[IN]����ID
-// originalNetworkID		[IN]�擾�Ώۂ�originalNetworkID
-// transportStreamID		[IN]�擾�Ώۂ�transportStreamID
-// serviceID				[IN]�擾�Ώۂ�ServiceID
-// eventID					[IN]�擾�Ώۂ�EventID
-// pfOnlyFlag				[IN]p/f����̂݌������邩�ǂ���
-// epgInfo					[OUT]EPG���iDLL���Ŏ����I��delete����B���Ɏ擾���s���܂ŗL���j
+//指定イベントのEPG情報を取得する
+//戻り値：
+// エラーコード
+//引数：
+// id						[IN]識別ID
+// originalNetworkID		[IN]取得対象のoriginalNetworkID
+// transportStreamID		[IN]取得対象のtransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// eventID					[IN]取得対象のEventID
+// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
+// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DLL_EXPORT
 DWORD WINAPI SearchEpgInfoEP(
 	DWORD id,
@@ -305,9 +305,9 @@ DWORD WINAPI SearchEpgInfoEP(
 	return NO_ERR;
 }
 
-//EPG�f�[�^�̒~�Ϗ�Ԃ����Z�b�g����
-//�����F
-// id						[IN]����ID
+//EPGデータの蓄積状態をリセットする
+//引数：
+// id						[IN]識別ID
 DLL_EXPORT
 void WINAPI ClearSectionStatusEP(
 	DWORD id
@@ -321,12 +321,12 @@ void WINAPI ClearSectionStatusEP(
 	ptr->ClearSectionStatus();
 }
 
-//EPG�f�[�^�̒~�Ϗ�Ԃ��擾����
-//�߂�l�F
-// �X�e�[�^�X
-//�����F
-// id						[IN]����ID
-// l_eitFlag				[IN]L-EIT�̃X�e�[�^�X���擾
+//EPGデータの蓄積状態を取得する
+//戻り値：
+// ステータス
+//引数：
+// id						[IN]識別ID
+// l_eitFlag				[IN]L-EITのステータスを取得
 DLL_EXPORT
 EPG_SECTION_STATUS WINAPI GetSectionStatusEP(
 	DWORD id,
@@ -341,15 +341,15 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusEP(
 	return ptr->GetSectionStatus(l_eitFlag);
 }
 
-//�w��T�[�r�X��EPG�f�[�^�̒~�Ϗ�Ԃ��擾����
-//�߂�l�F
-// �X�e�[�^�X
-//�����F
-// id						[IN]����ID
-// originalNetworkID		[IN]�擾�Ώۂ�OriginalNetworkID
-// transportStreamID		[IN]�擾�Ώۂ�TransportStreamID
-// serviceID				[IN]�擾�Ώۂ�ServiceID
-// l_eitFlag				[IN]L-EIT�̃X�e�[�^�X���擾
+//指定サービスのEPGデータの蓄積状態を取得する
+//戻り値：
+// ステータス
+//引数：
+// id						[IN]識別ID
+// originalNetworkID		[IN]取得対象のOriginalNetworkID
+// transportStreamID		[IN]取得対象のTransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// l_eitFlag				[IN]L-EITのステータスを取得
 DLL_EXPORT
 EPG_SECTION_STATUS WINAPI GetSectionStatusServiceEP(
 	DWORD id,
@@ -367,11 +367,11 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusServiceEP(
 	return ptr->GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
 }
 
-//PC���v�����Ƃ����X�g���[�����ԂƂ̍����擾����
-//�߂�l�F
-// ���̕b��
-//�����F
-// id						[IN]����ID
+//PC時計を元としたストリーム時間との差を取得する
+//戻り値：
+// 差の秒数
+//引数：
+// id						[IN]識別ID
 DLL_EXPORT
 int WINAPI GetTimeDelayEP(
 	DWORD id

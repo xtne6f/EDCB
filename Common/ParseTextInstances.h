@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 
 #include "ParseText.h"
 #include "StructDef.h"
 
-//ƒ`ƒƒƒ“ƒlƒ‹î•ñƒtƒ@ƒCƒ‹uChSet4.txtv‚Ì“Ç‚İ‚İ‚Æ•Û‘¶ˆ—‚ğs‚¤
-//ƒL[‚Í“Ç‚İ‚İ‡”Ô†
+//ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ã€ŒChSet4.txtã€ã®èª­ã¿è¾¼ã¿ã¨ä¿å­˜å‡¦ç†ã‚’è¡Œã†
+//ã‚­ãƒ¼ã¯èª­ã¿è¾¼ã¿é †ç•ªå·
 class CParseChText4 : CParseText<DWORD, CH_DATA4>
 {
 public:
@@ -13,19 +13,19 @@ public:
 	using Base::GetFilePath;
 	using Base::SetFilePath;
 	using Base::SaveText;
-	//ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚ğ’Ç‰Á‚·‚é(¸”s‚µ‚È‚¢)B–ß‚è’l‚Í’Ç‰Á‚³‚ê‚½ƒL[
+	//ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹(å¤±æ•—ã—ãªã„)ã€‚æˆ»ã‚Šå€¤ã¯è¿½åŠ ã•ã‚ŒãŸã‚­ãƒ¼
 	DWORD AddCh(const CH_DATA4& item);
-	//ƒ`ƒƒƒ“ƒlƒ‹î•ñ‚ğíœ‚·‚é
+	//ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ã‚’å‰Šé™¤ã™ã‚‹
 	void DelCh(DWORD key);
-	//useViewFlag‚ğİ’è‚·‚é
+	//useViewFlagã‚’è¨­å®šã™ã‚‹
 	void SetUseViewFlag(DWORD key, BOOL useViewFlag);
 private:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, CH_DATA4>& item);
 	bool SaveLine(const pair<DWORD, CH_DATA4>& item, wstring& saveLine) const;
 };
 
-//ƒ`ƒƒƒ“ƒlƒ‹î•ñƒtƒ@ƒCƒ‹uChSet5.txtv‚Ì“Ç‚İ‚İ‚Æ•Û‘¶ˆ—‚ğs‚¤
-//ƒL[‚ÍONID<<32|TSID<<16|SID
+//ãƒãƒ£ãƒ³ãƒãƒ«æƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ã€ŒChSet5.txtã€ã®èª­ã¿è¾¼ã¿ã¨ä¿å­˜å‡¦ç†ã‚’è¡Œã†
+//ã‚­ãƒ¼ã¯ONID<<32|TSID<<16|SID
 class CParseChText5 : CParseText<LONGLONG, CH_DATA5>
 {
 public:
@@ -35,7 +35,7 @@ public:
 	using Base::SetFilePath;
 	using Base::SaveText;
 	LONGLONG AddCh(const CH_DATA5& item);
-	//EPGƒf[ƒ^‚Ìæ“¾‘ÎÛ‚©‚ğİ’è‚·‚é
+	//EPGãƒ‡ãƒ¼ã‚¿ã®å–å¾—å¯¾è±¡ã‹ã‚’è¨­å®šã™ã‚‹
 	bool SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL epgCapFlag);
 private:
 	bool ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item);
@@ -44,7 +44,7 @@ private:
 	vector<LONGLONG> parsedOrder;
 };
 
-//Šg’£q‚ÆContent-Type‚Ì‘Î‰ƒtƒ@ƒCƒ‹uContentTypeText.txtv‚Ì“Ç‚İ‚İ‚ğs‚¤
+//æ‹¡å¼µå­ã¨Content-Typeã®å¯¾å¿œãƒ•ã‚¡ã‚¤ãƒ«ã€ŒContentTypeText.txtã€ã®èª­ã¿è¾¼ã¿ã‚’è¡Œã†
 class CParseContentTypeText : CParseText<wstring, wstring>
 {
 public:
@@ -57,7 +57,7 @@ private:
 	bool ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& item);
 };
 
-//ƒT[ƒrƒX–¼‚Æ‚µ‚å‚Ú‚¢ƒJƒŒƒ“ƒ_[•ú‘—‹Ç–¼‚Ì‘Î‰ƒtƒ@ƒCƒ‹uSyoboiCh.txtv‚Ì“Ç‚İ‚İ‚ğs‚¤
+//ã‚µãƒ¼ãƒ“ã‚¹åã¨ã—ã‚‡ã¼ã„ã‚«ãƒ¬ãƒ³ãƒ€ãƒ¼æ”¾é€å±€åã®å¯¾å¿œãƒ•ã‚¡ã‚¤ãƒ«ã€ŒSyoboiCh.txtã€ã®èª­ã¿è¾¼ã¿ã‚’è¡Œã†
 class CParseServiceChgText : CParseText<wstring, wstring>
 {
 public:
@@ -70,8 +70,8 @@ private:
 	bool ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& item);
 };
 
-//˜^‰æÏ‚İî•ñƒtƒ@ƒCƒ‹uRecInfo.txtv‚Ì“Ç‚İ‚İ‚Æ•Û‘¶ˆ—‚ğs‚¤
-//ƒL[‚ÍREC_FILE_INFO::id(”ñ0,‰i‘±“I)
+//éŒ²ç”»æ¸ˆã¿æƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ã€ŒRecInfo.txtã€ã®èª­ã¿è¾¼ã¿ã¨ä¿å­˜å‡¦ç†ã‚’è¡Œã†
+//ã‚­ãƒ¼ã¯REC_FILE_INFO::id(é0,æ°¸ç¶šçš„)
 class CParseRecInfoText : CParseText<DWORD, REC_FILE_INFO>
 {
 public:
@@ -81,22 +81,22 @@ public:
 	using Base::GetFilePath;
 	using Base::SetFilePath;
 	using Base::SaveText;
-	//˜^‰æÏ‚İî•ñ‚ğ’Ç‰Á‚·‚é
+	//éŒ²ç”»æ¸ˆã¿æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹
 	DWORD AddRecInfo(const REC_FILE_INFO& item);
-	//˜^‰æÏ‚İî•ñ‚ğíœ‚·‚é
+	//éŒ²ç”»æ¸ˆã¿æƒ…å ±ã‚’å‰Šé™¤ã™ã‚‹
 	bool DelRecInfo(DWORD id);
-	//ƒtƒ@ƒCƒ‹ƒpƒX‚ğ•ÏX‚·‚é
+	//ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ã‚’å¤‰æ›´ã™ã‚‹
 	bool ChgPathRecInfo(DWORD id, LPCWSTR recFilePath);
-	//ƒvƒƒeƒNƒgî•ñ‚ğ•ÏX‚·‚é
+	//ãƒ—ãƒ­ãƒ†ã‚¯ãƒˆæƒ…å ±ã‚’å¤‰æ›´ã™ã‚‹
 	bool ChgProtectRecInfo(DWORD id, BYTE flag);
-	//AddRecInfo’¼Œã‚Éc‚µ‚Ä‚¨‚­”ñƒvƒƒeƒNƒg‚Ì˜^‰æÏ‚İî•ñ‚ÌŒÂ”‚ğİ’è‚·‚é
+	//AddRecInfoç›´å¾Œã«æ®‹ã—ã¦ãŠãéãƒ—ãƒ­ãƒ†ã‚¯ãƒˆã®éŒ²ç”»æ¸ˆã¿æƒ…å ±ã®å€‹æ•°ã‚’è¨­å®šã™ã‚‹
 	void SetKeepCount(DWORD n = UINT_MAX) { this->keepCount = n; }
 	void SetRecInfoDelFile(bool delFile) { this->recInfoDelFile = delFile; }
 	void CustomizeDelExt(bool customize) { this->customizeDelExt = customize; }
 	void SetCustomDelExt(const vector<wstring>& list) { this->customDelExt = list; }
 	void SetRecInfoFolder(LPCWSTR folder);
 	wstring GetRecInfoFolder() const { return this->recInfoFolder; }
-	//•â‘«‚Ì˜^‰æî•ñ‚ğæ“¾‚·‚é
+	//è£œè¶³ã®éŒ²ç”»æƒ…å ±ã‚’å–å¾—ã™ã‚‹
 	static wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder, bool recInfoFolderOnly);
 private:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item);
@@ -104,9 +104,9 @@ private:
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectItemToSave(vector<map<DWORD, REC_FILE_INFO>::const_iterator>& itemList) const;
 	bool IsUtf8Default() const { return true; }
-	//î•ñ‚ªíœ‚³‚ê‚é’¼‘O‚Ì•â‘«ì‹Æ
+	//æƒ…å ±ãŒå‰Šé™¤ã•ã‚Œã‚‹ç›´å‰ã®è£œè¶³ä½œæ¥­
 	void OnDelRecInfo(const REC_FILE_INFO& item);
-	//‰ß‹‚É’Ç‰Á‚µ‚½ID‚æ‚è‚à‘å‚«‚È’lB100000000(1‰­)ID‚Å„‰ñ‚·‚é(‚½‚¾‚µ1“ú‚É1000IDÁ”ï‚µ‚Ä‚à200”NˆÈã‚©‚©‚é‚Ì‚Ål‚¦‚é‚¾‚¯–³‘Ê)
+	//éå»ã«è¿½åŠ ã—ãŸIDã‚ˆã‚Šã‚‚å¤§ããªå€¤ã€‚100000000(1å„„)IDã§å·¡å›ã™ã‚‹(ãŸã ã—1æ—¥ã«1000IDæ¶ˆè²»ã—ã¦ã‚‚200å¹´ä»¥ä¸Šã‹ã‹ã‚‹ã®ã§è€ƒãˆã‚‹ã ã‘ç„¡é§„)
 	DWORD nextID;
 	DWORD saveNextID;
 	DWORD keepCount;
@@ -125,8 +125,8 @@ struct PARSE_REC_INFO2_ITEM
 	wstring eventName;
 };
 
-//˜^‰æÏ‚İƒCƒxƒ“ƒgî•ñƒtƒ@ƒCƒ‹uRecInfo2.txtv‚Ì“Ç‚İ‚İ‚Æ•Û‘¶ˆ—‚ğs‚¤
-//ƒL[‚Í“Ç‚İ‚İ‡”Ô†
+//éŒ²ç”»æ¸ˆã¿ã‚¤ãƒ™ãƒ³ãƒˆæƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ã€ŒRecInfo2.txtã€ã®èª­ã¿è¾¼ã¿ã¨ä¿å­˜å‡¦ç†ã‚’è¡Œã†
+//ã‚­ãƒ¼ã¯èª­ã¿è¾¼ã¿é †ç•ªå·
 class CParseRecInfo2Text : CParseText<DWORD, PARSE_REC_INFO2_ITEM>
 {
 public:
@@ -146,8 +146,8 @@ private:
 	DWORD keepCount;
 };
 
-//—\–ñî•ñƒtƒ@ƒCƒ‹uReserve.txtv‚Ì“Ç‚İ‚İ‚Æ•Û‘¶ˆ—‚ğs‚¤
-//ƒL[‚ÍreserveID(”ñ0,‰i‘±“I)
+//äºˆç´„æƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ã€ŒReserve.txtã€ã®èª­ã¿è¾¼ã¿ã¨ä¿å­˜å‡¦ç†ã‚’è¡Œã†
+//ã‚­ãƒ¼ã¯reserveID(é0,æ°¸ç¶šçš„)
 class CParseReserveText : CParseText<DWORD, RESERVE_DATA>
 {
 public:
@@ -157,21 +157,21 @@ public:
 	using Base::GetFilePath;
 	using Base::SetFilePath;
 	using Base::SaveText;
-	//—\–ñî•ñ‚ğ’Ç‰Á‚·‚é
+	//äºˆç´„æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹
 	DWORD AddReserve(const RESERVE_DATA& item);
-	//—\–ñî•ñ‚ğ•ÏX‚·‚é
+	//äºˆç´„æƒ…å ±ã‚’å¤‰æ›´ã™ã‚‹
 	bool ChgReserve(const RESERVE_DATA& item);
-	//presentFlag‚ğ•ÏX‚·‚é(ƒCƒeƒŒ[ƒ^‚É‰e‹¿‚µ‚È‚¢)
+	//presentFlagã‚’å¤‰æ›´ã™ã‚‹(ã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿ã«å½±éŸ¿ã—ãªã„)
 	bool SetPresentFlag(DWORD id, BYTE presentFlag);
-	//overlapMode‚ğ•ÏX‚·‚é(ƒCƒeƒŒ[ƒ^‚É‰e‹¿‚µ‚È‚¢)
+	//overlapModeã‚’å¤‰æ›´ã™ã‚‹(ã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿ã«å½±éŸ¿ã—ãªã„)
 	bool SetOverlapMode(DWORD id, BYTE overlapMode);
-	//ngTunerIDList‚É’Ç‰Á‚·‚é(ƒCƒeƒŒ[ƒ^‚É‰e‹¿‚µ‚È‚¢)
+	//ngTunerIDListã«è¿½åŠ ã™ã‚‹(ã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿ã«å½±éŸ¿ã—ãªã„)
 	bool AddNGTunerID(DWORD id, DWORD tunerID);
-	//—\–ñî•ñ‚ğíœ‚·‚é
+	//äºˆç´„æƒ…å ±ã‚’å‰Šé™¤ã™ã‚‹
 	bool DelReserve(DWORD id);
-	//˜^‰æŠJn“ú‚Åƒ\[ƒg‚³‚ê‚½—\–ñˆê——‚ğæ“¾‚·‚é
+	//éŒ²ç”»é–‹å§‹æ—¥æ™‚ã§ã‚½ãƒ¼ãƒˆã•ã‚ŒãŸäºˆç´„ä¸€è¦§ã‚’å–å¾—ã™ã‚‹
 	vector<pair<LONGLONG, const RESERVE_DATA*>> GetReserveList(BOOL calcMargin = FALSE, int defStartMargin = 0) const;
-	//ONID<<48|TSID<<32|SID<<16|EID,—\–ñID‚Åƒ\[ƒg‚³‚ê‚½—\–ñˆê——‚ğæ“¾‚·‚éB–ß‚è’l‚ÍŸ‚Ì”ñconst‘€ì‚Ü‚Å—LŒø
+	//ONID<<48|TSID<<32|SID<<16|EID,äºˆç´„IDã§ã‚½ãƒ¼ãƒˆã•ã‚ŒãŸäºˆç´„ä¸€è¦§ã‚’å–å¾—ã™ã‚‹ã€‚æˆ»ã‚Šå€¤ã¯æ¬¡ã®éconstæ“ä½œã¾ã§æœ‰åŠ¹
 	const vector<pair<ULONGLONG, DWORD>>& GetSortByEventList() const;
 private:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& item);
@@ -184,8 +184,8 @@ private:
 	mutable vector<pair<ULONGLONG, DWORD>> sortByEventCache;
 };
 
-//—\–ñî•ñƒtƒ@ƒCƒ‹uEpgAutoAdd.txtv‚Ì“Ç‚İ‚İ‚Æ•Û‘¶ˆ—‚ğs‚¤
-//ƒL[‚ÍdataID(”ñ0,‰i‘±“I)
+//äºˆç´„æƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ã€ŒEpgAutoAdd.txtã€ã®èª­ã¿è¾¼ã¿ã¨ä¿å­˜å‡¦ç†ã‚’è¡Œã†
+//ã‚­ãƒ¼ã¯dataID(é0,æ°¸ç¶šçš„)
 class CParseEpgAutoAddText : CParseText<DWORD, EPG_AUTO_ADD_DATA>
 {
 public:
@@ -197,7 +197,7 @@ public:
 	using Base::SaveText;
 	DWORD AddData(const EPG_AUTO_ADD_DATA& item);
 	bool ChgData(const EPG_AUTO_ADD_DATA& item);
-	//—\–ñ“o˜^”‚ğ•ÏX‚·‚é(ƒCƒeƒŒ[ƒ^‚É‰e‹¿‚µ‚È‚¢)
+	//äºˆç´„ç™»éŒ²æ•°ã‚’å¤‰æ›´ã™ã‚‹(ã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿ã«å½±éŸ¿ã—ãªã„)
 	bool SetAddCount(DWORD id, DWORD addCount);
 	bool DelData(DWORD id);
 private:
@@ -210,8 +210,8 @@ private:
 	DWORD saveNextID;
 };
 
-//—\–ñî•ñƒtƒ@ƒCƒ‹uManualAutoAdd.txtv‚Ì“Ç‚İ‚İ‚Æ•Û‘¶ˆ—‚ğs‚¤
-//ƒL[‚ÍdataID(”ñ0,‰i‘±“I)
+//äºˆç´„æƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ã€ŒManualAutoAdd.txtã€ã®èª­ã¿è¾¼ã¿ã¨ä¿å­˜å‡¦ç†ã‚’è¡Œã†
+//ã‚­ãƒ¼ã¯dataID(é0,æ°¸ç¶šçš„)
 class CParseManualAutoAddText : CParseText<DWORD, MANUAL_AUTO_ADD_DATA>
 {
 public:

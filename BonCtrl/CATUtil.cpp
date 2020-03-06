@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "CATUtil.h"
 
 #include "../Common/EpgTimerUtil.h"
@@ -40,25 +40,25 @@ BOOL CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
 
 	DWORD readSize = 0;
 	//////////////////////////////////////////////////////
-	//‰ðÍˆ—
+	//è§£æžå‡¦ç†
 	table_id = data[0];
 	section_syntax_indicator = (data[1]&0x80)>>7;
 	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
 	readSize+=3;
 
 	if( section_syntax_indicator != 1 || (data[1]&0x40) != 0 ){
-		//ŒÅ’è’l‚ª‚¨‚©‚µ‚¢
+		//å›ºå®šå€¤ãŒãŠã‹ã—ã„
 		return FALSE;
 	}
 	if( table_id != 0x01 ){
-		//table_id‚ª‚¨‚©‚µ‚¢
+		//table_idãŒãŠã‹ã—ã„
 		return FALSE;
 	}
 	if( readSize+section_length > dataSize || section_length < 4){
-		//ƒTƒCƒYˆÙí
+		//ã‚µã‚¤ã‚ºç•°å¸¸
 		return FALSE;
 	}
-	//CRCƒ`ƒFƒbƒN
+	//CRCãƒã‚§ãƒƒã‚¯
 	if( CalcCrc32(3+section_length, data) != 0 ){
 		return FALSE;
 	}

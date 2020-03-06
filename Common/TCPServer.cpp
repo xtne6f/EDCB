@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "TCPServer.h"
 #include "StringUtil.h"
 #include "CtrlCmdDef.h"
@@ -45,7 +45,7 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 	    m_ipv6 == ipv6 &&
 	    m_dwResponseTimeout == dwResponseTimeout &&
 	    m_acl == acl ){
-		//cmdProc‚Ì•Ï‰»‚Í‘z’è‚µ‚Ä‚¢‚È‚¢
+		//cmdProcã®å¤‰åŒ–ã¯æƒ³å®šã—ã¦ã„ãªã„
 		return true;
 	}
 	StopServer();
@@ -77,7 +77,7 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 		BOOL b = TRUE;
 		setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&b, sizeof(b));
 		if( m_ipv6 ){
-			//ƒfƒ…ƒAƒ‹ƒXƒ^ƒbƒN‚É‚Í‚µ‚È‚¢
+			//ãƒ‡ãƒ¥ã‚¢ãƒ«ã‚¹ã‚¿ãƒƒã‚¯ã«ã¯ã—ãªã„
 			b = TRUE;
 			setsockopt(m_sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&b, sizeof(b));
 		}
@@ -139,20 +139,20 @@ namespace
 {
 bool TestAcl(struct sockaddr* addr, wstring acl)
 {
-	//‘®—á: +192.168.0.0/16,-192.168.0.1
-	//‘®—á(IPv6): +fe80::/64,-::1
+	//æ›¸å¼ä¾‹: +192.168.0.0/16,-192.168.0.1
+	//æ›¸å¼ä¾‹(IPv6): +fe80::/64,-::1
 	bool ret = false;
 	for(;;){
 		wstring val;
 		bool sep = Separate(acl, L",", val, acl);
 		if( val.empty() || (val[0] != L'+' && val[0] != L'-') ){
-			//‘®ƒGƒ‰[
+			//æ›¸å¼ã‚¨ãƒ©ãƒ¼
 			return false;
 		}
 		wstring m;
 		int mm = Separate(val, L"/", val, m) ? (int)wcstol(m.c_str(), NULL, 10) : addr->sa_family == AF_INET6 ? 128 : 32;
 		if( val.empty() || mm < 0 || mm > (addr->sa_family == AF_INET6 ? 128 : 32) ){
-			//‘®ƒGƒ‰[
+			//æ›¸å¼ã‚¨ãƒ©ãƒ¼
 			return false;
 		}
 		string valU;
@@ -162,7 +162,7 @@ bool TestAcl(struct sockaddr* addr, wstring acl)
 		hints.ai_family = addr->sa_family;
 		struct addrinfo* result;
 		if( getaddrinfo(valU.c_str() + 1, NULL, &hints, &result) != 0 ){
-			//‘®ƒGƒ‰[
+			//æ›¸å¼ã‚¨ãƒ©ãƒ¼
 			return false;
 		}
 		if( result->ai_family == AF_INET6 ){
@@ -266,12 +266,12 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 			WSANETWORKEVENTS events;
 			if( WSAEnumNetworkEvents(waitList[i]->sock, waitList[i]->hEvent, &events) != SOCKET_ERROR ){
 				if( events.lNetworkEvents & FD_CLOSE ){
-					//•Â‚¶‚é
+					//é–‰ã˜ã‚‹
 					closesocket(waitList[i]->sock);
 					WSACloseEvent(waitList[i]->hEvent);
 					waitList.erase(waitList.begin() + i);
 				}else if( events.lNetworkEvents & FD_READ ){
-					//“Ç‚İ”ò‚Î‚·
+					//èª­ã¿é£›ã°ã™
 					OutputDebugString(L"Unexpected FD_READ\r\n");
 					char buf[1024];
 					recv(waitList[i]->sock, buf, sizeof(buf), 0);
@@ -294,7 +294,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 		}
 		for( size_t i = 0; i < waitList.size(); ){
 			if( pfdList[2 + i].revents & POLLIN ){
-				//•Â‚¶‚é
+				//é–‰ã˜ã‚‹
 				close(waitList[i]->sock);
 				waitList.erase(waitList.begin() + i);
 				pfdList.erase(pfdList.begin() + 2 + i);
@@ -311,7 +311,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 				CMD_STREAM stRes;
 				pSys->m_cmdProc(&waitList[i]->cmd, &stRes, NULL);
 				if( stRes.param == CMD_NO_RES ){
-					//‰“š‚Í•Û—¯‚³‚ê‚½
+					//å¿œç­”ã¯ä¿ç•™ã•ã‚ŒãŸ
 					if( GetTickCount() - waitList[i]->tick <= pSys->m_dwResponseTimeout ){
 						continue;
 					}
@@ -324,7 +324,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						extSize = min(stRes.dataSize, (DWORD)(sizeof(head) - sizeof(DWORD)*2));
 						memcpy(head + 2, stRes.data.get(), extSize);
 					}
-					//ƒuƒƒbƒLƒ“ƒOƒ‚[ƒh‚É•ÏX
+					//ãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°ãƒ¢ãƒ¼ãƒ‰ã«å¤‰æ›´
 					SetBlockingMode(waitList[i]->sock);
 					if( send(waitList[i]->sock, (const char*)head, sizeof(DWORD)*2 + extSize, 0) == (int)(sizeof(DWORD)*2 + extSize) ){
 						if( stRes.dataSize > extSize ){
@@ -334,7 +334,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					SetNonBlockingMode(*waitList[i]);
 				}
 				shutdown(waitList[i]->sock, 2); //SD_BOTH
-				//ƒ^ƒCƒ€ƒAƒEƒg‚©‰“šÏ‚İ(‚±‚±‚Å‚Í•Â‚¶‚È‚¢)
+				//ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã‹å¿œç­”æ¸ˆã¿(ã“ã“ã§ã¯é–‰ã˜ãªã„)
 				waitList[i]->closing = true;
 			}
 		}
@@ -372,7 +372,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 				}
 			}
 			if( sock != INVALID_SOCKET ){
-				//ƒuƒƒbƒLƒ“ƒOƒ‚[ƒh‚É•ÏX
+				//ãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°ãƒ¢ãƒ¼ãƒ‰ã«å¤‰æ›´
 				SetBlockingMode(sock);
 				for(;;){
 					CMD_STREAM stCmd;
@@ -381,7 +381,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					if( RecvAll(sock, (char*)head, sizeof(DWORD)*2, 0) != (int)(sizeof(DWORD)*2) ){
 						break;
 					}
-					//‘æ2,3ƒoƒCƒg‚Í0‚Å‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+					//ç¬¬2,3ãƒã‚¤ãƒˆã¯0ã§ãªã‘ã‚Œã°ãªã‚‰ãªã„
 					if( head[0] & 0xFFFF0000 ){
 						_OutputDebugString(L"Deny TCP cmd:0x%08x\r\n", head[0]);
 						break;
@@ -400,7 +400,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP ||
 					    stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP ||
 					    stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
-						//Ú‘±Œ³IP‚ğˆø”‚É“Y•t
+						//æ¥ç¶šå…ƒIPã‚’å¼•æ•°ã«æ·»ä»˜
 						char ip[NI_MAXHOST];
 						if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 ){
 							UTF8toW(ip, clientIP);
@@ -410,7 +410,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					pSys->m_cmdProc(&stCmd, &stRes, clientIP.empty() ? NULL : clientIP.c_str());
 					if( stRes.param == CMD_NO_RES ){
 						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
-							//•Û—¯‰Â”\‚ÈƒRƒ}ƒ“ƒh‚Í‰“š‘Ò‚¿ƒŠƒXƒg‚ÉˆÚ“®
+							//ä¿ç•™å¯èƒ½ãªã‚³ãƒãƒ³ãƒ‰ã¯å¿œç­”å¾…ã¡ãƒªã‚¹ãƒˆã«ç§»å‹•
 #ifdef _WIN32
 							WSAEVENT hEvent;
 							if( hEventList.size() < WSA_MAXIMUM_WAIT_EVENTS && (hEvent = WSACreateEvent()) != WSA_INVALID_EVENT )
@@ -445,7 +445,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						break;
 					}
 					if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
-						//Enum—p‚ÌŒJ‚è•Ô‚µ‚Å‚Í‚È‚¢
+						//Enumç”¨ã®ç¹°ã‚Šè¿”ã—ã§ã¯ãªã„
 						shutdown(sock, 2); //SD_BOTH
 						break;
 					}

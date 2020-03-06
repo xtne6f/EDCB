@@ -1,4 +1,4 @@
-// SendTSTCP.cpp : DLL ƒAƒvƒŠƒP[ƒVƒ‡ƒ“—p‚ÉƒGƒNƒXƒ|[ƒg‚³‚ê‚éŠÖ”‚ğ’è‹`‚µ‚Ü‚·B
+ï»¿// SendTSTCP.cpp : DLL ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ç”¨ã«ã‚¨ã‚¯ã‚¹ãƒãƒ¼ãƒˆã•ã‚Œã‚‹é–¢æ•°ã‚’å®šç¾©ã—ã¾ã™ã€‚
 //
 
 #include "stdafx.h"
@@ -12,8 +12,8 @@
 CInstanceManager<CSendTSTCPMain> g_instMng;
 
 
-//DLL‚Ì‰Šú‰»
-//–ß‚è’lF¯•ÊIDi-1‚ÅƒGƒ‰[j
+//DLLã®åˆæœŸåŒ–
+//æˆ»ã‚Šå€¤ï¼šè­˜åˆ¥IDï¼ˆ-1ã§ã‚¨ãƒ©ãƒ¼ï¼‰
 DLL_EXPORT
 int WINAPI InitializeDLL(
 	)
@@ -29,11 +29,11 @@ int WINAPI InitializeDLL(
 }
 
 
-//DLL‚ÌŠJ•ú
-//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+//DLLã®é–‹æ”¾
+//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 DLL_EXPORT
 DWORD WINAPI UnInitializeDLL(
-	int iID //[IN] InitializeDLL‚Ì–ß‚è’l
+	int iID //[IN] InitializeDLLã®æˆ»ã‚Šå€¤
 	)
 {
 	DWORD err = ERR_NOT_INIT;
@@ -47,11 +47,11 @@ DWORD WINAPI UnInitializeDLL(
 }
 
 
-//‘—Mæ‚ğ’Ç‰Á
-//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+//é€ä¿¡å…ˆã‚’è¿½åŠ 
+//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 DLL_EXPORT
 DWORD WINAPI AddSendAddrDLL(
-	int iID, //[IN] InitializeDLL‚Ì–ß‚è’l
+	int iID, //[IN] InitializeDLLã®æˆ»ã‚Šå€¤
 	LPCWSTR lpcwszIP,
 	DWORD dwPort
 	)
@@ -65,11 +65,11 @@ DWORD WINAPI AddSendAddrDLL(
 	return dwRet;
 }
 
-//‘—MæƒNƒŠƒA
-//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+//é€ä¿¡å…ˆã‚¯ãƒªã‚¢
+//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 DLL_EXPORT
 DWORD WINAPI ClearSendAddrDLL(
-	int iID //[IN] InitializeDLL‚Ì–ß‚è’l
+	int iID //[IN] InitializeDLLã®æˆ»ã‚Šå€¤
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
@@ -81,11 +81,11 @@ DWORD WINAPI ClearSendAddrDLL(
 	return dwRet;
 }
 
-//ƒf[ƒ^‘—M‚ğŠJn
-//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+//ãƒ‡ãƒ¼ã‚¿é€ä¿¡ã‚’é–‹å§‹
+//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 DLL_EXPORT
 DWORD WINAPI StartSendDLL(
-	int iID //[IN] InitializeDLL‚Ì–ß‚è’l
+	int iID //[IN] InitializeDLLã®æˆ»ã‚Šå€¤
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
@@ -97,11 +97,11 @@ DWORD WINAPI StartSendDLL(
 	return dwRet;
 }
 
-//ƒf[ƒ^‘—M‚ğ’â~
-//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+//ãƒ‡ãƒ¼ã‚¿é€ä¿¡ã‚’åœæ­¢
+//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 DLL_EXPORT
 DWORD WINAPI StopSendDLL(
-	int iID //[IN] InitializeDLL‚Ì–ß‚è’l
+	int iID //[IN] InitializeDLLã®æˆ»ã‚Šå€¤
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
@@ -113,11 +113,11 @@ DWORD WINAPI StopSendDLL(
 	return dwRet;
 }
 
-//ƒf[ƒ^‘—M‚ğŠJn
-//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+//ãƒ‡ãƒ¼ã‚¿é€ä¿¡ã‚’é–‹å§‹
+//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 DLL_EXPORT
 DWORD WINAPI AddSendDataDLL(
-	int iID, //[IN] InitializeDLL‚Ì–ß‚è’l
+	int iID, //[IN] InitializeDLLã®æˆ»ã‚Šå€¤
 	BYTE* pbData,
 	DWORD dwSize
 	)
@@ -131,11 +131,11 @@ DWORD WINAPI AddSendDataDLL(
 	return dwRet;
 }
 
-//‘—Mƒoƒbƒtƒ@‚ğƒNƒŠƒA
-//–ß‚è’lFƒGƒ‰[ƒR[ƒh
+//é€ä¿¡ãƒãƒƒãƒ•ã‚¡ã‚’ã‚¯ãƒªã‚¢
+//æˆ»ã‚Šå€¤ï¼šã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 DLL_EXPORT
 DWORD WINAPI ClearSendBuffDLL(
-	int iID //[IN] InitializeDLL‚Ì–ß‚è’l
+	int iID //[IN] InitializeDLLã®æˆ»ã‚Šå€¤
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);

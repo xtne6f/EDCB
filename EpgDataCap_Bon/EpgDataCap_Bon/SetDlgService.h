@@ -1,22 +1,22 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/ParseTextInstances.h"
 
 
-// CSetDlgService ƒ_ƒCƒAƒƒO
+// CSetDlgService ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 class CSetDlgService
 {
 public:
-	CSetDlgService();   // •W€ƒRƒ“ƒXƒgƒ‰ƒNƒ^[
+	CSetDlgService();   // æ¨™æº–ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ¼
 	~CSetDlgService();
 	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 
-// ƒ_ƒCƒAƒƒO ƒf[ƒ^
+// ãƒ€ã‚¤ã‚¢ãƒ­ã‚° ãƒ‡ãƒ¼ã‚¿
 	enum { IDD = IDD_DIALOG_SET_SERVICE };
 
 

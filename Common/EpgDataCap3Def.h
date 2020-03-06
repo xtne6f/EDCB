@@ -1,31 +1,31 @@
-#ifndef INCLUDE_EPG_DATA_CAP3_DEF_H
+ï»¿#ifndef INCLUDE_EPG_DATA_CAP3_DEF_H
 #define INCLUDE_EPG_DATA_CAP3_DEF_H
 
-//EPGƒf[ƒ^æ“¾ƒXƒe[ƒ^ƒX
+//EPGãƒ‡ãƒ¼ã‚¿å–å¾—ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
 typedef enum{
-	EpgNoData			= 0x0000,	//ƒf[ƒ^‚ª‚È‚¢
-	EpgNeedData			= 0x0001,	//‚½‚Ü‚Á‚Ä‚¢‚È‚¢
-	EpgBasicAll			= 0x0010,	//Šî–{î•ñ‚Í‚½‚Ü‚Á‚½
-	EpgExtendAll		= 0x0020,	//Šg’£î•ñ‚Í‚½‚Ü‚Á‚½
-	EpgHEITAll			= 0x0040,	//Šî–{AŠg’£‹¤‚É‚½‚Ü‚Á‚½
-	EpgLEITAll			= 0x0080,	//ƒƒ“ƒZƒO‚ª‚½‚Ü‚Á‚½
+	EpgNoData			= 0x0000,	//ãƒ‡ãƒ¼ã‚¿ãŒãªã„
+	EpgNeedData			= 0x0001,	//ãŸã¾ã£ã¦ã„ãªã„
+	EpgBasicAll			= 0x0010,	//åŸºæœ¬æƒ…å ±ã¯ãŸã¾ã£ãŸ
+	EpgExtendAll		= 0x0020,	//æ‹¡å¼µæƒ…å ±ã¯ãŸã¾ã£ãŸ
+	EpgHEITAll			= 0x0040,	//åŸºæœ¬ã€æ‹¡å¼µå…±ã«ãŸã¾ã£ãŸ
+	EpgLEITAll			= 0x0080,	//ãƒ¯ãƒ³ã‚»ã‚°ãŒãŸã¾ã£ãŸ
 } EPG_SECTION_STATUS;
 
-//EPGŠî–{î•ñ
+//EPGåŸºæœ¬æƒ…å ±
 typedef struct {
-	WORD event_nameLength;		//event_name‚Ì•¶š”
-	LPCWSTR event_name;			//ƒCƒxƒ“ƒg–¼
-	WORD text_charLength;		//text_char‚Ì•¶š”
-	LPCWSTR text_char;			//î•ñ
+	WORD event_nameLength;		//event_nameã®æ–‡å­—æ•°
+	LPCWSTR event_name;			//ã‚¤ãƒ™ãƒ³ãƒˆå
+	WORD text_charLength;		//text_charã®æ–‡å­—æ•°
+	LPCWSTR text_char;			//æƒ…å ±
 } EPG_SHORT_EVENT_INFO;
 
-//EPGŠg’£î•ñ
+//EPGæ‹¡å¼µæƒ…å ±
 typedef struct {
-	WORD text_charLength;		//text_char‚Ì•¶š”
-	LPCWSTR text_char;			//Ú×î•ñ
+	WORD text_charLength;		//text_charã®æ–‡å­—æ•°
+	LPCWSTR text_char;			//è©³ç´°æƒ…å ±
 } EPG_EXTENDED_EVENT_INFO;
 
-//EPGƒWƒƒƒ“ƒ‹ƒf[ƒ^
+//EPGã‚¸ãƒ£ãƒ³ãƒ«ãƒ‡ãƒ¼ã‚¿
 typedef struct {
 	BYTE content_nibble_level_1;
 	BYTE content_nibble_level_2;
@@ -33,22 +33,22 @@ typedef struct {
 	BYTE user_nibble_2;
 }EPG_CONTENT;
 
-//EPGƒWƒƒƒ“ƒ‹î•ñ
+//EPGã‚¸ãƒ£ãƒ³ãƒ«æƒ…å ±
 typedef struct {
 	WORD listSize;
 	EPG_CONTENT* nibbleList;
 } EPG_CONTEN_INFO;
 
-//EPG‰f‘œî•ñ
+//EPGæ˜ åƒæƒ…å ±
 typedef struct {
 	BYTE stream_content;
 	BYTE component_type;
 	BYTE component_tag;
-	WORD text_charLength;		//text_char‚Ì•¶š”
-	LPCWSTR text_char;			//Ú×î•ñ
+	WORD text_charLength;		//text_charã®æ–‡å­—æ•°
+	LPCWSTR text_char;			//è©³ç´°æƒ…å ±
 } EPG_COMPONENT_INFO;
 
-//EPG‰¹ºî•ñ
+//EPGéŸ³å£°æƒ…å ±
 typedef struct {
 	BYTE stream_content;
 	BYTE component_type;
@@ -59,17 +59,17 @@ typedef struct {
 	BYTE main_component_flag;
 	BYTE quality_indicator;
 	BYTE sampling_rate;
-	WORD text_charLength;		//text_char‚Ì•¶š”
-	LPCWSTR text_char;			//Ú×î•ñ
+	WORD text_charLength;		//text_charã®æ–‡å­—æ•°
+	LPCWSTR text_char;			//è©³ç´°æƒ…å ±
 } EPG_AUDIO_COMPONENT_INFO_DATA;
 
-//EPG‰¹ºî•ñ
+//EPGéŸ³å£°æƒ…å ±
 typedef struct {
 	WORD listSize;
 	EPG_AUDIO_COMPONENT_INFO_DATA* audioList;
 } EPG_AUDIO_COMPONENT_INFO;
 
-//EPGƒCƒxƒ“ƒgƒf[ƒ^
+//EPGã‚¤ãƒ™ãƒ³ãƒˆãƒ‡ãƒ¼ã‚¿
 typedef struct {
 	WORD original_network_id;
 	WORD transport_stream_id;
@@ -77,7 +77,7 @@ typedef struct {
 	WORD event_id;
 }EPG_EVENT_DATA;
 
-//EPGƒCƒxƒ“ƒgƒOƒ‹[ƒvî•ñ
+//EPGã‚¤ãƒ™ãƒ³ãƒˆã‚°ãƒ«ãƒ¼ãƒ—æƒ…å ±
 typedef struct {
 	BYTE group_type;
 	BYTE event_count;
@@ -85,24 +85,24 @@ typedef struct {
 } EPG_EVENTGROUP_INFO;
 
 typedef struct {
-	WORD event_id;							//ƒCƒxƒ“ƒgID
-	BYTE StartTimeFlag;						//start_time‚Ì’l‚ª—LŒø‚©‚Ç‚¤‚©
-	SYSTEMTIME start_time;					//ŠJnŠÔ
-	BYTE DurationFlag;						//duration‚Ì’l‚ª—LŒø‚©‚Ç‚¤‚©
-	DWORD durationSec;						//‘ŠÔi’PˆÊF•bj
+	WORD event_id;							//ã‚¤ãƒ™ãƒ³ãƒˆID
+	BYTE StartTimeFlag;						//start_timeã®å€¤ãŒæœ‰åŠ¹ã‹ã©ã†ã‹
+	SYSTEMTIME start_time;					//é–‹å§‹æ™‚é–“
+	BYTE DurationFlag;						//durationã®å€¤ãŒæœ‰åŠ¹ã‹ã©ã†ã‹
+	DWORD durationSec;						//ç·æ™‚é–“ï¼ˆå˜ä½ï¼šç§’ï¼‰
 
-	EPG_SHORT_EVENT_INFO* shortInfo;		//Šî–{î•ñ
-	EPG_EXTENDED_EVENT_INFO* extInfo;		//Šg’£î•ñ
-	EPG_CONTEN_INFO* contentInfo;			//ƒWƒƒƒ“ƒ‹î•ñ
-	EPG_COMPONENT_INFO* componentInfo;		//‰f‘œî•ñ
-	EPG_AUDIO_COMPONENT_INFO* audioInfo;	//‰¹ºî•ñ
-	EPG_EVENTGROUP_INFO* eventGroupInfo;	//ƒCƒxƒ“ƒgƒOƒ‹[ƒvî•ñ
-	EPG_EVENTGROUP_INFO* eventRelayInfo;	//ƒCƒxƒ“ƒgƒŠƒŒ[î•ñ
+	EPG_SHORT_EVENT_INFO* shortInfo;		//åŸºæœ¬æƒ…å ±
+	EPG_EXTENDED_EVENT_INFO* extInfo;		//æ‹¡å¼µæƒ…å ±
+	EPG_CONTEN_INFO* contentInfo;			//ã‚¸ãƒ£ãƒ³ãƒ«æƒ…å ±
+	EPG_COMPONENT_INFO* componentInfo;		//æ˜ åƒæƒ…å ±
+	EPG_AUDIO_COMPONENT_INFO* audioInfo;	//éŸ³å£°æƒ…å ±
+	EPG_EVENTGROUP_INFO* eventGroupInfo;	//ã‚¤ãƒ™ãƒ³ãƒˆã‚°ãƒ«ãƒ¼ãƒ—æƒ…å ±
+	EPG_EVENTGROUP_INFO* eventRelayInfo;	//ã‚¤ãƒ™ãƒ³ãƒˆãƒªãƒ¬ãƒ¼æƒ…å ±
 
-	BYTE freeCAFlag;						//ƒmƒ“ƒXƒNƒ‰ƒ“ƒuƒ‹ƒtƒ‰ƒO
+	BYTE freeCAFlag;						//ãƒãƒ³ã‚¹ã‚¯ãƒ©ãƒ³ãƒ–ãƒ«ãƒ•ãƒ©ã‚°
 }EPG_EVENT_INFO;
 
-//ƒT[ƒrƒX‚ÌÚ×î•ñ
+//ã‚µãƒ¼ãƒ“ã‚¹ã®è©³ç´°æƒ…å ±
 typedef struct {
 	BYTE service_type;
 	BYTE partialReceptionFlag;
@@ -113,30 +113,30 @@ typedef struct {
 	BYTE remote_control_key_id;
 }SERVICE_EXT_INFO;
 
-//ƒT[ƒrƒXî•ñ
+//ã‚µãƒ¼ãƒ“ã‚¹æƒ…å ±
 typedef struct {
 	WORD original_network_id;	//original_network_id
 	WORD transport_stream_id;	//transport_stream_id
 	WORD service_id;			//service_id
-	SERVICE_EXT_INFO* extInfo;	//Ú×î•ñ
+	SERVICE_EXT_INFO* extInfo;	//è©³ç´°æƒ…å ±
 }SERVICE_INFO;
 
-//ƒtƒ@ƒCƒ‹–¼ƒvƒ‰ƒOƒCƒ“‚Ì“ü—Íî•ñ
+//ãƒ•ã‚¡ã‚¤ãƒ«åãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã®å…¥åŠ›æƒ…å ±
 typedef struct {
-	SYSTEMTIME startTime;		//ŠJnŠÔ
-	DWORD durationSec;			//‘ŠÔi’PˆÊ•bj
-	WCHAR eventName[512];		//”Ô‘g–¼
+	SYSTEMTIME startTime;		//é–‹å§‹æ™‚é–“
+	DWORD durationSec;			//ç·æ™‚é–“ï¼ˆå˜ä½ç§’ï¼‰
+	WCHAR eventName[512];		//ç•ªçµ„å
 	WORD ONID;					//originai_network_id
 	WORD TSID;					//transport_stream_id
 	WORD SID;					//service_id
-	WORD EventID;				//evend_idiƒvƒƒOƒ‰ƒ€—\–ñˆµ‚¢A0xFFFFj
-	WCHAR serviceName[256];		//ƒT[ƒrƒX–¼
-	WCHAR bonDriverName[256];	//g—pBonDriverƒtƒ@ƒCƒ‹–¼
-	DWORD bonDriverID;			//EpgTimerSrv“à•”‚Å‚ÌBonDriver¯•ÊID
-	DWORD tunerID;				//EpgTimerSrv“à•”‚Å‚Ìƒ`ƒ…[ƒi[¯•ÊID
-	DWORD reserveID;			//—\–ñIDiConvertRecName3‚Å•K{j
-	EPG_EVENT_INFO* epgInfo;	//”Ô‘gî•ñi‘¶İ‚µ‚È‚¢‚Æ‚«NULLjiConvertRecName3‚Å•K{j
-	DWORD sizeOfStruct;			//–¢g—pi0‚Ü‚½‚Í\‘¢‘ÌƒTƒCƒY‚Å‰Šú‰»jiConvertRecName3‚Å•K{j
+	WORD EventID;				//evend_idï¼ˆãƒ—ãƒ­ã‚°ãƒ©ãƒ äºˆç´„æ‰±ã„æ™‚ã€0xFFFFï¼‰
+	WCHAR serviceName[256];		//ã‚µãƒ¼ãƒ“ã‚¹å
+	WCHAR bonDriverName[256];	//ä½¿ç”¨BonDriverãƒ•ã‚¡ã‚¤ãƒ«å
+	DWORD bonDriverID;			//EpgTimerSrvå†…éƒ¨ã§ã®BonDriverè­˜åˆ¥ID
+	DWORD tunerID;				//EpgTimerSrvå†…éƒ¨ã§ã®ãƒãƒ¥ãƒ¼ãƒŠãƒ¼è­˜åˆ¥ID
+	DWORD reserveID;			//äºˆç´„IDï¼ˆConvertRecName3ã§å¿…é ˆï¼‰
+	EPG_EVENT_INFO* epgInfo;	//ç•ªçµ„æƒ…å ±ï¼ˆå­˜åœ¨ã—ãªã„ã¨ãNULLï¼‰ï¼ˆConvertRecName3ã§å¿…é ˆï¼‰
+	DWORD sizeOfStruct;			//æœªä½¿ç”¨ï¼ˆ0ã¾ãŸã¯æ§‹é€ ä½“ã‚µã‚¤ã‚ºã§åˆæœŸåŒ–ï¼‰ï¼ˆConvertRecName3ã§å¿…é ˆï¼‰
 } PLUGIN_RESERVE_INFO;
 
 #endif

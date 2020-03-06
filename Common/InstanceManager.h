@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ThreadUtil.h"
 #include <map>
@@ -84,8 +84,8 @@ protected:
 			}
 			count += 1;
 
-			// 65536 �񎎂��ă_����������f�O
-			// 1 �v���Z�X���� (2^16) �ȏ�̃C���X�^���X�𓯎��ɍ쐬���邱�Ƃ͂Ȃ��͂�
+			// 65536 回試してダメだったら断念
+			// 1 プロセスから (2^16) 以上のインスタンスを同時に作成することはないはず
 
 		} while ((nextID == INVALID_ID) && (count < (1<<16))); 
 

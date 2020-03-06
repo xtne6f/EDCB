@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "BatManager.h"
 
 #include "../../Common/SendCtrlCmd.h"
@@ -95,7 +95,7 @@ void CBatManager::StartWork()
 {
 	CBlockLock lock(&this->managerLock);
 
-	//ƒ[ƒJƒXƒŒƒbƒh‚ªI—¹‚µ‚æ‚¤‚Æ‚µ‚Ä‚¢‚é‚Æ‚«‚Í‚»‚ÌŠ®—¹‚ğ‘Ò‚Â
+	//ãƒ¯ãƒ¼ã‚«ã‚¹ãƒ¬ãƒƒãƒ‰ãŒçµ‚äº†ã—ã‚ˆã†ã¨ã—ã¦ã„ã‚‹ã¨ãã¯ãã®å®Œäº†ã‚’å¾…ã¤
 	if( this->batWorkThread.joinable() && this->batWorkExitingFlag ){
 		this->batWorkThread.join();
 	}
@@ -126,7 +126,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 			}
 		}
 		if( sys->batWorkStopFlag ){
-			//’†~
+			//ä¸­æ­¢
 			break;
 		}
 
@@ -136,7 +136,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 		{
 			CBlockLock lock(&sys->managerLock);
 			if( sys->workList.empty() ){
-				//‚±‚Ìƒtƒ‰ƒO‚ğ—§‚Ä‚½‚ ‚Æ‚Í“ñ“x‚ÆƒƒbƒN‚ğŠm•Û‚µ‚Ä‚Í‚¢‚¯‚È‚¢
+				//ã“ã®ãƒ•ãƒ©ã‚°ã‚’ç«‹ã¦ãŸã‚ã¨ã¯äºŒåº¦ã¨ãƒ­ãƒƒã‚¯ã‚’ç¢ºä¿ã—ã¦ã¯ã„ã‘ãªã„
 				sys->batWorkExitingFlag = true;
 				sys->nextBatMargin = 0;
 				break;
@@ -166,12 +166,12 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 				{
 					CBlockLock lock(&sys->managerLock);
 					if( sys->idleMargin < exBatMargin ){
-						//ƒAƒCƒhƒ‹ŠÔ‚É—]—T‚ª‚È‚¢‚Ì‚Å’†~
+						//ã‚¢ã‚¤ãƒ‰ãƒ«æ™‚é–“ã«ä½™è£•ãŒãªã„ã®ã§ä¸­æ­¢
 						sys->batWorkExitingFlag = true;
 						sys->nextBatMargin = exBatMargin;
 						break;
 					}
-					//NotifyIntervalŠg’£: macroList[0]‚ª"NotifyID"‚Ì‚Æ‚«A‚±‚Ì’l‚ğ"0"‚É‚µ‚Äw’èŠÔŒã‚ÉÄ”­s‚·‚éBidleMargin‚Æ•¹—p•s‰Â
+					//NotifyIntervalæ‹¡å¼µ: macroList[0]ãŒ"NotifyID"ã®ã¨ãã€ã“ã®å€¤ã‚’"0"ã«ã—ã¦æŒ‡å®šæ™‚é–“å¾Œã«å†ç™ºè¡Œã™ã‚‹ã€‚idleMarginã¨ä½µç”¨ä¸å¯
 					if( exNotifyInterval && notifyWorkWait == 0 &&
 					    sys->workList[0].macroList.empty() == false && sys->workList[0].macroList[0].first == "NotifyID" ){
 						notifyWorkWait = exNotifyInterval;
@@ -188,14 +188,14 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 					bool executed = false;
 					HANDLE hProcess = NULL;
 					if( exDirect == false && sys->notifyManager.IsGUI() == false ){
-						//•\¦‚Å‚«‚È‚¢‚Ì‚ÅGUIŒo—R‚Å‹N“®‚µ‚Ä‚İ‚é
+						//è¡¨ç¤ºã§ããªã„ã®ã§GUIçµŒç”±ã§èµ·å‹•ã—ã¦ã¿ã‚‹
 						CSendCtrlCmd ctrlCmd;
 						vector<DWORD> registGUI = sys->notifyManager.GetRegistGUI();
 						for( size_t i = 0; i < registGUI.size(); i++ ){
 							ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, registGUI[i]);
 							DWORD pid;
 							if( ctrlCmd.SendGUIExecute(L'"' + work.batFilePath + L'"', &pid) == CMD_SUCCESS ){
-								//ƒnƒ“ƒhƒ‹ŠJ‚­‘O‚ÉI—¹‚·‚é‚©‚à‚µ‚ê‚È‚¢
+								//ãƒãƒ³ãƒ‰ãƒ«é–‹ãå‰ã«çµ‚äº†ã™ã‚‹ã‹ã‚‚ã—ã‚Œãªã„
 								executed = true;
 								hProcess = OpenProcess(SYNCHRONIZE | PROCESS_SET_INFORMATION, FALSE, pid);
 								if( hProcess ){
@@ -223,7 +223,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 								exePath.append(L"System32\\WindowsPowerShell\\v1.0\\powershell.exe");
 							}
 						}else{
-							//ƒRƒ}ƒ“ƒhƒvƒƒ“ƒvƒg
+							//ã‚³ãƒãƒ³ãƒ‰ãƒ—ãƒ­ãƒ³ãƒ—ãƒˆ
 							strParam = L" /c \"\"" + work.batFilePath + L"\" \"";
 							WCHAR szComSpec[MAX_PATH];
 							DWORD dwRet = GetEnvironmentVariable(L"ComSpec", szComSpec, MAX_PATH);
@@ -232,7 +232,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 							}
 						}
 						vector<WCHAR> strBuff(strParam.c_str(), strParam.c_str() + strParam.size() + 1);
-						//‚±‚±‚Å’Z—•]‰¿‚·‚é‚ÆC4701(pi‚ª–¢‰Šú‰»)‚É‚È‚éB‚¨‚»‚ç‚­‹U—z«
+						//ã“ã“ã§çŸ­çµ¡è©•ä¾¡ã™ã‚‹ã¨C4701(piãŒæœªåˆæœŸåŒ–)ã«ãªã‚‹ã€‚ãŠãã‚‰ãå½é™½æ€§
 						if( exePath.empty() == false ){
 							if( CreateProcess(exePath.c_str(), strBuff.data(), NULL, NULL, FALSE,
 							                  BELOW_NORMAL_PRIORITY_CLASS | (exDirect ? CREATE_UNICODE_ENVIRONMENT : 0),
@@ -243,11 +243,11 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 							}
 						}
 						if( hProcess == NULL ){
-							_OutputDebugString(L"BAT‹N“®ƒGƒ‰[F%ls\r\n", work.batFilePath.c_str());
+							_OutputDebugString(L"BATèµ·å‹•ã‚¨ãƒ©ãƒ¼ï¼š%ls\r\n", work.batFilePath.c_str());
 						}
 					}
 					if( hProcess ){
-						//I—¹ŠÄ‹
+						//çµ‚äº†ç›£è¦–
 						HANDLE hEvents[2] = { sys->batWorkEvent.Handle(), hProcess };
 						while( WaitForMultipleObjects(2, hEvents, FALSE, INFINITE) == WAIT_OBJECT_0 && sys->batWorkStopFlag == false );
 						CloseHandle(hProcess);
@@ -270,7 +270,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						exit(EXIT_FAILURE);
 					}
 					if( pid != -1 ){
-						//I—¹ŠÄ‹(Œø—¦‚æ‚¢è–@‚Í‚È‚¢‚à‚Ì‚©c)
+						//çµ‚äº†ç›£è¦–(åŠ¹ç‡ã‚ˆã„æ‰‹æ³•ã¯ãªã„ã‚‚ã®ã‹â€¦)
 						while( sys->batWorkStopFlag == false && waitpid(pid, NULL, WNOHANG) == 0 ){
 							sys->batWorkEvent.WaitOne(200);
 						}
@@ -278,10 +278,10 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 #endif
 				}
 			}else{
-				_OutputDebugString(L"BATƒtƒ@ƒCƒ‹ì¬ƒGƒ‰[F%ls\r\n", work.batFilePath.c_str());
+				_OutputDebugString(L"BATãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆã‚¨ãƒ©ãƒ¼ï¼š%ls\r\n", work.batFilePath.c_str());
 			}
 		}else{
-			_OutputDebugString(L"BATŠg’£qƒGƒ‰[F%ls\r\n", work.batFilePath.c_str());
+			_OutputDebugString(L"BATæ‹¡å¼µå­ã‚¨ãƒ©ãƒ¼ï¼š%ls\r\n", work.batFilePath.c_str());
 		}
 
 		CBlockLock lock(&sys->managerLock);
@@ -291,24 +291,24 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 
 bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& exNotifyInterval, WORD& exSW, bool& exDirect, vector<char>& buff) const
 {
-	//ƒoƒbƒ`‚Ìì¬
+	//ãƒãƒƒãƒã®ä½œæˆ
 	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(info.batFilePath, UTIL_SECURE_READ), fclose);
 	if( !fp ){
 		return false;
 	}
 
-	//Šg’£–½—ß: BatMargin
+	//æ‹¡å¼µå‘½ä»¤: BatMargin
 	exBatMargin = 0;
-	//Šg’£–½—ß: NotifyInterval
+	//æ‹¡å¼µå‘½ä»¤: NotifyInterval
 	exNotifyInterval = 0;
-	//Šg’£–½—ß: ŠÂ‹«“n‚µ‚É‚æ‚é’¼ÚÀs
+	//æ‹¡å¼µå‘½ä»¤: ç’°å¢ƒæ¸¡ã—ã«ã‚ˆã‚‹ç›´æ¥å®Ÿè¡Œ
 	exDirect = true;
-	//ƒJƒXƒ^ƒ€ƒnƒ“ƒhƒ‰—pƒtƒ@ƒCƒ‹‚Ì’†g
+	//ã‚«ã‚¹ã‚¿ãƒ ãƒãƒ³ãƒ‰ãƒ©ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ã®ä¸­èº«
 	buff.clear();
 #ifdef _WIN32
-	//Šg’£–½—ß: “ú‚É‚Â‚¢‚Ä‚Ì•Ï”‚ğISOŒ`®‚É‚·‚é
+	//æ‹¡å¼µå‘½ä»¤: æ—¥æ™‚ã«ã¤ã„ã¦ã®å¤‰æ•°ã‚’ISOå½¢å¼ã«ã™ã‚‹
 	bool exFormatTime = true;
-	//Šg’£–½—ß: ƒEƒBƒ“ƒhƒE•\¦ó‘Ô
+	//æ‹¡å¼µå‘½ä»¤: ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦è¡¨ç¤ºçŠ¶æ…‹
 	exSW = SW_SHOWMINNOACTIVE;
 
 	if( UtilPathEndsWith(info.batFilePath.c_str(), L".bat") ){
@@ -321,7 +321,7 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 	for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
 		olbuff[n] = '\0';
 		if( strstr(olbuff, "_EDCBX_BATMARGIN_=") ){
-			//ˆê“I‚É’f•Ğ‚ğŠi”[‚·‚é‚©‚à‚µ‚ê‚È‚¢‚ªÅI“I‚É³‚µ‚¯‚ê‚Î‚æ‚¢
+			//ä¸€æ™‚çš„ã«æ–­ç‰‡ã‚’æ ¼ç´ã™ã‚‹ã‹ã‚‚ã—ã‚Œãªã„ãŒæœ€çµ‚çš„ã«æ­£ã—ã‘ã‚Œã°ã‚ˆã„
 			exBatMargin = strtoul(strstr(olbuff, "_EDCBX_BATMARGIN_=") + 18, NULL, 10) * 60;
 		}
 		if( strstr(olbuff, "_EDCBX_NOTIFY_INTERVAL_=") ){
@@ -352,23 +352,23 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 				info.macroList.erase(info.macroList.begin() + i);
 				continue;
 			}
-			//ƒRƒƒ“ƒgƒAƒEƒg‚ğ‰ğœ‚·‚é
+			//ã‚³ãƒ¡ãƒ³ãƒˆã‚¢ã‚¦ãƒˆã‚’è§£é™¤ã™ã‚‹
 			if( info.macroList[i].first.compare(0, 1, "#") == 0 ){
 				info.macroList[i].first.erase(0, 1);
 			}
 		}
 #endif
-		//ƒRƒƒ“ƒgƒAƒEƒg‚³‚ê‚Ä‚¢‚é‚à‚Ì‚ğÁ‚·
+		//ã‚³ãƒ¡ãƒ³ãƒˆã‚¢ã‚¦ãƒˆã•ã‚Œã¦ã„ã‚‹ã‚‚ã®ã‚’æ¶ˆã™
 		if( info.macroList[i].first.compare(0, 1, "#") == 0 ){
 			info.macroList.erase(info.macroList.begin() + i);
 			continue;
 		}
 		for( size_t j = 0; j < info.macroList[i].second.size(); j++ ){
-			//§Œä•¶š‚Æƒ_ƒuƒ‹ƒNƒH[ƒg‚Í’u‚«Š·‚¦‚é
+			//åˆ¶å¾¡æ–‡å­—ã¨ãƒ€ãƒ–ãƒ«ã‚¯ã‚©ãƒ¼ãƒˆã¯ç½®ãæ›ãˆã‚‹
 			if( (L'\x1' <= info.macroList[i].second[j] && info.macroList[i].second[j] <= L'\x1f') || info.macroList[i].second[j] == L'\x7f' ){
-				info.macroList[i].second[j] = L'¬';
+				info.macroList[i].second[j] = L'ã€“';
 			}else if( info.macroList[i].second[j] == L'"' ){
-				info.macroList[i].second[j] = L'h';
+				info.macroList[i].second[j] = L'â€';
 			}
 		}
 		i++;
@@ -391,7 +391,7 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 	}
 #ifdef _WIN32
 	if( exDirect ){
-		//ƒJƒXƒ^ƒ€ƒnƒ“ƒhƒ‰
+		//ã‚«ã‚¹ã‚¿ãƒ ãƒãƒ³ãƒ‰ãƒ©
 		return true;
 	}
 	string strRead = buff.data();
@@ -406,7 +406,7 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 		if( next == string::npos ){
 			break;
 		}
-		//"$ƒ}ƒNƒ$"‚ª‚ ‚ê‚Î’uŠ·
+		//"$ãƒã‚¯ãƒ­$"ãŒã‚ã‚Œã°ç½®æ›
 		auto itrMacro = std::find_if(info.macroList.begin(), info.macroList.end(),
 			[=, &strRead](const pair<string, wstring>& a) { return strRead.compare(pos + 1, next - pos - 1, a.first) == 0; });
 		if( itrMacro == info.macroList.end() ){
@@ -419,7 +419,7 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 		}
 	}
 
-	//ˆêƒtƒ@ƒCƒ‹‚ÉƒRƒs[
+	//ä¸€æ™‚ãƒ•ã‚¡ã‚¤ãƒ«ã«ã‚³ãƒ”ãƒ¼
 	info.batFilePath = GetCommonIniPath().replace_filename(this->managerName).concat(L".bat").native();
 	fp.reset(UtilOpenFile(info.batFilePath, UTIL_SECURE_WRITE | UTIL_F_IONBF));
 	if( !fp || fputs(strRead.c_str(), fp.get()) < 0 ){
@@ -446,7 +446,7 @@ wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
 	for( size_t i = 0; i < info.macroList.size(); i++ ){
 		wstring strVar;
 		UTF8toW(info.macroList[i].first, strVar);
-		//‹£‡‚·‚é•Ï”‚ª‚È‚¯‚ê‚Î’Ç‰Á
+		//ç«¶åˆã™ã‚‹å¤‰æ•°ãŒãªã‘ã‚Œã°è¿½åŠ 
 		bool unique = true;
 		for( size_t n = 0; unique && n < strEnv.size(); ){
 			size_t m = strEnv.find_first_of(L'\0', n);

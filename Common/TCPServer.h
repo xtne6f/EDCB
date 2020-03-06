@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "StructDef.h"
 #include "ThreadUtil.h"
@@ -13,9 +13,9 @@
 class CTCPServer
 {
 public:
-	//‰“š‚ª•Û—¯‚³‚ê‚Ä‚¢‚éƒRƒ}ƒ“ƒh‚ğÄ“xŒÄ‚Ô(=NotifyUpdate()‚·‚é)ŠÔŠu
+	//å¿œç­”ãŒä¿ç•™ã•ã‚Œã¦ã„ã‚‹ã‚³ãƒãƒ³ãƒ‰ã‚’å†åº¦å‘¼ã¶(=NotifyUpdate()ã™ã‚‹)é–“éš”
 	static const DWORD NOTIFY_INTERVAL = 2000;
-	//‘—óMƒ^ƒCƒ€ƒAƒEƒg
+	//é€å—ä¿¡ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆ
 	static const DWORD SND_RCV_TIMEOUT = 30000;
 
 	CTCPServer(void);

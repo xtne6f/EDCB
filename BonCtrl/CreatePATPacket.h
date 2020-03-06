@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Common/EpgTimerUtil.h"
 #include "../Common/ErrDef.h"
@@ -8,29 +8,29 @@ class CCreatePATPacket
 public:
 	CCreatePATPacket(void);
 
-	//�쐬PAT�̃p�����[�^��ݒ�
-	//�����F
+	//作成PATのパラメータを設定
+	//引数：
 	// TSID				[IN]TransportStreamID
-	// PIDList			[IN]PMT��PID��ServiceID�̃��X�g
+	// PIDList			[IN]PMTのPIDとServiceIDのリスト
 	void SetParam(
 		WORD TSID_,
 		const vector<pair<WORD, WORD>>& PIDList_
 	);
 
-	//�쐬PAT�̃o�b�t�@�|�C���^���擾
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// buff				[OUT]�쐬����PAT�p�P�b�g�ւ̃|�C���^�i����Ăяo�����܂ŗL���j
-	// buffSize			[OUT]buff�̃T�C�Y
-	// incrementFlag	[IN]TS�p�P�b�g��Counter���C���N�������g���邩�ǂ����iTRUE:����AFALSE�F���Ȃ��j
+	//作成PATのバッファポインタを取得
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// buff				[OUT]作成したPATパケットへのポインタ（次回呼び出し時まで有効）
+	// buffSize			[OUT]buffのサイズ
+	// incrementFlag	[IN]TSパケットのCounterをインクリメントするかどうか（TRUE:する、FALSE：しない）
 	BOOL GetPacket(
 		BYTE** buff,
 		DWORD* buffSize,
 		BOOL incrementFlag = TRUE
 	);
 
-	//�쐬PAT�̃o�b�t�@���N���A
+	//作成PATのバッファをクリア
 	void Clear();
 
 protected:

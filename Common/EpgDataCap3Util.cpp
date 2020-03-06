@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "EpgDataCap3Util.h"
 
 #include "ErrDef.h"
@@ -66,7 +66,7 @@ DWORD CEpgDataCap3Util::Initialize(
 		}
 		UnInitialize();
 	}
-	_OutputDebugString(L"%ls‚Ìƒ[ƒh‚É¸”s‚µ‚Ü‚µ‚½\r\n", path.c_str());
+	_OutputDebugString(L"%lsã®ãƒ­ãƒ¼ãƒ‰ã«å¤±æ•—ã—ã¾ã—ãŸ\r\n", path.c_str());
 	return err;
 }
 

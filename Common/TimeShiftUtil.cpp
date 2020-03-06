@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "TimeShiftUtil.h"
 #include "PathUtil.h"
 #include "StringUtil.h"
@@ -35,7 +35,7 @@ void CTimeShiftUtil::Send(
 	CBlockLock lock(&this->utilLock);
 	CBlockLock lock2(&this->ioLock);
 
-	//‘—Mæ‚ğİ’è‚·‚é
+	//é€ä¿¡å…ˆã‚’è¨­å®šã™ã‚‹
 	WCHAR ip[64];
 	swprintf_s(ip, L"%d.%d.%d.%d", val->ip >> 24, val->ip >> 16 & 0xFF, val->ip >> 8 & 0xFF, val->ip & 0xFF);
 
@@ -43,7 +43,7 @@ void CTimeShiftUtil::Send(
 		CSendNW* sendNW = (tcp ? (CSendNW*)&this->sendTcp : (CSendNW*)&this->sendUdp);
 		SEND_INFO* info = this->sendInfo + tcp;
 		if( info->ip.empty() == false && ((tcp ? val->tcp : val->udp) == 0 || info->ip != ip) ){
-			//I—¹
+			//çµ‚äº†
 			info->ip.clear();
 			sendNW->StopSend();
 			sendNW->UnInitialize();
@@ -58,11 +58,11 @@ void CTimeShiftUtil::Send(
 			continue;
 		}
 		if( info->ip.empty() == false ){
-			//ŠJnÏ‚İBƒ|[ƒg”Ô†‚ğ•Ô‚·
+			//é–‹å§‹æ¸ˆã¿ã€‚ãƒãƒ¼ãƒˆç•ªå·ã‚’è¿”ã™
 			(tcp ? val->tcpPort : val->udpPort) = info->port;
 			continue;
 		}
-		//ˆø”‚Ìƒ|[ƒg”Ô†‚Íg‚í‚È‚¢(Œ´ì‹““®)Bip:0.0.0.1-255‚Í“Á•Êˆµ‚¢
+		//å¼•æ•°ã®ãƒãƒ¼ãƒˆç•ªå·ã¯ä½¿ã‚ãªã„(åŸä½œæŒ™å‹•)ã€‚ip:0.0.0.1-255ã¯ç‰¹åˆ¥æ‰±ã„
 		info->port = (tcp ? (1 <= val->ip && val->ip <= 255 ? 0 : BON_TCP_PORT_BEGIN) : BON_UDP_PORT_BEGIN);
 		for( int i = 0; i < BON_NW_PORT_RANGE; i++, info->port++ ){
 #ifdef _WIN32
@@ -91,7 +91,7 @@ void CTimeShiftUtil::Send(
 #endif
 		}
 		if( info->mutex ){
-			//ŠJn
+			//é–‹å§‹
 			OutputDebugString((info->key + L"\r\n").c_str());
 			sendNW->Initialize();
 			sendNW->AddSendAddr(ip, info->port, false);
@@ -132,7 +132,7 @@ BOOL CTimeShiftUtil::StartTimeShift()
 		return FALSE;
 	}else{
 		if( this->readThread.joinable() == false ){
-			//óMƒXƒŒƒbƒh‹N“®
+			//å—ä¿¡ã‚¹ãƒ¬ãƒƒãƒ‰èµ·å‹•
 			this->readStopFlag = false;
 			this->readThread = thread_(ReadThread, this);
 		}
@@ -181,11 +181,11 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		{
 			__int64 wait = 0;
 			if( base >= 0 ){
-				//ƒŒ[ƒg’²®
+				//ãƒ¬ãƒ¼ãƒˆèª¿æ•´
 				wait = ((base + 0x200000000LL - initTime) & 0x1FFFFFFFFLL) / 90 - (GetTickCount() - initTick);
 				base = -1;
 			}else if( errCount > 0 ){
-				//I’[ŠÄ‹’†
+				//çµ‚ç«¯ç›£è¦–ä¸­
 				wait = 200;
 			}
 			for( ; wait > 0 && sys->readStopFlag == false; wait -= 20 ){
@@ -202,9 +202,9 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 			break;
 		}
 		if( pos != sys->currentFilePos ){
-			//ƒV[ƒN‚³‚ê‚½
+			//ã‚·ãƒ¼ã‚¯ã•ã‚ŒãŸ
 			if( sys->currentFilePos >= sys->GetAvailableFileSize() ){
-				//—LŒø‚Èƒf[ƒ^‚ÌI’[‚É’B‚µ‚½
+				//æœ‰åŠ¹ãªãƒ‡ãƒ¼ã‚¿ã®çµ‚ç«¯ã«é”ã—ãŸ
 				if( sys->fileMode || ++errCount > 50 ){
 					break;
 				}
@@ -218,7 +218,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		}
 		DWORD readSize = (DWORD)fread(buff, 1, sizeof(buff), sys->readFile.get());
 		if( readSize < (sys->fileMode ? 1 : sizeof(buff)) ){
-			//ƒtƒ@ƒCƒ‹I’[‚É’B‚µ‚½
+			//ãƒ•ã‚¡ã‚¤ãƒ«çµ‚ç«¯ã«é”ã—ãŸ
 			if( sys->fileMode || ++errCount > 50 ){
 				break;
 			}
@@ -231,7 +231,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		DWORD dataSize;
 		if( packetInit.GetTSData(buff, readSize, &data, &dataSize) == FALSE || dataSize <= 0 ){
 			if( sys->fileMode == FALSE && sys->currentFilePos + (__int64)sizeof(buff) > sys->GetAvailableFileSize() ){
-				//–³Œø‚Èƒf[ƒ^—Ìˆæ‚ğ“Ç‚ñ‚Å‚¢‚é‰Â”\«‚ª‚ ‚é
+				//ç„¡åŠ¹ãªãƒ‡ãƒ¼ã‚¿é ˜åŸŸã‚’èª­ã‚“ã§ã„ã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹
 				if( ++errCount > 50 ){
 					break;
 				}
@@ -239,7 +239,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 					break;
 				}
 			}else{
-				//•s³‚Èƒf[ƒ^‚ğ“Ç‚İ”ò‚Î‚·
+				//ä¸æ­£ãªãƒ‡ãƒ¼ã‚¿ã‚’èª­ã¿é£›ã°ã™
 				sys->currentFilePos += readSize;
 				errCount = 0;
 			}
@@ -252,8 +252,8 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data + i, 188) ){
 				if( packet.adaptation_field_length > 0 && packet.PCR_flag == 1 ){
-					//Å‰‚É3‰ñPCR‚ªoŒ»‚µ‚½PID‚ğPCR_PID‚Æ‚·‚é
-					//PCR_PID‚ªŒ»‚ê‚é‚±‚Æ‚È‚­5‰ñ•Ê‚ÌPCR‚ªoŒ»‚·‚ê‚ÎPCR_PID‚ğ•ÏX‚·‚é
+					//æœ€åˆã«3å›PCRãŒå‡ºç¾ã—ãŸPIDã‚’PCR_PIDã¨ã™ã‚‹
+					//PCR_PIDãŒç¾ã‚Œã‚‹ã“ã¨ãªã5å›åˆ¥ã®PCRãŒå‡ºç¾ã™ã‚Œã°PCR_PIDã‚’å¤‰æ›´ã™ã‚‹
 					if( packet.PID != sys->PCR_PID ){
 						pcrPidList.push_back(packet.PID);
 						if( std::count(pcrPidList.begin(), pcrPidList.end(), packet.PID) >= (sys->PCR_PID == 0xFFFF ? 3 : 5) ){
@@ -283,7 +283,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 	if( sys->readStopFlag == false ){
 		return;
 	}
-	//–³ŒøPAT‘—‚Á‚ÄŸ‰ñ‘—M‚ÉƒŠƒZƒbƒg‚³‚ê‚é‚æ‚¤‚É‚·‚é
+	//ç„¡åŠ¹PATé€ã£ã¦æ¬¡å›é€ä¿¡æ™‚ã«ãƒªã‚»ãƒƒãƒˆã•ã‚Œã‚‹ã‚ˆã†ã«ã™ã‚‹
 	std::fill_n(buff, sizeof(buff), (BYTE)0xFF);
 	CCreatePATPacket patUtil;
 	patUtil.SetParam(1, vector<pair<WORD, WORD>>());
@@ -334,20 +334,20 @@ __int64 CTimeShiftUtil::GetAvailableFileSize() const
 			fileSize = _ftelli64(fp);
 		}
 		if( this->fileMode ){
-			//’Pƒ‚Éƒtƒ@ƒCƒ‹ƒTƒCƒY‚ğ•Ô‚·
+			//å˜ç´”ã«ãƒ•ã‚¡ã‚¤ãƒ«ã‚µã‚¤ã‚ºã‚’è¿”ã™
 			if( fileSize >= 0 ){
 				return fileSize;
 			}
 		}else{
-			//—LŒø‚Èƒf[ƒ^‚Ì‚ ‚é”ÍˆÍ‚ğ’²‚×‚é
+			//æœ‰åŠ¹ãªãƒ‡ãƒ¼ã‚¿ã®ã‚ã‚‹ç¯„å›²ã‚’èª¿ã¹ã‚‹
 			if( fileSize >= 188 * 16 * 8 ){
 				CPacketInit packetInit;
 				if( IsDataAvailable(fp, fileSize - 188 * 16 * this->seekJitter, &packetInit) == FALSE ){
-					//I’[•”•ª‚ª–³Œø‚È‚Ì‚Å—LŒø‚Èƒf[ƒ^‚Ì‹«–Ú‚ğ’T‚·
-					//seekJitter‚Í’²¸‰ÓŠ‚ª‚½‚Ü‚½‚Ü‰ó‚ê‚Ä‚¢‚éê‡‚Ö‚Ì‘Îˆ
+					//çµ‚ç«¯éƒ¨åˆ†ãŒç„¡åŠ¹ãªã®ã§æœ‰åŠ¹ãªãƒ‡ãƒ¼ã‚¿ã®å¢ƒç›®ã‚’æ¢ã™
+					//seekJitterã¯èª¿æŸ»ç®‡æ‰€ãŒãŸã¾ãŸã¾å£Šã‚Œã¦ã„ã‚‹å ´åˆã¸ã®å¯¾å‡¦
 					__int64 range = fileSize - 188 * 16 * this->seekJitter;
 					__int64 pos = range / 2 / 188 * 188;
-					//‚±‚±‚Í•p”É‚ÉŒÄ‚Î‚ê‚é‚Æ‚•‰‰×‚ÉŒ©‚¦‚é‚ªAƒtƒ@ƒCƒ‹ƒLƒƒƒbƒVƒ…‚ª‚æ‚­Œø‚­ğŒ‚È‚Ì‚Å‚³‚Ù‚Ç‚Å‚à‚È‚¢
+					//ã“ã“ã¯é »ç¹ã«å‘¼ã°ã‚Œã‚‹ã¨é«˜è² è·ã«è¦‹ãˆã‚‹ãŒã€ãƒ•ã‚¡ã‚¤ãƒ«ã‚­ãƒ£ãƒƒã‚·ãƒ¥ãŒã‚ˆãåŠ¹ãæ¡ä»¶ãªã®ã§ã•ã»ã©ã§ã‚‚ãªã„
 					for( ; range > 256 * 1024; range /= 2 ){
 						if( IsDataAvailable(fp, pos, &packetInit) ){
 							pos += range / 4 / 188 * 188;
@@ -355,7 +355,7 @@ __int64 CTimeShiftUtil::GetAvailableFileSize() const
 							pos -= range / 4 / 188 * 188;
 						}
 					}
-					//ˆÀ’è‚Ì‚½‚ß—LŒø‚Èƒf[ƒ^‚Ì‹«–Ú‚©‚ç‚³‚ç‚É512KB‚¾‚¯è‘O‚É‚·‚é
+					//å®‰å®šã®ãŸã‚æœ‰åŠ¹ãªãƒ‡ãƒ¼ã‚¿ã®å¢ƒç›®ã‹ã‚‰ã•ã‚‰ã«512KBã ã‘æ‰‹å‰ã«ã™ã‚‹
 					fileSize = max(pos - range / 2 - 512 * 1024, 0LL);
 				}
 				return fileSize;

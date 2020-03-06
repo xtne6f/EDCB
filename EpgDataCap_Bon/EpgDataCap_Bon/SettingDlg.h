@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 
 #include "../../Common/PathUtil.h"
@@ -10,17 +10,17 @@
 #include "SetDlgAppBtn.h"
 #include "SetDlgService.h"
 
-// CSettingDlg ƒ_ƒCƒAƒƒO
+// CSettingDlg ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 class CSettingDlg
 {
 public:
-	CSettingDlg(HWND hWndOwner = NULL);   // •W€ƒRƒ“ƒXƒgƒ‰ƒNƒ^[
+	CSettingDlg(HWND hWndOwner = NULL);   // æ¨™æº–ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ¼
 	~CSettingDlg();
 	INT_PTR DoModal();
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 
-// ƒ_ƒCƒAƒƒO ƒf[ƒ^
+// ãƒ€ã‚¤ã‚¢ãƒ­ã‚° ãƒ‡ãƒ¼ã‚¿
 	enum { IDD = IDD_DIALOG_SETTING };
 
 protected:

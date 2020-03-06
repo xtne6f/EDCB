@@ -1,4 +1,4 @@
-#ifndef INCLUDE_CTRL_CMD_UTIL_H
+ï»¿#ifndef INCLUDE_CTRL_CMD_UTIL_H
 #define INCLUDE_CTRL_CMD_UTIL_H
 
 #include "StructDef.h"
@@ -18,7 +18,7 @@ template<class T> BOOL CCUTIL_ReadVectorVALUE_( WORD ver, vector<T>* val, const 
 #define CCUTIL_VECTOR_READ_				return CCUTIL_ReadVectorVALUE_(ver, val, buff, buffSize, readSize)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-//ƒRƒ}ƒ“ƒh‘—M—pƒoƒCƒiƒŠì¬ŠÖ”
+//ã‚³ãƒãƒ³ãƒ‰é€ä¿¡ç”¨ãƒã‚¤ãƒŠãƒªä½œæˆé–¢æ•°
 
 inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, char val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( WORD ver, char* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
@@ -208,19 +208,19 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const NOTIFY_SRV_INFO&
 BOOL ReadVALUE( WORD ver, NOTIFY_SRV_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-//ƒeƒ“ƒvƒŒ[ƒg’è‹`
+//ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆå®šç¾©
 
 template<class T>
 DWORD CCUTIL_WriteVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const vector<T>& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD) * 2;
-	//ƒŠƒXƒg‚ÌŒÂ”
+	//ãƒªã‚¹ãƒˆã®å€‹æ•°
 	WriteVALUE(0, buff, buffOffset + sizeof(DWORD), (DWORD)val.size());
-	//ƒŠƒXƒg‚Ì’†g
+	//ãƒªã‚¹ãƒˆã®ä¸­èº«
 	for( size_t i = 0; i < val.size(); i++ ){
 		pos += WriteVALUE(ver, buff, pos, val[i]);
 	}
-	//‘S‘Ì‚ÌƒTƒCƒY
+	//å…¨ä½“ã®ã‚µã‚¤ã‚º
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
 }
@@ -229,16 +229,16 @@ template<class T>
 DWORD CCUTIL_WritePtrVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const vector<T>& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD) * 2;
-	//ƒŠƒXƒg‚ÌŒÂ”
+	//ãƒªã‚¹ãƒˆã®å€‹æ•°
 	WriteVALUE(0, buff, buffOffset + sizeof(DWORD), (DWORD)val.size());
-	//ƒŠƒXƒg‚Ì’†g
+	//ãƒªã‚¹ãƒˆã®ä¸­èº«
 	for( size_t i = 0; i < val.size(); i++ ){
 		if( val[i] == NULL ){
 			throw std::runtime_error("");
 		}
 		pos += WriteVALUE(ver, buff, pos, *val[i]);
 	}
-	//‘S‘Ì‚ÌƒTƒCƒY
+	//å…¨ä½“ã®ã‚µã‚¤ã‚º
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
 }
@@ -254,10 +254,10 @@ BOOL CCUTIL_ReadVectorVALUE_( WORD ver, vector<T>* val, const BYTE* buff, DWORD 
 	DWORD size = 0;
 	DWORD valSize = 0;
 	DWORD valCount = 0;
-	//‘S‘Ì‚ÌƒTƒCƒY
+	//å…¨ä½“ã®ã‚µã‚¤ã‚º
 	ReadVALUE(0, &valSize, buff + pos, buffSize - pos, &size);
 	pos += size;
-	//ƒŠƒXƒg‚ÌŒÂ”
+	//ãƒªã‚¹ãƒˆã®å€‹æ•°
 	ReadVALUE(0, &valCount, buff + pos, buffSize - pos, &size);
 	pos += size;
 	if( valSize < pos || buffSize < valSize ){
@@ -312,7 +312,7 @@ inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWOR
 	if( val == NULL || buff == NULL ){
 		return FALSE;
 	}
-	//2–¢–‚ÌƒRƒ}ƒ“ƒhƒo[ƒWƒ‡ƒ“‚Í2‚Æ‚µ‚Äˆµ‚¤
+	//2æœªæº€ã®ã‚³ãƒãƒ³ãƒ‰ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã¯2ã¨ã—ã¦æ‰±ã†
 	ver = max(ver, (WORD)2);
 	DWORD readSize_;
 	return CtrlCmdUtilImpl_::ReadVALUE(ver, val, buff, buffSize, readSize ? readSize : &readSize_);
@@ -321,7 +321,7 @@ inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWOR
 template<class T>
 std::unique_ptr<BYTE[]> NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD& writeSize )
 {
-	//2–¢–‚ÌƒRƒ}ƒ“ƒhƒo[ƒWƒ‡ƒ“‚Í2‚Æ‚µ‚Äˆµ‚¤
+	//2æœªæº€ã®ã‚³ãƒãƒ³ãƒ‰ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã¯2ã¨ã—ã¦æ‰±ã†
 	ver = max(ver, (WORD)2);
 	DWORD buffSize = CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, ver) + CtrlCmdUtilImpl_::WriteVALUE(ver, NULL, 0, val);
 	std::unique_ptr<BYTE[]> buff(new BYTE[buffSize]);
@@ -331,7 +331,7 @@ std::unique_ptr<BYTE[]> NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-//‹Œƒo[ƒWƒ‡ƒ“ƒRƒ}ƒ“ƒh‘—M—pƒoƒCƒiƒŠì¬ŠÖ”
+//æ—§ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚³ãƒãƒ³ãƒ‰é€ä¿¡ç”¨ãƒã‚¤ãƒŠãƒªä½œæˆé–¢æ•°
 std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const RESERVE_DATA& val, DWORD& writeSize, std::unique_ptr<BYTE[]>&& buff_ = NULL );
 BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const std::unique_ptr<BYTE[]>& buff_, DWORD buffSize );
 BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>& buff_, DWORD buffSize );

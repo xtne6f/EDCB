@@ -1,31 +1,31 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "AribDescriptor.h"
 #include "../../Common/EpgTimerUtil.h"
 
 namespace AribDescriptor
 {
 
-//EPSI/SI‚Ì‹Lqq‚ğƒp[ƒX‚·‚éŠÈˆÕDSL
-//EARIB STD-B10“™‚Ì\‘¢‘Ì‚ğ‚¾‚¢‚½‚¢‚»‚Ì‚Ü‚Ü‘‚¯‚é
+//ãƒ»PSI/SIã®è¨˜è¿°å­ã‚’ãƒ‘ãƒ¼ã‚¹ã™ã‚‹ç°¡æ˜“DSL
+//ãƒ»ARIB STD-B10ç­‰ã®æ§‹é€ ä½“ã‚’ã ã„ãŸã„ãã®ã¾ã¾æ›¸ã‘ã‚‹
 //
-//‘¦’l: 0`0x1EFFB’PˆÊ‚ÍŠî–{“I‚Ébit
-//QÆ: 0x2000`Bˆø”‚Æ‚µ‚Ä‰ğß‚³‚ê‚é‚Æ‚«‚Ì’PˆÊ‚ÍŠî–{“I‚Ébyte
-//D_FIN:                ƒp[ƒTI’[
-//D_END:                D_BEGIN*‚ğ•Â‚¶‚é
-//D_BEGIN,{‘¦’l|QÆ}:  D_END‚Ü‚Å‰ß•s‘«‚È‚­{‘¦’l|QÆ}ƒTƒCƒY‚¾‚¯“ü—Í‚ğÁ”ï‚·‚é
-//D_BEGIN_SUB,{‘¦’l|QÆ},{‘¦’l}: D_END‚Ü‚Å‰ß•s‘«‚È‚­{‘¦’l|QÆ}-{‘¦’l}ƒTƒCƒY‚¾‚¯“ü—Í‚ğÁ”ï‚·‚é
-//D_BEGIN_IF,{QÆ},{‘¦’lL},{‘¦’lR}: {QÆ}‚ª{‘¦’lL}ˆÈã{‘¦’lR}ˆÈ‰º‚Ìê‡‚ÉD_END‚Ü‚Å‚Ì‹æŠÔ‚ğ—LŒø‚É‚·‚é
-//D_BEGIN_IF_NOT,{QÆ},{‘¦’lL},{‘¦’lR}: D_BEGIN_IF‚Ì”Û’è
-//D_BEGIN_FOR,{QÆ}:   ƒvƒƒpƒeƒB‚Ìƒ‹[ƒv‚ğì¬‚µ‚Ä{QÆ}‰ñ‚¾‚¯ŒJ‚è•Ô‚·
-//D_BEGIN_FOR_TO_END:   ƒvƒƒpƒeƒB‚Ìƒ‹[ƒv‚ğì¬‚µ‚Ä‚Å‚«‚é‚¾‚¯“ü—Í‚ğÁ”ï‚·‚é‚æ‚¤‚ÉŒJ‚è•Ô‚·
-//D_DESCRIPTOR_LOOP:    ƒvƒƒpƒeƒB‚Ìƒ‹[ƒv‚ğì¬‚µ‚Ä‹Lqqƒ‹[ƒv‚Æ‚µ‚Äƒp[ƒX‚µA‚Å‚«‚é‚¾‚¯“ü—Í‚ğÁ”ï‚·‚é
-//{QÆ},{‘¦’l|QÆ}:          “ü—Íƒf[ƒ^‚ğ{‘¦’l|QÆ}ƒTƒCƒY‚¾‚¯{QÆ}‚ÉDWORD’l‚Æ‚µ‚ÄŠi”[
-//{QÆ},D_LOCAL,{‘¦’l|QÆ}:  DWORD’l‚Æ‚µ‚ÄŠi”[‚µƒp[ƒXŒã‚ÉÌ‚Ä‚é
-//{QÆ},D_LOCAL_TO_END:       D_LOCAL‚Æ“¯—l‚¾‚ªA‚Å‚«‚é‚¾‚¯“ü—Í‚ğÁ”ï‚·‚é
-//{QÆ},D_BINARY,{‘¦’l|QÆ}: “ü—Íƒf[ƒ^‚ğ{‘¦’l|QÆ}ƒTƒCƒY‚¾‚¯{QÆ}‚ÉƒoƒCƒg—ñ‚Æ‚µ‚ÄŠi”[
-//{QÆ},D_BINARY_TO_END:      D_BINARY‚Æ“¯—l‚¾‚ªA‚Å‚«‚é‚¾‚¯“ü—Í‚ğÁ”ï‚·‚é
+//å³å€¤: 0ï½0x1EFFã€‚å˜ä½ã¯åŸºæœ¬çš„ã«bit
+//å‚ç…§: 0x2000ï½ã€‚å¼•æ•°ã¨ã—ã¦è§£é‡ˆã•ã‚Œã‚‹ã¨ãã®å˜ä½ã¯åŸºæœ¬çš„ã«byte
+//D_FIN:                ãƒ‘ãƒ¼ã‚µçµ‚ç«¯
+//D_END:                D_BEGIN*ã‚’é–‰ã˜ã‚‹
+//D_BEGIN,{å³å€¤|å‚ç…§}:  D_ENDã¾ã§éä¸è¶³ãªã{å³å€¤|å‚ç…§}ã‚µã‚¤ã‚ºã ã‘å…¥åŠ›ã‚’æ¶ˆè²»ã™ã‚‹
+//D_BEGIN_SUB,{å³å€¤|å‚ç…§},{å³å€¤}: D_ENDã¾ã§éä¸è¶³ãªã{å³å€¤|å‚ç…§}-{å³å€¤}ã‚µã‚¤ã‚ºã ã‘å…¥åŠ›ã‚’æ¶ˆè²»ã™ã‚‹
+//D_BEGIN_IF,{å‚ç…§},{å³å€¤L},{å³å€¤R}: {å‚ç…§}ãŒ{å³å€¤L}ä»¥ä¸Š{å³å€¤R}ä»¥ä¸‹ã®å ´åˆã«D_ENDã¾ã§ã®åŒºé–“ã‚’æœ‰åŠ¹ã«ã™ã‚‹
+//D_BEGIN_IF_NOT,{å‚ç…§},{å³å€¤L},{å³å€¤R}: D_BEGIN_IFã®å¦å®š
+//D_BEGIN_FOR,{å‚ç…§}:   ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã®ãƒ«ãƒ¼ãƒ—ã‚’ä½œæˆã—ã¦{å‚ç…§}å›ã ã‘ç¹°ã‚Šè¿”ã™
+//D_BEGIN_FOR_TO_END:   ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã®ãƒ«ãƒ¼ãƒ—ã‚’ä½œæˆã—ã¦ã§ãã‚‹ã ã‘å…¥åŠ›ã‚’æ¶ˆè²»ã™ã‚‹ã‚ˆã†ã«ç¹°ã‚Šè¿”ã™
+//D_DESCRIPTOR_LOOP:    ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã®ãƒ«ãƒ¼ãƒ—ã‚’ä½œæˆã—ã¦è¨˜è¿°å­ãƒ«ãƒ¼ãƒ—ã¨ã—ã¦ãƒ‘ãƒ¼ã‚¹ã—ã€ã§ãã‚‹ã ã‘å…¥åŠ›ã‚’æ¶ˆè²»ã™ã‚‹
+//{å‚ç…§},{å³å€¤|å‚ç…§}:          å…¥åŠ›ãƒ‡ãƒ¼ã‚¿ã‚’{å³å€¤|å‚ç…§}ã‚µã‚¤ã‚ºã ã‘{å‚ç…§}ã«DWORDå€¤ã¨ã—ã¦æ ¼ç´
+//{å‚ç…§},D_LOCAL,{å³å€¤|å‚ç…§}:  DWORDå€¤ã¨ã—ã¦æ ¼ç´ã—ãƒ‘ãƒ¼ã‚¹å¾Œã«æ¨ã¦ã‚‹
+//{å‚ç…§},D_LOCAL_TO_END:       D_LOCALã¨åŒæ§˜ã ãŒã€ã§ãã‚‹ã ã‘å…¥åŠ›ã‚’æ¶ˆè²»ã™ã‚‹
+//{å‚ç…§},D_BINARY,{å³å€¤|å‚ç…§}: å…¥åŠ›ãƒ‡ãƒ¼ã‚¿ã‚’{å³å€¤|å‚ç…§}ã‚µã‚¤ã‚ºã ã‘{å‚ç…§}ã«ãƒã‚¤ãƒˆåˆ—ã¨ã—ã¦æ ¼ç´
+//{å‚ç…§},D_BINARY_TO_END:      D_BINARYã¨åŒæ§˜ã ãŒã€ã§ãã‚‹ã ã‘å…¥åŠ›ã‚’æ¶ˆè²»ã™ã‚‹
 //
-//¦D_BEGIN*,D_DESCRIPTOR_LOOP,D_BINARY*‚ÍƒoƒCƒg(8bit)‹«ŠE‚Å‚Ì‚İg—p‚Å‚«‚é
+//â€»D_BEGIN*,D_DESCRIPTOR_LOOP,D_BINARY*ã¯ãƒã‚¤ãƒˆ(8bit)å¢ƒç•Œã§ã®ã¿ä½¿ç”¨ã§ãã‚‹
 
 const short audio_component_descriptor_p[] = {
 	descriptor_tag, 8,
@@ -873,7 +873,7 @@ const short video_decode_control_descriptor_p[] = {
 };
 #endif
 
-//’ˆÓ: —˜—p‚³‚ê‚È‚¢‹Lqq‚ÍƒRƒƒ“ƒgƒAƒEƒg‚µ‚Ä‚¢‚é(unknown_descriptorˆµ‚¢)
+//æ³¨æ„: åˆ©ç”¨ã•ã‚Œãªã„è¨˜è¿°å­ã¯ã‚³ãƒ¡ãƒ³ãƒˆã‚¢ã‚¦ãƒˆã—ã¦ã„ã‚‹(unknown_descriptoræ‰±ã„)
 const PARSER_PAIR parserMap[] = {
 	//{ CA_descriptor,							CA_descriptor_p },
 	//{ AVC_video_descriptor,					AVC_video_descriptor_p },
@@ -1185,10 +1185,10 @@ bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSi
 		return false;
 	}
 
-	//SIŒ^‚É‘Î‰‚·‚éƒp[ƒT‚ğ‘I‚Ô
+	//SIå‹ã«å¯¾å¿œã™ã‚‹ãƒ‘ãƒ¼ã‚µã‚’é¸ã¶
 	const short* parser = sectionParserList[type];
 
-	//ƒ[ƒJƒ‹QÆ—pƒXƒ^ƒbƒN
+	//ãƒ­ãƒ¼ã‚«ãƒ«å‚ç…§ç”¨ã‚¹ã‚¿ãƒƒã‚¯
 	LOCAL_PROPERTY localProperty[128];
 	localProperty->id = D_FIN;
 	localProperty->type = _countof(localProperty);
@@ -1197,13 +1197,13 @@ bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSi
 	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, localProperty, customParserList);
 	if( readSize < 0 || this->rootProperty.size() < 2 ){
 		if( readSize == -3 ){
-			//‚±‚ÌğŒ‚ª–‚½‚³‚ê‚é‚Æ‚«‚Íƒp[ƒT‚Éƒ~ƒX‚ª‚ ‚é
+			//ã“ã®æ¡ä»¶ãŒæº€ãŸã•ã‚Œã‚‹ã¨ãã¯ãƒ‘ãƒ¼ã‚µã«ãƒŸã‚¹ãŒã‚ã‚‹
 			OutputDebugString(L"CDescriptor::DecodeProperty: Parser syntax error\r\n");
 		}else if( readSize == -4 ){
-			//‹Lqqƒ‹[ƒv‚ÉˆÙí‚ª‚ ‚é
+			//è¨˜è¿°å­ãƒ«ãƒ¼ãƒ—ã«ç•°å¸¸ãŒã‚ã‚‹
 			OutputDebugString(L"CDescriptor::DecodeProperty: Invalid descriptor loop error\r\n");
 		}
-		//“ü—Í‚ğƒp[ƒX‚Å‚«‚È‚¢
+		//å…¥åŠ›ã‚’ãƒ‘ãƒ¼ã‚¹ã§ããªã„
 		Clear();
 		return false;
 	}
@@ -1234,7 +1234,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 		return false;
 	}
 
-	//‹Lqqƒ^ƒO‚É‘Î‰‚·‚éƒp[ƒT‚ğ’T‚·(customParserList‚ğ—Dæ)
+	//è¨˜è¿°å­ã‚¿ã‚°ã«å¯¾å¿œã™ã‚‹ãƒ‘ãƒ¼ã‚µã‚’æ¢ã™(customParserListã‚’å„ªå…ˆ)
 	const short* parser = NULL;
 	if( customParserList != NULL ){
 		for( int i = 0; customParserList[i].parser != NULL; ++i ){
@@ -1256,7 +1256,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 		}
 	}
 
-	//ƒ[ƒJƒ‹QÆ—pƒXƒ^ƒbƒN
+	//ãƒ­ãƒ¼ã‚«ãƒ«å‚ç…§ç”¨ã‚¹ã‚¿ãƒƒã‚¯
 	LOCAL_PROPERTY localProperty[128];
 	localProperty->id = D_FIN;
 	localProperty->type = _countof(localProperty);
@@ -1265,7 +1265,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, localProperty, customParserList);
 	if( readSize < 0 ){
 		if( readSize == -3 ){
-			//‚±‚ÌğŒ‚ª–‚½‚³‚ê‚é‚Æ‚«‚Íƒp[ƒT‚Éƒ~ƒX‚ª‚ ‚é
+			//ã“ã®æ¡ä»¶ãŒæº€ãŸã•ã‚Œã‚‹ã¨ãã¯ãƒ‘ãƒ¼ã‚µã«ãƒŸã‚¹ãŒã‚ã‚‹
 			OutputDebugString(L"CDescriptor::DecodeProperty: Parser syntax error\r\n");
 		}
 		Clear();
@@ -1296,7 +1296,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 				++*parser;
 				if( *(*parser - 2) == D_BEGIN_SUB ){
 					if( subSize < (DWORD)**parser / 8 ){
-						//Á”ïƒTƒCƒY‚ª•‰‚É‚È‚éB‚±‚ÌƒGƒ‰[‚Í‰ñ•œ‚Å‚«‚È‚¢
+						//æ¶ˆè²»ã‚µã‚¤ã‚ºãŒè² ã«ãªã‚‹ã€‚ã“ã®ã‚¨ãƒ©ãƒ¼ã¯å›å¾©ã§ããªã„
 						return -2;
 					}
 					subSize -= **parser / 8;
@@ -1310,7 +1310,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					return subReadSize;
 				}
 				if( (DWORD)subReadSize < subSize ){
-					//“à•ï‚·‚éƒf[ƒ^’·‚ª‘«‚è‚È‚¢B‚±‚ÌƒGƒ‰[‚Í‰ñ•œ‚Å‚«‚È‚¢
+					//å†…åŒ…ã™ã‚‹ãƒ‡ãƒ¼ã‚¿é•·ãŒè¶³ã‚Šãªã„ã€‚ã“ã®ã‚¨ãƒ©ãƒ¼ã¯å›å¾©ã§ããªã„
 					return -2;
 				}
 				readSize += subReadSize;
@@ -1337,7 +1337,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					}
 					readSize += subReadSize;
 				}else{
-					//D_END‚Ü‚ÅˆÚ“®
+					//D_ENDã¾ã§ç§»å‹•
 					for( int n = 1; n > 0; ++*parser ){
 						if( D_BEGIN <= **parser && **parser <= D_BEGIN_FOR_TO_END ){
 							++n;
@@ -1385,10 +1385,10 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					readSize += subReadSize;
 				}
 				if( loopNum > 0 || loopNum < 0 && readSize < dataSize ){
-					//w’è‚Ìƒ‹[ƒv‰ñ”‚É’B‚µ‚È‚¢‚©ƒf[ƒ^’·‚ª–µ‚‚·‚éB‚±‚ÌƒGƒ‰[‚Í‰ñ•œ‚Å‚«‚È‚¢
+					//æŒ‡å®šã®ãƒ«ãƒ¼ãƒ—å›æ•°ã«é”ã—ãªã„ã‹ãƒ‡ãƒ¼ã‚¿é•·ãŒçŸ›ç›¾ã™ã‚‹ã€‚ã“ã®ã‚¨ãƒ©ãƒ¼ã¯å›å¾©ã§ããªã„
 					return -2;
 				}
-				//D_END‚Ü‚ÅˆÚ“®
+				//D_ENDã¾ã§ç§»å‹•
 				for( int n = 1; n > 0; ++*parser ){
 					if( D_BEGIN <= **parser && **parser <= D_BEGIN_FOR_TO_END ){
 						++n;
@@ -1417,7 +1417,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 				while( readSize < dataSize ){
 					DWORD subReadSize;
 					if( !desc.Decode(data + readSize, dataSize - readSize, &subReadSize, customParserList) ){
-						//‹Lqq‚ªˆÙíB‚±‚ÌƒGƒ‰[‚Í‰ñ•œ‚Å‚«‚È‚¢
+						//è¨˜è¿°å­ãŒç•°å¸¸ã€‚ã“ã®ã‚¨ãƒ©ãƒ¼ã¯å›å¾©ã§ããªã„
 						return -4;
 					}
 					dp.pl->resize(dp.pl->size() + 1);
@@ -1425,7 +1425,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					readSize += subReadSize;
 				}
 				if( readSize < dataSize ){
-					//ƒf[ƒ^’·‚ª–µ‚‚·‚éB‚±‚ÌƒGƒ‰[‚Í‰ñ•œ‚Å‚«‚È‚¢
+					//ãƒ‡ãƒ¼ã‚¿é•·ãŒçŸ›ç›¾ã™ã‚‹ã€‚ã“ã®ã‚¨ãƒ©ãƒ¼ã¯å›å¾©ã§ããªã„
 					return -2;
 				}
 			}
@@ -1455,7 +1455,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					dp.id = dpID;
 					dp.type = (short)(DESCRIPTOR_PROPERTY::TYPE_B | copySize);
 					if( copySize < sizeof(dp.b) + 1 ){
-						//’¼’u‚«
+						//ç›´ç½®ã
 						memcpy(dp.b, data + readSize, copySize);
 					}else{
 						dp.pb = new BYTE[copySize];
@@ -1476,7 +1476,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 						return -1;
 					}
 					if( ppLocal->n == (DWORD)ppLocal->type ){
-						//ƒXƒ^ƒbƒN‚ªs‚«‚½B‚±‚ÌƒGƒ‰[‚Í‰ñ•œ‚Å‚«‚È‚¢
+						//ã‚¹ã‚¿ãƒƒã‚¯ãŒå°½ããŸã€‚ã“ã®ã‚¨ãƒ©ãƒ¼ã¯å›å¾©ã§ããªã„
 						return -3;
 					}
 					ppLocal[ppLocal->n].id = dpID;
@@ -1504,7 +1504,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 		}
 	}
 	if( bitOffset != 0 ){
-		//ƒuƒƒbƒN‚ÍƒoƒCƒg‹«ŠE‚É‚È‚¯‚ê‚Î‚È‚ç‚È‚¢B‚±‚ÌƒGƒ‰[‚Í‰ñ•œ‚Å‚«‚È‚¢
+		//ãƒ–ãƒ­ãƒƒã‚¯ã¯ãƒã‚¤ãƒˆå¢ƒç•Œã«ãªã‘ã‚Œã°ãªã‚‰ãªã„ã€‚ã“ã®ã‚¨ãƒ©ãƒ¼ã¯å›å¾©ã§ããªã„
 		return -3;
 	}
 	++*parser;
@@ -1513,7 +1513,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 
 DWORD CDescriptor::GetOperand(short id, const LOCAL_PROPERTY* ppLocal)
 {
-	//‘¦’l‚©‚Ç‚¤‚©B‘¦’l‚Ì’PˆÊ‚Íƒrƒbƒg
+	//å³å€¤ã‹ã©ã†ã‹ã€‚å³å€¤ã®å˜ä½ã¯ãƒ“ãƒƒãƒˆ
 	if( id <= D_IMMEDIATE_MAX ){
 		return id;
 	}
@@ -1522,7 +1522,7 @@ DWORD CDescriptor::GetOperand(short id, const LOCAL_PROPERTY* ppLocal)
 			return ppLocal->n * 8;
 		}
 	}
-	//‚±‚ÌğŒ‚ª–‚½‚³‚ê‚é‚Æ‚«‚Íƒp[ƒT‚Éƒ~ƒX‚ª‚ ‚é
+	//ã“ã®æ¡ä»¶ãŒæº€ãŸã•ã‚Œã‚‹ã¨ãã¯ãƒ‘ãƒ¼ã‚µã«ãƒŸã‚¹ãŒã‚ã‚‹
 	OutputDebugString(L"CDescriptor::GetOperand: Parser syntax error\r\n");
 	return 0;
 }
@@ -1558,7 +1558,7 @@ bool CDescriptor::EnterLoop(CLoopPointer& lp, DWORD offset) const
 	vector<DESCRIPTOR_PROPERTY>::const_iterator itr;
 	for( itr = current->begin(); itr != current->end(); ++itr ){
 		if( itr->type == DESCRIPTOR_PROPERTY::TYPE_P && offset-- == 0 ){
-			//‹ó‚Ìƒ‹[ƒv‚É‚Í“ü‚ç‚È‚¢
+			//ç©ºã®ãƒ«ãƒ¼ãƒ—ã«ã¯å…¥ã‚‰ãªã„
 			if( !itr->pl->empty() ){
 				lp.pl = itr->pl;
 				lp.index = 0;

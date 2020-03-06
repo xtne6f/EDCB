@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "ScrambleDecoderUtil.h"
 
 namespace
@@ -9,7 +9,7 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOI
 #ifndef _MSC_VER
 	if( funcCast == NULL ){
 		if( (hModule = LoadLibrary(L"IBonCast.dll")) == NULL ){
-			OutputDebugString(L"šIBonCast.dll‚ªƒ[ƒh‚Å‚«‚Ü‚¹‚ñ\r\n");
+			OutputDebugString(L"â˜…IBonCast.dllãŒãƒ­ãƒ¼ãƒ‰ã§ãã¾ã›ã‚“\r\n");
 			return NULL;
 		}
 		funcCast = (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(hModule, "Cast");
@@ -18,7 +18,7 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOI
 	void* pBase;
 	const LPVOID* table;
 	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IB25Decoder@5", pBase)) == NULL ){
-		OutputDebugString(L"šCast‚ÉŽ¸”s‚µ‚Ü‚µ‚½\r\n");
+		OutputDebugString(L"â˜…Castã«å¤±æ•—ã—ã¾ã—ãŸ\r\n");
 #ifndef _MSC_VER
 		if( hModule ){
 			FreeLibrary(hModule);
@@ -189,7 +189,7 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 
 	if( CompareNoCase(dllPath, this->currentDll) != 0 ){
 		if( LoadDll(dllPath.c_str()) == FALSE ){
-			_OutputDebugString(L"š%ls ‚Ìƒ[ƒh‚ÉŽ¸”s‚µ‚Ü‚µ‚½B\r\n", dllPath.c_str());
+			_OutputDebugString(L"â˜…%ls ã®ãƒ­ãƒ¼ãƒ‰ã«å¤±æ•—ã—ã¾ã—ãŸã€‚\r\n", dllPath.c_str());
 			this->currentDll = L"";
 		}else{
 			this->currentDll = dllPath;

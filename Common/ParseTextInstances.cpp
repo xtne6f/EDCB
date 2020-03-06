@@ -1,14 +1,14 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "ParseTextInstances.h"
 #include "TimeUtil.h"
 #include "PathUtil.h"
 
 namespace
 {
-//ƒ^ƒu‹æØ‚è‚ÌŸ‚Ìƒg[ƒNƒ“‚ÉˆÚ“®‚·‚é
+//ã‚¿ãƒ–åŒºåˆ‡ã‚Šã®æ¬¡ã®ãƒˆãƒ¼ã‚¯ãƒ³ã«ç§»å‹•ã™ã‚‹
 LPCWSTR NextToken(LPCWSTR* token, WCHAR extraDelimiter = L'\0')
 {
-	//token‚É‚ÍŒ»İ‚Ìƒg[ƒNƒ“æ“ª/––”ö/Ÿ‚Ìƒg[ƒNƒ“æ“ª‚ğŠi”[‚·‚é
+	//tokenã«ã¯ç¾åœ¨ã®ãƒˆãƒ¼ã‚¯ãƒ³å…ˆé ­/æœ«å°¾/æ¬¡ã®ãƒˆãƒ¼ã‚¯ãƒ³å…ˆé ­ã‚’æ ¼ç´ã™ã‚‹
 	token[0] = token[2];
 	for( ; *token[2] != L'\0'; token[2]++ ){
 		if( *token[2] == L'\t' || *token[2] == extraDelimiter ){
@@ -20,7 +20,7 @@ LPCWSTR NextToken(LPCWSTR* token, WCHAR extraDelimiter = L'\0')
 	return token[0];
 }
 
-//‰üs‚ğƒ^ƒu‚ÉAƒ^ƒu‚ğ‹ó”’‚É’uŠ·‚µ‚ÄAc‚Á‚½ƒ^ƒu‚Ì”‚ğ•Ô‚·
+//æ”¹è¡Œã‚’ã‚¿ãƒ–ã«ã€ã‚¿ãƒ–ã‚’ç©ºç™½ã«ç½®æ›ã—ã¦ã€æ®‹ã£ãŸã‚¿ãƒ–ã®æ•°ã‚’è¿”ã™
 DWORD FinalizeField(wstring& str)
 {
 	DWORD tabCount = 0;
@@ -229,7 +229,7 @@ bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& save
 
 bool CParseChText5::SelectItemToSave(vector<map<LONGLONG, CH_DATA5>::const_iterator>& itemList) const
 {
-	//î•ñ‚Ì’Ç‰Á‚ª‚È‚¯‚ê‚Î“Ç‚İ‚İ‡‚ğˆÛ
+	//æƒ…å ±ã®è¿½åŠ ãŒãªã‘ã‚Œã°èª­ã¿è¾¼ã¿é †ã‚’ç¶­æŒ
 	if( this->parsedOrder.size() == this->itemMap.size() ){
 		itemList.reserve(this->parsedOrder.size());
 		for( size_t i = 0; i < this->parsedOrder.size(); i++ ){
@@ -253,7 +253,7 @@ void CParseContentTypeText::GetMimeType(wstring ext, wstring& mimeType) const
 bool CParseContentTypeText::ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& item)
 {
 	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
-		//‹ósorƒRƒƒ“ƒg
+		//ç©ºè¡Œorã‚³ãƒ¡ãƒ³ãƒˆ
 		return false;
 	}
 	LPCWSTR token[3] = {NULL, NULL, parseLine};
@@ -293,7 +293,7 @@ DWORD CParseRecInfoText::AddRecInfo(const REC_FILE_INFO& item)
 	this->nextID = this->nextID % 100000000 + 1;
 	DWORD id = itr->second.id = itr->first;
 
-	//”ñƒvƒƒeƒNƒg‚Ì—v‘f”‚ªkeepCountˆÈ‰º‚É‚È‚é‚Ü‚Åíœ
+	//éãƒ—ãƒ­ãƒ†ã‚¯ãƒˆã®è¦ç´ æ•°ãŒkeepCountä»¥ä¸‹ã«ãªã‚‹ã¾ã§å‰Šé™¤
 	if( this->keepCount < UINT_MAX ){
 		size_t protectCount = std::count_if(this->itemMap.begin(), this->itemMap.end(),
 			[](const pair<DWORD, REC_FILE_INFO>& a) { return a.second.protectFlag != 0; });
@@ -393,7 +393,7 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 	item.second.protectFlag = NextTokenToInt(token) != 0;
 	item.second.id = item.first = (DWORD)NextTokenToInt(token);
 	if( item.first == 0 || item.first > 100000000 || this->itemMap.count(item.first) ){
-		//V‚µ‚¢ID‚ğ—^‚¦‚é
+		//æ–°ã—ã„IDã‚’ä¸ãˆã‚‹
 		item.second.id = item.first = this->nextID;
 	}
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
@@ -429,10 +429,10 @@ bool CParseRecInfoText::SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring
 
 bool CParseRecInfoText::SaveFooterLine(wstring& saveLine) const
 {
-	//Ÿ‚Ì“Ç‚İ‚İ‚ÉnextID‚ğ•œŒ³‚·‚é‚½‚ß‚Ìƒtƒbƒ^ƒRƒƒ“ƒg
-	//‚±‚ÌƒRƒƒ“ƒg‚Í‚à‚µíœ‚³‚ê‚Ä‚à‘å‚«‚È–â‘è‚Í‚È‚¢
+	//æ¬¡ã®èª­ã¿è¾¼ã¿æ™‚ã«nextIDã‚’å¾©å…ƒã™ã‚‹ãŸã‚ã®ãƒ•ãƒƒã‚¿ã‚³ãƒ¡ãƒ³ãƒˆ
+	//ã“ã®ã‚³ãƒ¡ãƒ³ãƒˆã¯ã‚‚ã—å‰Šé™¤ã•ã‚Œã¦ã‚‚å¤§ããªå•é¡Œã¯ãªã„
 	Format(saveLine, L";;NextID=%d", this->nextID);
-	//“Ç‚İ‚İ‚É‚±‚ÌƒRƒƒ“ƒg‚ª–³‚©‚Á‚½‚Æ‚«‚Í•Û‘¶‚µ‚È‚¢
+	//èª­ã¿è¾¼ã¿æ™‚ã«ã“ã®ã‚³ãƒ¡ãƒ³ãƒˆãŒç„¡ã‹ã£ãŸã¨ãã¯ä¿å­˜ã—ãªã„
 	return this->saveNextID != 0;
 }
 
@@ -440,7 +440,7 @@ bool CParseRecInfoText::SelectItemToSave(vector<map<DWORD, REC_FILE_INFO>::const
 {
 	if( this->saveNextID != 0 ){
 		if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
-			//ID„‰ñ’†
+			//IDå·¡å›ä¸­
 			map<DWORD, REC_FILE_INFO>::const_iterator itr;
 			for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
 				itemList.push_back(itr);
@@ -452,7 +452,7 @@ bool CParseRecInfoText::SelectItemToSave(vector<map<DWORD, REC_FILE_INFO>::const
 		}
 		return false;
 	}
-	//NextIDƒRƒƒ“ƒg‚ª–³‚©‚Á‚½‚Æ‚«‚Í]—ˆ‚Ç‚¨‚èŠJn“ú‡‚Å•Û‘¶‚·‚é
+	//NextIDã‚³ãƒ¡ãƒ³ãƒˆãŒç„¡ã‹ã£ãŸã¨ãã¯å¾“æ¥ã©ãŠã‚Šé–‹å§‹æ—¥æ™‚é †ã§ä¿å­˜ã™ã‚‹
 	itemList.reserve(this->itemMap.size());
 	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
 		itemList.push_back(itr);
@@ -476,7 +476,7 @@ wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, 
 {
 	wstring info;
 	if( recFilePath[0] != L'\0' ){
-		//•â‘«‚Ì˜^‰æî•ñƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Ş
+		//è£œè¶³ã®éŒ²ç”»æƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€
 		std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
 		if( resultOfGetRecInfoFolder.empty() || recInfoFolderOnly == false ){
 			fp.reset(UtilOpenFile(fs_path(recFilePath).concat(extension), UTIL_SHARED_READ | UTIL_SH_DELETE));
@@ -508,11 +508,11 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 	if( item.recFilePath.empty() || this->recInfoDelFile == false ){
 		return;
 	}
-	//˜^‰æƒtƒ@ƒCƒ‹‚ğíœ‚·‚é
+	//éŒ²ç”»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‰Šé™¤ã™ã‚‹
 	DeleteFile(item.recFilePath.c_str());
 	if( this->customizeDelExt ){
-		//ƒJƒXƒ^ƒ€ƒ‹[ƒ‹
-		OutputDebugString((L"šRecInfo Auto Delete : " + item.recFilePath + L"\r\n").c_str());
+		//ã‚«ã‚¹ã‚¿ãƒ ãƒ«ãƒ¼ãƒ«
+		OutputDebugString((L"â˜…RecInfo Auto Delete : " + item.recFilePath + L"\r\n").c_str());
 		wstring debug;
 		for( size_t i = 0; i < this->customDelExt.size(); i++ ){
 			wstring delPath = fs_path(item.recFilePath).replace_extension().native();
@@ -520,10 +520,10 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 			debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
 		}
 		if( debug.empty() == false ){
-			OutputDebugString((L"šRecInfo Auto Delete : " + debug + L")\r\n").c_str());
+			OutputDebugString((L"â˜…RecInfo Auto Delete : " + debug + L")\r\n").c_str());
 		}
 		if( this->recInfoFolder.empty() == false ){
-			//˜^‰æî•ñƒtƒHƒ‹ƒ_‚É‚à“K—p
+			//éŒ²ç”»æƒ…å ±ãƒ•ã‚©ãƒ«ãƒ€ã«ã‚‚é©ç”¨
 			debug.clear();
 			for( size_t i = 0; i < this->customDelExt.size(); i++ ){
 				wstring delPath = fs_path(this->recInfoFolder).append(fs_path(item.recFilePath).stem().native()).native();
@@ -531,20 +531,20 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 				debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
 			}
 			if( debug.empty() == false ){
-				OutputDebugString((L"šRecInfo Auto Delete : " + debug + L")\r\n").c_str());
+				OutputDebugString((L"â˜…RecInfo Auto Delete : " + debug + L")\r\n").c_str());
 			}
 		}
 	}else{
-		//•W€‚Ìƒ‹[ƒ‹
+		//æ¨™æº–ã®ãƒ«ãƒ¼ãƒ«
 		DeleteFile((item.recFilePath + L".err").c_str());
 		DeleteFile((item.recFilePath + L".program.txt").c_str());
-		OutputDebugString((L"šRecInfo Auto Delete : " + item.recFilePath + L"(.err|.program.txt)\r\n").c_str());
+		OutputDebugString((L"â˜…RecInfo Auto Delete : " + item.recFilePath + L"(.err|.program.txt)\r\n").c_str());
 		if( this->recInfoFolder.empty() == false ){
-			//˜^‰æî•ñƒtƒHƒ‹ƒ_‚É‚à“K—p
+			//éŒ²ç”»æƒ…å ±ãƒ•ã‚©ãƒ«ãƒ€ã«ã‚‚é©ç”¨
 			wstring delPath = fs_path(this->recInfoFolder).append(fs_path(item.recFilePath).filename().native()).native();
 			DeleteFile((delPath + L".err").c_str());
 			DeleteFile((delPath + L".program.txt").c_str());
-			OutputDebugString((L"šRecInfo Auto Delete : " + delPath + L"(.err|.program.txt)\r\n").c_str());
+			OutputDebugString((L"â˜…RecInfo Auto Delete : " + delPath + L"(.err|.program.txt)\r\n").c_str());
 		}
 	}
 }
@@ -703,17 +703,17 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 	if( item.second.recSetting.batFilePath.assign(token[0], token[1]) == L"0" ){
 		item.second.recSetting.batFilePath.clear();
 	}
-	//«—ˆ—p
+	//å°†æ¥ç”¨
 	NextToken(token);
 	NextToken(token);
 	item.second.comment.assign(token[0], token[1]);
 	NextToken(token);
-	//˜^‰æƒtƒHƒ‹ƒ_ƒpƒX‚ÌÅ‰‚Ì—v‘f‚¾‚¯‚±‚±‚É‚ ‚é
+	//éŒ²ç”»ãƒ•ã‚©ãƒ«ãƒ€ãƒ‘ã‚¹ã®æœ€åˆã®è¦ç´ ã ã‘ã“ã“ã«ã‚ã‚‹
 	item.second.recSetting.recFolderList.resize(1);
 	item.second.recSetting.recFolderList[0].recFolder.assign(token[0], token[1]);
 	item.second.recSetting.suspendMode = (BYTE)NextTokenToInt(token);
 	item.second.recSetting.rebootFlag = NextTokenToInt(token) != 0;
-	//”p~(‹ŒrecFilePath)
+	//å»ƒæ­¢(æ—§recFilePath)
 	NextToken(token);
 	item.second.recSetting.useMargineFlag = NextTokenToInt(token) != 0;
 	item.second.recSetting.startMargine = NextTokenToInt(token);
@@ -805,7 +805,7 @@ bool CParseReserveText::SaveFooterLine(wstring& saveLine) const
 bool CParseReserveText::SelectItemToSave(vector<map<DWORD, RESERVE_DATA>::const_iterator>& itemList) const
 {
 	if( this->saveNextID == 0 ){
-		//NextIDƒRƒƒ“ƒg‚ª–³‚©‚Á‚½‚Æ‚«‚Í]—ˆ‚Ç‚¨‚è—\–ñ“ú‡‚Å•Û‘¶‚·‚é
+		//NextIDã‚³ãƒ¡ãƒ³ãƒˆãŒç„¡ã‹ã£ãŸã¨ãã¯å¾“æ¥ã©ãŠã‚Šäºˆç´„æ—¥æ™‚é †ã§ä¿å­˜ã™ã‚‹
 		vector<pair<LONGLONG, const RESERVE_DATA*>> sortItemList = GetReserveList();
 		vector<pair<LONGLONG, const RESERVE_DATA*>>::const_iterator itr;
 		for( itr = sortItemList.begin(); itr != sortItemList.end(); itr++ ){
@@ -814,7 +814,7 @@ bool CParseReserveText::SelectItemToSave(vector<map<DWORD, RESERVE_DATA>::const_
 		return true;
 	}
 	if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
-		//ID„‰ñ’†
+		//IDå·¡å›ä¸­
 		map<DWORD, RESERVE_DATA>::const_iterator itr;
 		for( itr = this->itemMap.upper_bound(50000000); itr != this->itemMap.end(); itr++ ){
 			itemList.push_back(itr);
@@ -832,7 +832,7 @@ vector<pair<LONGLONG, const RESERVE_DATA*>> CParseReserveText::GetReserveList(BO
 	vector<pair<LONGLONG, const RESERVE_DATA*>> retList;
 	retList.reserve(this->itemMap.size());
 
-	//“ú‡‚Éƒ\[ƒg
+	//æ—¥æ™‚é †ã«ã‚½ãƒ¼ãƒˆ
 	map<DWORD, RESERVE_DATA>::const_iterator itr;
 	for( itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
 		LONGLONG startTime = ConvertI64Time(itr->second.startTime);
@@ -842,7 +842,7 @@ vector<pair<LONGLONG, const RESERVE_DATA*>> CParseReserveText::GetReserveList(BO
 			if( itr->second.recSetting.useMargineFlag == TRUE ){
 				startMargin = itr->second.recSetting.startMargine * I64_1SEC;
 			}
-			//ŠJnƒ}[ƒWƒ“‚ÍŒ³‚Ì—\–ñI—¹‚ğ’´‚¦‚Ä•‰‚Å‚ ‚Á‚Ä‚Í‚È‚ç‚È‚¢
+			//é–‹å§‹ãƒãƒ¼ã‚¸ãƒ³ã¯å…ƒã®äºˆç´„çµ‚äº†æ™‚åˆ»ã‚’è¶…ãˆã¦è² ã§ã‚ã£ã¦ã¯ãªã‚‰ãªã„
 			startTime -= max(startMargin, startTime - endTime);
 		}
 		retList.push_back( pair<LONGLONG, const RESERVE_DATA*>((startTime / I64_1SEC) << 16 | itr->second.transportStreamID, &itr->second) );
@@ -930,7 +930,7 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 
 	LPCWSTR subToken[3] = {};
 	for( subToken[2] = NextToken(token); NextToken(subToken, L',') < token[1]; ){
-		//’ˆÓ: ŒİŠ·‚Ì‚½‚ßwcstol
+		//æ³¨æ„: äº’æ›ã®ãŸã‚wcstol
 		LPWSTR endp;
 		int flag = (int)wcstol(subToken[0], &endp, 10);
 		if( endp != subToken[0] && endp <= subToken[1] ){

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "BonDriverUtil.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
@@ -19,14 +19,14 @@ IBonDriver* CastB(IBonDriver2** if2, IBonDriver* (*funcCreate)())
 {
 	HMODULE hModule = LoadLibrary(L"IBonCast.dll");
 	if( hModule == NULL ){
-		OutputDebugString(L"šIBonCast.dll‚ªƒ[ƒh‚Å‚«‚Ü‚¹‚ñ\r\n");
+		OutputDebugString(L"â˜…IBonCast.dllãŒãƒ­ãƒ¼ãƒ‰ã§ãã¾ã›ã‚“\r\n");
 		return NULL;
 	}
 	const LPVOID* (WINAPI* funcCast)(LPCSTR, void*) = (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(hModule, "Cast");
 	void* pBase;
 	const LPVOID* table;
 	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IBonDriver@10", pBase)) == NULL ){
-		OutputDebugString(L"šCast‚ÉŽ¸”s‚µ‚Ü‚µ‚½\r\n");
+		OutputDebugString(L"â˜…Castã«å¤±æ•—ã—ã¾ã—ãŸ\r\n");
 		FreeLibrary(hModule);
 		return NULL;
 	}
@@ -36,7 +36,7 @@ IBonDriver* CastB(IBonDriver2** if2, IBonDriver* (*funcCreate)())
 	public:
 		CCastB(HMODULE h_, void* p, const LPVOID* t, const LPVOID* t2) : h(h_) {
 			st2.st.pCtx = p;
-			//ƒAƒ_ƒvƒ^‚ÌŠÖ”ƒ|ƒCƒ“ƒ^ƒtƒB[ƒ‹ƒh‚ðã‘‚«
+			//ã‚¢ãƒ€ãƒ—ã‚¿ã®é–¢æ•°ãƒã‚¤ãƒ³ã‚¿ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã‚’ä¸Šæ›¸ã
 			memcpy(&st2.st.pF00, t, sizeof(LPVOID) * 10);
 			if( t2 ) memcpy(&st2.pF10, t2, sizeof(LPVOID) * 7);
 		}
@@ -53,7 +53,7 @@ IBonDriver* CastB(IBonDriver2** if2, IBonDriver* (*funcCreate)())
 		*if2 = new CCastB(hModule, pBase, table, table + 10);
 		return *if2;
 	}
-	//IBonDriver2•”•ª‚Í–¢‰Šú‰»‚È‚Ì‚Åƒ_ƒEƒ“ƒLƒƒƒXƒg‚µ‚Ä‚Í‚È‚ç‚È‚¢
+	//IBonDriver2éƒ¨åˆ†ã¯æœªåˆæœŸåŒ–ãªã®ã§ãƒ€ã‚¦ãƒ³ã‚­ãƒ£ã‚¹ãƒˆã—ã¦ã¯ãªã‚‰ãªã„
 	*if2 = NULL;
 	return new CCastB(hModule, pBase, table, NULL);
 }
@@ -93,7 +93,7 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFil
 		this->recvFunc = recvFunc_;
 		this->statusFunc = statusFunc_;
 		this->driverThread = thread_(DriverThread, this);
-		//Openˆ—‚ªŠ®—¹‚·‚é‚Ü‚Å‘Ò‚Â
+		//Openå‡¦ç†ãŒå®Œäº†ã™ã‚‹ã¾ã§å¾…ã¤
 		while( WaitForSingleObject(this->driverThread.native_handle(), 10) == WAIT_TIMEOUT ){
 			CBlockLock lock(&this->utilLock);
 			if( this->hwndDriver ){
@@ -123,7 +123,7 @@ void CBonDriverUtil::CloseBonDriver()
 
 void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 {
-	//BonDriver‚ªCOM‚ð—˜—p‚·‚é‚©‚à‚µ‚ê‚È‚¢‚½‚ß
+	//BonDriverãŒCOMã‚’åˆ©ç”¨ã™ã‚‹ã‹ã‚‚ã—ã‚Œãªã„ãŸã‚
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	IBonDriver* bonIF = NULL;
@@ -132,11 +132,11 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 	CBonStruct2Adapter bon2Adapter;
 	HMODULE hModule = LoadLibrary(fs_path(sys->loadDllFolder).append(sys->loadDllFileName).c_str());
 	if( hModule == NULL ){
-		OutputDebugString(L"šBonDriver‚ªƒ[ƒh‚Å‚«‚Ü‚¹‚ñ\r\n");
+		OutputDebugString(L"â˜…BonDriverãŒãƒ­ãƒ¼ãƒ‰ã§ãã¾ã›ã‚“\r\n");
 	}else{
 		const STRUCT_IBONDRIVER* (*funcCreateBonStruct)() = (const STRUCT_IBONDRIVER*(*)())GetProcAddress(hModule, "CreateBonStruct");
 		if( funcCreateBonStruct ){
-			//“Á’èƒRƒ“ƒpƒCƒ‰‚ÉˆË‘¶‚µ‚È‚¢I/F‚ðŽg‚¤
+			//ç‰¹å®šã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ã«ä¾å­˜ã—ãªã„I/Fã‚’ä½¿ã†
 			const STRUCT_IBONDRIVER* st = funcCreateBonStruct();
 			if( st ){
 				if( bon2Adapter.Adapt(*st) ){
@@ -149,29 +149,29 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 		}else{
 			IBonDriver* (*funcCreateBonDriver)() = (IBonDriver*(*)())GetProcAddress(hModule, "CreateBonDriver");
 			if( funcCreateBonDriver == NULL ){
-				OutputDebugString(L"šGetProcAddress‚ÉŽ¸”s‚µ‚Ü‚µ‚½\r\n");
+				OutputDebugString(L"â˜…GetProcAddressã«å¤±æ•—ã—ã¾ã—ãŸ\r\n");
 			}else{
 #ifdef _MSC_VER
 				if( (bonIF = funcCreateBonDriver()) != NULL ){
 					sys->bon2IF = dynamic_cast<IBonDriver2*>(bonIF);
 				}
 #else
-				//MSVC++ƒIƒuƒWƒFƒNƒg‚ð•ÏŠ·‚·‚é
+				//MSVC++ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å¤‰æ›ã™ã‚‹
 				bonIF = CastB(&sys->bon2IF, funcCreateBonDriver);
 #endif
 			}
 		}
 		if( sys->bon2IF ){
 			if( sys->bon2IF->OpenTuner() == FALSE ){
-				OutputDebugString(L"šOpenTuner‚ÉŽ¸”s‚µ‚Ü‚µ‚½\r\n");
+				OutputDebugString(L"â˜…OpenTunerã«å¤±æ•—ã—ã¾ã—ãŸ\r\n");
 			}else{
 				sys->initChSetFlag = false;
-				//ƒ`ƒ…[ƒi[–¼‚ÌŽæ“¾
+				//ãƒãƒ¥ãƒ¼ãƒŠãƒ¼åã®å–å¾—
 				LPCWSTR tunerName = sys->bon2IF->GetTunerName();
 				sys->loadTunerName = tunerName ? tunerName : L"";
-				Replace(sys->loadTunerName, L"(",L"i");
-				Replace(sys->loadTunerName, L")",L"j");
-				//ƒ`ƒƒƒ“ƒlƒ‹ˆê——‚ÌŽæ“¾
+				Replace(sys->loadTunerName, L"(",L"ï¼ˆ");
+				Replace(sys->loadTunerName, L")",L"ï¼‰");
+				//ãƒãƒ£ãƒ³ãƒãƒ«ä¸€è¦§ã®å–å¾—
 				sys->loadChList.clear();
 				for( DWORD countSpace = 0; ; countSpace++ ){
 					LPCWSTR spaceName = sys->bon2IF->EnumTuningSpace(countSpace);
@@ -200,7 +200,7 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 		}
 	}
 	if( sys->hwndDriver == NULL ){
-		//Open‚Å‚«‚È‚©‚Á‚½
+		//Openã§ããªã‹ã£ãŸ
 		if( bonIF ){
 			bonIF->Release();
 		}
@@ -210,10 +210,10 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 		CoUninitialize();
 		return;
 	}
-	//Š„‚èž‚Ý’x‰„‚Ö‚Ì‘Ï«‚ÍBonDriver‚Ìƒoƒbƒtƒ@”\—Í‚ÉˆË‘¶‚·‚é‚Ì‚ÅA‘Š‘Î—Dæ‡ˆÊ‚ðã‚°‚Ä‚¨‚­
+	//å‰²ã‚Šè¾¼ã¿é…å»¶ã¸ã®è€æ€§ã¯BonDriverã®ãƒãƒƒãƒ•ã‚¡èƒ½åŠ›ã«ä¾å­˜ã™ã‚‹ã®ã§ã€ç›¸å¯¾å„ªå…ˆé †ä½ã‚’ä¸Šã’ã¦ãŠã
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 
-	//ƒƒbƒZ[ƒWƒ‹[ƒv
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ«ãƒ¼ãƒ—
 	MSG msg;
 	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
 		DispatchMessage(&msg);
@@ -248,7 +248,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 	case WM_TIMER:
 		if( wParam == 1 ){
 			SendMessage(hwnd, WM_APP_GET_TS_STREAM, 0, 0);
-			//]—ˆ‚ÌŽæ“¾ŠÔŠu‚ªŠT‚Ë1•b‚È‚Ì‚ÅA‚»‚ê‚æ‚è‚â‚â’Z‚¢ŠÔŠu
+			//å¾“æ¥ã®å–å¾—é–“éš”ãŒæ¦‚ã­1ç§’ãªã®ã§ã€ãã‚Œã‚ˆã‚Šã‚„ã‚„çŸ­ã„é–“éš”
 			if( ++sys->statusTimeout > 600 / 20 ){
 				SendMessage(hwnd, WM_APP_GET_STATUS, 0, 0);
 				sys->statusTimeout = 0;
@@ -258,7 +258,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		break;
 	case WM_APP_GET_TS_STREAM:
 		{
-			//TSƒXƒgƒŠ[ƒ€‚ðŽæ“¾
+			//TSã‚¹ãƒˆãƒªãƒ¼ãƒ ã‚’å–å¾—
 			BYTE* data;
 			DWORD size;
 			DWORD remain;
@@ -268,7 +268,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 				}
 				PostMessage(hwnd, WM_APP_GET_TS_STREAM, 1, 0);
 			}else if( wParam ){
-				//EDCB‚Í(“`““I‚É)GetTsStream‚Ìremain‚ð—˜—p‚µ‚È‚¢‚Ì‚ÅAŽó‚¯Žæ‚é‚à‚Ì‚ª‚È‚­‚È‚Á‚½‚çremain=0‚ð’m‚ç‚¹‚é
+				//EDCBã¯(ä¼çµ±çš„ã«)GetTsStreamã®remainã‚’åˆ©ç”¨ã—ãªã„ã®ã§ã€å—ã‘å–ã‚‹ã‚‚ã®ãŒãªããªã£ãŸã‚‰remain=0ã‚’çŸ¥ã‚‰ã›ã‚‹
 				if( sys->recvFunc ){
 					sys->recvFunc(NULL, 0, 0);
 				}
@@ -308,7 +308,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 bool CBonDriverUtil::SetCh(DWORD space, DWORD ch)
 {
 	if( this->hwndDriver ){
-		//“¯ˆêƒ`ƒƒƒ“ƒlƒ‹Žž‚Ì–½—ßÈ—ª‚Í‚µ‚È‚¢B•K—v‚È‚ç—˜—p‘¤‚Ås‚¤‚±‚Æ
+		//åŒä¸€ãƒãƒ£ãƒ³ãƒãƒ«æ™‚ã®å‘½ä»¤çœç•¥ã¯ã—ãªã„ã€‚å¿…è¦ãªã‚‰åˆ©ç”¨å´ã§è¡Œã†ã“ã¨
 		if( SendMessage(this->hwndDriver, WM_APP_SET_CH, (WPARAM)space, (LPARAM)ch) ){
 			return true;
 		}
@@ -330,7 +330,7 @@ wstring CBonDriverUtil::GetOpenBonDriverFileName()
 {
 	CBlockLock lock(&this->utilLock);
 	if( this->hwndDriver ){
-		//Open’†‚Íconst
+		//Openä¸­ã¯const
 		return this->loadDllFileName;
 	}
 	return L"";

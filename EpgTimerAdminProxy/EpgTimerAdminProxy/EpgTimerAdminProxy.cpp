@@ -1,4 +1,4 @@
-#include <sdkddkver.h>
+ï»¿#include <sdkddkver.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <string.h>
@@ -10,9 +10,9 @@ static const WCHAR CLASS_NAME[] = L"EpgTimerAdminProxy";
 static bool g_denySetTime;
 
 enum {
-	// ƒVƒXƒeƒ€“ú‚ğİ’è‚·‚é
+	// ã‚·ã‚¹ãƒ†ãƒ æ—¥æ™‚ã‚’è¨­å®šã™ã‚‹
 	WM_APP_SETTIME = WM_APP,
-	// “Á’èŠg’£q‚Ìƒtƒ@ƒCƒ‹‚É‹¤—LƒAƒNƒZƒX‚ª‚ ‚é‚©‚Ç‚¤‚©’²‚×‚é
+	// ç‰¹å®šæ‹¡å¼µå­ã®ãƒ•ã‚¡ã‚¤ãƒ«ã«å…±æœ‰ã‚¢ã‚¯ã‚»ã‚¹ãŒã‚ã‚‹ã‹ã©ã†ã‹èª¿ã¹ã‚‹
 	WM_APP_NETFIND,
 };
 
@@ -37,11 +37,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			GetSystemTimeAsFileTime(&ftNow);
 			__int64 t = ft.dwLowDateTime | static_cast<__int64>(ft.dwHighDateTime) << 32;
 			__int64 tNow = ftNow.dwLowDateTime | static_cast<__int64>(ftNow.dwHighDateTime) << 32;
-			// Œƒ•Ï‹Ö~(24ŠÔ)
+			// æ¿€å¤‰ç¦æ­¢(24æ™‚é–“)
 			if (tNow - 24 * 3600 * 1000000LL < t && t < tNow + 24 * 3600 * 10000000LL) {
 				SYSTEMTIME st;
 				if (FileTimeToSystemTime(&ft, &st) && SetSystemTime(&st)) {
-					// ˆÀ‘S‚Ì‚½‚ß30•bŠÔ‚ÍÄİ’è‚ğ‹‘”Û‚·‚é
+					// å®‰å…¨ã®ãŸã‚30ç§’é–“ã¯å†è¨­å®šã‚’æ‹’å¦ã™ã‚‹
 					g_denySetTime = true;
 					SetTimer(hwnd, 1, 30000, nullptr);
 					return TRUE;
@@ -51,11 +51,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		return -1;
 	case WM_APP_NETFIND:
 		{
-			// 8•¶šˆÈ‰º‚ÌŠg’£q‚ğwParam‚ÆlParam‚Åó‚¯æ‚é
+			// 8æ–‡å­—ä»¥ä¸‹ã®æ‹¡å¼µå­ã‚’wParamã¨lParamã§å—ã‘å–ã‚‹
 			WCHAR ext[10] = L".";
 			for (int i = 1; i < 9; ++i) {
 				ext[i] = (static_cast<DWORD>(i < 5 ? wParam : lParam) >> ((i - 1) % 4 * 8)) & 0xFF;
-				// ‰p”š‚ÉŒÀ‚é
+				// è‹±æ•°å­—ã«é™ã‚‹
 				if (ext[i] && (ext[i] < L'0' || L'9' < ext[i]) && (ext[i] < L'A' || L'Z' < ext[i]) && (ext[i] < L'a' || L'z' < ext[i])) {
 					ext[1] = L'\0';
 					break;
@@ -83,7 +83,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 }
 
 #ifdef USE_WINMAIN_A
-__declspec(dllexport) // ASLR‚ğ–³Œø‚É‚µ‚È‚¢‚½‚ß(CVE-2018-5392)
+__declspec(dllexport) // ASLRã‚’ç„¡åŠ¹ã«ã—ãªã„ãŸã‚(CVE-2018-5392)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -99,7 +99,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 #else
 	if (_wcsicmp(lpCmdLine, L"/TestSetTime") == 0) {
 #endif
-		// “®ìƒeƒXƒg: Œ»İ‚ÅƒVƒXƒeƒ€“ú‚ğİ’è‚·‚é
+		// å‹•ä½œãƒ†ã‚¹ãƒˆ: ç¾åœ¨æ™‚åˆ»ã§ã‚·ã‚¹ãƒ†ãƒ æ—¥æ™‚ã‚’è¨­å®šã™ã‚‹
 		LPCWSTR text = L"Proxy not found.";
 		HWND hwnd = FindWindowEx(HWND_MESSAGE, nullptr, CLASS_NAME, nullptr);
 		if (hwnd) {
@@ -116,7 +116,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 #else
 	else if (_wcsicmp(lpCmdLine, L"/TestNetFind") == 0) {
 #endif
-		// “®ìƒeƒXƒg: Šg’£q.txt‚É‚Â‚¢‚Ä‹¤—LƒAƒNƒZƒX‚ª‚ ‚é‚©‚Ç‚¤‚©’²‚×‚é
+		// å‹•ä½œãƒ†ã‚¹ãƒˆ: æ‹¡å¼µå­.txtã«ã¤ã„ã¦å…±æœ‰ã‚¢ã‚¯ã‚»ã‚¹ãŒã‚ã‚‹ã‹ã©ã†ã‹èª¿ã¹ã‚‹
 		LPCWSTR text = L"Proxy not found.";
 		HWND hwnd = FindWindowEx(HWND_MESSAGE, nullptr, CLASS_NAME, nullptr);
 		if (hwnd) {
@@ -127,17 +127,17 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		return 0;
 	}
 
-	// ƒƒbƒZ[ƒWê—pƒEƒBƒ“ƒhƒE‚ğì¬
+	// ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å°‚ç”¨ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’ä½œæˆ
 	WNDCLASS wc = {};
 	wc.lpfnWndProc = WndProc;
 	wc.hInstance = hInstance;
 	wc.lpszClassName = CLASS_NAME;
 	RegisterClass(&wc);
 	if (CreateWindow(CLASS_NAME, nullptr, 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr)) {
-		// ®‡«ƒŒƒxƒ‹‚Ì’á‚¢ƒvƒƒZƒX‚©‚ç‚ÌƒƒbƒZ[ƒW‚ğó‚¯æ‚é‚æ‚¤‚É‚·‚é
+		// æ•´åˆæ€§ãƒ¬ãƒ™ãƒ«ã®ä½ã„ãƒ—ãƒ­ã‚»ã‚¹ã‹ã‚‰ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å—ã‘å–ã‚‹ã‚ˆã†ã«ã™ã‚‹
 		ChangeWindowMessageFilter(WM_APP_SETTIME, MSGFLT_ADD);
 		ChangeWindowMessageFilter(WM_APP_NETFIND, MSGFLT_ADD);
-		// ƒƒbƒZ[ƒWƒ‹[ƒv
+		// ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ«ãƒ¼ãƒ—
 		MSG msg;
 		while (GetMessage(&msg, nullptr, 0, 0) > 0) {
 			TranslateMessage(&msg);

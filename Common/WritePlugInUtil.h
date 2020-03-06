@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 class CWritePlugInUtil
 {
@@ -6,80 +6,80 @@ public:
 	CWritePlugInUtil(void);
 	~CWritePlugInUtil(void);
 
-	//DLL�̏�����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j
-	//�����F
-	// loadDllFilePath		[IN]���[�h����DLL�p�X
+	//DLLの初期化
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// loadDllFilePath		[IN]ロードするDLLパス
 	BOOL Initialize(
 		LPCWSTR loadDllFilePath
 		);
 
-	//DLL�̉��
+	//DLLの解放
 	void UnInitialize(
 		);
 
-	//PlugIn�̖��O���擾����
-	//name��NULL���͕K�v�ȃT�C�Y��nameSize�ŕԂ�
-	//�ʏ�nameSize=256�ŌĂяo��
-	//�߂�l
-	// TRUE�i�����j�AFALSE�i���s�j�AERR_NOT_INIT�i���������j
-	//�����F
-	// name						[OUT]����
-	// nameSize					[IN/OUT]name�̃T�C�Y(WCHAR�P��)
+	//PlugInの名前を取得する
+	//nameがNULL時は必要なサイズをnameSizeで返す
+	//通常nameSize=256で呼び出し
+	//戻り値
+	// TRUE（成功）、FALSE（失敗）、ERR_NOT_INIT（未初期化）
+	//引数：
+	// name						[OUT]名称
+	// nameSize					[IN/OUT]nameのサイズ(WCHAR単位)
 	BOOL GetName(
 		WCHAR* name,
 		DWORD* nameSize
 		);
 
-	//PlugIn�Őݒ肪�K�v�ȏꍇ�A�ݒ�p�̃_�C�A���O�Ȃǂ�\������
-	//�����F
-	// parentWnd				[IN]�e�E�C���h�E
+	//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
+	//引数：
+	// parentWnd				[IN]親ウインドウ
 	void ShowSetting(
 		HWND parentWnd
 		);
 
-	//�t�@�C���ۑ����J�n����
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j�AERR_NOT_INIT�i���������j
-	//�����F
-	// fileName				[IN]�ۑ��t�@�C���t���p�X�i�K�v�ɉ����Ċg���q�ς�����ȂǍs���j
-	// overWriteFlag		[IN]����t�@�C�������ݎ��ɏ㏑�����邩�ǂ����iTRUE�F����AFALSE�F���Ȃ��j
-	// createSize			[IN]���͗\�z�e�ʁi188�o�C�gTS�ł̗e�ʁB�����^�掞�ȂǑ����Ԗ���̏ꍇ��0�B�����Ȃǂ̉\��������̂Ŗڈ����x�j
+	//ファイル保存を開始する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）、ERR_NOT_INIT（未初期化）
+	//引数：
+	// fileName				[IN]保存ファイルフルパス（必要に応じて拡張子変えたりなど行う）
+	// overWriteFlag		[IN]同一ファイル名存在時に上書きするかどうか（TRUE：する、FALSE：しない）
+	// createSize			[IN]入力予想容量（188バイトTSでの容量。即時録画時など総時間未定の場合は0。延長などの可能性もあるので目安程度）
 	BOOL Start(
 		LPCWSTR fileName,
 		BOOL overWriteFlag,
 		ULONGLONG createSize
 		);
 
-	//�t�@�C���ۑ����I������
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j�AERR_NOT_INIT�i���������j
+	//ファイル保存を終了する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）、ERR_NOT_INIT（未初期化）
 	BOOL Stop(
 		);
 
-	//���ۂɕۑ����Ă���t�@�C���p�X���擾����i�Đ���o�b�`�����ɗ��p�����j
-	//filePath��NULL���͕K�v�ȃT�C�Y��filePathSize�ŕԂ�
-	//�ʏ�filePathSize=512�ŌĂяo��
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j�AERR_NOT_INIT�i���������j
-	//�����F
-	// filePath				[OUT]�ۑ��t�@�C���t���p�X
-	// filePathSize			[IN/OUT]filePath�̃T�C�Y(WCHAR�P��)
+	//実際に保存しているファイルパスを取得する（再生やバッチ処理に利用される）
+	//filePathがNULL時は必要なサイズをfilePathSizeで返す
+	//通常filePathSize=512で呼び出し
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）、ERR_NOT_INIT（未初期化）
+	//引数：
+	// filePath				[OUT]保存ファイルフルパス
+	// filePathSize			[IN/OUT]filePathのサイズ(WCHAR単位)
 	BOOL GetSavePath(
 		WCHAR* filePath,
 		DWORD* filePathSize
 		);
 
-	//�ۑ��pTS�f�[�^�𑗂�
-	//�󂫗e�ʕs���Ȃǂŏ����o�����s�����ꍇ�AwriteSize�̒l������
-	//�ēx�ۑ���������Ƃ��̑��M�J�n�n�_�����߂�
-	//�߂�l�F
-	// TRUE�i�����j�AFALSE�i���s�j�AERR_NOT_INIT�i���������j
-	//�����F
-	// data					[IN]TS�f�[�^
-	// size					[IN]data�̃T�C�Y
-	// writeSize			[OUT]�ۑ��ɗ��p�����T�C�Y
+	//保存用TSデータを送る
+	//空き容量不足などで書き出し失敗した場合、writeSizeの値を元に
+	//再度保存処理するときの送信開始地点を決める
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）、ERR_NOT_INIT（未初期化）
+	//引数：
+	// data					[IN]TSデータ
+	// size					[IN]dataのサイズ
+	// writeSize			[OUT]保存に利用したサイズ
 	BOOL Write(
 		BYTE* data,
 		DWORD size,
