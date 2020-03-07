@@ -813,7 +813,7 @@ wstring CReserveManager::GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo,
 	SYSTEMTIME stNewEnd;
 	ConvertSystemTime(ConvertI64Time(stNew) + newInfo.durationSecond * I64_1SEC, &stNewEnd);
 	wstring msg;
-	Format(msg, L"%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\nEventID:0x%04X\r\n↓\r\n%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\nEventID:0x%04X",
+	Format(msg, L"%ls %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%ls\r\nEventID:0x%04X\r\n↓\r\n%ls %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%ls\r\nEventID:0x%04X",
 		oldInfo.stationName.c_str(), stOld.wYear, stOld.wMonth, stOld.wDay, stOld.wHour, stOld.wMinute,
 		stOldEnd.wHour, stOldEnd.wMinute, oldInfo.title.c_str(), oldInfo.eventID,
 		newInfo.stationName.c_str(), stNew.wYear, stNew.wMonth, stNew.wDay, stNew.wHour, stNew.wMinute,
@@ -1351,7 +1351,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 			SYSTEMTIME stEnd;
 			ConvertSystemTime(ConvertI64Time(st) + item.durationSecond * I64_1SEC, &stEnd);
 			wstring msg;
-			Format(msg, L"%ls %04d/%02d/%02d %02d:%02d\xFF5E%02d:%02d\r\n%ls\r\n%ls",
+			Format(msg, L"%ls %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%ls\r\n%ls",
 			       item.serviceName.c_str(), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute,
 			       stEnd.wHour, stEnd.wMinute, item.title.c_str(), item.GetComment());
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
