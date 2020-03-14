@@ -192,10 +192,10 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			}
 		}
 		if( func == L"HtoZ" ){
-			funcStack.push_back(L"Tr＼ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~＼　！”＃＄％＆’（）＊＋，\xFF0D．／：；＜＝＞？＠［￥］＾＿‘｛｜｝￣＼");
+			funcStack.push_back(L"Tr＼ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~＼　！”＃＄％＆’（）＊＋，－．／：；＜＝＞？＠［￥］＾＿‘｛｜｝￣＼");
 			funcStack.push_back(L"HtoZ<alnum>");
 		}else if( func == L"ZtoH" ){
-			funcStack.push_back(L"Tr＼　！”＃＄％＆’（）＊＋，\xFF0D．／：；＜＝＞？＠［￥］＾＿‘｛｜｝￣＼ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~＼");
+			funcStack.push_back(L"Tr＼　！”＃＄％＆’（）＊＋，－．／：；＜＝＞？＠［￥］＾＿‘｛｜｝￣＼ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~＼");
 			funcStack.push_back(L"ZtoH<alnum>");
 		}else if( func == L"HtoZ<alnum>" ){
 			funcStack.push_back(L"Tr/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ/");

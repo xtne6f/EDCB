@@ -87,10 +87,10 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 		SYSTEMTIME st = info->start_time;
 		Format(text, L"%04d/%02d/%02d(%ls) %02d:%02d",
 		       st.wYear, st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
-		wstring time = L" \xFF5E 未定";
+		wstring time = L" ～ 未定";
 		if( info->DurationFlag ){
 			ConvertSystemTime(ConvertI64Time(st) + info->durationSec * I64_1SEC, &st);
-			Format(time, L"\xFF5E%02d:%02d", st.wHour, st.wMinute);
+			Format(time, L"～%02d:%02d", st.wHour, st.wMinute);
 		}
 		text += time;
 	}
