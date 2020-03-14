@@ -37,6 +37,20 @@
 ・EpgTimer.exeについては[その他]を参照
 
 
+[ビルド(Mingw-w64)] ※ビルド環境が最もコンパクト
+
+0.https://sourceforge.net/projects/mingw-w64/files/ の「MinGW-W64 GCC-8.1.0」（上位バージョンがあればそれでもOK）のリストから
+  i686-win32-dwarf(x86ビルド用) または x86_64-win32-seh(x64ビルド用) の7z圧縮ファイルをダウンロードしてどこかに展開
+  （以下、"C:\mingw32"または"C:\mingw64"に展開したと仮定）
+
+1."Document\MinGW\RunMake.bat"をメモ帳で開き、set MINGW_ROOT=C:\mingw32 などに書き換える
+
+2.RunMake.batを実行（クリーンしたいときはRunMakeClean.batを実行）
+
+（注意）
+・libwinpthread-1.dllは不要。ほかの注意事項は「ビルド(MSYS2/Mingw-w64)」と同様
+
+
 [ビルド(VisualStudio2010)]
 
 0.以下を順番に入れる

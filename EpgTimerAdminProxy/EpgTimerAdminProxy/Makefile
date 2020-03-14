@@ -1,7 +1,7 @@
 TARGET ?= EpgTimerAdminProxy.exe
-CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=0x0600 -DUSE_WINMAIN_A $(CPPFLAGS)
+CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=0x0600 $(CPPFLAGS)
 CXXFLAGS := -Os $(CXXFLAGS)
-LDFLAGS := -mwindows -Wl,-s,--dynamicbase,--nxcompat -static $(LDFLAGS)
+LDFLAGS := -municode -mwindows -Wl,-s,--dynamicbase,--nxcompat -static $(LDFLAGS)
 LDLIBS := -lnetapi32 $(LDLIBS)
 WINDRES ?= windres
 

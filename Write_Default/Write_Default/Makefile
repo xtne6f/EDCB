@@ -25,7 +25,13 @@ Common__%.cpp.obj: ../../Common/%.cpp stdafx.h.gch $(DEP_ALL_H)
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 stdafx.h.gch: stdafx.h ../../Common/Common.h targetver.h
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
-%.rc.obj: %.rc resource.h targetver.h
-	iconv -f UTF-16LE -t UTF-8 $< | $(WINDRES) $(CPPFLAGS) -c 65001 -J rc -O coff $(OUTPUT_OPTION)
+%.rc.obj: %.rc.u.obj resource.h targetver.h
+	$(WINDRES) $(CPPFLAGS) -c 65001 -J rc -O coff $(OUTPUT_OPTION) $<
+%.rc.u.obj: %.rc
+ifdef MSYSTEM
+	iconv -f UTF-16LE -t UTF-8 $< >$@
+else
+	powershell -NoProfile -Command "&{cat $<|Out-File -Encoding UTF8 $@}"
+endif
 clean:
 	$(RM) stdafx.h.gch *.obj $(TARGET)

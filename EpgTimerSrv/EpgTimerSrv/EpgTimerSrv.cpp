@@ -22,12 +22,10 @@ recursive_mutex_ g_debugLogLock;
 void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv);
 }
 
-#ifdef USE_WINMAIN_A
+#ifdef __MINGW32__
 __declspec(dllexport) //ASLRを無効にしないため(CVE-2018-5392)
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-#else
-int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 #endif
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
 	SetDllDirectory(L"");
 
