@@ -345,12 +345,8 @@ namespace EpgTimer
                 menuItemTimeshift.Tag = reserve.ReserveID;
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
 
-                //表示モード
-                MenuItem menuItemView = new MenuItem();
-                menuItemView.Header = "表示モード (_W)";
-
                 MenuItem menuItemViewSetDlg = new MenuItem();
-                menuItemViewSetDlg.Header = "表示設定";
+                menuItemViewSetDlg.Header = "表示設定 (_W)";
                 menuItemViewSetDlg.Click += new RoutedEventHandler(cm_viewSet_Click);
 
                 MenuItem menuItemChgViewMode2 = new MenuItem();
@@ -362,11 +358,6 @@ namespace EpgTimer
                 menuItemChgViewMode3.Tag = 2;
                 menuItemChgViewMode3.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
 
-                menuItemView.Items.Add(menuItemChgViewMode2);
-                menuItemView.Items.Add(menuItemChgViewMode3);
-                menuItemView.Items.Add(new Separator());
-                menuItemView.Items.Add(menuItemViewSetDlg);
-
                 menuItemNew.IsEnabled = program != null && addMode && program.Past == false;
                 menuItemAdd.IsEnabled = program != null;
                 menuItemChg.IsEnabled = addMode == false;
@@ -374,13 +365,16 @@ namespace EpgTimer
                 menuItemAutoAdd.IsEnabled = program != null;
                 menuItemTimeshift.IsEnabled = addMode == false;
 
-                menu.Items.Add(menuItemNew);
+                menu.Items.Add(addMode ? menuItemNew : menuItemChg);
                 menu.Items.Add(menuItemAdd);
-                menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
                 menu.Items.Add(menuItemAutoAdd);
                 menu.Items.Add(menuItemTimeshift);
-                menu.Items.Add(menuItemView);
+                menu.Items.Add(new Separator());
+                menu.Items.Add(menuItemChgViewMode2);
+                menu.Items.Add(menuItemChgViewMode3);
+                menu.Items.Add(new Separator());
+                menu.Items.Add(menuItemViewSetDlg);
                 menu.IsOpen = true;
             }
             catch (Exception ex)

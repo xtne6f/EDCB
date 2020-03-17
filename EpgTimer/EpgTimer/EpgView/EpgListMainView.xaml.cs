@@ -583,6 +583,8 @@ namespace EpgTimer
             {
                 cm_new.IsEnabled = item.IsReserved == false && item.Past == false;
                 cm_chg.IsEnabled = item.IsReserved;
+                cm_new.Visibility = item.IsReserved ? Visibility.Collapsed : Visibility.Visible;
+                cm_chg.Visibility = item.IsReserved ? Visibility.Visible : Visibility.Collapsed;
                 cm_del.IsEnabled = item.IsReserved;
                 cm_timeshift.IsEnabled = item.IsReserved;
                 if (item.IsReserved)
