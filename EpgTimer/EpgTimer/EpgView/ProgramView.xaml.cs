@@ -235,21 +235,42 @@ namespace EpgTimer.EpgView
             //テキスト全体を表示できる高さを求める
             items[0].Height = 4096;
             popupItemPanel.Initialize(items, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
-                                      EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
+                                      false, EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
                                       dictTitle, dicNormal, itemFontTitle, itemFontNormal,
                                       EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
                                       EpgSetting.EpgBackColorA, contentBrushList);
-            items[0].Height = Math.Max(popupItemPanel.LastItemRenderTextHeight, info.Height);
-            popupItemPanel.Height = items[0].Height;
+            double itemHeight = Math.Max(popupItemPanel.LastItemRenderTextHeight, info.Height);
+            double topPos = info.TopPos;
+
+            if (EpgSetting.EpgAdjustPopup)
+            {
+                //下方にはみ出す部分をできるだけ縮める
+                double trimmableHeight = Math.Max(info.Height - popupItemPanel.LastItemRenderTextHeight, 0);
+                double trimHeight = topPos + itemHeight - (scrollViewer.VerticalOffset + Math.Floor(scrollViewer.ViewportHeight));
+                trimHeight = Math.Min(Math.Max(trimHeight, 0), trimmableHeight);
+                trimmableHeight -= trimHeight;
+                itemHeight -= trimHeight;
+                //下方にはみ出すなら上げる
+                topPos = Math.Min(topPos, scrollViewer.VerticalOffset + Math.Floor(scrollViewer.ViewportHeight) - itemHeight);
+                //上方にはみ出すなら下げる
+                topPos = Math.Max(topPos, scrollViewer.VerticalOffset);
+                //ポップアップ前よりも下方に伸びる部分をできるだけ縮める
+                trimHeight = topPos + itemHeight - (info.TopPos + info.Height);
+                trimHeight = Math.Min(Math.Max(trimHeight, 0), trimmableHeight);
+                itemHeight -= trimHeight;
+            }
+
+            items[0].Height = itemHeight;
+            popupItemPanel.Height = itemHeight;
             popupItemPanel.Initialize(items, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
-                                      EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
+                                      topPos != info.TopPos, EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
                                       dictTitle, dicNormal, itemFontTitle, itemFontNormal,
                                       EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
                                       EpgSetting.EpgBackColorA, contentBrushList);
             popupItemPanel.InvalidateVisual();
 
             Canvas.SetLeft(popupItem, info.LeftPos);
-            Canvas.SetTop(popupItem, info.TopPos);
+            Canvas.SetTop(popupItem, topPos);
             popupItem.Visibility = System.Windows.Visibility.Visible;
         }
 
@@ -414,7 +435,7 @@ namespace EpgTimer.EpgView
                     item.Width = programList.Item1;
                     Canvas.SetLeft(item, totalWidth);
                     item.Initialize(programList.Item2, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
-                                    EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoTable,
+                                    false, EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoTable,
                                     dictTitle, dicNormal, itemFontTitle, itemFontNormal,
                                     EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
                                     EpgSetting.EpgBackColorA, contentBrushList);
