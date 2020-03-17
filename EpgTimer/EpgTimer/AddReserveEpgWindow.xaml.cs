@@ -77,7 +77,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() == typeof(Hyperlink))
                 {
                     Hyperlink h = sender as Hyperlink;
                     System.Diagnostics.Process.Start(h.NavigateUri.ToString());

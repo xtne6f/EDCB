@@ -505,7 +505,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() == typeof(Hyperlink))
                 {
                     Hyperlink h = sender as Hyperlink;
                     System.Diagnostics.Process.Start(h.NavigateUri.ToString());
@@ -866,10 +865,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
                 if (listView_event.SelectedItem != null)
                 {
                     SearchItem item = listView_event.SelectedItem as SearchItem;
@@ -950,13 +945,8 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
                 if (ViewModeChangeRequested != null)
                 {
-                    MenuItem item = sender as MenuItem;
                     CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     if (sender == cm_chg_viewMode2)
                     {

@@ -193,7 +193,6 @@ namespace EpgTimer.TunerReserveViewCtrl
         {
             try
             {
-                if (sender.GetType() == typeof(TunerReservePanel))
                 {
                     if (e.LeftButton == MouseButtonState.Pressed && isDrag == true)
                     {

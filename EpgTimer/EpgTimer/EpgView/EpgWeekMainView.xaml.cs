@@ -128,7 +128,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() == typeof(ProgramView))
                 {
                     //時間軸の表示もスクロール
                     timeView.scrollViewer.ScrollToVerticalOffset(epgProgramView.scrollViewer.VerticalOffset);
@@ -152,9 +151,8 @@ namespace EpgTimer
             try
             {
                 e.Handled = true;
-                if (sender.GetType() == typeof(ProgramView))
                 {
-                    ProgramView view = sender as ProgramView;
+                    ProgramView view = epgProgramView;
                     if (setViewInfo.EpgSetting.MouseScrollAuto)
                     {
                         view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - e.Delta);
@@ -686,11 +684,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
                 ProgramViewItem programView = GetProgramItem(clickPos);
                 if (programView == null)
                 {
