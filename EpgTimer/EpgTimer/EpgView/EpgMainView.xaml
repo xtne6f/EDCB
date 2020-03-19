@@ -19,7 +19,7 @@
         <local:DateView Grid.ColumnSpan="2" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" TimeButtonRightClick="epgDateView_TimeButtonRightClick" />
         <Button Click="button_now_Click" Content="現在" Grid.Row="1" />
         <local:TimeView Grid.Row="2" Margin="0,0,0,18" x:Name="timeView" />
-        <local:ServiceView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="serviceView" />
+        <local:ServiceView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="serviceView" LeftDoubleClick="serviceView_LeftDoubleClick" RightClick="serviceView_RightClick" />
         <local:ProgramView Grid.Column="1" Grid.Row="2" x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" PreviewMouseWheel="epgProgramView_PreviewMouseWheel" RightClick="epgProgramView_RightClick" ScrollChanged="epgProgramView_ScrollChanged" />
     </Grid>
 </UserControl>

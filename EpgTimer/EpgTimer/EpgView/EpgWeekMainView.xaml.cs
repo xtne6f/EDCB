@@ -22,11 +22,12 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgWeekMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo, object> ViewModeChangeRequested;
+        public event Action<object, CustomEpgTabInfo, DateTime, object> ViewModeChangeRequested;
         private object scrollToTarget;
+        private bool scrollToMoveBaseTime;
 
-        private CustomEpgTabInfo setViewInfo = null;
-        private DateTime baseTime = DateTime.MaxValue;
+        private CustomEpgTabInfo setViewInfo;
+        private DateTime baseTime;
 
         private SortedList<DateTime, List<ProgramViewItem>> timeList = new SortedList<DateTime, List<ProgramViewItem>>();
         private List<DateTime> dayList = new List<DateTime>();
@@ -38,7 +39,7 @@ namespace EpgTimer
         private bool updateEpgData = true;
         private bool updateReserveData = true;
 
-        public EpgWeekMainView(CustomEpgTabInfo setInfo)
+        public EpgWeekMainView(CustomEpgTabInfo setInfo, DateTime _baseTime)
         {
             InitializeComponent();
 
@@ -46,6 +47,7 @@ namespace EpgTimer
             nowViewTimer.Tick += (sender, e) => ReDrawNowLine();
             setViewInfo = setInfo;
             epgProgramView.EpgSetting = setInfo.EpgSetting;
+            baseTime = _baseTime;
         }
 
         /// <summary>
@@ -750,7 +752,7 @@ namespace EpgTimer
                 }
                 else if (ViewModeChangeRequested != null)
                 {
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
             }
         }
@@ -769,7 +771,7 @@ namespace EpgTimer
                     CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     setInfo.ViewMode = (int)((MenuItem)sender).Tag;
                     ProgramViewItem program = GetProgramItem(clickPos);
-                    ViewModeChangeRequested(this, setInfo, (program != null ? program.EventInfo : null));
+                    ViewModeChangeRequested(this, setInfo, baseTime, (program != null ? program.EventInfo : null));
                 }
             }
             catch (Exception ex)
@@ -1359,33 +1361,38 @@ namespace EpgTimer
             }
             if (scrollToTarget != null)
             {
-                ScrollTo(scrollToTarget);
+                ScrollTo(scrollToTarget, scrollToMoveBaseTime);
             }
         }
 
-        public void ScrollTo(object target)
+        public void ScrollTo(object target, bool moveBaseTime)
         {
             scrollToTarget = null;
             if (IsVisible == false)
             {
                 //Visibleになるまですこし待つ
                 scrollToTarget = target;
+                scrollToMoveBaseTime = moveBaseTime;
                 Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() => scrollToTarget = null));
                 return;
             }
+            MoveNowTime(moveBaseTime);
             // サービス選択
             UInt64 serviceKey_Target1 = 0;
             if (target is ReserveData)
             {
-                MoveNowTime(true);
                 var reserveData1 = (ReserveData)target;
                 serviceKey_Target1 = CommonManager.Create64Key(reserveData1.OriginalNetworkID, reserveData1.TransportStreamID, reserveData1.ServiceID);
             }
             else if (target is EpgEventInfo)
             {
-                MoveNowTime(true);
                 var eventInfo1 = (EpgEventInfo)target;
                 serviceKey_Target1 = CommonManager.Create64Key(eventInfo1.original_network_id, eventInfo1.transport_stream_id, eventInfo1.service_id);
+            }
+            else if (target is EpgServiceInfo)
+            {
+                var info = (EpgServiceInfo)target;
+                serviceKey_Target1 = CommonManager.Create64Key(info.ONID, info.TSID, info.SID);
             }
             foreach (ComboBoxItem item in this.comboBox_service.Items)
             {
@@ -1412,15 +1419,16 @@ namespace EpgTimer
             }
             else if (target is EpgEventInfo)
             {
+                var info = (EpgEventInfo)target;
                 for (int i = 0; i < this.timeList.Count; i++)
                 {
                     foreach (ProgramViewItem item in this.timeList.Values[i])
                     {
-                        if (item.Past == false &&
-                            item.EventInfo.event_id == ((EpgEventInfo)target).event_id &&
-                            item.EventInfo.original_network_id == ((EpgEventInfo)target).original_network_id &&
-                            item.EventInfo.service_id == ((EpgEventInfo)target).service_id &&
-                            item.EventInfo.transport_stream_id == ((EpgEventInfo)target).transport_stream_id)
+                        if (item.EventInfo.original_network_id == info.original_network_id &&
+                            item.EventInfo.transport_stream_id == info.transport_stream_id &&
+                            item.EventInfo.service_id == info.service_id &&
+                            (item.Past ? item.EventInfo.StartTimeFlag != 0 && info.StartTimeFlag != 0 && item.EventInfo.start_time == info.start_time :
+                                         item.EventInfo.event_id == info.event_id))
                         {
                             this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(item.LeftPos - 100);
                             this.epgProgramView.scrollViewer.ScrollToVerticalOffset(item.TopPos - 100);
@@ -1438,7 +1446,7 @@ namespace EpgTimer
             setInfo.ViewMode = 0;
             if (ViewModeChangeRequested != null)
             {
-                ViewModeChangeRequested(this, setInfo, null);
+                ViewModeChangeRequested(this, setInfo, baseTime, null);
             }
         }
     }

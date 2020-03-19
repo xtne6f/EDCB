@@ -22,11 +22,12 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo, object> ViewModeChangeRequested;
+        public event Action<object, CustomEpgTabInfo, DateTime, object> ViewModeChangeRequested;
         private object scrollToTarget;
+        private bool scrollToMoveBaseTime;
 
-        private CustomEpgTabInfo setViewInfo = null;
-        private DateTime baseTime = DateTime.MaxValue;
+        private CustomEpgTabInfo setViewInfo;
+        private DateTime baseTime;
 
         private List<EpgServiceInfo> serviceList = new List<EpgServiceInfo>();
         private SortedList<DateTime, List<ProgramViewItem>> timeList = new SortedList<DateTime, List<ProgramViewItem>>();
@@ -37,7 +38,7 @@ namespace EpgTimer
         private bool updateEpgData = true;
         private bool updateReserveData = true;
 
-        public EpgMainView(CustomEpgTabInfo setInfo)
+        public EpgMainView(CustomEpgTabInfo setInfo, DateTime _baseTime)
         {
             InitializeComponent();
 
@@ -45,6 +46,7 @@ namespace EpgTimer
             nowViewTimer.Tick += (sender, e) => ReDrawNowLine();
             setViewInfo = setInfo;
             epgProgramView.EpgSetting = setInfo.EpgSetting;
+            baseTime = _baseTime;
         }
 
         /// <summary>
@@ -639,7 +641,7 @@ namespace EpgTimer
                 }
                 else if (ViewModeChangeRequested != null)
                 {
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
             }
         }
@@ -658,7 +660,7 @@ namespace EpgTimer
                     CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     setInfo.ViewMode = (int)((MenuItem)sender).Tag;
                     ProgramViewItem program = GetProgramItem(clickPos);
-                    ViewModeChangeRequested(this, setInfo, (program != null ? program.EventInfo : null));
+                    ViewModeChangeRequested(this, setInfo, baseTime, (program != null ? program.EventInfo : null));
                 }
             }
             catch (Exception ex)
@@ -796,6 +798,46 @@ namespace EpgTimer
                     menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
                 }
                 menu.IsOpen = true;
+            }
+        }
+
+        /// <summary>
+        /// サービス左ボタンダブルクリック
+        /// </summary>
+        void serviceView_LeftDoubleClick(EpgServiceInfo info)
+        {
+            CommonManager.Instance.TVTestCtrl.SetLiveCh(info.ONID, info.TSID, info.SID);
+        }
+
+        /// <summary>
+        /// サービス右ボタンクリック
+        /// </summary>
+        void serviceView_RightClick(EpgServiceInfo info)
+        {
+            if (ViewModeChangeRequested != null)
+            {
+                CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
+                setInfo.ViewMode = 1;
+                //表示位置前後の番組をターゲットにする
+                int pivot = (int)(epgProgramView.scrollViewer.VerticalOffset / (60 * setViewInfo.EpgSetting.MinHeight));
+                for (int d = 0; d < 24; d = d > 0 ? -d : -d + 1)
+                {
+                    if (0 <= pivot + d && pivot + d < timeList.Count)
+                    {
+                        foreach (ProgramViewItem pgInfo in timeList.Values[pivot + d])
+                        {
+                            if (pgInfo.EventInfo.original_network_id == info.ONID &&
+                                pgInfo.EventInfo.transport_stream_id == info.TSID &&
+                                pgInfo.EventInfo.service_id == info.SID)
+                            {
+                                ViewModeChangeRequested(this, setInfo, baseTime, pgInfo.EventInfo);
+                                return;
+                            }
+                        }
+                    }
+                }
+                //見つからなければサービスをターゲットにする
+                ViewModeChangeRequested(this, setInfo, baseTime, info);
             }
         }
 
@@ -1384,23 +1426,24 @@ namespace EpgTimer
             }
             if (scrollToTarget != null)
             {
-                ScrollTo(scrollToTarget);
+                ScrollTo(scrollToTarget, scrollToMoveBaseTime);
             }
         }
 
-        public void ScrollTo(object target)
+        public void ScrollTo(object target, bool moveBaseTime)
         {
             scrollToTarget = null;
             if (IsVisible == false)
             {
                 //Visibleになるまですこし待つ
                 scrollToTarget = target;
+                scrollToMoveBaseTime = moveBaseTime;
                 Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() => scrollToTarget = null));
                 return;
             }
+            MoveNowTime(moveBaseTime);
             if (target is ReserveData)
             {
-                MoveNowTime(true);
                 foreach (ReserveViewItem reserveViewItem1 in this.reserveList)
                 {
                     if (reserveViewItem1.ReserveInfo.ReserveID == ((ReserveData)target).ReserveID)
@@ -1413,16 +1456,16 @@ namespace EpgTimer
             }
             else if (target is EpgEventInfo)
             {
-                MoveNowTime(true);
+                var info = (EpgEventInfo)target;
                 for (int i = 0; i < this.timeList.Count; i++)
                 {
                     foreach (ProgramViewItem item in this.timeList.Values[i])
                     {
-                        if (item.Past == false &&
-                            item.EventInfo.event_id == ((EpgEventInfo)target).event_id &&
-                            item.EventInfo.original_network_id == ((EpgEventInfo)target).original_network_id &&
-                            item.EventInfo.service_id == ((EpgEventInfo)target).service_id &&
-                            item.EventInfo.transport_stream_id == ((EpgEventInfo)target).transport_stream_id)
+                        if (item.EventInfo.original_network_id == info.original_network_id &&
+                            item.EventInfo.transport_stream_id == info.transport_stream_id &&
+                            item.EventInfo.service_id == info.service_id &&
+                            (item.Past ? item.EventInfo.StartTimeFlag != 0 && info.StartTimeFlag != 0 && item.EventInfo.start_time == info.start_time :
+                                         item.EventInfo.event_id == info.event_id))
                         {
                             this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(item.LeftPos - 100);
                             this.epgProgramView.scrollViewer.ScrollToVerticalOffset(item.TopPos - 100);

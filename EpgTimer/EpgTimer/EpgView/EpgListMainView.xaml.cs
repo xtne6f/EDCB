@@ -22,10 +22,10 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgListMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo, object> ViewModeChangeRequested;
+        public event Action<object, CustomEpgTabInfo, DateTime, object> ViewModeChangeRequested;
 
-        private CustomEpgTabInfo setViewInfo = null;
-        private DateTime baseTime = DateTime.MaxValue;
+        private CustomEpgTabInfo setViewInfo;
+        private DateTime baseTime;
 
         string _lastHeaderClicked = null;
         ListSortDirection _lastDirection = ListSortDirection.Ascending;
@@ -38,11 +38,12 @@ namespace EpgTimer
 
         private Dictionary<ulong, bool> lastChkSID = new Dictionary<ulong, bool>();
 
-        public EpgListMainView(CustomEpgTabInfo setInfo)
+        public EpgListMainView(CustomEpgTabInfo setInfo, DateTime _baseTime)
         {
             InitializeComponent();
 
             setViewInfo = setInfo;
+            baseTime = _baseTime;
         }
 
         /// <summary>
@@ -894,7 +895,7 @@ namespace EpgTimer
                 }
                 else if (ViewModeChangeRequested != null)
                 {
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
             }
         }
@@ -919,7 +920,7 @@ namespace EpgTimer
                     {
                         setInfo.ViewMode = 0;
                     }
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
             }
             catch (Exception ex)
