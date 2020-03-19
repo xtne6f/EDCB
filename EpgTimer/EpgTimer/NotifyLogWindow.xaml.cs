@@ -12,7 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using System.Collections;
 using System.IO;
 
 namespace EpgTimer

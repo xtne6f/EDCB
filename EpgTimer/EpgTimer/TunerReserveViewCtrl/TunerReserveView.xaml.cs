@@ -15,7 +15,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
-using System.Collections;
 
 namespace EpgTimer.TunerReserveViewCtrl
 {
