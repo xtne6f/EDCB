@@ -13,6 +13,9 @@
             <MenuItem Header="サービス名" Name="StationName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="チューナー強制" Name="TunerID" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画後実行bat" Name="BatFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="タグ" Name="BatFileTag" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
     </UserControl.Resources>
@@ -59,6 +62,21 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Priority}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding TunerID}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="チューナー強制" Tag="TunerID" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding BatFilePath}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画後実行bat" Tag="BatFilePath" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding BatFileTag}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="タグ" Tag="BatFileTag" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding ID}">

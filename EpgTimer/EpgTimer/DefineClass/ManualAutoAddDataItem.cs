@@ -67,6 +67,29 @@ namespace EpgTimer
             get { return ManualAutoAddInfo.recSetting.Priority; }
         }
 
+        public string TunerID
+        {
+            get { return ManualAutoAddInfo.recSetting.TunerID == 0 ? "自動" : "ID:" + ManualAutoAddInfo.recSetting.TunerID.ToString("X8"); }
+        }
+
+        public string BatFilePath
+        {
+            get
+            {
+                int i = ManualAutoAddInfo.recSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? ManualAutoAddInfo.recSetting.BatFilePath : ManualAutoAddInfo.recSetting.BatFilePath.Remove(i);
+            }
+        }
+
+        public string BatFileTag
+        {
+            get
+            {
+                int i = ManualAutoAddInfo.recSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? "" : ManualAutoAddInfo.recSetting.BatFilePath.Substring(i + 1);
+            }
+        }
+
         public uint ID
         {
             get { return ManualAutoAddInfo.dataID; }
