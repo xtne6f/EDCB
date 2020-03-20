@@ -723,7 +723,7 @@ namespace EpgTimer
             // Hide()したSearchWindowを復帰
             foreach (Window win1 in this.OwnedWindows)
             {
-                if (win1.GetType() == typeof(SearchWindow))
+                if (win1 is SearchWindow)
                 {
                     win1.Show();
                     return;

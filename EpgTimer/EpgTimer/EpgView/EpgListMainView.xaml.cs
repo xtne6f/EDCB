@@ -14,9 +14,6 @@ using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
-using System.Text.RegularExpressions;
-
-
 
 namespace EpgTimer
 {
@@ -25,10 +22,10 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgListMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo, object> ViewModeChangeRequested;
+        public event Action<object, CustomEpgTabInfo, DateTime, object> ViewModeChangeRequested;
 
-        private CustomEpgTabInfo setViewInfo = null;
-        private DateTime baseTime = DateTime.MaxValue;
+        private CustomEpgTabInfo setViewInfo;
+        private DateTime baseTime;
 
         string _lastHeaderClicked = null;
         ListSortDirection _lastDirection = ListSortDirection.Ascending;
@@ -41,11 +38,12 @@ namespace EpgTimer
 
         private Dictionary<ulong, bool> lastChkSID = new Dictionary<ulong, bool>();
 
-        public EpgListMainView(CustomEpgTabInfo setInfo)
+        public EpgListMainView(CustomEpgTabInfo setInfo, DateTime _baseTime)
         {
             InitializeComponent();
 
             setViewInfo = setInfo;
+            baseTime = _baseTime;
         }
 
         /// <summary>
@@ -478,42 +476,7 @@ namespace EpgTimer
                 EpgEventInfo eventInfo = item.EventInfo;
 
                 String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-
-                int searchFrom = 0;
-                Paragraph para = new Paragraph();
-                string rtext = CommonManager.ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
-                if (rtext.Length == text.Length)
-                {
-                    for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
-                    {
-                        para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
-                        Hyperlink h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
-                        h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
-                        h.Foreground = Brushes.Blue;
-                        h.Cursor = Cursors.Hand;
-                        h.NavigateUri = new Uri(m.Value);
-                        para.Inlines.Add(h);
-                        searchFrom = m.Index + m.Length;
-                    }
-                }
-                para.Inlines.Add(text.Substring(searchFrom));
-                richTextBox_eventInfo.Document = new FlowDocument(para);
-            }
-        }
-
-        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() == typeof(Hyperlink))
-                {
-                    Hyperlink h = sender as Hyperlink;
-                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                richTextBox_eventInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(text));
             }
         }
 
@@ -583,6 +546,8 @@ namespace EpgTimer
             {
                 cm_new.IsEnabled = item.IsReserved == false && item.Past == false;
                 cm_chg.IsEnabled = item.IsReserved;
+                cm_new.Visibility = item.IsReserved ? Visibility.Collapsed : Visibility.Visible;
+                cm_chg.Visibility = item.IsReserved ? Visibility.Visible : Visibility.Collapsed;
                 cm_del.IsEnabled = item.IsReserved;
                 cm_timeshift.IsEnabled = item.IsReserved;
                 if (item.IsReserved)
@@ -864,10 +829,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
                 if (listView_event.SelectedItem != null)
                 {
                     SearchItem item = listView_event.SelectedItem as SearchItem;
@@ -934,7 +895,7 @@ namespace EpgTimer
                 }
                 else if (ViewModeChangeRequested != null)
                 {
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
             }
         }
@@ -948,13 +909,8 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
                 if (ViewModeChangeRequested != null)
                 {
-                    MenuItem item = sender as MenuItem;
                     CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     if (sender == cm_chg_viewMode2)
                     {
@@ -964,7 +920,7 @@ namespace EpgTimer
                     {
                         setInfo.ViewMode = 0;
                     }
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
             }
             catch (Exception ex)

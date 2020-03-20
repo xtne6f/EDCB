@@ -65,10 +65,6 @@
                 <ListView.ContextMenu>
                     <ContextMenu x:Name="listView_event_contextMenu">
                         <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" />
-                        <MenuItem x:Name="cm_add" Header="予約追加 (_A)">
-                            <MenuItem Header="ダイアログ表示 (_X)" Click="cm_add_Click" />
-                            <Separator Name="cm_add_separator" />
-                        </MenuItem>
                         <MenuItem x:Name="cm_chg" Header="予約変更 (_C)">
                             <MenuItem Header="ダイアログ表示 (_X)" Click="cm_change_Click" />
                             <Separator/>
@@ -87,16 +83,18 @@
                                 <MenuItem Header="_5" Name="priority_5" Click="cm_chg_priority_Click" />
                             </MenuItem>
                         </MenuItem>
+                        <MenuItem x:Name="cm_add" Header="予約追加 (_A)">
+                            <MenuItem Header="ダイアログ表示 (_X)" Click="cm_add_Click" />
+                            <Separator Name="cm_add_separator" />
+                        </MenuItem>
                         <MenuItem x:Name="cm_del" Header="予約削除" Click="cm_del_Click" />
                         <MenuItem x:Name="cm_autoadd" Header="自動予約登録" Click="cm_autoadd_Click" />
                         <MenuItem x:Name="cm_timeshift" Header="追っかけ再生 (_P)" Click="cm_timeShiftPlay_Click" />
                         <Separator/>
-                        <MenuItem x:Name="cm_view" Header="表示モード (_W)">
-                            <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード (_1)" Click="cm_chg_viewMode_Click"  />
-                            <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード (_2)" Click="cm_chg_viewMode_Click" />
-                            <Separator/>
-                            <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
-                        </MenuItem>
+                        <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード (_1)" Click="cm_chg_viewMode_Click" />
+                        <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード (_2)" Click="cm_chg_viewMode_Click" />
+                        <Separator/>
+                        <MenuItem Header="表示設定 (_W)" Click="cm_viewSet_Click" />
                     </ContextMenu>
                 </ListView.ContextMenu>
             </ListView>

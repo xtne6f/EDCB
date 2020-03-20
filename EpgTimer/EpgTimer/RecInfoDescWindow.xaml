@@ -1,14 +1,14 @@
 ﻿<Window x:Class="EpgTimer.RecInfoDescWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="録画情報" Height="420" Width="640" Loaded="Window_Loaded" WindowStartupLocation="CenterOwner">
+        Title="録画情報" Height="460" Width="660" Loaded="Window_Loaded" WindowStartupLocation="CenterOwner">
     <Grid>
         <TabControl Margin="0,0,0,39">
             <TabItem Header="番組情報" Name="tabItem_pgInfo">
-                <TextBox Name="textBox_pgInfo" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                <RichTextBox IsReadOnly="True" Name="richTextBox_pgInfo" VerticalScrollBarVisibility="Auto" />
             </TabItem>
             <TabItem Header="エラーログ" Name="tabItem_errLog">
-                <TextBox Name="textBox_errLog" IsReadOnly="True" FontFamily="MS Gothic" VerticalScrollBarVisibility="Auto" />
+                <TextBox FontFamily="Consolas" IsReadOnly="True" Name="textBox_errLog" VerticalScrollBarVisibility="Auto" />
             </TabItem>
         </TabControl>
         <Button Click="button_play_Click" Content="再生" Height="23" HorizontalAlignment="Left" Margin="30,0,0,8" VerticalAlignment="Bottom" Width="80" />

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Documents;
 using System.IO;
 
 namespace EpgTimer
@@ -846,6 +848,39 @@ namespace EpgTimer
                 retText = "その他";
             }
             return retText;
+        }
+
+        public static Paragraph ConvertDisplayText(string text)
+        {
+            int searchFrom = 0;
+            var para = new Paragraph();
+            string rtext = ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
+            if (rtext.Length == text.Length)
+            {
+                for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
+                {
+                    para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
+                    var h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
+                    h.MouseLeftButtonDown += (sender, e) =>
+                    {
+                        try
+                        {
+                            using (System.Diagnostics.Process.Start(((Hyperlink)sender).NavigateUri.ToString())) { }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.ToString());
+                        }
+                    };
+                    h.Foreground = SystemColors.HotTrackBrush;
+                    h.Cursor = System.Windows.Input.Cursors.Hand;
+                    h.NavigateUri = new Uri(m.Value);
+                    para.Inlines.Add(h);
+                    searchFrom = m.Index + m.Length;
+                }
+            }
+            para.Inlines.Add(text.Substring(searchFrom));
+            return para;
         }
 
         public void FilePlay(uint reserveID)

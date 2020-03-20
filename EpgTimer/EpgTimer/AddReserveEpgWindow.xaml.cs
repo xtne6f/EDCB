@@ -11,8 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-using System.Text.RegularExpressions;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -46,42 +44,7 @@ namespace EpgTimer
                 eventInfo = eventData;
                 textBox_info.Text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.BasicOnly);
                 String text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.ExtOnly);
-
-                int searchFrom = 0;
-                Paragraph para = new Paragraph();
-                string rtext = CommonManager.ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
-                if (rtext.Length == text.Length)
-                {
-                    for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
-                    {
-                        para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
-                        Hyperlink h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
-                        h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
-                        h.Foreground = Brushes.Blue;
-                        h.Cursor = Cursors.Hand;
-                        h.NavigateUri = new Uri(m.Value);
-                        para.Inlines.Add(h);
-                        searchFrom = m.Index + m.Length;
-                    }
-                }
-                para.Inlines.Add(text.Substring(searchFrom));
-                richTextBox_descInfo.Document = new FlowDocument(para);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() == typeof(Hyperlink))
-                {
-                    Hyperlink h = sender as Hyperlink;
-                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
-                }
+                richTextBox_descInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(text));
             }
             catch (Exception ex)
             {

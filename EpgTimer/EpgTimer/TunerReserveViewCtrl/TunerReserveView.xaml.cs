@@ -15,7 +15,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
-using System.Collections;
 
 namespace EpgTimer.TunerReserveViewCtrl
 {
@@ -193,7 +192,6 @@ namespace EpgTimer.TunerReserveViewCtrl
         {
             try
             {
-                if (sender.GetType() == typeof(TunerReservePanel))
                 {
                     if (e.LeftButton == MouseButtonState.Pressed && isDrag == true)
                     {

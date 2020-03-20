@@ -11,7 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Collections;
 using System.Windows.Threading;
 
 using EpgTimer.TunerReserveViewCtrl;
@@ -64,7 +63,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() == typeof(TunerReserveView))
                 {
                     //時間軸の表示もスクロール
                     tunerReserveTimeView.scrollViewer.ScrollToVerticalOffset(tunerReserveView.scrollViewer.VerticalOffset);
@@ -88,9 +86,8 @@ namespace EpgTimer
             try
             {
                 e.Handled = true;
-                if (sender.GetType() == typeof(TunerReserveView))
                 {
-                    TunerReserveView view = sender as TunerReserveView;
+                    TunerReserveView view = tunerReserveView;
                     if (Settings.Instance.EpgSettingList[0].MouseScrollAuto)
                     {
                         view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - e.Delta);
@@ -341,11 +338,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
                 ReserveData reserve = GetReserveItem(clickPos);
                 if (reserve == null)
                 {
@@ -383,11 +375,6 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
                 ReserveData reserve = GetReserveItem(clickPos);
                 if (reserve == null)
                 {
