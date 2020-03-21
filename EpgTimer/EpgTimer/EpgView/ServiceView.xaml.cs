@@ -61,7 +61,7 @@ namespace EpgTimer.EpgView
                 var gridItem = new System.Windows.Controls.Primitives.UniformGrid();
                 gridItem.Margin = new Thickness(1, 1, 1, 1);
                 gridItem.Background = serviceBrush;
-                gridItem.MouseLeftButtonUp += (sender, e) =>
+                gridItem.MouseLeftButtonDown += (sender, e) =>
                 {
                     if (e.ClickCount == 2 && LeftDoubleClick != null)
                     {
