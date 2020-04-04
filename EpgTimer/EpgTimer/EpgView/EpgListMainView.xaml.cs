@@ -106,9 +106,10 @@ namespace EpgTimer
         /// <summary>
         /// 表示週変更
         /// </summary>
-        void button_time_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        void button_time_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            var menu = new ContextMenu();
+            ContextMenu menu = ((Button)sender).ContextMenu;
+            menu.Items.Clear();
             bool prev = sender == button_prev;
             for (int i = 1; i <= 15; i++)
             {
@@ -142,7 +143,6 @@ namespace EpgTimer
                 }
                 menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
             }
-            menu.IsOpen = true;
         }
 
         /// <summary>

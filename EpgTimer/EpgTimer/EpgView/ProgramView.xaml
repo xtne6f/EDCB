@@ -5,20 +5,27 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.EpgView"
-             d:DesignHeight="300" d:DesignWidth="300">
-    <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
-        <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown" MouseLeave="canvas_MouseLeave">
-            <StackPanel IsHitTestVisible="False" Name="popupItem" UseLayoutRounding="True" Visibility="Hidden" ZIndex="20">
-                <StackPanel.Effect>
-                    <DropShadowEffect BlurRadius="12" Opacity="0.5" />
-                </StackPanel.Effect>
-                <local:EpgViewPanel x:Name="popupItemPanel" />
-            </StackPanel>
-            <Line Canvas.ZIndex="15" IsHitTestVisible="False" Name="nowLine" Opacity="0.7" Stroke="Red" StrokeThickness="3" Visibility="Hidden">
-                <Line.Effect>
-                    <DropShadowEffect BlurRadius="10" />
-                </Line.Effect>
-            </Line>
-        </Canvas>
+             d:DesignHeight="300" d:DesignWidth="300" PreviewMouseWheel="UserControl_PreviewMouseWheel">
+    <ScrollViewer HorizontalScrollBarVisibility="Visible" IsTabStop="True" Name="scrollViewer" ScrollChanged="scrollViewer_ScrollChanged">
+        <Grid>
+            <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonUp="canvas_MouseRightButtonUp" MouseLeave="canvas_MouseLeave">
+                <StackPanel IsHitTestVisible="False" Name="popupItem" UseLayoutRounding="True" Visibility="Hidden" ZIndex="20">
+                    <StackPanel.Effect>
+                        <DropShadowEffect BlurRadius="12" Opacity="0.5" />
+                    </StackPanel.Effect>
+                    <local:EpgViewPanel x:Name="popupItemPanel" />
+                </StackPanel>
+                <Line Canvas.ZIndex="15" IsHitTestVisible="False" Name="nowLine" Opacity="0.7" Stroke="Red" StrokeThickness="3" Visibility="Hidden">
+                    <Line.Effect>
+                        <DropShadowEffect BlurRadius="10" />
+                    </Line.Effect>
+                </Line>
+            </Canvas>
+            <Popup AllowsTransparency="True" MouseLeftButtonDown="toolTip_MouseLeftButtonDown" MouseRightButtonDown="toolTip_MouseRightButtonDown" Name="toolTip" Placement="MousePoint" PopupAnimation="Fade">
+                <Border Background="DarkGray">
+                    <TextBlock Margin="2" MaxWidth="400" Name="toolTipTextBlock" TextWrapping="Wrap" />
+                </Border>
+            </Popup>
+        </Grid>
     </ScrollViewer>
 </UserControl>

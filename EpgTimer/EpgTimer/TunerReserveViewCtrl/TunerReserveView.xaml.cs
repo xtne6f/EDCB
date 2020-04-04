@@ -26,7 +26,6 @@ namespace EpgTimer.TunerReserveViewCtrl
         public delegate void ProgramViewClickHandler(object sender, Point cursorPos);
         public event ScrollChangedEventHandler ScrollChanged = null;
         public event ProgramViewClickHandler LeftDoubleClick = null;
-        public event ProgramViewClickHandler RightClick = null;
 
         private Point lastDownMousePos;
         private double lastDownHOffset;
@@ -35,7 +34,6 @@ namespace EpgTimer.TunerReserveViewCtrl
 
         private DispatcherTimer toolTipTimer;
         private DispatcherTimer toolTipOffTimer;
-        private Popup toolTip = new Popup();
         private Point lastPopupPos;
         private ReserveViewItem lastPopupInfo;
 
@@ -45,17 +43,9 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             toolTipTimer = new DispatcherTimer(DispatcherPriority.Normal);
             toolTipTimer.Tick += new EventHandler(toolTipTimer_Tick);
-            toolTipTimer.Interval = TimeSpan.FromMilliseconds(1500);
             toolTipOffTimer = new DispatcherTimer(DispatcherPriority.Normal);
             toolTipOffTimer.Tick += new EventHandler(toolTipOffTimer_Tick);
             toolTipOffTimer.Interval = TimeSpan.FromSeconds(15);
-
-            toolTip.Placement = PlacementMode.MousePoint;
-            toolTip.PopupAnimation = PopupAnimation.Fade;
-            toolTip.PlacementTarget = reserveViewPanel;
-            toolTip.AllowsTransparency = true;
-            toolTip.MouseLeftButtonDown += new MouseButtonEventHandler(toolTip_MouseLeftButtonDown);
-            toolTip.PreviewMouseWheel += new MouseWheelEventHandler(toolTip_PreviewMouseWheel);
         }
 
         public void ClearInfo()
@@ -74,15 +64,6 @@ namespace EpgTimer.TunerReserveViewCtrl
             canvas.Width = 0;
         }
 
-        void toolTip_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            toolTipTimer.Stop();
-            toolTipOffTimer.Stop();
-            toolTip.IsOpen = false;
-
-            RaiseEvent(e);
-        }
-
         void toolTip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 2)
@@ -96,6 +77,13 @@ namespace EpgTimer.TunerReserveViewCtrl
                     LeftDoubleClick(sender, lastPopupPos);
                 }
             }
+        }
+
+        void toolTip_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            toolTipTimer.Stop();
+            toolTipOffTimer.Stop();
+            toolTip.IsOpen = false;
         }
 
         void toolTipOffTimer_Tick(object sender, EventArgs e)
@@ -141,19 +129,15 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                                     view += info.ReserveInfo.Title;
 
-                                    Border border = new Border();
-                                    border.Background = Brushes.DarkGray;
-
-                                    TextBlock block = new TextBlock();
-                                    block.Text = view;
-                                    block.MaxWidth = 400;
-                                    block.TextWrapping = TextWrapping.Wrap;
-                                    block.Margin = new Thickness(2);
-
-                                    block.Background = Brushes.LightGray;
-                                    block.Foreground = Brushes.Black;
-                                    border.Child = block;
-                                    toolTip.Child = border;
+                                    toolTipTextBlock.Text = view;
+                                    toolTipTextBlock.Background = new SolidColorBrush(Color.FromRgb(
+                                        Settings.Instance.EpgSettingList[0].EpgTipsBackColorR,
+                                        Settings.Instance.EpgSettingList[0].EpgTipsBackColorG,
+                                        Settings.Instance.EpgSettingList[0].EpgTipsBackColorB));
+                                    toolTipTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(
+                                        Settings.Instance.EpgSettingList[0].EpgTipsForeColorR,
+                                        Settings.Instance.EpgSettingList[0].EpgTipsForeColorG,
+                                        Settings.Instance.EpgSettingList[0].EpgTipsForeColorB));
                                     toolTip.IsOpen = true;
                                     toolTipOffTimer.Start();
 
@@ -242,6 +226,7 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                             }
 
+                            toolTipTimer.Interval = TimeSpan.FromMilliseconds(Settings.Instance.EpgSettingList[0].EpgToolTipViewWait);
                             toolTipTimer.Start();
                             lastPopupPos = CursorPos;
                         }
@@ -312,7 +297,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
         }
 
-        private void reserveViewPanel_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void reserveViewPanel_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             toolTipTimer.Stop();
             toolTipOffTimer.Stop();
@@ -320,19 +305,30 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             reserveViewPanel.ReleaseMouseCapture();
             isDrag = false;
-            lastDownMousePos = Mouse.GetPosition(null);
-            lastDownHOffset = scrollViewer.HorizontalOffset;
-            lastDownVOffset = scrollViewer.VerticalOffset;
-            if (e.ClickCount == 1)
-            {
-                Point cursorPos = Mouse.GetPosition(reserveViewPanel);
-                if (RightClick != null)
-                {
-                    RightClick(sender, cursorPos);
-                }
-            }
         }
 
+        void UserControl_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            toolTipTimer.Stop();
+            toolTipOffTimer.Stop();
+            toolTip.IsOpen = false;
+
+            e.Handled = true;
+            if (Settings.Instance.EpgSettingList[0].MouseScrollAuto)
+            {
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
+            }
+            else if (e.Delta < 0)
+            {
+                //下方向
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + Settings.Instance.EpgSettingList[0].ScrollSize);
+            }
+            else
+            {
+                //上方向
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - Settings.Instance.EpgSettingList[0].ScrollSize);
+            }
+        }
     }
 
 }

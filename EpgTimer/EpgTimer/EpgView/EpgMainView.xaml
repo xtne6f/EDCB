@@ -16,10 +16,51 @@
             <ColumnDefinition Width="40" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <local:DateView Grid.ColumnSpan="2" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" TimeButtonRightClick="epgDateView_TimeButtonRightClick" />
+        <local:DateView Grid.ColumnSpan="2" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" TimeButtonContextMenuOpening="epgDateView_TimeButtonContextMenuOpening" />
         <Button Click="button_now_Click" Content="現在" Grid.Row="1" />
         <local:TimeView Grid.Row="2" Margin="0,0,0,18" x:Name="timeView" />
         <local:ServiceView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="serviceView" LeftDoubleClick="serviceView_LeftDoubleClick" RightClick="serviceView_RightClick" />
-        <local:ProgramView Grid.Column="1" Grid.Row="2" x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" PreviewMouseWheel="epgProgramView_PreviewMouseWheel" RightClick="epgProgramView_RightClick" ScrollChanged="epgProgramView_ScrollChanged" />
+        <Grid ContextMenuOpening="grid_content_ContextMenuOpening" Grid.Column="1" Grid.Row="2" Name="grid_content">
+            <local:ProgramView x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" ScrollChanged="epgProgramView_ScrollChanged" />
+            <Grid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Click="cm_add_preset_Click" Header="簡易予約" Name="cm_new" />
+                    <MenuItem Header="予約変更 (_C)" Name="cm_chg">
+                        <MenuItem Click="cm_chg_Click" Header="ダイアログ表示 (_X)" />
+                        <Separator />
+                        <MenuItem Click="cm_chg_recmode_Click" Header="全サービス (_0)" Name="recmode_all" />
+                        <MenuItem Click="cm_chg_recmode_Click" Header="指定サービス (_1)" Name="recmode_only" />
+                        <MenuItem Click="cm_chg_recmode_Click" Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" />
+                        <MenuItem Click="cm_chg_recmode_Click" Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" />
+                        <MenuItem Click="cm_chg_recmode_Click" Header="視聴 (_4)" Name="recmode_view" />
+                        <MenuItem Click="cm_chg_recmode_Click" Header="無効 (_5)" Name="recmode_no" />
+                        <Separator />
+                        <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
+                            <MenuItem Click="cm_chg_priority_Click" Header="_1" Name="priority_1" />
+                            <MenuItem Click="cm_chg_priority_Click" Header="_2" Name="priority_2" />
+                            <MenuItem Click="cm_chg_priority_Click" Header="_3" Name="priority_3" />
+                            <MenuItem Click="cm_chg_priority_Click" Header="_4" Name="priority_4" />
+                            <MenuItem Click="cm_chg_priority_Click" Header="_5" Name="priority_5" />
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="予約追加 (_A)" Name="cm_add">
+                        <MenuItem Click="cm_add_Click" Header="ダイアログ表示 (_X)" />
+                        <Separator />
+                    </MenuItem>
+                    <MenuItem Header="重複予約追加 (_A)" Name="cm_dupadd">
+                        <MenuItem Click="cm_add_Click" Header="ダイアログ表示 (_X)" />
+                        <Separator />
+                    </MenuItem>
+                    <MenuItem Click="cm_del_Click" Header="予約削除" Name="cm_del" />
+                    <MenuItem Click="cm_autoadd_Click" Header="自動予約登録" Name="cm_autoadd" />
+                    <MenuItem Click="cm_timeShiftPlay_Click" Header="追っかけ再生 (_P)" Name="cm_timeshift" />
+                    <Separator />
+                    <MenuItem Click="cm_chg_viewMode_Click" Header="1週間モード (_2)" Name="cm_chg_viewMode2" />
+                    <MenuItem Click="cm_chg_viewMode_Click" Header="リスト表示モード (_3)" Name="cm_chg_viewMode3" />
+                    <Separator />
+                    <MenuItem Click="cm_viewSet_Click" Header="表示設定 (_W)" />
+                </ContextMenu>
+            </Grid.ContextMenu>
+        </Grid>
     </Grid>
 </UserControl>
