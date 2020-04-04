@@ -266,11 +266,6 @@ namespace EpgTimer
             DialogResult = true;
         }
 
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-        }
-
         private void checkBox_program_Click(object sender, RoutedEventArgs e)
         {
             recSettingView.SetViewMode(checkBox_program.IsChecked == false);

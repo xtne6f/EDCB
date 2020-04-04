@@ -140,11 +140,6 @@ namespace EpgTimer
             DialogResult = true;
         }
 
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-        }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             if (defKey != null)

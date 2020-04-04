@@ -13,6 +13,6 @@
         </TabControl>
         <Button Click="button_play_Click" Content="再生" Height="23" HorizontalAlignment="Left" Margin="30,0,0,8" VerticalAlignment="Bottom" Width="80" />
         <Button Click="button_del_Click" Content="削除" Height="23" HorizontalAlignment="Left" Margin="118,0,0,8" VerticalAlignment="Bottom" Width="80" />
-        <Button Click="button_cancel_Click" Content="キャンセル" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="206,0,0,8" VerticalAlignment="Bottom" Width="80" />
+        <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="206,0,0,8" VerticalAlignment="Bottom" Width="80" />
     </Grid>
 </Window>

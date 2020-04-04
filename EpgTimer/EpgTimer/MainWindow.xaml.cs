@@ -802,7 +802,7 @@ namespace EpgTimer
                     {
                         SuspendCheckWindow dlg = new SuspendCheckWindow();
                         dlg.SetMode(0, 2);
-                        if (dlg.ShowDialog() == true)
+                        if (dlg.ShowDialog() != true)
                         {
                             return;
                         }
@@ -852,7 +852,7 @@ namespace EpgTimer
                     {
                         SuspendCheckWindow dlg = new SuspendCheckWindow();
                         dlg.SetMode(0, 1);
-                        if (dlg.ShowDialog() == true)
+                        if (dlg.ShowDialog() != true)
                         {
                             return;
                         }
@@ -1031,7 +1031,7 @@ namespace EpgTimer
                         {
                             SuspendCheckWindow dlg = new SuspendCheckWindow();
                             dlg.SetMode(reboot, suspendMode);
-                            if (dlg.ShowDialog() != true)
+                            if (dlg.ShowDialog() == true)
                             {
                                 CommonManager.CreateSrvCtrl().SendReboot();
                             }
@@ -1072,7 +1072,7 @@ namespace EpgTimer
             {
                 SuspendCheckWindow dlg = new SuspendCheckWindow();
                 dlg.SetMode(0, suspendMode);
-                if (dlg.ShowDialog() != true)
+                if (dlg.ShowDialog() == true)
                 {
                     CommonManager.CreateSrvCtrl().SendSuspend(param);
                 }

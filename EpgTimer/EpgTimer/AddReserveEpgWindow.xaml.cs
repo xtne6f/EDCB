@@ -114,11 +114,6 @@ namespace EpgTimer
             DialogResult = true;
         }
 
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-        }
-
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
