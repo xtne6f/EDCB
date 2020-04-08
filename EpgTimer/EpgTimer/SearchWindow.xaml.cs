@@ -24,6 +24,7 @@ namespace EpgTimer
             new List<KeyValuePair<string, bool>>() { new KeyValuePair<string, bool>("StartTime", false) };
 
         private UInt32 autoAddID = 0;
+        private bool searchOnLoaded = false;
 
         public SearchWindow()
         {
@@ -55,44 +56,19 @@ namespace EpgTimer
         public void SetSearchDefKey(EpgSearchKeyInfo key)
         {
             searchKeyView.SetSearchKey(key);
+            searchOnLoaded = true;
         }
 
-        public void SetRecInfoDef(RecSettingData set)
+        /// <summary>
+        /// 自動登録情報をセットし、ウィンドウを変更モードにする
+        /// </summary>
+        public void SetChangeModeData(EpgAutoAddData item)
         {
-            recSettingView.SetDefSetting(set);
-        }
-
-        public void SetViewMode(UInt16 mode)
-        {
-            if (mode == 1)
-            {
-                button_add_reserve.Visibility = System.Windows.Visibility.Hidden;
-                button_add_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-
-                Title = "EPG予約条件";
-            }
-            else if (mode == 2)
-            {
-                button_add_reserve.Visibility = System.Windows.Visibility.Hidden;
-                button_add_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-
-                Title = "EPG予約条件";
-            }
-            else
-            {
-                button_add_reserve.Visibility = System.Windows.Visibility.Visible;
-                button_add_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-
-                Title = "検索";
-            }
-        }
-
-        public void SetChgAutoAddID(UInt32 id)
-        {
-            autoAddID = id;
+            autoAddID = item.dataID;
+            SetSearchDefKey(item.searchInfo);
+            recSettingView.SetDefSetting(item.recSetting);
+            Title = "EPG予約条件";
+            button_chg_epgAutoAdd.Visibility = Visibility.Visible;
         }
 
         private void tabItem_searchKey_KeyDown(object sender, KeyEventArgs e)
@@ -452,13 +428,14 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (Title == "検索")
+            if (searchOnLoaded)
             {
-                this.searchKeyView.FocusAndKey();
+                searchOnLoaded = false;
+                SearchPg();
             }
             else
             {
-                this.SearchPg();
+                searchKeyView.FocusAndKey();
             }
             CommonManager.Instance.DB.ReserveInfoChanged -= RefreshReserve;
             CommonManager.Instance.DB.ReserveInfoChanged += RefreshReserve;

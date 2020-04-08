@@ -103,8 +103,7 @@ namespace EpgTimer
                 ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
                 AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
+                dlg.SetChangeModeData(info.ManualAutoAddInfo);
                 dlg.ShowDialog();
             }
         }
@@ -116,8 +115,7 @@ namespace EpgTimer
                 ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
                 AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
+                dlg.SetChangeModeData(info.ManualAutoAddInfo);
                 dlg.ShowDialog();
             }
         }

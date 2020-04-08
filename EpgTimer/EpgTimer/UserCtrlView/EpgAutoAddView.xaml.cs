@@ -88,7 +88,6 @@ namespace EpgTimer
             {
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
                 dlg.ShowDialog();
             }
             catch (Exception ex)
@@ -277,10 +276,7 @@ namespace EpgTimer
                 EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(2);
-                dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
-                dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
+                dlg.SetChangeModeData(info.EpgAutoAddInfo);
                 dlg.ShowDialog();
             }
             catch (Exception ex)

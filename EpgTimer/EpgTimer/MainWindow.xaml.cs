@@ -740,7 +740,6 @@ namespace EpgTimer
             {
                 var search = new SearchWindow();
                 search.Owner = (Window)topWindow.RootVisual;
-                search.SetViewMode(0);
                 search.ShowDialog();
             }
         }
