@@ -53,7 +53,6 @@ namespace EpgTimer
         /// <param name="e"></param>
         void tunerReserveView_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            try
             {
                 {
                     //時間軸の表示もスクロール
@@ -61,10 +60,6 @@ namespace EpgTimer
                     //サービス名表示もスクロール
                     tunerReserveNameView.scrollViewer.ScrollToHorizontalOffset(tunerReserveView.scrollViewer.HorizontalOffset);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -133,7 +128,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -162,7 +157,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -190,7 +185,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -201,7 +196,6 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_autoadd_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 var reserve = (ReserveData)((MenuItem)sender).DataContext;
                 SearchWindow dlg = new SearchWindow();
@@ -219,10 +213,6 @@ namespace EpgTimer
                 dlg.SetSearchDefKey(key);
                 dlg.ShowDialog();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
@@ -232,14 +222,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_timeShiftPlay_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 var reserve = (ReserveData)((MenuItem)sender).DataContext;
                 CommonManager.Instance.FilePlay(reserve.ReserveID);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -279,7 +264,6 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void ChangeReserve(ReserveData reserveInfo)
         {
-            try
             {
                 ChgReserveWindow dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
@@ -287,10 +271,6 @@ namespace EpgTimer
                 if (dlg.ShowDialog() == true)
                 {
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -456,7 +436,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 

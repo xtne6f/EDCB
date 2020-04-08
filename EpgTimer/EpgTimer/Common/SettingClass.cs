@@ -730,7 +730,7 @@ namespace EpgTimer
             {
                 if (notifyException)
                 {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    MessageBox.Show(ex.ToString());
                 }
             }
         }

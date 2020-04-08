@@ -84,15 +84,10 @@ namespace EpgTimer
 
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -112,7 +107,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -187,7 +182,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -215,18 +210,11 @@ namespace EpgTimer
 
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            try
             {
                 foreach (MenuItem item in listView_key.ContextMenu.Items)
                 {
                     item.IsChecked = Settings.Instance.AutoAddEpgColumn.Any(info => info.Tag == item.Name);
                 }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -257,7 +245,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -269,19 +257,13 @@ namespace EpgTimer
 
         void showDialog()
         {
-            if (listView_key.SelectedItem == null) { return; }
-            //
-            try
+            if (listView_key.SelectedItem != null)
             {
                 EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetChangeModeData(info.EpgAutoAddInfo);
                 dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

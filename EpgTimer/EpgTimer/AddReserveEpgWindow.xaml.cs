@@ -39,16 +39,11 @@ namespace EpgTimer
 
         public void SetEventInfo(EpgEventInfo eventData)
         {
-            try
             {
                 eventInfo = eventData;
                 textBox_info.Text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.BasicOnly);
                 String text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.ExtOnly);
                 richTextBox_descInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(text));
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -109,7 +104,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
             DialogResult = true;
         }

@@ -126,7 +126,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -230,7 +230,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -252,7 +252,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -275,13 +275,12 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
         private void listView_result_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            try
             {
                 if (listView_result.SelectedItem != null)
                 {
@@ -296,39 +295,25 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void ChangeReserve(ReserveData reserveInfo)
         {
-            try
             {
                 ChgReserveWindow dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetReserveInfo(reserveInfo);
                 dlg.ShowDialog();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void AddReserve(EpgEventInfo eventInfo)
         {
-            try
             {
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetEventInfo(eventInfo);
                 dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -520,7 +505,7 @@ namespace EpgTimer
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                        MessageBox.Show(ex.ToString());
                     }
                 }
             }
@@ -553,7 +538,7 @@ namespace EpgTimer
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                        MessageBox.Show(ex.ToString());
                     }
                 }
             }

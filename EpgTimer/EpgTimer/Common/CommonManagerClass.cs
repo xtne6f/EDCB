@@ -889,15 +889,19 @@ namespace EpgTimer
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
-                if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                try
                 {
-                    CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
-                    if (info.filePath != "")
+                    if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
                     {
-                        FilePlay(info.filePath);
-                        return;
+                        CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
+                        if (info.filePath != "")
+                        {
+                            FilePlay(info.filePath);
+                            return;
+                        }
                     }
                 }
+                catch { }
                 MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
@@ -932,7 +936,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
     }

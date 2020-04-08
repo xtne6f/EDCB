@@ -133,18 +133,11 @@ namespace EpgTimer
 
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            try
             {
                 foreach (MenuItem item in listView_key.ContextMenu.Items)
                 {
                     item.IsChecked = Settings.Instance.AutoAddManualColumn.Any(info => info.Tag == item.Name);
                 }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -175,7 +168,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
     }
