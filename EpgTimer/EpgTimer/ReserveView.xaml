@@ -27,9 +27,9 @@
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
         </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
+        <ContextMenu x:Key="itemMenu">
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
-            <MenuItem Header="変更 (_C)">
+            <MenuItem Header="変更 (_C)" Name="cm_chg">
                 <MenuItem Header="ダイアログ表示 (_X)" Click="button_change_Click" InputGestureText="Enter" />
                 <Separator/>
                 <MenuItem Header="全サービス (_0)" Name="recmode_0" Click="recmode_Click" />
@@ -68,6 +68,7 @@
                     <Setter Property="BorderThickness" Value="5,0,0,1" />
                     <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
+                    <EventSetter Event="ContextMenuOpening" Handler="listView_reserve_ContextMenuOpening" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_reserve_MouseDoubleClick"/>
                     <EventSetter Event="KeyDown" Handler="listView_reserve_KeyDown" />
                 </Style>

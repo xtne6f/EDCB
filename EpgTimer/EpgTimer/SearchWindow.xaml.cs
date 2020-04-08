@@ -169,14 +169,15 @@ namespace EpgTimer
             }
         }
 
-        private void button_add_reserve_Click(object sender, RoutedEventArgs e)
+        private void buttonOrMenuItem_add_reserve_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (listView_result.SelectedItem != null)
                 {
                     List<ReserveData> list = new List<ReserveData>();
-                    RecSettingData setInfo = recSettingView.GetRecSetting();
+                    RecSettingData setInfo = sender is MenuItem ? Settings.CreateRecSetting((uint)((MenuItem)sender).Tag) :
+                                                                  recSettingView.GetRecSetting();
 
                     foreach (SearchItem item in listView_result.SelectedItems)
                     {
@@ -615,22 +616,16 @@ namespace EpgTimer
             }
         }
 
-        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
+        private void listView_result_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            if (listView_result.SelectedItem != null)
             {
-                foreach (object item in ((ContextMenu)sender).Items)
+                foreach (FrameworkElement item in ((ListViewItem)sender).ContextMenu.Items)
                 {
-                    if (item is MenuItem && (((MenuItem)item).Name == "cmdDlt"))
+                    if (item.Name == "cmdDlt")
                     {
-                        bool isReserved = false;
-                        foreach (SearchItem selItem in listView_result.SelectedItems)
-                        {
-                            isReserved |= selItem.IsReserved;
-                        }
-                        ((MenuItem)item).IsEnabled = isReserved;
+                        item.IsEnabled = listView_result.SelectedItems.Cast<SearchItem>().Any(a => a.IsReserved);
                     }
-                    else if (item is MenuItem && ((MenuItem)item).Name == "cmdChg")
+                    else if (item.Name == "cmdChg")
                     {
                         //選択されているすべての予約が同じ設定の場合だけチェックを表示する
                         byte recMode = 0xFF;
@@ -660,7 +655,7 @@ namespace EpgTimer
 
                         if (recMode != 0xFF)
                         {
-                            ((MenuItem)item).IsEnabled = true;
+                            item.IsEnabled = true;
                             for (int i = 0; i <= 5; i++)
                             {
                                 ((MenuItem)((MenuItem)item).Items[i]).IsChecked = (i == recMode);
@@ -681,7 +676,23 @@ namespace EpgTimer
                         }
                         else
                         {
-                            ((MenuItem)item).IsEnabled = false;
+                            item.IsEnabled = false;
+                        }
+                    }
+                    else if (item.Name == "cmdAdd")
+                    {
+                        ((MenuItem)item).Items.Clear();
+                        item.IsEnabled = listView_result.SelectedItems.Cast<SearchItem>().Any(a => a.IsReserved == false);
+                        if (item.IsEnabled)
+                        {
+                            foreach (RecPresetItem info in Settings.GetRecPresetList())
+                            {
+                                var menuItem = new MenuItem();
+                                menuItem.Header = info.DisplayName;
+                                menuItem.Tag = info.ID;
+                                menuItem.Click += buttonOrMenuItem_add_reserve_Click;
+                                ((MenuItem)item).Items.Add(menuItem);
+                            }
                         }
                     }
                 }
