@@ -326,7 +326,7 @@ namespace EpgTimer
             foreach (object item in listView_reserve.ContextMenu.Items)
             {
                 MenuItem menuItem = item as MenuItem;
-                if (menuItem != null)
+                if (menuItem != null && menuItem.IsCheckable)
                 {
                     if (menuItem.Name == "HideButton")
                     {
@@ -334,15 +334,7 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItem.IsChecked = false;
-                        foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
-                        {
-                            if (info.Tag == menuItem.Name)
-                            {
-                                menuItem.IsChecked = true;
-                                break;
-                            }
-                        }
+                        menuItem.IsChecked = Settings.Instance.ReserveListColumn.Any(info => info.Tag == menuItem.Name);
                     }
                 }
             }

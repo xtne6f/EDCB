@@ -209,6 +209,8 @@ namespace EpgTimer
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
         public bool RecInfoHideButton { get; set; }
+        public bool AutoAddEpgHideButton { get; set; }
+        public bool AutoAddManualHideButton { get; set; }
         public string TvTestExe { get; set; }
         public string TvTestCmd { get; set; }
         public bool NwTvMode { get; set; }
@@ -411,6 +413,8 @@ namespace EpgTimer
             Enum.TryParse(ConvertXElem(x, w, "RecInfoSortDirection", RecInfoSortDirection.ToString(), ""), out sd);
             r.RecInfoSortDirection      = sd;
             r.RecInfoHideButton         = ConvertXElem(x, w, "RecInfoHideButton", RecInfoHideButton, false);
+            r.AutoAddEpgHideButton      = ConvertXElem(x, w, "AutoAddEpgHideButton", AutoAddEpgHideButton, false);
+            r.AutoAddManualHideButton   = ConvertXElem(x, w, "AutoAddManualHideButton", AutoAddManualHideButton, false);
             r.TvTestExe                 = ConvertXElem(x, w, "TvTestExe", TvTestExe, "");
             r.TvTestCmd                 = ConvertXElem(x, w, "TvTestCmd", TvTestCmd, "");
             r.NwTvMode                  = ConvertXElem(x, w, "NwTvMode", NwTvMode, false);
@@ -507,6 +511,8 @@ namespace EpgTimer
             dest.RecInfoColumnHead = RecInfoColumnHead;
             dest.RecInfoSortDirection = RecInfoSortDirection;
             dest.RecInfoHideButton = RecInfoHideButton;
+            dest.AutoAddEpgHideButton = AutoAddEpgHideButton;
+            dest.AutoAddManualHideButton = AutoAddManualHideButton;
             dest.NWServerIP = NWServerIP;
             dest.NWServerPort = NWServerPort;
             dest.NWWaitPort = NWWaitPort;

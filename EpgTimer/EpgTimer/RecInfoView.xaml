@@ -46,8 +46,8 @@
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
         </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu">
-            <MenuItem Header="録画情報" Click="button_recInfo_Click" />
+        <ContextMenu x:Key="itemMenu">
+            <MenuItem Header="録画情報" Click="button_recInfo_Click" InputGestureText="Enter" />
             <MenuItem Header="削除" Click="button_del_Click" />
             <MenuItem Header="再生" Click="button_play_Click" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />

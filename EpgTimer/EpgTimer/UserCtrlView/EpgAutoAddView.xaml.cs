@@ -40,6 +40,10 @@ namespace EpgTimer
                     gridView_key.Columns.Add(columnList[info.Tag]);
                 }
             }
+            if (Settings.Instance.AutoAddEpgHideButton)
+            {
+                stackPanel_button.Visibility = Visibility.Collapsed;
+            }
         }
 
         public void SaveSize()
@@ -210,10 +214,19 @@ namespace EpgTimer
 
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
+            foreach (object item in listView_key.ContextMenu.Items)
             {
-                foreach (MenuItem item in listView_key.ContextMenu.Items)
+                MenuItem menuItem = item as MenuItem;
+                if (menuItem != null)
                 {
-                    item.IsChecked = Settings.Instance.AutoAddEpgColumn.Any(info => info.Tag == item.Name);
+                    if (menuItem.Name == "HideButton")
+                    {
+                        menuItem.IsChecked = Settings.Instance.AutoAddEpgHideButton;
+                    }
+                    else
+                    {
+                        menuItem.IsChecked = Settings.Instance.AutoAddEpgColumn.Any(info => info.Tag == menuItem.Name);
+                    }
                 }
             }
         }
@@ -246,6 +259,27 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void hideButton_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Instance.AutoAddEpgHideButton = ((MenuItem)sender).IsChecked;
+            stackPanel_button.Visibility = Settings.Instance.AutoAddEpgHideButton ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void listView_key_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            foreach (FrameworkElement item in ((ListViewItem)sender).ContextMenu.Items)
+            {
+                if (item.Name == "saveItemOrder")
+                {
+                    item.IsEnabled = button_saveItemOrder.IsEnabled;
+                }
+                else if (item.Name == "reloadItem")
+                {
+                    item.IsEnabled = button_reloadItem.IsEnabled;
+                }
             }
         }
 
@@ -363,6 +397,24 @@ namespace EpgTimer
             this.reloadItemOrder();
         }
 
+        private void listView_key_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    showDialog();
+                    break;
+                case Key.Delete:
+                    if (listView_key.SelectedItems.Count > 0 &&
+                        MessageBox.Show(listView_key.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
+                                        MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
+                    {
+                        button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    }
+                    break;
+            }
+        }
+
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
@@ -378,29 +430,11 @@ namespace EpgTimer
                     case Key.S:
                         this.saveItemOrder();
                         break;
-                    case Key.R:
+                    case Key.Z:
                         this.reloadItemOrder();
                         break;
                 }
             }
-            else
-            {
-                switch (e.Key)
-                {
-                    case Key.Enter:
-                        this.showDialog();
-                        break;
-                    case Key.Delete:
-                        if (listView_key.SelectedItems.Count > 0 &&
-                            MessageBox.Show(listView_key.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
-                                            MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
-                        {
-                            button_del_Click(listView_key.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-                        }
-                        break;
-                }
-            }
-            //
             base.OnPreviewKeyDown(e);
         }
 
