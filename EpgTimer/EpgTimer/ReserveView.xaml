@@ -21,14 +21,16 @@
             <MenuItem Header="プログラム" Name="IsProgram" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="チューナー強制" Name="TunerID" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画後実行bat" Name="BatFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="タグ" Name="BatFileTag" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予想サイズ" Name="EstimatedRecSize" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
+            <Separator />
+            <MenuItem Header="プログラム予約追加" Click="button_add_manual_Click" />
         </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
-            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
-            <MenuItem Header="変更 (_C)">
+        <ContextMenu x:Key="itemMenu">
+            <MenuItem Header="変更 (_C)" Name="cm_chg">
                 <MenuItem Header="ダイアログ表示 (_X)" Click="button_change_Click" InputGestureText="Enter" />
                 <Separator/>
                 <MenuItem Header="全サービス (_0)" Name="recmode_0" Click="recmode_Click" />
@@ -46,6 +48,7 @@
                     <MenuItem Header="_5" Name="priority_5" Click="priority_Click" />
                 </MenuItem>
             </MenuItem>
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
             <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" InputGestureText="Ctrl + P" />
@@ -67,6 +70,7 @@
                     <Setter Property="BorderThickness" Value="5,0,0,1" />
                     <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
+                    <EventSetter Event="ContextMenuOpening" Handler="listView_reserve_ContextMenuOpening" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_reserve_MouseDoubleClick"/>
                     <EventSetter Event="KeyDown" Handler="listView_reserve_KeyDown" />
                 </Style>
@@ -148,6 +152,11 @@
                             <GridViewColumnHeader Content="録画後実行bat" Tag="BatFilePath" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding BatFileTag}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="タグ" Tag="BatFileTag" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding EstimatedRecSize}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="予想サイズ" Tag="EstimatedRecSize" HorizontalContentAlignment="Left" />
@@ -162,11 +171,11 @@
             </ListView.View>
         </ListView>
         <StackPanel Grid.Column="1" Name="stackPanel_button" Width="130">
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" ToolTip="Delete" />
-            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" ToolTip="Enter" />
+            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
+            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" />
             <Button Content="無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" />
             <Button Content="プログラム予約追加" Height="23" Name="button_add_manual" Margin="0,10,0,10" Click="button_add_manual_Click" />
-            <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" ToolTip="Ctrl + P" />
+            <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" />
         </StackPanel>
     </Grid>
 </UserControl>

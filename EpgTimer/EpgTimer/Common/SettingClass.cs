@@ -129,6 +129,7 @@ namespace EpgTimer
         public bool EpgToolTipNoViewOnly { get; set; }
         public int EpgToolTipViewWait { get; set; }
         public bool EpgPopup { get; set; }
+        public bool EpgAdjustPopup { get; set; }
         public bool EpgExtInfoTable { get; set; }
         public bool EpgExtInfoPopup { get; set; }
         public bool EpgGradation { get; set; }
@@ -208,6 +209,8 @@ namespace EpgTimer
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
         public bool RecInfoHideButton { get; set; }
+        public bool AutoAddEpgHideButton { get; set; }
+        public bool AutoAddManualHideButton { get; set; }
         public string TvTestExe { get; set; }
         public string TvTestCmd { get; set; }
         public bool NwTvMode { get; set; }
@@ -335,6 +338,7 @@ namespace EpgTimer
                 rr.EpgToolTipNoViewOnly     = ConvertXElem(xx, w, "EpgToolTipNoViewOnly", val.EpgToolTipNoViewOnly, true);
                 rr.EpgToolTipViewWait       = (int)ConvertXElem(xx, w, "EpgToolTipViewWait", val.EpgToolTipViewWait, 1500);
                 rr.EpgPopup                 = ConvertXElem(xx, w, "EpgPopup", val.EpgPopup, true);
+                rr.EpgAdjustPopup           = ConvertXElem(xx, w, "EpgAdjustPopup", val.EpgAdjustPopup, true);
                 rr.EpgExtInfoTable          = ConvertXElem(xx, w, "EpgExtInfoTable", val.EpgExtInfoTable, false);
                 rr.EpgExtInfoPopup          = ConvertXElem(xx, w, "EpgExtInfoPopup", val.EpgExtInfoPopup, true);
                 rr.EpgGradation             = ConvertXElem(xx, w, "EpgGradation", val.EpgGradation, true);
@@ -409,6 +413,8 @@ namespace EpgTimer
             Enum.TryParse(ConvertXElem(x, w, "RecInfoSortDirection", RecInfoSortDirection.ToString(), ""), out sd);
             r.RecInfoSortDirection      = sd;
             r.RecInfoHideButton         = ConvertXElem(x, w, "RecInfoHideButton", RecInfoHideButton, false);
+            r.AutoAddEpgHideButton      = ConvertXElem(x, w, "AutoAddEpgHideButton", AutoAddEpgHideButton, false);
+            r.AutoAddManualHideButton   = ConvertXElem(x, w, "AutoAddManualHideButton", AutoAddManualHideButton, false);
             r.TvTestExe                 = ConvertXElem(x, w, "TvTestExe", TvTestExe, "");
             r.TvTestCmd                 = ConvertXElem(x, w, "TvTestCmd", TvTestCmd, "");
             r.NwTvMode                  = ConvertXElem(x, w, "NwTvMode", NwTvMode, false);
@@ -505,6 +511,8 @@ namespace EpgTimer
             dest.RecInfoColumnHead = RecInfoColumnHead;
             dest.RecInfoSortDirection = RecInfoSortDirection;
             dest.RecInfoHideButton = RecInfoHideButton;
+            dest.AutoAddEpgHideButton = AutoAddEpgHideButton;
+            dest.AutoAddManualHideButton = AutoAddManualHideButton;
             dest.NWServerIP = NWServerIP;
             dest.NWServerPort = NWServerPort;
             dest.NWWaitPort = NWWaitPort;
@@ -728,7 +736,7 @@ namespace EpgTimer
             {
                 if (notifyException)
                 {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    MessageBox.Show(ex.ToString());
                 }
             }
         }

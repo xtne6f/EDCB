@@ -14,8 +14,16 @@
             <ColumnDefinition Width="auto" />
             <ColumnDefinition Name="columnDefinition" Width="*" />
         </Grid.ColumnDefinitions>
-        <Button Click="button_time_Click" Content="←" IsEnabled="False" MouseRightButtonUp="button_time_MouseRightButtonUp" Name="button_prev" Visibility="Collapsed"  Width="40" />
-        <Button Click="button_time_Click" Content="→" Grid.Row="1" IsEnabled="False" MouseRightButtonUp="button_time_MouseRightButtonUp" Name="button_next" Visibility="{Binding Visibility, ElementName=button_prev}" Width="40" />
+        <Button Click="button_time_Click" Content="←" ContextMenuOpening="button_time_ContextMenuOpening" IsEnabled="False" Name="button_prev" Visibility="Collapsed" Width="40">
+            <Button.ContextMenu>
+                <ContextMenu />
+            </Button.ContextMenu>
+        </Button>
+        <Button Click="button_time_Click" Content="→" ContextMenuOpening="button_time_ContextMenuOpening" Grid.Row="1" IsEnabled="False" Name="button_next" Visibility="{Binding Visibility, ElementName=button_prev}" Width="40">
+            <Button.ContextMenu>
+                <ContextMenu />
+            </Button.ContextMenu>
+        </Button>
         <UniformGrid Grid.Column="1" Name="uniformGrid_day" Rows="1" />
         <UniformGrid Grid.Column="1" Grid.Row="1" Name="uniformGrid_time" Rows="1" />
     </Grid>

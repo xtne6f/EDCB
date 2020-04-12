@@ -209,7 +209,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -723,7 +723,7 @@ namespace EpgTimer
             // Hide()したSearchWindowを復帰
             foreach (Window win1 in this.OwnedWindows)
             {
-                if (win1.GetType() == typeof(SearchWindow))
+                if (win1 is SearchWindow)
                 {
                     win1.Show();
                     return;
@@ -740,7 +740,6 @@ namespace EpgTimer
             {
                 var search = new SearchWindow();
                 search.Owner = (Window)topWindow.RootVisual;
-                search.SetViewMode(0);
                 search.ShowDialog();
             }
         }
@@ -802,7 +801,7 @@ namespace EpgTimer
                     {
                         SuspendCheckWindow dlg = new SuspendCheckWindow();
                         dlg.SetMode(0, 2);
-                        if (dlg.ShowDialog() == true)
+                        if (dlg.ShowDialog() != true)
                         {
                             return;
                         }
@@ -852,7 +851,7 @@ namespace EpgTimer
                     {
                         SuspendCheckWindow dlg = new SuspendCheckWindow();
                         dlg.SetMode(0, 1);
-                        if (dlg.ShowDialog() == true)
+                        if (dlg.ShowDialog() != true)
                         {
                             return;
                         }
@@ -886,11 +885,11 @@ namespace EpgTimer
         {
             try
             {
-                System.Diagnostics.Process.Start(Settings.Instance.Cust1BtnCmd, Settings.Instance.Cust1BtnCmdOpt);
+                using (System.Diagnostics.Process.Start(Settings.Instance.Cust1BtnCmd, Settings.Instance.Cust1BtnCmdOpt)) { }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -898,11 +897,11 @@ namespace EpgTimer
         {
             try
             {
-                System.Diagnostics.Process.Start(Settings.Instance.Cust2BtnCmd, Settings.Instance.Cust2BtnCmdOpt);
+                using (System.Diagnostics.Process.Start(Settings.Instance.Cust2BtnCmd, Settings.Instance.Cust2BtnCmdOpt)) { }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -1031,7 +1030,7 @@ namespace EpgTimer
                         {
                             SuspendCheckWindow dlg = new SuspendCheckWindow();
                             dlg.SetMode(reboot, suspendMode);
-                            if (dlg.ShowDialog() != true)
+                            if (dlg.ShowDialog() == true)
                             {
                                 CommonManager.CreateSrvCtrl().SendReboot();
                             }
@@ -1072,7 +1071,7 @@ namespace EpgTimer
             {
                 SuspendCheckWindow dlg = new SuspendCheckWindow();
                 dlg.SetMode(0, suspendMode);
-                if (dlg.ShowDialog() != true)
+                if (dlg.ShowDialog() == true)
                 {
                     CommonManager.CreateSrvCtrl().SendSuspend(param);
                 }
