@@ -179,7 +179,8 @@ bool CEdcbPlugIn::Initialize()
 		m_pApp->AddLog(L"TVTestのバージョンが古いため初期化できません。");
 		return false;
 	}
-	m_edcbDir = GetPrivateProfileToString(L"SET", L"EdcbFolderPath", L"", GetModulePath(g_hinstDLL).replace_extension(L".ini").c_str());
+	fs_path iniPath = GetModulePath(g_hinstDLL).replace_extension(L".ini");
+	m_edcbDir = GetPrivateProfileToString(L"SET", L"EdcbFolderPath", L"", iniPath.c_str());
 	// 未指定のときはTVTestと同階層のEDCBフォルダ
 	if (m_edcbDir.empty()) {
 		fs_path altPath = GetModulePath().parent_path().parent_path();
@@ -208,7 +209,7 @@ bool CEdcbPlugIn::Initialize()
 		m_chSet5.push_back(it->second);
 	}
 #ifdef SEND_PIPE_TEST
-	if (m_sendPipe.Initialize()) {
+	if (GetPrivateProfileInt(L"SET", L"SendPipeTest", 0, iniPath.c_str()) && m_sendPipe.Initialize()) {
 		int port = 0;
 		for (; port < BON_NW_PORT_RANGE; ++port) {
 			wstring name;

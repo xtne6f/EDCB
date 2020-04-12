@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 // TVTestのフォルダにSendTSTCP.dllがあれば、EpgDataCap_Bonで送信先に"0.0.0.1:0"を設定したときと似たような動作をする
-//#define SEND_PIPE_TEST
+#define SEND_PIPE_TEST
 
 #define TVTEST_PLUGIN_CLASS_IMPLEMENT
 #define TVTEST_PLUGIN_VERSION TVTEST_PLUGIN_VERSION_(0,0,14)

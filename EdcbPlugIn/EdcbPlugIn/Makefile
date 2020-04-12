@@ -1,6 +1,5 @@
 TARGET ?= EdcbPlugIn.tvtp
 CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE $(CPPFLAGS)
-#CPPFLAGS += -DSEND_PIPE_TEST
 CXXFLAGS := -Os $(CXXFLAGS)
 LDFLAGS := -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
 WINDRES ?= windres
