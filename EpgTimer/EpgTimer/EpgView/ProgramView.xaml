@@ -7,7 +7,7 @@
              xmlns:local="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300" PreviewMouseWheel="UserControl_PreviewMouseWheel">
     <ScrollViewer HorizontalScrollBarVisibility="Visible" IsTabStop="True" Name="scrollViewer" ScrollChanged="scrollViewer_ScrollChanged">
-        <Grid>
+        <Canvas Height="{Binding Height, ElementName=canvas}" Width="{Binding Width, ElementName=canvas}">
             <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonUp="canvas_MouseRightButtonUp" MouseLeave="canvas_MouseLeave">
                 <StackPanel IsHitTestVisible="False" Name="popupItem" UseLayoutRounding="True" Visibility="Hidden" ZIndex="20">
                     <StackPanel.Effect>
@@ -26,6 +26,6 @@
                     <TextBlock Margin="2" MaxWidth="400" Name="toolTipTextBlock" TextWrapping="Wrap" />
                 </Border>
             </Popup>
-        </Grid>
+        </Canvas>
     </ScrollViewer>
 </UserControl>

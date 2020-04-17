@@ -413,6 +413,8 @@ namespace EpgTimer.EpgView
                     canvas.Children.Add(item);
                     totalWidth += programList.Item1;
                 }
+                //このHeightとWidthはBindingにより包含するCanvasにも適用される。GridやStackPanelで包含してもよいはずだが
+                //非表示中にここを通るとなぜか包含側のActualHeight(Width)が正しく更新されず、結果スクロール不能になる
                 canvas.Height = Math.Ceiling(height);
                 canvas.Width = totalWidth;
                 itemFontNormal.ClearCache();
