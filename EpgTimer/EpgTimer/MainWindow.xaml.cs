@@ -48,29 +48,9 @@ namespace EpgTimer
                 Environment.Exit(0);
             }
 
-            if (Settings.Instance.NoStyle == 0)
+            if (Settings.AppResourceDictionary != null)
             {
-                if (System.IO.File.Exists(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml"))
-                {
-                    //ResourceDictionaryを定義したファイルがあるので本体にマージする
-                    try
-                    {
-                        App.Current.Resources.MergedDictionaries.Add(
-                            (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
-                                System.Xml.XmlReader.Create(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml")));
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.ToString());
-                    }
-                }
-                else
-                {
-                    //既定のテーマ(Aero)をマージする
-                    App.Current.Resources.MergedDictionaries.Add(
-                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                        );
-                }
+                Application.Current.Resources.MergedDictionaries.Add(Settings.AppResourceDictionary);
             }
 
             //オリジナルのmutex名をもつEpgTimerか
@@ -345,7 +325,7 @@ namespace EpgTimer
 
         public void TaskTrayRightClick()
         {
-            var menu = new ContextMenu();
+            var menu = new ContextMenuEx();
             foreach (string info in Settings.Instance.TaskMenuList)
             {
                 if (info == "（セパレータ）")
@@ -1258,5 +1238,19 @@ namespace EpgTimer
             }
         }
 
+    }
+
+    /// <summary>
+    /// アプリケーション全体に適用する拡張コンテキストメニュー
+    /// </summary>
+    public class ContextMenuEx : ContextMenu
+    {
+        public ContextMenuEx()
+        {
+            if (Settings.ContextMenuResourceDictionary != null)
+            {
+                Resources.MergedDictionaries.Add(Settings.ContextMenuResourceDictionary);
+            }
+        }
     }
 }

@@ -272,6 +272,7 @@ namespace EpgTimer
         public bool ShowTray { get; set; }
         public bool MinHide { get; set; }
         public int NoStyle { get; set; }
+        public bool ApplyContextMenuStyle { get; set; }
         public int NoSendClose { get; set; }
         public string StartTab { get; set; }
 
@@ -476,6 +477,7 @@ namespace EpgTimer
             r.ShowTray                  = ConvertXElem(x, w, "ShowTray", ShowTray, false);
             r.MinHide                   = ConvertXElem(x, w, "MinHide", MinHide, true);
             r.NoStyle                   = (int)ConvertXElem(x, w, "NoStyle", NoStyle, 1);
+            r.ApplyContextMenuStyle     = ConvertXElem(x, w, "ApplyContextMenuStyle", ApplyContextMenuStyle, false);
             r.NoSendClose               = (int)ConvertXElem(x, w, "NoSendClose", NoSendClose, 0);
             r.StartTab                  = ConvertXElem(x, w, "StartTab", StartTab, "ReserveView");
         }
@@ -556,6 +558,78 @@ namespace EpgTimer
                     _brushCache = new SettingsBrushCache();
                 }
                 return _brushCache;
+            }
+        }
+
+        private static bool appResourceDictionaryInitialized;
+        private static ResourceDictionary _appResourceDictionary;
+        public static ResourceDictionary AppResourceDictionary
+        {
+            get
+            {
+                if (appResourceDictionaryInitialized == false)
+                {
+                    appResourceDictionaryInitialized = true;
+                    if (Instance.NoStyle == 0)
+                    {
+                        try
+                        {
+                            if (File.Exists(Assembly.GetEntryAssembly().Location + ".rd.xaml"))
+                            {
+                                //ResourceDictionaryを定義したファイルがあるので本体にマージする
+                                _appResourceDictionary = (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
+                                    System.Xml.XmlReader.Create(Assembly.GetEntryAssembly().Location + ".rd.xaml"));
+                            }
+                            else
+                            {
+                                //既定のテーマ(Aero)をマージする
+                                _appResourceDictionary = (ResourceDictionary)Application.LoadComponent(
+                                    new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.ToString());
+                        }
+                    }
+                }
+                return _appResourceDictionary;
+            }
+        }
+
+        private static bool contextMenuResourceDictionaryInitialized;
+        private static ResourceDictionary _contextMenuResourceDictionary;
+        public static ResourceDictionary ContextMenuResourceDictionary
+        {
+            get
+            {
+                if (contextMenuResourceDictionaryInitialized == false)
+                {
+                    contextMenuResourceDictionaryInitialized = true;
+                    if (Instance.ApplyContextMenuStyle)
+                    {
+                        try
+                        {
+                            if (File.Exists(Assembly.GetEntryAssembly().Location + ".rdcm.xaml"))
+                            {
+                                //ResourceDictionaryを定義したファイルがあるので本体にマージする
+                                _contextMenuResourceDictionary = (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
+                                    System.Xml.XmlReader.Create(Assembly.GetEntryAssembly().Location + ".rdcm.xaml"));
+                            }
+                            else
+                            {
+                                //既定のテーマ(Aero)をマージする
+                                _contextMenuResourceDictionary = (ResourceDictionary)Application.LoadComponent(
+                                    new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.ToString());
+                        }
+                    }
+                }
+                return _contextMenuResourceDictionary;
             }
         }
 

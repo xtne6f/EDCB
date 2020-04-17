@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             xmlns:local="clr-namespace:EpgTimer"
              d:DesignHeight="500" d:DesignWidth="700" IsVisibleChanged="UserControl_IsVisibleChanged">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -63,7 +64,7 @@
                     </GridView>
                 </ListView.View>
                 <ListView.ContextMenu>
-                    <ContextMenu x:Name="listView_event_contextMenu">
+                    <local:ContextMenuEx x:Name="listView_event_contextMenu">
                         <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" />
                         <MenuItem x:Name="cm_chg" Header="予約変更 (_C)">
                             <MenuItem Header="ダイアログ表示 (_X)" Click="cm_change_Click" />
@@ -95,7 +96,7 @@
                         <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード (_2)" Click="cm_chg_viewMode_Click" />
                         <Separator/>
                         <MenuItem Header="表示設定 (_W)" Click="cm_viewSet_Click" />
-                    </ContextMenu>
+                    </local:ContextMenuEx>
                 </ListView.ContextMenu>
             </ListView>
         </Grid>
@@ -122,12 +123,12 @@
         </ListView>
         <Button Click="button_time_Click" Content="←" ContextMenuOpening="button_time_ContextMenuOpening" Height="23" HorizontalAlignment="Left" IsEnabled="False" Name="button_prev" VerticalAlignment="Bottom" Width="23">
             <Button.ContextMenu>
-                <ContextMenu />
+                <local:ContextMenuEx />
             </Button.ContextMenu>
         </Button>
         <Button Click="button_time_Click" Content="→" ContextMenuOpening="button_time_ContextMenuOpening" Height="23" HorizontalAlignment="Left" IsEnabled="False" Margin="23,0,0,0" Name="button_next" VerticalAlignment="Bottom" Width="23">
             <Button.ContextMenu>
-                <ContextMenu />
+                <local:ContextMenuEx />
             </Button.ContextMenu>
         </Button>
         <UniformGrid Columns="2" Margin="51,0,0,0" Height="23" VerticalAlignment="Bottom">

@@ -4,9 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             xmlns:local="clr-namespace:EpgTimer"
              d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
+        <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
             <MenuItem Header="曜日" Name="DayOfWeek" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="時間" Name="Time" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名" Name="Title" IsCheckable="True" Click="headerSelect_Click" />
@@ -21,13 +22,13 @@
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
             <Separator />
             <MenuItem Header="追加" Click="button_add_Click" />
-        </ContextMenu>
-        <ContextMenu x:Key="itemMenu">
+        </local:ContextMenuEx>
+        <local:ContextMenuEx x:Key="itemMenu">
             <MenuItem Header="変更" Click="button_change_Click" InputGestureText="Enter" />
             <MenuItem Header="削除" Click="button_del_Click" />
             <Separator />
             <MenuItem Header="追加" Click="button_add_Click" />
-        </ContextMenu>
+        </local:ContextMenuEx>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>

@@ -4,7 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             xmlns:local="clr-namespace:EpgTimer.EpgView"
+             xmlns:local="clr-namespace:EpgTimer"
+             xmlns:my="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <Grid Name="grid_PG">
         <Grid.RowDefinitions>
@@ -16,14 +17,14 @@
             <ColumnDefinition Width="40" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <local:DateView Grid.ColumnSpan="2" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" TimeButtonContextMenuOpening="epgDateView_TimeButtonContextMenuOpening" />
+        <my:DateView Grid.ColumnSpan="2" x:Name="dateView" TimeButtonClick="epgDateView_TimeButtonClick" TimeButtonContextMenuOpening="epgDateView_TimeButtonContextMenuOpening" />
         <Button Click="button_now_Click" Content="現在" Grid.Row="1" />
-        <local:TimeView Grid.Row="2" Margin="0,0,0,18" x:Name="timeView" />
-        <local:ServiceView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="serviceView" LeftDoubleClick="serviceView_LeftDoubleClick" RightClick="serviceView_RightClick" />
+        <my:TimeView Grid.Row="2" Margin="0,0,0,18" x:Name="timeView" />
+        <my:ServiceView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="serviceView" LeftDoubleClick="serviceView_LeftDoubleClick" RightClick="serviceView_RightClick" />
         <Grid ContextMenuOpening="grid_content_ContextMenuOpening" Grid.Column="1" Grid.Row="2" Name="grid_content">
-            <local:ProgramView x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" ScrollChanged="epgProgramView_ScrollChanged" />
+            <my:ProgramView x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" ScrollChanged="epgProgramView_ScrollChanged" />
             <Grid.ContextMenu>
-                <ContextMenu>
+                <local:ContextMenuEx>
                     <MenuItem Click="cm_add_preset_Click" Header="簡易予約" Name="cm_new" />
                     <MenuItem Header="予約変更 (_C)" Name="cm_chg">
                         <MenuItem Click="cm_chg_Click" Header="ダイアログ表示 (_X)" />
@@ -59,7 +60,7 @@
                     <MenuItem Click="cm_chg_viewMode_Click" Header="リスト表示モード (_3)" Name="cm_chg_viewMode3" />
                     <Separator />
                     <MenuItem Click="cm_viewSet_Click" Header="表示設定 (_W)" />
-                </ContextMenu>
+                </local:ContextMenuEx>
             </Grid.ContextMenu>
         </Grid>
     </Grid>
