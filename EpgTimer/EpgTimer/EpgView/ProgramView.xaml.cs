@@ -267,8 +267,8 @@ namespace EpgTimer.EpgView
                     canvas.Children.RemoveAt(i--);
                 }
             }
-            canvas.Height = 0;
-            canvas.Width = 0;
+            canvasContainer.Height = canvas.Height = 0;
+            canvasContainer.Width = canvas.Width = 0;
         }
 
         public void SetReserveList(List<ReserveViewItem> reserveList)
@@ -413,10 +413,10 @@ namespace EpgTimer.EpgView
                     canvas.Children.Add(item);
                     totalWidth += programList.Item1;
                 }
-                //このHeightとWidthはBindingにより包含するCanvasにも適用される。GridやStackPanelで包含してもよいはずだが
+                //包含するCanvasにも直接適用する(Bindingは遅延するため)。GridやStackPanelで包含してもよいはずだが
                 //非表示中にここを通るとなぜか包含側のActualHeight(Width)が正しく更新されず、結果スクロール不能になる
-                canvas.Height = Math.Ceiling(height);
-                canvas.Width = totalWidth;
+                canvasContainer.Height = canvas.Height = Math.Ceiling(height);
+                canvasContainer.Width = canvas.Width = totalWidth;
                 itemFontNormal.ClearCache();
                 itemFontTitle.ClearCache();
             }
