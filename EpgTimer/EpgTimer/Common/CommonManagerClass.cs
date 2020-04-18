@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Documents;
 using System.IO;
 
 namespace EpgTimer
@@ -848,21 +850,58 @@ namespace EpgTimer
             return retText;
         }
 
+        public static Paragraph ConvertDisplayText(string text)
+        {
+            int searchFrom = 0;
+            var para = new Paragraph();
+            string rtext = ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
+            if (rtext.Length == text.Length)
+            {
+                for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
+                {
+                    para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
+                    var h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
+                    h.MouseLeftButtonDown += (sender, e) =>
+                    {
+                        try
+                        {
+                            using (System.Diagnostics.Process.Start(((Hyperlink)sender).NavigateUri.ToString())) { }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.ToString());
+                        }
+                    };
+                    h.Foreground = SystemColors.HotTrackBrush;
+                    h.Cursor = System.Windows.Input.Cursors.Hand;
+                    h.NavigateUri = new Uri(m.Value);
+                    para.Inlines.Add(h);
+                    searchFrom = m.Index + m.Length;
+                }
+            }
+            para.Inlines.Add(text.Substring(searchFrom));
+            return para;
+        }
+
         public void FilePlay(uint reserveID)
         {
             if (Settings.Instance.FilePlay && Settings.Instance.FilePlayOnAirWithExe)
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
-                if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                try
                 {
-                    CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
-                    if (info.filePath != "")
+                    if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
                     {
-                        FilePlay(info.filePath);
-                        return;
+                        CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
+                        if (info.filePath != "")
+                        {
+                            FilePlay(info.filePath);
+                            return;
+                        }
                     }
                 }
+                catch { }
                 MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
@@ -897,7 +936,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
     }

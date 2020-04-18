@@ -79,7 +79,8 @@
                             <CheckBox Content="詳細も表示" HorizontalAlignment="Left" IsChecked="{Binding EpgExtInfoPopup}" IsEnabled="{Binding IsChecked, ElementName=checkBox_epgPopup, UpdateSourceTrigger=PropertyChanged}" Margin="605,136,0,0" VerticalAlignment="Top" />
                             <Label Content="ツールチップを表示するまでの時間(ミリ秒)" HorizontalAlignment="Left" Margin="370,154,0,0" VerticalAlignment="Top" IsEnabled="{Binding IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
                             <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" Margin="605,156,0,0" Text="{Binding EpgToolTipViewWait}" VerticalAlignment="Top" Width="47" />
-                            <CheckBox Content="番組内容をポップアップ表示する" HorizontalAlignment="Left" IsChecked="{Binding EpgPopup}" Margin="535,114,0,0" Name="checkBox_epgPopup" VerticalAlignment="Top" />
+                            <CheckBox Content="番組内容をポップアップ表示する" HorizontalAlignment="Left" IsChecked="{Binding EpgPopup}" Margin="535,92,0,0" Name="checkBox_epgPopup" VerticalAlignment="Top" />
+                            <CheckBox Content="なるべく画面内に収める" HorizontalAlignment="Left" IsChecked="{Binding EpgAdjustPopup}" IsEnabled="{Binding IsChecked, ElementName=checkBox_epgPopup, UpdateSourceTrigger=PropertyChanged}" Margin="570,114,0,0" VerticalAlignment="Top" />
                             <Label Content="グラデーション表示を行う" HorizontalAlignment="Left" Margin="350,182,0,0" VerticalAlignment="Top" />
                             <CheckBox Content="番組" HorizontalAlignment="Left" IsChecked="{Binding EpgGradation}" Margin="503,187,0,0" VerticalAlignment="Top" />
                             <CheckBox Content="サービス・時刻軸" HorizontalAlignment="Left" IsChecked="{Binding EpgGradationHeader}" Margin="563,187,0,0" VerticalAlignment="Top" />
