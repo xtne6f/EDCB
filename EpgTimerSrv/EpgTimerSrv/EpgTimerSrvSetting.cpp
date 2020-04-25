@@ -309,23 +309,19 @@ INT_PTR CEpgTimerSrvSetting::ShowDialog()
 INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 {
 	HWND hTab = GetDlgItem(this->hwndTop, IDC_TAB);
-	TCITEM tci;
-	tci.mask = TCIF_TEXT;
-	tci.pszText = L"基本設定";
-	TabCtrl_InsertItem(hTab, 0, &tci);
-	tci.pszText = L"EPG取得";
-	TabCtrl_InsertItem(hTab, 1, &tci);
-	tci.pszText = L"録画動作";
-	TabCtrl_InsertItem(hTab, 2, &tci);
-	tci.pszText = L"予約情報管理";
-	TabCtrl_InsertItem(hTab, 3, &tci);
-	tci.pszText = L"その他";
-	TabCtrl_InsertItem(hTab, 4, &tci);
 	this->hwndChild[0] = this->hwndBasic = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_BASIC), this->hwndTop, ChildDlgProc, (LPARAM)this);
 	this->hwndChild[1] = this->hwndEpg = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_EPG), this->hwndTop, ChildDlgProc, (LPARAM)this);
 	this->hwndChild[2] = this->hwndRec = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_REC), this->hwndTop, ChildDlgProc, (LPARAM)this);
 	this->hwndChild[3] = this->hwndReserve = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_RESERVE), this->hwndTop, ChildDlgProc, (LPARAM)this);
 	this->hwndChild[4] = this->hwndOther = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_OTHER), this->hwndTop, ChildDlgProc, (LPARAM)this);
+	for( int i = 0; i < _countof(this->hwndChild); i++ ){
+		WCHAR text[32] = {};
+		GetWindowText(this->hwndChild[i], text, 32);
+		TCITEM tci;
+		tci.mask = TCIF_TEXT;
+		tci.pszText = text;
+		TabCtrl_InsertItem(hTab, i, &tci);
+	}
 	RECT rc;
 	GetWindowRect(hTab, &rc);
 	TabCtrl_AdjustRect(hTab, FALSE, &rc);
@@ -414,9 +410,11 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	ListView_SetExtendedListViewStyleEx(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
 	lvc.mask = LVCF_WIDTH | LVCF_TEXT;
 	lvc.cx /= 2;
-	lvc.pszText = L"開始時間";
+	WCHAR textStart[] = L"開始時間";
+	lvc.pszText = textStart;
 	ListView_InsertColumn(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), 0, &lvc);
-	lvc.pszText = L"種別(BS,CS1,2,3)";
+	WCHAR textType[] = L"種別(BS,CS1,2,3)";
+	lvc.pszText = textType;
 	ListView_InsertColumn(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), 1, &lvc);
 
 	for( int i = 0; i < 8; i++ ){

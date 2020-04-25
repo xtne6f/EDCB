@@ -89,8 +89,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
 				SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
+				WCHAR serviceName[] = SERVICE_NAME;
 				SERVICE_TABLE_ENTRY dispatchTable[] = {
-					{ SERVICE_NAME, service_main },
+					{ serviceName, service_main },
 					{ NULL, NULL }
 				};
 				if( StartServiceCtrlDispatcher(dispatchTable) == FALSE ){

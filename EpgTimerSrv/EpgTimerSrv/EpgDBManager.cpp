@@ -854,7 +854,7 @@ bool CEpgDBManager::IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EP
 					if( itrEvent->hasComponentInfo == false ){
 						continue;
 					}
-					WORD type = itrEvent->componentInfo.stream_content << 8 || itrEvent->componentInfo.component_type;
+					WORD type = itrEvent->componentInfo.stream_content << 8 | itrEvent->componentInfo.component_type;
 					if( std::find(key.videoList.begin(), key.videoList.end(), type) == key.videoList.end() ){
 						continue;
 					}
