@@ -8,7 +8,6 @@
 #include "../../Common/PathUtil.h"
 #include <windowsx.h>
 #include <commctrl.h>
-#pragma comment(lib, "comctl32.lib")
 
 
 // CEpgDataCap_BonApp:

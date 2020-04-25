@@ -9,7 +9,6 @@
 #include <io.h>
 #include <fcntl.h>
 #include <wincrypt.h>
-#pragma comment(lib, "Crypt32.lib")
 #endif
 
 namespace
@@ -757,14 +756,16 @@ int io_open(lua_State* L)
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#else
+#endif
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4996)
 #endif
 	p->f = _wfopen(wfilename, wmode);
 #ifdef __clang__
 #pragma clang diagnostic pop
-#else
+#endif
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 	nefree(wmode);

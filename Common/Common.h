@@ -30,11 +30,12 @@ using std::vector;
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wlogical-op-parentheses"
 #pragma clang diagnostic ignored "-Wunused-parameter"
-#else
+#endif
+
+#ifdef _MSC_VER
 // 'identifier': unreferenced formal parameter
 #pragma warning(disable : 4100)
-
-#if defined(_MSC_VER) && _MSC_VER < 1900
+#if _MSC_VER < 1900
 // 'class': assignment operator was implicitly defined as deleted
 #pragma warning(disable : 4512)
 #endif

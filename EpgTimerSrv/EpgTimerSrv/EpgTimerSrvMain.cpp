@@ -10,9 +10,7 @@
 #include <shellapi.h>
 #include <tlhelp32.h>
 #include <lm.h>
-#pragma comment (lib, "netapi32.lib")
 #include <commctrl.h>
-#pragma comment(lib, "comctl32.lib")
 
 namespace
 {

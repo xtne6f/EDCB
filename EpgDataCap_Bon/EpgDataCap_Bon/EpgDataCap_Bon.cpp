@@ -13,7 +13,6 @@
 #ifndef SUPPRESS_OUTPUT_STACK_TRACE
 #include <tlhelp32.h>
 #include <dbghelp.h>
-#pragma comment(lib, "dbghelp.lib")
 #endif
 
 namespace

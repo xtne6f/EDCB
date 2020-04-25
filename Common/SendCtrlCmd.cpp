@@ -3,7 +3,6 @@
 #if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#pragma comment(lib, "Ws2_32.lib")
 #endif
 #include "StringUtil.h"
 #ifndef _WIN32

@@ -5,7 +5,6 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
-#pragma comment(lib, "IPHLPAPI.lib")
 
 
 CStreamCtrlDlg::CStreamCtrlDlg(void)

@@ -2,9 +2,7 @@
 #include "SyoboiCalUtil.h"
 
 #include <winhttp.h>
-#pragma comment (lib, "winhttp.lib")
 #include <wincrypt.h>
-#pragma comment (lib, "Crypt32.lib")
 
 #include "../../Common/CommonDef.h"
 #include "../../Common/PathUtil.h"

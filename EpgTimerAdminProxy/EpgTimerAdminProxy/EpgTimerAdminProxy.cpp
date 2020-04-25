@@ -3,7 +3,6 @@
 #include <windows.h>
 #include <string.h>
 #include <lm.h>
-#pragma comment(lib, "netapi32.lib")
 
 static const WCHAR CLASS_NAME[] = L"EpgTimerAdminProxy";
 
