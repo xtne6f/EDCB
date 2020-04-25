@@ -11,7 +11,7 @@ public:
 	CDecodeUtil(void);
 
 	void SetEpgDB(CEpgDBUtil* epgDBUtil_);
-	void AddTSData(BYTE* data);
+	void AddTSData(BYTE* data, DWORD size);
 
 	//解析データの現在のストリームＩＤを取得する
 	//引数：

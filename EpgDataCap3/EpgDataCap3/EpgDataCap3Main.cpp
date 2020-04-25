@@ -13,15 +13,17 @@ CEpgDataCap3Main::~CEpgDataCap3Main(void)
 	decodeUtilClass.SetEpgDB(NULL);
 }
 
-//解析対象のTSパケット１つを読み込ませる
-// data		[IN]TSパケット１つ
+//解析対象のTSパケットを読み込ませる
+// data		[IN]TSパケット
+// size		[IN]dataのサイズ（188の整数倍であること）
 void CEpgDataCap3Main::AddTSPacket(
-	BYTE* data
+	BYTE* data,
+	DWORD size
 	)
 {
 	CBlockLock lock(&this->utilLock);
 
-	this->decodeUtilClass.AddTSData(data);
+	this->decodeUtilClass.AddTSData(data, size);
 }
 
 //解析データの現在のストリームＩＤを取得する

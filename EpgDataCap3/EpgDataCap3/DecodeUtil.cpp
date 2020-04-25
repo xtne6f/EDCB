@@ -269,14 +269,11 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	}
 }
 
-void CDecodeUtil::AddTSData(BYTE* data)
+void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 {
-	{
+	for( DWORD i = 0; i + 188 <= size; i += 188 ){
 		CTSPacketUtil tsPacket;
-		if( tsPacket.Set188TS(data, 188) == TRUE ){
-			if( tsPacket.PID == 0x1FFF ){
-				return;
-			}
+		if( tsPacket.Set188TS(data + i, 188) && tsPacket.PID != 0x1FFF ){
 			CTSBuffUtil* buffUtil = NULL;
 
 			map<WORD, CTSBuffUtil>::iterator itr;

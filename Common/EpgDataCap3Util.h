@@ -25,15 +25,22 @@ public:
 	DWORD UnInitialize(
 		);
 
-	//解析対象のTSパケット１つを読み込ませる
+	//解析対象のTSパケットを読み込ませる
+	//CanAddMultipleTSPackets()が偽のとき、sizeは188より大きくできない（互換のため）
 	//戻り値：
 	// エラーコード
-	// data		[IN]TSパケット１つ
-	// size		[IN]dataのサイズ（188、192あたりになるはず）
+	// data		[IN]TSパケット
+	// size		[IN]dataのサイズ（188の整数倍であること）
 	DWORD AddTSPacket(
 		BYTE* data,
 		DWORD size
 		);
+
+	bool CanAddMultipleTSPackets(
+		) {
+		BYTE b;
+		return AddTSPacket(&b, 0) == FALSE;
+	}
 
 	//解析データの現在のストリームＩＤを取得する
 	//戻り値：

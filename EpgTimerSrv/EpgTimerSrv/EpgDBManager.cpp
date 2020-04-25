@@ -139,6 +139,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		sys->loadStop = true;
 		return;
 	}
+	bool addMultiplePackets = epgUtil.CanAddMultipleTSPackets();
 
 	__int64 utcNow = GetNowI64Time() - I64_UTIL_TIMEZONE;
 
@@ -264,12 +265,22 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				}
 				_fseeki64(file.get(), seekPos, SEEK_SET);
 				for( size_t n; (n = fread(readBuff, 1, sizeof(readBuff), file.get())) != 0; ){
-					for( size_t i = 0; i + 188 <= n; i += 188 ){
-						if( ignoreTOT && ((readBuff[i+1] & 0x1F) << 8 | readBuff[i+2]) == 0x14 ){
-							ignoreTOT = false;
-						}else{
-							epgUtil.AddTSPacket(readBuff+i, 188);
+					size_t i = 0;
+					if( ignoreTOT || addMultiplePackets == false ){
+						for( ; i + 188 <= n; i += 188 ){
+							if( ignoreTOT && ((readBuff[i + 1] & 0x1F) << 8 | readBuff[i + 2]) == 0x14 ){
+								ignoreTOT = false;
+								if( addMultiplePackets ){
+									i += 188;
+									break;
+								}
+							}else{
+								epgUtil.AddTSPacket(readBuff + i, 188);
+							}
 						}
+					}
+					if( addMultiplePackets && n - i >= 188 ){
+						epgUtil.AddTSPacket(readBuff + i, (n - i) / 188 * 188);
 					}
 					if( sys->loadForeground == false ){
 						//処理速度がだいたい2/3になるように休む。I/O負荷軽減が狙い
