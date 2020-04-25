@@ -122,14 +122,16 @@ void CARIB8CharDecode::InitCaption(void)
 
 BOOL CARIB8CharDecode::PSISI( const BYTE* pbSrc, DWORD dwSrcSize, wstring* strDec )
 {
-	if( pbSrc == NULL || dwSrcSize == 0 || strDec == NULL){
+	if( pbSrc == NULL || dwSrcSize == 0 ){
 		return FALSE;
 	}
 	InitPSISI();
 	DWORD dwReadSize = 0;
 
 	BOOL bRet = Analyze(pbSrc, dwSrcSize, &dwReadSize );
-	*strDec = m_strDecode;
+	if( strDec ){
+		*strDec = m_strDecode;
+	}
 	return bRet;
 }
 
@@ -559,7 +561,11 @@ BOOL CARIB8CharDecode::C1( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 
 BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize, const MF_MODE* mode )
 {
-	if( dwSrcSize == 0 || (pbSrc[0]&0x7F) <= 0x20 || 0x7F <= (pbSrc[0]&0x7F) ){
+	if( dwSrcSize == 0 ){
+		return FALSE;
+	}
+	BYTE b = pbSrc[0] & 0x7F;
+	if( b < 0x21 || 0x7F <= b ){
 		return FALSE;
 	}
 
@@ -570,7 +576,7 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 			case MF_JISX_KANA:
 				{
 				//JIS X0201片仮名
-				m_strDecode += JisXKanaTable[(pbSrc[0]&0x7F)-0x21];
+				m_strDecode += JisXKanaTable[b - 0x21];
 				dwReadSize = 1;
 				}
 				break;
@@ -578,11 +584,11 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 			case MF_PROP_ASCII:
 				{
 				if( IsSmallCharMode() == FALSE ){
-					//全角なのでテーブルからSJISコード取得
-					m_strDecode += AsciiTable[(pbSrc[0]&0x7F)-0x21];
+					//全角なのでテーブルからコード取得
+					m_strDecode += AsciiTable[b - 0x21];
 				}else{
 					//半角なのでそのまま入れる
-					m_strDecode += pbSrc[0]&0x7F;
+					m_strDecode += b;
 				}
 				dwReadSize = 1;
 				}
@@ -591,8 +597,8 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 			case MF_PROP_HIRA:
 				{
 				//半角ひらがな
-				//テーブルからSJISコード取得
-				m_strDecode += HiraTable[(pbSrc[0]&0x7F)-0x21];
+				//テーブルからコード取得
+				m_strDecode += HiraTable[b - 0x21];
 				dwReadSize = 1;
 				}
 				break;
@@ -600,8 +606,8 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 			case MF_PROP_KANA:
 				{
 				//半角カタカナ
-				//テーブルからSJISコード取得
-				m_strDecode += KanaTable[(pbSrc[0]&0x7F)-0x21];
+				//テーブルからコード取得
+				m_strDecode += KanaTable[b - 0x21];
 				dwReadSize = 1;
 				}
 				break;
@@ -614,8 +620,12 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 				if( dwSrcSize < 2 ){
 					return FALSE;
 				}
-				if( ToSJIS( (pbSrc[0]&0x7F), (pbSrc[1]&0x7F) ) == FALSE ){
-					ToCustomFont( (pbSrc[0]&0x7F), (pbSrc[1]&0x7F) );
+				BYTE bSecond = pbSrc[1] & 0x7F;
+				if( b >= 0x21 + 84 || bSecond < 0x21 || bSecond >= 0x21 + 94 ){
+					ToCustomFont(b, bSecond);
+				}else{
+					//テーブルからコード取得
+					m_strDecode += m_jisTable[(b - 0x21) * 94 + (bSecond - 0x21)];
 				}
 				dwReadSize = 2;
 				}
@@ -632,8 +642,8 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 			DWORD dwTemp=0;
 			//マクロ
 			//PSI/SIでは未サポート
-			if( 0x60 <= (pbSrc[0]&0x7F) && (pbSrc[0]&0x7F) <= 0x6F ){
-				if( Analyze(DefaultMacro[pbSrc[0]&0x0F], sizeof(DefaultMacro[0]), &dwTemp) == FALSE ){
+			if( 0x60 <= b && b <= 0x6F ){
+				if( Analyze(DefaultMacro[b & 0x0F], sizeof(DefaultMacro[0]), &dwTemp) == FALSE ){
 					return FALSE;
 				}
 			}
@@ -647,46 +657,6 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 	}
 
 	*pdwReadSize = dwReadSize;
-
-	return TRUE;
-}
-
-BOOL CARIB8CharDecode::ToSJIS( const BYTE bFirst, const BYTE bSecond )
-{
-	if( bFirst < 0x21 || bFirst >= 0x21 + 84 || bSecond < 0x21 || bSecond >= 0x21 + 94 ){
-		return FALSE;
-	}
-
-#ifdef _WIN32
-	unsigned char ucFirst = bFirst;
-	unsigned char ucSecond = bSecond;
-	
-	ucFirst = ucFirst - 0x21;
-	if( ( ucFirst & 0x01 ) == 0 ){
-		ucSecond += 0x1F;
-		if( ucSecond >= 0x7F ){
-			ucSecond += 0x01;
-		}
-	}else{
-		ucSecond += 0x7E;
-	}
-	ucFirst = ucFirst>>1;
-	if( ucFirst >= 0x1F ){
-		ucFirst += 0xC1;
-	}else{
-		ucFirst += 0x81;
-	}
-
-	unsigned char ucDec[] = {ucFirst, ucSecond, '\0'};
-	WCHAR cDec[3];
-	if( MultiByteToWideChar(932, MB_ERR_INVALID_CHARS, (char*)ucDec, -1, cDec, 3) < 2 ){
-		m_strDecode += L'・';
-	}else{
-		m_strDecode += cDec;
-	}
-#else
-	m_strDecode += m_jisTable[(bFirst - 0x21) * 94 + (bSecond - 0x21)];
-#endif
 
 	return TRUE;
 }
@@ -1154,9 +1124,8 @@ BOOL CARIB8CharDecode::IsChgPos(void)
 	return FALSE;
 }
 
-#ifndef _WIN32
 const WCHAR CARIB8CharDecode::m_jisTable[84 * 94 + 1] =
-	L"　、。，．・：；？！゛゜´｀¨＾￣＿ヽヾゝゞ〃仝々〆〇ー―‐／＼\xFF5E∥｜…‥‘’“”（）〔〕［］｛｝〈〉《》「」『』【】＋\xFF0D±×÷＝≠＜＞≦≧∞∴♂♀°′″℃￥＄￠￡％＃＆＊＠§☆★○●◎◇"
+	L"　、。，．・：；？！゛゜´｀¨＾￣＿ヽヾゝゞ〃仝々〆〇ー―‐／＼～∥｜…‥‘’“”（）〔〕［］｛｝〈〉《》「」『』【】＋－±×÷＝≠＜＞≦≧∞∴♂♀°′″℃￥＄￠￡％＃＆＊＠§☆★○●◎◇"
 	L"◆□■△▲▽▼※〒→←↑↓〓・・・・・・・・・・・∈∋⊆⊇⊂⊃∪∩・・・・・・・・∧∨￢⇒⇔∀∃・・・・・・・・・・・∠⊥⌒∂∇≡≒≪≫√∽∝∵∫∬・・・・・・・Å‰♯♭♪†‡¶・・・・◯"
 	L"・・・・・・・・・・・・・・・０１２３４５６７８９・・・・・・・ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ・・・・・・ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ・・・・"
 	L"ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをん・・・・・・・・・・・"
@@ -1240,4 +1209,3 @@ const WCHAR CARIB8CharDecode::m_jisTable[84 * 94 + 1] =
 	L"髻鬆鬘鬚鬟鬢鬣鬥鬧鬨鬩鬪鬮鬯鬲魄魃魏魍魎魑魘魴鮓鮃鮑鮖鮗鮟鮠鮨鮴鯀鯊鮹鯆鯏鯑鯒鯣鯢鯤鯔鯡鰺鯲鯱鯰鰕鰔鰉鰓鰌鰆鰈鰒鰊鰄鰮鰛鰥鰤鰡鰰鱇鰲鱆鰾鱚鱠鱧鱶鱸鳧鳬鳰鴉鴈鳫鴃鴆鴪鴦鶯鴣鴟鵄鴕鴒鵁鴿鴾鵆鵈"
 	L"鵝鵞鵤鵑鵐鵙鵲鶉鶇鶫鵯鵺鶚鶤鶩鶲鷄鷁鶻鶸鶺鷆鷏鷂鷙鷓鷸鷦鷭鷯鷽鸚鸛鸞鹵鹹鹽麁麈麋麌麒麕麑麝麥麩麸麪麭靡黌黎黏黐黔黜點黝黠黥黨黯黴黶黷黹黻黼黽鼇鼈皷鼕鼡鼬鼾齊齒齔齣齟齠齡齦齧齬齪齷齲齶龕龜龠"
 	L"堯槇遙瑤凜熙・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・";
-#endif

@@ -413,10 +413,10 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						src = eit.GetBinary(Desc::item_description_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
 							if( itemDescFlag == FALSE && itemBuff.size() > 0 ){
-								wstring buff;
-								this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
-								buff += L"\r\n";
-								extendText += buff;
+								if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), NULL) ){
+									extendText += this->arib.GetDecodedString();
+								}
+								extendText += L"\r\n";
 								itemBuff.clear();
 							}
 							itemDescFlag = TRUE;
@@ -425,10 +425,10 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						src = eit.GetBinary(Desc::item_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
 							if( itemDescFlag && itemBuff.size() > 0 ){
-								wstring buff;
-								this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
-								buff += L"\r\n";
-								extendText += buff;
+								if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), NULL) ){
+									extendText += this->arib.GetDecodedString();
+								}
+								extendText += L"\r\n";
 								itemBuff.clear();
 							}
 							itemDescFlag = FALSE;
@@ -440,10 +440,10 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 		}
 
 		if( itemBuff.size() > 0 ){
-			wstring buff;
-			this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
-			buff += L"\r\n";
-			extendText += buff;
+			if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), NULL) ){
+				extendText += this->arib.GetDecodedString();
+			}
+			extendText += L"\r\n";
 		}
 
 		if( foundFlag == FALSE ){
