@@ -280,7 +280,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						}
 					}
 					if( addMultiplePackets && n - i >= 188 ){
-						epgUtil.AddTSPacket(readBuff + i, (n - i) / 188 * 188);
+						epgUtil.AddTSPacket(readBuff + i, (DWORD)((n - i) / 188 * 188));
 					}
 					if( sys->loadForeground == false ){
 						//処理速度がだいたい2/3になるように休む。I/O負荷軽減が狙い
