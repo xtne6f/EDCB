@@ -4,7 +4,7 @@ CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=
 CFLAGS := -Os $(CFLAGS)
 CXXFLAGS := -Os $(CXXFLAGS)
 LDFLAGS := -municode -mwindows -Wl,-s,--dynamicbase,--nxcompat -static-libgcc -static-libstdc++ $(LDFLAGS)
-LDLIBS := -lws2_32 -lole32 -lcomctl32 -lwinhttp -loleaut32 -lcrypt32 -liphlpapi -luuid -lnetapi32 $(LDLIBS)
+LDLIBS := -lws2_32 -lole32 -lcomctl32 -lwinhttp -loleaut32 -lcrypt32 -liphlpapi -luuid -lnetapi32 -ldbghelp $(LDLIBS)
 WINDRES ?= windres
 DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
 CUR_ALL_H := $(wildcard *.h *.inl)
@@ -82,6 +82,7 @@ $(TARGET): $(addsuffix .obj, \
   Common__ReNamePlugInUtil.cpp \
   Common__SendCtrlCmd.cpp \
   Common__ServiceUtil.cpp \
+  Common__StackTrace.cpp \
   Common__StringUtil.cpp \
   Common__TCPServer.cpp \
   Common__TimeShiftUtil.cpp \

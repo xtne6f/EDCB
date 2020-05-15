@@ -206,6 +206,9 @@
     <ClInclude Include="TaskbarList.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\StackTrace.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EpgDataCap_Bon.cpp">
@@ -324,6 +327,9 @@
     </ClCompile>
     <ClCompile Include="TaskbarList.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\StackTrace.cpp">
+      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

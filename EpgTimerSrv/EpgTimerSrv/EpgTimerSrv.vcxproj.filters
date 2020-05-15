@@ -296,6 +296,9 @@
     <ClInclude Include="lua\zlib1\gzguts.h">
       <Filter>ヘッダー ファイル\lua\zlib1</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\StackTrace.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -525,6 +528,9 @@
     </ClCompile>
     <ClCompile Include="lua\zlib1\inffast.c">
       <Filter>ソース ファイル\lua\zlib1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\StackTrace.cpp">
+      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
