@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2017 the Civetweb developers
+/* Copyright (c) 2013-2020 the Civetweb developers
  * Copyright (c) 2004-2013 Sergey Lyubka
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,9 +23,9 @@
 #ifndef CIVETWEB_HEADER_INCLUDED
 #define CIVETWEB_HEADER_INCLUDED
 
-#define CIVETWEB_VERSION "1.11"
+#define CIVETWEB_VERSION "1.12"
 #define CIVETWEB_VERSION_MAJOR (1)
-#define CIVETWEB_VERSION_MINOR (11)
+#define CIVETWEB_VERSION_MINOR (12)
 #define CIVETWEB_VERSION_PATCH (0)
 
 #ifndef CIVETWEB_API
@@ -250,28 +250,54 @@ struct mg_callbacks {
 
 	/* Called when civetweb initializes SSL library.
 	   Parameters:
+	     ssl_ctx: SSL_CTX pointer.
 	     user_data: parameter user_data passed when starting the server.
 	   Return value:
 	     0: civetweb will set up the SSL certificate.
 	     1: civetweb assumes the callback already set up the certificate.
 	    -1: initializing ssl fails. */
-	int (*init_ssl)(void *ssl_context, void *user_data);
+	int (*init_ssl)(void *ssl_ctx, void *user_data);
+
+	/* Called when civetweb initializes SSL library for a domain.
+	   Parameters:
+	     server_domain: authentication_domain from the domain config.
+	     ssl_ctx: SSL_CTX pointer.
+	     user_data: parameter user_data passed when starting the server.
+	   Return value:
+	     0: civetweb will set up the SSL certificate.
+	     1: civetweb assumes the callback already set up the certificate.
+	    -1: initializing ssl fails. */
+	int (*init_ssl_domain)(const char *server_domain,
+	                       void *ssl_ctx,
+	                       void *user_data);
 
 	/* Called when civetweb is about to create or free a SSL_CTX.
 	Parameters:
-	   ssl_ctx: SSL_CTX pointer. NULL at creation time, Not NULL when mg_context
-	            will be freed
-	     user_data: parameter user_data passed when starting the server.
-	   Return value:
-	     0: civetweb will continue to create the context, just as if the
-	        callback would not be present.
-	        The value in *ssl_ctx when the function returns is ignored.
-	     1: civetweb will copy the value from *ssl_ctx to the civetweb context
-	        and doesn't create its own.
-	    -1: initializing ssl fails.*/
+	     ssl_ctx: SSL_CTX pointer. NULL at creation time, Not NULL when
+	mg_context will be freed user_data: parameter user_data passed when starting
+	the server. Return value: 0: civetweb will continue to create the context,
+	just as if the callback would not be present. The value in *ssl_ctx when the
+	function returns is ignored. 1: civetweb will copy the value from *ssl_ctx
+	to the civetweb context and doesn't create its own. -1: initializing ssl
+	fails.*/
 	int (*external_ssl_ctx)(void **ssl_ctx, void *user_data);
 
-#if defined(MG_LEGACY_INTERFACE) /* 2015-08-19 */
+	/* Called when civetweb is about to create or free a SSL_CTX for a domain.
+	Parameters:
+	     server_domain: authentication_domain from the domain config.
+	     ssl_ctx: SSL_CTX pointer. NULL at creation time, Not NULL when
+	mg_context will be freed user_data: parameter user_data passed when starting
+	the server. Return value: 0: civetweb will continue to create the context,
+	just as if the callback would not be present. The value in *ssl_ctx when the
+	function returns is ignored. 1: civetweb will copy the value from *ssl_ctx
+	to the civetweb context and doesn't create its own. -1: initializing ssl
+	fails.*/
+	int (*external_ssl_ctx_domain)(const char *server_domain,
+	                               void **ssl_ctx,
+	                               void *user_data);
+
+#if defined(MG_LEGACY_INTERFACE)           /* 2015-08-19 */                    \
+    || defined(MG_EXPERIMENTAL_INTERFACES) /* 2019-11-03 */
 	/* Called when websocket request is received, before websocket handshake.
 	   Return value:
 	     0: civetweb proceeds with websocket handshake.
@@ -351,20 +377,38 @@ struct mg_callbacks {
 	     ctx: context handle */
 	void (*init_context)(const struct mg_context *ctx);
 
-	/* Called when a new worker thread is initialized.
-	   Parameters:
-	     ctx: context handle
-	     thread_type:
-	       0 indicates the master thread
-	       1 indicates a worker thread handling client connections
-	       2 indicates an internal helper thread (timer thread)
-	       */
-	void (*init_thread)(const struct mg_context *ctx, int thread_type);
-
 	/* Called when civetweb context is deleted.
-	   Parameters:
-	     ctx: context handle */
+	Parameters:
+	ctx: context handle */
 	void (*exit_context)(const struct mg_context *ctx);
+
+	/* Called when a new worker thread is initialized.
+	 * Parameters:
+	 *   ctx: context handle
+	 *   thread_type:
+	 *     0 indicates the master thread
+	 *     1 indicates a worker thread handling client connections
+	 *     2 indicates an internal helper thread (timer thread)
+	 * Return value:
+	 *   This function returns a user supplied pointer. The pointer is assigned
+	 *   to the thread and can be obtained from the mg_connection object using
+	 *   mg_get_thread_pointer in all server callbacks. Note: A connection and
+	 *   a thread are not directly related. Threads will serve several different
+	 *   connections, and data from a single connection may call different
+	 *   callbacks using different threads. The thread pointer can be obtained
+	 *   in a callback handler, but should not be stored beyond the scope of
+	 *   one call to one callback.
+	 */
+	void *(*init_thread)(const struct mg_context *ctx, int thread_type);
+
+	/* Called when a worker exits.
+	 * The parameters "ctx" and "thread_type" correspond to the "init_thread"
+	 * call. The  "thread_pointer" parameter is the value returned by
+	 * "init_thread".
+	 */
+	void (*exit_thread)(const struct mg_context *ctx,
+	                    int thread_type,
+	                    void *thread_pointer);
 
 	/* Called when initializing a new connection object.
 	 * Can be used to initialize the connection specific user data
@@ -470,7 +514,8 @@ typedef int (*mg_request_handler)(struct mg_connection *conn, void *cbdata);
 /* mg_set_request_handler
 
    Sets or removes a URI mapping for a request handler.
-   This function uses mg_lock_context internally.
+   This function waits until a removing/updating handler becomes unused, so
+   do not call from the handler itself.
 
    URI's are ordered and prefixed URI's are supported. For example,
    consider two URIs: /a/b and /a
@@ -610,6 +655,14 @@ mg_get_context(const struct mg_connection *conn);
 CIVETWEB_API void *mg_get_user_data(const struct mg_context *ctx);
 
 
+/* Get user data passed to mg_start from connection. */
+CIVETWEB_API void *mg_get_user_context_data(const struct mg_connection *conn);
+
+
+/* Get user defined thread pointer for server threads (see init_thread). */
+CIVETWEB_API void *mg_get_thread_pointer(const struct mg_connection *conn);
+
+
 /* Set user data for the current connection. */
 /* Note: This function is deprecated. Use the init_connection callback
    instead to initialize the user connection data pointer. It is
@@ -692,7 +745,7 @@ enum {
 CIVETWEB_API const struct mg_option *mg_get_valid_options(void);
 
 
-struct mg_server_ports {
+struct mg_server_port {
 	int protocol;    /* 1 = IPv4, 2 = IPv6, 3 = both */
 	int port;        /* port number */
 	int is_ssl;      /* https port: 0 = no, 1 = yes */
@@ -703,15 +756,18 @@ struct mg_server_ports {
 	int _reserved4;
 };
 
+/* Legacy name */
+#define mg_server_ports mg_server_port
+
 
 /* Get the list of ports that civetweb is listening on.
    The parameter size is the size of the ports array in elements.
    The caller is responsibility to allocate the required memory.
-   This function returns the number of struct mg_server_ports elements
+   This function returns the number of struct mg_server_port elements
    filled in, or <0 in case of an error. */
 CIVETWEB_API int mg_get_server_ports(const struct mg_context *ctx,
                                      int size,
-                                     struct mg_server_ports *ports);
+                                     struct mg_server_port *ports);
 
 
 #if defined(MG_LEGACY_INTERFACE) /* 2017-04-02 */
@@ -814,7 +870,8 @@ CIVETWEB_API int mg_websocket_client_write(struct mg_connection *conn,
    with websockets only.
    Invoke this before mg_write or mg_printf when communicating with a
    websocket if your code has server-initiated communication as well as
-   communication in direct response to a message. */
+   communication in direct response to a message.
+   Do not acquire this lock while holding mg_lock_context(). */
 CIVETWEB_API void mg_lock_connection(struct mg_connection *conn);
 CIVETWEB_API void mg_unlock_connection(struct mg_connection *conn);
 
@@ -826,7 +883,8 @@ CIVETWEB_API void mg_unlock_connection(struct mg_connection *conn);
 
 
 /* Lock server context.  This lock may be used to protect resources
-   that are shared between different connection/worker threads. */
+   that are shared between different connection/worker threads.
+   If the given context is not server, these functions do nothing. */
 CIVETWEB_API void mg_lock_context(struct mg_context *ctx);
 CIVETWEB_API void mg_unlock_context(struct mg_context *ctx);
 
@@ -1135,6 +1193,10 @@ CIVETWEB_API int mg_get_cookie(const char *cookie,
      struct mg_connection *conn;
      conn = mg_download("google.com", 80, 0, ebuf, sizeof(ebuf),
                         "%s", "GET / HTTP/1.0\r\nHost: google.com\r\n\r\n");
+
+   mg_download is equivalent to calling mg_connect_client followed by
+   mg_printf and mg_get_response. Using these three functions directly may
+   allow more control as compared to using mg_download.
  */
 CIVETWEB_API struct mg_connection *
 mg_download(const char *host,
@@ -1402,6 +1464,7 @@ struct mg_client_options {
 	int port;
 	const char *client_cert;
 	const char *server_cert;
+	const char *host_name;
 	/* TODO: add more data */
 };
 
@@ -1412,7 +1475,9 @@ mg_connect_client_secure(const struct mg_client_options *client_options,
                          size_t error_buffer_size);
 
 
+#if defined(MG_LEGACY_INTERFACE) /* 2019-11-02 */
 enum { TIMEOUT_INFINITE = -1 };
+#endif
 enum { MG_TIMEOUT_INFINITE = -1 };
 
 /* Wait for a response from the server
@@ -1452,13 +1517,17 @@ CIVETWEB_API int mg_get_response(struct mg_connection *conn,
         64  support server side JavaScript (USE_DUKTAPE is set)
        128  support caching (NO_CACHING not set)
        256  support server statistics (USE_SERVER_STATS is set)
+       512  support for on the fly compression (USE_ZLIB is set)
+
+       These values are defined as MG_FEATURES_*
+
        The result is undefined, if bits are set that do not represent a
-       defined feature (currently: feature >= 512).
+       defined feature (currently: feature >= 1024).
        The result is undefined, if no bit is set (feature == 0).
 
    Return:
-     If feature is available, the corresponding bit is set
-     If feature is not available, the bit is 0
+     If a feature is available, the corresponding bit is set
+     If a feature is not available, the bit is 0
 */
 CIVETWEB_API unsigned mg_check_feature(unsigned feature);
 
@@ -1498,7 +1567,7 @@ CIVETWEB_API int
 mg_get_context_info(const struct mg_context *ctx, char *buffer, int buflen);
 
 
-#ifdef MG_EXPERIMENTAL_INTERFACES
+#if defined(MG_EXPERIMENTAL_INTERFACES)
 /* Get connection information. Useful for server diagnosis.
    Parameters:
      ctx: Context handle
@@ -1521,6 +1590,47 @@ CIVETWEB_API int mg_get_connection_info(const struct mg_context *ctx,
                                         int buflen);
 #endif
 
+
+/* New APIs for enhanced option and error handling.
+   These mg_*2 API functions have the same purpose as their original versions,
+   but provide additional options and/or provide improved error diagnostics.
+
+   Note: Experimental interfaces may change
+*/
+struct mg_error_data {
+	unsigned *code;          /* error code (number) */
+	char *text;              /* buffer for error text */
+	size_t text_buffer_size; /* size of buffer of "text" */
+};
+
+struct mg_init_data {
+	const struct mg_callbacks *callbacks; /* callback function pointer */
+	void *user_data;                      /* data */
+	const char **configuration_options;
+};
+
+
+#if defined(MG_EXPERIMENTAL_INTERFACES)
+
+CIVETWEB_API struct mg_connection *
+mg_connect_client2(const char *host,
+                   const char *protocol,
+                   int port,
+                   const char *path,
+                   struct mg_init_data *init,
+                   struct mg_error_data *error);
+
+CIVETWEB_API int mg_get_response2(struct mg_connection *conn,
+                                  struct mg_error_data *error,
+                                  int timeout);
+
+CIVETWEB_API struct mg_context *mg_start2(struct mg_init_data *init,
+                                          struct mg_error_data *error);
+
+CIVETWEB_API int mg_start_domain2(struct mg_context *ctx,
+                                  const char **configuration_options,
+                                  struct mg_error_data *error);
+#endif
 
 #ifdef __cplusplus
 }

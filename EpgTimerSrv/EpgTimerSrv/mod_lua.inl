@@ -2,6 +2,9 @@
  * See https://github.com/civetweb/civetweb/
  */
 
+#if !defined(_WIN32)
+#include <dlfcn.h>
+#endif
 #include "civetweb_lua.h"
 /*#include "civetweb_private_lua.h"*/
 
@@ -325,6 +328,7 @@ lsp_connect(lua_State *L)
 		if (!ok) {
 			return luaL_error(L, ebuf);
 		} else {
+			set_blocking_mode(sock);
 			lua_newtable(L);
 			reg_lstring(L, "sock", (const char *)&sock, sizeof(SOCKET));
 			reg_string(L, "host", lua_tostring(L, -4));
@@ -364,11 +368,12 @@ lsp_abort(lua_State *L)
 	lua_error(L);
 }
 
+
 struct lsp_var_reader_data {
-	const char *begin;
 	int64_t len;
-	unsigned char state;
 	int64_t consumed;
+	const char *begin;
+	unsigned char state;
 	char tag;
 };
 
@@ -392,7 +397,7 @@ lsp_var_reader(lua_State *L, void *ud, size_t *sz)
 	case 1:
 		/* Second call: forward variable name */
 		ret = reader->begin;
-		*sz = reader->len;
+		*sz = (size_t)reader->len;
 		reader->consumed += reader->len;
 		break;
 	case 2:
@@ -564,7 +569,8 @@ run_lsp_kepler(struct mg_connection *conn,
                const char *path,
                const char *p,
                int64_t len,
-               lua_State *L)
+               lua_State *L,
+               int depth)
 {
 
 	int lua_ok;
@@ -574,15 +580,23 @@ run_lsp_kepler(struct mg_connection *conn,
 
 	gmt_time_string(date, sizeof(date), &curtime);
 
-	conn->must_close = 1;
-	mg_printf(conn, "HTTP/1.1 200 OK\r\n");
-	send_no_cache_header(conn);
-	send_additional_header(conn);
-	mg_printf(conn,
-	          "Date: %s\r\n"
-	          "Connection: close\r\n"
-	          "Content-Type: text/html; charset=utf-8\r\n\r\n",
-	          date);
+	if (depth == 1) {
+		/* Top level page assumes keep_alive is disabled.
+		 * Do not overwrite this setting for included pages. */
+		conn->must_close = 1;
+
+		/* Only send a HTML header, if this is the top level page.
+		 * If this page is included by some mg.include calls, do not add a
+		 * header. */
+		mg_printf(conn, "HTTP/1.1 200 OK\r\n");
+		send_no_cache_header(conn);
+		send_additional_header(conn);
+		mg_printf(conn,
+		          "Date: %s\r\n"
+		          "Connection: close\r\n"
+		          "Content-Type: text/html; charset=utf-8\r\n\r\n",
+		          date);
+	}
 
 	data.begin = p;
 	data.len = len;
@@ -610,13 +624,20 @@ run_lsp_civetweb(struct mg_connection *conn,
                  const char *path,
                  const char *p,
                  int64_t len,
-                 lua_State *L)
+                 lua_State *L,
+                 int depth)
 {
 	int i, j, s, pos = 0, lines = 1, lualines = 0, is_var, lua_ok;
 	char chunkname[MG_BUF_LEN];
 	struct lsp_var_reader_data data;
 	const char lsp_mark1 = '?'; /* Use <? code ?> */
 	const char lsp_mark2 = '%'; /* Use <% code %> */
+
+	if (depth == 1) {
+		/* Assume the script does not support keep_alive. The script may change
+		 * this by calling mg.keep_alive(true). */
+		conn->must_close = 1;
+	}
 
 	for (i = 0; i < len; i++) {
 		if (p[i] == '\n') {
@@ -992,10 +1013,83 @@ lsp_send_file_body(lua_State *L)
 		ret = mg_send_file_body(conn, filename);
 	} else {
 		/* Syntax error */
-		return luaL_error(L, "invalid send_file() call");
+		return luaL_error(L, "invalid send_file_body() call");
 	}
 
 	lua_pushboolean(L, ret >= 0);
+	return 1;
+}
+
+
+/* mg.send_http_error */
+static int
+lsp_send_http_error(lua_State *L)
+{
+	struct mg_connection *conn =
+	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
+	int num_args = lua_gettop(L);
+	int status = (num_args >= 1) ? (int)lua_tonumber(L, 1) : -1;
+	const char *auxText = (num_args >= 2) ? lua_tostring(L, 2) : NULL;
+	int ret;
+
+	if ((status >= 100) && (status <= 999)) {
+		ret = mg_send_http_error(conn,
+		                         status,
+		                         (auxText != NULL) ? "%s" : "",
+		                         auxText);
+	} else {
+		/* Syntax error */
+		return luaL_error(L, "invalid send_http_error() call");
+	}
+
+	lua_pushnumber(L, ret);
+	return 1;
+}
+
+
+/* mg.send_http_error */
+static int
+lsp_send_http_ok(lua_State *L)
+{
+	struct mg_connection *conn =
+	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
+	int num_args = lua_gettop(L);
+	int type1, type2;
+	const char *content_type = NULL;
+	const char *content = NULL;
+	int64_t content_len = 0;
+	int ret;
+
+	if (num_args < 2) {
+		/* Syntax error */
+		return luaL_error(L, "invalid send_http_ok() call");
+	}
+	type1 = lua_type(L, 1);
+	type2 = lua_type(L, 2);
+	if (type1 == LUA_TSTRING) {
+		content_type = lua_tostring(L, 1);
+	} else if (type1 != LUA_TNIL) {
+		/* Syntax error */
+		return luaL_error(L, "invalid send_http_ok() call");
+	}
+	if (type2 == LUA_TSTRING) {
+		size_t len;
+		content = lua_tolstring(L, 2, &len);
+		content_len = (int64_t)len;
+	} else if (type2 == LUA_TNUMBER) {
+		content_len = (int64_t)lua_tonumber(L, 2);
+	} else {
+		/* Syntax error */
+		return luaL_error(L, "invalid send_http_ok() call");
+	}
+
+	ret = mg_send_http_ok(conn, content_type, content_len);
+
+	if ((ret == 0) && (content != NULL) && (content_len > 0)) {
+		mg_write(conn, content, (size_t)content_len);
+	}
+
+	lua_pushnumber(L, ret);
 	return 1;
 }
 
@@ -1504,12 +1598,13 @@ lua_action(struct laction_arg *arg)
 	lua_pushlightuserdata(arg->state, (void *)&lua_regkey_ctx);
 	lua_gettable(arg->state, LUA_REGISTRYINDEX);
 	ctx = (struct mg_context *)lua_touserdata(arg->state, -1);
+	lua_pop(arg->state, 1);
 
 	err = luaL_loadstring(arg->state, arg->txt);
 	if (err != 0) {
 		struct mg_connection fc;
-		lua_cry(fake_connection(&fc, ctx), err, arg->state, arg->script,
-		        "timer");
+		lua_cry(
+		    fake_connection(&fc, ctx), err, arg->state, arg->script, "timer");
 		(void)pthread_mutex_unlock(arg->pmutex);
 		mg_free(arg);
 		return 0;
@@ -1517,8 +1612,8 @@ lua_action(struct laction_arg *arg)
 	err = lua_pcall(arg->state, 0, 1, 0);
 	if (err != 0) {
 		struct mg_connection fc;
-		lua_cry(fake_connection(&fc, ctx), err, arg->state, arg->script,
-		        "timer");
+		lua_cry(
+		    fake_connection(&fc, ctx), err, arg->state, arg->script, "timer");
 		(void)pthread_mutex_unlock(arg->pmutex);
 		mg_free(arg);
 		return 0;
@@ -1873,6 +1968,7 @@ prepare_lua_request_info(struct mg_connection *conn, lua_State *L)
 		reg_int(L, "status", conn->status_code);
 	}
 
+	/* Table "HTTP headers" */
 	lua_pushstring(L, "http_headers");
 	lua_newtable(L);
 	for (i = 0; i < conn->request_info.num_headers; i++) {
@@ -1882,6 +1978,18 @@ prepare_lua_request_info(struct mg_connection *conn, lua_State *L)
 	}
 	lua_rawset(L, -3);
 
+	/* Table "Client Certificate" */
+	if (conn->request_info.client_cert) {
+		lua_pushstring(L, "client_cert");
+		lua_newtable(L);
+		reg_string(L, "subject", conn->request_info.client_cert->subject);
+		reg_string(L, "issuer", conn->request_info.client_cert->issuer);
+		reg_string(L, "serial", conn->request_info.client_cert->serial);
+		reg_string(L, "finger", conn->request_info.client_cert->finger);
+		lua_rawset(L, -3);
+	}
+
+	/* End of request_info */
 	lua_rawset(L, -3);
 }
 
@@ -1924,6 +2032,8 @@ civetweb_open_lua_libs(lua_State *L)
 	{
 		extern int luaopen_LuaXML_lib(lua_State *);
 		luaopen_LuaXML_lib(L);
+		// lua_pushvalue(L, -1); to copy value
+		lua_setglobal(L, "xml");
 	}
 #endif
 #if defined(USE_LUA_FILE_SYSTEM)
@@ -1961,9 +2071,10 @@ prepare_lua_environment(struct mg_context *ctx,
 	 * TODO: Redesign the interface.
 	 */
 	luaL_newmetatable(L, LUASOCKET);
-	lua_pushliteral(L, "__index");
-	luaL_newlib(L, luasocket_methods);
-	lua_rawset(L, -3);
+	/* self.__index = self */
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	luaL_setfuncs(L, luasocket_methods, 0);
 	lua_pop(L, 1);
 	lua_register(L, "connect", lsp_connect);
 #endif
@@ -2014,11 +2125,13 @@ prepare_lua_environment(struct mg_context *ctx,
 		reg_conn_function(L, "keep_alive", lsp_keep_alive, conn);
 		reg_conn_function(L, "send_file", lsp_send_file, conn);
 		reg_conn_function(L, "send_file_body", lsp_send_file_body, conn);
+		reg_conn_function(L, "send_http_error", lsp_send_http_error, conn);
+		reg_conn_function(L, "send_http_ok", lsp_send_http_ok, conn);
+		reg_conn_function(L, "redirect", lsp_redirect, conn);
 	}
 
 	if (lua_env_type == LUA_ENV_TYPE_LUA_SERVER_PAGE) {
 		reg_conn_function(L, "include", lsp_include, conn);
-		reg_conn_function(L, "redirect", lsp_redirect, conn);
 	}
 
 	if (lua_env_type == LUA_ENV_TYPE_LUA_WEBSOCKET) {
@@ -2211,12 +2324,9 @@ handle_lsp_request(struct mg_connection *conn,
 	               const char *,
 	               const char *,
 	               int64_t,
-	               lua_State *);
+	               lua_State *,
+	               int);
 	const char *addr;
-
-	/* Assume the script does not support keep_alive. The script may change this
-	 * by calling mg.keep_alive(true). */
-	conn->must_close = 1;
 
 	/* mg_fopen opens the file and sets the size accordingly */
 	if (!mg_fopen(conn, path, MG_FOPEN_MODE_READ, filep)) {
@@ -2346,7 +2456,11 @@ handle_lsp_request(struct mg_connection *conn,
 	}
 
 	/* We're not sending HTTP headers here, Lua page must do it. */
-	error = run_lsp(conn, path, addr, filep->stat.size, L);
+	error =
+	    run_lsp(conn, path, addr, filep->stat.size, L, include_history->depth);
+
+	/* pop from stack */
+	include_history->depth--;
 
 cleanup_handle_lsp_request:
 
