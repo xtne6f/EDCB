@@ -10,6 +10,7 @@ DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
 CUR_ALL_H := $(wildcard *.h *.inl)
 
 ifdef withlua
+  CPPFLAGS += -DEPGTIMERSRV_WITHLUA
   SOURCES_LUA = \
     lua__lapi.c \
     lua__lauxlib.c \
@@ -56,8 +57,7 @@ ifdef withlua
     lua_zlib1__uncompr.c \
     lua_zlib1__zutil.c
 else
-  # Lazy loading fails with segfault if LUA_LIB undefined.
-  CPPFLAGS += -DLUA_BUILD_AS_DLL -DLUA_LIB
+  # Lazy loading fails with segfault if LUA_BUILD_AS_DLL defined.
   SOURCES_LUA =
   LDLIBS := -L. -llua52-mingw-lazy-$(or $(MSYSTEM_CARCH),$(findstring x86_64,$(MAKE_HOST)),i686) $(LDLIBS)
 endif

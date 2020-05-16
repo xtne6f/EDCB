@@ -21,7 +21,7 @@ const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 CHttpServer::CHttpServer()
 	: mgContext(NULL)
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	, hLuaDll(NULL)
 #endif
 	, initedLibrary(false)
@@ -143,7 +143,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		options[opCount++] = globalAuthPath.c_str();
 	}
 
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
 	this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
 	if( this->hLuaDll == NULL ){
@@ -247,7 +247,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 		mg_exit_library();
 		this->initedLibrary = false;
 	}
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;

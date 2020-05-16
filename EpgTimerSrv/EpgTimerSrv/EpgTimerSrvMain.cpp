@@ -87,7 +87,7 @@ struct MAIN_WINDOW_CONTEXT {
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
 	, hwndMain(NULL)
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	, hLuaDll(NULL)
 #endif
 	, nwtvUdp(false)
@@ -156,7 +156,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			DispatchMessage(&msg);
 		}
 	}
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
@@ -1118,7 +1118,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	if( initialize ){
 		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 		//存在を確認しているだけ
 		this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
 		if( this->hLuaDll )
@@ -2964,7 +2964,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 	return false;
 }
 
-#ifndef LUA_BUILD_AS_DLL
+#ifdef EPGTIMERSRV_WITHLUA
 extern "C" int luaopen_zlib(lua_State*);
 #endif
 
@@ -3101,7 +3101,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		" return r;"
 		"end");
 
-#ifndef LUA_BUILD_AS_DLL
+#ifdef EPGTIMERSRV_WITHLUA
 	//組み込みのzlibをロード済みにする
 	luaL_requiref(L, "zlib", luaopen_zlib, 0);
 #endif
