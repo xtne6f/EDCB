@@ -1,6 +1,6 @@
 TARGET ?= EpgDataCap3.dll
 CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE $(CPPFLAGS)
-CXXFLAGS := -Os $(CXXFLAGS)
+CXXFLAGS := -O2 $(CXXFLAGS)
 LDFLAGS := -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
 WINDRES ?= windres
 DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
