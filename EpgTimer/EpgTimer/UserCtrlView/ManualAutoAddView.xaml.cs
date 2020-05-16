@@ -37,6 +37,10 @@ namespace EpgTimer
                     gridView_key.Columns.Add(columnList[info.Tag]);
                 }
             }
+            if (Settings.Instance.AutoAddManualHideButton)
+            {
+                stackPanel_button.Visibility = Visibility.Collapsed;
+            }
         }
 
         public void SaveSize()
@@ -103,8 +107,7 @@ namespace EpgTimer
                 ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
                 AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
+                dlg.SetChangeModeData(info.ManualAutoAddInfo);
                 dlg.ShowDialog();
             }
         }
@@ -116,8 +119,7 @@ namespace EpgTimer
                 ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
                 AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
+                dlg.SetChangeModeData(info.ManualAutoAddInfo);
                 dlg.ShowDialog();
             }
         }
@@ -135,18 +137,20 @@ namespace EpgTimer
 
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            try
+            foreach (object item in listView_key.ContextMenu.Items)
             {
-                foreach (MenuItem item in listView_key.ContextMenu.Items)
+                MenuItem menuItem = item as MenuItem;
+                if (menuItem != null && menuItem.IsCheckable)
                 {
-                    item.IsChecked = Settings.Instance.AutoAddManualColumn.Any(info => info.Tag == item.Name);
+                    if (menuItem.Name == "HideButton")
+                    {
+                        menuItem.IsChecked = Settings.Instance.AutoAddManualHideButton;
+                    }
+                    else
+                    {
+                        menuItem.IsChecked = Settings.Instance.AutoAddManualColumn.Any(info => info.Tag == menuItem.Name);
+                    }
                 }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -177,7 +181,23 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void hideButton_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Instance.AutoAddManualHideButton = ((MenuItem)sender).IsChecked;
+            stackPanel_button.Visibility = Settings.Instance.AutoAddManualHideButton ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void listView_key_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    button_change.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    break;
             }
         }
     }

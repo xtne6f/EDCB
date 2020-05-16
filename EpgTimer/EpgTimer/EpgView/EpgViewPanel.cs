@@ -106,7 +106,8 @@ namespace EpgTimer.EpgView
             private set;
         }
 
-        public void Initialize(List<ProgramViewItem> items, double borderLeftSize, double borderTopSize, bool isTitleIndent, bool extInfoMode,
+        public void Initialize(List<ProgramViewItem> items, double borderLeftSize, double borderTopSize,
+                               bool drawHour, bool isTitleIndent, bool extInfoMode,
                                Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionaryTitle,
                                Dictionary<char, List<KeyValuePair<string, string>>> replaceDictionaryNormal,
                                ItemFont itemFontTitle, ItemFont itemFontNormal, double sizeTitle, double sizeNormal, Brush brushTitle, Brush brushNormal,
@@ -144,18 +145,19 @@ namespace EpgTimer.EpgView
                     double innerTop = info.TopPos + borderTopSize / 2 - 0.26;
                     double innerWidth = info.Width - borderLeftSize;
                     double innerHeight = info.Height - borderTopSize;
-                    double useHeight;
+                    double useHeight = 0;
 
+                    if (drawHour && isTitleIndent)
+                    {
+                        //時
+                        string hour = (info.EventInfo.StartTimeFlag == 0 ? "?" : info.EventInfo.start_time.Hour.ToString()) + ":";
+                        RenderText(hour, textDrawList, itemFontTitle, sizeTitle * 0.8, innerWidth - 1, innerHeight,
+                                   innerLeft + 1, innerTop, out useHeight, brushTitle, m, selfLeft);
+                    }
                     //分
                     string min = (info.EventInfo.StartTimeFlag == 0 ? "?" : info.EventInfo.start_time.Minute.ToString("d02"));
-                    if (RenderText(min, textDrawList, itemFontTitle, sizeTitle * 0.95,
-                                   innerWidth - 1, innerHeight,
-                                   innerLeft + 1, innerTop, out useHeight, brushTitle, m, selfLeft) == false)
-                    {
-                        info.TitleDrawErr = true;
-                        LastItemRenderTextHeight = info.Height;
-                        continue;
-                    }
+                    RenderText(min, textDrawList, itemFontTitle, sizeTitle * 0.95, innerWidth - 1, innerHeight,
+                               innerLeft + 1, innerTop + useHeight, out useHeight, brushTitle, m, selfLeft);
 
                     //タイトル
                     string title = info.EventInfo.ShortInfo == null ? "" : info.EventInfo.ShortInfo.event_name;

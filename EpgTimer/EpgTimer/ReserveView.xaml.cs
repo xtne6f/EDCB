@@ -13,7 +13,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using System.Collections;
 
 
 namespace EpgTimer
@@ -191,7 +190,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -219,7 +218,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -247,7 +246,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -257,7 +256,6 @@ namespace EpgTimer
             {
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
@@ -303,7 +301,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -311,7 +309,6 @@ namespace EpgTimer
         {
             ChgReserveWindow dlg = new ChgReserveWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.AddReserveMode(true);
             dlg.ShowDialog();
         }
 
@@ -329,7 +326,7 @@ namespace EpgTimer
             foreach (object item in listView_reserve.ContextMenu.Items)
             {
                 MenuItem menuItem = item as MenuItem;
-                if (menuItem != null)
+                if (menuItem != null && menuItem.IsCheckable)
                 {
                     if (menuItem.Name == "HideButton")
                     {
@@ -337,15 +334,7 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItem.IsChecked = false;
-                        foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
-                        {
-                            if (info.Tag == menuItem.Name)
-                            {
-                                menuItem.IsChecked = true;
-                                break;
-                            }
-                        }
+                        menuItem.IsChecked = Settings.Instance.ReserveListColumn.Any(info => info.Tag == menuItem.Name);
                     }
                 }
             }
@@ -378,7 +367,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -447,7 +436,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -473,7 +462,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -486,7 +475,7 @@ namespace EpgTimer
             }
         }
 
-        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
+        private void listView_reserve_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             //選択されているすべての予約が同じ設定の場合だけチェックを表示する
             byte recMode = 0xFF;
@@ -510,9 +499,9 @@ namespace EpgTimer
                     priority = 0xFE;
                 }
             }
-            foreach (object item in ((ContextMenu)sender).Items)
+            foreach (FrameworkElement item in ((ListViewItem)sender).ContextMenu.Items)
             {
-                if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更", StringComparison.Ordinal))
+                if (item.Name == "cm_chg")
                 {
                     for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
                     {

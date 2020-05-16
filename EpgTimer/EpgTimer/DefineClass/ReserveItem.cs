@@ -83,7 +83,19 @@ namespace EpgTimer
         }
         public String BatFilePath
         {
-            get { return ReserveInfo.RecSetting.BatFilePath; }
+            get
+            {
+                int i = ReserveInfo.RecSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? ReserveInfo.RecSetting.BatFilePath : ReserveInfo.RecSetting.BatFilePath.Remove(i);
+            }
+        }
+        public string BatFileTag
+        {
+            get
+            {
+                int i = ReserveInfo.RecSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? "" : ReserveInfo.RecSetting.BatFilePath.Substring(i + 1);
+            }
         }
         public uint ID
         {

@@ -13,7 +13,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using System.Collections;
 
 
 namespace EpgTimer
@@ -83,7 +82,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -214,7 +213,6 @@ namespace EpgTimer
             {
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
@@ -321,15 +319,7 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItem.IsChecked = false;
-                        foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
-                        {
-                            if (info.Tag == menuItem.Name)
-                            {
-                                menuItem.IsChecked = true;
-                                break;
-                            }
-                        }
+                        menuItem.IsChecked = Settings.Instance.RecInfoListColumn.Any(info => info.Tag == menuItem.Name);
                     }
                 }
             }
@@ -362,7 +352,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 

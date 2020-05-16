@@ -18,6 +18,6 @@
         <Slider Height="23" HorizontalAlignment="Left" Margin="93,86,0,0" Maximum="255" SmallChange="1" Value="{Binding A, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}" VerticalAlignment="Top" Width="114" />
         <Rectangle Height="86" HorizontalAlignment="Left" Margin="222,12,0,0" Name="rectangle_color" Stroke="Black" VerticalAlignment="Top" Width="114" />
         <Button Content="OK" Height="23" HorizontalAlignment="Left" Margin="163,115,0,0" Name="button_OK" VerticalAlignment="Top" Width="77" Click="button_OK_Click" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" Margin="259,115,0,0" Name="button_cancel" VerticalAlignment="Top" Width="77" Click="button_cancel_Click" />
+        <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="259,115,0,0" Name="button_cancel" VerticalAlignment="Top" Width="77" />
     </Grid>
 </Window>
