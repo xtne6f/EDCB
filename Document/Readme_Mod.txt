@@ -13,7 +13,9 @@ EpgTimerTaskはEpgTimerSrvに統合しました。EpgTimerSrv.exeをコピーし
 
 Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人柱版10.69
 のままです。更新履歴はHistory.txtに移されていますが、すでに内容を更新していませ
-ん。正確な履歴はコミットログを参照してください。
+ん。正確な履歴はコミットログを参照してください。ファイルプロパティ等のバージョン
+情報は(独断で)10.70としていますが、おおむね2020年以降に更新したこのフォークやそ
+れに近いフォークに付けた大まかな値です。
 このファイルでは上述のReadmeから改変された部分だけを説明します(他者の改変部分も
 原則能動態で説明します)。なお、仕様に影響しないバグ修正や細かいデザイン改変は省
 略します。追加機能については【追加】マークを付けています。
@@ -78,6 +80,7 @@ Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人�
 EpgDataCap_Bon.exeがなんらかの不具合で異常終了するとき、スタックトレースを
 EpgDataCap_Bon.exe.errというテキストファイルに出力します。また、ビルド時に生成さ
 れるEpgDataCap_Bon.pdbが同じフォルダにあれば出力内容が詳細になります。
+EpgTimerSrv.exeも同様です。
 
 ■Readme_EpgTimer.txt■
 "EpgTimer.exe"を"EpgTimerNW～.exe"にファイル名をリネームすることで、EpgTimerNW相
@@ -290,6 +293,9 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         テーマになります。オンのときEpgTimerのあるフォルダにEpgTimer.exe.rd.xaml
         があれば、そこに定義されたリソースを適用します【追加】。iniフォルダに簡
         単なサンプルを用意したので参考にしてください。
+      ・右クリックメニューにテーマを適用する(要再起動)【追加】
+        上述機能の右クリックメニュー限定版です。リソースを定義したいときは同様に
+        EpgTimer.exe.rdcm.xamlを作成してください。
       ・EPGデータを常に更新する(旧「EPGデータを自動的に読み込まない」相当)
         EpgTimerSrvのEPGデータをEpgTimerにダウンロードするのを、番組表を表示する
         タイミング(≒番組表タブを開くタイミング)まで遅らせるかどうか指定します。
@@ -614,7 +620,7 @@ EpgTimer/EpgTimer/CommonフォルダのソースコードCtrlCmd.csとCtrlCmdDef
 HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetWebを組み込みました。
 有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。
 https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
-CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.11
+CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.12
 https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
 SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にlibssl-1_1(-x64).dllとlibcrypto-1_1(-x64).dllが必要です。自ビルドするか信頼できるどこかから入手してください。
 https://www.openssl.org/community/binaries.html から辿った https://bintray.com/vszakats/generic/openssl (curlメンテナによるバイナリ)のopenssl-1.1.1*で動作を確認しています。
