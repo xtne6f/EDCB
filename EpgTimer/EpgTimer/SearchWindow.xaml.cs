@@ -122,7 +122,10 @@ namespace EpgTimer
                 RefreshReserve();
                 Sort();
 
-                searchKeyView.SaveSearchLog();
+                if (Settings.Instance.SaveSearchKeyword)
+                {
+                    searchKeyView.SaveSearchLog();
+                }
             }
             catch (Exception ex)
             {
