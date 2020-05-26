@@ -379,16 +379,16 @@ namespace EpgTimer
 
         void listView_reserve_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.IsRepeat)
-            {
-                return;
-            }
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
                     case Key.P:
-                        this.timeShiftPlay_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        if (e.IsRepeat == false)
+                        {
+                            button_timeShiftPlay.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
                         break;
                 }
             }
@@ -397,18 +397,21 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.F3:
-                        this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
+                        MenuItem_Click_ProgramTable(sender, e);
+                        e.Handled = true;
                         break;
                     case Key.Enter:
-                        this.button_change_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        ChangeReserve();
+                        e.Handled = true;
                         break;
                     case Key.Delete:
                         if (listView_reserve.SelectedItems.Count > 0 &&
                             MessageBox.Show(listView_reserve.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
                                             MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
                         {
-                            button_del_Click(listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                            button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         }
+                        e.Handled = true;
                         break;
                 }
             }

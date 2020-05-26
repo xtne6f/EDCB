@@ -197,6 +197,16 @@ namespace EpgTimer
             {
                 case Key.Enter:
                     button_change.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    e.Handled = true;
+                    break;
+                case Key.Delete:
+                    if (listView_key.SelectedItems.Count > 0 &&
+                        MessageBox.Show(listView_key.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
+                                        MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
+                    {
+                        button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    }
+                    e.Handled = true;
                     break;
             }
         }

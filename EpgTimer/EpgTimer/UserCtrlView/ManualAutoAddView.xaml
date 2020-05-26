@@ -25,7 +25,7 @@
         </local:ContextMenuEx>
         <local:ContextMenuEx x:Key="itemMenu">
             <MenuItem Header="変更" Click="button_change_Click" InputGestureText="Enter" />
-            <MenuItem Header="削除" Click="button_del_Click" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
             <Separator />
             <MenuItem Header="追加" Click="button_add_Click" />
         </local:ContextMenuEx>

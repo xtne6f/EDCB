@@ -403,6 +403,7 @@ namespace EpgTimer
             {
                 case Key.Enter:
                     showDialog();
+                    e.Handled = true;
                     break;
                 case Key.Delete:
                     if (listView_key.SelectedItems.Count > 0 &&
@@ -411,31 +412,41 @@ namespace EpgTimer
                     {
                         button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     }
+                    e.Handled = true;
                     break;
             }
         }
 
-        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
                     case Key.Up:
                         moveItem(true);
+                        e.Handled = true;
                         break;
                     case Key.Down:
                         moveItem(false);
+                        e.Handled = true;
                         break;
                     case Key.S:
-                        this.saveItemOrder();
+                        if (e.IsRepeat == false)
+                        {
+                            saveItemOrder();
+                        }
+                        e.Handled = true;
                         break;
                     case Key.Z:
-                        this.reloadItemOrder();
+                        if (e.IsRepeat == false)
+                        {
+                            reloadItemOrder();
+                        }
+                        e.Handled = true;
                         break;
                 }
             }
-            base.OnPreviewKeyDown(e);
         }
 
         private void button_up_Click2(object sender, RoutedEventArgs e)

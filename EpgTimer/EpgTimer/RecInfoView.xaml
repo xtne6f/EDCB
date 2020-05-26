@@ -49,10 +49,10 @@
         </local:ContextMenuEx>
         <local:ContextMenuEx x:Key="itemMenu">
             <MenuItem Header="録画情報" Click="button_recInfo_Click" InputGestureText="Enter" />
-            <MenuItem Header="削除" Click="button_del_Click" />
-            <MenuItem Header="再生" Click="button_play_Click" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
+            <MenuItem Header="再生" Click="button_play_Click" InputGestureText="Ctrl + P" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" />
+            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" InputGestureText="Ctrl + O" />
         </local:ContextMenuEx>
 
     </UserControl.Resources>
