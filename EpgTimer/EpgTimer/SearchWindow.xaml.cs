@@ -252,6 +252,7 @@ namespace EpgTimer
                 {
                     MessageBox.Show("追加に失敗しました");
                 }
+                Close();
             }
             catch (Exception ex)
             {
@@ -275,6 +276,7 @@ namespace EpgTimer
                 {
                     MessageBox.Show("変更に失敗しました");
                 }
+                Close();
             }
             catch (Exception ex)
             {
@@ -373,43 +375,42 @@ namespace EpgTimer
             CommonManager.Instance.DB.ReserveInfoChanged -= RefreshReserve;
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.IsRepeat)
-            {
-                return;
-            }
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
                     case Key.F:
-                        this.button_search.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        if (e.IsRepeat == false)
+                        {
+                            SearchPg();
+                        }
+                        e.Handled = true;
+                        break;
+                    case Key.N:
+                        // バインディング更新のためフォーカスを移す
+                        button_add_epgAutoAdd.Focus();
+                        button_add_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
                     case Key.S:
-                        this.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                    case Key.A:
-                        this.button_add_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        this.Close();
-                        break;
-                    case Key.C:
-                        this.button_chg_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        this.Close();
+                        if (button_chg_epgAutoAdd.Visibility == Visibility.Visible)
+                        {
+                            button_chg_epgAutoAdd.Focus();
+                            button_chg_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
                         break;
                 }
             }
-            else
+            else if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 switch (e.Key)
                 {
-                    case Key.F3:
-                        this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
-                        break;
                     case Key.Escape:
-                        {
-                            this.Close();
-                        }
+                        Close();
+                        e.Handled = true;
                         break;
                 }
             }
@@ -432,11 +433,32 @@ namespace EpgTimer
 
         void listView_result_KeyDown(object sender, KeyEventArgs e)
         {
-            switch (e.Key)
+            if (Keyboard.Modifiers == ModifierKeys.Control)
             {
-                case Key.Enter:
-                    this.MenuItem_Click_ShowDialog(listView_result.SelectedItem, new RoutedEventArgs());
-                    break;
+                switch (e.Key)
+                {
+                    case Key.R:
+                        if (e.IsRepeat == false)
+                        {
+                            button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
+                        break;
+                }
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.F3:
+                        MenuItem_Click_ProgramTable(sender, e);
+                        e.Handled = true;
+                        break;
+                    case Key.Enter:
+                        MenuItem_Click_ShowDialog(sender, e);
+                        e.Handled = true;
+                        break;
+                }
             }
         }
 
@@ -600,7 +622,7 @@ namespace EpgTimer
                 }
                 searchKeyView.SetSearchKey(defKey);
 
-                button_search_Click(sender, e);
+                SearchPg();
             }
         }
 

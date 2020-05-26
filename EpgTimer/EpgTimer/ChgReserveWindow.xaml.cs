@@ -228,19 +228,21 @@ namespace EpgTimer
             recSettingView.SetViewMode(checkBox_program.IsChecked == false);
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-            //
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
-                    case Key.C:
-                        this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    case Key.S:
+                        // バインディング更新のためフォーカスを移す
+                        button_chg_reserve.Focus();
+                        button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
                     case Key.D:
-                        this.button_del_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        button_del_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
                 }
             }

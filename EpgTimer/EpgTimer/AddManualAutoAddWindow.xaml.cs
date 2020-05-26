@@ -156,5 +156,21 @@ namespace EpgTimer
                 recSettingView.SetDefSetting(defKey.recSetting);
             }
         }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.S:
+                        // バインディング更新のためフォーカスを移す
+                        button_add.Focus();
+                        button_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
+                        break;
+                }
+            }
+        }
     }
 }
