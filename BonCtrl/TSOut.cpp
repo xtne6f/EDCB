@@ -110,7 +110,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	{
 		for( DWORD i=0; i<dataSize; i+=188 ){
 			CTSPacketUtil packet;
-			if( packet.Set188TS(data + i, 188) == TRUE ){
+			if( packet.Set188TS(data + i, 188) ){
 				if( this->chChangeState != CH_ST_DONE ){
 					//チャンネル切り替え中
 					if( packet.transport_scrambling_control != 0 ){

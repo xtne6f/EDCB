@@ -24,14 +24,14 @@ void CServiceFilter::Clear(WORD tsid)
 	this->pat.Clear();
 }
 
-void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPacketUtil& packet)
+void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, const CTSPacketUtil& packet)
 {
 	this->catOrPmtUpdated = false;
 
 	//指定サービスに必要なPIDを解析
 	if( packet.transport_scrambling_control == 0 ){
 		//CAT
-		if( packet.PID == 1 && this->catUtil.AddPacket(&packet) ){
+		if( packet.PID == 1 && this->catUtil.AddPacket(packet) ){
 			this->catOrPmtUpdated = true;
 			CheckNeedPID();
 		}
@@ -44,7 +44,7 @@ void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPa
 					if( itr == this->pmtUtilMap.end() ){
 						itr = this->pmtUtilMap.insert(std::make_pair(packet.PID, CPMTUtil())).first;
 					}
-					if( itr->second.AddPacket(&packet) ){
+					if( itr->second.AddPacket(packet) ){
 						this->catOrPmtUpdated = true;
 						CheckNeedPID();
 					}
@@ -53,7 +53,7 @@ void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPa
 		}else{
 			//PMTの2パケット目かチェック
 			map<WORD, CPMTUtil>::iterator itr = this->pmtUtilMap.find(packet.PID);
-			if( itr != this->pmtUtilMap.end() && itr->second.AddPacket(&packet) ){
+			if( itr != this->pmtUtilMap.end() && itr->second.AddPacket(packet) ){
 				this->catOrPmtUpdated = true;
 				CheckNeedPID();
 			}

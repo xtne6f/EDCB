@@ -121,9 +121,9 @@ void COneServiceUtil::AddTSBuff(
 
 		for( DWORD i=0; i<size; i+=188 ){
 			CTSPacketUtil packet;
-			if( packet.Set188TS(data + i, 188) == TRUE ){
+			if( packet.Set188TS(data + i, 188) ){
 				if( packet.PID == this->pmtPID ){
-					createPmt.AddData(&packet);
+					createPmt.AddData(packet);
 				}
 			}
 		}
@@ -132,7 +132,7 @@ void COneServiceUtil::AddTSBuff(
 
 		for( DWORD i=0; i<size; i+=188 ){
 			CTSPacketUtil packet;
-			if( packet.Set188TS(data + i, 188) == TRUE ){
+			if( packet.Set188TS(data + i, 188) ){
 				if( packet.PID == 0x0000 ){
 					//PAT
 					BYTE* patBuff = NULL;
@@ -144,7 +144,7 @@ void COneServiceUtil::AddTSBuff(
 					}
 				}else if( packet.PID == this->pmtPID ){
 					//PMT
-					DWORD err = createPmt.AddData(&packet);
+					DWORD err = createPmt.AddData(packet);
 					if( err == NO_ERR || err == CCreatePMTPacket::ERR_NO_CHAGE ){
 						BYTE* pmtBuff = NULL;
 						DWORD pmtBuffSize = 0;

@@ -251,7 +251,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		for( DWORD i = 0; i < dataSize; i += 188 ){
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data + i, 188) ){
-				if( packet.adaptation_field_length > 0 && packet.PCR_flag == 1 ){
+				if( packet.has_adaptation_field_flags && packet.PCR_flag ){
 					//最初に3回PCRが出現したPIDをPCR_PIDとする
 					//PCR_PIDが現れることなく5回別のPCRが出現すればPCR_PIDを変更する
 					if( packet.PID != sys->PCR_PID ){

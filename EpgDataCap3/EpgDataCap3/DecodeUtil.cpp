@@ -284,7 +284,7 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 			}else{
 				buffUtil = &itr->second;
 			}
-			if( buffUtil->Add188TS(&tsPacket) == TRUE ){
+			if( buffUtil->Add188TS(tsPacket) == TRUE ){
 				BYTE* section = NULL;
 				DWORD sectionSize = 0;
 				while( buffUtil->GetSectionBuff( &section, &sectionSize ) == TRUE ){

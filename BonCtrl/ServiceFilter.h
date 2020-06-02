@@ -10,7 +10,7 @@ public:
 	CServiceFilter();
 	void SetServiceID(bool allServices, const vector<WORD>& sidList);
 	void Clear(WORD tsid);
-	void FilterPacket(vector<BYTE>& outData, const BYTE* data, CTSPacketUtil& packet);
+	void FilterPacket(vector<BYTE>& outData, const BYTE* data, const CTSPacketUtil& packet);
 	bool CatOrPmtUpdated() const { return this->catOrPmtUpdated; }
 	const CCATUtil& CatUtil() const { return this->catUtil; }
 	const map<WORD, CPMTUtil>& PmtUtilMap() const { return this->pmtUtilMap; }
