@@ -47,7 +47,7 @@ protected:
 
 	//PID毎のバッファリング
 	//キー PID
-	map<WORD, CTSBuffUtil> buffUtilMap;
+	vector<pair<WORD, CTSBuffUtil>> buffUtilMap;
 
 	std::unique_ptr<const AribDescriptor::CDescriptor> patInfo;
 	map<BYTE, AribDescriptor::CDescriptor> nitActualInfo;

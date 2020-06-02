@@ -129,15 +129,14 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 namespace
 {
 struct KIND_INFO {
-	WORD key;
+	WORD first;
 	LPCWSTR str;
 };
 
 LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
 {
-	KIND_INFO info = { key, NULL };
-	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, [](const KIND_INFO& a, const KIND_INFO& b) { return a.key < b.key; });
-	return ret != arr + len && ret->key == key ? ret->str : L"";
+	const KIND_INFO* ret = lower_bound_first(arr, arr + len, key);
+	return ret != arr + len && ret->first == key ? ret->str : L"";
 }
 }
 

@@ -13,14 +13,14 @@ public:
 	void FilterPacket(vector<BYTE>& outData, const BYTE* data, const CTSPacketUtil& packet);
 	bool CatOrPmtUpdated() const { return this->catOrPmtUpdated; }
 	const CCATUtil& CatUtil() const { return this->catUtil; }
-	const map<WORD, CPMTUtil>& PmtUtilMap() const { return this->pmtUtilMap; }
+	const vector<pair<WORD, CPMTUtil>>& PmtUtilMap() const { return this->pmtUtilMap; }
 private:
 	WORD transportStreamID;
 	bool allServicesFlag;
 	bool catOrPmtUpdated;
 	vector<WORD> serviceIDList;
 	CCATUtil catUtil;
-	map<WORD, CPMTUtil> pmtUtilMap; //キーPMTのPID
+	vector<pair<WORD, CPMTUtil>> pmtUtilMap; //キーPMTのPID
 	vector<WORD> needPIDList;
 	CCreatePATPacket pat;
 
