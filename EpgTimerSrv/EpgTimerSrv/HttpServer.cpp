@@ -76,7 +76,6 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	//Access Control List
 	string acl;
 	WtoUTF8(op.accessControlList, acl);
-	acl = "-0.0.0.0/0," + acl;
 
 	string authDomain;
 	WtoUTF8(op.authenticationDomain, authDomain);
@@ -152,7 +151,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	}
 #endif
 
-	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_LUA + MG_FEATURES_CACHE + (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
+	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_IPV6 + MG_FEATURES_LUA + MG_FEATURES_CACHE +
+	                    (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
 	this->initedLibrary = true;
 	if( mg_init_library(feat + (op.enableSsdpServer ? MG_FEATURES_X_ALLOW_SUBSCRIBE : 0)) != feat ){
 		OutputDebugString(L"CHttpServer::StartServer(): Library initialization failed.\r\n");
@@ -265,7 +265,7 @@ CHttpServer::SERVER_OPTIONS CHttpServer::LoadServerOptions(LPCWSTR iniPath)
 		if( op.rootPath.empty() ){
 			op.rootPath = GetCommonIniPath().replace_filename(L"HttpPublic").native();
 		}
-		op.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath);
+		op.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1,+::1,+::ffff:127.0.0.1", iniPath);
 		op.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath);
 		op.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 5, iniPath);
 		op.requestTimeout = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath) * 1000;
