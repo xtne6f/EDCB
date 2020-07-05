@@ -101,7 +101,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnDriverChange()
 	{
 		CBlockLock lock(&m_outer.m_statusLock);
 		WCHAR name[MAX_PATH];
-		m_outer.m_currentBonDriver = (m_outer.m_pApp->GetDriverName(name, _countof(name)) > 0 ? name : L"");
+		m_outer.m_currentBonDriver = (m_outer.m_pApp->GetDriverName(name, array_size(name)) > 0 ? name : L"");
 	}
 	// ストリームコールバックはチューナ使用時だけ
 	m_outer.m_pApp->SetStreamCallback(m_outer.IsTunerBonDriver() ? 0 : TVTest::STREAM_CALLBACK_REMOVE, StreamCallback, &m_outer);
@@ -159,8 +159,8 @@ CEdcbPlugIn::CEdcbPlugIn()
 	, m_recCtrlCount(0)
 {
 	m_lastSetCh.useSID = FALSE;
-	std::fill_n(m_epgCapBasicOnlyONIDs, _countof(m_epgCapBasicOnlyONIDs), false);
-	std::fill_n(m_epgCapBackBasicOnlyONIDs, _countof(m_epgCapBackBasicOnlyONIDs), false);
+	std::fill_n(m_epgCapBasicOnlyONIDs, array_size(m_epgCapBasicOnlyONIDs), false);
+	std::fill_n(m_epgCapBackBasicOnlyONIDs, array_size(m_epgCapBackBasicOnlyONIDs), false);
 }
 
 bool CEdcbPlugIn::GetPluginInfo(TVTest::PluginInfo *pInfo)
@@ -382,7 +382,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (m_epgCapChkNext) {
 					while (!m_epgCapChList.empty()) {
 						SET_CH_INFO &chInfo = m_epgCapChList.front();
-						if (!m_epgCapChkONIDs[min<size_t>(chInfo.ONID, _countof(m_epgCapChkONIDs) - 1)]) {
+						if (!m_epgCapChkONIDs[min<size_t>(chInfo.ONID, array_size(m_epgCapChkONIDs) - 1)]) {
 							TVTest::ChannelSelectInfo si = {};
 							si.Size = sizeof(si);
 							si.Space = -1;
@@ -420,7 +420,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					}
 					else {
 						SET_CH_INFO &chInfo = m_epgCapChList.front();
-						bool basicFlag = m_epgCapBasicOnlyONIDs[min<size_t>(chInfo.ONID, _countof(m_epgCapBasicOnlyONIDs) - 1)];
+						bool basicFlag = m_epgCapBasicOnlyONIDs[min<size_t>(chInfo.ONID, array_size(m_epgCapBasicOnlyONIDs) - 1)];
 						vector<CH_DATA5> chkList = GetEpgCheckList(chInfo.ONID, chInfo.TSID, chInfo.SID, basicFlag);
 						if (chkList.empty()) {
 							m_epgCapChList.erase(m_epgCapChList.begin());
@@ -457,7 +457,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 								}
 							}
 							if (m_epgCapChkNext) {
-								m_epgCapChkONIDs[min<size_t>(chInfo.ONID, _countof(m_epgCapChkONIDs) - 1)] = basicFlag;
+								m_epgCapChkONIDs[min<size_t>(chInfo.ONID, array_size(m_epgCapChkONIDs) - 1)] = basicFlag;
 								m_epgCapChList.erase(m_epgCapChList.begin());
 								saveEpgFile = true;
 							}
@@ -498,7 +498,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						saveEpgFile = m_epgCapSaveTimeout;
 					}
 					else {
-						bool basicFlag = m_epgCapBackBasicOnlyONIDs[min<size_t>(onid, _countof(m_epgCapBackBasicOnlyONIDs) - 1)];
+						bool basicFlag = m_epgCapBackBasicOnlyONIDs[min<size_t>(onid, array_size(m_epgCapBackBasicOnlyONIDs) - 1)];
 						vector<CH_DATA5> chkList = GetEpgCheckList(onid, tsid, -1, basicFlag);
 						if (chkList.empty()) {
 							m_epgCapBack = false;
@@ -601,7 +601,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					m_epgCapBasicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str()) != 0;
 					m_epgCapBasicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str()) != 0;
 					m_epgCapBasicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, commonIniPath.c_str()) != 0;
-					std::fill_n(m_epgCapChkONIDs, _countof(m_epgCapChkONIDs), false);
+					std::fill_n(m_epgCapChkONIDs, array_size(m_epgCapChkONIDs), false);
 					m_epgCapChkNext = true;
 					SendMessage(hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
 				}
