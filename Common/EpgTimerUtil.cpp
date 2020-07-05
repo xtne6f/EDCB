@@ -330,7 +330,7 @@ LPCWSTR GetGenreName(BYTE nibble1, BYTE nibble2)
 
 	{ 0xFFFF, L"なし" },
 	};
-	return SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
+	return SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, array_size(contentKindSortedArray));
 }
 
 LPCWSTR GetComponentTypeName(BYTE content, BYTE type)
@@ -412,7 +412,7 @@ LPCWSTR GetComponentTypeName(BYTE content, BYTE type)
 	{ 0x05E3, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
 	{ 0x05E4, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" },
 	};
-	return SearchKindInfoArray(content << 8 | type, componentKindSortedArray, _countof(componentKindSortedArray));
+	return SearchKindInfoArray(content << 8 | type, componentKindSortedArray, array_size(componentKindSortedArray));
 }
 
 //EPG情報をTextに変換

@@ -76,7 +76,7 @@ LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
 			g_work.stackFrame.AddrFrame.Offset = g_work.contextRecord.Ebp;
 			g_work.stackFrame.AddrStack.Offset = g_work.contextRecord.Esp;
 #endif
-			for( size_t i = 1; i < _countof(g_work.addrOffsets) - 1 && StackWalk64(
+			for( size_t i = 1; i < array_size(g_work.addrOffsets) - 1 && StackWalk64(
 #ifdef _M_X64
 				IMAGE_FILE_MACHINE_AMD64,
 #else

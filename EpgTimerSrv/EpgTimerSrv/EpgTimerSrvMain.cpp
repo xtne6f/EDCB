@@ -3013,7 +3013,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ NULL, NULL }
 	};
 	//必要な領域をヒントに与えて"edcb"メタテーブルを作成
-	lua_createtable(L, 0, _countof(closures) - 1 + 2 + 2 + 1);
+	lua_createtable(L, 0, array_size(closures) - 1 + 2 + 2 + 1);
 	lua_pushlightuserdata(L, this);
 	luaL_setfuncs(L, closures, 1);
 	LuaHelp::reg_int(L, "htmlEscape", 0);

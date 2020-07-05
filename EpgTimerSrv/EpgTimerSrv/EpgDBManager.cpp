@@ -1489,9 +1489,9 @@ void CEpgDBManager::ConvertSearchText(wstring& str)
 			}else if( L'ａ' <= c && c <= L'ｚ' ){
 				*itr = c - L'ａ' + L'a';
 			}else{
-				const WCHAR (*f)[2] = std::lower_bound(convertFrom, convertFrom + _countof(convertFrom), &*itr,
+				const WCHAR (*f)[2] = std::lower_bound(convertFrom, convertFrom + array_size(convertFrom), &*itr,
 				                                       [](LPCWSTR a, LPCWSTR b) { return (unsigned short)a[0] < (unsigned short)b[0]; });
-				for( ; f != convertFrom + _countof(convertFrom) && (*f)[0] == c; f++ ){
+				for( ; f != convertFrom + array_size(convertFrom) && (*f)[0] == c; f++ ){
 					if( (*f)[1] == L'\0' ){
 						*itr = convertTo[f - convertFrom];
 						break;

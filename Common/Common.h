@@ -47,6 +47,12 @@ RndIt upper_bound_first(RndIt first, RndIt last, const T& key)
 	return first;
 }
 
+#ifdef __cpp_lib_nonmember_container_access
+#define array_size std::size
+#else
+#define array_size _countof
+#endif
+
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wlogical-op-parentheses"
 #pragma clang diagnostic ignored "-Wunused-parameter"

@@ -193,7 +193,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 			int notifyPort = atoi(ports.c_str() + (ports.find_last_of(':') == string::npos ? 0 : ports.find_last_of(':') + 1)) & 0xFFFF;
 			//UPnPのUDP(Port1900)部分を担当するサーバ
 			LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
-			vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
+			vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + array_size(targetArray));
 			targetList[0].target = notifyUuid;
 			char location[64];
 			sprintf_s(location, ":%d/dlna/dms/ddd.xml", notifyPort);

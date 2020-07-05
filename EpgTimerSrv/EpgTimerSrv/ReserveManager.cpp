@@ -1549,7 +1549,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							for( size_t i = 0; i < tunerList.size(); i++ ){
 								if( tunerList[listIndex]->GetCh(addCh.ONID, addCh.TSID, addCh.SID) ){
 									epgCapChList[listIndex].push_back(addCh);
-									inONIDs[min<size_t>(addCh.ONID, _countof(inONIDs) - 1)] = true;
+									inONIDs[min<size_t>(addCh.ONID, array_size(inONIDs) - 1)] = true;
 									listIndex = (listIndex + 1) % tunerList.size();
 									break;
 								}
