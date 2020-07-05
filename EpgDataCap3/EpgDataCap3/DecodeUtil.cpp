@@ -243,8 +243,10 @@ void CDecodeUtil::Clear()
 
 void CDecodeUtil::ClearBuff(WORD noClearPid)
 {
-	this->buffUtilMap.erase(this->buffUtilMap.begin(), this->buffUtilMap.lower_bound(noClearPid));
-	this->buffUtilMap.erase(this->buffUtilMap.upper_bound(noClearPid), this->buffUtilMap.end());
+	this->buffUtilMap.erase(upper_bound_first(this->buffUtilMap.begin(), this->buffUtilMap.end(), noClearPid),
+	                        this->buffUtilMap.end());
+	this->buffUtilMap.erase(this->buffUtilMap.begin(),
+	                        lower_bound_first(this->buffUtilMap.begin(), this->buffUtilMap.end(), noClearPid));
 }
 
 void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
@@ -269,28 +271,21 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	}
 }
 
-void CDecodeUtil::AddTSData(BYTE* data)
+void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 {
-	{
+	for( DWORD i = 0; i + 188 <= size; i += 188 ){
 		CTSPacketUtil tsPacket;
-		if( tsPacket.Set188TS(data, 188) == TRUE ){
-			if( tsPacket.PID == 0x1FFF ){
-				return;
-			}
-			CTSBuffUtil* buffUtil = NULL;
-
-			map<WORD, CTSBuffUtil>::iterator itr;
-			itr = this->buffUtilMap.find( tsPacket.PID );
-			if( itr == this->buffUtilMap.end() ){
+		if( tsPacket.Set188TS(data + i, 188) && tsPacket.PID != 0x1FFF ){
+			vector<pair<WORD, CTSBuffUtil>>::iterator itr =
+				lower_bound_first(this->buffUtilMap.begin(), this->buffUtilMap.end(), tsPacket.PID);
+			if( itr == this->buffUtilMap.end() || itr->first != tsPacket.PID ){
 				//まだPIDがないので新規
-				buffUtil = &this->buffUtilMap.insert(std::make_pair(tsPacket.PID, CTSBuffUtil())).first->second;
-			}else{
-				buffUtil = &itr->second;
+				itr = this->buffUtilMap.insert(itr, std::make_pair(tsPacket.PID, CTSBuffUtil()));
 			}
-			if( buffUtil->Add188TS(&tsPacket) == TRUE ){
+			if( itr->second.Add188TS(tsPacket) == TRUE ){
 				BYTE* section = NULL;
 				DWORD sectionSize = 0;
-				while( buffUtil->GetSectionBuff( &section, &sectionSize ) == TRUE ){
+				while( itr->second.GetSectionBuff(&section, &sectionSize) == TRUE ){
 					switch( section[0] ){
 					case 0x00:
 						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_PAT) ){

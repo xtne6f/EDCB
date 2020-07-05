@@ -2,9 +2,7 @@
 #include "SyoboiCalUtil.h"
 
 #include <winhttp.h>
-#pragma comment (lib, "winhttp.lib")
 #include <wincrypt.h>
-#pragma comment (lib, "Crypt32.lib")
 
 #include "../../Common/CommonDef.h"
 #include "../../Common/PathUtil.h"
@@ -139,13 +137,6 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	//data
 	wstring dataParam;
 	wstring param;
-	map<DWORD, wstring> tunerMap;
-	for( size_t i=0; i<tunerList->size(); i++ ){
-		for( size_t j=0; j<(*tunerList)[i].reserveList.size(); j++ ){
-			tunerMap.insert(pair<DWORD, wstring>((*tunerList)[i].reserveList[j], (*tunerList)[i].tunerName));
-		}
-	}
-	map<DWORD, wstring>::iterator itrTuner;
 	DWORD dataCount = 0;
 	for(size_t i=0; i<reserveList->size(); i++ ){
 		if( dataCount>=200 ){
@@ -155,17 +146,19 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 		if( info->recSetting.recMode == RECMODE_NO || info->recSetting.recMode == RECMODE_VIEW ){
 			continue;
 		}
-		wstring device=L"";
-		itrTuner = tunerMap.find(info->reserveID);
-		if( itrTuner != tunerMap.end() ){
-			device = itrTuner->second;
+		LPCWSTR device = L"";
+		for( size_t j=0; j<tunerList->size(); j++ ){
+			if( std::binary_search((*tunerList)[j].reserveList.begin(), (*tunerList)[j].reserveList.end(), info->reserveID) ){
+				device = (*tunerList)[j].tunerName.c_str();
+				break;
+			}
 		}
 
 		wstring stationName = info->stationName;
 		srvChg.ChgText(stationName);
 
 		__int64 startTime = GetTimeStamp(info->startTime);
-		Format(param, L"%lld\t%lld\t%ls\t%ls\t%ls\t\t0\t%d\n", startTime, startTime+info->durationSecond, device.c_str(), info->title.c_str(), stationName.c_str(), info->reserveID );
+		Format(param, L"%lld\t%lld\t%ls\t%ls\t%ls\t\t0\t%d\n", startTime, startTime+info->durationSecond, device, info->title.c_str(), stationName.c_str(), info->reserveID );
 		dataParam+=param;
 	}
 

@@ -238,12 +238,12 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 				std::fill_n(serviceInfo->sectionList, 8, infoZero);
 				for( int i = 1; i < 8; i++ ){
 					//第0テーブル以外のセクションを無視
-					std::fill_n(serviceInfo->sectionList[i].ignoreFlags, _countof(serviceInfo->sectionList[0].ignoreFlags), (BYTE)0xFF);
+					std::fill_n(serviceInfo->sectionList[i].ignoreFlags, array_size(serviceInfo->sectionList[0].ignoreFlags), (BYTE)0xFF);
 				}
 				serviceInfo->lastTableID = table_id;
 			}
 			//第0セグメント以外のセクションを無視
-			std::fill_n(serviceInfo->sectionList[0].ignoreFlags + 1, _countof(serviceInfo->sectionList[0].ignoreFlags) - 1, (BYTE)0xFF);
+			std::fill_n(serviceInfo->sectionList[0].ignoreFlags + 1, array_size(serviceInfo->sectionList[0].ignoreFlags) - 1, (BYTE)0xFF);
 			//第0セグメントの送られないセクションを無視
 			for( int i = eit.GetNumber(Desc::segment_last_section_number) % 8 + 1; i < 8; i++ ){
 				serviceInfo->sectionList[0].ignoreFlags[0] |= 1 << i;
@@ -270,13 +270,13 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 				std::fill_n(sectionList, 8, infoZero);
 				for( int i = eit.GetNumber(Desc::last_table_id) % 8 + 1; i < 8; i++ ){
 					//送られないテーブルのセクションを無視
-					std::fill_n(sectionList[i].ignoreFlags, _countof(sectionList[0].ignoreFlags), (BYTE)0xFF);
+					std::fill_n(sectionList[i].ignoreFlags, array_size(sectionList[0].ignoreFlags), (BYTE)0xFF);
 				}
 				lastTableID = (BYTE)eit.GetNumber(Desc::last_table_id);
 			}
 			//送られないセグメントのセクションを無視
 			std::fill_n(sectionList[table_id % 8].ignoreFlags + (BYTE)eit.GetNumber(Desc::last_section_number) / 8 + 1,
-			            _countof(sectionList[0].ignoreFlags) - (BYTE)eit.GetNumber(Desc::last_section_number) / 8 - 1, (BYTE)0xFF);
+			            array_size(sectionList[0].ignoreFlags) - (BYTE)eit.GetNumber(Desc::last_section_number) / 8 - 1, (BYTE)0xFF);
 			if( table_id % 8 == 0 && streamTime > 0 ){
 				//放送済みセグメントのセクションを無視
 				std::fill_n(sectionList[0].ignoreFlags, streamTime / (3 * 60 * 60 * I64_1SEC) % 8, (BYTE)0xFF);
@@ -413,10 +413,10 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						src = eit.GetBinary(Desc::item_description_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
 							if( itemDescFlag == FALSE && itemBuff.size() > 0 ){
-								wstring buff;
-								this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
-								buff += L"\r\n";
-								extendText += buff;
+								if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), NULL) ){
+									extendText += this->arib.GetDecodedString();
+								}
+								extendText += L"\r\n";
 								itemBuff.clear();
 							}
 							itemDescFlag = TRUE;
@@ -425,10 +425,10 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						src = eit.GetBinary(Desc::item_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
 							if( itemDescFlag && itemBuff.size() > 0 ){
-								wstring buff;
-								this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
-								buff += L"\r\n";
-								extendText += buff;
+								if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), NULL) ){
+									extendText += this->arib.GetDecodedString();
+								}
+								extendText += L"\r\n";
 								itemBuff.clear();
 							}
 							itemDescFlag = FALSE;
@@ -440,10 +440,10 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 		}
 
 		if( itemBuff.size() > 0 ){
-			wstring buff;
-			this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), &buff);
-			buff += L"\r\n";
-			extendText += buff;
+			if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), NULL) ){
+				extendText += this->arib.GetDecodedString();
+			}
+			extendText += L"\r\n";
 		}
 
 		if( foundFlag == FALSE ){

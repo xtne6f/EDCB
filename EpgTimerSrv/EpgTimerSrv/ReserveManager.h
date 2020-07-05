@@ -66,7 +66,7 @@ public:
 	bool FindProgramReserve(WORD onid, WORD tsid, WORD sid, P findProc) const {
 		CBlockLock lock(&this->managerLock);
 		const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
-		auto itr = std::lower_bound(sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(Create64PgKey(onid, tsid, sid, 0xFFFF), 0));
+		auto itr = lower_bound_first(sortList.begin(), sortList.end(), Create64PgKey(onid, tsid, sid, 0xFFFF));
 		for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, 0xFFFF); itr++ ){
 			if( findProc(this->reserveText.GetMap().find(itr->second)->second) ){
 				return true;
@@ -108,6 +108,10 @@ private:
 		__int64 effectivePriority;
 		bool started;
 		const RESERVE_DATA* r;
+	};
+	struct CHK_BANK_DATA {
+		vector<DWORD> startedResList;
+		vector<CHK_RESERVE_DATA> assignedResList;
 	};
 	//チューナに割り当てられていない予約一覧を取得する
 	vector<DWORD> GetNoTunerReserveAll() const;

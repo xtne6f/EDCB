@@ -7,16 +7,14 @@ CTSPacketUtil::CTSPacketUtil(void)
 	data_byte = NULL;
 }
 
-BOOL CTSPacketUtil::Set188TS(BYTE* data, DWORD dataSize)
+BOOL CTSPacketUtil::Set188TS(const BYTE* data, DWORD dataSize)
 {
-	if( data == NULL || dataSize != 188){
-		return FALSE;
-	}
 	data_byteSize = 0;
+	data_byte = NULL;
 
-	DWORD readSize = 0;
-	sync_byte = data[0];
-	if( sync_byte != 0x47 ){
+	if( data == NULL || dataSize != 188 || data[0] != 0x47 ){
+		// Not a TS packet
+		transport_error_indicator = 0;
 		return FALSE;
 	}
 	transport_error_indicator = (data[1]&0x80)>>7;
@@ -29,12 +27,14 @@ BOOL CTSPacketUtil::Set188TS(BYTE* data, DWORD dataSize)
 	transport_scrambling_control = (data[3]&0xC0)>>6;
 	adaptation_field_control = (data[3]&0x30)>>4;
 	continuity_counter = data[3]&0x0F;
-	readSize+=4;
+	has_adaptation_field_flags = 0;
+	DWORD readSize = 4;
 
 	if( adaptation_field_control == 0x02 || adaptation_field_control == 0x03 ){
-		adaptation_field_length = data[4];
+		BYTE adaptation_field_length = data[4];
 		readSize++;
 		if( adaptation_field_length > 0 ){
+			has_adaptation_field_flags = 1;
 			discontinuity_indicator = (data[readSize]&0x80)>>7;
 			random_access_indicator = (data[readSize]&0x40)>>6;
 			elementary_stream_priority_indicator = (data[readSize]&0x20)>>5;
@@ -109,27 +109,8 @@ BOOL CTSPacketUtil::Set188TS(BYTE* data, DWORD dataSize)
 					readSize+=5;
 				}
 			}
-		}else{
-			discontinuity_indicator = 0;
-			random_access_indicator = 0;
-			elementary_stream_priority_indicator = 0;
-			PCR_flag = 0;
-			OPCR_flag = 0;
-			splicing_point_flag = 0;
-			transport_private_data_flag = 0;
-			adaptation_field_extension_flag = 0;
 		}
 		readSize = 5+adaptation_field_length;
-	}else{
-		adaptation_field_length = 0;
-		discontinuity_indicator = 0;
-		random_access_indicator = 0;
-		elementary_stream_priority_indicator = 0;
-		PCR_flag = 0;
-		OPCR_flag = 0;
-		splicing_point_flag = 0;
-		transport_private_data_flag = 0;
-		adaptation_field_extension_flag = 0;
 	}
 	if( adaptation_field_control == 0x01 || adaptation_field_control == 0x03 ){
 		if( 188 < readSize ){

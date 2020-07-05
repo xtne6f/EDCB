@@ -9,7 +9,6 @@
 #include <io.h>
 #include <fcntl.h>
 #include <wincrypt.h>
-#pragma comment(lib, "Crypt32.lib")
 #endif
 
 namespace
@@ -22,7 +21,7 @@ const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 CHttpServer::CHttpServer()
 	: mgContext(NULL)
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	, hLuaDll(NULL)
 #endif
 	, initedLibrary(false)
@@ -77,7 +76,6 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	//Access Control List
 	string acl;
 	WtoUTF8(op.accessControlList, acl);
-	acl = "-0.0.0.0/0," + acl;
 
 	string authDomain;
 	WtoUTF8(op.authenticationDomain, authDomain);
@@ -144,7 +142,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		options[opCount++] = globalAuthPath.c_str();
 	}
 
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
 	this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
 	if( this->hLuaDll == NULL ){
@@ -153,7 +151,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	}
 #endif
 
-	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_LUA + MG_FEATURES_CACHE + (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
+	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_IPV6 + MG_FEATURES_LUA + MG_FEATURES_CACHE +
+	                    (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
 	this->initedLibrary = true;
 	if( mg_init_library(feat + (op.enableSsdpServer ? MG_FEATURES_X_ALLOW_SUBSCRIBE : 0)) != feat ){
 		OutputDebugString(L"CHttpServer::StartServer(): Library initialization failed.\r\n");
@@ -194,7 +193,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 			int notifyPort = atoi(ports.c_str() + (ports.find_last_of(':') == string::npos ? 0 : ports.find_last_of(':') + 1)) & 0xFFFF;
 			//UPnPのUDP(Port1900)部分を担当するサーバ
 			LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
-			vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
+			vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + array_size(targetArray));
 			targetList[0].target = notifyUuid;
 			char location[64];
 			sprintf_s(location, ":%d/dlna/dms/ddd.xml", notifyPort);
@@ -248,7 +247,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 		mg_exit_library();
 		this->initedLibrary = false;
 	}
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
@@ -266,7 +265,7 @@ CHttpServer::SERVER_OPTIONS CHttpServer::LoadServerOptions(LPCWSTR iniPath)
 		if( op.rootPath.empty() ){
 			op.rootPath = GetCommonIniPath().replace_filename(L"HttpPublic").native();
 		}
-		op.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath);
+		op.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1,+::1,+::ffff:127.0.0.1", iniPath);
 		op.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath);
 		op.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 5, iniPath);
 		op.requestTimeout = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath) * 1000;
@@ -757,14 +756,16 @@ int io_open(lua_State* L)
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#else
+#endif
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4996)
 #endif
 	p->f = _wfopen(wfilename, wmode);
 #ifdef __clang__
 #pragma clang diagnostic pop
-#else
+#endif
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 	nefree(wmode);

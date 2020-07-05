@@ -88,7 +88,6 @@ adaptation_field() {
 class CTSPacketUtil
 {
 public:
-	BYTE sync_byte;
 	BYTE transport_error_indicator;
 	BYTE payload_unit_start_indicator;
 	BYTE transport_priority;
@@ -97,9 +96,10 @@ public:
 	BYTE adaptation_field_control;
 	BYTE continuity_counter;
 	BYTE data_byteSize;
-	BYTE* data_byte;
+	const BYTE* data_byte;
 
-	BYTE adaptation_field_length;
+	BYTE has_adaptation_field_flags;
+	// the following are unset if has_adaptation_field_flags == 0
 	BYTE discontinuity_indicator;
 	BYTE random_access_indicator;
 	BYTE elementary_stream_priority_indicator;
@@ -129,5 +129,5 @@ public:
 public:
 	CTSPacketUtil(void);
 
-	BOOL Set188TS(BYTE* data, DWORD dataSize);
+	BOOL Set188TS(const BYTE* data, DWORD dataSize);
 };

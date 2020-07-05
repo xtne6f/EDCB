@@ -9,7 +9,7 @@ class CPMTUtil
 public:
 	CPMTUtil(void);
 
-	BOOL AddPacket(CTSPacketUtil* packet);
+	BOOL AddPacket(const CTSPacketUtil& packet);
 	WORD GetProgramNumber() const { return program_number; }
 	WORD GetPcrPID() const { return PCR_PID; }
 	const vector<pair<WORD, BYTE>>& GetPIDTypeList() const { return PIDList; }

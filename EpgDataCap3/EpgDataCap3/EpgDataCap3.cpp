@@ -66,13 +66,14 @@ DWORD WINAPI UnInitializeEP(
 	return err;
 }
 
-//解析対象のTSパケット１つを読み込ませる
+//解析対象のTSパケットを読み込ませる
+//AddTSPacketEP(id, !NULL, 0)!=ERR_FALSEのとき、sizeは188より大きくできない（互換のため）
 //戻り値：
 // エラーコード
 //引数：
 // id		[IN]識別ID InitializeEPの戻り値
-// data		[IN]TSパケット１つ
-// size		[IN]dataのサイズ（188でなければならない）
+// data		[IN]TSパケット
+// size		[IN]dataのサイズ（188の整数倍であること）
 DLL_EXPORT
 DWORD WINAPI AddTSPacketEP(
 	DWORD id,
@@ -84,11 +85,14 @@ DWORD WINAPI AddTSPacketEP(
 	if (ptr == NULL) {
 		return ERR_NOT_INIT;
 	}
-	if (data == NULL || size != 188) {
+	if (data == NULL || size % 188 != 0) {
 		return ERR_INVALID_ARG;
 	}
+	if (size == 0) {
+		return ERR_FALSE;
+	}
 
-	ptr->AddTSPacket(data);
+	ptr->AddTSPacket(data, size);
 	return NO_ERR;
 }
 

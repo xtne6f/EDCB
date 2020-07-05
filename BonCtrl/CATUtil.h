@@ -7,9 +7,7 @@
 class CCATUtil
 {
 public:
-	CCATUtil(void);
-
-	BOOL AddPacket(CTSPacketUtil* packet);
+	BOOL AddPacket(const CTSPacketUtil& packet);
 	const vector<WORD>& GetPIDList() const { return PIDList; }
 
 protected:

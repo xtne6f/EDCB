@@ -129,15 +129,14 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 namespace
 {
 struct KIND_INFO {
-	WORD key;
+	WORD first;
 	LPCWSTR str;
 };
 
 LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
 {
-	KIND_INFO info = { key, NULL };
-	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, [](const KIND_INFO& a, const KIND_INFO& b) { return a.key < b.key; });
-	return ret != arr + len && ret->key == key ? ret->str : L"";
+	const KIND_INFO* ret = lower_bound_first(arr, arr + len, key);
+	return ret != arr + len && ret->first == key ? ret->str : L"";
 }
 }
 
@@ -331,7 +330,7 @@ LPCWSTR GetGenreName(BYTE nibble1, BYTE nibble2)
 
 	{ 0xFFFF, L"なし" },
 	};
-	return SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
+	return SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, array_size(contentKindSortedArray));
 }
 
 LPCWSTR GetComponentTypeName(BYTE content, BYTE type)
@@ -413,7 +412,7 @@ LPCWSTR GetComponentTypeName(BYTE content, BYTE type)
 	{ 0x05E3, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
 	{ 0x05E4, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" },
 	};
-	return SearchKindInfoArray(content << 8 | type, componentKindSortedArray, _countof(componentKindSortedArray));
+	return SearchKindInfoArray(content << 8 | type, componentKindSortedArray, array_size(componentKindSortedArray));
 }
 
 //EPG情報をTextに変換

@@ -309,23 +309,19 @@ INT_PTR CEpgTimerSrvSetting::ShowDialog()
 INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 {
 	HWND hTab = GetDlgItem(this->hwndTop, IDC_TAB);
-	TCITEM tci;
-	tci.mask = TCIF_TEXT;
-	tci.pszText = L"基本設定";
-	TabCtrl_InsertItem(hTab, 0, &tci);
-	tci.pszText = L"EPG取得";
-	TabCtrl_InsertItem(hTab, 1, &tci);
-	tci.pszText = L"録画動作";
-	TabCtrl_InsertItem(hTab, 2, &tci);
-	tci.pszText = L"予約情報管理";
-	TabCtrl_InsertItem(hTab, 3, &tci);
-	tci.pszText = L"その他";
-	TabCtrl_InsertItem(hTab, 4, &tci);
 	this->hwndChild[0] = this->hwndBasic = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_BASIC), this->hwndTop, ChildDlgProc, (LPARAM)this);
 	this->hwndChild[1] = this->hwndEpg = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_EPG), this->hwndTop, ChildDlgProc, (LPARAM)this);
 	this->hwndChild[2] = this->hwndRec = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_REC), this->hwndTop, ChildDlgProc, (LPARAM)this);
 	this->hwndChild[3] = this->hwndReserve = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_RESERVE), this->hwndTop, ChildDlgProc, (LPARAM)this);
 	this->hwndChild[4] = this->hwndOther = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTING_OTHER), this->hwndTop, ChildDlgProc, (LPARAM)this);
+	for( int i = 0; i < (int)array_size(this->hwndChild); i++ ){
+		WCHAR text[32] = {};
+		GetWindowText(this->hwndChild[i], text, 32);
+		TCITEM tci;
+		tci.mask = TCIF_TEXT;
+		tci.pszText = text;
+		TabCtrl_InsertItem(hTab, i, &tci);
+	}
 	RECT rc;
 	GetWindowRect(hTab, &rc);
 	TabCtrl_AdjustRect(hTab, FALSE, &rc);
@@ -333,7 +329,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	pt.x = rc.left;
 	pt.y = rc.top;
 	ScreenToClient(this->hwndTop, &pt);
-	for( int i = 0; i < _countof(this->hwndChild); i++ ){
+	for( size_t i = 0; i < array_size(this->hwndChild); i++ ){
 		MoveWindow(this->hwndChild[i], pt.x, pt.y, rc.right - rc.left, rc.bottom - rc.top, TRUE);
 	}
 
@@ -414,9 +410,11 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	ListView_SetExtendedListViewStyleEx(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
 	lvc.mask = LVCF_WIDTH | LVCF_TEXT;
 	lvc.cx /= 2;
-	lvc.pszText = L"開始時間";
+	WCHAR textStart[] = L"開始時間";
+	lvc.pszText = textStart;
 	ListView_InsertColumn(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), 0, &lvc);
-	lvc.pszText = L"種別(BS,CS1,2,3)";
+	WCHAR textType[] = L"種別(BS,CS1,2,3)";
+	lvc.pszText = textType;
 	ListView_InsertColumn(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), 1, &lvc);
 
 	for( int i = 0; i < 8; i++ ){
@@ -596,9 +594,9 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 void CEpgTimerSrvSetting::OnTcnSelchangeTab()
 {
 	int sel = TabCtrl_GetCurSel(GetDlgItem(this->hwndTop, IDC_TAB));
-	if( 0 <= sel && sel < _countof(this->hwndChild) ){
+	if( 0 <= sel && sel < (int)array_size(this->hwndChild) ){
 		ShowWindow(this->hwndChild[sel], SW_SHOW);
-		for( int i = 0; i < _countof(this->hwndChild); i++ ){
+		for( int i = 0; i < (int)array_size(this->hwndChild); i++ ){
 			if( i != sel ){
 				ShowWindow(this->hwndChild[i], SW_HIDE);
 			}
@@ -700,8 +698,8 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	for( int i = 0; i < ListView_GetItemCount(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME)); i++ ){
 		WCHAR w[32] = {};
 		WCHAR f[32] = {};
-		ListView_GetItemText(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), i, 0, w, _countof(w));
-		ListView_GetItemText(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), i, 1, f, _countof(f));
+		ListView_GetItemText(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), i, 0, w, array_size(w));
+		ListView_GetItemText(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), i, 1, f, array_size(f));
 		if( wcslen(w) == 6 && wcslen(f) == 7 ){
 			swprintf_s(key, L"%d", num);
 			WCHAR val[32];
@@ -937,7 +935,7 @@ void CEpgTimerSrvSetting::AddEpgTime(bool check)
 		lvi.iItem = ListView_GetItemCount(GetDlgItem(this->hwndEpg, IDC_LIST_SET_EPG_TIME));
 		for( int i = 0; i < lvi.iItem; i++ ){
 			WCHAR buff[32] = {};
-			ListView_GetItemText(GetDlgItem(this->hwndEpg, IDC_LIST_SET_EPG_TIME), i, 0, buff, _countof(buff));
+			ListView_GetItemText(GetDlgItem(this->hwndEpg, IDC_LIST_SET_EPG_TIME), i, 0, buff, array_size(buff));
 			if( wcscmp(buff, weekMin) == 0 ){
 				//すでにある
 				return;
@@ -989,7 +987,7 @@ void CEpgTimerSrvSetting::BrowseExeFile(HWND hTarget)
 	ofn.hwndOwner = this->hwndTop;
 	ofn.lpstrFilter = L"exe files (*.exe)\0*.exe\0All files (*.*)\0*.*\0";
 	ofn.lpstrFile = buff;
-	ofn.nMaxFile = _countof(buff);
+	ofn.nMaxFile = array_size(buff);
 	ofn.Flags = OFN_FILEMUSTEXIST;
 	if( GetOpenFileName(&ofn) ){
 		SetWindowText(hTarget, buff);

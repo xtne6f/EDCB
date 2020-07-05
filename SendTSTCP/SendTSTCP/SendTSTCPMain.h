@@ -6,7 +6,6 @@
 
 #include "../../Common/StringUtil.h"
 #include "../../Common/ThreadUtil.h"
-#pragma comment(lib, "Ws2_32.lib")
 
 class CSendTSTCPMain
 {

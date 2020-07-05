@@ -1191,7 +1191,7 @@ bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSi
 	//ローカル参照用スタック
 	LOCAL_PROPERTY localProperty[128];
 	localProperty->id = D_FIN;
-	localProperty->type = _countof(localProperty);
+	localProperty->type = array_size(localProperty);
 	localProperty->n = 1;
 
 	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, localProperty, customParserList);
@@ -1259,7 +1259,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	//ローカル参照用スタック
 	LOCAL_PROPERTY localProperty[128];
 	localProperty->id = D_FIN;
-	localProperty->type = _countof(localProperty);
+	localProperty->type = array_size(localProperty);
 	localProperty->n = 1;
 
 	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, localProperty, customParserList);

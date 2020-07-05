@@ -150,13 +150,13 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;comctl32.lib;winhttp.lib;crypt32.lib;iphlpapi.lib;netapi32.lib;dbghelp.lib;lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -165,13 +165,13 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;comctl32.lib;winhttp.lib;crypt32.lib;iphlpapi.lib;netapi32.lib;dbghelp.lib;lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -182,16 +182,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateMapFile>true</GenerateMapFile>
-      <AdditionalDependencies>lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/PDBALTPATH:%_PDB% %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>ws2_32.lib;comctl32.lib;winhttp.lib;crypt32.lib;iphlpapi.lib;netapi32.lib;dbghelp.lib;lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -202,15 +202,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>USE_LUA;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EPGTIMERSRV_WITHLUA;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalOptions>/PDBALTPATH:%_PDB% %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>ws2_32.lib;comctl32.lib;winhttp.lib;crypt32.lib;iphlpapi.lib;netapi32.lib;dbghelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -220,16 +221,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateMapFile>true</GenerateMapFile>
-      <AdditionalDependencies>lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/PDBALTPATH:%_PDB% %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>ws2_32.lib;comctl32.lib;winhttp.lib;crypt32.lib;iphlpapi.lib;netapi32.lib;dbghelp.lib;lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -240,15 +241,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>USE_LUA;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EPGTIMERSRV_WITHLUA;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalOptions>/PDBALTPATH:%_PDB% %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>ws2_32.lib;comctl32.lib;winhttp.lib;crypt32.lib;iphlpapi.lib;netapi32.lib;dbghelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -278,6 +280,7 @@
     <ClInclude Include="..\..\Common\ReNamePlugInUtil.h" />
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
     <ClInclude Include="..\..\Common\ServiceUtil.h" />
+    <ClInclude Include="..\..\Common\StackTrace.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\StructDef.h" />
     <ClInclude Include="..\..\Common\TCPServer.h" />
@@ -352,6 +355,7 @@
     <ClCompile Include="..\..\Common\ReNamePlugInUtil.cpp" />
     <ClCompile Include="..\..\Common\SendCtrlCmd.cpp" />
     <ClCompile Include="..\..\Common\ServiceUtil.cpp" />
+    <ClCompile Include="..\..\Common\StackTrace.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
     <ClCompile Include="..\..\Common\TCPServer.cpp" />
     <ClCompile Include="..\..\Common\TimeShiftUtil.cpp" />

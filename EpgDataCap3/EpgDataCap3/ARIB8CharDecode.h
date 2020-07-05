@@ -626,6 +626,8 @@ public:
 	BOOL PSISI( const BYTE* pbSrc, DWORD dwSrcSize, wstring* strDec );
 	//字幕を想定したwstringへの変換
 	BOOL Caption( const BYTE* pbSrc, DWORD dwSrcSize, vector<CAPTION_DATA>* pCaptionList );
+	//PSISI()の結果が真のとき、引数*strDecに格納される文字列
+	const wstring& GetDecodedString() const { return m_strDecode; }
 
 protected:
 	struct MF_MODE{
@@ -677,9 +679,7 @@ protected:
 	DWORD m_dwWaitTime;
 
 	vector<CAPTION_DATA>* m_pCaptionList;
-#ifndef _WIN32
 	static const WCHAR m_jisTable[84 * 94 + 1];
-#endif
 protected:
 	void InitPSISI(void);
 	void InitCaption(void);
@@ -698,7 +698,6 @@ protected:
 	//エスケープシーケンス
 	BOOL ESC( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize );
 	//２バイト文字変換
-	BOOL ToSJIS( const BYTE bFirst, const BYTE bSecond );
 	BOOL ToCustomFont( const BYTE bFirst, const BYTE bSecond );
 
 	BOOL CSI( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize );

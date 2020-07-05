@@ -31,6 +31,7 @@ $(TARGET): $(addsuffix .obj, \
   Common__PathUtil.cpp \
   Common__PipeServer.cpp \
   Common__SendCtrlCmd.cpp \
+  Common__StackTrace.cpp \
   Common__StringUtil.cpp \
   Common__TimeUtil.cpp \
   Common__TSBuffUtil.cpp \

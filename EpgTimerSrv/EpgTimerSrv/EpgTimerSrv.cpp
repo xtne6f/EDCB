@@ -5,6 +5,7 @@
 #include "EpgTimerSrvMain.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ServiceUtil.h"
+#include "../../Common/StackTrace.h"
 #include "../../Common/ThreadUtil.h"
 #include "../../Common/CommonDef.h"
 #include <winsvc.h>
@@ -64,6 +65,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		}
 	}
 
+#ifndef SUPPRESS_OUTPUT_STACK_TRACE
+	SetOutputStackTraceOnUnhandledException(GetModulePath().concat(L".err").c_str());
+#endif
 
 	if( IsInstallService(SERVICE_NAME) == FALSE ){
 		//普通にexeとして起動を行う
@@ -89,8 +93,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
 				SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
+				WCHAR serviceName[] = SERVICE_NAME;
 				SERVICE_TABLE_ENTRY dispatchTable[] = {
-					{ SERVICE_NAME, service_main },
+					{ serviceName, service_main },
 					{ NULL, NULL }
 				};
 				if( StartServiceCtrlDispatcher(dispatchTable) == FALSE ){

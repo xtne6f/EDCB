@@ -140,7 +140,7 @@ private:
 	mutable recursive_mutex_ autoAddLock;
 	mutable recursive_mutex_ settingLock;
 	HWND hwndMain;
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	HMODULE hLuaDll;
 #endif
 	atomic_bool_ stoppingFlag;

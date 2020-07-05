@@ -10,9 +10,7 @@
 #include <shellapi.h>
 #include <tlhelp32.h>
 #include <lm.h>
-#pragma comment (lib, "netapi32.lib")
 #include <commctrl.h>
-#pragma comment(lib, "comctl32.lib")
 
 namespace
 {
@@ -89,7 +87,7 @@ struct MAIN_WINDOW_CONTEXT {
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
 	, hwndMain(NULL)
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	, hLuaDll(NULL)
 #endif
 	, nwtvUdp(false)
@@ -158,7 +156,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			DispatchMessage(&msg);
 		}
 	}
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
@@ -1120,7 +1118,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	if( initialize ){
 		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 		//存在を確認しているだけ
 		this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
 		if( this->hLuaDll )
@@ -2966,7 +2964,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 	return false;
 }
 
-#ifndef LUA_BUILD_AS_DLL
+#ifdef EPGTIMERSRV_WITHLUA
 extern "C" int luaopen_zlib(lua_State*);
 #endif
 
@@ -3015,7 +3013,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ NULL, NULL }
 	};
 	//必要な領域をヒントに与えて"edcb"メタテーブルを作成
-	lua_createtable(L, 0, _countof(closures) - 1 + 2 + 2 + 1);
+	lua_createtable(L, 0, array_size(closures) - 1 + 2 + 2 + 1);
 	lua_pushlightuserdata(L, this);
 	luaL_setfuncs(L, closures, 1);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
@@ -3103,7 +3101,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		" return r;"
 		"end");
 
-#ifndef LUA_BUILD_AS_DLL
+#ifdef EPGTIMERSRV_WITHLUA
 	//組み込みのzlibをロード済みにする
 	luaL_requiref(L, "zlib", luaopen_zlib, 0);
 #endif

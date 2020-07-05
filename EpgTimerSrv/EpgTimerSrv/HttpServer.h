@@ -36,7 +36,7 @@ private:
 	static void InitLua(const mg_connection* conn, void* luaContext);
 	mg_context* mgContext;
 	std::function<void(lua_State*)> initLuaProc;
-#ifdef LUA_BUILD_AS_DLL
+#ifndef EPGTIMERSRV_WITHLUA
 	HMODULE hLuaDll;
 #endif
 	bool initedLibrary;

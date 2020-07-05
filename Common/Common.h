@@ -27,14 +27,41 @@ using std::map;
 using std::multimap;
 using std::vector;
 
+template<class RndIt, class T>
+RndIt lower_bound_first(RndIt first, RndIt last, const T& key)
+{
+	while( last != first ){
+		RndIt it = first + (last - first) / 2;
+		if( it->first < key ) first = ++it; else last = it;
+	}
+	return first;
+}
+
+template<class RndIt, class T>
+RndIt upper_bound_first(RndIt first, RndIt last, const T& key)
+{
+	while( last != first ){
+		RndIt it = first + (last - first) / 2;
+		if( !(key < it->first) ) first = ++it; else last = it;
+	}
+	return first;
+}
+
+#ifdef __cpp_lib_nonmember_container_access
+#define array_size std::size
+#else
+#define array_size _countof
+#endif
+
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wlogical-op-parentheses"
 #pragma clang diagnostic ignored "-Wunused-parameter"
-#else
+#endif
+
+#ifdef _MSC_VER
 // 'identifier': unreferenced formal parameter
 #pragma warning(disable : 4100)
-
-#if defined(_MSC_VER) && _MSC_VER < 1900
+#if _MSC_VER < 1900
 // 'class': assignment operator was implicitly defined as deleted
 #pragma warning(disable : 4512)
 #endif
