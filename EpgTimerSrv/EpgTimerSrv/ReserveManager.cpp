@@ -730,19 +730,25 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 {
 	//CBlockLock lock(&this->managerLock);
 
-	bool overlapped = false;
+	__int64 distanceSameCh[] = { LLONG_MAX, LLONG_MAX };
+	__int64 distanceOtherCh[] = { LLONG_MAX, LLONG_MAX };
 	__int64 otherCosts[5] = {};
 
 	for( size_t i = 0; i < bank.size(); i++ ){
+		bool latter = false;
+		__int64 dist = -1;
+		if( bank[i].cutStartTime >= inItem.cutEndTime ){
+			latter = true;
+			dist = bank[i].cutStartTime - inItem.cutEndTime;
+		}else if( bank[i].cutEndTime <= inItem.cutStartTime ){
+			dist = inItem.cutStartTime - bank[i].cutEndTime;
+		}
+
 		if( bank[i].r->originalNetworkID == inItem.r->originalNetworkID && bank[i].r->transportStreamID == inItem.r->transportStreamID ){
 			//同一チャンネル
-			if( inItem.cutStartTime < bank[i].cutStartTime && bank[i].cutStartTime < inItem.cutEndTime ||
-			    inItem.cutStartTime < bank[i].cutEndTime && bank[i].cutEndTime < inItem.cutEndTime ||
-			    inItem.cutStartTime > bank[i].cutStartTime && bank[i].cutEndTime > inItem.cutEndTime ){
-				//重なりがある
-				overlapped = true;
-			}
+			distanceSameCh[latter] = min(dist, distanceSameCh[latter]);
 		}else{
+			distanceOtherCh[latter] = min(dist, distanceOtherCh[latter]);
 			if( bank[i].effectivePriority < inItem.effectivePriority ){
 				//相手が高優先度なので自分の予約時間を削る
 				if( bank[i].startOrder > inItem.startOrder ){
@@ -784,9 +790,16 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 		cost += min((otherCosts[i] + 10 * I64_1SEC - 1) / (10 * I64_1SEC), 5400LL - 1) * weight;
 		weight *= 5400;
 	}
-	if( cost == 0 && overlapped ){
-		//TODO: とりあえず一律に-10秒とするが、重なり度合をコストに反映してもいいかも
-		cost = -1;
+	if( cost == 0 ){
+		//犠牲なく配置できる
+		//TODO: コスト0以下はどれを選んでもよいということなので、より良い配置を投機的に評価するとよいかも
+		__int64 dist = min(distanceSameCh[0] < distanceOtherCh[0] ? distanceSameCh[0] : LLONG_MAX,
+		                   distanceSameCh[1] < distanceOtherCh[1] ? distanceSameCh[1] : LLONG_MAX);
+		//同一チャンネルで重なっていれば最低コスト、近ければまとまりが良いので低コストとする
+		cost = -5401;
+		if( dist >= 0 ){
+			cost += 1 + min(dist / (10 * I64_1SEC), 5400LL);
+		}
 	}
 	return cost;
 }
