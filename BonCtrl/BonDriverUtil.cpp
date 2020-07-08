@@ -84,7 +84,7 @@ CBonDriverUtil::~CBonDriverUtil(void)
 
 bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFile,
                                    const std::function<void(BYTE*, DWORD, DWORD)>& recvFunc_,
-                                   const std::function<void(float, int, int)>& statusFunc_, int openWait)
+                                   const std::function<void(float, int, int)>& statusFunc_, int traceLevel_)
 {
 	CloseBonDriver();
 	this->loadDllFolder = bonDriverFolder;
@@ -92,6 +92,15 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFil
 	if( this->loadDllFolder.empty() == false && this->loadDllFileName.empty() == false ){
 		this->recvFunc = recvFunc_;
 		this->statusFunc = statusFunc_;
+		this->traceLevel = max(traceLevel_, 0);
+		if( this->traceLevel ){
+			this->callingName = L"Opening";
+			this->callingTick = GetTickCount();
+			this->statGetTsCalls = 0;
+			this->statGetTsBytes = 0;
+			this->watchdogStopEvent.Reset();
+			this->watchdogThread = thread_(WatchdogThread, this);
+		}
 		this->driverThread = thread_(DriverThread, this);
 		//Open処理が完了するまで待つ
 		while( WaitForSingleObject(this->driverThread.native_handle(), 10) == WAIT_TIMEOUT ){
@@ -101,10 +110,13 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFil
 			}
 		}
 		if( this->hwndDriver ){
-			Sleep(openWait);
 			return true;
 		}
 		this->driverThread.join();
+		if( this->watchdogThread.joinable() ){
+			this->watchdogStopEvent.Set();
+			this->watchdogThread.join();
+		}
 	}
 	return false;
 }
@@ -114,6 +126,10 @@ void CBonDriverUtil::CloseBonDriver()
 	if( this->hwndDriver ){
 		PostMessage(this->hwndDriver, WM_CLOSE, 0, 0);
 		this->driverThread.join();
+		if( this->watchdogThread.joinable() ){
+			this->watchdogStopEvent.Set();
+			this->watchdogThread.join();
+		}
 		this->loadChList.clear();
 		this->loadTunerName.clear();
 		CBlockLock lock(&this->utilLock);
@@ -237,8 +253,19 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)sys);
 		SetTimer(hwnd, 1, 20, NULL);
 		sys->statusTimeout = 0;
+		if( sys->traceLevel ){
+			OutputDebugString(L"CBonDriverUtil: #Open\r\n");
+			CBlockLock lock(&sys->utilLock);
+			sys->callingName = NULL;
+		}
 		return 0;
 	case WM_DESTROY:
+		if( sys->traceLevel ){
+			OutputDebugString(L"CBonDriverUtil: #Closing\r\n");
+			CBlockLock lock(&sys->utilLock);
+			sys->callingName = L"Closing";
+			sys->callingTick = GetTickCount();
+		}
 		if( sys->statusFunc ){
 			sys->statusFunc(0.0f, -1, -1);
 		}
@@ -258,6 +285,11 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		break;
 	case WM_APP_GET_TS_STREAM:
 		{
+			if( sys->traceLevel ){
+				CBlockLock lock(&sys->utilLock);
+				sys->callingName = L"GetTs";
+				sys->callingTick = GetTickCount();
+			}
 			//TSストリームを取得
 			BYTE* data;
 			DWORD size;
@@ -267,42 +299,120 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 					sys->recvFunc(data, size, 1);
 				}
 				PostMessage(hwnd, WM_APP_GET_TS_STREAM, 1, 0);
-			}else if( wParam ){
-				//EDCBは(伝統的に)GetTsStreamのremainを利用しないので、受け取るものがなくなったらremain=0を知らせる
-				if( sys->recvFunc ){
-					sys->recvFunc(NULL, 0, 0);
+			}else{
+				size = 0;
+				if( wParam ){
+					//EDCBは(伝統的に)GetTsStreamのremainを利用しないので、受け取るものがなくなったらremain=0を知らせる
+					if( sys->recvFunc ){
+						sys->recvFunc(NULL, 0, 0);
+					}
 				}
+			}
+			if( sys->traceLevel ){
+				CBlockLock lock(&sys->utilLock);
+				sys->callingName = NULL;
+				sys->statGetTsCalls++;
+				sys->statGetTsBytes += size;
 			}
 		}
 		return 0;
 	case WM_APP_GET_STATUS:
 		if( sys->statusFunc ){
+			if( sys->traceLevel ){
+				CBlockLock lock(&sys->utilLock);
+				sys->callingName = L"GetStatus";
+				sys->callingTick = GetTickCount();
+			}
 			if( sys->initChSetFlag ){
 				sys->statusFunc(sys->bon2IF->GetSignalLevel(), sys->bon2IF->GetCurSpace(), sys->bon2IF->GetCurChannel());
 			}else{
 				sys->statusFunc(sys->bon2IF->GetSignalLevel(), -1, -1);
 			}
+			if( sys->traceLevel ){
+				CBlockLock lock(&sys->utilLock);
+				sys->callingName = NULL;
+			}
 		}
 		return 0;
 	case WM_APP_SET_CH:
+		if( sys->traceLevel ){
+			OutputDebugString(L"CBonDriverUtil: #SetCh\r\n");
+			CBlockLock lock(&sys->utilLock);
+			sys->callingName = L"SetCh";
+			sys->callingTick = GetTickCount();
+		}
 		if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
 			Sleep(500);
+			if( sys->traceLevel ){
+				OutputDebugString(L"CBonDriverUtil: #SetCh2\r\n");
+			}
 			if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
+				if( sys->traceLevel ){
+					CBlockLock lock(&sys->utilLock);
+					sys->callingName = NULL;
+				}
 				return FALSE;
 			}
+		}
+		if( sys->traceLevel ){
+			CBlockLock lock(&sys->utilLock);
+			sys->callingName = NULL;
 		}
 		sys->initChSetFlag = true;
 		PostMessage(hwnd, WM_APP_GET_STATUS, 0, 0);
 		return TRUE;
 	case WM_APP_GET_NOW_CH:
 		if( sys->initChSetFlag ){
+			if( sys->traceLevel ){
+				CBlockLock lock(&sys->utilLock);
+				sys->callingName = L"GetNowCh";
+				sys->callingTick = GetTickCount();
+			}
 			*(DWORD*)wParam = sys->bon2IF->GetCurSpace();
 			*(DWORD*)lParam = sys->bon2IF->GetCurChannel();
+			if( sys->traceLevel ){
+				CBlockLock lock(&sys->utilLock);
+				sys->callingName = NULL;
+			}
 			return TRUE;
 		}
 		return FALSE;
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void CBonDriverUtil::WatchdogThread(CBonDriverUtil* sys)
+{
+	int statTimeout = 0;
+	while( sys->watchdogStopEvent.WaitOne(2000) == false ){
+		if( sys->traceLevel ){
+			//統計を1分ごとにデバッグ出力
+			if( ++statTimeout >= 30 ){
+				int calls;
+				__int64 bytes;
+				{
+					CBlockLock lock(&sys->utilLock);
+					calls = sys->statGetTsCalls;
+					bytes = sys->statGetTsBytes;
+					sys->statGetTsCalls = 0;
+					sys->statGetTsBytes = 0;
+				}
+				if( sys->traceLevel > 1 ){
+					_OutputDebugString(L"CBonDriverUtil: #GetTs %d calls, %lld bytes\r\n", calls, bytes);
+				}
+				statTimeout = 0;
+			}
+			//BonDriver呼び出しに10秒以上かかっていればデバッグ出力
+			CBlockLock lock(&sys->utilLock);
+			if( sys->callingName ){
+				DWORD tick = GetTickCount();
+				if( tick - sys->callingTick > 10000 ){
+					_OutputDebugString(L"CBonDriverUtil: #%ls takes more than 10 seconds!\r\n", sys->callingName);
+					sys->callingTick = tick;
+				}
+			}
+		}
+	}
 }
 
 bool CBonDriverUtil::SetCh(DWORD space, DWORD ch)

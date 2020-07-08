@@ -80,6 +80,7 @@ void CBonCtrl::Check()
 
 BOOL CBonCtrl::OpenBonDriver(
 	LPCWSTR bonDriverFile,
+	int traceLevel,
 	int openWait,
 	DWORD tsBuffMaxCount
 )
@@ -87,7 +88,10 @@ BOOL CBonCtrl::OpenBonDriver(
 	CloseBonDriver();
 	if( this->bonUtil.OpenBonDriver(GetModulePath().replace_filename(BON_DLL_FOLDER).c_str(), bonDriverFile,
 	                                [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
-	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, openWait) ){
+	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, traceLevel) ){
+		if( openWait > 0 ){
+			Sleep(openWait);
+		}
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		//解析スレッド起動
 		this->analyzeStopFlag = false;

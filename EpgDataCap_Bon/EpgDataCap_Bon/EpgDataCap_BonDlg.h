@@ -73,6 +73,7 @@ protected:
 	BOOL dropLogAsUtf8;
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
+	int traceBonDriverLevel;
 	int openWait;
 	vector<wstring> recFolderList;
 	vector<NW_SEND_INFO> setUdpSendList;

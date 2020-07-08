@@ -17,12 +17,13 @@ public:
 	// bonDriverFile	[IN]BonDriverのファイル名
 	// recvFunc_		[IN]ストリーム受信時のコールバック関数
 	// statusFunc_		[IN]ステータス(シグナルレベル,Space,Ch)取得時のコールバック関数
+	// traceLevel_		[IN]デバッグ出力の詳細レベル
 	bool OpenBonDriver(
 		LPCWSTR bonDriverFolder,
 		LPCWSTR bonDriverFile,
 		const std::function<void(BYTE*, DWORD, DWORD)>& recvFunc_,
 		const std::function<void(float, int, int)>& statusFunc_,
-		int openWait
+		int traceLevel_
 		);
 
 	//ロードしているBonDriverの開放
@@ -69,6 +70,8 @@ private:
 	static void DriverThread(CBonDriverUtil* sys);
 	//ワーカースレッドのメッセージ専用ウィンドウプロシージャ
 	static LRESULT CALLBACK DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	//BonDriverへのアクセスを監視するスレッド
+	static void WatchdogThread(CBonDriverUtil* sys);
 
 	static class CInit { public: CInit(); } s_init;
 	recursive_mutex_ utilLock;
@@ -82,6 +85,13 @@ private:
 	int statusTimeout;
 	IBonDriver2* bon2IF;
 	thread_ driverThread;
+	thread_ watchdogThread;
+	CAutoResetEvent watchdogStopEvent;
+	int traceLevel;
+	LPCWSTR callingName;
+	DWORD callingTick;
+	int statGetTsCalls;
+	__int64 statGetTsBytes;
 	HWND hwndDriver;
 };
 
