@@ -40,6 +40,10 @@ namespace EpgTimer
                     gridView_key.Columns.Add(columnList[info.Tag]);
                 }
             }
+            if (Settings.Instance.AutoAddEpgHideButton)
+            {
+                stackPanel_button.Visibility = Visibility.Collapsed;
+            }
         }
 
         public void SaveSize()
@@ -84,16 +88,10 @@ namespace EpgTimer
 
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
                 dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -113,7 +111,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -188,7 +186,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -216,18 +214,20 @@ namespace EpgTimer
 
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            try
+            foreach (object item in listView_key.ContextMenu.Items)
             {
-                foreach (MenuItem item in listView_key.ContextMenu.Items)
+                MenuItem menuItem = item as MenuItem;
+                if (menuItem != null)
                 {
-                    item.IsChecked = Settings.Instance.AutoAddEpgColumn.Any(info => info.Tag == item.Name);
+                    if (menuItem.Name == "HideButton")
+                    {
+                        menuItem.IsChecked = Settings.Instance.AutoAddEpgHideButton;
+                    }
+                    else
+                    {
+                        menuItem.IsChecked = Settings.Instance.AutoAddEpgColumn.Any(info => info.Tag == menuItem.Name);
+                    }
                 }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -258,7 +258,28 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void hideButton_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Instance.AutoAddEpgHideButton = ((MenuItem)sender).IsChecked;
+            stackPanel_button.Visibility = Settings.Instance.AutoAddEpgHideButton ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void listView_key_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            foreach (FrameworkElement item in ((ListViewItem)sender).ContextMenu.Items)
+            {
+                if (item.Name == "saveItemOrder")
+                {
+                    item.IsEnabled = button_saveItemOrder.IsEnabled;
+                }
+                else if (item.Name == "reloadItem")
+                {
+                    item.IsEnabled = button_reloadItem.IsEnabled;
+                }
             }
         }
 
@@ -270,22 +291,13 @@ namespace EpgTimer
 
         void showDialog()
         {
-            if (listView_key.SelectedItem == null) { return; }
-            //
-            try
+            if (listView_key.SelectedItem != null)
             {
                 EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(2);
-                dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
-                dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
+                dlg.SetChangeModeData(info.EpgAutoAddInfo);
                 dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -385,45 +397,56 @@ namespace EpgTimer
             this.reloadItemOrder();
         }
 
-        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        private void listView_key_KeyDown(object sender, KeyEventArgs e)
         {
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    showDialog();
+                    e.Handled = true;
+                    break;
+                case Key.Delete:
+                    if (listView_key.SelectedItems.Count > 0 &&
+                        MessageBox.Show(listView_key.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
+                                        MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
+                    {
+                        button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    }
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
                     case Key.Up:
                         moveItem(true);
+                        e.Handled = true;
                         break;
                     case Key.Down:
                         moveItem(false);
+                        e.Handled = true;
                         break;
                     case Key.S:
-                        this.saveItemOrder();
-                        break;
-                    case Key.R:
-                        this.reloadItemOrder();
-                        break;
-                }
-            }
-            else
-            {
-                switch (e.Key)
-                {
-                    case Key.Enter:
-                        this.showDialog();
-                        break;
-                    case Key.Delete:
-                        if (listView_key.SelectedItems.Count > 0 &&
-                            MessageBox.Show(listView_key.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
-                                            MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
+                        if (e.IsRepeat == false)
                         {
-                            button_del_Click(listView_key.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                            saveItemOrder();
                         }
+                        e.Handled = true;
+                        break;
+                    case Key.Z:
+                        if (e.IsRepeat == false)
+                        {
+                            reloadItemOrder();
+                        }
+                        e.Handled = true;
                         break;
                 }
             }
-            //
-            base.OnPreviewKeyDown(e);
         }
 
         private void button_up_Click2(object sender, RoutedEventArgs e)

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             xmlns:local="clr-namespace:EpgTimer"
              d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
         <Style TargetType="{x:Type CheckBox}">
@@ -31,7 +32,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
+        <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
             <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="長さ" Name="Duration" IsCheckable="True" Click="headerSelect_Click" />
@@ -45,14 +46,14 @@
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
-        </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu">
-            <MenuItem Header="録画情報" Click="button_recInfo_Click" />
-            <MenuItem Header="削除" Click="button_del_Click" />
-            <MenuItem Header="再生" Click="button_play_Click" />
+        </local:ContextMenuEx>
+        <local:ContextMenuEx x:Key="itemMenu">
+            <MenuItem Header="録画情報" Click="button_recInfo_Click" InputGestureText="Enter" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
+            <MenuItem Header="再生" Click="button_play_Click" InputGestureText="Ctrl + P" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" />
-        </ContextMenu>
+            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" InputGestureText="Ctrl + O" />
+        </local:ContextMenuEx>
 
     </UserControl.Resources>
     <Grid>

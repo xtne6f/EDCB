@@ -4,10 +4,15 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" xmlns:local="clr-namespace:EpgTimer.TunerReserveViewCtrl">
-    <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
+             d:DesignHeight="300" d:DesignWidth="300" xmlns:local="clr-namespace:EpgTimer.TunerReserveViewCtrl" PreviewMouseWheel="UserControl_PreviewMouseWheel">
+    <ScrollViewer HorizontalScrollBarVisibility="Visible" IsTabStop="True" Name="scrollViewer" ScrollChanged="scrollViewer_ScrollChanged">
         <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top">
-            <local:TunerReservePanel x:Name="reserveViewPanel" Background="DarkGray" MouseMove="reserveViewPanel_MouseMove" MouseLeftButtonDown="reserveViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="reserveViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="reserveViewPanel_MouseRightButtonDown" />
+            <local:TunerReservePanel x:Name="reserveViewPanel" Background="DarkGray" MouseMove="reserveViewPanel_MouseMove" MouseLeftButtonDown="reserveViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="reserveViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonUp="reserveViewPanel_MouseRightButtonUp" />
+            <Popup AllowsTransparency="True" MouseLeftButtonDown="toolTip_MouseLeftButtonDown" MouseRightButtonDown="toolTip_MouseRightButtonDown" Name="toolTip" Placement="MousePoint" PopupAnimation="Fade">
+                <Border Background="DarkGray">
+                    <TextBlock Margin="2" MaxWidth="400" Name="toolTipTextBlock" TextWrapping="Wrap" />
+                </Border>
+            </Popup>
         </Canvas>
     </ScrollViewer>
 </UserControl>

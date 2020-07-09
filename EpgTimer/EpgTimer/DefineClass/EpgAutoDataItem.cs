@@ -228,6 +228,29 @@ namespace EpgTimer
             }
         }
 
+        public string TunerID
+        {
+            get { return EpgAutoAddInfo.recSetting.TunerID == 0 ? "自動" : "ID:" + EpgAutoAddInfo.recSetting.TunerID.ToString("X8"); }
+        }
+
+        public string BatFilePath
+        {
+            get
+            {
+                int i = EpgAutoAddInfo.recSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? EpgAutoAddInfo.recSetting.BatFilePath : EpgAutoAddInfo.recSetting.BatFilePath.Remove(i);
+            }
+        }
+
+        public string BatFileTag
+        {
+            get
+            {
+                int i = EpgAutoAddInfo.recSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? "" : EpgAutoAddInfo.recSetting.BatFilePath.Substring(i + 1);
+            }
+        }
+
         public uint ID
         {
             get { return EpgAutoAddInfo.dataID; }

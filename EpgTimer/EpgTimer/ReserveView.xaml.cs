@@ -13,7 +13,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using System.Collections;
 
 
 namespace EpgTimer
@@ -191,7 +190,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -219,7 +218,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -247,7 +246,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -257,7 +256,6 @@ namespace EpgTimer
             {
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
@@ -303,7 +301,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -311,7 +309,6 @@ namespace EpgTimer
         {
             ChgReserveWindow dlg = new ChgReserveWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.AddReserveMode(true);
             dlg.ShowDialog();
         }
 
@@ -329,7 +326,7 @@ namespace EpgTimer
             foreach (object item in listView_reserve.ContextMenu.Items)
             {
                 MenuItem menuItem = item as MenuItem;
-                if (menuItem != null)
+                if (menuItem != null && menuItem.IsCheckable)
                 {
                     if (menuItem.Name == "HideButton")
                     {
@@ -337,15 +334,7 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItem.IsChecked = false;
-                        foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
-                        {
-                            if (info.Tag == menuItem.Name)
-                            {
-                                menuItem.IsChecked = true;
-                                break;
-                            }
-                        }
+                        menuItem.IsChecked = Settings.Instance.ReserveListColumn.Any(info => info.Tag == menuItem.Name);
                     }
                 }
             }
@@ -378,7 +367,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -390,16 +379,16 @@ namespace EpgTimer
 
         void listView_reserve_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.IsRepeat)
-            {
-                return;
-            }
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
                     case Key.P:
-                        this.timeShiftPlay_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        if (e.IsRepeat == false)
+                        {
+                            button_timeShiftPlay.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
                         break;
                 }
             }
@@ -408,18 +397,21 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.F3:
-                        this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
+                        MenuItem_Click_ProgramTable(sender, e);
+                        e.Handled = true;
                         break;
                     case Key.Enter:
-                        this.button_change_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        ChangeReserve();
+                        e.Handled = true;
                         break;
                     case Key.Delete:
                         if (listView_reserve.SelectedItems.Count > 0 &&
                             MessageBox.Show(listView_reserve.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
                                             MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
                         {
-                            button_del_Click(listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                            button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         }
+                        e.Handled = true;
                         break;
                 }
             }
@@ -447,7 +439,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -473,7 +465,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -486,7 +478,7 @@ namespace EpgTimer
             }
         }
 
-        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
+        private void listView_reserve_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             //選択されているすべての予約が同じ設定の場合だけチェックを表示する
             byte recMode = 0xFF;
@@ -510,9 +502,9 @@ namespace EpgTimer
                     priority = 0xFE;
                 }
             }
-            foreach (object item in ((ContextMenu)sender).Items)
+            foreach (FrameworkElement item in ((ListViewItem)sender).ContextMenu.Items)
             {
-                if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更", StringComparison.Ordinal))
+                if (item.Name == "cm_chg")
                 {
                     for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
                     {

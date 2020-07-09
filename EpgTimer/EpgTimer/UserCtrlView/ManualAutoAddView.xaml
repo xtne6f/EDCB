@@ -4,29 +4,45 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             xmlns:local="clr-namespace:EpgTimer"
              d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
+        <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
             <MenuItem Header="曜日" Name="DayOfWeek" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="時間" Name="Time" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名" Name="Title" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="StationName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="チューナー強制" Name="TunerID" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画後実行bat" Name="BatFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="タグ" Name="BatFileTag" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
-        </ContextMenu>
+            <Separator />
+            <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
+            <Separator />
+            <MenuItem Header="追加" Click="button_add_Click" />
+        </local:ContextMenuEx>
+        <local:ContextMenuEx x:Key="itemMenu">
+            <MenuItem Header="変更" Click="button_change_Click" InputGestureText="Enter" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
+            <Separator />
+            <MenuItem Header="追加" Click="button_add_Click" />
+        </local:ContextMenuEx>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="130" />
+            <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
         <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
+                    <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
+                    <EventSetter Event="KeyDown" Handler="listView_key_KeyDown" />
                 </Style>
             </ListView.Resources>
             <ListView.View>
@@ -61,6 +77,21 @@
                             <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding TunerID}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="チューナー強制" Tag="TunerID" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding BatFilePath}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画後実行bat" Tag="BatFilePath" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding BatFileTag}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="タグ" Tag="BatFileTag" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding ID}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ID" Tag="ID" HorizontalContentAlignment="Left"/>
@@ -69,7 +100,7 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button">
+        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="130">
             <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" Click="button_add_Click" />
             <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
             <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" />

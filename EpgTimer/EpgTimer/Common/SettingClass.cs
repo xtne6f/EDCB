@@ -129,6 +129,7 @@ namespace EpgTimer
         public bool EpgToolTipNoViewOnly { get; set; }
         public int EpgToolTipViewWait { get; set; }
         public bool EpgPopup { get; set; }
+        public bool EpgAdjustPopup { get; set; }
         public bool EpgExtInfoTable { get; set; }
         public bool EpgExtInfoPopup { get; set; }
         public bool EpgGradation { get; set; }
@@ -167,6 +168,7 @@ namespace EpgTimer
         public bool PlayDClick { get; set; }
         public bool ConfirmDelRecInfo { get; set; }
         public bool ConfirmDelRecInfoAlways { get; set; }
+        public bool SaveSearchKeyword { get; set; }
         public bool ShowEpgCapServiceOnly { get; set; }
         public bool SortServiceList { get; set; }
         public bool ExitAfterProcessingArgs { get; set; }
@@ -208,6 +210,8 @@ namespace EpgTimer
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
         public bool RecInfoHideButton { get; set; }
+        public bool AutoAddEpgHideButton { get; set; }
+        public bool AutoAddManualHideButton { get; set; }
         public string TvTestExe { get; set; }
         public string TvTestCmd { get; set; }
         public bool NwTvMode { get; set; }
@@ -269,6 +273,7 @@ namespace EpgTimer
         public bool ShowTray { get; set; }
         public bool MinHide { get; set; }
         public int NoStyle { get; set; }
+        public bool ApplyContextMenuStyle { get; set; }
         public int NoSendClose { get; set; }
         public string StartTab { get; set; }
 
@@ -335,6 +340,7 @@ namespace EpgTimer
                 rr.EpgToolTipNoViewOnly     = ConvertXElem(xx, w, "EpgToolTipNoViewOnly", val.EpgToolTipNoViewOnly, true);
                 rr.EpgToolTipViewWait       = (int)ConvertXElem(xx, w, "EpgToolTipViewWait", val.EpgToolTipViewWait, 1500);
                 rr.EpgPopup                 = ConvertXElem(xx, w, "EpgPopup", val.EpgPopup, true);
+                rr.EpgAdjustPopup           = ConvertXElem(xx, w, "EpgAdjustPopup", val.EpgAdjustPopup, true);
                 rr.EpgExtInfoTable          = ConvertXElem(xx, w, "EpgExtInfoTable", val.EpgExtInfoTable, false);
                 rr.EpgExtInfoPopup          = ConvertXElem(xx, w, "EpgExtInfoPopup", val.EpgExtInfoPopup, true);
                 rr.EpgGradation             = ConvertXElem(xx, w, "EpgGradation", val.EpgGradation, true);
@@ -362,6 +368,7 @@ namespace EpgTimer
             r.PlayDClick                = ConvertXElem(x, w, "PlayDClick", PlayDClick, false);
             r.ConfirmDelRecInfo         = ConvertXElem(x, w, "ConfirmDelRecInfo", ConfirmDelRecInfo, true);
             r.ConfirmDelRecInfoAlways   = ConvertXElem(x, w, "ConfirmDelRecInfoAlways", ConfirmDelRecInfoAlways, false);
+            r.SaveSearchKeyword         = ConvertXElem(x, w, "SaveSearchKeyword", SaveSearchKeyword, true);
             r.ShowEpgCapServiceOnly     = ConvertXElem(x, w, "ShowEpgCapServiceOnly", ShowEpgCapServiceOnly, false);
             r.SortServiceList           = ConvertXElem(x, w, "SortServiceList", SortServiceList, true);
             r.ExitAfterProcessingArgs   = ConvertXElem(x, w, "ExitAfterProcessingArgs", ExitAfterProcessingArgs, false);
@@ -409,6 +416,8 @@ namespace EpgTimer
             Enum.TryParse(ConvertXElem(x, w, "RecInfoSortDirection", RecInfoSortDirection.ToString(), ""), out sd);
             r.RecInfoSortDirection      = sd;
             r.RecInfoHideButton         = ConvertXElem(x, w, "RecInfoHideButton", RecInfoHideButton, false);
+            r.AutoAddEpgHideButton      = ConvertXElem(x, w, "AutoAddEpgHideButton", AutoAddEpgHideButton, false);
+            r.AutoAddManualHideButton   = ConvertXElem(x, w, "AutoAddManualHideButton", AutoAddManualHideButton, false);
             r.TvTestExe                 = ConvertXElem(x, w, "TvTestExe", TvTestExe, "");
             r.TvTestCmd                 = ConvertXElem(x, w, "TvTestCmd", TvTestCmd, "");
             r.NwTvMode                  = ConvertXElem(x, w, "NwTvMode", NwTvMode, false);
@@ -470,6 +479,7 @@ namespace EpgTimer
             r.ShowTray                  = ConvertXElem(x, w, "ShowTray", ShowTray, false);
             r.MinHide                   = ConvertXElem(x, w, "MinHide", MinHide, true);
             r.NoStyle                   = (int)ConvertXElem(x, w, "NoStyle", NoStyle, 1);
+            r.ApplyContextMenuStyle     = ConvertXElem(x, w, "ApplyContextMenuStyle", ApplyContextMenuStyle, false);
             r.NoSendClose               = (int)ConvertXElem(x, w, "NoSendClose", NoSendClose, 0);
             r.StartTab                  = ConvertXElem(x, w, "StartTab", StartTab, "ReserveView");
         }
@@ -505,6 +515,8 @@ namespace EpgTimer
             dest.RecInfoColumnHead = RecInfoColumnHead;
             dest.RecInfoSortDirection = RecInfoSortDirection;
             dest.RecInfoHideButton = RecInfoHideButton;
+            dest.AutoAddEpgHideButton = AutoAddEpgHideButton;
+            dest.AutoAddManualHideButton = AutoAddManualHideButton;
             dest.NWServerIP = NWServerIP;
             dest.NWServerPort = NWServerPort;
             dest.NWWaitPort = NWWaitPort;
@@ -548,6 +560,78 @@ namespace EpgTimer
                     _brushCache = new SettingsBrushCache();
                 }
                 return _brushCache;
+            }
+        }
+
+        private static bool appResourceDictionaryInitialized;
+        private static ResourceDictionary _appResourceDictionary;
+        public static ResourceDictionary AppResourceDictionary
+        {
+            get
+            {
+                if (appResourceDictionaryInitialized == false)
+                {
+                    appResourceDictionaryInitialized = true;
+                    if (Instance.NoStyle == 0)
+                    {
+                        try
+                        {
+                            if (File.Exists(Assembly.GetEntryAssembly().Location + ".rd.xaml"))
+                            {
+                                //ResourceDictionaryを定義したファイルがあるので本体にマージする
+                                _appResourceDictionary = (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
+                                    System.Xml.XmlReader.Create(Assembly.GetEntryAssembly().Location + ".rd.xaml"));
+                            }
+                            else
+                            {
+                                //既定のテーマ(Aero)をマージする
+                                _appResourceDictionary = (ResourceDictionary)Application.LoadComponent(
+                                    new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.ToString());
+                        }
+                    }
+                }
+                return _appResourceDictionary;
+            }
+        }
+
+        private static bool contextMenuResourceDictionaryInitialized;
+        private static ResourceDictionary _contextMenuResourceDictionary;
+        public static ResourceDictionary ContextMenuResourceDictionary
+        {
+            get
+            {
+                if (contextMenuResourceDictionaryInitialized == false)
+                {
+                    contextMenuResourceDictionaryInitialized = true;
+                    if (Instance.ApplyContextMenuStyle)
+                    {
+                        try
+                        {
+                            if (File.Exists(Assembly.GetEntryAssembly().Location + ".rdcm.xaml"))
+                            {
+                                //ResourceDictionaryを定義したファイルがあるので本体にマージする
+                                _contextMenuResourceDictionary = (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
+                                    System.Xml.XmlReader.Create(Assembly.GetEntryAssembly().Location + ".rdcm.xaml"));
+                            }
+                            else
+                            {
+                                //既定のテーマ(Aero)をマージする
+                                _contextMenuResourceDictionary = (ResourceDictionary)Application.LoadComponent(
+                                    new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.ToString());
+                        }
+                    }
+                }
+                return _contextMenuResourceDictionary;
             }
         }
 
@@ -728,7 +812,7 @@ namespace EpgTimer
             {
                 if (notifyException)
                 {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    MessageBox.Show(ex.ToString());
                 }
             }
         }

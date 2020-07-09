@@ -14,9 +14,6 @@ using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
-using System.Text.RegularExpressions;
-
-
 
 namespace EpgTimer
 {
@@ -25,10 +22,10 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgListMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo, object> ViewModeChangeRequested;
+        public event Action<object, CustomEpgTabInfo, DateTime, object> ViewModeChangeRequested;
 
-        private CustomEpgTabInfo setViewInfo = null;
-        private DateTime baseTime = DateTime.MaxValue;
+        private CustomEpgTabInfo setViewInfo;
+        private DateTime baseTime;
 
         string _lastHeaderClicked = null;
         ListSortDirection _lastDirection = ListSortDirection.Ascending;
@@ -41,11 +38,12 @@ namespace EpgTimer
 
         private Dictionary<ulong, bool> lastChkSID = new Dictionary<ulong, bool>();
 
-        public EpgListMainView(CustomEpgTabInfo setInfo)
+        public EpgListMainView(CustomEpgTabInfo setInfo, DateTime _baseTime)
         {
             InitializeComponent();
 
             setViewInfo = setInfo;
+            baseTime = _baseTime;
         }
 
         /// <summary>
@@ -108,9 +106,10 @@ namespace EpgTimer
         /// <summary>
         /// 表示週変更
         /// </summary>
-        void button_time_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        void button_time_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            var menu = new ContextMenu();
+            ContextMenu menu = ((Button)sender).ContextMenu;
+            menu.Items.Clear();
             bool prev = sender == button_prev;
             for (int i = 1; i <= 15; i++)
             {
@@ -144,7 +143,6 @@ namespace EpgTimer
                 }
                 menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
             }
-            menu.IsOpen = true;
         }
 
         /// <summary>
@@ -308,7 +306,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -424,7 +422,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -478,48 +476,12 @@ namespace EpgTimer
                 EpgEventInfo eventInfo = item.EventInfo;
 
                 String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-
-                int searchFrom = 0;
-                Paragraph para = new Paragraph();
-                string rtext = CommonManager.ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
-                if (rtext.Length == text.Length)
-                {
-                    for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
-                    {
-                        para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
-                        Hyperlink h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
-                        h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
-                        h.Foreground = Brushes.Blue;
-                        h.Cursor = Cursors.Hand;
-                        h.NavigateUri = new Uri(m.Value);
-                        para.Inlines.Add(h);
-                        searchFrom = m.Index + m.Length;
-                    }
-                }
-                para.Inlines.Add(text.Substring(searchFrom));
-                richTextBox_eventInfo.Document = new FlowDocument(para);
-            }
-        }
-
-        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() == typeof(Hyperlink))
-                {
-                    Hyperlink h = sender as Hyperlink;
-                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                richTextBox_eventInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(text));
             }
         }
 
         private void listView_event_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            try
             {
                 if (listView_event.SelectedItem != null)
                 {
@@ -534,15 +496,11 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void ChangeReserve(ReserveData reserveInfo)
         {
-            try{
+            {
                 ChgReserveWindow dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetOpenMode(setViewInfo.EpgSetting.EpgInfoOpenMode);
@@ -551,15 +509,10 @@ namespace EpgTimer
                 {
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void AddReserve(EpgEventInfo eventInfo, bool reservable)
         {
-            try
             {
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
@@ -570,10 +523,6 @@ namespace EpgTimer
                 {
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void listView_event_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -583,6 +532,8 @@ namespace EpgTimer
             {
                 cm_new.IsEnabled = item.IsReserved == false && item.Past == false;
                 cm_chg.IsEnabled = item.IsReserved;
+                cm_new.Visibility = item.IsReserved ? Visibility.Collapsed : Visibility.Visible;
+                cm_chg.Visibility = item.IsReserved ? Visibility.Visible : Visibility.Collapsed;
                 cm_del.IsEnabled = item.IsReserved;
                 cm_timeshift.IsEnabled = item.IsReserved;
                 if (item.IsReserved)
@@ -678,7 +629,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -705,13 +656,12 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
         private void cm_change_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 if (listView_event.SelectedItem != null)
                 {
@@ -722,25 +672,16 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void cm_add_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 if (listView_event.SelectedItem != null)
                 {
                     SearchItem item = listView_event.SelectedItem as SearchItem;
                     AddReserve(item.EventInfo, item.Past == false);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -800,7 +741,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -856,25 +797,19 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
         private void cm_autoadd_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
                 if (listView_event.SelectedItem != null)
                 {
                     SearchItem item = listView_event.SelectedItem as SearchItem;
 
                     SearchWindow dlg = new SearchWindow();
                     dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetViewMode(1);
 
                     EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
@@ -889,15 +824,10 @@ namespace EpgTimer
                     dlg.ShowDialog();                
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void cm_timeShiftPlay_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 if (listView_event.SelectedItem != null)
                 {
@@ -907,10 +837,6 @@ namespace EpgTimer
                         CommonManager.Instance.FilePlay(item.ReserveInfo.ReserveID);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -934,7 +860,7 @@ namespace EpgTimer
                 }
                 else if (ViewModeChangeRequested != null)
                 {
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
             }
         }
@@ -946,15 +872,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_viewMode_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
                 if (ViewModeChangeRequested != null)
                 {
-                    MenuItem item = sender as MenuItem;
                     CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
                     if (sender == cm_chg_viewMode2)
                     {
@@ -964,12 +884,8 @@ namespace EpgTimer
                     {
                         setInfo.ViewMode = 0;
                     }
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
