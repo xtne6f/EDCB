@@ -45,13 +45,13 @@ namespace EpgTimer
         {
             get { return TimeSpan.FromSeconds(ReserveInfo.DurationSecond); }
         }
+        public string RecEnabled
+        {
+            get { return ReserveInfo.RecSetting.IsNoRec() ? "いいえ" : "はい"; }
+        }
         public String RecMode
         {
-            get
-            {
-                return CommonManager.Instance.RecModeList.Length > ReserveInfo.RecSetting.RecMode ?
-                       CommonManager.Instance.RecModeList[ReserveInfo.RecSetting.RecMode] : "";
-            }
+            get { return CommonManager.Instance.RecModeList[ReserveInfo.RecSetting.GetRecMode()]; }
         }
         public byte Priority
         {
@@ -110,7 +110,7 @@ namespace EpgTimer
                 if (_estimatedRecSize == null)
                 {
                     _estimatedRecSize = "";
-                    if (ReserveInfo.RecSetting.RecMode != 4)
+                    if (ReserveInfo.RecSetting.GetRecMode() != 4)
                     {
                         int bitrate = 0;
                         for (int i = 0; bitrate <= 0; i++)
@@ -136,7 +136,7 @@ namespace EpgTimer
         {
             get
             {
-                return ReserveInfo.RecSetting.RecMode == 5 ? Settings.BrushCache.ResNoBrush :
+                return ReserveInfo.RecSetting.IsNoRec() ? Settings.BrushCache.ResNoBrush :
                        ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
                        ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
             }

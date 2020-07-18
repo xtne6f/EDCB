@@ -17,33 +17,25 @@
         <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="413,6,0,0" Name="button_del_preset" VerticalAlignment="Top" Width="48" Click="button_del_preset_Click" />
         <Border BorderBrush="#FF8C8E94" BorderThickness="1" Margin="0,40,0,0" Padding="4,1,4,1">
             <Grid>
-                <Label Content="録画モード" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
-                <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,6,0,0" Name="comboBox_recMode" VerticalAlignment="Top" Width="180">
+                <CheckBox Content="有効" Height="16" HorizontalAlignment="Left" Margin="11,11,0,0" Name="checkBox_enabled" VerticalAlignment="Top" />
+                <Label Content="録画モード" Height="28" HorizontalAlignment="Left" Margin="80,6,0,0" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="160,6,0,0" Name="comboBox_recMode" VerticalAlignment="Top" Width="200">
                     <ComboBoxItem Content="全サービス" />
                     <ComboBoxItem Content="指定サービス" />
                     <ComboBoxItem Content="全サービス（デコード処理なし）" />
                     <ComboBoxItem Content="指定サービス（デコード処理なし）" />
                     <ComboBoxItem Content="視聴" />
-                    <ComboBoxItem Content="無効" />
                 </ComboBox>
-                <Label Content="イベントリレー追従" Height="28" HorizontalAlignment="Left" Margin="300,6,0,0" VerticalAlignment="Top" />
-                <ComboBox Height="24" HorizontalAlignment="Left" Margin="440,6,0,0" Name="comboBox_tuijyu" VerticalAlignment="Top" Width="75">
-                    <ComboBoxItem Content="しない" />
-                    <ComboBoxItem Content="する" />
-                </ComboBox>
-                <Label Content="ぴったり（？）録画" Height="28" HorizontalAlignment="Left" Margin="300,35,0,0" VerticalAlignment="Top" />
-                <ComboBox Height="24" HorizontalAlignment="Left" Margin="440,35,0,0" Name="comboBox_pittari" VerticalAlignment="Top" Width="75">
-                    <ComboBoxItem Content="しない" />
-                    <ComboBoxItem Content="する" />
-                </ComboBox>
-                <Label Content="優先度" Height="28" HorizontalAlignment="Left" Margin="6,35,0,0" VerticalAlignment="Top" />
-                <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,35,0,0" Name="comboBox_priority" VerticalAlignment="Top" Width="75">
+                <Label Content="優先度" Height="28" HorizontalAlignment="Left" Margin="80,35,0,0" VerticalAlignment="Top" />
+                <ComboBox Height="24" HorizontalAlignment="Left" Margin="160,35,0,0" Name="comboBox_priority" VerticalAlignment="Top" Width="75">
                     <ComboBoxItem Content="1 (低)" />
                     <ComboBoxItem Content="2" />
                     <ComboBoxItem Content="3" />
                     <ComboBoxItem Content="4" />
                     <ComboBoxItem Content="5 (高)" />
                 </ComboBox>
+                <CheckBox Content="イベントリレー追従" Height="16" HorizontalAlignment="Left" Margin="405,11,0,0" Name="checkBox_tuijyu" VerticalAlignment="Top" />
+                <CheckBox Content="ぴったり（？）録画" Height="16" HorizontalAlignment="Left" Margin="405,40,0,0" Name="checkBox_pittari" VerticalAlignment="Top" />
                 <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,64,0,0" VerticalAlignment="Top" />
                 <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="160,69,0,0" Name="checkBox_margineDef" VerticalAlignment="Top" />
                 <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="255,64,0,0" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource convert}, ConverterParameter=not}" />

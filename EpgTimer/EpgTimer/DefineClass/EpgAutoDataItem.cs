@@ -68,13 +68,13 @@ namespace EpgTimer
                        (new DateTime(2000, 1, 2 + info.endDayOfWeek % 7, info.endHour % 24, info.endMin % 60, 0)).ToString(" ～ ddd HH\\:mm");
             }
         }
+        public string RecEnabled
+        {
+            get { return EpgAutoAddInfo.recSetting.IsNoRec() ? "いいえ" : "はい"; }
+        }
         public String RecMode
         {
-            get
-            {
-                return CommonManager.Instance.RecModeList.Length > EpgAutoAddInfo.recSetting.RecMode ?
-                       CommonManager.Instance.RecModeList[EpgAutoAddInfo.recSetting.RecMode] : "";
-            }
+            get { return CommonManager.Instance.RecModeList[EpgAutoAddInfo.recSetting.GetRecMode()]; }
         }
         public byte Priority
         {
@@ -291,6 +291,7 @@ namespace EpgTimer
                     if (EpgAutoAddInfo.recSetting != null)
                     {
                         view += "録画設定\r\n";
+                        view += "有効：" + RecEnabled + "\r\n";
                         view += "録画モード：" + RecMode + "\r\n";
                         view += "優先度：" + Priority + "\r\n";
                         view += "追従：" + Tuijyu + "\r\n";

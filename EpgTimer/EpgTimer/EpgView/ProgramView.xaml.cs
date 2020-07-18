@@ -307,7 +307,7 @@ namespace EpgTimer.EpgView
                     Rectangle fillOnlyRect = EpgSetting.ReserveRectFillWithShadow ? null : new Rectangle();
                     Rectangle fillRect = fillOnlyRect ?? rect;
 
-                    if (info.ReserveInfo.RecSetting.RecMode == 5)
+                    if (info.ReserveInfo.RecSetting.IsNoRec())
                     {
                         rect.Stroke = strokeNo;
                         fillRect.Fill = fillNo;
@@ -330,7 +330,7 @@ namespace EpgTimer.EpgView
 
                     rect.Effect = blurEffect;
                     rect.StrokeThickness = 3;
-                    if (info.ReserveInfo.RecSetting.RecMode == 4)
+                    if (info.ReserveInfo.RecSetting.GetRecMode() == 4)
                     {
                         rect.StrokeDashArray = dashArray;
                         rect.StrokeDashCap = PenLineCap.Round;

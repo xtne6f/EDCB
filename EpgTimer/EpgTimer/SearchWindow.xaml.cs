@@ -440,7 +440,15 @@ namespace EpgTimer
                     case Key.R:
                         if (e.IsRepeat == false)
                         {
-                            button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            //予約が1つでもあれば有効無効切り替えとみなす
+                            if (listView_result.SelectedItems.Cast<SearchItem>().Any(a => a.IsReserved))
+                            {
+                                MenuItem_Click_No(sender, e);
+                            }
+                            else
+                            {
+                                button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            }
                         }
                         e.Handled = true;
                         break;
@@ -503,6 +511,43 @@ namespace EpgTimer
             }
         }
 
+        private void MenuItem_Click_No(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                var list = new List<ReserveData>();
+                foreach (SearchItem item in listView_result.SelectedItems)
+                {
+                    if (item.IsReserved)
+                    {
+                        byte recMode = item.ReserveInfo.RecSetting.GetRecMode();
+                        if (item.ReserveInfo.RecSetting.IsNoRec() == false)
+                        {
+                            //録画モード情報を維持して無効化
+                            recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
+                        }
+                        item.ReserveInfo.RecSetting.RecMode = recMode;
+                        list.Add(item.ReserveInfo);
+                    }
+                }
+                if (list.Count > 0)
+                {
+                    try
+                    {
+                        ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
+                        if (err != ErrCode.CMD_SUCCESS)
+                        {
+                            MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString());
+                    }
+                }
+            }
+        }
+
         private void MenuItem_Click_RecMode(object sender, RoutedEventArgs e)
         {
             if (listView_result.SelectedItem != null)
@@ -513,7 +558,13 @@ namespace EpgTimer
                 {
                     if (item.IsReserved == true)
                     {
-                        item.ReserveInfo.RecSetting.RecMode = byte.Parse((string)((MenuItem)sender).Tag);
+                        byte recMode = byte.Parse((string)((MenuItem)sender).Tag);
+                        if (item.ReserveInfo.RecSetting.IsNoRec())
+                        {
+                            //録画モード情報を維持して無効化
+                            recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
+                        }
+                        item.ReserveInfo.RecSetting.RecMode = recMode;
                         list.Add(item.ReserveInfo);
                     }
                 }
@@ -638,56 +689,46 @@ namespace EpgTimer
                     else if (item.Name == "cmdChg")
                     {
                         //選択されているすべての予約が同じ設定の場合だけチェックを表示する
-                        byte recMode = 0xFF;
-                        byte priority = 0xFF;
+                        int noRec = -1;
+                        int recMode = -1;
+                        int priority = -1;
                         foreach (SearchItem selItem in listView_result.SelectedItems)
                         {
                             if (selItem.IsReserved == true)
                             {
-                                if (recMode == 0xFF)
+                                if (noRec < 0)
                                 {
-                                    recMode = selItem.ReserveInfo.RecSetting.RecMode;
-                                }
-                                else if (recMode != selItem.ReserveInfo.RecSetting.RecMode)
-                                {
-                                    recMode = 0xFE;
-                                }
-                                if (priority == 0xFF)
-                                {
+                                    noRec = selItem.ReserveInfo.RecSetting.IsNoRec() ? 1 : 0;
+                                    recMode = selItem.ReserveInfo.RecSetting.GetRecMode();
                                     priority = selItem.ReserveInfo.RecSetting.Priority;
                                 }
-                                else if (priority != selItem.ReserveInfo.RecSetting.Priority)
+                                else
                                 {
-                                    priority = 0xFE;
+                                    noRec = noRec != (selItem.ReserveInfo.RecSetting.IsNoRec() ? 1 : 0) ? 2 : noRec;
+                                    recMode = recMode != selItem.ReserveInfo.RecSetting.GetRecMode() ? -1 : recMode;
+                                    priority = priority != selItem.ReserveInfo.RecSetting.Priority ? -1 : priority;
                                 }
                             }
                         }
-
-                        if (recMode != 0xFF)
+                        item.IsEnabled = noRec >= 0;
+                        var itemChg = (MenuItem)item;
+                        itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cmdNo").Visibility =
+                            (noRec == 0 ? Visibility.Visible : Visibility.Collapsed);
+                        itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cmdNoInv").Visibility =
+                            (noRec == 1 ? Visibility.Visible : Visibility.Collapsed);
+                        itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cmdNoToggle").Visibility =
+                            (noRec == 2 ? Visibility.Visible : Visibility.Collapsed);
+                        int i = itemChg.Items.IndexOf(itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cmdRecModeAll"));
+                        for (int j = 0; j <= 4; j++)
                         {
-                            item.IsEnabled = true;
-                            for (int i = 0; i <= 5; i++)
-                            {
-                                ((MenuItem)((MenuItem)item).Items[i]).IsChecked = (i == recMode);
-                            }
-                            for (int i = 6; i < ((MenuItem)item).Items.Count; i++)
-                            {
-                                MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
-                                if (subItem != null && subItem.Name == "cmdPri")
-                                {
-                                    for (int j = 0; j < subItem.Items.Count; j++)
-                                    {
-                                        ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == priority);
-                                    }
-                                    subItem.Header = string.Format((string)subItem.Tag, priority < 0xFE ? "" + priority : "*");
-                                    break;
-                                }
-                            }
+                            ((MenuItem)itemChg.Items[i + j]).IsChecked = (j == recMode);
                         }
-                        else
+                        var itemPri = (MenuItem)itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cmdPri");
+                        for (int j = 0; j < itemPri.Items.Count; j++)
                         {
-                            item.IsEnabled = false;
+                            ((MenuItem)itemPri.Items[j]).IsChecked = (j + 1 == priority);
                         }
+                        itemPri.Header = string.Format((string)itemPri.Tag, priority >= 0 ? "" + priority : "*");
                     }
                     else if (item.Name == "cmdAdd")
                     {

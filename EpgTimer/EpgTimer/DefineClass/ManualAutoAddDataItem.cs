@@ -53,13 +53,14 @@ namespace EpgTimer
             get { return ManualAutoAddInfo.stationName; }
         }
 
+        public string RecEnabled
+        {
+            get { return ManualAutoAddInfo.recSetting.IsNoRec() ? "いいえ" : "はい"; }
+        }
+
         public String RecMode
         {
-            get
-            {
-                return CommonManager.Instance.RecModeList.Length > ManualAutoAddInfo.recSetting.RecMode ?
-                       CommonManager.Instance.RecModeList[ManualAutoAddInfo.recSetting.RecMode] : "";
-            }
+            get { return CommonManager.Instance.RecModeList[ManualAutoAddInfo.recSetting.GetRecMode()]; }
         }
 
         public byte Priority

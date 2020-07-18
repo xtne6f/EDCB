@@ -713,6 +713,7 @@ namespace EpgTimer
                     new ListColumnInfo("NetworkName", double.NaN),
                     new ListColumnInfo("ServiceName", double.NaN),
                     new ListColumnInfo("EventName", double.NaN),
+                    new ListColumnInfo("RecEnabled", double.NaN),
                     new ListColumnInfo("RecMode", double.NaN),
                     new ListColumnInfo("Priority", double.NaN),
                     new ListColumnInfo("Tuijyu", double.NaN),
@@ -860,6 +861,10 @@ namespace EpgTimer
             }
 
             defKey.RecMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "RecMode", 1, SettingPath.TimerSrvIniPath);
+            if (defKey.IsNoRec())
+            {
+                defKey.RecMode = (byte)(5 + (byte)(IniFileHandler.GetPrivateProfileInt(defName, "NoRecMode", 1, SettingPath.TimerSrvIniPath) + 4) % 5);
+            }
             defKey.Priority = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "Priority", 2, SettingPath.TimerSrvIniPath);
             defKey.TuijyuuFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "TuijyuuFlag", 1, SettingPath.TimerSrvIniPath);
             defKey.ServiceMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "ServiceMode", 0, SettingPath.TimerSrvIniPath);

@@ -28,13 +28,14 @@
                     <MenuItem Click="cm_add_preset_Click" Header="簡易予約" Name="cm_new" />
                     <MenuItem Header="予約変更 (_C)" Name="cm_chg">
                         <MenuItem Click="cm_chg_Click" Header="ダイアログ表示 (_X)" />
+                        <MenuItem Click="cm_chg_no_Click" Header="無効にする (_R)" Name="cm_chg_no" />
+                        <MenuItem Click="cm_chg_no_Click" Header="有効にする (_R)" Name="cm_chg_no_inv" />
                         <Separator />
                         <MenuItem Click="cm_chg_recmode_Click" Header="全サービス (_0)" Name="recmode_all" />
                         <MenuItem Click="cm_chg_recmode_Click" Header="指定サービス (_1)" Name="recmode_only" />
                         <MenuItem Click="cm_chg_recmode_Click" Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" />
                         <MenuItem Click="cm_chg_recmode_Click" Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" />
                         <MenuItem Click="cm_chg_recmode_Click" Header="視聴 (_4)" Name="recmode_view" />
-                        <MenuItem Click="cm_chg_recmode_Click" Header="無効 (_5)" Name="recmode_no" />
                         <Separator />
                         <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
                             <MenuItem Click="cm_chg_priority_Click" Header="_1" Name="priority_1" />

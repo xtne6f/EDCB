@@ -13,6 +13,7 @@
             <MenuItem Header="正規表現" Name="RegExp" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="あいまい" Name="Aimai" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名のみ" Name="TitleOnly" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画有効" Name="RecEnabled" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
@@ -87,6 +88,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding TitleOnly}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="番組名のみ" Tag="TitleOnly" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding RecEnabled}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画有効" Tag="RecEnabled" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding RecMode}">

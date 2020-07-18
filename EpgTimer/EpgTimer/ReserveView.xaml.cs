@@ -170,14 +170,17 @@ namespace EpgTimer
         {
             try
             {
-                byte recMode = byte.Parse(((MenuItem)sender).Name.Substring("recmode_".Length));
                 List<ReserveData> list = new List<ReserveData>();
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
-                    ReserveData reserveInfo = item.ReserveInfo;
-                    reserveInfo.RecSetting.RecMode = recMode;
-
-                    list.Add(reserveInfo);
+                    byte recMode = byte.Parse((string)((MenuItem)sender).Tag);
+                    if (item.ReserveInfo.RecSetting.IsNoRec())
+                    {
+                        //録画モード情報を維持して無効化
+                        recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
+                    }
+                    item.ReserveInfo.RecSetting.RecMode = recMode;
+                    list.Add(item.ReserveInfo);
                 }
                 if (list.Count > 0)
                 {
@@ -201,11 +204,14 @@ namespace EpgTimer
                 List<ReserveData> list = new List<ReserveData>();
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
-                    ReserveData reserveInfo = item.ReserveInfo;
-
-                    reserveInfo.RecSetting.RecMode = 5;
-
-                    list.Add(reserveInfo);
+                    byte recMode = item.ReserveInfo.RecSetting.GetRecMode();
+                    if (item.ReserveInfo.RecSetting.IsNoRec() == false)
+                    {
+                        //録画モード情報を維持して無効化
+                        recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
+                    }
+                    item.ReserveInfo.RecSetting.RecMode = recMode;
+                    list.Add(item.ReserveInfo);
                 }
                 if (list.Count > 0)
                 {
@@ -226,14 +232,11 @@ namespace EpgTimer
         {
             try
             {
-                byte priority = byte.Parse(((MenuItem)sender).Name.Substring("priority_".Length));
                 List<ReserveData> list = new List<ReserveData>();
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
-                    ReserveData reserveInfo = item.ReserveInfo;
-                    reserveInfo.RecSetting.Priority = priority;
-
-                    list.Add(reserveInfo);
+                    item.ReserveInfo.RecSetting.Priority = byte.Parse((string)((MenuItem)sender).Tag);
+                    list.Add(item.ReserveInfo);
                 }
                 if (list.Count > 0)
                 {
@@ -390,6 +393,13 @@ namespace EpgTimer
                         }
                         e.Handled = true;
                         break;
+                    case Key.R:
+                        if (e.IsRepeat == false)
+                        {
+                            button_no.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
+                        break;
                 }
             }
             else if (Keyboard.Modifiers == ModifierKeys.None)
@@ -417,58 +427,6 @@ namespace EpgTimer
             }
         }
 
-        void setPriority(int priority0)
-        {
-            try
-            {
-                List<ReserveData> list = new List<ReserveData>();
-                foreach (ReserveItem item in listView_reserve.SelectedItems)
-                {
-                    ReserveData reserveInfo = item.ReserveInfo;
-                    reserveInfo.RecSetting.Priority = BitConverter.GetBytes(priority0)[0]; ;
-                    list.Add(reserveInfo);
-                }
-                if (list.Count > 0)
-                {
-                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-        }
-
-        void setRecMode(int redMode0)
-        {
-            try
-            {
-                List<ReserveData> list = new List<ReserveData>();
-                foreach (ReserveItem item in listView_reserve.SelectedItems)
-                {
-                    ReserveData reserveInfo = item.ReserveInfo;
-                    reserveInfo.RecSetting.RecMode = BitConverter.GetBytes(redMode0)[0];
-                    list.Add(reserveInfo);
-                }
-                if (list.Count > 0)
-                {
-                    ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-        }
-
         private void MenuItem_Click_ProgramTable(object sender, RoutedEventArgs e)
         {
             ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
@@ -481,53 +439,42 @@ namespace EpgTimer
         private void listView_reserve_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             //選択されているすべての予約が同じ設定の場合だけチェックを表示する
-            byte recMode = 0xFF;
-            byte priority = 0xFF;
+            int noRec = -1;
+            int recMode = -1;
+            int priority = -1;
             foreach (ReserveItem item in listView_reserve.SelectedItems)
             {
-                if (recMode == 0xFF)
+                if (noRec < 0)
                 {
-                    recMode = item.ReserveInfo.RecSetting.RecMode;
-                }
-                else if (recMode != item.ReserveInfo.RecSetting.RecMode)
-                {
-                    recMode = 0xFE;
-                }
-                if (priority == 0xFF)
-                {
+                    noRec = item.ReserveInfo.RecSetting.IsNoRec() ? 1 : 0;
+                    recMode = item.ReserveInfo.RecSetting.GetRecMode();
                     priority = item.ReserveInfo.RecSetting.Priority;
                 }
-                else if (priority != item.ReserveInfo.RecSetting.Priority)
+                else
                 {
-                    priority = 0xFE;
+                    noRec = noRec != (item.ReserveInfo.RecSetting.IsNoRec() ? 1 : 0) ? 2 : noRec;
+                    recMode = recMode != item.ReserveInfo.RecSetting.GetRecMode() ? -1 : recMode;
+                    priority = priority != item.ReserveInfo.RecSetting.Priority ? -1 : priority;
                 }
             }
-            foreach (FrameworkElement item in ((ListViewItem)sender).ContextMenu.Items)
+            var itemChg = (MenuItem)((ListViewItem)sender).ContextMenu.Items.Cast<FrameworkElement>().First(a => a.Name == "cm_chg");
+            itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cm_no").Visibility =
+                (noRec == 0 ? Visibility.Visible : Visibility.Collapsed);
+            itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cm_no_inv").Visibility =
+                (noRec == 1 ? Visibility.Visible : Visibility.Collapsed);
+            itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cm_no_toggle").Visibility =
+                (noRec == 2 ? Visibility.Visible : Visibility.Collapsed);
+            int i = itemChg.Items.IndexOf(itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "recmode_all"));
+            for (int j = 0; j <= 4; j++)
             {
-                if (item.Name == "cm_chg")
-                {
-                    for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
-                    {
-                        MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
-                        if (subItem != null && subItem.Name == "recmode_0")
-                        {
-                            for (int j = 0; j <= 5; j++)
-                            {
-                                ((MenuItem)((MenuItem)item).Items[i + j]).IsChecked = (j == recMode);
-                            }
-                        }
-                        if (subItem != null && subItem.Name == "cm_pri")
-                        {
-                            for (int j = 0; j < subItem.Items.Count; j++)
-                            {
-                                ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == priority);
-                            }
-                            subItem.Header = string.Format((string)subItem.Tag, priority < 0xFE ? "" + priority : "*");
-                        }
-                    }
-                    break;
-                }
+                ((MenuItem)itemChg.Items[i + j]).IsChecked = (j == recMode);
             }
+            var itemPri = (MenuItem)itemChg.Items.Cast<FrameworkElement>().First(a => a.Name == "cm_pri");
+            for (int j = 0; j < itemPri.Items.Count; j++)
+            {
+                ((MenuItem)itemPri.Items[j]).IsChecked = (j + 1 == priority);
+            }
+            itemPri.Header = string.Format((string)itemPri.Tag, priority >= 0 ? "" + priority : "*");
         }
 
     }

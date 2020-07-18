@@ -133,6 +133,31 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// 右クリックメニュー 有効無効イベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_chg_no_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var reserve = (ReserveData)((MenuItem)sender).DataContext;
+                //録画モード情報を維持して無効化
+                reserve.RecSetting.RecMode =
+                    (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (reserve.RecSetting.GetRecMode() + 4) % 5);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(new List<ReserveData>() { reserve });
+                if (err != ErrCode.CMD_SUCCESS)
+                {
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        /// <summary>
         /// 右クリックメニュー 予約モード変更イベント呼び出し
         /// </summary>
         /// <param name="sender"></param>
@@ -145,11 +170,8 @@ namespace EpgTimer
                 reserve.RecSetting.RecMode = (byte)(sender == recmode_all ? 0 :
                                                     sender == recmode_only ? 1 :
                                                     sender == recmode_all_nodec ? 2 :
-                                                    sender == recmode_only_nodec ? 3 :
-                                                    sender == recmode_view ? 4 : 5);
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserve);
-                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
+                                                    sender == recmode_only_nodec ? 3 : 4);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(new List<ReserveData>() { reserve });
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
@@ -240,9 +262,9 @@ namespace EpgTimer
             cm_timeshift.IsEnabled = reserve != null;
             if (reserve != null)
             {
-                for (int i = 0; i <= 5; i++)
+                for (int i = 0; i <= 4; i++)
                 {
-                    ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).IsChecked = (i == reserve.RecSetting.RecMode);
+                    ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).IsChecked = (i == reserve.RecSetting.GetRecMode());
                 }
                 for (int i = 0; i < cm_pri.Items.Count; i++)
                 {

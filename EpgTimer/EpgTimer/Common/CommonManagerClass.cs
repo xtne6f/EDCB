@@ -329,7 +329,7 @@ namespace EpgTimer
                     { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
                 };
             }
-            RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
+            RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
             ReplaceUrlDictionary = CreateReplaceDictionary(",０,0,１,1,２,2,３,3,４,4,５,5,６,6,７,7,８,8,９,9" +
@@ -489,34 +489,15 @@ namespace EpgTimer
         public String ConvertReserveText(ReserveData reserveInfo)
         {
             String view = new TimeDuration(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
-            String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
-            String tuijyu = "";
-            if (reserveInfo.RecSetting.TuijyuuFlag == 0)
-            {
-                tuijyu = "しない";
-            }
-            else if (reserveInfo.RecSetting.TuijyuuFlag == 1)
-            {
-                tuijyu = "する";
-            }
-            String pittari = "";
-            if (reserveInfo.RecSetting.PittariFlag == 0)
-            {
-                pittari = "しない";
-            }
-            else if (reserveInfo.RecSetting.PittariFlag == 1)
-            {
-                pittari = "する";
-            }
-
             view += reserveInfo.StationName;
             view += " (" + ConvertNetworkNameText(reserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
             view += reserveInfo.Title + "\r\n\r\n";
-            view += "録画モード : " + recMode + "\r\n";
+            view += "有効 : " + (reserveInfo.RecSetting.IsNoRec() ? "いいえ" : "はい") + "\r\n";
+            view += "録画モード : " + RecModeList[reserveInfo.RecSetting.GetRecMode()] + "\r\n";
             view += "優先度 : " + reserveInfo.RecSetting.Priority.ToString() + "\r\n";
-            view += "追従 : " + tuijyu + "\r\n";
-            view += "ぴったり（？） : " + pittari + "\r\n";
+            view += "追従 : " + (reserveInfo.RecSetting.TuijyuuFlag == 0 ? "しない" : "する") + "\r\n";
+            view += "ぴったり（？） : " + (reserveInfo.RecSetting.PittariFlag == 0 ? "しない" : "する") + "\r\n";
             if ((reserveInfo.RecSetting.ServiceMode & 0x01) == 0)
             {
                 view += "指定サービス対象データ : デフォルト\r\n";

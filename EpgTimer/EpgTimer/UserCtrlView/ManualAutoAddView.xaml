@@ -12,6 +12,7 @@
             <MenuItem Header="時間" Name="Time" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名" Name="Title" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="StationName" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画有効" Name="RecEnabled" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="チューナー強制" Name="TunerID" IsCheckable="True" Click="headerSelect_Click" />
@@ -65,6 +66,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding StationName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="サービス名" Tag="StationName" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding RecEnabled}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画有効" Tag="RecEnabled" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding RecMode}">

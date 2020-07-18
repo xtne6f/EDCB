@@ -13,6 +13,7 @@
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名" Name="EventName" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="有効" Name="RecEnabled" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
@@ -33,20 +34,22 @@
         <local:ContextMenuEx x:Key="itemMenu">
             <MenuItem Header="変更 (_C)" Name="cm_chg">
                 <MenuItem Header="ダイアログ表示 (_X)" Click="button_change_Click" InputGestureText="Enter" />
+                <MenuItem Header="無効にする (_R)" Name="cm_no" Click="button_no_Click" InputGestureText="Ctrl + R" />
+                <MenuItem Header="有効にする (_R)" Name="cm_no_inv" Click="button_no_Click" InputGestureText="Ctrl + R" />
+                <MenuItem Header="有効←→無効 (_R)" Name="cm_no_toggle" Click="button_no_Click" InputGestureText="Ctrl + R" />
                 <Separator/>
-                <MenuItem Header="全サービス (_0)" Name="recmode_0" Click="recmode_Click" />
-                <MenuItem Header="指定サービス (_1)" Name="recmode_1" Click="recmode_Click" />
-                <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_2" Click="recmode_Click" />
-                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_3" Click="recmode_Click" />
-                <MenuItem Header="視聴 (_4)" Name="recmode_4" Click="recmode_Click" />
-                <MenuItem Header="無効 (_5)" Name="recmode_5" Click="button_no_Click" />
+                <MenuItem Header="全サービス (_0)" Name="recmode_all" Tag="0" Click="recmode_Click" />
+                <MenuItem Header="指定サービス (_1)" Tag="1" Click="recmode_Click" />
+                <MenuItem Header="全サービス（デコード処理なし） (_2)" Tag="2" Click="recmode_Click" />
+                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Tag="3" Click="recmode_Click" />
+                <MenuItem Header="視聴 (_4)" Tag="4" Click="recmode_Click" />
                 <Separator/>
                 <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
-                    <MenuItem Header="_1" Name="priority_1" Click="priority_Click" />
-                    <MenuItem Header="_2" Name="priority_2" Click="priority_Click" />
-                    <MenuItem Header="_3" Name="priority_3" Click="priority_Click" />
-                    <MenuItem Header="_4" Name="priority_4" Click="priority_Click" />
-                    <MenuItem Header="_5" Name="priority_5" Click="priority_Click" />
+                    <MenuItem Header="_1" Tag="1" Click="priority_Click" />
+                    <MenuItem Header="_2" Tag="2" Click="priority_Click" />
+                    <MenuItem Header="_3" Tag="3" Click="priority_Click" />
+                    <MenuItem Header="_4" Tag="4" Click="priority_Click" />
+                    <MenuItem Header="_5" Tag="5" Click="priority_Click" />
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
@@ -101,6 +104,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding EventName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding RecEnabled}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="有効" Tag="RecEnabled" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding RecMode}">
@@ -174,7 +182,7 @@
         <StackPanel Grid.Column="1" Name="stackPanel_button" Width="130">
             <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
             <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" />
-            <Button Content="無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" />
+            <Button Content="有効←→無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" />
             <Button Content="プログラム予約追加" Height="23" Name="button_add_manual" Margin="0,10,0,10" Click="button_add_manual_Click" />
             <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" />
         </StackPanel>
