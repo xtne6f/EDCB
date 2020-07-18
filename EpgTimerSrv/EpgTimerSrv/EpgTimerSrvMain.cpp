@@ -1038,7 +1038,7 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 {
 	__int64 maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
 	list.erase(std::remove_if(list.begin(), list.end(), [=](const RESERVE_DATA& a) {
-		return a.recSetting.recMode == RECMODE_NO || ConvertI64Time(a.startTime) > maxTime;
+		return a.recSetting.IsNoRec() || ConvertI64Time(a.startTime) > maxTime;
 	}), list.end());
 	std::sort(list.begin(), list.end(), [](const RESERVE_DATA& a, const RESERVE_DATA& b) {
 		return ConvertI64Time(a.startTime) < ConvertI64Time(b.startTime);
@@ -1058,7 +1058,7 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 		WCHAR text[128];
 		swprintf_s(text, L"%02d:%02d-%02d:%02d%ls %.31ls 【%.31ls】",
 		           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
-		           list[i].recSetting.recMode == RECMODE_VIEW ? L"▲" : L"",
+		           list[i].recSetting.GetRecMode() == RECMODE_VIEW ? L"▲" : L"",
 		           list[i].title.c_str(), list[i].stationName.c_str());
 		std::replace(text, text + wcslen(text), L'　', L' ');
 		std::replace(text, text + wcslen(text), L'&', L'＆');
@@ -1157,7 +1157,8 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 	r.reserveID = 0x7FFFFFFF;
 	ConvertSystemTime(startTime, &r.startTime);
 	r.startTimeEpg = r.startTime;
-	r.recSetting.recMode = RECMODE_SERVICE;
+	//無効かどうかを定数ではなくフラグで解釈することを示す(以前はRECMODE_SERVICE)
+	r.recSetting.recMode = REC_SETTING_DATA::DIV_RECMODE;
 	r.recSetting.priority = 1;
 	r.recSetting.suspendMode = (this->setting.recEndMode + 3) % 4 + 1;
 	r.recSetting.rebootFlag = this->setting.reboot;
@@ -1169,6 +1170,16 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 	//*以降をBatFileTagとして扱うことを示す
 	r.recSetting.batFilePath = L"*";
 	return r;
+}
+
+void CEpgTimerSrvMain::AdjustRecModeRange(REC_SETTING_DATA& recSetting) const
+{
+	if( recSetting.IsNoRec() ){
+		CBlockLock lock(&this->settingLock);
+		if( this->setting.fixNoRecToServiceOnly ){
+			recSetting.recMode = REC_SETTING_DATA::DIV_RECMODE;
+		}
+	}
 }
 
 bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec)
@@ -1476,7 +1487,9 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					item.eventID = info.event_id;
 					item.recSetting = data.recSetting;
 					if( data.searchInfo.chkRecEnd != 0 && this->reserveManager.IsFindRecEventInfo(info, data.searchInfo.chkRecDay) ){
-						item.recSetting.recMode = RECMODE_NO;
+						//無効にする
+						item.recSetting.recMode = REC_SETTING_DATA::DIV_RECMODE +
+							(item.recSetting.GetRecMode() + REC_SETTING_DATA::DIV_RECMODE - 1) % REC_SETTING_DATA::DIV_RECMODE;
 					}
 					item.comment = L"EPG自動予約";
 					if( resultList[i].second.empty() == false ){
@@ -1806,6 +1819,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
+						sys->AdjustRecModeRange(val[i].recSetting);
 						val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
 						sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 						sys->AutoAddReserveEPG(val[i], addList);
@@ -1842,6 +1856,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
+						sys->AdjustRecModeRange(val[i].recSetting);
 						if( sys->epgAutoAdd.ChgData(val[i]) ){
 							sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 							sys->AutoAddReserveEPG(val[i], addList);
@@ -1877,6 +1892,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
+						sys->AdjustRecModeRange(val[i].recSetting);
 						val[i].dataID = sys->manualAutoAdd.AddData(val[i]);
 						sys->AutoAddReserveProgram(val[i], addList);
 					}
@@ -1910,6 +1926,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
+						sys->AdjustRecModeRange(val[i].recSetting);
 						if( sys->manualAutoAdd.ChgData(val[i]) ){
 							sys->AutoAddReserveProgram(val[i], addList);
 						}
@@ -2383,6 +2400,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
+						sys->AdjustRecModeRange(val[i].recSetting);
 						val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
 						sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 						sys->AutoAddReserveEPG(val[i], addList);
@@ -2408,6 +2426,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
+						sys->AdjustRecModeRange(val[i].recSetting);
 						if( sys->epgAutoAdd.ChgData(val[i]) ){
 							sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 							sys->AutoAddReserveEPG(val[i], addList);
@@ -2451,6 +2470,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
+						sys->AdjustRecModeRange(val[i].recSetting);
 						val[i].dataID = sys->manualAutoAdd.AddData(val[i]);
 						sys->AutoAddReserveProgram(val[i], addList);
 					}
@@ -2475,6 +2495,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
+						sys->AdjustRecModeRange(val[i].recSetting);
 						if( sys->manualAutoAdd.ChgData(val[i]) ){
 							sys->AutoAddReserveProgram(val[i], addList);
 						}
@@ -2599,6 +2620,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 				{
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
+					sys->AdjustRecModeRange(item.recSetting);
 					item.dataID = sys->epgAutoAdd.AddData(item);
 					sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 					sys->AutoAddReserveEPG(item, addList);
@@ -2633,6 +2655,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 				{
 					CBlockLock lock(&sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
+					sys->AdjustRecModeRange(item.recSetting);
 					if( sys->epgAutoAdd.ChgData(item) ){
 						sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 						sys->AutoAddReserveEPG(item, addList);
@@ -3065,6 +3088,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		"   name=d[i]==0 and 'Default' or gp(n,'SetName','',p),"
 		"   recSetting={"
 		"    recMode=tonumber(gp(n,'RecMode',1,p)) or 1,"
+		"    noRecMode=tonumber(gp(n,'NoRecMode',1,p)) or 1,"
 		"    priority=tonumber(gp(n,'Priority',2,p)) or 2,"
 		"    tuijyuuFlag=gp(n,'TuijyuuFlag',1,p)~='0',"
 		"    serviceMode=tonumber(gp(n,'ServiceMode',0,p)) or 0,"
@@ -3845,6 +3869,7 @@ int CEpgTimerSrvMain::LuaAddOrChgAutoAdd(lua_State* L)
 				bool modified = true;
 				{
 					CBlockLock lock(&ws.sys->autoAddLock);
+					ws.sys->AdjustRecModeRange(item.recSetting);
 					if( item.dataID == 0 ){
 						item.dataID = ws.sys->epgAutoAdd.AddData(item);
 					}else{
@@ -3890,6 +3915,7 @@ int CEpgTimerSrvMain::LuaAddOrChgManuAdd(lua_State* L)
 			bool modified = true;
 			{
 				CBlockLock lock(&ws.sys->autoAddLock);
+				ws.sys->AdjustRecModeRange(item.recSetting);
 				if( item.dataID == 0 ){
 					item.dataID = ws.sys->manualAutoAdd.AddData(item);
 				}else{
@@ -4145,7 +4171,8 @@ void CEpgTimerSrvMain::PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r)
 void CEpgTimerSrvMain::PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_DATA& rs)
 {
 	lua_State* L = ws.L;
-	LuaHelp::reg_int(L, "recMode", rs.recMode);
+	LuaHelp::reg_int(L, "recMode", rs.IsNoRec() ? REC_SETTING_DATA::DIV_RECMODE : rs.GetRecMode());
+	LuaHelp::reg_int(L, "noRecMode", rs.GetRecMode());
 	LuaHelp::reg_int(L, "priority", rs.priority);
 	LuaHelp::reg_boolean(L, "tuijyuuFlag", rs.tuijyuuFlag != 0);
 	LuaHelp::reg_int(L, "serviceMode", (int)rs.serviceMode);
@@ -4267,6 +4294,12 @@ void CEpgTimerSrvMain::FetchRecSettingData(CLuaWorkspace& ws, REC_SETTING_DATA& 
 {
 	lua_State* L = ws.L;
 	rs.recMode = (BYTE)LuaHelp::get_int(L, "recMode");
+	if( rs.IsNoRec() ){
+		//無効状態と録画モード情報をマージ
+		rs.recMode = REC_SETTING_DATA::DIV_RECMODE +
+			((BYTE)(LuaHelp::get_boolean(L, "noRecMode") ? LuaHelp::get_int(L, "noRecMode") : RECMODE_SERVICE) +
+				REC_SETTING_DATA::DIV_RECMODE - 1) % REC_SETTING_DATA::DIV_RECMODE;
+	}
 	rs.priority = (BYTE)LuaHelp::get_int(L, "priority");
 	rs.tuijyuuFlag = LuaHelp::get_boolean(L, "tuijyuuFlag");
 	rs.serviceMode = (BYTE)LuaHelp::get_int(L, "serviceMode");

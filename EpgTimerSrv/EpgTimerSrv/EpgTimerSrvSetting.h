@@ -42,6 +42,7 @@ public:
 		bool retryOtherTuners;
 		bool separateFixedTuners;
 		bool commentAutoAdd;
+		bool fixNoRecToServiceOnly;
 		bool autoDelRecInfo;
 		DWORD autoDelRecInfoNum;
 		DWORD recInfo2Max;

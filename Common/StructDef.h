@@ -36,6 +36,13 @@ struct REC_SETTING_DATA {
 	DWORD tunerID;				//強制的に使用Tunerを固定
 	//CMD_VER 2以降
 	vector<REC_FILE_SET_INFO> partialRecFolder;	//部分受信サービス録画のフォルダ
+	enum {
+		DIV_RECMODE = 5,		//recModeの録画モード情報以外の除数
+	};
+	//無効かどうか
+	bool IsNoRec() const { return recMode / DIV_RECMODE % 2 != 0; }
+	//recModeの録画モード情報のみ
+	BYTE GetRecMode() const { return (recMode + recMode / DIV_RECMODE % 2) % DIV_RECMODE; }
 };
 
 //登録予約情報
