@@ -35,6 +35,7 @@
         <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
             <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="開始日時" Name="StartTimeNoDuration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="長さ" Name="Duration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
@@ -99,6 +100,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding StartTime}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding StartTimeNoDuration}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="開始日時" Tag="StartTimeNoDuration" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Duration}">

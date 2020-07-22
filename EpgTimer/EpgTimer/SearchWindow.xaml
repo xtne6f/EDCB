@@ -85,7 +85,7 @@
                     </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left" Tag="StartTime" />
+                            <GridViewColumnHeader Content="開始日時" HorizontalContentAlignment="Left" Tag="StartTime" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

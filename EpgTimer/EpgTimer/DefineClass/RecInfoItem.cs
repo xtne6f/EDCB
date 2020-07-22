@@ -45,6 +45,10 @@ namespace EpgTimer
         {
             get { return new CommonManager.TimeDuration(true, RecInfo.StartTime, true, RecInfo.DurationSecond); }
         }
+        public CommonManager.TimeDuration StartTimeNoDuration
+        {
+            get { return new CommonManager.TimeDuration(true, RecInfo.StartTime, true, double.NaN); }
+        }
         public TimeSpan Duration
         {
             get { return TimeSpan.FromSeconds(RecInfo.DurationSecond); }

@@ -9,6 +9,7 @@
     <UserControl.Resources>
         <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="開始日時" Name="StartTimeNoDuration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="長さ" Name="Duration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
@@ -97,6 +98,16 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Background="{Binding ResBackColor}" Text="{Binding StartTime}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="開始日時" Tag="StartTimeNoDuration" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Background="{Binding ResBackColor}" Text="{Binding StartTimeNoDuration}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
