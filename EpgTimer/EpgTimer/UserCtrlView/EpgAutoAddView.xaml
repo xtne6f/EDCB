@@ -52,6 +52,7 @@
         <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
@@ -65,10 +66,15 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_key">
-                    <GridViewColumn DisplayMemberBinding="{Binding AndKey}">
+                    <GridViewColumn>
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="Andキーワード" Tag="AndKey" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Background="{Binding KeyEnabledBackColor}" Text="{Binding AndKey}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding NotKey}">
                         <GridViewColumn.Header>

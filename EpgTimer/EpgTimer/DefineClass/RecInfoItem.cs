@@ -75,10 +75,14 @@ namespace EpgTimer
         }
         public SolidColorBrush BackColor
         {
+            get { return Settings.BrushCache.RecEndDefBrush; }
+        }
+        public SolidColorBrush DropScrambleBackColor
+        {
             get
             {
                 return RecInfo.Drops > 0 ? Settings.BrushCache.RecEndErrBrush :
-                       RecInfo.Scrambles > 0 ? Settings.BrushCache.RecEndWarBrush : Settings.BrushCache.RecEndDefBrush;
+                       RecInfo.Scrambles > 0 ? Settings.BrushCache.RecEndWarBrush : null;
             }
         }
         public SolidColorBrush ResultBackColor

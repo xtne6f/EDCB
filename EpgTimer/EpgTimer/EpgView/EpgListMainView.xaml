@@ -33,7 +33,7 @@
                     <GridView x:Name="gridView_event">
                         <GridViewColumn Width="30">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content=""/>
+                                <GridViewColumnHeader Tag="Reserved" />
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -41,24 +41,29 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
+                        <GridViewColumn>
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left" Tag="StartTime" />
                             </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Background="{Binding ResBackColor}" Text="{Binding StartTime}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left" Tag="NetworkName" />
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" Tag="ServiceName" />
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left" Tag="EventName" />
                             </GridViewColumn.Header>
                         </GridViewColumn>
                     </GridView>

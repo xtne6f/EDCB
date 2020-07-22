@@ -107,10 +107,15 @@
                             <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding EventName}">
+                    <GridViewColumn>
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Background="{Binding DropScrambleBackColor}" Text="{Binding EventName}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Drops}">
                         <GridViewColumn.Header>

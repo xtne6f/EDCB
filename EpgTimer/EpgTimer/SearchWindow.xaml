@@ -74,10 +74,15 @@
                             <GridViewColumnHeader Tag="Reserved" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
+                    <GridViewColumn>
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left" Tag="StartTime" />
                         </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Background="{Binding ResBackColor}" Text="{Binding StartTime}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramDuration}">
                         <GridViewColumn.Header>

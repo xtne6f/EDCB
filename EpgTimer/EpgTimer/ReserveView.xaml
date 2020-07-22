@@ -81,10 +81,15 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_reserve">
-                    <GridViewColumn DisplayMemberBinding="{Binding StartTime}">
+                    <GridViewColumn>
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Background="{Binding ResBackColor}" Text="{Binding StartTime}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Duration}">
                         <GridViewColumn.Header>

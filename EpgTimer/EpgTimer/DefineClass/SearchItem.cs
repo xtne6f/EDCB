@@ -72,12 +72,16 @@ namespace EpgTimer
         }
         public SolidColorBrush BackColor
         {
+            get { return Settings.BrushCache.ResDefBrush; }
+        }
+        public SolidColorBrush ResBackColor
+        {
             get
             {
-                return ReserveInfo == null ? Settings.BrushCache.ResDefBrush :
+                return ReserveInfo == null ? null :
                        ReserveInfo.RecSetting.IsNoRec() ? Settings.BrushCache.ResNoBrush :
                        ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
-                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
+                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : null;
             }
         }
         public double Opacity

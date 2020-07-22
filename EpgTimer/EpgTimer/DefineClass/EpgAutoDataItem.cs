@@ -258,10 +258,15 @@ namespace EpgTimer
 
         public SolidColorBrush BackColor
         {
+            get { return Settings.BrushCache.ResDefBrush; }
+        }
+
+        public SolidColorBrush KeyEnabledBackColor
+        {
             get
             {
                 return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ?
-                       Settings.BrushCache.ResNoBrush : Settings.BrushCache.ResDefBrush;
+                       Settings.BrushCache.ResNoBrush : null;
             }
         }
 

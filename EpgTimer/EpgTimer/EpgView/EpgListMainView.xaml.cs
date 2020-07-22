@@ -410,12 +410,11 @@ namespace EpgTimer
 
                 if (_lastHeaderClicked != null)
                 {
-                    //string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
                     Sort(_lastHeaderClicked, _lastDirection);
                 }
                 else
                 {
-                    string header = ((Binding)gridView_event.Columns[1].DisplayMemberBinding).Path.Path;
+                    string header = (string)((GridViewColumnHeader)gridView_event.Columns[1].Header).Tag;
                     Sort(header, _lastDirection);
                     _lastHeaderClicked = header;
                 }
@@ -886,11 +885,7 @@ namespace EpgTimer
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    string header = "Reserved";
-                    if (headerClicked.Column.DisplayMemberBinding != null)
-                    {
-                        header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                    }
+                    string header = (string)headerClicked.Tag;
                     if (header != _lastHeaderClicked)
                     {
                         direction = ListSortDirection.Ascending;
