@@ -67,10 +67,19 @@
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                    <Setter Property="Background" Value="{Binding BackColor}" />
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
                     <EventSetter Event="KeyDown" Handler="listView_recinfo_KeyDown" />
+                    <Style.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="ItemsControl.AlternationIndex" Value="0" />
+                                <Condition Property="IsSelected" Value="False" />
+                                <Condition Property="IsMouseOver" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{Binding BackColor}" />
+                        </MultiTrigger>
+                    </Style.Triggers>
                 </Style>
             </ListView.Resources>
             <ListView.View>

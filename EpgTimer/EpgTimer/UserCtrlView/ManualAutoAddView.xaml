@@ -44,6 +44,16 @@
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
                     <EventSetter Event="KeyDown" Handler="listView_key_KeyDown" />
+                    <Style.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="ItemsControl.AlternationIndex" Value="0" />
+                                <Condition Property="IsSelected" Value="False" />
+                                <Condition Property="IsMouseOver" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{Binding BackColor}" />
+                        </MultiTrigger>
+                    </Style.Triggers>
                 </Style>
             </ListView.Resources>
             <ListView.View>

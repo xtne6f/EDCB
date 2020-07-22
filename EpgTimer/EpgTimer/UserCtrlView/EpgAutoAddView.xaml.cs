@@ -44,6 +44,7 @@ namespace EpgTimer
             {
                 stackPanel_button.Visibility = Visibility.Collapsed;
             }
+            listView_key.AlternationCount = Settings.Instance.ResAlternationCount;
         }
 
         public void SaveSize()

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Media;
 
 namespace EpgTimer
 {
@@ -94,6 +95,11 @@ namespace EpgTimer
         public uint ID
         {
             get { return ManualAutoAddInfo.dataID; }
+        }
+
+        public SolidColorBrush BackColor
+        {
+            get { return Settings.BrushCache.ResDefBrush; }
         }
     }
 }

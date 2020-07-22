@@ -51,6 +51,7 @@ namespace EpgTimer
             catch
             {
             }
+            listView_result.AlternationCount = Settings.Instance.ResAlternationCount;
         }
 
         public void SetSearchDefKey(EpgSearchKeyInfo key)

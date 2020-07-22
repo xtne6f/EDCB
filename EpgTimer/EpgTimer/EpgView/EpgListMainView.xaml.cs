@@ -44,6 +44,7 @@ namespace EpgTimer
 
             setViewInfo = setInfo;
             baseTime = _baseTime;
+            listView_event.AlternationCount = Settings.Instance.ResAlternationCount;
         }
 
         /// <summary>

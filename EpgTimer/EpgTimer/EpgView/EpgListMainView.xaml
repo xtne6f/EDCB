@@ -22,11 +22,20 @@
             <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
-                        <Setter Property="Background" Value="{Binding BackColor}" />
                         <Setter Property="Opacity" Value="{Binding Opacity}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_event_MouseDoubleClick"/>
                         <Setter Property="BorderThickness" Value="5,0,0,1" />
                         <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
+                        <Style.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="ItemsControl.AlternationIndex" Value="0" />
+                                    <Condition Property="IsSelected" Value="False" />
+                                    <Condition Property="IsMouseOver" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Background" Value="{Binding BackColor}" />
+                            </MultiTrigger>
+                        </Style.Triggers>
                     </Style>
                 </ListView.Resources>
                 <ListView.View>
