@@ -73,7 +73,11 @@ namespace EpgTimer
         {
             get { return ReserveInfo.Comment; }
         }
-        public List<String> RecFileName
+        public string RecFileName
+        {
+            get { return ReserveInfo.RecFileNameList.FirstOrDefault() ?? ""; }
+        }
+        public List<string> RecFileNameList
         {
             get { return ReserveInfo.RecFileNameList; }
         }

@@ -20,6 +20,7 @@
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予約状況" Name="Comment" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="予定ファイル名リスト" Name="RecFileNameList" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="プログラム" Name="IsProgram" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="チューナー強制" Name="TunerID" IsCheckable="True" Click="headerSelect_Click" />
@@ -69,6 +70,7 @@
         <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                     <Setter Property="BorderThickness" Value="5,0,0,1" />
@@ -156,13 +158,18 @@
                             <GridViewColumnHeader Content="予約状況" Tag="Comment" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding RecFileName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="予定ファイル名" Tag="RecFileName" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="予定ファイル名リスト" Tag="RecFileNameList" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding RecFileName}" SelectedIndex="0"></ComboBox>
+                                <ComboBox ItemsSource="{Binding RecFileNameList}" SelectedIndex="0" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

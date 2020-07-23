@@ -448,8 +448,8 @@ namespace EpgTimer
             r.ResDefColorB              = (byte)ConvertXElem(x, w, "ResDefColorB", ResDefColorB, 0xFF);
             r.ResErrColorA              = (byte)ConvertXElem(x, w, "ResErrColorA", ResErrColorA, 0x80);
             r.ResErrColorR              = (byte)ConvertXElem(x, w, "ResErrColorR", ResErrColorR, 0xFF);
-            r.ResErrColorG              = (byte)ConvertXElem(x, w, "ResErrColorG", ResErrColorG, 0);
-            r.ResErrColorB              = (byte)ConvertXElem(x, w, "ResErrColorB", ResErrColorB, 0);
+            r.ResErrColorG              = (byte)ConvertXElem(x, w, "ResErrColorG", ResErrColorG, 0x20);
+            r.ResErrColorB              = (byte)ConvertXElem(x, w, "ResErrColorB", ResErrColorB, 0x20);
             r.ResWarColorA              = (byte)ConvertXElem(x, w, "ResWarColorA", ResWarColorA, 0x80);
             r.ResWarColorR              = (byte)ConvertXElem(x, w, "ResWarColorR", ResWarColorR, 0xFF);
             r.ResWarColorG              = (byte)ConvertXElem(x, w, "ResWarColorG", ResWarColorG, 0xFF);
@@ -465,8 +465,8 @@ namespace EpgTimer
             r.RecEndDefColorB           = (byte)ConvertXElem(x, w, "RecEndDefColorB", RecEndDefColorB, 0x80);
             r.RecEndErrColorA           = (byte)ConvertXElem(x, w, "RecEndErrColorA", RecEndErrColorA, 0x80);
             r.RecEndErrColorR           = (byte)ConvertXElem(x, w, "RecEndErrColorR", RecEndErrColorR, 0xFF);
-            r.RecEndErrColorG           = (byte)ConvertXElem(x, w, "RecEndErrColorG", RecEndErrColorG, 0);
-            r.RecEndErrColorB           = (byte)ConvertXElem(x, w, "RecEndErrColorB", RecEndErrColorB, 0);
+            r.RecEndErrColorG           = (byte)ConvertXElem(x, w, "RecEndErrColorG", RecEndErrColorG, 0x20);
+            r.RecEndErrColorB           = (byte)ConvertXElem(x, w, "RecEndErrColorB", RecEndErrColorB, 0x20);
             r.RecEndWarColorA           = (byte)ConvertXElem(x, w, "RecEndWarColorA", RecEndWarColorA, 0x80);
             r.RecEndWarColorR           = (byte)ConvertXElem(x, w, "RecEndWarColorR", RecEndWarColorR, 0xFF);
             r.RecEndWarColorG           = (byte)ConvertXElem(x, w, "RecEndWarColorG", RecEndWarColorG, 0xFF);
