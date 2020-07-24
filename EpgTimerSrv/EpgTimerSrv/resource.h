@@ -147,6 +147,7 @@
 #define IDC_BUTTON_SET_VIEW_BON_DN              40523
 #define IDC_BUTTON_SET_VIEW_BON_ADD             40524
 #define IDC_BUTTON_SET_VIEW_BON_DEL             40525
+#define IDC_CHECK_SET_BALLOON_TIP_REALTIME      40526
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

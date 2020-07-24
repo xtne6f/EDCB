@@ -18,7 +18,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 2, iniPath);
 	s.notifyTipStyle = GetPrivateProfileInt(L"SET", L"NotifyTipStyle", 0, iniPath);
 	s.blinkPreRec = GetPrivateProfileInt(L"SET", L"BlinkPreRec", 0, iniPath) != 0;
-	s.noBalloonTip = GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath) != 0;
+	s.noBalloonTip = GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath);
 	s.saveNotifyLog = GetPrivateProfileInt(L"SET", L"SaveNotifyLog", 0, iniPath) != 0;
 	s.saveDebugLog = GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath) != 0;
 	s.wakeTime = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath);
@@ -561,7 +561,8 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SHOW_TRAY, setting.residentMode != 1);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_NOTIFY_TIP_STYLE, setting.notifyTipStyle == 1);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BLINK_PRE_REC, setting.blinkPreRec);
-	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP, setting.noBalloonTip);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP, setting.noBalloonTip == 1);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_BALLOON_TIP_REALTIME, setting.noBalloonTip == 2);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_NOTIFY_LOG, setting.saveNotifyLog);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG, setting.saveDebugLog);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_COMPAT_TKNTREC, GetPrivateProfileInt(L"SET", L"CompatFlags", 0, iniPath.c_str()) % 4096 == 4095);
@@ -846,7 +847,9 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	                           (GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SHOW_TRAY) ? 2 : 1) : 0, iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"NotifyTipStyle", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_NOTIFY_TIP_STYLE), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"BlinkPreRec", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BLINK_PRE_REC), iniPath.c_str());
-	WritePrivateProfileInt(L"SET", L"NoBalloonTip", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"NoBalloonTip",
+	                       GetDlgButtonCheck(hwnd, IDC_CHECK_SET_NO_BALLOON_TIP) ? 1 :
+	                       GetDlgButtonCheck(hwnd, IDC_CHECK_SET_BALLOON_TIP_REALTIME) ? 2 : 0, iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"SaveNotifyLog", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_NOTIFY_LOG), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"SaveDebugLog", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_SAVE_DEBUG_LOG), iniPath.c_str());
 	//チェックを操作したときだけ変化させる
@@ -1206,12 +1209,19 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 		case IDC_CHECK_SET_RESIDENT:
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_SHOW_TRAY), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_NO_BALLOON_TIP), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
+			SendMessage(hDlg, WM_COMMAND, IDC_CHECK_SET_NO_BALLOON_TIP, 0);
 			//FALL THROUGH!
 		case IDC_CHECK_SET_SHOW_TRAY:
 			{
 				bool b = GetDlgButtonCheck(hDlg, IDC_CHECK_SET_RESIDENT) && GetDlgButtonCheck(hDlg, IDC_CHECK_SET_SHOW_TRAY);
 				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_NOTIFY_TIP_STYLE), b);
 				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_BLINK_PRE_REC), b);
+			}
+			break;
+		case IDC_CHECK_SET_NO_BALLOON_TIP:
+			{
+				bool b = GetDlgButtonCheck(hDlg, IDC_CHECK_SET_RESIDENT) && GetDlgButtonCheck(hDlg, LOWORD(wParam)) == false;
+				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_BALLOON_TIP_REALTIME), b);
 			}
 			break;
 		case IDC_BUTTON_SET_RECNAME_PLUGIN:

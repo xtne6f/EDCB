@@ -10,7 +10,7 @@ public:
 		int residentMode;
 		int notifyTipStyle;
 		bool blinkPreRec;
-		bool noBalloonTip;
+		int noBalloonTip;
 		bool saveNotifyLog;
 		bool saveDebugLog;
 		DWORD wakeTime;

@@ -62,7 +62,7 @@ struct MAIN_WINDOW_CONTEXT {
 	vector<RESERVE_DATA> autoAddCheckAddList;
 	bool autoAddCheckAddCountUpdated;
 	bool taskFlag;
-	bool showBalloonTip;
+	int noBalloonTip;
 	//0,1,2:NOTIFY_UPDATE_SRV_STATUSの値, 3:無効, 3<:点滅
 	DWORD notifySrvStatus;
 	DWORD notifyCount;
@@ -76,7 +76,7 @@ struct MAIN_WINDOW_CONTEXT {
 		, shutdownPendingTick(0)
 		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
 		, taskFlag(false)
-		, showBalloonTip(false)
+		, noBalloonTip(1)
 		, notifySrvStatus(0)
 		, notifyCount(0)
 		, notifyTipActiveTime(LLONG_MAX) {}
@@ -474,7 +474,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->reserveManager.Finalize();
 		OutputDebugString(L"*** Server finalized ***\r\n");
 		//タスクトレイから削除
-		SendMessage(hwnd, WM_APP_SHOW_TRAY, FALSE, FALSE);
+		SendMessage(hwnd, WM_APP_SHOW_TRAY, FALSE, 0);
 		ctx->sys->hwndMain = NULL;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
 		RemoveProp(hwnd, L"PopupSel");
@@ -651,13 +651,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					}
 				}
 			}
-			if( ctx->showBalloonTip && CNotifyManager::ExtractTitleFromInfo(&info).first[0] ){
+			if( ctx->noBalloonTip != 1 && CNotifyManager::ExtractTitleFromInfo(&info).first[0] ){
 				//バルーンチップ表示
 				NOTIFYICONDATA nid = {};
 				nid.cbSize = NOTIFYICONDATA_V2_SIZE;
 				nid.hWnd = hwnd;
 				nid.uID = 1;
-				nid.uFlags = NIF_INFO;
+				nid.uFlags = NIF_INFO | (ctx->noBalloonTip == 2 ? 0x40 : 0); //NIF_REALTIME
 				nid.dwInfoFlags = NIIF_INFO;
 				nid.uTimeout = 10000; //効果はない
 				wcsncpy_s(nid.szInfoTitle, CNotifyManager::ExtractTitleFromInfo(&info).first, _TRUNCATE);
@@ -699,7 +699,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			Shell_NotifyIcon(NIM_DELETE, &nid);
 		}
 		ctx->taskFlag = wParam != FALSE;
-		ctx->showBalloonTip = ctx->taskFlag && lParam;
+		ctx->noBalloonTip = ctx->taskFlag ? (int)lParam : 1;
 		if( ctx->taskFlag ){
 			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
 		}
@@ -1140,7 +1140,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 			//常駐する(CMD2_EPG_SRV_CLOSEを無視)
 			this->residentFlag = true;
 			//タスクトレイに表示するかどうか
-			PostMessage(this->hwndMain, WM_APP_SHOW_TRAY, this->setting.residentMode >= 2, !this->setting.noBalloonTip);
+			PostMessage(this->hwndMain, WM_APP_SHOW_TRAY, this->setting.residentMode >= 2, this->setting.noBalloonTip);
 		}
 	}else if( this->setting.residentMode >= 2 ){
 		//チップヘルプを更新するため
