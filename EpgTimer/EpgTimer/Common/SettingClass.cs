@@ -164,6 +164,7 @@ namespace EpgTimer
         public List<EpgSetting> EpgSettingList { get; set; }
         public bool NoToolTip { get; set; }
         public bool NoBallonTips { get; set; }
+        public bool BalloonTipRealtime { get; set; }
         public int ForceHideBalloonTipSec { get; set; }
         public bool PlayDClick { get; set; }
         public bool ConfirmDelRecInfo { get; set; }
@@ -366,6 +367,7 @@ namespace EpgTimer
             }
             r.NoToolTip                 = ConvertXElem(x, w, "NoToolTip", NoToolTip, false);
             r.NoBallonTips              = ConvertXElem(x, w, "NoBallonTips", NoBallonTips, false);
+            r.BalloonTipRealtime        = ConvertXElem(x, w, "BalloonTipRealtime", BalloonTipRealtime, false);
             r.ForceHideBalloonTipSec    = (int)ConvertXElem(x, w, "ForceHideBalloonTipSec", ForceHideBalloonTipSec, 0);
             r.PlayDClick                = ConvertXElem(x, w, "PlayDClick", PlayDClick, false);
             r.ConfirmDelRecInfo         = ConvertXElem(x, w, "ConfirmDelRecInfo", ConfirmDelRecInfo, true);

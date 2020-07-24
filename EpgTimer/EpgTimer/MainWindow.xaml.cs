@@ -1137,7 +1137,7 @@ namespace EpgTimer
                                        notifyID == UpdateNotifyItem.ChgTuijyu ? "番組変更" : "EPG取得";
                         string tips = notifyID == UpdateNotifyItem.EpgCapStart ? "開始" :
                                       notifyID == UpdateNotifyItem.EpgCapEnd ? "終了" : status.param4;
-                        taskTray.ShowBalloonTip(title, tips, 10 * 1000);
+                        taskTray.ShowBalloonTip(title, tips, 10 * 1000, Settings.Instance.BalloonTipRealtime);
                     }
                     CommonManager.Instance.NotifyLogList.Add(status);
                     break;
