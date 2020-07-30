@@ -28,7 +28,6 @@
 #define RECMODE_ALL_NOB25 2 //全サービス（B25処理なし）
 #define RECMODE_SERVICE_NOB25 3 //指定サービスのみ（B25処理なし）
 #define RECMODE_VIEW 4 //視聴
-#define RECMODE_NO 5 //無効
 
 #define RESERVE_EXECUTE 0 //普通に予約実行
 #define RESERVE_PILED_UP 1 //重なって実行できない予約あり

@@ -1,13 +1,13 @@
-TARGET ?= EpgTimerPlugIn.tvtp
+TARGET ?= EpgTimerPlugIn
 CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE $(CPPFLAGS)
-CXXFLAGS := -Os $(CXXFLAGS)
-LDFLAGS := -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
+CXXFLAGS := -std=c++17 -pedantic-errors -Os $(CXXFLAGS)
+LDFLAGS2 = -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
 LDLIBS := -lws2_32 -liphlpapi $(LDLIBS)
 WINDRES ?= windres
 DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
 CUR_ALL_H := $(wildcard *.h)
 
-$(TARGET): $(addsuffix .obj, \
+$(TARGET).tvtp: $(addsuffix .obj, \
   Common__CtrlCmdUtil.cpp \
   Common__PathUtil.cpp \
   Common__PipeServer.cpp \
@@ -18,7 +18,7 @@ $(TARGET): $(addsuffix .obj, \
   StreamCtrlDlg.cpp \
   EpgTimerPlugIn.rc \
   )
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $(LDFLAGS2) $^ $(LDLIBS) -o $@
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp stdafx.h.gch $(DEP_ALL_H)
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 Common__%.cpp.obj: ../../Common/%.cpp stdafx.h.gch $(DEP_ALL_H)
@@ -36,4 +36,4 @@ else
 	powershell -NoProfile -Command "&{cat $<|Out-File -Encoding UTF8 $@}"
 endif
 clean:
-	$(RM) stdafx.h.gch *.obj $(TARGET)
+	$(RM) stdafx.h.gch *.obj $(TARGET).tvtp $(TARGET).map

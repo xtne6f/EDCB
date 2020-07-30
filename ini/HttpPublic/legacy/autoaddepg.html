@@ -56,7 +56,7 @@ for i=page*PAGE_COUNT+1,math.min(#a,(page+1)*PAGE_COUNT) do
     ..'<td'..cl..'>'..v.notKey
     ..'<td'..cl..'>'..(#v.contentList>0 and edcb.GetGenreName(v.contentList[1].content_nibble)..(#v.contentList>1 and 'など' or '') or '')
     ..'<td'..cl..'>'..serviceName..(#v.serviceList>1 and 'など' or '')
-    ..'<td'..cl..'>'..(RecModeTextList()[a[i].recSetting.recMode+1] or '')
+    ..'<td'..cl..'>'..(RecModeTextList()[(a[i].recSetting.recMode~=5 and a[i].recSetting.recMode or a[i].recSetting.noRecMode or 1)+1] or '')
     ..'<td'..cl..'>'..a[i].recSetting.priority..'</tr>\n')
 end
 

@@ -120,6 +120,7 @@
 #define IDC_RADIO_SET_DEL_RESERVE_END           40422
 #define IDC_RADIO_SET_DEL_RESERVE_CANCEL        40423
 #define IDC_CHECK_SET_REC_INFO_FOLDER_ONLY      40424
+#define IDC_CHECK_SET_FIX_NO_REC                40425
 #define IDC_CHECK_SET_TCP_SERVER                40500
 #define IDC_CHECK_SET_TCP_IPV6                  40501
 #define IDC_EDIT_SET_TCP_PORT                   40502
@@ -146,6 +147,7 @@
 #define IDC_BUTTON_SET_VIEW_BON_DN              40523
 #define IDC_BUTTON_SET_VIEW_BON_ADD             40524
 #define IDC_BUTTON_SET_VIEW_BON_DEL             40525
+#define IDC_CHECK_SET_BALLOON_TIP_REALTIME      40526
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

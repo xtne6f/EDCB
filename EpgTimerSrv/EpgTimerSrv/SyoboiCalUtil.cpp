@@ -143,7 +143,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 			break;
 		}
 		const RESERVE_DATA* info = &(*reserveList)[i];
-		if( info->recSetting.recMode == RECMODE_NO || info->recSetting.recMode == RECMODE_VIEW ){
+		if( info->recSetting.IsNoRec() || info->recSetting.GetRecMode() == RECMODE_VIEW ){
 			continue;
 		}
 		LPCWSTR device = L"";

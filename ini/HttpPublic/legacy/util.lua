@@ -51,14 +51,13 @@ end
 
 --録画設定フォームのテンプレート
 function RecSettingTemplate(rs)
-  local s='録画モード: <select name="recMode">'
+  local s='<input type="checkbox" name="recEnabled" value="1"'..(rs.recMode~=5 and ' checked' or '')..'>有効<br>\n'
+    ..'録画モード: <select name="recMode">'
   for i=1,#RecModeTextList() do
-    s=s..'<option value="'..(i-1)..'"'..(rs.recMode==i-1 and ' selected' or '')..'>'..RecModeTextList()[i]
+    s=s..'<option value="'..(i-1)..'"'..((rs.recMode~=5 and rs.recMode or rs.noRecMode or 1)==i-1 and ' selected' or '')..'>'..RecModeTextList()[i]
   end
   s=s..'</select><br>\n'
-    ..'イベントリレー追従: <select name="tuijyuuFlag">'
-    ..'<option value="0"'..(not rs.tuijyuuFlag and ' selected' or '')..'>しない'
-    ..'<option value="1"'..(rs.tuijyuuFlag and ' selected' or '')..'>する</select><br>\n'
+    ..'<input type="checkbox" name="tuijyuuFlag" value="1"'..(rs.tuijyuuFlag and ' checked' or '')..'>イベントリレー追従<br>\n'
     ..'優先度: <select name="priority">'
   for i=1,5 do
     s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected' or '')..'>'..i..(i==1 and ' (低)' or i==5 and ' (高)' or '')
@@ -66,9 +65,7 @@ function RecSettingTemplate(rs)
   --デフォルト値
   local rsdef=(edcb.GetReserveData(0x7FFFFFFF) or {}).recSetting
   s=s..'</select><br>\n'
-    ..'ぴったり（？）録画: <select name="pittariFlag">'
-    ..'<option value="0"'..(not rs.pittariFlag and ' selected' or '')..'>しない'
-    ..'<option value="1"'..(rs.pittariFlag and ' selected' or '')..'>する</select><br>\n'
+    ..'<input type="checkbox" name="pittariFlag" value="1"'..(rs.pittariFlag and ' checked' or '')..'>ぴったり（？）録画<br>\n'
     ..'録画マージン: <input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked')..'>デフォルト || '
     ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or rsdef and rsdef.startMargin or 0)..'" size="5"> '
     ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or rsdef and rsdef.endMargin or 0)..'" size="5"><br>\n'
@@ -106,7 +103,7 @@ function RecSettingTemplate(rs)
 end
 
 function RecModeTextList()
-  return {'全サービス','指定サービス','全サービス（デコード処理なし）','指定サービス（デコード処理なし）','視聴','無効'}
+  return {'全サービス','指定サービス','全サービス（デコード処理なし）','指定サービス（デコード処理なし）','視聴'}
 end
 
 function NetworkType(onid)

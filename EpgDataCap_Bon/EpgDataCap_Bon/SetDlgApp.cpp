@@ -47,6 +47,7 @@ BOOL CSetDlgApp::OnInitDialog()
 	Button_SetCheck(GetDlgItem(IDC_CHECK_NO_LOG_SCRAMBLE), GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_DROP_LOG_AS_UTF8), GetPrivateProfileInt(L"SET", L"DropLogAsUtf8", 0, appIniPath.c_str()));
 	Button_SetCheck(GetDlgItem(IDC_CHECK_SAVE_DEBUG_LOG), GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_TRACE_BON_LEVEL), GetPrivateProfileInt(L"SET", L"TraceBonDriverLevel", 0, appIniPath.c_str()) != 0);
 	SetDlgItemInt(m_hWnd, IDC_EDIT_TS_BUFF_MAX, GetPrivateProfileInt(L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str()), FALSE);
 	int buffMax = GetPrivateProfileInt(L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str());
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WRITE_BUFF_MAX, buffMax < 0 ? 0 : buffMax, FALSE);
@@ -78,6 +79,15 @@ void CSetDlgApp::SaveIni(void)
 	WritePrivateProfileInt( L"SET", L"NoLogScramble", Button_GetCheck(GetDlgItem(IDC_CHECK_NO_LOG_SCRAMBLE)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"DropLogAsUtf8", Button_GetCheck(GetDlgItem(IDC_CHECK_DROP_LOG_AS_UTF8)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"SaveDebugLog", Button_GetCheck(GetDlgItem(IDC_CHECK_SAVE_DEBUG_LOG)), appIniPath.c_str() );
+	int traceLevel = 0;
+	if( Button_GetCheck(GetDlgItem(IDC_CHECK_TRACE_BON_LEVEL)) ){
+		//チェックボックスだが設定的には多値なので、値を維持する
+		traceLevel = GetPrivateProfileInt(L"SET", L"TraceBonDriverLevel", 0, appIniPath.c_str());
+		if( traceLevel == 0 ){
+			traceLevel = 2;
+		}
+	}
+	WritePrivateProfileInt( L"SET", L"TraceBonDriverLevel", traceLevel, appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"TsBuffMaxCount", GetDlgItemInt(m_hWnd, IDC_EDIT_TS_BUFF_MAX, NULL, FALSE), appIniPath.c_str() );
 	int buffMax = GetDlgItemInt(m_hWnd, IDC_EDIT_WRITE_BUFF_MAX, NULL, FALSE);
 	WritePrivateProfileInt( L"SET", L"WriteBuffMaxCount", buffMax <= 0 ? -1 : buffMax, appIniPath.c_str() );

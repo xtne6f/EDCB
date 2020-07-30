@@ -10,7 +10,7 @@ public:
 		int residentMode;
 		int notifyTipStyle;
 		bool blinkPreRec;
-		bool noBalloonTip;
+		int noBalloonTip;
 		bool saveNotifyLog;
 		bool saveDebugLog;
 		DWORD wakeTime;
@@ -42,6 +42,7 @@ public:
 		bool retryOtherTuners;
 		bool separateFixedTuners;
 		bool commentAutoAdd;
+		bool fixNoRecToServiceOnly;
 		bool autoDelRecInfo;
 		DWORD autoDelRecInfoNum;
 		DWORD recInfo2Max;

@@ -92,6 +92,7 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	this->dropLogAsUtf8 = GetPrivateProfileInt(L"SET", L"DropLogAsUtf8", 0, appIniPath.c_str()) != 0;
 	this->tsBuffMaxCount = (DWORD)GetPrivateProfileInt(L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str());
 	this->writeBuffMaxCount = GetPrivateProfileInt(L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str());
+	this->traceBonDriverLevel = GetPrivateProfileInt(L"SET", L"TraceBonDriverLevel", 0, appIniPath.c_str());
 	this->openWait = GetPrivateProfileInt(L"SET", L"OpenWait", 200, appIniPath.c_str());
 
 	this->recFolderList.clear();
@@ -987,7 +988,7 @@ BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 {
 	this->lastONID = 0xFFFF;
 	this->lastTSID = 0xFFFF;
-	BOOL ret = this->bonCtrl.OpenBonDriver(fileName, this->openWait, this->tsBuffMaxCount);
+	BOOL ret = this->bonCtrl.OpenBonDriver(fileName, this->traceBonDriverLevel, this->openWait, this->tsBuffMaxCount);
 	if( ret == FALSE ){
 		wstring log;
 		Format(log, L"BonDriverのオープンができませんでした\r\n%ls\r\n", fileName);

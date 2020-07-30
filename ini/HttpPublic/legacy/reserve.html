@@ -44,7 +44,7 @@ rate={}
 for i=page*PAGE_COUNT+1,math.min(#a,(page+1)*PAGE_COUNT) do
   v=a[i]
   size=nil
-  if v.recSetting.recMode~=4 then
+  if (v.recSetting.recMode~=5 and v.recSetting.recMode or v.recSetting.noRecMode or 1)~=4 then
     --予想ファイルサイズ
     for j=1,4 do
       key=('%04X%04X%04X'):format((j>3 and 65535 or v.onid),(j>2 and 65535 or v.tsid),(j>1 and 65535 or v.sid))
@@ -62,7 +62,7 @@ for i=page*PAGE_COUNT+1,math.min(#a,(page+1)*PAGE_COUNT) do
   ct:Append('    <tr><td><a href="reserveinfo.html?id='..v.reserveID..'">'
     ..FormatTimeAndDuration(v.startTime, v.durationSecond)
     ..'</a><td'..cl..'>'..v.stationName..'<td'..cl..'>'..v.title
-    ..'<td'..cl..'>'..(RecModeTextList()[v.recSetting.recMode+1] or '')
+    ..'<td'..cl..'>'..(RecModeTextList()[(v.recSetting.recMode~=5 and v.recSetting.recMode or v.recSetting.noRecMode or 1)+1] or '')
     ..'<td'..cl..'>'..v.recSetting.priority
     ..'<td'..cl..'>'..(size and ('%.1fG'):format(size/1024/1024/1024) or '')..'</tr>\n')
 end
