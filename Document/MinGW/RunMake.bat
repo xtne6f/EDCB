@@ -5,7 +5,7 @@ set MINGW_ROOT=
 @rem set MINGW_ROOT=%SystemDrive%\mingw64
 
 @rem set CPPFLAGS=-DEPGDB_STD_WREGEX
-@rem set LDFLAGS=-Wl,-Map=$(basename $(TARGET)).map
+@rem set LDFLAGS=-Wl,-Map=$(basename $@).map
 
 @if not "%MINGW_ROOT%"=="" goto label2
 @echo.

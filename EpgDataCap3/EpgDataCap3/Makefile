@@ -1,7 +1,7 @@
-TARGET ?= EpgDataCap3.dll
+TARGET ?= EpgDataCap3
 CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE $(CPPFLAGS)
-CXXFLAGS := -O2 $(CXXFLAGS)
-LDFLAGS := -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
+CXXFLAGS := -std=c++17 -pedantic-errors -O2 $(CXXFLAGS)
+LDFLAGS2 = -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
 WINDRES ?= windres
 DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
 CUR_ALL_H := $(wildcard *.h)
@@ -22,10 +22,10 @@ SOURCES_BASE = \
   stdafx.cpp \
   EpgDataCap3.rc
 
-$(TARGET): $(addsuffix .obj,$(SOURCES_BASE) ARIB8CharDecode.cpp) $(basename $(TARGET))_Unicode$(suffix $(TARGET))
-	$(CXX) $(LDFLAGS) $(filter %.obj,$^) $(LDLIBS) -o $@
-$(basename $(TARGET))_Unicode$(suffix $(TARGET)): $(addsuffix .obj,$(SOURCES_BASE) USE_UNICODE_ARIB8CharDecode.cpp)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+$(TARGET).dll: $(addsuffix .obj,$(SOURCES_BASE) ARIB8CharDecode.cpp) $(TARGET)_Unicode.dll
+	$(CXX) $(LDFLAGS2) $(filter %.obj,$^) $(LDLIBS) -o $@
+$(TARGET)_Unicode.dll: $(addsuffix .obj,$(SOURCES_BASE) USE_UNICODE_ARIB8CharDecode.cpp)
+	$(CXX) $(LDFLAGS2) $^ $(LDLIBS) -o $@
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp stdafx.h.gch $(DEP_ALL_H)
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 Common__%.cpp.obj: ../../Common/%.cpp stdafx.h.gch $(DEP_ALL_H)
@@ -45,4 +45,4 @@ else
 	powershell -NoProfile -Command "&{cat $<|Out-File -Encoding UTF8 $@}"
 endif
 clean:
-	$(RM) stdafx.h.gch *.obj $(TARGET) $(basename $(TARGET))_Unicode$(suffix $(TARGET))
+	$(RM) stdafx.h.gch *.obj $(TARGET).dll $(TARGET).map $(TARGET)_Unicode.dll $(TARGET)_Unicode.map
