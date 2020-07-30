@@ -71,6 +71,14 @@ namespace EpgTimer
             get;
             private set;
         }
+        public bool FixNoRecToServiceOnly
+        {
+            get
+            {
+                //DefaultRecSettingが無効状態ならば、RecSettingData.RecModeに無効状態と録画モード情報とを同時にセットできる
+                return DefaultRecSetting == null || DefaultRecSetting.IsNoRec() == false;
+            }
+        }
         public Dictionary<UInt32, RecFileInfo> RecFileInfo
         {
             get { return recFileInfo; }
@@ -645,9 +653,9 @@ namespace EpgTimer
         public ReserveData GetNextReserve()
         {
             DateTime now = DateTime.UtcNow.AddHours(9);
-            if (reserveList.Values.Any(a => a.RecSetting.RecMode != 5 && a.StartTime > now))
+            if (reserveList.Values.Any(a => a.RecSetting.IsNoRec() == false && a.StartTime > now))
             {
-                return reserveList.Values.Where(a => a.RecSetting.RecMode != 5 && a.StartTime > now)
+                return reserveList.Values.Where(a => a.RecSetting.IsNoRec() == false && a.StartTime > now)
                                          .Aggregate((a, b) => a.StartTime <= b.StartTime ? a : b);
             }
             return null;

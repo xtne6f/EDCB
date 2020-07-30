@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             xmlns:local="clr-namespace:EpgTimer"
              d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
         <Style TargetType="{x:Type CheckBox}">
@@ -31,9 +32,10 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
+        <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
             <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="開始日時" Name="StartTimeNoDuration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="長さ" Name="Duration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
@@ -45,14 +47,14 @@
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
-        </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu">
-            <MenuItem Header="録画情報" Click="button_recInfo_Click" />
-            <MenuItem Header="削除" Click="button_del_Click" />
-            <MenuItem Header="再生" Click="button_play_Click" />
+        </local:ContextMenuEx>
+        <local:ContextMenuEx x:Key="itemMenu">
+            <MenuItem Header="録画情報" Click="button_recInfo_Click" InputGestureText="Enter" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
+            <MenuItem Header="再生" Click="button_play_Click" InputGestureText="Ctrl + P" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" />
-        </ContextMenu>
+            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" InputGestureText="Ctrl + O" />
+        </local:ContextMenuEx>
 
     </UserControl.Resources>
     <Grid>
@@ -66,10 +68,19 @@
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                    <Setter Property="Background" Value="{Binding BackColor}" />
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
                     <EventSetter Event="KeyDown" Handler="listView_recinfo_KeyDown" />
+                    <Style.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="ItemsControl.AlternationIndex" Value="0" />
+                                <Condition Property="IsSelected" Value="False" />
+                                <Condition Property="IsMouseOver" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{Binding BackColor}" />
+                        </MultiTrigger>
+                    </Style.Triggers>
                 </Style>
             </ListView.Resources>
             <ListView.View>
@@ -91,6 +102,11 @@
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding StartTimeNoDuration}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="開始日時" Tag="StartTimeNoDuration" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Duration}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="長さ" Tag="Duration" HorizontalContentAlignment="Left"/>
@@ -106,10 +122,15 @@
                             <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding EventName}">
+                    <GridViewColumn>
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Background="{Binding DropScrambleBackColor}" Text="{Binding EventName}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Drops}">
                         <GridViewColumn.Header>

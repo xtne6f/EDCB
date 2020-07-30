@@ -48,29 +48,9 @@ namespace EpgTimer
                 Environment.Exit(0);
             }
 
-            if (Settings.Instance.NoStyle == 0)
+            if (Settings.AppResourceDictionary != null)
             {
-                if (System.IO.File.Exists(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml"))
-                {
-                    //ResourceDictionaryを定義したファイルがあるので本体にマージする
-                    try
-                    {
-                        App.Current.Resources.MergedDictionaries.Add(
-                            (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
-                                System.Xml.XmlReader.Create(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml")));
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.ToString());
-                    }
-                }
-                else
-                {
-                    //既定のテーマ(Aero)をマージする
-                    App.Current.Resources.MergedDictionaries.Add(
-                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                        );
-                }
+                Application.Current.Resources.MergedDictionaries.Add(Settings.AppResourceDictionary);
             }
 
             //オリジナルのmutex名をもつEpgTimerか
@@ -209,7 +189,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -345,7 +325,7 @@ namespace EpgTimer
 
         public void TaskTrayRightClick()
         {
-            var menu = new ContextMenu();
+            var menu = new ContextMenuEx();
             foreach (string info in Settings.Instance.TaskMenuList)
             {
                 if (info == "（セパレータ）")
@@ -723,7 +703,7 @@ namespace EpgTimer
             // Hide()したSearchWindowを復帰
             foreach (Window win1 in this.OwnedWindows)
             {
-                if (win1.GetType() == typeof(SearchWindow))
+                if (win1 is SearchWindow)
                 {
                     win1.Show();
                     return;
@@ -740,7 +720,6 @@ namespace EpgTimer
             {
                 var search = new SearchWindow();
                 search.Owner = (Window)topWindow.RootVisual;
-                search.SetViewMode(0);
                 search.ShowDialog();
             }
         }
@@ -802,7 +781,7 @@ namespace EpgTimer
                     {
                         SuspendCheckWindow dlg = new SuspendCheckWindow();
                         dlg.SetMode(0, 2);
-                        if (dlg.ShowDialog() == true)
+                        if (dlg.ShowDialog() != true)
                         {
                             return;
                         }
@@ -852,7 +831,7 @@ namespace EpgTimer
                     {
                         SuspendCheckWindow dlg = new SuspendCheckWindow();
                         dlg.SetMode(0, 1);
-                        if (dlg.ShowDialog() == true)
+                        if (dlg.ShowDialog() != true)
                         {
                             return;
                         }
@@ -886,11 +865,11 @@ namespace EpgTimer
         {
             try
             {
-                System.Diagnostics.Process.Start(Settings.Instance.Cust1BtnCmd, Settings.Instance.Cust1BtnCmdOpt);
+                using (System.Diagnostics.Process.Start(Settings.Instance.Cust1BtnCmd, Settings.Instance.Cust1BtnCmdOpt)) { }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -898,11 +877,11 @@ namespace EpgTimer
         {
             try
             {
-                System.Diagnostics.Process.Start(Settings.Instance.Cust2BtnCmd, Settings.Instance.Cust2BtnCmdOpt);
+                using (System.Diagnostics.Process.Start(Settings.Instance.Cust2BtnCmd, Settings.Instance.Cust2BtnCmdOpt)) { }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -1031,7 +1010,7 @@ namespace EpgTimer
                         {
                             SuspendCheckWindow dlg = new SuspendCheckWindow();
                             dlg.SetMode(reboot, suspendMode);
-                            if (dlg.ShowDialog() != true)
+                            if (dlg.ShowDialog() == true)
                             {
                                 CommonManager.CreateSrvCtrl().SendReboot();
                             }
@@ -1072,7 +1051,7 @@ namespace EpgTimer
             {
                 SuspendCheckWindow dlg = new SuspendCheckWindow();
                 dlg.SetMode(0, suspendMode);
-                if (dlg.ShowDialog() != true)
+                if (dlg.ShowDialog() == true)
                 {
                     CommonManager.CreateSrvCtrl().SendSuspend(param);
                 }
@@ -1158,7 +1137,7 @@ namespace EpgTimer
                                        notifyID == UpdateNotifyItem.ChgTuijyu ? "番組変更" : "EPG取得";
                         string tips = notifyID == UpdateNotifyItem.EpgCapStart ? "開始" :
                                       notifyID == UpdateNotifyItem.EpgCapEnd ? "終了" : status.param4;
-                        taskTray.ShowBalloonTip(title, tips, 10 * 1000);
+                        taskTray.ShowBalloonTip(title, tips, 10 * 1000, Settings.Instance.BalloonTipRealtime);
                     }
                     CommonManager.Instance.NotifyLogList.Add(status);
                     break;
@@ -1259,5 +1238,19 @@ namespace EpgTimer
             }
         }
 
+    }
+
+    /// <summary>
+    /// アプリケーション全体に適用する拡張コンテキストメニュー
+    /// </summary>
+    public class ContextMenuEx : ContextMenu
+    {
+        public ContextMenuEx()
+        {
+            if (Settings.ContextMenuResourceDictionary != null)
+            {
+                Resources.MergedDictionaries.Add(Settings.ContextMenuResourceDictionary);
+            }
+        }
     }
 }

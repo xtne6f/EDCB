@@ -109,7 +109,8 @@ namespace EpgTimer
                 }
 
                 IniFileHandler.WritePrivateProfileString(defName, "SetName", preItem.DisplayName, SettingPath.TimerSrvIniPath);
-                IniFileHandler.WritePrivateProfileString(defName, "RecMode", info.RecMode.ToString(), SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString(defName, "RecMode", (info.IsNoRec() ? 5 : info.GetRecMode()).ToString(), SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString(defName, "NoRecMode", info.GetRecMode().ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "Priority", info.Priority.ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "TuijyuuFlag", info.TuijyuuFlag.ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "ServiceMode", info.ServiceMode.ToString(), SettingPath.TimerSrvIniPath);
@@ -145,16 +146,8 @@ namespace EpgTimer
 
         public void SetViewMode(bool epgMode)
         {
-            if (epgMode == true)
-            {
-                comboBox_tuijyu.IsEnabled = true;
-                comboBox_pittari.IsEnabled = true;
-            }
-            else
-            {
-                comboBox_tuijyu.IsEnabled = false;
-                comboBox_pittari.IsEnabled = false;
-            }
+            checkBox_tuijyu.IsEnabled = epgMode;
+            checkBox_pittari.IsEnabled = epgMode;
         }
 
         public void SetDefSetting(RecSettingData set)
@@ -174,8 +167,13 @@ namespace EpgTimer
         {
             var setInfo = new RecSettingData();
             setInfo.RecMode = (byte)comboBox_recMode.SelectedIndex;
+            if (checkBox_enabled.IsChecked != true)
+            {
+                //録画モード情報を維持して無効化
+                setInfo.RecMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (setInfo.RecMode + 4) % 5);
+            }
             setInfo.Priority = (byte)(comboBox_priority.SelectedIndex + 1);
-            setInfo.TuijyuuFlag = (byte)comboBox_tuijyu.SelectedIndex;
+            setInfo.TuijyuuFlag = (byte)(checkBox_tuijyu.IsChecked == true ? 1 : 0);
             if (checkBox_serviceMode.IsChecked == true)
             {
                 setInfo.ServiceMode = 0;
@@ -192,7 +190,7 @@ namespace EpgTimer
                     setInfo.ServiceMode |= 0x20;
                 }
             }
-            setInfo.PittariFlag = (byte)comboBox_pittari.SelectedIndex;
+            setInfo.PittariFlag = (byte)(checkBox_pittari.IsChecked == true ? 1 : 0);
             setInfo.BatFilePath = textBox_bat.Text;
             foreach (RecFileSetInfoView view in listView_recFolder.Items)
             {
@@ -330,7 +328,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -338,9 +336,10 @@ namespace EpgTimer
         {
             try
             {
-                comboBox_recMode.SelectedIndex = Math.Min((int)recSetting.RecMode, 5);
+                checkBox_enabled.IsChecked = recSetting.IsNoRec() == false;
+                comboBox_recMode.SelectedIndex = recSetting.GetRecMode();
                 comboBox_priority.SelectedIndex = Math.Min(Math.Max((int)recSetting.Priority, 1), 5) - 1;
-                comboBox_tuijyu.SelectedIndex = recSetting.TuijyuuFlag != 0 ? 1 : 0;
+                checkBox_tuijyu.IsChecked = recSetting.TuijyuuFlag != 0;
 
                 if ((recSetting.ServiceMode & 0x01) == 0)
                 {
@@ -358,8 +357,7 @@ namespace EpgTimer
                     checkBox_serviceData.IsChecked = (recSetting.ServiceMode & 0x20) != 0;
                 }
 
-                comboBox_pittari.SelectedIndex = recSetting.PittariFlag != 0 ? 1 : 0;
-
+                checkBox_pittari.IsChecked = recSetting.PittariFlag != 0;
 
                 textBox_bat.Text = recSetting.BatFilePath;
 
@@ -439,7 +437,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -561,7 +559,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -582,7 +580,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -621,7 +619,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 

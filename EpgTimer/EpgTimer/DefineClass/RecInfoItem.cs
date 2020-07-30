@@ -45,6 +45,10 @@ namespace EpgTimer
         {
             get { return new CommonManager.TimeDuration(true, RecInfo.StartTime, true, RecInfo.DurationSecond); }
         }
+        public CommonManager.TimeDuration StartTimeNoDuration
+        {
+            get { return new CommonManager.TimeDuration(true, RecInfo.StartTime, true, double.NaN); }
+        }
         public TimeSpan Duration
         {
             get { return TimeSpan.FromSeconds(RecInfo.DurationSecond); }
@@ -75,10 +79,14 @@ namespace EpgTimer
         }
         public SolidColorBrush BackColor
         {
+            get { return Settings.BrushCache.RecEndDefBrush; }
+        }
+        public SolidColorBrush DropScrambleBackColor
+        {
             get
             {
                 return RecInfo.Drops > 0 ? Settings.BrushCache.RecEndErrBrush :
-                       RecInfo.Scrambles > 0 ? Settings.BrushCache.RecEndWarBrush : Settings.BrushCache.RecEndDefBrush;
+                       RecInfo.Scrambles > 0 ? Settings.BrushCache.RecEndWarBrush : null;
             }
         }
         public SolidColorBrush ResultBackColor
