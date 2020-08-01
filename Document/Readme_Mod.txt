@@ -13,7 +13,9 @@ EpgTimerTaskはEpgTimerSrvに統合しました。EpgTimerSrv.exeをコピーし
 
 Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人柱版10.69
 のままです。更新履歴はHistory.txtに移されていますが、すでに内容を更新していませ
-ん。正確な履歴はコミットログを参照してください。
+ん。正確な履歴はコミットログを参照してください。ファイルプロパティ等のバージョン
+情報は(独断で)10.70としていますが、おおむね2020年以降に更新したこのフォークやそ
+れに近いフォークに付けた大まかな値です。
 このファイルでは上述のReadmeから改変された部分だけを説明します(他者の改変部分も
 原則能動態で説明します)。なお、仕様に影響しないバグ修正や細かいデザイン改変は省
 略します。追加機能については【追加】マークを付けています。
@@ -51,6 +53,10 @@ Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人�
     ・デバッグ出力をファイルに保存する【追加】
       デバッグ出力(OutputDebugStringW)をEpgDataCap_Bon.exeの起動数に応じて
       EpgDataCap_Bon_DebugLog-{番号}.txtに保存します。
+    ・BonDriverについてのデバッグ出力を増やす【追加】
+      BonDriverの呼び出しが10秒以上ブロックされた場合などにデバッグ出力します。
+      ストリームの統計も1分ごとに出力するようになりますが、これを抑制したいとき
+      は、EpgDataCap_Bon.iniのTraceBonDriverLevelを2→1に変更してください。
     ・TS入力/ファイル出力バッファ上限【追加】
       EpgDataCap_Bon.iniのTsBuffMaxCount/WriteBuffMaxCountを設定します。値の意味
       は「回数」ではなく「48128バイトのn倍」になりました。
@@ -78,6 +84,7 @@ Readme.txt、Readme_EpgDataCap_Bon.txt、Readme_EpgTimer.txtは基本的に人�
 EpgDataCap_Bon.exeがなんらかの不具合で異常終了するとき、スタックトレースを
 EpgDataCap_Bon.exe.errというテキストファイルに出力します。また、ビルド時に生成さ
 れるEpgDataCap_Bon.pdbが同じフォルダにあれば出力内容が詳細になります。
+EpgTimerSrv.exeも同様です。
 
 ■Readme_EpgTimer.txt■
 "EpgTimer.exe"を"EpgTimerNW～.exe"にファイル名をリネームすることで、EpgTimerNW相
@@ -135,6 +142,8 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
       同一サービスかどうかのチェックを省略し、同一番組名のみで判断します。
 
 ◇録画設定
+  ・有効【追加】
+    以前の録画モード「無効」がチェックボックスとして分離しました。
   ・追従
     プログラム予約に切り替えるのと実質的な違いがほとんど無いため、「イベントリレ
     ー追従」に意味を変更しました。
@@ -211,6 +220,9 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         されませんが、チューナー強制指定が異なる予約に限ってこれを可能にします。
       ・EPG自動予約をプログラム化したとき、再び追加されないようにする【追加】
         次のEPG再読み込みで同じ番組が追加されないよう予約状況に注釈を入れます。
+      ・予約を無効にするとき、録画モードを「指定サービス」にする【追加】
+        無効時の録画モードは、録画モードを表す数値の拡張で実現しているため、外部
+        ツールに不具合がでる場合は有効にしてください。
       ・録画情報保存フォルダ指定時は録画ファイルと同じ場所を参照しない【追加】
         録画済み一覧で使用される録画情報(.program.txt/.err)は、録画ファイルと同
         じ場所→録画情報保存フォルダの順に参照しますが、この挙動を変更します。
@@ -235,7 +247,7 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
     ●その他/全般
       ・ネットワーク接続を許可する
         ・IPv6【追加】
-          IPv6サーバにします。
+          IPv6サーバにします。IPv4IPv6デュアルスタックではありません。
           アクセス制御もIPv6で指定してください("+::1,+fe80::/64"など)。
         ・アクセス制御【追加】
           EpgTimerSrv.exeが接続を許可するクライアントのIPアドレスを
@@ -259,6 +271,8 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         ・開始準備で点滅させる【追加】
           「予約録画開始準備」(使用BonDriver通知を除く)の通知で点滅させます。
         ・バルーンチップ/トーストでの動作通知を抑制する【追加】
+          ・リアルタイムで表示できなかった通知を捨てる【追加】
+            過去の通知が遅れてバルーンチップ/トースト表示されないようにします。
           ※これらはEpgTimerSrv.exeが直接表示するものについての設定です
       ・情報通知ログをファイルに保存する【追加】
         情報通知ログをEpgTimerSrvのあるフォルダのEpgTimerSrvNotify.logに保存しま
@@ -290,6 +304,9 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         テーマになります。オンのときEpgTimerのあるフォルダにEpgTimer.exe.rd.xaml
         があれば、そこに定義されたリソースを適用します【追加】。iniフォルダに簡
         単なサンプルを用意したので参考にしてください。
+      ・右クリックメニューにテーマを適用する(要再起動)【追加】
+        上述機能の右クリックメニュー限定版です。リソースを定義したいときは同様に
+        EpgTimer.exe.rdcm.xamlを作成してください。
       ・EPGデータを常に更新する(旧「EPGデータを自動的に読み込まない」相当)
         EpgTimerSrvのEPGデータをEpgTimerにダウンロードするのを、番組表を表示する
         タイミング(≒番組表タブを開くタイミング)まで遅らせるかどうか指定します。
@@ -469,9 +486,10 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
     全予約を開始時間でソートし、予約のない時間帯ごとに組分け、組ごとの予約に対し
     "予約優先度>開始時間(終ろ優先時逆順)>予約ID"の一意な優先度をつけ、優先度順に
     予約をチューナに割り当てます。ここで、優先度をもとに実際の録画時間を計算し、
-    最長となるチューナを選びます(同じ長さならBonDriverの優先度順)。チューナ強制
-    指定時はここで選べるチューナが限定されることになります。録画時間が0分ならチ
-    ューナ不足となります。
+    最長となるチューナを選びます(同じ長さならBonDriverの優先度順)。録画時間を減
+    らすことなく割り当てられるチューナが複数ある場合、より近くに同一チャンネルの
+    予約があるチューナを選びます。チューナ強制指定時はここで選べるチューナが限定
+    されることになります。録画時間が0分ならチューナ不足となります。
   ・開始と終了時間重なっているときの動作を詳しく
     別チャンネルの場合、前番組の優先度が高いときはそれが終わるまで後番組の録画は
     始まりません。後番組の優先度が高いときは、その開始20秒前に前番組の録画を終了
@@ -614,7 +632,7 @@ EpgTimer/EpgTimer/CommonフォルダのソースコードCtrlCmd.csとCtrlCmdDef
 HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetWebを組み込みました。
 有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。
 https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
-CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.11
+CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.12
 https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
 SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にlibssl-1_1(-x64).dllとlibcrypto-1_1(-x64).dllが必要です。自ビルドするか信頼できるどこかから入手してください。
 https://www.openssl.org/community/binaries.html から辿った https://bintray.com/vszakats/generic/openssl (curlメンテナによるバイナリ)のopenssl-1.1.1*で動作を確認しています。
@@ -625,15 +643,16 @@ EnableHttpSrv[=0]
   HTTPサーバ機能を有効にするかどうか
   # [=1]または[=2]で有効
   # [=2]にするとEpgTimerSrv.exeと同じ場所にログファイルも出力
-HttpAccessControlList[=+127.0.0.1]
+HttpAccessControlList[=+127.0.0.1,+::1,+::ffff:127.0.0.1]
   アクセス制御
-  # CivetWebのaccess_control_listに相当(ただし"deny all accesses"からスタート)
+  # CivetWebのaccess_control_listに相当("deny all accesses"からスタート)
   # LANを越えないなら+127.0.0.1,+192.168.0.0/16
   # 従来通りすべてのアクセスを許可する場合は+0.0.0.0/0とする
   # ※+0.0.0.0/0は最終手段。キャリアの技術情報やプロキシを活用して接続元をできるだけ限定すべき
 HttpPort[=5510]
   ポート番号
   # CivetWebのlistening_portsに相当
+  # IPv4IPv6デュアルスタックは[=+5510]
   # SSL/TLSは[=5510s]
   # 複数ポート指定方法などは本家ドキュメント参照
 HttpPublicFolder[=EpgTimerSrv.exeと同じ場所の"HttpPublic"]
@@ -986,6 +1005,7 @@ edcb.EnumRecPresetInfo=function()
         name=d[i]==0 and 'Default' or gp(n,'SetName','',p),
         recSetting={
           recMode=tonumber(gp(n,'RecMode',1,p)) or 1,
+          noRecMode=tonumber(gp(n,'NoRecMode',1,p)) or 1,
           priority=tonumber(gp(n,'Priority',2,p)) or 2,
           tuijyuuFlag=gp(n,'TuijyuuFlag',1,p)~='0',
           serviceMode=tonumber(gp(n,'ServiceMode',0,p)) or 0,
@@ -1115,7 +1135,8 @@ end
 }
 
 <録画設定>={
-  recMode:I=録画モード
+  recMode:I=録画モード(0～5)
+  noRecMode:I|nil=無効時の録画モード(0～4。recModeが5でないとき無意味。recModeが5のとき、nilならば1とみなす)
   priority:I=優先度
   tuijyuuFlag:B=イベントリレー追従するかどうか
   serviceMode:I=処理対象データモード
