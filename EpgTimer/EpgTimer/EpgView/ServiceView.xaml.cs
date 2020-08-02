@@ -19,6 +19,9 @@ namespace EpgTimer.EpgView
     /// </summary>
     public partial class ServiceView : UserControl
     {
+        public event Action<EpgServiceInfo> LeftDoubleClick;
+        public event Action<EpgServiceInfo> RightClick;
+
         public ServiceView()
         {
             InitializeComponent();
@@ -58,19 +61,23 @@ namespace EpgTimer.EpgView
                 var gridItem = new System.Windows.Controls.Primitives.UniformGrid();
                 gridItem.Margin = new Thickness(1, 1, 1, 1);
                 gridItem.Background = serviceBrush;
-                gridItem.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);
+                gridItem.MouseLeftButtonDown += (sender, e) =>
+                {
+                    if (e.ClickCount == 2 && LeftDoubleClick != null)
+                    {
+                        LeftDoubleClick((EpgServiceInfo)((FrameworkElement)sender).Tag);
+                    }
+                };
+                gridItem.MouseRightButtonUp += (sender, e) =>
+                {
+                    if (RightClick != null)
+                    {
+                        RightClick((EpgServiceInfo)((FrameworkElement)sender).Tag);
+                    }
+                };
                 gridItem.Tag = info;
                 gridItem.Children.Add(item);
                 stackPanel_service.Children.Add(gridItem);
-            }
-        }
-
-        void item_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ClickCount == 2)
-            {
-                var info = (EpgServiceInfo)((FrameworkElement)sender).Tag;
-                CommonManager.Instance.TVTestCtrl.SetLiveCh(info.ONID, info.TSID, info.SID);
             }
         }
     }

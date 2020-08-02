@@ -41,17 +41,21 @@ namespace EpgTimer
         {
             get { return new CommonManager.TimeDuration(true, ReserveInfo.StartTime, true, ReserveInfo.DurationSecond); }
         }
+        public CommonManager.TimeDuration StartTimeNoDuration
+        {
+            get { return new CommonManager.TimeDuration(true, ReserveInfo.StartTime, true, double.NaN); }
+        }
         public TimeSpan Duration
         {
             get { return TimeSpan.FromSeconds(ReserveInfo.DurationSecond); }
         }
+        public string RecEnabled
+        {
+            get { return ReserveInfo.RecSetting.IsNoRec() ? "いいえ" : "はい"; }
+        }
         public String RecMode
         {
-            get
-            {
-                return CommonManager.Instance.RecModeList.Length > ReserveInfo.RecSetting.RecMode ?
-                       CommonManager.Instance.RecModeList[ReserveInfo.RecSetting.RecMode] : "";
-            }
+            get { return CommonManager.Instance.RecModeList[ReserveInfo.RecSetting.GetRecMode()]; }
         }
         public byte Priority
         {
@@ -69,7 +73,11 @@ namespace EpgTimer
         {
             get { return ReserveInfo.Comment; }
         }
-        public List<String> RecFileName
+        public string RecFileName
+        {
+            get { return ReserveInfo.RecFileNameList.FirstOrDefault() ?? ""; }
+        }
+        public List<string> RecFileNameList
         {
             get { return ReserveInfo.RecFileNameList; }
         }
@@ -83,7 +91,19 @@ namespace EpgTimer
         }
         public String BatFilePath
         {
-            get { return ReserveInfo.RecSetting.BatFilePath; }
+            get
+            {
+                int i = ReserveInfo.RecSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? ReserveInfo.RecSetting.BatFilePath : ReserveInfo.RecSetting.BatFilePath.Remove(i);
+            }
+        }
+        public string BatFileTag
+        {
+            get
+            {
+                int i = ReserveInfo.RecSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? "" : ReserveInfo.RecSetting.BatFilePath.Substring(i + 1);
+            }
         }
         public uint ID
         {
@@ -98,7 +118,7 @@ namespace EpgTimer
                 if (_estimatedRecSize == null)
                 {
                     _estimatedRecSize = "";
-                    if (ReserveInfo.RecSetting.RecMode != 4)
+                    if (ReserveInfo.RecSetting.GetRecMode() != 4)
                     {
                         int bitrate = 0;
                         for (int i = 0; bitrate <= 0; i++)
@@ -122,11 +142,27 @@ namespace EpgTimer
 
         public SolidColorBrush BackColor
         {
+            get { return Settings.Instance.ResColorPosition == 0 ? ResBackColor : null; }
+        }
+        public SolidColorBrush AlternationBackColor
+        {
+            get { return (Settings.Instance.ResColorPosition == 0 ? ResBackColor : null) ?? Settings.BrushCache.ResDefBrush; }
+        }
+        public SolidColorBrush StartTimeBackColor
+        {
+            get { return Settings.Instance.ResColorPosition == 1 ? ResBackColor : null; }
+        }
+        public SolidColorBrush EventNameBackColor
+        {
+            get { return Settings.Instance.ResColorPosition == 2 ? ResBackColor : null; }
+        }
+        private SolidColorBrush ResBackColor
+        {
             get
             {
-                return ReserveInfo.RecSetting.RecMode == 5 ? Settings.BrushCache.ResNoBrush :
+                return ReserveInfo.RecSetting.IsNoRec() ? Settings.BrushCache.ResNoBrush :
                        ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
-                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
+                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : null;
             }
         }
         public TextBlock ToolTipView

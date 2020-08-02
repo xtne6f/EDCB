@@ -13,7 +13,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using System.Collections;
 
 
 namespace EpgTimer
@@ -47,6 +46,7 @@ namespace EpgTimer
             {
                 stackPanel_button.Visibility = Visibility.Collapsed;
             }
+            listView_recinfo.AlternationCount = Settings.Instance.RecEndAlternationCount;
         }
 
         public void SaveSize()
@@ -62,10 +62,10 @@ namespace EpgTimer
             {
                 if (listView_recinfo.SelectedItems.Count > 0)
                 {
-                    if (Settings.Instance.ConfirmDelRecInfo)
+                    if ((sender is ListViewItem) || Settings.Instance.ConfirmDelRecInfo)
                     {
                         bool hasPath = listView_recinfo.SelectedItems.Cast<RecInfoItem>().Any(info => info.RecFilePath.Length > 0);
-                        if ((hasPath || Settings.Instance.ConfirmDelRecInfoAlways) &&
+                        if ((hasPath || (sender is ListViewItem) || Settings.Instance.ConfirmDelRecInfoAlways) &&
                             MessageBox.Show(listView_recinfo.SelectedItems.Count + "項目を削除してよろしいですか?" +
                                             (hasPath ? "\r\n\r\n「録画ファイルも削除する」設定が有効な場合、ファイルも削除されます。" : ""), "確認",
                                             MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) != MessageBoxResult.OK)
@@ -83,7 +83,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -189,10 +189,39 @@ namespace EpgTimer
 
         private void listView_recinfo_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter && e.IsRepeat == false)
+            if (Keyboard.Modifiers == ModifierKeys.Control)
             {
-                //PlayDClickの切り替えはKeyDownが2回発生する(プロセス起動でフォーカス変化するため?)バギーな挙動があるので行わない
-                button_recInfo_Click(sender, e);
+                switch (e.Key)
+                {
+                    case Key.P:
+                        if (e.IsRepeat == false)
+                        {
+                            button_play.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
+                        break;
+                    case Key.O:
+                        if (e.IsRepeat == false)
+                        {
+                            openFolder_Click(sender, e);
+                        }
+                        e.Handled = true;
+                        break;
+                }
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Enter:
+                        button_recInfo_Click(sender, e);
+                        e.Handled = true;
+                        break;
+                    case Key.Delete:
+                        button_del_Click(sender, e);
+                        e.Handled = true;
+                        break;
+                }
             }
         }
 
@@ -214,7 +243,6 @@ namespace EpgTimer
             {
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
@@ -285,25 +313,29 @@ namespace EpgTimer
             if (listView_recinfo.SelectedItem != null && CommonManager.Instance.NWMode == false)
             {
                 RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
-                if (info.RecFilePath.Length == 0)
+                if (info.RecFilePath.Length > 0)
                 {
-                    MessageBox.Show("録画ファイルが存在しません");
-                }
-                else
-                {
-                    if (System.IO.File.Exists(info.RecFilePath) == true)
+                    try
                     {
-                        String cmd = "/select,";
-                        cmd += "\"" + info.RecFilePath + "\"";
-
-                        System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
+                        if (System.IO.File.Exists(info.RecFilePath))
+                        {
+                            using (System.Diagnostics.Process.Start("EXPLORER.EXE", "/select,\"" + info.RecFilePath + "\"")) { }
+                            return;
+                        }
+                        string folderPath = System.IO.Path.GetDirectoryName(info.RecFilePath);
+                        if (System.IO.Directory.Exists(folderPath))
+                        {
+                            using (System.Diagnostics.Process.Start("EXPLORER.EXE", "\"" + folderPath + "\"")) { }
+                            return;
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        String folderPath = System.IO.Path.GetDirectoryName(info.RecFilePath);
-                        System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                        MessageBox.Show(ex.ToString());
+                        return;
                     }
                 }
+                MessageBox.Show("録画フォルダが存在しません");
             }
         }
 
@@ -321,15 +353,7 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItem.IsChecked = false;
-                        foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
-                        {
-                            if (info.Tag == menuItem.Name)
-                            {
-                                menuItem.IsChecked = true;
-                                break;
-                            }
-                        }
+                        menuItem.IsChecked = Settings.Instance.RecInfoListColumn.Any(info => info.Tag == menuItem.Name);
                     }
                 }
             }
@@ -362,7 +386,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 

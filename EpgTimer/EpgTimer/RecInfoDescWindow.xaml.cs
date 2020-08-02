@@ -28,7 +28,7 @@ namespace EpgTimer
         public void SetRecInfo(RecFileInfo info)
         {
             recInfo = info;
-            textBox_pgInfo.Text = info.ProgramInfo;
+            richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(info.ProgramInfo));
             textBox_errLog.Text = info.ErrInfo;
         }
 
@@ -71,11 +71,6 @@ namespace EpgTimer
                     MessageBox.Show(ex.ToString());
                 }
             }
-            DialogResult = false;
-        }
-
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
-        {
             DialogResult = false;
         }
     }

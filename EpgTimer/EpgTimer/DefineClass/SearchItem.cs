@@ -68,16 +68,32 @@ namespace EpgTimer
         }
         public String Reserved
         {
-            get { return ReserveInfo == null ? "" : ReserveInfo.RecSetting.RecMode == 4 ? "視" :  "予"; }
+            get { return ReserveInfo == null ? "" : ReserveInfo.RecSetting.GetRecMode() == 4 ? "視" : "予"; }
         }
         public SolidColorBrush BackColor
         {
+            get { return Settings.Instance.ResColorPosition == 0 ? ResBackColor : null; }
+        }
+        public SolidColorBrush AlternationBackColor
+        {
+            get { return (Settings.Instance.ResColorPosition == 0 ? ResBackColor : null) ?? Settings.BrushCache.ResDefBrush; }
+        }
+        public SolidColorBrush StartTimeBackColor
+        {
+            get { return Settings.Instance.ResColorPosition == 1 ? ResBackColor : null; }
+        }
+        public SolidColorBrush EventNameBackColor
+        {
+            get { return Settings.Instance.ResColorPosition == 2 ? ResBackColor : null; }
+        }
+        private SolidColorBrush ResBackColor
+        {
             get
             {
-                return ReserveInfo == null ? Settings.BrushCache.ResDefBrush :
-                       ReserveInfo.RecSetting.RecMode == 5 ? Settings.BrushCache.ResNoBrush :
+                return ReserveInfo == null ? null :
+                       ReserveInfo.RecSetting.IsNoRec() ? Settings.BrushCache.ResNoBrush :
                        ReserveInfo.OverlapMode == 2 ? Settings.BrushCache.ResErrBrush :
-                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : Settings.BrushCache.ResDefBrush;
+                       ReserveInfo.OverlapMode == 1 ? Settings.BrushCache.ResWarBrush : null;
             }
         }
         public double Opacity
@@ -97,19 +113,6 @@ namespace EpgTimer
                 block.MaxWidth = 400;
                 block.TextWrapping = TextWrapping.Wrap;
                 return block;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public String RecMode
-        {
-            get
-            {
-                if (this.ReserveInfo == null) { return null; }
-                return CommonManager.Instance.RecModeList.Length > ReserveInfo.RecSetting.RecMode ?
-                       CommonManager.Instance.RecModeList[ReserveInfo.RecSetting.RecMode] : "";
             }
         }
 

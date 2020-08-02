@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Documents;
 using System.IO;
 
 namespace EpgTimer
@@ -327,7 +329,7 @@ namespace EpgTimer
                     { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
                 };
             }
-            RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
+            RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
             ReplaceUrlDictionary = CreateReplaceDictionary(",０,0,１,1,２,2,３,3,４,4,５,5,６,6,７,7,８,8,９,9" +
@@ -487,34 +489,15 @@ namespace EpgTimer
         public String ConvertReserveText(ReserveData reserveInfo)
         {
             String view = new TimeDuration(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
-            String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
-            String tuijyu = "";
-            if (reserveInfo.RecSetting.TuijyuuFlag == 0)
-            {
-                tuijyu = "しない";
-            }
-            else if (reserveInfo.RecSetting.TuijyuuFlag == 1)
-            {
-                tuijyu = "する";
-            }
-            String pittari = "";
-            if (reserveInfo.RecSetting.PittariFlag == 0)
-            {
-                pittari = "しない";
-            }
-            else if (reserveInfo.RecSetting.PittariFlag == 1)
-            {
-                pittari = "する";
-            }
-
             view += reserveInfo.StationName;
             view += " (" + ConvertNetworkNameText(reserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
             view += reserveInfo.Title + "\r\n\r\n";
-            view += "録画モード : " + recMode + "\r\n";
+            view += "有効 : " + (reserveInfo.RecSetting.IsNoRec() ? "いいえ" : "はい") + "\r\n";
+            view += "録画モード : " + RecModeList[reserveInfo.RecSetting.GetRecMode()] + "\r\n";
             view += "優先度 : " + reserveInfo.RecSetting.Priority.ToString() + "\r\n";
-            view += "追従 : " + tuijyu + "\r\n";
-            view += "ぴったり（？） : " + pittari + "\r\n";
+            view += "追従 : " + (reserveInfo.RecSetting.TuijyuuFlag == 0 ? "しない" : "する") + "\r\n";
+            view += "ぴったり（？） : " + (reserveInfo.RecSetting.PittariFlag == 0 ? "しない" : "する") + "\r\n";
             if ((reserveInfo.RecSetting.ServiceMode & 0x01) == 0)
             {
                 view += "指定サービス対象データ : デフォルト\r\n";
@@ -848,21 +831,58 @@ namespace EpgTimer
             return retText;
         }
 
+        public static Paragraph ConvertDisplayText(string text)
+        {
+            int searchFrom = 0;
+            var para = new Paragraph();
+            string rtext = ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
+            if (rtext.Length == text.Length)
+            {
+                for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
+                {
+                    para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
+                    var h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
+                    h.MouseLeftButtonDown += (sender, e) =>
+                    {
+                        try
+                        {
+                            using (System.Diagnostics.Process.Start(((Hyperlink)sender).NavigateUri.ToString())) { }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.ToString());
+                        }
+                    };
+                    h.Foreground = SystemColors.HotTrackBrush;
+                    h.Cursor = System.Windows.Input.Cursors.Hand;
+                    h.NavigateUri = new Uri(m.Value);
+                    para.Inlines.Add(h);
+                    searchFrom = m.Index + m.Length;
+                }
+            }
+            para.Inlines.Add(text.Substring(searchFrom));
+            return para;
+        }
+
         public void FilePlay(uint reserveID)
         {
             if (Settings.Instance.FilePlay && Settings.Instance.FilePlayOnAirWithExe)
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
-                if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                try
                 {
-                    CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
-                    if (info.filePath != "")
+                    if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
                     {
-                        FilePlay(info.filePath);
-                        return;
+                        CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
+                        if (info.filePath != "")
+                        {
+                            FilePlay(info.filePath);
+                            return;
+                        }
                     }
                 }
+                catch { }
                 MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
@@ -897,7 +917,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
     }

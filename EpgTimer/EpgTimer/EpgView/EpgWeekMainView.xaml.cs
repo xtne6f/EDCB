@@ -11,7 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Collections;
 using System.Windows.Threading;
 
 using EpgTimer.EpgView;
@@ -23,23 +22,23 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgWeekMainView : UserControl
     {
-        public event Action<object, CustomEpgTabInfo, object> ViewModeChangeRequested;
+        public event Action<object, CustomEpgTabInfo, DateTime, object> ViewModeChangeRequested;
         private object scrollToTarget;
+        private bool scrollToMoveBaseTime;
 
-        private CustomEpgTabInfo setViewInfo = null;
-        private DateTime baseTime = DateTime.MaxValue;
+        private CustomEpgTabInfo setViewInfo;
+        private DateTime baseTime;
 
         private SortedList<DateTime, List<ProgramViewItem>> timeList = new SortedList<DateTime, List<ProgramViewItem>>();
         private List<DateTime> dayList = new List<DateTime>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
-        private Point clickPos;
         private DispatcherTimer nowViewTimer;
         private Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
 
         private bool updateEpgData = true;
         private bool updateReserveData = true;
 
-        public EpgWeekMainView(CustomEpgTabInfo setInfo)
+        public EpgWeekMainView(CustomEpgTabInfo setInfo, DateTime _baseTime)
         {
             InitializeComponent();
 
@@ -47,6 +46,7 @@ namespace EpgTimer
             nowViewTimer.Tick += (sender, e) => ReDrawNowLine();
             setViewInfo = setInfo;
             epgProgramView.EpgSetting = setInfo.EpgSetting;
+            baseTime = _baseTime;
         }
 
         /// <summary>
@@ -126,64 +126,13 @@ namespace EpgTimer
         /// <param name="e"></param>
         void epgProgramView_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            try
             {
-                if (sender.GetType() == typeof(ProgramView))
                 {
                     //時間軸の表示もスクロール
                     timeView.scrollViewer.ScrollToVerticalOffset(epgProgramView.scrollViewer.VerticalOffset);
                     //サービス名表示もスクロール
                     weekDayView.scrollViewer.ScrollToHorizontalOffset(epgProgramView.scrollViewer.HorizontalOffset);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
-        /// マウスホイールイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void epgProgramView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            try
-            {
-                e.Handled = true;
-                if (sender.GetType() == typeof(ProgramView))
-                {
-                    ProgramView view = sender as ProgramView;
-                    if (setViewInfo.EpgSetting.MouseScrollAuto)
-                    {
-                        view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - e.Delta);
-                    }
-                    else
-                    {
-                        if (e.Delta < 0)
-                        {
-                            //下方向
-                            view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset + setViewInfo.EpgSetting.ScrollSize);
-                        }
-                        else
-                        {
-                            //上方向
-                            if (view.scrollViewer.VerticalOffset < setViewInfo.EpgSetting.ScrollSize)
-                            {
-                                view.scrollViewer.ScrollToVerticalOffset(0);
-                            }
-                            else
-                            {
-                                view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - setViewInfo.EpgSetting.ScrollSize);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -228,9 +177,10 @@ namespace EpgTimer
         /// <summary>
         /// 表示週変更
         /// </summary>
-        void button_time_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        void button_time_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            var menu = new ContextMenu();
+            ContextMenu menu = ((Button)sender).ContextMenu;
+            menu.Items.Clear();
             bool prev = sender == button_prev;
             for (int i = 1; i <= 15; i++)
             {
@@ -251,7 +201,6 @@ namespace EpgTimer
                 }
                 menu.Items.Insert(prev ? menu.Items.Count : 0, menuItem);
             }
-            menu.IsOpen = true;
         }
 
         /// <summary>
@@ -337,7 +286,6 @@ namespace EpgTimer
         /// <param name="cursorPos"></param>
         void epgProgramView_LeftDoubleClick(object sender, Point cursorPos)
         {
-            try
             {
                 //まず予約情報あるかチェック
                 ReserveData reserve = GetReserveItem(cursorPos);
@@ -356,148 +304,6 @@ namespace EpgTimer
                     return;
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
-        /// 右ボタンクリック
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="cursorPos"></param>
-        void epgProgramView_RightClick(object sender, Point cursorPos)
-        {
-            try
-            {
-                //右クリック表示メニューの作成
-                clickPos = cursorPos;
-                ReserveData reserve = GetReserveItem(cursorPos);
-                ProgramViewItem program = GetProgramItem(cursorPos);
-                bool addMode = false;
-                if (reserve == null)
-                {
-                    reserve = new ReserveData();
-                    addMode = true;
-                }
-                ContextMenu menu = new ContextMenu();
-
-                MenuItem menuItemNew = new MenuItem();
-                menuItemNew.Header = "簡易予約";
-                menuItemNew.Tag = (uint)0;
-                menuItemNew.Click += new RoutedEventHandler(cm_add_preset_Click);
-
-                MenuItem menuItemAdd = new MenuItem();
-                menuItemAdd.Header = (program != null && addMode == false ? "重複" : "") + "予約追加 (_A)";
-
-                MenuItem menuItemAddDlg = new MenuItem();
-                menuItemAddDlg.Header = "ダイアログ表示 (_X)";
-                menuItemAddDlg.Click += new RoutedEventHandler(cm_add_Click);
-
-                menuItemAdd.Items.Add(menuItemAddDlg);
-                menuItemAdd.Items.Add(new Separator());
-
-                foreach (RecPresetItem info in Settings.GetRecPresetList())
-                {
-                    MenuItem menuItem = new MenuItem();
-                    menuItem.Header = info.DisplayName;
-                    menuItem.Tag = info.ID;
-                    menuItem.Click += new RoutedEventHandler(cm_add_preset_Click);
-                    menuItem.IsEnabled = program != null && program.Past == false;
-                    menuItemAdd.Items.Add(menuItem);
-                }
-
-                MenuItem menuItemChg = new MenuItem();
-                menuItemChg.Header = "予約変更 (_C)";
-                MenuItem menuItemChgDlg = new MenuItem();
-                menuItemChgDlg.Header = "ダイアログ表示 (_X)";
-                menuItemChgDlg.Tag = reserve.ReserveID;
-                menuItemChgDlg.Click += new RoutedEventHandler(cm_chg_Click);
-
-                menuItemChg.Items.Add(menuItemChgDlg);
-                menuItemChg.Items.Add(new Separator());
-
-                for (byte i = 0; i < CommonManager.Instance.RecModeList.Length; i++)
-                {
-                    MenuItem menuItem = new MenuItem();
-                    menuItem.Header = CommonManager.Instance.RecModeList[i] + " (_" + i + ")";
-                    menuItem.Tag = new Tuple<byte, uint>(i, reserve.ReserveID);
-                    menuItem.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                    menuItem.IsChecked = i == reserve.RecSetting.RecMode;
-                    menuItemChg.Items.Add(menuItem);
-                }
-                menuItemChg.Items.Add(new Separator());
-
-                MenuItem menuItemChgRecPri = new MenuItem();
-                menuItemChgRecPri.Header = "優先度 " + reserve.RecSetting.Priority + " (_E)";
-
-                for (byte i = 1; i <= 5; i++)
-                {
-                    MenuItem menuItem = new MenuItem();
-                    menuItem.Header = "_" + i;
-                    menuItem.Tag = new Tuple<byte, uint>(i, reserve.ReserveID);
-                    menuItem.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                    menuItem.IsChecked = i == reserve.RecSetting.Priority;
-                    menuItemChgRecPri.Items.Add(menuItem);
-                }
-                menuItemChg.Items.Add(menuItemChgRecPri);
-
-                MenuItem menuItemDel = new MenuItem();
-                menuItemDel.Header = "予約削除";
-                menuItemDel.Tag = reserve.ReserveID;
-                menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
-
-                MenuItem menuItemAutoAdd = new MenuItem();
-                menuItemAutoAdd.Header = "自動予約登録";
-                menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
-                MenuItem menuItemTimeshift = new MenuItem();
-                menuItemTimeshift.Header = "追っかけ再生 (_P)";
-                menuItemTimeshift.Tag = reserve.ReserveID;
-                menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
-
-                //表示モード
-                MenuItem menuItemView = new MenuItem();
-                menuItemView.Header = "表示モード (_W)";
-
-                MenuItem menuItemViewSetDlg = new MenuItem();
-                menuItemViewSetDlg.Header = "表示設定";
-                menuItemViewSetDlg.Click += new RoutedEventHandler(cm_viewSet_Click);
-
-                MenuItem menuItemChgViewMode1 = new MenuItem();
-                menuItemChgViewMode1.Header = "標準モード (_1)";
-                menuItemChgViewMode1.Tag = 0;
-                menuItemChgViewMode1.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
-                MenuItem menuItemChgViewMode3 = new MenuItem();
-                menuItemChgViewMode3.Header = "リスト表示モード (_3)";
-                menuItemChgViewMode3.Tag = 2;
-                menuItemChgViewMode3.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
-
-                menuItemView.Items.Add(menuItemChgViewMode1);
-                menuItemView.Items.Add(menuItemChgViewMode3);
-                menuItemView.Items.Add(new Separator());
-                menuItemView.Items.Add(menuItemViewSetDlg);
-
-                menuItemNew.IsEnabled = program != null && addMode && program.Past == false;
-                menuItemAdd.IsEnabled = program != null;
-                menuItemChg.IsEnabled = addMode == false;
-                menuItemDel.IsEnabled = addMode == false;
-                menuItemAutoAdd.IsEnabled = program != null;
-                menuItemTimeshift.IsEnabled = addMode == false;
-
-                menu.Items.Add(menuItemNew);
-                menu.Items.Add(menuItemAdd);
-                menu.Items.Add(menuItemChg);
-                menu.Items.Add(menuItemDel);
-                menu.Items.Add(menuItemAutoAdd);
-                menu.Items.Add(menuItemTimeshift);
-                menu.Items.Add(menuItemView);
-                menu.IsOpen = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
@@ -511,11 +317,7 @@ namespace EpgTimer
             {
                 uint presetID = (uint)((MenuItem)sender).Tag;
 
-                ProgramViewItem program = GetProgramItem(clickPos);
-                if (program == null)
-                {
-                    return;
-                }
+                ProgramViewItem program = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item2;
                 EpgEventInfo eventInfo = program.EventInfo;
                 if (eventInfo.StartTimeFlag == 0)
                 {
@@ -562,7 +364,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -573,19 +375,8 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_add_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                ProgramViewItem program = GetProgramItem(clickPos);
-                if (program == null)
-                {
-                    return;
-                }
-                AddReserve(program.EventInfo, program.Past == false);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ProgramViewItem program = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item2;
+            AddReserve(program.EventInfo, program.Past == false);
         }
 
         /// <summary>
@@ -595,11 +386,8 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_Click(object sender, RoutedEventArgs e)
         {
-            ReserveData reserve;
-            if (CommonManager.Instance.DB.ReserveList.TryGetValue((uint)((MenuItem)sender).Tag, out reserve))
-            {
-                ChangeReserve(reserve);
-            }
+            ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+            ChangeReserve(reserve);
         }
 
         /// <summary>
@@ -611,7 +399,8 @@ namespace EpgTimer
         {
             try
             {
-                ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(new List<uint>() { (uint)((MenuItem)sender).Tag });
+                ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+                ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(new List<uint>() { reserve.ReserveID });
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約削除でエラーが発生しました。");
@@ -619,7 +408,36 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 右クリックメニュー 有効無効イベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_chg_no_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+                byte recMode = reserve.RecSetting.GetRecMode();
+                if (reserve.RecSetting.IsNoRec() == false)
+                {
+                    //録画モード情報を維持して無効化
+                    recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
+                }
+                reserve.RecSetting.RecMode = recMode;
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(new List<ReserveData>() { reserve });
+                if (err != ErrCode.CMD_SUCCESS)
+                {
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -632,16 +450,18 @@ namespace EpgTimer
         {
             try
             {
-                var recMode = (Tuple<byte, uint>)((MenuItem)sender).Tag;
-                ReserveData reserve;
-                if (CommonManager.Instance.DB.ReserveList.TryGetValue(recMode.Item2, out reserve) == false)
+                ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+                byte recMode = (byte)(sender == recmode_all ? 0 :
+                                      sender == recmode_only ? 1 :
+                                      sender == recmode_all_nodec ? 2 :
+                                      sender == recmode_only_nodec ? 3 : 4);
+                if (reserve.RecSetting.IsNoRec())
                 {
-                    return;
+                    //録画モード情報を維持して無効化
+                    recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
                 }
-                reserve.RecSetting.RecMode = recMode.Item1;
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserve);
-                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
+                reserve.RecSetting.RecMode = recMode;
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(new List<ReserveData>() { reserve });
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
@@ -649,7 +469,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -662,13 +482,11 @@ namespace EpgTimer
         {
             try
             {
-                var priority = (Tuple<byte, uint>)((MenuItem)sender).Tag;
-                ReserveData reserve;
-                if (CommonManager.Instance.DB.ReserveList.TryGetValue(priority.Item2, out reserve) == false)
-                {
-                    return;
-                }
-                reserve.RecSetting.Priority = priority.Item1;
+                ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+                reserve.RecSetting.Priority = (byte)(sender == priority_1 ? 1 :
+                                                     sender == priority_2 ? 2 :
+                                                     sender == priority_3 ? 3 :
+                                                     sender == priority_4 ? 4 : 5);
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserve);
                 ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
@@ -679,7 +497,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -690,23 +508,12 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_autoadd_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
-                ProgramViewItem programView = GetProgramItem(clickPos);
-                if (programView == null)
-                {
-                    return;
-                }
+                ProgramViewItem programView = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item2;
                 EpgEventInfo program = programView.EventInfo;
 
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
@@ -720,10 +527,6 @@ namespace EpgTimer
                 dlg.SetSearchDefKey(key);
                 dlg.ShowDialog();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
@@ -733,13 +536,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_timeShiftPlay_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
-                CommonManager.Instance.FilePlay((uint)((MenuItem)sender).Tag);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+                CommonManager.Instance.FilePlay(reserve.ReserveID);
             }
         }
 
@@ -764,7 +563,7 @@ namespace EpgTimer
                 }
                 else if (ViewModeChangeRequested != null)
                 {
-                    ViewModeChangeRequested(this, setInfo, null);
+                    ViewModeChangeRequested(this, setInfo, baseTime, null);
                 }
             }
         }
@@ -776,20 +575,70 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_viewMode_Click(object sender, RoutedEventArgs e)
         {
-            try
             {
                 if (ViewModeChangeRequested != null)
                 {
                     CustomEpgTabInfo setInfo = setViewInfo.DeepClone();
-                    setInfo.ViewMode = (int)((MenuItem)sender).Tag;
-                    ProgramViewItem program = GetProgramItem(clickPos);
-                    ViewModeChangeRequested(this, setInfo, (program != null ? program.EventInfo : null));
+                    setInfo.ViewMode = sender == cm_chg_viewMode1 ? 0 : 2;
+                    ProgramViewItem program = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item2;
+                    ViewModeChangeRequested(this, setInfo, baseTime, (program != null ? program.EventInfo : null));
                 }
             }
-            catch (Exception ex)
+        }
+
+        private void grid_content_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            Point cursorPos = Mouse.GetPosition(epgProgramView.canvas);
+            ReserveData reserve = GetReserveItem(cursorPos);
+            ProgramViewItem program = GetProgramItem(cursorPos);
+            grid_content.ContextMenu.DataContext = new Tuple<ReserveData, ProgramViewItem>(reserve, program);
+
+            cm_new.IsEnabled = program != null && reserve == null && program.Past == false;
+            cm_add.IsEnabled = program != null;
+            cm_dupadd.IsEnabled = program != null;
+            cm_add.Visibility = reserve != null ? Visibility.Collapsed : Visibility.Visible;
+            cm_dupadd.Visibility = reserve != null ? Visibility.Visible : Visibility.Collapsed;
+            cm_chg.IsEnabled = reserve != null;
+            cm_new.Visibility = reserve != null ? Visibility.Collapsed : Visibility.Visible;
+            cm_chg.Visibility = reserve != null ? Visibility.Visible : Visibility.Collapsed;
+            cm_del.IsEnabled = reserve != null;
+            cm_autoadd.IsEnabled = program != null;
+            cm_timeshift.IsEnabled = reserve != null;
+            if (reserve != null)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                cm_chg_no.Visibility = reserve.RecSetting.IsNoRec() ? Visibility.Collapsed : Visibility.Visible;
+                cm_chg_no_inv.Visibility = reserve.RecSetting.IsNoRec() ? Visibility.Visible : Visibility.Collapsed;
+                for (int i = 0; i <= 4; i++)
+                {
+                    ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).IsChecked = (i == reserve.RecSetting.GetRecMode());
+                }
+                for (int i = 0; i < cm_pri.Items.Count; i++)
+                {
+                    ((MenuItem)cm_pri.Items[i]).IsChecked = (i + 1 == reserve.RecSetting.Priority);
+                }
+                cm_pri.Header = string.Format((string)cm_pri.Tag, reserve.RecSetting.Priority);
             }
+            for (int i = cm_add.Items.Count - 1; cm_add.Items[i] is MenuItem; i--)
+            {
+                cm_add.Items.RemoveAt(i);
+            }
+            for (int i = cm_dupadd.Items.Count - 1; cm_dupadd.Items[i] is MenuItem; i--)
+            {
+                cm_dupadd.Items.RemoveAt(i);
+            }
+            if (program != null)
+            {
+                foreach (RecPresetItem info in Settings.GetRecPresetList())
+                {
+                    var menuItem = new MenuItem();
+                    menuItem.Header = info.DisplayName;
+                    menuItem.Tag = info.ID;
+                    menuItem.Click += cm_add_preset_Click;
+                    menuItem.IsEnabled = program.Past == false;
+                    (reserve != null ? cm_dupadd : cm_add).Items.Add(menuItem);
+                }
+            }
+            cm_new.Tag = (uint)0;
         }
 
         /// <summary>
@@ -799,7 +648,6 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void ChangeReserve(ReserveData reserveInfo)
         {
-            try
             {
                 ChgReserveWindow dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
@@ -808,10 +656,6 @@ namespace EpgTimer
                 if (dlg.ShowDialog() == true)
                 {
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -822,7 +666,6 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void AddReserve(EpgEventInfo eventInfo, bool reservable)
         {
-            try
             {
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
@@ -832,10 +675,6 @@ namespace EpgTimer
                 if (dlg.ShowDialog() == true)
                 {
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -1127,7 +966,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -1373,33 +1212,38 @@ namespace EpgTimer
             }
             if (scrollToTarget != null)
             {
-                ScrollTo(scrollToTarget);
+                ScrollTo(scrollToTarget, scrollToMoveBaseTime);
             }
         }
 
-        public void ScrollTo(object target)
+        public void ScrollTo(object target, bool moveBaseTime)
         {
             scrollToTarget = null;
             if (IsVisible == false)
             {
                 //Visibleになるまですこし待つ
                 scrollToTarget = target;
+                scrollToMoveBaseTime = moveBaseTime;
                 Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() => scrollToTarget = null));
                 return;
             }
+            MoveNowTime(moveBaseTime);
             // サービス選択
             UInt64 serviceKey_Target1 = 0;
             if (target is ReserveData)
             {
-                MoveNowTime(true);
                 var reserveData1 = (ReserveData)target;
                 serviceKey_Target1 = CommonManager.Create64Key(reserveData1.OriginalNetworkID, reserveData1.TransportStreamID, reserveData1.ServiceID);
             }
             else if (target is EpgEventInfo)
             {
-                MoveNowTime(true);
                 var eventInfo1 = (EpgEventInfo)target;
                 serviceKey_Target1 = CommonManager.Create64Key(eventInfo1.original_network_id, eventInfo1.transport_stream_id, eventInfo1.service_id);
+            }
+            else if (target is EpgServiceInfo)
+            {
+                var info = (EpgServiceInfo)target;
+                serviceKey_Target1 = CommonManager.Create64Key(info.ONID, info.TSID, info.SID);
             }
             foreach (ComboBoxItem item in this.comboBox_service.Items)
             {
@@ -1426,15 +1270,16 @@ namespace EpgTimer
             }
             else if (target is EpgEventInfo)
             {
+                var info = (EpgEventInfo)target;
                 for (int i = 0; i < this.timeList.Count; i++)
                 {
                     foreach (ProgramViewItem item in this.timeList.Values[i])
                     {
-                        if (item.Past == false &&
-                            item.EventInfo.event_id == ((EpgEventInfo)target).event_id &&
-                            item.EventInfo.original_network_id == ((EpgEventInfo)target).original_network_id &&
-                            item.EventInfo.service_id == ((EpgEventInfo)target).service_id &&
-                            item.EventInfo.transport_stream_id == ((EpgEventInfo)target).transport_stream_id)
+                        if (item.EventInfo.original_network_id == info.original_network_id &&
+                            item.EventInfo.transport_stream_id == info.transport_stream_id &&
+                            item.EventInfo.service_id == info.service_id &&
+                            (item.Past ? item.EventInfo.StartTimeFlag != 0 && info.StartTimeFlag != 0 && item.EventInfo.start_time == info.start_time :
+                                         item.EventInfo.event_id == info.event_id))
                         {
                             this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(item.LeftPos - 100);
                             this.epgProgramView.scrollViewer.ScrollToVerticalOffset(item.TopPos - 100);
@@ -1452,7 +1297,7 @@ namespace EpgTimer
             setInfo.ViewMode = 0;
             if (ViewModeChangeRequested != null)
             {
-                ViewModeChangeRequested(this, setInfo, null);
+                ViewModeChangeRequested(this, setInfo, baseTime, null);
             }
         }
     }
