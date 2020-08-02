@@ -27,6 +27,7 @@
                         <EventSetter Event="MouseDoubleClick" Handler="listView_event_MouseDoubleClick"/>
                         <Setter Property="BorderThickness" Value="5,0,0,1" />
                         <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
+                        <Setter Property="Background" Value="{Binding BackColor}" />
                         <Style.Triggers>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
@@ -34,7 +35,7 @@
                                     <Condition Property="IsSelected" Value="False" />
                                     <Condition Property="IsMouseOver" Value="False" />
                                 </MultiTrigger.Conditions>
-                                <Setter Property="Background" Value="{Binding BackColor}" />
+                                <Setter Property="Background" Value="{Binding AlternationBackColor}" />
                             </MultiTrigger>
                         </Style.Triggers>
                     </Style>
@@ -57,7 +58,7 @@
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Background="{Binding ResBackColor}" Text="{Binding StartTime}" />
+                                    <TextBlock Background="{Binding StartTimeBackColor}" Text="{Binding StartTime}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -71,10 +72,15 @@
                                 <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" Tag="ServiceName" />
                             </GridViewColumn.Header>
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
+                        <GridViewColumn>
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left" Tag="EventName" />
                             </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Background="{Binding EventNameBackColor}" Text="{Binding EventName}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>

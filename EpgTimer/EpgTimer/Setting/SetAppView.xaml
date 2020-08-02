@@ -44,6 +44,19 @@
                         <ComboBoxItem Content="自動予約登録-プログラム予約" Tag="ManualAutoAddView" />
                         <ComboBoxItem Content="番組表" Tag="EpgView" />
                     </ComboBox>
+                    <Label Content="エラー等強調色の位置" HorizontalAlignment="Left" Margin="351,233,0,0" VerticalAlignment="Top" />
+                    <Label Content="予約一覧など" HorizontalAlignment="Left" Margin="369,263,0,0" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="489,265,0,0" SelectedIndex="{Binding ResColorPosition}" VerticalAlignment="Top" Width="100">
+                        <ComboBoxItem Content="行背景" />
+                        <ComboBoxItem Content="日時" />
+                        <ComboBoxItem Content="番組名" />
+                    </ComboBox>
+                    <Label Content="録画済み一覧" HorizontalAlignment="Left" Margin="369,293,0,0" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="489,295,0,0" SelectedIndex="{Binding RecEndColorPosition}" VerticalAlignment="Top" Width="100">
+                        <ComboBoxItem Content="行背景" />
+                        <ComboBoxItem Content="日時" />
+                        <ComboBoxItem Content="番組名" />
+                    </ComboBox>
                     <Button Content="スタートアップにEpgTimer.exeのショートカットを作成する" Height="23" HorizontalAlignment="Left" Margin="6,356,0,0" Name="button_shortCutAdd" VerticalAlignment="Top" Width="340" Click="button_shortCutAdd_Click" />
                     <Button Content="スタートアップからEpgTimer.exeのショートカットを削除する" Height="23" HorizontalAlignment="Left" Margin="6,356,0,0" Name="button_shortCutDel" VerticalAlignment="Top" Width="340" Click="button_shortCutDel_Click" />
                     <Button Content="EpgTimerSrv設定" Height="23" HorizontalAlignment="Left" Margin="6,392,0,0" Name="button_srvSetting" VerticalAlignment="Top" Width="150" Click="button_srvSetting_Click" />

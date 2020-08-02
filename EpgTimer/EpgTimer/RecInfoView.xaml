@@ -71,6 +71,7 @@
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
                     <EventSetter Event="KeyDown" Handler="listView_recinfo_KeyDown" />
+                    <Setter Property="Background" Value="{Binding BackColor}" />
                     <Style.Triggers>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -78,7 +79,7 @@
                                 <Condition Property="IsSelected" Value="False" />
                                 <Condition Property="IsMouseOver" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{Binding BackColor}" />
+                            <Setter Property="Background" Value="{Binding AlternationBackColor}" />
                         </MultiTrigger>
                     </Style.Triggers>
                 </Style>
@@ -97,15 +98,25 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding StartTime}">
+                    <GridViewColumn>
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Background="{Binding StartTimeBackColor}" Text="{Binding StartTime}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding StartTimeNoDuration}">
+                    <GridViewColumn>
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="開始日時" Tag="StartTimeNoDuration" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Background="{Binding StartTimeBackColor}" Text="{Binding StartTimeNoDuration}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Duration}">
                         <GridViewColumn.Header>
@@ -128,7 +139,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Background="{Binding DropScrambleBackColor}" Text="{Binding EventName}" />
+                                <TextBlock Background="{Binding EventNameBackColor}" Text="{Binding EventName}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

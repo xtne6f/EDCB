@@ -61,6 +61,7 @@
                     <EventSetter Event="ContextMenuOpening" Handler="listView_key_ContextMenuOpening" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
                     <EventSetter Event="KeyDown" Handler="listView_key_KeyDown" />
+                    <Setter Property="Background" Value="{Binding BackColor}" />
                     <Style.Triggers>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -68,7 +69,7 @@
                                 <Condition Property="IsSelected" Value="False" />
                                 <Condition Property="IsMouseOver" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{Binding BackColor}" />
+                            <Setter Property="Background" Value="{Binding AlternationBackColor}" />
                         </MultiTrigger>
                     </Style.Triggers>
                 </Style>
@@ -81,7 +82,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Background="{Binding KeyEnabledBackColor}" Text="{Binding AndKey}" />
+                                <TextBlock Background="{Binding AndKeyBackColor}" Text="{Binding AndKey}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

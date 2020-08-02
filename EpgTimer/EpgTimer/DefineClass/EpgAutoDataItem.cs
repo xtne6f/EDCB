@@ -258,10 +258,20 @@ namespace EpgTimer
 
         public SolidColorBrush BackColor
         {
-            get { return Settings.BrushCache.ResDefBrush; }
+            get { return Settings.Instance.ResColorPosition == 0 ? KeyEnabledBackColor : null; }
         }
 
-        public SolidColorBrush KeyEnabledBackColor
+        public SolidColorBrush AlternationBackColor
+        {
+            get { return (Settings.Instance.ResColorPosition == 0 ? KeyEnabledBackColor : null) ?? Settings.BrushCache.ResDefBrush; }
+        }
+
+        public SolidColorBrush AndKeyBackColor
+        {
+            get { return Settings.Instance.ResColorPosition != 0 ? KeyEnabledBackColor : null; }
+        }
+
+        private SolidColorBrush KeyEnabledBackColor
         {
             get
             {

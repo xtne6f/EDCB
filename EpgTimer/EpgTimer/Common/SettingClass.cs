@@ -234,6 +234,7 @@ namespace EpgTimer
         public bool PrebuildEpg { get; set; }
         public Int32 TvTestOpenWait { get; set; }
         public Int32 TvTestChgBonWait { get; set; }
+        public int ResColorPosition { get; set; }
         public int ResAlternationCount { get; set; }
         public byte ResDefColorA { get; set; }
         public byte ResDefColorR { get; set; }
@@ -251,6 +252,7 @@ namespace EpgTimer
         public byte ResNoColorR { get; set; }
         public byte ResNoColorG { get; set; }
         public byte ResNoColorB { get; set; }
+        public int RecEndColorPosition { get; set; }
         public int RecEndAlternationCount { get; set; }
         public byte RecEndDefColorA { get; set; }
         public byte RecEndDefColorR { get; set; }
@@ -443,6 +445,7 @@ namespace EpgTimer
             r.PrebuildEpg               = ConvertXElem(x, w, "PrebuildEpg", PrebuildEpg, false);
             r.TvTestOpenWait            = (int)ConvertXElem(x, w, "TvTestOpenWait", TvTestOpenWait, 2000);
             r.TvTestChgBonWait          = (int)ConvertXElem(x, w, "TvTestChgBonWait", TvTestChgBonWait, 2000);
+            r.ResColorPosition          = (int)ConvertXElem(x, w, "ResColorPosition", ResColorPosition, 2);
             r.ResAlternationCount       = (int)ConvertXElem(x, w, "ResAlternationCount", ResAlternationCount, 2);
             r.ResDefColorA              = (byte)ConvertXElem(x, w, "ResDefColorA", ResDefColorA, 0);
             r.ResDefColorR              = (byte)ConvertXElem(x, w, "ResDefColorR", ResDefColorR, 0xFF);
@@ -460,6 +463,7 @@ namespace EpgTimer
             r.ResNoColorR               = (byte)ConvertXElem(x, w, "ResNoColorR", ResNoColorR, 0xA9);
             r.ResNoColorG               = (byte)ConvertXElem(x, w, "ResNoColorG", ResNoColorG, 0xA9);
             r.ResNoColorB               = (byte)ConvertXElem(x, w, "ResNoColorB", ResNoColorB, 0xA9);
+            r.RecEndColorPosition       = (int)ConvertXElem(x, w, "RecEndColorPosition", RecEndColorPosition, 2);
             r.RecEndAlternationCount    = (int)ConvertXElem(x, w, "RecEndAlternationCount", RecEndAlternationCount, 2);
             r.RecEndDefColorA           = (byte)ConvertXElem(x, w, "RecEndDefColorA", RecEndDefColorA, 0x0C);
             r.RecEndDefColorR           = (byte)ConvertXElem(x, w, "RecEndDefColorR", RecEndDefColorR, 0x80);

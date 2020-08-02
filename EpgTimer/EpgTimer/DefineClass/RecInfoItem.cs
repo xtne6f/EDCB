@@ -79,9 +79,21 @@ namespace EpgTimer
         }
         public SolidColorBrush BackColor
         {
-            get { return Settings.BrushCache.RecEndDefBrush; }
+            get { return Settings.Instance.RecEndColorPosition == 0 ? DropScrambleBackColor : null; }
         }
-        public SolidColorBrush DropScrambleBackColor
+        public SolidColorBrush AlternationBackColor
+        {
+            get { return (Settings.Instance.RecEndColorPosition == 0 ? DropScrambleBackColor : null) ?? Settings.BrushCache.RecEndDefBrush; }
+        }
+        public SolidColorBrush StartTimeBackColor
+        {
+            get { return Settings.Instance.RecEndColorPosition == 1 ? DropScrambleBackColor : null; }
+        }
+        public SolidColorBrush EventNameBackColor
+        {
+            get { return Settings.Instance.RecEndColorPosition == 2 ? DropScrambleBackColor : null; }
+        }
+        private SolidColorBrush DropScrambleBackColor
         {
             get
             {
