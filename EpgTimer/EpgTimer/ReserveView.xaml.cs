@@ -266,8 +266,7 @@ namespace EpgTimer
                 ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
 
                 key.andKey = item.ReserveInfo.Title;
-                Int64 sidKey = ((Int64)item.ReserveInfo.OriginalNetworkID) << 32 | ((Int64)item.ReserveInfo.TransportStreamID) << 16 | ((Int64)item.ReserveInfo.ServiceID);
-                key.serviceList.Add(sidKey);
+                key.serviceList.Add((long)CommonManager.Create64Key(item.ReserveInfo.OriginalNetworkID, item.ReserveInfo.TransportStreamID, item.ReserveInfo.ServiceID));
 
                 dlg.SetSearchDefKey(key);
                 dlg.ShowDialog();

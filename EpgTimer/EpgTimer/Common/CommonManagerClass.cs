@@ -617,9 +617,7 @@ namespace EpgTimer
             string extInfo = "";
             if (eventInfo != null)
             {
-                UInt64 key = ((UInt64)eventInfo.original_network_id) << 32 |
-                    ((UInt64)eventInfo.transport_stream_id) << 16 |
-                    ((UInt64)eventInfo.service_id);
+                UInt64 key = Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
                 if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                 {
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
@@ -763,9 +761,7 @@ namespace EpgTimer
                         extInfo += "イベントリレーあり：\r\n";
                         foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
                         {
-                            key = ((UInt64)info.original_network_id) << 32 |
-                                ((UInt64)info.transport_stream_id) << 16 |
-                                ((UInt64)info.service_id);
+                            key = Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
                             if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                             {
                                 extInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + " ";
