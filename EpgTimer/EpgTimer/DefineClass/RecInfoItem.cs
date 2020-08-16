@@ -129,8 +129,8 @@ namespace EpgTimer
                     view += " (" + NetworkName + ")" + "\r\n";
                     view += EventName + "\r\n";
                     view += "\r\n";
-                    view += "録画結果 : " + RecInfo.Comment + "\r\n";
-                    view += "録画ファイルパス : " + RecInfo.RecFilePath + "\r\n";
+                    view += "結果 : " + RecInfo.Comment + "\r\n";
+                    view += "録画ファイル : " + RecInfo.RecFilePath + "\r\n";
                     view += "\r\n";
 
                     view += "OriginalNetworkID : " + RecInfo.OriginalNetworkID.ToString() + " (0x" + RecInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
@@ -138,8 +138,8 @@ namespace EpgTimer
                     view += "ServiceID : " + RecInfo.ServiceID.ToString() + " (0x" + RecInfo.ServiceID.ToString("X4") + ")\r\n";
                     view += "EventID : " + RecInfo.EventID.ToString() + " (0x" + RecInfo.EventID.ToString("X4") + ")\r\n";
                     view += "\r\n";
-                    view += "Drops : " + Drops + "\r\n";
-                    view += "Scrambles : " + Scrambles;
+                    view += "Drop : " + Drops + "\r\n";
+                    view += "Scramble : " + Scrambles;
                 }
 
 
