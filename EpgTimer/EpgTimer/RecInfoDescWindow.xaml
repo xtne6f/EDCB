@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="録画情報" Height="460" Width="660" Loaded="Window_Loaded" WindowStartupLocation="CenterOwner">
     <Grid>
-        <TabControl Margin="0,0,0,39">
+        <TabControl Margin="0,0,0,70">
             <TabItem Header="番組情報" Name="tabItem_pgInfo">
                 <RichTextBox IsReadOnly="True" Name="richTextBox_pgInfo" VerticalScrollBarVisibility="Auto" />
             </TabItem>
@@ -11,6 +11,9 @@
                 <TextBox FontFamily="Consolas" IsReadOnly="True" Name="textBox_errLog" VerticalScrollBarVisibility="Auto" />
             </TabItem>
         </TabControl>
+        <Label Content="ファイル" Height="28" HorizontalAlignment="Left" Margin="5,0,0,39" VerticalAlignment="Bottom" />
+        <TextBox Height="23" Margin="60,0,83,41" Name="textBox_recFilePath" TextChanged="textBox_recFilePath_TextChanged" VerticalAlignment="Bottom" />
+        <Button Click="button_rename_Click" Content="リネーム" Height="23" HorizontalAlignment="Right" IsEnabled="False" Margin="0,0,8,41" Name="button_rename" ToolTip="ファイルが存在すれば同時に移動します。拡張子が付加されたファイルも移動します。" VerticalAlignment="Bottom" Width="67" />
         <Button Click="button_play_Click" Content="再生" Height="23" HorizontalAlignment="Left" Margin="30,0,0,8" VerticalAlignment="Bottom" Width="80" />
         <Button Click="button_del_Click" Content="削除" Height="23" HorizontalAlignment="Left" Margin="118,0,0,8" VerticalAlignment="Bottom" Width="80" />
         <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="206,0,0,8" VerticalAlignment="Bottom" Width="80" />
