@@ -26,7 +26,10 @@ cinema=GetVarInt(mg.request_info.query_string,'cinema')==1
 
 post=AssertPost()
 if post then
-  if mg.get_var(post,'del') then
+  if mg.get_var(post,'protect') then
+    edcb.ChgProtectRecFileInfo(id,mg.get_var(post,'protect')=='y')
+    ct:Append('  <div id="result">変更しました</div>\n')
+  elseif mg.get_var(post,'del') then
     edcb.DelRecFileInfo(id)
     ct:Append('  <div id="result">削除しました</div>\n')
   end
@@ -103,6 +106,11 @@ if v then
     end
   end
   ct:Append('<br></dd>\n'
+    ..'    <dt>プロテクト</dt><dd>\n'
+    ..'<form method="POST" action="recinfodesc.html?id='..v.id..'"><div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="hidden" name="protect" value="'..(v.protectFlag and 'n' or 'y')..'">\n'
+    ..'<input type="submit" value="'..(v.protectFlag and 'Yes' or 'No')..'"></div></form></dd>\n'
     ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..v.programInfo:gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..v.errInfo:gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
