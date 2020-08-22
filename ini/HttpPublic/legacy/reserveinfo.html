@@ -73,11 +73,11 @@ function Change(id,post)
   return false
 end
 
-vtag=GetVarInt(mg.request_info.query_string,'vtag') or 0
+vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
-<!DOCTYPE HTML]=]..(vtag==0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
+<!DOCTYPE HTML]=]..(vtag<=0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -91,6 +91,10 @@ ct:Append([=[
 ]=])
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
+offset=GetVarInt(mg.request_info.query_string,'offset',0,100)
+audio2=GetVarInt(mg.request_info.query_string,'audio2')==1
+dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
+cinema=GetVarInt(mg.request_info.query_string,'cinema')==1
 
 post=AssertPost()
 if post then
@@ -110,36 +114,52 @@ if r then
   epgInfo=ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct:Append('  <dl>\n'
-    ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..string.gsub(epgInfo, '\r?\n', '<br>\n')
+    ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..epgInfo:gsub('\r?\n','<br>\n')
       or FormatTimeAndDuration(r.startTime, r.durationSecond)..'<br>'..r.stationName..'<br>'..r.title..'<br><br>'
-        ..string.format('OriginalNetworkID:%d(0x%04X)<br>', r.onid, r.onid)
-        ..string.format('TransportStreamID:%d(0x%04X)<br>', r.tsid, r.tsid)
-        ..string.format('ServiceID:%d(0x%04X)<br>', r.sid, r.sid)
+        ..('OriginalNetworkID:%d(0x%04X)<br>'):format(r.onid,r.onid)
+        ..('TransportStreamID:%d(0x%04X)<br>'):format(r.tsid,r.tsid)
+        ..('ServiceID:%d(0x%04X)<br>'):format(r.sid,r.sid)
       )..'</dd>\n'
-    ..'    <dt>ファイル →<a href="reserveinfo.html?id='..r.reserveID..(vtag==0 and '&amp;vtag=-1">Video' or '">DL')..'</a></dt><dd>\n')
+    ..'    <dt>ファイル →<a href="reserveinfo.html?id='..r.reserveID..(offset and '&amp;offset='..offset or '')..(audio2 and '&amp;audio2=1' or '')
+    ..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a></dt><dd>\n')
   ref=recFilePath and NativeToDocumentPath(recFilePath)
   if ref then
     for i,ext in ipairs({'.mp4','.webm',''}) do
       ff=edcb.FindFile and edcb.FindFile(recFilePath..ext,1)
       if ff then
-        ct:Append((vtag==i and '<video autoplay controls src="' or '<a href="')
+        ct:Append((vtag==i and '<video autoplay controls style="max-width:95%" src="' or '<a href="')
           ..(vtag~=0 and vtag~=i and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
           ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video>' or '</a>'))
         if ext=='' then
-          for j=0,9 do
-            ct:Append('\n'..(j==0 and '[' or '')..(vtag==j+10 and '<br><video autoplay controls src="' or '<a href="')
-              ..(vtag~=0 and vtag~=j+10 and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..(j+10) or 'xcode.lua?'..(j*10)..'='..mg.url_encode(ref))
-              ..'">'..(j==0 and 'xcode.lua' or j)..(vtag==j+10 and '</video>' or '</a>'))
-          end
           fsec,fsize=0,0
           f=edcb.io.open(recFilePath,'rb')
           if f then
             fsec,fsize=GetDurationSec(f)
             f:close()
           end
-          ct:Append('\n'..(vtag==99 and '<br><video autoplay controls src="' or '<a href="')
-            ..(vtag~=0 and vtag~=99 and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag=99' or 'xcode.lua?99='..mg.url_encode(ref))
-            ..'">('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)'..(vtag==99 and '</video>' or '</a>')..']<br>\n')
+          ct:Append(' ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
+            ..'<form method="GET" action="'..(vtag==0 and 'xcode.lua' or 'reserveinfo.html')..'"><div>\n'
+            ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
+                 or '<input type="hidden" name="id" value="'..r.reserveID..'">\n<input type="hidden" name="vtag" value="10">\n')
+            ..'<input type="submit" value="xcode.lua">\n'
+            ..'offset: <select name="offset">')
+          for j=0,100,5 do
+            ct:Append('<option value="'..j..'"'..((offset or 0)==j and ' selected' or '')..'>'
+              ..(fsec>0 and ('%dm%02ds|'):format(math.floor(fsec*j/100/60),fsec*j/100%60) or '')..j..'%')
+          end
+          ct:Append('</select>\n'
+            ..'<input type="checkbox" name="audio2" value="1"'..(audio2 and ' checked' or '')..'>audio2\n'
+            ..'<select name="dual">'
+            ..'<option value="0"'..(dual~=1 and dual~=2 and ' selected' or '')..'>*'
+            ..'<option value="1"'..(dual==1 and ' selected' or '')..'>dual-main'
+            ..'<option value="2"'..(dual==2 and ' selected' or '')..'>dual-sub'
+            ..'</select>\n'
+            ..'<input type="checkbox" name="cinema" value="1"'..(cinema and ' checked' or '')..'>cinema\n'
+            ..'</div></form>')
+          if vtag==10 then
+             ct:Append('\n<video autoplay controls style="max-width:95%" src="xcode.lua?fname='..mg.url_encode(ref)..(offset and '&amp;offset='..offset or '')
+               ..(audio2 and '&amp;audio2=1' or '')..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')..'">xcode.lua</video>')
+          end
         else
           ct:Append(' ('..math.floor(ff[1].size/1048576)..'M)<br>\n')
         end

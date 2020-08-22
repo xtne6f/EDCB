@@ -7,7 +7,7 @@ vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
-<!DOCTYPE HTML]=]..(vtag<0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
+<!DOCTYPE HTML]=]..(vtag<=0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -76,17 +76,56 @@ ct:Append(pageNav)
 ct:Append([=[
 </div>
 <div class="aside">
-  view.lua]=])
-for i,v in ipairs(edcb.FindFile and edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
+]=])
+a={}
+for i,v in ipairs(edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
   n=v.name:match('^[^_]+_(%d+)_%d+$')
   if n then
-    ct:Append((vtag..''==n and ' <video autoplay controls src="' or ' <a href="')
-      ..'view.lua?ctok='..CsrfToken('view.lua')..'&amp;n='..n..'">-pipe'..n
-      ..(vtag..''==n and '</video>' or '</a> <a href="reserve.html?vtag='..n..'#footer">(video)</a>'))
+    a[#a+1]=n
+  end
+end
+if #a>0 then
+  n=mg.get_var(mg.request_info.query_string,'fname') or a[1]
+  audio2=GetVarInt(mg.request_info.query_string,'audio2')==1
+  dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
+  cinema=GetVarInt(mg.request_info.query_string,'cinema')==1
+  ct:Append('視聴 →<a href="reserve.html?vtag='..(vtag==0 and '-1' or '0')
+    ..(audio2 and '&amp;audio2=1' or '')..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')
+    ..'#footer">'..(vtag==0 and 'Video' or 'DL')..'</a>\n'
+    ..'<form method="GET" action="'..(vtag==0 and 'view.lua' or 'reserve.html#footer')..'"><div>\n'
+    ..'<input type="submit" value="view.lua">\n'
+    ..'<select name="n">')
+  for i,v in ipairs(a) do
+    ct:Append('<option value="'..v..'"'..(n==v and ' selected' or '')..'>-pipe'..v)
+  end
+  ct:Append('</select>\n'
+    ..'<input type="checkbox" name="audio2" value="1"'..(audio2 and ' checked' or '')..'>audio2\n'
+    ..'<select name="dual">'
+    ..'<option value="0"'..(dual~=1 and dual~=2 and ' selected' or '')..'>*'
+    ..'<option value="1"'..(dual==1 and ' selected' or '')..'>dual-main'
+    ..'<option value="2"'..(dual==2 and ' selected' or '')..'>dual-sub'
+    ..'</select>\n'
+    ..'<input type="checkbox" name="cinema" value="1"'..(cinema and ' checked' or '')..'>cinema\n'
+    ..(vtag==0 and '<input type="hidden" name="ctok" value="'..CsrfToken('view.lua')..'">\n'
+         or '<input type="hidden" name="vtag" value="1">\n')
+    ..'</div></form>\n')
+  if vtag==1 then
+    for i,v in ipairs(a) do
+      if n==v then
+        ct:Append('<video autoplay controls style="max-width:95%" src="view.lua?n='..v
+          ..(audio2 and '&amp;audio2=1' or '')..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')
+          ..'&amp;ctok='..CsrfToken('view.lua')..'">view.lua</video>\n')
+        break
+      end
+    end
   end
 end
 ct:Append([=[
- <a href="view.lua?ctok=]=]..CsrfToken('view.lua')..[=[&amp;n=-1">-term</a>
+  <form method="POST" action="view.lua"><div>
+    <input type="hidden" name="ctok" value="]=]..CsrfToken('view.lua')..[=[">
+    <input type="hidden" name="n" value="-1">
+    <input type="submit" value="view.lua -term">
+  </div></form>
 </div>
 <div id="footer">
   <a href="index.html">メニュー</a>

@@ -1,5 +1,5 @@
 -- ファイルを転送するスクリプト
--- ファイルをタイムシフト再生できる: http://localhost:5510/xcode.lua?0=video/foo.ts
+-- ファイルをタイムシフト再生できる: http://localhost:5510/xcode.lua?fname=video/foo.ts
 
 -- コマンドはEDCBのToolsフォルダにあるものを優先する
 ffmpeg=edcb.GetPrivateProfile('SET', 'ModulePath', '', 'Common.ini')..'\\Tools\\ffmpeg.exe'
@@ -9,11 +9,14 @@ if not edcb.FindFile(readex, 1) then readex='readex.exe' end
 
 -- トランスコードするかどうか(する場合はreadex.exeとffmpeg.exeを用意すること)
 XCODE=false
--- 変換コマンド
+-- フィルタオプション
+XFILTER='-vf yadif=0:-1:1'
+XFILTER_CINEMA='-vf pullup -r 24000/1001'
+-- ffmpeg変換オプション($FILTERはフィルタオプションに置換)
 -- libvpxの例:リアルタイム変換と画質が両立するようにビットレート-bと計算量-cpu-usedを調整する
-XCMD='"'..ffmpeg..'" -i pipe:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 -vf yadif=0:-1:1 -s 512x288 -r 30000/1001 -acodec libvorbis -ab 128k -f webm -'
---XCMD='"'..ffmpeg..'" -i pipe:0 -vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast -g 120 -vf yadif=0:-1:1 -s 512x288 -r 30000/1001 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
---XCMD='"'..ffmpeg..'" -i pipe:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium -g 120 -vf yadif=0:-1:1 -s 1280x720 -r 30000/1001 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
+XOPT='-vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -acodec libvorbis -ab 128k -f webm -'
+--XOPT='-vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast -g 120 $FILTER -s 512x288 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
+--XOPT='-vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium -g 120 $FILTER -s 1280x720 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
 -- 変換後の拡張子
 XEXT='.webm'
 --XEXT='.mp4'
@@ -22,15 +25,14 @@ XPREPARE=nil
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-fpath=nil
-for i=0,99 do
-  -- 変数名は転送開始位置(99分率)
-  fpath=mg.get_var(mg.request_info.query_string, ''..i)
-  if fpath then
-    fpath=DocumentToNativePath(fpath)
-    offset=i
-    break
-  end
+fpath=mg.get_var(mg.request_info.query_string,'fname')
+if fpath then
+  fpath=DocumentToNativePath(fpath)
+  offset=GetVarInt(mg.request_info.query_string,'offset',0,100) or 0
+  audio2=GetVarInt(mg.request_info.query_string,'audio2',0,1) or 0
+  dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
+  dual=dual==1 and ' -dual_mono_mode main' or dual==2 and ' -dual_mono_mode sub' or ''
+  filter=GetVarInt(mg.request_info.query_string,'cinema')==1 and XFILTER_CINEMA or XFILTER
 end
 
 f=nil
@@ -42,16 +44,17 @@ if fpath then
     f=edcb.io.open(fpath, 'rb')
     if f then
       fsec,fsize=GetDurationSec(f)
-      if offset~=0 and offset~=99 and fsec>0 and SeekSec(f,fsec*offset/99) then
+      if offset~=0 and offset~=100 and fsec>0 and SeekSec(f,fsec*offset/100) then
         offset=f:seek('cur',0) or 0
       else
-        offset=math.floor(fsize*offset/99/188)*188
+        offset=math.floor(fsize*offset/100/188)*188
       end
       if XCODE then
         f:close()
         -- 容量確保の可能性があるときは周期188+同期語0x47(188*256+0x47=48199)で対象ファイルを終端判定する
         sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
-        f=edcb.io.popen('""'..readex..'" '..offset..(sync and ' 4p48199' or ' 4')..' "'..fpath..'" | '..XCMD..'"', 'rb')
+        f=edcb.io.popen('""'..readex..'" '..offset..(sync and ' 4p48199' or ' 4')..' "'..fpath..'" | "'
+          ..ffmpeg..'"'..dual..' -i pipe:0 -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)..'"', 'rb')
         fname='xcode'..XEXT
       else
         -- 容量確保には未対応
