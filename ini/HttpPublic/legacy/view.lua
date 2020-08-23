@@ -1,9 +1,5 @@
 -- 名前付きパイプ(SendTSTCPの送信先:0.0.0.1 ポート:0～65535)を転送するスクリプト
 
--- コマンドはEDCBのToolsフォルダにあるものを優先する
-ffmpeg=edcb.GetPrivateProfile('SET', 'ModulePath', '', 'Common.ini')..'\\Tools\\ffmpeg.exe'
-if not edcb.FindFile(ffmpeg, 1) then ffmpeg='ffmpeg.exe' end
-
 -- フィルタオプション
 XFILTER='-vf yadif=0:-1:1'
 XFILTER_CINEMA='-vf pullup -r 24000/1001'
@@ -15,10 +11,17 @@ XOPT='-vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 
 -- 変換後の拡張子
 XEXT='.webm'
 --XEXT='.mp4'
+-- 出力バッファの量(bytes。asyncbuf.exeを用意すること。変換負荷や通信のむらを吸収する)
+XBUF=0
 -- 転送開始前に変換しておく量(bytes)
-XPREPARE=nil
+XPREPARE=0
 -- NetworkTVモードの名前付きパイプをFindFileで見つけられない場合(EpgTimerSrvのWindowsサービス化など？)に対応するか
 FIND_BY_OPEN=false
+
+-- コマンドはEDCBのToolsフォルダにあるものを優先する
+tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools\\'
+ffmpeg=(edcb.FindFile(tools..'ffmpeg.exe',1) and tools or '')..'ffmpeg.exe'
+asyncbuf=(edcb.FindFile(tools..'asyncbuf.exe',1) and tools or '')..'asyncbuf.exe'
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
@@ -50,7 +53,8 @@ if true then
         for i=1,50 do
           ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*_'..pid, 1)
           if ff and ff[1].name:find('^[^_]+_%d+_%d+$') then
-            f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\'..ff[1].name..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)..'"', 'rb')
+            f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\'..ff[1].name..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
+              ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
             fname='view'..XEXT
             break
           elseif FIND_BY_OPEN then
@@ -61,7 +65,8 @@ if true then
                 ff:close()
                 -- 再び開けるようになるまで少しラグがある
                 edcb.Sleep(4000)
-                f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\SendTSTCP_'..j..'_'..pid..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)..'"', 'rb')
+                f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\SendTSTCP_'..j..'_'..pid..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
+                  ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
                 fname='view'..XEXT
                 break
               end
@@ -84,7 +89,8 @@ if true then
     -- 名前付きパイプがあれば開く
     ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*', 1)
     if ff and ff[1].name:find('^[^_]+_%d+_%d+$') then
-      f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\'..ff[1].name..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)..'"', 'rb')
+      f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\'..ff[1].name..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
+        ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
       fname='view'..XEXT
     end
   end
@@ -97,8 +103,7 @@ if not f then
 else
   mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
   while true do
-    buf=f:read(XPREPARE or 48128)
-    XPREPARE=nil
+    buf=f:read(48128)
     if buf and #buf ~= 0 then
       if not mg.write(buf) then
         -- キャンセルされた

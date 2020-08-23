@@ -1,12 +1,6 @@
 -- ファイルを転送するスクリプト
 -- ファイルをタイムシフト再生できる: http://localhost:5510/xcode.lua?fname=video/foo.ts
 
--- コマンドはEDCBのToolsフォルダにあるものを優先する
-ffmpeg=edcb.GetPrivateProfile('SET', 'ModulePath', '', 'Common.ini')..'\\Tools\\ffmpeg.exe'
-if not edcb.FindFile(ffmpeg, 1) then ffmpeg='ffmpeg.exe' end
-readex=edcb.GetPrivateProfile('SET', 'ModulePath', '', 'Common.ini')..'\\Tools\\readex.exe'
-if not edcb.FindFile(readex, 1) then readex='readex.exe' end
-
 -- トランスコードするかどうか(する場合はreadex.exeとffmpeg.exeを用意すること)
 XCODE=false
 -- フィルタオプション
@@ -20,8 +14,16 @@ XOPT='-vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 
 -- 変換後の拡張子
 XEXT='.webm'
 --XEXT='.mp4'
+-- 出力バッファの量(bytes。asyncbuf.exeを用意すること。変換負荷や通信のむらを吸収する)
+XBUF=0
 -- 転送開始前に変換しておく量(bytes)
-XPREPARE=nil
+XPREPARE=0
+
+-- コマンドはEDCBのToolsフォルダにあるものを優先する
+tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools\\'
+ffmpeg=(edcb.FindFile(tools..'ffmpeg.exe',1) and tools or '')..'ffmpeg.exe'
+readex=(edcb.FindFile(tools..'readex.exe',1) and tools or '')..'readex.exe'
+asyncbuf=(edcb.FindFile(tools..'asyncbuf.exe',1) and tools or '')..'asyncbuf.exe'
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
@@ -54,12 +56,12 @@ if fpath then
         -- 容量確保の可能性があるときは周期188+同期語0x47(188*256+0x47=48199)で対象ファイルを終端判定する
         sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
         f=edcb.io.popen('""'..readex..'" '..offset..(sync and ' 4p48199' or ' 4')..' "'..fpath..'" | "'
-          ..ffmpeg..'"'..dual..' -i pipe:0 -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)..'"', 'rb')
+          ..ffmpeg..'"'..dual..' -i pipe:0 -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
+          ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
         fname='xcode'..XEXT
       else
         -- 容量確保には未対応
         f:seek('set', offset)
-        XPREPARE=nil
       end
     end
   end
@@ -73,8 +75,7 @@ else
   mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
   retry=0
   while true do
-    buf=f:read(XPREPARE or 48128)
-    XPREPARE=nil
+    buf=f:read(48128)
     if buf and #buf ~= 0 then
       retry=0
       if not mg.write(buf) then
