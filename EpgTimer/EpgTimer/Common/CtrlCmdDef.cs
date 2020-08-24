@@ -170,6 +170,16 @@ namespace EpgTimer
             }
             r.End();
         }
+        /// <summary>無効かどうか</summary>
+        public bool IsNoRec()
+        {
+            return RecMode / 5 % 2 != 0;
+        }
+        /// <summary>RecModeの録画モード情報のみ</summary>
+        public byte GetRecMode()
+        {
+            return (byte)((RecMode + RecMode / 5 % 2) % 5);
+        }
     }
 
     /// <summary>登録予約情報</summary>
