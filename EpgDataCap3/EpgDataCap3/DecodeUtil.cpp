@@ -354,6 +354,8 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 						}
 						break;
 					}
+					//ChangeTSIDClear()によってイテレータが無効になるかもしれない
+					itr = lower_bound_first(this->buffUtilMap.begin(), this->buffUtilMap.end(), tsPacket.PID);
 				}
 			}
 		}
