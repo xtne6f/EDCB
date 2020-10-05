@@ -45,7 +45,7 @@ BOOL CReNamePlugInUtil::Convert(
 	auto getProcAddr = [=](const char* name) { return dlsym(hModule, name); };
 #endif
 	if( hModule == NULL ){
-		_OutputDebugString(L"%lsのロードに失敗しました\r\n", dllPath.c_str());
+		AddDebugLogFormat(L"%lsのロードに失敗しました", dllPath.c_str());
 		return FALSE;
 	}
 	CloseConvert();
@@ -65,7 +65,7 @@ BOOL CReNamePlugInUtil::Convert(
 			if( pfnConvertRecName ){
 				ret = pfnConvertRecName(info, recName, recNamesize);
 			}else{
-				OutputDebugString(L"ConvertRecNameの GetProcAddress に失敗\r\n");
+				AddDebugLog(L"ConvertRecNameの GetProcAddress に失敗");
 				ret = FALSE;
 			}
 		}

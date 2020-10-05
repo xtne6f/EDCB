@@ -169,12 +169,12 @@ BOOL CBonCtrl::ProcessSetCh(
 		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow || this->tsOut.IsChUnknown(&elapsed) && elapsed > 15000 ){
 			StopBackgroundEpgCap();
 			this->tsOut.SetChChangeEvent(chScan);
-			_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
+			AddDebugLogFormat(L"SetCh space %d, ch %d", space, ch);
 			ret = this->bonUtil.SetCh(space, ch);
 			StartBackgroundEpgCap();
 		}
 	}else{
-		OutputDebugString(L"Err GetNowCh");
+		AddDebugLog(L"Err GetNowCh");
 	}
 	return ret;
 }
@@ -557,13 +557,13 @@ void CBonCtrl::CheckChScan()
 			if( this->tsOut.IsChUnknown(&elapsed) ){
 				if( elapsed > this->chScanChChgTimeOut * 1000 ){
 					//チャンネル切り替えにchChgTimeOut秒以上かかってるので無信号と判断
-					OutputDebugString(L"★AutoScan Ch Change timeout\r\n");
+					AddDebugLog(L"★AutoScan Ch Change timeout");
 					this->chScanChkNext = TRUE;
 				}
 			}else{
 				if( GetTickCount() - this->chScanTick > (this->chScanChChgTimeOut + this->chScanServiceChkTimeOut) * 1000 ){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
-					OutputDebugString(L"★AutoScan GetService timeout\r\n");
+					AddDebugLog(L"★AutoScan GetService timeout");
 					this->chScanChkNext = TRUE;
 				}else{
 					//サービス一覧の取得を行う
@@ -736,7 +736,7 @@ void CBonCtrl::CheckEpgCap()
 					//timeOut分以上かかっているなら停止
 					this->tsOut.StopSaveEPG(this->epgCapSaveTimeOut);
 					this->epgCapChkNext = TRUE;
-					_OutputDebugString(L"++%d分でEPG取得完了せず or Ch変更でエラー", this->epgCapTimeOut);
+					AddDebugLogFormat(L"++%d分でEPG取得完了せず or Ch変更でエラー", this->epgCapTimeOut);
 				}else if( tick - this->epgCapTick > 5000 ){
 					SET_CH_INFO ch = this->epgCapChList[chkCount];
 					BOOL basicOnly = ch.ONID == 4 && this->epgCapBSBasic ||
@@ -1012,7 +1012,7 @@ void CBonCtrl::CheckEpgCapBack()
 				CSendCtrlCmd cmd;
 				cmd.SetConnectTimeOut(1000);
 				cmd.SendReloadEpg();
-				_OutputDebugString(L"++%d分でEPG取得完了せず or Ch変更でエラー", this->epgCapTimeOut);
+				AddDebugLogFormat(L"++%d分でEPG取得完了せず or Ch変更でエラー", this->epgCapTimeOut);
 				this->epgCapBackIndexOrStatus = ST_STOP;
 			}
 		}

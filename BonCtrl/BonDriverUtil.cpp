@@ -19,14 +19,14 @@ IBonDriver* CastB(IBonDriver2** if2, IBonDriver* (*funcCreate)())
 {
 	HMODULE hModule = LoadLibrary(L"IBonCast.dll");
 	if( hModule == NULL ){
-		OutputDebugString(L"★IBonCast.dllがロードできません\r\n");
+		AddDebugLog(L"★IBonCast.dllがロードできません");
 		return NULL;
 	}
 	const LPVOID* (WINAPI* funcCast)(LPCSTR, void*) = (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(hModule, "Cast");
 	void* pBase;
 	const LPVOID* table;
 	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IBonDriver@10", pBase)) == NULL ){
-		OutputDebugString(L"★Castに失敗しました\r\n");
+		AddDebugLog(L"★Castに失敗しました");
 		FreeLibrary(hModule);
 		return NULL;
 	}
@@ -148,7 +148,7 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 	CBonStruct2Adapter bon2Adapter;
 	HMODULE hModule = LoadLibrary(fs_path(sys->loadDllFolder).append(sys->loadDllFileName).c_str());
 	if( hModule == NULL ){
-		OutputDebugString(L"★BonDriverがロードできません\r\n");
+		AddDebugLog(L"★BonDriverがロードできません");
 	}else{
 		const STRUCT_IBONDRIVER* (*funcCreateBonStruct)() = (const STRUCT_IBONDRIVER*(*)())GetProcAddress(hModule, "CreateBonStruct");
 		if( funcCreateBonStruct ){
@@ -165,7 +165,7 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 		}else{
 			IBonDriver* (*funcCreateBonDriver)() = (IBonDriver*(*)())GetProcAddress(hModule, "CreateBonDriver");
 			if( funcCreateBonDriver == NULL ){
-				OutputDebugString(L"★GetProcAddressに失敗しました\r\n");
+				AddDebugLog(L"★GetProcAddressに失敗しました");
 			}else{
 #ifdef _MSC_VER
 				if( (bonIF = funcCreateBonDriver()) != NULL ){
@@ -179,7 +179,7 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 		}
 		if( sys->bon2IF ){
 			if( sys->bon2IF->OpenTuner() == FALSE ){
-				OutputDebugString(L"★OpenTunerに失敗しました\r\n");
+				AddDebugLog(L"★OpenTunerに失敗しました");
 			}else{
 				sys->initChSetFlag = false;
 				//チューナー名の取得
@@ -254,14 +254,14 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		SetTimer(hwnd, 1, 20, NULL);
 		sys->statusTimeout = 0;
 		if( sys->traceLevel ){
-			OutputDebugString(L"CBonDriverUtil: #Open\r\n");
+			AddDebugLog(L"CBonDriverUtil: #Open");
 			CBlockLock lock(&sys->utilLock);
 			sys->callingName = NULL;
 		}
 		return 0;
 	case WM_DESTROY:
 		if( sys->traceLevel ){
-			OutputDebugString(L"CBonDriverUtil: #Closing\r\n");
+			AddDebugLog(L"CBonDriverUtil: #Closing");
 			CBlockLock lock(&sys->utilLock);
 			sys->callingName = L"Closing";
 			sys->callingTick = GetTickCount();
@@ -336,7 +336,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		return 0;
 	case WM_APP_SET_CH:
 		if( sys->traceLevel ){
-			OutputDebugString(L"CBonDriverUtil: #SetCh\r\n");
+			AddDebugLog(L"CBonDriverUtil: #SetCh");
 			CBlockLock lock(&sys->utilLock);
 			sys->callingName = L"SetCh";
 			sys->callingTick = GetTickCount();
@@ -344,7 +344,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
 			Sleep(500);
 			if( sys->traceLevel ){
-				OutputDebugString(L"CBonDriverUtil: #SetCh2\r\n");
+				AddDebugLog(L"CBonDriverUtil: #SetCh2");
 			}
 			if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
 				if( sys->traceLevel ){
@@ -398,7 +398,7 @@ void CBonDriverUtil::WatchdogThread(CBonDriverUtil* sys)
 					sys->statGetTsBytes = 0;
 				}
 				if( sys->traceLevel > 1 ){
-					_OutputDebugString(L"CBonDriverUtil: #GetTs %d calls, %lld bytes\r\n", calls, bytes);
+					AddDebugLogFormat(L"CBonDriverUtil: #GetTs %d calls, %lld bytes", calls, bytes);
 				}
 				statTimeout = 0;
 			}
@@ -407,7 +407,7 @@ void CBonDriverUtil::WatchdogThread(CBonDriverUtil* sys)
 			if( sys->callingName ){
 				DWORD tick = GetTickCount();
 				if( tick - sys->callingTick > 10000 ){
-					_OutputDebugString(L"CBonDriverUtil: #%ls takes more than 10 seconds!\r\n", sys->callingName);
+					AddDebugLogFormat(L"CBonDriverUtil: #%ls takes more than 10 seconds!", sys->callingName);
 					sys->callingTick = tick;
 				}
 			}

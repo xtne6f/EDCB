@@ -59,20 +59,20 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 	this->showNormal = TRUE;
 
 	if( enable == TRUE ){
-		OutputDebugString(L"EnablePlugin");
+		AddDebugLog(L"EnablePlugin");
 		if(this->m_pApp->SetWindowMessageCallback(WindowMsgeCallback, this)==false){
-			OutputDebugString(L"●TVTest Version Err::SetWindowMessageCallback");
+			AddDebugLog(L"●TVTest Version Err::SetWindowMessageCallback");
 		}
 		if( this->grantServerAccess == FALSE ){
 			if( CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION) ){
-				OutputDebugString(L"Granted SYNCHRONIZE|PROCESS_TERMINATE|PROCESS_SET_INFORMATION\r\n");
+				AddDebugLog(L"Granted SYNCHRONIZE|PROCESS_TERMINATE|PROCESS_SET_INFORMATION");
 			}
 			this->grantServerAccess = TRUE;
 		}
 
 		wstring pipeName;
 		Format(pipeName, L"%ls%d", CMD2_TVTEST_CTRL_PIPE, GetCurrentProcessId());
-		OutputDebugString(pipeName.c_str());
+		AddDebugLogFormat(L"%ls", pipeName.c_str());
 		this->pipeServer.StartServer(pipeName, [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
 			// SendMessageTimeout()はメッセージ処理中でも容赦なくタイムアウトするのでコマンドデータを排他処理する
 			{
@@ -181,7 +181,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 
 	switch( cmdParam->param ){
 	case CMD2_VIEW_APP_SET_BONDRIVER:
-		OutputDebugString(L"TvTest:CMD2_VIEW_APP_SET_BONDRIVER");
+		AddDebugLog(L"TvTest:CMD2_VIEW_APP_SET_BONDRIVER");
 		{
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
@@ -197,7 +197,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_GET_BONDRIVER:
-		OutputDebugString(L"TvTest:CMD2_VIEW_APP_GET_BONDRIVER");
+		AddDebugLog(L"TvTest:CMD2_VIEW_APP_GET_BONDRIVER");
 		{
 			WCHAR buff[512] = L"";
 			sys->m_pApp->GetDriverFullPathName(buff, 512);
@@ -209,7 +209,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_SET_CH:
-		OutputDebugString(L"TvTest:CMD2_VIEW_APP_SET_CH");
+		AddDebugLog(L"TvTest:CMD2_VIEW_APP_SET_CH");
 		{
 			SET_CH_INFO val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
@@ -220,7 +220,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 					while(1){
 						if( sys->m_pApp->GetChannelInfo(space, ch, &chInfo) == false ){
 							if( ch == 0 ){
-								OutputDebugString(L"TvTest:NotFind ChInfo");
+								AddDebugLog(L"TvTest:NotFind ChInfo");
 								break;
 							}else{
 								space++;
@@ -232,9 +232,9 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 							{
 								if( sys->m_pApp->SetChannel(space, ch, val.SID) == true ){
 									resParam->param = CMD_SUCCESS;
-									OutputDebugString(L"TvTest:m_pApp->SetChannel true");
+									AddDebugLog(L"TvTest:m_pApp->SetChannel true");
 								}else{
-									OutputDebugString(L"TvTest:m_pApp->SetChannel false");
+									AddDebugLog(L"TvTest:m_pApp->SetChannel false");
 								}
 								break;
 							}
@@ -250,14 +250,14 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_CLOSE:
-		OutputDebugString(L"TvTest:CMD2_VIEW_APP_CLOSE");
+		AddDebugLog(L"TvTest:CMD2_VIEW_APP_CLOSE");
 		{
 			resParam->param = CMD_SUCCESS;
 			sys->m_pApp->Close(1);
 		}
 		break;
 	case CMD2_VIEW_APP_TT_SET_CTRL:
-		OutputDebugString(L"TvTest:CMD2_VIEW_APP_TT_SET_CTRL");
+		AddDebugLog(L"TvTest:CMD2_VIEW_APP_TT_SET_CTRL");
 		{
 			if( ReadVALUE(&sys->nwModeInfo, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				resParam->param = CMD_SUCCESS;
@@ -267,7 +267,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 		}
 		break;
 	default:
-		_OutputDebugString(L"TvTest:err default cmd %d\r\n", cmdParam->param);
+		AddDebugLogFormat(L"TvTest:err default cmd %d", cmdParam->param);
 		resParam->param = CMD_NON_SUPPORT;
 		break;
 	}
@@ -283,7 +283,7 @@ void CEpgTimerPlugIn::ResetStreamingCtrlView()
 	info.length = sizeof(WINDOWPLACEMENT);
 
 	if( GetWindowPlacement(this->m_pApp->GetAppWindow(), &info) == FALSE ){
-		_OutputDebugString(L"GetWindowPlacement err");
+		AddDebugLog(L"GetWindowPlacement err");
 		return;
 	}
 	if( this->fullScreen == FALSE ){

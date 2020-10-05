@@ -1198,17 +1198,17 @@ bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSi
 	if( readSize < 0 || this->rootProperty.size() < 2 ){
 		if( readSize == -3 ){
 			//この条件が満たされるときはパーサにミスがある
-			OutputDebugString(L"CDescriptor::DecodeProperty: Parser syntax error\r\n");
+			AddDebugLog(L"CDescriptor::DecodeProperty: Parser syntax error");
 		}else if( readSize == -4 ){
 			//記述子ループに異常がある
-			OutputDebugString(L"CDescriptor::DecodeProperty: Invalid descriptor loop error\r\n");
+			AddDebugLog(L"CDescriptor::DecodeProperty: Invalid descriptor loop error");
 		}
 		//入力をパースできない
 		Clear();
 		return false;
 	}
 	if( Has(CRC_32) && CalcCrc32(readSize, data) != 0 ){
-		OutputDebugString(L"CDescriptor::DecodeSI: CRC32 error\r\n");
+		AddDebugLog(L"CDescriptor::DecodeSI: CRC32 error");
 		Clear();
 		return false;
 	}
@@ -1266,7 +1266,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	if( readSize < 0 ){
 		if( readSize == -3 ){
 			//この条件が満たされるときはパーサにミスがある
-			OutputDebugString(L"CDescriptor::DecodeProperty: Parser syntax error\r\n");
+			AddDebugLog(L"CDescriptor::DecodeProperty: Parser syntax error");
 		}
 		Clear();
 		return false;
@@ -1523,7 +1523,7 @@ DWORD CDescriptor::GetOperand(short id, const LOCAL_PROPERTY* ppLocal)
 		}
 	}
 	//この条件が満たされるときはパーサにミスがある
-	OutputDebugString(L"CDescriptor::GetOperand: Parser syntax error\r\n");
+	AddDebugLog(L"CDescriptor::GetOperand: Parser syntax error");
 	return 0;
 }
 

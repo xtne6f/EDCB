@@ -234,13 +234,13 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS ){
 			if( status != VIEW_APP_ST_GET_EPG ){
 				//取得終わった
-				OutputDebugString(L"epg end\r\n");
+				AddDebugLog(L"epg end");
 				CloseTuner();
 				this->specialState = TR_IDLE;
 			}
 		}else{
 			//エラー
-			OutputDebugString(L"epg err\r\n");
+			AddDebugLog(L"epg err");
 			CloseTuner();
 			this->specialState = TR_IDLE;
 		}
@@ -522,7 +522,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			//作成を前倒しする必要は特にないのと、チャンネル変更からEIT[p/f]取得までの時間を確保できるようこの秒数にした
 			if( this->specialState == TR_EPGCAP ){
 				//EPG取得をキャンセル(遷移中断)
-				OutputDebugString(L"epg cancel\r\n");
+				AddDebugLog(L"epg cancel");
 				//CSendCtrlCmd::SendViewEpgCapStop()は送らない(即座にチューナ閉じるので意味がないため)
 				CloseTuner();
 				this->specialState = TR_IDLE;
@@ -1027,7 +1027,7 @@ __int64 CTunerBankCtrl::DelayTime() const
 bool CTunerBankCtrl::OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo)
 {
 	if( this->specialState == TR_EPGCAP ){
-		OutputDebugString(L"epg cancel\r\n");
+		AddDebugLog(L"epg cancel");
 		//CSendCtrlCmd::SendViewEpgCapStop()は送らない(即座にチューナ閉じるので意味がないため)
 		CloseTuner();
 		this->specialState = TR_IDLE;
@@ -1201,7 +1201,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 #else
 		kill(this->tunerPid, 9);
 #endif
-		_OutputDebugString(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x\r\n", L"OpenTuner()", this->tunerID);
+		AddDebugLogFormat(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x", L"OpenTuner()", this->tunerID);
 		CloseTuner();
 	}
 	return false;
@@ -1232,7 +1232,7 @@ void CTunerBankCtrl::CloseTuner()
 				//ぶち殺す
 				kill(this->tunerPid, 9);
 #endif
-				_OutputDebugString(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x\r\n", L"CloseTuner()", this->tunerID);
+				AddDebugLogFormat(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x", L"CloseTuner()", this->tunerID);
 			}
 		}
 		CBlockLock lock(&this->watchContext.lock);
@@ -1382,7 +1382,7 @@ void CTunerBankCtrl::Watch()
 #else
 			kill(this->tunerPid, 9);
 #endif
-			_OutputDebugString(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x\r\n", L"Watch()", this->tunerID);
+			AddDebugLogFormat(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x", L"Watch()", this->tunerID);
 		}
 	}
 }

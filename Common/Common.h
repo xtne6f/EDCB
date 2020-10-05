@@ -78,18 +78,21 @@ RndIt upper_bound_first(RndIt first, RndIt last, const T& key)
 #define PRINTF_FORMAT_SZ
 #endif
 
-#ifdef WRAP_OUTPUT_DEBUG_STRING
-#undef OutputDebugString
-#define OutputDebugString OutputDebugStringWrapper
-// OutputDebugStringWのラッパー関数
-// APIフックによる高度なものでなく単なる置換。OutputDebugStringAやDLLからの呼び出しはラップされない
-void OutputDebugStringWrapper(LPCWSTR lpOutputString);
-void SetSaveDebugLog(bool saveDebugLog);
+#ifdef _WIN32
+#define UTIL_NEWLINE L"\r\n"
+#else
+#define UTIL_NEWLINE L"\n"
 #endif
 
-inline void _OutputDebugString(PRINTF_FORMAT_SZ const WCHAR* format, ...)
+#ifndef WRAP_DEBUG_OUTPUT
+inline void AddDebugLogNoNewline(const WCHAR* s)
 {
-	// TODO: この関数名は予約名違反の上に紛らわしいので変更すべき
+	OutputDebugString(s);
+}
+#endif
+
+inline void AddDebugLogFormatNoNewline(PRINTF_FORMAT_SZ const WCHAR* format, ...)
+{
 	va_list params;
 	va_start(params, format);
 	// 長すぎる等エラー時は書式文字列の展開を省略する
@@ -100,8 +103,11 @@ inline void _OutputDebugString(PRINTF_FORMAT_SZ const WCHAR* format, ...)
 	const WCHAR* p = vswprintf(buff, 1024, format, params) < 0 ? format : buff;
 #endif
 	va_end(params);
-	OutputDebugString(p);
+	AddDebugLogNoNewline(p);
 }
 
+#define AddDebugLog(s) AddDebugLogNoNewline(s UTIL_NEWLINE)
+#define AddDebugLogFormat(format, ...) AddDebugLogFormatNoNewline(format UTIL_NEWLINE, __VA_ARGS__)
+
 // 適切でない書式文字列の検出用
-//#define _OutputDebugString(...) (void)wprintf_s(__VA_ARGS__)
+//#define AddDebugLogFormatNoNewline(...) (void)wprintf_s(__VA_ARGS__)

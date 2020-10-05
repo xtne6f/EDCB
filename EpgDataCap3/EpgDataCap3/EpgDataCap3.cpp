@@ -38,7 +38,7 @@ DWORD WINAPI InitializeEP(
 		err = ERR_FALSE;
 	}
 
-	_OutputDebugString(L"EgpDataCap3 [InitializeEP : id=%d]\n", *id);
+	AddDebugLogFormat(L"EgpDataCap3 [InitializeEP : id=%d]", *id);
 
 	return err;
 }
@@ -53,7 +53,7 @@ DWORD WINAPI UnInitializeEP(
 	DWORD id
 	)
 {
-	_OutputDebugString(L"EgpDataCap3 [UnInitializeEP : id=%d]\n", id);
+	AddDebugLogFormat(L"EgpDataCap3 [UnInitializeEP : id=%d]", id);
 
 	DWORD err = ERR_NOT_INIT;
 	{

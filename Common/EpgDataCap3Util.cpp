@@ -66,7 +66,7 @@ DWORD CEpgDataCap3Util::Initialize(
 		}
 		UnInitialize();
 	}
-	_OutputDebugString(L"%lsのロードに失敗しました\r\n", path.c_str());
+	AddDebugLogFormat(L"%lsのロードに失敗しました", path.c_str());
 	return err;
 }
 

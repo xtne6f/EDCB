@@ -9,7 +9,7 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOI
 #ifndef _MSC_VER
 	if( funcCast == NULL ){
 		if( (hModule = LoadLibrary(L"IBonCast.dll")) == NULL ){
-			OutputDebugString(L"★IBonCast.dllがロードできません\r\n");
+			AddDebugLog(L"★IBonCast.dllがロードできません");
 			return NULL;
 		}
 		funcCast = (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(hModule, "Cast");
@@ -18,7 +18,7 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOI
 	void* pBase;
 	const LPVOID* table;
 	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IB25Decoder@5", pBase)) == NULL ){
-		OutputDebugString(L"★Castに失敗しました\r\n");
+		AddDebugLog(L"★Castに失敗しました");
 #ifndef _MSC_VER
 		if( hModule ){
 			FreeLibrary(hModule);
@@ -189,7 +189,7 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 
 	if( CompareNoCase(dllPath, this->currentDll) != 0 ){
 		if( LoadDll(dllPath.c_str()) == FALSE ){
-			_OutputDebugString(L"★%ls のロードに失敗しました。\r\n", dllPath.c_str());
+			AddDebugLogFormat(L"★%ls のロードに失敗しました。", dllPath.c_str());
 			this->currentDll = L"";
 		}else{
 			this->currentDll = dllPath;

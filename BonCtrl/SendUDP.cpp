@@ -128,7 +128,7 @@ bool CSendUDP::AddSendData(BYTE* pbBuff, DWORD dwSize)
 #endif
 					//送信処理が追いつかずSNDBUF_SIZEで指定したバッファも尽きてしまった
 					//帯域が足りないときはどう足掻いてもドロップするしかないので、Sleep()によるフロー制御はしない
-					OutputDebugString(L"Dropped\r\n");
+					AddDebugLog(L"Dropped");
 				}
 			}
 		}

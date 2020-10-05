@@ -80,7 +80,7 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 	if( this->enableDecodeFlag != FALSE || this->emmEnableFlag != FALSE ){
 		//スクランブル解除かEMM処理が設定されている場合だけ実行
 		if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
-			OutputDebugString(L"★★Decode DLL load err [CTSOut::OnChChanged()]\r\n");
+			AddDebugLog(L"★★Decode DLL load err [CTSOut::OnChChanged()]");
 			//再試行は意味がなさそうなので廃止
 		}
 		this->decodeUtil.SetEmm(this->emmEnableFlag);
@@ -133,13 +133,13 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						WORD tsid;
 						if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
 							if( this->chChangeState == CH_ST_INIT ){
-								_OutputDebugString(L"★Ch Init 0x%04X 0x%04X\r\n", onid, tsid);
+								AddDebugLogFormat(L"★Ch Init 0x%04X 0x%04X", onid, tsid);
 								OnChChanged(onid, tsid);
 							}else if( onid != this->lastONID || tsid != this->lastTSID ){
-								_OutputDebugString(L"★Ch Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+								AddDebugLogFormat(L"★Ch Change 0x%04X 0x%04X => 0x%04X 0x%04X", this->lastONID, this->lastTSID, onid, tsid);
 								OnChChanged(onid, tsid);
 							}else if( tick - this->chChangeTime > 7000 ){
-								OutputDebugString(L"★Ch NoChange\r\n");
+								AddDebugLog(L"★Ch NoChange");
 								OnChChanged(onid, tsid);
 							}
 						}
@@ -160,7 +160,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 			WORD tsid;
 			if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
 				if( onid != this->lastONID || tsid != this->lastTSID ){
-					_OutputDebugString(L"★Ch Unexpected Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+					AddDebugLogFormat(L"★Ch Unexpected Change 0x%04X 0x%04X => 0x%04X 0x%04X", this->lastONID, this->lastTSID, onid, tsid);
 					OnChChanged(onid, tsid);
 				}
 			}
@@ -188,7 +188,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 			}
 		}
 	}catch(...){
-		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception2");
+		AddDebugLog(L"★★CTSOut::AddTSBuff Exception2");
 		//デコード失敗
 		decodeData = &this->decodeBuff.front();
 		decodeSize = (DWORD)this->decodeBuff.size();
@@ -326,8 +326,8 @@ BOOL CTSOut::StartSaveEPG(
 	this->epgTempFilePath = epgFilePath_;
 	this->epgTempFilePath += L".tmp";
 
-	_OutputDebugString(L"★%ls\r\n", this->epgFilePath.c_str());
-	_OutputDebugString(L"★%ls\r\n", this->epgTempFilePath.c_str());
+	AddDebugLogFormat(L"★%ls", this->epgFilePath.c_str());
+	AddDebugLogFormat(L"★%ls", this->epgTempFilePath.c_str());
 
 	this->epgUtil.ClearSectionStatus();
 	this->epgFileState = EPG_FILE_ST_NONE;
@@ -335,7 +335,7 @@ BOOL CTSOut::StartSaveEPG(
 	UtilCreateDirectories(fs_path(this->epgTempFilePath).parent_path());
 	this->epgFile.reset(UtilOpenFile(this->epgTempFilePath, UTIL_SECURE_WRITE));
 	if( this->epgFile == NULL ){
-		OutputDebugString(L"err\r\n");
+		AddDebugLog(L"err");
 		return FALSE;
 	}
 
@@ -405,7 +405,7 @@ BOOL CTSOut::SetEmm(
 				//最初に EMM 処理が設定される場合は DLL を読み込む
 				//スクランブル解除が設定されている場合は読み込み済みなので除外
 				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
-					OutputDebugString(L"★★Decode DLL load err [CTSOut::SetEmm()]\r\n");
+					AddDebugLog(L"★★Decode DLL load err [CTSOut::SetEmm()]");
 				}
 			}
 		}
@@ -796,7 +796,7 @@ BOOL CTSOut::UpdateEnableDecodeFlag()
 				//最初にスクランブル解除が設定される場合は DLL を再読み込みする
 				//EMM 処理が設定されている場合は読み込み済みなので除外
 				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
-					OutputDebugString(L"★★Decode DLL load err [CTSOut::SetScramble()]\r\n");
+					AddDebugLog(L"★★Decode DLL load err [CTSOut::SetScramble()]");
 				}
 			}
 		}

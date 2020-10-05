@@ -1074,7 +1074,6 @@ void CARIB8CharDecode::CreateCaptionData(CAPTION_DATA* pItem)
 void CARIB8CharDecode::CreateCaptionCharData(CAPTION_CHAR_DATA* pItem)
 {
 	pItem->strDecode = m_strDecode;
-//	OutputDebugStringA(m_strDecode.c_str());
 
 	pItem->stCharColor = DefClut[m_bCharColorIndex];
 	pItem->stBackColor = DefClut[m_bBackColorIndex];

@@ -92,7 +92,7 @@ void CTimeShiftUtil::Send(
 		}
 		if( info->mutex ){
 			//開始
-			OutputDebugString((info->key + L"\r\n").c_str());
+			AddDebugLogFormat(L"%ls", info->key.c_str());
 			sendNW->Initialize();
 			sendNW->AddSendAddr(ip, info->port, false);
 			sendNW->StartSend();

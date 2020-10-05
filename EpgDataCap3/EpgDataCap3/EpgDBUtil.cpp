@@ -99,7 +99,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 
 		if( eit.GetNumber(Desc::running_status, lp) == 1 || eit.GetNumber(Desc::running_status, lp) == 3 ){
 			//非実行中または停止中
-			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x\r\n",
+			AddDebugLogFormat(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x",
 				original_network_id,  transport_stream_id, service_id, event_id
 				);
 			continue;
@@ -115,7 +115,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			//[p/f]
 			if( section_number == 0 ){
 				if( start_time == 0 ){
-					OutputDebugString(L"Invalid EIT[p/f]\r\n");
+					AddDebugLog(L"Invalid EIT[p/f]");
 				}else if( serviceInfo->nowEvent.empty() || siTag.time >= serviceInfo->nowEvent.back().time ){
 					if( serviceInfo->nowEvent.empty() || serviceInfo->nowEvent.back().db.event_id != event_id ){
 						//イベント入れ替わり
@@ -165,7 +165,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			//[schedule]もしくは(H-EITでないとき)[p/f after]
 			//TODO: イベント消滅には対応していない(クラス設計的に対応は厳しい)。EDCB的には実用上のデメリットはあまり無い
 			if( start_time == 0 || duration == 0xFFFFFF ){
-				OutputDebugString(L"Invalid EIT[schedule]\r\n");
+				AddDebugLog(L"Invalid EIT[schedule]");
 			}else{
 				itrEvent = serviceInfo->eventMap.find(event_id);
 				if( itrEvent == serviceInfo->eventMap.end() ){
@@ -211,7 +211,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			if( (table_id < 0x58 || 0x5F < table_id) && (table_id < 0x68 || 0x6F < table_id) ){
 				if( table_id > 0x4F && eventInfo->tagBasic.version != 0xFF && eventInfo->tagBasic.tableID <= 0x4F ){
 					//[schedule][p/f after]とも運用するサービスがあれば[p/f after]を優先する(今のところサービス階層が分離しているのであり得ないはず)
-					_OutputDebugString(L"Conflicts EIT[schedule][p/f after] SID:0x%04x EventID:0x%04x\r\n", service_id, eventInfo->db.event_id);
+					AddDebugLogFormat(L"Conflicts EIT[schedule][p/f after] SID:0x%04x EventID:0x%04x", service_id, eventInfo->db.event_id);
 				}else if( siTag.time >= eventInfo->tagBasic.time ){
 					if( version_number != eventInfo->tagBasic.version ||
 					    table_id != eventInfo->tagBasic.tableID ||
@@ -261,7 +261,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 				lastTableID = 0;
 			}else if( sectionList[table_id % 8].version != 0 &&
 			          sectionList[table_id % 8].version != version_number + 1 ){
-				OutputDebugString(L"EIT[schedule] updated\r\n");
+				AddDebugLog(L"EIT[schedule] updated");
 				lastTableID = 0;
 			}
 			if( lastTableID == 0 ){

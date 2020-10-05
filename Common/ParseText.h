@@ -46,7 +46,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 			return true;
 		}else if( ++retry > 5 ){
 			//6回トライしてそれでもダメなら失敗
-			OutputDebugString(L"CParseText<>::ParseText(): Error: Cannot open file\r\n");
+			AddDebugLog(L"CParseText<>::ParseText(): Error: Cannot open file");
 			return false;
 		}
 		Sleep(200 * retry);
@@ -116,7 +116,7 @@ bool CParseText<K, V>::SaveText() const
 		if( fp ){
 			break;
 		}else if( ++retry > 5 ){
-			OutputDebugString(L"CParseText<>::SaveText(): Error: Cannot open file\r\n");
+			AddDebugLog(L"CParseText<>::SaveText(): Error: Cannot open file");
 			return false;
 		}
 		Sleep(200 * retry);
@@ -182,7 +182,7 @@ bool CParseText<K, V>::SaveText() const
 #endif
 				return true;
 			}else if( ++retry > 5 ){
-				OutputDebugString(L"CParseText<>::SaveText(): Error: Cannot open file\r\n");
+				AddDebugLog(L"CParseText<>::SaveText(): Error: Cannot open file");
 				break;
 			}
 			Sleep(200 * retry);

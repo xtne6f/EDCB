@@ -186,7 +186,7 @@ DWORD CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE un
 		BYTE pointer_field = payload[0];
 		if( pointer_field + 1 > payloadSize ){
 			//サイズが小さすぎる
-			_OutputDebugString(L"★psi size err PID 0x%04X\r\n", this->lastPID);
+			AddDebugLogFormat(L"★psi size err PID 0x%04X", this->lastPID);
 			sectionSize = 0;
 			return FALSE;
 		}
@@ -199,7 +199,7 @@ DWORD CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE un
 				return TRUE;
 			}else{
 				//サイズがおかしいのでクリア
-				_OutputDebugString(L"★psi section size err PID 0x%04X\r\n", this->lastPID);
+				AddDebugLogFormat(L"★psi section size err PID 0x%04X", this->lastPID);
 				sectionSize = 0;
 			}
 		}

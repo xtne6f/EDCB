@@ -90,12 +90,12 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 		}
 		if (optUpperD) {
 			dlg.SetInitBon(optUpperD);
-			OutputDebugString(optUpperD);
+			AddDebugLogFormat(L"%ls", optUpperD);
 		}
 		// 原作の挙動に合わせるため
 		if (optLowerD) {
 			dlg.SetInitBon(optLowerD);
-			OutputDebugString(optLowerD);
+			AddDebugLogFormat(L"%ls", optLowerD);
 		}
 		LocalFree(argv);
 	}
@@ -133,7 +133,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 	return 0;
 }
 
-void OutputDebugStringWrapper(LPCWSTR lpOutputString)
+void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutput)
 {
 	{
 		//デバッグ出力ログ保存
@@ -150,12 +150,14 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 				fwrite(lpOutputString, sizeof(WCHAR), m, g_debugLog);
 			}
 			if( m == 0 || lpOutputString[m - 1] != L'\n' ){
-				fwrite(L"<NOBR>\r\n", sizeof(WCHAR), 8, g_debugLog);
+				fwrite(L"<NOBR>" UTIL_NEWLINE, sizeof(WCHAR), array_size(L"<NOBR>" UTIL_NEWLINE) - 1, g_debugLog);
 			}
 			fflush(g_debugLog);
 		}
 	}
-	OutputDebugStringW(lpOutputString);
+	if( suppressDebugOutput == false ){
+		OutputDebugString(lpOutputString);
+	}
 }
 
 void SetSaveDebugLog(bool saveDebugLog)
@@ -174,12 +176,12 @@ void SetSaveDebugLog(bool saveDebugLog)
 				g_debugLog = UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ);
 			}
 			if( g_debugLog ){
-				OutputDebugString(L"****** LOG START ******\r\n");
+				AddDebugLog(L"****** LOG START ******");
 				break;
 			}
 		}
 	}else if( g_debugLog && saveDebugLog == false ){
-		OutputDebugString(L"****** LOG STOP ******\r\n");
+		AddDebugLog(L"****** LOG STOP ******");
 		fclose(g_debugLog);
 		g_debugLog = NULL;
 	}

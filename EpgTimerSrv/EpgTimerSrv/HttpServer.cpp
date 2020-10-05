@@ -44,7 +44,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 #ifdef _WIN32
 	//パスにASCII範囲外を含むのは(主にLuaが原因で)難ありなので蹴る
 	if( std::find_if(rootPathU.begin(), rootPathU.end(), [](char c) { return (c & 0x80) != 0; }) != rootPathU.end() ){
-		OutputDebugString(L"CHttpServer::StartServer(): path has unavailable chars.\r\n");
+		AddDebugLog(L"CHttpServer::StartServer(): path has unavailable chars.");
 		return false;
 	}
 #endif
@@ -61,7 +61,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	WtoA(sslFsPath.native(), sslPathA, UTIL_CONV_ACP);
 	AtoW(sslPathA, sslPath, UTIL_CONV_ACP);
 	if( sslPath != sslFsPath.native() ){
-		OutputDebugString(L"CHttpServer::StartServer(): path has unavailable chars.\r\n");
+		AddDebugLog(L"CHttpServer::StartServer(): path has unavailable chars.");
 		return false;
 	}
 	string sslCertPath = sslPathA + "cert.pem";
@@ -146,7 +146,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
 	this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
 	if( this->hLuaDll == NULL ){
-		OutputDebugString(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.\r\n");
+		AddDebugLog(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.");
 		return false;
 	}
 #endif
@@ -155,7 +155,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	                    (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
 	this->initedLibrary = true;
 	if( mg_init_library(feat + (op.enableSsdpServer ? MG_FEATURES_X_ALLOW_SUBSCRIBE : 0)) != feat ){
-		OutputDebugString(L"CHttpServer::StartServer(): Library initialization failed.\r\n");
+		AddDebugLog(L"CHttpServer::StartServer(): Library initialization failed.");
 		StopServer();
 		return false;
 	}
@@ -212,7 +212,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 			}
 			this->upnpSsdpServer.Start(targetList, op.ssdpIfTypes, op.ssdpInitialWaitSec);
 		}else{
-			OutputDebugString(L"CHttpServer::StartServer(): invalid /dlna/dms/ddd.xml\r\n");
+			AddDebugLog(L"CHttpServer::StartServer(): invalid /dlna/dms/ddd.xml");
 		}
 	}
 	return true;
@@ -238,7 +238,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 				Sleep(10);
 			}
 			if( this->mgContext ){
-				OutputDebugString(L"CHttpServer::StopServer(): failed to stop service.\r\n");
+				AddDebugLog(L"CHttpServer::StopServer(): failed to stop service.");
 			}
 		}
 		this->mgContext = NULL;

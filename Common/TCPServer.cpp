@@ -272,7 +272,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					waitList.erase(waitList.begin() + i);
 				}else if( events.lNetworkEvents & FD_READ ){
 					//読み飛ばす
-					OutputDebugString(L"Unexpected FD_READ\r\n");
+					AddDebugLog(L"Unexpected FD_READ");
 					char buf[1024];
 					recv(waitList[i]->sock, buf, sizeof(buf), 0);
 				}
@@ -357,7 +357,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 #endif
 			if( sock != INVALID_SOCKET ){
 				if( (pSys->m_ipv6 && client.ss_family != AF_INET6) || (pSys->m_ipv6 == false && client.ss_family != AF_INET) ){
-					OutputDebugString(L"IP protocol mismatch\r\n");
+					AddDebugLog(L"IP protocol mismatch");
 					closesocket(sock);
 					sock = INVALID_SOCKET;
 				}else if( TestAcl((struct sockaddr*)&client, pSys->m_acl) == false ){
@@ -366,7 +366,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 ){
 						UTF8toW(ip, ipW);
 					}
-					OutputDebugString((L"Deny from IP: " + ipW + L"\r\n").c_str());
+					AddDebugLogFormat(L"Deny from IP: %ls", ipW.c_str());
 					closesocket(sock);
 					sock = INVALID_SOCKET;
 				}
@@ -383,7 +383,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					}
 					//第2,3バイトは0でなければならない
 					if( head[0] & 0xFFFF0000 ){
-						_OutputDebugString(L"Deny TCP cmd:0x%08x\r\n", head[0]);
+						AddDebugLogFormat(L"Deny TCP cmd:0x%08x", head[0]);
 						break;
 					}
 					stCmd.param = head[0];

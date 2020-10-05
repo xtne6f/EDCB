@@ -321,7 +321,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 					sendCtrl.SetSendMode(TRUE);
 					sendCtrl.SetNWSetting(registTCP[i].first, registTCP[i].second);
 #else
-					OutputDebugString(L"CNotifyManager: Notification by TCP/IP registration is not supported.\r\n");
+					AddDebugLog(L"CNotifyManager: Notification by TCP/IP registration is not supported.");
 					continue;
 #endif
 				}else{
@@ -349,12 +349,12 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 				}
 				if( tcp && err != CMD_SUCCESS && err != CMD_NON_SUPPORT ){
 					//送信できなかったもの削除
-					_OutputDebugString(L"notifyErr %ls:%d\r\n", registTCP[i].first.c_str(), registTCP[i].second);
+					AddDebugLogFormat(L"notifyErr %ls:%d", registTCP[i].first.c_str(), registTCP[i].second);
 					sys->UnRegistTCP(registTCP[i].first.c_str(), registTCP[i].second);
 				}
 				if( !tcp && err == CMD_ERR_CONNECT && sendCtrl.PipeExists() == false ){
 					//存在しないので削除
-					_OutputDebugString(L"notifyErr %ls:%d\r\n", L"PID", registGUI[i]);
+					AddDebugLogFormat(L"notifyErr %ls:%d", L"PID", registGUI[i]);
 					sys->UnRegistGUI(registGUI[i]);
 				}
 			}

@@ -243,7 +243,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 							}
 						}
 						if( hProcess == NULL ){
-							_OutputDebugString(L"BAT起動エラー：%ls\r\n", work.batFilePath.c_str());
+							AddDebugLogFormat(L"BAT起動エラー：%ls", work.batFilePath.c_str());
 						}
 					}
 					if( hProcess ){
@@ -278,10 +278,10 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 #endif
 				}
 			}else{
-				_OutputDebugString(L"BATファイル作成エラー：%ls\r\n", work.batFilePath.c_str());
+				AddDebugLogFormat(L"BATファイル作成エラー：%ls", work.batFilePath.c_str());
 			}
 		}else{
-			_OutputDebugString(L"BAT拡張子エラー：%ls\r\n", work.batFilePath.c_str());
+			AddDebugLogFormat(L"BAT拡張子エラー：%ls", work.batFilePath.c_str());
 		}
 
 		CBlockLock lock(&sys->managerLock);

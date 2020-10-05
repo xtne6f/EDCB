@@ -512,7 +512,7 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 	DeleteFile(item.recFilePath.c_str());
 	if( this->customizeDelExt ){
 		//カスタムルール
-		OutputDebugString((L"★RecInfo Auto Delete : " + item.recFilePath + L"\r\n").c_str());
+		AddDebugLogFormat(L"★RecInfo Auto Delete : %ls", item.recFilePath.c_str());
 		wstring debug;
 		for( size_t i = 0; i < this->customDelExt.size(); i++ ){
 			wstring delPath = fs_path(item.recFilePath).replace_extension().native();
@@ -520,7 +520,7 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 			debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
 		}
 		if( debug.empty() == false ){
-			OutputDebugString((L"★RecInfo Auto Delete : " + debug + L")\r\n").c_str());
+			AddDebugLogFormat(L"★RecInfo Auto Delete : %ls)", debug.c_str());
 		}
 		if( this->recInfoFolder.empty() == false ){
 			//録画情報フォルダにも適用
@@ -531,20 +531,20 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 				debug = (debug.empty() ? delPath + L'(' : debug + L'|') + this->customDelExt[i];
 			}
 			if( debug.empty() == false ){
-				OutputDebugString((L"★RecInfo Auto Delete : " + debug + L")\r\n").c_str());
+				AddDebugLogFormat(L"★RecInfo Auto Delete : %ls)", debug.c_str());
 			}
 		}
 	}else{
 		//標準のルール
 		DeleteFile((item.recFilePath + L".err").c_str());
 		DeleteFile((item.recFilePath + L".program.txt").c_str());
-		OutputDebugString((L"★RecInfo Auto Delete : " + item.recFilePath + L"(.err|.program.txt)\r\n").c_str());
+		AddDebugLogFormat(L"★RecInfo Auto Delete : %ls(.err|.program.txt)", item.recFilePath.c_str());
 		if( this->recInfoFolder.empty() == false ){
 			//録画情報フォルダにも適用
 			wstring delPath = fs_path(this->recInfoFolder).append(fs_path(item.recFilePath).filename().native()).native();
 			DeleteFile((delPath + L".err").c_str());
 			DeleteFile((delPath + L".program.txt").c_str());
-			OutputDebugString((L"★RecInfo Auto Delete : " + delPath + L"(.err|.program.txt)\r\n").c_str());
+			AddDebugLogFormat(L"★RecInfo Auto Delete : %ls(.err|.program.txt)", delPath.c_str());
 		}
 	}
 }

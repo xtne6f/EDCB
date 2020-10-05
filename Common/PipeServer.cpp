@@ -58,11 +58,11 @@ bool CPipeServer::StartServer(
 		if( insecureFlag ){
 			//現在はSYNCHRONIZEでよいが以前のクライアントはCreateEvent()で開いていたのでGENERIC_ALLが必要
 			if( GrantAccessToKernelObject(this->hEventConnect, trusteeName, GENERIC_ALL) ){
-				_OutputDebugString(L"Granted GENERIC_ALL on %ls to %ls\r\n", eventName.c_str(), trusteeName);
+				AddDebugLogFormat(L"Granted GENERIC_ALL on %ls to %ls", eventName.c_str(), trusteeName);
 				writeDac = WRITE_DAC;
 			}
 		}else if( GrantServerAccessToKernelObject(this->hEventConnect, SYNCHRONIZE) ){
-			_OutputDebugString(L"Granted SYNCHRONIZE on %ls to %ls\r\n", eventName.c_str(), SERVICE_NAME);
+			AddDebugLogFormat(L"Granted SYNCHRONIZE on %ls to %ls", eventName.c_str(), SERVICE_NAME);
 			writeDac = WRITE_DAC;
 		}
 		wstring pipePath = L"\\\\.\\pipe\\" + pipeName;
@@ -70,10 +70,10 @@ bool CPipeServer::StartServer(
 		if( this->hPipe != INVALID_HANDLE_VALUE ){
 			if( insecureFlag ){
 				if( writeDac && GrantAccessToKernelObject(this->hPipe, trusteeName, GENERIC_READ | GENERIC_WRITE) ){
-					_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipePath.c_str(), trusteeName);
+					AddDebugLogFormat(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls", pipePath.c_str(), trusteeName);
 				}
 			}else if( writeDac && GrantServerAccessToKernelObject(this->hPipe, GENERIC_READ | GENERIC_WRITE) ){
-				_OutputDebugString(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls\r\n", pipePath.c_str(), SERVICE_NAME);
+				AddDebugLogFormat(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls", pipePath.c_str(), SERVICE_NAME);
 			}
 			this->hEventOl = CreateEvent(NULL, TRUE, FALSE, NULL);
 			if( this->hEventOl ){

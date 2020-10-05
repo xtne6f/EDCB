@@ -7,7 +7,10 @@
 
 #include "targetver.h"
 
-#define WRAP_OUTPUT_DEBUG_STRING
+void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutput = false);
+void SetSaveDebugLog(bool saveDebugLog);
+
+#define WRAP_DEBUG_OUTPUT
 #include "../../Common/Common.h"
 
 #define afx_msg
