@@ -62,6 +62,7 @@ protected:
 	vector<pair<WORD, CTSBuffUtil>> buffUtilMap;
 
 	std::unique_ptr<const AribDescriptor::CDescriptor> patInfo;
+	vector<pair<WORD, std::unique_ptr<const AribDescriptor::CDescriptor>>> engineeringPmtMap;
 	map<BYTE, AribDescriptor::CDescriptor> nitActualInfo;
 	map<BYTE, AribDescriptor::CDescriptor> sdtActualInfo;
 	std::unique_ptr<const AribDescriptor::CDescriptor> bitInfo;
@@ -82,6 +83,17 @@ protected:
 	DWORD logoTypeFlags;
 	vector<WORD> additionalNeededPidList;
 
+	struct DOWNLOAD_MODULE_DATA {
+		const char* name;
+		DWORD downloadID;
+		WORD pid;
+		WORD moduleID;
+		BYTE moduleVersion;
+		vector<BYTE> blockGetList;
+		vector<BYTE> moduleData;
+	};
+	vector<DOWNLOAD_MODULE_DATA> downloadModuleList;
+
 	std::unique_ptr<SERVICE_INFO[]> serviceList;
 	std::unique_ptr<EPGDB_SERVICE_INFO[]> serviceDBList;
 	std::unique_ptr<CServiceInfoAdapter[]> serviceAdapterList;
@@ -91,7 +103,13 @@ protected:
 	void ChangeTSIDClear(WORD noClearPid);
 
 	void CheckPAT(WORD PID, const AribDescriptor::CDescriptor& pat);
+	void CheckPMT(const AribDescriptor::CDescriptor& pmt);
+	void CheckDsmcc(WORD PID, const AribDescriptor::CDescriptor& dsmccHead, const BYTE* data, size_t dataSize);
+	void CheckDsmccDII(WORD PID, const BYTE* body, size_t bodySize);
+	void CheckDsmccDDB(WORD PID, DWORD downloadID, const BYTE* body, size_t bodySize);
+	void CheckDownloadedModule(const DOWNLOAD_MODULE_DATA& dl);
 	void CheckNIT(WORD PID, const AribDescriptor::CDescriptor& nit);
+	void UpdateEngineeringPmtMap();
 	void CheckSDT(WORD PID, const AribDescriptor::CDescriptor& sdt);
 	void CheckTDT(const AribDescriptor::CDescriptor& tdt);
 	void CheckEIT(WORD PID, const AribDescriptor::CDescriptor& eit);

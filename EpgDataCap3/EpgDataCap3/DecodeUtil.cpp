@@ -205,6 +205,24 @@ static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 
 #endif //SUPPORT_SKY_SD
 
+static const struct {
+	BYTE type;
+	const char* name;
+} DOWNLOAD_LOGO_TYPE_NAMES[] = {
+	{0, "LOGO-00"},
+	{1, "LOGO-01"},
+	{2, "LOGO-02"},
+	{3, "LOGO-03"},
+	{4, "LOGO-04"},
+	{5, "LOGO-05"},
+	{0, "CS_LOGO-00"},
+	{1, "CS_LOGO-01"},
+	{2, "CS_LOGO-02"},
+	{3, "CS_LOGO-03"},
+	{4, "CS_LOGO-04"},
+	{5, "CS_LOGO-05"},
+};
+
 CDecodeUtil::CDecodeUtil(void)
 {
 	this->epgDBUtil = NULL;
@@ -233,6 +251,7 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	ClearBuff(noClearPid);
 
 	this->patInfo.reset();
+	this->engineeringPmtMap.clear();
 
 	this->nitActualInfo.clear();
 	this->sdtActualInfo.clear();
@@ -244,6 +263,7 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	this->tdtTime = 0;
 	this->sitTime = 0;
 	this->logoMap.clear();
+	this->downloadModuleList.clear();
 
 	if( this->epgDBUtil != NULL ){
 		this->epgDBUtil->SetStreamChangeEvent();
@@ -270,6 +290,22 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 					case 0x00:
 						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_PAT) ){
 							CheckPAT(tsPacket.PID, this->tableBuff);
+						}
+						break;
+					case 0x02:
+						//ロゴを取得するときだけ
+						if( this->logoTypeFlags &&
+						    this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_PMT) ){
+							CheckPMT(this->tableBuff);
+						}
+						break;
+					case 0x3B:
+					case 0x3C:
+						//ロゴを取得するときだけ
+						if( this->logoTypeFlags &&
+						    this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_DSMCC_HEAD) &&
+						    sectionSize >= 12 ){
+							CheckDsmcc(tsPacket.PID, this->tableBuff, section + 8, sectionSize - 12);
 						}
 						break;
 					case 0x40:
@@ -368,6 +404,188 @@ void CDecodeUtil::CheckPAT(WORD PID, const Desc::CDescriptor& pat)
 	}
 }
 
+void CDecodeUtil::CheckPMT(const Desc::CDescriptor& pmt)
+{
+	WORD pnum = (WORD)pmt.GetNumber(Desc::program_number);
+	auto itr = lower_bound_first(this->engineeringPmtMap.begin(), this->engineeringPmtMap.end(), pnum);
+	if( itr != this->engineeringPmtMap.end() && itr->first == pnum &&
+	    (itr->second == NULL ||
+	     itr->second->GetNumber(Desc::version_number) != pmt.GetNumber(Desc::version_number)) ){
+		//運用規則によりマルチセクションでない
+		itr->second.reset(new Desc::CDescriptor(pmt));
+	}
+}
+
+void CDecodeUtil::CheckDsmcc(WORD PID, const Desc::CDescriptor& dsmccHead, const BYTE* data, size_t dataSize)
+{
+	if( dataSize < 12 ){
+		return;
+	}
+	BYTE protocolDiscriminator = data[0];
+	BYTE dsmccType = data[1];
+	WORD messageID = data[2] << 8 | data[3];
+	size_t adaptationLength = data[9];
+	size_t messageLength = data[10] << 8 | data[11];
+	if( protocolDiscriminator == 0x11 && dsmccType == 0x03 &&
+	    (messageID == 0x1002 || messageID == 0x1003) &&
+	    dataSize >= 12 + messageLength && messageLength >= adaptationLength ){
+		//MPEG-2 DSM-CC, STD-B24 DII or DDB (データカルーセル)
+		const BYTE* body = data + 12 + adaptationLength;
+		size_t bodySize = messageLength - adaptationLength;
+		if( messageID == 0x1002 ){
+			CheckDsmccDII(PID, body, bodySize);
+		}else{
+			DWORD downloadID = (DWORD)data[4] << 24 | data[5] << 16 | data[6] << 8 | data[7];
+			CheckDsmccDDB(PID, downloadID, body, bodySize);
+		}
+	}
+}
+
+void CDecodeUtil::CheckDsmccDII(WORD PID, const BYTE* body, size_t bodySize)
+{
+	if( bodySize < 18 ){
+		return;
+	}
+	DWORD downloadID = (DWORD)body[0] << 24 | body[1] << 16 | body[2] << 8 | body[3];
+	size_t blockSize = body[4] << 8 | body[5];
+	size_t compatDescLength = body[16] << 8 | body[17];
+	if( blockSize > 0 && bodySize >= compatDescLength + 20 ){
+		size_t numberOfModules = body[compatDescLength + 18] << 8 | body[compatDescLength + 19];
+		const BYTE* modules = body + compatDescLength + 20;
+		size_t modulesSize = bodySize - compatDescLength - 20;
+		for( size_t i = 0; numberOfModules > 0 && i + 8 <= modulesSize; numberOfModules-- ){
+			WORD moduleID = modules[i] << 8 | modules[i + 1];
+			size_t moduleSize = (DWORD)modules[i + 2] << 24 | modules[i + 3] << 16 | modules[i + 4] << 8 | modules[i + 5];
+			BYTE moduleVersion = modules[i + 6];
+			size_t moduleInfoLength = modules[i + 7];
+			i += 8;
+			const char* moduleName = NULL;
+			if( i + moduleInfoLength <= modulesSize ){
+				for( size_t j = 0; j + 1 < moduleInfoLength; ){
+					size_t len = modules[i + j + 1];
+					if( modules[i + j] == 0x02 && j + 2 + len <= moduleInfoLength ){
+						//DII Name記述子
+						const BYTE* name = modules + i + j + 2;
+						for( size_t k = 0; k < array_size(DOWNLOAD_LOGO_TYPE_NAMES); k++ ){
+							if( (this->logoTypeFlags & (1 << DOWNLOAD_LOGO_TYPE_NAMES[k].type)) &&
+							    len == strlen(DOWNLOAD_LOGO_TYPE_NAMES[k].name) &&
+							    memcmp(name, DOWNLOAD_LOGO_TYPE_NAMES[k].name, len) == 0 ){
+								//ダウンロード対象
+								moduleName = DOWNLOAD_LOGO_TYPE_NAMES[k].name;
+								break;
+							}
+						}
+						break;
+					}
+					j += 2 + len;
+				}
+			}
+			//ロゴデータの最大見積もりから現実的なサイズに制限
+			if( moduleName && moduleSize > 0 && moduleSize < 4 * 1024 * 1024 ){
+				vector<DOWNLOAD_MODULE_DATA>::iterator itr =
+					std::find_if(this->downloadModuleList.begin(), this->downloadModuleList.end(),
+					             [=](const DOWNLOAD_MODULE_DATA& a) { return a.name == moduleName; });
+				if( itr == this->downloadModuleList.end() ){
+					this->downloadModuleList.resize(this->downloadModuleList.size() + 1);
+					itr = this->downloadModuleList.end() - 1;
+					itr->name = moduleName;
+				}
+				size_t blockNum = (moduleSize + blockSize - 1) / blockSize;
+				if( itr->moduleData.size() != moduleSize ||
+				    itr->blockGetList.size() != blockNum ||
+				    itr->downloadID != downloadID ||
+				    itr->pid != PID ||
+				    itr->moduleID != moduleID ||
+				    itr->moduleVersion != moduleVersion ){
+					//ブロック取得状況をリセット
+					itr->moduleData.assign(moduleSize, 0);
+					itr->blockGetList.assign(blockNum, 0);
+					itr->downloadID = downloadID;
+					itr->pid = PID;
+					itr->moduleID = moduleID;
+					itr->moduleVersion = moduleVersion;
+				}
+			}
+			i += moduleInfoLength;
+		}
+	}
+}
+
+void CDecodeUtil::CheckDsmccDDB(WORD PID, DWORD downloadID, const BYTE* body, size_t bodySize)
+{
+	if( bodySize < 6 ){
+		return;
+	}
+	WORD moduleID = body[0] << 8 | body[1];
+	BYTE moduleVersion = body[2];
+	size_t blockNumber = body[4] << 8 | body[5];
+	for( vector<DOWNLOAD_MODULE_DATA>::iterator itr = this->downloadModuleList.begin(); itr != this->downloadModuleList.end(); itr++ ){
+		if( itr->downloadID == downloadID &&
+		    itr->pid == PID &&
+		    itr->moduleID == moduleID &&
+		    itr->moduleVersion == moduleVersion &&
+		    itr->blockGetList.size() > blockNumber &&
+		    itr->blockGetList[blockNumber] == 0 ){
+			//ブロック取得
+			size_t blockSize = bodySize - 6;
+			if( blockNumber == itr->blockGetList.size() - 1 ){
+				//最終ブロック
+				if( itr->moduleData.size() >= blockSize ){
+					std::copy(body + 6, body + bodySize, itr->moduleData.end() - blockSize);
+					itr->blockGetList[blockNumber] = 1;
+				}
+			}else{
+				//最終ブロック以外
+				if( itr->moduleData.size() >= blockSize * blockNumber + blockSize ){
+					std::copy(body + 6, body + bodySize, itr->moduleData.begin() + blockSize * blockNumber);
+					itr->blockGetList[blockNumber] = 1;
+				}
+			}
+			if( std::find(itr->blockGetList.begin(), itr->blockGetList.end(), 0) == itr->blockGetList.end() ){
+				//すべて取得した
+				CheckDownloadedModule(*itr);
+			}
+		}
+	}
+}
+
+void CDecodeUtil::CheckDownloadedModule(const DOWNLOAD_MODULE_DATA& dl)
+{
+	//STD-B21 LogoDataModuleのダウンロードだけなので、nameの確認は省略
+	if( dl.moduleData.size() < 3 ){
+		return;
+	}
+	BYTE type = dl.moduleData[0];
+	size_t numberOfLoop = dl.moduleData[1] << 8 | dl.moduleData[2];
+	for( size_t i = 3; numberOfLoop > 0 && i + 3 <= dl.moduleData.size(); numberOfLoop-- ){
+		WORD id = (dl.moduleData[i] << 8 | dl.moduleData[i + 1]) & 0x1FF;
+		size_t numberOfServices = dl.moduleData[i + 2];
+		i += 3;
+		if( i + numberOfServices * 6 + 2 > dl.moduleData.size() ){
+			break;
+		}
+		size_t logoSize = dl.moduleData[i + numberOfServices * 6] << 8 |
+		                  dl.moduleData[i + numberOfServices * 6 + 1];
+		const BYTE* logo = dl.moduleData.data() + i + numberOfServices * 6 + 2;
+		if( i + numberOfServices * 6 + 2 + logoSize > dl.moduleData.size() ){
+			break;
+		}
+		for( ; numberOfServices > 0; numberOfServices-- ){
+			WORD onid = dl.moduleData[i] << 8 | dl.moduleData[i + 1];
+			WORD sid = dl.moduleData[i + 4] << 8 | dl.moduleData[i + 5];
+			UpdateLogoData(onid, id, type, logo, logoSize);
+			LONGLONG key = (LONGLONG)onid << 32 | (LONGLONG)id << 16 | type;
+			vector<LOGO_DATA>::iterator itr = lower_bound_first(this->logoMap.begin(), this->logoMap.end(), key);
+			if( itr != this->logoMap.end() && itr->first == key &&
+			    std::find(itr->serviceList.begin(), itr->serviceList.end(), sid) == itr->serviceList.end() ){
+				itr->serviceList.push_back(sid);
+			}
+			i += 6;
+		}
+		i += 2 + logoSize;
+	}
+}
+
 void CDecodeUtil::CheckNIT(WORD PID, const Desc::CDescriptor& nit)
 {
 	if( epgDBUtil != NULL ){
@@ -380,46 +598,36 @@ void CDecodeUtil::CheckNIT(WORD PID, const Desc::CDescriptor& nit)
 		if( this->nitActualInfo.empty() ){
 			//初回
 			this->nitActualInfo[section_number] = nit;
+			UpdateEngineeringPmtMap();
 		}else{
 			if( this->nitActualInfo.begin()->second.GetNumber(Desc::network_id) != nit.GetNumber(Desc::network_id) ){
 				//NID変わったのでネットワーク変わった
 				ChangeTSIDClear(PID);
 				this->nitActualInfo[section_number] = nit;
+				UpdateEngineeringPmtMap();
 			}else if( this->nitActualInfo.begin()->second.GetNumber(Desc::version_number) != nit.GetNumber(Desc::version_number) ){
 				//バージョン変わった
 				this->nitActualInfo.clear();
 				this->nitActualInfo[section_number] = nit;
+				UpdateEngineeringPmtMap();
 			}else{
 				map<BYTE, Desc::CDescriptor>::const_iterator itr = this->nitActualInfo.find(0);
-				if( itr != this->nitActualInfo.end() ){
-					Desc::CDescriptor::CLoopPointer lpLast, lp;
-					if( itr->second.EnterLoop(lpLast, 1) && nit.EnterLoop(lp, 1) && itr->first == section_number ){
-						if( itr->second.GetNumber(Desc::original_network_id, lpLast) != nit.GetNumber(Desc::original_network_id, lp) ){
-							//ONID変わったのでネットワーク変わった
-							ChangeTSIDClear(PID);
-							this->nitActualInfo[section_number] = nit;
-						}else{
-							if( itr->second.GetNumber(Desc::transport_stream_id, lpLast) != nit.GetNumber(Desc::transport_stream_id, lp) ){
-								//TSID変わったのでネットワーク変わった
-								ChangeTSIDClear(PID);
-								this->nitActualInfo[section_number] = nit;
-							}else{
-								//変化なし
-								if( this->nitActualInfo.count(section_number) == 0 ){
-									this->nitActualInfo[section_number] = nit;
-								}
-							}
-						}
-					}else{
-						//変化なし
-						if( this->nitActualInfo.count(section_number) == 0 ){
-							this->nitActualInfo[section_number] = nit;
-						}
-					}
+				Desc::CDescriptor::CLoopPointer lpLast, lp;
+				if( itr != this->nitActualInfo.end() &&
+				    itr->first == section_number &&
+				    itr->second.EnterLoop(lpLast, 1) && nit.EnterLoop(lp, 1) &&
+				    (itr->second.GetNumber(Desc::original_network_id, lpLast) != nit.GetNumber(Desc::original_network_id, lp) ||
+				     itr->second.GetNumber(Desc::transport_stream_id, lpLast) != nit.GetNumber(Desc::transport_stream_id, lp)) ){
+					//ONID変わったのでネットワーク変わった
+					//TSID変わったのでネットワーク変わった
+					ChangeTSIDClear(PID);
+					this->nitActualInfo[section_number] = nit;
+					UpdateEngineeringPmtMap();
 				}else{
 					//変化なし
 					if( this->nitActualInfo.count(section_number) == 0 ){
 						this->nitActualInfo[section_number] = nit;
+						UpdateEngineeringPmtMap();
 					}
 				}
 			}
@@ -427,6 +635,54 @@ void CDecodeUtil::CheckNIT(WORD PID, const Desc::CDescriptor& nit)
 	}else if( nit.GetNumber(Desc::table_id) == 0x41 ){
 		//他ネットワーク
 		//特に扱う必要性なし
+	}
+}
+
+void CDecodeUtil::UpdateEngineeringPmtMap()
+{
+	if( this->nitActualInfo.empty() ||
+	    this->nitActualInfo.begin()->second.GetNumber(Desc::last_section_number) + 1 != this->nitActualInfo.size() ){
+		//セクション不足
+		return;
+	}
+
+	//エンジニアリングサービスを探す
+	vector<WORD> engList;
+	for( auto itr = this->nitActualInfo.cbegin(); itr != this->nitActualInfo.end(); itr++ ){
+		Desc::CDescriptor::CLoopPointer lp;
+		if( itr->second.EnterLoop(lp, 1) ){
+			do{
+				Desc::CDescriptor::CLoopPointer lp2 = lp;
+				if( itr->second.EnterLoop(lp2) ){
+					do{
+						Desc::CDescriptor::CLoopPointer lp3 = lp2;
+						if( itr->second.GetNumber(Desc::descriptor_tag, lp2) == Desc::service_list_descriptor &&
+						    itr->second.EnterLoop(lp3) ){
+							do{
+								//STD-B10,TR-B15
+								if( itr->second.GetNumber(Desc::service_type, lp3) == 0xA4 ){
+									engList.push_back((WORD)itr->second.GetNumber(Desc::service_id, lp3));
+									if( engList.back() != 0 ){
+										auto jtr = lower_bound_first(this->engineeringPmtMap.begin(), this->engineeringPmtMap.end(), engList.back());
+										if( jtr == this->engineeringPmtMap.end() || jtr->first != engList.back() ){
+											this->engineeringPmtMap.insert(jtr, std::make_pair(engList.back(), std::unique_ptr<const Desc::CDescriptor>()));
+										}
+									}
+								}
+							}while( itr->second.NextLoopIndex(lp3) );
+						}
+					}while( itr->second.NextLoopIndex(lp2) );
+				}
+			}while( itr->second.NextLoopIndex(lp) );
+		}
+	}
+
+	for( auto itr = this->engineeringPmtMap.begin(); itr != this->engineeringPmtMap.end(); ){
+		if( std::find(engList.begin(), engList.end(), itr->first) == engList.end() ){
+			itr = this->engineeringPmtMap.erase(itr);
+		}else{
+			itr++;
+		}
 	}
 }
 
@@ -683,6 +939,40 @@ void CDecodeUtil::SetLogoTypeFlags(
 
 	this->additionalNeededPidList.clear();
 	if( additionalNeededPids ){
+		for( auto itr = this->engineeringPmtMap.cbegin(); itr != this->engineeringPmtMap.end(); itr++ ){
+			//エンジニアリングサービスのPMTも見たい
+			if( this->patInfo ){
+				Desc::CDescriptor::CLoopPointer lp;
+				if( this->patInfo->EnterLoop(lp) ){
+					do{
+						if( this->patInfo->GetNumber(Desc::program_number, lp) == itr->first ){
+							this->additionalNeededPidList.push_back((WORD)this->patInfo->GetNumber(Desc::program_map_PID, lp));
+							break;
+						}
+					}while( this->patInfo->NextLoopIndex(lp) );
+				}
+			}
+			//ロゴが含まれるデータカルーセルも見たい
+			Desc::CDescriptor::CLoopPointer lp;
+			if( itr->second && itr->second->EnterLoop(lp, 1) ){
+				do{
+					Desc::CDescriptor::CLoopPointer lp2 = lp;
+					if( itr->second->GetNumber(Desc::stream_type, lp) == 0x0D && itr->second->EnterLoop(lp2) ){
+						//DSM-CC type D (データカルーセル)
+						do{
+							if( itr->second->GetNumber(Desc::descriptor_tag, lp2) == Desc::stream_identifier_descriptor ){
+								if( itr->second->GetNumber(Desc::component_tag, lp2) == 0x79 ){
+									//TR-B15 全受信機共通データ
+									this->additionalNeededPidList.push_back((WORD)itr->second->GetNumber(Desc::elementary_PID, lp));
+								}
+								break;
+							}
+						}while( itr->second->NextLoopIndex(lp2) );
+					}
+				}while( itr->second->NextLoopIndex(lp) );
+			}
+		}
+
 		this->additionalNeededPidList.push_back(0);
 		*additionalNeededPids = this->additionalNeededPidList.data();
 	}

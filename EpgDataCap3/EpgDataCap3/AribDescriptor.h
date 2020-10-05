@@ -277,6 +277,10 @@ namespace AribDescriptor
 		broadcaster_descriptors_length,
 		data_type,
 		data_module_byte,
+		PCR_PID,
+		program_info_length,
+		elementary_PID,
+		ES_info_length,
 	};
 
 	enum {
@@ -298,7 +302,7 @@ namespace AribDescriptor
 		//time_shifted_event_descriptor				= 0x4F,
 		component_descriptor						= 0x50,
 		//mosaic_descriptor							= 0x51,
-		//stream_identifier_descriptor				= 0x52,
+		stream_identifier_descriptor				= 0x52,
 		//CA_identifier_descriptor					= 0x53,
 		content_descriptor							= 0x54,
 		//parental_rating_descriptor				= 0x55,
@@ -337,6 +341,8 @@ namespace AribDescriptor
 
 	enum si_type {
 		TYPE_PAT,
+		TYPE_PMT,
+		TYPE_DSMCC_HEAD,
 		TYPE_NIT,
 		TYPE_SDT,
 		TYPE_EIT,
@@ -351,7 +357,7 @@ namespace AribDescriptor
 		BYTE tag;
 		const short* parser;
 	};
-	extern const PARSER_PAIR parserMap[16];
+	extern const PARSER_PAIR parserMap[17];
 
 	class CDescriptor
 	{
