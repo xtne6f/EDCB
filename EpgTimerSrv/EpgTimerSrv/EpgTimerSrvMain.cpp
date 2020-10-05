@@ -2890,12 +2890,14 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam.data, cmdParam.dataSize, &readSize) ){
 				vector<wstring> list;
-				if( ReadVALUE2(ver, &list, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) && list.size() < 32 ){
+				if( ReadVALUE2(ver, &list, cmdParam.data.get() + readSize, cmdParam.dataSize - readSize, NULL) ){
+					//転送サイズがtotalSizeRemainより大きい場合、結果はトリムされる
+					size_t totalSizeRemain = 256 * 1024 * 1024;
 					vector<FILE_DATA> result(list.size());
 					for( size_t i = 0; i < list.size(); i++ ){
-						result[i].Name = list[i];
 						fs_path path;
-						if( UtilComparePath(list[i].c_str(), L"ChSet5.txt") == 0 ){
+						if( UtilComparePath(list[i].c_str(), L"ChSet5.txt") == 0 ||
+						    UtilComparePath(list[i].c_str(), LOGO_SAVE_FOLDER L".ini") == 0 ){
 							path = GetSettingPath().append(list[i]);
 						}else if( UtilComparePath(list[i].c_str(), L"EpgTimerSrv.ini") == 0 ||
 						          UtilComparePath(list[i].c_str(), L"Common.ini") == 0 ||
@@ -2904,9 +2906,39 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 						          UtilComparePath(list[i].c_str(), L"ViewApp.ini") == 0 ||
 						          UtilComparePath(list[i].c_str(), L"Bitrate.ini") == 0 ){
 							path = GetCommonIniPath().replace_filename(list[i]);
+						}else{
+							//ロゴフォルダに対する特例
+							size_t namePos = array_size(LOGO_SAVE_FOLDER L"\\") - 1;
+							if( list[i].size() > namePos && UtilComparePath(list[i].substr(0, namePos).c_str(), LOGO_SAVE_FOLDER L"\\") == 0 ){
+								path = GetSettingPath().append(LOGO_SAVE_FOLDER);
+								wstring name = list[i].substr(namePos);
+								if( name != L"*.*" ){
+									CheckFileName(name);
+								}
+								path.append(name);
+							}
 						}
 						if( path.empty() == false ){
-							if( UtilPathEndsWith(path.c_str(), L".ini") ){
+							if( UtilPathEndsWith(path.c_str(), L"*.*") ){
+								//ファイルリストを返す
+								wstring strData = L"\xFEFF";
+								EnumFindFile(path, [&strData](UTIL_FIND_DATA& findData) -> bool {
+									WCHAR prop[64];
+									swprintf_s(prop, L"%d %lld %lld ",
+									           findData.isDir ? 1 : 0, findData.lastWriteTime + I64_UTIL_TIMEZONE, findData.fileSize);
+									strData += prop;
+									strData += findData.fileName;
+									strData += L"\r\n";
+									return true;
+								});
+								if( totalSizeRemain < strData.size() ){
+									result.resize(i);
+									break;
+								}
+								totalSizeRemain -= strData.size();
+								//BOMつきUTF-16
+								result[i].Data.assign((const BYTE*)strData.c_str(), (const BYTE*)(strData.c_str() + strData.size()));
+							}else if( UtilPathEndsWith(path.c_str(), L".ini") ){
 								//ファイルロックを邪魔しないようAPI経由で読む
 								wstring strData = L"\xFEFF";
 								int appendModulePathState = UtilComparePath(path.filename().c_str(), L"Common.ini") == 0;
@@ -2933,6 +2965,11 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 									strData += L"[SET]\r\nModulePath=\"" + GetCommonIniPath().parent_path().native() + L"\"\r\n";
 								}
 								if( strData.size() > 1 ){
+									if( totalSizeRemain < strData.size() ){
+										result.resize(i);
+										break;
+									}
+									totalSizeRemain -= strData.size();
 									//BOMつきUTF-16
 									result[i].Data.assign((const BYTE*)strData.c_str(), (const BYTE*)(strData.c_str() + strData.size()));
 								}
@@ -2940,7 +2977,12 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 								std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
 								if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
 									__int64 fileSize = _ftelli64(fp.get());
-									if( 0 < fileSize && fileSize < 16 * 1024 * 1024 ){
+									if( 0 < fileSize ){
+										if( (__int64)totalSizeRemain < fileSize ){
+											result.resize(i);
+											break;
+										}
+										totalSizeRemain -= (size_t)fileSize;
 										result[i].Data.resize((size_t)fileSize);
 										rewind(fp.get());
 										if( fread(&result[i].Data.front(), 1, (size_t)fileSize, fp.get()) != (size_t)fileSize ){
@@ -2950,6 +2992,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM
 								}
 							}
 						}
+						result[i].Name.swap(list[i]);
 					}
 					resParam.data = NewWriteVALUE2WithVersion(ver, result, resParam.dataSize);
 					resParam.param = CMD_SUCCESS;
