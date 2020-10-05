@@ -9,7 +9,13 @@
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 
+namespace
+{
 CInstanceManager<CEpgDataCap3Main> g_instMng;
+recursive_mutex_ g_debugLogLock;
+void (CALLBACK *g_debugLogProc)(const WCHAR* s);
+int g_debugLogProcCount;
+}
 
 //DLLの初期化
 //戻り値：
@@ -38,7 +44,7 @@ DWORD WINAPI InitializeEP(
 		err = ERR_FALSE;
 	}
 
-	_OutputDebugString(L"EgpDataCap3 [InitializeEP : id=%d]\n", *id);
+	AddDebugLogFormat(L"EgpDataCap3 [InitializeEP : id=%d]", *id);
 
 	return err;
 }
@@ -53,7 +59,7 @@ DWORD WINAPI UnInitializeEP(
 	DWORD id
 	)
 {
-	_OutputDebugString(L"EgpDataCap3 [UnInitializeEP : id=%d]\n", id);
+	AddDebugLogFormat(L"EgpDataCap3 [UnInitializeEP : id=%d]", id);
 
 	DWORD err = ERR_NOT_INIT;
 	{
@@ -371,6 +377,56 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusServiceEP(
 	return ptr->GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
 }
 
+//取得するロゴタイプをフラグで指定する
+//引数：
+// id						[IN]識別ID
+// flags					[IN]フラグ(ロゴタイプnを取得するとき下位からnビット目をセットする)
+// additionalNeededPids		[OUT]追加で解析したいTSパケットのPIDのリスト(0終端)。NULL可。次の呼び出しまで有効
+DLL_EXPORT
+void WINAPI SetLogoTypeFlagsEP(
+	DWORD id,
+	DWORD flags,
+	const WORD** additionalNeededPids
+	)
+{
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr) {
+		ptr->SetLogoTypeFlags(flags, additionalNeededPids);
+	}
+}
+
+//全ロゴを列挙する
+//戻り値がNO_ERRのときコールバックが発生する
+//初回コールバックでlogoListSizeに全ロゴの個数、logoListにNULLが入る
+//次回からはlogoListSizeに列挙ごとのロゴの個数が入る
+//FALSEを返すと列挙を中止できる
+//戻り値：
+// エラーコード
+//引数：
+// id						[IN]識別ID
+// enumLogoListProc			[IN]ロゴのリストを取得するコールバック関数
+// param					[IN]コールバック引数
+DLL_EXPORT
+DWORD WINAPI EnumLogoListEP(
+	DWORD id,
+	BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param),
+	LPVOID param
+	)
+{
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
+		return ERR_NOT_INIT;
+	}
+	if (enumLogoListProc == NULL) {
+		return ERR_INVALID_ARG;
+	}
+
+	if (ptr->EnumLogoList(enumLogoListProc, param) == FALSE) {
+		return ERR_NOT_FIND;
+	}
+	return NO_ERR;
+}
+
 //PC時計を元としたストリーム時間との差を取得する
 //戻り値：
 // 差の秒数
@@ -387,4 +443,41 @@ int WINAPI GetTimeDelayEP(
 	}
 
 	return ptr->GetTimeDelay();
+}
+
+//ログ出力関数を登録/登録解除する
+//戻り値：
+// エラーコード
+//引数：
+// debugLogProc				[IN]ログ出力関数
+DLL_EXPORT
+DWORD WINAPI SetDebugLogCallbackEP(
+	void (CALLBACK *debugLogProc)(const WCHAR* s)
+	)
+{
+	CBlockLock lock(&g_debugLogLock);
+
+	if (debugLogProc) {
+		g_debugLogProc = debugLogProc;
+		g_debugLogProcCount++;
+		return NO_ERR;
+	}
+	if (g_debugLogProcCount) {
+		if (--g_debugLogProcCount == 0) {
+			g_debugLogProc = NULL;
+		}
+		return NO_ERR;
+	}
+	return ERR_FALSE;
+}
+
+void AddDebugLogNoNewline(const wchar_t* s)
+{
+	{
+		CBlockLock lock(&g_debugLogLock);
+		if (g_debugLogProc) {
+			g_debugLogProc(s);
+		}
+	}
+	OutputDebugString(s);
 }

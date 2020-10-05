@@ -40,6 +40,10 @@ DWORD CEpgDataCap3Util::Initialize(
 #endif
 	DWORD err = FALSE;
 	if( module != NULL ){
+		pfnSetDebugLogCallbackEP3 = (SetDebugLogCallbackEP3)getProcAddr("SetDebugLogCallbackEP");
+		if( pfnSetDebugLogCallbackEP3 ){
+			pfnSetDebugLogCallbackEP3(DebugLogCallback);
+		}
 		InitializeEP3 pfnInitializeEP3;
 		if( (pfnInitializeEP3 = (InitializeEP3)getProcAddr("InitializeEP")) != NULL &&
 		    (pfnUnInitializeEP3 = (UnInitializeEP3)getProcAddr("UnInitializeEP")) != NULL &&
@@ -55,6 +59,8 @@ DWORD CEpgDataCap3Util::Initialize(
 		    (pfnGetTimeDelayEP3 = (GetTimeDelayEP3)getProcAddr("GetTimeDelayEP")) != NULL ){
 			pfnEnumEpgInfoListEP3 = (EnumEpgInfoListEP3)getProcAddr("EnumEpgInfoListEP");
 			pfnGetSectionStatusServiceEP3 = (GetSectionStatusServiceEP3)getProcAddr("GetSectionStatusServiceEP");
+			pfnSetLogoTypeFlagsEP3 = (SetLogoTypeFlagsEP3)getProcAddr("SetLogoTypeFlagsEP");
+			pfnEnumLogoListEP3 = (EnumLogoListEP3)getProcAddr("EnumLogoListEP");
 			err = pfnInitializeEP3(asyncFlag, &id);
 			if( err == NO_ERR ){
 				if( id != 0 ){
@@ -66,7 +72,7 @@ DWORD CEpgDataCap3Util::Initialize(
 		}
 		UnInitialize();
 	}
-	_OutputDebugString(L"%lsのロードに失敗しました\r\n", path.c_str());
+	AddDebugLogFormat(L"%lsのロードに失敗しました", path.c_str());
 	return err;
 }
 
@@ -80,6 +86,9 @@ DWORD CEpgDataCap3Util::UnInitialize(
 	if( id != 0 ){
 		err = pfnUnInitializeEP3(id);
 		id = 0;
+	}
+	if( pfnSetDebugLogCallbackEP3 ){
+		pfnSetDebugLogCallbackEP3(NULL);
 	}
 #ifdef _WIN32
 	FreeLibrary((HMODULE)module);
@@ -232,6 +241,31 @@ DWORD CEpgDataCap3Util::SearchEpgInfo(
 	return pfnSearchEpgInfoEP3(id, originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
 }
 
+void CEpgDataCap3Util::SetLogoTypeFlags(
+	DWORD flags,
+	const WORD** additionalNeededPids
+	)
+{
+	if( module == NULL || id == 0 || pfnSetLogoTypeFlagsEP3 == NULL ){
+		return;
+	}
+	return pfnSetLogoTypeFlagsEP3(id, flags, additionalNeededPids);
+}
+
+DWORD CEpgDataCap3Util::EnumLogoList(
+	BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param),
+	LPVOID param
+	)
+{
+	if( module == NULL || id == 0 ){
+		return ERR_NOT_INIT;
+	}
+	if( pfnEnumLogoListEP3 == NULL ){
+		return ERR_FALSE;
+	}
+	return pfnEnumLogoListEP3(id, enumLogoListProc, param);
+}
+
 int CEpgDataCap3Util::GetTimeDelay(
 	)
 {
@@ -239,4 +273,13 @@ int CEpgDataCap3Util::GetTimeDelay(
 		return 0;
 	}
 	return pfnGetTimeDelayEP3(id);
+}
+
+void CALLBACK CEpgDataCap3Util::DebugLogCallback(
+	const WCHAR* s
+	)
+{
+#ifdef WRAP_DEBUG_OUTPUT
+	AddDebugLogNoNewline(s, true);
+#endif
 }

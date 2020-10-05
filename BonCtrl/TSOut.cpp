@@ -18,6 +18,7 @@ CTSOut::CTSOut(void)
 	this->emmEnableFlag = FALSE;
 
 	this->nextCtrlID = 1;
+	this->logoAdditionalNeededPids = NULL;
 	this->noLogScramble = FALSE;
 	this->parseEpgPostProcess = FALSE;
 }
@@ -42,6 +43,7 @@ void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 		//EpgDataCap3は内部メソッド単位でアトミック。初期化以外はobjLockかepgUtilLockのどちらかを獲得すればよい
 		this->epgUtil.UnInitialize();
 		this->epgUtil.Initialize(FALSE);
+		this->logoAdditionalNeededPids = NULL;
 	}
 }
 
@@ -80,7 +82,7 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 	if( this->enableDecodeFlag != FALSE || this->emmEnableFlag != FALSE ){
 		//スクランブル解除かEMM処理が設定されている場合だけ実行
 		if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
-			OutputDebugString(L"★★Decode DLL load err [CTSOut::OnChChanged()]\r\n");
+			AddDebugLog(L"★★Decode DLL load err [CTSOut::OnChChanged()]");
 			//再試行は意味がなさそうなので廃止
 		}
 		this->decodeUtil.SetEmm(this->emmEnableFlag);
@@ -117,6 +119,10 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						//スクランブルパケットなので解析できない
 						continue;
 					}
+					if( packet.PID >= BON_SELECTIVE_PID ){
+						//間接指定のパケットは不要
+						continue;
+					}
 					this->epgUtil.AddTSPacket(data + i, 188);
 					//GetTSID()が切り替え前の値を返さないようにPATを待つ
 					if( this->chChangeState == CH_ST_WAIT_PAT ){
@@ -133,13 +139,13 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						WORD tsid;
 						if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
 							if( this->chChangeState == CH_ST_INIT ){
-								_OutputDebugString(L"★Ch Init 0x%04X 0x%04X\r\n", onid, tsid);
+								AddDebugLogFormat(L"★Ch Init 0x%04X 0x%04X", onid, tsid);
 								OnChChanged(onid, tsid);
 							}else if( onid != this->lastONID || tsid != this->lastTSID ){
-								_OutputDebugString(L"★Ch Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+								AddDebugLogFormat(L"★Ch Change 0x%04X 0x%04X => 0x%04X 0x%04X", this->lastONID, this->lastTSID, onid, tsid);
 								OnChChanged(onid, tsid);
 							}else if( tick - this->chChangeTime > 7000 ){
-								OutputDebugString(L"★Ch NoChange\r\n");
+								AddDebugLog(L"★Ch NoChange");
 								OnChChanged(onid, tsid);
 							}
 						}
@@ -149,8 +155,21 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					if( this->serviceFilter.CatOrPmtUpdated() ){
 						UpdateServiceUtil(FALSE);
 					}
-					if( packet.PID < BON_SELECTIVE_PID && this->parseEpgPostProcess == FALSE ){
-						ParseEpgPacket(data + i, packet);
+					if( this->parseEpgPostProcess == FALSE ){
+						if( packet.PID < BON_SELECTIVE_PID ){
+							ParseEpgPacket(data + i, packet);
+						}else{
+							CBlockLock lock2(&this->epgUtilLock);
+							if( this->logoAdditionalNeededPids ){
+								for( const WORD* pid = this->logoAdditionalNeededPids; *pid; pid++ ){
+									if( *pid == packet.PID ){
+										//ロゴ取得に必要
+										this->epgUtil.AddTSPacket(data + i, 188);
+										break;
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -160,7 +179,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 			WORD tsid;
 			if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
 				if( onid != this->lastONID || tsid != this->lastTSID ){
-					_OutputDebugString(L"★Ch Unexpected Change 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
+					AddDebugLogFormat(L"★Ch Unexpected Change 0x%04X 0x%04X => 0x%04X 0x%04X", this->lastONID, this->lastTSID, onid, tsid);
 					OnChChanged(onid, tsid);
 				}
 			}
@@ -188,7 +207,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 			}
 		}
 	}catch(...){
-		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception2");
+		AddDebugLog(L"★★CTSOut::AddTSBuff Exception2");
 		//デコード失敗
 		decodeData = &this->decodeBuff.front();
 		decodeSize = (DWORD)this->decodeBuff.size();
@@ -311,6 +330,58 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 	}
 }
 
+void CTSOut::CheckLogo(DWORD logoTypeFlags, CHECK_LOGO_RESULT& result)
+{
+	CBlockLock lock(&this->epgUtilLock);
+
+	this->epgUtil.SetLogoTypeFlags(logoTypeFlags, &this->logoAdditionalNeededPids);
+	result.dataUpdated = false;
+	result.serviceListUpdated = false;
+	if( logoTypeFlags ){
+		pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*> context(&result, &this->logoServiceListSizeMap);
+		this->epgUtil.EnumLogoList(EnumLogoListProc, &context);
+	}
+}
+
+BOOL CALLBACK CTSOut::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param)
+{
+	CHECK_LOGO_RESULT& result = *((pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*>*)param)->first;
+	vector<pair<LONGLONG, DWORD>>& serviceListSizeMap = *((pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*>*)param)->second;
+
+	if( logoList == NULL ){
+		return TRUE;
+	}
+	for( ; logoListSize > 0; logoListSize--, logoList++ ){
+		if( logoList->serviceListSize > 0 ){
+			LONGLONG key = (LONGLONG)logoList->onid << 32 | (LONGLONG)logoList->id << 16 | logoList->type;
+			vector<pair<LONGLONG, DWORD>>::iterator itr = lower_bound_first(serviceListSizeMap.begin(), serviceListSizeMap.end(), key);
+			try{
+				if( itr == serviceListSizeMap.end() || itr->first != key ){
+					serviceListSizeMap.insert(itr, pair<LONGLONG, DWORD>(key, 0));
+					result.onid = logoList->onid;
+					result.id = logoList->id;
+					result.type = logoList->type;
+					result.data.assign(logoList->data, logoList->data + logoList->dataSize);
+					result.dataUpdated = true;
+					return FALSE;
+				}
+				if( itr->second < logoList->serviceListSize ){
+					result.onid = logoList->onid;
+					result.id = logoList->id;
+					result.type = logoList->type;
+					result.serviceList.assign(logoList->serviceList, logoList->serviceList + logoList->serviceListSize);
+					result.serviceListUpdated = true;
+					itr->second = logoList->serviceListSize;
+					return FALSE;
+				}
+			}catch( std::bad_alloc& ){
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
 //EPGデータの保存を開始する
 //戻り値：
 // TRUE（成功）、FALSE（失敗）
@@ -326,8 +397,8 @@ BOOL CTSOut::StartSaveEPG(
 	this->epgTempFilePath = epgFilePath_;
 	this->epgTempFilePath += L".tmp";
 
-	_OutputDebugString(L"★%ls\r\n", this->epgFilePath.c_str());
-	_OutputDebugString(L"★%ls\r\n", this->epgTempFilePath.c_str());
+	AddDebugLogFormat(L"★%ls", this->epgFilePath.c_str());
+	AddDebugLogFormat(L"★%ls", this->epgTempFilePath.c_str());
 
 	this->epgUtil.ClearSectionStatus();
 	this->epgFileState = EPG_FILE_ST_NONE;
@@ -335,7 +406,7 @@ BOOL CTSOut::StartSaveEPG(
 	UtilCreateDirectories(fs_path(this->epgTempFilePath).parent_path());
 	this->epgFile.reset(UtilOpenFile(this->epgTempFilePath, UTIL_SECURE_WRITE));
 	if( this->epgFile == NULL ){
-		OutputDebugString(L"err\r\n");
+		AddDebugLog(L"err");
 		return FALSE;
 	}
 
@@ -405,7 +476,7 @@ BOOL CTSOut::SetEmm(
 				//最初に EMM 処理が設定される場合は DLL を読み込む
 				//スクランブル解除が設定されている場合は読み込み済みなので除外
 				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
-					OutputDebugString(L"★★Decode DLL load err [CTSOut::SetEmm()]\r\n");
+					AddDebugLog(L"★★Decode DLL load err [CTSOut::SetEmm()]");
 				}
 			}
 		}
@@ -796,7 +867,7 @@ BOOL CTSOut::UpdateEnableDecodeFlag()
 				//最初にスクランブル解除が設定される場合は DLL を再読み込みする
 				//EMM 処理が設定されている場合は読み込み済みなので除外
 				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
-					OutputDebugString(L"★★Decode DLL load err [CTSOut::SetScramble()]\r\n");
+					AddDebugLog(L"★★Decode DLL load err [CTSOut::SetScramble()]");
 				}
 			}
 		}

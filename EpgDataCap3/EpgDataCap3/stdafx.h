@@ -7,4 +7,7 @@
 
 #include "targetver.h"
 
+void AddDebugLogNoNewline(const wchar_t* s);
+
+#define WRAP_DEBUG_OUTPUT
 #include "../../Common/Common.h"

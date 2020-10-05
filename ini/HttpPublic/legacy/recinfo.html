@@ -41,7 +41,7 @@ for i=page*PAGE_COUNT+1,math.min(#a,(page+1)*PAGE_COUNT) do
   v=a[i]
   ct:Append('    <tr><td><a href="recinfodesc.html?id='..v.id..'">'
     ..FormatTimeAndDuration(v.startTime, v.durationSecond)
-    ..'</a><td>'..v.serviceName..'<td>'..v.title
+    ..'</a><td>'..v.serviceName..'<td>'..v.title..'<td>'..(v.protectFlag and '🔑' or '-')
     ..'<td'..(v.drops>0 and ' class="drops"' or v.scrambles>0 and ' class="scrambles"' or '')..'>'..v.drops..'/'..v.scrambles
     ..'<td'..((v.recStatus==1 or v.recStatus==4 or v.recStatus==6) and '' or (v.recStatus==3 or v.recStatus==11 or v.recStatus==13) and ' class="warn"' or ' class="err"')
     ..'>'..v.comment..'</tr>\n')

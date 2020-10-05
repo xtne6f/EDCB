@@ -194,6 +194,26 @@ EPG_SECTION_STATUS CEpgDataCap3Main::GetSectionStatusService(
 	return this->epgDBUtilClass.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
 }
 
+//取得するロゴタイプをフラグで指定する
+void CEpgDataCap3Main::SetLogoTypeFlags(
+	DWORD flags,
+	const WORD** additionalNeededPids
+	)
+{
+	CBlockLock lock(&this->utilLock);
+	this->decodeUtilClass.SetLogoTypeFlags(flags, additionalNeededPids);
+}
+
+//全ロゴを列挙する
+BOOL CEpgDataCap3Main::EnumLogoList(
+	BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, LPVOID),
+	LPVOID param
+	)
+{
+	CBlockLock lock(&this->utilLock);
+	return this->decodeUtilClass.EnumLogoList(enumLogoListProc, param);
+}
+
 //PC時計を元としたストリーム時間との差を取得する
 //戻り値：
 // 差の秒数

@@ -15,4 +15,6 @@ EXPORTS
 	SearchEpgInfoEP		@12
 	EnumEpgInfoListEP	@13
 	GetSectionStatusServiceEP	@14
-
+	SetDebugLogCallbackEP	@15
+	SetLogoTypeFlagsEP	@16
+	EnumLogoListEP		@17

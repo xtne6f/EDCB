@@ -99,7 +99,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 
 		if( eit.GetNumber(Desc::running_status, lp) == 1 || eit.GetNumber(Desc::running_status, lp) == 3 ){
 			//非実行中または停止中
-			_OutputDebugString(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x\r\n",
+			AddDebugLogFormat(L"★非実行中または停止中イベント ONID:0x%04x TSID:0x%04x SID:0x%04x EventID:0x%04x",
 				original_network_id,  transport_stream_id, service_id, event_id
 				);
 			continue;
@@ -115,7 +115,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			//[p/f]
 			if( section_number == 0 ){
 				if( start_time == 0 ){
-					OutputDebugString(L"Invalid EIT[p/f]\r\n");
+					AddDebugLog(L"Invalid EIT[p/f]");
 				}else if( serviceInfo->nowEvent.empty() || siTag.time >= serviceInfo->nowEvent.back().time ){
 					if( serviceInfo->nowEvent.empty() || serviceInfo->nowEvent.back().db.event_id != event_id ){
 						//イベント入れ替わり
@@ -165,7 +165,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			//[schedule]もしくは(H-EITでないとき)[p/f after]
 			//TODO: イベント消滅には対応していない(クラス設計的に対応は厳しい)。EDCB的には実用上のデメリットはあまり無い
 			if( start_time == 0 || duration == 0xFFFFFF ){
-				OutputDebugString(L"Invalid EIT[schedule]\r\n");
+				AddDebugLog(L"Invalid EIT[schedule]");
 			}else{
 				itrEvent = serviceInfo->eventMap.find(event_id);
 				if( itrEvent == serviceInfo->eventMap.end() ){
@@ -211,7 +211,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 			if( (table_id < 0x58 || 0x5F < table_id) && (table_id < 0x68 || 0x6F < table_id) ){
 				if( table_id > 0x4F && eventInfo->tagBasic.version != 0xFF && eventInfo->tagBasic.tableID <= 0x4F ){
 					//[schedule][p/f after]とも運用するサービスがあれば[p/f after]を優先する(今のところサービス階層が分離しているのであり得ないはず)
-					_OutputDebugString(L"Conflicts EIT[schedule][p/f after] SID:0x%04x EventID:0x%04x\r\n", service_id, eventInfo->db.event_id);
+					AddDebugLogFormat(L"Conflicts EIT[schedule][p/f after] SID:0x%04x EventID:0x%04x", service_id, eventInfo->db.event_id);
 				}else if( siTag.time >= eventInfo->tagBasic.time ){
 					if( version_number != eventInfo->tagBasic.version ||
 					    table_id != eventInfo->tagBasic.tableID ||
@@ -261,7 +261,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 				lastTableID = 0;
 			}else if( sectionList[table_id % 8].version != 0 &&
 			          sectionList[table_id % 8].version != version_number + 1 ){
-				OutputDebugString(L"EIT[schedule] updated\r\n");
+				AddDebugLog(L"EIT[schedule] updated");
 				lastTableID = 0;
 			}
 			if( lastTableID == 0 ){
@@ -400,14 +400,14 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 
 		Desc::CDescriptor::CLoopPointer lp = lpParent;
 		if( eit.EnterLoop(lp) ){
-			for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
+			do{
 				if( eit.GetNumber(Desc::descriptor_tag, lp) != Desc::extended_event_descriptor ){
 					continue;
 				}
 				foundFlag = TRUE;
 				Desc::CDescriptor::CLoopPointer lp2 = lp;
 				if( eit.EnterLoop(lp2) ){
-					for( DWORD j=0; eit.SetLoopIndex(lp2, j); j++ ){
+					do{
 						const BYTE* src;
 						DWORD srcSize;
 						src = eit.GetBinary(Desc::item_description_char, &srcSize, lp2);
@@ -434,9 +434,9 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 							itemDescFlag = FALSE;
 							itemBuff.insert(itemBuff.end(), src, src + srcSize);
 						}
-					}
+					}while( eit.NextLoopIndex(lp2) );
 				}
-			}
+			}while( eit.NextLoopIndex(lp) );
 		}
 
 		if( itemBuff.size() > 0 ){
@@ -464,15 +464,16 @@ void CEpgDBUtil::AddContent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescriptor
 	eventInfo->hasContentInfo = true;
 	eventInfo->contentInfo.nibbleList.clear();
 	if( eit.EnterLoop(lp) ){
-		eventInfo->contentInfo.nibbleList.resize(eit.GetLoopSize(lp));
-		for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
-			EPG_CONTENT& nibble = eventInfo->contentInfo.nibbleList[i];
+		eventInfo->contentInfo.nibbleList.reserve(eit.GetLoopSize(lp));
+		do{
+			EPG_CONTENT nibble;
 			DWORD n = eit.GetNumber(Desc::content_user_nibble, lp);
 			nibble.content_nibble_level_1 = (n >> 12) & 0x0F;
 			nibble.content_nibble_level_2 = (n >> 8) & 0x0F;
 			nibble.user_nibble_1 = (n >> 4) & 0x0F;
 			nibble.user_nibble_2 = n & 0x0F;
-		}
+			eventInfo->contentInfo.nibbleList.push_back(nibble);
+		}while( eit.NextLoopIndex(lp) );
 	}
 }
 
@@ -496,11 +497,11 @@ BOOL CEpgDBUtil::AddAudioComponent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDes
 		WORD listSize = 0;
 		Desc::CDescriptor::CLoopPointer lp = lpParent;
 		if( eit.EnterLoop(lp) ){
-			for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
+			do{
 				if( eit.GetNumber(Desc::descriptor_tag, lp) == Desc::audio_component_descriptor ){
 					listSize++;
 				}
-			}
+			}while( eit.NextLoopIndex(lp) );
 		}
 		if( listSize == 0 ){
 			return FALSE;
@@ -543,14 +544,15 @@ void CEpgDBUtil::AddEventGroup(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescrip
 	eventInfo->eventGroupInfoGroupType = 1;
 	eventInfo->eventGroupInfo.eventDataList.clear();
 	if( eit.EnterLoop(lp) ){
-		eventInfo->eventGroupInfo.eventDataList.resize(eit.GetLoopSize(lp));
-		for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
-			EPG_EVENT_DATA& item = eventInfo->eventGroupInfo.eventDataList[i];
+		eventInfo->eventGroupInfo.eventDataList.reserve(eit.GetLoopSize(lp));
+		do{
+			EPG_EVENT_DATA item;
 			item.original_network_id = onid;
 			item.transport_stream_id = tsid;
 			item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
 			item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
-		}
+			eventInfo->eventGroupInfo.eventDataList.push_back(item);
+		}while( eit.NextLoopIndex(lp) );
 	}
 }
 
@@ -560,26 +562,28 @@ void CEpgDBUtil::AddEventRelay(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescrip
 	eventInfo->eventRelayInfo.eventDataList.clear();
 	if( eventInfo->eventRelayInfoGroupType == 2 ){
 		if( eit.EnterLoop(lp) ){
-			eventInfo->eventRelayInfo.eventDataList.resize(eit.GetLoopSize(lp));
-			for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
-				EPG_EVENT_DATA& item = eventInfo->eventRelayInfo.eventDataList[i];
+			eventInfo->eventRelayInfo.eventDataList.reserve(eit.GetLoopSize(lp));
+			do{
+				EPG_EVENT_DATA item;
 				item.original_network_id = onid;
 				item.transport_stream_id = tsid;
 				item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
 				item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
-			}
+				eventInfo->eventRelayInfo.eventDataList.push_back(item);
+			}while( eit.NextLoopIndex(lp) );
 		}
 	}else{
 		if( eit.EnterLoop(lp, 1) ){
 			//他ネットワークへのリレー情報は第2ループにあるので、これは記述子のevent_countの値とは異なる
-			eventInfo->eventRelayInfo.eventDataList.resize(eit.GetLoopSize(lp));
-			for( DWORD i = 0; eit.SetLoopIndex(lp, i); i++ ){
-				EPG_EVENT_DATA& item = eventInfo->eventRelayInfo.eventDataList[i];
+			eventInfo->eventRelayInfo.eventDataList.reserve(eit.GetLoopSize(lp));
+			do{
+				EPG_EVENT_DATA item;
 				item.original_network_id = (WORD)eit.GetNumber(Desc::original_network_id, lp);
 				item.transport_stream_id = (WORD)eit.GetNumber(Desc::transport_stream_id, lp);
 				item.service_id = (WORD)eit.GetNumber(Desc::service_id, lp);
 				item.event_id = (WORD)eit.GetNumber(Desc::event_id, lp);
-			}
+				eventInfo->eventRelayInfo.eventDataList.push_back(item);
+			}while( eit.NextLoopIndex(lp) );
 		}
 	}
 }
@@ -678,7 +682,7 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 
 	Desc::CDescriptor::CLoopPointer lp;
 	if( nit.EnterLoop(lp) ){
-		for( DWORD i = 0; nit.SetLoopIndex(lp, i); i++ ){
+		do{
 			if( nit.GetNumber(Desc::descriptor_tag, lp) == Desc::network_name_descriptor ){
 				DWORD srcSize;
 				const BYTE* src = nit.GetBinary(Desc::d_char, &srcSize, lp);
@@ -686,12 +690,12 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 					this->arib.PSISI(src, srcSize, &network_nameW);
 				}
 			}
-		}
+		}while( nit.NextLoopIndex(lp) );
 	}
 
 	lp = Desc::CDescriptor::CLoopPointer();
 	if( nit.EnterLoop(lp, 1) ){
-		for( DWORD i = 0; nit.SetLoopIndex(lp, i); i++ ){
+		do{
 			//サービス情報更新用
 			WORD onid = (WORD)nit.GetNumber(Desc::original_network_id, lp);
 			WORD tsid = (WORD)nit.GetNumber(Desc::transport_stream_id, lp);
@@ -703,18 +707,18 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 
 			Desc::CDescriptor::CLoopPointer lp2 = lp;
 			if( nit.EnterLoop(lp2) ){
-				for( DWORD j = 0; nit.SetLoopIndex(lp2, j); j++ ){
+				do{
 					if( nit.GetNumber(Desc::descriptor_tag, lp2) == Desc::service_list_descriptor ){
 						Desc::CDescriptor::CLoopPointer lp3 = lp2;
 						if( nit.EnterLoop(lp3) ){
-							for( DWORD k=0; nit.SetLoopIndex(lp3, k); k++ ){
+							do{
 								ULONGLONG key = Create64Key(onid, tsid, (WORD)nit.GetNumber(Desc::service_id, lp3));
 								map<ULONGLONG, BYTE>::iterator itrService;
 								itrService = this->serviceList.find(key);
 								if( itrService == this->serviceList.end() ){
 									this->serviceList.insert(pair<ULONGLONG, BYTE>(key, (BYTE)nit.GetNumber(Desc::service_type, lp3)));
 								}
-							}
+							}while( nit.NextLoopIndex(lp3) );
 						}
 					}
 					if( nit.GetNumber(Desc::descriptor_tag, lp2) == Desc::ts_information_descriptor && itrFind != this->serviceInfoList.end()){
@@ -730,18 +734,18 @@ BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 						//部分受信フラグ
 						Desc::CDescriptor::CLoopPointer lp3 = lp2;
 						if( nit.EnterLoop(lp3) ){
-							for( DWORD k=0; nit.SetLoopIndex(lp3, k); k++ ){
+							do{
 								map<WORD, EPGDB_SERVICE_INFO>::iterator itrService;
 								itrService = itrFind->second.serviceList.find((WORD)nit.GetNumber(Desc::service_id, lp3));
 								if( itrService != itrFind->second.serviceList.end() ){
 									itrService->second.partialReceptionFlag = 1;
 								}
-							}
+							}while( nit.NextLoopIndex(lp3) );
 						}
 					}
-				}
+				}while( nit.NextLoopIndex(lp2) );
 			}
-		}
+		}while( nit.NextLoopIndex(lp) );
 	}
 
 	return TRUE;
@@ -752,11 +756,11 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 	WORD ONID = 0xFFFF;
 	Desc::CDescriptor::CLoopPointer lp;
 	if( sit.EnterLoop(lp) ){
-		for( DWORD i = 0; sit.SetLoopIndex(lp, i); i++ ){
+		do{
 			if( sit.GetNumber(Desc::descriptor_tag, lp) == Desc::network_identification_descriptor ){
 				ONID = (WORD)sit.GetNumber(Desc::network_id, lp);
 			}
-		}
+		}while( sit.NextLoopIndex(lp) );
 	}
 	if(ONID == 0xFFFF){
 		return FALSE;
@@ -771,7 +775,7 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 
 		lp = Desc::CDescriptor::CLoopPointer();
 		if( sit.EnterLoop(lp, 1) ){
-			for( DWORD i = 0; sit.SetLoopIndex(lp, i); i++ ){
+			do{
 				EPGDB_SERVICE_INFO item = {};
 				item.ONID = ONID;
 				item.TSID = TSID;
@@ -779,7 +783,7 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 
 				Desc::CDescriptor::CLoopPointer lp2 = lp;
 				if( sit.EnterLoop(lp2) ){
-					for( DWORD j = 0; sit.SetLoopIndex(lp2, j); j++ ){
+					do{
 						if( sit.GetNumber(Desc::descriptor_tag, lp2) == Desc::service_descriptor ){
 							wstring service_provider_name;
 							wstring service_name;
@@ -798,10 +802,10 @@ BOOL CEpgDBUtil::AddServiceListSIT(WORD TSID, const Desc::CDescriptor& sit)
 
 							item.service_type = (BYTE)sit.GetNumber(Desc::service_type, lp2);
 						}
-					}
+					}while( sit.NextLoopIndex(lp2) );
 				}
 				info.serviceList.insert(std::make_pair(item.SID, item));
-			}
+			}while( sit.NextLoopIndex(lp) );
 		}
 		this->serviceInfoList.insert(std::make_pair(key, info));
 	}
@@ -823,7 +827,7 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 
 	Desc::CDescriptor::CLoopPointer lp;
 	if( sdt.EnterLoop(lp) ){
-		for( DWORD i = 0; sdt.SetLoopIndex(lp, i); i++ ){
+		do{
 			map<WORD, EPGDB_SERVICE_INFO>::iterator itrS;
 			itrS = itrTS->second.serviceList.find((WORD)sdt.GetNumber(Desc::service_id, lp));
 			if( itrS == itrTS->second.serviceList.end()){
@@ -834,7 +838,7 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 
 				Desc::CDescriptor::CLoopPointer lp2 = lp;
 				if( sdt.EnterLoop(lp2) ){
-					for( DWORD j = 0; sdt.SetLoopIndex(lp2, j); j++ ){
+					do{
 						if( sdt.GetNumber(Desc::descriptor_tag, lp2) != Desc::service_descriptor ){
 							continue;
 						}
@@ -854,11 +858,11 @@ BOOL CEpgDBUtil::AddSDT(const Desc::CDescriptor& sdt)
 						item.service_name.swap(service_name);
 
 						item.service_type = (BYTE)sdt.GetNumber(Desc::service_type, lp2);
-					}
+					}while( sdt.NextLoopIndex(lp2) );
 				}
 				itrTS->second.serviceList.insert(std::make_pair(item.SID, item));
 			}
-		}
+		}while( sdt.NextLoopIndex(lp) );
 	}
 
 	return TRUE;

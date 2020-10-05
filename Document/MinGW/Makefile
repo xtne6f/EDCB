@@ -9,7 +9,7 @@ TARGETS = EpgDataCap_Bon \
           EdcbPlugIn \
           EpgTimerSrv
 
-all: readex.exe relayread.exe tsidmove.exe cp_dep $(addsuffix .all, $(TARGETS))
+all: asyncbuf.exe readex.exe relayread.exe tsidmove.exe cp_dep $(addsuffix .all, $(TARGETS))
 clean: $(addsuffix .clean, $(TARGETS)) rm_dep rm_tools
 %.all:
 	$(MAKE) -C ../../$*/$* TARGET=../../Document/MinGW/$*
@@ -21,6 +21,8 @@ ifdef MINGW_PREFIX
 endif
 rm_dep:
 	$(RM) libwinpthread-1.dll
+asyncbuf.exe: ../../ini/Tools/asyncbuf.c
+	$(CC) -municode -Wl,-s -static -D_UNICODE -Os -o $@ $<
 readex.exe: ../../ini/Tools/readex.c
 	$(CC) -municode -Wl,-s -static -D_UNICODE -Os -o $@ $<
 relayread.exe: ../../ini/Tools/relayread.c
@@ -32,4 +34,4 @@ tsidmove.exe: ../../Common/ParseTextInstances.cpp \
               ../../ini/Tools/tsidmove/tsidmove.cpp
 	$(CXX) -municode -Wl,-s -static-libgcc -static-libstdc++ -I../../ini/Tools/tsidmove -D_UNICODE -std=c++17 -pedantic-errors -Os -o $@ $+
 rm_tools:
-	$(RM) readex.exe relayread.exe tsidmove.exe
+	$(RM) asyncbuf.exe readex.exe relayread.exe tsidmove.exe

@@ -84,7 +84,7 @@ BOOL COneServiceUtil::SendUdpTcp(
 					CloseHandle(portMutex);
 					(*sendList)[i].port++;
 				}else{
-					_OutputDebugString(L"%ls\r\n", key.c_str());
+					AddDebugLogFormat(L"%ls", key.c_str());
 					portMutexList.push_back(portMutex);
 					break;
 				}
@@ -151,12 +151,12 @@ void COneServiceUtil::AddTSBuff(
 						if( createPmt.GetPacket(&pmtBuff, &pmtBuffSize) == TRUE ){
 							this->buff.insert(this->buff.end(), pmtBuff, pmtBuff + pmtBuffSize);
 						}else{
-							_OutputDebugString(L"createPmt.GetPacket Err");
+							AddDebugLog(L"createPmt.GetPacket Err");
 							//そのまま
 							this->buff.insert(this->buff.end(), data + i, data + i + 188);
 						}
 					}else if( err == FALSE ){
-						_OutputDebugString(L"createPmt.AddData Err");
+						AddDebugLog(L"createPmt.AddData Err");
 						//そのまま
 						this->buff.insert(this->buff.end(), data + i, data + i + 188);
 					}
@@ -217,7 +217,7 @@ void COneServiceUtil::SetPmtPID(
 	)
 {
 	if( this->pmtPID != pmtPID_ && this->SID != 0xFFFF){
-		_OutputDebugString(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID_);
+		AddDebugLogFormat(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID_);
 		vector<pair<WORD, WORD>> pidList;
 		pidList.push_back(std::make_pair((WORD)0x10, (WORD)0));
 		pidList.push_back(std::make_pair(pmtPID_, this->SID));
@@ -243,11 +243,11 @@ BOOL COneServiceUtil::StartSave(
 {
 	if( this->writeFile.IsRec() == FALSE && this->pittariState == PITTARI_NONE ){
 		if( recParam.pittariFlag == FALSE ){
-			OutputDebugString(L"*:StartSave");
+			AddDebugLog(L"*:StartSave");
 			return this->writeFile.StartSave(recParam.fileName, recParam.overWriteFlag, recParam.createSize,
 			                                 recParam.saveFolder, saveFolderSub, maxBuffCount);
 		}else{
-			OutputDebugString(L"*:StartSave pittariFlag");
+			AddDebugLog(L"*:StartSave pittariFlag");
 			this->pittariRecParam = recParam;
 			this->pittariSaveFolderSub = saveFolderSub;
 			this->pittariMaxBuffCount = maxBuffCount;
@@ -265,7 +265,7 @@ BOOL COneServiceUtil::StartSave(
 void COneServiceUtil::StratPittariRec()
 {
 	if( this->writeFile.IsRec() == FALSE && this->pittariState == PITTARI_START ){
-		OutputDebugString(L"*:StratPittariRec");
+		AddDebugLog(L"*:StratPittariRec");
 		if( this->writeFile.StartSave(this->pittariRecParam.fileName, this->pittariRecParam.overWriteFlag, this->pittariRecParam.createSize,
 		                              this->pittariRecParam.saveFolder, this->pittariSaveFolderSub, this->pittariMaxBuffCount) == FALSE ){
 			this->pittariState = PITTARI_END;
@@ -277,7 +277,7 @@ void COneServiceUtil::StratPittariRec()
 
 void COneServiceUtil::StopPittariRec()
 {
-	OutputDebugString(L"*:StopPittariRec");
+	AddDebugLog(L"*:StopPittariRec");
 	this->pittariState = PITTARI_END;
 	//ここでファイルパスを取得しておく
 	this->pittariRecParam.fileName = this->writeFile.GetSaveFilePath();
@@ -297,7 +297,7 @@ BOOL COneServiceUtil::EndSave(BOOL* subRecFlag)
 		ret = TRUE;
 	}
 	this->pittariState = PITTARI_NONE;
-	OutputDebugString(L"*:EndSave");
+	AddDebugLog(L"*:EndSave");
 	return ret;
 }
 

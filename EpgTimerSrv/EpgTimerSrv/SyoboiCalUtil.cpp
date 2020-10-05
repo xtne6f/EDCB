@@ -86,7 +86,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	if( GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniAppPath.c_str()) == 0 ){
 		return FALSE;
 	}
-	_OutputDebugString(L"★SyoboiCalUtil:SendReserve");
+	AddDebugLog(L"★SyoboiCalUtil:SendReserve");
 
 	CParseServiceChgText srvChg;
 	srvChg.ParseText(GetCommonIniPath().replace_filename(L"SyoboiCh.txt").c_str());
@@ -111,7 +111,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	wstring epgurl=GetPrivateProfileToString(L"SYOBOI", L"epgurl", L"", iniAppPath.c_str());
 
 	if( id.size() == 0 ){
-		_OutputDebugString(L"★SyoboiCalUtil:NoUserID");
+		AddDebugLog(L"★SyoboiCalUtil:NoUserID");
 		return FALSE;
 	}
 
@@ -163,7 +163,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	}
 
 	if(dataParam.size() == 0 ){
-		_OutputDebugString(L"★SyoboiCalUtil:NoReserve");
+		AddDebugLog(L"★SyoboiCalUtil:NoReserve");
 		return FALSE;
 	}
 
@@ -273,7 +273,7 @@ EXIT:
 		WinHttpCloseHandle(session);
 	}
 
-	_OutputDebugString(L"★SyoboiCalUtil:SendRequest res:%ls", result);
+	AddDebugLogFormat(L"★SyoboiCalUtil:SendRequest res:%ls", result);
 
 	if( result[0] != L'1' ){
 		return FALSE;

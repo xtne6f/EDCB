@@ -130,6 +130,18 @@ public:
 		BOOL l_eitFlag
 		);
 
+	//取得するロゴタイプをフラグで指定する
+	void SetLogoTypeFlags(
+		DWORD flags,
+		const WORD** additionalNeededPids
+		);
+
+	//全ロゴを列挙する
+	BOOL EnumLogoList(
+		BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, LPVOID),
+		LPVOID param
+		);
+
 	//PC時計を元としたストリーム時間との差を取得する
 	//戻り値：
 	// 差の秒数

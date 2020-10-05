@@ -17,6 +17,16 @@
 class CTSOut
 {
 public:
+	struct CHECK_LOGO_RESULT {
+		bool dataUpdated;
+		bool serviceListUpdated;
+		WORD onid;
+		WORD id;
+		BYTE type;
+		vector<BYTE> data;
+		vector<WORD> serviceList;
+	};
+
 	CTSOut(void);
 	~CTSOut(void);
 
@@ -35,6 +45,15 @@ public:
 		);
 
 	void AddTSBuff(BYTE* data, DWORD dataSize);
+
+	//ロゴの更新を調べる
+	//引数：
+	// logoTypeFlags	[IN]フラグ(ロゴタイプnを取得するとき下位からnビット目をセットする)
+	// result			[OUT]結果
+	void CheckLogo(
+		DWORD logoTypeFlags,
+		CHECK_LOGO_RESULT& result
+		);
 
 	//EMM処理の動作設定
 	//戻り値：
@@ -347,6 +366,8 @@ protected:
 	__int64 epgFileTotPos;
 	wstring epgFilePath;
 	wstring epgTempFilePath;
+	vector<pair<LONGLONG, DWORD>> logoServiceListSizeMap;
+	const WORD* logoAdditionalNeededPids;
 
 	wstring bonFile;
 	BOOL noLogScramble;
@@ -355,6 +376,8 @@ protected:
 	void ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet);
 
 	void UpdateServiceUtil(BOOL updateFilterSID);
+
+	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param);
 
 	DWORD GetNextID();
 

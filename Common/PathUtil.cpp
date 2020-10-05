@@ -533,7 +533,7 @@ bool UtilCreateDirectories(const fs_path& path)
 	}
 	if( mightExist ){
 		// 特殊な理由
-		OutputDebugString(L"UtilCreateDirectories(): Error\r\n");
+		AddDebugLog(L"UtilCreateDirectories(): Error");
 		return false;
 	}
 	UtilCreateDirectories(path.parent_path());
@@ -559,7 +559,7 @@ __int64 UtilGetStorageFreeBytes(const fs_path& directoryPath)
 	}
 	if( mightExist ){
 		// 特殊な理由
-		OutputDebugString(L"UtilGetStorageFreeBytes(): Error\r\n");
+		AddDebugLog(L"UtilGetStorageFreeBytes(): Error");
 		return -1;
 	}
 	return UtilGetStorageFreeBytes(directoryPath.parent_path());
@@ -596,7 +596,7 @@ wstring UtilGetStorageID(const fs_path& directoryPath)
 	}
 	if( mightExist ){
 		// 特殊な理由
-		OutputDebugString(L"UtilGetStorageID(): Error\r\n");
+		AddDebugLog(L"UtilGetStorageID(): Error");
 		return ret;
 	}
 	return UtilGetStorageID(directoryPath.parent_path());
@@ -696,10 +696,10 @@ BOOL WritePrivateProfileString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpStrin
 					return TRUE;
 				}
 			}
-			OutputDebugString(L"WritePrivateProfileString(): Error\r\n");
+			AddDebugLog(L"WritePrivateProfileString(): Error");
 			break;
 		}else if( ++retry > 1000 ){
-			OutputDebugString(L"WritePrivateProfileString(): Error: Cannot open file\r\n");
+			AddDebugLog(L"WritePrivateProfileString(): Error: Cannot open file");
 			break;
 		}
 		Sleep(10);
@@ -765,7 +765,7 @@ wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDe
 		}else if( UtilFileExists(fileName, &mightExist).first == false && mightExist == false ){
 			break;
 		}else if( ++retry > 1000 ){
-			OutputDebugString(L"GetPrivateProfileToString(): Error: Cannot open file\r\n");
+			AddDebugLog(L"GetPrivateProfileToString(): Error: Cannot open file");
 			break;
 		}
 		Sleep(10);

@@ -35,11 +35,11 @@ BOOL CWriteMain::Start(
 	Stop();
 
 	this->savePath = fileName;
-	_OutputDebugString(L"★CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
+	AddDebugLogFormat(L"★CWriteMain::Start CreateFile:%ls", this->savePath.c_str());
 	UtilCreateDirectories(fs_path(this->savePath).parent_path());
 	this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( this->file == INVALID_HANDLE_VALUE ){
-		_OutputDebugString(L"★CWriteMain::Start Err:0x%08X\r\n", GetLastError());
+		AddDebugLogFormat(L"★CWriteMain::Start Err:0x%08X", GetLastError());
 		fs_path pathWoExt = this->savePath;
 		fs_path ext = pathWoExt.extension();
 		pathWoExt.replace_extension();
@@ -48,11 +48,11 @@ BOOL CWriteMain::Start(
 			this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 			if( this->file != INVALID_HANDLE_VALUE || i >= 999 ){
 				DWORD err = GetLastError();
-				_OutputDebugString(L"★CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
+				AddDebugLogFormat(L"★CWriteMain::Start CreateFile:%ls", this->savePath.c_str());
 				if( this->file != INVALID_HANDLE_VALUE ){
 					break;
 				}
-				_OutputDebugString(L"★CWriteMain::Start Err:0x%08X\r\n", err);
+				AddDebugLogFormat(L"★CWriteMain::Start Err:0x%08X", err);
 				this->savePath = L"";
 				return FALSE;
 			}
@@ -88,7 +88,7 @@ BOOL CWriteMain::Stop(
 		if( this->writeBuff.empty() == false ){
 			DWORD write;
 			if( WriteFile(this->file, &this->writeBuff.front(), (DWORD)this->writeBuff.size(), &write, NULL) == FALSE ){
-				_OutputDebugString(L"★WriteFile Err:0x%08X\r\n", GetLastError());
+				AddDebugLogFormat(L"★WriteFile Err:0x%08X", GetLastError());
 			}else{
 				this->writeBuff.erase(this->writeBuff.begin(), this->writeBuff.begin() + write);
 				CBlockLock lock(&this->wroteLock);
@@ -136,7 +136,7 @@ BOOL CWriteMain::Write(
 				//バッファが埋まったので出力
 				DWORD write;
 				if( WriteFile(this->file, &this->writeBuff.front(), (DWORD)this->writeBuff.size(), &write, NULL) == FALSE ){
-					_OutputDebugString(L"★WriteFile Err:0x%08X\r\n", GetLastError());
+					AddDebugLogFormat(L"★WriteFile Err:0x%08X", GetLastError());
 					SetEndOfFile(this->file);
 					CloseHandle(this->file);
 					this->file = INVALID_HANDLE_VALUE;
@@ -154,7 +154,7 @@ BOOL CWriteMain::Write(
 			//バッファサイズより大きいのでそのまま出力
 			DWORD write;
 			if( WriteFile(this->file, data, size, &write, NULL) == FALSE ){
-				_OutputDebugString(L"★WriteFile Err:0x%08X\r\n", GetLastError());
+				AddDebugLogFormat(L"★WriteFile Err:0x%08X", GetLastError());
 				SetEndOfFile(this->file);
 				CloseHandle(this->file);
 				this->file = INVALID_HANDLE_VALUE;

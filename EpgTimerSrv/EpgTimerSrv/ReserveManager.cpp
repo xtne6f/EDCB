@@ -37,7 +37,7 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 			}
 			DWORD tunerID = (DWORD)priority << 16 | 1;
 			if( this->tunerBankMap.count(tunerID) != 0 ){
-				OutputDebugString(L"CReserveManager::Initialize(): Duplicate bonID\r\n");
+				AddDebugLog(L"CReserveManager::Initialize(): Duplicate bonID");
 			}else{
 				CParseChText4 chText4;
 				chText4.ParseText(fs_path(settingPath).append(nameList[i].second).c_str());
@@ -177,7 +177,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 	if( itr != this->reserveText.GetMap().end() ){
 		*reserveData = itr->second;
 		reserveData->recFileNameList.clear();
-		if( getRecFileName ){
+		if( getRecFileName && reserveData->recSetting.GetRecMode() != RECMODE_VIEW ){
 			CReNamePlugInUtil utilCache;
 			if( util == NULL ){
 				util = &utilCache;
@@ -528,7 +528,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 	if( reloadTime == LLONG_MAX ){
 		return;
 	}
-	OutputDebugString(L"Start ReloadBankMap\r\n");
+	AddDebugLog(L"Start ReloadBankMap");
 	DWORD tick = GetTickCount();
 
 	__int64 boundaryReloadTime = 0;
@@ -729,7 +729,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 		}
 	}
 
-	_OutputDebugString(L"End ReloadBankMap %dmsec\r\n", GetTickCount() - tick);
+	AddDebugLogFormat(L"End ReloadBankMap %dmsec", GetTickCount() - tick);
 }
 
 __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const
@@ -890,7 +890,7 @@ void CReserveManager::CheckTuijyu()
 					wstring msg = GetNotifyChgReserveMessage(itr->second, r);
 					this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_CHG_TUIJYU, msg);
 					Replace(msg, L"\r\n", L" ");
-					_OutputDebugString(L"●予約(ID=%d)を追従 %ls\r\n", r.reserveID, msg.c_str());
+					AddDebugLogFormat(L"●予約(ID=%d)を追従 %ls", r.reserveID, msg.c_str());
 				}
 			}
 		}
@@ -956,7 +956,7 @@ void CReserveManager::CheckTuijyuTuner()
 						//現在(present)に現れた予約が番組終了後に時間未定追従に移行しないようにするため(旧SetChkPfInfo()に相当)
 						if( i == 0 && itrRes->second.presentFlag == FALSE ){
 							this->reserveText.SetPresentFlag(itrRes->first, TRUE);
-							_OutputDebugString(L"●予約(ID=%d)のEIT[present]を確認しました\r\n", itrRes->first);
+							AddDebugLogFormat(L"●予約(ID=%d)のEIT[present]を確認しました", itrRes->first);
 						}
 						RESERVE_DATA r = itrRes->second;
 						bool chgRes = false;
@@ -983,7 +983,7 @@ void CReserveManager::CheckTuijyuTuner()
 									r.durationSecond += 300;
 									r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 									chgRes = true;
-									OutputDebugString(L"●p/f 継続時間未定の現在/次イベントの予約を延長します\r\n");
+									AddDebugLog(L"●p/f 継続時間未定の現在/次イベントの予約を延長します");
 								}
 							}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
 								r.durationSecond = info.durationSec;
@@ -998,7 +998,7 @@ void CReserveManager::CheckTuijyuTuner()
 								r.durationSecond += 300;
 								r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 								chgRes = true;
-								OutputDebugString(L"●p/f 開始時刻未定の次イベントの予約を延長します\r\n");
+								AddDebugLog(L"●p/f 開始時刻未定の次イベントの予約を延長します");
 							}
 						}
 						if( chgRes ){
@@ -1006,7 +1006,7 @@ void CReserveManager::CheckTuijyuTuner()
 							wstring msg = GetNotifyChgReserveMessage(itrRes->second, r);
 							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
 							Replace(msg, L"\r\n", L" ");
-							_OutputDebugString(L"●p/f 予約(ID=%d)を追従 %ls\r\n", r.reserveID, msg.c_str());
+							AddDebugLogFormat(L"●p/f 予約(ID=%d)を追従 %ls", r.reserveID, msg.c_str());
 						}
 						//現在(present)についてはイベントリレーもチェック
 						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfoGroupType ){
@@ -1020,7 +1020,7 @@ void CReserveManager::CheckTuijyuTuner()
 								}
 							}
 							if( itrR == info.eventRelayInfo.eventDataList.end() ){
-								OutputDebugString(L"EventRelayCheck\r\n");
+								AddDebugLog(L"EventRelayCheck");
 								for( itrR = info.eventRelayInfo.eventDataList.begin(); itrR != info.eventRelayInfo.eventDataList.end(); itrR++ ){
 									map<LONGLONG, CH_DATA5>::const_iterator itrCh = this->chUtil.GetMap().find(
 										Create64Key(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id));
@@ -1041,7 +1041,7 @@ void CReserveManager::CheckTuijyuTuner()
 										rr.recSetting = r.recSetting;
 										rr.reserveStatus = ADD_RESERVE_RELAY;
 										relayAddList.push_back(rr);
-										OutputDebugString(L"★イベントリレー追加\r\n");
+										AddDebugLog(L"★イベントリレー追加");
 										break;
 									}
 								}
@@ -1064,7 +1064,7 @@ void CReserveManager::CheckTuijyuTuner()
 							r.durationSecond += 300;
 							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 							chgRes = true;
-							OutputDebugString(L"●時間未定の通常イベントの予約を延長します\r\n");
+							AddDebugLog(L"●時間未定の通常イベントの予約を延長します");
 						}
 						if( pfExplicitlyUnknownEnd && r.reserveStatus != ADD_RESERVE_UNKNOWN_END && ConvertI64Time(r.startTime) < GetNowI64Time() + 3600 * I64_1SEC ){
 							//明示的な放送未定の場合は開始まで60分を切る時点でUNKNOWN_ENDにする
@@ -1072,7 +1072,7 @@ void CReserveManager::CheckTuijyuTuner()
 							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 							chgRes = true;
 							chgResStatusOnly = true;
-							OutputDebugString(L"●時間未定の通常イベントの予約をUNKNOWN_ENDにします\r\n");
+							AddDebugLog(L"●時間未定の通常イベントの予約をUNKNOWN_ENDにします");
 						}
 					}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END ){
 						//イベントID直前変更対応(主にNHK)
@@ -1085,7 +1085,7 @@ void CReserveManager::CheckTuijyuTuner()
 								if( endTime > ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
 									r.durationSecond = (DWORD)((endTime - ConvertI64Time(r.startTime)) / I64_1SEC) + 1;
 									chgRes = true;
-									OutputDebugString(L"●時間未定の通常イベントの予約と同じイベント名のp/fが見つかりました。予約を延長します\r\n");
+									AddDebugLog(L"●時間未定の通常イベントの予約と同じイベント名のp/fが見つかりました。予約を延長します");
 								}
 								break;
 							}
@@ -1127,7 +1127,7 @@ void CReserveManager::CheckTuijyuTuner()
 							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
 						}
 						Replace(msg, L"\r\n", L" ");
-						_OutputDebugString(L"●予約(ID=%d)を追従 %ls\r\n", r.reserveID, msg.c_str());
+						AddDebugLogFormat(L"●予約(ID=%d)を追従 %ls", r.reserveID, msg.c_str());
 					}
 				}
 			}
@@ -1222,14 +1222,14 @@ void CReserveManager::CheckAutoDel() const
 				        [&](const pair<DWORD, REC_FILE_INFO>& a) {
 				            return a.second.protectFlag && UtilComparePath(a.second.recFilePath.c_str(), delPath.c_str()) == 0; }) ){
 					//プロテクトされた録画済みファイルは消さない
-					_OutputDebugString(L"★No Delete(Protected) : %ls\r\n", delPath.c_str());
+					AddDebugLogFormat(L"★No Delete(Protected) : %ls", delPath.c_str());
 				}else{
 					DeleteFile(delPath.c_str());
 					needFreeSize -= jtr->first.fileSize;
-					_OutputDebugString(L"★Auto Delete2 : %ls\r\n", delPath.c_str());
+					AddDebugLogFormat(L"★Auto Delete2 : %ls", delPath.c_str());
 					for( size_t i = 0 ; i < this->setting.delExtList.size(); i++ ){
 						DeleteFile(fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
-						_OutputDebugString(L"★Auto Delete2 : %ls\r\n", fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
+						AddDebugLogFormat(L"★Auto Delete2 : %ls", fs_path(delPath).replace_extension(this->setting.delExtList[i]).c_str());
 					}
 				}
 				findList.erase(jtr);
@@ -1286,7 +1286,7 @@ void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& 
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
 		if( itrRes != this->reserveText.GetMap().end() ){
 			if( this->setting.retryOtherTuners && itrRet->type == CTunerBankCtrl::CHECK_ERR_OPEN ){
-				_OutputDebugString(L"●予約(ID=%d)にNGチューナー(ID=0x%08x)を追加します\r\n", itrRes->first, tunerID);
+				AddDebugLogFormat(L"●予約(ID=%d)にNGチューナー(ID=0x%08x)を追加します", itrRes->first, tunerID);
 				this->reserveText.AddNGTunerID(itrRes->first, tunerID);
 				ngTunerAdded = true;
 				continue;
@@ -1601,7 +1601,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							this->epgCapTimeSyncDelayMax = delay;
 							this->epgCapTimeSyncTick = tick;
 							this->epgCapTimeSyncQuality = 0;
-							OutputDebugString(L"★SetSystemTime start\r\n");
+							AddDebugLog(L"★SetSystemTime start");
 						}
 					}else if( delay != 0 ){
 						//遅延時間の揺らぎを記録する(delay==0は未取得と区別できないので除外)
@@ -1618,7 +1618,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 				    this->epgCapTimeSyncDelayMax - this->epgCapTimeSyncDelayMin > 10 * I64_1SEC ){
 					//別のプロセスが時計合わせしたor揺らぎすぎ
 					this->epgCapTimeSyncBase = -1;
-					OutputDebugString(L"★SetSystemTime cancel\r\n");
+					AddDebugLog(L"★SetSystemTime cancel");
 				}else if( this->epgCapTimeSyncQuality > 150 * 1000 ){
 					//概ね2チャンネル以上の遅延時間を観測できたはず
 					//時計合わせ(要SE_SYSTEMTIME_NAME特権)
@@ -1648,7 +1648,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 						debug = L" ";
 					}
 #endif
-					_OutputDebugString(L"★SetSystemTime%ls%d\r\n", debug, (int)(delay / I64_1SEC));
+					AddDebugLogFormat(L"★SetSystemTime%ls%d", debug, (int)(delay / I64_1SEC));
 					this->epgCapSetTimeSync = true;
 				}
 			}
@@ -1921,7 +1921,7 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 					infoEventName = std::regex_replace(infoEventName, re, wstring());
 				}catch( std::regex_error& ){
 #endif
-					OutputDebugString(L"RecInfo2RegExp seems ill-formed\r\n");
+					AddDebugLog(L"RecInfo2RegExp seems ill-formed");
 					infoEventName = L"";
 				}
 			}

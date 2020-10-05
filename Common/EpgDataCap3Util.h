@@ -166,6 +166,26 @@ public:
 		EPG_EVENT_INFO** epgInfo
 		);
 
+	//取得するロゴタイプをフラグで指定する
+	//引数：
+	// flags					[IN]フラグ(ロゴタイプnを取得するとき下位からnビット目をセットする)
+	// additionalNeededPids		[OUT]追加で解析したいTSパケットのPIDのリスト(0終端)。NULL可。次の呼び出しまで有効
+	void SetLogoTypeFlags(
+		DWORD flags,
+		const WORD** additionalNeededPids
+		);
+
+	//全ロゴを列挙する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// enumLogoListProc			[IN]ロゴのリストを取得するコールバック関数
+	// param					[IN]コールバック引数
+	DWORD EnumLogoList(
+		BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param),
+		LPVOID param
+		);
+
 	//PC時計を元としたストリーム時間との差を取得する
 	//戻り値：
 	// 差の秒数
@@ -187,7 +207,10 @@ private:
 	typedef EPG_SECTION_STATUS (WINAPI *GetSectionStatusServiceEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL l_eitFlag);
 	typedef DWORD (WINAPI *GetEpgInfoEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL nextFlag, EPG_EVENT_INFO** epgInfo);
 	typedef DWORD (WINAPI *SearchEpgInfoEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, WORD eventID, BYTE pfOnlyFlag, EPG_EVENT_INFO** epgInfo);
+	typedef void (WINAPI *SetLogoTypeFlagsEP3)(DWORD id, DWORD flags, const WORD** additionalNeededPids);
+	typedef DWORD (WINAPI *EnumLogoListEP3)(DWORD id, BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param), LPVOID param);
 	typedef int (WINAPI *GetTimeDelayEP3)(DWORD id);
+	typedef DWORD (WINAPI *SetDebugLogCallbackEP3)(void (CALLBACK *debugLogProc)(const WCHAR* s));
 
 	void* module;
 	DWORD id;
@@ -203,9 +226,13 @@ private:
 	GetServiceListEpgDBEP3	pfnGetServiceListEpgDBEP3;
 	GetEpgInfoEP3			pfnGetEpgInfoEP3;
 	SearchEpgInfoEP3		pfnSearchEpgInfoEP3;
+	SetLogoTypeFlagsEP3		pfnSetLogoTypeFlagsEP3;
+	EnumLogoListEP3			pfnEnumLogoListEP3;
 	GetTimeDelayEP3			pfnGetTimeDelayEP3;
+	SetDebugLogCallbackEP3	pfnSetDebugLogCallbackEP3;
 
 	CEpgDataCap3Util(const CEpgDataCap3Util&);
 	CEpgDataCap3Util& operator=(const CEpgDataCap3Util&);
+	static void CALLBACK DebugLogCallback(const WCHAR* s);
 };
 

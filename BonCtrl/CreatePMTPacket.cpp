@@ -86,27 +86,27 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
-		_OutputDebugString(L"CCreatePMTPacket::section_syntax_indicator Err");
+		AddDebugLog(L"CCreatePMTPacket::section_syntax_indicator Err");
 		return ERR_FALSE;
 	}
 	if( table_id != 0x02 ){
 		//table_idがおかしい
-		_OutputDebugString(L"CCreatePMTPacket::table_id Err");
+		AddDebugLog(L"CCreatePMTPacket::table_id Err");
 		return ERR_FALSE;
 	}
 	if( readSize+section_length > dataSize || section_length < 4){
 		//サイズ異常
-		_OutputDebugString(L"CCreatePMTPacket::section_length Err");
+		AddDebugLog(L"CCreatePMTPacket::section_length Err");
 		return ERR_FALSE;
 	}
 	//CRCチェック
 	if( CalcCrc32(3+section_length, data) != 0 ){
-		_OutputDebugString(L"CCreatePMTPacket::CRC Err");
+		AddDebugLog(L"CCreatePMTPacket::CRC Err");
 		return ERR_FALSE;
 	}
 
 	if( section_length - 4 < 9 ){
-		_OutputDebugString(L"CCreatePMTPacket::section_length %d Err2", section_length);
+		AddDebugLogFormat(L"CCreatePMTPacket::section_length %d Err2", section_length);
 		return ERR_FALSE;
 	}
 
@@ -120,7 +120,7 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 	readSize += 9;
 
 	if( readSize + program_info_length > (DWORD)section_length+3-4 ){
-		_OutputDebugString(L"CCreatePMTPacket::program_info_length %d Err", program_info_length);
+		AddDebugLogFormat(L"CCreatePMTPacket::program_info_length %d Err", program_info_length);
 		return ERR_FALSE;
 	}
 

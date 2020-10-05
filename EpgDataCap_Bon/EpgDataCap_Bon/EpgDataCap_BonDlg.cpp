@@ -62,7 +62,7 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->epgCapWorking = FALSE;
 
 	if( CPipeServer::GrantServerAccessToKernelObject(GetCurrentProcess(), SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION) ){
-		OutputDebugString(L"Granted SYNCHRONIZE|PROCESS_TERMINATE|PROCESS_SET_INFORMATION to " SERVICE_NAME L"\r\n");
+		AddDebugLog(L"Granted SYNCHRONIZE|PROCESS_TERMINATE|PROCESS_SET_INFORMATION to " SERVICE_NAME);
 	}
 }
 
@@ -141,7 +141,9 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	                            GetPrivateProfileInt(L"SET", L"Scramble", 1, appIniPath.c_str()) != 0,
 	                            GetPrivateProfileInt(L"SET", L"Caption", 1, appIniPath.c_str()) != 0,
 	                            GetPrivateProfileInt(L"SET", L"Data", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()) != 0);
+	                            GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()) != 0,
+	                            (DWORD)(GetPrivateProfileInt(L"SET", L"SaveLogo", 0, appIniPath.c_str()) == 0 ? 0 :
+	                                        GetPrivateProfileInt(L"SET", L"SaveLogoTypeFlags", 32, appIniPath.c_str())));
 
 	EnableWindow(GetDlgItem(IDC_BUTTON_VIEW), this->viewPath.empty() == false);
 }
@@ -180,13 +182,13 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	int initChgWait = 0;
 	if( this->iniBonDriver.empty() == false &&
 	    GetPrivateProfileInt(this->iniBonDriver.c_str(), L"OpenFix", 0, appIniPath.c_str()) ){
-		OutputDebugString(L"強制サービス指定 設定値ロード");
+		AddDebugLog(L"強制サービス指定 設定値ロード");
 		initONID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixONID", -1, appIniPath.c_str());
 		initTSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixTSID", -1, appIniPath.c_str());
 		initSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixSID", -1, appIniPath.c_str());
 		initOpenWait = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"OpenWait", 0, appIniPath.c_str());
 		initChgWait = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"ChgWait", 0, appIniPath.c_str());
-		_OutputDebugString(L"%d,%d,%d,%d,%d", initONID, initTSID, initSID, initOpenWait, initChgWait);
+		AddDebugLogFormat(L"%d,%d,%d,%d,%d", initONID, initTSID, initSID, initOpenWait, initChgWait);
 	}else if( GetPrivateProfileInt(L"SET", L"OpenLast", 1, appIniPath.c_str()) ){
 		initONID = GetPrivateProfileInt(L"SET", L"LastONID", -1, appIniPath.c_str());
 		initTSID = GetPrivateProfileInt(L"SET", L"LastTSID", -1, appIniPath.c_str());
@@ -607,7 +609,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 		case TIMER_TRY_STOP_SERVER:
 			if( this->pipeServer.StopServer(true) ){
 				KillTimer(TIMER_TRY_STOP_SERVER);
-				OutputDebugString(L"CmdServer stopped\r\n");
+				AddDebugLog(L"CmdServer stopped");
 				EndDialog(m_hWnd, IDCANCEL);
 			}
 			break;
@@ -1354,7 +1356,7 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 {
 	wstring pipeName;
 	Format(pipeName, L"%ls%d", CMD2_VIEW_CTRL_PIPE, GetCurrentProcessId());
-	OutputDebugString(pipeName.c_str());
+	AddDebugLogFormat(L"%ls", pipeName.c_str());
 	this->pipeServer.StartServer(pipeName, [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
 		resParam->param = CMD_ERR;
 		//同期呼び出しが不要なコマンドはここで処理する
@@ -1390,23 +1392,23 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 			}
 			return;
 		case CMD2_VIEW_APP_CLOSE:
-			OutputDebugString(L"CMD2_VIEW_APP_CLOSE");
+			AddDebugLog(L"CMD2_VIEW_APP_CLOSE");
 			PostMessage(m_hWnd, WM_CLOSE, 0, 0);
 			resParam->param = CMD_SUCCESS;
 			return;
 		case CMD2_VIEW_APP_SET_ID:
-			OutputDebugString(L"CMD2_VIEW_APP_SET_ID");
+			AddDebugLog(L"CMD2_VIEW_APP_SET_ID");
 			if( ReadVALUE(&this->outCtrlID, cmdParam->data, cmdParam->dataSize, NULL) ){
 				resParam->param = CMD_SUCCESS;
 			}
 			return;
 		case CMD2_VIEW_APP_GET_ID:
-			OutputDebugString(L"CMD2_VIEW_APP_GET_ID");
+			AddDebugLog(L"CMD2_VIEW_APP_GET_ID");
 			resParam->data = NewWriteVALUE(this->outCtrlID, resParam->dataSize);
 			resParam->param = CMD_SUCCESS;
 			return;
 		case CMD2_VIEW_APP_REC_FILE_PATH:
-			OutputDebugString(L"CMD2_VIEW_APP_REC_FILE_PATH");
+			AddDebugLog(L"CMD2_VIEW_APP_REC_FILE_PATH");
 			{
 				DWORD id;
 				if( ReadVALUE(&id, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1464,7 +1466,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 
 	switch( cmdParam->param ){
 	case CMD2_VIEW_APP_SET_BONDRIVER:
-		OutputDebugString(L"CMD2_VIEW_APP_SET_BONDRIVER");
+		AddDebugLog(L"CMD2_VIEW_APP_SET_BONDRIVER");
 		{
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1491,7 +1493,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_SET_CH:
-		OutputDebugString(L"CMD2_VIEW_APP_SET_CH");
+		AddDebugLog(L"CMD2_VIEW_APP_SET_CH");
 		{
 			SET_CH_INFO val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1520,7 +1522,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_SET_STANDBY_REC:
-		OutputDebugString(L"CMD2_VIEW_APP_SET_STANDBY_REC");
+		AddDebugLog(L"CMD2_VIEW_APP_SET_STANDBY_REC");
 		{
 			DWORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1539,7 +1541,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_CREATE_CTRL:
-		OutputDebugString(L"CMD2_VIEW_APP_CREATE_CTRL");
+		AddDebugLog(L"CMD2_VIEW_APP_CREATE_CTRL");
 		{
 			DWORD val = this->bonCtrl.CreateServiceCtrl(FALSE);
 			this->cmdCtrlList.push_back(val);
@@ -1548,7 +1550,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_DELETE_CTRL:
-		OutputDebugString(L"CMD2_VIEW_APP_DELETE_CTRL");
+		AddDebugLog(L"CMD2_VIEW_APP_DELETE_CTRL");
 		{
 			DWORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1569,7 +1571,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_SET_CTRLMODE:
-		OutputDebugString(L"CMD2_VIEW_APP_SET_CTRLMODE");
+		AddDebugLog(L"CMD2_VIEW_APP_SET_CTRLMODE");
 		{
 			SET_CTRL_MODE val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1581,7 +1583,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_REC_START_CTRL:
-		OutputDebugString(L"CMD2_VIEW_APP_REC_START_CTRL");
+		AddDebugLog(L"CMD2_VIEW_APP_REC_START_CTRL");
 		{
 			SET_CTRL_REC_PARAM val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1604,7 +1606,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_REC_STOP_CTRL:
-		OutputDebugString(L"CMD2_VIEW_APP_REC_STOP_CTRL");
+		AddDebugLog(L"CMD2_VIEW_APP_REC_STOP_CTRL");
 		{
 			SET_CTRL_REC_STOP_PARAM val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1639,7 +1641,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_EPGCAP_START:
-		OutputDebugString(L"CMD2_VIEW_APP_EPGCAP_START");
+		AddDebugLog(L"CMD2_VIEW_APP_EPGCAP_START");
 		{
 			vector<SET_CH_INFO> val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
@@ -1653,13 +1655,13 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	case CMD2_VIEW_APP_EPGCAP_STOP:
-		OutputDebugString(L"CMD2_VIEW_APP_EPGCAP_STOP");
+		AddDebugLog(L"CMD2_VIEW_APP_EPGCAP_STOP");
 		this->bonCtrl.StopEpgCap();
 		ChgIconStatus();
 		resParam->param = CMD_SUCCESS;
 		break;
 	case CMD2_VIEW_APP_REC_STOP_ALL:
-		OutputDebugString(L"CMD2_VIEW_APP_REC_STOP_ALL");
+		AddDebugLog(L"CMD2_VIEW_APP_REC_STOP_ALL");
 		while( this->cmdCtrlList.empty() == false ){
 			this->bonCtrl.DeleteServiceCtrl(this->cmdCtrlList.back());
 			this->cmdCtrlList.pop_back();
@@ -1685,7 +1687,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		}
 		break;
 	default:
-		_OutputDebugString(L"err default cmd %d\r\n", cmdParam->param);
+		AddDebugLogFormat(L"err default cmd %d", cmdParam->param);
 		resParam->param = CMD_NON_SUPPORT;
 		break;
 	}

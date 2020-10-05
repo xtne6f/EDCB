@@ -45,6 +45,9 @@ BOOL CSetDlgEpg::OnInitDialog()
 	Button_SetCheck( GetDlgItem(IDC_CHECK_EPGCAP_REC), GetPrivateProfileInt(L"SET", L"EpgCapRec", 1, appIniPath.c_str()) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC), GetPrivateProfileInt(L"SET", L"ParseEpgPostProcess", 0, appIniPath.c_str()) );
 	SetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str()), FALSE);
+	Button_SetCheck( GetDlgItem(IDC_CHECK_SAVE_LOGO), GetPrivateProfileInt(L"SET", L"SaveLogo", 0, appIniPath.c_str()) );
+	SetDlgItemInt(m_hWnd, IDC_EDIT_SAVE_LOGO_TYPE, GetPrivateProfileInt(L"SET", L"SaveLogoTypeFlags", 32, appIniPath.c_str()), FALSE);
+	OnBnClickedSaveLogo();
 
 	this->chSet.ParseText(GetSettingPath().append(L"ChSet5.txt").c_str());
 
@@ -93,6 +96,8 @@ void CSetDlgEpg::SaveIni(void)
 	WritePrivateProfileInt( L"SET", L"EpgCapRec", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_REC)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"ParseEpgPostProcess", Button_GetCheck(GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", GetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, NULL, FALSE), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"SaveLogo", Button_GetCheck(GetDlgItem(IDC_CHECK_SAVE_LOGO)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"SaveLogoTypeFlags", GetDlgItemInt(m_hWnd, IDC_EDIT_SAVE_LOGO_TYPE, NULL, FALSE), appIniPath.c_str() );
 
 	BOOL chSetModified = FALSE;
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
@@ -146,6 +151,12 @@ void CSetDlgEpg::OnBnClickedButtonAllClear()
 }
 
 
+void CSetDlgEpg::OnBnClickedSaveLogo()
+{
+	EnableWindow(GetDlgItem(IDC_EDIT_SAVE_LOGO_TYPE), Button_GetCheck(GetDlgItem(IDC_CHECK_SAVE_LOGO)) == BST_CHECKED);
+}
+
+
 INT_PTR CALLBACK CSetDlgEpg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CSetDlgEpg* pSys = (CSetDlgEpg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
@@ -171,6 +182,9 @@ INT_PTR CALLBACK CSetDlgEpg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			break;
 		case IDC_BUTTON_ALL_CLEAR:
 			pSys->OnBnClickedButtonAllClear();
+			break;
+		case IDC_CHECK_SAVE_LOGO:
+			pSys->OnBnClickedSaveLogo();
 			break;
 		}
 		break;

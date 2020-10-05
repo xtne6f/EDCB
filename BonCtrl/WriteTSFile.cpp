@@ -37,7 +37,7 @@ BOOL CWriteTSFile::StartSave(
 )
 {
 	if( saveFolder.size() == 0 ){
-		OutputDebugString(L"CWriteTSFile::StartSave Err saveFolder 0\r\n");
+		AddDebugLog(L"CWriteTSFile::StartSave Err saveFolder 0");
 		return FALSE;
 	}
 	
@@ -79,7 +79,7 @@ BOOL CWriteTSFile::StartSave(
 		this->outThread.join();
 	}
 
-	OutputDebugString(L"CWriteTSFile::StartSave Err 1\r\n");
+	AddDebugLog(L"CWriteTSFile::StartSave Err 1");
 	return FALSE;
 }
 
@@ -122,7 +122,7 @@ BOOL CWriteTSFile::AddTSBuff(
 			if( this->tsFreeList.empty() ){
 				//バッファを増やす
 				if( this->maxBuffCount > 0 && this->tsBuffList.size() > (size_t)this->maxBuffCount ){
-					_OutputDebugString(L"★writeBuffList MaxOver");
+					AddDebugLog(L"★writeBuffList MaxOver");
 					for( auto itr = this->tsBuffList.begin(); itr != this->tsBuffList.end(); (itr++)->clear() );
 					this->tsFreeList.splice(this->tsFreeList.end(), this->tsBuffList);
 				}else{
@@ -150,7 +150,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	BOOL emptyFlag = TRUE;
 	for( size_t i=0; i<sys->fileList.size(); i++ ){
 		if( sys->fileList[i]->writeUtil.Initialize(GetModulePath().replace_filename(L"Write").append(sys->fileList[i]->writePlugIn).c_str()) == FALSE ){
-			OutputDebugString(L"CWriteTSFile::StartSave Err 3\r\n");
+			AddDebugLog(L"CWriteTSFile::StartSave Err 3");
 			sys->fileList[i].reset();
 		}else{
 			fs_path recFolder = sys->fileList[i]->recFolder;
@@ -171,7 +171,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			BOOL startRes = sys->fileList[i]->writeUtil.Start(fs_path(recFolder).append(sys->fileList[i]->recFileName).c_str(),
 			                                                  sys->overWriteFlag, sys->createSize);
 			if( startRes == FALSE ){
-				OutputDebugString(L"CWriteTSFile::StartSave Err 2\r\n");
+				AddDebugLog(L"CWriteTSFile::StartSave Err 2");
 				//エラー時サブフォルダでリトライ
 				if( isMainUnknownOrFree ){
 					vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
@@ -202,7 +202,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 		}
 	}
 	if( emptyFlag ){
-		OutputDebugString(L"CWriteTSFile::StartSave Err fileList 0\r\n");
+		AddDebugLog(L"CWriteTSFile::StartSave Err fileList 0");
 		CoUninitialize();
 		sys->outStopState = 1;
 		sys->outStopEvent.Set();
