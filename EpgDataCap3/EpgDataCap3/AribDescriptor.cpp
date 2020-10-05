@@ -516,6 +516,7 @@ const short local_time_offset_descriptor_p[] = {
 	D_END, D_END,
 	D_FIN,
 };
+#endif
 const short logo_transmission_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -541,6 +542,7 @@ const short logo_transmission_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#if 0
 const short mosaic_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -912,7 +914,7 @@ const PARSER_PAIR parserMap[] = {
 	//{ Download_content_descriptor,			Download_content_descriptor_p },
 	{ ts_information_descriptor,				ts_information_descriptor_p },
 	//{ extended_broadcaster_descriptor,		extended_broadcaster_descriptor_p },
-	//{ logo_transmission_descriptor,			logo_transmission_descriptor_p },
+	{ logo_transmission_descriptor,				logo_transmission_descriptor_p },
 	//{ series_descriptor,						series_descriptor_p },
 	{ event_group_descriptor,					event_group_descriptor_p },
 	//{ SI_parameter_descriptor,				SI_parameter_descriptor_p },
@@ -1169,6 +1171,34 @@ const short broadcaster_information_section_p[] = {
 	D_FIN,
 };
 
+const short common_data_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_ASSERT_CRC_32, section_length, 24,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			download_data_id, 16,
+			reserved, D_LOCAL, 2,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			original_network_id, 16,
+			data_type, 8,
+			reserved, D_LOCAL, 4,
+			descriptors_loop_length, D_LOCAL, 12,
+			D_BEGIN, descriptors_loop_length,
+				D_DESCRIPTOR_LOOP,
+			D_END,
+			data_module_byte, D_BINARY_TO_END,
+		D_END,
+		CRC_32, D_LOCAL, 32,
+	D_END,
+	D_FIN,
+};
+
 const short* const sectionParserList[] = {
 	program_association_section_p,
 	network_information_section_p,
@@ -1178,6 +1208,7 @@ const short* const sectionParserList[] = {
 	time_offset_section_p,
 	selection_information_section_p,
 	broadcaster_information_section_p,
+	common_data_section_p,
 };
 
 void CDescriptor::Clear()

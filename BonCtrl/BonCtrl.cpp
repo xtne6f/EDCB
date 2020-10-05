@@ -29,6 +29,8 @@ CBonCtrl::CBonCtrl(void)
 	this->epgCapBackCS2Basic = TRUE;
 	this->epgCapBackCS3Basic = FALSE;
 	this->epgCapBackStartWaitSec = 30;
+
+	this->tsOutLogoTypeFlags = 0;
 }
 
 
@@ -46,7 +48,8 @@ void CBonCtrl::ReloadSetting(
 	BOOL enableScramble,
 	BOOL needCaption,
 	BOOL needData,
-	BOOL allService
+	BOOL allService,
+	DWORD logoTypeFlags
 	)
 {
 	this->tsOut.SetEmm(enableEmm);
@@ -59,6 +62,7 @@ void CBonCtrl::ReloadSetting(
 	this->tsOut.SetScramble(this->nwCtrlID, this->nwCtrlEnableScramble);
 	this->tsOut.SetServiceMode(this->nwCtrlID, this->nwCtrlNeedCaption, this->nwCtrlNeedData);
 	this->tsOut.SetServiceID(this->nwCtrlID, this->nwCtrlAllService ? 0xFFFF : this->nwCtrlServiceID);
+	this->tsOutLogoTypeFlags = logoTypeFlags;
 }
 
 void CBonCtrl::SetNWCtrlServiceID(
@@ -76,6 +80,7 @@ void CBonCtrl::Check()
 	CheckChScan();
 	CheckEpgCap();
 	CheckEpgCapBack();
+	CheckLogo();
 }
 
 BOOL CBonCtrl::OpenBonDriver(
@@ -1014,6 +1019,53 @@ void CBonCtrl::CheckEpgCapBack()
 				cmd.SendReloadEpg();
 				AddDebugLogFormat(L"++%d分でEPG取得完了せず or Ch変更でエラー", this->epgCapTimeOut);
 				this->epgCapBackIndexOrStatus = ST_STOP;
+			}
+		}
+	}
+}
+
+void CBonCtrl::CheckLogo()
+{
+	CTSOut::CHECK_LOGO_RESULT result;
+	this->tsOut.CheckLogo(this->tsOutLogoTypeFlags, result);
+
+	if( result.dataUpdated ){
+		//ロゴを保存
+		WCHAR name[64];
+		swprintf_s(name, L"%04x_%03x_000_%02x.png", result.onid, result.id, result.type);
+		fs_path path = GetSettingPath().append(LOGO_SAVE_FOLDER).append(name);
+		bool update = true;
+		if( UtilFileExists(path).first ){
+			update = false;
+			std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
+			if( logoFile ){
+				//小さいか中身が違っていれば更新
+				for( size_t i = 0; i < result.data.size(); i++ ){
+					int c = fgetc(logoFile.get());
+					if( c == EOF || c != result.data[i] ){
+						update = true;
+						break;
+					}
+				}
+			}
+		}
+		if( update ){
+			UtilCreateDirectory(path.parent_path());
+			std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_WRITE), fclose);
+			if( logoFile ){
+				fwrite(result.data.data(), 1, result.data.size(), logoFile.get());
+			}
+		}
+	}
+
+	if( result.serviceListUpdated ){
+		//サービスからロゴへのポインティングを保存
+		fs_path iniPath = GetSettingPath().append(LOGO_SAVE_FOLDER L".ini");
+		for( size_t i = 0; i < result.serviceList.size(); i++ ){
+			WCHAR name[16];
+			swprintf_s(name, L"%04X%04X", result.onid, result.serviceList[i]);
+			if( GetPrivateProfileInt(L"LogoIDMap", name, 0xFFFF, iniPath.c_str()) != result.id ){
+				WritePrivateProfileInt(L"LogoIDMap", name, result.id, iniPath.c_str());
 			}
 		}
 	}

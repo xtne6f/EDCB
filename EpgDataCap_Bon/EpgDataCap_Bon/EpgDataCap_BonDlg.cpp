@@ -141,7 +141,9 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	                            GetPrivateProfileInt(L"SET", L"Scramble", 1, appIniPath.c_str()) != 0,
 	                            GetPrivateProfileInt(L"SET", L"Caption", 1, appIniPath.c_str()) != 0,
 	                            GetPrivateProfileInt(L"SET", L"Data", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()) != 0);
+	                            GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()) != 0,
+	                            (DWORD)(GetPrivateProfileInt(L"SET", L"SaveLogo", 0, appIniPath.c_str()) == 0 ? 0 :
+	                                        GetPrivateProfileInt(L"SET", L"SaveLogoTypeFlags", 32, appIniPath.c_str())));
 
 	EnableWindow(GetDlgItem(IDC_BUTTON_VIEW), this->viewPath.empty() == false);
 }

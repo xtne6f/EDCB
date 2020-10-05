@@ -18,6 +18,7 @@ CTSOut::CTSOut(void)
 	this->emmEnableFlag = FALSE;
 
 	this->nextCtrlID = 1;
+	this->logoAdditionalNeededPids = NULL;
 	this->noLogScramble = FALSE;
 	this->parseEpgPostProcess = FALSE;
 }
@@ -42,6 +43,7 @@ void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 		//EpgDataCap3は内部メソッド単位でアトミック。初期化以外はobjLockかepgUtilLockのどちらかを獲得すればよい
 		this->epgUtil.UnInitialize();
 		this->epgUtil.Initialize(FALSE);
+		this->logoAdditionalNeededPids = NULL;
 	}
 }
 
@@ -117,6 +119,10 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						//スクランブルパケットなので解析できない
 						continue;
 					}
+					if( packet.PID >= BON_SELECTIVE_PID ){
+						//間接指定のパケットは不要
+						continue;
+					}
 					this->epgUtil.AddTSPacket(data + i, 188);
 					//GetTSID()が切り替え前の値を返さないようにPATを待つ
 					if( this->chChangeState == CH_ST_WAIT_PAT ){
@@ -149,8 +155,21 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					if( this->serviceFilter.CatOrPmtUpdated() ){
 						UpdateServiceUtil(FALSE);
 					}
-					if( packet.PID < BON_SELECTIVE_PID && this->parseEpgPostProcess == FALSE ){
-						ParseEpgPacket(data + i, packet);
+					if( this->parseEpgPostProcess == FALSE ){
+						if( packet.PID < BON_SELECTIVE_PID ){
+							ParseEpgPacket(data + i, packet);
+						}else{
+							CBlockLock lock2(&this->epgUtilLock);
+							if( this->logoAdditionalNeededPids ){
+								for( const WORD* pid = this->logoAdditionalNeededPids; *pid; pid++ ){
+									if( *pid == packet.PID ){
+										//ロゴ取得に必要
+										this->epgUtil.AddTSPacket(data + i, 188);
+										break;
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -309,6 +328,58 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 	if( updateFilterSID ){
 		this->serviceFilter.SetServiceID(std::find(filterSIDList.begin(), filterSIDList.end(), 0xFFFF) != filterSIDList.end(), filterSIDList);
 	}
+}
+
+void CTSOut::CheckLogo(DWORD logoTypeFlags, CHECK_LOGO_RESULT& result)
+{
+	CBlockLock lock(&this->epgUtilLock);
+
+	this->epgUtil.SetLogoTypeFlags(logoTypeFlags, &this->logoAdditionalNeededPids);
+	result.dataUpdated = false;
+	result.serviceListUpdated = false;
+	if( logoTypeFlags ){
+		pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*> context(&result, &this->logoServiceListSizeMap);
+		this->epgUtil.EnumLogoList(EnumLogoListProc, &context);
+	}
+}
+
+BOOL CALLBACK CTSOut::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param)
+{
+	CHECK_LOGO_RESULT& result = *((pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*>*)param)->first;
+	vector<pair<LONGLONG, DWORD>>& serviceListSizeMap = *((pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*>*)param)->second;
+
+	if( logoList == NULL ){
+		return TRUE;
+	}
+	for( ; logoListSize > 0; logoListSize--, logoList++ ){
+		if( logoList->serviceListSize > 0 ){
+			LONGLONG key = (LONGLONG)logoList->onid << 32 | (LONGLONG)logoList->id << 16 | logoList->type;
+			vector<pair<LONGLONG, DWORD>>::iterator itr = lower_bound_first(serviceListSizeMap.begin(), serviceListSizeMap.end(), key);
+			try{
+				if( itr == serviceListSizeMap.end() || itr->first != key ){
+					serviceListSizeMap.insert(itr, pair<LONGLONG, DWORD>(key, 0));
+					result.onid = logoList->onid;
+					result.id = logoList->id;
+					result.type = logoList->type;
+					result.data.assign(logoList->data, logoList->data + logoList->dataSize);
+					result.dataUpdated = true;
+					return FALSE;
+				}
+				if( itr->second < logoList->serviceListSize ){
+					result.onid = logoList->onid;
+					result.id = logoList->id;
+					result.type = logoList->type;
+					result.serviceList.assign(logoList->serviceList, logoList->serviceList + logoList->serviceListSize);
+					result.serviceListUpdated = true;
+					itr->second = logoList->serviceListSize;
+					return FALSE;
+				}
+			}catch( std::bad_alloc& ){
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
 }
 
 //EPGデータの保存を開始する

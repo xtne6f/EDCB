@@ -100,8 +100,10 @@
 #define IDC_CHECK_PARSE_EPG_POST_PROC   1040
 #define IDC_BUTTON_CHK_CLEAR            1040
 #define IDC_CHECK_TRACE_BON_LEVEL       1040
+#define IDC_CHECK_SAVE_LOGO             1041
 #define IDC_EDIT_DROP_SAVE_THRESH       1041
 #define IDC_EDIT_CH                     1041
+#define IDC_EDIT_SAVE_LOGO_TYPE         1042
 #define IDC_EDIT_SCRAMBLE_SAVE_THRESH   1042
 #define IDC_BUTTON_DEL                  1042
 #define IDC_CHECK_DROP_LOG_AS_UTF8      1043

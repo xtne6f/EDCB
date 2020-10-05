@@ -121,6 +121,19 @@ typedef struct {
 	SERVICE_EXT_INFO* extInfo;	//詳細情報
 }SERVICE_INFO;
 
+//ロゴ情報
+typedef struct {
+	WORD onid;
+	WORD id;
+	BYTE type;
+	BYTE bReserved;
+	WORD wReserved;
+	DWORD dataSize;
+	DWORD serviceListSize;
+	const BYTE* data;
+	const WORD* serviceList;
+} LOGO_INFO;
+
 //ファイル名プラグインの入力情報
 typedef struct {
 	SYSTEMTIME startTime;		//開始時間

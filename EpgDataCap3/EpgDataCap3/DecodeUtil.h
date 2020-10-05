@@ -13,6 +13,18 @@ public:
 	void SetEpgDB(CEpgDBUtil* epgDBUtil_);
 	void AddTSData(BYTE* data, DWORD size);
 
+	//取得するロゴタイプをフラグで指定する
+	void SetLogoTypeFlags(
+		DWORD flags,
+		const WORD** additionalNeededPids
+		);
+
+	//全ロゴを列挙する
+	BOOL EnumLogoList(
+		BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, LPVOID),
+		LPVOID param
+		);
+
 	//解析データの現在のストリームＩＤを取得する
 	//引数：
 	// originalNetworkID		[OUT]現在のoriginalNetworkID
@@ -61,13 +73,20 @@ protected:
 	DWORD tdtTimeTick;
 	DWORD sitTimeTick;
 
+	struct LOGO_DATA {
+		LONGLONG first; //onid<<32|logoID<<16|logoType
+		vector<BYTE> data;
+		vector<WORD> serviceList;
+	};
+	vector<LOGO_DATA> logoMap;
+	DWORD logoTypeFlags;
+	vector<WORD> additionalNeededPidList;
 
 	std::unique_ptr<SERVICE_INFO[]> serviceList;
 	std::unique_ptr<EPGDB_SERVICE_INFO[]> serviceDBList;
 	std::unique_ptr<CServiceInfoAdapter[]> serviceAdapterList;
 
 protected:
-	void Clear();
 	void ClearBuff(WORD noClearPid);
 	void ChangeTSIDClear(WORD noClearPid);
 
@@ -78,6 +97,10 @@ protected:
 	void CheckEIT(WORD PID, const AribDescriptor::CDescriptor& eit);
 	void CheckBIT(WORD PID, const AribDescriptor::CDescriptor& bit);
 	void CheckSIT(const AribDescriptor::CDescriptor& sit);
+	void CheckCDT(const AribDescriptor::CDescriptor& cdt);
+	void UpdateLogoData(WORD onid, WORD id, BYTE type, const BYTE* logo, size_t logoSize);
+	void UpdateLogoServiceList(const AribDescriptor::CDescriptor& sdt);
+	static void AppendPngPalette(vector<BYTE>& dest);
 
 	//自ストリームのサービス一覧をSITから取得する
 	//引数：

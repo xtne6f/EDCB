@@ -24,6 +24,7 @@ protected:
 	afx_msg void OnBnClickedButtonAllChk();
 	afx_msg void OnBnClickedButtonVideoChk();
 	afx_msg void OnBnClickedButtonAllClear();
+	void OnBnClickedSaveLogo();
 	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	HWND GetDlgItem(int nID) const{ return ::GetDlgItem(m_hWnd, nID); }
 };

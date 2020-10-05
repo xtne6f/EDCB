@@ -275,6 +275,8 @@ namespace AribDescriptor
 		broadcast_view_propriety,
 		first_descriptors_length,
 		broadcaster_descriptors_length,
+		data_type,
+		data_module_byte,
 	};
 
 	enum {
@@ -314,7 +316,7 @@ namespace AribDescriptor
 		//Download_content_descriptor				= 0xC9,
 		ts_information_descriptor					= 0xCD,
 		//extended_broadcaster_descriptor			= 0xCE,
-		//logo_transmission_descriptor				= 0xCF,
+		logo_transmission_descriptor				= 0xCF,
 		//series_descriptor							= 0xD5,
 		event_group_descriptor						= 0xD6,
 		//SI_parameter_descriptor					= 0xD7,
@@ -342,13 +344,14 @@ namespace AribDescriptor
 		TYPE_TOT,
 		TYPE_SIT,
 		TYPE_BIT,
+		TYPE_CDT,
 	};
 
 	struct PARSER_PAIR {
 		BYTE tag;
 		const short* parser;
 	};
-	extern const PARSER_PAIR parserMap[15];
+	extern const PARSER_PAIR parserMap[16];
 
 	class CDescriptor
 	{
