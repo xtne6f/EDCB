@@ -40,6 +40,10 @@ DWORD CEpgDataCap3Util::Initialize(
 #endif
 	DWORD err = FALSE;
 	if( module != NULL ){
+		pfnSetDebugLogCallbackEP3 = (SetDebugLogCallbackEP3)getProcAddr("SetDebugLogCallbackEP");
+		if( pfnSetDebugLogCallbackEP3 ){
+			pfnSetDebugLogCallbackEP3(DebugLogCallback);
+		}
 		InitializeEP3 pfnInitializeEP3;
 		if( (pfnInitializeEP3 = (InitializeEP3)getProcAddr("InitializeEP")) != NULL &&
 		    (pfnUnInitializeEP3 = (UnInitializeEP3)getProcAddr("UnInitializeEP")) != NULL &&
@@ -80,6 +84,9 @@ DWORD CEpgDataCap3Util::UnInitialize(
 	if( id != 0 ){
 		err = pfnUnInitializeEP3(id);
 		id = 0;
+	}
+	if( pfnSetDebugLogCallbackEP3 ){
+		pfnSetDebugLogCallbackEP3(NULL);
 	}
 #ifdef _WIN32
 	FreeLibrary((HMODULE)module);
@@ -239,4 +246,13 @@ int CEpgDataCap3Util::GetTimeDelay(
 		return 0;
 	}
 	return pfnGetTimeDelayEP3(id);
+}
+
+void CALLBACK CEpgDataCap3Util::DebugLogCallback(
+	const WCHAR* s
+	)
+{
+#ifdef WRAP_DEBUG_OUTPUT
+	AddDebugLogNoNewline(s, true);
+#endif
 }

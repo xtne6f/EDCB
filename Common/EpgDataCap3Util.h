@@ -188,6 +188,7 @@ private:
 	typedef DWORD (WINAPI *GetEpgInfoEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL nextFlag, EPG_EVENT_INFO** epgInfo);
 	typedef DWORD (WINAPI *SearchEpgInfoEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, WORD eventID, BYTE pfOnlyFlag, EPG_EVENT_INFO** epgInfo);
 	typedef int (WINAPI *GetTimeDelayEP3)(DWORD id);
+	typedef DWORD (WINAPI *SetDebugLogCallbackEP3)(void (CALLBACK *debugLogProc)(const WCHAR* s));
 
 	void* module;
 	DWORD id;
@@ -204,8 +205,10 @@ private:
 	GetEpgInfoEP3			pfnGetEpgInfoEP3;
 	SearchEpgInfoEP3		pfnSearchEpgInfoEP3;
 	GetTimeDelayEP3			pfnGetTimeDelayEP3;
+	SetDebugLogCallbackEP3	pfnSetDebugLogCallbackEP3;
 
 	CEpgDataCap3Util(const CEpgDataCap3Util&);
 	CEpgDataCap3Util& operator=(const CEpgDataCap3Util&);
+	static void CALLBACK DebugLogCallback(const WCHAR* s);
 };
 

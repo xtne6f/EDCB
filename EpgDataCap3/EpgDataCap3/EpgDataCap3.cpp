@@ -9,7 +9,13 @@
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 
+namespace
+{
 CInstanceManager<CEpgDataCap3Main> g_instMng;
+recursive_mutex_ g_debugLogLock;
+void (CALLBACK *g_debugLogProc)(const WCHAR* s);
+int g_debugLogProcCount;
+}
 
 //DLLの初期化
 //戻り値：
@@ -387,4 +393,41 @@ int WINAPI GetTimeDelayEP(
 	}
 
 	return ptr->GetTimeDelay();
+}
+
+//ログ出力関数を登録/登録解除する
+//戻り値：
+// エラーコード
+//引数：
+// debugLogProc				[IN]ログ出力関数
+DLL_EXPORT
+DWORD WINAPI SetDebugLogCallbackEP(
+	void (CALLBACK *debugLogProc)(const WCHAR* s)
+	)
+{
+	CBlockLock lock(&g_debugLogLock);
+
+	if (debugLogProc) {
+		g_debugLogProc = debugLogProc;
+		g_debugLogProcCount++;
+		return NO_ERR;
+	}
+	if (g_debugLogProcCount) {
+		if (--g_debugLogProcCount == 0) {
+			g_debugLogProc = NULL;
+		}
+		return NO_ERR;
+	}
+	return ERR_FALSE;
+}
+
+void AddDebugLogNoNewline(const wchar_t* s)
+{
+	{
+		CBlockLock lock(&g_debugLogLock);
+		if (g_debugLogProc) {
+			g_debugLogProc(s);
+		}
+	}
+	OutputDebugString(s);
 }
