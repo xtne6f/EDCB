@@ -43,12 +43,12 @@ static bool SDDecodeNIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 	}
 	Desc::CDescriptor::CLoopPointer lp;
 	if( table.EnterLoop(lp) ){
-		for( DWORD i = 0; table.SetLoopIndex(lp, i); i++ ){
+		do{
 			if( table.GetNumber(Desc::descriptor_tag, lp) == 0x82 && table.GetNumber(Desc::reserved, lp) == 1 ){
 				//日本語版？ネットワーク記述子にキャスト
 				table.SetNumber(Desc::descriptor_tag, Desc::network_name_descriptor, lp);
 			}
-		}
+		}while( table.NextLoopIndex(lp) );
 	}
 	return true;
 }
@@ -93,12 +93,12 @@ static bool SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 	}
 	Desc::CDescriptor::CLoopPointer lp;
 	if( table.EnterLoop(lp) ){
-		for( DWORD i = 0; table.SetLoopIndex(lp, i); i++ ){
+		do{
 			Desc::CDescriptor::CLoopPointer lp0x82, lp2 = lp;
 			if( table.EnterLoop(lp2) ){
 				bool found0x82 = false;
 				DWORD service_type = 0;
-				for( DWORD j = 0; table.SetLoopIndex(lp2, j); j++ ){
+				do{
 					if( table.GetNumber(Desc::descriptor_tag, lp2) == 0x82 ){
 						//サービス名
 						if( table.GetNumber(Desc::service_type, lp2) == 1 ){
@@ -110,14 +110,14 @@ static bool SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 						//サービスタイプ
 						service_type = table.GetNumber(Desc::service_type, lp2);
 					}
-				}
+				}while( table.NextLoopIndex(lp2) );
 				if( found0x82 ){
 					//サービス記述子にキャスト
 					table.SetNumber(Desc::descriptor_tag, Desc::service_descriptor, lp0x82);
 					table.SetNumber(Desc::service_type, service_type == 0x81 ? 0xA1 : service_type, lp0x82);
 				}
 			}
-		}
+		}while( table.NextLoopIndex(lp) );
 	}
 	return true;
 }
@@ -166,11 +166,11 @@ static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 	}
 	Desc::CDescriptor::CLoopPointer lp;
 	if( table.EnterLoop(lp) ){
-		for( DWORD i = 0; table.SetLoopIndex(lp, i); i++ ){
+		do{
 			Desc::CDescriptor::CLoopPointer lp0x82, lp2 = lp;
 			if( table.EnterLoop(lp2) ){
 				bool found0x82 = false;
-				for( DWORD j = 0; table.SetLoopIndex(lp2, j); j++ ){
+				do{
 					if( table.GetNumber(Desc::descriptor_tag, lp2) == 0x82 ){
 						//番組名
 						if( table.GetNumber(Desc::reserved, lp2) == 1 ){
@@ -192,13 +192,13 @@ static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 							table.SetNumber(Desc::descriptor_tag, Desc::audio_component_descriptor, lp2);
 						}
 					}
-				}
+				}while( table.NextLoopIndex(lp2) );
 				if( found0x82 ){
 					//短形式イベント記述子にキャスト
 					table.SetNumber(Desc::descriptor_tag, Desc::short_event_descriptor, lp0x82);
 				}
 			}
-		}
+		}while( table.NextLoopIndex(lp) );
 	}
 	return true;
 }
@@ -527,14 +527,14 @@ void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 	//時間計算
 	Desc::CDescriptor::CLoopPointer lp;
 	if( this->totTime == 0 && this->tdtTime == 0 && sit.EnterLoop(lp) ){
-		for( DWORD i = 0; sit.SetLoopIndex(lp, i); i++ ){
+		do{
 			if( sit.GetNumber(Desc::descriptor_tag, lp) == Desc::partialTS_time_descriptor ){
 				if( sit.GetNumber(Desc::jst_time_flag, lp) == 1 ){
 					this->sitTime = MJDtoI64Time(sit.GetNumber(Desc::jst_time_mjd), sit.GetNumber(Desc::jst_time_bcd));
 					this->sitTimeTick = GetTickCount();
 				}
 			}
-		}
+		}while( sit.NextLoopIndex(lp) );
 	}
 
 	if( epgDBUtil != NULL ){
@@ -574,12 +574,12 @@ BOOL CDecodeUtil::GetTSID(
 		//ONID
 		Desc::CDescriptor::CLoopPointer lp;
 		if( this->sitInfo->EnterLoop(lp) ){
-			for( DWORD i = 0; this->sitInfo->SetLoopIndex(lp, i); i++ ){
+			do{
 				if( this->sitInfo->GetNumber(Desc::descriptor_tag, lp) == Desc::network_identification_descriptor ){
 					*originalNetworkID = (WORD)this->sitInfo->GetNumber(Desc::network_id, lp);
 					return TRUE;
 				}
-			}
+			}while( this->sitInfo->NextLoopIndex(lp) );
 		}
 	}
 	return FALSE;
@@ -623,7 +623,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 	for( auto itr = this->nitActualInfo.cbegin(); itr != this->nitActualInfo.end(); itr++ ){
 		Desc::CDescriptor::CLoopPointer lp;
 		if( itr->second.EnterLoop(lp) ){
-			for( DWORD i = 0; itr->second.SetLoopIndex(lp, i); i++ ){
+			do{
 				if( itr->second.GetNumber(Desc::descriptor_tag, lp) != Desc::network_name_descriptor ){
 					continue;
 				}
@@ -633,18 +633,18 @@ BOOL CDecodeUtil::GetServiceListActual(
 					CARIB8CharDecode arib;
 					arib.PSISI(src, srcSize, &network_nameW);
 				}
-			}
+			}while( itr->second.NextLoopIndex(lp) );
 		}
 		lp = Desc::CDescriptor::CLoopPointer();
 		if( itr->second.EnterLoop(lp, 1) == false ){
 			continue;
 		}
-		for( DWORD i = 0; itr->second.SetLoopIndex(lp, i); i++ ){
+		do{
 			Desc::CDescriptor::CLoopPointer lp2 = lp;
 			if( itr->second.EnterLoop(lp2) == false ){
 				continue;
 			}
-			for( DWORD j = 0; itr->second.SetLoopIndex(lp2, j); j++ ){
+			do{
 				if( itr->second.GetNumber(Desc::descriptor_tag, lp2) == Desc::ts_information_descriptor ){
 					DWORD srcSize;
 					const BYTE* src = itr->second.GetBinary(Desc::ts_name_char, &srcSize, lp2);
@@ -658,13 +658,13 @@ BOOL CDecodeUtil::GetServiceListActual(
 					partialServiceList.clear();
 					Desc::CDescriptor::CLoopPointer lp3 = lp2;
 					if( itr->second.EnterLoop(lp3) ){
-						for( DWORD k=0; itr->second.SetLoopIndex(lp3, k); k++ ){
+						do{
 							partialServiceList.push_back((WORD)itr->second.GetNumber(Desc::service_id, lp3));
-						}
+						}while( itr->second.NextLoopIndex(lp3) );
 					}
 				}
-			}
-		}
+			}while( itr->second.NextLoopIndex(lp2) );
+		}while( itr->second.NextLoopIndex(lp) );
 	}
 
 	DWORD count = 0;
@@ -673,7 +673,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 		if( itr->second.EnterLoop(lp) == false ){
 			continue;
 		}
-		for( DWORD i = 0; itr->second.SetLoopIndex(lp, i); i++ ){
+		do{
 			this->serviceDBList[count].ONID = (WORD)itr->second.GetNumber(Desc::original_network_id);
 			this->serviceDBList[count].TSID = (WORD)itr->second.GetNumber(Desc::transport_stream_id);
 			this->serviceDBList[count].SID = (WORD)itr->second.GetNumber(Desc::service_id, lp);
@@ -681,7 +681,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 
 			Desc::CDescriptor::CLoopPointer lp2 = lp;
 			if( itr->second.EnterLoop(lp2) ){
-				for( DWORD j = 0; itr->second.SetLoopIndex(lp2, j); j++ ){
+				do{
 					if( itr->second.GetNumber(Desc::descriptor_tag, lp2) != Desc::service_descriptor ){
 						continue;
 					}
@@ -701,7 +701,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 					this->serviceDBList[count].service_type = (BYTE)itr->second.GetNumber(Desc::service_type, lp2);
 					this->serviceDBList[count].service_provider_name.swap(service_provider_name);
 					this->serviceDBList[count].service_name.swap(service_name);
-				}
+				}while( itr->second.NextLoopIndex(lp2) );
 			}
 
 			this->serviceDBList[count].network_name = network_nameW;
@@ -717,7 +717,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 
 			this->serviceList[count] = this->serviceAdapterList[count].Create(&this->serviceDBList[count]);
 			count++;
-		}
+		}while( itr->second.NextLoopIndex(lp) );
 	}
 
 	*serviceList_ = this->serviceList.get();
@@ -744,11 +744,11 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	*serviceListSize = 0;
 	Desc::CDescriptor::CLoopPointer lp;
 	if( this->sitInfo->EnterLoop(lp) ){
-		for( DWORD i = 0; this->sitInfo->SetLoopIndex(lp, i); i++ ){
+		do{
 			if( this->sitInfo->GetNumber(Desc::descriptor_tag, lp) == Desc::network_identification_descriptor ){
 				ONID = (WORD)this->sitInfo->GetNumber(Desc::network_id);
 			}
-		}
+		}while( this->sitInfo->NextLoopIndex(lp) );
 		*serviceListSize = this->sitInfo->GetLoopSize(lp);
 	}
 
@@ -770,7 +770,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 
 		Desc::CDescriptor::CLoopPointer lp2 = lp;
 		if( this->sitInfo->EnterLoop(lp2) ){
-			for( DWORD j = 0; this->sitInfo->SetLoopIndex(lp2, j); j++ ){
+			do{
 				if( this->sitInfo->GetNumber(Desc::descriptor_tag, lp2) != Desc::service_descriptor ){
 					continue;
 				}
@@ -790,7 +790,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 				this->serviceDBList[i].service_type = (BYTE)this->sitInfo->GetNumber(Desc::service_type, lp2);
 				this->serviceDBList[i].service_provider_name.swap(service_provider_name);
 				this->serviceDBList[i].service_name.swap(service_name);
-			}
+			}while( this->sitInfo->NextLoopIndex(lp2) );
 		}
 
 		//トランスポートの情報は取得できない
