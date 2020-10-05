@@ -177,7 +177,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 	if( itr != this->reserveText.GetMap().end() ){
 		*reserveData = itr->second;
 		reserveData->recFileNameList.clear();
-		if( getRecFileName ){
+		if( getRecFileName && reserveData->recSetting.GetRecMode() != RECMODE_VIEW ){
 			CReNamePlugInUtil utilCache;
 			if( util == NULL ){
 				util = &utilCache;
