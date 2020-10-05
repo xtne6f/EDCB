@@ -67,7 +67,7 @@ BOOL CWriteMain::Start(
 		}
 		this->savePath = &path.front();
 	}else{
-		_OutputDebugString(L"★CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
+		AddDebugLogFormat(L"★CWriteMain::Start CreateFile:%ls", this->savePath.c_str());
 		UtilCreateDirectories(fs_path(this->savePath).parent_path());
 		this->file.reset(UtilOpenFile(this->savePath, (overWriteFlag ? UTIL_O_CREAT_WRONLY : UTIL_O_EXCL_CREAT_WRONLY) | UTIL_SH_READ | UTIL_F_IONBF));
 		if( !this->file ){
@@ -78,11 +78,11 @@ BOOL CWriteMain::Start(
 				Format(this->savePath, L"%ls-(%d)%ls", pathWoExt.c_str(), i, ext.c_str());
 				this->file.reset(UtilOpenFile(this->savePath, (overWriteFlag ? UTIL_O_CREAT_WRONLY : UTIL_O_EXCL_CREAT_WRONLY) | UTIL_SH_READ | UTIL_F_IONBF));
 				if( this->file || i >= 999 ){
-					_OutputDebugString(L"★CWriteMain::Start CreateFile:%ls\r\n", this->savePath.c_str());
+					AddDebugLogFormat(L"★CWriteMain::Start CreateFile:%ls", this->savePath.c_str());
 					if( this->file ){
 						break;
 					}
-					OutputDebugString(L"★CWriteMain::Start Err\r\n");
+					AddDebugLog(L"★CWriteMain::Start Err");
 					this->savePath = L"";
 					return FALSE;
 				}
@@ -130,7 +130,7 @@ BOOL CWriteMain::Write(
 			}else{
 				*writeSize = (DWORD)fwrite(data, 1, size, this->file.get());
 				if( *writeSize == 0 ){
-					OutputDebugString(L"★CWriteMain::Write Err\r\n");
+					AddDebugLog(L"★CWriteMain::Write Err");
 					this->file.reset();
 					return FALSE;
 				}
@@ -171,7 +171,7 @@ BOOL CWriteMain::Write(
 				}
 			}else{
 				if( fwrite(&this->outBuff.front(), 1, this->outBuff.size(), this->file.get()) == 0 ){
-					OutputDebugString(L"★CWriteMain::Write Err\r\n");
+					AddDebugLog(L"★CWriteMain::Write Err");
 					this->file.reset();
 					return FALSE;
 				}
