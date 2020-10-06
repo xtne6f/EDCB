@@ -74,6 +74,7 @@ private:
 	static void ReloadEpgThread(int param);
 	// ストリームコールバック(別スレッド)
 	static BOOL CALLBACK StreamCallback(BYTE *pData, void *pClientData);
+	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO *logoList, LPVOID param);
 
 	CMyEventHandler m_handler;
 	recursive_mutex_ m_streamLock;
@@ -116,6 +117,10 @@ private:
 	DWORD m_recCtrlCount;
 	map<DWORD, REC_CTRL> m_recCtrlMap;
 	wstring m_duplicateOriginalPath;
+	vector<pair<LONGLONG, DWORD>> m_logoServiceListSizeMap;
+	const WORD *m_logoAdditionalNeededPids;
+	DWORD m_logoTick;
+	DWORD m_logoTypeFlags;
 #ifdef SEND_PIPE_TEST
 	CSendTCP m_sendPipe;
 	HANDLE m_sendPipeMutex;

@@ -64,6 +64,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnChannelChange()
 		// EpgDataCap3は内部メソッド単位でアトミック。UnInitialize()中にワーカースレッドにアクセスさせないよう排他制御が必要
 		m_outer.m_epgUtil.UnInitialize();
 		m_outer.m_epgUtil.Initialize(FALSE, m_outer.m_epgUtilPath.c_str());
+		m_outer.m_logoAdditionalNeededPids = nullptr;
 		m_outer.m_chChangeID = CH_CHANGE_ERR;
 		if (ret) {
 			m_outer.m_chChangeID = static_cast<DWORD>(ci.NetworkID) << 16 | ci.TransportStreamID;
@@ -157,6 +158,9 @@ CEdcbPlugIn::CEdcbPlugIn()
 	, m_epgFile(nullptr, fclose)
 	, m_epgCapBack(false)
 	, m_recCtrlCount(0)
+	, m_logoAdditionalNeededPids(nullptr)
+	, m_logoTick(0)
+	, m_logoTypeFlags(0)
 {
 	m_lastSetCh.useSID = FALSE;
 	std::fill_n(m_epgCapBasicOnlyONIDs, array_size(m_epgCapBasicOnlyONIDs), false);
@@ -330,6 +334,8 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			m_epgCapBackBasicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS1BasicOnly", 1, iniPath.c_str()) != 0;
 			m_epgCapBackBasicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS2BasicOnly", 1, iniPath.c_str()) != 0;
 			m_epgCapBackBasicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS3BasicOnly", 0, iniPath.c_str()) != 0;
+			m_logoTypeFlags = GetPrivateProfileInt(L"SET", L"SaveLogo", 0, iniPath.c_str()) == 0 ? 0 :
+				GetPrivateProfileInt(L"SET", L"SaveLogoTypeFlags", 32, iniPath.c_str());
 		}
 		return 0;
 	case WM_DESTROY:
@@ -1043,8 +1049,8 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 	if (packet.Set188TS(pData, 188)) {
 		CEdcbPlugIn &this_ = *static_cast<CEdcbPlugIn*>(pClientData);
 		CBlockLock lock(&this_.m_streamLock);
-		if (packet.PID < BON_SELECTIVE_PID) {
-			if (this_.m_chChangeID > CH_CHANGE_ERR) {
+		if (this_.m_chChangeID > CH_CHANGE_ERR) {
+			if (packet.PID < BON_SELECTIVE_PID) {
 				// チャンネル切り替え中
 				// 1秒間は切り替え前のパケット来る可能性を考慮して無視する
 				if (GetTickCount() - this_.m_chChangeTick > 1000) {
@@ -1064,7 +1070,9 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 					}
 				}
 			}
-			else {
+		}
+		else {
+			if (packet.PID < BON_SELECTIVE_PID) {
 				if (this_.m_epgFile) {
 					if (packet.PID == 0 && packet.payload_unit_start_indicator) {
 						if (this_.m_epgFileState == EPG_FILE_ST_NONE) {
@@ -1095,6 +1103,26 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 					}
 				}
 				this_.m_epgUtil.AddTSPacket(pData, 188);
+
+				DWORD tick = GetTickCount();
+				if (tick - this_.m_logoTick >= 1000) {
+					this_.m_epgUtil.SetLogoTypeFlags(this_.m_logoTypeFlags, &this_.m_logoAdditionalNeededPids);
+					if (this_.m_logoTypeFlags) {
+						this_.m_epgUtil.EnumLogoList(EnumLogoListProc, &this_);
+					}
+					this_.m_logoTick = tick;
+				}
+			}
+			else {
+				if (this_.m_logoAdditionalNeededPids) {
+					for (const WORD *pid = this_.m_logoAdditionalNeededPids; *pid; pid++) {
+						if (*pid == packet.PID) {
+							// ロゴ取得に必要
+							this_.m_epgUtil.AddTSPacket(pData, 188);
+							break;
+						}
+					}
+				}
 			}
 		}
 		for (map<DWORD, REC_CTRL>::iterator it = this_.m_recCtrlMap.begin(); it != this_.m_recCtrlMap.end(); ++it) {
@@ -1116,6 +1144,68 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 			}
 		}
 #endif
+	}
+	return TRUE;
+}
+
+BOOL CALLBACK CEdcbPlugIn::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO *logoList, LPVOID param)
+{
+	CEdcbPlugIn &this_ = *static_cast<CEdcbPlugIn*>(param);
+
+	if (logoList == nullptr) {
+		return TRUE;
+	}
+	for (; logoListSize > 0; logoListSize--, logoList++) {
+		if (logoList->serviceListSize > 0) {
+			LONGLONG key = static_cast<LONGLONG>(logoList->onid) << 32 | static_cast<LONGLONG>(logoList->id) << 16 | logoList->type;
+			vector<pair<LONGLONG, DWORD>>::iterator itr =
+				lower_bound_first(this_.m_logoServiceListSizeMap.begin(), this_.m_logoServiceListSizeMap.end(), key);
+			if (itr == this_.m_logoServiceListSizeMap.end() || itr->first != key) {
+				this_.m_logoServiceListSizeMap.insert(itr, pair<LONGLONG, DWORD>(key, 0));
+				// ロゴを保存
+				WCHAR name[64];
+				swprintf_s(name, L"%04x_%03x_000_%02x.png", logoList->onid, logoList->id, logoList->type);
+				fs_path path = this_.GetEdcbSettingPath().append(LOGO_SAVE_FOLDER).append(name);
+				bool update = true;
+				if (UtilFileExists(path).first) {
+					update = false;
+					std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
+					if (logoFile) {
+						// 小さいか中身が違っていれば更新
+						for (DWORD i = 0; i < logoList->dataSize; i++) {
+							int c = fgetc(logoFile.get());
+							if (c == EOF || c != logoList->data[i]) {
+								update = true;
+								break;
+							}
+						}
+					}
+				}
+				if (update) {
+					UtilCreateDirectory(path.parent_path());
+					std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_WRITE), fclose);
+					if (logoFile) {
+						fwrite(logoList->data, 1, logoList->dataSize, logoFile.get());
+					}
+				}
+				// 負荷分散のため列挙を中止
+				return FALSE;
+			}
+
+			if (itr->second < logoList->serviceListSize) {
+				// サービスからロゴへのポインティングを保存
+				fs_path iniPath = this_.GetEdcbSettingPath().append(LOGO_SAVE_FOLDER L".ini");
+				for (DWORD i = 0; i < logoList->serviceListSize; i++) {
+					WCHAR name[16];
+					swprintf_s(name, L"%04X%04X", logoList->onid, logoList->serviceList[i]);
+					if (GetPrivateProfileInt(L"LogoIDMap", name, 0xFFFF, iniPath.c_str()) != logoList->id) {
+						WritePrivateProfileInt(L"LogoIDMap", name, logoList->id, iniPath.c_str());
+					}
+				}
+				itr->second = logoList->serviceListSize;
+				return FALSE;
+			}
+		}
 	}
 	return TRUE;
 }
