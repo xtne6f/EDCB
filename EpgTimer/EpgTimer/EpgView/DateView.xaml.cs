@@ -20,7 +20,7 @@ namespace EpgTimer.EpgView
     public partial class DateView : UserControl
     {
         public event Action<DateTime> TimeButtonClick;
-        public event Action<DateTime> TimeButtonRightClick;
+        public event Action<DateTime, ContextMenu, ContextMenuEventArgs> TimeButtonContextMenuOpening;
 
         public DateView()
         {
@@ -89,11 +89,15 @@ namespace EpgTimer.EpgView
             }
         }
 
-        void button_time_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        void button_time_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            if (TimeButtonRightClick != null)
+            if (TimeButtonContextMenuOpening != null)
             {
-                TimeButtonRightClick((DateTime)((Button)sender).Tag);
+                TimeButtonContextMenuOpening((DateTime)((Button)sender).Tag, ((Button)sender).ContextMenu, e);
+            }
+            else
+            {
+                e.Handled = true;
             }
         }
     }
