@@ -98,6 +98,20 @@ void ParseRecFolderList(LPCWSTR* token, vector<REC_FILE_SET_INFO>& list)
 }
 }
 
+void CParseChText4::SetFilePath(LPCWSTR path)
+{
+	this->filePath = path;
+	this->isUtf8 = true;
+	if( this->filePath.empty() == false ){
+		//文字コードを維持する
+		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(this->filePath, UTIL_SECURE_READ), fclose);
+		if( fp ){
+			char buf[3];
+			this->isUtf8 = fread(buf, 1, 3, fp.get()) == 3 && buf[0] == '\xEF' && buf[1] == '\xBB' && buf[2] == '\xBF';
+		}
+	}
+}
+
 DWORD CParseChText4::AddCh(const CH_DATA4& item)
 {
 	map<DWORD, CH_DATA4>::const_iterator itr =

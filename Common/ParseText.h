@@ -7,11 +7,10 @@ template <class K, class V>
 class CParseText
 {
 public:
-	CParseText() : isUtf8(false) {}
+	CParseText() : isUtf8(true) {}
 	bool ParseText(LPCWSTR path = NULL);
 	const map<K, V>& GetMap() const { return this->itemMap; }
 	const wstring& GetFilePath() const { return this->filePath; }
-	void SetFilePath(LPCWSTR path) { this->filePath = path; this->isUtf8 = IsUtf8Default(); }
 protected:
 	typedef CParseText<K, V> Base;
 	bool SaveText() const;
@@ -19,7 +18,6 @@ protected:
 	virtual bool SaveLine(const pair<K, V>& item, wstring& saveLine) const { return false; }
 	virtual bool SaveFooterLine(wstring& saveLine) const { return false; }
 	virtual bool SelectItemToSave(vector<typename map<K, V>::const_iterator>& itemList) const { return false; }
-	virtual bool IsUtf8Default() const { return false; }
 	map<K, V> itemMap;
 	wstring filePath;
 	bool isUtf8;
@@ -29,7 +27,7 @@ template <class K, class V>
 bool CParseText<K, V>::ParseText(LPCWSTR path)
 {
 	this->itemMap.clear();
-	this->isUtf8 = IsUtf8Default();
+	this->isUtf8 = true;
 	if( path != NULL ){
 		this->filePath = path;
 	}

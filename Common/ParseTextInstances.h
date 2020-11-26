@@ -11,8 +11,9 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	using Base::SaveText;
+	//ファイルパスを設定する
+	void SetFilePath(LPCWSTR path);
 	//チャンネル情報を追加する(失敗しない)。戻り値は追加されたキー
 	DWORD AddCh(const CH_DATA4& item);
 	//チャンネル情報を削除する
@@ -32,7 +33,6 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	using Base::SaveText;
 	LONGLONG AddCh(const CH_DATA5& item);
 	//EPGデータの取得対象かを設定する
@@ -51,7 +51,6 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	void GetMimeType(wstring ext, wstring& mimeType) const;
 private:
 	bool ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& item);
@@ -64,7 +63,6 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	void ChgText(wstring& chgText) const;
 private:
 	bool ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& item);
@@ -79,7 +77,6 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	using Base::SaveText;
 	//録画済み情報を追加する
 	DWORD AddRecInfo(const REC_FILE_INFO& item);
@@ -103,7 +100,6 @@ private:
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectItemToSave(vector<map<DWORD, REC_FILE_INFO>::const_iterator>& itemList) const;
-	bool IsUtf8Default() const { return true; }
 	//情報が削除される直前の補足作業
 	void OnDelRecInfo(const REC_FILE_INFO& item);
 	//過去に追加したIDよりも大きな値。100000000(1億)IDで巡回する(ただし1日に1000ID消費しても200年以上かかるので考えるだけ無駄)
@@ -134,7 +130,6 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	using Base::SaveText;
 	DWORD Add(const PARSE_REC_INFO2_ITEM& item);
 	void SetKeepCount(DWORD n = UINT_MAX) { this->keepCount = n; }
@@ -142,7 +137,6 @@ private:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, PARSE_REC_INFO2_ITEM>& item);
 	bool SaveLine(const pair<DWORD, PARSE_REC_INFO2_ITEM>& item, wstring& saveLine) const;
 	bool SelectItemToSave(vector<map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator>& itemList) const;
-	bool IsUtf8Default() const { return true; }
 	DWORD keepCount;
 };
 
@@ -155,7 +149,6 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	using Base::SaveText;
 	//予約情報を追加する
 	DWORD AddReserve(const RESERVE_DATA& item);
@@ -178,7 +171,6 @@ private:
 	bool SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring& saveLine) const;
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectItemToSave(vector<map<DWORD, RESERVE_DATA>::const_iterator>& itemList) const;
-	bool IsUtf8Default() const { return true; }
 	DWORD nextID;
 	DWORD saveNextID;
 	mutable vector<pair<ULONGLONG, DWORD>> sortByEventCache;
@@ -193,7 +185,6 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	using Base::SaveText;
 	DWORD AddData(const EPG_AUTO_ADD_DATA& item);
 	bool ChgData(const EPG_AUTO_ADD_DATA& item);
@@ -205,7 +196,6 @@ private:
 	bool SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, wstring& saveLine) const;
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectItemToSave(vector<map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator>& itemList) const;
-	bool IsUtf8Default() const { return true; }
 	DWORD nextID;
 	DWORD saveNextID;
 };
@@ -219,7 +209,6 @@ public:
 	using Base::ParseText;
 	using Base::GetMap;
 	using Base::GetFilePath;
-	using Base::SetFilePath;
 	using Base::SaveText;
 	DWORD AddData(const MANUAL_AUTO_ADD_DATA& item);
 	bool ChgData(const MANUAL_AUTO_ADD_DATA& item);
@@ -229,7 +218,6 @@ private:
 	bool SaveLine(const pair<DWORD, MANUAL_AUTO_ADD_DATA>& item, wstring& saveLine) const;
 	bool SaveFooterLine(wstring& saveLine) const;
 	bool SelectItemToSave(vector<map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator>& itemList) const;
-	bool IsUtf8Default() const { return true; }
 	DWORD nextID;
 	DWORD saveNextID;
 };
