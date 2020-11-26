@@ -130,4 +130,11 @@ public:
 	CTSPacketUtil(void);
 
 	BOOL Set188TS(const BYTE* data, DWORD dataSize);
+	static BYTE GetTransportErrorIndicatorFrom188TS(const BYTE* data) { return data[1] >> 7; }
+	static BYTE GetPayloadUnitStartIndicatorFrom188TS(const BYTE* data) { return (data[1] >> 6) & 0x01; }
+	static BYTE GetTransportPriorityFrom188TS(const BYTE* data) { return (data[1] >> 5) & 0x01; }
+	static WORD GetPidFrom188TS(const BYTE* data) { return (data[1] << 8 | data[2]) & 0x1FFF; }
+	static BYTE GetTransportScramblingControlFrom188TS(const BYTE* data) { return data[3] >> 6; }
+	static BYTE GetAdaptationFieldControlFrom188TS(const BYTE* data) { return (data[3] >> 4) & 0x03; }
+	static BYTE GetContinuityCounterFrom188TS(const BYTE* data) { return data[3] & 0x0F; }
 };

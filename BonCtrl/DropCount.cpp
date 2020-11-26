@@ -3,6 +3,7 @@
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
 #include "../Common/TimeUtil.h"
+#include "../Common/TSPacketUtil.h"
 
 CDropCount::CDropCount(void)
 {
@@ -23,16 +24,13 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 		return ;
 	}
 	DROP_INFO item = {};
-	for( DWORD i=0; i<size; i+=188 ){
-		BYTE sync_byte = data[i];
-		BYTE transport_error_indicator = data[i + 1] & 0x80;
-		if( sync_byte == 0x47 && transport_error_indicator == 0 ){
-			item.first = (data[i + 1] << 8 | data[i + 2]) & 0x1FFF;
+	for( DWORD i = 0; i + 188 <= size; i += 188 ){
+		if( CTSPacketUtil::GetTransportErrorIndicatorFrom188TS(data + i) == 0 ){
+			item.first = CTSPacketUtil::GetPidFrom188TS(data + i);
 			vector<DROP_INFO>::iterator itr =
 				lower_bound_first(this->infoList.begin(), this->infoList.end(), item.first);
 			if( itr == this->infoList.end() || itr->first != item.first ){
-				BYTE continuity_counter = data[i + 3] & 0x0F;
-				item.lastCounter = (continuity_counter + 15) & 0x0F;
+				item.lastCounter = (CTSPacketUtil::GetContinuityCounterFrom188TS(data + i) + 15) & 0x0F;
 				itr = this->infoList.insert(itr, item);
 			}
 			itr->total++;
@@ -112,11 +110,10 @@ ULONGLONG CDropCount::GetScrambleCount()
 
 void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 {
-	BYTE transport_scrambling_control = packet[3] >> 6;
-	BYTE adaptation_field_control = (packet[3] >> 4) & 0x03;
-	BYTE continuity_counter = packet[3] & 0x0F;
+	BYTE adaptation_field_control = CTSPacketUtil::GetAdaptationFieldControlFrom188TS(packet);
+	BYTE continuity_counter = CTSPacketUtil::GetContinuityCounterFrom188TS(packet);
 
-	if( transport_scrambling_control != 0 ){
+	if( CTSPacketUtil::GetTransportScramblingControlFrom188TS(packet) != 0 ){
 		info->scramble++;
 		this->scramble++;
 	}

@@ -17,16 +17,16 @@ BOOL CTSPacketUtil::Set188TS(const BYTE* data, DWORD dataSize)
 		transport_error_indicator = 0;
 		return FALSE;
 	}
-	transport_error_indicator = (data[1]&0x80)>>7;
+	transport_error_indicator = GetTransportErrorIndicatorFrom188TS(data);
 	if( transport_error_indicator == 1 ){
 		return FALSE;
 	}
-	payload_unit_start_indicator = (data[1]&0x40)>>6;
-	transport_priority = (data[1]&0x20)>>5;
-	PID = ((WORD)data[1]&0x1F)<<8 | data[2];
-	transport_scrambling_control = (data[3]&0xC0)>>6;
-	adaptation_field_control = (data[3]&0x30)>>4;
-	continuity_counter = data[3]&0x0F;
+	payload_unit_start_indicator = GetPayloadUnitStartIndicatorFrom188TS(data);
+	transport_priority = GetTransportPriorityFrom188TS(data);
+	PID = GetPidFrom188TS(data);
+	transport_scrambling_control = GetTransportScramblingControlFrom188TS(data);
+	adaptation_field_control = GetAdaptationFieldControlFrom188TS(data);
+	continuity_counter = GetContinuityCounterFrom188TS(data);
 	has_adaptation_field_flags = 0;
 	DWORD readSize = 4;
 

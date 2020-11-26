@@ -8,6 +8,7 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/EpgDataCap3Util.h"
 #include "../../Common/CtrlCmdUtil.h"
+#include "../../Common/TSPacketUtil.h"
 #include <list>
 
 CEpgDBManager::CEpgDBManager()
@@ -238,10 +239,8 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				//PATを送る(ストリームを確実にリセットするため)
 				DWORD seekPos = 0;
 				for( DWORD i = 0; fread(readBuff, 1, 188, file.get()) == 188; i += 188 ){
-					//PID
-					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0 ){
-						//payload_unit_start_indicator
-						if( (readBuff[1] & 0x40) != 0 ){
+					if( CTSPacketUtil::GetPidFrom188TS(readBuff) == 0 ){
+						if( CTSPacketUtil::GetPayloadUnitStartIndicatorFrom188TS(readBuff) ){
 							if( seekPos != 0 ){
 								break;
 							}
@@ -256,7 +255,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				//TOTを先頭に持ってきて送る(ストリームの時刻を確定させるため)
 				bool ignoreTOT = false;
 				while( fread(readBuff, 1, 188, file.get()) == 188 ){
-					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0x14 ){
+					if( CTSPacketUtil::GetPidFrom188TS(readBuff) == 0x14 ){
 						ignoreTOT = true;
 						epgUtil.AddTSPacket(readBuff, 188);
 						break;
@@ -267,7 +266,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					size_t i = 0;
 					if( ignoreTOT ){
 						for( ; i + 188 <= n; i += 188 ){
-							if( ((readBuff[i + 1] & 0x1F) << 8 | readBuff[i + 2]) == 0x14 ){
+							if( CTSPacketUtil::GetPidFrom188TS(readBuff + i) == 0x14 ){
 								ignoreTOT = false;
 								i += 188;
 								break;
