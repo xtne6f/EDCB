@@ -1,23 +1,35 @@
 ﻿#include "stdafx.h"
 #include "ChSetUtil.h"
-
+#include "BonCtrlDef.h"
 #include "../Common/EpgTimerUtil.h"
-
-CChSetUtil::CChSetUtil(void)
-{
-}
+#include "../Common/PathUtil.h"
 
 //チャンネル設定ファイルを読み込む
 BOOL CChSetUtil::LoadChSet(
-	const wstring& chSet4FilePath,
-	const wstring& chSet5FilePath
+	const wstring& settingPath,
+	const wstring& driverName,
+	wstring tunerName
 	)
 {
 	BOOL ret = TRUE;
-	if( this->chText4.ParseText(chSet4FilePath.c_str()) == FALSE ){
-		ret = FALSE;
+	CheckFileName(tunerName);
+	bool mightExist = false;
+	if( tunerName.empty() == false ){
+		//チューナー名付きのファイルがあれば優先する
+		fs_path chSet4FilePath = fs_path(settingPath).append(fs_path(driverName).stem().concat(L"(" + tunerName + L").ChSet4.txt").native());
+		if( UtilFileExists(chSet4FilePath, &mightExist).first || mightExist ){
+			mightExist = true;
+			if( this->chText4.ParseText(chSet4FilePath.c_str()) == false ){
+				ret = FALSE;
+			}
+		}
 	}
-	if( this->chText5.ParseText(chSet5FilePath.c_str()) == FALSE ){
+	if( mightExist == false ){
+		if( this->chText4.ParseText(fs_path(settingPath).append(fs_path(driverName).stem().concat(L"().ChSet4.txt").native()).c_str()) == false ){
+			ret = FALSE;
+		}
+	}
+	if( this->chText5.ParseText(fs_path(settingPath).append(L"ChSet5.txt").c_str()) == false ){
 		ret = FALSE;
 	}
 	return ret;
@@ -25,10 +37,15 @@ BOOL CChSetUtil::LoadChSet(
 
 //チャンネル設定ファイルを保存する
 BOOL CChSetUtil::SaveChSet(
-	const wstring& chSet4FilePath,
-	const wstring& chSet5FilePath
+	const wstring& settingPath,
+	const wstring& driverName,
+	wstring tunerName
 	)
 {
+	CheckFileName(tunerName);
+	fs_path chSet4FilePath = fs_path(settingPath).append(fs_path(driverName).stem().concat(L"(" + tunerName + L").ChSet4.txt").native());
+	fs_path chSet5FilePath = fs_path(settingPath).append(L"ChSet5.txt");
+
 	//接続待ち
 	HANDLE waitEvent = CreateEvent(NULL, FALSE, TRUE, CHSET_SAVE_EVENT_WAIT);
 	if( waitEvent == NULL ){
@@ -43,6 +60,9 @@ BOOL CChSetUtil::SaveChSet(
 	this->chText4.SetFilePath(chSet4FilePath.c_str());
 	if( this->chText4.SaveText() == false ){
 		ret = FALSE;
+	}else if( tunerName.empty() == false ){
+		//チューナー名付きと無しのファイルは同時に存在すべきでない
+		DeleteFile(fs_path(settingPath).append(fs_path(driverName).stem().concat(L"().ChSet4.txt").native()).c_str());
 	}
 
 	//他で更新されてる可能性あるので再読み込み
