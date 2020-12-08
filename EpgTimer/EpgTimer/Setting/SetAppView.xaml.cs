@@ -252,7 +252,7 @@ namespace EpgTimer.Setting
                 string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk");
                 if (File.Exists(shortcutPath) == false)
                 {
-                    CreateShortCut(shortcutPath, Assembly.GetEntryAssembly().Location, "");
+                    CreateShortCut(shortcutPath, System.IO.Path.Combine(SettingPath.ModulePath, SettingPath.ModuleName), "");
                 }
                 button_shortCutAdd.Visibility = Visibility.Hidden;
                 button_shortCutDel.Visibility = Visibility.Visible;

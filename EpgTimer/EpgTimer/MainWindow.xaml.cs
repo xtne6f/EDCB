@@ -30,7 +30,7 @@ namespace EpgTimer
 
         public MainWindow()
         {
-            string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
+            string appName = System.IO.Path.GetFileNameWithoutExtension(SettingPath.ModuleName);
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
 
             Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
@@ -122,20 +122,25 @@ namespace EpgTimer
 
                 if (CommonManager.Instance.NWMode == false)
                 {
+                    int pid;
+                    using (var process = System.Diagnostics.Process.GetCurrentProcess())
+                    {
+                        pid = process.Id;
+                    }
                     //コールバックは別スレッドかもしれないので設定は予めキャプチャする
                     uint execBat = Settings.Instance.ExecBat;
-                    pipeServer = new PipeServer("Global\\EpgTimerGUI_Ctrl_BonConnect_" + System.Diagnostics.Process.GetCurrentProcess().Id,
-                                                "EpgTimerGUI_Ctrl_BonPipe_" + System.Diagnostics.Process.GetCurrentProcess().Id,
+                    pipeServer = new PipeServer("Global\\EpgTimerGUI_Ctrl_BonConnect_" + pid,
+                                                "EpgTimerGUI_Ctrl_BonPipe_" + pid,
                                                 (c, r) => OutsideCmdCallback(c, r, false, execBat));
 
                     for (int i = 0; i < 150; i++)
                     {
-                        if (CommonManager.CreateSrvCtrl().SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) == ErrCode.CMD_SUCCESS)
+                        if (CommonManager.CreateSrvCtrl().SendRegistGUI((uint)pid) == ErrCode.CMD_SUCCESS)
                         {
                             byte[] binData;
                             if (CommonManager.CreateSrvCtrl().SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
                             {
-                                ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932)));
+                                ChSet5.LoadWithStreamReader(new System.IO.MemoryStream(binData));
                             }
                             break;
                         }
@@ -215,7 +220,7 @@ namespace EpgTimer
                         byte[] binData;
                         if (cmd.SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
                         {
-                            connected = ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932)));
+                            connected = ChSet5.LoadWithStreamReader(new System.IO.MemoryStream(binData));
                             break;
                         }
                     }
@@ -231,7 +236,7 @@ namespace EpgTimer
             {
                 byte[] binData;
                 if (cmd.SendFileCopy("ChSet5.txt", out binData) != ErrCode.CMD_SUCCESS ||
-                    ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932))) == false)
+                    ChSet5.LoadWithStreamReader(new System.IO.MemoryStream(binData)) == false)
                 {
                     MessageBox.Show("EpgTimerSrvとの接続に失敗しました。");
                     return true;
@@ -433,7 +438,7 @@ namespace EpgTimer
             byte[] binData;
             if (CommonManager.CreateSrvCtrl().SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
             {
-                ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932)));
+                ChSet5.LoadWithStreamReader(new System.IO.MemoryStream(binData));
             }
             CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
             CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.RecInfo);
@@ -490,7 +495,10 @@ namespace EpgTimer
                 {
                     var cmd = CommonManager.CreateSrvCtrl();
                     cmd.SetConnectTimeOut(3000);
-                    cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                    using (var process = System.Diagnostics.Process.GetCurrentProcess())
+                    {
+                        cmd.SendUnRegistGUI((uint)process.Id);
+                    }
                     //オリジナルのmutex名をもつEpgTimerか
                     if (mutexName == "2")
                     {
