@@ -98,20 +98,31 @@ namespace EpgTimer
             return IsDttv(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
         }
 
-        public static bool Load(System.IO.StreamReader reader)
+        public static bool LoadWithStreamReader(System.IO.Stream stream)
         {
+            Encoding enc;
+            try
+            {
+                enc = Encoding.GetEncoding(932);
+            }
+            catch
+            {
+                enc = Encoding.UTF8;
+            }
+
             try
             {
                 Instance.ChList.Clear();
                 Instance.ChListOrderByIndex.Clear();
-                for (string buff = reader.ReadLine(); buff != null; buff = reader.ReadLine())
+                using (var reader = new System.IO.StreamReader(stream, enc))
                 {
-                    if (buff.StartsWith(";", StringComparison.Ordinal))
+                    for (string buff = reader.ReadLine(); buff != null; buff = reader.ReadLine())
                     {
-                        //コメント行
-                    }
-                    else
-                    {
+                        if (buff.StartsWith(";", StringComparison.Ordinal))
+                        {
+                            //コメント行
+                            continue;
+                        }
                         string[] list = buff.Split('\t');
                         ChSet5Item item = new ChSet5Item();
                         try
@@ -156,8 +167,7 @@ namespace EpgTimer
         {
             get
             {
-                UInt64 key = ((UInt64)ONID)<<32 | ((UInt64)TSID)<<16 | (UInt64)SID;
-                return key;
+                return CommonManager.Create64Key(ONID, TSID, SID);
             }
         }
         public UInt16 ONID

@@ -62,11 +62,14 @@ namespace EpgTimer
             else
             {
                 countTimer.Stop();
-                DialogResult = false;
+                if (DialogResult == null)
+                {
+                    DialogResult = true;
+                }
             }
         }
 
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        private void button_ok_Click(object sender, RoutedEventArgs e)
         {
             countTimer.Stop();
             DialogResult = true;
@@ -81,10 +84,6 @@ namespace EpgTimer
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             countTimer.Stop();
-            if (DialogResult == null)
-            {
-                DialogResult = false;
-            }
         }
     }
 }

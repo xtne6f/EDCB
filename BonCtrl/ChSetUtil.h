@@ -2,25 +2,23 @@
 
 #include "../Common/StructDef.h"
 #include "../Common/EpgDataCap3Def.h"
-#include "BonCtrlDef.h"
-
 #include "../Common/ParseTextInstances.h"
 
 class CChSetUtil
 {
 public:
-	CChSetUtil(void);
-
 	//チャンネル設定ファイルを読み込む
 	BOOL LoadChSet(
-		const wstring& chSet4FilePath,
-		const wstring& chSet5FilePath
+		const wstring& settingPath,
+		const wstring& driverName,
+		wstring tunerName
 		);
 
 	//チャンネル設定ファイルを保存する
 	BOOL SaveChSet(
-		const wstring& chSet4FilePath,
-		const wstring& chSet5FilePath
+		const wstring& settingPath,
+		const wstring& driverName,
+		wstring tunerName
 		);
 
 	//チャンネルスキャン用にクリアする

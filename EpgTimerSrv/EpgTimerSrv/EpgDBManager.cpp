@@ -8,6 +8,7 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/EpgDataCap3Util.h"
 #include "../../Common/CtrlCmdUtil.h"
+#include "../../Common/TSPacketUtil.h"
 #include <list>
 
 CEpgDBManager::CEpgDBManager()
@@ -139,7 +140,6 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		sys->loadStop = true;
 		return;
 	}
-	bool addMultiplePackets = epgUtil.CanAddMultipleTSPackets();
 
 	__int64 utcNow = GetNowI64Time() - I64_UTIL_TIMEZONE;
 
@@ -239,10 +239,8 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				//PATを送る(ストリームを確実にリセットするため)
 				DWORD seekPos = 0;
 				for( DWORD i = 0; fread(readBuff, 1, 188, file.get()) == 188; i += 188 ){
-					//PID
-					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0 ){
-						//payload_unit_start_indicator
-						if( (readBuff[1] & 0x40) != 0 ){
+					if( CTSPacketUtil::GetPidFrom188TS(readBuff) == 0 ){
+						if( CTSPacketUtil::GetPayloadUnitStartIndicatorFrom188TS(readBuff) ){
 							if( seekPos != 0 ){
 								break;
 							}
@@ -257,7 +255,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				//TOTを先頭に持ってきて送る(ストリームの時刻を確定させるため)
 				bool ignoreTOT = false;
 				while( fread(readBuff, 1, 188, file.get()) == 188 ){
-					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0x14 ){
+					if( CTSPacketUtil::GetPidFrom188TS(readBuff) == 0x14 ){
 						ignoreTOT = true;
 						epgUtil.AddTSPacket(readBuff, 188);
 						break;
@@ -266,20 +264,17 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				_fseeki64(file.get(), seekPos, SEEK_SET);
 				for( size_t n; (n = fread(readBuff, 1, sizeof(readBuff), file.get())) != 0; ){
 					size_t i = 0;
-					if( ignoreTOT || addMultiplePackets == false ){
+					if( ignoreTOT ){
 						for( ; i + 188 <= n; i += 188 ){
-							if( ignoreTOT && ((readBuff[i + 1] & 0x1F) << 8 | readBuff[i + 2]) == 0x14 ){
+							if( CTSPacketUtil::GetPidFrom188TS(readBuff + i) == 0x14 ){
 								ignoreTOT = false;
-								if( addMultiplePackets ){
-									i += 188;
-									break;
-								}
-							}else{
-								epgUtil.AddTSPacket(readBuff + i, 188);
+								i += 188;
+								break;
 							}
+							epgUtil.AddTSPacket(readBuff + i, 188);
 						}
 					}
-					if( addMultiplePackets && n - i >= 188 ){
+					if( n - i >= 188 ){
 						epgUtil.AddTSPacket(readBuff + i, (DWORD)((n - i) / 188 * 188));
 					}
 					if( sys->loadForeground == false ){

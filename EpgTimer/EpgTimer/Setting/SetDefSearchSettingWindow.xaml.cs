@@ -37,10 +37,5 @@ namespace EpgTimer
         {
             DialogResult = true;
         }
-
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-        }
     }
 }

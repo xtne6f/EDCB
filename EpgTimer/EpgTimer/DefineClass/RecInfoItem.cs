@@ -45,6 +45,10 @@ namespace EpgTimer
         {
             get { return new CommonManager.TimeDuration(true, RecInfo.StartTime, true, RecInfo.DurationSecond); }
         }
+        public CommonManager.TimeDuration StartTimeNoDuration
+        {
+            get { return new CommonManager.TimeDuration(true, RecInfo.StartTime, true, double.NaN); }
+        }
         public TimeSpan Duration
         {
             get { return TimeSpan.FromSeconds(RecInfo.DurationSecond); }
@@ -75,10 +79,26 @@ namespace EpgTimer
         }
         public SolidColorBrush BackColor
         {
+            get { return Settings.Instance.RecEndColorPosition == 0 ? DropScrambleBackColor : null; }
+        }
+        public SolidColorBrush AlternationBackColor
+        {
+            get { return (Settings.Instance.RecEndColorPosition == 0 ? DropScrambleBackColor : null) ?? Settings.BrushCache.RecEndDefBrush; }
+        }
+        public SolidColorBrush StartTimeBackColor
+        {
+            get { return Settings.Instance.RecEndColorPosition == 1 ? DropScrambleBackColor : null; }
+        }
+        public SolidColorBrush EventNameBackColor
+        {
+            get { return Settings.Instance.RecEndColorPosition == 2 ? DropScrambleBackColor : null; }
+        }
+        private SolidColorBrush DropScrambleBackColor
+        {
             get
             {
                 return RecInfo.Drops > 0 ? Settings.BrushCache.RecEndErrBrush :
-                       RecInfo.Scrambles > 0 ? Settings.BrushCache.RecEndWarBrush : Settings.BrushCache.RecEndDefBrush;
+                       RecInfo.Scrambles > 0 ? Settings.BrushCache.RecEndWarBrush : null;
             }
         }
         public SolidColorBrush ResultBackColor
@@ -109,8 +129,8 @@ namespace EpgTimer
                     view += " (" + NetworkName + ")" + "\r\n";
                     view += EventName + "\r\n";
                     view += "\r\n";
-                    view += "録画結果 : " + RecInfo.Comment + "\r\n";
-                    view += "録画ファイルパス : " + RecInfo.RecFilePath + "\r\n";
+                    view += "結果 : " + RecInfo.Comment + "\r\n";
+                    view += "録画ファイル : " + RecInfo.RecFilePath + "\r\n";
                     view += "\r\n";
 
                     view += "OriginalNetworkID : " + RecInfo.OriginalNetworkID.ToString() + " (0x" + RecInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
@@ -118,8 +138,8 @@ namespace EpgTimer
                     view += "ServiceID : " + RecInfo.ServiceID.ToString() + " (0x" + RecInfo.ServiceID.ToString("X4") + ")\r\n";
                     view += "EventID : " + RecInfo.EventID.ToString() + " (0x" + RecInfo.EventID.ToString("X4") + ")\r\n";
                     view += "\r\n";
-                    view += "Drops : " + Drops + "\r\n";
-                    view += "Scrambles : " + Scrambles;
+                    view += "Drop : " + Drops + "\r\n";
+                    view += "Scramble : " + Scrambles;
                 }
 
 

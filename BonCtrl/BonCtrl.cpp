@@ -103,11 +103,7 @@ BOOL CBonCtrl::OpenBonDriver(
 		this->analyzeThread = thread_(AnalyzeThread, this);
 
 		this->tsOut.SetBonDriver(bonFile);
-		fs_path settingPath = GetSettingPath();
-		wstring tunerName = this->bonUtil.GetTunerName();
-		CheckFileName(tunerName);
-		this->chUtil.LoadChSet(fs_path(settingPath).append(fs_path(bonFile).stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native(),
-		                       fs_path(settingPath).append(L"ChSet5.txt").native());
+		this->chUtil.LoadChSet(GetSettingPath().native(), bonFile, this->bonUtil.GetTunerName());
 		this->tsOut.ClearErrCount(this->nwCtrlID);
 		return TRUE;
 	}
@@ -492,13 +488,7 @@ BOOL CBonCtrl::StartChScan()
 void CBonCtrl::StopChScan()
 {
 	if( this->chScanIndexOrStatus >= ST_WORKING ){
-		fs_path bonFile = this->bonUtil.GetOpenBonDriverFileName();
-		wstring tunerName = this->bonUtil.GetTunerName();
-		CheckFileName(tunerName);
-		fs_path settingPath = GetSettingPath();
-		wstring chSet4 = fs_path(settingPath).append(bonFile.stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native();
-		wstring chSet5 = fs_path(settingPath).append(L"ChSet5.txt").native();
-		this->chUtil.LoadChSet(chSet4, chSet5);
+		this->chUtil.LoadChSet(GetSettingPath().native(), this->bonUtil.GetOpenBonDriverFileName(), this->bonUtil.GetTunerName());
 		this->chScanIndexOrStatus = ST_CANCEL;
 	}
 }
@@ -605,13 +595,7 @@ void CBonCtrl::CheckChScan()
 			chkCount++;
 			if( this->chScanChkList.size() <= (size_t)chkCount ){
 				//全部チェック終わったので終了
-				fs_path bonFile = this->bonUtil.GetOpenBonDriverFileName();
-				wstring tunerName = this->bonUtil.GetTunerName();
-				CheckFileName(tunerName);
-				fs_path settingPath = GetSettingPath();
-				wstring chSet4 = fs_path(settingPath).append(bonFile.stem().concat(L"(" + tunerName + L").ChSet4.txt").native()).native();
-				wstring chSet5 = fs_path(settingPath).append(L"ChSet5.txt").native();
-				this->chUtil.SaveChSet(chSet4, chSet5);
+				this->chUtil.SaveChSet(GetSettingPath().native(), this->bonUtil.GetOpenBonDriverFileName(), this->bonUtil.GetTunerName());
 				this->chScanIndexOrStatus = ST_COMPLETE;
 				return;
 			}

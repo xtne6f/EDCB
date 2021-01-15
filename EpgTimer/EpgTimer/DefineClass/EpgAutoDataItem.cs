@@ -68,13 +68,13 @@ namespace EpgTimer
                        (new DateTime(2000, 1, 2 + info.endDayOfWeek % 7, info.endHour % 24, info.endMin % 60, 0)).ToString(" ～ ddd HH\\:mm");
             }
         }
+        public string RecEnabled
+        {
+            get { return EpgAutoAddInfo.recSetting.IsNoRec() ? "いいえ" : "はい"; }
+        }
         public String RecMode
         {
-            get
-            {
-                return CommonManager.Instance.RecModeList.Length > EpgAutoAddInfo.recSetting.RecMode ?
-                       CommonManager.Instance.RecModeList[EpgAutoAddInfo.recSetting.RecMode] : "";
-            }
+            get { return CommonManager.Instance.RecModeList[EpgAutoAddInfo.recSetting.GetRecMode()]; }
         }
         public byte Priority
         {
@@ -228,6 +228,29 @@ namespace EpgTimer
             }
         }
 
+        public string TunerID
+        {
+            get { return EpgAutoAddInfo.recSetting.TunerID == 0 ? "自動" : "ID:" + EpgAutoAddInfo.recSetting.TunerID.ToString("X8"); }
+        }
+
+        public string BatFilePath
+        {
+            get
+            {
+                int i = EpgAutoAddInfo.recSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? EpgAutoAddInfo.recSetting.BatFilePath : EpgAutoAddInfo.recSetting.BatFilePath.Remove(i);
+            }
+        }
+
+        public string BatFileTag
+        {
+            get
+            {
+                int i = EpgAutoAddInfo.recSetting.BatFilePath.IndexOf('*');
+                return i < 0 ? "" : EpgAutoAddInfo.recSetting.BatFilePath.Substring(i + 1);
+            }
+        }
+
         public uint ID
         {
             get { return EpgAutoAddInfo.dataID; }
@@ -235,10 +258,25 @@ namespace EpgTimer
 
         public SolidColorBrush BackColor
         {
+            get { return Settings.Instance.ResColorPosition == 0 ? KeyEnabledBackColor : null; }
+        }
+
+        public SolidColorBrush AlternationBackColor
+        {
+            get { return (Settings.Instance.ResColorPosition == 0 ? KeyEnabledBackColor : null) ?? Settings.BrushCache.ResDefBrush; }
+        }
+
+        public SolidColorBrush AndKeyBackColor
+        {
+            get { return Settings.Instance.ResColorPosition != 0 ? KeyEnabledBackColor : null; }
+        }
+
+        private SolidColorBrush KeyEnabledBackColor
+        {
             get
             {
                 return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ?
-                       Settings.BrushCache.ResNoBrush : Settings.BrushCache.ResDefBrush;
+                       Settings.BrushCache.ResNoBrush : null;
             }
         }
 
@@ -261,88 +299,13 @@ namespace EpgTimer
                         view += "番組名のみ検索対象：" + TitleOnly + "\r\n";
                         view += "ジャンル絞り込み：" + JyanruKey + "\r\n";
                         view += "時間絞り込み：" + DateKey + "\r\n";
-                        view += "検索対象サービス：" + ServiceKey + "\r\n";
-
-                        view += "\r\n";
+                        view += "検索対象サービス：" + ServiceKey;
                     }
                     if (EpgAutoAddInfo.recSetting != null)
                     {
-                        view += "録画設定\r\n";
-                        view += "録画モード：" + RecMode + "\r\n";
-                        view += "優先度：" + Priority + "\r\n";
-                        view += "追従：" + Tuijyu + "\r\n";
-
-                        if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x01) == 0)
-                        {
-                            view += "指定サービス対象データ : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "指定サービス対象データ : ";
-                            if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x10) > 0)
-                            {
-                                view += "字幕含む ";
-                            }
-                            if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x20) > 0)
-                            {
-                                view += "データカルーセル含む";
-                            }
-                            view += "\r\n";
-                        }
-
-                        view += "録画実行bat : " + EpgAutoAddInfo.recSetting.BatFilePath + "\r\n";
-
-                        if (EpgAutoAddInfo.recSetting.RecFolderList.Count == 0)
-                        {
-                            view += "録画フォルダ : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画フォルダ : \r\n";
-                            foreach (RecFileSetInfo info in EpgAutoAddInfo.recSetting.RecFolderList)
-                            {
-                                view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
-                            }
-                        }
-
-                        if (EpgAutoAddInfo.recSetting.UseMargineFlag == 0)
-                        {
-                            view += "録画マージン : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画マージン : 開始 " + EpgAutoAddInfo.recSetting.StartMargine.ToString() +
-                                " 終了 " + EpgAutoAddInfo.recSetting.EndMargine.ToString() + "\r\n";
-                        }
-
-                        if (EpgAutoAddInfo.recSetting.SuspendMode == 0)
-                        {
-                            view += "録画後動作 : デフォルト\r\n";
-                        }
-                        else
-                        {
-                            view += "録画後動作 : ";
-                            switch (EpgAutoAddInfo.recSetting.SuspendMode)
-                            {
-                                case 1:
-                                    view += "スタンバイ";
-                                    break;
-                                case 2:
-                                    view += "休止";
-                                    break;
-                                case 3:
-                                    view += "シャットダウン";
-                                    break;
-                                case 4:
-                                    view += "何もしない";
-                                    break;
-                            }
-                            if (EpgAutoAddInfo.recSetting.RebootFlag == 1)
-                            {
-                                view += " 復帰後再起動する";
-                            }
-                            view += "\r\n";
-                        }
+                        view += (view.Length > 0 ? "\r\n\r\n" : "") +
+                                "録画設定\r\n" +
+                                CommonManager.Instance.ConvertRecSettingText(EpgAutoAddInfo.recSetting);
                     }
                 }
 

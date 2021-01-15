@@ -26,21 +26,14 @@ public:
 		);
 
 	//解析対象のTSパケットを読み込ませる
-	//CanAddMultipleTSPackets()が偽のとき、sizeは188より大きくできない（互換のため）
 	//戻り値：
 	// エラーコード
 	// data		[IN]TSパケット
-	// size		[IN]dataのサイズ（188の整数倍であること）
+	// size		[IN]dataのサイズ（188の整数倍であること。size>188のとき、内部メソッドが未対応ならば、メソッド呼び出しは分割される）
 	DWORD AddTSPacket(
 		BYTE* data,
 		DWORD size
 		);
-
-	bool CanAddMultipleTSPackets(
-		) {
-		BYTE b;
-		return AddTSPacket(&b, 0) == FALSE;
-	}
 
 	//解析データの現在のストリームＩＤを取得する
 	//戻り値：

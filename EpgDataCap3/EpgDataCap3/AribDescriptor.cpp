@@ -772,6 +772,7 @@ const short SI_prime_ts_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#endif
 const short stream_identifier_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -780,6 +781,7 @@ const short stream_identifier_descriptor_p[] = {
 	D_END,
 	D_FIN,
 };
+#if 0
 const short stuffing_descriptor_p[] = {
 	descriptor_tag, 8,
 	descriptor_length, D_LOCAL, 8,
@@ -896,7 +898,7 @@ const PARSER_PAIR parserMap[] = {
 	//{ time_shifted_event_descriptor,			time_shifted_event_descriptor_p },
 	{ component_descriptor,						component_descriptor_p },
 	//{ mosaic_descriptor,						mosaic_descriptor_p },
-	//{ stream_identifier_descriptor,			stream_identifier_descriptor_p },
+	{ stream_identifier_descriptor,				stream_identifier_descriptor_p },
 	//{ CA_identifier_descriptor,				CA_identifier_descriptor_p },
 	{ content_descriptor,						content_descriptor_p },
 	//{ parental_rating_descriptor,				parental_rating_descriptor_p },
@@ -953,6 +955,63 @@ const short program_association_section_p[] = {
 				reserved, D_LOCAL, 3,
 				program_map_PID, 13,
 			D_END,
+		D_END,
+		CRC_32, D_LOCAL, 32,
+	D_END,
+	D_FIN,
+};
+
+const short program_map_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_ASSERT_CRC_32, section_length, 24,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			program_number, 16,
+			reserved, D_LOCAL, 2,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			reserved, D_LOCAL, 3,
+			PCR_PID, 13,
+			reserved, D_LOCAL, 4,
+			program_info_length, D_LOCAL, 12,
+			D_BEGIN, program_info_length,
+				D_DESCRIPTOR_LOOP,
+			D_END,
+			D_BEGIN_FOR_TO_END,
+				stream_type, 8,
+				reserved, D_LOCAL, 3,
+				elementary_PID, 13,
+				reserved, D_LOCAL, 4,
+				ES_info_length, D_LOCAL, 12,
+				D_BEGIN, ES_info_length,
+					D_DESCRIPTOR_LOOP,
+				D_END,
+			D_END,
+		D_END,
+		CRC_32, D_LOCAL, 32,
+	D_END,
+	D_FIN,
+};
+
+const short dsmcc_head_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_ASSERT_CRC_32, section_length, 24,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			reserved, D_LOCAL, 18,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			reserved, D_LOCAL_TO_END,
 		D_END,
 		CRC_32, D_LOCAL, 32,
 	D_END,
@@ -1201,6 +1260,8 @@ const short common_data_section_p[] = {
 
 const short* const sectionParserList[] = {
 	program_association_section_p,
+	program_map_section_p,
+	dsmcc_head_section_p,
 	network_information_section_p,
 	service_description_section_p,
 	event_information_section_p,

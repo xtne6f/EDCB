@@ -24,7 +24,6 @@ namespace EpgTimer.EpgView
         public delegate void ProgramViewClickHandler(object sender, Point cursorPos);
         public event ScrollChangedEventHandler ScrollChanged = null;
         public event ProgramViewClickHandler LeftDoubleClick = null;
-        public event ProgramViewClickHandler RightClick = null;
 
         private Point lastDownMousePos;
         private double lastDownHOffset;
@@ -34,7 +33,6 @@ namespace EpgTimer.EpgView
 
         private DispatcherTimer toolTipTimer;
         private DispatcherTimer toolTipOffTimer; 
-        private Popup toolTip = new Popup();
         private Point lastPopupPos;
         private ProgramViewItem lastPopupInfo = null;
 
@@ -46,20 +44,6 @@ namespace EpgTimer.EpgView
             toolTipTimer.Tick += new EventHandler(toolTipTimer_Tick);
             toolTipOffTimer = new DispatcherTimer(DispatcherPriority.Normal);
             toolTipOffTimer.Tick += new EventHandler(toolTipOffTimer_Tick);
-
-            toolTip.Placement = PlacementMode.MousePoint;
-            toolTip.PopupAnimation = PopupAnimation.Fade;
-            toolTip.PlacementTarget = canvas;
-            toolTip.AllowsTransparency = true;
-            toolTip.MouseLeftButtonDown += new MouseButtonEventHandler(toolTip_MouseLeftButtonDown);
-            toolTip.MouseRightButtonDown += new MouseButtonEventHandler(toolTip_MouseRightButtonDown);
-            toolTip.PreviewMouseWheel += new MouseWheelEventHandler(toolTip_PreviewMouseWheel);
-        }
-
-        void toolTip_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            toolTip.IsOpen = false;
-            RaiseEvent(e);
         }
 
         void toolTip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -81,10 +65,6 @@ namespace EpgTimer.EpgView
         void toolTip_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             toolTip.IsOpen = false;
-            if (RightClick != null)
-            {
-                RightClick(sender, lastPopupPos);
-            }
         }
 
         void toolTipOffTimer_Tick(object sender, EventArgs e)
@@ -143,19 +123,9 @@ namespace EpgTimer.EpgView
                                         viewTip += info.EventInfo.ExtInfo.text_char;
                                     }
                                 }
-                                Border border = new Border();
-                                border.Background = Brushes.DarkGray;
-
-                                TextBlock block = new TextBlock();
-                                block.Text = viewTip;
-                                block.MaxWidth = 400;
-                                block.TextWrapping = TextWrapping.Wrap;
-                                block.Margin = new Thickness(2);
-
-                                block.Background = new SolidColorBrush(Color.FromRgb(EpgSetting.EpgTipsBackColorR, EpgSetting.EpgTipsBackColorG, EpgSetting.EpgTipsBackColorB));
-                                block.Foreground = new SolidColorBrush(Color.FromRgb(EpgSetting.EpgTipsForeColorR, EpgSetting.EpgTipsForeColorG, EpgSetting.EpgTipsForeColorB));
-                                border.Child = block;
-                                toolTip.Child = border;
+                                toolTipTextBlock.Text = viewTip;
+                                toolTipTextBlock.Background = new SolidColorBrush(Color.FromRgb(EpgSetting.EpgTipsBackColorR, EpgSetting.EpgTipsBackColorG, EpgSetting.EpgTipsBackColorB));
+                                toolTipTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(EpgSetting.EpgTipsForeColorR, EpgSetting.EpgTipsForeColorG, EpgSetting.EpgTipsForeColorB));
                                 toolTip.IsOpen = true;
                                 toolTipOffTimer.Stop();
                                 toolTipOffTimer.Interval = TimeSpan.FromSeconds(10);
@@ -235,21 +205,42 @@ namespace EpgTimer.EpgView
             //テキスト全体を表示できる高さを求める
             items[0].Height = 4096;
             popupItemPanel.Initialize(items, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
-                                      EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
+                                      false, EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
                                       dictTitle, dicNormal, itemFontTitle, itemFontNormal,
                                       EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
                                       EpgSetting.EpgBackColorA, contentBrushList);
-            items[0].Height = Math.Max(popupItemPanel.LastItemRenderTextHeight, info.Height);
-            popupItemPanel.Height = items[0].Height;
+            double itemHeight = Math.Max(popupItemPanel.LastItemRenderTextHeight, info.Height);
+            double topPos = info.TopPos;
+
+            if (EpgSetting.EpgAdjustPopup)
+            {
+                //下方にはみ出す部分をできるだけ縮める
+                double trimmableHeight = Math.Max(info.Height - popupItemPanel.LastItemRenderTextHeight, 0);
+                double trimHeight = topPos + itemHeight - (scrollViewer.VerticalOffset + Math.Floor(scrollViewer.ViewportHeight));
+                trimHeight = Math.Min(Math.Max(trimHeight, 0), trimmableHeight);
+                trimmableHeight -= trimHeight;
+                itemHeight -= trimHeight;
+                //下方にはみ出すなら上げる
+                topPos = Math.Min(topPos, scrollViewer.VerticalOffset + Math.Floor(scrollViewer.ViewportHeight) - itemHeight);
+                //上方にはみ出すなら下げる
+                topPos = Math.Max(topPos, scrollViewer.VerticalOffset);
+                //ポップアップ前よりも下方に伸びる部分をできるだけ縮める
+                trimHeight = topPos + itemHeight - (info.TopPos + info.Height);
+                trimHeight = Math.Min(Math.Max(trimHeight, 0), trimmableHeight);
+                itemHeight -= trimHeight;
+            }
+
+            items[0].Height = itemHeight;
+            popupItemPanel.Height = itemHeight;
             popupItemPanel.Initialize(items, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
-                                      EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
+                                      topPos != info.TopPos, EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoPopup,
                                       dictTitle, dicNormal, itemFontTitle, itemFontNormal,
                                       EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
                                       EpgSetting.EpgBackColorA, contentBrushList);
             popupItemPanel.InvalidateVisual();
 
             Canvas.SetLeft(popupItem, info.LeftPos);
-            Canvas.SetTop(popupItem, info.TopPos);
+            Canvas.SetTop(popupItem, topPos);
             popupItem.Visibility = System.Windows.Visibility.Visible;
         }
 
@@ -276,8 +267,8 @@ namespace EpgTimer.EpgView
                     canvas.Children.RemoveAt(i--);
                 }
             }
-            canvas.Height = 0;
-            canvas.Width = 0;
+            canvasContainer.Height = canvas.Height = 0;
+            canvasContainer.Width = canvas.Width = 0;
         }
 
         public void SetReserveList(List<ReserveViewItem> reserveList)
@@ -316,7 +307,7 @@ namespace EpgTimer.EpgView
                     Rectangle fillOnlyRect = EpgSetting.ReserveRectFillWithShadow ? null : new Rectangle();
                     Rectangle fillRect = fillOnlyRect ?? rect;
 
-                    if (info.ReserveInfo.RecSetting.RecMode == 5)
+                    if (info.ReserveInfo.RecSetting.IsNoRec())
                     {
                         rect.Stroke = strokeNo;
                         fillRect.Fill = fillNo;
@@ -339,7 +330,7 @@ namespace EpgTimer.EpgView
 
                     rect.Effect = blurEffect;
                     rect.StrokeThickness = 3;
-                    if (info.ReserveInfo.RecSetting.RecMode == 4)
+                    if (info.ReserveInfo.RecSetting.GetRecMode() == 4)
                     {
                         rect.StrokeDashArray = dashArray;
                         rect.StrokeDashCap = PenLineCap.Round;
@@ -367,7 +358,7 @@ namespace EpgTimer.EpgView
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -414,7 +405,7 @@ namespace EpgTimer.EpgView
                     item.Width = programList.Item1;
                     Canvas.SetLeft(item, totalWidth);
                     item.Initialize(programList.Item2, EpgSetting.EpgBorderLeftSize, EpgSetting.EpgBorderTopSize,
-                                    EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoTable,
+                                    false, EpgSetting.EpgTitleIndent, EpgSetting.EpgExtInfoTable,
                                     dictTitle, dicNormal, itemFontTitle, itemFontNormal,
                                     EpgSetting.FontSizeTitle, EpgSetting.FontSize, brushTitle, brushNormal,
                                     EpgSetting.EpgBackColorA, contentBrushList);
@@ -422,14 +413,16 @@ namespace EpgTimer.EpgView
                     canvas.Children.Add(item);
                     totalWidth += programList.Item1;
                 }
-                canvas.Height = Math.Ceiling(height);
-                canvas.Width = totalWidth;
+                //包含するCanvasにも直接適用する(Bindingは遅延するため)。GridやStackPanelで包含してもよいはずだが
+                //非表示中にここを通るとなぜか包含側のActualHeight(Width)が正しく更新されず、結果スクロール不能になる
+                canvasContainer.Height = canvas.Height = Math.Ceiling(height);
+                canvasContainer.Width = canvas.Width = totalWidth;
                 itemFontNormal.ClearCache();
                 itemFontTitle.ClearCache();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -495,7 +488,7 @@ namespace EpgTimer.EpgView
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -524,7 +517,7 @@ namespace EpgTimer.EpgView
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -549,7 +542,7 @@ namespace EpgTimer.EpgView
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
 
@@ -569,24 +562,13 @@ namespace EpgTimer.EpgView
             }
         }
 
-        private void canvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void canvas_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             toolTipTimer.Stop();
             toolTip.IsOpen = false;
 
             canvas.ReleaseMouseCapture();
             isDrag = false; 
-            lastDownMousePos = Mouse.GetPosition(null);
-            lastDownHOffset = scrollViewer.HorizontalOffset;
-            lastDownVOffset = scrollViewer.VerticalOffset;
-            if (e.ClickCount == 1)
-            {
-                Point cursorPos = Mouse.GetPosition(canvas);
-                if (RightClick != null)
-                {
-                    RightClick(sender, cursorPos);
-                }
-            }
         }
 
         private void canvas_MouseLeave(object sender, MouseEventArgs e)
@@ -596,6 +578,28 @@ namespace EpgTimer.EpgView
                 popupItem.Visibility = System.Windows.Visibility.Hidden;
                 lastPopupInfo = null;
                 lastPopupPos = new Point(-1, -1);
+            }
+        }
+
+        void UserControl_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            toolTipTimer.Stop();
+            toolTip.IsOpen = false;
+
+            e.Handled = true;
+            if (EpgSetting.MouseScrollAuto)
+            {
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
+            }
+            else if (e.Delta < 0)
+            {
+                //下方向
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + EpgSetting.ScrollSize);
+            }
+            else
+            {
+                //上方向
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - EpgSetting.ScrollSize);
             }
         }
     }
