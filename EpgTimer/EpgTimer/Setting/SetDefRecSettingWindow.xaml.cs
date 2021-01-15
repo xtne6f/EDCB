@@ -22,10 +22,5 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
         }
-
-        private void button_ok_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = true;
-        }
     }
 }

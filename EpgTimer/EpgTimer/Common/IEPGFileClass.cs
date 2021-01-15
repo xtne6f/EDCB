@@ -107,9 +107,19 @@ namespace EpgTimer
 
         private static Dictionary<string, string> TryLoadParamList(string filePath)
         {
+            Encoding enc;
             try
             {
-                using (var reader = new System.IO.StreamReader(filePath, Encoding.GetEncoding(932)))
+                enc = Encoding.GetEncoding(932);
+            }
+            catch
+            {
+                enc = Encoding.UTF8;
+            }
+
+            try
+            {
+                using (var reader = new System.IO.StreamReader(filePath, enc))
                 {
                     var paramList = new Dictionary<string, string>();
                     // 空行まで読む

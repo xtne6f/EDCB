@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Documents;
 using System.IO;
 
 namespace EpgTimer
@@ -327,7 +329,7 @@ namespace EpgTimer
                     { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
                 };
             }
-            RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
+            RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
             ReplaceUrlDictionary = CreateReplaceDictionary(",０,0,１,1,２,2,３,3,４,4,５,5,６,6,７,7,８,8,９,9" +
@@ -487,85 +489,79 @@ namespace EpgTimer
         public String ConvertReserveText(ReserveData reserveInfo)
         {
             String view = new TimeDuration(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
-            String recMode = RecModeList.Length > reserveInfo.RecSetting.RecMode ? RecModeList[reserveInfo.RecSetting.RecMode] : "";
-            String tuijyu = "";
-            if (reserveInfo.RecSetting.TuijyuuFlag == 0)
-            {
-                tuijyu = "しない";
-            }
-            else if (reserveInfo.RecSetting.TuijyuuFlag == 1)
-            {
-                tuijyu = "する";
-            }
-            String pittari = "";
-            if (reserveInfo.RecSetting.PittariFlag == 0)
-            {
-                pittari = "しない";
-            }
-            else if (reserveInfo.RecSetting.PittariFlag == 1)
-            {
-                pittari = "する";
-            }
-
             view += reserveInfo.StationName;
             view += " (" + ConvertNetworkNameText(reserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
             view += reserveInfo.Title + "\r\n\r\n";
-            view += "録画モード : " + recMode + "\r\n";
-            view += "優先度 : " + reserveInfo.RecSetting.Priority.ToString() + "\r\n";
-            view += "追従 : " + tuijyu + "\r\n";
-            view += "ぴったり（？） : " + pittari + "\r\n";
-            if ((reserveInfo.RecSetting.ServiceMode & 0x01) == 0)
+            view += ConvertRecSettingText(reserveInfo.RecSetting) + "\r\n" +
+                    "予約状況 : " + reserveInfo.Comment +
+                    "\r\n\r\n" +
+                    "OriginalNetworkID : " + reserveInfo.OriginalNetworkID.ToString() + " (0x" + reserveInfo.OriginalNetworkID.ToString("X4") + ")\r\n" +
+                    "TransportStreamID : " + reserveInfo.TransportStreamID.ToString() + " (0x" + reserveInfo.TransportStreamID.ToString("X4") + ")\r\n" +
+                    "ServiceID : " + reserveInfo.ServiceID.ToString() + " (0x" + reserveInfo.ServiceID.ToString("X4") + ")\r\n" +
+                    "EventID : " + reserveInfo.EventID.ToString() + " (0x" + reserveInfo.EventID.ToString("X4") + ")";
+            return view;
+        }
+
+        public string ConvertRecSettingText(RecSettingData recSetting)
+        {
+            string view = "有効 : " + (recSetting.IsNoRec() ? "いいえ" : "はい") + "\r\n" +
+                          "録画モード : " + RecModeList[recSetting.GetRecMode()] + "\r\n" +
+                          "優先度 : " + recSetting.Priority.ToString() + "\r\n" +
+                          "追従 : " + (recSetting.TuijyuuFlag == 0 ? "しない" : "する") + "\r\n" +
+                          "ぴったり（？） : " + (recSetting.PittariFlag == 0 ? "しない" : "する") + "\r\n";
+            if ((recSetting.ServiceMode & 0x01) == 0)
             {
                 view += "指定サービス対象データ : デフォルト\r\n";
             }
             else
             {
-                view += "指定サービス対象データ : ";
-                if ((reserveInfo.RecSetting.ServiceMode & 0x10) > 0)
+                view += "指定サービス対象データ :";
+                if ((recSetting.ServiceMode & 0x10) != 0)
                 {
-                    view += "字幕含む ";
+                    view += " 字幕含む";
                 }
-                if ((reserveInfo.RecSetting.ServiceMode & 0x20) > 0)
+                if ((recSetting.ServiceMode & 0x20) != 0)
                 {
-                    view += "データカルーセル含む";
+                    view += " データカルーセル含む";
                 }
                 view += "\r\n";
             }
 
-            view += "録画実行bat : " + reserveInfo.RecSetting.BatFilePath + "\r\n";
+            view += "録画後実行bat : " + recSetting.BatFilePath + "\r\n";
 
-            if (reserveInfo.RecSetting.RecFolderList.Count == 0)
+            if (recSetting.RecFolderList.Count == 0)
             {
                 view += "録画フォルダ : デフォルト\r\n";
             }
             else
             {
                 view += "録画フォルダ : \r\n";
-                foreach (RecFileSetInfo info in reserveInfo.RecSetting.RecFolderList)
+                foreach (RecFileSetInfo info in recSetting.RecFolderList)
                 {
-                    view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + " ファイル名PlugIn:" + info.RecNamePlugIn + ")\r\n";
+                    view += info.RecFolder + " (" + info.WritePlugIn + ", " +
+                            (info.RecNamePlugIn.Length > 0 ? info.RecNamePlugIn : "ファイル名PlugInなし") + ")\r\n";
                 }
             }
 
-            if (reserveInfo.RecSetting.UseMargineFlag == 0)
+            if (recSetting.UseMargineFlag == 0)
             {
                 view += "録画マージン : デフォルト\r\n";
             }
             else
             {
-                view += "録画マージン : 開始 " + reserveInfo.RecSetting.StartMargine.ToString() +
-                    " 終了 " + reserveInfo.RecSetting.EndMargine.ToString() + "\r\n";
+                view += "録画マージン : 開始 " + recSetting.StartMargine.ToString() +
+                        " 終了 " + recSetting.EndMargine.ToString() + "\r\n";
             }
 
-            if (reserveInfo.RecSetting.SuspendMode == 0)
+            if (recSetting.SuspendMode == 0)
             {
                 view += "録画後動作 : デフォルト\r\n";
             }
             else
             {
                 view += "録画後動作 : ";
-                switch (reserveInfo.RecSetting.SuspendMode)
+                switch (recSetting.SuspendMode)
                 {
                     case 1:
                         view += "スタンバイ";
@@ -580,50 +576,28 @@ namespace EpgTimer
                         view += "何もしない";
                         break;
                 }
-                if (reserveInfo.RecSetting.RebootFlag == 1)
+                if (recSetting.RebootFlag == 1)
                 {
                     view += " 復帰後再起動する";
                 }
                 view += "\r\n";
             }
-            if (reserveInfo.RecSetting.PartialRecFlag == 0)
+            if (recSetting.PartialRecFlag == 0)
             {
                 view += "部分受信 : 同時出力なし\r\n";
             }
             else
             {
-                view += "部分受信 : 同時出力あり\r\n";
-                view += "部分受信　録画フォルダ : \r\n";
-                foreach (RecFileSetInfo info in reserveInfo.RecSetting.PartialRecFolder)
+                view += "部分受信 : 同時出力あり\r\n" +
+                        "部分受信 録画フォルダ : \r\n";
+                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
                 {
-                    view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + " ファイル名PlugIn:" + info.RecNamePlugIn + ")\r\n";
+                    view += info.RecFolder + "(" + info.WritePlugIn + ", " +
+                            (info.RecNamePlugIn.Length > 0 ? info.RecNamePlugIn : "ファイル名PlugInなし") + ")\r\n";
                 }
             }
-            if (reserveInfo.RecSetting.ContinueRecFlag == 0)
-            {
-                view += "連続録画動作 : 分割\r\n";
-            }
-            else
-            {
-                view += "連続録画動作 : 同一ファイル出力\r\n";
-            }
-            if (reserveInfo.RecSetting.TunerID == 0)
-            {
-                view += "使用チューナー強制指定 : 自動\r\n";
-            }
-            else
-            {
-                view += "使用チューナー強制指定 : ID:" + reserveInfo.RecSetting.TunerID.ToString("X8") + "\r\n";
-            }
-
-            view += "予約状況 : " + reserveInfo.Comment;
-            view += "\r\n\r\n"; 
-            
-            view += "OriginalNetworkID : " + reserveInfo.OriginalNetworkID.ToString() + " (0x" + reserveInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
-            view += "TransportStreamID : " + reserveInfo.TransportStreamID.ToString() + " (0x" + reserveInfo.TransportStreamID.ToString("X4") + ")\r\n";
-            view += "ServiceID : " + reserveInfo.ServiceID.ToString() + " (0x" + reserveInfo.ServiceID.ToString("X4") + ")\r\n";
-            view += "EventID : " + reserveInfo.EventID.ToString() + " (0x" + reserveInfo.EventID.ToString("X4") + ")\r\n";
-
+            view += "連続録画動作 : " + (recSetting.ContinueRecFlag == 0 ? "分割" : "同一ファイル出力") + "\r\n" +
+                    "使用チューナー強制指定 : " + (recSetting.TunerID == 0 ? "自動" : "ID:" + recSetting.TunerID.ToString("X8"));
             return view;
         }
 
@@ -634,9 +608,7 @@ namespace EpgTimer
             string extInfo = "";
             if (eventInfo != null)
             {
-                UInt64 key = ((UInt64)eventInfo.original_network_id) << 32 |
-                    ((UInt64)eventInfo.transport_stream_id) << 16 |
-                    ((UInt64)eventInfo.service_id);
+                UInt64 key = Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
                 if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                 {
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
@@ -780,9 +752,7 @@ namespace EpgTimer
                         extInfo += "イベントリレーあり：\r\n";
                         foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
                         {
-                            key = ((UInt64)info.original_network_id) << 32 |
-                                ((UInt64)info.transport_stream_id) << 16 |
-                                ((UInt64)info.service_id);
+                            key = Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
                             if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                             {
                                 extInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + " ";
@@ -848,21 +818,58 @@ namespace EpgTimer
             return retText;
         }
 
+        public static Paragraph ConvertDisplayText(string text)
+        {
+            int searchFrom = 0;
+            var para = new Paragraph();
+            string rtext = ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
+            if (rtext.Length == text.Length)
+            {
+                for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
+                {
+                    para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
+                    var h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
+                    h.MouseLeftButtonDown += (sender, e) =>
+                    {
+                        try
+                        {
+                            using (System.Diagnostics.Process.Start(((Hyperlink)sender).NavigateUri.ToString())) { }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.ToString());
+                        }
+                    };
+                    h.Foreground = SystemColors.HotTrackBrush;
+                    h.Cursor = System.Windows.Input.Cursors.Hand;
+                    h.NavigateUri = new Uri(m.Value);
+                    para.Inlines.Add(h);
+                    searchFrom = m.Index + m.Length;
+                }
+            }
+            para.Inlines.Add(text.Substring(searchFrom));
+            return para;
+        }
+
         public void FilePlay(uint reserveID)
         {
             if (Settings.Instance.FilePlay && Settings.Instance.FilePlayOnAirWithExe)
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
-                if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                try
                 {
-                    CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
-                    if (info.filePath != "")
+                    if (CreateSrvCtrl().SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
                     {
-                        FilePlay(info.filePath);
-                        return;
+                        CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
+                        if (info.filePath != "")
+                        {
+                            FilePlay(info.filePath);
+                            return;
+                        }
                     }
                 }
+                catch { }
                 MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
@@ -897,7 +904,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show(ex.ToString());
             }
         }
     }

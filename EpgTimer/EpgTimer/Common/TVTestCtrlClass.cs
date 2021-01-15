@@ -72,9 +72,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    UInt64 key = ((UInt64)ONID) << 32 |
-                        ((UInt64)TSID) << 16 |
-                        ((UInt64)SID);
+                    UInt64 key = CommonManager.Create64Key(ONID, TSID, SID);
                     TvTestChChgInfo chInfo = new TvTestChChgInfo();
                     ErrCode err = CommonManager.CreateSrvCtrl().SendGetChgChTVTest(key, ref chInfo);
                     if (err == ErrCode.CMD_SUCCESS)
@@ -122,8 +120,8 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
+                MessageBox.Show(ex.ToString());
+            }
             return true;
         }
 
@@ -213,8 +211,8 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
+                MessageBox.Show(ex.ToString());
+            }
             return true;
         }
 
@@ -242,27 +240,18 @@ namespace EpgTimer
                     {
                         for (int i = 0; i < 100; i++)
                         {
-                            try
+                            var cmdTvTest = new CtrlCmdUtil();
+                            cmdTvTest.SetPipeSetting("Global\\View_Ctrl_BonConnect_" + process.Id, "View_Ctrl_BonPipe_" + process.Id);
+                            if (cmdTvTest.PipeExists())
                             {
-                                using (System.Threading.EventWaitHandle.OpenExisting(
-                                           "Global\\View_Ctrl_BonConnect_" + process.Id, System.Security.AccessControl.EventWaitHandleRights.Synchronize))
-                                {
-                                }
                                 // Viewアプリ(EdcbPlugIn)と判断
                                 processType = "View";
                                 break;
                             }
-                            catch
+                            cmdTvTest.SetPipeSetting("Global\\TvTest_Ctrl_BonConnect_" + process.Id, "TvTest_Ctrl_BonPipe_" + process.Id);
+                            if (cmdTvTest.PipeExists())
                             {
-                                try
-                                {
-                                    using (System.Threading.EventWaitHandle.OpenExisting(
-                                               "Global\\TvTest_Ctrl_BonConnect_" + process.Id, System.Security.AccessControl.EventWaitHandleRights.Synchronize))
-                                    {
-                                    }
-                                    break;
-                                }
-                                catch { }
+                                break;
                             }
                             System.Threading.Thread.Sleep(100);
                             openWait -= 100;
@@ -282,12 +271,10 @@ namespace EpgTimer
             foreach (Process p in processes)
             {
                 // 原作と異なりプロセス名ではなく接続待機用イベントの有無で判断するので注意
-                try
+                var cmdTvTest = new CtrlCmdUtil();
+                cmdTvTest.SetPipeSetting("Global\\" + type + "_Ctrl_BonConnect_" + p.Id, type + "_Ctrl_BonPipe_" + p.Id);
+                if (cmdTvTest.PipeExists())
                 {
-                    using (System.Threading.EventWaitHandle.OpenExisting(
-                               "Global\\" + type + "_Ctrl_BonConnect_" + p.Id, System.Security.AccessControl.EventWaitHandleRights.Synchronize))
-                    {
-                    }
                     if (type == "View")
                     {
                         // TVTestではなさそうなViewアプリは除外する(※EpgDataCap_BonもViewアプリ)
@@ -297,8 +284,6 @@ namespace EpgTimer
                             continue;
                         }
                         // 識別用IDが設定されたViewアプリは除外する
-                        var cmdTvTest = new CtrlCmdUtil();
-                        cmdTvTest.SetPipeSetting("Global\\View_Ctrl_BonConnect_" + p.Id, "View_Ctrl_BonPipe_" + p.Id);
                         cmdTvTest.SetConnectTimeOut(1000);
                         int id = -1;
                         if (cmdTvTest.SendViewGetID(ref id) != ErrCode.CMD_SUCCESS || id >= 0)
@@ -309,7 +294,6 @@ namespace EpgTimer
                     foreach (Process pp in processes.Where(pp => pp != p)) { pp.Dispose(); }
                     return p;
                 }
-                catch { }
             }
             foreach (Process p in processes) { p.Dispose(); }
             return null;

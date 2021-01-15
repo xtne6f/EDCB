@@ -467,7 +467,21 @@ namespace EpgTimer
         public void SetPipeSetting(string eventName, string pipeName)
         {
             this.eventName = eventName;
-            this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
+            this.pipeName = pipeName;
+        }
+        /// <summary>接続先パイプが存在するか調べる</summary>
+        public bool PipeExists()
+        {
+            try
+            {
+                using (System.Threading.EventWaitHandle.OpenExisting(eventName,
+                           System.Security.AccessControl.EventWaitHandleRights.Synchronize))
+                {
+                    return true;
+                }
+            }
+            catch { }
+            return false;
         }
         /// <summary>TCP/IPモード時の接続先を設定</summary>
         public void SetNWSetting(System.Net.IPAddress ip, uint port)
@@ -556,7 +570,7 @@ namespace EpgTimer
         public ErrCode SendNwPlayClose(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_CLOSE, val); }
         /// <summary>ストリーム配信用ファイルをタイムシフトモードで開く</summary>
         public ErrCode SendNwTimeShiftOpen(uint val, ref NWPlayTimeShiftInfo resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_TF_OPEN, val, ref o); }
-        #region // コマンドバージョン対応版
+#region // コマンドバージョン対応版
         /// <summary>予約一覧を取得する</summary>
         public ErrCode SendEnumReserve(ref List<ReserveData> val) { object o = val; return ReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_ENUM_RESERVE2, ref o); }
         /// <summary>予約情報を取得する</summary>
@@ -589,7 +603,7 @@ namespace EpgTimer
         public ErrCode SendChgProtectRecInfo(List<RecFileInfo> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_PROTECT_RECINFO2, val); }
         /// <summary>現在のNOTIFY_UPDATE_SRV_STATUSを取得する</summary>
         public ErrCode SendGetNotifySrvStatus(ref NotifySrvInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2, 0, ref o); }
-        #endregion
+#endregion
         /// <summary>BonDriverの切り替え</summary>
         public ErrCode SendViewSetBonDrivere(string val) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_BONDRIVER, val); }
         /// <summary>使用中のBonDriverのファイル名を取得</summary>
