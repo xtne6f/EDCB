@@ -52,33 +52,7 @@
 
 [ビルド(VisualStudio2010)]
 
-0.以下を順番に入れる
-  Visual C++ 2010 Express
-  https://go.microsoft.com/fwlink/?LinkId=190491
-  Visual C# 2010 Express
-  https://go.microsoft.com/fwlink/?LinkId=190492
-  Visual Studio 2010 Service Pack 1（リンク切れ、たぶんWindowsUpdateで更新可能）
-  https://www.microsoft.com/ja-jp/download/details.aspx?id=23691
-  Windows SDK 7.1
-  https://www.microsoft.com/en-us/download/details.aspx?id=8279
-  # Visual C++ Compilers のチェックを外してインストールする。でないと失敗する
-  # Visual C++ x86/x64 2010 Redistributable を事前にアンインストールしておく必要があるかもしれない
-  Windows SDK 7.1 用 Microsoft Visual C++ 2010 Service Pack 1 コンパイラ更新プログラム
-  https://www.microsoft.com/ja-jp/download/details.aspx?id=4422
-
-1."Document\EDCB_VCALL.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
-
-2."EpgTimer\EpgTimer.sln"を 右クリック→プログラムから開く→C# 2010 Express で開き（.NET Framework v4.0への再ターゲットのダイアログが出るときは従う）
-  ツール(T)→設定→上級者設定にチェック、[Release][x86]にしてビルド
-
-（注意）
-・プロジェクトを開くのに失敗する場合は"EpgTimer\EpgTimer\EpgTimer.csproj"をメモ帳で開き
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-  となっている部分を
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-  に変更する
-
-3.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
+※VisualStudio2010の延長サポートが終了したため、内容を削除した。必要なら2020年以前のコミットを参照
 
 
 [その他]
