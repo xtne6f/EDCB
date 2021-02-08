@@ -3,6 +3,7 @@
 #include "PathUtil.h"
 #include "StringUtil.h"
 #include "TSPacketUtil.h"
+#include "../BonCtrl/BonCtrlDef.h"
 #include "../BonCtrl/PacketInit.h"
 #include "../BonCtrl/CreatePATPacket.h"
 #ifndef _WIN32
@@ -40,7 +41,7 @@ void CTimeShiftUtil::Send(
 	swprintf_s(ip, L"%d.%d.%d.%d", val->ip >> 24, val->ip >> 16 & 0xFF, val->ip >> 8 & 0xFF, val->ip & 0xFF);
 
 	for( int tcp = 0; tcp < 2; tcp++ ){
-		CSendNW* sendNW = (tcp ? (CSendNW*)&this->sendTcp : (CSendNW*)&this->sendUdp);
+		CSendTSTCPDllUtil* sendNW = (tcp ? &this->sendTcp : &this->sendUdp);
 		SEND_INFO* info = this->sendInfo + tcp;
 		if( info->ip.empty() == false && ((tcp ? val->tcp : val->udp) == 0 || info->ip != ip) ){
 			//終了
@@ -94,7 +95,12 @@ void CTimeShiftUtil::Send(
 			//開始
 			AddDebugLogFormat(L"%ls", info->key.c_str());
 			sendNW->Initialize();
-			sendNW->AddSendAddr(ip, info->port, false);
+			if( tcp ){
+				sendNW->AddSendAddr(ip, info->port);
+			}else{
+				int maxSendSize = GetPrivateProfileInt(L"SET", L"UDPPacket", 128, GetModuleIniPath().c_str()) * 188;
+				sendNW->AddSendAddrUdp(ip, info->port, false, maxSendSize);
+			}
 			sendNW->StartSend();
 			info->ip = ip;
 			(tcp ? val->tcpPort : val->udpPort) = info->port;

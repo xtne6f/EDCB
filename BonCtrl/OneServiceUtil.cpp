@@ -50,7 +50,8 @@ WORD COneServiceUtil::GetSID()
 
 BOOL COneServiceUtil::SendUdpTcp(
 	vector<NW_SEND_INFO>* sendList,
-	CSendNW& sendNW,
+	BOOL tcpFlag,
+	CSendTSTCPDllUtil& sendNW,
 	vector<HANDLE>& portMutexList,
 	LPCWSTR mutexName
 	)
@@ -89,7 +90,12 @@ BOOL COneServiceUtil::SendUdpTcp(
 					break;
 				}
 			}
-			sendNW.AddSendAddr((*sendList)[i].ipString.c_str(), (*sendList)[i].port, (*sendList)[i].broadcastFlag != FALSE);
+			if( tcpFlag ){
+				sendNW.AddSendAddr((*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+			}else{
+				sendNW.AddSendAddrUdp((*sendList)[i].ipString.c_str(), (*sendList)[i].port,
+				                      (*sendList)[i].broadcastFlag != FALSE, (*sendList)[i].udpMaxSendSize);
+			}
 		}
 		sendNW.StartSend();
 	}

@@ -16,29 +16,11 @@
 #define BON_SELECTIVE_PID			0x0030
 
 //ネットワーク送信用設定
-typedef struct {
+struct NW_SEND_INFO {
 	wstring ipString;
 	DWORD port;
 	BOOL broadcastFlag;
-}NW_SEND_INFO;
-
-class CSendNW
-{
-public:
-	CSendNW() {}
-	virtual ~CSendNW() {}
-	virtual bool Initialize() = 0;
-	virtual void UnInitialize() = 0;
-	virtual bool IsInitialized() const = 0;
-	virtual bool AddSendAddr(LPCWSTR ip, DWORD dwPort, bool broadcastFlag) = 0;
-	virtual void ClearSendAddr() = 0;
-	virtual bool StartSend() = 0;
-	virtual void StopSend() = 0;
-	virtual bool AddSendData(BYTE* pbBuff, DWORD dwSize) = 0;
-	virtual void ClearSendBuff() {}
-private:
-	CSendNW(const CSendNW&);
-	CSendNW& operator=(const CSendNW&);
+	int udpMaxSendSize;
 };
 
 #endif

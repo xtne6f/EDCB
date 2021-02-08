@@ -2,7 +2,7 @@ TARGET ?= EpgDataCap_Bon
 CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE -D_WIN32_WINNT=0x0600 $(CPPFLAGS)
 CXXFLAGS := -std=c++17 -pedantic-errors -Os $(CXXFLAGS)
 LDFLAGS2 = -municode -mwindows -Wl,-s,--dynamicbase,--nxcompat -static-libgcc -static-libstdc++ $(LDFLAGS)
-LDLIBS := -lws2_32 -lole32 -lcomctl32 -ldbghelp -lcomdlg32 $(LDLIBS)
+LDLIBS := -lole32 -lcomctl32 -ldbghelp -lcomdlg32 $(LDLIBS)
 WINDRES ?= windres
 DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
 CUR_ALL_H := $(wildcard *.h)
@@ -19,8 +19,6 @@ $(TARGET).exe: $(addsuffix .obj, \
   BonCtrl__PacketInit.cpp \
   BonCtrl__PMTUtil.cpp \
   BonCtrl__ScrambleDecoderUtil.cpp \
-  BonCtrl__SendTCP.cpp \
-  BonCtrl__SendUDP.cpp \
   BonCtrl__ServiceFilter.cpp \
   BonCtrl__TSOut.cpp \
   BonCtrl__WriteTSFile.cpp \
@@ -31,6 +29,7 @@ $(TARGET).exe: $(addsuffix .obj, \
   Common__PathUtil.cpp \
   Common__PipeServer.cpp \
   Common__SendCtrlCmd.cpp \
+  Common__SendTSTCPDllUtil.cpp \
   Common__StackTrace.cpp \
   Common__StringUtil.cpp \
   Common__TimeUtil.cpp \

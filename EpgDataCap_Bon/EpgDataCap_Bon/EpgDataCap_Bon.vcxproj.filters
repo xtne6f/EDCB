@@ -101,6 +101,9 @@
     <ClInclude Include="..\..\Common\SendCtrlCmd.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Common\StringUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -153,12 +156,6 @@
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\BonCtrl\ScrambleDecoderUtil.h">
-      <Filter>ヘッダー ファイル\BonCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BonCtrl\SendTCP.h">
-      <Filter>ヘッダー ファイル\BonCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BonCtrl\SendUDP.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\BonCtrl\TSOut.h">
@@ -232,6 +229,9 @@
     <ClCompile Include="SetDlgApp.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Common\SendTSTCPDllUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Common\StringUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
@@ -284,12 +284,6 @@
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\ScrambleDecoderUtil.cpp">
-      <Filter>ソース ファイル\BonCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BonCtrl\SendTCP.cpp">
-      <Filter>ソース ファイル\BonCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BonCtrl\SendUDP.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\TSOut.cpp">

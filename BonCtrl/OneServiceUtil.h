@@ -3,10 +3,9 @@
 #include "../Common/ErrDef.h"
 #include "../Common/TSPacketUtil.h"
 #include "../Common/StringUtil.h"
+#include "../Common/SendTSTCPDllUtil.h"
 
 #include "BonCtrlDef.h"
-#include "SendUDP.h"
-#include "SendTCP.h"
 #include "WriteTSFile.h"
 #include "PMTUtil.h"
 #include "CATUtil.h"
@@ -46,7 +45,7 @@ public:
 	BOOL SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		) {
-		return SendUdpTcp(sendList, this->sendUdp, this->udpPortMutex, MUTEX_UDP_PORT_NAME);
+		return SendUdpTcp(sendList, FALSE, this->sendUdp, this->udpPortMutex, MUTEX_UDP_PORT_NAME);
 	}
 
 	//TCPで送信を行う
@@ -57,7 +56,7 @@ public:
 	BOOL SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		) {
-		return SendUdpTcp(sendList, this->sendTcp, this->tcpPortMutex, MUTEX_TCP_PORT_NAME);
+		return SendUdpTcp(sendList, TRUE, this->sendTcp, this->tcpPortMutex, MUTEX_TCP_PORT_NAME);
 	}
 
 	//出力用TSデータを送る
@@ -190,8 +189,8 @@ protected:
 	vector<HANDLE> udpPortMutex;
 	vector<HANDLE> tcpPortMutex;
 
-	CSendUDP sendUdp;
-	CSendTCP sendTcp;
+	CSendTSTCPDllUtil sendUdp;
+	CSendTSTCPDllUtil sendTcp;
 	CWriteTSFile writeFile;
 
 	vector<BYTE> buff;
@@ -215,7 +214,8 @@ protected:
 protected:
 	static BOOL SendUdpTcp(
 		vector<NW_SEND_INFO>* sendList,
-		CSendNW& sendNW,
+		BOOL tcpFlag,
+		CSendTSTCPDllUtil& sendNW,
 		vector<HANDLE>& portMutexList,
 		LPCWSTR mutexName
 		);

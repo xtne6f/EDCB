@@ -1,12 +1,12 @@
 ﻿#include "stdafx.h"
-#include "SendTCP.h"
-#include "../Common/PathUtil.h"
+#include "SendTSTCPDllUtil.h"
+#include "PathUtil.h"
 #ifndef _WIN32
-#include "../Common/StringUtil.h"
+#include "StringUtil.h"
 #include <dlfcn.h>
 #endif
 
-bool CSendTCP::Initialize()
+bool CSendTSTCPDllUtil::Initialize()
 {
 	if( m_hModule ){
 		return true;
@@ -30,6 +30,7 @@ bool CSendTCP::Initialize()
 		    (m_pfnStopSendDLL = (StopSendDLL)getProcAddr("StopSendDLL")) != NULL &&
 		    (m_pfnAddSendDataDLL = (AddSendDataDLL)getProcAddr("AddSendDataDLL")) != NULL &&
 		    (m_pfnClearSendBuffDLL = (ClearSendBuffDLL)getProcAddr("ClearSendBuffDLL")) != NULL ){
+			m_pfnAddSendAddrUdpDLL = (AddSendAddrUdpDLL)getProcAddr("AddSendAddrUdpDLL");
 			m_iID = pfnInitializeDLL();
 			if( m_iID != -1 ){
 				return true;
@@ -45,7 +46,7 @@ bool CSendTCP::Initialize()
 	return false;
 }
 
-void CSendTCP::UnInitialize()
+void CSendTSTCPDllUtil::UnInitialize()
 {
 	if( m_hModule ){
 		m_pfnUnInitializeDLL(m_iID);
@@ -58,23 +59,30 @@ void CSendTCP::UnInitialize()
 	}
 }
 
-bool CSendTCP::AddSendAddr(LPCWSTR ip, DWORD dwPort, bool broadcastFlag)
+bool CSendTSTCPDllUtil::AddSendAddr(LPCWSTR ip, DWORD dwPort)
 {
-	(void)broadcastFlag;
 	if( m_hModule ){
 		return m_pfnAddSendAddrDLL(m_iID, ip, dwPort) == TRUE;
 	}
 	return false;
 }
 
-void CSendTCP::ClearSendAddr()
+bool CSendTSTCPDllUtil::AddSendAddrUdp(LPCWSTR ip, DWORD dwPort, bool broadcastFlag, int maxSendSize)
+{
+	if( m_hModule && m_pfnAddSendAddrUdpDLL ){
+		return m_pfnAddSendAddrUdpDLL(m_iID, ip, dwPort, broadcastFlag, maxSendSize) == TRUE;
+	}
+	return false;
+}
+
+void CSendTSTCPDllUtil::ClearSendAddr()
 {
 	if( m_hModule ){
 		m_pfnClearSendAddrDLL(m_iID);
 	}
 }
 
-bool CSendTCP::StartSend()
+bool CSendTSTCPDllUtil::StartSend()
 {
 	if( m_hModule ){
 		return m_pfnStartSendDLL(m_iID) == TRUE;
@@ -82,14 +90,14 @@ bool CSendTCP::StartSend()
 	return false;
 }
 
-void CSendTCP::StopSend()
+void CSendTSTCPDllUtil::StopSend()
 {
 	if( m_hModule ){
 		m_pfnStopSendDLL(m_iID);
 	}
 }
 
-bool CSendTCP::AddSendData(BYTE* pbBuff, DWORD dwSize)
+bool CSendTSTCPDllUtil::AddSendData(BYTE* pbBuff, DWORD dwSize)
 {
 	if( m_hModule ){
 		return m_pfnAddSendDataDLL(m_iID, pbBuff, dwSize) == TRUE;
@@ -97,7 +105,7 @@ bool CSendTCP::AddSendData(BYTE* pbBuff, DWORD dwSize)
 	return false;
 }
 
-void CSendTCP::ClearSendBuff()
+void CSendTSTCPDllUtil::ClearSendBuff()
 {
 	if( m_hModule ){
 		m_pfnClearSendBuffDLL(m_iID);

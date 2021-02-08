@@ -9,3 +9,4 @@ EXPORTS
 	StopSendDLL			@6
 	AddSendDataDLL		@7
 	ClearSendBuffDLL	@8
+	AddSendAddrUdpDLL	@9
