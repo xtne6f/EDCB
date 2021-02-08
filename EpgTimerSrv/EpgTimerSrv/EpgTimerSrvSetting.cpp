@@ -1094,7 +1094,16 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 		return TRUE;
 	case WM_CTLCOLORDLG:
 	case WM_CTLCOLORSTATIC:
-		return (INT_PTR)GetStockBrush(WHITE_BRUSH);
+		{
+			//ダイアログが灰色背景のときタブコントロールは白背景の可能性が高いので合わせる
+			//ハイコントラスト等で破綻しないよう条件を絞る
+			DWORD c = GetSysColor(COLOR_BTNFACE);
+			DWORD v = ((c & 0xFF) + (c >> 8 & 0xFF) + (c >> 16 & 0xFF)) / 3;
+			if( 0xE0 <= v && v < 0xFF ){
+				return (INT_PTR)GetStockBrush(WHITE_BRUSH);
+			}
+		}
+		break;
 	case WM_NOTIFY:
 		if( ((NMHDR*)lParam)->idFrom == IDC_LIST_SET_EPG_SERVICE && ((NMHDR*)lParam)->code == LVN_ITEMCHANGED ){
 			sys->OnLbnSelchangeListSetEpgService();

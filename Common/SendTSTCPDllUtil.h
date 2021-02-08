@@ -1,17 +1,15 @@
 ﻿#pragma once
 
-#include "BonCtrlDef.h"
-
-//final
-class CSendTCP : public CSendNW
+class CSendTSTCPDllUtil
 {
 public:
-	CSendTCP() : m_hModule(NULL) {}
-	~CSendTCP() { UnInitialize(); }
+	CSendTSTCPDllUtil() : m_hModule(NULL) {}
+	~CSendTSTCPDllUtil() { UnInitialize(); }
 	bool Initialize();
 	void UnInitialize();
 	bool IsInitialized() const { return m_hModule != NULL; }
-	bool AddSendAddr(LPCWSTR ip, DWORD dwPort, bool broadcastFlag);
+	bool AddSendAddr(LPCWSTR ip, DWORD dwPort);
+	bool AddSendAddrUdp(LPCWSTR ip, DWORD dwPort, bool broadcastFlag, int maxSendSize);
 	void ClearSendAddr();
 	bool StartSend();
 	void StopSend();
@@ -22,6 +20,7 @@ private:
 	typedef int (WINAPI *InitializeDLL)();
 	typedef DWORD (WINAPI *UnInitializeDLL)(int iID);
 	typedef DWORD (WINAPI *AddSendAddrDLL)(int iID, LPCWSTR lpcwszIP, DWORD dwPort);
+	typedef DWORD (WINAPI *AddSendAddrUdpDLL)(int iID, LPCWSTR lpcwszIP, DWORD dwPort, BOOL broadcastFlag, int maxSendSize);
 	typedef DWORD (WINAPI *ClearSendAddrDLL)(int iID);
 	typedef DWORD (WINAPI *StartSendDLL)(int iID);
 	typedef DWORD (WINAPI *StopSendDLL)(int iID);
@@ -32,9 +31,13 @@ private:
 	int m_iID;
 	UnInitializeDLL m_pfnUnInitializeDLL;
 	AddSendAddrDLL m_pfnAddSendAddrDLL;
+	AddSendAddrUdpDLL m_pfnAddSendAddrUdpDLL;
 	ClearSendAddrDLL m_pfnClearSendAddrDLL;
 	StartSendDLL m_pfnStartSendDLL;
 	StopSendDLL m_pfnStopSendDLL;
 	AddSendDataDLL m_pfnAddSendDataDLL;
 	ClearSendBuffDLL m_pfnClearSendBuffDLL;
+
+	CSendTSTCPDllUtil(const CSendTSTCPDllUtil&);
+	CSendTSTCPDllUtil& operator=(const CSendTSTCPDllUtil&);
 };

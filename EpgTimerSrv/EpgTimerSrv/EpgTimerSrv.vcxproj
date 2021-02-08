@@ -262,8 +262,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h" />
     <ClInclude Include="..\..\BonCtrl\PacketInit.h" />
-    <ClInclude Include="..\..\BonCtrl\SendTCP.h" />
-    <ClInclude Include="..\..\BonCtrl\SendUDP.h" />
     <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
@@ -279,6 +277,7 @@
     <ClInclude Include="..\..\Common\PipeServer.h" />
     <ClInclude Include="..\..\Common\ReNamePlugInUtil.h" />
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
+    <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h" />
     <ClInclude Include="..\..\Common\ServiceUtil.h" />
     <ClInclude Include="..\..\Common\StackTrace.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
@@ -344,8 +343,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp" />
     <ClCompile Include="..\..\BonCtrl\PacketInit.cpp" />
-    <ClCompile Include="..\..\BonCtrl\SendTCP.cpp" />
-    <ClCompile Include="..\..\BonCtrl\SendUDP.cpp" />
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
@@ -354,6 +351,7 @@
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
     <ClCompile Include="..\..\Common\ReNamePlugInUtil.cpp" />
     <ClCompile Include="..\..\Common\SendCtrlCmd.cpp" />
+    <ClCompile Include="..\..\Common\SendTSTCPDllUtil.cpp" />
     <ClCompile Include="..\..\Common\ServiceUtil.cpp" />
     <ClCompile Include="..\..\Common\StackTrace.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />

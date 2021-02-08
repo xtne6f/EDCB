@@ -13,6 +13,9 @@
 //送信先(サーバ)接続のためのポーリング間隔
 #define SEND_TS_TCP_CONNECT_INTERVAL_MSEC 2000
 
+//UDP送信バッファのサイズ
+static const int UDP_SNDBUF_SIZE = 3 * 1024 * 1024;
+
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
 	WSAData wsaData;
@@ -22,6 +25,7 @@ CSendTSTCPMain::CSendTSTCPMain(void)
 CSendTSTCPMain::~CSendTSTCPMain(void)
 {
 	StopSend();
+	ClearSendAddr();
 
 	WSACleanup();
 }
@@ -57,6 +61,56 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	return TRUE;
 }
 
+//送信先を追加(UDP)
+//戻り値：エラーコード
+DWORD CSendTSTCPMain::AddSendAddrUdp(
+	LPCWSTR lpcwszIP,
+	DWORD dwPort,
+	BOOL broadcastFlag,
+	int maxSendSize
+	)
+{
+	if( lpcwszIP == NULL ){
+		return FALSE;
+	}
+	SOCKET_DATA item;
+	string ipA;
+	WtoUTF8(lpcwszIP, ipA);
+	char szPort[16];
+	sprintf_s(szPort, "%d", (WORD)dwPort);
+	struct addrinfo hints = {};
+	hints.ai_flags = AI_NUMERICHOST;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_protocol = IPPROTO_UDP;
+	struct addrinfo* result;
+	if( getaddrinfo(ipA.c_str(), szPort, &hints, &result) != 0 ){
+		return FALSE;
+	}
+	item.addrlen = min((size_t)result->ai_addrlen, sizeof(item.addr));
+	memcpy(&item.addr, result->ai_addr, item.addrlen);
+	item.sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	freeaddrinfo(result);
+	if( item.sock == INVALID_SOCKET ){
+		return FALSE;
+	}
+
+	//ノンブロッキングモードへ
+	unsigned long x = 1;
+	if( ioctlsocket(item.sock, FIONBIO, &x) != 0 ||
+	    setsockopt(item.sock, SOL_SOCKET, SO_SNDBUF, (const char*)&UDP_SNDBUF_SIZE, sizeof(UDP_SNDBUF_SIZE)) != 0 ){
+		closesocket(item.sock);
+		return FALSE;
+	}
+	if( broadcastFlag ){
+		BOOL b = TRUE;
+		setsockopt(item.sock, SOL_SOCKET, SO_BROADCAST, (const char*)&b, sizeof(b));
+	}
+	item.maxSendSize = maxSendSize;
+	m_udpSockList.push_back(item);
+
+	return TRUE;
+}
+
 //送信先クリア
 //戻り値：エラーコード
 DWORD CSendTSTCPMain::ClearSendAddr(
@@ -70,6 +124,12 @@ DWORD CSendTSTCPMain::ClearSendAddr(
 		m_SendList.clear();
 	}
 
+	while( m_udpSockList.empty() == false ){
+		unsigned long x = 0;
+		ioctlsocket(m_udpSockList.back().sock, FIONBIO, &x);
+		closesocket(m_udpSockList.back().sock);
+		m_udpSockList.pop_back();
+	}
 	return TRUE;
 }
 
@@ -109,13 +169,31 @@ DWORD CSendTSTCPMain::AddSendData(
 	)
 {
 	if( m_sendThread.joinable() ){
+		//UDPは基本的にブロックしない(輻輳制御がない)のでここで送る
+		for( auto itr = m_udpSockList.cbegin(); itr != m_udpSockList.end(); itr++ ){
+			for( DWORD dwRead = 0; dwRead < dwSize; ){
+				//ペイロード分割。BonDriver_UDPに送る場合は受信サイズ48128以下でなければならない
+				int len = (int)min((DWORD)max(itr->maxSendSize, 1), dwSize - dwRead);
+				if( sendto(itr->sock, (const char*)(pbData + dwRead), len, 0, (const sockaddr*)&itr->addr, (int)itr->addrlen) < 0 ){
+					if( WSAGetLastError() == WSAEWOULDBLOCK ){
+						//送信処理が追いつかずSO_SNDBUFで指定したバッファも尽きてしまった
+						//帯域が足りないときはどう足掻いてもドロップするしかないので、Sleep()によるフロー制御はしない
+						AddDebugLog(L"Dropped");
+					}
+				}
+				dwRead += len;
+			}
+		}
+
 		CBlockLock lock(&m_sendLock);
-		m_TSBuff.push_back(vector<BYTE>());
-		m_TSBuff.back().reserve(sizeof(DWORD) * 2 + dwSize);
-		m_TSBuff.back().resize(sizeof(DWORD) * 2);
-		m_TSBuff.back().insert(m_TSBuff.back().end(), pbData, pbData + dwSize);
-		if( m_TSBuff.size() > SEND_TS_TCP_BUFF_MAX ){
-			for( ; m_TSBuff.size() > SEND_TS_TCP_BUFF_MAX / 2; m_TSBuff.pop_front() );
+		if( m_SendList.empty() == false ){
+			m_TSBuff.push_back(vector<BYTE>());
+			m_TSBuff.back().reserve(sizeof(DWORD) * 2 + dwSize);
+			m_TSBuff.back().resize(sizeof(DWORD) * 2);
+			m_TSBuff.back().insert(m_TSBuff.back().end(), pbData, pbData + dwSize);
+			if( m_TSBuff.size() > SEND_TS_TCP_BUFF_MAX ){
+				for( ; m_TSBuff.size() > SEND_TS_TCP_BUFF_MAX / 2; m_TSBuff.pop_front() );
+			}
 		}
 	}
 	return TRUE;

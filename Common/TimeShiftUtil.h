@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include "../BonCtrl/SendUDP.h"
-#include "../BonCtrl/SendTCP.h"
+#include "SendTSTCPDllUtil.h"
 #include "StructDef.h"
 #include "ThreadUtil.h"
 
@@ -52,8 +51,8 @@ public:
 protected:
 	recursive_mutex_ utilLock;
 	recursive_mutex_ ioLock;
-	CSendUDP sendUdp;
-	CSendTCP sendTcp;
+	CSendTSTCPDllUtil sendUdp;
+	CSendTSTCPDllUtil sendTcp;
 	struct SEND_INFO {
 		wstring ip;
 		DWORD port;

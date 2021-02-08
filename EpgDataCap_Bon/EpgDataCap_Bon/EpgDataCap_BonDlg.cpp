@@ -123,6 +123,7 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 			item.port = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN, appIniPath.c_str());
 			swprintf_s(key, L"BroadCast%d", i);
 			item.broadcastFlag = tcp ? 0 : GetPrivateProfileInt(L"SET_UDP", key, 0, appIniPath.c_str());
+			item.udpMaxSendSize = tcp ? 0 : GetPrivateProfileInt(L"SET", L"UDPPacket", 128, appIniPath.c_str()) * 188;
 			(tcp ? this->setTcpSendList : this->setUdpSendList).push_back(item);
 		}
 	}

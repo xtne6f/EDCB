@@ -20,6 +20,15 @@ public:
 		DWORD dwPort
 		);
 
+	//送信先を追加(UDP)
+	//戻り値：エラーコード
+	DWORD AddSendAddrUdp(
+		LPCWSTR lpcwszIP,
+		DWORD dwPort,
+		BOOL broadcastFlag,
+		int maxSendSize
+		);
+
 	//送信先クリア
 	//戻り値：エラーコード
 	DWORD ClearSendAddr(
@@ -66,6 +75,14 @@ protected:
 		BOOL bConnect;
 	};
 	std::list<SEND_INFO> m_SendList;
+
+	struct SOCKET_DATA {
+		SOCKET sock;
+		struct sockaddr_storage addr;
+		size_t addrlen;
+		int maxSendSize;
+	};
+	vector<SOCKET_DATA> m_udpSockList;
 
 protected:
 	static void SendThread(CSendTSTCPMain* pSys);

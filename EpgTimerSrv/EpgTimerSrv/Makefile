@@ -71,8 +71,6 @@ $(TARGET).exe: $(addsuffix .obj, \
   $(SOURCES_LUA) \
   BonCtrl__CreatePATPacket.cpp \
   BonCtrl__PacketInit.cpp \
-  BonCtrl__SendTCP.cpp \
-  BonCtrl__SendUDP.cpp \
   Common__CtrlCmdUtil.cpp \
   Common__EpgDataCap3Util.cpp \
   Common__EpgTimerUtil.cpp \
@@ -81,6 +79,7 @@ $(TARGET).exe: $(addsuffix .obj, \
   Common__PipeServer.cpp \
   Common__ReNamePlugInUtil.cpp \
   Common__SendCtrlCmd.cpp \
+  Common__SendTSTCPDllUtil.cpp \
   Common__ServiceUtil.cpp \
   Common__StackTrace.cpp \
   Common__StringUtil.cpp \

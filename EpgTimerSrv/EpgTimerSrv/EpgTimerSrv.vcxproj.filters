@@ -143,16 +143,13 @@
     <ClInclude Include="..\..\Common\TSPacketUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\BonCtrl\PacketInit.h">
-      <Filter>ヘッダー ファイル\BonCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BonCtrl\SendTCP.h">
-      <Filter>ヘッダー ファイル\BonCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BonCtrl\SendUDP.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
     <ClInclude Include="NotifyManager.h">
@@ -364,16 +361,13 @@
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Common\SendTSTCPDllUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\PacketInit.cpp">
-      <Filter>ソース ファイル\BonCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BonCtrl\SendTCP.cpp">
-      <Filter>ソース ファイル\BonCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BonCtrl\SendUDP.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
     <ClCompile Include="NotifyManager.cpp">
