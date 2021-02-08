@@ -14,7 +14,7 @@
 #include "../../BonCtrl/BonCtrlDef.h"
 #ifdef SEND_PIPE_TEST
 #include "../../BonCtrl/ServiceFilter.h"
-#include "../../BonCtrl/SendTCP.h"
+#include "../../Common/SendTSTCPDllUtil.h"
 #endif
 
 class CEdcbPlugIn : public TVTest::CTVTestPlugin
@@ -122,7 +122,7 @@ private:
 	DWORD m_logoTick;
 	DWORD m_logoTypeFlags;
 #ifdef SEND_PIPE_TEST
-	CSendTCP m_sendPipe;
+	CSendTSTCPDllUtil m_sendPipe;
 	HANDLE m_sendPipeMutex;
 	vector<BYTE> m_sendPipeBuf;
 	CServiceFilter m_serviceFilter;

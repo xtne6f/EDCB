@@ -228,7 +228,7 @@ bool CEdcbPlugIn::Initialize()
 				m_sendPipeMutex = nullptr;
 			}
 		}
-		m_sendPipe.AddSendAddr(L"0.0.0.1", port, false);
+		m_sendPipe.AddSendAddr(L"0.0.0.1", port);
 		m_sendPipe.StartSend();
 	}
 #endif

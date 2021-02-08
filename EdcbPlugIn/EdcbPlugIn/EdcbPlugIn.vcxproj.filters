@@ -96,8 +96,8 @@
     <ClInclude Include="..\..\Common\ParseTextInstances.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\BonCtrl\SendTCP.h">
-      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\BonCtrl\BonCtrlDef.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
@@ -158,8 +158,8 @@
     <ClCompile Include="..\..\Common\ParseTextInstances.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\BonCtrl\SendTCP.cpp">
-      <Filter>ソース ファイル\BonCtrl</Filter>
+    <ClCompile Include="..\..\Common\SendTSTCPDllUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\TSBuffUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
