@@ -759,8 +759,11 @@ edcb.io.open
 edcb.io.popen
 引数にUTF-8をそのまま渡せる以外の挙動はLua標準ライブラリと同じ。
 ただし、edcb.io.*が返すファイルハンドルは簡略化のため行読み込みの機能(linesなど)を省略している。
-また、execute/popenのプロンプト画面は出ないが、最後の引数にtrueを指定すれば表示できる。
+また、execute/popenのプロンプト画面は出ないが、第2(popenは第3)引数にtrueを指定すれば表示できる。
 例：edcb.os.execute('ping localhost',true)
+さらに、execute/popenの第3(第4)引数に追加の環境変数をテーブルで指定できる。テーブルの各要素の値は
+文字列かfalse(継承される環境変数を打ち消す)とする。未対応バージョンでは第3(第4)引数は無視される。
+例：edcb.os.execute('echo %hoge% %fuga% & pause', true, {hoge='ほげ♪',fuga='ふが☆'})
 
 [略語の定義]
 B:ブーリアン
