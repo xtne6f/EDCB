@@ -61,7 +61,7 @@ private:
 	void AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList);
 	void AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const;
 	//外部制御コマンド関係
-	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag, LPCWSTR clientIP);
+	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, int threadIndex, bool tcpFlag, LPCWSTR clientIP);
 	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam, LPCWSTR clientIP);
 	void InitLuaCallback(lua_State* L, LPCSTR serverRandom);
 	void DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff);
@@ -160,5 +160,6 @@ private:
 	bool nwtvTcp;
 	DWORD compatFlags;
 
-	vector<EPGDB_EVENT_INFO> oldSearchList[2];
+	//CPipeServer用に2つとCTCPServer用に1つ
+	vector<EPGDB_EVENT_INFO> oldSearchList[3];
 };

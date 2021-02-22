@@ -5,7 +5,10 @@
 #define CONNECT_TIMEOUT 15*1000
 
 //パイプ名
+//"Pipe"を"Connect"に置換した名前のイベントオブジェクトが接続時の勧告ロックとして使われる
+//ただし"NoWaitPipe"の場合、クライアントはこのイベントオブジェクトを無視すること(接続は必ずしも成功しない)
 #define CMD2_EPG_SRV_PIPE L"EpgTimerSrvPipe"
+#define CMD2_EPG_SRV_NOWAIT_PIPE L"EpgTimerSrvNoWaitPipe"
 #define CMD2_GUI_CTRL_PIPE L"EpgTimerGUI_Ctrl_BonPipe_" //+プロセスID
 #define CMD2_VIEW_CTRL_PIPE L"View_Ctrl_BonPipe_" //+プロセスID
 #define CMD2_TVTEST_CTRL_PIPE L"TvTest_Ctrl_BonPipe_" //+プロセスID

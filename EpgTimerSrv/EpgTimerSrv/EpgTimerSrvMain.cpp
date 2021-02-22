@@ -50,6 +50,7 @@ struct MAIN_WINDOW_CONTEXT {
 	CEpgTimerSrvMain* const sys;
 	const UINT msgTaskbarCreated;
 	CPipeServer pipeServer;
+	CPipeServer noWaitPipeServer;
 	CTCPServer tcpServer;
 	CHttpServer httpServer;
 	HANDLE resumeTimer;
@@ -452,8 +453,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->ReloadNetworkSetting();
 		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_PIPE,
-		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, false, NULL); },
+		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, 0, false, NULL); },
 		                            !(ctx->sys->notifyManager.IsGUI()));
+		//イベントオブジェクトの待機を省略したいクライアント向けにもう1つ生成する
+		ctx->noWaitPipeServer.StartServer(CMD2_EPG_SRV_NOWAIT_PIPE,
+		                                  [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, 1, false, NULL); },
+		                                  !(ctx->sys->notifyManager.IsGUI()));
 		ctx->sys->epgDB.ReloadEpgData(true);
 		SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
@@ -469,6 +474,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->notifyManager.SetNotifyCallback(NULL);
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
+		ctx->noWaitPipeServer.StopServer();
 		ctx->pipeServer.StopServer();
 		ctx->sys->stoppingFlag = true;
 		ctx->sys->reserveManager.Finalize();
@@ -504,7 +510,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				ctx->tcpServer.StopServer();
 			}else{
 				ctx->tcpServer.StartServer(tcpPort_, tcpIPv6_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(),
-				                           [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, true, clientIP); });
+				                           [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, 2, true, clientIP); });
 			}
 			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
 		}
@@ -1560,9 +1566,9 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 	}
 }
 
-void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag, LPCWSTR clientIP)
+void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, int threadIndex, bool tcpFlag, LPCWSTR clientIP)
 {
-	//この関数はPipeとTCPとで同時に呼び出されるかもしれない(各々が同時に複数呼び出すことはない)
+	//この関数はthreadIndexで識別されるスレッドで同時に呼び出されるかもしれない
 	resParam->dataSize = 0;
 	resParam->param = CMD_ERR;
 
@@ -2679,22 +2685,22 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) == FALSE ){
 				break;
 			}
-			sys->oldSearchList[tcpFlag].clear();
+			sys->oldSearchList[threadIndex].clear();
 			sys->epgDB.SearchEpg(&item.searchInfo, 1, 0, LLONG_MAX, NULL, [=](const EPGDB_EVENT_INFO* val, wstring*) {
 				if( val ){
-					sys->oldSearchList[tcpFlag].push_back(*val);
+					sys->oldSearchList[threadIndex].push_back(*val);
 				}
 			});
-			std::reverse(sys->oldSearchList[tcpFlag].begin(), sys->oldSearchList[tcpFlag].end());
+			std::reverse(sys->oldSearchList[threadIndex].begin(), sys->oldSearchList[threadIndex].end());
 		}
 		//FALL THROUGH!
 	case CMD_EPG_SRV_SEARCH_PG_NEXT:
 		{
 			resParam->param = OLD_CMD_ERR;
-			if( sys->oldSearchList[tcpFlag].empty() == false ){
-				resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList[tcpFlag].back(), resParam->dataSize);
-				sys->oldSearchList[tcpFlag].pop_back();
-				resParam->param = sys->oldSearchList[tcpFlag].empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
+			if( sys->oldSearchList[threadIndex].empty() == false ){
+				resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList[threadIndex].back(), resParam->dataSize);
+				sys->oldSearchList[threadIndex].pop_back();
+				resParam->param = sys->oldSearchList[threadIndex].empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
 			}
 		}
 		break;
