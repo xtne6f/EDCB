@@ -361,16 +361,15 @@ struct MANUAL_AUTO_ADD_DATA {
 	REC_SETTING_DATA recSetting;	//録画設定
 };
 
-//コマンド送信用
-//チャンネル変更情報
+//チャンネル・NetworkTVモード変更情報
 struct SET_CH_INFO {
-	BOOL useSID;//wONIDとwTSIDとwSIDの値が使用できるかどうか
+	BOOL useSID;	//ONIDとTSIDとSIDの値が使用できるかどうか
 	WORD ONID;
 	WORD TSID;
 	WORD SID;
-	BOOL useBonCh;//dwSpaceとdwChの値が使用できるかどうか
-	DWORD space;
-	DWORD ch;
+	BOOL useBonCh;	//spaceとchの値が使用できるかどうか
+	int space;		//チューナー空間（NetworkTV関連ではID）
+	int ch;			//物理チャンネル（NetworkTV関連では送信モード）
 };
 
 struct SET_CTRL_MODE {

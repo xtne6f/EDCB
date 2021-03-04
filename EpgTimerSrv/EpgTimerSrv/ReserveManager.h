@@ -76,12 +76,12 @@ public:
 	}
 	//指定サービスを利用できるチューナID一覧を取得する
 	vector<DWORD> GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const;
-	bool GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const;
+	bool GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, int* space, int* ch) const;
 	wstring GetTunerBonFileName(DWORD tunerID) const;
 	bool IsOpenTuner(DWORD tunerID) const;
 	//ネットワークモードでチューナを起動しチャンネル設定する
 	//tunerIDList: 起動させるときはこのリストにあるチューナを候補にする
-	pair<bool, int> OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList);
+	pair<bool, int> OpenNWTV(int id, bool nwUdp, bool nwTcp, WORD onid, WORD tsid, WORD sid, const vector<DWORD>& tunerIDList);
 	//ネットワークモードでチューナが起動しているか
 	pair<bool, int> IsOpenNWTV(int id) const;
 	//ネットワークモードのチューナを閉じる

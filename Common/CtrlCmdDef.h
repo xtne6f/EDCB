@@ -97,9 +97,11 @@
 #define CMD2_EPG_SRV_PROFILE_UPDATE			1063 //設定ファイル(ini)の更新を通知させる
 #define CMD2_EPG_SRV_GET_NOTIFY_LOG			1065 //保存された情報通知ログを取得する
 
-#define CMD2_EPG_SRV_NWTV_SET_CH			1070 //ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
-#define CMD2_EPG_SRV_NWTV_CLOSE				1071 //ネットワークモードで起動中のEpgDataCap_Bonを終了
-#define CMD2_EPG_SRV_NWTV_MODE				1072 //ネットワークモードで起動するときのモード（1:UDP 2:TCP 3:UDP+TCP）
+#define CMD2_EPG_SRV_NWTV_SET_CH			1070 //NetworkTVモードのViewアプリのチャンネルを切り替え（ID=0のみ）
+#define CMD2_EPG_SRV_NWTV_CLOSE				1071 //NetworkTVモードで起動中のViewアプリを終了（ID=0のみ）
+#define CMD2_EPG_SRV_NWTV_MODE				1072 //NetworkTVモードで起動するときの送信モード（1:UDP 2:TCP 3:UDP+TCP）
+#define CMD2_EPG_SRV_NWTV_ID_SET_CH			1073 //NetworkTVモードのViewアプリのチャンネルを切り替え、または起動の確認（ID指定）
+#define CMD2_EPG_SRV_NWTV_ID_CLOSE			1074 //NetworkTVモードで起動中のViewアプリを終了（ID指定）
 
 #define CMD2_EPG_SRV_NWPLAY_OPEN			1080 //ストリーム配信用ファイルを開く
 #define CMD2_EPG_SRV_NWPLAY_CLOSE			1081 //ストリーム配信用ファイルを閉じる

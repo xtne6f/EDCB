@@ -2144,38 +2144,68 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}
 		break;
 	case CMD2_EPG_SRV_NWTV_SET_CH:
+	case CMD2_EPG_SRV_NWTV_ID_SET_CH:
 		{
-			AddDebugLog(L"CMD2_EPG_SRV_NWTV_SET_CH");
+			AddDebugLog(L"CMD2_EPG_SRV_NWTV(_ID)_SET_CH");
 			SET_CH_INFO val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && val.useSID ){
-				bool nwtvUdp;
-				bool nwtvTcp;
-				vector<DWORD> idUseList = sys->reserveManager.GetSupportServiceTuner(val.ONID, val.TSID, val.SID);
-				{
-					CBlockLock lock(&sys->settingLock);
-					nwtvUdp = sys->nwtvUdp;
-					nwtvTcp = sys->nwtvTcp;
-					for( size_t i = 0; i < idUseList.size(); ){
-						wstring bonDriver = sys->reserveManager.GetTunerBonFileName(idUseList[i]);
-						if( std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
-						                 [&](const wstring& a) { return UtilComparePath(a.c_str(), bonDriver.c_str()) == 0; }) == sys->setting.viewBonList.end() ){
-							idUseList.erase(idUseList.begin() + i);
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				if( val.useSID ){
+					int nwtvID = 0;
+					bool nwtvUdp;
+					bool nwtvTcp;
+					vector<DWORD> idUseList = sys->reserveManager.GetSupportServiceTuner(val.ONID, val.TSID, val.SID);
+					{
+						CBlockLock lock(&sys->settingLock);
+						if( cmdParam->param != CMD2_EPG_SRV_NWTV_SET_CH && val.useBonCh ){
+							//新コマンドではIDと送信モードを指定できる
+							nwtvID = val.space;
+							nwtvUdp = val.ch == 1 || val.ch == 3;
+							nwtvTcp = val.ch == 2 || val.ch == 3;
 						}else{
-							i++;
+							nwtvUdp = sys->nwtvUdp;
+							nwtvTcp = sys->nwtvTcp;
+						}
+						for( size_t i = 0; i < idUseList.size(); ){
+							wstring bonDriver = sys->reserveManager.GetTunerBonFileName(idUseList[i]);
+							if( std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
+							                 [&](const wstring& a) { return UtilComparePath(a.c_str(), bonDriver.c_str()) == 0; }) == sys->setting.viewBonList.end() ){
+								idUseList.erase(idUseList.begin() + i);
+							}else{
+								i++;
+							}
+						}
+						std::reverse(idUseList.begin(), idUseList.end());
+					}
+					pair<bool, int> retAndProcessID = sys->reserveManager.OpenNWTV(nwtvID, nwtvUdp, nwtvTcp, val.ONID, val.TSID, val.SID, idUseList);
+					if( retAndProcessID.first ){
+						resParam->param = CMD_SUCCESS;
+						if( cmdParam->param != CMD2_EPG_SRV_NWTV_SET_CH ){
+							//新コマンドではViewアプリのプロセスIDを返す
+							resParam->data = NewWriteVALUE(retAndProcessID.second, resParam->dataSize);
 						}
 					}
-					std::reverse(idUseList.begin(), idUseList.end());
-				}
-				if( sys->reserveManager.OpenNWTV(0, nwtvUdp, nwtvTcp, val, idUseList).first ){
-					resParam->param = CMD_SUCCESS;
+				}else if( cmdParam->param != CMD2_EPG_SRV_NWTV_SET_CH ){
+					//新コマンドでは起動の確認
+					pair<bool, int> retAndProcessID = sys->reserveManager.IsOpenNWTV(val.useBonCh ? val.space : 0);
+					if( retAndProcessID.first ){
+						resParam->param = CMD_SUCCESS;
+						resParam->data = NewWriteVALUE(retAndProcessID.second, resParam->dataSize);
+					}
 				}
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_NWTV_CLOSE:
-		AddDebugLog(L"CMD2_EPG_SRV_NWTV_CLOSE");
-		if( sys->reserveManager.CloseNWTV(0) ){
-			resParam->param = CMD_SUCCESS;
+	case CMD2_EPG_SRV_NWTV_ID_CLOSE:
+		{
+			AddDebugLog(L"CMD2_EPG_SRV_NWTV(_ID)_CLOSE");
+			//新コマンドではIDを指定できる
+			int nwtvID = 0;
+			if( cmdParam->param == CMD2_EPG_SRV_NWTV_CLOSE || ReadVALUE(&nwtvID, cmdParam->data, cmdParam->dataSize, NULL) ){
+				if( sys->reserveManager.CloseNWTV(nwtvID) ){
+					resParam->param = CMD_SUCCESS;
+				}
+			}
 		}
 		break;
 	case CMD2_EPG_SRV_NWTV_MODE:
@@ -4043,15 +4073,12 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 4 || lua_gettop(L) == 5 ){
-		SET_CH_INFO info;
-		info.useSID = TRUE;
-		info.ONID = (WORD)lua_tointeger(L, 2);
-		info.TSID = (WORD)lua_tointeger(L, 3);
-		info.SID = (WORD)lua_tointeger(L, 4);
-		info.useBonCh = FALSE;
+		WORD onid = (WORD)lua_tointeger(L, 2);
+		WORD tsid = (WORD)lua_tointeger(L, 3);
+		WORD sid = (WORD)lua_tointeger(L, 4);
 		int mode = (int)lua_tointeger(L, 1);
 		int nwtvID = (int)lua_tointeger(L, 5);
-		vector<DWORD> idUseList = ws.sys->reserveManager.GetSupportServiceTuner(info.ONID, info.TSID, info.SID);
+		vector<DWORD> idUseList = ws.sys->reserveManager.GetSupportServiceTuner(onid, tsid, sid);
 		{
 			CBlockLock lock(&ws.sys->settingLock);
 			for( size_t i = 0; i < idUseList.size(); ){
@@ -4067,7 +4094,7 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 		}
 		//すでに起動しているものの送信モードは変更しない
 		pair<bool, int> retAndProcessID =
-			ws.sys->reserveManager.OpenNWTV(nwtvID, (mode == 1 || mode == 3), (mode == 2 || mode == 3), info, idUseList);
+			ws.sys->reserveManager.OpenNWTV(nwtvID, (mode == 1 || mode == 3), (mode == 2 || mode == 3), onid, tsid, sid, idUseList);
 		if( retAndProcessID.first ){
 			lua_pushboolean(L, true);
 			lua_pushinteger(L, retAndProcessID.second);
