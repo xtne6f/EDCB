@@ -71,6 +71,8 @@
 #define CMD2_EPG_SRV_GET_PG_INFO_LIST		1024 //番組情報取得(指定IDリスト)
 #define CMD2_EPG_SRV_SEARCH_PG				1025 //番組検索
 #define CMD2_EPG_SRV_ENUM_PG_ALL			1026 //番組情報一覧取得
+#define CMD2_EPG_SRV_GET_PG_INFO_MINMAX		1028 //番組情報の最小開始時間と最大開始時間を取得する
+#define CMD2_EPG_SRV_ENUM_PG_INFO_EX		1029 //サービス指定と時間指定で番組情報一覧を取得する
 #define CMD2_EPG_SRV_ENUM_PG_ARC			1030 //サービス指定と時間指定で過去番組情報一覧を取得する
 
 #define CMD2_EPG_SRV_ENUM_AUTO_ADD			1031 //自動予約登録の条件一覧取得

@@ -1984,6 +1984,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			});
 		}
 		break;
+	case CMD2_EPG_SRV_GET_PG_INFO_MINMAX:
 	case CMD2_EPG_SRV_GET_PG_ARC_MINMAX:
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
@@ -1991,7 +1992,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			vector<__int64> key;
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) && key.size() % 2 == 0 ){
 				for( size_t i = 0; i + 1 < key.size(); i += 2 ){
-					pair<__int64, __int64> ret = sys->epgDB.GetArchiveEventMinMaxTime(key[i], key[i + 1]);
+					pair<__int64, __int64> ret;
+					if( cmdParam->param == CMD2_EPG_SRV_GET_PG_INFO_MINMAX ){
+						ret = sys->epgDB.GetEventMinMaxTime(key[i], key[i + 1]);
+					}else{
+						ret = sys->epgDB.GetArchiveEventMinMaxTime(key[i], key[i + 1]);
+					}
 					key[i] = ret.first;
 					key[i + 1] = ret.second;
 				}
@@ -2000,8 +2006,9 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_ENUM_PG_INFO_EX:
 	case CMD2_EPG_SRV_ENUM_PG_ARC:
-		AddDebugLog(L"CMD2_EPG_SRV_ENUM_PG_ARC");
+		AddDebugLog(L"CMD2_EPG_SRV_ENUM_PG_INFO_EX/_ARC");
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
@@ -2009,8 +2016,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&keyAndRange, cmdParam->data, cmdParam->dataSize, NULL) && keyAndRange.size() >= 2 ){
 				vector<EPGDB_SERVICE_EVENT_INFO_PTR> ret;
 				vector<EPGDB_SERVICE_EVENT_INFO_PTR>::iterator itr = ret.end();
-				sys->epgDB.EnumArchiveEventInfo(keyAndRange.data(), keyAndRange.size() - 2, *(keyAndRange.end() - 2), keyAndRange.back(), false,
-				                                [=, &ret, &itr](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO* si) {
+				auto enumProc = [=, &ret, &itr](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO* si) -> void {
 					if( val ){
 						if( itr == ret.end() || itr->serviceInfo != si ){
 							itr = std::find_if(ret.begin(), ret.end(), [si](const EPGDB_SERVICE_EVENT_INFO_PTR& a) {
@@ -2026,7 +2032,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 						resParam->param = CMD_SUCCESS;
 						resParam->data = NewWriteVALUE(ret, resParam->dataSize);
 					}
-				});
+				};
+				if( cmdParam->param == CMD2_EPG_SRV_ENUM_PG_INFO_EX ){
+					sys->epgDB.EnumEventInfo(keyAndRange.data(), keyAndRange.size() - 2, *(keyAndRange.end() - 2), keyAndRange.back(), enumProc);
+				}else{
+					sys->epgDB.EnumArchiveEventInfo(keyAndRange.data(), keyAndRange.size() - 2, *(keyAndRange.end() - 2), keyAndRange.back(), false, enumProc);
+				}
 			}
 		}
 		break;
