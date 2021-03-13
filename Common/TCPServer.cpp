@@ -444,7 +444,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					     send(sock, (char*)stRes.data.get() + extSize, stRes.dataSize - extSize, 0) != (int)(stRes.dataSize - extSize)) ){
 						break;
 					}
-					if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
+					if( stRes.param != OLD_CMD_NEXT ){
 						//Enum用の繰り返しではない
 						shutdown(sock, 2); //SD_BOTH
 						break;

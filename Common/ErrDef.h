@@ -9,7 +9,6 @@
 
 #define CMD_SUCCESS			NO_ERR		//成功
 #define CMD_ERR				ERR_FALSE	//汎用エラー
-#define CMD_NEXT			202			//Enumコマンド用、続きあり
 #define CMD_NON_SUPPORT		203			//未サポートのコマンド
 #define CMD_ERR_INVALID_ARG	204			//引数エラー
 #define CMD_ERR_CONNECT		205			//サーバーにコネクトできなかった
