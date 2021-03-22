@@ -1,12 +1,6 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-if not mg.request_info.uri:find('/$') and
-   not mg.request_info.uri:lower():find('%.html$') then
-  mg.write(Response(301, nil, nil, 0)..'Location: '..mg.request_info.uri..'/\r\n\r\n')
-  return
-end
-
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
