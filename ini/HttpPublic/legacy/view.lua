@@ -97,23 +97,27 @@ if true then
 end
 
 if not f then
-  mg.write(Response(404,'text/html','utf-8')..'\r\n'
-    ..'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
+  ct=CreateContentBuilder()
+  ct:Append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
     ..'<title>view.lua</title><p><a href="index.html">メニュー</a></p>')
+  ct:Finish()
+  mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
 else
   mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
-  while true do
-    buf=f:read(48128)
-    if buf and #buf ~= 0 then
-      if not mg.write(buf) then
-        -- キャンセルされた
-        mg.cry('canceled')
+  if mg.request_info.request_method~='HEAD' then
+    while true do
+      buf=f:read(48128)
+      if buf and #buf~=0 then
+        if not mg.write(buf) then
+          -- キャンセルされた
+          mg.cry('canceled')
+          break
+        end
+      else
+        -- 終端に達した
+        mg.cry('end')
         break
       end
-    else
-      -- 終端に達した
-      mg.cry('end')
-      break
     end
   end
   f:close()

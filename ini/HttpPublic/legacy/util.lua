@@ -1,6 +1,9 @@
 --このサイズ以上のときページ圧縮する(nilのとき常に非圧縮)
 GZIP_THRESHOLD_BYTE=4096
 
+--処理するPOSTリクエストボディの最大値
+POST_MAX_BYTE=1024*1024
+
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
 function ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
   local s, v = '', (type(onidOrEpg)=='table' and onidOrEpg or edcb.SearchEpg(onidOrEpg, tsid, sid, eid))
@@ -283,14 +286,19 @@ function Response(code,ctype,charset,cl)
     ..'\r\nDate: '..ImfFixdate(os.date('!*t'))
     ..'\r\nX-Frame-Options: SAMEORIGIN'
     ..(ctype and '\r\nX-Content-Type-Options: nosniff\r\nContent-Type: '..ctype..(charset and '; charset='..charset or '') or '')
-    ..(cl and '\r\nContent-Length: '..cl or '')
+    ..(cl and mg.request_info.request_method~='HEAD' and '\r\nContent-Length: '..cl or '')
     ..(mg.keep_alive(not not cl) and '\r\n' or '\r\nConnection: close\r\n')
 end
 
---コンテンツを連結するオブジェクトを生成する
+--コンテンツ(レスポンスボディ)を連結するオブジェクトを生成する
+--※HEADリクエストでは何も追加されない
+--※threshを省略すると圧縮は行われない
 function CreateContentBuilder(thresh)
   local self={ct={''},len=0,thresh_=thresh}
   function self:Append(s)
+    if mg.request_info.request_method=='HEAD' then
+      return
+    end
     if self.thresh_ and self.len+#s>=self.thresh_ and not self.stream_ then
       self.stream_=true
       --可能ならコンテンツをgzip圧縮する(lua-zlib(zlib.dll)が必要)
@@ -313,6 +321,7 @@ function CreateContentBuilder(thresh)
       self.len=self.len+#s
     end
   end
+  --コンテンツの連結を完了してlenを確定させる
   function self:Finish()
     if self.gzip and self.stream_ then
       self.ct[#self.ct+1]=self.stream_()
@@ -320,6 +329,7 @@ function CreateContentBuilder(thresh)
     end
     self.stream_=nil
   end
+  --必要ならヘッダをつけて全体を取り出す
   function self:Pop(s)
     self:Finish()
     self.ct[1]=s or ''
@@ -340,6 +350,7 @@ function AssertPost()
     repeat
       s=mg.read()
       post=post..(s or '')
+      assert(#post<POST_MAX_BYTE)
     until not s
     if #post~=mg.request_info.content_length then
       post=''

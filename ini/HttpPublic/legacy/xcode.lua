@@ -68,29 +68,33 @@ if fpath then
 end
 
 if not f then
-  mg.write(Response(404,'text/html','utf-8')..'\r\n'
-    ..'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
+  ct=CreateContentBuilder()
+  ct:Append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
     ..'<title>xcode.lua</title><p><a href="index.html">メニュー</a></p>')
+  ct:Finish()
+  mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
 else
   mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
-  retry=0
-  while true do
-    buf=f:read(48128)
-    if buf and #buf ~= 0 then
-      retry=0
-      if not mg.write(buf) then
-        -- キャンセルされた
-        mg.cry('canceled')
-        break
+  if mg.request_info.request_method~='HEAD' then
+    retry=0
+    while true do
+      buf=f:read(48128)
+      if buf and #buf~=0 then
+        retry=0
+        if not mg.write(buf) then
+          -- キャンセルされた
+          mg.cry('canceled')
+          break
+        end
+      else
+        -- 終端に達した。4秒間この状態が続けば対象ファイルへの追記が終息したとみなす
+        retry=retry+1
+        if XCODE or retry > 20 then
+          mg.cry('end')
+          break
+        end
+        edcb.Sleep(200)
       end
-    else
-      -- 終端に達した。4秒間この状態が続けば対象ファイルへの追記が終息したとみなす
-      retry=retry+1
-      if XCODE or retry > 20 then
-        mg.cry('end')
-        break
-      end
-      edcb.Sleep(200)
     end
   end
   f:close()
