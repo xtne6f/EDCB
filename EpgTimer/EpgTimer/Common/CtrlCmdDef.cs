@@ -1347,18 +1347,20 @@ namespace EpgTimer
         }
     }
 
-    /// <summary>チャンネル変更情報</summary>
+    /// <summary>チャンネル・NetworkTVモード変更情報</summary>
     public class SetChInfo : ICtrlCmdReadWrite
     {
-        /// <summary>wONIDとwTSIDとwSIDの値が使用できるかどうか</summary>
+        /// <summary>ONIDとTSIDとSIDの値が使用できるかどうか</summary>
         public int useSID;
         public ushort ONID;
         public ushort TSID;
         public ushort SID;
-        /// <summary>dwSpaceとdwChの値が使用できるかどうか</summary>
+        /// <summary>spaceとchの値が使用できるかどうか</summary>
         public int useBonCh;
-        public uint space;
-        public uint ch;
+        /// <summary>チューナー空間（NetworkTV関連ではID）</summary>
+        public int space;
+        /// <summary>物理チャンネル（NetworkTV関連では送信モード）</summary>
+        public int ch;
         public SetChInfo()
         {
             useSID = 0;

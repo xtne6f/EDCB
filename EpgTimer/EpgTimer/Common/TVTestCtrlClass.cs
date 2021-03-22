@@ -322,19 +322,24 @@ namespace EpgTimer
         // 外部プロセスのウィンドウを起動する
         private static void WakeupWindow(IntPtr windowHandle)
         {
-            if (IsIconic(windowHandle))
+            if (NativeMethods.IsIconic(windowHandle))
             {
-                ShowWindowAsync(windowHandle, SW_RESTORE);
+                NativeMethods.ShowWindowAsync(windowHandle, SW_RESTORE);
             }
             // メイン・ウィンドウを最前面に表示する
             CommonUtil.SetForegroundWindow(windowHandle);
         }
-        // 外部プロセスのメイン・ウィンドウを起動するためのWin32 API
-        [DllImport("user32.dll")]
-        private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
-        [DllImport("user32.dll")]
-        private static extern bool IsIconic(IntPtr hWnd);
+
         // ShowWindowAsync関数のパラメータに渡す定義値
         private const int SW_RESTORE = 9;  // 画面を元の大きさに戻す
+
+        private static class NativeMethods
+        {
+            [DllImport("user32.dll")]
+            public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+            [DllImport("user32.dll")]
+            public static extern bool IsIconic(IntPtr hWnd);
+        }
     }
 }

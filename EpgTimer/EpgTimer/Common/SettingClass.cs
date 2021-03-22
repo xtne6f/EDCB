@@ -15,24 +15,15 @@ namespace EpgTimer
 {
     class IniFileHandler
     {
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        private static extern uint
-          GetPrivateProfileString(string lpAppName,
-          string lpKeyName, string lpDefault,
-          StringBuilder lpReturnedString, uint nSize,
-          string lpFileName);
+        public static int GetPrivateProfileInt(string appName, string keyName, int nDefault, string fileName)
+        {
+            return NativeMethods.GetPrivateProfileInt(appName, keyName, nDefault, fileName);
+        }
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        public static extern int
-          GetPrivateProfileInt(string lpAppName,
-          string lpKeyName, int nDefault, string lpFileName);
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        public static extern uint WritePrivateProfileString(
-          string lpAppName,
-          string lpKeyName,
-          string lpString,
-          string lpFileName);
+        public static bool WritePrivateProfileString(string appName, string keyName, string lpString, string fileName)
+        {
+            return NativeMethods.WritePrivateProfileString(appName, keyName, lpString, fileName);
+        }
 
         public static string
           GetPrivateProfileString(string lpAppName,
@@ -43,7 +34,7 @@ namespace EpgTimer
             {
                 //セクション名取得などのNUL文字分割された結果は先頭要素のみ格納される
                 buff = new StringBuilder((int)n);
-                if (GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, n, lpFileName) < n - 2)
+                if (NativeMethods.GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, n, lpFileName) < n - 2)
                 {
                     break;
                 }
@@ -61,6 +52,19 @@ namespace EpgTimer
                 }
             }
             catch { }
+        }
+
+        private static class NativeMethods
+        {
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+            public static extern uint GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault,
+                                                              StringBuilder lpReturnedString, uint nSize, string lpFileName);
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+            public static extern int GetPrivateProfileInt(string lpAppName, string lpKeyName, int nDefault, string lpFileName);
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+            public static extern bool WritePrivateProfileString(string lpAppName, string lpKeyName, string lpString, string lpFileName);
         }
     }
 
