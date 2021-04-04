@@ -842,8 +842,15 @@ namespace EpgTimer
                     };
                     h.Foreground = SystemColors.HotTrackBrush;
                     h.Cursor = System.Windows.Input.Cursors.Hand;
-                    h.NavigateUri = new Uri(m.Value);
-                    para.Inlines.Add(h);
+                    try
+                    {
+                        h.NavigateUri = new Uri(m.Value);
+                        para.Inlines.Add(h);
+                    }
+                    catch
+                    {
+                        para.Inlines.Add(m.Value);
+                    }
                     searchFrom = m.Index + m.Length;
                 }
             }
