@@ -825,7 +825,8 @@ namespace EpgTimer
             string rtext = ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
             if (rtext.Length == text.Length)
             {
-                for (Match m = Regex.Match(rtext, @"https?://[0-9A-Za-z!#$%&'()~=@;:?_+\-*/.]+"); m.Success; m = m.NextMatch())
+                //http(s)スキームで始まるか特定のTLDっぽい文字列を含むものを探す
+                for (Match m = Regex.Match(rtext, @"(?:https?://|(?<![0-9A-Za-z%_/.-])[0-9A-Za-z%_.-]+\.(?:com|jp|tv)/)[0-9A-Za-z!#$%&'()~=@;:?_+*/.-]+"); m.Success; m = m.NextMatch())
                 {
                     para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
                     var h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
@@ -844,7 +845,7 @@ namespace EpgTimer
                     h.Cursor = System.Windows.Input.Cursors.Hand;
                     try
                     {
-                        h.NavigateUri = new Uri(m.Value);
+                        h.NavigateUri = new Uri((Regex.IsMatch(m.Value, "^https?://") ? "" : "https://") + m.Value);
                         para.Inlines.Add(h);
                     }
                     catch
