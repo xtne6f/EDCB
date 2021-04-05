@@ -849,7 +849,7 @@ namespace EpgTimer
                     }
                     catch
                     {
-                        para.Inlines.Add(m.Value);
+                        para.Inlines.Add(text.Substring(m.Index, m.Length));
                     }
                     searchFrom = m.Index + m.Length;
                 }
