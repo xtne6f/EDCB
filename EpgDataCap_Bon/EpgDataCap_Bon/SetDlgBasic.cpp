@@ -52,6 +52,13 @@ BOOL CSetDlgBasic::OnInitDialog()
 	int index = GetPrivateProfileInt(L"SET", L"DialogTemplate", 0, appIniPath.c_str());
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_DIALOG_TEMPLATE), min(max(index, 0), 2));
 
+	WCHAR versionText[128] = L"Ver.";
+	LoadString(GetModuleHandle(NULL), IDS_VERSION_TEXT, versionText + 4, (int)array_size(versionText) - 4);
+	if( wcslen(versionText) > 4 ){
+		//バージョン文字列を表示
+		SetDlgItemText(m_hWnd, IDC_STATIC_VERSION_TEXT, versionText);
+	}
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
 }

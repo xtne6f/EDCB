@@ -9,6 +9,7 @@
 #define IDI_ICON_BLUE                   109
 #define IDI_ICON_GREEN                  110
 #define IDI_ICON_RED                    111
+#define IDS_VERSION_TEXT                115
 #define IDD_DIALOG_SETTING              120
 #define IDD_DIALOG_SETTING_BASIC        121
 #define IDD_DIALOG_SETTING_EPG          122
@@ -49,6 +50,7 @@
 #define IDC_BUTTON_SET_BON_DN                   40118
 #define IDC_COMBO_SET_BON_COUNT                 40119
 #define IDC_COMBO_SET_BON_EPG_COUNT             40120
+#define IDC_STATIC_VERSION_TEXT                 40121
 #define IDC_LIST_SET_EPG_SERVICE                40200
 #define IDC_BUTTON_SET_EPG_SERVICE_ALL          40201
 #define IDC_BUTTON_SET_EPG_SERVICE_VIDEO        40202
