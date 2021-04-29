@@ -222,15 +222,16 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 		}
 
 		DWORD dwRes;
-		for( int t[2] = {}; (dwRes = WaitForMultipleObjects(olNum + 1, hEventArray, FALSE, 10000)) == WAIT_TIMEOUT; ){
+		int olTimes[2] = {};
+		while( (dwRes = WaitForMultipleObjects(olNum + 1, hEventArray, FALSE, 10000)) == WAIT_TIMEOUT ){
 			for( int i = 0; i < olNum; i++ ){
 				//クライアントが接続待ちイベントを獲得したままパイプに接続しなかった場合に接続不能になるのを防ぐ
 				if( WaitForSingleObject(pSys->hEventConnects[olIndexes[i]], 0) == WAIT_OBJECT_0 ||
-				    t[i] >= PIPE_CONNECT_OPEN_TIMEOUT ){
+				    olTimes[i] >= PIPE_CONNECT_OPEN_TIMEOUT ){
 					SetEvent(pSys->hEventConnects[olIndexes[i]]);
-					t[i] = 0;
+					olTimes[i] = 0;
 				}else{
-					t[i] += 10000;
+					olTimes[i] += 10000;
 				}
 			}
 		}
