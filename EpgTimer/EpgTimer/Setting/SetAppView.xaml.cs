@@ -34,6 +34,9 @@ namespace EpgTimer.Setting
                 Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? Visibility.Hidden : Visibility.Visible;
             button_shortCutDel.Visibility = button_shortCutAdd.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
             listBox_service.ItemsSource = ChSet5.Instance.ChListSelected.Select(a => new ServiceViewItem(a));
+
+            // バージョン文字列を表示
+            textBlock_versionText.Text = App.VERSION_TEXT != "" ? "Ver." + App.VERSION_TEXT : "";
         }
 
         private void UserControl_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
