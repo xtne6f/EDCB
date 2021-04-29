@@ -327,6 +327,10 @@ namespace EpgTimer
         CMD_EPG_SRV_SEARCH_PG = 1025,
         /// <summary>番組情報一覧取得</summary>
         CMD_EPG_SRV_ENUM_PG_ALL = 1026,
+        /// <summary>番組情報の最小開始時間と最大開始時間を取得する</summary>
+        CMD_EPG_SRV_GET_PG_INFO_MINMAX = 1028,
+        /// <summary>サービス指定と時間指定で番組情報一覧を取得する</summary>
+        CMD_EPG_SRV_ENUM_PG_INFO_EX = 1029,
         /// <summary>サービス指定と時間指定で過去番組情報一覧を取得する</summary>
         CMD_EPG_SRV_ENUM_PG_ARC = 1030,
         /// <summary>自動予約登録の条件一覧取得</summary>
@@ -361,12 +365,16 @@ namespace EpgTimer
         CMD_EPG_SRV_GET_CHG_CH_TVTEST = 1062,
         /// <summary>保存された情報通知ログを取得する</summary>
         CMD_EPG_SRV_GET_NOTIFY_LOG = 1065,
-        /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
+        /// <summary>NetworkTVモードのViewアプリのチャンネルを切り替え（ID=0のみ）</summary>
         CMD_EPG_SRV_NWTV_SET_CH = 1070,
-        /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
+        /// <summary>NetworkTVモードで起動中のViewアプリを終了（ID=0のみ）</summary>
         CMD_EPG_SRV_NWTV_CLOSE = 1071,
-        /// <summary>ネットワークモードで起動するときのモード（1:UDP 2:TCP 3:UDP+TCP）</summary>
+        /// <summary>NetworkTVモードで起動するときの送信モード（1:UDP 2:TCP 3:UDP+TCP）</summary>
         CMD_EPG_SRV_NWTV_MODE = 1072,
+        /// <summary>NetworkTVモードのViewアプリのチャンネルを切り替え、または起動の確認（ID指定）</summary>
+        CMD_EPG_SRV_NWTV_ID_SET_CH = 1073,
+        /// <summary>NetworkTVモードで起動中のViewアプリを終了（ID指定）</summary>
+        CMD_EPG_SRV_NWTV_ID_CLOSE = 1074,
         /// <summary>ストリーム配信用ファイルを開く</summary>
         CMD_EPG_SRV_NWPLAY_OPEN = 1080,
         /// <summary>ストリーム配信用ファイルを閉じる</summary>
@@ -542,6 +550,10 @@ namespace EpgTimer
         public ErrCode SendSearchPgMinimum(List<EpgSearchKeyInfo> key, ref List<EpgEventInfoMinimum> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_SEARCH_PG, key, ref o); }
         /// <summary>番組情報一覧を取得する</summary>
         public ErrCode SendEnumPgAll(ref List<EpgServiceEventInfo> val) { object o = val;  return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ALL, ref o); }
+        /// <summary>番組情報の最小開始時間と最大開始時間を取得する</summary>
+        public ErrCode SendGetPgInfoMinMax(List<long> key, ref List<long> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_PG_INFO_MINMAX, key, ref o); }
+        /// <summary>サービス指定と時間指定で番組情報一覧を取得する</summary>
+        public ErrCode SendEnumPgInfoEx(List<long> keyAndRange, ref List<EpgServiceEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_INFO_EX, keyAndRange, ref o); }
         /// <summary>サービス指定と時間指定で過去番組情報一覧を取得する</summary>
         public ErrCode SendEnumPgArc(List<long> keyAndRange, ref List<EpgServiceEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC, keyAndRange, ref o); }
         /// <summary>自動予約登録条件を削除する</summary>
@@ -558,12 +570,16 @@ namespace EpgTimer
         public ErrCode SendGetChgChTVTest(ulong val, ref TvTestChChgInfo resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_CHG_CH_TVTEST, val, ref o); }
         /// <summary>保存された情報通知ログを取得する</summary>
         public ErrCode SendGetNotifyLog(int val, ref string resVal) { object o = resVal; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_NOTIFY_LOG, val, ref o); resVal = (string)o; return ret; }
-        /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
+        /// <summary>NetworkTVモードのViewアプリのチャンネルを切り替え（ID=0のみ）</summary>
         public ErrCode SendNwTVSetCh(SetChInfo val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWTV_SET_CH, val); }
-        /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
+        /// <summary>NetworkTVモードで起動中のViewアプリを終了（ID=0のみ）</summary>
         public ErrCode SendNwTVClose() { return SendCmdWithoutData(CtrlCmd.CMD_EPG_SRV_NWTV_CLOSE); }
-        /// <summary>ネットワークモードで起動するときのモード</summary>
+        /// <summary>NetworkTVモードで起動するときの送信モード（1:UDP 2:TCP 3:UDP+TCP）</summary>
         public ErrCode SendNwTVMode(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWTV_MODE, val); }
+        /// <summary>NetworkTVモードのViewアプリのチャンネルを切り替え、または起動の確認（ID指定）</summary>
+        public ErrCode SendNwTVIDSetCh(SetChInfo val, ref int processID) { object o = processID; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_NWTV_ID_SET_CH, val, ref o); processID = (int)o; return ret; }
+        /// <summary>NetworkTVモードで起動中のViewアプリを終了（ID指定）</summary>
+        public ErrCode SendNwTVIDClose(int nwtvID) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWTV_ID_CLOSE, nwtvID); }
         /// <summary>ストリーム配信用ファイルを開く</summary>
         public ErrCode SendNwPlayOpen(string val, ref uint resVal) { object o = resVal; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_OPEN, val, ref o); resVal = (uint)o; return ret; }
         /// <summary>ストリーム配信用ファイルを閉じる</summary>

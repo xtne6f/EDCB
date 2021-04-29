@@ -17,7 +17,7 @@ namespace EpgTimer
         void TaskTrayRightClick();
     }
 
-    class TaskTrayClass : IDisposable
+    sealed class TaskTrayClass : IDisposable
     {
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct NOTIFYICONDATA
@@ -39,9 +39,6 @@ namespace EpgTimer
             public string szInfoTitle;
             public uint dwInfoFlags;
         }
-
-        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-        private static extern bool Shell_NotifyIcon(uint dwMessage, [In] ref NOTIFYICONDATA lpData);
 
         private const int WM_APP_TRAY = 0x8100;
         private static Dictionary<TaskTrayClass, HwndSource> hwndDictionary;
@@ -122,15 +119,15 @@ namespace EpgTimer
                         {
                             nid.uFlags |= NIF_ICON;
                             nid.hIcon = icon.Handle;
-                            if (Shell_NotifyIcon(1, ref nid) == false)
+                            if (NativeMethods.Shell_NotifyIcon(1, ref nid) == false)
                             {
-                                Shell_NotifyIcon(0, ref nid);
+                                NativeMethods.Shell_NotifyIcon(0, ref nid);
                             }
                         }
                     }
-                    else if (Shell_NotifyIcon(1, ref nid) == false)
+                    else if (NativeMethods.Shell_NotifyIcon(1, ref nid) == false)
                     {
-                        Shell_NotifyIcon(0, ref nid);
+                        NativeMethods.Shell_NotifyIcon(0, ref nid);
                     }
                     if (sourceHook == null && CommonUtil.RegisterTaskbarCreatedWindowMessage() != 0)
                     {
@@ -154,7 +151,7 @@ namespace EpgTimer
                     nid.szTip = "";
                     nid.szInfo = "";
                     nid.szInfoTitle = "";
-                    Shell_NotifyIcon(2, ref nid);
+                    NativeMethods.Shell_NotifyIcon(2, ref nid);
                 }
             }
         }
@@ -176,7 +173,7 @@ namespace EpgTimer
                 nid.uTimeoutOrVersion = (uint)timeOutMSec;
                 nid.szInfoTitle = title.Length > 63 ? title.Substring(0, 60) + "..." : title;
                 nid.dwInfoFlags = NIIF_INFO;
-                Shell_NotifyIcon(1, ref nid);
+                NativeMethods.Shell_NotifyIcon(1, ref nid);
             }
         }
 
@@ -249,6 +246,12 @@ namespace EpgTimer
                 self.Visible = self.Visible;
             }
             return IntPtr.Zero;
+        }
+
+        private static class NativeMethods
+        {
+            [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+            public static extern bool Shell_NotifyIcon(uint dwMessage, [In] ref NOTIFYICONDATA lpData);
         }
     }
 }
