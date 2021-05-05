@@ -37,13 +37,14 @@ void CARIB8CharDecode::InitPSISI(void)
 	m_bCharColorIndex = 0;
 	m_bBackColorIndex = 0;
 	m_bRasterColorIndex = 0;
+	m_bORNColorIndex = 0;
 	m_bDefPalette = 0;
 
 	m_bUnderLine = FALSE;
-	m_bShadow = FALSE;
 	m_bBold = FALSE;
 	m_bItalic = FALSE;
 	m_bFlushMode = 0;
+	m_bORN = 0;
 
 	m_wSWFMode=0;
 	m_wClientX=0;
@@ -66,7 +67,7 @@ void CARIB8CharDecode::InitPSISI(void)
 
 void CARIB8CharDecode::InitCaption(void)
 {
-	m_G0.iMF = MF_JIS_KANJI1;
+	m_G0.iMF = MF_KANJI;
 	m_G0.iMode = MF_MODE_G;
 	m_G0.iByte = 2;
 
@@ -91,13 +92,14 @@ void CARIB8CharDecode::InitCaption(void)
 	m_bCharColorIndex = 7;
 	m_bBackColorIndex = 8;
 	m_bRasterColorIndex = 8;
+	m_bORNColorIndex = 8;
 	m_bDefPalette = 0;
 
 	m_bUnderLine = FALSE;
-	m_bShadow = FALSE;
 	m_bBold = FALSE;
 	m_bItalic = FALSE;
 	m_bFlushMode = 0;
+	m_bORN = 0;
 
 	m_wSWFMode=0;
 	m_wClientX=0;
@@ -209,41 +211,26 @@ BOOL CARIB8CharDecode::Analyze( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRe
 	DWORD dwReadSize = 0;
 
 	while( dwReadSize < dwSrcSize ){
+		BOOL bRet = FALSE;
 		DWORD dwReadBuff = 0;
 		//1バイト目チェック
 		if( pbSrc[dwReadSize] <= 0x20 ){
 			//C0制御コード
-			BOOL bRet = C0( pbSrc+dwReadSize, dwSrcSize-dwReadSize, &dwReadBuff );
-			dwReadSize += dwReadBuff;
-			if( bRet == FALSE ){
-				return FALSE;
-			}else if( bRet == 2 ){
-				break;
-			}
+			bRet = C0( pbSrc+dwReadSize, dwSrcSize-dwReadSize, &dwReadBuff );
 		}else if( pbSrc[dwReadSize] < 0x7F ){
 			//GL符号領域
-			if( GL_GR( pbSrc+dwReadSize, dwSrcSize-dwReadSize, &dwReadBuff, m_GL ) == FALSE ){
-				return FALSE;
-			}
-			dwReadSize += dwReadBuff;
+			bRet = GL_GR( pbSrc+dwReadSize, dwSrcSize-dwReadSize, &dwReadBuff, m_GL );
 		}else if( pbSrc[dwReadSize] <= 0xA0 ){
 			//C1制御コード
-			BOOL bRet = C1( pbSrc+dwReadSize, dwSrcSize-dwReadSize, &dwReadBuff );
-			dwReadSize += dwReadBuff;
-			if( bRet == FALSE ){
-				return FALSE;
-			}else if( bRet == 2 ){
-				break;
-			}
+			bRet = C1( pbSrc+dwReadSize, dwSrcSize-dwReadSize, &dwReadBuff );
 		}else if( pbSrc[dwReadSize] < 0xFF ){
 			//GR符号領域
-			if( GL_GR( pbSrc+dwReadSize, dwSrcSize-dwReadSize, &dwReadBuff, m_GR ) == FALSE ){
-				return FALSE;
-			}
-			dwReadSize += dwReadBuff;
-		}else{
+			bRet = GL_GR( pbSrc+dwReadSize, dwSrcSize-dwReadSize, &dwReadBuff, m_GR );
+		}
+		if( !bRet ){
 			return FALSE;
 		}
+		dwReadSize += dwReadBuff;
 	}
 
 	*pdwReadSize = dwReadSize;
@@ -258,8 +245,6 @@ BOOL CARIB8CharDecode::C0( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 
 	DWORD dwReadSize = 0;
 	DWORD dwReadBuff = 0;
-
-	BOOL bRet = TRUE;
 
 	switch(pbSrc[0]){
 	case 0x20:
@@ -335,11 +320,11 @@ BOOL CARIB8CharDecode::C0( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 			dwReadSize = 1;
 			CAPTION_DATA Item;
 			Item.bClear = TRUE;
-			Item.dwWaitTime = m_dwWaitTime*100;
+			Item.dwWaitTime = m_dwWaitTime;
 			if( m_pCaptionList != NULL ){
 				m_pCaptionList->push_back(Item);
 			}
-			bRet = 2;
+			//TODO: 字幕系ではここで初期化動作が必要
 			m_dwWaitTime = 0;
 		}else{
 			//APB、APF、APD、APU
@@ -350,7 +335,7 @@ BOOL CARIB8CharDecode::C0( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 
 	*pdwReadSize = dwReadSize;
 
-	return bRet;
+	return TRUE;
 }
 
 BOOL CARIB8CharDecode::C1( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize )
@@ -360,8 +345,6 @@ BOOL CARIB8CharDecode::C1( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 	}
 	DWORD dwReadSize = 0;
 	DWORD dwReadBuff = 0;
-
-	BOOL bRet = TRUE;
 
 	CheckModify();
 
@@ -445,14 +428,15 @@ BOOL CARIB8CharDecode::C1( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 		if( pbSrc[1] == 0x20 ){
 			if( dwSrcSize < 3 ) return FALSE;
 			dwReadSize = 3;
+			//規定によりパレットは0から127まで使われる
 			m_bDefPalette = pbSrc[2]&0x07;
 		}else{
 			switch(pbSrc[1]&0xF0){
 				case 0x40:
-					m_bCharColorIndex = pbSrc[1]&0x0F;
+					m_bCharColorIndex = (m_bDefPalette<<4) | (pbSrc[1]&0x0F);
 					break;
 				case 0x50:
-					m_bBackColorIndex = pbSrc[1]&0x0F;
+					m_bBackColorIndex = (m_bDefPalette<<4) | (pbSrc[1]&0x0F);
 					break;
 				case 0x60:
 					//未サポート
@@ -492,7 +476,7 @@ BOOL CARIB8CharDecode::C1( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 		break;
 	case 0x95:
 		//MACRO マクロ定義
-		//未サポート
+		//未サポート(MACRO 0x4Fまで送る)
 		dwReadSize = 2;
 		do{
 			if( ++dwReadSize > dwSrcSize ){
@@ -514,23 +498,22 @@ BOOL CARIB8CharDecode::C1( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 		break;
 	case 0x99:
 		//SPL アンダーライン モザイクの終了
-		m_bBold = FALSE;
-		bRet = 2;
+		m_bUnderLine = FALSE;
 		dwReadSize = 1;
 		break;
 	case 0x9A:
 		//STL アンダーライン モザイクの開始
-		m_bBold = TRUE;
+		m_bUnderLine = TRUE;
 		dwReadSize = 1;
 		break;
 	case 0x9D:
 		//TIME 時間制御
-		CheckModify();
 		if( dwSrcSize < 3 ) return FALSE;
 		if( pbSrc[1] == 0x20 ){
-			m_dwWaitTime = pbSrc[2]-0x40;
+			m_dwWaitTime += (pbSrc[2]-0x40) * 100;
 			dwReadSize = 3;
 		}else{
+			//未サポート
 			dwReadSize = 1;
 			do{
 				if( ++dwReadSize > dwSrcSize ){
@@ -554,7 +537,7 @@ BOOL CARIB8CharDecode::C1( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 
 	*pdwReadSize = dwReadSize;
 
-	return bRet;
+	return TRUE;
 }
 
 BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSize, const MF_MODE* mode )
@@ -594,8 +577,7 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 			case MF_HIRA:
 			case MF_PROP_HIRA:
 				{
-				//半角ひらがな
-				//テーブルからコード取得
+				//Gセットのひらがな系集合
 				m_strDecode += HiraTable[b - 0x21];
 				dwReadSize = 1;
 				}
@@ -603,8 +585,7 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 			case MF_KANA:
 			case MF_PROP_KANA:
 				{
-				//半角カタカナ
-				//テーブルからコード取得
+				//Gセットのカタカナ系集合
 				m_strDecode += KanaTable[b - 0x21];
 				dwReadSize = 1;
 				}
@@ -983,22 +964,24 @@ BOOL CARIB8CharDecode::CSI( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSi
 			break;
 		case 0x63:
 			//ORN
-			if( wP1 == 0x02 ){
-				m_bShadow = TRUE;
+			if( wP1 <= 3 ){
+				BYTE bIndex = (BYTE)((nParam >= 2 && (wP1 == 1 || wP1 == 2) ? (wP2 / 100) << 4 | (wP2 % 100) : 8) & 0x7F);
+				if( wP1 != m_bORN || bIndex != m_bORNColorIndex ){
+					CheckModify();
+				}
+				m_bORN = (BYTE)wP1;
+				m_bORNColorIndex = bIndex;
 			}
 			break;
 		case 0x64:
 			//MDF
-			if( wP1 == 0 ){
-				m_bBold = FALSE;
-				m_bItalic = FALSE;
-			}else if( wP1 == 1 ){
-				m_bBold = TRUE;
-			}else if( wP1 == 2 ){
-				m_bItalic = TRUE;
-			}else if( wP1 == 3 ){
-				m_bBold = TRUE;
-				m_bItalic = TRUE;
+			if( wP1 <= 3 ){
+				if( ((wP1 & 1) != 0) != m_bBold ||
+				    ((wP1 & 2) != 0) != m_bItalic ){
+					CheckModify();
+				}
+				m_bBold = (wP1 & 1) != 0;
+				m_bItalic = (wP1 & 2) != 0;
 			}
 			break;
 		case 0x66:
@@ -1056,10 +1039,10 @@ void CARIB8CharDecode::CheckModify(void)
 	}
 }
 
-void CARIB8CharDecode::CreateCaptionData(CAPTION_DATA* pItem)
+void CARIB8CharDecode::CreateCaptionData(CAPTION_DATA* pItem) const
 {
 	pItem->bClear = FALSE;
-	pItem->dwWaitTime = m_dwWaitTime*100;
+	pItem->dwWaitTime = m_dwWaitTime;
 	pItem->wSWFMode = m_wSWFMode;
 	pItem->wClientX = m_wClientX;
 	pItem->wClientY = m_wClientY;
@@ -1069,19 +1052,20 @@ void CARIB8CharDecode::CreateCaptionData(CAPTION_DATA* pItem)
 	pItem->wPosY = m_wPosY;
 }
 
-void CARIB8CharDecode::CreateCaptionCharData(CAPTION_CHAR_DATA* pItem)
+void CARIB8CharDecode::CreateCaptionCharData(CAPTION_CHAR_DATA* pItem) const
 {
 	pItem->strDecode = m_strDecode;
 
 	pItem->stCharColor = DefClut[m_bCharColorIndex];
 	pItem->stBackColor = DefClut[m_bBackColorIndex];
 	pItem->stRasterColor = DefClut[m_bRasterColorIndex];
+	pItem->stORNColor = DefClut[m_bORNColorIndex];
 
 	pItem->bUnderLine = m_bUnderLine;
-	pItem->bShadow = m_bShadow;
 	pItem->bBold = m_bBold;
 	pItem->bItalic = m_bItalic;
 	pItem->bFlushMode = m_bFlushMode;
+	pItem->bORN = m_bORN;
 
 	pItem->wCharW = m_wCharW;
 	pItem->wCharH = m_wCharH;
@@ -1314,9 +1298,9 @@ const WCHAR CARIB8CharDecode::JisXKanaTable[94] = {
 
 //デフォルトマクロ文(NULは効果がないと規定されている)
 const BYTE CARIB8CharDecode::DefaultMacro[16][20] = {
-	{0x1B, 0x24, 0x39, 0x1B, 0x29, 0x4A, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
-	{0x1B, 0x24, 0x39, 0x1B, 0x29, 0x31, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
-	{0x1B, 0x24, 0x39, 0x1B, 0x29, 0x20, 0x41, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
+	{0x1B, 0x24, 0x42, 0x1B, 0x29, 0x4A, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
+	{0x1B, 0x24, 0x42, 0x1B, 0x29, 0x31, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
+	{0x1B, 0x24, 0x42, 0x1B, 0x29, 0x20, 0x41, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
 	{0x1B, 0x28, 0x32, 0x1B, 0x29, 0x34, 0x1B, 0x2A, 0x35, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
 	{0x1B, 0x28, 0x32, 0x1B, 0x29, 0x33, 0x1B, 0x2A, 0x35, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
 	{0x1B, 0x28, 0x32, 0x1B, 0x29, 0x20, 0x41, 0x1B, 0x2A, 0x35, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
@@ -1325,9 +1309,9 @@ const BYTE CARIB8CharDecode::DefaultMacro[16][20] = {
 	{0x1B, 0x28, 0x20, 0x47, 0x1B, 0x29, 0x20, 0x48, 0x1B, 0x2A, 0x20, 0x49, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
 	{0x1B, 0x28, 0x20, 0x4A, 0x1B, 0x29, 0x20, 0x4B, 0x1B, 0x2A, 0x20, 0x4C, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
 	{0x1B, 0x28, 0x20, 0x4D, 0x1B, 0x29, 0x20, 0x4E, 0x1B, 0x2A, 0x20, 0x4F, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
-	{0x1B, 0x24, 0x39, 0x1B, 0x29, 0x20, 0x42, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
-	{0x1B, 0x24, 0x39, 0x1B, 0x29, 0x20, 0x43, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
-	{0x1B, 0x24, 0x39, 0x1B, 0x29, 0x20, 0x44, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
+	{0x1B, 0x24, 0x42, 0x1B, 0x29, 0x20, 0x42, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
+	{0x1B, 0x24, 0x42, 0x1B, 0x29, 0x20, 0x43, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
+	{0x1B, 0x24, 0x42, 0x1B, 0x29, 0x20, 0x44, 0x1B, 0x2A, 0x30, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
 	{0x1B, 0x28, 0x31, 0x1B, 0x29, 0x30, 0x1B, 0x2A, 0x4A, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D},
 	{0x1B, 0x28, 0x4A, 0x1B, 0x29, 0x32, 0x1B, 0x2A, 0x20, 0x41, 0x1B, 0x2B, 0x20, 0x70, 0x0F, 0x1B, 0x7D}
 };

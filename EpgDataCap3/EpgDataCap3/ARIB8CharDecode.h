@@ -82,12 +82,13 @@ struct CAPTION_CHAR_DATA{
 	CLUT_DAT stCharColor;
 	CLUT_DAT stBackColor;
 	CLUT_DAT stRasterColor;
+	CLUT_DAT stORNColor;
 
 	BOOL bUnderLine;
-	BOOL bShadow;
 	BOOL bBold;
 	BOOL bItalic;
 	BYTE bFlushMode;
+	BYTE bORN;
 
 	WORD wCharW;
 	WORD wCharH;
@@ -96,6 +97,7 @@ struct CAPTION_CHAR_DATA{
 };
 
 struct CAPTION_DATA{
+	//bClear==TRUEのときdwWaitTime以外のフィールドは未定義
 	BOOL bClear;
 	WORD wSWFMode;
 	WORD wClientX;
@@ -116,12 +118,14 @@ public:
 
 	//PSI/SIを想定したwstringへの変換
 	BOOL PSISI( const BYTE* pbSrc, DWORD dwSrcSize, wstring* strDec );
-	//字幕を想定したwstringへの変換
-	BOOL Caption( const BYTE* pbSrc, DWORD dwSrcSize, vector<CAPTION_DATA>* pCaptionList );
 	//PSISI()の結果が真のとき、引数*strDecに格納される文字列
 	const wstring& GetDecodedString() const { return m_strDecode; }
 
 protected:
+	//字幕を想定したwstringへの変換
+	//注意! これは本来publicだが、字幕系はあまりメンテナンスされていないのでここに置く
+	BOOL Caption( const BYTE* pbSrc, DWORD dwSrcSize, vector<CAPTION_DATA>* pCaptionList );
+
 	struct MF_MODE{
 		int iMF; //文字符号集合
 		int iMode; //符号集合の分類
@@ -147,12 +151,13 @@ protected:
 	BYTE m_bBackColorIndex;
 	BYTE m_bRasterColorIndex;
 	BYTE m_bDefPalette;
+	BYTE m_bORNColorIndex;
 
 	BOOL m_bUnderLine;
-	BOOL m_bShadow;
 	BOOL m_bBold;
 	BOOL m_bItalic;
 	BYTE m_bFlushMode;
+	BYTE m_bORN;
 
 	//表示書式
 	WORD m_wSWFMode;
@@ -167,7 +172,7 @@ protected:
 	WORD m_wCharHInterval;
 	WORD m_wCharVInterval;
 	WORD m_wMaxChar;
-
+	//表示タイミング(ミリ秒)
 	DWORD m_dwWaitTime;
 
 	vector<CAPTION_DATA>* m_pCaptionList;
@@ -187,8 +192,8 @@ protected:
 
 	BOOL IsSmallCharMode(void);
 	BOOL IsChgPos(void);
-	void CreateCaptionData(CAPTION_DATA* pItem);
-	void CreateCaptionCharData(CAPTION_CHAR_DATA* pItem);
+	void CreateCaptionData(CAPTION_DATA* pItem) const;
+	void CreateCaptionCharData(CAPTION_CHAR_DATA* pItem) const;
 	void CheckModify(void);
 
 	//制御符号
