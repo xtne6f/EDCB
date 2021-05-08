@@ -4365,7 +4365,7 @@ bool CEpgTimerSrvMain::FetchReserveData(CLuaWorkspace& ws, RESERVE_DATA& r)
 	r.serviceID = (WORD)LuaHelp::get_int(L, "sid");
 	r.eventID = (WORD)LuaHelp::get_int(L, "eid");
 	UTF8toW(LuaHelp::get_string(L, "comment"), r.comment);
-	r.reserveID = (WORD)LuaHelp::get_int(L, "reserveID");
+	r.reserveID = LuaHelp::get_int(L, "reserveID");
 	r.startTimeEpg = LuaHelp::get_time(L, "startTimeEpg");
 	lua_getfield(L, -1, "recSetting");
 	if( r.startTime.wYear && r.startTimeEpg.wYear && lua_istable(L, -1) ){
