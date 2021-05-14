@@ -64,6 +64,9 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   となっている部分をインストールされている.NETのバージョンに変更するか、v4.5のTargeting Packをインストールする
 
+・gitコマンドのある環境では、versionhashgen.batを実行すればバージョン情報にコミットハッシュを埋め込むことができる
+  versionhash.shはMSYS2などのシェル環境用
+
 ・Lua5.2を組み込んだビルドもできる("EpgTimerSrv\EpgTimerSrv.sln"の[Release-withlua])
   以下のファイルが必要
   ・https://www.lua.org/ のlua-5.2.4.tar.gzのsrcフォルダの中身を"EpgTimerSrv\EpgTimerSrv\lua"に既存ファイルも含めて上書き

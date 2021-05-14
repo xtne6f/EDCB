@@ -431,7 +431,7 @@ SYSTEMTIME get_time(lua_State* L, const char* name)
 namespace
 {
 
-wchar_t* utf8towcsdup(const char* s, const wchar_t* prefix = L"")
+wchar_t* utf8towcsdup(const char* s, const wchar_t* prefix = L"", const wchar_t* suffix = L"")
 {
 	wstring w;
 	try{
@@ -442,12 +442,73 @@ wchar_t* utf8towcsdup(const char* s, const wchar_t* prefix = L"")
 			return NULL;
 		}
 		w.insert(0, prefix);
+		w.append(suffix);
 	}catch(...){
 		return NULL;
 	}
 	wchar_t* ret = (wchar_t*)malloc((w.size() + 1) * sizeof(wchar_t));
 	if( ret ){
 		wcscpy_s(ret, w.size() + 1, w.c_str());
+	}
+	return ret;
+}
+
+wchar_t* allocenv(lua_State* L, int idx)
+{
+	wstring wenv;
+	LPWCH env = GetEnvironmentStrings();
+	if( env ){
+		size_t n = 0;
+		while( env[n] ){
+			n += wcslen(env + n) + 1;
+		}
+		try{
+			wenv.assign(env, env + n);
+		}catch(...){
+			FreeEnvironmentStrings(env);
+			return NULL;
+		}
+		FreeEnvironmentStrings(env);
+	}
+	lua_pushnil(L);
+	while( lua_next(L, idx) ){
+		if( lua_type(L, -2) == LUA_TSTRING ){
+			try{
+				wstring var;
+				UTF8toW(lua_tostring(L, -2), var);
+				if( var.find(L'=') == wstring::npos ){
+					for( size_t n = 0; n < wenv.size(); ){
+						size_t m = wenv.find(L'\0', n);
+						if( m - n > var.size() && wenv[n + var.size()] == L'=' ){
+							wenv[n + var.size()] = L'\0';
+							if( CompareNoCase(var, wenv.c_str() + n) == 0 ){
+								//erase an old variable
+								wenv.erase(n, m + 1 - n);
+							}else{
+								wenv[n + var.size()] = L'=';
+								n = m + 1;
+							}
+						}else{
+							n = m + 1;
+						}
+					}
+					if( lua_type(L, -1) == LUA_TSTRING ){
+						//append a new variable
+						wstring val;
+						UTF8toW(lua_tostring(L, -1), val);
+						wenv += var + L'=' + val + L'\0';
+					}
+				}
+			}catch(...){
+				lua_pop(L, 2);
+				return NULL;
+			}
+		}
+		lua_pop(L, 1);
+	}
+	wchar_t* ret = (wchar_t*)malloc((wenv.size() + 1) * sizeof(wchar_t));
+	if( ret ){
+		std::copy(wenv.c_str(), wenv.c_str() + wenv.size() + 1, ret);
 	}
 	return ret;
 }
@@ -686,14 +747,17 @@ int os_execute(lua_State* L)
 	}
 	const char* cmd = luaL_optstring(L, 1, NULL);
 	if( cmd != NULL ){
-		DWORD creflags = lua_toboolean(L, 2) ? 0 : CREATE_NO_WINDOW;
+		//EXTENDED!: show/hide console window
+		DWORD creflags = CREATE_UNICODE_ENVIRONMENT | (lua_toboolean(L, 2) ? 0 : CREATE_NO_WINDOW);
 		wchar_t* wcmd = utf8towcsdup(cmd, L" /c ");
 		luaL_argcheck(L, wcmd != NULL, 1, "utf8towcsdup");
+		//EXTENDED!: override environment
+		wchar_t* wenv = lua_istable(L, 3) ? allocenv(L, 3) : NULL;
 		STARTUPINFO si = {};
 		si.cb = sizeof(si);
 		PROCESS_INFORMATION pi;
 		int stat = -1;
-		if( cmdexe[0] && CreateProcess(cmdexe, wcmd, NULL, NULL, FALSE, creflags, NULL, NULL, &si, &pi) ){
+		if( cmdexe[0] && CreateProcess(cmdexe, wcmd, NULL, NULL, FALSE, creflags, wenv, NULL, &si, &pi) ){
 			CloseHandle(pi.hThread);
 			if( WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_OBJECT_0 && GetExitCodeProcess(pi.hProcess, &dw) ){
 				stat = (int)dw;
@@ -701,6 +765,7 @@ int os_execute(lua_State* L)
 			CloseHandle(pi.hProcess);
 		}
 		errno = ENOENT;
+		nefree(wenv);
 		nefree(wcmd);
 		return luaL_execresult(L, stat);
 	}else{
@@ -748,7 +813,7 @@ int io_open(lua_State* L)
 	luaL_argcheck(L, checkmode(mode), 2, "invalid mode");
 	wchar_t* wfilename = utf8towcsdup(filename);
 	luaL_argcheck(L, wfilename != NULL, 1, "utf8towcsdup");
-	wchar_t* wmode = utf8towcsdup(mode);
+	wchar_t* wmode = utf8towcsdup(mode, L"", L"N");
 	if( wmode == NULL ){
 		free(wfilename);
 		luaL_argerror(L, 2, "utf8towcsdup");
@@ -777,7 +842,9 @@ int io_popen(lua_State* L)
 {
 	const char* filename = luaL_checkstring(L, 1);
 	const char* mode = luaL_optstring(L, 2, "r");
-	DWORD creflags = lua_toboolean(L, 3) ? 0 : CREATE_NO_WINDOW;
+	//EXTENDED!: show/hide console window
+	DWORD creflags = CREATE_UNICODE_ENVIRONMENT | (lua_toboolean(L, 3) ? 0 : CREATE_NO_WINDOW);
+	int nargs = lua_gettop(L);
 	LStream* p = newprefile(L);
 	luaL_argcheck(L, (mode[0] == 'r' || mode[0] == 'w') && (!mode[1] || mode[1] == 'b' && !mode[2]), 2, "invalid mode");
 	wchar_t* wfilename = utf8towcsdup(filename, L" /c ");
@@ -788,6 +855,8 @@ int io_popen(lua_State* L)
 	if( dw == 0 || dw >= MAX_PATH ){
 		cmdexe[0] = L'\0';
 	}
+	//EXTENDED!: override environment
+	wchar_t* wenv = nargs >= 4 && lua_istable(L, 4) ? allocenv(L, 4) : NULL;
 	HANDLE ppipe = INVALID_HANDLE_VALUE; //parent
 	HANDLE tpipe = INVALID_HANDLE_VALUE; //temporary
 	if( cmdexe[0] && CreatePipe(mode[0] == 'r' ? &ppipe : &tpipe, mode[0] == 'r' ? &tpipe : &ppipe, NULL, 0) ){
@@ -810,7 +879,7 @@ int io_popen(lua_State* L)
 			}
 			si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			PROCESS_INFORMATION pi;
-			b = CreateProcess(cmdexe, wfilename, NULL, NULL, TRUE, creflags, NULL, NULL, &si, &pi);
+			b = CreateProcess(cmdexe, wfilename, NULL, NULL, TRUE, creflags, wenv, NULL, &si, &pi);
 			if( si.hStdError != INVALID_HANDLE_VALUE ){
 				CloseHandle(si.hStdError);
 			}
@@ -842,6 +911,7 @@ int io_popen(lua_State* L)
 		}
 	}
 	errno = ENOENT;
+	nefree(wenv);
 	nefree(wfilename);
 	p->closef = &f_pclose;
 	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;

@@ -80,6 +80,7 @@
     <Compile Include="AddManualAutoAddWindow.xaml.cs">
       <DependentUpon>AddManualAutoAddWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AppVersion.cs" />
     <Compile Include="AutoAddView.xaml.cs">
       <DependentUpon>AutoAddView.xaml</DependentUpon>
     </Compile>

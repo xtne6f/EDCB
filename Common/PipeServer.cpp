@@ -21,9 +21,11 @@
 CPipeServer::CPipeServer(void)
 {
 #ifdef _WIN32
-	this->hEventOl = NULL;
-	this->hEventConnect = NULL;
-	this->hPipe = INVALID_HANDLE_VALUE;
+	for( int i = 0; i < 2; i++ ){
+		this->hEventOls[i] = NULL;
+		this->hEventConnects[i] = NULL;
+		this->hPipes[i] = INVALID_HANDLE_VALUE;
+	}
 #else
 	this->srvSock = -1;
 #endif
@@ -37,7 +39,8 @@ CPipeServer::~CPipeServer(void)
 bool CPipeServer::StartServer(
 	const wstring& pipeName,
 	const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc_,
-	bool insecureFlag
+	bool insecureFlag,
+	bool doNotCreateNoWaitPipe
 )
 {
 	if( !cmdProc_ || pipeName.find(L"Pipe") == wstring::npos ){
@@ -50,39 +53,46 @@ bool CPipeServer::StartServer(
 
 	//原作仕様では同期的にパイプを生成しないので注意
 #ifdef _WIN32
-	wstring eventName = (L"Global\\" + pipeName).replace(7 + pipeName.find(L"Pipe"), 4, L"Connect");
-	this->hEventConnect = CreateEvent(NULL, FALSE, FALSE, eventName.c_str());
-	if( this->hEventConnect && GetLastError() != ERROR_ALREADY_EXISTS ){
-		WCHAR trusteeName[] = L"NT AUTHORITY\\Authenticated Users";
-		DWORD writeDac = 0;
-		if( insecureFlag ){
-			//現在はSYNCHRONIZEでよいが以前のクライアントはCreateEvent()で開いていたのでGENERIC_ALLが必要
-			if( GrantAccessToKernelObject(this->hEventConnect, trusteeName, GENERIC_ALL) ){
-				AddDebugLogFormat(L"Granted GENERIC_ALL on %ls to %ls", eventName.c_str(), trusteeName);
+	for( int i = 0; i < 2; i++ ){
+		wstring eventName = (L"Global\\" + pipeName).replace(7 + pipeName.find(L"Pipe"), 4, i == 0 ? L"Connect" : L"NoWaitConnect");
+		this->hEventConnects[i] = CreateEvent(NULL, FALSE, FALSE, eventName.c_str());
+		if( this->hEventConnects[i] && GetLastError() != ERROR_ALREADY_EXISTS ){
+			WCHAR trusteeName[] = L"NT AUTHORITY\\Authenticated Users";
+			DWORD writeDac = 0;
+			if( insecureFlag ){
+				//現在はSYNCHRONIZEでよいが以前のクライアントはCreateEvent()で開いていたのでGENERIC_ALLが必要
+				if( GrantAccessToKernelObject(this->hEventConnects[i], trusteeName, GENERIC_ALL) ){
+					AddDebugLogFormat(L"Granted GENERIC_ALL on %ls to %ls", eventName.c_str(), trusteeName);
+					writeDac = WRITE_DAC;
+				}
+			}else if( GrantServerAccessToKernelObject(this->hEventConnects[i], SYNCHRONIZE) ){
+				AddDebugLogFormat(L"Granted SYNCHRONIZE on %ls to %ls", eventName.c_str(), SERVICE_NAME);
 				writeDac = WRITE_DAC;
 			}
-		}else if( GrantServerAccessToKernelObject(this->hEventConnect, SYNCHRONIZE) ){
-			AddDebugLogFormat(L"Granted SYNCHRONIZE on %ls to %ls", eventName.c_str(), SERVICE_NAME);
-			writeDac = WRITE_DAC;
-		}
-		wstring pipePath = L"\\\\.\\pipe\\" + pipeName;
-		this->hPipe = CreateNamedPipe(pipePath.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | writeDac, 0, 1, 8192, 8192, PIPE_TIMEOUT, NULL);
-		if( this->hPipe != INVALID_HANDLE_VALUE ){
-			if( insecureFlag ){
-				if( writeDac && GrantAccessToKernelObject(this->hPipe, trusteeName, GENERIC_READ | GENERIC_WRITE) ){
-					AddDebugLogFormat(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls", pipePath.c_str(), trusteeName);
+			wstring pipePath = (L"\\\\.\\pipe\\" + pipeName).replace(9 + pipeName.find(L"Pipe"), 0, i == 0 ? L"" : L"NoWait");
+			this->hPipes[i] = CreateNamedPipe(pipePath.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | writeDac, 0, 1, 8192, 8192, PIPE_TIMEOUT, NULL);
+			if( this->hPipes[i] != INVALID_HANDLE_VALUE ){
+				if( insecureFlag ){
+					if( writeDac && GrantAccessToKernelObject(this->hPipes[i], trusteeName, GENERIC_READ | GENERIC_WRITE) ){
+						AddDebugLogFormat(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls", pipePath.c_str(), trusteeName);
+					}
+				}else if( writeDac && GrantServerAccessToKernelObject(this->hPipes[i], GENERIC_READ | GENERIC_WRITE) ){
+					AddDebugLogFormat(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls", pipePath.c_str(), SERVICE_NAME);
 				}
-			}else if( writeDac && GrantServerAccessToKernelObject(this->hPipe, GENERIC_READ | GENERIC_WRITE) ){
-				AddDebugLogFormat(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls", pipePath.c_str(), SERVICE_NAME);
-			}
-			this->hEventOl = CreateEvent(NULL, TRUE, FALSE, NULL);
-			if( this->hEventOl ){
-				this->exitingFlag = false;
-				this->stopEvent.Reset();
-				this->workThread = thread_(ServerThread, this);
-				return true;
+				this->hEventOls[i] = CreateEvent(NULL, TRUE, FALSE, NULL);
+				if( this->hEventOls[i] ){
+					if( i == (doNotCreateNoWaitPipe ? 0 : 1) ){
+						this->exitingFlag = false;
+						this->stopEvent.Reset();
+						this->workThread = thread_(ServerThread, this);
+						return true;
+					}
+					continue;
+				}
 			}
 		}
+		//失敗
+		break;
 	}
 #else
 	WtoUTF8(EDCB_INI_ROOT + pipeName, this->sockPath);
@@ -121,17 +131,19 @@ bool CPipeServer::StopServer(bool checkOnlyFlag)
 		this->workThread.join();
 	}
 #ifdef _WIN32
-	if( this->hPipe != INVALID_HANDLE_VALUE ){
-		CloseHandle(this->hPipe);
-		this->hPipe = INVALID_HANDLE_VALUE;
-	}
-	if( this->hEventConnect ){
-		CloseHandle(this->hEventConnect);
-		this->hEventConnect = NULL;
-	}
-	if( this->hEventOl ){
-		CloseHandle(this->hEventOl);
-		this->hEventOl = NULL;
+	for( int i = 1; i >= 0; i-- ){
+		if( this->hPipes[i] != INVALID_HANDLE_VALUE ){
+			CloseHandle(this->hPipes[i]);
+			this->hPipes[i] = INVALID_HANDLE_VALUE;
+		}
+		if( this->hEventConnects[i] ){
+			CloseHandle(this->hEventConnects[i]);
+			this->hEventConnects[i] = NULL;
+		}
+		if( this->hEventOls[i] ){
+			CloseHandle(this->hEventOls[i]);
+			this->hEventOls[i] = NULL;
+		}
 	}
 #else
 	if( this->srvSock >= 0 ){
@@ -175,46 +187,73 @@ BOOL CPipeServer::GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, D
 
 void CPipeServer::ServerThread(CPipeServer* pSys)
 {
+#ifdef _WIN32
+	OVERLAPPED ols[2] = {};
+#endif
+
 	for(;;){
 #ifdef _WIN32
-		HANDLE hEventArray[] = { pSys->stopEvent.Handle(), pSys->hEventOl };
-		OVERLAPPED stOver = {};
-		stOver.hEvent = hEventArray[1];
-		if( ConnectNamedPipe(pSys->hPipe, &stOver) == FALSE ){
-			DWORD err = GetLastError();
-			if( err == ERROR_PIPE_CONNECTED ){
-				SetEvent(hEventArray[1]);
-			}else if( err != ERROR_IO_PENDING ){
-				//エラー
-				break;
+		int olNum = 0;
+		int olIndexes[2] = {};
+		HANDLE hEventArray[3] = { pSys->stopEvent.Handle() };
+		for( int i = 0; i < (pSys->hEventOls[1] ? 2 : 1); i++ ){
+			if( ols[i].hEvent == NULL ){
+				OVERLAPPED olZero = {};
+				ols[i] = olZero;
+				ols[i].hEvent = pSys->hEventOls[i];
+				if( ConnectNamedPipe(pSys->hPipes[i], ols + i) == FALSE ){
+					DWORD err = GetLastError();
+					if( err == ERROR_PIPE_CONNECTED ){
+						SetEvent(pSys->hEventOls[i]);
+					}else if( err != ERROR_IO_PENDING ){
+						//エラー
+						ols[i].hEvent = NULL;
+						continue;
+					}
+				}
+				SetEvent(pSys->hEventConnects[i]);
 			}
+			olIndexes[olNum] = i;
+			hEventArray[++olNum] = pSys->hEventOls[i];
 		}
-		SetEvent(pSys->hEventConnect);
+		if( olNum == 0 ){
+			//すべてエラーになった
+			break;
+		}
 
 		DWORD dwRes;
-		for( int t = 0; (dwRes = WaitForMultipleObjects(2, hEventArray, FALSE, 10000)) == WAIT_TIMEOUT; ){
-			//クライアントが接続待ちイベントを獲得したままパイプに接続しなかった場合に接続不能になるのを防ぐ
-			if( WaitForSingleObject(pSys->hEventConnect, 0) == WAIT_OBJECT_0 || t >= PIPE_CONNECT_OPEN_TIMEOUT ){
-				SetEvent(pSys->hEventConnect);
-				t = 0;
-			}else{
-				t += 10000;
+		int olTimes[2] = {};
+		while( (dwRes = WaitForMultipleObjects(olNum + 1, hEventArray, FALSE, 10000)) == WAIT_TIMEOUT ){
+			for( int i = 0; i < olNum; i++ ){
+				//クライアントが接続待ちイベントを獲得したままパイプに接続しなかった場合に接続不能になるのを防ぐ
+				if( WaitForSingleObject(pSys->hEventConnects[olIndexes[i]], 0) == WAIT_OBJECT_0 ||
+				    olTimes[i] >= PIPE_CONNECT_OPEN_TIMEOUT ){
+					SetEvent(pSys->hEventConnects[olIndexes[i]]);
+					olTimes[i] = 0;
+				}else{
+					olTimes[i] += 10000;
+				}
 			}
 		}
 		if( dwRes == WAIT_OBJECT_0 ){
 			//STOP
-			CancelIo(pSys->hPipe);
-			WaitForSingleObject(hEventArray[1], INFINITE);
+			for( int i = 0; i < olNum; i++ ){
+				CancelIo(pSys->hPipes[olIndexes[i]]);
+				WaitForSingleObject(pSys->hEventOls[olIndexes[i]], INFINITE);
+			}
 			break;
-		}else if( dwRes == WAIT_OBJECT_0+1 ){
+		}else if( dwRes == WAIT_OBJECT_0 + 1 || dwRes == WAIT_OBJECT_0 + 2 ){
 			//コマンド受信
-			DWORD dwWrite = 0;
-			DWORD head[2];
+			ols[olIndexes[dwRes - WAIT_OBJECT_0 - 1]].hEvent = NULL;
+			HANDLE hPipe = pSys->hPipes[olIndexes[dwRes - WAIT_OBJECT_0 - 1]];
+
 			for(;;){
+				DWORD dwWrite = 0;
+				DWORD head[2];
 				CMD_STREAM stCmd;
 				CMD_STREAM stRes;
 				DWORD n = 0;
-				for( DWORD m; n < sizeof(head) && ReadFile(pSys->hPipe, (BYTE*)head + n, sizeof(head) - n, &m, NULL); n += m );
+				for( DWORD m; n < sizeof(head) && ReadFile(hPipe, (BYTE*)head + n, sizeof(head) - n, &m, NULL); n += m );
 				if( n != sizeof(head) ){
 					break;
 				}
@@ -223,7 +262,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 				if( stCmd.dataSize > 0 ){
 					stCmd.data.reset(new BYTE[stCmd.dataSize]);
 					n = 0;
-					for( DWORD m; n < stCmd.dataSize && ReadFile(pSys->hPipe, stCmd.data.get() + n, stCmd.dataSize - n, &m, NULL); n += m );
+					for( DWORD m; n < stCmd.dataSize && ReadFile(hPipe, stCmd.data.get() + n, stCmd.dataSize - n, &m, NULL); n += m );
 					if( n != stCmd.dataSize ){
 						break;
 					}
@@ -232,21 +271,21 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 				pSys->cmdProc(&stCmd, &stRes);
 				head[0] = stRes.param;
 				head[1] = stRes.dataSize;
-				if( WriteFile(pSys->hPipe, head, sizeof(head), &dwWrite, NULL) == FALSE ){
+				if( WriteFile(hPipe, head, sizeof(head), &dwWrite, NULL) == FALSE ){
 					break;
 				}
 				if( stRes.dataSize > 0 ){
-					if( WriteFile(pSys->hPipe, stRes.data.get(), stRes.dataSize, &dwWrite, NULL) == FALSE ){
+					if( WriteFile(hPipe, stRes.data.get(), stRes.dataSize, &dwWrite, NULL) == FALSE ){
 						break;
 					}
 				}
-				FlushFileBuffers(pSys->hPipe);
-				if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
+				FlushFileBuffers(hPipe);
+				if( stRes.param != OLD_CMD_NEXT ){
 					//Enum用の繰り返しではない
 					break;
 				}
 			}
-			DisconnectNamedPipe(pSys->hPipe);
+			DisconnectNamedPipe(hPipe);
 		}
 #else
 		pollfd pfds[2];
@@ -295,7 +334,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 							break;
 						}
 					}
-					if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
+					if( stRes.param != OLD_CMD_NEXT ){
 						//Enum用の繰り返しではない
 						break;
 					}

@@ -5,7 +5,10 @@
 #define CONNECT_TIMEOUT 15*1000
 
 //パイプ名
+//"Pipe"を"Connect"に置換した名前のイベントオブジェクトが接続時の勧告ロックとして使われる
+//ただし"NoWaitPipe"の場合、クライアントはこのイベントオブジェクトを無視すること(接続は必ずしも成功しない)
 #define CMD2_EPG_SRV_PIPE L"EpgTimerSrvPipe"
+#define CMD2_EPG_SRV_NOWAIT_PIPE L"EpgTimerSrvNoWaitPipe"
 #define CMD2_GUI_CTRL_PIPE L"EpgTimerGUI_Ctrl_BonPipe_" //+プロセスID
 #define CMD2_VIEW_CTRL_PIPE L"View_Ctrl_BonPipe_" //+プロセスID
 #define CMD2_TVTEST_CTRL_PIPE L"TvTest_Ctrl_BonPipe_" //+プロセスID
@@ -68,6 +71,8 @@
 #define CMD2_EPG_SRV_GET_PG_INFO_LIST		1024 //番組情報取得(指定IDリスト)
 #define CMD2_EPG_SRV_SEARCH_PG				1025 //番組検索
 #define CMD2_EPG_SRV_ENUM_PG_ALL			1026 //番組情報一覧取得
+#define CMD2_EPG_SRV_GET_PG_INFO_MINMAX		1028 //番組情報の最小開始時間と最大開始時間を取得する
+#define CMD2_EPG_SRV_ENUM_PG_INFO_EX		1029 //サービス指定と時間指定で番組情報一覧を取得する
 #define CMD2_EPG_SRV_ENUM_PG_ARC			1030 //サービス指定と時間指定で過去番組情報一覧を取得する
 
 #define CMD2_EPG_SRV_ENUM_AUTO_ADD			1031 //自動予約登録の条件一覧取得
@@ -92,9 +97,11 @@
 #define CMD2_EPG_SRV_PROFILE_UPDATE			1063 //設定ファイル(ini)の更新を通知させる
 #define CMD2_EPG_SRV_GET_NOTIFY_LOG			1065 //保存された情報通知ログを取得する
 
-#define CMD2_EPG_SRV_NWTV_SET_CH			1070 //ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
-#define CMD2_EPG_SRV_NWTV_CLOSE				1071 //ネットワークモードで起動中のEpgDataCap_Bonを終了
-#define CMD2_EPG_SRV_NWTV_MODE				1072 //ネットワークモードで起動するときのモード（1:UDP 2:TCP 3:UDP+TCP）
+#define CMD2_EPG_SRV_NWTV_SET_CH			1070 //NetworkTVモードのViewアプリのチャンネルを切り替え（ID=0のみ）
+#define CMD2_EPG_SRV_NWTV_CLOSE				1071 //NetworkTVモードで起動中のViewアプリを終了（ID=0のみ）
+#define CMD2_EPG_SRV_NWTV_MODE				1072 //NetworkTVモードで起動するときの送信モード（1:UDP 2:TCP 3:UDP+TCP）
+#define CMD2_EPG_SRV_NWTV_ID_SET_CH			1073 //NetworkTVモードのViewアプリのチャンネルを切り替え、または起動の確認（ID指定）
+#define CMD2_EPG_SRV_NWTV_ID_CLOSE			1074 //NetworkTVモードで起動中のViewアプリを終了（ID指定）
 
 #define CMD2_EPG_SRV_NWPLAY_OPEN			1080 //ストリーム配信用ファイルを開く
 #define CMD2_EPG_SRV_NWPLAY_CLOSE			1081 //ストリーム配信用ファイルを閉じる

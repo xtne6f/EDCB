@@ -1,0 +1,30 @@
+-- vim:set ft=lua:
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>EDCB</title></head>
+<body><p>EpgTimerSrv.exeのHTTPサーバ機能は有効です。<br>必要に応じてHttpPublicフォルダをカスタマイズしてください。<br>
+英数ハイフン7文字以内のサブフォルダを↓にリストします。<br>
+※リストされたくないものは8文字以上などにしてください。<br>
+]=]
+for i,v in ipairs(edcb.FindFile(mg.script_name:gsub('[^\\/]*$','*'),0) or {}) do
+  if v.isdir and #v.name<8 and v.name:find('^[0-9A-Za-z-]+$') and v.name~='api' then
+    ct=ct..'<a href="'..v.name..'/">'..v.name..'/</a><br>\n'
+  end
+end
+ct=ct..[=[
+</p></body></html>
+]=]
+
+function ImfFixdate(t)
+  return ('%s, %02d %s %d %02d:%02d:%02d GMT'):format(({'Sun','Mon','Tue','Wed','Thu','Fri','Sat'})[t.wday],t.day,
+    ({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})[t.month],t.year,t.hour,t.min,t.sec)
+end
+
+mg.write('HTTP/1.1 200 OK'
+  ..'\r\nDate: '..ImfFixdate(os.date('!*t'))
+  ..'\r\nContent-Type: text/html; charset=utf-8'
+  ..(mg.request_info.request_method~='HEAD' and '\r\nContent-Length: '..#ct or '')
+  ..(mg.keep_alive(true) and '' or '\r\nConnection: close')
+  ..'\r\n\r\n'
+  ..(mg.request_info.request_method~='HEAD' and ct or ''))

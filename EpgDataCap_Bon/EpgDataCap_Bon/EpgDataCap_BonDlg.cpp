@@ -1506,8 +1506,8 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 					}
 				}else if( val.useBonCh ){
 					for( size_t i = 0; i < this->serviceList.size(); i++ ){
-						if( (DWORD)this->serviceList[i].space == val.space &&
-						    (DWORD)this->serviceList[i].ch == val.ch ){
+						if( this->serviceList[i].space == val.space &&
+						    this->serviceList[i].ch == val.ch ){
 							int index = ReloadServiceList(this->serviceList[i].originalNetworkID,
 							                              this->serviceList[i].transportStreamID,
 							                              this->serviceList[i].serviceID);

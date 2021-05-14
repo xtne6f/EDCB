@@ -13,7 +13,8 @@ public:
 	bool StartServer(
 		const wstring& pipeName,
 		const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc_,
-		bool insecureFlag = false
+		bool insecureFlag = false,
+		bool doNotCreateNoWaitPipe = false
 		);
 	bool StopServer(bool checkOnlyFlag = false);
 
@@ -28,9 +29,10 @@ protected:
 	CAutoResetEvent stopEvent;
 	thread_ workThread;
 #ifdef _WIN32
-	HANDLE hEventOl;
-	HANDLE hEventConnect;
-	HANDLE hPipe;
+	//要素1は勧告ロックを求めないパイプ用。約束事が異なるだけで実装は完全に対称
+	HANDLE hEventOls[2];
+	HANDLE hEventConnects[2];
+	HANDLE hPipes[2];
 
 	static BOOL GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, DWORD permissions);
 #else

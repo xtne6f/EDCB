@@ -10,7 +10,7 @@ using System.Security.AccessControl;
 
 namespace EpgTimer
 {
-    public class PipeServer : IDisposable
+    public sealed class PipeServer : IDisposable
     {
         private Thread m_ServerThread = null;
         private AutoResetEvent m_StopEvent = new AutoResetEvent(false);

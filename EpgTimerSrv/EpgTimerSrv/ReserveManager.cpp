@@ -1789,7 +1789,7 @@ vector<DWORD> CReserveManager::GetSupportServiceTuner(WORD onid, WORD tsid, WORD
 	return idList;
 }
 
-bool CReserveManager::GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const
+bool CReserveManager::GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, int* space, int* ch) const
 {
 	auto itr = this->tunerBankMap.find(tunerID);
 	if( itr != this->tunerBankMap.end() ){
@@ -1821,10 +1821,15 @@ bool CReserveManager::IsOpenTuner(DWORD tunerID) const
 	return itr != this->tunerBankMap.end() && itr->second->GetState() != CTunerBankCtrl::TR_IDLE;
 }
 
-pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList)
+pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, WORD onid, WORD tsid, WORD sid, const vector<DWORD>& tunerIDList)
 {
 	CBlockLock lock(&this->managerLock);
 
+	SET_CH_INFO chInfo = {};
+	chInfo.useSID = TRUE;
+	chInfo.ONID = onid;
+	chInfo.TSID = tsid;
+	chInfo.SID = sid;
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV && itr->second->GetNWTVID() == id ){
 			//すでに起動しているので使えたら使う

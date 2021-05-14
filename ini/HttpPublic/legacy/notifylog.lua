@@ -1,8 +1,10 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
 f=edcb.io.open(edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\EpgTimerSrvNotify.log','rb')
 if not f then
-  mg.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\nNot Found or Forbidden.\r\n')
+  mg.write(Response(404,nil,nil,0)..'\r\n')
 else
-  mg.write('HTTP/1.1 200 OK\r\nX-Content-Type-Options: nosniff\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\n\r\n')
+  ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
   c=tonumber(mg.get_var(mg.request_info.query_string,'c')) or math.huge
   fsize=f:seek('end')
   if fsize>=2 then
@@ -14,7 +16,7 @@ else
       until not buf or #buf<2 or buf=='\n\0'
     end
     --utf-16le to utf-8
-    mg.write((f:read('*a'):gsub('..',function (x)
+    ct:Append((f:read('*a'):gsub('..',function (x)
       x=x:byte(1)+x:byte(2)*256
       if 0xd800<=x and x<=0xdbff then
         hi=x
@@ -30,4 +32,6 @@ else
     end)))
   end
   f:close()
+  ct:Finish()
+  mg.write(ct:Pop(Response(200,'text/plain','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
 end

@@ -1,12 +1,6 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-if not mg.request_info.uri:find('/$') and
-   not mg.request_info.uri:lower():find('%.html$') then
-  mg.write(Response(301, nil, nil, 0)..'Location: '..mg.request_info.uri..'/\r\n\r\n')
-  return
-end
-
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -38,6 +32,7 @@ ct:Append([=[
     <div>
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
       <input type="hidden" name="suspend" value="y">
+      <!--<input type="hidden" name="hibernate" value="y">-->
       <input type="submit" value="システムスタンバイ">
     </div>
   </form>
@@ -59,9 +54,26 @@ ct:Append([=[
 
 post=AssertPost()
 if post then
-  if mg.get_var(post,'suspend') then
-    --ok=edcb.os.execute('start "SetSuspendState" powershell -NoProfile -Command "&{sleep 5;Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.Application]::SetSuspendState([Windows.Forms.PowerState]::Suspend,$false,$false)}"')
-    ct:Append('  <div id="result">スタンバイに移行'..(ok and 'します' or 'できません (スクリプトのコメントアウトを解除してください)')..'</div>\n')
+  if mg.get_var(post,'suspend') or mg.get_var(post,'hibernate') then
+    --利用する場合は下のコメントアウトを解除
+    --enabled=true
+    if enabled then
+      for i=1,100 do
+        f=edcb.io.open('\\\\.\\pipe\\EpgTimerSrvNoWaitPipe','r+b')
+        if f then
+          --CMD_EPG_SRV_SUSPEND(=1051)を送る
+          f:write(string.char(1051%256,math.floor(1051/256),0,0))
+          f:write(string.char(2,0,0,0,(mg.get_var(post,'hibernate') and 2 or 1),255))
+          f:flush()
+          --CMD_SUCCESS(=1)を確認
+          ok=(f:read(4) or '')=='\1\0\0\0'
+          f:close()
+          break
+        end
+        edcb.Sleep(10)
+      end
+    end
+    ct:Append('  <div id="result">スタンバイに移行'..(ok and 'します' or 'できません '..(enabled and '(もうすぐ予約が始まるなど)' or '(スクリプトのコメントアウトを解除してください)'))..'</div>\n')
   elseif mg.get_var(post,'epgcap') then
     ct:Append('  <div id="result">EPG取得を開始'..(edcb.EpgCapNow() and 'しました' or 'できませんでした')..'</div>\n')
   elseif mg.get_var(post,'epgreload') then

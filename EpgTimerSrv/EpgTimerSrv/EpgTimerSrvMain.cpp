@@ -50,6 +50,7 @@ struct MAIN_WINDOW_CONTEXT {
 	CEpgTimerSrvMain* const sys;
 	const UINT msgTaskbarCreated;
 	CPipeServer pipeServer;
+	CPipeServer noWaitPipeServer;
 	CTCPServer tcpServer;
 	CHttpServer httpServer;
 	HANDLE resumeTimer;
@@ -452,8 +453,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->ReloadNetworkSetting();
 		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_PIPE,
-		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, false, NULL); },
-		                            !(ctx->sys->notifyManager.IsGUI()));
+		                            [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, 0, false, NULL); },
+		                            !(ctx->sys->notifyManager.IsGUI()), true);
+		//イベントオブジェクトの待機を省略したいクライアント向けにもう1つ生成する(負荷分散の目的を兼ねるのでスレッドを分ける)
+		ctx->noWaitPipeServer.StartServer(CMD2_EPG_SRV_NOWAIT_PIPE,
+		                                  [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, 1, false, NULL); },
+		                                  !(ctx->sys->notifyManager.IsGUI()), true);
 		ctx->sys->epgDB.ReloadEpgData(true);
 		SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
@@ -469,6 +474,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->notifyManager.SetNotifyCallback(NULL);
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
+		ctx->noWaitPipeServer.StopServer();
 		ctx->pipeServer.StopServer();
 		ctx->sys->stoppingFlag = true;
 		ctx->sys->reserveManager.Finalize();
@@ -504,7 +510,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				ctx->tcpServer.StopServer();
 			}else{
 				ctx->tcpServer.StartServer(tcpPort_, tcpIPv6_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(),
-				                           [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, true, clientIP); });
+				                           [ctx](CMD_STREAM* cmdParam, CMD_STREAM* resParam, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmdParam, resParam, 2, true, clientIP); });
 			}
 			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
 		}
@@ -1560,9 +1566,9 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 	}
 }
 
-void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag, LPCWSTR clientIP)
+void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, int threadIndex, bool tcpFlag, LPCWSTR clientIP)
 {
-	//この関数はPipeとTCPとで同時に呼び出されるかもしれない(各々が同時に複数呼び出すことはない)
+	//この関数はthreadIndexで識別されるスレッドで同時に呼び出されるかもしれない
 	resParam->dataSize = 0;
 	resParam->param = CMD_ERR;
 
@@ -1978,6 +1984,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			});
 		}
 		break;
+	case CMD2_EPG_SRV_GET_PG_INFO_MINMAX:
 	case CMD2_EPG_SRV_GET_PG_ARC_MINMAX:
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
@@ -1985,7 +1992,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			vector<__int64> key;
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) && key.size() % 2 == 0 ){
 				for( size_t i = 0; i + 1 < key.size(); i += 2 ){
-					pair<__int64, __int64> ret = sys->epgDB.GetArchiveEventMinMaxTime(key[i], key[i + 1]);
+					pair<__int64, __int64> ret;
+					if( cmdParam->param == CMD2_EPG_SRV_GET_PG_INFO_MINMAX ){
+						ret = sys->epgDB.GetEventMinMaxTime(key[i], key[i + 1]);
+					}else{
+						ret = sys->epgDB.GetArchiveEventMinMaxTime(key[i], key[i + 1]);
+					}
 					key[i] = ret.first;
 					key[i + 1] = ret.second;
 				}
@@ -1994,8 +2006,9 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_ENUM_PG_INFO_EX:
 	case CMD2_EPG_SRV_ENUM_PG_ARC:
-		AddDebugLog(L"CMD2_EPG_SRV_ENUM_PG_ARC");
+		AddDebugLog(L"CMD2_EPG_SRV_ENUM_PG_INFO_EX/_ARC");
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			resParam->param = CMD_ERR_BUSY;
 		}else{
@@ -2003,8 +2016,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( ReadVALUE(&keyAndRange, cmdParam->data, cmdParam->dataSize, NULL) && keyAndRange.size() >= 2 ){
 				vector<EPGDB_SERVICE_EVENT_INFO_PTR> ret;
 				vector<EPGDB_SERVICE_EVENT_INFO_PTR>::iterator itr = ret.end();
-				sys->epgDB.EnumArchiveEventInfo(keyAndRange.data(), keyAndRange.size() - 2, *(keyAndRange.end() - 2), keyAndRange.back(), false,
-				                                [=, &ret, &itr](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO* si) {
+				auto enumProc = [=, &ret, &itr](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO* si) -> void {
 					if( val ){
 						if( itr == ret.end() || itr->serviceInfo != si ){
 							itr = std::find_if(ret.begin(), ret.end(), [si](const EPGDB_SERVICE_EVENT_INFO_PTR& a) {
@@ -2020,7 +2032,12 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 						resParam->param = CMD_SUCCESS;
 						resParam->data = NewWriteVALUE(ret, resParam->dataSize);
 					}
-				});
+				};
+				if( cmdParam->param == CMD2_EPG_SRV_ENUM_PG_INFO_EX ){
+					sys->epgDB.EnumEventInfo(keyAndRange.data(), keyAndRange.size() - 2, *(keyAndRange.end() - 2), keyAndRange.back(), enumProc);
+				}else{
+					sys->epgDB.EnumArchiveEventInfo(keyAndRange.data(), keyAndRange.size() - 2, *(keyAndRange.end() - 2), keyAndRange.back(), false, enumProc);
+				}
 			}
 		}
 		break;
@@ -2127,38 +2144,68 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 		}
 		break;
 	case CMD2_EPG_SRV_NWTV_SET_CH:
+	case CMD2_EPG_SRV_NWTV_ID_SET_CH:
 		{
-			AddDebugLog(L"CMD2_EPG_SRV_NWTV_SET_CH");
+			AddDebugLog(L"CMD2_EPG_SRV_NWTV(_ID)_SET_CH");
 			SET_CH_INFO val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && val.useSID ){
-				bool nwtvUdp;
-				bool nwtvTcp;
-				vector<DWORD> idUseList = sys->reserveManager.GetSupportServiceTuner(val.ONID, val.TSID, val.SID);
-				{
-					CBlockLock lock(&sys->settingLock);
-					nwtvUdp = sys->nwtvUdp;
-					nwtvTcp = sys->nwtvTcp;
-					for( size_t i = 0; i < idUseList.size(); ){
-						wstring bonDriver = sys->reserveManager.GetTunerBonFileName(idUseList[i]);
-						if( std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
-						                 [&](const wstring& a) { return UtilComparePath(a.c_str(), bonDriver.c_str()) == 0; }) == sys->setting.viewBonList.end() ){
-							idUseList.erase(idUseList.begin() + i);
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				if( val.useSID ){
+					int nwtvID = 0;
+					bool nwtvUdp;
+					bool nwtvTcp;
+					vector<DWORD> idUseList = sys->reserveManager.GetSupportServiceTuner(val.ONID, val.TSID, val.SID);
+					{
+						CBlockLock lock(&sys->settingLock);
+						if( cmdParam->param != CMD2_EPG_SRV_NWTV_SET_CH && val.useBonCh ){
+							//新コマンドではIDと送信モードを指定できる
+							nwtvID = val.space;
+							nwtvUdp = val.ch == 1 || val.ch == 3;
+							nwtvTcp = val.ch == 2 || val.ch == 3;
 						}else{
-							i++;
+							nwtvUdp = sys->nwtvUdp;
+							nwtvTcp = sys->nwtvTcp;
+						}
+						for( size_t i = 0; i < idUseList.size(); ){
+							wstring bonDriver = sys->reserveManager.GetTunerBonFileName(idUseList[i]);
+							if( std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
+							                 [&](const wstring& a) { return UtilComparePath(a.c_str(), bonDriver.c_str()) == 0; }) == sys->setting.viewBonList.end() ){
+								idUseList.erase(idUseList.begin() + i);
+							}else{
+								i++;
+							}
+						}
+						std::reverse(idUseList.begin(), idUseList.end());
+					}
+					pair<bool, int> retAndProcessID = sys->reserveManager.OpenNWTV(nwtvID, nwtvUdp, nwtvTcp, val.ONID, val.TSID, val.SID, idUseList);
+					if( retAndProcessID.first ){
+						resParam->param = CMD_SUCCESS;
+						if( cmdParam->param != CMD2_EPG_SRV_NWTV_SET_CH ){
+							//新コマンドではViewアプリのプロセスIDを返す
+							resParam->data = NewWriteVALUE(retAndProcessID.second, resParam->dataSize);
 						}
 					}
-					std::reverse(idUseList.begin(), idUseList.end());
-				}
-				if( sys->reserveManager.OpenNWTV(0, nwtvUdp, nwtvTcp, val, idUseList).first ){
-					resParam->param = CMD_SUCCESS;
+				}else if( cmdParam->param != CMD2_EPG_SRV_NWTV_SET_CH ){
+					//新コマンドでは起動の確認
+					pair<bool, int> retAndProcessID = sys->reserveManager.IsOpenNWTV(val.useBonCh ? val.space : 0);
+					if( retAndProcessID.first ){
+						resParam->param = CMD_SUCCESS;
+						resParam->data = NewWriteVALUE(retAndProcessID.second, resParam->dataSize);
+					}
 				}
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_NWTV_CLOSE:
-		AddDebugLog(L"CMD2_EPG_SRV_NWTV_CLOSE");
-		if( sys->reserveManager.CloseNWTV(0) ){
-			resParam->param = CMD_SUCCESS;
+	case CMD2_EPG_SRV_NWTV_ID_CLOSE:
+		{
+			AddDebugLog(L"CMD2_EPG_SRV_NWTV(_ID)_CLOSE");
+			//新コマンドではIDを指定できる
+			int nwtvID = 0;
+			if( cmdParam->param == CMD2_EPG_SRV_NWTV_CLOSE || ReadVALUE(&nwtvID, cmdParam->data, cmdParam->dataSize, NULL) ){
+				if( sys->reserveManager.CloseNWTV(nwtvID) ){
+					resParam->param = CMD_SUCCESS;
+				}
+			}
 		}
 		break;
 	case CMD2_EPG_SRV_NWTV_MODE:
@@ -2679,22 +2726,22 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdPar
 			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) == FALSE ){
 				break;
 			}
-			sys->oldSearchList[tcpFlag].clear();
+			sys->oldSearchList[threadIndex].clear();
 			sys->epgDB.SearchEpg(&item.searchInfo, 1, 0, LLONG_MAX, NULL, [=](const EPGDB_EVENT_INFO* val, wstring*) {
 				if( val ){
-					sys->oldSearchList[tcpFlag].push_back(*val);
+					sys->oldSearchList[threadIndex].push_back(*val);
 				}
 			});
-			std::reverse(sys->oldSearchList[tcpFlag].begin(), sys->oldSearchList[tcpFlag].end());
+			std::reverse(sys->oldSearchList[threadIndex].begin(), sys->oldSearchList[threadIndex].end());
 		}
 		//FALL THROUGH!
 	case CMD_EPG_SRV_SEARCH_PG_NEXT:
 		{
 			resParam->param = OLD_CMD_ERR;
-			if( sys->oldSearchList[tcpFlag].empty() == false ){
-				resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList[tcpFlag].back(), resParam->dataSize);
-				sys->oldSearchList[tcpFlag].pop_back();
-				resParam->param = sys->oldSearchList[tcpFlag].empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
+			if( sys->oldSearchList[threadIndex].empty() == false ){
+				resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList[threadIndex].back(), resParam->dataSize);
+				sys->oldSearchList[threadIndex].pop_back();
+				resParam->param = sys->oldSearchList[threadIndex].empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
 			}
 		}
 		break;
@@ -4026,15 +4073,12 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 4 || lua_gettop(L) == 5 ){
-		SET_CH_INFO info;
-		info.useSID = TRUE;
-		info.ONID = (WORD)lua_tointeger(L, 2);
-		info.TSID = (WORD)lua_tointeger(L, 3);
-		info.SID = (WORD)lua_tointeger(L, 4);
-		info.useBonCh = FALSE;
+		WORD onid = (WORD)lua_tointeger(L, 2);
+		WORD tsid = (WORD)lua_tointeger(L, 3);
+		WORD sid = (WORD)lua_tointeger(L, 4);
 		int mode = (int)lua_tointeger(L, 1);
 		int nwtvID = (int)lua_tointeger(L, 5);
-		vector<DWORD> idUseList = ws.sys->reserveManager.GetSupportServiceTuner(info.ONID, info.TSID, info.SID);
+		vector<DWORD> idUseList = ws.sys->reserveManager.GetSupportServiceTuner(onid, tsid, sid);
 		{
 			CBlockLock lock(&ws.sys->settingLock);
 			for( size_t i = 0; i < idUseList.size(); ){
@@ -4050,7 +4094,7 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 		}
 		//すでに起動しているものの送信モードは変更しない
 		pair<bool, int> retAndProcessID =
-			ws.sys->reserveManager.OpenNWTV(nwtvID, (mode == 1 || mode == 3), (mode == 2 || mode == 3), info, idUseList);
+			ws.sys->reserveManager.OpenNWTV(nwtvID, (mode == 1 || mode == 3), (mode == 2 || mode == 3), onid, tsid, sid, idUseList);
 		if( retAndProcessID.first ){
 			lua_pushboolean(L, true);
 			lua_pushinteger(L, retAndProcessID.second);
@@ -4321,7 +4365,7 @@ bool CEpgTimerSrvMain::FetchReserveData(CLuaWorkspace& ws, RESERVE_DATA& r)
 	r.serviceID = (WORD)LuaHelp::get_int(L, "sid");
 	r.eventID = (WORD)LuaHelp::get_int(L, "eid");
 	UTF8toW(LuaHelp::get_string(L, "comment"), r.comment);
-	r.reserveID = (WORD)LuaHelp::get_int(L, "reserveID");
+	r.reserveID = LuaHelp::get_int(L, "reserveID");
 	r.startTimeEpg = LuaHelp::get_time(L, "startTimeEpg");
 	lua_getfield(L, -1, "recSetting");
 	if( r.startTime.wYear && r.startTimeEpg.wYear && lua_istable(L, -1) ){

@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace EpgTimer
 {
-    public class NWConnect : IDisposable
+    public sealed class NWConnect : IDisposable
     {
         private Thread workerThread = null;
         private AutoResetEvent stopEvent = null;

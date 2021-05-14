@@ -1,5 +1,5 @@
 TARGET ?= RecName_Macro
-CPPFLAGS := -I. -DNDEBUG -DWIN32 -D_WINDOWS -D_UNICODE -DUNICODE $(CPPFLAGS)
+CPPFLAGS := -I. -DNDEBUG -D_WINDOWS -DRECNAME_MACRO_EXPORTS -D_UNICODE -DUNICODE $(CPPFLAGS)
 CXXFLAGS := -std=c++17 -pedantic-errors -Os $(CXXFLAGS)
 LDFLAGS2 = -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
 WINDRES ?= windres
