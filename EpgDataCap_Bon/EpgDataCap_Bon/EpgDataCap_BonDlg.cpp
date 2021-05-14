@@ -24,26 +24,8 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	: m_hWnd(NULL)
 	, m_hKeyboardHook(NULL)
 {
-	HMODULE hModule = GetModuleHandle(NULL);
-	HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE,PCWSTR,int,HICON*) =
-		(HRESULT (WINAPI*)(HINSTANCE,PCWSTR,int,HICON*))GetProcAddress(GetModuleHandle(L"comctl32.dll"), "LoadIconMetric");
-	if( pfnLoadIconMetric == NULL ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), LIM_SMALL, &m_hIcon) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), LIM_LARGE, &m_hIcon2) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_RED), LIM_SMALL, &iconRed) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), LIM_SMALL, &iconGreen) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), LIM_SMALL, &iconGray) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_REC), LIM_SMALL, &iconOlRec) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_EPG), LIM_SMALL, &iconOlEpg) != S_OK ){
-		m_hIcon = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		m_hIcon2 = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
-		iconRed = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_RED), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		iconGreen = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		iconGray = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		iconOlRec = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_REC), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		iconOlEpg = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_EPG), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	}
-	iconBlue = m_hIcon;
+	m_hIcon = LoadLargeOrSmallIcon(IDI_ICON_BLUE, false);
+	m_hIcon2 = LoadLargeOrSmallIcon(IDI_ICON_BLUE, true);
 
 	taskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 
@@ -66,6 +48,16 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	}
 }
 
+CEpgDataCap_BonDlg::~CEpgDataCap_BonDlg()
+{
+	if( m_hIcon2 ){
+		DestroyIcon(m_hIcon2);
+	}
+	if( m_hIcon ){
+		DestroyIcon(m_hIcon);
+	}
+}
+
 INT_PTR CEpgDataCap_BonDlg::DoModal()
 {
 	int index = GetPrivateProfileInt(L"SET", L"DialogTemplate", 0, GetModuleIniPath().c_str());
@@ -73,6 +65,21 @@ INT_PTR CEpgDataCap_BonDlg::DoModal()
 	                      MAKEINTRESOURCE(index == 1 ? IDD_EPGDATACAP_BON_DIALOG_1 :
 	                                      index == 2 ? IDD_EPGDATACAP_BON_DIALOG_2 : IDD),
 	                      NULL, DlgProc, (LPARAM)this);
+}
+
+HICON CEpgDataCap_BonDlg::LoadLargeOrSmallIcon(int iconID, bool isLarge)
+{
+	HMODULE hModule = GetModuleHandle(L"comctl32.dll");
+	if( hModule ){
+		HICON hIcon;
+		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*) =
+			(HRESULT (WINAPI*)(HINSTANCE, PCWSTR, int, HICON*))GetProcAddress(hModule, "LoadIconMetric");
+		if( pfnLoadIconMetric &&
+		    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), isLarge ? LIM_LARGE : LIM_SMALL, &hIcon) == S_OK ){
+			return hIcon;
+		}
+	}
+	return (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), IMAGE_ICON, isLarge ? 32 : 16, isLarge ? 32 : 16, 0);
 }
 
 void CEpgDataCap_BonDlg::ReloadSetting()
@@ -558,13 +565,13 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				KillTimer(nIDEvent);
 
-				HICON setIcon = this->iconBlue;
+				int iconID = IDI_ICON_BLUE;
 				if( this->bonCtrl.IsRec() ){
-					setIcon = this->iconRed;
+					iconID = IDI_ICON_RED;
 				}else if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
-					setIcon = this->iconGreen;
+					iconID = IDI_ICON_GREEN;
 				}else if( this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ){
-					setIcon = this->iconGray;
+					iconID = IDI_ICON_GRAY;
 				}
 		
 				if( this->modifyTitleBarText ){
@@ -582,14 +589,21 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 							title.insert(0, L" - ");
 							sep = 0;
 						}
-						title[sep + 1] = (setIcon == this->iconRed ? L'●' : setIcon == this->iconGreen ? L'○' : L'-');
+						title[sep + 1] = (iconID == IDI_ICON_RED ? L'●' : iconID == IDI_ICON_GREEN ? L'○' : L'-');
 						if( title != szTitle ){
 							SetWindowText(m_hWnd, title.c_str());
 						}
 					}
 				}
 				if( this->overlayTaskIcon ){
-					SetOverlayIcon(setIcon == this->iconRed ? this->iconOlRec : setIcon == this->iconGreen ? this->iconOlEpg : NULL);
+					HICON hIcon = NULL;
+					if( iconID == IDI_ICON_RED || iconID == IDI_ICON_GREEN ){
+						hIcon = LoadLargeOrSmallIcon(iconID == IDI_ICON_RED ? IDI_ICON_OVERLAY_REC : IDI_ICON_OVERLAY_EPG, false);
+					}
+					SetOverlayIcon(hIcon);
+					if( hIcon ){
+						DestroyIcon(hIcon);
+					}
 				}
 				if( this->minTask && IsWindowVisible(m_hWnd) == FALSE ){
 					wstring bonFile;
@@ -597,12 +611,16 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					WCHAR szBuff[256] = L"";
 					GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff, 256);
 					wstring buff = bonFile + L" ： " + szBuff;
+					HICON hIcon = LoadLargeOrSmallIcon(iconID, false);
 					if( nIDEvent == RETRY_ADD_TRAY ){
-						if( AddTaskBar(m_hWnd, WM_TRAY_PUSHICON, TRAYICON_ID, setIcon, buff) == FALSE ){
+						if( AddTaskBar(m_hWnd, WM_TRAY_PUSHICON, TRAYICON_ID, hIcon, buff) == FALSE ){
 							SetTimer(RETRY_ADD_TRAY, 5000, NULL);
 						}
 					}else{
-						ChgTipsTaskBar(m_hWnd, TRAYICON_ID, setIcon, buff);
+						ChgTipsTaskBar(m_hWnd, TRAYICON_ID, hIcon, buff);
+					}
+					if( hIcon ){
+						DestroyIcon(hIcon);
 					}
 				}
 			}

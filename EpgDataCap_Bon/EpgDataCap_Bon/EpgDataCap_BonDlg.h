@@ -15,6 +15,7 @@ class CEpgDataCap_BonDlg
 // コンストラクション
 public:
 	CEpgDataCap_BonDlg();	// 標準コンストラクター
+	~CEpgDataCap_BonDlg();
 	INT_PTR DoModal();
 
 	void SetInitBon(LPCWSTR bonFile){ iniBonDriver = bonFile; }
@@ -31,6 +32,7 @@ protected:
 	static UINT taskbarCreated;
 	static BOOL disableKeyboardHook;
 protected:
+	static HICON LoadLargeOrSmallIcon(int iconID, bool isLarge);
 	void ReloadSetting();
 	void BtnUpdate(DWORD guiMode);
 	//タスクトレイ
@@ -55,12 +57,6 @@ protected:
 	HICON m_hIcon;
 	HICON m_hIcon2;
 
-	HICON iconRed;
-	HICON iconBlue;
-	HICON iconGreen;
-	HICON iconGray;
-	HICON iconOlRec;
-	HICON iconOlEpg;
 	BOOL modifyTitleBarText;
 	BOOL overlayTaskIcon;
 	BOOL minTask;
