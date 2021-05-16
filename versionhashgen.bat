@@ -1,6 +1,6 @@
 @echo off
 pushd "%~dp0"
-for /f "usebackq tokens=*" %%i in (`git rev-parse --short=7 HEAD`) do set git_hash=%%i
+for /f "usebackq tokens=*" %%i in (`git rev-parse --short^=7 HEAD`) do set git_hash=%%i
 if "%git_hash%" == "" goto label9
 
 set target=Common\CommonResource.h
