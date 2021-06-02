@@ -60,8 +60,8 @@ private:
 	vector<CH_DATA5> GetEpgCheckList(WORD onid, WORD tsid, int sid, bool basicFlag) const;
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	void CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam);
-	void CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resParam);
+	void CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res);
+	void CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res);
 	// EDCBの設定関係保存フォルダのパスを取得する
 	fs_path GetEdcbSettingPath() const;
 	// 録画停止中かどうか調べる

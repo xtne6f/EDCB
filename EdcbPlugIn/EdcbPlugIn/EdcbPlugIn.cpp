@@ -145,7 +145,7 @@ void CEdcbPlugIn::CMyEventHandler::OnStartupDone()
 		Format(pipeName, L"%ls%d", CMD2_VIEW_CTRL_PIPE, GetCurrentProcessId());
 		CEdcbPlugIn *outer = &m_outer;
 		m_outer.m_pipeServer.StartServer(pipeName,
-		                                 [outer](CMD_STREAM *cmdParam, CMD_STREAM *resParam) { outer->CtrlCmdCallback(cmdParam, resParam); });
+		                                 [outer](CCmdStream &cmd, CCmdStream &res) { outer->CtrlCmdCallback(cmd, res); });
 	}
 }
 
@@ -575,7 +575,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 		break;
 	case WM_INVOKE_CTRL_CMD:
-		CtrlCmdCallbackInvoked(reinterpret_cast<CMD_STREAM*>(wParam), reinterpret_cast<CMD_STREAM*>(lParam));
+		CtrlCmdCallbackInvoked(*reinterpret_cast<const CCmdStream*>(wParam), *reinterpret_cast<CCmdStream*>(lParam));
 		return 0;
 	case WM_APP_CLOSE:
 		m_pApp->Close(TVTest::CLOSE_EXIT);
@@ -644,54 +644,54 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void CEdcbPlugIn::CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam)
+void CEdcbPlugIn::CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res)
 {
-	switch (cmdParam->param) {
+	switch (cmd.GetParam()) {
 	case CMD2_VIEW_APP_GET_BONDRIVER:
 		{
 			CBlockLock lock(&m_statusLock);
 			if (!m_currentBonDriver.empty()) {
-				resParam->data = NewWriteVALUE(m_currentBonDriver, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+				res.WriteVALUE(m_currentBonDriver);
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
 	case CMD2_VIEW_APP_GET_DELAY:
 		{
 			CBlockLock lock(&m_streamLock);
-			resParam->data = NewWriteVALUE(m_epgUtil.GetTimeDelay(), resParam->dataSize);
-			resParam->param = CMD_SUCCESS;
+			res.WriteVALUE(m_epgUtil.GetTimeDelay());
+			res.SetParam(CMD_SUCCESS);
 		}
 		break;
 	case CMD2_VIEW_APP_GET_STATUS:
 		{
 			CBlockLock lock(&m_statusLock);
-			resParam->data = NewWriteVALUE(m_statusCode, resParam->dataSize);
-			resParam->param = CMD_SUCCESS;
+			res.WriteVALUE(m_statusCode);
+			res.SetParam(CMD_SUCCESS);
 		}
 		break;
 	case CMD2_VIEW_APP_CLOSE:
 		SendNotifyMessage(m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_CLOSE"));
 		SendNotifyMessage(m_hwnd, WM_APP_CLOSE, 0, 0);
-		resParam->param = CMD_SUCCESS;
+		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_VIEW_APP_SET_ID:
 		SendNotifyMessage(m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_ID"));
-		if (ReadVALUE(&m_outCtrlID, cmdParam->data, cmdParam->dataSize, nullptr)) {
-			resParam->param = CMD_SUCCESS;
+		if (cmd.ReadVALUE(&m_outCtrlID)) {
+			res.SetParam(CMD_SUCCESS);
 		}
 		break;
 	case CMD2_VIEW_APP_GET_ID:
-		resParam->data = NewWriteVALUE(m_outCtrlID, resParam->dataSize);
-		resParam->param = CMD_SUCCESS;
+		res.WriteVALUE(m_outCtrlID);
+		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_VIEW_APP_SET_STANDBY_REC:
 		SendNotifyMessage(m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_STANDBY_REC"));
 		{
 			DWORD val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
+			if (cmd.ReadVALUE(&val)) {
 				// TODO: とりあえず無視
-				resParam->param = CMD_SUCCESS;
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
@@ -699,26 +699,26 @@ void CEdcbPlugIn::CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam)
 		SendNotifyMessage(m_hwnd, WM_APP_ADD_LOG, 0, reinterpret_cast<LPARAM>(L"CMD2_VIEW_APP_SET_CTRLMODE"));
 		{
 			SET_CTRL_MODE val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
+			if (cmd.ReadVALUE(&val)) {
 				CBlockLock lock(&m_streamLock);
 				if (m_recCtrlMap.count(val.ctrlID) != 0) {
 					m_recCtrlMap[val.ctrlID].sid = val.SID;
 				}
-				resParam->param = CMD_SUCCESS;
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
 	case CMD2_VIEW_APP_SEARCH_EVENT:
 		{
 			SEARCH_EPG_INFO_PARAM key;
-			if (ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, nullptr)) {
+			if (cmd.ReadVALUE(&key)) {
 				CBlockLock lock(&m_streamLock);
 				EPG_EVENT_INFO *epgInfo;
 				if (m_epgUtil.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR) {
 					EPGDB_EVENT_INFO epgDBInfo;
 					ConvertEpgInfo(key.ONID, key.TSID, key.SID, epgInfo, &epgDBInfo);
-					resParam->data = NewWriteVALUE(epgDBInfo, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					res.WriteVALUE(epgDBInfo);
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 		}
@@ -726,40 +726,40 @@ void CEdcbPlugIn::CtrlCmdCallback(CMD_STREAM *cmdParam, CMD_STREAM *resParam)
 	case CMD2_VIEW_APP_GET_EVENT_PF:
 		{
 			GET_EPG_PF_INFO_PARAM key;
-			if (ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, nullptr)) {
+			if (cmd.ReadVALUE(&key)) {
 				CBlockLock lock(&m_streamLock);
 				EPG_EVENT_INFO *epgInfo;
 				if (m_epgUtil.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR) {
 					EPGDB_EVENT_INFO epgDBInfo;
 					ConvertEpgInfo(key.ONID, key.TSID, key.SID, epgInfo, &epgDBInfo);
-					resParam->data = NewWriteVALUE(epgDBInfo, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					res.WriteVALUE(epgDBInfo);
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 		}
 		break;
 	case CMD2_VIEW_APP_EXEC_VIEW_APP:
 		// 無視
-		resParam->param = CMD_SUCCESS;
+		res.SetParam(CMD_SUCCESS);
 		break;
 	default:
 		// 同期呼び出しが必要なコマンド
-		SendMessage(m_hwnd, WM_INVOKE_CTRL_CMD, reinterpret_cast<WPARAM>(cmdParam), reinterpret_cast<LPARAM>(resParam));
+		SendMessage(m_hwnd, WM_INVOKE_CTRL_CMD, reinterpret_cast<WPARAM>(&cmd), reinterpret_cast<LPARAM>(&res));
 		break;
 	}
 }
 
-void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resParam)
+void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 {
-	switch (cmdParam->param) {
+	switch (cmd.GetParam()) {
 	case CMD2_VIEW_APP_SET_BONDRIVER:
 		m_pApp->AddLog(L"CMD2_VIEW_APP_SET_BONDRIVER");
 		if (IsNotRecording()) {
 			wstring val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
+			if (cmd.ReadVALUE(&val)) {
 				m_pApp->SetDriverName(nullptr);
 				if (m_pApp->SetDriverName(val.c_str())) {
-					resParam->param = CMD_SUCCESS;
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 		}
@@ -768,7 +768,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		m_pApp->AddLog(L"CMD2_VIEW_APP_SET_CH");
 		if (IsNotRecording()) {
 			SET_CH_INFO val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
+			if (cmd.ReadVALUE(&val)) {
 				SendMessage(m_hwnd, WM_EPGCAP_STOP, 0, 0);
 				if (val.useSID) {
 					TVTest::ChannelSelectInfo si = {};
@@ -781,7 +781,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 					if (m_pApp->SelectChannel(&si)) {
 						m_lastSetCh = val;
 						m_chChangedAfterSetCh = false;
-						resParam->param = CMD_SUCCESS;
+						res.SetParam(CMD_SUCCESS);
 					}
 				}
 				// チューナ番号指定には未対応
@@ -790,8 +790,8 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		break;
 	case CMD2_VIEW_APP_CREATE_CTRL:
 		m_pApp->AddLog(L"CMD2_VIEW_APP_CREATE_CTRL");
-		resParam->data = NewWriteVALUE(++m_recCtrlCount, resParam->dataSize);
-		resParam->param = CMD_SUCCESS;
+		res.WriteVALUE(++m_recCtrlCount);
+		res.SetParam(CMD_SUCCESS);
 		// TVTestはチャンネルをロックできないので、CMD2_VIEW_APP_SET_CH後にユーザによる変更があれば戻しておく
 		if (m_lastSetCh.useSID && m_chChangedAfterSetCh && IsNotRecording()) {
 			m_pApp->AddLog(L"SetCh", TVTest::LOG_TYPE_WARNING);
@@ -817,7 +817,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		m_pApp->AddLog(L"CMD2_VIEW_APP_DELETE_CTRL");
 		{
 			DWORD val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr) && m_recCtrlMap.count(val) != 0) {
+			if (cmd.ReadVALUE(&val) && m_recCtrlMap.count(val) != 0) {
 				REC_CTRL recCtrl;
 				{
 					CBlockLock lock(&m_streamLock);
@@ -834,7 +834,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						m_pApp->StopRecord();
 					}
 				}
-				resParam->param = CMD_SUCCESS;
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
@@ -842,7 +842,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		m_pApp->AddLog(L"CMD2_VIEW_APP_REC_START_CTRL");
 		{
 			SET_CTRL_REC_PARAM val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr) && m_recCtrlMap.count(val.ctrlID) != 0) {
+			if (cmd.ReadVALUE(&val) && m_recCtrlMap.count(val.ctrlID) != 0) {
 				// overWriteFlag,pittariFlag,createSizeは無視
 				REC_CTRL &recCtrl = m_recCtrlMap[val.ctrlID];
 				if (recCtrl.filePath.empty() && !val.saveFolder.empty()) {
@@ -868,7 +868,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 							SendMessage(m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
 							CBlockLock lock(&m_streamLock);
 							recCtrl.filePath = strFilePath;
-							resParam->param = CMD_SUCCESS;
+							res.SetParam(CMD_SUCCESS);
 						}
 						else {
 							m_pApp->AddLog(L"重複録画開始に失敗しました。", TVTest::LOG_TYPE_ERROR);
@@ -895,7 +895,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 								recCtrl.filePath = m_duplicateOriginalPath = &buf.front();
 								recCtrl.duplicateTargetID = 1;
 								SendMessage(m_hwnd, WM_SIGNAL_UPDATE_START, 0, 0);
-								resParam->param = CMD_SUCCESS;
+								res.SetParam(CMD_SUCCESS);
 							}
 							else {
 								m_pApp->StopRecord();
@@ -910,7 +910,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		m_pApp->AddLog(L"CMD2_VIEW_APP_REC_STOP_CTRL");
 		{
 			SET_CTRL_REC_STOP_PARAM val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr) && m_recCtrlMap.count(val.ctrlID) != 0) {
+			if (cmd.ReadVALUE(&val) && m_recCtrlMap.count(val.ctrlID) != 0) {
 				SET_CTRL_REC_STOP_RES_PARAM resVal;
 				CDropCount dropCount;
 				DWORD duplicateTargetID;
@@ -959,8 +959,8 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 						// 最後の録画
 						m_pApp->StopRecord();
 					}
-					resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					res.WriteVALUE(resVal);
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 		}
@@ -968,10 +968,10 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 	case CMD2_VIEW_APP_REC_FILE_PATH:
 		{
 			DWORD val;
-			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr) && m_recCtrlMap.count(val) != 0) {
+			if (cmd.ReadVALUE(&val) && m_recCtrlMap.count(val) != 0) {
 				if (!m_recCtrlMap[val].filePath.empty()) {
-					resParam->data = NewWriteVALUE(m_recCtrlMap[val].filePath, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					res.WriteVALUE(m_recCtrlMap[val].filePath);
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 		}
@@ -980,16 +980,16 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		m_pApp->AddLog(L"CMD2_VIEW_APP_EPGCAP_START");
 		{
 			vector<SET_CH_INFO> chList;
-			if (m_epgCapChList.empty() && ReadVALUE(&chList, cmdParam->data, cmdParam->dataSize, nullptr)) {
+			if (m_epgCapChList.empty() && cmd.ReadVALUE(&chList)) {
 				SendMessage(m_hwnd, WM_EPGCAP_START, 0, reinterpret_cast<LPARAM>(&chList));
-				resParam->param = CMD_SUCCESS;
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
 	case CMD2_VIEW_APP_EPGCAP_STOP:
 		m_pApp->AddLog(L"CMD2_VIEW_APP_EPGCAP_STOP");
 		SendMessage(m_hwnd, WM_EPGCAP_STOP, 0, 0);
-		resParam->param = CMD_SUCCESS;
+		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_VIEW_APP_REC_STOP_ALL:
 		m_pApp->AddLog(L"CMD2_VIEW_APP_REC_STOP_ALL");
@@ -999,11 +999,11 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 			}
 			CBlockLock lock(&m_streamLock);
 			m_recCtrlMap.clear();
-			resParam->param = CMD_SUCCESS;
+			res.SetParam(CMD_SUCCESS);
 		}
 		break;
 	default:
-		resParam->param = CMD_NON_SUPPORT;
+		res.SetParam(CMD_NON_SUPPORT);
 		break;
 	}
 }
