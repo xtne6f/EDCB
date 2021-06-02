@@ -563,7 +563,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							m_epgReloadThread.join();
 						}
 						if (!m_epgReloadThread.joinable()) {
-							m_epgReloadThread = thread_(ReloadEpgThread, 0);
+							m_epgReloadThread = thread_(ReloadEpgThread);
 						}
 					}
 				}
@@ -1036,7 +1036,7 @@ bool CEdcbPlugIn:: IsTunerBonDriver() const
 		[](wchar_t a, wchar_t b) { return towupper(a) == towupper(b); }) == m_nonTunerDrivers.end();
 }
 
-void CEdcbPlugIn::ReloadEpgThread(int param)
+void CEdcbPlugIn::ReloadEpgThread()
 {
 	CSendCtrlCmd cmd;
 	cmd.SetConnectTimeOut(4000);

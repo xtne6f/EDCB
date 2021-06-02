@@ -71,7 +71,7 @@ private:
 	// 現在のBonDriverはチューナかどうか調べる
 	bool IsTunerBonDriver() const;
 	// EpgTimerSrvにEPG再読み込みを要求するスレッド
-	static void ReloadEpgThread(int param);
+	static void ReloadEpgThread();
 	// ストリームコールバック(別スレッド)
 	static BOOL CALLBACK StreamCallback(BYTE *pData, void *pClientData);
 	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO *logoList, LPVOID param);

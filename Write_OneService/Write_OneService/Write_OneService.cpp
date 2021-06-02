@@ -58,6 +58,7 @@ void WINAPI Setting(
 	HWND parentWnd
 	)
 {
+	(void)parentWnd;
 	{
 		fs_path iniPath = GetModuleIniPath(g_instance);
 		if( GetPrivateProfileToString(L"SET", L"WritePlugin", L"*", iniPath.c_str()) == L"*" ){
