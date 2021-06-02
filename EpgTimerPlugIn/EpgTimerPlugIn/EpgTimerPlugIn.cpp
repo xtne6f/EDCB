@@ -73,23 +73,19 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 		wstring pipeName;
 		Format(pipeName, L"%ls%d", CMD2_TVTEST_CTRL_PIPE, GetCurrentProcessId());
 		AddDebugLogFormat(L"%ls", pipeName.c_str());
-		this->pipeServer.StartServer(pipeName, [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
+		this->pipeServer.StartServer(pipeName, [this](CCmdStream& cmd, CCmdStream& res) {
 			// SendMessageTimeout()はメッセージ処理中でも容赦なくタイムアウトするのでコマンドデータを排他処理する
 			{
 				CBlockLock lock(&this->cmdLock);
-				std::swap(this->cmdCapture.param, cmdParam->param);
-				std::swap(this->cmdCapture.dataSize, cmdParam->dataSize);
-				this->cmdCapture.data.swap(cmdParam->data);
+				std::swap(this->cmdCapture, cmd);
 			}
 			// CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ(デッドロック防止のためタイムアウトつき)
 			DWORD_PTR dwResult;
 			if( SendMessageTimeout(this->ctrlDlg.GetDlgHWND(), WM_INVOKE_CTRL_CMD, 0, 0, SMTO_NORMAL, 10000, &dwResult) ){
 				CBlockLock lock(&this->cmdLock);
-				std::swap(resParam->param, this->resCapture.param);
-				std::swap(resParam->dataSize, this->resCapture.dataSize);
-				resParam->data.swap(this->resCapture.data);
+				std::swap(res, this->resCapture);
 			}else{
-				resParam->param = CMD_ERR;
+				res.SetParam(CMD_ERR);
 			}
 		});
 
@@ -131,6 +127,7 @@ bool CEpgTimerPlugIn::Finalize()
 // 何かイベントが起きると呼ばれる
 LRESULT CALLBACK CEpgTimerPlugIn::EventCallback(UINT Event,LPARAM lParam1,LPARAM lParam2,void *pClientData)
 {
+	(void)lParam2;
 	CEpgTimerPlugIn *pThis=static_cast<CEpgTimerPlugIn*>(pClientData);
 	switch (Event) {
 	case TVTest::EVENT_PLUGINENABLE:
@@ -172,21 +169,21 @@ LRESULT CALLBACK CEpgTimerPlugIn::EventCallback(UINT Event,LPARAM lParam1,LPARAM
 void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 {
 	CBlockLock lock(&this->cmdLock);
-	CMD_STREAM* cmdParam = &this->cmdCapture;
-	CMD_STREAM* resParam = &this->resCapture;
+	const CCmdStream& cmd = this->cmdCapture;
+	CCmdStream& res = this->resCapture;
 	CEpgTimerPlugIn* sys = this;
 
-	resParam->dataSize = 0;
-	resParam->param = CMD_ERR;
+	res.Resize(0);
+	res.SetParam(CMD_ERR);
 
-	switch( cmdParam->param ){
+	switch( cmd.GetParam() ){
 	case CMD2_VIEW_APP_SET_BONDRIVER:
 		AddDebugLog(L"TvTest:CMD2_VIEW_APP_SET_BONDRIVER");
 		{
 			wstring val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+			if( cmd.ReadVALUE(&val) ){
 				if( sys->m_pApp->SetDriverName(val.c_str()) == TRUE ){
-					resParam->param = CMD_SUCCESS;
+					res.SetParam(CMD_SUCCESS);
 				}
 				if( CompareNoCase(val, L"BonDriver_UDP.dll") == 0 ||
 				    CompareNoCase(val, L"BonDriver_TCP.dll") == 0 ||
@@ -203,8 +200,8 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 			sys->m_pApp->GetDriverFullPathName(buff, 512);
 			wstring bonName = fs_path(buff).filename().native();
 			if( bonName.size() > 0 ){
-				resParam->data = NewWriteVALUE(bonName, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+				res.WriteVALUE(bonName);
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
@@ -212,7 +209,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 		AddDebugLog(L"TvTest:CMD2_VIEW_APP_SET_CH");
 		{
 			SET_CH_INFO val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+			if( cmd.ReadVALUE(&val) ){
 				if( val.useSID == TRUE && val.useBonCh == TRUE ){
 					int space = 0;
 					int ch = 0;
@@ -229,7 +226,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 						}else{
 							if( chInfo.Space == val.space && chInfo.Channel == val.ch ){
 								if( sys->m_pApp->SetChannel(space, ch, val.SID) == true ){
-									resParam->param = CMD_SUCCESS;
+									res.SetParam(CMD_SUCCESS);
 									AddDebugLog(L"TvTest:m_pApp->SetChannel true");
 								}else{
 									AddDebugLog(L"TvTest:m_pApp->SetChannel false");
@@ -250,23 +247,23 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 	case CMD2_VIEW_APP_CLOSE:
 		AddDebugLog(L"TvTest:CMD2_VIEW_APP_CLOSE");
 		{
-			resParam->param = CMD_SUCCESS;
+			res.SetParam(CMD_SUCCESS);
 			sys->m_pApp->Close(1);
 		}
 		break;
 	case CMD2_VIEW_APP_TT_SET_CTRL:
 		AddDebugLog(L"TvTest:CMD2_VIEW_APP_TT_SET_CTRL");
 		{
-			if( ReadVALUE(&sys->nwModeInfo, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				resParam->param = CMD_SUCCESS;
+			if( cmd.ReadVALUE(&sys->nwModeInfo) ){
+				res.SetParam(CMD_SUCCESS);
 				// 投げるだけ
 				PostMessage(sys->ctrlDlg.GetDlgHWND(), WM_TT_SET_CTRL, 0, 0);
 			}
 		}
 		break;
 	default:
-		AddDebugLogFormat(L"TvTest:err default cmd %d", cmdParam->param);
-		resParam->param = CMD_NON_SUPPORT;
+		AddDebugLogFormat(L"TvTest:err default cmd %d", cmd.GetParam());
+		res.SetParam(CMD_NON_SUPPORT);
 		break;
 	}
 }
@@ -322,6 +319,10 @@ void CEpgTimerPlugIn::ResetStreamingCtrlView()
 
 BOOL CALLBACK CEpgTimerPlugIn::WindowMsgeCallback(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam,LRESULT *pResult,void *pUserData)
 {
+	(void)hwnd;
+	(void)wParam;
+	(void)lParam;
+	(void)pResult;
 	CEpgTimerPlugIn* sys = (CEpgTimerPlugIn*)pUserData;
 	if( sys->nwMode == TRUE ){
 		switch(uMsg){
@@ -343,6 +344,9 @@ BOOL CALLBACK CEpgTimerPlugIn::WindowMsgeCallback(HWND hwnd,UINT uMsg,WPARAM wPa
 
 LRESULT CALLBACK CEpgTimerPlugIn::StreamCtrlDlgCallback(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam,void *pUserData)
 {
+	(void)hwnd;
+	(void)wParam;
+	(void)lParam;
 	CEpgTimerPlugIn* sys = (CEpgTimerPlugIn*)pUserData;
 	{
 		switch(uMsg){

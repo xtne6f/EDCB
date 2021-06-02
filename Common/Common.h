@@ -55,12 +55,9 @@ RndIt upper_bound_first(RndIt first, RndIt last, const T& key)
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wlogical-op-parentheses"
-#pragma clang diagnostic ignored "-Wunused-parameter"
 #endif
 
 #ifdef _MSC_VER
-// 'identifier': unreferenced formal parameter
-#pragma warning(disable : 4100)
 #if _MSC_VER < 1900
 // 'class': assignment operator was implicitly defined as deleted
 #pragma warning(disable : 4512)

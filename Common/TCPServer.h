@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "StructDef.h"
+#include "CtrlCmdUtil.h"
 #include "ThreadUtil.h"
 
 #include <functional>
@@ -21,12 +21,12 @@ public:
 	~CTCPServer(void);
 
 	bool StartServer(unsigned short port, bool ipv6, DWORD dwResponseTimeout, LPCWSTR acl,
-	                 const std::function<void(CMD_STREAM*, CMD_STREAM*, LPCWSTR)>& cmdProc);
+	                 const std::function<void(const CCmdStream&, CCmdStream&, LPCWSTR)>& cmdProc);
 	void StopServer();
 	void NotifyUpdate();
 
 protected:
-	std::function<void(CMD_STREAM*, CMD_STREAM*, LPCWSTR)> m_cmdProc;
+	std::function<void(const CCmdStream&, CCmdStream&, LPCWSTR)> m_cmdProc;
 	unsigned short m_port;
 	bool m_ipv6;
 	DWORD m_dwResponseTimeout;

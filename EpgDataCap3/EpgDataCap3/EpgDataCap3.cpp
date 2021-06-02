@@ -29,6 +29,7 @@ DWORD WINAPI InitializeEP(
 	DWORD* id
 	)
 {
+	(void)asyncFlag;
 	if (id == NULL) {
 		return ERR_INVALID_ARG;
 	}

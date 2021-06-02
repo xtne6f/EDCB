@@ -23,8 +23,8 @@ private:
 	BOOL showNormal;
 	BOOL grantServerAccess;
 	CStreamCtrlDlg ctrlDlg;
-	CMD_STREAM cmdCapture;
-	CMD_STREAM resCapture;
+	CCmdStream cmdCapture;
+	CCmdStream resCapture;
 	recursive_mutex_ cmdLock;
 
 private:

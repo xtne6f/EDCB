@@ -4,6 +4,7 @@
 #include "ReserveManager.h"
 #include "NotifyManager.h"
 #include "HttpServer.h"
+#include "../../Common/CtrlCmdUtil.h"
 #include "../../Common/ParseTextInstances.h"
 #include "../../Common/TimeShiftUtil.h"
 #include "../../Common/InstanceManager.h"
@@ -61,8 +62,8 @@ private:
 	void AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList);
 	void AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const;
 	//外部制御コマンド関係
-	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, CMD_STREAM* cmdParam, CMD_STREAM* resParam, int threadIndex, bool tcpFlag, LPCWSTR clientIP);
-	bool CtrlCmdProcessCompatible(CMD_STREAM& cmdParam, CMD_STREAM& resParam, LPCWSTR clientIP);
+	static void CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& cmd, CCmdStream& res, int threadIndex, bool tcpFlag, LPCWSTR clientIP);
+	bool CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStream& res, LPCWSTR clientIP);
 	void InitLuaCallback(lua_State* L, LPCSTR serverRandom);
 	void DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff);
 	//Lua-edcb空間のコールバック

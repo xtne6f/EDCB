@@ -35,7 +35,7 @@ CTCPServer::~CTCPServer(void)
 }
 
 bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTimeout, LPCWSTR acl,
-                             const std::function<void(CMD_STREAM*, CMD_STREAM*, LPCWSTR)>& cmdProc)
+                             const std::function<void(const CCmdStream&, CCmdStream&, LPCWSTR)>& cmdProc)
 {
 	if( !cmdProc ){
 		return false;
@@ -225,7 +225,7 @@ void SetBlockingMode(SOCKET sock)
 
 struct WAIT_INFO {
 	SOCKET sock;
-	CMD_STREAM cmd;
+	CCmdStream cmd;
 	DWORD tick;
 	bool closing;
 #ifdef _WIN32
@@ -308,29 +308,17 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 				if( waitList[i]->closing ){
 					continue;
 				}
-				CMD_STREAM stRes;
-				pSys->m_cmdProc(&waitList[i]->cmd, &stRes, NULL);
-				if( stRes.param == CMD_NO_RES ){
+				CCmdStream res;
+				pSys->m_cmdProc(waitList[i]->cmd, res, NULL);
+				if( res.GetParam() == CMD_NO_RES ){
 					//応答は保留された
 					if( GetTickCount() - waitList[i]->tick <= pSys->m_dwResponseTimeout ){
 						continue;
 					}
 				}else{
-					DWORD head[256];
-					head[0] = stRes.param;
-					head[1] = stRes.dataSize;
-					DWORD extSize = 0;
-					if( stRes.dataSize > 0 ){
-						extSize = min(stRes.dataSize, (DWORD)(sizeof(head) - sizeof(DWORD)*2));
-						memcpy(head + 2, stRes.data.get(), extSize);
-					}
 					//ブロッキングモードに変更
 					SetBlockingMode(waitList[i]->sock);
-					if( send(waitList[i]->sock, (const char*)head, sizeof(DWORD)*2 + extSize, 0) == (int)(sizeof(DWORD)*2 + extSize) ){
-						if( stRes.dataSize > extSize ){
-							send(waitList[i]->sock, (const char*)stRes.data.get() + extSize, stRes.dataSize - extSize, 0);
-						}
-					}
+					send(waitList[i]->sock, (const char*)res.GetStream(), res.GetStreamSize(), 0);
 					SetNonBlockingMode(*waitList[i]);
 				}
 				shutdown(waitList[i]->sock, 2); //SD_BOTH
@@ -375,10 +363,8 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 				//ブロッキングモードに変更
 				SetBlockingMode(sock);
 				for(;;){
-					CMD_STREAM stCmd;
-					CMD_STREAM stRes;
-					DWORD head[256];
-					if( RecvAll(sock, (char*)head, sizeof(DWORD)*2, 0) != (int)(sizeof(DWORD)*2) ){
+					DWORD head[2];
+					if( RecvAll(sock, (char*)head, sizeof(head), 0) != (int)sizeof(head) ){
 						break;
 					}
 					//第2,3バイトは0でなければならない
@@ -386,20 +372,16 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						AddDebugLogFormat(L"Deny TCP cmd:0x%08x", head[0]);
 						break;
 					}
-					stCmd.param = head[0];
-					stCmd.dataSize = head[1];
-
-					if( stCmd.dataSize > 0 ){
-						stCmd.data.reset(new BYTE[stCmd.dataSize]);
-						if( RecvAll(sock, (char*)stCmd.data.get(), stCmd.dataSize, 0) != (int)stCmd.dataSize ){
-							break;
-						}
+					CCmdStream cmd(head[0]);
+					cmd.Resize(head[1]);
+					if( RecvAll(sock, (char*)cmd.GetData(), cmd.GetDataSize(), 0) != (int)cmd.GetDataSize() ){
+						break;
 					}
 
 					wstring clientIP;
-					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP ||
-					    stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP ||
-					    stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
+					if( cmd.GetParam() == CMD2_EPG_SRV_REGIST_GUI_TCP ||
+					    cmd.GetParam() == CMD2_EPG_SRV_UNREGIST_GUI_TCP ||
+					    cmd.GetParam() == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
 						//接続元IPを引数に添付
 						char ip[NI_MAXHOST];
 						if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 ){
@@ -407,9 +389,10 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						}
 					}
 
-					pSys->m_cmdProc(&stCmd, &stRes, clientIP.empty() ? NULL : clientIP.c_str());
-					if( stRes.param == CMD_NO_RES ){
-						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
+					CCmdStream res;
+					pSys->m_cmdProc(cmd, res, clientIP.empty() ? NULL : clientIP.c_str());
+					if( res.GetParam() == CMD_NO_RES ){
+						if( cmd.GetParam() == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
 							//保留可能なコマンドは応答待ちリストに移動
 #ifdef _WIN32
 							WSAEVENT hEvent;
@@ -418,9 +401,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 							{
 								waitList.push_back(std::unique_ptr<WAIT_INFO>(new WAIT_INFO));
 								waitList.back()->sock = sock;
-								waitList.back()->cmd.param = stCmd.param;
-								waitList.back()->cmd.dataSize = stCmd.dataSize;
-								waitList.back()->cmd.data.swap(stCmd.data);
+								std::swap(waitList.back()->cmd, cmd);
 								waitList.back()->tick = GetTickCount();
 								waitList.back()->closing = false;
 #ifdef _WIN32
@@ -432,19 +413,10 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						}
 						break;
 					}
-					head[0] = stRes.param;
-					head[1] = stRes.dataSize;
-					DWORD extSize = 0;
-					if( stRes.dataSize > 0 ){
-						extSize = min(stRes.dataSize, (DWORD)(sizeof(head) - sizeof(DWORD)*2));
-						memcpy(head + 2, stRes.data.get(), extSize);
-					}
-					if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) != (int)(sizeof(DWORD)*2 + extSize) ||
-					    (stRes.dataSize > extSize &&
-					     send(sock, (char*)stRes.data.get() + extSize, stRes.dataSize - extSize, 0) != (int)(stRes.dataSize - extSize)) ){
+					if( send(sock, (const char*)res.GetStream(), res.GetStreamSize(), 0) != (int)res.GetStreamSize() ){
 						break;
 					}
-					if( stRes.param != OLD_CMD_NEXT ){
+					if( res.GetParam() != OLD_CMD_NEXT ){
 						//Enum用の繰り返しではない
 						shutdown(sock, 2); //SD_BOTH
 						break;

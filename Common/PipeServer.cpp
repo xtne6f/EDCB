@@ -38,7 +38,7 @@ CPipeServer::~CPipeServer(void)
 
 bool CPipeServer::StartServer(
 	const wstring& pipeName,
-	const std::function<void(CMD_STREAM*, CMD_STREAM*)>& cmdProc_,
+	const std::function<void(CCmdStream&, CCmdStream&)>& cmdProc_,
 	bool insecureFlag,
 	bool doNotCreateNoWaitPipe
 )
@@ -250,37 +250,26 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 			for(;;){
 				DWORD dwWrite = 0;
 				DWORD head[2];
-				CMD_STREAM stCmd;
-				CMD_STREAM stRes;
 				DWORD n = 0;
 				for( DWORD m; n < sizeof(head) && ReadFile(hPipe, (BYTE*)head + n, sizeof(head) - n, &m, NULL); n += m );
 				if( n != sizeof(head) ){
 					break;
 				}
-				stCmd.param = head[0];
-				stCmd.dataSize = head[1];
-				if( stCmd.dataSize > 0 ){
-					stCmd.data.reset(new BYTE[stCmd.dataSize]);
-					n = 0;
-					for( DWORD m; n < stCmd.dataSize && ReadFile(hPipe, stCmd.data.get() + n, stCmd.dataSize - n, &m, NULL); n += m );
-					if( n != stCmd.dataSize ){
-						break;
-					}
-				}
-
-				pSys->cmdProc(&stCmd, &stRes);
-				head[0] = stRes.param;
-				head[1] = stRes.dataSize;
-				if( WriteFile(hPipe, head, sizeof(head), &dwWrite, NULL) == FALSE ){
+				CCmdStream cmd(head[0]);
+				cmd.Resize(head[1]);
+				n = 0;
+				for( DWORD m; n < cmd.GetDataSize() && ReadFile(hPipe, cmd.GetData() + n, cmd.GetDataSize() - n, &m, NULL); n += m );
+				if( n != cmd.GetDataSize() ){
 					break;
 				}
-				if( stRes.dataSize > 0 ){
-					if( WriteFile(hPipe, stRes.data.get(), stRes.dataSize, &dwWrite, NULL) == FALSE ){
-						break;
-					}
+
+				CCmdStream res;
+				pSys->cmdProc(cmd, res);
+				if( WriteFile(hPipe, res.GetStream(), res.GetStreamSize(), &dwWrite, NULL) == FALSE ){
+					break;
 				}
 				FlushFileBuffers(hPipe);
-				if( stRes.param != OLD_CMD_NEXT ){
+				if( res.GetParam() != OLD_CMD_NEXT ){
 					//Enum用の繰り返しではない
 					break;
 				}
@@ -305,36 +294,25 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 			if( sock >= 0 ){
 				for(;;){
 					DWORD head[2];
-					CMD_STREAM stCmd;
-					CMD_STREAM stRes;
 					DWORD n = 0;
 					for( int m; n < sizeof(head) && (m = (int)recv(sock, (BYTE*)head + n, sizeof(head) - n, 0)) > 0; n += m );
 					if( n != sizeof(head) ){
 						break;
 					}
-					stCmd.param = head[0];
-					stCmd.dataSize = head[1];
-					if( stCmd.dataSize > 0 ){
-						stCmd.data.reset(new BYTE[stCmd.dataSize]);
-						n = 0;
-						for( int m; n < stCmd.dataSize && (m = (int)recv(sock, stCmd.data.get() + n, stCmd.dataSize - n, 0)) > 0; n += m );
-						if( n != stCmd.dataSize ){
-							break;
-						}
-					}
-
-					pSys->cmdProc(&stCmd, &stRes);
-					head[0] = stRes.param;
-					head[1] = stRes.dataSize;
-					if( send(sock, head, sizeof(head), 0) != (int)sizeof(head) ){
+					CCmdStream cmd(head[0]);
+					cmd.Resize(head[1]);
+					n = 0;
+					for( int m; n < cmd.GetDataSize() && (m = (int)recv(sock, cmd.GetData() + n, cmd.GetDataSize() - n, 0)) > 0; n += m );
+					if( n != cmd.GetDataSize() ){
 						break;
 					}
-					if( stRes.dataSize > 0 ){
-						if( send(sock, stRes.data.get(), stRes.dataSize, 0) != (int)stRes.dataSize ){
-							break;
-						}
+
+					CCmdStream res;
+					pSys->cmdProc(cmd, res);
+					if( send(sock, res.GetStream(), res.GetStreamSize(), 0) != (int)res.GetStreamSize() ){
+						break;
 					}
-					if( stRes.param != OLD_CMD_NEXT ){
+					if( res.GetParam() != OLD_CMD_NEXT ){
 						//Enum用の繰り返しではない
 						break;
 					}

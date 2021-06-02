@@ -291,22 +291,6 @@ inline BOOL ReadVALUE( T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize
 }
 
 template<class T>
-inline BOOL ReadVALUE( T* val, const std::unique_ptr<BYTE[]>& buff, DWORD buffSize, DWORD* readSize )
-{
-	return ReadVALUE(val, buff.get(), buffSize, readSize);
-}
-
-template<class T>
-std::unique_ptr<BYTE[]> NewWriteVALUE( const T& val, DWORD& writeSize )
-{
-	DWORD buffSize = CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, val);
-	std::unique_ptr<BYTE[]> buff(new BYTE[buffSize]);
-	CtrlCmdUtilImpl_::WriteVALUE(0, buff.get(), 0, val);
-	writeSize = buffSize;
-	return buff;
-}
-
-template<class T>
 inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL ){
@@ -319,22 +303,86 @@ inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWOR
 }
 
 template<class T>
-std::unique_ptr<BYTE[]> NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD& writeSize )
+inline BOOL ReadVALUE2WithVersion( WORD* ver, T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
-	//2未満のコマンドバージョンは2として扱う
-	ver = max(ver, (WORD)2);
-	DWORD buffSize = CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, ver) + CtrlCmdUtilImpl_::WriteVALUE(ver, NULL, 0, val);
-	std::unique_ptr<BYTE[]> buff(new BYTE[buffSize]);
-	CtrlCmdUtilImpl_::WriteVALUE(ver, buff.get(), CtrlCmdUtilImpl_::WriteVALUE(0, buff.get(), 0, ver), val);
-	writeSize = buffSize;
-	return buff;
+	DWORD readVerSize;
+	if( ReadVALUE(ver, buff, buffSize, &readVerSize) &&
+	    ReadVALUE2(*ver, val, buff + readVerSize, buffSize - readVerSize, readSize) ){
+		if( readSize ){
+			*readSize += readVerSize;
+		}
+		return TRUE;
+	}
+	return FALSE;
 }
+
+//コマンド送受信ストリーム
+class CCmdStream
+{
+public:
+	explicit CCmdStream(DWORD param = 0) {
+		params[0] = param;
+		params[1] = 0;
+	}
+
+	//送信時コマンド、受信時エラーコードをセットする
+	void SetParam(DWORD param);
+
+	//送信データをリサイズする
+	void Resize(DWORD dataSize);
+
+	//送信時コマンド、受信時エラーコード
+	DWORD GetParam() const { return params[0]; }
+
+	//送信データのサイズ
+	DWORD GetDataSize() const { return params[1]; }
+
+	//ストリーム全体のサイズ
+	DWORD GetStreamSize() const { return 8 + params[1]; }
+
+	//ストリーム全体
+	const BYTE* GetStream() const { return buff.empty() ? (BYTE*)params : buff.data(); }
+
+	//送信データ
+	const BYTE* GetData() const { return GetStream() + 8; }
+
+	//送信データ
+	BYTE* GetData() { return (buff.empty() ? (BYTE*)params : buff.data()) + 8; }
+
+	template<class T>
+	void WriteVALUE(const T& val) {
+		Resize(CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, val));
+		CtrlCmdUtilImpl_::WriteVALUE(0, GetData(), 0, val);
+	}
+
+	template<class T>
+	void WriteVALUE2WithVersion(WORD ver, const T& val) {
+		//2未満のコマンドバージョンは2として扱う
+		ver = max(ver, (WORD)2);
+		Resize(CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, ver) + CtrlCmdUtilImpl_::WriteVALUE(ver, NULL, 0, val));
+		CtrlCmdUtilImpl_::WriteVALUE(ver, GetData(), CtrlCmdUtilImpl_::WriteVALUE(0, GetData(), 0, ver), val);
+	}
+
+	template<class T>
+	bool ReadVALUE(T* val) const {
+		return !!::ReadVALUE(val, GetData(), GetDataSize(), NULL);
+	}
+
+	template<class T>
+	bool ReadVALUE2WithVersion(WORD* ver, T* val) const {
+		return !!::ReadVALUE2WithVersion(ver, val, GetData(), GetDataSize(), NULL);
+	}
+
+private:
+	DWORD params[2];
+	vector<BYTE> buff;
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数
-std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const RESERVE_DATA& val, DWORD& writeSize, std::unique_ptr<BYTE[]>&& buff_ = NULL );
-BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const std::unique_ptr<BYTE[]>& buff_, DWORD buffSize );
-BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>& buff_, DWORD buffSize );
-std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, DWORD& writeSize, std::unique_ptr<BYTE[]>&& buff_ = NULL );
+void DeprecatedNewWriteVALUE( const RESERVE_DATA& val, CCmdStream& cmd, BYTE* buff = NULL );
+BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize );
+BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize );
+void DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, CCmdStream& cmd, BYTE* buff = NULL );
 
 #endif

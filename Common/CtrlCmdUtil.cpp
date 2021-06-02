@@ -1331,12 +1331,31 @@ BOOL ReadVALUE( WORD ver, NOTIFY_SRV_INFO* val, const BYTE* buff, DWORD buffSize
 
 }
 
+void CCmdStream::SetParam(DWORD param)
+{
+	params[0] = param;
+	if( buff.size() >= 4 ){
+		std::copy((BYTE*)params, (BYTE*)params + 4, buff.data());
+	}
+}
+
+void CCmdStream::Resize(DWORD dataSize)
+{
+	if( dataSize ){
+		buff.resize(8 + dataSize);
+		params[1] = dataSize;
+		std::copy((BYTE*)params, (BYTE*)params + 8, buff.data());
+	}else{
+		buff.clear();
+		params[1] = dataSize;
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数
-std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const RESERVE_DATA& val, DWORD& writeSize, std::unique_ptr<BYTE[]>&& buff_ )
+void DeprecatedNewWriteVALUE( const RESERVE_DATA& val, CCmdStream& cmd, BYTE* buff )
 {
 	using namespace CtrlCmdUtilImpl_;
-	BYTE* buff = buff_.get();
 	DWORD pos = 0;
 	pos += WriteVALUE(0, buff, pos, val.title, true);
 	pos += WriteVALUE(0, buff, pos, val.startTime);
@@ -1364,16 +1383,14 @@ std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const RESERVE_DATA& val, DWORD&
 	pos += WriteVALUE(0, buff, pos, val.recSetting.endMargine);
 	pos += WriteVALUE(0, buff, pos, val.recSetting.serviceMode);
 	if( buff == NULL ){
-		return DeprecatedNewWriteVALUE(val, writeSize, std::unique_ptr<BYTE[]>(new BYTE[pos]));
+		cmd.Resize(pos);
+		DeprecatedNewWriteVALUE(val, cmd, cmd.GetData());
 	}
-	writeSize = pos;
-	return std::move(buff_);
 }
 
-BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const std::unique_ptr<BYTE[]>& buff_, DWORD buffSize )
+BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize )
 {
 	using namespace CtrlCmdUtilImpl_;
-	const BYTE* buff = buff_.get();
 	if( val == NULL || buff == NULL ){
 		return FALSE;
 	}
@@ -1433,10 +1450,9 @@ BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const std::unique_ptr<BYTE[]>& buff
 	return TRUE;
 }
 
-BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>& buff_, DWORD buffSize )
+BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize )
 {
 	using namespace CtrlCmdUtilImpl_;
-	const BYTE* buff = buff_.get();
 	if( val == NULL || buff == NULL ){
 		return FALSE;
 	}
@@ -1543,10 +1559,9 @@ BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>&
 	return TRUE;
 }
 
-std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, DWORD& writeSize, std::unique_ptr<BYTE[]>&& buff_ )
+void DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, CCmdStream& cmd, BYTE* buff )
 {
 	using namespace CtrlCmdUtilImpl_;
-	BYTE* buff = buff_.get();
 	DWORD pos = 0;
 	pos += WriteVALUE(0, buff, pos, val.original_network_id);
 	pos += WriteVALUE(0, buff, pos, val.transport_stream_id);
@@ -1591,8 +1606,7 @@ std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, DW
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.event_id);
 	}
 	if( buff == NULL ){
-		return DeprecatedNewWriteVALUE(val, writeSize, std::unique_ptr<BYTE[]>(new BYTE[pos]));
+		cmd.Resize(pos);
+		DeprecatedNewWriteVALUE(val, cmd, cmd.GetData());
 	}
-	writeSize = pos;
-	return std::move(buff_);
 }

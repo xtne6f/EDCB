@@ -181,17 +181,6 @@ struct CH_DATA5 {
 	BOOL searchFlag;				//検索時のデフォルト検索対象サービスかどうか
 };
 
-//コマンド送受信ストリーム
-struct CMD_STREAM {
-	DWORD param;	//送信時コマンド、受信時エラーコード
-	DWORD dataSize;	//dataのサイズ（BYTE単位）
-	std::unique_ptr<BYTE[]> data;	//送受信するバイナリデータ（dataSize>0のとき必ず非NULL）
-	CMD_STREAM(void) {
-		param = 0;
-		dataSize = 0;
-	}
-};
-
 //EPG基本情報
 struct EPGDB_SHORT_EVENT_INFO {
 	wstring event_name;			//イベント名

@@ -418,6 +418,7 @@ void CDecodeUtil::CheckPMT(const Desc::CDescriptor& pmt)
 
 void CDecodeUtil::CheckDsmcc(WORD PID, const Desc::CDescriptor& dsmccHead, const BYTE* data, size_t dataSize)
 {
+	(void)dsmccHead;
 	if( dataSize < 12 ){
 		return;
 	}
@@ -961,7 +962,8 @@ void CDecodeUtil::SetLogoTypeFlags(
 						//DSM-CC type D (データカルーセル)
 						do{
 							if( itr->second->GetNumber(Desc::descriptor_tag, lp2) == Desc::stream_identifier_descriptor ){
-								if( itr->second->GetNumber(Desc::component_tag, lp2) == 0x79 ){
+								DWORD tag = itr->second->GetNumber(Desc::component_tag, lp2);
+								if( tag == 0x79 || tag == 0x7A ){
 									//TR-B15 全受信機共通データ
 									this->additionalNeededPidList.push_back((WORD)itr->second->GetNumber(Desc::elementary_PID, lp));
 								}

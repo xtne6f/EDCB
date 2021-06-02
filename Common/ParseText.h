@@ -15,9 +15,9 @@ protected:
 	typedef CParseText<K, V> Base;
 	bool SaveText() const;
 	virtual bool ParseLine(LPCWSTR parseLine, pair<K, V>& item) = 0;
-	virtual bool SaveLine(const pair<K, V>& item, wstring& saveLine) const { return false; }
-	virtual bool SaveFooterLine(wstring& saveLine) const { return false; }
-	virtual bool SelectItemToSave(vector<typename map<K, V>::const_iterator>& itemList) const { return false; }
+	virtual bool SaveLine(const pair<K, V>& item, wstring& saveLine) const { (void)item; (void)saveLine; return false; }
+	virtual bool SaveFooterLine(wstring& saveLine) const { (void)saveLine; return false; }
+	virtual bool SelectItemToSave(vector<typename map<K, V>::const_iterator>& itemList) const { (void)itemList; return false; }
 	map<K, V> itemMap;
 	wstring filePath;
 	bool isUtf8;

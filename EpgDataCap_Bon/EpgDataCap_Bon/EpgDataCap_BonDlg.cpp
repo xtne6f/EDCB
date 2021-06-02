@@ -24,26 +24,8 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	: m_hWnd(NULL)
 	, m_hKeyboardHook(NULL)
 {
-	HMODULE hModule = GetModuleHandle(NULL);
-	HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE,PCWSTR,int,HICON*) =
-		(HRESULT (WINAPI*)(HINSTANCE,PCWSTR,int,HICON*))GetProcAddress(GetModuleHandle(L"comctl32.dll"), "LoadIconMetric");
-	if( pfnLoadIconMetric == NULL ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), LIM_SMALL, &m_hIcon) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), LIM_LARGE, &m_hIcon2) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_RED), LIM_SMALL, &iconRed) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), LIM_SMALL, &iconGreen) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), LIM_SMALL, &iconGray) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_REC), LIM_SMALL, &iconOlRec) != S_OK ||
-	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_EPG), LIM_SMALL, &iconOlEpg) != S_OK ){
-		m_hIcon = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		m_hIcon2 = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_BLUE), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
-		iconRed = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_RED), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		iconGreen = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		iconGray = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GRAY), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		iconOlRec = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_REC), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		iconOlEpg = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_OVERLAY_EPG), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	}
-	iconBlue = m_hIcon;
+	m_hIcon = LoadLargeOrSmallIcon(IDI_ICON_BLUE, false);
+	m_hIcon2 = LoadLargeOrSmallIcon(IDI_ICON_BLUE, true);
 
 	taskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 
@@ -66,6 +48,16 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	}
 }
 
+CEpgDataCap_BonDlg::~CEpgDataCap_BonDlg()
+{
+	if( m_hIcon2 ){
+		DestroyIcon(m_hIcon2);
+	}
+	if( m_hIcon ){
+		DestroyIcon(m_hIcon);
+	}
+}
+
 INT_PTR CEpgDataCap_BonDlg::DoModal()
 {
 	int index = GetPrivateProfileInt(L"SET", L"DialogTemplate", 0, GetModuleIniPath().c_str());
@@ -73,6 +65,21 @@ INT_PTR CEpgDataCap_BonDlg::DoModal()
 	                      MAKEINTRESOURCE(index == 1 ? IDD_EPGDATACAP_BON_DIALOG_1 :
 	                                      index == 2 ? IDD_EPGDATACAP_BON_DIALOG_2 : IDD),
 	                      NULL, DlgProc, (LPARAM)this);
+}
+
+HICON CEpgDataCap_BonDlg::LoadLargeOrSmallIcon(int iconID, bool isLarge)
+{
+	HMODULE hModule = GetModuleHandle(L"comctl32.dll");
+	if( hModule ){
+		HICON hIcon;
+		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*) =
+			(HRESULT (WINAPI*)(HINSTANCE, PCWSTR, int, HICON*))GetProcAddress(hModule, "LoadIconMetric");
+		if( pfnLoadIconMetric &&
+		    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), isLarge ? LIM_LARGE : LIM_SMALL, &hIcon) == S_OK ){
+			return hIcon;
+		}
+	}
+	return (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), IMAGE_ICON, isLarge ? 32 : 16, isLarge ? 32 : 16, 0);
 }
 
 void CEpgDataCap_BonDlg::ReloadSetting()
@@ -302,6 +309,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 
 void CEpgDataCap_BonDlg::OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed)
 {
+	(void)lParam;
 	// TODO: ここにメッセージ ハンドラー コードを追加するか、既定の処理を呼び出します。
 	if( nID == SC_CLOSE ){
 		if( this->bonCtrl.IsRec() ){
@@ -558,13 +566,13 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				KillTimer(nIDEvent);
 
-				HICON setIcon = this->iconBlue;
+				int iconID = IDI_ICON_BLUE;
 				if( this->bonCtrl.IsRec() ){
-					setIcon = this->iconRed;
+					iconID = IDI_ICON_RED;
 				}else if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
-					setIcon = this->iconGreen;
+					iconID = IDI_ICON_GREEN;
 				}else if( this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ){
-					setIcon = this->iconGray;
+					iconID = IDI_ICON_GRAY;
 				}
 		
 				if( this->modifyTitleBarText ){
@@ -582,14 +590,21 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 							title.insert(0, L" - ");
 							sep = 0;
 						}
-						title[sep + 1] = (setIcon == this->iconRed ? L'●' : setIcon == this->iconGreen ? L'○' : L'-');
+						title[sep + 1] = (iconID == IDI_ICON_RED ? L'●' : iconID == IDI_ICON_GREEN ? L'○' : L'-');
 						if( title != szTitle ){
 							SetWindowText(m_hWnd, title.c_str());
 						}
 					}
 				}
 				if( this->overlayTaskIcon ){
-					SetOverlayIcon(setIcon == this->iconRed ? this->iconOlRec : setIcon == this->iconGreen ? this->iconOlEpg : NULL);
+					HICON hIcon = NULL;
+					if( iconID == IDI_ICON_RED || iconID == IDI_ICON_GREEN ){
+						hIcon = LoadLargeOrSmallIcon(iconID == IDI_ICON_RED ? IDI_ICON_OVERLAY_REC : IDI_ICON_OVERLAY_EPG, false);
+					}
+					SetOverlayIcon(hIcon);
+					if( hIcon ){
+						DestroyIcon(hIcon);
+					}
 				}
 				if( this->minTask && IsWindowVisible(m_hWnd) == FALSE ){
 					wstring bonFile;
@@ -597,12 +612,16 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					WCHAR szBuff[256] = L"";
 					GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff, 256);
 					wstring buff = bonFile + L" ： " + szBuff;
+					HICON hIcon = LoadLargeOrSmallIcon(iconID, false);
 					if( nIDEvent == RETRY_ADD_TRAY ){
-						if( AddTaskBar(m_hWnd, WM_TRAY_PUSHICON, TRAYICON_ID, setIcon, buff) == FALSE ){
+						if( AddTaskBar(m_hWnd, WM_TRAY_PUSHICON, TRAYICON_ID, hIcon, buff) == FALSE ){
 							SetTimer(RETRY_ADD_TRAY, 5000, NULL);
 						}
 					}else{
-						ChgTipsTaskBar(m_hWnd, TRAYICON_ID, setIcon, buff);
+						ChgTipsTaskBar(m_hWnd, TRAYICON_ID, hIcon, buff);
+					}
+					if( hIcon ){
+						DestroyIcon(hIcon);
 					}
 				}
 			}
@@ -622,6 +641,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 {
+	(void)cx;
+	(void)cy;
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 	if( nType == SIZE_MINIMIZED && this->iniMin == FALSE && this->minTask ){
 		SetTimer(RETRY_ADD_TRAY, 0, NULL);
@@ -632,6 +653,7 @@ void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 
 LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
+	(void)wParam;
 	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
 	switch(message){
 	case WM_INVOKE_CTRL_CMD:
@@ -1358,22 +1380,22 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 	wstring pipeName;
 	Format(pipeName, L"%ls%d", CMD2_VIEW_CTRL_PIPE, GetCurrentProcessId());
 	AddDebugLogFormat(L"%ls", pipeName.c_str());
-	this->pipeServer.StartServer(pipeName, [this](CMD_STREAM* cmdParam, CMD_STREAM* resParam) {
-		resParam->param = CMD_ERR;
+	this->pipeServer.StartServer(pipeName, [this](CCmdStream& cmd, CCmdStream& res) {
+		res.SetParam(CMD_ERR);
 		//同期呼び出しが不要なコマンドはここで処理する
-		switch( cmdParam->param ){
+		switch( cmd.GetParam() ){
 		case CMD2_VIEW_APP_GET_BONDRIVER:
 			{
 				wstring bonFile;
 				if( this->bonCtrl.GetOpenBonDriver(&bonFile) ){
-					resParam->data = NewWriteVALUE(bonFile, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					res.WriteVALUE(bonFile);
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 			return;
 		case CMD2_VIEW_APP_GET_DELAY:
-			resParam->data = NewWriteVALUE(this->bonCtrl.GetTimeDelay(), resParam->dataSize);
-			resParam->param = CMD_SUCCESS;
+			res.WriteVALUE(this->bonCtrl.GetTimeDelay());
+			res.SetParam(CMD_SUCCESS);
 			return;
 		case CMD2_VIEW_APP_GET_STATUS:
 			{
@@ -1388,35 +1410,35 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 				}else if( this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ){
 					val = VIEW_APP_ST_ERR_CH_CHG;
 				}
-				resParam->data = NewWriteVALUE(val, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+				res.WriteVALUE(val);
+				res.SetParam(CMD_SUCCESS);
 			}
 			return;
 		case CMD2_VIEW_APP_CLOSE:
 			AddDebugLog(L"CMD2_VIEW_APP_CLOSE");
 			PostMessage(m_hWnd, WM_CLOSE, 0, 0);
-			resParam->param = CMD_SUCCESS;
+			res.SetParam(CMD_SUCCESS);
 			return;
 		case CMD2_VIEW_APP_SET_ID:
 			AddDebugLog(L"CMD2_VIEW_APP_SET_ID");
-			if( ReadVALUE(&this->outCtrlID, cmdParam->data, cmdParam->dataSize, NULL) ){
-				resParam->param = CMD_SUCCESS;
+			if( cmd.ReadVALUE(&this->outCtrlID) ){
+				res.SetParam(CMD_SUCCESS);
 			}
 			return;
 		case CMD2_VIEW_APP_GET_ID:
 			AddDebugLog(L"CMD2_VIEW_APP_GET_ID");
-			resParam->data = NewWriteVALUE(this->outCtrlID, resParam->dataSize);
-			resParam->param = CMD_SUCCESS;
+			res.WriteVALUE(this->outCtrlID);
+			res.SetParam(CMD_SUCCESS);
 			return;
 		case CMD2_VIEW_APP_REC_FILE_PATH:
 			AddDebugLog(L"CMD2_VIEW_APP_REC_FILE_PATH");
 			{
 				DWORD id;
-				if( ReadVALUE(&id, cmdParam->data, cmdParam->dataSize, NULL) ){
+				if( cmd.ReadVALUE(&id) ){
 					wstring saveFile = this->bonCtrl.GetSaveFilePath(id);
 					if( saveFile.size() > 0 ){
-						resParam->data = NewWriteVALUE(saveFile, resParam->dataSize);
-						resParam->param = CMD_SUCCESS;
+						res.WriteVALUE(saveFile);
+						res.SetParam(CMD_SUCCESS);
 					}
 				}
 			}
@@ -1425,10 +1447,10 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 			{
 				SEARCH_EPG_INFO_PARAM key;
 				EPGDB_EVENT_INFO epgInfo;
-				if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) &&
+				if( cmd.ReadVALUE(&key) &&
 				    this->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR ){
-					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					res.WriteVALUE(epgInfo);
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 			return;
@@ -1436,23 +1458,23 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 			{
 				GET_EPG_PF_INFO_PARAM key;
 				EPGDB_EVENT_INFO epgInfo;
-				if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL) &&
+				if( cmd.ReadVALUE(&key) &&
 				    this->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR ){
-					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					res.WriteVALUE(epgInfo);
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 			return;
 		case CMD2_VIEW_APP_EXEC_VIEW_APP:
 			//原作は同期的
 			PostMessage(m_hWnd, WM_VIEW_APP_OPEN, 0, 0);
-			resParam->param = CMD_SUCCESS;
+			res.SetParam(CMD_SUCCESS);
 			return;
 		}
 		//CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ
 		//注意: CPipeServerがアクティブな間、ウィンドウは確実に存在しなければならない
-		this->cmdCapture = cmdParam;
-		this->resCapture = resParam;
+		this->cmdCapture = &cmd;
+		this->resCapture = &res;
 		SendMessage(m_hWnd, WM_INVOKE_CTRL_CMD, 0, 0);
 		this->cmdCapture = NULL;
 		this->resCapture = NULL;
@@ -1462,15 +1484,15 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 
 void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 {
-	CMD_STREAM* cmdParam = this->cmdCapture;
-	CMD_STREAM* resParam = this->resCapture;
+	const CCmdStream& cmd = *this->cmdCapture;
+	CCmdStream& res = *this->resCapture;
 
-	switch( cmdParam->param ){
+	switch( cmd.GetParam() ){
 	case CMD2_VIEW_APP_SET_BONDRIVER:
 		AddDebugLog(L"CMD2_VIEW_APP_SET_BONDRIVER");
 		{
 			wstring val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				if( SelectBonDriver(val.c_str()) ){
 					ReloadServiceList();
 					//可能なら一覧の表示を同期しておく
@@ -1484,7 +1506,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 						}
 					}
 					ChgIconStatus();
-					resParam->param = CMD_SUCCESS;
+					res.SetParam(CMD_SUCCESS);
 				}else{
 					this->serviceList.clear();
 					ComboBox_ResetContent(GetDlgItem(IDC_COMBO_SERVICE));
@@ -1497,12 +1519,12 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		AddDebugLog(L"CMD2_VIEW_APP_SET_CH");
 		{
 			SET_CH_INFO val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				if( val.useSID ){
 					int index = ReloadServiceList(val.ONID, val.TSID, val.SID);
 					if( index >= 0 && SelectService(this->serviceList[index]) ){
 						ChgIconStatus();
-						resParam->param = CMD_SUCCESS;
+						res.SetParam(CMD_SUCCESS);
 					}
 				}else if( val.useBonCh ){
 					for( size_t i = 0; i < this->serviceList.size(); i++ ){
@@ -1513,7 +1535,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 							                              this->serviceList[i].serviceID);
 							if( index >= 0 && SelectService(this->serviceList[index]) ){
 								ChgIconStatus();
-								resParam->param = CMD_SUCCESS;
+								res.SetParam(CMD_SUCCESS);
 							}
 							break;
 						}
@@ -1526,7 +1548,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		AddDebugLog(L"CMD2_VIEW_APP_SET_STANDBY_REC");
 		{
 			DWORD val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				if( val == 1 ){
 					BtnUpdate(GUI_REC_STANDBY);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"予約録画待機中\r\n");
@@ -1537,7 +1559,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 					BtnUpdate(GUI_NORMAL);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");
 				}
-				resParam->param = CMD_SUCCESS;
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
@@ -1546,15 +1568,15 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		{
 			DWORD val = this->bonCtrl.CreateServiceCtrl(FALSE);
 			this->cmdCtrlList.push_back(val);
-			resParam->data = NewWriteVALUE(val, resParam->dataSize);
-			resParam->param = CMD_SUCCESS;
+			res.WriteVALUE(val);
+			res.SetParam(CMD_SUCCESS);
 		}
 		break;
 	case CMD2_VIEW_APP_DELETE_CTRL:
 		AddDebugLog(L"CMD2_VIEW_APP_DELETE_CTRL");
 		{
 			DWORD val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				auto itr = std::find(this->cmdCtrlList.begin(), this->cmdCtrlList.end(), val);
 				if( itr != this->cmdCtrlList.end() ){
 					this->cmdCtrlList.erase(itr);
@@ -1565,7 +1587,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 							this->bonCtrl.SetNWCtrlServiceID(sid);
 							ReloadServiceList(this->lastONID, this->lastTSID, sid);
 						}
-						resParam->param = CMD_SUCCESS;
+						res.SetParam(CMD_SUCCESS);
 					}
 				}
 			}
@@ -1575,11 +1597,11 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		AddDebugLog(L"CMD2_VIEW_APP_SET_CTRLMODE");
 		{
 			SET_CTRL_MODE val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				this->bonCtrl.SetScramble(val.ctrlID, val.enableScramble);
 				this->bonCtrl.SetServiceMode(val.ctrlID, val.enableCaption, val.enableData);
 				this->bonCtrl.SetServiceID(val.ctrlID, val.SID);
-				resParam->param = CMD_SUCCESS;
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
@@ -1587,7 +1609,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		AddDebugLog(L"CMD2_VIEW_APP_REC_START_CTRL");
 		{
 			SET_CTRL_REC_PARAM val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				if( val.overWriteFlag == 2 ){
 					val.overWriteFlag = this->overWriteFlag != FALSE;
 				}
@@ -1601,7 +1623,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 						SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 					}
 					ChgIconStatus();
-					resParam->param = CMD_SUCCESS;
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 		}
@@ -1610,7 +1632,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		AddDebugLog(L"CMD2_VIEW_APP_REC_STOP_CTRL");
 		{
 			SET_CTRL_REC_STOP_PARAM val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				SET_CTRL_REC_STOP_RES_PARAM resVal;
 				resVal.recFilePath = this->bonCtrl.GetSaveFilePath(val.ctrlID);
 				resVal.drop = 0;
@@ -1630,8 +1652,8 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 				BOOL subRec;
 				if( this->bonCtrl.EndSave(val.ctrlID, &subRec) ){
 					resVal.subRecFlag = subRec != FALSE;
-					resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
-					resParam->param = CMD_SUCCESS;
+					res.WriteVALUE(resVal);
+					res.SetParam(CMD_SUCCESS);
 					if( this->cmdCtrlList.size() == 1 ){
 						BtnUpdate(GUI_NORMAL);
 						SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"予約録画終了しました\r\n");
@@ -1645,12 +1667,12 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		AddDebugLog(L"CMD2_VIEW_APP_EPGCAP_START");
 		{
 			vector<SET_CH_INFO> val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				if( this->bonCtrl.StartEpgCap(&val) ){
 					this->epgCapWorking = TRUE;
 					BtnUpdate(GUI_CANCEL_ONLY);
 					ChgIconStatus();
-					resParam->param = CMD_SUCCESS;
+					res.SetParam(CMD_SUCCESS);
 				}
 			}
 		}
@@ -1659,7 +1681,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		AddDebugLog(L"CMD2_VIEW_APP_EPGCAP_STOP");
 		this->bonCtrl.StopEpgCap();
 		ChgIconStatus();
-		resParam->param = CMD_SUCCESS;
+		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_VIEW_APP_REC_STOP_ALL:
 		AddDebugLog(L"CMD2_VIEW_APP_REC_STOP_ALL");
@@ -1674,22 +1696,22 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		BtnUpdate(GUI_NORMAL);
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"予約録画終了しました\r\n");
 		ChgIconStatus();
-		resParam->param = CMD_SUCCESS;
+		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_VIEW_APP_REC_WRITE_SIZE:
 		{
 			DWORD val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+			if( cmd.ReadVALUE(&val) ){
 				__int64 writeSize = -1;
 				this->bonCtrl.GetRecWriteSize(val, &writeSize);
-				resParam->data = NewWriteVALUE(writeSize, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
+				res.WriteVALUE(writeSize);
+				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
 	default:
-		AddDebugLogFormat(L"err default cmd %d", cmdParam->param);
-		resParam->param = CMD_NON_SUPPORT;
+		AddDebugLogFormat(L"err default cmd %d", cmd.GetParam());
+		res.SetParam(CMD_NON_SUPPORT);
 		break;
 	}
 }
