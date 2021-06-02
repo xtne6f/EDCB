@@ -86,8 +86,8 @@ protected:
 	CPipeServer pipeServer;
 	int outCtrlID;
 	vector<DWORD> cmdCtrlList;
-	CMD_STREAM* cmdCapture;
-	CMD_STREAM* resCapture;
+	const CCmdStream* cmdCapture;
+	CCmdStream* resCapture;
 
 	vector<CH_DATA4> serviceList;
 	WORD lastONID;

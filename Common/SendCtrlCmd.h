@@ -486,11 +486,11 @@ private:
 
 	CSendCtrlCmd(const CSendCtrlCmd&);
 	CSendCtrlCmd& operator=(const CSendCtrlCmd&);
-	DWORD SendCmdStream(const CMD_STREAM* cmd, CMD_STREAM* res);
-	DWORD SendCmdWithoutData(DWORD param, CMD_STREAM* res = NULL);
-	DWORD SendCmdWithoutData2(DWORD param, CMD_STREAM* res = NULL);
-	template<class T> DWORD SendCmdData(DWORD param, const T& val, CMD_STREAM* res = NULL);
-	template<class T> DWORD SendCmdData2(DWORD param, const T& val, CMD_STREAM* res = NULL);
+	DWORD SendCmdStream(const CCmdStream& cmd, CCmdStream* res);
+	DWORD SendCmdWithoutData(DWORD param, CCmdStream* res = NULL);
+	DWORD SendCmdWithoutData2(DWORD param, CCmdStream* res = NULL);
+	template<class T> DWORD SendCmdData(DWORD param, const T& val, CCmdStream* res = NULL);
+	template<class T> DWORD SendCmdData2(DWORD param, const T& val, CCmdStream* res = NULL);
 	template<class T> DWORD ReceiveCmdData(DWORD param, T* resVal);
 	template<class T> DWORD ReceiveCmdData2(DWORD param, T* resVal);
 	template<class T, class U> DWORD SendAndReceiveCmdData(DWORD param, const T& val, U* resVal);
@@ -499,51 +499,41 @@ private:
 
 #if 1 //インライン/テンプレート定義
 
-inline DWORD CSendCtrlCmd::SendCmdWithoutData(DWORD param, CMD_STREAM* res)
+inline DWORD CSendCtrlCmd::SendCmdWithoutData(DWORD param, CCmdStream* res)
 {
-	CMD_STREAM cmd;
-	cmd.param = param;
-	return SendCmdStream(&cmd, res);
+	return SendCmdStream(CCmdStream(param), res);
 }
 
-inline DWORD CSendCtrlCmd::SendCmdWithoutData2(DWORD param, CMD_STREAM* res)
+inline DWORD CSendCtrlCmd::SendCmdWithoutData2(DWORD param, CCmdStream* res)
 {
 	return SendCmdData(param, (WORD)CMD_VER, res);
 }
 
 template<class T>
-DWORD CSendCtrlCmd::SendCmdData(DWORD param, const T& val, CMD_STREAM* res)
+DWORD CSendCtrlCmd::SendCmdData(DWORD param, const T& val, CCmdStream* res)
 {
-	CMD_STREAM cmd;
-	cmd.param = param;
-	cmd.data = NewWriteVALUE(val, cmd.dataSize);
-	if( cmd.data == NULL ){
-		return CMD_ERR;
-	}
-	return SendCmdStream(&cmd, res);
+	CCmdStream cmd(param);
+	cmd.WriteVALUE(val);
+	return SendCmdStream(cmd, res);
 }
 
 template<class T>
-DWORD CSendCtrlCmd::SendCmdData2(DWORD param, const T& val, CMD_STREAM* res)
+DWORD CSendCtrlCmd::SendCmdData2(DWORD param, const T& val, CCmdStream* res)
 {
 	WORD ver = CMD_VER;
-	CMD_STREAM cmd;
-	cmd.param = param;
-	cmd.data = NewWriteVALUE2WithVersion(ver, val, cmd.dataSize);
-	if( cmd.data == NULL ){
-		return CMD_ERR;
-	}
-	return SendCmdStream(&cmd, res);
+	CCmdStream cmd(param);
+	cmd.WriteVALUE2WithVersion(ver, val);
+	return SendCmdStream(cmd, res);
 }
 
 template<class T>
 DWORD CSendCtrlCmd::ReceiveCmdData(DWORD param, T* resVal)
 {
-	CMD_STREAM res;
+	CCmdStream res;
 	DWORD ret = SendCmdWithoutData(param, &res);
 
 	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
+		if( !res.ReadVALUE(resVal) ){
 			ret = CMD_ERR;
 		}
 	}
@@ -553,14 +543,12 @@ DWORD CSendCtrlCmd::ReceiveCmdData(DWORD param, T* resVal)
 template<class T>
 DWORD CSendCtrlCmd::ReceiveCmdData2(DWORD param, T* resVal)
 {
-	CMD_STREAM res;
+	CCmdStream res;
 	DWORD ret = SendCmdWithoutData2(param, &res);
 
 	if( ret == CMD_SUCCESS ){
 		WORD ver = 0;
-		DWORD readSize = 0;
-		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE ||
-			ReadVALUE2(ver, resVal, res.data.get() + readSize, res.dataSize - readSize, NULL) == FALSE ){
+		if( !res.ReadVALUE2WithVersion(&ver, resVal) ){
 			ret = CMD_ERR;
 		}
 	}
@@ -570,11 +558,11 @@ DWORD CSendCtrlCmd::ReceiveCmdData2(DWORD param, T* resVal)
 template<class T, class U>
 DWORD CSendCtrlCmd::SendAndReceiveCmdData(DWORD param, const T& val, U* resVal)
 {
-	CMD_STREAM res;
+	CCmdStream res;
 	DWORD ret = SendCmdData(param, val, &res);
 
 	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
+		if( !res.ReadVALUE(resVal) ){
 			ret = CMD_ERR;
 		}
 	}
@@ -584,14 +572,12 @@ DWORD CSendCtrlCmd::SendAndReceiveCmdData(DWORD param, const T& val, U* resVal)
 template<class T, class U>
 DWORD CSendCtrlCmd::SendAndReceiveCmdData2(DWORD param, const T& val, U* resVal)
 {
-	CMD_STREAM res;
+	CCmdStream res;
 	DWORD ret = SendCmdData2(param, val, &res);
 
 	if( ret == CMD_SUCCESS ){
 		WORD ver = 0;
-		DWORD readSize = 0;
-		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE ||
-			ReadVALUE2(ver, resVal, res.data.get() + readSize, res.dataSize - readSize, NULL) == FALSE ){
+		if( !res.ReadVALUE2WithVersion(&ver, resVal) ){
 			ret = CMD_ERR;
 		}
 	}

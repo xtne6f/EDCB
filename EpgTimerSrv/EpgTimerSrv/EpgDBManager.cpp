@@ -112,9 +112,7 @@ void ReadOldArchiveEventInfo(FILE* fp, const vector<__int64>& index, size_t inde
 		buff.resize(buffSize);
 		if( fread(buff.data(), 1, buffSize, fp) == buffSize ){
 			WORD ver;
-			DWORD readSize;
-			if( ReadVALUE(&ver, buff.data(), buffSize, &readSize) == FALSE ||
-			    ReadVALUE2(ver, &info, buff.data() + readSize, buffSize - readSize, NULL) == FALSE ){
+			if( ReadVALUE2WithVersion(&ver, &info, buff.data(), buffSize, NULL) == FALSE ){
 				info.eventList.clear();
 			}
 		}
@@ -373,10 +371,8 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		}
 		if( buff.empty() == false ){
 			WORD ver;
-			DWORD readSize;
 			vector<EPGDB_SERVICE_EVENT_INFO> list;
-			if( ReadVALUE(&ver, buff.data(), (DWORD)buff.size(), &readSize) &&
-			    ReadVALUE2(ver, &list, buff.data() + readSize, (DWORD)buff.size() - readSize, NULL) ){
+			if( ReadVALUE2WithVersion(&ver, &list, buff.data(), (DWORD)buff.size(), NULL) ){
 				for( size_t i = 0; i < list.size(); i++ ){
 					LONGLONG key = Create64Key(list[i].serviceInfo.ONID, list[i].serviceInfo.TSID, list[i].serviceInfo.SID);
 					arcFromFile[key] = std::move(list[i]);
@@ -514,19 +510,20 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					}
 					std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldMin, UTIL_O_EXCL_CREAT_WRONLY), fclose);
 					if( fp ){
-						DWORD buffSize;
-						vector<std::unique_ptr<BYTE[]>> buffList;
+						vector<CCmdStream> buffList;
 						buffList.reserve(epgOld.size());
 						while( epgOld.empty() == false ){
 							//サービス単位で書き込み、シークできるようにインデックスを作る
-							buffList.push_back(NewWriteVALUE2WithVersion(5, epgOld.back(), buffSize));
+							buffList.push_back(CCmdStream());
+							buffList.back().WriteVALUE2WithVersion(5, epgOld.back());
 							epgOld.pop_back();
-							oldIndex[epgOld.size() * 4] = buffSize;
+							oldIndex[epgOld.size() * 4] = buffList.back().GetDataSize();
 						}
-						std::unique_ptr<BYTE[]> buff = NewWriteVALUE(oldIndex, buffSize);
-						fwrite(buff.get(), 1, buffSize, fp.get());
+						CCmdStream buff;
+						buff.WriteVALUE(oldIndex);
+						fwrite(buff.GetData(), 1, buff.GetDataSize(), fp.get());
 						while( buffList.empty() == false ){
-							fwrite(buffList.back().get(), 1, (size_t)*(oldIndex.end() - buffList.size() * 4), fp.get());
+							fwrite(buffList.back().GetData(), 1, buffList.back().GetDataSize(), fp.get());
 							buffList.pop_back();
 						}
 						if( oldCache.empty() == false ){
@@ -557,11 +554,11 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		vector<const EPGDB_SERVICE_EVENT_INFO*> valp;
 		valp.reserve(sys->epgArchive.size());
 		for( auto itr = sys->epgArchive.cbegin(); itr != sys->epgArchive.end(); valp.push_back(&(itr++)->second) );
-		DWORD buffSize;
-		std::unique_ptr<BYTE[]> buff = NewWriteVALUE2WithVersion(5, valp, buffSize);
+		CCmdStream buff;
+		buff.WriteVALUE2WithVersion(5, valp);
 		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME), UTIL_SECURE_WRITE), fclose);
 		if( fp ){
-			fwrite(buff.get(), 1, buffSize, fp.get());
+			fwrite(buff.GetData(), 1, buff.GetDataSize(), fp.get());
 		}
 	}
 
