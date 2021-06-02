@@ -96,6 +96,7 @@ void CSetDlgApp::SaveIni(void)
 
 INT_PTR CALLBACK CSetDlgApp::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	(void)wParam;
 	CSetDlgApp* pSys = (CSetDlgApp*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 	if( pSys == NULL && uMsg != WM_INITDIALOG ){
 		return FALSE;

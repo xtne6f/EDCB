@@ -131,6 +131,7 @@ bool CEpgTimerPlugIn::Finalize()
 // 何かイベントが起きると呼ばれる
 LRESULT CALLBACK CEpgTimerPlugIn::EventCallback(UINT Event,LPARAM lParam1,LPARAM lParam2,void *pClientData)
 {
+	(void)lParam2;
 	CEpgTimerPlugIn *pThis=static_cast<CEpgTimerPlugIn*>(pClientData);
 	switch (Event) {
 	case TVTest::EVENT_PLUGINENABLE:
@@ -322,6 +323,10 @@ void CEpgTimerPlugIn::ResetStreamingCtrlView()
 
 BOOL CALLBACK CEpgTimerPlugIn::WindowMsgeCallback(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam,LRESULT *pResult,void *pUserData)
 {
+	(void)hwnd;
+	(void)wParam;
+	(void)lParam;
+	(void)pResult;
 	CEpgTimerPlugIn* sys = (CEpgTimerPlugIn*)pUserData;
 	if( sys->nwMode == TRUE ){
 		switch(uMsg){
@@ -343,6 +348,9 @@ BOOL CALLBACK CEpgTimerPlugIn::WindowMsgeCallback(HWND hwnd,UINT uMsg,WPARAM wPa
 
 LRESULT CALLBACK CEpgTimerPlugIn::StreamCtrlDlgCallback(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam,void *pUserData)
 {
+	(void)hwnd;
+	(void)wParam;
+	(void)lParam;
 	CEpgTimerPlugIn* sys = (CEpgTimerPlugIn*)pUserData;
 	{
 		switch(uMsg){

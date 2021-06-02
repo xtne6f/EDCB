@@ -309,6 +309,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 
 void CEpgDataCap_BonDlg::OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed)
 {
+	(void)lParam;
 	// TODO: ここにメッセージ ハンドラー コードを追加するか、既定の処理を呼び出します。
 	if( nID == SC_CLOSE ){
 		if( this->bonCtrl.IsRec() ){
@@ -640,6 +641,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 {
+	(void)cx;
+	(void)cy;
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 	if( nType == SIZE_MINIMIZED && this->iniMin == FALSE && this->minTask ){
 		SetTimer(RETRY_ADD_TRAY, 0, NULL);
@@ -650,6 +653,7 @@ void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 
 LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
+	(void)wParam;
 	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
 	switch(message){
 	case WM_INVOKE_CTRL_CMD:

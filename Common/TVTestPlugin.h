@@ -4297,11 +4297,11 @@ protected:
 
 	// 有効状態が変化した
 	// 変化を拒否する場合 false を返します
-	virtual bool OnPluginEnable(bool fEnable) { return false; }
+	virtual bool OnPluginEnable(bool fEnable) { (void)fEnable; return false; }
 	// 設定を行う
 	// プラグインのフラグに PLUGIN_FLAG_HASSETTINGS が設定されている場合に呼ばれます
 	// 設定が OK されたら true を返します
-	virtual bool OnPluginSettings(HWND hwndOwner) { return false; }
+	virtual bool OnPluginSettings(HWND hwndOwner) { (void)hwndOwner; return false; }
 	// チャンネルが変更された
 	virtual bool OnChannelChange() { return false; }
 	// サービスが変更された
@@ -4311,26 +4311,26 @@ protected:
 	// サービスの構成が変化した
 	virtual bool OnServiceUpdate() { return false; }
 	// 録画状態が変化した
-	virtual bool OnRecordStatusChange(int Status) { return false; }
+	virtual bool OnRecordStatusChange(int Status) { (void)Status; return false; }
 	// 全画面表示状態が変化した
-	virtual bool OnFullscreenChange(bool fFullscreen) { return false; }
+	virtual bool OnFullscreenChange(bool fFullscreen) { (void)fFullscreen; return false; }
 	// プレビュー表示状態が変化した
-	virtual bool OnPreviewChange(bool fPreview) { return false; }
+	virtual bool OnPreviewChange(bool fPreview) { (void)fPreview; return false; }
 	// 音量が変化した
-	virtual bool OnVolumeChange(int Volume, bool fMute) { return false; }
+	virtual bool OnVolumeChange(int Volume, bool fMute) { (void)Volume; (void)fMute; return false; }
 	// ステレオモードが変化した
-	virtual bool OnStereoModeChange(int StereoMode) { return false; }
+	virtual bool OnStereoModeChange(int StereoMode) { (void)StereoMode; return false; }
 	// 色の設定が変化した
 	virtual bool OnColorChange() { return false; }
 #if TVTEST_PLUGIN_VERSION >= TVTEST_PLUGIN_VERSION_(0, 0, 3)
 	// 待機状態が変化した
-	virtual bool OnStandby(bool fStandby) { return false; }
+	virtual bool OnStandby(bool fStandby) { (void)fStandby; return false; }
 	// コマンドが選択された
-	virtual bool OnCommand(int ID) { return false; }
+	virtual bool OnCommand(int ID) { (void)ID; return false; }
 #endif
 #if TVTEST_PLUGIN_VERSION >= TVTEST_PLUGIN_VERSION_(0, 0, 4)
 	// 複数起動禁止時に複数起動された
-	virtual bool OnExecute(LPCWSTR pszCommandLine) { return false; }
+	virtual bool OnExecute(LPCWSTR pszCommandLine) { (void)pszCommandLine; return false; }
 #endif
 #if TVTEST_PLUGIN_VERSION >= TVTEST_PLUGIN_VERSION_(0, 0, 5)
 	// リセットされた
@@ -4338,7 +4338,7 @@ protected:
 	// ステータス(MESSAGE_GETSTUATUSで取得できる内容)がリセットされた
 	virtual bool OnStatusReset() { return false; }
 	// 音声ストリームが変更された
-	virtual bool OnAudioStreamChange(int Stream) { return false; }
+	virtual bool OnAudioStreamChange(int Stream) { (void)Stream; return false; }
 #endif
 #if TVTEST_PLUGIN_VERSION >= TVTEST_PLUGIN_VERSION_(0, 0, 9)
 	// 設定が変更された
@@ -4348,66 +4348,66 @@ protected:
 	// TVTestのウィンドウが閉じられる
 	virtual bool OnClose() { return false; }
 	// 録画が開始される
-	virtual bool OnStartRecord(StartRecordInfo *pInfo) { return false; }
+	virtual bool OnStartRecord(StartRecordInfo *pInfo) { (void)pInfo; return false; }
 	// 録画ファイルの切り替えが行われた
-	virtual bool OnRelayRecord(LPCWSTR pszFileName) { return false; }
+	virtual bool OnRelayRecord(LPCWSTR pszFileName) { (void)pszFileName; return false; }
 #endif
 #if TVTEST_PLUGIN_VERSION >= TVTEST_PLUGIN_VERSION_(0, 0, 11)
 	// コントローラの対象の設定
-	virtual bool OnControllerFocus(HWND hwnd) { return false; }
+	virtual bool OnControllerFocus(HWND hwnd) { (void)hwnd; return false; }
 #endif
 #if TVTEST_PLUGIN_VERSION >= TVTEST_PLUGIN_VERSION_(0, 0, 13)
 	// 起動処理が終了した
 	virtual void OnStartupDone() {}
 	// 番組表の初期化
-	virtual bool OnProgramGuideInitialize(HWND hwnd) { return true; }
+	virtual bool OnProgramGuideInitialize(HWND hwnd) { (void)hwnd; return true; }
 	// 番組表の終了
-	virtual bool OnProgramGuideFinalize(HWND hwnd) { return true; }
+	virtual bool OnProgramGuideFinalize(HWND hwnd) { (void)hwnd; return true; }
 	// 番組表のコマンドの実行
 	virtual bool OnProgramGuideCommand(
-		UINT Command, const ProgramGuideCommandParam *pParam) { return false; }
+		UINT Command, const ProgramGuideCommandParam *pParam) { (void)Command; (void)pParam; return false; }
 	// 番組表のメニューの初期化
 	virtual int OnProgramGuideInitializeMenu(
-		const ProgramGuideInitializeMenuInfo *pInfo) { return 0; }
+		const ProgramGuideInitializeMenuInfo *pInfo) { (void)pInfo; return 0; }
 	// 番組表のメニューが選択された
-	virtual bool OnProgramGuideMenuSelected(UINT Command) { return false; }
+	virtual bool OnProgramGuideMenuSelected(UINT Command) { (void)Command; return false; }
 	// 番組表の番組の背景描画
 	virtual bool OnProgramGuideProgramDrawBackground(
 		const ProgramGuideProgramInfo *pProgramInfo,
-		const ProgramGuideProgramDrawBackgroundInfo *pInfo) { return false; }
+		const ProgramGuideProgramDrawBackgroundInfo *pInfo) { (void)pProgramInfo; (void)pInfo; return false; }
 	// 番組表の番組のメニュー初期化
 	virtual int OnProgramGuideProgramInitializeMenu(
 		const ProgramGuideProgramInfo *pProgramInfo,
-		const ProgramGuideProgramInitializeMenuInfo *pInfo) { return 0; }
+		const ProgramGuideProgramInitializeMenuInfo *pInfo) { (void)pProgramInfo; (void)pInfo; return 0; }
 	// 番組表の番組のメニューが選択された
 	virtual bool OnProgramGuideProgramMenuSelected(
-		const ProgramGuideProgramInfo *pProgramInfo, UINT Command) { return false; }
+		const ProgramGuideProgramInfo *pProgramInfo, UINT Command) { (void)pProgramInfo; (void)Command; return false; }
 #endif
 #if TVTEST_PLUGIN_VERSION >= TVTEST_PLUGIN_VERSION_(0, 0, 14)
 	// フィルタグラフの初期化
-	virtual void OnFilterGraphInitialize(FilterGraphInfo *pInfo) {}
+	virtual void OnFilterGraphInitialize(FilterGraphInfo *pInfo) { (void)pInfo; }
 	// フィルタグラフが初期化された
-	virtual void OnFilterGraphInitialized(FilterGraphInfo *pInfo) {}
+	virtual void OnFilterGraphInitialized(FilterGraphInfo *pInfo) { (void)pInfo; }
 	// フィルタグラフの終了処理
-	virtual void OnFilterGraphFinalize(FilterGraphInfo *pInfo) {}
+	virtual void OnFilterGraphFinalize(FilterGraphInfo *pInfo) { (void)pInfo; }
 	// フィルタグラフが終了処理された
-	virtual void OnFilterGraphFinalized(FilterGraphInfo *pInfo) {}
+	virtual void OnFilterGraphFinalized(FilterGraphInfo *pInfo) { (void)pInfo; }
 	// コマンドアイコンの描画
-	virtual bool OnDrawCommandIcon(DrawCommandIconInfo *pInfo) { return false; }
+	virtual bool OnDrawCommandIcon(DrawCommandIconInfo *pInfo) { (void)pInfo; return false; }
 	// ステータス項目の描画
-	virtual bool OnStatusItemDraw(StatusItemDrawInfo *pInfo) { return false; }
+	virtual bool OnStatusItemDraw(StatusItemDrawInfo *pInfo) { (void)pInfo; return false; }
 	// ステータス項目の通知
-	virtual bool OnStatusItemNotify(StatusItemEventInfo *pInfo) { return false; }
+	virtual bool OnStatusItemNotify(StatusItemEventInfo *pInfo) { (void)pInfo; return false; }
 	// ステータス項目のマウスイベント
-	virtual bool OnStatusItemMouseEvent(StatusItemMouseEventInfo *pInfo) { return false; }
+	virtual bool OnStatusItemMouseEvent(StatusItemMouseEventInfo *pInfo) { (void)pInfo; return false; }
 	// パネル項目の通知
-	virtual bool OnPanelItemNotify(PanelItemEventInfo *pInfo) { return false; }
+	virtual bool OnPanelItemNotify(PanelItemEventInfo *pInfo) { (void)pInfo; return false; }
 	// お気に入りチャンネルが変更された
 	virtual void OnFavoritesChanged() {}
 	// ワンセグモードが変わった
-	virtual void On1SegModeChanged(bool f1SegMode) {}
+	virtual void On1SegModeChanged(bool f1SegMode) { (void)f1SegMode; }
 	// 変数を取得
-	virtual bool OnGetVariable(GetVariableInfo *pInfo) { return false; }
+	virtual bool OnGetVariable(GetVariableInfo *pInfo) { (void)pInfo; return false; }
 #endif
 
 public:
@@ -4559,6 +4559,7 @@ TVTest::CTVTestPlugin *g_pPlugin; // プラグインクラスへのポインタ
 // プラグインクラスのインスタンスの生成と破棄を行っています
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
+	(void)lpvReserved;
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
 		g_hinstDLL = hinstDLL;

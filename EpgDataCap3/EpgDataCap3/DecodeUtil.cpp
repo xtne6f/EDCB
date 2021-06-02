@@ -418,6 +418,7 @@ void CDecodeUtil::CheckPMT(const Desc::CDescriptor& pmt)
 
 void CDecodeUtil::CheckDsmcc(WORD PID, const Desc::CDescriptor& dsmccHead, const BYTE* data, size_t dataSize)
 {
+	(void)dsmccHead;
 	if( dataSize < 12 ){
 		return;
 	}

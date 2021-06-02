@@ -284,6 +284,7 @@ void CALLBACK CEpgDataCap3Util::DebugLogCallback(
 	const WCHAR* s
 	)
 {
+	(void)s;
 #ifdef WRAP_DEBUG_OUTPUT
 	AddDebugLogNoNewline(s, true);
 #endif
