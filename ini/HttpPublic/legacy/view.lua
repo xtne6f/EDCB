@@ -4,19 +4,21 @@
 XFILTER='-vf yadif=0:-1:1'
 XFILTER_CINEMA='-vf pullup -r 24000/1001'
 -- ffmpeg変換オプション($FILTERはフィルタオプションに置換)
+XOPT='-vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast -g 120 $FILTER -s 512x288 -acodec aac -b:a 128k -f mp4 -movflags frag_keyframe+empty_moov -'
+-- NVENCの例:対応GPUが必要
+--XOPT='-vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium -g 120 $FILTER -s 1280x720 -acodec aac -b:a 128k -f mp4 -movflags frag_keyframe+empty_moov -'
 -- libvpxの例:リアルタイム変換と画質が両立するようにビットレート-bと計算量-cpu-usedを調整する
-XOPT='-vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -acodec libvorbis -ab 128k -f webm -'
---XOPT='-vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast -g 120 $FILTER -s 512x288 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
---XOPT='-vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium -g 120 $FILTER -s 1280x720 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
--- 変換後の拡張子
-XEXT='.webm'
---XEXT='.mp4'
+--XOPT='-vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -acodec libvorbis -b:a 128k -f webm -'
+
 -- 出力バッファの量(bytes。asyncbuf.exeを用意すること。変換負荷や通信のむらを吸収する)
 XBUF=0
 -- 転送開始前に変換しておく量(bytes)
 XPREPARE=0
 -- NetworkTVモードの名前付きパイプをFindFileで見つけられない場合(EpgTimerSrvのWindowsサービス化など？)に対応するか
 FIND_BY_OPEN=false
+
+-- 変換後の拡張子
+xext=XOPT:find(' %-f webm ') and '.webm' or '.mp4'
 
 -- コマンドはEDCBのToolsフォルダにあるものを優先する
 tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools\\'
@@ -45,7 +47,9 @@ if true then
     if sid==0 then
       -- NetworkTVモードを終了
       edcb.CloseNetworkTV(n)
-    else
+    elseif 0<=n and n<100 then
+      openTime=os.time()
+      edcb.WritePrivateProfile('NWTV','nwtv'..n..'open','@'..openTime,'Setting\\HttpPublic.ini')
       -- NetworkTVモードを開始
       ok,pid=edcb.OpenNetworkTV(2,onid,tsid,sid,n)
       if ok then
@@ -55,7 +59,7 @@ if true then
           if ff and ff[1].name:find('^[^_]+_%d+_%d+$') then
             f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\'..ff[1].name..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
               ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
-            fname='view'..XEXT
+            fname='view'..xext
             break
           elseif FIND_BY_OPEN then
             -- ポートを予想して開いてみる
@@ -64,10 +68,10 @@ if true then
               if ff then
                 ff:close()
                 -- 再び開けるようになるまで少しラグがある
-                edcb.Sleep(4000)
+                edcb.Sleep(2000)
                 f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\SendTSTCP_'..j..'_'..pid..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
                   ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
-                fname='view'..XEXT
+                fname='view'..xext
                 break
               end
             end
@@ -91,7 +95,7 @@ if true then
     if ff and ff[1].name:find('^[^_]+_%d+_%d+$') then
       f=edcb.io.popen('""'..ffmpeg..'" -f mpegts'..dual..' -i "\\\\.\\pipe\\'..ff[1].name..'" -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
         ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
-      fname='view'..XEXT
+      fname='view'..xext
     end
   end
 end
@@ -122,7 +126,10 @@ else
   end
   f:close()
   if onid then
-    -- NetworkTVモードを終了
-    edcb.CloseNetworkTV(n)
+    -- リロード時などの終了を防ぐ。厳密にはロックなどが必要だが概ねうまくいけば良い
+    if edcb.GetPrivateProfile('NWTV','nwtv'..n..'open','@'..openTime,'Setting\\HttpPublic.ini')=='@'..openTime then
+      -- NetworkTVモードを終了
+      edcb.CloseNetworkTV(n)
+    end
   end
 end

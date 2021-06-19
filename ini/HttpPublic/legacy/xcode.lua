@@ -2,22 +2,24 @@
 -- ファイルをタイムシフト再生できる: http://localhost:5510/xcode.lua?fname=video/foo.ts
 
 -- トランスコードするかどうか(する場合はreadex.exeとffmpeg.exeを用意すること)
-XCODE=false
+XCODE=true
 -- フィルタオプション
 XFILTER='-vf yadif=0:-1:1'
 XFILTER_CINEMA='-vf pullup -r 24000/1001'
 -- ffmpeg変換オプション($FILTERはフィルタオプションに置換)
+XOPT='-vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast -g 120 $FILTER -s 512x288 -acodec aac -b:a 128k -f mp4 -movflags frag_keyframe+empty_moov -'
+-- NVENCの例:対応GPUが必要
+--XOPT='-vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium -g 120 $FILTER -s 1280x720 -acodec aac -b:a 128k -f mp4 -movflags frag_keyframe+empty_moov -'
 -- libvpxの例:リアルタイム変換と画質が両立するようにビットレート-bと計算量-cpu-usedを調整する
-XOPT='-vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -acodec libvorbis -ab 128k -f webm -'
---XOPT='-vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast -g 120 $FILTER -s 512x288 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
---XOPT='-vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium -g 120 $FILTER -s 1280x720 -acodec aac -ab 128k -f mp4 -movflags frag_keyframe+empty_moov -'
--- 変換後の拡張子
-XEXT='.webm'
---XEXT='.mp4'
+--XOPT='-vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -acodec libvorbis -b:a 128k -f webm -'
+
 -- 出力バッファの量(bytes。asyncbuf.exeを用意すること。変換負荷や通信のむらを吸収する)
 XBUF=0
 -- 転送開始前に変換しておく量(bytes)
 XPREPARE=0
+
+-- 変換後の拡張子
+xext=XOPT:find(' %-f webm ') and '.webm' or '.mp4'
 
 -- コマンドはEDCBのToolsフォルダにあるものを優先する
 tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools\\'
@@ -58,7 +60,7 @@ if fpath then
         f=edcb.io.popen('""'..readex..'" '..offset..(sync and ' 4p48199' or ' 4')..' "'..fpath..'" | "'
           ..ffmpeg..'"'..dual..' -i pipe:0 -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
           ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
-        fname='xcode'..XEXT
+        fname='xcode'..xext
       else
         -- 容量確保には未対応
         f:seek('set', offset)
