@@ -3290,13 +3290,17 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 	if( lua_gettop(L) == 3 ){
 		LPCSTR to = lua_tostring(L, 1);
 		LPCSTR from = lua_tostring(L, 2);
-		LPCSTR src = lua_tostring(L, 3);
+		size_t len;
+		LPCSTR src = lua_tolstring(L, 3, &len);
 		if( to && from && src ){
 			wstring wsrc;
 			if( CompareNoCase(from, "utf-8") == 0 ){
 				UTF8toW(src, wsrc);
 			}else if( CompareNoCase(from, "cp932") == 0 ){
 				AtoW(src, wsrc);
+			}else if( CompareNoCase(from, "utf-16le") == 0 ){
+				//srcは仕様により完全にアライメントされている
+				wsrc.assign((LPCWSTR)src, len / 2);
 			}else{
 				lua_pushnil(L);
 				return 1;
@@ -3309,6 +3313,10 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 				string dest;
 				WtoA(wsrc, dest);
 				lua_pushstring(L, dest.c_str());
+				return 1;
+			}else if( CompareNoCase(to, "utf-16le") == 0 ){
+				UTF8toW(ws.WtoUTF8(wsrc), wsrc);
+				lua_pushlstring(L, (LPCSTR)wsrc.c_str(), wsrc.size() * 2);
 				return 1;
 			}
 		}
