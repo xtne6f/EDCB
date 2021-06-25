@@ -15,9 +15,10 @@ ct:Append([=[
 <h1>EDCB Legacy WebUIについて</h1>
 <div id="main">
   <p>
-    EDCBの操作をブラウザから行うことができます。このWebUIではJavaScriptやCookieは使用しません。
+    EDCBの操作をブラウザから行うことができます。このWebUIではJavaScript(HLSを除く)やCookieは使用しません。<br>
+    このWebUIでは公開フォルダ(HttpPublic)にないファイルには原則アクセスしません。
   </p><p>
-    EDCBの「録画保存フォルダ」を公開フォルダ(HttpPublic)配下(公開フォルダ直下のvideoフォルダを推奨)に設定すれば、リンク表示などの追加機能を利用できます。<br>
+    EDCBの「録画保存フォルダ」を公開フォルダ配下(公開フォルダ直下のvideoフォルダを推奨)に設定すれば、リンク表示などの追加機能を利用できます。<br>
     追っかけ再生する場合は「録画動作」の「録画ファイルの容量確保を行う」をオフにすることをお勧めします。
   </p><p>
     番組表などにはEDCBの「EPG取得対象サービス」でチェックされたサービスのみ表示します。
@@ -26,7 +27,9 @@ ct:Append([=[
     必要に応じてスクリプトを編集してコメントアウト(--ハイフン2つ)を解除してください。
   </p><p>
     xcode.luaやview.luaを利用する場合は、ffmpeg.exeやreadex.exeをEDCBフォルダ直下のToolsフォルダに用意してください。<br>
-    詳細は各スクリプトのコメントを参照してください。
+    詳細は各スクリプトのコメントを参照してください。<br>
+    HLS(HTTP Live Streaming)を利用する場合はさらにpwatch.batやnwtvclose.ps1を用意し、util.luaのALLOW_HLSをtrueにしてください。<br>
+    HLSの一時ファイルが<a href="segments/">segments/</a>に作成されるので、ストレージの容量などに気をつけてください。
   </p><p>
     スクリプトはLua 5.2を使用しています。<a href="https://www.lua.org/manual/5.2/">Lua 5.2 Reference Manual</a> (<a href="http://milkpot.sakura.ne.jp/lua/lua52_manual_ja.html">有志による日本語訳</a>)<br>
     EDCBによる追加機能はDocument/Readme_Mod.txtの「Lua edcbグローバル変数の仕様」を参照してください。

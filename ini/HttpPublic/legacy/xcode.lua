@@ -6,7 +6,7 @@ XCODE=true
 -- フィルタオプション
 XFILTER='-vf yadif=0:-1:1'
 XFILTER_CINEMA='-vf pullup -r 24000/1001'
--- ffmpeg変換オプション($FILTERはフィルタオプションに置換)
+-- ffmpeg変換オプション($FILTERはフィルタオプションに置換。ライブストリーミング方式では -f オプション以降は上書きされる)
 XOPT='-vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast -g 120 $FILTER -s 512x288 -acodec aac -b:a 128k -f mp4 -movflags frag_keyframe+empty_moov -'
 -- NVENCの例:対応GPUが必要
 --XOPT='-vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium -g 120 $FILTER -s 1280x720 -acodec aac -b:a 128k -f mp4 -movflags frag_keyframe+empty_moov -'
@@ -37,10 +37,54 @@ if fpath then
   dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
   dual=dual==1 and ' -dual_mono_mode main' or dual==2 and ' -dual_mono_mode sub' or ''
   filter=GetVarInt(mg.request_info.query_string,'cinema')==1 and XFILTER_CINEMA or XFILTER
+  hls=ALLOW_HLS and GetVarInt(mg.request_info.query_string,'hls',1)
+  segmentsDir=mg.script_name:gsub('[^\\/]*$','')..'segments'
+end
+
+function OpenTranscoder()
+  local cmd=' -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
+  if hls then
+    -- 出力指定をHLSに置換。セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
+    cmd=cmd:gsub(' %-f .*',' -f hls -hls_segment_type mpegts -hls_flags delete_segments'
+      ..' -hls_segment_filename '..segmentKey..'_%%04d.m2t '..segmentKey..'.m3u8')
+  elseif XBUF>0 then
+    cmd=cmd..' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE
+  end
+  -- 容量確保の可能性があるときは周期188+同期語0x47(188*256+0x47=48199)で対象ファイルを終端判定する
+  local sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
+  cmd='"'..readex..'" '..offset..(sync and ' 4p48199' or ' 4')..' "'..fpath..'" | "'
+    ..ffmpeg..'" -f mpegts'..dual..(hls and ' -re' or '')..' -i pipe:0'..cmd
+  if hls then
+    -- 極端に多く開けないようにする
+    local indexCount=#(edcb.FindFile(segmentsDir..'/*.m3u8',10) or {})
+    if indexCount<10 and edcb.FindFile(tools..'pwatch.bat',1) then
+      edcb.os.execute('cd /d "'..segmentsDir..'" && start "" /b cmd /c "'..cmd..'"')
+      for i=1,100 do
+        local f=edcb.io.open(segmentsDir..'/'..segmentKey..'.m3u8','rb')
+        if f then
+          -- インデックスファイルにアクセスがなければ終了するように監視
+          edcb.os.execute('cd /d "'..segmentsDir..'" && start "" /b cmd /c ""'
+            ..tools..'pwatch.bat" ffmpeg.exe %%'..segmentKey..'[_]%% '..segmentKey..'.acc 10 & del '..segmentKey..'*.*"')
+          return f
+        end
+        edcb.Sleep(100)
+      end
+      -- 失敗。プロセスが残っていたら終わらせる
+      edcb.os.execute('wmic process where "name=\'ffmpeg.exe\' and commandline like \'%%'..segmentKey..'[_]%%\'" call terminate >nul')
+    end
+    return nil
+  end
+  return edcb.io.popen('"'..cmd..'"','rb')
 end
 
 f=nil
-if fpath then
+if fpath and hls then
+  -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
+  segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..offset..':'..audio2..':'..dual..':'..filter)
+  f=edcb.io.open(segmentsDir..'/'..segmentKey..'.m3u8','rb')
+end
+
+if fpath and not f then
   fname='xcode'..(fpath:match('%.[0-9A-Za-z]+$') or '')
   fnamets='xcode'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini'):lower()
   -- 拡張子を限定
@@ -55,12 +99,12 @@ if fpath then
       end
       if XCODE then
         f:close()
-        -- 容量確保の可能性があるときは周期188+同期語0x47(188*256+0x47=48199)で対象ファイルを終端判定する
-        sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
-        f=edcb.io.popen('""'..readex..'" '..offset..(sync and ' 4p48199' or ' 4')..' "'..fpath..'" | "'
-          ..ffmpeg..'"'..dual..' -i pipe:0 -map 0:v:0 -map 0:a:'..audio2..' '..XOPT:gsub('$FILTER',filter)
-          ..(XBUF>0 and ' | "'..asyncbuf..'" '..XBUF..' '..XPREPARE or '')..'"', 'rb')
+        f=OpenTranscoder()
         fname='xcode'..xext
+      elseif hls then
+        -- トランスコードなしのライブストリーミングには未対応
+        f:close()
+        f=nil
       else
         -- 容量確保には未対応
         f:seek('set', offset)
@@ -75,6 +119,19 @@ if not f then
     ..'<title>xcode.lua</title><p><a href="index.html">メニュー</a></p>')
   ct:Finish()
   mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
+elseif hls then
+  -- アクセスを記録してインデックスファイルを返す
+  ct=CreateContentBuilder()
+  ct:Append((f:read('*a') or ''):gsub('[0-9A-Za-z_]+%.m2t','segments/%0'))
+  f:close()
+  f=edcb.io.open(segmentsDir..'/'..segmentKey..'.acc','wb')
+  if f then
+    now=os.date('!*t')
+    f:write(''..(100000+(now.hour*60+now.min)*60+now.sec))
+    f:close()
+  end
+  ct:Finish()
+  mg.write(ct:Pop(Response(200,'application/vnd.apple.mpegurl','utf-8',ct.len)..'\r\n'))
 else
   mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
   if mg.request_info.request_method~='HEAD' then

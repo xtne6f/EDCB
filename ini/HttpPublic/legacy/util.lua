@@ -1,3 +1,8 @@
+--HLS(HTTP Live Streaming)を許可するかどうか
+ALLOW_HLS=false
+--ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか
+ALWAYS_USE_HLS=false
+
 --このサイズ以上のときページ圧縮する(nilのとき常に非圧縮)
 GZIP_THRESHOLD_BYTE=4096
 

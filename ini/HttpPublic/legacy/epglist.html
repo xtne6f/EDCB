@@ -130,9 +130,33 @@ else
          or '<input type="hidden" name="vtag" value="1">\n')
     ..'</div></form>')
   if vtag==1 then
-    ct:Append('\n<video autoplay controls style="max-width:95%" src="view.lua?n=0&amp;id='..onid..'-'..tsid..'-'..sid
+    src='view.lua?n=0&amp;id='..onid..'-'..tsid..'-'..sid
       ..(audio2 and '&amp;audio2=1' or '')..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')
-      ..'&amp;ctok='..CsrfToken('view.lua')..'">view.lua -nwtv0</video>')
+      ..'&amp;ctok='..CsrfToken('view.lua')
+    ct:Append('\n<video id="vid" autoplay controls style="max-width:95%"'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view.lua -nwtv0</video>')
+    if ALLOW_HLS then
+      ct:Append('\n<p id="vidsrc" style="visibility:hidden">'..src..'</p>')
+      now=os.date('!*t')
+      hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
+      if ALWAYS_USE_HLS then
+        ct:Append('\n<script src="hls.min.js"></script><script>\n'
+          ..'var vid=document.getElementById("vid");\n'
+          ..'if(Hls.isSupported()){\n'
+          ..'  var hls=new Hls();\n'
+          ..'  hls.loadSource(document.getElementById("vidsrc").textContent+"'..hls..'");\n'
+          ..'  hls.attachMedia(vid);\n'
+          ..'  hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
+          ..'}else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
+          ..'  vid.src=document.getElementById("vidsrc").textContent+"'..hls..'";\n'
+          ..'}\n'
+          ..'</script>')
+      else
+        ct:Append('\n<script>\n'
+          ..'var vid=document.getElementById("vid");\n'
+          ..'vid.src=document.getElementById("vidsrc").textContent+(vid.canPlayType("application/vnd.apple.mpegurl")?"'..hls..'":"");\n'
+          ..'</script>')
+      end
+    end
   end
 end
 ct:Append([=[

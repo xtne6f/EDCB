@@ -1,6 +1,6 @@
-.ts	video/mpeg
+.ts	video/mp2t
 ;.ts	video/vnd.dlna.mpeg-tts
-.m2t	video/mpeg
-.m2ts	video/mpeg
-.mts	video/mpeg
+.m2t	video/mp2t
+.m2ts	video/mp2t
+.mts	video/mp2t
 .m4a	audio/mp4
