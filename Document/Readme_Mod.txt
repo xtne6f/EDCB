@@ -801,7 +801,7 @@ S GetComponentTypeName( コンポーネント内容*256+コンポーネント種
 
 S|nil Convert( to文字コード:S, from文字コード:S, 変換対象:S )
   文字コード変換する
-  利用できる文字コードは'utf-8'または'cp932'のみ。
+  利用できる文字コードは'utf-8' 'utf-16le' 'cp932'。
   変換に失敗すると空文字列、利用できない文字コードを指定するとnilが返る。
   例：os.execute(edcb.Convert('cp932','utf-8','echo 表が怖い & pause'))
 
