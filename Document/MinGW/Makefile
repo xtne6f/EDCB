@@ -5,6 +5,8 @@ TARGETS = EpgDataCap_Bon \
           RecName_Macro \
           SendTSTCP \
           Write_Default \
+          Write_OneService \
+          EdcbPlugIn \
           EpgTimerSrv
 
 all: asyncbuf.exe readex.exe relayread.exe tsidmove.exe cp_dep $(addsuffix .all, $(TARGETS))
