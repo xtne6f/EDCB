@@ -74,6 +74,21 @@ DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid)
 	return 19 * 1024;
 }
 
+namespace
+{
+//文字列とCR+LFを追加する。追加するもの以上の長さのCR+LFが文字列にあれば減らす
+void ReduceCrLfAndAppend(wstring& text, const wstring& appendText, LPCWSTR crlf)
+{
+	size_t i = text.size();
+	text += appendText;
+	text += crlf;
+	for( size_t j; (j = text.find(crlf, i)) != wstring::npos; ){
+		text.erase(j, 2);
+	}
+	text += L"\r\n";
+}
+}
+
 //EPG情報をTextに変換
 wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName, const wstring* extraText)
 {
@@ -100,17 +115,12 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 		text += L"\r\n";
 	}
 
-	if( info->hasShortInfo ){
-		text += info->shortInfo.event_name;
-		text += L"\r\n\r\n";
-		text += info->shortInfo.text_char;
-		text += L"\r\n\r\n";
-	}
+	ReduceCrLfAndAppend(text, info->hasShortInfo ? info->shortInfo.event_name : wstring(), L"\r\n\r\n");
+	ReduceCrLfAndAppend(text, info->hasShortInfo ? info->shortInfo.text_char : wstring(), L"\r\n\r\n");
 
 	if( info->hasExtInfo ){
 		text += L"詳細情報\r\n";
-		text += info->extInfo.text_char;
-		text += L"\r\n\r\n";
+		ReduceCrLfAndAppend(text, info->extInfo.text_char, L"\r\n\r\n\r\n");
 	}
 
 	if( extraText != NULL ){
