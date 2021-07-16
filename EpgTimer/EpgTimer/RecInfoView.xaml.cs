@@ -279,28 +279,6 @@ namespace EpgTimer
                 {
                     info.ProgramInfo = extraRecInfo.ProgramInfo;
                     info.ErrInfo = extraRecInfo.ErrInfo;
-                    if (info.ProgramInfo.Length == 0 && info.EventID != 0xFFFF)
-                    {
-                        //過去番組情報を探してみる
-                        var arcList = new List<EpgServiceEventInfo>();
-                        if (CommonManager.CreateSrvCtrl().SendEnumPgArc(new List<long> {
-                                0, (long)CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID),
-                                info.StartTime.ToFileTimeUtc(), info.StartTime.ToFileTimeUtc() + 1 }, ref arcList) == ErrCode.CMD_SUCCESS &&
-                            arcList.Count > 0 && arcList[0].eventList.Count > 0)
-                        {
-                            info.ProgramInfo = CommonManager.Instance.ConvertProgramText(arcList[0].eventList[0], EventInfoTextMode.All);
-                        }
-                        else
-                        {
-                            //番組情報を探してみる
-                            EpgEventInfo eventInfo = CommonManager.Instance.DB.GetPgInfo(info.OriginalNetworkID, info.TransportStreamID,
-                                                                                         info.ServiceID, info.EventID, false);
-                            if (eventInfo != null && eventInfo.StartTimeFlag != 0 && eventInfo.start_time == info.StartTime)
-                            {
-                                info.ProgramInfo = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                            }
-                        }
-                    }
                 }
                 dlg.SetRecInfo(info);
                 dlg.ShowDialog();

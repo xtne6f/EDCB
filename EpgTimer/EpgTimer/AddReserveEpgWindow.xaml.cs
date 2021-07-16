@@ -39,12 +39,12 @@ namespace EpgTimer
 
         public void SetEventInfo(EpgEventInfo eventData)
         {
-            {
-                eventInfo = eventData;
-                textBox_info.Text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.BasicOnly);
-                String text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.ExtOnly);
-                richTextBox_descInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(text));
-            }
+            eventInfo = eventData;
+            textBox_info.Text = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicInfo);
+            richTextBox_descInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(
+                CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicText),
+                CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedText),
+                CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo)));
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

@@ -109,7 +109,10 @@ namespace EpgTimer
                     return null;
                 }
                 TextBlock block = new TextBlock();
-                block.Text = CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
+                block.Text = CommonManager.ConvertProgramText(EventInfo, EventInfoTextMode.BasicInfo) +
+                             CommonManager.ConvertProgramText(EventInfo, EventInfoTextMode.BasicText) +
+                             CommonManager.TrimHyphenSpace(CommonManager.ConvertProgramText(EventInfo, EventInfoTextMode.ExtendedText)) +
+                             CommonManager.ConvertProgramText(EventInfo, EventInfoTextMode.PropertyInfo);
                 block.MaxWidth = 400;
                 block.TextWrapping = TextWrapping.Wrap;
                 return block;
@@ -192,17 +195,6 @@ namespace EpgTimer
             }
         }
 
-        /// <summary>
-        /// 番組詳細
-        /// </summary>
-        public string ProgramDetail
-        {
-            get
-            {
-                //
-                return CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
-            }
-        }
         public Brush BorderBrush
         {
             get

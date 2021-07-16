@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -28,7 +29,52 @@ namespace EpgTimer
         public void SetRecInfo(RecFileInfo info)
         {
             recInfo = info;
-            richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(info.ProgramInfo));
+            EpgEventInfo eventInfo = null;
+            if (info.ProgramInfo.Length == 0 && info.EventID != 0xFFFF)
+            {
+                // 過去番組情報を探してみる
+                var arcList = new List<EpgServiceEventInfo>();
+                if (CommonManager.CreateSrvCtrl().SendEnumPgArc(new List<long> {
+                        0, (long)CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID),
+                        info.StartTime.ToFileTimeUtc(), info.StartTime.ToFileTimeUtc() + 1 }, ref arcList) == ErrCode.CMD_SUCCESS &&
+                    arcList.Count > 0 && arcList[0].eventList.Count > 0)
+                {
+                    eventInfo = arcList[0].eventList[0];
+                }
+                else
+                {
+                    // 番組情報を探してみる
+                    eventInfo = CommonManager.Instance.DB.GetPgInfo(info.OriginalNetworkID, info.TransportStreamID,
+                                                                    info.ServiceID, info.EventID, false);
+                    if (eventInfo == null || eventInfo.StartTimeFlag == 0 || eventInfo.start_time != info.StartTime)
+                    {
+                        eventInfo = null;
+                    }
+                }
+            }
+            if (eventInfo != null)
+            {
+                richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(
+                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicInfo) +
+                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicText),
+                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedText),
+                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo)));
+            }
+            else
+            {
+                // 詳細情報を分離してみる
+                string basicInfo = info.ProgramInfo;
+                string extText = "";
+                string propertyInfo = "";
+                Match m = Regex.Match(basicInfo, @"^([\s\S]*?\r?\n\r?\n[\s\S]*?\r?\n\r?\n)(詳細情報\r?\n[\s\S]*?\r?\n\r?\n\r?\n)([\s\S]*)$");
+                if (m.Success)
+                {
+                    basicInfo = m.Groups[1].Value;
+                    extText = m.Groups[2].Value;
+                    propertyInfo = m.Groups[3].Value;
+                }
+                richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(basicInfo, extText, propertyInfo));
+            }
             textBox_errLog.Text = info.ErrInfo;
             textBox_recFilePath.Text = info.RecFilePath;
             button_rename.IsEnabled = false;
