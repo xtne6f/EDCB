@@ -66,12 +66,19 @@ namespace EpgTimer
                 string basicInfo = info.ProgramInfo;
                 string extText = "";
                 string propertyInfo = "";
-                Match m = Regex.Match(basicInfo, @"^([\s\S]*?\r?\n\r?\n[\s\S]*?\r?\n\r?\n)(詳細情報\r?\n[\s\S]*?\r?\n\r?\n\r?\n)([\s\S]*)$");
+                // 2個目の空行までマッチ
+                Match m = Regex.Match(basicInfo, @"^[\s\S]*?\r?\n\r?\n[\s\S]*?\r?\n\r?\n");
                 if (m.Success)
                 {
-                    basicInfo = m.Groups[1].Value;
-                    extText = m.Groups[2].Value;
-                    propertyInfo = m.Groups[3].Value;
+                    propertyInfo = basicInfo.Substring(m.Length);
+                    basicInfo = basicInfo.Substring(0, m.Length);
+                    // "詳細情報"のとき空行2行までマッチ
+                    m = Regex.Match(propertyInfo, @"^詳細情報\r?\n[\s\S]*?\r?\n\r?\n\r?\n");
+                    if (m.Success)
+                    {
+                        extText = propertyInfo.Substring(0, m.Length);
+                        propertyInfo = propertyInfo.Substring(m.Length);
+                    }
                 }
                 richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(basicInfo, extText, propertyInfo));
             }
