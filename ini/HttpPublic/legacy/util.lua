@@ -29,10 +29,82 @@ EPG_SERVICE_PX=150
 EPG_TIME_COLUMN=3
 --番組表の番組を絞り込みたいときはNOTキーワードの先頭を"#EPG_CUST_1"にした自動EPG予約を作る
 
---HLS(HTTP Live Streaming)を許可するかどうか
+--HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeとnwtvclose.ps1を用意すること
 ALLOW_HLS=false
 --ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか
 ALWAYS_USE_HLS=false
+
+--トランスコードオプション
+--HLSのときはセグメント長約4秒、最大8MBytes(=1秒あたり16Mbits)を想定しているので、オプションもそれに合わせること
+--name:表示名
+--xcoder:Toolsフォルダからの相対パス。Toolsフォルダになければパスが通っているとみなす
+--option:$SRCと$OUTPUTは必須、再生時に適宜置換される
+XCODE_OPTIONS={
+  {
+    name='288p/h264/ffmpeg',
+    xcoder='ffmpeg.exe',
+    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    dualMain='-dual_mono_mode main',
+    dualSub='-dual_mono_mode sub',
+    filter='-g 120 -vf yadif=0:-1:1',
+    filterCinema='-g 96 -vf pullup -r 24000/1001',
+    captionNone='-sn',
+    captionHls='-map 0:s? -scodec copy',
+    output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
+    outputHls={'m2t','-f mpegts -'},
+  },
+  {
+    name='576p/h264/ffmpeg-nvenc',
+    xcoder='ffmpeg.exe',
+    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    dualMain='-dual_mono_mode main',
+    dualSub='-dual_mono_mode sub',
+    filter='-g 120 -vf yadif=0:-1:1',
+    filterCinema='-g 96 -vf pullup -r 24000/1001',
+    captionNone='-sn',
+    captionHls='-map 0:s? -scodec copy',
+    output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
+    outputHls={'m2t','-f mpegts -'},
+  },
+  {
+    name='288p/webm/ffmpeg',
+    xcoder='ffmpeg.exe',
+    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    dualMain='-dual_mono_mode main',
+    dualSub='-dual_mono_mode sub',
+    filter='-vf yadif=0:-1:1',
+    filterCinema='-vf pullup -r 24000/1001',
+    captionNone='-sn',
+    output={'webm','-f webm -'},
+  },
+  {
+    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。いまのところ(v5.36)第2音声はうまくいかない
+    name='576p/h264/NVEncC',
+    xcoder='NVEncC\\NVEncC.exe',
+    option='--input-format mpegts -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec aac$DUAL --audio-bitrate 128 $CAPTION $OUTPUT',
+    audioStartAt=1,
+    dualMain='#dual_mono_mode=main',
+    dualSub='#dual_mono_mode=sub',
+    filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
+    filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true,rff=true',
+    captionNone='',
+    captionHls='--sub-copy',
+    output={'mp4','-f mp4 -o -'},
+    outputHls={'m2t','-f mpegts -o -'},
+  },
+}
+
+--トランスコードするかどうか。する場合はreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
+XCODE=true
+--ログを"log"フォルダに保存するかどうか
+XCODE_LOG=false
+--出力バッファの量(bytes)。asyncbuf.exeを用意すること。変換負荷や通信のむらを吸収する
+XCODE_BUF=0
+--転送開始前に変換しておく量(bytes)
+XCODE_PREPARE=0
+
+--NetworkTVモードの名前付きパイプをFindFileで見つけられない場合(EpgTimerSrvのWindowsサービス化など？)に対応するか
+NWTV_FIND_BY_OPEN=false
 
 --このサイズ以上のときページ圧縮する(nilのとき常に非圧縮)
 GZIP_THRESHOLD_BYTE=4096
@@ -41,6 +113,79 @@ GZIP_THRESHOLD_BYTE=4096
 POST_MAX_BYTE=1024*1024
 
 ----------定数定義ここまで----------
+
+function GetTranscodeQueries(qs)
+  return {
+    option=GetVarInt(qs,'option',1,#XCODE_OPTIONS),
+    offset=GetVarInt(qs,'offset',0,100),
+    audio2=GetVarInt(qs,'audio2')==1,
+    dual=GetVarInt(qs,'dual',0,2),
+    cinema=GetVarInt(qs,'cinema')==1,
+    caption=GetVarInt(qs,'caption')==1,
+  }
+end
+
+function ConstructTranscodeQueries(xq)
+  return (xq.option and '&amp;option='..xq.option or '')
+    ..(xq.offset and '&amp;offset='..xq.offset or '')
+    ..(xq.audio2 and '&amp;audio2=1' or '')
+    ..(xq.dual and '&amp;dual='..xq.dual or '')
+    ..(xq.cinema and '&amp;cinema=1' or '')
+    ..(xq.caption and '&amp;caption=1' or '')
+end
+
+function TranscodeSettingTemplete(xq,fsec)
+  local s='<select name="option">'
+  for i,v in ipairs(XCODE_OPTIONS) do
+    s=s..'<option value="'..i..'"'..((xq.option or 1)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
+  end
+  s=s..'</select>\n'
+  if fsec then
+    s=s..'offset: <select name="offset">'
+    local i=0
+    while i<=100 do
+      s=s..'<option value="'..i..'"'..((xq.offset or 0)==i and ' selected' or '')..'>'
+        ..(fsec>0 and ('%dm%02ds|'):format(math.floor(fsec*i/100/60),fsec*i/100%60) or '')..i..'%'
+      i=i<5 and i+1 or i+5
+    end
+    s=s..'</select>\n'
+  end
+  s=s..'<input type="checkbox" name="audio2" value="1"'..(xq.audio2 and ' checked' or '')..'>audio2\n'
+    ..'<select name="dual">'
+    ..'<option value="0"'..(xq.dual~=1 and xq.dual~=2 and ' selected' or '')..'>*'
+    ..'<option value="1"'..(xq.dual==1 and ' selected' or '')..'>dual-main'
+    ..'<option value="2"'..(xq.dual==2 and ' selected' or '')..'>dual-sub'
+    ..'</select>\n'
+    ..'<input type="checkbox" name="cinema" value="1"'..(xq.cinema and ' checked' or '')..'>cinema\n'
+  if ALLOW_HLS then
+    s=s..'<input type="checkbox" name="caption" value="1"'..(xq.caption and ' checked' or '')..'>caption\n'
+  end
+  return s
+end
+
+function HlsScriptTemplete()
+  local now=os.date('!*t')
+  local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
+  if ALWAYS_USE_HLS then
+    return '<script src="hls.min.js"></script>\n'
+      ..'<script>\n'
+      ..'var vid=document.getElementById("vid");\n'
+      ..'if(Hls.isSupported()){\n'
+      ..'  var hls=new Hls();\n'
+      ..'  hls.loadSource(document.getElementById("vidsrc").textContent+"'..hls..'");\n'
+      ..'  hls.attachMedia(vid);\n'
+      ..'  hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
+      ..'}else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
+      ..'  vid.src=document.getElementById("vidsrc").textContent+"'..hls..'";\n'
+      ..'}\n'
+      ..'</script>'
+  else
+    return '<script>\n'
+      ..'var vid=document.getElementById("vid");\n'
+      ..'vid.src=document.getElementById("vidsrc").textContent+(vid.canPlayType("application/vnd.apple.mpegurl")?"'..hls..'":"");\n'
+      ..'</script>'
+  end
+end
 
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
 function ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)

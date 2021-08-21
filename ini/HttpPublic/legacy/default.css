@@ -243,3 +243,13 @@ th, td {
 #now {
   border-bottom: 2px solid #f00;
 }
+
+.video-container {
+  max-width: 95%;
+  position: relative;
+  width: max-content;
+}
+
+.video-container > video {
+  width: 100%;
+}

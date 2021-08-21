@@ -85,58 +85,28 @@ for i,v in ipairs(edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
 end
 if #a>0 then
   n=mg.get_var(mg.request_info.query_string,'fname') or a[1]
-  audio2=GetVarInt(mg.request_info.query_string,'audio2')==1
-  dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
-  cinema=GetVarInt(mg.request_info.query_string,'cinema')==1
+  xq=GetTranscodeQueries(mg.request_info.query_string)
   ct:Append('視聴 →<a href="reserve.html?vtag='..(vtag==0 and '-1' or '0')
-    ..(audio2 and '&amp;audio2=1' or '')..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')
+    ..ConstructTranscodeQueries(xq)
     ..'#footer">'..(vtag==0 and 'Video' or 'DL')..'</a>\n'
     ..'<form method="GET" action="'..(vtag==0 and 'view.lua' or 'reserve.html#footer')..'"><div>\n'
-    ..'<input type="submit" value="view.lua">\n'
+    ..'<input type="submit" value="view">\n'
     ..'<select name="n">')
   for i,v in ipairs(a) do
     ct:Append('<option value="'..v..'"'..(n==v and ' selected' or '')..'>-pipe'..v)
   end
   ct:Append('</select>\n'
-    ..'<input type="checkbox" name="audio2" value="1"'..(audio2 and ' checked' or '')..'>audio2\n'
-    ..'<select name="dual">'
-    ..'<option value="0"'..(dual~=1 and dual~=2 and ' selected' or '')..'>*'
-    ..'<option value="1"'..(dual==1 and ' selected' or '')..'>dual-main'
-    ..'<option value="2"'..(dual==2 and ' selected' or '')..'>dual-sub'
-    ..'</select>\n'
-    ..'<input type="checkbox" name="cinema" value="1"'..(cinema and ' checked' or '')..'>cinema\n'
+    ..TranscodeSettingTemplete(xq)
     ..(vtag==0 and '<input type="hidden" name="ctok" value="'..CsrfToken('view.lua')..'">\n'
          or '<input type="hidden" name="vtag" value="1">\n')
     ..'</div></form>\n')
   if vtag==1 then
     for i,v in ipairs(a) do
       if n==v then
-        src='view.lua?n='..v
-          ..(audio2 and '&amp;audio2=1' or '')..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')
-          ..'&amp;ctok='..CsrfToken('view.lua')
-        ct:Append('<video id="vid" autoplay controls style="max-width:95%"'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view.lua</video>')
+        src='view.lua?n='..v..ConstructTranscodeQueries(xq)..'&amp;ctok='..CsrfToken('view.lua')
+        ct:Append('<div class="video-container"><video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video></div>')
         if ALLOW_HLS then
-          ct:Append('\n<p id="vidsrc" style="visibility:hidden">'..src..'</p>')
-          now=os.date('!*t')
-          hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
-          if ALWAYS_USE_HLS then
-            ct:Append('\n<script src="hls.min.js"></script><script>\n'
-              ..'var vid=document.getElementById("vid");\n'
-              ..'if(Hls.isSupported()){\n'
-              ..'  var hls=new Hls();\n'
-              ..'  hls.loadSource(document.getElementById("vidsrc").textContent+"'..hls..'");\n'
-              ..'  hls.attachMedia(vid);\n'
-              ..'  hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
-              ..'}else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
-              ..'  vid.src=document.getElementById("vidsrc").textContent+"'..hls..'";\n'
-              ..'}\n'
-              ..'</script>')
-          else
-            ct:Append('\n<script>\n'
-              ..'var vid=document.getElementById("vid");\n'
-              ..'vid.src=document.getElementById("vidsrc").textContent+(vid.canPlayType("application/vnd.apple.mpegurl")?"'..hls..'":"");\n'
-              ..'</script>')
-          end
+          ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete())
         end
         ct:Append('\n')
         break
@@ -148,7 +118,7 @@ ct:Append([=[
   <form method="POST" action="view.lua"><div>
     <input type="hidden" name="ctok" value="]=]..CsrfToken('view.lua')..[=[">
     <input type="hidden" name="n" value="-1">
-    <input type="submit" value="view.lua -term">
+    <input type="submit" value="view -term">
   </div></form>
 </div>
 <div id="footer">
