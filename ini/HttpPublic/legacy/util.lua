@@ -29,6 +29,18 @@ EPG_SERVICE_PX=150
 EPG_TIME_COLUMN=3
 --番組表の番組を絞り込みたいときはNOTキーワードの先頭を"#EPG_CUST_1"にした自動EPG予約を作る
 
+--ライブラリに表示するフォルダをドキュメントルートから'/'区切りの相対パスで指定
+LIBRARY_LIST={
+  'video',
+}
+
+--ライブラリなどに表示するメディアファイルの拡張子を指定
+--EpgTimerSrv設定の「TSファイルの拡張子」はあらかじめ指定されている
+MEDIA_EXTENSION_LIST={
+  '.mp4',
+  '.webm',
+}
+
 --HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeとnwtvclose.ps1を用意すること
 ALLOW_HLS=false
 --ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか

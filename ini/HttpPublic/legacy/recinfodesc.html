@@ -60,7 +60,7 @@ if v then
     ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a></dt><dd>\n')
   ref=w and NativeToDocumentPath(w.recFilePath)
   if ref then
-    for i,ext in ipairs({'.mp4','.webm',''}) do
+    for i,ext in ipairs({table.unpack(MEDIA_EXTENSION_LIST),''}) do
       ff=edcb.FindFile and edcb.FindFile(w.recFilePath..ext,1)
       if ff then
         ct:Append((vtag==i and '<div class="video-container"><video autoplay controls src="' or '<a href="')
