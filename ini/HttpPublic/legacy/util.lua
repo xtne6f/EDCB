@@ -176,10 +176,33 @@ function TranscodeSettingTemplete(xq,fsec)
 end
 
 function HlsScriptTemplete(caption)
+  --フルスクリーンボタン
+  local s=[=[
+<script>
+var vfull=document.getElementById("vid-full");
+vfull.requestFullscreen=vfull.requestFullscreen||vfull.webkitRequestFullscreen;
+document.exitFullscreen=document.exitFullscreen||document.webkitCancelFullScreen;
+var vcont=document.getElementById("vid-cont");
+var btn=document.createElement('button');
+btn.innerText="full";
+btn.onclick=function(){vfull.requestFullscreen();};
+var div=document.createElement('div');
+div.className="full-control";
+div.appendChild(btn);
+vcont.appendChild(div);
+btn=document.createElement('button');
+btn.innerText="exit";
+btn.onclick=function(){document.exitFullscreen();};
+div=document.createElement('div');
+div.className="exit-control";
+div.appendChild(btn);
+vcont.appendChild(div);
+</script>
+]=]
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
   if ALWAYS_USE_HLS then
-    return '<script src="hls.min.js"></script>\n'
+    s=s..'<script src="hls.min.js"></script>\n'
       ..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
       ..'var vid=document.getElementById("vid");\n'
@@ -198,7 +221,7 @@ function HlsScriptTemplete(caption)
       ..'}\n'
       ..'</script>'
   else
-    return (caption and '<script src="aribb24.js"></script>\n' or '')
+    s=s..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
       ..'var vid=document.getElementById("vid");\n'
       ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:true});\n'
@@ -206,6 +229,7 @@ function HlsScriptTemplete(caption)
       ..'vid.src=document.getElementById("vidsrc").textContent+(vid.canPlayType("application/vnd.apple.mpegurl")?"'..hls..'":"");\n'
       ..'</script>'
   end
+  return s;
 end
 
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)

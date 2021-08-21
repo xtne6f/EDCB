@@ -253,3 +253,63 @@ th, td {
 .video-container > video {
   width: 100%;
 }
+
+.video-full-container:fullscreen > .video-container {
+  max-width: 100%;
+  width: 100%;
+}
+
+.video-full-container:-webkit-full-screen > .video-container {
+  max-width: 100%;
+  width: 100%;
+}
+
+.full-control {
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+}
+
+.exit-control {
+  display: none;
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+
+.full-control > button, .exit-control > button {
+  font-size: x-large;
+  margin: 0.5em;
+  padding: 0.5em;
+}
+
+.video-full-container .full-control:hover {
+  opacity: 1;
+}
+
+.video-full-container:fullscreen .full-control {
+  display: none;
+}
+
+.video-full-container:-webkit-full-screen .full-control {
+  display: none;
+}
+
+.video-full-container:fullscreen .exit-control {
+  display: block;
+  opacity: 0;
+}
+
+.video-full-container:-webkit-full-screen .exit-control {
+  display: block;
+  opacity: 0;
+}
+
+.video-full-container:fullscreen .exit-control:hover {
+  opacity: 1;
+}
+
+.video-full-container:-webkit-full-screen .exit-control:hover {
+  opacity: 1;
+}
