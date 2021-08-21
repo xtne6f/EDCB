@@ -175,25 +175,34 @@ function TranscodeSettingTemplete(xq,fsec)
   return s
 end
 
-function HlsScriptTemplete()
+function HlsScriptTemplete(caption)
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
   if ALWAYS_USE_HLS then
     return '<script src="hls.min.js"></script>\n'
+      ..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
       ..'var vid=document.getElementById("vid");\n'
+      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported()});\n'
+           ..'cap.attachMedia(vid);\n' or '')
       ..'if(Hls.isSupported()){\n'
       ..'  var hls=new Hls();\n'
       ..'  hls.loadSource(document.getElementById("vidsrc").textContent+"'..hls..'");\n'
       ..'  hls.attachMedia(vid);\n'
       ..'  hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
+      ..(caption and '  hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){\n'
+           ..'    for(var s of data.samples){cap.pushID3v2Data(s.pts,s.data);}\n'
+           ..'  });\n' or '')
       ..'}else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
       ..'  vid.src=document.getElementById("vidsrc").textContent+"'..hls..'";\n'
       ..'}\n'
       ..'</script>'
   else
-    return '<script>\n'
+    return (caption and '<script src="aribb24.js"></script>\n' or '')
+      ..'<script>\n'
       ..'var vid=document.getElementById("vid");\n'
+      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:true});\n'
+           ..'cap.attachMedia(vid);\n' or '')
       ..'vid.src=document.getElementById("vidsrc").textContent+(vid.canPlayType("application/vnd.apple.mpegurl")?"'..hls..'":"");\n'
       ..'</script>'
   end
