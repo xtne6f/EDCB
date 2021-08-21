@@ -1,3 +1,34 @@
+--情報通知ログの表示を許可するかどうか
+SHOW_NOTIFY_LOG=true
+--デバッグ出力の表示を許可するかどうか
+SHOW_DEBUG_LOG=false
+
+--メニューに「システムスタンバイ」ボタンを表示するかどうか
+INDEX_ENABLE_SUSPEND=false
+--メニューの「システムスタンバイ」ボタンを「システム休止」にするかどうか
+INDEX_SUSPEND_USE_HIBERNATE=false
+
+--各種一覧のいちどに表示する行数
+RESERVE_PAGE_COUNT=50
+RECINFO_PAGE_COUNT=50
+AUTOADDEPG_PAGE_COUNT=50
+
+--リスト番組表の非表示にしたいサービス
+HIDE_SERVICES={
+  --非表示にしたいサービスを['ONID-TSID-SID']=true,のように指定
+  --['1-2345-6789']=true,
+}
+
+--番組表の1分あたりの番組高さ
+EPG_ONE_MIN_PX=2
+--番組表の番組の最低表示高さ
+EPG_MINIMUM_PX=12
+--番組表のサービスあたりの幅
+EPG_SERVICE_PX=150
+--番組表の時刻軸を入れる間隔
+EPG_TIME_COLUMN=3
+--番組表の番組を絞り込みたいときはNOTキーワードの先頭を"#EPG_CUST_1"にした自動EPG予約を作る
+
 --HLS(HTTP Live Streaming)を許可するかどうか
 ALLOW_HLS=false
 --ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか
@@ -8,6 +39,8 @@ GZIP_THRESHOLD_BYTE=4096
 
 --処理するPOSTリクエストボディの最大値
 POST_MAX_BYTE=1024*1024
+
+----------定数定義ここまで----------
 
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
 function ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)

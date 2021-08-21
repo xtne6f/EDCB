@@ -1,14 +1,4 @@
 -- vim:set ft=lua:
---1分あたりの番組高さ
-ONE_MIN_PX=2
---番組の最低表示高さ
-MINIMUM_PX=12
---サービスあたりの幅
-SERVICE_PX=150
---時刻軸を入れる間隔
-TIME_COLUMN=3
---番組を絞り込みたいときはNOTキーワードの先頭を"#EPG_CUST_1"にした自動EPG予約を作る
-
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
@@ -153,8 +143,8 @@ for i,v in ipairs(st) do
   if tcol==1 then
     rowHead=rowHead..'<td></td>\n'
   end
-  tcol=(tcol<TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
-  rowHead=rowHead..'<th style="min-width:'..(SERVICE_PX-2)..'px;width:'..(SERVICE_PX-2)
+  tcol=(tcol<EPG_TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
+  rowHead=rowHead..'<th style="min-width:'..(EPG_SERVICE_PX-2)..'px;width:'..(EPG_SERVICE_PX-2)
     ..'px"><img alt="" style="max-height:0.8em;width:auto" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</th>\n'
 end
 rowTail='<tr class="epg-row-tail">\n'..rowHead..'</tr>\n'
@@ -164,7 +154,7 @@ colHead='<td class="epg-col-head">\n'
 for i=4,28 do
   colHead=colHead..'<div class="t'..(i%24)..(i%24~=4 and i%24==(math.floor(now/3600)+9)%24 and ' tnow' or '')..'"'
     ..(i==11 and ' id="noon"' or i==17 and ' id="dusk"' or i==23 and ' id="night"' or '')
-    ..' style="height:'..(ONE_MIN_PX*60)..'px">'..i..'</div>\n'
+    ..' style="height:'..(EPG_ONE_MIN_PX*60)..'px">'..i..'</div>\n'
 end
 colHead=colHead..'</td>\n'
 
@@ -176,7 +166,7 @@ for i,v in ipairs(st) do
     ct:Append(colHead)
     colHead=colHead:gsub(' id=[^ ]+', '')
   end
-  tcol=(tcol<TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
+  tcol=(tcol<EPG_TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
   if i==1 or v.onid~=st[i-1].onid or v.tsid~=st[i-1].tsid then
     left=1
     for j=i,#st+1 do
@@ -186,19 +176,19 @@ for i,v in ipairs(st) do
       end
     end
   else
-    left=left+SERVICE_PX+2
+    left=left+EPG_SERVICE_PX+2
   end
   lastPx=0
   for j,w in ipairs(v.et) do
     startTime=os.time(w.startTime)+timezone
-    startPx=math.min(math.floor((startTime-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
+    startPx=math.min(math.floor((startTime-baseTime-date*24*3600)/60)*EPG_ONE_MIN_PX, EPG_ONE_MIN_PX*60*25)
     endPx=math.min(math.floor(((
       w.durationSecond and startTime+w.durationSecond or (j<#v.et and os.time(v.et[j+1].startTime)+timezone or startTime) --終了時間未定
-      )-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
+      )-baseTime-date*24*3600)/60)*EPG_ONE_MIN_PX, EPG_ONE_MIN_PX*60*25)
     if startPx-lastPx>0 then
       lastPx=startPx
     end
-    endPx=lastPx+math.max(endPx-lastPx, MINIMUM_PX)
+    endPx=lastPx+math.max(endPx-lastPx, EPG_MINIMUM_PX)
     if endPx-lastPx>2 then
       --貫かれるものでないか
       if not w.eventGroupInfo or #w.eventGroupInfo.eventDataList~=1 or
@@ -207,13 +197,13 @@ for i,v in ipairs(st) do
          w.eventGroupInfo.eventDataList[1].sid==w.sid and
          w.eventGroupInfo.eventDataList[1].eid==w.eid then
         --横にどれだけ貫くか
-        width=SERVICE_PX
+        width=EPG_SERVICE_PX
         for k=i+1,#st do
           span=false
           if v.onid==st[k].onid and v.tsid==st[k].tsid and w.eventGroupInfo then
             for l,x in ipairs(w.eventGroupInfo.eventDataList) do
               if v.onid==x.onid and v.tsid==x.tsid and st[k].sid==x.sid then
-                width=width+SERVICE_PX+2
+                width=width+EPG_SERVICE_PX+2
                 span=true
                 break
               end

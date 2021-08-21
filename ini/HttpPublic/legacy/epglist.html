@@ -1,9 +1,4 @@
 -- vim:set ft=lua:
-HIDE_SERVICES={
-  --非表示にしたいサービスを['ONID-TSID-SID']=true,のように指定
-  --['1-2345-6789']=true,
-}
-
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1

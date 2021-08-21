@@ -1,14 +1,26 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
---f=edcb.io.open(edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\EpgTimerSrvDebugLog.txt','rb')
+if mg.get_var(mg.request_info.query_string,'t')=='d' then
+  if SHOW_DEBUG_LOG then
+    t='\\EpgTimerSrvDebugLog.txt'
+  end
+else
+  if SHOW_NOTIFY_LOG then
+    t='\\EpgTimerSrvNotify.log'
+  end
+end
+if t then
+  f=edcb.io.open(edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..t,'rb')
+end
+
 if not f then
   mg.write(Response(404,nil,nil,0)..'\r\n')
 else
   ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-  c=tonumber(mg.get_var(mg.request_info.query_string,'c')) or math.huge
+  c=GetVarInt(mg.request_info.query_string,'c',0,1e7) or 1e7
   fsize=f:seek('end')
   if fsize>=2 then
-    ofs=math.floor(math.max(fsize/2-1-math.min(math.max(c,0),1e7),0))
+    ofs=math.floor(math.max(fsize/2-1-c,0))
     f:seek('set',2+ofs*2)
     if ofs~=0 then
       repeat
