@@ -17,8 +17,8 @@ __int64 MJDtoI64Time(DWORD mjd, DWORD bcdTime);
 DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid);
 
 //EPG情報をTextに変換
-wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName = NULL, const wstring* extraText = NULL);
-wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& serviceName);
+wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO& info, const wstring* serviceName = NULL, const wstring* extraText = NULL);
+wstring ConvertProgramText(const EPGDB_EVENT_INFO& info, const wstring& serviceName);
 void AppendEpgContentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);
 void AppendEpgComponentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);
 void AppendEpgAudioComponentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);

@@ -811,9 +811,9 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	}
 	string outText;
 	if( this->saveProgramInfoAsUtf8 ){
-		WtoUTF8(ConvertEpgInfoText2(&info, serviceName), outText);
+		WtoUTF8(ConvertProgramText(info, serviceName), outText);
 	}else{
-		WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
+		WtoA(ConvertProgramText(info, serviceName), outText);
 	}
 
 	//※原作と異なりディレクトリの自動生成はしない
