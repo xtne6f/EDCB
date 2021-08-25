@@ -240,6 +240,11 @@ th, td {
   opacity: 0.6;
 }
 
+.escape-text {
+  color: transparent;
+  font-size: xx-small;
+}
+
 #now {
   border-bottom: 2px solid #f00;
 }

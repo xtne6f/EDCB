@@ -42,12 +42,12 @@ if v then
     --過去番組情報を探してみる
     ev=edcb.EnumEventInfoArchive and edcb.EnumEventInfoArchive({{onid=v.onid,tsid=v.tsid,sid=v.sid}},{startTime=v.startTime,durationSecond=1})
     if ev and #ev>0 then
-      v.programInfo=ConvertEpgInfoText2(ev[1])
+      v.programInfo=ConvertProgramText(ev[1])
     else
       --番組情報を探してみる
       ev=edcb.SearchEpg(v.onid,v.tsid,v.sid,v.eid)
       if ev and ev.startTime and os.time(ev.startTime)==os.time(v.startTime) then
-        v.programInfo=ConvertEpgInfoText2(ev)
+        v.programInfo=ConvertProgramText(ev)
       end
     end
   end

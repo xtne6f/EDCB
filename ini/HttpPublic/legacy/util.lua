@@ -233,8 +233,8 @@ vcont.appendChild(div);
 end
 
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
-function ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
-  local s, v = '', (type(onidOrEpg)=='table' and onidOrEpg or edcb.SearchEpg(onidOrEpg, tsid, sid, eid))
+function ConvertProgramText(v)
+  local s=''
   if v then
     s=s..(v.startTime and FormatTimeAndDuration(v.startTime, v.durationSecond)..(v.durationSecond and '' or '～未定') or '未定')..'\n'
     for i,w in ipairs(edcb.GetServiceList() or {}) do
@@ -248,7 +248,7 @@ function ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
       s=s..v.shortInfo.event_name..'\n\n'..DecorateUri(v.shortInfo.text_char)..'\n\n'
     end
     if v.extInfo then
-      s=s..'詳細情報\n'..DecorateUri(v.extInfo.text_char)..'\n\n'
+      s=s..DecorateUri(('\n'..v.extInfo.text_char):gsub('\n%- ([^\n\r]*)','\n<span class="escape-text">- </span><b>%1</b>'):sub(2))..'\n\n'
     end
     if v.contentInfoList then
       s=s..'ジャンル : \n'
@@ -372,36 +372,61 @@ end
 
 --URIをタグ装飾する
 function DecorateUri(s)
-  local i=1
+  local hwhost='-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+  local hw='!#$%&()*+/:;=?@_~~'..hwhost
+  local fwhost='－．０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ'
+  local fw='！＃＄％＆（）＊＋／：；＝？＠＿～￣'..fwhost
+  --sを半角置換
+  local r,i={},1
   while i<=#s do
-    if s:find('^http',i) or s:find('^ｈｔｔｐ',i) then
-      local hw='&/:;%#$?()~.=+-_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-      local fw='＆／：；％＃＄？（）￣．＝＋－＿０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ'
-      local j,href=i,''
-      while j<=#s do
-        local k=hw:find(s:sub(j,j),1,true)
-        if k then
-          href=href..hw:sub(k,k)
-          j=j+1
-        else
-          k=fw:find(s:sub(j,j+2),1,true)
-          if j+2<=#s and k and k%3==1 then
-            href=href..hw:sub((k+2)/3,(k+2)/3)..(k==1 and 'amp;' or '')
-            j=j+3
-          else
-            break
-          end
-        end
-      end
-      if href:find('^https?://.') then
-        href='<a href="'..href..'">'..s:sub(i,j-1)..'</a>'
-        s=s:sub(1,i-1)..href..s:sub(j)
-        i=i+#href-(j-i)
-      end
+    local j=fw:find(s:sub(i,i+2),1,true)
+    if i+2<=#s and j and j%3==1 then
+      r[#r+1]=hw:sub((j+2)/3,(j+2)/3)
+      i=i+2
+    else
+      r[#r+1]=s:sub(i,i)
     end
     i=i+1
   end
-  return s
+  r=table.concat(r)
+
+  --置換後nにある文字がsのどこにあるか
+  local spos=function(n)
+    local i=1
+    while i<=#s and n>1 do
+      n=n-1
+      local j=fw:find(s:sub(i,i+2),1,true)
+      if i+2<=#s and j and j%3==1 then
+        i=i+2
+      end
+      i=i+1
+    end
+    return i
+  end
+
+  local t,n,i='',1,1
+  while i<=#r do
+    --特定のTLDっぽい文字列があればホスト部分をさかのぼる
+    local h=0
+    if r:find('^%.com/',i) or r:find('^%.jp/',i) or r:find('^%.tv/',i) then
+      while i-h>1 and hwhost:find(r:sub(i-h-1,i-h-1),1,true) do
+        h=h+1
+      end
+    end
+    if (h>0 and (i-h==1 or r:find('^[^/]',i-h-1))) or r:find('^https?://',i) then
+      local j=i
+      while j<=#r and hw:find(r:sub(j,j),1,true) do
+        j=j+1
+      end
+      t=t..s:sub(spos(n),spos(i-h)-1)..'<a href="'..(h>0 and 'https://' or '')
+        ..r:sub(i-h,j-1):gsub('&amp;','&'):gsub('&','&amp;')..'">'..s:sub(spos(i-h),spos(j)-1)..'</a>'
+      n=j
+      i=j-1
+    end
+    i=i+1
+  end
+  t=t..s:sub(spos(n))
+  return t
 end
 
 --時間の文字列を取得する

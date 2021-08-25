@@ -108,7 +108,7 @@ recFilePath=edcb.GetRecFilePath(id)
 edcb.htmlEscape=15
 r=edcb.GetReserveData(id)
 if r then
-  epgInfo=ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
+  epgInfo=ConvertProgramText(edcb.SearchEpg(r.onid,r.tsid,r.sid,r.eid))
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct:Append('  <dl>\n'
     ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..epgInfo:gsub('\r?\n','<br>\n')
