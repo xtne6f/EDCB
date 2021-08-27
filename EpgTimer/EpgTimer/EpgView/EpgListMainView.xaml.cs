@@ -473,10 +473,11 @@ namespace EpgTimer
             {
                 SearchItem item = listView_event.SelectedItem as SearchItem;
 
-                EpgEventInfo eventInfo = item.EventInfo;
-
-                String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                richTextBox_eventInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(text));
+                richTextBox_eventInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(
+                    CommonManager.ConvertProgramText(item.EventInfo, EventInfoTextMode.BasicInfo) +
+                    CommonManager.ConvertProgramText(item.EventInfo, EventInfoTextMode.BasicText),
+                    CommonManager.ConvertProgramText(item.EventInfo, EventInfoTextMode.ExtendedText),
+                    CommonManager.ConvertProgramText(item.EventInfo, EventInfoTextMode.PropertyInfo)));
             }
         }
 
