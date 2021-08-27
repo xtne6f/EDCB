@@ -1,6 +1,4 @@
 -- vim:set ft=lua:
-PAGE_COUNT=50
-
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
@@ -21,14 +19,15 @@ ct:Append([=[
 edcb.htmlEscape=15
 a=edcb.GetRecFileInfoBasic()
 table.sort(a, function(a,b) return os.time(a.startTime) > os.time(b.startTime) end)
-page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/PAGE_COUNT) or 0
+pageCount=RECINFO_PAGE_COUNT
+page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/pageCount) or 0
 pageNav=''
-if #a>PAGE_COUNT then
-  for i=math.max(page-1,1),math.min(math.max(page-1,1)+6,(#a+PAGE_COUNT-1)/PAGE_COUNT) do
-    pageNav=pageNav..(i-1==page and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href="recinfo.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+if #a>pageCount then
+  for i=math.max(page-1,1),math.min(math.max(page-1,1)+6,(#a+pageCount-1)/pageCount) do
+    pageNav=pageNav..(i-1==page and ((i-1)*pageCount+1)..'～ ' or '<a href="recinfo.html?page='..(i-1)..'">'..((i-1)*pageCount+1)..'～</a> ')
   end
   pageNav=(page==0 and '|&lt;&lt; ' or '<a href="recinfo.html">|&lt;&lt;</a> ')..pageNav
-    ..(page==math.floor((#a-1)/PAGE_COUNT) and '&gt;&gt;|' or '<a href="recinfo.html?page='..math.floor((#a-1)/PAGE_COUNT)..'">&gt;&gt;|</a>\n')
+    ..(page==math.floor((#a-1)/pageCount) and '&gt;&gt;|' or '<a href="recinfo.html?page='..math.floor((#a-1)/pageCount)..'">&gt;&gt;|</a>\n')
 end
 ct:Append(pageNav)
 ct:Append([=[
@@ -37,7 +36,7 @@ ct:Append([=[
   <table>
 ]=])
 
-for i=page*PAGE_COUNT+1,math.min(#a,(page+1)*PAGE_COUNT) do
+for i=page*pageCount+1,math.min(#a,(page+1)*pageCount) do
   v=a[i]
   ct:Append('    <tr><td><a href="recinfodesc.html?id='..v.id..'">'
     ..FormatTimeAndDuration(v.startTime, v.durationSecond)

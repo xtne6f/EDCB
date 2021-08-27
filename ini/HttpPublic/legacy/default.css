@@ -17,7 +17,7 @@ li {
 
 input {
   font-size: medium;
-  margin: 0.1em;
+  margin: 0.5em 0.1em;
 }
 
 select {
@@ -240,6 +240,96 @@ th, td {
   opacity: 0.6;
 }
 
+.escape-text {
+  color: transparent;
+  font-size: xx-small;
+}
+
 #now {
   border-bottom: 2px solid #f00;
+}
+
+.video-container {
+  line-height: 0;
+  max-width: 95%;
+  position: relative;
+  width: max-content;
+}
+
+.video-container > video {
+  width: 100%;
+}
+
+.video-full-container:fullscreen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.video-full-container:-webkit-full-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.video-full-container:fullscreen > .video-container {
+  max-height: 100%;
+  max-width: 100%;
+  width: 100%;
+}
+
+.video-full-container:-webkit-full-screen > .video-container {
+  max-height: 100%;
+  max-width: 100%;
+  width: 100%;
+}
+
+.full-control {
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+}
+
+.exit-control {
+  display: none;
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+
+.full-control > button, .exit-control > button {
+  font-size: x-large;
+  margin: 0.5em;
+  padding: 0.5em;
+}
+
+.video-full-container .full-control:hover {
+  opacity: 1;
+}
+
+.video-full-container:fullscreen .full-control {
+  display: none;
+}
+
+.video-full-container:-webkit-full-screen .full-control {
+  display: none;
+}
+
+.video-full-container:fullscreen .exit-control {
+  display: block;
+  opacity: 0;
+}
+
+.video-full-container:-webkit-full-screen .exit-control {
+  display: block;
+  opacity: 0;
+}
+
+.video-full-container:fullscreen .exit-control:hover {
+  opacity: 1;
+}
+
+.video-full-container:-webkit-full-screen .exit-control:hover {
+  opacity: 1;
 }

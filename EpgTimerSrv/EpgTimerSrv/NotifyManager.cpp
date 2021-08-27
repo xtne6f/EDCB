@@ -28,7 +28,7 @@ CNotifyManager::~CNotifyManager()
 
 void CNotifyManager::RegistGUI(DWORD processID)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	UnRegistGUI(processID);
 	this->registGUIList.push_back(processID);
@@ -37,7 +37,7 @@ void CNotifyManager::RegistGUI(DWORD processID)
 
 void CNotifyManager::RegistTCP(LPCWSTR ip, DWORD port)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	UnRegistTCP(ip, port);
 	this->registTCPList.push_back(std::make_pair(wstring(ip), port));
@@ -46,7 +46,7 @@ void CNotifyManager::RegistTCP(LPCWSTR ip, DWORD port)
 
 void CNotifyManager::UnRegistGUI(DWORD processID)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
 		if( this->registGUIList[i] == processID ){
@@ -58,7 +58,7 @@ void CNotifyManager::UnRegistGUI(DWORD processID)
 
 void CNotifyManager::UnRegistTCP(LPCWSTR ip, DWORD port)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	for( size_t i = 0; i < this->registTCPList.size(); i++ ){
 		if( this->registTCPList[i].first == ip && this->registTCPList[i].second == port ){
@@ -70,7 +70,7 @@ void CNotifyManager::UnRegistTCP(LPCWSTR ip, DWORD port)
 
 void CNotifyManager::SetNotifyCallback(const std::function<void()>& proc)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	this->notifyProc = proc;
 	if( proc ){
@@ -80,14 +80,14 @@ void CNotifyManager::SetNotifyCallback(const std::function<void()>& proc)
 
 void CNotifyManager::SetLogFilePath(LPCWSTR path)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	this->logFilePath = path;
 }
 
 bool CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	if( targetCount == 0 ){
 		//現在のsrvStatusを返す
@@ -114,7 +114,7 @@ bool CNotifyManager::WaitForIdle(DWORD timeoutMsec) const
 {
 	DWORD count;
 	{
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 		count = this->activeOrIdleCount;
 		if( count % 2 == 0 ){
 			//Idle
@@ -123,7 +123,7 @@ bool CNotifyManager::WaitForIdle(DWORD timeoutMsec) const
 	}
 	for( DWORD t = 1; t <= timeoutMsec; t += 10 ){
 		Sleep(10);
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 		if( count != this->activeOrIdleCount ){
 			//1回以上Idleになった
 			return true;
@@ -135,7 +135,7 @@ bool CNotifyManager::WaitForIdle(DWORD timeoutMsec) const
 int CNotifyManager::GetNotifyUpdateCount(DWORD notifyID) const
 {
 	if( 1 <= notifyID && notifyID < array_size(this->notifyUpdateCount) ){
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 		return this->notifyUpdateCount[notifyID] & 0x7FFFFFFF;
 	}
 	return -1;
@@ -158,21 +158,21 @@ pair<LPCWSTR, LPCWSTR> CNotifyManager::ExtractTitleFromInfo(const NOTIFY_SRV_INF
 
 vector<DWORD> CNotifyManager::GetRegistGUI() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	return this->registGUIList;
 }
 
 vector<pair<wstring, DWORD>> CNotifyManager::GetRegistTCP() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	return this->registTCPList;
 }
 
 void CNotifyManager::AddNotify(DWORD notifyID)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	NOTIFY_SRV_INFO info = {};
 	ConvertSystemTime(GetNowI64Time(), &info.time);
@@ -187,7 +187,7 @@ void CNotifyManager::AddNotify(DWORD notifyID)
 
 void CNotifyManager::SetNotifySrvStatus(DWORD status)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	if( status != this->srvStatus ){
 		NOTIFY_SRV_INFO info = {};
@@ -202,7 +202,7 @@ void CNotifyManager::SetNotifySrvStatus(DWORD status)
 
 void CNotifyManager::AddNotifyMsg(DWORD notifyID, const wstring& msg)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	NOTIFY_SRV_INFO info = {};
 	info.notifyID = notifyID;
@@ -244,7 +244,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 		}
 		//現在の情報取得
 		{
-			CBlockLock lock(&sys->managerLock);
+			lock_recursive_mutex lock(sys->managerLock);
 			registGUI = sys->GetRegistGUI();
 			registTCP = sys->GetRegistTCP();
 			if( waitNotify && GetTickCount() - waitNotifyTick < 5000 ){
@@ -360,7 +360,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 			}
 		}
 
-		CBlockLock lock(&sys->managerLock);
+		lock_recursive_mutex lock(sys->managerLock);
 		sys->activeOrIdleCount++;
 	}
 }

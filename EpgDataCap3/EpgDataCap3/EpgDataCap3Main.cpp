@@ -21,7 +21,7 @@ void CEpgDataCap3Main::AddTSPacket(
 	DWORD size
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 
 	this->decodeUtilClass.AddTSData(data, size);
 }
@@ -35,7 +35,7 @@ BOOL CEpgDataCap3Main::GetTSID(
 	WORD* transportStreamID
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	return this->decodeUtilClass.GetTSID(originalNetworkID, transportStreamID);
 }
 
@@ -48,7 +48,7 @@ BOOL CEpgDataCap3Main::GetServiceListActual(
 	SERVICE_INFO** serviceList
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	return this->decodeUtilClass.GetServiceListActual(serviceListSize, serviceList);
 }
 
@@ -62,7 +62,7 @@ void CEpgDataCap3Main::GetServiceListEpgDB(
 	SERVICE_INFO** serviceList
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	this->epgDBUtilClass.GetServiceListEpgDB(serviceListSize, serviceList);
 }
 
@@ -81,7 +81,7 @@ BOOL CEpgDataCap3Main::GetEpgInfoList(
 	EPG_EVENT_INFO** epgInfoList
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	return this->epgDBUtilClass.GetEpgInfoList(originalNetworkID, transportStreamID, serviceID, epgInfoListSize, epgInfoList);
 }
 
@@ -94,7 +94,7 @@ BOOL CEpgDataCap3Main::EnumEpgInfoList(
 	LPVOID param
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	return this->epgDBUtilClass.EnumEpgInfoList(originalNetworkID, transportStreamID, serviceID, enumEpgInfoListProc, param);
 }
 
@@ -113,7 +113,7 @@ BOOL CEpgDataCap3Main::GetEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	if( this->epgDBUtilClass.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo) == FALSE ){
 		return FALSE;
 	}
@@ -157,7 +157,7 @@ BOOL CEpgDataCap3Main::SearchEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 
 	return this->epgDBUtilClass.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
 }
@@ -165,7 +165,7 @@ BOOL CEpgDataCap3Main::SearchEpgInfo(
 //EPGデータの蓄積状態をリセットする
 void CEpgDataCap3Main::ClearSectionStatus()
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	this->epgDBUtilClass.ClearSectionStatus();
 	return ;
 }
@@ -177,7 +177,7 @@ void CEpgDataCap3Main::ClearSectionStatus()
 // l_eitFlag		[IN]L-EITのステータスを取得
 EPG_SECTION_STATUS CEpgDataCap3Main::GetSectionStatus(BOOL l_eitFlag)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	EPG_SECTION_STATUS status = this->epgDBUtilClass.GetSectionStatus(l_eitFlag);
 	return status;
 }
@@ -190,7 +190,7 @@ EPG_SECTION_STATUS CEpgDataCap3Main::GetSectionStatusService(
 	BOOL l_eitFlag
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	return this->epgDBUtilClass.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
 }
 
@@ -200,7 +200,7 @@ void CEpgDataCap3Main::SetLogoTypeFlags(
 	const WORD** additionalNeededPids
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	this->decodeUtilClass.SetLogoTypeFlags(flags, additionalNeededPids);
 }
 
@@ -210,7 +210,7 @@ BOOL CEpgDataCap3Main::EnumLogoList(
 	LPVOID param
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	return this->decodeUtilClass.EnumLogoList(enumLogoListProc, param);
 }
 
@@ -220,7 +220,7 @@ BOOL CEpgDataCap3Main::EnumLogoList(
 int CEpgDataCap3Main::GetTimeDelay(
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 	__int64 time;
 	DWORD tick;
 	if( this->decodeUtilClass.GetNowTime(&time, &tick) == FALSE ){

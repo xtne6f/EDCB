@@ -15,18 +15,26 @@ ct:Append([=[
 <h1>EDCB Legacy WebUIについて</h1>
 <div id="main">
   <p>
-    EDCBの操作をブラウザから行うことができます。このWebUIではJavaScriptやCookieは使用しません。
+    EDCBの操作をブラウザから行うことができます。このWebUIではJavaScript(HLSを除く)やCookieは使用しません。<br>
+    このWebUIでは公開フォルダ(HttpPublic)にないファイルには原則アクセスしません。
   </p><p>
-    EDCBの「録画保存フォルダ」を公開フォルダ(HttpPublic)配下(公開フォルダ直下のvideoフォルダを推奨)に設定すれば、リンク表示などの追加機能を利用できます。<br>
+    EDCBの「録画保存フォルダ」を公開フォルダ配下(公開フォルダ直下のvideoフォルダを推奨)に設定すれば、リンク表示などの追加機能を利用できます。<br>
     追っかけ再生する場合は「録画動作」の「録画ファイルの容量確保を行う」をオフにすることをお勧めします。
   </p><p>
     番組表などにはEDCBの「EPG取得対象サービス」でチェックされたサービスのみ表示します。
   </p><p>
-    <a href="debuglog.lua?c=8192">デバッグ出力</a>(debuglog.lua)や<a href="index.html">メニュー</a>(index.html)のシステムスタンバイ機能はデフォルトで無効化しています。<br>
-    必要に応じてスクリプトを編集してコメントアウト(--ハイフン2つ)を解除してください。
+    <a href="showlog.lua?c=8192&amp;t=d">デバッグ出力</a>や<a href="index.html">メニュー</a>のシステムスタンバイ機能はデフォルトで無効化しています。<br>
+    必要に応じてutil.luaの定数定義を編集して有効にしてください。
   </p><p>
-    xcode.luaやview.luaを利用する場合は、ffmpeg.exeやreadex.exeをEDCBフォルダ直下のToolsフォルダに用意してください。<br>
-    詳細は各スクリプトのコメントを参照してください。
+    トランスコード機能(xcodeボタン)や視聴機能(viewボタン)を利用する場合は、ffmpeg.exeやreadex.exeをEDCBフォルダ直下のToolsフォルダに用意してください。<br>
+    また、必要に応じてutil.luaの定数定義を編集してください。<br>
+    ブラウザの制限により自動再生されないことがあるので、その場合は再生画面をクリックやタップしてください。<br>
+    <a href="https://github.com/monyone/aribb24.js">aribb24.js</a>による字幕表示ができるのは今のところHLS再生時のみです。
+  </p><p>
+    視聴機能を利用する場合は、EpgDataCap_Bonなどの「TCP送信先」にSrvPipeを追加しておく必要があります。<br>
+    予約一覧にあるviewボタンは起動済みのEpgDataCap_Bonなどに接続して視聴するものです。<br>
+    リスト番組表にあるviewボタンはNetworkTVモードによりEpgDataCap_Bonなどを起動して視聴するものです。<br>
+    NetworkTVモードでは「視聴に使用するBonDriver」をEpgTimerSrv設定で指定しておく必要があります。
   </p><p>
     スクリプトはLua 5.2を使用しています。<a href="https://www.lua.org/manual/5.2/">Lua 5.2 Reference Manual</a> (<a href="http://milkpot.sakura.ne.jp/lua/lua52_manual_ja.html">有志による日本語訳</a>)<br>
     EDCBによる追加機能はDocument/Readme_Mod.txtの「Lua edcbグローバル変数の仕様」を参照してください。
@@ -34,7 +42,7 @@ ct:Append([=[
     無保証です。セキュリティに気をつけてください。スクリプトの改変、再配布などすべて自由です。
   </p><p>
     スクリプト作成などにあたって特に<a href="https://github.com/EMWUI/EDCB_Material_WebUI">EDCB Material WebUI</a>を参考にしています。<br>
-    トランスコード機能は「<a href="http://nana2.sarashi.com/">Tvmaid</a> MAYA ストリーミング設定」や<a href="https://github.com/Chinachu/Chinachu">Chinachu</a>を参考にしました。
+    トランスコード機能は「<a href="http://nana2.sarashi.com/">Tvmaid</a> MAYA ストリーミング設定」や<a href="https://github.com/Chinachu/Chinachu">Chinachu</a>や<a href="https://github.com/tsukumijima/TVRemotePlus">TVRemotePlus</a>を参考にしました。
   </p>
 </div>
 <div id="footer">

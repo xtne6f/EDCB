@@ -76,13 +76,13 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 		this->pipeServer.StartServer(pipeName, [this](CCmdStream& cmd, CCmdStream& res) {
 			// SendMessageTimeout()はメッセージ処理中でも容赦なくタイムアウトするのでコマンドデータを排他処理する
 			{
-				CBlockLock lock(&this->cmdLock);
+				lock_recursive_mutex lock(this->cmdLock);
 				std::swap(this->cmdCapture, cmd);
 			}
 			// CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ(デッドロック防止のためタイムアウトつき)
 			DWORD_PTR dwResult;
 			if( SendMessageTimeout(this->ctrlDlg.GetDlgHWND(), WM_INVOKE_CTRL_CMD, 0, 0, SMTO_NORMAL, 10000, &dwResult) ){
-				CBlockLock lock(&this->cmdLock);
+				lock_recursive_mutex lock(this->cmdLock);
 				std::swap(res, this->resCapture);
 			}else{
 				res.SetParam(CMD_ERR);
@@ -168,7 +168,7 @@ LRESULT CALLBACK CEpgTimerPlugIn::EventCallback(UINT Event,LPARAM lParam1,LPARAM
 
 void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 {
-	CBlockLock lock(&this->cmdLock);
+	lock_recursive_mutex lock(this->cmdLock);
 	const CCmdStream& cmd = this->cmdCapture;
 	CCmdStream& res = this->resCapture;
 	CEpgTimerPlugIn* sys = this;

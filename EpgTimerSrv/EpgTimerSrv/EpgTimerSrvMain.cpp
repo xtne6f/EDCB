@@ -498,7 +498,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			DWORD tcpResTo;
 			wstring tcpAcl;
 			{
-				CBlockLock lock(&ctx->sys->settingLock);
+				lock_recursive_mutex lock(ctx->sys->settingLock);
 				tcpPort_ = ctx->sys->tcpPort;
 				tcpIPv6_ = ctx->sys->tcpIPv6;
 				tcpResTo = ctx->sys->tcpResponseTimeoutSec * 1000;
@@ -520,7 +520,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_APP_RELOAD_EPG_CHK:
 		//EPGリロード完了のチェックを開始
 		{
-			CBlockLock lock(&ctx->sys->autoAddLock);
+			lock_recursive_mutex lock(ctx->sys->autoAddLock);
 			ctx->sys->autoAddCheckItr = ctx->sys->epgAutoAdd.GetMap().begin();
 		}
 		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 10, NULL);
@@ -538,7 +538,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//rebootFlag時は(指定+5分前)に復帰
 				DWORD marginSec;
 				{
-					CBlockLock lock(&ctx->sys->settingLock);
+					lock_recursive_mutex lock(ctx->sys->settingLock);
 					marginSec = ctx->sys->setting.wakeTime * 60 + (lParam ? 300 : 0);
 				}
 				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, marginSec) ){
@@ -599,7 +599,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				int notifyTipStyle;
 				bool blinkPreRec;
 				{
-					CBlockLock lock(&ctx->sys->settingLock);
+					lock_recursive_mutex lock(ctx->sys->settingLock);
 					notifyTipStyle = ctx->sys->setting.notifyTipStyle;
 					blinkPreRec = ctx->sys->setting.blinkPreRec;
 				}
@@ -720,7 +720,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			}
 			if( ctx->sys->epgDB.IsLoadingData() == false ){
 				{
-					CBlockLock lock(&ctx->sys->autoAddLock);
+					lock_recursive_mutex lock(ctx->sys->autoAddLock);
 					if( ctx->sys->autoAddCheckItr == ctx->sys->epgAutoAdd.GetMap().begin() ){
 						//自動予約登録処理を開始
 						ctx->autoAddCheckTick = GetTickCount();
@@ -815,7 +815,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
 				DWORD marginSec;
 				{
-					CBlockLock lock(&ctx->sys->settingLock);
+					lock_recursive_mutex lock(ctx->sys->settingLock);
 					marginSec = ctx->sys->setting.wakeTime * 60;
 				}
 				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, marginSec);
@@ -860,7 +860,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					ctx->sys->epgDB.ReloadEpgData(true);
 					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
 					{
-						CBlockLock lock(&ctx->sys->settingLock);
+						lock_recursive_mutex lock(ctx->sys->settingLock);
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					}
@@ -877,7 +877,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					ctx->shutdownModePending = LOBYTE(ret.second);
 					ctx->rebootFlagPending = HIBYTE(ret.second) != 0;
 					if( ctx->shutdownModePending == SD_MODE_INVALID ){
-						CBlockLock lock(&ctx->sys->settingLock);
+						lock_recursive_mutex lock(ctx->sys->settingLock);
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					}
@@ -894,7 +894,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				KillTimer(hwnd, TIMER_RESET_HTTP_SERVER);
 				CHttpServer::SERVER_OPTIONS op;
 				{
-					CBlockLock lock(&ctx->sys->settingLock);
+					lock_recursive_mutex lock(ctx->sys->settingLock);
 					op = ctx->sys->httpOptions;
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() ){
@@ -935,7 +935,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_S3:
 		case IDC_BUTTON_S4:
 			if( ctx->sys->IsSuspendOK() ){
-				CBlockLock lock(&ctx->sys->settingLock);
+				lock_recursive_mutex lock(ctx->sys->settingLock);
 				PostMessage(hwnd, WM_APP_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
 			}else{
 				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
@@ -1087,7 +1087,7 @@ bool CEpgTimerSrvMain::IsSuspendOK() const
 	DWORD marginSec;
 	bool noFileStreaming;
 	{
-		CBlockLock lock(&this->settingLock);
+		lock_recursive_mutex lock(this->settingLock);
 		//rebootFlag時の復帰マージンを基準に3分余裕を加えたものと抑制条件のどちらか大きいほう
 		marginSec = max(this->setting.wakeTime + 5 + 3, this->setting.noStandbyTime) * 60;
 		noFileStreaming = this->setting.noFileStreaming;
@@ -1103,7 +1103,7 @@ bool CEpgTimerSrvMain::IsSuspendOK() const
 
 void CEpgTimerSrvMain::ReloadNetworkSetting()
 {
-	CBlockLock lock(&this->settingLock);
+	lock_recursive_mutex lock(this->settingLock);
 
 	fs_path iniPath = GetModuleIniPath();
 	this->tcpPort = 0;
@@ -1139,7 +1139,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	this->epgDB.SetArchivePeriod(s.epgArchivePeriodHour * 3600);
 	SetSaveDebugLog(s.saveDebugLog);
 
-	CBlockLock lock(&this->settingLock);
+	lock_recursive_mutex lock(this->settingLock);
 
 	this->setting = std::move(s);
 	if( this->residentFlag == false ){
@@ -1158,7 +1158,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 
 RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 {
-	CBlockLock lock(&this->settingLock);
+	lock_recursive_mutex lock(this->settingLock);
 
 	RESERVE_DATA r = {};
 	r.reserveID = 0x7FFFFFFF;
@@ -1182,7 +1182,7 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
 void CEpgTimerSrvMain::AdjustRecModeRange(REC_SETTING_DATA& recSetting) const
 {
 	if( recSetting.IsNoRec() ){
-		CBlockLock lock(&this->settingLock);
+		lock_recursive_mutex lock(this->settingLock);
 		if( this->setting.fixNoRecToServiceOnly ){
 			recSetting.recMode = REC_SETTING_DATA::DIV_RECMODE;
 		}
@@ -1263,7 +1263,7 @@ bool CEpgTimerSrvMain::QueryShutdown(BYTE rebootFlag, BYTE suspendMode)
 
 bool CEpgTimerSrvMain::IsUserWorking() const
 {
-	CBlockLock lock(&this->settingLock);
+	lock_recursive_mutex lock(this->settingLock);
 
 	//最終入力時刻取得
 	LASTINPUTINFO lii;
@@ -1283,7 +1283,7 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 	bool found = false;
 	WCHAR ext[10] = {};
 	{
-		CBlockLock lock(&this->settingLock);
+		lock_recursive_mutex lock(this->settingLock);
 		if( this->setting.noShareFile ){
 			wcsncpy_s(ext, this->setting.tsExt.c_str(), _TRUNCATE);
 		}
@@ -1321,7 +1321,7 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 
 bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 {
-	CBlockLock lock(&this->settingLock);
+	lock_recursive_mutex lock(this->settingLock);
 
 	if( this->setting.noSuspendExeList.empty() == false ){
 		//Toolhelpスナップショットを作成する
@@ -1354,7 +1354,7 @@ vector<RESERVE_DATA>& CEpgTimerSrvMain::PreChgReserveData(vector<RESERVE_DATA>& 
 {
 	bool commentAutoAdd;
 	{
-		CBlockLock lock(&this->settingLock);
+		lock_recursive_mutex lock(this->settingLock);
 		commentAutoAdd = this->setting.commentAutoAdd;
 	}
 	if( commentAutoAdd ){
@@ -1400,7 +1400,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 	bool separateFixedTuners;
 	bool commentAutoAdd;
 	{
-		CBlockLock lock(&this->settingLock);
+		lock_recursive_mutex lock(this->settingLock);
 		autoAddHour = this->setting.autoAddHour;
 		chkGroupEvent = this->setting.chkGroupEvent;
 		separateFixedTuners = this->setting.separateFixedTuners;
@@ -1514,7 +1514,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 			}
 		}
 	}
-	CBlockLock lock(&this->autoAddLock);
+	lock_recursive_mutex lock(this->autoAddLock);
 	//addCountは参考程度の情報。保存もされないので更新を通知する必要はない
 	this->epgAutoAdd.SetAddCount(data.dataID, (DWORD)resultList.size());
 }
@@ -1786,7 +1786,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		{
 			WORD val;
 			if( cmd.ReadVALUE(&val) && sys->IsSuspendOK() ){
-				CBlockLock lock(&sys->settingLock);
+				lock_recursive_mutex lock(sys->settingLock);
 				//再起動フラグが0xFFのときはデフォルト動作に従う
 				PostMessage(sys->hwndMain, WM_APP_REQUEST_SHUTDOWN, LOBYTE(val), HIBYTE(val) == 0xFF ? sys->setting.reboot : (HIBYTE(val) != 0));
 				res.SetParam(CMD_SUCCESS);
@@ -1809,7 +1809,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			AddDebugLog(L"CMD2_EPG_SRV_ENUM_AUTO_ADD");
 			vector<EPG_AUTO_ADD_DATA> val;
 			{
-				CBlockLock lock(&sys->autoAddLock);
+				lock_recursive_mutex lock(sys->autoAddLock);
 				for( auto itr = sys->epgAutoAdd.GetMap().cbegin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
 					val.push_back(itr->second);
 				}
@@ -1823,7 +1823,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<EPG_AUTO_ADD_DATA> val;
 			if( cmd.ReadVALUE(&val) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						sys->AdjustRecModeRange(val[i].recSetting);
@@ -1843,7 +1843,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		{
 			vector<DWORD> val;
 			if( cmd.ReadVALUE(&val) ){
-				CBlockLock lock(&sys->autoAddLock);
+				lock_recursive_mutex lock(sys->autoAddLock);
 				for( size_t i = 0; i < val.size(); i++ ){
 					if( sys->epgAutoAdd.DelData(val[i]) ){
 						sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
@@ -1860,7 +1860,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<EPG_AUTO_ADD_DATA> val;
 			if( cmd.ReadVALUE(&val) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						sys->AdjustRecModeRange(val[i].recSetting);
@@ -1882,7 +1882,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			AddDebugLog(L"CMD2_EPG_SRV_ENUM_MANU_ADD");
 			vector<MANUAL_AUTO_ADD_DATA> val;
 			{
-				CBlockLock lock(&sys->autoAddLock);
+				lock_recursive_mutex lock(sys->autoAddLock);
 				for( auto itr = sys->manualAutoAdd.GetMap().cbegin(); itr != sys->manualAutoAdd.GetMap().end(); itr++ ){
 					val.push_back(itr->second);
 				}
@@ -1896,7 +1896,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<MANUAL_AUTO_ADD_DATA> val;
 			if( cmd.ReadVALUE(&val) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						sys->AdjustRecModeRange(val[i].recSetting);
@@ -1915,7 +1915,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		{
 			vector<DWORD> val;
 			if( cmd.ReadVALUE(&val) ){
-				CBlockLock lock(&sys->autoAddLock);
+				lock_recursive_mutex lock(sys->autoAddLock);
 				for( size_t i = 0; i < val.size(); i++ ){
 					sys->manualAutoAdd.DelData(val[i]);
 				}
@@ -1930,7 +1930,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<MANUAL_AUTO_ADD_DATA> val;
 			if( cmd.ReadVALUE(&val) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						sys->AdjustRecModeRange(val[i].recSetting);
@@ -2076,7 +2076,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 				for( int i = (int)idList.size() - 1; i >= 0; i-- ){
 					info.bonDriver = sys->reserveManager.GetTunerBonFileName(idList[i]);
 					{
-						CBlockLock lock(&sys->settingLock);
+						lock_recursive_mutex lock(sys->settingLock);
 						info.chInfo.useBonCh =
 							std::find_if(sys->setting.viewBonList.begin(), sys->setting.viewBonList.end(),
 							             [&](const wstring& a) { return UtilComparePath(a.c_str(), info.bonDriver.c_str()) == 0; }) != sys->setting.viewBonList.end();
@@ -2095,7 +2095,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		{
 			AddDebugLog(L"CMD2_EPG_SRV_GET_NOTIFY_LOG");
 			{
-				CBlockLock lock(&sys->settingLock);
+				lock_recursive_mutex lock(sys->settingLock);
 				if( sys->setting.saveNotifyLog == false ){
 					break;
 				}
@@ -2156,7 +2156,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 					bool nwtvTcp;
 					vector<DWORD> idUseList = sys->reserveManager.GetSupportServiceTuner(val.ONID, val.TSID, val.SID);
 					{
-						CBlockLock lock(&sys->settingLock);
+						lock_recursive_mutex lock(sys->settingLock);
 						if( cmd.GetParam() != CMD2_EPG_SRV_NWTV_SET_CH && val.useBonCh ){
 							//新コマンドではIDと送信モードを指定できる
 							nwtvID = val.space;
@@ -2214,7 +2214,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			AddDebugLog(L"CMD2_EPG_SRV_NWTV_MODE");
 			DWORD val;
 			if( cmd.ReadVALUE(&val) ){
-				CBlockLock lock(&sys->settingLock);
+				lock_recursive_mutex lock(sys->settingLock);
 				sys->nwtvUdp = val == 1 || val == 3;
 				sys->nwtvTcp = val == 2 || val == 3;
 				res.SetParam(CMD_SUCCESS);
@@ -2418,7 +2418,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			if( cmd.ReadVALUE(&ver) ){
 				vector<EPG_AUTO_ADD_DATA> val;
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					for( auto itr = sys->epgAutoAdd.GetMap().cbegin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
 						val.push_back(itr->second);
 					}
@@ -2435,7 +2435,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<EPG_AUTO_ADD_DATA> val;
 			if( cmd.ReadVALUE2WithVersion(&ver, &val) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						sys->AdjustRecModeRange(val[i].recSetting);
@@ -2459,7 +2459,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<EPG_AUTO_ADD_DATA> val;
 			if( cmd.ReadVALUE2WithVersion(&ver, &val) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						sys->AdjustRecModeRange(val[i].recSetting);
@@ -2484,7 +2484,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			if( cmd.ReadVALUE(&ver) ){
 				vector<MANUAL_AUTO_ADD_DATA> val;
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					for( auto itr = sys->manualAutoAdd.GetMap().cbegin(); itr != sys->manualAutoAdd.GetMap().end(); itr++ ){
 						val.push_back(itr->second);
 					}
@@ -2501,7 +2501,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<MANUAL_AUTO_ADD_DATA> val;
 			if( cmd.ReadVALUE2WithVersion(&ver, &val) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						sys->AdjustRecModeRange(val[i].recSetting);
@@ -2524,7 +2524,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<MANUAL_AUTO_ADD_DATA> val;
 			if( cmd.ReadVALUE2WithVersion(&ver, &val) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					for( size_t i = 0; i < val.size(); i++ ){
 						sys->AdjustRecModeRange(val[i].recSetting);
@@ -2644,7 +2644,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			EPG_AUTO_ADD_DATA item;
 			if( DeprecatedReadVALUE(&item, cmd.GetData(), cmd.GetDataSize()) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					sys->AdjustRecModeRange(item.recSetting);
 					item.dataID = sys->epgAutoAdd.AddData(item);
@@ -2663,7 +2663,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			res.SetParam(OLD_CMD_ERR);
 			EPG_AUTO_ADD_DATA item;
 			if( DeprecatedReadVALUE(&item, cmd.GetData(), cmd.GetDataSize()) ){
-				CBlockLock lock(&sys->autoAddLock);
+				lock_recursive_mutex lock(sys->autoAddLock);
 				if( sys->epgAutoAdd.DelData(item.dataID) ){
 					sys->autoAddCheckItr = sys->epgAutoAdd.GetMap().begin();
 				}
@@ -2679,7 +2679,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			EPG_AUTO_ADD_DATA item;
 			if( DeprecatedReadVALUE(&item, cmd.GetData(), cmd.GetDataSize()) ){
 				{
-					CBlockLock lock(&sys->autoAddLock);
+					lock_recursive_mutex lock(sys->autoAddLock);
 					vector<RESERVE_DATA> addList;
 					sys->AdjustRecModeRange(item.recSetting);
 					if( sys->epgAutoAdd.ChgData(item) ){
@@ -3290,13 +3290,17 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 	if( lua_gettop(L) == 3 ){
 		LPCSTR to = lua_tostring(L, 1);
 		LPCSTR from = lua_tostring(L, 2);
-		LPCSTR src = lua_tostring(L, 3);
+		size_t len;
+		LPCSTR src = lua_tolstring(L, 3, &len);
 		if( to && from && src ){
 			wstring wsrc;
 			if( CompareNoCase(from, "utf-8") == 0 ){
 				UTF8toW(src, wsrc);
 			}else if( CompareNoCase(from, "cp932") == 0 ){
 				AtoW(src, wsrc);
+			}else if( CompareNoCase(from, "utf-16le") == 0 ){
+				//srcは仕様により完全にアライメントされている
+				wsrc.assign((LPCWSTR)src, len / 2);
 			}else{
 				lua_pushnil(L);
 				return 1;
@@ -3309,6 +3313,10 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 				string dest;
 				WtoA(wsrc, dest);
 				lua_pushstring(L, dest.c_str());
+				return 1;
+			}else if( CompareNoCase(to, "utf-16le") == 0 ){
+				UTF8toW(ws.WtoUTF8(wsrc), wsrc);
+				lua_pushlstring(L, (LPCSTR)wsrc.c_str(), wsrc.size() * 2);
 				return 1;
 			}
 		}
@@ -3840,7 +3848,7 @@ int CEpgTimerSrvMain::LuaGetTunerReserveAll(lua_State* L)
 int CEpgTimerSrvMain::LuaEnumAutoAdd(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	CBlockLock lock(&ws.sys->autoAddLock);
+	lock_recursive_mutex lock(ws.sys->autoAddLock);
 	lua_newtable(L);
 	int i = 0;
 	for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ws.sys->epgAutoAdd.GetMap().begin(); itr != ws.sys->epgAutoAdd.GetMap().end(); itr++, i++ ){
@@ -3863,7 +3871,7 @@ int CEpgTimerSrvMain::LuaEnumAutoAdd(lua_State* L)
 int CEpgTimerSrvMain::LuaEnumManuAdd(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	CBlockLock lock(&ws.sys->autoAddLock);
+	lock_recursive_mutex lock(ws.sys->autoAddLock);
 	lua_newtable(L);
 	int i = 0;
 	for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ws.sys->manualAutoAdd.GetMap().begin(); itr != ws.sys->manualAutoAdd.GetMap().end(); itr++, i++ ){
@@ -3890,7 +3898,7 @@ int CEpgTimerSrvMain::LuaDelAutoAdd(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 1 ){
-		CBlockLock lock(&ws.sys->autoAddLock);
+		lock_recursive_mutex lock(ws.sys->autoAddLock);
 		if( ws.sys->epgAutoAdd.DelData((DWORD)lua_tointeger(L, -1)) ){
 			ws.sys->autoAddCheckItr = ws.sys->epgAutoAdd.GetMap().begin();
 			ws.sys->epgAutoAdd.SaveText();
@@ -3904,7 +3912,7 @@ int CEpgTimerSrvMain::LuaDelManuAdd(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 1 ){
-		CBlockLock lock(&ws.sys->autoAddLock);
+		lock_recursive_mutex lock(ws.sys->autoAddLock);
 		if( ws.sys->manualAutoAdd.DelData((DWORD)lua_tointeger(L, -1)) ){
 			ws.sys->manualAutoAdd.SaveText();
 			ws.sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
@@ -3927,7 +3935,7 @@ int CEpgTimerSrvMain::LuaAddOrChgAutoAdd(lua_State* L)
 				FetchRecSettingData(ws, item.recSetting);
 				bool modified = true;
 				{
-					CBlockLock lock(&ws.sys->autoAddLock);
+					lock_recursive_mutex lock(ws.sys->autoAddLock);
 					ws.sys->AdjustRecModeRange(item.recSetting);
 					if( item.dataID == 0 ){
 						item.dataID = ws.sys->epgAutoAdd.AddData(item);
@@ -3973,7 +3981,7 @@ int CEpgTimerSrvMain::LuaAddOrChgManuAdd(lua_State* L)
 			FetchRecSettingData(ws, item.recSetting);
 			bool modified = true;
 			{
-				CBlockLock lock(&ws.sys->autoAddLock);
+				lock_recursive_mutex lock(ws.sys->autoAddLock);
 				ws.sys->AdjustRecModeRange(item.recSetting);
 				if( item.dataID == 0 ){
 					item.dataID = ws.sys->manualAutoAdd.AddData(item);
@@ -4049,7 +4057,7 @@ int CEpgTimerSrvMain::LuaOpenNetworkTV(lua_State* L)
 		int nwtvID = (int)lua_tointeger(L, 5);
 		vector<DWORD> idUseList = ws.sys->reserveManager.GetSupportServiceTuner(onid, tsid, sid);
 		{
-			CBlockLock lock(&ws.sys->settingLock);
+			lock_recursive_mutex lock(ws.sys->settingLock);
 			for( size_t i = 0; i < idUseList.size(); ){
 				wstring bonDriver = ws.sys->reserveManager.GetTunerBonFileName(idUseList[i]);
 				if( std::find_if(ws.sys->setting.viewBonList.begin(), ws.sys->setting.viewBonList.end(),

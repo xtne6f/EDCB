@@ -33,8 +33,8 @@ void CTimeShiftUtil::Send(
 	NWPLAY_PLAY_INFO* val
 	)
 {
-	CBlockLock lock(&this->utilLock);
-	CBlockLock lock2(&this->ioLock);
+	lock_recursive_mutex lock(this->utilLock);
+	lock_recursive_mutex lock2(this->ioLock);
 
 	//送信先を設定する
 	WCHAR ip[64];
@@ -113,7 +113,7 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 	BOOL fileMode_
 	)
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 
 	StopTimeShift();
 
@@ -132,7 +132,7 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 
 BOOL CTimeShiftUtil::StartTimeShift()
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 
 	if( this->filePath.size() == 0 ){
 		return FALSE;
@@ -149,7 +149,7 @@ BOOL CTimeShiftUtil::StartTimeShift()
 
 void CTimeShiftUtil::StopTimeShift()
 {
-	CBlockLock lock(&this->utilLock);
+	lock_recursive_mutex lock(this->utilLock);
 
 	if( this->readThread.joinable() ){
 		this->readStopFlag = true;
@@ -165,7 +165,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 	CPacketInit packetInit;
 
 	{
-		CBlockLock lock(&sys->ioLock);
+		lock_recursive_mutex lock(sys->ioLock);
 		sys->readFile.reset(UtilOpenFile(sys->filePath, UTIL_SHARED_READ | UTIL_F_SEQUENTIAL));
 		if( !sys->readFile ){
 			return;
@@ -201,7 +201,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 				break;
 			}
 		}
-		CBlockLock lock(&sys->ioLock);
+		lock_recursive_mutex lock(sys->ioLock);
 
 		__int64 pos = _ftelli64(sys->readFile.get());
 		if( pos < 0 ){
@@ -282,7 +282,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		sys->sendTcp.AddSendData(data, dataSize);
 	}
 
-	CBlockLock lock(&sys->ioLock);
+	lock_recursive_mutex lock(sys->ioLock);
 	sys->seekFile.reset();
 	sys->readFile.reset();
 
@@ -373,8 +373,8 @@ __int64 CTimeShiftUtil::GetAvailableFileSize() const
 
 void CTimeShiftUtil::GetFilePos(__int64* filePos, __int64* fileSize)
 {
-	CBlockLock lock(&this->utilLock);
-	CBlockLock lock2(&this->ioLock);
+	lock_recursive_mutex lock(this->utilLock);
+	lock_recursive_mutex lock2(this->ioLock);
 
 	if( filePos != NULL ){
 		*filePos = this->currentFilePos;
@@ -386,8 +386,8 @@ void CTimeShiftUtil::GetFilePos(__int64* filePos, __int64* fileSize)
 
 void CTimeShiftUtil::SetFilePos(__int64 filePos)
 {
-	CBlockLock lock(&this->utilLock);
-	CBlockLock lock2(&this->ioLock);
+	lock_recursive_mutex lock(this->utilLock);
+	lock_recursive_mutex lock2(this->ioLock);
 
 	this->currentFilePos = filePos;
 }

@@ -251,7 +251,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
 		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
-				CBlockLock lock(&this->watchContext.lock);
+				lock_recursive_mutex lock(this->watchContext.lock);
 #ifdef _WIN32
 				CloseHandle(this->hTunerProcess);
 #endif
@@ -271,7 +271,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
 		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
-				CBlockLock lock(&this->watchContext.lock);
+				lock_recursive_mutex lock(this->watchContext.lock);
 #ifdef _WIN32
 				CloseHandle(this->hTunerProcess);
 #endif
@@ -811,9 +811,9 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	}
 	string outText;
 	if( this->saveProgramInfoAsUtf8 ){
-		WtoUTF8(ConvertEpgInfoText2(&info, serviceName), outText);
+		WtoUTF8(ConvertProgramText(info, serviceName), outText);
 	}else{
-		WtoA(ConvertEpgInfoText2(&info, serviceName), outText);
+		WtoA(ConvertProgramText(info, serviceName), outText);
 	}
 
 	//※原作と異なりディレクトリの自動生成はしない
@@ -1235,7 +1235,7 @@ void CTunerBankCtrl::CloseTuner()
 				AddDebugLogFormat(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x", L"CloseTuner()", this->tunerID);
 			}
 		}
-		CBlockLock lock(&this->watchContext.lock);
+		lock_recursive_mutex lock(this->watchContext.lock);
 #ifdef _WIN32
 		CloseHandle(this->hTunerProcess);
 #endif
@@ -1288,7 +1288,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 					WaitForSingleObject(this->hTunerProcess, 10000);
 					closed = true;
 				}
-				CBlockLock lock(&this->watchContext.lock);
+				lock_recursive_mutex lock(this->watchContext.lock);
 				CloseHandle(this->hTunerProcess);
 				this->tunerPid = 0;
 			}
@@ -1309,7 +1309,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 					WaitForSingleObject(this->hTunerProcess, 10000);
 					closed = true;
 				}
-				CBlockLock lock(&this->watchContext.lock);
+				lock_recursive_mutex lock(this->watchContext.lock);
 				CloseHandle(this->hTunerProcess);
 				this->tunerPid = 0;
 			}
@@ -1373,7 +1373,7 @@ void CTunerBankCtrl::Watch()
 {
 	//チューナがフリーズするような非常事態ではCSendCtrlCmdのタイムアウトは当てにならない
 	//CWatchBlockで囲われた区間を40秒のタイムアウトで監視して、必要なら強制終了する
-	CBlockLock lock(&this->watchContext.lock);
+	lock_recursive_mutex lock(this->watchContext.lock);
 	if( this->watchContext.count != 0 && GetTickCount() - this->watchContext.tick > 40000 ){
 		if( this->tunerPid ){
 #ifdef _WIN32
@@ -1390,7 +1390,7 @@ void CTunerBankCtrl::Watch()
 CTunerBankCtrl::CWatchBlock::CWatchBlock(WATCH_CONTEXT* context_)
 	: context(context_)
 {
-	CBlockLock lock(&this->context->lock);
+	lock_recursive_mutex lock(this->context->lock);
 	if( ++this->context->count == 1 ){
 		this->context->tick = GetTickCount();
 	}
@@ -1398,6 +1398,6 @@ CTunerBankCtrl::CWatchBlock::CWatchBlock(WATCH_CONTEXT* context_)
 
 CTunerBankCtrl::CWatchBlock::~CWatchBlock()
 {
-	CBlockLock lock(&this->context->lock);
+	lock_recursive_mutex lock(this->context->lock);
 	this->context->count--;
 }

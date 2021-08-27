@@ -117,7 +117,7 @@ BOOL CWriteTSFile::AddTSBuff(
 	BOOL ret = TRUE;
 
 	{
-		CBlockLock lock(&this->outThreadLock);
+		lock_recursive_mutex lock(this->outThreadLock);
 		while( size != 0 ){
 			if( this->tsFreeList.empty() ){
 				//バッファを増やす
@@ -216,7 +216,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	while( sys->outStopState == 0 ){
 		//バッファからデータ取り出し
 		{
-			CBlockLock lock(&sys->outThreadLock);
+			lock_recursive_mutex lock(sys->outThreadLock);
 			if( data.empty() == false ){
 				//返却
 				data.front().clear();
@@ -236,7 +236,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 						if( sys->fileList[i]->writeUtil.Write(data.front().data(), dataSize, &write) == FALSE ){
 							//空きがなくなった
 							if( i == 0 ){
-								CBlockLock lock(&sys->outThreadLock);
+								lock_recursive_mutex lock(sys->outThreadLock);
 								if( sys->writeTotalSize >= 0 ){
 									//出力サイズの加算を停止する
 									sys->writeTotalSize = -(sys->writeTotalSize + 1);
@@ -270,7 +270,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 							//原作では成否にかかわらずwriteTotalSizeにdataSizeを加算しているが
 							//出力サイズの利用ケース的にはmainSaveFilePathと一致させないとおかしいと思うので、そのように変更した
 							if( i == 0 ){
-								CBlockLock lock(&sys->outThreadLock);
+								lock_recursive_mutex lock(sys->outThreadLock);
 								if( sys->writeTotalSize >= 0 ){
 									sys->writeTotalSize += dataSize;
 								}
@@ -287,7 +287,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 
 	//残っているバッファを書き出し
 	{
-		CBlockLock lock(&sys->outThreadLock);
+		lock_recursive_mutex lock(sys->outThreadLock);
 		if( sys->tsFreeList.empty() == false && sys->tsFreeList.front().empty() == false ){
 			sys->tsBuffList.splice(sys->tsBuffList.end(), sys->tsFreeList, sys->tsFreeList.begin());
 		}
@@ -324,7 +324,7 @@ void CWriteTSFile::GetRecWriteSize(
 	)
 {
 	if( writeSize != NULL ){
-		CBlockLock lock(&this->outThreadLock);
+		lock_recursive_mutex lock(this->outThreadLock);
 		*writeSize = this->writeTotalSize < 0 ? -(this->writeTotalSize + 1) : this->writeTotalSize;
 	}
 }

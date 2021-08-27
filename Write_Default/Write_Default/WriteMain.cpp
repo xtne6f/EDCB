@@ -91,7 +91,7 @@ BOOL CWriteMain::Stop(
 				AddDebugLogFormat(L"★WriteFile Err:0x%08X", GetLastError());
 			}else{
 				this->writeBuff.erase(this->writeBuff.begin(), this->writeBuff.begin() + write);
-				CBlockLock lock(&this->wroteLock);
+				lock_recursive_mutex lock(this->wroteLock);
 				this->wrotePos += write;
 			}
 			//未出力のバッファは再Start()に備えて繰り越す
@@ -143,7 +143,7 @@ BOOL CWriteMain::Write(
 					return FALSE;
 				}
 				this->writeBuff.erase(this->writeBuff.begin(), this->writeBuff.begin() + write);
-				CBlockLock lock(&this->wroteLock);
+				lock_recursive_mutex lock(this->wroteLock);
 				this->wrotePos += write;
 			}
 			if( this->writeBuff.empty() == false || size == 0 ){
@@ -161,7 +161,7 @@ BOOL CWriteMain::Write(
 				return FALSE;
 			}
 			*writeSize += write;
-			CBlockLock lock(&this->wroteLock);
+			lock_recursive_mutex lock(this->wroteLock);
 			this->wrotePos += write;
 		}else{
 			//バッファにコピー
@@ -217,7 +217,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 					for(;;){
 						__int64 readablePos;
 						{
-							CBlockLock lock(&sys->wroteLock);
+							lock_recursive_mutex lock(sys->wroteLock);
 							readablePos = sys->wrotePos - sys->teeDelay;
 						}
 						LARGE_INTEGER liPos = {};

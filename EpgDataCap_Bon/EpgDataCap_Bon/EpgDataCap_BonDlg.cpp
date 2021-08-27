@@ -462,7 +462,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					EPGDB_EVENT_INFO eventInfo;
 					if( this->bonCtrl.GetEpgInfo(onid, tsid, this->bonCtrl.GetNWCtrlServiceID(),
 					                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) == NO_ERR ){
-						info = ConvertEpgInfoText(&eventInfo);
+						info = ConvertEpgInfoText(eventInfo);
 					}
 				}
 				vector<WCHAR> pgInfo(info.size() + 2);
@@ -1219,7 +1219,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 	if( this->bonCtrl.GetStreamID(&onid, &tsid) &&
 	    this->bonCtrl.GetEpgInfo(onid, tsid, this->bonCtrl.GetNWCtrlServiceID(),
 	                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) == NO_ERR ){
-		info = ConvertEpgInfoText(&eventInfo);
+		info = ConvertEpgInfoText(eventInfo);
 	}
 	SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
 }

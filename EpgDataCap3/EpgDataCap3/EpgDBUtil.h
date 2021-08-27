@@ -180,6 +180,7 @@ protected:
 	int GetCaptionInfo(const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
 	void AddBasicInfo(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent, WORD onid, WORD tsid);
 	void AddShortEvent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
+	static void EscapeHyphenSpaceAndAppend(wstring& text, const wstring& appendText);
 	BOOL AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent);
 	static void AddContent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
 	void AddComponent(EPGDB_EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);

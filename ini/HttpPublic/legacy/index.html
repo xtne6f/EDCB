@@ -22,20 +22,32 @@ ct:Append([=[
     <li><a href="epglist.html">リスト番組表</a></li>
     <!--<li><a href="addprogres.html">プログラム予約追加(必要なら自作してください)</a></li>-->
     <li><a href="storage.html">ストレージ</a></li>
-    <li><a href="notifylog.lua?c=8192">情報通知ログ</a></li>
-    <li><a href="debuglog.lua?c=8192">デバッグ出力</a></li>
-    <li><a href="]=]..PathToRoot()..[=[video/">/video/</a></li>
+    <li><a href="showlog.lua?c=8192">情報通知ログ</a></li>
+    <li><a href="showlog.lua?c=8192&amp;t=d">デバッグ出力</a></li>
+    <li><a href="library.html">ライブラリ</a></li>
   </ul>
 </div>
 <div class="aside">
+]=])
+
+if INDEX_ENABLE_SUSPEND then
+ct:Append([=[
   <form method="POST" action="index.html">
     <div>
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+]=]..(INDEX_SUSPEND_USE_HIBERNATE and [=[
+      <input type="hidden" name="hibernate" value="y">
+      <input type="submit" value="システム休止">
+]=] or [=[
       <input type="hidden" name="suspend" value="y">
-      <!--<input type="hidden" name="hibernate" value="y">-->
       <input type="submit" value="システムスタンバイ">
+]=])..[=[
     </div>
   </form>
+]=])
+end
+
+ct:Append([=[
   <form method="POST" action="index.html">
     <div>
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
@@ -55,9 +67,7 @@ ct:Append([=[
 post=AssertPost()
 if post then
   if mg.get_var(post,'suspend') or mg.get_var(post,'hibernate') then
-    --利用する場合は下のコメントアウトを解除
-    --enabled=true
-    if enabled then
+    if INDEX_ENABLE_SUSPEND then
       for i=1,100 do
         f=edcb.io.open('\\\\.\\pipe\\EpgTimerSrvNoWaitPipe','r+b')
         if f then
@@ -73,7 +83,7 @@ if post then
         edcb.Sleep(10)
       end
     end
-    ct:Append('  <div id="result">スタンバイに移行'..(ok and 'します' or 'できません '..(enabled and '(もうすぐ予約が始まるなど)' or '(スクリプトのコメントアウトを解除してください)'))..'</div>\n')
+    ct:Append('  <div id="result">スタンバイに移行'..(ok and 'します' or 'できません (もうすぐ予約が始まるなど)')..'</div>\n')
   elseif mg.get_var(post,'epgcap') then
     ct:Append('  <div id="result">EPG取得を開始'..(edcb.EpgCapNow() and 'しました' or 'できませんでした')..'</div>\n')
   elseif mg.get_var(post,'epgreload') then

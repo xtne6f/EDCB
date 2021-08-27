@@ -74,22 +74,34 @@ DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid)
 	return 19 * 1024;
 }
 
+namespace
+{
+//文字列とCR+LFを追加する。追加するもの以上の長さのCR+LFが文字列にあれば減らす
+void ReduceCrLfAndAppend(wstring& text, const wstring& appendText, LPCWSTR crlf)
+{
+	size_t i = text.size();
+	text += appendText;
+	text += crlf;
+	for( size_t j; (j = text.find(crlf, i)) != wstring::npos; ){
+		text.erase(j, 2);
+	}
+	text += L"\r\n";
+}
+}
+
 //EPG情報をTextに変換
-wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceName, const wstring* extraText)
+wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO& info, const wstring* serviceName, const wstring* extraText)
 {
 	wstring text;
-	if( info == NULL ){
-		return text;
-	}
 
 	text = L"未定";
-	if( info->StartTimeFlag ){
-		SYSTEMTIME st = info->start_time;
+	if( info.StartTimeFlag ){
+		SYSTEMTIME st = info.start_time;
 		Format(text, L"%04d/%02d/%02d(%ls) %02d:%02d",
 		       st.wYear, st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 		wstring time = L" ～ 未定";
-		if( info->DurationFlag ){
-			ConvertSystemTime(ConvertI64Time(st) + info->durationSec * I64_1SEC, &st);
+		if( info.DurationFlag ){
+			ConvertSystemTime(ConvertI64Time(st) + info.durationSec * I64_1SEC, &st);
 			Format(time, L"～%02d:%02d", st.wHour, st.wMinute);
 		}
 		text += time;
@@ -100,28 +112,23 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, const wstring* serviceN
 		text += L"\r\n";
 	}
 
-	if( info->hasShortInfo ){
-		text += info->shortInfo.event_name;
-		text += L"\r\n\r\n";
-		text += info->shortInfo.text_char;
-		text += L"\r\n\r\n";
-	}
+	ReduceCrLfAndAppend(text, info.hasShortInfo ? info.shortInfo.event_name : wstring(), L"\r\n\r\n");
+	ReduceCrLfAndAppend(text, info.hasShortInfo ? info.shortInfo.text_char : wstring(), L"\r\n\r\n");
 
-	if( info->hasExtInfo ){
+	if( info.hasExtInfo ){
 		text += L"詳細情報\r\n";
-		text += info->extInfo.text_char;
-		text += L"\r\n\r\n";
+		ReduceCrLfAndAppend(text, info.extInfo.text_char, L"\r\n\r\n\r\n");
 	}
 
 	if( extraText != NULL ){
 		text += *extraText;
 	}
-	wstring buff = L"";
+	wstring buff;
 	Format(buff, L"OriginalNetworkID:%d(0x%04X)\r\nTransportStreamID:%d(0x%04X)\r\nServiceID:%d(0x%04X)\r\nEventID:%d(0x%04X)\r\n",
-		info->original_network_id, info->original_network_id,
-		info->transport_stream_id, info->transport_stream_id,
-		info->service_id, info->service_id,
-		info->event_id, info->event_id);
+		info.original_network_id, info.original_network_id,
+		info.transport_stream_id, info.transport_stream_id,
+		info.service_id, info.service_id,
+		info.event_id, info.event_id);
 	text += buff;
 	return text;
 }
@@ -416,42 +423,32 @@ LPCWSTR GetComponentTypeName(BYTE content, BYTE type)
 }
 
 //EPG情報をTextに変換
-wstring ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, const wstring& serviceName)
+wstring ConvertProgramText(const EPGDB_EVENT_INFO& info, const wstring& serviceName)
 {
 	wstring text;
-	if( info == NULL ){
-		return text;
-	}
 
-	if( info->hasContentInfo ){
+	if( info.hasContentInfo ){
 		text+=L"ジャンル : \r\n";
-		AppendEpgContentInfoText(text, *info);
+		AppendEpgContentInfoText(text, info);
 		text+=L"\r\n";
 	}
 
-	if( info->hasComponentInfo ){
+	if( info.hasComponentInfo ){
 		text+=L"映像 : ";
-		AppendEpgComponentInfoText(text, *info);
+		AppendEpgComponentInfoText(text, info);
 		text+=L"\r\n";
 	}
 
-	if( info->hasAudioInfo ){
+	if( info.hasAudioInfo ){
 		text+=L"音声 : ";
-		AppendEpgAudioComponentInfoText(text, *info);
+		AppendEpgAudioComponentInfoText(text, info);
 	}
 
 	text+=L"\r\n";
-	if (!(0x7880 <= info->original_network_id && info->original_network_id <= 0x7FE8)){
-		if (info->freeCAFlag == 0)
-        {
-            text += L"無料放送\r\n";
-        }
-        else
-        {
-            text += L"有料放送\r\n";
-        }
-        text += L"\r\n";
-    }
+	if( !(0x7880 <= info.original_network_id && info.original_network_id <= 0x7FE8) ){
+		text += info.freeCAFlag == 0 ? L"無料放送" : L"有料放送";
+		text += L"\r\n\r\n";
+	}
 
 	return ConvertEpgInfoText(info, &serviceName, &text);
 }

@@ -1,9 +1,4 @@
 -- vim:set ft=lua:
-HIDE_SERVICES={
-  --非表示にしたいサービスを['ONID-TSID-SID']=true,のように指定
-  --['1-2345-6789']=true,
-}
-
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
@@ -107,32 +102,27 @@ if sid==0 then
     <input type="hidden" name="ctok" value="]=]..CsrfToken('view.lua')..[=[">
     <input type="hidden" name="n" value="0">
     <input type="hidden" name="id" value="0-0-0">
-    <input type="submit" value="view.lua -nwtv0 -term">
+    <input type="submit" value="view -nwtv0 -term">
   </div></form>]=])
 else
-  audio2=GetVarInt(mg.request_info.query_string,'audio2')==1
-  dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
-  cinema=GetVarInt(mg.request_info.query_string,'cinema')==1
-  ct:Append('視聴 →<a href="epglist.html?id='..onid..'-'..tsid..'-'..sid
-    ..(audio2 and '&amp;audio2=1' or '')..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')
-    ..'&amp;vtag='..(vtag==0 and '-1#footer">Video' or '0#footer">DL')..'</a>\n'
+  xq=GetTranscodeQueries(mg.request_info.query_string)
+  ct:Append('視聴 →<a href="epglist.html?id='..onid..'-'..tsid..'-'..sid..'&amp;vtag='..(vtag==0 and '-1' or '0')
+    ..ConstructTranscodeQueries(xq)
+    ..'#footer">'..(vtag==0 and 'Video' or 'DL')..'</a>\n'
     ..'<form method="GET" action="'..(vtag==0 and 'view.lua' or 'epglist.html#footer')..'"><div>\n'
-    ..'<input type="submit" value="view.lua -nwtv0">\n'
-    ..'<input type="checkbox" name="audio2" value="1"'..(audio2 and ' checked' or '')..'>audio2\n'
-    ..'<select name="dual">'
-    ..'<option value="0"'..(dual~=1 and dual~=2 and ' selected' or '')..'>*'
-    ..'<option value="1"'..(dual==1 and ' selected' or '')..'>dual-main'
-    ..'<option value="2"'..(dual==2 and ' selected' or '')..'>dual-sub'
-    ..'</select>\n'
-    ..'<input type="checkbox" name="cinema" value="1"'..(cinema and ' checked' or '')..'>cinema\n'
+    ..'<input type="submit" value="view -nwtv0">\n'
+    ..TranscodeSettingTemplete(xq)
     ..'<input type="hidden" name="id" value="'..onid..'-'..tsid..'-'..sid..'">\n'
     ..(vtag==0 and '<input type="hidden" name="n" value="0">\n<input type="hidden" name="ctok" value="'..CsrfToken('view.lua')..'">\n'
          or '<input type="hidden" name="vtag" value="1">\n')
     ..'</div></form>')
   if vtag==1 then
-    ct:Append('\n<video autoplay controls style="max-width:95%" src="view.lua?n=0&amp;id='..onid..'-'..tsid..'-'..sid
-      ..(audio2 and '&amp;audio2=1' or '')..(dual and '&amp;dual='..dual or '')..(cinema and '&amp;cinema=1' or '')
-      ..'&amp;ctok='..CsrfToken('view.lua')..'">view.lua -nwtv0</video>')
+    src='view.lua?n=0&amp;id='..onid..'-'..tsid..'-'..sid..ConstructTranscodeQueries(xq)..'&amp;ctok='..CsrfToken('view.lua')
+    ct:Append('\n<div class="video-full-container" id="vid-full"><div class="video-container" id="vid-cont">'
+      ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view -nwtv0</video></div></div>')
+    if ALLOW_HLS then
+      ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))
+    end
   end
 end
 ct:Append([=[
