@@ -117,11 +117,11 @@ private:
 	{
 	public:
 		CRefLock(pair<int, recursive_mutex_*>* ref_) : ref(ref_) {
-			CBlockLock lock(ref->second);
+			lock_recursive_mutex lock(*ref->second);
 			++ref->first;
 		}
 		~CRefLock() {
-			CBlockLock lock(ref->second);
+			lock_recursive_mutex lock(*ref->second);
 			--ref->first;
 		}
 	private:

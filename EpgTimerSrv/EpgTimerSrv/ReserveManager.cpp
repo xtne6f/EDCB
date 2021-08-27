@@ -79,7 +79,7 @@ void CReserveManager::Finalize()
 
 void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	fs_path commonIniPath = GetCommonIniPath();
 
@@ -103,7 +103,7 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 
 vector<RESERVE_DATA> CReserveManager::GetReserveDataAll(bool getRecFileName) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	vector<RESERVE_DATA> list;
 	list.reserve(this->reserveText.GetMap().size());
@@ -117,7 +117,7 @@ vector<RESERVE_DATA> CReserveManager::GetReserveDataAll(bool getRecFileName) con
 
 vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	vector<TUNER_RESERVE_INFO> list;
 	list.reserve(this->tunerBankMap.size() + 1);
@@ -144,7 +144,7 @@ vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 
 vector<DWORD> CReserveManager::GetNoTunerReserveAll() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	vector<DWORD> list;
 	list.reserve(this->reserveText.GetMap().size());
@@ -171,7 +171,7 @@ vector<DWORD> CReserveManager::GetNoTunerReserveAll() const
 
 bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName, CReNamePlugInUtil* util) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(id);
 	if( itr != this->reserveText.GetMap().end() ){
@@ -204,7 +204,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 
 bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	bool modified = false;
 	__int64 minStartTime = LLONG_MAX;
@@ -249,7 +249,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 
 bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	bool modified = false;
 	__int64 minStartTime = LLONG_MAX;
@@ -399,7 +399,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 
 void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	vector<CTunerBankCtrl::CHECK_RESULT> retList;
 	__int64 minStartTime = LLONG_MAX;
@@ -446,7 +446,7 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) cons
 	wstring folder;
 	bool folderOnly;
 	{
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 		infoList.reserve(this->recInfoText.GetMap().size());
 		for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
 			infoList.push_back(itr->second);
@@ -470,7 +470,7 @@ bool CReserveManager::GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getE
 	wstring folder;
 	bool folderOnly;
 	{
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 		map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().find(id);
 		if( itr == this->recInfoText.GetMap().end() ){
 			return false;
@@ -490,7 +490,7 @@ bool CReserveManager::GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getE
 
 void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	for( size_t i = 0; i < idList.size(); i++ ){
 		this->recInfoText.DelRecInfo(idList[i]);
@@ -501,7 +501,7 @@ void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
 
 void CReserveManager::ChgPathRecFileInfo(const vector<REC_FILE_INFO>& infoList)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	for( size_t i = 0; i < infoList.size(); i++ ){
 		this->recInfoText.ChgPathRecInfo(infoList[i].id, infoList[i].recFilePath.c_str());
@@ -512,7 +512,7 @@ void CReserveManager::ChgPathRecFileInfo(const vector<REC_FILE_INFO>& infoList)
 
 void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	for( size_t i = 0; i < infoList.size(); i++ ){
 		this->recInfoText.ChgProtectRecInfo(infoList[i].id, infoList[i].protectFlag);
@@ -523,7 +523,7 @@ void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoLis
 
 void CReserveManager::ReloadBankMap(__int64 reloadTime)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	if( reloadTime == LLONG_MAX ){
 		return;
@@ -734,7 +734,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 
 __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const
 {
-	//CBlockLock lock(&this->managerLock);
+	//lock_recursive_mutex lock(this->managerLock);
 
 	__int64 distanceSameCh[] = { LLONG_MAX, LLONG_MAX };
 	__int64 distanceOtherCh[] = { LLONG_MAX, LLONG_MAX };
@@ -812,7 +812,7 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 
 void CReserveManager::CalcEntireReserveTime(__int64* startTime, __int64* endTime, const RESERVE_DATA& data) const
 {
-	//CBlockLock lock(&this->managerLock);
+	//lock_recursive_mutex lock(this->managerLock);
 
 	__int64 startTime_ = ConvertI64Time(data.startTime);
 	__int64 endTime_ = startTime_ + data.durationSecond * I64_1SEC;
@@ -853,7 +853,7 @@ wstring CReserveManager::GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo,
 
 void CReserveManager::CheckTuijyu()
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	vector<RESERVE_DATA> chgList;
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
@@ -905,7 +905,7 @@ void CReserveManager::CheckTuijyuTuner()
 	vector<DWORD> chkChList;
 	//tunerBankMapそのものは排他制御の対象外
 	for( auto itrBank = this->tunerBankMap.cbegin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 
 		WORD onid, tsid;
 		if( itrBank->second->GetCurrentChID(&onid, &tsid) == false ){
@@ -1143,7 +1143,7 @@ void CReserveManager::CheckTuijyuTuner()
 
 void CReserveManager::CheckAutoDel() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	if( this->setting.autoDel == false ){
 		return;
@@ -1246,7 +1246,7 @@ void CReserveManager::CheckAutoDel() const
 
 void CReserveManager::CheckOverTimeReserve()
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	bool modified = false;
 	__int64 now = GetNowI64Time();
@@ -1410,7 +1410,7 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 	bool isEpgCap = false;
 	//tunerBankMapそのものは排他制御の対象外
 	for( auto itrBank = this->tunerBankMap.cbegin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 
 		// チューナの予約状態遷移を行い、予約終了をチェックする
 		vector<DWORD> startedReserveIDList;
@@ -1452,7 +1452,7 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 		this->shutdownModePending = -1;
 		return std::make_pair(CHECK_NEED_SHUTDOWN, shutdownMode);
 	}else if( this->reserveModified ){
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 		if( this->reserveModified ){
 			this->reserveModified = false;
 			return std::make_pair(CHECK_RESERVE_MODIFIED, 0);
@@ -1463,7 +1463,7 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 
 vector<CTunerBankCtrl*> CReserveManager::GetEpgCapTunerList(__int64 now) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	//利用可能なチューナの抽出
 	vector<CTunerBankCtrl*> tunerList;
@@ -1498,7 +1498,7 @@ vector<CTunerBankCtrl*> CReserveManager::GetEpgCapTunerList(__int64 now) const
 
 bool CReserveManager::RequestStartEpgCap()
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	if( this->epgCapRequested || this->epgCapWork || GetEpgCapTunerList(GetNowI64Time()).empty() ){
 		return false;
@@ -1509,7 +1509,7 @@ bool CReserveManager::RequestStartEpgCap()
 
 bool CReserveManager::CheckEpgCap(bool isEpgCap)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	bool doneEpgCap = false;
 	__int64 now = GetNowI64Time();
@@ -1674,7 +1674,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 
 bool CReserveManager::IsActive() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	if( this->epgCapRequested || this->epgCapWork ||
 	    this->batManager.IsWorking() ||
@@ -1691,7 +1691,7 @@ bool CReserveManager::IsActive() const
 
 __int64 CReserveManager::GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* reserveData) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	//最も近い予約開始時刻を得る
 	__int64 nextRec = LLONG_MAX;
@@ -1718,7 +1718,7 @@ __int64 CReserveManager::GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* rese
 
 __int64 CReserveManager::GetNearestRecReserveTime() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	__int64 minTime = LLONG_MAX;
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
@@ -1734,7 +1734,7 @@ __int64 CReserveManager::GetNearestRecReserveTime() const
 
 __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	SYSTEMTIME st;
 	ConvertSystemTime(now, &st);
@@ -1763,7 +1763,7 @@ __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) con
 
 bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
 
@@ -1815,7 +1815,7 @@ wstring CReserveManager::GetTunerBonFileName(DWORD tunerID) const
 
 bool CReserveManager::IsOpenTuner(DWORD tunerID) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	auto itr = this->tunerBankMap.find(tunerID);
 	return itr != this->tunerBankMap.end() && itr->second->GetState() != CTunerBankCtrl::TR_IDLE;
@@ -1823,7 +1823,7 @@ bool CReserveManager::IsOpenTuner(DWORD tunerID) const
 
 pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, WORD onid, WORD tsid, WORD sid, const vector<DWORD>& tunerIDList)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	SET_CH_INFO chInfo = {};
 	chInfo.useSID = TRUE;
@@ -1856,7 +1856,7 @@ pair<bool, int> CReserveManager::OpenNWTV(int id, bool nwUdp, bool nwTcp, WORD o
 
 pair<bool, int> CReserveManager::IsOpenNWTV(int id) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV && itr->second->GetNWTVID() == id ){
@@ -1868,7 +1868,7 @@ pair<bool, int> CReserveManager::IsOpenNWTV(int id) const
 
 bool CReserveManager::CloseNWTV(int id)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV && itr->second->GetNWTVID() == id ){
@@ -1881,7 +1881,7 @@ bool CReserveManager::CloseNWTV(int id)
 
 bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetRecFilePath(reserveID, filePath) ){
@@ -1893,7 +1893,7 @@ bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath) const
 
 bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 	bool ret = false;
 
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
@@ -1974,7 +1974,7 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 
 bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	vector<RESERVE_DATA> chgList;
 	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
@@ -1996,7 +1996,7 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid, 
 
 bool CReserveManager::GetChData(WORD onid, WORD tsid, WORD sid, CH_DATA5* chData) const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	map<LONGLONG, CH_DATA5>::const_iterator itr = this->chUtil.GetMap().find(Create64Key(onid, tsid, sid));
 	if( itr != this->chUtil.GetMap().end() ){
@@ -2008,7 +2008,7 @@ bool CReserveManager::GetChData(WORD onid, WORD tsid, WORD sid, CH_DATA5* chData
 
 vector<CH_DATA5> CReserveManager::GetChDataList() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	vector<CH_DATA5> list;
 	list.reserve(this->chUtil.GetMap().size());

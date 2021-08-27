@@ -31,7 +31,7 @@ CTSOut::~CTSOut(void)
 
 void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	this->chChangeState = CH_ST_WAIT_PAT;
 	this->chChangeTime = GetTickCount();
@@ -39,7 +39,7 @@ void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 	this->decodeUtil.UnLoadDll();
 
 	if( resetEpgUtil == TRUE ){
-		CBlockLock lock2(&this->epgUtilLock);
+		lock_recursive_mutex lock2(this->epgUtilLock);
 		//EpgDataCap3は内部メソッド単位でアトミック。初期化以外はobjLockかepgUtilLockのどちらかを獲得すればよい
 		this->epgUtil.UnInitialize();
 		this->epgUtil.Initialize(FALSE);
@@ -49,7 +49,7 @@ void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 
 BOOL CTSOut::IsChUnknown(DWORD* elapsedTime)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	if( this->chChangeState != CH_ST_DONE ){
 		if( elapsedTime != NULL ){
@@ -62,7 +62,7 @@ BOOL CTSOut::IsChUnknown(DWORD* elapsedTime)
 
 BOOL CTSOut::GetStreamID(WORD* ONID, WORD* TSID)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	if( this->chChangeState == CH_ST_DONE ){
 		*ONID = this->lastONID;
@@ -96,7 +96,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 {
 	//dataは同期済みかつそのサイズは188の整数倍であること
 
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 	if( dataSize == 0 || data == NULL ){
 		return;
 	}
@@ -159,7 +159,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						if( packet.PID < BON_SELECTIVE_PID ){
 							ParseEpgPacket(data + i, packet);
 						}else{
-							CBlockLock lock2(&this->epgUtilLock);
+							lock_recursive_mutex lock2(this->epgUtilLock);
 							if( this->logoAdditionalNeededPids ){
 								for( const WORD* pid = this->logoAdditionalNeededPids; *pid; pid++ ){
 									if( *pid == packet.PID ){
@@ -227,7 +227,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	{
 		for( auto itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
 			itrService->second->AddTSBuff(decodeData, decodeSize, [this](WORD onid, WORD tsid, WORD sid) -> int {
-				CBlockLock lock2(&this->epgUtilLock);
+				lock_recursive_mutex lock2(this->epgUtilLock);
 				EPG_EVENT_INFO* epgInfo;
 				return this->epgUtil.GetEpgInfo(onid, tsid, sid, FALSE, &epgInfo) == NO_ERR ? epgInfo->event_id : -1;
 			});
@@ -332,7 +332,7 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 
 void CTSOut::CheckLogo(DWORD logoTypeFlags, CHECK_LOGO_RESULT& result)
 {
-	CBlockLock lock(&this->epgUtilLock);
+	lock_recursive_mutex lock(this->epgUtilLock);
 
 	this->epgUtil.SetLogoTypeFlags(logoTypeFlags, &this->logoAdditionalNeededPids);
 	result.dataUpdated = false;
@@ -389,7 +389,7 @@ BOOL CTSOut::StartSaveEPG(
 	const wstring& epgFilePath_
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 	if( this->epgFile != NULL ){
 		return FALSE;
 	}
@@ -418,7 +418,7 @@ void CTSOut::StopSaveEPG(
 	BOOL copy
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 	if( this->epgFile == NULL ){
 		return;
 	}
@@ -440,7 +440,7 @@ EPG_SECTION_STATUS CTSOut::GetSectionStatus(
 	BOOL l_eitFlag
 	)
 {
-	CBlockLock lock(&this->epgUtilLock);
+	lock_recursive_mutex lock(this->epgUtilLock);
 
 	return this->epgUtil.GetSectionStatus(l_eitFlag);
 }
@@ -453,7 +453,7 @@ pair<EPG_SECTION_STATUS, BOOL> CTSOut::GetSectionStatusService(
 	BOOL l_eitFlag
 	)
 {
-	CBlockLock lock(&this->epgUtilLock);
+	lock_recursive_mutex lock(this->epgUtilLock);
 
 	return this->epgUtil.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
 }
@@ -467,7 +467,7 @@ BOOL CTSOut::SetEmm(
 	BOOL enable
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	try{
 		if( this->chChangeState == CH_ST_DONE ){
@@ -493,7 +493,7 @@ BOOL CTSOut::SetEmm(
 // 処理数
 DWORD CTSOut::GetEmmCount()
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	return this->decodeUtil.GetEmmCount();
 }
@@ -507,7 +507,7 @@ BOOL CTSOut::GetLoadStatus(
 	wstring& loadErrDll
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	return this->decodeUtil.GetLoadStatus(loadErrDll);
 }
@@ -521,7 +521,7 @@ DWORD CTSOut::GetServiceListActual(
 	const std::function<void(DWORD, SERVICE_INFO*)>& funcGetList
 	)
 {
-	CBlockLock lock(&this->epgUtilLock);
+	lock_recursive_mutex lock(this->epgUtilLock);
 
 	DWORD serviceListSize;
 	SERVICE_INFO* serviceList;
@@ -580,7 +580,7 @@ DWORD CTSOut::CreateServiceCtrl(
 	BOOL sendUdpTcp
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = this->serviceUtilMap.insert(
 		std::make_pair(GetNextID(), std::unique_ptr<COneServiceUtil>(new COneServiceUtil(sendUdpTcp)))).first;
@@ -600,7 +600,7 @@ BOOL CTSOut::DeleteServiceCtrl(
 	DWORD id
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	if( serviceUtilMap.erase(id) == 0 ){
 		return FALSE;
@@ -623,7 +623,7 @@ BOOL CTSOut::SetServiceID(
 	WORD serviceID
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
@@ -641,7 +641,7 @@ BOOL CTSOut::GetServiceID(
 	WORD* serviceID
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
@@ -665,7 +665,7 @@ BOOL CTSOut::SendUdp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
@@ -688,7 +688,7 @@ BOOL CTSOut::SendTcp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
@@ -717,7 +717,7 @@ DWORD CTSOut::GetEpgInfo(
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
-	CBlockLock lock(&this->epgUtilLock);
+	lock_recursive_mutex lock(this->epgUtilLock);
 
 	EPG_EVENT_INFO* _epgInfo;
 	DWORD err = this->epgUtil.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, &_epgInfo);
@@ -747,7 +747,7 @@ DWORD CTSOut::SearchEpgInfo(
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
-	CBlockLock lock(&this->epgUtilLock);
+	lock_recursive_mutex lock(this->epgUtilLock);
 
 	EPG_EVENT_INFO* _epgInfo;
 	DWORD err = this->epgUtil.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, &_epgInfo);
@@ -764,7 +764,7 @@ DWORD CTSOut::SearchEpgInfo(
 int CTSOut::GetTimeDelay(
 	)
 {
-	CBlockLock lock(&this->epgUtilLock);
+	lock_recursive_mutex lock(this->epgUtilLock);
 
 	return this->epgUtil.GetTimeDelay();
 }
@@ -774,7 +774,7 @@ int CTSOut::GetTimeDelay(
 // TRUE（録画中）、FALSE（していない）
 BOOL CTSOut::IsRec()
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	for( auto itr = this->serviceUtilMap.begin(); itr != this->serviceUtilMap.end(); itr++ ){
 		if( itr->second->IsRec() == TRUE ){
@@ -791,7 +791,7 @@ BOOL CTSOut::StartSave(
 	int maxBuffCount
 )
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(recParam.ctrlID);
 	if( itr == serviceUtilMap.end() ){
@@ -806,7 +806,7 @@ BOOL CTSOut::EndSave(
 	BOOL* subRecFlag
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
 		return FALSE;
@@ -825,7 +825,7 @@ BOOL CTSOut::SetScramble(
 	BOOL enable
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
@@ -890,7 +890,7 @@ void CTSOut::SetServiceMode(
 	BOOL enableData
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
@@ -905,7 +905,7 @@ void CTSOut::ClearErrCount(
 	DWORD id
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
@@ -924,7 +924,7 @@ void CTSOut::GetErrCount(
 	ULONGLONG* scramble
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
@@ -942,7 +942,7 @@ void CTSOut::GetRecWriteSize(
 	__int64* writeSize
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
@@ -961,7 +961,7 @@ wstring CTSOut::GetSaveFilePath(
 	DWORD id
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
@@ -980,7 +980,7 @@ void CTSOut::SaveErrCount(
 	ULONGLONG& scramble
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
@@ -992,7 +992,7 @@ void CTSOut::SetSignalLevel(
 	float signalLv
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	for( auto itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){
 		itr->second->SetSignalLevel(signalLv);
@@ -1004,7 +1004,7 @@ void CTSOut::SetBonDriver(
 	const wstring& bonDriver
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	for( auto itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){
 		itr->second->SetBonDriver(bonDriver);
@@ -1016,7 +1016,7 @@ void CTSOut::SetNoLogScramble(
 	BOOL noLog
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	for( auto itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){
 		itr->second->SetNoLogScramble(noLog);
@@ -1028,7 +1028,7 @@ void CTSOut::SetParseEpgPostProcess(
 	BOOL parsePost
 	)
 {
-	CBlockLock lock(&this->objLock);
+	lock_recursive_mutex lock(this->objLock);
 
 	parseEpgPostProcess = parsePost;
 }

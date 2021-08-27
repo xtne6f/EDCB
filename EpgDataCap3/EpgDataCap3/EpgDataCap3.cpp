@@ -456,7 +456,7 @@ DWORD WINAPI SetDebugLogCallbackEP(
 	void (CALLBACK *debugLogProc)(const WCHAR* s)
 	)
 {
-	CBlockLock lock(&g_debugLogLock);
+	lock_recursive_mutex lock(g_debugLogLock);
 
 	if (debugLogProc) {
 		g_debugLogProc = debugLogProc;
@@ -475,7 +475,7 @@ DWORD WINAPI SetDebugLogCallbackEP(
 void AddDebugLogNoNewline(const wchar_t* s)
 {
 	{
-		CBlockLock lock(&g_debugLogLock);
+		lock_recursive_mutex lock(g_debugLogLock);
 		if (g_debugLogProc) {
 			g_debugLogProc(s);
 		}

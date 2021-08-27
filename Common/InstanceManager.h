@@ -17,7 +17,7 @@ public:
 
 	DWORD push(std::shared_ptr<T> ptr)
 	{
-		CBlockLock lock(&(this->m_lock));
+		lock_recursive_mutex lock(this->m_lock);
 
 		DWORD id = this->getNextID();
 		this->m_list.insert(std::make_pair(id,ptr));
@@ -27,7 +27,7 @@ public:
 
 	std::shared_ptr<T> pop(DWORD id)
 	{
-		CBlockLock lock(&(this->m_lock));
+		lock_recursive_mutex lock(this->m_lock);
 
 		std::shared_ptr<T> ptr = this->find(id);
 		if (ptr != NULL) {
@@ -39,21 +39,21 @@ public:
 
 	void clear()
 	{
-		CBlockLock lock(&(this->m_lock));
+		lock_recursive_mutex lock(this->m_lock);
 
 		this->m_list.clear();
 	}
 
 	bool empty() const
 	{
-		CBlockLock lock(&(this->m_lock));
+		lock_recursive_mutex lock(this->m_lock);
 
 		return this->m_list.empty();
 	}
 
 	std::shared_ptr<T> find(DWORD id) const
 	{
-		CBlockLock lock(&(this->m_lock));
+		lock_recursive_mutex lock(this->m_lock);
 
 		if (this->m_list.count(id) == 0) {
 			return NULL;
@@ -69,7 +69,7 @@ protected:
 
 	DWORD getNextID()
 	{
-		CBlockLock lock(&(this->m_lock));
+		lock_recursive_mutex lock(this->m_lock);
 
 		DWORD nextID = INVALID_ID;
 		int count = 0;

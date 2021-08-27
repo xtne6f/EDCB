@@ -242,7 +242,7 @@ void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMa
 	BYTE* outData;
 	DWORD outSize;
 	if( data != NULL && size != 0 && this->packetInit.GetTSData(data, size, &outData, &outSize) ){
-		CBlockLock lock(&this->buffLock);
+		lock_recursive_mutex lock(this->buffLock);
 		while( outSize != 0 ){
 			if( this->tsFreeList.empty() ){
 				//バッファを増やす
@@ -270,7 +270,7 @@ void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMa
 
 void CBonCtrl::StatusCallback(float signalLv, int space, int ch)
 {
-	CBlockLock lock(&this->buffLock);
+	lock_recursive_mutex lock(this->buffLock);
 	this->statusSignalLv = signalLv;
 	this->viewSpace = space;
 	this->viewCh = ch;
@@ -284,7 +284,7 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 		//バッファからデータ取り出し
 		float signalLv;
 		{
-			CBlockLock lock(&sys->buffLock);
+			lock_recursive_mutex lock(sys->buffLock);
 			if( data.empty() == false ){
 				//返却
 				data.front().clear();
@@ -1065,7 +1065,7 @@ void CBonCtrl::GetViewStatusInfo(
 {
 	this->tsOut.GetErrCount(this->nwCtrlID, drop, scramble);
 
-	CBlockLock lock(&this->buffLock);
+	lock_recursive_mutex lock(this->buffLock);
 	*signalLv = this->statusSignalLv;
 	*space = this->viewSpace;
 	*ch = this->viewCh;

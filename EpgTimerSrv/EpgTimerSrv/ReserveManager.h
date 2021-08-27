@@ -64,7 +64,7 @@ public:
 	//指定サービスのプログラム予約を抽出して検索する
 	template<class P>
 	bool FindProgramReserve(WORD onid, WORD tsid, WORD sid, P findProc) const {
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 		const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
 		auto itr = lower_bound_first(sortList.begin(), sortList.end(), Create64PgKey(onid, tsid, sid, 0xFFFF));
 		for( ; itr != sortList.end() && itr->first == Create64PgKey(onid, tsid, sid, 0xFFFF); itr++ ){

@@ -100,6 +100,17 @@ private:
 	CRITICAL_SECTION m_cs;
 };
 
+class lock_recursive_mutex
+{
+public:
+	lock_recursive_mutex(recursive_mutex_& mtx) : m_mtx(mtx) { m_mtx.lock(); }
+	~lock_recursive_mutex() { m_mtx.unlock(); }
+private:
+	lock_recursive_mutex(const recursive_mutex_&);
+	recursive_mutex_& operator=(const recursive_mutex_&);
+	recursive_mutex_& m_mtx;
+};
+
 #else
 #include <thread>
 #include <mutex>
@@ -112,18 +123,8 @@ typedef std::atomic_int atomic_int_;
 typedef std::atomic_bool atomic_bool_;
 typedef std::thread thread_;
 typedef std::recursive_mutex recursive_mutex_;
+typedef std::lock_guard<recursive_mutex_> lock_recursive_mutex;
 #endif
-
-class CBlockLock
-{
-public:
-	CBlockLock(recursive_mutex_* mtx) : m_mtx(mtx) { m_mtx->lock(); }
-	~CBlockLock() { m_mtx->unlock(); }
-private:
-	CBlockLock(const CBlockLock&);
-	CBlockLock& operator=(const CBlockLock&);
-	recursive_mutex_* m_mtx;
-};
 
 class CAutoResetEvent
 {

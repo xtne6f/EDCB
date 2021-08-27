@@ -33,7 +33,7 @@ void CBatManager::Finalize()
 
 void CBatManager::AddBatWork(const BAT_WORK_INFO& info)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	this->workList.push_back(info);
 	StartWork();
@@ -41,7 +41,7 @@ void CBatManager::AddBatWork(const BAT_WORK_INFO& info)
 
 void CBatManager::SetIdleMargin(DWORD marginSec)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	this->idleMargin = marginSec;
 	StartWork();
@@ -49,7 +49,7 @@ void CBatManager::SetIdleMargin(DWORD marginSec)
 
 void CBatManager::SetCustomHandler(LPCWSTR ext, const std::function<void(BAT_WORK_INFO&, vector<char>&)>& handler)
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	this->customHandler = handler;
 	this->customExt = ext;
@@ -67,7 +67,7 @@ wstring CBatManager::FindExistingPath(LPCWSTR basePath) const
 		return path.native();
 	}
 	{
-		CBlockLock lock(&this->managerLock);
+		lock_recursive_mutex lock(this->managerLock);
 		if( !this->customHandler ){
 			return wstring();
 		}
@@ -78,14 +78,14 @@ wstring CBatManager::FindExistingPath(LPCWSTR basePath) const
 
 bool CBatManager::IsWorking() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	return this->workList.empty() == false;
 }
 
 bool CBatManager::IsWorkingWithoutNotification() const
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	return std::find_if(this->workList.begin(), this->workList.end(),
 	                    [](const BAT_WORK_INFO& a) { return a.macroList.empty() || a.macroList[0].first != "NotifyID"; }) != this->workList.end();
@@ -93,7 +93,7 @@ bool CBatManager::IsWorkingWithoutNotification() const
 
 void CBatManager::StartWork()
 {
-	CBlockLock lock(&this->managerLock);
+	lock_recursive_mutex lock(this->managerLock);
 
 	//ワーカスレッドが終了しようとしているときはその完了を待つ
 	if( this->batWorkThread.joinable() && this->batWorkExitingFlag ){
@@ -121,7 +121,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 			DWORD diff = GetTickCount() - tick;
 			notifyWorkWait -= min(diff, notifyWorkWait);
 			if( notifyWorkWait == 0 ){
-				CBlockLock lock(&sys->managerLock);
+				lock_recursive_mutex lock(sys->managerLock);
 				sys->workList.push_back(std::move(notifyWork));
 			}
 		}
@@ -134,7 +134,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 		bool workable = true;
 		std::function<void(BAT_WORK_INFO&, vector<char>&)> customHandler_;
 		{
-			CBlockLock lock(&sys->managerLock);
+			lock_recursive_mutex lock(sys->managerLock);
 			if( sys->workList.empty() ){
 				//このフラグを立てたあとは二度とロックを確保してはいけない
 				sys->batWorkExitingFlag = true;
@@ -164,7 +164,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 			vector<char> buff;
 			if( sys->CreateBatFile(work, exBatMargin, exNotifyInterval, exSW, exDirect, buff) ){
 				{
-					CBlockLock lock(&sys->managerLock);
+					lock_recursive_mutex lock(sys->managerLock);
 					if( sys->idleMargin < exBatMargin ){
 						//アイドル時間に余裕がないので中止
 						sys->batWorkExitingFlag = true;
@@ -284,7 +284,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 			AddDebugLogFormat(L"BAT拡張子エラー：%ls", work.batFilePath.c_str());
 		}
 
-		CBlockLock lock(&sys->managerLock);
+		lock_recursive_mutex lock(sys->managerLock);
 		sys->workList.erase(sys->workList.begin());
 	}
 }

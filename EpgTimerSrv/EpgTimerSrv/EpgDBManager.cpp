@@ -27,7 +27,7 @@ CEpgDBManager::~CEpgDBManager()
 
 void CEpgDBManager::SetArchivePeriod(int periodSec)
 {
-	CBlockLock lock(&this->epgMapLock);
+	lock_recursive_mutex lock(this->epgMapLock);
 	this->archivePeriodSec = periodSec;
 }
 
@@ -338,7 +338,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	__int64 oldMax = LLONG_MIN;
 	__int64 oldMin = LLONG_MIN;
 	{
-		CBlockLock lock(&sys->epgMapLock);
+		lock_recursive_mutex lock(sys->epgMapLock);
 		if( sys->archivePeriodSec > 0 ){
 			//アーカイブする
 			arcMin = arcMax - sys->archivePeriodSec * I64_1SEC;
@@ -416,7 +416,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	for(;;){
 		//データベースを排他する
 		{
-			CBlockLock lock(&sys->epgMapLock);
+			lock_recursive_mutex lock(sys->epgMapLock);
 			if( sys->epgMapRefLock.first == 0 ){
 				if( arcFromFile.empty() == false ){
 					sys->epgArchive.swap(arcFromFile);

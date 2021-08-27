@@ -66,7 +66,7 @@ DWORD CSendTSTCPMain::AddSendAddr(
 		}
 	}
 
-	CBlockLock lock(&m_sendLock);
+	lock_recursive_mutex lock(m_sendLock);
 	if( std::find_if(m_SendList.begin(), m_SendList.end(), [&Item](const SEND_INFO& a) {
 	        return a.strIP == Item.strIP && (WORD)a.dwPort == (WORD)Item.dwPort; }) == m_SendList.end() ){
 		m_SendList.push_back(Item);
@@ -207,7 +207,7 @@ DWORD CSendTSTCPMain::AddSendData(
 			}
 		}
 
-		CBlockLock lock(&m_sendLock);
+		lock_recursive_mutex lock(m_sendLock);
 		if( m_SendList.empty() == false ){
 			m_TSBuff.push_back(vector<BYTE>());
 			m_TSBuff.back().reserve(sizeof(DWORD) * 2 + dwSize);
@@ -226,7 +226,7 @@ DWORD CSendTSTCPMain::AddSendData(
 DWORD CSendTSTCPMain::ClearSendBuff(
 	)
 {
-	CBlockLock lock(&m_sendLock);
+	lock_recursive_mutex lock(m_sendLock);
 	m_TSBuff.clear();
 
 	return TRUE;
@@ -245,7 +245,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 		std::list<SEND_INFO>::iterator itr;
 		for( size_t itrIndex = 0;; itrIndex++ ){
 			{
-				CBlockLock lock(&pSys->m_sendLock);
+				lock_recursive_mutex lock(pSys->m_sendLock);
 				if( itrIndex == 0 ){
 					itr = pSys->m_SendList.begin();
 				}else{
@@ -353,7 +353,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 		std::list<vector<BYTE>> item;
 		size_t sendListSize;
 		{
-			CBlockLock lock(&pSys->m_sendLock);
+			lock_recursive_mutex lock(pSys->m_sendLock);
 
 			if( pSys->m_TSBuff.empty() == false ){
 				item.splice(item.end(), pSys->m_TSBuff, pSys->m_TSBuff.begin());
@@ -376,7 +376,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 		bool bStop = false;
 		for( size_t itrIndex = 0; bStop == false && itrIndex < sendListSize; itrIndex++ ){
 			{
-				CBlockLock lock(&pSys->m_sendLock);
+				lock_recursive_mutex lock(pSys->m_sendLock);
 				if( itrIndex == 0 ){
 					itr = pSys->m_SendList.begin();
 				}else{
@@ -475,7 +475,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 		}
 	}
 
-	CBlockLock lock(&pSys->m_sendLock);
+	lock_recursive_mutex lock(pSys->m_sendLock);
 	for( auto itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++ ){
 		if( itr->sock != INVALID_SOCKET ){
 			//未送信データが捨てられても問題ないのでshutdown()は省略
