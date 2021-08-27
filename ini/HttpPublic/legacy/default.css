@@ -17,7 +17,7 @@ li {
 
 input {
   font-size: medium;
-  margin: 0.1em;
+  margin: 0.5em 0.1em;
 }
 
 select {
@@ -250,6 +250,7 @@ th, td {
 }
 
 .video-container {
+  line-height: 0;
   max-width: 95%;
   position: relative;
   width: max-content;
@@ -259,12 +260,26 @@ th, td {
   width: 100%;
 }
 
+.video-full-container:fullscreen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.video-full-container:-webkit-full-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .video-full-container:fullscreen > .video-container {
+  max-height: 100%;
   max-width: 100%;
   width: 100%;
 }
 
 .video-full-container:-webkit-full-screen > .video-container {
+  max-height: 100%;
   max-width: 100%;
   width: 100%;
 }

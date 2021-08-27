@@ -162,15 +162,15 @@ function TranscodeSettingTemplete(xq,fsec)
     end
     s=s..'</select>\n'
   end
-  s=s..'<input type="checkbox" name="audio2" value="1"'..(xq.audio2 and ' checked' or '')..'>audio2\n'
+  s=s..'<label><input type="checkbox" name="audio2" value="1"'..(xq.audio2 and ' checked' or '')..'>audio2</label>\n'
     ..'<select name="dual">'
     ..'<option value="0"'..(xq.dual~=1 and xq.dual~=2 and ' selected' or '')..'>*'
     ..'<option value="1"'..(xq.dual==1 and ' selected' or '')..'>dual-main'
     ..'<option value="2"'..(xq.dual==2 and ' selected' or '')..'>dual-sub'
     ..'</select>\n'
-    ..'<input type="checkbox" name="cinema" value="1"'..(xq.cinema and ' checked' or '')..'>cinema\n'
+    ..'<label><input type="checkbox" name="cinema" value="1"'..(xq.cinema and ' checked' or '')..'>cinema</label>\n'
   if ALLOW_HLS then
-    s=s..'<input type="checkbox" name="caption" value="1"'..(xq.caption and ' checked' or '')..'>caption\n'
+    s=s..'<label><input type="checkbox" name="caption" value="1"'..(xq.caption and ' checked' or '')..'>caption</label>\n'
   end
   return s
 end
@@ -180,19 +180,17 @@ function HlsScriptTemplete(caption)
   local s=[=[
 <script>
 var vfull=document.getElementById("vid-full");
-vfull.requestFullscreen=vfull.requestFullscreen||vfull.webkitRequestFullscreen;
-document.exitFullscreen=document.exitFullscreen||document.webkitCancelFullScreen;
 var vcont=document.getElementById("vid-cont");
 var btn=document.createElement('button');
 btn.innerText="full";
-btn.onclick=function(){vfull.requestFullscreen();};
+btn.onclick=function(){(vfull.requestFullscreen||vfull.webkitRequestFullscreen||vfull.webkitRequestFullScreen).call(vfull);};
 var div=document.createElement('div');
 div.className="full-control";
 div.appendChild(btn);
 vcont.appendChild(div);
 btn=document.createElement('button');
 btn.innerText="exit";
-btn.onclick=function(){document.exitFullscreen();};
+btn.onclick=function(){(document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen).call(document);};
 div=document.createElement('div');
 div.className="exit-control";
 div.appendChild(btn);
@@ -282,13 +280,13 @@ end
 
 --録画設定フォームのテンプレート
 function RecSettingTemplate(rs)
-  local s='<input type="checkbox" name="recEnabled" value="1"'..(rs.recMode~=5 and ' checked' or '')..'>有効<br>\n'
+  local s='<label><input type="checkbox" name="recEnabled" value="1"'..(rs.recMode~=5 and ' checked' or '')..'>有効</label><br>\n'
     ..'録画モード: <select name="recMode">'
   for i=1,#RecModeTextList() do
     s=s..'<option value="'..(i-1)..'"'..((rs.recMode~=5 and rs.recMode or rs.noRecMode or 1)==i-1 and ' selected' or '')..'>'..RecModeTextList()[i]
   end
   s=s..'</select><br>\n'
-    ..'<input type="checkbox" name="tuijyuuFlag" value="1"'..(rs.tuijyuuFlag and ' checked' or '')..'>イベントリレー追従<br>\n'
+    ..'<label><input type="checkbox" name="tuijyuuFlag" value="1"'..(rs.tuijyuuFlag and ' checked' or '')..'>イベントリレー追従</label><br>\n'
     ..'優先度: <select name="priority">'
   for i=1,5 do
     s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected' or '')..'>'..i..(i==1 and ' (低)' or i==5 and ' (高)' or '')
@@ -296,15 +294,15 @@ function RecSettingTemplate(rs)
   --デフォルト値
   local rsdef=(edcb.GetReserveData(0x7FFFFFFF) or {}).recSetting
   s=s..'</select><br>\n'
-    ..'<input type="checkbox" name="pittariFlag" value="1"'..(rs.pittariFlag and ' checked' or '')..'>ぴったり（？）録画<br>\n'
-    ..'録画マージン: <input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked')..'>デフォルト || '
+    ..'<label><input type="checkbox" name="pittariFlag" value="1"'..(rs.pittariFlag and ' checked' or '')..'>ぴったり（？）録画</label><br>\n'
+    ..'録画マージン: <label><input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked')..'>デフォルト</label> || '
     ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or rsdef and rsdef.startMargin or 0)..'" size="5"> '
     ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or rsdef and rsdef.endMargin or 0)..'" size="5"><br>\n'
-    ..'指定サービス対象データ: <input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked' or '')..'>デフォルト || '
-    ..'<input type="checkbox" name="serviceMode_1" value="1"'
-      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/16 or rsdef and rsdef.serviceMode/16 or 0)%2~=0 and ' checked' or '')..'>字幕を含める '
-    ..'<input type="checkbox" name="serviceMode_2" value="1"'
-      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/32 or rsdef and rsdef.serviceMode/32 or 0)%2~=0 and ' checked' or '')..'>データカルーセルを含める<br>\n'
+    ..'指定サービス対象データ: <label><input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked' or '')..'>デフォルト</label> || '
+    ..'<label><input type="checkbox" name="serviceMode_1" value="1"'
+      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/16 or rsdef and rsdef.serviceMode/16 or 0)%2~=0 and ' checked' or '')..'>字幕を含める</label> '
+    ..'<label><input type="checkbox" name="serviceMode_2" value="1"'
+      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/32 or rsdef and rsdef.serviceMode/32 or 0)%2~=0 and ' checked' or '')..'>データカルーセルを含める</label><br>\n'
     ..'<table><tr><td>録画フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td><td>部分受信</td></tr>\n'
   for i,v in ipairs(rs.recFolderList) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>いいえ</td></tr>\n'
@@ -313,8 +311,8 @@ function RecSettingTemplate(rs)
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>はい</td></tr>\n'
   end
   s=s..'</table>（プリセットによる変更のみ対応）<br>\n'
-    ..'<input type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked' or '')..'>部分受信（ワンセグ）を別ファイルに同時出力する<br>\n'
-    ..'<input type="checkbox" name="continueRecFlag" value="1"'..(rs.continueRecFlag and ' checked' or '')..'>後ろの予約を同一ファイルで出力する<br>\n'
+    ..'<label><input type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked' or '')..'>部分受信（ワンセグ）を別ファイルに同時出力する</label><br>\n'
+    ..'<label><input type="checkbox" name="continueRecFlag" value="1"'..(rs.continueRecFlag and ' checked' or '')..'>後ろの予約を同一ファイルで出力する</label><br>\n'
     ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..(rs.tunerID==0 and ' selected' or '')..'>自動'
   local a=edcb.GetTunerReserveAll()
   for i=1,#a-1 do
@@ -327,8 +325,8 @@ function RecSettingTemplate(rs)
     ..'<option value="2"'..(rs.suspendMode==2 and ' selected' or '')..'>休止'
     ..'<option value="3"'..(rs.suspendMode==3 and ' selected' or '')..'>シャットダウン'
     ..'<option value="4"'..(rs.suspendMode==4 and ' selected' or '')..'>何もしない</select> '
-    ..'<input type="checkbox" name="rebootFlag" value="1"'
-      ..((rs.suspendMode==0 and rsdef and rsdef.rebootFlag or rs.suspendMode~=0 and rs.rebootFlag) and ' checked' or '')..'>復帰後再起動する<br>\n'
+    ..'<label><input type="checkbox" name="rebootFlag" value="1"'
+      ..((rs.suspendMode==0 and rsdef and rsdef.rebootFlag or rs.suspendMode~=0 and rs.rebootFlag) and ' checked' or '')..'>復帰後再起動する</label><br>\n'
     ..'録画後実行bat（プリセットによる変更のみ対応）: '..(#rs.batFilePath==0 and '（なし）' or rs.batFilePath)..'<br>\n'
   return s
 end

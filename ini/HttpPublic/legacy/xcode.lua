@@ -1,19 +1,12 @@
 -- ファイルを転送するスクリプト
 -- ファイルをタイムシフト再生できる: http://localhost:5510/xcode.lua?fname=video/foo.ts
 
--- コマンドはEDCBのToolsフォルダにあるものを優先する
-tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
-readex=(edcb.FindFile(tools..'\\readex.exe',1) and tools..'\\' or '')..'readex.exe'
-asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
-tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
-
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 fpath=mg.get_var(mg.request_info.query_string,'fname')
 if fpath then
   fpath=DocumentToNativePath(fpath)
   option=XCODE_OPTIONS[GetVarInt(mg.request_info.query_string,'option',1,#XCODE_OPTIONS) or 1]
-  xcoder=(edcb.FindFile(tools..'\\'..option.xcoder,1) and tools..'\\' or '')..option.xcoder
   offset=GetVarInt(mg.request_info.query_string,'offset',0,100) or 0
   audio2=(GetVarInt(mg.request_info.query_string,'audio2',0,1) or 0)+(option.audioStartAt or 0)
   dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
@@ -29,6 +22,13 @@ if fpath then
 end
 
 function OpenTranscoder()
+  -- コマンドはEDCBのToolsフォルダにあるものを優先する
+  local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
+  local readex=(edcb.FindFile(tools..'\\readex.exe',1) and tools..'\\' or '')..'readex.exe'
+  local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
+  local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
+  local xcoder=(edcb.FindFile(tools..'\\'..option.xcoder,1) and tools..'\\' or '')..option.xcoder
+
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC','-')
     :gsub('$AUDIO',audio2)
@@ -82,7 +82,7 @@ end
 f=nil
 if fpath and hls then
   -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-  segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..xcoder..':'..option.option..':'..offset..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+  segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
   f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
 end
 

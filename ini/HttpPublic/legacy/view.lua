@@ -1,10 +1,5 @@
 -- 名前付きパイプ(SendTSTCPの送信先:0.0.0.1 ポート:0～65535)を転送するスクリプト
 
--- コマンドはEDCBのToolsフォルダにあるものを優先する
-tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
-asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
-tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
-
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 post=AssertPost()
@@ -15,7 +10,6 @@ if not post then
 end
 
 option=XCODE_OPTIONS[GetVarInt(post,'option',1,#XCODE_OPTIONS) or 1]
-xcoder=(edcb.FindFile(tools..'\\'..option.xcoder,1) and tools..'\\' or '')..option.xcoder
 audio2=(GetVarInt(post,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 dual=GetVarInt(post,'dual',0,2)
 dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
@@ -32,6 +26,12 @@ if hls and not (ALLOW_HLS and option.outputHls) then
 end
 
 function OpenTranscoder(pipeName,nwtvclose)
+  -- コマンドはEDCBのToolsフォルダにあるものを優先する
+  local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
+  local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
+  local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
+  local xcoder=(edcb.FindFile(tools..'\\'..option.xcoder,1) and tools..'\\' or '')..option.xcoder
+
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC',pipeName)
     :gsub('$AUDIO',audio2)
@@ -94,7 +94,7 @@ if onid then
   elseif 0<=n and n<100 then
     if hls then
       -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-      segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..xcoder..':'..option.option..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+      segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
       f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
     end
     if not f then
@@ -148,7 +148,7 @@ elseif n and n<0 then
 elseif n and n<=65535 then
   if hls then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-    segmentKey=mg.md5('view:'..hls..':'..n..':'..xcoder..':'..option.option..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+    segmentKey=mg.md5('view:'..hls..':'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
     f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
   end
   if not f then
