@@ -60,7 +60,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnChannelChange()
 	TVTest::ChannelInfo ci;
 	bool ret = m_outer.m_pApp->GetCurrentChannelInfo(&ci);
 	{
-		CBlockLock lock(&m_outer.m_streamLock);
+		lock_recursive_mutex lock(m_outer.m_streamLock);
 		// EpgDataCap3は内部メソッド単位でアトミック。UnInitialize()中にワーカースレッドにアクセスさせないよう排他制御が必要
 		m_outer.m_epgUtil.UnInitialize();
 		m_outer.m_epgUtil.Initialize(FALSE, m_outer.m_epgUtilPath.c_str());
@@ -84,7 +84,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnServiceChange()
 	int index = m_outer.m_pApp->GetService();
 	TVTest::ServiceInfo si;
 	if (index >= 0 && m_outer.m_pApp->GetServiceInfo(index, &si)) {
-		CBlockLock lock(&m_outer.m_streamLock);
+		lock_recursive_mutex lock(m_outer.m_streamLock);
 		m_outer.m_serviceFilter.SetServiceID(false, vector<WORD>(1, si.ServiceID));
 	}
 #endif
@@ -100,7 +100,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnServiceUpdate()
 bool CEdcbPlugIn::CMyEventHandler::OnDriverChange()
 {
 	{
-		CBlockLock lock(&m_outer.m_statusLock);
+		lock_recursive_mutex lock(m_outer.m_statusLock);
 		WCHAR name[MAX_PATH];
 		m_outer.m_currentBonDriver = (m_outer.m_pApp->GetDriverName(name, array_size(name)) > 0 ? name : L"");
 	}
@@ -117,7 +117,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnRecordStatusChange(int Status)
 	if (Status == TVTest::RECORD_STATUS_NOTRECORDING) {
 		if (m_outer.IsEdcbRecording()) {
 			// キャンセル動作とみなす
-			CBlockLock lock(&m_outer.m_streamLock);
+			lock_recursive_mutex lock(m_outer.m_streamLock);
 			for (map<DWORD, REC_CTRL>::iterator it = m_outer.m_recCtrlMap.begin(); it != m_outer.m_recCtrlMap.end(); ++it) {
 				if (!it->second.filePath.empty()) {
 					wstring().swap(it->second.filePath);
@@ -369,7 +369,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (!m_pApp->GetStatus(&si)) {
 					si.SignalLevel = 0;
 				}
-				CBlockLock lock(&m_streamLock);
+				lock_recursive_mutex lock(m_streamLock);
 				for (map<DWORD, REC_CTRL>::iterator it = m_recCtrlMap.begin(); it != m_recCtrlMap.end(); ++it) {
 					if (!it->second.filePath.empty()) {
 						it->second.dropCount.SetSignal(si.SignalLevel);
@@ -407,7 +407,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				else {
 					DWORD chChangeID;
 					{
-						CBlockLock lock(&m_streamLock);
+						lock_recursive_mutex lock(m_streamLock);
 						chChangeID = m_chChangeID;
 					}
 					bool saveEpgFile = false;
@@ -441,7 +441,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							FILE* epgFile = UtilOpenFile(m_epgFilePath + L".tmp", UTIL_SECURE_WRITE);
 							if (epgFile) {
 								m_pApp->AddLog((L'★' + name).c_str());
-								CBlockLock lock(&m_streamLock);
+								lock_recursive_mutex lock(m_streamLock);
 								m_epgFile.reset(epgFile);
 								m_epgFileState = EPG_FILE_ST_NONE;
 							}
@@ -473,7 +473,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						// 保存終了
 						{
 							std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
-							CBlockLock lock(&m_streamLock);
+							lock_recursive_mutex lock(m_streamLock);
 							epgFile.swap(m_epgFile);
 						}
 						if (saveEpgFile) {
@@ -518,7 +518,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							FILE* epgFile = UtilOpenFile(m_epgFilePath + L".tmp", UTIL_SECURE_WRITE);
 							if (epgFile) {
 								m_pApp->AddLog((L'★' + name).c_str());
-								CBlockLock lock(&m_streamLock);
+								lock_recursive_mutex lock(m_streamLock);
 								m_epgFile.reset(epgFile);
 								m_epgFileState = EPG_FILE_ST_NONE;
 							}
@@ -551,7 +551,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					// 保存終了
 					{
 						std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
-						CBlockLock lock(&m_streamLock);
+						lock_recursive_mutex lock(m_streamLock);
 						epgFile.swap(m_epgFile);
 					}
 					if (saveEpgFile) {
@@ -585,7 +585,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		return 0;
 	case WM_UPDATE_STATUS_CODE:
 		{
-			CBlockLock lock(&m_statusLock);
+			lock_recursive_mutex lock(m_statusLock);
 			m_statusCode = m_currentBonDriver.empty() ? VIEW_APP_ST_ERR_BON :
 			               !IsNotRecording() ? VIEW_APP_ST_REC :
 			               !m_epgCapChList.empty() ? VIEW_APP_ST_GET_EPG :
@@ -634,7 +634,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			// 保存キャンセル
 			{
 				std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
-				CBlockLock lock(&m_streamLock);
+				lock_recursive_mutex lock(m_streamLock);
 				epgFile.swap(m_epgFile);
 			}
 			DeleteFile((m_epgFilePath + L".tmp").c_str());
@@ -649,7 +649,7 @@ void CEdcbPlugIn::CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res)
 	switch (cmd.GetParam()) {
 	case CMD2_VIEW_APP_GET_BONDRIVER:
 		{
-			CBlockLock lock(&m_statusLock);
+			lock_recursive_mutex lock(m_statusLock);
 			if (!m_currentBonDriver.empty()) {
 				res.WriteVALUE(m_currentBonDriver);
 				res.SetParam(CMD_SUCCESS);
@@ -658,14 +658,14 @@ void CEdcbPlugIn::CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res)
 		break;
 	case CMD2_VIEW_APP_GET_DELAY:
 		{
-			CBlockLock lock(&m_streamLock);
+			lock_recursive_mutex lock(m_streamLock);
 			res.WriteVALUE(m_epgUtil.GetTimeDelay());
 			res.SetParam(CMD_SUCCESS);
 		}
 		break;
 	case CMD2_VIEW_APP_GET_STATUS:
 		{
-			CBlockLock lock(&m_statusLock);
+			lock_recursive_mutex lock(m_statusLock);
 			res.WriteVALUE(m_statusCode);
 			res.SetParam(CMD_SUCCESS);
 		}
@@ -700,7 +700,7 @@ void CEdcbPlugIn::CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res)
 		{
 			SET_CTRL_MODE val;
 			if (cmd.ReadVALUE(&val)) {
-				CBlockLock lock(&m_streamLock);
+				lock_recursive_mutex lock(m_streamLock);
 				if (m_recCtrlMap.count(val.ctrlID) != 0) {
 					m_recCtrlMap[val.ctrlID].sid = val.SID;
 				}
@@ -712,7 +712,7 @@ void CEdcbPlugIn::CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res)
 		{
 			SEARCH_EPG_INFO_PARAM key;
 			if (cmd.ReadVALUE(&key)) {
-				CBlockLock lock(&m_streamLock);
+				lock_recursive_mutex lock(m_streamLock);
 				EPG_EVENT_INFO *epgInfo;
 				if (m_epgUtil.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR) {
 					EPGDB_EVENT_INFO epgDBInfo;
@@ -727,7 +727,7 @@ void CEdcbPlugIn::CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res)
 		{
 			GET_EPG_PF_INFO_PARAM key;
 			if (cmd.ReadVALUE(&key)) {
-				CBlockLock lock(&m_streamLock);
+				lock_recursive_mutex lock(m_streamLock);
 				EPG_EVENT_INFO *epgInfo;
 				if (m_epgUtil.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR) {
 					EPGDB_EVENT_INFO epgDBInfo;
@@ -807,7 +807,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 			}
 		}
 		{
-			CBlockLock lock(&m_streamLock);
+			lock_recursive_mutex lock(m_streamLock);
 			m_recCtrlMap[m_recCtrlCount] = REC_CTRL();
 			m_recCtrlMap[m_recCtrlCount].sid = 0xFFFF;
 			m_recCtrlMap[m_recCtrlCount].dropCount.SetNoLog(FALSE, this->m_noLogScramble);
@@ -820,7 +820,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 			if (cmd.ReadVALUE(&val) && m_recCtrlMap.count(val) != 0) {
 				REC_CTRL recCtrl;
 				{
-					CBlockLock lock(&m_streamLock);
+					lock_recursive_mutex lock(m_streamLock);
 					recCtrl = std::move(m_recCtrlMap[val]);
 					m_recCtrlMap.erase(val);
 				}
@@ -866,7 +866,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 						wstring strFilePath = filePath.native();
 						if (DuplicateSave(m_duplicateOriginalPath.c_str(), &recCtrl.duplicateTargetID, &strFilePath)) {
 							SendMessage(m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
-							CBlockLock lock(&m_streamLock);
+							lock_recursive_mutex lock(m_streamLock);
 							recCtrl.filePath = strFilePath;
 							res.SetParam(CMD_SUCCESS);
 						}
@@ -891,7 +891,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 							rsi.MaxFileName = static_cast<int>(buf.size());
 							if (m_pApp->GetRecordStatus(&rsi) && buf[0]) {
 								SendMessage(m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
-								CBlockLock lock(&m_streamLock);
+								lock_recursive_mutex lock(m_streamLock);
 								recCtrl.filePath = m_duplicateOriginalPath = &buf.front();
 								recCtrl.duplicateTargetID = 1;
 								SendMessage(m_hwnd, WM_SIGNAL_UPDATE_START, 0, 0);
@@ -915,7 +915,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 				CDropCount dropCount;
 				DWORD duplicateTargetID;
 				{
-					CBlockLock lock(&m_streamLock);
+					lock_recursive_mutex lock(m_streamLock);
 					resVal.recFilePath.swap(m_recCtrlMap[val.ctrlID].filePath);
 					std::swap(m_recCtrlMap[val.ctrlID].dropCount, dropCount);
 					duplicateTargetID = m_recCtrlMap[val.ctrlID].duplicateTargetID;
@@ -997,7 +997,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 			if (IsEdcbRecording()) {
 				m_pApp->StopRecord();
 			}
-			CBlockLock lock(&m_streamLock);
+			lock_recursive_mutex lock(m_streamLock);
 			m_recCtrlMap.clear();
 			res.SetParam(CMD_SUCCESS);
 		}
@@ -1048,7 +1048,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 	CTSPacketUtil packet;
 	if (packet.Set188TS(pData, 188)) {
 		CEdcbPlugIn &this_ = *static_cast<CEdcbPlugIn*>(pClientData);
-		CBlockLock lock(&this_.m_streamLock);
+		lock_recursive_mutex lock(this_.m_streamLock);
 		if (this_.m_chChangeID > CH_CHANGE_ERR) {
 			if (packet.PID < BON_SELECTIVE_PID) {
 				// チャンネル切り替え中
