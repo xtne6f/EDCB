@@ -42,9 +42,9 @@ MEDIA_EXTENSION_LIST={
 }
 
 --HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeとnwtvclose.ps1を用意すること
-ALLOW_HLS=false
+ALLOW_HLS=true
 --ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか
-ALWAYS_USE_HLS=false
+ALWAYS_USE_HLS=true
 
 --トランスコードオプション
 --HLSのときはセグメント長約4秒、最大8MBytes(=1秒あたり16Mbits)を想定しているので、オプションもそれに合わせること
@@ -55,7 +55,7 @@ XCODE_OPTIONS={
   {
     name='288p/h264/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     dualMain='-dual_mono_mode main',
     dualSub='-dual_mono_mode sub',
     filter='-g 120 -vf yadif=0:-1:1',
@@ -68,7 +68,7 @@ XCODE_OPTIONS={
   {
     name='576p/h264/ffmpeg-nvenc',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     dualMain='-dual_mono_mode main',
     dualSub='-dual_mono_mode sub',
     filter='-g 120 -vf yadif=0:-1:1',
@@ -81,7 +81,7 @@ XCODE_OPTIONS={
   {
     name='288p/webm/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
     dualMain='-dual_mono_mode main',
     dualSub='-dual_mono_mode sub',
     filter='-vf yadif=0:-1:1',
@@ -90,10 +90,10 @@ XCODE_OPTIONS={
     output={'webm','-f webm -'},
   },
   {
-    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。いまのところ(v5.36)第2音声はうまくいかない
+    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。"aac_coder=twoloop"なしだと音質がとても悪い
     name='576p/h264/NVEncC',
     xcoder='NVEncC\\NVEncC.exe',
-    option='--input-format mpegts -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec aac$DUAL --audio-bitrate 128 $CAPTION $OUTPUT',
+    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
     audioStartAt=1,
     dualMain='#dual_mono_mode=main',
     dualSub='#dual_mono_mode=sub',
@@ -106,8 +106,10 @@ XCODE_OPTIONS={
   },
 }
 
---トランスコードするかどうか。する場合はreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
+--トランスコードするかどうか。する場合はtsreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
 XCODE=true
+--トランスコードするプロセスを1つだけに制限するかどうか(並列処理できる余裕がシステムにない場合など)
+XCODE_SINGLE=false
 --ログを"log"フォルダに保存するかどうか
 XCODE_LOG=false
 --出力バッファの量(bytes)。asyncbuf.exeを用意すること。変換負荷や通信のむらを吸収する
@@ -149,7 +151,9 @@ end
 function TranscodeSettingTemplete(xq,fsec)
   local s='<select name="option">'
   for i,v in ipairs(XCODE_OPTIONS) do
-    s=s..'<option value="'..i..'"'..((xq.option or 1)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
+    if not ALLOW_HLS or not ALWAYS_USE_HLS or v.outputHls then
+      s=s..'<option value="'..i..'"'..((xq.option or 1)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
+    end
   end
   s=s..'</select>\n'
   if fsec then

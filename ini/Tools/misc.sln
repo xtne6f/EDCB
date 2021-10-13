@@ -5,8 +5,6 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asyncbuf", "asyncbuf.vcxproj", "{3DED8BD7-57C5-4AE4-AC57-9C770EEFC061}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "readex", "readex.vcxproj", "{97D51B9A-6AA1-4CA0-B00E-757D7A3AE99C}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "relayread", "relayread.vcxproj", "{8851A2B0-213F-49FF-ADD3-9B6027E1C1D2}"
 EndProject
 Global
