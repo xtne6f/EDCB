@@ -11,7 +11,8 @@ if fpath then
   audio2=(GetVarInt(mg.request_info.query_string,'audio2',0,1) or 0)+(option.audioStartAt or 0)
   dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
   dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
-  filter=GetVarInt(mg.request_info.query_string,'cinema')==1 and option.filterCinema or option.filter or ''
+  filter=GetVarInt(mg.request_info.query_string,'fast')==1 and (GetVarInt(mg.request_info.query_string,'cinema')==1 and option.filterCinemaFast or option.filterFast)
+  filter=filter or (GetVarInt(mg.request_info.query_string,'cinema')==1 and option.filterCinema or option.filter or '')
   hls=GetVarInt(mg.request_info.query_string,'hls',1)
   caption=hls and GetVarInt(mg.request_info.query_string,'caption')==1 and option.captionHls or option.captionNone or ''
   output=hls and option.outputHls or option.output

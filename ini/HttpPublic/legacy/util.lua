@@ -51,6 +51,7 @@ ALWAYS_USE_HLS=true
 --name:表示名
 --xcoder:Toolsフォルダからの相対パス。Toolsフォルダになければパスが通っているとみなす
 --option:$SRCと$OUTPUTは必須、再生時に適宜置換される
+--filter*Fast:倍速再生用、未定義でもよい
 XCODE_OPTIONS={
   {
     name='288p/h264/ffmpeg',
@@ -60,6 +61,8 @@ XCODE_OPTIONS={
     dualSub='-dual_mono_mode sub',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
+    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
+    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25 -r 24000/1001',
     captionNone='-sn',
     captionHls='-map 0:s? -scodec copy',
     output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
@@ -73,6 +76,8 @@ XCODE_OPTIONS={
     dualSub='-dual_mono_mode sub',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
+    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
+    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25 -r 24000/1001',
     captionNone='-sn',
     captionHls='-map 0:s? -scodec copy',
     output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
@@ -86,11 +91,13 @@ XCODE_OPTIONS={
     dualSub='-dual_mono_mode sub',
     filter='-vf yadif=0:-1:1',
     filterCinema='-vf pullup -r 24000/1001',
+    filterFast='-vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25',
+    filterCinemaFast='-vf pullup,setpts=PTS/1.25 -af atempo=1.25 -r 24000/1001',
     captionNone='-sn',
     output={'webm','-f webm -'},
   },
   {
-    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。"aac_coder=twoloop"なしだと音質がとても悪い
+    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
     name='576p/h264/NVEncC',
     xcoder='NVEncC\\NVEncC.exe',
     option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
@@ -105,6 +112,12 @@ XCODE_OPTIONS={
     outputHls={'m2t','-f mpegts -o -'},
   },
 }
+
+--フォーム上の各オプションのデフォルト選択状態を指定する
+XCODE_SELECT_OPTION=1
+XCODE_CHECK_CINEMA=false
+XCODE_CHECK_FAST=false
+XCODE_CHECK_CAPTION=false
 
 --トランスコードするかどうか。する場合はtsreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
 XCODE=true
@@ -135,6 +148,7 @@ function GetTranscodeQueries(qs)
     audio2=GetVarInt(qs,'audio2')==1,
     dual=GetVarInt(qs,'dual',0,2),
     cinema=GetVarInt(qs,'cinema')==1,
+    fast=GetVarInt(qs,'fast')==1,
     caption=GetVarInt(qs,'caption')==1,
   }
 end
@@ -145,6 +159,7 @@ function ConstructTranscodeQueries(xq)
     ..(xq.audio2 and '&amp;audio2=1' or '')
     ..(xq.dual and '&amp;dual='..xq.dual or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
+    ..(xq.fast and '&amp;fast=1' or '')
     ..(xq.caption and '&amp;caption=1' or '')
 end
 
@@ -152,7 +167,7 @@ function TranscodeSettingTemplete(xq,fsec)
   local s='<select name="option">'
   for i,v in ipairs(XCODE_OPTIONS) do
     if not ALLOW_HLS or not ALWAYS_USE_HLS or v.outputHls then
-      s=s..'<option value="'..i..'"'..((xq.option or 1)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
+      s=s..'<option value="'..i..'"'..((xq.option or XCODE_SELECT_OPTION)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
     end
   end
   s=s..'</select>\n'
@@ -172,9 +187,10 @@ function TranscodeSettingTemplete(xq,fsec)
     ..'<option value="1"'..(xq.dual==1 and ' selected' or '')..'>dual-main'
     ..'<option value="2"'..(xq.dual==2 and ' selected' or '')..'>dual-sub'
     ..'</select>\n'
-    ..'<label><input type="checkbox" name="cinema" value="1"'..(xq.cinema and ' checked' or '')..'>cinema</label>\n'
+    ..'<label><input type="checkbox" name="cinema" value="1"'..((xq.cinema or not xq.option and XCODE_CHECK_CINEMA) and ' checked' or '')..'>cinema</label>\n'
+    ..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
   if ALLOW_HLS then
-    s=s..'<label><input type="checkbox" name="caption" value="1"'..(xq.caption and ' checked' or '')..'>caption</label>\n'
+    s=s..'<label><input type="checkbox" name="caption" value="1"'..((xq.caption or not xq.option and XCODE_CHECK_CAPTION) and ' checked' or '')..'>caption</label>\n'
   end
   return s
 end
