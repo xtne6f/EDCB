@@ -116,11 +116,13 @@ if fpath and not f then
   if fname:lower()==fnamets then
     f=edcb.io.open(fpath, 'rb')
     if f then
-      fsec,fsize=GetDurationSec(f)
-      if offset~=0 and offset~=100 and fsec>0 and SeekSec(f,fsec*offset/100) then
-        offset=f:seek('cur',0) or 0
-      else
-        offset=math.floor(fsize*offset/100/188)*188
+      if offset~=0 then
+        fsec,fsize=GetDurationSec(f)
+        if offset~=100 and SeekSec(f,fsec*offset/100,fsec,fsize) then
+          offset=f:seek('cur',0) or 0
+        else
+          offset=math.floor(fsize*offset/100/188)*188
+        end
       end
       if XCODE then
         f:close()

@@ -500,14 +500,28 @@ function GetDurationSec(f)
       if pcr2 then
         return math.floor((pcr2+0x100000000-pcr)%0x100000000/45000),fsize
       end
+      --TSデータが存在する境目を見つける
+      local predicted,range=math.floor(fsize/2/188)*188,fsize
+      while range>1880000 and f:seek('set',predicted) do
+        local buf=f:read(189)
+        local valid=buf and #buf==189 and buf:byte(1)==0x47 and buf:byte(189)==0x47
+        predicted=math.floor((predicted+(valid and range/4 or -range/4))/188)*188
+        range=range/2
+      end
+      predicted=predicted-1880000
+      if predicted>0 and f:seek('set',predicted) then
+        pcr2=ReadToPcr(f,pid)
+        if pcr2 then
+          return math.floor((pcr2+0x100000000-pcr)%0x100000000/45000),predicted
+        end
+      end
     end
   end
   return 0,fsize
 end
 
 --ファイルの先頭からsec秒だけシークする
-function SeekSec(f,sec)
-  local dur,fsize=GetDurationSec(f)
+function SeekSec(f,sec,dur,fsize)
   if dur>0 and fsize>1880000 and f:seek('set') then
     local pcr,pid=ReadToPcr(f)
     if pcr then
