@@ -56,7 +56,7 @@ XCODE_OPTIONS={
   {
     name='288p/h264/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     dualMain='-dual_mono_mode main',
     dualSub='-dual_mono_mode sub',
     filter='-g 120 -vf yadif=0:-1:1',
@@ -652,6 +652,36 @@ function GetVarInt(qs,n,ge,le,occ)
     return n
   end
   return nil
+end
+
+--クエリパラメータからサービスのIDを取得する
+function GetVarServiceID(qs,n,occ,leextra)
+  local onid,tsid,sid,x=(mg.get_var(qs,n,occ) or ''):match('^([0-9]+)%-([0-9]+)%-([0-9]+)'..(leextra and '%-([0-9]+)' or '')..'$')
+  onid=tonumber(onid)
+  tsid=tonumber(tsid)
+  sid=tonumber(sid)
+  x=tonumber(x)
+  if onid and onid==math.floor(onid) and onid>=0 and onid<=65535 and
+     tsid and tsid==math.floor(tsid) and tsid>=0 and tsid<=65535 and
+     sid and sid==math.floor(sid) and sid>=0 and sid<=65535 then
+    if not leextra then
+      return onid,tsid,sid,0
+    elseif x and x==math.floor(x) and x>=0 and x<=leextra then
+      return onid,tsid,sid,x
+    end
+  end
+  --失敗
+  return 0,0,0,0
+end
+
+--クエリパラメータから番組のIDを取得する
+function GetVarEventID(qs,n,occ)
+  return GetVarServiceID(qs,n,occ,65535)
+end
+
+--クエリパラメータから過去番組のIDを取得する
+function GetVarPastEventID(qs,n,occ)
+  return GetVarServiceID(qs,n,occ,4294967295)
 end
 
 --CSRFトークンを取得する

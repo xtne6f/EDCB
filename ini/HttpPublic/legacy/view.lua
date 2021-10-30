@@ -2,23 +2,26 @@
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-post=AssertPost()
-if not post then
+query=AssertPost()
+if not query then
   -- POSTでなくてもよい
-  post=mg.request_info.query_string
-  AssertCsrf(post)
+  query=mg.request_info.query_string
+  AssertCsrf(query)
 end
 
-option=XCODE_OPTIONS[GetVarInt(post,'option',1,#XCODE_OPTIONS) or 1]
-audio2=(GetVarInt(post,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-dual=GetVarInt(post,'dual',0,2)
+option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
+audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
+dual=GetVarInt(query,'dual',0,2)
 dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
-filter=GetVarInt(post,'cinema')==1 and option.filterCinema or option.filter or ''
-hls=GetVarInt(post,'hls',1)
-caption=hls and GetVarInt(post,'caption')==1 and option.captionHls or option.captionNone or ''
+filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
+hls=GetVarInt(query,'hls',1)
+caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
-n=GetVarInt(post,'n') or 0
-onid,tsid,sid=(mg.get_var(post,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
+n=GetVarInt(query,'n') or 0
+onid,tsid,sid=GetVarServiceID(query,'id')
+if onid==0 and tsid==0 and sid==0 then
+  onid=nil
+end
 if hls and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
   n=nil
@@ -109,9 +112,6 @@ end
 
 f=nil
 if onid then
-  onid=tonumber(onid) or 0
-  tsid=tonumber(tsid) or 0
-  sid=tonumber(sid) or 0
   if sid==0 then
     -- NetworkTVモードを終了
     edcb.CloseNetworkTV(n)

@@ -17,11 +17,7 @@ ct:Append([=[
   <dl>
 ]=])
 
-onid,tsid,sid,startTime=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d+)$')
-onid=tonumber(onid) or 0
-tsid=tonumber(tsid) or 0
-sid=tonumber(sid) or 0
-startTime=tonumber(startTime) or 0
+onid,tsid,sid,startTime=GetVarPastEventID(mg.request_info.query_string,'id')
 
 edcb.htmlEscape=15
 et=edcb.EnumEventInfoArchive({{onid=onid,tsid=tsid,sid=sid}}, {startTime=os.date('!*t',startTime), durationSecond=1})

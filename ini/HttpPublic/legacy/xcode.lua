@@ -3,23 +3,26 @@
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-fpath=mg.get_var(mg.request_info.query_string,'fname')
+-- 安全な(POST的でない)処理を意識するのでCSRF対策トークンは求めない
+query=mg.request_info.query_string
+fpath=mg.get_var(query,'fname')
 if fpath then
   fpath=DocumentToNativePath(fpath)
-  option=XCODE_OPTIONS[GetVarInt(mg.request_info.query_string,'option',1,#XCODE_OPTIONS) or 1]
-  offset=GetVarInt(mg.request_info.query_string,'offset',0,100) or 0
-  audio2=(GetVarInt(mg.request_info.query_string,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-  dual=GetVarInt(mg.request_info.query_string,'dual',0,2)
-  dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
-  filter=GetVarInt(mg.request_info.query_string,'fast')==1 and (GetVarInt(mg.request_info.query_string,'cinema')==1 and option.filterCinemaFast or option.filterFast)
-  filter=filter or (GetVarInt(mg.request_info.query_string,'cinema')==1 and option.filterCinema or option.filter or '')
-  hls=GetVarInt(mg.request_info.query_string,'hls',1)
-  caption=hls and GetVarInt(mg.request_info.query_string,'caption')==1 and option.captionHls or option.captionNone or ''
-  output=hls and option.outputHls or option.output
-  if hls and not (ALLOW_HLS and option.outputHls) then
-    -- エラーを返す
-    fpath=nil
-  end
+end
+
+offset=GetVarInt(query,'offset',0,100) or 0
+option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
+audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
+dual=GetVarInt(query,'dual',0,2)
+dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
+filter=GetVarInt(query,'fast')==1 and (GetVarInt(query,'cinema')==1 and option.filterCinemaFast or option.filterFast)
+filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
+hls=GetVarInt(query,'hls',1)
+caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
+output=hls and option.outputHls or option.output
+if hls and not (ALLOW_HLS and option.outputHls) then
+  -- エラーを返す
+  fpath=nil
 end
 
 function OpenTranscoder()
@@ -104,38 +107,39 @@ function OpenTranscoder()
 end
 
 f=nil
-if fpath and hls then
-  -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-  segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
-  f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
-end
-
-if fpath and not f then
-  fname='xcode'..(fpath:match('%.[0-9A-Za-z]+$') or '')
-  fnamets='xcode'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini'):lower()
-  -- 拡張子を限定
-  if fname:lower()==fnamets then
-    f=edcb.io.open(fpath, 'rb')
-    if f then
-      if offset~=0 then
-        fsec,fsize=GetDurationSec(f)
-        if offset~=100 and SeekSec(f,fsec*offset/100,fsec,fsize) then
-          offset=f:seek('cur',0) or 0
-        else
-          offset=math.floor(fsize*offset/100/188)*188
+if fpath then
+  if hls then
+    -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
+    segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
+  end
+  if not f then
+    fname='xcode'..(fpath:match('%.[0-9A-Za-z]+$') or '')
+    fnamets='xcode'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini'):lower()
+    -- 拡張子を限定
+    if fname:lower()==fnamets then
+      f=edcb.io.open(fpath,'rb')
+      if f then
+        if offset~=0 then
+          fsec,fsize=GetDurationSec(f)
+          if offset~=100 and SeekSec(f,fsec*offset/100,fsec,fsize) then
+            offset=f:seek('cur',0) or 0
+          else
+            offset=math.floor(fsize*offset/100/188)*188
+          end
         end
-      end
-      if XCODE then
-        f:close()
-        f=OpenTranscoder()
-        fname='xcode.'..output[1]
-      elseif hls then
-        -- トランスコードなしのライブストリーミングには未対応
-        f:close()
-        f=nil
-      else
-        -- 容量確保には未対応
-        f:seek('set', offset)
+        if XCODE then
+          f:close()
+          f=OpenTranscoder()
+          fname='xcode.'..output[1]
+        elseif hls then
+          -- トランスコードなしのライブストリーミングには未対応
+          f:close()
+          f=nil
+        else
+          -- 容量確保には未対応
+          f:seek('set',offset)
+        end
       end
     end
   end
