@@ -111,6 +111,21 @@ XCODE_OPTIONS={
     output={'mp4','-f mp4 -o -'},
     outputHls={'m2t','-f mpegts -o -'},
   },
+  {
+    --QSVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
+    name='576p/h264/QSVEncC',
+    xcoder='QSVEncC\\QSVEncC.exe',
+    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --quality balanced $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    audioStartAt=1,
+    dualMain='#dual_mono_mode=main',
+    dualSub='#dual_mono_mode=sub',
+    filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
+    filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true',
+    captionNone='',
+    captionHls='--sub-copy',
+    output={'mp4','-f mp4 -o -'},
+    outputHls={'m2t','-f mpegts -o -'},
+  },
 }
 
 --フォーム上の各オプションのデフォルト選択状態を指定する
