@@ -238,7 +238,9 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 
 void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 {
-	DWORD dwCount = 0;
+	//ヘッダのdwCount情報を3バイト目が0でない値で始める。原作は0で始めていたが仕様的に始点に意味はなく
+	//また他のTCPインタフェースのヘッダと区別しにくいため設定を誤った場合に想定外のことが起きるのを防ぐため
+	DWORD dwCount = 0x01000000;
 	DWORD dwCheckConnectTick = GetTickCount();
 	for(;;){
 		DWORD tick = GetTickCount();
@@ -362,7 +364,13 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 			if( pSys->m_TSBuff.empty() == false ){
 				item.splice(item.end(), pSys->m_TSBuff, pSys->m_TSBuff.begin());
 				DWORD dwCmd[2] = { dwCount, (DWORD)(item.back().size() - sizeof(DWORD) * 2) };
-				memcpy(&item.back().front(), dwCmd, sizeof(dwCmd));
+				//ヘッダは2つのリトルエンディアンのDWORD値(dwCount情報はたいてい無視される)
+				for( int i = 0; i < 2; i++ ){
+					item.back()[i * 4] = (BYTE)dwCmd[i];
+					item.back()[i * 4 + 1] = (BYTE)(dwCmd[i] >> 8);
+					item.back()[i * 4 + 2] = (BYTE)(dwCmd[i] >> 16);
+					item.back()[i * 4 + 3] = (BYTE)(dwCmd[i] >> 24);
+				}
 			}
 			//途中で減ることはない
 			sendListSize = pSys->m_SendList.size();
