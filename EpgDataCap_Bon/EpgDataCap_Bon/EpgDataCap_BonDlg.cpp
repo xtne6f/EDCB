@@ -123,7 +123,7 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
 				item.ipString.erase(0, 1).pop_back();
 			}else{
-				UINT ip = _wtoi(item.ipString.c_str());
+				UINT ip = (int)wcstol(item.ipString.c_str(), NULL, 10);
 				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 			}
 			swprintf_s(key, L"Port%d", i);

@@ -66,7 +66,8 @@ protected:
 
 	struct SEND_INFO {
 		string strIP;
-		DWORD dwPort;
+		WORD port;
+		bool bSuppressHeader;
 		SOCKET sock;
 		HANDLE pipe[2];
 		HANDLE olEvent[2];

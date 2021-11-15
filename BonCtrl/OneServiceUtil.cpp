@@ -65,36 +65,41 @@ BOOL COneServiceUtil::SendUdpTcp(
 
 	if( sendList != NULL ){
 		sendNW.Initialize();
-		for( size_t i=0; i<sendList->size(); i++ ){
-			wstring key = L"";
-			HANDLE portMutex;
-
-			//生成できなくても深刻ではないのでほどほどに打ち切る
-			for( int j = 0; j < BON_NW_PORT_RANGE; j++ ){
+		for( vector<NW_SEND_INFO>::iterator itr = sendList->begin(); itr != sendList->end(); itr++ ){
+			//IPアドレスであること
+			if( std::find_if(itr->ipString.begin(), itr->ipString.end(), [](WCHAR c) {
+			        return (c < L'0' || L'9' < c) && (c < L'A' || L'Z' < c) && (c < L'a' || L'z' < c) && c != L'%' && c != L'.' && c != L':'; }) != itr->ipString.end() ){
+				continue;
+			}
+			HANDLE portMutex = NULL;
+			for( int i = 0; i < BON_NW_PORT_RANGE; i++ ){
+				wstring key;
 				UINT u[4];
-				if( swscanf_s((*sendList)[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-					Format(key, L"Global\\%ls%d_%d", mutexName, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], (*sendList)[i].port);
+				if( swscanf_s(itr->ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
+					Format(key, L"Global\\%ls%d_%d", mutexName, (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3], itr->port);
 				}else{
-					Format(key, L"Global\\%ls%ls_%d", mutexName, (*sendList)[i].ipString.c_str(), (*sendList)[i].port);
+					Format(key, L"Global\\%ls%ls_%d", mutexName, itr->ipString.c_str(), itr->port);
 				}
 				portMutex = CreateMutex(NULL, FALSE, key.c_str());
-		
 				if( portMutex == NULL ){
-					(*sendList)[i].port++;
+					itr->port++;
 				}else if( GetLastError() == ERROR_ALREADY_EXISTS ){
 					CloseHandle(portMutex);
-					(*sendList)[i].port++;
+					portMutex = NULL;
+					itr->port++;
 				}else{
 					AddDebugLogFormat(L"%ls", key.c_str());
 					portMutexList.push_back(portMutex);
 					break;
 				}
 			}
-			if( tcpFlag ){
-				sendNW.AddSendAddr((*sendList)[i].ipString.c_str(), (*sendList)[i].port);
-			}else{
-				sendNW.AddSendAddrUdp((*sendList)[i].ipString.c_str(), (*sendList)[i].port,
-				                      (*sendList)[i].broadcastFlag != FALSE, (*sendList)[i].udpMaxSendSize);
+			//ポート番号増分用のミューテックスを生成できたものだけ追加
+			if( portMutex ){
+				if( tcpFlag ){
+					sendNW.AddSendAddr(itr->ipString.c_str(), itr->port);
+				}else{
+					sendNW.AddSendAddrUdp(itr->ipString.c_str(), itr->port, itr->broadcastFlag != FALSE, itr->udpMaxSendSize);
+				}
 			}
 		}
 		sendNW.StartSend();
