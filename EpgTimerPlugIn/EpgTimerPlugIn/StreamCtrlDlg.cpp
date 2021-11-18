@@ -10,6 +10,8 @@ CStreamCtrlDlg::CStreamCtrlDlg(void)
 	this->ctrlEnabled = FALSE;
 	this->callbackFunc = NULL;
 	this->callbackParam = NULL;
+	this->thumbTracking = FALSE;
+	this->getPosState = 0;
 }
 
 CStreamCtrlDlg::~CStreamCtrlDlg(void)
@@ -43,6 +45,8 @@ void CStreamCtrlDlg::SetCtrl(const TVTEST_STREAMING_INFO& info)
 			SetNWModeSend();
 			this->cmd.SendNwPlayStart(this->ctrlID);
 			SetTimer(this->hwnd, 1000, 500, NULL);
+			this->thumbTracking = FALSE;
+			this->getPosState = 0;
 		}
 	}
 }
@@ -127,6 +131,8 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						sys->SetNWModeSend();
 						sys->cmd.SendNwPlayStart(sys->ctrlID);
 						SetTimer(hDlgWnd, 1000, 500, NULL);
+						sys->thumbTracking = FALSE;
+						sys->getPosState = 0;
 						break;
 					case IDC_BUTTON_STOP:
 						KillTimer(hDlgWnd, 1000);
@@ -218,11 +224,44 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 					__int64 totalPos = 0;
 					__int64 filePos = 0;
 
-					NWPLAY_POS_CMD item;
-					item.ctrlID = sys->ctrlID;
-					sys->cmd.SendNwPlayGetPos(&item);
-					totalPos = item.totalPos;
-					filePos = item.currentPos;
+					// ファイルサイズと位置の変化を予測して問い合わせを減らす
+					const int interval = 8;
+					if( sys->getPosState <= interval ){
+						// 実測
+						NWPLAY_POS_CMD item;
+						item.ctrlID = sys->ctrlID;
+						if( sys->cmd.SendNwPlayGetPos(&item) != CMD_SUCCESS ){
+							sys->getPosState = 0;
+						}else{
+							if( sys->getPosState == interval ){
+								sys->totalPosDelta = item.totalPos - sys->measuredTotalPos;
+								sys->filePosDelta = item.currentPos - sys->measuredFilePos;
+							}
+							if( sys->getPosState == 0 || sys->getPosState == interval ){
+								sys->measuredTotalPos = item.totalPos;
+								sys->measuredFilePos = item.currentPos;
+							}
+							totalPos = item.totalPos;
+							filePos = item.currentPos;
+							++sys->getPosState;
+						}
+					}else{
+						// 予測
+						totalPos = sys->measuredTotalPos + sys->totalPosDelta * (sys->getPosState - interval) / interval;
+						if( totalPos < 0 ){
+							totalPos = 0;
+						}
+						filePos = sys->measuredFilePos + sys->filePosDelta * (sys->getPosState - interval) / interval;
+						if( filePos < 0 ){
+							filePos = 0;
+						}
+						if( filePos > totalPos ){
+							filePos = totalPos;
+						}
+						if( ++sys->getPosState == interval * 2 ){
+							sys->getPosState = interval;
+						}
+					}
 
 					if( totalPos<10000 ){
 						SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_SETRANGEMAX, FALSE, (DWORD)totalPos );
@@ -241,9 +280,11 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 				if( sys->ctrlEnabled ){
 					switch(LOWORD(wp)){
 					case SB_THUMBTRACK:
-						KillTimer(hDlgWnd, 1000);
-
-						sys->cmd.SendNwPlayStop(sys->ctrlID);
+						if( sys->thumbTracking == FALSE ){
+							KillTimer(hDlgWnd, 1000);
+							sys->cmd.SendNwPlayStop(sys->ctrlID);
+							sys->thumbTracking = TRUE;
+						}
 						break;
 					case SB_LINELEFT:
 					case SB_LINERIGHT:
@@ -275,6 +316,8 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 							sys->cmd.SendNwPlaySetPos(&item);
 							sys->cmd.SendNwPlayStart(sys->ctrlID);
 							SetTimer(hDlgWnd, 1000, 500, NULL);
+							sys->thumbTracking = FALSE;
+							sys->getPosState = 0;
 						}
 						break;
 					default:

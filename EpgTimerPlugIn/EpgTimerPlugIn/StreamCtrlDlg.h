@@ -43,5 +43,11 @@ protected:
 	BOOL ctrlIsNetwork;
 	MessageCallbackFunc callbackFunc;
 	void* callbackParam;
+	BOOL thumbTracking;
+	int getPosState;
+	__int64 measuredTotalPos;
+	__int64 measuredFilePos;
+	__int64 totalPosDelta;
+	__int64 filePosDelta;
 };
 
