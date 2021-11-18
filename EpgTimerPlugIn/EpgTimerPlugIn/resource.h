@@ -11,7 +11,6 @@
 #define IDC_CHECK_UDP                   1005
 #define IDC_CHECK_TCP                   1006
 #define IDC_COMBO1                      1007
-#define IDC_COMBO_IP                    1007
 #define IDC_BUTTON_STOP2                1008
 #define IDC_BUTTON_CLOSE                1008
 #define IDC_STATIC                      -1

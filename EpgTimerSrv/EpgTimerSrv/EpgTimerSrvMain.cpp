@@ -2296,13 +2296,16 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		}
 		break;
 	case CMD2_EPG_SRV_NWPLAY_SET_IP:
-		{
-			AddDebugLog(L"CMD2_EPG_SRV_NWPLAY_SET_IP");
+		AddDebugLog(L"CMD2_EPG_SRV_NWPLAY_SET_IP");
+		if( tcpFlag == false || clientIP ){
 			NWPLAY_PLAY_INFO val;
 			if( cmd.ReadVALUE(&val) ){
 				std::shared_ptr<CTimeShiftUtil> util = sys->streamingManager.find(val.ctrlID);
 				if( util ){
-					util->Send(&val);
+					//TCP接続時は常にclientIPを使う
+					WCHAR ipv4[64];
+					swprintf_s(ipv4, L"%u.%u.%u.%u", val.ip >> 24, (val.ip >> 16) & 0xFF, (val.ip >> 8) & 0xFF, val.ip & 0xFF);
+					util->Send(tcpFlag ? clientIP : ipv4, val.udp ? &val.udpPort : NULL, val.tcp ? &val.tcpPort : NULL);
 					res.WriteVALUE(val);
 					res.SetParam(CMD_SUCCESS);
 				}

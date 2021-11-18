@@ -381,7 +381,8 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					wstring clientIP;
 					if( cmd.GetParam() == CMD2_EPG_SRV_REGIST_GUI_TCP ||
 					    cmd.GetParam() == CMD2_EPG_SRV_UNREGIST_GUI_TCP ||
-					    cmd.GetParam() == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
+					    cmd.GetParam() == CMD2_EPG_SRV_ISREGIST_GUI_TCP ||
+					    cmd.GetParam() == CMD2_EPG_SRV_NWPLAY_SET_IP ){
 						//接続元IPを引数に添付
 						char ip[NI_MAXHOST];
 						if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 ){

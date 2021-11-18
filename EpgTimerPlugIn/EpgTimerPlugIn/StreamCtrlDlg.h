@@ -31,7 +31,6 @@ public:
 	void StopFullScreenMouseChk();
 protected:
 	void SetNWModeSend();
-	void EnumIP();
 
 	static LRESULT CALLBACK DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPARAM lp);
 
