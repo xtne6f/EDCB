@@ -38,21 +38,12 @@ namespace EpgTimer
         EpgCapEnd = 108,
     };
 
-    public enum EpgViewMode : uint
-    {
-        Unknown = 0, //無効
-        BS = 1, //BS
-        CS = 2, //CS
-        Tere = 3, //地デジ
-        Other = 4, //その他
-        Custom = 5, //カスタム
-    };
-    
     public enum EventInfoTextMode : uint
     {
-        All = 0, //基本＋詳細
-        BasicOnly = 1, //基本のみ
-        ExtOnly = 2, //詳細のみ
+        BasicInfo,
+        BasicText,
+        ExtendedText,
+        PropertyInfo,
     };
 
     //StructDef.hより
