@@ -50,7 +50,10 @@ BOOL CSetDlgNetwork::OnInitDialog()
 				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 			}
 			swprintf_s(key, L"Port%d", i);
-			item.port = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN, appIniPath.c_str());
+			item.port = 0;
+			if( item.ipString != BON_NW_SRV_PIPE_IP ){
+				item.port = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN, appIniPath.c_str());
+			}
 			swprintf_s(key, L"BroadCast%d", i);
 			item.broadcastFlag = tcp ? 0 : GetPrivateProfileInt(L"SET_UDP", key, 0, appIniPath.c_str());
 			(tcp ? tcpSendList : udpSendList).push_back(item);
@@ -61,8 +64,8 @@ BOOL CSetDlgNetwork::OnInitDialog()
 			       item.port, item.port + BON_NW_PORT_RANGE - 1,
 			       item.broadcastFlag ? L" (Broadcast)" :
 			       tcp == 0 ? L"" :
-			       item.ipString == L"0.0.0.1" ? L" (SrvPipe)" :
-			       item.ipString == L"0.0.0.2" ? L" (Pipe)" : L"");
+			       item.ipString == BON_NW_SRV_PIPE_IP ? L" (SrvPipe)" :
+			       item.ipString == BON_NW_PIPE_IP ? L" (Pipe)" : L"");
 			ListBox_AddString(GetDlgItem(tcp ? IDC_LIST_IP_TCP : IDC_LIST_IP_UDP), add.c_str());
 		}
 	}
@@ -190,8 +193,8 @@ void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 	Format(add, L"%ls:%d-%d%ls",
 	       item.ipString.c_str(),
 	       item.port, item.port + BON_NW_PORT_RANGE - 1,
-	       item.ipString == L"0.0.0.1" ? L" (SrvPipe)" :
-	       item.ipString == L"0.0.0.2" ? L" (Pipe)" : L"");
+	       item.ipString == BON_NW_SRV_PIPE_IP ? L" (SrvPipe)" :
+	       item.ipString == BON_NW_PIPE_IP ? L" (Pipe)" : L"");
 	item.broadcastFlag = FALSE;
 
 	for( size_t i = 0; i < tcpSendList.size(); i++ ){
@@ -221,14 +224,17 @@ void CSetDlgNetwork::OnBnClickedRadioTcp()
 {
 	if( Button_GetCheck(GetDlgItem(IDC_RADIO_SRV_PIPE)) == BST_CHECKED ){
 		EnableWindow(GetDlgItem(IDC_IPADDRESS_TCP), FALSE);
-		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"0.0.0.1");
+		EnableWindow(GetDlgItem(IDC_EDIT_PORT_TCP), FALSE);
+		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, BON_NW_SRV_PIPE_IP);
 		SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, 0, FALSE);
 	}else if( Button_GetCheck(GetDlgItem(IDC_RADIO_PIPE)) == BST_CHECKED ){
 		EnableWindow(GetDlgItem(IDC_IPADDRESS_TCP), FALSE);
-		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"0.0.0.2");
+		EnableWindow(GetDlgItem(IDC_EDIT_PORT_TCP), TRUE);
+		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, BON_NW_PIPE_IP);
 		SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, 0, FALSE);
 	}else{
 		EnableWindow(GetDlgItem(IDC_IPADDRESS_TCP), TRUE);
+		EnableWindow(GetDlgItem(IDC_EDIT_PORT_TCP), TRUE);
 		SetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, L"127.0.0.1");
 		SetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, BON_TCP_PORT_BEGIN, FALSE);
 	}
