@@ -2705,7 +2705,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 				break;
 			}
 			EPG_AUTO_ADD_DATA item;
-			if( DeprecatedReadVALUE(&item, cmd.GetData(), cmd.GetDataSize()) == FALSE ){
+			if( DeprecatedReadVALUE(&item, cmd.GetData(), cmd.GetDataSize()) == false ){
 				break;
 			}
 			sys->oldSearchList[threadIndex].clear();
