@@ -278,6 +278,7 @@
     <None Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\BonCtrl\BonCtrlDef.h" />
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h" />
     <ClInclude Include="..\..\BonCtrl\PacketInit.h" />
     <ClInclude Include="..\..\Common\Common.h" />

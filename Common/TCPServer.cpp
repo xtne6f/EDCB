@@ -35,7 +35,8 @@ CTCPServer::~CTCPServer(void)
 }
 
 bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTimeout, LPCWSTR acl,
-                             const std::function<void(const CCmdStream&, CCmdStream&, LPCWSTR)>& cmdProc)
+                             const std::function<void(const CCmdStream&, CCmdStream&, LPCWSTR)>& cmdProc,
+                             const std::function<void(const CCmdStream&, CCmdStream&, RESPONSE_THREAD_STATE, void*&)>& responseThreadProc)
 {
 	if( !cmdProc ){
 		return false;
@@ -45,11 +46,12 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 	    m_ipv6 == ipv6 &&
 	    m_dwResponseTimeout == dwResponseTimeout &&
 	    m_acl == acl ){
-		//cmdProcの変化は想定していない
+		//cmdProcとresponseThreadProcの変化は想定していない
 		return true;
 	}
 	StopServer();
 	m_cmdProc = cmdProc;
+	m_responseThreadProc = responseThreadProc;
 	m_port = port;
 	m_ipv6 = ipv6;
 	m_dwResponseTimeout = dwResponseTimeout;
@@ -250,7 +252,8 @@ void SetNonBlockingMode(const WAIT_INFO& info)
 
 void CTCPServer::ServerThread(CTCPServer* pSys)
 {
-	vector<std::unique_ptr<WAIT_INFO>> waitList;
+	vector<std::unique_ptr<RESPONSE_THREAD_INFO>> resThreadList;
+	vector<WAIT_INFO> waitList;
 
 	while( pSys->m_stopFlag == false ){
 #ifdef _WIN32
@@ -258,23 +261,23 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 		hEventList[0] = pSys->m_notifyEvent.Handle();
 		hEventList[1] = pSys->m_hAcceptEvent;
 		for( size_t i = 0; i < waitList.size(); i++ ){
-			hEventList[2 + i] = waitList[i]->hEvent;
+			hEventList[2 + i] = waitList[i].hEvent;
 		}
 		DWORD result = WSAWaitForMultipleEvents((DWORD)hEventList.size(), &hEventList[0], FALSE, waitList.empty() ? WSA_INFINITE : NOTIFY_INTERVAL, FALSE);
 		if( WSA_WAIT_EVENT_0 + 2 <= result && result < WSA_WAIT_EVENT_0 + hEventList.size() ){
 			size_t i = result - WSA_WAIT_EVENT_0 - 2;
 			WSANETWORKEVENTS events;
-			if( WSAEnumNetworkEvents(waitList[i]->sock, waitList[i]->hEvent, &events) != SOCKET_ERROR ){
+			if( WSAEnumNetworkEvents(waitList[i].sock, waitList[i].hEvent, &events) != SOCKET_ERROR ){
 				if( events.lNetworkEvents & FD_CLOSE ){
 					//閉じる
-					closesocket(waitList[i]->sock);
-					WSACloseEvent(waitList[i]->hEvent);
+					closesocket(waitList[i].sock);
+					WSACloseEvent(waitList[i].hEvent);
 					waitList.erase(waitList.begin() + i);
 				}else if( events.lNetworkEvents & FD_READ ){
 					//読み飛ばす
 					AddDebugLog(L"Unexpected FD_READ");
 					char buf[1024];
-					recv(waitList[i]->sock, buf, sizeof(buf), 0);
+					recv(waitList[i].sock, buf, sizeof(buf), 0);
 				}
 			}
 		}else if( result == WSA_WAIT_EVENT_0 || result == WSA_WAIT_TIMEOUT ){
@@ -285,7 +288,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 		pfdList[1].fd = pSys->m_sock;
 		pfdList[1].events = POLLIN;
 		for( size_t i = 0; i < waitList.size(); i++ ){
-			pfdList[2 + i].fd = waitList[i]->sock;
+			pfdList[2 + i].fd = waitList[i].sock;
 			pfdList[2 + i].events = POLLIN;
 		}
 		int result = poll(&pfdList[0], pfdList.size(), waitList.empty() ? -1 : (int)NOTIFY_INTERVAL);
@@ -295,7 +298,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 		for( size_t i = 0; i < waitList.size(); ){
 			if( pfdList[2 + i].revents & POLLIN ){
 				//閉じる
-				close(waitList[i]->sock);
+				close(waitList[i].sock);
 				waitList.erase(waitList.begin() + i);
 				pfdList.erase(pfdList.begin() + 2 + i);
 			}else{
@@ -305,25 +308,25 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 		if( result == 0 || (pfdList[0].revents & POLLIN) ){
 #endif
 			for( size_t i = 0; i < waitList.size(); i++ ){
-				if( waitList[i]->closing ){
+				if( waitList[i].closing ){
 					continue;
 				}
 				CCmdStream res;
-				pSys->m_cmdProc(waitList[i]->cmd, res, NULL);
+				pSys->m_cmdProc(waitList[i].cmd, res, NULL);
 				if( res.GetParam() == CMD_NO_RES ){
 					//応答は保留された
-					if( GetTickCount() - waitList[i]->tick <= pSys->m_dwResponseTimeout ){
+					if( GetTickCount() - waitList[i].tick <= pSys->m_dwResponseTimeout ){
 						continue;
 					}
 				}else{
 					//ブロッキングモードに変更
-					SetBlockingMode(waitList[i]->sock);
-					send(waitList[i]->sock, (const char*)res.GetStream(), res.GetStreamSize(), 0);
-					SetNonBlockingMode(*waitList[i]);
+					SetBlockingMode(waitList[i].sock);
+					send(waitList[i].sock, (const char*)res.GetStream(), res.GetStreamSize(), 0);
+					SetNonBlockingMode(waitList[i]);
 				}
-				shutdown(waitList[i]->sock, 2); //SD_BOTH
+				shutdown(waitList[i].sock, 2); //SD_BOTH
 				//タイムアウトか応答済み(ここでは閉じない)
-				waitList[i]->closing = true;
+				waitList[i].closing = true;
 			}
 		}
 #ifdef _WIN32
@@ -400,18 +403,42 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 							if( hEventList.size() < WSA_MAXIMUM_WAIT_EVENTS && (hEvent = WSACreateEvent()) != WSA_INVALID_EVENT )
 #endif
 							{
-								waitList.push_back(std::unique_ptr<WAIT_INFO>(new WAIT_INFO));
-								waitList.back()->sock = sock;
-								std::swap(waitList.back()->cmd, cmd);
-								waitList.back()->tick = GetTickCount();
-								waitList.back()->closing = false;
+								waitList.resize(waitList.size() + 1);
+								waitList.back().sock = sock;
+								std::swap(waitList.back().cmd, cmd);
+								waitList.back().tick = GetTickCount();
+								waitList.back().closing = false;
 #ifdef _WIN32
-								waitList.back()->hEvent = hEvent;
+								waitList.back().hEvent = hEvent;
 #endif
-								SetNonBlockingMode(*waitList.back());
+								SetNonBlockingMode(waitList.back());
 								sock = INVALID_SOCKET;
 							}
 						}
+						break;
+					}else if( res.GetParam() == CMD_NO_RES_THREAD ){
+						//できるだけ回収
+						for( auto itr = resThreadList.begin(); itr != resThreadList.end(); ){
+							if( (*itr)->completed ){
+								(*itr)->th.join();
+								itr = resThreadList.erase(itr);
+							}else{
+								itr++;
+							}
+						}
+						if( resThreadList.size() >= RESPONSE_THREADS_MAX ){
+							AddDebugLog(L"Too many TCP threads");
+							break;
+						}
+						//応答用スレッドを追加
+						resThreadList.push_back(std::unique_ptr<RESPONSE_THREAD_INFO>(new RESPONSE_THREAD_INFO));
+						RESPONSE_THREAD_INFO& info = *resThreadList.back();
+						info.sock = sock;
+						std::swap(info.cmd, cmd);
+						info.sys = pSys;
+						info.completed = false;
+						info.th = thread_(ResponseThread, &info);
+						sock = INVALID_SOCKET;
 						break;
 					}
 					if( send(sock, (const char*)res.GetStream(), res.GetStreamSize(), 0) != (int)res.GetStreamSize() ){
@@ -436,11 +463,46 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 	}
 
 	while( waitList.empty() == false ){
-		SetBlockingMode(waitList.back()->sock);
-		closesocket(waitList.back()->sock);
+		SetBlockingMode(waitList.back().sock);
+		closesocket(waitList.back().sock);
 #ifdef _WIN32
-		WSACloseEvent(waitList.back()->hEvent);
+		WSACloseEvent(waitList.back().hEvent);
 #endif
 		waitList.pop_back();
 	}
+	while( resThreadList.empty() == false ){
+		resThreadList.back()->th.join();
+		resThreadList.pop_back();
+	}
+}
+
+void CTCPServer::ResponseThread(RESPONSE_THREAD_INFO* info)
+{
+	CCmdStream res(CMD_ERR);
+	void* param = NULL;
+	if( info->sys->m_responseThreadProc ){
+		info->sys->m_responseThreadProc(info->cmd, res, RESPONSE_THREAD_INIT, param);
+	}
+	if( send(info->sock, (const char*)res.GetStream(), res.GetStreamSize(), 0) != (int)res.GetStreamSize() ){
+		if( res.GetParam() == CMD_SUCCESS ){
+			info->sys->m_responseThreadProc(info->cmd, res, RESPONSE_THREAD_FIN, param);
+		}
+	}else if( res.GetParam() == CMD_SUCCESS ){
+		DWORD tick = GetTickCount();
+		while( res.GetParam() == CMD_SUCCESS && info->sys->m_stopFlag == false &&
+		       GetTickCount() - tick <= info->sys->m_dwResponseTimeout ){
+			res.SetParam(CMD_ERR);
+			res.Resize(0);
+			info->sys->m_responseThreadProc(info->cmd, res, RESPONSE_THREAD_PROC, param);
+			if( info->sys->m_stopFlag == false && res.GetDataSize() != 0 ){
+				if( send(info->sock, (const char*)res.GetData(), res.GetDataSize(), 0) != (int)res.GetDataSize() ){
+					break;
+				}
+				tick = GetTickCount();
+			}
+		}
+		info->sys->m_responseThreadProc(info->cmd, res, RESPONSE_THREAD_FIN, param);
+	}
+	closesocket(info->sock);
+	info->completed = true;
 }

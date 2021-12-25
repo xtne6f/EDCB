@@ -15,6 +15,7 @@
 #define CMD_ERR_DISCONNECT	206			//サーバーから切断された
 #define CMD_ERR_TIMEOUT		207			//タイムアウト発生
 #define CMD_ERR_BUSY		208			//ビジー状態で現在処理できない（EPGデータ読み込み中、録画中など）
-#define CMD_NO_RES			250			//Post用でレスポンスの必要なし
+#define CMD_NO_RES			250			//コマンドの応答を保留したい（サーバー内部で使用）
+#define CMD_NO_RES_THREAD	251			//コマンドの応答にスレッドを使いたい（サーバー内部で使用）
 
 #endif

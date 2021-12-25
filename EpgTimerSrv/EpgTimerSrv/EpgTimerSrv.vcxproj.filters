@@ -146,6 +146,9 @@
     <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\BonCtrlDef.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>

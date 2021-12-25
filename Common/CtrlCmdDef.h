@@ -30,6 +30,9 @@
 #define CMD2_EPG_SRV_UNREGIST_GUI_TCP		8 //TCP接続のGUIアプリケーションのIPとポートの登録を解除
 #define CMD2_EPG_SRV_ISREGIST_GUI_TCP		9 //TCP接続のGUIアプリケーションのIPとポートの登録状況確認
 
+//特別な応答を返すコマンド
+#define CMD2_EPG_SRV_RELAY_VIEW_STREAM		301 //ViewアプリのSrvPipeストリームを転送する
+
 #define CMD2_EPG_SRV_ENUM_RESERVE			1011 //予約一覧取得
 #define CMD2_EPG_SRV_GET_RESERVE			1012 //予約情報取得
 #define CMD2_EPG_SRV_ADD_RESERVE			1013 //予約追加
