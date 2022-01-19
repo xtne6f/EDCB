@@ -106,8 +106,8 @@ public:
 	lock_recursive_mutex(recursive_mutex_& mtx) : m_mtx(mtx) { m_mtx.lock(); }
 	~lock_recursive_mutex() { m_mtx.unlock(); }
 private:
-	lock_recursive_mutex(const recursive_mutex_&);
-	recursive_mutex_& operator=(const recursive_mutex_&);
+	lock_recursive_mutex(const lock_recursive_mutex&);
+	lock_recursive_mutex& operator=(const lock_recursive_mutex&);
 	recursive_mutex_& m_mtx;
 };
 
