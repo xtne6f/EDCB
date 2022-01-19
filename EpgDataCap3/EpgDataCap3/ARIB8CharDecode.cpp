@@ -593,11 +593,23 @@ BOOL CARIB8CharDecode::GL_GR( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRead
 					return FALSE;
 				}
 				BYTE bSecond = pbSrc[1] & 0x7F;
-				if( b >= 0x21 + 84 || bSecond < 0x21 || bSecond >= 0x21 + 94 ){
-					ToCustomFont(b, bSecond);
+				if( mode->iMF == MF_JIS_KANJI2 ){
+					//JIS互換漢字2面。テーブル未実装
+					m_strDecode += L'〓';
+				}else if( b >= 0x21 + 84 || bSecond < 0x21 || bSecond >= 0x21 + 94 ){
+					if( mode->iMF == MF_JIS_KANJI1 ){
+						//JIS互換漢字1面の第3水準。テーブル未実装
+						m_strDecode += L'〓';
+					}else{
+						ToCustomFont(b, bSecond);
+					}
 				}else{
 					//テーブルからコード取得
 					m_strDecode += m_jisTable[(b - 0x21) * 94 + (bSecond - 0x21)];
+					if( mode->iMF == MF_JIS_KANJI1 && m_strDecode.back() == L'・' && (b != 0x21 || bSecond != 0x21 + 5) ){
+						//JIS互換漢字1面では1区6点以外の・はテーブル未実装
+						m_strDecode.back() = L'〓';
+					}
 				}
 				dwReadSize = 2;
 				}
