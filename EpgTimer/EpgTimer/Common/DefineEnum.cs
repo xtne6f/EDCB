@@ -9,14 +9,12 @@ namespace EpgTimer
     {
         CMD_SUCCESS = 1, //成功
         CMD_ERR = 0, //汎用エラー
-        CMD_NEXT = 202, //Enumコマンド用、続きあり
         CMD_NON_SUPPORT = 203, //未サポートのコマンド
         CMD_ERR_INVALID_ARG = 204, //引数エラー
         CMD_ERR_CONNECT = 205, //サーバーにコネクトできなかった
         CMD_ERR_DISCONNECT = 206, //サーバーから切断された
         CMD_ERR_TIMEOUT = 207, //タイムアウト発生
         CMD_ERR_BUSY = 208, //ビジー状態で現在処理できない（EPGデータ読み込み中、録画中など）
-        CMD_NO_RES = 250 //Post用でレスポンスの必要なし
     };
 
     public enum UpdateNotifyItem : uint
