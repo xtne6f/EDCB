@@ -601,35 +601,43 @@ namespace EpgTimer
             return view;
         }
 
-        public String ConvertProgramText(EpgEventInfo eventInfo, EventInfoTextMode textMode)
+        public static string ConvertProgramText(EpgEventInfo eventInfo, EventInfoTextMode textMode)
         {
             string retText = "";
-            string basicInfo = "";
-            string extInfo = "";
-            if (eventInfo != null)
+            if (textMode == EventInfoTextMode.BasicInfo)
             {
+                string basicInfo = "";
                 UInt64 key = Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
                 if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                 {
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
                 }
-
                 basicInfo += new TimeDuration(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
                                               eventInfo.DurationFlag != 0, eventInfo.durationSec) + "\r\n";
-
                 if (eventInfo.ShortInfo != null)
                 {
                     basicInfo += eventInfo.ShortInfo.event_name + "\r\n\r\n";
-                    extInfo += eventInfo.ShortInfo.text_char + "\r\n\r\n";
                 }
-
+                retText = basicInfo;
+            }
+            else if (textMode == EventInfoTextMode.BasicText)
+            {
+                if (eventInfo.ShortInfo != null)
+                {
+                    retText = eventInfo.ShortInfo.text_char + "\r\n\r\n";
+                }
+            }
+            else if (textMode == EventInfoTextMode.ExtendedText)
+            {
                 if (eventInfo.ExtInfo != null)
                 {
-                    extInfo += eventInfo.ExtInfo.text_char + "\r\n\r\n";
+                    retText = eventInfo.ExtInfo.text_char + "\r\n\r\n";
                 }
-
+            }
+            else if (textMode == EventInfoTextMode.PropertyInfo)
+            {
                 //ジャンル
-                extInfo += "ジャンル :\r\n";
+                string extInfo = "ジャンル :\r\n";
                 if (eventInfo.ContentInfo != null)
                 {
                     foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
@@ -642,17 +650,18 @@ namespace EpgTimer
                             nibble1 = info.user_nibble_1 | (0x60 + nibble2 * 16);
                             nibble2 = info.user_nibble_2;
                         }
-                        if (ContentKindDictionary.ContainsKey((ushort)(nibble1 << 8 | 0xFF)))
+                        string name;
+                        if (Instance.ContentKindDictionary.TryGetValue((ushort)(nibble1 << 8 | 0xFF), out name))
                         {
-                            content += ContentKindDictionary[(ushort)(nibble1 << 8 | 0xFF)];
+                            content += name;
                         }
                         else
                         {
                             content += "(0x" + nibble1.ToString("X2") + ")";
                         }
-                        if (ContentKindDictionary.ContainsKey((ushort)(nibble1 << 8 | nibble2)))
+                        if (Instance.ContentKindDictionary.TryGetValue((ushort)(nibble1 << 8 | nibble2), out name))
                         {
-                            content += " - " + ContentKindDictionary[(ushort)(nibble1 << 8 | nibble2)];
+                            content += " - " + name;
                         }
                         else if (nibble1 != 0x0F)
                         {
@@ -669,10 +678,10 @@ namespace EpgTimer
                 {
                     int streamContent = eventInfo.ComponentInfo.stream_content;
                     int componentType = eventInfo.ComponentInfo.component_type;
-                    UInt16 componentKey = (UInt16)(streamContent << 8 | componentType);
-                    if (ComponentKindDictionary.ContainsKey(componentKey) == true)
+                    string name;
+                    if (Instance.ComponentKindDictionary.TryGetValue((ushort)(streamContent << 8 | componentType), out name))
                     {
-                        extInfo += ComponentKindDictionary[componentKey];
+                        extInfo += name;
                     }
                     if (eventInfo.ComponentInfo.text_char.Length > 0)
                     {
@@ -690,10 +699,10 @@ namespace EpgTimer
                     {
                         int streamContent = info.stream_content;
                         int componentType = info.component_type;
-                        UInt16 componentKey = (UInt16)(streamContent << 8 | componentType);
-                        if (ComponentKindDictionary.ContainsKey(componentKey) == true)
+                        string name;
+                        if (Instance.ComponentKindDictionary.TryGetValue((ushort)(streamContent << 8 | componentType), out name))
                         {
-                            extInfo += ComponentKindDictionary[componentKey];
+                            extInfo += name;
                         }
                         if (info.text_char.Length > 0)
                         {
@@ -752,7 +761,7 @@ namespace EpgTimer
                         extInfo += "イベントリレーあり：\r\n";
                         foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
                         {
-                            key = Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
+                            ulong key = Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
                             if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                             {
                                 extInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + " ";
@@ -774,17 +783,9 @@ namespace EpgTimer
                 extInfo += "TransportStreamID : " + eventInfo.transport_stream_id.ToString() + " (0x" + eventInfo.transport_stream_id.ToString("X4") + ")\r\n";
                 extInfo += "ServiceID : " + eventInfo.service_id.ToString() + " (0x" + eventInfo.service_id.ToString("X4") + ")\r\n";
                 extInfo += "EventID : " + eventInfo.event_id.ToString() + " (0x" + eventInfo.event_id.ToString("X4") + ")\r\n";
-
+                retText = extInfo;
             }
 
-            if (textMode == EventInfoTextMode.All || textMode == EventInfoTextMode.BasicOnly)
-            {
-                retText = basicInfo;
-            }
-            if (textMode == EventInfoTextMode.All || textMode == EventInfoTextMode.ExtOnly)
-            {
-                retText += extInfo;
-            }
             return retText;
         }
 
@@ -818,44 +819,114 @@ namespace EpgTimer
             return retText;
         }
 
-        public static Paragraph ConvertDisplayText(string text)
+        public static string TrimHyphenSpace(string text)
         {
-            int searchFrom = 0;
-            var para = new Paragraph();
-            string rtext = ReplaceText(text, CommonManager.Instance.ReplaceUrlDictionary);
-            if (rtext.Length == text.Length)
+            //行ごとに処理
+            for (int lineStart = 0, lineEnd; lineStart < text.Length; lineStart = lineEnd)
             {
-                //http(s)スキームで始まるか特定のTLDっぽい文字列を含むものを探す
-                for (Match m = Regex.Match(rtext, @"(?:https?://|(?<![0-9A-Za-z%_/.-])[0-9A-Za-z%_.-]+\.(?:com|jp|tv)/)[0-9A-Za-z!#$%&'()~=@;:?_+*/.-]+"); m.Success; m = m.NextMatch())
+                lineEnd = text.IndexOf('\n', lineStart);
+                lineEnd = lineEnd < 0 ? text.Length : lineEnd + 1;
+                if (lineEnd - lineStart >= 2 && text[lineStart] == '-')
                 {
-                    para.Inlines.Add(text.Substring(searchFrom, m.Index - searchFrom));
-                    var h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
-                    h.MouseLeftButtonDown += (sender, e) =>
+                    if (text[lineStart + 1] == ' ')
                     {
-                        try
-                        {
-                            using (System.Diagnostics.Process.Start(((Hyperlink)sender).NavigateUri.ToString())) { }
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.ToString());
-                        }
-                    };
-                    h.Foreground = SystemColors.HotTrackBrush;
-                    h.Cursor = System.Windows.Input.Cursors.Hand;
-                    try
-                    {
-                        h.NavigateUri = new Uri((Regex.IsMatch(m.Value, "^https?://") ? "" : "https://") + m.Value);
-                        para.Inlines.Add(h);
+                        //"- "を取り除く
+                        text = text.Remove(lineStart, 2);
+                        lineEnd -= 2;
                     }
-                    catch
+                    else
                     {
-                        para.Inlines.Add(text.Substring(m.Index, m.Length));
+                        //"-- "などで始まるものは"-"を1つだけ減らす
+                        for (lineStart++; lineStart < lineEnd && text[lineStart] == '-'; lineStart++) { }
+                        if (lineStart < lineEnd && text[lineStart] == ' ')
+                        {
+                            text = text.Remove(lineStart - 1, 1);
+                            lineEnd--;
+                        }
                     }
-                    searchFrom = m.Index + m.Length;
                 }
             }
-            para.Inlines.Add(text.Substring(searchFrom));
+            return text;
+        }
+
+        public static Paragraph ConvertDisplayText(string basicInfo, string extText, string propertyInfo)
+        {
+            int plainStart = 0;
+            var para = new Paragraph();
+            string text = basicInfo + extText + propertyInfo;
+            string rtext = ReplaceText(text, Instance.ReplaceUrlDictionary);
+            if (rtext.Length == text.Length)
+            {
+                var reEscapedHyphenSpace = new Regex(@"\G--+ ");
+                var reHyperlink = new Regex(@"(?:https?://|(?<![0-9A-Za-z%_/.-])[0-9A-Za-z%_.-]+\.(?:com|jp|tv)/)[0-9A-Za-z!#$%&'()~=@;:?_+*/.-]+");
+
+                //行ごとに処理
+                for (int lineStart = 0, lineEnd; lineStart < text.Length; lineStart = lineEnd)
+                {
+                    lineEnd = text.IndexOf('\n', lineStart);
+                    lineEnd = lineEnd < 0 ? text.Length : lineEnd + 1;
+                    //extTextの各行について"- "で始まるものは装飾する
+                    if (lineStart >= basicInfo.Length &&
+                        lineStart < basicInfo.Length + extText.Length &&
+                        lineEnd - lineStart >= 2 && text[lineStart] == '-' && text[lineStart + 1] == ' ')
+                    {
+                        //非装飾
+                        para.Inlines.Add(text.Substring(plainStart, lineStart - plainStart));
+                        //非表示
+                        var run = new Run("- ");
+                        run.FontSize = 1;
+                        run.Foreground = System.Windows.Media.Brushes.Transparent;
+                        para.Inlines.Add(run);
+                        lineStart += 2;
+                        //太字
+                        para.Inlines.Add(new Bold(new Run(text.Substring(lineStart, lineEnd - lineStart))));
+                        plainStart = lineEnd;
+                    }
+                    else
+                    {
+                        //extTextの各行について"-- "などで始まるものは"-"を1つだけ減らす
+                        if (lineStart >= basicInfo.Length &&
+                            lineStart < basicInfo.Length + extText.Length &&
+                            reEscapedHyphenSpace.IsMatch(text, lineStart))
+                        {
+                            para.Inlines.Add(text.Substring(plainStart, lineStart - plainStart));
+                            var run = new Run("-");
+                            run.FontSize = 1;
+                            run.Foreground = System.Windows.Media.Brushes.Transparent;
+                            para.Inlines.Add(run);
+                            plainStart = ++lineStart;
+                        }
+                        //http(s)スキームで始まるか特定のTLDっぽい文字列を含むものを探す
+                        for (Match m = reHyperlink.Match(rtext, lineStart, lineEnd - lineStart); m.Success; m = m.NextMatch())
+                        {
+                            para.Inlines.Add(text.Substring(plainStart, m.Index - plainStart));
+                            plainStart = m.Index;
+                            var h = new Hyperlink(new Run(text.Substring(m.Index, m.Length)));
+                            h.MouseLeftButtonDown += (sender, e) =>
+                            {
+                                try
+                                {
+                                    using (System.Diagnostics.Process.Start(((Hyperlink)sender).NavigateUri.ToString())) { }
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show(ex.ToString());
+                                }
+                            };
+                            h.Foreground = SystemColors.HotTrackBrush;
+                            h.Cursor = System.Windows.Input.Cursors.Hand;
+                            try
+                            {
+                                h.NavigateUri = new Uri((Regex.IsMatch(m.Value, "^https?://") ? "" : "https://") + m.Value);
+                                para.Inlines.Add(h);
+                                plainStart = m.Index + m.Length;
+                            }
+                            catch { }
+                        }
+                    }
+                }
+            }
+            para.Inlines.Add(text.Substring(plainStart));
             return para;
         }
 
