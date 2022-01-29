@@ -39,6 +39,7 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->resCapture = NULL;
 	this->lastONID = 0xFFFF;
 	this->lastTSID = 0xFFFF;
+	this->lastSIDforEpgCap = 0xFFFF;
 	this->recCtrlID = 0;
 	this->chScanWorking = FALSE;
 	this->epgCapWorking = FALSE;
@@ -533,11 +534,26 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				SET_CH_INFO info;
 				CBonCtrl::JOB_STATUS status = this->bonCtrl.GetEpgCapStatus(&info);
 				if( status == CBonCtrl::ST_WORKING ){
-					ReloadServiceList(info.ONID, info.TSID, info.SID);
 					this->lastONID = info.ONID;
 					this->lastTSID = info.TSID;
 					this->bonCtrl.SetNWCtrlServiceID(info.SID);
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
+					if (this->lastSIDforEpgCap != info.SID) {
+						this->lastSIDforEpgCap = info.SID;
+						ReloadServiceList(info.ONID, info.TSID, info.SID);
+						ChgIconStatus();
+
+						wchar_t epglog[32];
+						epglog[0] = L'\0';
+						wcsncat_s(epglog, 32, L"EPG取得中\r\n", _TRUNCATE);
+						for (size_t i = 0; i < this->serviceList.size(); i++)
+						{
+							if (serviceList[i].serviceID == info.SID)
+							{
+								wcsncat_s(epglog, 32, serviceList[i].serviceName.c_str(), _TRUNCATE);
+							}
+						}
+						SetDlgItemText(m_hWnd, IDC_EDIT_LOG, epglog);
+					}
 				}else if( status == CBonCtrl::ST_CANCEL ){
 					this->epgCapWorking = FALSE;
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
@@ -1016,6 +1032,7 @@ BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 {
 	this->lastONID = 0xFFFF;
 	this->lastTSID = 0xFFFF;
+	this->lastSIDforEpgCap = 0xFFFF;
 	BOOL ret = this->bonCtrl.OpenBonDriver(fileName, this->traceBonDriverLevel, this->openWait, this->tsBuffMaxCount);
 	if( ret == FALSE ){
 		wstring log;
@@ -1060,6 +1077,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonEpg()
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得を開始できませんでした\r\n");
 		return;
 	}
+	this->lastSIDforEpgCap = 0xFFFF;
 	this->epgCapWorking = TRUE;
 	BtnUpdate(GUI_CANCEL_ONLY);
 	ChgIconStatus();
@@ -1672,6 +1690,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 			vector<SET_CH_INFO> val;
 			if( cmd.ReadVALUE(&val) ){
 				if( this->bonCtrl.StartEpgCap(&val) ){
+					this->lastSIDforEpgCap = 0xFFFF;
 					this->epgCapWorking = TRUE;
 					BtnUpdate(GUI_CANCEL_ONLY);
 					ChgIconStatus();
