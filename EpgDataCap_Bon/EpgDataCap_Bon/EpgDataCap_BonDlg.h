@@ -92,6 +92,7 @@ protected:
 	vector<CH_DATA4> serviceList;
 	WORD lastONID;
 	WORD lastTSID;
+	WORD lastSIDforEpgCap;
 	DWORD recCtrlID;
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
