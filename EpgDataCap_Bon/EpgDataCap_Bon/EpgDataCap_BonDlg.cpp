@@ -539,10 +539,14 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				CBonCtrl::JOB_STATUS status = this->bonCtrl.GetEpgCapStatus(&info);
 				if( status == CBonCtrl::ST_WORKING ){
 					ReloadServiceList(info.ONID, info.TSID, info.SID);
-					this->lastONID = info.ONID;
-					this->lastTSID = info.TSID;
 					this->bonCtrl.SetNWCtrlServiceID(info.SID);
 					CheckAndSetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
+					if( this->lastONID != info.ONID || this->lastTSID != info.TSID ){
+						this->lastONID = info.ONID;
+						this->lastTSID = info.TSID;
+						//トレイアイコンのサービス名を更新するため
+						ChgIconStatus();
+					}
 				}else if( status == CBonCtrl::ST_CANCEL ){
 					this->epgCapWorking = FALSE;
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
