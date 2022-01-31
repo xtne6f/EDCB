@@ -82,6 +82,15 @@ HICON CEpgDataCap_BonDlg::LoadLargeOrSmallIcon(int iconID, bool isLarge)
 	return (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), IMAGE_ICON, isLarge ? 32 : 16, isLarge ? 32 : 16, 0);
 }
 
+void CEpgDataCap_BonDlg::CheckAndSetDlgItemText(HWND wnd, int id, LPCWSTR text)
+{
+	vector<WCHAR> buff(wcslen(text) + 8, L'\0');
+	GetDlgItemText(wnd, id, buff.data(), (int)buff.size());
+	if( wcscmp(buff.data(), text) != 0 ){
+		SetDlgItemText(wnd, id, text);
+	}
+}
+
 void CEpgDataCap_BonDlg::ReloadSetting()
 {
 	fs_path appIniPath = GetModuleIniPath();
@@ -468,11 +477,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						info = ConvertEpgInfoText(eventInfo);
 					}
 				}
-				vector<WCHAR> pgInfo(info.size() + 2);
-				GetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, pgInfo.data(), (int)pgInfo.size());
-				if( info != pgInfo.data() ){
-					SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
-				}
+				CheckAndSetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
 			}
 
 			if( this->chScanWorking ){
@@ -537,7 +542,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					this->lastONID = info.ONID;
 					this->lastTSID = info.TSID;
 					this->bonCtrl.SetNWCtrlServiceID(info.SID);
-					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
+					CheckAndSetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
 				}else if( status == CBonCtrl::ST_CANCEL ){
 					this->epgCapWorking = FALSE;
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
@@ -972,44 +977,62 @@ void CEpgDataCap_BonDlg::UpdateTitleBarText()
 
 int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 {
-	this->serviceList.clear();
-	ComboBox_ResetContent(GetDlgItem(IDC_COMBO_SERVICE));
+	//サービス一覧の表示の更新は重いので必要なときだけ
+	bool updateComboBox = false;
+	const map<DWORD, CH_DATA4>& nextServices = this->bonCtrl.GetServiceList();
+	if( this->serviceList.size() != nextServices.size() ){
+		updateComboBox = true;
+		this->serviceList.resize(nextServices.size());
+	}
+	auto itrNext = nextServices.begin();
+	for( size_t i = 0; i < this->serviceList.size(); i++ ){
+		updateComboBox = updateComboBox ||
+		                 this->serviceList[i].useViewFlag != itrNext->second.useViewFlag ||
+		                 this->serviceList[i].serviceName != itrNext->second.serviceName;
+		this->serviceList[i] = (itrNext++)->second;
+	}
 
-	DWORD ret = this->bonCtrl.GetServiceList(&this->serviceList);
-	if( ret != NO_ERR || this->serviceList.size() == 0 ){
+	//必要なら一覧の表示と選択状態を更新する
+	int selectIndex = -1;
+	int selectSel = -1;
+	int comboBoxIndex = 0;
+	HWND hItem = GetDlgItem(IDC_COMBO_SERVICE);
+	if( updateComboBox ){
+		ComboBox_ResetContent(hItem);
+	}
+	for( size_t i = 0; i < this->serviceList.size(); i++ ){
+		if( selectIndex < 0 ||
+		    (this->serviceList[i].originalNetworkID == selONID &&
+		     this->serviceList[i].transportStreamID == selTSID &&
+		     this->serviceList[i].serviceID == selSID) ){
+			//一覧には表示しないがリストには存在する場合もある
+			selectIndex = (int)i;
+		}
+		if( this->serviceList[i].useViewFlag == TRUE ){
+			if( updateComboBox ){
+				ComboBox_AddString(hItem, this->serviceList[i].serviceName.c_str());
+				ComboBox_SetItemData(hItem, comboBoxIndex, i);
+			}
+			if( selectIndex == (int)i ){
+				selectSel = comboBoxIndex;
+			}
+			comboBoxIndex++;
+		}
+	}
+	if( selectSel >= 0 && selectSel != ComboBox_GetCurSel(hItem) ){
+		ComboBox_SetCurSel(hItem, selectSel);
+	}
+
+	if( this->serviceList.empty() ){
 		WCHAR log[512 + 64] = L"";
 		GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
 		if( wcsstr(log, L"チャンネル情報の読み込みに失敗しました\r\n") == NULL ){
 			wcscat_s(log, L"チャンネル情報の読み込みに失敗しました\r\n");
 			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 		}
-	}else{
-		int selectIndex = -1;
-		int selectSel = -1;
-		for( size_t i=0; i<this->serviceList.size(); i++ ){
-			if( selectIndex < 0 ||
-			    (this->serviceList[i].originalNetworkID == selONID &&
-			     this->serviceList[i].transportStreamID == selTSID &&
-			     this->serviceList[i].serviceID == selSID) ){
-				//一覧には表示しないがリストには存在する場合もある
-				selectIndex = (int)i;
-			}
-			if( this->serviceList[i].useViewFlag == TRUE ){
-				int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_SERVICE), this->serviceList[i].serviceName.c_str());
-				ComboBox_SetItemData(GetDlgItem(IDC_COMBO_SERVICE), index, i);
-				if( selectSel < 0 || selectIndex == (int)i ){
-					selectSel = index;
-				}
-			}
-		}
-		if( selectSel >= 0 ){
-			ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_SERVICE), selectSel);
-		}
-		UpdateTitleBarText();
-		return selectIndex;
 	}
 	UpdateTitleBarText();
-	return -1;
+	return selectIndex;
 }
 
 BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)

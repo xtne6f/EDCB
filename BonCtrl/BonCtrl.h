@@ -106,12 +106,11 @@ public:
 
 	//サービス一覧を取得する
 	//戻り値：
-	// エラーコード
-	//引数：
-	// serviceList				[OUT]サービス情報のリスト
-	DWORD GetServiceList(
-		vector<CH_DATA4>* serviceList
-		);
+	// サービス一覧。mapのキーは読み込み順番号。次に非スレッドセーフメソッドを呼び出すまで有効
+	const map<DWORD, CH_DATA4>& GetServiceList(
+		) {
+		return this->chUtil.GetServiceList();
+	}
 
 	//TSストリーム制御用コントロールを作成する
 	//戻り値：

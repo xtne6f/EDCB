@@ -304,18 +304,6 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 	}
 }
 
-//サービス一覧を取得する
-//戻り値：
-// エラーコード
-//引数：
-// serviceList				[OUT]サービス情報のリスト
-DWORD CBonCtrl::GetServiceList(
-	vector<CH_DATA4>* serviceList
-	)
-{
-	return this->chUtil.GetEnumService(serviceList);
-}
-
 DWORD CBonCtrl::CreateServiceCtrl(
 	BOOL duplicateNWCtrl
 	)

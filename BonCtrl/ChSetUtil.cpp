@@ -172,22 +172,6 @@ BOOL CChSetUtil::AddServiceInfo(
 	return TRUE;
 }
 
-
-//サービス一覧を取得する
-BOOL CChSetUtil::GetEnumService(
-	vector<CH_DATA4>* serviceList
-	)
-{
-	if( this->chText4.GetMap().size() == 0 ){
-		return FALSE;
-	}
-	map<DWORD, CH_DATA4>::const_iterator itr;
-	for( itr = this->chText4.GetMap().begin(); itr != this->chText4.GetMap().end(); itr++ ){
-		serviceList->push_back(itr->second);
-	}
-	return TRUE;
-}
-
 //IDから物理チャンネルを検索する
 BOOL CChSetUtil::GetCh(
 	WORD ONID,
@@ -195,7 +179,7 @@ BOOL CChSetUtil::GetCh(
 	WORD SID,
 	DWORD& space,
 	DWORD& ch
-	)
+	) const
 {
 	BOOL ret = FALSE;
 	map<DWORD, CH_DATA4>::const_iterator itr;
@@ -215,7 +199,7 @@ BOOL CChSetUtil::GetCh(
 	return ret;
 }
 
-vector<SET_CH_INFO> CChSetUtil::GetEpgCapService()
+vector<SET_CH_INFO> CChSetUtil::GetEpgCapService() const
 {
 	vector<SET_CH_INFO> ret;
 	map<DWORD, CH_DATA4>::const_iterator itrCh4;
@@ -247,7 +231,7 @@ vector<SET_CH_INFO> CChSetUtil::GetEpgCapService()
 vector<SET_CH_INFO> CChSetUtil::GetEpgCapServiceAll(
 	int ONID,
 	int TSID
-	)
+	) const
 {
 	vector<SET_CH_INFO> ret;
 	map<LONGLONG, CH_DATA5>::const_iterator itrCh5;
@@ -271,7 +255,7 @@ BOOL CChSetUtil::IsPartial(
 	WORD ONID,
 	WORD TSID,
 	WORD SID
-	)
+	) const
 {
 	LONGLONG key = Create64Key(ONID, TSID, SID);
 	map<LONGLONG, CH_DATA5>::const_iterator itr;

@@ -33,6 +33,8 @@ protected:
 	static BOOL disableKeyboardHook;
 protected:
 	static HICON LoadLargeOrSmallIcon(int iconID, bool isLarge);
+	//現在値と異なるときだけSetDlgItemText()を呼ぶ
+	static void CheckAndSetDlgItemText(HWND wnd, int id, LPCWSTR text);
 	void ReloadSetting();
 	void BtnUpdate(DWORD guiMode);
 	//タスクトレイ
@@ -89,6 +91,7 @@ protected:
 	const CCmdStream* cmdCapture;
 	CCmdStream* resCapture;
 
+	//サービス一覧の表示と同期する。ただしこのリストには非表示サービスも含む
 	vector<CH_DATA4> serviceList;
 	WORD lastONID;
 	WORD lastTSID;
