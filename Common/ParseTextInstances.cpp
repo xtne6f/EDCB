@@ -186,6 +186,15 @@ LONGLONG CParseChText5::AddCh(const CH_DATA5& item)
 	return key;
 }
 
+void CParseChText5::DelCh(LONGLONG key)
+{
+	this->itemMap.erase(key);
+	vector<LONGLONG>::iterator itr = std::find(this->parsedOrder.begin(), this->parsedOrder.end(), key);
+	if( itr != this->parsedOrder.end() ){
+		this->parsedOrder.erase(itr);
+	}
+}
+
 bool CParseChText5::SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL epgCapFlag)
 {
 	map<LONGLONG, CH_DATA5>::iterator itr = this->itemMap.find((LONGLONG)originalNetworkID << 32 | (LONGLONG)transportStreamID << 16 | serviceID);

@@ -35,6 +35,7 @@ public:
 	using Base::GetFilePath;
 	using Base::SaveText;
 	LONGLONG AddCh(const CH_DATA5& item);
+	void DelCh(LONGLONG key);
 	//EPGデータの取得対象かを設定する
 	bool SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL epgCapFlag);
 private:

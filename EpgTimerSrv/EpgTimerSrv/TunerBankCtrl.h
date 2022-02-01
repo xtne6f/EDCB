@@ -74,7 +74,7 @@ public:
 		vector<REC_FILE_SET_INFO> partialRecFolder;
 	};
 
-	CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, WORD epgCapMax, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
+	CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, WORD epgCapMax, const map<DWORD, CH_DATA4>& chMap_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
 	~CTunerBankCtrl();
 	void ReloadSetting(const CEpgTimerSrvSetting::SETTING& s);
 
@@ -83,11 +83,7 @@ public:
 	//このチューナと同じドライバのチューナをEPG取得に使える最大数を取得(不変値)
 	WORD GetEpgCapMaxOfThisBon() const { return this->epgCapMaxOfThisBon; }
 	//サービス情報を取得(不変値)
-	const CH_DATA4* GetCh(WORD onid, WORD tsid, WORD sid) const {
-		auto itr = std::find_if(this->chList.begin(), this->chList.end(), [=](const CH_DATA4& a) {
-			return a.originalNetworkID == onid && a.transportStreamID == tsid && a.serviceID == sid; });
-		return itr == this->chList.end() ? NULL : &*itr;
-	}
+	const CH_DATA4* GetCh(WORD onid, WORD tsid, WORD sid) const;
 	//予約を追加する
 	bool AddReserve(const TUNER_RESERVE& reserve);
 	//待機状態に入っている予約を変更する
@@ -174,7 +170,7 @@ private:
 	const DWORD tunerID;
 	const wstring bonFileName;
 	const WORD epgCapMaxOfThisBon;
-	const vector<CH_DATA4> chList;
+	map<LONGLONG, CH_DATA4> chMap;
 	CNotifyManager& notifyManager;
 	CEpgDBManager& epgDBManager;
 	map<DWORD, TUNER_RESERVE_WORK> reserveMap;

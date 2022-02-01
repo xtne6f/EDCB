@@ -13,7 +13,7 @@ public:
 	const wstring& GetFilePath() const { return this->filePath; }
 protected:
 	typedef CParseText<K, V> Base;
-	bool SaveText() const;
+	bool SaveText(string* saveToStr = NULL) const;
 	virtual bool ParseLine(LPCWSTR parseLine, pair<K, V>& item) = 0;
 	virtual bool SaveLine(const pair<K, V>& item, wstring& saveLine) const { (void)item; (void)saveLine; return false; }
 	virtual bool SaveFooterLine(wstring& saveLine) const { (void)saveLine; return false; }
@@ -102,27 +102,35 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 }
 
 template <class K, class V>
-bool CParseText<K, V>::SaveText() const
+bool CParseText<K, V>::SaveText(string* saveToStr) const
 {
 	if( this->filePath.empty() ){
 		return false;
 	}
 	std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
-	for( int retry = 0;; ){
-		UtilCreateDirectories(fs_path(this->filePath).parent_path());
-		fp.reset(UtilOpenFile(this->filePath + L".tmp", UTIL_SECURE_WRITE));
-		if( fp ){
-			break;
-		}else if( ++retry > 5 ){
-			AddDebugLog(L"CParseText<>::SaveText(): Error: Cannot open file");
-			return false;
+	if( saveToStr ){
+		saveToStr->clear();
+	}else{
+		for( int retry = 0;; ){
+			UtilCreateDirectories(fs_path(this->filePath).parent_path());
+			fp.reset(UtilOpenFile(this->filePath + L".tmp", UTIL_SECURE_WRITE));
+			if( fp ){
+				break;
+			}else if( ++retry > 5 ){
+				AddDebugLog(L"CParseText<>::SaveText(): Error: Cannot open file");
+				return false;
+			}
+			Sleep(200 * retry);
 		}
-		Sleep(200 * retry);
 	}
 
 	bool ret = true;
 	if( this->isUtf8 ){
-		ret = ret && fputs("\xEF\xBB\xBF", fp.get()) >= 0;
+		if( saveToStr ){
+			saveToStr->append("\xEF\xBB\xBF");
+		}else{
+			ret = ret && fputs("\xEF\xBB\xBF", fp.get()) >= 0;
+		}
 	}
 	wstring saveLine;
 	vector<char> saveBuf;
@@ -138,7 +146,11 @@ bool CParseText<K, V>::SaveText() const
 				}else{
 					len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 				}
-				ret = ret && fwrite(&saveBuf.front(), 1, len, fp.get()) == len;
+				if( saveToStr ){
+					saveToStr->append(saveBuf.data(), saveBuf.data() + len);
+				}else{
+					ret = ret && fwrite(saveBuf.data(), 1, len, fp.get()) == len;
+				}
 			}
 		}
 	}else{
@@ -152,7 +164,11 @@ bool CParseText<K, V>::SaveText() const
 				}else{
 					len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 				}
-				ret = ret && fwrite(&saveBuf.front(), 1, len, fp.get()) == len;
+				if( saveToStr ){
+					saveToStr->append(saveBuf.data(), saveBuf.data() + len);
+				}else{
+					ret = ret && fwrite(saveBuf.data(), 1, len, fp.get()) == len;
+				}
 			}
 		}
 	}
@@ -165,11 +181,18 @@ bool CParseText<K, V>::SaveText() const
 		}else{
 			len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 		}
-		ret = ret && fwrite(&saveBuf.front(), 1, len, fp.get()) == len;
+		if( saveToStr ){
+			saveToStr->append(saveBuf.data(), saveBuf.data() + len);
+		}else{
+			ret = ret && fwrite(saveBuf.data(), 1, len, fp.get()) == len;
+		}
 	}
 	fp.reset();
 
 	if( ret ){
+		if( saveToStr ){
+			return true;
+		}
 		for( int retry = 0;; ){
 #ifdef _WIN32
 			if( MoveFileEx((this->filePath + L".tmp").c_str(), this->filePath.c_str(), MOVEFILE_REPLACE_EXISTING) ){

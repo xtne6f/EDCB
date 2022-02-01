@@ -41,14 +41,9 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 			}else{
 				CParseChText4 chText4;
 				chText4.ParseText(fs_path(settingPath).append(nameList[i].second).c_str());
-				vector<CH_DATA4> chList;
-				chList.reserve(chUtil.GetMap().size());
-				for( map<DWORD, CH_DATA4>::const_iterator itr = chText4.GetMap().begin(); itr != chText4.GetMap().end(); itr++ ){
-					chList.push_back(itr->second);
-				}
 				for( WORD j = 0; j < count; j++, tunerID++ ){
 					this->tunerBankMap.insert(std::make_pair(tunerID, std::unique_ptr<CTunerBankCtrl>(new CTunerBankCtrl(
-						tunerID, nameList[i].first.c_str(), min(epgCount, count), chList, this->notifyManager, this->epgDBManager))));
+						tunerID, nameList[i].first.c_str(), min(epgCount, count), chText4.GetMap(), this->notifyManager, this->epgDBManager))));
 				}
 			}
 		}
@@ -84,6 +79,23 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	fs_path commonIniPath = GetCommonIniPath();
 
 	this->chUtil.ParseText(GetSettingPath().append(L"ChSet5.txt").c_str());
+
+	//チューナがあるものだけ残す
+	for( map<LONGLONG, CH_DATA5>::const_iterator itrCh = this->chUtil.GetMap().begin(); itrCh != this->chUtil.GetMap().end(); ){
+		auto itr = this->tunerBankMap.cbegin();
+		for( ; itr != this->tunerBankMap.end(); itr++ ){
+			if( itr->second->GetCh(itrCh->second.originalNetworkID, itrCh->second.transportStreamID, itrCh->second.serviceID) ){
+				break;
+			}
+		}
+		if( itr == this->tunerBankMap.end() ){
+			LONGLONG key = itrCh->first;
+			this->chUtil.DelCh(key);
+			itrCh = this->chUtil.GetMap().lower_bound(key);
+		}else{
+			itrCh++;
+		}
+	}
 
 	this->setting = s;
 
@@ -2016,6 +2028,13 @@ vector<CH_DATA5> CReserveManager::GetChDataList() const
 		list.push_back(itr->second);
 	}
 	return list;
+}
+
+bool CReserveManager::GetChDataListAsText(string& text) const
+{
+	lock_recursive_mutex lock(this->managerLock);
+
+	return this->chUtil.SaveText(&text);
 }
 
 void CReserveManager::WatchdogThread(CReserveManager* sys)

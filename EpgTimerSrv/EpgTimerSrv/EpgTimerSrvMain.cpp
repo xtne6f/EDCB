@@ -2038,17 +2038,11 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		{
 			wstring val;
 			if( cmd.ReadVALUE(&val) && UtilComparePath(val.c_str(), L"ChSet5.txt") == 0 ){
-				fs_path path = GetSettingPath().append(L"ChSet5.txt");
-				std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
-				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-					__int64 fileSize = _ftelli64(fp.get());
-					if( 0 < fileSize && fileSize < 64 * 1024 * 1024 ){
-						res.Resize((DWORD)fileSize);
-						rewind(fp.get());
-						if( fread(res.GetData(), 1, res.GetDataSize(), fp.get()) != res.GetDataSize() ){
-							res.Resize(0);
-						}
-					}
+				//読み込み済みのデータを返す
+				string text;
+				if( sys->reserveManager.GetChDataListAsText(text) ){
+					res.Resize((DWORD)text.size());
+					std::copy((const BYTE*)text.c_str(), (const BYTE*)(text.c_str() + text.size()), res.GetData());
 					res.SetParam(CMD_SUCCESS);
 				}
 			}
@@ -3014,8 +3008,18 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 				vector<FILE_DATA> result(list.size());
 				for( size_t i = 0; i < list.size(); i++ ){
 					fs_path path;
-					if( UtilComparePath(list[i].c_str(), L"ChSet5.txt") == 0 ||
-					    UtilComparePath(list[i].c_str(), LOGO_SAVE_FOLDER L".ini") == 0 ){
+					if( UtilComparePath(list[i].c_str(), L"ChSet5.txt") == 0 ){
+						//読み込み済みのデータを返す
+						string text;
+						if( this->reserveManager.GetChDataListAsText(text) ){
+							if( totalSizeRemain < text.size() ){
+								result.resize(i);
+								break;
+							}
+							totalSizeRemain -= text.size();
+							result[i].Data.assign((const BYTE*)text.c_str(), (const BYTE*)(text.c_str() + text.size()));
+						}
+					}else if( UtilComparePath(list[i].c_str(), LOGO_SAVE_FOLDER L".ini") == 0 ){
 						path = GetSettingPath().append(list[i]);
 					}else if( UtilComparePath(list[i].c_str(), L"EpgTimerSrv.ini") == 0 ||
 					          UtilComparePath(list[i].c_str(), L"Common.ini") == 0 ||
