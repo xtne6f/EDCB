@@ -6,6 +6,7 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/CommonDef.h"
 #include "../../Common/EpgTimerUtil.h"
+#include "../../Common/IniUtil.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/TSPacketUtil.h"
 #include "../../Common/ParseTextInstances.h"
@@ -319,23 +320,25 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			fs_path bonCtrlIniPath = fs_path(m_edcbDir).append(L"BonCtrl.ini");
 			m_epgCapTimeout = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 10, bonCtrlIniPath.c_str());
 			m_epgCapSaveTimeout = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, bonCtrlIniPath.c_str()) != 0;
+
 			fs_path iniPath = GetModulePath(g_hinstDLL).replace_extension(L".ini");
-			m_nonTunerDrivers = L"::" + GetPrivateProfileToString(L"SET", L"NonTunerDrivers",
+			vector<WCHAR> bufSet = GetPrivateProfileSectionBuffer(L"SET", iniPath.c_str());
+			m_nonTunerDrivers = L"::" + GetBufferedProfileToString(bufSet.data(), L"NonTunerDrivers",
 				L"BonDriver_UDP.dll:BonDriver_TCP.dll:BonDriver_File.dll:BonDriver_RecTask.dll:BonDriver_TsTask.dll:"
-				L"BonDriver_NetworkPipe.dll:BonDriver_Pipe.dll:BonDriver_Pipe2.dll", iniPath.c_str()) + L':';
-			m_recNamePrefix = GetPrivateProfileToString(L"SET", L"RecNamePrefix", L"", iniPath.c_str());
-			m_dropSaveThresh = GetPrivateProfileInt(L"SET", L"DropSaveThresh", 0, iniPath.c_str());
-			m_scrambleSaveThresh = GetPrivateProfileInt(L"SET", L"ScrambleSaveThresh", -1, iniPath.c_str());
-			m_noLogScramble = GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, iniPath.c_str()) != 0;
-			m_dropLogAsUtf8 = GetPrivateProfileInt(L"SET", L"DropLogAsUtf8", 0, iniPath.c_str()) != 0;
-			m_epgCapBackStartWaitSec = GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, iniPath.c_str()) == 0 ? MAXDWORD :
-				GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, iniPath.c_str());
-			m_epgCapBackBasicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"EpgCapBackBSBasicOnly", 1, iniPath.c_str()) != 0;
-			m_epgCapBackBasicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS1BasicOnly", 1, iniPath.c_str()) != 0;
-			m_epgCapBackBasicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS2BasicOnly", 1, iniPath.c_str()) != 0;
-			m_epgCapBackBasicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS3BasicOnly", 0, iniPath.c_str()) != 0;
-			m_logoTypeFlags = GetPrivateProfileInt(L"SET", L"SaveLogo", 0, iniPath.c_str()) == 0 ? 0 :
-				GetPrivateProfileInt(L"SET", L"SaveLogoTypeFlags", 32, iniPath.c_str());
+				L"BonDriver_NetworkPipe.dll:BonDriver_Pipe.dll:BonDriver_Pipe2.dll") + L':';
+			m_recNamePrefix = GetBufferedProfileToString(bufSet.data(), L"RecNamePrefix", L"");
+			m_dropSaveThresh = GetBufferedProfileInt(bufSet.data(), L"DropSaveThresh", 0);
+			m_scrambleSaveThresh = GetBufferedProfileInt(bufSet.data(), L"ScrambleSaveThresh", -1);
+			m_noLogScramble = GetBufferedProfileInt(bufSet.data(), L"NoLogScramble", 0) != 0;
+			m_dropLogAsUtf8 = GetBufferedProfileInt(bufSet.data(), L"DropLogAsUtf8", 0) != 0;
+			m_epgCapBackStartWaitSec = GetBufferedProfileInt(bufSet.data(), L"EpgCapLive", 1) == 0 ? MAXDWORD :
+				GetBufferedProfileInt(bufSet.data(), L"EpgCapBackStartWaitSec", 30);
+			m_epgCapBackBasicOnlyONIDs[4] = GetBufferedProfileInt(bufSet.data(), L"EpgCapBackBSBasicOnly", 1) != 0;
+			m_epgCapBackBasicOnlyONIDs[6] = GetBufferedProfileInt(bufSet.data(), L"EpgCapBackCS1BasicOnly", 1) != 0;
+			m_epgCapBackBasicOnlyONIDs[7] = GetBufferedProfileInt(bufSet.data(), L"EpgCapBackCS2BasicOnly", 1) != 0;
+			m_epgCapBackBasicOnlyONIDs[10] = GetBufferedProfileInt(bufSet.data(), L"EpgCapBackCS3BasicOnly", 0) != 0;
+			m_logoTypeFlags = GetBufferedProfileInt(bufSet.data(), L"SaveLogo", 0) == 0 ? 0 :
+				GetBufferedProfileInt(bufSet.data(), L"SaveLogoTypeFlags", 32);
 		}
 		return 0;
 	case WM_DESTROY:
