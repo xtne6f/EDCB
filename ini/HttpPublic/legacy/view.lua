@@ -2,38 +2,65 @@
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-post=AssertPost()
-if not post then
+query=AssertPost()
+if not query then
   -- POSTでなくてもよい
-  post=mg.request_info.query_string
-  AssertCsrf(post)
+  query=mg.request_info.query_string
+  AssertCsrf(query)
 end
 
-option=XCODE_OPTIONS[GetVarInt(post,'option',1,#XCODE_OPTIONS) or 1]
-audio2=(GetVarInt(post,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-dual=GetVarInt(post,'dual',0,2)
+option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
+audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
+dual=GetVarInt(query,'dual',0,2)
 dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
-filter=GetVarInt(post,'cinema')==1 and option.filterCinema or option.filter or ''
-hls=GetVarInt(post,'hls',1)
-caption=hls and GetVarInt(post,'caption')==1 and option.captionHls or option.captionNone or ''
+filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
+hls=GetVarInt(query,'hls',1)
+caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
-n=GetVarInt(post,'n') or 0
-onid,tsid,sid=(mg.get_var(post,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
+n=GetVarInt(query,'n') or 0
+onid,tsid,sid=GetVarServiceID(query,'id')
+if onid==0 and tsid==0 and sid==0 then
+  onid=nil
+end
 if hls and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
   n=nil
   onid=nil
 end
 
-function OpenTranscoder(pipeName,nwtvclose)
+function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
+  if XCODE_SINGLE then
+    -- トランスコーダーの親プロセスのリストを作る
+    local pids=nil
+    local pf=edcb.io.popen('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-%\'" get parentprocessid 2>nul | findstr /b [1-9]')
+    if pf then
+      for pid in (pf:read('*a') or ''):gmatch('[1-9][0-9]*') do
+        pids=(pids and pids..' or ' or '')..'processid='..pid
+      end
+      pf:close()
+    end
+    -- パイプラインの上流を終わらせる
+    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-%\'" call terminate >nul')
+    if pids then
+      -- 親プロセスの終了を2秒だけ待つ。パイプラインの下流でストールしている可能性もあるので待ちすぎない
+      for i=1,4 do
+        edcb.Sleep(500)
+        if i==4 or not edcb.os.execute('wmic process where "'..pids..'" get processid 2>nul | findstr /b [1-9] >nul') then
+          break
+        end
+      end
+    end
+  end
+
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
   local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
+  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
   local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
   local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
   local xcoder=(edcb.FindFile(tools..'\\'..option.xcoder,1) and tools..'\\' or '')..option.xcoder
 
   local cmd='"'..xcoder..'" '..option.option
-    :gsub('$SRC',pipeName)
+    :gsub('$SRC','-')
     :gsub('$AUDIO',audio2)
     :gsub('$DUAL',(dual:gsub('%%','%%%%')))
     :gsub('$FILTER',(filter:gsub('%%','%%%%')))
@@ -61,8 +88,8 @@ function OpenTranscoder(pipeName,nwtvclose)
   elseif XCODE_BUF>0 then
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
-  -- プロセス検索用コメント
-  cmd=cmd..' & rem view-lua'
+  -- "-z"はプロセス検索用
+  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -b 1 -c 1 -u 2 '..pipeName..' | '..cmd
   if hls then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
@@ -85,9 +112,6 @@ end
 
 f=nil
 if onid then
-  onid=tonumber(onid) or 0
-  tsid=tonumber(tsid) or 0
-  sid=tonumber(sid) or 0
   if sid==0 then
     -- NetworkTVモードを終了
     edcb.CloseNetworkTV(n)
@@ -127,7 +151,7 @@ if onid then
           edcb.Sleep(200)
         end
         if pipeName then
-          f=OpenTranscoder(pipeName,n..' @'..openTime)
+          f=OpenTranscoder(pipeName,'view',n..' @'..openTime,sid)
           fname='view.'..output[1]
         end
         if not f then
@@ -138,13 +162,7 @@ if onid then
   end
 elseif n and n<0 then
   -- プロセスが残っていたらすべて終わらせる
-  pf=edcb.io.popen('wmic process where "commandline like \'% [r]em view-lua%\'" get processid 2>nul | findstr /b [1-9]')
-  if pf then
-    for pid in (pf:read('*a') or ''):gmatch('[1-9][0-9]*') do
-      edcb.os.execute('wmic process where "parentprocessid = '..pid..' and commandline like \'%SendTSTCP[_]%[_]%\'" call terminate >nul')
-    end
-    pf:close()
-  end
+  edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-%\'" call terminate >nul')
 elseif n and n<=65535 then
   if hls then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
@@ -153,17 +171,11 @@ elseif n and n<=65535 then
   end
   if not f then
     -- 前回のプロセスが残っていたら終わらせる
-    pf=edcb.io.popen('wmic process where "commandline like \'% [r]em view-lua%\'" get processid 2>nul | findstr /b [1-9]')
-    if pf then
-      for pid in (pf:read('*a') or ''):gmatch('[1-9][0-9]*') do
-        edcb.os.execute('wmic process where "parentprocessid = '..pid..' and commandline like \'%SendTSTCP[_]'..n..'[_]%\'" call terminate >nul')
-      end
-      pf:close()
-    end
+    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-'..n..' %\'" call terminate >nul')
     -- 名前付きパイプがあれば開く
     ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*', 1)
     if ff and ff[1].name:find('^[A-Za-z]+_%d+_%d+$') then
-      f=OpenTranscoder('\\\\.\\pipe\\'..ff[1].name)
+      f=OpenTranscoder('\\\\.\\pipe\\'..ff[1].name,'view-'..n)
       fname='view.'..output[1]
     end
   end
@@ -178,7 +190,7 @@ if not f then
 elseif hls then
   -- インデックスファイルを返す
   ct=CreateContentBuilder()
-  ct:Append('#EXTM3U\n#EXT-X-VERSION:3\n')
+  ct:Append('#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:')
   hasSeg=false
   buf=f:read(16)
   if buf and #buf==16 then
@@ -195,8 +207,8 @@ elseif hls then
         segCount=(buf:byte(7)*256+buf:byte(6))*256+buf:byte(5)
         segDuration=((buf:byte(11)*256+buf:byte(10))*256+buf:byte(9))/1000
         if not hasSeg then
-          ct:Append('#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
-            ..(endList and '#EXT-X-ENDLIST\n' or ''))
+          ct:Append((segCount==1 and '1\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY' or segCount+2)
+            ..'\n'..(endList and '#EXT-X-ENDLIST\n' or ''))
           hasSeg=true
         end
         ct:Append('#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_'):format(segIndex)..segCount..'\n')
@@ -205,7 +217,7 @@ elseif hls then
   end
   f:close()
   if not hasSeg then
-    ct:Append('#EXT-X-TARGETDURATION:8\n#EXT-X-MEDIA-SEQUENCE:1\n#EXTINF:8.008000,\nloading.m2t\n')
+    ct:Append('1\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY\n#EXTINF:4.004,\nloading.m2t\n')
   end
   ct:Finish()
   mg.write(ct:Pop(Response(200,'application/vnd.apple.mpegurl','utf-8',ct.len)..'\r\n'))

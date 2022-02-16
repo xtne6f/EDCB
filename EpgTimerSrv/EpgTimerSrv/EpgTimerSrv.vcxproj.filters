@@ -146,6 +146,9 @@
     <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\BonCtrlDef.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
@@ -294,6 +297,9 @@
       <Filter>ヘッダー ファイル\lua\zlib1</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\StackTrace.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\IniUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
   </ItemGroup>
@@ -524,6 +530,9 @@
       <Filter>ソース ファイル\lua\zlib1</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\StackTrace.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\IniUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
   </ItemGroup>

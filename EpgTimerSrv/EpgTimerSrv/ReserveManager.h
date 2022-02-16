@@ -96,6 +96,8 @@ public:
 	bool GetChData(WORD onid, WORD tsid, WORD sid, CH_DATA5* chData) const;
 	//チャンネル情報一覧を取得する
 	vector<CH_DATA5> GetChDataList() const;
+	//チャンネル情報一覧をファイル出力の形式で取得する
+	bool GetChDataListAsText(string& text) const;
 	//パラメータなしの通知を追加する
 	void AddNotifyAndPostBat(DWORD notifyID);
 	//バッチのカスタムハンドラを設定する

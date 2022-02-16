@@ -2,9 +2,6 @@
 #include "resource.h"
 #include "StreamCtrlDlg.h"
 #include <commctrl.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <iphlpapi.h>
 
 
 CStreamCtrlDlg::CStreamCtrlDlg(void)
@@ -13,6 +10,8 @@ CStreamCtrlDlg::CStreamCtrlDlg(void)
 	this->ctrlEnabled = FALSE;
 	this->callbackFunc = NULL;
 	this->callbackParam = NULL;
+	this->thumbTracking = FALSE;
+	this->getPosState = 0;
 }
 
 CStreamCtrlDlg::~CStreamCtrlDlg(void)
@@ -33,19 +32,21 @@ void CStreamCtrlDlg::SetCtrl(const TVTEST_STREAMING_INFO& info)
 		this->cmd.SetSendMode(this->ctrlIsNetwork);
 		if( this->ctrlIsNetwork ){
 			// ネットワーク接続を使う
+			// TODO: IPv6対応。ただしBonDriver_UDP/TCPが基本未対応なのでメリットは少ない
 			wstring ip;
 			Format(ip, L"%d.%d.%d.%d", info.serverIP >> 24, (info.serverIP >> 16) & 0xFF, (info.serverIP >> 8) & 0xFF, info.serverIP & 0xFF);
 			this->cmd.SetNWSetting(ip, info.serverPort);
 		}
 		if( this->hwnd ){
 			EnableWindow(GetDlgItem(this->hwnd, IDC_CHECK_UDP), this->ctrlIsNetwork);
-			EnableWindow(GetDlgItem(this->hwnd, IDC_COMBO_IP), this->ctrlIsNetwork);
 			SendDlgItemMessage(this->hwnd, IDC_SLIDER_SEEK, TBM_SETPOS, TRUE, 0);
 			SendDlgItemMessage(this->hwnd, IDC_CHECK_UDP, BM_SETCHECK, info.udpSend ? BST_CHECKED : BST_UNCHECKED, 0);
 			SendDlgItemMessage(this->hwnd, IDC_CHECK_TCP, BM_SETCHECK, info.tcpSend ? BST_CHECKED : BST_UNCHECKED, 0);
 			SetNWModeSend();
 			this->cmd.SendNwPlayStart(this->ctrlID);
 			SetTimer(this->hwnd, 1000, 500, NULL);
+			this->thumbTracking = FALSE;
+			this->getPosState = 0;
 		}
 	}
 }
@@ -120,7 +121,6 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 			SetWindowLongPtr(hDlgWnd, GWLP_USERDATA, lp);
 			sys = (CStreamCtrlDlg*)lp;
 			sys->hwnd = hDlgWnd;
-			sys->EnumIP();
 			SetWindowText(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), L"停止");
 			break;
         case WM_COMMAND:
@@ -131,6 +131,8 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						sys->SetNWModeSend();
 						sys->cmd.SendNwPlayStart(sys->ctrlID);
 						SetTimer(hDlgWnd, 1000, 500, NULL);
+						sys->thumbTracking = FALSE;
+						sys->getPosState = 0;
 						break;
 					case IDC_BUTTON_STOP:
 						KillTimer(hDlgWnd, 1000);
@@ -160,15 +162,29 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 			return FALSE;
 		case WM_SIZE:
 			{
-				RECT rc;
-				GetWindowRect(hDlgWnd, &rc);
-
 				if( wp == SIZE_RESTORED || wp == SIZE_MAXIMIZED ){
-					int x = rc.right-rc.left - 140;
-					int y = 3;
+					RECT rc;
+					GetClientRect(hDlgWnd, &rc);
+					int cx = rc.right;
+
+					GetWindowRect(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), &rc);
+					POINT pt;
+					pt.x = rc.left;
+					pt.y = rc.top;
+					ScreenToClient(hDlgWnd, &pt);
+					int x = cx - (rc.right - rc.left) - 5;
+					int y = pt.y;
+					GetWindowRect(GetDlgItem(hDlgWnd, IDC_BUTTON_CLOSE), &rc);
+					pt.x = rc.right;
+					pt.y = rc.top;
+					ScreenToClient(hDlgWnd, &pt);
+					if( x < pt.x + 5 ){
+						x = pt.x + 5;
+					}
 					SetWindowPos(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), NULL, x, y, 0, 0, SWP_NOZORDER|SWP_NOSIZE|SWP_SHOWWINDOW);
-					int cx = rc.right-rc.left - 140 - 20;
-					int cy = 30;
+
+					GetWindowRect(GetDlgItem(hDlgWnd, IDC_SLIDER_SEEK), &rc);
+					int cy = rc.bottom - rc.top;
 					SetWindowPos(GetDlgItem(hDlgWnd, IDC_SLIDER_SEEK), NULL, 0, 0, cx, cy, SWP_NOZORDER|SWP_NOMOVE|SWP_SHOWWINDOW);
 				}
 			}
@@ -191,12 +207,13 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 
 					POINT pos;
 					GetCursorPos(&pos);
+					GetWindowRect(hDlgWnd, &rcWnd);
+					int cy = rcWnd.bottom - rcWnd.top;
 
-					if( pos.y > rc.bottom - 65 && rc.left < pos.x && pos.x < rc.right){
+					if( pos.y > rc.bottom - cy && rc.left < pos.x && pos.x < rc.right ){
 						int x = rc.left;
-						int y = rc.bottom-65;
+						int y = rc.bottom - cy;
 						int cx = rc.right - rc.left;
-						int cy = 65;
 
 						ShowWindow(hDlgWnd, SW_SHOW);
 						SetWindowPos(hDlgWnd, HWND_TOPMOST, x, y, cx, cy, SWP_SHOWWINDOW);
@@ -207,11 +224,44 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 					__int64 totalPos = 0;
 					__int64 filePos = 0;
 
-					NWPLAY_POS_CMD item;
-					item.ctrlID = sys->ctrlID;
-					sys->cmd.SendNwPlayGetPos(&item);
-					totalPos = item.totalPos;
-					filePos = item.currentPos;
+					// ファイルサイズと位置の変化を予測して問い合わせを減らす
+					const int interval = 8;
+					if( sys->getPosState <= interval ){
+						// 実測
+						NWPLAY_POS_CMD item;
+						item.ctrlID = sys->ctrlID;
+						if( sys->cmd.SendNwPlayGetPos(&item) != CMD_SUCCESS ){
+							sys->getPosState = 0;
+						}else{
+							if( sys->getPosState == interval ){
+								sys->totalPosDelta = item.totalPos - sys->measuredTotalPos;
+								sys->filePosDelta = item.currentPos - sys->measuredFilePos;
+							}
+							if( sys->getPosState == 0 || sys->getPosState == interval ){
+								sys->measuredTotalPos = item.totalPos;
+								sys->measuredFilePos = item.currentPos;
+							}
+							totalPos = item.totalPos;
+							filePos = item.currentPos;
+							++sys->getPosState;
+						}
+					}else{
+						// 予測
+						totalPos = sys->measuredTotalPos + sys->totalPosDelta * (sys->getPosState - interval) / interval;
+						if( totalPos < 0 ){
+							totalPos = 0;
+						}
+						filePos = sys->measuredFilePos + sys->filePosDelta * (sys->getPosState - interval) / interval;
+						if( filePos < 0 ){
+							filePos = 0;
+						}
+						if( filePos > totalPos ){
+							filePos = totalPos;
+						}
+						if( ++sys->getPosState == interval * 2 ){
+							sys->getPosState = interval;
+						}
+					}
 
 					if( totalPos<10000 ){
 						SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_SETRANGEMAX, FALSE, (DWORD)totalPos );
@@ -230,9 +280,11 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 				if( sys->ctrlEnabled ){
 					switch(LOWORD(wp)){
 					case SB_THUMBTRACK:
-						KillTimer(hDlgWnd, 1000);
-
-						sys->cmd.SendNwPlayStop(sys->ctrlID);
+						if( sys->thumbTracking == FALSE ){
+							KillTimer(hDlgWnd, 1000);
+							sys->cmd.SendNwPlayStop(sys->ctrlID);
+							sys->thumbTracking = TRUE;
+						}
 						break;
 					case SB_LINELEFT:
 					case SB_LINERIGHT:
@@ -264,6 +316,8 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 							sys->cmd.SendNwPlaySetPos(&item);
 							sys->cmd.SendNwPlayStart(sys->ctrlID);
 							SetTimer(hDlgWnd, 1000, 500, NULL);
+							sys->thumbTracking = FALSE;
+							sys->getPosState = 0;
 						}
 						break;
 					default:
@@ -285,26 +339,16 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 
 void CStreamCtrlDlg::SetNWModeSend()
 {
-	WCHAR textBuff[512] = L"0.0.0.2";
-	if( this->ctrlIsNetwork ){
-		GetDlgItemText(this->hwnd, IDC_COMBO_IP, textBuff, 512);
-	}
-	wstring strIP = textBuff;
-	wstring ip1;
-	wstring ip2;
-	wstring ip3;
-	wstring ip4;
-	Separate(strIP, L".", ip1, strIP);
-	Separate(strIP, L".", ip2, strIP);
-	Separate(strIP, L".", ip3, ip4);
-
 	NWPLAY_PLAY_INFO nwPlayInfo;
 	nwPlayInfo.ctrlID = this->ctrlID;
 	nwPlayInfo.udp = this->ctrlIsNetwork && SendDlgItemMessage(this->hwnd, IDC_CHECK_UDP, BM_GETCHECK, 0, 0) != 0;
 	nwPlayInfo.tcp = SendDlgItemMessage(this->hwnd, IDC_CHECK_TCP, BM_GETCHECK, 0, 0) != 0;
 	nwPlayInfo.udpPort = 65536;
 	nwPlayInfo.tcpPort = 65536;
-	nwPlayInfo.ip = _wtoi(ip1.c_str())<<24 | _wtoi(ip2.c_str())<<16 | _wtoi(ip3.c_str())<<8 | _wtoi(ip4.c_str());
+	// cmdがパイプ接続のときはip=2("0.0.0.2"=Pipe)にストリームが送られる
+	// cmdがネットワーク接続のときipは無視され、常にサーバから見たこちら側にストリームが送られる
+	// getsockname()で得たIPをセットすれば(ipを無視しない)古いサーバにも対応できるがそこまではしない
+	nwPlayInfo.ip = 2;
 	this->cmd.SendNwPlaySetIP(&nwPlayInfo);
 
 	wstring editLog;
@@ -312,61 +356,19 @@ void CStreamCtrlDlg::SetNWModeSend()
 	if( nwPlayInfo.udp == 1 ){
 		udpPort = nwPlayInfo.udpPort;
 		wstring udp;
-		Format(udp, L"UDP送信：%ls:%d\r\n", textBuff, udpPort);
+		Format(udp, L"UDP送信：%d", udpPort);
 		editLog += udp;
 	}
 	DWORD tcpPort = 65536;
 	if( nwPlayInfo.tcp == 1 ){
 		tcpPort = nwPlayInfo.tcpPort;
 		wstring tcp;
-		Format(tcp, L"TCP送信：%ls:%d\r\n", textBuff, tcpPort);
+		Format(tcp, L"TCP送信：%ls%d", this->ctrlIsNetwork ? L"" : L"(Pipe)", tcpPort);
+		if( editLog.empty() == false ){
+			editLog += L", ";
+		}
 		editLog += tcp;
 	}
 	SetDlgItemText(this->hwnd, IDC_EDIT_LOG, editLog.empty() ? L"送信先なし" : editLog.c_str());
 	PostMessage(this->hwnd, WM_CHG_PORT, udpPort, tcpPort);
-}
-
-void CStreamCtrlDlg::EnumIP()
-{
-	ULONG len = 0;   // 列挙に必要なバイト数です。
-	DWORD ret = GetAdaptersAddresses(AF_UNSPEC, 0, 0, 0, &len);
-	if(ret != ERROR_BUFFER_OVERFLOW) return;   // メモリ不足以外のエラーなら制御を返します。
-
-	// 要求されたバイト数 len 分のメモリを adpts に用意します。
-	PIP_ADAPTER_ADDRESSES adpts = (PIP_ADAPTER_ADDRESSES)new BYTE[len];
-	if(adpts == 0) return;      // メモリを用意できなければ制御を返します。
-
-	ret = GetAdaptersAddresses(AF_INET, 0, 0, adpts, &len);   // adpts に情報を列挙します。
-	if(ret != ERROR_SUCCESS){   // アダプタを列挙できなかったら制御を返します。
-		delete [] adpts;
-		return;
-	}
-
-	WSADATA data;
-	WSAStartup(MAKEWORD(2, 2), &data);
-	// adpts 配列内の各アダプタ情報を一つずつ adpt に入れてみていきます。
-	for(PIP_ADAPTER_ADDRESSES adpt = adpts; adpt; adpt = adpt->Next){
-		if(adpt->PhysicalAddressLength == 0) continue;            // データリンク層を持たないなら
-		if(adpt->IfType == IF_TYPE_SOFTWARE_LOOPBACK) continue;   // ループバック アドレスなら
-		// adpt アダプタ情報の IP アドレスを一つずつ uni に入れてみていきます。
-		for(PIP_ADAPTER_UNICAST_ADDRESS uni = adpt->FirstUnicastAddress; uni; uni = uni->Next){
-			// DNS に対して適切なアドレスでない（プライベートなど）ならば
-			if(~(uni->Flags) & IP_ADAPTER_ADDRESS_DNS_ELIGIBLE) continue;   // 次のアドレスへ
-			// アプリケーションが使うべきでないアドレスなら
-			if(uni->Flags & IP_ADAPTER_ADDRESS_TRANSIENT) continue;         // 次のアドレスへ
-			char host[NI_MAXHOST + 1] = {'\0'};   // host に「0.0.0.0」形式の文字列を取得します。
-			if(getnameinfo(uni->Address.lpSockaddr, uni->Address.iSockaddrLength
-			, host, sizeof(host), 0, 0, NI_NUMERICHOST/*NI_NAMEREQD*/) == 0){
-				wstring strW;
-				UTF8toW(host, strW);
-				SendDlgItemMessage(this->hwnd , IDC_COMBO_IP, CB_ADDSTRING , 0 , (LPARAM)strW.c_str());
-			}
-		}
-	}
-	WSACleanup();
-	delete [] adpts;
-
-	if(SendDlgItemMessage(this->hwnd , IDC_COMBO_IP, CB_GETCOUNT , 0 , 0) > 0){
-		SendDlgItemMessage(this->hwnd , IDC_COMBO_IP, CB_SETCURSEL , 0 , 0);
-	}
 }

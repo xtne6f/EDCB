@@ -17,10 +17,7 @@ ct:Append([=[
 <h1>リスト番組表</h1>
 ]=])
 
-onid,tsid,sid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
-onid=tonumber(onid) or 0
-tsid=tonumber(tsid) or 0
-sid=tonumber(sid) or 0
+onid,tsid,sid=GetVarServiceID(mg.request_info.query_string,'id')
 date=GetVarInt(mg.request_info.query_string,'date',-10000,0) or 0
 --dateクエリは今日(0時区切り)を基準(=0)とする
 now=os.time()
@@ -101,7 +98,7 @@ if sid==0 then
   <form method="POST" action="view.lua"><div>
     <input type="hidden" name="ctok" value="]=]..CsrfToken('view.lua')..[=[">
     <input type="hidden" name="n" value="0">
-    <input type="hidden" name="id" value="0-0-0">
+    <input type="hidden" name="id" value="1-1-0">
     <input type="submit" value="view -nwtv0 -term">
   </div></form>]=])
 else

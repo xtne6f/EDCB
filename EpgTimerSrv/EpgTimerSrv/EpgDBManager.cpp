@@ -91,7 +91,7 @@ void ReadOldArchiveIndex(FILE* fp, vector<BYTE>& buff, vector<__int64>& index, D
 		buff.resize(buff.size() + 1024);
 		size_t n = fread(buff.data() + buff.size() - 1024, 1, 1024, fp);
 		buff.resize(buff.size() - 1024 + n);
-		if( n == 0 || ReadVALUE(&index, buff.data(), (DWORD)buff.size(), headerSize) ){
+		if( n == 0 || UtilReadVALUE(&index, buff.data(), (DWORD)buff.size(), headerSize) ){
 			break;
 		}
 		index.clear();
@@ -112,7 +112,7 @@ void ReadOldArchiveEventInfo(FILE* fp, const vector<__int64>& index, size_t inde
 		buff.resize(buffSize);
 		if( fread(buff.data(), 1, buffSize, fp) == buffSize ){
 			WORD ver;
-			if( ReadVALUE2WithVersion(&ver, &info, buff.data(), buffSize, NULL) == FALSE ){
+			if( UtilReadVALUE2WithVersion(&ver, &info, buff.data(), buffSize, NULL) == false ){
 				info.eventList.clear();
 			}
 		}
@@ -372,7 +372,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		if( buff.empty() == false ){
 			WORD ver;
 			vector<EPGDB_SERVICE_EVENT_INFO> list;
-			if( ReadVALUE2WithVersion(&ver, &list, buff.data(), (DWORD)buff.size(), NULL) ){
+			if( UtilReadVALUE2WithVersion(&ver, &list, buff.data(), (DWORD)buff.size(), NULL) ){
 				for( size_t i = 0; i < list.size(); i++ ){
 					LONGLONG key = Create64Key(list[i].serviceInfo.ONID, list[i].serviceInfo.TSID, list[i].serviceInfo.SID);
 					arcFromFile[key] = std::move(list[i]);

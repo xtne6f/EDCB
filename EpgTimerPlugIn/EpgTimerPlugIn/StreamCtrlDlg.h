@@ -31,7 +31,6 @@ public:
 	void StopFullScreenMouseChk();
 protected:
 	void SetNWModeSend();
-	void EnumIP();
 
 	static LRESULT CALLBACK DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPARAM lp);
 
@@ -44,5 +43,11 @@ protected:
 	BOOL ctrlIsNetwork;
 	MessageCallbackFunc callbackFunc;
 	void* callbackParam;
+	BOOL thumbTracking;
+	int getPosState;
+	__int64 measuredTotalPos;
+	__int64 measuredFilePos;
+	__int64 totalPosDelta;
+	__int64 filePosDelta;
 };
 

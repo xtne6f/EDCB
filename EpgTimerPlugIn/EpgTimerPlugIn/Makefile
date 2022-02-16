@@ -2,7 +2,7 @@ TARGET ?= EpgTimerPlugIn
 CPPFLAGS := -I. -DNDEBUG -D_WINDOWS -DEPGTIMERPLUGIN_EXPORTS -D_UNICODE -DUNICODE $(CPPFLAGS)
 CXXFLAGS := -std=c++17 -pedantic-errors -Os $(CXXFLAGS)
 LDFLAGS2 = -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
-LDLIBS := -lws2_32 -liphlpapi $(LDLIBS)
+LDLIBS := -lws2_32 $(LDLIBS)
 WINDRES ?= windres
 DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
 CUR_ALL_H := $(wildcard *.h)

@@ -73,11 +73,7 @@ ct:Append([=[
 <div id="main">
 ]=])
 
-onid,tsid,sid,eid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)%-(%d?%d?%d?%d?%d)$')
-onid=tonumber(onid) or 0
-tsid=tonumber(tsid) or 0
-sid=tonumber(sid) or 0
-eid=tonumber(eid) or 0
+onid,tsid,sid,eid=GetVarEventID(mg.request_info.query_string,'id')
 presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
 
 post=AssertPost()

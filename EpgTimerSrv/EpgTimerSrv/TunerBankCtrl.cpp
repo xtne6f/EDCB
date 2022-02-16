@@ -12,11 +12,10 @@
 #include <unistd.h>
 #endif
 
-CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, WORD epgCapMax, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
+CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, WORD epgCapMax, const map<DWORD, CH_DATA4>& chMap_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: tunerID(tunerID_)
 	, bonFileName(bonFileName_)
 	, epgCapMaxOfThisBon(epgCapMax)
-	, chList(chList_)
 	, notifyManager(notifyManager_)
 	, epgDBManager(epgDBManager_)
 	, tunerPid(0)
@@ -24,6 +23,9 @@ CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, WORD epgCap
 	, delayTime(0)
 	, epgCapDelayTime(0)
 {
+	for( auto itr = chMap_.begin(); itr != chMap_.end(); itr++ ){
+		this->chMap.insert(std::make_pair(Create64Key(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID), itr->second));
+	}
 	this->watchContext.count = 0;
 }
 
@@ -54,6 +56,12 @@ void CTunerBankCtrl::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	this->recNameNoChkYen = s.noChkYen;
 	this->recNamePlugInFileName = s.recNamePlugIn ? s.recNamePlugInFile : wstring();
 	this->tsExt = s.tsExt;
+}
+
+const CH_DATA4* CTunerBankCtrl::GetCh(WORD onid, WORD tsid, WORD sid) const
+{
+	auto itr = this->chMap.find(Create64Key(onid, tsid, sid));
+	return itr == this->chMap.end() ? NULL : &itr->second;
 }
 
 bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
@@ -713,14 +721,15 @@ bool CTunerBankCtrl::IsNeedOpenTuner() const
 
 bool CTunerBankCtrl::FindPartialService(WORD onid, WORD tsid, WORD sid, WORD* partialSID, wstring* serviceName) const
 {
-	for( auto itr = this->chList.cbegin(); itr != this->chList.end(); itr++ ){
-		if( itr->originalNetworkID == onid && itr->transportStreamID == tsid && itr->partialFlag != FALSE ){
-			if( itr->serviceID != sid ){
+	auto itrEnd = this->chMap.upper_bound(Create64Key(onid, tsid, 0xFFFF));
+	for( auto itr = this->chMap.lower_bound(Create64Key(onid, tsid, 0)); itr != itrEnd; itr++ ){
+		if( itr->second.partialFlag ){
+			if( itr->second.serviceID != sid ){
 				if( partialSID != NULL ){
-					*partialSID = itr->serviceID;
+					*partialSID = itr->second.serviceID;
 				}
 				if( serviceName != NULL ){
-					*serviceName = itr->serviceName;
+					*serviceName = itr->second.serviceName;
 				}
 				return true;
 			}
@@ -801,13 +810,9 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	}
 
 	wstring serviceName;
-	for( size_t i = 0; i < this->chList.size(); i++ ){
-		if( this->chList[i].originalNetworkID == info.original_network_id &&
-		    this->chList[i].transportStreamID == info.transport_stream_id &&
-		    this->chList[i].serviceID == info.service_id ){
-			serviceName = this->chList[i].serviceName;
-			break;
-		}
+	auto itr = this->chMap.find(Create64Key(info.original_network_id, info.transport_stream_id, info.service_id));
+	if( itr != this->chMap.end() ){
+		serviceName = itr->second.serviceName;
 	}
 	string outText;
 	if( this->saveProgramInfoAsUtf8 ){

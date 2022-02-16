@@ -42,24 +42,27 @@ MEDIA_EXTENSION_LIST={
 }
 
 --HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeとnwtvclose.ps1を用意すること
-ALLOW_HLS=false
+ALLOW_HLS=true
 --ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか
-ALWAYS_USE_HLS=false
+ALWAYS_USE_HLS=true
 
 --トランスコードオプション
 --HLSのときはセグメント長約4秒、最大8MBytes(=1秒あたり16Mbits)を想定しているので、オプションもそれに合わせること
 --name:表示名
 --xcoder:Toolsフォルダからの相対パス。Toolsフォルダになければパスが通っているとみなす
 --option:$SRCと$OUTPUTは必須、再生時に適宜置換される
+--filter*Fast:倍速再生用、未定義でもよい
 XCODE_OPTIONS={
   {
     name='288p/h264/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec libx264 -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     dualMain='-dual_mono_mode main',
     dualSub='-dual_mono_mode sub',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
+    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
+    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25 -r 24000/1001',
     captionNone='-sn',
     captionHls='-map 0:s? -scodec copy',
     output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
@@ -68,11 +71,13 @@ XCODE_OPTIONS={
   {
     name='576p/h264/ffmpeg-nvenc',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     dualMain='-dual_mono_mode main',
     dualSub='-dual_mono_mode sub',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
+    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
+    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25 -r 24000/1001',
     captionNone='-sn',
     captionHls='-map 0:s? -scodec copy',
     output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
@@ -81,19 +86,21 @@ XCODE_OPTIONS={
   {
     name='288p/webm/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
     dualMain='-dual_mono_mode main',
     dualSub='-dual_mono_mode sub',
     filter='-vf yadif=0:-1:1',
     filterCinema='-vf pullup -r 24000/1001',
+    filterFast='-vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25',
+    filterCinemaFast='-vf pullup,setpts=PTS/1.25 -af atempo=1.25 -r 24000/1001',
     captionNone='-sn',
     output={'webm','-f webm -'},
   },
   {
-    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。いまのところ(v5.36)第2音声はうまくいかない
+    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
     name='576p/h264/NVEncC',
     xcoder='NVEncC\\NVEncC.exe',
-    option='--input-format mpegts -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec aac$DUAL --audio-bitrate 128 $CAPTION $OUTPUT',
+    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
     audioStartAt=1,
     dualMain='#dual_mono_mode=main',
     dualSub='#dual_mono_mode=sub',
@@ -104,10 +111,33 @@ XCODE_OPTIONS={
     output={'mp4','-f mp4 -o -'},
     outputHls={'m2t','-f mpegts -o -'},
   },
+  {
+    --QSVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
+    name='576p/h264/QSVEncC',
+    xcoder='QSVEncC\\QSVEncC.exe',
+    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --quality balanced $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    audioStartAt=1,
+    dualMain='#dual_mono_mode=main',
+    dualSub='#dual_mono_mode=sub',
+    filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
+    filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true',
+    captionNone='',
+    captionHls='--sub-copy',
+    output={'mp4','-f mp4 -o -'},
+    outputHls={'m2t','-f mpegts -o -'},
+  },
 }
 
---トランスコードするかどうか。する場合はreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
+--フォーム上の各オプションのデフォルト選択状態を指定する
+XCODE_SELECT_OPTION=1
+XCODE_CHECK_CINEMA=false
+XCODE_CHECK_FAST=false
+XCODE_CHECK_CAPTION=false
+
+--トランスコードするかどうか。する場合はtsreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
 XCODE=true
+--トランスコードするプロセスを1つだけに制限するかどうか(並列処理できる余裕がシステムにない場合など)
+XCODE_SINGLE=false
 --ログを"log"フォルダに保存するかどうか
 XCODE_LOG=false
 --出力バッファの量(bytes)。asyncbuf.exeを用意すること。変換負荷や通信のむらを吸収する
@@ -133,6 +163,7 @@ function GetTranscodeQueries(qs)
     audio2=GetVarInt(qs,'audio2')==1,
     dual=GetVarInt(qs,'dual',0,2),
     cinema=GetVarInt(qs,'cinema')==1,
+    fast=GetVarInt(qs,'fast')==1,
     caption=GetVarInt(qs,'caption')==1,
   }
 end
@@ -143,13 +174,16 @@ function ConstructTranscodeQueries(xq)
     ..(xq.audio2 and '&amp;audio2=1' or '')
     ..(xq.dual and '&amp;dual='..xq.dual or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
+    ..(xq.fast and '&amp;fast=1' or '')
     ..(xq.caption and '&amp;caption=1' or '')
 end
 
 function TranscodeSettingTemplete(xq,fsec)
   local s='<select name="option">'
   for i,v in ipairs(XCODE_OPTIONS) do
-    s=s..'<option value="'..i..'"'..((xq.option or 1)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
+    if not ALLOW_HLS or not ALWAYS_USE_HLS or v.outputHls then
+      s=s..'<option value="'..i..'"'..((xq.option or XCODE_SELECT_OPTION)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
+    end
   end
   s=s..'</select>\n'
   if fsec then
@@ -168,9 +202,10 @@ function TranscodeSettingTemplete(xq,fsec)
     ..'<option value="1"'..(xq.dual==1 and ' selected' or '')..'>dual-main'
     ..'<option value="2"'..(xq.dual==2 and ' selected' or '')..'>dual-sub'
     ..'</select>\n'
-    ..'<label><input type="checkbox" name="cinema" value="1"'..(xq.cinema and ' checked' or '')..'>cinema</label>\n'
+    ..'<label><input type="checkbox" name="cinema" value="1"'..((xq.cinema or not xq.option and XCODE_CHECK_CINEMA) and ' checked' or '')..'>cinema</label>\n'
+    ..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
   if ALLOW_HLS then
-    s=s..'<label><input type="checkbox" name="caption" value="1"'..(xq.caption and ' checked' or '')..'>caption</label>\n'
+    s=s..'<label><input type="checkbox" name="caption" value="1"'..((xq.caption or not xq.option and XCODE_CHECK_CAPTION) and ' checked' or '')..'>caption</label>\n'
   end
   return s
 end
@@ -496,14 +531,28 @@ function GetDurationSec(f)
       if pcr2 then
         return math.floor((pcr2+0x100000000-pcr)%0x100000000/45000),fsize
       end
+      --TSデータが存在する境目を見つける
+      local predicted,range=math.floor(fsize/2/188)*188,fsize
+      while range>1880000 and f:seek('set',predicted) do
+        local buf=f:read(189)
+        local valid=buf and #buf==189 and buf:byte(1)==0x47 and buf:byte(189)==0x47
+        predicted=math.floor((predicted+(valid and range/4 or -range/4))/188)*188
+        range=range/2
+      end
+      predicted=predicted-1880000
+      if predicted>0 and f:seek('set',predicted) then
+        pcr2=ReadToPcr(f,pid)
+        if pcr2 then
+          return math.floor((pcr2+0x100000000-pcr)%0x100000000/45000),predicted
+        end
+      end
     end
   end
   return 0,fsize
 end
 
 --ファイルの先頭からsec秒だけシークする
-function SeekSec(f,sec)
-  local dur,fsize=GetDurationSec(f)
+function SeekSec(f,sec,dur,fsize)
   if dur>0 and fsize>1880000 and f:seek('set') then
     local pcr,pid=ReadToPcr(f)
     if pcr then
@@ -618,6 +667,36 @@ function GetVarInt(qs,n,ge,le,occ)
     return n
   end
   return nil
+end
+
+--クエリパラメータからサービスのIDを取得する
+function GetVarServiceID(qs,n,occ,leextra)
+  local onid,tsid,sid,x=(mg.get_var(qs,n,occ) or ''):match('^([0-9]+)%-([0-9]+)%-([0-9]+)'..(leextra and '%-([0-9]+)' or '')..'$')
+  onid=tonumber(onid)
+  tsid=tonumber(tsid)
+  sid=tonumber(sid)
+  x=tonumber(x)
+  if onid and onid==math.floor(onid) and onid>=0 and onid<=65535 and
+     tsid and tsid==math.floor(tsid) and tsid>=0 and tsid<=65535 and
+     sid and sid==math.floor(sid) and sid>=0 and sid<=65535 then
+    if not leextra then
+      return onid,tsid,sid,0
+    elseif x and x==math.floor(x) and x>=0 and x<=leextra then
+      return onid,tsid,sid,x
+    end
+  end
+  --失敗
+  return 0,0,0,0
+end
+
+--クエリパラメータから番組のIDを取得する
+function GetVarEventID(qs,n,occ)
+  return GetVarServiceID(qs,n,occ,65535)
+end
+
+--クエリパラメータから過去番組のIDを取得する
+function GetVarPastEventID(qs,n,occ)
+  return GetVarServiceID(qs,n,occ,4294967295)
 end
 
 --CSRFトークンを取得する

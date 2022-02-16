@@ -135,7 +135,7 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
 void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutput)
 {
-	{
+	if( lpOutputString[0] ){
 		//デバッグ出力ログ保存
 		lock_recursive_mutex lock(g_debugLogLock);
 		if( g_debugLog ){
@@ -145,13 +145,7 @@ void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutpu
 			int n = swprintf_s(t, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
 			                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 			fwrite(t, sizeof(WCHAR), n, g_debugLog);
-			size_t m = lpOutputString ? wcslen(lpOutputString) : 0;
-			if( m > 0 ){
-				fwrite(lpOutputString, sizeof(WCHAR), m, g_debugLog);
-			}
-			if( m == 0 || lpOutputString[m - 1] != L'\n' ){
-				fwrite(L"<NOBR>" UTIL_NEWLINE, sizeof(WCHAR), array_size(L"<NOBR>" UTIL_NEWLINE) - 1, g_debugLog);
-			}
+			fwrite(lpOutputString, sizeof(WCHAR), wcslen(lpOutputString), g_debugLog);
 			fflush(g_debugLog);
 		}
 	}

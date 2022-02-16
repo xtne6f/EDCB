@@ -133,10 +133,7 @@ __int64 UtilGetStorageFreeBytes(const fs_path& directoryPath);
 // フォルダがあるストレージの識別子を取得する。失敗時は空
 wstring UtilGetStorageID(const fs_path& directoryPath);
 
-#ifdef _WIN32
-// 必要なバッファを確保してGetPrivateProfileSection()を呼ぶ
-vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName);
-#else
+#ifndef _WIN32
 int GetPrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int nDefault, LPCWSTR fileName);
 BOOL WritePrivateProfileString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpString, LPCWSTR fileName);
 #endif

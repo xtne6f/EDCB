@@ -1,9 +1,11 @@
 ﻿#include "stdafx.h"
 #include "EpgTimerSrvMain.h"
 #include "SyoboiCalUtil.h"
+#include "../../BonCtrl/BonCtrlDef.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/SendCtrlCmd.h"
+#include "../../Common/IniUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "resource.h"
@@ -82,6 +84,87 @@ struct MAIN_WINDOW_CONTEXT {
 		, notifyCount(0)
 		, notifyTipActiveTime(LLONG_MAX) {}
 };
+
+void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPServer::RESPONSE_THREAD_STATE state, void*& param)
+{
+	struct RELAY_STREAM_CONTEXT {
+		HANDLE hFile;
+		HANDLE hEvent;
+		OVERLAPPED ol;
+		BYTE buff[48128];
+	};
+
+	if( cmd.GetParam() != CMD2_EPG_SRV_RELAY_VIEW_STREAM ){
+		return;
+	}
+	if( state == CTCPServer::RESPONSE_THREAD_INIT ){
+		//転送元ストリームを開く
+		int processID;
+		if( cmd.ReadVALUE(&processID) ){
+			for( int i = 0; i < BON_NW_PORT_RANGE; i++ ){
+				WCHAR name[64];
+				swprintf_s(name, L"\\\\.\\pipe\\SendTSTCP_%d_%d", i, processID);
+				HANDLE hFile = CreateFile(name, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+				if( hFile != INVALID_HANDLE_VALUE ){
+					RELAY_STREAM_CONTEXT* context = new RELAY_STREAM_CONTEXT;
+					context->hFile = hFile;
+					context->hEvent = NULL;
+					param = context;
+					res.SetParam(CMD_SUCCESS);
+					return;
+				}
+			}
+		}
+	}else if( state == CTCPServer::RESPONSE_THREAD_PROC ){
+		//転送元ストリームを非同期で読み込んで送る
+		RELAY_STREAM_CONTEXT& context = *(RELAY_STREAM_CONTEXT*)param;
+		if( context.hEvent ){
+			if( WaitForSingleObject(context.hEvent, 200) == WAIT_TIMEOUT ){
+				//読み込み待ち
+				res.SetParam(CMD_SUCCESS);
+				return;
+			}
+			DWORD n;
+			if( GetOverlappedResult(context.hFile, &context.ol, &n, FALSE) == FALSE ){
+				//失敗
+				CloseHandle(context.hEvent);
+				context.hEvent = NULL;
+				return;
+			}
+			res.Resize(n);
+			std::copy(context.buff, context.buff + n, res.GetData());
+		}else{
+			context.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+			if( context.hEvent == NULL ){
+				//失敗
+				return;
+			}
+		}
+		res.SetParam(CMD_SUCCESS);
+
+		OVERLAPPED olZero = {};
+		context.ol = olZero;
+		context.ol.hEvent = context.hEvent;
+		if( ReadFile(context.hFile, context.buff, sizeof(context.buff), NULL, &context.ol) ){
+			SetEvent(context.hEvent);
+		}else if( GetLastError() != ERROR_IO_PENDING ){
+			//失敗
+			CloseHandle(context.hEvent);
+			context.hEvent = NULL;
+			res.SetParam(CMD_ERR);
+		}
+	}else if( state == CTCPServer::RESPONSE_THREAD_FIN ){
+		//転送元ストリームを閉じる
+		RELAY_STREAM_CONTEXT* context = (RELAY_STREAM_CONTEXT*)param;
+		if( context->hEvent ){
+			CancelIo(context->hFile);
+			WaitForSingleObject(context->hEvent, INFINITE);
+			CloseHandle(context->hEvent);
+		}
+		CloseHandle(context->hFile);
+		delete context;
+	}
+}
 
 }
 
@@ -508,7 +591,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				ctx->tcpServer.StopServer();
 			}else{
 				ctx->tcpServer.StartServer(tcpPort_, tcpIPv6_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(),
-				                           [ctx](const CCmdStream& cmd, CCmdStream& res, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmd, res, 2, true, clientIP); });
+				                           [ctx](const CCmdStream& cmd, CCmdStream& res, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmd, res, 2, true, clientIP); },
+				                           CtrlCmdResponseThreadCallback);
 			}
 			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
 		}
@@ -1955,17 +2039,11 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		{
 			wstring val;
 			if( cmd.ReadVALUE(&val) && UtilComparePath(val.c_str(), L"ChSet5.txt") == 0 ){
-				fs_path path = GetSettingPath().append(L"ChSet5.txt");
-				std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
-				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-					__int64 fileSize = _ftelli64(fp.get());
-					if( 0 < fileSize && fileSize < 64 * 1024 * 1024 ){
-						res.Resize((DWORD)fileSize);
-						rewind(fp.get());
-						if( fread(res.GetData(), 1, res.GetDataSize(), fp.get()) != res.GetDataSize() ){
-							res.Resize(0);
-						}
-					}
+				//読み込み済みのデータを返す
+				string text;
+				if( sys->reserveManager.GetChDataListAsText(text) ){
+					res.Resize((DWORD)text.size());
+					std::copy((const BYTE*)text.c_str(), (const BYTE*)(text.c_str() + text.size()), res.GetData());
 					res.SetParam(CMD_SUCCESS);
 				}
 			}
@@ -2296,13 +2374,16 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		}
 		break;
 	case CMD2_EPG_SRV_NWPLAY_SET_IP:
-		{
-			AddDebugLog(L"CMD2_EPG_SRV_NWPLAY_SET_IP");
+		AddDebugLog(L"CMD2_EPG_SRV_NWPLAY_SET_IP");
+		if( tcpFlag == false || clientIP ){
 			NWPLAY_PLAY_INFO val;
 			if( cmd.ReadVALUE(&val) ){
 				std::shared_ptr<CTimeShiftUtil> util = sys->streamingManager.find(val.ctrlID);
 				if( util ){
-					util->Send(&val);
+					//TCP接続時は常にclientIPを使う
+					WCHAR ipv4[64];
+					swprintf_s(ipv4, L"%u.%u.%u.%u", val.ip >> 24, (val.ip >> 16) & 0xFF, (val.ip >> 8) & 0xFF, val.ip & 0xFF);
+					util->Send(tcpFlag ? clientIP : ipv4, val.udp ? &val.udpPort : NULL, val.tcp ? &val.tcpPort : NULL);
 					res.WriteVALUE(val);
 					res.SetParam(CMD_SUCCESS);
 				}
@@ -2321,6 +2402,21 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 					resVal.ctrlID = sys->streamingManager.push(util);
 					res.WriteVALUE(resVal);
 					res.SetParam(CMD_SUCCESS);
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_RELAY_VIEW_STREAM:
+		AddDebugLog(L"CMD2_EPG_SRV_RELAY_VIEW_STREAM");
+		if( tcpFlag ){
+			int processID;
+			if( cmd.ReadVALUE(&processID) ){
+				//プロセスが存在しViewアプリであること
+				CSendCtrlCmd ctrlCmd;
+				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, processID);
+				if( ctrlCmd.PipeExists() ){
+					//専用スレッドで応答する
+					res.SetParam(CMD_NO_RES_THREAD);
 				}
 			}
 		}
@@ -2702,7 +2798,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 				break;
 			}
 			EPG_AUTO_ADD_DATA item;
-			if( DeprecatedReadVALUE(&item, cmd.GetData(), cmd.GetDataSize()) == FALSE ){
+			if( DeprecatedReadVALUE(&item, cmd.GetData(), cmd.GetDataSize()) == false ){
 				break;
 			}
 			sys->oldSearchList[threadIndex].clear();
@@ -2913,8 +3009,18 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 				vector<FILE_DATA> result(list.size());
 				for( size_t i = 0; i < list.size(); i++ ){
 					fs_path path;
-					if( UtilComparePath(list[i].c_str(), L"ChSet5.txt") == 0 ||
-					    UtilComparePath(list[i].c_str(), LOGO_SAVE_FOLDER L".ini") == 0 ){
+					if( UtilComparePath(list[i].c_str(), L"ChSet5.txt") == 0 ){
+						//読み込み済みのデータを返す
+						string text;
+						if( this->reserveManager.GetChDataListAsText(text) ){
+							if( totalSizeRemain < text.size() ){
+								result.resize(i);
+								break;
+							}
+							totalSizeRemain -= text.size();
+							result[i].Data.assign((const BYTE*)text.c_str(), (const BYTE*)(text.c_str() + text.size()));
+						}
+					}else if( UtilComparePath(list[i].c_str(), LOGO_SAVE_FOLDER L".ini") == 0 ){
 						path = GetSettingPath().append(list[i]);
 					}else if( UtilComparePath(list[i].c_str(), L"EpgTimerSrv.ini") == 0 ||
 					          UtilComparePath(list[i].c_str(), L"Common.ini") == 0 ||

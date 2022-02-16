@@ -1,20 +1,27 @@
 ﻿#include "stdafx.h"
 #include "SendTSTCPMain.h"
 
+namespace
+{
 //SendTSTCPプロトコルのヘッダの送信を抑制する既定のポート範囲
-#define SEND_TS_TCP_NOHEAD_PORT_MIN 22000
-#define SEND_TS_TCP_NOHEAD_PORT_MAX 22999
+const DWORD SEND_TS_TCP_NOHEAD_PORT_MIN = 22000;
+const DWORD SEND_TS_TCP_NOHEAD_PORT_MAX = 22999;
+
 //送信先が0.0.0.1のとき待ち受ける名前付きパイプ名
-#define SEND_TS_TCP_0001_PIPE_NAME L"\\\\.\\pipe\\SendTSTCP_%d_%u"
+const WCHAR SEND_TS_TCP_0001_PIPE_NAME[] = L"\\\\.\\pipe\\SendTSTCP_%d_%u";
+
 //送信先が0.0.0.2のとき開く名前付きパイプ名
-#define SEND_TS_TCP_0002_PIPE_NAME L"\\\\.\\pipe\\BonDriver_Pipe%02d"
+const WCHAR SEND_TS_TCP_0002_PIPE_NAME[] = L"\\\\.\\pipe\\BonDriver_Pipe%02d";
+
 //送信バッファの最大数(サイズはAddSendData()の入力に依存)
-#define SEND_TS_TCP_BUFF_MAX 500
+const DWORD SEND_TS_TCP_BUFF_MAX = 500;
+
 //送信先(サーバ)接続のためのポーリング間隔
-#define SEND_TS_TCP_CONNECT_INTERVAL_MSEC 2000
+const DWORD SEND_TS_TCP_CONNECT_INTERVAL_MSEC = 2000;
 
 //UDP送信バッファのサイズ
-static const int UDP_SNDBUF_SIZE = 3 * 1024 * 1024;
+const int UDP_SNDBUF_SIZE = 3 * 1024 * 1024;
+}
 
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
@@ -41,22 +48,19 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	if( lpcwszIP == NULL ){
 		return FALSE;
 	}
-	SEND_INFO Item;
-	WtoUTF8(lpcwszIP, Item.strIP);
-	Item.dwPort = dwPort;
-	if( SEND_TS_TCP_NOHEAD_PORT_MIN <= dwPort && dwPort <= SEND_TS_TCP_NOHEAD_PORT_MAX ){
-		//上位ワードが1のときはヘッダの送信が抑制される
-		Item.dwPort |= 0x10000;
-	}
-	Item.sock = INVALID_SOCKET;
-	for( size_t i = 0; i < array_size(Item.pipe); i++ ){
-		Item.pipe[i] = INVALID_HANDLE_VALUE;
-		Item.olEvent[i] = NULL;
-		Item.bConnect[i] = false;
+	SEND_INFO item;
+	WtoUTF8(lpcwszIP, item.strIP);
+	item.port = (WORD)dwPort;
+	item.bSuppressHeader = (dwPort & 0x10000) != 0 || (SEND_TS_TCP_NOHEAD_PORT_MIN <= dwPort && dwPort <= SEND_TS_TCP_NOHEAD_PORT_MAX);
+	item.sock = INVALID_SOCKET;
+	for( size_t i = 0; i < array_size(item.pipe); i++ ){
+		item.pipe[i] = INVALID_HANDLE_VALUE;
+		item.olEvent[i] = NULL;
+		item.bConnect[i] = false;
 	}
 
 	//名前付きパイプでなければ
-	if( Item.strIP != "0.0.0.1" && Item.strIP != "0.0.0.2" ){
+	if( item.strIP != "0.0.0.1" && item.strIP != "0.0.0.2" ){
 		if( m_wsaStartupResult == -1 ){
 			WSAData wsaData;
 			m_wsaStartupResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -67,9 +71,9 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	}
 
 	lock_recursive_mutex lock(m_sendLock);
-	if( std::find_if(m_SendList.begin(), m_SendList.end(), [&Item](const SEND_INFO& a) {
-	        return a.strIP == Item.strIP && (WORD)a.dwPort == (WORD)Item.dwPort; }) == m_SendList.end() ){
-		m_SendList.push_back(Item);
+	if( std::find_if(m_SendList.begin(), m_SendList.end(), [&item](const SEND_INFO& a) {
+	        return a.strIP == item.strIP && a.port == item.port; }) == m_SendList.end() ){
+		m_SendList.push_back(item);
 	}
 
 	return TRUE;
@@ -234,7 +238,9 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 
 void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 {
-	DWORD dwCount = 0;
+	//ヘッダのdwCount情報を3バイト目が0でない値で始める。原作は0で始めていたが仕様的に始点に意味はなく
+	//また他のTCPインタフェースのヘッダと区別しにくいため設定を誤った場合に想定外のことが起きるのを防ぐため
+	DWORD dwCount = 0x01000000;
 	DWORD dwCheckConnectTick = GetTickCount();
 	for(;;){
 		DWORD tick = GetTickCount();
@@ -263,7 +269,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						itr->olEvent[i] = CreateEvent(NULL, TRUE, FALSE, NULL);
 						if( itr->olEvent[i] ){
 							wstring strPipe;
-							Format(strPipe, SEND_TS_TCP_0001_PIPE_NAME, (WORD)itr->dwPort, GetCurrentProcessId());
+							Format(strPipe, SEND_TS_TCP_0001_PIPE_NAME, itr->port, GetCurrentProcessId());
 							itr->pipe[i] = CreateNamedPipe(strPipe.c_str(), PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED,
 							                               0, (DWORD)array_size(itr->pipe), 48128, 0, 0, NULL);
 							if( itr->pipe[i] != INVALID_HANDLE_VALUE ){
@@ -298,7 +304,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					}
 					if( itr->olEvent[0] && itr->pipe[0] == INVALID_HANDLE_VALUE ){
 						wstring strPipe;
-						Format(strPipe, SEND_TS_TCP_0002_PIPE_NAME, (WORD)itr->dwPort);
+						Format(strPipe, SEND_TS_TCP_0002_PIPE_NAME, itr->port);
 						itr->pipe[0] = CreateFile(strPipe.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 						if( itr->pipe[0] != INVALID_HANDLE_VALUE ){
 							itr->bConnect[0] = true;
@@ -322,7 +328,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					}
 					if( itr->sock == INVALID_SOCKET ){
 						char szPort[16];
-						sprintf_s(szPort, "%d", (WORD)itr->dwPort);
+						sprintf_s(szPort, "%d", itr->port);
 						struct addrinfo hints = {};
 						hints.ai_flags = AI_NUMERICHOST;
 						hints.ai_socktype = SOCK_STREAM;
@@ -358,7 +364,13 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 			if( pSys->m_TSBuff.empty() == false ){
 				item.splice(item.end(), pSys->m_TSBuff, pSys->m_TSBuff.begin());
 				DWORD dwCmd[2] = { dwCount, (DWORD)(item.back().size() - sizeof(DWORD) * 2) };
-				memcpy(&item.back().front(), dwCmd, sizeof(dwCmd));
+				//ヘッダは2つのリトルエンディアンのDWORD値(dwCount情報はたいてい無視される)
+				for( int i = 0; i < 2; i++ ){
+					item.back()[i * 4] = (BYTE)dwCmd[i];
+					item.back()[i * 4 + 1] = (BYTE)(dwCmd[i] >> 8);
+					item.back()[i * 4 + 2] = (BYTE)(dwCmd[i] >> 16);
+					item.back()[i * 4 + 3] = (BYTE)(dwCmd[i] >> 24);
+				}
 			}
 			//途中で減ることはない
 			sendListSize = pSys->m_SendList.size();
@@ -433,7 +445,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 				}
 			}else{
 				size_t adjust = item.back().size();
-				if( itr->dwPort >> 16 == 1 ){
+				if( itr->bSuppressHeader ){
 					//ヘッダの送信を抑制
 					adjust -= sizeof(DWORD) * 2;
 				}

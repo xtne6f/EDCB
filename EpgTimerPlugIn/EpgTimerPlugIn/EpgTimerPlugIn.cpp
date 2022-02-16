@@ -284,28 +284,30 @@ void CEpgTimerPlugIn::ResetStreamingCtrlView()
 	if( this->fullScreen == FALSE ){
 		if( info.showCmd == SW_SHOWNORMAL ){
 			RECT rc;
+			GetWindowRect(this->ctrlDlg.GetDlgHWND(), &rc);
+			int cy = rc.bottom - rc.top;
 			GetWindowRect(this->m_pApp->GetAppWindow(), &rc);
 
 			int x = rc.left;
 			int y = rc.bottom+3;
 			int cx = rc.right - rc.left;
-			int cy = 65;
 
 			this->ctrlDlg.ShowCtrlDlg(SW_SHOW);
 			SetWindowPos(this->ctrlDlg.GetDlgHWND(), this->m_pApp->GetAppWindow(), x, y, cx, cy, SWP_SHOWWINDOW);
 			this->showNormal = TRUE;
 		}else if( info.showCmd == SW_SHOWMAXIMIZED ){
 			RECT rc;
+			GetWindowRect(this->ctrlDlg.GetDlgHWND(), &rc);
+			int cy = rc.bottom - rc.top;
 			GetWindowRect(this->m_pApp->GetAppWindow(), &rc);
 
 			POINT pos;
 			GetCursorPos(&pos);
 
-			if( pos.y > rc.bottom - 65 ){
+			if( pos.y > rc.bottom - cy ){
 				int x = rc.left;
-				int y = rc.bottom-65;
+				int y = rc.bottom - cy;
 				int cx = rc.right - rc.left;
-				int cy = 65;
 
 				this->ctrlDlg.ShowCtrlDlg(SW_SHOW);
 				SetWindowPos(this->ctrlDlg.GetDlgHWND(), HWND_TOPMOST, x, y, cx, cy, SWP_SHOWWINDOW);
