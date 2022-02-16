@@ -5,6 +5,7 @@
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/SendCtrlCmd.h"
+#include "../../Common/IniUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "resource.h"

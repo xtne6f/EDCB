@@ -8,6 +8,7 @@
 #include "../../Common/CommonDef.h"
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/CtrlCmdUtil.h"
+#include "../../Common/IniUtil.h"
 #include "../../Common/TimeUtil.h"
 #include <shellapi.h>
 #include <objbase.h>
@@ -95,21 +96,25 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 {
 	fs_path appIniPath = GetModuleIniPath();
 
-	SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, appIniPath.c_str()) != 0);
-	this->modifyTitleBarText = GetPrivateProfileInt(L"SET", L"ModifyTitleBarText", 0, appIniPath.c_str()) != 0;
-	this->overlayTaskIcon = GetPrivateProfileInt(L"SET", L"OverlayTaskIcon", 1, appIniPath.c_str()) != 0;
-	this->minTask = GetPrivateProfileInt(L"SET", L"MinTask", 0, appIniPath.c_str()) != 0;
-	this->recFileName = GetPrivateProfileToString(L"SET", L"RecFileName", L"$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts", appIniPath.c_str());
-	this->overWriteFlag = GetPrivateProfileInt(L"SET", L"OverWrite", 0, appIniPath.c_str()) != 0;
-	this->viewPath = GetPrivateProfileToString(L"SET", L"ViewPath", L"", appIniPath.c_str());
-	this->viewOpt = GetPrivateProfileToString(L"SET", L"ViewOption", L"", appIniPath.c_str());
-	this->dropSaveThresh = GetPrivateProfileInt(L"SET", L"DropSaveThresh", 0, appIniPath.c_str());
-	this->scrambleSaveThresh = GetPrivateProfileInt(L"SET", L"ScrambleSaveThresh", -1, appIniPath.c_str());
-	this->dropLogAsUtf8 = GetPrivateProfileInt(L"SET", L"DropLogAsUtf8", 0, appIniPath.c_str()) != 0;
-	this->tsBuffMaxCount = (DWORD)GetPrivateProfileInt(L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str());
-	this->writeBuffMaxCount = GetPrivateProfileInt(L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str());
-	this->traceBonDriverLevel = GetPrivateProfileInt(L"SET", L"TraceBonDriverLevel", 0, appIniPath.c_str());
-	this->openWait = GetPrivateProfileInt(L"SET", L"OpenWait", 200, appIniPath.c_str());
+	//セクション単位で処理するほうが軽い
+	vector<WCHAR> buffSet = GetPrivateProfileSectionBuffer(L"SET", appIniPath.c_str());
+
+	SetSaveDebugLog(GetBufferedProfileInt(buffSet.data(), L"SaveDebugLog", 0) != 0);
+	this->modifyTitleBarText  = GetBufferedProfileInt(buffSet.data(), L"ModifyTitleBarText", 0) != 0;
+	this->overlayTaskIcon     = GetBufferedProfileInt(buffSet.data(), L"OverlayTaskIcon", 1) != 0;
+	this->minTask             = GetBufferedProfileInt(buffSet.data(), L"MinTask", 0) != 0;
+	this->recFileName         = GetBufferedProfileToString(buffSet.data(), L"RecFileName",
+	                                                       L"$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts");
+	this->overWriteFlag       = GetBufferedProfileInt(buffSet.data(), L"OverWrite", 0) != 0;
+	this->viewPath            = GetBufferedProfileToString(buffSet.data(), L"ViewPath", L"");
+	this->viewOpt             = GetBufferedProfileToString(buffSet.data(), L"ViewOption", L"");
+	this->dropSaveThresh      = GetBufferedProfileInt(buffSet.data(), L"DropSaveThresh", 0);
+	this->scrambleSaveThresh  = GetBufferedProfileInt(buffSet.data(), L"ScrambleSaveThresh", -1);
+	this->dropLogAsUtf8       = GetBufferedProfileInt(buffSet.data(), L"DropLogAsUtf8", 0) != 0;
+	this->tsBuffMaxCount      = (DWORD)GetBufferedProfileInt(buffSet.data(), L"TsBuffMaxCount", 5000);
+	this->writeBuffMaxCount   = GetBufferedProfileInt(buffSet.data(), L"WriteBuffMaxCount", -1);
+	this->traceBonDriverLevel = GetBufferedProfileInt(buffSet.data(), L"TraceBonDriverLevel", 0);
+	this->openWait            = GetBufferedProfileInt(buffSet.data(), L"OpenWait", 200);
 
 	this->recFolderList.clear();
 	for( int i = 0; ; i++ ){
@@ -123,12 +128,13 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	this->setUdpSendList.clear();
 	this->setTcpSendList.clear();
 	for( int tcp = 0; tcp < 2; tcp++ ){
-		int count = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", L"Count", 0, appIniPath.c_str());
+		vector<WCHAR> buffSetNW = GetPrivateProfileSectionBuffer(tcp ? L"SET_TCP" : L"SET_UDP", appIniPath.c_str());
+		int count = GetBufferedProfileInt(buffSetNW.data(), L"Count", 0);
 		for( int i = 0; i < count; i++ ){
 			NW_SEND_INFO item;
 			WCHAR key[64];
 			swprintf_s(key, L"IP%d", i);
-			item.ipString = GetPrivateProfileToString(tcp ? L"SET_TCP" : L"SET_UDP", key, L"2130706433", appIniPath.c_str());
+			item.ipString = GetBufferedProfileToString(buffSetNW.data(), key, L"2130706433");
 			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
 				item.ipString.erase(0, 1).pop_back();
 			}else{
@@ -138,32 +144,32 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 			swprintf_s(key, L"Port%d", i);
 			item.port = 0;
 			if( item.ipString != BON_NW_SRV_PIPE_IP ){
-				item.port = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN, appIniPath.c_str());
+				item.port = GetBufferedProfileInt(buffSetNW.data(), key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN);
 			}
 			swprintf_s(key, L"BroadCast%d", i);
-			item.broadcastFlag = tcp ? 0 : GetPrivateProfileInt(L"SET_UDP", key, 0, appIniPath.c_str());
-			item.udpMaxSendSize = tcp ? 0 : GetPrivateProfileInt(L"SET", L"UDPPacket", 128, appIniPath.c_str()) * 188;
+			item.broadcastFlag = tcp ? 0 : GetBufferedProfileInt(buffSetNW.data(), key, 0);
+			item.udpMaxSendSize = tcp ? 0 : GetBufferedProfileInt(buffSet.data(), L"UDPPacket", 128) * 188;
 			(tcp ? this->setTcpSendList : this->setUdpSendList).push_back(item);
 		}
 	}
 
-	this->bonCtrl.SetBackGroundEpgCap(GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapRec", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapBackBSBasicOnly", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapBackCS1BasicOnly", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapBackCS2BasicOnly", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapBackCS3BasicOnly", 0, appIniPath.c_str()) != 0,
-	                                  (DWORD)GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str()));
+	this->bonCtrl.SetBackGroundEpgCap(GetBufferedProfileInt(buffSet.data(), L"EpgCapLive", 1) != 0,
+	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapRec", 1) != 0,
+	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapBackBSBasicOnly", 1) != 0,
+	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapBackCS1BasicOnly", 1) != 0,
+	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapBackCS2BasicOnly", 1) != 0,
+	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapBackCS3BasicOnly", 0) != 0,
+	                                  (DWORD)GetBufferedProfileInt(buffSet.data(), L"EpgCapBackStartWaitSec", 30));
 
-	this->bonCtrl.ReloadSetting(GetPrivateProfileInt(L"SET", L"EMM", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"ParseEpgPostProcess", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"Scramble", 1, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"Caption", 1, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"Data", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()) != 0,
-	                            (DWORD)(GetPrivateProfileInt(L"SET", L"SaveLogo", 0, appIniPath.c_str()) == 0 ? 0 :
-	                                        GetPrivateProfileInt(L"SET", L"SaveLogoTypeFlags", 32, appIniPath.c_str())));
+	this->bonCtrl.ReloadSetting(GetBufferedProfileInt(buffSet.data(), L"EMM", 0) != 0,
+	                            GetBufferedProfileInt(buffSet.data(), L"NoLogScramble", 0) != 0,
+	                            GetBufferedProfileInt(buffSet.data(), L"ParseEpgPostProcess", 0) != 0,
+	                            GetBufferedProfileInt(buffSet.data(), L"Scramble", 1) != 0,
+	                            GetBufferedProfileInt(buffSet.data(), L"Caption", 1) != 0,
+	                            GetBufferedProfileInt(buffSet.data(), L"Data", 0) != 0,
+	                            GetBufferedProfileInt(buffSet.data(), L"AllService", 0) != 0,
+	                            (DWORD)(GetBufferedProfileInt(buffSet.data(), L"SaveLogo", 0) == 0 ? 0 :
+	                                        GetBufferedProfileInt(buffSet.data(), L"SaveLogoTypeFlags", 32)));
 
 	EnableWindow(GetDlgItem(IDC_BUTTON_VIEW), this->viewPath.empty() == false);
 }

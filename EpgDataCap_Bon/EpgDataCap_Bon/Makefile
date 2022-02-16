@@ -25,6 +25,7 @@ $(TARGET).exe: $(addsuffix .obj, \
   Common__CtrlCmdUtil.cpp \
   Common__EpgDataCap3Util.cpp \
   Common__EpgTimerUtil.cpp \
+  Common__IniUtil.cpp \
   Common__ParseTextInstances.cpp \
   Common__PathUtil.cpp \
   Common__PipeServer.cpp \
