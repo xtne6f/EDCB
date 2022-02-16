@@ -179,19 +179,18 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	// TODO: 初期化をここに追加します。
 	ReloadSetting();
 
-	for( int i=0; i<24; i++ ){
-		WCHAR buff[32];
-		swprintf_s(buff, L"%d", i);
-		ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_H), buff);
+	for( int minOrHour = 0; minOrHour < 2; minOrHour++ ){
+		HWND hItem = GetDlgItem(minOrHour ? IDC_COMBO_REC_M : IDC_COMBO_REC_H);
+		SendMessage(hItem, WM_SETREDRAW, FALSE, 0);
+		for( int i = 0; i < (minOrHour ? 60 : 24); i++ ){
+			WCHAR buff[32];
+			swprintf_s(buff, L"%d", i);
+			ComboBox_AddString(hItem, buff);
+		}
+		ComboBox_SetCurSel(hItem, 0);
+		SendMessage(hItem, WM_SETREDRAW, TRUE, 0);
+		RedrawWindow(hItem, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 	}
-	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_H), 0);
-
-	for( int i=0; i<60; i++ ){
-		WCHAR buff[32];
-		swprintf_s(buff, L"%d", i);
-		ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_M), buff);
-	}
-	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_M), 0);
 
 	fs_path appIniPath = GetModuleIniPath();
 
@@ -1002,6 +1001,7 @@ int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 	int comboBoxIndex = 0;
 	HWND hItem = GetDlgItem(IDC_COMBO_SERVICE);
 	if( updateComboBox ){
+		SendMessage(hItem, WM_SETREDRAW, FALSE, 0);
 		ComboBox_ResetContent(hItem);
 	}
 	for( size_t i = 0; i < this->serviceList.size(); i++ ){
@@ -1025,6 +1025,10 @@ int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 	}
 	if( selectSel >= 0 && selectSel != ComboBox_GetCurSel(hItem) ){
 		ComboBox_SetCurSel(hItem, selectSel);
+	}
+	if( updateComboBox ){
+		SendMessage(hItem, WM_SETREDRAW, TRUE, 0);
+		RedrawWindow(hItem, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 	}
 
 	if( this->serviceList.empty() ){
