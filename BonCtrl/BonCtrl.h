@@ -78,13 +78,9 @@ public:
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// space			[IN]変更チャンネルのSpace
-	// ch				[IN]変更チャンネルの物理Ch
-	// serviceID		[IN]変更チャンネルのサービスID
+	// chData		[IN]変更チャンネルのサービス情報
 	BOOL SetCh(
-		DWORD space,
-		DWORD ch,
-		WORD serviceID
+		const CH_DATA4& chData
 		);
 
 	//チャンネル変更中かどうか
@@ -467,7 +463,7 @@ protected:
 	BOOL ProcessSetCh(
 		DWORD space,
 		DWORD ch,
-		BOOL chScan
+		int onidOrChScan
 		);
 
 	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);

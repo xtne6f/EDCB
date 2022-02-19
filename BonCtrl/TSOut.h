@@ -30,7 +30,10 @@ public:
 	CTSOut(void);
 	~CTSOut(void);
 
-	void SetChChangeEvent(BOOL resetEpgUtil = FALSE);
+	//チャンネル変更状態に遷移する
+	void SetChChangeEvent(WORD presumedONID = 0xFFFF, BOOL resetEpgUtil = FALSE);
+
+	//GetStreamID()が失敗する状態かどうか
 	BOOL IsChUnknown(DWORD* elapsedTime = NULL);
 
 	//現在のストリームのIDを取得する
@@ -348,6 +351,7 @@ protected:
 
 	enum { CH_ST_INIT, CH_ST_WAIT_PAT, CH_ST_WAIT_PAT2, CH_ST_WAIT_ID, CH_ST_DONE } chChangeState;
 	DWORD chChangeTime;
+	WORD chChangePresumedONID;
 	WORD lastONID;
 	WORD lastTSID;
 

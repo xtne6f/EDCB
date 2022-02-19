@@ -1068,7 +1068,7 @@ BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 
 BOOL CEpgDataCap_BonDlg::SelectService(const CH_DATA4& chData)
 {
-	if( this->bonCtrl.SetCh(chData.space, chData.ch, chData.serviceID) ){
+	if( this->bonCtrl.SetCh(chData) ){
 		this->lastONID = chData.originalNetworkID;
 		this->lastTSID = chData.transportStreamID;
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");

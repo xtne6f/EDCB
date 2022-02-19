@@ -135,9 +135,7 @@ BOOL CBonCtrl::GetOpenBonDriver(
 }
 
 BOOL CBonCtrl::SetCh(
-	DWORD space,
-	DWORD ch,
-	WORD serviceID
+	const CH_DATA4& chData
 )
 {
 	if( this->tsOut.IsRec() == TRUE ){
@@ -145,8 +143,8 @@ BOOL CBonCtrl::SetCh(
 	}
 	StopEpgCap();
 
-	if( ProcessSetCh(space, ch, FALSE) ){
-		this->nwCtrlServiceID = serviceID;
+	if( ProcessSetCh(chData.space, chData.ch, chData.originalNetworkID) ){
+		this->nwCtrlServiceID = chData.serviceID;
 		this->tsOut.SetServiceID(this->nwCtrlID, this->nwCtrlAllService ? 0xFFFF : this->nwCtrlServiceID);
 		return TRUE;
 	}
@@ -157,7 +155,7 @@ BOOL CBonCtrl::SetCh(
 BOOL CBonCtrl::ProcessSetCh(
 	DWORD space,
 	DWORD ch,
-	BOOL chScan
+	int onidOrChScan
 	)
 {
 	DWORD spaceNow=0;
@@ -169,7 +167,7 @@ BOOL CBonCtrl::ProcessSetCh(
 		DWORD elapsed;
 		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow || this->tsOut.IsChUnknown(&elapsed) && elapsed > 15000 ){
 			StopBackgroundEpgCap();
-			this->tsOut.SetChChangeEvent(chScan);
+			this->tsOut.SetChChangeEvent((WORD)(onidOrChScan < 0 ? 0xFFFF : onidOrChScan), onidOrChScan < 0);
 			AddDebugLogFormat(L"SetCh space %d, ch %d", space, ch);
 			ret = this->bonUtil.SetCh(space, ch);
 			StartBackgroundEpgCap();
@@ -588,7 +586,7 @@ void CBonCtrl::CheckChScan()
 				return;
 			}
 			this->chScanIndexOrStatus = chkCount;
-			if( this->ProcessSetCh(this->chScanChkList[chkCount].space, this->chScanChkList[chkCount].ch, TRUE) ){
+			if( this->ProcessSetCh(this->chScanChkList[chkCount].space, this->chScanChkList[chkCount].ch, -1) ){
 				this->chScanTick = GetTickCount();
 				this->chScanChkNext = FALSE;
 			}
@@ -811,7 +809,7 @@ void CBonCtrl::CheckEpgCap()
 			DWORD ch;
 			if( this->chUtil.GetCh(this->epgCapChList[chkCount].ONID, this->epgCapChList[chkCount].TSID,
 			                       this->epgCapChList[chkCount].SID, space, ch) &&
-			    this->ProcessSetCh(space, ch, FALSE) ){
+			    this->ProcessSetCh(space, ch, this->epgCapChList[chkCount].ONID) ){
 				this->epgCapSetChState = 0;
 				this->epgCapChkNext = FALSE;
 			}
