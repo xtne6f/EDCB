@@ -17,10 +17,10 @@
 
 [ビルド(MSYS2/Mingw-w64)] ※VisualStudioのインストールが面倒な場合お勧め
 
-0.https://www.msys2.org/ の msys2-i686-日付.exe(32bitOS用) または msys2-x86_64-日付.exe(64bitOS用) をインストール
+0.https://www.msys2.org/ の msys2-x86_64-日付.exe(64bitOS用) をインストール
   上記サイトに従ってpacman -Syu →(必要なら)pacman -Suでパッケージをアップデート
-  スタートメニューの"MSYS2 MinGW 32-bit"(x64ビルド時は64-bit)を開き、起動した黒窓で以下を実行してmakeとgccをインストール
-  $ pacman -S make mingw-w64-i686-gcc # x64ビルド時はmingw-w64-x86_64-gcc
+  スタートメニューの"MSYS2 MinGW 64-bit"(32bitビルド時は32-bit)を開き、起動した黒窓で以下を実行してmakeとgccをインストール
+  $ pacman -S make mingw-w64-x86_64-gcc # 32bitビルド時はmingw-w64-i686-gcc
 
 1.つづけて以下を実行（この文書が"C:\EDCB\Document"にあると仮定）
   $ cd /c/EDCB/Document/MinGW
@@ -31,7 +31,7 @@
 ・Luaを組み込まない場合でHTTPサーバ機能などを使うときは、lua52.dllを別途 https://sourceforge.net/projects/luabinaries/ からダウンロードする
   ・EpgTimerSrv/liblua52-mingw-lazy-*.a は lua-5.2.4_Win{32|64}_dllw6_lib.zip から以下を実行して作成したインポートライブラリ
     $ dlltool -t zz -D lua52.dll -d lua52.def -y liblua52.a
-・EpgTimerAdminProxy.exe、readex.exe、relayread.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様で
+・EpgTimerAdminProxy.exe、asyncbuf.exe、relayread.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様で
   スタティックリンクだとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダ、TVTestではTVTest.exeのフォルダに置く
 ・EpgDataCap_Bon.exeについては、使用するBonDriverに特別な対応がされていない限り、VC++でビルドされたIBonCast.dllが必要
 ・EpgTimer.exeについては[その他]を参照
