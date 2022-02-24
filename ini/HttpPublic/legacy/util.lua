@@ -50,6 +50,7 @@ ALWAYS_USE_HLS=true
 --HLSのときはセグメント長約4秒、最大8MBytes(=1秒あたり16Mbits)を想定しているので、オプションもそれに合わせること
 --name:表示名
 --xcoder:Toolsフォルダからの相対パス。Toolsフォルダになければパスが通っているとみなす
+--       ※NVEncCやQSVEncCの例では'NVEncC\\NVEncC.exe'のように「Toolsの下のNVEncCフォルダの下」なので注意
 --option:$SRCと$OUTPUTは必須、再生時に適宜置換される
 --filter*Fast:倍速再生用、未定義でもよい
 XCODE_OPTIONS={
@@ -188,11 +189,9 @@ function TranscodeSettingTemplete(xq,fsec)
   s=s..'</select>\n'
   if fsec then
     s=s..'offset: <select name="offset">'
-    local i=0
-    while i<=100 do
+    for i=0,100 do
       s=s..'<option value="'..i..'"'..((xq.offset or 0)==i and ' selected' or '')..'>'
-        ..(fsec>0 and ('%dm%02ds|'):format(math.floor(fsec*i/100/60),fsec*i/100%60) or '')..i..'%'
-      i=i<5 and i+1 or i+5
+        ..(fsec>0 and ('%dm%02ds'):format(math.floor(fsec*i/100/60),fsec*i/100%60) or '')..(i%5==0 and '|'..i..'%' or '')
     end
     s=s..'</select>\n'
   end
