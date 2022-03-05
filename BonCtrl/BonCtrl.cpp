@@ -781,28 +781,20 @@ void CBonCtrl::CheckEpgCap()
 
 		if( this->epgCapChkNext ){
 			//次のチャンネルへ
-			chkCount++;
-			if( this->epgCapChList.size() <= (size_t)chkCount ){
-				//全部チェック終わったので終了
-				this->epgCapIndexOrStatus = ST_COMPLETE;
-				return;
-			}
-			if( this->epgCapChList[chkCount].ONID == 4 && this->epgCapBSBasic && this->epgCapChkBS ||
-			    this->epgCapChList[chkCount].ONID == 6 && this->epgCapCS1Basic && this->epgCapChkCS1 ||
-			    this->epgCapChList[chkCount].ONID == 7 && this->epgCapCS2Basic && this->epgCapChkCS2 ||
-			    this->epgCapChList[chkCount].ONID == 10 && this->epgCapCS3Basic && this->epgCapChkCS3 ){
+			for(;;){
 				chkCount++;
-				while( (size_t)chkCount < this->epgCapChList.size() ){
-					if( this->epgCapChList[chkCount].ONID != this->epgCapChList[chkCount - 1].ONID ){
-						break;
-					}
-					chkCount++;
-				}
 				if( this->epgCapChList.size() <= (size_t)chkCount ){
 					//全部チェック終わったので終了
 					this->epgCapIndexOrStatus = ST_COMPLETE;
 					return;
 				}
+				if( this->epgCapChList[chkCount].ONID == 4 && this->epgCapBSBasic && this->epgCapChkBS ||
+				    this->epgCapChList[chkCount].ONID == 6 && this->epgCapCS1Basic && this->epgCapChkCS1 ||
+				    this->epgCapChList[chkCount].ONID == 7 && this->epgCapCS2Basic && this->epgCapChkCS2 ||
+				    this->epgCapChList[chkCount].ONID == 10 && this->epgCapCS3Basic && this->epgCapChkCS3 ){
+					continue;
+				}
+				break;
 			}
 			this->epgCapIndexOrStatus = chkCount;
 			DWORD space;
