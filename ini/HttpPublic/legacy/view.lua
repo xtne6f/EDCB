@@ -11,8 +11,6 @@ end
 
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-dual=GetVarInt(query,'dual',0,2)
-dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
 filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
 hls=GetVarInt(query,'hls',1)
 caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
@@ -62,7 +60,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC','-')
     :gsub('$AUDIO',audio2)
-    :gsub('$DUAL',(dual:gsub('%%','%%%%')))
+    :gsub('$DUAL','')
     :gsub('$FILTER',(filter:gsub('%%','%%%%')))
     :gsub('$CAPTION',(caption:gsub('%%','%%%%')))
     :gsub('$OUTPUT',(output[2]:gsub('%%','%%%%')))
@@ -89,7 +87,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -b 1 -c 1 -u 2 '..pipeName..' | '..cmd
+  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c 1 -u 2 '..pipeName..' | '..cmd
   if hls then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
@@ -118,7 +116,7 @@ if onid then
   elseif 0<=n and n<100 then
     if hls then
       -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-      segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+      segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
       f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
     end
     if not f then
@@ -166,7 +164,7 @@ elseif n and n<0 then
 elseif n and n<=65535 then
   if hls then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-    segmentKey=mg.md5('view:'..hls..':'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+    segmentKey=mg.md5('view:'..hls..':'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
     f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
   end
   if not f then

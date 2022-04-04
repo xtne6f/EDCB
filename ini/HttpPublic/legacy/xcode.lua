@@ -13,8 +13,6 @@ end
 offset=GetVarInt(query,'offset',0,100) or 0
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-dual=GetVarInt(query,'dual',0,2)
-dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
 filter=GetVarInt(query,'fast')==1 and (GetVarInt(query,'cinema')==1 and option.filterCinemaFast or option.filterFast)
 filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
 hls=GetVarInt(query,'hls',1)
@@ -59,7 +57,7 @@ function OpenTranscoder()
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC','-')
     :gsub('$AUDIO',audio2)
-    :gsub('$DUAL',(dual:gsub('%%','%%%%')))
+    :gsub('$DUAL','')
     :gsub('$FILTER',(filter:gsub('%%','%%%%')))
     :gsub('$CAPTION',(caption:gsub('%%','%%%%')))
     :gsub('$OUTPUT',(output[2]:gsub('%%','%%%%')))
@@ -85,7 +83,7 @@ function OpenTranscoder()
   end
   local sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-xcode -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -b 1 -c 1 -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
+  cmd='"'..tsreadex..'" -z edcb-legacy-xcode -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c 1 -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
   if hls then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
@@ -110,7 +108,7 @@ f=nil
 if fpath then
   if hls then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-    segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+    segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..filter..':'..caption..':'..output[2])
     f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
   end
   if not f then

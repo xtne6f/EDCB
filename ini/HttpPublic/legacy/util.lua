@@ -57,9 +57,7 @@ XCODE_OPTIONS={
   {
     name='288p/h264/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
-    dualMain='-dual_mono_mode main',
-    dualSub='-dual_mono_mode sub',
+    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -72,9 +70,7 @@ XCODE_OPTIONS={
   {
     name='576p/h264/ffmpeg-nvenc',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
-    dualMain='-dual_mono_mode main',
-    dualSub='-dual_mono_mode sub',
+    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -87,9 +83,7 @@ XCODE_OPTIONS={
   {
     name='288p/webm/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
-    dualMain='-dual_mono_mode main',
-    dualSub='-dual_mono_mode sub',
+    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
     filter='-vf yadif=0:-1:1',
     filterCinema='-vf pullup -r 24000/1001',
     filterFast='-vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25',
@@ -101,10 +95,8 @@ XCODE_OPTIONS={
     --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
     name='576p/h264/NVEncC',
     xcoder='NVEncC\\NVEncC.exe',
-    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
     audioStartAt=1,
-    dualMain='#dual_mono_mode=main',
-    dualSub='#dual_mono_mode=sub',
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true,rff=true',
     captionNone='',
@@ -116,10 +108,8 @@ XCODE_OPTIONS={
     --QSVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
     name='576p/h264/QSVEncC',
     xcoder='QSVEncC\\QSVEncC.exe',
-    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --quality balanced $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --quality balanced $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
     audioStartAt=1,
-    dualMain='#dual_mono_mode=main',
-    dualSub='#dual_mono_mode=sub',
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true',
     captionNone='',
@@ -162,7 +152,6 @@ function GetTranscodeQueries(qs)
     option=GetVarInt(qs,'option',1,#XCODE_OPTIONS),
     offset=GetVarInt(qs,'offset',0,100),
     audio2=GetVarInt(qs,'audio2')==1,
-    dual=GetVarInt(qs,'dual',0,2),
     cinema=GetVarInt(qs,'cinema')==1,
     fast=GetVarInt(qs,'fast')==1,
     caption=GetVarInt(qs,'caption')==1,
@@ -173,7 +162,6 @@ function ConstructTranscodeQueries(xq)
   return (xq.option and '&amp;option='..xq.option or '')
     ..(xq.offset and '&amp;offset='..xq.offset or '')
     ..(xq.audio2 and '&amp;audio2=1' or '')
-    ..(xq.dual and '&amp;dual='..xq.dual or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
     ..(xq.fast and '&amp;fast=1' or '')
     ..(xq.caption and '&amp;caption=1' or '')
@@ -191,18 +179,15 @@ function TranscodeSettingTemplete(xq,fsec)
     s=s..'offset: <select name="offset">'
     for i=0,100 do
       s=s..'<option value="'..i..'"'..((xq.offset or 0)==i and ' selected' or '')..'>'
-        ..(fsec>0 and ('%dm%02ds'):format(math.floor(fsec*i/100/60),fsec*i/100%60) or '')..(i%5==0 and '|'..i..'%' or '')
+        ..(fsec>0 and ('%dm%02ds'):format(math.floor(fsec*i/100/60),fsec*i/100%60)..(i%5==0 and '|'..i..'%' or '') or i..'%')
     end
     s=s..'</select>\n'
   end
   s=s..'<label><input type="checkbox" name="audio2" value="1"'..(xq.audio2 and ' checked' or '')..'>audio2</label>\n'
-    ..'<select name="dual">'
-    ..'<option value="0"'..(xq.dual~=1 and xq.dual~=2 and ' selected' or '')..'>*'
-    ..'<option value="1"'..(xq.dual==1 and ' selected' or '')..'>dual-main'
-    ..'<option value="2"'..(xq.dual==2 and ' selected' or '')..'>dual-sub'
-    ..'</select>\n'
     ..'<label><input type="checkbox" name="cinema" value="1"'..((xq.cinema or not xq.option and XCODE_CHECK_CINEMA) and ' checked' or '')..'>cinema</label>\n'
-    ..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
+  if fsec then
+    s=s..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
+  end
   if ALLOW_HLS then
     s=s..'<label><input type="checkbox" name="caption" value="1"'..((xq.caption or not xq.option and XCODE_CHECK_CAPTION) and ' checked' or '')..'>caption</label>\n'
   end
