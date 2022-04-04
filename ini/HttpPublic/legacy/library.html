@@ -94,9 +94,11 @@ else
       ct:Append('→<a href="library.html?i='..index..'&amp;h='..hash..ConstructTranscodeQueries(xq)
         ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a><br>\n')
 
-      ct:Append((vtag==1 and '<div class="video-container"><video autoplay controls src="' or '<a href="')
+      ct:Append((vtag==1 and '<div class="video-full-container" id="vid-full"><div class="video-container" id="vid-cont">'
+                   ..'<video id="vid" autoplay controls src="' or '<a href="')
         ..(vtag~=0 and vtag~=1 and 'library.html?i='..index..'&amp;h='..hash..'&amp;vtag=1' or PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'))
-        ..'">/'..EdcbHtmlEscape(ref)..(vtag==1 and '</video></div>' or '</a>'))
+        ..'">/'..EdcbHtmlEscape(ref)..(vtag==1 and '<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
+                                         ..'.vtt" type="text/vtt" default></video></div></div>\n'..VideoScriptTemplete() or '</a>'))
       if info.ists then
         fsec,fsize=0,0
         f=edcb.io.open(dir..'\\'..info.name,'rb')

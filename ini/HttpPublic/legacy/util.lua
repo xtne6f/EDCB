@@ -125,6 +125,12 @@ XCODE_CHECK_CINEMA=false
 XCODE_CHECK_FAST=false
 XCODE_CHECK_CAPTION=false
 
+--字幕表示のオプション https://github.com/monyone/aribb24.js#options
+ARIBB24_JS_OPTION=[=[
+  normalFont:'"Rounded M+ 1m for ARIB","Yu Gothic Medium",sans-serif',
+  drcsReplacement:true
+]=]
+
 --トランスコードするかどうか。する場合はtsreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
 XCODE=true
 --トランスコードするプロセスを1つだけに制限するかどうか(並列処理できる余裕がシステムにない場合など)
@@ -194,9 +200,8 @@ function TranscodeSettingTemplete(xq,fsec)
   return s
 end
 
-function HlsScriptTemplete(caption)
-  --フルスクリーンボタン
-  local s=[=[
+function FullscreenButtonScriptTemplete()
+  return [=[
 <script>
 var vfull=document.getElementById("vid-full");
 var vcont=document.getElementById("vid-cont");
@@ -216,6 +221,135 @@ div.appendChild(btn);
 vcont.appendChild(div);
 </script>
 ]=]
+end
+
+function VideoScriptTemplete()
+  return FullscreenButtonScriptTemplete()..[=[
+<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
+  ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption</label>
+<script src="aribb24.js"></script>
+<script>
+function decodeB24CaptionFromCueText(text,work){
+  work=work||[];
+  text=text.replace(/\r?\n/g,'');
+  var re=/<v b24caption[0-8]>(.*?)<\/v>/g;
+  var src,ret=null;
+  while((src=re.exec(text))!==null){
+    src=src[1].replace(/<.*?>/g,'').replace(/&(?:amp|lt|gt|quot|apos);/g,function(m){
+      return m=='&amp;'?'&':m=='&lt;'?'<':m=='&gt;'?'>':m=='&quot;'?'"':'\'';
+    });
+    var brace=[],wl=0,hi=0;
+    for(var i=0;i<src.length;){
+      if(src[i]=='%'){
+        if((++i)+2>src.length)return null;
+        var c=src[i++];
+        var d=src[i++];
+        if(c=='^'){
+          work[wl++]=0xc2;
+          work[wl++]=d.charCodeAt(0)+64;
+        }else if(c=='='){
+          if(d=='{'){
+            work[wl++]=0;
+            work[wl++]=0;
+            work[wl++]=0;
+            brace.push(wl);
+          }else if(d=='}'&&brace.length>0){
+            var pos=brace.pop();
+            work[pos-3]=wl-pos>>16&255;
+            work[pos-2]=wl-pos>>8&255;
+            work[pos-1]=wl-pos&255;
+          }else return null;
+        }else if(c=='+'){
+          if(d=='{'){
+            var pos=src.indexOf('%+}',i);
+            if(pos<0)return null;
+            try{
+              var buf=atob(src.substring(i,pos));
+              for(var j=0;j<buf.length;j++)work[wl++]=buf.charCodeAt(j);
+            }catch(e){return null;}
+            i=pos+3;
+          }else return null;
+        }else{
+          var x=c.charCodeAt(0);
+          var y=d.charCodeAt(0);
+          work[wl++]=(x>=97?x-87:x>=65?x-55:x-48)<<4|(y>=97?y-87:y>=65?y-55:y-48);
+        }
+      }else{
+        var x=src.charCodeAt(i++);
+        if(x<0x80){
+          work[wl++]=x;
+        }else if(x<0x800){
+          work[wl++]=0xc0|x>>6;
+          work[wl++]=0x80|x&63;
+        }else if(0xd800<=x&&x<=0xdbff){
+          hi=x;
+        }else if(0xdc00<=x&&x<=0xdfff){
+          x=0x10000+((hi&0x3ff)<<10)+(x&0x3ff);
+          work[wl++]=0xf0|x>>18;
+          work[wl++]=0x80|x>>12&63;
+          work[wl++]=0x80|x>>6&63;
+          work[wl++]=0x80|x&63;
+        }else{
+          work[wl++]=0xe0|x>>12;
+          work[wl++]=0x80|x>>6&63;
+          work[wl++]=0x80|x&63;
+        }
+      }
+    }
+    if(brace.length>0)return null;
+    if(3<=wl&&wl<=65520){
+      var r=new Uint8Array(wl+7);
+      r[0]=0x80;
+      r[1]=0xff;
+      r[2]=0xf0;
+      r[3]=work[0];
+      r[4]=work[1];
+      r[5]=work[2];
+      r[6]=wl-3>>8&255;
+      r[7]=wl-3&255;
+      for(var i=3;i<wl;i++)r[i+5]=work[i];
+      ret=ret||[];
+      ret.push(r);
+    }
+  }
+  return ret;
+}
+var cap=null;
+var cbCaption=document.getElementById("cb-caption");
+cbCaption.onclick=function(){
+  if(cap){if(cbCaption.checked){cap.show();}else{cap.hide();}}
+};
+var vidMeta=document.getElementById("vid-meta");
+vidMeta.oncuechange=function(){
+  vidMeta.oncuechange=null;
+  var work=[];
+  var dataList=[];
+  var cues=vidMeta.track.cues;
+  for(var i=0;i<cues.length;i++){
+    var ret=decodeB24CaptionFromCueText(cues[i].text,work);
+    if(!ret){return;}
+    for(var j=0;j<ret.length;j++){dataList.push({pts:cues[i].startTime,pes:ret[j]});}
+  }
+  cap=new aribb24js.CanvasRenderer({]=]..ARIBB24_JS_OPTION..[=[});
+  cap.attachMedia(document.getElementById("vid"));
+  document.getElementById("label-caption").style.display="inline";
+  if(!cbCaption.checked){cap.hide();}
+  dataList.reverse();
+  (function pushCap(){
+    for(var i=0;i<100;i++){
+      var data=dataList.pop();
+      if(!data){return;}
+      cap.pushRawData(data.pts,data.pes);
+    }
+    setTimeout(pushCap,0);
+  })();
+};
+</script>
+]=]
+end
+
+function HlsScriptTemplete(caption)
+  local s=FullscreenButtonScriptTemplete()
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
   if ALWAYS_USE_HLS then
@@ -223,7 +357,7 @@ vcont.appendChild(div);
       ..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
       ..'var vid=document.getElementById("vid");\n'
-      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported()});\n'
+      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported(),'..ARIBB24_JS_OPTION..'});\n'
            ..'cap.attachMedia(vid);\n' or '')
       ..'if(Hls.isSupported()){\n'
       ..'  var hls=new Hls();\n'
@@ -231,7 +365,7 @@ vcont.appendChild(div);
       ..'  hls.attachMedia(vid);\n'
       ..'  hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
       ..(caption and '  hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){\n'
-           ..'    for(var s of data.samples){cap.pushID3v2Data(s.pts,s.data);}\n'
+           ..'    for(var i=0;i<data.samples.length;i++){cap.pushID3v2Data(data.samples[i].pts,data.samples[i].data);}\n'
            ..'  });\n' or '')
       ..'}else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
       ..'  vid.src=document.getElementById("vidsrc").textContent+"'..hls..'";\n'
@@ -241,7 +375,7 @@ vcont.appendChild(div);
     s=s..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
       ..'var vid=document.getElementById("vid");\n'
-      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:true});\n'
+      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:true,'..ARIBB24_JS_OPTION..'});\n'
            ..'cap.attachMedia(vid);\n' or '')
       ..'vid.src=document.getElementById("vidsrc").textContent+(vid.canPlayType("application/vnd.apple.mpegurl")?"'..hls..'":"");\n'
       ..'</script>'

@@ -1,3 +1,6 @@
+The attached "aribb24.js" ( https://github.com/xtne6f/aribb24.js ) has been
+modified for UCS support.
+
 "aribb24.js" ( https://github.com/monyone/aribb24.js ) is licensed under the
 following license:
 
