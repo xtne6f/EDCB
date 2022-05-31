@@ -34,7 +34,7 @@ protected:
 	HANDLE hEventConnects[2];
 	HANDLE hPipes[2];
 
-	static BOOL GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, DWORD permissions);
+	static BOOL GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, bool trusteeIsSid, DWORD permissions);
 #else
 	int srvSock;
 	string sockPath;
