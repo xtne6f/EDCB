@@ -35,6 +35,7 @@ protected:
 	HANDLE hPipes[2];
 
 	static BOOL GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, DWORD permissions);
+	static BOOL GrantAccessToKernelObjectWithSid(HANDLE handle, WCHAR* trusteeName, DWORD permissions);
 #else
 	int srvSock;
 	string sockPath;
