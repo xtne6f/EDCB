@@ -6,7 +6,6 @@
 #include "CommonDef.h"
 #ifdef _WIN32
 #include <aclapi.h>
-#include <sddl.h>
 #else
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -62,11 +61,17 @@ bool CPipeServer::StartServer(
 			//NT AUTHORITY\\Authenticated Users
 			//ユーザー名はOSの言語設定で変化するので、SIDを使用する
 			WCHAR trusteeName[] = L"S-1-5-11";
+			SID trusteeSid;
+			//SubAuthorityCountが明らかに1なのでバッファの拡張は不要
+			DWORD cbTrusteeSid = sizeof(trusteeSid);
+			if( !CreateWellKnownSid(WinAuthenticatedUserSid, NULL, &trusteeSid, &cbTrusteeSid) ){
+				cbTrusteeSid = 0;
+			}
 			DWORD writeDac = 0;
 
 			if( insecureFlag ){
 				//現在はSYNCHRONIZEでよいが以前のクライアントはCreateEvent()で開いていたのでGENERIC_ALLが必要
-				if( GrantAccessToKernelObject(this->hEventConnects[i], trusteeName, true, GENERIC_ALL) ){
+				if( cbTrusteeSid && GrantAccessToKernelObject(this->hEventConnects[i], (WCHAR*)&trusteeSid, true, GENERIC_ALL) ){
 					AddDebugLogFormat(L"Granted GENERIC_ALL on %ls to %ls", eventName.c_str(), trusteeName);
 					writeDac = WRITE_DAC;
 				}
@@ -78,7 +83,7 @@ bool CPipeServer::StartServer(
 			this->hPipes[i] = CreateNamedPipe(pipePath.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | writeDac, 0, 1, 8192, 8192, PIPE_TIMEOUT, NULL);
 			if( this->hPipes[i] != INVALID_HANDLE_VALUE ){
 				if( insecureFlag ){
-					if( writeDac && GrantAccessToKernelObject(this->hPipes[i], trusteeName, true, GENERIC_READ | GENERIC_WRITE) ){
+					if( writeDac && cbTrusteeSid && GrantAccessToKernelObject(this->hPipes[i], (WCHAR*)&trusteeSid, true, GENERIC_READ | GENERIC_WRITE) ){
 						AddDebugLogFormat(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls", pipePath.c_str(), trusteeName);
 					}
 				}else if( writeDac && GrantServerAccessToKernelObject(this->hPipes[i], GENERIC_READ | GENERIC_WRITE) ){
@@ -175,23 +180,14 @@ BOOL CPipeServer::GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, b
 	PACL pDacl;
 	PSECURITY_DESCRIPTOR pSecurityDesc;
 	if( GetSecurityInfo(handle, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, &pDacl, NULL, &pSecurityDesc) == ERROR_SUCCESS ){
-		PSID sid= nullptr;
-		EXPLICIT_ACCESS explicitAccess;
-		if( trusteeIsSid ){
-			if( ConvertStringSidToSid( trusteeName, &sid ) ){
-				memset( &explicitAccess, 0, sizeof( EXPLICIT_ACCESS ) );
-				explicitAccess.grfAccessPermissions = permissions;
-				explicitAccess.grfAccessMode = SET_ACCESS;
-				explicitAccess.grfInheritance = NO_INHERITANCE;
-				explicitAccess.Trustee.TrusteeForm = TRUSTEE_IS_SID;
-				explicitAccess.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-				explicitAccess.Trustee.ptstrName = (LPTSTR)sid;
-			}
-		}
-		else{
-			BuildExplicitAccessWithName( &explicitAccess, trusteeName, permissions, GRANT_ACCESS, 0 );
-		}
-
+		EXPLICIT_ACCESS explicitAccess = {};
+		explicitAccess.grfAccessPermissions = permissions;
+		explicitAccess.grfAccessMode = GRANT_ACCESS;
+		explicitAccess.grfInheritance = NO_INHERITANCE;
+		explicitAccess.Trustee.TrusteeForm = trusteeIsSid ? TRUSTEE_IS_SID : TRUSTEE_IS_NAME;
+		//入力方向のAPIでは検証されないのでUNKNOWNでよい
+		explicitAccess.Trustee.TrusteeType = TRUSTEE_IS_UNKNOWN;
+		explicitAccess.Trustee.ptstrName = trusteeName;
 		PACL pNewDacl;
 		if( SetEntriesInAcl(1, &explicitAccess, pDacl, &pNewDacl) == ERROR_SUCCESS ){
 			if( SetSecurityInfo(handle, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL) == ERROR_SUCCESS ){
@@ -199,10 +195,7 @@ BOOL CPipeServer::GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, b
 			}
 			LocalFree(pNewDacl);
 		}
-		if( sid != nullptr ){
-			LocalFree( sid );
-		}
-		LocalFree( pSecurityDesc );
+		LocalFree(pSecurityDesc);
 	}
 	return ret;
 }
