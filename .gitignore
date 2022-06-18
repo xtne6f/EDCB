@@ -17,7 +17,9 @@
 !*.ini
 !*.inl
 !*.js
+!*.js.map
 !*.lua
+!*.m2t
 !*.manifest
 !*.md
 !*.png
@@ -25,6 +27,7 @@
 !*.rc
 !*.sh
 !*.sln
+!*.ttf
 !*.txt
 !*.vbs
 !*.vcxproj
