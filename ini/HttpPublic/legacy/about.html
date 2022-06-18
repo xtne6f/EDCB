@@ -27,6 +27,7 @@ ct:Append([=[
   </p><p>
     トランスコード機能(xcodeボタン)や視聴機能(viewボタン)を利用する場合は、ffmpegなどのトランスコーダーとtsreadex.exeとをEDCB直下のToolsフォルダに用意してください。<br>
     既定ではHLS再生が有効なのでtsmemseg.exeとnwtvclose.ps1も必要です。<br>
+    後述のデータ放送の表示にはpsisiarc.exeも必要です。<br>
     また、必要に応じてutil.luaの定数定義を編集してください。<br>
     ブラウザの制限により自動再生されないことがあるので、その場合は再生画面をクリックやタップしてください。
   </p><p>
@@ -37,6 +38,9 @@ ct:Append([=[
   </p><p>
     HLS再生時や<a href="https://github.com/xtne6f/b24tovtt">b24tovtt</a>出力のWebVTTが配置されたメディアファイル再生時は、<a href="https://github.com/monyone/aribb24.js">aribb24.js</a>による字幕表示ができます。<br>
     字幕つき全画面表示は再生画面の左上隅あたりをクリックやタップしてください。
+  </p><p>
+    HLS再生時や<a href="https://github.com/xtne6f/psisiarc">psisiarc</a>出力の.pscファイルが配置されたメディアファイル再生時は、<a href="https://github.com/otya128/web-bml">web-bml</a>によるデータ放送の表示ができます。<br>
+    ※指定サービス対象データに「データカルーセルを含める」必要があります。
   </p><p>
     スクリプトはLua 5.2を使用しています。<a href="https://www.lua.org/manual/5.2/">Lua 5.2 Reference Manual</a> (<a href="http://milkpot.sakura.ne.jp/lua/lua52_manual_ja.html">有志による日本語訳</a>)<br>
     EDCBによる追加機能はDocument/Readme_Mod.txtの「Lua edcbグローバル変数の仕様」を参照してください。

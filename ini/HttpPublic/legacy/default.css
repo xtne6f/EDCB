@@ -251,7 +251,7 @@ th, td {
 
 .video-container {
   line-height: 0;
-  max-width: 95%;
+  max-width: 90%;
   position: relative;
   width: max-content;
 }
@@ -332,4 +332,60 @@ th, td {
 
 .video-full-container:-webkit-full-screen .exit-control:hover {
   opacity: 1;
+}
+
+.data-broadcasting-browser-container {
+  overflow: hidden;
+}
+
+.data-broadcasting-browser-content {
+  display: none;
+}
+
+.remote-control > button {
+  height: 2em;
+  margin-top: 0.2em;
+  min-width: 2em;
+}
+
+#key1, #key2, #key3, #key4, #key18, #key19 {
+  min-width: 3em;
+}
+
+#key20 {
+  background-color: gray;
+  color: white;
+  margin-left: 1em;
+  margin-right: 1em;
+  min-width: 3em;
+}
+
+#key21 {
+  background-color: rgb(0, 114, 214);
+  color: white;
+  min-width: 3em;
+}
+
+#key22 {
+  background-color: rgb(201, 0, 0);
+  color: white;
+  min-width: 3em;
+}
+
+#key23 {
+  background-color: rgb(27, 135, 0);
+  color: white;
+  min-width: 3em;
+}
+
+#key24 {
+  background-color: rgb(227, 178, 0);
+  color: white;
+  margin-right: 1em;
+  min-width: 3em;
+}
+
+.remote-control-indicator {
+  height: 6em;
+  white-space: pre-line;
 }

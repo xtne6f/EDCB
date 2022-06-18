@@ -1,0 +1,142 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>NVRAM設定 - EDCB</title>
+</head>
+<body>
+<h1>データ放送のNVRAM設定</h1>
+<div id="main">
+  <p>
+    <label>郵便番号(7桁)<br>
+    <input type="text" id="nvram-zip" value=""></label>
+  </p><p>
+    <label>地域<br>
+    <select id="nvram-region">
+      <!-- TVTDataBroadcastingWV2/NVRAMSettingsDialog.cpp より -->
+      <option value="255-0b0" selected>未設定
+      <option value="1-0b000101101011">東北海道
+      <option value="2-0b000101101011">西北海道
+      <option value="3-0b010001100111">青森県
+      <option value="4-0b010111010100">岩手県
+      <option value="5-0b011101011000">宮城県
+      <option value="6-0b101011000110">秋田県
+      <option value="7-0b111001001100">山形県
+      <option value="8-0b000110101110">福島県
+      <option value="9-0b110001101001">茨城県
+      <option value="10-0b111000111000">栃木県
+      <option value="11-0b100110001011">群馬県
+      <option value="12-0b011001001011">埼玉県
+      <option value="13-0b000111000111">千葉県
+      <option value="14-0b101010101100">東京都(島部を除く)
+      <option value="15-0b010101101100">神奈川県
+      <option value="16-0b010011001110">新潟県
+      <option value="17-0b010100111001">富山県
+      <option value="18-0b011010100110">石川県
+      <option value="19-0b100100101101">福井県
+      <option value="20-0b110101001010">山梨県
+      <option value="21-0b100111010010">長野県
+      <option value="22-0b101001100101">岐阜県
+      <option value="23-0b101001011010">静岡県
+      <option value="24-0b100101100110">愛知県
+      <option value="25-0b001011011100">三重県
+      <option value="26-0b110011100100">滋賀県
+      <option value="27-0b010110011010">京都府
+      <option value="28-0b110010110010">大阪府
+      <option value="29-0b011001110100">兵庫県
+      <option value="30-0b101010010011">奈良県
+      <option value="31-0b001110010110">和歌山県
+      <option value="32-0b110100100011">鳥取県
+      <option value="33-0b001100011011">島根県
+      <option value="34-0b001010110101">岡山県
+      <option value="35-0b101100110001">広島県
+      <option value="36-0b101110011000">山口県
+      <option value="37-0b111001100010">徳島県
+      <option value="38-0b100110110100">香川県
+      <option value="39-0b000110011101">愛媛県
+      <option value="40-0b001011100011">高知県
+      <option value="41-0b011000101101">福岡県
+      <option value="42-0b100101011001">佐賀県
+      <option value="43-0b101000101011">長崎県
+      <option value="44-0b100010100111">熊本県
+      <option value="45-0b110010001101">大分県
+      <option value="46-0b110100011100">宮崎県
+      <option value="47-0b110101000101">鹿児島県(南西諸島を除く)
+      <option value="48-0b001101110010">沖縄県
+      <option value="49-0b101010101100">東京都島部(伊豆・小笠原諸島)
+      <option value="50-0b110101000101">鹿児島県島部(南西諸島の鹿児島県域)
+    </select></label>
+  </p><p>
+    <button type="button" id="nvram-set">設定</button><br>
+    ※設定はブラウザのローカルストレージに保存されます
+  </p><p>
+    <button type="button" id="nvram-del">保存領域を全消去</button>
+  </p>
+</div>
+<div id="footer">
+  <a href="index.html">メニュー</a>
+</div>
+<script>
+var prefix="nvram_prefix=receiverinfo%2F";
+var zip=document.getElementById("nvram-zip");
+var region=document.getElementById("nvram-region");
+var v=localStorage.getItem(prefix+"zipcode");
+if(v){
+  try{
+    v=atob(v);
+    if(/^[0-9]{7}$/.test(v))zip.value=v;
+  }catch(e){}
+}
+v=localStorage.getItem(prefix+"regioncode");
+if(v){
+  try{
+    v=atob(v);
+    v=v.charCodeAt(0)<<8|v.charCodeAt(1);
+    for(var i=0;i<region.options.length;i++){
+      if(parseInt(region.options[i].value.split("-0b")[1],2)===v){
+        region.options[i].selected=true;
+        break;
+      }
+    }
+  }catch(e){}
+}
+document.getElementById("nvram-set").onclick=function(){
+  if(/^[0-9]{7}$/.test(zip.value)){
+    localStorage.setItem(prefix+"zipcode",btoa(zip.value));
+  }else{
+    localStorage.removeItem(prefix+"zipcode");
+  }
+  if(region.value&&region.value!=="255-0b0"){
+    var v=parseInt(region.value.split("-0b")[0]);
+    localStorage.setItem(prefix+"prefecture",btoa(String.fromCharCode(v)));
+    v=parseInt(region.value.split("-0b")[1],2);
+    localStorage.setItem(prefix+"regioncode",btoa(String.fromCharCode(v>>8,v&0xff)));
+  }else{
+    localStorage.removeItem(prefix+"prefecture");
+    localStorage.removeItem(prefix+"regioncode");
+  }
+};
+document.getElementById("nvram-del").onclick=function(){
+  var keys=[];
+  for(var i=0;i<localStorage.length;i++){
+    if(/^nvram_/.test(localStorage.key(i))){
+      keys.push(localStorage.key(i));
+    }
+  }
+  for(var i=0;i<keys.length;i++){
+    localStorage.removeItem(keys[i]);
+  }
+};
+</script>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

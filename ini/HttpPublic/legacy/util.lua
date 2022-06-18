@@ -132,6 +132,9 @@ ARIBB24_JS_OPTION=[=[
   drcsReplacement:true
 ]=]
 
+--データ放送表示機能を使うかどうか。トランスコード中に表示する場合はpsisiarc.exeを用意すること。IE非対応
+USE_DATACAST=true
+
 --トランスコードするかどうか。する場合はtsreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
 XCODE=true
 --トランスコードするプロセスを1つだけに制限するかどうか(並列処理できる余裕がシステムにない場合など)
@@ -204,30 +207,216 @@ end
 function FullscreenButtonScriptTemplete()
   return [=[
 <script>
-var vfull=document.getElementById("vid-full");
-var vcont=document.getElementById("vid-cont");
-var btn=document.createElement('button');
-btn.innerText="full";
-btn.onclick=function(){(vfull.requestFullscreen||vfull.webkitRequestFullscreen||vfull.webkitRequestFullScreen).call(vfull);};
-var div=document.createElement('div');
-div.className="full-control";
-div.appendChild(btn);
-vcont.appendChild(div);
-btn=document.createElement('button');
-btn.innerText="exit";
-btn.onclick=function(){(document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen).call(document);};
-div=document.createElement('div');
-div.className="exit-control";
-div.appendChild(btn);
-vcont.appendChild(div);
+var hideFullscreenButton;
+(function(){
+  var vfull=document.getElementById("vid-full");
+  var vcont=document.getElementById("vid-cont");
+  var btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="full";
+  btn.onclick=function(){(vfull.requestFullscreen||vfull.webkitRequestFullscreen||vfull.webkitRequestFullScreen).call(vfull);};
+  var bfull=document.createElement("div");
+  bfull.className="full-control";
+  bfull.appendChild(btn);
+  btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="exit";
+  btn.onclick=function(){(document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen).call(document);};
+  var bexit=document.createElement("div");
+  bexit.className="exit-control";
+  bexit.appendChild(btn);
+  var removed=true;
+  hideFullscreenButton=function(hide){
+    if(!removed&&hide){
+      vcont.removeChild(bfull);
+      vcont.removeChild(bexit);
+      removed=true;
+    }else if(removed&&!hide){
+      vcont.appendChild(bfull);
+      vcont.appendChild(bexit);
+      removed=false;
+    }
+  };
+  hideFullscreenButton(false);
+})();
 </script>
 ]=]
 end
 
+function WebBmlScriptTemplate(label)
+  return USE_DATACAST and [=[
+<div class="remote-control" style="display:none">
+  <button type="button" id="key21">青</button><button
+    type="button" id="key22">赤</button><button
+    type="button" id="key23">緑</button><button
+    type="button" id="key24">黄</button><button
+    type="button" id="key1">↑</button><button
+    type="button" id="key3">←</button><button
+    type="button" id="key18">決定</button><button
+    type="button" id="key4">→</button><button
+    type="button" id="key2">↓</button><button
+    type="button" id="key20">d</button><button
+    type="button" id="key19">戻る</button><button
+    type="button" id="key6">1</button><button
+    type="button" id="key7">2</button><button
+    type="button" id="key8">3</button><button
+    type="button" id="key9">4</button><button
+    type="button" id="key10">5</button><button
+    type="button" id="key11">6</button><button
+    type="button" id="key12">7</button><button
+    type="button" id="key13">8</button><button
+    type="button" id="key14">9</button><button
+    type="button" id="key15">10</button><button
+    type="button" id="key16">11</button><button
+    type="button" id="key17">12</button><button
+    type="button" id="key5">0</button>
+  <span class="remote-control-receiving-status" style="display:none">Loading...</span>
+  <div class="remote-control-indicator"></div>
+</div>
+<label><input id="cb-datacast" type="checkbox">]=]..label..[=[</label>
+<script src="web_bml_play_ts.js"></script>
+<script>
+function readPsiData(data,proc,startSec,ctx){
+  data=new DataView(data);
+  ctx=ctx||{};
+  if(!ctx.pids){
+    ctx.pids=[];
+    ctx.dict=[];
+    ctx.pos=0;
+    ctx.trailerSize=0;
+    ctx.timeListCount=-1;
+    ctx.codeListPos=0;
+    ctx.codeCount=0;
+    ctx.initTime=-1;
+    ctx.currTime=-1;
+  }
+  while(data.byteLength-ctx.pos>=ctx.trailerSize+32){
+    var pos=ctx.pos+ctx.trailerSize;
+    var timeListLen=data.getUint16(pos+10,true);
+    var dictionaryLen=data.getUint16(pos+12,true);
+    var dictionaryWindowLen=data.getUint16(pos+14,true);
+    var dictionaryDataSize=data.getUint32(pos+16,true);
+    var dictionaryBuffSize=data.getUint32(pos+20,true);
+    var codeListLen=data.getUint32(pos+24,true);
+    if(data.getUint32(pos)!=0x50737363||
+       data.getUint32(pos+4)!=0x0d0a9a0a||
+       dictionaryWindowLen<dictionaryLen||
+       dictionaryBuffSize<dictionaryDataSize||
+       dictionaryWindowLen>65536-4096){
+      return null;
+    }
+    var chunkSize=32+timeListLen*4+dictionaryLen*2+Math.ceil(dictionaryDataSize/2)*2+codeListLen*2;
+    if(data.byteLength-pos<chunkSize)break;
+    var timeListPos=pos+32;
+    pos+=32+timeListLen*4;
+    if(ctx.timeListCount<0){
+      var pids=[];
+      var dict=[];
+      var sectionListPos=0;
+      for(var i=0;i<dictionaryLen;i++,pos+=2){
+        var codeOrSize=data.getUint16(pos,true)-4096;
+        if(codeOrSize>=0){
+          if(codeOrSize>=ctx.pids.length||ctx.pids[codeOrSize]<0)return null;
+          pids[i]=ctx.pids[codeOrSize];
+          dict[i]=ctx.dict[codeOrSize];
+          ctx.pids[codeOrSize]=-1;
+        }else{
+          pids[i]=codeOrSize;
+          dict[i]=null;
+          sectionListPos+=2;
+        }
+      }
+      sectionListPos+=pos;
+      for(var i=0;i<dictionaryLen;i++){
+        if(pids[i]>=0)continue;
+        var psi=new Uint8Array(data.buffer,sectionListPos,pids[i]+4097);
+        dict[i]=new Uint8Array(Math.ceil((psi.length+1)/184)*188);
+        for(var j=0,k=0;k<psi.length;j++,k++){
+          if(!(j%188)){
+            j+=4;
+            if(!k)dict[i][j++]=0;
+          }
+          dict[i][j]=psi[k];
+        }
+        sectionListPos+=psi.length;
+        pids[i]=data.getUint16(pos,true)&0x1fff;
+        pos+=2;
+      }
+      for(var i=dictionaryLen,j=0;i<dictionaryWindowLen;j++){
+        if(j>=ctx.pids.length)return null;
+        if(ctx.pids[j]<0)continue;
+        pids[i]=ctx.pids[j];
+        dict[i++]=ctx.dict[j];
+      }
+      ctx.pids=pids;
+      ctx.dict=dict;
+      ctx.timeListCount=0;
+      pos=sectionListPos+dictionaryDataSize%2;
+    }else{
+      pos+=dictionaryLen*2+Math.ceil(dictionaryDataSize/2)*2;
+    }
+    pos+=ctx.codeListPos;
+    timeListPos+=ctx.timeListCount*4;
+    for(;ctx.timeListCount<timeListLen;ctx.timeListCount++,timeListPos+=4){
+      var initTime=ctx.initTime;
+      var currTime=ctx.currTime;
+      var absTime=data.getUint32(timeListPos,true);
+      if(absTime==0xffffffff){
+        currTime=-1;
+      }else if(absTime>=0x80000000){
+        currTime=absTime&0x3fffffff;
+        if(initTime<0)initTime=currTime;
+      }else{
+        var n=data.getUint16(timeListPos+2,true)+1;
+        if(currTime>=0){
+          currTime+=data.getUint16(timeListPos,true);
+          var sec=((currTime+0x40000000-initTime)&0x3fffffff)/11250;
+          if(sec>=(startSec||0)){
+            for(;ctx.codeCount<n;ctx.codeCount++,pos+=2,ctx.codeListPos+=2){
+              var code=data.getUint16(pos,true)-4096;
+              if(!proc(sec,ctx.dict[code],ctx.pids[code]))return false;
+            }
+            ctx.codeCount=0;
+          }else{
+            pos+=n*2;
+            ctx.codeListPos+=n*2;
+          }
+        }else{
+          pos+=n*2;
+          ctx.codeListPos+=n*2;
+        }
+      }
+      ctx.initTime=initTime;
+      ctx.currTime=currTime;
+    }
+    ctx.pos=pos;
+    ctx.trailerSize=2+(2+chunkSize)%4;
+    ctx.timeListCount=-1;
+    ctx.codeListPos=0;
+    ctx.currTime=-1;
+  }
+  var ret=data.buffer.slice(ctx.pos);
+  ctx.pos=0;
+  return ret;
+}
+function setTSPacketHeader(packets,counters,pid){
+  counters[pid]=counters[pid]||0;
+  for(var i=0;i<packets.length;i+=188){
+    packets[i]=0x47;
+    packets[i+1]=(i>0?0:0x40)|pid>>8;
+    packets[i+2]=pid;
+    packets[i+3]=0x10|counters[pid];
+    counters[pid]=(counters[pid]+1)&0xf;
+  }
+}
+</script>
+]=] or ''
+end
+
 function VideoScriptTemplete()
-  return FullscreenButtonScriptTemplete()..[=[
+  return FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
-  ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption</label>
+  ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
 <script>
 function decodeB24CaptionFromCueText(text,work){
@@ -320,6 +509,7 @@ var cbCaption=document.getElementById("cb-caption");
 cbCaption.onclick=function(){
   if(cap){if(cbCaption.checked){cap.show();}else{cap.hide();}}
 };
+var vid=document.getElementById("vid")
 var vidMeta=document.getElementById("vid-meta");
 vidMeta.oncuechange=function(){
   vidMeta.oncuechange=null;
@@ -332,7 +522,7 @@ vidMeta.oncuechange=function(){
     for(var j=0;j<ret.length;j++){dataList.push({pts:cues[i].startTime,pes:ret[j]});}
   }
   cap=new aribb24js.CanvasRenderer({]=]..ARIBB24_JS_OPTION..[=[});
-  cap.attachMedia(document.getElementById("vid"));
+  cap.attachMedia(vid);
   document.getElementById("label-caption").style.display="inline";
   if(!cbCaption.checked){cap.hide();}
   dataList.reverse();
@@ -346,11 +536,130 @@ vidMeta.oncuechange=function(){
   })();
 };
 </script>
-]=]
+]=]..(USE_DATACAST and [=[
+<script>
+var psiData=null;
+var readTimer=null;
+var videoLastSec=0;
+function startReadPsiData(video){
+  clearTimeout(readTimer);
+  var startSec=video.currentTime;
+  videoLastSec=startSec;
+  var ctx={};
+  var counters=[];
+  var f=function(){
+    var videoSec=video.currentTime;
+    if(videoSec<videoLastSec||videoLastSec+10<videoSec){
+      startReadPsiData(video);
+      return;
+    }
+    videoLastSec=videoSec;
+    if(psiData&&readPsiData(psiData,function(sec,psiTS,pid){
+        setTSPacketHeader(psiTS,counters,pid);
+        bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
+        return sec<videoSec;
+      },startSec,ctx)!==false){
+      startReadPsiData(video);
+      return;
+    }
+    readTimer=setTimeout(f,500);
+  };
+  readTimer=setTimeout(f,500);
+}
+var xhr=null;
+var cbDatacast=document.getElementById("cb-datacast");
+cbDatacast.onclick=function(){
+  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+  if(!cbDatacast.checked){
+    clearTimeout(readTimer);
+    readTimer=null;
+    hideFullscreenButton(false);
+    bmlBrowserSetInvisible(true);
+    return;
+  }
+  startReadPsiData(document.getElementById("vid"));
+  var vcont=document.getElementById("vid-cont");
+  bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
+  hideFullscreenButton(true);
+  bmlBrowserSetInvisible(false);
+  if(xhr)return;
+  xhr=new XMLHttpRequest();
+  xhr.open("GET",document.getElementById("psidatasrc").textContent);
+  xhr.responseType="arraybuffer";
+  xhr.overrideMimeType("application/octet-stream");
+  xhr.onloadend=function(){
+    if(!psiData){
+      document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+")";
+    }
+  };
+  xhr.onload=function(){
+    if(xhr.status!=200||!xhr.response)return;
+    psiData=xhr.response;
+  };
+  xhr.send();
+};
+</script>
+]=] or '')
 end
 
 function HlsScriptTemplete(caption)
-  local s=FullscreenButtonScriptTemplete()
+  local s=FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast')..(USE_DATACAST and [=[
+<script>
+var xhr=null;
+var psiData=null;
+var responseCount;
+var ctx;
+var counters;
+var cbDatacast=document.getElementById("cb-datacast");
+cbDatacast.onclick=function(){
+  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+  if(!cbDatacast.checked){
+    if(xhr){
+      xhr.abort();
+      xhr=null;
+    }
+    hideFullscreenButton(false);
+    bmlBrowserSetInvisible(true);
+    return;
+  }
+  var videoSec=Math.floor(document.getElementById("vid").currentTime);
+  var vcont=document.getElementById("vid-cont");
+  bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
+  hideFullscreenButton(true);
+  bmlBrowserSetInvisible(false);
+  if(psiData||xhr)return;
+  psiData=new Uint8Array(0);
+  responseCount=0;
+  ctx={};
+  counters=[];
+  xhr=new XMLHttpRequest();
+  xhr.open("GET",document.getElementById("vidsrc").textContent+"&psidata=1&ofssec="+videoSec);
+  xhr.onloadend=function(){
+    if(!psiData||!responseCount){
+      document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+"|"+responseCount+"Bytes)";
+    }
+    xhr=null;
+    psiData=null;
+  };
+  xhr.onprogress=function(){
+    if(!psiData||!xhr||xhr.status!=200||!xhr.response||xhr.response.length<=responseCount)return;
+    var n=Math.floor((xhr.response.length-responseCount)/4)*4;
+    var addData=atob(xhr.response.substring(responseCount,responseCount+n));
+    responseCount+=n;
+    var concatData=new Uint8Array(psiData.length+addData.length);
+    for(var i=0;i<psiData.length;i++)concatData[i]=psiData[i];
+    for(var i=0;i<addData.length;i++)concatData[psiData.length+i]=addData.charCodeAt(i);
+    psiData=readPsiData(concatData.buffer,function(sec,psiTS,pid){
+      setTSPacketHeader(psiTS,counters,pid);
+      bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
+      return true;
+    },0,ctx);
+    if(psiData)psiData=new Uint8Array(psiData);
+  };
+  xhr.send();
+};
+</script>
+]=] or '')
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
   if ALWAYS_USE_HLS then
@@ -675,7 +984,7 @@ function SeekSec(f,sec,dur,fsize)
   if dur>0 and fsize>1880000 and f:seek('set') then
     local pcr,pid=ReadToPcr(f)
     if pcr then
-      local pos,diff=0,sec*45000
+      local pos,diff=0,math.min(math.max(sec,0),dur)*45000
       --5ループまたは誤差が2秒未満になるまで動画レートから概算シーク
       for i=1,5 do
         if math.abs(diff)<90000 then break end
