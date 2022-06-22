@@ -16,6 +16,10 @@ const WCHAR SEND_TS_TCP_0002_PIPE_NAME[] = L"\\\\.\\pipe\\BonDriver_Pipe%02d";
 //送信バッファの最大数(サイズはAddSendData()の入力に依存)
 const DWORD SEND_TS_TCP_BUFF_MAX = 500;
 
+//送信バッファのうち先行書き込み可能な最大数
+//(複数送信先の送信タイミングの同期によりパフォーマンスが低下するのを避ける)
+const DWORD SEND_TS_TCP_WRITE_AHEAD_MAX = SEND_TS_TCP_BUFF_MAX / 4;
+
 //送信先(サーバ)接続のためのポーリング間隔
 const DWORD SEND_TS_TCP_CONNECT_INTERVAL_MSEC = 2000;
 
@@ -57,6 +61,8 @@ DWORD CSendTSTCPMain::AddSendAddr(
 		item.pipe[i] = INVALID_HANDLE_VALUE;
 		item.olEvent[i] = NULL;
 		item.bConnect[i] = false;
+		item.bPipeWriting[i] = false;
+		item.writeAheadCount[i] = 0;
 	}
 
 	//名前付きパイプでなければ
@@ -218,7 +224,7 @@ DWORD CSendTSTCPMain::AddSendData(
 			m_TSBuff.back().resize(sizeof(DWORD) * 2);
 			m_TSBuff.back().insert(m_TSBuff.back().end(), pbData, pbData + dwSize);
 			if( m_TSBuff.size() > SEND_TS_TCP_BUFF_MAX ){
-				for( ; m_TSBuff.size() > SEND_TS_TCP_BUFF_MAX / 2; m_TSBuff.pop_front() );
+				ClearSendBuff();
 			}
 		}
 	}
@@ -231,8 +237,16 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 	)
 {
 	lock_recursive_mutex lock(m_sendLock);
-	m_TSBuff.clear();
 
+	DWORD unerasableCount = 0;
+	for( auto itr = m_SendList.begin(); itr != m_SendList.end(); itr++ ){
+		for( size_t i = 0; i < array_size(itr->pipe); i++ ){
+			unerasableCount = std::max(itr->writeAheadCount[i], unerasableCount);
+		}
+	}
+	if( m_TSBuff.size() > unerasableCount ){
+		m_TSBuff.resize(unerasableCount);
+	}
 	return TRUE;
 }
 
@@ -242,6 +256,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 	//また他のTCPインタフェースのヘッダと区別しにくいため設定を誤った場合に想定外のことが起きるのを防ぐため
 	DWORD dwCount = 0x01000000;
 	DWORD dwCheckConnectTick = GetTickCount();
+	vector<HANDLE> olEventList;
 	for(;;){
 		DWORD tick = GetTickCount();
 		bool bCheckConnect = tick - dwCheckConnectTick > SEND_TS_TCP_CONNECT_INTERVAL_MSEC;
@@ -280,6 +295,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 									DWORD err = GetLastError();
 									if( err == ERROR_PIPE_CONNECTED ){
 										itr->bConnect[i] = true;
+										itr->bPipeWriting[i] = false;
 									}else if( err != ERROR_IO_PENDING ){
 										CloseHandle(itr->pipe[i]);
 										itr->pipe[i] = INVALID_HANDLE_VALUE;
@@ -292,6 +308,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						if( itr->bConnect[i] == false ){
 							if( WaitForSingleObject(itr->olEvent[i], 0) == WAIT_OBJECT_0 ){
 								itr->bConnect[i] = true;
+								itr->bPipeWriting[i] = false;
 							}
 						}
 					}
@@ -308,6 +325,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						itr->pipe[0] = CreateFile(strPipe.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 						if( itr->pipe[0] != INVALID_HANDLE_VALUE ){
 							itr->bConnect[0] = true;
+							itr->bPipeWriting[0] = false;
 						}
 					}
 				}
@@ -362,6 +380,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 			lock_recursive_mutex lock(pSys->m_sendLock);
 
 			if( pSys->m_TSBuff.empty() == false ){
+				//バッファは先行書き込み中かもしれないのでコピーしてはいけない
 				item.splice(item.end(), pSys->m_TSBuff, pSys->m_TSBuff.begin());
 				DWORD dwCmd[2] = { dwCount, (DWORD)(item.back().size() - sizeof(DWORD) * 2) };
 				//ヘッダは2つのリトルエンディアンのDWORD値(dwCount情報はたいてい無視される)
@@ -370,6 +389,14 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					item.back()[i * 4 + 1] = (BYTE)(dwCmd[i] >> 8);
 					item.back()[i * 4 + 2] = (BYTE)(dwCmd[i] >> 16);
 					item.back()[i * 4 + 3] = (BYTE)(dwCmd[i] >> 24);
+				}
+				//バッファを1つ消費したので先行書き込み数を1つ減らす
+				for( itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++ ){
+					for( size_t i = 0; i < array_size(itr->pipe); i++ ){
+						if( itr->writeAheadCount[i] ){
+							itr->writeAheadCount[i]--;
+						}
+					}
 				}
 			}
 			//途中で減ることはない
@@ -385,7 +412,126 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 			continue;
 		}
 
+		//パイプ書き込み
 		bool bStop = false;
+		do{
+			olEventList.assign(1, pSys->m_stopSendEvent.Handle());
+			bool bItemWriting = false;
+			for( size_t itrIndex = 0; itrIndex < sendListSize; itrIndex++ ){
+				{
+					lock_recursive_mutex lock(pSys->m_sendLock);
+					if( itrIndex == 0 ){
+						itr = pSys->m_SendList.begin();
+					}else{
+						itr++;
+					}
+				}
+				for( size_t i = 0; i < array_size(itr->pipe); i++ ){
+					if( itr->pipe[i] == INVALID_HANDLE_VALUE ||
+					    itr->bConnect[i] == false ||
+					    itr->writeAheadCount[i] > SEND_TS_TCP_WRITE_AHEAD_MAX ){
+						continue;
+					}
+					if( itr->bPipeWriting[i] ){
+						//書き込み状況を確認
+						const vector<BYTE>* pWritingItem = &item.back();
+						if( itr->writeAheadCount[i] ){
+							lock_recursive_mutex lock(pSys->m_sendLock);
+							auto itrAhead = pSys->m_TSBuff.cbegin();
+							std::advance(itrAhead, itr->writeAheadCount[i] - 1);
+							pWritingItem = &*itrAhead;
+						}
+						DWORD xferred;
+						BOOL bSuccess = GetOverlappedResult(itr->pipe[i], itr->ol + i, &xferred, FALSE);
+						if( bSuccess && xferred == pWritingItem->size() - 8 ){
+							//成功
+							itr->bPipeWriting[i] = false;
+							lock_recursive_mutex lock(pSys->m_sendLock);
+							itr->writeAheadCount[i]++;
+						}else if( bSuccess || GetLastError() != ERROR_IO_INCOMPLETE ){
+							//失敗
+							itr->bConnect[i] = false;
+						}else{
+							//さらに待機
+							olEventList.push_back(itr->olEvent[i]);
+							if( itr->writeAheadCount[i] == 0 ){
+								bItemWriting = true;
+							}
+						}
+					}
+					OVERLAPPED olReset = {};
+					olReset.hEvent = itr->olEvent[i];
+					if( itr->bConnect[i] && itr->bPipeWriting[i] == false ){
+						const vector<BYTE>* pWriteItem = &item.back();
+						if( itr->writeAheadCount[i] ){
+							lock_recursive_mutex lock(pSys->m_sendLock);
+							pWriteItem = NULL;
+							if( pSys->m_TSBuff.size() >= itr->writeAheadCount[i] ){
+								auto itrAhead = pSys->m_TSBuff.cbegin();
+								std::advance(itrAhead, itr->writeAheadCount[i] - 1);
+								pWriteItem = &*itrAhead;
+							}
+						}
+						if( pWriteItem ){
+							if( pWriteItem->size() > 8 ){
+								//書き込む
+								itr->ol[i] = olReset;
+								if( WriteFile(itr->pipe[i], pWriteItem->data() + 8, (DWORD)(pWriteItem->size() - 8), NULL, itr->ol + i) ||
+								    GetLastError() == ERROR_IO_PENDING ){
+									//待機
+									itr->bPipeWriting[i] = true;
+									olEventList.push_back(itr->olEvent[i]);
+									if( itr->writeAheadCount[i] == 0 ){
+										bItemWriting = true;
+									}
+								}else{
+									//失敗
+									itr->bConnect[i] = false;
+								}
+							}else if( itr->writeAheadCount[i] <= SEND_TS_TCP_WRITE_AHEAD_MAX ){
+								lock_recursive_mutex lock(pSys->m_sendLock);
+								itr->writeAheadCount[i]++;
+							}
+						}
+					}
+					if( itr->bConnect[i] == false ){
+						if( itr->strIP == "0.0.0.1" ){
+							//再び待ち受け
+							DisconnectNamedPipe(itr->pipe[i]);
+							itr->ol[i] = olReset;
+							if( ConnectNamedPipe(itr->pipe[i], itr->ol + i) == FALSE ){
+								DWORD err = GetLastError();
+								if( err == ERROR_PIPE_CONNECTED ){
+									itr->bConnect[i] = true;
+									itr->bPipeWriting[i] = false;
+								}else if( err != ERROR_IO_PENDING ){
+									CloseHandle(itr->pipe[i]);
+									itr->pipe[i] = INVALID_HANDLE_VALUE;
+								}
+							}
+						}else{
+							CloseHandle(itr->pipe[i]);
+							itr->pipe[i] = INVALID_HANDLE_VALUE;
+						}
+						lock_recursive_mutex lock(pSys->m_sendLock);
+						itr->writeAheadCount[i] = 0;
+					}
+				}
+			}
+			if( bItemWriting == false ){
+				//すべてのパイプにitemを書き込んだ
+				break;
+			}
+			DWORD dwRet;
+			if( olEventList.size() <= MAXIMUM_WAIT_OBJECTS ){
+				dwRet = WaitForMultipleObjects((DWORD)olEventList.size(), olEventList.data(), FALSE, INFINITE);
+			}else{
+				dwRet = WaitForMultipleObjects(MAXIMUM_WAIT_OBJECTS, olEventList.data(), FALSE, 10);
+			}
+			bStop = dwRet != WAIT_TIMEOUT && (dwRet <= WAIT_OBJECT_0 || dwRet >= WAIT_OBJECT_0 + MAXIMUM_WAIT_OBJECTS);
+		}while( bStop == false );
+
+		//TCP送信
 		for( size_t itrIndex = 0; bStop == false && itrIndex < sendListSize; itrIndex++ ){
 			{
 				lock_recursive_mutex lock(pSys->m_sendLock);
@@ -395,55 +541,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					itr++;
 				}
 			}
-			if( itr->sock == INVALID_SOCKET ){
-				size_t adjust = item.back().size() - sizeof(DWORD) * 2;
-				for( size_t i = 0; i < array_size(itr->pipe); i++ ){
-					if( itr->pipe[i] == INVALID_HANDLE_VALUE || itr->bConnect[i] == false || adjust == 0 ){
-						continue;
-					}
-					//名前付きパイプに書き込む
-					OVERLAPPED ol = {};
-					ol.hEvent = itr->olEvent[i];
-					HANDLE olEvents[] = { pSys->m_stopSendEvent.Handle(), itr->olEvent[i] };
-					bool bClose = false;
-					DWORD xferred;
-					if( WriteFile(itr->pipe[i], item.back().data() + item.back().size() - adjust, (DWORD)adjust, NULL, &ol) == FALSE &&
-					    GetLastError() != ERROR_IO_PENDING ){
-						bClose = true;
-					}else if( WaitForMultipleObjects(2, olEvents, FALSE, INFINITE) != WAIT_OBJECT_0 + 1 ){
-						//キャンセルされた
-						CancelIo(itr->pipe[i]);
-						WaitForSingleObject(itr->olEvent[i], INFINITE);
-						bStop = true;
-						break;
-					}else if( GetOverlappedResult(itr->pipe[i], &ol, &xferred, FALSE) == FALSE || xferred < adjust ){
-						bClose = true;
-					}
-					if( bClose ){
-						if( itr->strIP == "0.0.0.1" ){
-							//再び待ち受け
-							DisconnectNamedPipe(itr->pipe[i]);
-							itr->bConnect[i] = false;
-							OVERLAPPED olZero = {};
-							itr->ol[i] = olZero;
-							itr->ol[i].hEvent = itr->olEvent[i];
-							if( ConnectNamedPipe(itr->pipe[i], itr->ol + i) == FALSE ){
-								DWORD err = GetLastError();
-								if( err == ERROR_PIPE_CONNECTED ){
-									itr->bConnect[i] = true;
-								}else if( err != ERROR_IO_PENDING ){
-									CloseHandle(itr->pipe[i]);
-									itr->pipe[i] = INVALID_HANDLE_VALUE;
-								}
-							}
-						}else{
-							CloseHandle(itr->pipe[i]);
-							itr->pipe[i] = INVALID_HANDLE_VALUE;
-							itr->bConnect[i] = false;
-						}
-					}
-				}
-			}else{
+			if( itr->sock != INVALID_SOCKET && itr->bConnect[0] ){
 				size_t adjust = item.back().size();
 				if( itr->bSuppressHeader ){
 					//ヘッダの送信を抑制
@@ -453,9 +551,6 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					if( pSys->m_stopSendEvent.WaitOne(0) ){
 						//キャンセルされた
 						bStop = true;
-						break;
-					}
-					if( itr->bConnect[0] == false ){
 						break;
 					}
 					if( adjust != 0 ){
@@ -496,6 +591,11 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 		}
 		for( size_t i = 0; i < array_size(itr->pipe); i++ ){
 			if( itr->pipe[i] != INVALID_HANDLE_VALUE ){
+				if( itr->bConnect[i] && itr->bPipeWriting[i] ){
+					//書き込みをキャンセル
+					CancelIo(itr->pipe[i]);
+					WaitForSingleObject(itr->olEvent[i], INFINITE);
+				}
 				if( itr->strIP == "0.0.0.1" ){
 					if( itr->bConnect[i] ){
 						DisconnectNamedPipe(itr->pipe[i]);
@@ -513,6 +613,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 				itr->olEvent[i] = NULL;
 			}
 			itr->bConnect[i] = false;
+			itr->writeAheadCount[i] = 0;
 		}
 	}
 }

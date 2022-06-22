@@ -73,6 +73,8 @@ protected:
 		HANDLE olEvent[2];
 		OVERLAPPED ol[2];
 		bool bConnect[2];
+		bool bPipeWriting[2];
+		DWORD writeAheadCount[2];
 	};
 	std::list<SEND_INFO> m_SendList;
 
