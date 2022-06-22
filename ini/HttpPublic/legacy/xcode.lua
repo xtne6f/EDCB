@@ -118,12 +118,6 @@ function OpenPsiDataArchiver()
   return edcb.io.popen('"'..cmd..'"','rb')
 end
 
-function GetLeNumber(buf,pos,len)
-  local n=0
-  for i=pos+len-1,pos,-1 do n=n*256+buf:byte(i) end
-  return n
-end
-
 function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
   if trailerSize>0 then
     local buf=f:read(trailerSize)

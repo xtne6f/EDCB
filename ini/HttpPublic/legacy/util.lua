@@ -1002,6 +1002,13 @@ function SeekSec(f,sec,dur,fsize)
   return false
 end
 
+--リトルエンディアンの値を取得する
+function GetLeNumber(buf,pos,len)
+  local n=0
+  for i=pos+len-1,pos,-1 do n=n*256+buf:byte(i) end
+  return n
+end
+
 --HTTP日付の文字列を取得する
 function ImfFixdate(t)
   return ('%s, %02d %s %d %02d:%02d:%02d GMT'):format(({'Sun','Mon','Tue','Wed','Thu','Fri','Sat'})[t.wday],t.day,
