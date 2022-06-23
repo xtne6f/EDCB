@@ -69,8 +69,11 @@ namespace EpgTimer
                                                                                  info.ServiceID, info.EventID, false);
                     if (eventInfo != null)
                     {
-                        String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                        richTextBox_descInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(text));
+                        richTextBox_descInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(
+                            CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicInfo) +
+                            CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicText),
+                            CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedText),
+                            CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo)));
                     }
                 }
 

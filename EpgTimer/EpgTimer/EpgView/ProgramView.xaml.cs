@@ -120,7 +120,7 @@ namespace EpgTimer.EpgView
                                     }
                                     if (info.EventInfo.ExtInfo != null)
                                     {
-                                        viewTip += info.EventInfo.ExtInfo.text_char;
+                                        viewTip += CommonManager.TrimHyphenSpace(info.EventInfo.ExtInfo.text_char);
                                     }
                                 }
                                 toolTipTextBlock.Text = viewTip;
