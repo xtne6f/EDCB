@@ -1,10 +1,12 @@
 ﻿[ビルド]
 
-0.Visual Studio Express 2015/2017 for Desktop または2019までのVisual Studio Communityのどれかをインストールする
+0.Visual Studio Express 2015/2017 for Desktop または2022までのVisual Studio Communityのどれかをインストールする
 
 1."Document\EDCB_ALL.VS2015.sln"を開き、ツールバーを[Release][Win32](x64ビルド時は[x64])にしてビルド→ソリューションのビルド
 
 （注意）
+・ツールバーのソリューション構成を[Debug](デバッグモード)にしてビルドすると
+  非常にパフォーマンスの悪い（高負荷な）バイナリができるので注意する
 ・Windows SDKのエラーが出る場合は、プロジェクト→ソリューションの再ターゲット
   で切り替える。ビルド可能なバージョンなら何でもいい
 ・WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
@@ -56,6 +58,12 @@
 
 
 [その他]
+
+・一部のマクロを定義することでビルドをカスタマイズできる。以下主なもの
+  ・EDCB_RC_DIALOG_NO_FONT (Common\CommonResource.h)
+  ・ARIB8CHAR_USE_UNICODE (EpgDataCap3\ARIB8CharDecode.cpp)
+  ・EPGDB_STD_WREGEX (EpgTimerSrv\EpgDBManager.h)
+  ソースコードを編集するかプロジェクトプロパティのプリプロセッサ定義に加える
 
 ・EpgTimer.exeをビルドするだけならVisualStudioは不要(参考:2ch_EDCB/52/224)
   必要なら.NET Framework v4.0以降をインストールして、EpgTimerフォルダでコマンドプロンプトを開いて以下を実行（またはx86build.batを実行）
