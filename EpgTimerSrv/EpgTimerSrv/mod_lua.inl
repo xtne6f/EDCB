@@ -5,6 +5,7 @@
 #if !defined(_WIN32)
 #include <dlfcn.h>
 #endif
+
 #include "civetweb_lua.h"
 /*#include "civetweb_private_lua.h"*/
 
@@ -32,6 +33,7 @@ mmap(void *addr, int64_t len, int prot, int flags, int fd, int offset)
 	return p;
 }
 
+
 static void
 munmap(void *addr, int64_t length)
 {
@@ -47,6 +49,7 @@ munmap(void *addr, int64_t length)
 #else
 #include <sys/mman.h>
 #endif
+
 
 static const char *const LUASOCKET = "luasocket";
 static const char lua_regkey_ctx = 1;
@@ -69,6 +72,7 @@ static int handle_lsp_request(struct mg_connection *,
                               struct mg_file *,
                               struct lua_State *);
 
+
 static void
 reg_lstring(struct lua_State *L,
             const char *name,
@@ -81,6 +85,7 @@ reg_lstring(struct lua_State *L,
 		lua_rawset(L, -3);
 	}
 }
+
 
 static void
 reg_llstring(struct lua_State *L,
@@ -95,6 +100,7 @@ reg_llstring(struct lua_State *L,
 		lua_rawset(L, -3);
 	}
 }
+
 
 #define reg_string(L, name, val)                                               \
 	reg_lstring(L, name, val, val ? strlen(val) : 0)
@@ -119,6 +125,7 @@ reg_boolean(struct lua_State *L, const char *name, int val)
 	}
 }
 
+
 static void
 reg_conn_function(struct lua_State *L,
                   const char *name,
@@ -133,6 +140,7 @@ reg_conn_function(struct lua_State *L,
 	}
 }
 
+
 static void
 reg_function(struct lua_State *L, const char *name, lua_CFunction func)
 {
@@ -142,6 +150,7 @@ reg_function(struct lua_State *L, const char *name, lua_CFunction func)
 		lua_rawset(L, -3);
 	}
 }
+
 
 static void
 lua_cry(struct mg_connection *conn,
@@ -196,6 +205,7 @@ lua_cry(struct mg_connection *conn,
 	}
 }
 
+
 #if defined(MG_LEGACY_INTERFACE)
 static int
 lsp_sock_close(lua_State *L)
@@ -217,6 +227,7 @@ lsp_sock_close(lua_State *L)
 	}
 	return 0;
 }
+
 
 static int
 lsp_sock_recv(lua_State *L)
@@ -244,6 +255,7 @@ lsp_sock_recv(lua_State *L)
 	}
 	return 1;
 }
+
 
 static int
 lsp_sock_send(lua_State *L)
@@ -276,6 +288,7 @@ lsp_sock_send(lua_State *L)
 	return 1;
 }
 
+
 static int
 lsp_sock_gc(lua_State *L)
 {
@@ -298,6 +311,7 @@ lsp_sock_gc(lua_State *L)
 	return 0;
 }
 
+
 /* Methods and meta-methods supported by the object returned by connect.
  * For meta-methods, see http://lua-users.org/wiki/MetatableEvents */
 static const struct luaL_Reg luasocket_methods[] = {{"close", lsp_sock_close},
@@ -305,6 +319,7 @@ static const struct luaL_Reg luasocket_methods[] = {{"close", lsp_sock_close},
                                                     {"recv", lsp_sock_recv},
                                                     {"__gc", lsp_sock_gc},
                                                     {NULL, NULL}};
+
 
 static int
 lsp_connect(lua_State *L)
@@ -343,6 +358,7 @@ lsp_connect(lua_State *L)
 }
 #endif /* MG_LEGACY_INTERFACE */
 
+
 static int
 lsp_error(lua_State *L)
 {
@@ -353,6 +369,7 @@ lsp_error(lua_State *L)
 	lua_pcall(L, 1, 0, 0);
 	return 0;
 }
+
 
 /* Silently stop processing chunks. */
 static void
@@ -1035,8 +1052,8 @@ lsp_send_http_error(lua_State *L)
 	if ((status >= 100) && (status <= 999)) {
 		ret = mg_send_http_error(conn,
 		                         status,
-		                         (auxText != NULL) ? "%s" : "",
-		                         auxText);
+		                         "%s",
+		                         (auxText != NULL) ? auxText : "");
 	} else {
 		/* Syntax error */
 		return luaL_error(L, "invalid send_http_error() call");
@@ -1047,7 +1064,7 @@ lsp_send_http_error(lua_State *L)
 }
 
 
-/* mg.send_http_error */
+/* mg.send_http_ok */
 static int
 lsp_send_http_ok(lua_State *L)
 {
@@ -1913,9 +1930,9 @@ static const char *LUA_MG_FUNCTIONS =
 
 /* Lua Environment */
 enum {
-	LUA_ENV_TYPE_LUA_SERVER_PAGE = 0,
-	LUA_ENV_TYPE_PLAIN_LUA_PAGE = 1,
-	LUA_ENV_TYPE_LUA_WEBSOCKET = 2,
+	LUA_ENV_TYPE_LUA_SERVER_PAGE = 0, /* page.lp */
+	LUA_ENV_TYPE_PLAIN_LUA_PAGE = 1,  /* script.lua */
+	LUA_ENV_TYPE_LUA_WEBSOCKET = 2,   /* websock.lua */
 };
 
 
@@ -2003,6 +2020,7 @@ lua_allocator(void *ud, void *ptr, size_t osize, size_t nsize)
 		mg_free(ptr);
 		return NULL;
 	}
+
 	return mg_realloc_ctx(ptr, nsize, (struct mg_context *)ud);
 }
 
@@ -2117,8 +2135,8 @@ prepare_lua_environment(struct mg_context *ctx,
 		break;
 	}
 
-	if (lua_env_type == LUA_ENV_TYPE_LUA_SERVER_PAGE
-	    || lua_env_type == LUA_ENV_TYPE_PLAIN_LUA_PAGE) {
+	if ((lua_env_type == LUA_ENV_TYPE_LUA_SERVER_PAGE)
+	    || (lua_env_type == LUA_ENV_TYPE_PLAIN_LUA_PAGE)) {
 		reg_conn_function(L, "cry", lsp_cry, conn);
 		reg_conn_function(L, "read", lsp_read, conn);
 		reg_conn_function(L, "write", lsp_write, conn);
@@ -2351,7 +2369,7 @@ handle_lsp_request(struct mg_connection *conn,
 	              MAP_PRIVATE,
 	              fileno(filep->access.fp),
 	              0))
-	           == MAP_FAILED) {
+	    == MAP_FAILED) {
 
 		/* File was not already in memory, and mmap failed now.
 		 * Since wi have no data, show an error. */
@@ -2375,7 +2393,7 @@ handle_lsp_request(struct mg_connection *conn,
 		goto cleanup_handle_lsp_request;
 	}
 
-	/* File content is now memory mapped. Get mapping address */
+	/* File content is now memory mapped. Get mapping address. */
 	addr = (const char *)p;
 
 	/* Get a Lua state */
@@ -2743,7 +2761,7 @@ mg_prepare_lua_context_script(const char *file_name,
 	lua_ret = lua_pcall(L,
 	                    /* no arguments */ 0,
 	                    /* zero or one return value */ 1,
-	                    /* errors as strint return value */ 0);
+	                    /* errors as string return value */ 0);
 
 	if (lua_ret != LUA_OK) {
 		/* Error when executing the script */

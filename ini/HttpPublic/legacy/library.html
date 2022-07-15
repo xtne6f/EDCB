@@ -17,12 +17,27 @@ ct:Append([=[
 <h1>ライブラリ</h1>
 ]=])
 
+dirname=nil
 index=GetVarInt(mg.request_info.query_string,'i',1,#LIBRARY_LIST)
-sort=mg.get_var(mg.request_info.query_string,'s') or 'dd'
-hash=mg.get_var(mg.request_info.query_string,'h')
-xq=GetTranscodeQueries(mg.request_info.query_string)
+if index then
+  dir=DocumentToNativePath(LIBRARY_LIST[index])
+  if dir then
+    dirhash=mg.get_var(mg.request_info.query_string,'d')
+    if dirhash then
+      for i,v in ipairs(edcb.FindFile(dir..'\\*',0) or {}) do
+        if v.isdir and mg.md5(v.name)==dirhash then
+          dir=dir..'\\'..v.name
+          dirname=LIBRARY_LIST[index]..'/'..v.name
+          break
+        end
+      end
+    else
+      dirname=LIBRARY_LIST[index]
+    end
+  end
+end
 
-if not index then
+if not dirname then
   ct:Append('<div class="nav"><ul>\n')
   edcb.htmlEscape=15
   for i,v in ipairs(LIBRARY_LIST) do
@@ -31,20 +46,28 @@ if not index then
       ..'</li>\n')
   end
   ct:Append('</ul></div>\n')
-elseif not hash then
-  ct:Append('<div class="nav"><table>\n<tr>'
-    ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='dd' and 'dd' or 'da')..'">Modified</a>'
-    ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='sa' and 'sa' or 'sd')..'">Size</a>'
-    ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='na' and 'na' or 'nd')..'">Name</a></tr>\n')
-  dir=DocumentToNativePath(LIBRARY_LIST[index])
-  if dir then
+else
+  hash=mg.get_var(mg.request_info.query_string,'h')
+  if not hash then
+    sort=mg.get_var(mg.request_info.query_string,'s') or 'dd'
+    ct:Append('<div class="nav"><table>\n<tr>'
+      ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='dd' and 'dd' or 'da')..(dirhash and '&amp;d='..dirhash or '')..'">Modified</a>'
+      ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='sa' and 'sa' or 'sd')..(dirhash and '&amp;d='..dirhash or '')..'">Size</a>'
+      ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='na' and 'na' or 'nd')..(dirhash and '&amp;d='..dirhash or '')..'">Name</a></tr>\n'
+      ..'<tr><td><td><td><a href="library.html'..(dirhash and '?i='..index or '')..'">Parent directory ..</a></tr>\n')
     tsx=edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini')
+    xlist={table.unpack(MEDIA_EXTENSION_LIST),tsx}
     ff={}
-    for i,v in ipairs({table.unpack(MEDIA_EXTENSION_LIST),tsx}) do
-      for j,w in ipairs(edcb.FindFile(dir..'\\*'..v,0) or {}) do
-        if not w.isdir then
-          ff[#ff+1]=w
+    for i,v in ipairs(edcb.FindFile(dir..'\\*',0) or {}) do
+      if not v.isdir then
+        for j,ext in ipairs(xlist) do
+          if #v.name>#ext and v.name:sub(-#ext):lower()==ext:lower() then
+            ff[#ff+1]=v
+            break
+          end
         end
+      elseif not dirhash and not v.name:find('^%.') then
+        ff[#ff+1]=v
       end
     end
     if sort=='da' then
@@ -64,16 +87,15 @@ elseif not hash then
     for i,v in ipairs(ff) do
       v.mtime.sec=0
       ct:Append('<tr><td>'..FormatTimeAndDuration(v.mtime)
-        ..'<td>'..math.floor(v.size/1048576)..'M'
-        ..'<td><a href="library.html?i='..index..'&amp;h='..mg.md5(v.name)..'">'
-        ..EdcbHtmlEscape(LIBRARY_LIST[index]..'/'..v.name)..'</a></tr>\n')
+        ..'<td>'..(v.isdir and '' or math.floor(v.size/1048576)..'M')
+        ..'<td><a href="library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')
+        ..'&amp;'..(v.isdir and 'd=' or 'h=')..mg.md5(v.name)..'">'
+        ..EdcbHtmlEscape(dirname..'/'..v.name..(v.isdir and '/' or ''))..'</a></tr>\n')
     end
-  end
-  ct:Append('</table></div>\n')
-else
-  ct:Append('<div id="main">\n')
-  dir=DocumentToNativePath(LIBRARY_LIST[index])
-  if dir then
+    ct:Append('</table></div>\n')
+  else
+    xq=GetTranscodeQueries(mg.request_info.query_string)
+    ct:Append('<div id="main">\n')
     tsx=edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini')
     info=nil
     for i,v in ipairs({table.unpack(MEDIA_EXTENSION_LIST),tsx}) do
@@ -90,13 +112,22 @@ else
     end
     edcb.htmlEscape=15
     if info then
-      ref=LIBRARY_LIST[index]..'/'..info.name
-      ct:Append('→<a href="library.html?i='..index..'&amp;h='..hash..ConstructTranscodeQueries(xq)
+      ref=dirname..'/'..info.name
+      ct:Append('<a href="library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')..'">Parent directory ..</a><br>\n'
+        ..'→<a href="library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')
+        ..'&amp;h='..hash..ConstructTranscodeQueries(xq)
         ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a><br>\n')
 
-      ct:Append((vtag==1 and '<div class="video-container"><video autoplay controls src="' or '<a href="')
-        ..(vtag~=0 and vtag~=1 and 'library.html?i='..index..'&amp;h='..hash..'&amp;vtag=1' or PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'))
-        ..'">/'..EdcbHtmlEscape(ref)..(vtag==1 and '</video></div>' or '</a>'))
+      ct:Append((vtag==1 and '<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+                   ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
+                   ..'<div class="video-container arib-video-container" id="vid-cont">'
+                   ..'<video id="vid" autoplay controls src="' or '<a href="')
+        ..(vtag~=0 and vtag~=1 and 'library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')..'&amp;h='..hash..'&amp;vtag=1'
+             or PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'))
+        ..'">/'..EdcbHtmlEscape(ref)..(vtag==1 and '<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
+                                         ..'.vtt" type="text/vtt" default></video></div></div>\n'
+                                         ..'<div id="psidatasrc" style="display:none">'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
+                                         ..'.psc</div>\n'..VideoScriptTemplete() or '</a>'))
       if info.ists then
         fsec,fsize=0,0
         f=edcb.io.open(dir..'\\'..info.name,'rb')
@@ -107,13 +138,17 @@ else
         ct:Append(' ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
           ..'<form method="GET" action="'..(vtag==0 and 'xcode.lua' or 'library.html')..'"><div>\n'
           ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
-               or '<input type="hidden" name="i" value="'..index..'">\n<input type="hidden" name="h" value="'..hash..'">\n<input type="hidden" name="vtag" value="10">\n')
+               or '<input type="hidden" name="i" value="'..index..'">\n'
+                 ..(dirhash and '<input type="hidden" name="d" value="'..dirhash..'">\n' or '')
+                 ..'<input type="hidden" name="h" value="'..hash..'">\n<input type="hidden" name="vtag" value="10">\n')
           ..'<input type="submit" value="xcode">\n'
           ..TranscodeSettingTemplete(xq,fsec)
           ..'</div></form>')
         if vtag==10 then
           src='xcode.lua?fname='..mg.url_encode(ref)..ConstructTranscodeQueries(xq)
-          ct:Append('\n<div class="video-full-container" id="vid-full"><div class="video-container" id="vid-cont">'
+          ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+            ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
+            ..'<div class="video-container arib-video-container" id="vid-cont">'
             ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>')
           if ALLOW_HLS then
             ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))
@@ -123,8 +158,8 @@ else
         ct:Append(' ('..math.floor(info.size/1048576)..'M)<br>\n')
       end
     end
+    ct:Append('</div>\n')
   end
-  ct:Append('</div>\n')
 end
 
 ct:Append([=[

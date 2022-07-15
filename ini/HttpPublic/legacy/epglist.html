@@ -115,7 +115,9 @@ else
     ..'</div></form>')
   if vtag==1 then
     src='view.lua?n=0&amp;id='..onid..'-'..tsid..'-'..sid..ConstructTranscodeQueries(xq)..'&amp;ctok='..CsrfToken('view.lua')
-    ct:Append('\n<div class="video-full-container" id="vid-full"><div class="video-container" id="vid-cont">'
+    ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+      ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
+      ..'<div class="video-container arib-video-container" id="vid-cont">'
       ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view -nwtv0</video></div></div>')
     if ALLOW_HLS then
       ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))

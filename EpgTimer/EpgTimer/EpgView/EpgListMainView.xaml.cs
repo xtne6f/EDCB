@@ -473,10 +473,11 @@ namespace EpgTimer
             {
                 SearchItem item = listView_event.SelectedItem as SearchItem;
 
-                EpgEventInfo eventInfo = item.EventInfo;
-
-                String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                richTextBox_eventInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(text));
+                richTextBox_eventInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(
+                    CommonManager.ConvertProgramText(item.EventInfo, EventInfoTextMode.BasicInfo) +
+                    CommonManager.ConvertProgramText(item.EventInfo, EventInfoTextMode.BasicText),
+                    CommonManager.ConvertProgramText(item.EventInfo, EventInfoTextMode.ExtendedText),
+                    CommonManager.ConvertProgramText(item.EventInfo, EventInfoTextMode.PropertyInfo)));
             }
         }
 
@@ -835,6 +836,7 @@ namespace EpgTimer
         private void cm_viewSet_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new EpgDataViewSettingWindow();
+            dlg.Title += " (一時的)";
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             dlg.SetDefSetting(setViewInfo);
             if (dlg.ShowDialog() == true)

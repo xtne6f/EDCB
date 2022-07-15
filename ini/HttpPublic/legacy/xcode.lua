@@ -11,10 +11,9 @@ if fpath then
 end
 
 offset=GetVarInt(query,'offset',0,100) or 0
+ofssec=GetVarInt(query,'ofssec',0,100000) or 0
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-dual=GetVarInt(query,'dual',0,2)
-dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
 filter=GetVarInt(query,'fast')==1 and (GetVarInt(query,'cinema')==1 and option.filterCinemaFast or option.filterFast)
 filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
 hls=GetVarInt(query,'hls',1)
@@ -24,6 +23,7 @@ if hls and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
   fpath=nil
 end
+psidata=GetVarInt(query,'psidata')==1
 
 function OpenTranscoder()
   if XCODE_SINGLE then
@@ -59,7 +59,7 @@ function OpenTranscoder()
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC','-')
     :gsub('$AUDIO',audio2)
-    :gsub('$DUAL',(dual:gsub('%%','%%%%')))
+    :gsub('$DUAL','')
     :gsub('$FILTER',(filter:gsub('%%','%%%%')))
     :gsub('$CAPTION',(caption:gsub('%%','%%%%')))
     :gsub('$OUTPUT',(output[2]:gsub('%%','%%%%')))
@@ -85,7 +85,7 @@ function OpenTranscoder()
   end
   local sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-xcode -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -b 1 -c 1 -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
+  cmd='"'..tsreadex..'" -z edcb-legacy-xcode -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c 1 -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
   if hls then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
@@ -106,11 +106,46 @@ function OpenTranscoder()
   return edcb.io.popen('"'..cmd..'"','rb')
 end
 
+function OpenPsiDataArchiver()
+  -- コマンドはEDCBのToolsフォルダにあるものを優先する
+  local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
+  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
+  local psisiarc=(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe'
+  local sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
+  -- 3秒間隔で出力
+  local cmd='"'..psisiarc..'" -r arib-data -i 3 - -'
+  cmd='"'..tsreadex..'" -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
+  return edcb.io.popen('"'..cmd..'"','rb')
+end
+
+function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
+  if trailerSize>0 then
+    local buf=f:read(trailerSize)
+    if not buf or #buf~=trailerSize then return nil end
+  end
+  local buf=f:read(32)
+  if not buf or #buf~=32 then return nil end
+  local timeListLen=GetLeNumber(buf,11,2)
+  local dictionaryLen=GetLeNumber(buf,13,2)
+  local dictionaryDataSize=GetLeNumber(buf,17,4)
+  local codeListLen=GetLeNumber(buf,25,4)
+  local payload=''
+  local payloadSize=timeListLen*4+dictionaryLen*2+math.ceil(dictionaryDataSize/2)*2+codeListLen*2
+  if payloadSize>0 then
+    payload=f:read(payloadSize)
+    if not payload or #payload~=payloadSize then return nil end
+  end
+  -- Base64のパディングを避けるため、トレーラを利用してbufのサイズを3の倍数にする
+  local trailerConsumeSize=2-(trailerRemainSize+#buf+#payload+2)%3
+  buf=('='):rep(trailerRemainSize)..buf..payload..('='):rep(trailerConsumeSize)
+  return buf,2+(2+#payload)%4,2+(2+#payload)%4-trailerConsumeSize
+end
+
 f=nil
 if fpath then
-  if hls then
+  if hls and not psidata then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-    segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+    segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..filter..':'..caption..':'..output[2])
     f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
   end
   if not f then
@@ -120,15 +155,19 @@ if fpath then
     if fname:lower()==fnamets then
       f=edcb.io.open(fpath,'rb')
       if f then
-        if offset~=0 then
+        if offset~=0 or ofssec~=0 then
           fsec,fsize=GetDurationSec(f)
-          if offset~=100 and SeekSec(f,fsec*offset/100,fsec,fsize) then
+          if offset~=100 and SeekSec(f,fsec*offset/100+ofssec,fsec,fsize) then
             offset=f:seek('cur',0) or 0
           else
             offset=math.floor(fsize*offset/100/188)*188
           end
         end
-        if XCODE then
+        if psidata then
+          f:close()
+          f=OpenPsiDataArchiver()
+          fname='xcode.psc.txt'
+        elseif XCODE then
           f:close()
           f=OpenTranscoder()
           fname='xcode.'..output[1]
@@ -151,6 +190,23 @@ if not f then
     ..'<title>xcode.lua</title><p><a href="index.html">メニュー</a></p>')
   ct:Finish()
   mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
+elseif psidata then
+  mg.write(Response(200,mg.get_mime_type(fname),'utf-8')..'Content-Disposition: filename='..fname..'\r\n\r\n')
+  if mg.request_info.request_method~='HEAD' then
+    trailerSize=0
+    trailerRemainSize=0
+    baseTime=0
+    while true do
+      -- 3秒間隔でチャンクを読めば等速になる
+      buf,trailerSize,trailerRemainSize=ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
+      if not buf or not mg.write(mg.base64_encode(buf)) then break end
+      now=os.time()
+      if math.abs(baseTime-now)>10 then baseTime=now end
+      edcb.Sleep(math.max(baseTime+3-now,0)*1000)
+      baseTime=baseTime+3
+    end
+  end
+  f:close()
 elseif hls then
   -- インデックスファイルを返す
   ct=CreateContentBuilder()
@@ -168,8 +224,8 @@ elseif hls then
       segAvailable=buf:byte(8)==0
       if segAvailable then
         segIndex=buf:byte(1)
-        segCount=(buf:byte(7)*256+buf:byte(6))*256+buf:byte(5)
-        segDuration=((buf:byte(11)*256+buf:byte(10))*256+buf:byte(9))/1000
+        segCount=GetLeNumber(buf,5,3)
+        segDuration=GetLeNumber(buf,9,3)/1000
         if not hasSeg then
           ct:Append((segCount==1 and '1\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY' or segCount+1)
             ..'\n'..(endList and '#EXT-X-ENDLIST\n' or ''))

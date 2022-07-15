@@ -1010,7 +1010,7 @@ BOOL CDecodeUtil::EnumLogoList(
 }
 
 //解析データの現在のストリームＩＤを取得する
-// originalNetworkID		[OUT]現在のoriginalNetworkID
+// originalNetworkID		[OUT]現在のoriginalNetworkID。NULL可
 // transportStreamID		[OUT]現在のtransportStreamID
 BOOL CDecodeUtil::GetTSID(
 	WORD* originalNetworkID,
@@ -1018,15 +1018,20 @@ BOOL CDecodeUtil::GetTSID(
 	)
 {
 	if( this->sdtActualInfo.empty() == false ){
-		*originalNetworkID = (WORD)this->sdtActualInfo.begin()->second.GetNumber(Desc::original_network_id);
+		if( originalNetworkID ){
+			*originalNetworkID = (WORD)this->sdtActualInfo.begin()->second.GetNumber(Desc::original_network_id);
+		}
 		*transportStreamID = (WORD)this->sdtActualInfo.begin()->second.GetNumber(Desc::transport_stream_id);
 		return TRUE;
-	}else if( this->sitInfo != NULL && this->patInfo != NULL ){
+	}else if( this->patInfo ){
 		//TSID
 		*transportStreamID = (WORD)this->patInfo->GetNumber(Desc::transport_stream_id);
 		//ONID
+		if( originalNetworkID == NULL ){
+			return TRUE;
+		}
 		Desc::CDescriptor::CLoopPointer lp;
-		if( this->sitInfo->EnterLoop(lp) ){
+		if( this->sitInfo && this->sitInfo->EnterLoop(lp) ){
 			do{
 				if( this->sitInfo->GetNumber(Desc::descriptor_tag, lp) == Desc::network_identification_descriptor ){
 					*originalNetworkID = (WORD)this->sitInfo->GetNumber(Desc::network_id, lp);

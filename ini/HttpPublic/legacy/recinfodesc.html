@@ -63,9 +63,15 @@ if v then
     for i,ext in ipairs({table.unpack(MEDIA_EXTENSION_LIST),''}) do
       ff=edcb.FindFile and edcb.FindFile(w.recFilePath..ext,1)
       if ff then
-        ct:Append((vtag==i and '<div class="video-container"><video autoplay controls src="' or '<a href="')
+        ct:Append((vtag==i and '<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+                     ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
+                     ..'<div class="video-container arib-video-container" id="vid-cont">'
+                     ..'<video id="vid" autoplay controls src="' or '<a href="')
           ..(vtag~=0 and vtag~=i and 'recinfodesc.html?id='..v.id..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
-          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '</video></div>' or '</a>'))
+          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
+                                                ..'.vtt" type="text/vtt" default></video></div></div>\n'
+                                                ..'<div id="psidatasrc" style="display:none">'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
+                                                ..'.psc</div>\n'..VideoScriptTemplete() or '</a>'))
         if ext=='' then
           fsec,fsize=0,0
           f=edcb.io.open(w.recFilePath,'rb')
@@ -82,7 +88,9 @@ if v then
             ..'</div></form>')
           if vtag==10 then
             src='xcode.lua?fname='..mg.url_encode(ref)..ConstructTranscodeQueries(xq)
-            ct:Append('\n<div class="video-full-container" id="vid-full"><div class="video-container" id="vid-cont">'
+            ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+              ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
+              ..'<div class="video-container arib-video-container" id="vid-cont">'
               ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>')
             if ALLOW_HLS then
               ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))

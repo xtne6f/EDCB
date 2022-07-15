@@ -21,7 +21,7 @@ public:
 
 	//解析データの現在のストリームＩＤを取得する
 	//引数：
-	// originalNetworkID		[OUT]現在のoriginalNetworkID
+	// originalNetworkID		[OUT]現在のoriginalNetworkID。NULL可
 	// transportStreamID		[OUT]現在のtransportStreamID
 	BOOL GetTSID(
 		WORD* originalNetworkID,

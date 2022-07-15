@@ -708,8 +708,8 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	for( int i = 0; i < ListView_GetItemCount(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME)); i++ ){
 		WCHAR w[32] = {};
 		WCHAR f[32] = {};
-		ListView_GetItemText(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), i, 0, w, array_size(w));
-		ListView_GetItemText(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), i, 1, f, array_size(f));
+		ListView_GetItemText(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), i, 0, w, (int)array_size(w));
+		ListView_GetItemText(GetDlgItem(hwnd, IDC_LIST_SET_EPG_TIME), i, 1, f, (int)array_size(f));
 		if( wcslen(w) == 6 && wcslen(f) == 7 ){
 			swprintf_s(key, L"%d", num);
 			WCHAR val[32];
@@ -948,7 +948,7 @@ void CEpgTimerSrvSetting::AddEpgTime(bool check)
 		lvi.iItem = ListView_GetItemCount(GetDlgItem(this->hwndEpg, IDC_LIST_SET_EPG_TIME));
 		for( int i = 0; i < lvi.iItem; i++ ){
 			WCHAR buff[32] = {};
-			ListView_GetItemText(GetDlgItem(this->hwndEpg, IDC_LIST_SET_EPG_TIME), i, 0, buff, array_size(buff));
+			ListView_GetItemText(GetDlgItem(this->hwndEpg, IDC_LIST_SET_EPG_TIME), i, 0, buff, (int)array_size(buff));
 			if( wcscmp(buff, weekMin) == 0 ){
 				//すでにある
 				return;
@@ -1000,7 +1000,7 @@ void CEpgTimerSrvSetting::BrowseExeFile(HWND hTarget)
 	ofn.hwndOwner = this->hwndTop;
 	ofn.lpstrFilter = L"exe files (*.exe)\0*.exe\0All files (*.*)\0*.*\0";
 	ofn.lpstrFile = buff;
-	ofn.nMaxFile = array_size(buff);
+	ofn.nMaxFile = (DWORD)array_size(buff);
 	ofn.Flags = OFN_FILEMUSTEXIST;
 	if( GetOpenFileName(&ofn) ){
 		SetWindowText(hTarget, buff);

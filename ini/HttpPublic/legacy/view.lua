@@ -11,8 +11,6 @@ end
 
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-dual=GetVarInt(query,'dual',0,2)
-dual=dual==1 and option.dualMain or dual==2 and option.dualSub or ''
 filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
 hls=GetVarInt(query,'hls',1)
 caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
@@ -27,6 +25,7 @@ if hls and not (ALLOW_HLS and option.outputHls) then
   n=nil
   onid=nil
 end
+psidata=GetVarInt(query,'psidata')==1
 
 function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if XCODE_SINGLE then
@@ -62,7 +61,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC','-')
     :gsub('$AUDIO',audio2)
-    :gsub('$DUAL',(dual:gsub('%%','%%%%')))
+    :gsub('$DUAL','')
     :gsub('$FILTER',(filter:gsub('%%','%%%%')))
     :gsub('$CAPTION',(caption:gsub('%%','%%%%')))
     :gsub('$OUTPUT',(output[2]:gsub('%%','%%%%')))
@@ -89,7 +88,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -b 1 -c 1 -u 2 '..pipeName..' | '..cmd
+  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c 1 -u 2 '..pipeName..' | '..cmd
   if hls then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
@@ -110,22 +109,60 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   return edcb.io.popen('"'..cmd..'"','rb')
 end
 
+function OpenPsiDataArchiver(pipeName,targetSID)
+  -- コマンドはEDCBのToolsフォルダにあるものを優先する
+  local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
+  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
+  local psisiarc=(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe'
+  -- 3秒間隔で出力
+  local cmd='"'..psisiarc..'" -r arib-data -n '..(targetSID or -1)..' -i 3 - -'
+  cmd='"'..tsreadex..'" -t 10 -m 2 '..pipeName..' | '..cmd
+  return edcb.io.popen('"'..cmd..'"','rb')
+end
+
+function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
+  if trailerSize>0 then
+    local buf=f:read(trailerSize)
+    if not buf or #buf~=trailerSize then return nil end
+  end
+  local buf=f:read(32)
+  if not buf or #buf~=32 then return nil end
+  local timeListLen=GetLeNumber(buf,11,2)
+  local dictionaryLen=GetLeNumber(buf,13,2)
+  local dictionaryDataSize=GetLeNumber(buf,17,4)
+  local codeListLen=GetLeNumber(buf,25,4)
+  local payload=''
+  local payloadSize=timeListLen*4+dictionaryLen*2+math.ceil(dictionaryDataSize/2)*2+codeListLen*2
+  if payloadSize>0 then
+    payload=f:read(payloadSize)
+    if not payload or #payload~=payloadSize then return nil end
+  end
+  -- Base64のパディングを避けるため、トレーラを利用してbufのサイズを3の倍数にする
+  local trailerConsumeSize=2-(trailerRemainSize+#buf+#payload+2)%3
+  buf=('='):rep(trailerRemainSize)..buf..payload..('='):rep(trailerConsumeSize)
+  return buf,2+(2+#payload)%4,2+(2+#payload)%4-trailerConsumeSize
+end
+
 f=nil
 if onid then
   if sid==0 then
     -- NetworkTVモードを終了
     edcb.CloseNetworkTV(n)
   elseif 0<=n and n<100 then
-    if hls then
+    if hls and not psidata then
       -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-      segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+      segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
       f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
     end
     if not f then
-      openTime=os.time()
-      edcb.WritePrivateProfile('NWTV','nwtv'..n..'open','@'..openTime,'Setting\\HttpPublic.ini')
-      -- NetworkTVモードを開始
-      ok,pid=edcb.OpenNetworkTV(2,onid,tsid,sid,n)
+      if psidata then
+        ok,pid=edcb.IsOpenNetworkTV(n)
+      else
+        openTime=os.time()
+        edcb.WritePrivateProfile('NWTV','nwtv'..n..'open','@'..openTime,'Setting\\HttpPublic.ini')
+        -- NetworkTVモードを開始
+        ok,pid=edcb.OpenNetworkTV(2,onid,tsid,sid,n)
+      end
       if ok then
         -- 名前付きパイプができるまで待つ
         pipeName=nil
@@ -150,12 +187,19 @@ if onid then
           end
           edcb.Sleep(200)
         end
-        if pipeName then
-          f=OpenTranscoder(pipeName,'view',n..' @'..openTime,sid)
-          fname='view.'..output[1]
-        end
-        if not f then
-          edcb.CloseNetworkTV(n)
+        if psidata then
+          if pipeName then
+            f=OpenPsiDataArchiver(pipeName,sid)
+            fname='view.psc.txt'
+          end
+        else
+          if pipeName then
+            f=OpenTranscoder(pipeName,'view',n..' @'..openTime,sid)
+            fname='view.'..output[1]
+          end
+          if not f then
+            edcb.CloseNetworkTV(n)
+          end
         end
       end
     end
@@ -164,19 +208,26 @@ elseif n and n<0 then
   -- プロセスが残っていたらすべて終わらせる
   edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-%\'" call terminate >nul')
 elseif n and n<=65535 then
-  if hls then
+  if hls and not psidata then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-    segmentKey=mg.md5('view:'..hls..':'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..dual..':'..filter..':'..caption..':'..output[2])
+    segmentKey=mg.md5('view:'..hls..':'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
     f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
   end
   if not f then
-    -- 前回のプロセスが残っていたら終わらせる
-    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-'..n..' %\'" call terminate >nul')
+    if not psidata then
+      -- 前回のプロセスが残っていたら終わらせる
+      edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-'..n..' %\'" call terminate >nul')
+    end
     -- 名前付きパイプがあれば開く
     ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*', 1)
     if ff and ff[1].name:find('^[A-Za-z]+_%d+_%d+$') then
-      f=OpenTranscoder('\\\\.\\pipe\\'..ff[1].name,'view-'..n)
-      fname='view.'..output[1]
+      if psidata then
+        f=OpenPsiDataArchiver('\\\\.\\pipe\\'..ff[1].name)
+        fname='view.psc.txt'
+      else
+        f=OpenTranscoder('\\\\.\\pipe\\'..ff[1].name,'view-'..n)
+        fname='view.'..output[1]
+      end
     end
   end
 end
@@ -187,6 +238,17 @@ if not f then
     ..'<title>view.lua</title><p><a href="index.html">メニュー</a></p>')
   ct:Finish()
   mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
+elseif psidata then
+  mg.write(Response(200,mg.get_mime_type(fname),'utf-8')..'Content-Disposition: filename='..fname..'\r\n\r\n')
+  if mg.request_info.request_method~='HEAD' then
+    trailerSize=0
+    trailerRemainSize=0
+    while true do
+      buf,trailerSize,trailerRemainSize=ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
+      if not buf or not mg.write(mg.base64_encode(buf)) then break end
+    end
+  end
+  f:close()
 elseif hls then
   -- インデックスファイルを返す
   ct=CreateContentBuilder()
@@ -204,8 +266,8 @@ elseif hls then
       segAvailable=buf:byte(8)==0
       if segAvailable then
         segIndex=buf:byte(1)
-        segCount=(buf:byte(7)*256+buf:byte(6))*256+buf:byte(5)
-        segDuration=((buf:byte(11)*256+buf:byte(10))*256+buf:byte(9))/1000
+        segCount=GetLeNumber(buf,5,3)
+        segDuration=GetLeNumber(buf,9,3)/1000
         if not hasSeg then
           ct:Append((segCount==1 and '1\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY' or segCount+2)
             ..'\n'..(endList and '#EXT-X-ENDLIST\n' or ''))

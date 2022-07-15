@@ -8,11 +8,11 @@ if key and #key==35 and not key:sub(-2)~='00' then
   f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..key,'rb')
   if f then
     buf=f:read(188)
-    if buf and #buf==188 and c==key..'_'..((buf:byte(7)*256+buf:byte(6))*256+buf:byte(5)) then
+    if buf and #buf==188 and c==key..'_'..GetLeNumber(buf,5,3) then
       if mg.request_info.request_method=='HEAD' then
         buf=''
       else
-        segSize=((buf:byte(11)*256+buf:byte(10))*256+buf:byte(9))*188
+        segSize=GetLeNumber(buf,9,3)*188
         buf=f:read(segSize)
         if buf and #buf~=segSize then
           buf=nil

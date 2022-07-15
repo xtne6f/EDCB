@@ -104,7 +104,9 @@ if #a>0 then
     for i,v in ipairs(a) do
       if n==v then
         src='view.lua?n='..v..ConstructTranscodeQueries(xq)..'&amp;ctok='..CsrfToken('view.lua')
-        ct:Append('<div class="video-full-container" id="vid-full"><div class="video-container" id="vid-cont">'
+        ct:Append('<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+          ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
+          ..'<div class="video-container arib-video-container" id="vid-cont">'
           ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video></div></div>')
         if ALLOW_HLS then
           ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))

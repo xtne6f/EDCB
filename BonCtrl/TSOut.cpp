@@ -9,6 +9,7 @@ CTSOut::CTSOut(void)
 {
 	this->chChangeState = CH_ST_INIT;
 	this->chChangeTime = 0;
+	this->chChangePresumedONID = 0xFFFF;
 	this->lastONID = 0xFFFF;
 	this->lastTSID = 0xFFFF;
 
@@ -29,12 +30,13 @@ CTSOut::~CTSOut(void)
 	StopSaveEPG(FALSE);
 }
 
-void CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
+void CTSOut::SetChChangeEvent(WORD presumedONID, BOOL resetEpgUtil)
 {
 	lock_recursive_mutex lock(this->objLock);
 
 	this->chChangeState = CH_ST_WAIT_PAT;
 	this->chChangeTime = GetTickCount();
+	this->chChangePresumedONID = presumedONID;
 
 	this->decodeUtil.UnLoadDll();
 
@@ -137,7 +139,16 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					if( this->chChangeState == CH_ST_INIT || this->chChangeState == CH_ST_WAIT_ID ){
 						WORD onid;
 						WORD tsid;
-						if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
+						DWORD ret = this->epgUtil.GetTSID(&onid, &tsid);
+						if( ret != NO_ERR && this->chChangePresumedONID != 0xFFFF && this->lastTSID != 0xFFFF ){
+							//ONIDの取得は遅いことがあるので、チャンネル変更などでONIDが予測できる場合はそれを使う
+							//切り替え前との区別を確実にするためTSIDが変化する場合に限る
+							onid = this->chChangePresumedONID;
+							if( this->epgUtil.GetTSID(NULL, &tsid) == NO_ERR && tsid != this->lastTSID ){
+								ret = NO_ERR;
+							}
+						}
+						if( ret == NO_ERR ){
 							if( this->chChangeState == CH_ST_INIT ){
 								AddDebugLogFormat(L"★Ch Init 0x%04X 0x%04X", onid, tsid);
 								OnChChanged(onid, tsid);

@@ -30,6 +30,7 @@ EPG_TIME_COLUMN=3
 --番組表の番組を絞り込みたいときはNOTキーワードの先頭を"#EPG_CUST_1"にした自動EPG予約を作る
 
 --ライブラリに表示するフォルダをドキュメントルートから'/'区切りの相対パスで指定
+--指定フォルダとその1階層下のフォルダにあるメディアファイルまでが表示対象
 LIBRARY_LIST={
   'video',
 }
@@ -50,15 +51,14 @@ ALWAYS_USE_HLS=true
 --HLSのときはセグメント長約4秒、最大8MBytes(=1秒あたり16Mbits)を想定しているので、オプションもそれに合わせること
 --name:表示名
 --xcoder:Toolsフォルダからの相対パス。Toolsフォルダになければパスが通っているとみなす
+--       ※NVEncCやQSVEncCの例では'NVEncC\\NVEncC.exe'のように「Toolsの下のNVEncCフォルダの下」なので注意
 --option:$SRCと$OUTPUTは必須、再生時に適宜置換される
 --filter*Fast:倍速再生用、未定義でもよい
 XCODE_OPTIONS={
   {
     name='288p/h264/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
-    dualMain='-dual_mono_mode main',
-    dualSub='-dual_mono_mode sub',
+    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -71,9 +71,7 @@ XCODE_OPTIONS={
   {
     name='576p/h264/ffmpeg-nvenc',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
-    dualMain='-dual_mono_mode main',
-    dualSub='-dual_mono_mode sub',
+    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -86,9 +84,7 @@ XCODE_OPTIONS={
   {
     name='288p/webm/ffmpeg',
     xcoder='ffmpeg.exe',
-    option='-f mpegts $DUAL -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
-    dualMain='-dual_mono_mode main',
-    dualSub='-dual_mono_mode sub',
+    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
     filter='-vf yadif=0:-1:1',
     filterCinema='-vf pullup -r 24000/1001',
     filterFast='-vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25',
@@ -100,10 +96,8 @@ XCODE_OPTIONS={
     --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
     name='576p/h264/NVEncC',
     xcoder='NVEncC\\NVEncC.exe',
-    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
     audioStartAt=1,
-    dualMain='#dual_mono_mode=main',
-    dualSub='#dual_mono_mode=sub',
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true,rff=true',
     captionNone='',
@@ -115,10 +109,8 @@ XCODE_OPTIONS={
     --QSVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
     name='576p/h264/QSVEncC',
     xcoder='QSVEncC\\QSVEncC.exe',
-    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --quality balanced $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop$DUAL --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --quality balanced $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
     audioStartAt=1,
-    dualMain='#dual_mono_mode=main',
-    dualSub='#dual_mono_mode=sub',
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true',
     captionNone='',
@@ -133,6 +125,15 @@ XCODE_SELECT_OPTION=1
 XCODE_CHECK_CINEMA=false
 XCODE_CHECK_FAST=false
 XCODE_CHECK_CAPTION=false
+
+--字幕表示のオプション https://github.com/monyone/aribb24.js#options
+ARIBB24_JS_OPTION=[=[
+  normalFont:'"Rounded M+ 1m for ARIB","Yu Gothic Medium",sans-serif',
+  drcsReplacement:true
+]=]
+
+--データ放送表示機能を使うかどうか。トランスコード中に表示する場合はpsisiarc.exeを用意すること。IE非対応
+USE_DATACAST=true
 
 --トランスコードするかどうか。する場合はtsreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
 XCODE=true
@@ -161,7 +162,6 @@ function GetTranscodeQueries(qs)
     option=GetVarInt(qs,'option',1,#XCODE_OPTIONS),
     offset=GetVarInt(qs,'offset',0,100),
     audio2=GetVarInt(qs,'audio2')==1,
-    dual=GetVarInt(qs,'dual',0,2),
     cinema=GetVarInt(qs,'cinema')==1,
     fast=GetVarInt(qs,'fast')==1,
     caption=GetVarInt(qs,'caption')==1,
@@ -172,7 +172,6 @@ function ConstructTranscodeQueries(xq)
   return (xq.option and '&amp;option='..xq.option or '')
     ..(xq.offset and '&amp;offset='..xq.offset or '')
     ..(xq.audio2 and '&amp;audio2=1' or '')
-    ..(xq.dual and '&amp;dual='..xq.dual or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
     ..(xq.fast and '&amp;fast=1' or '')
     ..(xq.caption and '&amp;caption=1' or '')
@@ -188,50 +187,479 @@ function TranscodeSettingTemplete(xq,fsec)
   s=s..'</select>\n'
   if fsec then
     s=s..'offset: <select name="offset">'
-    local i=0
-    while i<=100 do
+    for i=0,100 do
       s=s..'<option value="'..i..'"'..((xq.offset or 0)==i and ' selected' or '')..'>'
-        ..(fsec>0 and ('%dm%02ds|'):format(math.floor(fsec*i/100/60),fsec*i/100%60) or '')..i..'%'
-      i=i<5 and i+1 or i+5
+        ..(fsec>0 and ('%dm%02ds'):format(math.floor(fsec*i/100/60),fsec*i/100%60)..(i%5==0 and '|'..i..'%' or '') or i..'%')
     end
     s=s..'</select>\n'
   end
   s=s..'<label><input type="checkbox" name="audio2" value="1"'..(xq.audio2 and ' checked' or '')..'>audio2</label>\n'
-    ..'<select name="dual">'
-    ..'<option value="0"'..(xq.dual~=1 and xq.dual~=2 and ' selected' or '')..'>*'
-    ..'<option value="1"'..(xq.dual==1 and ' selected' or '')..'>dual-main'
-    ..'<option value="2"'..(xq.dual==2 and ' selected' or '')..'>dual-sub'
-    ..'</select>\n'
     ..'<label><input type="checkbox" name="cinema" value="1"'..((xq.cinema or not xq.option and XCODE_CHECK_CINEMA) and ' checked' or '')..'>cinema</label>\n'
-    ..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
+  if fsec then
+    s=s..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
+  end
   if ALLOW_HLS then
     s=s..'<label><input type="checkbox" name="caption" value="1"'..((xq.caption or not xq.option and XCODE_CHECK_CAPTION) and ' checked' or '')..'>caption</label>\n'
   end
   return s
 end
 
-function HlsScriptTemplete(caption)
-  --フルスクリーンボタン
-  local s=[=[
+function FullscreenButtonScriptTemplete()
+  return [=[
 <script>
-var vfull=document.getElementById("vid-full");
-var vcont=document.getElementById("vid-cont");
-var btn=document.createElement('button');
-btn.innerText="full";
-btn.onclick=function(){(vfull.requestFullscreen||vfull.webkitRequestFullscreen||vfull.webkitRequestFullScreen).call(vfull);};
-var div=document.createElement('div');
-div.className="full-control";
-div.appendChild(btn);
-vcont.appendChild(div);
-btn=document.createElement('button');
-btn.innerText="exit";
-btn.onclick=function(){(document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen).call(document);};
-div=document.createElement('div');
-div.className="exit-control";
-div.appendChild(btn);
-vcont.appendChild(div);
+var hideFullscreenButton;
+(function(){
+  var vfull=document.getElementById("vid-full");
+  var vcont=document.getElementById("vid-cont");
+  var btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="full";
+  btn.onclick=function(){(vfull.requestFullscreen||vfull.webkitRequestFullscreen||vfull.webkitRequestFullScreen).call(vfull);};
+  var bfull=document.createElement("div");
+  bfull.className="full-control";
+  bfull.appendChild(btn);
+  btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="exit";
+  btn.onclick=function(){(document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen).call(document);};
+  var bexit=document.createElement("div");
+  bexit.className="exit-control";
+  bexit.appendChild(btn);
+  var removed=true;
+  hideFullscreenButton=function(hide){
+    if(!removed&&hide){
+      vcont.removeChild(bfull);
+      vcont.removeChild(bexit);
+      removed=true;
+    }else if(removed&&!hide){
+      vcont.appendChild(bfull);
+      vcont.appendChild(bexit);
+      removed=false;
+    }
+  };
+  hideFullscreenButton(false);
+})();
 </script>
 ]=]
+end
+
+function WebBmlScriptTemplate(label)
+  return USE_DATACAST and [=[
+<div class="remote-control" style="display:none">
+  <button type="button" id="key21">青</button><button
+    type="button" id="key22">赤</button><button
+    type="button" id="key23">緑</button><button
+    type="button" id="key24">黄</button><button
+    type="button" id="key1">↑</button><button
+    type="button" id="key3">←</button><button
+    type="button" id="key18">決定</button><button
+    type="button" id="key4">→</button><button
+    type="button" id="key2">↓</button><button
+    type="button" id="key20">d</button><button
+    type="button" id="key19">戻る</button><button
+    type="button" id="key6">1</button><button
+    type="button" id="key7">2</button><button
+    type="button" id="key8">3</button><button
+    type="button" id="key9">4</button><button
+    type="button" id="key10">5</button><button
+    type="button" id="key11">6</button><button
+    type="button" id="key12">7</button><button
+    type="button" id="key13">8</button><button
+    type="button" id="key14">9</button><button
+    type="button" id="key15">10</button><button
+    type="button" id="key16">11</button><button
+    type="button" id="key17">12</button><button
+    type="button" id="key5">0</button>
+  <span class="remote-control-receiving-status" style="display:none">Loading...</span>
+  <div class="remote-control-indicator"></div>
+</div>
+<label><input id="cb-datacast" type="checkbox">]=]..label..[=[</label>
+<script src="web_bml_play_ts.js"></script>
+<script>
+function readPsiData(data,proc,startSec,ctx){
+  data=new DataView(data);
+  ctx=ctx||{};
+  if(!ctx.pids){
+    ctx.pids=[];
+    ctx.dict=[];
+    ctx.pos=0;
+    ctx.trailerSize=0;
+    ctx.timeListCount=-1;
+    ctx.codeListPos=0;
+    ctx.codeCount=0;
+    ctx.initTime=-1;
+    ctx.currTime=-1;
+  }
+  while(data.byteLength-ctx.pos>=ctx.trailerSize+32){
+    var pos=ctx.pos+ctx.trailerSize;
+    var timeListLen=data.getUint16(pos+10,true);
+    var dictionaryLen=data.getUint16(pos+12,true);
+    var dictionaryWindowLen=data.getUint16(pos+14,true);
+    var dictionaryDataSize=data.getUint32(pos+16,true);
+    var dictionaryBuffSize=data.getUint32(pos+20,true);
+    var codeListLen=data.getUint32(pos+24,true);
+    if(data.getUint32(pos)!=0x50737363||
+       data.getUint32(pos+4)!=0x0d0a9a0a||
+       dictionaryWindowLen<dictionaryLen||
+       dictionaryBuffSize<dictionaryDataSize||
+       dictionaryWindowLen>65536-4096){
+      return null;
+    }
+    var chunkSize=32+timeListLen*4+dictionaryLen*2+Math.ceil(dictionaryDataSize/2)*2+codeListLen*2;
+    if(data.byteLength-pos<chunkSize)break;
+    var timeListPos=pos+32;
+    pos+=32+timeListLen*4;
+    if(ctx.timeListCount<0){
+      var pids=[];
+      var dict=[];
+      var sectionListPos=0;
+      for(var i=0;i<dictionaryLen;i++,pos+=2){
+        var codeOrSize=data.getUint16(pos,true)-4096;
+        if(codeOrSize>=0){
+          if(codeOrSize>=ctx.pids.length||ctx.pids[codeOrSize]<0)return null;
+          pids[i]=ctx.pids[codeOrSize];
+          dict[i]=ctx.dict[codeOrSize];
+          ctx.pids[codeOrSize]=-1;
+        }else{
+          pids[i]=codeOrSize;
+          dict[i]=null;
+          sectionListPos+=2;
+        }
+      }
+      sectionListPos+=pos;
+      for(var i=0;i<dictionaryLen;i++){
+        if(pids[i]>=0)continue;
+        var psi=new Uint8Array(data.buffer,sectionListPos,pids[i]+4097);
+        dict[i]=new Uint8Array(Math.ceil((psi.length+1)/184)*188);
+        for(var j=0,k=0;k<psi.length;j++,k++){
+          if(!(j%188)){
+            j+=4;
+            if(!k)dict[i][j++]=0;
+          }
+          dict[i][j]=psi[k];
+        }
+        sectionListPos+=psi.length;
+        pids[i]=data.getUint16(pos,true)&0x1fff;
+        pos+=2;
+      }
+      for(var i=dictionaryLen,j=0;i<dictionaryWindowLen;j++){
+        if(j>=ctx.pids.length)return null;
+        if(ctx.pids[j]<0)continue;
+        pids[i]=ctx.pids[j];
+        dict[i++]=ctx.dict[j];
+      }
+      ctx.pids=pids;
+      ctx.dict=dict;
+      ctx.timeListCount=0;
+      pos=sectionListPos+dictionaryDataSize%2;
+    }else{
+      pos+=dictionaryLen*2+Math.ceil(dictionaryDataSize/2)*2;
+    }
+    pos+=ctx.codeListPos;
+    timeListPos+=ctx.timeListCount*4;
+    for(;ctx.timeListCount<timeListLen;ctx.timeListCount++,timeListPos+=4){
+      var initTime=ctx.initTime;
+      var currTime=ctx.currTime;
+      var absTime=data.getUint32(timeListPos,true);
+      if(absTime==0xffffffff){
+        currTime=-1;
+      }else if(absTime>=0x80000000){
+        currTime=absTime&0x3fffffff;
+        if(initTime<0)initTime=currTime;
+      }else{
+        var n=data.getUint16(timeListPos+2,true)+1;
+        if(currTime>=0){
+          currTime+=data.getUint16(timeListPos,true);
+          var sec=((currTime+0x40000000-initTime)&0x3fffffff)/11250;
+          if(sec>=(startSec||0)){
+            for(;ctx.codeCount<n;ctx.codeCount++,pos+=2,ctx.codeListPos+=2){
+              var code=data.getUint16(pos,true)-4096;
+              if(!proc(sec,ctx.dict[code],ctx.pids[code]))return false;
+            }
+            ctx.codeCount=0;
+          }else{
+            pos+=n*2;
+            ctx.codeListPos+=n*2;
+          }
+        }else{
+          pos+=n*2;
+          ctx.codeListPos+=n*2;
+        }
+      }
+      ctx.initTime=initTime;
+      ctx.currTime=currTime;
+    }
+    ctx.pos=pos;
+    ctx.trailerSize=2+(2+chunkSize)%4;
+    ctx.timeListCount=-1;
+    ctx.codeListPos=0;
+    ctx.currTime=-1;
+  }
+  var ret=data.buffer.slice(ctx.pos);
+  ctx.pos=0;
+  return ret;
+}
+function setTSPacketHeader(packets,counters,pid){
+  counters[pid]=counters[pid]||0;
+  for(var i=0;i<packets.length;i+=188){
+    packets[i]=0x47;
+    packets[i+1]=(i>0?0:0x40)|pid>>8;
+    packets[i+2]=pid;
+    packets[i+3]=0x10|counters[pid];
+    counters[pid]=(counters[pid]+1)&0xf;
+  }
+}
+</script>
+]=] or ''
+end
+
+function VideoScriptTemplete()
+  return FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..[=[
+<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
+  ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
+<script src="aribb24.js"></script>
+<script>
+function decodeB24CaptionFromCueText(text,work){
+  work=work||[];
+  text=text.replace(/\r?\n/g,'');
+  var re=/<v b24caption[0-8]>(.*?)<\/v>/g;
+  var src,ret=null;
+  while((src=re.exec(text))!==null){
+    src=src[1].replace(/<.*?>/g,'').replace(/&(?:amp|lt|gt|quot|apos);/g,function(m){
+      return m=='&amp;'?'&':m=='&lt;'?'<':m=='&gt;'?'>':m=='&quot;'?'"':'\'';
+    });
+    var brace=[],wl=0,hi=0;
+    for(var i=0;i<src.length;){
+      if(src[i]=='%'){
+        if((++i)+2>src.length)return null;
+        var c=src[i++];
+        var d=src[i++];
+        if(c=='^'){
+          work[wl++]=0xc2;
+          work[wl++]=d.charCodeAt(0)+64;
+        }else if(c=='='){
+          if(d=='{'){
+            work[wl++]=0;
+            work[wl++]=0;
+            work[wl++]=0;
+            brace.push(wl);
+          }else if(d=='}'&&brace.length>0){
+            var pos=brace.pop();
+            work[pos-3]=wl-pos>>16&255;
+            work[pos-2]=wl-pos>>8&255;
+            work[pos-1]=wl-pos&255;
+          }else return null;
+        }else if(c=='+'){
+          if(d=='{'){
+            var pos=src.indexOf('%+}',i);
+            if(pos<0)return null;
+            try{
+              var buf=atob(src.substring(i,pos));
+              for(var j=0;j<buf.length;j++)work[wl++]=buf.charCodeAt(j);
+            }catch(e){return null;}
+            i=pos+3;
+          }else return null;
+        }else{
+          var x=c.charCodeAt(0);
+          var y=d.charCodeAt(0);
+          work[wl++]=(x>=97?x-87:x>=65?x-55:x-48)<<4|(y>=97?y-87:y>=65?y-55:y-48);
+        }
+      }else{
+        var x=src.charCodeAt(i++);
+        if(x<0x80){
+          work[wl++]=x;
+        }else if(x<0x800){
+          work[wl++]=0xc0|x>>6;
+          work[wl++]=0x80|x&63;
+        }else if(0xd800<=x&&x<=0xdbff){
+          hi=x;
+        }else if(0xdc00<=x&&x<=0xdfff){
+          x=0x10000+((hi&0x3ff)<<10)+(x&0x3ff);
+          work[wl++]=0xf0|x>>18;
+          work[wl++]=0x80|x>>12&63;
+          work[wl++]=0x80|x>>6&63;
+          work[wl++]=0x80|x&63;
+        }else{
+          work[wl++]=0xe0|x>>12;
+          work[wl++]=0x80|x>>6&63;
+          work[wl++]=0x80|x&63;
+        }
+      }
+    }
+    if(brace.length>0)return null;
+    if(3<=wl&&wl<=65520){
+      var r=new Uint8Array(wl+7);
+      r[0]=0x80;
+      r[1]=0xff;
+      r[2]=0xf0;
+      r[3]=work[0];
+      r[4]=work[1];
+      r[5]=work[2];
+      r[6]=wl-3>>8&255;
+      r[7]=wl-3&255;
+      for(var i=3;i<wl;i++)r[i+5]=work[i];
+      ret=ret||[];
+      ret.push(r);
+    }
+  }
+  return ret;
+}
+var cap=null;
+var cbCaption=document.getElementById("cb-caption");
+cbCaption.onclick=function(){
+  if(cap){if(cbCaption.checked){cap.show();}else{cap.hide();}}
+};
+var vid=document.getElementById("vid")
+var vidMeta=document.getElementById("vid-meta");
+vidMeta.oncuechange=function(){
+  vidMeta.oncuechange=null;
+  var work=[];
+  var dataList=[];
+  var cues=vidMeta.track.cues;
+  for(var i=0;i<cues.length;i++){
+    var ret=decodeB24CaptionFromCueText(cues[i].text,work);
+    if(!ret){return;}
+    for(var j=0;j<ret.length;j++){dataList.push({pts:cues[i].startTime,pes:ret[j]});}
+  }
+  cap=new aribb24js.CanvasRenderer({]=]..ARIBB24_JS_OPTION..[=[});
+  cap.attachMedia(vid);
+  document.getElementById("label-caption").style.display="inline";
+  if(!cbCaption.checked){cap.hide();}
+  dataList.reverse();
+  (function pushCap(){
+    for(var i=0;i<100;i++){
+      var data=dataList.pop();
+      if(!data){return;}
+      cap.pushRawData(data.pts,data.pes);
+    }
+    setTimeout(pushCap,0);
+  })();
+};
+</script>
+]=]..(USE_DATACAST and [=[
+<script>
+var psiData=null;
+var readTimer=null;
+var videoLastSec=0;
+function startReadPsiData(video){
+  clearTimeout(readTimer);
+  var startSec=video.currentTime;
+  videoLastSec=startSec;
+  var ctx={};
+  var counters=[];
+  var f=function(){
+    var videoSec=video.currentTime;
+    if(videoSec<videoLastSec||videoLastSec+10<videoSec){
+      startReadPsiData(video);
+      return;
+    }
+    videoLastSec=videoSec;
+    if(psiData&&readPsiData(psiData,function(sec,psiTS,pid){
+        setTSPacketHeader(psiTS,counters,pid);
+        bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
+        return sec<videoSec;
+      },startSec,ctx)!==false){
+      startReadPsiData(video);
+      return;
+    }
+    readTimer=setTimeout(f,500);
+  };
+  readTimer=setTimeout(f,500);
+}
+var xhr=null;
+var cbDatacast=document.getElementById("cb-datacast");
+cbDatacast.onclick=function(){
+  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+  if(!cbDatacast.checked){
+    clearTimeout(readTimer);
+    readTimer=null;
+    hideFullscreenButton(false);
+    bmlBrowserSetInvisible(true);
+    return;
+  }
+  startReadPsiData(document.getElementById("vid"));
+  var vcont=document.getElementById("vid-cont");
+  bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
+  hideFullscreenButton(true);
+  bmlBrowserSetInvisible(false);
+  if(xhr)return;
+  xhr=new XMLHttpRequest();
+  xhr.open("GET",document.getElementById("psidatasrc").textContent);
+  xhr.responseType="arraybuffer";
+  xhr.overrideMimeType("application/octet-stream");
+  xhr.onloadend=function(){
+    if(!psiData){
+      document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+")";
+    }
+  };
+  xhr.onload=function(){
+    if(xhr.status!=200||!xhr.response)return;
+    psiData=xhr.response;
+  };
+  xhr.send();
+};
+</script>
+]=] or '')
+end
+
+function HlsScriptTemplete(caption)
+  local s=FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast')..(USE_DATACAST and [=[
+<script>
+var xhr=null;
+var psiData=null;
+var responseCount;
+var ctx;
+var counters;
+var cbDatacast=document.getElementById("cb-datacast");
+cbDatacast.onclick=function(){
+  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+  if(!cbDatacast.checked){
+    if(xhr){
+      xhr.abort();
+      xhr=null;
+    }
+    hideFullscreenButton(false);
+    bmlBrowserSetInvisible(true);
+    return;
+  }
+  var videoSec=Math.floor(document.getElementById("vid").currentTime);
+  var vcont=document.getElementById("vid-cont");
+  bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
+  hideFullscreenButton(true);
+  bmlBrowserSetInvisible(false);
+  if(psiData||xhr)return;
+  psiData=new Uint8Array(0);
+  responseCount=0;
+  ctx={};
+  counters=[];
+  xhr=new XMLHttpRequest();
+  xhr.open("GET",document.getElementById("vidsrc").textContent+"&psidata=1&ofssec="+videoSec);
+  xhr.onloadend=function(){
+    if(!psiData||!responseCount){
+      document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+"|"+responseCount+"Bytes)";
+    }
+    xhr=null;
+    psiData=null;
+  };
+  xhr.onprogress=function(){
+    if(!psiData||!xhr||xhr.status!=200||!xhr.response||xhr.response.length<=responseCount)return;
+    var n=Math.floor((xhr.response.length-responseCount)/4)*4;
+    var addData=atob(xhr.response.substring(responseCount,responseCount+n));
+    responseCount+=n;
+    var concatData=new Uint8Array(psiData.length+addData.length);
+    for(var i=0;i<psiData.length;i++)concatData[i]=psiData[i];
+    for(var i=0;i<addData.length;i++)concatData[psiData.length+i]=addData.charCodeAt(i);
+    psiData=readPsiData(concatData.buffer,function(sec,psiTS,pid){
+      setTSPacketHeader(psiTS,counters,pid);
+      bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
+      return true;
+    },0,ctx);
+    if(psiData)psiData=new Uint8Array(psiData);
+  };
+  xhr.send();
+};
+</script>
+]=] or '')
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
   if ALWAYS_USE_HLS then
@@ -239,7 +667,7 @@ vcont.appendChild(div);
       ..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
       ..'var vid=document.getElementById("vid");\n'
-      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported()});\n'
+      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported(),'..ARIBB24_JS_OPTION..'});\n'
            ..'cap.attachMedia(vid);\n' or '')
       ..'if(Hls.isSupported()){\n'
       ..'  var hls=new Hls();\n'
@@ -247,7 +675,7 @@ vcont.appendChild(div);
       ..'  hls.attachMedia(vid);\n'
       ..'  hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
       ..(caption and '  hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){\n'
-           ..'    for(var s of data.samples){cap.pushID3v2Data(s.pts,s.data);}\n'
+           ..'    for(var i=0;i<data.samples.length;i++){cap.pushID3v2Data(data.samples[i].pts,data.samples[i].data);}\n'
            ..'  });\n' or '')
       ..'}else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
       ..'  vid.src=document.getElementById("vidsrc").textContent+"'..hls..'";\n'
@@ -257,7 +685,7 @@ vcont.appendChild(div);
     s=s..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
       ..'var vid=document.getElementById("vid");\n'
-      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:true});\n'
+      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:true,'..ARIBB24_JS_OPTION..'});\n'
            ..'cap.attachMedia(vid);\n' or '')
       ..'vid.src=document.getElementById("vidsrc").textContent+(vid.canPlayType("application/vnd.apple.mpegurl")?"'..hls..'":"");\n'
       ..'</script>'
@@ -556,7 +984,7 @@ function SeekSec(f,sec,dur,fsize)
   if dur>0 and fsize>1880000 and f:seek('set') then
     local pcr,pid=ReadToPcr(f)
     if pcr then
-      local pos,diff=0,sec*45000
+      local pos,diff=0,math.min(math.max(sec,0),dur)*45000
       --5ループまたは誤差が2秒未満になるまで動画レートから概算シーク
       for i=1,5 do
         if math.abs(diff)<90000 then break end
@@ -572,6 +1000,13 @@ function SeekSec(f,sec,dur,fsize)
     end
   end
   return false
+end
+
+--リトルエンディアンの値を取得する
+function GetLeNumber(buf,pos,len)
+  local n=0
+  for i=pos+len-1,pos,-1 do n=n*256+buf:byte(i) end
+  return n
 end
 
 --HTTP日付の文字列を取得する
