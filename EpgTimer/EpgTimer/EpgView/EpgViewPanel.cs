@@ -185,7 +185,8 @@ namespace EpgTimer.EpgView
                         //説明
                         string detail = info.EventInfo.ShortInfo.text_char;
                         //詳細
-                        detail += extInfoMode == false || info.EventInfo.ExtInfo == null ? "" : "\r\n\r\n" + info.EventInfo.ExtInfo.text_char;
+                        detail += extInfoMode == false || info.EventInfo.ExtInfo == null ? "" :
+                                      "\r\n\r\n" + CommonManager.TrimHyphenSpace(info.EventInfo.ExtInfo.text_char);
                         if (replaceDictionaryNormal != null)
                         {
                             detail = CommonManager.ReplaceText(detail, replaceDictionaryNormal);

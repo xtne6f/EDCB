@@ -259,6 +259,8 @@ namespace EpgTimer
         CMD_EPG_SRV_REGIST_GUI_TCP = 7,
         /// <summary>TCP接続のGUIアプリケーションのIPとポートの登録を解除</summary>
         CMD_EPG_SRV_UNREGIST_GUI_TCP = 8,
+        /// <summary>ViewアプリのSrvPipeストリームを転送する</summary>
+        CMD_EPG_SRV_RELAY_VIEW_STREAM = 301,
         /// <summary>予約一覧取得</summary>
         CMD_EPG_SRV_ENUM_RESERVE = 1011,
         /// <summary>予約情報取得</summary>

@@ -438,6 +438,7 @@ namespace EpgTimer
         private void cm_viewSet_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new EpgDataViewSettingWindow();
+            dlg.Title += " (一時的)";
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             dlg.SetDefSetting(setViewInfo);
             if (dlg.ShowDialog() == true)
