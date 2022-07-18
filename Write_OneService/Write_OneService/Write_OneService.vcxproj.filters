@@ -51,6 +51,9 @@
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\CreatePMTPacket.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Common\StructDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -117,6 +120,9 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp">
+      <Filter>ソース ファイル\BonCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BonCtrl\CreatePMTPacket.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp">

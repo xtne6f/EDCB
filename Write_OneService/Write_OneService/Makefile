@@ -9,6 +9,7 @@ CUR_ALL_H := $(wildcard *.h)
 $(TARGET).dll: $(addsuffix .obj, \
   BonCtrl__CATUtil.cpp \
   BonCtrl__CreatePATPacket.cpp \
+  BonCtrl__CreatePMTPacket.cpp \
   BonCtrl__PacketInit.cpp \
   BonCtrl__PMTUtil.cpp \
   BonCtrl__ServiceFilter.cpp \

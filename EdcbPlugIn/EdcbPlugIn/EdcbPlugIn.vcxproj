@@ -169,6 +169,7 @@
     <ClInclude Include="..\..\BonCtrl\BonCtrlDef.h" />
     <ClInclude Include="..\..\BonCtrl\CATUtil.h" />
     <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h" />
+    <ClInclude Include="..\..\BonCtrl\CreatePMTPacket.h" />
     <ClInclude Include="..\..\BonCtrl\DropCount.h" />
     <ClInclude Include="..\..\BonCtrl\PMTUtil.h" />
     <ClInclude Include="..\..\BonCtrl\ServiceFilter.h" />
@@ -201,6 +202,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\BonCtrl\CATUtil.cpp" />
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp" />
+    <ClCompile Include="..\..\BonCtrl\CreatePMTPacket.cpp" />
     <ClCompile Include="..\..\BonCtrl\DropCount.cpp" />
     <ClCompile Include="..\..\BonCtrl\PMTUtil.cpp" />
     <ClCompile Include="..\..\BonCtrl\ServiceFilter.cpp" />
