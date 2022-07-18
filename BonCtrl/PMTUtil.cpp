@@ -6,49 +6,38 @@
 
 CPMTUtil::CPMTUtil(void)
 {
-	this->program_number = 0xFFFF;
-	this->PCR_PID = 0xFFFF;
+	program_number = 0;
+	version_number = 0xFF;
+	PCR_PID = 0xFFFF;
 }
 
 BOOL CPMTUtil::AddPacket(const CTSPacketUtil& packet)
 {
+	BOOL updated = FALSE;
 	if( buffUtil.Add188TS(packet) == TRUE ){
 		BYTE* section = NULL;
 		DWORD sectionSize = 0;
-		while( buffUtil.GetSectionBuff( &section, &sectionSize ) == TRUE ){
-			if( DecodePMT(section, sectionSize) == FALSE ){
-				return FALSE;
-			}
+		while( buffUtil.GetSectionBuff(&section, &sectionSize) ){
+			updated = DecodePMT(section, sectionSize) || updated;
 		}
-	}else{
-		return FALSE;
 	}
-	return TRUE;
-}
-
-void CPMTUtil::Clear()
-{
-	PIDList.clear();
+	return updated;
 }
 
 BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 {
-	Clear();
-
-	if( data == NULL ){
-		return FALSE;
-	}
-
-	if( dataSize < 7 ){
+	if( data == NULL || dataSize < 3 ||
+	    (dataSize == lastSection.size() && std::equal(data, data + dataSize, lastSection.begin())) ){
+		//解析不要
 		return FALSE;
 	}
 
 	DWORD readSize = 0;
 	//////////////////////////////////////////////////////
 	//解析処理
-	table_id = data[0];
-	section_syntax_indicator = (data[1]&0x80)>>7;
-	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
+	BYTE table_id = data[0];
+	BYTE section_syntax_indicator = (data[1]&0x80)>>7;
+	WORD section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
 	readSize+=3;
 
 	if( section_syntax_indicator != 1 ){
@@ -61,7 +50,7 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		AddDebugLog(L"CPMTUtil::table_id Err");
 		return FALSE;
 	}
-	if( readSize+section_length > dataSize || section_length < 4){
+	if( readSize+section_length > dataSize || section_length < 9 + 4 ){
 		//サイズ異常
 		AddDebugLogFormat(L"CPMTUtil::section_length %d Err", section_length);
 		return FALSE;
@@ -71,15 +60,19 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		AddDebugLog(L"CPMTUtil::crc32 Err");
 		return FALSE;
 	}
+	BYTE current_next_indicator = data[readSize+2]&0x01;
+	if( current_next_indicator == 0 ){
+		//解析不要
+		return FALSE;
+	}
+	lastSection.assign(data, data + dataSize);
 
-	if( section_length > 12 ){
+	{
+		PIDList.clear();
 		program_number = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
-		current_next_indicator = data[readSize+2]&0x01;
-		section_number = data[readSize+3];
-		last_section_number = data[readSize+4];
 		PCR_PID = ((WORD)data[readSize+5]&0x1F)<<8 | data[readSize+6];
-		program_info_length = ((WORD)data[readSize+7]&0x0F)<<8 | data[readSize+8];
+		WORD program_info_length = ((WORD)data[readSize+7]&0x0F)<<8 | data[readSize+8];
 		readSize += 9;
 
 		//descriptor

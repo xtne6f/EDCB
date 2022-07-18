@@ -99,16 +99,20 @@ void CServiceFilter::CheckNeedPID()
 	}
 
 	for( auto itr = this->pmtUtilMap.cbegin(); itr != this->pmtUtilMap.end(); itr++ ){
-		if( this->allServicesFlag ||
-		    std::find(this->serviceIDList.begin(), this->serviceIDList.end(), itr->second.GetProgramNumber()) != this->serviceIDList.end() ){
+		WORD programNumber = itr->second.GetProgramNumber();
+		if( programNumber != 0 &&
+		    (this->allServicesFlag ||
+		     std::find(this->serviceIDList.begin(), this->serviceIDList.end(), programNumber) != this->serviceIDList.end()) ){
 			//PAT作成用のPMTリスト作成
-			pidList.push_back(std::make_pair(itr->first, itr->second.GetProgramNumber()));
+			pidList.push_back(std::make_pair(itr->first, programNumber));
 			//PMT記載のPIDを登録
 			if( std::find(this->needPIDList.begin(), this->needPIDList.end(), itr->first) == this->needPIDList.end() ){
 				this->needPIDList.push_back(itr->first);
 			}
-			if( std::find(this->needPIDList.begin(), this->needPIDList.end(), itr->second.GetPcrPID()) == this->needPIDList.end() ){
-				this->needPIDList.push_back(itr->second.GetPcrPID());
+			WORD pcrPID = itr->second.GetPcrPID();
+			if( pcrPID != 0x1FFF &&
+			    std::find(this->needPIDList.begin(), this->needPIDList.end(), pcrPID) == this->needPIDList.end() ){
+				this->needPIDList.push_back(pcrPID);
 			}
 			for( auto itrPID = itr->second.GetPIDTypeList().cbegin(); itrPID != itr->second.GetPIDTypeList().end(); itrPID++ ){
 				if( std::find(this->needPIDList.begin(), this->needPIDList.end(), itrPID->first) == this->needPIDList.end() ){

@@ -292,7 +292,12 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 			itrService->second->SetPIDName(*itr, L"EMM");
 		}
 		for( auto itrPmt = this->serviceFilter.PmtUtilMap().cbegin(); itrPmt != this->serviceFilter.PmtUtilMap().end(); itrPmt++ ){
-			if( itrService->second->GetSID() == itrPmt->second.GetProgramNumber() ){
+			WORD programNumber = itrPmt->second.GetProgramNumber();
+			if( programNumber == 0 ){
+				//このPMTは未解析
+				continue;
+			}
+			if( itrService->second->GetSID() == programNumber ){
 				//PMT発見
 				itrService->second->SetPmtPID(this->lastTSID, itrPmt->first);
 				itrService->second->SetEmmPID(this->serviceFilter.CatUtil().GetPIDList());
@@ -332,7 +337,7 @@ void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
 				}
 				itrService->second->SetPIDName(itrPID->first, name);
 			}
-			Format(name, L"PMT(ServiceID 0x%04X)", itrPmt->second.GetProgramNumber());
+			Format(name, L"PMT(ServiceID 0x%04X)", programNumber);
 			itrService->second->SetPIDName(itrPmt->first, name);
 		}
 	}
