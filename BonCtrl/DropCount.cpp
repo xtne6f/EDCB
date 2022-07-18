@@ -30,7 +30,7 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 			vector<DROP_INFO>::iterator itr =
 				lower_bound_first(this->infoList.begin(), this->infoList.end(), item.first);
 			if( itr == this->infoList.end() || itr->first != item.first ){
-				item.lastCounter = (CTSPacketUtil::GetContinuityCounterFrom188TS(data + i) + 15) & 0x0F;
+				item.lastCounter = 0xFF;
 				itr = this->infoList.insert(itr, item);
 			}
 			itr->total++;
@@ -112,18 +112,27 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 {
 	BYTE adaptation_field_control = CTSPacketUtil::GetAdaptationFieldControlFrom188TS(packet);
 	BYTE continuity_counter = CTSPacketUtil::GetContinuityCounterFrom188TS(packet);
+	BYTE adaptation_field_length = packet[4];
+	BYTE discontinuity_indicator = packet[5] & 0x80;
 
 	if( CTSPacketUtil::GetTransportScramblingControlFrom188TS(packet) != 0 ){
 		info->scramble++;
 		this->scramble++;
 	}
-	
-	if( adaptation_field_control == 0x00 || adaptation_field_control == 0x02 ){
-		//ペイロードが存在しない場合は意味なし
+
+	if( adaptation_field_control == 0x00 ){
+		//意味なし
+		info->duplicateFlag = FALSE;
+	}else if( adaptation_field_control == 0x02 ){
+		//ペイロードが存在しない場合は増分なし
+		if( info->lastCounter != 0xFF && info->lastCounter != continuity_counter ){
+			if( adaptation_field_length == 0 || discontinuity_indicator == 0 ){
+				info->drop++;
+				this->drop++;
+			}
+		}
 		info->duplicateFlag = FALSE;
 	}else{
-		BYTE adaptation_field_length = packet[4];
-		BYTE discontinuity_indicator = packet[5] & 0x80;
 		if( info->lastCounter == continuity_counter ){
 			if( adaptation_field_control == 0x01 || adaptation_field_length == 0 || discontinuity_indicator == 0 ){
 				//※厳密には重送判定は前パケットとの完全比較もすべき
@@ -141,7 +150,7 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 			}
 		}else{
 			//※原作はたぶんlastCounter==15またはcontinuity_counter==0のときの連続判定がバグっていた
-			if( ((info->lastCounter + 1) & 0x0F) != continuity_counter ){
+			if( info->lastCounter != 0xFF && ((info->lastCounter + 1) & 0x0F) != continuity_counter ){
 				if( adaptation_field_control == 0x01 || adaptation_field_length == 0 || discontinuity_indicator == 0 ){
 					//カウンターが飛んだので不連続
 					//※原作はここで差分を加算する
