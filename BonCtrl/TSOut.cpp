@@ -89,8 +89,9 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 		}
 		this->decodeUtil.SetEmm(this->emmEnableFlag);
 	}
-	ResetErrCount();
-
+	for( auto itr = this->serviceUtilMap.begin(); itr != this->serviceUtilMap.end(); itr++ ){
+		itr->second->Clear(tsid);
+	}
 	this->serviceFilter.Clear(tsid);
 }
 
@@ -163,9 +164,6 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					}
 				}else{
 					this->serviceFilter.FilterPacket(this->decodeBuff, data + i, packet);
-					if( this->serviceFilter.CatOrPmtUpdated() ){
-						UpdateServiceUtil(FALSE);
-					}
 					if( this->parseEpgPostProcess == FALSE ){
 						if( packet.PID < BON_SELECTIVE_PID ){
 							ParseEpgPacket(data + i, packet);
@@ -278,67 +276,20 @@ void CTSOut::ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet)
 	this->epgUtil.AddTSPacket(data, 188);
 }
 
-void CTSOut::UpdateServiceUtil(BOOL updateFilterSID)
+void CTSOut::UpdateFilterServiceID()
 {
 	vector<WORD> filterSIDList;
 
-	//各サービスのPMTを探す
-	for( auto itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
-		if( updateFilterSID ){
-			filterSIDList.push_back(itrService->second->GetSID());
-		}
-		//EMMのPID
-		for( auto itr = this->serviceFilter.CatUtil().GetPIDList().cbegin(); itr != this->serviceFilter.CatUtil().GetPIDList().end(); itr++ ){
-			itrService->second->SetPIDName(*itr, L"EMM");
-		}
-		for( auto itrPmt = this->serviceFilter.PmtUtilMap().cbegin(); itrPmt != this->serviceFilter.PmtUtilMap().end(); itrPmt++ ){
-			if( itrService->second->GetSID() == itrPmt->second.GetProgramNumber() ){
-				//PMT発見
-				itrService->second->SetPmtPID(this->lastTSID, itrPmt->first);
-				itrService->second->SetEmmPID(this->serviceFilter.CatUtil().GetPIDList());
-			}
-
-			itrService->second->SetPIDName(itrPmt->second.GetPcrPID(), L"PCR");
-			wstring name;
-			for( auto itrPID = itrPmt->second.GetPIDTypeList().cbegin(); itrPID != itrPmt->second.GetPIDTypeList().end(); itrPID++ ){
-				switch( itrPID->second ){
-				case 0x00:
-					name = L"ECM";
-					break;
-				case 0x02:
-					name = L"MPEG2 VIDEO";
-					break;
-				case 0x0F:
-					name = L"MPEG2 AAC";
-					break;
-				case 0x1B:
-					name = L"MPEG4 VIDEO";
-					break;
-				case 0x04:
-					name = L"MPEG2 AUDIO";
-					break;
-				case 0x24:
-					name = L"HEVC VIDEO";
-					break;
-				case 0x06:
-					name = L"字幕";
-					break;
-				case 0x0D:
-					name = L"データカルーセル";
-					break;
-				default:
-					Format(name, L"stream_type 0x%0X", itrPID->second);
-					break;
-				}
-				itrService->second->SetPIDName(itrPID->first, name);
-			}
-			Format(name, L"PMT(ServiceID 0x%04X)", itrPmt->second.GetProgramNumber());
-			itrService->second->SetPIDName(itrPmt->first, name);
+	for( auto itr = this->serviceUtilMap.begin(); itr != this->serviceUtilMap.end(); itr++ ){
+		filterSIDList.push_back(itr->second->GetSID());
+		if( filterSIDList.back() == 0xFFFF ){
+			//下流の処理対象が全サービスなのでフィルタしない
+			this->serviceFilter.SetServiceID(true, vector<WORD>());
+			return;
 		}
 	}
-	if( updateFilterSID ){
-		this->serviceFilter.SetServiceID(std::find(filterSIDList.begin(), filterSIDList.end(), 0xFFFF) != filterSIDList.end(), filterSIDList);
-	}
+	//下流の処理対象サービスを合計したものでフィルタ
+	this->serviceFilter.SetServiceID(false, filterSIDList);
 }
 
 void CTSOut::CheckLogo(DWORD logoTypeFlags, CHECK_LOGO_RESULT& result)
@@ -597,7 +548,10 @@ DWORD CTSOut::CreateServiceCtrl(
 		std::make_pair(GetNextID(), std::unique_ptr<COneServiceUtil>(new COneServiceUtil(sendUdpTcp)))).first;
 	itr->second->SetBonDriver(bonFile);
 	itr->second->SetNoLogScramble(noLogScramble);
-	UpdateServiceUtil(TRUE);
+	if( this->chChangeState == CH_ST_DONE ){
+		itr->second->Clear(this->lastTSID);
+	}
+	UpdateFilterServiceID();
 
 	return itr->first;
 }
@@ -618,7 +572,7 @@ BOOL CTSOut::DeleteServiceCtrl(
 	}
 
 	UpdateEnableDecodeFlag();
-	UpdateServiceUtil(TRUE);
+	UpdateFilterServiceID();
 
 	return TRUE;
 }
@@ -642,7 +596,7 @@ BOOL CTSOut::SetServiceID(
 	}
 
 	itr->second->SetSID(serviceID);
-	UpdateServiceUtil(TRUE);
+	UpdateFilterServiceID();
 
 	return TRUE;
 }
@@ -958,13 +912,6 @@ void CTSOut::GetRecWriteSize(
 	auto itr = serviceUtilMap.find(id);
 	if( itr != serviceUtilMap.end() ){
 		itr->second->GetRecWriteSize(writeSize);
-	}
-}
-
-void CTSOut::ResetErrCount()
-{
-	for( auto itr = serviceUtilMap.begin(); itr != serviceUtilMap.end(); itr++ ){
-		itr->second->ClearErrCount();
 	}
 }
 

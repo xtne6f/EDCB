@@ -4,7 +4,7 @@ set MINGW_ROOT=
 @rem set MINGW_ROOT=%SystemDrive%\mingw32
 @rem set MINGW_ROOT=%SystemDrive%\mingw64
 
-@rem set CPPFLAGS=-DEDCB_RC_DIALOG_FONT_MEIRYO
+@rem set CPPFLAGS=-DEDCB_RC_DIALOG_NO_FONT
 @rem set CPPFLAGS=-DEPGDB_STD_WREGEX
 @rem set LDFLAGS=-Wl,-Map=$(basename $@).map
 
