@@ -1,8 +1,5 @@
 ﻿#pragma once
 
-#include "../Common/EpgTimerUtil.h"
-#include "../Common/ErrDef.h"
-
 class CCreatePATPacket
 {
 public:
@@ -23,21 +20,16 @@ public:
 	//引数：
 	// buff				[OUT]作成したPATパケットへのポインタ（次回呼び出し時まで有効）
 	// buffSize			[OUT]buffのサイズ
-	// incrementFlag	[IN]TSパケットのCounterをインクリメントするかどうか（TRUE:する、FALSE：しない）
 	BOOL GetPacket(
 		BYTE** buff,
-		DWORD* buffSize,
-		BOOL incrementFlag = TRUE
+		DWORD* buffSize
 	);
 
-	//作成PATのバッファをクリア
+	//内部情報をクリア
 	void Clear();
 
 protected:
 	void CreatePAT();
-	void CreatePacket();
-	void IncrementCounter();
-
 protected:
 	BYTE version;
 	BYTE counter;

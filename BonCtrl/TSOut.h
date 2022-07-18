@@ -379,15 +379,13 @@ protected:
 protected:
 	void ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet);
 
-	void UpdateServiceUtil(BOOL updateFilterSID);
+	void UpdateFilterServiceID();
 
 	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param);
 
 	DWORD GetNextID();
 
 	BOOL UpdateEnableDecodeFlag();
-
-	void ResetErrCount();
 
 	void OnChChanged(WORD onid, WORD tsid);
 };

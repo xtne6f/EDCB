@@ -3,14 +3,12 @@
 
 
 COneServiceUtil::COneServiceUtil(BOOL sendUdpTcp_)
+	: serviceFilter(true)
 {
 	this->sendUdpTcp = sendUdpTcp_;
 	this->SID = 0xFFFF;
-
-	this->pmtPID = 0xFFFF;
-
 	this->enableScramble = -1;
-
+	this->serviceFilter.SetServiceID(true, vector<WORD>());
 	this->pittariState = PITTARI_NONE;
 }
 
@@ -32,9 +30,13 @@ void COneServiceUtil::SetSID(
 )
 {
 	if( this->SID != SID_ ){
-		this->pmtPID = 0xFFFF;
-		this->emmPIDList.clear();
-
+		AddDebugLogFormat(L"COneServiceUtil::SetSID 0x%04X => 0x%04X", this->SID, SID_);
+		//ネットワーク送信モードのフィルタ動作は全サービス相当
+		if( SID_ == 0xFFFF || this->sendUdpTcp ){
+			this->serviceFilter.SetServiceID(true, vector<WORD>());
+		}else{
+			this->serviceFilter.SetServiceID(false, vector<WORD>(1, SID_));
+		}
 		this->dropCount.Clear();
 	}
 	this->SID = SID_;
@@ -119,82 +121,67 @@ void COneServiceUtil::AddTSBuff(
 	const std::function<int(WORD, WORD, WORD)>& funcGetPresent
 	)
 {
-	if( this->sendUdpTcp ){
-		if( size > 0 ){
-			this->sendUdp.AddSendData(data, size);
-			this->sendTcp.AddSendData(data, size);
-		}
-		this->dropCount.AddData(data, size);
-	}else if( this->SID == 0xFFFF ){
-		//全サービス扱い
-		this->writeFile.AddTSBuff(data, size);
-		this->dropCount.AddData(data, size);
-
-		for( DWORD i=0; i<size; i+=188 ){
-			CTSPacketUtil packet;
-			if( packet.Set188TS(data + i, 188) ){
-				if( packet.PID == this->pmtPID ){
-					createPmt.AddData(packet);
+	this->buff.clear();
+	for( DWORD i = 0; i < size; i += 188 ){
+		CTSPacketUtil packet;
+		if( packet.Set188TS(data + i, 188) ){
+			this->serviceFilter.FilterPacket(this->buff, data + i, packet);
+			if( this->serviceFilter.CatOrPmtUpdated() ){
+				//各PIDに名前をつける
+				for( auto itr = this->serviceFilter.CatUtil().GetPIDList().cbegin(); itr != this->serviceFilter.CatUtil().GetPIDList().end(); itr++ ){
+					this->dropCount.SetPIDName(*itr, L"EMM");
 				}
-			}
-		}
-	}else{
-		this->buff.clear();
-
-		for( DWORD i=0; i<size; i+=188 ){
-			CTSPacketUtil packet;
-			if( packet.Set188TS(data + i, 188) ){
-				if( packet.PID == 0x0000 ){
-					//PAT
-					BYTE* patBuff = NULL;
-					DWORD patBuffSize = 0;
-					if( createPat.GetPacket(&patBuff, &patBuffSize) == TRUE ){
-						if( packet.payload_unit_start_indicator == 1 ){
-							this->buff.insert(this->buff.end(), patBuff, patBuff + patBuffSize);
+				for( auto itr = this->serviceFilter.PmtUtilMap().cbegin(); itr != this->serviceFilter.PmtUtilMap().end(); itr++ ){
+					WORD programNumber = itr->second.GetProgramNumber();
+					if( programNumber != 0 ){
+						this->dropCount.SetPIDName(itr->second.GetPcrPID(), L"PCR");
+						wstring name;
+						for( auto itrPID = itr->second.GetPIDTypeList().cbegin(); itrPID != itr->second.GetPIDTypeList().end(); itrPID++ ){
+							name = itrPID->second == 0x00 ? L"ECM" :
+							       itrPID->second == 0x02 ? L"MPEG2 VIDEO" :
+							       itrPID->second == 0x0F ? L"MPEG2 AAC" :
+							       itrPID->second == 0x1B ? L"MPEG4 VIDEO" :
+							       itrPID->second == 0x04 ? L"MPEG2 AUDIO" :
+							       itrPID->second == 0x24 ? L"HEVC VIDEO" :
+							       itrPID->second == 0x06 ? L"字幕" :
+							       itrPID->second == 0x0D ? L"データカルーセル" : L"";
+							if( name.empty() ){
+								Format(name, L"stream_type 0x%0X", itrPID->second);
+							}
+							this->dropCount.SetPIDName(itrPID->first, name);
 						}
-					}
-				}else if( packet.PID == this->pmtPID ){
-					//PMT
-					DWORD err = createPmt.AddData(packet);
-					if( err == NO_ERR || err == CCreatePMTPacket::ERR_NO_CHAGE ){
-						BYTE* pmtBuff = NULL;
-						DWORD pmtBuffSize = 0;
-						if( createPmt.GetPacket(&pmtBuff, &pmtBuffSize) == TRUE ){
-							this->buff.insert(this->buff.end(), pmtBuff, pmtBuff + pmtBuffSize);
-						}else{
-							AddDebugLog(L"createPmt.GetPacket Err");
-							//そのまま
-							this->buff.insert(this->buff.end(), data + i, data + i + 188);
-						}
-					}else if( err == FALSE ){
-						AddDebugLog(L"createPmt.AddData Err");
-						//そのまま
-						this->buff.insert(this->buff.end(), data + i, data + i + 188);
-					}
-				}else{
-					//その他
-					if( packet.PID < BON_SELECTIVE_PID || createPmt.IsNeedPID(packet.PID) ||
-					    std::binary_search(this->emmPIDList.begin(), this->emmPIDList.end(), packet.PID) ){
-						//PMTで定義されてるかEMMなら必要
-						this->buff.insert(this->buff.end(), data + i, data + i + 188);
+						Format(name, L"PMT(ServiceID 0x%04X)", programNumber);
+						this->dropCount.SetPIDName(itr->first, name);
 					}
 				}
 			}
 		}
-
-		if( this->buff.empty() == false ){
+	}
+	if( this->buff.empty() == false ){
+		if( this->sendUdpTcp ){
+			this->sendUdp.AddSendData(this->buff.data(), (DWORD)this->buff.size());
+			this->sendTcp.AddSendData(this->buff.data(), (DWORD)this->buff.size());
+		}else{
 			this->writeFile.AddTSBuff(this->buff.data(), (DWORD)this->buff.size());
-			this->dropCount.AddData(this->buff.data(), (DWORD)this->buff.size());
 		}
+		this->dropCount.AddData(this->buff.data(), (DWORD)this->buff.size());
 	}
 
 	if( this->pittariState == PITTARI_START ){
+		WORD pmtVersion = 0xFFFF;
+		for( auto itr = this->serviceFilter.PmtUtilMap().cbegin(); itr != this->serviceFilter.PmtUtilMap().end(); itr++ ){
+			WORD programNumber = itr->second.GetProgramNumber();
+			if( programNumber != 0 && programNumber == this->pittariRecParam.pittariSID ){
+				pmtVersion = itr->second.GetVersion();
+				break;
+			}
+		}
 		if( this->lastPMTVer == 0xFFFF ){
-			this->lastPMTVer = createPmt.GetVersion();
-		}else if(this->lastPMTVer != createPmt.GetVersion()){
+			this->lastPMTVer = pmtVersion;
+		}else if( pmtVersion != 0xFFFF && this->lastPMTVer != pmtVersion ){
 			//ぴったり開始
 			StratPittariRec();
-			this->lastPMTVer = createPmt.GetVersion();
+			this->lastPMTVer = pmtVersion;
 		}
 		if( funcGetPresent ){
 			int eventID = funcGetPresent(this->pittariRecParam.pittariONID, this->pittariRecParam.pittariTSID, this->pittariRecParam.pittariSID);
@@ -222,28 +209,12 @@ void COneServiceUtil::AddTSBuff(
 	}
 }
 
-void COneServiceUtil::SetPmtPID(
-	WORD TSID,
-	WORD pmtPID_
+void COneServiceUtil::Clear(
+	WORD tsid
 	)
 {
-	if( this->pmtPID != pmtPID_ && this->SID != 0xFFFF){
-		AddDebugLogFormat(L"COneServiceUtil::SetPmtPID 0x%04x => 0x%04x", this->pmtPID, pmtPID_);
-		vector<pair<WORD, WORD>> pidList;
-		pidList.push_back(std::make_pair((WORD)0x10, (WORD)0));
-		pidList.push_back(std::make_pair(pmtPID_, this->SID));
-		this->createPat.SetParam(TSID, pidList);
-
-		this->pmtPID = pmtPID_;
-	}
-}
-
-void COneServiceUtil::SetEmmPID(
-	const vector<WORD>& pidList
-	)
-{
-	this->emmPIDList = pidList;
-	std::sort(this->emmPIDList.begin(), this->emmPIDList.end());
+	this->serviceFilter.Clear(tsid);
+	this->dropCount.Clear();
 }
 
 BOOL COneServiceUtil::StartSave(
@@ -329,7 +300,7 @@ void COneServiceUtil::SetServiceMode(
 	BOOL enableData
 	)
 {
-	createPmt.SetCreateMode(enableCaption, enableData);
+	this->serviceFilter.SetPmtCreateMode(!!enableCaption, !!enableData);
 }
 
 //エラーカウントをクリアする
@@ -406,14 +377,6 @@ void COneServiceUtil::SetBonDriver(
 	)
 {
 	this->dropCount.SetBonDriver(bonDriver);
-}
-
-void COneServiceUtil::SetPIDName(
-	WORD pid,
-	const wstring& name
-	)
-{
-	this->dropCount.SetPIDName(pid, name);
 }
 
 void COneServiceUtil::SetNoLogScramble(

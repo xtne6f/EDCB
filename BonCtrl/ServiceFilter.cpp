@@ -2,7 +2,8 @@
 #include "ServiceFilter.h"
 #include "BonCtrlDef.h"
 
-CServiceFilter::CServiceFilter()
+CServiceFilter::CServiceFilter(bool createPmt)
+	: createPmtFlag(createPmt)
 {
 	this->transportStreamID = 0;
 	this->allServicesFlag = false;
@@ -15,6 +16,14 @@ void CServiceFilter::SetServiceID(bool allServices, const vector<WORD>& sidList)
 	CheckNeedPID();
 }
 
+void CServiceFilter::SetPmtCreateMode(bool enableCaption, bool enableData)
+{
+	if( this->createPmtFlag ){
+		this->pmt.SetCreateMode(enableCaption, enableData);
+		CheckNeedPID();
+	}
+}
+
 void CServiceFilter::Clear(WORD tsid)
 {
 	this->transportStreamID = tsid;
@@ -22,6 +31,7 @@ void CServiceFilter::Clear(WORD tsid)
 	this->pmtUtilMap.clear();
 	this->needPIDList.clear();
 	this->pat.Clear();
+	this->pmt.Clear();
 }
 
 void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, const CTSPacketUtil& packet)
@@ -78,7 +88,26 @@ void CServiceFilter::FilterPacket(vector<BYTE>& outData, const BYTE* data, const
 			}
 		}else if( packet.PID < BON_SELECTIVE_PID ||
 		          std::binary_search(this->needPIDList.begin(), this->needPIDList.end(), packet.PID) ){
-			outData.insert(outData.end(), data, data + 188);
+			if( this->createPmtFlag && this->serviceIDList.empty() == false ){
+				//PMT改変が有効なときは改変後のPMTを出力する
+				vector<pair<WORD, CPMTUtil>>::iterator itr =
+					lower_bound_first(this->pmtUtilMap.begin(), this->pmtUtilMap.end(), packet.PID);
+				if( itr != this->pmtUtilMap.end() && itr->first == packet.PID &&
+				    itr->second.GetProgramNumber() != 0 &&
+				    itr->second.GetProgramNumber() == this->serviceIDList[0] ){
+					if( packet.payload_unit_start_indicator ){
+						BYTE* pmtBuff;
+						DWORD pmtBuffSize;
+						if( this->pmt.GetPacket(&pmtBuff, &pmtBuffSize, packet.PID) ){
+							outData.insert(outData.end(), pmtBuff, pmtBuff + pmtBuffSize);
+						}
+					}
+				}else{
+					outData.insert(outData.end(), data, data + 188);
+				}
+			}else{
+				outData.insert(outData.end(), data, data + 188);
+			}
 		}
 	}
 }
@@ -114,8 +143,19 @@ void CServiceFilter::CheckNeedPID()
 			    std::find(this->needPIDList.begin(), this->needPIDList.end(), pcrPID) == this->needPIDList.end() ){
 				this->needPIDList.push_back(pcrPID);
 			}
+			if( this->createPmtFlag &&
+			    this->allServicesFlag == false &&
+			    this->serviceIDList[0] == programNumber ){
+				this->pmt.SetSectionData(itr->second.GetSectionData().data(), (DWORD)itr->second.GetSectionData().size());
+			}
 			for( auto itrPID = itr->second.GetPIDTypeList().cbegin(); itrPID != itr->second.GetPIDTypeList().end(); itrPID++ ){
-				if( std::find(this->needPIDList.begin(), this->needPIDList.end(), itrPID->first) == this->needPIDList.end() ){
+				//PMT改変が有効なときは改変後に含まれるPIDのみ登録
+				if( (this->createPmtFlag == false ||
+				     this->allServicesFlag ||
+				     this->serviceIDList[0] != programNumber ||
+				     this->pmt.IsEcmPID(itrPID->first) ||
+				     this->pmt.IsElementaryPID(itrPID->first)) &&
+				    std::find(this->needPIDList.begin(), this->needPIDList.end(), itrPID->first) == this->needPIDList.end() ){
 					this->needPIDList.push_back(itrPID->first);
 				}
 			}

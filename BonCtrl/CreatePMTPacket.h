@@ -1,18 +1,8 @@
 ﻿#pragma once
 
-#include "../Common/ErrDef.h"
-#include "../Common/EpgTimerUtil.h"
-#include "../Common/TSPacketUtil.h"
-#include "../Common/TSBuffUtil.h"
-
 class CCreatePMTPacket
 {
 public:
-	//次のTSパケット入れないと解析できない
-	static const DWORD ERR_NEED_NEXT_PACKET = 20;
-	//バージョンの変更ないため解析不要
-	static const DWORD ERR_NO_CHAGE = 30;
-
 	CCreatePMTPacket(void);
 
 	//PMT作成時のモード
@@ -24,73 +14,62 @@ public:
 		BOOL needData_
 	);
 
-	//作成元となるPMTのパケットを入力
+	//作成元となるPMTセクションを設定
 	//戻り値：
 	// エラーコード
 	//引数：
-	// packet			//[IN] PMTのパケット
-	DWORD AddData(
-		const CTSPacketUtil& packet
+	// data				[IN]PMTセクションデータ
+	// size				[IN]dataのサイズ
+	void SetSectionData(
+		const BYTE* data,
+		DWORD dataSize
 	);
 
-	//必要なPIDかを確認
-	//戻り値：
-	// TRUE（必要）、FALSE（不必要）
-	//引数：
-	// PID				//[IN]確認するPID
-	BOOL IsNeedPID(
-		WORD PID
+	//ECMのPIDかどうか
+	BOOL IsEcmPID(
+		WORD pid
+	);
+
+	//作成PMTのエレメンタリストリームに含まれるPIDかどうか
+	BOOL IsElementaryPID(
+		WORD pid
 	);
 
 	//作成PMTのバッファポインタを取得
 	//戻り値：
-	// 作成PMTのバッファポインタ
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// buff					[OUT]作成したPMTパケットへのポインタ（次回呼び出し時まで有効）
 	// size					[OUT]buffのサイズ
-	// incrementFlag		[IN]TSパケットのCounterをインクリメントするかどうか（TRUE:する、FALSE：しない）
+	// pid					[IN]PID
 	BOOL GetPacket(
 		BYTE** buff,
 		DWORD* size,
-		BOOL incrementFlag = TRUE
+		WORD pid
 	);
 
 	//内部情報をクリア
 	void Clear();
 
-	BYTE GetVersion();
-
 protected:
-	DWORD DecodePMT(BYTE* data, DWORD dataSize);
-
 	void CreatePMT();
-	void CreatePacket();
-	void IncrementCounter();
 protected:
-	CTSBuffUtil buffUtil;
-
 	BOOL needCaption;
 	BOOL needData;
-
-	WORD lastPmtPID;
-	WORD lastPcrPID;
-	WORD lastPgNumber;
-	BYTE lastVersion;
-
-	vector<BYTE> firstDescBuff;
+	vector<BYTE> lastSection;
 
 	struct SECOND_DESC_BUFF {
 		BYTE stream_type;
 		WORD elementary_PID;
-		vector<BYTE> descBuff;
+		DWORD descBuffPos;
+		WORD descBuffSize;
 		WORD quality;
 		WORD qualityPID;
 	};
-	vector<SECOND_DESC_BUFF> secondDescBuff;
 
-	vector<WORD> emmPIDList;
+	vector<WORD> ecmPIDList;
 
-	vector<WORD> needPIDList;
+	vector<WORD> elementaryPIDList;
 
 	vector<BYTE> createPSI;
 	
