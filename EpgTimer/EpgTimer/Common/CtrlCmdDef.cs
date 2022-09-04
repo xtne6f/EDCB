@@ -27,6 +27,41 @@ namespace EpgTimer
     // ただし、互換のため一部の値型フィールドは例外的に非0で初期化している。
     // nullが意味をもつ一部の参照型フィールドは"= null"で明示的に初期化。
 
+    /// <summary>転送ファイルデータ</summary>
+    public class FileData : ICtrlCmdReadWrite
+    {
+        public string Name = "";
+        public uint Status;
+        public byte[] Data = null;
+
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref Name);
+            uint size = 0;
+            r.Read(ref size);
+            r.Read(ref Status);
+            Data = null;
+            if (size != 0)
+            {
+                Data = new byte[size];
+                r.ReadToArray(Data);
+            }
+            r.End();
+        }
+        public void Write(MemoryStream s, ushort version)
+        {
+            var w = new CtrlCmdWriter(s, version);
+            w.Begin();
+            w.Write(Name);
+            w.Write((uint)(Data == null ? 0 : Data.Length));
+            w.Write(Status);
+            if (Data != null) w.Stream.Write(Data, 0, Data.Length);
+            w.End();
+        }
+    }
+
     /// <summary>録画フォルダ情報</summary>
     public class RecFileSetInfo : ICtrlCmdReadWrite
     {
