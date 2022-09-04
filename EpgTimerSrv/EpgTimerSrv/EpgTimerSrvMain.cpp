@@ -2998,8 +2998,8 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 		}
 		break;
 	case CMD2_EPG_SRV_FILE_COPY2:
-		if( this->compatFlags & 0x80 ){
-			//互換動作: 指定ファイルをまとめて転送するコマンドを実装する
+		{
+			//指定ファイルをまとめて転送する
 			AddDebugLog(L"CMD2_EPG_SRV_FILE_COPY2");
 			WORD ver;
 			vector<wstring> list;
@@ -3022,12 +3022,14 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 						}
 					}else if( UtilComparePath(list[i].c_str(), LOGO_SAVE_FOLDER L".ini") == 0 ){
 						path = GetSettingPath().append(list[i]);
-					}else if( UtilComparePath(list[i].c_str(), L"EpgTimerSrv.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"Common.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"EpgDataCap_Bon.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"BonCtrl.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"ViewApp.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"Bitrate.ini") == 0 ){
+					}else if( (this->compatFlags & 0x80) != 0 &&
+					          (UtilComparePath(list[i].c_str(), L"EpgTimerSrv.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"Common.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"EpgDataCap_Bon.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"BonCtrl.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"ViewApp.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"Bitrate.ini") == 0) ){
+						//互換動作: 設定ファイルを転送可能にする
 						path = GetCommonIniPath().replace_filename(list[i]);
 					}else{
 						//ロゴフォルダに対する特例
