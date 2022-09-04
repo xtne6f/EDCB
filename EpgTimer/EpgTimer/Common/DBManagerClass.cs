@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using System.Windows.Media.Imaging;
 
 namespace EpgTimer
 {
@@ -30,6 +31,14 @@ namespace EpgTimer
         private bool updateRecInfo = true;
         private bool updateAutoAddEpgInfo = true;
         private bool updateAutoAddManualInfo = true;
+
+        private bool logoLoadCompleted = true;
+        private byte[] logoIniBinary;
+        private byte[] logoIndexBinary;
+        private bool logoIndexLoaded;
+        private Dictionary<uint, uint> chLogoIDs;
+        private Dictionary<uint, string> logoNames;
+        private int logoNamesLoadedCount;
 
         Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
         Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
@@ -92,6 +101,7 @@ namespace EpgTimer
             get { return epgAutoAddList; }
         }
 
+        public event Action ChSet5LogoChanged;
         public event Action EpgDataChanged;
         public event Action ReserveInfoChanged;
 
@@ -121,6 +131,201 @@ namespace EpgTimer
             {
                 updateAutoAddManualInfo = true;
             }
+        }
+
+        /// <summary>
+        /// ChSet5のチャンネルリストを再読み込みする
+        /// </summary>
+        public ErrCode ReloadChSet5()
+        {
+            ErrCode ret = ErrCode.CMD_ERR;
+            byte[] chSet5Binary = null;
+            try
+            {
+                var dataList = new List<FileData>();
+                if (Settings.Instance.ShowLogo)
+                {
+                    //効率のためついでにロゴのインデックス情報も取得
+                    ret = CommonManager.CreateSrvCtrl().SendFileCopy2(new List<string> { "ChSet5.txt", "LogoData.ini", "LogoData\\*.*" }, ref dataList);
+                    logoIniBinary = null;
+                    logoIndexBinary = null;
+                    logoIndexLoaded = true;
+                }
+                if (ret == ErrCode.CMD_SUCCESS)
+                {
+                    chSet5Binary = dataList.Count < 1 ? null : dataList[0].Data;
+                    logoIniBinary = dataList.Count < 2 ? null : dataList[1].Data;
+                    logoIndexBinary = dataList.Count < 3 ? null : dataList[2].Data;
+                }
+                else
+                {
+                    ret = CommonManager.CreateSrvCtrl().SendFileCopy("ChSet5.txt", out chSet5Binary);
+                }
+            }
+            catch { }
+
+            if (ret == ErrCode.CMD_SUCCESS)
+            {
+                ChSet5.LoadWithStreamReader(new System.IO.MemoryStream(chSet5Binary ?? new byte[0]));
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// ロゴを取得してChSet5に格納する。完了すればtrueが返る
+        /// </summary>
+        public bool LoadChSet5Logo()
+        {
+            if (logoLoadCompleted)
+            {
+                //取得開始
+                if (logoIndexLoaded == false)
+                {
+                    logoIniBinary = null;
+                    logoIndexBinary = null;
+                    logoIndexLoaded = true;
+                    try
+                    {
+                        var dataList = new List<FileData>();
+                        if (Settings.Instance.ShowLogo &&
+                            CommonManager.CreateSrvCtrl().SendFileCopy2(new List<string> { "LogoData.ini", "LogoData\\*.*" }, ref dataList) == ErrCode.CMD_SUCCESS)
+                        {
+                            logoIniBinary = dataList.Count < 1 ? null : dataList[0].Data;
+                            logoIndexBinary = dataList.Count < 2 ? null : dataList[1].Data;
+                        }
+                    }
+                    catch { }
+                }
+                logoLoadCompleted = false;
+            }
+
+            bool changed = false;
+            if (logoIndexLoaded)
+            {
+                //インデックス情報が更新された
+                logoIndexLoaded = false;
+                foreach (ChSet5Item ch in ChSet5.Instance.ChList.Values)
+                {
+                    changed = changed || ch.Logo != null;
+                    ch.Logo = null;
+                }
+
+                string logoIni = null;
+                string logoIndex = null;
+                if (Settings.Instance.ShowLogo &&
+                    logoIniBinary != null && logoIniBinary.Length > 2 && logoIniBinary[0] == 0xFF && logoIniBinary[1] == 0xFE &&
+                    logoIndexBinary != null && logoIndexBinary.Length > 2 && logoIndexBinary[0] == 0xFF && logoIndexBinary[1] == 0xFE)
+                {
+                    try
+                    {
+                        //必ずUTF-16LE
+                        logoIni = Encoding.Unicode.GetString(logoIniBinary, 2, logoIniBinary.Length - 2);
+                        logoIndex = Encoding.Unicode.GetString(logoIndexBinary, 2, logoIndexBinary.Length - 2);
+                    }
+                    catch { }
+                }
+                if (logoIni == null || logoIndex == null)
+                {
+                    //取得不要かインデックス情報を取得できていない
+                    if (ChSet5LogoChanged != null && changed)
+                    {
+                        ChSet5LogoChanged();
+                    }
+                    logoLoadCompleted = true;
+                    return logoLoadCompleted;
+                }
+
+                //ChSet5のサービスとロゴ識別との対照表を作る
+                string[] lines = logoIni.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                chLogoIDs = new Dictionary<uint, uint>();
+                foreach (ChSet5Item ch in ChSet5.Instance.ChList.Values)
+                {
+                    uint chID = (uint)ch.ONID << 16 | ch.SID;
+                    string startKey = chID.ToString("X8") + "=";
+                    foreach (string s in lines)
+                    {
+                        if (s.StartsWith(startKey, StringComparison.OrdinalIgnoreCase))
+                        {
+                            int logoID;
+                            if (int.TryParse(s.Substring(9), out logoID) && 0 <= logoID && logoID <= 0x1FF)
+                            {
+                                chLogoIDs[chID] = (uint)ch.ONID << 16 | (uint)logoID;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                //ロゴ識別とロゴファイル名との対照表を作る
+                lines = logoIndex.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                logoNames = new Dictionary<uint, string>();
+                var logoTypes = new int[] { 5, 2, 4, 1, 3, 0 };
+                foreach (uint onidLogoID in chLogoIDs.Values.Distinct())
+                {
+                    for (int i = 0; i < logoTypes.Length; i++)
+                    {
+                        string endKey = "_0" + logoTypes[i] + ".png";
+                        string searchKey = " " + (onidLogoID >> 16).ToString("X4") + "_" + (onidLogoID & 0x1FF).ToString("X3") + "_";
+                        foreach (string s in lines)
+                        {
+                            if (s.EndsWith(endKey, StringComparison.OrdinalIgnoreCase) && s.Length >= 20 &&
+                                s.Substring(s.Length - 20, 10).Equals(searchKey, StringComparison.OrdinalIgnoreCase))
+                            {
+                                logoNames[onidLogoID] = "LogoData\\" + s.Substring(s.Length - 19);
+                                i = logoTypes.Length - 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+                logoNamesLoadedCount = 0;
+            }
+
+            //サーバーの負荷を考慮して少しずつ取得する
+            var copyNameList = logoNames.Values.Skip(logoNamesLoadedCount).Take(20).ToList();
+            if (copyNameList.Count > 0)
+            {
+                logoNamesLoadedCount += copyNameList.Count;
+                var bitmapList = new List<BitmapSource>();
+                try
+                {
+                    var dataList = new List<FileData>();
+                    if (CommonManager.CreateSrvCtrl().SendFileCopy2(copyNameList, ref dataList) == ErrCode.CMD_SUCCESS)
+                    {
+                        foreach (FileData data in dataList)
+                        {
+                            var decoder = new PngBitmapDecoder(new System.IO.MemoryStream(data.Data),
+                                                               BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+                            bitmapList.Add(decoder.Frames[0]);
+                            bitmapList.Last().Freeze();
+                        }
+                    }
+                }
+                catch { }
+
+                foreach (ChSet5Item ch in ChSet5.Instance.ChList.Values)
+                {
+                    uint onidLogoID;
+                    string name;
+                    if (chLogoIDs.TryGetValue((uint)ch.ONID << 16 | ch.SID, out onidLogoID) &&
+                        logoNames.TryGetValue(onidLogoID, out name))
+                    {
+                        int i = copyNameList.IndexOf(name);
+                        if (0 <= i && i < bitmapList.Count())
+                        {
+                            ch.Logo = bitmapList[copyNameList.IndexOf(name)];
+                            changed = true;
+                        }
+                    }
+                }
+            }
+
+            if (ChSet5LogoChanged != null && changed)
+            {
+                ChSet5LogoChanged();
+            }
+            logoLoadCompleted = logoNamesLoadedCount == logoNames.Count;
+            return logoLoadCompleted;
         }
 
         /// <summary>
