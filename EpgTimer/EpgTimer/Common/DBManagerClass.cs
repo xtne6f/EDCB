@@ -237,42 +237,50 @@ namespace EpgTimer
 
                 //ChSet5のサービスとロゴ識別との対照表を作る
                 string[] lines = logoIni.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                Array.Sort(lines, StringComparer.OrdinalIgnoreCase);
                 chLogoIDs = new Dictionary<uint, uint>();
                 foreach (ChSet5Item ch in ChSet5.Instance.ChList.Values)
                 {
                     uint chID = (uint)ch.ONID << 16 | ch.SID;
                     string startKey = chID.ToString("X8") + "=";
-                    foreach (string s in lines)
+                    int index = Array.BinarySearch(lines, startKey, StringComparer.OrdinalIgnoreCase);
+                    index = index < 0 ? ~index : index;
+                    if (index < lines.Length && lines[index].StartsWith(startKey, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (s.StartsWith(startKey, StringComparison.OrdinalIgnoreCase))
+                        int logoID;
+                        if (int.TryParse(lines[index].Substring(9), out logoID) && 0 <= logoID && logoID <= 0x1FF)
                         {
-                            int logoID;
-                            if (int.TryParse(s.Substring(9), out logoID) && 0 <= logoID && logoID <= 0x1FF)
-                            {
-                                chLogoIDs[chID] = (uint)ch.ONID << 16 | (uint)logoID;
-                            }
-                            break;
+                            chLogoIDs[chID] = (uint)ch.ONID << 16 | (uint)logoID;
                         }
                     }
                 }
 
-                //ロゴ識別とロゴファイル名との対照表を作る
+                //インデックス情報からファイル名を抽出してソート
                 lines = logoIndex.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string s = lines[i];
+                    lines[i] = s.Count(c => c == ' ') < 3 ? "" : s.Substring(s.IndexOf(' ', s.IndexOf(' ', s.IndexOf(' ') + 1) + 1) + 1);
+                }
+                Array.Sort(lines, StringComparer.OrdinalIgnoreCase);
+
+                //ロゴ識別とロゴファイル名との対照表を作る
                 logoNames = new Dictionary<uint, string>();
                 var logoTypes = new int[] { 5, 2, 4, 1, 3, 0 };
                 foreach (uint onidLogoID in chLogoIDs.Values.Distinct())
                 {
-                    for (int i = 0; i < logoTypes.Length; i++)
+                    string startKey = (onidLogoID >> 16).ToString("X4") + "_" + (onidLogoID & 0x1FF).ToString("X3") + "_";
+                    int index = Array.BinarySearch(lines, startKey, StringComparer.OrdinalIgnoreCase);
+                    index = index < 0 ? ~index : index;
+                    for (int logoTypeIndex = 0; logoTypeIndex < logoTypes.Length; logoTypeIndex++)
                     {
-                        string endKey = "_0" + logoTypes[i] + ".png";
-                        string searchKey = " " + (onidLogoID >> 16).ToString("X4") + "_" + (onidLogoID & 0x1FF).ToString("X3") + "_";
-                        foreach (string s in lines)
+                        string endKey = "_0" + logoTypes[logoTypeIndex] + ".png";
+                        for (int i = index; i < lines.Length && lines[i].StartsWith(startKey, StringComparison.OrdinalIgnoreCase); i++)
                         {
-                            if (s.EndsWith(endKey, StringComparison.OrdinalIgnoreCase) && s.Length >= 20 &&
-                                s.Substring(s.Length - 20, 10).Equals(searchKey, StringComparison.OrdinalIgnoreCase))
+                            if (lines[i].EndsWith(endKey, StringComparison.OrdinalIgnoreCase))
                             {
-                                logoNames[onidLogoID] = "LogoData\\" + s.Substring(s.Length - 19);
-                                i = logoTypes.Length - 1;
+                                logoNames[onidLogoID] = "LogoData\\" + lines[i];
+                                logoTypeIndex = logoTypes.Length - 1;
                                 break;
                             }
                         }
