@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Media.Imaging;
 
 namespace EpgTimer
 {
@@ -211,6 +212,11 @@ namespace EpgTimer
             set;
         }
         public bool SearchFlag
+        {
+            get;
+            set;
+        }
+        public BitmapSource Logo
         {
             get;
             set;

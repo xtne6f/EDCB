@@ -182,6 +182,7 @@ namespace EpgTimer
         public bool ConfirmDelRecInfo { get; set; }
         public bool ConfirmDelRecInfoAlways { get; set; }
         public bool SaveSearchKeyword { get; set; }
+        public bool ShowLogo { get; set; }
         public bool ShowEpgCapServiceOnly { get; set; }
         public bool SortServiceList { get; set; }
         public bool ExitAfterProcessingArgs { get; set; }
@@ -387,6 +388,7 @@ namespace EpgTimer
             r.ConfirmDelRecInfo         = ConvertXElem(x, w, "ConfirmDelRecInfo", ConfirmDelRecInfo, true);
             r.ConfirmDelRecInfoAlways   = ConvertXElem(x, w, "ConfirmDelRecInfoAlways", ConfirmDelRecInfoAlways, false);
             r.SaveSearchKeyword         = ConvertXElem(x, w, "SaveSearchKeyword", SaveSearchKeyword, true);
+            r.ShowLogo                  = ConvertXElem(x, w, "ShowLogo", ShowLogo, true);
             r.ShowEpgCapServiceOnly     = ConvertXElem(x, w, "ShowEpgCapServiceOnly", ShowEpgCapServiceOnly, false);
             r.SortServiceList           = ConvertXElem(x, w, "SortServiceList", SortServiceList, true);
             r.ExitAfterProcessingArgs   = ConvertXElem(x, w, "ExitAfterProcessingArgs", ExitAfterProcessingArgs, false);
