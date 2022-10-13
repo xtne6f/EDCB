@@ -6,7 +6,7 @@
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300" PreviewMouseWheel="UserControl_PreviewMouseWheel">
-    <ScrollViewer HorizontalScrollBarVisibility="Visible" IsTabStop="True" Name="scrollViewer" ScrollChanged="scrollViewer_ScrollChanged">
+    <ScrollViewer HorizontalScrollBarVisibility="Visible" IsTabStop="True" Name="scrollViewer" MouseEnter="scrollViewer_MouseEnter" MouseLeave="scrollViewer_MouseLeave" ScrollChanged="scrollViewer_ScrollChanged">
         <Canvas Name="canvasContainer" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonUp="canvas_MouseRightButtonUp" MouseLeave="canvas_MouseLeave">
                 <StackPanel IsHitTestVisible="False" Name="popupItem" UseLayoutRounding="True" Visibility="Hidden" ZIndex="20">

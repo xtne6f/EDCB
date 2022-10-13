@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -31,6 +32,8 @@ namespace EpgTimer.TunerReserveViewCtrl
         private double lastDownHOffset;
         private double lastDownVOffset;
         private bool isDrag = false;
+        private HwndSource scrollViewerHwndSource;
+        private HwndSourceHook horizontalScrollMessageHook;
 
         private DispatcherTimer toolTipTimer;
         private DispatcherTimer toolTipOffTimer;
@@ -281,6 +284,51 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
         }
 
+        private void scrollViewer_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (horizontalScrollMessageHook == null &&
+                (Settings.Instance.EpgSettingList[0].MouseHorizontalScrollAuto ||
+                 Settings.Instance.EpgSettingList[0].HorizontalScrollSize != 0))
+            {
+                scrollViewerHwndSource = PresentationSource.FromVisual(scrollViewer) as HwndSource;
+                if (scrollViewerHwndSource != null)
+                {
+                    horizontalScrollMessageHook = (IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+                    {
+                        const int WM_MOUSEHWHEEL = 0x020E;
+                        if (msg == WM_MOUSEHWHEEL)
+                        {
+                            toolTipTimer.Stop();
+                            toolTipOffTimer.Stop();
+                            toolTip.IsOpen = false;
+
+                            double delta = (short)((wParam.ToInt64() >> 16) & 0xFFFF);
+                            if (delta != 0)
+                            {
+                                //負のとき左方向
+                                delta = Settings.Instance.EpgSettingList[0].MouseHorizontalScrollAuto ? delta :
+                                            Settings.Instance.EpgSettingList[0].HorizontalScrollSize * (delta < 0 ? -1 : 1);
+                                scrollViewer.ScrollToHorizontalOffset(scrollViewer.HorizontalOffset + delta);
+                            }
+                            handled = true;
+                        }
+                        return IntPtr.Zero;
+                    };
+                    scrollViewerHwndSource.AddHook(horizontalScrollMessageHook);
+                }
+            }
+        }
+
+        private void scrollViewer_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (horizontalScrollMessageHook != null)
+            {
+                scrollViewerHwndSource.RemoveHook(horizontalScrollMessageHook);
+                horizontalScrollMessageHook = null;
+                scrollViewerHwndSource = null;
+            }
+        }
+
         private void scrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             var ps = PresentationSource.FromVisual(this);
@@ -313,21 +361,14 @@ namespace EpgTimer.TunerReserveViewCtrl
             toolTipOffTimer.Stop();
             toolTip.IsOpen = false;
 
+            if (e.Delta != 0)
+            {
+                //負のとき下方向
+                double delta = Settings.Instance.EpgSettingList[0].MouseScrollAuto ? e.Delta :
+                                   Settings.Instance.EpgSettingList[0].ScrollSize * (e.Delta < 0 ? -1 : 1);
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - delta);
+            }
             e.Handled = true;
-            if (Settings.Instance.EpgSettingList[0].MouseScrollAuto)
-            {
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
-            }
-            else if (e.Delta < 0)
-            {
-                //下方向
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + Settings.Instance.EpgSettingList[0].ScrollSize);
-            }
-            else
-            {
-                //上方向
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - Settings.Instance.EpgSettingList[0].ScrollSize);
-            }
         }
     }
 

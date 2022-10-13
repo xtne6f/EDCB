@@ -110,6 +110,8 @@ namespace EpgTimer
         public double ServiceWidth { get; set; }
         public bool MouseScrollAuto { get; set; }
         public double ScrollSize { get; set; }
+        public bool MouseHorizontalScrollAuto { get; set; }
+        public double HorizontalScrollSize { get; set; }
         public string FontName { get; set; }
         public double FontSize { get; set; }
         public string FontNameTitle { get; set; }
@@ -325,6 +327,8 @@ namespace EpgTimer
                 rr.ServiceWidth             = ConvertXElem(xx, w, "ServiceWidth", val.ServiceWidth, 150);
                 rr.MouseScrollAuto          = ConvertXElem(xx, w, "MouseScrollAuto", val.MouseScrollAuto, false);
                 rr.ScrollSize               = ConvertXElem(xx, w, "ScrollSize", val.ScrollSize, 240);
+                rr.MouseHorizontalScrollAuto = ConvertXElem(xx, w, "MouseHorizontalScrollAuto", val.MouseHorizontalScrollAuto, false);
+                rr.HorizontalScrollSize     = ConvertXElem(xx, w, "HorizontalScrollSize", val.HorizontalScrollSize, 150);
                 rr.FontName                 = ConvertXElem(xx, w, "FontName", val.FontName, "メイリオ");
                 rr.FontSize                 = ConvertXElem(xx, w, "FontSize", val.FontSize, 12);
                 rr.FontNameTitle            = ConvertXElem(xx, w, "FontNameTitle", val.FontNameTitle, "メイリオ");
