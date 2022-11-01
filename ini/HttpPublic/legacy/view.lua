@@ -56,7 +56,12 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
   local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
   local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
-  local xcoder=(edcb.FindFile(tools..'\\'..option.xcoder,1) and tools..'\\' or '')..option.xcoder
+  local xcoder=''
+  for s in option.xcoder:gmatch('[^|]+') do
+    xcoder=tools..'\\'..s
+    if edcb.FindFile(xcoder,1) then break end
+    xcoder=s
+  end
 
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC','-')
