@@ -49,6 +49,7 @@ ALWAYS_USE_HLS=true
 
 --トランスコードオプション
 --HLSのときはセグメント長約4秒、最大8MBytes(=1秒あたり16Mbits)を想定しているので、オプションもそれに合わせること
+--HLSでないときはフラグメントMP4などを使ったプログレッシブダウンロード。字幕は適当な重畳手法がまだないので未対応
 --name:表示名
 --xcoder:トランスコーダーのToolsフォルダからの相対パス。'|'で複数候補を指定可。見つからなければ最終候補にパスが通っているとみなす
 --option:$OUTPUTは必須、再生時に適宜置換される。標準入力からMPEG2-TSを受け取るようにオプションを指定する
@@ -107,7 +108,7 @@ XCODE_OPTIONS={
     output={'webm','-f webm -'},
   },
   {
-    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応
+    --NVEncCの例。倍速再生未対応
     name='720p/h264/NVEncC',
     xcoder='NVEncC\\NVEncC64.exe|NVEncC\\NVEncC.exe|NVEncC64.exe|NVEncC.exe',
     option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --vbr 3936 --qp-min 23:26:30 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
@@ -116,11 +117,11 @@ XCODE_OPTIONS={
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true,rff=true',
     captionNone='',
     captionHls='--sub-copy',
-    output={'mp4','-f mp4 -o -'},
+    output={'mp4','-f mp4 --no-mp4opt -m movflags:frag_keyframe+empty_moov -o -'},
     outputHls={'m2t','-f mpegts -o -'},
   },
   {
-    --QSVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応
+    --QSVEncCの例。倍速再生未対応
     name='720p/h264/QSVEncC',
     xcoder='QSVEncC\\QSVEncC64.exe|QSVEncC\\QSVEncC.exe|QSVEncC64.exe|QSVEncC.exe',
     option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --qvbr 3936 --qvbr-quality 26 --fallback-rc --max-bitrate 8192 --vbv-bufsize 8192 $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
@@ -129,7 +130,7 @@ XCODE_OPTIONS={
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true',
     captionNone='',
     captionHls='--sub-copy',
-    output={'mp4','-f mp4 -o -'},
+    output={'mp4','-f mp4 --no-mp4opt -m movflags:frag_keyframe+empty_moov -o -'},
     outputHls={'m2t','-f mpegts -o -'},
   },
 }
