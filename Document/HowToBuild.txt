@@ -1,85 +1,108 @@
-﻿[ビルド]
+﻿<!-- vim:set ft=markdown: -->
 
-0.Visual Studio Express 2015/2017 for Desktop または2022までのVisual Studio Communityのどれかをインストールする
+ビルド(VisualStudio)
+----------------------------------------
+0. Visual Studio Express 2015/2017 for Desktop または2022までのVisual Studio Communityのどれかをインストールする
 
-1."Document\EDCB_ALL.VS2015.sln"を開き、ツールバーを[Release][Win32](x64ビルド時は[x64])にしてビルド→ソリューションのビルド
+1. "Document/EDCB_ALL.VS2015.sln"を開き、ツールバーを"Release/Win32"(x64ビルド時は"Release/x64")にしてビルド→ソリューションのビルド
+
+2. （EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
 
 （注意）
-・ツールバーのソリューション構成を[Debug](デバッグモード)にしてビルドすると
+- ツールバーのソリューション構成を"Debug"(デバッグモード)にしてビルドすると
   非常にパフォーマンスの悪い（高負荷な）バイナリができるので注意する
-・Windows SDKのエラーが出る場合は、プロジェクト→ソリューションの再ターゲット
+- Windows SDKのエラーが出る場合は、プロジェクト→ソリューションの再ターゲット
   で切り替える。ビルド可能なバージョンなら何でもいい
-・WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
+- WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
   構成プロパティ→プラットフォームツールセットを"v140_xp"などに切り替える必要がある
   （ソリューションエクスプローラ―上でCtrl+マウス選択を駆使すればまとめて切り替えられる）
-・SSE2非対応CPUで実行可能なファイルを作りたいときは、拡張命令セットを"拡張命令なし(/arch:IA32)"に切り替える
-
-2.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
+- SSE2非対応CPUで実行可能なファイルを作りたいときは、拡張命令セットを"拡張命令なし(/arch:IA32)"に切り替える
 
 
-[ビルド(MSYS2/Mingw-w64)] ※VisualStudioのインストールが面倒な場合お勧め
 
-0.https://www.msys2.org/ の msys2-x86_64-日付.exe(64bitOS用) をインストール
-  上記サイトに従ってpacman -Syu →(必要なら)pacman -Suでパッケージをアップデート
-  スタートメニューの"MSYS2 MinGW 64-bit"(32bitビルド時は32-bit)を開き、起動した黒窓で以下を実行してmakeとgccをインストール
-  $ pacman -S make mingw-w64-x86_64-gcc # 32bitビルド時はmingw-w64-i686-gcc
+ビルド(MSYS2/Mingw-w64)
+----------------------------------------
+※VisualStudioのインストールが面倒な場合お勧め
 
-1.つづけて以下を実行（この文書が"C:\EDCB\Document"にあると仮定）
-  $ cd /c/EDCB/Document/MinGW
-  $ make
+0. [MSYS2](https://www.msys2.org/) の `msys2-x86_64-日付.exe`(64bitOS用) をインストール  
+   上記サイトに従って`pacman -Syu` →`pacman -Su`でパッケージをアップデート  
+   スタートメニューの"MSYS2 MinGW 64-bit"(32bitビルド時は32-bit)を開き、起動した黒窓で以下を実行してmakeとgccをインストール
+   ```shell
+   pacman -S make mingw-w64-x86_64-gcc
+   pacman -S make mingw-w64-i686-gcc # 32bitビルド時
+   ```
+
+1. つづけて以下を実行（この文書が"C:/EDCB/Document"にあると仮定）
+   ```shell
+   cd /c/EDCB/Document/MinGW
+   make
+   ```
 
 （注意）
-・EpgTimerSrv.exeにLuaを組み込む場合は、[その他]を参照し、makeの引数にwithlua=1をつけてビルドする
-・Luaを組み込まない場合でHTTPサーバ機能などを使うときは、lua52.dllを別途 https://sourceforge.net/projects/luabinaries/ からダウンロードする
-  ・EpgTimerSrv/liblua52-mingw-lazy-*.a は lua-5.2.4_Win{32|64}_dllw6_lib.zip から以下を実行して作成したインポートライブラリ
-    $ dlltool -t zz -D lua52.dll -d lua52.def -y liblua52.a
-・EpgTimerAdminProxy.exe、asyncbuf.exe、relayread.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様で
+- EpgTimerSrv.exeにLuaを組み込む場合は、[その他](#その他)を参照し、makeの引数にwithlua=1をつけてビルドする
+- Luaを組み込まない場合でHTTPサーバ機能などを使うときは、lua52.dllを別途 https://sourceforge.net/projects/luabinaries/ からダウンロードする
+  - EpgTimerSrv/liblua52-mingw-lazy-{i686|x86_64}.a は lua-5.2.4_Win{32|64}_dllw6_lib.zip から以下を実行して作成したインポートライブラリ
+    ```shell
+    dlltool -t zz -D lua52.dll -d lua52.def -y liblua52.a
+    ```
+- EpgTimerAdminProxy.exe、asyncbuf.exe、relayread.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様で
   スタティックリンクだとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダ、TVTestではTVTest.exeのフォルダに置く
-・EpgDataCap_Bon.exeについては、使用するBonDriverに特別な対応がされていない限り、VC++でビルドされたIBonCast.dllが必要
-・EpgTimer.exeについては[その他]を参照
+- EpgDataCap_Bon.exeについては、使用するBonDriverに特別な対応がされていない限り、VC++でビルドされたIBonCast.dllが必要
+- EpgTimer.exeについては[その他](#その他)を参照
 
 
-[ビルド(Mingw-w64)] ※ビルド環境が最もコンパクト
 
-0.https://sourceforge.net/projects/mingw-w64/files/ の「MinGW-W64 GCC-8.1.0」（上位バージョンがあればそれでもOK）のリストから
-  i686-win32-dwarf(x86ビルド用) または x86_64-win32-seh(x64ビルド用) の7z圧縮ファイルをダウンロードしてどこかに展開
-  （以下、"C:\mingw32"または"C:\mingw64"に展開したと仮定）
-  （Online InstallerでもOK。i686/win32/dwarfまたはx86_64/win32/sehを選び、"C:\mingw32"または"C:\mingw64"にインストール）
+ビルド(Mingw-w64)
+----------------------------------------
+※ビルド環境が最もコンパクト
 
-1.RunMake.batを実行（クリーンしたいときはRunMakeClean.batを実行）
+0. https://sourceforge.net/projects/mingw-w64/files/ の「MinGW-W64 GCC-8.1.0」（上位バージョンがあればそれでもOK）のリストから
+   i686-win32-dwarf(x86ビルド用) または x86_64-win32-seh(x64ビルド用) の7z圧縮ファイルをダウンロードしてどこかに展開  
+   （以下、"C:/mingw32"または"C:/mingw64"に展開したと仮定）  
+   （Online InstallerでもOK。i686/win32/dwarfまたはx86_64/win32/sehを選び、"C:/mingw32"または"C:/mingw64"にインストール）
+
+1. RunMake.batを実行（クリーンしたいときはRunMakeClean.batを実行）
 
 （注意）
-・libwinpthread-1.dllは不要。ほかの注意事項は「ビルド(MSYS2/Mingw-w64)」と同様
+- libwinpthread-1.dllは不要。ほかの注意事項は「ビルド(MSYS2/Mingw-w64)」と同様
 
 
-[ビルド(VisualStudio2010)]
 
+ビルド(VisualStudio2010)
+----------------------------------------
 ※VisualStudio2010の延長サポートが終了したため、内容を削除した。必要なら2020年以前のコミットを参照
 
 
-[その他]
 
-・一部のマクロを定義することでビルドをカスタマイズできる。以下主なもの
-  ・EDCB_RC_DIALOG_NO_FONT (Common\CommonResource.h)
-  ・ARIB8CHAR_USE_UNICODE (EpgDataCap3\ARIB8CharDecode.cpp)
-  ・EPGDB_STD_WREGEX (EpgTimerSrv\EpgDBManager.h)
+その他
+----------------------------------------
+- 一部のマクロを定義することでビルドをカスタマイズできる。以下主なもの
+  - `EDCB_RC_DIALOG_NO_FONT` (Common/CommonResource.h)
+  - `ARIB8CHAR_USE_UNICODE` (EpgDataCap3/ARIB8CharDecode.cpp)
+  - `EPGDB_STD_WREGEX` (EpgTimerSrv/EpgDBManager.h)
+
   ソースコードを編集するかプロジェクトプロパティのプリプロセッサ定義に加える
 
-・EpgTimer.exeをビルドするだけならVisualStudioは不要(参考:2ch_EDCB/52/224)
+- EpgTimer.exeをビルドするだけならVisualStudioは不要(参考:2ch_EDCB/52/224)。
   必要なら.NET Framework v4.0以降をインストールして、EpgTimerフォルダでコマンドプロンプトを開いて以下を実行（またはx86build.batを実行）
-  > C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe EpgTimer.sln /p:Configuration=Release /p:Platform=x86
-  放置してもたぶん問題ないが、MSB3644の警告がでる場合は"EpgTimer\EpgTimer\EpgTimer.csproj"をメモ帳で開き
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  ```batchfile
+  C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe EpgTimer.sln /p:Configuration=Release /p:Platform=x86
+  ```
+  放置してもたぶん問題ないが、MSB3644の警告がでる場合は"EpgTimer/EpgTimer/EpgTimer.csproj"をメモ帳で開き
+  ```
+  <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  ```
   となっている部分をインストールされている.NETのバージョンに変更するか、v4.5のTargeting Packをインストールする
 
-・gitコマンドのある環境では、versionhashgen.batを実行すればバージョン情報にコミットハッシュを埋め込むことができる
+- gitコマンドのある環境では、versionhashgen.batを実行すればバージョン情報にコミットハッシュを埋め込むことができる。
   versionhash.shはMSYS2などのシェル環境用
 
-・Lua5.2を組み込んだビルドもできる("EpgTimerSrv\EpgTimerSrv.sln"の[Release-withlua])
+- Lua5.2を組み込んだビルドもできる("EpgTimerSrv/EpgTimerSrv.sln"の"Release-withlua")。
   以下のファイルが必要
-  ・https://www.lua.org/ のlua-5.2.4.tar.gzのsrcフォルダの中身を"EpgTimerSrv\EpgTimerSrv\lua"に既存ファイルも含めて上書き
-  ・https://github.com/brimworks/lua-zlib/releases/ のv0.5.zipのlua_zlib.cを"EpgTimerSrv\EpgTimerSrv\lua"にコピー
-  ・https://zlib.net/ のzlib1211.zipの中身を"EpgTimerSrv\EpgTimerSrv\lua\zlib1"にコピー
+  - https://www.lua.org/ のlua-5.2.4.tar.gzのsrcフォルダの中身を"EpgTimerSrv/EpgTimerSrv/lua"に既存ファイルも含めて上書き
+  - https://github.com/brimworks/lua-zlib/releases/ のv0.5.zipのlua_zlib.cを"EpgTimerSrv/EpgTimerSrv/lua"にコピー
+  - https://zlib.net/ のzlib1211.zipの中身を"EpgTimerSrv/EpgTimerSrv/lua/zlib1"にコピー
+
   ビルド中にWarningが多めにでるがコーディングスタイルの問題なので気にしない
 
-・プラットフォームツールセット:LLVM-vs2014( https://releases.llvm.org/ , ver.7.0.0以降はMarketplaceに移動の模様)に対応している
+- プラットフォームツールセット:LLVM-vs2014( https://releases.llvm.org/ , ver.7.0.0以降はMarketplaceに移動の模様)に対応している
