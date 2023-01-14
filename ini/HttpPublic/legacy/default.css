@@ -298,7 +298,14 @@ th, td {
   top: 0;
 }
 
-.full-control > button, .exit-control > button {
+.live-control {
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.full-control > button, .exit-control > button, .live-control > button {
   font-size: x-large;
   margin: 0.5em;
   padding: 0.5em;
@@ -331,6 +338,10 @@ th, td {
 }
 
 .video-full-container:-webkit-full-screen .exit-control:hover {
+  opacity: 1;
+}
+
+.video-full-container .live-control:hover {
   opacity: 1;
 }
 

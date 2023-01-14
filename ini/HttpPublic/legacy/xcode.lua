@@ -84,7 +84,7 @@ function OpenTranscoder()
   end
   if hls then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
-    cmd=cmd..' | "'..tsmemseg..'" -a 10 -r 100 -m 8192 -d 3 '..segmentKey..'_'
+    cmd=cmd..' | "'..tsmemseg..'"'..(USE_MP4_HLS and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..segmentKey..'_'
   elseif XCODE_BUF>0 then
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
@@ -144,6 +144,41 @@ function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
   local trailerConsumeSize=2-(trailerRemainSize+#buf+#payload+2)%3
   buf=('='):rep(trailerRemainSize)..buf..payload..('='):rep(trailerConsumeSize)
   return buf,2+(2+#payload)%4,2+(2+#payload)%4-trailerConsumeSize
+end
+
+function CreateHlsPlaylist(f)
+  local s='#EXTM3U\n'
+  local hasSeg=false
+  local buf=f:read(16)
+  if buf and #buf==16 then
+    local segNum=buf:byte(1)
+    local endList=buf:byte(9)~=0
+    local segIncomplete=buf:byte(10)~=0
+    local isMp4=buf:byte(11)~=0
+    s=s..'#EXT-X-VERSION:'..(isMp4 and 6 or 3)..'\n#EXT-X-TARGETDURATION:6\n'
+    buf=f:read(segNum*16)
+    if not buf or #buf~=segNum*16 then
+      segNum=0
+    end
+    for i=1,segNum do
+      local segIndex=buf:byte(1)
+      local segCount=GetLeNumber(buf,5,3)
+      local segAvailable=buf:byte(8)==0
+      local segDuration=GetLeNumber(buf,9,3)/1000
+      local nextSegAvailable=i<segNum and buf:byte(16+8)==0
+      if segAvailable and (not segIncomplete or nextSegAvailable) then
+        if not hasSeg then
+          s=s..'#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
+            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..segmentKey..'"\n' or '')
+            ..(endList and '#EXT-X-ENDLIST\n' or '')
+          hasSeg=true
+        end
+        s=s..'#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_'):format(segIndex)..segCount..'\n'
+      end
+      buf=buf:sub(17)
+    end
+  end
+  return s
 end
 
 f=nil
@@ -214,36 +249,10 @@ elseif psidata then
   f:close()
 elseif hls then
   -- インデックスファイルを返す
-  ct=CreateContentBuilder()
-  ct:Append('#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:')
-  hasSeg=false
-  buf=f:read(16)
-  if buf and #buf==16 then
-    segNum=buf:byte(1)
-    endList=buf:byte(9)~=0
-    for i=1,segNum do
-      buf=f:read(16)
-      if not buf or #buf~=16 then
-        break
-      end
-      segAvailable=buf:byte(8)==0
-      if segAvailable then
-        segIndex=buf:byte(1)
-        segCount=GetLeNumber(buf,5,3)
-        segDuration=GetLeNumber(buf,9,3)/1000
-        if not hasSeg then
-          ct:Append((segCount==1 and '1\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY' or segCount+1)
-            ..'\n'..(endList and '#EXT-X-ENDLIST\n' or ''))
-          hasSeg=true
-        end
-        ct:Append('#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_'):format(segIndex)..segCount..'\n')
-      end
-    end
-  end
+  m3u=CreateHlsPlaylist(f)
   f:close()
-  if not hasSeg then
-    ct:Append('1\n#EXTINF:4.004,\nloading.m2t\n')
-  end
+  ct=CreateContentBuilder()
+  ct:Append(m3u)
   ct:Finish()
   mg.write(ct:Pop(Response(200,'application/vnd.apple.mpegurl','utf-8',ct.len)..'\r\n'))
 else
