@@ -26,8 +26,8 @@ if hls and not (ALLOW_HLS and option.outputHls) then
   onid=nil
 end
 psidata=GetVarInt(query,'psidata')==1
-hlsMsn=GetVarInt(query,'_HLS_msn')
-hlsPart=GetVarInt(query,'_HLS_part')
+hlsMsn=GetVarInt(query,'_HLS_msn',1)
+hlsPart=GetVarInt(query,'_HLS_part',0)
 
 function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if XCODE_SINGLE then
@@ -151,7 +151,7 @@ function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
 end
 
 function CreateHlsPlaylist(f)
-  local s='#EXTM3U\n'
+  local a={'#EXTM3U\n'}
   local hasSeg=false
   local buf=f:read(16)
   if buf and #buf==16 then
@@ -159,11 +159,8 @@ function CreateHlsPlaylist(f)
     local endList=buf:byte(9)~=0
     local segIncomplete=buf:byte(10)~=0
     local isMp4=buf:byte(11)~=0
-    s=s..'#EXT-X-VERSION:'..(isMp4 and (USE_MP4_LLHLS and 9 or 6) or 3)..'\n#EXT-X-TARGETDURATION:6\n'
-    if isMp4 and USE_MP4_LLHLS then
-      s=s..'#EXT-X-PART-INF:PART-TARGET=0.5\n'
-        ..'#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK=1.5\n'
-    end
+    local partTarget=0.5
+    a[2]='#EXT-X-VERSION:'..(isMp4 and (USE_MP4_LLHLS and 9 or 6) or 3)..'\n#EXT-X-TARGETDURATION:6\n'
     buf=f:read(segNum*16)
     if not buf or #buf~=segNum*16 then
       segNum=0
@@ -174,6 +171,8 @@ function CreateHlsPlaylist(f)
       local segCount=GetLeNumber(buf,5,3)
       local segAvailable=buf:byte(8)==0
       local segDuration=GetLeNumber(buf,9,3)/1000
+      local segTime=GetLeNumber(buf,13,4)
+      local timeTag=os.date('!%Y-%m-%dT%H:%M:%S',os.time({year=2020,month=1,day=1})+math.floor(segTime/100))..('.%02d0+00:00'):format(segTime%100)
       local nextSegAvailable=i<segNum and buf:byte(16+8)==0
       local xbuf=f:read(fragNum*16)
       if not xbuf or #xbuf~=fragNum*16 then
@@ -182,7 +181,13 @@ function CreateHlsPlaylist(f)
       for j=1,fragNum do
         local fragDuration=GetLeNumber(xbuf,1,3)/1000
         if hasSeg and USE_MP4_LLHLS then
-          s=s..'#EXT-X-PART:DURATION='..fragDuration..',URI="segment.lua?c='..segmentKey..('_%02d_'):format(segIndex)..segCount..'_'..j..'"'
+          partTarget=math.max(fragDuration,partTarget)
+          if timeTag then
+            -- このタグがないとまずい環境があるらしい
+            a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
+            timeTag=nil
+          end
+          a[#a+1]='#EXT-X-PART:DURATION='..fragDuration..',URI="segment.lua?c='..segmentKey..('_%02d_%d_%d"'):format(segIndex,segCount,j)
             ..(j==1 and ',INDEPENDENT=YES' or '')..'\n'
         end
         xbuf=xbuf:sub(17)
@@ -190,17 +195,25 @@ function CreateHlsPlaylist(f)
       -- v1.3.0現在のhls.jsはプレイリストがセグメントで終わると再生時間がバグるので避ける
       if segAvailable and (endList or nextSegAvailable) then
         if not hasSeg then
-          s=s..'#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
+          a[#a+1]='#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
             ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..segmentKey..'"\n' or '')
             ..(endList and '#EXT-X-ENDLIST\n' or '')
           hasSeg=true
         end
-        s=s..'#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_'):format(segIndex)..segCount..'\n'
+        if isMp4 and USE_MP4_LLHLS and timeTag then
+          a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
+        end
+        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_%d\n'):format(segIndex,segCount)
       end
       buf=buf:sub(17)
     end
+    if isMp4 and USE_MP4_LLHLS then
+      -- PART-HOLD-BACKがPART-TARGETのちょうど3倍だとまずい環境があるらしい
+      a[2]=a[2]..'#EXT-X-PART-INF:PART-TARGET='..partTarget
+        ..'\n#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK=2.0\n'
+    end
   end
-  return s
+  return table.concat(a)
 end
 
 f=nil
@@ -315,7 +328,8 @@ elseif hls then
   while true do
     m3u=CreateHlsPlaylist(f)
     f:close()
-    if i>8 or not hlsMsn or m3u:find('EXT%-X%-ENDLIST') or not m3u:find('CAN%-BLOCK%-RELOAD') or
+    if i>40 or not hlsMsn or m3u:find('EXT%-X%-ENDLIST') or not m3u:find('CAN%-BLOCK%-RELOAD') or
+       not m3u:find('_'..(hlsMsn-1)..'\n') or
        m3u:find('_'..hlsMsn..'\n') or
        (hlsPart and m3u:find('_'..hlsMsn..'_'..(hlsPart+1)..'"')) then
       break

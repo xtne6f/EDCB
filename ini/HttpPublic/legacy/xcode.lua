@@ -147,7 +147,7 @@ function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
 end
 
 function CreateHlsPlaylist(f)
-  local s='#EXTM3U\n'
+  local a={'#EXTM3U\n'}
   local hasSeg=false
   local buf=f:read(16)
   if buf and #buf==16 then
@@ -155,7 +155,7 @@ function CreateHlsPlaylist(f)
     local endList=buf:byte(9)~=0
     local segIncomplete=buf:byte(10)~=0
     local isMp4=buf:byte(11)~=0
-    s=s..'#EXT-X-VERSION:'..(isMp4 and 6 or 3)..'\n#EXT-X-TARGETDURATION:6\n'
+    a[2]='#EXT-X-VERSION:'..(isMp4 and 6 or 3)..'\n#EXT-X-TARGETDURATION:6\n'
     buf=f:read(segNum*16)
     if not buf or #buf~=segNum*16 then
       segNum=0
@@ -168,17 +168,17 @@ function CreateHlsPlaylist(f)
       local nextSegAvailable=i<segNum and buf:byte(16+8)==0
       if segAvailable and (not segIncomplete or nextSegAvailable) then
         if not hasSeg then
-          s=s..'#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
+          a[#a+1]='#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
             ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..segmentKey..'"\n' or '')
             ..(endList and '#EXT-X-ENDLIST\n' or '')
           hasSeg=true
         end
-        s=s..'#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_'):format(segIndex)..segCount..'\n'
+        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_%d\n'):format(segIndex,segCount)
       end
       buf=buf:sub(17)
     end
   end
-  return s
+  return table.concat(a)
 end
 
 f=nil
