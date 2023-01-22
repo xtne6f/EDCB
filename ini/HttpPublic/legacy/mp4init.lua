@@ -29,8 +29,7 @@ if key and #key==32 then
   end
 end
 if init then
-  mg.write(Response(200,mg.get_mime_type(isMp4 and 'a.mp4' or 'a.m2t'),nil,#init)
-             ..'Content-Disposition: filename=segment'..(isMp4 and '.mp4' or '.m2t')..'\r\n\r\n',init)
+  mg.write(Response(200,mg.get_mime_type('a.mp4'),nil,#init)..'Content-Disposition: filename=mp4init.mp4\r\n\r\n',init)
 else
   mg.write(Response(404,nil,nil,0)..'\r\n')
 end

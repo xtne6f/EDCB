@@ -13,6 +13,7 @@ option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
 hls=GetVarInt(query,'hls',1)
+hls4=GetVarInt(query,'hls4',0) or 0
 caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
 n=GetVarInt(query,'n') or 0
@@ -89,7 +90,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if hls then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
     -- プロセス終了時に対応するNetworkTVモードも終了させる
-    cmd=cmd..' | "'..tsmemseg..'"'..(USE_MP4_HLS and ' -4' or '')..' -a 10 -m 8192 -d 3 '
+    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 '
       ..(nwtvclose and '-c "powershell -NoProfile -ExecutionPolicy RemoteSigned -File nwtvclose.ps1 '..nwtvclose..'" ' or '')..segmentKey..'_'
   elseif XCODE_BUF>0 then
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
@@ -160,7 +161,7 @@ function CreateHlsPlaylist(f)
     local segIncomplete=buf:byte(10)~=0
     local isMp4=buf:byte(11)~=0
     local partTarget=0.5
-    a[2]='#EXT-X-VERSION:'..(isMp4 and (USE_MP4_LLHLS and 9 or 6) or 3)..'\n#EXT-X-TARGETDURATION:6\n'
+    a[2]='#EXT-X-VERSION:'..(isMp4 and (hls4>1 and 9 or 6) or 3)..'\n#EXT-X-TARGETDURATION:6\n'
     buf=f:read(segNum*16)
     if not buf or #buf~=segNum*16 then
       segNum=0
@@ -180,7 +181,7 @@ function CreateHlsPlaylist(f)
       end
       for j=1,fragNum do
         local fragDuration=GetLeNumber(xbuf,1,3)/1000
-        if hasSeg and USE_MP4_LLHLS then
+        if hasSeg and hls4>1 then
           partTarget=math.max(fragDuration,partTarget)
           if timeTag then
             -- このタグがないとまずい環境があるらしい
@@ -200,14 +201,14 @@ function CreateHlsPlaylist(f)
             ..(endList and '#EXT-X-ENDLIST\n' or '')
           hasSeg=true
         end
-        if isMp4 and USE_MP4_LLHLS and timeTag then
+        if isMp4 and hls4>1 and timeTag then
           a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
         end
         a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_%d\n'):format(segIndex,segCount)
       end
       buf=buf:sub(17)
     end
-    if isMp4 and USE_MP4_LLHLS then
+    if isMp4 and hls4>1 then
       -- PART-HOLD-BACKがPART-TARGETのちょうど3倍だとまずい環境があるらしい
       a[2]=a[2]..'#EXT-X-PART-INF:PART-TARGET='..partTarget
         ..'\n#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK=2.0\n'
@@ -347,7 +348,7 @@ else
   mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
   if mg.request_info.request_method~='HEAD' then
     while true do
-      buf=f:read(48128)
+      buf=f:read(188*128)
       if buf and #buf~=0 then
         if not mg.write(buf) then
           -- キャンセルされた

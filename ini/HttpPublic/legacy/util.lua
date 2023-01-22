@@ -42,11 +42,12 @@ MEDIA_EXTENSION_LIST={
   '.webm',
 }
 
---HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeとnwtvclose.ps1を用意すること
+--HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeとnwtvclose.ps1を用意すること。IE非対応
 ALLOW_HLS=true
 --ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか
 ALWAYS_USE_HLS=true
 --HLS再生時にトランスコーダーから受け取ったMPEG2-TSをMP4に変換するかどうか。有効時はHEVCトランスコードに対応
+--※Android版Firefoxでは不具合があるため無効扱いになる
 USE_MP4_HLS=true
 --視聴機能(viewボタン)でLowLatencyHLSにするかどうか。再生遅延が小さくなる。ネイティブHLS環境ではHTTP/2が要求されるためhls.js使用時のみ有用
 USE_MP4_LLHLS=true
@@ -63,7 +64,7 @@ XCODE_OPTIONS={
     --ffmpegの例。-b:vでおおよその最大ビットレートを決め、-qminで動きの少ないシーンのデータ量を節約する
     name='360p/h264/ffmpeg',
     xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i - -map 0:v:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 1888k -qmin 23 -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 640x360 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 1888k -qmin 23 -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 640x360 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -76,7 +77,7 @@ XCODE_OPTIONS={
   {
     name='720p/h264/ffmpeg-nvenc',
     xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i - -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 41 -b:v 3936k -qmin 23 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec h264_nvenc -profile:v main -level 41 -b:v 3936k -qmin 23 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -90,7 +91,7 @@ XCODE_OPTIONS={
     --ffmpegのh264_qsvは環境によって異常にビットレートが高くなったりしてあまり質が良くない。要注意
     name='720p/h264/ffmpeg-qsv',
     xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i - -map 0:v:0 -vcodec h264_qsv -profile:v main -level 41 -b:v 3936k -min_qp_i 23 -min_qp_p 26 -min_qp_b 30 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec h264_qsv -profile:v main -level 41 -b:v 3936k -min_qp_i 23 -min_qp_p 26 -min_qp_b 30 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -103,7 +104,7 @@ XCODE_OPTIONS={
   {
     name='360p/webm/ffmpeg',
     xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i - -map 0:v:0 -vcodec libvpx -b:v 1888k -quality realtime -cpu-used 1 $FILTER -s 640x360 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 160k $CAPTION $OUTPUT',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec libvpx -b:v 1888k -quality realtime -cpu-used 1 $FILTER -s 640x360 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 160k $CAPTION $OUTPUT',
     filter='-vf yadif=0:-1:1',
     filterCinema='-vf pullup -r 24000/1001',
     filterFast='-vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25',
@@ -485,6 +486,7 @@ cbDatacast.onclick=function(){
 ]=] or '')
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
+  local hls4=USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or ''
   if ALWAYS_USE_HLS then
     s=s..'<script src="hls.min.js"></script>\n'
       ..(caption and '<script src="aribb24.js"></script>\n' or '')
@@ -494,7 +496,9 @@ cbDatacast.onclick=function(){
            ..'Renderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported(),'..ARIBB24_JS_OPTION..'});\n'
            ..'cap.attachMedia(vid);\n' or '')
       ..'vid.poster="loading.png";\n'
-      ..'waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..'",1000,2000,function(){vid.poster=null;},function(src){\n'
+      --Android版Firefoxは非キーフレームで切ったフラグメントMP4だとカクつくので避ける
+      ..'waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..'"+(/Android.+Firefox/i.test(navigator.userAgent)?"":"'..hls4
+      ..'"),1000,2000,function(){vid.poster=null;},function(src){\n'
       ..'  if(Hls.isSupported()){\n'
       ..'    var hls=new Hls();\n'
       ..'    hls.loadSource(src);\n'
@@ -518,7 +522,7 @@ cbDatacast.onclick=function(){
       --AndroidはcanPlayTypeが空文字列を返さないことがあるが実装に個体差が大きいので避ける
       ..'if(!/Android/i.test(navigator.userAgent)&&vid.canPlayType("application/vnd.apple.mpegurl")){\n'
       ..'  vid.poster="loading.png";\n'
-      ..'  waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..'",1000,2000,function(){vid.poster=null;},function(src){\n'
+      ..'  waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..hls4..'",1000,2000,function(){vid.poster=null;},function(src){\n'
       ..'    vid.src=src;\n'
       ..'  });\n'
       ..'}else{\n'

@@ -17,6 +17,7 @@ audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'fast')==1 and (GetVarInt(query,'cinema')==1 and option.filterCinemaFast or option.filterFast)
 filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
 hls=GetVarInt(query,'hls',1)
+hls4=GetVarInt(query,'hls4',0) or 0
 caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
 if hls and not (ALLOW_HLS and option.outputHls) then
@@ -84,7 +85,7 @@ function OpenTranscoder()
   end
   if hls then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
-    cmd=cmd..' | "'..tsmemseg..'"'..(USE_MP4_HLS and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..segmentKey..'_'
+    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..segmentKey..'_'
   elseif XCODE_BUF>0 then
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
@@ -260,7 +261,7 @@ else
   if mg.request_info.request_method~='HEAD' then
     retry=0
     while true do
-      buf=f:read(48128)
+      buf=f:read(188*128)
       if buf and #buf~=0 then
         retry=0
         if not mg.write(buf) then
