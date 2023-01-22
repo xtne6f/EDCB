@@ -37,10 +37,10 @@ ct:Append([=[
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
 ]=]..(INDEX_SUSPEND_USE_HIBERNATE and [=[
       <input type="hidden" name="hibernate" value="y">
-      <input type="submit" value="システム休止">
+      <button type="submit">システム休止</button>
 ]=] or [=[
       <input type="hidden" name="suspend" value="y">
-      <input type="submit" value="システムスタンバイ">
+      <button type="submit">システムスタンバイ</button>
 ]=])..[=[
     </div>
   </form>
@@ -52,14 +52,14 @@ ct:Append([=[
     <div>
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
       <input type="hidden" name="epgcap" value="y">
-      <input type="submit" value="EPG取得">
+      <button type="submit">EPG取得</button>
     </div>
   </form>
   <form method="POST" action="index.html">
     <div>
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
       <input type="hidden" name="epgreload" value="y">
-      <input type="submit" value="EPG再読み込み">
+      <button type="submit">EPG再読み込み</button>
     </div>
   </form>
 ]=])

@@ -424,8 +424,8 @@ cbDatacast.onclick=function(){
 ]=] or '')
 end
 
-function HlsScriptTemplete(caption)
-  local s=FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast')..[=[
+function TranscordScriptTemplete()
+  return FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast')..[=[
 <script src="script.js"></script>
 ]=]..(USE_DATACAST and [=[
 <script>
@@ -484,6 +484,10 @@ cbDatacast.onclick=function(){
 };
 </script>
 ]=] or '')
+end
+
+function HlsScriptTemplete(caption)
+  local s=''
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
   local hls4=USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or ''

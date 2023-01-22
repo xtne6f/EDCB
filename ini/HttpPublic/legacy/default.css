@@ -15,9 +15,29 @@ li {
   padding: 0.2em 0;
 }
 
-input {
+button, input {
   font-size: medium;
   margin: 0.5em 0.1em;
+}
+
+button {
+  background: #eee;
+  border: 0;
+  color: #07d;
+  font-weight: bold;
+  padding: 0.2em 0.5em;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #07d;
+  color: white;
+}
+
+input[type="checkbox"] {
+  height: 1em;
+  margin-left: 0.2em;
+  width: 1em;
 }
 
 select {
