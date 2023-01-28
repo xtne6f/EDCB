@@ -15,8 +15,6 @@ class CEpgTimerSrvMain
 {
 public:
 	CEpgTimerSrvMain();
-	//メインループ処理(Taskモード)
-	static bool TaskMain();
 	//メインループ処理
 	//serviceFlag_: サービスとしての起動かどうか
 	bool Main(bool serviceFlag_);
@@ -25,8 +23,6 @@ public:
 	//休止／スタンバイに移行して構わない状況かどうか
 	bool IsSuspendOK() const;
 private:
-	//メインウィンドウ(Taskモード)
-	static LRESULT CALLBACK TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//メインウィンドウ
 	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//シャットダウン問い合わせダイアログ

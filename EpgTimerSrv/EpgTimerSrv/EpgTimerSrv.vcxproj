@@ -319,6 +319,7 @@
     <ClInclude Include="EpgDBManager.h" />
     <ClInclude Include="EpgTimerSrvMain.h" />
     <ClInclude Include="EpgTimerSrvSetting.h" />
+    <ClInclude Include="EpgTimerTask.h" />
     <ClInclude Include="HttpServer.h" />
     <ClInclude Include="lua\lapi.h" />
     <ClInclude Include="lua\lauxlib.h" />
@@ -399,6 +400,7 @@
     <ClCompile Include="EpgTimerSrv.cpp" />
     <ClCompile Include="EpgTimerSrvMain.cpp" />
     <ClCompile Include="EpgTimerSrvSetting.cpp" />
+    <ClCompile Include="EpgTimerTask.cpp" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="lua\lapi.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>

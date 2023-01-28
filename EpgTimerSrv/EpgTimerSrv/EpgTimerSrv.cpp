@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "EpgTimerSrvMain.h"
+#include "EpgTimerTask.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ServiceUtil.h"
 #include "../../Common/StackTrace.h"
@@ -59,7 +60,7 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 		}else if( CompareNoCase(L"task", option + 1) == 0 ){
 			//Taskモード
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-			CEpgTimerSrvMain::TaskMain();
+			CEpgTimerTask().Main();
 			CoUninitialize();
 			return 0;
 		}

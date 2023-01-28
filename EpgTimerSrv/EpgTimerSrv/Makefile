@@ -94,6 +94,7 @@ $(TARGET).exe: $(addsuffix .obj, \
   EpgTimerSrv.cpp \
   EpgTimerSrvMain.cpp \
   EpgTimerSrvSetting.cpp \
+  EpgTimerTask.cpp \
   HttpServer.cpp \
   NotifyManager.cpp \
   RegExp.cpp \
