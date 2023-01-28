@@ -108,7 +108,7 @@ if #a>0 then
           ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
           ..'<div class="video-container arib-video-container" id="vid-cont">'
           ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video></div></div>\n'
-          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscordScriptTemplete())
+          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true))
         if ALLOW_HLS then
           ct:Append(HlsScriptTemplete(xq.caption))
         end

@@ -91,7 +91,15 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
     -- プロセス終了時に対応するNetworkTVモードも終了させる
     cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 '
-      ..(nwtvclose and '-c "powershell -NoProfile -ExecutionPolicy RemoteSigned -File nwtvclose.ps1 '..nwtvclose..'" ' or '')..segmentKey..'_'
+    if nwtvclose then
+      if edcb.FindFile(tools..'\\nwtvclose.ps1',1) then
+        cmd=cmd..'-c "powershell -NoProfile -ExecutionPolicy RemoteSigned -File nwtvclose.ps1 '..nwtvclose[1]..' '..nwtvclose[2]..'" '
+      else
+        cmd=cmd.."-c \"..\\EpgTimerSrv.exe /luapost if(edcb.GetPrivateProfile('NWTV','nwtv"..nwtvclose[1].."open','"..nwtvclose[2]
+          .."','Setting\\\\HttpPublic.ini')=='"..nwtvclose[2].."')then;edcb.CloseNetworkTV("..nwtvclose[1]..");end\" "
+      end
+    end
+    cmd=cmd..segmentKey..'_'
   elseif XCODE_BUF>0 then
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
@@ -100,7 +108,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if hls then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
-    if indexCount<10 and (not nwtvclose or edcb.FindFile(tools..'\\nwtvclose.ps1',1)) then
+    if indexCount<10 then
       edcb.os.execute('start "" /b cmd /s /c "'..(nwtvclose and 'cd /d "'..tools..'" && ' or '')..cmd..'"')
       for i=1,100 do
         local f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
@@ -245,9 +253,9 @@ if onid then
           if ff and ff[1].name:find('^[A-Za-z]+_%d+_%d+$') then
             pipeName='\\\\.\\pipe\\'..ff[1].name
             break
-          elseif NWTV_FIND_BY_OPEN then
-            -- ポートを予想して開いてみる
-            for j=0,9 do
+          elseif i%10==0 then
+            -- FindFileで見つけられない環境があるかもしれないのでポートを予想して開いてみる
+            for j=0,29 do
               ff=edcb.io.open('\\\\.\\pipe\\SendTSTCP_'..j..'_'..pid, 'rb')
               if ff then
                 ff:close()
@@ -268,7 +276,7 @@ if onid then
           end
         else
           if pipeName then
-            f=OpenTranscoder(pipeName,'view',n..' @'..openTime,sid)
+            f=OpenTranscoder(pipeName,'view',{n,'@'..openTime},sid)
             fname='view.'..output[1]
           end
           if not f then

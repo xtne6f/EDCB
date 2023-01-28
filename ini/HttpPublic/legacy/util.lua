@@ -42,7 +42,7 @@ MEDIA_EXTENSION_LIST={
   '.webm',
 }
 
---HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeとnwtvclose.ps1を用意すること。IE非対応
+--HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeを用意すること。IE非対応
 ALLOW_HLS=true
 --ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか
 ALWAYS_USE_HLS=true
@@ -64,7 +64,7 @@ XCODE_OPTIONS={
     --ffmpegの例。-b:vでおおよその最大ビットレートを決め、-qminで動きの少ないシーンのデータ量を節約する
     name='360p/h264/ffmpeg',
     xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 1888k -qmin 23 -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 640x360 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 1888k -qmin 23 -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 640x360 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION -max_interleave_delta 500k $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -77,7 +77,7 @@ XCODE_OPTIONS={
   {
     name='720p/h264/ffmpeg-nvenc',
     xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec h264_nvenc -profile:v main -level 41 -b:v 3936k -qmin 23 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec h264_nvenc -profile:v main -level 41 -b:v 3936k -qmin 23 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION -max_interleave_delta 500k $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -91,7 +91,7 @@ XCODE_OPTIONS={
     --ffmpegのh264_qsvは環境によって異常にビットレートが高くなったりしてあまり質が良くない。要注意
     name='720p/h264/ffmpeg-qsv',
     xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec h264_qsv -profile:v main -level 41 -b:v 3936k -min_qp_i 23 -min_qp_p 26 -min_qp_b 30 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION $OUTPUT',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec h264_qsv -profile:v main -level 41 -b:v 3936k -min_qp_i 23 -min_qp_p 26 -min_qp_b 30 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION -max_interleave_delta 500k $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
     filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
@@ -104,7 +104,7 @@ XCODE_OPTIONS={
   {
     name='360p/webm/ffmpeg',
     xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec libvpx -b:v 1888k -quality realtime -cpu-used 1 $FILTER -s 640x360 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 160k $CAPTION $OUTPUT',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec libvpx -b:v 1888k -quality realtime -cpu-used 1 $FILTER -s 640x360 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 160k $CAPTION -max_interleave_delta 500k $OUTPUT',
     filter='-vf yadif=0:-1:1',
     filterCinema='-vf pullup -r 24000/1001',
     filterFast='-vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25',
@@ -116,7 +116,7 @@ XCODE_OPTIONS={
     --NVEncCの例。倍速再生未対応
     name='720p/h264/NVEncC',
     xcoder='NVEncC\\NVEncC64.exe|NVEncC\\NVEncC.exe|NVEncC64.exe|NVEncC.exe',
-    option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --vbr 3936 --qp-min 23:26:30 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --vbr 3936 --qp-min 23:26:30 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION -m max_interleave_delta:500k $OUTPUT',
     audioStartAt=1,
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true,rff=true',
@@ -129,7 +129,7 @@ XCODE_OPTIONS={
     --QSVEncCの例。倍速再生未対応
     name='720p/h264/QSVEncC',
     xcoder='QSVEncC\\QSVEncC64.exe|QSVEncC\\QSVEncC.exe|QSVEncC64.exe|QSVEncC.exe',
-    option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --qvbr 3936 --qvbr-quality 26 --fallback-rc --max-bitrate 8192 --vbv-bufsize 8192 $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --qvbr 3936 --qvbr-quality 26 --fallback-rc --max-bitrate 8192 --vbv-bufsize 8192 $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION -m max_interleave_delta:500k $OUTPUT',
     audioStartAt=1,
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true',
@@ -168,9 +168,6 @@ XCODE_LOG=false
 XCODE_BUF=0
 --転送開始前に変換しておく量(bytes)
 XCODE_PREPARE=0
-
---NetworkTVモードの名前付きパイプをFindFileで見つけられない場合(EpgTimerSrvのWindowsサービス化など？)に対応するか
-NWTV_FIND_BY_OPEN=false
 
 --このサイズ以上のときページ圧縮する(nilのとき常に非圧縮)
 GZIP_THRESHOLD_BYTE=4096
@@ -227,10 +224,10 @@ function TranscodeSettingTemplete(xq,fsec)
   return s
 end
 
-function FullscreenButtonScriptTemplete()
+function OnscreenButtonsScriptTemplete()
   return [=[
 <script>
-var hideFullscreenButton;
+var hideOnscreenButtons;
 (function(){
   var vfull=document.getElementById("vid-full");
   var vcont=document.getElementById("vid-cont");
@@ -248,29 +245,30 @@ var hideFullscreenButton;
   var bexit=document.createElement("div");
   bexit.className="exit-control";
   bexit.appendChild(btn);
-  var removed=true;
-  hideFullscreenButton=function(hide){
-    if(!removed&&hide){
-      vcont.removeChild(bfull);
-      vcont.removeChild(bexit);
-      removed=true;
-    }else if(removed&&!hide){
-      vcont.appendChild(bfull);
-      vcont.appendChild(bexit);
-      removed=false;
-    }
-  };
-  hideFullscreenButton(false);
   var vid=document.getElementById("vid");
   var diffs=[0,0,0,0,0];
   var duration=-1;
-  vid.ondurationchange=function(){
-    if(duration>=0){
-      diffs.shift();
-      diffs.push(vid.duration-duration);
+  var lastseek=0;
+  function checkDuration(){
+    var seekable=vid.duration;
+    if(seekable==Infinity)seekable=vid.seekable.length>0?vid.seekable.end(vid.seekable.length-1):0;
+    if(!(seekable>0))return;
+    if(duration<0)duration=seekable;
+    if(seekable-duration<0.5)return;
+    diffs.shift();
+    diffs.push(seekable-duration);
+    duration=seekable;
+    var interval=Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])+1;
+    if(vid.currentTime<duration-interval*2-3&&Date.now()-lastseek>10000){
+      var cbLive=document.getElementById("cb-live");
+      if(cbLive&&cbLive.checked){
+        vid.currentTime=duration-interval;
+        lastseek=Date.now();
+      }
     }
-    duration=vid.duration;
-  };
+  }
+  vid.ondurationchange=checkDuration;
+  setInterval(checkDuration,500);
   btn=document.createElement("button");
   btn.type="button";
   btn.innerText="→";
@@ -278,7 +276,21 @@ var hideFullscreenButton;
   var blive=document.createElement("div");
   blive.className="live-control";
   blive.appendChild(btn);
-  vcont.appendChild(blive);
+  var removed=true;
+  hideOnscreenButtons=function(hide){
+    if(!removed&&hide){
+      vcont.removeChild(bfull);
+      vcont.removeChild(bexit);
+      vcont.removeChild(blive);
+      removed=true;
+    }else if(removed&&!hide){
+      vcont.appendChild(bfull);
+      vcont.appendChild(bexit);
+      vcont.appendChild(blive);
+      removed=false;
+    }
+  };
+  hideOnscreenButtons(false);
 })();
 </script>
 ]=]
@@ -320,7 +332,7 @@ function WebBmlScriptTemplate(label)
 end
 
 function VideoScriptTemplete()
-  return FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..[=[
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
   ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
@@ -395,14 +407,14 @@ cbDatacast.onclick=function(){
   if(!cbDatacast.checked){
     clearTimeout(readTimer);
     readTimer=null;
-    hideFullscreenButton(false);
+    hideOnscreenButtons(false);
     bmlBrowserSetInvisible(true);
     return;
   }
   startReadPsiData(document.getElementById("vid"));
   var vcont=document.getElementById("vid-cont");
   bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-  hideFullscreenButton(true);
+  hideOnscreenButtons(true);
   bmlBrowserSetInvisible(false);
   if(xhr)return;
   xhr=new XMLHttpRequest();
@@ -424,8 +436,9 @@ cbDatacast.onclick=function(){
 ]=] or '')
 end
 
-function TranscordScriptTemplete()
-  return FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast')..[=[
+function TranscodeScriptTemplete(live)
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')
+    ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <script src="script.js"></script>
 ]=]..(USE_DATACAST and [=[
 <script>
@@ -442,14 +455,14 @@ cbDatacast.onclick=function(){
       xhr.abort();
       xhr=null;
     }
-    hideFullscreenButton(false);
+    hideOnscreenButtons(false);
     bmlBrowserSetInvisible(true);
     return;
   }
   var videoSec=Math.floor(document.getElementById("vid").currentTime);
   var vcont=document.getElementById("vid-cont");
   bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-  hideFullscreenButton(true);
+  hideOnscreenButtons(true);
   bmlBrowserSetInvisible(false);
   if(psiData||xhr)return;
   psiData=new Uint8Array(0);
@@ -499,6 +512,8 @@ function HlsScriptTemplete(caption)
       ..(caption and 'var cap=new aribb24js.'..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')
            ..'Renderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported(),'..ARIBB24_JS_OPTION..'});\n'
            ..'cap.attachMedia(vid);\n' or '')
+      ..'var cbLive=document.getElementById("cb-live");\n'
+      ..'if(cbLive)cbLive.checked=true;\n'
       ..'vid.poster="loading.png";\n'
       --Android版Firefoxは非キーフレームで切ったフラグメントMP4だとカクつくので避ける
       ..'waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..'"+(/Android.+Firefox/i.test(navigator.userAgent)?"":"'..hls4
@@ -525,6 +540,8 @@ function HlsScriptTemplete(caption)
            ..'cap.attachMedia(vid);\n' or '')
       --AndroidはcanPlayTypeが空文字列を返さないことがあるが実装に個体差が大きいので避ける
       ..'if(!/Android/i.test(navigator.userAgent)&&vid.canPlayType("application/vnd.apple.mpegurl")){\n'
+      ..'  var cbLive=document.getElementById("cb-live");\n'
+      ..'  if(cbLive)cbLive.checked=true;\n'
       ..'  vid.poster="loading.png";\n'
       ..'  waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..hls4..'",1000,2000,function(){vid.poster=null;},function(src){\n'
       ..'    vid.src=src;\n'
