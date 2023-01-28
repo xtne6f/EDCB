@@ -62,6 +62,7 @@ private:
 	bool CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStream& res, LPCWSTR clientIP);
 	void InitLuaCallback(lua_State* L, LPCSTR serverRandom);
 	void DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff);
+	static void DoLuaWorker(CEpgTimerSrvMain* sys);
 	//Lua-edcb空間のコールバック
 	class CLuaWorkspace
 	{
@@ -156,6 +157,10 @@ private:
 	bool nwtvUdp;
 	bool nwtvTcp;
 	DWORD compatFlags;
+
+	thread_ doLuaWorkerThread;
+	recursive_mutex_ doLuaWorkerLock;
+	vector<string> doLuaScriptQueue;
 
 	//CPipeServer用に2つとCTCPServer用に1つ
 	vector<EPGDB_EVENT_INFO> oldSearchList[3];

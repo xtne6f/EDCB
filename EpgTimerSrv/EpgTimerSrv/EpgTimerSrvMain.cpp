@@ -260,6 +260,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		if( ctx->resumeTimer ){
 			CloseHandle(ctx->resumeTimer);
 		}
+		if( ctx->sys->doLuaWorkerThread.joinable() ){
+			ctx->sys->doLuaWorkerThread.join();
+		}
 		ctx->sys->notifyManager.SetNotifyCallback(NULL);
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
@@ -281,6 +284,34 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			DestroyWindow(hwnd);
 		}
 		return 0;
+	case WM_COPYDATA:
+		if( lParam ){
+			const COPYDATASTRUCT& cds = *(const COPYDATASTRUCT*)lParam;
+			if( cds.dwData == COPYDATA_TYPE_LUAPOST && cds.lpData ){
+				//Luaスクリプトをワーカースレッドに投入する
+				vector<WCHAR> buff((cds.cbData + 3) / sizeof(WCHAR), 0);
+				std::copy((const BYTE*)cds.lpData, (const BYTE*)cds.lpData + cds.cbData, (BYTE*)buff.data());
+				string script;
+				WtoUTF8(wstring(buff.data()), script);
+#ifndef EPGTIMERSRV_WITHLUA
+				//Luaが利用可能ならば
+				if( ctx->sys->hLuaDll )
+#endif
+				{
+					lock_recursive_mutex lock(ctx->sys->doLuaWorkerLock);
+
+					if( ctx->sys->doLuaScriptQueue.empty() && ctx->sys->doLuaWorkerThread.joinable() ){
+						ctx->sys->doLuaWorkerThread.join();
+					}
+					ctx->sys->doLuaScriptQueue.push_back(std::move(script));
+					if( ctx->sys->doLuaWorkerThread.joinable() == false ){
+						ctx->sys->doLuaWorkerThread = thread_(DoLuaWorker, ctx->sys);
+					}
+					return TRUE;
+				}
+			}
+		}
+		return FALSE;
 	case WM_APP_RESET_SERVER:
 		{
 			//サーバリセット処理
@@ -3030,6 +3061,38 @@ void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& 
 			AddDebugLogFormat(L"Error %ls: %ls", work.batFilePath.c_str(), werr.c_str());
 		}
 		lua_close(L);
+	}
+}
+
+void CEpgTimerSrvMain::DoLuaWorker(CEpgTimerSrvMain* sys)
+{
+	for(;;){
+		string script;
+		{
+			lock_recursive_mutex lock(sys->doLuaWorkerLock);
+			script.swap(sys->doLuaScriptQueue.front());
+		}
+
+		lua_State* L = luaL_newstate();
+		if( L ){
+			luaL_openlibs(L);
+			sys->InitLuaCallback(L, NULL);
+			if( luaL_dostring(L, script.c_str()) != 0 ){
+				wstring werr;
+				LPCSTR err = lua_tostring(L, -1);
+				if( err ){
+					UTF8toW(err, werr);
+				}
+				AddDebugLogFormat(L"Error script: %ls", werr.c_str());
+			}
+			lua_close(L);
+		}
+
+		lock_recursive_mutex lock(sys->doLuaWorkerLock);
+		sys->doLuaScriptQueue.erase(sys->doLuaScriptQueue.begin());
+		if( sys->doLuaScriptQueue.empty() ){
+			break;
+		}
 	}
 }
 

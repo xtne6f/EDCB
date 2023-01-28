@@ -71,4 +71,7 @@
 #define NOTIFY_UPDATE_EPGCAP_START	107		//EPG取得開始
 #define NOTIFY_UPDATE_EPGCAP_END	108		//EPG取得終了
 
+//WM_COPYDATAの型
+#define COPYDATA_TYPE_LUAPOST 0x45544C50 //Luaスクリプト実行をプロセスに要求する(完了を待たない)
+
 #endif
