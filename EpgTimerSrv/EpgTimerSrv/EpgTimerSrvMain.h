@@ -33,6 +33,8 @@ private:
 	static void OpenGUI();
 	//「予約削除」ポップアップを作成する
 	static void InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list);
+	//「配信停止」ポップアップを作成する
+	void InitStreamingMenuPopup(HMENU hMenu) const;
 	void ReloadNetworkSetting();
 	void ReloadSetting(bool initialize = false);
 	//デフォルト指定可能なフィールドのデフォルト値を特別な予約情報(ID=0x7FFFFFFF)として取得する

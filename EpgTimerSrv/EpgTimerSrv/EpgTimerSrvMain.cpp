@@ -732,10 +732,16 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		break;
 	case WM_INITMENUPOPUP:
-		if( GetMenuItemID((HMENU)wParam, 0) == IDC_MENU_RESERVE ){
-			vector<RESERVE_DATA> list = ctx->sys->reserveManager.GetReserveDataAll();
-			InitReserveMenuPopup((HMENU)wParam, list);
-			return 0;
+		{
+			UINT id = GetMenuItemID((HMENU)wParam, 0);
+			if( id == IDC_MENU_RESERVE ){
+				vector<RESERVE_DATA> list = ctx->sys->reserveManager.GetReserveDataAll();
+				InitReserveMenuPopup((HMENU)wParam, list);
+				return 0;
+			}else if( id == IDC_MENU_STREAMING ){
+				ctx->sys->InitStreamingMenuPopup((HMENU)wParam);
+				return 0;
+			}
 		}
 		break;
 	case WM_MENUSELECT:
@@ -772,11 +778,20 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_GUI:
 			OpenGUI();
 			break;
+		case IDC_BUTTON_STREAMING_NWPLAY:
+			//「追っかけ・ストリーミング再生停止」
+			ctx->sys->streamingManager.clear();
+			break;
 		default:
 			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
 				//「予約削除」
 				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
 					ctx->sys->reserveManager.DelReserveData(vector<DWORD>(1, (DWORD)(UINT_PTR)GetProp(hwnd, L"PopupSelData")));
+				}
+			}else if( IDC_MENU_STREAMING <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_STREAMING_MAX ){
+				//「配信停止」
+				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
+					ctx->sys->reserveManager.CloseNWTV((int)(UINT_PTR)GetProp(hwnd, L"PopupSelData"));
 				}
 			}
 			break;
@@ -895,6 +910,30 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 		mii.dwTypeData = text;
 		InsertMenuItem(hMenu, i, TRUE, &mii);
 	}
+}
+
+void CEpgTimerSrvMain::InitStreamingMenuPopup(HMENU hMenu) const
+{
+	vector<pair<DWORD, int>> list = this->reserveManager.GetNWTVIDAll();
+
+	while( GetMenuItemCount(hMenu) > 2 && DeleteMenu(hMenu, 0, MF_BYPOSITION) );
+	if( list.empty() ){
+		InsertMenu(hMenu, 0, MF_GRAYED | MF_BYPOSITION, IDC_MENU_STREAMING, L"(配信なし)");
+	}
+	for( UINT i = 0; i < list.size() && i <= IDC_MENU_STREAMING_MAX - IDC_MENU_STREAMING; i++ ){
+		MENUITEMINFO mii;
+		mii.cbSize = sizeof(mii);
+		mii.fMask = MIIM_ID | MIIM_DATA | MIIM_STRING;
+		mii.wID = IDC_MENU_STREAMING + i;
+		mii.dwItemData = list[i].second;
+		WCHAR text[128];
+		swprintf_s(text, L"Nwtv%d: %08x (%.63ls)",
+		           list[i].second, list[i].first, this->reserveManager.GetTunerBonFileName(list[i].first).c_str());
+		std::replace(text, text + wcslen(text), L'&', L'＆');
+		mii.dwTypeData = text;
+		InsertMenuItem(hMenu, i, TRUE, &mii);
+	}
+	EnableMenuItem(hMenu, IDC_BUTTON_STREAMING_NWPLAY, this->streamingManager.empty() ? MF_GRAYED : MF_ENABLED);
 }
 
 void CEpgTimerSrvMain::StopMain()

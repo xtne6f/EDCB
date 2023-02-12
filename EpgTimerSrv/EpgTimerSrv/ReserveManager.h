@@ -86,6 +86,8 @@ public:
 	pair<bool, int> IsOpenNWTV(int id) const;
 	//ネットワークモードのチューナを閉じる
 	bool CloseNWTV(int id);
+	//ネットワークモードのID一覧を取得する(チューナID順)
+	vector<pair<DWORD, int>> GetNWTVIDAll() const;
 	//予約が録画中であればその録画ファイル名を取得する
 	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
 	//指定EPGイベントは録画済みかどうか

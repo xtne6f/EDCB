@@ -27,6 +27,9 @@
 #define IDC_BUTTON_GUI                  32774
 #define IDC_MENU_RESERVE                32775
 #define IDC_MENU_RESERVE_MAX            32874
+#define IDC_MENU_STREAMING              32875
+#define IDC_MENU_STREAMING_MAX          32974
+#define IDC_BUTTON_STREAMING_NWPLAY     32975
 #define IDC_TAB                                 40000
 #define IDC_BUTTON_OK                           40001
 #define IDC_EDIT_SET_DATA_SAVE_PATH             40100

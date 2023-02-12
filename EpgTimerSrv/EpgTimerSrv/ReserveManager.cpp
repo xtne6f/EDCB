@@ -1891,6 +1891,19 @@ bool CReserveManager::CloseNWTV(int id)
 	return false;
 }
 
+vector<pair<DWORD, int>> CReserveManager::GetNWTVIDAll() const
+{
+	lock_recursive_mutex lock(this->managerLock);
+
+	vector<pair<DWORD, int>> idList;
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV ){
+			idList.push_back(std::make_pair(itr->first, itr->second->GetNWTVID()));
+		}
+	}
+	return idList;
+}
+
 bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath) const
 {
 	lock_recursive_mutex lock(this->managerLock);
