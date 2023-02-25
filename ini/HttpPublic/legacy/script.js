@@ -234,3 +234,66 @@ function waitForHlsStart(src,interval,delay,onerror,onstart){
     xhr.send();
   })();
 }
+
+function unescapeHtml(s){
+  return s.replace(/&(?:amp|lt|gt|quot|apos|#10|#13);/g,function(m){
+    return m[1]=="l"?"<":m[1]=="g"?">":m[1]=="q"?'"':m[3]=="p"?"&":m[3]=="o"?"'":m[3]=="0"?"\n":"\r";
+  });
+}
+
+var chatTagColors={
+  red:"#ff0000",
+  pink:"#ff8080",
+  orange:"#ffc000",
+  yellow:"#ffff00",
+  green:"#00ff00",
+  cyan:"#00ffff",
+  blue:"#0000ff",
+  purple:"#c000ff",
+  black:"#000000",
+  white2:"#cccc99",
+  niconicowhite:"#cccc99",
+  red2:"#cc0033",
+  truered:"#cc0033",
+  pink2:"#ff33cc",
+  orange2:"#ff6600",
+  passionorange:"#ff6600",
+  yellow2:"#999900",
+  madyellow:"#999900",
+  green2:"#00cc66",
+  elementalgreen:"#00cc66",
+  cyan2:"#00cccc",
+  blue2:"#3399ff",
+  marineblue:"#3399ff",
+  purple2:"#6633cc",
+  nobleviolet:"#6633cc",
+  black2:"#666666"
+};
+
+var getChatTagColorRe=new RegExp("(?:^| )(#[0-9A-Fa-f]{6}|"+Object.keys(chatTagColors).join("|")+")(?: |$)");
+
+function parseChatTag(tag){
+  var m=tag.match(/^<chat(?= )(.*)>(.*?)<\/chat>$/);
+  if(m){
+    var a=m[1];
+    var r={text:unescapeHtml(m[2])};
+    m=a.match(/ date="(\d+)"/);
+    if(m){
+      r.date=parseInt(m[1],10);
+      if(r.date>=0){
+        m=a.match(/ mail="(.*?)"/);
+        r.mail=m?m[1]:"";
+        m=r.mail.match(/(?:^| )(ue|shita)(?: |$)/);
+        r.type=!m?"right":m[1]=="ue"?"top":"bottom";
+        m=r.mail.match(getChatTagColorRe);
+        r.colorcode=!m?"#ffffff":m[1][0]=="#"?m[1]:chatTagColors[m[1]];
+        r.color=parseInt(r.colorcode.substring(1),16);
+        r.yourpost=/ yourpost="1"/.test(a);
+        m=a.match(/ user_id="([0-9A-Za-z_-]*)"/);
+        r.user=m?m[1]:"";
+        return r;
+      }
+    }
+  }
+  return null;
+}
