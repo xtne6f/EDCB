@@ -161,6 +161,10 @@ ARIBB24_USE_SVG=false
 --データ放送表示機能を使うかどうか。トランスコード中に表示する場合はpsisiarc.exeを用意すること。IE非対応
 USE_DATACAST=true
 
+--ライブ実況表示機能を使うかどうか
+--利用には実況を扱うツール側の対応(NicoJKの場合はcommentShareMode)が必要
+USE_LIVEJK=true
+
 --実況ログ表示機能を使う場合、jkrdlog.exeの絶対パス
 JKRDLOG_PATH=nil
 --JKRDLOG_PATH='C:\\Path\\to\\jkrdlog.exe'
@@ -170,6 +174,15 @@ JK_COMMENT_HEIGHT=32
 
 --実況コメントの表示時間(秒)
 JK_COMMENT_DURATION=5
+
+--chatタグ表示前の置換(JavaScript)
+JK_CUSTOM_REPLACE=[=[
+  // 広告などを下コメにする
+  tag = tag.replace(/^<chat(?![^>]*? mail=)/, '<chat mail=""');
+  tag = tag.replace(/^(<chat[^>]*? premium="3"[^>]*?>\/nicoad )(\{[^<]*?"totalAdPoint":)(\d+)/, "$1$3$2");
+  tag = tag.replace(/^<chat(?=[^>]*? premium="3")([^>]*? mail=")([^>]*?>)\/nicoad (\d*)\{[^<]*?"message":("[^<]*?")[,}][^<]*/, '<chat align="right"$1shita small yellow $2$4($3pt)');
+  tag = tag.replace(/^<chat(?=[^>]*? premium="3")([^>]*? mail=")([^>]*?>)\/spi /, '<chat align="right"$1shita small white2 $2');
+]=]
 
 --トランスコードするかどうか。する場合はtsreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
 XCODE=true
@@ -243,6 +256,7 @@ function OnscreenButtonsScriptTemplete()
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
 var vfull=document.getElementById("vid-full");
+var setSendComment;
 var hideOnscreenButtons;
 (function(){
   var btn=document.createElement("button");
@@ -289,17 +303,44 @@ var hideOnscreenButtons;
   var blive=document.createElement("div");
   blive.className="live-control";
   blive.appendChild(btn);
+  var commInput=document.createElement("input");
+  commInput.type="text";
+  var commSend=null;
+  commInput.onkeydown=function(e){
+    if(!e.isComposing&&e.keyCode!=229&&e.key=="Enter"){
+      if(commSend&&commInput.value)commSend(commInput.value);
+      commInput.value="";
+    }
+  };
+  var btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="≫";
+  btn.onclick=function(){
+    if(commSend&&commInput.value)commSend(commInput.value);
+    commInput.value="";
+  };
+  var bcomm=document.createElement("div");
+  bcomm.className="comment-control";
+  bcomm.style.display="none";
+  bcomm.appendChild(commInput);
+  bcomm.appendChild(btn);
+  setSendComment=function(f){
+    bcomm.style.display=f?null:"none";
+    commSend=f;
+  };
   var removed=true;
   hideOnscreenButtons=function(hide){
     if(!removed&&hide){
       vcont.removeChild(bfull);
       vcont.removeChild(bexit);
       vcont.removeChild(blive);
+      vcont.removeChild(bcomm);
       removed=true;
     }else if(removed&&!hide){
       vcont.appendChild(bfull);
       vcont.appendChild(bexit);
       vcont.appendChild(blive);
+      vcont.appendChild(bcomm);
       removed=false;
     }
   };
@@ -447,12 +488,12 @@ cbDatacast.onclick=function(){
 ]=] or '')
 end
 
-function TranscodeScriptTemplete(live,ofssec,fast)
+function TranscodeScriptTemplete(live,params)
   return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')
-    ..(not live and JKRDLOG_PATH and '<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>\n' or '')
+    ..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and '<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>\n' or '')
     ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <script src="script.js"></script>
-]=]..((USE_DATACAST or not live and JKRDLOG_PATH) and [=[
+]=]..((USE_DATACAST or live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 <script>
 var openSubStream;
 var onDataStream=null;
@@ -460,59 +501,35 @@ var onDataStreamError=null;
 var onJikkyoStream=null;
 var onJikkyoStreamError=null;
 (function(){
+  var reopen=false;
   var xhr=null;
   openSubStream=function(){
+    if(reopen)return;
     if(xhr){
       xhr.abort();
       xhr=null;
-      if(onDataStream||onJikkyoStream)setTimeout(openSubStream,500);
+      if(onDataStream||onJikkyoStream){
+        reopen=true;
+        setTimeout(function(){reopen=false;openSubStream();},5000);
+      }
       return;
     }
     if(!onDataStream&&!onJikkyoStream)return;
-    var atobRemain="";
-    var psiData=new Uint8Array(0);
-    var responseCount=0;
+    var readCount=0;
     var ctx={};
-    var counters=[];
     xhr=new XMLHttpRequest();
     xhr.open("GET",document.getElementById("vidsrc").textContent+(onDataStream?"&psidata=1":"")+(onJikkyoStream?"&jikkyo=1":"")+
-             "&ofssec="+(]=]..math.floor(ofssec or 0)..[=[+Math.floor(vid.currentTime]=]..(fast and '*'..XCODE_FAST or '')..[=[)));
+             "&ofssec="+(]=]..math.floor(params.ofssec or 0)..[=[+Math.floor(vid.currentTime]=]..(params.fast and '*'..XCODE_FAST or '')..[=[)));
     xhr.onloadend=function(){
-      if(xhr&&!responseCount){
-        if(onDataStreamError)onDataStreamError(xhr.status,responseCount);
-        if(onJikkyoStreamError)onJikkyoStreamError(xhr.status,responseCount);
+      if(xhr&&(readCount==0||xhr.status!=0)){
+        if(onDataStream&&onDataStreamError)onDataStreamError(xhr.status,readCount);
+        if(onJikkyoStream&&onJikkyoStreamError)onJikkyoStreamError(xhr.status,readCount);
       }
       xhr=null;
     };
     xhr.onprogress=function(){
-      if(!xhr||xhr.status!=200||!xhr.response)return;
-      while(responseCount<xhr.response.length){
-        var i=xhr.response.indexOf("<",responseCount);
-        if(i==responseCount){
-          i=xhr.response.indexOf("\n",responseCount);
-          if(i<0)break;
-          if(onJikkyoStream)onJikkyoStream(xhr.response.substring(responseCount,i));
-          responseCount=i+1;
-        }else{
-          i=i<0?xhr.response.length:i;
-          var n=Math.floor((i-responseCount+atobRemain.length)/4)*4;
-          if(n){
-            var addData=atob(atobRemain+xhr.response.substring(responseCount,responseCount+n-atobRemain.length));
-            atobRemain=xhr.response.substring(responseCount+n-atobRemain.length,i);
-            var concatData=new Uint8Array(psiData.length+addData.length);
-            for(var j=0;j<psiData.length;j++)concatData[j]=psiData[j];
-            for(var j=0;j<addData.length;j++)concatData[psiData.length+j]=addData.charCodeAt(j);
-            psiData=readPsiData(concatData.buffer,function(sec,psiTS,pid){
-              setTSPacketHeader(psiTS,counters,pid);
-              if(onDataStream)onDataStream(psiTS,Math.floor(sec*90000));
-              return true;
-            },0,ctx);
-            if(psiData)psiData=new Uint8Array(psiData);
-          }else{
-            atobRemain+=xhr.response.substring(responseCount,i);
-          }
-          responseCount=i;
-        }
+      if(xhr&&xhr.status==200&&xhr.response){
+        readCount=progressPsiDataChatMixedStream(readCount,xhr.response,onDataStream,onJikkyoStream,ctx);
       }
     };
     xhr.send();
@@ -555,13 +572,13 @@ cbDatacast.onclick=function(){
   hideOnscreenButtons(true);
   bmlBrowserSetInvisible(false);
   onDataStream=function(psiTS,pcr){bmlBrowserPlayTS(psiTS,pcr);};
-  onDataStreamError=function(status,responseCount){
-    document.querySelector(".remote-control-indicator").innerText="Error! ("+status+"|"+responseCount+"Bytes)";
+  onDataStreamError=function(status,readCount){
+    document.querySelector(".remote-control-indicator").innerText="Error! ("+status+"|"+readCount+"Bytes)";
   };
   openSubStream();
 };
 </script>
-]=] or '')..(not live and JKRDLOG_PATH and [=[
+]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 <script src="danmaku.js"></script>
 <script>
 var cbJikkyo=document.getElementById("cb-jikkyo");
@@ -570,6 +587,7 @@ cbJikkyo.onclick=function(){
     onJikkyoStream=null;
     openSubStream();
     checkJikkyoDisplay();
+    setSendComment(null);
     return;
   }
   var comm=document.getElementById("jk-comm");
@@ -593,6 +611,27 @@ cbJikkyo.onclick=function(){
     });
   }
   checkJikkyoDisplay();
+  function addMessage(text){
+    var b=document.createElement("strong");
+    b.innerText=text;
+    var div=document.createElement("div");
+    div.appendChild(b);
+    comm.appendChild(div);
+  }
+]=]..(live and USE_LIVEJK and [=[
+  setSendComment(function(value){
+    var xhr=new XMLHttpRequest();
+    xhr.open("POST","comment.lua");
+    xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+    xhr.onloadend=function(){
+      if(xhr.status!=200){
+        addMessage("Post error! ("+xhr.status+")");
+      }
+    };
+    xhr.send("ctok=]=]..CsrfToken('comment.lua')..'&n='..params.n..(params.id and '&id='..params.id or '')
+      ..[=[&comm="+encodeURIComponent(value).replace(/%20/g,"+"));
+  });
+]=] or '')..[=[
   var commHide=true;
   setInterval(function(){
     if(getComputedStyle(comm).display=="none"){
@@ -608,9 +647,13 @@ cbJikkyo.onclick=function(){
   var scatter=[];
   var scatterInterval=200;
   var closed=false;
+  function replaceTag(tag){
+]=]..JK_CUSTOM_REPLACE..[=[
+    return tag;
+  }
   onJikkyoStream=function(tag){
-    if(tag[1]=="c"){
-      var c=parseChatTag(tag);
+    if(tag.substring(0,6)=="<chat "){
+      var c=parseChatTag(replaceTag(tag));
       if(c){
         if(c.yourpost)c.border="2px solid #c00";
         scatter.push(c);
@@ -630,19 +673,29 @@ cbJikkyo.onclick=function(){
         if(!fragment)fragment=document.createDocumentFragment();
         fragment.appendChild(div);
       }
-    }else if(tag[1]!="!"){
+      return;
+    }else if(tag.substring(0,13)=="<chat_result "){
+      var m=tag.match(/^[^>]*? status="(\d+)"/);
+      if(m&&m[1]!="0")addMessage("Error! (chat_result="+m[1]+")");
+      return;
+    }else if(tag.substring(0,7)=="<!-- M="){
+      if(tag.substring(7,22)=="Closed logfile.")closed=true;
+      else if(tag.substring(7,31)!="Started reading logfile:")addMessage(tag.substring(7,tag.length-4));
+      return;
+    }else if(tag.substring(0,7)!="<!-- J="){
       return;
     }
-    if(tag.substring(0,6)!="<!-- J"){
-      if(tag.substring(0,13)=="<!-- M=Closed")closed=true;
-      return;
-    }
-    scatterInterval=Math.min(Math.max(scatterInterval+(scatter.length>0?-10:10),100),200);
+    if(tag.indexOf(";T=")<0)scatterInterval=90;
+    else scatterInterval=Math.min(Math.max(scatterInterval+(scatter.length>0?-10:10),100),200);
     setTimeout(function(){
       var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
       if(fragment){
         comm.appendChild(fragment);
         fragment=null;
+      }
+      if(scatterInterval<100){
+        danmaku.draw(scatter);
+        scatter.splice(0);
       }
       var n=Math.ceil(scatter.length/5);
       if(n>0){
@@ -662,6 +715,9 @@ cbJikkyo.onclick=function(){
       }
       if(scroll)comm.scrollTop=comm.scrollHeight;
     },0);
+  };
+  onJikkyoStreamError=function(status,readCount){
+    addMessage("Error! ("+status+"|"+readCount+"Bytes)");
   };
   openSubStream();
 };

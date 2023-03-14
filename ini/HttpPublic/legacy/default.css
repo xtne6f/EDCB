@@ -331,10 +331,31 @@ th, td {
   top: 0;
 }
 
+.comment-control {
+  bottom: 20%;
+  display: flex;
+  left: 50%;
+  opacity: 0;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 40%;
+}
+
 .full-control > button, .exit-control > button, .live-control > button {
   font-size: x-large;
   margin: 0.5em;
   padding: 0.5em;
+}
+
+.comment-control > input, .comment-control > button {
+  font-size: large;
+  margin: 1em 0.2em;
+  opacity: 0.8;
+  padding: 0.2em;
+}
+
+.comment-control > input {
+  flex: 1;
 }
 
 .video-full-container .full-control:hover {
@@ -368,6 +389,10 @@ th, td {
 }
 
 .video-full-container .live-control:hover {
+  opacity: 1;
+}
+
+.video-full-container .comment-control:hover {
   opacity: 1;
 }
 

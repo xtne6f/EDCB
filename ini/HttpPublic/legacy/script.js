@@ -133,6 +133,45 @@ function setTSPacketHeader(packets,counters,pid){
   }
 }
 
+function progressPsiDataChatMixedStream(readCount,response,onData,onChat,ctx){
+  ctx=ctx||{};
+  if(!ctx.ctx){
+    ctx.ctx={};
+    ctx.counters=[];
+    ctx.atobRemain="";
+    ctx.psiData=new Uint8Array(0);
+  }
+  while(readCount<response.length){
+    var i=response.indexOf("<",readCount);
+    if(i==readCount){
+      i=response.indexOf("\n",readCount);
+      if(i<0)break;
+      if(onChat)onChat(response.substring(readCount,i));
+      readCount=i+1;
+    }else{
+      i=i<0?response.length:i;
+      var n=Math.floor((i-readCount+ctx.atobRemain.length)/4)*4;
+      if(n){
+        var addData=atob(ctx.atobRemain+response.substring(readCount,readCount+n-ctx.atobRemain.length));
+        ctx.atobRemain=response.substring(readCount+n-ctx.atobRemain.length,i);
+        var concatData=new Uint8Array(ctx.psiData.length+addData.length);
+        for(var j=0;j<ctx.psiData.length;j++)concatData[j]=ctx.psiData[j];
+        for(var j=0;j<addData.length;j++)concatData[ctx.psiData.length+j]=addData.charCodeAt(j);
+        ctx.psiData=readPsiData(concatData.buffer,function(sec,psiTS,pid){
+          setTSPacketHeader(psiTS,ctx.counters,pid);
+          if(onData)onData(psiTS,Math.floor(sec*90000));
+          return true;
+        },0,ctx.ctx);
+        if(ctx.psiData)ctx.psiData=new Uint8Array(ctx.psiData);
+      }else{
+        atobRemain+=response.substring(readCount,i);
+      }
+      readCount=i;
+    }
+  }
+  return readCount;
+}
+
 function decodeB24CaptionFromCueText(text,work){
   work=work||[];
   text=text.replace(/\r?\n/g,'');

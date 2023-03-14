@@ -297,18 +297,18 @@ elseif psidata or jikkyo then
         failed=not buf or not mg.write(mg.base64_encode(buf))
         if failed then break end
       end
-      for i=1,3 do
-        if jikkyo then
+      if jikkyo then
+        for i=1,3 do
           -- 1/fastRate秒間隔でブロックされる
           buf=ReadJikkyoChunk(f.jk)
           failed=not buf or not mg.write(buf)
           if failed then break end
-        else
-          now=os.time()*fastRate
-          if math.abs(baseTime-now)>10 then baseTime=now end
-          edcb.Sleep(math.max((baseTime+1-now)/fastRate,0)*1000)
-          baseTime=baseTime+1
         end
+      else
+        now=os.time()*fastRate
+        if math.abs(baseTime-now)>10 then baseTime=now end
+        edcb.Sleep(math.max((baseTime+3-now)/fastRate,0)*1000)
+        baseTime=baseTime+3
       end
     until failed
   end

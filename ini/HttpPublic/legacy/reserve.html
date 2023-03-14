@@ -84,7 +84,7 @@ for i,v in ipairs(edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
   end
 end
 if #a>0 then
-  n=mg.get_var(mg.request_info.query_string,'fname') or a[1]
+  n=mg.get_var(mg.request_info.query_string,'n') or a[1]
   xq=GetTranscodeQueries(mg.request_info.query_string)
   ct:Append('視聴 →<a href="reserve.html?vtag='..(vtag==0 and '-1' or '0')
     ..ConstructTranscodeQueries(xq)
@@ -108,7 +108,7 @@ if #a>0 then
           ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
           ..'<div class="video-container arib-video-container" id="vid-cont">'
           ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video></div></div>\n'
-          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true))
+          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,{n=v}))
         if ALLOW_HLS then
           ct:Append(HlsScriptTemplete(xq.caption))
         end

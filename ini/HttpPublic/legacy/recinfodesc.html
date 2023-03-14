@@ -92,7 +92,7 @@ if v then
               ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
               ..'<div class="video-container arib-video-container" id="vid-cont">'
               ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>\n'
-              ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(false,fsec*(xq.offset or 0)/100,xq.fast))
+              ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(false,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
             if ALLOW_HLS then
               ct:Append(HlsScriptTemplete(xq.caption))
             end
