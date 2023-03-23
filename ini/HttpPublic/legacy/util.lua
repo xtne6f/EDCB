@@ -606,6 +606,8 @@ cbJikkyo.onclick=function(){
       apiBackend:{read:function(opt){opt.success([]);}},
       height:]=]..JK_COMMENT_HEIGHT..[=[,
       duration:]=]..JK_COMMENT_DURATION..[=[,
+      paddingTop:10,
+      paddingBottom:10,
       unlimited:false,
       api:{id:"noid",address:"noad",token:"noto",user:"nous",speedRate:1}
     });
@@ -663,6 +665,10 @@ cbJikkyo.onclick=function(){
                     String(100+c.date%60).substring(1)+" ("+c.user.substring(0,3)+") ";
         var span=document.createElement("span");
         span.innerText=c.text;
+        if(c.color!=0xffffff){
+          span.style.backgroundColor=c.colorcode;
+          span.className=(c.color>>16)*3+(c.color>>8)%256*6+c.color%256<255?"dark":"light";
+        }
         var div=document.createElement("div");
         if(closed){
           div.className="closed";

@@ -151,7 +151,9 @@ class Danmaku {
         if (this.showing) {
             const itemHeight = this.options.height;
             const danWidth = this.container.offsetWidth;
-            const danHeight = this.container.offsetHeight;
+            const danPaddingTop = this.options.paddingTop || 0;
+            const danPaddingBottom = this.options.paddingBottom || 0;
+            const danHeight = Math.max(this.container.offsetHeight - danPaddingTop - danPaddingBottom, 0);
             const itemY = parseInt(danHeight / itemHeight);
 
             const danItemRight = (ele) => {
@@ -235,20 +237,20 @@ class Danmaku {
                         tunnel = getTunnel(item, dan[i].type, itemWidth);
                         if (tunnel >= 0) {
                             item.style.width = itemWidth + 1 + 'px';
-                            item.style.top = itemHeight * tunnel + 'px';
+                            item.style.top = (danPaddingTop + itemHeight * tunnel) + 'px';
                             item.style.transform = `translateX(-${danWidth}px)`;
                         }
                         break;
                     case 'top':
                         tunnel = getTunnel(item, dan[i].type);
                         if (tunnel >= 0) {
-                            item.style.top = itemHeight * tunnel + 'px';
+                            item.style.top = (danPaddingTop + itemHeight * tunnel) + 'px';
                         }
                         break;
                     case 'bottom':
                         tunnel = getTunnel(item, dan[i].type);
                         if (tunnel >= 0) {
-                            item.style.bottom = itemHeight * tunnel + 'px';
+                            item.style.bottom = (danPaddingBottom + itemHeight * tunnel) + 'px';
                         }
                         break;
                     default:

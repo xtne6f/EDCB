@@ -475,6 +475,14 @@ th, td {
   color: #c00;
 }
 
+.jikkyo-comments .dark {
+  color: #fff;
+}
+
+.jikkyo-comments .light {
+  color: #000;
+}
+
 .video-full-container:fullscreen .jikkyo-comments {
   display: none;
 }
@@ -487,8 +495,6 @@ th, td {
   display: inline-block;
   font-weight: bold;
   line-height: 1;
-  padding-bottom: 4px;
-  padding-top: 4px;
   pointer-events: none;
   -webkit-text-stroke: 1px #000;
   text-stroke: 1px #000;
