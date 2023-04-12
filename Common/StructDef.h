@@ -3,33 +3,33 @@
 
 #include "Util.h"
 
-//˜^‰æƒtƒHƒ‹ƒ_î•ñ
+//ï¿½^ï¿½ï¿½tï¿½Hï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½
 typedef struct _REC_FILE_SET_INFO{
-	wstring recFolder;			//˜^‰æƒtƒHƒ‹ƒ_
-	wstring writePlugIn;		//o—ÍPlugIn
-	wstring recNamePlugIn;		//ƒtƒ@ƒCƒ‹–¼•ÏŠ·PlugIn‚ÌŽg—p
-	wstring recFileName;		//ƒtƒ@ƒCƒ‹–¼ŒÂ•Ê‘Î‰ž ˜^‰æŠJŽnˆ—Žž‚É“à•”‚ÅŽg—pB—\–ñî•ñ‚Æ‚µ‚Ä‚Í•K—v‚È‚µ
+	wstring recFolder;			//ï¿½^ï¿½ï¿½tï¿½Hï¿½ï¿½ï¿½_
+	wstring writePlugIn;		//ï¿½oï¿½ï¿½PlugIn
+	wstring recNamePlugIn;		//ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½ÏŠï¿½PlugInï¿½ÌŽgï¿½p
+	wstring recFileName;		//ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½Â•Ê‘Î‰ï¿½ ï¿½^ï¿½ï¿½Jï¿½nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É“ï¿½ï¿½ï¿½ï¿½ÅŽgï¿½pï¿½Bï¿½\ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½ï¿½Ä‚Í•Kï¿½vï¿½È‚ï¿½
 }REC_FILE_SET_INFO;
 
-//˜^‰æÝ’èî•ñ
+//ï¿½^ï¿½ï¿½Ý’ï¿½ï¿½ï¿½
 typedef struct _REC_SETTING_DATA{
-	BYTE recMode;				//˜^‰æƒ‚[ƒh
-	BYTE priority;				//—Dæ“x
-	BYTE tuijyuuFlag;			//’Ç]ƒ‚[ƒh
-	DWORD serviceMode;			//ˆ—‘ÎÛƒf[ƒ^ƒ‚[ƒh
-	BYTE pittariFlag;			//‚Ò‚Á‚½‚èH˜^‰æ
-	wstring batFilePath;		//˜^‰æŒãBATƒtƒ@ƒCƒ‹ƒpƒX
-	vector<REC_FILE_SET_INFO> recFolderList;		//˜^‰æƒtƒHƒ‹ƒ_ƒpƒX
-	BYTE suspendMode;			//‹xŽ~ƒ‚[ƒh
-	BYTE rebootFlag;			//˜^‰æŒãÄ‹N“®‚·‚é
-	BYTE useMargineFlag;		//˜^‰æƒ}[ƒWƒ“‚ðŒÂ•ÊŽw’è
-	INT startMargine;			//˜^‰æŠJŽnŽž‚Ìƒ}[ƒWƒ“
-	INT endMargine;				//˜^‰æI—¹Žž‚Ìƒ}[ƒWƒ“
-	BYTE continueRecFlag;		//Œã‘±“¯ˆêƒT[ƒrƒXŽžA“¯ˆêƒtƒ@ƒCƒ‹‚Å˜^‰æ
-	BYTE partialRecFlag;		//•¨—CH‚É•”•ªŽóMƒT[ƒrƒX‚ª‚ ‚éê‡A“¯Žž˜^‰æ‚·‚é‚©‚Ç‚¤‚©
-	DWORD tunerID;				//‹­§“I‚ÉŽg—pTuner‚ðŒÅ’è
-	//CMD_VER 2ˆÈ~
-	vector<REC_FILE_SET_INFO> partialRecFolder;	//•”•ªŽóMƒT[ƒrƒX˜^‰æ‚ÌƒtƒHƒ‹ƒ_
+	BYTE recMode;				//ï¿½^ï¿½æƒ‚ï¿½[ï¿½h
+	BYTE priority;				//ï¿½Dï¿½ï¿½x
+	BYTE tuijyuuFlag;			//ï¿½Ç]ï¿½ï¿½ï¿½[ï¿½h
+	DWORD serviceMode;			//ï¿½ï¿½ï¿½ï¿½ï¿½ÎÛƒfï¿½[ï¿½^ï¿½ï¿½ï¿½[ï¿½h
+	BYTE pittariFlag;			//ï¿½Ò‚ï¿½ï¿½ï¿½ï¿½ï¿½Hï¿½^ï¿½ï¿½
+	wstring batFilePath;		//ï¿½^ï¿½ï¿½ï¿½BATï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½pï¿½X
+	vector<REC_FILE_SET_INFO> recFolderList;		//ï¿½^ï¿½ï¿½tï¿½Hï¿½ï¿½ï¿½_ï¿½pï¿½X
+	BYTE suspendMode;			//ï¿½xï¿½~ï¿½ï¿½ï¿½[ï¿½h
+	BYTE rebootFlag;			//ï¿½^ï¿½ï¿½ï¿½Ä‹Nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	BYTE useMargineFlag;		//ï¿½^ï¿½ï¿½}ï¿½[ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½Â•ÊŽwï¿½ï¿½
+	INT startMargine;			//ï¿½^ï¿½ï¿½Jï¿½nï¿½ï¿½ï¿½Ìƒ}ï¿½[ï¿½Wï¿½ï¿½
+	INT endMargine;				//ï¿½^ï¿½ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½Ìƒ}ï¿½[ï¿½Wï¿½ï¿½
+	BYTE continueRecFlag;		//ï¿½ã‘±ï¿½ï¿½ï¿½ï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½Å˜^ï¿½ï¿½
+	BYTE partialRecFlag;		//ï¿½ï¿½ï¿½ï¿½CHï¿½É•ï¿½ï¿½ï¿½ï¿½ï¿½Mï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê‡ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½^ï¿½æ‚·ï¿½é‚©ï¿½Ç‚ï¿½ï¿½ï¿½
+	DWORD tunerID;				//ï¿½ï¿½ï¿½ï¿½ï¿½Iï¿½ÉŽgï¿½pTunerï¿½ï¿½ï¿½Å’ï¿½
+	//CMD_VER 2ï¿½È~
+	vector<REC_FILE_SET_INFO> partialRecFolder;	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Mï¿½Tï¿½[ï¿½rï¿½Xï¿½^ï¿½ï¿½Ìƒtï¿½Hï¿½ï¿½ï¿½_
 	_REC_SETTING_DATA(void){
 		recMode = 1;
 		priority = 1;
@@ -48,27 +48,27 @@ typedef struct _REC_SETTING_DATA{
 	};
 } REC_SETTING_DATA;
 
-//“o˜^—\–ñî•ñ
+//ï¿½oï¿½^ï¿½\ï¿½ï¿½ï¿½ï¿½
 typedef struct _RESERVE_DATA{
-	wstring title;					//”Ô‘g–¼
-	SYSTEMTIME startTime;			//˜^‰æŠJŽnŽžŠÔ
-	DWORD durationSecond;			//˜^‰æ‘ŽžŠÔ
-	wstring stationName;			//ƒT[ƒrƒX–¼
+	wstring title;					//ï¿½Ô‘gï¿½ï¿½
+	SYSTEMTIME startTime;			//ï¿½^ï¿½ï¿½Jï¿½nï¿½ï¿½ï¿½ï¿½
+	DWORD durationSecond;			//ï¿½^ï¿½æ‘ï¿½ï¿½ï¿½ï¿½
+	wstring stationName;			//ï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½
 	WORD originalNetworkID;			//ONID
 	WORD transportStreamID;			//TSID
 	WORD serviceID;					//SID
 	WORD eventID;					//EventID
-	wstring comment;				//ƒRƒƒ“ƒg
-	DWORD reserveID;				//—\–ñŽ¯•ÊID —\–ñ“o˜^Žž‚Í0
-	BYTE recWaitFlag;				//—\–ñ‘Ò‹@“ü‚Á‚½H “à•”‚ÅŽg—p
-	BYTE overlapMode;				//‚©‚Ô‚èó‘Ô 1:‚©‚Ô‚Á‚Äƒ`ƒ…[ƒi[‘«‚è‚È‚¢—\–ñ‚ ‚è 2:ƒ`ƒ…[ƒi[‘«‚è‚È‚­‚Ä—\–ñ‚Å‚«‚È‚¢
-	wstring recFilePath;			//˜^‰æƒtƒ@ƒCƒ‹ƒpƒX ‹Œƒo[ƒWƒ‡ƒ“ŒÝŠ·—p –¢Žg—p
-	SYSTEMTIME startTimeEpg;		//—\–ñŽž‚ÌŠJŽnŽžŠÔ
-	REC_SETTING_DATA recSetting;	//˜^‰æÝ’è
-	DWORD reserveStatus;			//—\–ñ’Ç‰Áó‘Ô “à•”‚ÅŽg—p
-	//CMD_VER 5ˆÈ~
-	vector<wstring> recFileNameList;	//˜^‰æ—\’èƒtƒ@ƒCƒ‹–¼
-	DWORD param1;					//«—ˆ—p
+	wstring comment;				//ï¿½Rï¿½ï¿½ï¿½ï¿½ï¿½g
+	DWORD reserveID;				//ï¿½\ï¿½ñŽ¯•ï¿½ID ï¿½\ï¿½ï¿½oï¿½^ï¿½ï¿½ï¿½ï¿½0
+	BYTE recWaitFlag;				//ï¿½\ï¿½ï¿½Ò‹@ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½H ï¿½ï¿½ï¿½ï¿½ï¿½ÅŽgï¿½p
+	BYTE overlapMode;				//ï¿½ï¿½ï¿½Ô‚ï¿½ï¿½ï¿½ 1:ï¿½ï¿½ï¿½Ô‚ï¿½ï¿½Äƒ`ï¿½ï¿½ï¿½[ï¿½iï¿½[ï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½\ï¿½ñ‚ ‚ï¿½ 2:ï¿½`ï¿½ï¿½ï¿½[ï¿½iï¿½[ï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½Ä—\ï¿½ï¿½Å‚ï¿½ï¿½È‚ï¿½
+	wstring recFilePath;			//ï¿½^ï¿½ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½pï¿½X ï¿½ï¿½ï¿½oï¿½[ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ÝŠï¿½ï¿½p ï¿½ï¿½ï¿½gï¿½p
+	SYSTEMTIME startTimeEpg;		//ï¿½\ï¿½ñŽž‚ÌŠJï¿½nï¿½ï¿½ï¿½ï¿½
+	REC_SETTING_DATA recSetting;	//ï¿½^ï¿½ï¿½Ý’ï¿½
+	DWORD reserveStatus;			//ï¿½\ï¿½ï¿½Ç‰ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ÅŽgï¿½p
+	//CMD_VER 5ï¿½È~
+	vector<wstring> recFileNameList;	//ï¿½^ï¿½ï¿½\ï¿½ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½
+	DWORD param1;					//ï¿½ï¿½ï¿½ï¿½ï¿½p
 	_RESERVE_DATA(void){
 		title=L"";
 		ZeroMemory(&startTime, sizeof(SYSTEMTIME));
@@ -91,23 +91,23 @@ typedef struct _RESERVE_DATA{
 
 typedef struct _REC_FILE_INFO{
 	DWORD id;					//ID
-	wstring recFilePath;		//˜^‰æƒtƒ@ƒCƒ‹ƒpƒX
-	wstring title;				//”Ô‘g–¼
-	SYSTEMTIME startTime;		//ŠJŽnŽžŠÔ
-	DWORD durationSecond;		//˜^‰æŽžŠÔ
-	wstring serviceName;		//ƒT[ƒrƒX–¼
+	wstring recFilePath;		//ï¿½^ï¿½ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½pï¿½X
+	wstring title;				//ï¿½Ô‘gï¿½ï¿½
+	SYSTEMTIME startTime;		//ï¿½Jï¿½nï¿½ï¿½ï¿½ï¿½
+	DWORD durationSecond;		//ï¿½^ï¿½æŽžï¿½ï¿½
+	wstring serviceName;		//ï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½
 	WORD originalNetworkID;		//ONID
 	WORD transportStreamID;		//TSID
 	WORD serviceID;				//SID
 	WORD eventID;				//EventID
-	__int64 drops;				//ƒhƒƒbƒv”
-	__int64 scrambles;			//ƒXƒNƒ‰ƒ“ƒuƒ‹”
-	DWORD recStatus;			//˜^‰æŒ‹‰Ê‚ÌƒXƒe[ƒ^ƒX
-	SYSTEMTIME startTimeEpg;	//—\–ñŽž‚ÌŠJŽnŽžŠÔ
-	wstring comment;			//ƒRƒƒ“ƒg
-	wstring programInfo;		//.program.txtƒtƒ@ƒCƒ‹‚Ì“à—e
-	wstring errInfo;			//.errƒtƒ@ƒCƒ‹‚Ì“à—e
-	//CMD_VER 4ˆÈ~
+	__int64 drops;				//ï¿½hï¿½ï¿½ï¿½bï¿½vï¿½ï¿½
+	__int64 scrambles;			//ï¿½Xï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½uï¿½ï¿½ï¿½ï¿½
+	DWORD recStatus;			//ï¿½^ï¿½æŒ‹ï¿½Ê‚ÌƒXï¿½eï¿½[ï¿½^ï¿½X
+	SYSTEMTIME startTimeEpg;	//ï¿½\ï¿½ñŽž‚ÌŠJï¿½nï¿½ï¿½ï¿½ï¿½
+	wstring comment;			//ï¿½Rï¿½ï¿½ï¿½ï¿½ï¿½g
+	wstring programInfo;		//.program.txtï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½Ì“ï¿½ï¿½e
+	wstring errInfo;			//.errï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½Ì“ï¿½ï¿½e
+	//CMD_VER 4ï¿½È~
 	BYTE protectFlag;
 	_REC_FILE_INFO(void){
 		id = 0;
@@ -158,20 +158,20 @@ typedef struct _TUNER_RESERVE_INFO{
 	vector<DWORD> reserveList;
 } TUNER_RESERVE_INFO;
 
-//ƒ`ƒ…[ƒi[–ˆƒT[ƒrƒXî•ñ
+//ï¿½`ï¿½ï¿½ï¿½[ï¿½iï¿½[ï¿½ï¿½ï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½ï¿½
 typedef struct _CH_DATA4{
-	int space;						//ƒ`ƒ…[ƒi[‹óŠÔ
-	int ch;							//•¨—ƒ`ƒƒƒ“ƒlƒ‹
+	int space;						//ï¿½`ï¿½ï¿½ï¿½[ï¿½iï¿½[ï¿½ï¿½ï¿½
+	int ch;							//ï¿½ï¿½ï¿½ï¿½ï¿½`ï¿½ï¿½ï¿½ï¿½ï¿½lï¿½ï¿½
 	WORD originalNetworkID;			//ONID
 	WORD transportStreamID;			//TSID
-	WORD serviceID;					//ƒT[ƒrƒXID
-	WORD serviceType;				//ƒT[ƒrƒXƒ^ƒCƒv
-	BOOL partialFlag;				//•”•ªŽóMƒT[ƒrƒXiƒƒ“ƒZƒOj‚©‚Ç‚¤‚©
-	BOOL useViewFlag;				//ˆê——•\Ž¦‚ÉŽg—p‚·‚é‚©‚Ç‚¤‚©
-	wstring serviceName;			//ƒT[ƒrƒX–¼
-	wstring chName;					//ƒ`ƒƒƒ“ƒlƒ‹–¼
+	WORD serviceID;					//ï¿½Tï¿½[ï¿½rï¿½XID
+	WORD serviceType;				//ï¿½Tï¿½[ï¿½rï¿½Xï¿½^ï¿½Cï¿½v
+	BOOL partialFlag;				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Mï¿½Tï¿½[ï¿½rï¿½Xï¿½iï¿½ï¿½ï¿½ï¿½ï¿½Zï¿½Oï¿½jï¿½ï¿½ï¿½Ç‚ï¿½ï¿½ï¿½
+	BOOL useViewFlag;				//ï¿½ê——ï¿½\ï¿½ï¿½ï¿½ÉŽgï¿½pï¿½ï¿½ï¿½é‚©ï¿½Ç‚ï¿½ï¿½ï¿½
+	wstring serviceName;			//ï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½
+	wstring chName;					//ï¿½`ï¿½ï¿½ï¿½ï¿½ï¿½lï¿½ï¿½ï¿½ï¿½
 	wstring networkName;			//ts_name or network_name
-	BYTE remoconID;					//ƒŠƒ‚ƒRƒ“ID
+	BYTE remoconID;					//ï¿½ï¿½ï¿½ï¿½ï¿½Rï¿½ï¿½ID
 	_CH_DATA4(void){
 		space = 0;
 		ch = 0;
@@ -188,17 +188,17 @@ typedef struct _CH_DATA4{
 	};
 } CH_DATA4;
 
-//‘Sƒ`ƒ…[ƒi[‚Å”FŽ¯‚µ‚½ƒT[ƒrƒXˆê——
+//ï¿½Sï¿½`ï¿½ï¿½ï¿½[ï¿½iï¿½[ï¿½Å”Fï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Tï¿½[ï¿½rï¿½Xï¿½ê——
 typedef struct _CH_DATA5{
 	WORD originalNetworkID;			//ONID
 	WORD transportStreamID;			//TSID
-	WORD serviceID;					//ƒT[ƒrƒXID
-	WORD serviceType;				//ƒT[ƒrƒXƒ^ƒCƒv
-	BOOL partialFlag;				//•”•ªŽóMƒT[ƒrƒXiƒƒ“ƒZƒOj‚©‚Ç‚¤‚©
-	wstring serviceName;			//ƒT[ƒrƒX–¼
+	WORD serviceID;					//ï¿½Tï¿½[ï¿½rï¿½XID
+	WORD serviceType;				//ï¿½Tï¿½[ï¿½rï¿½Xï¿½^ï¿½Cï¿½v
+	BOOL partialFlag;				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Mï¿½Tï¿½[ï¿½rï¿½Xï¿½iï¿½ï¿½ï¿½ï¿½ï¿½Zï¿½Oï¿½jï¿½ï¿½ï¿½Ç‚ï¿½ï¿½ï¿½
+	wstring serviceName;			//ï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½
 	wstring networkName;			//ts_name or network_name
-	BOOL epgCapFlag;				//EPGƒf[ƒ^Žæ“¾‘ÎÛ‚©‚Ç‚¤‚©
-	BOOL searchFlag;				//ŒŸõŽž‚ÌƒfƒtƒHƒ‹ƒgŒŸõ‘ÎÛƒT[ƒrƒX‚©‚Ç‚¤‚©
+	BOOL epgCapFlag;				//EPGï¿½fï¿½[ï¿½^ï¿½æ“¾ï¿½ÎÛ‚ï¿½ï¿½Ç‚ï¿½ï¿½ï¿½
+	BOOL searchFlag;				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ìƒfï¿½tï¿½Hï¿½ï¿½ï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ÎÛƒTï¿½[ï¿½rï¿½Xï¿½ï¿½ï¿½Ç‚ï¿½ï¿½ï¿½
 	_CH_DATA5(void){
 		originalNetworkID = 0;
 		transportStreamID = 0;
@@ -217,11 +217,11 @@ typedef struct _REGIST_TCP_INFO{
 	DWORD port;
 }REGIST_TCP_INFO;
 
-//ƒRƒ}ƒ“ƒh‘—ŽóMƒXƒgƒŠ[ƒ€
+//ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½ï¿½Mï¿½Xï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½
 typedef struct _CMD_STREAM{
-	DWORD param;	//‘—MŽžƒRƒ}ƒ“ƒhAŽóMŽžƒGƒ‰[ƒR[ƒh
-	DWORD dataSize;	//data‚ÌƒTƒCƒYiBYTE’PˆÊj
-	BYTE* data;		//‘—ŽóM‚·‚éƒoƒCƒiƒŠƒf[ƒ^
+	DWORD param;	//ï¿½ï¿½ï¿½Mï¿½ï¿½ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½Aï¿½ï¿½Mï¿½ï¿½ï¿½Gï¿½ï¿½ï¿½[ï¿½Rï¿½[ï¿½h
+	DWORD dataSize;	//dataï¿½ÌƒTï¿½Cï¿½Yï¿½iBYTEï¿½Pï¿½Êj
+	BYTE* data;		//ï¿½ï¿½ï¿½ï¿½Mï¿½ï¿½ï¿½ï¿½oï¿½Cï¿½iï¿½ï¿½ï¿½fï¿½[ï¿½^
 	_CMD_STREAM(void){
 		param = 0;
 		dataSize = 0;
@@ -236,9 +236,9 @@ private:
 } CMD_STREAM;
 
 typedef struct _HTTP_STREAM{
-	string httpHeader;	//‘—MŽžƒRƒ}ƒ“ƒhAŽóMŽžƒGƒ‰[ƒR[ƒh
-	DWORD dataSize;	//data‚ÌƒTƒCƒYiBYTE’PˆÊj
-	BYTE* data;		//‘—ŽóM‚·‚éƒoƒCƒiƒŠƒf[ƒ^
+	string httpHeader;	//ï¿½ï¿½ï¿½Mï¿½ï¿½ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½Aï¿½ï¿½Mï¿½ï¿½ï¿½Gï¿½ï¿½ï¿½[ï¿½Rï¿½[ï¿½h
+	DWORD dataSize;	//dataï¿½ÌƒTï¿½Cï¿½Yï¿½iBYTEï¿½Pï¿½Êj
+	BYTE* data;		//ï¿½ï¿½ï¿½ï¿½Mï¿½ï¿½ï¿½ï¿½oï¿½Cï¿½iï¿½ï¿½ï¿½fï¿½[ï¿½^
 	_HTTP_STREAM(void){
 		httpHeader = "";
 		dataSize = 0;
@@ -252,18 +252,18 @@ private:
 	_HTTP_STREAM & operator= (const _HTTP_STREAM &);
 } HTTP_STREAM;
 
-//EPGŠî–{î•ñ
+//EPGï¿½ï¿½{ï¿½ï¿½ï¿½
 typedef struct _EPGDB_SHORT_EVENT_INFO{
-	wstring event_name;			//ƒCƒxƒ“ƒg–¼
-	wstring text_char;			//î•ñ
+	wstring event_name;			//ï¿½Cï¿½xï¿½ï¿½ï¿½gï¿½ï¿½
+	wstring text_char;			//ï¿½ï¿½ï¿½
 } EPGDB_SHORT_EVENT_INFO;
 
-//EPGŠg’£î•ñ
+//EPGï¿½gï¿½ï¿½ï¿½ï¿½ï¿½
 typedef struct _EPGDB_EXTENDED_EVENT_INFO{
-	wstring text_char;			//Ú×î•ñ
+	wstring text_char;			//ï¿½Ú×ï¿½ï¿½
 } EPGDB_EXTENDED_EVENT_INFO;
 
-//EPGƒWƒƒƒ“ƒ‹ƒf[ƒ^
+//EPGï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½fï¿½[ï¿½^
 typedef struct _EPGDB_CONTENT_DATA{
 	BYTE content_nibble_level_1;
 	BYTE content_nibble_level_2;
@@ -271,20 +271,20 @@ typedef struct _EPGDB_CONTENT_DATA{
 	BYTE user_nibble_2;
 }EPGDB_CONTENT_DATA;
 
-//EPGƒWƒƒƒ“ƒ‹î•ñ
+//EPGï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 typedef struct _EPGDB_CONTENT_INFO{
 	vector<EPGDB_CONTENT_DATA> nibbleList;
 } EPGDB_CONTEN_INFO;
 
-//EPG‰f‘œî•ñ
+//EPGï¿½fï¿½ï¿½ï¿½ï¿½ï¿½
 typedef struct _EPGDB_COMPONENT_INFO{
 	BYTE stream_content;
 	BYTE component_type;
 	BYTE component_tag;
-	wstring text_char;			//î•ñ
+	wstring text_char;			//ï¿½ï¿½ï¿½
 } EPGDB_COMPONENT_INFO;
 
-//EPG‰¹ºî•ñƒf[ƒ^
+//EPGï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½fï¿½[ï¿½^
 typedef struct _EPGDB_AUDIO_COMPONENT_INFO_DATA{
 	BYTE stream_content;
 	BYTE component_type;
@@ -295,15 +295,15 @@ typedef struct _EPGDB_AUDIO_COMPONENT_INFO_DATA{
 	BYTE main_component_flag;
 	BYTE quality_indicator;
 	BYTE sampling_rate;
-	wstring text_char;			//Ú×î•ñ
+	wstring text_char;			//ï¿½Ú×ï¿½ï¿½
 } EPGDB_AUDIO_COMPONENT_INFO_DATA;
 
-//EPG‰¹ºî•ñ
+//EPGï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 typedef struct _EPGDB_AUDIO_COMPONENT_INFO{
 	vector<EPGDB_AUDIO_COMPONENT_INFO_DATA> componentList;
 } EPGDB_AUDIO_COMPONENT_INFO;
 
-//EPGƒCƒxƒ“ƒgƒf[ƒ^
+//EPGï¿½Cï¿½xï¿½ï¿½ï¿½gï¿½fï¿½[ï¿½^
 typedef struct _EPGDB_EVENT_DATA{
 	WORD original_network_id;
 	WORD transport_stream_id;
@@ -311,7 +311,7 @@ typedef struct _EPGDB_EVENT_DATA{
 	WORD event_id;
 }EPGDB_EVENT_DATA;
 
-//EPGƒCƒxƒ“ƒgƒOƒ‹[ƒvî•ñ
+//EPGï¿½Cï¿½xï¿½ï¿½ï¿½gï¿½Oï¿½ï¿½ï¿½[ï¿½vï¿½ï¿½ï¿½
 typedef struct _EPGDB_EVENTGROUP_INFO{
 	BYTE group_type;
 	vector<EPGDB_EVENT_DATA> eventDataList;
@@ -321,21 +321,21 @@ typedef struct _EPGDB_EVENT_INFO{
 	WORD original_network_id;
 	WORD transport_stream_id;
 	WORD service_id;
-	WORD event_id;							//ƒCƒxƒ“ƒgID
-	BYTE StartTimeFlag;						//start_time‚Ì’l‚ª—LŒø‚©‚Ç‚¤‚©
-	SYSTEMTIME start_time;					//ŠJŽnŽžŠÔ
-	BYTE DurationFlag;						//duration‚Ì’l‚ª—LŒø‚©‚Ç‚¤‚©
-	DWORD durationSec;						//‘ŽžŠÔi’PˆÊF•bj
+	WORD event_id;							//ï¿½Cï¿½xï¿½ï¿½ï¿½gID
+	BYTE StartTimeFlag;						//start_timeï¿½Ì’lï¿½ï¿½ï¿½Lï¿½ï¿½ï¿½ï¿½ï¿½Ç‚ï¿½ï¿½ï¿½
+	SYSTEMTIME start_time;					//ï¿½Jï¿½nï¿½ï¿½ï¿½ï¿½
+	BYTE DurationFlag;						//durationï¿½Ì’lï¿½ï¿½ï¿½Lï¿½ï¿½ï¿½ï¿½ï¿½Ç‚ï¿½ï¿½ï¿½
+	DWORD durationSec;						//ï¿½ï¿½ï¿½ï¿½ï¿½Ôiï¿½Pï¿½ÊFï¿½bï¿½j
 
-	EPGDB_SHORT_EVENT_INFO* shortInfo;		//Šî–{î•ñ
-	EPGDB_EXTENDED_EVENT_INFO* extInfo;		//Šg’£î•ñ
-	EPGDB_CONTEN_INFO* contentInfo;			//ƒWƒƒƒ“ƒ‹î•ñ
-	EPGDB_COMPONENT_INFO* componentInfo;		//‰f‘œî•ñ
-	EPGDB_AUDIO_COMPONENT_INFO* audioInfo;	//‰¹ºî•ñ
-	EPGDB_EVENTGROUP_INFO* eventGroupInfo;	//ƒCƒxƒ“ƒgƒOƒ‹[ƒvî•ñ
-	EPGDB_EVENTGROUP_INFO* eventRelayInfo;	//ƒCƒxƒ“ƒgƒŠƒŒ[î•ñ
+	EPGDB_SHORT_EVENT_INFO* shortInfo;		//ï¿½ï¿½{ï¿½ï¿½ï¿½
+	EPGDB_EXTENDED_EVENT_INFO* extInfo;		//ï¿½gï¿½ï¿½ï¿½ï¿½ï¿½
+	EPGDB_CONTEN_INFO* contentInfo;			//ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	EPGDB_COMPONENT_INFO* componentInfo;		//ï¿½fï¿½ï¿½ï¿½ï¿½ï¿½
+	EPGDB_AUDIO_COMPONENT_INFO* audioInfo;	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	EPGDB_EVENTGROUP_INFO* eventGroupInfo;	//ï¿½Cï¿½xï¿½ï¿½ï¿½gï¿½Oï¿½ï¿½ï¿½[ï¿½vï¿½ï¿½ï¿½
+	EPGDB_EVENTGROUP_INFO* eventRelayInfo;	//ï¿½Cï¿½xï¿½ï¿½ï¿½gï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½
 
-	BYTE freeCAFlag;						//ƒmƒ“ƒXƒNƒ‰ƒ“ƒuƒ‹ƒtƒ‰ƒO
+	BYTE freeCAFlag;						//ï¿½mï¿½ï¿½ï¿½Xï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½uï¿½ï¿½ï¿½tï¿½ï¿½ï¿½O
 	_EPGDB_EVENT_INFO(void){
 		shortInfo = NULL;
 		extInfo = NULL;
@@ -423,7 +423,7 @@ typedef struct _EPGDB_SEARCH_DATE_INFO{
 	WORD endMin;
 } EPGDB_SEARCH_DATE_INFO;
 
-//ŒŸõðŒ
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 typedef struct _EPGDB_SEARCH_KEY_INFO{
 	wstring andKey;
 	wstring notKey;
@@ -438,10 +438,10 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 	BYTE notContetFlag;
 	BYTE notDateFlag;
 	BYTE freeCAFlag;
-	//CMD_VER 3ˆÈ~
-	//Ž©“®—\–ñ“o˜^‚ÌðŒê—p
-	BYTE chkRecEnd;					//˜^‰æÏ‚©‚Ìƒ`ƒFƒbƒN‚ ‚è
-	WORD chkRecDay;					//˜^‰æÏ‚©‚Ìƒ`ƒFƒbƒN‘ÎÛŠúŠÔ
+	//CMD_VER 3ï¿½È~
+	//ï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½oï¿½^ï¿½Ìï¿½ï¿½ï¿½ï¿½ï¿½p
+	BYTE chkRecEnd;					//ï¿½^ï¿½ï¿½Ï‚ï¿½ï¿½Ìƒ`ï¿½Fï¿½bï¿½Nï¿½ï¿½ï¿½ï¿½
+	WORD chkRecDay;					//ï¿½^ï¿½ï¿½Ï‚ï¿½ï¿½Ìƒ`ï¿½Fï¿½bï¿½Nï¿½ÎÛŠï¿½ï¿½ï¿½
 	_EPGDB_SEARCH_KEY_INFO(void){
 		andKey = L"";
 		notKey = L"";
@@ -456,35 +456,35 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 	};
 }EPGDB_SEARCH_KEY_INFO;
 
-//Ž©“®—\–ñ“o˜^î•ñ
+//ï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½oï¿½^ï¿½ï¿½ï¿½
 typedef struct _EPG_AUTO_ADD_DATA{
 	DWORD dataID;
-	EPGDB_SEARCH_KEY_INFO searchInfo;	//ŒŸõƒL[
-	REC_SETTING_DATA recSetting;	//˜^‰æÝ’è
-	DWORD addCount;		//—\–ñ“o˜^”
+	EPGDB_SEARCH_KEY_INFO searchInfo;	//ï¿½ï¿½ï¿½ï¿½ï¿½Lï¿½[
+	REC_SETTING_DATA recSetting;	//ï¿½^ï¿½ï¿½Ý’ï¿½
+	DWORD addCount;		//ï¿½\ï¿½ï¿½oï¿½^ï¿½ï¿½
 } EPG_AUTO_ADD_DATA;
 
 typedef struct _MANUAL_AUTO_ADD_DATA{
 	DWORD dataID;
-	BYTE dayOfWeekFlag;				//‘ÎÛ—j“ú
-	DWORD startTime;				//˜^‰æŠJŽnŽžŠÔi00:00‚ð0‚Æ‚µ‚Ä•b’PˆÊj
-	DWORD durationSecond;			//˜^‰æ‘ŽžŠÔ
-	wstring title;					//”Ô‘g–¼
-	wstring stationName;			//ƒT[ƒrƒX–¼
+	BYTE dayOfWeekFlag;				//ï¿½ÎÛ—jï¿½ï¿½
+	DWORD startTime;				//ï¿½^ï¿½ï¿½Jï¿½nï¿½ï¿½ï¿½Ôi00:00ï¿½ï¿½0ï¿½Æ‚ï¿½ï¿½Ä•bï¿½Pï¿½Êj
+	DWORD durationSecond;			//ï¿½^ï¿½æ‘ï¿½ï¿½ï¿½ï¿½
+	wstring title;					//ï¿½Ô‘gï¿½ï¿½
+	wstring stationName;			//ï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½
 	WORD originalNetworkID;			//ONID
 	WORD transportStreamID;			//TSID
 	WORD serviceID;					//SID
-	REC_SETTING_DATA recSetting;	//˜^‰æÝ’è
+	REC_SETTING_DATA recSetting;	//ï¿½^ï¿½ï¿½Ý’ï¿½
 } MANUAL_AUTO_ADD_DATA;
 
-//ƒRƒ}ƒ“ƒh‘—M—p
-//ƒ`ƒƒƒ“ƒlƒ‹•ÏXî•ñ
+//ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½Mï¿½p
+//ï¿½`ï¿½ï¿½ï¿½ï¿½ï¿½lï¿½ï¿½ï¿½ÏXï¿½ï¿½ï¿½
 typedef struct _SET_CH_INFO{
-	BOOL useSID;//wONID‚ÆwTSID‚ÆwSID‚Ì’l‚ªŽg—p‚Å‚«‚é‚©‚Ç‚¤‚©
+	BOOL useSID;//wONIDï¿½ï¿½wTSIDï¿½ï¿½wSIDï¿½Ì’lï¿½ï¿½ï¿½gï¿½pï¿½Å‚ï¿½ï¿½é‚©ï¿½Ç‚ï¿½ï¿½ï¿½
 	WORD ONID;
 	WORD TSID;
 	WORD SID;
-	BOOL useBonCh;//dwSpace‚ÆdwCh‚Ì’l‚ªŽg—p‚Å‚«‚é‚©‚Ç‚¤‚©
+	BOOL useBonCh;//dwSpaceï¿½ï¿½dwChï¿½Ì’lï¿½ï¿½ï¿½gï¿½pï¿½Å‚ï¿½ï¿½é‚©ï¿½Ç‚ï¿½ï¿½ï¿½
 	DWORD space;
 	DWORD ch;
 }SET_CH_INFO;
@@ -559,14 +559,14 @@ typedef struct _NWPLAY_PLAY_INFO{
 	DWORD ip;
 	BYTE udp;
 	BYTE tcp;
-	DWORD udpPort;//out‚ÅŽÀÛ‚ÌŠJŽnƒ|[ƒg
-	DWORD tcpPort;//out‚ÅŽÀÛ‚ÌŠJŽnƒ|[ƒg
+	DWORD udpPort;//outï¿½ÅŽï¿½ï¿½Û‚ÌŠJï¿½nï¿½|ï¿½[ï¿½g
+	DWORD tcpPort;//outï¿½ÅŽï¿½ï¿½Û‚ÌŠJï¿½nï¿½|ï¿½[ï¿½g
 } NWPLAY_PLAY_INFO;
 
 typedef struct _NWPLAY_POS_CMD{
 	DWORD ctrlID;
 	__int64 currentPos;
-	__int64 totalPos;//CMD2_EPG_SRV_NWPLAY_SET_POSŽž‚Í–³Ž‹
+	__int64 totalPos;//CMD2_EPG_SRV_NWPLAY_SET_POSï¿½ï¿½ï¿½Í–ï¿½ï¿½ï¿½
 } NWPLAY_POS_CMD;
 
 typedef struct _NWPLAY_TIMESHIFT_INFO{
@@ -574,16 +574,16 @@ typedef struct _NWPLAY_TIMESHIFT_INFO{
 	wstring filePath;
 } NWPLAY_TIMESHIFT_INFO;
 
-//î•ñ’Ê’m—pƒpƒ‰ƒ[ƒ^[
+//ï¿½ï¿½ï¿½Ê’mï¿½pï¿½pï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½[
 typedef struct _NOTIFY_SRV_INFO{
-	DWORD notifyID;		//’Ê’mî•ñ‚ÌŽí—Þ
-	SYSTEMTIME time;	//’Ê’mó‘Ô‚Ì”­¶‚µ‚½ŽžŠÔ
-	DWORD param1;		//ƒpƒ‰ƒ[ƒ^[‚PiŽí—Þ‚É‚æ‚Á‚Ä“à—e•ÏXj
-	DWORD param2;		//ƒpƒ‰ƒ[ƒ^[‚QiŽí—Þ‚É‚æ‚Á‚Ä“à—e•ÏXj
-	DWORD param3;		//ƒpƒ‰ƒ[ƒ^[‚RiŽí—Þ‚É‚æ‚Á‚Ä“à—e•ÏXj
-	wstring param4;		//ƒpƒ‰ƒ[ƒ^[‚SiŽí—Þ‚É‚æ‚Á‚Ä“à—e•ÏXj
-	wstring param5;		//ƒpƒ‰ƒ[ƒ^[‚TiŽí—Þ‚É‚æ‚Á‚Ä“à—e•ÏXj
-	wstring param6;		//ƒpƒ‰ƒ[ƒ^[‚UiŽí—Þ‚É‚æ‚Á‚Ä“à—e•ÏXj
+	DWORD notifyID;		//ï¿½Ê’mï¿½ï¿½ï¿½ÌŽï¿½ï¿½
+	SYSTEMTIME time;	//ï¿½Ê’mï¿½ï¿½Ô‚Ì”ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	DWORD param1;		//ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½[ï¿½Pï¿½iï¿½ï¿½Þ‚É‚ï¿½ï¿½ï¿½Ä“ï¿½ï¿½eï¿½ÏXï¿½j
+	DWORD param2;		//ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½[ï¿½Qï¿½iï¿½ï¿½Þ‚É‚ï¿½ï¿½ï¿½Ä“ï¿½ï¿½eï¿½ÏXï¿½j
+	DWORD param3;		//ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½[ï¿½Rï¿½iï¿½ï¿½Þ‚É‚ï¿½ï¿½ï¿½Ä“ï¿½ï¿½eï¿½ÏXï¿½j
+	wstring param4;		//ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½[ï¿½Sï¿½iï¿½ï¿½Þ‚É‚ï¿½ï¿½ï¿½Ä“ï¿½ï¿½eï¿½ÏXï¿½j
+	wstring param5;		//ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½[ï¿½Tï¿½iï¿½ï¿½Þ‚É‚ï¿½ï¿½ï¿½Ä“ï¿½ï¿½eï¿½ÏXï¿½j
+	wstring param6;		//ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½[ï¿½Uï¿½iï¿½ï¿½Þ‚É‚ï¿½ï¿½ï¿½Ä“ï¿½ï¿½eï¿½ÏXï¿½j
 	_NOTIFY_SRV_INFO(void){
 		notifyID= 0;
 		param1 = 0;
@@ -591,6 +591,7 @@ typedef struct _NOTIFY_SRV_INFO{
 		param3 = 0;
 	};
 } NOTIFY_SRV_INFO;
+
 
 
 typedef struct _GENRU_INFO{
@@ -608,7 +609,7 @@ typedef struct _GENRU_INFO{
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-//‹Œƒo[ƒWƒ‡ƒ“ƒRƒ}ƒ“ƒh‘—M—p
+//ï¿½ï¿½ï¿½oï¿½[ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½Mï¿½p
 typedef struct _OLD_RESERVE_DATA{
 	wstring strTitle;
 	SYSTEMTIME StartTime;
@@ -624,9 +625,9 @@ typedef struct _OLD_RESERVE_DATA{
 	DWORD dwRecMode;
 	BOOL bPittari;
 	wstring strBatPath;
-	DWORD dwReserveID; //“¯ˆê”Ô‘g”»•Ê—pID
-	BOOL bSetWait; //—\–ñ‘Ò‹@“ü‚Á‚½H
-	DWORD dwPiledUpMode; //‚©‚Ô‚èó‘Ô 1:‚©‚Ô‚Á‚Äƒ`ƒ…[ƒi[‘«‚è‚È‚¢—\–ñ‚ ‚è 2:ƒ`ƒ…[ƒi[‘«‚è‚È‚­‚Ä—\–ñ‚Å‚«‚È‚¢
+	DWORD dwReserveID; //ï¿½ï¿½ï¿½ï¿½Ô‘gï¿½ï¿½ï¿½Ê—pID
+	BOOL bSetWait; //ï¿½\ï¿½ï¿½Ò‹@ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½H
+	DWORD dwPiledUpMode; //ï¿½ï¿½ï¿½Ô‚ï¿½ï¿½ï¿½ 1:ï¿½ï¿½ï¿½Ô‚ï¿½ï¿½Äƒ`ï¿½ï¿½ï¿½[ï¿½iï¿½[ï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½\ï¿½ñ‚ ‚ï¿½ 2:ï¿½`ï¿½ï¿½ï¿½[ï¿½iï¿½[ï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½Ä—\ï¿½ï¿½Å‚ï¿½ï¿½È‚ï¿½
 	wstring strRecFolder;
 	WORD wSuspendMode;
 	BOOL bReboot;
@@ -687,8 +688,8 @@ typedef struct _OLD_SEARCH_KEY{
 	BOOL bChkSat;
 	BOOL bChkSun;
 	vector<__int64> CHIDList; //ONID<<24 | TSID<<16 | SID
-	//ˆÈ‰ºŽ©“®—\–ñ“o˜^ŽžŠÖŒW‚Ì‚ÝŽg—p
-	int iAutoAddID; //Ž©“®—\–ñ“o˜^ˆê——‚ÌŽ¯•Ê—pƒL[
+	//ï¿½È‰ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½oï¿½^ï¿½ï¿½ï¿½ÖŒWï¿½Ì‚ÝŽgï¿½p
+	int iAutoAddID; //ï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½oï¿½^ï¿½ê——ï¿½ÌŽï¿½ï¿½Ê—pï¿½Lï¿½[
 	int iPriority;
 	int iTuijyuu;
 	int iRecMode;
