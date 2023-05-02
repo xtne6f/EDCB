@@ -160,9 +160,7 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
 	, hwndMain(NULL)
-#ifndef EPGTIMERSRV_WITHLUA
 	, hLuaDll(NULL)
-#endif
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
@@ -202,12 +200,10 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			DispatchMessage(&msg);
 		}
 	}
-#ifndef EPGTIMERSRV_WITHLUA
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
 	}
-#endif
 	return true;
 }
 
@@ -293,11 +289,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				std::copy((const BYTE*)cds.lpData, (const BYTE*)cds.lpData + cds.cbData, (BYTE*)buff.data());
 				string script;
 				WtoUTF8(wstring(buff.data()), script);
-#ifndef EPGTIMERSRV_WITHLUA
 				//Luaが利用可能ならば
-				if( ctx->sys->hLuaDll )
-#endif
-				{
+				if( ctx->sys->hLuaDll ){
 					lock_recursive_mutex lock(ctx->sys->doLuaWorkerLock);
 
 					if( ctx->sys->doLuaScriptQueue.empty() && ctx->sys->doLuaWorkerThread.joinable() ){
@@ -987,12 +980,9 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	if( initialize ){
 		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
-#ifndef EPGTIMERSRV_WITHLUA
 		//存在を確認しているだけ
 		this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
-		if( this->hLuaDll )
-#endif
-		{
+		if( this->hLuaDll ){
 			this->reserveManager.SetBatCustomHandler(L".lua", [this](CBatManager::BAT_WORK_INFO& work, vector<char>& buff) { DoLuaBat(work, buff); });
 		}
 	}else{
@@ -2932,10 +2922,6 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 	return false;
 }
 
-#ifdef EPGTIMERSRV_WITHLUA
-extern "C" int luaopen_zlib(lua_State*);
-#endif
-
 void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 {
 	static const luaL_Reg closures[] = {
@@ -3069,11 +3055,6 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		" end end"
 		" return r;"
 		"end");
-
-#ifdef EPGTIMERSRV_WITHLUA
-	//組み込みのzlibをロード済みにする
-	luaL_requiref(L, "zlib", luaopen_zlib, 0);
-#endif
 }
 
 void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff)

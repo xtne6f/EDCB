@@ -9,58 +9,8 @@ WINDRES ?= windres
 DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
 CUR_ALL_H := $(wildcard *.h *.inl)
 
-ifdef withlua
-  CPPFLAGS += -DEPGTIMERSRV_WITHLUA
-  SOURCES_LUA = \
-    lua__lapi.c \
-    lua__lauxlib.c \
-    lua__lbaselib.c \
-    lua__lbitlib.c \
-    lua__lcode.c \
-    lua__lcorolib.c \
-    lua__lctype.c \
-    lua__ldblib.c \
-    lua__ldebug.c \
-    lua__ldo.c \
-    lua__ldump.c \
-    lua__lfunc.c \
-    lua__lgc.c \
-    lua__linit.c \
-    lua__liolib.c \
-    lua__llex.c \
-    lua__lmathlib.c \
-    lua__lmem.c \
-    lua__loadlib.c \
-    lua__lobject.c \
-    lua__lopcodes.c \
-    lua__loslib.c \
-    lua__lparser.c \
-    lua__lstate.c \
-    lua__lstring.c \
-    lua__lstrlib.c \
-    lua__ltable.c \
-    lua__ltablib.c \
-    lua__ltm.c \
-    lua__lundump.c \
-    lua__lvm.c \
-    lua__lzio.c \
-    lua__lua_zlib.c \
-    lua_zlib1__adler32.c \
-    lua_zlib1__compress.c \
-    lua_zlib1__crc32.c \
-    lua_zlib1__deflate.c \
-    lua_zlib1__infback.c \
-    lua_zlib1__inffast.c \
-    lua_zlib1__inflate.c \
-    lua_zlib1__inftrees.c \
-    lua_zlib1__trees.c \
-    lua_zlib1__uncompr.c \
-    lua_zlib1__zutil.c
-else
-  # Lazy loading fails with segfault if LUA_BUILD_AS_DLL defined.
-  SOURCES_LUA =
-  LDLIBS := -L. -llua52-mingw-lazy-$(or $(MSYSTEM_CARCH),$(findstring x86_64,$(MAKE_HOST)),i686) $(LDLIBS)
-endif
+# Lazy loading fails with segfault if LUA_BUILD_AS_DLL defined.
+LDLIBS := -L. -llua52-mingw-lazy-$(or $(MSYSTEM_CARCH),$(findstring x86_64,$(MAKE_HOST)),i686) $(LDLIBS)
 
 ifndef MSYSTEM
   # Assume non-pthread threading model
@@ -68,7 +18,6 @@ ifndef MSYSTEM
 endif
 
 $(TARGET).exe: $(addsuffix .obj, \
-  $(SOURCES_LUA) \
   BonCtrl__CreatePATPacket.cpp \
   BonCtrl__PacketInit.cpp \
   Common__CtrlCmdUtil.cpp \
@@ -114,10 +63,6 @@ Common__%.cpp.obj: ../../Common/%.cpp stdafx.h.gch $(DEP_ALL_H)
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 stdafx.h.gch: stdafx.h ../../Common/Common.h targetver.h
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
-lua__%.c.obj: lua/%.c
-	$(COMPILE.c) -I./lua -I./lua/zlib1 $(OUTPUT_OPTION) $<
-lua_zlib1__%.c.obj: lua/zlib1/%.c
-	$(COMPILE.c) $(OUTPUT_OPTION) $<
 %.c.obj: %.c $(CUR_ALL_H)
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 %.rc.obj: %.rc.u.obj resource.h targetver.h
