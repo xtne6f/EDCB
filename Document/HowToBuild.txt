@@ -8,6 +8,10 @@
 
 2. （EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
 
+3. （lua52.dllが必要な場合のみ） https://github.com/xtne6f/lua/tree/v5.2-luabinaries をzipでダウンロード→展開して"lua52.sln"をビルド
+
+4. （zlib52.dllが必要な場合のみ） https://github.com/xtne6f/lua-zlib/tree/v0.5-lua52 をzipでダウンロード→展開して"zlib52.sln"をビルド
+
 （注意）
 - ツールバーのソリューション構成を"Debug"(デバッグモード)にしてビルドすると
   非常にパフォーマンスの悪い（高負荷な）バイナリができるので注意する
@@ -26,7 +30,7 @@
 
 0. [MSYS2](https://www.msys2.org/) の `msys2-x86_64-日付.exe`(64bitOS用) をインストール  
    上記サイトに従って`pacman -Syu` →`pacman -Su`でパッケージをアップデート  
-   スタートメニューの"MSYS2 MinGW 64-bit"(32bitビルド時は32-bit)を開き、起動した黒窓で以下を実行してmakeとgccをインストール
+   スタートメニューの"MSYS2 MINGW64"(32bitビルド時はMINGW32)を開き、起動した黒窓で以下を実行してmakeとgccをインストール
    ```shell
    pacman -S make mingw-w64-x86_64-gcc
    pacman -S make mingw-w64-i686-gcc # 32bitビルド時
@@ -38,9 +42,20 @@
    make
    ```
 
+2. （lua52.dllが必要な場合のみ） https://github.com/xtne6f/lua/tree/v5.2-luabinaries をzipでダウンロード→展開して（"C:/lua-5.2-luabinaries"と仮定）
+   ```shell
+   cd /c/lua-5.2-luabinaries
+   make lua52.dll
+   ```
+
+3. （zlib52.dllが必要な場合のみ） https://github.com/xtne6f/lua-zlib/tree/v0.5-lua52 をzipでダウンロード→展開して（"C:/lua-zlib-0.5-lua52"と仮定）
+   ```shell
+   cd /c/lua-zlib-0.5-lua52
+   make zlib52.dll
+   ```
+
 （注意）
-- EpgTimerSrv.exeにLuaを組み込む場合は、[その他](#その他)を参照し、makeの引数にwithlua=1をつけてビルドする
-- Luaを組み込まない場合でHTTPサーバ機能などを使うときは、lua52.dllを別途 https://sourceforge.net/projects/luabinaries/ からダウンロードする
+- lua52.dllは https://sourceforge.net/projects/luabinaries/ からダウンロードしたものでもよい
   - EpgTimerSrv/liblua52-mingw-lazy-{i686|x86_64}.a は lua-5.2.4_Win{32|64}_dllw6_lib.zip から以下を実行して作成したインポートライブラリ
     ```shell
     dlltool -t zz -D lua52.dll -d lua52.def -y liblua52.a
@@ -61,10 +76,17 @@
    （以下、"C:/mingw32"または"C:/mingw64"に展開したと仮定）  
    （Online InstallerでもOK。i686/win32/dwarfまたはx86_64/win32/sehを選び、"C:/mingw32"または"C:/mingw64"にインストール）
 
-1. RunMake.batを実行（クリーンしたいときはRunMakeClean.batを実行）
+1. RunMake.batを実行、"Specify make options :"のプロンプトで何も入力せずEnterキーを押す（クリーンしたいときはcleanと入力）
+
+2. （lua52.dllが必要な場合のみ） https://github.com/xtne6f/lua/tree/v5.2-luabinaries をzipでダウンロード→展開してRunMake.batを実行  
+   "Specify make options :"のプロンプトでlua52.dllと入力してEnterキーを押す
+
+3. （zlib52.dllが必要な場合のみ） https://github.com/xtne6f/lua-zlib/tree/v0.5-lua52 をzipでダウンロード→展開してRunMake.batを実行  
+   "Specify make options :"のプロンプトでzlib52.dllと入力してEnterキーを押す
 
 （注意）
 - libwinpthread-1.dllは不要。ほかの注意事項は「ビルド(MSYS2/Mingw-w64)」と同様
+- 使用するMingw-w64は https://github.com/niXman/mingw-builds-binaries/releases でもOK（GCCのバージョンが新しい）
 
 
 
@@ -96,13 +118,5 @@
 
 - gitコマンドのある環境では、versionhashgen.batを実行すればバージョン情報にコミットハッシュを埋め込むことができる。
   versionhash.shはMSYS2などのシェル環境用
-
-- Lua5.2を組み込んだビルドもできる("EpgTimerSrv/EpgTimerSrv.sln"の"Release-withlua")。
-  以下のファイルが必要
-  - https://www.lua.org/ のlua-5.2.4.tar.gzのsrcフォルダの中身を"EpgTimerSrv/EpgTimerSrv/lua"に既存ファイルも含めて上書き
-  - https://github.com/brimworks/lua-zlib/releases/ のv0.5.zipのlua_zlib.cを"EpgTimerSrv/EpgTimerSrv/lua"にコピー
-  - https://zlib.net/ のzlib1211.zipの中身を"EpgTimerSrv/EpgTimerSrv/lua/zlib1"にコピー
-
-  ビルド中にWarningが多めにでるがコーディングスタイルの問題なので気にしない
 
 - プラットフォームツールセット:LLVM-vs2014( https://releases.llvm.org/ , ver.7.0.0以降はMarketplaceに移動の模様)に対応している
