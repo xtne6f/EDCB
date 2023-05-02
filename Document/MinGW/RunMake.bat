@@ -32,14 +32,19 @@ set MINGW_ROOT=%x%
 set MINGW_ROOT=%x%
 
 :label2
-@if exist "%MINGW_ROOT%\bin" goto label1
+@if exist "%MINGW_ROOT%\bin" goto label3
 @echo Error: "%MINGW_ROOT%\bin" Not Found.
 @pause
 @goto label9
 
-:label1
+:label3
 set PATH=%MINGW_ROOT%\bin;%PATH%
-mingw32-make CC=gcc RM=del %*
+@set x=%*
+@if not "%x%"=="" goto label1
+@set /p x="Specify make options : "
+
+:label1
+mingw32-make CC=gcc RM=del %x%
 @echo.
 @echo Done(%errorlevel%).
 @pause
