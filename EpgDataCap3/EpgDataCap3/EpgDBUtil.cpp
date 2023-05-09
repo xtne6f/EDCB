@@ -690,7 +690,7 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 
 BOOL CEpgDBUtil::AddServiceListNIT(const Desc::CDescriptor& nit)
 {
-	wstring network_nameW = L"";
+	wstring network_nameW;
 
 	Desc::CDescriptor::CLoopPointer lp;
 	if( nit.EnterLoop(lp) ){
