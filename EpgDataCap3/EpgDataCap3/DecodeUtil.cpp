@@ -1073,8 +1073,8 @@ BOOL CDecodeUtil::GetServiceListActual(
 	this->serviceAdapterList.reset(new CServiceInfoAdapter[*serviceListSize]);
 
 
-	wstring network_nameW = L"";
-	wstring ts_nameW = L"";
+	wstring network_nameW;
+	wstring ts_nameW;
 	BYTE remote_control_key_id = 0;
 	vector<WORD> partialServiceList;
 

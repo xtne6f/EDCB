@@ -144,7 +144,7 @@ if r then
             ..'<form method="GET" action="'..(vtag==0 and 'xcode.lua' or 'reserveinfo.html')..'"><div>\n'
             ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
                  or '<input type="hidden" name="id" value="'..r.reserveID..'">\n<input type="hidden" name="vtag" value="10">\n')
-            ..'<input type="submit" value="xcode">\n'
+            ..'<button type="submit">xcode</button>\n'
             ..TranscodeSettingTemplete(xq,fsec)
             ..'</div></form>')
           if vtag==10 then
@@ -152,9 +152,10 @@ if r then
             ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
               ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
               ..'<div class="video-container arib-video-container" id="vid-cont">'
-              ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>')
+              ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>\n'
+              ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(false,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
             if ALLOW_HLS then
-              ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))
+              ct:Append(HlsScriptTemplete(xq.caption))
             end
           end
         else
@@ -179,7 +180,7 @@ if r then
     ..'">:<input type="text" size="2" name="end-i" value="'..math.floor(dur/60)%60
     ..'">:<input type="text" size="2" name="end-s" value="'..dur%60
     ..'"><br>\n'
-    ..'<input type="submit" value="変更"></div></form></dd>\n'
+    ..'<button type="submit">変更</button></div></form></dd>\n'
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="reserveinfo.html"><div>\n'
     ..'<input type="hidden" name="id" value="'..r.reserveID..'"><select name="presetID">\n')
@@ -196,18 +197,18 @@ if r then
     end
   end
   ct:Append('<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
-    ..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
+    ..'</select> <button type="submit">録画設定にロード</button></div></form></dd>\n'
     ..'    <dt>録画設定</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
     ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="addchg" value="y">\n'
-    ..RecSettingTemplate(rs)..'<input type="submit" value="変更"></div></form></dd>\n'
+    ..RecSettingTemplate(rs)..'<button type="submit">変更</button></div></form></dd>\n'
     ..'    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="del" value="y">\n'
-    ..'<input type="submit" value="削除"></div></form></dd>\n'
+    ..'<button type="submit">削除</button></div></form></dd>\n'
     ..'  </dl>\n')
 end
 r=r or rdel

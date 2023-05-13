@@ -42,80 +42,103 @@ MEDIA_EXTENSION_LIST={
   '.webm',
 }
 
---HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeとnwtvclose.ps1を用意すること
+--HLS(HTTP Live Streaming)を許可するかどうか。する場合はtsmemseg.exeを用意すること。IE非対応
 ALLOW_HLS=true
 --ネイティブHLS非対応環境でもhls.jsを使ってHLS再生するかどうか
 ALWAYS_USE_HLS=true
+--HLS再生時にトランスコーダーから受け取ったMPEG2-TSをMP4に変換するかどうか。有効時はHEVCトランスコードに対応
+--※Android版Firefoxでは不具合があるため無効扱いになる
+USE_MP4_HLS=true
+--視聴機能(viewボタン)でLowLatencyHLSにするかどうか。再生遅延が小さくなる。ネイティブHLS環境ではHTTP/2が要求されるためhls.js使用時のみ有用
+USE_MP4_LLHLS=true
+
+--倍速再生(fastボタン)の速度
+XCODE_FAST=1.25
 
 --トランスコードオプション
 --HLSのときはセグメント長約4秒、最大8MBytes(=1秒あたり16Mbits)を想定しているので、オプションもそれに合わせること
+--HLSでないときはフラグメントMP4などを使ったプログレッシブダウンロード。字幕は適当な重畳手法がまだないので未対応
 --name:表示名
---xcoder:Toolsフォルダからの相対パス。Toolsフォルダになければパスが通っているとみなす
---       ※NVEncCやQSVEncCの例では'NVEncC\\NVEncC.exe'のように「Toolsの下のNVEncCフォルダの下」なので注意
---option:$SRCと$OUTPUTは必須、再生時に適宜置換される
+--xcoder:トランスコーダーのToolsフォルダからの相対パス。'|'で複数候補を指定可。見つからなければ最終候補にパスが通っているとみなす
+--option:$OUTPUTは必須、再生時に適宜置換される。標準入力からMPEG2-TSを受け取るようにオプションを指定する
 --filter*Fast:倍速再生用、未定義でもよい
 XCODE_OPTIONS={
   {
-    name='288p/h264/ffmpeg',
-    xcoder='ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 896k -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 512x288 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    --ffmpegの例。-b:vでおおよその最大ビットレートを決め、-qminで動きの少ないシーンのデータ量を節約する
+    name='360p/h264/ffmpeg',
+    xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec libx264 -flags:v +cgop -profile:v main -level 31 -b:v 1888k -qmin 23 -maxrate 4M -bufsize 4M -preset veryfast $FILTER -s 640x360 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION -max_interleave_delta 500k $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
-    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
-    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25 -r 24000/1001',
+    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/'..XCODE_FAST..' -af atempo='..XCODE_FAST..' -bsf:s setts=ts=TS/'..XCODE_FAST,
+    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/'..XCODE_FAST..' -af atempo='..XCODE_FAST..' -bsf:s setts=ts=TS/'..XCODE_FAST..' -r 24000/1001',
     captionNone='-sn',
     captionHls='-map 0:s? -scodec copy',
     output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
     outputHls={'m2t','-f mpegts -'},
   },
   {
-    name='576p/h264/ffmpeg-nvenc',
-    xcoder='ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec h264_nvenc -profile:v main -level 31 -b:v 1408k -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1024x576 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    name='720p/h264/ffmpeg-nvenc',
+    xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec h264_nvenc -profile:v main -level 41 -b:v 3936k -qmin 23 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION -max_interleave_delta 500k $OUTPUT',
     filter='-g 120 -vf yadif=0:-1:1',
     filterCinema='-g 96 -vf pullup -r 24000/1001',
-    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25',
-    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/1.25 -af atempo=1.25 -bsf:s setts=ts=TS/1.25 -r 24000/1001',
+    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/'..XCODE_FAST..' -af atempo='..XCODE_FAST..' -bsf:s setts=ts=TS/'..XCODE_FAST,
+    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/'..XCODE_FAST..' -af atempo='..XCODE_FAST..' -bsf:s setts=ts=TS/'..XCODE_FAST..' -r 24000/1001',
     captionNone='-sn',
     captionHls='-map 0:s? -scodec copy',
     output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
     outputHls={'m2t','-f mpegts -'},
   },
   {
-    name='288p/webm/ffmpeg',
-    xcoder='ffmpeg.exe',
-    option='-f mpegts -analyzeduration 1M -i $SRC -map 0:v:0 -vcodec libvpx -b:v 896k -quality realtime -cpu-used 1 $FILTER -s 512x288 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 128k $CAPTION $OUTPUT',
+    --ffmpegのh264_qsvは環境によって異常にビットレートが高くなったりしてあまり質が良くない。要注意
+    name='720p/h264/ffmpeg-qsv',
+    xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec h264_qsv -profile:v main -level 41 -b:v 3936k -min_qp_i 23 -min_qp_p 26 -min_qp_b 30 -maxrate 8M -bufsize 8M -preset medium $FILTER -s 1280x720 -map 0:a:$AUDIO -acodec aac -ac 2 -b:a 160k $CAPTION -max_interleave_delta 500k $OUTPUT',
+    filter='-g 120 -vf yadif=0:-1:1',
+    filterCinema='-g 96 -vf pullup -r 24000/1001',
+    filterFast='-g 120 -vf yadif=0:-1:1,setpts=PTS/'..XCODE_FAST..' -af atempo='..XCODE_FAST..' -bsf:s setts=ts=TS/'..XCODE_FAST,
+    filterCinemaFast='-g 96 -vf pullup,setpts=PTS/'..XCODE_FAST..' -af atempo='..XCODE_FAST..' -bsf:s setts=ts=TS/'..XCODE_FAST..' -r 24000/1001',
+    captionNone='-sn',
+    captionHls='-map 0:s? -scodec copy',
+    output={'mp4','-f mp4 -movflags frag_keyframe+empty_moov -'},
+    outputHls={'m2t','-f mpegts -'},
+  },
+  {
+    name='360p/webm/ffmpeg',
+    xcoder='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
+    option='-f mpegts -analyzeduration 1M -i - -map 0:v?:0 -vcodec libvpx -b:v 1888k -quality realtime -cpu-used 1 $FILTER -s 640x360 -map 0:a:$AUDIO -acodec libvorbis -ac 2 -b:a 160k $CAPTION -max_interleave_delta 500k $OUTPUT',
     filter='-vf yadif=0:-1:1',
     filterCinema='-vf pullup -r 24000/1001',
-    filterFast='-vf yadif=0:-1:1,setpts=PTS/1.25 -af atempo=1.25',
-    filterCinemaFast='-vf pullup,setpts=PTS/1.25 -af atempo=1.25 -r 24000/1001',
+    filterFast='-vf yadif=0:-1:1,setpts=PTS/'..XCODE_FAST..' -af atempo='..XCODE_FAST,
+    filterCinemaFast='-vf pullup,setpts=PTS/'..XCODE_FAST..' -af atempo='..XCODE_FAST..' -r 24000/1001',
     captionNone='-sn',
     output={'webm','-f webm -'},
   },
   {
-    --NVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
-    name='576p/h264/NVEncC',
-    xcoder='NVEncC\\NVEncC.exe',
-    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    --NVEncCの例。倍速再生未対応
+    name='720p/h264/NVEncC',
+    xcoder='NVEncC\\NVEncC64.exe|NVEncC\\NVEncC.exe|NVEncC64.exe|NVEncC.exe',
+    option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --vbr 3936 --qp-min 23:26:30 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION -m max_interleave_delta:500k $OUTPUT',
     audioStartAt=1,
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true,rff=true',
     captionNone='',
     captionHls='--sub-copy',
-    output={'mp4','-f mp4 -o -'},
+    output={'mp4','-f mp4 --no-mp4opt -m movflags:frag_keyframe+empty_moov -o -'},
     outputHls={'m2t','-f mpegts -o -'},
   },
   {
-    --QSVEncCの例。フラグメントMP4の出し方が不明なのでHLS専用。倍速再生未対応。"aac_coder=twoloop"なしだと音質がとても悪い
-    name='576p/h264/QSVEncC',
-    xcoder='QSVEncC\\QSVEncC.exe',
-    option='--input-format mpegts --input-analyze 1 -i $SRC --avhw --profile main --level 3.1 --vbr 1408 --max-bitrate 8192 --vbv-bufsize 8192 --quality balanced $FILTER --output-res 1024x576 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac:aac_coder=twoloop --audio-bitrate $AUDIO?128 --audio-disposition $AUDIO?default $CAPTION $OUTPUT',
+    --QSVEncCの例。倍速再生未対応
+    name='720p/h264/QSVEncC',
+    xcoder='QSVEncC\\QSVEncC64.exe|QSVEncC\\QSVEncC.exe|QSVEncC64.exe|QSVEncC.exe',
+    option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --qvbr 3936 --qvbr-quality 26 --fallback-rc --max-bitrate 8192 --vbv-bufsize 8192 $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION -m max_interleave_delta:500k $OUTPUT',
     audioStartAt=1,
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
     filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true',
     captionNone='',
     captionHls='--sub-copy',
-    output={'mp4','-f mp4 -o -'},
+    output={'mp4','-f mp4 --no-mp4opt -m movflags:frag_keyframe+empty_moov -o -'},
     outputHls={'m2t','-f mpegts -o -'},
   },
 }
@@ -132,8 +155,34 @@ ARIBB24_JS_OPTION=[=[
   drcsReplacement:true
 ]=]
 
+--字幕表示にSVGRendererを使うかどうか。描画品質が上がる(ただし一部ブラウザで背景に線が入る)。IE非対応
+ARIBB24_USE_SVG=false
+
 --データ放送表示機能を使うかどうか。トランスコード中に表示する場合はpsisiarc.exeを用意すること。IE非対応
 USE_DATACAST=true
+
+--ライブ実況表示機能を使うかどうか
+--利用には実況を扱うツール側の対応(NicoJKの場合はcommentShareMode)が必要
+USE_LIVEJK=true
+
+--実況ログ表示機能を使う場合、jkrdlog.exeの絶対パス
+JKRDLOG_PATH=nil
+--JKRDLOG_PATH='C:\\Path\\to\\jkrdlog.exe'
+
+--実況コメントの文字の高さ(px)
+JK_COMMENT_HEIGHT=32
+
+--実況コメントの表示時間(秒)
+JK_COMMENT_DURATION=5
+
+--chatタグ表示前の置換(JavaScript)
+JK_CUSTOM_REPLACE=[=[
+  // 広告などを下コメにする
+  tag = tag.replace(/^<chat(?![^>]*? mail=)/, '<chat mail=""');
+  tag = tag.replace(/^(<chat[^>]*? premium="3"[^>]*?>\/nicoad )(\{[^<]*?"totalAdPoint":)(\d+)/, "$1$3$2");
+  tag = tag.replace(/^<chat(?=[^>]*? premium="3")([^>]*? mail=")([^>]*?>)\/nicoad (\d*)\{[^<]*?"message":("[^<]*?")[,}][^<]*/, '<chat align="right"$1shita small yellow $2$4($3pt)');
+  tag = tag.replace(/^<chat(?=[^>]*? premium="3")([^>]*? mail=")([^>]*?>)\/spi /, '<chat align="right"$1shita small white2 $2');
+]=]
 
 --トランスコードするかどうか。する場合はtsreadex.exeとトランスコーダー(ffmpeg.exeなど)を用意すること
 XCODE=true
@@ -145,9 +194,6 @@ XCODE_LOG=false
 XCODE_BUF=0
 --転送開始前に変換しておく量(bytes)
 XCODE_PREPARE=0
-
---NetworkTVモードの名前付きパイプをFindFileで見つけられない場合(EpgTimerSrvのWindowsサービス化など？)に対応するか
-NWTV_FIND_BY_OPEN=false
 
 --このサイズ以上のときページ圧縮する(nilのとき常に非圧縮)
 GZIP_THRESHOLD_BYTE=4096
@@ -204,13 +250,15 @@ function TranscodeSettingTemplete(xq,fsec)
   return s
 end
 
-function FullscreenButtonScriptTemplete()
+function OnscreenButtonsScriptTemplete()
   return [=[
 <script>
-var hideFullscreenButton;
+var vid=document.getElementById("vid");
+var vcont=document.getElementById("vid-cont");
+var vfull=document.getElementById("vid-full");
+var setSendComment;
+var hideOnscreenButtons;
 (function(){
-  var vfull=document.getElementById("vid-full");
-  var vcont=document.getElementById("vid-cont");
   var btn=document.createElement("button");
   btn.type="button";
   btn.innerText="full";
@@ -225,19 +273,78 @@ var hideFullscreenButton;
   var bexit=document.createElement("div");
   bexit.className="exit-control";
   bexit.appendChild(btn);
+  var diffs=[0,0,0,0,0];
+  var duration=-1;
+  var lastseek=0;
+  function checkDuration(){
+    var seekable=vid.duration;
+    if(seekable==Infinity)seekable=vid.seekable.length>0?vid.seekable.end(vid.seekable.length-1):0;
+    if(!(seekable>0))return;
+    if(duration<0)duration=seekable;
+    if(seekable-duration<0.5)return;
+    diffs.shift();
+    diffs.push(seekable-duration);
+    duration=seekable;
+    var interval=Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])+1;
+    if(vid.currentTime<duration-interval*2-3&&Date.now()-lastseek>10000){
+      var cbLive=document.getElementById("cb-live");
+      if(cbLive&&cbLive.checked){
+        vid.currentTime=duration-interval;
+        lastseek=Date.now();
+      }
+    }
+  }
+  vid.ondurationchange=checkDuration;
+  setInterval(checkDuration,500);
+  btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="→";
+  btn.onclick=function(){vid.currentTime=duration-Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])-1;};
+  var blive=document.createElement("div");
+  blive.className="live-control";
+  blive.appendChild(btn);
+  var commInput=document.createElement("input");
+  commInput.type="text";
+  var commSend=null;
+  commInput.onkeydown=function(e){
+    if(!e.isComposing&&e.keyCode!=229&&e.key=="Enter"){
+      if(commSend&&commInput.value)commSend(commInput.value);
+      commInput.value="";
+    }
+  };
+  var btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="≫";
+  btn.onclick=function(){
+    if(commSend&&commInput.value)commSend(commInput.value);
+    commInput.value="";
+  };
+  var bcomm=document.createElement("div");
+  bcomm.className="comment-control";
+  bcomm.style.display="none";
+  bcomm.appendChild(commInput);
+  bcomm.appendChild(btn);
+  setSendComment=function(f){
+    bcomm.style.display=f?null:"none";
+    commSend=f;
+  };
   var removed=true;
-  hideFullscreenButton=function(hide){
+  hideOnscreenButtons=function(hide){
     if(!removed&&hide){
       vcont.removeChild(bfull);
       vcont.removeChild(bexit);
+      vcont.removeChild(blive);
+      vcont.removeChild(bcomm);
       removed=true;
     }else if(removed&&!hide){
       vcont.appendChild(bfull);
       vcont.appendChild(bexit);
+      vcont.appendChild(blive);
+      vcont.appendChild(bcomm);
       removed=false;
     }
   };
-  hideFullscreenButton(false);
+  hideOnscreenButtons(false);
 })();
 </script>
 ]=]
@@ -275,241 +382,21 @@ function WebBmlScriptTemplate(label)
 </div>
 <label><input id="cb-datacast" type="checkbox">]=]..label..[=[</label>
 <script src="web_bml_play_ts.js"></script>
-<script>
-function readPsiData(data,proc,startSec,ctx){
-  data=new DataView(data);
-  ctx=ctx||{};
-  if(!ctx.pids){
-    ctx.pids=[];
-    ctx.dict=[];
-    ctx.pos=0;
-    ctx.trailerSize=0;
-    ctx.timeListCount=-1;
-    ctx.codeListPos=0;
-    ctx.codeCount=0;
-    ctx.initTime=-1;
-    ctx.currTime=-1;
-  }
-  while(data.byteLength-ctx.pos>=ctx.trailerSize+32){
-    var pos=ctx.pos+ctx.trailerSize;
-    var timeListLen=data.getUint16(pos+10,true);
-    var dictionaryLen=data.getUint16(pos+12,true);
-    var dictionaryWindowLen=data.getUint16(pos+14,true);
-    var dictionaryDataSize=data.getUint32(pos+16,true);
-    var dictionaryBuffSize=data.getUint32(pos+20,true);
-    var codeListLen=data.getUint32(pos+24,true);
-    if(data.getUint32(pos)!=0x50737363||
-       data.getUint32(pos+4)!=0x0d0a9a0a||
-       dictionaryWindowLen<dictionaryLen||
-       dictionaryBuffSize<dictionaryDataSize||
-       dictionaryWindowLen>65536-4096){
-      return null;
-    }
-    var chunkSize=32+timeListLen*4+dictionaryLen*2+Math.ceil(dictionaryDataSize/2)*2+codeListLen*2;
-    if(data.byteLength-pos<chunkSize)break;
-    var timeListPos=pos+32;
-    pos+=32+timeListLen*4;
-    if(ctx.timeListCount<0){
-      var pids=[];
-      var dict=[];
-      var sectionListPos=0;
-      for(var i=0;i<dictionaryLen;i++,pos+=2){
-        var codeOrSize=data.getUint16(pos,true)-4096;
-        if(codeOrSize>=0){
-          if(codeOrSize>=ctx.pids.length||ctx.pids[codeOrSize]<0)return null;
-          pids[i]=ctx.pids[codeOrSize];
-          dict[i]=ctx.dict[codeOrSize];
-          ctx.pids[codeOrSize]=-1;
-        }else{
-          pids[i]=codeOrSize;
-          dict[i]=null;
-          sectionListPos+=2;
-        }
-      }
-      sectionListPos+=pos;
-      for(var i=0;i<dictionaryLen;i++){
-        if(pids[i]>=0)continue;
-        var psi=new Uint8Array(data.buffer,sectionListPos,pids[i]+4097);
-        dict[i]=new Uint8Array(Math.ceil((psi.length+1)/184)*188);
-        for(var j=0,k=0;k<psi.length;j++,k++){
-          if(!(j%188)){
-            j+=4;
-            if(!k)dict[i][j++]=0;
-          }
-          dict[i][j]=psi[k];
-        }
-        sectionListPos+=psi.length;
-        pids[i]=data.getUint16(pos,true)&0x1fff;
-        pos+=2;
-      }
-      for(var i=dictionaryLen,j=0;i<dictionaryWindowLen;j++){
-        if(j>=ctx.pids.length)return null;
-        if(ctx.pids[j]<0)continue;
-        pids[i]=ctx.pids[j];
-        dict[i++]=ctx.dict[j];
-      }
-      ctx.pids=pids;
-      ctx.dict=dict;
-      ctx.timeListCount=0;
-      pos=sectionListPos+dictionaryDataSize%2;
-    }else{
-      pos+=dictionaryLen*2+Math.ceil(dictionaryDataSize/2)*2;
-    }
-    pos+=ctx.codeListPos;
-    timeListPos+=ctx.timeListCount*4;
-    for(;ctx.timeListCount<timeListLen;ctx.timeListCount++,timeListPos+=4){
-      var initTime=ctx.initTime;
-      var currTime=ctx.currTime;
-      var absTime=data.getUint32(timeListPos,true);
-      if(absTime==0xffffffff){
-        currTime=-1;
-      }else if(absTime>=0x80000000){
-        currTime=absTime&0x3fffffff;
-        if(initTime<0)initTime=currTime;
-      }else{
-        var n=data.getUint16(timeListPos+2,true)+1;
-        if(currTime>=0){
-          currTime+=data.getUint16(timeListPos,true);
-          var sec=((currTime+0x40000000-initTime)&0x3fffffff)/11250;
-          if(sec>=(startSec||0)){
-            for(;ctx.codeCount<n;ctx.codeCount++,pos+=2,ctx.codeListPos+=2){
-              var code=data.getUint16(pos,true)-4096;
-              if(!proc(sec,ctx.dict[code],ctx.pids[code]))return false;
-            }
-            ctx.codeCount=0;
-          }else{
-            pos+=n*2;
-            ctx.codeListPos+=n*2;
-          }
-        }else{
-          pos+=n*2;
-          ctx.codeListPos+=n*2;
-        }
-      }
-      ctx.initTime=initTime;
-      ctx.currTime=currTime;
-    }
-    ctx.pos=pos;
-    ctx.trailerSize=2+(2+chunkSize)%4;
-    ctx.timeListCount=-1;
-    ctx.codeListPos=0;
-    ctx.currTime=-1;
-  }
-  var ret=data.buffer.slice(ctx.pos);
-  ctx.pos=0;
-  return ret;
-}
-function setTSPacketHeader(packets,counters,pid){
-  counters[pid]=counters[pid]||0;
-  for(var i=0;i<packets.length;i+=188){
-    packets[i]=0x47;
-    packets[i+1]=(i>0?0:0x40)|pid>>8;
-    packets[i+2]=pid;
-    packets[i+3]=0x10|counters[pid];
-    counters[pid]=(counters[pid]+1)&0xf;
-  }
-}
-</script>
 ]=] or ''
 end
 
 function VideoScriptTemplete()
-  return FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..[=[
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
   ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
+<script src="script.js"></script>
 <script>
-function decodeB24CaptionFromCueText(text,work){
-  work=work||[];
-  text=text.replace(/\r?\n/g,'');
-  var re=/<v b24caption[0-8]>(.*?)<\/v>/g;
-  var src,ret=null;
-  while((src=re.exec(text))!==null){
-    src=src[1].replace(/<.*?>/g,'').replace(/&(?:amp|lt|gt|quot|apos);/g,function(m){
-      return m=='&amp;'?'&':m=='&lt;'?'<':m=='&gt;'?'>':m=='&quot;'?'"':'\'';
-    });
-    var brace=[],wl=0,hi=0;
-    for(var i=0;i<src.length;){
-      if(src[i]=='%'){
-        if((++i)+2>src.length)return null;
-        var c=src[i++];
-        var d=src[i++];
-        if(c=='^'){
-          work[wl++]=0xc2;
-          work[wl++]=d.charCodeAt(0)+64;
-        }else if(c=='='){
-          if(d=='{'){
-            work[wl++]=0;
-            work[wl++]=0;
-            work[wl++]=0;
-            brace.push(wl);
-          }else if(d=='}'&&brace.length>0){
-            var pos=brace.pop();
-            work[pos-3]=wl-pos>>16&255;
-            work[pos-2]=wl-pos>>8&255;
-            work[pos-1]=wl-pos&255;
-          }else return null;
-        }else if(c=='+'){
-          if(d=='{'){
-            var pos=src.indexOf('%+}',i);
-            if(pos<0)return null;
-            try{
-              var buf=atob(src.substring(i,pos));
-              for(var j=0;j<buf.length;j++)work[wl++]=buf.charCodeAt(j);
-            }catch(e){return null;}
-            i=pos+3;
-          }else return null;
-        }else{
-          var x=c.charCodeAt(0);
-          var y=d.charCodeAt(0);
-          work[wl++]=(x>=97?x-87:x>=65?x-55:x-48)<<4|(y>=97?y-87:y>=65?y-55:y-48);
-        }
-      }else{
-        var x=src.charCodeAt(i++);
-        if(x<0x80){
-          work[wl++]=x;
-        }else if(x<0x800){
-          work[wl++]=0xc0|x>>6;
-          work[wl++]=0x80|x&63;
-        }else if(0xd800<=x&&x<=0xdbff){
-          hi=x;
-        }else if(0xdc00<=x&&x<=0xdfff){
-          x=0x10000+((hi&0x3ff)<<10)+(x&0x3ff);
-          work[wl++]=0xf0|x>>18;
-          work[wl++]=0x80|x>>12&63;
-          work[wl++]=0x80|x>>6&63;
-          work[wl++]=0x80|x&63;
-        }else{
-          work[wl++]=0xe0|x>>12;
-          work[wl++]=0x80|x>>6&63;
-          work[wl++]=0x80|x&63;
-        }
-      }
-    }
-    if(brace.length>0)return null;
-    if(3<=wl&&wl<=65520){
-      var r=new Uint8Array(wl+7);
-      r[0]=0x80;
-      r[1]=0xff;
-      r[2]=0xf0;
-      r[3]=work[0];
-      r[4]=work[1];
-      r[5]=work[2];
-      r[6]=wl-3>>8&255;
-      r[7]=wl-3&255;
-      for(var i=3;i<wl;i++)r[i+5]=work[i];
-      ret=ret||[];
-      ret.push(r);
-    }
-  }
-  return ret;
-}
 var cap=null;
 var cbCaption=document.getElementById("cb-caption");
 cbCaption.onclick=function(){
   if(cap){if(cbCaption.checked){cap.show();}else{cap.hide();}}
 };
-var vid=document.getElementById("vid")
 var vidMeta=document.getElementById("vid-meta");
 vidMeta.oncuechange=function(){
   vidMeta.oncuechange=null;
@@ -521,7 +408,7 @@ vidMeta.oncuechange=function(){
     if(!ret){return;}
     for(var j=0;j<ret.length;j++){dataList.push({pts:cues[i].startTime,pes:ret[j]});}
   }
-  cap=new aribb24js.CanvasRenderer({]=]..ARIBB24_JS_OPTION..[=[});
+  cap=new aribb24js.]=]..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')..'Renderer({'..ARIBB24_JS_OPTION..[=[});
   cap.attachMedia(vid);
   document.getElementById("label-caption").style.display="inline";
   if(!cbCaption.checked){cap.hide();}
@@ -541,16 +428,16 @@ vidMeta.oncuechange=function(){
 var psiData=null;
 var readTimer=null;
 var videoLastSec=0;
-function startReadPsiData(video){
+function startReadPsiData(){
   clearTimeout(readTimer);
-  var startSec=video.currentTime;
+  var startSec=vid.currentTime;
   videoLastSec=startSec;
   var ctx={};
   var counters=[];
   var f=function(){
-    var videoSec=video.currentTime;
+    var videoSec=vid.currentTime;
     if(videoSec<videoLastSec||videoLastSec+10<videoSec){
-      startReadPsiData(video);
+      startReadPsiData();
       return;
     }
     videoLastSec=videoSec;
@@ -559,7 +446,7 @@ function startReadPsiData(video){
         bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
         return sec<videoSec;
       },startSec,ctx)!==false){
-      startReadPsiData(video);
+      startReadPsiData();
       return;
     }
     readTimer=setTimeout(f,500);
@@ -573,14 +460,13 @@ cbDatacast.onclick=function(){
   if(!cbDatacast.checked){
     clearTimeout(readTimer);
     readTimer=null;
-    hideFullscreenButton(false);
+    hideOnscreenButtons(false);
     bmlBrowserSetInvisible(true);
     return;
   }
-  startReadPsiData(document.getElementById("vid"));
-  var vcont=document.getElementById("vid-cont");
+  startReadPsiData();
   bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-  hideFullscreenButton(true);
+  hideOnscreenButtons(true);
   bmlBrowserSetInvisible(false);
   if(xhr)return;
   xhr=new XMLHttpRequest();
@@ -602,92 +488,297 @@ cbDatacast.onclick=function(){
 ]=] or '')
 end
 
-function HlsScriptTemplete(caption)
-  local s=FullscreenButtonScriptTemplete()..WebBmlScriptTemplate('datacast')..(USE_DATACAST and [=[
+function TranscodeScriptTemplete(live,params)
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')
+    ..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and '<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>\n' or '')
+    ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
+<script src="script.js"></script>
+]=]..((USE_DATACAST or live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 <script>
-var xhr=null;
-var psiData=null;
-var responseCount;
-var ctx;
-var counters;
+var openSubStream;
+var onDataStream=null;
+var onDataStreamError=null;
+var onJikkyoStream=null;
+var onJikkyoStreamError=null;
+(function(){
+  var reopen=false;
+  var xhr=null;
+  openSubStream=function(){
+    if(reopen)return;
+    if(xhr){
+      xhr.abort();
+      xhr=null;
+      if(onDataStream||onJikkyoStream){
+        reopen=true;
+        setTimeout(function(){reopen=false;openSubStream();},5000);
+      }
+      return;
+    }
+    if(!onDataStream&&!onJikkyoStream)return;
+    var readCount=0;
+    var ctx={};
+    xhr=new XMLHttpRequest();
+    xhr.open("GET",document.getElementById("vidsrc").textContent+(onDataStream?"&psidata=1":"")+(onJikkyoStream?"&jikkyo=1":"")+
+             "&ofssec="+(]=]..math.floor(params.ofssec or 0)..[=[+Math.floor(vid.currentTime]=]..(params.fast and '*'..XCODE_FAST or '')..[=[)));
+    xhr.onloadend=function(){
+      if(xhr&&(readCount==0||xhr.status!=0)){
+        if(onDataStream&&onDataStreamError)onDataStreamError(xhr.status,readCount);
+        if(onJikkyoStream&&onJikkyoStreamError)onJikkyoStreamError(xhr.status,readCount);
+      }
+      xhr=null;
+    };
+    xhr.onprogress=function(){
+      if(xhr&&xhr.status==200&&xhr.response){
+        readCount=progressPsiDataChatMixedStream(readCount,xhr.response,onDataStream,onJikkyoStream,ctx);
+      }
+    };
+    xhr.send();
+  };
+})();
+var danmaku=null;
+function checkJikkyoDisplay(){
+  var comm=document.getElementById("jk-comm");
+  if(comm){
+    var cbDatacast=document.getElementById("cb-datacast");
+    var cbJikkyo=document.getElementById("cb-jikkyo");
+    if((cbDatacast&&cbDatacast.checked)||!cbJikkyo.checked){
+      if(comm.style.display!="none"){
+        danmaku.hide();
+        comm.style.display="none";
+      }
+    }else if(comm.style.display=="none"){
+      danmaku.show();
+      vfull.appendChild(comm);
+      comm.style.display=null;
+    }
+  }
+}
+</script>
+]=] or '')..(USE_DATACAST and [=[
+<script>
 var cbDatacast=document.getElementById("cb-datacast");
 cbDatacast.onclick=function(){
   document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
   if(!cbDatacast.checked){
-    if(xhr){
-      xhr.abort();
-      xhr=null;
-    }
-    hideFullscreenButton(false);
+    onDataStream=null;
+    openSubStream();
+    hideOnscreenButtons(false);
     bmlBrowserSetInvisible(true);
+    checkJikkyoDisplay();
     return;
   }
-  var videoSec=Math.floor(document.getElementById("vid").currentTime);
-  var vcont=document.getElementById("vid-cont");
+  checkJikkyoDisplay();
   bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-  hideFullscreenButton(true);
+  hideOnscreenButtons(true);
   bmlBrowserSetInvisible(false);
-  if(psiData||xhr)return;
-  psiData=new Uint8Array(0);
-  responseCount=0;
-  ctx={};
-  counters=[];
-  xhr=new XMLHttpRequest();
-  xhr.open("GET",document.getElementById("vidsrc").textContent+"&psidata=1&ofssec="+videoSec);
-  xhr.onloadend=function(){
-    if(!psiData||!responseCount){
-      document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+"|"+responseCount+"Bytes)";
+  onDataStream=function(psiTS,pcr){bmlBrowserPlayTS(psiTS,pcr);};
+  onDataStreamError=function(status,readCount){
+    document.querySelector(".remote-control-indicator").innerText="Error! ("+status+"|"+readCount+"Bytes)";
+  };
+  openSubStream();
+};
+</script>
+]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
+<script src="danmaku.js"></script>
+<script>
+var cbJikkyo=document.getElementById("cb-jikkyo");
+cbJikkyo.onclick=function(){
+  if(!cbJikkyo.checked){
+    onJikkyoStream=null;
+    openSubStream();
+    checkJikkyoDisplay();
+    setSendComment(null);
+    return;
+  }
+  var comm=document.getElementById("jk-comm");
+  if(!comm){
+    comm=document.createElement("div");
+    comm.id="jk-comm";
+    comm.className="jikkyo-comments";
+    vfull.appendChild(comm);
+  }
+  if(!danmaku){
+    danmaku=new Danmaku({
+      container:vcont,
+      opacity:1,
+      callback:function(){},
+      error:function(msg){},
+      apiBackend:{read:function(opt){opt.success([]);}},
+      height:]=]..JK_COMMENT_HEIGHT..[=[,
+      duration:]=]..JK_COMMENT_DURATION..[=[,
+      paddingTop:10,
+      paddingBottom:10,
+      unlimited:false,
+      api:{id:"noid",address:"noad",token:"noto",user:"nous",speedRate:1}
+    });
+  }
+  checkJikkyoDisplay();
+  function addMessage(text){
+    var b=document.createElement("strong");
+    b.innerText=text;
+    var div=document.createElement("div");
+    div.appendChild(b);
+    comm.appendChild(div);
+  }
+]=]..(live and USE_LIVEJK and [=[
+  setSendComment(function(value){
+    var xhr=new XMLHttpRequest();
+    xhr.open("POST","comment.lua");
+    xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+    xhr.onloadend=function(){
+      if(xhr.status!=200){
+        addMessage("Post error! ("+xhr.status+")");
+      }
+    };
+    xhr.send("ctok=]=]..CsrfToken('comment.lua')..'&n='..params.n..(params.id and '&id='..params.id or '')
+      ..[=[&comm="+encodeURIComponent(value).replace(/%20/g,"+"));
+  });
+]=] or '')..[=[
+  var commHide=true;
+  setInterval(function(){
+    if(getComputedStyle(comm).display=="none"){
+      commHide=true;
+    }else{
+      var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
+      comm.style.height=vid.clientHeight+"px";
+      if(commHide||scroll)comm.scrollTop=comm.scrollHeight;
+      commHide=false;
     }
-    xhr=null;
-    psiData=null;
+  },1000);
+  var fragment=null;
+  var scatter=[];
+  var scatterInterval=200;
+  var closed=false;
+  function replaceTag(tag){
+]=]..JK_CUSTOM_REPLACE..[=[
+    return tag;
+  }
+  onJikkyoStream=function(tag){
+    if(tag.substring(0,6)=="<chat "){
+      var c=parseChatTag(replaceTag(tag));
+      if(c){
+        if(c.yourpost)c.border="2px solid #c00";
+        scatter.push(c);
+        var b=document.createElement(c.yourpost?"strong":"b");
+        b.innerText=String(100+(Math.floor(c.date/3600)+9)%24).substring(1)+":"+
+                    String(100+Math.floor(c.date/60)%60).substring(1)+":"+
+                    String(100+c.date%60).substring(1)+" ("+c.user.substring(0,3)+") ";
+        var span=document.createElement("span");
+        span.innerText=c.text;
+        if(c.color!=0xffffff){
+          span.style.backgroundColor=c.colorcode;
+          span.className=(c.color>>16)*3+(c.color>>8)%256*6+c.color%256<255?"dark":"light";
+        }
+        var div=document.createElement("div");
+        if(closed){
+          div.className="closed";
+          closed=false;
+        }
+        div.appendChild(b);
+        div.appendChild(span);
+        if(!fragment)fragment=document.createDocumentFragment();
+        fragment.appendChild(div);
+      }
+      return;
+    }else if(tag.substring(0,13)=="<chat_result "){
+      var m=tag.match(/^[^>]*? status="(\d+)"/);
+      if(m&&m[1]!="0")addMessage("Error! (chat_result="+m[1]+")");
+      return;
+    }else if(tag.substring(0,7)=="<!-- M="){
+      if(tag.substring(7,22)=="Closed logfile.")closed=true;
+      else if(tag.substring(7,31)!="Started reading logfile:")addMessage(tag.substring(7,tag.length-4));
+      return;
+    }else if(tag.substring(0,7)!="<!-- J="){
+      return;
+    }
+    if(tag.indexOf(";T=")<0)scatterInterval=90;
+    else scatterInterval=Math.min(Math.max(scatterInterval+(scatter.length>0?-10:10),100),200);
+    setTimeout(function(){
+      var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
+      if(fragment){
+        comm.appendChild(fragment);
+        fragment=null;
+      }
+      if(scatterInterval<100){
+        danmaku.draw(scatter);
+        scatter.splice(0);
+      }
+      var n=Math.ceil(scatter.length/5);
+      if(n>0){
+        for(var i=0;i<5;i++){
+          setTimeout(function(){
+            if(scatter.length>0){
+              danmaku.draw(scatter.slice(0,n));
+              scatter.splice(0,n);
+            }
+          },scatterInterval*i);
+        }
+      }
+      if(commHide||scroll){
+        while(comm.childElementCount>1000){
+          comm.removeChild(comm.firstElementChild);
+        }
+      }
+      if(scroll)comm.scrollTop=comm.scrollHeight;
+    },0);
   };
-  xhr.onprogress=function(){
-    if(!psiData||!xhr||xhr.status!=200||!xhr.response||xhr.response.length<=responseCount)return;
-    var n=Math.floor((xhr.response.length-responseCount)/4)*4;
-    var addData=atob(xhr.response.substring(responseCount,responseCount+n));
-    responseCount+=n;
-    var concatData=new Uint8Array(psiData.length+addData.length);
-    for(var i=0;i<psiData.length;i++)concatData[i]=psiData[i];
-    for(var i=0;i<addData.length;i++)concatData[psiData.length+i]=addData.charCodeAt(i);
-    psiData=readPsiData(concatData.buffer,function(sec,psiTS,pid){
-      setTSPacketHeader(psiTS,counters,pid);
-      bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
-      return true;
-    },0,ctx);
-    if(psiData)psiData=new Uint8Array(psiData);
+  onJikkyoStreamError=function(status,readCount){
+    addMessage("Error! ("+status+"|"+readCount+"Bytes)");
   };
-  xhr.send();
+  openSubStream();
 };
 </script>
 ]=] or '')
+end
+
+function HlsScriptTemplete(caption)
+  local s=''
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
+  local hls4=USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or ''
   if ALWAYS_USE_HLS then
     s=s..'<script src="hls.min.js"></script>\n'
       ..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
-      ..'var vid=document.getElementById("vid");\n'
-      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported(),'..ARIBB24_JS_OPTION..'});\n'
+      ..(caption and 'var cap=new aribb24js.'..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')
+           ..'Renderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported(),'..ARIBB24_JS_OPTION..'});\n'
            ..'cap.attachMedia(vid);\n' or '')
-      ..'if(Hls.isSupported()){\n'
-      ..'  var hls=new Hls();\n'
-      ..'  hls.loadSource(document.getElementById("vidsrc").textContent+"'..hls..'");\n'
-      ..'  hls.attachMedia(vid);\n'
-      ..'  hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
-      ..(caption and '  hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){\n'
-           ..'    for(var i=0;i<data.samples.length;i++){cap.pushID3v2Data(data.samples[i].pts,data.samples[i].data);}\n'
-           ..'  });\n' or '')
-      ..'}else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
-      ..'  vid.src=document.getElementById("vidsrc").textContent+"'..hls..'";\n'
-      ..'}\n'
+      ..'var cbLive=document.getElementById("cb-live");\n'
+      ..'if(cbLive)cbLive.checked=true;\n'
+      ..'vid.poster="loading.png";\n'
+      --Android版Firefoxは非キーフレームで切ったフラグメントMP4だとカクつくので避ける
+      ..'waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..'"+(/Android.+Firefox/i.test(navigator.userAgent)?"":"'..hls4
+      ..'"),1000,2000,function(){vid.poster=null;},function(src){\n'
+      ..'  if(Hls.isSupported()){\n'
+      ..'    var hls=new Hls();\n'
+      ..'    hls.loadSource(src);\n'
+      ..'    hls.attachMedia(vid);\n'
+      ..'    hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
+      ..(caption and '    hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){\n'
+           ..'      for(var i=0;i<data.samples.length;i++){cap.pushID3v2Data(data.samples[i].pts,data.samples[i].data);}\n'
+           ..'    });\n' or '')
+      ..'  }else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
+      ..'    vid.src=src;\n'
+      ..'  }\n'
+      ..'});\n'
       ..'</script>'
   else
     s=s..(caption and '<script src="aribb24.js"></script>\n' or '')
       ..'<script>\n'
-      ..'var vid=document.getElementById("vid");\n'
-      ..(caption and 'var cap=new aribb24js.CanvasRenderer({enableAutoInBandMetadataTextTrackDetection:true,'..ARIBB24_JS_OPTION..'});\n'
+      ..(caption and 'var cap=new aribb24js.'..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')
+           ..'Renderer({enableAutoInBandMetadataTextTrackDetection:true,'..ARIBB24_JS_OPTION..'});\n'
            ..'cap.attachMedia(vid);\n' or '')
-      ..'vid.src=document.getElementById("vidsrc").textContent+(vid.canPlayType("application/vnd.apple.mpegurl")?"'..hls..'":"");\n'
+      --AndroidはcanPlayTypeが空文字列を返さないことがあるが実装に個体差が大きいので避ける
+      ..'if(!/Android/i.test(navigator.userAgent)&&vid.canPlayType("application/vnd.apple.mpegurl")){\n'
+      ..'  var cbLive=document.getElementById("cb-live");\n'
+      ..'  if(cbLive)cbLive.checked=true;\n'
+      ..'  vid.poster="loading.png";\n'
+      ..'  waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..hls4..'",1000,2000,function(){vid.poster=null;},function(src){\n'
+      ..'    vid.src=src;\n'
+      ..'  });\n'
+      ..'}else{\n'
+      ..'  vid.src=document.getElementById("vidsrc").textContent;\n'
+      ..'}\n'
       ..'</script>'
   end
   return s;
@@ -1002,6 +1093,57 @@ function SeekSec(f,sec,dur,fsize)
   return false
 end
 
+--ファイルの先頭のTOT時刻とネットワークIDとサービスIDを取得する
+function GetTotAndServiceID(f)
+  if f:seek('set') then
+    local pcr,pcrPid=ReadToPcr(f)
+    if pcr then
+      local tot,nid,sid=nil,nil,nil
+      for i=1,400000 do
+        local buf=f:read(188)
+        if not buf or #buf~=188 or buf:byte(1)~=0x47 then break end
+        local adaptation=math.floor(buf:byte(4)/16)%4
+        local adaptationLen=adaptation==1 and -1 or adaptation==3 and buf:byte(5) or 183
+        --payload_unit_start_indicator
+        if math.floor(buf:byte(2)/64)%2==1 and adaptationLen<183 then
+          local pid=buf:byte(2)%32*256+buf:byte(3)
+          local pointer=7+adaptationLen+buf:byte(6+adaptationLen)
+          local id=pointer<=188 and buf:byte(pointer)
+          if pid==0 and pointer+13<=188 and id==0x00 then
+            --PAT
+            local sectionLen=buf:byte(pointer+2)
+            sid=buf:byte(pointer+8)*256+buf:byte(pointer+9)
+            if sectionLen>=17 and sid==0 then
+              sid=buf:byte(pointer+12)*256+buf:byte(pointer+13)
+            end
+            if sectionLen<13 or sid==0 then
+              sid=nil
+            end
+          elseif pid==16 and pointer+4<=188 and id==0x40 then
+            --NIT
+            nid=buf:byte(pointer+3)*256+buf:byte(pointer+4)
+          elseif pid==20 and pointer+7<=188 and (id==0x70 or id==0x73) and not tot then
+            --TDT,TOT
+            local pcr2=ReadToPcr(f,pcrPid)
+            if not pcr2 then break end
+            local mjd=buf:byte(pointer+3)*256+buf:byte(pointer+4)
+            local h=buf:byte(pointer+5)
+            local m=buf:byte(pointer+6)
+            local s=buf:byte(pointer+7)
+            tot=((mjd*24+math.floor(h/16)*10+h%16)*60+math.floor(m/16)*10+m%16)*60+math.floor(s/16)*10+s%16-
+                3506749200-math.floor((pcr2+0x100000000-pcr)%0x100000000/45000)
+          end
+          if tot and nid and sid then
+            return tot,nid,sid
+          end
+        end
+      end
+    end
+  end
+  return nil
+end
+
+
 --リトルエンディアンの値を取得する
 function GetLeNumber(buf,pos,len)
   local n=0
@@ -1016,12 +1158,13 @@ function ImfFixdate(t)
 end
 
 --レスポンスを生成する
-function Response(code,ctype,charset,cl)
+function Response(code,ctype,charset,cl,maxage)
   return 'HTTP/1.1 '..code..' '..mg.get_response_code_text(code)
     ..'\r\nDate: '..ImfFixdate(os.date('!*t'))
     ..'\r\nX-Frame-Options: SAMEORIGIN'
     ..(ctype and '\r\nX-Content-Type-Options: nosniff\r\nContent-Type: '..ctype..(charset and '; charset='..charset or '') or '')
     ..(cl and mg.request_info.request_method~='HEAD' and '\r\nContent-Length: '..cl or '')
+    ..'\r\nCache-Control: private, max-age='..(maxage or 0)
     ..(mg.keep_alive(not not cl) and '\r\n' or '\r\nConnection: close\r\n')
 end
 

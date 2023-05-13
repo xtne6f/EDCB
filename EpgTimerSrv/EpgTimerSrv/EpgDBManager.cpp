@@ -717,6 +717,12 @@ bool CEpgDBManager::InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>
 			ctx.chkDurationMaxSec = dur % 10000 == 0 ? MAXDWORD : dur % 10000 * 60;
 		}
 	}
+	wstring notKey = key->notKey;
+	if( notKey.compare(0, 6, L":note:") == 0 ){
+		//メモを除去
+		size_t n = notKey.find_first_of(L" 　");
+		notKey.erase(0, n + (n == wstring::npos ? 0 : 1));
+	}
 
 	//キーワード分解
 	ctx.andKeyList.clear();
@@ -728,8 +734,8 @@ bool CEpgDBManager::InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>
 			ctx.andKeyList.push_back(vector<pair<wstring, RegExpPtr>>());
 			AddKeyword(ctx.andKeyList.back(), andKey, ctx.caseFlag, true, key->titleOnlyFlag != FALSE);
 		}
-		if( key->notKey.empty() == false ){
-			AddKeyword(ctx.notKeyList, key->notKey, ctx.caseFlag, true, key->titleOnlyFlag != FALSE);
+		if( notKey.empty() == false ){
+			AddKeyword(ctx.notKeyList, notKey, ctx.caseFlag, true, key->titleOnlyFlag != FALSE);
 		}
 	}else{
 		//正規表現ではないのでキーワードの分解
@@ -747,7 +753,6 @@ bool CEpgDBManager::InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>
 				AddKeyword(ctx.andKeyList.back(), std::move(buff), ctx.caseFlag, false, key->titleOnlyFlag != FALSE);
 			}
 		}
-		wstring notKey = key->notKey;
 		Replace(notKey, L"　", L" ");
 		while( notKey.empty() == false ){
 			wstring buff;

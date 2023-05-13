@@ -99,7 +99,7 @@ if sid==0 then
     <input type="hidden" name="ctok" value="]=]..CsrfToken('view.lua')..[=[">
     <input type="hidden" name="n" value="0">
     <input type="hidden" name="id" value="1-1-0">
-    <input type="submit" value="view -nwtv0 -term">
+    <button type="submit">view -nwtv0 -term</button>
   </div></form>]=])
 else
   xq=GetTranscodeQueries(mg.request_info.query_string)
@@ -107,7 +107,7 @@ else
     ..ConstructTranscodeQueries(xq)
     ..'#footer">'..(vtag==0 and 'Video' or 'DL')..'</a>\n'
     ..'<form method="GET" action="'..(vtag==0 and 'view.lua' or 'epglist.html#footer')..'"><div>\n'
-    ..'<input type="submit" value="view -nwtv0">\n'
+    ..'<button type="submit">view -nwtv0</button>\n'
     ..TranscodeSettingTemplete(xq)
     ..'<input type="hidden" name="id" value="'..onid..'-'..tsid..'-'..sid..'">\n'
     ..(vtag==0 and '<input type="hidden" name="n" value="0">\n<input type="hidden" name="ctok" value="'..CsrfToken('view.lua')..'">\n'
@@ -118,9 +118,10 @@ else
     ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
       ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
       ..'<div class="video-container arib-video-container" id="vid-cont">'
-      ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view -nwtv0</video></div></div>')
+      ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view -nwtv0</video></div></div>\n'
+      ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,{n=0,id=onid..'-'..tsid..'-'..sid}))
     if ALLOW_HLS then
-      ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))
+      ct:Append(HlsScriptTemplete(xq.caption))
     end
   end
 end

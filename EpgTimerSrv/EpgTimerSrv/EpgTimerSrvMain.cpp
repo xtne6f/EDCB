@@ -37,17 +37,6 @@ enum {
 	SD_MODE_NONE,
 };
 
-struct TASK_MAIN_WINDOW_CONTEXT {
-	const UINT msgTaskbarCreated;
-	CPipeServer pipeServer;
-	pair<HWND, pair<BYTE, bool>> queryShutdownContext;
-	DWORD notifySrvStatus;
-	TASK_MAIN_WINDOW_CONTEXT()
-		: msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
-		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
-		, notifySrvStatus(0) {}
-};
-
 struct MAIN_WINDOW_CONTEXT {
 	CEpgTimerSrvMain* const sys;
 	const UINT msgTaskbarCreated;
@@ -171,39 +160,10 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
 	, hwndMain(NULL)
-#ifndef EPGTIMERSRV_WITHLUA
 	, hLuaDll(NULL)
-#endif
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
-}
-
-bool CEpgTimerSrvMain::TaskMain()
-{
-	//非表示のメインウィンドウを作成
-	WNDCLASSEX wc = {};
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.lpfnWndProc = TaskMainWndProc;
-	wc.hInstance = GetModuleHandle(NULL);
-	wc.lpszClassName = SERVICE_NAME L" Task";
-	wc.hIcon = (HICON)LoadImage(NULL, IDI_INFORMATION, IMAGE_ICON, 0, 0, LR_SHARED);
-	if( RegisterClassEx(&wc) == 0 ){
-		return false;
-	}
-	TASK_MAIN_WINDOW_CONTEXT ctx;
-	if( CreateWindowEx(0, wc.lpszClassName, wc.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL, wc.hInstance, &ctx) == NULL ){
-		return false;
-	}
-	//メッセージループ
-	MSG msg;
-	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
-		if( ctx.queryShutdownContext.first == NULL || IsDialogMessage(ctx.queryShutdownContext.first, &msg) == FALSE ){
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-	}
-	return true;
 }
 
 bool CEpgTimerSrvMain::Main(bool serviceFlag_)
@@ -240,267 +200,11 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			DispatchMessage(&msg);
 		}
 	}
-#ifndef EPGTIMERSRV_WITHLUA
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
 	}
-#endif
 	return true;
-}
-
-LRESULT CALLBACK CEpgTimerSrvMain::TaskMainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	enum {
-		TIMER_RETRY_ADD_TRAY = 1,
-	};
-
-	TASK_MAIN_WINDOW_CONTEXT* ctx = (TASK_MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-	if( uMsg != WM_CREATE && ctx == NULL ){
-		return DefWindowProc(hwnd, uMsg, wParam, lParam);
-	}
-
-	switch( uMsg ){
-	case WM_CREATE:
-		{
-			ctx = (TASK_MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
-			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
-			wstring pipeName;
-			Format(pipeName, L"%ls%d", CMD2_GUI_CTRL_PIPE, GetCurrentProcessId());
-			ctx->pipeServer.StartServer(pipeName, [hwnd](CCmdStream& cmd, CCmdStream& res) {
-				res.SetParam(CMD_ERR);
-				switch( cmd.GetParam() ){
-				case CMD2_TIMER_GUI_VIEW_EXECUTE:
-					{
-						wstring exeCmd;
-						if( cmd.ReadVALUE(&exeCmd) && exeCmd.compare(0, 1, L"\"") == 0 ){
-							//形式は("FileName")か("FileName" Arguments..)のどちらか。ほかは拒否してよい
-							size_t i = exeCmd.find(L'"', 1);
-							if( i >= 2 && (exeCmd.size() == i + 1 || exeCmd[i + 1] == L' ') ){
-								wstring file(exeCmd, 1, i - 1);
-								SHELLEXECUTEINFO sei = {};
-								sei.cbSize = sizeof(sei);
-								sei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
-								sei.lpFile = file.c_str();
-								if( exeCmd.size() > i + 2 ){
-									sei.lpParameters = exeCmd.erase(0, i + 2).c_str();
-								}
-								sei.nShow = UtilPathEndsWith(file.c_str(), L".bat") ? SW_SHOWMINNOACTIVE : SW_SHOWNORMAL;
-								if( ShellExecuteEx(&sei) && sei.hProcess ){
-									CPipeServer::GrantServerAccessToKernelObject(sei.hProcess, SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION);
-									res.WriteVALUE(GetProcessId(sei.hProcess));
-									res.SetParam(CMD_SUCCESS);
-									CloseHandle(sei.hProcess);
-								}
-							}
-						}
-					}
-					break;
-				case CMD2_TIMER_GUI_QUERY_SUSPEND:
-					{
-						WORD val;
-						if( cmd.ReadVALUE(&val) ){
-							res.SetParam(CMD_SUCCESS);
-							if( SD_MODE_STANDBY <= LOBYTE(val) && LOBYTE(val) <= SD_MODE_SHUTDOWN ){
-								fs_path srvIniPath = GetCommonIniPath().replace_filename(EPG_TIMER_SERVICE_EXE).replace_extension(L".ini");
-								if( GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePC", 0, srvIniPath.c_str()) != 0 ){
-									DWORD noUsePCTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePCTime", 3, srvIniPath.c_str());
-									LASTINPUTINFO lii;
-									lii.cbSize = sizeof(lii);
-									if( noUsePCTime == 0 || (GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < noUsePCTime * 60 * 1000) ){
-										break;
-									}
-								}
-								PostMessage(hwnd, WM_APP_QUERY_SHUTDOWN, LOBYTE(val), HIBYTE(val));
-							}
-						}
-					}
-					break;
-				case CMD2_TIMER_GUI_QUERY_REBOOT:
-					PostMessage(hwnd, WM_APP_QUERY_SHUTDOWN, SD_MODE_INVALID, TRUE);
-					res.SetParam(CMD_SUCCESS);
-					break;
-				case CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2:
-					{
-						WORD ver;
-						NOTIFY_SRV_INFO status;
-						if( cmd.ReadVALUE2WithVersion(&ver, &status) ){
-							if( status.notifyID == NOTIFY_UPDATE_SRV_STATUS ){
-								PostMessage(hwnd, WM_APP_RECEIVE_NOTIFY, FALSE, status.param1);
-							}
-							res.SetParam(CMD_SUCCESS);
-						}
-					}
-					break;
-				default:
-					res.SetParam(CMD_NON_SUPPORT);
-					break;
-				}
-			});
-			CSendCtrlCmd cmd;
-			for( int timeout = 0; cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS; timeout += 100 ){
-				Sleep(100);
-				if( timeout > CONNECT_TIMEOUT ){
-					MessageBox(hwnd, L"サービスの起動を確認できませんでした。", NULL, MB_ICONERROR);
-					PostMessage(hwnd, WM_CLOSE, 0, 0);
-					break;
-				}
-			}
-			PostMessage(hwnd, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
-		}
-		return 0;
-	case WM_DESTROY:
-		{
-			CSendCtrlCmd cmd;
-			cmd.SendUnRegistGUI(GetCurrentProcessId());
-			ctx->pipeServer.StopServer();
-			//タスクトレイから削除
-			NOTIFYICONDATA nid = {};
-			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-			nid.hWnd = hwnd;
-			nid.uID = 1;
-			Shell_NotifyIcon(NIM_DELETE, &nid);
-			RemoveProp(hwnd, L"PopupSel");
-			RemoveProp(hwnd, L"PopupSelData");
-			PostQuitMessage(0);
-		}
-		return 0;
-	case WM_APP_REQUEST_SHUTDOWN:
-		{
-			CSendCtrlCmd cmd;
-			cmd.SendSuspend(MAKEWORD(wParam, lParam));
-		}
-		break;
-	case WM_APP_REQUEST_REBOOT:
-		{
-			CSendCtrlCmd cmd;
-			cmd.SendReboot();
-		}
-		break;
-	case WM_APP_QUERY_SHUTDOWN:
-		if( ctx->queryShutdownContext.first == NULL ){
-			INITCOMMONCONTROLSEX icce;
-			icce.dwSize = sizeof(icce);
-			icce.dwICC = ICC_PROGRESS_CLASS;
-			InitCommonControlsEx(&icce);
-			ctx->queryShutdownContext.second.first = (BYTE)wParam;
-			ctx->queryShutdownContext.second.second = lParam != FALSE;
-			CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
-		}
-		return TRUE;
-	case WM_APP_RECEIVE_NOTIFY:
-		//通知を受け取る
-		{
-			if( wParam == FALSE ){
-				ctx->notifySrvStatus = (DWORD)lParam;
-			}
-			NOTIFYICONDATA nid = {};
-			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-			nid.hWnd = hwnd;
-			nid.uID = 1;
-			nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED : ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN : IDI_ICON_BLUE);
-			nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-			nid.uCallbackMessage = WM_APP_TRAY_PUSHICON;
-			if( Shell_NotifyIcon(NIM_MODIFY, &nid) == FALSE && Shell_NotifyIcon(NIM_ADD, &nid) == FALSE ){
-				SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 5000, NULL);
-			}
-			if( nid.hIcon ){
-				DestroyIcon(nid.hIcon);
-			}
-		}
-		break;
-	case WM_APP_TRAY_PUSHICON:
-		//タスクトレイ関係
-		switch( LOWORD(lParam) ){
-		case WM_LBUTTONUP:
-			OpenGUI();
-			break;
-		case WM_RBUTTONUP:
-			{
-				HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU_TRAY));
-				if( hMenu ){
-					POINT point;
-					GetCursorPos(&point);
-					SetForegroundWindow(hwnd);
-					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, hwnd, NULL);
-					DestroyMenu(hMenu);
-				}
-			}
-			break;
-		}
-		break;
-	case WM_TIMER:
-		switch( wParam ){
-		case TIMER_RETRY_ADD_TRAY:
-			KillTimer(hwnd, TIMER_RETRY_ADD_TRAY);
-			SendMessage(hwnd, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
-			break;
-		}
-		break;
-	case WM_INITMENUPOPUP:
-		if( GetMenuItemID((HMENU)wParam, 0) == IDC_MENU_RESERVE ){
-			CSendCtrlCmd cmd;
-			vector<RESERVE_DATA> list;
-			cmd.SendEnumReserve(&list);
-			InitReserveMenuPopup((HMENU)wParam, list);
-			return 0;
-		}
-		break;
-	case WM_MENUSELECT:
-		if( lParam != 0 && (HIWORD(wParam) & MF_POPUP) == 0 ){
-			MENUITEMINFO mii;
-			mii.cbSize = sizeof(mii);
-			mii.fMask = MIIM_ID | MIIM_DATA;
-			if( GetMenuItemInfo((HMENU)lParam, LOWORD(wParam), FALSE, &mii) ){
-				//WM_COMMANDでは取得できないので、ここで選択内容を記録する
-				SetProp(hwnd, L"PopupSel", (HANDLE)(UINT_PTR)mii.wID);
-				SetProp(hwnd, L"PopupSelData", (HANDLE)mii.dwItemData);
-			}
-		}
-		break;
-	case WM_COMMAND:
-		switch( LOWORD(wParam) ){
-		case IDC_BUTTON_SETTING:
-			ShellExecute(NULL, NULL, GetModulePath().replace_filename(EPG_TIMER_SERVICE_EXE).c_str(), L"/setting", NULL, SW_SHOWNORMAL);
-			break;
-		case IDC_BUTTON_S3:
-		case IDC_BUTTON_S4:
-			{
-				CSendCtrlCmd cmd;
-				if(cmd.SendChkSuspend() == CMD_SUCCESS ){
-					cmd.SendSuspend(LOWORD(wParam) == IDC_BUTTON_S3 ? 0xFF01 : 0xFF02);
-				}else{
-					MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
-				}
-			}
-			break;
-		case IDC_BUTTON_END:
-			if( MessageBox(hwnd, SERVICE_NAME L" (Task) を終了します（サービスは終了しません）。", L"確認", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
-				SendMessage(hwnd, WM_CLOSE, 0, 0);
-			}
-			break;
-		case IDC_BUTTON_GUI:
-			OpenGUI();
-			break;
-		default:
-			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
-				//「予約削除」
-				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
-					CSendCtrlCmd cmd;
-					cmd.SendDelReserve(vector<DWORD>(1, (DWORD)(UINT_PTR)GetProp(hwnd, L"PopupSelData")));
-				}
-			}
-			break;
-		}
-		break;
-	default:
-		if( uMsg == ctx->msgTaskbarCreated ){
-			//シェルの再起動時
-			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
-		}
-		break;
-	}
-	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -552,6 +256,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		if( ctx->resumeTimer ){
 			CloseHandle(ctx->resumeTimer);
 		}
+		if( ctx->sys->doLuaWorkerThread.joinable() ){
+			ctx->sys->doLuaWorkerThread.join();
+		}
 		ctx->sys->notifyManager.SetNotifyCallback(NULL);
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
@@ -573,6 +280,31 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			DestroyWindow(hwnd);
 		}
 		return 0;
+	case WM_COPYDATA:
+		if( lParam ){
+			const COPYDATASTRUCT& cds = *(const COPYDATASTRUCT*)lParam;
+			if( cds.dwData == COPYDATA_TYPE_LUAPOST && cds.lpData ){
+				//Luaスクリプトをワーカースレッドに投入する
+				vector<WCHAR> buff((cds.cbData + 3) / sizeof(WCHAR), 0);
+				std::copy((const BYTE*)cds.lpData, (const BYTE*)cds.lpData + cds.cbData, (BYTE*)buff.data());
+				string script;
+				WtoUTF8(wstring(buff.data()), script);
+				//Luaが利用可能ならば
+				if( ctx->sys->hLuaDll ){
+					lock_recursive_mutex lock(ctx->sys->doLuaWorkerLock);
+
+					if( ctx->sys->doLuaScriptQueue.empty() && ctx->sys->doLuaWorkerThread.joinable() ){
+						ctx->sys->doLuaWorkerThread.join();
+					}
+					ctx->sys->doLuaScriptQueue.push_back(std::move(script));
+					if( ctx->sys->doLuaWorkerThread.joinable() == false ){
+						ctx->sys->doLuaWorkerThread = thread_(DoLuaWorker, ctx->sys);
+					}
+					return TRUE;
+				}
+			}
+		}
+		return FALSE;
 	case WM_APP_RESET_SERVER:
 		{
 			//サーバリセット処理
@@ -993,10 +725,16 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		break;
 	case WM_INITMENUPOPUP:
-		if( GetMenuItemID((HMENU)wParam, 0) == IDC_MENU_RESERVE ){
-			vector<RESERVE_DATA> list = ctx->sys->reserveManager.GetReserveDataAll();
-			InitReserveMenuPopup((HMENU)wParam, list);
-			return 0;
+		{
+			UINT id = GetMenuItemID((HMENU)wParam, 0);
+			if( id == IDC_MENU_RESERVE ){
+				vector<RESERVE_DATA> list = ctx->sys->reserveManager.GetReserveDataAll();
+				InitReserveMenuPopup((HMENU)wParam, list);
+				return 0;
+			}else if( id == IDC_MENU_STREAMING ){
+				ctx->sys->InitStreamingMenuPopup((HMENU)wParam);
+				return 0;
+			}
 		}
 		break;
 	case WM_MENUSELECT:
@@ -1033,11 +771,20 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_GUI:
 			OpenGUI();
 			break;
+		case IDC_BUTTON_STREAMING_NWPLAY:
+			//「追っかけ・ストリーミング再生停止」
+			ctx->sys->streamingManager.clear();
+			break;
 		default:
 			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
 				//「予約削除」
 				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
 					ctx->sys->reserveManager.DelReserveData(vector<DWORD>(1, (DWORD)(UINT_PTR)GetProp(hwnd, L"PopupSelData")));
+				}
+			}else if( IDC_MENU_STREAMING <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_STREAMING_MAX ){
+				//「配信停止」
+				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
+					ctx->sys->reserveManager.CloseNWTV((int)(UINT_PTR)GetProp(hwnd, L"PopupSelData"));
 				}
 			}
 			break;
@@ -1158,6 +905,30 @@ void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& l
 	}
 }
 
+void CEpgTimerSrvMain::InitStreamingMenuPopup(HMENU hMenu) const
+{
+	vector<pair<DWORD, int>> list = this->reserveManager.GetNWTVIDAll();
+
+	while( GetMenuItemCount(hMenu) > 2 && DeleteMenu(hMenu, 0, MF_BYPOSITION) );
+	if( list.empty() ){
+		InsertMenu(hMenu, 0, MF_GRAYED | MF_BYPOSITION, IDC_MENU_STREAMING, L"(配信なし)");
+	}
+	for( UINT i = 0; i < list.size() && i <= IDC_MENU_STREAMING_MAX - IDC_MENU_STREAMING; i++ ){
+		MENUITEMINFO mii;
+		mii.cbSize = sizeof(mii);
+		mii.fMask = MIIM_ID | MIIM_DATA | MIIM_STRING;
+		mii.wID = IDC_MENU_STREAMING + i;
+		mii.dwItemData = list[i].second;
+		WCHAR text[128];
+		swprintf_s(text, L"Nwtv%d: %08x (%.63ls)",
+		           list[i].second, list[i].first, this->reserveManager.GetTunerBonFileName(list[i].first).c_str());
+		std::replace(text, text + wcslen(text), L'&', L'＆');
+		mii.dwTypeData = text;
+		InsertMenuItem(hMenu, i, TRUE, &mii);
+	}
+	EnableMenuItem(hMenu, IDC_BUTTON_STREAMING_NWPLAY, this->streamingManager.empty() ? MF_GRAYED : MF_ENABLED);
+}
+
 void CEpgTimerSrvMain::StopMain()
 {
 	HWND hwndMain_ = this->hwndMain;
@@ -1209,12 +980,9 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	if( initialize ){
 		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
-#ifndef EPGTIMERSRV_WITHLUA
 		//存在を確認しているだけ
 		this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
-		if( this->hLuaDll )
-#endif
-		{
+		if( this->hLuaDll ){
 			this->reserveManager.SetBatCustomHandler(L".lua", [this](CBatManager::BAT_WORK_INFO& work, vector<char>& buff) { DoLuaBat(work, buff); });
 		}
 	}else{
@@ -2998,8 +2766,8 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 		}
 		break;
 	case CMD2_EPG_SRV_FILE_COPY2:
-		if( this->compatFlags & 0x80 ){
-			//互換動作: 指定ファイルをまとめて転送するコマンドを実装する
+		{
+			//指定ファイルをまとめて転送する
 			AddDebugLog(L"CMD2_EPG_SRV_FILE_COPY2");
 			WORD ver;
 			vector<wstring> list;
@@ -3022,12 +2790,14 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 						}
 					}else if( UtilComparePath(list[i].c_str(), LOGO_SAVE_FOLDER L".ini") == 0 ){
 						path = GetSettingPath().append(list[i]);
-					}else if( UtilComparePath(list[i].c_str(), L"EpgTimerSrv.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"Common.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"EpgDataCap_Bon.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"BonCtrl.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"ViewApp.ini") == 0 ||
-					          UtilComparePath(list[i].c_str(), L"Bitrate.ini") == 0 ){
+					}else if( (this->compatFlags & 0x80) != 0 &&
+					          (UtilComparePath(list[i].c_str(), L"EpgTimerSrv.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"Common.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"EpgDataCap_Bon.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"BonCtrl.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"ViewApp.ini") == 0 ||
+					           UtilComparePath(list[i].c_str(), L"Bitrate.ini") == 0) ){
+						//互換動作: 設定ファイルを転送可能にする
 						path = GetCommonIniPath().replace_filename(list[i]);
 					}else{
 						//ロゴフォルダに対する特例
@@ -3151,10 +2921,6 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 	}
 	return false;
 }
-
-#ifdef EPGTIMERSRV_WITHLUA
-extern "C" int luaopen_zlib(lua_State*);
-#endif
 
 void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 {
@@ -3289,11 +3055,6 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		" end end"
 		" return r;"
 		"end");
-
-#ifdef EPGTIMERSRV_WITHLUA
-	//組み込みのzlibをロード済みにする
-	luaL_requiref(L, "zlib", luaopen_zlib, 0);
-#endif
 }
 
 void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& buff)
@@ -3320,6 +3081,38 @@ void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& 
 			AddDebugLogFormat(L"Error %ls: %ls", work.batFilePath.c_str(), werr.c_str());
 		}
 		lua_close(L);
+	}
+}
+
+void CEpgTimerSrvMain::DoLuaWorker(CEpgTimerSrvMain* sys)
+{
+	for(;;){
+		string script;
+		{
+			lock_recursive_mutex lock(sys->doLuaWorkerLock);
+			script.swap(sys->doLuaScriptQueue.front());
+		}
+
+		lua_State* L = luaL_newstate();
+		if( L ){
+			luaL_openlibs(L);
+			sys->InitLuaCallback(L, NULL);
+			if( luaL_dostring(L, script.c_str()) != 0 ){
+				wstring werr;
+				LPCSTR err = lua_tostring(L, -1);
+				if( err ){
+					UTF8toW(err, werr);
+				}
+				AddDebugLogFormat(L"Error script: %ls", werr.c_str());
+			}
+			lua_close(L);
+		}
+
+		lock_recursive_mutex lock(sys->doLuaWorkerLock);
+		sys->doLuaScriptQueue.erase(sys->doLuaScriptQueue.begin());
+		if( sys->doLuaScriptQueue.empty() ){
+			break;
+		}
 	}
 }
 

@@ -37,10 +37,10 @@ ct:Append([=[
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
 ]=]..(INDEX_SUSPEND_USE_HIBERNATE and [=[
       <input type="hidden" name="hibernate" value="y">
-      <input type="submit" value="システム休止">
+      <button type="submit">システム休止</button>
 ]=] or [=[
       <input type="hidden" name="suspend" value="y">
-      <input type="submit" value="システムスタンバイ">
+      <button type="submit">システムスタンバイ</button>
 ]=])..[=[
     </div>
   </form>
@@ -52,19 +52,38 @@ ct:Append([=[
     <div>
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
       <input type="hidden" name="epgcap" value="y">
-      <input type="submit" value="EPG取得">
+      <button type="submit">EPG取得</button>
     </div>
   </form>
   <form method="POST" action="index.html">
     <div>
       <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
       <input type="hidden" name="epgreload" value="y">
-      <input type="submit" value="EPG再読み込み">
+      <button type="submit">EPG再読み込み</button>
     </div>
   </form>
 ]=])
 
 post=AssertPost()
+
+edcbnosuspend=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools\\edcbnosuspend.exe'
+if edcb.FindFile(edcbnosuspend,1) then
+  onstat=post and mg.get_var(post,'nosuspend')
+  if not onstat then
+    onstat,stat,code=edcb.os.execute('wmic process where "name=\'edcbnosuspend.exe\'" get processid 2>nul | findstr /b [1-9]')
+    onstat=onstat and stat=='exit' and code==0 and 'y'
+  end
+  ct:Append([=[
+  <form method="POST" action="index.html">
+    <div>
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="hidden" name="nosuspend" value="]=]..(onstat=='y' and 'n' or 'y')..[=[">
+      <button type="submit">録画後動作]=]..(onstat=='y' and 'の抑制を*解除*' or 'を抑制')..[=[</button>
+    </div>
+  </form>
+]=])
+end
+
 if post then
   if mg.get_var(post,'suspend') or mg.get_var(post,'hibernate') then
     if INDEX_ENABLE_SUSPEND then
@@ -88,6 +107,12 @@ if post then
     ct:Append('  <div id="result">EPG取得を開始'..(edcb.EpgCapNow() and 'しました' or 'できませんでした')..'</div>\n')
   elseif mg.get_var(post,'epgreload') then
     ct:Append('  <div id="result">EPG再読み込みを開始'..(edcb.ReloadEpg() and 'しました' or 'できませんでした')..'</div>\n')
+  elseif mg.get_var(post,'nosuspend')=='y' then
+    edcb.os.execute('start "" /b "'..edcbnosuspend..'" -')
+    ct:Append('  <div id="result">edcbnosuspend.exeを起動しました</div>\n')
+  elseif mg.get_var(post,'nosuspend')=='n' then
+    edcb.os.execute('wmic process where "name=\'edcbnosuspend.exe\'" call terminate >nul')
+    ct:Append('  <div id="result">edcbnosuspend.exeを停止しました</div>\n')
   end
 end
 

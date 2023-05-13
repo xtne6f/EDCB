@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "EpgTimerSrvMain.h"
+#include "EpgTimerTask.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/ServiceUtil.h"
 #include "../../Common/StackTrace.h"
@@ -31,11 +32,15 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 	SetDllDirectory(L"");
 
 	WCHAR option[16] = {};
+	vector<WCHAR> param;
 	int argc;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLine(), &argc);
 	if( argv ){
 		if( argc >= 2 ){
 			wcsncpy_s(option, argv[1], _TRUNCATE);
+		}
+		if( argc >= 3 ){
+			param.assign(argv[2], argv[2] + wcslen(argv[2]));
 		}
 		LocalFree(argv);
 	}
@@ -59,8 +64,25 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 		}else if( CompareNoCase(L"task", option + 1) == 0 ){
 			//Taskモード
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-			CEpgTimerSrvMain::TaskMain();
+			CEpgTimerTask().Main();
 			CoUninitialize();
+			return 0;
+		}else if( CompareNoCase(L"luapost", option + 1) == 0 ){
+			if( param.empty() == false ){
+				COPYDATASTRUCT cds;
+				cds.dwData = COPYDATA_TYPE_LUAPOST;
+				cds.cbData = (DWORD)(param.size() * sizeof(WCHAR));
+				cds.lpData = param.data();
+				HWND hwnd = NULL;
+				while( (hwnd = FindWindowEx(NULL, hwnd, SERVICE_NAME, NULL)) != NULL ){
+					//ウィンドウスレッドはさほどビジーにならないので想定する最悪値として10秒タイムアウトとする
+					DWORD_PTR dwResult;
+					if( SendMessageTimeout(hwnd, WM_COPYDATA, 0, (LPARAM)&cds, SMTO_NORMAL, 10000, &dwResult) && dwResult ){
+						break;
+					}
+				}
+			}
+			//コンソールアプリではないので戻り値は成否によらない
 			return 0;
 		}
 	}

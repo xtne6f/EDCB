@@ -877,12 +877,9 @@ void CReserveManager::CheckTuijyu()
 		EPGDB_EVENT_INFO info;
 		if( this->epgDBManager.SearchEpg(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, itr->second.eventID, &info) ){
 			//マージの都合でEIT[p/f]由来の未定時刻のイベントが混じるかもしれないがここでは無視する
-			if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
-				__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(itr->second.startTime);
-				if( startDiff < -12 * 3600 * I64_1SEC || 12 * 3600 * I64_1SEC < startDiff ){
-					//EventIDの再使用に備えるため12時間以上の移動は対象外
-					continue;
-				}
+			//EventIDの再使用と区別するため終了した番組は無視する
+			if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
+			    GetNowI64Time() < ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC ){
 				RESERVE_DATA r = itr->second;
 				bool chgRes = false;
 				if( info.hasShortInfo && r.title != info.shortInfo.event_name ){
@@ -1109,26 +1106,24 @@ void CReserveManager::CheckTuijyuTuner()
 					    r.reserveStatus != ADD_RESERVE_CHG_PF &&
 					    r.reserveStatus != ADD_RESERVE_UNKNOWN_END &&
 					    itrBank->second->SearchEpgInfo(sid, r.eventID, &info) ){
-						if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
-							__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(r.startTime);
-							//EventIDの再使用に備えるため12時間以上の移動は対象外
-							if( -12 * 3600 * I64_1SEC <= startDiff && startDiff <= 12 * 3600 * I64_1SEC ){
-								if( info.hasShortInfo && r.title != info.shortInfo.event_name ){
-									r.title = info.shortInfo.event_name;
-									//EPG再読み込みで変更されないようにする
-									r.reserveStatus = ADD_RESERVE_CHG_PF2;
-									chgRes = true;
-								}
-								if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
-									r.startTime = info.start_time;
-									r.reserveStatus = ADD_RESERVE_CHG_PF2;
-									chgRes = true;
-								}
-								if( r.durationSecond != info.durationSec ){
-									r.durationSecond = info.durationSec;
-									r.reserveStatus = ADD_RESERVE_CHG_PF2;
-									chgRes = true;
-								}
+						//EventIDの再使用と区別するため終了した番組は無視する
+						if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
+						    GetNowI64Time() < ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC ){
+							if( info.hasShortInfo && r.title != info.shortInfo.event_name ){
+								r.title = info.shortInfo.event_name;
+								//EPG再読み込みで変更されないようにする
+								r.reserveStatus = ADD_RESERVE_CHG_PF2;
+								chgRes = true;
+							}
+							if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
+								r.startTime = info.start_time;
+								r.reserveStatus = ADD_RESERVE_CHG_PF2;
+								chgRes = true;
+							}
+							if( r.durationSecond != info.durationSec ){
+								r.durationSecond = info.durationSec;
+								r.reserveStatus = ADD_RESERVE_CHG_PF2;
+								chgRes = true;
 							}
 						}
 					}
@@ -1889,6 +1884,19 @@ bool CReserveManager::CloseNWTV(int id)
 		}
 	}
 	return false;
+}
+
+vector<pair<DWORD, int>> CReserveManager::GetNWTVIDAll() const
+{
+	lock_recursive_mutex lock(this->managerLock);
+
+	vector<pair<DWORD, int>> idList;
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV ){
+			idList.push_back(std::make_pair(itr->first, itr->second->GetNWTVID()));
+		}
+	}
+	return idList;
 }
 
 bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath) const

@@ -83,7 +83,7 @@ if v then
             ..'<form method="GET" action="'..(vtag==0 and 'xcode.lua' or 'recinfodesc.html')..'"><div>\n'
             ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
                  or '<input type="hidden" name="id" value="'..v.id..'">\n<input type="hidden" name="vtag" value="10">\n')
-            ..'<input type="submit" value="xcode">\n'
+            ..'<button type="submit">xcode</button>\n'
             ..TranscodeSettingTemplete(xq,fsec)
             ..'</div></form>')
           if vtag==10 then
@@ -91,9 +91,10 @@ if v then
             ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
               ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
               ..'<div class="video-container arib-video-container" id="vid-cont">'
-              ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>')
+              ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>\n'
+              ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(false,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
             if ALLOW_HLS then
-              ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))
+              ct:Append(HlsScriptTemplete(xq.caption))
             end
           end
         else
@@ -107,14 +108,14 @@ if v then
     ..'<form method="POST" action="recinfodesc.html?id='..v.id..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="protect" value="'..(v.protectFlag and 'n' or 'y')..'">\n'
-    ..'<input type="submit" value="'..(v.protectFlag and 'Yes' or 'No')..'"></div></form></dd>\n'
+    ..'<button type="submit">'..(v.protectFlag and 'Yes' or 'No')..'</button></div></form></dd>\n'
     ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..v.programInfo:gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..v.errInfo:gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="recinfodesc.html?id='..v.id..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="del" value="y">\n'
-    ..'<input type="submit" value="削除"></div></form></dd>\n'
+    ..'<button type="submit">削除</button></div></form></dd>\n'
     ..'  </dl>\n')
 end
 

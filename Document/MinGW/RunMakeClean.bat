@@ -1,1 +1,0 @@
-@call RunMake.bat clean

@@ -84,13 +84,13 @@ for i,v in ipairs(edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
   end
 end
 if #a>0 then
-  n=mg.get_var(mg.request_info.query_string,'fname') or a[1]
+  n=mg.get_var(mg.request_info.query_string,'n') or a[1]
   xq=GetTranscodeQueries(mg.request_info.query_string)
   ct:Append('視聴 →<a href="reserve.html?vtag='..(vtag==0 and '-1' or '0')
     ..ConstructTranscodeQueries(xq)
     ..'#footer">'..(vtag==0 and 'Video' or 'DL')..'</a>\n'
     ..'<form method="GET" action="'..(vtag==0 and 'view.lua' or 'reserve.html#footer')..'"><div>\n'
-    ..'<input type="submit" value="view">\n'
+    ..'<button type="submit">view</button>\n'
     ..'<select name="n">')
   for i,v in ipairs(a) do
     ct:Append('<option value="'..v..'"'..(n==v and ' selected' or '')..'>-pipe'..v)
@@ -107,9 +107,10 @@ if #a>0 then
         ct:Append('<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
           ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
           ..'<div class="video-container arib-video-container" id="vid-cont">'
-          ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video></div></div>')
+          ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video></div></div>\n'
+          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,{n=v}))
         if ALLOW_HLS then
-          ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))
+          ct:Append(HlsScriptTemplete(xq.caption))
         end
         ct:Append('\n')
         break
@@ -121,7 +122,7 @@ ct:Append([=[
   <form method="POST" action="view.lua"><div>
     <input type="hidden" name="ctok" value="]=]..CsrfToken('view.lua')..[=[">
     <input type="hidden" name="n" value="-1">
-    <input type="submit" value="view -term">
+    <button type="submit">view -term</button>
   </div></form>
 </div>
 <div id="footer">

@@ -11,12 +11,14 @@ if fpath then
 end
 
 offset=GetVarInt(query,'offset',0,100) or 0
-ofssec=GetVarInt(query,'ofssec',0,100000) or 0
+ofssec=GetVarInt(query,'ofssec',0,100000)
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'fast')==1 and (GetVarInt(query,'cinema')==1 and option.filterCinemaFast or option.filterFast)
+fastRate=filter and XCODE_FAST or 1
 filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
 hls=GetVarInt(query,'hls',1)
+hls4=GetVarInt(query,'hls4',0) or 0
 caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
 if hls and not (ALLOW_HLS and option.outputHls) then
@@ -24,6 +26,7 @@ if hls and not (ALLOW_HLS and option.outputHls) then
   fpath=nil
 end
 psidata=GetVarInt(query,'psidata')==1
+jikkyo=GetVarInt(query,'jikkyo')==1
 
 function OpenTranscoder()
   if XCODE_SINGLE then
@@ -54,7 +57,12 @@ function OpenTranscoder()
   local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
   local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
   local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
-  local xcoder=(edcb.FindFile(tools..'\\'..option.xcoder,1) and tools..'\\' or '')..option.xcoder
+  local xcoder=''
+  for s in option.xcoder:gmatch('[^|]+') do
+    xcoder=tools..'\\'..s
+    if edcb.FindFile(xcoder,1) then break end
+    xcoder=s
+  end
 
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC','-')
@@ -79,7 +87,7 @@ function OpenTranscoder()
   end
   if hls then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
-    cmd=cmd..' | "'..tsmemseg..'" -a 10 -r 100 -m 8192 -d 3 '..segmentKey..'_'
+    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..segmentKey..'_'
   elseif XCODE_BUF>0 then
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
@@ -118,6 +126,12 @@ function OpenPsiDataArchiver()
   return edcb.io.popen('"'..cmd..'"','rb')
 end
 
+function OpenJikkyoReader(tot,nid,sid)
+  if not JKRDLOG_PATH then return nil end
+  local cmd='"'..JKRDLOG_PATH..'" -r '..(fastRate*100)..' ns'..((NetworkType(nid)=='地デジ' and 15 or nid)*65536+sid)..' '..(tot+ofssec)..' 0'
+  return edcb.io.popen('"'..cmd..'"','r')
+end
+
 function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
   if trailerSize>0 then
     local buf=f:read(trailerSize)
@@ -141,9 +155,57 @@ function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
   return buf,2+(2+#payload)%4,2+(2+#payload)%4-trailerConsumeSize
 end
 
+function ReadJikkyoChunk(f)
+  local head=f:read(80)
+  if not head or #head~=80 then return nil end
+  local payload=''
+  local payloadSize=tonumber(head:match('L=([0-9]+)'))
+  if not payloadSize then return nil end
+  if payloadSize>0 then
+    payload=f:read(payloadSize)
+    if not payload or #payload~=payloadSize then return nil end
+  end
+  return head..payload
+end
+
+function CreateHlsPlaylist(f)
+  local a={'#EXTM3U\n'}
+  local hasSeg=false
+  local buf=f:read(16)
+  if buf and #buf==16 then
+    local segNum=buf:byte(1)
+    local endList=buf:byte(9)~=0
+    local segIncomplete=buf:byte(10)~=0
+    local isMp4=buf:byte(11)~=0
+    a[2]='#EXT-X-VERSION:'..(isMp4 and 6 or 3)..'\n#EXT-X-TARGETDURATION:6\n'
+    buf=f:read(segNum*16)
+    if not buf or #buf~=segNum*16 then
+      segNum=0
+    end
+    for i=1,segNum do
+      local segIndex=buf:byte(1)
+      local segCount=GetLeNumber(buf,5,3)
+      local segAvailable=buf:byte(8)==0
+      local segDuration=GetLeNumber(buf,9,3)/1000
+      local nextSegAvailable=i<segNum and buf:byte(16+8)==0
+      if segAvailable and (not segIncomplete or nextSegAvailable) then
+        if not hasSeg then
+          a[#a+1]='#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
+            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..segmentKey..'"\n' or '')
+            ..(endList and '#EXT-X-ENDLIST\n' or '')
+          hasSeg=true
+        end
+        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_%d\n'):format(segIndex,segCount)
+      end
+      buf=buf:sub(17)
+    end
+  end
+  return table.concat(a)
+end
+
 f=nil
 if fpath then
-  if hls and not psidata then
+  if hls and not psidata and not jikkyo then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
     segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..filter..':'..caption..':'..output[2])
     f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
@@ -155,17 +217,47 @@ if fpath then
     if fname:lower()==fnamets then
       f=edcb.io.open(fpath,'rb')
       if f then
-        if offset~=0 or ofssec~=0 then
-          fsec,fsize=GetDurationSec(f)
-          if offset~=100 and SeekSec(f,fsec*offset/100+ofssec,fsec,fsize) then
-            offset=f:seek('cur',0) or 0
-          else
-            offset=math.floor(fsize*offset/100/188)*188
+        if ofssec then
+          -- 時間シーク
+          offset=0
+          if ofssec~=0 then
+            fsec,fsize=GetDurationSec(f)
+            if SeekSec(f,ofssec,fsec,fsize) then
+              offset=f:seek('cur',0) or 0
+            end
+          end
+        else
+          -- 比率シーク
+          ofssec=0
+          if offset~=0 then
+            fsec,fsize=GetDurationSec(f)
+            ofssec=math.floor(fsec*offset/100)
+            if offset~=100 and SeekSec(f,ofssec,fsec,fsize) then
+              offset=f:seek('cur',0) or 0
+            else
+              offset=math.floor(fsize*offset/100/188)*188
+            end
           end
         end
-        if psidata then
+        if psidata or jikkyo then
+          if jikkyo then
+            tot,nid,sid=GetTotAndServiceID(f)
+          end
           f:close()
-          f=OpenPsiDataArchiver()
+          f={}
+          if psidata then
+            f.psi=OpenPsiDataArchiver()
+            if not f.psi then
+              f=nil
+            end
+          end
+          if f and jikkyo then
+            f.jk=tot and OpenJikkyoReader(tot,nid,sid)
+            if not f.jk then
+              if f.psi then f.psi:close() end
+              f=nil
+            end
+          end
           fname='xcode.psc.txt'
         elseif XCODE then
           f:close()
@@ -190,55 +282,44 @@ if not f then
     ..'<title>xcode.lua</title><p><a href="index.html">メニュー</a></p>')
   ct:Finish()
   mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
-elseif psidata then
+elseif psidata or jikkyo then
+  -- PSI/SI、実況、またはその混合データストリームを返す
   mg.write(Response(200,mg.get_mime_type(fname),'utf-8')..'Content-Disposition: filename='..fname..'\r\n\r\n')
   if mg.request_info.request_method~='HEAD' then
     trailerSize=0
     trailerRemainSize=0
     baseTime=0
-    while true do
-      -- 3秒間隔でチャンクを読めば等速になる
-      buf,trailerSize,trailerRemainSize=ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
-      if not buf or not mg.write(mg.base64_encode(buf)) then break end
-      now=os.time()
-      if math.abs(baseTime-now)>10 then baseTime=now end
-      edcb.Sleep(math.max(baseTime+3-now,0)*1000)
-      baseTime=baseTime+3
-    end
+    failed=false
+    repeat
+      if psidata then
+        -- 3/fastRate秒間隔でチャンクを読めば主ストリームと等速になる
+        buf,trailerSize,trailerRemainSize=ReadPsiDataChunk(f.psi,trailerSize,trailerRemainSize)
+        failed=not buf or not mg.write(mg.base64_encode(buf))
+        if failed then break end
+      end
+      if jikkyo then
+        for i=1,3 do
+          -- 1/fastRate秒間隔でブロックされる
+          buf=ReadJikkyoChunk(f.jk)
+          failed=not buf or not mg.write(buf)
+          if failed then break end
+        end
+      else
+        now=os.time()*fastRate
+        if math.abs(baseTime-now)>10 then baseTime=now end
+        edcb.Sleep(math.max((baseTime+3-now)/fastRate,0)*1000)
+        baseTime=baseTime+3
+      end
+    until failed
   end
-  f:close()
+  if f.psi then f.psi:close() end
+  if f.jk then f.jk:close() end
 elseif hls then
   -- インデックスファイルを返す
-  ct=CreateContentBuilder()
-  ct:Append('#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:')
-  hasSeg=false
-  buf=f:read(16)
-  if buf and #buf==16 then
-    segNum=buf:byte(1)
-    endList=buf:byte(9)~=0
-    for i=1,segNum do
-      buf=f:read(16)
-      if not buf or #buf~=16 then
-        break
-      end
-      segAvailable=buf:byte(8)==0
-      if segAvailable then
-        segIndex=buf:byte(1)
-        segCount=GetLeNumber(buf,5,3)
-        segDuration=GetLeNumber(buf,9,3)/1000
-        if not hasSeg then
-          ct:Append((segCount==1 and '1\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY' or segCount+1)
-            ..'\n'..(endList and '#EXT-X-ENDLIST\n' or ''))
-          hasSeg=true
-        end
-        ct:Append('#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_'):format(segIndex)..segCount..'\n')
-      end
-    end
-  end
+  m3u=CreateHlsPlaylist(f)
   f:close()
-  if not hasSeg then
-    ct:Append('1\n#EXTINF:4.004,\nloading.m2t\n')
-  end
+  ct=CreateContentBuilder()
+  ct:Append(m3u)
   ct:Finish()
   mg.write(ct:Pop(Response(200,'application/vnd.apple.mpegurl','utf-8',ct.len)..'\r\n'))
 else
@@ -246,7 +327,7 @@ else
   if mg.request_info.request_method~='HEAD' then
     retry=0
     while true do
-      buf=f:read(48128)
+      buf=f:read(188*128)
       if buf and #buf~=0 then
         retry=0
         if not mg.write(buf) then

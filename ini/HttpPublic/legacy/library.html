@@ -141,7 +141,7 @@ else
                or '<input type="hidden" name="i" value="'..index..'">\n'
                  ..(dirhash and '<input type="hidden" name="d" value="'..dirhash..'">\n' or '')
                  ..'<input type="hidden" name="h" value="'..hash..'">\n<input type="hidden" name="vtag" value="10">\n')
-          ..'<input type="submit" value="xcode">\n'
+          ..'<button type="submit">xcode</button>\n'
           ..TranscodeSettingTemplete(xq,fsec)
           ..'</div></form>')
         if vtag==10 then
@@ -149,9 +149,10 @@ else
           ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
             ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
             ..'<div class="video-container arib-video-container" id="vid-cont">'
-            ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>')
+            ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>\n'
+            ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(false,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
           if ALLOW_HLS then
-            ct:Append('\n<div id="vidsrc" style="display:none">'..src..'</div>\n'..HlsScriptTemplete(xq.caption))
+            ct:Append(HlsScriptTemplete(xq.caption))
           end
         end
       else

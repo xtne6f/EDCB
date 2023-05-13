@@ -113,7 +113,7 @@ if r then
     ..'">:<input type="text" size="2" name="end-i" value="'..math.floor(dur/60)%60
     ..'">:<input type="text" size="2" name="end-s" value="'..dur%60
     ..'"><br>\n'
-    ..'<input type="submit" value="変更"></div></form></dd>\n')
+    ..'<button type="submit">変更</button></div></form></dd>\n')
 end
 ct:Append('    <dt>プリセット<dt><dd>\n'
   ..'<form action="epginfo.html"><div>'
@@ -133,20 +133,20 @@ end
 if r then
   ct:Append('<option value="65535"'..(preset and '' or ' selected')..'>予約時\n')
 end
-ct:Append('</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
+ct:Append('</select> <button type="submit">録画設定にロード</button></div></form></dd>\n'
   ..'    <dt>録画設定<dt><dd>\n'
   ..'<form method="POST" action="'
   ..(r and 'reserveinfo.html?id='..r.reserveID or 'epginfo.html?id='..onid..'-'..tsid..'-'..sid..'-'..eid)
   ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
   ..'<input type="hidden" name="ctok" value="'..CsrfToken(r and 'reserveinfo.html')..'">\n'
   ..'<input type="hidden" name="addchg" value="y">\n'
-  ..RecSettingTemplate(rs)..'<input type="submit" value="'..(r and '変更' or '追加')..'"></div></form></dd>\n')
+  ..RecSettingTemplate(rs)..'<button type="submit">'..(r and '変更' or '追加')..'</button></div></form></dd>\n')
 if r then
   ct:Append('    <dt>-</dt><dd>\n'
     ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken('reserveinfo.html')..'">\n'
     ..'<input type="hidden" name="del" value="y">\n'
-    ..'<input type="submit" value="削除"></div></form></dd>\n')
+    ..'<button type="submit">削除</button></div></form></dd>\n')
 end
 
 ct:Append([=[

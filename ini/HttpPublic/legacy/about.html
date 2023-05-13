@@ -15,7 +15,7 @@ ct:Append([=[
 <h1>EDCB Legacy WebUIについて</h1>
 <div id="main">
   <p>
-    EDCBの操作をブラウザから行うことができます。このWebUIではJavaScript(HLS再生や字幕表示を除く)やCookieは使用しません。<br>
+    EDCBの操作をブラウザから行うことができます。このWebUIではJavaScript(メディア再生や字幕表示を除く)やCookieは使用しません。<br>
     このWebUIでは公開フォルダ(HttpPublic)にないファイルには原則アクセスしません。
   </p><p>
     EDCBの「録画保存フォルダ」を公開フォルダ配下(公開フォルダ直下のvideoフォルダを推奨)に設定すれば、リンク表示などの追加機能を利用できます。
@@ -26,7 +26,7 @@ ct:Append([=[
     必要に応じてutil.luaの定数定義を編集して有効にしてください。
   </p><p>
     トランスコード機能(xcodeボタン)や視聴機能(viewボタン)を利用する場合は、ffmpegなどのトランスコーダーとtsreadex.exeとをEDCB直下のToolsフォルダに用意してください。<br>
-    既定ではHLS再生が有効なのでtsmemseg.exeとnwtvclose.ps1も必要です。<br>
+    既定ではHLS再生が有効なのでtsmemseg.exeも必要です。<br>
     後述のデータ放送の表示にはpsisiarc.exeも必要です。<br>
     また、必要に応じてutil.luaの定数定義を編集してください。<br>
     ブラウザの制限により自動再生されないことがあるので、その場合は再生画面をクリックやタップしてください。
@@ -39,8 +39,15 @@ ct:Append([=[
     HLS再生時や<a href="https://github.com/xtne6f/b24tovtt">b24tovtt</a>出力のWebVTTが配置されたメディアファイル再生時は、<a href="https://github.com/monyone/aribb24.js">aribb24.js</a>による字幕表示ができます。<br>
     字幕つき全画面表示は再生画面の左上隅あたりをクリックやタップしてください。
   </p><p>
-    HLS再生時や<a href="https://github.com/xtne6f/psisiarc">psisiarc</a>出力の.pscファイルが配置されたメディアファイル再生時は、<a href="https://github.com/otya128/web-bml">web-bml</a>によるデータ放送の表示ができます。<br>
+    トランスコード時や視聴時、<a href="https://github.com/xtne6f/psisiarc">psisiarc</a>出力の.pscファイルが配置されたメディアファイル再生時は、<a href="https://github.com/otya128/web-bml">web-bml</a>によるデータ放送の表示ができます。<br>
     ※指定サービス対象データに「データカルーセルを含める」必要があります。
+  </p><p>
+    トランスコード時や視聴時、TVTestのNicoJKプラグインのログや実況の表示ができます。おもに録画用アプリをTVTestにしている人向けの機能です。<br>
+    再生画面の中央やや下あたりをマウスオーバーやタップすると実況コメントを入力できます。
+  </p><p>
+    tsreadex.exeを"edcbnosuspend.exe"という名前でコピーしてToolsフォルダに用意すると、<a href="index.html">メニュー</a>に「録画後動作を抑制」ボタンが現れます。<br>
+    このedcbnosuspend.exeをEpgTimerSrv設定の「録画後動作の抑制条件」に指定しておくことで録画後動作を一時的に抑制することができます。<br>
+    ※edcbnosuspend.exeは単に起動させておくだけの何もしないプロセスです。
   </p><p>
     スクリプトはLua 5.2を使用しています。<a href="https://www.lua.org/manual/5.2/">Lua 5.2 Reference Manual</a> (<a href="http://milkpot.sakura.ne.jp/lua/lua52_manual_ja.html">有志による日本語訳</a>)<br>
     EDCBによる追加機能はDocument/Readme_Mod.txtの「Lua edcbグローバル変数の仕様」を参照してください。

@@ -1,5 +1,5 @@
 TARGET ?= EpgDataCap_Bon
-CPPFLAGS := -I. -DNDEBUG -D_WINDOWS -DEPGDATACAP_BON_APPLICATION -D_UNICODE -DUNICODE -D_WIN32_WINNT=0x0600 $(CPPFLAGS)
+CPPFLAGS := -I. -DNDEBUG -D_WINDOWS -DEPGDATACAP_BON_APPLICATION -D_UNICODE -DUNICODE $(CPPFLAGS)
 CXXFLAGS := -std=c++17 -pedantic-errors -Os $(CXXFLAGS)
 LDFLAGS2 = -municode -mwindows -Wl,-s,--dynamicbase,--nxcompat -static-libgcc -static-libstdc++ $(LDFLAGS)
 LDLIBS := -lole32 -lcomctl32 -ldbghelp -lcomdlg32 $(LDLIBS)

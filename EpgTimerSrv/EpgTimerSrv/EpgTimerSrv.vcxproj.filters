@@ -31,17 +31,8 @@
     <Filter Include="ヘッダー ファイル\civetweb">
       <UniqueIdentifier>{d06eb7fc-fc46-4201-a8f9-c57d6c944769}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\lua">
-      <UniqueIdentifier>{c2a39cab-b275-404b-81de-23aea29c65f6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ヘッダー ファイル\lua">
       <UniqueIdentifier>{176e7939-f443-4594-a5ff-cc0509a5b531}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\lua\zlib1">
-      <UniqueIdentifier>{37498eec-3e6d-43bd-b9f9-7c71c73a7db2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\lua\zlib1">
-      <UniqueIdentifier>{523010e0-5ef3-4fbe-8643-5c9fe4cfa6ac}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -188,45 +179,6 @@
     <ClInclude Include="RegExp.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="lua\ldo.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lfunc.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lgc.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\llex.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\llimits.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lmem.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lobject.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lopcodes.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lparser.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lstate.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lstring.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\ltable.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\ltm.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
     <ClInclude Include="lua\lua.h">
       <Filter>ヘッダー ファイル\lua</Filter>
     </ClInclude>
@@ -236,71 +188,20 @@
     <ClInclude Include="lua\lualib.h">
       <Filter>ヘッダー ファイル\lua</Filter>
     </ClInclude>
-    <ClInclude Include="lua\lundump.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lvm.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lzio.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lapi.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
     <ClInclude Include="lua\lauxlib.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lcode.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lctype.h">
-      <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\ldebug.h">
       <Filter>ヘッダー ファイル\lua</Filter>
     </ClInclude>
     <ClInclude Include="lua\lua.hpp">
       <Filter>ヘッダー ファイル\lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\inffast.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\inffixed.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\inflate.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\inftrees.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\trees.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\zconf.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\zlib.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\zutil.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\crc32.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\deflate.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\zlib1\gzguts.h">
-      <Filter>ヘッダー ファイル\lua\zlib1</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\StackTrace.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\IniUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="EpgTimerTask.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -397,143 +298,14 @@
     <ClCompile Include="RegExp.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="lua\ltablib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\ltm.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lundump.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lvm.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lzio.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lapi.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lauxlib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lbaselib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lbitlib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lcode.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lcorolib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lctype.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\ldblib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\ldebug.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\ldo.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\ldump.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lfunc.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lgc.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\linit.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\liolib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\llex.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lmathlib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lmem.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\loadlib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lobject.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lopcodes.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\loslib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lparser.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lstate.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lstring.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lstrlib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\ltable.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lua_zlib.c">
-      <Filter>ソース ファイル\lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\inflate.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\inftrees.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\trees.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\uncompr.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\zutil.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\adler32.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\compress.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\crc32.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\deflate.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\infback.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\zlib1\inffast.c">
-      <Filter>ソース ファイル\lua\zlib1</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\StackTrace.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\IniUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="EpgTimerTask.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

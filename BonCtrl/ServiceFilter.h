@@ -24,9 +24,21 @@ private:
 	vector<WORD> serviceIDList;
 	CCATUtil catUtil;
 	vector<pair<WORD, CPMTUtil>> pmtUtilMap; //キーPMTのPID
-	vector<WORD> needPIDList;
 	CCreatePATPacket pat;
 	CCreatePMTPacket pmt;
 
+	//PIDごとに出力の要不要、連続性指標を調整したりアダプテーションを置くための情報
+	struct PID_INFO {
+		WORD first; //PID;
+		bool neededByCatOrPmt;
+		bool onceOutputted;
+		bool originalOutputted;
+		bool originalDropped;
+		BYTE patLastCounter;
+		BYTE patShiftCounter;
+	};
+	vector<PID_INFO> pidInfoMap;
+
+	static PID_INFO& InsertPIDInfo(vector<PID_INFO>& infoMap, WORD pid);
 	void CheckNeedPID();
 };

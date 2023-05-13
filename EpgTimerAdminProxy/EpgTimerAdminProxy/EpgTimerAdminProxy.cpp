@@ -1,4 +1,5 @@
-﻿#include <sdkddkver.h>
+﻿#define _WIN32_WINNT _WIN32_WINNT_VISTA
+#include <sdkddkver.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <string.h>

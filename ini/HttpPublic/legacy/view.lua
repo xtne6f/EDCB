@@ -13,6 +13,7 @@ option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
 hls=GetVarInt(query,'hls',1)
+hls4=GetVarInt(query,'hls4',0) or 0
 caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
 n=GetVarInt(query,'n') or 0
@@ -26,6 +27,9 @@ if hls and not (ALLOW_HLS and option.outputHls) then
   onid=nil
 end
 psidata=GetVarInt(query,'psidata')==1
+jikkyo=GetVarInt(query,'jikkyo')==1
+hlsMsn=GetVarInt(query,'_HLS_msn',1)
+hlsPart=GetVarInt(query,'_HLS_part',0)
 
 function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if XCODE_SINGLE then
@@ -56,7 +60,12 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
   local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
   local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
-  local xcoder=(edcb.FindFile(tools..'\\'..option.xcoder,1) and tools..'\\' or '')..option.xcoder
+  local xcoder=''
+  for s in option.xcoder:gmatch('[^|]+') do
+    xcoder=tools..'\\'..s
+    if edcb.FindFile(xcoder,1) then break end
+    xcoder=s
+  end
 
   local cmd='"'..xcoder..'" '..option.option
     :gsub('$SRC','-')
@@ -82,8 +91,16 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if hls then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
     -- プロセス終了時に対応するNetworkTVモードも終了させる
-    cmd=cmd..' | "'..tsmemseg..'" -a 10 -m 8192 -d 3 '
-      ..(nwtvclose and '-c "powershell -NoProfile -ExecutionPolicy RemoteSigned -File nwtvclose.ps1 '..nwtvclose..'" ' or '')..segmentKey..'_'
+    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 '
+    if nwtvclose then
+      if edcb.FindFile(tools..'\\nwtvclose.ps1',1) then
+        cmd=cmd..'-c "powershell -NoProfile -ExecutionPolicy RemoteSigned -File nwtvclose.ps1 '..nwtvclose[1]..' '..nwtvclose[2]..'" '
+      else
+        cmd=cmd.."-c \"..\\EpgTimerSrv.exe /luapost if(edcb.GetPrivateProfile('NWTV','nwtv"..nwtvclose[1].."open','"..nwtvclose[2]
+          .."','Setting\\\\HttpPublic.ini')=='"..nwtvclose[2].."')then;edcb.CloseNetworkTV("..nwtvclose[1]..");end\" "
+      end
+    end
+    cmd=cmd..segmentKey..'_'
   elseif XCODE_BUF>0 then
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
@@ -92,7 +109,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if hls then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
-    if indexCount<10 and (not nwtvclose or edcb.FindFile(tools..'\\nwtvclose.ps1',1)) then
+    if indexCount<10 then
       edcb.os.execute('start "" /b cmd /s /c "'..(nwtvclose and 'cd /d "'..tools..'" && ' or '')..cmd..'"')
       for i=1,100 do
         local f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
@@ -143,19 +160,98 @@ function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
   return buf,2+(2+#payload)%4,2+(2+#payload)%4-trailerConsumeSize
 end
 
+function ReadJikkyoChunk(f)
+  local head=f:read(80)
+  if not head or #head~=80 then return nil end
+  local payload=''
+  local payloadSize=tonumber(head:match('L=([0-9]+)'))
+  if not payloadSize then return nil end
+  if payloadSize>0 then
+    payload=f:read(payloadSize)
+    if not payload or #payload~=payloadSize then return nil end
+  end
+  return head..payload
+end
+
+function CreateHlsPlaylist(f)
+  local a={'#EXTM3U\n'}
+  local hasSeg=false
+  local buf=f:read(16)
+  if buf and #buf==16 then
+    local segNum=buf:byte(1)
+    local endList=buf:byte(9)~=0
+    local segIncomplete=buf:byte(10)~=0
+    local isMp4=buf:byte(11)~=0
+    local partTarget=0.5
+    a[2]='#EXT-X-VERSION:'..(isMp4 and (hls4>1 and 9 or 6) or 3)..'\n#EXT-X-TARGETDURATION:6\n'
+    buf=f:read(segNum*16)
+    if not buf or #buf~=segNum*16 then
+      segNum=0
+    end
+    for i=1,segNum do
+      local segIndex=buf:byte(1)
+      local fragNum=buf:byte(3)
+      local segCount=GetLeNumber(buf,5,3)
+      local segAvailable=buf:byte(8)==0
+      local segDuration=GetLeNumber(buf,9,3)/1000
+      local segTime=GetLeNumber(buf,13,4)
+      local timeTag=os.date('!%Y-%m-%dT%H:%M:%S',os.time({year=2020,month=1,day=1})+math.floor(segTime/100))..('.%02d0+00:00'):format(segTime%100)
+      local nextSegAvailable=i<segNum and buf:byte(16+8)==0
+      local xbuf=f:read(fragNum*16)
+      if not xbuf or #xbuf~=fragNum*16 then
+        fragNum=0
+      end
+      for j=1,fragNum do
+        local fragDuration=GetLeNumber(xbuf,1,3)/1000
+        if hasSeg and hls4>1 then
+          partTarget=math.max(fragDuration,partTarget)
+          if timeTag then
+            -- このタグがないとまずい環境があるらしい
+            a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
+            timeTag=nil
+          end
+          a[#a+1]='#EXT-X-PART:DURATION='..fragDuration..',URI="segment.lua?c='..segmentKey..('_%02d_%d_%d"'):format(segIndex,segCount,j)
+            ..(j==1 and ',INDEPENDENT=YES' or '')..'\n'
+        end
+        xbuf=xbuf:sub(17)
+      end
+      -- v1.3.0現在のhls.jsはプレイリストがセグメントで終わると再生時間がバグるので避ける
+      if segAvailable and (endList or nextSegAvailable) then
+        if not hasSeg then
+          a[#a+1]='#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
+            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..segmentKey..'"\n' or '')
+            ..(endList and '#EXT-X-ENDLIST\n' or '')
+          hasSeg=true
+        end
+        if isMp4 and hls4>1 and timeTag then
+          a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
+        end
+        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_%d\n'):format(segIndex,segCount)
+      end
+      buf=buf:sub(17)
+    end
+    if isMp4 and hls4>1 then
+      -- PART-HOLD-BACKがPART-TARGETのちょうど3倍だとまずい環境があるらしい
+      a[2]=a[2]..'#EXT-X-PART-INF:PART-TARGET='..partTarget
+        ..'\n#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK=2.0\n'
+    end
+  end
+  return table.concat(a)
+end
+
 f=nil
 if onid then
   if sid==0 then
     -- NetworkTVモードを終了
     edcb.CloseNetworkTV(n)
   elseif 0<=n and n<100 then
-    if hls and not psidata then
+    if hls and not psidata and not jikkyo then
       -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
       segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
       f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
     end
     if not f then
-      if psidata then
+      if psidata or jikkyo then
         ok,pid=edcb.IsOpenNetworkTV(n)
       else
         openTime=os.time()
@@ -171,9 +267,9 @@ if onid then
           if ff and ff[1].name:find('^[A-Za-z]+_%d+_%d+$') then
             pipeName='\\\\.\\pipe\\'..ff[1].name
             break
-          elseif NWTV_FIND_BY_OPEN then
-            -- ポートを予想して開いてみる
-            for j=0,9 do
+          elseif i%10==0 then
+            -- FindFileで見つけられない環境があるかもしれないのでポートを予想して開いてみる
+            for j=0,29 do
               ff=edcb.io.open('\\\\.\\pipe\\SendTSTCP_'..j..'_'..pid, 'rb')
               if ff then
                 ff:close()
@@ -187,14 +283,27 @@ if onid then
           end
           edcb.Sleep(200)
         end
-        if psidata then
+        if psidata or jikkyo then
           if pipeName then
-            f=OpenPsiDataArchiver(pipeName,sid)
+            f={}
+            if psidata then
+              f.psi=OpenPsiDataArchiver(pipeName,sid)
+              if not f.psi then
+                f=nil
+              end
+            end
+            if f and jikkyo then
+              f.jk=edcb.io.open('\\\\.\\pipe\\chat_d7b64ac2_'..pid,'r')
+              if not f.jk then
+                if f.psi then f.psi:close() end
+                f=nil
+              end
+            end
             fname='view.psc.txt'
           end
         else
           if pipeName then
-            f=OpenTranscoder(pipeName,'view',n..' @'..openTime,sid)
+            f=OpenTranscoder(pipeName,'view',{n,'@'..openTime},sid)
             fname='view.'..output[1]
           end
           if not f then
@@ -208,21 +317,34 @@ elseif n and n<0 then
   -- プロセスが残っていたらすべて終わらせる
   edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-%\'" call terminate >nul')
 elseif n and n<=65535 then
-  if hls and not psidata then
+  if hls and not psidata and not jikkyo then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
     segmentKey=mg.md5('view:'..hls..':'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
     f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
   end
   if not f then
-    if not psidata then
+    if not psidata and not jikkyo then
       -- 前回のプロセスが残っていたら終わらせる
       edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-'..n..' %\'" call terminate >nul')
     end
     -- 名前付きパイプがあれば開く
     ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*', 1)
     if ff and ff[1].name:find('^[A-Za-z]+_%d+_%d+$') then
-      if psidata then
-        f=OpenPsiDataArchiver('\\\\.\\pipe\\'..ff[1].name)
+      if psidata or jikkyo then
+        f={}
+        if psidata then
+          f.psi=OpenPsiDataArchiver('\\\\.\\pipe\\'..ff[1].name)
+          if not f.psi then
+            f=nil
+          end
+        end
+        if f and jikkyo then
+          f.jk=edcb.io.open('\\\\.\\pipe\\chat_d7b64ac2_'..ff[1].name:match('^[A-Za-z]+_%d+_(%d+)$'),'r')
+          if not f.jk then
+            if f.psi then f.psi:close() end
+            f=nil
+          end
+        end
         fname='view.psc.txt'
       else
         f=OpenTranscoder('\\\\.\\pipe\\'..ff[1].name,'view-'..n)
@@ -238,56 +360,62 @@ if not f then
     ..'<title>view.lua</title><p><a href="index.html">メニュー</a></p>')
   ct:Finish()
   mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
-elseif psidata then
+elseif psidata or jikkyo then
+  -- PSI/SI、実況、またはその混合データストリームを返す
   mg.write(Response(200,mg.get_mime_type(fname),'utf-8')..'Content-Disposition: filename='..fname..'\r\n\r\n')
   if mg.request_info.request_method~='HEAD' then
     trailerSize=0
     trailerRemainSize=0
-    while true do
-      buf,trailerSize,trailerRemainSize=ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
-      if not buf or not mg.write(mg.base64_encode(buf)) then break end
-    end
+    baseTime=0
+    failed=false
+    repeat
+      -- 混合のときはPSI/SIのチャンクを3秒間隔で読む
+      if psidata then
+        buf,trailerSize,trailerRemainSize=ReadPsiDataChunk(f.psi,trailerSize,trailerRemainSize)
+        failed=not buf or not mg.write(mg.base64_encode(buf))
+        if failed then break end
+      end
+      if jikkyo then
+        repeat
+          -- 短い間隔(おおむね1秒以下)で読めることを仮定
+          buf=ReadJikkyoChunk(f.jk)
+          failed=not buf or not mg.write(buf)
+          if failed then break end
+          now=os.time()
+          if math.abs(baseTime-now)>10 then baseTime=now end
+        until now>=baseTime+3
+        baseTime=baseTime+3
+      end
+    until failed
   end
-  f:close()
+  if f.psi then f.psi:close() end
+  if f.jk then f.jk:close() end
 elseif hls then
   -- インデックスファイルを返す
-  ct=CreateContentBuilder()
-  ct:Append('#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:')
-  hasSeg=false
-  buf=f:read(16)
-  if buf and #buf==16 then
-    segNum=buf:byte(1)
-    endList=buf:byte(9)~=0
-    for i=1,segNum do
-      buf=f:read(16)
-      if not buf or #buf~=16 then
-        break
-      end
-      segAvailable=buf:byte(8)==0
-      if segAvailable then
-        segIndex=buf:byte(1)
-        segCount=GetLeNumber(buf,5,3)
-        segDuration=GetLeNumber(buf,9,3)/1000
-        if not hasSeg then
-          ct:Append((segCount==1 and '1\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY' or segCount+2)
-            ..'\n'..(endList and '#EXT-X-ENDLIST\n' or ''))
-          hasSeg=true
-        end
-        ct:Append('#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_'):format(segIndex)..segCount..'\n')
-      end
+  i=1
+  while true do
+    m3u=CreateHlsPlaylist(f)
+    f:close()
+    if i>40 or not hlsMsn or m3u:find('EXT%-X%-ENDLIST') or not m3u:find('CAN%-BLOCK%-RELOAD') or
+       not m3u:find('_'..(hlsMsn-1)..'\n') or
+       m3u:find('_'..hlsMsn..'\n') or
+       (hlsPart and m3u:find('_'..hlsMsn..'_'..(hlsPart+1)..'"')) then
+      break
     end
+    edcb.Sleep(200)
+    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
+    if not f then break end
+    i=i+1
   end
-  f:close()
-  if not hasSeg then
-    ct:Append('1\n#EXTINF:4.004,\nloading.m2t\n#EXT-X-DISCONTINUITY\n#EXTINF:4.004,\nloading.m2t\n')
-  end
+  ct=CreateContentBuilder()
+  ct:Append(m3u)
   ct:Finish()
   mg.write(ct:Pop(Response(200,'application/vnd.apple.mpegurl','utf-8',ct.len)..'\r\n'))
 else
   mg.write(Response(200,mg.get_mime_type(fname))..'Content-Disposition: filename='..fname..'\r\n\r\n')
   if mg.request_info.request_method~='HEAD' then
     while true do
-      buf=f:read(48128)
+      buf=f:read(188*128)
       if buf and #buf~=0 then
         if not mg.write(buf) then
           -- キャンセルされた

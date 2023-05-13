@@ -15,9 +15,29 @@ li {
   padding: 0.2em 0;
 }
 
-input {
+button, input {
   font-size: medium;
   margin: 0.5em 0.1em;
+}
+
+button {
+  background: #eee;
+  border: 0;
+  color: #07d;
+  font-weight: bold;
+  padding: 0.2em 0.5em;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #07d;
+  color: white;
+}
+
+input[type="checkbox"] {
+  height: 1em;
+  margin-left: 0.2em;
+  width: 1em;
 }
 
 select {
@@ -252,12 +272,18 @@ th, td {
 .video-container {
   line-height: 0;
   max-width: 90%;
+  overflow: hidden;
   position: relative;
   width: max-content;
 }
 
 .video-container > video {
   width: 100%;
+}
+
+.video-full-container {
+  display: flex;
+  flex-direction: row;
 }
 
 .video-full-container:fullscreen {
@@ -298,10 +324,38 @@ th, td {
   top: 0;
 }
 
-.full-control > button, .exit-control > button {
+.live-control {
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.comment-control {
+  bottom: 20%;
+  display: flex;
+  left: 50%;
+  opacity: 0;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 40%;
+}
+
+.full-control > button, .exit-control > button, .live-control > button {
   font-size: x-large;
   margin: 0.5em;
   padding: 0.5em;
+}
+
+.comment-control > input, .comment-control > button {
+  font-size: large;
+  margin: 1em 0.2em;
+  opacity: 0.8;
+  padding: 0.2em;
+}
+
+.comment-control > input {
+  flex: 1;
 }
 
 .video-full-container .full-control:hover {
@@ -331,6 +385,14 @@ th, td {
 }
 
 .video-full-container:-webkit-full-screen .exit-control:hover {
+  opacity: 1;
+}
+
+.video-full-container .live-control:hover {
+  opacity: 1;
+}
+
+.video-full-container .comment-control:hover {
   opacity: 1;
 }
 
@@ -388,4 +450,104 @@ th, td {
 .remote-control-indicator {
   height: 6em;
   white-space: pre-line;
+}
+
+.jikkyo-comments {
+  border: 1px solid #ccc;
+  flex: 0 0 25%;
+  font-size: small;
+  margin-left: 1px;
+  overflow: auto;
+}
+
+.jikkyo-comments > .closed {
+  border-top: 1px dotted #aaa;
+}
+
+.jikkyo-comments > div > b {
+  background-color: #fff;
+  color: #00c;
+  font-weight: normal;
+}
+
+.jikkyo-comments > div > strong {
+  background-color: #fff;
+  color: #c00;
+}
+
+.jikkyo-comments .dark {
+  color: #fff;
+}
+
+.jikkyo-comments .light {
+  color: #000;
+}
+
+.video-full-container:fullscreen .jikkyo-comments {
+  display: none;
+}
+
+.video-full-container:-webkit-full-screen .jikkyo-comments {
+  display: none;
+}
+
+.dplayer-danmaku-item {
+  display: inline-block;
+  font-weight: bold;
+  line-height: 1;
+  pointer-events: none;
+  -webkit-text-stroke: 1px #000;
+  text-stroke: 1px #000;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.dplayer-danmaku-item--demo {
+  position: absolute;
+  visibility: hidden;
+}
+
+.dplayer-danmaku-dark {
+  -webkit-text-stroke: 1px #fff;
+  text-stroke: 1px #fff;
+}
+
+.dplayer-danmaku-right {
+  position: absolute;
+  right: 0;
+  transform: translateX(100%);
+}
+
+.dplayer-danmaku-right.dplayer-danmaku-move {
+  animation-name: danmaku;
+  animation-timing-function: linear;
+  will-change: transform;
+}
+
+.dplayer-danmaku-top, .dplayer-danmaku-bottom {
+  left: 0;
+  position: absolute;
+  text-align: center;
+  width: 100%;
+}
+
+.dplayer-danmaku-top.dplayer-danmaku-move, .dplayer-danmaku-bottom.dplayer-danmaku-move {
+  animation-name: danmaku-center;
+  animation-timing-function: linear;
+  will-change: visibility;
+}
+
+@keyframes danmaku {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes danmaku-center {
+  from {
+    visibility: visible;
+  }
+  to {
+    visibility: visible;
+  }
 }

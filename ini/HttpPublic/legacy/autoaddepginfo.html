@@ -194,7 +194,7 @@ if aa.searchInfo then
   disAndKey=si.andKey:match('^^!{999}(.*)')
   --大小文字区別
   caseAndKey=(disAndKey or si.andKey):match('^C!{999}(.*)')
-  ct:Append('</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
+  ct:Append('</select> <button type="submit">録画設定にロード</button></div></form></dd>\n'
     ..'    <dt>条件</dt><dd>\n'
     ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'">\n'
     ..'<div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
@@ -268,14 +268,14 @@ if aa.searchInfo then
     ..'&emsp;<label><input type="checkbox" name="chkRecNoService" value="1"'..(si.chkRecNoService and ' checked' or '')..'>全てのサービスで無効にする</label><br>\n'
     ..'&emsp;確認対象期間 <input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
     ..'</div><div class="section"><h2>録画設定</h2>\n'..RecSettingTemplate(rs)..'</div>\n'
-    ..'<div><input type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'"></div></form></dd>\n')
+    ..'<div><button type="submit">'..(aa.dataID==0 and '追加' or '変更')..'</button></div></form></dd>\n')
 
   if aa.dataID~=0 then
     ct:Append('    <dt>-</dt><dd>\n'
       ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'"><div>\n'
       ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
       ..'<input type="hidden" name="del" value="y">\n'
-      ..'<input type="submit" value="削除"></div></form></dd>\n')
+      ..'<button type="submit">削除</button></div></form></dd>\n')
   end
   ct:Append('  </dl>\n')
 end
