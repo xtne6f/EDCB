@@ -108,7 +108,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_WINDOWS;EPGTIMERSRV_APPLICATION;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;LUA_BUILD_AS_DLL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;EPGTIMERSRV_APPLICATION;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_3_0;LUA_BUILD_AS_DLL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -126,7 +126,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_WINDOWS;EPGTIMERSRV_APPLICATION;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;LUA_BUILD_AS_DLL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;EPGTIMERSRV_APPLICATION;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_3_0;LUA_BUILD_AS_DLL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -146,7 +146,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_WINDOWS;EPGTIMERSRV_APPLICATION;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;LUA_BUILD_AS_DLL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;EPGTIMERSRV_APPLICATION;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_3_0;LUA_BUILD_AS_DLL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -169,7 +169,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_WINDOWS;EPGTIMERSRV_APPLICATION;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_1_1;LUA_BUILD_AS_DLL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;EPGTIMERSRV_APPLICATION;USE_LUA;USE_IPV6;NO_CGI;NO_POPEN;OPENSSL_API_3_0;LUA_BUILD_AS_DLL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
