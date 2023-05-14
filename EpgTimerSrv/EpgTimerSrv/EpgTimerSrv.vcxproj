@@ -187,8 +187,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="EpgTimerSrv.ico" />
+    <None Include="match.inl" />
     <None Include="md5.inl" />
     <None Include="mod_lua.inl" />
+    <None Include="mod_lua_shared.inl" />
+    <None Include="openssl_dl.inl" />
+    <None Include="response.inl" />
     <None Include="small.ico" />
   </ItemGroup>
   <ItemGroup>

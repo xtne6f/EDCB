@@ -301,8 +301,9 @@ string CHttpServer::CreateRandom()
 	return ret;
 }
 
-void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)
+void CHttpServer::InitLua(const mg_connection* conn, void* luaContext, unsigned int contextFlags)
 {
+	(void)contextFlags;
 	const CHttpServer* sys = (CHttpServer*)mg_get_user_data(mg_get_context(conn));
 	lua_State* L = (lua_State*)luaContext;
 	sys->initLuaProc(L);
