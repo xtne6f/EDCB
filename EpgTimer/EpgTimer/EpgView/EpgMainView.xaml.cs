@@ -796,6 +796,21 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// ロゴ更新通知
+        /// </summary>
+        public void RefreshLogo()
+        {
+            try
+            {
+                serviceView.RefreshLogo();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        /// <summary>
         /// 予約情報更新通知
         /// </summary>
         public void RefreshReserve()
