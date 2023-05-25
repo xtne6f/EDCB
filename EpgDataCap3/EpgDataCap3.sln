@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap3", "EpgDataCap3\EpgDataCap3.vcxproj", "{2342998F-86F9-4819-8B01-6E9103F0DCD4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap3_Unicode", "EpgDataCap3\EpgDataCap3_Unicode.vcxproj", "{7698938F-15D1-4587-894A-ED8BCE437986}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -19,6 +21,14 @@ Global
 		{2342998F-86F9-4819-8B01-6E9103F0DCD4}.Release|Win32.Build.0 = Release|Win32
 		{2342998F-86F9-4819-8B01-6E9103F0DCD4}.Release|x64.ActiveCfg = Release|x64
 		{2342998F-86F9-4819-8B01-6E9103F0DCD4}.Release|x64.Build.0 = Release|x64
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Debug|Win32.Build.0 = Debug|Win32
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Debug|x64.ActiveCfg = Debug|x64
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Debug|x64.Build.0 = Debug|x64
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Release|Win32.ActiveCfg = Release|Win32
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Release|Win32.Build.0 = Release|Win32
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Release|x64.ActiveCfg = Release|x64
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
