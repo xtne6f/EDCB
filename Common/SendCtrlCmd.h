@@ -58,7 +58,7 @@ public:
 		DWORD timeOut
 		);
 
-	//EPGデータを再読み込みする
+	//EPG再読み込みを開始する
 	//戻り値：
 	// エラーコード
 	DWORD SendReloadEpg(){
@@ -72,7 +72,7 @@ public:
 		return SendCmdWithoutData(CMD2_EPG_SRV_RELOAD_SETTING);
 	}
 
-	//EpgTimerSrv.exeのパイプ接続GUIとしてプロセスを登録する
+	//EpgTimerSrvのパイプ接続GUIとしてプロセスを登録する（通知が受信可能になる）
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -81,7 +81,7 @@ public:
 		return SendCmdData(CMD2_EPG_SRV_REGIST_GUI, processID);
 	}
 
-	//EpgTimerSrv.exeのパイプ接続GUI登録を解除する
+	//EpgTimerSrvのパイプ接続GUI登録を解除する
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -90,7 +90,7 @@ public:
 		return SendCmdData(CMD2_EPG_SRV_UNREGIST_GUI, processID);
 	}
 
-	//予約一覧を取得する
+	//予約一覧取得
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -101,7 +101,7 @@ public:
 		return ReceiveCmdData(CMD2_EPG_SRV_ENUM_RESERVE, val);
 	}
 
-	//予約を削除する
+	//予約削除
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -110,16 +110,27 @@ public:
 		return SendCmdData(CMD2_EPG_SRV_DEL_RESERVE, val);
 	}
 
+	//スタンバイ、休止、シャットダウンを行っていいかの確認
+	//戻り値：
+	// エラーコード
 	DWORD SendChkSuspend(){
 		return SendCmdWithoutData(CMD2_EPG_SRV_CHK_SUSPEND);
 	}
 
+	//スタンバイ、休止、シャットダウンに移行する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]1:スタンバイ 2:休止 3:シャットダウン | 0x0100:復帰後再起動
 	DWORD SendSuspend(
 		WORD val
 		){
 		return SendCmdData(CMD2_EPG_SRV_SUSPEND, val);
 	}
 
+	//PC再起動を行う
+	//戻り値：
+	// エラーコード
 	DWORD SendReboot(){
 		return SendCmdWithoutData(CMD2_EPG_SRV_REBOOT);
 	}
@@ -201,9 +212,9 @@ public:
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_SET_IP, *val, val);
 	}
 
-//タイマーGUI（EpgTimer_Bon.exe）用
+	// ***** 以下、タイマーGUI（EpgTimerなど）用 *****
 
-	//予約一覧の情報が更新された
+	//予約情報などが更新されたことを通知する（旧仕様との互換用）
 	//戻り値：
 	// エラーコード
 	DWORD SendGUIUpdateReserve(
@@ -211,7 +222,7 @@ public:
 		return SendCmdWithoutData(CMD2_TIMER_GUI_UPDATE_RESERVE);
 	}
 
-	//EPGデータの再読み込みが完了した
+	//EPGデータが更新されたことを通知する（旧仕様との互換用）
 	//戻り値：
 	// エラーコード
 	DWORD SendGUIUpdateEpgData(
@@ -219,7 +230,7 @@ public:
 		return SendCmdWithoutData(CMD2_TIMER_GUI_UPDATE_EPGDATA);
 	}
 
-	//情報更新を通知する
+	//サーバーの情報変更を通知する
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -228,7 +239,7 @@ public:
 		return SendCmdData2(CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2, val);
 	}
 
-	//Viewアプリ（EpgDataCap_Bon.exe）を起動
+	//Viewアプリ（EpgDataCap_Bonなど）を起動
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -241,7 +252,7 @@ public:
 		return SendAndReceiveCmdData(CMD2_TIMER_GUI_VIEW_EXECUTE, exeCmd, PID);
 	}
 
-	//スタンバイ、休止、シャットダウンに入っていいかの確認をユーザーに行う
+	//スタンバイ、休止、シャットダウンに入っていいかユーザーに確認する（了解ならタイマーGUIはCMD_EPG_SRV_SUSPENDを送る）
 	//戻り値：
 	// エラーコード
 	DWORD SendGUIQuerySuspend(
@@ -251,7 +262,7 @@ public:
 		return SendCmdData(CMD2_TIMER_GUI_QUERY_SUSPEND, (WORD)(rebootFlag<<8|suspendMode));
 	}
 
-	//PC再起動に入っていいかの確認をユーザーに行う
+	//PC再起動に入っていいかユーザーに確認する（了解ならタイマーGUIはCMD_EPG_SRV_REBOOTを送る）
 	//戻り値：
 	// エラーコード
 	DWORD SendGUIQueryReboot(
@@ -260,19 +271,18 @@ public:
 		return SendCmdData(CMD2_TIMER_GUI_QUERY_REBOOT, (WORD)(rebootFlag<<8));
 	}
 
-	//サーバーのステータス変更通知
+	//サーバーの動作状況の変更を通知する（旧仕様との互換用）
 	//戻り値：
 	// エラーコード
 	//引数：
-	// status			[IN]ステータス
+	// status			[IN]1:通常、2:EPGデータ取得開始、3:予約録画開始
 	DWORD SendGUIStatusChg(
 		WORD status
 		){
 		return SendCmdData(CMD2_TIMER_GUI_SRV_STATUS_CHG, status);
 	}
 
-
-//Viewアプリ（EpgDataCap_Bon.exe）用
+	// ***** 以下、Viewアプリ（EpgDataCap_Bonなど）用 *****
 
 	//使用中のBonDriverのファイル名を取得
 	//戻り値：
@@ -379,7 +389,7 @@ public:
 		return SendCmdData(CMD2_VIEW_APP_DELETE_CTRL, ctrlID);
 	}
 
-	//制御コントロールの設定
+	//コントロールの動作を設定
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -437,7 +447,7 @@ public:
 		return SendCmdData(CMD2_VIEW_APP_EPGCAP_START, val);
 	}
 
-	//EPG取得キャンセル
+	//EPG取得停止
 	//戻り値：
 	// エラーコード
 	DWORD SendViewEpgCapStop(
@@ -445,7 +455,7 @@ public:
 		return SendCmdWithoutData(CMD2_VIEW_APP_EPGCAP_STOP);
 	}
 
-	//EPGデータの検索
+	//番組情報の検索
 	//戻り値：
 	// エラーコード
 	// val					[IN]取得番組
@@ -469,7 +479,7 @@ public:
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_GET_EVENT_PF, val, resVal);
 	}
 
-	//Viewボタン登録アプリ起動
+	//Viewボタン登録アプリの起動
 	//戻り値：
 	// エラーコード
 	DWORD SendViewExecViewApp(
