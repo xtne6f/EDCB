@@ -989,6 +989,11 @@ function FormatTimeAndDuration(t,dur)
     ..(dur and string.format('～%02d:%02d',math.floor(dur/3600)%24,math.floor(dur/60)%60)..(dur%60~=0 and string.format('<small>:%02d</small>',dur%60) or '') or '')
 end
 
+--システムのタイムゾーンに影響されずに時間のテーブルを数値表現にする (timezone=0のとき概ねos.date('!*t')の逆関数)
+function TimeWithZone(t,timezone)
+  return os.time(t)+90000-os.time(os.date('!*t',90000))-(timezone or 0)
+end
+
 --ドキュメントルートへの相対パスを取得する
 function PathToRoot()
   return ('../'):rep(#mg.script_name:gsub('[^\\/]*[\\/]+[^\\/]*','N')-#(mg.document_root..'/'):gsub('[^\\/]*[\\/]+','N'))
