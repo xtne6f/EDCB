@@ -14,7 +14,7 @@ audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
 hls=GetVarInt(query,'hls',1)
 hls4=GetVarInt(query,'hls4',0) or 0
-caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
+caption=hls and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
 n=GetVarInt(query,'n') or 0
 onid,tsid,sid=GetVarServiceID(query,'id')

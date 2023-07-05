@@ -149,6 +149,9 @@ XCODE_CHECK_CINEMA=false
 XCODE_CHECK_FAST=false
 XCODE_CHECK_CAPTION=false
 
+--初期値ミュートで再生するかどうか
+VIDEO_MUTED=true
+
 --字幕表示のオプション https://github.com/monyone/aribb24.js#options
 ARIBB24_JS_OPTION=[=[
   normalFont:'"Rounded M+ 1m for ARIB","Yu Gothic Medium",sans-serif',
@@ -210,7 +213,6 @@ function GetTranscodeQueries(qs)
     audio2=GetVarInt(qs,'audio2')==1,
     cinema=GetVarInt(qs,'cinema')==1,
     fast=GetVarInt(qs,'fast')==1,
-    caption=GetVarInt(qs,'caption')==1,
   }
 end
 
@@ -220,7 +222,6 @@ function ConstructTranscodeQueries(xq)
     ..(xq.audio2 and '&amp;audio2=1' or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
     ..(xq.fast and '&amp;fast=1' or '')
-    ..(xq.caption and '&amp;caption=1' or '')
 end
 
 function TranscodeSettingTemplete(xq,fsec)
@@ -243,9 +244,6 @@ function TranscodeSettingTemplete(xq,fsec)
     ..'<label><input type="checkbox" name="cinema" value="1"'..((xq.cinema or not xq.option and XCODE_CHECK_CINEMA) and ' checked' or '')..'>cinema</label>\n'
   if fsec then
     s=s..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
-  end
-  if ALLOW_HLS then
-    s=s..'<label><input type="checkbox" name="caption" value="1"'..((xq.caption or not xq.option and XCODE_CHECK_CAPTION) and ' checked' or '')..'>caption</label>\n'
   end
   return s
 end
@@ -392,6 +390,7 @@ function VideoScriptTemplete()
 <script src="aribb24.js"></script>
 <script src="script.js"></script>
 <script>
+]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
 var cap=null;
 var cbCaption=document.getElementById("cb-caption");
 cbCaption.onclick=function(){
@@ -470,7 +469,7 @@ cbDatacast.onclick=function(){
   bmlBrowserSetInvisible(false);
   if(xhr)return;
   xhr=new XMLHttpRequest();
-  xhr.open("GET",document.getElementById("psidatasrc").textContent);
+  xhr.open("GET",vid.getAttribute("src").replace(/\.[0-9A-Za-z]+$/,"")+".psc");
   xhr.responseType="arraybuffer";
   xhr.overrideMimeType("application/octet-stream");
   xhr.onloadend=function(){
@@ -490,11 +489,13 @@ end
 
 function TranscodeScriptTemplete(live,params)
   return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')
+    ..'<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"'
+      ..(XCODE_CHECK_CAPTION and ' checked' or '')..'>caption</label>\n'
     ..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and '<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>\n' or '')
     ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <script src="script.js"></script>
-]=]..((USE_DATACAST or live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 <script>
+]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..((USE_DATACAST or live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 var openSubStream;
 var onDataStream=null;
 var onDataStreamError=null;
@@ -553,9 +554,7 @@ function checkJikkyoDisplay(){
     }
   }
 }
-</script>
 ]=] or '')..(USE_DATACAST and [=[
-<script>
 var cbDatacast=document.getElementById("cb-datacast");
 cbDatacast.onclick=function(){
   document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
@@ -577,8 +576,8 @@ cbDatacast.onclick=function(){
   };
   openSubStream();
 };
-</script>
 ]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
+</script>
 <script src="danmaku.js"></script>
 <script>
 var cbJikkyo=document.getElementById("cb-jikkyo");
@@ -727,59 +726,80 @@ cbJikkyo.onclick=function(){
   };
   openSubStream();
 };
+]=] or '')..[=[
 </script>
-]=] or '')
+]=]
 end
 
-function HlsScriptTemplete(caption)
-  local s=''
+function HlsScriptTemplete()
+  local s=[=[
+<script src="aribb24.js"></script>
+<script>
+var cap=null;
+var cbCaption=document.getElementById("cb-caption");
+function onclickCaption(){
+  if(cbCaption.checked){
+    if(!cap){
+      cap=new aribb24js.]=]..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')..'Renderer({enableAutoInBandMetadataTextTrackDetection:'
+        ..(ALWAYS_USE_HLS and '!Hls.isSupported(),' or 'true,')..ARIBB24_JS_OPTION..[=[});
+      cap.attachMedia(vid);
+    }
+    cap.show();
+  }else if(cap){
+    cap.hide();
+  }
+}
+</script>
+]=]
   local now=os.date('!*t')
   local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
   local hls4=USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or ''
   if ALWAYS_USE_HLS then
-    s=s..'<script src="hls.min.js"></script>\n'
-      ..(caption and '<script src="aribb24.js"></script>\n' or '')
-      ..'<script>\n'
-      ..(caption and 'var cap=new aribb24js.'..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')
-           ..'Renderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported(),'..ARIBB24_JS_OPTION..'});\n'
-           ..'cap.attachMedia(vid);\n' or '')
-      ..'var cbLive=document.getElementById("cb-live");\n'
-      ..'if(cbLive)cbLive.checked=true;\n'
-      ..'vid.poster="loading.png";\n'
+    s=s..[=[
+<script src="hls.min.js"></script>
+<script>
+onclickCaption();
+cbCaption.onclick=onclickCaption;
+document.getElementById("label-caption").style.display="inline";
+var cbLive=document.getElementById("cb-live");
+if(cbLive)cbLive.checked=true;
+vid.poster="loading.png";
+waitForHlsStart(document.getElementById("vidsrc").textContent+"]=]
       --Android版Firefoxは非キーフレームで切ったフラグメントMP4だとカクつくので避ける
-      ..'waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..'"+(/Android.+Firefox/i.test(navigator.userAgent)?"":"'..hls4
-      ..'"),1000,2000,function(){vid.poster=null;},function(src){\n'
-      ..'  if(Hls.isSupported()){\n'
-      ..'    var hls=new Hls();\n'
-      ..'    hls.loadSource(src);\n'
-      ..'    hls.attachMedia(vid);\n'
-      ..'    hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
-      ..(caption and '    hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){\n'
-           ..'      for(var i=0;i<data.samples.length;i++){cap.pushID3v2Data(data.samples[i].pts,data.samples[i].data);}\n'
-           ..'    });\n' or '')
-      ..'  }else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
-      ..'    vid.src=src;\n'
-      ..'  }\n'
-      ..'});\n'
-      ..'</script>'
+      ..hls..'"+(/Android.+Firefox/i.test(navigator.userAgent)?"":"'..hls4..[=["),1000,2000,function(){vid.poster=null;},function(src){
+  if(Hls.isSupported()){
+    var hls=new Hls();
+    hls.loadSource(src);
+    hls.attachMedia(vid);
+    hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});
+    hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){
+      for(var i=0;cap&&i<data.samples.length;i++){cap.pushID3v2Data(data.samples[i].pts,data.samples[i].data);}
+    });
+  }else if(vid.canPlayType("application/vnd.apple.mpegurl")){
+    vid.src=src;
+  }
+});
+</script>
+]=]
   else
-    s=s..(caption and '<script src="aribb24.js"></script>\n' or '')
-      ..'<script>\n'
-      ..(caption and 'var cap=new aribb24js.'..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')
-           ..'Renderer({enableAutoInBandMetadataTextTrackDetection:true,'..ARIBB24_JS_OPTION..'});\n'
-           ..'cap.attachMedia(vid);\n' or '')
-      --AndroidはcanPlayTypeが空文字列を返さないことがあるが実装に個体差が大きいので避ける
-      ..'if(!/Android/i.test(navigator.userAgent)&&vid.canPlayType("application/vnd.apple.mpegurl")){\n'
-      ..'  var cbLive=document.getElementById("cb-live");\n'
-      ..'  if(cbLive)cbLive.checked=true;\n'
-      ..'  vid.poster="loading.png";\n'
-      ..'  waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..hls4..'",1000,2000,function(){vid.poster=null;},function(src){\n'
-      ..'    vid.src=src;\n'
-      ..'  });\n'
-      ..'}else{\n'
-      ..'  vid.src=document.getElementById("vidsrc").textContent;\n'
-      ..'}\n'
-      ..'</script>'
+    --AndroidはcanPlayTypeが空文字列を返さないことがあるが実装に個体差が大きいので避ける
+    s=s..[=[
+<script>
+if(!/Android/i.test(navigator.userAgent)&&vid.canPlayType("application/vnd.apple.mpegurl")){
+  onclickCaption();
+  cbCaption.onclick=onclickCaption;
+  document.getElementById("label-caption").style.display="inline";
+  var cbLive=document.getElementById("cb-live");
+  if(cbLive)cbLive.checked=true;
+  vid.poster="loading.png";
+  waitForHlsStart(document.getElementById("vidsrc").textContent+"]=]..hls..hls4..[=[",1000,2000,function(){vid.poster=null;},function(src){
+    vid.src=src;
+  });
+}else{
+  vid.src=document.getElementById("vidsrc").textContent;
+}
+</script>
+]=]
   end
   return s;
 end

@@ -19,7 +19,7 @@ fastRate=filter and XCODE_FAST or 1
 filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
 hls=GetVarInt(query,'hls',1)
 hls4=GetVarInt(query,'hls4',0) or 0
-caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
+caption=hls and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
 if hls and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
