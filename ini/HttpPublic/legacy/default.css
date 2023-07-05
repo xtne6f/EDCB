@@ -65,7 +65,7 @@ th, td {
 
 #footer {
   margin-top: 2em;
-  margin-bottom: 2em;
+  margin-bottom: 3em;
 }
 
 #result {
@@ -257,7 +257,7 @@ th, td {
 }
 
 .past {
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 .escape-text {
@@ -465,13 +465,13 @@ th, td {
 }
 
 .jikkyo-comments > div > b {
-  background-color: #fff;
+  background: #fff;
   color: #00c;
   font-weight: normal;
 }
 
 .jikkyo-comments > div > strong {
-  background-color: #fff;
+  background: #fff;
   color: #c00;
 }
 
@@ -549,5 +549,42 @@ th, td {
   }
   to {
     visibility: visible;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #300;
+    color: #eee;
+  }
+
+  a {
+    color: #07d;
+  }
+
+  a:visited {
+    color: #96a;
+  }
+
+  .epg-col {
+    background: #300;
+  }
+
+  .epg-col > div, .epg-list > div {
+    opacity: 0.9;
+  }
+
+  .epg-col > .past, .epg-list > .past {
+    opacity: 0.7;
+  }
+
+  .jikkyo-comments > div > b {
+    background: #300;
+    color: #66c;
+  }
+
+  .jikkyo-comments > div > strong {
+    background: #300;
+    color: #c66;
   }
 }

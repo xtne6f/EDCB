@@ -42,7 +42,8 @@ end
 
 if cust~=0 then
   for i,v in ipairs(edcb.EnumAutoAdd()) do
-    if v.searchInfo.notKey:find('^#EPG_CUST_'..cust) then
+    if v.searchInfo.notKey:find('^#EPG_CUST_'..cust) or
+       v.searchInfo.notKey:find('^:note:#EPG_CUST_'..cust) then
       key=v.searchInfo
       key.andKey=key.andKey:gsub('^^!{999}','')
       i=1
