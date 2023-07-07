@@ -336,3 +336,256 @@ function parseChatTag(tag){
   }
   return null;
 }
+
+function readJikkyoLog(text,proc,startSec,ctx){
+  ctx=ctx||{};
+  if(ctx.pos===undefined){
+    ctx.pos=0;
+    ctx.currSec=-1;
+  }
+  for(;;){
+    var i=text.indexOf("\n",ctx.pos);
+    if(i<0)break;
+    var tag=text.substring(ctx.pos,i);
+    var sec=ctx.currSec;
+    if(/^<!-- J=/.test(tag))sec++;
+    if(sec>=(startSec||0)&&!proc(sec,tag))break;
+    ctx.pos=i+1;
+    ctx.currSec=sec;
+  }
+}
+
+function runOnscreenButtonsScript(){
+  var btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="full";
+  btn.onclick=function(){(vfull.requestFullscreen||vfull.webkitRequestFullscreen||vfull.webkitRequestFullScreen).call(vfull);};
+  var bfull=document.createElement("div");
+  bfull.className="full-control";
+  bfull.appendChild(btn);
+  btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="exit";
+  btn.onclick=function(){(document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen).call(document);};
+  var bexit=document.createElement("div");
+  bexit.className="exit-control";
+  bexit.appendChild(btn);
+  var diffs=[0,0,0,0,0];
+  var duration=-1;
+  var lastseek=0;
+  function checkDuration(){
+    var seekable=vid.duration;
+    if(seekable==Infinity)seekable=vid.seekable.length>0?vid.seekable.end(vid.seekable.length-1):0;
+    if(!(seekable>0))return;
+    if(duration<0)duration=seekable;
+    if(seekable-duration<0.5)return;
+    diffs.shift();
+    diffs.push(seekable-duration);
+    duration=seekable;
+    var interval=Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])+1;
+    if(vid.currentTime<duration-interval*2-3&&Date.now()-lastseek>10000){
+      var cbLive=document.getElementById("cb-live");
+      if(cbLive&&cbLive.checked){
+        vid.currentTime=duration-interval;
+        lastseek=Date.now();
+      }
+    }
+  }
+  vid.ondurationchange=checkDuration;
+  setInterval(checkDuration,500);
+  btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="\u2192";
+  btn.onclick=function(){vid.currentTime=duration-Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])-1;};
+  var blive=document.createElement("div");
+  blive.className="live-control";
+  blive.appendChild(btn);
+  var commInput=document.createElement("input");
+  commInput.type="text";
+  var commSend=null;
+  commInput.onkeydown=function(e){
+    if(!e.isComposing&&e.keyCode!=229&&e.key=="Enter"){
+      if(commSend&&commInput.value)commSend(commInput.value);
+      commInput.value="";
+    }
+  };
+  var btn=document.createElement("button");
+  btn.type="button";
+  btn.innerText="\u226b";
+  btn.onclick=function(){
+    if(commSend&&commInput.value)commSend(commInput.value);
+    commInput.value="";
+  };
+  var bcomm=document.createElement("div");
+  bcomm.className="comment-control";
+  bcomm.style.display="none";
+  bcomm.appendChild(commInput);
+  bcomm.appendChild(btn);
+  setSendComment=function(f){
+    bcomm.style.display=f?null:"none";
+    commSend=f;
+  };
+  var removed=true;
+  hideOnscreenButtons=function(hide){
+    if(!removed&&hide){
+      vcont.removeChild(bfull);
+      vcont.removeChild(bexit);
+      vcont.removeChild(blive);
+      vcont.removeChild(bcomm);
+      removed=true;
+    }else if(removed&&!hide){
+      vcont.appendChild(bfull);
+      vcont.appendChild(bexit);
+      vcont.appendChild(blive);
+      vcont.appendChild(bcomm);
+      removed=false;
+    }
+  };
+  hideOnscreenButtons(false);
+}
+
+function runJikkyoScript(commentHeight,commentDuration,replaceTag){
+  var danmaku=null;
+  checkJikkyoDisplay=function(){
+    var comm=document.getElementById("jk-comm");
+    if(comm){
+      var cbDatacast=document.getElementById("cb-datacast");
+      var cbJikkyo=document.getElementById("cb-jikkyo");
+      if((cbDatacast&&cbDatacast.checked)||!cbJikkyo.checked){
+        if(comm.style.display!="none"){
+          danmaku.hide();
+          comm.style.display="none";
+        }
+      }else if(comm.style.display=="none"){
+        danmaku.show();
+        vfull.appendChild(comm);
+        comm.style.display=null;
+      }
+    }
+  };
+  toggleJikkyo=function(enabled){
+    if(!enabled){
+      onJikkyoStream=null;
+      onJikkyoStreamError=null;
+      checkJikkyoDisplay();
+      return;
+    }
+    var comm=document.getElementById("jk-comm");
+    if(!comm){
+      comm=document.createElement("div");
+      comm.id="jk-comm";
+      comm.className="jikkyo-comments";
+      vfull.appendChild(comm);
+    }
+    if(!danmaku){
+      danmaku=new Danmaku({
+        container:vcont,
+        opacity:1,
+        callback:function(){},
+        error:function(msg){},
+        apiBackend:{read:function(opt){opt.success([]);}},
+        height:commentHeight,
+        duration:commentDuration,
+        paddingTop:10,
+        paddingBottom:10,
+        unlimited:false,
+        api:{id:"noid",address:"noad",token:"noto",user:"nous",speedRate:1}
+      });
+    }
+    checkJikkyoDisplay();
+    function addMessage(text){
+      var b=document.createElement("strong");
+      b.innerText=text;
+      var div=document.createElement("div");
+      div.appendChild(b);
+      comm.appendChild(div);
+    }
+    var commHide=true;
+    setInterval(function(){
+      if(getComputedStyle(comm).display=="none"){
+        commHide=true;
+      }else{
+        var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
+        comm.style.height=vid.clientHeight+"px";
+        if(commHide||scroll)comm.scrollTop=comm.scrollHeight;
+        commHide=false;
+      }
+    },1000);
+    var fragment=null;
+    var scatter=[];
+    var scatterInterval=200;
+    var closed=false;
+    onJikkyoStream=function(tag){
+      if(/^<chat /.test(tag)){
+        var c=parseChatTag(replaceTag(tag));
+        if(c){
+          if(c.yourpost)c.border="2px solid #c00";
+          scatter.push(c);
+          var b=document.createElement(c.yourpost?"strong":"b");
+          b.innerText=String(100+(Math.floor(c.date/3600)+9)%24).substring(1)+":"+
+                      String(100+Math.floor(c.date/60)%60).substring(1)+":"+
+                      String(100+c.date%60).substring(1)+" ("+c.user.substring(0,3)+") ";
+          var span=document.createElement("span");
+          span.innerText=c.text;
+          if(c.color!=0xffffff){
+            span.style.backgroundColor=c.colorcode;
+            span.className=(c.color>>16)*3+(c.color>>8)%256*6+c.color%256<255?"dark":"light";
+          }
+          var div=document.createElement("div");
+          if(closed){
+            div.className="closed";
+            closed=false;
+          }
+          div.appendChild(b);
+          div.appendChild(span);
+          if(!fragment)fragment=document.createDocumentFragment();
+          fragment.appendChild(div);
+        }
+        return;
+      }else if(/^<chat_result /.test(tag)){
+        var m=tag.match(/^[^>]*? status="(\d+)"/);
+        if(m&&m[1]!="0")addMessage("Error! (chat_result="+m[1]+")");
+        return;
+      }else if(/^<!-- M=/.test(tag)){
+        if(tag.substring(7,22)=="Closed logfile.")closed=true;
+        else if(tag.substring(7,31)!="Started reading logfile:")addMessage(tag.substring(7,tag.length-4));
+        return;
+      }else if(!/^<!-- J=/.test(tag)){
+        return;
+      }
+      if(tag.indexOf(";T=")<0)scatterInterval=90;
+      else scatterInterval=Math.min(Math.max(scatterInterval+(scatter.length>0?-10:10),100),200);
+      setTimeout(function(){
+        var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
+        if(fragment){
+          comm.appendChild(fragment);
+          fragment=null;
+        }
+        if(scatterInterval<100){
+          danmaku.draw(scatter);
+          scatter.splice(0);
+        }
+        var n=Math.ceil(scatter.length/5);
+        if(n>0){
+          for(var i=0;i<5;i++){
+            setTimeout(function(){
+              if(scatter.length>0){
+                danmaku.draw(scatter.slice(0,n));
+                scatter.splice(0,n);
+              }
+            },scatterInterval*i);
+          }
+        }
+        if(commHide||scroll){
+          while(comm.childElementCount>1000){
+            comm.removeChild(comm.firstElementChild);
+          }
+        }
+        if(scroll)comm.scrollTop=comm.scrollHeight;
+      },0);
+    };
+    onJikkyoStreamError=function(status,readCount){
+      addMessage("Error! ("+status+"|"+readCount+"Bytes)");
+    };
+  };
+}

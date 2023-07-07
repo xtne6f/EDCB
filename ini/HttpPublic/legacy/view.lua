@@ -160,19 +160,6 @@ function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
   return buf,2+(2+#payload)%4,2+(2+#payload)%4-trailerConsumeSize
 end
 
-function ReadJikkyoChunk(f)
-  local head=f:read(80)
-  if not head or #head~=80 then return nil end
-  local payload=''
-  local payloadSize=tonumber(head:match('L=([0-9]+)'))
-  if not payloadSize then return nil end
-  if payloadSize>0 then
-    payload=f:read(payloadSize)
-    if not payload or #payload~=payloadSize then return nil end
-  end
-  return head..payload
-end
-
 function CreateHlsPlaylist(f)
   local a={'#EXTM3U\n'}
   local hasSeg=false

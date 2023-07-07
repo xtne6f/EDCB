@@ -178,6 +178,16 @@ JK_COMMENT_HEIGHT=32
 --実況コメントの表示時間(秒)
 JK_COMMENT_DURATION=5
 
+--実況ログ表示機能のデジタル放送のサービスIDと、実況の番号(jk?)
+--キーの下4桁の16進数にサービスID、上1桁にネットワークID(ただし地上波は15=0xF)を指定
+--指定しないサービスにはjkrdlogの既定値が使われる
+JK_CHANNELS={
+  --例:テレビ東京(0x0430)をjk7と対応づけたいとき
+  --[0xF0430]=7,
+  --例:NHKBS1(0x0065)とデフォルト(jk101)との対応付けを解除したいとき
+  --[0x40065]=-1,
+}
+
 --chatタグ表示前の置換(JavaScript)
 JK_CUSTOM_REPLACE=[=[
   // 広告などを下コメにする
@@ -250,100 +260,14 @@ end
 
 function OnscreenButtonsScriptTemplete()
   return [=[
+<script src="script.js"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
 var vfull=document.getElementById("vid-full");
 var setSendComment;
 var hideOnscreenButtons;
-(function(){
-  var btn=document.createElement("button");
-  btn.type="button";
-  btn.innerText="full";
-  btn.onclick=function(){(vfull.requestFullscreen||vfull.webkitRequestFullscreen||vfull.webkitRequestFullScreen).call(vfull);};
-  var bfull=document.createElement("div");
-  bfull.className="full-control";
-  bfull.appendChild(btn);
-  btn=document.createElement("button");
-  btn.type="button";
-  btn.innerText="exit";
-  btn.onclick=function(){(document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen).call(document);};
-  var bexit=document.createElement("div");
-  bexit.className="exit-control";
-  bexit.appendChild(btn);
-  var diffs=[0,0,0,0,0];
-  var duration=-1;
-  var lastseek=0;
-  function checkDuration(){
-    var seekable=vid.duration;
-    if(seekable==Infinity)seekable=vid.seekable.length>0?vid.seekable.end(vid.seekable.length-1):0;
-    if(!(seekable>0))return;
-    if(duration<0)duration=seekable;
-    if(seekable-duration<0.5)return;
-    diffs.shift();
-    diffs.push(seekable-duration);
-    duration=seekable;
-    var interval=Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])+1;
-    if(vid.currentTime<duration-interval*2-3&&Date.now()-lastseek>10000){
-      var cbLive=document.getElementById("cb-live");
-      if(cbLive&&cbLive.checked){
-        vid.currentTime=duration-interval;
-        lastseek=Date.now();
-      }
-    }
-  }
-  vid.ondurationchange=checkDuration;
-  setInterval(checkDuration,500);
-  btn=document.createElement("button");
-  btn.type="button";
-  btn.innerText="→";
-  btn.onclick=function(){vid.currentTime=duration-Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])-1;};
-  var blive=document.createElement("div");
-  blive.className="live-control";
-  blive.appendChild(btn);
-  var commInput=document.createElement("input");
-  commInput.type="text";
-  var commSend=null;
-  commInput.onkeydown=function(e){
-    if(!e.isComposing&&e.keyCode!=229&&e.key=="Enter"){
-      if(commSend&&commInput.value)commSend(commInput.value);
-      commInput.value="";
-    }
-  };
-  var btn=document.createElement("button");
-  btn.type="button";
-  btn.innerText="≫";
-  btn.onclick=function(){
-    if(commSend&&commInput.value)commSend(commInput.value);
-    commInput.value="";
-  };
-  var bcomm=document.createElement("div");
-  bcomm.className="comment-control";
-  bcomm.style.display="none";
-  bcomm.appendChild(commInput);
-  bcomm.appendChild(btn);
-  setSendComment=function(f){
-    bcomm.style.display=f?null:"none";
-    commSend=f;
-  };
-  var removed=true;
-  hideOnscreenButtons=function(hide){
-    if(!removed&&hide){
-      vcont.removeChild(bfull);
-      vcont.removeChild(bexit);
-      vcont.removeChild(blive);
-      vcont.removeChild(bcomm);
-      removed=true;
-    }else if(removed&&!hide){
-      vcont.appendChild(bfull);
-      vcont.appendChild(bexit);
-      vcont.appendChild(blive);
-      vcont.appendChild(bcomm);
-      removed=false;
-    }
-  };
-  hideOnscreenButtons(false);
-})();
+runOnscreenButtonsScript();
 </script>
 ]=]
 end
@@ -383,12 +307,32 @@ function WebBmlScriptTemplate(label)
 ]=] or ''
 end
 
+function JikkyoScriptTemplate(live)
+  return (live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
+<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>
+<script src="danmaku.js"></script>
+<script>
+var onJikkyoStream=null;
+var onJikkyoStreamError=null;
+var checkJikkyoDisplay;
+var toggleJikkyo;
+runJikkyoScript(]=]..JK_COMMENT_HEIGHT..','..JK_COMMENT_DURATION..',function(tag){'..JK_CUSTOM_REPLACE..[=[
+  return tag;});
+</script>
+]=] or [=[
+<script>
+var onJikkyoStream=null;
+var onJikkyoStreamError=null;
+var checkJikkyoDisplay=function(){};
+</script>
+]=]
+end
+
 function VideoScriptTemplete()
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..[=[
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false)..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
   ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
-<script src="script.js"></script>
 <script>
 ]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
 var cap=null;
@@ -421,86 +365,141 @@ vidMeta.oncuechange=function(){
     setTimeout(pushCap,0);
   })();
 };
-</script>
 ]=]..(USE_DATACAST and [=[
-<script>
-var psiData=null;
-var readTimer=null;
-var videoLastSec=0;
-function startReadPsiData(){
-  clearTimeout(readTimer);
-  var startSec=vid.currentTime;
-  videoLastSec=startSec;
-  var ctx={};
-  var counters=[];
-  var f=function(){
-    var videoSec=vid.currentTime;
-    if(videoSec<videoLastSec||videoLastSec+10<videoSec){
-      startReadPsiData();
-      return;
-    }
-    videoLastSec=videoSec;
-    if(psiData&&readPsiData(psiData,function(sec,psiTS,pid){
-        setTSPacketHeader(psiTS,counters,pid);
-        bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
-        return sec<videoSec;
-      },startSec,ctx)!==false){
-      startReadPsiData();
-      return;
-    }
-    readTimer=setTimeout(f,500);
-  };
-  readTimer=setTimeout(f,500);
-}
-var xhr=null;
-var cbDatacast=document.getElementById("cb-datacast");
-cbDatacast.onclick=function(){
-  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
-  if(!cbDatacast.checked){
+(function(){
+  var psiData=null;
+  var readTimer=null;
+  var videoLastSec=0;
+  function startRead(){
     clearTimeout(readTimer);
-    readTimer=null;
-    hideOnscreenButtons(false);
-    bmlBrowserSetInvisible(true);
-    return;
-  }
-  startReadPsiData();
-  bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-  hideOnscreenButtons(true);
-  bmlBrowserSetInvisible(false);
-  if(xhr)return;
-  xhr=new XMLHttpRequest();
-  xhr.open("GET",vid.getAttribute("src").replace(/\.[0-9A-Za-z]+$/,"")+".psc");
-  xhr.responseType="arraybuffer";
-  xhr.overrideMimeType("application/octet-stream");
-  xhr.onloadend=function(){
-    if(!psiData){
-      document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+")";
+    var startSec=vid.currentTime;
+    videoLastSec=startSec;
+    var ctx={};
+    var counters=[];
+    function read(){
+      var videoSec=vid.currentTime;
+      if(videoSec<videoLastSec||videoLastSec+10<videoSec){
+        startRead();
+        return;
+      }
+      videoLastSec=videoSec;
+      if(psiData&&readPsiData(psiData,function(sec,psiTS,pid){
+          setTSPacketHeader(psiTS,counters,pid);
+          bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
+          return sec<videoSec;
+        },startSec,ctx)!==false){
+        startRead();
+        return;
+      }
+      readTimer=setTimeout(read,500);
     }
+    readTimer=setTimeout(read,500);
+  }
+  var xhr=null;
+  var cbDatacast=document.getElementById("cb-datacast");
+  cbDatacast.checked=false;
+  cbDatacast.onclick=function(){
+    document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+    if(!cbDatacast.checked){
+      clearTimeout(readTimer);
+      readTimer=null;
+      hideOnscreenButtons(false);
+      bmlBrowserSetInvisible(true);
+      checkJikkyoDisplay();
+      return;
+    }
+    startRead();
+    checkJikkyoDisplay();
+    bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
+    hideOnscreenButtons(true);
+    bmlBrowserSetInvisible(false);
+    if(xhr)return;
+    xhr=new XMLHttpRequest();
+    xhr.open("GET",vid.getAttribute("src").replace(/\.[0-9A-Za-z]+$/,"")+".psc");
+    xhr.responseType="arraybuffer";
+    xhr.overrideMimeType("application/octet-stream");
+    xhr.onloadend=function(){
+      if(!psiData){
+        document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+")";
+      }
+    };
+    xhr.onload=function(){
+      if(xhr.status!=200||!xhr.response)return;
+      psiData=xhr.response;
+    };
+    xhr.send();
   };
-  xhr.onload=function(){
-    if(xhr.status!=200||!xhr.response)return;
-    psiData=xhr.response;
-  };
-  xhr.send();
-};
+})();
+]=] or '')..(JKRDLOG_PATH and [=[
+(function(){
+  var logText=null;
+  var readTimer=null;
+  var videoLastSec=0;
+  function startRead(){
+    clearTimeout(readTimer);
+    var startSec=vid.currentTime;
+    videoLastSec=startSec;
+    var ctx={};
+    function read(){
+      var videoSec=vid.currentTime;
+      if(videoSec<videoLastSec||videoLastSec+10<videoSec){
+        startRead();
+        return;
+      }
+      videoLastSec=videoSec;
+      if(logText){
+        readJikkyoLog(logText,function(sec,tag){
+          if(onJikkyoStream)onJikkyoStream(tag);
+          return sec<videoSec;
+        },startSec,ctx);
+      }
+      readTimer=setTimeout(read,200);
+    }
+    readTimer=setTimeout(read,200);
+  }
+  var xhr=null;
+  var cbJikkyo=document.getElementById("cb-jikkyo");
+  function onclickJikkyo(){
+    if(!cbJikkyo.checked){
+      toggleJikkyo(false);
+      clearTimeout(readTimer);
+      readTimer=null;
+      return;
+    }
+    toggleJikkyo(true);
+    startRead();
+    if(xhr)return;
+    xhr=new XMLHttpRequest();
+    xhr.open("GET","jklog.lua?fname="+vid.getAttribute("src").replace(/^(?:\.\.\/)+/,""));
+    xhr.onloadend=function(){
+      if(!logText){
+        if(onJikkyoStreamError)onJikkyoStreamError(xhr.status,0);
+      }
+    };
+    xhr.onload=function(){
+      if(xhr.status!=200||!xhr.response)return;
+      logText=xhr.response;
+    };
+    xhr.send();
+  }
+  onclickJikkyo();
+  cbJikkyo.onclick=onclickJikkyo;
+})();
+]=] or '')..[=[
 </script>
-]=] or '')
+]=]
 end
 
 function TranscodeScriptTemplete(live,params)
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live)
     ..'<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"'
       ..(XCODE_CHECK_CAPTION and ' checked' or '')..'>caption</label>\n'
-    ..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and '<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>\n' or '')
     ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
-<script src="script.js"></script>
 <script>
 ]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..((USE_DATACAST or live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 var openSubStream;
 var onDataStream=null;
 var onDataStreamError=null;
-var onJikkyoStream=null;
-var onJikkyoStreamError=null;
 (function(){
   var reopen=false;
   var xhr=null;
@@ -523,8 +522,8 @@ var onJikkyoStreamError=null;
              "&ofssec="+(]=]..math.floor(params.ofssec or 0)..[=[+Math.floor(vid.currentTime]=]..(params.fast and '*'..XCODE_FAST or '')..[=[)));
     xhr.onloadend=function(){
       if(xhr&&(readCount==0||xhr.status!=0)){
-        if(onDataStream&&onDataStreamError)onDataStreamError(xhr.status,readCount);
-        if(onJikkyoStream&&onJikkyoStreamError)onJikkyoStreamError(xhr.status,readCount);
+        if(onDataStreamError)onDataStreamError(xhr.status,readCount);
+        if(onJikkyoStreamError)onJikkyoStreamError(xhr.status,readCount);
       }
       xhr=null;
     };
@@ -536,30 +535,14 @@ var onJikkyoStreamError=null;
     xhr.send();
   };
 })();
-var danmaku=null;
-function checkJikkyoDisplay(){
-  var comm=document.getElementById("jk-comm");
-  if(comm){
-    var cbDatacast=document.getElementById("cb-datacast");
-    var cbJikkyo=document.getElementById("cb-jikkyo");
-    if((cbDatacast&&cbDatacast.checked)||!cbJikkyo.checked){
-      if(comm.style.display!="none"){
-        danmaku.hide();
-        comm.style.display="none";
-      }
-    }else if(comm.style.display=="none"){
-      danmaku.show();
-      vfull.appendChild(comm);
-      comm.style.display=null;
-    }
-  }
-}
 ]=] or '')..(USE_DATACAST and [=[
 var cbDatacast=document.getElementById("cb-datacast");
+cbDatacast.checked=false;
 cbDatacast.onclick=function(){
   document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
   if(!cbDatacast.checked){
     onDataStream=null;
+    onDataStreamError=null;
     openSubStream();
     hideOnscreenButtons(false);
     bmlBrowserSetInvisible(true);
@@ -577,48 +560,16 @@ cbDatacast.onclick=function(){
   openSubStream();
 };
 ]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
-</script>
-<script src="danmaku.js"></script>
-<script>
 var cbJikkyo=document.getElementById("cb-jikkyo");
+cbJikkyo.checked=false;
 cbJikkyo.onclick=function(){
   if(!cbJikkyo.checked){
-    onJikkyoStream=null;
+    toggleJikkyo(false);
     openSubStream();
-    checkJikkyoDisplay();
     setSendComment(null);
     return;
   }
-  var comm=document.getElementById("jk-comm");
-  if(!comm){
-    comm=document.createElement("div");
-    comm.id="jk-comm";
-    comm.className="jikkyo-comments";
-    vfull.appendChild(comm);
-  }
-  if(!danmaku){
-    danmaku=new Danmaku({
-      container:vcont,
-      opacity:1,
-      callback:function(){},
-      error:function(msg){},
-      apiBackend:{read:function(opt){opt.success([]);}},
-      height:]=]..JK_COMMENT_HEIGHT..[=[,
-      duration:]=]..JK_COMMENT_DURATION..[=[,
-      paddingTop:10,
-      paddingBottom:10,
-      unlimited:false,
-      api:{id:"noid",address:"noad",token:"noto",user:"nous",speedRate:1}
-    });
-  }
-  checkJikkyoDisplay();
-  function addMessage(text){
-    var b=document.createElement("strong");
-    b.innerText=text;
-    var div=document.createElement("div");
-    div.appendChild(b);
-    comm.appendChild(div);
-  }
+  toggleJikkyo(true);
 ]=]..(live and USE_LIVEJK and [=[
   setSendComment(function(value){
     var xhr=new XMLHttpRequest();
@@ -633,97 +584,6 @@ cbJikkyo.onclick=function(){
       ..[=[&comm="+encodeURIComponent(value).replace(/%20/g,"+"));
   });
 ]=] or '')..[=[
-  var commHide=true;
-  setInterval(function(){
-    if(getComputedStyle(comm).display=="none"){
-      commHide=true;
-    }else{
-      var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
-      comm.style.height=vid.clientHeight+"px";
-      if(commHide||scroll)comm.scrollTop=comm.scrollHeight;
-      commHide=false;
-    }
-  },1000);
-  var fragment=null;
-  var scatter=[];
-  var scatterInterval=200;
-  var closed=false;
-  function replaceTag(tag){
-]=]..JK_CUSTOM_REPLACE..[=[
-    return tag;
-  }
-  onJikkyoStream=function(tag){
-    if(tag.substring(0,6)=="<chat "){
-      var c=parseChatTag(replaceTag(tag));
-      if(c){
-        if(c.yourpost)c.border="2px solid #c00";
-        scatter.push(c);
-        var b=document.createElement(c.yourpost?"strong":"b");
-        b.innerText=String(100+(Math.floor(c.date/3600)+9)%24).substring(1)+":"+
-                    String(100+Math.floor(c.date/60)%60).substring(1)+":"+
-                    String(100+c.date%60).substring(1)+" ("+c.user.substring(0,3)+") ";
-        var span=document.createElement("span");
-        span.innerText=c.text;
-        if(c.color!=0xffffff){
-          span.style.backgroundColor=c.colorcode;
-          span.className=(c.color>>16)*3+(c.color>>8)%256*6+c.color%256<255?"dark":"light";
-        }
-        var div=document.createElement("div");
-        if(closed){
-          div.className="closed";
-          closed=false;
-        }
-        div.appendChild(b);
-        div.appendChild(span);
-        if(!fragment)fragment=document.createDocumentFragment();
-        fragment.appendChild(div);
-      }
-      return;
-    }else if(tag.substring(0,13)=="<chat_result "){
-      var m=tag.match(/^[^>]*? status="(\d+)"/);
-      if(m&&m[1]!="0")addMessage("Error! (chat_result="+m[1]+")");
-      return;
-    }else if(tag.substring(0,7)=="<!-- M="){
-      if(tag.substring(7,22)=="Closed logfile.")closed=true;
-      else if(tag.substring(7,31)!="Started reading logfile:")addMessage(tag.substring(7,tag.length-4));
-      return;
-    }else if(tag.substring(0,7)!="<!-- J="){
-      return;
-    }
-    if(tag.indexOf(";T=")<0)scatterInterval=90;
-    else scatterInterval=Math.min(Math.max(scatterInterval+(scatter.length>0?-10:10),100),200);
-    setTimeout(function(){
-      var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
-      if(fragment){
-        comm.appendChild(fragment);
-        fragment=null;
-      }
-      if(scatterInterval<100){
-        danmaku.draw(scatter);
-        scatter.splice(0);
-      }
-      var n=Math.ceil(scatter.length/5);
-      if(n>0){
-        for(var i=0;i<5;i++){
-          setTimeout(function(){
-            if(scatter.length>0){
-              danmaku.draw(scatter.slice(0,n));
-              scatter.splice(0,n);
-            }
-          },scatterInterval*i);
-        }
-      }
-      if(commHide||scroll){
-        while(comm.childElementCount>1000){
-          comm.removeChild(comm.firstElementChild);
-        }
-      }
-      if(scroll)comm.scrollTop=comm.scrollHeight;
-    },0);
-  };
-  onJikkyoStreamError=function(status,readCount){
-    addMessage("Error! ("+status+"|"+readCount+"Bytes)");
-  };
   openSubStream();
 };
 ]=] or '')..[=[
@@ -1168,6 +1028,26 @@ function GetTotAndServiceID(f)
   return nil
 end
 
+--ライブ実況やjkrdlogの出力のチャンクを1つだけ読み取る
+function ReadJikkyoChunk(f)
+  local head=f:read(80)
+  if not head or #head~=80 then return nil end
+  local payload=''
+  local payloadSize=tonumber(head:match('L=([0-9]+)'))
+  if not payloadSize then return nil end
+  if payloadSize>0 then
+    payload=f:read(payloadSize)
+    if not payload or #payload~=payloadSize then return nil end
+  end
+  return head..payload
+end
+
+--jkrdlogに渡す実況のIDを取得する
+function GetJikkyoID(nid,sid)
+  --地上波のサービス種別とサービス番号はマスクする
+  local id=NetworkType(nid)=='地デジ' and 0xf0000+bit32.band(sid,0xfe78) or nid*65536+sid
+  return not JK_CHANNELS[id] and 'ns'..id or JK_CHANNELS[id]>0 and 'jk'..JK_CHANNELS[id]
+end
 
 --リトルエンディアンの値を取得する
 function GetLeNumber(buf,pos,len)
