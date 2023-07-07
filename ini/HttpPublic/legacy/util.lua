@@ -260,7 +260,7 @@ end
 
 function OnscreenButtonsScriptTemplete()
   return [=[
-<script src="script.js"></script>
+<script src="script.js?ver=20230707"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
@@ -335,157 +335,11 @@ function VideoScriptTemplete()
 <script src="aribb24.js"></script>
 <script>
 ]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
-var cap=null;
-var cbCaption=document.getElementById("cb-caption");
-cbCaption.onclick=function(){
-  if(cap){if(cbCaption.checked){cap.show();}else{cap.hide();}}
-};
-var vidMeta=document.getElementById("vid-meta");
-vidMeta.oncuechange=function(){
-  vidMeta.oncuechange=null;
-  var work=[];
-  var dataList=[];
-  var cues=vidMeta.track.cues;
-  for(var i=0;i<cues.length;i++){
-    var ret=decodeB24CaptionFromCueText(cues[i].text,work);
-    if(!ret){return;}
-    for(var j=0;j<ret.length;j++){dataList.push({pts:cues[i].startTime,pes:ret[j]});}
-  }
-  cap=new aribb24js.]=]..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')..'Renderer({'..ARIBB24_JS_OPTION..[=[});
-  cap.attachMedia(vid);
-  document.getElementById("label-caption").style.display="inline";
-  if(!cbCaption.checked){cap.hide();}
-  dataList.reverse();
-  (function pushCap(){
-    for(var i=0;i<100;i++){
-      var data=dataList.pop();
-      if(!data){return;}
-      cap.pushRawData(data.pts,data.pes);
-    }
-    setTimeout(pushCap,0);
-  })();
-};
-]=]..(USE_DATACAST and [=[
-(function(){
-  var psiData=null;
-  var readTimer=null;
-  var videoLastSec=0;
-  function startRead(){
-    clearTimeout(readTimer);
-    var startSec=vid.currentTime;
-    videoLastSec=startSec;
-    var ctx={};
-    var counters=[];
-    function read(){
-      var videoSec=vid.currentTime;
-      if(videoSec<videoLastSec||videoLastSec+10<videoSec){
-        startRead();
-        return;
-      }
-      videoLastSec=videoSec;
-      if(psiData&&readPsiData(psiData,function(sec,psiTS,pid){
-          setTSPacketHeader(psiTS,counters,pid);
-          bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
-          return sec<videoSec;
-        },startSec,ctx)!==false){
-        startRead();
-        return;
-      }
-      readTimer=setTimeout(read,500);
-    }
-    readTimer=setTimeout(read,500);
-  }
-  var xhr=null;
-  var cbDatacast=document.getElementById("cb-datacast");
-  cbDatacast.checked=false;
-  cbDatacast.onclick=function(){
-    document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
-    if(!cbDatacast.checked){
-      clearTimeout(readTimer);
-      readTimer=null;
-      hideOnscreenButtons(false);
-      bmlBrowserSetInvisible(true);
-      checkJikkyoDisplay();
-      return;
-    }
-    startRead();
-    checkJikkyoDisplay();
-    bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-    hideOnscreenButtons(true);
-    bmlBrowserSetInvisible(false);
-    if(xhr)return;
-    xhr=new XMLHttpRequest();
-    xhr.open("GET",vid.getAttribute("src").replace(/\.[0-9A-Za-z]+$/,"")+".psc");
-    xhr.responseType="arraybuffer";
-    xhr.overrideMimeType("application/octet-stream");
-    xhr.onloadend=function(){
-      if(!psiData){
-        document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+")";
-      }
-    };
-    xhr.onload=function(){
-      if(xhr.status!=200||!xhr.response)return;
-      psiData=xhr.response;
-    };
-    xhr.send();
-  };
-})();
-]=] or '')..(JKRDLOG_PATH and [=[
-(function(){
-  var logText=null;
-  var readTimer=null;
-  var videoLastSec=0;
-  function startRead(){
-    clearTimeout(readTimer);
-    var startSec=vid.currentTime;
-    videoLastSec=startSec;
-    var ctx={};
-    function read(){
-      var videoSec=vid.currentTime;
-      if(videoSec<videoLastSec||videoLastSec+10<videoSec){
-        startRead();
-        return;
-      }
-      videoLastSec=videoSec;
-      if(logText){
-        readJikkyoLog(logText,function(sec,tag){
-          if(onJikkyoStream)onJikkyoStream(tag);
-          return sec<videoSec;
-        },startSec,ctx);
-      }
-      readTimer=setTimeout(read,200);
-    }
-    readTimer=setTimeout(read,200);
-  }
-  var xhr=null;
-  var cbJikkyo=document.getElementById("cb-jikkyo");
-  function onclickJikkyo(){
-    if(!cbJikkyo.checked){
-      toggleJikkyo(false);
-      clearTimeout(readTimer);
-      readTimer=null;
-      return;
-    }
-    toggleJikkyo(true);
-    startRead();
-    if(xhr)return;
-    xhr=new XMLHttpRequest();
-    xhr.open("GET","jklog.lua?fname="+vid.getAttribute("src").replace(/^(?:\.\.\/)+/,""));
-    xhr.onloadend=function(){
-      if(!logText){
-        if(onJikkyoStreamError)onJikkyoStreamError(xhr.status,0);
-      }
-    };
-    xhr.onload=function(){
-      if(xhr.status!=200||!xhr.response)return;
-      logText=xhr.response;
-    };
-    xhr.send();
-  }
-  onclickJikkyo();
-  cbJikkyo.onclick=onclickJikkyo;
-})();
-]=] or '')..[=[
+runVideoScript(]=]
+  ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
+  ..(USE_DATACAST and 'true' or 'false')..','
+  ..(JKRDLOG_PATH and 'true' or 'false')..[=[
+);
 </script>
 ]=]
 end
@@ -496,172 +350,35 @@ function TranscodeScriptTemplete(live,params)
       ..(XCODE_CHECK_CAPTION and ' checked' or '')..'>caption</label>\n'
     ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <script>
-]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..((USE_DATACAST or live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
-var openSubStream;
-var onDataStream=null;
-var onDataStreamError=null;
-(function(){
-  var reopen=false;
-  var xhr=null;
-  openSubStream=function(){
-    if(reopen)return;
-    if(xhr){
-      xhr.abort();
-      xhr=null;
-      if(onDataStream||onJikkyoStream){
-        reopen=true;
-        setTimeout(function(){reopen=false;openSubStream();},5000);
-      }
-      return;
-    }
-    if(!onDataStream&&!onJikkyoStream)return;
-    var readCount=0;
-    var ctx={};
-    xhr=new XMLHttpRequest();
-    xhr.open("GET",document.getElementById("vidsrc").textContent+(onDataStream?"&psidata=1":"")+(onJikkyoStream?"&jikkyo=1":"")+
-             "&ofssec="+(]=]..math.floor(params.ofssec or 0)..[=[+Math.floor(vid.currentTime]=]..(params.fast and '*'..XCODE_FAST or '')..[=[)));
-    xhr.onloadend=function(){
-      if(xhr&&(readCount==0||xhr.status!=0)){
-        if(onDataStreamError)onDataStreamError(xhr.status,readCount);
-        if(onJikkyoStreamError)onJikkyoStreamError(xhr.status,readCount);
-      }
-      xhr=null;
-    };
-    xhr.onprogress=function(){
-      if(xhr&&xhr.status==200&&xhr.response){
-        readCount=progressPsiDataChatMixedStream(readCount,xhr.response,onDataStream,onJikkyoStream,ctx);
-      }
-    };
-    xhr.send();
-  };
-})();
-]=] or '')..(USE_DATACAST and [=[
-var cbDatacast=document.getElementById("cb-datacast");
-cbDatacast.checked=false;
-cbDatacast.onclick=function(){
-  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
-  if(!cbDatacast.checked){
-    onDataStream=null;
-    onDataStreamError=null;
-    openSubStream();
-    hideOnscreenButtons(false);
-    bmlBrowserSetInvisible(true);
-    checkJikkyoDisplay();
-    return;
-  }
-  checkJikkyoDisplay();
-  bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-  hideOnscreenButtons(true);
-  bmlBrowserSetInvisible(false);
-  onDataStream=function(psiTS,pcr){bmlBrowserPlayTS(psiTS,pcr);};
-  onDataStreamError=function(status,readCount){
-    document.querySelector(".remote-control-indicator").innerText="Error! ("+status+"|"+readCount+"Bytes)";
-  };
-  openSubStream();
-};
-]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
-var cbJikkyo=document.getElementById("cb-jikkyo");
-cbJikkyo.checked=false;
-cbJikkyo.onclick=function(){
-  if(!cbJikkyo.checked){
-    toggleJikkyo(false);
-    openSubStream();
-    setSendComment(null);
-    return;
-  }
-  toggleJikkyo(true);
-]=]..(live and USE_LIVEJK and [=[
-  setSendComment(function(value){
-    var xhr=new XMLHttpRequest();
-    xhr.open("POST","comment.lua");
-    xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-    xhr.onloadend=function(){
-      if(xhr.status!=200){
-        addMessage("Post error! ("+xhr.status+")");
-      }
-    };
-    xhr.send("ctok=]=]..CsrfToken('comment.lua')..'&n='..params.n..(params.id and '&id='..params.id or '')
-      ..[=[&comm="+encodeURIComponent(value).replace(/%20/g,"+"));
-  });
-]=] or '')..[=[
-  openSubStream();
-};
-]=] or '')..[=[
+]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
+runTranscodeScript(]=]
+  ..(USE_DATACAST and 'true' or 'false')..','
+  ..(live and USE_LIVEJK and 'true' or 'false')..','
+  ..(not live and JKRDLOG_PATH and 'true' or 'false')..','
+  ..math.floor(params.ofssec or 0)..','
+  ..(params.fast and XCODE_FAST or 1)..','
+  ..'"'..(live and USE_LIVEJK and 'ctok='..CsrfToken('comment.lua')..'&n='..params.n..(params.id and '&id='..params.id or '') or '')..'"'..[=[
+);
 </script>
 ]=]
 end
 
 function HlsScriptTemplete()
-  local s=[=[
-<script src="aribb24.js"></script>
-<script>
-var cap=null;
-var cbCaption=document.getElementById("cb-caption");
-function onclickCaption(){
-  if(cbCaption.checked){
-    if(!cap){
-      cap=new aribb24js.]=]..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')..'Renderer({enableAutoInBandMetadataTextTrackDetection:'
-        ..(ALWAYS_USE_HLS and '!Hls.isSupported(),' or 'true,')..ARIBB24_JS_OPTION..[=[});
-      cap.attachMedia(vid);
-    }
-    cap.show();
-  }else if(cap){
-    cap.hide();
-  }
-}
-</script>
-]=]
   local now=os.date('!*t')
-  local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
-  local hls4=USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or ''
-  if ALWAYS_USE_HLS then
-    s=s..[=[
+  return [=[
+<script src="aribb24.js"></script>
+]=]..(ALWAYS_USE_HLS and [=[
 <script src="hls.min.js"></script>
+]=] or '')..[=[
 <script>
-onclickCaption();
-cbCaption.onclick=onclickCaption;
-document.getElementById("label-caption").style.display="inline";
-var cbLive=document.getElementById("cb-live");
-if(cbLive)cbLive.checked=true;
-vid.poster="loading.png";
-waitForHlsStart(document.getElementById("vidsrc").textContent+"]=]
-      --Android版Firefoxは非キーフレームで切ったフラグメントMP4だとカクつくので避ける
-      ..hls..'"+(/Android.+Firefox/i.test(navigator.userAgent)?"":"'..hls4..[=["),1000,2000,function(){vid.poster=null;},function(src){
-  if(Hls.isSupported()){
-    var hls=new Hls();
-    hls.loadSource(src);
-    hls.attachMedia(vid);
-    hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});
-    hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){
-      for(var i=0;cap&&i<data.samples.length;i++){cap.pushID3v2Data(data.samples[i].pts,data.samples[i].data);}
-    });
-  }else if(vid.canPlayType("application/vnd.apple.mpegurl")){
-    vid.src=src;
-  }
-});
+runHlsScript(]=]
+  ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
+  ..(ALWAYS_USE_HLS and 'true' or 'false')..','
+  ..'"&hls='..(1+(now.hour*60+now.min)*60+now.sec)..'",'
+  ..'"'..(USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or '')..'"'..[=[
+);
 </script>
 ]=]
-  else
-    --AndroidはcanPlayTypeが空文字列を返さないことがあるが実装に個体差が大きいので避ける
-    s=s..[=[
-<script>
-if(!/Android/i.test(navigator.userAgent)&&vid.canPlayType("application/vnd.apple.mpegurl")){
-  onclickCaption();
-  cbCaption.onclick=onclickCaption;
-  document.getElementById("label-caption").style.display="inline";
-  var cbLive=document.getElementById("cb-live");
-  if(cbLive)cbLive.checked=true;
-  vid.poster="loading.png";
-  waitForHlsStart(document.getElementById("vidsrc").textContent+"]=]..hls..hls4..[=[",1000,2000,function(){vid.poster=null;},function(src){
-    vid.src=src;
-  });
-}else{
-  vid.src=document.getElementById("vidsrc").textContent;
-}
-</script>
-]=]
-  end
-  return s;
 end
 
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
