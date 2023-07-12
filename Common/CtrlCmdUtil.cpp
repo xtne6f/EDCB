@@ -1378,7 +1378,7 @@ bool DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSi
 		return false;
 	}
 	for( DWORD i = 0; i < dwRead; i++ ){
-		__int64 item;
+		LONGLONG item;
 		if( !ReadVALUE(0, &buff, buffEnd, &item) ){
 			return false;
 		}

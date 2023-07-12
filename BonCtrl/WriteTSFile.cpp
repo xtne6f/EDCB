@@ -155,13 +155,13 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 		}else{
 			fs_path recFolder = sys->fileList[i]->recFolder;
 			//空き容量をあらかじめチェック
-			__int64 freeBytes = UtilGetStorageFreeBytes(recFolder);
-			bool isMainUnknownOrFree = (freeBytes < 0 || freeBytes > (__int64)sys->createSize + FREE_FOLDER_MIN_BYTES);
+			LONGLONG freeBytes = UtilGetStorageFreeBytes(recFolder);
+			bool isMainUnknownOrFree = (freeBytes < 0 || freeBytes > (LONGLONG)sys->createSize + FREE_FOLDER_MIN_BYTES);
 			if( isMainUnknownOrFree == false ){
 				//空きのあるサブフォルダを探してみる
 				vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
 					[&](const wstring& a) { return UtilComparePath(a.c_str(), recFolder.c_str()) &&
-					                               UtilGetStorageFreeBytes(a) > (__int64)sys->createSize + FREE_FOLDER_MIN_BYTES; });
+					                               UtilGetStorageFreeBytes(a) > (LONGLONG)sys->createSize + FREE_FOLDER_MIN_BYTES; });
 				if( itrFree != sys->saveFolderSub.end() ){
 					sys->subRecFlag = TRUE;
 					recFolder = *itrFree;
@@ -176,7 +176,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 				if( isMainUnknownOrFree ){
 					vector<wstring>::iterator itrFree = std::find_if(sys->saveFolderSub.begin(), sys->saveFolderSub.end(),
 						[&](const wstring& a) { return UtilComparePath(a.c_str(), recFolder.c_str()) &&
-						                               UtilGetStorageFreeBytes(a) > (__int64)sys->createSize + FREE_FOLDER_MIN_BYTES; });
+						                               UtilGetStorageFreeBytes(a) > (LONGLONG)sys->createSize + FREE_FOLDER_MIN_BYTES; });
 					if( itrFree != sys->saveFolderSub.end() ){
 						sys->subRecFlag = TRUE;
 						startRes = sys->fileList[i]->writeUtil.Start(fs_path(*itrFree).append(sys->fileList[i]->recFileName).c_str(),
@@ -320,7 +320,7 @@ wstring CWriteTSFile::GetSaveFilePath()
 //引数：
 // writeSize			[OUT]保存ファイル名
 void CWriteTSFile::GetRecWriteSize(
-	__int64* writeSize
+	LONGLONG* writeSize
 	)
 {
 	if( writeSize != NULL ){

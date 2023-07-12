@@ -48,6 +48,18 @@
     <None Include="md5.inl">
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </None>
+    <None Include="openssl_dl.inl">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </None>
+    <None Include="match.inl">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </None>
+    <None Include="response.inl">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </None>
+    <None Include="mod_lua_shared.inl">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

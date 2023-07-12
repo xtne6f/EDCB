@@ -540,11 +540,11 @@ bool UtilCreateDirectories(const fs_path& path)
 	return UtilCreateDirectory(path);
 }
 
-__int64 UtilGetStorageFreeBytes(const fs_path& directoryPath)
+LONGLONG UtilGetStorageFreeBytes(const fs_path& directoryPath)
 {
 #ifdef _WIN32
 	ULARGE_INTEGER li;
-	return GetDiskFreeSpaceEx(UtilGetStorageID(directoryPath).c_str(), &li, NULL, NULL) ? (__int64)li.QuadPart : -1;
+	return GetDiskFreeSpaceEx(UtilGetStorageID(directoryPath).c_str(), &li, NULL, NULL) ? (LONGLONG)li.QuadPart : -1;
 #else
 	if( directoryPath.empty() || (directoryPath.is_relative() && directoryPath.has_root_path()) ){
 		// パスが不完全
@@ -555,7 +555,7 @@ __int64 UtilGetStorageFreeBytes(const fs_path& directoryPath)
 		string strPath;
 		WtoUTF8(directoryPath.native(), strPath);
 		struct statvfs st;
-		return statvfs(strPath.c_str(), &st) == 0 ? (__int64)st.f_frsize * (__int64)st.f_bavail : -1;
+		return statvfs(strPath.c_str(), &st) == 0 ? (LONGLONG)st.f_frsize * (LONGLONG)st.f_bavail : -1;
 	}
 	if( mightExist ){
 		// 特殊な理由
@@ -773,8 +773,8 @@ void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DAT
 			UTIL_FIND_DATA ufd;
 			do{
 				ufd.isDir = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-				ufd.lastWriteTime = (__int64)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
-				ufd.fileSize = (__int64)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
+				ufd.lastWriteTime = (LONGLONG)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
+				ufd.fileSize = (LONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
 				ufd.fileName = findData.cFileName;
 			}while( enumProc(ufd) && FindNextFile(hFind, &findData) );
 		}catch(...){
@@ -793,8 +793,8 @@ void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DAT
 		if( stat(strPath.c_str(), &st) == 0 ){
 			UTIL_FIND_DATA ufd;
 			ufd.isDir = S_ISDIR(st.st_mode) != 0;
-			ufd.lastWriteTime = (__int64)st.st_mtime * 10000000 + 116444736000000000;
-			ufd.fileSize = (__int64)st.st_size;
+			ufd.lastWriteTime = (LONGLONG)st.st_mtime * 10000000 + 116444736000000000;
+			ufd.fileSize = (LONGLONG)st.st_size;
 			ufd.fileName = pat.native();
 			enumProc(ufd);
 		}
@@ -835,8 +835,8 @@ void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DAT
 						struct stat st;
 						if( stat(strPath.c_str(), &st) == 0 ){
 							ufd.isDir = S_ISDIR(st.st_mode) != 0;
-							ufd.lastWriteTime = (__int64)st.st_mtime * 10000000 + 116444736000000000;
-							ufd.fileSize = (__int64)st.st_size;
+							ufd.lastWriteTime = (LONGLONG)st.st_mtime * 10000000 + 116444736000000000;
+							ufd.fileSize = (LONGLONG)st.st_size;
 							if( enumProc(ufd) == false ){
 								break;
 							}

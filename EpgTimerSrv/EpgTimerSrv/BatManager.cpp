@@ -3,6 +3,7 @@
 
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/StringUtil.h"
+#include "../../Common/TimeUtil.h"
 #include "../../Common/PathUtil.h"
 #ifndef _WIN32
 #include <sys/wait.h>
@@ -116,9 +117,9 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 	BAT_WORK_INFO notifyWork;
 	for(;;){
 		while( notifyWorkWait && sys->batWorkStopFlag == false && sys->IsWorking() == false ){
-			DWORD tick = GetTickCount();
+			DWORD tick = GetU32Tick();
 			sys->batWorkEvent.WaitOne(notifyWorkWait);
-			DWORD diff = GetTickCount() - tick;
+			DWORD diff = GetU32Tick() - tick;
 			notifyWorkWait -= min(diff, notifyWorkWait);
 			if( notifyWorkWait == 0 ){
 				lock_recursive_mutex lock(sys->managerLock);
@@ -316,7 +317,7 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 		exFormatTime = false;
 	}
 #endif
-	__int64 fileSize = 0;
+	LONGLONG fileSize = 0;
 	char olbuff[257];
 	for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
 		olbuff[n] = '\0';

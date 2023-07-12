@@ -542,7 +542,7 @@ void CBonCtrl::CheckChScan()
 					this->chScanChkNext = TRUE;
 				}
 			}else{
-				if( GetTickCount() - this->chScanTick > (this->chScanChChgTimeOut + this->chScanServiceChkTimeOut) * 1000 ){
+				if( GetU32Tick() - this->chScanTick > (this->chScanChChgTimeOut + this->chScanServiceChkTimeOut) * 1000 ){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
 					AddDebugLog(L"★AutoScan GetService timeout");
 					this->chScanChkNext = TRUE;
@@ -587,7 +587,7 @@ void CBonCtrl::CheckChScan()
 			}
 			this->chScanIndexOrStatus = chkCount;
 			if( this->ProcessSetCh(this->chScanChkList[chkCount].space, this->chScanChkList[chkCount].ch, -1) ){
-				this->chScanTick = GetTickCount();
+				this->chScanTick = GetU32Tick();
 				this->chScanChkNext = FALSE;
 			}
 		}
@@ -701,7 +701,7 @@ void CBonCtrl::CheckEpgCap()
 					this->epgCapChkNext = TRUE;
 				}
 			}else{
-				DWORD tick = GetTickCount();
+				DWORD tick = GetU32Tick();
 				if( this->epgCapSetChState == 0 ){
 					//切り替え完了
 					this->epgCapSetChState = 1;
@@ -834,7 +834,7 @@ void CBonCtrl::SaveErrCount(
 // writeSize			[OUT]保存ファイル名
 void CBonCtrl::GetRecWriteSize(
 	DWORD id,
-	__int64* writeSize
+	LONGLONG* writeSize
 	)
 {
 	this->tsOut.GetRecWriteSize(id, writeSize);
@@ -876,7 +876,7 @@ void CBonCtrl::StartBackgroundEpgCap()
 	if( this->chScanIndexOrStatus < ST_WORKING &&
 	    this->epgCapIndexOrStatus < ST_WORKING ){
 		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
-			this->epgCapTick = GetTickCount();
+			this->epgCapTick = GetU32Tick();
 			this->epgCapBackIndexOrStatus = ST_WORKING;
 		}
 	}
@@ -892,7 +892,7 @@ void CBonCtrl::StopBackgroundEpgCap()
 
 void CBonCtrl::CheckEpgCapBack()
 {
-	DWORD tick = GetTickCount();
+	DWORD tick = GetU32Tick();
 	if( this->epgCapBackIndexOrStatus == ST_WORKING ){
 		//取得待機中
 		if( tick - this->epgCapTick > this->epgCapBackStartWaitSec * 1000 ){

@@ -38,11 +38,11 @@ private:
 	void ReloadNetworkSetting();
 	void ReloadSetting(bool initialize = false);
 	//デフォルト指定可能なフィールドのデフォルト値を特別な予約情報(ID=0x7FFFFFFF)として取得する
-	RESERVE_DATA GetDefaultReserveData(__int64 startTime) const;
+	RESERVE_DATA GetDefaultReserveData(LONGLONG startTime) const;
 	//REC_SETTING_DATA::recModeの値域を調整する
 	void AdjustRecModeRange(REC_SETTING_DATA& recSetting) const;
 	//現在の予約状態に応じた復帰タイマをセットする
-	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
+	bool SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime, DWORD marginSec);
 	//システムをシャットダウンする
 	static void SetShutdown(BYTE shutdownMode);
 	//GUIにシャットダウン可能かどうかの問い合わせを開始させる

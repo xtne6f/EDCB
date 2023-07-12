@@ -46,12 +46,17 @@ function AddOrChange(dataID,post)
        (not useMargin or aa.recSetting.startMargin and aa.recSetting.endMargin) and
        aa.recSetting.tunerID
     then
+      notKey=mg.get_var(post,'notKey') or ''
+      note=mg.get_var(post,'note') or ''
+      if #note>0 or notKey:find('^:note:') then
+        notKey=':note:'..note:gsub('\\','\\\\'):gsub(' ','\\s'):gsub('　','\\m')..(#notKey>0 and ' '..notKey or '')
+      end
       aa.searchInfo={
         --制御文字は消す
         andKey=(GetVarInt(post,'disableFlag')==1 and '^!{999}' or '')
           ..(GetVarInt(post,'caseFlag')==1 and 'C!{999}' or '')
           ..(mg.get_var(post,'andKey') or ''):gsub('%c',''),
-        notKey=(mg.get_var(post,'notKey') or ''):gsub('%c',''),
+        notKey=notKey:gsub('%c',''),
         regExpFlag=GetVarInt(post,'regExpFlag')==1,
         titleOnlyFlag=GetVarInt(post,'titleOnlyFlag')==1,
         aimaiFlag=GetVarInt(post,'aimaiFlag')==1,
@@ -194,6 +199,11 @@ if aa.searchInfo then
   disAndKey=si.andKey:match('^^!{999}(.*)')
   --大小文字区別
   caseAndKey=(disAndKey or si.andKey):match('^C!{999}(.*)')
+  --メモ
+  note=si.notKey:match('^:note:(.-　)') or si.notKey:match('^:note:([^ ]* ?)')
+  notKey=si.notKey:sub(note and #note+7 or 1)
+  note=(note or ''):gsub('　',''):gsub(' ',''):gsub('\\s',' '):gsub('\\m','　'):gsub('\\\\','\\')
+
   ct:Append('</select> <button type="submit">録画設定にロード</button></div></form></dd>\n'
     ..'    <dt>条件</dt><dd>\n'
     ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'">\n'
@@ -202,7 +212,8 @@ if aa.searchInfo then
     ..'<input type="hidden" name="addchg" value="y"></div>\n'
     ..'<div class="section"><h2>検索条件</h2>\n'
     ..'検索キーワード<br><input type="text" name="andKey" value="'..(caseAndKey or disAndKey or si.andKey)..'" style="width:95%"><br>\n'
-    ..'NOTキーワード<br><input type="text" name="notKey" value="'..si.notKey..'" style="width:95%"><br>\n'
+    ..'NOTキーワード<br><input type="text" name="notKey" value="'..notKey..'" style="width:95%"><br>\n'
+    ..'メモ<br><input type="text" name="note" value="'..note..'" style="width:95%"><br>\n'
     ..'<label><input type="checkbox" name="regExpFlag" value="1"'..(si.regExpFlag and ' checked' or '')..'>正規表現モード</label>&emsp;\n'
     ..'<label><input type="checkbox" name="aimaiFlag" value="1"'..(si.aimaiFlag and ' checked' or '')..'>あいまい検索モード</label><br>\n'
     ..'<label><input type="checkbox" name="titleOnlyFlag" value="1"'..(si.titleOnlyFlag and ' checked' or '')..'>番組名のみ検索対象にする</label><br>\n'

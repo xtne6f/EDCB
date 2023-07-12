@@ -27,7 +27,7 @@ EPG_MINIMUM_PX=12
 EPG_SERVICE_PX=150
 --番組表の時刻軸を入れる間隔
 EPG_TIME_COLUMN=3
---番組表の番組を絞り込みたいときはNOTキーワードの先頭を"#EPG_CUST_1"にした自動EPG予約を作る
+--番組表の番組を絞り込みたいときはメモ欄かNOTキーワードの先頭を"#EPG_CUST_1"にした自動EPG予約を作る
 
 --ライブラリに表示するフォルダをドキュメントルートから'/'区切りの相対パスで指定
 --指定フォルダとその1階層下のフォルダにあるメディアファイルまでが表示対象
@@ -149,6 +149,9 @@ XCODE_CHECK_CINEMA=false
 XCODE_CHECK_FAST=false
 XCODE_CHECK_CAPTION=false
 
+--初期値ミュートで再生するかどうか
+VIDEO_MUTED=true
+
 --字幕表示のオプション https://github.com/monyone/aribb24.js#options
 ARIBB24_JS_OPTION=[=[
   normalFont:'"Rounded M+ 1m for ARIB","Yu Gothic Medium",sans-serif',
@@ -174,6 +177,16 @@ JK_COMMENT_HEIGHT=32
 
 --実況コメントの表示時間(秒)
 JK_COMMENT_DURATION=5
+
+--実況ログ表示機能のデジタル放送のサービスIDと、実況の番号(jk?)
+--キーの下4桁の16進数にサービスID、上1桁にネットワークID(ただし地上波は15=0xF)を指定
+--指定しないサービスにはjkrdlogの既定値が使われる
+JK_CHANNELS={
+  --例:テレビ東京(0x0430)をjk7と対応づけたいとき
+  --[0xF0430]=7,
+  --例:NHKBS1(0x0065)とデフォルト(jk101)との対応付けを解除したいとき
+  --[0x40065]=-1,
+}
 
 --chatタグ表示前の置換(JavaScript)
 JK_CUSTOM_REPLACE=[=[
@@ -210,7 +223,6 @@ function GetTranscodeQueries(qs)
     audio2=GetVarInt(qs,'audio2')==1,
     cinema=GetVarInt(qs,'cinema')==1,
     fast=GetVarInt(qs,'fast')==1,
-    caption=GetVarInt(qs,'caption')==1,
   }
 end
 
@@ -220,7 +232,6 @@ function ConstructTranscodeQueries(xq)
     ..(xq.audio2 and '&amp;audio2=1' or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
     ..(xq.fast and '&amp;fast=1' or '')
-    ..(xq.caption and '&amp;caption=1' or '')
 end
 
 function TranscodeSettingTemplete(xq,fsec)
@@ -244,108 +255,19 @@ function TranscodeSettingTemplete(xq,fsec)
   if fsec then
     s=s..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
   end
-  if ALLOW_HLS then
-    s=s..'<label><input type="checkbox" name="caption" value="1"'..((xq.caption or not xq.option and XCODE_CHECK_CAPTION) and ' checked' or '')..'>caption</label>\n'
-  end
   return s
 end
 
 function OnscreenButtonsScriptTemplete()
   return [=[
+<script src="script.js?ver=20230707"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
 var vfull=document.getElementById("vid-full");
 var setSendComment;
 var hideOnscreenButtons;
-(function(){
-  var btn=document.createElement("button");
-  btn.type="button";
-  btn.innerText="full";
-  btn.onclick=function(){(vfull.requestFullscreen||vfull.webkitRequestFullscreen||vfull.webkitRequestFullScreen).call(vfull);};
-  var bfull=document.createElement("div");
-  bfull.className="full-control";
-  bfull.appendChild(btn);
-  btn=document.createElement("button");
-  btn.type="button";
-  btn.innerText="exit";
-  btn.onclick=function(){(document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen).call(document);};
-  var bexit=document.createElement("div");
-  bexit.className="exit-control";
-  bexit.appendChild(btn);
-  var diffs=[0,0,0,0,0];
-  var duration=-1;
-  var lastseek=0;
-  function checkDuration(){
-    var seekable=vid.duration;
-    if(seekable==Infinity)seekable=vid.seekable.length>0?vid.seekable.end(vid.seekable.length-1):0;
-    if(!(seekable>0))return;
-    if(duration<0)duration=seekable;
-    if(seekable-duration<0.5)return;
-    diffs.shift();
-    diffs.push(seekable-duration);
-    duration=seekable;
-    var interval=Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])+1;
-    if(vid.currentTime<duration-interval*2-3&&Date.now()-lastseek>10000){
-      var cbLive=document.getElementById("cb-live");
-      if(cbLive&&cbLive.checked){
-        vid.currentTime=duration-interval;
-        lastseek=Date.now();
-      }
-    }
-  }
-  vid.ondurationchange=checkDuration;
-  setInterval(checkDuration,500);
-  btn=document.createElement("button");
-  btn.type="button";
-  btn.innerText="→";
-  btn.onclick=function(){vid.currentTime=duration-Math.max(diffs[0],diffs[1],diffs[2],diffs[3],diffs[4])-1;};
-  var blive=document.createElement("div");
-  blive.className="live-control";
-  blive.appendChild(btn);
-  var commInput=document.createElement("input");
-  commInput.type="text";
-  var commSend=null;
-  commInput.onkeydown=function(e){
-    if(!e.isComposing&&e.keyCode!=229&&e.key=="Enter"){
-      if(commSend&&commInput.value)commSend(commInput.value);
-      commInput.value="";
-    }
-  };
-  var btn=document.createElement("button");
-  btn.type="button";
-  btn.innerText="≫";
-  btn.onclick=function(){
-    if(commSend&&commInput.value)commSend(commInput.value);
-    commInput.value="";
-  };
-  var bcomm=document.createElement("div");
-  bcomm.className="comment-control";
-  bcomm.style.display="none";
-  bcomm.appendChild(commInput);
-  bcomm.appendChild(btn);
-  setSendComment=function(f){
-    bcomm.style.display=f?null:"none";
-    commSend=f;
-  };
-  var removed=true;
-  hideOnscreenButtons=function(hide){
-    if(!removed&&hide){
-      vcont.removeChild(bfull);
-      vcont.removeChild(bexit);
-      vcont.removeChild(blive);
-      vcont.removeChild(bcomm);
-      removed=true;
-    }else if(removed&&!hide){
-      vcont.appendChild(bfull);
-      vcont.appendChild(bexit);
-      vcont.appendChild(blive);
-      vcont.appendChild(bcomm);
-      removed=false;
-    }
-  };
-  hideOnscreenButtons(false);
-})();
+runOnscreenButtonsScript();
 </script>
 ]=]
 end
@@ -385,403 +307,78 @@ function WebBmlScriptTemplate(label)
 ]=] or ''
 end
 
+function JikkyoScriptTemplate(live)
+  return (live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
+<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>
+<script src="danmaku.js"></script>
+<script>
+var onJikkyoStream=null;
+var onJikkyoStreamError=null;
+var checkJikkyoDisplay;
+var toggleJikkyo;
+runJikkyoScript(]=]..JK_COMMENT_HEIGHT..','..JK_COMMENT_DURATION..',function(tag){'..JK_CUSTOM_REPLACE..[=[
+  return tag;});
+</script>
+]=] or [=[
+<script>
+var onJikkyoStream=null;
+var onJikkyoStreamError=null;
+var checkJikkyoDisplay=function(){};
+</script>
+]=]
+end
+
 function VideoScriptTemplete()
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..[=[
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false)..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
   ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
-<script src="script.js"></script>
 <script>
-var cap=null;
-var cbCaption=document.getElementById("cb-caption");
-cbCaption.onclick=function(){
-  if(cap){if(cbCaption.checked){cap.show();}else{cap.hide();}}
-};
-var vidMeta=document.getElementById("vid-meta");
-vidMeta.oncuechange=function(){
-  vidMeta.oncuechange=null;
-  var work=[];
-  var dataList=[];
-  var cues=vidMeta.track.cues;
-  for(var i=0;i<cues.length;i++){
-    var ret=decodeB24CaptionFromCueText(cues[i].text,work);
-    if(!ret){return;}
-    for(var j=0;j<ret.length;j++){dataList.push({pts:cues[i].startTime,pes:ret[j]});}
-  }
-  cap=new aribb24js.]=]..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')..'Renderer({'..ARIBB24_JS_OPTION..[=[});
-  cap.attachMedia(vid);
-  document.getElementById("label-caption").style.display="inline";
-  if(!cbCaption.checked){cap.hide();}
-  dataList.reverse();
-  (function pushCap(){
-    for(var i=0;i<100;i++){
-      var data=dataList.pop();
-      if(!data){return;}
-      cap.pushRawData(data.pts,data.pes);
-    }
-    setTimeout(pushCap,0);
-  })();
-};
+]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
+runVideoScript(]=]
+  ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
+  ..(USE_DATACAST and 'true' or 'false')..','
+  ..(JKRDLOG_PATH and 'true' or 'false')..[=[
+);
 </script>
-]=]..(USE_DATACAST and [=[
-<script>
-var psiData=null;
-var readTimer=null;
-var videoLastSec=0;
-function startReadPsiData(){
-  clearTimeout(readTimer);
-  var startSec=vid.currentTime;
-  videoLastSec=startSec;
-  var ctx={};
-  var counters=[];
-  var f=function(){
-    var videoSec=vid.currentTime;
-    if(videoSec<videoLastSec||videoLastSec+10<videoSec){
-      startReadPsiData();
-      return;
-    }
-    videoLastSec=videoSec;
-    if(psiData&&readPsiData(psiData,function(sec,psiTS,pid){
-        setTSPacketHeader(psiTS,counters,pid);
-        bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
-        return sec<videoSec;
-      },startSec,ctx)!==false){
-      startReadPsiData();
-      return;
-    }
-    readTimer=setTimeout(f,500);
-  };
-  readTimer=setTimeout(f,500);
-}
-var xhr=null;
-var cbDatacast=document.getElementById("cb-datacast");
-cbDatacast.onclick=function(){
-  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
-  if(!cbDatacast.checked){
-    clearTimeout(readTimer);
-    readTimer=null;
-    hideOnscreenButtons(false);
-    bmlBrowserSetInvisible(true);
-    return;
-  }
-  startReadPsiData();
-  bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-  hideOnscreenButtons(true);
-  bmlBrowserSetInvisible(false);
-  if(xhr)return;
-  xhr=new XMLHttpRequest();
-  xhr.open("GET",document.getElementById("psidatasrc").textContent);
-  xhr.responseType="arraybuffer";
-  xhr.overrideMimeType("application/octet-stream");
-  xhr.onloadend=function(){
-    if(!psiData){
-      document.querySelector(".remote-control-indicator").innerText="Error! ("+xhr.status+")";
-    }
-  };
-  xhr.onload=function(){
-    if(xhr.status!=200||!xhr.response)return;
-    psiData=xhr.response;
-  };
-  xhr.send();
-};
-</script>
-]=] or '')
+]=]
 end
 
 function TranscodeScriptTemplete(live,params)
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')
-    ..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and '<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>\n' or '')
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live)
+    ..'<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"'
+      ..(XCODE_CHECK_CAPTION and ' checked' or '')..'>caption</label>\n'
     ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
-<script src="script.js"></script>
-]=]..((USE_DATACAST or live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 <script>
-var openSubStream;
-var onDataStream=null;
-var onDataStreamError=null;
-var onJikkyoStream=null;
-var onJikkyoStreamError=null;
-(function(){
-  var reopen=false;
-  var xhr=null;
-  openSubStream=function(){
-    if(reopen)return;
-    if(xhr){
-      xhr.abort();
-      xhr=null;
-      if(onDataStream||onJikkyoStream){
-        reopen=true;
-        setTimeout(function(){reopen=false;openSubStream();},5000);
-      }
-      return;
-    }
-    if(!onDataStream&&!onJikkyoStream)return;
-    var readCount=0;
-    var ctx={};
-    xhr=new XMLHttpRequest();
-    xhr.open("GET",document.getElementById("vidsrc").textContent+(onDataStream?"&psidata=1":"")+(onJikkyoStream?"&jikkyo=1":"")+
-             "&ofssec="+(]=]..math.floor(params.ofssec or 0)..[=[+Math.floor(vid.currentTime]=]..(params.fast and '*'..XCODE_FAST or '')..[=[)));
-    xhr.onloadend=function(){
-      if(xhr&&(readCount==0||xhr.status!=0)){
-        if(onDataStream&&onDataStreamError)onDataStreamError(xhr.status,readCount);
-        if(onJikkyoStream&&onJikkyoStreamError)onJikkyoStreamError(xhr.status,readCount);
-      }
-      xhr=null;
-    };
-    xhr.onprogress=function(){
-      if(xhr&&xhr.status==200&&xhr.response){
-        readCount=progressPsiDataChatMixedStream(readCount,xhr.response,onDataStream,onJikkyoStream,ctx);
-      }
-    };
-    xhr.send();
-  };
-})();
-var danmaku=null;
-function checkJikkyoDisplay(){
-  var comm=document.getElementById("jk-comm");
-  if(comm){
-    var cbDatacast=document.getElementById("cb-datacast");
-    var cbJikkyo=document.getElementById("cb-jikkyo");
-    if((cbDatacast&&cbDatacast.checked)||!cbJikkyo.checked){
-      if(comm.style.display!="none"){
-        danmaku.hide();
-        comm.style.display="none";
-      }
-    }else if(comm.style.display=="none"){
-      danmaku.show();
-      vfull.appendChild(comm);
-      comm.style.display=null;
-    }
-  }
-}
+]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
+runTranscodeScript(]=]
+  ..(USE_DATACAST and 'true' or 'false')..','
+  ..(live and USE_LIVEJK and 'true' or 'false')..','
+  ..(not live and JKRDLOG_PATH and 'true' or 'false')..','
+  ..math.floor(params.ofssec or 0)..','
+  ..(params.fast and XCODE_FAST or 1)..','
+  ..'"'..(live and USE_LIVEJK and 'ctok='..CsrfToken('comment.lua')..'&n='..params.n..(params.id and '&id='..params.id or '') or '')..'"'..[=[
+);
 </script>
-]=] or '')..(USE_DATACAST and [=[
-<script>
-var cbDatacast=document.getElementById("cb-datacast");
-cbDatacast.onclick=function(){
-  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
-  if(!cbDatacast.checked){
-    onDataStream=null;
-    openSubStream();
-    hideOnscreenButtons(false);
-    bmlBrowserSetInvisible(true);
-    checkJikkyoDisplay();
-    return;
-  }
-  checkJikkyoDisplay();
-  bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-  hideOnscreenButtons(true);
-  bmlBrowserSetInvisible(false);
-  onDataStream=function(psiTS,pcr){bmlBrowserPlayTS(psiTS,pcr);};
-  onDataStreamError=function(status,readCount){
-    document.querySelector(".remote-control-indicator").innerText="Error! ("+status+"|"+readCount+"Bytes)";
-  };
-  openSubStream();
-};
-</script>
-]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
-<script src="danmaku.js"></script>
-<script>
-var cbJikkyo=document.getElementById("cb-jikkyo");
-cbJikkyo.onclick=function(){
-  if(!cbJikkyo.checked){
-    onJikkyoStream=null;
-    openSubStream();
-    checkJikkyoDisplay();
-    setSendComment(null);
-    return;
-  }
-  var comm=document.getElementById("jk-comm");
-  if(!comm){
-    comm=document.createElement("div");
-    comm.id="jk-comm";
-    comm.className="jikkyo-comments";
-    vfull.appendChild(comm);
-  }
-  if(!danmaku){
-    danmaku=new Danmaku({
-      container:vcont,
-      opacity:1,
-      callback:function(){},
-      error:function(msg){},
-      apiBackend:{read:function(opt){opt.success([]);}},
-      height:]=]..JK_COMMENT_HEIGHT..[=[,
-      duration:]=]..JK_COMMENT_DURATION..[=[,
-      paddingTop:10,
-      paddingBottom:10,
-      unlimited:false,
-      api:{id:"noid",address:"noad",token:"noto",user:"nous",speedRate:1}
-    });
-  }
-  checkJikkyoDisplay();
-  function addMessage(text){
-    var b=document.createElement("strong");
-    b.innerText=text;
-    var div=document.createElement("div");
-    div.appendChild(b);
-    comm.appendChild(div);
-  }
-]=]..(live and USE_LIVEJK and [=[
-  setSendComment(function(value){
-    var xhr=new XMLHttpRequest();
-    xhr.open("POST","comment.lua");
-    xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-    xhr.onloadend=function(){
-      if(xhr.status!=200){
-        addMessage("Post error! ("+xhr.status+")");
-      }
-    };
-    xhr.send("ctok=]=]..CsrfToken('comment.lua')..'&n='..params.n..(params.id and '&id='..params.id or '')
-      ..[=[&comm="+encodeURIComponent(value).replace(/%20/g,"+"));
-  });
-]=] or '')..[=[
-  var commHide=true;
-  setInterval(function(){
-    if(getComputedStyle(comm).display=="none"){
-      commHide=true;
-    }else{
-      var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
-      comm.style.height=vid.clientHeight+"px";
-      if(commHide||scroll)comm.scrollTop=comm.scrollHeight;
-      commHide=false;
-    }
-  },1000);
-  var fragment=null;
-  var scatter=[];
-  var scatterInterval=200;
-  var closed=false;
-  function replaceTag(tag){
-]=]..JK_CUSTOM_REPLACE..[=[
-    return tag;
-  }
-  onJikkyoStream=function(tag){
-    if(tag.substring(0,6)=="<chat "){
-      var c=parseChatTag(replaceTag(tag));
-      if(c){
-        if(c.yourpost)c.border="2px solid #c00";
-        scatter.push(c);
-        var b=document.createElement(c.yourpost?"strong":"b");
-        b.innerText=String(100+(Math.floor(c.date/3600)+9)%24).substring(1)+":"+
-                    String(100+Math.floor(c.date/60)%60).substring(1)+":"+
-                    String(100+c.date%60).substring(1)+" ("+c.user.substring(0,3)+") ";
-        var span=document.createElement("span");
-        span.innerText=c.text;
-        if(c.color!=0xffffff){
-          span.style.backgroundColor=c.colorcode;
-          span.className=(c.color>>16)*3+(c.color>>8)%256*6+c.color%256<255?"dark":"light";
-        }
-        var div=document.createElement("div");
-        if(closed){
-          div.className="closed";
-          closed=false;
-        }
-        div.appendChild(b);
-        div.appendChild(span);
-        if(!fragment)fragment=document.createDocumentFragment();
-        fragment.appendChild(div);
-      }
-      return;
-    }else if(tag.substring(0,13)=="<chat_result "){
-      var m=tag.match(/^[^>]*? status="(\d+)"/);
-      if(m&&m[1]!="0")addMessage("Error! (chat_result="+m[1]+")");
-      return;
-    }else if(tag.substring(0,7)=="<!-- M="){
-      if(tag.substring(7,22)=="Closed logfile.")closed=true;
-      else if(tag.substring(7,31)!="Started reading logfile:")addMessage(tag.substring(7,tag.length-4));
-      return;
-    }else if(tag.substring(0,7)!="<!-- J="){
-      return;
-    }
-    if(tag.indexOf(";T=")<0)scatterInterval=90;
-    else scatterInterval=Math.min(Math.max(scatterInterval+(scatter.length>0?-10:10),100),200);
-    setTimeout(function(){
-      var scroll=Math.abs(comm.scrollTop+comm.clientHeight-comm.scrollHeight)<comm.clientHeight/4;
-      if(fragment){
-        comm.appendChild(fragment);
-        fragment=null;
-      }
-      if(scatterInterval<100){
-        danmaku.draw(scatter);
-        scatter.splice(0);
-      }
-      var n=Math.ceil(scatter.length/5);
-      if(n>0){
-        for(var i=0;i<5;i++){
-          setTimeout(function(){
-            if(scatter.length>0){
-              danmaku.draw(scatter.slice(0,n));
-              scatter.splice(0,n);
-            }
-          },scatterInterval*i);
-        }
-      }
-      if(commHide||scroll){
-        while(comm.childElementCount>1000){
-          comm.removeChild(comm.firstElementChild);
-        }
-      }
-      if(scroll)comm.scrollTop=comm.scrollHeight;
-    },0);
-  };
-  onJikkyoStreamError=function(status,readCount){
-    addMessage("Error! ("+status+"|"+readCount+"Bytes)");
-  };
-  openSubStream();
-};
-</script>
-]=] or '')
+]=]
 end
 
-function HlsScriptTemplete(caption)
-  local s=''
+function HlsScriptTemplete()
   local now=os.date('!*t')
-  local hls='&hls='..(1+(now.hour*60+now.min)*60+now.sec)
-  local hls4=USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or ''
-  if ALWAYS_USE_HLS then
-    s=s..'<script src="hls.min.js"></script>\n'
-      ..(caption and '<script src="aribb24.js"></script>\n' or '')
-      ..'<script>\n'
-      ..(caption and 'var cap=new aribb24js.'..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')
-           ..'Renderer({enableAutoInBandMetadataTextTrackDetection:!Hls.isSupported(),'..ARIBB24_JS_OPTION..'});\n'
-           ..'cap.attachMedia(vid);\n' or '')
-      ..'var cbLive=document.getElementById("cb-live");\n'
-      ..'if(cbLive)cbLive.checked=true;\n'
-      ..'vid.poster="loading.png";\n'
-      --Android版Firefoxは非キーフレームで切ったフラグメントMP4だとカクつくので避ける
-      ..'waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..'"+(/Android.+Firefox/i.test(navigator.userAgent)?"":"'..hls4
-      ..'"),1000,2000,function(){vid.poster=null;},function(src){\n'
-      ..'  if(Hls.isSupported()){\n'
-      ..'    var hls=new Hls();\n'
-      ..'    hls.loadSource(src);\n'
-      ..'    hls.attachMedia(vid);\n'
-      ..'    hls.on(Hls.Events.MANIFEST_PARSED,function(){vid.play();});\n'
-      ..(caption and '    hls.on(Hls.Events.FRAG_PARSING_METADATA,function(event,data){\n'
-           ..'      for(var i=0;i<data.samples.length;i++){cap.pushID3v2Data(data.samples[i].pts,data.samples[i].data);}\n'
-           ..'    });\n' or '')
-      ..'  }else if(vid.canPlayType("application/vnd.apple.mpegurl")){\n'
-      ..'    vid.src=src;\n'
-      ..'  }\n'
-      ..'});\n'
-      ..'</script>'
-  else
-    s=s..(caption and '<script src="aribb24.js"></script>\n' or '')
-      ..'<script>\n'
-      ..(caption and 'var cap=new aribb24js.'..(ARIBB24_USE_SVG and 'SVG' or 'Canvas')
-           ..'Renderer({enableAutoInBandMetadataTextTrackDetection:true,'..ARIBB24_JS_OPTION..'});\n'
-           ..'cap.attachMedia(vid);\n' or '')
-      --AndroidはcanPlayTypeが空文字列を返さないことがあるが実装に個体差が大きいので避ける
-      ..'if(!/Android/i.test(navigator.userAgent)&&vid.canPlayType("application/vnd.apple.mpegurl")){\n'
-      ..'  var cbLive=document.getElementById("cb-live");\n'
-      ..'  if(cbLive)cbLive.checked=true;\n'
-      ..'  vid.poster="loading.png";\n'
-      ..'  waitForHlsStart(document.getElementById("vidsrc").textContent+"'..hls..hls4..'",1000,2000,function(){vid.poster=null;},function(src){\n'
-      ..'    vid.src=src;\n'
-      ..'  });\n'
-      ..'}else{\n'
-      ..'  vid.src=document.getElementById("vidsrc").textContent;\n'
-      ..'}\n'
-      ..'</script>'
-  end
-  return s;
+  return [=[
+<script src="aribb24.js"></script>
+]=]..(ALWAYS_USE_HLS and [=[
+<script src="hls.min.js"></script>
+]=] or '')..[=[
+<script>
+runHlsScript(]=]
+  ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
+  ..(ALWAYS_USE_HLS and 'true' or 'false')..','
+  ..'"&hls='..(1+(now.hour*60+now.min)*60+now.sec)..'",'
+  ..'"'..(USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or '')..'"'..[=[
+);
+</script>
+]=]
 end
 
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
@@ -989,6 +586,11 @@ function FormatTimeAndDuration(t,dur)
     ..(dur and string.format('～%02d:%02d',math.floor(dur/3600)%24,math.floor(dur/60)%60)..(dur%60~=0 and string.format('<small>:%02d</small>',dur%60) or '') or '')
 end
 
+--システムのタイムゾーンに影響されずに時間のテーブルを数値表現にする (timezone=0のとき概ねos.date('!*t')の逆関数)
+function TimeWithZone(t,timezone)
+  return os.time(t)+90000-os.time(os.date('!*t',90000))-(timezone or 0)
+end
+
 --ドキュメントルートへの相対パスを取得する
 function PathToRoot()
   return ('../'):rep(#mg.script_name:gsub('[^\\/]*[\\/]+[^\\/]*','N')-#(mg.document_root..'/'):gsub('[^\\/]*[\\/]+','N'))
@@ -1143,6 +745,26 @@ function GetTotAndServiceID(f)
   return nil
 end
 
+--ライブ実況やjkrdlogの出力のチャンクを1つだけ読み取る
+function ReadJikkyoChunk(f)
+  local head=f:read(80)
+  if not head or #head~=80 then return nil end
+  local payload=''
+  local payloadSize=tonumber(head:match('L=([0-9]+)'))
+  if not payloadSize then return nil end
+  if payloadSize>0 then
+    payload=f:read(payloadSize)
+    if not payload or #payload~=payloadSize then return nil end
+  end
+  return head..payload
+end
+
+--jkrdlogに渡す実況のIDを取得する
+function GetJikkyoID(nid,sid)
+  --地上波のサービス種別とサービス番号はマスクする
+  local id=NetworkType(nid)=='地デジ' and 0xf0000+bit32.band(sid,0xfe78) or nid*65536+sid
+  return not JK_CHANNELS[id] and 'ns'..id or JK_CHANNELS[id]>0 and 'jk'..JK_CHANNELS[id]
+end
 
 --リトルエンディアンの値を取得する
 function GetLeNumber(buf,pos,len)

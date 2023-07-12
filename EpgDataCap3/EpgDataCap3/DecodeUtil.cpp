@@ -2,6 +2,7 @@
 #include "DecodeUtil.h"
 
 #include "../../Common/StringUtil.h"
+#include "../../Common/TimeUtil.h"
 #include "ARIB8CharDecode.h"
 #include "../../Common/EpgTimerUtil.h"
 
@@ -731,21 +732,21 @@ void CDecodeUtil::CheckSDT(WORD PID, const Desc::CDescriptor& sdt)
 
 void CDecodeUtil::CheckTDT(const Desc::CDescriptor& tdt)
 {
-	__int64 time = MJDtoI64Time(tdt.GetNumber(Desc::jst_time_mjd), tdt.GetNumber(Desc::jst_time_bcd));
+	LONGLONG time = MJDtoI64Time(tdt.GetNumber(Desc::jst_time_mjd), tdt.GetNumber(Desc::jst_time_bcd));
 	if( tdt.GetNumber(Desc::table_id) == 0x73 ){
 		//TOT
 		this->totTime = time;
-		this->totTimeTick = GetTickCount();
+		this->totTimeTick = GetU32Tick();
 	}else{
 		this->tdtTime = time;
-		this->tdtTimeTick = GetTickCount();
+		this->tdtTimeTick = GetU32Tick();
 	}
 }
 
 void CDecodeUtil::CheckEIT(WORD PID, const Desc::CDescriptor& eit)
 {
 	if( epgDBUtil != NULL ){
-		__int64 time = 0;
+		LONGLONG time = 0;
 		GetNowTime(&time);
 		epgDBUtil->AddEIT(PID, eit, time);
 	}
@@ -779,7 +780,7 @@ void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 			if( sit.GetNumber(Desc::descriptor_tag, lp) == Desc::partialTS_time_descriptor ){
 				if( sit.GetNumber(Desc::jst_time_flag, lp) == 1 ){
 					this->sitTime = MJDtoI64Time(sit.GetNumber(Desc::jst_time_mjd), sit.GetNumber(Desc::jst_time_bcd));
-					this->sitTimeTick = GetTickCount();
+					this->sitTimeTick = GetU32Tick();
 				}
 			}
 		}while( sit.NextLoopIndex(lp) );
@@ -1269,7 +1270,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 // time				[OUT]ストリーム内の現在の時間
 // tick				[OUT]timeを取得した時点のチックカウント
 BOOL CDecodeUtil::GetNowTime(
-	__int64* time,
+	LONGLONG* time,
 	DWORD* tick
 	)
 {

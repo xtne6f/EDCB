@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap_Bon", "..\EpgDat
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap3", "..\EpgDataCap3\EpgDataCap3\EpgDataCap3.vcxproj", "{2342998F-86F9-4819-8B01-6E9103F0DCD4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap3_Unicode", "..\EpgDataCap3\EpgDataCap3\EpgDataCap3_Unicode.vcxproj", "{7698938F-15D1-4587-894A-ED8BCE437986}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgTimerPlugIn", "..\EpgTimerPlugIn\EpgTimerPlugIn\EpgTimerPlugIn.vcxproj", "{90ECFC68-A7C2-4BDB-A6DD-C6736FCDEECB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgTimerSrv", "..\EpgTimerSrv\EpgTimerSrv\EpgTimerSrv.vcxproj", "{A515AC7D-4B3D-4DDC-BB9D-586AEBC016E4}"
@@ -53,6 +55,14 @@ Global
 		{2342998F-86F9-4819-8B01-6E9103F0DCD4}.Release|Win32.Build.0 = Release|Win32
 		{2342998F-86F9-4819-8B01-6E9103F0DCD4}.Release|x64.ActiveCfg = Release|x64
 		{2342998F-86F9-4819-8B01-6E9103F0DCD4}.Release|x64.Build.0 = Release|x64
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Debug|Win32.Build.0 = Debug|Win32
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Debug|x64.ActiveCfg = Debug|x64
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Debug|x64.Build.0 = Debug|x64
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Release|Win32.ActiveCfg = Release|Win32
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Release|Win32.Build.0 = Release|Win32
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Release|x64.ActiveCfg = Release|x64
+		{7698938F-15D1-4587-894A-ED8BCE437986}.Release|x64.Build.0 = Release|x64
 		{90ECFC68-A7C2-4BDB-A6DD-C6736FCDEECB}.Debug|Win32.ActiveCfg = Debug|Win32
 		{90ECFC68-A7C2-4BDB-A6DD-C6736FCDEECB}.Debug|Win32.Build.0 = Debug|Win32
 		{90ECFC68-A7C2-4BDB-A6DD-C6736FCDEECB}.Debug|x64.ActiveCfg = Debug|x64

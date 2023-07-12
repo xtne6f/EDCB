@@ -119,7 +119,7 @@ BOOL CEpgDataCap3Main::GetEpgInfo(
 	}
 
 	//TODO: こういう選別をライブラリ側で行うのは微妙に思うが、互換のため残しておく
-	__int64 nowTime;
+	LONGLONG nowTime;
 	if( this->decodeUtilClass.GetNowTime(&nowTime) == FALSE ){
 		nowTime = GetNowI64Time();
 	}
@@ -221,11 +221,11 @@ int CEpgDataCap3Main::GetTimeDelay(
 	)
 {
 	lock_recursive_mutex lock(this->utilLock);
-	__int64 time;
+	LONGLONG time;
 	DWORD tick;
 	if( this->decodeUtilClass.GetNowTime(&time, &tick) == FALSE ){
 		return 0;
 	}
-	__int64 delay = time + (GetTickCount() - tick) * (I64_1SEC / 1000) - GetNowI64Time();
+	LONGLONG delay = time + (GetU32Tick() - tick) * (I64_1SEC / 1000) - GetNowI64Time();
 	return (int)(delay / I64_1SEC);
 }

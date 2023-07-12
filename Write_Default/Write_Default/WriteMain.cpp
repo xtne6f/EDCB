@@ -215,7 +215,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 					CloseHandle(pi.hThread);
 					CloseHandle(pi.hProcess);
 					for(;;){
-						__int64 readablePos;
+						LONGLONG readablePos;
 						{
 							lock_recursive_mutex lock(sys->wroteLock);
 							readablePos = sys->wrotePos - sys->teeDelay;
@@ -223,7 +223,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 						LARGE_INTEGER liPos = {};
 						DWORD read;
 						if( SetFilePointerEx(sys->teeFile, liPos, &liPos, FILE_CURRENT) &&
-						    readablePos - liPos.QuadPart >= (__int64)sys->teeBuff.size() &&
+						    readablePos - liPos.QuadPart >= (LONGLONG)sys->teeBuff.size() &&
 						    ReadFile(sys->teeFile, sys->teeBuff.data(), (DWORD)sys->teeBuff.size(), &read, NULL) && read > 0 ){
 							OVERLAPPED ol = {};
 							ol.hEvent = olEvents[1];

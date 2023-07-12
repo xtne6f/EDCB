@@ -1,5 +1,7 @@
 ﻿#include "stdafx.h"
 #include "SendTSTCPMain.h"
+#include "../../Common/StringUtil.h"
+#include "../../Common/TimeUtil.h"
 
 namespace
 {
@@ -255,10 +257,10 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 	//ヘッダのdwCount情報を3バイト目が0でない値で始める。原作は0で始めていたが仕様的に始点に意味はなく
 	//また他のTCPインタフェースのヘッダと区別しにくいため設定を誤った場合に想定外のことが起きるのを防ぐため
 	DWORD dwCount = 0x01000000;
-	DWORD dwCheckConnectTick = GetTickCount();
+	DWORD dwCheckConnectTick = GetU32Tick();
 	vector<HANDLE> olEventList;
 	for(;;){
-		DWORD tick = GetTickCount();
+		DWORD tick = GetU32Tick();
 		bool bCheckConnect = tick - dwCheckConnectTick > SEND_TS_TCP_CONNECT_INTERVAL_MSEC;
 		if( bCheckConnect ){
 			dwCheckConnectTick = tick;

@@ -58,7 +58,7 @@ public:
 	bool IsActive() const;
 	//baseTime以後に録画またはEPG取得を開始する最小時刻を取得する
 	//reserveData: 最小時刻の予約情報(ないときreserveID==0)
-	__int64 GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* reserveData = NULL) const;
+	LONGLONG GetSleepReturnTime(LONGLONG baseTime, RESERVE_DATA* reserveData = NULL) const;
 	//指定イベントの予約が存在するかどうか
 	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD tunerID) const;
 	//指定サービスのプログラム予約を抽出して検索する
@@ -106,10 +106,10 @@ public:
 	void SetBatCustomHandler(LPCWSTR ext, const std::function<void(CBatManager::BAT_WORK_INFO&, vector<char>&)>& handler);
 private:
 	struct CHK_RESERVE_DATA {
-		__int64 cutStartTime;
-		__int64 cutEndTime;
-		__int64 startOrder;
-		__int64 effectivePriority;
+		LONGLONG cutStartTime;
+		LONGLONG cutEndTime;
+		LONGLONG startOrder;
+		LONGLONG effectivePriority;
 		bool started;
 		const RESERVE_DATA* r;
 	};
@@ -121,12 +121,12 @@ private:
 	vector<DWORD> GetNoTunerReserveAll() const;
 	//予約をチューナに割り当てる
 	//reloadTime: なんらかの変更があった最小予約位置
-	void ReloadBankMap(__int64 reloadTime = 0);
+	void ReloadBankMap(LONGLONG reloadTime = 0);
 	//ある予約をバンクに追加したときに発生するコスト(単位:10秒)を計算する
 	//戻り値: 重なりが無ければ0、別チャンネルの重なりがあれば重なりの秒数だけ加算、同一チャンネルのみの重なりがあれば-1
-	__int64 ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const;
+	LONGLONG ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const;
 	//マージンを考慮した予約時刻を計算する(常にendTime>=startTime)
-	void CalcEntireReserveTime(__int64* startTime, __int64* endTime, const RESERVE_DATA& data) const;
+	void CalcEntireReserveTime(LONGLONG* startTime, LONGLONG* endTime, const RESERVE_DATA& data) const;
 	//追従通知用メッセージを取得する
 	static wstring GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo, const RESERVE_DATA& newInfo);
 	//最新EPG(チューナからの情報)をもとに追従処理する
@@ -140,15 +140,15 @@ private:
 	//shutdownMode: 最後に処理した予約の録画後動作を記録
 	void ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, DWORD tunerID = 0, int* shutdownMode = NULL);
 	//EPG取得可能なチューナのリストを取得する
-	vector<CTunerBankCtrl*> GetEpgCapTunerList(__int64 now) const;
+	vector<CTunerBankCtrl*> GetEpgCapTunerList(LONGLONG now) const;
 	//EPG取得処理を管理する
 	//isEpgCap: EPG取得中のチューナが無ければfalse
 	//戻り値: EPG取得が完了した瞬間にtrue
 	bool CheckEpgCap(bool isEpgCap);
 	//予約開始(視聴を除く)の最小時刻を取得する
-	__int64 GetNearestRecReserveTime() const;
+	LONGLONG GetNearestRecReserveTime() const;
 	//次のEPG取得時刻を取得する
-	__int64 GetNextEpgCapTime(__int64 now, int* basicOnlyFlags = NULL) const;
+	LONGLONG GetNextEpgCapTime(LONGLONG now, int* basicOnlyFlags = NULL) const;
 	//バンクを監視して必要ならチューナを強制終了するスレッド
 	static void WatchdogThread(CReserveManager* sys);
 	//batPostManagerにバッチを追加する
@@ -177,13 +177,13 @@ private:
 
 	CEpgTimerSrvSetting::SETTING setting;
 	DWORD checkCount;
-	__int64 lastCheckEpgCap;
+	LONGLONG lastCheckEpgCap;
 	bool epgCapRequested;
 	bool epgCapWork;
 	bool epgCapSetTimeSync;
-	__int64 epgCapTimeSyncBase;
-	__int64 epgCapTimeSyncDelayMin;
-	__int64 epgCapTimeSyncDelayMax;
+	LONGLONG epgCapTimeSyncBase;
+	LONGLONG epgCapTimeSyncDelayMin;
+	LONGLONG epgCapTimeSyncDelayMax;
 	DWORD epgCapTimeSyncTick;
 	DWORD epgCapTimeSyncQuality;
 	int epgCapBasicOnlyFlags;

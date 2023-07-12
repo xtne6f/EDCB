@@ -39,7 +39,7 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 			}
 		}
 	}
-	DWORD tick = GetTickCount();
+	DWORD tick = GetU32Tick();
 	if( tick - this->lastLogTime > 5000 ){
 		if( this->lastLogDrop < this->drop ||
 		    this->lastLogScramble < this->scramble ){

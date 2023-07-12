@@ -20,7 +20,7 @@ cust=GetVarInt(mg.request_info.query_string,'cust',0,1) or 1
 date=GetVarInt(mg.request_info.query_string,'date',-10000,1000) or 0
 --dateクエリは今日(深夜4時区切り)を基準(=0)とする
 now=os.time()
-timezone=now-os.time(os.date('!*t',now))
+--UTC+9の今日の始まりの日付と時刻。現在時刻が深夜のときは前日の深夜4時になることに注意
 baseDate=math.floor((now+(9-4)*3600)/(24*3600))
 baseTime=(baseDate*24+4)*3600
 
@@ -42,7 +42,8 @@ end
 
 if cust~=0 then
   for i,v in ipairs(edcb.EnumAutoAdd()) do
-    if v.searchInfo.notKey:find('^#EPG_CUST_'..cust) then
+    if v.searchInfo.notKey:find('^#EPG_CUST_'..cust) or
+       v.searchInfo.notKey:find('^:note:#EPG_CUST_'..cust) then
       key=v.searchInfo
       key.andKey=key.andKey:gsub('^^!{999}','')
       i=1
@@ -71,13 +72,13 @@ for i,v in ipairs(edcb.GetServiceList() or {}) do
     table.insert(st, v)
     mmt=edcb.GetEventMinMaxTime(v.onid, v.tsid, v.sid)
     if mmt then
-      minTime=minTime and os.time(mmt.minTime)>minTime and minTime or os.time(mmt.minTime)
-      maxTime=maxTime and os.time(mmt.maxTime)<maxTime and maxTime or os.time(mmt.maxTime)
+      maxTime=math.max(maxTime or 0,TimeWithZone(mmt.maxTime))
+      minTime=math.min(minTime or maxTime,TimeWithZone(mmt.minTime))
     end
     mmt=edcb.GetEventMinMaxTimeArchive and edcb.GetEventMinMaxTimeArchive(v.onid, v.tsid, v.sid)
     if mmt then
-      minTime=minTime and os.time(mmt.minTime)>minTime and minTime or os.time(mmt.minTime)
-      maxTime=maxTime and os.time(mmt.maxTime)<maxTime and maxTime or os.time(mmt.maxTime)
+      maxTime=math.max(maxTime or 0,TimeWithZone(mmt.maxTime))
+      minTime=math.min(minTime or maxTime,TimeWithZone(mmt.minTime))
     end
     filterService[#filterService+1]={onid=v.onid, tsid=v.tsid, sid=v.sid}
   end
@@ -127,7 +128,7 @@ pageNav=pageNav..'  ||\n'
 
 pageNav2=''
 if minTime then
-  for i=math.max(baseDate+date-7,math.floor((minTime+timezone-4*3600)/(24*3600))),math.min(baseDate+date+7,math.floor((maxTime+timezone-4*3600)/(24*3600))) do
+  for i=math.max(baseDate+date-7,math.floor((minTime-4*3600)/(24*3600))),math.min(baseDate+date+7,math.floor((maxTime-4*3600)/(24*3600))) do
     d=os.date('!*t', i*24*3600)
     pageNav2=pageNav2..'  '..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;cust='..cust..'&amp;date='..(i-baseDate)..'">' or '')
       ..(i==baseDate and '<span style="text-decoration:underline">' or '')
@@ -180,10 +181,10 @@ for i,v in ipairs(st) do
   end
   lastPx=0
   for j,w in ipairs(v.et) do
-    startTime=os.time(w.startTime)+timezone
+    startTime=TimeWithZone(w.startTime)
     startPx=math.min(math.floor((startTime-baseTime-date*24*3600)/60)*EPG_ONE_MIN_PX, EPG_ONE_MIN_PX*60*25)
     endPx=math.min(math.floor(((
-      w.durationSecond and startTime+w.durationSecond or (j<#v.et and os.time(v.et[j+1].startTime)+timezone or startTime) --終了時間未定
+      w.durationSecond and startTime+w.durationSecond or (j<#v.et and TimeWithZone(v.et[j+1].startTime) or startTime) --終了時間未定
       )-baseTime-date*24*3600)/60)*EPG_ONE_MIN_PX, EPG_ONE_MIN_PX*60*25)
     if startPx-lastPx>0 then
       lastPx=startPx
@@ -218,7 +219,7 @@ for i,v in ipairs(st) do
           ..'" style="height:'..(endPx-lastPx)..'px;left:'..left..'px;top:'..(lastPx+1)..'px;width:'..width..'px">'
           ..(not w.past and rt[w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid] and '<b>予</b> ' or '')
           ..('%02d'):format(w.startTime.min)..' <a href="'
-          ..(w.past and 'epgpastinfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..(os.time(w.startTime)+timezone)
+          ..(w.past and 'epgpastinfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..TimeWithZone(w.startTime)
             or 'epginfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid)..'">'
           ..(w.shortInfo and w.shortInfo.event_name or '&nbsp;')..'</a></div>\n')
       end

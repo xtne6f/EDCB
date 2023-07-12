@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "UpnpSsdpServer.h"
 #include "../../Common/StringUtil.h"
+#include "../../Common/TimeUtil.h"
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -153,7 +154,7 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 	};
 	vector<SSDP_REPLY_INFO> replyList;
 	DWORD random = 0;
-	DWORD notifyTick = GetTickCount() - 1000 * NOTIFY_INTERVAL_SEC;
+	DWORD notifyTick = GetU32Tick() - 1000 * NOTIFY_INTERVAL_SEC;
 	while( sys->stopFlag == false ){
 		fd_set ready;
 		FD_ZERO(&ready);
@@ -166,7 +167,7 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 		if( select(0, &ready, NULL, NULL, &to) < 0 ){
 			break;
 		}
-		DWORD tick = GetTickCount();
+		DWORD tick = GetU32Tick();
 		random = (random << 31 | random >> 1) ^ tick;
 		for( size_t i = 0; i < nicList.size(); i++ ){
 			if( FD_ISSET(nicList[i].sock, &ready) ){

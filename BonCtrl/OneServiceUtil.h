@@ -162,7 +162,7 @@ public:
 	//引数：
 	// writeSize			[OUT]出力サイズ
 	void GetRecWriteSize(
-		__int64* writeSize
+		LONGLONG* writeSize
 		);
 
 	void SetBonDriver(

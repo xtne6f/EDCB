@@ -14,7 +14,7 @@ audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
 hls=GetVarInt(query,'hls',1)
 hls4=GetVarInt(query,'hls4',0) or 0
-caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
+caption=hls and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
 n=GetVarInt(query,'n') or 0
 onid,tsid,sid=GetVarServiceID(query,'id')
@@ -158,19 +158,6 @@ function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
   local trailerConsumeSize=2-(trailerRemainSize+#buf+#payload+2)%3
   buf=('='):rep(trailerRemainSize)..buf..payload..('='):rep(trailerConsumeSize)
   return buf,2+(2+#payload)%4,2+(2+#payload)%4-trailerConsumeSize
-end
-
-function ReadJikkyoChunk(f)
-  local head=f:read(80)
-  if not head or #head~=80 then return nil end
-  local payload=''
-  local payloadSize=tonumber(head:match('L=([0-9]+)'))
-  if not payloadSize then return nil end
-  if payloadSize>0 then
-    payload=f:read(payloadSize)
-    if not payload or #payload~=payloadSize then return nil end
-  end
-  return head..payload
 end
 
 function CreateHlsPlaylist(f)

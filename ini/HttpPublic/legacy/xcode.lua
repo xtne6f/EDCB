@@ -19,7 +19,7 @@ fastRate=filter and XCODE_FAST or 1
 filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
 hls=GetVarInt(query,'hls',1)
 hls4=GetVarInt(query,'hls4',0) or 0
-caption=hls and GetVarInt(query,'caption')==1 and option.captionHls or option.captionNone or ''
+caption=hls and option.captionHls or option.captionNone or ''
 output=hls and option.outputHls or option.output
 if hls and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
@@ -127,8 +127,9 @@ function OpenPsiDataArchiver()
 end
 
 function OpenJikkyoReader(tot,nid,sid)
-  if not JKRDLOG_PATH then return nil end
-  local cmd='"'..JKRDLOG_PATH..'" -r '..(fastRate*100)..' ns'..((NetworkType(nid)=='地デジ' and 15 or nid)*65536+sid)..' '..(tot+ofssec)..' 0'
+  local id=GetJikkyoID(nid,sid)
+  if not id or not JKRDLOG_PATH then return nil end
+  local cmd='"'..JKRDLOG_PATH..'" -r '..(fastRate*100)..' '..id..' '..(tot+ofssec)..' 0'
   return edcb.io.popen('"'..cmd..'"','r')
 end
 
@@ -153,19 +154,6 @@ function ReadPsiDataChunk(f,trailerSize,trailerRemainSize)
   local trailerConsumeSize=2-(trailerRemainSize+#buf+#payload+2)%3
   buf=('='):rep(trailerRemainSize)..buf..payload..('='):rep(trailerConsumeSize)
   return buf,2+(2+#payload)%4,2+(2+#payload)%4-trailerConsumeSize
-end
-
-function ReadJikkyoChunk(f)
-  local head=f:read(80)
-  if not head or #head~=80 then return nil end
-  local payload=''
-  local payloadSize=tonumber(head:match('L=([0-9]+)'))
-  if not payloadSize then return nil end
-  if payloadSize>0 then
-    payload=f:read(payloadSize)
-    if not payload or #payload~=payloadSize then return nil end
-  end
-  return head..payload
 end
 
 function CreateHlsPlaylist(f)

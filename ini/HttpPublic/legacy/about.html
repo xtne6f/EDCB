@@ -1,6 +1,10 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+info=mg.get_info('system')
+info='mg_ver. '..(info:match('"version" : "(.-)"') or '')..', lua_ver. '..(info:match('"lua_version" : "(.-)"') or '')..', remote_addr='..mg.request_info.remote_addr
+info=info:gsub('[<>&]','')
+
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append([=[
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -42,7 +46,9 @@ ct:Append([=[
     トランスコード時や視聴時、<a href="https://github.com/xtne6f/psisiarc">psisiarc</a>出力の.pscファイルが配置されたメディアファイル再生時は、<a href="https://github.com/otya128/web-bml">web-bml</a>によるデータ放送の表示ができます。<br>
     ※指定サービス対象データに「データカルーセルを含める」必要があります。
   </p><p>
-    トランスコード時や視聴時、TVTestのNicoJKプラグインのログや実況の表示ができます。おもに録画用アプリをTVTestにしている人向けの機能です。<br>
+    トランスコード時や視聴時、psisiarc出力の.pscファイルが配置されたメディアファイル再生時は、TVTestのNicoJKプラグインのログや実況の表示ができます。おもに録画用アプリをTVTestにしている人向けの機能です。<br>
+    ※ログの表示にはutil.luaの JKRDLOG_PATH 定数の編集が必要です。<br>
+    ※実況の表示にはプラグインの commentShareMode の設定が必要です。<br>
     再生画面の中央やや下あたりをマウスオーバーやタップすると実況コメントを入力できます。
   </p><p>
     tsreadex.exeを"edcbnosuspend.exe"という名前でコピーしてToolsフォルダに用意すると、<a href="index.html">メニュー</a>に「録画後動作を抑制」ボタンが現れます。<br>
@@ -56,11 +62,28 @@ ct:Append([=[
   </p><p>
     スクリプト作成などにあたって特に<a href="https://github.com/EMWUI/EDCB_Material_WebUI">EDCB Material WebUI</a>を参考にしています。<br>
     トランスコード機能は「<a href="http://nana2.sarashi.com/">Tvmaid</a> MAYA ストリーミング設定」や<a href="https://github.com/Chinachu/Chinachu">Chinachu</a>や<a href="https://github.com/tsukumijima/TVRemotePlus">TVRemotePlus</a>を参考にしました。
-  </p>
+  </p><dl>
+    <dt>環境情報</dt>
+    <dd>
+      ]=]..info..[=[<span id="env-info"></span><br>
+      <span id="env-date">]=]..os.date('!%Y-%m-%dT%H:%M:%S',os.time()+9*3600)..[=[</span>+09:00
+    </dd>
+  </dl>
 </div>
 <div id="footer">
   <a href="index.html">メニュー</a>
 </div>
+<script>
+document.getElementById("env-info").innerHTML=window.isSecureContext?", secure_context":", <s>secure_context</s>";
+var initDate=new Date(document.getElementById("env-date").innerText+"Z");
+var initNow=Date.now();
+function addDate(){
+  var d=new Date(Date.now()-initNow+initDate.getTime());
+  document.getElementById("env-date").innerText=d.toISOString().substring(0,19);
+  setTimeout(addDate,10050-d.getTime()%10000);
+}
+addDate();
+</script>
 </body>
 </html>
 ]=])

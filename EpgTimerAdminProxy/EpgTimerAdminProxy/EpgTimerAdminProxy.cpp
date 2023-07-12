@@ -35,8 +35,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			ft.dwHighDateTime = static_cast<DWORD>(lParam);
 			FILETIME ftNow;
 			GetSystemTimeAsFileTime(&ftNow);
-			__int64 t = ft.dwLowDateTime | static_cast<__int64>(ft.dwHighDateTime) << 32;
-			__int64 tNow = ftNow.dwLowDateTime | static_cast<__int64>(ftNow.dwHighDateTime) << 32;
+			LONGLONG t = ft.dwLowDateTime | static_cast<LONGLONG>(ft.dwHighDateTime) << 32;
+			LONGLONG tNow = ftNow.dwLowDateTime | static_cast<LONGLONG>(ftNow.dwHighDateTime) << 32;
 			// 激変禁止(24時間)
 			if (tNow - 24 * 3600 * 1000000LL < t && t < tNow + 24 * 3600 * 10000000LL) {
 				SYSTEMTIME st;

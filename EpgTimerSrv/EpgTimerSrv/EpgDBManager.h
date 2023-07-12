@@ -32,20 +32,20 @@ public:
 
 	bool IsInitialLoadingDataDone() const { return this->initialLoadDone; }
 
-	void SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
+	void SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, LONGLONG enumStart, LONGLONG enumEnd,
 	               wstring* findKey, const std::function<void(const EPGDB_EVENT_INFO*, wstring*)>& enumProc) const;
 
-	void SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, bool deletableBeforeEnumDone,
+	void SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize, LONGLONG enumStart, LONGLONG enumEnd, bool deletableBeforeEnumDone,
 	                      wstring* findKey, const std::function<void(const EPGDB_EVENT_INFO*, wstring*)>& enumProc) const;
 
 	bool GetServiceList(vector<EPGDB_SERVICE_INFO>* list) const;
 
-	pair<__int64, __int64> GetEventMinMaxTime(__int64 keyMask, __int64 key) const {
+	pair<LONGLONG, LONGLONG> GetEventMinMaxTime(LONGLONG keyMask, LONGLONG key) const {
 		CRefLock lock(&this->epgMapRefLock);
 		return GetEventMinMaxTimeProc(keyMask, key, false);
 	}
 
-	bool EnumEventInfo(__int64* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
+	bool EnumEventInfo(LONGLONG* keys, size_t keysSize, LONGLONG enumStart, LONGLONG enumEnd,
 	                   const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc) const {
 		CRefLock lock(&this->epgMapRefLock);
 		return EnumEventInfoProc(keys, keysSize, enumStart, enumEnd, enumProc, false);
@@ -62,9 +62,9 @@ public:
 		return true;
 	}
 
-	pair<__int64, __int64> GetArchiveEventMinMaxTime(__int64 keyMask, __int64 key) const;
+	pair<LONGLONG, LONGLONG> GetArchiveEventMinMaxTime(LONGLONG keyMask, LONGLONG key) const;
 
-	void EnumArchiveEventInfo(__int64* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd, bool deletableBeforeEnumDone,
+	void EnumArchiveEventInfo(LONGLONG* keys, size_t keysSize, LONGLONG enumStart, LONGLONG enumEnd, bool deletableBeforeEnumDone,
 	                          const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc) const;
 
 	bool SearchEpg(
@@ -140,12 +140,12 @@ private:
 	//これらデータベースの読み取りにかぎりepgMapRefLockでアクセスできる。LoadThread以外では変更できない
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgMap;
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgArchive;
-	vector<vector<__int64>> epgOldIndexCache;
+	vector<vector<LONGLONG>> epgOldIndexCache;
 
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
 	static void LoadThread(CEpgDBManager* sys);
 
-	static bool InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<__int64>& enumServiceKey, const EPGDB_SEARCH_KEY_INFO* key);
+	static bool InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<LONGLONG>& enumServiceKey, const EPGDB_SEARCH_KEY_INFO* key);
 	static bool IsMatchEvent(SEARCH_CONTEXT* ctxs, size_t ctxsSize, const EPGDB_EVENT_INFO* itrEvent, wstring* findKey);
 	static bool IsEqualContent(const vector<EPGDB_CONTENT_DATA>& searchKey, const vector<EPGDB_CONTENT_DATA>& eventData);
 	static bool IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
@@ -153,8 +153,8 @@ private:
 	                        vector<int>& dist, bool caseFlag, bool aimai, bool andFlag, wstring* findKey = NULL);
 	static bool FindLikeKeyword(const wstring& key, size_t keyPos, const wstring& word, vector<int>& dist, bool caseFlag);
 	static void AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstring key, bool caseFlag, bool regExp, bool titleOnly);
-	pair<__int64, __int64> GetEventMinMaxTimeProc(__int64 keyMask, __int64 key, bool archive) const;
-	bool EnumEventInfoProc(__int64* keys, size_t keysSize, __int64 enumStart, __int64 enumEnd,
+	pair<LONGLONG, LONGLONG> GetEventMinMaxTimeProc(LONGLONG keyMask, LONGLONG key, bool archive) const;
+	bool EnumEventInfoProc(LONGLONG* keys, size_t keysSize, LONGLONG enumStart, LONGLONG enumEnd,
 	                       const std::function<void(const EPGDB_EVENT_INFO*, const EPGDB_SERVICE_INFO*)>& enumProc, bool archive) const;
 };
 

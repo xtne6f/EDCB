@@ -50,9 +50,15 @@ for i=page*pageCount+1,math.min(#a,(page+1)*pageCount) do
   disAndKey=v.andKey:match('^^!{999}(.*)')
   --大小文字区別
   andKey=(disAndKey or v.andKey):gsub('^C!{999}','(Aa) ')
+  --メモ
+  note=v.notKey:match('^:note:(.-　)') or v.notKey:match('^:note:([^ ]* ?)')
+  notKey=v.notKey:sub(note and #note+7 or 1)
+  note=(note or ''):gsub('　',''):gsub(' ',''):gsub('\\s',' '):gsub('\\m','　'):gsub('\\\\','\\')
+
   cl=disAndKey and ' class="disabled"' or ''
   ct:Append('    <tr><td><a href="autoaddepginfo.html?id='..a[i].dataID..'">'..andKey..'&ensp;</a>'
-    ..'<td'..cl..'>'..v.notKey
+    ..'<td'..cl..'>'..notKey
+    ..'<td'..cl..'>'..note
     ..'<td'..cl..'>'..(#v.contentList>0 and edcb.GetGenreName(v.contentList[1].content_nibble)..(#v.contentList>1 and 'など' or '') or '')
     ..'<td'..cl..'>'..serviceName..(#v.serviceList>1 and 'など' or '')
     ..'<td'..cl..'>'..(RecModeTextList()[(a[i].recSetting.recMode~=5 and a[i].recSetting.recMode or a[i].recSetting.noRecMode or 1)+1] or '')

@@ -4,7 +4,6 @@
 #include <ws2tcpip.h>
 #include <list>
 
-#include "../../Common/StringUtil.h"
 #include "../../Common/ThreadUtil.h"
 
 class CSendTSTCPMain

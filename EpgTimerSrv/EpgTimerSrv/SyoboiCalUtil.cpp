@@ -12,7 +12,7 @@
 
 #define SYOBOI_UP_URL L"http://cal.syoboi.jp/sch_upload"
 
-__int64 CSyoboiCalUtil::GetTimeStamp(SYSTEMTIME startTime)
+LONGLONG CSyoboiCalUtil::GetTimeStamp(SYSTEMTIME startTime)
 {
 	SYSTEMTIME keyTime;
 	keyTime.wYear = 1970;
@@ -157,7 +157,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 		wstring stationName = info->stationName;
 		srvChg.ChgText(stationName);
 
-		__int64 startTime = GetTimeStamp(info->startTime);
+		LONGLONG startTime = GetTimeStamp(info->startTime);
 		Format(param, L"%lld\t%lld\t%ls\t%ls\t%ls\t\t0\t%d\n", startTime, startTime+info->durationSecond, device, info->title.c_str(), stationName.c_str(), info->reserveID );
 		dataParam+=param;
 	}

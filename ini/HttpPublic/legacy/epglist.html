@@ -21,7 +21,7 @@ onid,tsid,sid=GetVarServiceID(mg.request_info.query_string,'id')
 date=GetVarInt(mg.request_info.query_string,'date',-10000,0) or 0
 --dateクエリは今日(0時区切り)を基準(=0)とする
 now=os.time()
-timezone=now-os.time(os.date('!*t',now))
+--UTC+9の今日の始まりの日付と時刻
 baseDate=math.floor((now+9*3600)/(24*3600))
 baseTime=baseDate*24*3600
 
@@ -69,8 +69,8 @@ else
       v.eventGroupInfo.eventDataList[1].sid~=v.sid or
       v.eventGroupInfo.eventDataList[1].eid~=v.eid)
     if not sub then
-      if v.startTime and os.time(v.startTime)+timezone <= now+9*3600 and
-         #et>i and et[i+1].startTime and os.time(et[i+1].startTime)+timezone > now+9*3600 then
+      if v.startTime and TimeWithZone(v.startTime,9*3600)<=now and
+         #et>i and et[i+1].startTime and TimeWithZone(et[i+1].startTime,9*3600)>now then
         v.now=true
       end
       cont=v.contentInfoList and #v.contentInfoList>0 and math.floor(v.contentInfoList[1].content_nibble/256)%16 or 16
@@ -78,7 +78,7 @@ else
         ..(v.startTime and ('%02d/%02d%s %02d:%02d'):format(v.startTime.month, v.startTime.day, ({'日','月','火','水','木','金','土'})[v.startTime.wday], v.startTime.hour, v.startTime.min) or '不明')
         ..(not v.past and rt[('%04X%04X%04X%04X'):format(v.onid, v.tsid, v.sid, v.eid)] and ' <b>予</b>' or '')
         ..' <a href="'
-          ..(v.past and 'epgpastinfo.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'-'..(os.time(v.startTime)+timezone)
+          ..(v.past and 'epgpastinfo.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'-'..TimeWithZone(v.startTime)
             or 'epginfo.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'-'..v.eid)..'">'
           ..(v.shortInfo and v.shortInfo.event_name or '&nbsp;')..'</a>'
         ..'</div>\n')
@@ -118,10 +118,10 @@ else
     ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
       ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
       ..'<div class="video-container arib-video-container" id="vid-cont">'
-      ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view -nwtv0</video></div></div>\n'
+      ..'<video id="vid" autoplay playsinline controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view -nwtv0</video></div></div>\n'
       ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,{n=0,id=onid..'-'..tsid..'-'..sid}))
     if ALLOW_HLS then
-      ct:Append(HlsScriptTemplete(xq.caption))
+      ct:Append(HlsScriptTemplete())
     end
   end
 end

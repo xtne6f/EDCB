@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "TCPServer.h"
 #include "StringUtil.h"
+#include "TimeUtil.h"
 #include "CtrlCmdDef.h"
 #include "ErrDef.h"
 #ifndef _WIN32
@@ -315,7 +316,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 				pSys->m_cmdProc(waitList[i].cmd, res, NULL);
 				if( res.GetParam() == CMD_NO_RES ){
 					//応答は保留された
-					if( GetTickCount() - waitList[i].tick <= pSys->m_dwResponseTimeout ){
+					if( GetU32Tick() - waitList[i].tick <= pSys->m_dwResponseTimeout ){
 						continue;
 					}
 				}else{
@@ -406,7 +407,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 								waitList.resize(waitList.size() + 1);
 								waitList.back().sock = sock;
 								std::swap(waitList.back().cmd, cmd);
-								waitList.back().tick = GetTickCount();
+								waitList.back().tick = GetU32Tick();
 								waitList.back().closing = false;
 #ifdef _WIN32
 								waitList.back().hEvent = hEvent;
@@ -488,9 +489,9 @@ void CTCPServer::ResponseThread(RESPONSE_THREAD_INFO* info)
 			info->sys->m_responseThreadProc(info->cmd, res, RESPONSE_THREAD_FIN, param);
 		}
 	}else if( res.GetParam() == CMD_SUCCESS ){
-		DWORD tick = GetTickCount();
+		DWORD tick = GetU32Tick();
 		while( res.GetParam() == CMD_SUCCESS && info->sys->m_stopFlag == false &&
-		       GetTickCount() - tick <= info->sys->m_dwResponseTimeout ){
+		       GetU32Tick() - tick <= info->sys->m_dwResponseTimeout ){
 			res.SetParam(CMD_ERR);
 			res.Resize(0);
 			info->sys->m_responseThreadProc(info->cmd, res, RESPONSE_THREAD_PROC, param);
@@ -498,7 +499,7 @@ void CTCPServer::ResponseThread(RESPONSE_THREAD_INFO* info)
 				if( send(info->sock, (const char*)res.GetData(), res.GetDataSize(), 0) != (int)res.GetDataSize() ){
 					break;
 				}
-				tick = GetTickCount();
+				tick = GetU32Tick();
 			}
 		}
 		info->sys->m_responseThreadProc(info->cmd, res, RESPONSE_THREAD_FIN, param);

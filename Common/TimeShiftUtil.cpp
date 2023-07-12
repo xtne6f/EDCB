@@ -2,6 +2,7 @@
 #include "TimeShiftUtil.h"
 #include "PathUtil.h"
 #include "StringUtil.h"
+#include "TimeUtil.h"
 #include "TSPacketUtil.h"
 #include "../BonCtrl/BonCtrlDef.h"
 #include "../BonCtrl/PacketInit.h"
@@ -142,7 +143,7 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 
 	this->filePath = filePath_;
 	this->fileMode = fileMode_;
-	this->seekJitter = GetTickCount() / 100 % 8 + 1;
+	this->seekJitter = GetU32Tick() / 100 % 8 + 1;
 	this->currentFilePos = 0;
 
 	return TRUE;
@@ -195,18 +196,18 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		}
 	}
 
-	__int64 initTime = -1;
-	__int64 base = -1;
+	LONGLONG initTime = -1;
+	LONGLONG base = -1;
 	DWORD initTick = 0;
 	vector<WORD> pcrPidList;
 	DWORD errCount = 0;
 
 	for(;;){
 		{
-			__int64 wait = 0;
+			LONGLONG wait = 0;
 			if( base >= 0 ){
 				//レート調整
-				wait = ((base + 0x200000000LL - initTime) & 0x1FFFFFFFFLL) / 90 - (GetTickCount() - initTick);
+				wait = ((base + 0x200000000LL - initTime) & 0x1FFFFFFFFLL) / 90 - (GetU32Tick() - initTick);
 				base = -1;
 			}else if( errCount > 0 ){
 				//終端監視中
@@ -221,7 +222,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		}
 		lock_recursive_mutex lock(sys->ioLock);
 
-		__int64 pos = _ftelli64(sys->readFile.get());
+		LONGLONG pos = _ftelli64(sys->readFile.get());
 		if( pos < 0 ){
 			break;
 		}
@@ -254,7 +255,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		BYTE* data;
 		DWORD dataSize;
 		if( packetInit.GetTSData(buff, readSize, &data, &dataSize) == FALSE || dataSize <= 0 ){
-			if( sys->fileMode == FALSE && sys->currentFilePos + (__int64)sizeof(buff) > sys->GetAvailableFileSize() ){
+			if( sys->fileMode == FALSE && sys->currentFilePos + (LONGLONG)sizeof(buff) > sys->GetAvailableFileSize() ){
 				//無効なデータ領域を読んでいる可能性がある
 				if( ++errCount > 50 ){
 					break;
@@ -290,7 +291,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 						base = packet.program_clock_reference_base;
 						if( initTime < 0 ){
 							initTime = base;
-							initTick = GetTickCount();
+							initTick = GetU32Tick();
 						}
 					}
 				}
@@ -327,7 +328,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 	sys->sendTcp.AddSendData(buff, sizeof(buff));
 }
 
-static BOOL IsDataAvailable(FILE* fp, __int64 pos, CPacketInit* packetInit)
+static BOOL IsDataAvailable(FILE* fp, LONGLONG pos, CPacketInit* packetInit)
 {
 	if( _fseeki64(fp, pos, SEEK_SET) == 0 ){
 		BYTE buff[188 * 16];
@@ -344,7 +345,7 @@ static BOOL IsDataAvailable(FILE* fp, __int64 pos, CPacketInit* packetInit)
 	return FALSE;
 }
 
-__int64 CTimeShiftUtil::GetAvailableFileSize() const
+LONGLONG CTimeShiftUtil::GetAvailableFileSize() const
 {
 	if( this->filePath.empty() == false ){
 		std::unique_ptr<FILE, decltype(&fclose)> tmpFile(NULL, fclose);
@@ -353,7 +354,7 @@ __int64 CTimeShiftUtil::GetAvailableFileSize() const
 			tmpFile.reset(UtilOpenFile(this->filePath, UTIL_SHARED_READ | UTIL_SH_DELETE));
 			fp = tmpFile.get();
 		}
-		__int64 fileSize = -1;
+		LONGLONG fileSize = -1;
 		if( fp && _fseeki64(fp, 0, SEEK_END) == 0 ){
 			fileSize = _ftelli64(fp);
 		}
@@ -369,8 +370,8 @@ __int64 CTimeShiftUtil::GetAvailableFileSize() const
 				if( IsDataAvailable(fp, fileSize - 188 * 16 * this->seekJitter, &packetInit) == FALSE ){
 					//終端部分が無効なので有効なデータの境目を探す
 					//seekJitterは調査箇所がたまたま壊れている場合への対処
-					__int64 range = fileSize - 188 * 16 * this->seekJitter;
-					__int64 pos = range / 2 / 188 * 188;
+					LONGLONG range = fileSize - 188 * 16 * this->seekJitter;
+					LONGLONG pos = range / 2 / 188 * 188;
 					//ここは頻繁に呼ばれると高負荷に見えるが、ファイルキャッシュがよく効く条件なのでさほどでもない
 					for( ; range > 256 * 1024; range /= 2 ){
 						if( IsDataAvailable(fp, pos, &packetInit) ){
@@ -389,7 +390,7 @@ __int64 CTimeShiftUtil::GetAvailableFileSize() const
 	return 0;
 }
 
-void CTimeShiftUtil::GetFilePos(__int64* filePos, __int64* fileSize)
+void CTimeShiftUtil::GetFilePos(LONGLONG* filePos, LONGLONG* fileSize)
 {
 	lock_recursive_mutex lock(this->utilLock);
 	lock_recursive_mutex lock2(this->ioLock);
@@ -402,7 +403,7 @@ void CTimeShiftUtil::GetFilePos(__int64* filePos, __int64* fileSize)
 	}
 }
 
-void CTimeShiftUtil::SetFilePos(__int64 filePos)
+void CTimeShiftUtil::SetFilePos(LONGLONG filePos)
 {
 	lock_recursive_mutex lock(this->utilLock);
 	lock_recursive_mutex lock2(this->ioLock);

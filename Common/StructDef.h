@@ -99,8 +99,8 @@ struct REC_FILE_INFO {
 	WORD transportStreamID;		//TSID
 	WORD serviceID;				//SID
 	WORD eventID;				//EventID
-	__int64 drops;				//ドロップ数
-	__int64 scrambles;			//スクランブル数
+	LONGLONG drops;				//ドロップ数
+	LONGLONG scrambles;			//スクランブル数
 	DWORD recStatus;			//録画結果のステータス
 	SYSTEMTIME startTimeEpg;	//予約時の開始時間
 	wstring programInfo;		//.program.txtファイルの内容
@@ -310,7 +310,7 @@ struct EPGDB_SEARCH_KEY_INFO {
 	BOOL titleOnlyFlag;
 	vector<EPGDB_CONTENT_DATA> contentList;
 	vector<EPGDB_SEARCH_DATE_INFO> dateList;
-	vector<__int64> serviceList;
+	vector<LONGLONG> serviceList;
 	vector<WORD> videoList;
 	vector<WORD> audioList;
 	BYTE aimaiFlag;
@@ -325,8 +325,8 @@ struct EPGDB_SEARCH_KEY_INFO {
 
 struct SEARCH_PG_PARAM {
 	vector<EPGDB_SEARCH_KEY_INFO> keyList;
-	__int64 enumStart;
-	__int64 enumEnd;
+	LONGLONG enumStart;
+	LONGLONG enumEnd;
 };
 
 //自動予約登録情報
@@ -437,8 +437,8 @@ struct NWPLAY_PLAY_INFO {
 
 struct NWPLAY_POS_CMD {
 	DWORD ctrlID;
-	__int64 currentPos;
-	__int64 totalPos;//CMD2_EPG_SRV_NWPLAY_SET_POS時は無視
+	LONGLONG currentPos;
+	LONGLONG totalPos;//CMD2_EPG_SRV_NWPLAY_SET_POS時は無視
 };
 
 struct NWPLAY_TIMESHIFT_INFO {

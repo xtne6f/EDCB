@@ -9,6 +9,7 @@ CUR_ALL_H := $(wildcard *.h)
 
 $(TARGET).dll: $(addsuffix .obj, \
   Common__StringUtil.cpp \
+  Common__TimeUtil.cpp \
   dllmain.cpp \
   SendTSTCP.cpp \
   SendTSTCPMain.cpp \

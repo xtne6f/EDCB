@@ -2,7 +2,8 @@
 #include "TimeUtil.h"
 #ifndef _WIN32
 #include <time.h>
-#include <stdexcept>
+#include <chrono>
+namespace chrono = std::chrono;
 #endif
 
 LPCWSTR GetDayOfWeekName( WORD wDayOfWeek )
@@ -13,27 +14,41 @@ LPCWSTR GetDayOfWeekName( WORD wDayOfWeek )
 	return name[wDayOfWeek % 7];
 }
 
-__int64 GetNowI64Time()
+DWORD GetU32Tick()
+{
+#ifdef _WIN32
+#ifdef _MSC_VER
+#pragma warning(push)
+// Consider using 'GetTickCount64' instead of 'GetTickCount'
+#pragma warning(disable : 28159)
+#endif
+	return GetTickCount();
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+#else
+	return (DWORD)chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now().time_since_epoch()).count();
+#endif
+}
+
+LONGLONG GetNowI64Time()
 {
 #ifdef _WIN32
 	FILETIME fTime;
 	GetSystemTimeAsFileTime(&fTime);
-	return ((__int64)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime) + I64_UTIL_TIMEZONE;
+	return ((LONGLONG)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime) + I64_UTIL_TIMEZONE;
 #else
-	timespec ts;
-	if( clock_gettime(CLOCK_REALTIME, &ts) ){
-		throw std::runtime_error("");
-	}
-	return (__int64)ts.tv_sec * I64_1SEC + ts.tv_nsec / 100 + 116444736000000000 + I64_UTIL_TIMEZONE;
+	return chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() * 10 +
+	       116444736000000000 + I64_UTIL_TIMEZONE;
 #endif
 }
 
-__int64 ConvertI64Time(SYSTEMTIME Time)
+LONGLONG ConvertI64Time(SYSTEMTIME Time)
 {
 #ifdef _WIN32
 	FILETIME fTime;
 	if( SystemTimeToFileTime( &Time, &fTime ) ){
-		return (__int64)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime;
+		return (LONGLONG)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime;
 	}
 #else
 	tm t = {};
@@ -45,13 +60,13 @@ __int64 ConvertI64Time(SYSTEMTIME Time)
 	t.tm_sec = Time.wSecond;
 	time_t tt = timegm(&t);
 	if( tt != (time_t)-1 ){
-		return (__int64)tt * I64_1SEC + Time.wMilliseconds * 10000 + 116444736000000000;
+		return (LONGLONG)tt * I64_1SEC + Time.wMilliseconds * 10000 + 116444736000000000;
 	}
 #endif
 	return 0;
 }
 
-bool ConvertSystemTime(__int64 i64Time, SYSTEMTIME* Time)
+bool ConvertSystemTime(LONGLONG i64Time, SYSTEMTIME* Time)
 {
 	if( Time != NULL ){
 #ifdef _WIN32
@@ -93,35 +108,36 @@ LPCSTR GetTimeMacroName(int index)
 
 wstring GetTimeMacroValue(int index, SYSTEMTIME Time)
 {
-	wstring val;
-	if( index == 0 ) Format(val, L"%04d", Time.wYear);
-	else if( index == 1 ) Format(val, L"%02d", Time.wYear % 100);
-	else if( index == 2 ) Format(val, L"%02d", Time.wMonth);
-	else if( index == 3 ) Format(val, L"%d", Time.wMonth);
-	else if( index == 4 ) Format(val, L"%02d", Time.wDay);
-	else if( index == 5 ) Format(val, L"%d", Time.wDay);
-	else if( index == 6 ) val = GetDayOfWeekName(Time.wDayOfWeek);
-	else if( index == 7 ) Format(val, L"%02d", Time.wHour);
-	else if( index == 8 ) Format(val, L"%d", Time.wHour);
-	else if( index == 9 ) Format(val, L"%02d", Time.wMinute);
-	else if( index == 10 ) Format(val, L"%d", Time.wMinute);
-	else if( index == 11 ) Format(val, L"%02d", Time.wSecond);
-	else if( index == 12 ) Format(val, L"%d", Time.wSecond);
+	WCHAR val[32];
+	val[0] = L'\0';
+	if( index == 0 ) swprintf_s(val, L"%04d", Time.wYear);
+	else if( index == 1 ) swprintf_s(val, L"%02d", Time.wYear % 100);
+	else if( index == 2 ) swprintf_s(val, L"%02d", Time.wMonth);
+	else if( index == 3 ) swprintf_s(val, L"%d", Time.wMonth);
+	else if( index == 4 ) swprintf_s(val, L"%02d", Time.wDay);
+	else if( index == 5 ) swprintf_s(val, L"%d", Time.wDay);
+	else if( index == 6 ) wcscpy_s(val, GetDayOfWeekName(Time.wDayOfWeek));
+	else if( index == 7 ) swprintf_s(val, L"%02d", Time.wHour);
+	else if( index == 8 ) swprintf_s(val, L"%d", Time.wHour);
+	else if( index == 9 ) swprintf_s(val, L"%02d", Time.wMinute);
+	else if( index == 10 ) swprintf_s(val, L"%d", Time.wMinute);
+	else if( index == 11 ) swprintf_s(val, L"%02d", Time.wSecond);
+	else if( index == 12 ) swprintf_s(val, L"%d", Time.wSecond);
 	else{
 		WORD wHour28 = Time.wHour;
 		if( wHour28 < 4 ){
 			ConvertSystemTime(ConvertI64Time(Time) - 24 * 3600 * I64_1SEC, &Time);
 			wHour28 += 24;
 		}
-		if( index == 13 ) Format(val, L"%04d", Time.wYear);
-		else if( index == 14 ) Format(val, L"%02d", Time.wYear % 100);
-		else if( index == 15 ) Format(val, L"%02d", Time.wMonth);
-		else if( index == 16 ) Format(val, L"%d", Time.wMonth);
-		else if( index == 17 ) Format(val, L"%02d", Time.wDay);
-		else if( index == 18 ) Format(val, L"%d", Time.wDay);
-		else if( index == 19 ) val = GetDayOfWeekName(Time.wDayOfWeek);
-		else if( index == 20 ) Format(val, L"%02d", wHour28);
-		else if( index == 21 ) Format(val, L"%d", wHour28);
+		if( index == 13 ) swprintf_s(val, L"%04d", Time.wYear);
+		else if( index == 14 ) swprintf_s(val, L"%02d", Time.wYear % 100);
+		else if( index == 15 ) swprintf_s(val, L"%02d", Time.wMonth);
+		else if( index == 16 ) swprintf_s(val, L"%d", Time.wMonth);
+		else if( index == 17 ) swprintf_s(val, L"%02d", Time.wDay);
+		else if( index == 18 ) swprintf_s(val, L"%d", Time.wDay);
+		else if( index == 19 ) wcscpy_s(val, GetDayOfWeekName(Time.wDayOfWeek));
+		else if( index == 20 ) swprintf_s(val, L"%02d", wHour28);
+		else if( index == 21 ) swprintf_s(val, L"%d", wHour28);
 	}
 	return val;
 }

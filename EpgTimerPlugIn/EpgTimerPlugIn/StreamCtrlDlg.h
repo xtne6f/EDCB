@@ -45,9 +45,9 @@ protected:
 	void* callbackParam;
 	BOOL thumbTracking;
 	int getPosState;
-	__int64 measuredTotalPos;
-	__int64 measuredFilePos;
-	__int64 totalPosDelta;
-	__int64 filePosDelta;
+	LONGLONG measuredTotalPos;
+	LONGLONG measuredFilePos;
+	LONGLONG totalPosDelta;
+	LONGLONG filePosDelta;
 };
 

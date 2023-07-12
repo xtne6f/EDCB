@@ -45,7 +45,7 @@ struct MAIN_WINDOW_CONTEXT {
 	CTCPServer tcpServer;
 	CHttpServer httpServer;
 	HANDLE resumeTimer;
-	__int64 resumeTime;
+	LONGLONG resumeTime;
 	BYTE shutdownModePending;
 	bool rebootFlagPending;
 	DWORD shutdownPendingTick;
@@ -58,7 +58,7 @@ struct MAIN_WINDOW_CONTEXT {
 	//0,1,2:NOTIFY_UPDATE_SRV_STATUSの値, 3:無効, 3<:点滅
 	DWORD notifySrvStatus;
 	DWORD notifyCount;
-	__int64 notifyTipActiveTime;
+	LONGLONG notifyTipActiveTime;
 	RESERVE_DATA notifyTipReserve;
 	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_)
 		: sys(sys_)
@@ -341,7 +341,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 10, NULL);
 		KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
-		ctx->shutdownPendingTick = GetTickCount();
+		ctx->shutdownPendingTick = GetU32Tick();
 		break;
 	case WM_APP_REQUEST_SHUTDOWN:
 		//シャットダウン処理
@@ -527,7 +527,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_TIMER:
 		switch( wParam ){
 		case TIMER_RELOAD_EPG_CHK_PENDING:
-			if( GetTickCount() - ctx->shutdownPendingTick > 30000 ){
+			if( GetU32Tick() - ctx->shutdownPendingTick > 30000 ){
 				//30秒以内にシャットダウン問い合わせできなければキャンセル
 				if( ctx->shutdownModePending ){
 					ctx->shutdownModePending = SD_MODE_INVALID;
@@ -539,17 +539,17 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					lock_recursive_mutex lock(ctx->sys->autoAddLock);
 					if( ctx->sys->autoAddCheckItr == ctx->sys->epgAutoAdd.GetMap().begin() ){
 						//自動予約登録処理を開始
-						ctx->autoAddCheckTick = GetTickCount();
+						ctx->autoAddCheckTick = GetU32Tick();
 						ctx->autoAddCheckAddList.clear();
 						ctx->autoAddCheckAddCountUpdated = false;
 					}
-					for( DWORD tick = GetTickCount(); ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end(); ){
+					for( DWORD tick = GetU32Tick(); ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end(); ){
 						DWORD addCount = ctx->sys->autoAddCheckItr->second.addCount;
 						ctx->sys->AutoAddReserveEPG(ctx->sys->autoAddCheckItr->second, ctx->autoAddCheckAddList);
 						if( addCount != (ctx->sys->autoAddCheckItr++)->second.addCount ){
 							ctx->autoAddCheckAddCountUpdated = true;
 						}
-						if( GetTickCount() - tick > 200 ){
+						if( GetU32Tick() - tick > 200 ){
 							//タイムアウト
 							break;
 						}
@@ -588,12 +588,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
 					syoboi.SendReserve(&reserveList, &tunerList);
 				}
-				AddDebugLogFormat(L"Done PostLoad EpgData %dmsec", GetTickCount() - ctx->autoAddCheckTick);
+				AddDebugLogFormat(L"Done PostLoad EpgData %dmsec", GetU32Tick() - ctx->autoAddCheckTick);
 			}
 			break;
 		case TIMER_QUERY_SHUTDOWN_PENDING:
-			if( GetTickCount() - ctx->shutdownPendingTick >= 100000 ){
-				if( GetTickCount() - ctx->shutdownPendingTick - 100000 > 30000 ){
+			if( GetU32Tick() - ctx->shutdownPendingTick >= 100000 ){
+				if( GetU32Tick() - ctx->shutdownPendingTick - 100000 > 30000 ){
 					//30秒以内にシャットダウン問い合わせできなければキャンセル
 					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->shutdownModePending ){
@@ -654,7 +654,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 				//チップヘルプの更新が必要かチェック
 				RESERVE_DATA r;
-				__int64 activeTime = ctx->sys->reserveManager.GetSleepReturnTime(GetNowI64Time(), &r);
+				LONGLONG activeTime = ctx->sys->reserveManager.GetSleepReturnTime(GetNowI64Time(), &r);
 				if( activeTime != ctx->notifyTipActiveTime || activeTime != LLONG_MAX &&
 				    (r.reserveID != ctx->notifyTipReserve.reserveID ||
 				     ConvertI64Time(r.startTime) != ConvertI64Time(ctx->notifyTipReserve.startTime) ||
@@ -874,7 +874,7 @@ void CEpgTimerSrvMain::OpenGUI()
 
 void CEpgTimerSrvMain::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list)
 {
-	__int64 maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
+	LONGLONG maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
 	list.erase(std::remove_if(list.begin(), list.end(), [=](const RESERVE_DATA& a) {
 		return a.recSetting.IsNoRec() || ConvertI64Time(a.startTime) > maxTime;
 	}), list.end());
@@ -947,7 +947,7 @@ bool CEpgTimerSrvMain::IsSuspendOK() const
 		marginSec = max(this->setting.wakeTime + 5 + 3, this->setting.noStandbyTime) * 60;
 		noFileStreaming = this->setting.noFileStreaming;
 	}
-	__int64 now = GetNowI64Time();
+	LONGLONG now = GetNowI64Time();
 	//シャットダウン可能で復帰が間に合うときだけ
 	return (noFileStreaming == false || this->streamingManager.empty()) &&
 	       this->reserveManager.IsActive() == false &&
@@ -1008,7 +1008,7 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
 }
 
-RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(__int64 startTime) const
+RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(LONGLONG startTime) const
 {
 	lock_recursive_mutex lock(this->settingLock);
 
@@ -1041,9 +1041,9 @@ void CEpgTimerSrvMain::AdjustRecModeRange(REC_SETTING_DATA& recSetting) const
 	}
 }
 
-bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec)
+bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime, DWORD marginSec)
 {
-	__int64 returnTime = this->reserveManager.GetSleepReturnTime(GetNowI64Time() + marginSec * I64_1SEC);
+	LONGLONG returnTime = this->reserveManager.GetSleepReturnTime(GetNowI64Time() + marginSec * I64_1SEC);
 	if( returnTime == LLONG_MAX ){
 		if( *resumeTimer != NULL ){
 			CloseHandle(*resumeTimer);
@@ -1051,7 +1051,7 @@ bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, 
 		}
 		return true;
 	}
-	__int64 setTime = returnTime - marginSec * I64_1SEC;
+	LONGLONG setTime = returnTime - marginSec * I64_1SEC;
 	if( *resumeTimer != NULL && *resumeTime == setTime ){
 		//同時刻でセット済み
 		return true;
@@ -1122,7 +1122,7 @@ bool CEpgTimerSrvMain::IsUserWorking() const
 	lii.cbSize = sizeof(LASTINPUTINFO);
 	if( this->setting.noUsePC ){
 		if( this->setting.noUsePCTime != 0 ){
-			return GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < this->setting.noUsePCTime * 60 * 1000;
+			return GetLastInputInfo(&lii) && GetU32Tick() - lii.dwTime < this->setting.noUsePCTime * 60 * 1000;
 		}
 		//閾値が0のときは常に使用中扱い
 		return true;
@@ -1258,7 +1258,7 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 		separateFixedTuners = this->setting.separateFixedTuners;
 		commentAutoAdd = this->setting.commentAutoAdd;
 	}
-	__int64 now = GetNowI64Time();
+	LONGLONG now = GetNowI64Time();
 
 	wstring findKeyBuff;
 	vector<pair<EPGDB_EVENT_INFO, wstring>> resultList;
@@ -1374,18 +1374,18 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, vector<RESERVE_DATA>& setList) const
 {
 	SYSTEMTIME baseTime;
-	__int64 now = GetNowI64Time();
+	LONGLONG now = GetNowI64Time();
 	ConvertSystemTime(now, &baseTime);
 	baseTime.wHour = 0;
 	baseTime.wMinute = 0;
 	baseTime.wSecond = 0;
 	baseTime.wMilliseconds = 0;
-	__int64 baseStartTime = ConvertI64Time(baseTime);
+	LONGLONG baseStartTime = ConvertI64Time(baseTime);
 
 	for( int i = 0; i < 8; i++ ){
 		//今日から8日分を調べる
 		if( data.dayOfWeekFlag >> ((i + baseTime.wDayOfWeek) % 7) & 1 ){
-			__int64 startTime = baseStartTime + (data.startTime + i * 24 * 60 * 60) * I64_1SEC;
+			LONGLONG startTime = baseStartTime + (data.startTime + i * 24 * 60 * 60) * I64_1SEC;
 			if( startTime > now ){
 				//同一時間の予約がすでにあるかチェック
 				if( this->reserveManager.FindProgramReserve(
@@ -1582,7 +1582,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			res.SetParam(CMD_ERR_BUSY);
 		}else{
-			__int64 serviceKey[2] = {};
+			LONGLONG serviceKey[2] = {};
 			if( cmd.ReadVALUE(serviceKey + 1) ){
 				vector<const EPGDB_EVENT_INFO*> valp;
 				sys->epgDB.EnumEventInfo(serviceKey, 2, 0, LLONG_MAX, [&res, &valp](const EPGDB_EVENT_INFO* val, const EPGDB_SERVICE_INFO*) {
@@ -1836,10 +1836,10 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			res.SetParam(CMD_ERR_BUSY);
 		}else{
-			vector<__int64> key;
+			vector<LONGLONG> key;
 			if( cmd.ReadVALUE(&key) && key.size() % 2 == 0 ){
 				for( size_t i = 0; i + 1 < key.size(); i += 2 ){
-					pair<__int64, __int64> ret;
+					pair<LONGLONG, LONGLONG> ret;
 					if( cmd.GetParam() == CMD2_EPG_SRV_GET_PG_INFO_MINMAX ){
 						ret = sys->epgDB.GetEventMinMaxTime(key[i], key[i + 1]);
 					}else{
@@ -1859,7 +1859,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
 			res.SetParam(CMD_ERR_BUSY);
 		}else{
-			vector<__int64> keyAndRange;
+			vector<LONGLONG> keyAndRange;
 			if( cmd.ReadVALUE(&keyAndRange) && keyAndRange.size() >= 2 ){
 				vector<EPGDB_SERVICE_EVENT_INFO_PTR> ret;
 				vector<EPGDB_SERVICE_EVENT_INFO_PTR>::iterator itr = ret.end();
@@ -1951,11 +1951,11 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 				fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
 				std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(logPath, UTIL_SHARED_READ), fclose);
 				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-					__int64 count = _ftelli64(fp.get());
+					LONGLONG count = _ftelli64(fp.get());
 					if( count >= 0 ){
 						//末尾からn行だけ戻った位置をさがす
 						const DWORD sowc = sizeof(WCHAR);
-						__int64 pos = count = count / sowc;
+						LONGLONG pos = count = count / sowc;
 						while( pos > 1 && n > 0 ){
 							DWORD dwRead = (DWORD)min(pos - 1, 4096LL);
 							WCHAR buff[4096];
@@ -2869,9 +2869,9 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 						}else{
 							std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
 							if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-								__int64 fileSize = _ftelli64(fp.get());
+								LONGLONG fileSize = _ftelli64(fp.get());
 								if( 0 < fileSize ){
-									if( (__int64)totalSizeRemain < fileSize ){
+									if( (LONGLONG)totalSizeRemain < fileSize ){
 										result.resize(i);
 										break;
 									}
@@ -2900,7 +2900,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 			if( this->epgDB.IsInitialLoadingDataDone() == false ){
 				res.SetParam(CMD_ERR_BUSY);
 			}else{
-				vector<__int64> idList;
+				vector<LONGLONG> idList;
 				if( cmd.ReadVALUE(&idList) ){
 					vector<const EPGDB_EVENT_INFO*> valp;
 					vector<EPGDB_EVENT_INFO> val(idList.size());
@@ -3172,12 +3172,12 @@ int CEpgTimerSrvMain::LuaSleep(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	DWORD wait = (DWORD)lua_tointeger(L, 1);
-	DWORD base = GetTickCount();
+	DWORD base = GetU32Tick();
 	DWORD tick = base;
 	do{
 		//stoppingFlagでも必ず休む
 		Sleep(min<DWORD>(wait - (tick - base), 100));
-		tick = GetTickCount();
+		tick = GetU32Tick();
 	}while( wait > tick - base && ws.sys->stoppingFlag == false );
 	lua_pushboolean(L, ws.sys->stoppingFlag);
 	return 1;
@@ -3374,10 +3374,10 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTimeProc(lua_State* L, bool archive)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 3 ){
-		pair<__int64, __int64> ret;
-		__int64 onid = (__int64)min(max(lua_tonumber(L, 1), 0.0), 1e+16);
-		__int64 tsid = (__int64)min(max(lua_tonumber(L, 2), 0.0), 1e+16);
-		__int64 sid = (__int64)min(max(lua_tonumber(L, 3), 0.0), 1e+16);
+		pair<LONGLONG, LONGLONG> ret;
+		LONGLONG onid = (LONGLONG)min(max(lua_tonumber(L, 1), 0.0), 1e+16);
+		LONGLONG tsid = (LONGLONG)min(max(lua_tonumber(L, 2), 0.0), 1e+16);
+		LONGLONG sid = (LONGLONG)min(max(lua_tonumber(L, 3), 0.0), 1e+16);
 		if( archive ){
 			ret = ws.sys->epgDB.GetArchiveEventMinMaxTime(Create64Key((WORD)(onid >> 16), (WORD)(tsid >> 16), (WORD)(sid >> 16)),
 			                                              Create64Key((WORD)onid, (WORD)tsid, (WORD)sid));
@@ -3413,9 +3413,9 @@ int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 {
 	CLuaWorkspace ws(L);
 	if( (lua_gettop(L) == 1 || lua_gettop(L) == 2) && lua_istable(L, 1) ){
-		vector<__int64> key;
-		__int64 enumStart = 0;
-		__int64 enumEnd = LLONG_MAX;
+		vector<LONGLONG> key;
+		LONGLONG enumStart = 0;
+		LONGLONG enumEnd = LLONG_MAX;
 		if( lua_gettop(L) == 2 ){
 			if( lua_istable(L, -1) ){
 				if( LuaHelp::isnil(L, "startTime") ){
@@ -3481,8 +3481,8 @@ int CEpgTimerSrvMain::LuaSearchEpgProc(lua_State* L, bool archive)
 			return 1;
 		}
 	}else if( (lua_gettop(L) == 1 || lua_gettop(L) == 2) && lua_istable(L, 1) ){
-		__int64 enumStart = 0;
-		__int64 enumEnd = LLONG_MAX;
+		LONGLONG enumStart = 0;
+		LONGLONG enumEnd = LLONG_MAX;
 		if( lua_gettop(L) == 2 ){
 			if( lua_istable(L, -1) ){
 				if( LuaHelp::isnil(L, "startTime") ){
@@ -3515,7 +3515,7 @@ int CEpgTimerSrvMain::LuaSearchEpgProc(lua_State* L, bool archive)
 			}
 		}
 		//対象期間
-		__int64 chkTime = LuaHelp::get_int(L, "days") * 24 * 60 * 60 * I64_1SEC;
+		LONGLONG chkTime = LuaHelp::get_int(L, "days") * 24 * 60 * 60 * I64_1SEC;
 		if( chkTime > 0 ){
 			SYSTEMTIME now;
 			ConvertSystemTime(GetNowI64Time(), &now);
@@ -4367,8 +4367,8 @@ void CEpgTimerSrvMain::FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY
 				break;
 			}
 			k.serviceList.push_back(
-				(__int64)LuaHelp::get_int(L, "onid") << 32 |
-				(__int64)LuaHelp::get_int(L, "tsid") << 16 |
+				(LONGLONG)LuaHelp::get_int(L, "onid") << 32 |
+				(LONGLONG)LuaHelp::get_int(L, "tsid") << 16 |
 				LuaHelp::get_int(L, "sid"));
 			lua_pop(L, 1);
 		}

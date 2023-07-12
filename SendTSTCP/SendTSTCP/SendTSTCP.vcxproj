@@ -190,6 +190,7 @@
     <ClInclude Include="..\..\Common\InstanceManager.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\ThreadUtil.h" />
+    <ClInclude Include="..\..\Common\TimeUtil.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SendTSTCPMain.h" />
     <ClInclude Include="stdafx.h" />
@@ -197,6 +198,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
+    <ClCompile Include="..\..\Common\TimeUtil.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</CompileAsManaged>

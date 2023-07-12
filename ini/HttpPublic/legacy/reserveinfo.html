@@ -127,12 +127,10 @@ if r then
         ct:Append((vtag==i and '<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
                      ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
                      ..'<div class="video-container arib-video-container" id="vid-cont">'
-                     ..'<video id="vid" autoplay controls src="' or '<a href="')
+                     ..'<video id="vid" autoplay playsinline controls src="' or '<a href="')
           ..(vtag~=0 and vtag~=i and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
           ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
-                                                ..'.vtt" type="text/vtt" default></video></div></div>\n'
-                                                ..'<div id="psidatasrc" style="display:none">'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
-                                                ..'.psc</div>\n'..VideoScriptTemplete() or '</a>'))
+                                                ..'.vtt" type="text/vtt" default></video></div></div>\n'..VideoScriptTemplete() or '</a>'))
         if ext=='' then
           fsec,fsize=0,0
           f=edcb.io.open(recFilePath,'rb')
@@ -152,10 +150,10 @@ if r then
             ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
               ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
               ..'<div class="video-container arib-video-container" id="vid-cont">'
-              ..'<video id="vid" autoplay controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>\n'
+              ..'<video id="vid" autoplay playsinline controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>\n'
               ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(false,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
             if ALLOW_HLS then
-              ct:Append(HlsScriptTemplete(xq.caption))
+              ct:Append(HlsScriptTemplete())
             end
           end
         else

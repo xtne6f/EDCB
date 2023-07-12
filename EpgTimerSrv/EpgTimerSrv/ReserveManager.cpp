@@ -219,8 +219,8 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 	lock_recursive_mutex lock(this->managerLock);
 
 	bool modified = false;
-	__int64 minStartTime = LLONG_MAX;
-	__int64 now = GetNowI64Time();
+	LONGLONG minStartTime = LLONG_MAX;
+	LONGLONG now = GetNowI64Time();
 	vector<CBatManager::BAT_WORK_INFO> batWorkList;
 	for( size_t i = 0; i < reserveList.size(); i++ ){
 		RESERVE_DATA r = reserveList[i];
@@ -240,7 +240,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			this->reserveModified = true;
 			modified = true;
 			if( r.recSetting.IsNoRec() == false ){
-				__int64 startTime;
+				LONGLONG startTime;
 				CalcEntireReserveTime(&startTime, NULL, r);
 				minStartTime = min(startTime, minStartTime);
 				batWorkList.resize(batWorkList.size() + 1);
@@ -264,7 +264,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 	lock_recursive_mutex lock(this->managerLock);
 
 	bool modified = false;
-	__int64 minStartTime = LLONG_MAX;
+	LONGLONG minStartTime = LLONG_MAX;
 	vector<CBatManager::BAT_WORK_INFO> batWorkList;
 	for( size_t i = 0; i < reserveList.size(); i++ ){
 		RESERVE_DATA r = reserveList[i];
@@ -291,7 +291,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 						}
 					}
 					r.overlapMode = RESERVE_EXECUTE;
-					__int64 startTime;
+					LONGLONG startTime;
 					CalcEntireReserveTime(&startTime, NULL, itr->second);
 					minStartTime = min(startTime, minStartTime);
 				}
@@ -314,12 +314,12 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				tr.pittari = r.recSetting.pittariFlag != 0;
 				tr.partialRecMode = r.recSetting.partialRecFlag;
 				tr.continueRecFlag = r.recSetting.continueRecFlag != 0;
-				__int64 startTime, endTime;
+				LONGLONG startTime, endTime;
 				CalcEntireReserveTime(&startTime, &endTime, r);
 				tr.startTime = ConvertI64Time(r.startTime);
 				tr.durationSecond = r.durationSecond;
-				__int64 startMargin = tr.startMargin = tr.startTime - startTime;
-				__int64 endMargin = tr.endMargin = endTime - (tr.startTime + tr.durationSecond * I64_1SEC);
+				LONGLONG startMargin = tr.startMargin = tr.startTime - startTime;
+				LONGLONG endMargin = tr.endMargin = endTime - (tr.startTime + tr.durationSecond * I64_1SEC);
 				tr.recFolder = r.recSetting.recFolderList;
 				tr.partialRecFolder = r.recSetting.partialRecFolder;
 
@@ -384,7 +384,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				        r.recSetting.startMargine != itr->second.recSetting.startMargine ||
 				        r.recSetting.endMargine != itr->second.recSetting.endMargine) ||
 				    r.recSetting.tunerID != itr->second.recSetting.tunerID ){
-					__int64 startTimeNext;
+					LONGLONG startTimeNext;
 					CalcEntireReserveTime(&startTime, NULL, itr->second);
 					CalcEntireReserveTime(&startTimeNext, NULL, r);
 					minStartTime = min(min(startTime, startTimeNext), minStartTime);
@@ -414,7 +414,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 	lock_recursive_mutex lock(this->managerLock);
 
 	vector<CTunerBankCtrl::CHECK_RESULT> retList;
-	__int64 minStartTime = LLONG_MAX;
+	LONGLONG minStartTime = LLONG_MAX;
 	for( size_t i = 0; i < idList.size(); i++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(idList[i]);
 		if( itr != this->reserveText.GetMap().end() ){
@@ -425,7 +425,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 						break;
 					}
 				}
-				__int64 startTime;
+				LONGLONG startTime;
 				CalcEntireReserveTime(&startTime, NULL, itr->second);
 				minStartTime = min(startTime, minStartTime);
 			}
@@ -533,7 +533,7 @@ void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoLis
 	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 }
 
-void CReserveManager::ReloadBankMap(__int64 reloadTime)
+void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 {
 	lock_recursive_mutex lock(this->managerLock);
 
@@ -541,16 +541,16 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 		return;
 	}
 	AddDebugLog(L"Start ReloadBankMap");
-	DWORD tick = GetTickCount();
+	DWORD tick = GetU32Tick();
 
-	__int64 boundaryReloadTime = 0;
+	LONGLONG boundaryReloadTime = 0;
 
 	//reloadTimeより前の予約を開始時間順にソート
-	vector<pair<__int64, const RESERVE_DATA*>> sortTimeMap;
+	vector<pair<LONGLONG, const RESERVE_DATA*>> sortTimeMap;
 	sortTimeMap.push_back(std::make_pair(reloadTime, (RESERVE_DATA*)NULL));
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		if( itr->second.recSetting.IsNoRec() == false ){
-			__int64 startTime;
+			LONGLONG startTime;
 			CalcEntireReserveTime(&startTime, NULL, itr->second);
 			if( startTime < reloadTime ){
 				sortTimeMap.push_back(std::make_pair(startTime, &itr->second));
@@ -563,7 +563,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 	for( auto itrTime = sortTimeMap.crbegin(); itrTime != sortTimeMap.rend(); itrTime++ ){
 		auto itrRes = itrTime;
 		for( itrRes++; itrRes != sortTimeMap.rend(); itrRes++ ){
-			__int64 endTime;
+			LONGLONG endTime;
 			CalcEntireReserveTime(NULL, &endTime, *itrRes->second);
 			if( endTime + CTunerBankCtrl::READY_MARGIN * I64_1SEC > itrTime->first ){
 				break;
@@ -588,7 +588,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 	sortTimeMap.clear();
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		if( itr->second.recSetting.IsNoRec() == false ){
-			__int64 startTime;
+			LONGLONG startTime;
 			CalcEntireReserveTime(&startTime, NULL, itr->second);
 			if( startTime >= boundaryReloadTime ){
 				this->reserveText.SetOverlapMode(itr->first, RESERVE_NO_EXECUTE);
@@ -599,13 +599,13 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 	std::sort(sortTimeMap.begin(), sortTimeMap.end());
 
 	//バンク未決の予約マップ
-	vector<pair<__int64, const RESERVE_DATA*>> sortResMap;
+	vector<pair<LONGLONG, const RESERVE_DATA*>> sortResMap;
 
 	//予約を無予約時間帯ごとに組分けしてバンク配置する(組ごとに独立して処理できるので速度や配置安定性が増す)
 	for( auto itrTime = sortTimeMap.crbegin(); itrTime != sortTimeMap.rend(); ){
 		auto itrRes = itrTime;
 		for( itrRes++; itrRes != sortTimeMap.rend(); itrRes++ ){
-			__int64 endTime;
+			LONGLONG endTime;
 			CalcEntireReserveTime(NULL, &endTime, *itrRes->second);
 			if( endTime + CTunerBankCtrl::READY_MARGIN * I64_1SEC > itrTime->first ){
 				break;
@@ -616,9 +616,9 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			sortResMap.clear();
 			for( itrRes = sortTimeMap.rbegin(); itrRes != itrTime; itrRes++ ){
 				//バンク決定順のキーはチューナ固定優先ビットつき実効優先度(予約優先度<<60|チューナ固定優先ビット<<59|開始順)
-				__int64 startOrder = itrRes->first / I64_1SEC << 16 | (itrRes->second->reserveID & 0xFFFF);
-				__int64 priority = (this->setting.backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
-				__int64 fixedBit = (this->setting.fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->setting.backPriority : !this->setting.backPriority;
+				LONGLONG startOrder = itrRes->first / I64_1SEC << 16 | (itrRes->second->reserveID & 0xFFFF);
+				LONGLONG priority = (this->setting.backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
+				LONGLONG fixedBit = (this->setting.fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->setting.backPriority : !this->setting.backPriority;
 				sortResMap.push_back(std::make_pair((this->setting.backPriority ? -1 : 1) * (priority << 60 | fixedBit << 59 | startOrder), itrRes->second));
 			}
 			std::sort(sortResMap.begin(), sortResMap.end());
@@ -677,14 +677,14 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 				}else{
 					//もっとも良いと思われるバンクに割り当てる
 					vector<pair<DWORD, CHK_BANK_DATA>>::iterator itrMin = bankResMap.end();
-					__int64 costMin = LLONG_MAX;
-					__int64 durationMin = 0;
+					LONGLONG costMin = LLONG_MAX;
+					LONGLONG durationMin = 0;
 					for( vector<pair<DWORD, CHK_BANK_DATA>>::iterator jtr = bankResMap.begin(); jtr != bankResMap.end(); jtr++ ){
 						//NGチューナを除く
 						if( std::find(itr->second->ngTunerIDList.begin(), itr->second->ngTunerIDList.end(), jtr->first) == itr->second->ngTunerIDList.end() &&
 						    this->tunerBankMap.find(jtr->first)->second->GetCh(itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
 							CHK_RESERVE_DATA testItem = item;
-							__int64 cost = ChkInsertStatus(jtr->second.assignedResList, testItem, false);
+							LONGLONG cost = ChkInsertStatus(jtr->second.assignedResList, testItem, false);
 							if( cost < costMin ){
 								itrMin = jtr;
 								costMin = cost;
@@ -707,7 +707,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			for( vector<pair<DWORD, CHK_BANK_DATA>>::const_iterator itr = bankResMap.begin(); itr != bankResMap.end(); itr++ ){
 				for( size_t i = 0; i < itr->second.assignedResList.size(); i++ ){
 					const RESERVE_DATA& r = *itr->second.assignedResList[i].r;
-					__int64 startTime, endTime;
+					LONGLONG startTime, endTime;
 					CalcEntireReserveTime(&startTime, &endTime, r);
 					//かぶり状態を記録する(参考程度の情報)
 					this->reserveText.SetOverlapMode(r.reserveID,
@@ -741,20 +741,20 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 		}
 	}
 
-	AddDebugLogFormat(L"End ReloadBankMap %dmsec", GetTickCount() - tick);
+	AddDebugLogFormat(L"End ReloadBankMap %dmsec", GetU32Tick() - tick);
 }
 
-__int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const
+LONGLONG CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const
 {
 	//lock_recursive_mutex lock(this->managerLock);
 
-	__int64 distanceSameCh[] = { LLONG_MAX, LLONG_MAX };
-	__int64 distanceOtherCh[] = { LLONG_MAX, LLONG_MAX };
-	__int64 otherCosts[5] = {};
+	LONGLONG distanceSameCh[] = { LLONG_MAX, LLONG_MAX };
+	LONGLONG distanceOtherCh[] = { LLONG_MAX, LLONG_MAX };
+	LONGLONG otherCosts[5] = {};
 
 	for( size_t i = 0; i < bank.size(); i++ ){
 		bool latter = false;
-		__int64 dist = -1;
+		LONGLONG dist = -1;
 		if( bank[i].cutStartTime >= inItem.cutEndTime ){
 			latter = true;
 			dist = bank[i].cutStartTime - inItem.cutEndTime;
@@ -771,12 +771,12 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 				//相手が高優先度なので自分の予約時間を削る
 				if( bank[i].startOrder > inItem.startOrder ){
 					//相手が遅れて開始するので自分の後方を削る
-					__int64 cutEndTime = max(min(inItem.cutEndTime, bank[i].cutStartTime), inItem.cutStartTime);
+					LONGLONG cutEndTime = max(min(inItem.cutEndTime, bank[i].cutStartTime), inItem.cutStartTime);
 					otherCosts[min(max<int>(inItem.r->recSetting.priority, 1), 5) - 1] += inItem.cutEndTime - cutEndTime;
 					inItem.cutEndTime = cutEndTime;
 				}else{
 					//前方を削る
-					__int64 cutStartTime = min(max(inItem.cutStartTime, bank[i].cutEndTime), inItem.cutEndTime);
+					LONGLONG cutStartTime = min(max(inItem.cutStartTime, bank[i].cutEndTime), inItem.cutEndTime);
 					otherCosts[min(max<int>(inItem.r->recSetting.priority, 1), 5) - 1] += cutStartTime - inItem.cutStartTime;
 					inItem.cutStartTime = cutStartTime;
 				}
@@ -784,14 +784,14 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 				//相手の予約時間を削る
 				if( inItem.startOrder > bank[i].startOrder ){
 					//相手の後方を削る
-					__int64 cutEndTime = max(min(bank[i].cutEndTime, inItem.cutStartTime), bank[i].cutStartTime);
+					LONGLONG cutEndTime = max(min(bank[i].cutEndTime, inItem.cutStartTime), bank[i].cutStartTime);
 					otherCosts[min(max<int>(bank[i].r->recSetting.priority, 1), 5) - 1] += bank[i].cutEndTime - cutEndTime;
 					if( modifyBank ){
 						bank[i].cutEndTime = cutEndTime;
 					}
 				}else{
 					//前方を削る
-					__int64 cutStartTime = bank[i].started ? bank[i].cutEndTime : min(max(bank[i].cutStartTime, inItem.cutEndTime), bank[i].cutEndTime);
+					LONGLONG cutStartTime = bank[i].started ? bank[i].cutEndTime : min(max(bank[i].cutStartTime, inItem.cutEndTime), bank[i].cutEndTime);
 					otherCosts[min(max<int>(bank[i].r->recSetting.priority, 1), 5) - 1] += cutStartTime - bank[i].cutStartTime;
 					if( modifyBank ){
 						bank[i].cutStartTime = cutStartTime;
@@ -802,8 +802,8 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 	}
 
 	//優先度ごとに重みをつけてコストを算出
-	__int64 cost = 0;
-	__int64 weight = 1;
+	LONGLONG cost = 0;
+	LONGLONG weight = 1;
 	for( int i = 0; i < 5; i++ ){
 		cost += min((otherCosts[i] + 10 * I64_1SEC - 1) / (10 * I64_1SEC), 5400LL - 1) * weight;
 		weight *= 5400;
@@ -811,7 +811,7 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 	if( cost == 0 ){
 		//犠牲なく配置できる
 		//TODO: コスト0以下はどれを選んでもよいということなので、より良い配置を投機的に評価するとよいかも
-		__int64 dist = min(distanceSameCh[0] < distanceOtherCh[0] ? distanceSameCh[0] : LLONG_MAX,
+		LONGLONG dist = min(distanceSameCh[0] < distanceOtherCh[0] ? distanceSameCh[0] : LLONG_MAX,
 		                   distanceSameCh[1] < distanceOtherCh[1] ? distanceSameCh[1] : LLONG_MAX);
 		//同一チャンネルで重なっていれば最低コスト、近ければまとまりが良いので低コストとする
 		cost = -5401;
@@ -822,14 +822,14 @@ __int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RES
 	return cost;
 }
 
-void CReserveManager::CalcEntireReserveTime(__int64* startTime, __int64* endTime, const RESERVE_DATA& data) const
+void CReserveManager::CalcEntireReserveTime(LONGLONG* startTime, LONGLONG* endTime, const RESERVE_DATA& data) const
 {
 	//lock_recursive_mutex lock(this->managerLock);
 
-	__int64 startTime_ = ConvertI64Time(data.startTime);
-	__int64 endTime_ = startTime_ + data.durationSecond * I64_1SEC;
-	__int64 startMargin = this->setting.startMargin * I64_1SEC;
-	__int64 endMargin = this->setting.endMargin * I64_1SEC;
+	LONGLONG startTime_ = ConvertI64Time(data.startTime);
+	LONGLONG endTime_ = startTime_ + data.durationSecond * I64_1SEC;
+	LONGLONG startMargin = this->setting.startMargin * I64_1SEC;
+	LONGLONG endMargin = this->setting.endMargin * I64_1SEC;
 	if( data.recSetting.useMargineFlag != 0 ){
 		startMargin = data.recSetting.startMargine * I64_1SEC;
 		endMargin = data.recSetting.endMargine * I64_1SEC;
@@ -986,7 +986,7 @@ void CReserveManager::CheckTuijyuTuner()
 							}
 							if( info.DurationFlag == 0 ){
 								//継続時間未定。終了まで5分を切る予約は5分伸ばす
-								__int64 endTime;
+								LONGLONG endTime;
 								CalcEntireReserveTime(NULL, &endTime, r);
 								if( endTime < GetNowI64Time() + 300 * I64_1SEC ){
 									r.durationSecond += 300;
@@ -1001,7 +1001,7 @@ void CReserveManager::CheckTuijyuTuner()
 							}
 						}else{
 							//開始時刻未定。次(following)かつ終了まで5分を切る予約は5分伸ばす
-							__int64 endTime;
+							LONGLONG endTime;
 							CalcEntireReserveTime(NULL, &endTime, r);
 							if( i == 1 && endTime < GetNowI64Time() + 300 * I64_1SEC ){
 								r.durationSecond += 300;
@@ -1067,7 +1067,7 @@ void CReserveManager::CheckTuijyuTuner()
 					bool chgResStatusOnly = false;
 					if( pfUnknownEnd ){
 						//EIT[p/f]の継続時間未定。以降の予約も時間未定とみなし、終了まで5分を切る予約は5分伸ばす
-						__int64 startTime, endTime;
+						LONGLONG startTime, endTime;
 						CalcEntireReserveTime(&startTime, &endTime, r);
 						if( endTime - startTime < this->setting.tuijyuHour * 3600 * I64_1SEC && endTime < GetNowI64Time() + 300 * I64_1SEC ){
 							r.durationSecond += 300;
@@ -1090,7 +1090,7 @@ void CReserveManager::CheckTuijyuTuner()
 							const EPGDB_EVENT_INFO& info = resPfVal[i];
 							if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
 							    r.title.empty() == false && info.hasShortInfo && r.title == info.shortInfo.event_name ){
-								__int64 endTime = ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC;
+								LONGLONG endTime = ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC;
 								if( endTime > ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
 									r.durationSecond = (DWORD)((endTime - ConvertI64Time(r.startTime)) / I64_1SEC) + 1;
 									chgRes = true;
@@ -1163,16 +1163,16 @@ void CReserveManager::CheckAutoDel() const
 	}
 
 	//ドライブレベルでのチェック
-	__int64 now = GetNowI64Time();
+	LONGLONG now = GetNowI64Time();
 	for( size_t checkIndex = 0; checkIndex < mountList.size(); checkIndex++ ){
 		if( mountList[checkIndex].empty() ){
 			//チェック済み
 			continue;
 		}
 		//直近で必要になりそうな空き領域を概算する
-		__int64 needSize = 0;
+		LONGLONG needSize = 0;
 		for( auto jtr = this->reserveText.GetMap().cbegin(); jtr != this->reserveText.GetMap().end(); jtr++ ){
-			__int64 startTime, endTime;
+			LONGLONG startTime, endTime;
 			CalcEntireReserveTime(&startTime, &endTime, jtr->second);
 			if( jtr->second.recSetting.IsNoRec() == false &&
 			    jtr->second.recSetting.GetRecMode() != RECMODE_VIEW &&
@@ -1196,17 +1196,17 @@ void CReserveManager::CheckAutoDel() const
 						//(厳密にやるのは簡単ではないので、従来通りゆるい実装にしておく)
 						if( now < startTime ){
 							DWORD bitrate = GetBitrateFromIni(jtr->second.originalNetworkID, jtr->second.transportStreamID, jtr->second.serviceID);
-							needSize += (__int64)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
+							needSize += (LONGLONG)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
 						}
 					}
 				}
 			}
 		}
 
-		__int64 freeBytes = UtilGetStorageFreeBytes(this->setting.delChkList[checkIndex]);
+		LONGLONG freeBytes = UtilGetStorageFreeBytes(this->setting.delChkList[checkIndex]);
 		if( freeBytes >= 0 && freeBytes < needSize ){
 			//ドライブにある古いTS順に必要なだけ消す
-			__int64 needFreeSize = needSize - freeBytes;
+			LONGLONG needFreeSize = needSize - freeBytes;
 			vector<pair<UTIL_FIND_DATA, size_t>> findList;
 			for( size_t i = checkIndex; i < mountList.size(); i++ ){
 				if( CompareNoCase(mountList[i], mountList[checkIndex]) == 0 ){
@@ -1256,11 +1256,11 @@ void CReserveManager::CheckOverTimeReserve()
 	lock_recursive_mutex lock(this->managerLock);
 
 	bool modified = false;
-	__int64 now = GetNowI64Time();
+	LONGLONG now = GetNowI64Time();
 	vector<DWORD> noList = GetNoTunerReserveAll();
 	for( size_t i = 0; i < noList.size(); i++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(noList[i]);
-		__int64 endTime;
+		LONGLONG endTime;
 		CalcEntireReserveTime(NULL, &endTime, itr->second);
 		if( endTime < now ){
 			//終了時間過ぎてしまっている
@@ -1443,7 +1443,7 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 	if( this->checkCount % 3 == 0 ){
 		CheckTuijyuTuner();
 	}
-	__int64 idleMargin = GetNearestRecReserveTime() - GetNowI64Time();
+	LONGLONG idleMargin = GetNearestRecReserveTime() - GetNowI64Time();
 	this->batManager.SetIdleMargin((DWORD)min(max(idleMargin / I64_1SEC, 0LL), 0xFFFFFFFFLL));
 	this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
 
@@ -1468,7 +1468,7 @@ pair<CReserveManager::CHECK_STATUS, int> CReserveManager::Check()
 	return std::make_pair(CHECK_NO_ACTION, 0);
 }
 
-vector<CTunerBankCtrl*> CReserveManager::GetEpgCapTunerList(__int64 now) const
+vector<CTunerBankCtrl*> CReserveManager::GetEpgCapTunerList(LONGLONG now) const
 {
 	lock_recursive_mutex lock(this->managerLock);
 
@@ -1485,7 +1485,7 @@ vector<CTunerBankCtrl*> CReserveManager::GetEpgCapTunerList(__int64 now) const
 				continue;
 			}
 			CTunerBankCtrl::TR_STATE state = itr->second->GetState();
-			__int64 minTime = itr->second->GetNearestReserveTime();
+			LONGLONG minTime = itr->second->GetNearestReserveTime();
 			if( this->setting.ngEpgCapTime != 0 && (state != CTunerBankCtrl::TR_IDLE || minTime < now + this->setting.ngEpgCapTime * 60 * I64_1SEC) ){
 				//実行しちゃいけない
 				ngCapCount++;
@@ -1519,12 +1519,12 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 	lock_recursive_mutex lock(this->managerLock);
 
 	bool doneEpgCap = false;
-	__int64 now = GetNowI64Time();
+	LONGLONG now = GetNowI64Time();
 	if( this->epgCapWork == false ){
 		//毎分0秒を跨ぐタイミングでEPG取得のチェックを行う
 		if( this->epgCapRequested || now / (60 * I64_1SEC) > this->lastCheckEpgCap / (60 * I64_1SEC) ){
 			int basicOnlyFlags = -1;
-			__int64 capTime = this->epgCapRequested ? now : GetNextEpgCapTime(now, &basicOnlyFlags);
+			LONGLONG capTime = this->epgCapRequested ? now : GetNextEpgCapTime(now, &basicOnlyFlags);
 			if( capTime <= now + 60 * I64_1SEC ){
 				vector<CTunerBankCtrl*> tunerList = GetEpgCapTunerList(now);
 				if( tunerList.empty() == false ){
@@ -1596,10 +1596,10 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 	}else{
 		//EPG取得中
 		if( this->setting.timeSync && this->epgCapSetTimeSync == false ){
-			DWORD tick = GetTickCount();
+			DWORD tick = GetU32Tick();
 			for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 				if( itr->second->GetState() == CTunerBankCtrl::TR_EPGCAP ){
-					__int64 delay = itr->second->DelayTime();
+					LONGLONG delay = itr->second->DelayTime();
 					if( this->epgCapTimeSyncBase < 0 ){
 						if( delay < -10 * I64_1SEC || 10 * I64_1SEC < delay ){
 							//時計合わせが必要かもしれない。遅延時間の観測開始
@@ -1629,7 +1629,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 				}else if( this->epgCapTimeSyncQuality > 150 * 1000 ){
 					//概ね2チャンネル以上の遅延時間を観測できたはず
 					//時計合わせ(要SE_SYSTEMTIME_NAME特権)
-					__int64 delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
+					LONGLONG delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
 					SYSTEMTIME setTime;
 					ConvertSystemTime(now + delay - I64_UTIL_TIMEZONE, &setTime);
 					LPCWSTR debug = L" err ";
@@ -1696,16 +1696,16 @@ bool CReserveManager::IsActive() const
 	return false;
 }
 
-__int64 CReserveManager::GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* reserveData) const
+LONGLONG CReserveManager::GetSleepReturnTime(LONGLONG baseTime, RESERVE_DATA* reserveData) const
 {
 	lock_recursive_mutex lock(this->managerLock);
 
 	//最も近い予約開始時刻を得る
-	__int64 nextRec = LLONG_MAX;
+	LONGLONG nextRec = LLONG_MAX;
 	const RESERVE_DATA* nextReserveData = NULL;
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		if( itr->second.recSetting.IsNoRec() == false ){
-			__int64 startTime;
+			LONGLONG startTime;
 			CalcEntireReserveTime(&startTime, NULL, itr->second);
 			if( startTime >= baseTime && startTime < nextRec ){
 				nextRec = startTime;
@@ -1719,19 +1719,19 @@ __int64 CReserveManager::GetSleepReturnTime(__int64 baseTime, RESERVE_DATA* rese
 			*reserveData = *nextReserveData;
 		}
 	}
-	__int64 capTime = GetNextEpgCapTime(baseTime + 60 * I64_1SEC);
+	LONGLONG capTime = GetNextEpgCapTime(baseTime + 60 * I64_1SEC);
 	return min(nextRec, capTime);
 }
 
-__int64 CReserveManager::GetNearestRecReserveTime() const
+LONGLONG CReserveManager::GetNearestRecReserveTime() const
 {
 	lock_recursive_mutex lock(this->managerLock);
 
-	__int64 minTime = LLONG_MAX;
+	LONGLONG minTime = LLONG_MAX;
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
 		if( itr->second.recSetting.GetRecMode() != RECMODE_VIEW &&
 		    itr->second.recSetting.IsNoRec() == false ){
-			__int64 startTime;
+			LONGLONG startTime;
 			CalcEntireReserveTime(&startTime, NULL, itr->second);
 			minTime = min(startTime, minTime);
 		}
@@ -1739,7 +1739,7 @@ __int64 CReserveManager::GetNearestRecReserveTime() const
 	return minTime;
 }
 
-__int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) const
+LONGLONG CReserveManager::GetNextEpgCapTime(LONGLONG now, int* basicOnlyFlags) const
 {
 	lock_recursive_mutex lock(this->managerLock);
 

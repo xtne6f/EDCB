@@ -1,5 +1,3 @@
-LIBRARY	"EpgDataCap3"
-
 EXPORTS
 	InitializeEP		@1
 	UnInitializeEP		@2
