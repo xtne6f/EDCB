@@ -214,7 +214,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 				wait = 200;
 			}
 			for( ; wait > 0 && sys->readStopFlag == false; wait -= 20 ){
-				Sleep(20);
+				SleepForMsec(20);
 			}
 			if( sys->readStopFlag ){
 				break;

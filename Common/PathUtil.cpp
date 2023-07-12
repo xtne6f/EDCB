@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <io.h>
 #else
+#include "ThreadUtil.h"
 #include <dirent.h>
 #include <errno.h>
 #include <sys/file.h>
@@ -684,7 +685,7 @@ BOOL WritePrivateProfileString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpStrin
 			AddDebugLog(L"WritePrivateProfileString(): Error: Cannot open file");
 			break;
 		}
-		Sleep(10);
+		SleepForMsec(10);
 	}
 	return FALSE;
 }
@@ -750,7 +751,7 @@ wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDe
 			AddDebugLog(L"GetPrivateProfileToString(): Error: Cannot open file");
 			break;
 		}
-		Sleep(10);
+		SleepForMsec(10);
 	}
 	return lpDefault ? lpDefault : L"";
 #endif

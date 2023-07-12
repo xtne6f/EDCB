@@ -343,7 +343,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 			sys->callingTick = GetU32Tick();
 		}
 		if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
-			Sleep(500);
+			SleepForMsec(500);
 			if( sys->traceLevel ){
 				AddDebugLog(L"CBonDriverUtil: #SetCh2");
 			}

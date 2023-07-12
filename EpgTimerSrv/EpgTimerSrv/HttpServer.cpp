@@ -231,7 +231,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 					this->mgContext = NULL;
 					break;
 				}
-				Sleep(10);
+				SleepForMsec(10);
 			}
 			if( this->mgContext ){
 				AddDebugLog(L"CHttpServer::StopServer(): failed to stop service.");

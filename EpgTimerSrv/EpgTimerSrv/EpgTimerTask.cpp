@@ -151,7 +151,7 @@ LRESULT CALLBACK CEpgTimerTask::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 			});
 			CSendCtrlCmd cmd;
 			for( int timeout = 0; cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS; timeout += 100 ){
-				Sleep(100);
+				SleepForMsec(100);
 				if( timeout > CONNECT_TIMEOUT ){
 					MessageBox(hwnd, L"サービスの起動を確認できませんでした。", NULL, MB_ICONERROR);
 					PostMessage(hwnd, WM_CLOSE, 0, 0);

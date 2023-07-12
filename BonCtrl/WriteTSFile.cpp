@@ -210,7 +210,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	}
 	sys->outStopEvent.Set();
 	//中間状態(2)でなくなるまで待つ
-	for( ; sys->outStopState == 2; Sleep(100) );
+	for( ; sys->outStopState == 2; SleepForMsec(100) );
 	std::list<vector<BYTE>> data;
 
 	while( sys->outStopState == 0 ){

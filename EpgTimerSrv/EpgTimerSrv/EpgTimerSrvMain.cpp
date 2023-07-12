@@ -1453,7 +1453,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 				CSendCtrlCmd ctrlCmd;
 				ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_PIPE, processID);
 				for( int i = 0; i < 50 && ctrlCmd.PipeExists() == false; i++ ){
-					Sleep(100);
+					SleepForMsec(100);
 				}
 				res.SetParam(CMD_SUCCESS);
 				sys->notifyManager.RegistGUI(processID);
@@ -3176,7 +3176,7 @@ int CEpgTimerSrvMain::LuaSleep(lua_State* L)
 	DWORD tick = base;
 	do{
 		//stoppingFlagでも必ず休む
-		Sleep(min<DWORD>(wait - (tick - base), 100));
+		SleepForMsec(min<DWORD>(wait - (tick - base), 100));
 		tick = GetU32Tick();
 	}while( wait > tick - base && ws.sys->stoppingFlag == false );
 	lua_pushboolean(L, ws.sys->stoppingFlag);

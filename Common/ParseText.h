@@ -2,6 +2,7 @@
 
 #include "PathUtil.h"
 #include "StringUtil.h"
+#include "ThreadUtil.h"
 
 template <class K, class V>
 class CParseText
@@ -47,7 +48,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 			AddDebugLog(L"CParseText<>::ParseText(): Error: Cannot open file");
 			return false;
 		}
-		Sleep(200 * retry);
+		SleepForMsec(200 * retry);
 	}
 
 	this->isUtf8 = false;
@@ -120,7 +121,7 @@ bool CParseText<K, V>::SaveText(string* saveToStr) const
 				AddDebugLog(L"CParseText<>::SaveText(): Error: Cannot open file");
 				return false;
 			}
-			Sleep(200 * retry);
+			SleepForMsec(200 * retry);
 		}
 	}
 
@@ -206,7 +207,7 @@ bool CParseText<K, V>::SaveText(string* saveToStr) const
 				AddDebugLog(L"CParseText<>::SaveText(): Error: Cannot open file");
 				break;
 			}
-			Sleep(200 * retry);
+			SleepForMsec(200 * retry);
 		}
 	}
 	return false;

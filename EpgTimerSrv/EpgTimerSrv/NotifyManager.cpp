@@ -122,7 +122,7 @@ bool CNotifyManager::WaitForIdle(DWORD timeoutMsec) const
 		}
 	}
 	for( DWORD t = 1; t <= timeoutMsec; t += 10 ){
-		Sleep(10);
+		SleepForMsec(10);
 		lock_recursive_mutex lock(this->managerLock);
 		if( count != this->activeOrIdleCount ){
 			//1回以上Idleになった

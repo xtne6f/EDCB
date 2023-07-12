@@ -95,7 +95,7 @@ void SendNotifyAliveOrByebye(bool byebyeFlag, const vector<SSDP_NIC_INFO>& nicLi
 void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 {
 	for( int i = 0; i < sys->initialWaitSec; i++ ){
-		Sleep(1000);
+		SleepForMsec(1000);
 		if( sys->stopFlag ){
 			return;
 		}
