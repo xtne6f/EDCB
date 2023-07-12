@@ -129,7 +129,7 @@ bool UtilCreateDirectory(const fs_path& path);
 // 再帰的にディレクトリを生成する
 bool UtilCreateDirectories(const fs_path& path);
 // フォルダがあるストレージの空き容量を取得する。失敗時は負値
-__int64 UtilGetStorageFreeBytes(const fs_path& directoryPath);
+LONGLONG UtilGetStorageFreeBytes(const fs_path& directoryPath);
 // フォルダがあるストレージの識別子を取得する。失敗時は空
 wstring UtilGetStorageID(const fs_path& directoryPath);
 
@@ -142,8 +142,8 @@ BOOL WritePrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int value, LPCWSTR
 
 struct UTIL_FIND_DATA {
 	bool isDir;
-	__int64 lastWriteTime;
-	__int64 fileSize;
+	LONGLONG lastWriteTime;
+	LONGLONG fileSize;
 	wstring fileName;
 };
 

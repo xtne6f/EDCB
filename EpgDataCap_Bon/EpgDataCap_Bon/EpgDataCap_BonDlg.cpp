@@ -1742,7 +1742,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		{
 			DWORD val;
 			if( cmd.ReadVALUE(&val) ){
-				__int64 writeSize = -1;
+				LONGLONG writeSize = -1;
 				this->bonCtrl.GetRecWriteSize(val, &writeSize);
 				res.WriteVALUE(writeSize);
 				res.SetParam(CMD_SUCCESS);

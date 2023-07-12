@@ -221,8 +221,8 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						ShowWindow(hDlgWnd, SW_HIDE);
 					}
 				}else if( wp == 1000 && sys->ctrlEnabled ){
-					__int64 totalPos = 0;
-					__int64 filePos = 0;
+					LONGLONG totalPos = 0;
+					LONGLONG filePos = 0;
 
 					// ファイルサイズと位置の変化を予測して問い合わせを減らす
 					const int interval = 8;
@@ -296,7 +296,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 
 							sys->cmd.SendNwPlayStop(sys->ctrlID);
 
-							__int64 filePos = SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_GETPOS, 0, 0);
+							LONGLONG filePos = SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_GETPOS, 0, 0);
 
 							NWPLAY_POS_CMD item;
 							item.ctrlID = sys->ctrlID;
@@ -309,7 +309,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 							}else{
 								SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_SETRANGEMAX, FALSE, 10000 );
 								double pos1 = ((double)item.totalPos)/10000;
-								filePos = (__int64)(filePos*pos1);
+								filePos = (LONGLONG)(filePos*pos1);
 								item.currentPos = filePos;
 								//SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_SETPOS, TRUE, (DWORD)filePos );
 							}

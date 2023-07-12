@@ -731,7 +731,7 @@ void CDecodeUtil::CheckSDT(WORD PID, const Desc::CDescriptor& sdt)
 
 void CDecodeUtil::CheckTDT(const Desc::CDescriptor& tdt)
 {
-	__int64 time = MJDtoI64Time(tdt.GetNumber(Desc::jst_time_mjd), tdt.GetNumber(Desc::jst_time_bcd));
+	LONGLONG time = MJDtoI64Time(tdt.GetNumber(Desc::jst_time_mjd), tdt.GetNumber(Desc::jst_time_bcd));
 	if( tdt.GetNumber(Desc::table_id) == 0x73 ){
 		//TOT
 		this->totTime = time;
@@ -745,7 +745,7 @@ void CDecodeUtil::CheckTDT(const Desc::CDescriptor& tdt)
 void CDecodeUtil::CheckEIT(WORD PID, const Desc::CDescriptor& eit)
 {
 	if( epgDBUtil != NULL ){
-		__int64 time = 0;
+		LONGLONG time = 0;
 		GetNowTime(&time);
 		epgDBUtil->AddEIT(PID, eit, time);
 	}
@@ -1269,7 +1269,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 // time				[OUT]ストリーム内の現在の時間
 // tick				[OUT]timeを取得した時点のチックカウント
 BOOL CDecodeUtil::GetNowTime(
-	__int64* time,
+	LONGLONG* time,
 	DWORD* tick
 	)
 {

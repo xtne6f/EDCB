@@ -3,16 +3,16 @@
 
 #include "StringUtil.h"
 
-#define I64_1SEC ((__int64)10000000)
+#define I64_1SEC ((LONGLONG)10000000)
 #define I64_UTIL_TIMEZONE (9 * 3600 * I64_1SEC)
 
 LPCWSTR GetDayOfWeekName( WORD wDayOfWeek );
 
-__int64 GetNowI64Time();
+LONGLONG GetNowI64Time();
 
-__int64 ConvertI64Time( SYSTEMTIME Time );
+LONGLONG ConvertI64Time(SYSTEMTIME Time);
 
-bool ConvertSystemTime(__int64 i64Time, SYSTEMTIME* Time);
+bool ConvertSystemTime(LONGLONG i64Time, SYSTEMTIME* Time);
 
 LPCSTR GetTimeMacroName(int index);
 

@@ -388,7 +388,7 @@ void CEpgTimerTask::OpenGUI()
 
 void CEpgTimerTask::InitReserveMenuPopup(HMENU hMenu, vector<RESERVE_DATA>& list)
 {
-	__int64 maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
+	LONGLONG maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
 	list.erase(std::remove_if(list.begin(), list.end(), [=](const RESERVE_DATA& a) {
 		return a.recSetting.IsNoRec() || ConvertI64Time(a.startTime) > maxTime;
 	}), list.end());

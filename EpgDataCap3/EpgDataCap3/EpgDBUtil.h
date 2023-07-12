@@ -8,7 +8,7 @@
 class CEpgDBUtil
 {
 public:
-	BOOL AddEIT(WORD PID, const AribDescriptor::CDescriptor& eit, __int64 streamTime);
+	BOOL AddEIT(WORD PID, const AribDescriptor::CDescriptor& eit, LONGLONG streamTime);
 
 	BOOL AddServiceListNIT(const AribDescriptor::CDescriptor& nit);
 	BOOL AddServiceListSIT(WORD TSID, const AribDescriptor::CDescriptor& sit);

@@ -74,7 +74,7 @@ bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
 	TUNER_RESERVE_WORK& r = this->reserveMap.insert(std::make_pair(reserve.reserveID, TUNER_RESERVE_WORK())).first->second;
 	static_cast<TUNER_RESERVE&>(r) = reserve;
 	r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | (r.reserveID & 0xFFFF);
-	r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
+	r.effectivePriority = (this->backPriority ? -1 : 1) * ((LONGLONG)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
 	r.state = TR_IDLE;
 	r.retryOpenCount = 0;
 	return true;
@@ -103,7 +103,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 		reserve->partialRecFolder = save.partialRecFolder;
 		//後方移動は注意。なお前方移動はどれだけ大きくても次のCheck()で予約終了するだけなので問題ない
 		if( reserve->startTime - reserve->startMargin > save.startTime - save.startMargin ){
-			__int64 now = GetNowI64Time() + this->delayTime;
+			LONGLONG now = GetNowI64Time() + this->delayTime;
 			if( reserve->startTime - reserve->startMargin - 60 * I64_1SEC > now ){
 				reserve->startTime = save.startTime;
 				reserve->startMargin = save.startMargin;
@@ -113,7 +113,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 		static_cast<TUNER_RESERVE&>(r) = *reserve;
 		//内部パラメータを再計算
 		r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | (r.reserveID & 0xFFFF);
-		r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
+		r.effectivePriority = (this->backPriority ? -1 : 1) * ((LONGLONG)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
 		return true;
 	}
 	return false;
@@ -181,7 +181,7 @@ bool CTunerBankCtrl::DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList)
 	return false;
 }
 
-void CTunerBankCtrl::ClearNoCtrl(__int64 startTime)
+void CTunerBankCtrl::ClearNoCtrl(LONGLONG startTime)
 {
 	for( auto itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
 		if( itr->second.state == TR_IDLE && itr->second.startTime - itr->second.startMargin >= startTime ){
@@ -317,10 +317,10 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			}
 		}
 	}
-	__int64 now = GetNowI64Time() + this->delayTime;
+	LONGLONG now = GetNowI64Time() + this->delayTime;
 
 	//終了時間を過ぎた予約を回収し、TR_IDLE->TR_READY以外の遷移をする
-	vector<pair<__int64, DWORD>> idleList;
+	vector<pair<LONGLONG, DWORD>> idleList;
 	bool ngResetLock = false;
 	for( auto itrRes = this->reserveMap.begin(); itrRes != this->reserveMap.end(); ){
 		TUNER_RESERVE_WORK& r = itrRes->second;
@@ -494,7 +494,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	std::sort(idleList.begin(), idleList.end());
 
 	//TR_IDLE->TR_READY(TR_REC)の遷移をする
-	for( vector<pair<__int64, DWORD>>::const_iterator itrIdle = idleList.begin(); itrIdle != idleList.end(); itrIdle++ ){
+	for( vector<pair<LONGLONG, DWORD>>::const_iterator itrIdle = idleList.begin(); itrIdle != idleList.end(); itrIdle++ ){
 		auto itrRes = this->reserveMap.find(itrIdle->second);
 		TUNER_RESERVE_WORK& r = itrRes->second;
 		CHECK_RESULT ret;
@@ -710,7 +710,7 @@ bool CTunerBankCtrl::IsNeedOpenTuner() const
 		return true;
 	}
 	//戻り値の振動を防ぐためdelayTimeを考慮してはいけない
-	__int64 now = GetNowI64Time();
+	LONGLONG now = GetNowI64Time();
 	for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 		if( itr->second.state != TR_IDLE || (itr->second.startTime - itr->second.startMargin - this->recWakeTime) / I64_1SEC < now / I64_1SEC ){
 			return true;
@@ -833,7 +833,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	}
 }
 
-bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) const
+bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, LONGLONG now) const
 {
 	if( this->tunerPid == 0 ){
 		return false;
@@ -935,9 +935,9 @@ CTunerBankCtrl::TR_STATE CTunerBankCtrl::GetState() const
 	return state;
 }
 
-__int64 CTunerBankCtrl::GetNearestReserveTime() const
+LONGLONG CTunerBankCtrl::GetNearestReserveTime() const
 {
-	__int64 minTime = LLONG_MAX;
+	LONGLONG minTime = LLONG_MAX;
 	for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 		minTime = min(itr->second.startTime - itr->second.startMargin, minTime);
 	}
@@ -1024,7 +1024,7 @@ int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resV
 	return 2;
 }
 
-__int64 CTunerBankCtrl::DelayTime() const
+LONGLONG CTunerBankCtrl::DelayTime() const
 {
 	return this->specialState == TR_EPGCAP ? this->epgCapDelayTime : this->delayTime;
 }

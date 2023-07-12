@@ -360,7 +360,7 @@ void COneServiceUtil::SetSignalLevel(
 //引数：
 // writeSize			[OUT]出力サイズ
 void COneServiceUtil::GetRecWriteSize(
-	__int64* writeSize
+	LONGLONG* writeSize
 	)
 {
 	if( this->writeFile.IsRec() || this->pittariState == PITTARI_END ){

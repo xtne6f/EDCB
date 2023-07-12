@@ -44,8 +44,8 @@ public:
 		wstring recFilePath;
 		bool continueRec;
 		//continueRec(連続録画開始による終了)のときdropsとscramblesは常に0
-		__int64 drops;
-		__int64 scrambles;
+		LONGLONG drops;
+		LONGLONG scrambles;
 		//以下はtype==CHECK_ENDのとき有効
 		SYSTEMTIME epgStartTime;
 		wstring epgEventName;
@@ -53,7 +53,7 @@ public:
 	struct TUNER_RESERVE {
 		DWORD reserveID;
 		wstring title;
-		__int64 startTime;
+		LONGLONG startTime;
 		DWORD durationSecond;
 		wstring stationName;
 		WORD onid;
@@ -68,8 +68,8 @@ public:
 		BYTE partialRecMode;
 		bool continueRecFlag;
 		//マージンはデフォルト値適用済みとすること
-		__int64 startMargin;
-		__int64 endMargin;
+		LONGLONG startMargin;
+		LONGLONG endMargin;
 		vector<REC_FILE_SET_INFO> recFolder;
 		vector<REC_FILE_SET_INFO> partialRecFolder;
 	};
@@ -94,7 +94,7 @@ public:
 	//retList: 録画中であれば終了結果を追加
 	bool DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList = NULL);
 	//開始時間がstartTime以上の待機状態に入っていないすべての予約をクリアする
-	void ClearNoCtrl(__int64 startTime = 0);
+	void ClearNoCtrl(LONGLONG startTime = 0);
 	//予約ID一覧を取得する(ソート済み)
 	vector<DWORD> GetReserveIDList() const;
 	//チューナの状態遷移をおこない、終了した予約を取得する
@@ -108,7 +108,7 @@ public:
 	//ネットワークモードIDを取得する(GetState()がTR_NWTVでないとき不定)
 	int GetNWTVID() const { return this->nwtvID; }
 	//予約開始の最小時刻を取得する
-	__int64 GetNearestReserveTime() const;
+	LONGLONG GetNearestReserveTime() const;
 	//EPG取得を開始する
 	bool StartEpgCap(const vector<SET_CH_INFO>& setChList);
 	//起動中のチューナのチャンネルを取得する
@@ -119,7 +119,7 @@ public:
 	//戻り値: 0=成功,1=失敗(番組情報はない),2=失敗(取得できない)
 	int GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resVal) const;
 	//放送波時刻に対するシステム時刻の遅延時間を取得する
-	__int64 DelayTime() const;
+	LONGLONG DelayTime() const;
 	//ネットワークモードでチューナを起動しチャンネル設定する
 	bool OpenNWTV(int id, bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo);
 	//ネットワークモードのチューナを閉じる
@@ -136,8 +136,8 @@ public:
 	void Watch();
 private:
 	struct TUNER_RESERVE_WORK : TUNER_RESERVE {
-		__int64 startOrder; //開始順(予約の前後関係を決める)
-		__int64 effectivePriority; //実効優先度(予約の優先度を決める。小さいほうが高優先度)
+		LONGLONG startOrder; //開始順(予約の前後関係を決める)
+		LONGLONG effectivePriority; //実効優先度(予約の優先度を決める。小さいほうが高優先度)
 		TR_STATE state;
 		int retryOpenCount;
 		//以下はstate!=TR_IDLEのとき有効
@@ -159,7 +159,7 @@ private:
 	//録画ファイルに対応する番組情報ファイルを保存する
 	void SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& info, bool append) const;
 	//チューナに録画を開始させる
-	bool RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) const;
+	bool RecStart(const TUNER_RESERVE_WORK& reserve, LONGLONG now) const;
 	//チューナを起動する
 	bool OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh);
 	//チューナを閉じる
@@ -187,12 +187,12 @@ private:
 	//EPG取得中かネットワークモードか否か
 	TR_STATE specialState;
 	//放送波時刻に対するシステム時刻の遅延時間
-	__int64 delayTime;
-	__int64 epgCapDelayTime;
+	LONGLONG delayTime;
+	LONGLONG epgCapDelayTime;
 	//ネットワークモードID
 	int nwtvID;
 
-	__int64 recWakeTime;
+	LONGLONG recWakeTime;
 	bool recMinWake;
 	bool recView;
 	bool recNW;

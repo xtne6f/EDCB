@@ -904,7 +904,7 @@ void CTSOut::GetErrCount(
 // writeSize			[OUT]出力サイズ
 void CTSOut::GetRecWriteSize(
 	DWORD id,
-	__int64* writeSize
+	LONGLONG* writeSize
 	)
 {
 	lock_recursive_mutex lock(this->objLock);

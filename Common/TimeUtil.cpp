@@ -13,27 +13,27 @@ LPCWSTR GetDayOfWeekName( WORD wDayOfWeek )
 	return name[wDayOfWeek % 7];
 }
 
-__int64 GetNowI64Time()
+LONGLONG GetNowI64Time()
 {
 #ifdef _WIN32
 	FILETIME fTime;
 	GetSystemTimeAsFileTime(&fTime);
-	return ((__int64)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime) + I64_UTIL_TIMEZONE;
+	return ((LONGLONG)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime) + I64_UTIL_TIMEZONE;
 #else
 	timespec ts;
 	if( clock_gettime(CLOCK_REALTIME, &ts) ){
 		throw std::runtime_error("");
 	}
-	return (__int64)ts.tv_sec * I64_1SEC + ts.tv_nsec / 100 + 116444736000000000 + I64_UTIL_TIMEZONE;
+	return (LONGLONG)ts.tv_sec * I64_1SEC + ts.tv_nsec / 100 + 116444736000000000 + I64_UTIL_TIMEZONE;
 #endif
 }
 
-__int64 ConvertI64Time(SYSTEMTIME Time)
+LONGLONG ConvertI64Time(SYSTEMTIME Time)
 {
 #ifdef _WIN32
 	FILETIME fTime;
 	if( SystemTimeToFileTime( &Time, &fTime ) ){
-		return (__int64)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime;
+		return (LONGLONG)fTime.dwHighDateTime << 32 | fTime.dwLowDateTime;
 	}
 #else
 	tm t = {};
@@ -45,13 +45,13 @@ __int64 ConvertI64Time(SYSTEMTIME Time)
 	t.tm_sec = Time.wSecond;
 	time_t tt = timegm(&t);
 	if( tt != (time_t)-1 ){
-		return (__int64)tt * I64_1SEC + Time.wMilliseconds * 10000 + 116444736000000000;
+		return (LONGLONG)tt * I64_1SEC + Time.wMilliseconds * 10000 + 116444736000000000;
 	}
 #endif
 	return 0;
 }
 
-bool ConvertSystemTime(__int64 i64Time, SYSTEMTIME* Time)
+bool ConvertSystemTime(LONGLONG i64Time, SYSTEMTIME* Time)
 {
 	if( Time != NULL ){
 #ifdef _WIN32

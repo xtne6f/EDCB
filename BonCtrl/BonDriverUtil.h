@@ -91,7 +91,7 @@ private:
 	LPCWSTR callingName;
 	DWORD callingTick;
 	int statGetTsCalls;
-	__int64 statGetTsBytes;
+	LONGLONG statGetTsBytes;
 	HWND hwndDriver;
 };
 

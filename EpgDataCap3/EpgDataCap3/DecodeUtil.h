@@ -48,7 +48,7 @@ public:
 	// time				[OUT]ストリーム内の現在の時間
 	// tick				[OUT]timeを取得した時点のチックカウント
 	BOOL GetNowTime(
-		__int64* time,
+		LONGLONG* time,
 		DWORD* tick = NULL
 		);
 
@@ -67,9 +67,9 @@ protected:
 	map<BYTE, AribDescriptor::CDescriptor> sdtActualInfo;
 	std::unique_ptr<const AribDescriptor::CDescriptor> bitInfo;
 	std::unique_ptr<const AribDescriptor::CDescriptor> sitInfo;
-	__int64 totTime;
-	__int64 tdtTime;
-	__int64 sitTime;
+	LONGLONG totTime;
+	LONGLONG tdtTime;
+	LONGLONG sitTime;
 	DWORD totTimeTick;
 	DWORD tdtTimeTick;
 	DWORD sitTimeTick;

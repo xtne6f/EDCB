@@ -255,7 +255,7 @@ public:
 	// writeSize			[OUT]保存ファイル名
 	void GetRecWriteSize(
 		DWORD id,
-		__int64* writeSize
+		LONGLONG* writeSize
 		);
 
 	//指定サービスの現在or次のEPG情報を取得する

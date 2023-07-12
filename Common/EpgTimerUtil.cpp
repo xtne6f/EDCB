@@ -50,7 +50,7 @@ DWORD CalcCrc32(int n, const BYTE* c)
 	return r;
 }
 
-__int64 MJDtoI64Time(DWORD mjd, DWORD bcdTime)
+LONGLONG MJDtoI64Time(DWORD mjd, DWORD bcdTime)
 {
 	DWORD h = (bcdTime >> 20 & 3) * 10 + (bcdTime >> 16 & 15);
 	DWORD m = (bcdTime >> 12 & 7) * 10 + (bcdTime >> 8 & 15);

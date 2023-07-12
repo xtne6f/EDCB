@@ -834,7 +834,7 @@ void CBonCtrl::SaveErrCount(
 // writeSize			[OUT]保存ファイル名
 void CBonCtrl::GetRecWriteSize(
 	DWORD id,
-	__int64* writeSize
+	LONGLONG* writeSize
 	)
 {
 	this->tsOut.GetRecWriteSize(id, writeSize);

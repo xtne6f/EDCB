@@ -64,7 +64,7 @@ public:
 	//引数：
 	// writeSize			[OUT]保存ファイル名
 	void GetRecWriteSize(
-		__int64* writeSize
+		LONGLONG* writeSize
 		);
 
 protected:
@@ -93,7 +93,7 @@ protected:
 	vector<wstring> saveFolderSub;
 
 	BOOL subRecFlag;
-	__int64 writeTotalSize;
+	LONGLONG writeTotalSize;
 	wstring mainSaveFilePath;
 
 	int maxBuffCount;

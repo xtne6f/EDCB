@@ -389,7 +389,7 @@ void CBonDriverUtil::WatchdogThread(CBonDriverUtil* sys)
 			//統計を1分ごとにデバッグ出力
 			if( ++statTimeout >= 30 ){
 				int calls;
-				__int64 bytes;
+				LONGLONG bytes;
 				{
 					lock_recursive_mutex lock(sys->utilLock);
 					calls = sys->statGetTsCalls;

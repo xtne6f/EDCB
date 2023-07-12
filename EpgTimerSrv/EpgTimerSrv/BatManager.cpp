@@ -316,7 +316,7 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 		exFormatTime = false;
 	}
 #endif
-	__int64 fileSize = 0;
+	LONGLONG fileSize = 0;
 	char olbuff[257];
 	for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
 		olbuff[n] = '\0';

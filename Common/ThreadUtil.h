@@ -145,7 +145,7 @@ public:
 		if (m_efd == -1) throw std::runtime_error("");
 	}
 	~CAutoResetEvent() { close(m_efd); }
-	void Set() { __int64 n = 1; write(m_efd, &n, sizeof(n)); }
+	void Set() { LONGLONG n = 1; write(m_efd, &n, sizeof(n)); }
 	void Reset() { WaitOne(0); }
 	int Handle() { return m_efd; }
 	bool WaitOne(unsigned int timeout = 0xFFFFFFFF) {
@@ -153,7 +153,7 @@ public:
 		pfd.fd = m_efd;
 		pfd.events = POLLIN;
 		if (poll(&pfd, 1, (int)timeout) > 0 && (pfd.revents & POLLIN)) {
-			__int64 n;
+			LONGLONG n;
 			return read(m_efd, &n, sizeof(n)) == sizeof(n);
 		}
 		return false;
