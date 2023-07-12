@@ -100,7 +100,7 @@ private:
 	DWORD m_chChangeTick;
 	std::unique_ptr<FILE, decltype(&fclose)> m_epgFile;
 	enum { EPG_FILE_ST_NONE, EPG_FILE_ST_PAT, EPG_FILE_ST_TOT, EPG_FILE_ST_ALL } m_epgFileState;
-	__int64 m_epgFileTotPos;
+	LONGLONG m_epgFileTotPos;
 	wstring m_epgFilePath;
 	thread_ m_epgReloadThread;
 	DWORD m_epgCapTimeout;
