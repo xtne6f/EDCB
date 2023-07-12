@@ -3,6 +3,7 @@
 #include "../../Common/CommonDef.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/PathUtil.h"
+#include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "resource.h"
 #include <shellapi.h>
@@ -118,7 +119,7 @@ LRESULT CALLBACK CEpgTimerTask::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 									DWORD noUsePCTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePCTime", 3, srvIniPath.c_str());
 									LASTINPUTINFO lii;
 									lii.cbSize = sizeof(lii);
-									if( noUsePCTime == 0 || (GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < noUsePCTime * 60 * 1000) ){
+									if( noUsePCTime == 0 || (GetLastInputInfo(&lii) && GetU32Tick() - lii.dwTime < noUsePCTime * 60 * 1000) ){
 										break;
 									}
 								}

@@ -226,6 +226,6 @@ int CEpgDataCap3Main::GetTimeDelay(
 	if( this->decodeUtilClass.GetNowTime(&time, &tick) == FALSE ){
 		return 0;
 	}
-	LONGLONG delay = time + (GetTickCount() - tick) * (I64_1SEC / 1000) - GetNowI64Time();
+	LONGLONG delay = time + (GetU32Tick() - tick) * (I64_1SEC / 1000) - GetNowI64Time();
 	return (int)(delay / I64_1SEC);
 }

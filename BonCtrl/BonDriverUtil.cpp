@@ -2,6 +2,7 @@
 #include "BonDriverUtil.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
+#include "../Common/TimeUtil.h"
 #include "IBonDriver2.h"
 #include <objbase.h>
 
@@ -95,7 +96,7 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFil
 		this->traceLevel = max(traceLevel_, 0);
 		if( this->traceLevel ){
 			this->callingName = L"Opening";
-			this->callingTick = GetTickCount();
+			this->callingTick = GetU32Tick();
 			this->statGetTsCalls = 0;
 			this->statGetTsBytes = 0;
 			this->watchdogStopEvent.Reset();
@@ -264,7 +265,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 			AddDebugLog(L"CBonDriverUtil: #Closing");
 			lock_recursive_mutex lock(sys->utilLock);
 			sys->callingName = L"Closing";
-			sys->callingTick = GetTickCount();
+			sys->callingTick = GetU32Tick();
 		}
 		if( sys->statusFunc ){
 			sys->statusFunc(0.0f, -1, -1);
@@ -288,7 +289,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 			if( sys->traceLevel ){
 				lock_recursive_mutex lock(sys->utilLock);
 				sys->callingName = L"GetTs";
-				sys->callingTick = GetTickCount();
+				sys->callingTick = GetU32Tick();
 			}
 			//TSストリームを取得
 			BYTE* data;
@@ -321,7 +322,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 			if( sys->traceLevel ){
 				lock_recursive_mutex lock(sys->utilLock);
 				sys->callingName = L"GetStatus";
-				sys->callingTick = GetTickCount();
+				sys->callingTick = GetU32Tick();
 			}
 			if( sys->initChSetFlag ){
 				sys->statusFunc(sys->bon2IF->GetSignalLevel(), sys->bon2IF->GetCurSpace(), sys->bon2IF->GetCurChannel());
@@ -339,7 +340,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 			AddDebugLog(L"CBonDriverUtil: #SetCh");
 			lock_recursive_mutex lock(sys->utilLock);
 			sys->callingName = L"SetCh";
-			sys->callingTick = GetTickCount();
+			sys->callingTick = GetU32Tick();
 		}
 		if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
 			Sleep(500);
@@ -366,7 +367,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 			if( sys->traceLevel ){
 				lock_recursive_mutex lock(sys->utilLock);
 				sys->callingName = L"GetNowCh";
-				sys->callingTick = GetTickCount();
+				sys->callingTick = GetU32Tick();
 			}
 			*(DWORD*)wParam = sys->bon2IF->GetCurSpace();
 			*(DWORD*)lParam = sys->bon2IF->GetCurChannel();
@@ -405,7 +406,7 @@ void CBonDriverUtil::WatchdogThread(CBonDriverUtil* sys)
 			//BonDriver呼び出しに10秒以上かかっていればデバッグ出力
 			lock_recursive_mutex lock(sys->utilLock);
 			if( sys->callingName ){
-				DWORD tick = GetTickCount();
+				DWORD tick = GetU32Tick();
 				if( tick - sys->callingTick > 10000 ){
 					AddDebugLogFormat(L"CBonDriverUtil: #%ls takes more than 10 seconds!", sys->callingName);
 					sys->callingTick = tick;

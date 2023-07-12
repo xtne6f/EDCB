@@ -2,6 +2,7 @@
 #include "DecodeUtil.h"
 
 #include "../../Common/StringUtil.h"
+#include "../../Common/TimeUtil.h"
 #include "ARIB8CharDecode.h"
 #include "../../Common/EpgTimerUtil.h"
 
@@ -735,10 +736,10 @@ void CDecodeUtil::CheckTDT(const Desc::CDescriptor& tdt)
 	if( tdt.GetNumber(Desc::table_id) == 0x73 ){
 		//TOT
 		this->totTime = time;
-		this->totTimeTick = GetTickCount();
+		this->totTimeTick = GetU32Tick();
 	}else{
 		this->tdtTime = time;
-		this->tdtTimeTick = GetTickCount();
+		this->tdtTimeTick = GetU32Tick();
 	}
 }
 
@@ -779,7 +780,7 @@ void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 			if( sit.GetNumber(Desc::descriptor_tag, lp) == Desc::partialTS_time_descriptor ){
 				if( sit.GetNumber(Desc::jst_time_flag, lp) == 1 ){
 					this->sitTime = MJDtoI64Time(sit.GetNumber(Desc::jst_time_mjd), sit.GetNumber(Desc::jst_time_bcd));
-					this->sitTimeTick = GetTickCount();
+					this->sitTimeTick = GetU32Tick();
 				}
 			}
 		}while( sit.NextLoopIndex(lp) );

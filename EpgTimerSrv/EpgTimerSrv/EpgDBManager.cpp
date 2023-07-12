@@ -124,7 +124,7 @@ void ReadOldArchiveEventInfo(FILE* fp, const vector<LONGLONG>& index, size_t ind
 void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 {
 	AddDebugLog(L"Start Load EpgData");
-	DWORD time = GetTickCount();
+	DWORD time = GetU32Tick();
 
 	if( sys->loadForeground == false ){
 		//バックグラウンドに移行
@@ -160,7 +160,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	});
 
 	DWORD loadElapsed = 0;
-	DWORD loadTick = GetTickCount();
+	DWORD loadTick = GetU32Tick();
 
 	//EPGファイルの解析
 	for( vector<wstring>::iterator itr = epgFileList.begin(); itr != epgFileList.end(); itr++ ){
@@ -277,13 +277,13 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					}
 					if( sys->loadForeground == false ){
 						//処理速度がだいたい2/3になるように休む。I/O負荷軽減が狙い
-						DWORD tick = GetTickCount();
+						DWORD tick = GetU32Tick();
 						loadElapsed += tick - loadTick;
 						loadTick = tick;
 						if( loadElapsed > 20 ){
 							Sleep(min<DWORD>(loadElapsed / 2, 100));
 							loadElapsed = 0;
-							loadTick = GetTickCount();
+							loadTick = GetU32Tick();
 						}
 					}
 				}
@@ -562,7 +562,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		}
 	}
 
-	AddDebugLogFormat(L"End Load EpgData %dmsec", GetTickCount() - time);
+	AddDebugLogFormat(L"End Load EpgData %dmsec", GetU32Tick() - time);
 
 	sys->loadForeground = false;
 	sys->initialLoadDone = true;

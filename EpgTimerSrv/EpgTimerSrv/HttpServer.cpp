@@ -225,8 +225,8 @@ bool CHttpServer::StopServer(bool checkOnly)
 		}else{
 			//正常であればmg_stop()はreqToを超えて待機することはない
 			DWORD reqTo = atoi(mg_get_option(this->mgContext, "request_timeout_ms"));
-			DWORD tick = GetTickCount();
-			while( GetTickCount() - tick < reqTo + 10000 ){
+			DWORD tick = GetU32Tick();
+			while( GetU32Tick() - tick < reqTo + 10000 ){
 				if( mg_check_stop(this->mgContext) ){
 					this->mgContext = NULL;
 					break;

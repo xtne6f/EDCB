@@ -2,6 +2,7 @@
 #include "TimeShiftUtil.h"
 #include "PathUtil.h"
 #include "StringUtil.h"
+#include "TimeUtil.h"
 #include "TSPacketUtil.h"
 #include "../BonCtrl/BonCtrlDef.h"
 #include "../BonCtrl/PacketInit.h"
@@ -142,7 +143,7 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 
 	this->filePath = filePath_;
 	this->fileMode = fileMode_;
-	this->seekJitter = GetTickCount() / 100 % 8 + 1;
+	this->seekJitter = GetU32Tick() / 100 % 8 + 1;
 	this->currentFilePos = 0;
 
 	return TRUE;
@@ -206,7 +207,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 			LONGLONG wait = 0;
 			if( base >= 0 ){
 				//レート調整
-				wait = ((base + 0x200000000LL - initTime) & 0x1FFFFFFFFLL) / 90 - (GetTickCount() - initTick);
+				wait = ((base + 0x200000000LL - initTime) & 0x1FFFFFFFFLL) / 90 - (GetU32Tick() - initTick);
 				base = -1;
 			}else if( errCount > 0 ){
 				//終端監視中
@@ -290,7 +291,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 						base = packet.program_clock_reference_base;
 						if( initTime < 0 ){
 							initTime = base;
-							initTick = GetTickCount();
+							initTick = GetU32Tick();
 						}
 					}
 				}

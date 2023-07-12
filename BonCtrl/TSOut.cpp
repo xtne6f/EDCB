@@ -35,7 +35,7 @@ void CTSOut::SetChChangeEvent(WORD presumedONID, BOOL resetEpgUtil)
 	lock_recursive_mutex lock(this->objLock);
 
 	this->chChangeState = CH_ST_WAIT_PAT;
-	this->chChangeTime = GetTickCount();
+	this->chChangeTime = GetU32Tick();
 	this->chChangePresumedONID = presumedONID;
 
 	this->decodeUtil.UnLoadDll();
@@ -55,7 +55,7 @@ BOOL CTSOut::IsChUnknown(DWORD* elapsedTime)
 
 	if( this->chChangeState != CH_ST_DONE ){
 		if( elapsedTime != NULL ){
-			*elapsedTime = this->chChangeState == CH_ST_INIT ? MAXDWORD : GetTickCount() - this->chChangeTime;
+			*elapsedTime = this->chChangeState == CH_ST_INIT ? MAXDWORD : GetU32Tick() - this->chChangeTime;
 		}
 		return TRUE;
 	}
@@ -103,7 +103,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	if( dataSize == 0 || data == NULL ){
 		return;
 	}
-	DWORD tick = GetTickCount();
+	DWORD tick = GetU32Tick();
 	if( this->chChangeState == CH_ST_WAIT_PAT && tick - this->chChangeTime < 1000 ){
 		//1秒間はチャンネル切り替え前のパケット来る可能性を考慮して無視する
 		return;

@@ -541,7 +541,7 @@ void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 		return;
 	}
 	AddDebugLog(L"Start ReloadBankMap");
-	DWORD tick = GetTickCount();
+	DWORD tick = GetU32Tick();
 
 	LONGLONG boundaryReloadTime = 0;
 
@@ -741,7 +741,7 @@ void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 		}
 	}
 
-	AddDebugLogFormat(L"End ReloadBankMap %dmsec", GetTickCount() - tick);
+	AddDebugLogFormat(L"End ReloadBankMap %dmsec", GetU32Tick() - tick);
 }
 
 LONGLONG CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const
@@ -1596,7 +1596,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 	}else{
 		//EPG取得中
 		if( this->setting.timeSync && this->epgCapSetTimeSync == false ){
-			DWORD tick = GetTickCount();
+			DWORD tick = GetU32Tick();
 			for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 				if( itr->second->GetState() == CTunerBankCtrl::TR_EPGCAP ){
 					LONGLONG delay = itr->second->DelayTime();

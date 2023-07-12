@@ -347,7 +347,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				ret.type = CHECK_ERR_PASS;
 			}
 			//パイプコマンドにはチャンネル変更の完了を調べる仕組みがないので、妥当な時間だけ待つ
-			else if( GetTickCount() - this->tunerChChgTick > 5000 && r.startTime - r.startMargin < now ){
+			else if( GetU32Tick() - this->tunerChChgTick > 5000 && r.startTime - r.startMargin < now ){
 				//録画開始～
 				if( RecStart(r, now) ){
 					//途中から開始されたか
@@ -513,7 +513,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				this->tunerTSID = r.tsid;
 				this->tunerChLocked = true;
 				this->tunerResetLock = false;
-				this->tunerChChgTick = GetTickCount();
+				this->tunerChChgTick = GetU32Tick();
 				this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, this->bonFileName);
 				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 				r.retryOpenCount = 0;
@@ -625,7 +625,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 					if( ctrlCmd.SendViewSetCh(chgCh) == CMD_SUCCESS ){
 						this->tunerChLocked = true;
 						this->tunerResetLock = false;
-						this->tunerChChgTick = GetTickCount();
+						this->tunerChChgTick = GetU32Tick();
 					}
 				}
 				if( this->tunerChLocked ){
@@ -1000,7 +1000,7 @@ int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resV
 {
 	//チャンネル変更を要求してから最初のEIT[p/f]が届く妥当な時間だけ待つ
 	//TODO: 視聴予約中(=GUIキープされていないとき)にチャンネル変更されると最新の情報でなくなる可能性がある。現仕様では解決策なし
-	if( this->tunerPid && this->specialState == TR_IDLE && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 8000) ){
+	if( this->tunerPid && this->specialState == TR_IDLE && (this->tunerChLocked == false || GetU32Tick() - this->tunerChChgTick > 8000) ){
 		CWatchBlock watchBlock(&this->watchContext);
 		CSendCtrlCmd ctrlCmd;
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
@@ -1016,7 +1016,7 @@ int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resV
 				Replace(resVal->shortInfo.event_name, L"\r\n", L"");
 			}
 			return 0;
-		}else if( ret == CMD_ERR && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 15000) ){
+		}else if( ret == CMD_ERR && (this->tunerChLocked == false || GetU32Tick() - this->tunerChChgTick > 15000) ){
 			return 1;
 		}
 		//最初のTOTが届くまでは、あるのに消える可能性がある
@@ -1174,7 +1174,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 		ctrlCmd.SetConnectTimeOut(0);
 		//起動完了まで最大30秒ほど待つ
-		for( DWORD tick = GetTickCount(); GetTickCount() - tick < 30000; ){
+		for( DWORD tick = GetU32Tick(); GetU32Tick() - tick < 30000; ){
 #ifdef _WIN32
 			if( WaitForSingleObject(this->hTunerProcess, 10) != WAIT_TIMEOUT ){
 #else
@@ -1379,7 +1379,7 @@ void CTunerBankCtrl::Watch()
 	//チューナがフリーズするような非常事態ではCSendCtrlCmdのタイムアウトは当てにならない
 	//CWatchBlockで囲われた区間を40秒のタイムアウトで監視して、必要なら強制終了する
 	lock_recursive_mutex lock(this->watchContext.lock);
-	if( this->watchContext.count != 0 && GetTickCount() - this->watchContext.tick > 40000 ){
+	if( this->watchContext.count != 0 && GetU32Tick() - this->watchContext.tick > 40000 ){
 		if( this->tunerPid ){
 #ifdef _WIN32
 			//少なくともhTunerProcessはまだCloseHandle()されていない
@@ -1397,7 +1397,7 @@ CTunerBankCtrl::CWatchBlock::CWatchBlock(WATCH_CONTEXT* context_)
 {
 	lock_recursive_mutex lock(this->context->lock);
 	if( ++this->context->count == 1 ){
-		this->context->tick = GetTickCount();
+		this->context->tick = GetU32Tick();
 	}
 }
 

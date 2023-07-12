@@ -341,7 +341,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 10, NULL);
 		KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
-		ctx->shutdownPendingTick = GetTickCount();
+		ctx->shutdownPendingTick = GetU32Tick();
 		break;
 	case WM_APP_REQUEST_SHUTDOWN:
 		//シャットダウン処理
@@ -527,7 +527,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_TIMER:
 		switch( wParam ){
 		case TIMER_RELOAD_EPG_CHK_PENDING:
-			if( GetTickCount() - ctx->shutdownPendingTick > 30000 ){
+			if( GetU32Tick() - ctx->shutdownPendingTick > 30000 ){
 				//30秒以内にシャットダウン問い合わせできなければキャンセル
 				if( ctx->shutdownModePending ){
 					ctx->shutdownModePending = SD_MODE_INVALID;
@@ -539,17 +539,17 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					lock_recursive_mutex lock(ctx->sys->autoAddLock);
 					if( ctx->sys->autoAddCheckItr == ctx->sys->epgAutoAdd.GetMap().begin() ){
 						//自動予約登録処理を開始
-						ctx->autoAddCheckTick = GetTickCount();
+						ctx->autoAddCheckTick = GetU32Tick();
 						ctx->autoAddCheckAddList.clear();
 						ctx->autoAddCheckAddCountUpdated = false;
 					}
-					for( DWORD tick = GetTickCount(); ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end(); ){
+					for( DWORD tick = GetU32Tick(); ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end(); ){
 						DWORD addCount = ctx->sys->autoAddCheckItr->second.addCount;
 						ctx->sys->AutoAddReserveEPG(ctx->sys->autoAddCheckItr->second, ctx->autoAddCheckAddList);
 						if( addCount != (ctx->sys->autoAddCheckItr++)->second.addCount ){
 							ctx->autoAddCheckAddCountUpdated = true;
 						}
-						if( GetTickCount() - tick > 200 ){
+						if( GetU32Tick() - tick > 200 ){
 							//タイムアウト
 							break;
 						}
@@ -588,12 +588,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
 					syoboi.SendReserve(&reserveList, &tunerList);
 				}
-				AddDebugLogFormat(L"Done PostLoad EpgData %dmsec", GetTickCount() - ctx->autoAddCheckTick);
+				AddDebugLogFormat(L"Done PostLoad EpgData %dmsec", GetU32Tick() - ctx->autoAddCheckTick);
 			}
 			break;
 		case TIMER_QUERY_SHUTDOWN_PENDING:
-			if( GetTickCount() - ctx->shutdownPendingTick >= 100000 ){
-				if( GetTickCount() - ctx->shutdownPendingTick - 100000 > 30000 ){
+			if( GetU32Tick() - ctx->shutdownPendingTick >= 100000 ){
+				if( GetU32Tick() - ctx->shutdownPendingTick - 100000 > 30000 ){
 					//30秒以内にシャットダウン問い合わせできなければキャンセル
 					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->shutdownModePending ){
@@ -1122,7 +1122,7 @@ bool CEpgTimerSrvMain::IsUserWorking() const
 	lii.cbSize = sizeof(LASTINPUTINFO);
 	if( this->setting.noUsePC ){
 		if( this->setting.noUsePCTime != 0 ){
-			return GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < this->setting.noUsePCTime * 60 * 1000;
+			return GetLastInputInfo(&lii) && GetU32Tick() - lii.dwTime < this->setting.noUsePCTime * 60 * 1000;
 		}
 		//閾値が0のときは常に使用中扱い
 		return true;
@@ -3172,12 +3172,12 @@ int CEpgTimerSrvMain::LuaSleep(lua_State* L)
 {
 	CLuaWorkspace ws(L);
 	DWORD wait = (DWORD)lua_tointeger(L, 1);
-	DWORD base = GetTickCount();
+	DWORD base = GetU32Tick();
 	DWORD tick = base;
 	do{
 		//stoppingFlagでも必ず休む
 		Sleep(min<DWORD>(wait - (tick - base), 100));
-		tick = GetTickCount();
+		tick = GetU32Tick();
 	}while( wait > tick - base && ws.sys->stoppingFlag == false );
 	lua_pushboolean(L, ws.sys->stoppingFlag);
 	return 1;
