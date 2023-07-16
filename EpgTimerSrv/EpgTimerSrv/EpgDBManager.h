@@ -142,7 +142,7 @@ private:
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgArchive;
 	vector<vector<LONGLONG>> epgOldIndexCache;
 
-	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
+	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param);
 	static void LoadThread(CEpgDBManager* sys);
 
 	static bool InitializeSearchContext(SEARCH_CONTEXT& ctx, vector<LONGLONG>& enumServiceKey, const EPGDB_SEARCH_KEY_INFO* key);

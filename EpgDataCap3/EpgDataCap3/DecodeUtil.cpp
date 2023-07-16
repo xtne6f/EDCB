@@ -983,8 +983,8 @@ void CDecodeUtil::SetLogoTypeFlags(
 
 //全ロゴを列挙する
 BOOL CDecodeUtil::EnumLogoList(
-	BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, LPVOID),
-	LPVOID param
+	BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, void*),
+	void* param
 	)
 {
 	if( this->logoMap.empty() ){

@@ -229,8 +229,8 @@ DWORD WINAPI EnumEpgInfoListEP(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
-	BOOL (CALLBACK *enumEpgInfoListEPProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param),
-	LPVOID param
+	BOOL (CALLBACK *enumEpgInfoListEPProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param),
+	void* param
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
@@ -411,8 +411,8 @@ void WINAPI SetLogoTypeFlagsEP(
 DLL_EXPORT
 DWORD WINAPI EnumLogoListEP(
 	DWORD id,
-	BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param),
-	LPVOID param
+	BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, void* param),
+	void* param
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);

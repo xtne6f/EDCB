@@ -169,8 +169,8 @@ DWORD CEpgDataCap3Util::EnumEpgInfoList(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
-	BOOL (CALLBACK *enumEpgInfoListProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param),
-	LPVOID param
+	BOOL (CALLBACK *enumEpgInfoListProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param),
+	void* param
 	)
 {
 	if( module == NULL ){
@@ -261,8 +261,8 @@ void CEpgDataCap3Util::SetLogoTypeFlags(
 }
 
 DWORD CEpgDataCap3Util::EnumLogoList(
-	BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param),
-	LPVOID param
+	BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, void* param),
+	void* param
 	)
 {
 	if( module == NULL ){

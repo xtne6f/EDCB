@@ -21,8 +21,8 @@ public:
 
 	//全ロゴを列挙する
 	BOOL EnumLogoList(
-		BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, LPVOID),
-		LPVOID param
+		BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, void*),
+		void* param
 		);
 
 	//解析データの現在のストリームＩＤを取得する

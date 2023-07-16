@@ -381,7 +381,7 @@ protected:
 
 	void UpdateFilterServiceID();
 
-	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param);
+	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, void* param);
 
 	DWORD GetNextID();
 

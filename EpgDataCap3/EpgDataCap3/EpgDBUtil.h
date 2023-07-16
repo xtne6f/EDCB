@@ -61,8 +61,8 @@ public:
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
-		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, LPVOID),
-		LPVOID param
+		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, void*),
+		void* param
 		);
 
 	//蓄積されたEPG情報のあるサービス一覧を取得する
