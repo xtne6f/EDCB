@@ -1,29 +1,47 @@
 ﻿#include "stdafx.h"
 #include "WriteMain.h"
-
-extern HINSTANCE g_instance;
+#include "../../Common/PathUtil.h"
+#include "../../Common/StringUtil.h"
+#include <errno.h>
+#include <io.h>
 
 CWriteMain::CWriteMain(void)
+	: file(NULL, fclose)
+	, teeFile(NULL, fclose)
 {
-	this->file = INVALID_HANDLE_VALUE;
-	this->teeFile = INVALID_HANDLE_VALUE;
-	{
-		fs_path iniPath = GetModuleIniPath(g_instance);
-		this->writeBuffSize = GetPrivateProfileInt(L"SET", L"Size", 770048, iniPath.c_str());
-		this->writeBuff.reserve(this->writeBuffSize);
-		this->teeCmd = GetPrivateProfileToString(L"SET", L"TeeCmd", L"", iniPath.c_str());
-		if( this->teeCmd.empty() == false ){
-			this->teeBuff.resize(GetPrivateProfileInt(L"SET", L"TeeSize", 770048, iniPath.c_str()));
-			this->teeBuff.resize(max<size_t>(this->teeBuff.size(), 1));
-			this->teeDelay = GetPrivateProfileInt(L"SET", L"TeeDelay", 0, iniPath.c_str());
-		}
-	}
+	this->writeBuffSize = 0;
 }
 
 
 CWriteMain::~CWriteMain(void)
 {
 	Stop();
+}
+
+void CWriteMain::SetBufferSize(
+	DWORD buffSize
+	)
+{
+	if( !this->file ){
+		this->writeBuff.clear();
+		this->writeBuff.reserve(buffSize);
+		this->writeBuffSize = buffSize;
+	}
+}
+
+void CWriteMain::SetTeeCommand(
+	LPCWSTR cmd,
+	DWORD buffSize,
+	DWORD delayBytes
+	)
+{
+	if( !this->teeFile ){
+		this->teeCmd = cmd;
+		if( this->teeCmd.empty() == false ){
+			this->teeBuff.resize(max<DWORD>(buffSize, 1));
+			this->teeDelay = delayBytes;
+		}
+	}
 }
 
 BOOL CWriteMain::Start(
@@ -37,22 +55,24 @@ BOOL CWriteMain::Start(
 	this->savePath = fileName;
 	AddDebugLogFormat(L"★CWriteMain::Start CreateFile:%ls", this->savePath.c_str());
 	UtilCreateDirectories(fs_path(this->savePath).parent_path());
-	this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-	if( this->file == INVALID_HANDLE_VALUE ){
-		AddDebugLogFormat(L"★CWriteMain::Start Err:0x%08X", GetLastError());
+	int apiErr;
+	this->file.reset(UtilOpenFile(this->savePath, (overWriteFlag ? UTIL_O_CREAT_WRONLY : UTIL_O_EXCL_CREAT_WRONLY) | UTIL_SH_READ | UTIL_F_IONBF, &apiErr));
+	if( !this->file ){
+		int err = apiErr ? apiErr : errno;
+		AddDebugLogFormat(L"★CWriteMain::Start Err:%ls%d", apiErr ? L"" : L"errno=", err);
 		fs_path pathWoExt = this->savePath;
 		fs_path ext = pathWoExt.extension();
 		pathWoExt.replace_extension();
 		for( int i = 1; ; i++ ){
 			Format(this->savePath, L"%ls-(%d)%ls", pathWoExt.c_str(), i, ext.c_str());
-			this->file = CreateFile(this->savePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, overWriteFlag ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-			if( this->file != INVALID_HANDLE_VALUE || i >= 999 ){
-				DWORD err = GetLastError();
+			this->file.reset(UtilOpenFile(this->savePath, (overWriteFlag ? UTIL_O_CREAT_WRONLY : UTIL_O_EXCL_CREAT_WRONLY) | UTIL_SH_READ | UTIL_F_IONBF, &apiErr));
+			if( this->file || i >= 999 ){
+				err = apiErr ? apiErr : errno;
 				AddDebugLogFormat(L"★CWriteMain::Start CreateFile:%ls", this->savePath.c_str());
-				if( this->file != INVALID_HANDLE_VALUE ){
+				if( this->file ){
 					break;
 				}
-				AddDebugLogFormat(L"★CWriteMain::Start Err:0x%08X", err);
+				AddDebugLogFormat(L"★CWriteMain::Start Err:%ls%d", apiErr ? L"" : L"errno=", err);
 				this->savePath = L"";
 				return FALSE;
 			}
@@ -61,18 +81,17 @@ BOOL CWriteMain::Start(
 
 	//ディスクに容量を確保
 	if( createSize > 0 ){
-		LARGE_INTEGER stPos;
-		stPos.QuadPart = createSize;
-		SetFilePointerEx( this->file, stPos, NULL, FILE_BEGIN );
-		SetEndOfFile( this->file );
-		SetFilePointer( this->file, 0, NULL, FILE_BEGIN );
+		if( _fseeki64(this->file.get(), createSize, SEEK_SET) == 0 ){
+			SetEndOfFile((HANDLE)_get_osfhandle(_fileno(this->file.get())));
+		}
+		rewind(this->file.get());
 	}
 	this->wrotePos = 0;
 
 	//コマンドに分岐出力
 	if( this->teeCmd.empty() == false ){
-		this->teeFile = CreateFile(this->savePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-		if( this->teeFile != INVALID_HANDLE_VALUE ){
+		this->teeFile.reset(UtilOpenFile(this->savePath, UTIL_SHARED_READ | UTIL_F_SEQUENTIAL | UTIL_F_IONBF));
+		if( this->teeFile ){
 			this->teeThreadStopEvent.Reset();
 			this->teeThread = thread_(TeeThread, this);
 		}
@@ -84,30 +103,26 @@ BOOL CWriteMain::Start(
 BOOL CWriteMain::Stop(
 	)
 {
-	if( this->file != INVALID_HANDLE_VALUE ){
+	if( this->file ){
 		if( this->writeBuff.empty() == false ){
-			DWORD write;
-			if( WriteFile(this->file, &this->writeBuff.front(), (DWORD)this->writeBuff.size(), &write, NULL) == FALSE ){
-				AddDebugLogFormat(L"★WriteFile Err:0x%08X", GetLastError());
+			size_t n = fwrite(this->writeBuff.data(), 1, this->writeBuff.size(), this->file.get());
+			if( n == 0 ){
+				AddDebugLogFormat(L"★WriteFile Err:errno=%d", errno);
 			}else{
-				this->writeBuff.erase(this->writeBuff.begin(), this->writeBuff.begin() + write);
+				this->writeBuff.erase(this->writeBuff.begin(), this->writeBuff.begin() + n);
 				lock_recursive_mutex lock(this->wroteLock);
-				this->wrotePos += write;
+				this->wrotePos += n;
 			}
 			//未出力のバッファは再Start()に備えて繰り越す
 		}
-		SetEndOfFile(this->file);
-		CloseHandle(this->file);
-		this->file = INVALID_HANDLE_VALUE;
+		TruncateFile(this->file.get());
+		this->file.reset();
 	}
 	if( this->teeThread.joinable() ){
 		this->teeThreadStopEvent.Set();
 		this->teeThread.join();
 	}
-	if( this->teeFile != INVALID_HANDLE_VALUE ){
-		CloseHandle(this->teeFile);
-		this->teeFile = INVALID_HANDLE_VALUE;
-	}
+	this->teeFile.reset();
 
 	return TRUE;
 }
@@ -124,7 +139,7 @@ BOOL CWriteMain::Write(
 	DWORD* writeSize
 	)
 {
-	if( this->file != INVALID_HANDLE_VALUE && data != NULL && size > 0 ){
+	if( this->file && data != NULL && size > 0 ){
 		*writeSize = 0;
 		if( this->writeBuff.empty() == false ){
 			//できるだけバッファにコピー。コピー済みデータは呼び出し側にとっては「保存済み」となる
@@ -134,17 +149,16 @@ BOOL CWriteMain::Write(
 			size -= *writeSize;
 			if( this->writeBuff.size() >= this->writeBuffSize ){
 				//バッファが埋まったので出力
-				DWORD write;
-				if( WriteFile(this->file, &this->writeBuff.front(), (DWORD)this->writeBuff.size(), &write, NULL) == FALSE ){
-					AddDebugLogFormat(L"★WriteFile Err:0x%08X", GetLastError());
-					SetEndOfFile(this->file);
-					CloseHandle(this->file);
-					this->file = INVALID_HANDLE_VALUE;
+				size_t n = fwrite(this->writeBuff.data(), 1, this->writeBuff.size(), this->file.get());
+				if( n == 0 ){
+					AddDebugLogFormat(L"★WriteFile Err:errno=%d", errno);
+					TruncateFile(this->file.get());
+					this->file.reset();
 					return FALSE;
 				}
-				this->writeBuff.erase(this->writeBuff.begin(), this->writeBuff.begin() + write);
+				this->writeBuff.erase(this->writeBuff.begin(), this->writeBuff.begin() + n);
 				lock_recursive_mutex lock(this->wroteLock);
-				this->wrotePos += write;
+				this->wrotePos += n;
 			}
 			if( this->writeBuff.empty() == false || size == 0 ){
 				return TRUE;
@@ -152,17 +166,16 @@ BOOL CWriteMain::Write(
 		}
 		if( size > this->writeBuffSize ){
 			//バッファサイズより大きいのでそのまま出力
-			DWORD write;
-			if( WriteFile(this->file, data, size, &write, NULL) == FALSE ){
-				AddDebugLogFormat(L"★WriteFile Err:0x%08X", GetLastError());
-				SetEndOfFile(this->file);
-				CloseHandle(this->file);
-				this->file = INVALID_HANDLE_VALUE;
+			size_t n = fwrite(data, 1, size, this->file.get());
+			if( n == 0 ){
+				AddDebugLogFormat(L"★WriteFile Err:errno=%d", errno);
+				TruncateFile(this->file.get());
+				this->file.reset();
 				return FALSE;
 			}
-			*writeSize += write;
+			*writeSize += (DWORD)n;
 			lock_recursive_mutex lock(this->wroteLock);
-			this->wrotePos += write;
+			this->wrotePos += n;
 		}else{
 			//バッファにコピー
 			*writeSize += size;
@@ -171,6 +184,11 @@ BOOL CWriteMain::Write(
 		return TRUE;
 	}
 	return FALSE;
+}
+
+void CWriteMain::TruncateFile(FILE* fp)
+{
+	SetEndOfFile((HANDLE)_get_osfhandle(_fileno(fp)));
 }
 
 void CWriteMain::TeeThread(CWriteMain* sys)
@@ -220,14 +238,14 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 							lock_recursive_mutex lock(sys->wroteLock);
 							readablePos = sys->wrotePos - sys->teeDelay;
 						}
-						LARGE_INTEGER liPos = {};
-						DWORD read;
-						if( SetFilePointerEx(sys->teeFile, liPos, &liPos, FILE_CURRENT) &&
-						    readablePos - liPos.QuadPart >= (LONGLONG)sys->teeBuff.size() &&
-						    ReadFile(sys->teeFile, sys->teeBuff.data(), (DWORD)sys->teeBuff.size(), &read, NULL) && read > 0 ){
+						LONGLONG pos;
+						size_t n;
+						if( (pos = _ftelli64(sys->teeFile.get())) >= 0 &&
+						    readablePos - pos >= (LONGLONG)sys->teeBuff.size() &&
+						    (n = fread(sys->teeBuff.data(), 1, sys->teeBuff.size(), sys->teeFile.get())) > 0 ){
 							OVERLAPPED ol = {};
 							ol.hEvent = olEvents[1];
-							if( WriteFile(writePipe, sys->teeBuff.data(), read, NULL, &ol) == FALSE && GetLastError() != ERROR_IO_PENDING ){
+							if( WriteFile(writePipe, sys->teeBuff.data(), (DWORD)n, NULL, &ol) == FALSE && GetLastError() != ERROR_IO_PENDING ){
 								//出力完了
 								break;
 							}
@@ -238,7 +256,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 								break;
 							}
 							DWORD xferred;
-							if( GetOverlappedResult(writePipe, &ol, &xferred, FALSE) == FALSE || xferred < read ){
+							if( GetOverlappedResult(writePipe, &ol, &xferred, FALSE) == FALSE || xferred < n ){
 								//出力完了
 								break;
 							}
