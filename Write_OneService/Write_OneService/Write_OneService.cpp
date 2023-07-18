@@ -5,6 +5,7 @@
 
 #include "WriteMain.h"
 #include "../../Common/InstanceManager.h"
+#include "../../Common/PathUtil.h"
 #include <shellapi.h>
 
 CInstanceManager<CWriteMain> g_instMng;
@@ -112,8 +113,20 @@ BOOL WINAPI CreateCtrl(
 		return FALSE;
 	}
 
+	fs_path pluginPath;
+	fs_path iniPath = GetModuleIniPath(g_instance);
+	wstring pluginName = GetPrivateProfileToString(L"SET", L"WritePlugin", L"", iniPath.c_str());
+	if( pluginName.empty() == false && pluginName[0] != L';' ){
+		//出力プラグインを数珠繋ぎ
+		pluginPath = GetModulePath(g_instance);
+		pluginPath.replace_filename(pluginName);
+	}
+
 	try{
 		std::shared_ptr<CWriteMain> ptr = std::make_shared<CWriteMain>();
+		if( pluginPath.empty() == false ){
+			ptr->InitializeDownstreamPlugin(pluginPath.c_str());
+		}
 		*id = g_instMng.push(ptr);
 	}catch( std::bad_alloc& ){
 		return FALSE;

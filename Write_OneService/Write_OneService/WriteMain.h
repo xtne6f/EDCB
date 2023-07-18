@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "../../Common/PathUtil.h"
-#include "../../Common/StringUtil.h"
 #include "../../Common/WritePlugInUtil.h"
 #include "../../BonCtrl/PacketInit.h"
 #include "../../BonCtrl/ServiceFilter.h"
@@ -11,6 +9,15 @@ class CWriteMain
 public:
 	CWriteMain();
 	~CWriteMain();
+
+	//数珠繋ぎする出力プラグインを初期化する
+	//戻り値：
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// pluginPath			[IN]ロードするプラグインのフルパス
+	BOOL InitializeDownstreamPlugin(
+		LPCWSTR pluginPath
+		);
 
 	//ファイル保存を開始する
 	//戻り値：

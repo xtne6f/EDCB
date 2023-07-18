@@ -1,29 +1,32 @@
 ﻿#include "stdafx.h"
 #include "WriteMain.h"
 #include "../../Common/PathUtil.h"
+#include "../../Common/StringUtil.h"
 #include "../../Common/TSPacketUtil.h"
-
-extern HINSTANCE g_instance;
 
 CWriteMain::CWriteMain()
 	: file(NULL, fclose)
 {
-	{
-		fs_path iniPath = GetModuleIniPath(g_instance);
-		wstring name = GetPrivateProfileToString(L"SET", L"WritePlugin", L"", iniPath.c_str());
-		if( name.empty() == false && name[0] != L';' ){
-			//出力プラグインを数珠繋ぎ
-			this->writePlugin.reset(new CWritePlugInUtil);
-			if( this->writePlugin->Initialize(GetModulePath(g_instance).replace_filename(name).c_str()) == FALSE ){
-				this->writePlugin.reset();
-			}
-		}
-	}
 }
 
 CWriteMain::~CWriteMain()
 {
 	Stop();
+}
+
+BOOL CWriteMain::InitializeDownstreamPlugin(
+	LPCWSTR pluginPath
+	)
+{
+	this->writePlugin.reset();
+	if( pluginPath && !this->file ){
+		this->writePlugin.reset(new CWritePlugInUtil);
+		if( this->writePlugin->Initialize(pluginPath) == FALSE ){
+			AddDebugLog(L"★CWriteMain::InitializeDownstreamPlugin Err");
+			this->writePlugin.reset();
+		}
+	}
+	return !!this->writePlugin;
 }
 
 BOOL CWriteMain::Start(
