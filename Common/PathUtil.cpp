@@ -8,6 +8,7 @@
 #else
 #include "ThreadUtil.h"
 #include <dirent.h>
+#include <dlfcn.h>
 #include <errno.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -260,8 +261,11 @@ void path::first_element(const wstring& src, size_t& element_pos, size_t& elemen
 } // namespace filesystem_
 
 
-FILE* UtilOpenFile(const wstring& path, int flags)
+FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 {
+	if( apiError ){
+		*apiError = 0;
+	}
 #ifdef _WIN32
 	LPCWSTR mode = (flags & 31) == UTIL_O_RDONLY ? L"rb" :
 	               (flags & 31) == UTIL_O_RDWR ? L"r+b" :
@@ -298,6 +302,8 @@ FILE* UtilOpenFile(const wstring& path, int flags)
 			}else{
 				CloseHandle(h);
 			}
+		}else if( apiError ){
+			*apiError = GetLastError();
 		}
 	}
 #else
@@ -373,26 +379,34 @@ fs_path GetModuleIniPath(HMODULE hModule)
 	return GetModulePath().replace_extension(L".ini");
 }
 #else
-fs_path GetModulePath()
+fs_path GetModulePath(void* funcAddr)
 {
-	char szPath[1024];
-	if( readlink("/proc/self/exe", szPath, sizeof(szPath)) < 0 ){
-		throw std::runtime_error("");
-	}
 	wstring strPath;
-	UTF8toW(szPath, strPath);
+	if( funcAddr ){
+		Dl_info info;
+		if( dladdr(funcAddr, &info) == 0 ){
+			throw std::runtime_error("dladdr");
+		}
+		UTF8toW(info.dli_fname, strPath);
+	}else{
+		char szPath[1024];
+		ssize_t len = readlink("/proc/self/exe", szPath, 1024);
+		if( len < 0 || len >= 1024 ){
+			throw std::runtime_error("readlink");
+		}
+		szPath[len] = '\0';
+		UTF8toW(szPath, strPath);
+	}
 	fs_path path(strPath);
 	if( path.is_relative() || path.has_filename() == false ){
 		throw std::runtime_error("");
 	}
 	return path;
 }
-fs_path GetModuleIniPath(LPCWSTR moduleName)
+
+fs_path GetModuleIniPath(void* funcAddr)
 {
-	if( moduleName ){
-		return fs_path(EDCB_INI_ROOT).append(moduleName).concat(L".ini");
-	}
-	return fs_path(EDCB_INI_ROOT).append(GetModulePath().filename().native()).replace_extension(L".ini");
+	return fs_path(EDCB_INI_ROOT).append(GetModulePath(funcAddr).filename().native()).concat(L".ini");
 }
 #endif
 

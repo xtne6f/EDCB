@@ -97,8 +97,8 @@ enum {
 };
 
 // ファイルを開く(継承不能、共有モード制御可)
-FILE* UtilOpenFile(const wstring& path, int flags);
-inline FILE* UtilOpenFile(const fs_path& path, int flags) { return UtilOpenFile(path.native(), flags); }
+FILE* UtilOpenFile(const wstring& path, int flags, int* apiError = NULL);
+inline FILE* UtilOpenFile(const fs_path& path, int flags, int* apiError = NULL) { return UtilOpenFile(path.native(), flags, apiError); }
 
 #ifndef _WIN32
 BOOL DeleteFile(LPCWSTR path);
@@ -110,8 +110,8 @@ fs_path GetSettingPath();
 fs_path GetModulePath(HMODULE hModule = NULL);
 fs_path GetModuleIniPath(HMODULE hModule = NULL);
 #else
-fs_path GetModulePath();
-fs_path GetModuleIniPath(LPCWSTR moduleName = NULL);
+fs_path GetModulePath(void* funcAddr = NULL);
+fs_path GetModuleIniPath(void* funcAddr = NULL);
 #endif
 fs_path GetCommonIniPath();
 fs_path GetRecFolderPath(int index = 0);
