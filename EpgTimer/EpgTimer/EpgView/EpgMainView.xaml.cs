@@ -829,10 +829,43 @@ namespace EpgTimer
         private void ReloadReserveViewItem()
         {
             reserveList.Clear();
+            timeView.ClearMarker();
+
             if (serviceList.Count > 0 && baseTime >= CommonManager.Instance.DB.EventBaseTime)
             {
+                var timeRanges = new List<KeyValuePair<DateTime, TimeSpan>>[] {
+                    new List<KeyValuePair<DateTime, TimeSpan>>(),
+                    new List<KeyValuePair<DateTime, TimeSpan>>(),
+                    new List<KeyValuePair<DateTime, TimeSpan>>()
+                };
+
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
+                    int duration = (int)info.DurationSecond;
+                    DateTime startTime = info.StartTime;
+                    //総時間60秒を下限に縮小方向のマージンを反映させる
+                    int startMargin = info.RecSetting.StartMargine;
+                    int endMargin = info.RecSetting.EndMargine;
+                    if (info.RecSetting.UseMargineFlag == 0)
+                    {
+                        startMargin = 0;
+                        endMargin = 0;
+                        if (CommonManager.Instance.DB.DefaultRecSetting != null)
+                        {
+                            startMargin = CommonManager.Instance.DB.DefaultRecSetting.StartMargine;
+                            endMargin = CommonManager.Instance.DB.DefaultRecSetting.EndMargine;
+                        }
+                    }
+                    startMargin = Math.Max(startMargin, -(duration - 60));
+                    endMargin = Math.Max(endMargin, -Math.Min(startMargin, 0) - (duration - 60));
+                    startTime = startTime.AddSeconds(-Math.Min(startMargin, 0));
+                    duration += Math.Min(startMargin, 0) + Math.Min(endMargin, 0);
+
+                    if (setViewInfo.EpgSetting.ReserveRectShowMarker && info.RecSetting.IsNoRec() == false)
+                    {
+                        timeRanges[Math.Min((int)info.OverlapMode, 2)].Add(new KeyValuePair<DateTime, TimeSpan>(startTime, TimeSpan.FromSeconds(duration)));
+                    }
+
                     {
                         int mergePos = 0;
                         int mergeNum = 0;
@@ -862,27 +895,6 @@ namespace EpgTimer
                             {
                                 ReserveViewItem viewItem = new ReserveViewItem(info);
                                 viewItem.LeftPos = setViewInfo.EpgSetting.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
-
-                                Int32 duration = (Int32)info.DurationSecond;
-                                DateTime startTime = info.StartTime;
-                                //総時間60秒を下限に縮小方向のマージンを反映させる
-                                int startMargin = info.RecSetting.StartMargine;
-                                int endMargin = info.RecSetting.EndMargine;
-                                if (info.RecSetting.UseMargineFlag == 0)
-                                {
-                                    startMargin = 0;
-                                    endMargin = 0;
-                                    if (CommonManager.Instance.DB.DefaultRecSetting != null)
-                                    {
-                                        startMargin = CommonManager.Instance.DB.DefaultRecSetting.StartMargine;
-                                        endMargin = CommonManager.Instance.DB.DefaultRecSetting.EndMargine;
-                                    }
-                                }
-                                startMargin = Math.Max(startMargin, -(duration - 60));
-                                endMargin = Math.Max(endMargin, -Math.Min(startMargin, 0) - (duration - 60));
-                                startTime = startTime.AddSeconds(-Math.Min(startMargin, 0));
-                                duration += Math.Min(startMargin, 0) + Math.Min(endMargin, 0);
-
                                 viewItem.Height = Math.Floor((duration / 60) * setViewInfo.EpgSetting.MinHeight);
                                 if (viewItem.Height < setViewInfo.EpgSetting.MinHeight)
                                 {
@@ -936,7 +948,27 @@ namespace EpgTimer
                         }
                     }
                 }
+
+                if (timeRanges[0].Count > 0)
+                {
+                    Brush brushNormal = ColorDef.CustColorBrush(setViewInfo.EpgSetting.ReserveRectColorNormal,
+                                                                setViewInfo.EpgSetting.ContentCustColorList[17], 0xA0);
+                    timeView.AddMarker(timeRanges[0], brushNormal);
+                }
+                if (timeRanges[1].Count > 0)
+                {
+                    Brush brushWarning = ColorDef.CustColorBrush(setViewInfo.EpgSetting.ReserveRectColorWarning,
+                                                                 setViewInfo.EpgSetting.ContentCustColorList[20], 0xA0);
+                    timeView.AddMarker(timeRanges[1], brushWarning);
+                }
+                if (timeRanges[2].Count > 0)
+                {
+                    Brush brushNoTuner = ColorDef.CustColorBrush(setViewInfo.EpgSetting.ReserveRectColorNoTuner,
+                                                                 setViewInfo.EpgSetting.ContentCustColorList[19], 0xA0);
+                    timeView.AddMarker(timeRanges[2], brushNoTuner);
+                }
             }
+
             //ほかの枠を完全に覆ってしまう場合は少しだけ縮める
             reserveList.Sort((a, b) => Math.Sign(a.LeftPos - b.LeftPos) * 2 + Math.Sign((int)a.ReserveInfo.ReserveID - (int)b.ReserveInfo.ReserveID));
             for (int i = 1; i < reserveList.Count; i++)
@@ -1251,19 +1283,14 @@ namespace EpgTimer
                     programGroupList,
                     timeList.Count * 60 * setViewInfo.EpgSetting.MinHeight);
 
-                List<DateTime> dateTimeList = new List<DateTime>();
-                foreach (var item in timeList)
-                {
-                    dateTimeList.Add(item.Key);
-                }
                 var timeBrushList = new List<Brush>();
                 for (int i = 0; i < setViewInfo.EpgSetting.TimeColorList.Count; i++)
                 {
                     SolidColorBrush brush = ColorDef.CustColorBrush(setViewInfo.EpgSetting.TimeColorList[i], setViewInfo.EpgSetting.TimeCustColorList[i]);
                     timeBrushList.Add(setViewInfo.EpgSetting.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
                 }
-                timeView.SetTime(dateTimeList, setViewInfo.EpgSetting.MinHeight, setViewInfo.NeedTimeOnlyBasic, timeBrushList, false);
-                dateView.SetTime(enablePrev, enableNext, dateTimeList);
+                timeView.SetTime(timeList.Keys, 60 * setViewInfo.EpgSetting.MinHeight, setViewInfo.NeedTimeOnlyBasic, timeBrushList, false);
+                dateView.SetTime(enablePrev, enableNext, timeList.FirstOrDefault().Key, timeList.LastOrDefault().Key);
 
                 SolidColorBrush serviceBrush = ColorDef.CustColorBrush(setViewInfo.EpgSetting.ServiceColor, setViewInfo.EpgSetting.ServiceCustColor);
                 serviceView.SetService(primeServiceList, setViewInfo.EpgSetting.ServiceWidth,

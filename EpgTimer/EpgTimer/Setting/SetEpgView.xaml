@@ -340,6 +340,7 @@
                             <Label Content="塗りつぶしで表示 (不透明度)" HorizontalAlignment="Left" Margin="12,63,0,0" VerticalAlignment="Top" />
                             <Slider AutoToolTipPlacement="TopLeft" Height="23" HorizontalAlignment="Left" LargeChange="10" Margin="205,67,0,0" Maximum="100" Minimum="0" SmallChange="1" Value="{Binding ReserveRectFillOpacity}" VerticalAlignment="Top" Width="145" />
                             <CheckBox Content="影付きで塗りつぶす" HorizontalAlignment="Left" IsChecked="{Binding ReserveRectFillWithShadow}" Margin="357,71,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="時刻軸に線を引く" HorizontalAlignment="Left" IsChecked="{Binding ReserveRectShowMarker}" Margin="520,71,0,0" VerticalAlignment="Top" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="292,6,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="624,6,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="292,34,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
