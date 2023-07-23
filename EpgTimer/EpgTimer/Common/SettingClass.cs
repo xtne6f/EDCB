@@ -198,6 +198,7 @@ namespace EpgTimer
         public double MainWndWidth { get; set; }
         public double MainWndHeight { get; set; }
         public double SearchWndTabsHeight { get; set; }
+        public double SearchWndNotKeyRatio { get; set; }
         public bool CloseMin { get; set; }
         public bool WakeMin { get; set; }
         public bool ViewButtonShowAsTab { get; set; }
@@ -411,6 +412,7 @@ namespace EpgTimer
             r.MainWndWidth              = ConvertXElem(x, w, "MainWndWidth", MainWndWidth, -100);
             r.MainWndHeight             = ConvertXElem(x, w, "MainWndHeight", MainWndHeight, -100);
             r.SearchWndTabsHeight       = ConvertXElem(x, w, "SearchWndTabsHeight", SearchWndTabsHeight, 0);
+            r.SearchWndNotKeyRatio      = ConvertXElem(x, w, "SearchWndNotKeyRatio", SearchWndNotKeyRatio, 0.6);
             r.CloseMin                  = ConvertXElem(x, w, "CloseMin", CloseMin, false);
             r.WakeMin                   = ConvertXElem(x, w, "WakeMin", WakeMin, false);
             r.ViewButtonShowAsTab       = ConvertXElem(x, w, "ViewButtonShowAsTab", ViewButtonShowAsTab, false);
@@ -540,6 +542,7 @@ namespace EpgTimer
             dest.MainWndWidth = MainWndWidth;
             dest.MainWndHeight = MainWndHeight;
             dest.SearchWndTabsHeight = SearchWndTabsHeight;
+            dest.SearchWndNotKeyRatio = SearchWndNotKeyRatio;
             dest.AndKeyList = AndKeyList;
             dest.NotKeyList = NotKeyList;
             dest.RecInfoColumnHead = RecInfoColumnHead;

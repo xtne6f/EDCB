@@ -67,6 +67,12 @@ namespace EpgTimer
                 }
                 listView_service.Items.Add(new ServiceItem(CommonManager.ConvertChSet5To(info)));
             }
+
+            if (0 <= Settings.Instance.SearchWndNotKeyRatio && Settings.Instance.SearchWndNotKeyRatio <= 1)
+            {
+                columnDefinition_notKey.Width = new GridLength(Settings.Instance.SearchWndNotKeyRatio, GridUnitType.Star);
+                columnDefinition_note.Width = new GridLength(1 - Settings.Instance.SearchWndNotKeyRatio, GridUnitType.Star);
+            }
         }
 
         public void FocusAndKey()
@@ -493,6 +499,12 @@ namespace EpgTimer
                     SaveSearchLogSettings();
                 }
             }
+        }
+
+        private void comboBox_notKey_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            Settings.Instance.SearchWndNotKeyRatio =
+                columnDefinition_notKey.ActualWidth / (columnDefinition_notKey.ActualWidth + columnDefinition_note.ActualWidth);
         }
 
         private void SaveSearchLogSettings()
