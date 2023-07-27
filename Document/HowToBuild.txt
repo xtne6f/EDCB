@@ -71,10 +71,10 @@
 ----------------------------------------
 ※ビルド環境が最もコンパクト
 
-0. https://sourceforge.net/projects/mingw-w64/files/ の「MinGW-W64 GCC-8.1.0」（上位バージョンがあればそれでもOK）のリストから
-   i686-win32-dwarf(x86ビルド用) または x86_64-win32-seh(x64ビルド用) の7z圧縮ファイルをダウンロードしてどこかに展開  
-   （以下、"C:/mingw32"または"C:/mingw64"に展開したと仮定）  
-   （Online InstallerでもOK。i686/win32/dwarfまたはx86_64/win32/sehを選び、"C:/mingw32"または"C:/mingw64"にインストール）
+0. https://github.com/niXman/mingw-builds-binaries/releases の「Release of 13.1.0-rt_v11-rev1」（上位バージョンがあればそれでもOK）
+   のリストから i686-13.1.0-release-win32-dwarf-msvcrt-rt_v11-rev1.7z(x86ビルド用) または
+   x86_64-13.1.0-release-win32-seh-msvcrt-rt_v11-rev1.7z(x64ビルド用) の7z圧縮ファイルをダウンロードしてどこかに展開  
+   （以下、"C:/mingw32"または"C:/mingw64"に展開したと仮定）
 
 1. RunMake.batを実行、"Specify make options :"のプロンプトで何も入力せずEnterキーを押す（クリーンしたいときはcleanと入力）
 
@@ -86,7 +86,8 @@
 
 （注意）
 - libwinpthread-1.dllは不要。ほかの注意事項は「ビルド(MSYS2/Mingw-w64)」と同様
-- 使用するMingw-w64は https://github.com/niXman/mingw-builds-binaries/releases でもOK（GCCのバージョンが新しい）
+- 使用するMingw-w64は https://sourceforge.net/projects/mingw-w64/files/ でも可だが、更新が止まってバージョンが古いのでお勧めしない
+- "Specify make options :"のプロンプトでプロジェクト名に.allを付けたもの(EpgTimerSrv.allなど)を入力すれば個別にビルドが可能
 
 
 
