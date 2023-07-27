@@ -115,6 +115,14 @@ namespace EpgTimer
             }
             return buff;
         }
+        /// <summary>配列のサイズだけストリームから読み込む</summary>
+        public void ReadToArray(byte[] v)
+        {
+            if (Stream.Read(v, 0, v.Length) != v.Length)
+            {
+                throw new EndOfStreamException();
+            }
+        }
         /// <summary>ストリームから読み込む</summary>
         public void Read(ref byte v) { v = ReadBytes(1)[0]; }
         /// <summary>ストリームから読み込む</summary>
@@ -361,6 +369,8 @@ namespace EpgTimer
         CMD_EPG_SRV_EPG_CAP_NOW = 1053,
         /// <summary>指定ファイルを転送する</summary>
         CMD_EPG_SRV_FILE_COPY = 1060,
+        /// <summary>指定ファイルをまとめて転送する</summary>
+        CMD_EPG_SRV_FILE_COPY2 = 2060,
         /// <summary>PlugInファイルの一覧を取得する（1:ReName、2:Write）</summary>
         CMD_EPG_SRV_ENUM_PLUGIN = 1061,
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
@@ -645,6 +655,8 @@ namespace EpgTimer
             resVal = ret == ErrCode.CMD_SUCCESS ? res.ToArray() : null;
             return ret;
         }
+        /// <summary>指定ファイルをまとめて転送する</summary>
+        public ErrCode SendFileCopy2(List<string> list, ref List<FileData> val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_FILE_COPY2, list, ref o); }
 
         private ErrCode SendPipe(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {

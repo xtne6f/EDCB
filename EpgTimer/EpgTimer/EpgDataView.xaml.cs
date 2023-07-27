@@ -43,6 +43,20 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// ロゴの更新通知
+        /// </summary>
+        public void RefreshLogo()
+        {
+            foreach (TabItem item in tabControl.Items)
+            {
+                if (item.Content is EpgMainView)
+                {
+                    ((EpgMainView)item.Content).RefreshLogo();
+                }
+            }
+        }
+
+        /// <summary>
         /// 予約情報の更新通知
         /// </summary>
         public void RefreshReserve()
