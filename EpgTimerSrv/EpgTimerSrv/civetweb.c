@@ -1108,7 +1108,7 @@ mg_atomic_inc(volatile ptrdiff_t *addr)
 #if defined(_WIN64) && !defined(NO_ATOMICS)
 	ret = InterlockedIncrement64(addr);
 #elif defined(_WIN32) && !defined(NO_ATOMICS)
-	ret = InterlockedIncrement(addr);
+	ret = InterlockedIncrement((volatile LONG *)addr);
 #elif defined(__GNUC__)                                                        \
     && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 0)))           \
     && !defined(NO_ATOMICS)
@@ -1131,7 +1131,7 @@ mg_atomic_dec(volatile ptrdiff_t *addr)
 #if defined(_WIN64) && !defined(NO_ATOMICS)
 	ret = InterlockedDecrement64(addr);
 #elif defined(_WIN32) && !defined(NO_ATOMICS)
-	ret = InterlockedDecrement(addr);
+	ret = InterlockedDecrement((volatile LONG *)addr);
 #elif defined(__GNUC__)                                                        \
     && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 0)))           \
     && !defined(NO_ATOMICS)
@@ -3306,20 +3306,21 @@ sockaddr_to_string(char *buf, size_t len, const union usa *usa)
 static void
 gmt_time_string(char *buf, size_t buf_len, time_t *t)
 {
-#if !defined(REENTRANT_TIME)
 	struct tm *tm;
 
+#if !defined(REENTRANT_TIME)
 	tm = ((t != NULL) ? gmtime(t) : NULL);
-	if (tm != NULL) {
 #else
 	struct tm _tm;
-	struct tm *tm = &_tm;
 
+	tm = NULL;
 	if (t != NULL) {
+		tm = &_tm;
 		gmtime_r(t, tm);
+	}
 #endif
-		strftime(buf, buf_len, "%a, %d %b %Y %H:%M:%S GMT", tm);
-	} else {
+	if ((tm == NULL)
+	    || (strftime(buf, buf_len, "%a, %d %b %Y %H:%M:%S GMT", tm) == 0)) {
 		mg_strlcpy(buf, "Thu, 01 Jan 1970 00:00:00 GMT", buf_len);
 	}
 }
@@ -9623,9 +9624,8 @@ print_dir_entry(struct mg_connection *conn, struct de *de)
 #else
 	tm = localtime(&de->file.last_modified);
 #endif
-	if (tm != NULL) {
-		strftime(mod, sizeof(mod), "%d-%b-%Y %H:%M", tm);
-	} else {
+	if ((tm == NULL)
+	    || (strftime(mod, sizeof(mod), "%d-%b-%Y %H:%M", tm) == 0)) {
 		mg_strlcpy(mod, "01-Jan-1970 00:00", sizeof(mod));
 	}
 	mg_printf(conn,
@@ -16114,13 +16114,14 @@ log_access(const struct mg_connection *conn)
 	/* If we did not get a log message from Lua, create it here. */
 	if (!log_buf[0]) {
 #if defined(REENTRANT_TIME)
-		localtime_r(&conn->conn_birth_time, tm);
+		gmtime_r(&conn->conn_birth_time, tm);
 #else
-		tm = localtime(&conn->conn_birth_time);
+		tm = gmtime(&conn->conn_birth_time);
 #endif
-		if (tm != NULL) {
-			strftime(date, sizeof(date), "%d/%b/%Y:%H:%M:%S %z", tm);
-		} else {
+		/* Unfortunately "%z" is a C99 feature, don't use it yet. */
+		if ((tm == NULL)
+		    || (strftime(date, sizeof(date), "%d/%b/%Y:%H:%M:%S +0000", tm)
+		        == 0)) {
 			mg_strlcpy(date, "01/Jan/1970:00:00:00 +0000", sizeof(date));
 		}
 
