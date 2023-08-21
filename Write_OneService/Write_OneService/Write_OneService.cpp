@@ -125,7 +125,7 @@ BOOL WINAPI CreateCtrl(
 	try{
 		std::shared_ptr<CWriteMain> ptr = std::make_shared<CWriteMain>();
 		if( pluginPath.empty() == false ){
-			ptr->InitializeDownstreamPlugin(pluginPath.c_str());
+			ptr->InitializeDownstreamPlugin(pluginPath.native());
 		}
 		*id = g_instMng.push(ptr);
 	}catch( std::bad_alloc& ){

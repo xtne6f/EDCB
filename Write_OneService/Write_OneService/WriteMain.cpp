@@ -15,11 +15,11 @@ CWriteMain::~CWriteMain()
 }
 
 BOOL CWriteMain::InitializeDownstreamPlugin(
-	LPCWSTR pluginPath
+	const wstring& pluginPath
 	)
 {
 	this->writePlugin.reset();
-	if( pluginPath && !this->file ){
+	if( pluginPath.empty() == false && !this->file ){
 		this->writePlugin.reset(new CWritePlugInUtil);
 		if( this->writePlugin->Initialize(pluginPath) == FALSE ){
 			AddDebugLog(L"★CWriteMain::InitializeDownstreamPlugin Err");

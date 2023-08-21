@@ -16,7 +16,7 @@ public:
 	//引数：
 	// pluginPath			[IN]ロードするプラグインのフルパス
 	BOOL InitializeDownstreamPlugin(
-		LPCWSTR pluginPath
+		const wstring& pluginPath
 		);
 
 	//ファイル保存を開始する

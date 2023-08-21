@@ -23,14 +23,12 @@ BOOL DuplicateSave(LPCWSTR originalPath, DWORD *targetID, wstring *targetPath)
 		buf.resize(buf.size() + 16, L'\0');
 	}
 	BOOL ret = FALSE;
-	HMODULE hDll = LoadLibrary(GetModulePath().replace_filename(L"Write_Multi.dll").c_str());
-	if (hDll) {
-		BOOL (WINAPI*pfnDuplicateSave)(LPCWSTR,DWORD*,WCHAR*,DWORD,int,ULONGLONG) =
-			reinterpret_cast<BOOL (WINAPI*)(LPCWSTR,DWORD*,WCHAR*,DWORD,int,ULONGLONG)>(GetProcAddress(hDll, "DuplicateSave"));
-		if (pfnDuplicateSave) {
+	std::unique_ptr<void, decltype(&UtilFreeLibrary)> module(UtilLoadLibrary(GetModulePath().replace_filename(L"Write_Multi.dll")), UtilFreeLibrary);
+	if (module) {
+		BOOL (WINAPI* pfnDuplicateSave)(LPCWSTR, DWORD*, WCHAR*, DWORD, int, ULONGLONG);
+		if (UtilGetProcAddress(module.get(), "DuplicateSave", pfnDuplicateSave)) {
 			ret = pfnDuplicateSave(originalPath, targetID, targetPath ? &buf.front() : nullptr, static_cast<DWORD>(buf.size()), -1, 0);
 		}
-		FreeLibrary(hDll);
 	}
 	if (ret && targetPath) {
 		*targetPath = &buf.front();
