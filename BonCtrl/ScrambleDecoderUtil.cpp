@@ -3,25 +3,25 @@
 
 namespace
 {
-IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOID* (WINAPI* funcCast)(LPCSTR, void*))
+IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), void* const* (WINAPI* funcCast)(LPCSTR, void*))
 {
-	HMODULE hModule = NULL;
+	void* hModule = NULL;
 #ifndef _MSC_VER
 	if( funcCast == NULL ){
-		if( (hModule = LoadLibrary(L"IBonCast.dll")) == NULL ){
+		if( (hModule = UtilLoadLibrary(wstring(L"IBonCast.dll"))) == NULL ){
 			AddDebugLog(L"★IBonCast.dllがロードできません");
 			return NULL;
 		}
-		funcCast = (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(hModule, "Cast");
+		UtilGetProcAddress(hModule, "Cast", funcCast);
 	}
 #endif
 	void* pBase;
-	const LPVOID* table;
+	void* const* table;
 	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IB25Decoder@5", pBase)) == NULL ){
 		AddDebugLog(L"★Castに失敗しました");
 #ifndef _MSC_VER
 		if( hModule ){
-			FreeLibrary(hModule);
+			UtilFreeLibrary(hModule);
 		}
 #endif
 		return NULL;
@@ -30,9 +30,9 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOI
 	class CCastB : public IB25Decoder2
 	{
 	public:
-		CCastB(HMODULE h_, void* p_, const LPVOID* t_) : h(h_), p(p_), t(t_) {}
+		CCastB(void* h_, void* p_, void* const* t_) : h(h_), p(p_), t(t_) {}
 		const BOOL Initialize(DWORD dwRound = 4) { return ((BOOL(*)(void*,DWORD))t[0])(p, dwRound); }
-		void Release() { ((void(*)(void*))t[1])(p); if( h ) FreeLibrary(h); delete this; }
+		void Release() { ((void(*)(void*))t[1])(p); if( h ) UtilFreeLibrary(h); delete this; }
 		const BOOL Decode(BYTE* pSrcBuf, const DWORD dwSrcSize, BYTE** ppDstBuf, DWORD* pdwDstSize) { return ((BOOL(*)(void*,BYTE*,DWORD,BYTE**,DWORD*))t[2])(p, pSrcBuf, dwSrcSize, ppDstBuf, pdwDstSize); }
 		const BOOL Flush(BYTE** ppDstBuf, DWORD* pdwDstSize) { return ((BOOL(*)(void*,BYTE**,DWORD*))t[3])(p, ppDstBuf, pdwDstSize); }
 		const BOOL Reset() { return ((BOOL(*)(void*))t[4])(p); }
@@ -52,9 +52,9 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOI
 		const DWORD GetEcmProcessNum() const { return ((DWORD(*)(void*))t[18])(p); }
 		const DWORD GetEmmProcessNum() const { return ((DWORD(*)(void*))t[19])(p); }
 	private:
-		HMODULE h;
+		void* h;
 		void* p;
-		const LPVOID* t;
+		void* const* t;
 	};
 
 	CCastB* b = new CCastB(hModule, pBase, table);
@@ -67,12 +67,12 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), const LPVOI
 }
 
 CScrambleDecoderUtil::CScrambleDecoderUtil(void)
+	: module(NULL, UtilFreeLibrary)
 {
 	this->currentDll = L"";
 
 	this->decodeIF = NULL;
 	this->decodeIF2 = NULL;
-	this->module = NULL;
 
 	this->emmEnable = false;
 }
@@ -82,23 +82,22 @@ CScrambleDecoderUtil::~CScrambleDecoderUtil(void)
 	UnLoadDll();
 }
 
-BOOL CScrambleDecoderUtil::LoadDll(LPCWSTR dllPath)
+BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 {
 	UnLoadDll();
 	BOOL ret = TRUE;
 
-	this->module = ::LoadLibrary(dllPath);
+	this->module.reset(UtilLoadLibrary(dllPath));
 	if( this->module == NULL ){
 		return FALSE;
 	}
 	IB25Decoder* (*func)();
-	func = (IB25Decoder* (*)())::GetProcAddress( this->module, "CreateB25Decoder");
-	if( !func ){
+	if( UtilGetProcAddress(this->module.get(), "CreateB25Decoder", func) == false ){
 		ret = FALSE;
 		goto ERR_END;
 	}
-	const LPVOID* (WINAPI* funcCast)(LPCSTR, void*);
-	funcCast = (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(this->module, "Cast");
+	void* const* (WINAPI* funcCast)(LPCSTR, void*);
+	UtilGetProcAddress(this->module.get(), "Cast", funcCast);
 #ifdef _MSC_VER
 	if( !funcCast ){
 		this->decodeIF = func();
@@ -147,10 +146,7 @@ void CScrambleDecoderUtil::UnLoadDll()
 		this->decodeIF = NULL;
 		this->decodeIF2 = NULL;
 	}
-	if( this->module != NULL ){
-		::FreeLibrary( this->module );
-		this->module = NULL;
-	}
+	this->module.reset();
 	this->currentDll = L"";
 }
 
@@ -188,7 +184,7 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 	}
 
 	if( CompareNoCase(dllPath, this->currentDll) != 0 ){
-		if( LoadDll(dllPath.c_str()) == FALSE ){
+		if( LoadDll(dllPath) == FALSE ){
 			AddDebugLogFormat(L"★%ls のロードに失敗しました。", dllPath.c_str());
 			this->currentDll = L"";
 		}else{

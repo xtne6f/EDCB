@@ -2,15 +2,11 @@
 #include "WritePlugInUtil.h"
 
 #include "ErrDef.h"
-#ifndef _WIN32
-#include "StringUtil.h"
-#include <dlfcn.h>
-#endif
+#include "PathUtil.h"
 
 CWritePlugInUtil::CWritePlugInUtil(void)
+	: module(NULL, UtilFreeLibrary)
 {
-	module = NULL;
-
 	this->id = 0;
 }
 
@@ -20,47 +16,32 @@ CWritePlugInUtil::~CWritePlugInUtil(void)
 }
 
 BOOL CWritePlugInUtil::Initialize(
-	LPCWSTR loadDllFilePath
+	const wstring& loadDllFilePath
 	)
 {
 	if( module != NULL ){
 		return FALSE;
 	}
 
-#ifdef _WIN32
-	module = LoadLibrary(loadDllFilePath);
-	auto getProcAddr = [=](const char* name) { return GetProcAddress((HMODULE)module, name); };
-#else
-	string strPath;
-	WtoUTF8(loadDllFilePath, strPath);
-	module = dlopen(strPath.c_str(), RTLD_LAZY);
-	auto getProcAddr = [=](const char* name) { return dlsym(module, name); };
-#endif
+	module.reset(UtilLoadLibrary(loadDllFilePath));
 
 	if( module == NULL ){
 		return FALSE;
 	}
 
 	CreateCtrlWP pfnCreateCtrlWP;
-	if( (pfnCreateCtrlWP = (CreateCtrlWP)getProcAddr("CreateCtrl")) != NULL &&
-	    (pfnGetPlugInNameWP = (GetPlugInNameWP)getProcAddr("GetPlugInName")) != NULL &&
-	    (pfnSettingWP = (SettingWP)getProcAddr("Setting")) != NULL &&
-	    (pfnDeleteCtrlWP = (DeleteCtrlWP)getProcAddr("DeleteCtrl")) != NULL &&
-	    (pfnStartSaveWP = (StartSaveWP)getProcAddr("StartSave")) != NULL &&
-	    (pfnStopSaveWP = (StopSaveWP)getProcAddr("StopSave")) != NULL &&
-	    (pfnGetSaveFilePathWP = (GetSaveFilePathWP)getProcAddr("GetSaveFilePath")) != NULL &&
-	    (pfnAddTSBuffWP = (AddTSBuffWP)getProcAddr("AddTSBuff")) != NULL ){
+	if( UtilGetProcAddress(module.get(), "CreateCtrl", pfnCreateCtrlWP) &&
+	    UtilGetProcAddress(module.get(), "DeleteCtrl", pfnDeleteCtrlWP) &&
+	    UtilGetProcAddress(module.get(), "StartSave", pfnStartSaveWP) &&
+	    UtilGetProcAddress(module.get(), "StopSave", pfnStopSaveWP) &&
+	    UtilGetProcAddress(module.get(), "GetSaveFilePath", pfnGetSaveFilePathWP) &&
+	    UtilGetProcAddress(module.get(), "AddTSBuff", pfnAddTSBuffWP) ){
 		if( pfnCreateCtrlWP(&this->id) ){
 			return TRUE;
 		}
 		this->id = 0;
 	}
-#ifdef _WIN32
-	FreeLibrary((HMODULE)module);
-#else
-	dlclose(module);
-#endif
-	module = NULL;
+	module.reset();
 	return FALSE;
 }
 
@@ -69,36 +50,8 @@ void CWritePlugInUtil::UnInitialize()
 	if( module != NULL ){
 		pfnDeleteCtrlWP(this->id);
 		this->id = 0;
-#ifdef _WIN32
-		FreeLibrary((HMODULE)module);
-#else
-		dlclose(module);
-#endif
+		module.reset();
 	}
-	module = NULL;
-}
-
-BOOL CWritePlugInUtil::GetName(
-	WCHAR* name,
-	DWORD* nameSize
-	)
-{
-	if( module == NULL ){
-		return ERR_NOT_INIT;
-	}
-
-	return pfnGetPlugInNameWP(name, nameSize);
-}
-
-void CWritePlugInUtil::ShowSetting(
-	HWND parentWnd
-	)
-{
-	if( module == NULL ){
-		return ;
-	}
-
-	return pfnSettingWP(parentWnd);
 }
 
 BOOL CWritePlugInUtil::Start(

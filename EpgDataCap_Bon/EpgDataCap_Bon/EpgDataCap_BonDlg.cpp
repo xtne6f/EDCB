@@ -73,9 +73,8 @@ HICON CEpgDataCap_BonDlg::LoadLargeOrSmallIcon(int iconID, bool isLarge)
 	HMODULE hModule = GetModuleHandle(L"comctl32.dll");
 	if( hModule ){
 		HICON hIcon;
-		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*) =
-			(HRESULT (WINAPI*)(HINSTANCE, PCWSTR, int, HICON*))GetProcAddress(hModule, "LoadIconMetric");
-		if( pfnLoadIconMetric &&
+		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*);
+		if( UtilGetProcAddress(hModule, "LoadIconMetric", pfnLoadIconMetric) &&
 		    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), isLarge ? LIM_LARGE : LIM_SMALL, &hIcon) == S_OK ){
 			return hIcon;
 		}
@@ -253,7 +252,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		//BonDriver指定時は一覧になくてもよい
 		if( SelectBonDriver(this->iniBonDriver.c_str()) ){
 			if( initOpenWait > 0 ){
-				Sleep(initOpenWait);
+				SleepForMsec(initOpenWait);
 			}
 			serviceIndex = ReloadServiceList(initONID, initTSID, initSID);
 		}
@@ -273,7 +272,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		//チャンネル変更
 		if( SelectService(this->serviceList[serviceIndex]) ){
 			if( initONID >= 0 && initTSID >= 0 && initSID >= 0 && initChgWait > 0 ){
-				Sleep(initChgWait);
+				SleepForMsec(initChgWait);
 			}
 		}
 	}

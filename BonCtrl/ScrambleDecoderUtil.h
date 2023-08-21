@@ -31,11 +31,11 @@ protected:
 
 	IB25Decoder* decodeIF;
 	IB25Decoder2* decodeIF2;
-	HMODULE module;
+	std::unique_ptr<void, decltype(&UtilFreeLibrary)> module;
 
 	bool emmEnable;
 
 protected:
-	BOOL LoadDll(LPCWSTR dllPath);
+	BOOL LoadDll(const wstring& dllPath);
 };
 

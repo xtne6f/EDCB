@@ -5,8 +5,7 @@
 class CReNamePlugInUtil
 {
 public:
-	CReNamePlugInUtil() : hModuleConvert(NULL) {}
-	~CReNamePlugInUtil() { CloseConvert(); }
+	CReNamePlugInUtil();
 
 #ifdef _WIN32
 	//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
@@ -16,7 +15,7 @@ public:
 	// dllPath					[IN]プラグインDLLパス
 	// parentWnd				[IN]親ウインドウ
 	static BOOL ShowSetting(
-		const WCHAR* dllPath,
+		const wstring& dllPath,
 		HWND parentWnd
 		);
 #endif
@@ -53,7 +52,5 @@ private:
 	typedef BOOL (WINAPI* ConvertRecName2RNP)(PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, WCHAR* recName, DWORD* recNamesize);
 	typedef BOOL (WINAPI* ConvertRecName3RNP)(PLUGIN_RESERVE_INFO* info, const WCHAR* pattern, WCHAR* recName, DWORD* recNamesize);
 
-	CReNamePlugInUtil(const CReNamePlugInUtil&);
-	CReNamePlugInUtil& operator=(const CReNamePlugInUtil&);
-	void* hModuleConvert;
+	std::unique_ptr<void, void(*)(void*)> m_moduleHolder;
 };

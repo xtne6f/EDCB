@@ -142,7 +142,7 @@ private:
 	mutable recursive_mutex_ autoAddLock;
 	mutable recursive_mutex_ settingLock;
 	HWND hwndMain;
-	HMODULE hLuaDll;
+	std::unique_ptr<void, void(*)(void*)> luaDllHolder;
 	atomic_bool_ stoppingFlag;
 
 	atomic_bool_ residentFlag;

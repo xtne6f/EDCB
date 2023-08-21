@@ -97,8 +97,20 @@ enum {
 };
 
 // ファイルを開く(継承不能、共有モード制御可)
-FILE* UtilOpenFile(const wstring& path, int flags);
-inline FILE* UtilOpenFile(const fs_path& path, int flags) { return UtilOpenFile(path.native(), flags); }
+FILE* UtilOpenFile(const wstring& path, int flags, int* apiError = NULL);
+inline FILE* UtilOpenFile(const fs_path& path, int flags, int* apiError = NULL) { return UtilOpenFile(path.native(), flags, apiError); }
+
+// 共有ライブラリをロードする
+void* UtilLoadLibrary(const wstring& path);
+inline void* UtilLoadLibrary(const fs_path& path) { return UtilLoadLibrary(path.native()); }
+
+// 共有ライブラリを解放する
+void UtilFreeLibrary(void* hModule);
+
+// 共有ライブラリのエクスポート関数や変数のアドレスを取得する
+void* UtilGetProcAddress(void* hModule, const char* name);
+template<class T>
+bool UtilGetProcAddress(void* hModule, const char* name, T& proc) { return (proc = (T)UtilGetProcAddress(hModule, name)) != NULL; }
 
 #ifndef _WIN32
 BOOL DeleteFile(LPCWSTR path);
@@ -110,8 +122,8 @@ fs_path GetSettingPath();
 fs_path GetModulePath(HMODULE hModule = NULL);
 fs_path GetModuleIniPath(HMODULE hModule = NULL);
 #else
-fs_path GetModulePath();
-fs_path GetModuleIniPath(LPCWSTR moduleName = NULL);
+fs_path GetModulePath(void* funcAddr = NULL);
+fs_path GetModuleIniPath(void* funcAddr = NULL);
 #endif
 fs_path GetCommonIniPath();
 fs_path GetRecFolderPath(int index = 0);

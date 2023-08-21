@@ -103,8 +103,13 @@ reg_llstring(struct lua_State *L,
 }
 
 
-#define reg_string(L, name, val)                                               \
-	reg_lstring(L, name, val, (val != NULL) ? strlen(val) : 0)
+static void
+reg_string(struct lua_State *L, const char *name, const char *val)
+{
+	if (val != NULL) {
+		reg_lstring(L, name, val, strlen(val));
+	}
+}
 
 
 static void

@@ -92,8 +92,8 @@ public:
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
-		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param),
-		LPVOID param
+		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param),
+		void* param
 		);
 
 	//EPGデータの蓄積状態をリセットする
@@ -175,8 +175,8 @@ public:
 	// enumLogoListProc			[IN]ロゴのリストを取得するコールバック関数
 	// param					[IN]コールバック引数
 	DWORD EnumLogoList(
-		BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param),
-		LPVOID param
+		BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, void* param),
+		void* param
 		);
 
 	//PC時計を元としたストリーム時間との差を取得する
@@ -194,18 +194,18 @@ private:
 	typedef DWORD (WINAPI *GetServiceListEpgDBEP3)(DWORD id, DWORD* serviceListSize, SERVICE_INFO** serviceList);
 	typedef DWORD (WINAPI *GetEpgInfoListEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, DWORD* epgInfoListSize, EPG_EVENT_INFO** epgInfoList);
 	typedef DWORD (WINAPI *EnumEpgInfoListEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID,
-	                                           BOOL (CALLBACK *enumEpgInfoListEP3Proc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param), LPVOID param);
+	                                           BOOL (CALLBACK *enumEpgInfoListEP3Proc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param), void* param);
 	typedef void (WINAPI *ClearSectionStatusEP3)(DWORD id);
 	typedef EPG_SECTION_STATUS (WINAPI *GetSectionStatusEP3)(DWORD id, BOOL l_eitFlag);
 	typedef EPG_SECTION_STATUS (WINAPI *GetSectionStatusServiceEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL l_eitFlag);
 	typedef DWORD (WINAPI *GetEpgInfoEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL nextFlag, EPG_EVENT_INFO** epgInfo);
 	typedef DWORD (WINAPI *SearchEpgInfoEP3)(DWORD id, WORD originalNetworkID, WORD transportStreamID, WORD serviceID, WORD eventID, BYTE pfOnlyFlag, EPG_EVENT_INFO** epgInfo);
 	typedef void (WINAPI *SetLogoTypeFlagsEP3)(DWORD id, DWORD flags, const WORD** additionalNeededPids);
-	typedef DWORD (WINAPI *EnumLogoListEP3)(DWORD id, BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, LPVOID param), LPVOID param);
+	typedef DWORD (WINAPI *EnumLogoListEP3)(DWORD id, BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, void* param), void* param);
 	typedef int (WINAPI *GetTimeDelayEP3)(DWORD id);
 	typedef DWORD (WINAPI *SetDebugLogCallbackEP3)(void (CALLBACK *debugLogProc)(const WCHAR* s));
 
-	void* module;
+	std::unique_ptr<void, void(*)(void*)> module;
 	DWORD id;
 	UnInitializeEP3			pfnUnInitializeEP3;
 	AddTSPacketEP3			pfnAddTSPacketEP3;
@@ -224,8 +224,6 @@ private:
 	GetTimeDelayEP3			pfnGetTimeDelayEP3;
 	SetDebugLogCallbackEP3	pfnSetDebugLogCallbackEP3;
 
-	CEpgDataCap3Util(const CEpgDataCap3Util&);
-	CEpgDataCap3Util& operator=(const CEpgDataCap3Util&);
 	static void CALLBACK DebugLogCallback(const WCHAR* s);
 };
 

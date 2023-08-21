@@ -6,6 +6,7 @@
 #include "WriteMain.h"
 #include "SettingDlg.h"
 #include "../../Common/InstanceManager.h"
+#include "../../Common/PathUtil.h"
 
 CInstanceManager<CWriteMain> g_instMng;
 
@@ -118,8 +119,20 @@ BOOL WINAPI CreateCtrl(
 		return FALSE;
 	}
 
+	fs_path iniPath = GetModuleIniPath(g_instance);
+	DWORD buffSize = GetPrivateProfileInt(L"SET", L"Size", 770048, iniPath.c_str());
+	DWORD teeSize = 0;
+	DWORD teeDelay = 0;
+	wstring teeCmd = GetPrivateProfileToString(L"SET", L"TeeCmd", L"", iniPath.c_str());
+	if( teeCmd.empty() == false ){
+		teeSize = GetPrivateProfileInt(L"SET", L"TeeSize", 770048, iniPath.c_str());
+		teeDelay = GetPrivateProfileInt(L"SET", L"TeeDelay", 0, iniPath.c_str());
+	}
+
 	try{
 		std::shared_ptr<CWriteMain> ptr = std::make_shared<CWriteMain>();
+		ptr->SetBufferSize(buffSize);
+		ptr->SetTeeCommand(teeCmd.c_str(), teeSize, teeDelay);
 		*id = g_instMng.push(ptr);
 	}catch( std::bad_alloc& ){
 		return FALSE;

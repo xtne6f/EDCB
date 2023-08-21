@@ -1178,7 +1178,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 #ifdef _WIN32
 			if( WaitForSingleObject(this->hTunerProcess, 10) != WAIT_TIMEOUT ){
 #else
-			Sleep(10);
+			SleepForMsec(10);
 			if( waitpid(this->tunerPid, NULL, WNOHANG) != 0 ){
 #endif
 				CloseTuner();
@@ -1231,7 +1231,7 @@ void CTunerBankCtrl::CloseTuner()
 #else
 			int timeout = 30000;
 			for( ; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
-				Sleep(10);
+				SleepForMsec(10);
 			}
 			if( timeout <= 0 ){
 				//ぶち殺す

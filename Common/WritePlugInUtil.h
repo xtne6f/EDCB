@@ -12,31 +12,11 @@ public:
 	//引数：
 	// loadDllFilePath		[IN]ロードするDLLパス
 	BOOL Initialize(
-		LPCWSTR loadDllFilePath
+		const wstring& loadDllFilePath
 		);
 
 	//DLLの解放
 	void UnInitialize(
-		);
-
-	//PlugInの名前を取得する
-	//nameがNULL時は必要なサイズをnameSizeで返す
-	//通常nameSize=256で呼び出し
-	//戻り値
-	// TRUE（成功）、FALSE（失敗）、ERR_NOT_INIT（未初期化）
-	//引数：
-	// name						[OUT]名称
-	// nameSize					[IN/OUT]nameのサイズ(WCHAR単位)
-	BOOL GetName(
-		WCHAR* name,
-		DWORD* nameSize
-		);
-
-	//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
-	//引数：
-	// parentWnd				[IN]親ウインドウ
-	void ShowSetting(
-		HWND parentWnd
 		);
 
 	//ファイル保存を開始する
@@ -87,8 +67,6 @@ public:
 		);
 
 private:
-	typedef BOOL (WINAPI *GetPlugInNameWP)(WCHAR* name, DWORD* nameSize);
-	typedef void (WINAPI *SettingWP)(HWND parentWnd);
 	typedef BOOL (WINAPI *CreateCtrlWP)(DWORD* id);
 	typedef BOOL (WINAPI *DeleteCtrlWP)(DWORD id);
 	typedef BOOL (WINAPI *StartSaveWP)(DWORD id, LPCWSTR fileName, BOOL overWriteFlag, ULONGLONG createSize);
@@ -96,18 +74,13 @@ private:
 	typedef BOOL (WINAPI *GetSaveFilePathWP)(DWORD id, WCHAR* filePath, DWORD* filePathSize);
 	typedef BOOL (WINAPI *AddTSBuffWP)(DWORD id, BYTE* data, DWORD size, DWORD* writeSize);
 
-	void* module;
+	std::unique_ptr<void, void(*)(void*)> module;
 	DWORD id;
 
-	GetPlugInNameWP				pfnGetPlugInNameWP;
-	SettingWP					pfnSettingWP;
 	DeleteCtrlWP				pfnDeleteCtrlWP;
 	StartSaveWP					pfnStartSaveWP;
 	StopSaveWP					pfnStopSaveWP;
 	GetSaveFilePathWP			pfnGetSaveFilePathWP;
 	AddTSBuffWP					pfnAddTSBuffWP;
-
-	CWritePlugInUtil(const CWritePlugInUtil&);
-	CWritePlugInUtil& operator=(const CWritePlugInUtil&);
 };
 

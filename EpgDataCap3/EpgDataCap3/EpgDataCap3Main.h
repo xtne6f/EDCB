@@ -67,8 +67,8 @@ public:
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
-		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, LPVOID),
-		LPVOID param
+		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, void*),
+		void* param
 		);
 
 	//指定サービスの現在or次のEPG情報を取得する
@@ -138,8 +138,8 @@ public:
 
 	//全ロゴを列挙する
 	BOOL EnumLogoList(
-		BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, LPVOID),
-		LPVOID param
+		BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, void*),
+		void* param
 		);
 
 	//PC時計を元としたストリーム時間との差を取得する

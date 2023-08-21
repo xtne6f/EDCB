@@ -151,7 +151,7 @@ LRESULT CALLBACK CEpgTimerTask::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 			});
 			CSendCtrlCmd cmd;
 			for( int timeout = 0; cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS; timeout += 100 ){
-				Sleep(100);
+				SleepForMsec(100);
 				if( timeout > CONNECT_TIMEOUT ){
 					MessageBox(hwnd, L"サービスの起動を確認できませんでした。", NULL, MB_ICONERROR);
 					PostMessage(hwnd, WM_CLOSE, 0, 0);
@@ -366,9 +366,8 @@ HICON CEpgTimerTask::LoadSmallIcon(int iconID)
 	HMODULE hModule = GetModuleHandle(L"comctl32.dll");
 	if( hModule ){
 		HICON hIcon;
-		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*) =
-			(HRESULT (WINAPI*)(HINSTANCE, PCWSTR, int, HICON*))GetProcAddress(hModule, "LoadIconMetric");
-		if( pfnLoadIconMetric &&
+		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*);
+		if( UtilGetProcAddress(hModule, "LoadIconMetric", pfnLoadIconMetric) &&
 		    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), LIM_SMALL, &hIcon) == S_OK ){
 			return hIcon;
 		}

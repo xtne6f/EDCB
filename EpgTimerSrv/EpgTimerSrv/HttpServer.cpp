@@ -21,7 +21,7 @@ const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 CHttpServer::CHttpServer()
 	: mgContext(NULL)
-	, hLuaDll(NULL)
+	, luaDllHolder(NULL, UtilFreeLibrary)
 	, initedLibrary(false)
 {
 }
@@ -45,6 +45,17 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		AddDebugLog(L"CHttpServer::StartServer(): path has unavailable chars.");
 		return false;
 	}
+#ifndef _MSC_VER
+	//Civetweb内部で64ビット整数の書式に%I64dが使われるが、特にMinGWではこの書式が利用可能かやや曖昧なので確かめる
+	LONGLONG llCheckSpec = 0;
+	char szCheckSpec[32];
+	if( _snprintf(szCheckSpec, sizeof(szCheckSpec), "%I64d", -12345678901) != 12 ||
+	    sscanf(szCheckSpec, "%I64d", &llCheckSpec) != 1 ||
+	    llCheckSpec != -12345678901 ){
+		AddDebugLog(L"CHttpServer::StartServer(): Environment error, check your compiler.");
+		return false;
+	}
+#endif
 #endif
 	string accessLogPath;
 	//ログは_wfopen()されるのでWtoUTF8()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
@@ -141,8 +152,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	}
 
 	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
-	this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
-	if( this->hLuaDll == NULL ){
+	this->luaDllHolder.reset(UtilLoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME)));
+	if( this->luaDllHolder == NULL ){
 		AddDebugLog(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.");
 		return false;
 	}
@@ -231,7 +242,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 					this->mgContext = NULL;
 					break;
 				}
-				Sleep(10);
+				SleepForMsec(10);
 			}
 			if( this->mgContext ){
 				AddDebugLog(L"CHttpServer::StopServer(): failed to stop service.");
@@ -243,10 +254,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 		mg_exit_library();
 		this->initedLibrary = false;
 	}
-	if( this->hLuaDll ){
-		FreeLibrary(this->hLuaDll);
-		this->hLuaDll = NULL;
-	}
+	this->luaDllHolder.reset();
 	return true;
 }
 

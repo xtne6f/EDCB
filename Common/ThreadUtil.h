@@ -111,7 +111,13 @@ private:
 	recursive_mutex_& m_mtx;
 };
 
+inline void SleepForMsec(DWORD msec)
+{
+	Sleep(msec);
+}
+
 #else
+#include <chrono>
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -124,6 +130,12 @@ typedef std::atomic_bool atomic_bool_;
 typedef std::thread thread_;
 typedef std::recursive_mutex recursive_mutex_;
 typedef std::lock_guard<recursive_mutex_> lock_recursive_mutex;
+
+inline void SleepForMsec(DWORD msec)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(msec));
+}
+
 #endif
 
 class CAutoResetEvent

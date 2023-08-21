@@ -95,7 +95,7 @@ BOOL CBonCtrl::OpenBonDriver(
 	                                [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
 	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, traceLevel) ){
 		if( openWait > 0 ){
-			Sleep(openWait);
+			SleepForMsec(openWait);
 		}
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		//解析スレッド起動

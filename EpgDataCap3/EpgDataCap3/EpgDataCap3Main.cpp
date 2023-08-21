@@ -90,8 +90,8 @@ BOOL CEpgDataCap3Main::EnumEpgInfoList(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
-	BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, LPVOID),
-	LPVOID param
+	BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, void*),
+	void* param
 	)
 {
 	lock_recursive_mutex lock(this->utilLock);
@@ -206,8 +206,8 @@ void CEpgDataCap3Main::SetLogoTypeFlags(
 
 //全ロゴを列挙する
 BOOL CEpgDataCap3Main::EnumLogoList(
-	BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, LPVOID),
-	LPVOID param
+	BOOL (CALLBACK *enumLogoListProc)(DWORD, const LOGO_INFO*, void*),
+	void* param
 	)
 {
 	lock_recursive_mutex lock(this->utilLock);

@@ -185,7 +185,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				for( int retry = 0; retry < 25; retry++ ){
 					std::unique_ptr<FILE, decltype(&fclose)> masterFile(UtilOpenFile(path, UTIL_SHARED_READ), fclose);
 					if( !masterFile ){
-						Sleep(200);
+						SleepForMsec(200);
 						continue;
 					}
 					for( retry = 0; retry < 3; retry++ ){
@@ -202,7 +202,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 								        fs_path(path).concat(L".tmp"), UTIL_O_RDONLY | UTIL_SH_READ | UTIL_SH_DELETE), fclose) ){
 									break;
 								}
-								Sleep(200);
+								SleepForMsec(200);
 							}
 							//退避中に上書きされていないことを確認する
 							bool matched = false;
@@ -223,7 +223,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 							}
 							file.reset();
 						}
-						Sleep(200);
+						SleepForMsec(200);
 					}
 					break;
 				}
@@ -281,7 +281,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						loadElapsed += tick - loadTick;
 						loadTick = tick;
 						if( loadElapsed > 20 ){
-							Sleep(min<DWORD>(loadElapsed / 2, 100));
+							SleepForMsec(min<DWORD>(loadElapsed / 2, 100));
 							loadElapsed = 0;
 							loadTick = GetU32Tick();
 						}
@@ -541,7 +541,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				break;
 			}
 		}
-		Sleep(1);
+		SleepForMsec(1);
 	}
 	if( sys->loadForeground == false ){
 		//バックグラウンドに移行
@@ -569,7 +569,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	sys->loadStop = true;
 }
 
-BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param)
+BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param)
 {
 	EPGDB_SERVICE_EVENT_INFO* item = (EPGDB_SERVICE_EVENT_INFO*)param;
 

@@ -30,9 +30,10 @@ ct:Append([=[
     必要に応じてutil.luaの定数定義を編集して有効にしてください。
   </p><p>
     トランスコード機能(xcodeボタン)や視聴機能(viewボタン)を利用する場合は、ffmpegなどのトランスコーダーとtsreadex.exeとをEDCB直下のToolsフォルダに用意してください。<br>
-    既定ではHLS再生が有効なのでtsmemseg.exeも必要です。<br>
+    既定ではHLS再生が有効なのでtsmemseg.exeも必要です。字幕表示のため"-d"オプション付き(master-with-dブランチ)のものを用意してください。<br>
     後述のデータ放送の表示にはpsisiarc.exeも必要です。<br>
     また、必要に応じてutil.luaの定数定義を編集してください。<br>
+    トランスコーダーなどのバージョンはとくに指定しませんが、なるべく新しいものを用意してください。<br>
     ブラウザの制限により自動再生されないことがあるので、その場合は再生画面をクリックやタップしてください。
   </p><p>
     視聴機能を利用する場合は、EpgDataCap_Bonなどの「TCP送信先」にSrvPipeを追加しておく必要があります。<br>
@@ -73,7 +74,7 @@ ct:Append([=[
 <div id="footer">
   <a href="index.html">メニュー</a>
 </div>
-<script>
+<script type="text/javascript">
 document.getElementById("env-info").innerHTML=window.isSecureContext?", secure_context":", <s>secure_context</s>";
 var initDate=new Date(document.getElementById("env-date").innerText+"Z");
 var initNow=Date.now();

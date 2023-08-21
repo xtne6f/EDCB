@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "../../Common/PathUtil.h"
-#include "../../Common/StringUtil.h"
 #include "../../Common/ThreadUtil.h"
 
 class CWriteMain
@@ -9,7 +7,25 @@ class CWriteMain
 public:
 	CWriteMain(void);
 	~CWriteMain(void);
-	
+
+	//出力バッファサイズを設定する
+	//引数：
+	// buffSize				[IN]バッファサイズ
+	void SetBufferSize(
+		DWORD buffSize
+		);
+
+	//同時出力用のコマンドを設定する
+	//引数：
+	// cmd					[IN]コマンド
+	// buffSize				[IN]出力のコマンド転送用のバッファサイズ
+	// delayBytes			[IN]出力のコマンド転送までの遅延量
+	void SetTeeCommand(
+		LPCWSTR cmd,
+		DWORD buffSize,
+		DWORD delayBytes
+		);
+
 	//ファイル保存を開始する
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
@@ -51,7 +67,7 @@ public:
 		);
 
 protected:
-	HANDLE file;
+	std::unique_ptr<FILE, decltype(&fclose)> file;
 	wstring savePath;
 
 	vector<BYTE> writeBuff;
@@ -59,13 +75,14 @@ protected:
 	LONGLONG wrotePos;
 	recursive_mutex_ wroteLock;
 
-	HANDLE teeFile;
+	std::unique_ptr<FILE, decltype(&fclose)> teeFile;
 	thread_ teeThread;
 	CAutoResetEvent teeThreadStopEvent;
 	wstring teeCmd;
 	vector<BYTE> teeBuff;
 	DWORD teeDelay;
 
+	static void TruncateFile(FILE* fp);
 	static void TeeThread(CWriteMain* sys);
 };
 
