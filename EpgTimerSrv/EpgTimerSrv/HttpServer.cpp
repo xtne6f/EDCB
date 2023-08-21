@@ -45,6 +45,17 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		AddDebugLog(L"CHttpServer::StartServer(): path has unavailable chars.");
 		return false;
 	}
+#ifndef _MSC_VER
+	//Civetweb内部で64ビット整数の書式に%I64dが使われるが、特にMinGWではこの書式が利用可能かやや曖昧なので確かめる
+	LONGLONG llCheckSpec = 0;
+	char szCheckSpec[32];
+	if( _snprintf(szCheckSpec, sizeof(szCheckSpec), "%I64d", -12345678901) != 12 ||
+	    sscanf(szCheckSpec, "%I64d", &llCheckSpec) != 1 ||
+	    llCheckSpec != -12345678901 ){
+		AddDebugLog(L"CHttpServer::StartServer(): Environment error, check your compiler.");
+		return false;
+	}
+#endif
 #endif
 	string accessLogPath;
 	//ログは_wfopen()されるのでWtoUTF8()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
