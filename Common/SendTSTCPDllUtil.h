@@ -3,11 +3,11 @@
 class CSendTSTCPDllUtil
 {
 public:
-	CSendTSTCPDllUtil() : m_hModule(NULL) {}
+	CSendTSTCPDllUtil();
 	~CSendTSTCPDllUtil() { UnInitialize(); }
 	bool Initialize();
 	void UnInitialize();
-	bool IsInitialized() const { return m_hModule != NULL; }
+	bool IsInitialized() const { return m_module != NULL; }
 	bool AddSendAddr(LPCWSTR ip, DWORD dwPort);
 	bool AddSendAddrUdp(LPCWSTR ip, DWORD dwPort, bool broadcastFlag, int maxSendSize);
 	void ClearSendAddr();
@@ -27,7 +27,7 @@ private:
 	typedef DWORD (WINAPI *AddSendDataDLL)(int iID, BYTE* pbData, DWORD dwSize);
 	typedef DWORD (WINAPI *ClearSendBuffDLL)(int iID);
 
-	void* m_hModule;
+	std::unique_ptr<void, void(*)(void*)> m_module;
 	int m_iID;
 	UnInitializeDLL m_pfnUnInitializeDLL;
 	AddSendAddrDLL m_pfnAddSendAddrDLL;
@@ -37,7 +37,4 @@ private:
 	StopSendDLL m_pfnStopSendDLL;
 	AddSendDataDLL m_pfnAddSendDataDLL;
 	ClearSendBuffDLL m_pfnClearSendBuffDLL;
-
-	CSendTSTCPDllUtil(const CSendTSTCPDllUtil&);
-	CSendTSTCPDllUtil& operator=(const CSendTSTCPDllUtil&);
 };

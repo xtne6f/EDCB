@@ -366,9 +366,8 @@ HICON CEpgTimerTask::LoadSmallIcon(int iconID)
 	HMODULE hModule = GetModuleHandle(L"comctl32.dll");
 	if( hModule ){
 		HICON hIcon;
-		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*) =
-			(HRESULT (WINAPI*)(HINSTANCE, PCWSTR, int, HICON*))GetProcAddress(hModule, "LoadIconMetric");
-		if( pfnLoadIconMetric &&
+		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*);
+		if( UtilGetProcAddress(hModule, "LoadIconMetric", pfnLoadIconMetric) &&
 		    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), LIM_SMALL, &hIcon) == S_OK ){
 			return hIcon;
 		}

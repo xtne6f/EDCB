@@ -149,7 +149,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 
 	BOOL emptyFlag = TRUE;
 	for( size_t i=0; i<sys->fileList.size(); i++ ){
-		if( sys->fileList[i]->writeUtil.Initialize(GetModulePath().replace_filename(L"Write").append(sys->fileList[i]->writePlugIn).c_str()) == FALSE ){
+		if( sys->fileList[i]->writeUtil.Initialize(GetModulePath().replace_filename(L"Write").append(sys->fileList[i]->writePlugIn).native()) == FALSE ){
 			AddDebugLog(L"CWriteTSFile::StartSave Err 3");
 			sys->fileList[i].reset();
 		}else{

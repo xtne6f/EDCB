@@ -21,7 +21,7 @@ const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 CHttpServer::CHttpServer()
 	: mgContext(NULL)
-	, hLuaDll(NULL)
+	, luaDllHolder(NULL, UtilFreeLibrary)
 	, initedLibrary(false)
 {
 }
@@ -152,8 +152,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	}
 
 	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
-	this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
-	if( this->hLuaDll == NULL ){
+	this->luaDllHolder.reset(UtilLoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME)));
+	if( this->luaDllHolder == NULL ){
 		AddDebugLog(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.");
 		return false;
 	}
@@ -254,10 +254,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 		mg_exit_library();
 		this->initedLibrary = false;
 	}
-	if( this->hLuaDll ){
-		FreeLibrary(this->hLuaDll);
-		this->hLuaDll = NULL;
-	}
+	this->luaDllHolder.reset();
 	return true;
 }
 

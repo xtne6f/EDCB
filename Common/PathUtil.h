@@ -100,6 +100,18 @@ enum {
 FILE* UtilOpenFile(const wstring& path, int flags, int* apiError = NULL);
 inline FILE* UtilOpenFile(const fs_path& path, int flags, int* apiError = NULL) { return UtilOpenFile(path.native(), flags, apiError); }
 
+// 共有ライブラリをロードする
+void* UtilLoadLibrary(const wstring& path);
+inline void* UtilLoadLibrary(const fs_path& path) { return UtilLoadLibrary(path.native()); }
+
+// 共有ライブラリを解放する
+void UtilFreeLibrary(void* hModule);
+
+// 共有ライブラリのエクスポート関数や変数のアドレスを取得する
+void* UtilGetProcAddress(void* hModule, const char* name);
+template<class T>
+bool UtilGetProcAddress(void* hModule, const char* name, T& proc) { return (proc = (T)UtilGetProcAddress(hModule, name)) != NULL; }
+
 #ifndef _WIN32
 BOOL DeleteFile(LPCWSTR path);
 #endif

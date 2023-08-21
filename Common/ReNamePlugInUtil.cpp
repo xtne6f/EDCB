@@ -1,27 +1,25 @@
 ﻿#include "stdafx.h"
 #include "ReNamePlugInUtil.h"
-#ifndef _WIN32
-#include "StringUtil.h"
-#include <dlfcn.h>
-#endif
+#include "PathUtil.h"
+
+CReNamePlugInUtil::CReNamePlugInUtil()
+	: m_moduleHolder(NULL, UtilFreeLibrary)
+{
+}
 
 #ifdef _WIN32
 BOOL CReNamePlugInUtil::ShowSetting(
-	const WCHAR* dllPath,
+	const wstring& dllPath,
 	HWND parentWnd
 	)
 {
-	BOOL ret = FALSE;
-	HMODULE hModule = LoadLibrary(dllPath);
-	if( hModule ){
-		SettingRNP pfnSetting = (SettingRNP)GetProcAddress(hModule, "Setting");
-		if( pfnSetting ){
-			pfnSetting(parentWnd);
-			ret = TRUE;
-		}
-		FreeLibrary(hModule);
+	std::unique_ptr<void, decltype(&UtilFreeLibrary)> module(UtilLoadLibrary(dllPath), UtilFreeLibrary);
+	SettingRNP pfnSetting;
+	if( UtilGetProcAddress(module.get(), "Setting", pfnSetting) ){
+		pfnSetting(parentWnd);
+		return TRUE;
 	}
-	return ret;
+	return FALSE;
 }
 #endif
 
@@ -35,34 +33,25 @@ BOOL CReNamePlugInUtil::Convert(
 {
 	wstring pattern = dllPattern;
 	wstring dllPath = dllFolder + pattern.substr(0, pattern.find('?'));
-#ifdef _WIN32
-	HMODULE hModule = LoadLibrary(dllPath.c_str());
-	auto getProcAddr = [=](const char* name) { return GetProcAddress(hModule, name); };
-#else
-	string strPath;
-	WtoUTF8(dllPath, strPath);
-	void* hModule = dlopen(strPath.c_str(), RTLD_LAZY);
-	auto getProcAddr = [=](const char* name) { return dlsym(hModule, name); };
-#endif
+	void* hModule = UtilLoadLibrary(dllPath);
 	if( hModule == NULL ){
 		AddDebugLogFormat(L"%lsのロードに失敗しました", dllPath.c_str());
 		return FALSE;
 	}
-	CloseConvert();
-	hModuleConvert = hModule;
+	m_moduleHolder.reset(hModule);
 	pattern.erase(0, pattern.find('?'));
 	pattern.erase(0, 1);
-	ConvertRecName3RNP pfnConvertRecName3 = (ConvertRecName3RNP)getProcAddr("ConvertRecName3");
+	ConvertRecName3RNP pfnConvertRecName3;
 	BOOL ret;
-	if( pfnConvertRecName3 ){
+	if( UtilGetProcAddress(hModule, "ConvertRecName3", pfnConvertRecName3) ){
 		ret = pfnConvertRecName3(info, pattern.empty() ? NULL : pattern.c_str(), recName, recNamesize);
 	}else{
-		ConvertRecName2RNP pfnConvertRecName2 = (ConvertRecName2RNP)getProcAddr("ConvertRecName2");
-		if( pfnConvertRecName2 ){
+		ConvertRecName2RNP pfnConvertRecName2;
+		if( UtilGetProcAddress(hModule, "ConvertRecName2", pfnConvertRecName2) ){
 			ret = pfnConvertRecName2(info, info->epgInfo, recName, recNamesize);
 		}else{
-			ConvertRecNameRNP pfnConvertRecName = (ConvertRecNameRNP)getProcAddr("ConvertRecName");
-			if( pfnConvertRecName ){
+			ConvertRecNameRNP pfnConvertRecName;
+			if( UtilGetProcAddress(hModule, "ConvertRecName", pfnConvertRecName) ){
 				ret = pfnConvertRecName(info, recName, recNamesize);
 			}else{
 				AddDebugLog(L"ConvertRecNameの GetProcAddress に失敗");
@@ -75,12 +64,5 @@ BOOL CReNamePlugInUtil::Convert(
 
 void CReNamePlugInUtil::CloseConvert()
 {
-	if( hModuleConvert ){
-#ifdef _WIN32
-		FreeLibrary((HMODULE)hModuleConvert);
-#else
-		dlclose(hModuleConvert);
-#endif
-		hModuleConvert = NULL;
-	}
+	m_moduleHolder.reset();
 }

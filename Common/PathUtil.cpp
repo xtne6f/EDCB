@@ -336,6 +336,38 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 	return NULL;
 }
 
+void* UtilLoadLibrary(const wstring& path)
+{
+#ifdef _WIN32
+	return LoadLibrary(path.c_str());
+#else
+	string strPath;
+	WtoUTF8(path, strPath);
+	return dlopen(strPath.c_str(), RTLD_NOW);
+#endif
+}
+
+void UtilFreeLibrary(void* hModule)
+{
+#ifdef _WIN32
+	FreeLibrary((HMODULE)hModule);
+#else
+	dlclose(hModule);
+#endif
+}
+
+void* UtilGetProcAddress(void* hModule, const char* name)
+{
+	if( hModule ){
+#ifdef _WIN32
+		return (void*)GetProcAddress((HMODULE)hModule, name);
+#else
+		return dlsym(hModule, name);
+#endif
+	}
+	return NULL;
+}
+
 #ifndef _WIN32
 BOOL DeleteFile(LPCWSTR path)
 {

@@ -18,36 +18,37 @@ enum {
 #ifndef _MSC_VER
 IBonDriver* CastB(IBonDriver2** if2, IBonDriver* (*funcCreate)())
 {
-	HMODULE hModule = LoadLibrary(L"IBonCast.dll");
+	void* hModule = UtilLoadLibrary(wstring(L"IBonCast.dll"));
 	if( hModule == NULL ){
 		AddDebugLog(L"★IBonCast.dllがロードできません");
 		return NULL;
 	}
-	const LPVOID* (WINAPI* funcCast)(LPCSTR, void*) = (const LPVOID*(WINAPI*)(LPCSTR,void*))GetProcAddress(hModule, "Cast");
+	void* const* (WINAPI* funcCast)(LPCSTR, void*);
 	void* pBase;
-	const LPVOID* table;
-	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IBonDriver@10", pBase)) == NULL ){
+	void* const* table;
+	if( UtilGetProcAddress(hModule, "Cast", funcCast) == false ||
+	    (pBase = funcCreate()) == NULL || (table = funcCast("IBonDriver@10", pBase)) == NULL ){
 		AddDebugLog(L"★Castに失敗しました");
-		FreeLibrary(hModule);
+		UtilFreeLibrary(hModule);
 		return NULL;
 	}
 
 	class CCastB : public CBonStruct2Adapter
 	{
 	public:
-		CCastB(HMODULE h_, void* p, const LPVOID* t, const LPVOID* t2) : h(h_) {
+		CCastB(void* h_, void* p, void* const* t, void* const* t2) : h(h_) {
 			st2.st.pCtx = p;
 			//アダプタの関数ポインタフィールドを上書き
-			memcpy(&st2.st.pF00, t, sizeof(LPVOID) * 10);
-			if( t2 ) memcpy(&st2.pF10, t2, sizeof(LPVOID) * 7);
+			std::copy(t, t + 10, (void**)&st2.st.pF00);
+			if( t2 ) std::copy(t2, t2 + 7, (void**)&st2.pF10);
 		}
 		void Release() {
 			CBonStruct2Adapter::Release();
-			FreeLibrary(h);
+			UtilFreeLibrary(h);
 			delete this;
 		}
 	private:
-		HMODULE h;
+		void* h;
 	};
 
 	if( funcCast("IBonDriver2@17", pBase) == table ){
@@ -147,12 +148,12 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 	sys->bon2IF = NULL;
 	CBonStructAdapter bonAdapter;
 	CBonStruct2Adapter bon2Adapter;
-	HMODULE hModule = LoadLibrary(fs_path(sys->loadDllFolder).append(sys->loadDllFileName).c_str());
+	void* hModule = UtilLoadLibrary(fs_path(sys->loadDllFolder).append(sys->loadDllFileName));
 	if( hModule == NULL ){
 		AddDebugLog(L"★BonDriverがロードできません");
 	}else{
-		const STRUCT_IBONDRIVER* (*funcCreateBonStruct)() = (const STRUCT_IBONDRIVER*(*)())GetProcAddress(hModule, "CreateBonStruct");
-		if( funcCreateBonStruct ){
+		const STRUCT_IBONDRIVER* (*funcCreateBonStruct)();
+		if( UtilGetProcAddress(hModule, "CreateBonStruct", funcCreateBonStruct) ){
 			//特定コンパイラに依存しないI/Fを使う
 			const STRUCT_IBONDRIVER* st = funcCreateBonStruct();
 			if( st ){
@@ -164,8 +165,8 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 				}
 			}
 		}else{
-			IBonDriver* (*funcCreateBonDriver)() = (IBonDriver*(*)())GetProcAddress(hModule, "CreateBonDriver");
-			if( funcCreateBonDriver == NULL ){
+			IBonDriver* (*funcCreateBonDriver)();
+			if( UtilGetProcAddress(hModule, "CreateBonDriver", funcCreateBonDriver) == false ){
 				AddDebugLog(L"★GetProcAddressに失敗しました");
 			}else{
 #ifdef _MSC_VER
@@ -222,7 +223,7 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 			bonIF->Release();
 		}
 		if( hModule ){
-			FreeLibrary(hModule);
+			UtilFreeLibrary(hModule);
 		}
 		CoUninitialize();
 		return;
@@ -237,7 +238,7 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 	}
 	sys->bon2IF->CloseTuner();
 	bonIF->Release();
-	FreeLibrary(hModule);
+	UtilFreeLibrary(hModule);
 
 	CoUninitialize();
 }

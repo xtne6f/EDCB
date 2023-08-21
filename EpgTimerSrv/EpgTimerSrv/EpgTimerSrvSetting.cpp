@@ -896,7 +896,7 @@ void CEpgTimerSrvSetting::OnBnClickedSetRecNamePlugIn()
 	vector<WCHAR> name;
 	GetWindowTextBuffer(GetDlgItem(this->hwndReserve, IDC_COMBO_SET_RECNAME_PLUGIN), name);
 	if( name[0] ){
-		CReNamePlugInUtil::ShowSetting(GetModulePath().replace_filename(L"RecName").append(name.data()).c_str(), this->hwndTop);
+		CReNamePlugInUtil::ShowSetting(GetModulePath().replace_filename(L"RecName").append(name.data()).native(), this->hwndTop);
 	}
 }
 

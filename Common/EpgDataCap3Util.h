@@ -205,7 +205,7 @@ private:
 	typedef int (WINAPI *GetTimeDelayEP3)(DWORD id);
 	typedef DWORD (WINAPI *SetDebugLogCallbackEP3)(void (CALLBACK *debugLogProc)(const WCHAR* s));
 
-	void* module;
+	std::unique_ptr<void, void(*)(void*)> module;
 	DWORD id;
 	UnInitializeEP3			pfnUnInitializeEP3;
 	AddTSPacketEP3			pfnAddTSPacketEP3;
@@ -224,8 +224,6 @@ private:
 	GetTimeDelayEP3			pfnGetTimeDelayEP3;
 	SetDebugLogCallbackEP3	pfnSetDebugLogCallbackEP3;
 
-	CEpgDataCap3Util(const CEpgDataCap3Util&);
-	CEpgDataCap3Util& operator=(const CEpgDataCap3Util&);
 	static void CALLBACK DebugLogCallback(const WCHAR* s);
 };
 

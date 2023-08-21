@@ -160,7 +160,7 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
 	, hwndMain(NULL)
-	, hLuaDll(NULL)
+	, luaDllHolder(NULL, UtilFreeLibrary)
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
@@ -200,10 +200,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			DispatchMessage(&msg);
 		}
 	}
-	if( this->hLuaDll ){
-		FreeLibrary(this->hLuaDll);
-		this->hLuaDll = NULL;
-	}
+	this->luaDllHolder.reset();
 	return true;
 }
 
@@ -290,7 +287,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				string script;
 				WtoUTF8(wstring(buff.data()), script);
 				//Luaが利用可能ならば
-				if( ctx->sys->hLuaDll ){
+				if( ctx->sys->luaDllHolder ){
 					lock_recursive_mutex lock(ctx->sys->doLuaWorkerLock);
 
 					if( ctx->sys->doLuaScriptQueue.empty() && ctx->sys->doLuaWorkerThread.joinable() ){
@@ -851,9 +848,8 @@ HICON CEpgTimerSrvMain::LoadSmallIcon(int iconID)
 	HMODULE hModule = GetModuleHandle(L"comctl32.dll");
 	if( hModule ){
 		HICON hIcon;
-		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*) =
-			(HRESULT (WINAPI*)(HINSTANCE, PCWSTR, int, HICON*))GetProcAddress(hModule, "LoadIconMetric");
-		if( pfnLoadIconMetric &&
+		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*);
+		if( UtilGetProcAddress(hModule, "LoadIconMetric", pfnLoadIconMetric) &&
 		    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), LIM_SMALL, &hIcon) == S_OK ){
 			return hIcon;
 		}
@@ -981,8 +977,8 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
 		//存在を確認しているだけ
-		this->hLuaDll = LoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME).c_str());
-		if( this->hLuaDll ){
+		this->luaDllHolder.reset(UtilLoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME)));
+		if( this->luaDllHolder ){
 			this->reserveManager.SetBatCustomHandler(L".lua", [this](CBatManager::BAT_WORK_INFO& work, vector<char>& buff) { DoLuaBat(work, buff); });
 		}
 	}else{
