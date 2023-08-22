@@ -7,7 +7,9 @@
              d:DesignHeight="300" d:DesignWidth="300">
 
     <ScrollViewer Name="scrollViewer" VerticalScrollBarVisibility="Hidden" PreviewMouseWheel="scrollViewer_PreviewMouseWheel">
-        <StackPanel Name="stackPanel_time" Background="White" />
+        <Canvas Name="canvas" VerticalAlignment="Top" SizeChanged="canvas_SizeChanged">
+            <StackPanel Name="stackPanel_time" Background="White" />
+        </Canvas>
     </ScrollViewer>
 
 </UserControl>

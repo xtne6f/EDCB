@@ -38,16 +38,14 @@ namespace EpgTimer.EpgView
             uniformGrid_time.Children.Clear();
         }
 
-        public void SetTime(bool enablePrev, bool enableNext, List<DateTime> timeList)
+        public void SetTime(bool enablePrev, bool enableNext, DateTime startTime, DateTime endTime)
         {
             ClearInfo();
             button_prev.IsEnabled = enablePrev;
             button_next.IsEnabled = enableNext;
             button_prev.Visibility = enablePrev || enableNext ? Visibility.Visible : Visibility.Collapsed;
-            if (timeList.Count > 0)
+            if (startTime != default(DateTime))
             {
-                DateTime startTime = timeList[0];
-                DateTime endTime = timeList[timeList.Count - 1];
                 DateTime itemTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, 0, 0, 0);
                 while (itemTime < endTime)
                 {

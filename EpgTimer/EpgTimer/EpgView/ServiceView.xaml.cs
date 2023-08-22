@@ -58,26 +58,61 @@ namespace EpgTimer.EpgView
                 // 単にCenterだとやや重い感じになるので上げる
                 item.Padding = new Thickness(0, 0, 0, 4);
                 item.VerticalAlignment = VerticalAlignment.Center;
-                var gridItem = new System.Windows.Controls.Primitives.UniformGrid();
-                gridItem.Margin = new Thickness(1, 1, 1, 1);
-                gridItem.Background = serviceBrush;
-                gridItem.MouseLeftButtonDown += (sender, e) =>
+                var stack = new StackPanel();
+                stack.Orientation = Orientation.Horizontal;
+                stack.Margin = new Thickness(1, 1, 1, 1);
+                stack.Background = serviceBrush;
+                stack.MouseLeftButtonDown += (sender, e) =>
                 {
                     if (e.ClickCount == 2 && LeftDoubleClick != null)
                     {
                         LeftDoubleClick((EpgServiceInfo)((FrameworkElement)sender).Tag);
                     }
                 };
-                gridItem.MouseRightButtonUp += (sender, e) =>
+                stack.MouseRightButtonUp += (sender, e) =>
                 {
                     if (RightClick != null)
                     {
                         RightClick((EpgServiceInfo)((FrameworkElement)sender).Tag);
                     }
                 };
-                gridItem.Tag = info;
-                gridItem.Children.Add(item);
-                stackPanel_service.Children.Add(gridItem);
+                stack.Tag = info;
+                stack.Children.Add(item);
+                stackPanel_service.Children.Add(stack);
+            }
+
+            RefreshLogo();
+        }
+
+        public void RefreshLogo()
+        {
+            foreach (StackPanel stack in stackPanel_service.Children)
+            {
+                Image logoItem = stack.Children.OfType<Image>().FirstOrDefault();
+                TextBlock item = stack.Children.OfType<TextBlock>().First();
+                double serviceWidth = item.Width + (logoItem != null ? logoItem.Width + logoItem.Margin.Left : 0) + 2;
+                if (logoItem != null)
+                {
+                    stack.Children.Remove(logoItem);
+                }
+
+                var info = (EpgServiceInfo)stack.Tag;
+                ChSet5Item ch;
+                if (ChSet5.Instance.ChList.TryGetValue(CommonManager.Create64Key(info.ONID, info.TSID, info.SID), out ch) &&
+                    ch.Logo != null && serviceWidth >= 30 + 1 + 2)
+                {
+                    logoItem = new Image();
+                    logoItem.Source = ch.Logo;
+                    logoItem.Width = 30;
+                    logoItem.VerticalAlignment = VerticalAlignment.Top;
+                    logoItem.Margin = new Thickness(1, 2, 0, 0);
+                    stack.Children.Insert(0, logoItem);
+                    item.Width = serviceWidth - logoItem.Width - logoItem.Margin.Left - 2;
+                }
+                else
+                {
+                    item.Width = serviceWidth - 2;
+                }
             }
         }
     }
