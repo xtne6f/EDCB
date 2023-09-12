@@ -35,6 +35,9 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	iniMin = FALSE;
 	this->iniUDP = FALSE;
 	this->iniTCP = FALSE;
+	this->iniONID = -1;
+	this->iniTSID = -1;
+	this->iniSID = -1;
 	this->outCtrlID = -1;
 	this->cmdCapture = NULL;
 	this->resCapture = NULL;
@@ -199,31 +202,42 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 
 	fs_path appIniPath = GetModuleIniPath();
 
-	int initONID = -1;
-	int initTSID = -1;
-	int initSID = -1;
 	int initOpenWait = 0;
 	int initChgWait = 0;
 	if( this->iniBonDriver.empty() == false &&
 	    GetPrivateProfileInt(this->iniBonDriver.c_str(), L"OpenFix", 0, appIniPath.c_str()) ){
 		AddDebugLog(L"強制サービス指定 設定値ロード");
-		initONID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixONID", -1, appIniPath.c_str());
-		initTSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixTSID", -1, appIniPath.c_str());
-		initSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixSID", -1, appIniPath.c_str());
+		int fixONID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixONID", -1, appIniPath.c_str());
+		int fixTSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixTSID", -1, appIniPath.c_str());
+		int fixSID = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"FixSID", -1, appIniPath.c_str());
+		//強制指定されていればオプションによる初期値を上書きする
+		if( fixONID >= 0 && fixTSID >= 0 && fixSID >= 0 ){
+			this->iniONID = fixONID;
+			this->iniTSID = fixTSID;
+			this->iniSID = fixSID;
+		}
 		initOpenWait = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"OpenWait", 0, appIniPath.c_str());
 		initChgWait = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"ChgWait", 0, appIniPath.c_str());
-		AddDebugLogFormat(L"%d,%d,%d,%d,%d", initONID, initTSID, initSID, initOpenWait, initChgWait);
+		AddDebugLogFormat(L"%d,%d,%d,%d,%d", this->iniONID, this->iniTSID, this->iniSID, initOpenWait, initChgWait);
 	}else if( GetPrivateProfileInt(L"SET", L"OpenLast", 1, appIniPath.c_str()) ){
-		initONID = GetPrivateProfileInt(L"SET", L"LastONID", -1, appIniPath.c_str());
-		initTSID = GetPrivateProfileInt(L"SET", L"LastTSID", -1, appIniPath.c_str());
-		initSID = GetPrivateProfileInt(L"SET", L"LastSID", -1, appIniPath.c_str());
+		if( this->iniONID < 0 || this->iniTSID < 0 || this->iniSID < 0 ){
+			this->iniONID = GetPrivateProfileInt(L"SET", L"LastONID", -1, appIniPath.c_str());
+			this->iniTSID = GetPrivateProfileInt(L"SET", L"LastTSID", -1, appIniPath.c_str());
+			this->iniSID = GetPrivateProfileInt(L"SET", L"LastSID", -1, appIniPath.c_str());
+		}
 		if( this->iniBonDriver.empty() ){
 			this->iniBonDriver = GetPrivateProfileToString(L"SET", L"LastBon", L"", appIniPath.c_str());
 		}
 	}else if( GetPrivateProfileInt(L"SET", L"OpenFix", 0, appIniPath.c_str()) ){
-		initONID = GetPrivateProfileInt(L"SET", L"FixONID", -1, appIniPath.c_str());
-		initTSID = GetPrivateProfileInt(L"SET", L"FixTSID", -1, appIniPath.c_str());
-		initSID = GetPrivateProfileInt(L"SET", L"FixSID", -1, appIniPath.c_str());
+		int fixONID = GetPrivateProfileInt(L"SET", L"FixONID", -1, appIniPath.c_str());
+		int fixTSID = GetPrivateProfileInt(L"SET", L"FixTSID", -1, appIniPath.c_str());
+		int fixSID = GetPrivateProfileInt(L"SET", L"FixSID", -1, appIniPath.c_str());
+		//強制指定されていればオプションによる初期値を上書きする
+		if( fixONID >= 0 && fixTSID >= 0 && fixSID >= 0 ){
+			this->iniONID = fixONID;
+			this->iniTSID = fixTSID;
+			this->iniSID = fixSID;
+		}
 		if( this->iniBonDriver.empty() ){
 			this->iniBonDriver = GetPrivateProfileToString(L"SET", L"FixBon", L"", appIniPath.c_str());
 		}
@@ -254,7 +268,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 			if( initOpenWait > 0 ){
 				SleepForMsec(initOpenWait);
 			}
-			serviceIndex = ReloadServiceList(initONID, initTSID, initSID);
+			serviceIndex = ReloadServiceList(this->iniONID, this->iniTSID, this->iniSID);
 		}
 	}else{
 		if( bonIndex >= 0 ){
@@ -271,7 +285,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	if( serviceIndex >= 0 ){
 		//チャンネル変更
 		if( SelectService(this->serviceList[serviceIndex]) ){
-			if( initONID >= 0 && initTSID >= 0 && initSID >= 0 && initChgWait > 0 ){
+			if( this->iniONID >= 0 && this->iniTSID >= 0 && this->iniSID >= 0 && initChgWait > 0 ){
 				SleepForMsec(initChgWait);
 			}
 		}

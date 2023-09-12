@@ -24,6 +24,9 @@ public:
 	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
 	void SetIniNWUDP(BOOL udpFlag){ iniUDP = udpFlag; };
 	void SetIniNWTCP(BOOL tcpFlag){ iniTCP = tcpFlag; };
+	void SetIniONID(int onid){ iniONID = onid; }
+	void SetIniTSID(int tsid){ iniTSID = tsid; }
+	void SetIniSID(int sid){ iniSID = sid; }
 
 // ダイアログ データ
 	enum { IDD = IDD_EPGDATACAP_BON_DIALOG };
@@ -83,6 +86,9 @@ protected:
 	BOOL iniNetwork;
 	BOOL iniUDP;
 	BOOL iniTCP;
+	int iniONID;
+	int iniTSID;
+	int iniSID;
 
 	CBonCtrl bonCtrl;
 	CPipeServer pipeServer;
