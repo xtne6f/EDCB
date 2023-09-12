@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "TunerBankCtrl.h"
 #include "../../Common/EpgTimerUtil.h"
+#include "../../Common/IniUtil.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
@@ -1088,19 +1089,34 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		strExecute = GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").native();
 	}
 
-	wstring strParam = L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"Bon", L"-d", strIni.c_str()) + L" " + this->bonFileName;
+	//セクション単位で処理するほうが軽い
+	vector<WCHAR> buffOpt = GetPrivateProfileSectionBuffer(L"APP_CMD_OPT", strIni.c_str());
+
+	wstring strParam = L" " + GetBufferedProfileToString(buffOpt.data(), L"Bon", L"-d") + L" " + this->bonFileName;
 
 	if( minWake ){
-		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"Min", L"-min", strIni.c_str());
+		strParam += L" " + GetBufferedProfileToString(buffOpt.data(), L"Min", L"-min");
 	}
 	if( noView ){
-		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"ViewOff", L"-noview", strIni.c_str());
+		strParam += L" " + GetBufferedProfileToString(buffOpt.data(), L"ViewOff", L"-noview");
 	}
 	if( nwUdp == false && nwTcp == false ){
-		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", strIni.c_str());
+		strParam += L" " + GetBufferedProfileToString(buffOpt.data(), L"NetworkOff", L"-nonw");
 	}else{
 		strParam += nwUdp ? L" -nwudp" : L"";
 		strParam += nwTcp ? L" -nwtcp" : L"";
+	}
+
+	if( initCh && initCh->useSID ){
+		//チャンネルの初期値を指定しておく(あくまで補助的なもの)
+		wstring optONID = GetBufferedProfileToString(buffOpt.data(), L"ONID", L"-nid");
+		wstring optTSID = GetBufferedProfileToString(buffOpt.data(), L"TSID", L"-tsid");
+		wstring optSID = GetBufferedProfileToString(buffOpt.data(), L"SID", L"-sid");
+		if( optONID.empty() == false && optTSID.empty() == false && optSID.empty() == false ){
+			wstring ch;
+			Format(ch, L" %ls %d %ls %d %ls %d", optONID.c_str(), initCh->ONID, optTSID.c_str(), initCh->TSID, optSID.c_str(), initCh->SID);
+			strParam += ch;
+		}
 	}
 
 	//原作と異なりイベントオブジェクト"Global\\EpgTimerSrv_OpenTuner_Event"による排他制御はしない

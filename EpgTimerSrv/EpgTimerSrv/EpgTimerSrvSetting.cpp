@@ -356,6 +356,9 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	SetDlgItemText(hwnd, IDC_EDIT_SET_REC_CMD_BON, GetPrivateProfileToString(L"APP_CMD_OPT", L"Bon", L"-d", viewAppIniPath.c_str()).c_str());
 	SetDlgItemText(hwnd, IDC_EDIT_SET_REC_CMD_MIN, GetPrivateProfileToString(L"APP_CMD_OPT", L"Min", L"-min", viewAppIniPath.c_str()).c_str());
 	SetDlgItemText(hwnd, IDC_EDIT_SET_REC_CMD_VIEW_OFF, GetPrivateProfileToString(L"APP_CMD_OPT", L"ViewOff", L"-noview", viewAppIniPath.c_str()).c_str());
+	SetDlgItemText(hwnd, IDC_EDIT_SET_REC_CMD_ONID, GetPrivateProfileToString(L"APP_CMD_OPT", L"ONID", L"-nid", viewAppIniPath.c_str()).c_str());
+	SetDlgItemText(hwnd, IDC_EDIT_SET_REC_CMD_TSID, GetPrivateProfileToString(L"APP_CMD_OPT", L"TSID", L"-tsid", viewAppIniPath.c_str()).c_str());
+	SetDlgItemText(hwnd, IDC_EDIT_SET_REC_CMD_SID, GetPrivateProfileToString(L"APP_CMD_OPT", L"SID", L"-sid", viewAppIniPath.c_str()).c_str());
 	for( int i = 0; ; i++ ){
 		fs_path recPath = GetRecFolderPath(i);
 		if( recPath.empty() ){
@@ -658,6 +661,19 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	if( wcscmp(buff.data(), GetPrivateProfileToString(L"APP_CMD_OPT", L"ViewOff", L"-noview", viewAppIniPath.c_str()).c_str()) != 0 ){
 		WritePrivateProfileString(L"APP_CMD_OPT", L"ViewOff", buff.data(), viewAppIniPath.c_str());
 	}
+	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_REC_CMD_ONID), buff);
+	if( wcscmp(buff.data(), GetPrivateProfileToString(L"APP_CMD_OPT", L"ONID", L"-nid", viewAppIniPath.c_str()).c_str()) != 0 ){
+		WritePrivateProfileString(L"APP_CMD_OPT", L"ONID", buff.data(), viewAppIniPath.c_str());
+	}
+	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_REC_CMD_TSID), buff);
+	if( wcscmp(buff.data(), GetPrivateProfileToString(L"APP_CMD_OPT", L"TSID", L"-tsid", viewAppIniPath.c_str()).c_str()) != 0 ){
+		WritePrivateProfileString(L"APP_CMD_OPT", L"TSID", buff.data(), viewAppIniPath.c_str());
+	}
+	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_REC_CMD_SID), buff);
+	if( wcscmp(buff.data(), GetPrivateProfileToString(L"APP_CMD_OPT", L"SID", L"-sid", viewAppIniPath.c_str()).c_str()) != 0 ){
+		WritePrivateProfileString(L"APP_CMD_OPT", L"SID", buff.data(), viewAppIniPath.c_str());
+	}
+
 	int num = 0;
 	for( int i = 0; i < ListBox_GetCount(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER)); i++ ){
 		GetListBoxTextBuffer(GetDlgItem(hwnd, IDC_LIST_SET_REC_FOLDER), i, buff);
