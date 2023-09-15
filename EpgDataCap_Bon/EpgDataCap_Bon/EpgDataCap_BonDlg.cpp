@@ -115,6 +115,7 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	this->viewPath            = GetBufferedProfileToString(buffSet.data(), L"ViewPath", L"");
 	this->viewOpt             = GetBufferedProfileToString(buffSet.data(), L"ViewOption", L"");
 	this->viewSingle          = GetBufferedProfileInt(buffSet.data(), L"ViewSingle", 1) != 0;
+	this->viewCloseOnExit     = GetBufferedProfileInt(buffSet.data(), L"ViewCloseOnExit", 0) != 0;
 	this->dropSaveThresh      = GetBufferedProfileInt(buffSet.data(), L"DropSaveThresh", 0);
 	this->scrambleSaveThresh  = GetBufferedProfileInt(buffSet.data(), L"ScrambleSaveThresh", -1);
 	this->dropLogAsUtf8       = GetBufferedProfileInt(buffSet.data(), L"DropLogAsUtf8", 0) != 0;
@@ -361,6 +362,20 @@ void CEpgDataCap_BonDlg::OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed
 }
 
 
+BOOL CALLBACK CEpgDataCap_BonDlg::CloseViewWindowsProc(HWND hwnd, LPARAM lParam)
+{
+	DWORD processID;
+	if( GetWindowThreadProcessId(hwnd, &processID) && processID == (DWORD)lParam ){
+		//オーナーのいるポップアップウィンドウは除外する
+		if( GetParent(hwnd) == NULL ){
+			AddDebugLogFormat(L"Post WM_CLOSE to view window:0x%08llx", (LONGLONG)hwnd);
+			PostMessage(hwnd, WM_CLOSE, 0, 0);
+		}
+	}
+	return TRUE;
+}
+
+
 void CEpgDataCap_BonDlg::OnDestroy()
 {
 	this->pipeServer.StopServer();
@@ -372,6 +387,15 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	DeleteTaskBar(m_hWnd, TRAYICON_ID);
 	if( this->overlayTaskIcon ){
 		SetOverlayIcon(NULL);
+	}
+
+	if( m_hViewProcess && this->viewSingle && this->viewCloseOnExit &&
+	    WaitForSingleObject(m_hViewProcess, 0) == WAIT_TIMEOUT ){
+		//プロセスのトップレベルウィンドウすべてにWM_CLOSEを投げる
+		DWORD viewProcessID = GetProcessId(m_hViewProcess);
+		if( viewProcessID != 0 ){
+			EnumWindows(CloseViewWindowsProc, (LPARAM)viewProcessID);
+		}
 	}
 
 	WINDOWPLACEMENT Pos;

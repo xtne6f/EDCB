@@ -71,6 +71,7 @@ protected:
 	wstring viewPath;
 	wstring viewOpt;
 	BOOL viewSingle;
+	BOOL viewCloseOnExit;
 	int dropSaveThresh;
 	int scrambleSaveThresh;
 	BOOL dropLogAsUtf8;
@@ -112,6 +113,7 @@ protected:
 	// 生成された、メッセージ割り当て関数
 	BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed);
+	static BOOL CALLBACK CloseViewWindowsProc(HWND hwnd, LPARAM lParam);
 	afx_msg void OnDestroy();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
