@@ -167,7 +167,7 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// id			[IN]制御識別ID
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	BOOL SendUdp(
 		DWORD id,
 		vector<NW_SEND_INFO>* sendList
@@ -178,7 +178,7 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// id			[IN]制御識別ID
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	BOOL SendTcp(
 		DWORD id,
 		vector<NW_SEND_INFO>* sendList

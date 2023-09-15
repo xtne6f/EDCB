@@ -35,25 +35,21 @@ public:
 	WORD GetSID();
 
 	//UDPで送信を行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-	BOOL SendUdp(
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+	void SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		) {
-		return SendUdpTcp(sendList, FALSE, this->sendUdp, this->udpPortMutex, MUTEX_UDP_PORT_NAME);
+		SendUdpTcp(sendList, FALSE, this->sendUdp, this->udpPortMutex, MUTEX_UDP_PORT_NAME);
 	}
 
 	//TCPで送信を行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
-	BOOL SendTcp(
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+	void SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		) {
-		return SendUdpTcp(sendList, TRUE, this->sendTcp, this->tcpPortMutex, MUTEX_TCP_PORT_NAME);
+		SendUdpTcp(sendList, TRUE, this->sendTcp, this->tcpPortMutex, MUTEX_TCP_PORT_NAME);
 	}
 
 	//出力用TSデータを送る
@@ -198,7 +194,7 @@ protected:
 	int pittariMaxBuffCount;
 
 protected:
-	static BOOL SendUdpTcp(
+	static void SendUdpTcp(
 		vector<NW_SEND_INFO>* sendList,
 		BOOL tcpFlag,
 		CSendTSTCPDllUtil& sendNW,

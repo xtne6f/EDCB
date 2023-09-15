@@ -619,12 +619,6 @@ BOOL CTSOut::GetServiceID(
 	return TRUE;
 }
 
-//UDPで送信を行う
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id			[IN]制御識別ID
-// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 BOOL CTSOut::SendUdp(
 	DWORD id,
 	vector<NW_SEND_INFO>* sendList
@@ -642,12 +636,6 @@ BOOL CTSOut::SendUdp(
 	return TRUE;
 }
 
-//TCPで送信を行う
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id			[IN]制御識別ID
-// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 BOOL CTSOut::SendTcp(
 	DWORD id,
 	vector<NW_SEND_INFO>* sendList

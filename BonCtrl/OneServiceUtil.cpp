@@ -50,7 +50,7 @@ WORD COneServiceUtil::GetSID()
 	return this->SID;
 }
 
-BOOL COneServiceUtil::SendUdpTcp(
+void COneServiceUtil::SendUdpTcp(
 	vector<NW_SEND_INFO>* sendList,
 	BOOL tcpFlag,
 	CSendTSTCPDllUtil& sendNW,
@@ -71,10 +71,12 @@ BOOL COneServiceUtil::SendUdpTcp(
 			//IPアドレスであること
 			if( std::find_if(itr->ipString.begin(), itr->ipString.end(), [](WCHAR c) {
 			        return (c < L'0' || L'9' < c) && (c < L'A' || L'Z' < c) && (c < L'a' || L'z' < c) && c != L'%' && c != L'.' && c != L':'; }) != itr->ipString.end() ){
+				//失敗
+				itr->port = 0x10000;
 				continue;
 			}
 			HANDLE portMutex = NULL;
-			for( int i = 0; i < BON_NW_PORT_RANGE; i++ ){
+			for( int i = 0; i < BON_NW_PORT_RANGE && itr->port < 0x10000; i++ ){
 				wstring key;
 				UINT u[4];
 				if( swscanf_s(itr->ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
@@ -102,12 +104,13 @@ BOOL COneServiceUtil::SendUdpTcp(
 				}else{
 					sendNW.AddSendAddrUdp(itr->ipString.c_str(), itr->port, itr->broadcastFlag != FALSE, itr->udpMaxSendSize);
 				}
+			}else{
+				//失敗
+				itr->port = 0x10000;
 			}
 		}
 		sendNW.StartSend();
 	}
-
-	return TRUE;
 }
 
 //出力用TSデータを送る

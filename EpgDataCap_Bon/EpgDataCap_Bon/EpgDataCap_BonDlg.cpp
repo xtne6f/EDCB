@@ -691,7 +691,26 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_VIEW_APP_OPEN:
 		if( this->viewPath.empty() == false ){
-			ShellExecute(NULL, NULL, this->viewPath.c_str(), this->viewOpt.c_str(), NULL, SW_SHOWNORMAL);
+			auto itrUdp = std::find_if(this->udpSendList.begin(), this->udpSendList.end(),
+				[](const NW_SEND_INFO& info) { return info.port < 0x10000; });
+			auto itrTcp = std::find_if(this->tcpSendList.begin(), this->tcpSendList.end(),
+				[](const NW_SEND_INFO& info) { return info.ipString != BON_NW_SRV_PIPE_IP && info.ipString != BON_NW_PIPE_IP && info.port < 0x10000; });
+			auto itrPipe = std::find_if(this->tcpSendList.begin(), this->tcpSendList.end(),
+				[](const NW_SEND_INFO& info) { return info.ipString == BON_NW_PIPE_IP && info.port < 0x10000; });
+			//実際に送信しているポート番号でマクロを置き換える
+			wstring opt = this->viewOpt;
+			WCHAR szPort[16];
+			swprintf_s(szPort, L"%d", itrUdp == this->udpSendList.end() ? BON_UDP_PORT_BEGIN : itrUdp->port);
+			Replace(opt, L"$UDPPort$", szPort);
+			swprintf_s(szPort, L"%d", itrTcp == this->tcpSendList.end() ? BON_TCP_PORT_BEGIN : itrTcp->port);
+			Replace(opt, L"$TCPPort$", szPort);
+			//歴史的な経緯でBonDriver_UDPをエミュレートしているため
+			swprintf_s(szPort, L"%d", (itrPipe == this->tcpSendList.end() ? 0 : itrPipe->port) + BON_UDP_PORT_BEGIN);
+			Replace(opt, L"$PipePort$", szPort);
+			swprintf_s(szPort, L"%d", itrPipe == this->tcpSendList.end() ? 0 : itrPipe->port);
+			Replace(opt, L"$PipeNumber$", szPort);
+
+			ShellExecute(NULL, NULL, this->viewPath.c_str(), opt.c_str(), NULL, SW_SHOWNORMAL);
 		}
 		break;
 	case WM_TRAY_PUSHICON:
