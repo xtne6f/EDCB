@@ -82,6 +82,7 @@
 #define IDC_CHECK_CS3                   1027
 #define IDC_EDIT_PORT_TCP               1028
 #define IDC_EDIT_WRITE_BUFF_MAX         1028
+#define IDC_CHECK_VIEW_SINGLE           1028
 #define IDC_CHECK_BACK_CS3              1028
 #define IDC_CHECK_ENABLE_DECODE         1029
 #define IDC_RADIO_TCP                   1029

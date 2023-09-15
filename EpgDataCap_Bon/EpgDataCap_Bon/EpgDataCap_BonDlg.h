@@ -61,6 +61,7 @@ protected:
 	HHOOK m_hKeyboardHook;
 	HICON m_hIcon;
 	HICON m_hIcon2;
+	HANDLE m_hViewProcess;
 
 	BOOL modifyTitleBarText;
 	BOOL overlayTaskIcon;
@@ -69,6 +70,7 @@ protected:
 	BOOL overWriteFlag;
 	wstring viewPath;
 	wstring viewOpt;
+	BOOL viewSingle;
 	int dropSaveThresh;
 	int scrambleSaveThresh;
 	BOOL dropLogAsUtf8;

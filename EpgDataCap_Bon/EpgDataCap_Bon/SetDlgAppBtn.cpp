@@ -34,6 +34,7 @@ BOOL CSetDlgAppBtn::OnInitDialog()
 	fs_path appIniPath = GetModuleIniPath();
 	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, GetPrivateProfileToString( L"SET", L"ViewPath", L"", appIniPath.c_str() ).c_str());
 	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_OPT, GetPrivateProfileToString( L"SET", L"ViewOption", L"", appIniPath.c_str() ).c_str());
+	Button_SetCheck(GetDlgItem(IDC_CHECK_VIEW_SINGLE), GetPrivateProfileInt( L"SET", L"ViewSingle", 1, appIniPath.c_str() ));
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -51,6 +52,7 @@ void CSetDlgAppBtn::SaveIni(void)
 	WritePrivateProfileString( L"SET", L"ViewPath", buff, appIniPath.c_str() );
 	GetDlgItemText(m_hWnd, IDC_EDIT_VIEW_OPT, buff, 512);
 	WritePrivateProfileString( L"SET", L"ViewOption", buff, appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"ViewSingle", Button_GetCheck(GetDlgItem(IDC_CHECK_VIEW_SINGLE)), appIniPath.c_str() );
 }
 
 void CSetDlgAppBtn::OnBnClickedButtonViewExe()

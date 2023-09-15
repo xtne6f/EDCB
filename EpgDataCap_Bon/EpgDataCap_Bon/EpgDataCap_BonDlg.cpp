@@ -24,6 +24,7 @@ BOOL CEpgDataCap_BonDlg::disableKeyboardHook = FALSE;
 CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	: m_hWnd(NULL)
 	, m_hKeyboardHook(NULL)
+	, m_hViewProcess(NULL)
 {
 	m_hIcon = LoadLargeOrSmallIcon(IDI_ICON_BLUE, false);
 	m_hIcon2 = LoadLargeOrSmallIcon(IDI_ICON_BLUE, true);
@@ -54,6 +55,9 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 
 CEpgDataCap_BonDlg::~CEpgDataCap_BonDlg()
 {
+	if( m_hViewProcess ){
+		CloseHandle(m_hViewProcess);
+	}
 	if( m_hIcon2 ){
 		DestroyIcon(m_hIcon2);
 	}
@@ -110,6 +114,7 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 	this->overWriteFlag       = GetBufferedProfileInt(buffSet.data(), L"OverWrite", 0) != 0;
 	this->viewPath            = GetBufferedProfileToString(buffSet.data(), L"ViewPath", L"");
 	this->viewOpt             = GetBufferedProfileToString(buffSet.data(), L"ViewOption", L"");
+	this->viewSingle          = GetBufferedProfileInt(buffSet.data(), L"ViewSingle", 1) != 0;
 	this->dropSaveThresh      = GetBufferedProfileInt(buffSet.data(), L"DropSaveThresh", 0);
 	this->scrambleSaveThresh  = GetBufferedProfileInt(buffSet.data(), L"ScrambleSaveThresh", -1);
 	this->dropLogAsUtf8       = GetBufferedProfileInt(buffSet.data(), L"DropLogAsUtf8", 0) != 0;
@@ -690,7 +695,12 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		CtrlCmdCallbackInvoked();
 		break;
 	case WM_VIEW_APP_OPEN:
-		if( this->viewPath.empty() == false ){
+		//前回起動プロセスの生存を確認する
+		if( m_hViewProcess && (this->viewSingle == FALSE || WaitForSingleObject(m_hViewProcess, 0) != WAIT_TIMEOUT) ){
+			CloseHandle(m_hViewProcess);
+			m_hViewProcess = NULL;
+		}
+		if( m_hViewProcess == NULL && this->viewPath.empty() == false ){
 			auto itrUdp = std::find_if(this->udpSendList.begin(), this->udpSendList.end(),
 				[](const NW_SEND_INFO& info) { return info.port < 0x10000; });
 			auto itrTcp = std::find_if(this->tcpSendList.begin(), this->tcpSendList.end(),
@@ -710,7 +720,15 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 			swprintf_s(szPort, L"%d", itrPipe == this->tcpSendList.end() ? 0 : itrPipe->port);
 			Replace(opt, L"$PipeNumber$", szPort);
 
-			ShellExecute(NULL, NULL, this->viewPath.c_str(), opt.c_str(), NULL, SW_SHOWNORMAL);
+			SHELLEXECUTEINFO sei = {};
+			sei.cbSize = sizeof(sei);
+			sei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
+			sei.lpFile = this->viewPath.c_str();
+			sei.lpParameters = opt.c_str();
+			sei.nShow = SW_SHOWNORMAL;
+			if( ShellExecuteEx(&sei) ){
+				m_hViewProcess = sei.hProcess;
+			}
 		}
 		break;
 	case WM_TRAY_PUSHICON:
