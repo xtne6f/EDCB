@@ -293,7 +293,12 @@ class Danmaku {
             this.context = document.createElement('canvas').getContext('2d');
             this.context.font = measureStyle.getPropertyValue('font');
         }
-        return this.context.measureText(text).width;
+        const lines = text.split('\n');
+        let maxWidth = 0;
+        for (let i = 0; i < lines.length; i++) {
+            maxWidth = Math.max(maxWidth, this.context.measureText(lines[i]).width);
+        }
+        return maxWidth;
     }
 
     seek() {
