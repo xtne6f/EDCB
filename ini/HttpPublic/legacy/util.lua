@@ -260,7 +260,7 @@ end
 
 function OnscreenButtonsScriptTemplete()
   return [=[
-<script src="script.js?ver=20230707"></script>
+<script src="script.js?ver=20230917"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");

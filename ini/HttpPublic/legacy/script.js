@@ -51,16 +51,8 @@ function readPsiData(data,proc,startSec,ctx){
       sectionListPos+=pos;
       for(var i=0;i<dictionaryLen;i++){
         if(pids[i]>=0)continue;
-        var psi=new Uint8Array(data.buffer,sectionListPos,pids[i]+4097);
-        dict[i]=new Uint8Array(Math.ceil((psi.length+1)/184)*188);
-        for(var j=0,k=0;k<psi.length;j++,k++){
-          if(!(j%188)){
-            j+=4;
-            if(!k)dict[i][j++]=0;
-          }
-          dict[i][j]=psi[k];
-        }
-        sectionListPos+=psi.length;
+        dict[i]=new Uint8Array(data.buffer.slice(sectionListPos,sectionListPos+pids[i]+4097));
+        sectionListPos+=pids[i]+4097;
         pids[i]=data.getUint16(pos,true)&0x1fff;
         pos+=2;
       }
@@ -96,7 +88,7 @@ function readPsiData(data,proc,startSec,ctx){
           if(sec>=(startSec||0)){
             for(;ctx.codeCount<n;ctx.codeCount++,pos+=2,ctx.codeListPos+=2){
               var code=data.getUint16(pos,true)-4096;
-              if(!proc(sec,ctx.dict[code],ctx.pids[code]))return false;
+              if(!proc(sec,ctx.dict,code,ctx.pids[code]))return false;
             }
             ctx.codeCount=0;
           }else{
@@ -122,22 +114,10 @@ function readPsiData(data,proc,startSec,ctx){
   return ret;
 }
 
-function setTSPacketHeader(packets,counters,pid){
-  counters[pid]=counters[pid]||0;
-  for(var i=0;i<packets.length;i+=188){
-    packets[i]=0x47;
-    packets[i+1]=(i>0?0:0x40)|pid>>8;
-    packets[i+2]=pid;
-    packets[i+3]=0x10|counters[pid];
-    counters[pid]=(counters[pid]+1)&0xf;
-  }
-}
-
 function progressPsiDataChatMixedStream(readCount,response,onData,onChat,ctx){
   ctx=ctx||{};
   if(!ctx.ctx){
     ctx.ctx={};
-    ctx.counters=[];
     ctx.atobRemain="";
     ctx.psiData=new Uint8Array(0);
   }
@@ -157,9 +137,8 @@ function progressPsiDataChatMixedStream(readCount,response,onData,onChat,ctx){
         var concatData=new Uint8Array(ctx.psiData.length+addData.length);
         for(var j=0;j<ctx.psiData.length;j++)concatData[j]=ctx.psiData[j];
         for(var j=0;j<addData.length;j++)concatData[ctx.psiData.length+j]=addData.charCodeAt(j);
-        ctx.psiData=readPsiData(concatData.buffer,function(sec,psiTS,pid){
-          setTSPacketHeader(psiTS,ctx.counters,pid);
-          if(onData)onData(psiTS,Math.floor(sec*90000));
+        ctx.psiData=readPsiData(concatData.buffer,function(sec,dict,code,pid){
+          if(onData)onData(pid,dict,code,Math.floor(sec*90000));
           return true;
         },0,ctx.ctx);
         if(ctx.psiData)ctx.psiData=new Uint8Array(ctx.psiData);
@@ -631,7 +610,6 @@ function runVideoScript(aribb24UseSvg,aribb24Option,useDatacast,useJikkyoLog){
         var startSec=vid.currentTime;
         videoLastSec=startSec;
         var ctx={};
-        var counters=[];
         function read(){
           var videoSec=vid.currentTime;
           if(videoSec<videoLastSec||videoLastSec+10<videoSec){
@@ -639,9 +617,8 @@ function runVideoScript(aribb24UseSvg,aribb24Option,useDatacast,useJikkyoLog){
             return;
           }
           videoLastSec=videoSec;
-          if(psiData&&readPsiData(psiData,function(sec,psiTS,pid){
-              setTSPacketHeader(psiTS,counters,pid);
-              bmlBrowserPlayTS(psiTS,Math.floor(sec*90000));
+          if(psiData&&readPsiData(psiData,function(sec,dict,code,pid){
+              dict[code]=bmlBrowserPlayTSSection(pid,dict[code],Math.floor(sec*90000))||dict[code];
               return sec<videoSec;
             },startSec,ctx)!==false){
             startRead();
@@ -811,7 +788,9 @@ function runTranscodeScript(useDatacast,useLiveJikkyo,useJikkyoLog,ofssec,fast,p
         bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
         hideOnscreenButtons(true);
         bmlBrowserSetInvisible(false);
-        onDataStream=function(psiTS,pcr){bmlBrowserPlayTS(psiTS,pcr);};
+        onDataStream=function(pid,dict,code,pcr){
+          dict[code]=bmlBrowserPlayTSSection(pid,dict[code],pcr)||dict[code];
+        };
         onDataStreamError=function(status,readCount){
           document.querySelector(".remote-control-indicator").innerText="Error! ("+status+"|"+readCount+"Bytes)";
         };
