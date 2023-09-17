@@ -265,6 +265,7 @@ function OnscreenButtonsScriptTemplete()
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
 var vfull=document.getElementById("vid-full");
+var vwrap=document.getElementById("vid-wrap");
 var setSendComment;
 var hideOnscreenButtons;
 runOnscreenButtonsScript();

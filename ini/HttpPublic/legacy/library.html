@@ -118,14 +118,15 @@ else
         ..'&amp;h='..hash..ConstructTranscodeQueries(xq)
         ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a><br>\n')
 
-      ct:Append((vtag==1 and '<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+      ct:Append((vtag==1 and '<div class="video-wrapper" id="vid-wrap">'
+                   ..'<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
                    ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
                    ..'<div class="video-container arib-video-container" id="vid-cont">'
                    ..'<video id="vid" autoplay playsinline controls src="' or '<a href="')
         ..(vtag~=0 and vtag~=1 and 'library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')..'&amp;h='..hash..'&amp;vtag=1'
              or PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'))
         ..'">/'..EdcbHtmlEscape(ref)..(vtag==1 and '<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
-                                         ..'.vtt" type="text/vtt" default></video></div></div>\n'..VideoScriptTemplete() or '</a>'))
+                                         ..'.vtt" type="text/vtt" default></video></div></div></div>\n'..VideoScriptTemplete() or '</a>'))
       if info.ists then
         fsec,fsize=0,0
         f=edcb.io.open(dir..'\\'..info.name,'rb')
@@ -144,10 +145,11 @@ else
           ..'</div></form>')
         if vtag==10 then
           src='xcode.lua?fname='..mg.url_encode(ref)..ConstructTranscodeQueries(xq)
-          ct:Append('\n<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+          ct:Append('\n<div class="video-wrapper" id="vid-wrap">'
+            ..'<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
             ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
             ..'<div class="video-container arib-video-container" id="vid-cont">'
-            ..'<video id="vid" autoplay playsinline controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div>\n'
+            ..'<video id="vid" autoplay playsinline controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video></div></div></div>\n'
             ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(false,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
           if ALLOW_HLS then
             ct:Append(HlsScriptTemplete())

@@ -661,11 +661,15 @@ function runVideoScript(aribb24UseSvg,aribb24Option,useDatacast,useJikkyoLog){
           readTimer=null;
           hideOnscreenButtons(false);
           bmlBrowserSetInvisible(true);
+          vwrap.style.width=null;
+          vwrap.style.height=null;
           checkJikkyoDisplay();
           return;
         }
         startRead();
         checkJikkyoDisplay();
+        vwrap.style.width=vfull.clientWidth+"px";
+        vwrap.style.height=vfull.clientHeight+"px";
         bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
         hideOnscreenButtons(true);
         bmlBrowserSetInvisible(false);
@@ -796,10 +800,14 @@ function runTranscodeScript(useDatacast,useLiveJikkyo,useJikkyoLog,ofssec,fast,p
           openSubStream();
           hideOnscreenButtons(false);
           bmlBrowserSetInvisible(true);
+          vwrap.style.width=null;
+          vwrap.style.height=null;
           checkJikkyoDisplay();
           return;
         }
         checkJikkyoDisplay();
+        vwrap.style.width=vfull.clientWidth+"px";
+        vwrap.style.height=vfull.clientHeight+"px";
         bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
         hideOnscreenButtons(true);
         bmlBrowserSetInvisible(false);
