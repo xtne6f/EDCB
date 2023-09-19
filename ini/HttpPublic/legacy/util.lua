@@ -475,7 +475,7 @@ function RecSettingTemplate(rs)
     ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..(rs.tunerID==0 and ' selected' or '')..'>自動'
   local a=edcb.GetTunerReserveAll()
   for i=1,#a-1 do
-    s=s..'<option value="'..a[i].tunerID..'"'..(a[i].tunerID==rs.tunerID and ' selected' or '')..string.format('>ID:%08X(', a[i].tunerID)..a[i].tunerName..')'
+    s=s..'<option value="'..a[i].tunerID..'"'..(a[i].tunerID==rs.tunerID and ' selected' or '')..('>ID:%08X('):format(a[i].tunerID)..a[i].tunerName..')'
   end
   s=s..'</select><br>\n'
     ..'録画後動作: <select name="suspendMode">'
@@ -589,9 +589,9 @@ end
 --時間の文字列を取得する
 function FormatTimeAndDuration(t,dur)
   dur=dur and (t.hour*3600+t.min*60+t.sec+dur)
-  return string.format('%d/%02d/%02d(%s) %02d:%02d',t.year,t.month,t.day,({'日','月','火','水','木','金','土',})[t.wday],t.hour,t.min)
-    ..(t.sec~=0 and string.format('<small>:%02d</small>',t.sec) or '')
-    ..(dur and string.format('～%02d:%02d',math.floor(dur/3600)%24,math.floor(dur/60)%60)..(dur%60~=0 and string.format('<small>:%02d</small>',dur%60) or '') or '')
+  return ('%d/%02d/%02d(%s) %02d:%02d'):format(t.year,t.month,t.day,({'日','月','火','水','木','金','土',})[t.wday],t.hour,t.min)
+    ..(t.sec~=0 and ('<small>:%02d</small>'):format(t.sec) or '')
+    ..(dur and ('～%02d:%02d'):format(math.floor(dur/3600)%24,math.floor(dur/60)%60)..(dur%60~=0 and ('<small>:%02d</small>'):format(dur%60) or '') or '')
 end
 
 --システムのタイムゾーンに影響されずに時間のテーブルを数値表現にする (timezone=0のとき概ねos.date('!*t')の逆関数)

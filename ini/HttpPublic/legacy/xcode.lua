@@ -82,7 +82,7 @@ function OpenTranscoder()
     if f then
       f:write(cmd..'\n\n')
       f:close()
-      cmd=cmd..' 2>>"'..log..'"'
+      cmd=cmd..' 2>>"'..log:gsub('[&%^]','^%0')..'"'
     end
   end
   if hls then
