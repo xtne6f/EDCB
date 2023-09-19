@@ -149,8 +149,15 @@ XCODE_CHECK_CINEMA=false
 XCODE_CHECK_FAST=false
 XCODE_CHECK_CAPTION=false
 
---初期値ミュートで再生するかどうか
-VIDEO_MUTED=true
+--トランスコード時、初期値ミュートで再生するかどうか
+--自動再生が無効になるブラウザが多いため、一時停止しつづけるとタイムアウトするトランスコード時はミュートを推奨
+XCODE_VIDEO_MUTED=true
+
+--非トランスコード時、初期値ミュートで再生するかどうか
+VIDEO_MUTED=false
+
+--音量の初期値。0～1、nilのとき未指定
+VIDEO_VOLUME=nil
 
 --字幕表示のオプション https://github.com/monyone/aribb24.js#options
 ARIBB24_JS_OPTION=[=[
@@ -335,7 +342,7 @@ function VideoScriptTemplete()
   ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
 <script>
-]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
+]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..(VIDEO_VOLUME and 'vid.volume='..VIDEO_VOLUME..';\n' or '')..[=[
 runVideoScript(]=]
   ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
   ..(USE_DATACAST and 'true' or 'false')..','
@@ -351,7 +358,7 @@ function TranscodeScriptTemplete(live,params)
       ..(XCODE_CHECK_CAPTION and ' checked' or '')..'>caption</label>\n'
     ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <script>
-]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
+]=]..(XCODE_VIDEO_MUTED and 'vid.muted=true;\n' or '')..(VIDEO_VOLUME and 'vid.volume='..VIDEO_VOLUME..';\n' or '')..[=[
 runTranscodeScript(]=]
   ..(USE_DATACAST and 'true' or 'false')..','
   ..(live and USE_LIVEJK and 'true' or 'false')..','
