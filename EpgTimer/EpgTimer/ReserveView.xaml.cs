@@ -26,6 +26,7 @@ namespace EpgTimer
         private Dictionary<string, GridViewColumn> columnList;
         string _lastHeaderClicked2 = "";
         ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
+        private ListViewHorizontalMouseScroller horizontalScroller = new ListViewHorizontalMouseScroller();
 
         public ReserveView()
         {
@@ -477,5 +478,15 @@ namespace EpgTimer
             itemPri.Header = string.Format((string)itemPri.Tag, priority >= 0 ? "" + priority : "*");
         }
 
+        private void listView_reserve_MouseEnter(object sender, MouseEventArgs e)
+        {
+            horizontalScroller.OnMouseEnter(listView_reserve, Settings.Instance.EpgSettingList[0].MouseHorizontalScrollAuto,
+                                            Settings.Instance.EpgSettingList[0].HorizontalScrollSize);
+        }
+
+        private void listView_reserve_MouseLeave(object sender, MouseEventArgs e)
+        {
+            horizontalScroller.OnMouseLeave();
+        }
     }
 }
