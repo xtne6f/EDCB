@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using System.Threading; //紅
 
 namespace EpgTimer
@@ -27,6 +28,7 @@ namespace EpgTimer
         private TaskTrayClass taskTray;
         private PipeServer pipeServer = null;
         private bool closeFlag = false;
+        private DispatcherTimer loadLogoTimer;
 
         public MainWindow()
         {
@@ -137,11 +139,7 @@ namespace EpgTimer
                     {
                         if (CommonManager.CreateSrvCtrl().SendRegistGUI((uint)pid) == ErrCode.CMD_SUCCESS)
                         {
-                            byte[] binData;
-                            if (CommonManager.CreateSrvCtrl().SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
-                            {
-                                ChSet5.LoadWithStreamReader(new System.IO.MemoryStream(binData));
-                            }
+                            CommonManager.Instance.DB.ReloadChSet5();
                             break;
                         }
                         Thread.Sleep(100);
@@ -152,9 +150,10 @@ namespace EpgTimer
                 taskTray = new TaskTrayClass(this);
                 taskTray.IconUri = new Uri("pack://application:,,,/Resources/TaskIconBlue.ico");
                 taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                Dispatcher.BeginInvoke(DispatcherPriority.Background,
                                        new Action(() => taskTray.Visible = Settings.Instance.ShowTray));
 
+                CommonManager.Instance.DB.ChSet5LogoChanged += epgView.RefreshLogo;
                 CommonManager.Instance.DB.EpgDataChanged += reserveView.RefreshEpgData;
                 CommonManager.Instance.DB.ReserveInfoChanged += epgView.RefreshReserve;
                 CommonManager.Instance.DB.ReserveInfoChanged += reserveView.Refresh;
@@ -166,6 +165,17 @@ namespace EpgTimer
                 }
                 //予約情報は常に遅延更新しない
                 CommonManager.Instance.DB.ReloadReserveInfo();
+
+                loadLogoTimer = new DispatcherTimer();
+                loadLogoTimer.Interval = TimeSpan.FromMilliseconds(500);
+                loadLogoTimer.Tick += (sender, e) =>
+                {
+                    if (CommonManager.Instance.DB.LoadChSet5Logo())
+                    {
+                        loadLogoTimer.Stop();
+                    }
+                };
+                loadLogoTimer.Start();
 
                 //初期タブ選択
                 switch (Settings.Instance.StartTab)
@@ -435,11 +445,7 @@ namespace EpgTimer
                 return false;
             }
 
-            byte[] binData;
-            if (CommonManager.CreateSrvCtrl().SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
-            {
-                ChSet5.LoadWithStreamReader(new System.IO.MemoryStream(binData));
-            }
+            CommonManager.Instance.DB.ReloadChSet5();
             CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.ReserveInfo);
             CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.RecInfo);
             CommonManager.Instance.DB.SetUpdateNotify(UpdateNotifyItem.AutoAddEpgInfo);
@@ -455,6 +461,7 @@ namespace EpgTimer
             autoAddView.UpdateAutoAddInfo();
             recInfoView.UpdateInfo();
             epgView.UpdateEpgData();
+            loadLogoTimer.Start();
             return true;
         }
 
@@ -478,6 +485,7 @@ namespace EpgTimer
             }
             else
             {
+                loadLogoTimer.Stop();
                 reserveView.SaveSize();
                 recInfoView.SaveSize();
                 autoAddView.SaveSize();
@@ -699,6 +707,7 @@ namespace EpgTimer
                 if (setting.ShowDialog() == true)
                 {
                     epgView.UpdateSetting();
+                    loadLogoTimer.Start();
                     ResetButtonView();
                     taskTray.ForceHideBalloonTipSec = Settings.Instance.ForceHideBalloonTipSec;
                     taskTray.Visible = Settings.Instance.ShowTray;
@@ -1169,12 +1178,12 @@ namespace EpgTimer
         {
             grid_main.Effect = new System.Windows.Media.Effects.BlurEffect();
             //効果がかかるまで遅延
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, new Action(() =>
+            Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
             {
                 tabItem_epg.IsSelected = true;
                 epgView.SearchJumpTargetProgram(target);
                 //ジャンプが済むまで遅延
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, new Action(() =>
+                Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
                 {
                     grid_main.Effect = null;
                 }));
