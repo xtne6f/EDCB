@@ -364,12 +364,15 @@ void CEpgDataCap_BonDlg::OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed
 
 BOOL CALLBACK CEpgDataCap_BonDlg::CloseViewWindowsProc(HWND hwnd, LPARAM lParam)
 {
+	pair<int, DWORD>& modeAndProcessID = *(pair<int, DWORD>*)lParam;
 	DWORD processID;
-	if( GetWindowThreadProcessId(hwnd, &processID) && processID == (DWORD)lParam ){
-		//オーナーのいるポップアップウィンドウは除外する
-		if( GetParent(hwnd) == NULL ){
-			AddDebugLogFormat(L"Post WM_CLOSE to view window:0x%08llx", (LONGLONG)hwnd);
+	if( GetWindowThreadProcessId(hwnd, &processID) && processID == modeAndProcessID.second ){
+		//オーナーのいるウィンドウと、モードにより不可視のウィンドウを除く
+		if( GetWindow(hwnd, GW_OWNER) == NULL && (modeAndProcessID.first >= 2 || IsWindowVisible(hwnd)) ){
+			AddDebugLogFormat(L"Post WM_CLOSE to%ls view window:0x%08llx", IsWindowVisible(hwnd) ? L"" : L" hidden", (LONGLONG)hwnd);
 			PostMessage(hwnd, WM_CLOSE, 0, 0);
+			//ウィンドウが見つかったことを示す
+			modeAndProcessID.first |= 1;
 		}
 	}
 	return TRUE;
@@ -392,9 +395,14 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	if( m_hViewProcess && this->viewSingle && this->viewCloseOnExit &&
 	    WaitForSingleObject(m_hViewProcess, 0) == WAIT_TIMEOUT ){
 		//プロセスのトップレベルウィンドウすべてにWM_CLOSEを投げる
-		DWORD viewProcessID = GetProcessId(m_hViewProcess);
-		if( viewProcessID != 0 ){
-			EnumWindows(CloseViewWindowsProc, (LPARAM)viewProcessID);
+		pair<int, DWORD> modeAndProcessID(0, GetProcessId(m_hViewProcess));
+		if( modeAndProcessID.second != 0 ){
+			EnumWindows(CloseViewWindowsProc, (LPARAM)&modeAndProcessID);
+			//ウィンドウが見つからなかったときは不可視のものを含める
+			if( modeAndProcessID.first == 0 ){
+				modeAndProcessID.first = 2;
+				EnumWindows(CloseViewWindowsProc, (LPARAM)&modeAndProcessID);
+			}
 		}
 	}
 
