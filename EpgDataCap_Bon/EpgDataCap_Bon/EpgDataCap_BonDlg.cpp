@@ -741,16 +741,19 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 				[](const NW_SEND_INFO& info) { return info.ipString == BON_NW_PIPE_IP && info.port < 0x10000; });
 			//実際に送信しているポート番号でマクロを置き換える
 			wstring opt = this->viewOpt;
-			WCHAR szPort[16];
-			swprintf_s(szPort, L"%d", itrUdp == this->udpSendList.end() ? BON_UDP_PORT_BEGIN : itrUdp->port);
-			Replace(opt, L"$UDPPort$", szPort);
-			swprintf_s(szPort, L"%d", itrTcp == this->tcpSendList.end() ? BON_TCP_PORT_BEGIN : itrTcp->port);
-			Replace(opt, L"$TCPPort$", szPort);
+			WCHAR szNum[16];
+			swprintf_s(szNum, L"%d", itrUdp == this->udpSendList.end() ? BON_UDP_PORT_BEGIN : itrUdp->port);
+			Replace(opt, L"$UDPPort$", szNum);
+			swprintf_s(szNum, L"%d", itrTcp == this->tcpSendList.end() ? BON_TCP_PORT_BEGIN : itrTcp->port);
+			Replace(opt, L"$TCPPort$", szNum);
 			//歴史的な経緯でBonDriver_UDPをエミュレートしているため
-			swprintf_s(szPort, L"%d", (itrPipe == this->tcpSendList.end() ? 0 : itrPipe->port) + BON_UDP_PORT_BEGIN);
-			Replace(opt, L"$PipePort$", szPort);
-			swprintf_s(szPort, L"%d", itrPipe == this->tcpSendList.end() ? 0 : itrPipe->port);
-			Replace(opt, L"$PipeNumber$", szPort);
+			swprintf_s(szNum, L"%d", (itrPipe == this->tcpSendList.end() ? 0 : itrPipe->port) + BON_UDP_PORT_BEGIN);
+			Replace(opt, L"$PipePort$", szNum);
+			swprintf_s(szNum, L"%d", itrPipe == this->tcpSendList.end() ? 0 : itrPipe->port);
+			Replace(opt, L"$PipeNumber$", szNum);
+			//起動元のプロセスID
+			swprintf_s(szNum, L"%u", GetCurrentProcessId());
+			Replace(opt, L"$PID$", szNum);
 
 			SHELLEXECUTEINFO sei = {};
 			sei.cbSize = sizeof(sei);
