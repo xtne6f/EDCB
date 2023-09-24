@@ -194,7 +194,9 @@ private:
 
 	LONGLONG recWakeTime;
 	bool recMinWake;
-	bool recView;
+	bool openViewForViewing;
+	bool openViewForRec;
+	bool openViewAlways;
 	bool recNW;
 	bool backPriority;
 	bool saveProgramInfo;

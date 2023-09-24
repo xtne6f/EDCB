@@ -137,7 +137,10 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.delReserveMode = GetPrivateProfileInt(L"SET", L"DelReserveMode", 2, iniPath);
 	s.recAppWakeTime = GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath);
 	s.recMinWake = GetPrivateProfileInt(L"SET", L"RecMinWake", 1, iniPath) != 0;
-	s.recView = GetPrivateProfileInt(L"SET", L"RecView", 1, iniPath) != 0;
+	int recView = GetPrivateProfileInt(L"SET", L"RecView", 1, iniPath);
+	s.openViewForViewing = (recView & 1) != 0;
+	s.openViewForRec = (recView & 2) != 0;
+	s.openViewAlways = (recView & 4) != 0;
 	s.recNW = GetPrivateProfileInt(L"SET", L"RecNW", 0, iniPath) != 0;
 	s.pgInfoLog = GetPrivateProfileInt(L"SET", L"PgInfoLog", 1, iniPath) != 0;
 	s.pgInfoLogAsUtf8 = GetPrivateProfileInt(L"SET", L"PgInfoLogAsUtf8", 0, iniPath) != 0;
@@ -500,7 +503,9 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	}
 	ComboBox_SetCurSel(GetDlgItem(hwnd, IDC_COMBO_SET_PROCESS_PRIORITY), min(max(setting.processPriority, 0), 5));
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_MIN_WAKE, setting.recMinWake);
-	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_VIEW, setting.recView);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_OPEN_VIEW_FOR_VIEWING, setting.openViewForViewing);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_OPEN_VIEW_FOR_REC, setting.openViewForRec);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_OPEN_VIEW_ALWAYS, setting.openViewAlways);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_DROP_LOG, setting.dropLog);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_PG_INFO_LOG, setting.pgInfoLog);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_PG_INFO_LOG_AS_UTF8, setting.pgInfoLogAsUtf8);
@@ -589,6 +594,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	//連動処理のため
 	SendMessage(this->hwndBasic, WM_COMMAND, MAKELONG(IDC_LIST_SET_BON, LBN_SELCHANGE), 0);
 	SendMessage(this->hwndRec, WM_COMMAND, IDC_CHECK_SET_NO_USE_PC, 0);
+	SendMessage(this->hwndRec, WM_COMMAND, IDC_CHECK_SET_OPEN_VIEW_ALWAYS, 0);
 	SendMessage(this->hwndRec, WM_COMMAND, IDC_CHECK_SET_PG_INFO_LOG, 0);
 	SendMessage(this->hwndReserve, WM_COMMAND, IDC_CHECK_SET_REC_INFO_DEL_FILE, 0);
 	SendMessage(this->hwndReserve, WM_COMMAND, IDC_CHECK_SET_AUTODEL, 0);
@@ -791,7 +797,9 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	WritePrivateProfileInt(L"SET", L"RecAppWakeTime", GetDlgItemInt(hwnd, IDC_EDIT_SET_APP_WAKE_TIME, NULL, FALSE), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"ProcessPriority", ComboBox_GetCurSel(GetDlgItem(hwnd, IDC_COMBO_SET_PROCESS_PRIORITY)), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"RecMinWake", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_MIN_WAKE), iniPath.c_str());
-	WritePrivateProfileInt(L"SET", L"RecView", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_REC_VIEW), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"RecView", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_OPEN_VIEW_FOR_VIEWING) +
+	                                           GetDlgButtonCheck(hwnd, IDC_CHECK_SET_OPEN_VIEW_FOR_REC) * 2 +
+	                                           GetDlgButtonCheck(hwnd, IDC_CHECK_SET_OPEN_VIEW_ALWAYS) * 4, iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"DropLog", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_DROP_LOG), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"PgInfoLog", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_PG_INFO_LOG), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"PgInfoLogAsUtf8", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_PG_INFO_LOG_AS_UTF8), iniPath.c_str());
@@ -1199,6 +1207,10 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 			break;
 		case IDC_CHECK_SET_NO_USE_PC:
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_NO_USE_PC), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
+			break;
+		case IDC_CHECK_SET_OPEN_VIEW_ALWAYS:
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_OPEN_VIEW_FOR_VIEWING), GetDlgButtonCheck(hDlg, LOWORD(wParam)) == false);
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_OPEN_VIEW_FOR_REC), GetDlgButtonCheck(hDlg, LOWORD(wParam)) == false);
 			break;
 		case IDC_CHECK_SET_PG_INFO_LOG:
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_PG_INFO_LOG_AS_UTF8), GetDlgButtonCheck(hDlg, LOWORD(wParam)));

@@ -45,7 +45,9 @@ void CTunerBankCtrl::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	//録画開始のちょうどn分前だと起動と他チューナ録画開始が若干重なりやすくなるので僅かにずらす
 	this->recWakeTime = max(s.recAppWakeTime * 60 - 3, READY_MARGIN) * I64_1SEC;
 	this->recMinWake = s.recMinWake;
-	this->recView = s.recView;
+	this->openViewForViewing = s.openViewForViewing && s.openViewAlways == false;
+	this->openViewForRec = s.openViewForRec && s.openViewAlways == false;
+	this->openViewAlways = s.openViewAlways;
 	this->recNW = s.recNW;
 	this->backPriority = s.backPriority;
 	this->saveProgramInfo = s.pgInfoLog;
@@ -368,7 +370,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							//「視聴モード」にするとGUIキープが解除されてしまうためチャンネルを把握することはできない
 							ctrlCmd.SendViewSetStandbyRec(2);
 							this->tunerChLocked = false;
-							if( this->recView ){
+							if( this->openViewForViewing ){
 								ctrlCmd.SendViewExecViewApp();
 							}
 						}
@@ -380,6 +382,9 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 								//たとえサブ録画が発生してもこのコマンドで得られるパスは変化しない
 								ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &r.recFilePath[i]);
 							}
+						}
+						if( this->openViewForRec ){
+							ctrlCmd.SendViewExecViewApp();
 						}
 					}
 					if( startedReserveIDList ){
@@ -509,7 +514,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			initCh.useSID = TRUE;
 			initCh.useBonCh = FALSE;
 			bool nwUdpTcp = this->recNW || r.recMode == RECMODE_VIEW;
-			if( OpenTuner(this->recMinWake, this->recView == false || r.recMode != RECMODE_VIEW, nwUdpTcp, nwUdpTcp, true, &initCh) ){
+			if( OpenTuner(this->recMinWake, (this->openViewForViewing == false && this->openViewAlways == false) || r.recMode != RECMODE_VIEW,
+			              nwUdpTcp, nwUdpTcp, true, &initCh) ){
 				this->tunerONID = r.onid;
 				this->tunerTSID = r.tsid;
 				this->tunerChLocked = true;
@@ -1213,6 +1219,9 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 				}
 				if( initCh ){
 					ctrlCmd.SendViewSetCh(*initCh);
+					if( this->openViewAlways ){
+						ctrlCmd.SendViewExecViewApp();
+					}
 				}
 				return true;
 			}
