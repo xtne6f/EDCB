@@ -31,6 +31,9 @@ jikkyo=GetVarInt(query,'jikkyo')==1
 hlsMsn=GetVarInt(query,'_HLS_msn',1)
 hlsPart=GetVarInt(query,'_HLS_part',0)
 
+-- フラグメント長の目安
+partConfigSec=0.8
+
 function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if XCODE_SINGLE then
     -- トランスコーダーの親プロセスのリストを作る
@@ -91,7 +94,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if hls then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
     -- プロセス終了時に対応するNetworkTVモードも終了させる
-    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 '
+    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 -p '..partConfigSec..' '
     if nwtvclose then
       if edcb.FindFile(tools..'\\nwtvclose.ps1',1) then
         cmd=cmd..'-c "powershell -NoProfile -ExecutionPolicy RemoteSigned -File nwtvclose.ps1 '..nwtvclose[1]..' '..nwtvclose[2]..'" '
@@ -173,7 +176,7 @@ function CreateHlsPlaylist(f)
     local endList=buf:byte(9)~=0
     local segIncomplete=buf:byte(10)~=0
     local isMp4=buf:byte(11)~=0
-    local partTarget=0.5
+    local partTarget=partConfigSec
     a[2]='#EXT-X-VERSION:'..(isMp4 and (hls4>1 and 9 or 6) or 3)..'\n#EXT-X-TARGETDURATION:6\n'
     buf=f:read(segNum*16)
     if not buf or #buf~=segNum*16 then
@@ -206,7 +209,8 @@ function CreateHlsPlaylist(f)
         end
         xbuf=xbuf:sub(17)
       end
-      -- v1.3.0現在のhls.jsはプレイリストがセグメントで終わると再生時間がバグるので避ける
+      -- v1.4.12現在のhls.jsはプレイリストがセグメントで終わると再生時間がバグるので避ける
+      --if segAvailable and (not segIncomplete or nextSegAvailable) then
       if segAvailable and (endList or nextSegAvailable) then
         if not hasSeg then
           a[#a+1]='#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
@@ -224,7 +228,7 @@ function CreateHlsPlaylist(f)
     if isMp4 and hls4>1 then
       -- PART-HOLD-BACKがPART-TARGETのちょうど3倍だとまずい環境があるらしい
       a[2]=a[2]..'#EXT-X-PART-INF:PART-TARGET='..partTarget
-        ..'\n#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK=2.0\n'
+        ..'\n#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK='..(partConfigSec*3.5)..'\n'
     end
   end
   return table.concat(a)
