@@ -71,6 +71,15 @@ function OpenTranscoder()
     :gsub('$FILTER',(filter:gsub('%%','%%%%')))
     :gsub('$CAPTION',(caption:gsub('%%','%%%%')))
     :gsub('$OUTPUT',(output[2]:gsub('%%','%%%%')))
+  if fastRate~=1 and option.editorFast then
+    local editor=''
+    for s in option.editorFast:gmatch('[^|]+') do
+      editor=tools..'\\'..s
+      if edcb.FindFile(editor,1) then break end
+      editor=s
+    end
+    cmd='"'..editor..'" '..option.editorOptionFast..' | '..cmd
+  end
   if XCODE_LOG then
     local log=mg.script_name:gsub('[^\\/]*$','')..'log'
     if not edcb.FindFile(log,1) then
