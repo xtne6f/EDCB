@@ -251,6 +251,17 @@ function ConstructTranscodeQueries(xq)
     ..(xq.fast and '&amp;fast=1' or '')
 end
 
+function VideoWrapperBegin()
+  return '<div class="video-wrapper" id="vid-wrap">'
+    ..'<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+    ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
+    ..'<div class="video-container arib-video-container" id="vid-cont">'
+end
+
+function VideoWrapperEnd()
+  return '</div></div></div>'
+end
+
 function TranscodeSettingTemplete(xq,fsec)
   local s='<select name="option">'
   for i,v in ipairs(XCODE_OPTIONS) do
@@ -271,13 +282,15 @@ function TranscodeSettingTemplete(xq,fsec)
     ..'<label><input type="checkbox" name="cinema" value="1"'..((xq.cinema or not xq.option and XCODE_CHECK_CINEMA) and ' checked' or '')..'>cinema</label>\n'
   if fsec then
     s=s..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
+      ..'<span id="vid-offset"></span>'
   end
+  s=s..'<span id="vid-bitrate"></span>\n'
   return s
 end
 
 function OnscreenButtonsScriptTemplete()
   return [=[
-<script src="script.js?ver=20230917"></script>
+<script src="script.js?ver=20231028"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
