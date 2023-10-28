@@ -90,6 +90,7 @@
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\KernelObjectSecurity.cs" />
+    <Compile Include="DefineClass\ListViewHorizontalMouseScroller.cs" />
     <Compile Include="DefineClass\ValueConverter.cs" />
     <Compile Include="DefineClass\ListColumnInfo.cs" />
     <Compile Include="Setting\ColorSetWindow.xaml.cs">

@@ -20,6 +20,7 @@ namespace EpgTimer
     /// </summary>
     public partial class ManualAutoAddView : UserControl
     {
+        private ListViewHorizontalMouseScroller horizontalScroller = new ListViewHorizontalMouseScroller();
         private bool ReloadInfo = true;
 
         private Dictionary<string, GridViewColumn> columnList;
@@ -210,6 +211,17 @@ namespace EpgTimer
                     e.Handled = true;
                     break;
             }
+        }
+
+        private void listView_key_MouseEnter(object sender, MouseEventArgs e)
+        {
+            horizontalScroller.OnMouseEnter(listView_key, Settings.Instance.EpgSettingList[0].MouseHorizontalScrollAuto,
+                                            Settings.Instance.EpgSettingList[0].HorizontalScrollSize);
+        }
+
+        private void listView_key_MouseLeave(object sender, MouseEventArgs e)
+        {
+            horizontalScroller.OnMouseLeave();
         }
     }
 }

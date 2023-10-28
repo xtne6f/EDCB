@@ -9,7 +9,23 @@
         <Label Content="検索キーワード" Height="28" HorizontalAlignment="Left" Margin="10,8,0,0" ToolTip="【検索対象を指定】 :title:ネコ&#10;   :title:番組名&#10;   :event:番組名と番組内容&#10;   :genre:ジャンル&#10;   :video:映像情報&#10;   :audio:音声情報&#10;【個別に正規表現】 ::title:^ネコ&#10;【OR検索】 :title:ネコ | :title:猫" VerticalAlignment="Top" />
         <Label Content="NOTキーワード" Height="28" HorizontalAlignment="Left" Margin="10,37,0,0" ToolTip="【検索対象を指定】 :title:ネコ&#10;   :title:番組名&#10;   :event:番組名と番組内容&#10;   :genre:ジャンル&#10;   :video:映像情報&#10;   :audio:音声情報&#10;【個別に正規表現】 ::title:^ネコ" VerticalAlignment="Top" />
         <ComboBox Height="24" IsEditable="True" IsTextSearchEnabled="False" KeyUp="comboBox_andKey_KeyUp" Margin="110,10,10,0" Name="comboBox_andKey" VerticalAlignment="Top" />
-        <ComboBox Height="24" IsEditable="True" IsTextSearchEnabled="False" KeyUp="comboBox_notKey_KeyUp" Margin="110,39,10,0" Name="comboBox_notKey" VerticalAlignment="Top" />
+        <Grid Margin="110,39,10,0" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition MinWidth="50" Name="columnDefinition_notKey" Width="0.6*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Name="columnDefinition_note" Width="0.4*" />
+            </Grid.ColumnDefinitions>
+            <ComboBox Height="24" IsEditable="True" IsTextSearchEnabled="False" KeyUp="comboBox_notKey_KeyUp" Name="comboBox_notKey" SizeChanged="comboBox_notKey_SizeChanged" VerticalAlignment="Top" />
+            <GridSplitter Background="Transparent" Grid.Column="1" HorizontalAlignment="Stretch" ResizeDirection="Columns" Width="6" />
+            <Grid Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Label Content="メモ" Height="24" Margin="0,0,2,0" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" Height="24" Name="textBox_note" VerticalAlignment="Center" />
+            </Grid>
+        </Grid>
         <Border BorderBrush="#FF8C8E94" BorderThickness="0,0,0,1" HorizontalAlignment="Left" Margin="28,70,0,0" VerticalAlignment="Top">
             <StackPanel KeyboardNavigation.TabNavigation="Once" Margin="15,0,0,3" Orientation="Horizontal" VerticalAlignment="Top">
                 <CheckBox Content="正規表現モード" Height="16" Margin="0,0,15,0" Name="checkBox_regExp" />
