@@ -10,7 +10,7 @@ else
   end
 end
 if t then
-  f=edcb.io.open(edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..t,'rb')
+  f=edcb.io.open(EdcbModulePath()..t,'rb')
 end
 
 if not f then

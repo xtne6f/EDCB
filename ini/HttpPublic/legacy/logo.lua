@@ -1,10 +1,10 @@
 -- 局ロゴを転送するスクリプト
 
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
 -- EDCBのロゴフォルダにロゴがないときに検索する、LogoData.iniとLogoフォルダがあるフォルダの絶対パス
 -- 未指定のときは公開フォルダ下の"img/logo/ONIDSID{.png|.bmp}"が使われる
---LOGO_DIR=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\..\\TVTest'
-
-dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+--LOGO_DIR=EdcbModulePath()..'\\..\\TVTest'
 
 onid=GetVarInt(mg.request_info.query_string,'onid',0,65535) or 0
 sid=GetVarInt(mg.request_info.query_string,'sid',0,65535) or 0
@@ -12,11 +12,7 @@ sid=GetVarInt(mg.request_info.query_string,'sid',0,65535) or 0
 -- ロゴ識別とServiceIDとの対応を調べる
 ddid=tonumber(edcb.GetPrivateProfile('LogoIDMap',('%04X%04X'):format(onid,sid),'','Setting\\LogoData.ini'))
 if ddid then
-  dir=edcb.GetPrivateProfile('SET','DataSavePath','','Common.ini')
-  if dir=='' then
-    dir=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Setting'
-  end
-  dir=dir..'\\LogoData\\'
+  dir=EdcbSettingPath()..'\\LogoData\\'
   ff=edcb.FindFile(dir..('%04X_%03X_*'):format(onid,ddid),6) or {}
   -- ファイル名の末尾2桁はロゴタイプ(STD-B21)
   for i,v in ipairs({'05%.png','02%.png','04%.png','01%.png','03%.png','00%.png'}) do

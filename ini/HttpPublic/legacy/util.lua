@@ -233,6 +233,14 @@ POST_MAX_BYTE=1024*1024
 
 ----------定数定義ここまで----------
 
+function Checkbox(b)
+  return ' type="checkbox" value="1"'..(b and ' checked' or '')
+end
+
+function Selected(b)
+  return b and ' selected' or ''
+end
+
 function GetTranscodeQueries(qs)
   return {
     option=GetVarInt(qs,'option',1,#XCODE_OPTIONS),
@@ -266,22 +274,22 @@ function TranscodeSettingTemplete(xq,fsec)
   local s='<select name="option">'
   for i,v in ipairs(XCODE_OPTIONS) do
     if not ALLOW_HLS or not ALWAYS_USE_HLS or v.outputHls then
-      s=s..'<option value="'..i..'"'..((xq.option or XCODE_SELECT_OPTION)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
+      s=s..'<option value="'..i..'"'..Selected((xq.option or XCODE_SELECT_OPTION)==i)..'>'..EdcbHtmlEscape(v.name)
     end
   end
   s=s..'</select>\n'
   if fsec then
     s=s..'offset: <select name="offset">'
     for i=0,100 do
-      s=s..'<option value="'..i..'"'..((xq.offset or 0)==i and ' selected' or '')..'>'
+      s=s..'<option value="'..i..'"'..Selected((xq.offset or 0)==i)..'>'
         ..(fsec>0 and ('%dm%02ds'):format(math.floor(fsec*i/100/60),fsec*i/100%60)..(i%5==0 and '|'..i..'%' or '') or i..'%')
     end
     s=s..'</select>\n'
   end
-  s=s..'<label><input type="checkbox" name="audio2" value="1"'..(xq.audio2 and ' checked' or '')..'>audio2</label>\n'
-    ..'<label><input type="checkbox" name="cinema" value="1"'..((xq.cinema or not xq.option and XCODE_CHECK_CINEMA) and ' checked' or '')..'>cinema</label>\n'
+  s=s..'<label><input name="audio2"'..Checkbox(xq.audio2)..'>audio2</label>\n'
+    ..'<label><input name="cinema"'..Checkbox(xq.cinema or not xq.option and XCODE_CHECK_CINEMA)..'>cinema</label>\n'
   if fsec then
-    s=s..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
+    s=s..'<label><input name="fast"'..Checkbox(xq.fast or not xq.option and XCODE_CHECK_FAST)..'>fast</label>\n'
       ..'<span id="vid-offset"></span>'
   end
   s=s..'<span id="vid-bitrate"></span>\n'
@@ -361,8 +369,7 @@ end
 
 function VideoScriptTemplete()
   return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false)..[=[
-<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
-  ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
+<label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(XCODE_CHECK_CAPTION)..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
 <script>
 ]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..(VIDEO_VOLUME and 'vid.volume='..VIDEO_VOLUME..';\n' or '')..[=[
@@ -376,10 +383,9 @@ runVideoScript(]=]
 end
 
 function TranscodeScriptTemplete(live,params)
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live)
-    ..'<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"'
-      ..(XCODE_CHECK_CAPTION and ' checked' or '')..'>caption</label>\n'
-    ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live)..[=[
+<label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(XCODE_CHECK_CAPTION)..[=[>caption</label>
+]=]..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <script>
 ]=]..(XCODE_VIDEO_MUTED and 'vid.muted=true;\n' or '')..(VIDEO_VOLUME and 'vid.volume='..VIDEO_VOLUME..';\n' or '')..[=[
 runTranscodeScript(]=]
@@ -462,29 +468,27 @@ end
 
 --録画設定フォームのテンプレート
 function RecSettingTemplate(rs)
-  local s='<label><input type="checkbox" name="recEnabled" value="1"'..(rs.recMode~=5 and ' checked' or '')..'>有効</label><br>\n'
+  local s='<label><input name="recEnabled"'..Checkbox(rs.recMode~=5)..'>有効</label><br>\n'
     ..'録画モード: <select name="recMode">'
   for i=1,#RecModeTextList() do
-    s=s..'<option value="'..(i-1)..'"'..((rs.recMode~=5 and rs.recMode or rs.noRecMode or 1)==i-1 and ' selected' or '')..'>'..RecModeTextList()[i]
+    s=s..'<option value="'..(i-1)..'"'..Selected((rs.recMode~=5 and rs.recMode or rs.noRecMode or 1)==i-1)..'>'..RecModeTextList()[i]
   end
   s=s..'</select><br>\n'
-    ..'<label><input type="checkbox" name="tuijyuuFlag" value="1"'..(rs.tuijyuuFlag and ' checked' or '')..'>イベントリレー追従</label><br>\n'
+    ..'<label><input name="tuijyuuFlag"'..Checkbox(rs.tuijyuuFlag)..'>イベントリレー追従</label><br>\n'
     ..'優先度: <select name="priority">'
   for i=1,5 do
-    s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected' or '')..'>'..i..(i==1 and ' (低)' or i==5 and ' (高)' or '')
+    s=s..'<option value="'..i..'"'..Selected(rs.priority==i)..'>'..i..(i==1 and ' (低)' or i==5 and ' (高)' or '')
   end
   --デフォルト値
   local rsdef=(edcb.GetReserveData(0x7FFFFFFF) or {}).recSetting
   s=s..'</select><br>\n'
-    ..'<label><input type="checkbox" name="pittariFlag" value="1"'..(rs.pittariFlag and ' checked' or '')..'>ぴったり（？）録画</label><br>\n'
-    ..'録画マージン: <label><input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked')..'>デフォルト</label> || '
+    ..'<label><input name="pittariFlag"'..Checkbox(rs.pittariFlag)..'>ぴったり（？）録画</label><br>\n'
+    ..'録画マージン: <label><input name="useDefMarginFlag"'..Checkbox(not rs.startMargin)..'><span class="enabled-on-checked">デフォルト</span></label> || <span class="disabled-on-checked">'
     ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or rsdef and rsdef.startMargin or 0)..'" size="5"> '
-    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or rsdef and rsdef.endMargin or 0)..'" size="5"><br>\n'
-    ..'指定サービス対象データ: <label><input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked' or '')..'>デフォルト</label> || '
-    ..'<label><input type="checkbox" name="serviceMode_1" value="1"'
-      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/16 or rsdef and rsdef.serviceMode/16 or 0)%2~=0 and ' checked' or '')..'>字幕を含める</label> '
-    ..'<label><input type="checkbox" name="serviceMode_2" value="1"'
-      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/32 or rsdef and rsdef.serviceMode/32 or 0)%2~=0 and ' checked' or '')..'>データカルーセルを含める</label><br>\n'
+    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or rsdef and rsdef.endMargin or 0)..'" size="5"></span><br>\n'
+    ..'指定サービス対象データ: <label><input class="" name="serviceMode"'..Checkbox(rs.serviceMode%2==0)..'><span class="enabled-on-checked">デフォルト</span></label> || <span class="disabled-on-checked">'
+    ..'<label><input name="serviceMode_1"'..Checkbox(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/16 or rsdef and rsdef.serviceMode/16 or 0)%2~=0)..'>字幕を含める</label> '
+    ..'<label><input name="serviceMode_2"'..Checkbox(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/32 or rsdef and rsdef.serviceMode/32 or 0)%2~=0)..'>データカルーセルを含める</label></span><br>\n'
     ..'<table><tr><td>録画フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td><td>部分受信</td></tr>\n'
   for i,v in ipairs(rs.recFolderList) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>いいえ</td></tr>\n'
@@ -493,22 +497,21 @@ function RecSettingTemplate(rs)
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>はい</td></tr>\n'
   end
   s=s..'</table>（プリセットによる変更のみ対応）<br>\n'
-    ..'<label><input type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked' or '')..'>部分受信（ワンセグ）を別ファイルに同時出力する</label><br>\n'
-    ..'<label><input type="checkbox" name="continueRecFlag" value="1"'..(rs.continueRecFlag and ' checked' or '')..'>後ろの予約を同一ファイルで出力する</label><br>\n'
-    ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..(rs.tunerID==0 and ' selected' or '')..'>自動'
+    ..'<label><input name="partialRecFlag"'..Checkbox(rs.partialRecFlag~=0)..'>部分受信（ワンセグ）を別ファイルに同時出力する</label><br>\n'
+    ..'<label><input name="continueRecFlag"'..Checkbox(rs.continueRecFlag)..'>後ろの予約を同一ファイルで出力する</label><br>\n'
+    ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..Selected(rs.tunerID==0)..'>自動'
   local a=edcb.GetTunerReserveAll()
   for i=1,#a-1 do
-    s=s..'<option value="'..a[i].tunerID..'"'..(a[i].tunerID==rs.tunerID and ' selected' or '')..('>ID:%08X('):format(a[i].tunerID)..a[i].tunerName..')'
+    s=s..'<option value="'..a[i].tunerID..'"'..Selected(a[i].tunerID==rs.tunerID)..('>ID:%08X('):format(a[i].tunerID)..a[i].tunerName..')'
   end
   s=s..'</select><br>\n'
     ..'録画後動作: <select name="suspendMode">'
-    ..'<option value="0"'..(rs.suspendMode==0 and ' selected' or '')..'>'..(rsdef and ({'スタンバイ','休止','シャットダウン','何もしない'})[rsdef.suspendMode] or '')..'（デフォルト）'
-    ..'<option value="1"'..(rs.suspendMode==1 and ' selected' or '')..'>スタンバイ'
-    ..'<option value="2"'..(rs.suspendMode==2 and ' selected' or '')..'>休止'
-    ..'<option value="3"'..(rs.suspendMode==3 and ' selected' or '')..'>シャットダウン'
-    ..'<option value="4"'..(rs.suspendMode==4 and ' selected' or '')..'>何もしない</select> '
-    ..'<label><input type="checkbox" name="rebootFlag" value="1"'
-      ..((rs.suspendMode==0 and rsdef and rsdef.rebootFlag or rs.suspendMode~=0 and rs.rebootFlag) and ' checked' or '')..'>復帰後再起動する</label><br>\n'
+    ..'<option value="0"'..Selected(rs.suspendMode==0)..'>'..(rsdef and ({'スタンバイ','休止','シャットダウン','何もしない'})[rsdef.suspendMode] or '')..'（デフォルト）'
+    ..'<option value="1"'..Selected(rs.suspendMode==1)..'>スタンバイ'
+    ..'<option value="2"'..Selected(rs.suspendMode==2)..'>休止'
+    ..'<option value="3"'..Selected(rs.suspendMode==3)..'>シャットダウン'
+    ..'<option value="4"'..Selected(rs.suspendMode==4)..'>何もしない</select> '
+    ..'<label><input name="rebootFlag"'..Checkbox(rs.suspendMode==0 and rsdef and rsdef.rebootFlag or rs.suspendMode~=0 and rs.rebootFlag)..'>復帰後再起動する</label><br>\n'
     ..'録画後実行bat（プリセットによる変更のみ対応）: '..(#rs.batFilePath==0 and '（なし）' or rs.batFilePath)..'<br>\n'
   return s
 end
@@ -648,6 +651,35 @@ function DocumentToNativePath(path)
     return mg.document_root..'\\'..path:gsub('/','\\')
   end
   return nil
+end
+
+--EDCBフォルダのパス
+function EdcbModulePath()
+  return edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')
+end
+
+--設定関係保存フォルダのパス
+function EdcbSettingPath()
+  local dir=edcb.GetPrivateProfile('SET','DataSavePath','','Common.ini')
+  return dir~='' and dir or EdcbModulePath()..'\\Setting'
+end
+
+--録画保存フォルダのパスのリスト
+function EdcbRecFolderPathList()
+  local n=tonumber(edcb.GetPrivateProfile('SET','RecFolderNum',0,'Common.ini')) or 0
+  local r={n>0 and edcb.GetPrivateProfile('SET','RecFolderPath0','','Common.ini') or ''}
+  if r[1]=='' then
+    --必ず返す
+    r[1]=EdcbSettingPath()
+  end
+  for i=2,n do
+    local dir=edcb.GetPrivateProfile('SET','RecFolderPath'..(i-1),'','Common.ini')
+    --空要素は詰める
+    if dir~='' then
+      r[#r+1]=dir
+    end
+  end
+  return r
 end
 
 --現在の変換モードでHTMLエスケープする

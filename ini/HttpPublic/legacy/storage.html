@@ -17,22 +17,9 @@ ct:Append([=[
   <dl>
 ]=])
 
-list={}
-n=tonumber(edcb.GetPrivateProfile('SET','RecFolderNum',0,'Common.ini'))
-if n<=0 then
-  --録画保存フォルダが未設定のときは設定関係保存フォルダになる
-  list[1]=edcb.GetPrivateProfile('SET','DataSavePath','','Common.ini')
-  if list[1]=='' then
-    list[1]=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Setting'
-  end
-end
-for i=0,n-1 do
-  list[#list+1]=edcb.GetPrivateProfile('SET','RecFolderPath'..i,'','Common.ini')
-end
-
 checked={}
-for i,v in ipairs(list) do
-  v=v:match('^%a:\\')
+for i,v in ipairs(EdcbRecFolderPathList()) do
+  v=v:match('^[A-Za-z]:\\')
   if v and not checked[v:upper()] then
     checked[v:upper()]=true
     free=nil

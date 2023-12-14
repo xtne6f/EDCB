@@ -588,3 +588,23 @@ th, td {
     color: #c66;
   }
 }
+
+div.disabled-on-checked, div.enabled-on-checked {
+  margin-left: 2em;
+}
+
+input[type=checkbox]:checked + .disabled-on-checked, input[type=checkbox] + .enabled-on-checked {
+  opacity: 0.5;
+}
+
+input[type=checkbox]:checked + .enabled-on-checked {
+  opacity: 1;
+}
+
+label:has(input[type=checkbox]:checked) + .disabled-on-checked, label:has(input[type=checkbox]) + .enabled-on-checked {
+  opacity: 0.5;
+}
+
+label:has(input[type=checkbox]:checked) + .enabled-on-checked {
+  opacity: 1;
+}
