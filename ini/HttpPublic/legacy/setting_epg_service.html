@@ -1,0 +1,42 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/EPG取得対象サービス (閲覧のみ) - EDCB</title>
+</head>
+<body>
+<h1>設定/EPG取得対象サービス (閲覧のみ)</h1>
+<div id="main">
+]=])
+
+--TODO: 書き込みの手段を用意していないので閲覧のみ
+
+edcb.htmlEscape=15
+
+ct:Append([=[
+<div>
+  <table>
+    <tr><th>サービス名<th>Network<th>ServiceID<th>Type</tr>
+]=])
+for i,v in ipairs(edcb.GetChDataList()) do
+  ct:Append('    <tr><td><label><input'..Checkbox(v.epgCapFlag)..'>'..v.serviceName..'</label></td><td>'..NetworkType(v.onid)..('<td>%d(0x%04x)<td>'):format(v.sid,v.sid)..v.serviceType..'</tr>\n')
+end
+ct:Append([=[
+  </table>
+</div>
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

@@ -3,6 +3,9 @@ SHOW_NOTIFY_LOG=true
 --デバッグ出力の表示を許可するかどうか
 SHOW_DEBUG_LOG=false
 
+--設定メニューからの設定の変更を許可するかどうか
+ALLOW_SETTING=false
+
 --メニューに「システムスタンバイ」ボタンを表示するかどうか
 INDEX_ENABLE_SUSPEND=false
 --メニューの「システムスタンバイ」ボタンを「システム休止」にするかどうか
@@ -467,7 +470,7 @@ function ConvertProgramText(v)
 end
 
 --録画設定フォームのテンプレート
-function RecSettingTemplate(rs)
+function RecSettingTemplate(rs,setting)
   local s='<label><input name="recEnabled"'..Checkbox(rs.recMode~=5)..'>有効</label><br>\n'
     ..'録画モード: <select name="recMode">'
   for i=1,#RecModeTextList() do
@@ -496,7 +499,7 @@ function RecSettingTemplate(rs)
   for i,v in ipairs(rs.partialRecFolder) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>はい</td></tr>\n'
   end
-  s=s..'</table>（プリセットによる変更のみ対応）<br>\n'
+  s=s..'</table>'..(setting and '<a href="'..setting..'">録画フォルダを編集</a>' or '（プリセットによる変更のみ対応）')..'<br>\n'
     ..'<label><input name="partialRecFlag"'..Checkbox(rs.partialRecFlag~=0)..'>部分受信（ワンセグ）を別ファイルに同時出力する</label><br>\n'
     ..'<label><input name="continueRecFlag"'..Checkbox(rs.continueRecFlag)..'>後ろの予約を同一ファイルで出力する</label><br>\n'
     ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..Selected(rs.tunerID==0)..'>自動'
@@ -512,7 +515,8 @@ function RecSettingTemplate(rs)
     ..'<option value="3"'..Selected(rs.suspendMode==3)..'>シャットダウン'
     ..'<option value="4"'..Selected(rs.suspendMode==4)..'>何もしない</select> '
     ..'<label><input name="rebootFlag"'..Checkbox(rs.suspendMode==0 and rsdef and rsdef.rebootFlag or rs.suspendMode~=0 and rs.rebootFlag)..'>復帰後再起動する</label><br>\n'
-    ..'録画後実行bat（プリセットによる変更のみ対応）: '..(#rs.batFilePath==0 and '（なし）' or rs.batFilePath)..'<br>\n'
+    ..'録画後実行bat[*タグ]'..(setting and '' or '（プリセットによる変更のみ対応）')..':<br>\n'
+    ..'<input type="text" name="batFilePath" value="'..rs.batFilePath..'" style="width:95%"'..(setting and '' or ' readonly')..'><br>\n'
   return s
 end
 

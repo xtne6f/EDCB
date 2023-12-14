@@ -11,6 +11,10 @@ ul {
   padding: 0;
 }
 
+ul > li > ul {
+  margin-left: 1em;
+}
+
 li {
   padding: 0.2em 0;
 }
@@ -589,7 +593,7 @@ th, td {
   }
 }
 
-div.disabled-on-checked, div.enabled-on-checked {
+div.disabled-on-checked, div.enabled-on-checked, div.sub-setting {
   margin-left: 2em;
 }
 

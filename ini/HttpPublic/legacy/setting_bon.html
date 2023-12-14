@@ -1,0 +1,162 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/BonDriver - EDCB</title>
+</head>
+<body>
+<h1>設定/BonDriver</h1>
+<div id="main">
+]=])
+
+srvIni='EpgTimerSrv.ini'
+function GetItemList()
+  local esc=edcb.htmlEscape
+  edcb.htmlEscape=0
+  local pattern=EdcbSettingPath()..'\\*.ChSet4.txt'
+  edcb.htmlEscape=esc
+  local ret={}
+  for i,v in ipairs(edcb.FindFile(pattern,0) or {}) do
+    if not v.isdir then
+      local bon=v.name
+      local depth=0
+      while bon~='' do
+        if bon:find('%)$') then
+          depth=depth+1
+        elseif bon:find('%($') and depth>0 then
+          depth=depth-1
+          if depth==0 then
+            bon=bon:sub(0,#bon-1)
+            break
+          end
+        end
+        bon=bon:sub(0,#bon-1)
+      end
+      if bon~='' then
+        bon=bon..'.dll'
+        for j,w in ipairs(ret) do
+          if w.bon:upper()==bon:upper() then
+            bon=nil
+            break
+          end
+        end
+        if bon then
+          local epgCount=0
+          if edcb.GetPrivateProfile(bon,'GetEpg',1,srvIni)~='0' then
+            epgCount=tonumber(edcb.GetPrivateProfile(bon,'EPGCount',0,srvIni)) or 0
+            if epgCount==0 then epgCount=100 end
+          end
+          ret[#ret+1]={
+            bon=bon,
+            count=tonumber(edcb.GetPrivateProfile(bon,'Count',0,srvIni)) or 0,
+            epgCount=epgCount
+          }
+        end
+      end
+    end
+  end
+  local priority={}
+  for i,v in ipairs(ret) do
+    priority[i]=tonumber(edcb.GetPrivateProfile(v.bon,'Priority',0xFFFF,srvIni)) or 0xFFFF
+  end
+  for i=2,#priority do
+    for j=2,#priority do
+      if priority[j]<priority[j-1] then
+        table.insert(priority,j-1,table.remove(priority,j))
+        table.insert(ret,j-1,table.remove(ret,j))
+      end
+    end
+  end
+  return ret
+end
+
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  itemList=GetItemList()
+  item=mg.get_var(post,'item') or ''
+  for i,v in ipairs(itemList) do
+    if v.bon==item then
+      if mg.get_var(post,'count') then
+        v.count=GetVarInt(post,'count',0,99) or 0
+        v.epgCount=GetVarInt(post,'epgCount',0,100) or 0
+        ct:Append('<div id="result">変更しました</div>\n')
+      elseif mg.get_var(post,'up') and i>1 then
+        table.remove(itemList,i)
+        table.insert(itemList,i-1,v)
+        ct:Append('<div id="result">移動しました</div>\n')
+      elseif mg.get_var(post,'down') and i<#itemList then
+        table.remove(itemList,i)
+        table.insert(itemList,i+1,v)
+        ct:Append('<div id="result">移動しました</div>\n')
+      end
+      break
+    end
+  end
+  for i,v in ipairs(itemList) do
+    edcb.WritePrivateProfile(v.bon,'Count',v.count,srvIni)
+    edcb.WritePrivateProfile(v.bon,'GetEpg',v.epgCount~=0,srvIni)
+    edcb.WritePrivateProfile(v.bon,'EPGCount',v.epgCount%100,srvIni)
+    edcb.WritePrivateProfile(v.bon,'Priority',i-1,srvIni)
+  end
+end
+
+edcb.htmlEscape=15
+
+for i,v in ipairs(GetItemList()) do
+  ct:Append([=[
+<div>
+  <form method="POST" action="setting_bon.html" style="display:inline"><div style="display:inline">
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="up" value="y">
+    <input type="hidden" name="item" value="]=]..v.bon..[=[">
+    <button type="submit">上↑</button></div></form>
+  <form method="POST" action="setting_bon.html" style="display:inline"><div style="display:inline">
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="down" value="y">
+    <input type="hidden" name="item" value="]=]..v.bon..[=[">
+    <button type="submit">下↓</button>]=]..v.bon..[=[</div></form>
+  <div class="sub-setting">
+    <form method="POST" action="setting_bon.html"><div>
+      <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+      <input type="hidden" name="item" value="]=]..v.bon..[=[">
+      チューナー数
+      <select name="count">]=])
+  for i=0,99 do
+    ct:Append('<option'..Selected(v.count==i)..'>'..i)
+  end
+  ct:Append([=[</select>
+      EPG取得に使用する数
+      <select name="epgCount">]=])
+  for i=0,99 do
+    ct:Append('<option'..Selected(v.epgCount==i)..'>'..i)
+  end
+  ct:Append('<option value="100"'..Selected(v.epgCount==100)..'>すべて')
+  ct:Append([=[</select>
+      <button type="submit">変更</button></div></form>
+  </div>
+</div>
+]=])
+end
+ct:Append([=[
+※上にあるBonDriverから優先的に使用します。<br>
+※設定は次回起動時に適用されます。
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

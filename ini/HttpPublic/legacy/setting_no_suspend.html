@@ -1,0 +1,103 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/録画動作の抑制条件/指定プロセスが起動している場合 (前方一致) - EDCB</title>
+</head>
+<body>
+<h1>設定/録画動作の抑制条件/指定プロセスが起動している場合 (前方一致)</h1>
+<div id="main">
+]=])
+
+srvIni='EpgTimerSrv.ini'
+function GetItemList()
+  local count=tonumber(edcb.GetPrivateProfile('NO_SUSPEND','Count',-1,srvIni)) or -1
+  if count<0 then
+    --未設定
+    return {'EpgDataCap_Bon'}
+  end
+  local ret={}
+  for i=1,count do
+    local item=edcb.GetPrivateProfile('NO_SUSPEND',i-1,'',srvIni)
+    if item~='' then
+      ret[#ret+1]=item
+    end
+  end
+  return ret
+end
+
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  itemList=GetItemList()
+  item=mg.get_var(post,'noSuspend') or ''
+  if mg.get_var(post,'add') then
+    for i,v in ipairs(itemList) do
+      if v:upper()==item:upper() then
+        --既にある
+        item=nil
+        break
+      end
+    end
+    if item and item:find('^[^%c/\\:*?"<>|]+$') then
+      itemList[#itemList+1]=item
+      ct:Append('<div id="result">追加しました</div>\n')
+    end
+  elseif mg.get_var(post,'del') then
+    for i,v in ipairs(itemList) do
+      if v==item then
+        table.remove(itemList,i)
+        ct:Append('<div id="result">削除しました</div>\n')
+        break
+      end
+    end
+  end
+  for i,v in ipairs(itemList) do
+    edcb.WritePrivateProfile('NO_SUSPEND',i-1,v,srvIni)
+  end
+  edcb.WritePrivateProfile('NO_SUSPEND','Count',#itemList,srvIni)
+  for i=#itemList+1,999 do
+    --掃除
+    if edcb.GetPrivateProfile('NO_SUSPEND',i-1,'',srvIni)=='' then break end
+    edcb.WritePrivateProfile('NO_SUSPEND',i-1,nil,srvIni)
+  end
+  edcb.ReloadSetting(false)
+end
+
+edcb.htmlEscape=15
+
+for i,v in ipairs(GetItemList()) do
+  ct:Append([=[
+<form method="POST" action="setting_no_suspend.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <input type="hidden" name="del" value="y">
+  <input type="hidden" name="noSuspend" value="]=]..v..[=[">
+  <button type="submit">削除</button>]=]..v..[=[</div></form>
+]=])
+end
+ct:Append([=[
+<form method="POST" action="setting_no_suspend.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <input type="hidden" name="add" value="y">
+  <input type="text" name="noSuspend" style="width:95%"><br>
+  <button type="submit">追加</button>
+</div></form>
+</div>
+<div id="footer">
+  <a href="setting_rec.html">録画動作</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

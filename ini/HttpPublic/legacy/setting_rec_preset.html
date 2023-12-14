@@ -1,0 +1,175 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/プリセット - EDCB</title>
+</head>
+<body>
+<h1>設定/プリセット</h1>
+<div id="main">
+]=])
+
+srvIni='EpgTimerSrv.ini'
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  presetID=GetVarInt(post,'presetID') or 0
+  preset=nil
+  itemList=edcb.EnumRecPresetInfo()
+  for i,v in ipairs(itemList) do
+    if v.id==presetID then
+      if mg.get_var(post,'del') then
+        --デフォルトは削除できない
+        if presetID~=0 then
+          presetID=nil
+          table.remove(itemList,i)
+          ct:Append('<div id="result">削除しました</div>\n')
+        end
+      elseif mg.get_var(post,'addchg') then
+        if mg.get_var(post,'add') then
+          presetName=mg.get_var(post,'presetName') or ''
+          if presetName:find('^%C+$') then
+            presetID=nil
+            preset={
+              name=presetName,
+              recSetting={
+                recFolderList=v.recSetting.recFolderList,
+                partialRecFolder=v.recSetting.partialRecFolder
+              }
+            }
+            itemList[#itemList+1]=preset
+            ct:Append('<div id="result">追加しました</div>\n')
+          end
+        else
+          presetID=nil
+          preset=v
+          ct:Append('<div id="result">変更しました</div>\n')
+        end
+      end
+      break
+    end
+  end
+  if not presetID then
+    --削除または追加または変更
+    if preset then
+      --追加または変更
+      rs=preset.recSetting
+      rs.noRecMode=GetVarInt(post,'recMode',0,4) or 1
+      rs.recMode=GetVarInt(post,'recEnabled')~=1 and 5 or rs.noRecMode
+      rs.tuijyuuFlag=GetVarInt(post,'tuijyuuFlag')==1
+      rs.priority=GetVarInt(post,'priority',1,5) or 2
+      rs.pittariFlag=GetVarInt(post,'pittariFlag')==1
+      rs.suspendMode=GetVarInt(post,'suspendMode',0,4) or 0
+      rs.rebootFlag=GetVarInt(post,'rebootFlag')==1
+      rs.startMargin=GetVarInt(post,'useDefMarginFlag')~=1 and GetVarInt(post,'startMargin',-6*3600,6*3600)
+      rs.endMargin=GetVarInt(post,'useDefMarginFlag')~=1 and GetVarInt(post,'endMargin',-6*3600,6*3600)
+      rs.serviceMode=GetVarInt(post,'serviceMode')==1 and 0 or
+        1+16*(GetVarInt(post,'serviceMode_1',0,1) or 0)+32*(GetVarInt(post,'serviceMode_2',0,1) or 0)
+      rs.continueRecFlag=GetVarInt(post,'continueRecFlag')==1
+      rs.tunerID=GetVarInt(post,'tunerID') or 0
+      rs.partialRecFlag=GetVarInt(post,'partialRecFlag',0,1) or 0
+      rs.batFilePath=(mg.get_var(post,'batFilePath') or ''):gsub('%c','')
+    end
+    saveID=''
+    for i,v in ipairs(itemList) do
+      --IDを振りなおす
+      v.id=i-1
+      defName='REC_DEF'
+      if v.id>0 then
+        defName=defName..v.id
+        saveID=saveID..v.id..','
+      end
+      edcb.WritePrivateProfile(defName,'SetName',v.id>0 and v.name or 'デフォルト',srvIni)
+      rs=v.recSetting
+      edcb.WritePrivateProfile(defName,'RecMode',rs.recMode,srvIni)
+      edcb.WritePrivateProfile(defName,'NoRecMode',rs.noRecMode,srvIni)
+      edcb.WritePrivateProfile(defName,'Priority',rs.priority,srvIni)
+      edcb.WritePrivateProfile(defName,'TuijyuuFlag',rs.tuijyuuFlag,srvIni)
+      edcb.WritePrivateProfile(defName,'ServiceMode',rs.serviceMode,srvIni)
+      edcb.WritePrivateProfile(defName,'PittariFlag',rs.pittariFlag,srvIni)
+      edcb.WritePrivateProfile(defName,'BatFilePath',rs.batFilePath,srvIni)
+      edcb.WritePrivateProfile(defName,'SuspendMode',rs.suspendMode,srvIni)
+      edcb.WritePrivateProfile(defName,'RebootFlag',rs.rebootFlag,srvIni)
+      edcb.WritePrivateProfile(defName,'UseMargineFlag',not not (rs.startMargin and rs.endMargin),srvIni)
+      edcb.WritePrivateProfile(defName,'StartMargine',rs.startMargin or 0,srvIni)
+      edcb.WritePrivateProfile(defName,'EndMargine',rs.endMargin or 0,srvIni)
+      edcb.WritePrivateProfile(defName,'ContinueRec',rs.continueRecFlag,srvIni)
+      edcb.WritePrivateProfile(defName,'PartialRec',rs.partialRecFlag,srvIni)
+      edcb.WritePrivateProfile(defName,'TunerID',rs.tunerID,srvIni)
+      defName=defName:gsub('EF','EF_FOLDER')
+      edcb.WritePrivateProfile(defName,'Count',#rs.recFolderList,srvIni)
+      for j,w in ipairs(rs.recFolderList) do
+        edcb.WritePrivateProfile(defName,j-1,w.recFolder,srvIni)
+        edcb.WritePrivateProfile(defName,'WritePlugIn'..(j-1),w.writePlugIn,srvIni)
+        edcb.WritePrivateProfile(defName,'RecNamePlugIn'..(j-1),w.recNamePlugIn,srvIni)
+      end
+      defName=defName:gsub('ER','ER_1SEG')
+      edcb.WritePrivateProfile(defName,'Count',#rs.partialRecFolder,srvIni)
+      for j,w in ipairs(rs.partialRecFolder) do
+        edcb.WritePrivateProfile(defName,j-1,w.recFolder,srvIni)
+        edcb.WritePrivateProfile(defName,'WritePlugIn'..(j-1),w.writePlugIn,srvIni)
+        edcb.WritePrivateProfile(defName,'RecNamePlugIn'..(j-1),w.recNamePlugIn,srvIni)
+      end
+    end
+    edcb.WritePrivateProfile('SET','PresetID',saveID,srvIni)
+    presetID=preset and preset.id or 0
+  end
+else
+  presetID=GetVarInt(mg.request_info.query_string,'presetID') or 0
+end
+
+edcb.htmlEscape=15
+
+ct:Append([=[
+<form action="setting_rec_preset.html"><div>
+  <select name="presetID">
+]=])
+preset=nil
+for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+  if v.id==presetID then
+    preset=v
+  end
+  ct:Append('    <option value="'..v.id..'"'..Selected(v.id==presetID)..'>'..v.name..'\n')
+end
+ct:Append([=[
+  </select>
+  <button type="submit">ロード</button></div></form>
+]=])
+if preset then
+  ct:Append([=[
+<form method="POST" action="setting_rec_preset.html"><div>
+  <input type="hidden" name="presetID" value="]=]..presetID..[=[">
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <input type="hidden" name="addchg" value="y">
+]=]..RecSettingTemplate(preset.recSetting,'setting_rec_preset_folder.html?presetID='..presetID)..[=[
+  <br>
+  <label><input name="add"]=]..Checkbox()..[=[>この名前でプリセットを追加</label>
+  <input type="text" name="presetName" size="20" class="enabled-on-checked"><br>
+  <button type="submit">適用</button></div></form>
+<form method="POST" action="setting_rec_preset.html"><div>
+  <input type="hidden" name="presetID" value="]=]..presetID..[=[">
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <input type="hidden" name="del" value="y">
+  プリセット「]=]..preset.name..[=[」を <button type="submit">削除</button></div></form>
+]=])
+end
+ct:Append([=[
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

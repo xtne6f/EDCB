@@ -1,0 +1,164 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/EPG取得開始時間 (有効にするものにチェック) - EDCB</title>
+</head>
+<body>
+<h1>設定/EPG取得開始時間 (有効にするものにチェック)</h1>
+<div id="main">
+]=])
+
+commonIni='Common.ini'
+srvIni='EpgTimerSrv.ini'
+function GetItemList()
+  local count=tonumber(edcb.GetPrivateProfile('EPG_CAP','Count',-1,srvIni)) or -1
+  if count<0 then
+    --未設定。毎日23:00に取得
+    return {{enabled=true,weekMin=23*60,flags=-1}}
+  end
+  local ret={}
+  for i=1,count do
+    local hour,minute,wday=edcb.GetPrivateProfile('EPG_CAP',i-1,'',srvIni):match('^([0-2][0-9]):([0-5][0-9])(w?[1-7]?)$')
+    if hour then
+      --曜日指定接尾辞(w1=Mon,...,w7=Sun)
+      wday=#wday==2 and wday:sub(2) or 0
+      ret[#ret+1]={
+        enabled=edcb.GetPrivateProfile('EPG_CAP',(i-1)..'Select',0,srvIni)~='0',
+        weekMin=(wday*24+hour%24)*60+minute,
+        --取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2,bit3=CS3)。負値のときは共通設定に従う
+        flags=tonumber(edcb.GetPrivateProfile('EPG_CAP',(i-1)..'BasicOnlyFlags',-1,srvIni))
+      }
+    end
+  end
+  return ret
+end
+
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  itemList=GetItemList()
+  if mg.get_var(post,'add') then
+    wday=GetVarInt(post,'wday',0,7) or 0
+    hour=GetVarInt(post,'hour',0,23) or 0
+    minute=GetVarInt(post,'minute',0,59) or 0
+    weekMin=(wday*24+hour%24)*60+minute
+    for i,v in ipairs(itemList) do
+      if v.weekMin==weekMin then
+        --既にある
+        weekMin=nil
+        break
+      end
+    end
+    if weekMin then
+      itemList[#itemList+1]={
+        enabled=true,
+        weekMin=weekMin,
+        flags=(GetVarInt(post,'basicOnlyBS',1,1) or 0)+
+              (GetVarInt(post,'basicOnlyCS1',1,1) or 0)*2+
+              (GetVarInt(post,'basicOnlyCS2',1,1) or 0)*4+
+              (GetVarInt(post,'basicOnlyCS3',1,1) or 0)*8
+      }
+      ct:Append('<div id="result">追加しました</div>\n')
+    end
+  else
+    newItemList={}
+    for i,v in ipairs(itemList) do
+      if GetVarInt(post,'del-'..v.weekMin)~=1 then
+        v.enabled=GetVarInt(post,'enabled-'..v.weekMin)==1
+        newItemList[#newItemList+1]=v
+      end
+    end
+    itemList=newItemList
+    ct:Append('<div id="result">変更しました</div>\n')
+  end
+  for i,v in ipairs(itemList) do
+    edcb.WritePrivateProfile('EPG_CAP',i-1,
+      ('%02d:%02d'):format(math.floor(v.weekMin/60)%24,v.weekMin%60)
+        ..(math.floor(v.weekMin/24/60)==0 and '' or 'w'..math.floor(v.weekMin/24/60)),srvIni)
+    edcb.WritePrivateProfile('EPG_CAP',(i-1)..'Select',v.enabled,srvIni)
+    edcb.WritePrivateProfile('EPG_CAP',(i-1)..'BasicOnlyFlags',v.flags,srvIni)
+  end
+  edcb.WritePrivateProfile('EPG_CAP','Count',#itemList,srvIni)
+  for i=#itemList+1,999 do
+    --掃除
+    if edcb.GetPrivateProfile('EPG_CAP',i-1,'',srvIni)=='' then break end
+    edcb.WritePrivateProfile('EPG_CAP',i-1,nil,srvIni)
+    edcb.WritePrivateProfile('EPG_CAP',(i-1)..'Select',nil,srvIni)
+    edcb.WritePrivateProfile('EPG_CAP',(i-1)..'BasicOnlyFlags',nil,srvIni)
+  end
+  edcb.ReloadSetting(false)
+end
+
+edcb.htmlEscape=15
+basicOnlyBS=edcb.GetPrivateProfile('SET','BSBasicOnly',1,commonIni)~='0'
+basicOnlyCS1=edcb.GetPrivateProfile('SET','CS1BasicOnly',1,commonIni)~='0'
+basicOnlyCS2=edcb.GetPrivateProfile('SET','CS2BasicOnly',1,commonIni)~='0'
+basicOnlyCS3=edcb.GetPrivateProfile('SET','CS3BasicOnly',0,commonIni)~='0'
+
+ct:Append([=[
+<form method="POST" action="setting_epg_time.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <table>
+    <tr><th>開始時間<th>種別(BS,CS1,CS2,CS3)<th></tr>
+]=])
+for i,v in ipairs(GetItemList()) do
+  ct:Append('    <tr><td><label><input name="enabled-'..v.weekMin..'"'..Checkbox(v.enabled)..'>'
+    ..({'','月','火','水','木','金','土','日'})[math.floor(v.weekMin/24/60)+1]
+    ..('%02d:%02d</label></td><td>'):format(math.floor(v.weekMin/60)%24,v.weekMin%60)
+    ..(v.flags>=0 and (v.flags%2~=0 and '基本,' or '拡張,')
+                        ..(math.floor(v.flags/2)%2~=0 and '基本,' or '拡張,')
+                        ..(math.floor(v.flags/4)%2~=0 and '基本,' or '拡張,')
+                        ..(math.floor(v.flags/8)%2~=0 and '基本' or '拡張') or '(共通設定に従う)')
+    ..'<td><label><input name="del-'..v.weekMin..'"'..Checkbox()..'>削除</label></td></tr>\n')
+end
+ct:Append([=[
+  </table>
+  <button type="submit">変更</button>
+</div></form><br>
+<form method="POST" action="setting_epg_time.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <input type="hidden" name="add" value="y">
+  <select name="wday">]=])
+for i=0,7 do
+  ct:Append('<option value="'..i..'">'..({'','月','火','水','木','金','土','日'})[i+1])
+end
+ct:Append([=[</select>
+  <select name="hour">]=])
+for i=0,23 do
+  ct:Append('<option>'..('%02d'):format(i))
+end
+ct:Append([=[</select> :
+  <select name="minute">]=])
+for i=0,59 do
+  ct:Append('<option>'..('%02d'):format(i))
+end
+ct:Append([=[</select><br>
+  基本情報のみ取得するネットワーク
+  <div class="sub-setting">
+    <label><input name="basicOnlyBS"]=]..Checkbox(basicOnlyBS)..[=[>BS</label>
+    <label><input name="basicOnlyCS1"]=]..Checkbox(basicOnlyCS1)..[=[>CS1</label>
+    <label><input name="basicOnlyCS2"]=]..Checkbox(basicOnlyCS2)..[=[>CS2</label>
+    <label><input name="basicOnlyCS3"]=]..Checkbox(basicOnlyCS3)..[=[>CS3</label>
+  </div>
+  <button type="submit">追加</button>
+</div></form>
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

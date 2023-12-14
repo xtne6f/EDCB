@@ -1,0 +1,127 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/その他 - EDCB</title>
+</head>
+<body>
+<h1>設定/その他</h1>
+<div id="main">
+]=])
+
+srvIni='EpgTimerSrv.ini'
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  edcb.htmlEscape=15
+  lastEnableTCPSrv=edcb.GetPrivateProfile('SET','EnableTCPSrv',0,srvIni)~='0'
+  lastTcpIPv6=edcb.GetPrivateProfile('SET','TCPIPv6',0,srvIni)~='0'
+  lastTcpPort=edcb.GetPrivateProfile('SET','TCPPort',4510,srvIni)
+  lastTcpAccessControlList=edcb.GetPrivateProfile('SET','TCPAccessControlList','+127.0.0.1,+192.168.0.0/16',srvIni)
+  lastTcpResponseTimeoutSec=edcb.GetPrivateProfile('SET','TCPResponseTimeoutSec',120,srvIni)
+  edcb.htmlEscape=0
+  edcb.WritePrivateProfile('SET','EnableTCPSrv',GetVarInt(post,'enableTCPSrv')==1,srvIni)
+  edcb.WritePrivateProfile('SET','TCPIPv6',GetVarInt(post,'tcpIPv6')==1,srvIni)
+  edcb.WritePrivateProfile('SET','TCPPort',GetVarInt(post,'tcpPort',0,65535) or 4510,srvIni)
+  edcb.WritePrivateProfile('SET','TCPAccessControlList',(mg.get_var(post,'tcpAccessControlList') or ''):gsub('%c',''),srvIni)
+  edcb.WritePrivateProfile('SET','TCPResponseTimeoutSec',GetVarInt(post,'tcpResponseTimeoutSec',0) or 120,srvIni)
+  edcb.WritePrivateProfile('SET','EpgArchivePeriodHour',(GetVarInt(post,'epgArchivePeriod',0,20000) or 0)*24,srvIni)
+  edcb.WritePrivateProfile('SET','ResidentMode',GetVarInt(post,'residentMode')~=1 and 0 or GetVarInt(post,'showTray')~=1 and 1 or 2,srvIni)
+  edcb.WritePrivateProfile('SET','NotifyTipStyle',GetVarInt(post,'notifyTipStyle')==1,srvIni)
+  edcb.WritePrivateProfile('SET','BlinkPreRec',GetVarInt(post,'blinkPreRec')==1,srvIni)
+  edcb.WritePrivateProfile('SET','NoBalloonTip',GetVarInt(post,'noBalloonTip')==1 and 1 or GetVarInt(post,'noBalloonTipRealtime')==1 and 2 or 0,srvIni)
+  edcb.WritePrivateProfile('SET','SaveNotifyLog',GetVarInt(post,'saveNotifyLog')==1,srvIni)
+  edcb.WritePrivateProfile('SET','SaveDebugLog',GetVarInt(post,'saveDebugLog')==1,srvIni)
+  edcb.WritePrivateProfile('SET','TimeSync',GetVarInt(post,'timeSync')==1,srvIni)
+  edcb.WritePrivateProfile('SET','AutoDelRecInfo',GetVarInt(post,'autoDelRecInfo')==1,srvIni)
+  edcb.WritePrivateProfile('SET','AutoDelRecInfoNum',GetVarInt(post,'autoDelRecInfoNum',0) or 100,srvIni)
+  edcb.WritePrivateProfile('SET','TSExt',(mg.get_var(post,'tsExt') or ''):match('^%.[0-9A-Za-z][0-9A-Za-z]?[0-9A-Za-z]?[0-9A-Za-z]?[0-9A-Za-z]?$') or '.ts',srvIni)
+  --何版か仮定できないのでCompatFlagsは閲覧のみ
+  ct:Append('<div id="result">変更しました</div>\n')
+end
+
+edcb.htmlEscape=15
+enableTCPSrv=edcb.GetPrivateProfile('SET','EnableTCPSrv',0,srvIni)~='0'
+tcpIPv6=edcb.GetPrivateProfile('SET','TCPIPv6',0,srvIni)~='0'
+tcpPort=edcb.GetPrivateProfile('SET','TCPPort',4510,srvIni)
+tcpAccessControlList=edcb.GetPrivateProfile('SET','TCPAccessControlList','+127.0.0.1,+192.168.0.0/16',srvIni)
+tcpResponseTimeoutSec=edcb.GetPrivateProfile('SET','TCPResponseTimeoutSec',120,srvIni)
+if post then
+  edcb.ReloadSetting(enableTCPSrv~=lastEnableTCPSrv or
+                     tcpIPv6~=lastTcpIPv6 or
+                     tcpPort~=lastTcpPort or
+                     tcpAccessControlList~=lastTcpAccessControlList or
+                     tcpResponseTimeoutSec~=lastTcpResponseTimeoutSec)
+end
+epgArchivePeriodHour=tonumber(edcb.GetPrivateProfile('SET','EpgArchivePeriodHour',0,srvIni)) or 0
+residentMode=edcb.GetPrivateProfile('SET','ResidentMode',2,srvIni)
+notifyTipStyle=edcb.GetPrivateProfile('SET','NotifyTipStyle',0,srvIni)~='0'
+blinkPreRec=edcb.GetPrivateProfile('SET','BlinkPreRec',0,srvIni)~='0'
+noBalloonTip=edcb.GetPrivateProfile('SET','NoBalloonTip',0,srvIni)
+saveNotifyLog=edcb.GetPrivateProfile('SET','SaveNotifyLog',0,srvIni)~='0'
+saveDebugLog=edcb.GetPrivateProfile('SET','SaveDebugLog',0,srvIni)~='0'
+timeSync=edcb.GetPrivateProfile('SET','TimeSync',0,srvIni)~='0'
+autoDelRecInfo=edcb.GetPrivateProfile('SET','AutoDelRecInfo',0,srvIni)~='0'
+autoDelRecInfoNum=edcb.GetPrivateProfile('SET','AutoDelRecInfoNum',100,srvIni)
+tsExt=edcb.GetPrivateProfile('SET','TSExt','.ts',srvIni)
+compatFlags=tonumber(edcb.GetPrivateProfile('SET','CompatFlags',0,srvIni)) or 0
+
+ct:Append([=[
+<form method="POST" action="setting_other.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <label><input name="enableTCPSrv"]=]..Checkbox(enableTCPSrv)..[=[>ネットワーク接続を許可する (EpgTimerNW用)</label>
+  <div class="enabled-on-checked">
+    ※設定変更後にHTTPサーバーも再起動します。<br>
+    <label><input name="tcpIPv6"]=]..Checkbox(tcpIPv6)..[=[>IPv6</label><br>
+    ポート <input type="text" name="tcpPort" value="]=]..tcpPort..[=[" size="8">
+    &nbsp;無通信タイムアウト(秒) <input type="text" name="tcpResponseTimeoutSec" value="]=]..tcpResponseTimeoutSec..[=[" size="8"><br>
+    アクセス制御 (※必ず信頼できるPCのみアクセスできるようにしてください。)<br>
+    <input type="text" name="tcpAccessControlList" value="]=]..tcpAccessControlList..[=[" style="width:95%">
+  </div>
+  <label><input name="autoDelRecInfo"]=]..Checkbox(autoDelRecInfo)..[=[>録画結果を自動的に削除する</label>
+  <div class="enabled-on-checked">
+    保持件数 <input type="text" name="autoDelRecInfoNum" value="]=]..autoDelRecInfoNum..[=[" size="8">
+  </div>
+  EPG取得後も番組情報を <select name="epgArchivePeriod">]=])
+for i=0,14 do
+  ct:Append('<option'..Selected(math.floor(epgArchivePeriodHour/24)==i)..'>'..i)
+end
+ct:Append([=[<option value="20000"]=]..Selected(math.floor(epgArchivePeriodHour/24)>14)..[=[>∞</select> 日前まで保存する<br>
+  <label><input name="timeSync"]=]..Checkbox(timeSync)..[=[>EPG取得時に放送波時間でPC時計を同期する (※システム時刻の変更特権が必要です)</label><br>
+  <label><input name="residentMode"]=]..Checkbox(residentMode~='0')..[=[>EpgTimerSrvを常駐させる</label>
+  <div class="enabled-on-checked">
+    <label><input name="showTray"]=]..Checkbox(residentMode~='1')..[=[>タスクトレイアイコンを表示する</label>
+    <div class="enabled-on-checked">
+      <label><input name="notifyTipStyle"]=]..Checkbox(notifyTipStyle)..[=[>ツールチップに次の予約を表示する</label><br>
+      <label><input name="blinkPreRec"]=]..Checkbox(blinkPreRec)..[=[>開始準備で点滅させる</label>
+    </div>
+    <label><input name="noBalloonTip"]=]..Checkbox(noBalloonTip=='1')..[=[><span class='enabled-on-checked'>バルーンチップ/トーストでの動作通知を抑制する</span></label>
+    <div class="disabled-on-checked">
+      <label><input name="noBalloonTipRealtime"]=]..Checkbox(noBalloonTip=='2')..[=[>リアルタイムで表示できなかった通知を捨てる</label>
+    </div>
+  </div>
+  <label><input name="saveNotifyLog"]=]..Checkbox(saveNotifyLog)..[=[>情報通知ログをファイルに保存する</label><br>
+  <label><input name="saveDebugLog"]=]..Checkbox(saveDebugLog)..[=[>デバッグ出力をファイルに保存する</label><br>
+  TSファイルの拡張子 <input type="text" name="tsExt" value="]=]..tsExt..[=[" size="8"><br>
+  <button type="submit">変更</button><br>
+]=]..(compatFlags%4096==4095 and '  ・現在のEpgTimerSrvの応答はtkntrec版互換です。\n')..[=[
+</div></form>
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
