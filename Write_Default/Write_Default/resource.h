@@ -2,6 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by Write_Default.rc
 //
+#define IDR_EMBED_TXT                   100
 #define IDD_DIALOG_SET                  101
 #define IDC_EDIT1                       1001
 #define IDC_EDIT_SIZE                   1001
