@@ -605,10 +605,14 @@ input[type=checkbox]:checked + .enabled-on-checked {
   opacity: 1;
 }
 
-label:has(input[type=checkbox]:checked) + .disabled-on-checked, label:has(input[type=checkbox]) + .enabled-on-checked {
+label:has(input[type=checkbox]:checked) + .disabled-on-checked,
+label:has(input[type=checkbox]:checked) + .disabled-on-checked + .disabled-on-checked,
+label:has(input[type=checkbox]) + .enabled-on-checked,
+label:has(input[type=checkbox]) + .enabled-on-checked + .enabled-on-checked {
   opacity: 0.5;
 }
 
-label:has(input[type=checkbox]:checked) + .enabled-on-checked {
+label:has(input[type=checkbox]:checked) + .enabled-on-checked,
+label:has(input[type=checkbox]:checked) + .enabled-on-checked + .enabled-on-checked {
   opacity: 1;
 }

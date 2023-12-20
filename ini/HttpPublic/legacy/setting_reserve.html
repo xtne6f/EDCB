@@ -16,20 +16,6 @@ ct:Append([=[
 <div id="main">
 ]=])
 
-function EnumPlugInFileName(name)
-  local esc=edcb.htmlEscape
-  edcb.htmlEscape=0
-  local pattern=EdcbModulePath()..'\\'..name..'\\'..name..'*.dll'
-  edcb.htmlEscape=esc
-  local ret={}
-  for i,v in ipairs(edcb.FindFile(pattern,0) or {}) do
-    if not v.isdir then
-      ret[#ret+1]=v.name
-    end
-  end
-  return ret
-end
-
 commonIni='Common.ini'
 srvIni='EpgTimerSrv.ini'
 post=AssertPost()

@@ -686,6 +686,21 @@ function EdcbRecFolderPathList()
   return r
 end
 
+--プラグインファイル名を列挙する
+function EnumPlugInFileName(name)
+  local esc=edcb.htmlEscape
+  edcb.htmlEscape=0
+  local pattern=EdcbModulePath()..'\\'..name..'\\'..name..'*.dll'
+  edcb.htmlEscape=esc
+  local r={}
+  for i,v in ipairs(edcb.FindFile(pattern,0) or {}) do
+    if not v.isdir then
+      r[#r+1]=v.name
+    end
+  end
+  return r
+end
+
 --現在の変換モードでHTMLエスケープする
 function EdcbHtmlEscape(s)
   return edcb.Convert('utf-8','utf-8',s)
