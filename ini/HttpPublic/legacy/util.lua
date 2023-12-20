@@ -245,12 +245,15 @@ function Selected(b)
 end
 
 function GetTranscodeQueries(qs)
+  local reload=GetVarInt(qs,'reload',0,86400-1)
   return {
     option=GetVarInt(qs,'option',1,#XCODE_OPTIONS),
     offset=GetVarInt(qs,'offset',0,100),
     audio2=GetVarInt(qs,'audio2')==1,
     cinema=GetVarInt(qs,'cinema')==1,
     fast=GetVarInt(qs,'fast')==1,
+    reload=not not reload,
+    loadtime=reload or GetVarInt(qs,'load',0,86400-1),
   }
 end
 
@@ -260,6 +263,7 @@ function ConstructTranscodeQueries(xq)
     ..(xq.audio2 and '&amp;audio2=1' or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
     ..(xq.fast and '&amp;fast=1' or '')
+    ..(xq.loadtime and '&amp;'..(xq.reload and 're' or '')..'load='..xq.loadtime or '')
 end
 
 function VideoWrapperBegin()
@@ -301,7 +305,7 @@ end
 
 function OnscreenButtonsScriptTemplete()
   return [=[
-<script src="script.js?ver=20231028"></script>
+<script src="script.js?ver=20231220"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
@@ -389,6 +393,8 @@ function TranscodeScriptTemplete(live,params)
   return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live)..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(XCODE_CHECK_CAPTION)..[=[>caption</label>
 ]=]..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
+<input id="vid-seek" type="range" style="display:none">
+<span id="vid-seek-status"></span>
 <script>
 ]=]..(XCODE_VIDEO_MUTED and 'vid.muted=true;\n' or '')..(VIDEO_VOLUME and 'vid.volume='..VIDEO_VOLUME..';\n' or '')..[=[
 runTranscodeScript(]=]
@@ -404,7 +410,6 @@ runTranscodeScript(]=]
 end
 
 function HlsScriptTemplete()
-  local now=os.date('!*t')
   return [=[
 <script src="aribb24.js"></script>
 ]=]..(ALWAYS_USE_HLS and [=[
@@ -414,7 +419,7 @@ function HlsScriptTemplete()
 runHlsScript(]=]
   ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
   ..(ALWAYS_USE_HLS and 'true' or 'false')..','
-  ..'"&hls='..(1+(now.hour*60+now.min)*60+now.sec)..'",'
+  ..'"&hls='..(1+os.time()%86400)..'",'
   ..'"'..(USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or '')..'"'..[=[
 );
 </script>

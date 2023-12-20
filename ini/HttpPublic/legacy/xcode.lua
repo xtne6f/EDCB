@@ -27,8 +27,11 @@ if hls and not (ALLOW_HLS and option.outputHls) then
 end
 psidata=GetVarInt(query,'psidata')==1
 jikkyo=GetVarInt(query,'jikkyo')==1
+reload=GetVarInt(query,'reload',0)
+loadtime=reload or GetVarInt(query,'load',0) or 0
 
 function OpenTranscoder()
+  local searchName='xcode-'..mg.md5(fpath..':'..loadtime):sub(25)
   if XCODE_SINGLE then
     -- トランスコーダーの親プロセスのリストを作る
     local pids=nil
@@ -50,6 +53,9 @@ function OpenTranscoder()
         end
       end
     end
+  elseif reload then
+    -- リロード時は前回のプロセスを速やかに終わらせる
+    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-'..searchName..' %\'" call terminate >nul')
   end
 
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
@@ -106,7 +112,7 @@ function OpenTranscoder()
   local c5or1,stat,code=edcb.os.execute('"'..tsreadex..'" -n -1 -c 5 -h')
   c5or1=(c5or1 or (stat=='exit' and code==2)) and 5 or 1
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-xcode -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c '..c5or1..' -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
+  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c '..c5or1..' -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
   if hls then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})

@@ -76,9 +76,10 @@ if v then
             f:close()
           end
           ct:Append(' ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
-            ..'<form method="GET" action="'..(vtag==0 and 'xcode.lua' or 'recinfodesc.html')..'"><div>\n'
+            ..'<form id="vid-form" action="'..(vtag==0 and 'xcode.lua' or 'recinfodesc.html')..'"><div>\n'
             ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
-                 or '<input type="hidden" name="id" value="'..v.id..'">\n<input type="hidden" name="vtag" value="10">\n')
+                 or '<input type="hidden" name="id" value="'..v.id..'">\n<input type="hidden" name="vtag" value="10">\n'
+                   ..'<input type="hidden" name="'..(vtag==10 and 're' or '')..'load" value="'..(xq.loadtime or os.time()%86400)..'">\n')
             ..'<button type="submit">xcode</button>\n'
             ..TranscodeSettingTemplete(xq,fsec)
             ..'</div></form>')

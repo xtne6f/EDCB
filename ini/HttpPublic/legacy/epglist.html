@@ -106,7 +106,7 @@ else
   ct:Append('視聴 →<a href="epglist.html?id='..onid..'-'..tsid..'-'..sid..'&amp;vtag='..(vtag==0 and '-1' or '0')
     ..ConstructTranscodeQueries(xq)
     ..'#footer">'..(vtag==0 and 'Video' or 'DL')..'</a>\n'
-    ..'<form method="GET" action="'..(vtag==0 and 'view.lua' or 'epglist.html#footer')..'"><div>\n'
+    ..'<form id="vid-form" action="'..(vtag==0 and 'view.lua' or 'epglist.html#footer')..'"><div>\n'
     ..'<button type="submit">view -nwtv0</button>\n'
     ..TranscodeSettingTemplete(xq)
     ..'<input type="hidden" name="id" value="'..onid..'-'..tsid..'-'..sid..'">\n'

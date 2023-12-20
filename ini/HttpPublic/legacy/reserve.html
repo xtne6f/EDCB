@@ -89,7 +89,7 @@ if #a>0 then
   ct:Append('視聴 →<a href="reserve.html?vtag='..(vtag==0 and '-1' or '0')
     ..ConstructTranscodeQueries(xq)
     ..'#footer">'..(vtag==0 and 'Video' or 'DL')..'</a>\n'
-    ..'<form method="GET" action="'..(vtag==0 and 'view.lua' or 'reserve.html#footer')..'"><div>\n'
+    ..'<form id="vid-form" action="'..(vtag==0 and 'view.lua' or 'reserve.html#footer')..'"><div>\n'
     ..'<button type="submit">view</button>\n'
     ..'<select name="n">')
   for i,v in ipairs(a) do
