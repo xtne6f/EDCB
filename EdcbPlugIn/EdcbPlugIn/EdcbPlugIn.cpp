@@ -862,6 +862,16 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 						wstring name = prefix + filePath.filename().native();
 						filePath.replace_filename(name);
 					}
+					// Write_OneServiceによるフィルタリングが行われると仮定してドロップカウンターにも同じフィルターをかける
+					WORD filterSID = 0;
+					fs_path name = filePath.filename();
+					if (name.c_str()[0] == L'#') {
+						WCHAR *endp;
+						filterSID = static_cast<WORD>(wcstol(name.c_str() + 1, &endp, 16));
+						if (endp - name.c_str() != 5 || *endp != L'#' || filterSID == 0xFFFF) {
+							filterSID = 0;
+						}
+					}
 					if (IsEdcbRecording()) {
 						// 重複録画
 						UtilCreateDirectories(filePath.parent_path());
@@ -870,6 +880,8 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 							SendMessage(m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
 							lock_recursive_mutex lock(m_streamLock);
 							recCtrl.filePath = strFilePath;
+							recCtrl.filterSID = filterSID;
+							recCtrl.filterStarted = false;
 							res.SetParam(CMD_SUCCESS);
 						}
 						else {
@@ -895,6 +907,8 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 								SendMessage(m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
 								lock_recursive_mutex lock(m_streamLock);
 								recCtrl.filePath = m_duplicateOriginalPath = &buf.front();
+								recCtrl.filterSID = filterSID;
+								recCtrl.filterStarted = false;
 								recCtrl.duplicateTargetID = 1;
 								SendMessage(m_hwnd, WM_SIGNAL_UPDATE_START, 0, 0);
 								res.SetParam(CMD_SUCCESS);
@@ -1129,7 +1143,27 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 		}
 		for (map<DWORD, REC_CTRL>::iterator it = this_.m_recCtrlMap.begin(); it != this_.m_recCtrlMap.end(); ++it) {
 			if (!it->second.filePath.empty()) {
-				it->second.dropCount.AddData(pData, 188);
+				if (it->second.filterSID == 0) {
+					// 全サービスなので何も弄らない
+					it->second.dropCount.AddData(pData, 188);
+				}
+				else {
+					// 指定サービス
+					WORD tsid;
+					if (!it->second.filterStarted &&
+					    this_.m_chChangeID == CH_CHANGE_OK &&
+					    this_.m_epgUtil.GetTSID(nullptr, &tsid) == NO_ERR)
+					{
+						it->second.filterForDropCount.SetServiceID(false, vector<WORD>(1, it->second.filterSID));
+						it->second.filterForDropCount.Clear(tsid);
+						it->second.filterStarted = true;
+					}
+					if (it->second.filterStarted) {
+						this_.m_bufForDropCount.clear();
+						it->second.filterForDropCount.FilterPacket(this_.m_bufForDropCount, pData, packet);
+						it->second.dropCount.AddData(this_.m_bufForDropCount.data(), static_cast<DWORD>(this_.m_bufForDropCount.size()));
+					}
+				}
 			}
 		}
 #ifdef SEND_PIPE_TEST

@@ -12,8 +12,8 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/ThreadUtil.h"
 #include "../../BonCtrl/BonCtrlDef.h"
-#ifdef SEND_PIPE_TEST
 #include "../../BonCtrl/ServiceFilter.h"
+#ifdef SEND_PIPE_TEST
 #include "../../Common/SendTSTCPDllUtil.h"
 #endif
 
@@ -53,6 +53,9 @@ private:
 		wstring filePath;
 		WORD sid;
 		DWORD duplicateTargetID;
+		WORD filterSID;
+		bool filterStarted;
+		CServiceFilter filterForDropCount;
 		CDropCount dropCount;
 	};
 
@@ -116,6 +119,7 @@ private:
 	DWORD m_epgCapBackStartTick;
 	DWORD m_recCtrlCount;
 	map<DWORD, REC_CTRL> m_recCtrlMap;
+	vector<BYTE> m_bufForDropCount;
 	wstring m_duplicateOriginalPath;
 	vector<pair<LONGLONG, DWORD>> m_logoServiceListSizeMap;
 	const WORD *m_logoAdditionalNeededPids;
