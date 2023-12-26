@@ -249,6 +249,8 @@ if onid then
       if psidata or jikkyo then
         ok,pid=edcb.IsOpenNetworkTV(n)
       else
+        -- 前回のプロセスが残っていたら終わらせる
+        edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-nwtv-'..n..' %\'" call terminate >nul')
         openTime=os.time()
         edcb.WritePrivateProfile('NWTV','nwtv'..n..'open','@'..openTime,'Setting\\HttpPublic.ini')
         -- NetworkTVモードを開始
@@ -298,7 +300,7 @@ if onid then
           end
         else
           if pipeName then
-            f=OpenTranscoder(pipeName,'view',{n,'@'..openTime},sid)
+            f=OpenTranscoder(pipeName,'nwtv-'..n,{n,'@'..openTime},sid)
             fname='view.'..output[1]
           end
           if not f then

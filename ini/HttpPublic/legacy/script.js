@@ -890,7 +890,7 @@ function runHlsScript(aribb24UseSvg,aribb24Option,alwaysUseHls,hlsQuery,hlsMp4Qu
     vid.poster="loading.png";
     waitForHlsStart(document.getElementById("vidsrc").textContent+
       //Excludes Firefox for Android, because playback of non-keyframe fragmented MP4 is jerky.
-      hlsQuery+(/Android.+Firefox/i.test(navigator.userAgent)?"":hlsMp4Query),1000,2000,function(){vid.poster=null;},function(src){
+      hlsQuery+(/Android.+Firefox/i.test(navigator.userAgent)?"":hlsMp4Query),1000,1000,function(){vid.poster=null;},function(src){
       if(Hls.isSupported()){
         var hls=new Hls();
         hls.loadSource(src);
@@ -928,7 +928,7 @@ function runHlsScript(aribb24UseSvg,aribb24Option,alwaysUseHls,hlsQuery,hlsMp4Qu
       var cbLive=document.getElementById("cb-live");
       if(cbLive)cbLive.checked=true;
       vid.poster="loading.png";
-      waitForHlsStart(document.getElementById("vidsrc").textContent+hlsQuery+hlsMp4Query,1000,2000,function(){vid.poster=null;},function(src){
+      waitForHlsStart(document.getElementById("vidsrc").textContent+hlsQuery+hlsMp4Query,1000,1000,function(){vid.poster=null;},function(src){
         vid.src=src;
       });
     }else{

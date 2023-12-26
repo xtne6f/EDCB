@@ -202,6 +202,10 @@ th, td {
   color: #fff;
 }
 
+.epg-list {
+  margin-bottom: 0.5em;
+}
+
 .epg-list > div {
   color: #000;
 }
@@ -622,4 +626,16 @@ label:has(input[type=checkbox]) + .enabled-on-checked + .enabled-on-checked {
 label:has(input[type=checkbox]:checked) + .enabled-on-checked,
 label:has(input[type=checkbox]:checked) + .enabled-on-checked + .enabled-on-checked {
   opacity: 1;
+}
+
+label.expand-on-checked {
+  display: none;
+}
+
+label:has(input[type=checkbox]:checked).expand-on-checked, label:has(input[type=checkbox]) + .expand-on-checked {
+  display: none;
+}
+
+label:has(input[type=checkbox]).expand-on-checked, label:has(input[type=checkbox]:checked) + .expand-on-checked {
+  display: unset;
 }
