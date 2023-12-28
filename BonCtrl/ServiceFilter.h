@@ -17,7 +17,8 @@ public:
 	const CCATUtil& CatUtil() const { return this->catUtil; }
 	const vector<pair<WORD, CPMTUtil>>& PmtUtilMap() const { return this->pmtUtilMap; }
 private:
-	const bool createPmtFlag;
+	//このメンバは不変だがオブジェクトを暗黙にコピー可能とするためconstにはしない
+	bool createPmtFlag;
 	WORD transportStreamID;
 	bool allServicesFlag;
 	bool catOrPmtUpdated;
