@@ -67,6 +67,12 @@ namespace EpgTimer
                 }
                 listView_service.Items.Add(new ServiceItem(CommonManager.ConvertChSet5To(info)));
             }
+
+            if (0 <= Settings.Instance.SearchWndNotKeyRatio && Settings.Instance.SearchWndNotKeyRatio <= 1)
+            {
+                columnDefinition_notKey.Width = new GridLength(Settings.Instance.SearchWndNotKeyRatio, GridUnitType.Star);
+                columnDefinition_note.Width = new GridLength(1 - Settings.Instance.SearchWndNotKeyRatio, GridUnitType.Star);
+            }
         }
 
         public void FocusAndKey()
@@ -130,6 +136,11 @@ namespace EpgTimer
             {
                 key.andKey = "^!{999}" + key.andKey;
             }
+            if (textBox_note.Text.Length > 0 || key.notKey.StartsWith(":note:", StringComparison.Ordinal))
+            {
+                key.notKey = ":note:" + textBox_note.Text.Replace("\\", "\\\\").Replace(" ", "\\s").Replace("　", "\\m") +
+                             (key.notKey.Length > 0 ? " " + key.notKey : "");
+            }
 
             if (listBox_content.IsEnabled)
             {
@@ -170,10 +181,34 @@ namespace EpgTimer
             return key;
         }
 
+        public void SetAndKey(string andKey)
+        {
+            comboBox_andKey.Text = andKey;
+        }
+
+        public void SetServiceList(List<long> serviceList)
+        {
+            List<long> sortedServiceList = serviceList.ToList();
+            sortedServiceList.Sort();
+            ServiceItem firstSelected = null;
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                info.IsSelected = sortedServiceList.BinarySearch((long)info.ID) >= 0;
+                if (firstSelected == null && info.IsSelected)
+                {
+                    firstSelected = info;
+                }
+            }
+            if (firstSelected != null)
+            {
+                listView_service.ScrollIntoView(firstSelected);
+            }
+        }
+
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
             comboBox_andKey.Text = Regex.Replace(key.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
-            comboBox_notKey.Text = key.notKey;
+            comboBox_notKey.Text = Regex.Replace(key.notKey, "^:note:[^ 　]*[ 　]?", "");
             checkBox_regExp.IsChecked = key.regExpFlag != 0;
             checkBox_aimai.IsChecked = key.aimaiFlag != 0;
             checkBox_titleOnly.IsChecked = key.titleOnlyFlag != 0;
@@ -187,6 +222,8 @@ namespace EpgTimer
             }
             textBox_chkDurationMin.Text = (dur / 10000 % 10000).ToString();
             textBox_chkDurationMax.Text = (dur % 10000).ToString();
+            match = Regex.Match(key.notKey, "^:note:([^ 　]*)");
+            textBox_note.Text = match.Success ? match.Groups[1].Value.Replace("\\s", " ").Replace("\\m", "　").Replace("\\\\", "\\") : "";
 
             EnableContentListBox(true);
             listBox_content.Items.Clear();
@@ -221,22 +258,7 @@ namespace EpgTimer
             }
             checkBox_notDate.IsChecked = key.notDateFlag != 0;
 
-            var keySortedServiceList = new List<long>(key.serviceList);
-            keySortedServiceList.Sort();
-            ServiceItem firstSelected = null;
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                info.IsSelected = keySortedServiceList.BinarySearch((long)info.ID) >= 0;
-                if (firstSelected == null && info.IsSelected)
-                {
-                    firstSelected = info;
-                }
-            }
-            if (firstSelected != null)
-            {
-                listView_service.ScrollIntoView(firstSelected);
-            }
-
+            SetServiceList(key.serviceList);
             comboBox_free.SelectedIndex = key.freeCAFlag % 3;
             checkBox_chkRecEnd.IsChecked = key.chkRecEnd != 0;
             textBox_chkRecDay.Text = (key.chkRecDay >= 40000 ? key.chkRecDay % 10000 : key.chkRecDay).ToString();
@@ -486,6 +508,12 @@ namespace EpgTimer
                     SaveSearchLogSettings();
                 }
             }
+        }
+
+        private void comboBox_notKey_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            Settings.Instance.SearchWndNotKeyRatio =
+                columnDefinition_notKey.ActualWidth / (columnDefinition_notKey.ActualWidth + columnDefinition_note.ActualWidth);
         }
 
         private void SaveSearchLogSettings()

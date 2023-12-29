@@ -25,7 +25,7 @@ namespace EpgTimer
         private Dictionary<string, GridViewColumn> columnList;
         private string _lastHeaderClicked2 = "";
         private ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
-
+        private ListViewHorizontalMouseScroller horizontalScroller = new ListViewHorizontalMouseScroller();
         private bool ReloadInfo = true;
 
         public RecInfoView()
@@ -371,6 +371,17 @@ namespace EpgTimer
         {
             Settings.Instance.RecInfoHideButton = ((MenuItem)sender).IsChecked;
             stackPanel_button.Visibility = Settings.Instance.RecInfoHideButton ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void listView_recinfo_MouseEnter(object sender, MouseEventArgs e)
+        {
+            horizontalScroller.OnMouseEnter(listView_recinfo, Settings.Instance.EpgSettingList[0].MouseHorizontalScrollAuto,
+                                            Settings.Instance.EpgSettingList[0].HorizontalScrollSize);
+        }
+
+        private void listView_recinfo_MouseLeave(object sender, MouseEventArgs e)
+        {
+            horizontalScroller.OnMouseLeave();
         }
     }
 }

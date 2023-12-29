@@ -110,6 +110,8 @@ namespace EpgTimer
         public double ServiceWidth { get; set; }
         public bool MouseScrollAuto { get; set; }
         public double ScrollSize { get; set; }
+        public bool MouseHorizontalScrollAuto { get; set; }
+        public double HorizontalScrollSize { get; set; }
         public string FontName { get; set; }
         public double FontSize { get; set; }
         public string FontNameTitle { get; set; }
@@ -126,6 +128,7 @@ namespace EpgTimer
         public string ReserveRectColorWarning { get; set; }
         public int ReserveRectFillOpacity { get; set; }
         public bool ReserveRectFillWithShadow { get; set; }
+        public bool ReserveRectShowMarker { get; set; }
         public string TitleColor1 { get; set; }
         public string TitleColor2 { get; set; }
         public UInt32 TitleCustColor1 { get; set; }
@@ -182,6 +185,7 @@ namespace EpgTimer
         public bool ConfirmDelRecInfo { get; set; }
         public bool ConfirmDelRecInfoAlways { get; set; }
         public bool SaveSearchKeyword { get; set; }
+        public bool ShowLogo { get; set; }
         public bool ShowEpgCapServiceOnly { get; set; }
         public bool SortServiceList { get; set; }
         public bool ExitAfterProcessingArgs { get; set; }
@@ -194,6 +198,7 @@ namespace EpgTimer
         public double MainWndWidth { get; set; }
         public double MainWndHeight { get; set; }
         public double SearchWndTabsHeight { get; set; }
+        public double SearchWndNotKeyRatio { get; set; }
         public bool CloseMin { get; set; }
         public bool WakeMin { get; set; }
         public bool ViewButtonShowAsTab { get; set; }
@@ -324,6 +329,8 @@ namespace EpgTimer
                 rr.ServiceWidth             = ConvertXElem(xx, w, "ServiceWidth", val.ServiceWidth, 150);
                 rr.MouseScrollAuto          = ConvertXElem(xx, w, "MouseScrollAuto", val.MouseScrollAuto, false);
                 rr.ScrollSize               = ConvertXElem(xx, w, "ScrollSize", val.ScrollSize, 240);
+                rr.MouseHorizontalScrollAuto = ConvertXElem(xx, w, "MouseHorizontalScrollAuto", val.MouseHorizontalScrollAuto, false);
+                rr.HorizontalScrollSize     = ConvertXElem(xx, w, "HorizontalScrollSize", val.HorizontalScrollSize, 150);
                 rr.FontName                 = ConvertXElem(xx, w, "FontName", val.FontName, "メイリオ");
                 rr.FontSize                 = ConvertXElem(xx, w, "FontSize", val.FontSize, 12);
                 rr.FontNameTitle            = ConvertXElem(xx, w, "FontNameTitle", val.FontNameTitle, "メイリオ");
@@ -342,6 +349,7 @@ namespace EpgTimer
                 rr.ReserveRectColorWarning  = ConvertXElem(xx, w, "ReserveRectColorWarning", val.ReserveRectColorWarning, "Yellow");
                 rr.ReserveRectFillOpacity   = (int)ConvertXElem(xx, w, "ReserveRectFillOpacity", val.ReserveRectFillOpacity, 0);
                 rr.ReserveRectFillWithShadow = ConvertXElem(xx, w, "ReserveRectFillWithShadow", val.ReserveRectFillWithShadow, true);
+                rr.ReserveRectShowMarker    = ConvertXElem(xx, w, "ReserveRectShowMarker", val.ReserveRectShowMarker, true);
                 rr.TitleColor1              = ConvertXElem(xx, w, "TitleColor1", val.TitleColor1, "Black");
                 rr.TitleColor2              = ConvertXElem(xx, w, "TitleColor2", val.TitleColor2, "Black");
                 rr.TitleCustColor1          = (uint)ConvertXElem(xx, w, "TitleCustColor1", val.TitleCustColor1, 0xFFFFFFFF);
@@ -387,6 +395,7 @@ namespace EpgTimer
             r.ConfirmDelRecInfo         = ConvertXElem(x, w, "ConfirmDelRecInfo", ConfirmDelRecInfo, true);
             r.ConfirmDelRecInfoAlways   = ConvertXElem(x, w, "ConfirmDelRecInfoAlways", ConfirmDelRecInfoAlways, false);
             r.SaveSearchKeyword         = ConvertXElem(x, w, "SaveSearchKeyword", SaveSearchKeyword, true);
+            r.ShowLogo                  = ConvertXElem(x, w, "ShowLogo", ShowLogo, true);
             r.ShowEpgCapServiceOnly     = ConvertXElem(x, w, "ShowEpgCapServiceOnly", ShowEpgCapServiceOnly, false);
             r.SortServiceList           = ConvertXElem(x, w, "SortServiceList", SortServiceList, true);
             r.ExitAfterProcessingArgs   = ConvertXElem(x, w, "ExitAfterProcessingArgs", ExitAfterProcessingArgs, false);
@@ -403,6 +412,7 @@ namespace EpgTimer
             r.MainWndWidth              = ConvertXElem(x, w, "MainWndWidth", MainWndWidth, -100);
             r.MainWndHeight             = ConvertXElem(x, w, "MainWndHeight", MainWndHeight, -100);
             r.SearchWndTabsHeight       = ConvertXElem(x, w, "SearchWndTabsHeight", SearchWndTabsHeight, 0);
+            r.SearchWndNotKeyRatio      = ConvertXElem(x, w, "SearchWndNotKeyRatio", SearchWndNotKeyRatio, 0.6);
             r.CloseMin                  = ConvertXElem(x, w, "CloseMin", CloseMin, false);
             r.WakeMin                   = ConvertXElem(x, w, "WakeMin", WakeMin, false);
             r.ViewButtonShowAsTab       = ConvertXElem(x, w, "ViewButtonShowAsTab", ViewButtonShowAsTab, false);
@@ -532,6 +542,7 @@ namespace EpgTimer
             dest.MainWndWidth = MainWndWidth;
             dest.MainWndHeight = MainWndHeight;
             dest.SearchWndTabsHeight = SearchWndTabsHeight;
+            dest.SearchWndNotKeyRatio = SearchWndNotKeyRatio;
             dest.AndKeyList = AndKeyList;
             dest.NotKeyList = NotKeyList;
             dest.RecInfoColumnHead = RecInfoColumnHead;
