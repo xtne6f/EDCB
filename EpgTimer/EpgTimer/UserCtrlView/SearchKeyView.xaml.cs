@@ -181,6 +181,30 @@ namespace EpgTimer
             return key;
         }
 
+        public void SetAndKey(string andKey)
+        {
+            comboBox_andKey.Text = andKey;
+        }
+
+        public void SetServiceList(List<long> serviceList)
+        {
+            List<long> sortedServiceList = serviceList.ToList();
+            sortedServiceList.Sort();
+            ServiceItem firstSelected = null;
+            foreach (ServiceItem info in listView_service.Items)
+            {
+                info.IsSelected = sortedServiceList.BinarySearch((long)info.ID) >= 0;
+                if (firstSelected == null && info.IsSelected)
+                {
+                    firstSelected = info;
+                }
+            }
+            if (firstSelected != null)
+            {
+                listView_service.ScrollIntoView(firstSelected);
+            }
+        }
+
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
             comboBox_andKey.Text = Regex.Replace(key.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
@@ -234,22 +258,7 @@ namespace EpgTimer
             }
             checkBox_notDate.IsChecked = key.notDateFlag != 0;
 
-            var keySortedServiceList = new List<long>(key.serviceList);
-            keySortedServiceList.Sort();
-            ServiceItem firstSelected = null;
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                info.IsSelected = keySortedServiceList.BinarySearch((long)info.ID) >= 0;
-                if (firstSelected == null && info.IsSelected)
-                {
-                    firstSelected = info;
-                }
-            }
-            if (firstSelected != null)
-            {
-                listView_service.ScrollIntoView(firstSelected);
-            }
-
+            SetServiceList(key.serviceList);
             comboBox_free.SelectedIndex = key.freeCAFlag % 3;
             checkBox_chkRecEnd.IsChecked = key.chkRecEnd != 0;
             textBox_chkRecDay.Text = (key.chkRecDay >= 40000 ? key.chkRecDay % 10000 : key.chkRecDay).ToString();

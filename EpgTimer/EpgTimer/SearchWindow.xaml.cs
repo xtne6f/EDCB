@@ -661,13 +661,10 @@ namespace EpgTimer
             if (listView_result.SelectedItem != null)
             {
                 SearchItem item = listView_result.SelectedItem as SearchItem;
-                EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                defKey.andKey = item.EventName;
-                defKey.serviceList.Add((long)CommonManager.Create64Key(item.EventInfo.original_network_id,
-                                                                       item.EventInfo.transport_stream_id,
-                                                                       item.EventInfo.service_id));
-                searchKeyView.SetSearchKey(defKey);
-
+                searchKeyView.SetAndKey(item.EventName);
+                searchKeyView.SetServiceList(new List<long> { (long)CommonManager.Create64Key(item.EventInfo.original_network_id,
+                                                                                              item.EventInfo.transport_stream_id,
+                                                                                              item.EventInfo.service_id) });
                 SearchPg();
             }
         }
