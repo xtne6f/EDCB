@@ -106,7 +106,7 @@ if #a>0 then
         src='view.lua?n='..v..ConstructTranscodeQueries(xq)..'&amp;ctok='..CsrfToken('view.lua')
         ct:Append(VideoWrapperBegin()
           ..'<video id="vid" autoplay playsinline controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video>'..VideoWrapperEnd()..'\n'
-          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,{n=v}))
+          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,xq.caption,xq.jikkyo,{n=v}))
         if ALLOW_HLS then
           ct:Append(HlsScriptTemplete())
         end

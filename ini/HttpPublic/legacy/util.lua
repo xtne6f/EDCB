@@ -161,6 +161,7 @@ XCODE_SELECT_OPTION=1
 XCODE_CHECK_CINEMA=false
 XCODE_CHECK_FAST=false
 XCODE_CHECK_CAPTION=false
+XCODE_CHECK_JIKKYO=false
 
 --トランスコード時、初期値ミュートで再生するかどうか
 --自動再生が無効になるブラウザが多いため、一時停止しつづけるとタイムアウトするトランスコード時はミュートを推奨
@@ -254,6 +255,8 @@ function GetTranscodeQueries(qs)
     fast=GetVarInt(qs,'fast')==1,
     reload=not not reload,
     loadtime=reload or GetVarInt(qs,'load',0,86400-1),
+    caption=(GetVarInt(qs,'caption') or XCODE_CHECK_CAPTION and 1)==1,
+    jikkyo=(GetVarInt(qs,'jikkyo') or XCODE_CHECK_JIKKYO and 1)==1,
   }
 end
 
@@ -300,12 +303,14 @@ function TranscodeSettingTemplete(xq,fsec)
       ..'<span id="vid-offset"></span>'
   end
   s=s..'<span id="vid-bitrate"></span>\n'
+    ..'<input type="hidden" name="caption" value="">\n'
+    ..'<input type="hidden" name="jikkyo" value="">\n'
   return s
 end
 
 function OnscreenButtonsScriptTemplete()
   return [=[
-<script src="script.js?ver=20231220"></script>
+<script src="script.js?ver=20240114"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
@@ -353,9 +358,10 @@ function WebBmlScriptTemplate(label)
 ]=] or ''
 end
 
-function JikkyoScriptTemplate(live)
+function JikkyoScriptTemplate(live,jikkyo)
   return (live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
-<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>
+<label><input id="cb-jikkyo"]=]..Checkbox(jikkyo)..[=[>jikkyo</label>
+<label class="enabled-on-checked"><input id="cb-jikkyo-onscr" type="checkbox" checked>onscr</label>
 <script src="danmaku.js"></script>
 <script>
 var onJikkyoStream=null;
@@ -375,7 +381,7 @@ var checkJikkyoDisplay=function(){};
 end
 
 function VideoScriptTemplete()
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false)..[=[
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false,XCODE_CHECK_JIKKYO)..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(XCODE_CHECK_CAPTION)..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
 <script>
@@ -389,9 +395,9 @@ runVideoScript(]=]
 ]=]
 end
 
-function TranscodeScriptTemplete(live,params)
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live)..[=[
-<label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(XCODE_CHECK_CAPTION)..[=[>caption</label>
+function TranscodeScriptTemplete(live,caption,jikkyo,params)
+  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live,jikkyo)..[=[
+<label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(caption)..[=[>caption</label>
 ]=]..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <input id="vid-seek" type="range" style="display:none">
 <span id="vid-seek-status"></span>

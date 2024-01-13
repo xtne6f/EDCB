@@ -142,7 +142,7 @@ else
     src='view.lua?n='..n..'&amp;id='..onid..'-'..tsid..'-'..sid..ConstructTranscodeQueries(xq)..'&amp;ctok='..CsrfToken('view.lua')
     ct:Append('\n'..VideoWrapperBegin()
       ..'<video id="vid" autoplay playsinline controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video>'..VideoWrapperEnd()..'\n'
-      ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,{n=n,id=onid..'-'..tsid..'-'..sid}))
+      ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,xq.caption,xq.jikkyo,{n=n,id=onid..'-'..tsid..'-'..sid}))
     if ALLOW_HLS then
       ct:Append(HlsScriptTemplete())
     end

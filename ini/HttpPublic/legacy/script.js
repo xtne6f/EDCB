@@ -425,8 +425,16 @@ function runOnscreenButtonsScript(){
 
 function runJikkyoScript(commentHeight,commentDuration,replaceTag){
   var danmaku=null;
+  var comm=null;
+  var cbJikkyoOnscr=document.getElementById("cb-jikkyo-onscr");
+  function onclickJikkyoOnscr(){
+    if(comm&&comm.style.display!="none"){
+      if(cbJikkyoOnscr.checked)danmaku.show();
+      else danmaku.hide();
+    }
+  }
+  cbJikkyoOnscr.onclick=onclickJikkyoOnscr;
   checkJikkyoDisplay=function(){
-    var comm=document.getElementById("jk-comm");
     if(comm){
       var cbDatacast=document.getElementById("cb-datacast");
       var cbJikkyo=document.getElementById("cb-jikkyo");
@@ -436,9 +444,9 @@ function runJikkyoScript(commentHeight,commentDuration,replaceTag){
           comm.style.display="none";
         }
       }else if(comm.style.display=="none"){
-        danmaku.show();
         vfull.appendChild(comm);
         comm.style.display=null;
+        onclickJikkyoOnscr();
       }
     }
   };
@@ -449,10 +457,8 @@ function runJikkyoScript(commentHeight,commentDuration,replaceTag){
       checkJikkyoDisplay();
       return;
     }
-    var comm=document.getElementById("jk-comm");
     if(!comm){
       comm=document.createElement("div");
-      comm.id="jk-comm";
       comm.className="jikkyo-comments";
       vfull.appendChild(comm);
     }
@@ -698,6 +704,7 @@ function runVideoScript(aribb24UseSvg,aribb24Option,useDatacast,useJikkyoLog){
       var xhr=null;
       var cbJikkyo=document.getElementById("cb-jikkyo");
       function onclickJikkyo(){
+        cbJikkyo.onclick=onclickJikkyo;
         if(!cbJikkyo.checked){
           toggleJikkyo(false);
           clearTimeout(readTimer);
@@ -720,8 +727,7 @@ function runVideoScript(aribb24UseSvg,aribb24Option,useDatacast,useJikkyoLog){
         };
         xhr.send();
       }
-      onclickJikkyo();
-      cbJikkyo.onclick=onclickJikkyo;
+      setTimeout(onclickJikkyo,500);
     })();
   }
 }
@@ -799,12 +805,17 @@ function runTranscodeScript(useDatacast,useLiveJikkyo,useJikkyoLog,ofssec,fast,p
     }
     if(useLiveJikkyo||useJikkyoLog){
       var cbJikkyo=document.getElementById("cb-jikkyo");
-      cbJikkyo.checked=false;
-      cbJikkyo.onclick=function(){
+      function onclickJikkyo(){
+        if(!cbJikkyo.onclick&&vid.currentTime==0){
+          setTimeout(onclickJikkyo,500);
+          return;
+        }
+        cbJikkyo.onclick=onclickJikkyo;
         if(!cbJikkyo.checked){
           toggleJikkyo(false);
           openSubStream();
           setSendComment(null);
+          document.querySelector('#vid-form input[name="jikkyo"]').value="0";
           return;
         }
         toggleJikkyo(true);
@@ -822,7 +833,9 @@ function runTranscodeScript(useDatacast,useLiveJikkyo,useJikkyoLog,ofssec,fast,p
           });
         }
         openSubStream();
-      };
+        document.querySelector('#vid-form input[name="jikkyo"]').value="1";
+      }
+      setTimeout(onclickJikkyo,500);
     }
   }
   var voffset=document.getElementById("vid-offset");
@@ -880,6 +893,7 @@ function runHlsScript(aribb24UseSvg,aribb24Option,alwaysUseHls,hlsQuery,hlsMp4Qu
     }else if(cap){
       cap.hide();
     }
+    document.querySelector('#vid-form input[name="caption"]').value=cbCaption.checked?"1":"0";
   }
   if(alwaysUseHls){
     onclickCaption();
