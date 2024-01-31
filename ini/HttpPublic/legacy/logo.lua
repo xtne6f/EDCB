@@ -78,10 +78,10 @@ ct=CreateContentBuilder()
 if logo then
   ct:Append(logo)
   ct:Finish()
-  mg.write(ct:Pop(Response(200,mg.get_mime_type(fname),nil,ct.len,3600)..'ETag: '..mg.md5(logo)..'\r\n\r\n'))
+  mg.write(ct:Pop(Response(200,mg.get_mime_type(fname),nil,ct.len,3600)..'ETag: "'..mg.md5(logo)..'"\r\n\r\n'))
 else
   -- 1x1gif
   ct:Append('GIF89a\1\0\1\0\x80\0\0\0\0\0\xFF\xFF\xFF\x21\xF9\4\1\0\0\0\0\x2C\0\0\0\0\1\0\1\0\0\2\1\x44\0\x3B')
   ct:Finish()
-  mg.write(ct:Pop(Response(200,'image/gif',nil,ct.len,3600)..'ETag: 0\r\n\r\n'))
+  mg.write(ct:Pop(Response(200,'image/gif',nil,ct.len,3600)..'ETag: "0"\r\n\r\n'))
 end

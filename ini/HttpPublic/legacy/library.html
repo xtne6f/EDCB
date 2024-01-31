@@ -47,6 +47,8 @@ if not dirname then
   end
   ct:Append('</ul></div>\n')
 else
+  tsx=edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini')
+  xlist={tsx,table.unpack(MEDIA_EXTENSION_LIST)}
   hash=mg.get_var(mg.request_info.query_string,'h')
   if not hash then
     sort=mg.get_var(mg.request_info.query_string,'s') or 'dd'
@@ -55,8 +57,6 @@ else
       ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='sa' and 'sa' or 'sd')..(dirhash and '&amp;d='..dirhash or '')..'">Size</a>'
       ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='na' and 'na' or 'nd')..(dirhash and '&amp;d='..dirhash or '')..'">Name</a></tr>\n'
       ..'<tr><td><td><td><a href="library.html'..(dirhash and '?i='..index or '')..'">Parent directory ..</a></tr>\n')
-    tsx=edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini')
-    xlist={table.unpack(MEDIA_EXTENSION_LIST),tsx}
     ff={}
     for i,v in ipairs(edcb.FindFile(dir..'\\*',0) or {}) do
       if not v.isdir then
@@ -96,9 +96,8 @@ else
   else
     xq=GetTranscodeQueries(mg.request_info.query_string)
     ct:Append('<div id="main">\n')
-    tsx=edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini')
     info=nil
-    for i,v in ipairs({table.unpack(MEDIA_EXTENSION_LIST),tsx}) do
+    for i,v in ipairs(xlist) do
       for j,w in ipairs(edcb.FindFile(dir..'\\*'..v,0) or {}) do
         if not w.isdir and mg.md5(w.name)==hash then
           info=w
@@ -151,7 +150,8 @@ else
           end
         end
       else
-        ct:Append(' ('..math.floor(info.size/1048576)..'M)<br>\n')
+        ct:Append(' ('..math.floor(info.size/1048576)..'M)'
+          ..(vtag==0 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref)..'">Mux-to-TS</a>]' or '')..'<br>\n')
       end
     end
     ct:Append('</div>\n')

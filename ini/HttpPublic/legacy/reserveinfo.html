@@ -121,7 +121,9 @@ if r then
     ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a></dt><dd>\n')
   ref=recFilePath and NativeToDocumentPath(recFilePath)
   if ref then
-    for i,ext in ipairs({table.unpack(MEDIA_EXTENSION_LIST),''}) do
+    xlist={table.unpack(MEDIA_EXTENSION_LIST)}
+    xlist[#xlist+1]=''
+    for i,ext in ipairs(xlist) do
       ff=edcb.FindFile(recFilePath..ext,1)
       if ff then
         ct:Append((vtag==i and VideoWrapperBegin()
@@ -154,7 +156,8 @@ if r then
             end
           end
         else
-          ct:Append(' ('..math.floor(ff[1].size/1048576)..'M)<br>\n')
+          ct:Append(' ('..math.floor(ff[1].size/1048576)..'M)'
+            ..(vtag==0 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref..ext)..'">Mux-to-TS</a>]' or '')..'<br>\n')
         end
       end
     end

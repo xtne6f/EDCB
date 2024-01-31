@@ -52,10 +52,59 @@ ct:Append([=[
     ※実況の表示にはプラグインの commentShareMode の設定が必要です。<br>
     再生画面の中央やや下あたりをマウスオーバーやタップすると実況コメントを入力できます。
   </p><p>
+    ライブラリ機能などにある「→DL」をクリックするとメディアファイルを再生ではなくダウンロードするためのリンクを表示します。<br>
+    ネットワークアドレスに対応した再生ソフトなどで利用できます。<br>
+    MP4ファイルにかぎりToolsフォルダにpsisimux.exeを用意することで「Mux-to-TS」リンクにより上記のWebVTTや.pscファイルを結合してTSファイルに変換できます。
+  </p><p>
     tsreadex.exeを"edcbnosuspend.exe"という名前でコピーしてToolsフォルダに用意すると、<a href="index.html">メニュー</a>に「録画後動作を抑制」ボタンが現れます。<br>
     このedcbnosuspend.exeをEpgTimerSrv設定の「録画後動作の抑制条件」に指定しておくことで録画後動作を一時的に抑制することができます。<br>
     ※edcbnosuspend.exeは単に起動させておくだけの何もしないプロセスです。
-  </p><p>
+  </p><pre style="font-size:small">
+ファイルの配置例:
+
+ (EDCBのルートフォルダ)/
+  |
+  |---HttpPublic/
+  |    |---legacy/
+  |    |    |---about.html ※このページ
+  |    |    |---index.html
+  |    |    |---util.lua
+  |    |    :
+  |    |
+  |    |---video/
+  |    |    |---(メディアファイルなど)
+  |    |    :
+  |    |
+  |    |---(他のWebUIスクリプトなど)
+  |    |---index.html
+  |    :
+  |
+  |---Tools/
+  |    |---asyncbuf.exe
+  |    |---edcbnosuspend.exe ※tsreadex.exeをコピーしたもの
+  |    |---psisiarc.exe
+  |    |---psisimux.exe
+  |    |---tsmemseg.exe
+  |    |---tsreadex.exe
+  |    |---ffmpeg/
+  |    |    |---ffmpeg.exe
+  |    |    |---ffprobe.exe ※LegacyWebUIでは未使用
+  |    |    :
+  |    |
+  |    |---NVEncC/
+  |    |    |---NVEncC.exeまたはNVEncC64.exe
+  |    |    :
+  |    |
+  |    |---QSVEncC/
+  |    |    |---QSVEncC.exeまたはQSVEncC64.exe
+  |    :    :
+  |
+  |---EpgTimer.exe
+  |---EpgTimerSrv.exe
+  |---lua52.dll
+  |---zlib52.dll
+  :
+</pre><p>
     スクリプトはLua 5.2を使用しています。<a href="https://www.lua.org/manual/5.2/">Lua 5.2 Reference Manual</a> (<a href="http://milkpot.sakura.ne.jp/lua/lua52_manual_ja.html">有志による日本語訳</a>)<br>
     EDCBによる追加機能はDocument/Readme_Mod.txtの「Lua edcbグローバル変数の仕様」を参照してください。
   </p><p>
