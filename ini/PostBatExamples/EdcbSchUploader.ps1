@@ -12,7 +12,9 @@ $DEV_COLORS = "T9999=#ff0000`t#1e90ff"
 # ユーザーエージェント
 $USER_AGENT = "edcbSchUploader/1.0.0"
 # アップロード先
-$UPLOAD_URL = "http://cal.syoboi.jp/sch_upload"
+$UPLOAD_URL = "https://cal.syoboi.jp/sch_upload"
+# 2024年時点ではHTTPも使える模様 (HTTPSでのアップロードが不調な場合などに)
+#$UPLOAD_URL = "http://cal.syoboi.jp/sch_upload"
 # 通信タイムアウト(ミリ秒)
 $TIMEOUT = 10000
 # 番組名を省略する文字数
@@ -72,6 +74,9 @@ foreach ($r in $rl) {
         if ($chMap[$stationName] -ne $null) {
             $stationName = $chMap[$stationName]
         }
+        # サロゲートペアを送ると500エラーが返るため
+        $title = $title -replace "[\uD800-\uDFFF]"
+        $stationName = $stationName -replace "[\uD800-\uDFFF]"
         $data += "" +
             ($r.StartTime - (Get-Date -Date 1970-01-01T00:00:00Z)).TotalSeconds + "`t" +
             ($r.StartTime.AddSeconds($r.DurationSecond) - (Get-Date -Date 1970-01-01T00:00:00Z)).TotalSeconds + "`t" +
@@ -86,8 +91,13 @@ if ((Test-Path $lastPath) -and ($data -join "`n") -ceq ((Get-Content $lastPath) 
     exit 0
 }
 
+$slot = "0"
+if ($args.Length -ge 4) {
+    $slot = [Uri]::EscapeDataString($args[3])
+}
+
 # 予約情報をサーバに送信
-[Net.HttpWebRequest]$wr = [Net.WebRequest]::Create($UPLOAD_URL)
+[Net.HttpWebRequest]$wr = [Net.WebRequest]::Create($UPLOAD_URL + "?slot=" + $slot)
 # しょぼかるのPOSTは"Expect: 100-Continue"に対応してないっぽい
 $wr.ServicePoint.Expect100Continue = $false
 # HttpWebRequestはデフォルトでIEのプロキシ設定に従う。必要であれば$wr.Proxyをここで設定すること
@@ -96,12 +106,7 @@ $wr.Credentials = New-Object Net.NetworkCredential ([Uri]::EscapeDataString($arg
 $wr.ContentType = "application/x-www-form-urlencoded"
 $wr.UserAgent = $USER_AGENT
 $wr.Method = "POST"
-$body = "slot="
-if ($args.Length -ge 4) {
-    $body += [Uri]::EscapeDataString($args[3])
-} else {
-    $body += "0"
-}
+$body = "slot=" + $slot
 $body += "&devcolors=" + [Uri]::EscapeDataString($DEV_COLORS)
 $body += "&epgurl="
 if ($args.Length -ge 3) {
