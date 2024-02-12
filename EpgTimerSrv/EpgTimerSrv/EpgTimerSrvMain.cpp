@@ -3325,6 +3325,7 @@ int CEpgTimerSrvMain::LuaGetChDataList(lua_State* L)
 		LuaHelp::reg_string(L, "networkName", ws.WtoUTF8(list[i].networkName));
 		LuaHelp::reg_boolean(L, "epgCapFlag", list[i].epgCapFlag != 0);
 		LuaHelp::reg_boolean(L, "searchFlag", list[i].searchFlag != 0);
+		LuaHelp::reg_int(L, "remoconID", list[i].remoconID);
 		lua_rawseti(L, -2, (int)i + 1);
 	}
 	return 1;

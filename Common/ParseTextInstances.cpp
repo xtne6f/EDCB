@@ -205,6 +205,24 @@ bool CParseChText5::SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID
 	return false;
 }
 
+bool CParseChText5::SetRemoconID(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BYTE remoconID)
+{
+	map<LONGLONG, CH_DATA5>::iterator itr = this->itemMap.find((LONGLONG)originalNetworkID << 32 | (LONGLONG)transportStreamID << 16 | serviceID);
+	if( itr != this->itemMap.end() ){
+		itr->second.remoconID = remoconID;
+		return true;
+	}
+	return false;
+}
+
+bool CParseChText5::SaveTextWithExtraFields(string* saveToStr) const
+{
+	saveWithExtraFields = true;
+	bool ret = SaveText(saveToStr);
+	saveWithExtraFields = false;
+	return ret;
+}
+
 bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 {
 	if( wcschr(parseLine, L'\t') == NULL ){
@@ -224,6 +242,7 @@ bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 	item.second.partialFlag = NextTokenToInt(token) != 0;
 	item.second.epgCapFlag = NextTokenToInt(token) != 0;
 	item.second.searchFlag = NextTokenToInt(token) != 0;
+	item.second.remoconID = 0;
 	item.first = (LONGLONG)item.second.originalNetworkID << 32 | (LONGLONG)item.second.transportStreamID << 16 | item.second.serviceID;
 	if( this->itemMap.empty() ){
 		this->parsedOrder.clear();
@@ -236,7 +255,9 @@ bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 
 bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& saveLine) const
 {
-	Format(saveLine, L"%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d",
+	WCHAR extra[16];
+	swprintf_s(extra, L"\n%d", item.second.remoconID);
+	Format(saveLine, L"%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d%ls",
 		item.second.serviceName.c_str(),
 		item.second.networkName.c_str(),
 		item.second.originalNetworkID,
@@ -245,9 +266,10 @@ bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& save
 		item.second.serviceType,
 		item.second.partialFlag,
 		item.second.epgCapFlag,
-		item.second.searchFlag
+		item.second.searchFlag,
+		saveWithExtraFields ? extra : L""
 		);
-	return FinalizeField(saveLine) == 8;
+	return FinalizeField(saveLine) == (DWORD)(saveWithExtraFields ? 9 : 8);
 }
 
 bool CParseChText5::SelectItemToSave(vector<map<LONGLONG, CH_DATA5>::const_iterator>& itemList) const

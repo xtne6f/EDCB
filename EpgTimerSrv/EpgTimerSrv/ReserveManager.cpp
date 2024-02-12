@@ -83,8 +83,10 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	//チューナがあるものだけ残す
 	for( map<LONGLONG, CH_DATA5>::const_iterator itrCh = this->chUtil.GetMap().begin(); itrCh != this->chUtil.GetMap().end(); ){
 		auto itr = this->tunerBankMap.cbegin();
+		const CH_DATA4* chData = NULL;
 		for( ; itr != this->tunerBankMap.end(); itr++ ){
-			if( itr->second->GetCh(itrCh->second.originalNetworkID, itrCh->second.transportStreamID, itrCh->second.serviceID) ){
+			chData = itr->second->GetCh(itrCh->second.originalNetworkID, itrCh->second.transportStreamID, itrCh->second.serviceID);
+			if( chData ){
 				break;
 			}
 		}
@@ -93,6 +95,7 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 			this->chUtil.DelCh(key);
 			itrCh = this->chUtil.GetMap().lower_bound(key);
 		}else{
+			this->chUtil.SetRemoconID(chData->originalNetworkID, chData->transportStreamID, chData->serviceID, chData->remoconID);
 			itrCh++;
 		}
 	}
@@ -2042,7 +2045,7 @@ bool CReserveManager::GetChDataListAsText(string& text) const
 {
 	lock_recursive_mutex lock(this->managerLock);
 
-	return this->chUtil.SaveText(&text);
+	return this->chUtil.SaveTextWithExtraFields(&text);
 }
 
 void CReserveManager::WatchdogThread(CReserveManager* sys)

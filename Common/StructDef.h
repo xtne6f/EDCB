@@ -179,6 +179,7 @@ struct CH_DATA5 {
 	wstring networkName;			//ts_name or network_name
 	BOOL epgCapFlag;				//EPGデータ取得対象かどうか
 	BOOL searchFlag;				//検索時のデフォルト検索対象サービスかどうか
+	BYTE remoconID;					//リモコンID
 };
 
 //EPG基本情報

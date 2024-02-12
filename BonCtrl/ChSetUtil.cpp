@@ -152,6 +152,7 @@ BOOL CChSetUtil::AddServiceInfo(
 	item5.partialFlag = FALSE;
 	item5.epgCapFlag = TRUE;
 	item5.searchFlag = TRUE;
+	item5.remoconID = 0;
 	if( serviceInfo->extInfo != NULL ){
 		item5.serviceType = serviceInfo->extInfo->service_type;
 		item5.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
