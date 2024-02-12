@@ -102,6 +102,13 @@ Readme_EpgDataCap_Bon.txtの改変点
       送信先を0.0.0.2(Pipe)にすると、BonDriver_Pipe.dllに接続します【追加】。ポ
       ート番号はPipe番号になります。
 
+  - ●外部アプリケーション設定タブ  
+    コマンドラインオプションにUDP/TCP/Pipeで送信中のポート番号やEpgDataCap_Bonの
+    プロセスIDをマクロで指定できます【追加】。`$PipePort$`は`$PipeNumber$`に1234
+    を加えた値です。  
+    既定で複数起動を抑止するようになりました。また、EpgDataCap_Bonの終了時に一緒
+    に閉じる設定【追加】は視聴予約などに便利です。
+
 #### ■例外発生時のスタックトレース出力について 【追加】
 
 EpgDataCap_Bon.exeがなんらかの不具合で異常終了するとき、スタックトレースを
@@ -146,6 +153,8 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
     例えばタイトルか映像情報に"[字]"が含まれるものを検索する場合  
       `:title:[字] | :video:[字]`  
     とします。先頭の:を::にする(::title:など)と個別に正規表現モードになります。
+  - メモ【追加】  
+    メモ欄です。実装上は`:note:`で始まるNOTキーワードです。
   - 正規表現モード  
     ConvertText.txtは廃止しました(後述)。全体を1つの正規表現とみなします。上述の
     OR検索や検索対象の指定はできません。
@@ -200,8 +209,11 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         録画用アプリの引数をカスタマイズします。EpgDataCap_Bon.exeの場合は弄る必
         要ありません。
         - 最小化: EPG取得や「最小化で起動する」設定の録画時に付加される
-        - 非視聴時: 視聴時以外や「視聴時はViewを起動する」にチェックしていないと
-                    きに付加される
+        - 非視聴時: 視聴時以外や、視聴時またはEPG取得を除く起動時の「Viewを起動
+                    する」にチェックしていないときに付加される
+        - ONID/TSID/SID: 録画や視聴時のチャンネルの初期値として付加され、チャン
+                         ネル変更が余分に発生するのを回避できる。設定値のいずれ
+                         かを空にすれば原作挙動に戻る
       - 録画情報保存フォルダ【追加】  
         .program.txt/.errの保存先を指定します(Common.iniのRecInfoFolderに相当)。
     - ●チューナー  
@@ -322,6 +334,8 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         廃止しました。
       - タスクトレイアイコンを表示する【追加】  
         タスクトレイアイコンの表示・非表示を切り替えます。
+      - サービスのロゴ画像があれば表示する【追加】  
+        「ロゴデータを保存する」で取得したロゴを番組表の表示などに利用します。
       - EPG取得対象サービスのみ表示する【追加】  
         一覧や番組表に表示するサービスをEpgTimerSrv設定の「EPG取得対象サービス」
         でチェックされたサービスに限定します。
@@ -614,11 +628,11 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
   列は正規表現として扱われ、動作としては、番組名から正規表現にマッチする部分を削
   除したものが同一番組名判定に使われます。
 
-  例：`RecInfo2RegExp=\[[再無生]\]`  
+  例：`RecInfo2RegExp=\[[再無生]\]|🈞|🈚|🈢`  
       （[再]と[無]と[生]に対応）
 
 #### ■EpgDataCap3.dllの字幕属性情報への対応 【追加】
-  番組名に字幕記号([字])がなく番組情報に字幕属性があるときは、映像情報の文字列
+  番組名に字幕記号(🈑)がなく番組情報に字幕属性があるときは、映像情報の文字列
   (:video:で検索できるもの)に[字]または[二字] (外国語字幕)を追加します。反対に、
   番組名に字幕記号があり、番組情報に字幕属性がないときは、[字無]を追加します。
 
@@ -636,6 +650,14 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
 #### ■EpgTimerSrvのタスクトレイ左クリック動作を変更する 【追加】
   デフォルトではEpgTimerSrv.exeと同じ場所のEpgTimer.exeを実行しますが、EpgTimer
   という名前のショートカットファイルがあればこちらを実行します。
+
+#### ■EpgTimerSrvの起動オプション 【追加】
+  - `/setting`  
+    設定ダイアログを表示します
+  - `/task`  
+    EpgTimerTaskとして動作します
+  - `/luapost {script}`  
+    起動中のEpgTimerSrvにLuaスクリプトの実行をウィンドウメッセージで要求します
 
 #### ■Write_DefaultのTeeコマンド機能について 【追加】
 
@@ -700,6 +722,54 @@ EpgTimer.exeがEpgTimerSrv.exeとの通信に使用しているEpgTimer.CtrlCmdU
 CtrlCmd.csとCtrlCmdDef.csを参照してください。利用例が
 [ini/PostBatExamples](../ini/PostBatExamples)/EdcbSchUploader.ps1にあります。
 
+#### ■各種PlugInの設定ファイルについてのメタ情報の仕様 【追加】
+
+Write_DefaultやRecName_Macroなどのプラグインの設定は、APIを使ってダイアログウィ
+ンドウを呼び出すのが従来の仕組みですが、ウィンドウハンドルなど低水準な情報を必要
+としたり応用が利かない面があります。そこで、設定ファイルについてのメタ情報をJSON
+形式のUTF-8文字列としてプラグインファイルに埋め込みます。
+
+メタ情報はJSONのサブ配列を格納した配列の形式になっていて  
+`[["setting-59c4d329-ba81-4054-9f4d-d1900653338a",`  
+という文字列で始まり  
+`[""]]`  
+で終わります。先頭のサブ配列はヘッダー情報で、その第1要素はプラグインの名前、第2
+要素はフラグです。  
+例: `[["setting-59c4d329-ba81-4054-9f4d-d1900653338a","サンプル PlugIn",0],`  
+フラグが1のとき、設定ファイルを新規作成する際にUnicodeで保存するよう指示します。
+フラグの最下位ビット以外は今のところ無視されます。
+
+先頭と末尾を除くサブ配列は各項目の情報で、その第0要素はフラグになっています。フ
+ラグの下位3ビット(0～7)は情報の種類を表し0のときは設定項目を表します。設定項目の
+第1要素はセクション名、第2要素はキー名、第3要素はラベル、第4要素は既定値です。  
+例: `[0,"SET","Name","名前","名無し"],`  
+既定値の型が真偽値のときは、falseを0、trueを1とする例えばチェックボックスのよう
+な項目です。  
+例: `[0,"SET","Enabled","有効",false],`  
+既定値の型が数値のときは、例えば数値入力ボックスのような項目です。第5要素は最小
+値、第6要素は最大値です。  
+例: `[0,"SET","Weight","重さ",100,-2147483648,2147483647],`  
+フラグが1のときは単なるラベルになります。フラグが2～7の項目は今のところ無視され
+ます。  
+例: `[1,"※正しく入力してね"],`  
+各項目のフラグに16を足すとサブ項目になり、典型的にはインデントされます。さらに8
+を足すと、手前の項目の有効状態(true、非0、非空文字)に応じて典型的にはグレーアウ
+トします。まとめると例えばこのような文字列になります。
+
+```
+[["setting-59c4d329-ba81-4054-9f4d-d1900653338a","サンプル PlugIn",0],
+[0,"SET","Enabled","有効",false],
+[24,"SET","Name","名前","名無し"],
+[24,"SET","Weight","重さ",100,-2147483648,2147483647],
+[25,"※正しく入力してね"],
+[""]]
+```
+
+改行はサブ配列を区切る`],`の直後のみ可能です。これ以外の整形はできません。データ
+型はfalse、true、整数(-2147483648～2147483647)、文字列(エスケープシーケンスは
+`\\\\`と`\\"`のみ)のみ使えます。各サブ配列に余分な要素があれば無視されますが拡張
+のために予約されています。
+
 
 
 CivetWebの組み込みについて
@@ -708,11 +778,10 @@ HTTPサーバ機能の簡単化とディレクトリトラバーサル等々の�
 有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。  
 https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
 
-CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.12  
+CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.16  
 https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
 
-SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にlibssl-1_1(-x64).dllとlibcrypto-1_1(-x64).dllが必要です。自ビルドするか信頼できるどこかから入手してください。
-https://www.openssl.org/community/binaries.html から辿った https://bintray.com/vszakats/generic/openssl (curlメンテナによるバイナリ)の`openssl-1.1.1*`で動作を確認しています。
+SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にlibssl-3(-x64).dllとlibcrypto-3(-x64).dllが必要です。自ビルドするか信頼できるどこかから入手してください。
 
 EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動してください。  
 以下のキー[=デフォルト]を利用できます:
@@ -738,6 +807,7 @@ EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動�
   - CivetWebのdocument_rootに相当
   - フォルダパスに日本語(マルチバイト)文字を含まないこと
     - EDCBを日本語を含むフォルダに入れている場合は要注意
+  - 1つしか指定できないので、複数の場所を公開したいときはフォルダ内にmklinkコマンドでシンボリックリンクを作る
 - `HttpAuthenticationDomain` [=mydomain.com]  
   認証領域
   - CivetWebのauthentication_domainに相当
@@ -791,7 +861,9 @@ EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動�
 公開フォルダ以下のフォルダやファイルが公開対象です(色々遊べる)。公開フォルダを用意しないと何もできません。
 [iniフォルダ](../ini)に原作っぽい動作をするLuaスクリプトを追加したので参考にしてください。
 
-LANを越える場合は以下を参考に"ssl_peer.pem"または"glpasswd"を作成し(フォルダごとの.htpasswdは不確実)、SSL/TLSを利用してください。
+リモートから利用したい場合はSSHポートフォワーディングをお勧めします。鍵の管理についての煩わしさが少なく応用が利き、設定ミスの危険も小さいと考えるからです。
+Windows10以降SSHサーバーは標準のオプション機能でインストールでき、スマホ等のSSHクライアントアプリもConnectBotをはじめ多くあります。  
+SSH以外の手段でLANを越える場合は以下を参考に"ssl_peer.pem"または"glpasswd"を作成し(フォルダごとの.htpasswdは不確実)、SSL/TLSを利用してください。
 不正アクセス耐性は"ssl_peer.pem"がおそらく最善(OpenSSLの信頼性とほぼ等価)です。
 CivetWebでセキュリティが確保されているだろうと判断できたのは認証処理までの不正アクセス耐性のみです。
 パス無しの公開サーバとしての利用はお勧めしません。
@@ -799,16 +871,24 @@ CivetWebでセキュリティが確保されているだろうと判断できた
 #### "ssl_cert.pem"(秘密鍵+自己署名証明書)の作成手順例
 
 ※鵜呑みにしないこと。bashの場合はtype→cat  
-※最近のブラウザはsubjectAltNameが必須のため、以下OpenSSLコマンドはバージョン1.1.1以降を使う
+※最近のブラウザはsubjectAltNameが必須のため、以下OpenSSLコマンドはバージョン1.1.1以降を使う  
+※証明書のインポート方法は様々なのでブラウザやOSに合わせること
+  - EdgeはOSの証明書ストアを参照するので"server.crt"を「信頼されたルート証明機関」としてインストールする
+  - Firefoxは自己署名証明書を例外扱いする方針なので、証明書例外追加時に"server.crt"と拇印が等しいかだけ注意する
+
 ```batchfile
 openssl req -new -newkey rsa:2048 -nodes -keyout server.key -out server.crt -x509 -days 3650 -sha256 -addext "subjectAltName = IP:127.0.0.1,IP:192.168.0.2,DNS:example.com"
 : (subjectAltNameは一例。自機のIPやドメインを並べる)
-: (入力項目はデフォルトでOK。ブラウザの証明書例外追加時に"server.crt"と拇印が等しいかだけ注意する)
+: (入力項目はデフォルトでOK)
 type server.crt >ssl_cert.pem
 type server.key >>ssl_cert.pem
 ```
 
 #### "ssl_peer.pem"(信頼済みクライアント証明書リスト)の作成手順例
+
+※証明書のインポート方法は様々なのでブラウザやOSに合わせること
+  - EdgeはOSの証明書ストアを参照するので"edcb_key.p12"を「個人/証明書」としてインストールする
+  - Firefoxは独自の証明書ストアを持つので"edcb_key.p12"を証明書マネージャーでインポートする
 
 ```batchfile
 openssl req -new -newkey rsa:2048 -nodes -keyout client.key -out client.crt -x509 -days 3650 -sha256
@@ -819,13 +899,15 @@ openssl pkcs12 -export -inkey client.key -in client.crt -out edcb_key.p12 -name 
 : (パスワードを入力するために"winpty openssl～"とする必要があるかもしれない)
 ```
 
-#### "glpasswd"(ダイジェスト認証ファイル)の簡単な作り方
+#### PowerShellを使った"glpasswd"(ダイジェスト認証ファイル)の簡単な作り方
 
-```batchfile
-: (ユーザ名root、認証領域mydomain.com、パスワードtest)
-set <nul /p "x=root:mydomain.com:test" | openssl md5
-: (出力される32文字のハッシュ値でパスワードを上書き↓)
-set <nul /p "x=root:mydomain.com:351eee77bbb11db9fef4870b0d78b061" >glpasswd
+```powershell
+# ユーザ名root、認証領域mydomain.com、パスワードtest
+"root:mydomain.com:test" | Out-File -Encoding ascii -NoNewline glpasswd
+# ハッシュ値を計算
+$hash=(Get-FileHash -Algorithm MD5 glpasswd).Hash.ToLowerInvariant()
+# パスワード部分をハッシュ値で上書き
+"root:mydomain.com:$hash" | Out-File -Encoding ascii -NoNewline glpasswd
 ```
 
 Luaのmg.write()について、成否のブーリアンを返すよう拡張しています(本家に取り込まれました)。
@@ -1077,9 +1159,6 @@ edcb.os.execute('echo %hoge% %fuga% & pause', true, {hoge='ほげ♪',fuga='ふ�
   - 4=自動予約登録情報が更新された
   - 5=自動予約(プログラム)登録情報が更新された
 
-`ListDmsPublicFile() → <ファイル情報>のリスト`
-- 廃止
-
 `FindFile( 検索パターン:S, 取得数:I ) → <ファイル情報>のリスト|nil`
 - Win32APIのFindFirstFileを呼ぶ  
   取得数を0とするとすべての検索結果を取得する。
@@ -1180,6 +1259,7 @@ Luaスクリプトのテーブル定義
   networkName:S=ネットワーク名
   epgCapFlag:B=EPGデータ取得対象かどうか
   searchFlag:B=検索時のデフォルト検索対象サービスかどうか
+  remoconID:I=リモコンキー識別
 }
 ```
 
