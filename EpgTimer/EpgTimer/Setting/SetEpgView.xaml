@@ -55,12 +55,16 @@
                             <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="表示" Height="248" Margin="6,144,6,0" VerticalAlignment="Top">
+                    <GroupBox Header="表示" Height="280" Margin="6,144,6,0" VerticalAlignment="Top">
                         <Grid>
-                            <Label Content="マウススクロールサイズ" HorizontalAlignment="Left" Margin="11,6,0,0" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="165,6,0,0" Text="{Binding ScrollSize}" VerticalAlignment="Top" Width="55" />
-                            <Label Content="サービス１つの幅" HorizontalAlignment="Left" Margin="11,36,0,0" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="165,36,0,0" Text="{Binding ServiceWidth}" VerticalAlignment="Top" Width="55" />
+                            <Label Content="マウス縦スクロールサイズ" HorizontalAlignment="Left" Margin="11,6,0,0" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, Converter={StaticResource convert}, ConverterParameter=not, ElementName=checkBox_mouseScrollAuto}" Margin="165,6,0,0" Text="{Binding ScrollSize}" VerticalAlignment="Top" Width="55" />
+                            <CheckBox Content="自動" HorizontalAlignment="Left" IsChecked="{Binding MouseScrollAuto}" Margin="226,11,0,0" Name="checkBox_mouseScrollAuto" VerticalAlignment="Top" />
+                            <Label Content="マウス横スクロールサイズ" HorizontalAlignment="Left" Margin="11,36,0,0" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, Converter={StaticResource convert}, ConverterParameter=not, ElementName=checkBox_mouseHorizontalScrollAuto}" Margin="165,36,0,0" Text="{Binding HorizontalScrollSize}" VerticalAlignment="Top" Width="55" />
+                            <CheckBox Content="自動" HorizontalAlignment="Left" IsChecked="{Binding MouseHorizontalScrollAuto}" Margin="226,41,0,0" Name="checkBox_mouseHorizontalScrollAuto" VerticalAlignment="Top" />
+                            <Label Content="サービス１つの幅" HorizontalAlignment="Left" Margin="11,66,0,0" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="165,66,0,0" Text="{Binding ServiceWidth}" VerticalAlignment="Top" Width="55" />
                             <Label Content="1分あたりの高さ" HorizontalAlignment="Left" Margin="327,6,0,0" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="470,8,0,0" Text="{Binding MinHeight}" VerticalAlignment="Top" Width="55" />
                             <Label Content="ドラッグスクロール倍率" HorizontalAlignment="Left" Margin="327,36,0,0" VerticalAlignment="Top" />
@@ -68,25 +72,24 @@
                             <Label Content="枠線の幅" HorizontalAlignment="Left" Margin="551,36,0,0" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="634,38,0,0" Text="{Binding EpgBorderLeftSize}" VerticalAlignment="Top" Width="33" />
                             <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="672,38,0,0" Text="{Binding EpgBorderTopSize}" VerticalAlignment="Top" Width="33" />
-                            <Label Content="タイトルの文字列置換リスト（/置換前/置換後/…）" HorizontalAlignment="Left" Margin="11,66,0,0" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="30,95,0,0" Text="{Binding EpgReplacePatternTitle}" VerticalAlignment="Top" Width="280" />
-                            <Label Content="タイトル以外の文字列置換リスト（〃）" HorizontalAlignment="Left" Margin="11,122,0,0" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="30,151,0,0" Text="{Binding EpgReplacePattern}" VerticalAlignment="Top" Width="280" />
-                            <CheckBox Content="番組内容表示位置を番組名表示位置にあわせる" HorizontalAlignment="Left" IsChecked="{Binding EpgTitleIndent}" Margin="350,70,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="詳細も表示" HorizontalAlignment="Left" IsChecked="{Binding EpgExtInfoTable}" Margin="350,92,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="詳細をツールチップ表示する" HorizontalAlignment="Left" IsChecked="{Binding EpgToolTip}" Margin="350,114,0,0" Name="checkBox_descToolTip" VerticalAlignment="Top" />
-                            <CheckBox Content="番組名を表示しきれない物のみ表示" HorizontalAlignment="Left" IsChecked="{Binding EpgToolTipNoViewOnly}" IsEnabled="{Binding IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" Margin="370,136,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="詳細も表示" HorizontalAlignment="Left" IsChecked="{Binding EpgExtInfoPopup}" IsEnabled="{Binding IsChecked, ElementName=checkBox_epgPopup, UpdateSourceTrigger=PropertyChanged}" Margin="605,136,0,0" VerticalAlignment="Top" />
-                            <Label Content="ツールチップを表示するまでの時間(ミリ秒)" HorizontalAlignment="Left" Margin="370,154,0,0" VerticalAlignment="Top" IsEnabled="{Binding IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" Margin="605,156,0,0" Text="{Binding EpgToolTipViewWait}" VerticalAlignment="Top" Width="47" />
-                            <CheckBox Content="番組内容をポップアップ表示する" HorizontalAlignment="Left" IsChecked="{Binding EpgPopup}" Margin="535,92,0,0" Name="checkBox_epgPopup" VerticalAlignment="Top" />
-                            <CheckBox Content="なるべく画面内に収める" HorizontalAlignment="Left" IsChecked="{Binding EpgAdjustPopup}" IsEnabled="{Binding IsChecked, ElementName=checkBox_epgPopup, UpdateSourceTrigger=PropertyChanged}" Margin="570,114,0,0" VerticalAlignment="Top" />
-                            <Label Content="グラデーション表示を行う" HorizontalAlignment="Left" Margin="350,182,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="番組" HorizontalAlignment="Left" IsChecked="{Binding EpgGradation}" Margin="503,187,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="サービス・時刻軸" HorizontalAlignment="Left" IsChecked="{Binding EpgGradationHeader}" Margin="563,187,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="シングルクリックで予約ダイアログを開く" HorizontalAlignment="Left" IsChecked="{Binding EpgInfoSingleClick}" Margin="11,183,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" HorizontalAlignment="Left" IsChecked="{Binding EpgInfoOpenMode, Converter={StaticResource convert}}" Margin="11,205,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="自動" HorizontalAlignment="Left" IsChecked="{Binding MouseScrollAuto}" Margin="226,11,0,0" VerticalAlignment="Top" />
+                            <Label Content="タイトルの文字列置換リスト（/置換前/置換後/…）" HorizontalAlignment="Left" Margin="11,96,0,0" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="30,125,0,0" Text="{Binding EpgReplacePatternTitle}" VerticalAlignment="Top" Width="280" />
+                            <Label Content="タイトル以外の文字列置換リスト（〃）" HorizontalAlignment="Left" Margin="11,152,0,0" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="30,181,0,0" Text="{Binding EpgReplacePattern}" VerticalAlignment="Top" Width="280" />
+                            <CheckBox Content="番組内容表示位置を番組名表示位置にあわせる" HorizontalAlignment="Left" IsChecked="{Binding EpgTitleIndent}" Margin="350,100,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="詳細も表示" HorizontalAlignment="Left" IsChecked="{Binding EpgExtInfoTable}" Margin="350,122,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="詳細をツールチップ表示する" HorizontalAlignment="Left" IsChecked="{Binding EpgToolTip}" Margin="350,144,0,0" Name="checkBox_descToolTip" VerticalAlignment="Top" />
+                            <CheckBox Content="番組名を表示しきれない物のみ表示" HorizontalAlignment="Left" IsChecked="{Binding EpgToolTipNoViewOnly}" IsEnabled="{Binding IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" Margin="370,166,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="詳細も表示" HorizontalAlignment="Left" IsChecked="{Binding EpgExtInfoPopup}" IsEnabled="{Binding IsChecked, ElementName=checkBox_epgPopup, UpdateSourceTrigger=PropertyChanged}" Margin="605,166,0,0" VerticalAlignment="Top" />
+                            <Label Content="ツールチップを表示するまでの時間(ミリ秒)" HorizontalAlignment="Left" Margin="370,184,0,0" VerticalAlignment="Top" IsEnabled="{Binding IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" Margin="605,186,0,0" Text="{Binding EpgToolTipViewWait}" VerticalAlignment="Top" Width="47" />
+                            <CheckBox Content="番組内容をポップアップ表示する" HorizontalAlignment="Left" IsChecked="{Binding EpgPopup}" Margin="535,122,0,0" Name="checkBox_epgPopup" VerticalAlignment="Top" />
+                            <CheckBox Content="なるべく画面内に収める" HorizontalAlignment="Left" IsChecked="{Binding EpgAdjustPopup}" IsEnabled="{Binding IsChecked, ElementName=checkBox_epgPopup, UpdateSourceTrigger=PropertyChanged}" Margin="570,144,0,0" VerticalAlignment="Top" />
+                            <Label Content="グラデーション表示を行う" HorizontalAlignment="Left" Margin="350,212,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="番組" HorizontalAlignment="Left" IsChecked="{Binding EpgGradation}" Margin="503,217,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="サービス・時刻軸" HorizontalAlignment="Left" IsChecked="{Binding EpgGradationHeader}" Margin="563,217,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="シングルクリックで予約ダイアログを開く" HorizontalAlignment="Left" IsChecked="{Binding EpgInfoSingleClick}" Margin="11,213,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" HorizontalAlignment="Left" IsChecked="{Binding EpgInfoOpenMode, Converter={StaticResource convert}}" Margin="11,235,0,0" VerticalAlignment="Top" />
                             <Label Content="最低表示行数" HorizontalAlignment="Left" Margin="551,6,0,0" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="650,8,0,0" Text="{Binding MinimumHeight}" VerticalAlignment="Top" Width="55" />
                         </Grid>
@@ -337,6 +340,7 @@
                             <Label Content="塗りつぶしで表示 (不透明度)" HorizontalAlignment="Left" Margin="12,63,0,0" VerticalAlignment="Top" />
                             <Slider AutoToolTipPlacement="TopLeft" Height="23" HorizontalAlignment="Left" LargeChange="10" Margin="205,67,0,0" Maximum="100" Minimum="0" SmallChange="1" Value="{Binding ReserveRectFillOpacity}" VerticalAlignment="Top" Width="145" />
                             <CheckBox Content="影付きで塗りつぶす" HorizontalAlignment="Left" IsChecked="{Binding ReserveRectFillWithShadow}" Margin="357,71,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="時刻軸に線を引く" HorizontalAlignment="Left" IsChecked="{Binding ReserveRectShowMarker}" Margin="520,71,0,0" VerticalAlignment="Top" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="292,6,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="624,6,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />
                             <Button Height="24" HorizontalAlignment="Left" Margin="292,34,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button_Color_Click" />

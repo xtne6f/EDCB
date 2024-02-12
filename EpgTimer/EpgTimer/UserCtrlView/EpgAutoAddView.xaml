@@ -10,6 +10,7 @@
         <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
             <MenuItem Header="Andキーワード" Name="AndKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="Notキーワード" Name="NotKey" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="メモ" Name="Note" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="正規表現" Name="RegExp" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="あいまい" Name="Aimai" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名のみ" Name="TitleOnly" IsCheckable="True" Click="headerSelect_Click" />
@@ -49,7 +50,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
+        <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" MouseEnter="listView_key_MouseEnter" MouseLeave="listView_key_MouseLeave">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -89,6 +90,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding NotKey}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="Notキーワード" Tag="NotKey" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Note}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="メモ" Tag="Note" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding RegExp}">

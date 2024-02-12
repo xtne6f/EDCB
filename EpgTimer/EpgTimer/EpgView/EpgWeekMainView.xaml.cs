@@ -1171,18 +1171,13 @@ namespace EpgTimer
                     dayList.Count * setViewInfo.EpgSetting.ServiceWidth,
                     timeList.Count * 60 * setViewInfo.EpgSetting.MinHeight);
 
-                List<DateTime> dateTimeList = new List<DateTime>();
-                foreach (var item in timeList)
-                {
-                    dateTimeList.Add(item.Key);
-                }
                 var timeBrushList = new List<Brush>();
                 for (int i = 0; i < setViewInfo.EpgSetting.TimeColorList.Count; i++)
                 {
                     SolidColorBrush brush = ColorDef.CustColorBrush(setViewInfo.EpgSetting.TimeColorList[i], setViewInfo.EpgSetting.TimeCustColorList[i]);
                     timeBrushList.Add(setViewInfo.EpgSetting.EpgGradationHeader ? (Brush)ColorDef.GradientBrush(brush.Color) : brush);
                 }
-                timeView.SetTime(dateTimeList, setViewInfo.EpgSetting.MinHeight, setViewInfo.NeedTimeOnlyWeek, timeBrushList, true);
+                timeView.SetTime(timeList.Keys, 60 * setViewInfo.EpgSetting.MinHeight, setViewInfo.NeedTimeOnlyWeek, timeBrushList, true);
                 weekDayView.SetDay(dayList, setViewInfo.EpgSetting.ServiceWidth, setViewInfo.EpgSetting.EpgGradationHeader);
             }
 
