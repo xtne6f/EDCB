@@ -137,6 +137,8 @@ namespace EpgTimer
                             item.PartialFlag = Convert.ToInt32(list[6]) != 0;
                             item.EpgCapFlag = Convert.ToInt32(list[7]) != 0;
                             item.SearchFlag = Convert.ToInt32(list[8]) != 0;
+                            //リモコンIDのフィールドは必ずしも存在しない
+                            item.RemoconID = list.Length < 10 ? (byte)0 : Convert.ToByte(list[9]);
                         }
                         catch
                         {
@@ -164,63 +166,24 @@ namespace EpgTimer
         public ChSet5Item()
         {
         }
-        public UInt64 Key
+        public ulong Key
         {
             get
             {
                 return CommonManager.Create64Key(ONID, TSID, SID);
             }
         }
-        public UInt16 ONID
-        {
-            get;
-            set;
-        }
-        public UInt16 TSID
-        {
-            get;
-            set;
-        }
-        public UInt16 SID
-        {
-            get;
-            set;
-        }
-        public UInt16 ServiceType
-        {
-            get;
-            set;
-        }
-        public bool PartialFlag
-        {
-            get;
-            set;
-        }
-        public String ServiceName
-        {
-            get;
-            set;
-        }
-        public String NetworkName
-        {
-            get;
-            set;
-        }
-        public bool EpgCapFlag
-        {
-            get;
-            set;
-        }
-        public bool SearchFlag
-        {
-            get;
-            set;
-        }
-        public BitmapSource Logo
-        {
-            get;
-            set;
-        }
+        public ushort ONID { get; set; }
+        public ushort TSID { get; set; }
+        public ushort SID { get; set; }
+        public ushort ServiceType { get; set; }
+        public bool PartialFlag { get; set; }
+        public string ServiceName { get; set; }
+        public string NetworkName { get; set; }
+        public bool EpgCapFlag { get; set; }
+        public bool SearchFlag { get; set; }
+        public byte RemoconID { get; set; }
+        public BitmapSource Logo { get; set; }
 
         public override string ToString()
         {
