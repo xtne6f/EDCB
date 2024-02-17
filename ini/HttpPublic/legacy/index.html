@@ -71,7 +71,7 @@ edcbnosuspend=EdcbModulePath()..'\\Tools\\edcbnosuspend.exe'
 if edcb.FindFile(edcbnosuspend,1) then
   onstat=post and mg.get_var(post,'nosuspend')
   if not onstat then
-    onstat,stat,code=edcb.os.execute('wmic process where "name=\'edcbnosuspend.exe\'" get processid 2>nul | findstr /b [1-9]')
+    onstat,stat,code=edcb.os.execute('tasklist /fi "imagename eq edcbnosuspend.exe" /fo csv /nh | find /i "edcbnosuspend.exe"')
     onstat=onstat and stat=='exit' and code==0 and 'y'
   end
   ct:Append([=[
@@ -112,7 +112,7 @@ if post then
     edcb.os.execute('start "" /b "'..edcbnosuspend..'" -')
     ct:Append('  <div id="result">edcbnosuspend.exeを起動しました</div>\n')
   elseif mg.get_var(post,'nosuspend')=='n' then
-    edcb.os.execute('wmic process where "name=\'edcbnosuspend.exe\'" call terminate >nul')
+    TerminateCommandlineLike('edcbnosuspend.exe','%')
     ct:Append('  <div id="result">edcbnosuspend.exeを停止しました</div>\n')
   end
 end

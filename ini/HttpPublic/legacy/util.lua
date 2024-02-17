@@ -717,6 +717,16 @@ function EdcbHtmlEscape(s)
   return edcb.Convert('utf-8','utf-8',s)
 end
 
+--プロセス名とコマンドラインのパターンに一致するコマンドをすべて終了させる
+function TerminateCommandlineLike(name,pattern)
+  if pattern=='%' then
+    edcb.os.execute('taskkill /f /im "'..name..'"')
+  elseif not edcb.os.execute('wmic process where "name=\''..name..'\' and commandline like \''..pattern..'\'" call terminate >nul') then
+    --wmicがないとき
+    edcb.os.execute('powershell -NoProfile -c "try{(gwmi win32_process -filter \\"name=\''..name..'\' and commandline like \''..pattern..'\'\\").terminate()}catch{}"')
+  end
+end
+
 --符号なし整数の時計算の差を計算する
 function UintCounterDiff(a,b)
   return (a+0x100000000-b)%0x100000000

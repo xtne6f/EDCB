@@ -46,9 +46,10 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
       pf:close()
     end
     -- パイプラインの上流を終わらせる
-    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-%\'" call terminate >nul')
+    TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-%')
     if pids then
       -- 親プロセスの終了を2秒だけ待つ。パイプラインの下流でストールしている可能性もあるので待ちすぎない
+      -- wmicコマンドのない環境では待たないがここの待機はさほど重要ではない
       for i=1,4 do
         edcb.Sleep(500)
         if i==4 or not edcb.os.execute('wmic process where "'..pids..'" get processid 2>nul | findstr /b [1-9] >nul') then
@@ -126,7 +127,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
         edcb.Sleep(100)
       end
       -- 失敗。プロセスが残っていたら終わらせる
-      edcb.os.execute('wmic process where "name=\'tsmemseg.exe\' and commandline like \'% '..segmentKey..'[_]%\'" call terminate >nul')
+      TerminateCommandlineLike('tsmemseg.exe','% '..segmentKey..'[_]%')
     end
     return nil
   end
@@ -250,7 +251,7 @@ if onid then
         ok,pid=edcb.IsOpenNetworkTV(n)
       else
         -- 前回のプロセスが残っていたら終わらせる
-        edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-nwtv-'..n..' %\'" call terminate >nul')
+        TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-nwtv-'..n..' %')
         openTime=os.time()
         edcb.WritePrivateProfile('NWTV','nwtv'..n..'open','@'..openTime,'Setting\\HttpPublic.ini')
         -- NetworkTVモードを開始
@@ -312,7 +313,7 @@ if onid then
   end
 elseif n and n<0 then
   -- プロセスが残っていたらすべて終わらせる
-  edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-%\'" call terminate >nul')
+  TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-view-%')
 elseif n and n<=65535 then
   if hls and not psidata and not jikkyo then
     -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
@@ -322,7 +323,7 @@ elseif n and n<=65535 then
   if not f then
     if not psidata and not jikkyo then
       -- 前回のプロセスが残っていたら終わらせる
-      edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-'..n..' %\'" call terminate >nul')
+      TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-view-'..n..' %')
     end
     -- 名前付きパイプがあれば開く
     ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*', 1)

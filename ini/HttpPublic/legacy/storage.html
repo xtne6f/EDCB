@@ -25,8 +25,8 @@ for i,v in ipairs(EdcbRecFolderPathList()) do
     free=nil
     f=edcb.io.popen('fsutil volume diskfree '..v)
     if f then
-      --最近のfsutilは数値に桁区切りがつく
-      free,total,avail=f:read('*a'):gsub("[%s',.]",''):match(':(%d+).*:(%d+).*:(%d+)')
+      --最近のfsutilは数値に桁区切りがつく。さらに最近のものは項目が増えた。
+      free,total,avail=f:read('*a'):gsub("[%s',.]",''):match(':(%d+).-:(%d+).-:(%d+)')
       f:close()
     end
     ct:Append('    <dt>'..v..'</dt><dd>'..(free and

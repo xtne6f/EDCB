@@ -43,9 +43,10 @@ function OpenTranscoder()
       pf:close()
     end
     -- パイプラインの上流を終わらせる
-    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-%\'" call terminate >nul')
+    TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-%')
     if pids then
       -- 親プロセスの終了を2秒だけ待つ。パイプラインの下流でストールしている可能性もあるので待ちすぎない
+      -- wmicコマンドのない環境では待たないがここの待機はさほど重要ではない
       for i=1,4 do
         edcb.Sleep(500)
         if i==4 or not edcb.os.execute('wmic process where "'..pids..'" get processid 2>nul | findstr /b [1-9] >nul') then
@@ -55,7 +56,7 @@ function OpenTranscoder()
     end
   elseif reload then
     -- リロード時は前回のプロセスを速やかに終わらせる
-    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-'..searchName..' %\'" call terminate >nul')
+    TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-'..searchName..' %')
   end
 
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
@@ -126,7 +127,7 @@ function OpenTranscoder()
         edcb.Sleep(100)
       end
       -- 失敗。プロセスが残っていたら終わらせる
-      edcb.os.execute('wmic process where "name=\'tsmemseg.exe\' and commandline like \'% '..segmentKey..'[_]%\'" call terminate >nul')
+      TerminateCommandlineLike('tsmemseg.exe','% '..segmentKey..'[_]%')
     end
     return nil
   end
