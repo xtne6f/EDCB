@@ -46,6 +46,7 @@ struct MAIN_WINDOW_CONTEXT {
 	CHttpServer httpServer;
 	HANDLE resumeTimer;
 	LONGLONG resumeTime;
+	LONGLONG lastSetSystemRequiredTick;
 	BYTE shutdownModePending;
 	bool rebootFlagPending;
 	DWORD shutdownPendingTick;
@@ -64,6 +65,7 @@ struct MAIN_WINDOW_CONTEXT {
 		: sys(sys_)
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
 		, resumeTimer(NULL)
+		, lastSetSystemRequiredTick(-1)
 		, shutdownModePending(SD_MODE_INVALID)
 		, shutdownPendingTick(0)
 		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
@@ -346,8 +348,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( wParam == SD_MODE_STANDBY || wParam == SD_MODE_SUSPEND ){
 				//ストリーミングを終了する
 				ctx->sys->streamingManager.clear();
-				//スリープ抑止解除
-				SetThreadExecutionState(ES_CONTINUOUS);
+				//AwayMode解除
+				SetThreadExecutionState(ES_CONTINUOUS | (SetThreadExecutionState(0) & ~ES_AWAYMODE_REQUIRED));
 				//rebootFlag時は(指定+5分前)に復帰
 				DWORD marginSec;
 				{
@@ -636,6 +638,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				EXECUTION_STATE esFlags = ES_CONTINUOUS;
 				EXECUTION_STATE esLastFlags;
 				if( ctx->shutdownModePending == SD_MODE_INVALID && ctx->sys->IsSuspendOK() ){
+					//Windows11以降システムアイドルタイマーリセットからスリープまでの(最低でも60秒の)マージンがなくなったため
+					if( ctx->lastSetSystemRequiredTick >= 0 && GetU32Tick() - (DWORD)ctx->lastSetSystemRequiredTick < 75000 ){
+						esFlags |= ES_SYSTEM_REQUIRED;
+					}else{
+						ctx->lastSetSystemRequiredTick = -1;
+					}
 					esLastFlags = SetThreadExecutionState(esFlags);
 				}else{
 					esFlags |= ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED;
@@ -645,6 +653,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						esFlags = ES_CONTINUOUS | ES_SYSTEM_REQUIRED;
 						esLastFlags = SetThreadExecutionState(esFlags);
 					}
+					ctx->lastSetSystemRequiredTick = GetU32Tick();
 				}
 				if( esLastFlags != esFlags ){
 					AddDebugLogFormat(L"SetThreadExecutionState(0x%08x)", (DWORD)esFlags);

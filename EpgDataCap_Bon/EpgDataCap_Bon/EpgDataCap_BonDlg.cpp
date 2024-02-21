@@ -266,6 +266,8 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_TUNER), bonIndex);
 	}
 
+	SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+
 	//BonDriverのオープン
 	int serviceIndex = -1;
 	if( this->iniBonDriver.empty() == false ){
@@ -457,7 +459,6 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			break;
 		case TIMER_STATUS_UPDATE:
 			{
-				SetThreadExecutionState(ES_SYSTEM_REQUIRED);
 				this->bonCtrl.Check();
 
 				int iLine = Edit_GetFirstVisibleLine(GetDlgItem(IDC_EDIT_STATUS));
