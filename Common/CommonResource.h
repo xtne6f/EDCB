@@ -1,4 +1,4 @@
-//#define EDCB_VERSION_TAG ""
+#define EDCB_VERSION_TAG "work+s-240221"
 
 // Only ASCII characters can be used here.
 
