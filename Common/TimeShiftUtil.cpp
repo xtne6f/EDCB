@@ -68,18 +68,15 @@ void CTimeShiftUtil::Send(
 			continue;
 		}
 
-		UINT u[4];
-		int scanNum = swscanf_s(ip, L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]);
-		if( scanNum == 4 ){
-			u[0] = (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3];
-		}
+		int n;
+		bool parsed = ParseIPv4Address(ip, n);
 		//引数のポート番号は使わない(原作挙動)。ip:0.0.0.1-255は特別扱い
-		info->port = (tcp ? (scanNum == 4 && 1 <= u[0] && u[0] <= 255 ? 0 : BON_TCP_PORT_BEGIN) : BON_UDP_PORT_BEGIN);
+		info->port = (tcp ? (parsed && 1 <= n && n <= 255 ? 0 : BON_TCP_PORT_BEGIN) : BON_UDP_PORT_BEGIN);
 		for( int i = 0; i < BON_NW_PORT_RANGE; i++, info->port++ ){
 			LPCWSTR mutexName = tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME;
 #ifdef _WIN32
-			if( scanNum == 4 ){
-				Format(info->key, L"Global\\%ls%d_%d", mutexName, u[0], info->port);
+			if( parsed ){
+				Format(info->key, L"Global\\%ls%d_%d", mutexName, n, info->port);
 			}else{
 				Format(info->key, L"Global\\%ls%ls_%d", mutexName, ip, info->port);
 			}
@@ -92,8 +89,8 @@ void CTimeShiftUtil::Send(
 				info->mutex = NULL;
 			}
 #else
-			if( scanNum == 4 ){
-				Format(info->key, L"%ls%ls%u_%u.lock", EDCB_INI_ROOT, mutexName, u[0], info->port);
+			if( parsed ){
+				Format(info->key, L"%ls%ls%d_%u.lock", EDCB_INI_ROOT, mutexName, n, info->port);
 			}else{
 				Format(info->key, L"%ls%ls%ls_%u.lock", EDCB_INI_ROOT, mutexName, ip, info->port);
 			}

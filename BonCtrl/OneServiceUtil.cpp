@@ -78,9 +78,9 @@ void COneServiceUtil::SendUdpTcp(
 			HANDLE portMutex = NULL;
 			for( int i = 0; i < BON_NW_PORT_RANGE && itr->port < 0x10000; i++ ){
 				wstring key;
-				UINT u[4];
-				if( swscanf_s(itr->ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-					Format(key, L"Global\\%ls%d_%d", mutexName, (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3], itr->port);
+				int n;
+				if( ParseIPv4Address(itr->ipString.c_str(), n) ){
+					Format(key, L"Global\\%ls%d_%d", mutexName, n, itr->port);
 				}else{
 					Format(key, L"Global\\%ls%ls_%d", mutexName, itr->ipString.c_str(), itr->port);
 				}

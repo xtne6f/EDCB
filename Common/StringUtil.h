@@ -32,4 +32,6 @@ int CompareNoCase(const WCHAR* s1, const WCHAR* s2);
 inline int CompareNoCase(const wstring& str1, const WCHAR* s2) { return CompareNoCase(str1.c_str(), s2); }
 inline int CompareNoCase(const wstring& str1, const wstring& str2) { return CompareNoCase(str1, str2.c_str()); }
 
+bool ParseIPv4Address(const WCHAR* s, int& n);
+
 #endif

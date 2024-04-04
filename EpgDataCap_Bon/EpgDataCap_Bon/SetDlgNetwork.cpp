@@ -94,9 +94,9 @@ void CSetDlgNetwork::SaveIni(void)
 	for( int i = 0; i < (int)udpSendList.size(); i++ ){
 		WCHAR key[64];
 		swprintf_s(key, L"IP%d", i);
-		UINT u[4];
-		if( swscanf_s(udpSendList[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-			WritePrivateProfileInt(L"SET_UDP", key, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], appIniPath.c_str());
+		int n;
+		if( ParseIPv4Address(udpSendList[i].ipString.c_str(), n) ){
+			WritePrivateProfileInt(L"SET_UDP", key, n, appIniPath.c_str());
 		}else{
 			WritePrivateProfileString(L"SET_UDP", key, (L'[' + udpSendList[i].ipString + L']').c_str(), appIniPath.c_str());
 		}
@@ -110,9 +110,9 @@ void CSetDlgNetwork::SaveIni(void)
 	for( int i = 0; i < (int)tcpSendList.size(); i++ ){
 		WCHAR key[64];
 		swprintf_s(key, L"IP%d", i);
-		UINT u[4];
-		if( swscanf_s(tcpSendList[i].ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-			WritePrivateProfileInt(L"SET_TCP", key, u[0] << 24 | u[1] << 16 | u[2] << 8 | u[3], appIniPath.c_str());
+		int n;
+		if( ParseIPv4Address(tcpSendList[i].ipString.c_str(), n) ){
+			WritePrivateProfileInt(L"SET_TCP", key, n, appIniPath.c_str());
 		}else{
 			WritePrivateProfileString(L"SET_TCP", key, (L'[' + tcpSendList[i].ipString + L']').c_str(), appIniPath.c_str());
 		}

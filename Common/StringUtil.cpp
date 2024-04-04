@@ -243,3 +243,19 @@ int CompareNoCase(const WCHAR* s1, const WCHAR* s2)
 	}
 	return *s1 - *s2;
 }
+
+bool ParseIPv4Address(const WCHAR* s, int& n)
+{
+	DWORD u = 0;
+	for( int i = 0; i < 4; i++ ){
+		WCHAR* endp;
+		long b = wcstol(s, &endp, 10);
+		if( b < 0 || b > 255 || endp == s || (i < 3 && *endp != L'.') ){
+			return false;
+		}
+		u = u * 256 + (DWORD)b;
+		s = endp + 1;
+	}
+	n = u < 0x80000000 ? (int)u : -(int)(0xFFFFFFFF - u) - 1;
+	return true;
+}
