@@ -3,6 +3,10 @@
 #include "TimeUtil.h"
 #include "PathUtil.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define wcstoll _wcstoi64
+#endif
+
 namespace
 {
 //タブ区切りの次のトークンに移動する
@@ -427,8 +431,8 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 	item.second.transportStreamID = (WORD)NextTokenToInt(token);
 	item.second.serviceID = (WORD)NextTokenToInt(token);
 	item.second.eventID = (WORD)NextTokenToInt(token);
-	item.second.drops = _wcstoi64(NextToken(token), NULL, 10);
-	item.second.scrambles = _wcstoi64(NextToken(token), NULL, 10);
+	item.second.drops = wcstoll(NextToken(token), NULL, 10);
+	item.second.scrambles = wcstoll(NextToken(token), NULL, 10);
 	item.second.recStatus = (DWORD)NextTokenToInt(token);
 
 	if( ParseDateTime(token, item.second.startTimeEpg) == false ){
@@ -1010,9 +1014,9 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 	}
 	for( subToken[2] = NextToken(token); NextToken(subToken, L',') < token[1]; ){
 		LPWSTR endp;
-		LONGLONG i64Ch = _wcstoi64(subToken[0], &endp, 16);
+		LONGLONG llCh = wcstoll(subToken[0], &endp, 16);
 		if( endp != subToken[0] && endp <= subToken[1] ){
-			item.second.searchInfo.serviceList.push_back(i64Ch & 0xFFFFFFFFFFFFLL);
+			item.second.searchInfo.serviceList.push_back(llCh & 0xFFFFFFFFFFFFLL);
 		}
 	}
 	item.second.recSetting.recMode = (BYTE)NextTokenToInt(token);
