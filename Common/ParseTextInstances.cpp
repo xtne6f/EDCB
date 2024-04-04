@@ -530,8 +530,8 @@ wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, 
 			fs_path infoPath = fs_path(resultOfGetRecInfoFolder).append(fs_path(recFilePath).filename().concat(extension).native());
 			fp.reset(UtilOpenFile(infoPath, UTIL_SHARED_READ | UTIL_SH_DELETE));
 		}
-		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-			LONGLONG fileSize = _ftelli64(fp.get());
+		if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
+			LONGLONG fileSize = my_ftell(fp.get());
 			if( 0 < fileSize && fileSize < 1024 * 1024 ){
 				vector<char> buf((size_t)fileSize + 1, '\0');
 				rewind(fp.get());

@@ -2,11 +2,21 @@
 
 // すべてのプロジェクトに適用される追加ヘッダおよび定義
 
+#ifdef _WIN32
 // wprintf関数系を規格準拠にする(VC14以降)。ワイド文字列には%sでなく%lsなどを使うこと
 #define _CRT_STDIO_ISO_WIDE_SPECIFIERS
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#define my_fseek _fseeki64
+#define my_ftell _ftelli64
+#else
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#endif
+#define my_fseek fseeko
+#define my_ftell ftello
+#endif
 #include <string>
 #include <utility>
 #include <map>

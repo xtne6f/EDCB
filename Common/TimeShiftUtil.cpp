@@ -219,7 +219,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		}
 		lock_recursive_mutex lock(sys->ioLock);
 
-		LONGLONG pos = _ftelli64(sys->readFile.get());
+		LONGLONG pos = my_ftell(sys->readFile.get());
 		if( pos < 0 ){
 			break;
 		}
@@ -232,7 +232,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 				}
 				continue;
 			}
-			if( _fseeki64(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
+			if( my_fseek(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
 				break;
 			}
 			packetInit.ClearBuff();
@@ -244,7 +244,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 			if( sys->fileMode || ++errCount > 50 ){
 				break;
 			}
-			if( _fseeki64(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
+			if( my_fseek(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
 				break;
 			}
 			continue;
@@ -257,7 +257,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 				if( ++errCount > 50 ){
 					break;
 				}
-				if( _fseeki64(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
+				if( my_fseek(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
 					break;
 				}
 			}else{
@@ -327,7 +327,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 
 static BOOL IsDataAvailable(FILE* fp, LONGLONG pos, CPacketInit* packetInit)
 {
-	if( _fseeki64(fp, pos, SEEK_SET) == 0 ){
+	if( my_fseek(fp, pos, SEEK_SET) == 0 ){
 		BYTE buff[188 * 16];
 		DWORD readSize = (DWORD)fread(buff, 1, sizeof(buff), fp);
 		if( readSize > 0 ){
@@ -352,8 +352,8 @@ LONGLONG CTimeShiftUtil::GetAvailableFileSize() const
 			fp = tmpFile.get();
 		}
 		LONGLONG fileSize = -1;
-		if( fp && _fseeki64(fp, 0, SEEK_END) == 0 ){
-			fileSize = _ftelli64(fp);
+		if( fp && my_fseek(fp, 0, SEEK_END) == 0 ){
+			fileSize = my_ftell(fp);
 		}
 		if( this->fileMode ){
 			//単純にファイルサイズを返す

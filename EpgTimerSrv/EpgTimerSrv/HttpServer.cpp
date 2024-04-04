@@ -712,11 +712,11 @@ int f_seek(lua_State* L)
 	lua_Number p3 = luaL_optnumber(L, 3, 0);
 	LONGLONG offset = (LONGLONG)p3;
 	luaL_argcheck(L, (lua_Number)offset == p3, 3, "not an integer in proper range");
-	op = _fseeki64(f, offset, mode[op]);
+	op = my_fseek(f, offset, mode[op]);
 	if( op )
 		return luaL_fileresult(L, 0, NULL); //error
 	else{
-		lua_pushnumber(L, (lua_Number)_ftelli64(f));
+		lua_pushnumber(L, (lua_Number)my_ftell(f));
 		return 1;
 	}
 }

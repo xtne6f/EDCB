@@ -1955,8 +1955,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			if( cmd.ReadVALUE(&n) ){
 				fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
 				std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(logPath, UTIL_SHARED_READ), fclose);
-				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-					LONGLONG count = _ftelli64(fp.get());
+				if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
+					LONGLONG count = my_ftell(fp.get());
 					if( count >= 0 ){
 						//末尾からn行だけ戻った位置をさがす
 						const DWORD sowc = sizeof(WCHAR);
@@ -1964,7 +1964,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 						while( pos > 1 && n > 0 ){
 							DWORD dwRead = (DWORD)min(pos - 1, 4096LL);
 							WCHAR buff[4096];
-							if( _fseeki64(fp.get(), sowc * (pos - dwRead), SEEK_SET) || fread(buff, sowc, dwRead, fp.get()) != dwRead ){
+							if( my_fseek(fp.get(), sowc * (pos - dwRead), SEEK_SET) || fread(buff, sowc, dwRead, fp.get()) != dwRead ){
 								break;
 							}
 							for( ; dwRead > 0; pos-- ){
@@ -1984,7 +1984,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 						}
 						if( count > pos && count - pos < 64 * 1024 * 1024 ){
 							vector<WCHAR> buff((size_t)(count - pos));
-							if( _fseeki64(fp.get(), sowc * pos, SEEK_SET) == 0 &&
+							if( my_fseek(fp.get(), sowc * pos, SEEK_SET) == 0 &&
 							    fread(&buff.front(), sowc, buff.size(), fp.get()) == buff.size() ){
 								res.WriteVALUE(wstring(buff.begin(), buff.end()));
 								res.SetParam(CMD_SUCCESS);
@@ -2873,8 +2873,8 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 							}
 						}else{
 							std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
-							if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-								LONGLONG fileSize = _ftelli64(fp.get());
+							if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
+								LONGLONG fileSize = my_ftell(fp.get());
 								if( 0 < fileSize ){
 									if( (LONGLONG)totalSizeRemain < fileSize ){
 										result.resize(i);

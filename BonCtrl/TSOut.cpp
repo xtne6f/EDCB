@@ -257,7 +257,7 @@ void CTSOut::ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet)
 				//TOTを前倒しで書き込むための場所を確保
 				BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
 				std::fill_n(nullData + 4, 184, (BYTE)0xFF);
-				this->epgFileTotPos = _ftelli64(this->epgFile.get());
+				this->epgFileTotPos = my_ftell(this->epgFile.get());
 				fwrite(nullData, 1, 188, this->epgFile.get());
 			}
 		}
@@ -265,10 +265,10 @@ void CTSOut::ParseEpgPacket(BYTE* data, const CTSPacketUtil& packet)
 		if( packet.PID == 0x14 && this->epgFileState == EPG_FILE_ST_TOT ){
 			this->epgFileState = EPG_FILE_ST_ALL;
 			if( this->epgFileTotPos >= 0 ){
-				_fseeki64(this->epgFile.get(), this->epgFileTotPos, SEEK_SET);
+				my_fseek(this->epgFile.get(), this->epgFileTotPos, SEEK_SET);
 			}
 			fwrite(data, 1, 188, this->epgFile.get());
-			_fseeki64(this->epgFile.get(), 0, SEEK_END);
+			my_fseek(this->epgFile.get(), 0, SEEK_END);
 		}else if( (packet.PID == 0 && this->epgFileState >= EPG_FILE_ST_PAT) || this->epgFileState >= EPG_FILE_ST_TOT ){
 			fwrite(data, 1, 188, this->epgFile.get());
 		}
