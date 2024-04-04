@@ -7,6 +7,7 @@
 #include "EpgDataCap_BonDlg.h"
 #include "../../Common/StackTrace.h"
 #include "../../Common/ThreadUtil.h"
+#include "../../Common/TimeUtil.h"
 #include <objbase.h>
 #include <shellapi.h>
 
@@ -144,7 +145,7 @@ void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutpu
 		lock_recursive_mutex lock(g_debugLogLock);
 		if( g_debugLog ){
 			SYSTEMTIME st;
-			GetLocalTime(&st);
+			ConvertSystemTime(GetNowI64Time(), &st);
 			WCHAR t[128];
 			int n = swprintf_s(t, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
 			                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
