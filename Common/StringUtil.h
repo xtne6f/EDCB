@@ -34,4 +34,7 @@ inline int CompareNoCase(const wstring& str1, const wstring& str2) { return Comp
 
 bool ParseIPv4Address(const WCHAR* s, int& n);
 
+inline char UtilToUpper(char c) { return 'a' <= c && c <= 'z' ? c - 'a' + 'A' : c; }
+inline WCHAR UtilToUpper(WCHAR c) { return L'a' <= c && c <= L'z' ? c - L'a' + L'A' : c; }
+
 #endif

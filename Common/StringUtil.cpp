@@ -226,8 +226,7 @@ bool Separate(const wstring& strIn, const WCHAR* sep, wstring& strLeft, wstring&
 
 int CompareNoCase(const char* s1, const char* s2)
 {
-	while( *s1 && ('a' <= *s1 && *s1 <= 'z' ? *s1 - 'a' + 'A' : *s1) ==
-	              ('a' <= *s2 && *s2 <= 'z' ? *s2 - 'a' + 'A' : *s2) ){
+	while( *s1 && UtilToUpper(*s1) == UtilToUpper(*s2) ){
 		s1++;
 		s2++;
 	}
@@ -236,8 +235,7 @@ int CompareNoCase(const char* s1, const char* s2)
 
 int CompareNoCase(const WCHAR* s1, const WCHAR* s2)
 {
-	while( *s1 && (L'a' <= *s1 && *s1 <= L'z' ? *s1 - L'a' + L'A' : *s1) ==
-	              (L'a' <= *s2 && *s2 <= L'z' ? *s2 - L'a' + L'A' : *s2) ){
+	while( *s1 && UtilToUpper(*s1) == UtilToUpper(*s2) ){
 		s1++;
 		s2++;
 	}

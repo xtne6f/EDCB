@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "IniUtil.h"
+#include "StringUtil.h"
 
 vector<WCHAR> GetPrivateProfileSectionBuffer(LPCWSTR appName, LPCWSTR fileName)
 {
@@ -24,7 +25,8 @@ void GetBufferedProfileString(LPCWSTR buff, LPCWSTR keyName, LPCWSTR lpDefault, 
 	size_t nKeyLen = wcslen(keyName);
 	while( *buff ){
 		size_t nLen = wcslen(buff);
-		if( !_wcsnicmp(buff, keyName, nKeyLen) && buff[nKeyLen] == L'=' ){
+		if( nLen > nKeyLen && buff[nKeyLen] == L'=' &&
+		    std::equal(buff, buff + nKeyLen, keyName, [](WCHAR a, WCHAR b) { return UtilToUpper(a) == UtilToUpper(b); }) ){
 			if( (buff[nKeyLen + 1] == L'\'' || buff[nKeyLen + 1] == L'"') &&
 			    nLen >= nKeyLen + 3 && buff[nKeyLen + 1] == buff[nLen - 1] ){
 				wcsncpy_s(returnedString, nSize, buff + nKeyLen + 2, min(nLen - nKeyLen - 3, (size_t)(nSize - 1)));
@@ -43,7 +45,8 @@ wstring GetBufferedProfileToString(LPCWSTR buff, LPCWSTR keyName, LPCWSTR lpDefa
 	size_t nKeyLen = wcslen(keyName);
 	while( *buff ){
 		size_t nLen = wcslen(buff);
-		if( !_wcsnicmp(buff, keyName, nKeyLen) && buff[nKeyLen] == L'=' ){
+		if( nLen > nKeyLen && buff[nKeyLen] == L'=' &&
+		    std::equal(buff, buff + nKeyLen, keyName, [](WCHAR a, WCHAR b) { return UtilToUpper(a) == UtilToUpper(b); }) ){
 			if( (buff[nKeyLen + 1] == L'\'' || buff[nKeyLen + 1] == L'"') &&
 			    nLen >= nKeyLen + 3 && buff[nKeyLen + 1] == buff[nLen - 1] ){
 				return wstring(buff + nKeyLen + 2, nLen - nKeyLen - 3);
