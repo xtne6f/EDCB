@@ -1,6 +1,5 @@
 ﻿#include "stdafx.h"
 #include "TimeShiftUtil.h"
-#include "PathUtil.h"
 #include "StringUtil.h"
 #include "TimeUtil.h"
 #include "TSPacketUtil.h"
@@ -12,7 +11,9 @@
 #endif
 
 CTimeShiftUtil::CTimeShiftUtil(void)
-	: readFile(NULL, fclose)
+	: udpMutex(UtilCreateGlobalMutex())
+	, tcpMutex(UtilCreateGlobalMutex())
+	, readFile(NULL, fclose)
 	, seekFile(NULL, fclose)
 {
 	this->PCR_PID = 0xFFFF;
@@ -39,6 +40,7 @@ void CTimeShiftUtil::Send(
 	lock_recursive_mutex lock2(this->ioLock);
 
 	for( int tcp = 0; tcp < 2; tcp++ ){
+		util_unique_handle& mutex = (tcp ? this->tcpMutex : this->udpMutex);
 		CSendTSTCPDllUtil* sendNW = (tcp ? &this->sendTcp : &this->sendUdp);
 		SEND_INFO* info = this->sendInfo + tcp;
 		DWORD* port = tcp ? tcpPort : udpPort;
@@ -47,12 +49,7 @@ void CTimeShiftUtil::Send(
 			info->ip.clear();
 			sendNW->StopSend();
 			sendNW->UnInitialize();
-#ifdef _WIN32
-			CloseHandle(info->mutex);
-#else
-			DeleteFile(info->key.c_str());
-			fclose(info->mutex);
-#endif
+			mutex.reset();
 		}
 		if( port == NULL ){
 			continue;
@@ -74,42 +71,19 @@ void CTimeShiftUtil::Send(
 		info->port = (tcp ? (parsed && 1 <= n && n <= 255 ? 0 : BON_TCP_PORT_BEGIN) : BON_UDP_PORT_BEGIN);
 		for( int i = 0; i < BON_NW_PORT_RANGE; i++, info->port++ ){
 			LPCWSTR mutexName = tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME;
-#ifdef _WIN32
 			if( parsed ){
-				Format(info->key, L"Global\\%ls%d_%d", mutexName, n, info->port);
+				Format(info->key, L"%ls%d_%d", mutexName, n, info->port);
 			}else{
-				Format(info->key, L"Global\\%ls%ls_%d", mutexName, ip, info->port);
+				Format(info->key, L"%ls%ls_%d", mutexName, ip, info->port);
 			}
-			info->mutex = CreateMutex(NULL, FALSE, info->key.c_str());
-			if( info->mutex ){
-				if( GetLastError() != ERROR_ALREADY_EXISTS ){
-					break;
-				}
-				CloseHandle(info->mutex);
-				info->mutex = NULL;
+			mutex = UtilCreateGlobalMutex(info->key.c_str());
+			if( mutex ){
+				break;
 			}
-#else
-			if( parsed ){
-				Format(info->key, L"%ls%ls%d_%u.lock", EDCB_INI_ROOT, mutexName, n, info->port);
-			}else{
-				Format(info->key, L"%ls%ls%ls_%u.lock", EDCB_INI_ROOT, mutexName, ip, info->port);
-			}
-			info->mutex = UtilOpenFile(info->key, UTIL_SECURE_WRITE);
-			if( info->mutex ){
-				string strKey;
-				WtoUTF8(info->key, strKey);
-				struct stat st[2];
-				if( fstat(fileno(info->mutex), st) == 0 && stat(strKey.c_str(), st + 1) == 0 && st[0].st_ino == st[1].st_ino ){
-					break;
-				}
-				fclose(info->mutex);
-				info->mutex = NULL;
-			}
-#endif
 		}
-		if( info->mutex ){
+		if( mutex ){
 			//開始
-			AddDebugLogFormat(L"%ls", info->key.c_str());
+			AddDebugLogFormat(L"Global\\%ls", info->key.c_str());
 			sendNW->Initialize();
 			if( tcp ){
 				sendNW->AddSendAddr(ip, info->port);

@@ -328,8 +328,13 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 			if( ((flags & 32) && (flags & 64)) || flock(fileno(fp), ((flags & 32) ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0 ){
 				return fp;
 			}
+			if( apiError ){
+				*apiError = errno == EACCES ? EAGAIN : errno;
+			}
 			// (ほぼないが)ファイル生成後にロックに失敗した場合のロールバックはしない
 			fclose(fp);
+		}else if( apiError ){
+			*apiError = errno;
 		}
 	}
 #endif
@@ -647,6 +652,70 @@ wstring UtilGetStorageID(const fs_path& directoryPath)
 		return ret;
 	}
 	return UtilGetStorageID(directoryPath.parent_path());
+#endif
+}
+
+namespace
+{
+void CloseGlobalMutex(void* p)
+{
+#ifdef _WIN32
+	CloseHandle(p);
+#else
+	std::unique_ptr<pair<FILE*, string>> f((pair<FILE*, string>*)p);
+	remove(f->second.c_str());
+	fclose(f->first);
+#endif
+}
+}
+
+util_unique_handle UtilCreateGlobalMutex(LPCWSTR name, bool* alreadyExists)
+{
+	if( alreadyExists ){
+		*alreadyExists = false;
+	}
+#ifdef _WIN32
+	HANDLE h = NULL;
+	if( name && wcslen(name) < MAX_PATH - 7 ){
+		WCHAR sz[MAX_PATH];
+		swprintf_s(sz, L"Global\\%ls", name);
+		h = CreateMutex(NULL, FALSE, sz);
+		if( h && GetLastError() == ERROR_ALREADY_EXISTS ){
+			if( alreadyExists ){
+				*alreadyExists = true;
+			}
+			CloseHandle(h);
+			h = NULL;
+		}
+	}
+	return util_unique_handle(h, CloseGlobalMutex);
+#else
+	std::unique_ptr<pair<FILE*, string>> f;
+	if( name ){
+		f.reset(new pair<FILE*, string>());
+		fs_path path = fs_path(EDCB_INI_ROOT).append(L"Global_").concat(name);
+		WtoUTF8(path.native(), f->second);
+		int apiError;
+		f->first = UtilOpenFile(path, UTIL_SECURE_WRITE, &apiError);
+		struct stat st[2];
+		if( f->first == NULL ){
+			if( alreadyExists ){
+				*alreadyExists = apiError == EAGAIN;
+			}
+			f.reset();
+		}else if( fstat(fileno(f->first), st) != 0 ){
+			fclose(f->first);
+			f.reset();
+		}else if( stat(f->second.c_str(), st + 1) != 0 || st[0].st_ino != st[1].st_ino ){
+			// 競合状態
+			if( alreadyExists ){
+				*alreadyExists = true;
+			}
+			fclose(f->first);
+			f.reset();
+		}
+	}
+	return util_unique_handle(f.release(), CloseGlobalMutex);
 #endif
 }
 

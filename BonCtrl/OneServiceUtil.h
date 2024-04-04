@@ -4,6 +4,7 @@
 #include "../Common/TSPacketUtil.h"
 #include "../Common/StringUtil.h"
 #include "../Common/SendTSTCPDllUtil.h"
+#include "../Common/PathUtil.h"
 
 #include "BonCtrlDef.h"
 #include "WriteTSFile.h"
@@ -174,8 +175,8 @@ protected:
 
 	int enableScramble;
 
-	vector<HANDLE> udpPortMutex;
-	vector<HANDLE> tcpPortMutex;
+	vector<util_unique_handle> udpPortMutex;
+	vector<util_unique_handle> tcpPortMutex;
 
 	CSendTSTCPDllUtil sendUdp;
 	CSendTSTCPDllUtil sendTcp;
@@ -198,7 +199,7 @@ protected:
 		vector<NW_SEND_INFO>* sendList,
 		BOOL tcpFlag,
 		CSendTSTCPDllUtil& sendNW,
-		vector<HANDLE>& portMutexList,
+		vector<util_unique_handle>& portMutexList,
 		LPCWSTR mutexName
 		);
 	void StratPittariRec();

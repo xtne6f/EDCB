@@ -71,18 +71,10 @@ int wmain(int argc, wchar_t **argv)
 		}
 	}
 
-	HANDLE hMutex = CreateMutex(nullptr, FALSE, EPG_TIMER_BON_SRV_MUTEX);
-	if (hMutex) {
-		if (GetLastError() == ERROR_ALREADY_EXISTS) {
-			CloseHandle(hMutex);
-			hMutex = nullptr;
-		}
-	}
-	if (!hMutex) {
+	if (!UtilCreateGlobalMutex(EPG_TIMER_BON_SRV_MUTEX)) {
 		fputws(L"Error: Close the EpgTimerSrv process.\n", stdout);
 		return 1;
 	}
-	CloseHandle(hMutex);
 
 	fputws(RESERVE_TEXT_NAME "...", stdout);
 	{
