@@ -265,14 +265,14 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 
 			for(;;){
 				DWORD dwWrite = 0;
-				DWORD head[2];
+				BYTE head[8];
 				DWORD n = 0;
-				for( DWORD m; n < sizeof(head) && ReadFile(hPipe, (BYTE*)head + n, sizeof(head) - n, &m, NULL); n += m );
+				for( DWORD m; n < sizeof(head) && ReadFile(hPipe, head + n, sizeof(head) - n, &m, NULL); n += m );
 				if( n != sizeof(head) ){
 					break;
 				}
-				CCmdStream cmd(head[0]);
-				cmd.Resize(head[1]);
+				CCmdStream cmd(head[0] | head[1] << 8 | head[2] << 16 | (DWORD)head[3] << 24);
+				cmd.Resize(head[4] | head[5] << 8 | head[6] << 16 | (DWORD)head[7] << 24);
 				n = 0;
 				for( DWORD m; n < cmd.GetDataSize() && ReadFile(hPipe, cmd.GetData() + n, cmd.GetDataSize() - n, &m, NULL); n += m );
 				if( n != cmd.GetDataSize() ){
@@ -309,14 +309,14 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 			int sock = accept4(pSys->srvSock, NULL, NULL, SOCK_CLOEXEC);
 			if( sock >= 0 ){
 				for(;;){
-					DWORD head[2];
+					BYTE head[8];
 					DWORD n = 0;
-					for( int m; n < sizeof(head) && (m = (int)recv(sock, (BYTE*)head + n, sizeof(head) - n, 0)) > 0; n += m );
+					for( int m; n < sizeof(head) && (m = (int)recv(sock, head + n, sizeof(head) - n, 0)) > 0; n += m );
 					if( n != sizeof(head) ){
 						break;
 					}
-					CCmdStream cmd(head[0]);
-					cmd.Resize(head[1]);
+					CCmdStream cmd(head[0] | head[1] << 8 | head[2] << 16 | (DWORD)head[3] << 24);
+					cmd.Resize(head[4] | head[5] << 8 | head[6] << 16 | (DWORD)head[7] << 24);
 					n = 0;
 					for( int m; n < cmd.GetDataSize() && (m = (int)recv(sock, cmd.GetData() + n, cmd.GetDataSize() - n, 0)) > 0; n += m );
 					if( n != cmd.GetDataSize() ){

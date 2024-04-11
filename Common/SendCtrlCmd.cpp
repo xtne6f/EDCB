@@ -177,7 +177,6 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CCmdStream& cmd, CC
 #endif
 
 	//送信
-	DWORD head[2];
 	DWORD n;
 #ifdef _WIN32
 	if( WriteFile(pipe, cmd.GetStream(), cmd.GetStreamSize(), &n, NULL) == FALSE ){
@@ -189,18 +188,19 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CCmdStream& cmd, CC
 	}
 
 	//受信
+	BYTE head[8];
 	n = 0;
 #ifdef _WIN32
-	for( DWORD m; n < sizeof(head) && ReadFile(pipe, (BYTE*)head + n, sizeof(head) - n, &m, NULL); n += m );
+	for( DWORD m; n < sizeof(head) && ReadFile(pipe, head + n, sizeof(head) - n, &m, NULL); n += m );
 #else
-	for( int m; n < sizeof(head) && (m = (int)recv(sock, (BYTE*)head + n, sizeof(head) - n, 0)) > 0; n += m );
+	for( int m; n < sizeof(head) && (m = (int)recv(sock, head + n, sizeof(head) - n, 0)) > 0; n += m );
 #endif
 	if( n != sizeof(head) ){
 		closeFile();
 		return CMD_ERR;
 	}
-	res->SetParam(head[0]);
-	res->Resize(head[1]);
+	res->SetParam(head[0] | head[1] << 8 | head[2] << 16 | (DWORD)head[3] << 24);
+	res->Resize(head[4] | head[5] << 8 | head[6] << 16 | (DWORD)head[7] << 24);
 	n = 0;
 #ifdef _WIN32
 	for( DWORD m; n < res->GetDataSize() && ReadFile(pipe, res->GetData() + n, res->GetDataSize() - n, &m, NULL); n += m );
@@ -276,18 +276,18 @@ DWORD SendTCP(const wstring& ip, DWORD port, DWORD timeOut, const CCmdStream& cm
 	}
 
 	//送信
-	DWORD head[2];
 	if( send(sock, (const char*)cmd.GetStream(), cmd.GetStreamSize(), 0) != (int)cmd.GetStreamSize() ){
 		closesocket(sock);
 		return CMD_ERR;
 	}
 	//受信
+	BYTE head[8];
 	if( RecvAll(sock, (char*)head, sizeof(head), 0) != (int)sizeof(head) ){
 		closesocket(sock);
 		return CMD_ERR;
 	}
-	res->SetParam(head[0]);
-	res->Resize(head[1]);
+	res->SetParam(head[0] | head[1] << 8 | head[2] << 16 | (DWORD)head[3] << 24);
+	res->Resize(head[4] | head[5] << 8 | head[6] << 16 | (DWORD)head[7] << 24);
 	if( RecvAll(sock, (char*)res->GetData(), res->GetDataSize(), 0) != (int)res->GetDataSize() ){
 		closesocket(sock);
 		return CMD_ERR;

@@ -31,6 +31,43 @@ const BYTE* ReadVectorIntro( const BYTE** buff, const BYTE** buffEnd, DWORD* val
 	return rb;
 }
 
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, DWORD val )
+{
+	WriteVALUE(ver, buff, buffOffset, (WORD)val);
+	WriteVALUE(ver, buff, buffOffset + 2, (WORD)(val >> 16));
+	return 4;
+}
+
+bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, DWORD* val )
+{
+	(void)ver;
+	if( buffEnd - *buff < 4 ){
+		return false;
+	}
+	*val = **buff | (*buff)[1] << 8 | (*buff)[2] << 16 | (DWORD)(*buff)[3] << 24;
+	*buff += 4;
+	return true;
+}
+
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, ULONGLONG val )
+{
+	WriteVALUE(ver, buff, buffOffset, (DWORD)val);
+	WriteVALUE(ver, buff, buffOffset + 4, (DWORD)(val >> 32));
+	return 8;
+}
+
+bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, ULONGLONG* val )
+{
+	(void)ver;
+	if( buffEnd - *buff < 8 ){
+		return false;
+	}
+	*val = **buff | (*buff)[1] << 8 | (*buff)[2] << 16 | (DWORD)(*buff)[3] << 24 |
+	       (ULONGLONG)((*buff)[4] | (*buff)[5] << 8 | (*buff)[6] << 16 | (DWORD)(*buff)[7] << 24) << 32;
+	*buff += 8;
+	return true;
+}
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const wstring& val, bool oldFormat )
 {
 	(void)ver;
@@ -47,18 +84,25 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const wstring& val, bo
 		DWORD pos = buffOffset + WriteVALUE(0, buff, buffOffset, oldFormat ? size - (DWORD)sizeof(DWORD) : size);
 #if WCHAR_MAX > 0xFFFF
 		for( size_t i = 0; i < val.size() + 1; i++ ){
+			WORD w;
 			if( 0x10000 <= val[i] && val[i] < 0x110000 ){
-				WORD ww[2] = { (WORD)((val[i] - 0x10000) / 0x400 + 0xD800), (WORD)((val[i] - 0x10000) % 0x400 + 0xDC00) };
-				memcpy(buff + pos, ww, sizeof(ww));
-				pos += sizeof(ww);
+				w = (WORD)((val[i] - 0x10000) / 0x400 + 0xD800);
+				buff[pos++] = (BYTE)w;
+				buff[pos++] = (BYTE)(w >> 8);
+				w = (WORD)((val[i] - 0x10000) % 0x400 + 0xDC00);
 			}else{
-				WORD w = (WORD)val[i];
-				memcpy(buff + pos, &w, sizeof(w));
-				pos += sizeof(w);
+				w = (WORD)val[i];
 			}
+			buff[pos++] = (BYTE)w;
+			buff[pos++] = (BYTE)(w >> 8);
 		}
+#elif defined(_WIN32)
+		std::copy((const BYTE*)val.c_str(), (const BYTE*)(val.c_str() + val.size() + 1), buff + pos);
 #else
-		memcpy(buff + pos, val.c_str(), (val.size() + 1) * sizeof(WCHAR));
+		for( size_t i = 0; i < val.size() + 1; i++ ){
+			buff[pos++] = (BYTE)val[i];
+			buff[pos++] = (BYTE)(val[i] >> 8);
+		}
 #endif
 	}
 	return size;
@@ -88,19 +132,46 @@ bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, wstring* val, 
 		val->reserve((valSize - sizeof(DWORD)) / sizeof(WORD) - 1);
 	}
 	while( rb < buffEnd - 1 && (rb[0] || rb[1]) ){
-		union { WORD w; BYTE b[2]; } x;
-		x.b[0] = *(rb++);
-		x.b[1] = *(rb++);
+		WORD w = rb[0] | rb[1] << 8;
+		rb += 2;
 #if WCHAR_MAX > 0xFFFF
-		if( 0xD800 <= x.w && x.w < 0xDC00 && rb < buffEnd - 1 && (rb[0] || rb[1]) ){
-			val->push_back(0x10000 + (x.w - 0xD800) * 0x400);
-			x.b[0] = *(rb++);
-			x.b[1] = *(rb++);
-			val->back() += x.w - 0xDC00;
+		if( 0xD800 <= w && w < 0xDC00 && rb < buffEnd - 1 && (rb[0] || rb[1]) ){
+			WORD x = rb[0] | rb[1] << 8;
+			rb += 2;
+			val->push_back(0x10000 + (w - 0xD800) * 0x400 + (x - 0xDC00));
 			continue;
 		}
 #endif
-		val->push_back(x.w);
+		val->push_back(w);
+	}
+	return true;
+}
+
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SYSTEMTIME& val )
+{
+	DWORD pos = buffOffset;
+	pos += WriteVALUE(ver, buff, pos, val.wYear);
+	pos += WriteVALUE(ver, buff, pos, val.wMonth);
+	pos += WriteVALUE(ver, buff, pos, val.wDayOfWeek);
+	pos += WriteVALUE(ver, buff, pos, val.wDay);
+	pos += WriteVALUE(ver, buff, pos, val.wHour);
+	pos += WriteVALUE(ver, buff, pos, val.wMinute);
+	pos += WriteVALUE(ver, buff, pos, val.wSecond);
+	pos += WriteVALUE(ver, buff, pos, val.wMilliseconds);
+	return pos - buffOffset;
+}
+
+bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SYSTEMTIME* val )
+{
+	if( !ReadVALUE(ver, buff, buffEnd, &val->wYear) ||
+	    !ReadVALUE(ver, buff, buffEnd, &val->wMonth) ||
+	    !ReadVALUE(ver, buff, buffEnd, &val->wDayOfWeek) ||
+	    !ReadVALUE(ver, buff, buffEnd, &val->wDay) ||
+	    !ReadVALUE(ver, buff, buffEnd, &val->wHour) ||
+	    !ReadVALUE(ver, buff, buffEnd, &val->wMinute) ||
+	    !ReadVALUE(ver, buff, buffEnd, &val->wSecond) ||
+	    !ReadVALUE(ver, buff, buffEnd, &val->wMilliseconds) ){
+		return false;
 	}
 	return true;
 }
@@ -112,7 +183,9 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const FILE_DATA& val )
 	pos += WriteVALUE(ver, buff, pos, (DWORD)val.Data.size());
 	pos += WriteVALUE(ver, buff, pos, (DWORD)0);
 	if( (DWORD)val.Data.size() != 0 ){
-		if( buff != NULL ) memcpy(buff + pos, &val.Data.front(), (DWORD)val.Data.size());
+		if( buff != NULL ){
+			std::copy(val.Data.begin(), val.Data.begin() + (DWORD)val.Data.size(), buff + pos);
+		}
 		pos += (DWORD)val.Data.size();
 	}
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
