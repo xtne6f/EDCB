@@ -2,9 +2,11 @@
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+-- HLSの開始はPOSTでなければならない
 query=AssertPost()
-if not query then
-  -- POSTでなくてもよい
+open=query and GetVarInt(query,'open')==1
+if open or not query then
+  -- URLクエリにもCSRF対策トークンが必要
   query=mg.request_info.query_string
   AssertCsrf(query)
 end
@@ -12,16 +14,16 @@ end
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
-hls=GetVarInt(query,'hls',1)
+hlsKey=mg.get_var(query,'hls')
 hls4=GetVarInt(query,'hls4',0) or 0
-caption=hls and option.captionHls or option.captionNone or ''
-output=hls and option.outputHls or option.output
+caption=hlsKey and option.captionHls or option.captionNone or ''
+output=hlsKey and option.outputHls or option.output
 n=GetVarInt(query,'n') or 0
 onid,tsid,sid=GetVarServiceID(query,'id')
 if onid==0 and tsid==0 and sid==0 then
   onid=nil
 end
-if hls and not (ALLOW_HLS and option.outputHls) then
+if hlsKey and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
   n=nil
   onid=nil
@@ -30,6 +32,9 @@ psidata=GetVarInt(query,'psidata')==1
 jikkyo=GetVarInt(query,'jikkyo')==1
 hlsMsn=GetVarInt(query,'_HLS_msn',1)
 hlsPart=GetVarInt(query,'_HLS_part',0)
+
+-- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
+hlsKey=hlsKey and n and mg.md5('view:'..hlsKey..(onid and ':nwtv' or ':')..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
 
 -- フラグメント長の目安
 partConfigSec=0.8
@@ -92,7 +97,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
       cmd=cmd..' 2>>"'..log:gsub('[&%^]','^%0')..'"'
     end
   end
-  if hls then
+  if hlsKey then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
     -- プロセス終了時に対応するNetworkTVモードも終了させる
     cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 -p '..partConfigSec..' '
@@ -104,7 +109,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
           .."','Setting\\\\HttpPublic.ini')=='"..nwtvclose[2].."')then;edcb.CloseNetworkTV("..nwtvclose[1]..");end\" "
       end
     end
-    cmd=cmd..segmentKey..'_'
+    cmd=cmd..hlsKey..'_'
   elseif XCODE_BUF>0 then
     cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
   end
@@ -114,20 +119,20 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   c5or1=(c5or1 or (stat=='exit' and code==2)) and 5 or 1
   -- "-z"はプロセス検索用
   cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c '..c5or1..' -u 2 '..pipeName..' | '..cmd
-  if hls then
+  if hlsKey then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
     if indexCount<10 then
       edcb.os.execute('start "" /b cmd /s /c "'..(nwtvclose and 'cd /d "'..tools..'" && ' or '')..cmd..'"')
       for i=1,100 do
-        local f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
+        local f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
         if f then
           return f
         end
         edcb.Sleep(100)
       end
       -- 失敗。プロセスが残っていたら終わらせる
-      TerminateCommandlineLike('tsmemseg.exe','% '..segmentKey..'[_]%')
+      TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-'..searchName..' %')
     end
     return nil
   end
@@ -205,7 +210,7 @@ function CreateHlsPlaylist(f)
             a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
             timeTag=nil
           end
-          a[#a+1]='#EXT-X-PART:DURATION='..fragDuration..',URI="segment.lua?c='..segmentKey..('_%02d_%d_%d"'):format(segIndex,segCount,j)
+          a[#a+1]='#EXT-X-PART:DURATION='..fragDuration..',URI="segment.lua?c='..hlsKey..('_%02d_%d_%d"'):format(segIndex,segCount,j)
             ..(j==1 and ',INDEPENDENT=YES' or '')..'\n'
         end
         xbuf=xbuf:sub(17)
@@ -215,14 +220,14 @@ function CreateHlsPlaylist(f)
       if segAvailable and (endList or nextSegAvailable) then
         if not hasSeg then
           a[#a+1]='#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
-            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..segmentKey..'"\n' or '')
+            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..hlsKey..'"\n' or '')
             ..(endList and '#EXT-X-ENDLIST\n' or '')
           hasSeg=true
         end
         if isMp4 and hls4>1 and timeTag then
           a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
         end
-        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_%d\n'):format(segIndex,segCount)
+        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..hlsKey..('_%02d_%d\n'):format(segIndex,segCount)
       end
       buf=buf:sub(17)
     end
@@ -241,12 +246,9 @@ if onid then
     -- NetworkTVモードを終了
     edcb.CloseNetworkTV(n)
   elseif 0<=n and n<100 then
-    if hls and not psidata and not jikkyo then
-      -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-      segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
-      f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
-    end
-    if not f then
+    if hlsKey and not open and not psidata and not jikkyo then
+      f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
+    else
       if psidata or jikkyo then
         ok,pid=edcb.IsOpenNetworkTV(n)
       else
@@ -315,12 +317,9 @@ elseif n and n<0 then
   -- プロセスが残っていたらすべて終わらせる
   TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-view-%')
 elseif n and n<=65535 then
-  if hls and not psidata and not jikkyo then
-    -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-    segmentKey=mg.md5('view:'..hls..':'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
-    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
-  end
-  if not f then
+  if hlsKey and not open and not psidata and not jikkyo then
+    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
+  else
     if not psidata and not jikkyo then
       -- 前回のプロセスが残っていたら終わらせる
       TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-view-'..n..' %')
@@ -388,7 +387,7 @@ elseif psidata or jikkyo then
   end
   if f.psi then f.psi:close() end
   if f.jk then f.jk:close() end
-elseif hls then
+elseif hlsKey then
   -- インデックスファイルを返す
   i=1
   while true do
@@ -401,7 +400,7 @@ elseif hls then
       break
     end
     edcb.Sleep(200)
-    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
+    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
     if not f then break end
     i=i+1
   end

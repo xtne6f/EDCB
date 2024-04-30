@@ -122,7 +122,7 @@ else
         ..(vtag~=0 and vtag~=1 and 'library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')..'&amp;h='..hash..'&amp;vtag=1'
              or PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'))
         ..'">/'..EdcbHtmlEscape(ref)..(vtag==1 and '<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
-                                         ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplete() or '</a>'))
+                                         ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplate() or '</a>'))
       if info.ists then
         fsec,fsize=0,0
         f=edcb.io.open(dir..'\\'..info.name,'rb')
@@ -136,17 +136,17 @@ else
                or '<input type="hidden" name="i" value="'..index..'">\n'
                  ..(dirhash and '<input type="hidden" name="d" value="'..dirhash..'">\n' or '')
                  ..'<input type="hidden" name="h" value="'..hash..'">\n<input type="hidden" name="vtag" value="10">\n'
-                 ..'<input type="hidden" name="'..(vtag==10 and 're' or '')..'load" value="'..(xq.loadtime or os.time()%86400)..'">\n')
+                 ..'<input type="hidden" name="'..(vtag==10 and 're' or '')..'load" value="'..(xq.loadKey or edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'">\n')
           ..'<button type="submit">xcode</button>\n'
-          ..TranscodeSettingTemplete(xq,fsec)
+          ..TranscodeSettingTemplate(xq,fsec)
           ..'</div></form>')
         if vtag==10 then
           src='xcode.lua?fname='..mg.url_encode(ref)..ConstructTranscodeQueries(xq)
           ct:Append('\n'..VideoWrapperBegin()
             ..'<video id="vid" autoplay playsinline controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>xcode</video>'..VideoWrapperEnd()..'\n'
-            ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(false,xq.caption,xq.jikkyo,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
+            ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplate(false,xq.caption,xq.jikkyo,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
           if ALLOW_HLS then
-            ct:Append(HlsScriptTemplete())
+            ct:Append(HlsScriptTemplate('xcode.lua'))
           end
         end
       else

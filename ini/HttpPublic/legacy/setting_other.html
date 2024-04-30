@@ -114,7 +114,7 @@ ct:Append([=[<option value="20000"]=]..Selected(math.floor(epgArchivePeriodHour/
   <label><input name="saveDebugLog"]=]..Checkbox(saveDebugLog)..[=[>デバッグ出力をファイルに保存する</label><br>
   TSファイルの拡張子 <input type="text" name="tsExt" value="]=]..tsExt..[=[" size="8"><br>
   <button type="submit">変更</button><br>
-]=]..(compatFlags%4096==4095 and '  ・現在のEpgTimerSrvの応答はtkntrec版互換です。\n')..[=[
+]=]..(compatFlags%4096==4095 and '  ・現在のEpgTimerSrvの応答はtkntrec版互換です。\n' or '')..[=[
 </div></form>
 </div>
 <div id="footer">

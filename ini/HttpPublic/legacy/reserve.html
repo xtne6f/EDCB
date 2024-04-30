@@ -96,7 +96,7 @@ if #a>0 then
     ct:Append('<option value="'..v..'"'..(n==v and ' selected' or '')..'>-pipe'..v)
   end
   ct:Append('</select>\n'
-    ..TranscodeSettingTemplete(xq)
+    ..TranscodeSettingTemplate(xq)
     ..(vtag==0 and '<input type="hidden" name="ctok" value="'..CsrfToken('view.lua')..'">\n'
          or '<input type="hidden" name="vtag" value="1">\n')
     ..'</div></form>\n')
@@ -106,9 +106,9 @@ if #a>0 then
         src='view.lua?n='..v..ConstructTranscodeQueries(xq)..'&amp;ctok='..CsrfToken('view.lua')
         ct:Append(VideoWrapperBegin()
           ..'<video id="vid" autoplay playsinline controls'..(ALLOW_HLS and '' or ' src="'..src..'"')..'>view</video>'..VideoWrapperEnd()..'\n'
-          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplete(true,xq.caption,xq.jikkyo,{n=v}))
+          ..'<div id="vidsrc" style="display:none">'..src..'</div>\n'..TranscodeScriptTemplate(true,xq.caption,xq.jikkyo,{n=v}))
         if ALLOW_HLS then
-          ct:Append(HlsScriptTemplete())
+          ct:Append(HlsScriptTemplate('view.lua'))
         end
         ct:Append('\n')
         break

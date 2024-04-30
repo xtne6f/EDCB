@@ -246,7 +246,8 @@ function Selected(b)
 end
 
 function GetTranscodeQueries(qs)
-  local reload=GetVarInt(qs,'reload',0,86400-1)
+  local reload=(mg.get_var(qs,'reload') or ''):match('^'..('[0-9a-f]'):rep(16,'?')..'$')
+  local loadKey=reload or (mg.get_var(qs,'load') or ''):match('^'..('[0-9a-f]'):rep(16,'?')..'$')
   return {
     option=GetVarInt(qs,'option',1,#XCODE_OPTIONS),
     offset=GetVarInt(qs,'offset',0,100),
@@ -254,7 +255,7 @@ function GetTranscodeQueries(qs)
     cinema=GetVarInt(qs,'cinema')==1,
     fast=GetVarInt(qs,'fast')==1,
     reload=not not reload,
-    loadtime=reload or GetVarInt(qs,'load',0,86400-1),
+    loadKey=loadKey,
     caption=(GetVarInt(qs,'caption') or XCODE_CHECK_CAPTION and 1)==1,
     jikkyo=(GetVarInt(qs,'jikkyo') or XCODE_CHECK_JIKKYO and 1)==1,
   }
@@ -266,7 +267,7 @@ function ConstructTranscodeQueries(xq)
     ..(xq.audio2 and '&amp;audio2=1' or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
     ..(xq.fast and '&amp;fast=1' or '')
-    ..(xq.loadtime and '&amp;'..(xq.reload and 're' or '')..'load='..xq.loadtime or '')
+    ..(xq.loadKey and '&amp;'..(xq.reload and 're' or '')..'load='..xq.loadKey or '')
 end
 
 function VideoWrapperBegin()
@@ -280,7 +281,7 @@ function VideoWrapperEnd()
   return '</div></div></div>'
 end
 
-function TranscodeSettingTemplete(xq,fsec)
+function TranscodeSettingTemplate(xq,fsec)
   local s='<select name="option">'
   for i,v in ipairs(XCODE_OPTIONS) do
     if not ALLOW_HLS or not ALWAYS_USE_HLS or v.outputHls then
@@ -308,9 +309,9 @@ function TranscodeSettingTemplete(xq,fsec)
   return s
 end
 
-function OnscreenButtonsScriptTemplete()
+function OnscreenButtonsScriptTemplate()
   return [=[
-<script src="script.js?ver=20240114"></script>
+<script src="script.js?ver=20240430"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
@@ -380,8 +381,8 @@ var checkJikkyoDisplay=function(){};
 ]=]
 end
 
-function VideoScriptTemplete()
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false,XCODE_CHECK_JIKKYO)..[=[
+function VideoScriptTemplate()
+  return OnscreenButtonsScriptTemplate()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false,XCODE_CHECK_JIKKYO)..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(XCODE_CHECK_CAPTION)..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
 <script>
@@ -395,8 +396,8 @@ runVideoScript(]=]
 ]=]
 end
 
-function TranscodeScriptTemplete(live,caption,jikkyo,params)
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live,jikkyo)..[=[
+function TranscodeScriptTemplate(live,caption,jikkyo,params)
+  return OnscreenButtonsScriptTemplate()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live,jikkyo)..[=[
 <label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(caption)..[=[>caption</label>
 ]=]..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <input id="vid-seek" type="range" style="display:none">
@@ -415,7 +416,7 @@ runTranscodeScript(]=]
 ]=]
 end
 
-function HlsScriptTemplete()
+function HlsScriptTemplate(target)
   return [=[
 <script src="aribb24.js"></script>
 ]=]..(ALWAYS_USE_HLS and [=[
@@ -425,7 +426,8 @@ function HlsScriptTemplete()
 runHlsScript(]=]
   ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
   ..(ALWAYS_USE_HLS and 'true' or 'false')..','
-  ..'"&hls='..(1+os.time()%86400)..'",'
+  ..'"ctok='..CsrfToken(target)..'&open=1",'
+  ..'"&hls='..(edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'",'
   ..'"'..(USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or '')..'"'..[=[
 );
 </script>

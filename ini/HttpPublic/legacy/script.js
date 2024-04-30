@@ -237,10 +237,13 @@ function decodeB24CaptionFromCueText(text,work){
   return ret;
 }
 
-function waitForHlsStart(src,interval,delay,onerror,onstart){
+function waitForHlsStart(src,postQuery,interval,delay,onerror,onstart){
+  var method="POST";
   (function poll(){
     var xhr=new XMLHttpRequest();
-    xhr.open("GET",src);
+    xhr.open(method,src);
+    if(method=="POST")xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+    method="GET";
     xhr.onload=function(){
       if(xhr.status==200&&xhr.response){
         if(xhr.response.indexOf('#EXT-X-MEDIA-SEQUENCE:')<0)setTimeout(poll,interval);
@@ -249,7 +252,7 @@ function waitForHlsStart(src,interval,delay,onerror,onstart){
         onerror();
       }
     }
-    xhr.send();
+    xhr.send(postQuery);
   })();
 }
 
@@ -879,7 +882,7 @@ function runTranscodeScript(useDatacast,useLiveJikkyo,useJikkyoLog,ofssec,fast,p
   }
 }
 
-function runHlsScript(aribb24UseSvg,aribb24Option,alwaysUseHls,hlsQuery,hlsMp4Query){
+function runHlsScript(aribb24UseSvg,aribb24Option,alwaysUseHls,postQuery,hlsQuery,hlsMp4Query){
   var cap=null;
   var cbCaption=document.getElementById("cb-caption");
   function onclickCaption(){
@@ -904,7 +907,7 @@ function runHlsScript(aribb24UseSvg,aribb24Option,alwaysUseHls,hlsQuery,hlsMp4Qu
     vid.poster="loading.png";
     waitForHlsStart(document.getElementById("vidsrc").textContent+
       //Excludes Firefox for Android, because playback of non-keyframe fragmented MP4 is jerky.
-      hlsQuery+(/Android.+Firefox/i.test(navigator.userAgent)?"":hlsMp4Query),1000,1000,function(){vid.poster=null;},function(src){
+      hlsQuery+(/Android.+Firefox/i.test(navigator.userAgent)?"":hlsMp4Query),postQuery,1000,1000,function(){vid.poster=null;},function(src){
       if(Hls.isSupported()){
         var hls=new Hls();
         hls.loadSource(src);
@@ -942,7 +945,7 @@ function runHlsScript(aribb24UseSvg,aribb24Option,alwaysUseHls,hlsQuery,hlsMp4Qu
       var cbLive=document.getElementById("cb-live");
       if(cbLive)cbLive.checked=true;
       vid.poster="loading.png";
-      waitForHlsStart(document.getElementById("vidsrc").textContent+hlsQuery+hlsMp4Query,1000,1000,function(){vid.poster=null;},function(src){
+      waitForHlsStart(document.getElementById("vidsrc").textContent+hlsQuery+hlsMp4Query,postQuery,1000,1000,function(){vid.poster=null;},function(src){
         vid.src=src;
       });
     }else{
