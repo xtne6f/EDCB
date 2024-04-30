@@ -720,7 +720,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					op = ctx->sys->httpOptions;
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() ){
-					ctx->sys->httpServerRandom = CHttpServer::CreateRandom();
+					ctx->sys->httpServerRandom = CHttpServer::CreateRandom(32);
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() == false ){
 					CEpgTimerSrvMain* sys = ctx->sys;
@@ -2930,6 +2930,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 {
 	static const luaL_Reg closures[] = {
+		{ "CreateRandom", LuaCreateRandom },
 		{ "GetGenreName", LuaGetGenreName },
 		{ "GetComponentTypeName", LuaGetComponentTypeName },
 		{ "Sleep", LuaSleep },
@@ -2999,13 +3000,29 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 	lua_pushliteral(L, "io");
 	luaL_newlib(L, iolib);
 	lua_rawset(L, -3);
+#else
+	//ファイル記述子へのFD_CLOEXECフラグ追加とBSDロック使用のため
+	static const luaL_Reg iolib[] = {
+		{ "_cloexec", LuaHelp::io_cloexec },
+		{ "_flock_nb", LuaHelp::io_flock_nb },
+		{ NULL, NULL }
+	};
+	lua_pushliteral(L, "io");
+	luaL_newlib(L, iolib);
+	lua_rawset(L, -3);
 #endif
 	lua_setglobal(L, "edcb");
 #ifndef _WIN32
-	//UTF-8補完は不要(単なるエイリアス)
+	//UTF-8補完は不要(基本的に単なるエイリアス)
 	luaL_dostring(L,
 		"edcb.os=os;"
-		"edcb.io=io;");
+		"for k,v in pairs(io) do edcb.io[k]=v end;"
+		"edcb.io.open=function(n,m)"
+		" local f,e=io.open(n,m)"
+		" if not f then return f,e end"
+		" edcb.io._cloexec(f)"
+		" return f;"
+		"end;");
 #endif
 	luaL_dostring(L,
 		"package.path=package.path:gsub(';%.[\\\\/][^;]*','');"
@@ -3149,6 +3166,18 @@ const char* CEpgTimerSrvMain::CLuaWorkspace::WtoUTF8(const wstring& strIn)
 		}
 	}
 	return &this->strOut[0];
+}
+
+int CEpgTimerSrvMain::LuaCreateRandom(lua_State* L)
+{
+	int len = (int)lua_tointeger(L, 1);
+	string ret;
+	if( len == 0 || (len <= 1024 * 1024 && (ret = CHttpServer::CreateRandom(len)).empty() == false) ){
+		lua_pushstring(L, ret.c_str());
+		return 1;
+	}
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaGetGenreName(lua_State* L)

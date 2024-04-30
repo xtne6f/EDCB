@@ -31,7 +31,7 @@ public:
 	bool StartServer(const SERVER_OPTIONS& op, const std::function<void(lua_State*)>& initProc);
 	bool StopServer(bool checkOnly = false);
 	static SERVER_OPTIONS LoadServerOptions(LPCWSTR iniPath);
-	static string CreateRandom();
+	static string CreateRandom(size_t len);
 private:
 	static void InitLua(const mg_connection* conn, void* luaContext, unsigned int contextFlags);
 	mg_context* mgContext;
@@ -66,5 +66,8 @@ namespace LuaHelp
 	int io_open(lua_State* L);
 	int io_popen(lua_State* L);
 	void f_createmeta(lua_State* L);
+#else
+	int io_cloexec(lua_State* L);
+	int io_flock_nb(lua_State* L);
 #endif
 }
