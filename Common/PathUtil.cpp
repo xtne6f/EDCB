@@ -753,7 +753,8 @@ BOOL WritePrivateProfileString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpStrin
 			int c;
 			do{
 				c = fgetc(fp.get());
-				if( c >= 0 && (char)c && (char)c != '\n' ){
+				c = c >= 0 && (char)c ? c : -1;
+				if( c >= 0 && (char)c != '\n' ){
 					line += (char)c;
 					continue;
 				}
@@ -774,7 +775,8 @@ BOOL WritePrivateProfileString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpStrin
 					m = (m == string::npos ? 0 : m + 1);
 					char d = line[m];
 					line[m] = '\0';
-					hasKey = isKey = CompareNoCase(key, line.c_str()) == 0;
+					isKey = CompareNoCase(key, line.c_str()) == 0;
+					hasKey = hasKey || isKey;
 					line[m] = d;
 					if( isKey && lpString ){
 						line.replace(n + 1, string::npos, val);
@@ -785,7 +787,7 @@ BOOL WritePrivateProfileString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpStrin
 					buff += '\n';
 				}
 				line.clear();
-			}while( c >= 0 && (char)c );
+			}while( c >= 0 );
 
 			if( keyName && lpString ){
 				if( hasApp == false ){
@@ -839,7 +841,8 @@ wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDe
 			int c;
 			do{
 				c = fgetc(fp.get());
-				if( c >= 0 && (char)c && (char)c != '\n' ){
+				c = c >= 0 && (char)c ? c : -1;
+				if( c >= 0 && (char)c != '\n' ){
 					line += (char)c;
 					continue;
 				}
@@ -865,7 +868,7 @@ wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDe
 					}
 				}
 				line.clear();
-			}while( c >= 0 && (char)c );
+			}while( c >= 0 );
 			break;
 		}else if( UtilFileExists(fileName, &mightExist).first == false && mightExist == false ){
 			break;
