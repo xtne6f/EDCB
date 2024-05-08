@@ -91,14 +91,36 @@ void ParseRecFolderList(LPCWSTR* token, vector<REC_FILE_SET_INFO>& list)
 		if( list[i].recFolder.empty() ){
 			list.erase(list.begin() + i);
 		}else{
-			Separate(list[i].recFolder, L"*", list[i].recFolder, list[i].writePlugIn);
-			Separate(list[i].writePlugIn, L"*", list[i].writePlugIn, list[i].recNamePlugIn);
+			//US制御文字があればそれで分割、なければ*で分割
+			LPCWSTR sep = list[i].recFolder.find(L'\x1F') != wstring::npos ? L"\x1F" : L"*";
+			Separate(list[i].recFolder, sep, list[i].recFolder, list[i].writePlugIn);
+			Separate(list[i].writePlugIn, sep, list[i].writePlugIn, list[i].recNamePlugIn);
 			if( list[i].writePlugIn.empty() ){
 				list[i].writePlugIn = L"Write_Default.dll";
 			}
 			i++;
 		}
 	}
+}
+
+bool SerializeRecFolder(const REC_FILE_SET_INFO& info, wstring& str)
+{
+	if( info.recFolder.find(L'\x1F') != wstring::npos ||
+	    info.writePlugIn.find(L'\x1F') != wstring::npos ){
+		//分割できない場所にUS制御文字がある
+		return false;
+	}
+	//US制御文字を含むか*で分割できないならUS制御文字で区切る
+	WCHAR sep = info.recFolder.find(L'*') != wstring::npos ||
+	            info.writePlugIn.find(L'*') != wstring::npos ||
+	            info.recNamePlugIn.find(L'\x1F') != wstring::npos ? L'\x1F' : L'*';
+	str += info.recFolder;
+	str += sep;
+	str += info.writePlugIn;
+	str += sep;
+	str += info.recNamePlugIn;
+	str += L'\n';
+	return true;
 }
 }
 
@@ -788,19 +810,26 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 
 bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring& saveLine) const
 {
+	wstring strFirstRecFolder;
+	if( item.second.recSetting.recFolderList.empty() == false ){
+		if( SerializeRecFolder(item.second.recSetting.recFolderList[0], strFirstRecFolder) ){
+			//'\n'を除去
+			strFirstRecFolder.pop_back();
+		}else{
+			return false;
+		}
+	}
 	wstring strRecFolder;
 	for( size_t i = 1; i < item.second.recSetting.recFolderList.size(); i++ ){
-		strRecFolder +=
-			item.second.recSetting.recFolderList[i].recFolder + L"*" +
-			item.second.recSetting.recFolderList[i].writePlugIn + L"*" +
-			item.second.recSetting.recFolderList[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.recFolderList[i], strRecFolder) == false ){
+			return false;
+		}
 	}
 	wstring strPartialRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.partialRecFolder.size(); i++ ){
-		strPartialRecFolder +=
-			item.second.recSetting.partialRecFolder[i].recFolder + L"*" +
-			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
-			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.partialRecFolder[i], strPartialRecFolder) == false ){
+			return false;
+		}
 	}
 	Format(saveLine, L"%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls\n%ls\n%ls\n%ls\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%d\n%ls%d\n%d\n%d\n%d\n%d\n%ls",
 		item.second.startTime.wYear, item.second.startTime.wMonth, item.second.startTime.wDay,
@@ -820,10 +849,7 @@ bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring&
 		item.second.recSetting.batFilePath.empty() ? L"0" : item.second.recSetting.batFilePath.c_str(),
 		L"0",
 		item.second.comment.c_str(),
-		item.second.recSetting.recFolderList.empty() ? L"" : (
-			item.second.recSetting.recFolderList[0].recFolder + L"*" +
-			item.second.recSetting.recFolderList[0].writePlugIn + L"*" +
-			item.second.recSetting.recFolderList[0].recNamePlugIn).c_str(),
+		strFirstRecFolder.c_str(),
 		item.second.recSetting.suspendMode,
 		item.second.recSetting.rebootFlag,
 		L"",
@@ -1088,17 +1114,15 @@ bool CParseEpgAutoAddText::SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, 
 	}
 	wstring strRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.recFolderList.size(); i++ ){
-		strRecFolder +=
-			item.second.recSetting.recFolderList[i].recFolder + L"*" +
-			item.second.recSetting.recFolderList[i].writePlugIn + L"*" +
-			item.second.recSetting.recFolderList[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.recFolderList[i], strRecFolder) == false ){
+			return false;
+		}
 	}
 	wstring strPartialRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.partialRecFolder.size(); i++ ){
-		strPartialRecFolder +=
-			item.second.recSetting.partialRecFolder[i].recFolder + L"*" +
-			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
-			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.partialRecFolder[i], strPartialRecFolder) == false ){
+			return false;
+		}
 	}
 	Format(saveLine, L"%d\n%ls\n%ls\n%d\n%d\n%ls\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n",
 		item.second.dataID,
@@ -1244,17 +1268,15 @@ bool CParseManualAutoAddText::SaveLine(const pair<DWORD, MANUAL_AUTO_ADD_DATA>& 
 {
 	wstring strRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.recFolderList.size(); i++ ){
-		strRecFolder +=
-			item.second.recSetting.recFolderList[i].recFolder + L"*" +
-			item.second.recSetting.recFolderList[i].writePlugIn + L"*" +
-			item.second.recSetting.recFolderList[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.recFolderList[i], strRecFolder) == false ){
+			return false;
+		}
 	}
 	wstring strPartialRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.partialRecFolder.size(); i++ ){
-		strPartialRecFolder +=
-			item.second.recSetting.partialRecFolder[i].recFolder + L"*" +
-			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
-			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.partialRecFolder[i], strPartialRecFolder) == false ){
+			return false;
+		}
 	}
 	Format(saveLine, L"%d\n%d\n%d\n%d\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n%d\n%d\n%ls",
 		item.second.dataID,
