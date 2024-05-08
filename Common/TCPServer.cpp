@@ -5,6 +5,7 @@
 #include "CtrlCmdDef.h"
 #include "ErrDef.h"
 #ifndef _WIN32
+#include <errno.h>
 #include <netdb.h>
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -294,6 +295,9 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 		}
 		int result = poll(&pfdList[0], pfdList.size(), waitList.empty() ? -1 : (int)NOTIFY_INTERVAL);
 		if( result < 0 ){
+			if( errno == EINTR ){
+				continue;
+			}
 			break;
 		}
 		for( size_t i = 0; i < waitList.size(); ){
@@ -307,6 +311,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 			}
 		}
 		if( result == 0 || (pfdList[0].revents & POLLIN) ){
+			pSys->m_notifyEvent.Reset();
 #endif
 			for( size_t i = 0; i < waitList.size(); i++ ){
 				if( waitList[i].closing ){

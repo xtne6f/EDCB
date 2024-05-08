@@ -325,7 +325,9 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 			}
 			// flock()は勧告ロックに過ぎないので注意
 			// UTIL_SHARED_READは無ロック相当で、既にかかっている排他ロックを無視するので注意
-			if( ((flags & 32) && (flags & 64)) || flock(fileno(fp), ((flags & 32) ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0 ){
+			// UTIL_SH_READは非書き込み時のみ共有ロックとする
+			if( ((flags & 32) && (flags & 64)) ||
+			    flock(fileno(fp), ((flags & 32) && (flags & 2) == 0 ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0 ){
 				return fp;
 			}
 			if( apiError ){
@@ -501,24 +503,29 @@ bool UtilPathEndsWith(LPCWSTR path, LPCWSTR suffix)
 
 void CheckFileName(wstring& fileName, bool noChkYen)
 {
+#ifdef _WIN32
 	static const WCHAR s[10] = L"\\/:*?\"<>|";
 	static const WCHAR r[10] = L"￥／：＊？”＜＞｜";
+#else
+	static const WCHAR s[2] = L"/";
+	static const WCHAR r[2] = L"／";
+#endif
 	// トリム
 	size_t j = fileName.find_last_not_of(L' ');
 	fileName.erase(j == wstring::npos ? 0 : j + 1);
 	fileName.erase(0, fileName.find_first_not_of(L' '));
 	for( size_t i = 0; i < fileName.size(); i++ ){
-		if( L'\x1' <= fileName[i] && fileName[i] <= L'\x1f' || fileName[i] == L'\x7f' ){
+		if( (L'\x1' <= fileName[i] && fileName[i] <= L'\x1f') || fileName[i] == L'\x7f' ){
 			// 制御文字
 			fileName[i] = L'〓';
 		}
-		// ".\"となるときはnoChkYenでも全角に
+		// ".\"("./")となるときはnoChkYenでも全角に
 		const WCHAR* p = wcschr(s, fileName[i]);
 		if( p && (noChkYen == false || *p != fs_path::preferred_separator || (i > 0 && fileName[i - 1] == L'.')) ){
 			fileName[i] = r[p - s];
 		}
 	}
-	// 冒頭'\'はトリム
+	// 冒頭'\'('/')はトリム
 	fileName.erase(0, fileName.find_first_not_of(fs_path::preferred_separator));
 	// すべて'.'のときは全角に
 	if( fileName.find_first_not_of(L'.') == wstring::npos ){
@@ -568,7 +575,7 @@ bool UtilCreateDirectory(const fs_path& path)
 #else
 	string strPath;
 	WtoUTF8(path.native(), strPath);
-	return mkdir(strPath.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0;
+	return mkdir(strPath.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) == 0;
 #endif
 }
 

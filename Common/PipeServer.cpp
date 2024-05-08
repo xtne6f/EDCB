@@ -7,10 +7,10 @@
 #ifdef _WIN32
 #include <aclapi.h>
 #else
+#include <errno.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <sys/un.h>
 #include <unistd.h>
 #endif
@@ -114,7 +114,6 @@ bool CPipeServer::StartServer(
 			addr.sun_family = AF_UNIX;
 			strcpy(addr.sun_path, this->sockPath.c_str());
 			if( bind(this->srvSock, (sockaddr*)&addr, sizeof(addr)) == 0 &&
-			    chmod(this->sockPath.c_str(), S_IRWXU) == 0 &&
 			    listen(this->srvSock, SOMAXCONN) == 0 ){
 				this->exitingFlag = false;
 				this->stopEvent.Reset();
@@ -299,11 +298,15 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 		pfds[1].fd = pSys->srvSock;
 		pfds[1].events = POLLIN;
 		if( poll(pfds, 2, -1) < 0 ){
-			//エラー
-			break;
+			if( errno != EINTR ){
+				//エラー
+				break;
+			}
 		}else if( pfds[0].revents & POLLIN ){
-			//STOP
-			break;
+			if( pSys->stopEvent.WaitOne(0) ){
+				//STOP
+				break;
+			}
 		}else if( pfds[1].revents & POLLIN ){
 			//コマンド受信
 			int sock = accept4(pSys->srvSock, NULL, NULL, SOCK_CLOEXEC);
