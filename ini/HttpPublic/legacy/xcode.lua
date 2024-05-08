@@ -66,9 +66,9 @@ function OpenTranscoder()
 
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
   local tools=EdcbModulePath()..'\\Tools'
-  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
-  local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
-  local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
+  local tsreadex='"'..(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe"'
+  local asyncbuf='"'..(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe"'
+  local tsmemseg='"'..(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe"'
   local xcoder=''
   for s in option.xcoder:gmatch('[^|]+') do
     xcoder=tools..'\\'..s
@@ -108,17 +108,14 @@ function OpenTranscoder()
   end
   if hlsKey then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
-    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..hlsKey..'_'
+    cmd=cmd..' | '..tsmemseg..(hls4>0 and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..hlsKey..'_'
   elseif XCODE_BUF>0 then
-    cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
+    cmd=cmd..' | '..asyncbuf..' '..XCODE_BUF..' '..XCODE_PREPARE
   end
   local sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
 
-  -- コマンドが対応していればffmpeg暴走回避のオプションをつける
-  local c5or1,stat,code=edcb.os.execute('"'..tsreadex..'" -n -1 -c 5 -h')
-  c5or1=(c5or1 or (stat=='exit' and code==2)) and 5 or 1
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c '..c5or1..' -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
+  cmd=tsreadex..' -z edcb-legacy-'..searchName..' -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c 5 -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
   if hlsKey then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
@@ -142,12 +139,12 @@ end
 function OpenPsiDataArchiver()
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
   local tools=EdcbModulePath()..'\\Tools'
-  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
-  local psisiarc=(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe'
+  local tsreadex='"'..(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe"'
+  local psisiarc='"'..(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe"'
   local sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
   -- 3秒間隔で出力
-  local cmd='"'..psisiarc..'" -r arib-data -i 3 - -'
-  cmd='"'..tsreadex..'" -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
+  local cmd=psisiarc..' -r arib-data -i 3 - -'
+  cmd=tsreadex..' -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
   return edcb.io.popen('"'..cmd..'"','rb')
 end
 

@@ -66,9 +66,9 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
 
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
   local tools=EdcbModulePath()..'\\Tools'
-  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
-  local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
-  local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
+  local tsreadex='"'..(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe"'
+  local asyncbuf='"'..(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe"'
+  local tsmemseg='"'..(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe"'
   local xcoder=''
   for s in option.xcoder:gmatch('[^|]+') do
     xcoder=tools..'\\'..s
@@ -100,25 +100,18 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if hlsKey then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
     -- プロセス終了時に対応するNetworkTVモードも終了させる
-    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 -p '..partConfigSec..' '
+    cmd=cmd..' | '..tsmemseg..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 -p '..partConfigSec..' '
     if nwtvclose then
-      if edcb.FindFile(tools..'\\nwtvclose.ps1',1) then
-        cmd=cmd..'-c "powershell -NoProfile -ExecutionPolicy RemoteSigned -File nwtvclose.ps1 '..nwtvclose[1]..' '..nwtvclose[2]..'" '
-      else
-        cmd=cmd.."-c \"..\\EpgTimerSrv.exe /luapost if(edcb.GetPrivateProfile('NWTV','nwtv"..nwtvclose[1].."open','"..nwtvclose[2]
-          .."','Setting\\\\HttpPublic.ini')=='"..nwtvclose[2].."')then;edcb.CloseNetworkTV("..nwtvclose[1]..");end\" "
-      end
+      cmd=cmd.."-c \"..\\EpgTimerSrv.exe /luapost if(edcb.GetPrivateProfile('NWTV','nwtv"..nwtvclose[1].."open','"..nwtvclose[2]
+        .."','Setting\\\\HttpPublic.ini')=='"..nwtvclose[2].."')then;edcb.CloseNetworkTV("..nwtvclose[1]..");end\" "
     end
     cmd=cmd..hlsKey..'_'
   elseif XCODE_BUF>0 then
-    cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
+    cmd=cmd..' | '..asyncbuf..' '..XCODE_BUF..' '..XCODE_PREPARE
   end
 
-  -- コマンドが対応していればffmpeg暴走回避のオプションをつける
-  local c5or1,stat,code=edcb.os.execute('"'..tsreadex..'" -n -1 -c 5 -h')
-  c5or1=(c5or1 or (stat=='exit' and code==2)) and 5 or 1
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c '..c5or1..' -u 2 '..pipeName..' | '..cmd
+  cmd=tsreadex..' -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c 5 -u 2 '..pipeName..' | '..cmd
   if hlsKey then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
@@ -142,11 +135,11 @@ end
 function OpenPsiDataArchiver(pipeName,targetSID)
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
   local tools=EdcbModulePath()..'\\Tools'
-  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
-  local psisiarc=(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe'
+  local tsreadex='"'..(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe"'
+  local psisiarc='"'..(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe"'
   -- 3秒間隔で出力
-  local cmd='"'..psisiarc..'" -r arib-data -n '..(targetSID or -1)..' -i 3 - -'
-  cmd='"'..tsreadex..'" -t 10 -m 2 '..pipeName..' | '..cmd
+  local cmd=psisiarc..' -r arib-data -n '..(targetSID or -1)..' -i 3 - -'
+  cmd=tsreadex..' -t 10 -m 2 '..pipeName..' | '..cmd
   return edcb.io.popen('"'..cmd..'"','rb')
 end
 
