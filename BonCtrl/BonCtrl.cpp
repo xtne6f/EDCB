@@ -121,17 +121,16 @@ BOOL CBonCtrl::GetOpenBonDriver(
 	wstring* bonDriverFile
 	)
 {
-	BOOL ret = FALSE;
-
+	if( bonDriverFile == NULL ){
+		return this->bonUtil.IsOpen();
+	}
 	wstring strBonDriverFile = this->bonUtil.GetOpenBonDriverFileName();
 	if( strBonDriverFile.empty() == false ){
-		ret = TRUE;
-		if( bonDriverFile != NULL ){
-			*bonDriverFile = strBonDriverFile;
-		}
+		*bonDriverFile = strBonDriverFile;
+		return TRUE;
 	}
 
-	return ret;
+	return FALSE;
 }
 
 BOOL CBonCtrl::SetCh(
@@ -162,7 +161,7 @@ BOOL CBonCtrl::ProcessSetCh(
 	DWORD chNow=0;
 
 	BOOL ret = FALSE;
-	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
+	if( this->bonUtil.IsOpen() ){
 		ret = TRUE;
 		DWORD elapsed;
 		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow || this->tsOut.IsChUnknown(&elapsed) && elapsed > 15000 ){
@@ -442,7 +441,7 @@ BOOL CBonCtrl::StartChScan()
 
 	StopBackgroundEpgCap();
 
-	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
+	if( this->bonUtil.IsOpen() ){
 		this->chScanChkList.clear();
 		const vector<pair<wstring, vector<wstring>>>& spaceList = this->bonUtil.GetOriginalChList();
 		for( size_t i = 0; i < spaceList.size(); i++ ){
@@ -613,7 +612,7 @@ BOOL CBonCtrl::StartEpgCap(
 
 	StopBackgroundEpgCap();
 
-	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
+	if( this->bonUtil.IsOpen() ){
 		if( chList ){
 			this->epgCapChList.clear();
 			for( size_t i = 0; i < chList->size(); i++ ){
@@ -875,7 +874,7 @@ void CBonCtrl::StartBackgroundEpgCap()
 	StopBackgroundEpgCap();
 	if( this->chScanIndexOrStatus < ST_WORKING &&
 	    this->epgCapIndexOrStatus < ST_WORKING ){
-		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
+		if( this->bonUtil.IsOpen() ){
 			this->epgCapTick = GetU32Tick();
 			this->epgCapBackIndexOrStatus = ST_WORKING;
 		}

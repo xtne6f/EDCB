@@ -209,6 +209,9 @@
     <ClInclude Include="..\..\Common\IniUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\MessageManager.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EpgDataCap_Bon.cpp">
@@ -329,6 +332,9 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\IniUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\MessageManager.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
   </ItemGroup>
