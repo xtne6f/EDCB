@@ -2,7 +2,9 @@
 #include "WriteTSFile.h"
 
 #include "../Common/PathUtil.h"
+#ifdef _WIN32
 #include <objbase.h>
+#endif
 
 CWriteTSFile::CWriteTSFile(void)
 {
@@ -56,7 +58,7 @@ BOOL CWriteTSFile::StartSave(
 			item.freeChk = FALSE;
 			item.writePlugIn = saveFolder[i].writePlugIn;
 			if( item.writePlugIn.size() == 0 ){
-				item.writePlugIn = L"Write_Default.dll";
+				item.writePlugIn = L"Write_Default" EDCB_LIB_EXT;
 			}
 			item.recFolder = saveFolder[i].recFolder;
 			item.recFileName = saveFolder[i].recFileName;
@@ -144,12 +146,20 @@ BOOL CWriteTSFile::AddTSBuff(
 
 void CWriteTSFile::OutThread(CWriteTSFile* sys)
 {
+#ifdef _WIN32
 	//プラグインがCOMを利用するかもしれないため
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+#endif
 
 	BOOL emptyFlag = TRUE;
 	for( size_t i=0; i<sys->fileList.size(); i++ ){
-		if( sys->fileList[i]->writeUtil.Initialize(GetModulePath().replace_filename(L"Write").append(sys->fileList[i]->writePlugIn).native()) == FALSE ){
+		if( sys->fileList[i]->writeUtil.Initialize(
+#ifdef EDCB_LIB_ROOT
+		        fs_path(EDCB_LIB_ROOT)
+#else
+		        GetModulePath().replace_filename(L"Write")
+#endif
+		        .append(sys->fileList[i]->writePlugIn).native()) == FALSE ){
 			AddDebugLog(L"CWriteTSFile::StartSave Err 3");
 			sys->fileList[i].reset();
 		}else{
@@ -203,7 +213,9 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 	}
 	if( emptyFlag ){
 		AddDebugLog(L"CWriteTSFile::StartSave Err fileList 0");
+#ifdef _WIN32
 		CoUninitialize();
+#endif
 		sys->outStopState = 1;
 		sys->outStopEvent.Set();
 		return;
@@ -308,7 +320,9 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 		}
 	}
 
+#ifdef _WIN32
 	CoUninitialize();
+#endif
 }
 
 wstring CWriteTSFile::GetSaveFilePath()

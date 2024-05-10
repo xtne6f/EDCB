@@ -6,7 +6,7 @@ namespace
 IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), void* const* (WINAPI* funcCast)(LPCSTR, void*))
 {
 	void* hModule = NULL;
-#ifndef _MSC_VER
+#if defined(_WIN32) && !defined(_MSC_VER)
 	if( funcCast == NULL ){
 		if( (hModule = UtilLoadLibrary(wstring(L"IBonCast.dll"))) == NULL ){
 			AddDebugLog(L"★IBonCast.dllがロードできません");
@@ -19,7 +19,7 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), void* const
 	void* const* table;
 	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IB25Decoder@5", pBase)) == NULL ){
 		AddDebugLog(L"★Castに失敗しました");
-#ifndef _MSC_VER
+#if defined(_WIN32) && !defined(_MSC_VER)
 		if( hModule ){
 			UtilFreeLibrary(hModule);
 		}
@@ -98,7 +98,7 @@ BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 	}
 	void* const* (WINAPI* funcCast)(LPCSTR, void*);
 	UtilGetProcAddress(this->module.get(), "Cast", funcCast);
-#ifdef _MSC_VER
+#if !defined(_WIN32) || defined(_MSC_VER)
 	if( !funcCast ){
 		this->decodeIF = func();
 	}else
@@ -155,35 +155,23 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 	BOOL ret = FALSE;
 	fs_path iniPath = GetCommonIniPath().replace_filename(L"BonCtrl.ini");
 
-	wstring defKey = L"FFFFFFFF";
-	wstring networkDefKey = L"";
-	wstring key = L"";
-	Format(networkDefKey, L"%04XFFFF", ONID);
-	Format(key, L"%04X%04X", ONID, TSID);
-
-	wstring defDll = GetPrivateProfileToString(L"SET", defKey.c_str(), L"", iniPath.c_str());
-	wstring networkDefDll = GetPrivateProfileToString(L"SET", networkDefKey.c_str(), L"", iniPath.c_str());
-	wstring loadDll = GetPrivateProfileToString(L"SET", key.c_str(), L"", iniPath.c_str());
-
-	wstring dllPath = GetModulePath().parent_path().native();
-	if( loadDll.size() > 0 ){
-		dllPath += L"\\";
-		dllPath += loadDll;
-		this->loadDll = loadDll;
-	}else if( networkDefDll.size() > 0 ){
-		dllPath += L"\\";
-		dllPath += networkDefDll;
-		this->loadDll = networkDefDll;
-	}else if( defDll.size() > 0 ){
-		dllPath += L"\\";
-		dllPath += defDll;
-		this->loadDll = defDll;
-	}else{
-		dllPath += L"\\B25Decoder.dll";
-		this->loadDll = L"B25Decoder.dll";
+	this->loadDll = L"";
+	for( int i = 0; i < 3 && this->loadDll.empty(); i++ ){
+		WCHAR key[32];
+		swprintf_s(key, L"%04X%04X", i > 1 ? 0xFFFF : ONID, i > 0 ? 0xFFFF : TSID);
+		this->loadDll = GetPrivateProfileToString(L"SET", key, L"", iniPath.c_str());
+	}
+	if( this->loadDll.empty() ){
+		this->loadDll = L"B25Decoder" EDCB_LIB_EXT;
 	}
 
-	if( CompareNoCase(dllPath, this->currentDll) != 0 ){
+#ifdef EDCB_LIB_ROOT
+	wstring dllPath = fs_path(EDCB_LIB_ROOT).append(this->loadDll).native();
+#else
+	wstring dllPath = GetModulePath().replace_filename(this->loadDll).native();
+#endif
+
+	if( UtilComparePath(dllPath.c_str(), this->currentDll.c_str()) != 0 ){
 		if( LoadDll(dllPath) == FALSE ){
 			AddDebugLogFormat(L"★%ls のロードに失敗しました。", dllPath.c_str());
 			this->currentDll = L"";

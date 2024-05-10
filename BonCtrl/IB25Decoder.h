@@ -67,4 +67,4 @@ public:
 
 
 // インスタンス生成メソッド
-extern "C" __declspec(dllimport) IB25Decoder * CreateB25Decoder(void);
+//extern "C" __declspec(dllimport) IB25Decoder * CreateB25Decoder(void);

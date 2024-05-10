@@ -91,7 +91,13 @@ BOOL CBonCtrl::OpenBonDriver(
 )
 {
 	CloseBonDriver();
-	if( this->bonUtil.OpenBonDriver(GetModulePath().replace_filename(BON_DLL_FOLDER).c_str(), bonDriverFile,
+	if( this->bonUtil.OpenBonDriver(
+#ifdef EDCB_LIB_ROOT
+	                                EDCB_LIB_ROOT,
+#else
+	                                GetModulePath().replace_filename(BON_DLL_FOLDER).c_str(),
+#endif
+	                                bonDriverFile,
 	                                [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
 	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, traceLevel) ){
 		if( openWait > 0 ){

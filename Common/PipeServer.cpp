@@ -7,6 +7,7 @@
 #ifdef _WIN32
 #include <aclapi.h>
 #else
+#include "PathUtil.h"
 #include <errno.h>
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -105,7 +106,7 @@ bool CPipeServer::StartServer(
 		break;
 	}
 #else
-	WtoUTF8(EDCB_INI_ROOT + pipeName, this->sockPath);
+	WtoUTF8(fs_path(EDCB_INI_ROOT).append(pipeName).native(), this->sockPath);
 	sockaddr_un addr;
 	if( this->sockPath.size() < sizeof(addr.sun_path) ){
 		this->srvSock = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
