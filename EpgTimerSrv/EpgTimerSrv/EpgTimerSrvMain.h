@@ -5,6 +5,7 @@
 #include "NotifyManager.h"
 #include "HttpServer.h"
 #include "../../Common/CtrlCmdUtil.h"
+#include "../../Common/MessageManager.h"
 #include "../../Common/ParseTextInstances.h"
 #include "../../Common/TimeShiftUtil.h"
 #include "../../Common/InstanceManager.h"
@@ -23,6 +24,7 @@ public:
 	//休止／スタンバイに移行して構わない状況かどうか
 	bool IsSuspendOK() const;
 private:
+	static bool OnMessage(CMessageManager::PARAMS& pa);
 	//メインウィンドウ
 	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//シャットダウン問い合わせダイアログ
@@ -142,7 +144,7 @@ private:
 	//autoAddLock->settingLockの順にロックする
 	mutable recursive_mutex_ autoAddLock;
 	mutable recursive_mutex_ settingLock;
-	HWND hwndMain;
+	CMessageManager msgManager;
 	std::unique_ptr<void, void(*)(void*)> luaDllHolder;
 	atomic_bool_ stoppingFlag;
 

@@ -18,15 +18,25 @@ namespace
 {
 
 enum {
-	WM_APP_RESET_SERVER = WM_APP,
-	WM_APP_RELOAD_EPG,
-	WM_APP_RELOAD_EPG_CHK,
-	WM_APP_REQUEST_SHUTDOWN,
-	WM_APP_REQUEST_REBOOT,
-	WM_APP_QUERY_SHUTDOWN,
-	WM_APP_RECEIVE_NOTIFY,
-	WM_APP_TRAY_PUSHICON,
-	WM_APP_SHOW_TRAY,
+	ID_APP_RESET_SERVER = CMessageManager::ID_APP,
+	ID_APP_RELOAD_EPG,
+	ID_APP_RELOAD_EPG_CHK,
+	ID_APP_REQUEST_SHUTDOWN,
+	ID_APP_REQUEST_REBOOT,
+	ID_APP_QUERY_SHUTDOWN,
+	ID_APP_RECEIVE_NOTIFY,
+	ID_APP_TRAY_PUSHICON,
+	ID_APP_SHOW_TRAY,
+};
+
+enum {
+	TIMER_RELOAD_EPG_CHK_PENDING = 1,
+	TIMER_QUERY_SHUTDOWN_PENDING,
+	TIMER_RETRY_ADD_TRAY,
+	TIMER_INC_SRV_STATUS,
+	TIMER_SET_RESUME,
+	TIMER_CHECK,
+	TIMER_RESET_HTTP_SERVER,
 };
 
 enum {
@@ -161,7 +171,7 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
-	, hwndMain(NULL)
+	, msgManager(OnMessage, NULL)
 	, luaDllHolder(NULL, UtilFreeLibrary)
 	, nwtvUdp(false)
 	, nwtvTcp(false)
@@ -190,6 +200,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 		return false;
 	}
 	MAIN_WINDOW_CONTEXT ctx(this);
+	this->msgManager.SetContext(&ctx);
 	if( CreateWindowEx(0, SERVICE_NAME, SERVICE_NAME, 0, 0, 0, 0, 0, NULL, NULL, GetModuleHandle(NULL), &ctx) == NULL ){
 		return false;
 	}
@@ -206,29 +217,14 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	return true;
 }
 
-LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+bool CEpgTimerSrvMain::OnMessage(CMessageManager::PARAMS& pa)
 {
-	enum {
-		TIMER_RELOAD_EPG_CHK_PENDING = 1,
-		TIMER_QUERY_SHUTDOWN_PENDING,
-		TIMER_RETRY_ADD_TRAY,
-		TIMER_INC_SRV_STATUS,
-		TIMER_SET_RESUME,
-		TIMER_CHECK,
-		TIMER_RESET_HTTP_SERVER,
-	};
 	static const DWORD SRV_STATUS_PRE_REC = 100;
 
-	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-	if( uMsg != WM_CREATE && ctx == NULL ){
-		return DefWindowProc(hwnd, uMsg, wParam, lParam);
-	}
+	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)pa.ctx;
 
-	switch( uMsg ){
-	case WM_CREATE:
-		ctx = (MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
-		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
-		ctx->sys->hwndMain = hwnd;
+	switch( pa.id ){
+	case CMessageManager::ID_INITIALIZED:
 		ctx->sys->ReloadSetting(true);
 		if( ctx->sys->reserveManager.GetTunerReserveAll().size() <= 1 ){
 			//チューナなし
@@ -244,14 +240,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		                                  [ctx](CCmdStream& cmd, CCmdStream& res) { CtrlCmdCallback(ctx->sys, cmd, res, 1, false, NULL); },
 		                                  !(ctx->sys->notifyManager.IsGUI()), true);
 		ctx->sys->epgDB.ReloadEpgData(true);
-		SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
-		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
-		SetTimer(hwnd, TIMER_SET_RESUME, 30000, NULL);
-		SetTimer(hwnd, TIMER_CHECK, 1000, NULL);
-		ctx->sys->notifyManager.SetNotifyCallback([hwnd]() { PostMessage(hwnd, WM_APP_RECEIVE_NOTIFY, FALSE, 0); });
+		ctx->sys->msgManager.Send(ID_APP_RELOAD_EPG_CHK);
+		ctx->sys->msgManager.Send(CMessageManager::ID_TIMER, TIMER_SET_RESUME);
+		ctx->sys->msgManager.SetTimer(TIMER_SET_RESUME, 30000);
+		ctx->sys->msgManager.SetTimer(TIMER_CHECK, 1000);
+		ctx->sys->notifyManager.SetNotifyCallback([ctx]() { ctx->sys->msgManager.Post(ID_APP_RECEIVE_NOTIFY, false); });
 		AddDebugLog(L"*** Server initialized ***");
-		return 0;
-	case WM_DESTROY:
+		return true;
+	case CMessageManager::ID_DESTROY:
 		if( ctx->resumeTimer ){
 			CloseHandle(ctx->resumeTimer);
 		}
@@ -267,44 +263,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->reserveManager.Finalize();
 		AddDebugLog(L"*** Server finalized ***");
 		//タスクトレイから削除
-		SendMessage(hwnd, WM_APP_SHOW_TRAY, FALSE, 0);
-		ctx->sys->hwndMain = NULL;
-		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
-		RemoveProp(hwnd, L"PopupSel");
-		RemoveProp(hwnd, L"PopupSelData");
-		PostQuitMessage(0);
-		return 0;
-	case WM_ENDSESSION:
-		if( wParam ){
-			DestroyWindow(hwnd);
-		}
-		return 0;
-	case WM_COPYDATA:
-		if( lParam ){
-			const COPYDATASTRUCT& cds = *(const COPYDATASTRUCT*)lParam;
-			if( cds.dwData == COPYDATA_TYPE_LUAPOST && cds.lpData ){
-				//Luaスクリプトをワーカースレッドに投入する
-				vector<WCHAR> buff((cds.cbData + 3) / sizeof(WCHAR), 0);
-				std::copy((const BYTE*)cds.lpData, (const BYTE*)cds.lpData + cds.cbData, (BYTE*)buff.data());
-				string script;
-				WtoUTF8(wstring(buff.data()), script);
-				//Luaが利用可能ならば
-				if( ctx->sys->luaDllHolder ){
-					lock_recursive_mutex lock(ctx->sys->doLuaWorkerLock);
-
-					if( ctx->sys->doLuaScriptQueue.empty() && ctx->sys->doLuaWorkerThread.joinable() ){
-						ctx->sys->doLuaWorkerThread.join();
-					}
-					ctx->sys->doLuaScriptQueue.push_back(std::move(script));
-					if( ctx->sys->doLuaWorkerThread.joinable() == false ){
-						ctx->sys->doLuaWorkerThread = thread_(DoLuaWorker, ctx->sys);
-					}
-					return TRUE;
-				}
-			}
-		}
-		return FALSE;
-	case WM_APP_RESET_SERVER:
+		ctx->sys->msgManager.Send(ID_APP_SHOW_TRAY, false, 0);
+		RemoveProp(ctx->sys->msgManager.GetHwnd(), L"PopupSel");
+		RemoveProp(ctx->sys->msgManager.GetHwnd(), L"PopupSelData");
+		return true;
+	case ID_APP_RESET_SERVER:
 		{
 			//サーバリセット処理
 			unsigned short tcpPort_;
@@ -325,27 +288,27 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				                           [ctx](const CCmdStream& cmd, CCmdStream& res, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmd, res, 2, true, clientIP); },
 				                           CtrlCmdResponseThreadCallback);
 			}
-			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
+			ctx->sys->msgManager.SetTimer(TIMER_RESET_HTTP_SERVER, 200);
 		}
-		break;
-	case WM_APP_RELOAD_EPG:
+		return true;
+	case ID_APP_RELOAD_EPG:
 		//EPGリロードを開始
 		ctx->sys->epgDB.ReloadEpgData();
 		//FALL THROUGH!
-	case WM_APP_RELOAD_EPG_CHK:
+	case ID_APP_RELOAD_EPG_CHK:
 		//EPGリロード完了のチェックを開始
 		{
 			lock_recursive_mutex lock(ctx->sys->autoAddLock);
 			ctx->sys->autoAddCheckItr = ctx->sys->epgAutoAdd.GetMap().begin();
 		}
-		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 10, NULL);
-		KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+		ctx->sys->msgManager.SetTimer(TIMER_RELOAD_EPG_CHK_PENDING, 10);
+		ctx->sys->msgManager.KillTimer(TIMER_QUERY_SHUTDOWN_PENDING);
 		ctx->shutdownPendingTick = GetU32Tick();
-		break;
-	case WM_APP_REQUEST_SHUTDOWN:
+		return true;
+	case ID_APP_REQUEST_SHUTDOWN:
 		//シャットダウン処理
 		if( ctx->sys->IsSuspendOK() ){
-			if( wParam == SD_MODE_STANDBY || wParam == SD_MODE_SUSPEND ){
+			if( pa.param1 == SD_MODE_STANDBY || pa.param1 == SD_MODE_SUSPEND ){
 				//ストリーミングを終了する
 				ctx->sys->streamingManager.clear();
 				//AwayMode解除
@@ -354,27 +317,28 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				DWORD marginSec;
 				{
 					lock_recursive_mutex lock(ctx->sys->settingLock);
-					marginSec = ctx->sys->setting.wakeTime * 60 + (lParam ? 300 : 0);
+					marginSec = ctx->sys->setting.wakeTime * 60 + (pa.param2 ? 300 : 0);
 				}
 				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, marginSec) ){
-					SetShutdown(wParam == SD_MODE_STANDBY ? 1 : 2);
-					if( lParam ){
+					SetShutdown(pa.param1 == SD_MODE_STANDBY ? 1 : 2);
+					if( pa.param2 ){
 						//再起動問い合わせ
-						if( SendMessage(hwnd, WM_APP_QUERY_SHUTDOWN, SD_MODE_INVALID, TRUE) == FALSE ){
+						if( !ctx->sys->msgManager.Send(ID_APP_QUERY_SHUTDOWN, SD_MODE_INVALID, true) ){
 							SetShutdown(4);
 						}
 					}
 				}
-			}else if( wParam == SD_MODE_SHUTDOWN ){
+			}else if( pa.param1 == SD_MODE_SHUTDOWN ){
 				SetShutdown(3);
 			}
 		}
-		break;
-	case WM_APP_REQUEST_REBOOT:
+		return true;
+	case ID_APP_REQUEST_REBOOT:
 		//再起動
 		SetShutdown(4);
-		break;
-	case WM_APP_QUERY_SHUTDOWN:
+		return true;
+	case ID_APP_QUERY_SHUTDOWN:
+		pa.result = true;
 		if( ctx->sys->notifyManager.IsGUI() ){
 			//直接尋ねる
 			if( ctx->queryShutdownContext.first == NULL ){
@@ -382,20 +346,21 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				icce.dwSize = sizeof(icce);
 				icce.dwICC = ICC_PROGRESS_CLASS;
 				InitCommonControlsEx(&icce);
-				ctx->queryShutdownContext.second.first = (BYTE)wParam;
-				ctx->queryShutdownContext.second.second = lParam != FALSE;
-				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
+				ctx->queryShutdownContext.second.first = (BYTE)pa.param1;
+				ctx->queryShutdownContext.second.second = !!pa.param2;
+				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), ctx->sys->msgManager.GetHwnd(),
+				                  QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
 			}
-		}else if( ctx->sys->QueryShutdown(lParam != FALSE, (BYTE)wParam) == false ){
+		}else if( ctx->sys->QueryShutdown(!!pa.param2, (BYTE)pa.param1) == false ){
 			//GUI経由で問い合わせ開始できなかった
-			return FALSE;
+			pa.result = false;
 		}
-		return TRUE;
-	case WM_APP_RECEIVE_NOTIFY:
+		return true;
+	case ID_APP_RECEIVE_NOTIFY:
 		//通知を受け取る
 		{
 			NOTIFY_SRV_INFO info = {};
-			if( wParam ){
+			if( pa.param1 ){
 				//更新だけ
 				info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 				info.param1 = ctx->notifySrvStatus;
@@ -406,7 +371,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					break;
 				}
 				ctx->notifyCount = info.param3;
-				PostMessage(hwnd, WM_APP_RECEIVE_NOTIFY, FALSE, 0);
+				ctx->sys->msgManager.Post(ID_APP_RECEIVE_NOTIFY, false);
 			}
 			if( info.notifyID == NOTIFY_UPDATE_SRV_STATUS ||
 			    (info.notifyID == NOTIFY_UPDATE_PRE_REC_START && info.param4.find(L'/') != wstring::npos &&
@@ -424,13 +389,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 							ctx->notifySrvStatus = info.param1;
 						}else{
 							ctx->notifySrvStatus = SRV_STATUS_PRE_REC;
-							SetTimer(hwnd, TIMER_INC_SRV_STATUS, 1000, NULL);
+							ctx->sys->msgManager.SetTimer(TIMER_INC_SRV_STATUS, 1000);
 						}
 					}
 					if( ctx->taskFlag ){
 						NOTIFYICONDATA nid = {};
 						nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-						nid.hWnd = hwnd;
+						nid.hWnd = ctx->sys->msgManager.GetHwnd();
 						nid.uID = 1;
 						nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
 						                          ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN :
@@ -460,9 +425,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 						}
 						nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-						nid.uCallbackMessage = WM_APP_TRAY_PUSHICON;
+						nid.uCallbackMessage = ID_APP_TRAY_PUSHICON;
 						if( Shell_NotifyIcon(NIM_MODIFY, &nid) == FALSE && Shell_NotifyIcon(NIM_ADD, &nid) == FALSE ){
-							SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 5000, NULL);
+							ctx->sys->msgManager.SetTimer(TIMER_RETRY_ADD_TRAY, 5000);
 						}
 						if( nid.hIcon ){
 							DestroyIcon(nid.hIcon);
@@ -474,7 +439,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//バルーンチップ表示
 				NOTIFYICONDATA nid = {};
 				nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-				nid.hWnd = hwnd;
+				nid.hWnd = ctx->sys->msgManager.GetHwnd();
 				nid.uID = 1;
 				nid.uFlags = NIF_INFO | (ctx->noBalloonTip == 2 ? 0x40 : 0); //NIF_REALTIME
 				nid.dwInfoFlags = NIIF_INFO;
@@ -484,10 +449,10 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				Shell_NotifyIcon(NIM_MODIFY, &nid);
 			}
 		}
-		break;
-	case WM_APP_TRAY_PUSHICON:
+		return true;
+	case ID_APP_TRAY_PUSHICON:
 		//タスクトレイ関係
-		switch( LOWORD(lParam) ){
+		switch( LOWORD(pa.param2) ){
 		case WM_LBUTTONUP:
 			if( ctx->notifySrvStatus != 3 ){
 				OpenGUI();
@@ -500,31 +465,31 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				if( hMenu ){
 					POINT point;
 					GetCursorPos(&point);
-					SetForegroundWindow(hwnd);
-					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, hwnd, NULL);
+					SetForegroundWindow(ctx->sys->msgManager.GetHwnd());
+					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, ctx->sys->msgManager.GetHwnd(), NULL);
 					DestroyMenu(hMenu);
 				}
 			}
 			break;
 		}
 		break;
-	case WM_APP_SHOW_TRAY:
+	case ID_APP_SHOW_TRAY:
 		//タスクトレイに表示/非表示する
-		if( ctx->taskFlag && wParam == FALSE ){
+		if( ctx->taskFlag && !pa.param1 ){
 			NOTIFYICONDATA nid = {};
 			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-			nid.hWnd = hwnd;
+			nid.hWnd = ctx->sys->msgManager.GetHwnd();
 			nid.uID = 1;
 			Shell_NotifyIcon(NIM_DELETE, &nid);
 		}
-		ctx->taskFlag = wParam != FALSE;
-		ctx->noBalloonTip = ctx->taskFlag ? (int)lParam : 1;
+		ctx->taskFlag = !!pa.param1;
+		ctx->noBalloonTip = ctx->taskFlag ? (int)pa.param2 : 1;
 		if( ctx->taskFlag ){
-			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+			ctx->sys->msgManager.SetTimer(TIMER_RETRY_ADD_TRAY, 0);
 		}
-		return TRUE;
-	case WM_TIMER:
-		switch( wParam ){
+		return true;
+	case CMessageManager::ID_TIMER:
+		switch( pa.param1 ){
 		case TIMER_RELOAD_EPG_CHK_PENDING:
 			if( GetU32Tick() - ctx->shutdownPendingTick > 30000 ){
 				//30秒以内にシャットダウン問い合わせできなければキャンセル
@@ -555,7 +520,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					}
 					if( ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end() ){
 						//まだあるので次の呼び出しまで中断
-						break;
+						return true;
 					}
 					//完了
 					for( auto itr = ctx->sys->manualAutoAdd.GetMap().cbegin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
@@ -566,11 +531,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					}
 					ctx->sys->autoAddCheckItr = ctx->sys->epgAutoAdd.GetMap().begin();
 				}
-				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
+				ctx->sys->msgManager.KillTimer(TIMER_RELOAD_EPG_CHK_PENDING);
 				if( ctx->shutdownModePending ){
 					//このタイマはWM_TIMER以外でもKillTimer()するためメッセージキューに残った場合に対処するためシフト
 					ctx->shutdownPendingTick -= 100000;
-					SetTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING, 200, NULL);
+					ctx->sys->msgManager.SetTimer(TIMER_QUERY_SHUTDOWN_PENDING, 200);
 				}
 				if( ctx->autoAddCheckAddCountUpdated ){
 					//予約登録数の変化を通知する
@@ -589,42 +554,42 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 				AddDebugLogFormat(L"Done PostLoad EpgData %dmsec", GetU32Tick() - ctx->autoAddCheckTick);
 			}
-			break;
+			return true;
 		case TIMER_QUERY_SHUTDOWN_PENDING:
 			if( GetU32Tick() - ctx->shutdownPendingTick >= 100000 ){
 				if( GetU32Tick() - ctx->shutdownPendingTick - 100000 > 30000 ){
 					//30秒以内にシャットダウン問い合わせできなければキャンセル
-					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+					ctx->sys->msgManager.KillTimer(TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->shutdownModePending ){
 						ctx->shutdownModePending = SD_MODE_INVALID;
 						AddDebugLog(L"Shutdown cancelled");
 					}
 				}else if( ctx->shutdownModePending && ctx->sys->IsSuspendOK() ){
-					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+					ctx->sys->msgManager.KillTimer(TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->sys->IsUserWorking() == false &&
 					    SD_MODE_STANDBY <= ctx->shutdownModePending &&  ctx->shutdownModePending <= SD_MODE_SHUTDOWN ){
 						//シャットダウン問い合わせ
-						if( SendMessage(hwnd, WM_APP_QUERY_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending) == FALSE ){
-							SendMessage(hwnd, WM_APP_REQUEST_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending);
+						if( !ctx->sys->msgManager.Send(ID_APP_QUERY_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending) ){
+							ctx->sys->msgManager.Send(ID_APP_REQUEST_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending);
 						}
 					}
 					ctx->shutdownModePending = SD_MODE_INVALID;
 				}
 			}
-			break;
+			return true;
 		case TIMER_RETRY_ADD_TRAY:
-			KillTimer(hwnd, TIMER_RETRY_ADD_TRAY);
-			SendMessage(hwnd, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
-			break;
+			ctx->sys->msgManager.KillTimer(TIMER_RETRY_ADD_TRAY);
+			ctx->sys->msgManager.Send(ID_APP_RECEIVE_NOTIFY, true);
+			return true;
 		case TIMER_INC_SRV_STATUS:
 			//最大20秒
 			if( SRV_STATUS_PRE_REC <= ctx->notifySrvStatus && ctx->notifySrvStatus < SRV_STATUS_PRE_REC + 20 ){
 				ctx->notifySrvStatus++;
-				SendMessage(hwnd, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
+				ctx->sys->msgManager.Send(ID_APP_RECEIVE_NOTIFY, true);
 			}else{
-				KillTimer(hwnd, TIMER_INC_SRV_STATUS);
+				ctx->sys->msgManager.KillTimer(TIMER_INC_SRV_STATUS);
 			}
-			break;
+			return true;
 		case TIMER_SET_RESUME:
 			{
 				//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
@@ -669,10 +634,10 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				     r.title != ctx->notifyTipReserve.title) ){
 					ctx->notifyTipActiveTime = activeTime;
 					ctx->notifyTipReserve = std::move(r);
-					SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+					ctx->sys->msgManager.SetTimer(TIMER_RETRY_ADD_TRAY, 0);
 				}
 			}
-			break;
+			return true;
 		case TIMER_CHECK:
 			{
 				pair<CReserveManager::CHECK_STATUS, int> ret = ctx->sys->reserveManager.Check();
@@ -680,13 +645,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				case CReserveManager::CHECK_EPGCAP_END:
 					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 					ctx->sys->epgDB.ReloadEpgData(true);
-					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
+					ctx->sys->msgManager.Send(ID_APP_RELOAD_EPG_CHK);
 					{
 						lock_recursive_mutex lock(ctx->sys->settingLock);
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					}
-					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					ctx->sys->msgManager.Send(CMessageManager::ID_TIMER, TIMER_SET_RESUME);
 					break;
 				case CReserveManager::CHECK_NEED_SHUTDOWN:
 					//EPGリロードは暇なときだけ
@@ -694,7 +659,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						ctx->sys->epgDB.ReloadEpgData(true);
 					}
 					//チェックは必須
-					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
+					ctx->sys->msgManager.Send(ID_APP_RELOAD_EPG_CHK);
 					//要求されたシャットダウン動作を試みる
 					ctx->shutdownModePending = LOBYTE(ret.second);
 					ctx->rebootFlagPending = HIBYTE(ret.second) != 0;
@@ -703,17 +668,17 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					}
-					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					ctx->sys->msgManager.Send(CMessageManager::ID_TIMER, TIMER_SET_RESUME);
 					break;
 				case CReserveManager::CHECK_RESERVE_MODIFIED:
-					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					ctx->sys->msgManager.Send(CMessageManager::ID_TIMER, TIMER_SET_RESUME);
 					break;
 				}
 			}
-			break;
+			return true;
 		case TIMER_RESET_HTTP_SERVER:
 			if( ctx->httpServer.StopServer(true) ){
-				KillTimer(hwnd, TIMER_RESET_HTTP_SERVER);
+				ctx->sys->msgManager.KillTimer(TIMER_RESET_HTTP_SERVER);
 				CHttpServer::SERVER_OPTIONS op;
 				{
 					lock_recursive_mutex lock(ctx->sys->settingLock);
@@ -727,9 +692,63 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					ctx->httpServer.StartServer(op, [sys](lua_State* L) { sys->InitLuaCallback(L, sys->httpServerRandom.c_str()); });
 				}
 			}
-			break;
+			return true;
 		}
 		break;
+	}
+	return false;
+}
+
+LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	if( uMsg == WM_CREATE ){
+		ctx = (MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
+	}
+	if( ctx == NULL ){
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+	}
+	LRESULT lResult;
+	if( ctx->sys->msgManager.ProcessWindowMessage(lResult, hwnd, uMsg, wParam, lParam) ){
+		if( uMsg == WM_DESTROY ){
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+			PostQuitMessage(0);
+		}
+		return lResult;
+	}
+
+	switch( uMsg ){
+	case WM_ENDSESSION:
+		if( wParam ){
+			DestroyWindow(hwnd);
+		}
+		return 0;
+	case WM_COPYDATA:
+		if( lParam ){
+			const COPYDATASTRUCT& cds = *(const COPYDATASTRUCT*)lParam;
+			if( cds.dwData == COPYDATA_TYPE_LUAPOST && cds.lpData ){
+				//Luaスクリプトをワーカースレッドに投入する
+				vector<WCHAR> buff((cds.cbData + 3) / sizeof(WCHAR), 0);
+				std::copy((const BYTE*)cds.lpData, (const BYTE*)cds.lpData + cds.cbData, (BYTE*)buff.data());
+				string script;
+				WtoUTF8(wstring(buff.data()), script);
+				//Luaが利用可能ならば
+				if( ctx->sys->luaDllHolder ){
+					lock_recursive_mutex lock(ctx->sys->doLuaWorkerLock);
+
+					if( ctx->sys->doLuaScriptQueue.empty() && ctx->sys->doLuaWorkerThread.joinable() ){
+						ctx->sys->doLuaWorkerThread.join();
+					}
+					ctx->sys->doLuaScriptQueue.push_back(std::move(script));
+					if( ctx->sys->doLuaWorkerThread.joinable() == false ){
+						ctx->sys->doLuaWorkerThread = thread_(DoLuaWorker, ctx->sys);
+					}
+					return TRUE;
+				}
+			}
+		}
+		return FALSE;
 	case WM_INITMENUPOPUP:
 		{
 			UINT id = GetMenuItemID((HMENU)wParam, 0);
@@ -764,14 +783,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_S4:
 			if( ctx->sys->IsSuspendOK() ){
 				lock_recursive_mutex lock(ctx->sys->settingLock);
-				PostMessage(hwnd, WM_APP_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
+				ctx->sys->msgManager.Post(ID_APP_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
 			}else{
 				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
 			}
 			break;
 		case IDC_BUTTON_END:
 			if( MessageBox(hwnd, SERVICE_NAME L" を終了します。", L"確認", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
-				SendMessage(hwnd, WM_CLOSE, 0, 0);
+				ctx->sys->msgManager.Send(CMessageManager::ID_CLOSE);
 			}
 			break;
 		case IDC_BUTTON_GUI:
@@ -799,7 +818,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	default:
 		if( uMsg == ctx->msgTaskbarCreated ){
 			//シェルの再起動時
-			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+			ctx->sys->msgManager.SetTimer(TIMER_RETRY_ADD_TRAY, 0);
 		}
 		break;
 	}
@@ -837,10 +856,10 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 		case IDOK:
 			if( ctx->second.first == SD_MODE_INVALID ){
 				//再起動
-				PostMessage(GetParent(hDlg), WM_APP_REQUEST_REBOOT, 0, 0);
+				PostMessage(GetParent(hDlg), ID_APP_REQUEST_REBOOT, 0, 0);
 			}else{
 				//スタンバイ休止または電源断
-				PostMessage(GetParent(hDlg), WM_APP_REQUEST_SHUTDOWN, ctx->second.first, ctx->second.second);
+				PostMessage(GetParent(hDlg), ID_APP_REQUEST_SHUTDOWN, ctx->second.first, ctx->second.second);
 			}
 			//FALL THROUGH!
 		case IDCANCEL:
@@ -936,10 +955,7 @@ void CEpgTimerSrvMain::InitStreamingMenuPopup(HMENU hMenu) const
 
 void CEpgTimerSrvMain::StopMain()
 {
-	HWND hwndMain_ = this->hwndMain;
-	if( hwndMain_ ){
-		SendNotifyMessage(hwndMain_, WM_CLOSE, 0, 0);
-	}
+	this->msgManager.SendNotify(CMessageManager::ID_CLOSE);
 }
 
 bool CEpgTimerSrvMain::IsSuspendOK() const
@@ -974,7 +990,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
 	this->httpOptions = CHttpServer::LoadServerOptions(iniPath.c_str());
-	PostMessage(this->hwndMain, WM_APP_RESET_SERVER, 0, 0);
+	this->msgManager.Post(ID_APP_RESET_SERVER);
 }
 
 void CEpgTimerSrvMain::ReloadSetting(bool initialize)
@@ -1004,11 +1020,11 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 			//常駐する(CMD2_EPG_SRV_CLOSEを無視)
 			this->residentFlag = true;
 			//タスクトレイに表示するかどうか
-			PostMessage(this->hwndMain, WM_APP_SHOW_TRAY, this->setting.residentMode >= 2, this->setting.noBalloonTip);
+			this->msgManager.Post(ID_APP_SHOW_TRAY, this->setting.residentMode >= 2, this->setting.noBalloonTip);
 		}
 	}else if( this->setting.residentMode >= 2 ){
 		//チップヘルプを更新するため
-		PostMessage(this->hwndMain, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
+		this->msgManager.Post(ID_APP_RECEIVE_NOTIFY, true);
 	}
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
 }
@@ -1436,7 +1452,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 
 	switch( cmd.GetParam() ){
 	case CMD2_EPG_SRV_RELOAD_EPG:
-		PostMessage(sys->hwndMain, WM_APP_RELOAD_EPG, 0, 0);
+		sys->msgManager.Post(ID_APP_RELOAD_EPG);
 		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_EPG_SRV_RELOAD_SETTING:
@@ -1645,13 +1661,13 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			if( cmd.ReadVALUE(&val) && sys->IsSuspendOK() ){
 				lock_recursive_mutex lock(sys->settingLock);
 				//再起動フラグが0xFFのときはデフォルト動作に従う
-				PostMessage(sys->hwndMain, WM_APP_REQUEST_SHUTDOWN, LOBYTE(val), HIBYTE(val) == 0xFF ? sys->setting.reboot : (HIBYTE(val) != 0));
+				sys->msgManager.Post(ID_APP_REQUEST_SHUTDOWN, LOBYTE(val), HIBYTE(val) == 0xFF ? sys->setting.reboot : (HIBYTE(val) != 0));
 				res.SetParam(CMD_SUCCESS);
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_REBOOT:
-		PostMessage(sys->hwndMain, WM_APP_REQUEST_REBOOT, 0, 0);
+		sys->msgManager.Post(ID_APP_REQUEST_REBOOT);
 		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_EPG_SRV_EPG_CAP_NOW:
@@ -3325,7 +3341,7 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 int CEpgTimerSrvMain::LuaReloadEpg(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	PostMessage(ws.sys->hwndMain, WM_APP_RELOAD_EPG, 0, 0);
+	ws.sys->msgManager.Post(ID_APP_RELOAD_EPG);
 	lua_pushboolean(L, true);
 	return 1;
 }

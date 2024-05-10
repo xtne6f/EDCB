@@ -209,6 +209,7 @@
     <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\IniUtil.h" />
     <ClInclude Include="..\..\Common\InstanceManager.h" />
+    <ClInclude Include="..\..\Common\MessageManager.h" />
     <ClInclude Include="..\..\Common\ParseText.h" />
     <ClInclude Include="..\..\Common\ParseTextInstances.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
@@ -255,6 +256,7 @@
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
     <ClCompile Include="..\..\Common\IniUtil.cpp" />
+    <ClCompile Include="..\..\Common\MessageManager.cpp" />
     <ClCompile Include="..\..\Common\ParseTextInstances.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
