@@ -23,12 +23,13 @@ DWORD CEpgDataCap3Util::Initialize(
 	if( module != NULL ){
 		return FALSE;
 	}
-	fs_path path = loadDllFilePath ? loadDllFilePath : GetModulePath().replace_filename(
-#ifdef _WIN32
-		L"EpgDataCap3.dll"
+	fs_path path = loadDllFilePath ? loadDllFilePath :
+#ifdef EDCB_LIB_ROOT
+		fs_path(EDCB_LIB_ROOT).append(
 #else
-		L"EpgDataCap3.so"
+		GetModulePath().replace_filename(
 #endif
+		L"EpgDataCap3" EDCB_LIB_EXT
 		);
 	module.reset(UtilLoadLibrary(path));
 	DWORD err = FALSE;

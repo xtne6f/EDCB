@@ -3,6 +3,20 @@
 
 #include <functional>
 
+#ifdef _WIN32
+#define EDCB_LIB_EXT L".dll"
+#else
+#ifndef EDCB_INI_ROOT
+#define EDCB_INI_ROOT L"/var/local/edcb"
+#endif
+#ifndef EDCB_LIB_ROOT
+#define EDCB_LIB_ROOT L"/usr/local/lib/edcb"
+#endif
+#ifndef EDCB_LIB_EXT
+#define EDCB_LIB_EXT L".so"
+#endif
+#endif
+
 namespace filesystem_
 {
 // Extract from Boost.Filesystem(1.64.0) www.boost.org/libs/filesystem

@@ -4,17 +4,20 @@
 #include "stdafx.h"
 
 #include "WriteMain.h"
-#include "SettingDlg.h"
 #include "../../Common/InstanceManager.h"
 #include "../../Common/PathUtil.h"
 
 CInstanceManager<CWriteMain> g_instMng;
 
-extern HINSTANCE g_instance;
-
 #define PLUGIN_NAME L"デフォルト 188バイトTS出力 PlugIn"
-#define DLL_EXPORT extern "C" __declspec(dllexport)
 
+#ifdef _WIN32
+#include "SettingDlg.h"
+#define DLL_EXPORT extern "C" __declspec(dllexport)
+extern HINSTANCE g_instance;
+#else
+#define DLL_EXPORT extern "C"
+#endif
 
 //PlugInの名前を取得する
 //nameがNULL時は必要なサイズをnameSizeで返す
@@ -51,6 +54,7 @@ BOOL WINAPI GetPlugInName(
 	return TRUE;
 }
 
+#ifdef _WIN32
 //PlugInで設定が必要な場合、設定用のダイアログなどを表示する
 //引数：
 // parentWnd				[IN]親ウインドウ
@@ -74,6 +78,7 @@ void WINAPI Setting(
 		}
 	}
 }
+#endif
 
 //////////////////////////////////////////////////////////
 //基本的な保存時のAPIの呼ばれ方
@@ -119,7 +124,11 @@ BOOL WINAPI CreateCtrl(
 		return FALSE;
 	}
 
+#ifdef _WIN32
 	fs_path iniPath = GetModuleIniPath(g_instance);
+#else
+	fs_path iniPath = GetModuleIniPath((void*)CreateCtrl);
+#endif
 	DWORD buffSize = GetPrivateProfileInt(L"SET", L"Size", 770048, iniPath.c_str());
 	DWORD teeSize = 0;
 	DWORD teeDelay = 0;

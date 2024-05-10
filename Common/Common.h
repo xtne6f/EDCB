@@ -239,7 +239,16 @@ RndIt upper_bound_first(RndIt first, RndIt last, const T& key)
 #ifndef WRAP_DEBUG_OUTPUT
 inline void AddDebugLogNoNewline(const WCHAR* s)
 {
+#ifdef _WIN32
 	OutputDebugString(s);
+#elif WCHAR_MAX > 0xFFFF && 0
+	for( size_t i = 0; s[i]; i++ ){
+		char dest[4];
+		fwrite(dest, 1, codepoint_to_utf8(s[i], dest), stderr);
+	}
+#else
+	(void)s;
+#endif
 }
 #endif
 
