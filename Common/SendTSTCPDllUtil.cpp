@@ -12,12 +12,13 @@ bool CSendTSTCPDllUtil::Initialize()
 	if( m_module ){
 		return true;
 	}
-	m_module.reset(UtilLoadLibrary(GetModulePath().replace_filename(
-#ifdef _WIN32
-		L"SendTSTCP.dll"
+	m_module.reset(UtilLoadLibrary(
+#ifdef EDCB_LIB_ROOT
+		fs_path(EDCB_LIB_ROOT).append(
 #else
-		L"SendTSTCP.so"
+		GetModulePath().replace_filename(
 #endif
+		L"SendTSTCP" EDCB_LIB_EXT
 		)));
 	if( m_module ){
 		InitializeDLL pfnInitializeDLL;
