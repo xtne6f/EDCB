@@ -23,6 +23,7 @@ namespace EpgTimer
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
         private List<EpgAutoDataItem> resultListMoved;
         private string lastAscendingSortedHeader;
+        private ListViewHorizontalMouseScroller horizontalScroller = new ListViewHorizontalMouseScroller();
         private bool ReloadInfo = true;
 
         private Dictionary<string, GridViewColumn> columnList;
@@ -460,5 +461,15 @@ namespace EpgTimer
             moveItem(false);
         }
 
+        private void listView_key_MouseEnter(object sender, MouseEventArgs e)
+        {
+            horizontalScroller.OnMouseEnter(listView_key, Settings.Instance.EpgSettingList[0].MouseHorizontalScrollAuto,
+                                            Settings.Instance.EpgSettingList[0].HorizontalScrollSize);
+        }
+
+        private void listView_key_MouseLeave(object sender, MouseEventArgs e)
+        {
+            horizontalScroller.OnMouseLeave();
+        }
     }
 }

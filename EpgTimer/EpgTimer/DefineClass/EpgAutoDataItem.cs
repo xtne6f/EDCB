@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -29,15 +30,23 @@ namespace EpgTimer
 
         public String AndKey
         {
-            get
-            {
-                return System.Text.RegularExpressions.Regex.Replace(
-                           EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
-            }
+            get { return Regex.Replace(EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", ""); }
         }
         public String NotKey
         {
-            get { return EpgAutoAddInfo.searchInfo.notKey; }
+            get { return Regex.Replace(EpgAutoAddInfo.searchInfo.notKey, "^:note:[^ 　]*[ 　]?", ""); }
+        }
+        public String Note
+        {
+            get
+            {
+                Match m = Regex.Match(EpgAutoAddInfo.searchInfo.notKey, "^:note:([^ 　]*)");
+                if (m.Success)
+                {
+                    return m.Groups[1].Value.Replace("\\s", " ").Replace("\\m", "　").Replace("\\\\", "\\");
+                }
+                return "";
+            }
         }
         public String RegExp
         {
@@ -221,11 +230,7 @@ namespace EpgTimer
 
         public String CaseSensitive
         {
-            get
-            {
-                return System.Text.RegularExpressions.Regex.IsMatch(
-                           EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?C!\{999\}") ? "はい" : "いいえ";
-            }
+            get { return Regex.IsMatch(EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?C!\{999\}") ? "はい" : "いいえ"; }
         }
 
         public string TunerID
