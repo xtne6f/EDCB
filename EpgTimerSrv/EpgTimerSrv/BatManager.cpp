@@ -365,12 +365,16 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 			continue;
 		}
 		for( size_t j = 0; j < info.macroList[i].second.size(); j++ ){
-			//制御文字とダブルクォートは置き換える
+			//制御文字は置き換える
 			if( (L'\x1' <= info.macroList[i].second[j] && info.macroList[i].second[j] <= L'\x1f') || info.macroList[i].second[j] == L'\x7f' ){
 				info.macroList[i].second[j] = L'〓';
-			}else if( info.macroList[i].second[j] == L'"' ){
+			}
+#ifdef _WIN32
+			//ダブルクォートも置き換える
+			else if( info.macroList[i].second[j] == L'"' ){
 				info.macroList[i].second[j] = L'”';
 			}
+#endif
 		}
 		i++;
 	}

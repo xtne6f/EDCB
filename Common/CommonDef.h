@@ -16,8 +16,6 @@
 #define EPG_AUTO_ADD_TEXT_NAME L"EpgAutoAdd.txt"
 #define MANUAL_AUTO_ADD_TEXT_NAME L"ManualAutoAdd.txt"
 
-#define EPG_TIMER_SERVICE_EXE L"EpgTimerSrv.exe"
-
 #define EPG_TIMER_BON_SRV_MUTEX L"EpgTimer_Bon_Service"
 #define SERVICE_NAME L"EpgTimer Service"
 
@@ -71,5 +69,8 @@
 
 //WM_COPYDATAの型
 #define COPYDATA_TYPE_LUAPOST 0x45544C50 //Luaスクリプト実行をプロセスに要求する(完了を待たない)
+
+//Luaスクリプト受け取り用FIFOファイル名
+#define LUAPOST_FIFO L"EpgTimerSrvLuaPost.fifo"
 
 #endif

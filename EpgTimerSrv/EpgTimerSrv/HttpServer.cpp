@@ -23,7 +23,6 @@ const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 CHttpServer::CHttpServer()
 	: mgContext(NULL)
-	, luaDllHolder(NULL, UtilFreeLibrary)
 	, initedLibrary(false)
 {
 }
@@ -153,13 +152,6 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		options[opCount++] = globalAuthPath.c_str();
 	}
 
-	//LuaのDLLが無いとき分かりにくいタイミングでエラーになるので事前に読んでおく(必須ではない)
-	this->luaDllHolder.reset(UtilLoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME)));
-	if( this->luaDllHolder == NULL ){
-		AddDebugLog(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.");
-		return false;
-	}
-
 	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_IPV6 + MG_FEATURES_LUA + MG_FEATURES_CACHE +
 	                    (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
 	this->initedLibrary = true;
@@ -256,7 +248,6 @@ bool CHttpServer::StopServer(bool checkOnly)
 		mg_exit_library();
 		this->initedLibrary = false;
 	}
-	this->luaDllHolder.reset();
 	return true;
 }
 

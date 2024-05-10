@@ -3,8 +3,6 @@
 #include "UpnpSsdpServer.h"
 #include <functional>
 
-#define LUA_DLL_NAME L"lua52.dll"
-
 struct mg_context;
 struct mg_connection;
 
@@ -36,7 +34,6 @@ private:
 	static void InitLua(const mg_connection* conn, void* luaContext, unsigned int contextFlags);
 	mg_context* mgContext;
 	std::function<void(lua_State*)> initLuaProc;
-	std::unique_ptr<void, void(*)(void*)> luaDllHolder;
 	bool initedLibrary;
 	CUpnpSsdpServer upnpSsdpServer;
 };

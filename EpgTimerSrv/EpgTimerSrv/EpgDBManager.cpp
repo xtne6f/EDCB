@@ -126,10 +126,12 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	AddDebugLog(L"Start Load EpgData");
 	DWORD time = GetU32Tick();
 
+#ifdef _WIN32
 	if( sys->loadForeground == false ){
 		//バックグラウンドに移行
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 	}
+#endif
 	CEpgDataCap3Util epgUtil;
 	if( epgUtil.Initialize(FALSE) != NO_ERR ){
 		AddDebugLog(L"★EpgDataCap3の初期化に失敗しました。");
@@ -175,9 +177,11 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 			AddDebugLogFormat(L"★delete %ls", path.c_str());
 		}else{
 			BYTE readBuff[188*256];
-			bool swapped = false;
 			std::unique_ptr<FILE, decltype(&fclose)> file(NULL, fclose);
+			//非_WIN32環境では必ずopen(tmp)->close(tmp)->rename(tmp,master)なので複雑なことは不要
+#ifdef _WIN32
 			//一時ファイルの状態を調べる。取得側のCreateFile(tmp)→CloseHandle(tmp)→CopyFile(tmp,master)→DeleteFile(tmp)の流れをある程度仮定
+			bool swapped = false;
 			bool mightExist = false;
 			if( UtilFileExists(fs_path(path).concat(L".tmp"), &mightExist).first || mightExist ){
 				//一時ファイルがある→もうすぐ上書きされるかもしれないので共有で開いて退避させる
@@ -227,7 +231,9 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					}
 					break;
 				}
-			}else{
+			}else
+#endif
+			{
 				//排他で開く
 				file.reset(UtilOpenFile(path, UTIL_SECURE_READ));
 			}
@@ -289,9 +295,11 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				}
 				file.reset();
 			}
+#ifdef _WIN32
 			if( swapped ){
 				DeleteFile(fs_path(path).concat(L".swp").c_str());
 			}
+#endif
 		}
 	}
 
@@ -409,10 +417,12 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		}
 	}
 
+#ifdef _WIN32
 	if( sys->loadForeground == false ){
 		//フォアグラウンドに復帰
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 	}
+#endif
 	for(;;){
 		//データベースを排他する
 		{
@@ -543,10 +553,12 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		}
 		SleepForMsec(1);
 	}
+#ifdef _WIN32
 	if( sys->loadForeground == false ){
 		//バックグラウンドに移行
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 	}
+#endif
 	nextMap.clear();
 
 	//アーカイブファイルに書き込む

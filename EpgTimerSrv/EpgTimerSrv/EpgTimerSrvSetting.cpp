@@ -15,10 +15,17 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 {
 	SETTING s;
 	s.epgArchivePeriodHour = GetPrivateProfileInt(L"SET", L"EpgArchivePeriodHour", 0, iniPath);
+#ifdef _WIN32
 	s.residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 2, iniPath);
 	s.notifyTipStyle = GetPrivateProfileInt(L"SET", L"NotifyTipStyle", 0, iniPath);
 	s.blinkPreRec = GetPrivateProfileInt(L"SET", L"BlinkPreRec", 0, iniPath) != 0;
 	s.noBalloonTip = GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath);
+#else
+	s.residentMode = 1;
+	s.notifyTipStyle = 0;
+	s.blinkPreRec = false;
+	s.noBalloonTip = 0;
+#endif
 	s.saveNotifyLog = GetPrivateProfileInt(L"SET", L"SaveNotifyLog", 0, iniPath) != 0;
 	s.saveDebugLog = GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath) != 0;
 	s.wakeTime = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath);
@@ -27,13 +34,15 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.chkGroupEvent = GetPrivateProfileInt(L"SET", L"ChkGroupEvent", 1, iniPath) != 0;
 	s.recEndMode = (BYTE)GetPrivateProfileInt(L"SET", L"RecEndMode", 2, iniPath);
 	s.reboot = GetPrivateProfileInt(L"SET", L"Reboot", 0, iniPath) != 0;
+	s.noFileStreaming = GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath) != 0;
+	s.noStandbyTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoStandbyTime", 10, iniPath);
+	int count;
+#ifdef WIN32
 	s.noUsePC = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePC", 0, iniPath) != 0;
 	s.noUsePCTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePCTime", 3, iniPath);
-	s.noFileStreaming = GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath) != 0;
 	s.noShareFile = GetPrivateProfileInt(L"NO_SUSPEND", L"NoShareFile", 0, iniPath) != 0;
-	s.noStandbyTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoStandbyTime", 10, iniPath);
 	s.noSuspendExeList.clear();
-	int count = GetPrivateProfileInt(L"NO_SUSPEND", L"Count", INT_MAX, iniPath);
+	count = GetPrivateProfileInt(L"NO_SUSPEND", L"Count", INT_MAX, iniPath);
 	if( count == INT_MAX ){
 		//未設定
 		s.noSuspendExeList.push_back(L"EpgDataCap_Bon");
@@ -47,6 +56,7 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 			}
 		}
 	}
+#endif
 	s.viewBonList.clear();
 	count = GetPrivateProfileInt(L"TVTEST", L"Num", 0, iniPath);
 	for( int i = 0; i < count; i++ ){
@@ -143,7 +153,11 @@ CEpgTimerSrvSetting::SETTING CEpgTimerSrvSetting::LoadSetting(LPCWSTR iniPath)
 	s.openViewAlways = (recView & 4) != 0;
 	s.recNW = GetPrivateProfileInt(L"SET", L"RecNW", 0, iniPath) != 0;
 	s.pgInfoLog = GetPrivateProfileInt(L"SET", L"PgInfoLog", 1, iniPath) != 0;
+#ifdef _WIN32
 	s.pgInfoLogAsUtf8 = GetPrivateProfileInt(L"SET", L"PgInfoLogAsUtf8", 0, iniPath) != 0;
+#else
+	s.pgInfoLogAsUtf8 = true;
+#endif
 	s.dropLog = GetPrivateProfileInt(L"SET", L"DropLog", 1, iniPath) != 0;
 	s.recOverWrite = GetPrivateProfileInt(L"SET", L"RecOverWrite", 0, iniPath) != 0;
 	s.processPriority = GetPrivateProfileInt(L"SET", L"ProcessPriority", 3, iniPath);
@@ -172,11 +186,7 @@ vector<pair<wstring, wstring>> CEpgTimerSrvSetting::EnumBonFileName(LPCWSTR sett
 				bon.pop_back();
 			}
 			if( bon.empty() == false ){
-#ifdef _WIN32
-				bon += L".dll";
-#else
-				bon += L".so";
-#endif
+				bon += EDCB_LIB_EXT;
 				if( std::find_if(ret.begin(), ret.end(), [&](const pair<wstring, wstring>& a) {
 				        return UtilComparePath(a.first.c_str(), bon.c_str()) == 0; }) == ret.end() ){
 					ret.push_back(std::make_pair(std::move(bon), std::move(findData.fileName)));
@@ -203,7 +213,13 @@ wstring CEpgTimerSrvSetting::CheckTSExtension(const wstring& ext)
 vector<wstring> CEpgTimerSrvSetting::EnumRecNamePlugInFileName()
 {
 	vector<wstring> ret;
-	EnumFindFile(GetModulePath().replace_filename(L"RecName").append(L"RecName*.dll"), [&ret](UTIL_FIND_DATA& findData) -> bool {
+	EnumFindFile(
+#ifdef EDCB_LIB_ROOT
+		fs_path(EDCB_LIB_ROOT)
+#else
+		GetModulePath().replace_filename(L"RecName")
+#endif
+		.append(L"RecName*" EDCB_LIB_EXT), [&ret](UTIL_FIND_DATA& findData) -> bool {
 		if( findData.isDir == false ){
 			ret.push_back(std::move(findData.fileName));
 		}

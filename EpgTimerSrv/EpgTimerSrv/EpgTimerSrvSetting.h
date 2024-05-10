@@ -18,12 +18,14 @@ public:
 		bool chkGroupEvent;
 		BYTE recEndMode;
 		bool reboot;
+		bool noFileStreaming;
+		DWORD noStandbyTime;
+#ifdef _WIN32
 		bool noUsePC;
 		DWORD noUsePCTime;
-		bool noFileStreaming;
 		bool noShareFile;
-		DWORD noStandbyTime;
 		vector<wstring> noSuspendExeList;
+#endif
 		vector<wstring> viewBonList;
 		DWORD ngEpgCapTime;
 		DWORD ngEpgCapTunerTime;
