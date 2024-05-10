@@ -27,9 +27,9 @@ LONGLONG CSyoboiCalUtil::GetTimeStamp(SYSTEMTIME startTime)
 	return (ConvertI64Time(startTime) - ConvertI64Time(keyTime)) / I64_1SEC;
 }
 
-BOOL CSyoboiCalUtil::UrlEncodeUTF8(LPCWSTR src, DWORD srcSize, string& dest)
+BOOL CSyoboiCalUtil::UrlEncodeUTF8(LPCWSTR src, string& dest)
 {
-	if( src == NULL || srcSize == 0 ){
+	if( src == NULL ){
 		return FALSE;
 	}
 
@@ -159,6 +159,8 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 
 		LONGLONG startTime = GetTimeStamp(info->startTime);
 		Format(param, L"%lld\t%lld\t%ls\t%ls\t%ls\t\t0\t%d\n", startTime, startTime+info->durationSecond, device, info->title.c_str(), stationName.c_str(), info->reserveID );
+		//サロゲートペアを送ると500エラーが返るため
+		param.erase(std::remove_if(param.begin(), param.end(), [](WCHAR a) { return 0xD800 <= a && a <= 0xDFFF; }), param.end());
 		dataParam+=param;
 	}
 
@@ -168,24 +170,22 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	}
 
 	string utf8;
-	UrlEncodeUTF8(dataParam.c_str(), (DWORD)dataParam.size(), utf8);
-	char szSlot[32];
-	sprintf_s(szSlot, "slot=%d&data=", slot);
-	string data = szSlot + utf8;
+	UrlEncodeUTF8(dataParam.c_str(), utf8);
+	vector<char> bodyBuff(32);
+	sprintf_s(&bodyBuff.front(), bodyBuff.size(), "slot=%d&data=", slot);
+	bodyBuff.resize(strlen(&bodyBuff.front()));
+	bodyBuff.insert(bodyBuff.end(), utf8.begin(), utf8.end());
 
 	if( devcolors.size() > 0){
-		utf8 = "";
-		UrlEncodeUTF8(devcolors.c_str(), (DWORD)devcolors.size(), utf8);
-		data += "&devcolors=";
-		data += utf8;
+		UrlEncodeUTF8(devcolors.c_str(), utf8);
+		utf8.insert(0, "&devcolors=");
+		bodyBuff.insert(bodyBuff.end(), utf8.begin(), utf8.end());
 	}
 	if( epgurl.size() > 0){
-		utf8 = "";
-		UrlEncodeUTF8(epgurl.c_str(), (DWORD)epgurl.size(), utf8);
-		data += "&epgurl=";
-		data += utf8;
+		UrlEncodeUTF8(epgurl.c_str(), utf8);
+		utf8.insert(0, "&epgurl=");
+		bodyBuff.insert(bodyBuff.end(), utf8.begin(), utf8.end());
 	}
-	vector<char> dataBuff(data.begin(), data.end());
 
 	//URLの分解
 	URL_COMPONENTS stURL = {};
@@ -199,6 +199,8 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	}
 	wstring host(stURL.lpszHostName, stURL.dwHostNameLength);
 	wstring sendUrl(stURL.lpszUrlPath, stURL.dwUrlPathLength + stURL.dwExtraInfoLength);
+	Format(param, L"?slot=%d", slot);
+	sendUrl += param;
 
 	HINTERNET session;
 	if( proxyServerName.empty() ){
@@ -243,7 +245,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 			}
 		}
 	}
-	if( WinHttpSendRequest(request, authHead.c_str(), (DWORD)-1, &dataBuff.front(), (DWORD)dataBuff.size(), (DWORD)dataBuff.size(), 0) == FALSE ){
+	if( WinHttpSendRequest(request, authHead.c_str(), (DWORD)-1, &bodyBuff.front(), (DWORD)bodyBuff.size(), (DWORD)bodyBuff.size(), 0) == FALSE ){
 		result = L"0 SendRequest";
 		goto EXIT;
 	}

@@ -11,6 +11,10 @@ ul {
   padding: 0;
 }
 
+ul > li > ul {
+  margin-left: 1em;
+}
+
 li {
   padding: 0.2em 0;
 }
@@ -38,6 +42,13 @@ input[type="checkbox"] {
   height: 1em;
   margin-left: 0.2em;
   width: 1em;
+}
+
+#vid-seek {
+  margin-left: 0.5em;
+  min-width: 10em;
+  vertical-align: middle;
+  width: 25%;
 }
 
 select {
@@ -189,6 +200,10 @@ th, td {
 .epg-col > div > b {
   background: #f00;
   color: #fff;
+}
+
+.epg-list {
+  margin-bottom: 0.5em;
 }
 
 .epg-list > div {
@@ -587,4 +602,40 @@ th, td {
     background: #300;
     color: #c66;
   }
+}
+
+div.disabled-on-checked, div.enabled-on-checked, div.sub-setting {
+  margin-left: 2em;
+}
+
+input[type=checkbox]:checked + .disabled-on-checked, input[type=checkbox] + .enabled-on-checked {
+  opacity: 0.5;
+}
+
+input[type=checkbox]:checked + .enabled-on-checked {
+  opacity: 1;
+}
+
+label:has(input[type=checkbox]:checked) + .disabled-on-checked,
+label:has(input[type=checkbox]:checked) + .disabled-on-checked + .disabled-on-checked,
+label:has(input[type=checkbox]) + .enabled-on-checked,
+label:has(input[type=checkbox]) + .enabled-on-checked + .enabled-on-checked {
+  opacity: 0.5;
+}
+
+label:has(input[type=checkbox]:checked) + .enabled-on-checked,
+label:has(input[type=checkbox]:checked) + .enabled-on-checked + .enabled-on-checked {
+  opacity: 1;
+}
+
+label.expand-on-checked {
+  display: none;
+}
+
+label:has(input[type=checkbox]:checked).expand-on-checked, label:has(input[type=checkbox]) + .expand-on-checked {
+  display: none;
+}
+
+label:has(input[type=checkbox]).expand-on-checked, label:has(input[type=checkbox]:checked) + .expand-on-checked {
+  display: unset;
 }

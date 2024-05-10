@@ -208,18 +208,48 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 		}else if( func.compare(0, 2, L"Tr") == 0 && func.size() >= 3 ){
 			//文字置換(Tr/置換文字リスト/置換後/)
 			size_t n = func.find(func[2], 3);
-			if( n == wstring::npos ){
+			size_t m;
+			if( n == wstring::npos || (m = func.find(func[2], n + 1)) == wstring::npos ){
 				return FALSE;
 			}
-			if( func.find(func[2], n + 1) != 4 + (n - 3) * 2 ){
+			wstring cmp;
+			cmp.reserve((n - 3) * 2);
+			for( size_t i = 3; i < n; i++ ){
+				//非サロゲートペアをダブらせて文字ごとに固定長にする
+				cmp.append(IsHighSurrogate(func[i]) || IsLowSurrogate(func[i]) ? 1 : 2, func[i]);
+			}
+			size_t rpos = 0;
+			for( size_t i = n + 1; i < m; i++ ){
+				rpos += IsHighSurrogate(func[i]) || IsLowSurrogate(func[i]) ? 1 : 2;
+			}
+			if( rpos != cmp.size() ){
+				//リストの文字数が合わない
 				return FALSE;
 			}
-			wstring cmp(func, 3, n - 3);
-			for( wstring::iterator itr = ret.begin(); itr != ret.end(); itr++ ){
-				size_t m = cmp.find(*itr);
-				if( m != wstring::npos ){
-					*itr = func[n + 1 + m];
+			for( size_t i = 0; i < ret.size(); ){
+				size_t inc = 1;
+				size_t pos = wstring::npos;
+				if( IsHighSurrogate(ret[i]) && i + 1 < ret.size() ){
+					inc = 2;
+					pos = cmp.find(ret.c_str() + i, 0, 2);
+				}else if( !IsHighSurrogate(ret[i]) && !IsLowSurrogate(ret[i]) ){
+					pos = cmp.find(ret[i]);
 				}
+				if( pos != wstring::npos ){
+					size_t j = n + 1;
+					for( rpos = 0; j < m && rpos < pos; j++ ){
+						rpos += IsHighSurrogate(func[j]) || IsLowSurrogate(func[j]) ? 1 : 2;
+					}
+					if( j >= m || (IsHighSurrogate(func[j]) && j + 1 >= m) ){
+						return FALSE;
+					}
+					ret.replace(i, inc, func, j, IsHighSurrogate(func[j]) ? 2 : 1);
+					if( ret.size() > 64 * 1024 ){
+						return FALSE;
+					}
+					inc = IsHighSurrogate(func[j]) ? 2 : 1;
+				}
+				i += inc;
 			}
 		}else if( func.compare(0, 1, L"S") == 0 && func.size() >= 2 ){
 			//文字列置換(S/置換文字列/置換後/.../)
@@ -252,27 +282,50 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 				return FALSE;
 			}
 			wstring cmp(func, 3, n - 3);
-			for( wstring::iterator itr = ret.begin(); itr != ret.end(); ){
-				if( cmp.find(*itr) != wstring::npos ){
-					itr = ret.erase(itr);
+			for( size_t i = 0; i < ret.size(); ){
+				if( IsHighSurrogate(ret[i]) && i + 1 < ret.size() ){
+					if( cmp.find(ret.c_str() + i, 0, 2) != wstring::npos ){
+						ret.erase(i, 2);
+					}else{
+						i += 2;
+					}
+				}else if( !IsHighSurrogate(ret[i]) && !IsLowSurrogate(ret[i]) && cmp.find(ret[i]) != wstring::npos ){
+					ret.erase(i, 1);
 				}else{
-					itr++;
+					i++;
 				}
 			}
 		}else if( func.compare(0, 4, L"Head") == 0 && func.size() >= 5 ){
 			//足切り(Head文字数[省略記号])
 			wchar_t* p;
 			size_t m = (size_t)wcstol(&func.c_str()[4], &p, 10);
+#if WCHAR_MAX > 0xFFFF
+			//UTF-16相当の長さ
+			bool hasSpace = false;
+			for( size_t i = 0; i < m && i < ret.size(); i++ ){
+				if( ret[i] > L'\xFFFF' ){
+					--m;
+				}
+				hasSpace = m == i;
+			}
+#endif
 			if( m < ret.size() ){
-				ret.erase(m);
-				if( *p && !ret.empty() ){
-					ret.pop_back();
+#if WCHAR_MAX > 0xFFFF
+				if( *p && (m > 0 || hasSpace) ){
+					if( !hasSpace ){
+						m--;
+					}
+#else
+				if( *p && m > 0 ){
+					m--;
+#endif
 				}else{
 					p = NULL;
 				}
-				if( !ret.empty() && IsHighSurrogate(ret.back()) ){
-					ret.pop_back();
+				if( m > 0 && IsHighSurrogate(ret[m - 1]) ){
+					m--;
 				}
+				ret.erase(m);
 				if( p ){
 					ret.push_back(*p);
 				}
@@ -281,16 +334,33 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			//頭切り(Tail文字数[省略記号])
 			wchar_t* p;
 			size_t m = (size_t)wcstol(&func.c_str()[4], &p, 10);
+#if WCHAR_MAX > 0xFFFF
+			//UTF-16相当の長さ
+			bool hasSpace = false;
+			for( size_t i = 0; i < m && i < ret.size(); i++ ){
+				if( ret[ret.size() - 1 - i] > L'\xFFFF' ){
+					--m;
+				}
+				hasSpace = m == i;
+			}
+#endif
 			if( m < ret.size() ){
-				ret.erase(0, ret.size() - m);
-				if( *p && !ret.empty() ){
-					ret.erase(ret.begin());
+#if WCHAR_MAX > 0xFFFF
+				if( *p && (m > 0 || hasSpace) ){
+					if( !hasSpace ){
+						m--;
+					}
+#else
+				if( *p && m > 0 ){
+					m--;
+#endif
 				}else{
 					p = NULL;
 				}
-				if( !ret.empty() && IsLowSurrogate(ret[0]) ){
-					ret.erase(ret.begin());
+				if( m > 0 && IsLowSurrogate(ret[ret.size() - m]) ){
+					m--;
 				}
+				ret.erase(0, ret.size() - m);
 				if( p ){
 					ret.insert(ret.begin(), *p);
 				}

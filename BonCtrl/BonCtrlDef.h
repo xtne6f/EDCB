@@ -3,7 +3,7 @@
 
 #define MUTEX_UDP_PORT_NAME			L"EpgDataCap_Bon_UDP_PORT_" //+IP_ポート番号
 #define MUTEX_TCP_PORT_NAME			L"EpgDataCap_Bon_TCP_PORT_" //+IP_ポート番号
-#define CHSET_SAVE_EVENT_WAIT		L"Global\\EpgTimer_ChSet"
+#define CHSET_SAVE_EVENT_WAIT		L"EpgTimer_ChSet"
 
 //ネットワーク送信の既定ポート番号
 #define BON_UDP_PORT_BEGIN			1234

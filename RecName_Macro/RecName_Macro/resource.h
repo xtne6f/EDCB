@@ -2,6 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by RecName_Macro.rc
 //
+#define IDR_EMBED_TXT                   100
 #define IDD_DIALOG_MACRO                101
 #define IDC_EDIT_MACRO                  1001
 #define IDC_STATIC                      -1

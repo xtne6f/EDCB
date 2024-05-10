@@ -226,8 +226,7 @@ bool Separate(const wstring& strIn, const WCHAR* sep, wstring& strLeft, wstring&
 
 int CompareNoCase(const char* s1, const char* s2)
 {
-	while( *s1 && ('a' <= *s1 && *s1 <= 'z' ? *s1 - 'a' + 'A' : *s1) ==
-	              ('a' <= *s2 && *s2 <= 'z' ? *s2 - 'a' + 'A' : *s2) ){
+	while( *s1 && UtilToUpper(*s1) == UtilToUpper(*s2) ){
 		s1++;
 		s2++;
 	}
@@ -236,10 +235,25 @@ int CompareNoCase(const char* s1, const char* s2)
 
 int CompareNoCase(const WCHAR* s1, const WCHAR* s2)
 {
-	while( *s1 && (L'a' <= *s1 && *s1 <= L'z' ? *s1 - L'a' + L'A' : *s1) ==
-	              (L'a' <= *s2 && *s2 <= L'z' ? *s2 - L'a' + L'A' : *s2) ){
+	while( *s1 && UtilToUpper(*s1) == UtilToUpper(*s2) ){
 		s1++;
 		s2++;
 	}
 	return *s1 - *s2;
+}
+
+bool ParseIPv4Address(const WCHAR* s, int& n)
+{
+	DWORD u = 0;
+	for( int i = 0; i < 4; i++ ){
+		WCHAR* endp;
+		long b = wcstol(s, &endp, 10);
+		if( b < 0 || b > 255 || endp == s || (i < 3 && *endp != L'.') ){
+			return false;
+		}
+		u = u * 256 + (DWORD)b;
+		s = endp + 1;
+	}
+	n = u < 0x80000000 ? (int)u : -(int)(0xFFFFFFFF - u) - 1;
+	return true;
 }

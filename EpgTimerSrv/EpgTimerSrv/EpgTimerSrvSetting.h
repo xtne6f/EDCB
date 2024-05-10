@@ -55,7 +55,9 @@ public:
 		int delReserveMode;
 		int recAppWakeTime;
 		bool recMinWake;
-		bool recView;
+		bool openViewForViewing;
+		bool openViewForRec;
+		bool openViewAlways;
 		bool recNW;
 		bool pgInfoLog;
 		bool pgInfoLogAsUtf8;

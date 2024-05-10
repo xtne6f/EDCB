@@ -1,0 +1,119 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/録画保存フォルダ - EDCB</title>
+</head>
+<body>
+<h1>設定/録画保存フォルダ</h1>
+<div id="main">
+]=])
+
+commonIni='Common.ini'
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  itemList=EdcbRecFolderPathList()
+  item=mg.get_var(post,'dir') or ''
+  if mg.get_var(post,'add') then
+    for i,v in ipairs(itemList) do
+      if v:upper()==item:upper() then
+        --既にある
+        item=nil
+        break
+      end
+    end
+    if item and item:find('^[^%c*?"<>|]+$') then
+      ff=edcb.FindFile(item,1)
+      if ff and ff[1].isdir or item:find('^[A-Za-z]:\\$') then
+        itemList[#itemList+1]=item
+        ct:Append('<div id="result">追加しました</div>\n')
+      end
+    end
+  else
+    for i,v in ipairs(itemList) do
+      if v==item then
+        if mg.get_var(post,'del') then
+          table.remove(itemList,i)
+          ct:Append('<div id="result">削除しました</div>\n')
+        elseif mg.get_var(post,'up') and i>1 then
+          table.remove(itemList,i)
+          table.insert(itemList,i-1,v)
+          ct:Append('<div id="result">移動しました</div>\n')
+        elseif mg.get_var(post,'down') and i<#itemList then
+          table.remove(itemList,i)
+          table.insert(itemList,i+1,v)
+          ct:Append('<div id="result">移動しました</div>\n')
+        end
+        break
+      end
+    end
+  end
+  for i,v in ipairs(itemList) do
+    if #itemList==1 and v:upper()==EdcbSettingPath():upper() then
+      --既定値なので記録しない
+      itemList={}
+      break
+    end
+    edcb.WritePrivateProfile('SET','RecFolderPath'..(i-1),v,commonIni)
+  end
+  edcb.WritePrivateProfile('SET','RecFolderNum',#itemList,commonIni)
+  for i=#itemList+1,999 do
+    --掃除
+    if edcb.GetPrivateProfile('SET','RecFolderPath'..(i-1),'',commonIni)=='' then break end
+    edcb.WritePrivateProfile('SET','RecFolderPath'..(i-1),nil,commonIni)
+  end
+  edcb.ReloadSetting(false)
+end
+
+edcb.htmlEscape=15
+
+for i,v in ipairs(EdcbRecFolderPathList()) do
+  ct:Append([=[
+<div>
+  <form method="POST" action="setting_rec_folder.html" style="display:inline"><div style="display:inline">
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="del" value="y">
+    <input type="hidden" name="dir" value="]=]..v..[=[">
+    <button type="submit">削除</button></div></form>
+  <form method="POST" action="setting_rec_folder.html" style="display:inline"><div style="display:inline">
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="up" value="y">
+    <input type="hidden" name="dir" value="]=]..v..[=[">
+    <button type="submit">上↑</button></div></form>
+  <form method="POST" action="setting_rec_folder.html" style="display:inline"><div style="display:inline">
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="down" value="y">
+    <input type="hidden" name="dir" value="]=]..v..[=[">
+    <button type="submit">下↓</button>]=]..v..[=[</div></form>
+</div>
+]=])
+end
+ct:Append([=[
+(空き容量が少ない場合、上から順に録画対象のフォルダとします)
+<form method="POST" action="setting_rec_folder.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <input type="hidden" name="add" value="y">
+  <input type="text" name="dir" style="width:95%"><br>
+  (フォルダは事前に作成してください)<br>
+  <button type="submit">追加</button>
+</div></form>
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

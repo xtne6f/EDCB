@@ -1,0 +1,175 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/プリセット/録画フォルダ - EDCB</title>
+</head>
+<body>
+<h1>設定/プリセット/録画フォルダ</h1>
+<div id="main">
+]=])
+
+srvIni='EpgTimerSrv.ini'
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  presetID=GetVarInt(post,'presetID') or 0
+  rs=nil
+  for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+    if v.id==presetID then
+      rs=v.recSetting
+      break
+    end
+  end
+  if rs then
+    if mg.get_var(post,'add') then
+      addFolder={recFolder=nil,writePlugIn='Write_Default.dll',recNamePlugIn=''}
+      item=mg.get_var(post,'dir') or ''
+      if item=='' then
+        addFolder.recFolder='!Default'
+      elseif item:find('^[^%c*?"<>|]+$') then
+        ff=edcb.FindFile(item,1)
+        if ff and ff[1].isdir or item:find('^[A-Za-z]:\\$') then
+          addFolder.recFolder=item
+        end
+      end
+      if addFolder.recFolder then
+        item=mg.get_var(post,'writePlugIn') or ''
+        for i,v in ipairs(EnumPlugInFileName('Write')) do
+          if v:upper()==item:upper() then
+            addFolder.writePlugIn=item
+            break
+          end
+        end
+        item=mg.get_var(post,'recNamePlugIn') or ''
+        for i,v in ipairs(EnumPlugInFileName('RecName')) do
+          if v:upper()==item:upper() then
+            addFolder.recNamePlugIn=item
+            break
+          end
+        end
+        item=mg.get_var(post,'recNameOption') or ''
+        if addFolder.recNamePlugIn~='' and item:find('^%C+$') then
+          addFolder.recNamePlugIn=addFolder.recNamePlugIn..'?'..item
+        end
+        table.insert(GetVarInt(post,'partial')==1 and rs.partialRecFolder or rs.recFolderList,addFolder)
+        ct:Append('<div id="result">追加しました</div>\n')
+      end
+    else
+      newList={}
+      for i,v in ipairs(rs.recFolderList) do
+        if GetVarInt(post,'del-'..i)~=1 then
+          newList[#newList+1]=v
+        end
+      end
+      newPartial={}
+      for i,v in ipairs(rs.partialRecFolder) do
+        if GetVarInt(post,'del-p-'..i)~=1 then
+          newPartial[#newPartial+1]=v
+        end
+      end
+      if #rs.recFolderList~=#newList or #rs.partialRecFolder~=#newPartial then
+        rs.recFolderList=newList
+        rs.partialRecFolder=newPartial
+        ct:Append('<div id="result">削除しました</div>\n')
+      end
+    end
+    defName='REC_DEF_FOLDER'
+    if presetID>0 then
+      defName=defName..presetID
+    end
+    edcb.WritePrivateProfile(defName,'Count',#rs.recFolderList,srvIni)
+    for i,v in ipairs(rs.recFolderList) do
+      edcb.WritePrivateProfile(defName,i-1,v.recFolder,srvIni)
+      edcb.WritePrivateProfile(defName,'WritePlugIn'..(i-1),v.writePlugIn,srvIni)
+      edcb.WritePrivateProfile(defName,'RecNamePlugIn'..(i-1),v.recNamePlugIn,srvIni)
+    end
+    defName=defName:gsub('ER','ER_1SEG')
+    edcb.WritePrivateProfile(defName,'Count',#rs.partialRecFolder,srvIni)
+    for i,v in ipairs(rs.partialRecFolder) do
+      edcb.WritePrivateProfile(defName,i-1,v.recFolder,srvIni)
+      edcb.WritePrivateProfile(defName,'WritePlugIn'..(i-1),v.writePlugIn,srvIni)
+      edcb.WritePrivateProfile(defName,'RecNamePlugIn'..(i-1),v.recNamePlugIn,srvIni)
+    end
+  end
+else
+  presetID=GetVarInt(mg.request_info.query_string,'presetID') or 0
+end
+
+edcb.htmlEscape=15
+preset=nil
+for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+  if v.id==presetID then
+    preset=v
+    break
+  end
+end
+
+if preset then
+  ct:Append([=[
+<form method="POST" action="setting_rec_preset_folder.html"><div>
+  <input type="hidden" name="presetID" value="]=]..presetID..[=[">
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <table>
+    <tr><td>録画フォルダ<td>出力PlugIn<td>ファイル名PlugIn<td>部分受信<td></tr>
+]=])
+  for i,v in ipairs(preset.recSetting.recFolderList) do
+    ct:Append('    <tr><td>'..v.recFolder..'<td>'..v.writePlugIn..'<td>'..v.recNamePlugIn
+      ..'<td>いいえ<td><label><input name="del-'..i..'"'..Checkbox()..'>削除</label></td></tr>\n')
+  end
+  for i,v in ipairs(preset.recSetting.partialRecFolder) do
+    ct:Append('    <tr><td>'..v.recFolder..'<td>'..v.writePlugIn..'<td>'..v.recNamePlugIn
+      ..'<td>はい<td><label><input name="del-p-'..i..'"'..Checkbox()..'>削除</label></td></tr>\n')
+  end
+  ct:Append([=[
+  </table>
+  <button type="submit">削除</button></div></form>
+<form method="POST" action="setting_rec_preset_folder.html"><div>
+  <input type="hidden" name="presetID" value="]=]..presetID..[=[">
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <input type="hidden" name="add" value="y">
+  録画フォルダ (フォルダは事前に作成してください)<br>
+  <input type="text" name="dir" style="width:95%"><br>
+  出力PlugIn
+  <select name="writePlugIn">
+]=])
+  for i,v in ipairs(EnumPlugInFileName('Write')) do
+    ct:Append('    <option>'..v..'</option>\n')
+  end
+  ct:Append([=[
+  </select><br>
+  ファイル名PlugIn
+  <select name="recNamePlugIn">
+    <option value="">なし</option>
+]=])
+  for i,v in ipairs(EnumPlugInFileName('RecName')) do
+    ct:Append('    <option>'..v..'</option>\n')
+  end
+  ct:Append([=[
+  </select><br>
+  ファイル名PlugInオプション<br>
+  <input type="text" name="recNameOption" style="width:95%"><br>
+  <label><input name="partial"]=]..Checkbox()..[=[>部分受信</label><br>
+  <button type="submit">追加</button></div></form>
+]=])
+end
+ct:Append([=[
+</div>
+<div id="footer">
+  <a href="setting_rec_preset.html?presetID=]=]..(preset and presetID or 0)..'">プリセット'..(preset and '「'..preset.name..'」' or '')..[=[</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

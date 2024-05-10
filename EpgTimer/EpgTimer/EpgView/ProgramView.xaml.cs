@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -30,6 +31,8 @@ namespace EpgTimer.EpgView
         private double lastDownVOffset;
         private bool isDrag = false;
         private bool isDragMoved = false;
+        private HwndSource scrollViewerHwndSource;
+        private HwndSourceHook horizontalScrollMessageHook;
 
         private DispatcherTimer toolTipTimer;
         private DispatcherTimer toolTipOffTimer; 
@@ -546,6 +549,47 @@ namespace EpgTimer.EpgView
             }
         }
 
+        private void scrollViewer_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (horizontalScrollMessageHook == null && (EpgSetting.MouseHorizontalScrollAuto || EpgSetting.HorizontalScrollSize != 0))
+            {
+                scrollViewerHwndSource = PresentationSource.FromVisual(scrollViewer) as HwndSource;
+                if (scrollViewerHwndSource != null)
+                {
+                    horizontalScrollMessageHook = (IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+                    {
+                        const int WM_MOUSEHWHEEL = 0x020E;
+                        if (msg == WM_MOUSEHWHEEL)
+                        {
+                            toolTipTimer.Stop();
+                            toolTip.IsOpen = false;
+
+                            double delta = (short)((wParam.ToInt64() >> 16) & 0xFFFF);
+                            if (delta != 0)
+                            {
+                                //負のとき左方向
+                                delta = EpgSetting.MouseHorizontalScrollAuto ? delta : EpgSetting.HorizontalScrollSize * (delta < 0 ? -1 : 1);
+                                scrollViewer.ScrollToHorizontalOffset(scrollViewer.HorizontalOffset + delta);
+                            }
+                            handled = true;
+                        }
+                        return IntPtr.Zero;
+                    };
+                    scrollViewerHwndSource.AddHook(horizontalScrollMessageHook);
+                }
+            }
+        }
+
+        private void scrollViewer_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (horizontalScrollMessageHook != null)
+            {
+                scrollViewerHwndSource.RemoveHook(horizontalScrollMessageHook);
+                horizontalScrollMessageHook = null;
+                scrollViewerHwndSource = null;
+            }
+        }
+
         private void scrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             var ps = PresentationSource.FromVisual(this);
@@ -586,21 +630,13 @@ namespace EpgTimer.EpgView
             toolTipTimer.Stop();
             toolTip.IsOpen = false;
 
+            if (e.Delta != 0)
+            {
+                //負のとき下方向
+                double delta = EpgSetting.MouseScrollAuto ? e.Delta : EpgSetting.ScrollSize * (e.Delta < 0 ? -1 : 1);
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - delta);
+            }
             e.Handled = true;
-            if (EpgSetting.MouseScrollAuto)
-            {
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
-            }
-            else if (e.Delta < 0)
-            {
-                //下方向
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + EpgSetting.ScrollSize);
-            }
-            else
-            {
-                //上方向
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - EpgSetting.ScrollSize);
-            }
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿#include "stdafx.h"
 #include "TimeShiftUtil.h"
-#include "PathUtil.h"
 #include "StringUtil.h"
 #include "TimeUtil.h"
 #include "TSPacketUtil.h"
@@ -12,7 +11,9 @@
 #endif
 
 CTimeShiftUtil::CTimeShiftUtil(void)
-	: readFile(NULL, fclose)
+	: udpMutex(UtilCreateGlobalMutex())
+	, tcpMutex(UtilCreateGlobalMutex())
+	, readFile(NULL, fclose)
 	, seekFile(NULL, fclose)
 {
 	this->PCR_PID = 0xFFFF;
@@ -39,6 +40,7 @@ void CTimeShiftUtil::Send(
 	lock_recursive_mutex lock2(this->ioLock);
 
 	for( int tcp = 0; tcp < 2; tcp++ ){
+		util_unique_handle& mutex = (tcp ? this->tcpMutex : this->udpMutex);
 		CSendTSTCPDllUtil* sendNW = (tcp ? &this->sendTcp : &this->sendUdp);
 		SEND_INFO* info = this->sendInfo + tcp;
 		DWORD* port = tcp ? tcpPort : udpPort;
@@ -47,12 +49,7 @@ void CTimeShiftUtil::Send(
 			info->ip.clear();
 			sendNW->StopSend();
 			sendNW->UnInitialize();
-#ifdef _WIN32
-			CloseHandle(info->mutex);
-#else
-			DeleteFile(info->key.c_str());
-			fclose(info->mutex);
-#endif
+			mutex.reset();
 		}
 		if( port == NULL ){
 			continue;
@@ -68,51 +65,25 @@ void CTimeShiftUtil::Send(
 			continue;
 		}
 
-		UINT u[4];
-		int scanNum = swscanf_s(ip, L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]);
-		if( scanNum == 4 ){
-			u[0] = (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3];
-		}
+		int n;
+		bool parsed = ParseIPv4Address(ip, n);
 		//引数のポート番号は使わない(原作挙動)。ip:0.0.0.1-255は特別扱い
-		info->port = (tcp ? (scanNum == 4 && 1 <= u[0] && u[0] <= 255 ? 0 : BON_TCP_PORT_BEGIN) : BON_UDP_PORT_BEGIN);
+		info->port = (tcp ? (parsed && 1 <= n && n <= 255 ? 0 : BON_TCP_PORT_BEGIN) : BON_UDP_PORT_BEGIN);
 		for( int i = 0; i < BON_NW_PORT_RANGE; i++, info->port++ ){
 			LPCWSTR mutexName = tcp ? MUTEX_TCP_PORT_NAME : MUTEX_UDP_PORT_NAME;
-#ifdef _WIN32
-			if( scanNum == 4 ){
-				Format(info->key, L"Global\\%ls%d_%d", mutexName, u[0], info->port);
+			if( parsed ){
+				Format(info->key, L"%ls%d_%d", mutexName, n, info->port);
 			}else{
-				Format(info->key, L"Global\\%ls%ls_%d", mutexName, ip, info->port);
+				Format(info->key, L"%ls%ls_%d", mutexName, ip, info->port);
 			}
-			info->mutex = CreateMutex(NULL, FALSE, info->key.c_str());
-			if( info->mutex ){
-				if( GetLastError() != ERROR_ALREADY_EXISTS ){
-					break;
-				}
-				CloseHandle(info->mutex);
-				info->mutex = NULL;
+			mutex = UtilCreateGlobalMutex(info->key.c_str());
+			if( mutex ){
+				break;
 			}
-#else
-			if( scanNum == 4 ){
-				Format(info->key, L"%ls%ls%u_%u.lock", EDCB_INI_ROOT, mutexName, u[0], info->port);
-			}else{
-				Format(info->key, L"%ls%ls%ls_%u.lock", EDCB_INI_ROOT, mutexName, ip, info->port);
-			}
-			info->mutex = UtilOpenFile(info->key, UTIL_SECURE_WRITE);
-			if( info->mutex ){
-				string strKey;
-				WtoUTF8(info->key, strKey);
-				struct stat st[2];
-				if( fstat(fileno(info->mutex), st) == 0 && stat(strKey.c_str(), st + 1) == 0 && st[0].st_ino == st[1].st_ino ){
-					break;
-				}
-				fclose(info->mutex);
-				info->mutex = NULL;
-			}
-#endif
 		}
-		if( info->mutex ){
+		if( mutex ){
 			//開始
-			AddDebugLogFormat(L"%ls", info->key.c_str());
+			AddDebugLogFormat(L"Global\\%ls", info->key.c_str());
 			sendNW->Initialize();
 			if( tcp ){
 				sendNW->AddSendAddr(ip, info->port);
@@ -222,7 +193,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 		}
 		lock_recursive_mutex lock(sys->ioLock);
 
-		LONGLONG pos = _ftelli64(sys->readFile.get());
+		LONGLONG pos = my_ftell(sys->readFile.get());
 		if( pos < 0 ){
 			break;
 		}
@@ -235,7 +206,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 				}
 				continue;
 			}
-			if( _fseeki64(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
+			if( my_fseek(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
 				break;
 			}
 			packetInit.ClearBuff();
@@ -247,7 +218,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 			if( sys->fileMode || ++errCount > 50 ){
 				break;
 			}
-			if( _fseeki64(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
+			if( my_fseek(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
 				break;
 			}
 			continue;
@@ -260,7 +231,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 				if( ++errCount > 50 ){
 					break;
 				}
-				if( _fseeki64(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
+				if( my_fseek(sys->readFile.get(), sys->currentFilePos, SEEK_SET) != 0 ){
 					break;
 				}
 			}else{
@@ -330,7 +301,7 @@ void CTimeShiftUtil::ReadThread(CTimeShiftUtil* sys)
 
 static BOOL IsDataAvailable(FILE* fp, LONGLONG pos, CPacketInit* packetInit)
 {
-	if( _fseeki64(fp, pos, SEEK_SET) == 0 ){
+	if( my_fseek(fp, pos, SEEK_SET) == 0 ){
 		BYTE buff[188 * 16];
 		DWORD readSize = (DWORD)fread(buff, 1, sizeof(buff), fp);
 		if( readSize > 0 ){
@@ -355,8 +326,8 @@ LONGLONG CTimeShiftUtil::GetAvailableFileSize() const
 			fp = tmpFile.get();
 		}
 		LONGLONG fileSize = -1;
-		if( fp && _fseeki64(fp, 0, SEEK_END) == 0 ){
-			fileSize = _ftelli64(fp);
+		if( fp && my_fseek(fp, 0, SEEK_END) == 0 ){
+			fileSize = my_ftell(fp);
 		}
 		if( this->fileMode ){
 			//単純にファイルサイズを返す

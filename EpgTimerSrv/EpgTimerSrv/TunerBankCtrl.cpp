@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "TunerBankCtrl.h"
 #include "../../Common/EpgTimerUtil.h"
+#include "../../Common/IniUtil.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
@@ -44,7 +45,9 @@ void CTunerBankCtrl::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	//録画開始のちょうどn分前だと起動と他チューナ録画開始が若干重なりやすくなるので僅かにずらす
 	this->recWakeTime = max(s.recAppWakeTime * 60 - 3, READY_MARGIN) * I64_1SEC;
 	this->recMinWake = s.recMinWake;
-	this->recView = s.recView;
+	this->openViewForViewing = s.openViewForViewing && s.openViewAlways == false;
+	this->openViewForRec = s.openViewForRec && s.openViewAlways == false;
+	this->openViewAlways = s.openViewAlways;
 	this->recNW = s.recNW;
 	this->backPriority = s.backPriority;
 	this->saveProgramInfo = s.pgInfoLog;
@@ -367,7 +370,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							//「視聴モード」にするとGUIキープが解除されてしまうためチャンネルを把握することはできない
 							ctrlCmd.SendViewSetStandbyRec(2);
 							this->tunerChLocked = false;
-							if( this->recView ){
+							if( this->openViewForViewing ){
 								ctrlCmd.SendViewExecViewApp();
 							}
 						}
@@ -379,6 +382,9 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 								//たとえサブ録画が発生してもこのコマンドで得られるパスは変化しない
 								ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &r.recFilePath[i]);
 							}
+						}
+						if( this->openViewForRec ){
+							ctrlCmd.SendViewExecViewApp();
 						}
 					}
 					if( startedReserveIDList ){
@@ -508,7 +514,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			initCh.useSID = TRUE;
 			initCh.useBonCh = FALSE;
 			bool nwUdpTcp = this->recNW || r.recMode == RECMODE_VIEW;
-			if( OpenTuner(this->recMinWake, this->recView == false || r.recMode != RECMODE_VIEW, nwUdpTcp, nwUdpTcp, true, &initCh) ){
+			if( OpenTuner(this->recMinWake, (this->openViewForViewing == false && this->openViewAlways == false) || r.recMode != RECMODE_VIEW,
+			              nwUdpTcp, nwUdpTcp, true, &initCh) ){
 				this->tunerONID = r.onid;
 				this->tunerTSID = r.tsid;
 				this->tunerChLocked = true;
@@ -1088,19 +1095,34 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		strExecute = GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").native();
 	}
 
-	wstring strParam = L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"Bon", L"-d", strIni.c_str()) + L" " + this->bonFileName;
+	//セクション単位で処理するほうが軽い
+	vector<WCHAR> buffOpt = GetPrivateProfileSectionBuffer(L"APP_CMD_OPT", strIni.c_str());
+
+	wstring strParam = L" " + GetBufferedProfileToString(buffOpt.data(), L"Bon", L"-d") + L" " + this->bonFileName;
 
 	if( minWake ){
-		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"Min", L"-min", strIni.c_str());
+		strParam += L" " + GetBufferedProfileToString(buffOpt.data(), L"Min", L"-min");
 	}
 	if( noView ){
-		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"ViewOff", L"-noview", strIni.c_str());
+		strParam += L" " + GetBufferedProfileToString(buffOpt.data(), L"ViewOff", L"-noview");
 	}
 	if( nwUdp == false && nwTcp == false ){
-		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", strIni.c_str());
+		strParam += L" " + GetBufferedProfileToString(buffOpt.data(), L"NetworkOff", L"-nonw");
 	}else{
 		strParam += nwUdp ? L" -nwudp" : L"";
 		strParam += nwTcp ? L" -nwtcp" : L"";
+	}
+
+	if( initCh && initCh->useSID ){
+		//チャンネルの初期値を指定しておく(あくまで補助的なもの)
+		wstring optONID = GetBufferedProfileToString(buffOpt.data(), L"ONID", L"-nid");
+		wstring optTSID = GetBufferedProfileToString(buffOpt.data(), L"TSID", L"-tsid");
+		wstring optSID = GetBufferedProfileToString(buffOpt.data(), L"SID", L"-sid");
+		if( optONID.empty() == false && optTSID.empty() == false && optSID.empty() == false ){
+			wstring ch;
+			Format(ch, L" %ls %d %ls %d %ls %d", optONID.c_str(), initCh->ONID, optTSID.c_str(), initCh->TSID, optSID.c_str(), initCh->SID);
+			strParam += ch;
+		}
 	}
 
 	//原作と異なりイベントオブジェクト"Global\\EpgTimerSrv_OpenTuner_Event"による排他制御はしない
@@ -1197,6 +1219,9 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 				}
 				if( initCh ){
 					ctrlCmd.SendViewSetCh(*initCh);
+					if( this->openViewAlways ){
+						ctrlCmd.SendViewExecViewApp();
+					}
 				}
 				return true;
 			}

@@ -50,20 +50,17 @@ WORD COneServiceUtil::GetSID()
 	return this->SID;
 }
 
-BOOL COneServiceUtil::SendUdpTcp(
+void COneServiceUtil::SendUdpTcp(
 	vector<NW_SEND_INFO>* sendList,
 	BOOL tcpFlag,
 	CSendTSTCPDllUtil& sendNW,
-	vector<HANDLE>& portMutexList,
+	vector<util_unique_handle>& portMutexList,
 	LPCWSTR mutexName
 	)
 {
 	sendNW.StopSend();
 	sendNW.UnInitialize();
-	while( portMutexList.empty() == false ){
-		CloseHandle(portMutexList.back());
-		portMutexList.pop_back();
-	}
+	portMutexList.clear();
 
 	if( sendList != NULL ){
 		sendNW.Initialize();
@@ -71,43 +68,41 @@ BOOL COneServiceUtil::SendUdpTcp(
 			//IPアドレスであること
 			if( std::find_if(itr->ipString.begin(), itr->ipString.end(), [](WCHAR c) {
 			        return (c < L'0' || L'9' < c) && (c < L'A' || L'Z' < c) && (c < L'a' || L'z' < c) && c != L'%' && c != L'.' && c != L':'; }) != itr->ipString.end() ){
+				//失敗
+				itr->port = 0x10000;
 				continue;
 			}
-			HANDLE portMutex = NULL;
-			for( int i = 0; i < BON_NW_PORT_RANGE; i++ ){
+			bool created = false;
+			for( int i = 0; i < BON_NW_PORT_RANGE && itr->port < 0x10000; i++, itr->port++ ){
 				wstring key;
-				UINT u[4];
-				if( swscanf_s(itr->ipString.c_str(), L"%u.%u.%u.%u", &u[0], &u[1], &u[2], &u[3]) == 4 ){
-					Format(key, L"Global\\%ls%d_%d", mutexName, (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3], itr->port);
+				int n;
+				if( ParseIPv4Address(itr->ipString.c_str(), n) ){
+					Format(key, L"%ls%d_%d", mutexName, n, itr->port);
 				}else{
-					Format(key, L"Global\\%ls%ls_%d", mutexName, itr->ipString.c_str(), itr->port);
+					Format(key, L"%ls%ls_%d", mutexName, itr->ipString.c_str(), itr->port);
 				}
-				portMutex = CreateMutex(NULL, FALSE, key.c_str());
-				if( portMutex == NULL ){
-					itr->port++;
-				}else if( GetLastError() == ERROR_ALREADY_EXISTS ){
-					CloseHandle(portMutex);
-					portMutex = NULL;
-					itr->port++;
-				}else{
-					AddDebugLogFormat(L"%ls", key.c_str());
-					portMutexList.push_back(portMutex);
+				util_unique_handle portMutex = UtilCreateGlobalMutex(key.c_str());
+				if( portMutex ){
+					AddDebugLogFormat(L"Global\\%ls", key.c_str());
+					portMutexList.push_back(std::move(portMutex));
+					created = true;
 					break;
 				}
 			}
 			//ポート番号増分用のミューテックスを生成できたものだけ追加
-			if( portMutex ){
+			if( created ){
 				if( tcpFlag ){
 					sendNW.AddSendAddr(itr->ipString.c_str(), itr->port);
 				}else{
 					sendNW.AddSendAddrUdp(itr->ipString.c_str(), itr->port, itr->broadcastFlag != FALSE, itr->udpMaxSendSize);
 				}
+			}else{
+				//失敗
+				itr->port = 0x10000;
 			}
 		}
 		sendNW.StartSend();
 	}
-
-	return TRUE;
 }
 
 //出力用TSデータを送る

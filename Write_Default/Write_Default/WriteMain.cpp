@@ -81,7 +81,7 @@ BOOL CWriteMain::Start(
 
 	//ディスクに容量を確保
 	if( createSize > 0 ){
-		if( _fseeki64(this->file.get(), createSize, SEEK_SET) == 0 ){
+		if( my_fseek(this->file.get(), createSize, SEEK_SET) == 0 ){
 			SetEndOfFile((HANDLE)_get_osfhandle(_fileno(this->file.get())));
 		}
 		rewind(this->file.get());
@@ -240,7 +240,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 						}
 						LONGLONG pos;
 						size_t n;
-						if( (pos = _ftelli64(sys->teeFile.get())) >= 0 &&
+						if( (pos = my_ftell(sys->teeFile.get())) >= 0 &&
 						    readablePos - pos >= (LONGLONG)sys->teeBuff.size() &&
 						    (n = fread(sys->teeBuff.data(), 1, sys->teeBuff.size(), sys->teeFile.get())) > 0 ){
 							OVERLAPPED ol = {};

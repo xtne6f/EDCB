@@ -18,9 +18,7 @@
 
 #define EPG_TIMER_SERVICE_EXE L"EpgTimerSrv.exe"
 
-#define EPG_TIMER_BON_MUTEX L"Global\\EpgTimer_Bon2"
-#define EPG_TIMER_BON_LITE_MUTEX L"Global\\EpgTimer_Bon2_Lite"
-#define EPG_TIMER_BON_SRV_MUTEX L"Global\\EpgTimer_Bon_Service"
+#define EPG_TIMER_BON_SRV_MUTEX L"EpgTimer_Bon_Service"
 #define SERVICE_NAME L"EpgTimer Service"
 
 #define RECMODE_ALL 0 //全サービス

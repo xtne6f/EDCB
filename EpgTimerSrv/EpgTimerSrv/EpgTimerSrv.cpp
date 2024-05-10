@@ -8,6 +8,7 @@
 #include "../../Common/ServiceUtil.h"
 #include "../../Common/StackTrace.h"
 #include "../../Common/ThreadUtil.h"
+#include "../../Common/TimeUtil.h"
 #include "../../Common/CommonDef.h"
 #include <winsvc.h>
 #include <objbase.h>
@@ -93,39 +94,33 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
 	if( IsInstallService(SERVICE_NAME) == FALSE ){
 		//普通にexeとして起動を行う
-		HANDLE hMutex = CreateMutex(NULL, FALSE, EPG_TIMER_BON_SRV_MUTEX);
-		if( hMutex != NULL ){
-			if( GetLastError() != ERROR_ALREADY_EXISTS ){
-				SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
-				//メインスレッドに対するCOMの初期化
-				CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-				CEpgTimerSrvMain* pMain = new CEpgTimerSrvMain;
-				if( pMain->Main(false) == false ){
-					AddDebugLog(L"_tWinMain(): Failed to start");
-				}
-				delete pMain;
-				CoUninitialize();
-				SetSaveDebugLog(false);
+		util_unique_handle mutex = UtilCreateGlobalMutex(EPG_TIMER_BON_SRV_MUTEX);
+		if( mutex ){
+			SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
+			//メインスレッドに対するCOMの初期化
+			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+			CEpgTimerSrvMain* pMain = new CEpgTimerSrvMain;
+			if( pMain->Main(false) == false ){
+				AddDebugLog(L"_tWinMain(): Failed to start");
 			}
-			CloseHandle(hMutex);
+			delete pMain;
+			CoUninitialize();
+			SetSaveDebugLog(false);
 		}
 	}else if( IsStopService(SERVICE_NAME) == FALSE ){
 		//サービスとして実行
-		HANDLE hMutex = CreateMutex(NULL, FALSE, EPG_TIMER_BON_SRV_MUTEX);
-		if( hMutex != NULL ){
-			if( GetLastError() != ERROR_ALREADY_EXISTS ){
-				SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
-				WCHAR serviceName[] = SERVICE_NAME;
-				SERVICE_TABLE_ENTRY dispatchTable[] = {
-					{ serviceName, service_main },
-					{ NULL, NULL }
-				};
-				if( StartServiceCtrlDispatcher(dispatchTable) == FALSE ){
-					AddDebugLog(L"_tWinMain(): StartServiceCtrlDispatcher failed");
-				}
-				SetSaveDebugLog(false);
+		util_unique_handle mutex = UtilCreateGlobalMutex(EPG_TIMER_BON_SRV_MUTEX);
+		if( mutex ){
+			SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
+			WCHAR serviceName[] = SERVICE_NAME;
+			SERVICE_TABLE_ENTRY dispatchTable[] = {
+				{ serviceName, service_main },
+				{ NULL, NULL }
+			};
+			if( StartServiceCtrlDispatcher(dispatchTable) == FALSE ){
+				AddDebugLog(L"_tWinMain(): StartServiceCtrlDispatcher failed");
 			}
-			CloseHandle(hMutex);
+			SetSaveDebugLog(false);
 		}
 	}
 
@@ -217,7 +212,7 @@ void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutpu
 		lock_recursive_mutex lock(g_debugLogLock);
 		if( g_debugLog ){
 			SYSTEMTIME st;
-			GetLocalTime(&st);
+			ConvertSystemTime(GetNowI64Time(), &st);
 			WCHAR t[128];
 			int n = swprintf_s(t, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
 			                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);

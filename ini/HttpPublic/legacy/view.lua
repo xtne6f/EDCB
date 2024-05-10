@@ -2,9 +2,11 @@
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
+-- HLSの開始はPOSTでなければならない
 query=AssertPost()
-if not query then
-  -- POSTでなくてもよい
+open=query and GetVarInt(query,'open')==1
+if open or not query then
+  -- URLクエリにもCSRF対策トークンが必要
   query=mg.request_info.query_string
   AssertCsrf(query)
 end
@@ -12,16 +14,16 @@ end
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
-hls=GetVarInt(query,'hls',1)
+hlsKey=mg.get_var(query,'hls')
 hls4=GetVarInt(query,'hls4',0) or 0
-caption=hls and option.captionHls or option.captionNone or ''
-output=hls and option.outputHls or option.output
+caption=hlsKey and option.captionHls or option.captionNone or ''
+output=hlsKey and option.outputHls or option.output
 n=GetVarInt(query,'n') or 0
 onid,tsid,sid=GetVarServiceID(query,'id')
 if onid==0 and tsid==0 and sid==0 then
   onid=nil
 end
-if hls and not (ALLOW_HLS and option.outputHls) then
+if hlsKey and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
   n=nil
   onid=nil
@@ -30,6 +32,12 @@ psidata=GetVarInt(query,'psidata')==1
 jikkyo=GetVarInt(query,'jikkyo')==1
 hlsMsn=GetVarInt(query,'_HLS_msn',1)
 hlsPart=GetVarInt(query,'_HLS_part',0)
+
+-- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
+hlsKey=hlsKey and n and mg.md5('view:'..hlsKey..(onid and ':nwtv' or ':')..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
+
+-- フラグメント長の目安
+partConfigSec=0.8
 
 function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if XCODE_SINGLE then
@@ -43,9 +51,10 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
       pf:close()
     end
     -- パイプラインの上流を終わらせる
-    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-%\'" call terminate >nul')
+    TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-%')
     if pids then
       -- 親プロセスの終了を2秒だけ待つ。パイプラインの下流でストールしている可能性もあるので待ちすぎない
+      -- wmicコマンドのない環境では待たないがここの待機はさほど重要ではない
       for i=1,4 do
         edcb.Sleep(500)
         if i==4 or not edcb.os.execute('wmic process where "'..pids..'" get processid 2>nul | findstr /b [1-9] >nul') then
@@ -56,10 +65,10 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   end
 
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
-  local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
-  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
-  local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
-  local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
+  local tools=EdcbModulePath()..'\\Tools'
+  local tsreadex='"'..(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe"'
+  local asyncbuf='"'..(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe"'
+  local tsmemseg='"'..(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe"'
   local xcoder=''
   for s in option.xcoder:gmatch('[^|]+') do
     xcoder=tools..'\\'..s
@@ -85,45 +94,38 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
     if f then
       f:write(cmd..'\n\n')
       f:close()
-      cmd=cmd..' 2>>"'..log..'"'
+      cmd=cmd..' 2>>"'..log:gsub('[&%^]','^%0')..'"'
     end
   end
-  if hls then
+  if hlsKey then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
     -- プロセス終了時に対応するNetworkTVモードも終了させる
-    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 '
+    cmd=cmd..' | '..tsmemseg..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 -p '..partConfigSec..' '
     if nwtvclose then
-      if edcb.FindFile(tools..'\\nwtvclose.ps1',1) then
-        cmd=cmd..'-c "powershell -NoProfile -ExecutionPolicy RemoteSigned -File nwtvclose.ps1 '..nwtvclose[1]..' '..nwtvclose[2]..'" '
-      else
-        cmd=cmd.."-c \"..\\EpgTimerSrv.exe /luapost if(edcb.GetPrivateProfile('NWTV','nwtv"..nwtvclose[1].."open','"..nwtvclose[2]
-          .."','Setting\\\\HttpPublic.ini')=='"..nwtvclose[2].."')then;edcb.CloseNetworkTV("..nwtvclose[1]..");end\" "
-      end
+      cmd=cmd.."-c \"..\\EpgTimerSrv.exe /luapost if(edcb.GetPrivateProfile('NWTV','nwtv"..nwtvclose[1].."open','"..nwtvclose[2]
+        .."','Setting\\\\HttpPublic.ini')=='"..nwtvclose[2].."')then;edcb.CloseNetworkTV("..nwtvclose[1]..");end\" "
     end
-    cmd=cmd..segmentKey..'_'
+    cmd=cmd..hlsKey..'_'
   elseif XCODE_BUF>0 then
-    cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
+    cmd=cmd..' | '..asyncbuf..' '..XCODE_BUF..' '..XCODE_PREPARE
   end
 
-  -- コマンドが対応していればffmpeg暴走回避のオプションをつける
-  local c5or1,stat,code=edcb.os.execute('"'..tsreadex..'" -n -1 -c 5 -h')
-  c5or1=(c5or1 or (stat=='exit' and code==2)) and 5 or 1
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c '..c5or1..' -u 2 '..pipeName..' | '..cmd
-  if hls then
+  cmd=tsreadex..' -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c 5 -u 2 '..pipeName..' | '..cmd
+  if hlsKey then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
     if indexCount<10 then
       edcb.os.execute('start "" /b cmd /s /c "'..(nwtvclose and 'cd /d "'..tools..'" && ' or '')..cmd..'"')
       for i=1,100 do
-        local f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
+        local f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
         if f then
           return f
         end
         edcb.Sleep(100)
       end
       -- 失敗。プロセスが残っていたら終わらせる
-      edcb.os.execute('wmic process where "name=\'tsmemseg.exe\' and commandline like \'% '..segmentKey..'[_]%\'" call terminate >nul')
+      TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-'..searchName..' %')
     end
     return nil
   end
@@ -132,12 +134,12 @@ end
 
 function OpenPsiDataArchiver(pipeName,targetSID)
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
-  local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
-  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
-  local psisiarc=(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe'
+  local tools=EdcbModulePath()..'\\Tools'
+  local tsreadex='"'..(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe"'
+  local psisiarc='"'..(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe"'
   -- 3秒間隔で出力
-  local cmd='"'..psisiarc..'" -r arib-data -n '..(targetSID or -1)..' -i 3 - -'
-  cmd='"'..tsreadex..'" -t 10 -m 2 '..pipeName..' | '..cmd
+  local cmd=psisiarc..' -r arib-data -n '..(targetSID or -1)..' -i 3 - -'
+  cmd=tsreadex..' -t 10 -m 2 '..pipeName..' | '..cmd
   return edcb.io.popen('"'..cmd..'"','rb')
 end
 
@@ -173,7 +175,7 @@ function CreateHlsPlaylist(f)
     local endList=buf:byte(9)~=0
     local segIncomplete=buf:byte(10)~=0
     local isMp4=buf:byte(11)~=0
-    local partTarget=0.5
+    local partTarget=partConfigSec
     a[2]='#EXT-X-VERSION:'..(isMp4 and (hls4>1 and 9 or 6) or 3)..'\n#EXT-X-TARGETDURATION:6\n'
     buf=f:read(segNum*16)
     if not buf or #buf~=segNum*16 then
@@ -201,30 +203,31 @@ function CreateHlsPlaylist(f)
             a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
             timeTag=nil
           end
-          a[#a+1]='#EXT-X-PART:DURATION='..fragDuration..',URI="segment.lua?c='..segmentKey..('_%02d_%d_%d"'):format(segIndex,segCount,j)
+          a[#a+1]='#EXT-X-PART:DURATION='..fragDuration..',URI="segment.lua?c='..hlsKey..('_%02d_%d_%d"'):format(segIndex,segCount,j)
             ..(j==1 and ',INDEPENDENT=YES' or '')..'\n'
         end
         xbuf=xbuf:sub(17)
       end
-      -- v1.3.0現在のhls.jsはプレイリストがセグメントで終わると再生時間がバグるので避ける
+      -- v1.4.12現在のhls.jsはプレイリストがセグメントで終わると再生時間がバグるので避ける
+      --if segAvailable and (not segIncomplete or nextSegAvailable) then
       if segAvailable and (endList or nextSegAvailable) then
         if not hasSeg then
           a[#a+1]='#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
-            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..segmentKey..'"\n' or '')
+            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..hlsKey..'"\n' or '')
             ..(endList and '#EXT-X-ENDLIST\n' or '')
           hasSeg=true
         end
         if isMp4 and hls4>1 and timeTag then
           a[#a+1]='#EXT-X-PROGRAM-DATE-TIME:'..timeTag..'\n'
         end
-        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_%d\n'):format(segIndex,segCount)
+        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..hlsKey..('_%02d_%d\n'):format(segIndex,segCount)
       end
       buf=buf:sub(17)
     end
     if isMp4 and hls4>1 then
       -- PART-HOLD-BACKがPART-TARGETのちょうど3倍だとまずい環境があるらしい
       a[2]=a[2]..'#EXT-X-PART-INF:PART-TARGET='..partTarget
-        ..'\n#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK=2.0\n'
+        ..'\n#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK='..(partConfigSec*3.5)..'\n'
     end
   end
   return table.concat(a)
@@ -236,15 +239,14 @@ if onid then
     -- NetworkTVモードを終了
     edcb.CloseNetworkTV(n)
   elseif 0<=n and n<100 then
-    if hls and not psidata and not jikkyo then
-      -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-      segmentKey=mg.md5('view:'..hls..':nwtv'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
-      f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
-    end
-    if not f then
+    if hlsKey and not open and not psidata and not jikkyo then
+      f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
+    else
       if psidata or jikkyo then
         ok,pid=edcb.IsOpenNetworkTV(n)
       else
+        -- 前回のプロセスが残っていたら終わらせる
+        TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-nwtv-'..n..' %')
         openTime=os.time()
         edcb.WritePrivateProfile('NWTV','nwtv'..n..'open','@'..openTime,'Setting\\HttpPublic.ini')
         -- NetworkTVモードを開始
@@ -294,7 +296,7 @@ if onid then
           end
         else
           if pipeName then
-            f=OpenTranscoder(pipeName,'view',{n,'@'..openTime},sid)
+            f=OpenTranscoder(pipeName,'nwtv-'..n,{n,'@'..openTime},sid)
             fname='view.'..output[1]
           end
           if not f then
@@ -306,17 +308,14 @@ if onid then
   end
 elseif n and n<0 then
   -- プロセスが残っていたらすべて終わらせる
-  edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-%\'" call terminate >nul')
+  TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-view-%')
 elseif n and n<=65535 then
-  if hls and not psidata and not jikkyo then
-    -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-    segmentKey=mg.md5('view:'..hls..':'..n..':'..option.xcoder..':'..option.option..':'..audio2..':'..filter..':'..caption..':'..output[2])
-    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
-  end
-  if not f then
+  if hlsKey and not open and not psidata and not jikkyo then
+    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
+  else
     if not psidata and not jikkyo then
       -- 前回のプロセスが残っていたら終わらせる
-      edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-view-'..n..' %\'" call terminate >nul')
+      TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-view-'..n..' %')
     end
     -- 名前付きパイプがあれば開く
     ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*', 1)
@@ -381,7 +380,7 @@ elseif psidata or jikkyo then
   end
   if f.psi then f.psi:close() end
   if f.jk then f.jk:close() end
-elseif hls then
+elseif hlsKey then
   -- インデックスファイルを返す
   i=1
   while true do
@@ -394,7 +393,7 @@ elseif hls then
       break
     end
     edcb.Sleep(200)
-    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
+    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
     if not f then break end
     i=i+1
   end

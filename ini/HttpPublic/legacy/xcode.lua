@@ -3,7 +3,9 @@
 
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
--- 安全な(POST的でない)処理を意識するのでCSRF対策トークンは求めない
+-- HLSの開始はPOSTでなければならない
+query=AssertPost()
+open=query and GetVarInt(query,'open')==1
 query=mg.request_info.query_string
 fpath=mg.get_var(query,'fname')
 if fpath then
@@ -17,18 +19,24 @@ audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 filter=GetVarInt(query,'fast')==1 and (GetVarInt(query,'cinema')==1 and option.filterCinemaFast or option.filterFast)
 fastRate=filter and XCODE_FAST or 1
 filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
-hls=GetVarInt(query,'hls',1)
+hlsKey=mg.get_var(query,'hls')
 hls4=GetVarInt(query,'hls4',0) or 0
-caption=hls and option.captionHls or option.captionNone or ''
-output=hls and option.outputHls or option.output
-if hls and not (ALLOW_HLS and option.outputHls) then
+caption=hlsKey and option.captionHls or option.captionNone or ''
+output=hlsKey and option.outputHls or option.output
+if hlsKey and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
   fpath=nil
 end
 psidata=GetVarInt(query,'psidata')==1
 jikkyo=GetVarInt(query,'jikkyo')==1
+reload=mg.get_var(query,'reload')
+loadKey=reload or mg.get_var(query,'load') or ''
+
+-- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
+hlsKey=hlsKey and mg.md5('xcode:'..hlsKey..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..filter..':'..caption..':'..output[2])
 
 function OpenTranscoder()
+  local searchName='xcode-'..mg.md5(fpath..':'..loadKey):sub(17)
   if XCODE_SINGLE then
     -- トランスコーダーの親プロセスのリストを作る
     local pids=nil
@@ -40,9 +48,10 @@ function OpenTranscoder()
       pf:close()
     end
     -- パイプラインの上流を終わらせる
-    edcb.os.execute('wmic process where "name=\'tsreadex.exe\' and commandline like \'% -z edcb-legacy-%\'" call terminate >nul')
+    TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-%')
     if pids then
       -- 親プロセスの終了を2秒だけ待つ。パイプラインの下流でストールしている可能性もあるので待ちすぎない
+      -- wmicコマンドのない環境では待たないがここの待機はさほど重要ではない
       for i=1,4 do
         edcb.Sleep(500)
         if i==4 or not edcb.os.execute('wmic process where "'..pids..'" get processid 2>nul | findstr /b [1-9] >nul') then
@@ -50,13 +59,16 @@ function OpenTranscoder()
         end
       end
     end
+  elseif reload then
+    -- リロード時は前回のプロセスを速やかに終わらせる
+    TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-'..searchName..' %')
   end
 
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
-  local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
-  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
-  local asyncbuf=(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe'
-  local tsmemseg=(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe'
+  local tools=EdcbModulePath()..'\\Tools'
+  local tsreadex='"'..(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe"'
+  local asyncbuf='"'..(edcb.FindFile(tools..'\\asyncbuf.exe',1) and tools..'\\' or '')..'asyncbuf.exe"'
+  local tsmemseg='"'..(edcb.FindFile(tools..'\\tsmemseg.exe',1) and tools..'\\' or '')..'tsmemseg.exe"'
   local xcoder=''
   for s in option.xcoder:gmatch('[^|]+') do
     xcoder=tools..'\\'..s
@@ -71,6 +83,15 @@ function OpenTranscoder()
     :gsub('$FILTER',(filter:gsub('%%','%%%%')))
     :gsub('$CAPTION',(caption:gsub('%%','%%%%')))
     :gsub('$OUTPUT',(output[2]:gsub('%%','%%%%')))
+  if fastRate~=1 and option.editorFast then
+    local editor=''
+    for s in option.editorFast:gmatch('[^|]+') do
+      editor=tools..'\\'..s
+      if edcb.FindFile(editor,1) then break end
+      editor=s
+    end
+    cmd='"'..editor..'" '..option.editorOptionFast..' | '..cmd
+  end
   if XCODE_LOG then
     local log=mg.script_name:gsub('[^\\/]*$','')..'log'
     if not edcb.FindFile(log,1) then
@@ -82,36 +103,33 @@ function OpenTranscoder()
     if f then
       f:write(cmd..'\n\n')
       f:close()
-      cmd=cmd..' 2>>"'..log..'"'
+      cmd=cmd..' 2>>"'..log:gsub('[&%^]','^%0')..'"'
     end
   end
-  if hls then
+  if hlsKey then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
-    cmd=cmd..' | "'..tsmemseg..'"'..(hls4>0 and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..segmentKey..'_'
+    cmd=cmd..' | '..tsmemseg..(hls4>0 and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..hlsKey..'_'
   elseif XCODE_BUF>0 then
-    cmd=cmd..' | "'..asyncbuf..'" '..XCODE_BUF..' '..XCODE_PREPARE
+    cmd=cmd..' | '..asyncbuf..' '..XCODE_BUF..' '..XCODE_PREPARE
   end
   local sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
 
-  -- コマンドが対応していればffmpeg暴走回避のオプションをつける
-  local c5or1,stat,code=edcb.os.execute('"'..tsreadex..'" -n -1 -c 5 -h')
-  c5or1=(c5or1 or (stat=='exit' and code==2)) and 5 or 1
   -- "-z"はプロセス検索用
-  cmd='"'..tsreadex..'" -z edcb-legacy-xcode -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c '..c5or1..' -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
-  if hls then
+  cmd=tsreadex..' -z edcb-legacy-'..searchName..' -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c 5 -u 2 "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
+  if hlsKey then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile('\\\\.\\pipe\\tsmemseg_*_00',10) or {})
     if indexCount<10 then
       edcb.os.execute('start "" /b cmd /c "'..cmd..'"')
       for i=1,100 do
-        local f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
+        local f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
         if f then
           return f
         end
         edcb.Sleep(100)
       end
       -- 失敗。プロセスが残っていたら終わらせる
-      edcb.os.execute('wmic process where "name=\'tsmemseg.exe\' and commandline like \'% '..segmentKey..'[_]%\'" call terminate >nul')
+      TerminateCommandlineLike('tsreadex.exe','% -z edcb-legacy-'..searchName..' %')
     end
     return nil
   end
@@ -120,13 +138,13 @@ end
 
 function OpenPsiDataArchiver()
   -- コマンドはEDCBのToolsフォルダにあるものを優先する
-  local tools=edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')..'\\Tools'
-  local tsreadex=(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe'
-  local psisiarc=(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe'
+  local tools=EdcbModulePath()..'\\Tools'
+  local tsreadex='"'..(edcb.FindFile(tools..'\\tsreadex.exe',1) and tools..'\\' or '')..'tsreadex.exe"'
+  local psisiarc='"'..(edcb.FindFile(tools..'\\psisiarc.exe',1) and tools..'\\' or '')..'psisiarc.exe"'
   local sync=edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
   -- 3秒間隔で出力
-  local cmd='"'..psisiarc..'" -r arib-data -i 3 - -'
-  cmd='"'..tsreadex..'" -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
+  local cmd=psisiarc..' -r arib-data -i 3 - -'
+  cmd=tsreadex..' -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' "'..fpath:gsub('[&%^]','^%0')..'" | '..cmd
   return edcb.io.popen('"'..cmd..'"','rb')
 end
 
@@ -183,11 +201,11 @@ function CreateHlsPlaylist(f)
       if segAvailable and (not segIncomplete or nextSegAvailable) then
         if not hasSeg then
           a[#a+1]='#EXT-X-MEDIA-SEQUENCE:'..segCount..'\n'
-            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..segmentKey..'"\n' or '')
+            ..(isMp4 and '#EXT-X-MAP:URI="mp4init.lua?c='..hlsKey..'"\n' or '')
             ..(endList and '#EXT-X-ENDLIST\n' or '')
           hasSeg=true
         end
-        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..segmentKey..('_%02d_%d\n'):format(segIndex,segCount)
+        a[#a+1]='#EXTINF:'..segDuration..',\nsegment.lua?c='..hlsKey..('_%02d_%d\n'):format(segIndex,segCount)
       end
       buf=buf:sub(17)
     end
@@ -197,12 +215,9 @@ end
 
 f=nil
 if fpath then
-  if hls and not psidata and not jikkyo then
-    -- クエリのハッシュをキーとし、同一キーアクセスは出力中のインデックスファイルを返す
-    segmentKey=mg.md5('xcode:'..hls..':'..fpath..':'..option.xcoder..':'..option.option..':'..offset..':'..audio2..':'..filter..':'..caption..':'..output[2])
-    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..segmentKey..'_00','rb')
-  end
-  if not f then
+  if hlsKey and not open and not psidata and not jikkyo then
+    f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..hlsKey..'_00','rb')
+  else
     fname='xcode'..(fpath:match('%.[0-9A-Za-z]+$') or '')
     fnamets='xcode'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini'):lower()
     -- 拡張子を限定
@@ -255,7 +270,7 @@ if fpath then
           f:close()
           f=OpenTranscoder()
           fname='xcode.'..output[1]
-        elseif hls then
+        elseif hlsKey then
           -- トランスコードなしのライブストリーミングには未対応
           f:close()
           f=nil
@@ -306,7 +321,7 @@ elseif psidata or jikkyo then
   end
   if f.psi then f.psi:close() end
   if f.jk then f.jk:close() end
-elseif hls then
+elseif hlsKey then
   -- インデックスファイルを返す
   m3u=CreateHlsPlaylist(f)
   f:close()

@@ -108,7 +108,7 @@ void ReadOldArchiveEventInfo(FILE* fp, const vector<LONGLONG>& index, size_t ind
 	for( size_t i = 0; i + 3 < indexPos; i += 4 ){
 		pos += (DWORD)index[i];
 	}
-	if( buffSize > 0 && _fseeki64(fp, 0, SEEK_END) == 0 && _ftelli64(fp) >= pos + buffSize && _fseeki64(fp, pos, SEEK_SET) == 0 ){
+	if( buffSize > 0 && my_fseek(fp, 0, SEEK_END) == 0 && my_ftell(fp) >= pos + buffSize && my_fseek(fp, pos, SEEK_SET) == 0 ){
 		buff.resize(buffSize);
 		if( fread(buff.data(), 1, buffSize, fp) == buffSize ){
 			WORD ver;
@@ -249,7 +249,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						epgUtil.AddTSPacket(readBuff, 188);
 					}
 				}
-				_fseeki64(file.get(), seekPos, SEEK_SET);
+				my_fseek(file.get(), seekPos, SEEK_SET);
 				//TOTを先頭に持ってきて送る(ストリームの時刻を確定させるため)
 				bool ignoreTOT = false;
 				while( fread(readBuff, 1, 188, file.get()) == 188 ){
@@ -259,7 +259,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 						break;
 					}
 				}
-				_fseeki64(file.get(), seekPos, SEEK_SET);
+				my_fseek(file.get(), seekPos, SEEK_SET);
 				for( size_t n; (n = fread(readBuff, 1, sizeof(readBuff), file.get())) != 0; ){
 					size_t i = 0;
 					if( ignoreTOT ){
@@ -359,8 +359,8 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	if( arcMin < LLONG_MAX && sys->epgArchive.empty() ){
 		vector<BYTE> buff;
 		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME), UTIL_SECURE_READ), fclose);
-		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-			LONGLONG fileSize = _ftelli64(fp.get());
+		if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
+			LONGLONG fileSize = my_ftell(fp.get());
 			if( 0 < fileSize && fileSize < INT_MAX ){
 				buff.resize((size_t)fileSize);
 				rewind(fp.get());

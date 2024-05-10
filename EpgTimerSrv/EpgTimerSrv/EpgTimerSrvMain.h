@@ -77,6 +77,7 @@ private:
 	private:
 		vector<char> strOut;
 	};
+	static int LuaCreateRandom(lua_State* L);
 	static int LuaGetGenreName(lua_State* L);
 	static int LuaGetComponentTypeName(lua_State* L);
 	static int LuaSleep(lua_State* L);

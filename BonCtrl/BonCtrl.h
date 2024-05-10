@@ -144,14 +144,14 @@ public:
 
 	//UDPで送信を行う
 	//引数：
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	void SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		);
 
 	//TCPで送信を行う
 	//引数：
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
+	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	void SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		);

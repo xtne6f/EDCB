@@ -46,6 +46,7 @@ struct MAIN_WINDOW_CONTEXT {
 	CHttpServer httpServer;
 	HANDLE resumeTimer;
 	LONGLONG resumeTime;
+	LONGLONG lastSetSystemRequiredTick;
 	BYTE shutdownModePending;
 	bool rebootFlagPending;
 	DWORD shutdownPendingTick;
@@ -64,6 +65,7 @@ struct MAIN_WINDOW_CONTEXT {
 		: sys(sys_)
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
 		, resumeTimer(NULL)
+		, lastSetSystemRequiredTick(-1)
 		, shutdownModePending(SD_MODE_INVALID)
 		, shutdownPendingTick(0)
 		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
@@ -346,8 +348,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( wParam == SD_MODE_STANDBY || wParam == SD_MODE_SUSPEND ){
 				//ストリーミングを終了する
 				ctx->sys->streamingManager.clear();
-				//スリープ抑止解除
-				SetThreadExecutionState(ES_CONTINUOUS);
+				//AwayMode解除
+				SetThreadExecutionState(ES_CONTINUOUS | (SetThreadExecutionState(0) & ~ES_AWAYMODE_REQUIRED));
 				//rebootFlag時は(指定+5分前)に復帰
 				DWORD marginSec;
 				{
@@ -636,6 +638,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				EXECUTION_STATE esFlags = ES_CONTINUOUS;
 				EXECUTION_STATE esLastFlags;
 				if( ctx->shutdownModePending == SD_MODE_INVALID && ctx->sys->IsSuspendOK() ){
+					//Windows11以降システムアイドルタイマーリセットからスリープまでの(最低でも60秒の)マージンがなくなったため
+					if( ctx->lastSetSystemRequiredTick >= 0 && GetU32Tick() - (DWORD)ctx->lastSetSystemRequiredTick < 75000 ){
+						esFlags |= ES_SYSTEM_REQUIRED;
+					}else{
+						ctx->lastSetSystemRequiredTick = -1;
+					}
 					esLastFlags = SetThreadExecutionState(esFlags);
 				}else{
 					esFlags |= ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED;
@@ -645,6 +653,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						esFlags = ES_CONTINUOUS | ES_SYSTEM_REQUIRED;
 						esLastFlags = SetThreadExecutionState(esFlags);
 					}
+					ctx->lastSetSystemRequiredTick = GetU32Tick();
 				}
 				if( esLastFlags != esFlags ){
 					AddDebugLogFormat(L"SetThreadExecutionState(0x%08x)", (DWORD)esFlags);
@@ -711,7 +720,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					op = ctx->sys->httpOptions;
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() ){
-					ctx->sys->httpServerRandom = CHttpServer::CreateRandom();
+					ctx->sys->httpServerRandom = CHttpServer::CreateRandom(32);
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() == false ){
 					CEpgTimerSrvMain* sys = ctx->sys;
@@ -1946,8 +1955,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			if( cmd.ReadVALUE(&n) ){
 				fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
 				std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(logPath, UTIL_SHARED_READ), fclose);
-				if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-					LONGLONG count = _ftelli64(fp.get());
+				if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
+					LONGLONG count = my_ftell(fp.get());
 					if( count >= 0 ){
 						//末尾からn行だけ戻った位置をさがす
 						const DWORD sowc = sizeof(WCHAR);
@@ -1955,7 +1964,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 						while( pos > 1 && n > 0 ){
 							DWORD dwRead = (DWORD)min(pos - 1, 4096LL);
 							WCHAR buff[4096];
-							if( _fseeki64(fp.get(), sowc * (pos - dwRead), SEEK_SET) || fread(buff, sowc, dwRead, fp.get()) != dwRead ){
+							if( my_fseek(fp.get(), sowc * (pos - dwRead), SEEK_SET) || fread(buff, sowc, dwRead, fp.get()) != dwRead ){
 								break;
 							}
 							for( ; dwRead > 0; pos-- ){
@@ -1975,7 +1984,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 						}
 						if( count > pos && count - pos < 64 * 1024 * 1024 ){
 							vector<WCHAR> buff((size_t)(count - pos));
-							if( _fseeki64(fp.get(), sowc * pos, SEEK_SET) == 0 &&
+							if( my_fseek(fp.get(), sowc * pos, SEEK_SET) == 0 &&
 							    fread(&buff.front(), sowc, buff.size(), fp.get()) == buff.size() ){
 								res.WriteVALUE(wstring(buff.begin(), buff.end()));
 								res.SetParam(CMD_SUCCESS);
@@ -2864,8 +2873,8 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 							}
 						}else{
 							std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
-							if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-								LONGLONG fileSize = _ftelli64(fp.get());
+							if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
+								LONGLONG fileSize = my_ftell(fp.get());
 								if( 0 < fileSize ){
 									if( (LONGLONG)totalSizeRemain < fileSize ){
 										result.resize(i);
@@ -2921,6 +2930,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 {
 	static const luaL_Reg closures[] = {
+		{ "CreateRandom", LuaCreateRandom },
 		{ "GetGenreName", LuaGetGenreName },
 		{ "GetComponentTypeName", LuaGetComponentTypeName },
 		{ "Sleep", LuaSleep },
@@ -2990,13 +3000,29 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 	lua_pushliteral(L, "io");
 	luaL_newlib(L, iolib);
 	lua_rawset(L, -3);
+#else
+	//ファイル記述子へのFD_CLOEXECフラグ追加とBSDロック使用のため
+	static const luaL_Reg iolib[] = {
+		{ "_cloexec", LuaHelp::io_cloexec },
+		{ "_flock_nb", LuaHelp::io_flock_nb },
+		{ NULL, NULL }
+	};
+	lua_pushliteral(L, "io");
+	luaL_newlib(L, iolib);
+	lua_rawset(L, -3);
 #endif
 	lua_setglobal(L, "edcb");
 #ifndef _WIN32
-	//UTF-8補完は不要(単なるエイリアス)
+	//UTF-8補完は不要(基本的に単なるエイリアス)
 	luaL_dostring(L,
 		"edcb.os=os;"
-		"edcb.io=io;");
+		"for k,v in pairs(io) do edcb.io[k]=v end;"
+		"edcb.io.open=function(n,m)"
+		" local f,e=io.open(n,m)"
+		" if not f then return f,e end"
+		" edcb.io._cloexec(f)"
+		" return f;"
+		"end;");
 #endif
 	luaL_dostring(L,
 		"package.path=package.path:gsub(';%.[\\\\/][^;]*','');"
@@ -3140,6 +3166,18 @@ const char* CEpgTimerSrvMain::CLuaWorkspace::WtoUTF8(const wstring& strIn)
 		}
 	}
 	return &this->strOut[0];
+}
+
+int CEpgTimerSrvMain::LuaCreateRandom(lua_State* L)
+{
+	int len = (int)lua_tointeger(L, 1);
+	string ret;
+	if( len == 0 || (len <= 1024 * 1024 && (ret = CHttpServer::CreateRandom(len)).empty() == false) ){
+		lua_pushstring(L, ret.c_str());
+		return 1;
+	}
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaGetGenreName(lua_State* L)
@@ -3325,6 +3363,7 @@ int CEpgTimerSrvMain::LuaGetChDataList(lua_State* L)
 		LuaHelp::reg_string(L, "networkName", ws.WtoUTF8(list[i].networkName));
 		LuaHelp::reg_boolean(L, "epgCapFlag", list[i].epgCapFlag != 0);
 		LuaHelp::reg_boolean(L, "searchFlag", list[i].searchFlag != 0);
+		LuaHelp::reg_int(L, "remoconID", list[i].remoconID);
 		lua_rawseti(L, -2, (int)i + 1);
 	}
 	return 1;

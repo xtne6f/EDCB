@@ -3,6 +3,9 @@ SHOW_NOTIFY_LOG=true
 --デバッグ出力の表示を許可するかどうか
 SHOW_DEBUG_LOG=false
 
+--設定メニューからの設定の変更を許可するかどうか
+ALLOW_SETTING=false
+
 --メニューに「システムスタンバイ」ボタンを表示するかどうか
 INDEX_ENABLE_SUSPEND=false
 --メニューの「システムスタンバイ」ボタンを「システム休止」にするかどうか
@@ -62,6 +65,8 @@ XCODE_FAST=1.25
 --xcoder:トランスコーダーのToolsフォルダからの相対パス。'|'で複数候補を指定可。見つからなければ最終候補にパスが通っているとみなす
 --option:$OUTPUTは必須、再生時に適宜置換される。標準入力からMPEG2-TSを受け取るようにオプションを指定する
 --filter*Fast:倍速再生用、未定義でもよい
+--editorFast:単独で倍速再生にできないトランスコーダーの手前に置く編集コマンド。指定方法はxcoderと同様
+--editorOptionFast:標準入出力ともにMPEG2-TSで倍速再生になるようにオプションを指定する
 XCODE_OPTIONS={
   {
     --ffmpegの例。-b:vでおおよその最大ビットレートを決め、-qminで動きの少ないシーンのデータ量を節約する
@@ -116,26 +121,34 @@ XCODE_OPTIONS={
     output={'webm','-f webm -'},
   },
   {
-    --NVEncCの例。倍速再生未対応
+    --NVEncCの例。倍速再生にはffmpegも必要
     name='720p/h264/NVEncC',
     xcoder='NVEncC\\NVEncC64.exe|NVEncC\\NVEncC.exe|NVEncC64.exe|NVEncC.exe',
     option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --vbr 3936 --qp-min 23:26:30 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION -m max_interleave_delta:500k $OUTPUT',
     audioStartAt=1,
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
-    filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true,rff=true',
+    filterCinema='--gop-len 96 --interlace tff --vpp-deinterlace normal --vpp-decimate',
+    filterFast='--fps '..math.floor(30000*XCODE_FAST+0.5)..'/1001 --gop-len '..math.floor(120*XCODE_FAST)..' --interlace tff --vpp-deinterlace normal',
+    filterCinemaFast='--fps '..math.floor(30000*XCODE_FAST+0.5)..'/1001 --gop-len '..math.floor(96*XCODE_FAST)..' --interlace tff --vpp-deinterlace normal --vpp-decimate',
+    editorFast='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
+    editorOptionFast='-f mpegts -analyzeduration 1M -i - -bsf:v setts=ts=TS/'..XCODE_FAST..' -map 0:v?:0 -vcodec copy -af atempo='..XCODE_FAST..' -bsf:s setts=ts=TS/'..XCODE_FAST..' -map 0:a -acodec ac3 -ac 2 -b:a 640k -map 0:s? -scodec copy -max_interleave_delta 300k -f mpegts -',
     captionNone='',
     captionHls='--sub-copy',
     output={'mp4','-f mp4 --no-mp4opt -m movflags:frag_keyframe+empty_moov -o -'},
     outputHls={'m2t','-f mpegts -o -'},
   },
   {
-    --QSVEncCの例。倍速再生未対応
+    --QSVEncCの例。倍速再生にはffmpegも必要
     name='720p/h264/QSVEncC',
     xcoder='QSVEncC\\QSVEncC64.exe|QSVEncC\\QSVEncC.exe|QSVEncC64.exe|QSVEncC.exe',
     option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --qvbr 3936 --qvbr-quality 26 --fallback-rc --max-bitrate 8192 --vbv-bufsize 8192 $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION -m max_interleave_delta:500k $OUTPUT',
     audioStartAt=1,
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
-    filterCinema='--gop-len 96 --interlace tff --vpp-afs preset=cinema,24fps=true',
+    filterCinema='--gop-len 96 --interlace tff --vpp-deinterlace normal --vpp-decimate',
+    filterFast='--fps '..math.floor(30000*XCODE_FAST+0.5)..'/1001 --gop-len '..math.floor(120*XCODE_FAST)..' --interlace tff --vpp-deinterlace normal',
+    filterCinemaFast='--fps '..math.floor(30000*XCODE_FAST+0.5)..'/1001 --gop-len '..math.floor(96*XCODE_FAST)..' --interlace tff --vpp-deinterlace normal --vpp-decimate',
+    editorFast='ffmpeg\\ffmpeg.exe|ffmpeg.exe',
+    editorOptionFast='-f mpegts -analyzeduration 1M -i - -bsf:v setts=ts=TS/'..XCODE_FAST..' -map 0:v?:0 -vcodec copy -af atempo='..XCODE_FAST..' -bsf:s setts=ts=TS/'..XCODE_FAST..' -map 0:a -acodec ac3 -ac 2 -b:a 640k -map 0:s? -scodec copy -max_interleave_delta 300k -f mpegts -',
     captionNone='',
     captionHls='--sub-copy',
     output={'mp4','-f mp4 --no-mp4opt -m movflags:frag_keyframe+empty_moov -o -'},
@@ -148,9 +161,17 @@ XCODE_SELECT_OPTION=1
 XCODE_CHECK_CINEMA=false
 XCODE_CHECK_FAST=false
 XCODE_CHECK_CAPTION=false
+XCODE_CHECK_JIKKYO=false
 
---初期値ミュートで再生するかどうか
-VIDEO_MUTED=true
+--トランスコード時、初期値ミュートで再生するかどうか
+--自動再生が無効になるブラウザが多いため、一時停止しつづけるとタイムアウトするトランスコード時はミュートを推奨
+XCODE_VIDEO_MUTED=true
+
+--非トランスコード時、初期値ミュートで再生するかどうか
+VIDEO_MUTED=false
+
+--音量の初期値。0～1、nilのとき未指定
+VIDEO_VOLUME=nil
 
 --字幕表示のオプション https://github.com/monyone/aribb24.js#options
 ARIBB24_JS_OPTION=[=[
@@ -216,13 +237,27 @@ POST_MAX_BYTE=1024*1024
 
 ----------定数定義ここまで----------
 
+function Checkbox(b)
+  return ' type="checkbox" value="1"'..(b and ' checked' or '')
+end
+
+function Selected(b)
+  return b and ' selected' or ''
+end
+
 function GetTranscodeQueries(qs)
+  local reload=(mg.get_var(qs,'reload') or ''):match('^'..('[0-9a-f]'):rep(16,'?')..'$')
+  local loadKey=reload or (mg.get_var(qs,'load') or ''):match('^'..('[0-9a-f]'):rep(16,'?')..'$')
   return {
     option=GetVarInt(qs,'option',1,#XCODE_OPTIONS),
     offset=GetVarInt(qs,'offset',0,100),
     audio2=GetVarInt(qs,'audio2')==1,
     cinema=GetVarInt(qs,'cinema')==1,
     fast=GetVarInt(qs,'fast')==1,
+    reload=not not reload,
+    loadKey=loadKey,
+    caption=(GetVarInt(qs,'caption') or XCODE_CHECK_CAPTION and 1)==1,
+    jikkyo=(GetVarInt(qs,'jikkyo') or XCODE_CHECK_JIKKYO and 1)==1,
   }
 end
 
@@ -232,39 +267,56 @@ function ConstructTranscodeQueries(xq)
     ..(xq.audio2 and '&amp;audio2=1' or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
     ..(xq.fast and '&amp;fast=1' or '')
+    ..(xq.loadKey and '&amp;'..(xq.reload and 're' or '')..'load='..xq.loadKey or '')
 end
 
-function TranscodeSettingTemplete(xq,fsec)
+function VideoWrapperBegin()
+  return '<div class="video-wrapper" id="vid-wrap">'
+    ..'<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
+    ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
+    ..'<div class="video-container arib-video-container" id="vid-cont">'
+end
+
+function VideoWrapperEnd()
+  return '</div></div></div>'
+end
+
+function TranscodeSettingTemplate(xq,fsec)
   local s='<select name="option">'
   for i,v in ipairs(XCODE_OPTIONS) do
     if not ALLOW_HLS or not ALWAYS_USE_HLS or v.outputHls then
-      s=s..'<option value="'..i..'"'..((xq.option or XCODE_SELECT_OPTION)==i and ' selected' or '')..'>'..EdcbHtmlEscape(v.name)
+      s=s..'<option value="'..i..'"'..Selected((xq.option or XCODE_SELECT_OPTION)==i)..'>'..EdcbHtmlEscape(v.name)
     end
   end
   s=s..'</select>\n'
   if fsec then
     s=s..'offset: <select name="offset">'
     for i=0,100 do
-      s=s..'<option value="'..i..'"'..((xq.offset or 0)==i and ' selected' or '')..'>'
+      s=s..'<option value="'..i..'"'..Selected((xq.offset or 0)==i)..'>'
         ..(fsec>0 and ('%dm%02ds'):format(math.floor(fsec*i/100/60),fsec*i/100%60)..(i%5==0 and '|'..i..'%' or '') or i..'%')
     end
     s=s..'</select>\n'
   end
-  s=s..'<label><input type="checkbox" name="audio2" value="1"'..(xq.audio2 and ' checked' or '')..'>audio2</label>\n'
-    ..'<label><input type="checkbox" name="cinema" value="1"'..((xq.cinema or not xq.option and XCODE_CHECK_CINEMA) and ' checked' or '')..'>cinema</label>\n'
+  s=s..'<label><input name="audio2"'..Checkbox(xq.audio2)..'>audio2</label>\n'
+    ..'<label><input name="cinema"'..Checkbox(xq.cinema or not xq.option and XCODE_CHECK_CINEMA)..'>cinema</label>\n'
   if fsec then
-    s=s..'<label><input type="checkbox" name="fast" value="1"'..((xq.fast or not xq.option and XCODE_CHECK_FAST) and ' checked' or '')..'>fast</label>\n'
+    s=s..'<label><input name="fast"'..Checkbox(xq.fast or not xq.option and XCODE_CHECK_FAST)..'>fast</label>\n'
+      ..'<span id="vid-offset"></span>'
   end
+  s=s..'<span id="vid-bitrate"></span>\n'
+    ..'<input type="hidden" name="caption" value="">\n'
+    ..'<input type="hidden" name="jikkyo" value="">\n'
   return s
 end
 
-function OnscreenButtonsScriptTemplete()
+function OnscreenButtonsScriptTemplate()
   return [=[
-<script src="script.js?ver=20230707"></script>
+<script src="script.js?ver=20240430"></script>
 <script>
 var vid=document.getElementById("vid");
 var vcont=document.getElementById("vid-cont");
 var vfull=document.getElementById("vid-full");
+var vwrap=document.getElementById("vid-wrap");
 var setSendComment;
 var hideOnscreenButtons;
 runOnscreenButtonsScript();
@@ -307,9 +359,10 @@ function WebBmlScriptTemplate(label)
 ]=] or ''
 end
 
-function JikkyoScriptTemplate(live)
+function JikkyoScriptTemplate(live,jikkyo)
   return (live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
-<label><input id="cb-jikkyo" type="checkbox">jikkyo</label>
+<label><input id="cb-jikkyo"]=]..Checkbox(jikkyo)..[=[>jikkyo</label>
+<label class="enabled-on-checked"><input id="cb-jikkyo-onscr" type="checkbox" checked>onscr</label>
 <script src="danmaku.js"></script>
 <script>
 var onJikkyoStream=null;
@@ -328,13 +381,12 @@ var checkJikkyoDisplay=function(){};
 ]=]
 end
 
-function VideoScriptTemplete()
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false)..[=[
-<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"]=]
-  ..(XCODE_CHECK_CAPTION and ' checked' or '')..[=[>caption.vtt</label>
+function VideoScriptTemplate()
+  return OnscreenButtonsScriptTemplate()..WebBmlScriptTemplate('datacast.psc')..JikkyoScriptTemplate(false,XCODE_CHECK_JIKKYO)..[=[
+<label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(XCODE_CHECK_CAPTION)..[=[>caption.vtt</label>
 <script src="aribb24.js"></script>
 <script>
-]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
+]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..(VIDEO_VOLUME and 'vid.volume='..VIDEO_VOLUME..';\n' or '')..[=[
 runVideoScript(]=]
   ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
   ..(USE_DATACAST and 'true' or 'false')..','
@@ -344,13 +396,14 @@ runVideoScript(]=]
 ]=]
 end
 
-function TranscodeScriptTemplete(live,params)
-  return OnscreenButtonsScriptTemplete()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live)
-    ..'<label id="label-caption" style="display:none"><input id="cb-caption" type="checkbox"'
-      ..(XCODE_CHECK_CAPTION and ' checked' or '')..'>caption</label>\n'
-    ..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
+function TranscodeScriptTemplate(live,caption,jikkyo,params)
+  return OnscreenButtonsScriptTemplate()..WebBmlScriptTemplate('datacast')..JikkyoScriptTemplate(live,jikkyo)..[=[
+<label id="label-caption" style="display:none"><input id="cb-caption"]=]..Checkbox(caption)..[=[>caption</label>
+]=]..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
+<input id="vid-seek" type="range" style="display:none">
+<span id="vid-seek-status"></span>
 <script>
-]=]..(VIDEO_MUTED and 'vid.muted=true;\n' or '')..[=[
+]=]..(XCODE_VIDEO_MUTED and 'vid.muted=true;\n' or '')..(VIDEO_VOLUME and 'vid.volume='..VIDEO_VOLUME..';\n' or '')..[=[
 runTranscodeScript(]=]
   ..(USE_DATACAST and 'true' or 'false')..','
   ..(live and USE_LIVEJK and 'true' or 'false')..','
@@ -363,8 +416,7 @@ runTranscodeScript(]=]
 ]=]
 end
 
-function HlsScriptTemplete()
-  local now=os.date('!*t')
+function HlsScriptTemplate(target)
   return [=[
 <script src="aribb24.js"></script>
 ]=]..(ALWAYS_USE_HLS and [=[
@@ -374,7 +426,8 @@ function HlsScriptTemplete()
 runHlsScript(]=]
   ..(ARIBB24_USE_SVG and 'true' or 'false')..',{'..ARIBB24_JS_OPTION..'},'
   ..(ALWAYS_USE_HLS and 'true' or 'false')..','
-  ..'"&hls='..(1+(now.hour*60+now.min)*60+now.sec)..'",'
+  ..'"ctok='..CsrfToken(target)..'&open=1",'
+  ..'"&hls='..(edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'",'
   ..'"'..(USE_MP4_HLS and '&hls4='..(USE_MP4_LLHLS and '2' or '1') or '')..'"'..[=[
 );
 </script>
@@ -430,30 +483,28 @@ function ConvertProgramText(v)
 end
 
 --録画設定フォームのテンプレート
-function RecSettingTemplate(rs)
-  local s='<label><input type="checkbox" name="recEnabled" value="1"'..(rs.recMode~=5 and ' checked' or '')..'>有効</label><br>\n'
+function RecSettingTemplate(rs,setting)
+  local s='<label><input name="recEnabled"'..Checkbox(rs.recMode~=5)..'>有効</label><br>\n'
     ..'録画モード: <select name="recMode">'
   for i=1,#RecModeTextList() do
-    s=s..'<option value="'..(i-1)..'"'..((rs.recMode~=5 and rs.recMode or rs.noRecMode or 1)==i-1 and ' selected' or '')..'>'..RecModeTextList()[i]
+    s=s..'<option value="'..(i-1)..'"'..Selected((rs.recMode~=5 and rs.recMode or rs.noRecMode or 1)==i-1)..'>'..RecModeTextList()[i]
   end
   s=s..'</select><br>\n'
-    ..'<label><input type="checkbox" name="tuijyuuFlag" value="1"'..(rs.tuijyuuFlag and ' checked' or '')..'>イベントリレー追従</label><br>\n'
+    ..'<label><input name="tuijyuuFlag"'..Checkbox(rs.tuijyuuFlag)..'>イベントリレー追従</label><br>\n'
     ..'優先度: <select name="priority">'
   for i=1,5 do
-    s=s..'<option value="'..i..'"'..(rs.priority==i and ' selected' or '')..'>'..i..(i==1 and ' (低)' or i==5 and ' (高)' or '')
+    s=s..'<option value="'..i..'"'..Selected(rs.priority==i)..'>'..i..(i==1 and ' (低)' or i==5 and ' (高)' or '')
   end
   --デフォルト値
   local rsdef=(edcb.GetReserveData(0x7FFFFFFF) or {}).recSetting
   s=s..'</select><br>\n'
-    ..'<label><input type="checkbox" name="pittariFlag" value="1"'..(rs.pittariFlag and ' checked' or '')..'>ぴったり（？）録画</label><br>\n'
-    ..'録画マージン: <label><input type="checkbox" name="useDefMarginFlag" value="1"'..(rs.startMargin and '' or ' checked')..'>デフォルト</label> || '
+    ..'<label><input name="pittariFlag"'..Checkbox(rs.pittariFlag)..'>ぴったり（？）録画</label><br>\n'
+    ..'録画マージン: <label><input name="useDefMarginFlag"'..Checkbox(not rs.startMargin)..'><span class="enabled-on-checked">デフォルト</span></label> || <span class="disabled-on-checked">'
     ..'開始（秒） <input type="text" name="startMargin" value="'..(rs.startMargin or rsdef and rsdef.startMargin or 0)..'" size="5"> '
-    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or rsdef and rsdef.endMargin or 0)..'" size="5"><br>\n'
-    ..'指定サービス対象データ: <label><input type="checkbox" name="serviceMode" value="1"'..(rs.serviceMode%2==0 and ' checked' or '')..'>デフォルト</label> || '
-    ..'<label><input type="checkbox" name="serviceMode_1" value="1"'
-      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/16 or rsdef and rsdef.serviceMode/16 or 0)%2~=0 and ' checked' or '')..'>字幕を含める</label> '
-    ..'<label><input type="checkbox" name="serviceMode_2" value="1"'
-      ..(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/32 or rsdef and rsdef.serviceMode/32 or 0)%2~=0 and ' checked' or '')..'>データカルーセルを含める</label><br>\n'
+    ..'終了（秒） <input type="text" name="endMargin" value="'..(rs.endMargin or rsdef and rsdef.endMargin or 0)..'" size="5"></span><br>\n'
+    ..'指定サービス対象データ: <label><input class="" name="serviceMode"'..Checkbox(rs.serviceMode%2==0)..'><span class="enabled-on-checked">デフォルト</span></label> || <span class="disabled-on-checked">'
+    ..'<label><input name="serviceMode_1"'..Checkbox(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/16 or rsdef and rsdef.serviceMode/16 or 0)%2~=0)..'>字幕を含める</label> '
+    ..'<label><input name="serviceMode_2"'..Checkbox(math.floor(rs.serviceMode%2~=0 and rs.serviceMode/32 or rsdef and rsdef.serviceMode/32 or 0)%2~=0)..'>データカルーセルを含める</label></span><br>\n'
     ..'<table><tr><td>録画フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td><td>部分受信</td></tr>\n'
   for i,v in ipairs(rs.recFolderList) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>いいえ</td></tr>\n'
@@ -461,24 +512,24 @@ function RecSettingTemplate(rs)
   for i,v in ipairs(rs.partialRecFolder) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td><td>はい</td></tr>\n'
   end
-  s=s..'</table>（プリセットによる変更のみ対応）<br>\n'
-    ..'<label><input type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked' or '')..'>部分受信（ワンセグ）を別ファイルに同時出力する</label><br>\n'
-    ..'<label><input type="checkbox" name="continueRecFlag" value="1"'..(rs.continueRecFlag and ' checked' or '')..'>後ろの予約を同一ファイルで出力する</label><br>\n'
-    ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..(rs.tunerID==0 and ' selected' or '')..'>自動'
+  s=s..'</table>'..(setting and '<a href="'..setting..'">録画フォルダを編集</a>' or '（プリセットによる変更のみ対応）')..'<br>\n'
+    ..'<label><input name="partialRecFlag"'..Checkbox(rs.partialRecFlag~=0)..'>部分受信（ワンセグ）を別ファイルに同時出力する</label><br>\n'
+    ..'<label><input name="continueRecFlag"'..Checkbox(rs.continueRecFlag)..'>後ろの予約を同一ファイルで出力する</label><br>\n'
+    ..'使用チューナー強制指定: <select name="tunerID"><option value="0"'..Selected(rs.tunerID==0)..'>自動'
   local a=edcb.GetTunerReserveAll()
   for i=1,#a-1 do
-    s=s..'<option value="'..a[i].tunerID..'"'..(a[i].tunerID==rs.tunerID and ' selected' or '')..string.format('>ID:%08X(', a[i].tunerID)..a[i].tunerName..')'
+    s=s..'<option value="'..a[i].tunerID..'"'..Selected(a[i].tunerID==rs.tunerID)..('>ID:%08X('):format(a[i].tunerID)..a[i].tunerName..')'
   end
   s=s..'</select><br>\n'
     ..'録画後動作: <select name="suspendMode">'
-    ..'<option value="0"'..(rs.suspendMode==0 and ' selected' or '')..'>'..(rsdef and ({'スタンバイ','休止','シャットダウン','何もしない'})[rsdef.suspendMode] or '')..'（デフォルト）'
-    ..'<option value="1"'..(rs.suspendMode==1 and ' selected' or '')..'>スタンバイ'
-    ..'<option value="2"'..(rs.suspendMode==2 and ' selected' or '')..'>休止'
-    ..'<option value="3"'..(rs.suspendMode==3 and ' selected' or '')..'>シャットダウン'
-    ..'<option value="4"'..(rs.suspendMode==4 and ' selected' or '')..'>何もしない</select> '
-    ..'<label><input type="checkbox" name="rebootFlag" value="1"'
-      ..((rs.suspendMode==0 and rsdef and rsdef.rebootFlag or rs.suspendMode~=0 and rs.rebootFlag) and ' checked' or '')..'>復帰後再起動する</label><br>\n'
-    ..'録画後実行bat（プリセットによる変更のみ対応）: '..(#rs.batFilePath==0 and '（なし）' or rs.batFilePath)..'<br>\n'
+    ..'<option value="0"'..Selected(rs.suspendMode==0)..'>'..(rsdef and ({'スタンバイ','休止','シャットダウン','何もしない'})[rsdef.suspendMode] or '')..'（デフォルト）'
+    ..'<option value="1"'..Selected(rs.suspendMode==1)..'>スタンバイ'
+    ..'<option value="2"'..Selected(rs.suspendMode==2)..'>休止'
+    ..'<option value="3"'..Selected(rs.suspendMode==3)..'>シャットダウン'
+    ..'<option value="4"'..Selected(rs.suspendMode==4)..'>何もしない</select> '
+    ..'<label><input name="rebootFlag"'..Checkbox(rs.suspendMode==0 and rsdef and rsdef.rebootFlag or rs.suspendMode~=0 and rs.rebootFlag)..'>復帰後再起動する</label><br>\n'
+    ..'録画後実行bat[*タグ]'..(setting and '' or '（プリセットによる変更のみ対応）')..':<br>\n'
+    ..'<input type="text" name="batFilePath" value="'..rs.batFilePath..'" style="width:95%"'..(setting and '' or ' readonly')..'><br>\n'
   return s
 end
 
@@ -581,9 +632,9 @@ end
 --時間の文字列を取得する
 function FormatTimeAndDuration(t,dur)
   dur=dur and (t.hour*3600+t.min*60+t.sec+dur)
-  return string.format('%d/%02d/%02d(%s) %02d:%02d',t.year,t.month,t.day,({'日','月','火','水','木','金','土',})[t.wday],t.hour,t.min)
-    ..(t.sec~=0 and string.format('<small>:%02d</small>',t.sec) or '')
-    ..(dur and string.format('～%02d:%02d',math.floor(dur/3600)%24,math.floor(dur/60)%60)..(dur%60~=0 and string.format('<small>:%02d</small>',dur%60) or '') or '')
+  return ('%d/%02d/%02d(%s) %02d:%02d'):format(t.year,t.month,t.day,({'日','月','火','水','木','金','土',})[t.wday],t.hour,t.min)
+    ..(t.sec~=0 and ('<small>:%02d</small>'):format(t.sec) or '')
+    ..(dur and ('～%02d:%02d'):format(math.floor(dur/3600)%24,math.floor(dur/60)%60)..(dur%60~=0 and ('<small>:%02d</small>'):format(dur%60) or '') or '')
 end
 
 --システムのタイムゾーンに影響されずに時間のテーブルを数値表現にする (timezone=0のとき概ねos.date('!*t')の逆関数)
@@ -619,9 +670,63 @@ function DocumentToNativePath(path)
   return nil
 end
 
+--EDCBフォルダのパス
+function EdcbModulePath()
+  return edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')
+end
+
+--設定関係保存フォルダのパス
+function EdcbSettingPath()
+  local dir=edcb.GetPrivateProfile('SET','DataSavePath','','Common.ini')
+  return dir~='' and dir or EdcbModulePath()..'\\Setting'
+end
+
+--録画保存フォルダのパスのリスト
+function EdcbRecFolderPathList()
+  local n=tonumber(edcb.GetPrivateProfile('SET','RecFolderNum',0,'Common.ini')) or 0
+  local r={n>0 and edcb.GetPrivateProfile('SET','RecFolderPath0','','Common.ini') or ''}
+  if r[1]=='' then
+    --必ず返す
+    r[1]=EdcbSettingPath()
+  end
+  for i=2,n do
+    local dir=edcb.GetPrivateProfile('SET','RecFolderPath'..(i-1),'','Common.ini')
+    --空要素は詰める
+    if dir~='' then
+      r[#r+1]=dir
+    end
+  end
+  return r
+end
+
+--プラグインファイル名を列挙する
+function EnumPlugInFileName(name)
+  local esc=edcb.htmlEscape
+  edcb.htmlEscape=0
+  local pattern=EdcbModulePath()..'\\'..name..'\\'..name..'*.dll'
+  edcb.htmlEscape=esc
+  local r={}
+  for i,v in ipairs(edcb.FindFile(pattern,0) or {}) do
+    if not v.isdir then
+      r[#r+1]=v.name
+    end
+  end
+  return r
+end
+
 --現在の変換モードでHTMLエスケープする
 function EdcbHtmlEscape(s)
   return edcb.Convert('utf-8','utf-8',s)
+end
+
+--プロセス名とコマンドラインのパターンに一致するコマンドをすべて終了させる
+function TerminateCommandlineLike(name,pattern)
+  if pattern=='%' then
+    edcb.os.execute('taskkill /f /im "'..name..'"')
+  elseif not edcb.os.execute('wmic process where "name=\''..name..'\' and commandline like \''..pattern..'\'" call terminate >nul') then
+    --wmicがないとき
+    edcb.os.execute('powershell -NoProfile -c "try{(gwmi win32_process -filter \\"name=\''..name..'\' and commandline like \''..pattern..'\'\\").terminate()}catch{}"')
+  end
 end
 
 --符号なし整数の時計算の差を計算する

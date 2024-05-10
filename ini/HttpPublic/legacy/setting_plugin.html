@@ -1,0 +1,214 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/PlugIn設定 - EDCB</title>
+</head>
+<body>
+<h1>設定/PlugIn設定</h1>
+<div id="main">
+]=])
+
+--設定ファイルについてのメタ情報(JSONの配列をコンマで任意の数並べた形式)を解析する
+function ParseSettingArrays(s)
+  local i,r=1,{}
+  while s:find('^%[',i) do
+    i=i+1
+    local a={}
+    while true do
+      local v=nil
+      if s:find('^false',i) then
+        v=false
+        i=i+5
+      elseif s:find('^true',i) then
+        v=true
+        i=i+4
+      elseif s:find('^"',i) then
+        --文字列
+        i=i+1
+        local t=''
+        while i<=#s do
+          if s:find('^"',i) then
+            v=t
+            i=i+1
+            break
+          elseif s:find('^\\.',i) then
+            i=i+1
+          end
+          t=t..s:sub(i,i)
+          i=i+1
+        end
+      else
+        local n=s:match('^%-?[0-9]+',i)
+        if n then
+          --数値
+          i=i+#n
+          n=tonumber(n)
+          if n and n==math.floor(n) and n>=-2147483648 and n<=2147483647 then
+            v=n
+          end
+        end
+      end
+      if v==nil then return nil end
+      a[#a+1]=v
+      if s:find('^%],',i) then
+        i=i+2
+        break
+      end
+      if not s:find('^,',i) then return nil end
+      i=i+1
+    end
+    if r.body then
+      if type(a[1])~='number' then return nil end
+      if a[1]%8==0 then
+        --設定項目
+        if #a<5 or type(a[2])~='string' or type(a[3])~='string' or type(a[4])~='string' then return nil end
+        r.body[#r.body+1]={sub=math.floor(a[1]/8)%4,section=a[2],key=a[3],desc=a[4],def=a[5]}
+        if type(a[5])=='number' then
+          --数値の設定項目
+          if type(a[6])~='number' or type(a[7])~='number' then return nil end
+          r.body[#r.body].min=a[6]
+          r.body[#r.body].max=a[7]
+        end
+      elseif a[1]%8==1 then
+        --ラベル項目
+        if type(a[2])~='string' then return nil end
+        r.body[#r.body+1]={sub=math.floor(a[1]/8)%4,label=a[2]}
+      end
+    else
+      if type(a[2])~='string' or type(a[3])~='number' then return nil end
+      r.head={desc=a[2],utf=a[3]%2==1}
+      r.body={}
+    end
+  end
+  return r.body and r or nil
+end
+
+post=AssertPost()
+mode=GetVarInt(post or mg.request_info.query_string,'mode',1,2) or 1
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+
+item=mg.get_var(post or mg.request_info.query_string,'item') or ''
+itemList=EnumPlugInFileName(mode==1 and 'RecName' or 'Write')
+setting=nil
+for i,v in ipairs(itemList) do
+  if v==item then
+    f=edcb.io.open(EdcbModulePath()..(mode==1 and '\\RecName\\' or '\\Write\\')..v,'rb')
+    if f then
+      --埋め込まれた設定ファイルについてのメタ情報を取り出す
+      buf=(' '):rep(65536)
+      while #buf==65536 do
+        buf=buf..(f:read(65536) or '')
+        setting=buf:match('%[(%["setting%-59c4d329%-ba81%-4054%-9f4d%-d1900653338a",.-)%[""%]%]')
+        if setting then
+          setting=ParseSettingArrays(setting:gsub('%c',''))
+          break
+        end
+        buf=buf:sub(65537)
+      end
+      f:close()
+    end
+    break
+  end
+end
+
+if post and setting then
+  if setting.head.utf then
+    --設定ファイルがまだないか空のときバイト順マークを書き込む
+    f=edcb.io.open(EdcbModulePath()..(mode==1 and '\\RecName\\' or '\\Write\\')..item..'.ini','ab')
+    if f then
+      if f:seek('end')==0 then
+        f:write('\xff\xfe')
+      end
+      f:close()
+    end
+  end
+  for i,v in ipairs(setting.body) do
+    if v.section and mg.get_var(post,'k-'..i)=='['..v.section..']'..v.key then
+      val=GetVarInt(post,'c-'..i)==1
+      if type(v.def)=='number' then
+        val=math.min(math.max(val and GetVarInt(post,'v-'..i) or 0,v.min),v.max)
+      elseif type(v.def)=='string' then
+        val=(val and mg.get_var(post,'v-'..i) or ''):gsub('%c','')
+      end
+      edcb.WritePrivateProfile(v.section,v.key,val,(mode==1 and 'RecName\\' or 'Write\\')..item..'.ini')
+    end
+  end
+  ct:Append('<div id="result">変更しました</div>\n')
+end
+
+edcb.htmlEscape=15
+
+ct:Append([=[
+<form action="setting_plugin.html"><div>
+  <input type="hidden" name="mode" value="]=]..mode..[=[">
+  <select name="item">
+]=])
+for i,v in ipairs(itemList) do
+  ct:Append('    <option'..Selected(v==item)..'>'..EdcbHtmlEscape(v)..'</option>\n')
+end
+ct:Append([=[
+  </select>
+  <button type="submit">ロード</button></div></form>
+]=])
+if setting then
+  ct:Append([=[
+【]=]..EdcbHtmlEscape(setting.head.desc)..[=[】
+<form method="POST" action="setting_plugin.html"><div>
+  <input type="hidden" name="mode" value="]=]..mode..[=[">
+  <input type="hidden" name="item" value="]=]..EdcbHtmlEscape(item)..[=[">
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  ]=])
+  sub=0
+  for i,v in ipairs(setting.body) do
+    ct:Append(v.sub>=2 and sub<2 and '\n  <div class="'..(v.sub==3 and 'enabled-on-checked' or 'sub-setting')..'">\n'
+                or v.sub<2 and sub>=2 and '\n  </div>\n' or '<br>\n')
+    sub=v.sub
+    if v.section then
+      --次の項目がenabled-on-checkedなサブ項目になるときは常にチェックボックスを作る
+      check=sub<2 and i<#setting.body and setting.body[i+1].sub==3
+      val=edcb.GetPrivateProfile(v.section,v.key,v.def,(mode==1 and 'RecName\\' or 'Write\\')..item..'.ini')
+      ct:Append('  <input type="hidden" name="k-'..i..'" value="'..EdcbHtmlEscape('['..v.section..']'..v.key)..'"><label><input name="c-'..i..'"')
+      if type(v.def)=='boolean' then
+        ct:Append(Checkbox(val~='0')..'>'..EdcbHtmlEscape(v.desc)..'</label>')
+      elseif type(v.def)=='number' then
+        ct:Append((check and Checkbox(val~='0') or ' type="hidden" value="1"')..'>'..EdcbHtmlEscape(v.desc)..'</label>\n  '
+          ..'<input type="text" name="v-'..i..'" value="'..val..'"'..(check and ' class="enabled-on-checked"' or '')..' size="8">')
+      else
+        ct:Append((check and Checkbox(val~='') or ' type="hidden" value="1"')..'>'..EdcbHtmlEscape(v.desc)..'</label>'
+          ..(check and '\n  <div class="enabled-on-checked">' or '<br>\n  ')
+          ..'<input type="text" name="v-'..i..'" value="'..val..'" style="width:95%">'..(check and '</div>' or ''))
+      end
+    else
+      --ラベル項目
+      ct:Append('  '..EdcbHtmlEscape(v.label))
+    end
+  end
+  ct:Append((sub>=2 and '\n  </div>\n' or '<br>\n')..[=[
+  <button type="submit">変更</button></div></form>
+]=])
+elseif item~='' then
+  ct:Append([=[
+・設定項目がないかメタ情報のないPlugInです。
+]=])
+end
+ct:Append([=[
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

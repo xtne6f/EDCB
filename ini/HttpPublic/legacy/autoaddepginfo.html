@@ -186,14 +186,13 @@ if aa.searchInfo then
     if v.id==presetID then
       preset=true
       rs=v.recSetting
-      ct:Append('<option value="'..v.id..'" selected>'..v.name..'\n')
     else
       rs=rs or v.recSetting
-      ct:Append('<option value="'..v.id..'">'..v.name..'\n')
     end
+    ct:Append('<option value="'..v.id..'"'..Selected(v.id==presetID)..'>'..v.name..'\n')
   end
   if aa.dataID~=0 then
-    ct:Append('<option value="65535"'..(preset and '' or ' selected')..'>予約時\n')
+    ct:Append('<option value="65535"'..Selected(not preset)..'>予約時\n')
   end
   --無効
   disAndKey=si.andKey:match('^^!{999}(.*)')
@@ -214,12 +213,12 @@ if aa.searchInfo then
     ..'検索キーワード<br><input type="text" name="andKey" value="'..(caseAndKey or disAndKey or si.andKey)..'" style="width:95%"><br>\n'
     ..'NOTキーワード<br><input type="text" name="notKey" value="'..notKey..'" style="width:95%"><br>\n'
     ..'メモ<br><input type="text" name="note" value="'..note..'" style="width:95%"><br>\n'
-    ..'<label><input type="checkbox" name="regExpFlag" value="1"'..(si.regExpFlag and ' checked' or '')..'>正規表現モード</label>&emsp;\n'
-    ..'<label><input type="checkbox" name="aimaiFlag" value="1"'..(si.aimaiFlag and ' checked' or '')..'>あいまい検索モード</label><br>\n'
-    ..'<label><input type="checkbox" name="titleOnlyFlag" value="1"'..(si.titleOnlyFlag and ' checked' or '')..'>番組名のみ検索対象にする</label><br>\n'
-    ..'<label><input type="checkbox" name="caseFlag" value="1"'..(caseAndKey and ' checked' or '')..'>大小文字区別</label><br>\n'
-    ..'<label><input type="checkbox" name="disableFlag" value="1"'..(disAndKey and ' checked' or '')..'>自動登録を無効にする</label><br><br>\n'
-    ..'ジャンル絞り込み（Ctrl+複数選択） <label><input type="checkbox" name="notContetFlag" value="1"'..(si.notContetFlag and ' checked' or '')..'>NOT扱い</label><br>\n'
+    ..'<label><input name="regExpFlag"'..Checkbox(si.regExpFlag)..'>正規表現モード</label>&emsp;\n'
+    ..'<label><input name="aimaiFlag"'..Checkbox(si.aimaiFlag)..'>あいまい検索モード</label><br>\n'
+    ..'<label><input name="titleOnlyFlag"'..Checkbox(si.titleOnlyFlag)..'>番組名のみ検索対象にする</label><br>\n'
+    ..'<label><input name="caseFlag"'..Checkbox(caseAndKey)..'>大小文字区別</label><br>\n'
+    ..'<label><input name="disableFlag"'..Checkbox(disAndKey)..'>自動登録を無効にする</label><br><br>\n'
+    ..'ジャンル絞り込み（Ctrl+複数選択） <label><input name="notContetFlag"'..Checkbox(si.notContetFlag)..'>NOT扱い</label><br>\n'
     ..'<select name="contentList" multiple size="5">\n')
   for _i,i in ipairs({0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,15,255}) do
     nibble1=edcb.GetGenreName(i*256+255)
@@ -260,7 +259,7 @@ if aa.searchInfo then
     ct:Append('>('..NetworkType(v.onid)..') '..v.serviceName..'\n')
   end
   ct:Append('</select><br><br>\n'
-    ..'時間絞り込み <label><input type="checkbox" name="notDateFlag" value="1"'..(si.notDateFlag and ' checked' or '')..'>NOT扱い</label><br>\n'
+    ..'時間絞り込み <label><input name="notDateFlag"'..Checkbox(si.notDateFlag)..'>NOT扱い</label><br>\n'
     ..'<input type="text" name="dateList" value="')
   for i,v in ipairs(si.dateList) do
     ct:Append((i==1 and '' or ', ')
@@ -269,15 +268,17 @@ if aa.searchInfo then
   end
   ct:Append('" style="width:95%"><br>\n書式: (sun|mon|tue|wed|thu|fri|sat)H:M-(...)H:M, （例: sun23:0-mon5:0, wed3:0-wed5:0）<br><br>\n'
     ..'スクランブル放送:\n<select name="freeCAFlag">\n'
-    ..'<option value="0"'..(si.freeCAFlag==0 and ' selected' or '')..'>無料、有料番組を対象とする'
-    ..'<option value="1"'..(si.freeCAFlag==1 and ' selected' or '')..'>無料番組を対象とする'
-    ..'<option value="2"'..(si.freeCAFlag==2 and ' selected' or '')..'>有料番組を対象とする'
+    ..'<option value="0"'..Selected(si.freeCAFlag==0)..'>無料、有料番組を対象とする'
+    ..'<option value="1"'..Selected(si.freeCAFlag==1)..'>無料番組を対象とする'
+    ..'<option value="2"'..Selected(si.freeCAFlag==2)..'>有料番組を対象とする'
     ..'</select><br>\n'
     ..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
     ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下（0で無制限）<br><br>\n'
-    ..'<label><input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked' or '')..'>同一番組名の録画結果があれば無効で登録する</label><br>\n'
-    ..'&emsp;<label><input type="checkbox" name="chkRecNoService" value="1"'..(si.chkRecNoService and ' checked' or '')..'>全てのサービスで無効にする</label><br>\n'
-    ..'&emsp;確認対象期間 <input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
+    ..'<label><input name="chkRecEnd"'..Checkbox(si.chkRecEnd)..'>同一番組名の録画結果があれば無効で登録する</label>\n'
+    ..'<div class="enabled-on-checked">\n'
+    ..'<label><input name="chkRecNoService"'..Checkbox(si.chkRecNoService)..'>全てのサービスで無効にする</label><br>\n'
+    ..'確認対象期間 <input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
+    ..'</div>\n'
     ..'</div><div class="section"><h2>録画設定</h2>\n'..RecSettingTemplate(rs)..'</div>\n'
     ..'<div><button type="submit">'..(aa.dataID==0 and '追加' or '変更')..'</button></div></form></dd>\n')
 

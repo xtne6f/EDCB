@@ -7,6 +7,7 @@
 #include "EpgDataCap_BonDlg.h"
 #include "../../Common/StackTrace.h"
 #include "../../Common/ThreadUtil.h"
+#include "../../Common/TimeUtil.h"
 #include <objbase.h>
 #include <shellapi.h>
 
@@ -64,28 +65,32 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 		LPCWSTR optLowerD = NULL;
 		for (int i = 1; i < argc; i++) {
 			if (argv[i][0] == L'-' || argv[i][0] == L'/') {
-				curr = L"";
-				if (wcscmp(argv[i] + 1, L"D") == 0 && optUpperD == NULL) {
-					curr = argv[i] + 1;
+				curr = argv[i] + 1;
+				if (wcscmp(curr, L"D") == 0 && optUpperD == NULL) {
 					optUpperD = L"";
-				} else if (wcscmp(argv[i] + 1, L"d") == 0 && optLowerD == NULL) {
-					curr = argv[i] + 1;
+				} else if (wcscmp(curr, L"d") == 0 && optLowerD == NULL) {
 					optLowerD = L"";
-				} else if (CompareNoCase(argv[i] + 1, L"min") == 0) {
+				} else if (CompareNoCase(curr, L"min") == 0) {
 					dlg.SetIniMin(TRUE);
-				} else if (CompareNoCase(argv[i] + 1, L"noview") == 0) {
+				} else if (CompareNoCase(curr, L"noview") == 0) {
 					dlg.SetIniView(FALSE);
-				} else if (CompareNoCase(argv[i] + 1, L"nonw") == 0) {
+				} else if (CompareNoCase(curr, L"nonw") == 0) {
 					dlg.SetIniNW(FALSE);
-				} else if (CompareNoCase(argv[i] + 1, L"nwudp") == 0) {
+				} else if (CompareNoCase(curr, L"nwudp") == 0) {
 					dlg.SetIniNWUDP(TRUE);
-				} else if (CompareNoCase(argv[i] + 1, L"nwtcp") == 0) {
+				} else if (CompareNoCase(curr, L"nwtcp") == 0) {
 					dlg.SetIniNWTCP(TRUE);
 				}
 			} else if (wcscmp(curr, L"D") == 0 && optUpperD && optUpperD[0] == L'\0') {
 				optUpperD = argv[i];
 			} else if (wcscmp(curr, L"d") == 0 && optLowerD && optLowerD[0] == L'\0') {
 				optLowerD = argv[i];
+			} else if (CompareNoCase(curr, L"nid") == 0) {
+				dlg.SetIniONID(wcstol(argv[i], NULL, 10));
+			} else if (CompareNoCase(curr, L"tsid") == 0) {
+				dlg.SetIniTSID(wcstol(argv[i], NULL, 10));
+			} else if (CompareNoCase(curr, L"sid") == 0) {
+				dlg.SetIniSID(wcstol(argv[i], NULL, 10));
 			}
 		}
 		if (optUpperD) {
@@ -140,7 +145,7 @@ void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutpu
 		lock_recursive_mutex lock(g_debugLogLock);
 		if( g_debugLog ){
 			SYSTEMTIME st;
-			GetLocalTime(&st);
+			ConvertSystemTime(GetNowI64Time(), &st);
 			WCHAR t[128];
 			int n = swprintf_s(t, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
 			                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);

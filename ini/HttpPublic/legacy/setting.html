@@ -1,0 +1,44 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EDCB</title>
+</head>
+<body>
+<h1>設定メニュー</h1>
+<div class="nav">
+  <ul>
+    <li><a href="setting_basic.html">基本設定</a><ul>
+      <li><a href="setting_rec_folder.html">録画保存フォルダ</a></li>
+      <li><a href="setting_bon.html">BonDriver</a></li>
+      </ul></li>
+    <li><a href="setting_epg.html">EPG取得</a><ul>
+      <li><a href="setting_epg_service.html">EPG取得対象サービス</a></li>
+      <li><a href="setting_epg_time.html">EPG取得開始時間</a></li>
+      </ul></li>
+    <li><a href="setting_rec.html">録画動作</a></li>
+    <li><a href="setting_reserve.html">予約情報管理</a></li>
+    <li><a href="setting_other.html">その他</a><ul>
+      <li><a href="setting_view_bon.html">視聴に使用するBonDriver</a></li>
+      </ul></li>
+    <li><a href="setting_rec_preset.html">プリセット</a><ul>
+      <li><a href="setting_plugin.html?mode=1">ファイル名PlugIn設定</a></li>
+      <li><a href="setting_plugin.html?mode=2">出力PlugIn設定</a></li>
+      </ul></li>
+  </ul>
+</div>
+<div id="footer">
+  <a href="index.html">メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

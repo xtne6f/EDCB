@@ -1,0 +1,67 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/EPG取得 - EDCB</title>
+</head>
+<body>
+<h1>設定/EPG取得</h1>
+<div id="main">
+]=])
+
+commonIni='Common.ini'
+srvIni='EpgTimerSrv.ini'
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  edcb.WritePrivateProfile('SET','BSBasicOnly',GetVarInt(post,'basicOnlyBS')==1,commonIni)
+  edcb.WritePrivateProfile('SET','CS1BasicOnly',GetVarInt(post,'basicOnlyCS1')==1,commonIni)
+  edcb.WritePrivateProfile('SET','CS2BasicOnly',GetVarInt(post,'basicOnlyCS2')==1,commonIni)
+  edcb.WritePrivateProfile('SET','CS3BasicOnly',GetVarInt(post,'basicOnlyCS3')==1,commonIni)
+  edcb.WritePrivateProfile('SET','NGEpgCapTime',GetVarInt(post,'ngEpgCapTime',0) or 20,srvIni)
+  edcb.WritePrivateProfile('SET','NGEpgCapTunerTime',GetVarInt(post,'ngEpgCapTunerTime',0) or 20,srvIni)
+  ct:Append('<div id="result">変更しました</div>\n')
+  edcb.ReloadSetting(false)
+end
+
+edcb.htmlEscape=15
+basicOnlyBS=edcb.GetPrivateProfile('SET','BSBasicOnly',1,commonIni)~='0'
+basicOnlyCS1=edcb.GetPrivateProfile('SET','CS1BasicOnly',1,commonIni)~='0'
+basicOnlyCS2=edcb.GetPrivateProfile('SET','CS2BasicOnly',1,commonIni)~='0'
+basicOnlyCS3=edcb.GetPrivateProfile('SET','CS3BasicOnly',0,commonIni)~='0'
+ngEpgCapTime=edcb.GetPrivateProfile('SET','NGEpgCapTime',20,srvIni)
+ngEpgCapTunerTime=edcb.GetPrivateProfile('SET','NGEpgCapTunerTime',20,srvIni)
+
+ct:Append([=[
+<form method="POST" action="setting_epg.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  基本情報のみ取得するネットワーク
+  <div class="sub-setting">
+    <label><input name="basicOnlyBS"]=]..Checkbox(basicOnlyBS)..[=[>BS</label>
+    <label><input name="basicOnlyCS1"]=]..Checkbox(basicOnlyCS1)..[=[>CS1</label>
+    <label><input name="basicOnlyCS2"]=]..Checkbox(basicOnlyCS2)..[=[>CS2</label>
+    <label><input name="basicOnlyCS3"]=]..Checkbox(basicOnlyCS3)..[=[>CS3</label>
+  </div>
+  実行抑制条件 <input type="text" name="ngEpgCapTime" value="]=]..ngEpgCapTime..[=[" size="8"> 分以内に予約がある場合、実行しない (0で録画時も実行)<br>
+  使用チューナー条件 <input type="text" name="ngEpgCapTunerTime" value="]=]..ngEpgCapTunerTime..[=[" size="8"> 分以内に予約がある場合、使用しない<br>
+  <button type="submit">変更</button>
+</div></form>
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

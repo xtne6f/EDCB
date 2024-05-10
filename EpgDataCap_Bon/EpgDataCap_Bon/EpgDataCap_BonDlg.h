@@ -24,6 +24,9 @@ public:
 	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
 	void SetIniNWUDP(BOOL udpFlag){ iniUDP = udpFlag; };
 	void SetIniNWTCP(BOOL tcpFlag){ iniTCP = tcpFlag; };
+	void SetIniONID(int onid){ iniONID = onid; }
+	void SetIniTSID(int tsid){ iniTSID = tsid; }
+	void SetIniSID(int sid){ iniSID = sid; }
 
 // ダイアログ データ
 	enum { IDD = IDD_EPGDATACAP_BON_DIALOG };
@@ -58,6 +61,7 @@ protected:
 	HHOOK m_hKeyboardHook;
 	HICON m_hIcon;
 	HICON m_hIcon2;
+	HANDLE m_hViewProcess;
 
 	BOOL modifyTitleBarText;
 	BOOL overlayTaskIcon;
@@ -66,6 +70,8 @@ protected:
 	BOOL overWriteFlag;
 	wstring viewPath;
 	wstring viewOpt;
+	BOOL viewSingle;
+	BOOL viewCloseOnExit;
 	int dropSaveThresh;
 	int scrambleSaveThresh;
 	BOOL dropLogAsUtf8;
@@ -83,6 +89,9 @@ protected:
 	BOOL iniNetwork;
 	BOOL iniUDP;
 	BOOL iniTCP;
+	int iniONID;
+	int iniTSID;
+	int iniSID;
 
 	CBonCtrl bonCtrl;
 	CPipeServer pipeServer;
@@ -104,6 +113,7 @@ protected:
 	// 生成された、メッセージ割り当て関数
 	BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed);
+	static BOOL CALLBACK CloseViewWindowsProc(HWND hwnd, LPARAM lParam);
 	afx_msg void OnDestroy();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnSize(UINT nType, int cx, int cy);

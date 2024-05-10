@@ -20,6 +20,7 @@ protected:
 
 	BOOL OnInitDialog();
 	afx_msg void OnBnClickedButtonViewExe();
+	void OnBnClickedCheckViewSingle();
 	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	HWND GetDlgItem(int nID) const{ return ::GetDlgItem(m_hWnd, nID); }
 };

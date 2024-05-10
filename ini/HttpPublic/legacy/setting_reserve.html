@@ -1,0 +1,116 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/予約情報管理 - EDCB</title>
+</head>
+<body>
+<h1>設定/予約情報管理</h1>
+<div id="main">
+]=])
+
+commonIni='Common.ini'
+srvIni='EpgTimerSrv.ini'
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  edcb.WritePrivateProfile('SET','RecInfoFolderOnly',GetVarInt(post,'recInfoFolderOnly')==1,srvIni)
+  edcb.WritePrivateProfile('SET','ApplyExtToRecInfoDel',GetVarInt(post,'applyExtToRecInfoDel')==1,srvIni)
+  edcb.WritePrivateProfile('SET','AutoDel',GetVarInt(post,'autoDel')==1,srvIni)
+  edcb.WritePrivateProfile('SET','BackPriority',GetVarInt(post,'backPriority')==1,srvIni)
+  edcb.WritePrivateProfile('SET','FixedTunerPriority',GetVarInt(post,'fixedTunerPriority')==1,srvIni)
+  edcb.WritePrivateProfile('SET','RetryOtherTuners',GetVarInt(post,'retryOtherTuners')==1,srvIni)
+  edcb.WritePrivateProfile('SET','SeparateFixedTuners',GetVarInt(post,'separateFixedTuners')==1,srvIni)
+  edcb.WritePrivateProfile('SET','CommentAutoAdd',GetVarInt(post,'commentAutoAdd')==1,srvIni)
+  edcb.WritePrivateProfile('SET','FixNoRecToServiceOnly',GetVarInt(post,'fixNoRecToServiceOnly')==1,srvIni)
+  edcb.WritePrivateProfile('SET','RecNamePlugIn',GetVarInt(post,'recNamePlugIn')==1,srvIni)
+  recNamePlugInFile=mg.get_var(post,'recNamePlugInFile') or ''
+  recNameList=EnumPlugInFileName('RecName')
+  for i,v in ipairs(recNameList) do
+    if v:upper()==recNamePlugInFile:upper() then
+      recNameList=nil
+      break
+    end
+  end
+  --未選択のときは先頭の候補にする
+  edcb.WritePrivateProfile('SET','RecNamePlugInFile',recNameList and (#recNameList>0 and recNameList[1] or '') or recNamePlugInFile,srvIni)
+  edcb.WritePrivateProfile('SET','NoChkYen',GetVarInt(post,'noChkYen')==1,srvIni)
+  edcb.WritePrivateProfile('SET','DelReserveMode',GetVarInt(post,'delReserveMode',0,2) or 2,srvIni)
+  edcb.WritePrivateProfile('SET','RecInfoDelFile',GetVarInt(post,'recInfoDelFile')==1,commonIni)
+  ct:Append('<div id="result">変更しました</div>\n')
+  edcb.ReloadSetting(false)
+end
+
+edcb.htmlEscape=15
+recInfoFolderOnly=edcb.GetPrivateProfile('SET','RecInfoFolderOnly',1,srvIni)~='0'
+applyExtToRecInfoDel=edcb.GetPrivateProfile('SET','ApplyExtToRecInfoDel',0,srvIni)~='0'
+autoDel=edcb.GetPrivateProfile('SET','AutoDel',0,srvIni)~='0'
+backPriority=edcb.GetPrivateProfile('SET','BackPriority',1,srvIni)~='0'
+fixedTunerPriority=edcb.GetPrivateProfile('SET','FixedTunerPriority',1,srvIni)~='0'
+retryOtherTuners=edcb.GetPrivateProfile('SET','RetryOtherTuners',0,srvIni)~='0'
+separateFixedTuners=edcb.GetPrivateProfile('SET','SeparateFixedTuners',0,srvIni)~='0'
+commentAutoAdd=edcb.GetPrivateProfile('SET','CommentAutoAdd',0,srvIni)~='0'
+fixNoRecToServiceOnly=edcb.GetPrivateProfile('SET','FixNoRecToServiceOnly',0,srvIni)~='0'
+recNamePlugIn=edcb.GetPrivateProfile('SET','RecNamePlugIn',0,srvIni)~='0'
+recNamePlugInFile=edcb.GetPrivateProfile('SET','RecNamePlugInFile','',srvIni)
+noChkYen=edcb.GetPrivateProfile('SET','NoChkYen',0,srvIni)~='0'
+delReserveMode=tonumber(edcb.GetPrivateProfile('SET','DelReserveMode',2,srvIni)) or 2
+recInfoDelFile=edcb.GetPrivateProfile('SET','RecInfoDelFile',0,commonIni)~='0'
+
+ct:Append([=[
+<form method="POST" action="setting_reserve.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  <label><input name="backPriority"]=]..Checkbox(backPriority)..[=[>優先度が同じで時間が重なった場合、後の予約を優先する</label><br>
+  <label><input name="fixedTunerPriority"]=]..Checkbox(fixedTunerPriority)..[=[>優先度が同じ場合、チューナー強制指定された予約を先にチューナー割り当てする</label><br>
+  <label><input name="retryOtherTuners"]=]..Checkbox(retryOtherTuners)..[=[>チューナーの起動に失敗したとき、ほかのチューナーで再試行する</label><br>
+  <label><input name="separateFixedTuners"]=]..Checkbox(separateFixedTuners)..[=[>チューナー強制指定の値が異なるものを重複予約できるようにする</label><br>
+  <label><input name="commentAutoAdd"]=]..Checkbox(commentAutoAdd)..[=[>EPG自動予約をプログラム予約化したとき、予約が再び追加されないようにする</label><br>
+  <label><input name="fixNoRecToServiceOnly"]=]..Checkbox(fixNoRecToServiceOnly)..[=[>予約を無効にするとき、録画モードを「指定サービス」にする</label><br>
+  <label><input name="recInfoFolderOnly"]=]..Checkbox(recInfoFolderOnly)..[=[>録画情報保存フォルダ指定時は録画ファイルと同じ場所を参照しない</label><br>
+  <label><input name="recInfoDelFile"]=]..Checkbox(recInfoDelFile)..[=[>録画済み一覧から削除するときに録画ファイルも削除する</label>
+  <div class="enabled-on-checked">
+    <label><input name="applyExtToRecInfoDel"]=]..Checkbox(applyExtToRecInfoDel)..[=[>同時に削除するファイルの拡張子は</label><a href="setting_del_ext.html">削除設定</a>に従う
+  </div>
+  <label><input name="autoDel"]=]..Checkbox(autoDel)..[=[>HDDの空きが少ない場合、古いTSファイルを削除する</label>
+  <div class="enabled-on-checked">
+    <a href="setting_del_ext.html">同時に削除するファイルの拡張子</a><br>
+    <a href="setting_del_chk.html">削除対象フォルダ</a>
+  </div>
+  <label><input name="recNamePlugIn"]=]..Checkbox(recNamePlugIn)..[=[>録画時のファイル名にPlugInを使用する</label>
+  <div class="enabled-on-checked">
+    <select name="recNamePlugInFile">
+]=])
+for i,v in ipairs(EnumPlugInFileName('RecName')) do
+  ct:Append('      <option'..Selected(v:upper()==recNamePlugInFile:upper())..'>'..v..'</option>\n')
+end
+ct:Append([=[
+    </select>
+  </div>
+  <label><input name="noChkYen"]=]..Checkbox(noChkYen)..[=[>ファイル名の禁則文字の変換対象から「\」を除外する</label><br>
+  録画中の予約削除を
+  <select name="delReserveMode">
+    <option value="0"]=]..Selected(delReserveMode==0)..[=[>削除のみ
+    <option value="1"]=]..Selected(delReserveMode==1)..[=[>録画済みに追加
+    <option value="2"]=]..Selected(delReserveMode==2)..[=[>キャンセルとして録画済みに追加
+  </select><br>
+  <button type="submit">変更</button>
+</div></form>
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

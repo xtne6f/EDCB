@@ -3,6 +3,10 @@
 #include "TimeUtil.h"
 #include "PathUtil.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define wcstoll _wcstoi64
+#endif
+
 namespace
 {
 //タブ区切りの次のトークンに移動する
@@ -87,14 +91,36 @@ void ParseRecFolderList(LPCWSTR* token, vector<REC_FILE_SET_INFO>& list)
 		if( list[i].recFolder.empty() ){
 			list.erase(list.begin() + i);
 		}else{
-			Separate(list[i].recFolder, L"*", list[i].recFolder, list[i].writePlugIn);
-			Separate(list[i].writePlugIn, L"*", list[i].writePlugIn, list[i].recNamePlugIn);
+			//US制御文字があればそれで分割、なければ*で分割
+			LPCWSTR sep = list[i].recFolder.find(L'\x1F') != wstring::npos ? L"\x1F" : L"*";
+			Separate(list[i].recFolder, sep, list[i].recFolder, list[i].writePlugIn);
+			Separate(list[i].writePlugIn, sep, list[i].writePlugIn, list[i].recNamePlugIn);
 			if( list[i].writePlugIn.empty() ){
 				list[i].writePlugIn = L"Write_Default.dll";
 			}
 			i++;
 		}
 	}
+}
+
+bool SerializeRecFolder(const REC_FILE_SET_INFO& info, wstring& str)
+{
+	if( info.recFolder.find(L'\x1F') != wstring::npos ||
+	    info.writePlugIn.find(L'\x1F') != wstring::npos ){
+		//分割できない場所にUS制御文字がある
+		return false;
+	}
+	//US制御文字を含むか*で分割できないならUS制御文字で区切る
+	WCHAR sep = info.recFolder.find(L'*') != wstring::npos ||
+	            info.writePlugIn.find(L'*') != wstring::npos ||
+	            info.recNamePlugIn.find(L'\x1F') != wstring::npos ? L'\x1F' : L'*';
+	str += info.recFolder;
+	str += sep;
+	str += info.writePlugIn;
+	str += sep;
+	str += info.recNamePlugIn;
+	str += L'\n';
+	return true;
 }
 }
 
@@ -205,6 +231,24 @@ bool CParseChText5::SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID
 	return false;
 }
 
+bool CParseChText5::SetRemoconID(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BYTE remoconID)
+{
+	map<LONGLONG, CH_DATA5>::iterator itr = this->itemMap.find((LONGLONG)originalNetworkID << 32 | (LONGLONG)transportStreamID << 16 | serviceID);
+	if( itr != this->itemMap.end() ){
+		itr->second.remoconID = remoconID;
+		return true;
+	}
+	return false;
+}
+
+bool CParseChText5::SaveTextWithExtraFields(string* saveToStr) const
+{
+	saveWithExtraFields = true;
+	bool ret = SaveText(saveToStr);
+	saveWithExtraFields = false;
+	return ret;
+}
+
 bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 {
 	if( wcschr(parseLine, L'\t') == NULL ){
@@ -224,6 +268,7 @@ bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 	item.second.partialFlag = NextTokenToInt(token) != 0;
 	item.second.epgCapFlag = NextTokenToInt(token) != 0;
 	item.second.searchFlag = NextTokenToInt(token) != 0;
+	item.second.remoconID = 0;
 	item.first = (LONGLONG)item.second.originalNetworkID << 32 | (LONGLONG)item.second.transportStreamID << 16 | item.second.serviceID;
 	if( this->itemMap.empty() ){
 		this->parsedOrder.clear();
@@ -236,7 +281,9 @@ bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 
 bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& saveLine) const
 {
-	Format(saveLine, L"%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d",
+	WCHAR extra[16];
+	swprintf_s(extra, L"\n%d", item.second.remoconID);
+	Format(saveLine, L"%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d%ls",
 		item.second.serviceName.c_str(),
 		item.second.networkName.c_str(),
 		item.second.originalNetworkID,
@@ -245,9 +292,10 @@ bool CParseChText5::SaveLine(const pair<LONGLONG, CH_DATA5>& item, wstring& save
 		item.second.serviceType,
 		item.second.partialFlag,
 		item.second.epgCapFlag,
-		item.second.searchFlag
+		item.second.searchFlag,
+		saveWithExtraFields ? extra : L""
 		);
-	return FinalizeField(saveLine) == 8;
+	return FinalizeField(saveLine) == (DWORD)(saveWithExtraFields ? 9 : 8);
 }
 
 bool CParseChText5::SelectItemToSave(vector<map<LONGLONG, CH_DATA5>::const_iterator>& itemList) const
@@ -405,8 +453,8 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 	item.second.transportStreamID = (WORD)NextTokenToInt(token);
 	item.second.serviceID = (WORD)NextTokenToInt(token);
 	item.second.eventID = (WORD)NextTokenToInt(token);
-	item.second.drops = _wcstoi64(NextToken(token), NULL, 10);
-	item.second.scrambles = _wcstoi64(NextToken(token), NULL, 10);
+	item.second.drops = wcstoll(NextToken(token), NULL, 10);
+	item.second.scrambles = wcstoll(NextToken(token), NULL, 10);
 	item.second.recStatus = (DWORD)NextTokenToInt(token);
 
 	if( ParseDateTime(token, item.second.startTimeEpg) == false ){
@@ -508,8 +556,8 @@ wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, 
 			fs_path infoPath = fs_path(resultOfGetRecInfoFolder).append(fs_path(recFilePath).filename().concat(extension).native());
 			fp.reset(UtilOpenFile(infoPath, UTIL_SHARED_READ | UTIL_SH_DELETE));
 		}
-		if( fp && _fseeki64(fp.get(), 0, SEEK_END) == 0 ){
-			LONGLONG fileSize = _ftelli64(fp.get());
+		if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
+			LONGLONG fileSize = my_ftell(fp.get());
 			if( 0 < fileSize && fileSize < 1024 * 1024 ){
 				vector<char> buf((size_t)fileSize + 1, '\0');
 				rewind(fp.get());
@@ -762,19 +810,26 @@ bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& 
 
 bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring& saveLine) const
 {
+	wstring strFirstRecFolder;
+	if( item.second.recSetting.recFolderList.empty() == false ){
+		if( SerializeRecFolder(item.second.recSetting.recFolderList[0], strFirstRecFolder) ){
+			//'\n'を除去
+			strFirstRecFolder.pop_back();
+		}else{
+			return false;
+		}
+	}
 	wstring strRecFolder;
 	for( size_t i = 1; i < item.second.recSetting.recFolderList.size(); i++ ){
-		strRecFolder +=
-			item.second.recSetting.recFolderList[i].recFolder + L"*" +
-			item.second.recSetting.recFolderList[i].writePlugIn + L"*" +
-			item.second.recSetting.recFolderList[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.recFolderList[i], strRecFolder) == false ){
+			return false;
+		}
 	}
 	wstring strPartialRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.partialRecFolder.size(); i++ ){
-		strPartialRecFolder +=
-			item.second.recSetting.partialRecFolder[i].recFolder + L"*" +
-			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
-			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.partialRecFolder[i], strPartialRecFolder) == false ){
+			return false;
+		}
 	}
 	Format(saveLine, L"%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls\n%ls\n%ls\n%ls\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%d\n%ls%d\n%d\n%d\n%d\n%d\n%ls",
 		item.second.startTime.wYear, item.second.startTime.wMonth, item.second.startTime.wDay,
@@ -794,10 +849,7 @@ bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring&
 		item.second.recSetting.batFilePath.empty() ? L"0" : item.second.recSetting.batFilePath.c_str(),
 		L"0",
 		item.second.comment.c_str(),
-		item.second.recSetting.recFolderList.empty() ? L"" : (
-			item.second.recSetting.recFolderList[0].recFolder + L"*" +
-			item.second.recSetting.recFolderList[0].writePlugIn + L"*" +
-			item.second.recSetting.recFolderList[0].recNamePlugIn).c_str(),
+		strFirstRecFolder.c_str(),
 		item.second.recSetting.suspendMode,
 		item.second.recSetting.rebootFlag,
 		L"",
@@ -988,9 +1040,9 @@ bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD
 	}
 	for( subToken[2] = NextToken(token); NextToken(subToken, L',') < token[1]; ){
 		LPWSTR endp;
-		LONGLONG i64Ch = _wcstoi64(subToken[0], &endp, 16);
+		LONGLONG llCh = wcstoll(subToken[0], &endp, 16);
 		if( endp != subToken[0] && endp <= subToken[1] ){
-			item.second.searchInfo.serviceList.push_back(i64Ch & 0xFFFFFFFFFFFFLL);
+			item.second.searchInfo.serviceList.push_back(llCh & 0xFFFFFFFFFFFFLL);
 		}
 	}
 	item.second.recSetting.recMode = (BYTE)NextTokenToInt(token);
@@ -1062,17 +1114,15 @@ bool CParseEpgAutoAddText::SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, 
 	}
 	wstring strRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.recFolderList.size(); i++ ){
-		strRecFolder +=
-			item.second.recSetting.recFolderList[i].recFolder + L"*" +
-			item.second.recSetting.recFolderList[i].writePlugIn + L"*" +
-			item.second.recSetting.recFolderList[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.recFolderList[i], strRecFolder) == false ){
+			return false;
+		}
 	}
 	wstring strPartialRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.partialRecFolder.size(); i++ ){
-		strPartialRecFolder +=
-			item.second.recSetting.partialRecFolder[i].recFolder + L"*" +
-			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
-			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.partialRecFolder[i], strPartialRecFolder) == false ){
+			return false;
+		}
 	}
 	Format(saveLine, L"%d\n%ls\n%ls\n%d\n%d\n%ls\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n",
 		item.second.dataID,
@@ -1218,17 +1268,15 @@ bool CParseManualAutoAddText::SaveLine(const pair<DWORD, MANUAL_AUTO_ADD_DATA>& 
 {
 	wstring strRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.recFolderList.size(); i++ ){
-		strRecFolder +=
-			item.second.recSetting.recFolderList[i].recFolder + L"*" +
-			item.second.recSetting.recFolderList[i].writePlugIn + L"*" +
-			item.second.recSetting.recFolderList[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.recFolderList[i], strRecFolder) == false ){
+			return false;
+		}
 	}
 	wstring strPartialRecFolder;
 	for( size_t i = 0; i < item.second.recSetting.partialRecFolder.size(); i++ ){
-		strPartialRecFolder +=
-			item.second.recSetting.partialRecFolder[i].recFolder + L"*" +
-			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
-			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
+		if( SerializeRecFolder(item.second.recSetting.partialRecFolder[i], strPartialRecFolder) == false ){
+			return false;
+		}
 	}
 	Format(saveLine, L"%d\n%d\n%d\n%d\n%ls\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%ls\n%d\n%d\n%d\n%d\n%d\n%d\n%ls%d\n%d\n%d\n%d\n%ls",
 		item.second.dataID,

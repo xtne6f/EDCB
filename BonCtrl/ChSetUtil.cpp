@@ -47,7 +47,8 @@ BOOL CChSetUtil::SaveChSet(
 	fs_path chSet5FilePath = fs_path(settingPath).append(L"ChSet5.txt");
 
 	//接続待ち
-	HANDLE waitEvent = CreateEvent(NULL, FALSE, TRUE, CHSET_SAVE_EVENT_WAIT);
+#ifdef _WIN32
+	HANDLE waitEvent = CreateEvent(NULL, FALSE, TRUE, L"Global\\" CHSET_SAVE_EVENT_WAIT);
 	if( waitEvent == NULL ){
 		return FALSE;
 	}
@@ -55,6 +56,17 @@ BOOL CChSetUtil::SaveChSet(
 		CloseHandle(waitEvent);
 		return FALSE;
 	}
+#else
+	//大域的なイベントオブジェクト相当のものは用意していないのでミューテックスを使う
+	util_unique_handle waitMutex = UtilCreateGlobalMutex(CHSET_SAVE_EVENT_WAIT);
+	for( int retry = 0; retry < 30 && !waitMutex; retry++ ){
+		SleepForMsec(100 + 10 * retry);
+		waitMutex = UtilCreateGlobalMutex(CHSET_SAVE_EVENT_WAIT);
+	}
+	if( !waitMutex ){
+		return FALSE;
+	}
+#endif
 
 	BOOL ret = TRUE;
 	this->chText4.SetFilePath(chSet4FilePath.c_str());
@@ -80,8 +92,10 @@ BOOL CChSetUtil::SaveChSet(
 	//最新版を再読み込み
 	this->chText5.ParseText(chSet5FilePath.c_str());
 
+#ifdef _WIN32
 	SetEvent(waitEvent);
 	CloseHandle(waitEvent);
+#endif
 
 	return ret;
 }
@@ -152,6 +166,7 @@ BOOL CChSetUtil::AddServiceInfo(
 	item5.partialFlag = FALSE;
 	item5.epgCapFlag = TRUE;
 	item5.searchFlag = TRUE;
+	item5.remoconID = 0;
 	if( serviceInfo->extInfo != NULL ){
 		item5.serviceType = serviceInfo->extInfo->service_type;
 		item5.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
