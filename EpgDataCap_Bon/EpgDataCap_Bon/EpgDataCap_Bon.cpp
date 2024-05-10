@@ -13,14 +13,8 @@
 
 namespace
 {
-
 FILE* g_debugLog;
 recursive_mutex_ g_debugLogLock;
-
-// 唯一の CEpgDataCap_BonApp オブジェクトです。
-
-CEpgDataCap_BonApp theApp;
-
 }
 
 // CEpgDataCap_BonApp コンストラクション
@@ -52,56 +46,12 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 #endif
 
 	CEpgDataCap_BonDlg dlg;
-	dlg.SetIniMin(FALSE);
-	dlg.SetIniView(TRUE);
-	dlg.SetIniNW(TRUE);
 
 	// コマンドオプションを解析
 	int argc;
 	LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
 	if (argv != NULL) {
-		LPCWSTR curr = L"";
-		LPCWSTR optUpperD = NULL;
-		LPCWSTR optLowerD = NULL;
-		for (int i = 1; i < argc; i++) {
-			if (argv[i][0] == L'-' || argv[i][0] == L'/') {
-				curr = argv[i] + 1;
-				if (wcscmp(curr, L"D") == 0 && optUpperD == NULL) {
-					optUpperD = L"";
-				} else if (wcscmp(curr, L"d") == 0 && optLowerD == NULL) {
-					optLowerD = L"";
-				} else if (CompareNoCase(curr, L"min") == 0) {
-					dlg.SetIniMin(TRUE);
-				} else if (CompareNoCase(curr, L"noview") == 0) {
-					dlg.SetIniView(FALSE);
-				} else if (CompareNoCase(curr, L"nonw") == 0) {
-					dlg.SetIniNW(FALSE);
-				} else if (CompareNoCase(curr, L"nwudp") == 0) {
-					dlg.SetIniNWUDP(TRUE);
-				} else if (CompareNoCase(curr, L"nwtcp") == 0) {
-					dlg.SetIniNWTCP(TRUE);
-				}
-			} else if (wcscmp(curr, L"D") == 0 && optUpperD && optUpperD[0] == L'\0') {
-				optUpperD = argv[i];
-			} else if (wcscmp(curr, L"d") == 0 && optLowerD && optLowerD[0] == L'\0') {
-				optLowerD = argv[i];
-			} else if (CompareNoCase(curr, L"nid") == 0) {
-				dlg.SetIniONID(wcstol(argv[i], NULL, 10));
-			} else if (CompareNoCase(curr, L"tsid") == 0) {
-				dlg.SetIniTSID(wcstol(argv[i], NULL, 10));
-			} else if (CompareNoCase(curr, L"sid") == 0) {
-				dlg.SetIniSID(wcstol(argv[i], NULL, 10));
-			}
-		}
-		if (optUpperD) {
-			dlg.SetInitBon(optUpperD);
-			AddDebugLogFormat(L"%ls", optUpperD);
-		}
-		// 原作の挙動に合わせるため
-		if (optLowerD) {
-			dlg.SetInitBon(optLowerD);
-			AddDebugLogFormat(L"%ls", optLowerD);
-		}
+		dlg.ParseCommandLine(argv, argc);
 		LocalFree(argv);
 	}
 
@@ -132,7 +82,7 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 	SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
 	//メインスレッドに対するCOMの初期化
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	theApp.InitInstance();
+	CEpgDataCap_BonApp().InitInstance();
 	CoUninitialize();
 	SetSaveDebugLog(false);
 	return 0;

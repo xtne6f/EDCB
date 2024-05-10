@@ -17,16 +17,7 @@ public:
 	CEpgDataCap_BonDlg();	// 標準コンストラクター
 	~CEpgDataCap_BonDlg();
 	INT_PTR DoModal();
-
-	void SetInitBon(LPCWSTR bonFile){ iniBonDriver = bonFile; }
-	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
-	void SetIniNW(BOOL networkFlag){ iniNetwork = networkFlag; };
-	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
-	void SetIniNWUDP(BOOL udpFlag){ iniUDP = udpFlag; };
-	void SetIniNWTCP(BOOL tcpFlag){ iniTCP = tcpFlag; };
-	void SetIniONID(int onid){ iniONID = onid; }
-	void SetIniTSID(int tsid){ iniTSID = tsid; }
-	void SetIniSID(int sid){ iniSID = sid; }
+	void ParseCommandLine(LPWSTR* argv, int argc);
 
 // ダイアログ データ
 	enum { IDD = IDD_EPGDATACAP_BON_DIALOG };

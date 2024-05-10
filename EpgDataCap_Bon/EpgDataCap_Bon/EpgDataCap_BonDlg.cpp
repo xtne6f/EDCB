@@ -31,9 +31,9 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 
 	taskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 
-	iniView = FALSE;
-	iniNetwork = TRUE;
-	iniMin = FALSE;
+	this->iniMin = FALSE;
+	this->iniView = TRUE;
+	this->iniNetwork = TRUE;
 	this->iniUDP = FALSE;
 	this->iniTCP = FALSE;
 	this->iniONID = -1;
@@ -73,6 +73,52 @@ INT_PTR CEpgDataCap_BonDlg::DoModal()
 	                      MAKEINTRESOURCE(index == 1 ? IDD_EPGDATACAP_BON_DIALOG_1 :
 	                                      index == 2 ? IDD_EPGDATACAP_BON_DIALOG_2 : IDD),
 	                      NULL, DlgProc, (LPARAM)this);
+}
+
+void CEpgDataCap_BonDlg::ParseCommandLine(LPWSTR* argv, int argc)
+{
+	LPCWSTR curr = L"";
+	LPCWSTR optUpperD = NULL;
+	LPCWSTR optLowerD = NULL;
+	for( int i = 1; i < argc; i++ ){
+		if( argv[i][0] == L'-' || argv[i][0] == L'/' ){
+			curr = argv[i] + 1;
+			if( wcscmp(curr, L"D") == 0 && optUpperD == NULL ){
+				optUpperD = L"";
+			}else if( wcscmp(curr, L"d") == 0 && optLowerD == NULL ){
+				optLowerD = L"";
+			}else if( CompareNoCase(curr, L"min") == 0 ){
+				this->iniMin = TRUE;
+			}else if( CompareNoCase(curr, L"noview") == 0 ){
+				this->iniView = FALSE;
+			}else if( CompareNoCase(curr, L"nonw") == 0 ){
+				this->iniNetwork = FALSE;
+			}else if( CompareNoCase(curr, L"nwudp") == 0 ){
+				this->iniUDP = TRUE;
+			}else if( CompareNoCase(curr, L"nwtcp") == 0 ){
+				this->iniTCP = TRUE;
+			}
+		}else if( wcscmp(curr, L"D") == 0 && optUpperD && optUpperD[0] == L'\0' ){
+			optUpperD = argv[i];
+		}else if( wcscmp(curr, L"d") == 0 && optLowerD && optLowerD[0] == L'\0' ){
+			optLowerD = argv[i];
+		}else if( CompareNoCase(curr, L"nid") == 0 ){
+			this->iniONID = wcstol(argv[i], NULL, 10);
+		}else if( CompareNoCase(curr, L"tsid") == 0 ){
+			this->iniTSID = wcstol(argv[i], NULL, 10);
+		}else if( CompareNoCase(curr, L"sid") == 0 ){
+			this->iniSID = wcstol(argv[i], NULL, 10);
+		}
+	}
+	if( optUpperD ){
+		this->iniBonDriver = optUpperD;
+		AddDebugLogFormat(L"%ls", optUpperD);
+	}
+	//原作の挙動に合わせるため
+	if( optLowerD ){
+		this->iniBonDriver = optLowerD;
+		AddDebugLogFormat(L"%ls", optLowerD);
+	}
 }
 
 HICON CEpgDataCap_BonDlg::LoadLargeOrSmallIcon(int iconID, bool isLarge)
