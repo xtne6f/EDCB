@@ -1416,7 +1416,15 @@ wstring CTunerBankCtrl::ConvertRecName(
 	}
 	if( ret.empty() ){
 		const SYSTEMTIME& st = startTimeForDefault;
-		Format(ret, L"%04d%02d%02d%02d%02d%02X%02X%02d-%.159ls%ls",
+		Format(ret, L"%04d%02d%02d%02d%02d%02X%02X%02d-"
+#ifdef _WIN32
+		            //パス全体の制限もあるのでNTFSの制限よりやや小さい長さ
+		            L"%.159ls"
+#else
+		            //84文字制限から日付拡張子等のUTF-8換算長を引いた長さ
+		            L"%.74ls"
+#endif
+		            L"%ls",
 		       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, tunerID >> 16, tunerID & 0xFFFF, ctrlID, eventName, ext);
 		CheckFileName(ret);
 	}
