@@ -20,7 +20,7 @@ srvIni='EpgTimerSrv.ini'
 function GetItemList()
   local esc=edcb.htmlEscape
   edcb.htmlEscape=0
-  local pattern=EdcbSettingPath()..'\\*.ChSet4.txt'
+  local pattern=PathAppend(EdcbSettingPath(),'*.ChSet4.txt')
   edcb.htmlEscape=esc
   local ret={}
   for i,v in ipairs(edcb.FindFile(pattern,0) or {}) do
@@ -40,7 +40,7 @@ function GetItemList()
         bon=bon:sub(0,#bon-1)
       end
       if bon~='' then
-        bon=bon..'.dll'
+        bon=bon..(WIN32 and '.dll' or '.so')
         for j,w in ipairs(ret) do
           if w.bon:upper()==bon:upper() then
             bon=nil

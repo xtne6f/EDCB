@@ -68,7 +68,7 @@ ct:Append([=[
 post=AssertPost()
 
 edcbnosuspend=EdcbModulePath()..'\\Tools\\edcbnosuspend.exe'
-if edcb.FindFile(edcbnosuspend,1) then
+if WIN32 and EdcbFindFilePlain(edcbnosuspend) then
   onstat=post and mg.get_var(post,'nosuspend')
   if not onstat then
     onstat,stat,code=edcb.os.execute('tasklist /fi "imagename eq edcbnosuspend.exe" /fo csv /nh | find /i "edcbnosuspend.exe"')
@@ -112,7 +112,7 @@ if post then
     edcb.os.execute('start "" /b "'..edcbnosuspend..'" -')
     ct:Append('  <div id="result">edcbnosuspend.exeを起動しました</div>\n')
   elseif mg.get_var(post,'nosuspend')=='n' then
-    TerminateCommandlineLike('edcbnosuspend.exe','%')
+    TerminateCommandlineLike('edcbnosuspend','')
     ct:Append('  <div id="result">edcbnosuspend.exeを停止しました</div>\n')
   end
 end

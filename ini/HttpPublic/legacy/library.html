@@ -24,9 +24,9 @@ if index then
   if dir then
     dirhash=mg.get_var(mg.request_info.query_string,'d')
     if dirhash then
-      for i,v in ipairs(edcb.FindFile(dir..'\\*',0) or {}) do
+      for i,v in ipairs(edcb.FindFile(PathAppend(dir,'*'),0) or {}) do
         if v.isdir and mg.md5(v.name)==dirhash then
-          dir=dir..'\\'..v.name
+          dir=PathAppend(dir,v.name)
           dirname=LIBRARY_LIST[index]..'/'..v.name
           break
         end
@@ -58,10 +58,10 @@ else
       ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='na' and 'na' or 'nd')..(dirhash and '&amp;d='..dirhash or '')..'">Name</a></tr>\n'
       ..'<tr><td><td><td><a href="library.html'..(dirhash and '?i='..index or '')..'">Parent directory ..</a></tr>\n')
     ff={}
-    for i,v in ipairs(edcb.FindFile(dir..'\\*',0) or {}) do
+    for i,v in ipairs(edcb.FindFile(PathAppend(dir,'*'),0) or {}) do
       if not v.isdir then
         for j,ext in ipairs(xlist) do
-          if #v.name>#ext and v.name:sub(-#ext):lower()==ext:lower() then
+          if #v.name>#ext and IsEqualPath(v.name:sub(-#ext),ext) then
             ff[#ff+1]=v
             break
           end
@@ -98,7 +98,7 @@ else
     ct:Append('<div id="main">\n')
     info=nil
     for i,v in ipairs(xlist) do
-      for j,w in ipairs(edcb.FindFile(dir..'\\*'..v,0) or {}) do
+      for j,w in ipairs(edcb.FindFile(PathAppend(dir,'*'..v),0) or {}) do
         if not w.isdir and mg.md5(w.name)==hash then
           info=w
           info.ists=v==tsx
@@ -125,7 +125,7 @@ else
                                          ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplate() or '</a>'))
       if info.ists then
         fsec,fsize=0,0
-        f=edcb.io.open(dir..'\\'..info.name,'rb')
+        f=edcb.io.open(PathAppend(dir,info.name),'rb')
         if f then
           fsec,fsize=GetDurationSec(f)
           f:close()

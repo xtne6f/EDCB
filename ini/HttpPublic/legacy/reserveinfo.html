@@ -124,7 +124,7 @@ if r then
     xlist={table.unpack(MEDIA_EXTENSION_LIST)}
     xlist[#xlist+1]=''
     for i,ext in ipairs(xlist) do
-      ff=edcb.FindFile(recFilePath..ext,1)
+      ff=EdcbFindFilePlain(recFilePath..ext)
       if ff then
         ct:Append((vtag==i and VideoWrapperBegin()
                      ..'<video id="vid" autoplay playsinline controls src="' or '<a href="')
@@ -156,7 +156,7 @@ if r then
             end
           end
         else
-          ct:Append(' ('..math.floor(ff[1].size/1048576)..'M)'
+          ct:Append(' ('..math.floor(ff.size/1048576)..'M)'
             ..(vtag==0 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref..ext)..'">Mux-to-TS</a>]' or '')..'<br>\n')
         end
       end

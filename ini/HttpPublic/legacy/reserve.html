@@ -77,8 +77,8 @@ ct:Append([=[
 <div class="aside">
 ]=])
 a={}
-for i,v in ipairs(edcb.FindFile('\\\\.\\pipe\\SendTSTCP_*',0) or {}) do
-  n=v.name:match('^[^_]+_(%d+)_%d+$')
+for i,v in ipairs(edcb.FindFile(SendTSTCPPipePath('*',0),0) or {}) do
+  n=v.name:match('^[^_]+_(%d+)_%d+')
   if n then
     a[#a+1]=n
   end

@@ -170,8 +170,8 @@ if code==200 then
   currSec=1
   for i,v in ipairs(totList) do
     if v.tot<v.totEnd then
-      cmd='"'..JKRDLOG_PATH..'" '..id..' '..v.tot..' '..v.totEnd
-      f=edcb.io.popen('"'..cmd..'"','r')
+      cmd=QuoteCommandArgForPath(JKRDLOG_PATH)..' '..id..' '..v.tot..' '..v.totEnd
+      f=edcb.io.popen(WIN32 and '"'..cmd..'"' or cmd)
       if f then
         while true do
           buf=ReadJikkyoChunk(f)

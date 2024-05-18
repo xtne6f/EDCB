@@ -33,27 +33,27 @@ if post then
   end
   if rs then
     if mg.get_var(post,'add') then
-      addFolder={recFolder=nil,writePlugIn='Write_Default.dll',recNamePlugIn=''}
+      addFolder={recFolder=nil,writePlugIn='Write_Default'..(WIN32 and '.dll' or '.so'),recNamePlugIn=''}
       item=mg.get_var(post,'dir') or ''
       if item=='' then
         addFolder.recFolder='!Default'
-      elseif item:find('^[^%c*?"<>|]+$') then
-        ff=edcb.FindFile(item,1)
-        if ff and ff[1].isdir or item:find('^[A-Za-z]:\\$') then
+      elseif item:find('^[^%c'..(WIN32 and '*?"<>|' or '')..']+$') then
+        ff=EdcbFindFilePlain(item)
+        if (ff and ff.isdir) or (WIN32 and item:find('^[A-Za-z]:\\$')) then
           addFolder.recFolder=item
         end
       end
       if addFolder.recFolder then
         item=mg.get_var(post,'writePlugIn') or ''
         for i,v in ipairs(EnumPlugInFileName('Write')) do
-          if v:upper()==item:upper() then
+          if IsEqualPath(v,item) then
             addFolder.writePlugIn=item
             break
           end
         end
         item=mg.get_var(post,'recNamePlugIn') or ''
         for i,v in ipairs(EnumPlugInFileName('RecName')) do
-          if v:upper()==item:upper() then
+          if IsEqualPath(v,item) then
             addFolder.recNamePlugIn=item
             break
           end

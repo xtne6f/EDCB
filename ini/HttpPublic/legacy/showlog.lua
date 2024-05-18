@@ -2,15 +2,15 @@ dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 if mg.get_var(mg.request_info.query_string,'t')=='d' then
   if SHOW_DEBUG_LOG then
-    t='\\EpgTimerSrvDebugLog.txt'
+    t='EpgTimerSrvDebugLog.txt'
   end
 else
   if SHOW_NOTIFY_LOG then
-    t='\\EpgTimerSrvNotify.log'
+    t='EpgTimerSrvNotify.log'
   end
 end
 if t then
-  f=edcb.io.open(EdcbModulePath()..t,'rb')
+  f=edcb.io.open(PathAppend(EdcbModulePath(),t),'rb')
 end
 
 if not f then
@@ -19,7 +19,18 @@ else
   ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
   c=GetVarInt(mg.request_info.query_string,'c',0,1e7) or 1e7
   fsize=f:seek('end')
-  if fsize>=2 then
+  if not WIN32 then
+    --UTF-8
+    ofs=math.max(fsize-c,0)
+    f:seek('set',ofs)
+    if ofs~=0 then
+      repeat
+        buf=f:read(1)
+      until not buf or #buf<1 or buf=='\n'
+    end
+    ct:Append(f:read('*a') or '')
+  elseif fsize>=2 then
+    --UTF-16
     ofs=math.floor(math.max(fsize/2-1-c,0))
     f:seek('set',2+ofs*2)
     if ofs~=0 then

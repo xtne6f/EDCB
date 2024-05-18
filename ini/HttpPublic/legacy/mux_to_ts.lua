@@ -41,11 +41,10 @@ if fpath and fpath:find('%.[Mm][Pp]4$') then
       break
     end
   end
-  -- コマンドはEDCBのToolsフォルダにあるものを優先する
-  tools=EdcbModulePath()..'\\Tools'
-  psisimux=(edcb.FindFile(tools..'\\psisimux.exe',1) and tools..'\\' or '')..'psisimux.exe'
+  psisimux=FindToolsCommand('psisimux')
   while true do
-    f=edcb.io.popen('""'..psisimux..'" -s '..(seek or 0)..' -r '..(range or -1)..' -p -8 -x .vtt -y .psc "'..fpath:gsub('[&%^]','^%0')..'" -"','rb')
+    cmd=psisimux..' -s '..(seek or 0)..' -r '..(range or -1)..' -p -8 -x .vtt -y .psc '..QuoteCommandArgForPath(fpath)..' -'
+    f=edcb.io.popen(WIN32 and '"'..cmd..'"' or cmd,'r'..POPEN_BINARY)
     if not f then break end
     buf=f:read(188)
     if not buf or #buf~=188 then
@@ -69,7 +68,7 @@ if not f then
   ct:Finish()
   mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
 else
-  fname='mux_to_ts'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini'):lower()
+  fname='mux_to_ts'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini')
   if fpos>=fsize then
     -- シーク範囲外
     mg.write(Response(416,mg.get_mime_type(fname),nil,0,3600)

@@ -29,7 +29,7 @@ function GetViewAppCmdOpt()
   }
 end
 
-defaultRecExePath=EdcbModulePath()..'\\EpgDataCap_Bon.exe'
+defaultRecExePath=WIN32 and PathAppend(EdcbModulePath(),'EpgDataCap_Bon.exe') or ''
 post=AssertPost()
 if post and not ALLOW_SETTING then
   post=nil
@@ -37,22 +37,22 @@ if post and not ALLOW_SETTING then
 end
 if post then
   item=mg.get_var(post,'dataSavePath') or ''
-  if item:upper()==(EdcbModulePath()..'\\Setting'):upper() then
+  if IsEqualPath(item,PathAppend(EdcbModulePath(),'Setting')) then
     --既定値なので記録しない
     edcb.WritePrivateProfile('SET','DataSavePath',nil,commonIni)
-  elseif item:find('^[^%c*?"<>|]+$') then
-    ff=edcb.FindFile(item,1)
-    if ff and ff[1].isdir then
+  elseif item:find('^[^%c'..(WIN32 and '*?"<>|' or '')..']+$') then
+    ff=EdcbFindFilePlain(item)
+    if ff and ff.isdir then
       edcb.WritePrivateProfile('SET','DataSavePath',item,commonIni)
     end
   end
   item=mg.get_var(post,'recExePath') or ''
-  if item:upper()==defaultRecExePath:upper() then
+  if IsEqualPath(item,defaultRecExePath) then
     --既定値なので記録しない
     edcb.WritePrivateProfile('SET','RecExePath',nil,commonIni)
-  elseif item:find('^[^%c*?"<>|]+$') then
-    ff=edcb.FindFile(item,1)
-    if ff and not ff[1].isdir then
+  elseif item:find('^[^%c'..(WIN32 and '*?"<>|' or '')..']+$') then
+    ff=EdcbFindFilePlain(item)
+    if ff and not ff.isdir then
       edcb.WritePrivateProfile('SET','RecExePath',item,commonIni)
     end
   end
@@ -60,9 +60,9 @@ if post then
   if item=='' then
     --既定値なので記録しない
     edcb.WritePrivateProfile('SET','RecInfoFolder',nil,commonIni)
-  elseif item:find('^[^%c*?"<>|]+$') then
-    ff=edcb.FindFile(item,1)
-    if ff and ff[1].isdir then
+  elseif item:find('^[^%c'..(WIN32 and '*?"<>|' or '')..']+$') then
+    ff=EdcbFindFilePlain(item)
+    if ff and ff.isdir then
       edcb.WritePrivateProfile('SET','RecInfoFolder',item,commonIni)
     end
   end
@@ -106,7 +106,7 @@ ct:Append([=[
   <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
   設定関係保存フォルダ<br>
   <input type="text" name="dataSavePath" value="]=]..dataSavePath..[=[" style="width:95%"><br>
-  録画用アプリのexe<br>
+  録画用アプリのパス]=]..(WIN32 and '' or ' (※未指定時はEpgTimerSrvと同じ場所のEpgDataCap_Bonを使います。)')..[=[<br>
   <input type="text" name="recExePath" value="]=]..recExePath..[=[" style="width:95%"><br>
   コマンドライン引数 <input type="text" name="cmdOptBon" value="]=]..cmdOpt.bon..[=[" size="40"> {BonDriver}
   <div class="sub-setting">

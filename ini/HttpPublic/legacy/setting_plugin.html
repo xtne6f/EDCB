@@ -103,7 +103,7 @@ itemList=EnumPlugInFileName(mode==1 and 'RecName' or 'Write')
 setting=nil
 for i,v in ipairs(itemList) do
   if v==item then
-    f=edcb.io.open(EdcbModulePath()..(mode==1 and '\\RecName\\' or '\\Write\\')..v,'rb')
+    f=edcb.io.open(PathAppend(EdcbLibPath() or PathAppend(EdcbModulePath(),mode==1 and 'RecName' or 'Write'),v),'rb')
     if f then
       --埋め込まれた設定ファイルについてのメタ情報を取り出す
       buf=(' '):rep(65536)
@@ -123,7 +123,7 @@ for i,v in ipairs(itemList) do
 end
 
 if post and setting then
-  if setting.head.utf then
+  if WIN32 and setting.head.utf then
     --設定ファイルがまだないか空のときバイト順マークを書き込む
     f=edcb.io.open(EdcbModulePath()..(mode==1 and '\\RecName\\' or '\\Write\\')..item..'.ini','ab')
     if f then
