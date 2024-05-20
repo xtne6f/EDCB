@@ -6,7 +6,25 @@
 #include "../../../Common/PathUtil.h"
 #include <locale.h>
 
-static const CH_DATA5 *CheckTSID(WORD onid, WORD tsid, WORD sid, const CParseChText5 &chText5)
+namespace
+{
+void PrintfInEnvironmentLocale(LPCWSTR format, ...)
+{
+	fflush(stdout);
+	setlocale(LC_ALL, "");
+	va_list params;
+	va_start(params, format);
+#ifdef _WIN32
+	vwprintf_s(format, params);
+#else
+	vwprintf(format, params);
+#endif
+	va_end(params);
+	fflush(stdout);
+	setlocale(LC_ALL, "C");
+}
+
+const CH_DATA5 *CheckTSID(WORD onid, WORD tsid, WORD sid, const CParseChText5 &chText5)
 {
 	if (chText5.GetMap().count(static_cast<LONGLONG>(onid) << 32 | static_cast<DWORD>(tsid) << 16 | sid) == 0) {
 		// 見つからなかった
@@ -19,23 +37,34 @@ static const CH_DATA5 *CheckTSID(WORD onid, WORD tsid, WORD sid, const CParseChT
 	}
 	return nullptr;
 }
+}
 
+#ifdef _WIN32
 int wmain(int argc, wchar_t **argv)
+#else
+int main(int argc, char **argv)
+#endif
 {
-	setlocale(LC_ALL, "");
-
 	// --dray-run時は書き込みを一切しない
+#ifdef _WIN32
 	const bool dryrun = (argc >= 2 && wcscmp(argv[1], L"--dry-run") == 0);
 	if (argc != 2 || (!dryrun && wcscmp(argv[1], L"--run") != 0)) {
+#else
+	const bool dryrun = (argc >= 2 && strcmp(argv[1], "--dry-run") == 0);
+	if (argc != 2 || (!dryrun && strcmp(argv[1], "--run") != 0)) {
+#endif
 		fputws(L"Usage: tsidmove --dry-run|--run\n", stdout);
 		return 2;
 	}
 
-	// このツールはEDCBフォルダかその直下のフォルダに置かれているはず
 	fs_path iniPath = GetCommonIniPath();
 	if (UtilFileExists(iniPath).first == false) {
+#ifdef _WIN32
+		// このツールはEDCBフォルダかその直下のフォルダに置かれているはず
 		iniPath = iniPath.parent_path().replace_filename(L"Common.ini");
-		if (UtilFileExists(iniPath).first == false) {
+		if (UtilFileExists(iniPath).first == false)
+#endif
+		{
 			fputws(L"Error: Common.ini: No such file.\n", stdout);
 			return 1;
 		}
@@ -46,7 +75,7 @@ int wmain(int argc, wchar_t **argv)
 	if (settingPath.empty()) {
 		settingPath = fs_path(iniPath).replace_filename(L"Setting");
 	}
-	wprintf_s(L"Checking... \"%ls\"\n", settingPath.c_str());
+	PrintfInEnvironmentLocale(L"Checking... \"%ls\"\n", settingPath.c_str());
 
 	fs_path chSet5Path = fs_path(settingPath).append(L"ChSet5.txt");
 	if (UtilFileExists(chSet5Path).first == false) {
@@ -89,9 +118,9 @@ int wmain(int argc, wchar_t **argv)
 				RESERVE_DATA r = itr->second;
 				const CH_DATA5 *ch = CheckTSID(r.originalNetworkID, r.transportStreamID, r.serviceID, chText5);
 				if (ch) {
-					wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
-					          r.reserveID, r.transportStreamID, r.transportStreamID,
-					          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
+					PrintfInEnvironmentLocale(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
+					                          r.reserveID, r.transportStreamID, r.transportStreamID,
+					                          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
 					r.transportStreamID = ch->transportStreamID;
 					text.ChgReserve(r);
 					n++;
@@ -100,7 +129,7 @@ int wmain(int argc, wchar_t **argv)
 			if (n == 0) {
 				fputws(L" No need to change. Skipped.\n", stdout);
 			} else {
-				wprintf_s(L"\nChanging the above %d items...\n", n);
+				PrintfInEnvironmentLocale(L"\nChanging the above %d items...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
 						fputws(L"Succeeded.\n", stdout);
@@ -128,9 +157,9 @@ int wmain(int argc, wchar_t **argv)
 				for (auto jtr = a.searchInfo.serviceList.begin(); jtr != a.searchInfo.serviceList.end(); jtr++) {
 					const CH_DATA5 *ch = CheckTSID(static_cast<WORD>(*jtr >> 32), static_cast<WORD>(*jtr >> 16), static_cast<WORD>(*jtr), chText5);
 					if (ch) {
-						wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
-						          a.dataID, static_cast<WORD>(*jtr >> 16), static_cast<WORD>(*jtr >> 16),
-						          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
+						PrintfInEnvironmentLocale(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
+						                          a.dataID, static_cast<WORD>(*jtr >> 16), static_cast<WORD>(*jtr >> 16),
+						                          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
 						*jtr = (*jtr & 0xFFFF0000FFFFLL) | (static_cast<DWORD>(ch->transportStreamID) << 16);
 						modified = true;
 					}
@@ -143,7 +172,7 @@ int wmain(int argc, wchar_t **argv)
 			if (n == 0) {
 				fputws(L" No need to change. Skipped.\n", stdout);
 			} else {
-				wprintf_s(L"\nChanging the above %d items...\n", n);
+				PrintfInEnvironmentLocale(L"\nChanging the above %d items...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
 						fputws(L"Succeeded.\n", stdout);
@@ -169,9 +198,9 @@ int wmain(int argc, wchar_t **argv)
 				MANUAL_AUTO_ADD_DATA m = itr->second;
 				const CH_DATA5 *ch = CheckTSID(m.originalNetworkID, m.transportStreamID, m.serviceID, chText5);
 				if (ch) {
-					wprintf_s(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
-					          m.dataID, m.transportStreamID, m.transportStreamID,
-					          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
+					PrintfInEnvironmentLocale(L"\n  ID=%d, TSID=%d(0x%04X) -> %d(0x%04X) (%ls)",
+					                          m.dataID, m.transportStreamID, m.transportStreamID,
+					                          ch->transportStreamID, ch->transportStreamID, ch->serviceName.c_str());
 					m.transportStreamID = ch->transportStreamID;
 					text.ChgData(m);
 					n++;
@@ -180,7 +209,7 @@ int wmain(int argc, wchar_t **argv)
 			if (n == 0) {
 				fputws(L" No need to change. Skipped.\n", stdout);
 			} else {
-				wprintf_s(L"\nChanging the above %d items...\n", n);
+				PrintfInEnvironmentLocale(L"\nChanging the above %d items...\n", n);
 				if (!dryrun) {
 					if (text.SaveText()) {
 						fputws(L"Succeeded.\n", stdout);
