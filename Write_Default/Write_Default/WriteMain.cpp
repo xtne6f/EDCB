@@ -342,8 +342,9 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 							if( poll(pfds, 2, -1) < 0 && errno != EINTR ){
 								break;
 							}
+						}else{
+							xferred += ret;
 						}
-						xferred += ret;
 					}
 					if( xferred < n ){
 						//打ち切りまたは出力完了
