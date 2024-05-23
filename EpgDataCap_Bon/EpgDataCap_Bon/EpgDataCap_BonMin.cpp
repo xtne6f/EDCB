@@ -100,15 +100,7 @@ void CEpgDataCap_BonMin::PrintStatusLog(LPCWSTR log)
 
 void CEpgDataCap_BonMin::OnInit()
 {
-	fs_path appIniPath = GetModuleIniPath();
-
-	this->overWriteFlag       = GetPrivateProfileInt(L"SET", L"OverWrite", 0, appIniPath.c_str()) != 0;
-	this->dropSaveThresh      = GetPrivateProfileInt(L"SET", L"DropSaveThresh", 0, appIniPath.c_str());
-	this->scrambleSaveThresh  = GetPrivateProfileInt(L"SET", L"ScrambleSaveThresh", -1, appIniPath.c_str());
-	this->tsBuffMaxCount      = (DWORD)GetPrivateProfileInt(L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str());
-	this->writeBuffMaxCount   = GetPrivateProfileInt(L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str());
-	this->traceBonDriverLevel = GetPrivateProfileInt(L"SET", L"TraceBonDriverLevel", 0, appIniPath.c_str());
-	this->openWait            = GetPrivateProfileInt(L"SET", L"OpenWait", 200, appIniPath.c_str());
+	this->setting = APP_SETTING::Load(GetModuleIniPath().c_str());
 
 	for( int i = 0; ; i++ ){
 		this->recFolderList.push_back(GetRecFolderPath(i).native());
@@ -120,55 +112,34 @@ void CEpgDataCap_BonMin::OnInit()
 
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
-	for( int tcp = 0; tcp < 2; tcp++ ){
-		if( this->iniNetwork == false || (tcp ? this->iniTCP : this->iniUDP) == false ){
-			continue;
-		}
-		LPCWSTR section = tcp ? L"SET_TCP" : L"SET_UDP";
-		int count = GetPrivateProfileInt(section, L"Count", 0, appIniPath.c_str());
-		for( int i = 0; i < count; i++ ){
-			NW_SEND_INFO item;
-			WCHAR key[64];
-			swprintf_s(key, L"IP%d", i);
-			item.ipString = GetPrivateProfileToString(section, key, L"2130706433", appIniPath.c_str());
-			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
-				item.ipString.erase(0, 1).pop_back();
-			}else{
-				DWORD ip = (int)wcstol(item.ipString.c_str(), NULL, 10);
-				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
-			}
-			swprintf_s(key, L"Port%d", i);
-			item.port = 0;
-			if( item.ipString != BON_NW_SRV_PIPE_IP ){
-				item.port = GetPrivateProfileInt(section, key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN, appIniPath.c_str());
-			}
-			swprintf_s(key, L"BroadCast%d", i);
-			item.broadcastFlag = tcp ? 0 : GetPrivateProfileInt(section, key, 0, appIniPath.c_str());
-			item.udpMaxSendSize = tcp ? 0 : GetPrivateProfileInt(L"SET", L"UDPPacket", 128, appIniPath.c_str()) * 188;
-			(tcp ? tcpSendList : udpSendList).push_back(item);
-		}
+	udpSendList.swap(this->setting.udpSendList);
+	tcpSendList.swap(this->setting.tcpSendList);
+	if( this->iniNetwork == false || this->iniUDP == false ){
+		udpSendList.clear();
+	}
+	if( this->iniNetwork == false || this->iniTCP == false ){
+		tcpSendList.clear();
 	}
 
-	this->bonCtrl.SetBackGroundEpgCap(GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapRec", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapBackBSBasicOnly", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapBackCS1BasicOnly", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapBackCS2BasicOnly", 1, appIniPath.c_str()) != 0,
-	                                  GetPrivateProfileInt(L"SET", L"EpgCapBackCS3BasicOnly", 0, appIniPath.c_str()) != 0,
-	                                  (DWORD)GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str()));
+	this->bonCtrl.SetBackGroundEpgCap(this->setting.epgCapLive,
+	                                  this->setting.epgCapRec,
+	                                  this->setting.epgCapBackBSBasic,
+	                                  this->setting.epgCapBackCS1Basic,
+	                                  this->setting.epgCapBackCS2Basic,
+	                                  this->setting.epgCapBackCS3Basic,
+	                                  this->setting.epgCapBackStartWaitSec);
 
-	this->bonCtrl.ReloadSetting(GetPrivateProfileInt(L"SET", L"EMM", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"ParseEpgPostProcess", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"Scramble", 1, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"Caption", 1, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"Data", 0, appIniPath.c_str()) != 0,
-	                            GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()) != 0,
-	                            (DWORD)(GetPrivateProfileInt(L"SET", L"SaveLogo", 0, appIniPath.c_str()) == 0 ? 0 :
-	                                        GetPrivateProfileInt(L"SET", L"SaveLogoTypeFlags", 32, appIniPath.c_str())));
+	this->bonCtrl.ReloadSetting(this->setting.emm,
+	                            this->setting.noLogScramble,
+	                            this->setting.parseEpgPostProcess,
+	                            this->setting.scramble,
+	                            this->setting.enableCaption,
+	                            this->setting.enableData,
+	                            this->setting.allService,
+	                            this->setting.saveLogo ? this->setting.saveLogoTypeFlags : 0);
 
 	if( this->iniBonDriver.empty() == false ){
-		if( this->bonCtrl.OpenBonDriver(this->iniBonDriver.c_str(), this->traceBonDriverLevel, this->openWait, this->tsBuffMaxCount) ){
+		if( this->bonCtrl.OpenBonDriver(this->iniBonDriver.c_str(), this->setting.traceBonDriverLevel, this->setting.openWait, this->setting.tsBuffMaxCount) ){
 			int selectIndex = ReloadServiceList(this->iniONID, this->iniTSID, this->iniSID);
 			if( selectIndex >= 0 && this->bonCtrl.SetCh(this->serviceList[selectIndex]) ){
 				this->lastONID = this->serviceList[selectIndex].originalNetworkID;
@@ -517,7 +488,7 @@ void CEpgDataCap_BonMin::CtrlCmdCallbackInvoked()
 			if( cmd.ReadVALUE(&val) ){
 				this->lastONID = -1;
 				this->lastTSID = -1;
-				if( this->bonCtrl.OpenBonDriver(val.c_str(), this->traceBonDriverLevel, this->openWait, this->tsBuffMaxCount) ){
+				if( this->bonCtrl.OpenBonDriver(val.c_str(), this->setting.traceBonDriverLevel, this->setting.openWait, this->setting.tsBuffMaxCount) ){
 					ReloadServiceList();
 					res.SetParam(CMD_SUCCESS);
 				}else{
@@ -609,10 +580,10 @@ void CEpgDataCap_BonMin::CtrlCmdCallbackInvoked()
 			SET_CTRL_REC_PARAM val;
 			if( cmd.ReadVALUE(&val) ){
 				if( val.overWriteFlag == 2 ){
-					val.overWriteFlag = this->overWriteFlag != FALSE;
+					val.overWriteFlag = this->setting.overWrite;
 				}
 				this->bonCtrl.ClearErrCount(val.ctrlID);
-				if( this->bonCtrl.StartSave(val, this->recFolderList, this->writeBuffMaxCount) ){
+				if( this->bonCtrl.StartSave(val, this->recFolderList, this->setting.writeBuffMaxCount) ){
 					res.SetParam(CMD_SUCCESS);
 				}
 			}
@@ -634,8 +605,8 @@ void CEpgDataCap_BonMin::CtrlCmdCallbackInvoked()
 					}else{
 						infoPath.append(fs_path(resVal.recFilePath).filename().concat(L".err").native());
 					}
-					this->bonCtrl.SaveErrCount(val.ctrlID, infoPath.native(), true, this->dropSaveThresh,
-					                           this->scrambleSaveThresh, resVal.drop, resVal.scramble);
+					this->bonCtrl.SaveErrCount(val.ctrlID, infoPath.native(), true, this->setting.dropSaveThresh,
+					                           this->setting.scrambleSaveThresh, resVal.drop, resVal.scramble);
 				}else{
 					this->bonCtrl.GetErrCount(val.ctrlID, &resVal.drop, &resVal.scramble);
 				}

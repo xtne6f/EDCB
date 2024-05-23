@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "AppSetting.h"
 #include "../../Common/ParseTextInstances.h"
 
 // CSetDlgEpg ダイアログ
@@ -9,7 +10,7 @@ class CSetDlgEpg
 public:
 	CSetDlgEpg();   // 標準コンストラクター
 	~CSetDlgEpg();
-	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
+	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 
@@ -18,6 +19,7 @@ public:
 	
 protected:
 	HWND m_hWnd;
+	const APP_SETTING* m_setting;
 	CParseChText5 chSet;
 
 	BOOL OnInitDialog();

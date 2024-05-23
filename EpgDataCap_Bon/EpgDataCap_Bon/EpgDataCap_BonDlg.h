@@ -6,6 +6,7 @@
 
 #include "../../BonCtrl/BonCtrl.h"
 #include "../../Common/PipeServer.h"
+#include "AppSetting.h"
 #include "EpgDataCap_BonDef.h"
 #include "SettingDlg.h"
 
@@ -54,25 +55,8 @@ protected:
 	HICON m_hIcon2;
 	HANDLE m_hViewProcess;
 
-	BOOL modifyTitleBarText;
-	BOOL overlayTaskIcon;
-	BOOL minTask;
-	wstring recFileName;
-	BOOL overWriteFlag;
-	wstring viewPath;
-	wstring viewOpt;
-	BOOL viewSingle;
-	BOOL viewCloseOnExit;
-	int dropSaveThresh;
-	int scrambleSaveThresh;
-	BOOL dropLogAsUtf8;
-	DWORD tsBuffMaxCount;
-	int writeBuffMaxCount;
-	int traceBonDriverLevel;
-	int openWait;
+	APP_SETTING setting;
 	vector<wstring> recFolderList;
-	vector<NW_SEND_INFO> setUdpSendList;
-	vector<NW_SEND_INFO> setTcpSendList;
 
 	wstring iniBonDriver;
 	BOOL iniMin;

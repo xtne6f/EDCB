@@ -7,7 +7,6 @@
 #ifdef _WIN32
 
 #include "resource.h"		// メイン シンボル
-#include "../../Common/PathUtil.h"
 #include <windowsx.h>
 #include <commctrl.h>
 

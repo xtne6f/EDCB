@@ -11,6 +11,7 @@
 
 CSetDlgEpg::CSetDlgEpg()
 	: m_hWnd(NULL)
+	, m_setting(NULL)
 {
 
 }
@@ -19,8 +20,9 @@ CSetDlgEpg::~CSetDlgEpg()
 {
 }
 
-BOOL CSetDlgEpg::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
+BOOL CSetDlgEpg::Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting)
 {
+	m_setting = &setting;
 	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
 
@@ -32,21 +34,20 @@ BOOL CSetDlgEpg::OnInitDialog()
 {
 	// TODO:  ここに初期化を追加してください
 	fs_path commonIniPath = GetCommonIniPath();
-	fs_path appIniPath = GetModuleIniPath();
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BS), GetPrivateProfileInt( L"SET", L"BSBasicOnly", 1, commonIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_CS1), GetPrivateProfileInt( L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_CS2), GetPrivateProfileInt( L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_CS3), GetPrivateProfileInt( L"SET", L"CS3BasicOnly", 0, commonIniPath.c_str() ) );
-	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_BS), GetPrivateProfileInt( L"SET", L"EpgCapBackBSBasicOnly", 1, appIniPath.c_str() ) );
-	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS1), GetPrivateProfileInt( L"SET", L"EpgCapBackCS1BasicOnly", 1, appIniPath.c_str() ) );
-	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS2), GetPrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", 1, appIniPath.c_str() ) );
-	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS3), GetPrivateProfileInt( L"SET", L"EpgCapBackCS3BasicOnly", 0, appIniPath.c_str() ) );
-	Button_SetCheck( GetDlgItem(IDC_CHECK_EPGCAP_LIVE), GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, appIniPath.c_str()) );
-	Button_SetCheck( GetDlgItem(IDC_CHECK_EPGCAP_REC), GetPrivateProfileInt(L"SET", L"EpgCapRec", 1, appIniPath.c_str()) );
-	Button_SetCheck( GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC), GetPrivateProfileInt(L"SET", L"ParseEpgPostProcess", 0, appIniPath.c_str()) );
-	SetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str()), FALSE);
-	Button_SetCheck( GetDlgItem(IDC_CHECK_SAVE_LOGO), GetPrivateProfileInt(L"SET", L"SaveLogo", 0, appIniPath.c_str()) );
-	SetDlgItemInt(m_hWnd, IDC_EDIT_SAVE_LOGO_TYPE, GetPrivateProfileInt(L"SET", L"SaveLogoTypeFlags", 32, appIniPath.c_str()), FALSE);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_BACK_BS), m_setting->epgCapBackBSBasic);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_BACK_CS1), m_setting->epgCapBackCS1Basic);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_BACK_CS2), m_setting->epgCapBackCS2Basic);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_BACK_CS3), m_setting->epgCapBackCS3Basic);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_EPGCAP_LIVE), m_setting->epgCapLive);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_EPGCAP_REC), m_setting->epgCapRec);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC), m_setting->parseEpgPostProcess);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, m_setting->epgCapBackStartWaitSec, FALSE);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_SAVE_LOGO), m_setting->saveLogo);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_SAVE_LOGO_TYPE, m_setting->saveLogoTypeFlags, FALSE);
 	OnBnClickedSaveLogo();
 
 	this->chSet.ParseText(GetSettingPath().append(L"ChSet5.txt").c_str());

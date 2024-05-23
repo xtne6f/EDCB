@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "AppSetting.h"
 
 // CSetDlgBasic ダイアログ
 
@@ -8,7 +9,7 @@ class CSetDlgBasic
 public:
 	CSetDlgBasic();   // 標準コンストラクター
 	~CSetDlgBasic();
-	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
+	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 
@@ -18,6 +19,7 @@ public:
 
 protected:
 	HWND m_hWnd;
+	const APP_SETTING* m_setting;
 
 	afx_msg void OnBnClickedButtonRecPath();
 	afx_msg void OnBnClickedButtonRecAdd();

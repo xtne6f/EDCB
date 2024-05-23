@@ -1,8 +1,6 @@
 ﻿#pragma once
 
-
-#include "../../Common/PathUtil.h"
-
+#include "AppSetting.h"
 #include "SetDlgBasic.h"
 #include "SetDlgNetwork.h"
 #include "SetDlgApp.h"
@@ -26,6 +24,7 @@ public:
 protected:
 	HWND m_hWnd;
 	HWND m_hWndOwner;
+	APP_SETTING m_setting;
 
 	CSetDlgBasic basicDlg;
 	CSetDlgApp appDlg;

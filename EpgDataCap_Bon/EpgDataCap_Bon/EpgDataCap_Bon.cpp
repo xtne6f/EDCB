@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
+#include "../../Common/PathUtil.h"
 #include "../../Common/ThreadUtil.h"
 #include "../../Common/TimeUtil.h"
 #ifdef _WIN32

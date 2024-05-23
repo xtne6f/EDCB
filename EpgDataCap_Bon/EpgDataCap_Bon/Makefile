@@ -31,6 +31,7 @@ SOURCES := \
   Common__TSBuffUtil.cpp \
   Common__TSPacketUtil.cpp \
   Common__WritePlugInUtil.cpp \
+  AppSetting.cpp \
   EpgDataCap_Bon.cpp \
   stdafx.cpp
 

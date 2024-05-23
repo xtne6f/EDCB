@@ -3,6 +3,7 @@
 #include "../../BonCtrl/BonCtrl.h"
 #include "../../Common/MessageManager.h"
 #include "../../Common/PipeServer.h"
+#include "AppSetting.h"
 
 class CEpgDataCap_BonMin
 {
@@ -21,13 +22,7 @@ private:
 	void OnTimerStatusUpdate();
 	void CtrlCmdCallbackInvoked();
 
-	bool overWriteFlag;
-	int dropSaveThresh;
-	int scrambleSaveThresh;
-	DWORD tsBuffMaxCount;
-	int writeBuffMaxCount;
-	int traceBonDriverLevel;
-	int openWait;
+	APP_SETTING setting;
 	vector<wstring> recFolderList;
 
 	wstring iniBonDriver;

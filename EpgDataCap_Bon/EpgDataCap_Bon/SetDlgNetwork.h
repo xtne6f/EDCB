@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-
-#include "../../BonCtrl/BonCtrlDef.h"
+#include "AppSetting.h"
 
 // CSetDlgNetwork ダイアログ
 
@@ -10,7 +9,7 @@ class CSetDlgNetwork
 public:
 	CSetDlgNetwork();   // 標準コンストラクター
 	~CSetDlgNetwork();
-	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent);
+	BOOL Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting);
 	HWND GetSafeHwnd() const{ return m_hWnd; }
 	void SaveIni(void);
 
