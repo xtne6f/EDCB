@@ -23,10 +23,9 @@ void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...)
 			int n = _vsnwprintf_s(p, s, _TRUNCATE, format, copyParams);
 #else
 			//切り捨て以外のエラーでも-1が返る(無効なパラメーターハンドラはない)ので注意
-			p[0] = p[s - 1] = L'\0';
-			int n = vswprintf(p, s - 1, format, copyParams);
-			//切り捨て以外のエラーと思われるものは不正として扱う(微妙だがvswprintfの仕様上こうするしかない)
-			if( n < 0 && wcslen(p) != s - 2 ){
+			int n = vswprintf(p, s, format, copyParams);
+			//切り捨てのみを区別できないので上限を設ける(微妙だがvswprintfの仕様上こうするしかない)
+			if( n < 0 && buff.size() >= 16 * 1024 * 1024 ){
 				std::terminate();
 			}
 #endif

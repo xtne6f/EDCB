@@ -335,6 +335,9 @@ bool CEpgTimerSrvMain::OnMessage(CMessageManager::PARAMS& pa)
 #endif
 		AddDebugLog(L"*** Server initialized ***");
 		return true;
+	case CMessageManager::ID_SIGNAL:
+		AddDebugLogFormat(L"Received signal %d", (int)pa.param1);
+		break;
 	case CMessageManager::ID_DESTROY:
 #ifdef _WIN32
 		if( ctx->resumeTimer ){
@@ -3226,6 +3229,12 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		" if not f then return f,e end"
 		" edcb.io._cloexec(f)"
 		" return f;"
+		"end;"
+		"edcb.io.popen=function(p,m)"
+		" local f=io.popen(p,m)"
+		" if not f then return f end"
+		" edcb.io._cloexec(f)"
+		" return f;"
 		"end;");
 #endif
 	luaL_dostring(L,
@@ -3634,8 +3643,13 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 			UTF8toW(val ? val : "", strVal);
 			UTF8toW(file, strFile);
 			RedirectRelativeIniPath(strFile);
-			lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : NULL, val ? strVal.c_str() : NULL, strFile.c_str()));
-			return 1;
+			//想定外のキーを挿入されないよう改行文字がないことを確認
+			if( strApp.find_first_of(L"\n\r") == wstring::npos &&
+			    strKey.find_first_of(L"\n\r") == wstring::npos &&
+			    strVal.find_first_of(L"\n\r") == wstring::npos ){
+				lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : NULL, val ? strVal.c_str() : NULL, strFile.c_str()));
+				return 1;
+			}
 		}
 	}
 	lua_pushboolean(L, false);

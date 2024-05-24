@@ -300,7 +300,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 	WtoUTF8(sys->savePath, filePath);
 
 	int fd[2];
-	if( pipe(fd) == 0 ){
+	if( pipe2(fd, O_CLOEXEC) == 0 ){
 		pid_t pid = fork();
 		if( pid == 0 ){
 			close(fd[1]);
