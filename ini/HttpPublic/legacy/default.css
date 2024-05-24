@@ -604,6 +604,10 @@ th, td {
   }
 }
 
+.inact-setting {
+  opacity: 0.3;
+}
+
 div.disabled-on-checked, div.enabled-on-checked, div.sub-setting {
   margin-left: 2em;
 }
