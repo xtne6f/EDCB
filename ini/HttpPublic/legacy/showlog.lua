@@ -2,7 +2,8 @@ dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 if mg.get_var(mg.request_info.query_string,'t')=='d' then
   if SHOW_DEBUG_LOG then
-    t='EpgTimerSrvDebugLog.txt'
+    logIndex=GetVarInt(mg.request_info.query_string,'i',0,99)
+    t=logIndex and 'EpgDataCap_Bon_DebugLog-'..logIndex..'.txt' or 'EpgTimerSrvDebugLog.txt'
   end
 else
   if SHOW_NOTIFY_LOG then

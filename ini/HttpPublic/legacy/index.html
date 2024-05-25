@@ -22,8 +22,20 @@ ct:Append([=[
     <li><a href="epglist.html">リスト番組表</a></li>
     <!--<li><a href="addprogres.html">プログラム予約追加(必要なら自作してください)</a></li>-->
     <li><a href="storage.html">ストレージ</a></li>
-    <li><a href="showlog.lua?c=8192">情報通知ログ</a></li>
-    <li><a href="showlog.lua?c=8192&amp;t=d">デバッグ出力</a></li>
+]=]..(WIN32 and '' or '    <li><a href="process.html">プロセス管理</a></li>\n')..[=[
+    <li><a href="showlog.lua?c=10000">情報通知ログ</a></li>
+    <li><a href="showlog.lua?t=d&amp;c=10000">デバッグ出力</a>
+]=])
+if SHOW_DEBUG_LOG then
+  for i,v in ipairs(edcb.FindFile(PathAppend(EdcbModulePath(),'EpgDataCap_Bon_DebugLog-*.txt'),100) or {}) do
+    logIndex=v.name:lower():match('%-([1-9]?[0-9])%.txt$')
+    if logIndex then
+      ct:Append('      <a href="showlog.lua?t=d&amp;i='..logIndex..'&amp;c=10000">[edcb-'..logIndex..']</a>\n')
+    end
+  end
+end
+ct:Append([=[
+    </li>
     <li><a href="library.html">ライブラリ</a></li>
     <li><a href="setting.html">設定メニュー</a></li>
   </ul>

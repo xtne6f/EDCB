@@ -1,0 +1,80 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append([=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>プロセス管理 - EDCB</title>
+</head>
+<body>
+<h1>プロセス管理</h1>
+<div id="main">
+]=])
+
+post=AssertPost()
+if post then
+  kill=mg.get_var(post,'kill')
+end
+
+for i=1,20 do
+  ps={}
+  killIndex=0
+  if PROCESS_MANAGEMENT_LIST and #PROCESS_MANAGEMENT_LIST>0 then
+    f=edcb.io.popen('ps -C "'..table.concat(PROCESS_MANAGEMENT_LIST,',')..'" -o pid=,%cpu=,%mem=,s=,command=')
+    if f then
+      for pid,cpu,mem,st,cmd in f:read('*a'):gmatch(' *([0-9]+) +([0-9.]+) +([0-9.]+) +([A-Za-z]+) +([^\n]+)\n') do
+        ps[#ps+1]={pid=pid,cpu=cpu,mem=mem,st=st,cmd=cmd}
+        if kill and kill:find('^'..pid..'!?$') then
+          killIndex=#ps
+          killForce=kill:find('!$')
+        end
+      end
+      f:close()
+    end
+  end
+  if killIndex==0 then
+    break
+  elseif i==1 then
+    cmd='kill '..(killForce and '-9 ' or '')..ps[killIndex].pid
+    edcb.os.execute(cmd)
+    ct:Append('<div id="result">`'..cmd..'`を実行しました</div>\n')
+  end
+  edcb.Sleep(500)
+end
+
+ct:Append([=[
+  <table>
+    <tr><th>PID<th>CPU<th>MEM<th>ST<th>COMMAND</tr>
+]=])
+
+edcb.htmlEscape=15
+for i,v in ipairs(ps) do
+  ct:Append('    <tr><td>'..v.pid..'<td>'..v.cpu..'<td>'..v.mem..'<td>'..v.st..'<td>'..EdcbHtmlEscape(v.cmd)..'</tr>\n')
+end
+
+ct:Append([=[
+  </table><br>
+  <form method="POST" action="process.html"><div>
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">PID
+    <select name="kill"><option selected value="">---]=])
+for i,v in ipairs(ps) do
+  ct:Append('<option value="'..v.pid..(i==killIndex and '!' or '')..'">'..v.pid..(i==killIndex and ' [hang-up]' or ''))
+end
+ct:Append([=[</select>
+    を<button type="submit">KILL</button>
+    する ([hang-up]の注記があるものは`kill -9`します)
+  </div></form>
+</div>
+<div id="footer">
+  <a href="index.html">メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))

@@ -11,6 +11,15 @@ INDEX_ENABLE_SUSPEND=false
 --メニューの「システムスタンバイ」ボタンを「システム休止」にするかどうか
 INDEX_SUSPEND_USE_HIBERNATE=false
 
+--「プロセス管理」に表示するプロセス名のリスト(非Windows専用)
+PROCESS_MANAGEMENT_LIST={
+  'EpgDataCap_Bon',
+  'ffmpeg',
+  'nvencc',
+  'qsvencc',
+  'vceencc',
+}
+
 --各種一覧のいちどに表示する行数
 RESERVE_PAGE_COUNT=50
 RECINFO_PAGE_COUNT=50
