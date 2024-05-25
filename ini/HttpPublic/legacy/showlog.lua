@@ -43,5 +43,5 @@ else
   end
   f:close()
   ct:Finish()
-  mg.write(ct:Pop(Response(200,'text/plain','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+  mg.write(ct:Pop(Response(200,'text/plain','utf-8',ct.len,ct.gzip)..'\r\n'))
 end

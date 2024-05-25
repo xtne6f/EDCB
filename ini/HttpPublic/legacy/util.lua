@@ -1045,6 +1045,8 @@ function GetLeNumber(buf,pos,len)
   return n
 end
 
+DOCTYPE_HTML4_STRICT='<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
+
 --HTTP日付の文字列を取得する
 function ImfFixdate(t)
   return ('%s, %02d %s %d %02d:%02d:%02d GMT'):format(({'Sun','Mon','Tue','Wed','Thu','Fri','Sat'})[t.wday],t.day,
@@ -1052,12 +1054,13 @@ function ImfFixdate(t)
 end
 
 --レスポンスを生成する
-function Response(code,ctype,charset,cl,maxage)
+function Response(code,ctype,charset,cl,cz,maxage)
   return 'HTTP/1.1 '..code..' '..mg.get_response_code_text(code)
     ..'\r\nDate: '..ImfFixdate(os.date('!*t'))
     ..'\r\nX-Frame-Options: SAMEORIGIN'
     ..(ctype and '\r\nX-Content-Type-Options: nosniff\r\nContent-Type: '..ctype..(charset and '; charset='..charset or '') or '')
     ..(cl and mg.request_info.request_method~='HEAD' and '\r\nContent-Length: '..cl or '')
+    ..(cz and '\r\nContent-Encoding: gzip' or '')
     ..'\r\nCache-Control: private, max-age='..(maxage or 0)
     ..(mg.keep_alive(not not cl) and '\r\n' or '\r\nConnection: close\r\n')
 end

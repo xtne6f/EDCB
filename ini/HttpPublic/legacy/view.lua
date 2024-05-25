@@ -355,8 +355,7 @@ end
 
 if not f then
   ct=CreateContentBuilder()
-  ct:Append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
-    ..'<title>view.lua</title><p><a href="index.html">メニュー</a></p>')
+  ct:Append(DOCTYPE_HTML4_STRICT..'<title>view.lua</title><p><a href="index.html">メニュー</a></p>')
   ct:Finish()
   mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
 elseif psidata or jikkyo then
