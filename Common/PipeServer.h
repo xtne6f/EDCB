@@ -21,6 +21,9 @@ public:
 #ifdef _WIN32
 	//SERVICE_NAMEのサービスセキュリティ識別子(Service-specific SID)に対するアクセス許可を追加する
 	static BOOL GrantServerAccessToKernelObject(HANDLE handle, DWORD permissions);
+#else
+	//異常終了などで残ったソケットファイル(名前の接尾にプロセスIDを伴うもの)があれば削除する
+	static void DeleteRemainingFiles(LPCWSTR pipeName);
 #endif
 
 protected:

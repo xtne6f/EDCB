@@ -10,6 +10,7 @@
 #include "PathUtil.h"
 #include <errno.h>
 #include <poll.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -198,6 +199,20 @@ BOOL CPipeServer::GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, b
 		LocalFree(pSecurityDesc);
 	}
 	return ret;
+}
+#else
+void CPipeServer::DeleteRemainingFiles(LPCWSTR pipeName)
+{
+	EnumFindFile(fs_path(EDCB_INI_ROOT).append(pipeName).concat(L"*"), [pipeName](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.fileName.size() > wcslen(pipeName) ){
+			int pid = (int)wcstol(findData.fileName.c_str() + wcslen(pipeName), NULL, 10);
+			if( pid > 0 && kill(pid, 0) == -1 && errno == ESRCH ){
+				AddDebugLogFormat(L"Delete remaining %ls", findData.fileName.c_str());
+				DeleteFile(fs_path(EDCB_INI_ROOT).append(findData.fileName).c_str());
+			}
+		}
+		return true;
+	});
 }
 #endif
 

@@ -265,6 +265,8 @@ bool CEpgDataCap_BonMin::OnMessage(CMessageManager::PARAMS& pa)
 
 void CEpgDataCap_BonMin::StartPipeServer()
 {
+	CPipeServer::DeleteRemainingFiles(CMD2_VIEW_CTRL_PIPE);
+
 	wstring pipeName;
 	Format(pipeName, L"%ls%d", CMD2_VIEW_CTRL_PIPE, (int)getpid());
 	AddDebugLogFormat(L"%ls", pipeName.c_str());

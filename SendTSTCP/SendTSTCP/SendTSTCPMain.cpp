@@ -3,10 +3,12 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #ifndef _WIN32
+#include "../../Common/PathUtil.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <poll.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -30,7 +32,9 @@ const WCHAR SEND_TS_TCP_0001_PIPE_NAME[] = L"\\\\.\\pipe\\SendTSTCP_%d_%u";
 const WCHAR SEND_TS_TCP_0002_PIPE_NAME[] = L"\\\\.\\pipe\\BonDriver_Pipe%02d";
 #else
 //送信先が0.0.0.1のとき待ち受けるFIFOファイル名
-const WCHAR SEND_TS_TCP_0001_FIFO_NAME[] = L"%ls%lsSendTSTCP_%d_%d_%d.fifo";
+const WCHAR SEND_TS_TCP_0001_FIFO_NAME[] = L"SendTSTCP_%d_%d_%d.fifo";
+const WCHAR SEND_TS_TCP_0001_FIFO_BASE[] = L"SendTSTCP_";
+const WCHAR SEND_TS_TCP_0001_FIFO_SUFFIX_PATTERN[] = L"*_*_?.fifo";
 #endif
 
 //送信バッファの最大数(サイズはAddSendData()の入力に依存)
@@ -309,6 +313,25 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 
 void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 {
+#ifndef _WIN32
+	//異常終了などで残ったFIFOファイルがあれば削除する
+	EnumFindFile(fs_path(EDCB_INI_ROOT).append(SEND_TS_TCP_0001_FIFO_BASE).concat(SEND_TS_TCP_0001_FIFO_SUFFIX_PATTERN),
+	             [](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.fileName.size() > wcslen(SEND_TS_TCP_0001_FIFO_BASE) ){
+			WCHAR* endp;
+			wcstol(findData.fileName.c_str() + wcslen(SEND_TS_TCP_0001_FIFO_BASE), &endp, 10);
+			if( *endp == L'_' ){
+				int pid = wcstol(endp + 1, NULL, 10);
+				if( pid > 0 && kill(pid, 0) == -1 && errno == ESRCH ){
+					AddDebugLogFormat(L"Delete remaining %ls", findData.fileName.c_str());
+					DeleteFile(fs_path(EDCB_INI_ROOT).append(findData.fileName).c_str());
+				}
+			}
+		}
+		return true;
+	});
+#endif
+
 	//ヘッダのdwCount情報を3バイト目が0でない値で始める。原作は0で始めていたが仕様的に始点に意味はなく
 	//また他のTCPインタフェースのヘッダと区別しにくいため設定を誤った場合に想定外のことが起きるのを防ぐため
 	DWORD dwCount = 0x01000000;
@@ -376,15 +399,11 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					}
 #else
 					if( itr->bConnect[i] == false ){
-						wstring path;
-						Format(path, SEND_TS_TCP_0001_FIFO_NAME,
-#ifdef EDCB_INI_ROOT
-						       EDCB_INI_ROOT, (EDCB_INI_ROOT[0] && EDCB_INI_ROOT[wcslen(EDCB_INI_ROOT) - 1] == L'/' ? L"" : L"/"),
-#else
-						       L"/var/local/edcb", L"/",
-#endif
-						       itr->port, (int)getpid(), (int)i);
-						WtoUTF8(path, itr->strPipe[i]);
+						if( itr->strPipe[i].empty() ){
+							WCHAR name[array_size(SEND_TS_TCP_0001_FIFO_NAME) + 32];
+							swprintf_s(name, SEND_TS_TCP_0001_FIFO_NAME, itr->port, (int)getpid(), (int)i);
+							WtoUTF8(fs_path(EDCB_INI_ROOT).append(name).native(), itr->strPipe[i]);
+						}
 						itr->pipe[i] = open(itr->strPipe[i].c_str(), O_WRONLY | O_NONBLOCK | O_CLOEXEC);
 						if( itr->pipe[i] >= 0 ){
 							itr->bConnect[i] = true;

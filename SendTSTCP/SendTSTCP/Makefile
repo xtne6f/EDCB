@@ -17,6 +17,7 @@ ifeq ($(OS),Windows_NT)
   LDFLAGS2 = -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
   LDLIBS := -lws2_32 $(LDLIBS)
 else
+  SOURCES := $(SOURCES) Common__PathUtil.cpp
   TARGETEXT = .so
   CPPFLAGS := -I. -DNDEBUG -DSENDTSTCP_EXPORTS $(CPPFLAGS)
   CXXFLAGS := -std=c++17 -pedantic-errors -Os -fPIC $(CXXFLAGS)
