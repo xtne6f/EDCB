@@ -185,6 +185,11 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 		delete context;
 	}
 #else
+	struct RELAY_STREAM_CONTEXT {
+		int fd;
+		int connecting;
+	};
+
 	if( state == CTCPServer::RESPONSE_THREAD_INIT ){
 		//転送元ストリームを開く
 		int processID;
@@ -198,7 +203,11 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 				if( fd >= 0 ){
 					if( flock(fd, LOCK_EX | LOCK_NB) == 0 ){
 						//成功
-						param = (void*)(INT_PTR)fd;
+						RELAY_STREAM_CONTEXT* context = new RELAY_STREAM_CONTEXT;
+						context->fd = fd;
+						//転送元がオープンして何かを送ってくるまで10秒だけ待つ
+						context->connecting = 50;
+						param = context;
 						res.SetParam(CMD_SUCCESS);
 						return false;
 					}
@@ -209,30 +218,38 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 		}
 	}else if( state == CTCPServer::RESPONSE_THREAD_PROC ){
 		//転送元ストリームを非同期で読み込んで送る
-		int fd = (int)(INT_PTR)param;
+		RELAY_STREAM_CONTEXT& context = *(RELAY_STREAM_CONTEXT*)param;
 		BYTE buff[188 * 128];
-		int n = (int)read(fd, buff, sizeof(buff));
-		if( n == 0 || (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) ){
+		int n = (int)read(context.fd, buff, sizeof(buff));
+		if( n == 0 && context.connecting ){
+			SleepForMsec(200);
+			context.connecting--;
+		}else if( n == 0 || (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) ){
 			//失敗
 			return;
 		}else if( n < 0 ){
 			//待機
 			pollfd pfd;
-			pfd.fd = fd;
+			pfd.fd = context.fd;
 			pfd.events = POLLIN;
 			if( poll(&pfd, 1, 200) < 0 && errno != EINTR ){
 				//失敗
 				return;
 			}
+			if( context.connecting ){
+				context.connecting--;
+			}
 		}else{
+			context.connecting = 0;
 			res.Resize(n);
 			std::copy(buff, buff + n, res.GetData());
 		}
 		res.SetParam(CMD_SUCCESS);
 	}else if( state == CTCPServer::RESPONSE_THREAD_FIN ){
 		//転送元ストリームを閉じる
-		int fd = (int)(INT_PTR)param;
-		close(fd);
+		RELAY_STREAM_CONTEXT* context = (RELAY_STREAM_CONTEXT*)param;
+		close(context->fd);
+		delete context;
 	}
 #endif
 }
