@@ -12,10 +12,6 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-typedef int SOCKET;
-static const int INVALID_SOCKET = -1;
-#define closesocket(sock) close(sock)
 #endif
 
 namespace

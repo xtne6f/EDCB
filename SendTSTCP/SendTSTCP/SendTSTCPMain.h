@@ -73,14 +73,13 @@ protected:
 		string strIP;
 		WORD port;
 		bool bSuppressHeader;
-#ifdef _WIN32
 		SOCKET sock;
+#ifdef _WIN32
 		HANDLE pipe[2];
 		HANDLE olEvent[2];
 		OVERLAPPED ol[2];
 		bool bPipeWriting[2];
 #else
-		int sock;
 		int pipe[2];
 		string strPipe[2];
 		DWORD wroteBytes[2];
@@ -91,11 +90,7 @@ protected:
 	std::list<SEND_INFO> m_SendList;
 
 	struct SOCKET_DATA {
-#ifdef _WIN32
 		SOCKET sock;
-#else
-		int sock;
-#endif
 		struct sockaddr_storage addr;
 		size_t addrlen;
 		int maxSendSize;

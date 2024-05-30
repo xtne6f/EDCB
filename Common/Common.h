@@ -59,6 +59,7 @@ typedef long long LONGLONG;
 typedef unsigned long long ULONGLONG;
 typedef int BOOL;
 typedef ptrdiff_t INT_PTR;
+typedef int SOCKET;
 
 struct SYSTEMTIME {
 	WORD wYear;
@@ -76,6 +77,8 @@ struct SYSTEMTIME {
 #define MAXDWORD 0xFFFFFFFF
 #define CALLBACK
 #define WINAPI
+#define INVALID_SOCKET (-1)
+#define closesocket(sock) close(sock)
 
 // 境界チェックインタフェース
 

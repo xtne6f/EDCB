@@ -11,10 +11,6 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-typedef int SOCKET;
-static const int INVALID_SOCKET = -1;
-#define closesocket(sock) close(sock)
 #endif
 
 CTCPServer::CTCPServer(void)
