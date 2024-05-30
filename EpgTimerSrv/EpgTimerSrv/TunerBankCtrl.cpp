@@ -1245,11 +1245,16 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		}
 #ifdef _WIN32
 		TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
+		CloseHandle(this->hTunerProcess);
 #else
 		kill(this->tunerPid, 9);
+		//ゾンビの回収に1秒だけ使う
+		for( int timeout = 1000; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+			SleepForMsec(10);
+		}
 #endif
+		this->tunerPid = 0;
 		AddDebugLogFormat(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x", L"OpenTuner()", this->tunerID);
-		CloseTuner();
 	}
 	return false;
 }
@@ -1271,13 +1276,16 @@ void CTunerBankCtrl::CloseTuner()
 				//ぶち殺す
 				TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
 #else
-			int timeout = 30000;
-			for( ; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+			bool killed = false;
+			for( int timeout = 30000; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+				if( killed == false && timeout < 1000 ){
+					//ぶち殺す。ゾンビの回収に1秒だけ使う
+					kill(this->tunerPid, 9);
+					killed = true;
+				}
 				SleepForMsec(10);
 			}
-			if( timeout <= 0 ){
-				//ぶち殺す
-				kill(this->tunerPid, 9);
+			if( killed ){
 #endif
 				AddDebugLogFormat(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x", L"CloseTuner()", this->tunerID);
 			}
