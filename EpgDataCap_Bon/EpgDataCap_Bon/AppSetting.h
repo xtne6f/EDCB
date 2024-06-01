@@ -24,8 +24,8 @@ struct APP_SETTING
 	int dropSaveThresh;
 	int scrambleSaveThresh;
 	bool noLogScramble;
-#ifdef _WIN32
 	wstring recFileName;
+#ifdef _WIN32
 	bool openLast;
 	bool dropLogAsUtf8;
 #endif

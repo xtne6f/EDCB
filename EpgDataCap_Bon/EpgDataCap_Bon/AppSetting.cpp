@@ -44,8 +44,8 @@ APP_SETTING APP_SETTING::Load(LPCWSTR iniPath)
 	s.dropSaveThresh = GET_SETTING_INT(appSet, L"DropSaveThresh", 0);
 	s.scrambleSaveThresh = GET_SETTING_INT(appSet, L"ScrambleSaveThresh", -1);
 	s.noLogScramble = GET_SETTING_INT(appSet, L"NoLogScramble", 0) != 0;
-#ifdef _WIN32
 	s.recFileName = GET_SETTING_TO_STRING(appSet, L"RecFileName", L"$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts");
+#ifdef _WIN32
 	s.openLast = GET_SETTING_INT(appSet, L"OpenLast", 1) != 0;
 	s.dropLogAsUtf8 = GET_SETTING_INT(appSet, L"DropLogAsUtf8", 0) != 0;
 #endif

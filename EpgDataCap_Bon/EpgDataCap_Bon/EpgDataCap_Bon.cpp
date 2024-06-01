@@ -100,6 +100,9 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
 int main(int argc, char** argv)
 {
+	if( CEpgDataCap_BonMin::ValidateCommandLine(argv, argc) == false ){
+		return 2;
+	}
 	struct sigaction sigact = {};
 	sigact.sa_handler = SIG_IGN;
 	sigaction(SIGPIPE, &sigact, NULL);

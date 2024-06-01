@@ -2,11 +2,13 @@
 #include "EpgDataCap_BonMin.h"
 #include "../../Common/CommonDef.h"
 #include "../../Common/CtrlCmdDef.h"
+#include "../../Common/TimeUtil.h"
 
 namespace
 {
 enum {
 	TIMER_STATUS_UPDATE = 1,
+	TIMER_START_REC,
 	TIMER_TRY_STOP_SERVER,
 };
 
@@ -24,6 +26,7 @@ CEpgDataCap_BonMin::CEpgDataCap_BonMin()
 	, iniSID(-1)
 	, iniChScan(false)
 	, iniEpgCap(false)
+	, iniRec(false)
 	, msgManager(OnMessage, this)
 	, outCtrlID(-1)
 	, cmdCapture(NULL)
@@ -65,8 +68,19 @@ void CEpgDataCap_BonMin::ParseCommandLine(char** argv, int argc)
 			this->iniChScan = true;
 		}else if( strcmp(argv[i], "-epgcap") == 0 ){
 			this->iniEpgCap = true;
+		}else if( strcmp(argv[i], "-rec") == 0 ){
+			this->iniRec = true;
 		}
 	}
+}
+
+bool CEpgDataCap_BonMin::ValidateCommandLine(char** argv, int argc)
+{
+	if( argc >= 2 && strcmp(argv[1], "-h") == 0 ){
+		printf("Usage: %s [-nonw][-nwudp][-nwtcp][-d BonDriver*][-nid x][-tsid y][-sid z][-chscan][-epgcap][-rec]\n", argv[0]);
+		return false;
+	}
+	return true;
 }
 
 int CEpgDataCap_BonMin::ReloadServiceList(int selONID, int selTSID, int selSID)
@@ -209,6 +223,14 @@ void CEpgDataCap_BonMin::OnInit()
 			this->msgManager.Send(CMessageManager::ID_CLOSE);
 			return;
 		}
+	}else if( this->iniRec ){
+		if( this->lastONID >= 0 ){
+			this->msgManager.SetTimer(TIMER_START_REC, 3000);
+		}else{
+			PrintStatusLog(L"Failed to open or set channel\n");
+			this->msgManager.Send(CMessageManager::ID_CLOSE);
+			return;
+		}
 	}
 }
 
@@ -222,8 +244,56 @@ void CEpgDataCap_BonMin::OnDestroy()
 		this->bonCtrl.StopEpgCap();
 		PrintStatusLog(L"Canceled\n");
 	}
+	if( this->recCtrlID != 0 ){
+		this->bonCtrl.DeleteServiceCtrl(this->recCtrlID);
+		this->recCtrlID = 0;
+	}
 	this->pipeServer.StopServer();
 	this->bonCtrl.CloseBonDriver();
+}
+
+void CEpgDataCap_BonMin::OnStartRec()
+{
+	if( this->bonCtrl.IsRec() || this->recCtrlID != 0 ){
+		return;
+	}
+
+	//即時録画
+	this->recCtrlID = this->bonCtrl.CreateServiceCtrl(TRUE);
+	wstring serviceName;
+	Format(serviceName, L"%04X", this->bonCtrl.GetNWCtrlServiceID());
+	for( size_t i = 0; i < this->serviceList.size(); i++ ){
+		if( this->serviceList[i].originalNetworkID == this->lastONID &&
+		    this->serviceList[i].transportStreamID == this->lastTSID &&
+		    this->serviceList[i].serviceID == this->bonCtrl.GetNWCtrlServiceID() ){
+			serviceName = this->serviceList[i].serviceName;
+			break;
+		}
+	}
+	wstring fileName = this->setting.recFileName;
+	SYSTEMTIME now;
+	ConvertSystemTime(GetNowI64Time(), &now);
+	for( int i = 0; GetTimeMacroName(i); i++ ){
+		wstring name;
+		UTF8toW(GetTimeMacroName(i), name);
+		Replace(fileName, L'$' + name + L'$', GetTimeMacroValue(i, now));
+	}
+	Replace(fileName, L"$ServiceName$", serviceName);
+	CheckFileName(fileName);
+
+	SET_CTRL_REC_PARAM recParam;
+	recParam.ctrlID = this->recCtrlID;
+	recParam.fileName = L"padding.ts";
+	recParam.overWriteFlag = this->setting.overWrite;
+	recParam.createSize = 0;
+	recParam.saveFolder.resize(1);
+	recParam.saveFolder.back().recFolder = this->recFolderList[0];
+	recParam.saveFolder.back().recFileName = fileName;
+	recParam.pittariFlag = FALSE;
+	if( this->bonCtrl.StartSave(recParam, this->recFolderList, this->setting.writeBuffMaxCount) == FALSE ){
+		PrintStatusLog(L"Failed to start rec\n");
+		this->msgManager.Send(CMessageManager::ID_CLOSE);
+	}
 }
 
 bool CEpgDataCap_BonMin::OnMessage(CMessageManager::PARAMS& pa)
@@ -247,6 +317,10 @@ bool CEpgDataCap_BonMin::OnMessage(CMessageManager::PARAMS& pa)
 	case CMessageManager::ID_TIMER:
 		if( pa.param1 == TIMER_STATUS_UPDATE ){
 			sys->OnTimerStatusUpdate();
+			return true;
+		}else if( pa.param1 == TIMER_START_REC ){
+			sys->msgManager.KillTimer(TIMER_START_REC);
+			sys->OnStartRec();
 			return true;
 		}else if( pa.param1 == TIMER_TRY_STOP_SERVER ){
 			if( sys->pipeServer.StopServer(true) ){
