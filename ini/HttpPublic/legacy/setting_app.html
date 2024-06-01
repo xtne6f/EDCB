@@ -31,8 +31,8 @@ if post then
   edcb.WritePrivateProfile('SET','DropSaveThresh',GetVarInt(post,'dropSaveThresh',-1) or 0,appIni)
   edcb.WritePrivateProfile('SET','ScrambleSaveThresh',GetVarInt(post,'scrambleSaveThresh',-1) or -1,appIni)
   edcb.WritePrivateProfile('SET','NoLogScramble',GetVarInt(post,'noLogScramble')==1,appIni)
+  edcb.WritePrivateProfile('SET','RecFileName',(mg.get_var(post,'recFileName') or ''):gsub('%c',''),appIni)
   if WIN32 then
-    edcb.WritePrivateProfile('SET','RecFileName',(mg.get_var(post,'recFileName') or ''):gsub('%c',''),appIni)
     edcb.WritePrivateProfile('SET','OpenLast',GetVarInt(post,'openLast')==1,appIni)
     edcb.WritePrivateProfile('SET','DropLogAsUtf8',GetVarInt(post,'dropLogAsUtf8')==1,appIni)
   end
@@ -68,7 +68,7 @@ overWrite=edcb.GetPrivateProfile('SET','OverWrite',0,appIni)~='0'
 dropSaveThresh=tonumber(edcb.GetPrivateProfile('SET','DropSaveThresh',0,appIni)) or 0
 scrambleSaveThresh=tonumber(edcb.GetPrivateProfile('SET','ScrambleSaveThresh',-1,appIni)) or -1
 noLogScramble=edcb.GetPrivateProfile('SET','NoLogScramble',0,appIni)~='0'
-recFileName=WIN32 and edcb.GetPrivateProfile('SET','RecFileName','$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts',appIni) or ''
+recFileName=edcb.GetPrivateProfile('SET','RecFileName','$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts',appIni)
 openLast=WIN32 and edcb.GetPrivateProfile('SET','OpenLast',1,appIni)~='0'
 dropLogAsUtf8=not WIN32 or edcb.GetPrivateProfile('SET','DropLogAsUtf8',0,appIni)~='0'
 saveDebugLog=edcb.GetPrivateProfile('SET','SaveDebugLog',0,appIni)~='0'
@@ -106,7 +106,7 @@ ct:Append([=[
   <label><input name="traceBonDriverLevel"]=]..Checkbox(traceBonDriverLevel)..[=[>BonDriverについてのデバッグ出力を増やす</label><br>
   TS入力バッファ上限(47KiB単位) <input type="text" name="tsBuffMaxCount" value="]=]..tsBuffMaxCount..[=[" size="8"><br>
   ファイル出力バッファ上限(47KiB単位)(0で無制限) <input type="text" name="writeBuffMaxCount" value="]=]..writeBuffMaxCount..[=[" size="8"><br>
-  <span class="]=]..(WIN32 and '' or 'inact-setting')..[=[">録画ファイル名* <input type="text" name="recFileName" value="]=]..recFileName..[=[" size="60"></span><br>
+  録画ファイル名* <input type="text" name="recFileName" value="]=]..recFileName..[=[" size="60"><br>
   <br>
   <label><input name="epgCapLive"]=]..Checkbox(epgCapLive)..[=[>視聴中にEPGデータの取得を行う</label><br>
   <label><input name="epgCapRec"]=]..Checkbox(epgCapRec)..[=[>録画中にEPGデータの取得を行う</label><br>

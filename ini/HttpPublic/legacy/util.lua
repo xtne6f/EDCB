@@ -6,6 +6,9 @@ SHOW_DEBUG_LOG=false
 --設定メニューからの設定の変更を許可するかどうか
 ALLOW_SETTING=false
 
+--※true/falseの設定は例えばリモートアドレスと比較して接続元の限定も可能
+--ALLOW_SETTING=mg.request_info.remote_addr=='127.0.0.1' or mg.request_info.remote_addr=='::1'
+
 --メニューに「システムスタンバイ」ボタンを表示するかどうか(Windows専用)
 INDEX_ENABLE_SUSPEND=false
 --メニューの「システムスタンバイ」ボタンを「システム休止」にするかどうか
@@ -246,6 +249,8 @@ GZIP_THRESHOLD_BYTE=4096
 POST_MAX_BYTE=1024*1024
 
 ----------定数定義ここまで----------
+
+--以下、関数名はパスカルケース、定数名はアッパースネークケースとし、変数は関数スコープに閉じ込めること
 
 function Checkbox(b)
   return ' type="checkbox" value="1"'..(b and ' checked' or '')
