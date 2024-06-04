@@ -84,7 +84,7 @@ bool CMessageManager::SetTimer(int timerID, int msec)
 		m_timerList.push_back(t);
 		m_pushEvent.Set();
 		if( m_handleSignal ){
-			kill(getpid(), SIGUSR1);
+			kill(getpid(), SIGUSR2);
 		}
 		return true;
 	}
@@ -124,7 +124,7 @@ INT_PTR CMessageManager::Send(int msgID, INT_PTR param1, INT_PTR param2)
 				m_sending = true;
 				m_pushEvent.Set();
 				if( m_handleSignal ){
-					kill(getpid(), SIGUSR1);
+					kill(getpid(), SIGUSR2);
 				}
 				m_sentEvent.WaitOne();
 				return m_sendParams.result;
@@ -142,7 +142,7 @@ bool CMessageManager::Post(int msgID, INT_PTR param1, INT_PTR param2)
 		m_postQueue.push(post);
 		m_pushEvent.Set();
 		if( m_handleSignal ){
-			kill(getpid(), SIGUSR1);
+			kill(getpid(), SIGUSR2);
 		}
 		return true;
 	}
@@ -181,7 +181,7 @@ bool CMessageManager::MessageLoop(bool handleSignal)
 		sigaddset(&sset, SIGHUP);
 		sigaddset(&sset, SIGINT);
 		sigaddset(&sset, SIGTERM);
-		sigaddset(&sset, SIGUSR1);
+		sigaddset(&sset, SIGUSR2);
 		if( sigprocmask(SIG_BLOCK, &sset, NULL) != 0 ){
 			return false;
 		}
@@ -201,7 +201,7 @@ bool CMessageManager::MessageLoop(bool handleSignal)
 				// 特定のシグナルを待つ
 				timespec ts;
 				ts.tv_sec = min<DWORD>(timeout, 2000) / 1000;
-				ts.tv_nsec = min<DWORD>(timeout, 2000) % 1000;
+				ts.tv_nsec = min<DWORD>(timeout, 2000) % 1000 * 1000000;
 				int signum = sigtimedwait(&sset, NULL, &ts);
 				if( signum == SIGHUP || signum == SIGINT || signum == SIGTERM ){
 					PARAMS pa = { ID_SIGNAL, signum, 0, 0, m_ctx };

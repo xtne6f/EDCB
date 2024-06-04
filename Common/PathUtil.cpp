@@ -2,8 +2,8 @@
 #include "PathUtil.h"
 #include "StringUtil.h"
 #include <stdexcept>
-#ifdef _WIN32
 #include <fcntl.h>
+#ifdef _WIN32
 #include <io.h>
 #else
 #include "ThreadUtil.h"
@@ -307,34 +307,48 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 		}
 	}
 #else
-	const char* mode = (flags & 31) == UTIL_O_RDONLY ? "re" :
-	                   (flags & 31) == UTIL_O_RDWR ? "r+e" :
-	                   (flags & 31) == UTIL_O_CREAT_WRONLY ? "we" :
-	                   (flags & 31) == UTIL_O_CREAT_RDWR ? "w+e" :
-	                   (flags & 31) == UTIL_O_CREAT_APPEND ? "ae" :
-	                   (flags & 31) == UTIL_O_EXCL_CREAT_WRONLY ? "wxe" :
-	                   (flags & 31) == UTIL_O_EXCL_CREAT_RDWR ? "w+xe" :
-	                   (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? "axe" : NULL;
+	const char* mode = (flags & 31) == UTIL_O_RDONLY ? "r" :
+	                   (flags & 31) == UTIL_O_RDWR ? "r+" :
+	                   (flags & 31) == UTIL_O_CREAT_WRONLY ? "w" :
+	                   (flags & 31) == UTIL_O_CREAT_RDWR ? "w+" :
+	                   (flags & 31) == UTIL_O_CREAT_APPEND ? "a" :
+	                   (flags & 31) == UTIL_O_EXCL_CREAT_WRONLY ? "w" :
+	                   (flags & 31) == UTIL_O_EXCL_CREAT_RDWR ? "w+" :
+	                   (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? "a" : NULL;
 	if( mode ){
 		string strPath;
 		WtoUTF8(path, strPath);
-		FILE* fp = fopen(strPath.c_str(), mode);
-		if( fp ){
-			if( flags & 512 ){
-				setvbuf(fp, NULL, _IONBF, 0);
-			}
+		// 切り捨てとロックの関係を正しく表現できないので低水準で開く
+		int fd = open(strPath.c_str(), ((flags & 3) == 3 ? O_RDWR : (flags & 2) ? O_WRONLY : O_RDONLY) |
+		                               ((flags & 24) ? O_CREAT : 0) |
+		                               ((flags & 24) == 24 ? O_EXCL : 0) |
+		                               ((flags & 4) ? O_APPEND : 0) | O_CLOEXEC,
+		              S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		if( fd >= 0 ){
 			// flock()は勧告ロックに過ぎないので注意
 			// UTIL_SHARED_READは無ロック相当で、既にかかっている排他ロックを無視するので注意
 			// UTIL_SH_READは非書き込み時のみ共有ロックとする
 			if( ((flags & 32) && (flags & 64)) ||
-			    flock(fileno(fp), ((flags & 32) && (flags & 2) == 0 ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0 ){
-				return fp;
+			    flock(fd, ((flags & 32) && (flags & 2) == 0 ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0 ){
+				if( (flags & 24) == 8 ){
+					ftruncate(fd, 0);
+				}
+				FILE* fp = fdopen(fd, mode);
+				if( fp ){
+					if( flags & 4 ){
+						my_fseek(fp, 0, SEEK_END);
+					}
+					if( flags & 512 ){
+						setvbuf(fp, NULL, _IONBF, 0);
+					}
+					return fp;
+				}
 			}
 			if( apiError ){
 				*apiError = errno == EACCES ? EAGAIN : errno;
 			}
 			// (ほぼないが)ファイル生成後にロックに失敗した場合のロールバックはしない
-			fclose(fp);
+			close(fd);
 		}else if( apiError ){
 			*apiError = errno;
 		}

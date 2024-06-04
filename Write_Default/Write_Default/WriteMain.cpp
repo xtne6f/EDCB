@@ -8,6 +8,7 @@
 #else
 #include <fcntl.h>
 #include <poll.h>
+#include <signal.h>
 #include <unistd.h>
 #endif
 
@@ -308,7 +309,10 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 				dup2(fd[0], STDIN_FILENO);
 				close(fd[0]);
 			}
-			if( chdir(execDir.c_str()) == 0 ){
+			//シグナルマスクを初期化
+			sigset_t sset;
+			sigemptyset(&sset);
+			if( sigprocmask(SIG_SETMASK, &sset, NULL) == 0 && chdir(execDir.c_str()) == 0 ){
 				setenv("FilePath", filePath.c_str(), 0);
 				execl("/bin/sh", "sh", "-c", cmd.c_str(), NULL);
 			}

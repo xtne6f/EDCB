@@ -1200,7 +1200,12 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 	argv.push_back(NULL);
 	pid_t pid = fork();
 	if( pid == 0 ){
-		execv(execU.c_str(), argv.data());
+		//シグナルマスクを初期化
+		sigset_t sset;
+		sigemptyset(&sset);
+		if( sigprocmask(SIG_SETMASK, &sset, NULL) == 0 ){
+			execv(execU.c_str(), argv.data());
+		}
 		exit(EXIT_FAILURE);
 	}else if( pid != -1 ){
 		this->tunerPid = (DWORD)pid;

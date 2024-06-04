@@ -6,6 +6,7 @@
 #include "../../Common/TimeUtil.h"
 #include "../../Common/PathUtil.h"
 #ifndef _WIN32
+#include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
@@ -260,7 +261,10 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 					WtoUTF8(fs_path(work.batFilePath).parent_path().native(), execDir);
 					pid_t pid = fork();
 					if( pid == 0 ){
-						if( chdir(execDir.c_str()) == 0 ){
+						//シグナルマスクを初期化
+						sigset_t sset;
+						sigemptyset(&sset);
+						if( sigprocmask(SIG_SETMASK, &sset, NULL) == 0 && chdir(execDir.c_str()) == 0 ){
 							for( size_t i = 0; i < work.macroList.size(); i++ ){
 								string strVal;
 								WtoUTF8(work.macroList[i].second, strVal);
