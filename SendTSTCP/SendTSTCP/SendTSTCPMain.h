@@ -68,9 +68,13 @@ protected:
 	int m_wsaStartupResult;
 #endif
 	std::list<vector<BYTE>> m_TSBuff;
+	bool m_bSendingToSomeone;
 
 	struct SEND_INFO {
-		string strIP;
+		string strIP; //空のときUDP
+		struct sockaddr_storage udpAddr;
+		size_t udpAddrlen;
+		int udpMaxSendSize;
 		WORD port;
 		bool bSuppressHeader;
 		SOCKET sock;
@@ -88,14 +92,6 @@ protected:
 		DWORD writeAheadCount[2];
 	};
 	std::list<SEND_INFO> m_SendList;
-
-	struct SOCKET_DATA {
-		SOCKET sock;
-		struct sockaddr_storage addr;
-		size_t addrlen;
-		int maxSendSize;
-	};
-	vector<SOCKET_DATA> m_udpSockList;
 
 protected:
 	static void SendThread(CSendTSTCPMain* pSys);
