@@ -79,7 +79,8 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
     end
     xcoder='"'..xcoder..'"'
   else
-    xcoder=('|'..option.xcoder:gsub('%.exe$','')):match('[\\/|]([0-9A-Za-z._-]+)$') or ':'
+    xcoder=('|'..option.xcoder:gsub('%.exe$','')):match('[\\/|]([0-9A-Za-z._-]+)$')
+    xcoder=xcoder and FindToolsCommand(xcoder) or ':'
   end
 
   local cmd=xcoder..' '..option.option

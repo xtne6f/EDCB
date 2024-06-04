@@ -798,8 +798,8 @@ end
 --コマンドラインのコマンド名として使うコマンドを探す
 function FindToolsCommand(name)
   if not WIN32 then
-    --そのまま
-    return name
+    --そのまま。ただし親プロセスのシグナルマスクを継承しないようにする
+    return 'env --default-signal '..name
   end
   --EDCBのToolsフォルダにあるものを優先する
   local esc=edcb.htmlEscape
