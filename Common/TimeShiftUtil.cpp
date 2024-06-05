@@ -13,8 +13,6 @@
 CTimeShiftUtil::CTimeShiftUtil(void)
 	: udpMutex(UtilCreateGlobalMutex())
 	, tcpMutex(UtilCreateGlobalMutex())
-	, readFile(NULL, fclose)
-	, seekFile(NULL, fclose)
 {
 	this->PCR_PID = 0xFFFF;
 	this->fileMode = FALSE;
@@ -319,7 +317,7 @@ static BOOL IsDataAvailable(FILE* fp, LONGLONG pos, CPacketInit* packetInit)
 LONGLONG CTimeShiftUtil::GetAvailableFileSize() const
 {
 	if( this->filePath.empty() == false ){
-		std::unique_ptr<FILE, decltype(&fclose)> tmpFile(NULL, fclose);
+		std::unique_ptr<FILE, fclose_deleter> tmpFile;
 		FILE* fp = this->seekFile.get();
 		if( fp == NULL ){
 			tmpFile.reset(UtilOpenFile(this->filePath, UTIL_SHARED_READ | UTIL_SH_DELETE));

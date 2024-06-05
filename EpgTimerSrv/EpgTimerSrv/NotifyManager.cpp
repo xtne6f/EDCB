@@ -295,7 +295,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 
 		if( path.empty() == false && ExtractTitleFromInfo(&notifyInfo).first[0] ){
 			//ログ保存
-			std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
+			std::unique_ptr<FILE, fclose_deleter> fp;
 #if WCHAR_MAX <= 0xFFFF
 			fp.reset(UtilOpenFile(path, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ));
 			if( fp ){

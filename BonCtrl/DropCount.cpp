@@ -169,7 +169,7 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 void CDropCount::SaveLog(const wstring& filePath, BOOL asUtf8)
 {
 	//※原作と異なりディレクトリの自動生成はしない
-	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(filePath, UTIL_SECURE_WRITE), fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(filePath, UTIL_SECURE_WRITE));
 	if( fp ){
 		LPCSTR newLine = UTIL_NEWLINE[0] == L'\r' ? "\r\n" : "\n";
 		string buff = asUtf8 ? "\xEF\xBB\xBF" : "";

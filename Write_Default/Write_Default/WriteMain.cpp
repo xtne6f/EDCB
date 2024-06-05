@@ -13,8 +13,6 @@
 #endif
 
 CWriteMain::CWriteMain(void)
-	: file(NULL, fclose)
-	, teeFile(NULL, fclose)
 {
 	this->writeBuffSize = 0;
 }

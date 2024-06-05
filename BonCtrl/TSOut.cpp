@@ -5,7 +5,6 @@
 #include "../Common/EpgTimerUtil.h"
 
 CTSOut::CTSOut(void)
-	: epgFile(NULL, fclose)
 {
 	this->chChangeState = CH_ST_INIT;
 	this->chChangeTime = 0;

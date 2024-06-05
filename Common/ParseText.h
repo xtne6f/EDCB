@@ -35,7 +35,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR path)
 	if( this->filePath.empty() ){
 		return false;
 	}
-	std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp;
 	for( int retry = 0;; ){
 		bool mightExist = false;
 		fp.reset(UtilOpenFile(this->filePath, UTIL_SECURE_READ));
@@ -111,7 +111,7 @@ bool CParseText<K, V>::SaveText(string* saveToStr) const
 	if( this->filePath.empty() ){
 		return false;
 	}
-	std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp;
 	if( saveToStr ){
 		saveToStr->clear();
 	}else{

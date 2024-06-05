@@ -130,7 +130,7 @@ void CParseChText4::SetFilePath(LPCWSTR path)
 	this->isUtf8 = true;
 	if( this->filePath.empty() == false ){
 		//文字コードを維持する
-		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(this->filePath, UTIL_SECURE_READ), fclose);
+		std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(this->filePath, UTIL_SECURE_READ));
 		if( fp ){
 			char buf[3];
 			this->isUtf8 = fread(buf, 1, 3, fp.get()) == 3 && buf[0] == '\xEF' && buf[1] == '\xBB' && buf[2] == '\xBF';
@@ -548,7 +548,7 @@ wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, 
 	wstring info;
 	if( recFilePath[0] != L'\0' ){
 		//補足の録画情報ファイルを読み込む
-		std::unique_ptr<FILE, decltype(&fclose)> fp(NULL, fclose);
+		std::unique_ptr<FILE, fclose_deleter> fp;
 		if( resultOfGetRecInfoFolder.empty() || recInfoFolderOnly == false ){
 			fp.reset(UtilOpenFile(fs_path(recFilePath).concat(extension), UTIL_SHARED_READ | UTIL_SH_DELETE));
 		}

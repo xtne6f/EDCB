@@ -2145,7 +2145,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			int n;
 			if( cmd.ReadVALUE(&n) ){
 				fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
-				std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(logPath, UTIL_SHARED_READ), fclose);
+				std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(logPath, UTIL_SHARED_READ));
 				if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
 					LONGLONG pos = my_ftell(fp.get());
 					if( pos >= 0 ){
@@ -3096,7 +3096,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 						}
 #endif
 						else{
-							std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
+							std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(path, UTIL_SECURE_READ));
 							if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
 								LONGLONG fileSize = my_ftell(fp.get());
 								if( 0 < fileSize ){

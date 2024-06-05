@@ -177,7 +177,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 			AddDebugLogFormat(L"★delete %ls", path.c_str());
 		}else{
 			BYTE readBuff[188*256];
-			std::unique_ptr<FILE, decltype(&fclose)> file(NULL, fclose);
+			std::unique_ptr<FILE, fclose_deleter> file;
 			//非_WIN32環境では必ずopen(tmp)->close(tmp)->rename(tmp,master)なので複雑なことは不要
 #ifdef _WIN32
 			//一時ファイルの状態を調べる。取得側のCreateFile(tmp)→CloseHandle(tmp)→CopyFile(tmp,master)→DeleteFile(tmp)の流れをある程度仮定
@@ -187,7 +187,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				//一時ファイルがある→もうすぐ上書きされるかもしれないので共有で開いて退避させる
 				AddDebugLogFormat(L"★lockless read %ls", path.c_str());
 				for( int retry = 0; retry < 25; retry++ ){
-					std::unique_ptr<FILE, decltype(&fclose)> masterFile(UtilOpenFile(path, UTIL_SHARED_READ), fclose);
+					std::unique_ptr<FILE, fclose_deleter> masterFile(UtilOpenFile(path, UTIL_SHARED_READ));
 					if( !masterFile ){
 						SleepForMsec(200);
 						continue;
@@ -202,8 +202,8 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 							}
 							for( int i = 0; i < 25; i++ ){
 								//一時ファイルを読み込み共有で開ける→上書き中かもしれないので少し待つ
-								if( !std::unique_ptr<FILE, decltype(&fclose)>(UtilOpenFile(
-								        fs_path(path).concat(L".tmp"), UTIL_O_RDONLY | UTIL_SH_READ | UTIL_SH_DELETE), fclose) ){
+								if( !std::unique_ptr<FILE, fclose_deleter>(UtilOpenFile(
+								        fs_path(path).concat(L".tmp"), UTIL_O_RDONLY | UTIL_SH_READ | UTIL_SH_DELETE)) ){
 									break;
 								}
 								SleepForMsec(200);
@@ -366,7 +366,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> arcFromFile;
 	if( arcMin < LLONG_MAX && sys->epgArchive.empty() ){
 		vector<BYTE> buff;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME), UTIL_SECURE_READ), fclose);
+		std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME), UTIL_SECURE_READ));
 		if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
 			LONGLONG fileSize = my_ftell(fp.get());
 			if( 0 < fileSize && fileSize < INT_MAX ){
@@ -409,7 +409,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		for( size_t i = 0; i < oldCache.front().size(); i++ ){
 			if( oldCache[1 + i].empty() ){
 				//キャッシュする
-				std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldCache.front()[i], UTIL_SECURE_READ), fclose);
+				std::unique_ptr<FILE, fclose_deleter> fp(OpenOldArchive(epgArcPath.c_str(), oldCache.front()[i], UTIL_SECURE_READ));
 				if( fp ){
 					ReadOldArchiveIndex(fp.get(), buff, oldCache[1 + i], NULL);
 				}
@@ -518,7 +518,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 					if( UtilFileExists(epgArcPath).first == false ){
 						UtilCreateDirectory(epgArcPath);
 					}
-					std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), oldMin, UTIL_O_EXCL_CREAT_WRONLY), fclose);
+					std::unique_ptr<FILE, fclose_deleter> fp(OpenOldArchive(epgArcPath.c_str(), oldMin, UTIL_O_EXCL_CREAT_WRONLY));
 					if( fp ){
 						vector<CCmdStream> buffList;
 						buffList.reserve(epgOld.size());
@@ -568,7 +568,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		for( auto itr = sys->epgArchive.cbegin(); itr != sys->epgArchive.end(); valp.push_back(&(itr++)->second) );
 		CCmdStream buff;
 		buff.WriteVALUE2WithVersion(5, valp);
-		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME), UTIL_SECURE_WRITE), fclose);
+		std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(fs_path(settingPath).append(EPG_ARCHIVE_DATA_NAME), UTIL_SECURE_WRITE));
 		if( fp ){
 			fwrite(buff.GetData(), 1, buff.GetDataSize(), fp.get());
 		}
@@ -1346,7 +1346,7 @@ void CEpgDBManager::EnumArchiveEventInfo(LONGLONG* keys, size_t keysSize, LONGLO
 			if( epgArcPath.empty() ){
 				epgArcPath = GetSettingPath().append(EPG_ARCHIVE_FOLDER);
 			}
-			std::unique_ptr<FILE, decltype(&fclose)> fp(OpenOldArchive(epgArcPath.c_str(), *itr, UTIL_SECURE_READ), fclose);
+			std::unique_ptr<FILE, fclose_deleter> fp(OpenOldArchive(epgArcPath.c_str(), *itr, UTIL_SECURE_READ));
 			if( fp ){
 				DWORD headerSize;
 				ReadOldArchiveIndex(fp.get(), buff, index, &headerSize);

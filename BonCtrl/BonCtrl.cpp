@@ -1004,7 +1004,7 @@ void CBonCtrl::CheckLogo()
 		bool update = true;
 		if( UtilFileExists(path).first ){
 			update = false;
-			std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
+			std::unique_ptr<FILE, fclose_deleter> logoFile(UtilOpenFile(path, UTIL_SECURE_READ));
 			if( logoFile ){
 				//小さいか中身が違っていれば更新
 				for( size_t i = 0; i < result.data.size(); i++ ){
@@ -1018,7 +1018,7 @@ void CBonCtrl::CheckLogo()
 		}
 		if( update ){
 			UtilCreateDirectory(path.parent_path());
-			std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_WRITE), fclose);
+			std::unique_ptr<FILE, fclose_deleter> logoFile(UtilOpenFile(path, UTIL_SECURE_WRITE));
 			if( logoFile ){
 				fwrite(result.data.data(), 1, result.data.size(), logoFile.get());
 			}

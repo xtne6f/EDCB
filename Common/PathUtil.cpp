@@ -550,7 +550,7 @@ void CheckFileName(wstring& fileName, bool noChkYen)
 #ifdef _WIN32
 void TouchFileAsUnicode(const fs_path& path)
 {
-	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_O_EXCL_CREAT_WRONLY), fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(path, UTIL_O_EXCL_CREAT_WRONLY));
 	if( fp ){
 		fputwc(L'\xFEFF', fp.get());
 	}
@@ -752,7 +752,7 @@ int GetPrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int nDefault, LPCWSTR
 BOOL WritePrivateProfileString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpString, LPCWSTR fileName)
 {
 	for( int retry = 0;; ){
-		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(wstring(fileName), UTIL_O_RDWR), fclose);
+		std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(wstring(fileName), UTIL_O_RDWR));
 		if( !fp ){
 			fp.reset(UtilOpenFile(wstring(fileName), UTIL_O_EXCL_CREAT_RDWR));
 		}
@@ -846,7 +846,7 @@ wstring GetPrivateProfileToString(LPCWSTR appName, LPCWSTR keyName, LPCWSTR lpDe
 #else
 	for( int retry = 0; appName && keyName; ){
 		bool mightExist = false;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(wstring(fileName), UTIL_SECURE_READ), fclose);
+		std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(wstring(fileName), UTIL_SECURE_READ));
 		if( fp ){
 			string app, key, line;
 			WtoUTF8(L'[' + wstring(appName) + L']', app);

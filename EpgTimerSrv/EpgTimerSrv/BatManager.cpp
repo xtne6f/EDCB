@@ -297,7 +297,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& exNotifyInterval, WORD& exSW, bool& exDirect, vector<char>& buff) const
 {
 	//バッチの作成
-	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(info.batFilePath, UTIL_SECURE_READ), fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(info.batFilePath, UTIL_SECURE_READ));
 	if( !fp ){
 		return false;
 	}

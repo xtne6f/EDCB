@@ -67,7 +67,7 @@ public:
 		);
 
 protected:
-	std::unique_ptr<FILE, decltype(&fclose)> file;
+	std::unique_ptr<FILE, fclose_deleter> file;
 	wstring savePath;
 
 	vector<BYTE> writeBuff;
@@ -75,7 +75,7 @@ protected:
 	LONGLONG wrotePos;
 	recursive_mutex_ wroteLock;
 
-	std::unique_ptr<FILE, decltype(&fclose)> teeFile;
+	std::unique_ptr<FILE, fclose_deleter> teeFile;
 	thread_ teeThread;
 	CAutoResetEvent teeThreadStopEvent;
 	wstring teeCmd;

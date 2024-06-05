@@ -74,8 +74,8 @@ protected:
 
 	thread_ readThread;
 	atomic_bool_ readStopFlag;
-	std::unique_ptr<FILE, decltype(&fclose)> readFile;
-	std::unique_ptr<FILE, decltype(&fclose)> seekFile;
+	std::unique_ptr<FILE, fclose_deleter> readFile;
+	std::unique_ptr<FILE, fclose_deleter> seekFile;
 protected:
 	static void ReadThread(CTimeShiftUtil* sys);
 	LONGLONG GetAvailableFileSize() const;

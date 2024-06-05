@@ -161,6 +161,11 @@ int swprintf_s(wchar_t(&dest)[size], const wchar_t* format, ...)
 }
 #endif
 
+struct fclose_deleter
+{
+	void operator()(FILE* fp) { fclose(fp); }
+};
+
 inline size_t codepoint_to_utf8(int x, char* dest)
 {
 	if( x < 0 || x >= 0x110000 ){

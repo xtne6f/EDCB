@@ -830,7 +830,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	WtoA(outTextW, outText, this->saveProgramInfoAsUtf8 ? UTIL_CONV_UTF8 : UTIL_CONV_DEFAULT);
 
 	//※原作と異なりディレクトリの自動生成はしない
-	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(savePath, append ? UTIL_O_CREAT_APPEND : UTIL_SECURE_WRITE), fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(savePath, append ? UTIL_O_CREAT_APPEND : UTIL_SECURE_WRITE));
 	if( fp ){
 		fputs(outText.c_str(), fp.get());
 	}

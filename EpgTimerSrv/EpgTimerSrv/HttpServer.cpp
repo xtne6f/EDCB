@@ -173,7 +173,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	if( op.enableSsdpServer ){
 		//"<UDN>uuid:{UUID}</UDN>"が必要
 		string notifyUuid;
-		std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(op.rootPath).append(L"dlna").append(L"dms").append(L"ddd.xml"), UTIL_SECURE_READ), fclose);
+		std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(fs_path(op.rootPath).append(L"dlna").append(L"dms").append(L"ddd.xml"), UTIL_SECURE_READ));
 		if( fp ){
 			char olbuff[257];
 			for( size_t n = fread(olbuff, 1, 256, fp.get()); ; n = fread(olbuff + 64, 1, 192, fp.get()) + 64 ){
@@ -294,7 +294,7 @@ string CHttpServer::CreateRandom(size_t len)
 		CryptReleaseContext(prov, 0);
 	}
 #else
-	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(fs_path(L"/dev/urandom"), UTIL_SHARED_READ), fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(fs_path(L"/dev/urandom"), UTIL_SHARED_READ));
 	if( fp ){
 		ULONGLONG r;
 		for( size_t i = 0; i < len && fread(&r, 1, 8, fp.get()) == 8; i += 8 ){
