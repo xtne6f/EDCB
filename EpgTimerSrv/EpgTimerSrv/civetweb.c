@@ -888,10 +888,15 @@ typedef unsigned short int in_port_t;
 #define CRYPTO_LIB "libcrypto.dylib"
 #else
 #if !defined(SSL_LIB)
+
+#if defined(OPENSSL_API_3_0)
+#define SSL_LIB "libssl.so.3"
+#define CRYPTO_LIB "libcrypto.so.3"
+#else
 #define SSL_LIB "libssl.so"
-#endif
-#if !defined(CRYPTO_LIB)
 #define CRYPTO_LIB "libcrypto.so"
+#endif
+
 #endif
 #endif
 #if !defined(O_BINARY)
