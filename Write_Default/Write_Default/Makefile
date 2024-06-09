@@ -20,8 +20,10 @@ else
   SOURCES := $(SOURCES) embed.txt
   TARGETEXT = .so
   CPPFLAGS := -I. -DNDEBUG -DWRITE_DEFAULT_EXPORTS $(CPPFLAGS)
-  CXXFLAGS := -std=c++17 -pedantic-errors -Os -fPIC $(CXXFLAGS)
-  LDFLAGS2 = -Wl,-s -shared $(LDFLAGS)
+  CXXFLAGS := -std=c++17 -pedantic-errors -Os -fPIC -pthread $(CXXFLAGS)
+  LDFLAGS2 = -Wl,-s -shared -pthread $(LDFLAGS)
+  # "-m" emulation may be required in some environments (e.g."-m elf_x86_64")
+  EMBED_TXT_LDFLAGS2 = -r -b binary $(EMBED_TXT_LDFLAGS)
 endif
 
 $(TARGET)$(TARGETEXT): $(addsuffix .obj,$(SOURCES))
@@ -35,7 +37,7 @@ Common__%.cpp.obj: ../../Common/%.cpp stdafx.h.gch $(DEP_ALL_H)
 stdafx.h.gch: stdafx.h ../../Common/Common.h targetver.h
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 embed.txt.b.obj: embed.txt
-	$(LD) -r -b binary -o $@ $<
+	$(LD) $(EMBED_TXT_LDFLAGS2) $< -o $@
 embed.txt.obj: embed.txt.b.obj
 	$(OBJCOPY) --rename-section .data=.embed,readonly,contents --add-section .note.GNU-stack=/dev/null $< $@
 %.rc.obj: %.rc.u.obj resource.h targetver.h

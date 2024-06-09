@@ -7,6 +7,7 @@
 #ifndef _WIN32
 #include <errno.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>

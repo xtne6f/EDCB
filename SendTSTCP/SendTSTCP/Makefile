@@ -20,8 +20,8 @@ else
   SOURCES := $(SOURCES) Common__PathUtil.cpp
   TARGETEXT = .so
   CPPFLAGS := -I. -DNDEBUG -DSENDTSTCP_EXPORTS $(CPPFLAGS)
-  CXXFLAGS := -std=c++17 -pedantic-errors -Os -fPIC $(CXXFLAGS)
-  LDFLAGS2 = -Wl,-s -shared $(LDFLAGS)
+  CXXFLAGS := -std=c++17 -pedantic-errors -Os -fPIC -pthread $(CXXFLAGS)
+  LDFLAGS2 = -Wl,-s -shared -pthread $(LDFLAGS)
 endif
 
 $(TARGET)$(TARGETEXT): $(addsuffix .obj,$(SOURCES))

@@ -442,6 +442,9 @@ fs_path GetModulePath(void* funcAddr)
 		}
 		UTF8toW(info.dli_fname, strPath);
 	}else{
+#ifdef PATH_UTIL_FIX_SELF_EXE
+		strPath = PATH_UTIL_FIX_SELF_EXE;
+#else
 		char szPath[1024];
 		ssize_t len = readlink("/proc/self/exe", szPath, 1024);
 		if( len < 0 || len >= 1024 ){
@@ -449,6 +452,7 @@ fs_path GetModulePath(void* funcAddr)
 		}
 		szPath[len] = '\0';
 		UTF8toW(szPath, strPath);
+#endif
 	}
 	fs_path path(strPath);
 	if( path.is_relative() || path.has_filename() == false ){

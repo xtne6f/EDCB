@@ -59,10 +59,15 @@ ifeq ($(OS),Windows_NT)
 else
   TARGETEXT =
   CPPFLAGS := -I. -DNDEBUG -DEPGTIMERSRV_APPLICATION -DUSE_LUA -DUSE_IPV6 -DNO_CGI -DNO_POPEN -DOPENSSL_API_3_0 $(CPPFLAGS)
-  CFLAGS := -Os -fPIC $(CFLAGS)
-  CXXFLAGS := -std=c++17 -pedantic-errors -Os -fPIC $(CXXFLAGS)
-  LDFLAGS2 = -Wl,-s $(LDFLAGS)
+  CFLAGS := -Os -pthread $(CFLAGS)
+  CXXFLAGS := -std=c++17 -pedantic-errors -Os -pthread $(CXXFLAGS)
+  LDFLAGS2 = -Wl,-s -pthread $(LDFLAGS)
   LDLIBS := -L. -llua5.2 $(LDLIBS)
+
+  ifneq ($(shell uname),Linux)
+    # For systems that do not have procfs
+    CPPFLAGS := -DPATH_UTIL_FIX_SELF_EXE=L\"/usr/local/bin/$(TARGET)\" $(CPPFLAGS)
+  endif
 endif
 
 $(TARGET)$(TARGETEXT): $(addsuffix .obj,$(SOURCES))

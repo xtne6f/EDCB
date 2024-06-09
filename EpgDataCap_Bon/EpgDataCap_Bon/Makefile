@@ -58,8 +58,13 @@ else
   SOURCES := $(SOURCES) EpgDataCap_BonMin.cpp
   TARGETEXT =
   CPPFLAGS := -I. -DNDEBUG -DEPGDATACAP_BON_APPLICATION $(CPPFLAGS)
-  CXXFLAGS := -std=c++17 -pedantic-errors -Os -fPIC $(CXXFLAGS)
-  LDFLAGS2 = -Wl,-s $(LDFLAGS)
+  CXXFLAGS := -std=c++17 -pedantic-errors -Os -pthread $(CXXFLAGS)
+  LDFLAGS2 = -Wl,-s -pthread $(LDFLAGS)
+
+  ifneq ($(shell uname),Linux)
+    # For systems that do not have procfs
+    CPPFLAGS := -DPATH_UTIL_FIX_SELF_EXE=L\"/usr/local/bin/$(TARGET)\" $(CPPFLAGS)
+  endif
 endif
 
 $(TARGET)$(TARGETEXT): $(addsuffix .obj,$(SOURCES))
