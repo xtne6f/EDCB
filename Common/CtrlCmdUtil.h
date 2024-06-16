@@ -136,6 +136,9 @@ inline bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, vector<
 
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SEARCH_PG_PARAM* val );
 
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const VIEW_APP_STATUS_INFO& val );
+bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, VIEW_APP_STATUS_INFO* val );
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CH_INFO& val );
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SET_CH_INFO* val );
 
@@ -186,6 +189,9 @@ inline bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, vector<
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TUNER_RESERVE_INFO& val );
 inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<TUNER_RESERVE_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
+
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TUNER_PROCESS_STATUS_INFO& val );
+inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<TUNER_PROCESS_STATUS_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EVENT_INFO& val );
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EVENT_INFO_PTR& val );

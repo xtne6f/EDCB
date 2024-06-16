@@ -336,7 +336,7 @@ void reg_int_(lua_State* L, const char* name, size_t size, int val)
 	lua_rawset(L, -3);
 }
 
-void reg_int64_(lua_State* L, const char* name, size_t size, LONGLONG val)
+void reg_number_(lua_State* L, const char* name, size_t size, double val)
 {
 	lua_pushlstring(L, name, size - 1);
 	lua_pushnumber(L, (lua_Number)val);

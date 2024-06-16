@@ -157,6 +157,19 @@ vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 	return list;
 }
 
+vector<TUNER_PROCESS_STATUS_INFO> CReserveManager::GetTunerProcessStatusAll() const
+{
+	lock_recursive_mutex lock(this->managerLock);
+
+	vector<TUNER_PROCESS_STATUS_INFO> list;
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetState() != CTunerBankCtrl::TR_IDLE ){
+			list.push_back(itr->second->GetProcessStatusInfo());
+		}
+	}
+	return list;
+}
+
 vector<DWORD> CReserveManager::GetNoTunerReserveAll() const
 {
 	lock_recursive_mutex lock(this->managerLock);

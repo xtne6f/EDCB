@@ -27,6 +27,8 @@ public:
 	vector<RESERVE_DATA> GetReserveDataAll(bool getRecFileName = false) const;
 	//チューナ毎の予約情報を取得する
 	vector<TUNER_RESERVE_INFO> GetTunerReserveAll() const;
+	//チューナ毎のステータス情報を取得する
+	vector<TUNER_PROCESS_STATUS_INFO> GetTunerProcessStatusAll() const;
 	//予約情報を取得する
 	bool GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName = false, CReNamePlugInUtil* util = NULL) const;
 	//予約情報を追加する

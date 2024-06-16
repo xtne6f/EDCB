@@ -125,6 +125,7 @@ private:
 	static int LuaChgProtectRecFileInfo(lua_State* L);
 	static int LuaDelRecFileInfo(lua_State* L);
 	static int LuaGetTunerReserveAll(lua_State* L);
+	static int LuaGetTunerProcessStatusAll(lua_State* L);
 	static int LuaEnumAutoAdd(lua_State* L);
 	static int LuaEnumManuAdd(lua_State* L);
 	static int LuaDelAutoAdd(lua_State* L);

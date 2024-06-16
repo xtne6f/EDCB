@@ -28,16 +28,20 @@ CEpgDataCap_BonMin::CEpgDataCap_BonMin()
 	, iniEpgCap(false)
 	, iniRec(false)
 	, msgManager(OnMessage, this)
-	, outCtrlID(-1)
 	, cmdCapture(NULL)
 	, resCapture(NULL)
-	, lastONID(-1)
-	, lastTSID(-1)
 	, recCtrlID(0)
 	, chScanWorking(false)
 	, epgCapWorking(false)
 	, printStatusSpace(0)
 {
+	VIEW_APP_STATUS_INFO info = {};
+	info.space = -1;
+	info.ch = -1;
+	info.originalNetworkID = -1;
+	info.transportStreamID = -1;
+	info.appID = -1;
+	this->statusInfo = info;
 }
 
 void CEpgDataCap_BonMin::Main()
@@ -156,8 +160,9 @@ void CEpgDataCap_BonMin::OnInit()
 		if( this->bonCtrl.OpenBonDriver(this->iniBonDriver.c_str(), this->setting.traceBonDriverLevel, this->setting.openWait, this->setting.tsBuffMaxCount) ){
 			int selectIndex = ReloadServiceList(this->iniONID, this->iniTSID, this->iniSID);
 			if( selectIndex >= 0 && this->bonCtrl.SetCh(this->serviceList[selectIndex]) ){
-				this->lastONID = this->serviceList[selectIndex].originalNetworkID;
-				this->lastTSID = this->serviceList[selectIndex].transportStreamID;
+				lock_recursive_mutex lock(this->statusInfoLock);
+				this->statusInfo.originalNetworkID = this->serviceList[selectIndex].originalNetworkID;
+				this->statusInfo.transportStreamID = this->serviceList[selectIndex].transportStreamID;
 			}
 		}
 	}
@@ -224,7 +229,7 @@ void CEpgDataCap_BonMin::OnInit()
 			return;
 		}
 	}else if( this->iniRec ){
-		if( this->lastONID >= 0 ){
+		if( this->statusInfo.originalNetworkID >= 0 ){
 			this->msgManager.SetTimer(TIMER_START_REC, 3000);
 		}else{
 			PrintStatusLog(L"Failed to open or set channel\n");
@@ -263,8 +268,8 @@ void CEpgDataCap_BonMin::OnStartRec()
 	wstring serviceName;
 	Format(serviceName, L"%04X", this->bonCtrl.GetNWCtrlServiceID());
 	for( size_t i = 0; i < this->serviceList.size(); i++ ){
-		if( this->serviceList[i].originalNetworkID == this->lastONID &&
-		    this->serviceList[i].transportStreamID == this->lastTSID &&
+		if( this->serviceList[i].originalNetworkID == this->statusInfo.originalNetworkID &&
+		    this->serviceList[i].transportStreamID == this->statusInfo.transportStreamID &&
 		    this->serviceList[i].serviceID == this->bonCtrl.GetNWCtrlServiceID() ){
 			serviceName = this->serviceList[i].serviceName;
 			break;
@@ -363,17 +368,12 @@ void CEpgDataCap_BonMin::StartPipeServer()
 			return;
 		case CMD2_VIEW_APP_GET_STATUS:
 			{
-				DWORD val = VIEW_APP_ST_NORMAL;
 				BOOL chChgErr;
-				if( this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ){
-					val = VIEW_APP_ST_ERR_BON;
-				}else if( this->bonCtrl.IsRec() ){
-					val = VIEW_APP_ST_REC;
-				}else if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
-					val = VIEW_APP_ST_GET_EPG;
-				}else if( this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ){
-					val = VIEW_APP_ST_ERR_CH_CHG;
-				}
+				DWORD val =
+					this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ? VIEW_APP_ST_ERR_BON :
+					this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
+					this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
+					this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
 				res.WriteVALUE(val);
 				res.SetParam(CMD_SUCCESS);
 			}
@@ -385,14 +385,42 @@ void CEpgDataCap_BonMin::StartPipeServer()
 			return;
 		case CMD2_VIEW_APP_SET_ID:
 			AddDebugLog(L"CMD2_VIEW_APP_SET_ID");
-			if( cmd.ReadVALUE(&this->outCtrlID) ){
+			if( cmd.ReadVALUE(&this->statusInfo.appID) ){
 				res.SetParam(CMD_SUCCESS);
 			}
 			return;
 		case CMD2_VIEW_APP_GET_ID:
 			AddDebugLog(L"CMD2_VIEW_APP_GET_ID");
-			res.WriteVALUE(this->outCtrlID);
+			res.WriteVALUE(this->statusInfo.appID);
 			res.SetParam(CMD_SUCCESS);
+			return;
+		case CMD2_VIEW_APP_GET_STATUS_DETAILS:
+			{
+				DWORD flags;
+				if( cmd.ReadVALUE(&flags) ){
+					VIEW_APP_STATUS_INFO info;
+					{
+						lock_recursive_mutex lock(this->statusInfoLock);
+						info = this->statusInfo;
+					}
+					if( flags & VIEW_APP_FLAG_GET_STATUS ){
+						BOOL chChgErr;
+						info.status =
+							this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ? VIEW_APP_ST_ERR_BON :
+							this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
+							this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
+							this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
+					}
+					if( flags & VIEW_APP_FLAG_GET_DELAY ){
+						info.delaySec = this->bonCtrl.GetTimeDelay();
+					}
+					if( flags & VIEW_APP_FLAG_GET_BONDRIVER ){
+						this->bonCtrl.GetOpenBonDriver(&info.bonDriver);
+					}
+					res.WriteVALUE(info);
+					res.SetParam(CMD_SUCCESS);
+				}
+			}
 			return;
 		case CMD2_VIEW_APP_REC_FILE_PATH:
 			AddDebugLog(L"CMD2_VIEW_APP_REC_FILE_PATH");
@@ -455,6 +483,14 @@ void CEpgDataCap_BonMin::OnTimerStatusUpdate()
 	ULONGLONG drop = 0;
 	ULONGLONG scramble = 0;
 	this->bonCtrl.GetViewStatusInfo(&signalLv, &space, &ch, &drop, &scramble);
+	{
+		lock_recursive_mutex lock(this->statusInfoLock);
+		this->statusInfo.drop = drop;
+		this->statusInfo.scramble = scramble;
+		this->statusInfo.signalLv = signalLv;
+		this->statusInfo.space = space;
+		this->statusInfo.ch = ch;
+	}
 
 	wstring statusLog;
 	if( space >= 0 && ch >= 0 ){
@@ -484,15 +520,18 @@ void CEpgDataCap_BonMin::OnTimerStatusUpdate()
 	//EPG取得中は別の検出ロジックがある
 	if( this->chScanWorking == false && this->epgCapWorking == false &&
 	    this->bonCtrl.GetStreamID(&onid, &tsid) &&
-	    (this->lastONID != onid || this->lastTSID != tsid) ){
+	    (this->statusInfo.originalNetworkID != onid || this->statusInfo.transportStreamID != tsid) ){
 		//チャンネルが変化した
 		for( size_t i = 0; i < this->serviceList.size(); i++ ){
 			if( this->serviceList[i].originalNetworkID == onid &&
 			    this->serviceList[i].transportStreamID == tsid ){
 				int index = ReloadServiceList(onid, tsid, this->serviceList[i].serviceID);
 				if( index >= 0 ){
-					this->lastONID = onid;
-					this->lastTSID = tsid;
+					{
+						lock_recursive_mutex lock(this->statusInfoLock);
+						this->statusInfo.originalNetworkID = onid;
+						this->statusInfo.transportStreamID = tsid;
+					}
 					this->bonCtrl.SetNWCtrlServiceID(this->serviceList[index].serviceID);
 				}
 				break;
@@ -532,9 +571,10 @@ void CEpgDataCap_BonMin::OnTimerStatusUpdate()
 		if( status == CBonCtrl::ST_WORKING ){
 			ReloadServiceList(info.ONID, info.TSID, info.SID);
 			this->bonCtrl.SetNWCtrlServiceID(info.SID);
-			if( this->lastONID != info.ONID || this->lastTSID != info.TSID ){
-				this->lastONID = info.ONID;
-				this->lastTSID = info.TSID;
+			{
+				lock_recursive_mutex lock(this->statusInfoLock);
+				this->statusInfo.originalNetworkID = info.ONID;
+				this->statusInfo.transportStreamID = info.TSID;
 			}
 		}else{
 			this->epgCapWorking = false;
@@ -562,8 +602,11 @@ void CEpgDataCap_BonMin::CtrlCmdCallbackInvoked()
 		{
 			wstring val;
 			if( cmd.ReadVALUE(&val) ){
-				this->lastONID = -1;
-				this->lastTSID = -1;
+				{
+					lock_recursive_mutex lock(this->statusInfoLock);
+					this->statusInfo.originalNetworkID = -1;
+					this->statusInfo.transportStreamID = -1;
+				}
 				if( this->bonCtrl.OpenBonDriver(val.c_str(), this->setting.traceBonDriverLevel, this->setting.openWait, this->setting.tsBuffMaxCount) ){
 					ReloadServiceList();
 					res.SetParam(CMD_SUCCESS);
@@ -581,8 +624,9 @@ void CEpgDataCap_BonMin::CtrlCmdCallbackInvoked()
 				if( val.useSID ){
 					int index = ReloadServiceList(val.ONID, val.TSID, val.SID);
 					if( index >= 0 && this->bonCtrl.SetCh(this->serviceList[index]) ){
-						this->lastONID = this->serviceList[index].originalNetworkID;
-						this->lastTSID = this->serviceList[index].transportStreamID;
+						lock_recursive_mutex lock(this->statusInfoLock);
+						this->statusInfo.originalNetworkID = this->serviceList[index].originalNetworkID;
+						this->statusInfo.transportStreamID = this->serviceList[index].transportStreamID;
 						res.SetParam(CMD_SUCCESS);
 					}
 				}else if( val.useBonCh ){
@@ -593,8 +637,9 @@ void CEpgDataCap_BonMin::CtrlCmdCallbackInvoked()
 							                              this->serviceList[i].transportStreamID,
 							                              this->serviceList[i].serviceID);
 							if( index >= 0 && this->bonCtrl.SetCh(this->serviceList[index]) ){
-								this->lastONID = this->serviceList[index].originalNetworkID;
-								this->lastTSID = this->serviceList[index].transportStreamID;
+								lock_recursive_mutex lock(this->statusInfoLock);
+								this->statusInfo.originalNetworkID = this->serviceList[index].originalNetworkID;
+								this->statusInfo.transportStreamID = this->serviceList[index].transportStreamID;
 								res.SetParam(CMD_SUCCESS);
 							}
 							break;
@@ -630,7 +675,7 @@ void CEpgDataCap_BonMin::CtrlCmdCallbackInvoked()
 						if( this->cmdCtrlList.empty() == false &&
 						    this->bonCtrl.GetServiceID(this->cmdCtrlList.front(), &sid) && sid != 0xFFFF ){
 							this->bonCtrl.SetNWCtrlServiceID(sid);
-							ReloadServiceList(this->lastONID, this->lastTSID, sid);
+							ReloadServiceList(this->statusInfo.originalNetworkID, this->statusInfo.transportStreamID, sid);
 						}
 						res.SetParam(CMD_SUCCESS);
 					}

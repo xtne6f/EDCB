@@ -2205,6 +2205,10 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_ENUM_TUNER_PROCESS:
+		res.WriteVALUE(sys->reserveManager.GetTunerProcessStatusAll());
+		res.SetParam(CMD_SUCCESS);
+		break;
 	case CMD2_EPG_SRV_NWTV_SET_CH:
 	case CMD2_EPG_SRV_NWTV_ID_SET_CH:
 		{
@@ -3183,6 +3187,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ "ChgProtectRecFileInfo", LuaChgProtectRecFileInfo },
 		{ "DelRecFileInfo", LuaDelRecFileInfo },
 		{ "GetTunerReserveAll", LuaGetTunerReserveAll },
+		{ "GetTunerProcessStatusAll", LuaGetTunerProcessStatusAll },
 		{ "EnumAutoAdd", LuaEnumAutoAdd },
 		{ "EnumManuAdd", LuaEnumManuAdd },
 		{ "DelAutoAdd", LuaDelAutoAdd },
@@ -4055,8 +4060,8 @@ int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
 			LuaHelp::reg_int(L, "tsid", r.transportStreamID);
 			LuaHelp::reg_int(L, "sid", r.serviceID);
 			LuaHelp::reg_int(L, "eid", r.eventID);
-			LuaHelp::reg_int64(L, "drops", r.drops);
-			LuaHelp::reg_int64(L, "scrambles", r.scrambles);
+			LuaHelp::reg_number(L, "drops", (double)r.drops);
+			LuaHelp::reg_number(L, "scrambles", (double)r.scrambles);
 			LuaHelp::reg_int(L, "recStatus", (int)r.recStatus);
 			LuaHelp::reg_time(L, "startTimeEpg", r.startTimeEpg);
 			LuaHelp::reg_string(L, "comment", ws.WtoUTF8(r.GetComment()));
@@ -4125,6 +4130,29 @@ int CEpgTimerSrvMain::LuaGetTunerReserveAll(lua_State* L)
 			lua_rawseti(L, -2, (int)j + 1);
 		}
 		lua_rawset(L, -3);
+		lua_rawseti(L, -2, (int)i + 1);
+	}
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaGetTunerProcessStatusAll(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	lua_newtable(L);
+	vector<TUNER_PROCESS_STATUS_INFO> list = ws.sys->reserveManager.GetTunerProcessStatusAll();
+	for( size_t i = 0; i < list.size(); i++ ){
+		lua_newtable(L);
+		LuaHelp::reg_int(L, "tunerID", (int)list[i].tunerID);
+		LuaHelp::reg_int(L, "processID", list[i].processID);
+		LuaHelp::reg_number(L, "drop", (double)list[i].drop);
+		LuaHelp::reg_number(L, "scramble", (double)list[i].scramble);
+		LuaHelp::reg_number(L, "signalLv", list[i].signalLv);
+		LuaHelp::reg_int(L, "space", list[i].space);
+		LuaHelp::reg_int(L, "ch", list[i].ch);
+		LuaHelp::reg_int(L, "onid", list[i].originalNetworkID);
+		LuaHelp::reg_int(L, "tsid", list[i].transportStreamID);
+		LuaHelp::reg_boolean(L, "recFlag", list[i].recFlag != 0);
+		LuaHelp::reg_boolean(L, "epgCapFlag", list[i].epgCapFlag != 0);
 		lua_rawseti(L, -2, (int)i + 1);
 	}
 	return 1;
@@ -4314,7 +4342,7 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 				}
 				lua_createtable(ws.L, 0, 4);
 				LuaHelp::reg_string(ws.L, "name", ws.WtoUTF8(findData.fileName));
-				LuaHelp::reg_int64(ws.L, "size", findData.fileSize);
+				LuaHelp::reg_number(ws.L, "size", (double)findData.fileSize);
 				LuaHelp::reg_boolean(ws.L, "isdir", findData.isDir);
 				SYSTEMTIME st;
 				ConvertSystemTime(findData.lastWriteTime + I64_UTIL_TIMEZONE, &st);

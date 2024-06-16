@@ -235,15 +235,25 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 
 	CWatchBlock watchBlock(&this->watchContext);
 	CSendCtrlCmd ctrlCmd;
+	DWORD getStatus = CMD_ERR;
 	if( this->tunerPid ){
 		//チューナ起動時にはこれを再度呼ぶこと
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+
+		//チューナが対応していれば現在の状態、BonDriver、時計の誤差などをまとめて取得する
+		if( this->getStatusDetailsNonSupport ){
+			getStatus = CMD_NON_SUPPORT;
+		}else{
+			getStatus = ctrlCmd.SendViewGetStatusDetails(
+				(this->specialState == TR_EPGCAP ? VIEW_APP_FLAG_GET_STATUS : 0) | VIEW_APP_FLAG_GET_BONDRIVER |
+				(this->specialState != TR_NWTV ? VIEW_APP_FLAG_GET_DELAY : 0), &this->statusInfo);
+			this->getStatusDetailsNonSupport = getStatus == CMD_NON_SUPPORT;
+		}
 	}
 
 	if( this->specialState == TR_EPGCAP ){
-		DWORD status;
-		if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS ){
-			if( status != VIEW_APP_ST_GET_EPG ){
+		if( (getStatus == CMD_NON_SUPPORT ? ctrlCmd.SendViewGetStatus(&this->statusInfo.status) : getStatus) == CMD_SUCCESS ){
+			if( this->statusInfo.status != VIEW_APP_ST_GET_EPG ){
 				//取得終わった
 				AddDebugLog(L"epg end");
 				CloseTuner();
@@ -258,9 +268,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	}else if( this->specialState == TR_NWTV ){
 		//ネットワークモードではGUIキープできないのでBonDriverが変更されるかもしれない
 		//BonDriverが変更されたチューナはこのバンクの管理下に置けないので、ネットワークモードを解除する
-		wstring bonDriver;
-		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
-		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
+		if( (getStatus == CMD_NON_SUPPORT ? ctrlCmd.SendViewGetBonDrivere(&this->statusInfo.bonDriver) : getStatus) == CMD_SUCCESS &&
+		    UtilComparePath(this->statusInfo.bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
 				lock_recursive_mutex lock(this->watchContext.lock);
 #ifdef _WIN32
@@ -278,9 +287,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		}
 	}else if( this->tunerPid && this->tunerChLocked == false ){
 		//GUIキープされていないのでBonDriverが変更されるかもしれない
-		wstring bonDriver;
-		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
-		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
+		if( (getStatus == CMD_NON_SUPPORT ? ctrlCmd.SendViewGetBonDrivere(&this->statusInfo.bonDriver) : getStatus) == CMD_SUCCESS &&
+		    UtilComparePath(this->statusInfo.bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
 				lock_recursive_mutex lock(this->watchContext.lock);
 #ifdef _WIN32
@@ -310,13 +318,12 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	this->epgCapDelayTime = 0;
 	if( this->tunerPid && this->specialState != TR_NWTV ){
 		//PC時計との誤差取得
-		int delaySec;
-		if( ctrlCmd.SendViewGetDelay(&delaySec) == CMD_SUCCESS ){
+		if( (getStatus == CMD_NON_SUPPORT ? ctrlCmd.SendViewGetDelay(&this->statusInfo.delaySec) : getStatus) == CMD_SUCCESS ){
 			//誤った値を掴んでおかしなことにならないよう、EPG取得中の値は状態遷移の参考にしない
 			if( this->specialState == TR_EPGCAP ){
-				this->epgCapDelayTime = delaySec * I64_1SEC;
+				this->epgCapDelayTime = this->statusInfo.delaySec * I64_1SEC;
 			}else{
-				this->delayTime = delaySec * I64_1SEC;
+				this->delayTime = this->statusInfo.delaySec * I64_1SEC;
 			}
 		}
 	}
@@ -938,6 +945,25 @@ CTunerBankCtrl::TR_STATE CTunerBankCtrl::GetState() const
 	return state;
 }
 
+TUNER_PROCESS_STATUS_INFO CTunerBankCtrl::GetProcessStatusInfo() const
+{
+	TUNER_PROCESS_STATUS_INFO info;
+	info.tunerID = this->tunerID;
+	info.processID = this->tunerPid;
+	info.drop = this->statusInfo.drop;
+	info.scramble = this->statusInfo.scramble;
+	info.signalLv = this->statusInfo.signalLv;
+	info.space = this->statusInfo.space;
+	info.ch = this->statusInfo.ch;
+	info.originalNetworkID = this->statusInfo.originalNetworkID;
+	info.transportStreamID = this->statusInfo.transportStreamID;
+	TR_STATE state = GetState();
+	info.recFlag = state == TR_REC;
+	info.epgCapFlag = state == TR_EPGCAP;
+	info.extraFlags = 0;
+	return info;
+}
+
 LONGLONG CTunerBankCtrl::GetNearestReserveTime() const
 {
 	LONGLONG minTime = LLONG_MAX;
@@ -1245,6 +1271,14 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 						ctrlCmd.SendViewExecViewApp();
 					}
 				}
+				VIEW_APP_STATUS_INFO info = {};
+				info.space = -1;
+				info.ch = -1;
+				info.originalNetworkID = -1;
+				info.transportStreamID = -1;
+				info.appID = -1;
+				this->statusInfo = info;
+				this->getStatusDetailsNonSupport = false;
 				return true;
 			}
 		}

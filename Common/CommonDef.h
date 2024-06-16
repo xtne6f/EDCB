@@ -50,6 +50,11 @@
 #define VIEW_APP_ST_GET_EPG				3 //EPG取得状態
 #define VIEW_APP_ST_ERR_CH_CHG			4 //チャンネル切り替え失敗状態
 
+//Viewアプリの取得すべき情報のフラグ
+#define VIEW_APP_FLAG_GET_STATUS	0x01	//statusフィールドを取得する
+#define VIEW_APP_FLAG_GET_DELAY		0x02	//delaySecフィールドを取得する
+#define VIEW_APP_FLAG_GET_BONDRIVER	0x04	//bonDriverフィールドを取得する
+
 //NotifyID
 #define NOTIFY_UPDATE_EPGDATA		1		//EPGデータが更新された
 #define NOTIFY_UPDATE_RESERVE_INFO	2		//予約情報が更新された

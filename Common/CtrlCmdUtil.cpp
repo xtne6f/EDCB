@@ -1,8 +1,50 @@
 ﻿#include "stdafx.h"
 #include "CtrlCmdUtil.h"
+#include <math.h>
+#include <limits>
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#include <float.h>
+#define isnan _isnan
+#define isfinite _finite
+#endif
 
 namespace CtrlCmdUtilImpl_
 {
+
+DWORD FloatToDWORD(float f)
+{
+	//仮数部23bitの単精度浮動小数点数
+	//丸め誤差の扱いがラフなので処理系のfloatと厳密には一致しない
+	if( isnan(f) ){
+		return 0x7FC00000;
+	}
+	int ex;
+	if( !isfinite(f) || (ex = (int)(logl(fabsf(f)) / logl(2) + 127)) > 254 ){
+		return f < 0 ? 0xFF800000 : 0x7F800000;
+	}
+	if( ex < 1 ){
+		return 0;
+	}
+	int frac = (int)((fabsf(f) * powl(2, 127 - ex) - 1) * 0x800000);
+	return (f < 0 ? 0x80000000 : 0) | ex << 23 | min(max(frac, 0), 0x7FFFFF);
+}
+
+float DWORDToFloat(DWORD n)
+{
+	if( (n & 0x7FFFFFFF) == 0x7F800000 ){
+		return std::numeric_limits<float>::infinity() * (n < 0x80000000 ? 1 : -1);
+	}
+	int ex = n >> 23 & 0xFF;
+	if( ex > 254 ){
+		return std::numeric_limits<float>::quiet_NaN();
+	}
+	if( ex < 1 ){
+		return 0;
+	}
+	int frac = n & 0x7FFFFF;
+	return (float)(((double)frac / 0x800000 + 1) * expl((ex - 127) * logl(2)) * (n < 0x80000000 ? 1 : -1));
+}
 
 const BYTE* ReadStructIntro( const BYTE** buff, const BYTE** buffEnd )
 {
@@ -773,6 +815,46 @@ bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SEARCH_PG_PARA
 	return true;
 }
 
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const VIEW_APP_STATUS_INFO& val )
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.status);
+	pos += WriteVALUE(ver, buff, pos, val.delaySec);
+	pos += WriteVALUE(ver, buff, pos, val.bonDriver);
+	pos += WriteVALUE(ver, buff, pos, val.drop);
+	pos += WriteVALUE(ver, buff, pos, val.scramble);
+	pos += WriteVALUE(ver, buff, pos, FloatToDWORD(val.signalLv));
+	pos += WriteVALUE(ver, buff, pos, val.space);
+	pos += WriteVALUE(ver, buff, pos, val.ch);
+	pos += WriteVALUE(ver, buff, pos, val.originalNetworkID);
+	pos += WriteVALUE(ver, buff, pos, val.transportStreamID);
+	pos += WriteVALUE(ver, buff, pos, val.appID);
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
+
+bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, VIEW_APP_STATUS_INFO* val )
+{
+	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
+	DWORD dwSignalLv;
+	if( rb == NULL ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->status) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->delaySec) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->bonDriver) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->drop) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->scramble) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &dwSignalLv) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->space) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->ch) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->originalNetworkID) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->transportStreamID) ||
+	    !ReadVALUE(ver, &rb, buffEnd, &val->appID) ){
+		return false;
+	}
+	val->signalLv = DWORDToFloat(dwSignalLv);
+	return true;
+}
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CH_INFO& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD);
@@ -1115,6 +1197,25 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TUNER_RESERVE_IN
 	pos += WriteVALUE(ver, buff, pos, val.tunerID);
 	pos += WriteVALUE(ver, buff, pos, val.tunerName);
 	pos += WriteVALUE(ver, buff, pos, val.reserveList);
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
+
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TUNER_PROCESS_STATUS_INFO& val )
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.tunerID);
+	pos += WriteVALUE(ver, buff, pos, val.processID);
+	pos += WriteVALUE(ver, buff, pos, val.drop);
+	pos += WriteVALUE(ver, buff, pos, val.scramble);
+	pos += WriteVALUE(ver, buff, pos, FloatToDWORD(val.signalLv));
+	pos += WriteVALUE(ver, buff, pos, val.space);
+	pos += WriteVALUE(ver, buff, pos, val.ch);
+	pos += WriteVALUE(ver, buff, pos, val.originalNetworkID);
+	pos += WriteVALUE(ver, buff, pos, val.transportStreamID);
+	pos += WriteVALUE(ver, buff, pos, val.recFlag);
+	pos += WriteVALUE(ver, buff, pos, val.epgCapFlag);
+	pos += WriteVALUE(ver, buff, pos, val.extraFlags);
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
 }

@@ -41,14 +41,14 @@ private:
 	CMessageManager msgManager;
 	CBonCtrl bonCtrl;
 	CPipeServer pipeServer;
-	int outCtrlID;
 	vector<DWORD> cmdCtrlList;
 	const CCmdStream* cmdCapture;
 	CCmdStream* resCapture;
 
+	recursive_mutex_ statusInfoLock;
+	VIEW_APP_STATUS_INFO statusInfo;
+
 	vector<CH_DATA4> serviceList;
-	int lastONID;
-	int lastTSID;
 	DWORD recCtrlID;
 	bool chScanWorking;
 	bool epgCapWorking;

@@ -70,15 +70,15 @@ protected:
 
 	CBonCtrl bonCtrl;
 	CPipeServer pipeServer;
-	int outCtrlID;
 	vector<DWORD> cmdCtrlList;
 	const CCmdStream* cmdCapture;
 	CCmdStream* resCapture;
 
+	recursive_mutex_ statusInfoLock;
+	VIEW_APP_STATUS_INFO statusInfo;
+
 	//サービス一覧の表示と同期する。ただしこのリストには非表示サービスも含む
 	vector<CH_DATA4> serviceList;
-	WORD lastONID;
-	WORD lastTSID;
 	DWORD recCtrlID;
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
