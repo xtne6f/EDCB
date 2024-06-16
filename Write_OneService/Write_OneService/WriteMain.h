@@ -60,7 +60,7 @@ public:
 		);
 
 private:
-	std::unique_ptr<FILE, decltype(&fclose)> file;
+	std::unique_ptr<FILE, fclose_deleter> file;
 	std::unique_ptr<CWritePlugInUtil> writePlugin;
 	wstring savePath;
 	WORD targetSID;

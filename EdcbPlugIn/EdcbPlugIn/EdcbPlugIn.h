@@ -101,7 +101,7 @@ private:
 	bool m_chChangedAfterSetCh;
 	DWORD m_chChangeID;
 	DWORD m_chChangeTick;
-	std::unique_ptr<FILE, decltype(&fclose)> m_epgFile;
+	std::unique_ptr<FILE, fclose_deleter> m_epgFile;
 	enum { EPG_FILE_ST_NONE, EPG_FILE_ST_PAT, EPG_FILE_ST_TOT, EPG_FILE_ST_ALL } m_epgFileState;
 	LONGLONG m_epgFileTotPos;
 	wstring m_epgFilePath;
@@ -127,7 +127,7 @@ private:
 	DWORD m_logoTypeFlags;
 #ifdef SEND_PIPE_TEST
 	CSendTSTCPDllUtil m_sendPipe;
-	HANDLE m_sendPipeMutex;
+	util_unique_handle m_sendPipeMutex;
 	vector<BYTE> m_sendPipeBuf;
 	CServiceFilter m_serviceFilter;
 #endif

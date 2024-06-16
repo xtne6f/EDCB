@@ -5,7 +5,6 @@
 #include "../../Common/TSPacketUtil.h"
 
 CWriteMain::CWriteMain()
-	: file(NULL, fclose)
 {
 }
 

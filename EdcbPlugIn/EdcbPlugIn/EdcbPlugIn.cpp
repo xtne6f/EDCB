@@ -155,12 +155,14 @@ CEdcbPlugIn::CEdcbPlugIn()
 	, m_outCtrlID(-1)
 	, m_statusCode(VIEW_APP_ST_ERR_BON)
 	, m_chChangeID(CH_CHANGE_OK)
-	, m_epgFile(nullptr, fclose)
 	, m_epgCapBack(false)
 	, m_recCtrlCount(0)
 	, m_logoAdditionalNeededPids(nullptr)
 	, m_logoTick(0)
 	, m_logoTypeFlags(0)
+#ifdef SEND_PIPE_TEST
+	, m_sendPipeMutex(UtilCreateGlobalMutex())
+#endif
 {
 	m_lastSetCh.useSID = FALSE;
 	std::fill_n(m_epgCapBasicOnlyONIDs, array_size(m_epgCapBasicOnlyONIDs), false);
@@ -217,15 +219,11 @@ bool CEdcbPlugIn::Initialize()
 		int port = 0;
 		for (; port < BON_NW_PORT_RANGE; ++port) {
 			wstring name;
-			Format(name, L"Global\\%ls1_%d", MUTEX_TCP_PORT_NAME, port);
-			m_sendPipeMutex = CreateMutex(nullptr, FALSE, name.c_str());
+			Format(name, L"%ls1_%d", MUTEX_TCP_PORT_NAME, port);
+			m_sendPipeMutex = UtilCreateGlobalMutex(name.c_str());
 			if (m_sendPipeMutex) {
-				if (GetLastError() != ERROR_ALREADY_EXISTS) {
-					m_pApp->AddLog(name.c_str());
-					break;
-				}
-				CloseHandle(m_sendPipeMutex);
-				m_sendPipeMutex = nullptr;
+				m_pApp->AddLog(name.c_str());
+				break;
 			}
 		}
 		m_sendPipe.AddSendAddr(L"0.0.0.1", port);
@@ -258,9 +256,7 @@ bool CEdcbPlugIn::Finalize()
 	if (m_sendPipe.IsInitialized()) {
 		m_sendPipe.StopSend();
 		m_sendPipe.UnInitialize();
-		if (m_sendPipeMutex) {
-			CloseHandle(m_sendPipeMutex);
-		}
+		m_sendPipeMutex.reset();
 	}
 #endif
 	m_epgUtil.UnInitialize();
@@ -474,7 +470,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					if (m_epgCapChkNext && m_epgFile) {
 						// 保存終了
 						{
-							std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
+							std::unique_ptr<FILE, fclose_deleter> epgFile;
 							lock_recursive_mutex lock(m_streamLock);
 							epgFile.swap(m_epgFile);
 						}
@@ -552,7 +548,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (!m_epgCapBack && m_epgFile) {
 					// 保存終了
 					{
-						std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
+						std::unique_ptr<FILE, fclose_deleter> epgFile;
 						lock_recursive_mutex lock(m_streamLock);
 						epgFile.swap(m_epgFile);
 					}
@@ -635,7 +631,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		if (m_epgCapChList.empty() && m_epgFile) {
 			// 保存キャンセル
 			{
-				std::unique_ptr<FILE, decltype(&fclose)> epgFile(nullptr, fclose);
+				std::unique_ptr<FILE, fclose_deleter> epgFile;
 				lock_recursive_mutex lock(m_streamLock);
 				epgFile.swap(m_epgFile);
 			}
@@ -1101,7 +1097,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 							// TOTを前倒しで書き込むための場所を確保
 							BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
 							std::fill_n(nullData + 4, 184, (BYTE)0xFF);
-							this_.m_epgFileTotPos = _ftelli64(this_.m_epgFile.get());
+							this_.m_epgFileTotPos = my_ftell(this_.m_epgFile.get());
 							fwrite(nullData, 1, 188, this_.m_epgFile.get());
 						}
 					}
@@ -1109,10 +1105,10 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 					if (packet.PID == 0x14 && this_.m_epgFileState == EPG_FILE_ST_TOT) {
 						this_.m_epgFileState = EPG_FILE_ST_ALL;
 						if (this_.m_epgFileTotPos >= 0) {
-							_fseeki64(this_.m_epgFile.get(), this_.m_epgFileTotPos, SEEK_SET);
+							my_fseek(this_.m_epgFile.get(), this_.m_epgFileTotPos, SEEK_SET);
 						}
 						fwrite(pData, 1, 188, this_.m_epgFile.get());
-						_fseeki64(this_.m_epgFile.get(), 0, SEEK_END);
+						my_fseek(this_.m_epgFile.get(), 0, SEEK_END);
 					}
 					else if (packet.PID == 0 && this_.m_epgFileState >= EPG_FILE_ST_PAT || this_.m_epgFileState >= EPG_FILE_ST_TOT) {
 						fwrite(pData, 1, 188, this_.m_epgFile.get());
@@ -1205,7 +1201,7 @@ BOOL CALLBACK CEdcbPlugIn::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO 
 				bool update = true;
 				if (UtilFileExists(path).first) {
 					update = false;
-					std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
+					std::unique_ptr<FILE, fclose_deleter> logoFile(UtilOpenFile(path, UTIL_SECURE_READ));
 					if (logoFile) {
 						// 小さいか中身が違っていれば更新
 						for (DWORD i = 0; i < logoList->dataSize; i++) {
@@ -1219,7 +1215,7 @@ BOOL CALLBACK CEdcbPlugIn::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO 
 				}
 				if (update) {
 					UtilCreateDirectory(path.parent_path());
-					std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_WRITE), fclose);
+					std::unique_ptr<FILE, fclose_deleter> logoFile(UtilOpenFile(path, UTIL_SECURE_WRITE));
 					if (logoFile) {
 						fwrite(logoList->data, 1, logoList->dataSize, logoFile.get());
 					}
