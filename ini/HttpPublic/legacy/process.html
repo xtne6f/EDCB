@@ -46,14 +46,23 @@ for i=1,20 do
   edcb.Sleep(500)
 end
 
+tuners=#ps>0 and edcb.GetTunerProcessStatusAll and edcb.GetTunerProcessStatusAll() or {}
+
 ct:Append([=[
   <table>
-    <tr><th>PID<th>CPU<th>MEM<th>ST<th>COMMAND</tr>
+    <tr><th>PID<th>CPU<th>MEM<th>ST<th>COMMAND<th>TUNER</tr>
 ]=])
 
 edcb.htmlEscape=15
 for i,v in ipairs(ps) do
-  ct:Append('    <tr><td>'..v.pid..'<td>'..v.cpu..'<td>'..v.mem..'<td>'..v.st..'<td>'..EdcbHtmlEscape(v.cmd)..'</tr>\n')
+  tunerStatus=''
+  for j,w in ipairs(tuners) do
+    if w.processID==tonumber(v.pid) then
+      tunerStatus=('Sig:%.2f D:'):format(w.signalLv)..w.drop..' S:'..w.scramble..' sp:'..w.space..' ch:'..w.ch..(w.recFlag and ' ●' or w.epgCapFlag and ' ○' or '')
+      break
+    end
+  end
+  ct:Append('    <tr><td>'..v.pid..'<td>'..v.cpu..'<td>'..v.mem..'<td>'..v.st..'<td>'..EdcbHtmlEscape(v.cmd)..'<td>'..EdcbHtmlEscape(tunerStatus)..'</tr>\n')
 end
 
 ct:Append([=[
