@@ -1,0 +1,136 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/録画アプリ(EpgDataCap_Bon) - EDCB</title>
+</head>
+<body>
+<h1>設定/録画アプリ(EpgDataCap_Bon)</h1>
+<div id="main">
+]=])
+
+appIni='EpgDataCap_Bon.ini'
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  edcb.WritePrivateProfile('SET','AllService',GetVarInt(post,'allService')==1,appIni)
+  edcb.WritePrivateProfile('SET','Scramble',GetVarInt(post,'scramble')==1,appIni)
+  edcb.WritePrivateProfile('SET','EMM',GetVarInt(post,'emm')==1,appIni)
+  edcb.WritePrivateProfile('SET','Caption',GetVarInt(post,'enableCaption')==1,appIni)
+  edcb.WritePrivateProfile('SET','Data',GetVarInt(post,'enableData')==1,appIni)
+  edcb.WritePrivateProfile('SET','OverWrite',GetVarInt(post,'overWrite')==1,appIni)
+  edcb.WritePrivateProfile('SET','DropSaveThresh',GetVarInt(post,'dropSaveThresh',-1) or 0,appIni)
+  edcb.WritePrivateProfile('SET','ScrambleSaveThresh',GetVarInt(post,'scrambleSaveThresh',-1) or -1,appIni)
+  edcb.WritePrivateProfile('SET','NoLogScramble',GetVarInt(post,'noLogScramble')==1,appIni)
+  edcb.WritePrivateProfile('SET','RecFileName',(mg.get_var(post,'recFileName') or ''):gsub('%c',''),appIni)
+  if WIN32 then
+    edcb.WritePrivateProfile('SET','OpenLast',GetVarInt(post,'openLast')==1,appIni)
+    edcb.WritePrivateProfile('SET','DropLogAsUtf8',GetVarInt(post,'dropLogAsUtf8')==1,appIni)
+  end
+  edcb.WritePrivateProfile('SET','SaveDebugLog',GetVarInt(post,'saveDebugLog')==1,appIni)
+  --設定的には多値なので、すでに有効な場合は値を維持する
+  traceLevel=GetVarInt(post,'traceBonDriverLevel')==1 and 2 or 0
+  if traceLevel==0 or edcb.GetPrivateProfile('SET','TraceBonDriverLevel',0,appIni)=='0' then
+    edcb.WritePrivateProfile('SET','TraceBonDriverLevel',traceLevel,appIni)
+  end
+  edcb.WritePrivateProfile('SET','TsBuffMaxCount',GetVarInt(post,'tsBuffMaxCount',0) or 5000,appIni)
+  edcb.WritePrivateProfile('SET','WriteBuffMaxCount',GetVarInt(post,'writeBuffMaxCount',1) or -1,appIni)
+  edcb.WritePrivateProfile('SET','EpgCapBackBSBasicOnly',GetVarInt(post,'epgCapBackBSBasic')==1,appIni)
+  edcb.WritePrivateProfile('SET','EpgCapBackCS1BasicOnly',GetVarInt(post,'epgCapBackCS1Basic')==1,appIni)
+  edcb.WritePrivateProfile('SET','EpgCapBackCS2BasicOnly',GetVarInt(post,'epgCapBackCS2Basic')==1,appIni)
+  edcb.WritePrivateProfile('SET','EpgCapBackCS3BasicOnly',GetVarInt(post,'epgCapBackCS3Basic')==1,appIni)
+  edcb.WritePrivateProfile('SET','EpgCapLive',GetVarInt(post,'epgCapLive')==1,appIni)
+  edcb.WritePrivateProfile('SET','EpgCapRec',GetVarInt(post,'epgCapRec')==1,appIni)
+  edcb.WritePrivateProfile('SET','ParseEpgPostProcess',GetVarInt(post,'parseEpgPostProcess')==1,appIni)
+  edcb.WritePrivateProfile('SET','EpgCapBackStartWaitSec',GetVarInt(post,'epgCapBackStartWaitSec',0) or 30,appIni)
+  edcb.WritePrivateProfile('SET','SaveLogo',GetVarInt(post,'saveLogo')==1,appIni)
+  edcb.WritePrivateProfile('SET','SaveLogoTypeFlags',GetVarInt(post,'saveLogoTypeFlags',0) or 32,appIni)
+  ct:Append('<div id="result">変更しました</div>\n')
+end
+
+edcb.htmlEscape=15
+
+allService=edcb.GetPrivateProfile('SET','AllService',0,appIni)~='0'
+scramble=edcb.GetPrivateProfile('SET','Scramble',1,appIni)~='0'
+emm=edcb.GetPrivateProfile('SET','EMM',0,appIni)~='0'
+enableCaption=edcb.GetPrivateProfile('SET','Caption',1,appIni)~='0'
+enableData=edcb.GetPrivateProfile('SET','Data',0,appIni)~='0'
+overWrite=edcb.GetPrivateProfile('SET','OverWrite',0,appIni)~='0'
+dropSaveThresh=tonumber(edcb.GetPrivateProfile('SET','DropSaveThresh',0,appIni)) or 0
+scrambleSaveThresh=tonumber(edcb.GetPrivateProfile('SET','ScrambleSaveThresh',-1,appIni)) or -1
+noLogScramble=edcb.GetPrivateProfile('SET','NoLogScramble',0,appIni)~='0'
+recFileName=edcb.GetPrivateProfile('SET','RecFileName','$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts',appIni)
+openLast=WIN32 and edcb.GetPrivateProfile('SET','OpenLast',1,appIni)~='0'
+dropLogAsUtf8=not WIN32 or edcb.GetPrivateProfile('SET','DropLogAsUtf8',0,appIni)~='0'
+saveDebugLog=edcb.GetPrivateProfile('SET','SaveDebugLog',0,appIni)~='0'
+traceBonDriverLevel=edcb.GetPrivateProfile('SET','TraceBonDriverLevel',0,appIni)~='0'
+tsBuffMaxCount=tonumber(edcb.GetPrivateProfile('SET','TsBuffMaxCount',5000,appIni)) or 5000
+--設定上の無制限は-1だがUIでは0を無制限とみなす
+writeBuffMaxCount=math.max(tonumber(edcb.GetPrivateProfile('SET','WriteBuffMaxCount',0,appIni)) or 0,0)
+epgCapBackBSBasic=edcb.GetPrivateProfile('SET','EpgCapBackBSBasicOnly',1,appIni)~='0'
+epgCapBackCS1Basic=edcb.GetPrivateProfile('SET','EpgCapBackCS1BasicOnly',1,appIni)~='0'
+epgCapBackCS2Basic=edcb.GetPrivateProfile('SET','EpgCapBackCS2BasicOnly',1,appIni)~='0'
+epgCapBackCS3Basic=edcb.GetPrivateProfile('SET','EpgCapBackCS3BasicOnly',0,appIni)~='0'
+epgCapLive=edcb.GetPrivateProfile('SET','EpgCapLive',1,appIni)~='0'
+epgCapRec=edcb.GetPrivateProfile('SET','EpgCapRec',1,appIni)~='0'
+parseEpgPostProcess=edcb.GetPrivateProfile('SET','ParseEpgPostProcess',0,appIni)~='0'
+epgCapBackStartWaitSec=tonumber(edcb.GetPrivateProfile('SET','EpgCapBackStartWaitSec',30,appIni)) or 30
+saveLogo=edcb.GetPrivateProfile('SET','SaveLogo',0,appIni)~='0'
+saveLogoTypeFlags=tonumber(edcb.GetPrivateProfile('SET','SaveLogoTypeFlags',32,appIni)) or 32
+
+ct:Append([=[
+<form method="POST" action="setting_app.html"><div>
+  <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+  (*の項目はEpgTimerSrvの予約以外で起動したとき用)<br>
+  <label><input name="allService"]=]..Checkbox(allService)..[=[>全サービスを処理対象とする*</label><br>
+  <label><input name="scramble"]=]..Checkbox(scramble)..[=[>スクランブル解除処理を行う*</label><br>
+  <label><input name="emm"]=]..Checkbox(emm)..[=[>EMM処理を行う</label><br>
+  <label><input name="enableCaption"]=]..Checkbox(enableCaption)..[=[>字幕を含める*</label><br>
+  <label><input name="enableData"]=]..Checkbox(enableData)..[=[>データカルーセルを含める*</label><br>
+  <label><input name="overWrite"]=]..Checkbox(overWrite)..[=[>録画ファイル名が同一の場合に上書きをする*</label><br>
+  <label class="]=]..(WIN32 and '' or 'inact-setting')..[=["><input name="openLast"]=]..Checkbox(openLast)..[=[>次回起動時に終了前のサービスで起動する</label><br>
+  ドロップ数が <input type="text" name="dropSaveThresh" value="]=]..dropSaveThresh..[=[" size="8"> 以上または<br>
+  スクランブル数が <input type="text" name="scrambleSaveThresh" value="]=]..scrambleSaveThresh..[=[" size="8"> 以上でドロップログを出力する(-1で常に出力しない)<br>
+  <label><input name="noLogScramble"]=]..Checkbox(noLogScramble)..[=[>スクランブル値の変化をドロップログに記録しない</label><br>
+  <label class="]=]..(WIN32 and '' or 'inact-setting')..[=["><input name="dropLogAsUtf8"]=]..Checkbox(dropLogAsUtf8)..[=[>ドロップログをUTF-8で出力する</label><br>
+  <label><input name="saveDebugLog"]=]..Checkbox(saveDebugLog)..[=[>デバッグ出力をファイルに保存する</label><br>
+  <label><input name="traceBonDriverLevel"]=]..Checkbox(traceBonDriverLevel)..[=[>BonDriverについてのデバッグ出力を増やす</label><br>
+  TS入力バッファ上限(47KiB単位) <input type="text" name="tsBuffMaxCount" value="]=]..tsBuffMaxCount..[=[" size="8"><br>
+  ファイル出力バッファ上限(47KiB単位)(0で無制限) <input type="text" name="writeBuffMaxCount" value="]=]..writeBuffMaxCount..[=[" size="8"><br>
+  録画ファイル名* <input type="text" name="recFileName" value="]=]..recFileName..[=[" size="60"><br>
+  <br>
+  <label><input name="epgCapLive"]=]..Checkbox(epgCapLive)..[=[>視聴中にEPGデータの取得を行う</label><br>
+  <label><input name="epgCapRec"]=]..Checkbox(epgCapRec)..[=[>録画中にEPGデータの取得を行う</label><br>
+  基本情報のみ取得するネットワーク（視聴・録画中）
+  <div class="sub-setting">
+    <label><input name="epgCapBackBSBasic"]=]..Checkbox(epgCapBackBSBasic)..[=[>BS</label>
+    <label><input name="epgCapBackCS1Basic"]=]..Checkbox(epgCapBackCS1Basic)..[=[>CS1</label>
+    <label><input name="epgCapBackCS2Basic"]=]..Checkbox(epgCapBackCS2Basic)..[=[>CS2</label>
+    <label><input name="epgCapBackCS3Basic"]=]..Checkbox(epgCapBackCS3Basic)..[=[>CS3</label>
+  </div>
+  Ch切換、録画開始 <input type="text" name="epgCapBackStartWaitSec" value="]=]..epgCapBackStartWaitSec..[=[" size="8"> 秒後からEPG取得する<br>
+  <label><input name="parseEpgPostProcess"]=]..Checkbox(parseEpgPostProcess)..[=[>TS解析後にEPG取得する</label><br>
+  <label><input name="saveLogo"]=]..Checkbox(saveLogo)..[=[>ロゴデータを保存する</label>
+  <div class="enabled-on-checked">
+    取得するロゴタイプ <input type="text" name="saveLogoTypeFlags" value="]=]..saveLogoTypeFlags..[=[" size="8">
+  </div>
+  <button type="submit">変更</button>
+</div></form>
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

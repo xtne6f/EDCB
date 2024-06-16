@@ -1,11 +1,11 @@
 ﻿#include "stdafx.h"
 #include "TunerBankCtrl.h"
 #include "../../Common/EpgTimerUtil.h"
-#include "../../Common/IniUtil.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
 #ifdef _WIN32
+#include "../../Common/IniUtil.h"
 #include <tlhelp32.h>
 #else
 #include <signal.h>
@@ -235,15 +235,25 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 
 	CWatchBlock watchBlock(&this->watchContext);
 	CSendCtrlCmd ctrlCmd;
+	DWORD getStatus = CMD_ERR;
 	if( this->tunerPid ){
 		//チューナ起動時にはこれを再度呼ぶこと
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+
+		//チューナが対応していれば現在の状態、BonDriver、時計の誤差などをまとめて取得する
+		if( this->getStatusDetailsNonSupport ){
+			getStatus = CMD_NON_SUPPORT;
+		}else{
+			getStatus = ctrlCmd.SendViewGetStatusDetails(
+				(this->specialState == TR_EPGCAP ? VIEW_APP_FLAG_GET_STATUS : 0) | VIEW_APP_FLAG_GET_BONDRIVER |
+				(this->specialState != TR_NWTV ? VIEW_APP_FLAG_GET_DELAY : 0), &this->statusInfo);
+			this->getStatusDetailsNonSupport = getStatus == CMD_NON_SUPPORT;
+		}
 	}
 
 	if( this->specialState == TR_EPGCAP ){
-		DWORD status;
-		if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS ){
-			if( status != VIEW_APP_ST_GET_EPG ){
+		if( (getStatus == CMD_NON_SUPPORT ? ctrlCmd.SendViewGetStatus(&this->statusInfo.status) : getStatus) == CMD_SUCCESS ){
+			if( this->statusInfo.status != VIEW_APP_ST_GET_EPG ){
 				//取得終わった
 				AddDebugLog(L"epg end");
 				CloseTuner();
@@ -258,9 +268,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	}else if( this->specialState == TR_NWTV ){
 		//ネットワークモードではGUIキープできないのでBonDriverが変更されるかもしれない
 		//BonDriverが変更されたチューナはこのバンクの管理下に置けないので、ネットワークモードを解除する
-		wstring bonDriver;
-		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
-		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
+		if( (getStatus == CMD_NON_SUPPORT ? ctrlCmd.SendViewGetBonDrivere(&this->statusInfo.bonDriver) : getStatus) == CMD_SUCCESS &&
+		    UtilComparePath(this->statusInfo.bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
 				lock_recursive_mutex lock(this->watchContext.lock);
 #ifdef _WIN32
@@ -278,9 +287,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		}
 	}else if( this->tunerPid && this->tunerChLocked == false ){
 		//GUIキープされていないのでBonDriverが変更されるかもしれない
-		wstring bonDriver;
-		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS &&
-		    UtilComparePath(bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
+		if( (getStatus == CMD_NON_SUPPORT ? ctrlCmd.SendViewGetBonDrivere(&this->statusInfo.bonDriver) : getStatus) == CMD_SUCCESS &&
+		    UtilComparePath(this->statusInfo.bonDriver.c_str(), this->bonFileName.c_str()) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
 				lock_recursive_mutex lock(this->watchContext.lock);
 #ifdef _WIN32
@@ -310,13 +318,12 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	this->epgCapDelayTime = 0;
 	if( this->tunerPid && this->specialState != TR_NWTV ){
 		//PC時計との誤差取得
-		int delaySec;
-		if( ctrlCmd.SendViewGetDelay(&delaySec) == CMD_SUCCESS ){
+		if( (getStatus == CMD_NON_SUPPORT ? ctrlCmd.SendViewGetDelay(&this->statusInfo.delaySec) : getStatus) == CMD_SUCCESS ){
 			//誤った値を掴んでおかしなことにならないよう、EPG取得中の値は状態遷移の参考にしない
 			if( this->specialState == TR_EPGCAP ){
-				this->epgCapDelayTime = delaySec * I64_1SEC;
+				this->epgCapDelayTime = this->statusInfo.delaySec * I64_1SEC;
 			}else{
-				this->delayTime = delaySec * I64_1SEC;
+				this->delayTime = this->statusInfo.delaySec * I64_1SEC;
 			}
 		}
 	}
@@ -821,21 +828,17 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	if( itr != this->chMap.end() ){
 		serviceName = itr->second.serviceName;
 	}
-	string outText;
-	if( this->saveProgramInfoAsUtf8 ){
-		WtoUTF8(ConvertProgramText(info, serviceName), outText);
-	}else{
-		WtoA(ConvertProgramText(info, serviceName), outText);
+	wstring outTextW = (append ? L"\r\n-----------------------\r\n" : this->saveProgramInfoAsUtf8 ? L"\xFEFF" : L"") +
+	                   ConvertProgramText(info, serviceName);
+	if( UTIL_NEWLINE[0] != L'\r' ){
+		Replace(outTextW, L"\r\n", L"\n");
 	}
+	string outText;
+	WtoA(outTextW, outText, this->saveProgramInfoAsUtf8 ? UTIL_CONV_UTF8 : UTIL_CONV_DEFAULT);
 
 	//※原作と異なりディレクトリの自動生成はしない
-	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(savePath, append ? UTIL_O_CREAT_APPEND : UTIL_SECURE_WRITE), fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(savePath, append ? UTIL_O_CREAT_APPEND : UTIL_SECURE_WRITE));
 	if( fp ){
-		if( append ){
-			fputs("\r\n-----------------------\r\n", fp.get());
-		}else if( this->saveProgramInfoAsUtf8 ){
-			fputs("\xEF\xBB\xBF", fp.get());
-		}
 		fputs(outText.c_str(), fp.get());
 	}
 }
@@ -940,6 +943,25 @@ CTunerBankCtrl::TR_STATE CTunerBankCtrl::GetState() const
 		}
 	}
 	return state;
+}
+
+TUNER_PROCESS_STATUS_INFO CTunerBankCtrl::GetProcessStatusInfo() const
+{
+	TUNER_PROCESS_STATUS_INFO info;
+	info.tunerID = this->tunerID;
+	info.processID = this->tunerPid;
+	info.drop = this->statusInfo.drop;
+	info.scramble = this->statusInfo.scramble;
+	info.signalLv = this->statusInfo.signalLv;
+	info.space = this->statusInfo.space;
+	info.ch = this->statusInfo.ch;
+	info.originalNetworkID = this->statusInfo.originalNetworkID;
+	info.transportStreamID = this->statusInfo.transportStreamID;
+	TR_STATE state = GetState();
+	info.recFlag = state == TR_REC;
+	info.epgCapFlag = state == TR_EPGCAP;
+	info.extraFlags = 0;
+	return info;
 }
 
 LONGLONG CTunerBankCtrl::GetNearestReserveTime() const
@@ -1088,15 +1110,19 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		return false;
 	}
 	fs_path commonIniPath = GetCommonIniPath();
-	fs_path strIni = fs_path(commonIniPath).replace_filename(L"ViewApp.ini");
 
 	wstring strExecute = GetPrivateProfileToString(L"SET", L"RecExePath", L"", commonIniPath.c_str());
 	if( strExecute.empty() ){
-		strExecute = GetModulePath().replace_filename(L"EpgDataCap_Bon.exe").native();
+		strExecute = GetModulePath().replace_filename(L"EpgDataCap_Bon"
+#ifdef _WIN32
+			L".exe"
+#endif
+			).native();
 	}
 
+#ifdef _WIN32
 	//セクション単位で処理するほうが軽い
-	vector<WCHAR> buffOpt = GetPrivateProfileSectionBuffer(L"APP_CMD_OPT", strIni.c_str());
+	vector<WCHAR> buffOpt = GetPrivateProfileSectionBuffer(L"APP_CMD_OPT", fs_path(commonIniPath).replace_filename(L"ViewApp.ini").c_str());
 
 	wstring strParam = L" " + GetBufferedProfileToString(buffOpt.data(), L"Bon", L"-d") + L" " + this->bonFileName;
 
@@ -1112,9 +1138,29 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		strParam += nwUdp ? L" -nwudp" : L"";
 		strParam += nwTcp ? L" -nwtcp" : L"";
 	}
+#else
+	string strParam;
+	WtoUTF8(this->bonFileName, strParam);
+	//パラメーターは固定。NUL文字区切りなので注意
+	strParam.insert(0, "-d", 3);
+	size_t replaceSpaceToNulPos = strParam.size();
+	if( minWake ){
+		strParam += " -min";
+	}
+	if( noView ){
+		strParam += " -noview";
+	}
+	if( nwUdp == false && nwTcp == false ){
+		strParam += " -nonw";
+	}else{
+		strParam += nwUdp ? " -nwudp" : "";
+		strParam += nwTcp ? " -nwtcp" : "";
+	}
+#endif
 
 	if( initCh && initCh->useSID ){
 		//チャンネルの初期値を指定しておく(あくまで補助的なもの)
+#ifdef _WIN32
 		wstring optONID = GetBufferedProfileToString(buffOpt.data(), L"ONID", L"-nid");
 		wstring optTSID = GetBufferedProfileToString(buffOpt.data(), L"TSID", L"-tsid");
 		wstring optSID = GetBufferedProfileToString(buffOpt.data(), L"SID", L"-sid");
@@ -1123,6 +1169,11 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 			Format(ch, L" %ls %d %ls %d %ls %d", optONID.c_str(), initCh->ONID, optTSID.c_str(), initCh->TSID, optSID.c_str(), initCh->SID);
 			strParam += ch;
 		}
+#else
+		char ch[64];
+		sprintf_s(ch, " -nid %d -tsid %d -sid %d", initCh->ONID, initCh->TSID, initCh->SID);
+		strParam += ch;
+#endif
 	}
 
 	//原作と異なりイベントオブジェクト"Global\\EpgTimerSrv_OpenTuner_Event"による排他制御はしない
@@ -1165,25 +1216,22 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 #else
 	string execU;
 	WtoUTF8(strExecute, execU);
-	string paramU;
-	WtoUTF8(strParam, paramU);
 	vector<char*> argv;
 	argv.push_back((char*)execU.c_str());
-	for( size_t i = 0; i < paramU.size(); ){
-		//単純に空白で分離
-		size_t j = paramU.find(' ', i);
-		if( i != j ){
-			argv.push_back((char*)(paramU.c_str() + i));
-			i = j;
-		}
-		if( i != string::npos ){
-			paramU[i++] = '\0';
-		}
+	std::replace(strParam.begin() + replaceSpaceToNulPos, strParam.end(), ' ', '\0');
+	//NUL文字で分離
+	for( size_t i = 0; i < strParam.size(); i += strlen(strParam.c_str() + i) + 1 ){
+		argv.push_back((char*)(strParam.c_str() + i));
 	}
 	argv.push_back(NULL);
 	pid_t pid = fork();
 	if( pid == 0 ){
-		execv(execU.c_str(), argv.data());
+		//シグナルマスクを初期化
+		sigset_t sset;
+		sigemptyset(&sset);
+		if( sigprocmask(SIG_SETMASK, &sset, NULL) == 0 ){
+			execv(execU.c_str(), argv.data());
+		}
 		exit(EXIT_FAILURE);
 	}else if( pid != -1 ){
 		this->tunerPid = (DWORD)pid;
@@ -1223,16 +1271,29 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 						ctrlCmd.SendViewExecViewApp();
 					}
 				}
+				VIEW_APP_STATUS_INFO info = {};
+				info.space = -1;
+				info.ch = -1;
+				info.originalNetworkID = -1;
+				info.transportStreamID = -1;
+				info.appID = -1;
+				this->statusInfo = info;
+				this->getStatusDetailsNonSupport = false;
 				return true;
 			}
 		}
 #ifdef _WIN32
 		TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
+		CloseHandle(this->hTunerProcess);
 #else
 		kill(this->tunerPid, 9);
+		//ゾンビの回収に1秒だけ使う
+		for( int timeout = 1000; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+			SleepForMsec(10);
+		}
 #endif
+		this->tunerPid = 0;
 		AddDebugLogFormat(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x", L"OpenTuner()", this->tunerID);
-		CloseTuner();
 	}
 	return false;
 }
@@ -1254,13 +1315,16 @@ void CTunerBankCtrl::CloseTuner()
 				//ぶち殺す
 				TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
 #else
-			int timeout = 30000;
-			for( ; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+			bool killed = false;
+			for( int timeout = 30000; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+				if( killed == false && timeout < 1000 ){
+					//ぶち殺す。ゾンビの回収に1秒だけ使う
+					kill(this->tunerPid, 9);
+					killed = true;
+				}
 				SleepForMsec(10);
 			}
-			if( timeout <= 0 ){
-				//ぶち殺す
-				kill(this->tunerPid, 9);
+			if( killed ){
 #endif
 				AddDebugLogFormat(L"CTunerBankCtrl::%ls: Terminated TunerID=0x%08x", L"CloseTuner()", this->tunerID);
 			}
@@ -1358,7 +1422,14 @@ wstring CTunerBankCtrl::ConvertRecName(
 {
 	wstring ret;
 	if( recNamePlugIn[0] ){
-		wstring plugInPath = GetModulePath().replace_filename(L"RecName").native() + fs_path::preferred_separator;
+		wstring plugInPath =
+#ifdef EDCB_LIB_ROOT
+			fs_path(EDCB_LIB_ROOT)
+#else
+			GetModulePath().replace_filename(L"RecName")
+#endif
+			.append(L"a").native();
+		plugInPath.erase(plugInPath.size() - 1);
 		PLUGIN_RESERVE_INFO info;
 		info.startTime = startTime;
 		info.durationSec = durationSec;
@@ -1392,7 +1463,15 @@ wstring CTunerBankCtrl::ConvertRecName(
 	}
 	if( ret.empty() ){
 		const SYSTEMTIME& st = startTimeForDefault;
-		Format(ret, L"%04d%02d%02d%02d%02d%02X%02X%02d-%.159ls%ls",
+		Format(ret, L"%04d%02d%02d%02d%02d%02X%02X%02d-"
+#ifdef _WIN32
+		            //パス全体の制限もあるのでNTFSの制限よりやや小さい長さ
+		            L"%.159ls"
+#else
+		            //84文字制限から日付拡張子等のUTF-8換算長を引いた長さ
+		            L"%.74ls"
+#endif
+		            L"%ls",
 		       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, tunerID >> 16, tunerID & 0xFFFF, ctrlID, eventName, ext);
 		CheckFileName(ret);
 	}

@@ -9,6 +9,8 @@
 #include <shellapi.h>
 #include <commctrl.h>
 
+#define EPG_TIMER_SERVICE_EXE L"EpgTimerSrv.exe"
+
 namespace
 {
 enum {

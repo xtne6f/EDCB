@@ -17,12 +17,12 @@ BROWSE_DIR={
 --Hostヘッダがないときに使うこのPCのホスト名。LAN内のIPアドレスやドメイン名を指定する
 HOSTNAME='127.0.0.1'
 
-dirSep=mg.document_root:match('/') or '\\'
+dirSep=package.config:match('^/') or '\\'
 
 function GetUpdateID(d)
   --自分とサブディレクトリの中で最新の更新日時を調べる
   local updateID=1
-  for i,v in ipairs(edcb.FindFile(mg.document_root..(d.dir..(d.sub and '/*' or '')):gsub('/',dirSep),10000) or {}) do
+  for i,v in ipairs(edcb.FindFile(mg.document_root:gsub('/+$','')..(d.dir..(d.sub and '/*' or '')):gsub('/',dirSep),10000) or {}) do
     if v.isdir and v.name~='..' then
       updateID=math.max(updateID,os.time(v.mtime) or 1)
     end
@@ -109,14 +109,14 @@ if post then
           res={}
           num={0,0}
           edcb.htmlEscape=0
-          ff=edcb.FindFile(mg.document_root..(BROWSE_DIR[dirID].dir..'/*'):gsub('/',dirSep),10000) or {}
+          ff=edcb.FindFile(mg.document_root:gsub('/+$','')..(BROWSE_DIR[dirID].dir..'/*'):gsub('/',dirSep),10000) or {}
           table.sort(ff,function(a,b) return a.name<b.name end)
           for i,v in ipairs(ff) do
             ff={v}
             if BROWSE_DIR[dirID].sub and v.isdir and v.name~='.' and v.name~='..' then
               --1階層だけサブディレクトリも見る
               edcb.htmlEscape=0
-              ff=edcb.FindFile(mg.document_root..(BROWSE_DIR[dirID].dir..'/'..v.name..'/*'):gsub('/',dirSep),10000) or {}
+              ff=edcb.FindFile(mg.document_root:gsub('/+$','')..(BROWSE_DIR[dirID].dir..'/'..v.name..'/*'):gsub('/',dirSep),10000) or {}
               table.sort(ff,function(a,b) return a.name<b.name end)
             end
             for j,w in ipairs(ff) do

@@ -4,12 +4,14 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SetDlgApp.h"
+#include "../../Common/PathUtil.h"
 
 
 // CSetDlgApp ダイアログ
 
 CSetDlgApp::CSetDlgApp()
 	: m_hWnd(NULL)
+	, m_setting(NULL)
 {
 
 }
@@ -18,8 +20,9 @@ CSetDlgApp::~CSetDlgApp()
 {
 }
 
-BOOL CSetDlgApp::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
+BOOL CSetDlgApp::Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting)
 {
+	m_setting = &setting;
 	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
 
@@ -30,27 +33,23 @@ BOOL CSetDlgApp::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 BOOL CSetDlgApp::OnInitDialog()
 {
 	// TODO:  ここに初期化を追加してください
-	fs_path appIniPath = GetModuleIniPath();
+	Button_SetCheck(GetDlgItem(IDC_CHECK_ALL_SERVICE), m_setting->allService);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_ENABLE_DECODE), m_setting->scramble);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_EMM), m_setting->emm);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_NEED_CAPTION), m_setting->enableCaption);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_NEED_DATA), m_setting->enableData);
 
-	Button_SetCheck(GetDlgItem(IDC_CHECK_ALL_SERVICE), GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()));
-	Button_SetCheck(GetDlgItem(IDC_CHECK_ENABLE_DECODE), GetPrivateProfileInt(L"SET", L"Scramble", 1, appIniPath.c_str()));
-	Button_SetCheck(GetDlgItem(IDC_CHECK_EMM), GetPrivateProfileInt(L"SET", L"EMM", 0, appIniPath.c_str()));
-	Button_SetCheck(GetDlgItem(IDC_CHECK_NEED_CAPTION), GetPrivateProfileInt(L"SET", L"Caption", 1, appIniPath.c_str()));
-	Button_SetCheck(GetDlgItem(IDC_CHECK_NEED_DATA), GetPrivateProfileInt(L"SET", L"Data", 0, appIniPath.c_str()));
-
-	SetDlgItemText(m_hWnd, IDC_EDIT_REC_FILENAME,
-		GetPrivateProfileToString(L"SET", L"RecFileName", L"$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts", appIniPath.c_str()).c_str());
-	Button_SetCheck(GetDlgItem(IDC_CHECK_OVER_WRITE), GetPrivateProfileInt(L"SET", L"OverWrite", 0, appIniPath.c_str()));
-	Button_SetCheck(GetDlgItem(IDC_CHECK_OPENLAST), GetPrivateProfileInt(L"SET", L"OpenLast", 1, appIniPath.c_str()));
-	SetDlgItemInt(m_hWnd, IDC_EDIT_DROP_SAVE_THRESH, GetPrivateProfileInt(L"SET", L"DropSaveThresh", 0, appIniPath.c_str()), TRUE);
-	SetDlgItemInt(m_hWnd, IDC_EDIT_SCRAMBLE_SAVE_THRESH, GetPrivateProfileInt(L"SET", L"ScrambleSaveThresh", -1, appIniPath.c_str()), TRUE);
-	Button_SetCheck(GetDlgItem(IDC_CHECK_NO_LOG_SCRAMBLE), GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, appIniPath.c_str()));
-	Button_SetCheck(GetDlgItem(IDC_CHECK_DROP_LOG_AS_UTF8), GetPrivateProfileInt(L"SET", L"DropLogAsUtf8", 0, appIniPath.c_str()));
-	Button_SetCheck(GetDlgItem(IDC_CHECK_SAVE_DEBUG_LOG), GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, appIniPath.c_str()));
-	Button_SetCheck(GetDlgItem(IDC_CHECK_TRACE_BON_LEVEL), GetPrivateProfileInt(L"SET", L"TraceBonDriverLevel", 0, appIniPath.c_str()) != 0);
-	SetDlgItemInt(m_hWnd, IDC_EDIT_TS_BUFF_MAX, GetPrivateProfileInt(L"SET", L"TsBuffMaxCount", 5000, appIniPath.c_str()), FALSE);
-	int buffMax = GetPrivateProfileInt(L"SET", L"WriteBuffMaxCount", -1, appIniPath.c_str());
-	SetDlgItemInt(m_hWnd, IDC_EDIT_WRITE_BUFF_MAX, buffMax < 0 ? 0 : buffMax, FALSE);
+	SetDlgItemText(m_hWnd, IDC_EDIT_REC_FILENAME, m_setting->recFileName.c_str());
+	Button_SetCheck(GetDlgItem(IDC_CHECK_OVER_WRITE), m_setting->overWrite);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_OPENLAST), m_setting->openLast);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_DROP_SAVE_THRESH, m_setting->dropSaveThresh, TRUE);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_SCRAMBLE_SAVE_THRESH, m_setting->scrambleSaveThresh, TRUE);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_NO_LOG_SCRAMBLE), m_setting->noLogScramble);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_DROP_LOG_AS_UTF8), m_setting->dropLogAsUtf8);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_SAVE_DEBUG_LOG), m_setting->saveDebugLog);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_TRACE_BON_LEVEL), m_setting->traceBonDriverLevel != 0);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_TS_BUFF_MAX, m_setting->tsBuffMaxCount, FALSE);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_WRITE_BUFF_MAX, m_setting->writeBuffMaxCount < 0 ? 0 : m_setting->writeBuffMaxCount, FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。

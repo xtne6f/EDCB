@@ -4,8 +4,7 @@ dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML]=]..(vtag<=0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
+ct:Append((vtag<=0 and DOCTYPE_HTML4_STRICT or '<!DOCTYPE html>\n')..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -158,4 +157,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

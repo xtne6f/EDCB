@@ -2,12 +2,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#if !defined(_IBONDRIVER_H_)
-#define _IBONDRIVER_H_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 
 // 凡ドライバインタフェース
@@ -98,5 +93,3 @@ protected:
 // インスタンス生成メソッド
 //extern "C" __declspec(dllimport) IBonDriver * CreateBonDriver();
 //extern "C" __declspec(dllimport) const STRUCT_IBONDRIVER * CreateBonStruct();
-
-#endif // !defined(_IBONDRIVER_H_)

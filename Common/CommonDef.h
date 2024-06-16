@@ -16,8 +16,6 @@
 #define EPG_AUTO_ADD_TEXT_NAME L"EpgAutoAdd.txt"
 #define MANUAL_AUTO_ADD_TEXT_NAME L"ManualAutoAdd.txt"
 
-#define EPG_TIMER_SERVICE_EXE L"EpgTimerSrv.exe"
-
 #define EPG_TIMER_BON_SRV_MUTEX L"EpgTimer_Bon_Service"
 #define SERVICE_NAME L"EpgTimer Service"
 
@@ -52,6 +50,11 @@
 #define VIEW_APP_ST_GET_EPG				3 //EPG取得状態
 #define VIEW_APP_ST_ERR_CH_CHG			4 //チャンネル切り替え失敗状態
 
+//Viewアプリの取得すべき情報のフラグ
+#define VIEW_APP_FLAG_GET_STATUS	0x01	//statusフィールドを取得する
+#define VIEW_APP_FLAG_GET_DELAY		0x02	//delaySecフィールドを取得する
+#define VIEW_APP_FLAG_GET_BONDRIVER	0x04	//bonDriverフィールドを取得する
+
 //NotifyID
 #define NOTIFY_UPDATE_EPGDATA		1		//EPGデータが更新された
 #define NOTIFY_UPDATE_RESERVE_INFO	2		//予約情報が更新された
@@ -71,5 +74,8 @@
 
 //WM_COPYDATAの型
 #define COPYDATA_TYPE_LUAPOST 0x45544C50 //Luaスクリプト実行をプロセスに要求する(完了を待たない)
+
+//Luaスクリプト受け取り用FIFOファイル名
+#define LUAPOST_FIFO L"EpgTimerSrvLuaPost.fifo"
 
 #endif

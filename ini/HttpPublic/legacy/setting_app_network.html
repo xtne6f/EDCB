@@ -1,0 +1,171 @@
+-- vim:set ft=lua:
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>設定/ネットワーク設定 - EDCB</title>
+</head>
+<body>
+<h1>設定/ネットワーク設定</h1>
+<div id="main">
+]=])
+
+appIni='EpgDataCap_Bon.ini'
+function GetItemList(tcp)
+  local count=tonumber(edcb.GetPrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','Count',0,appIni)) or 0
+  local ret={}
+  for i=1,count do
+    local ip=edcb.GetPrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','IP'..(i-1),2130706433,appIni)
+    if ip:find('^%[.') then
+      ip=ip:match('^%[(.*).$')
+    else
+      --IPv4
+      ip=tonumber(ip) or 0
+      ip=(ip<0 and 0x100000000 or 0)+ip
+      ip=(math.floor(ip/256/256/256)%256)..'.'..(math.floor(ip/256/256)%256)..'.'..(math.floor(ip/256)%256)..'.'..(ip%256)
+    end
+    ret[i]={
+      ip=ip,
+      port=tonumber(edcb.GetPrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','Port'..(i-1),not tcp and 1234 or ip~='0.0.0.1' and 2230 or 0,appIni)) or 0,
+      broadcast=not tcp and edcb.GetPrivateProfile('SET_UDP','BroadCast'..(i-1),0,appIni)~='0'
+    }
+  end
+  return ret
+end
+
+post=AssertPost()
+if post and not ALLOW_SETTING then
+  post=nil
+  ct:Append('<div id="result">変更は許可されていません</div>\n')
+end
+if post then
+  tcp=not not mg.get_var(post,'tcp')
+  itemList=GetItemList(tcp)
+  if mg.get_var(post,'add') then
+    ip=(mg.get_var(post,'specip') or ''):match('^.+$') or mg.get_var(post,'ip')
+    port=GetVarInt(post,'port',0)
+    --IPアドレスっぽくないものを弾く
+    if ip and port and ip:find('^[0-9A-Za-z%%.:]+$') and ip:find('[^%%.:]') and ip:find('[.:]') then
+      if ip=='0.0.0.1' then
+        --SrvPipeのPortは常に0
+        port=0
+      elseif ip=='0.0.0.2' and port>=100 then
+        --PipeのPortは基本的に0
+        port=0
+      end
+      broadcast=not tcp and GetVarInt(post,'broadcast')==1
+      for i,v in ipairs(itemList) do
+        if v.ip==ip and v.port%65536==port%65536 and v.broadcast==broadcast then
+          --既にある
+          ip=nil
+          break
+        end
+      end
+      if ip then
+        itemList[#itemList+1]={ip=ip,port=port,broadcast=broadcast}
+        ct:Append('<div id="result">追加しました</div>\n')
+      end
+    end
+  elseif mg.get_var(post,'del') then
+    index=GetVarInt(post,'index',1)
+    if index and index<=#itemList then
+      table.remove(itemList,index)
+      ct:Append('<div id="result">削除しました</div>\n')
+    end
+  end
+  for i,v in ipairs(itemList) do
+    ipA,ipB,ipC,ipD=v.ip:match('^([0-2]?[0-9]?[0-9])%.([0-2]?[0-9]?[0-9])%.([0-2]?[0-9]?[0-9])%.([0-2]?[0-9]?[0-9])$')
+    if ipA then
+      --IPv4。非負の整数に変換
+      ip=(tonumber(ipA) or 0)*256*256*256+(tonumber(ipB) or 0)*256*256+(tonumber(ipC) or 0)*256+(tonumber(ipD) or 0)
+      ip=math.floor(ip<0x100000000 and (ip>=0x80000000 and ip-0x100000000 or ip>0 and ip) or 0)
+    else
+      ip='['..v.ip..']'
+    end
+    edcb.WritePrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','IP'..(i-1),ip,appIni)
+    edcb.WritePrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','Port'..(i-1),v.port,appIni)
+    if not tcp then
+      edcb.WritePrivateProfile('SET_UDP','BroadCast'..(i-1),v.broadcast,appIni)
+    end
+  end
+  edcb.WritePrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','Count',#itemList,appIni)
+  for i=#itemList+1,999 do
+    --掃除
+    if edcb.GetPrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','IP'..(i-1),'',appIni)=='' then break end
+    edcb.WritePrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','IP'..(i-1),nil,appIni)
+    edcb.WritePrivateProfile(tcp and 'SET_TCP' or 'SET_UDP','Port'..(i-1),nil,appIni)
+    if not tcp then
+      edcb.WritePrivateProfile('SET_UDP','BroadCast'..(i-1),nil,appIni)
+    end
+  end
+end
+
+edcb.htmlEscape=15
+
+ct:Append([=[
+UDP送信先
+<div class="sub-setting">
+]=])
+
+for i,v in ipairs(GetItemList(false)) do
+  ct:Append([=[
+  <form method="POST" action="setting_app_network.html"><div>
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="del" value="y">
+    <input type="hidden" name="index" value="]=]..i..[=[">
+    <button type="submit">削除</button>]=]..v.ip..' Port '..v.port..('-')..(v.port+29)..(v.broadcast and ' (Broadcast)' or '')..[=[</div></form>
+  ]=])
+end
+ct:Append([=[
+  ※複数の起動があった場合、自動的にPortが+1されます。<br>
+  ※ブロードキャストとして送信する場合は、ブロードキャストアドレスを指定してください。<br>
+  ※仕様によりドロップすることがあるので、とくに理由がなければTCP送信の利用をお勧めします。
+  <form method="POST" action="setting_app_network.html"><div>
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="add" value="y">
+    <input type="text" name="ip" value="127.0.0.1" size="20">
+    Port <input type="text" name="port" value="1234" size="8">
+    <label><input name="broadcast" type="checkbox" value="1">ブロードキャスト</label>
+    <button type="submit">追加</button>
+  </div></form>
+</div>
+TCP送信先
+<div class="sub-setting">
+]=])
+
+for i,v in ipairs(GetItemList(true)) do
+  ct:Append([=[
+  <form method="POST" action="setting_app_network.html"><div>
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="tcp" value="y">
+    <input type="hidden" name="del" value="y">
+    <input type="hidden" name="index" value="]=]..i..[=[">
+    <button type="submit">削除</button>]=]..v.ip..' Port '..v.port..('-')..(v.port+29)..(v.ip=='0.0.0.1' and ' (SrvPipe)' or v.ip=='0.0.0.2' and ' (Pipe)' or '')..[=[</div></form>
+]=])
+end
+ct:Append([=[
+  ※複数の起動があった場合、自動的にPortが+1されます。
+  <form method="POST" action="setting_app_network.html"><div>
+    <input type="hidden" name="ctok" value="]=]..CsrfToken()..[=[">
+    <input type="hidden" name="tcp" value="y">
+    <input type="hidden" name="add" value="y">
+    <select name="specip"><option value="" selected>TCP<option value="0.0.0.1">SrvPipe]=]..(WIN32 and '<option value="0.0.0.2">Pipe' or '')..[=[</select>
+    <input type="text" name="ip" value="127.0.0.1" size="20">
+    Port <input type="text" name="port" value="2230" size="8">
+    <button type="submit">追加</button>
+  </div></form>
+</div>
+</div>
+<div id="footer">
+  <a href="setting.html">設定メニュー</a>
+</div>
+</body>
+</html>
+]=])
+ct:Finish()
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

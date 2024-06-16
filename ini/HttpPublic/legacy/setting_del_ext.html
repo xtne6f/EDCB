@@ -2,8 +2,7 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -40,13 +39,13 @@ if post then
   item=mg.get_var(post,'ext') or ''
   if mg.get_var(post,'add') then
     for i,v in ipairs(itemList) do
-      if v:upper()==item:upper() then
+      if IsEqualPath(v,item) then
         --既にある
         item=nil
         break
       end
     end
-    if item and item:find('^[^%c/\\:*?"<>|]+$') then
+    if item and item:find('^[^%c/'..(WIN32 and '\\:*?"<>|' or '')..']+$') then
       itemList[#itemList+1]=item
       ct:Append('<div id="result">追加しました</div>\n')
     end
@@ -97,4 +96,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

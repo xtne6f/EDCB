@@ -7,7 +7,11 @@
 #include "../../Common/ErrDef.h"
 #include "../../Common/InstanceManager.h"
 
+#ifdef _WIN32
 #define DLL_EXPORT extern "C" __declspec(dllexport)
+#else
+#define DLL_EXPORT extern "C"
+#endif
 
 namespace
 {
@@ -481,5 +485,7 @@ void AddDebugLogNoNewline(const wchar_t* s)
 			g_debugLogProc(s);
 		}
 	}
+#ifdef _WIN32
 	OutputDebugString(s);
+#endif
 }

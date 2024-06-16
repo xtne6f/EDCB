@@ -3,11 +3,16 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
 #include <errno.h>
+#ifdef _WIN32
 #include <io.h>
+#else
+#include <fcntl.h>
+#include <poll.h>
+#include <signal.h>
+#include <unistd.h>
+#endif
 
 CWriteMain::CWriteMain(void)
-	: file(NULL, fclose)
-	, teeFile(NULL, fclose)
 {
 	this->writeBuffSize = 0;
 }
@@ -82,7 +87,11 @@ BOOL CWriteMain::Start(
 	//ディスクに容量を確保
 	if( createSize > 0 ){
 		if( my_fseek(this->file.get(), createSize, SEEK_SET) == 0 ){
+#ifdef _WIN32
 			SetEndOfFile((HANDLE)_get_osfhandle(_fileno(this->file.get())));
+#elif defined(FALLOC_FL_KEEP_SIZE)
+			fallocate(fileno(this->file.get()), FALLOC_FL_KEEP_SIZE, 0, createSize);
+#endif
 		}
 		rewind(this->file.get());
 	}
@@ -188,17 +197,22 @@ BOOL CWriteMain::Write(
 
 void CWriteMain::TruncateFile(FILE* fp)
 {
+#ifdef _WIN32
 	SetEndOfFile((HANDLE)_get_osfhandle(_fileno(fp)));
+#else
+	ftruncate(fileno(fp), ftello(fp));
+#endif
 }
 
 void CWriteMain::TeeThread(CWriteMain* sys)
 {
+	//カレントは"Common.ini"のあるフォルダ
+	fs_path currentDir = GetCommonIniPath().parent_path();
+
+#ifdef _WIN32
 	wstring cmd = sys->teeCmd;
 	Replace(cmd, L"$FilePath$", sys->savePath);
 	vector<WCHAR> cmdBuff(cmd.c_str(), cmd.c_str() + cmd.size() + 1);
-	//カレントは実行ファイルのあるフォルダ
-	fs_path currentDir = GetModulePath().parent_path();
-
 	HANDLE olEvents[] = { sys->teeThreadStopEvent.Handle(), CreateEvent(NULL, TRUE, FALSE, NULL) };
 	if( olEvents[1] ){
 		WCHAR pipeName[64];
@@ -261,7 +275,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 								break;
 							}
 						}else{
-							if( WaitForSingleObject(olEvents[0], 200) != WAIT_TIMEOUT ){
+							if( sys->teeThreadStopEvent.WaitOne(200) ){
 								//打ち切り
 								break;
 							}
@@ -276,4 +290,78 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 		}
 		CloseHandle(olEvents[1]);
 	}
+#else
+	string cmd;
+	WtoUTF8(sys->teeCmd, cmd);
+	string execDir;
+	WtoUTF8(currentDir.native(), execDir);
+	string filePath;
+	WtoUTF8(sys->savePath, filePath);
+
+	int fd[2];
+	if( pipe2(fd, O_CLOEXEC) == 0 ){
+		pid_t pid = fork();
+		if( pid == 0 ){
+			close(fd[1]);
+			if( fd[0] != STDIN_FILENO ){
+				dup2(fd[0], STDIN_FILENO);
+				close(fd[0]);
+			}
+			//シグナルマスクを初期化
+			sigset_t sset;
+			sigemptyset(&sset);
+			if( sigprocmask(SIG_SETMASK, &sset, NULL) == 0 && chdir(execDir.c_str()) == 0 ){
+				setenv("FilePath", filePath.c_str(), 0);
+				execl("/bin/sh", "sh", "-c", cmd.c_str(), NULL);
+			}
+			exit(EXIT_FAILURE);
+		}
+		close(fd[0]);
+		if( pid != -1 && fcntl(fd[1], F_SETFL, O_NONBLOCK) != -1 ){
+			for(;;){
+				LONGLONG readablePos;
+				{
+					lock_recursive_mutex lock(sys->wroteLock);
+					readablePos = sys->wrotePos - sys->teeDelay;
+				}
+				LONGLONG pos;
+				size_t n;
+				if( (pos = my_ftell(sys->teeFile.get())) >= 0 &&
+				    readablePos - pos >= (LONGLONG)sys->teeBuff.size() &&
+				    (n = fread(sys->teeBuff.data(), 1, sys->teeBuff.size(), sys->teeFile.get())) > 0 ){
+					size_t xferred = 0;
+					while( !sys->teeThreadStopEvent.WaitOne(0) && xferred < n ){
+						int ret = (int)write(fd[1], sys->teeBuff.data() + xferred, n - xferred);
+						if( ret < 0 ){
+							if( errno != EAGAIN && errno != EWOULDBLOCK ){
+								break;
+							}
+							pollfd pfds[2];
+							pfds[0].fd = sys->teeThreadStopEvent.Handle();
+							pfds[0].events = POLLIN;
+							pfds[1].fd = fd[1];
+							pfds[1].events = POLLOUT;
+							if( poll(pfds, 2, -1) < 0 && errno != EINTR ){
+								break;
+							}
+						}else{
+							xferred += ret;
+						}
+					}
+					if( xferred < n ){
+						//打ち切りまたは出力完了
+						break;
+					}
+				}else{
+					if( sys->teeThreadStopEvent.WaitOne(200) ){
+						//打ち切り
+						break;
+					}
+				}
+			}
+			//プロセスは回収しない(標準入力が閉じられた後にどうするかはプロセスの判断に任せる)
+		}
+		close(fd[1]);
+	}
+#endif
 }

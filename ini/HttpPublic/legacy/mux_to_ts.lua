@@ -41,11 +41,10 @@ if fpath and fpath:find('%.[Mm][Pp]4$') then
       break
     end
   end
-  -- コマンドはEDCBのToolsフォルダにあるものを優先する
-  tools=EdcbModulePath()..'\\Tools'
-  psisimux=(edcb.FindFile(tools..'\\psisimux.exe',1) and tools..'\\' or '')..'psisimux.exe'
+  psisimux=FindToolsCommand('psisimux')
   while true do
-    f=edcb.io.popen('""'..psisimux..'" -s '..(seek or 0)..' -r '..(range or -1)..' -p -8 -x .vtt -y .psc "'..fpath:gsub('[&%^]','^%0')..'" -"','rb')
+    cmd=psisimux..' -s '..(seek or 0)..' -r '..(range or -1)..' -p -8 -x .vtt -y .psc '..QuoteCommandArgForPath(fpath)..' -'
+    f=edcb.io.popen(WIN32 and '"'..cmd..'"' or cmd,'r'..POPEN_BINARY)
     if not f then break end
     buf=f:read(188)
     if not buf or #buf~=188 then
@@ -64,20 +63,19 @@ end
 
 if not f then
   ct=CreateContentBuilder()
-  ct:Append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
-    ..'<title>mux_to_ts.lua</title><p><a href="index.html">メニュー</a></p>')
+  ct:Append(DOCTYPE_HTML4_STRICT..'<title>mux_to_ts.lua</title><p><a href="index.html">メニュー</a></p>')
   ct:Finish()
   mg.write(ct:Pop(Response(404,'text/html','utf-8',ct.len)..'\r\n'))
 else
-  fname='mux_to_ts'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini'):lower()
+  fname='mux_to_ts'..edcb.GetPrivateProfile('SET','TSExt','.ts','EpgTimerSrv.ini')
   if fpos>=fsize then
     -- シーク範囲外
-    mg.write(Response(416,mg.get_mime_type(fname),nil,0,3600)
+    mg.write(Response(416,mg.get_mime_type(fname),nil,0,false,3600)
       ..'Content-Disposition: filename='..fname..'\r\nETag: "'..fsize..'"\r\nAccept-Ranges: bytes\r\n'
       ..'Content-Range: bytes */'..fsize..'\r\n\r\n')
   else
     cl=range and math.min(range,fsize-fpos) or fsize-fpos
-    mg.write(Response(seek and 206 or 200,mg.get_mime_type(fname),nil,cl,3600)
+    mg.write(Response(seek and 206 or 200,mg.get_mime_type(fname),nil,cl,false,3600)
       ..'Content-Disposition: filename='..fname..'\r\nETag: "'..fsize..'"\r\nAccept-Ranges: bytes\r\n'
       ..(seek and 'Content-Range: bytes '..fpos..'-'..(fpos+cl-1)..'/'..fsize..'\r\n' or '')..'\r\n')
     if mg.request_info.request_method~='HEAD' then

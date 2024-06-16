@@ -24,6 +24,10 @@ void Format(wstring& strBuff, PRINTF_FORMAT_SZ const WCHAR *format, ...)
 #else
 			//切り捨て以外のエラーでも-1が返る(無効なパラメーターハンドラはない)ので注意
 			int n = vswprintf(p, s, format, copyParams);
+			//切り捨てのみを区別できないので上限を設ける(微妙だがvswprintfの仕様上こうするしかない)
+			if( n < 0 && buff.size() >= 16 * 1024 * 1024 ){
+				std::terminate();
+			}
 #endif
 			va_end(copyParams);
 			if( n >= 0 ){
@@ -75,6 +79,9 @@ size_t WtoA(const WCHAR* in, size_t inLen, vector<char>& out, UTIL_CONV_CODE cod
 		out[n] = '\0';
 		return strlen(out.data());
 	}
+#else
+	//常にUTF-8
+	(void)code;
 #endif
 	//WideCharToMultiByte(CP_UTF8)と4bytes全数比較済み
 	//vector<char> c[2];
@@ -95,32 +102,17 @@ size_t WtoA(const WCHAR* in, size_t inLen, vector<char>& out, UTIL_CONV_CODE cod
 	for( size_t i = 0; i < inLen && in[i]; ){
 #if WCHAR_MAX > 0xFFFF
 		int x = in[i++];
-		if( x < 0 || 0x10000 <= x ){
-			if( 0x10000 <= x && x < 0x110000 ){
 #else
 		int x = (WORD)in[i++];
 		if( 0xD800 <= x && x < 0xE000 ){
 			if( x < 0xDC00 && inLen > i && 0xDC00 <= (WORD)in[i] && (WORD)in[i] < 0xE000 ){
 				x = 0x10000 + (x - 0xD800) * 0x400 + ((WORD)in[i++] - 0xDC00);
-#endif
-				out[n++] = (char)(0xF0 | x >> 18);
-				out[n++] = (char)(0x80 | (x >> 12 & 0x3F));
-				out[n++] = (char)(0x80 | (x >> 6 & 0x3F));
-				out[n++] = (char)(0x80 | (x & 0x3F));
-				continue;
+			}else{
+				x = 0xFFFD;
 			}
-			x = 0xFFFD;
 		}
-		if( x < 0x80 ){
-			out[n++] = (char)x;
-		}else if( x < 0x800 ){
-			out[n++] = (char)(0xC0 | x >> 6);
-			out[n++] = (char)(0x80 | (x & 0x3F));
-		}else{
-			out[n++] = (char)(0xE0 | x >> 12);
-			out[n++] = (char)(0x80 | (x >> 6 & 0x3F));
-			out[n++] = (char)(0x80 | (x & 0x3F));
-		}
+#endif
+		n += codepoint_to_utf8(x, &out[n]);
 	}
 	out[n] = '\0';
 	return n;
@@ -140,6 +132,9 @@ size_t AtoW(const char* in, size_t inLen, vector<WCHAR>& out, UTIL_CONV_CODE cod
 		out[n] = L'\0';
 		return wcslen(out.data());
 	}
+#else
+	//常にUTF-8
+	(void)code;
 #endif
 	//MultiByteToWideChar(CP_UTF8)と4bytes全数比較済み
 	//vector<WCHAR> w[2];

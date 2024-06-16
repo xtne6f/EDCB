@@ -76,8 +76,7 @@ end
 vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML]=]..(vtag<=0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
+ct:Append((vtag<=0 and DOCTYPE_HTML4_STRICT or '<!DOCTYPE html>\n')..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -124,7 +123,7 @@ if r then
     xlist={table.unpack(MEDIA_EXTENSION_LIST)}
     xlist[#xlist+1]=''
     for i,ext in ipairs(xlist) do
-      ff=edcb.FindFile(recFilePath..ext,1)
+      ff=EdcbFindFilePlain(recFilePath..ext)
       if ff then
         ct:Append((vtag==i and VideoWrapperBegin()
                      ..'<video id="vid" autoplay playsinline controls src="' or '<a href="')
@@ -156,7 +155,7 @@ if r then
             end
           end
         else
-          ct:Append(' ('..math.floor(ff[1].size/1048576)..'M)'
+          ct:Append(' ('..math.floor(ff.size/1048576)..'M)'
             ..(vtag==0 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref..ext)..'">Mux-to-TS</a>]' or '')..'<br>\n')
         end
       end
@@ -220,4 +219,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

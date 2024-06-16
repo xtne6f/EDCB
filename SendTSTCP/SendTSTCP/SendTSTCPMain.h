@@ -1,7 +1,11 @@
 ﻿#pragma once
 
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
+#endif
 #include <list>
 
 #include "../../Common/ThreadUtil.h"
@@ -60,30 +64,34 @@ protected:
 	CAutoResetEvent m_stopSendEvent;
 	thread_ m_sendThread;
 	recursive_mutex_ m_sendLock;
+#ifdef _WIN32
 	int m_wsaStartupResult;
+#endif
 	std::list<vector<BYTE>> m_TSBuff;
+	bool m_bSendingToSomeone;
 
 	struct SEND_INFO {
-		string strIP;
+		string strIP; //空のときUDP
+		struct sockaddr_storage udpAddr;
+		size_t udpAddrlen;
+		int udpMaxSendSize;
 		WORD port;
 		bool bSuppressHeader;
 		SOCKET sock;
+#ifdef _WIN32
 		HANDLE pipe[2];
 		HANDLE olEvent[2];
 		OVERLAPPED ol[2];
-		bool bConnect[2];
 		bool bPipeWriting[2];
+#else
+		int pipe[2];
+		string strPipe[2];
+		DWORD wroteBytes[2];
+#endif
+		bool bConnect[2];
 		DWORD writeAheadCount[2];
 	};
 	std::list<SEND_INFO> m_SendList;
-
-	struct SOCKET_DATA {
-		SOCKET sock;
-		struct sockaddr_storage addr;
-		size_t addrlen;
-		int maxSendSize;
-	};
-	vector<SOCKET_DATA> m_udpSockList;
 
 protected:
 	static void SendThread(CSendTSTCPMain* pSys);

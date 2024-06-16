@@ -154,33 +154,35 @@ public:
 	bool WaitOne(DWORD timeout = 0xFFFFFFFF) { return WaitForSingleObject(m_h, timeout) == WAIT_OBJECT_0; }
 #else
 	CAutoResetEvent(bool initialState = false) {
-		m_efd = eventfd(initialState, EFD_CLOEXEC);
+		m_efd = eventfd(initialState, EFD_CLOEXEC | EFD_NONBLOCK);
 		if (m_efd == -1) throw std::runtime_error("");
 	}
 	~CAutoResetEvent() { close(m_efd); }
 	void Set() {
 		LONGLONG n = 1;
-		if (write(m_efd, &n, sizeof(n)) != sizeof(n)) throw std::runtime_error("");
+		while (write(m_efd, &n, sizeof(n)) < 0) {
+			if (errno != EAGAIN) throw std::runtime_error("");
+		}
 	}
 	void Reset() { WaitOne(0); }
 	int Handle() { return m_efd; }
 	bool WaitOne(DWORD timeout = 0xFFFFFFFF) {
 		LONGLONG n;
-		if (timeout >= 0x80000000) {
-			while (read(m_efd, &n, sizeof(n)) < 0) {
-				if (errno != EINTR) throw std::runtime_error("");
+		while (read(m_efd, &n, sizeof(n)) < 0) {
+			if (errno != EAGAIN) throw std::runtime_error("");
+			if (!timeout) return false;
+			pollfd pfd;
+			pfd.fd = m_efd;
+			pfd.events = POLLIN;
+			if (poll(&pfd, 1, timeout < 0x80000000 ? (int)timeout : -1) < 0 && errno != EINTR) {
+				throw std::runtime_error("");
 			}
-			return true;
+			if (timeout < 0x80000000) {
+				// シグナル発生時や競合時はtimeoutよりも早くタイムアウトするので注意
+				timeout = 0;
+			}
 		}
-		pollfd pfd;
-		pfd.fd = m_efd;
-		pfd.events = POLLIN;
-		if (poll(&pfd, 1, (int)timeout) > 0 && (pfd.revents & POLLIN)) {
-			if (read(m_efd, &n, sizeof(n)) != sizeof(n)) throw std::runtime_error("");
-			return true;
-		}
-		// シグナル発生時はtimeoutよりも早くタイムアウトするので注意
-		return false;
+		return true;
 	}
 #endif
 private:

@@ -2,12 +2,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#if !defined(_IBONDRIVER2_H_)
-#define _IBONDRIVER2_H_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 
 #include "IBonDriver.h"
@@ -17,12 +12,18 @@
 class IBonDriver2 : public IBonDriver
 {
 public:
-	virtual LPCTSTR GetTunerName(void) = 0;
+#if WCHAR_MAX > 0xFFFF
+	typedef WORD BON16CHAR;
+#else
+	typedef WCHAR BON16CHAR;
+#endif
+
+	virtual const BON16CHAR* GetTunerName(void) = 0;
 
 	virtual const BOOL IsTunerOpening(void) = 0;
 	
-	virtual LPCTSTR EnumTuningSpace(const DWORD dwSpace) = 0;
-	virtual LPCTSTR EnumChannelName(const DWORD dwSpace, const DWORD dwChannel) = 0;
+	virtual const BON16CHAR* EnumTuningSpace(const DWORD dwSpace) = 0;
+	virtual const BON16CHAR* EnumChannelName(const DWORD dwSpace, const DWORD dwChannel) = 0;
 
 	virtual const BOOL SetChannel(const DWORD dwSpace, const DWORD dwChannel) = 0;
 	
@@ -37,10 +38,10 @@ public:
 struct STRUCT_IBONDRIVER2
 {
 	STRUCT_IBONDRIVER st;
-	LPCTSTR (*pF10)(void *);
+	const IBonDriver2::BON16CHAR* (*pF10)(void *);
 	BOOL (*pF11)(void *);
-	LPCTSTR (*pF12)(void *, DWORD);
-	LPCTSTR (*pF13)(void *, DWORD, DWORD);
+	const IBonDriver2::BON16CHAR* (*pF12)(void *, DWORD);
+	const IBonDriver2::BON16CHAR* (*pF13)(void *, DWORD, DWORD);
 	BOOL (*pF14)(void *, DWORD, DWORD);
 	DWORD (*pF15)(void *);
 	DWORD (*pF16)(void *);
@@ -54,20 +55,20 @@ struct STRUCT_IBONDRIVER2
 		pF16 = F16;
 		return st.Initialize(pBon2, pEnd ? pEnd : this + 1);
 	}
-	static LPCTSTR F10(void *p) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->GetTunerName(); }
+	static const IBonDriver2::BON16CHAR* F10(void *p) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->GetTunerName(); }
 	static BOOL F11(void *p) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->IsTunerOpening(); }
-	static LPCTSTR F12(void *p, DWORD a0) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->EnumTuningSpace(a0); }
-	static LPCTSTR F13(void *p, DWORD a0, DWORD a1) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->EnumChannelName(a0, a1); }
+	static const IBonDriver2::BON16CHAR* F12(void *p, DWORD a0) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->EnumTuningSpace(a0); }
+	static const IBonDriver2::BON16CHAR* F13(void *p, DWORD a0, DWORD a1) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->EnumChannelName(a0, a1); }
 	static BOOL F14(void *p, DWORD a0, DWORD a1) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->SetChannel(a0, a1); }
 	static DWORD F15(void *p) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->GetCurSpace(); }
 	static DWORD F16(void *p) { return static_cast<IBonDriver2 *>(static_cast<IBonDriver *>(p))->GetCurChannel(); }
 };
 
 #define DEFINE_BON_STRUCT2_ADAPTER(st, p) \
-	LPCTSTR GetTunerName() { return st.pF10(p); } \
+	const BON16CHAR* GetTunerName() { return st.pF10(p); } \
 	const BOOL IsTunerOpening() { return st.pF11(p); } \
-	LPCTSTR EnumTuningSpace(const DWORD dwSpace) { return st.pF12(p, dwSpace); } \
-	LPCTSTR EnumChannelName(const DWORD dwSpace, const DWORD dwChannel) { return st.pF13(p, dwSpace, dwChannel); } \
+	const BON16CHAR* EnumTuningSpace(const DWORD dwSpace) { return st.pF12(p, dwSpace); } \
+	const BON16CHAR* EnumChannelName(const DWORD dwSpace, const DWORD dwChannel) { return st.pF13(p, dwSpace, dwChannel); } \
 	const BOOL SetChannel(const DWORD dwSpace, const DWORD dwChannel) { return st.pF14(p, dwSpace, dwChannel); } \
 	const DWORD GetCurSpace() { return st.pF15(p); } \
 	const DWORD GetCurChannel() { return st.pF16(p); }
@@ -88,5 +89,3 @@ public:
 protected:
 	STRUCT_IBONDRIVER2 st2;
 };
-
-#endif // !defined(_IBONDRIVER2_H_)

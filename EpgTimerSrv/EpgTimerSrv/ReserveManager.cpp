@@ -157,6 +157,19 @@ vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 	return list;
 }
 
+vector<TUNER_PROCESS_STATUS_INFO> CReserveManager::GetTunerProcessStatusAll() const
+{
+	lock_recursive_mutex lock(this->managerLock);
+
+	vector<TUNER_PROCESS_STATUS_INFO> list;
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetState() != CTunerBankCtrl::TR_IDLE ){
+			list.push_back(itr->second->GetProcessStatusInfo());
+		}
+	}
+	return list;
+}
+
 vector<DWORD> CReserveManager::GetNoTunerReserveAll() const
 {
 	lock_recursive_mutex lock(this->managerLock);
@@ -636,9 +649,9 @@ void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 						CHK_RESERVE_DATA item;
 						CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
 						item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
-						item.startOrder = abs(itr->first) & 0x07FFFFFFFFFFFFFF;
+						item.startOrder = llabs(itr->first) & 0x07FFFFFFFFFFFFFF;
 						//チューナ固定優先ビットを除去
-						item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
+						item.effectivePriority = (itr->first < 0 ? -1 : 1) * (llabs(itr->first) & 0x77FFFFFFFFFFFFFF);
 						item.started = true;
 						item.r = itr->second;
 						//開始済み予約はすべてバンク内で同一チャンネルなのでChkInsertStatus()は不要
@@ -654,9 +667,9 @@ void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 				CHK_RESERVE_DATA item;
 				CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
 				item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
-				item.startOrder = abs(itr->first) & 0x07FFFFFFFFFFFFFF;
+				item.startOrder = llabs(itr->first) & 0x07FFFFFFFFFFFFFF;
 				//チューナ固定優先ビットを除去
-				item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
+				item.effectivePriority = (itr->first < 0 ? -1 : 1) * (llabs(itr->first) & 0x77FFFFFFFFFFFFFF);
 				item.started = false;
 				item.r = itr->second;
 				//NGチューナが追加されているときはチューナIDを固定しない

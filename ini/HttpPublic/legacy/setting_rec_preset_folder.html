@@ -2,8 +2,7 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -33,27 +32,27 @@ if post then
   end
   if rs then
     if mg.get_var(post,'add') then
-      addFolder={recFolder=nil,writePlugIn='Write_Default.dll',recNamePlugIn=''}
+      addFolder={recFolder=nil,writePlugIn='Write_Default'..(WIN32 and '.dll' or '.so'),recNamePlugIn=''}
       item=mg.get_var(post,'dir') or ''
       if item=='' then
         addFolder.recFolder='!Default'
-      elseif item:find('^[^%c*?"<>|]+$') then
-        ff=edcb.FindFile(item,1)
-        if ff and ff[1].isdir or item:find('^[A-Za-z]:\\$') then
+      elseif item:find('^[^%c'..(WIN32 and '*?"<>|' or '')..']+$') then
+        ff=EdcbFindFilePlain(item)
+        if (ff and ff.isdir) or (WIN32 and item:find('^[A-Za-z]:\\$')) then
           addFolder.recFolder=item
         end
       end
       if addFolder.recFolder then
         item=mg.get_var(post,'writePlugIn') or ''
         for i,v in ipairs(EnumPlugInFileName('Write')) do
-          if v:upper()==item:upper() then
+          if IsEqualPath(v,item) then
             addFolder.writePlugIn=item
             break
           end
         end
         item=mg.get_var(post,'recNamePlugIn') or ''
         for i,v in ipairs(EnumPlugInFileName('RecName')) do
-          if v:upper()==item:upper() then
+          if IsEqualPath(v,item) then
             addFolder.recNamePlugIn=item
             break
           end
@@ -172,4 +171,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

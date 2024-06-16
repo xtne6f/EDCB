@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <wchar.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <limits.h>
 #include <string.h>
 
@@ -36,6 +37,158 @@ using std::pair;
 using std::map;
 using std::multimap;
 using std::vector;
+
+#ifndef _WIN32
+static_assert(sizeof(wchar_t) == 2 || sizeof(wchar_t) == 4);
+static_assert(sizeof(short) == 2);
+static_assert(sizeof(int) == 4);
+static_assert(sizeof(long) == 4 || sizeof(long) == 8);
+static_assert(sizeof(long long) == 8);
+static_assert(sizeof(size_t) == 4 || sizeof(size_t) == 8);
+static_assert(sizeof(size_t) == sizeof(ptrdiff_t));
+static_assert(sizeof(size_t) == sizeof(void*));
+
+typedef const char* LPCSTR;
+typedef wchar_t WCHAR;
+typedef WCHAR* LPWSTR;
+typedef const WCHAR* LPCWSTR;
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned int DWORD;
+typedef long long LONGLONG;
+typedef unsigned long long ULONGLONG;
+typedef int BOOL;
+typedef ptrdiff_t INT_PTR;
+typedef int SOCKET;
+
+struct SYSTEMTIME {
+	WORD wYear;
+	WORD wMonth;
+	WORD wDayOfWeek;
+	WORD wDay;
+	WORD wHour;
+	WORD wMinute;
+	WORD wSecond;
+	WORD wMilliseconds;
+};
+
+#define FALSE 0
+#define TRUE 1
+#define MAXDWORD 0xFFFFFFFF
+#define CALLBACK
+#define WINAPI
+#define INVALID_SOCKET (-1)
+#define closesocket(sock) close(sock)
+
+// 境界チェックインタフェース
+
+#include <exception>
+
+#define _TRUNCATE ((size_t)-1)
+
+inline void wcscpy_s(wchar_t* dest, size_t size, const wchar_t* src)
+{
+	if( !dest || !src || wcslen(src) >= size ) std::terminate();
+	wcscpy(dest, src);
+}
+
+template<size_t size>
+void wcscpy_s(wchar_t(&dest)[size], const wchar_t* src)
+{
+	wcscpy_s(dest, size, src);
+}
+
+inline void wcsncpy_s(wchar_t* dest, size_t size, const wchar_t* src, size_t count)
+{
+	if( !dest || !size || !src ) std::terminate();
+	size_t n = 0;
+	for( size_t i = (count == _TRUNCATE ? size - 1 : count); i && n < size && src[n]; i--, n++ );
+	if( n >= size ) std::terminate();
+	wcsncpy(dest, src, n);
+	dest[n] = 0;
+}
+
+template<size_t size>
+void wcsncpy_s(wchar_t(&dest)[size], const wchar_t* src, size_t count)
+{
+	wcsncpy_s(dest, size, src, count);
+}
+
+inline int sprintf_s(char* dest, size_t size, const char* format, ...)
+{
+	if( !dest || !size || !format ) std::terminate();
+	va_list params;
+	va_start(params, format);
+	int n = vsnprintf(dest, size, format, params);
+	va_end(params);
+	if( n < 0 || (size_t)n >= size ) std::terminate();
+	return n;
+}
+
+template<size_t size>
+int sprintf_s(char(&dest)[size], const char* format, ...)
+{
+	if( !format ) std::terminate();
+	va_list params;
+	va_start(params, format);
+	int n = vsnprintf(dest, size, format, params);
+	va_end(params);
+	if( n < 0 || (size_t)n >= size ) std::terminate();
+	return n;
+}
+
+inline int swprintf_s(wchar_t* dest, size_t size, const wchar_t* format, ...)
+{
+	if( !dest || !size || !format ) std::terminate();
+	va_list params;
+	va_start(params, format);
+	int n = vswprintf(dest, size, format, params);
+	va_end(params);
+	if( n < 0 ) std::terminate();
+	return n;
+}
+
+template<size_t size>
+int swprintf_s(wchar_t(&dest)[size], const wchar_t* format, ...)
+{
+	if( !format ) std::terminate();
+	va_list params;
+	va_start(params, format);
+	int n = vswprintf(dest, size, format, params);
+	va_end(params);
+	if( n < 0 ) std::terminate();
+	return n;
+}
+#endif
+
+struct fclose_deleter
+{
+	void operator()(FILE* fp) { fclose(fp); }
+};
+
+inline size_t codepoint_to_utf8(int x, char* dest)
+{
+	if( x < 0 || x >= 0x110000 ){
+		x = 0xFFFD;
+	}
+	size_t n = 0;
+	if( x < 0x80 ){
+		dest[n++] = (char)x;
+	}else if( x < 0x800 ){
+		dest[n++] = (char)(0xC0 | x >> 6);
+		dest[n++] = (char)(0x80 | (x & 0x3F));
+	}else if( x < 0x10000 ){
+		dest[n++] = (char)(0xE0 | x >> 12);
+		dest[n++] = (char)(0x80 | (x >> 6 & 0x3F));
+		dest[n++] = (char)(0x80 | (x & 0x3F));
+	}else{
+		dest[n++] = (char)(0xF0 | x >> 18);
+		dest[n++] = (char)(0x80 | (x >> 12 & 0x3F));
+		dest[n++] = (char)(0x80 | (x >> 6 & 0x3F));
+		dest[n++] = (char)(0x80 | (x & 0x3F));
+	}
+	return n;
+}
 
 template<class RndIt, class T>
 RndIt lower_bound_first(RndIt first, RndIt last, const T& key)
@@ -94,7 +247,16 @@ RndIt upper_bound_first(RndIt first, RndIt last, const T& key)
 #ifndef WRAP_DEBUG_OUTPUT
 inline void AddDebugLogNoNewline(const WCHAR* s)
 {
+#ifdef _WIN32
 	OutputDebugString(s);
+#elif WCHAR_MAX > 0xFFFF && 0
+	for( size_t i = 0; s[i]; i++ ){
+		char dest[4];
+		fwrite(dest, 1, codepoint_to_utf8(s[i], dest), stderr);
+	}
+#else
+	(void)s;
+#endif
 }
 #endif
 

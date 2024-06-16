@@ -47,19 +47,13 @@ protected:
 	thread_ m_thread;
 #ifdef _WIN32
 	WSAEVENT m_hAcceptEvent;
-	SOCKET m_sock;
-#else
-	int m_sock;
 #endif
+	SOCKET m_sock;
 
 	struct RESPONSE_THREAD_INFO {
 		thread_ th;
 		atomic_bool_ completed;
-#ifdef _WIN32
 		SOCKET sock;
-#else
-		int sock;
-#endif
 		CCmdStream cmd;
 		CTCPServer* sys;
 	};

@@ -2,8 +2,7 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -19,18 +18,32 @@ ct:Append([=[
 
 checked={}
 for i,v in ipairs(EdcbRecFolderPathList()) do
-  v=v:match('^[A-Za-z]:\\')
-  if v and not checked[v:upper()] then
-    checked[v:upper()]=true
-    free=nil
-    f=edcb.io.popen('fsutil volume diskfree '..v)
+  if WIN32 then
+    v=v:match('^[A-Za-z]:\\')
+    if v and not checked[v:upper()] then
+      checked[v:upper()]=true
+      free=nil
+      f=edcb.io.popen('fsutil volume diskfree '..v)
+      if f then
+        --最近のfsutilは数値に桁区切りがつく。さらに最近のものは項目が増えた。
+        free,total,avail=f:read('*a'):gsub("[%s',.]",''):match(':(%d+).-:(%d+).-:(%d+)')
+        f:close()
+      end
+      ct:Append('    <dt>'..v..'</dt><dd>'..(free and
+        ('%.3f GiB (avail: %.3f GiB) / %.3f GiB'):format(free/1024/1024/1024,avail/1024/1024/1024,total/1024/1024/1024) or '不明')..'</dd>\n')
+    end
+  else
+    total=nil
+    f=edcb.io.popen('df -P -BM '..QuoteCommandArgForPath(v)..' 2>/dev/null | sed "s/  */ /g" | cut -f2-4 -d" "')
     if f then
-      --最近のfsutilは数値に桁区切りがつく。さらに最近のものは項目が増えた。
-      free,total,avail=f:read('*a'):gsub("[%s',.]",''):match(':(%d+).-:(%d+).-:(%d+)')
+      total,used,avail=f:read('*a'):match('(%d+)M (%d+)M (%d+)M')
       f:close()
     end
-    ct:Append('    <dt>'..v..'</dt><dd>'..(free and
-      ('%.3f GiB (avail: %.3f GiB) / %.3f GiB'):format(free/1024/1024/1024,avail/1024/1024/1024,total/1024/1024/1024) or '不明')..'</dd>\n')
+    if total then
+      edcb.htmlEscape=15
+      ct:Append('    <dt>'..EdcbHtmlEscape(v)..'</dt><dd>'..('%.3f GiB (avail: %.3f GiB) / %.3f GiB'):format((total-used)/1024,avail/1024,total/1024)..'</dd>\n')
+      edcb.htmlEscape=0
+    end
   end
 end
 
@@ -44,4 +57,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

@@ -20,8 +20,10 @@ CSetDlgNetwork::~CSetDlgNetwork()
 {
 }
 
-BOOL CSetDlgNetwork::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
+BOOL CSetDlgNetwork::Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting)
 {
+	udpSendList = setting.udpSendList;
+	tcpSendList = setting.tcpSendList;
 	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
 
@@ -37,35 +39,16 @@ BOOL CSetDlgNetwork::OnInitDialog()
 	SetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_PACKET, GetPrivateProfileInt(L"SET", L"UDPPacket", 128, appIniPath.c_str()), FALSE);
 
 	for( int tcp = 0; tcp < 2; tcp++ ){
-		int count = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", L"Count", 0, appIniPath.c_str());
-		for( int i = 0; i < count; i++ ){
-			NW_SEND_INFO item;
-			WCHAR key[64];
-			swprintf_s(key, L"IP%d", i);
-			item.ipString = GetPrivateProfileToString(tcp ? L"SET_TCP" : L"SET_UDP", key, L"2130706433", appIniPath.c_str());
-			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
-				item.ipString.erase(0, 1).pop_back();
-			}else{
-				UINT ip = (int)wcstol(item.ipString.c_str(), NULL, 10);
-				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
-			}
-			swprintf_s(key, L"Port%d", i);
-			item.port = 0;
-			if( item.ipString != BON_NW_SRV_PIPE_IP ){
-				item.port = GetPrivateProfileInt(tcp ? L"SET_TCP" : L"SET_UDP", key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN, appIniPath.c_str());
-			}
-			swprintf_s(key, L"BroadCast%d", i);
-			item.broadcastFlag = tcp ? 0 : GetPrivateProfileInt(L"SET_UDP", key, 0, appIniPath.c_str());
-			(tcp ? tcpSendList : udpSendList).push_back(item);
-
+		vector<NW_SEND_INFO>& sendList = tcp ? tcpSendList : udpSendList;
+		for( size_t i = 0; i < sendList.size(); i++ ){
 			wstring add;
 			Format(add, L"%ls:%d-%d%ls",
-			       item.ipString.c_str(),
-			       item.port, item.port + BON_NW_PORT_RANGE - 1,
-			       item.broadcastFlag ? L" (Broadcast)" :
+			       sendList[i].ipString.c_str(),
+			       sendList[i].port, sendList[i].port + BON_NW_PORT_RANGE - 1,
+			       sendList[i].broadcastFlag ? L" (Broadcast)" :
 			       tcp == 0 ? L"" :
-			       item.ipString == BON_NW_SRV_PIPE_IP ? L" (SrvPipe)" :
-			       item.ipString == BON_NW_PIPE_IP ? L" (Pipe)" : L"");
+			       sendList[i].ipString == BON_NW_SRV_PIPE_IP ? L" (SrvPipe)" :
+			       sendList[i].ipString == BON_NW_PIPE_IP ? L" (Pipe)" : L"");
 			ListBox_AddString(GetDlgItem(tcp ? IDC_LIST_IP_TCP : IDC_LIST_IP_UDP), add.c_str());
 		}
 	}

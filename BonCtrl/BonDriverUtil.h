@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "../Common/MessageManager.h"
 #include "../Common/ThreadUtil.h"
 #include <functional>
 
@@ -59,6 +60,10 @@ public:
 		DWORD* ch
 		);
 
+	//Openしているかどうか
+	//※スレッドセーフ
+	bool IsOpen();
+
 	//OpenしたBonDriverのファイル名を取得
 	//※スレッドセーフ
 	//戻り値：
@@ -68,8 +73,13 @@ public:
 private:
 	//BonDriverにアクセスするワーカースレッド
 	static void DriverThread(CBonDriverUtil* sys);
+
+#ifdef _WIN32
 	//ワーカースレッドのメッセージ専用ウィンドウプロシージャ
 	static LRESULT CALLBACK DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+#endif
+	static bool OnMessage(CMessageManager::PARAMS& pa);
+
 	//BonDriverへのアクセスを監視するスレッド
 	static void WatchdogThread(CBonDriverUtil* sys);
 
@@ -86,12 +96,14 @@ private:
 	IBonDriver2* bon2IF;
 	thread_ driverThread;
 	thread_ watchdogThread;
+	CAutoResetEvent driverOpenEvent;
 	CAutoResetEvent watchdogStopEvent;
 	int traceLevel;
 	LPCWSTR callingName;
 	DWORD callingTick;
 	int statGetTsCalls;
 	LONGLONG statGetTsBytes;
-	HWND hwndDriver;
+	CMessageManager msgManager;
+	bool openFlag;
 };
 

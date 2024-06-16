@@ -1,32 +1,56 @@
 ﻿#include "stdafx.h"
 #include "EpgTimerSrvMain.h"
-#include "SyoboiCalUtil.h"
 #include "../../BonCtrl/BonCtrlDef.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/SendCtrlCmd.h"
-#include "../../Common/IniUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
+#ifdef _WIN32
+#include "SyoboiCalUtil.h"
+#include "../../Common/IniUtil.h"
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
 #include <lm.h>
 #include <commctrl.h>
+#else
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 
 namespace
 {
 
 enum {
-	WM_APP_RESET_SERVER = WM_APP,
-	WM_APP_RELOAD_EPG,
-	WM_APP_RELOAD_EPG_CHK,
-	WM_APP_REQUEST_SHUTDOWN,
-	WM_APP_REQUEST_REBOOT,
-	WM_APP_QUERY_SHUTDOWN,
-	WM_APP_RECEIVE_NOTIFY,
-	WM_APP_TRAY_PUSHICON,
-	WM_APP_SHOW_TRAY,
+	ID_APP_RESET_SERVER = CMessageManager::ID_APP,
+	ID_APP_RELOAD_EPG,
+	ID_APP_RELOAD_EPG_CHK,
+#ifdef _WIN32
+	ID_APP_REQUEST_SHUTDOWN,
+	ID_APP_REQUEST_REBOOT,
+	ID_APP_QUERY_SHUTDOWN,
+#endif
+	ID_APP_RECEIVE_NOTIFY,
+#ifdef _WIN32
+	ID_APP_TRAY_PUSHICON,
+#endif
+	ID_APP_SHOW_TRAY,
+};
+
+enum {
+	TIMER_RELOAD_EPG_CHK_PENDING = 1,
+	TIMER_QUERY_SHUTDOWN_PENDING,
+	TIMER_RETRY_ADD_TRAY,
+	TIMER_INC_SRV_STATUS,
+	TIMER_SET_RESUME,
+	TIMER_CHECK,
+	TIMER_RESET_HTTP_SERVER,
 };
 
 enum {
@@ -39,18 +63,20 @@ enum {
 
 struct MAIN_WINDOW_CONTEXT {
 	CEpgTimerSrvMain* const sys;
+#ifdef _WIN32
 	const UINT msgTaskbarCreated;
-	CPipeServer pipeServer;
+	HANDLE resumeTimer;
+	pair<HWND, pair<BYTE, bool>> queryShutdownContext;
 	CPipeServer noWaitPipeServer;
+#endif
+	CPipeServer pipeServer;
 	CTCPServer tcpServer;
 	CHttpServer httpServer;
-	HANDLE resumeTimer;
 	LONGLONG resumeTime;
 	LONGLONG lastSetSystemRequiredTick;
 	BYTE shutdownModePending;
 	bool rebootFlagPending;
 	DWORD shutdownPendingTick;
-	pair<HWND, pair<BYTE, bool>> queryShutdownContext;
 	DWORD autoAddCheckTick;
 	vector<RESERVE_DATA> autoAddCheckAddList;
 	bool autoAddCheckAddCountUpdated;
@@ -63,12 +89,14 @@ struct MAIN_WINDOW_CONTEXT {
 	RESERVE_DATA notifyTipReserve;
 	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_)
 		: sys(sys_)
+#ifdef _WIN32
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
 		, resumeTimer(NULL)
+		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
+#endif
 		, lastSetSystemRequiredTick(-1)
 		, shutdownModePending(SD_MODE_INVALID)
 		, shutdownPendingTick(0)
-		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
 		, taskFlag(false)
 		, noBalloonTip(1)
 		, notifySrvStatus(0)
@@ -78,16 +106,17 @@ struct MAIN_WINDOW_CONTEXT {
 
 void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPServer::RESPONSE_THREAD_STATE state, void*& param)
 {
+	if( cmd.GetParam() != CMD2_EPG_SRV_RELAY_VIEW_STREAM ){
+		return;
+	}
+#ifdef _WIN32
 	struct RELAY_STREAM_CONTEXT {
 		HANDLE hFile;
 		HANDLE hEvent;
 		OVERLAPPED ol;
-		BYTE buff[48128];
+		BYTE buff[188 * 128];
 	};
 
-	if( cmd.GetParam() != CMD2_EPG_SRV_RELAY_VIEW_STREAM ){
-		return;
-	}
 	if( state == CTCPServer::RESPONSE_THREAD_INIT ){
 		//転送元ストリームを開く
 		int processID;
@@ -155,14 +184,84 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 		CloseHandle(context->hFile);
 		delete context;
 	}
+#else
+	struct RELAY_STREAM_CONTEXT {
+		int fd;
+		int connecting;
+	};
+
+	if( state == CTCPServer::RESPONSE_THREAD_INIT ){
+		//転送元ストリームを開く
+		int processID;
+		if( cmd.ReadVALUE(&processID) ){
+			WCHAR name[64];
+			swprintf_s(name, L"SendTSTCP_*_%d_?.fifo", processID);
+			EnumFindFile(fs_path(EDCB_INI_ROOT).append(name), [&res, &param](UTIL_FIND_DATA& findData) -> bool {
+				string strPath;
+				WtoUTF8(fs_path(EDCB_INI_ROOT).append(findData.fileName).native(), strPath);
+				int fd = open(strPath.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+				if( fd >= 0 ){
+					if( flock(fd, LOCK_EX | LOCK_NB) == 0 ){
+						//成功
+						RELAY_STREAM_CONTEXT* context = new RELAY_STREAM_CONTEXT;
+						context->fd = fd;
+						//転送元がオープンして何かを送ってくるまで10秒だけ待つ
+						context->connecting = 50;
+						param = context;
+						res.SetParam(CMD_SUCCESS);
+						return false;
+					}
+					close(fd);
+				}
+				return true;
+			});
+		}
+	}else if( state == CTCPServer::RESPONSE_THREAD_PROC ){
+		//転送元ストリームを非同期で読み込んで送る
+		RELAY_STREAM_CONTEXT& context = *(RELAY_STREAM_CONTEXT*)param;
+		BYTE buff[188 * 128];
+		int n = (int)read(context.fd, buff, sizeof(buff));
+		if( n == 0 && context.connecting ){
+			SleepForMsec(200);
+			context.connecting--;
+		}else if( n == 0 || (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) ){
+			//失敗
+			return;
+		}else if( n < 0 ){
+			//待機
+			pollfd pfd;
+			pfd.fd = context.fd;
+			pfd.events = POLLIN;
+			if( poll(&pfd, 1, 200) < 0 && errno != EINTR ){
+				//失敗
+				return;
+			}
+			if( context.connecting ){
+				context.connecting--;
+			}
+		}else{
+			context.connecting = 0;
+			res.Resize(n);
+			std::copy(buff, buff + n, res.GetData());
+		}
+		res.SetParam(CMD_SUCCESS);
+	}else if( state == CTCPServer::RESPONSE_THREAD_FIN ){
+		//転送元ストリームを閉じる
+		RELAY_STREAM_CONTEXT* context = (RELAY_STREAM_CONTEXT*)param;
+		close(context->fd);
+		delete context;
+	}
+#endif
 }
 
 }
 
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
-	, hwndMain(NULL)
+	, msgManager(OnMessage, NULL)
+#ifdef _WIN32
 	, luaDllHolder(NULL, UtilFreeLibrary)
+#endif
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
@@ -179,6 +278,10 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	this->epgAutoAdd.ParseText(fs_path(settingPath).append(EPG_AUTO_ADD_TEXT_NAME).c_str());
 	this->manualAutoAdd.ParseText(fs_path(settingPath).append(MANUAL_AUTO_ADD_TEXT_NAME).c_str());
 
+	MAIN_WINDOW_CONTEXT ctx(this);
+	this->msgManager.SetContext(&ctx);
+
+#ifdef _WIN32
 	//非表示のメインウィンドウを作成
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(WNDCLASSEX);
@@ -189,7 +292,6 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	if( RegisterClassEx(&wc) == 0 ){
 		return false;
 	}
-	MAIN_WINDOW_CONTEXT ctx(this);
 	if( CreateWindowEx(0, SERVICE_NAME, SERVICE_NAME, 0, 0, 0, 0, 0, NULL, NULL, GetModuleHandle(NULL), &ctx) == NULL ){
 		return false;
 	}
@@ -202,33 +304,26 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			DispatchMessage(&msg);
 		}
 	}
+#else
+	if( this->msgManager.MessageLoop(true) == false ){
+		return false;
+	}
+#endif
+
+#ifdef _WIN32
 	this->luaDllHolder.reset();
+#endif
 	return true;
 }
 
-LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+bool CEpgTimerSrvMain::OnMessage(CMessageManager::PARAMS& pa)
 {
-	enum {
-		TIMER_RELOAD_EPG_CHK_PENDING = 1,
-		TIMER_QUERY_SHUTDOWN_PENDING,
-		TIMER_RETRY_ADD_TRAY,
-		TIMER_INC_SRV_STATUS,
-		TIMER_SET_RESUME,
-		TIMER_CHECK,
-		TIMER_RESET_HTTP_SERVER,
-	};
 	static const DWORD SRV_STATUS_PRE_REC = 100;
 
-	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-	if( uMsg != WM_CREATE && ctx == NULL ){
-		return DefWindowProc(hwnd, uMsg, wParam, lParam);
-	}
+	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)pa.ctx;
 
-	switch( uMsg ){
-	case WM_CREATE:
-		ctx = (MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
-		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
-		ctx->sys->hwndMain = hwnd;
+	switch( pa.id ){
+	case CMessageManager::ID_INITIALIZED:
 		ctx->sys->ReloadSetting(true);
 		if( ctx->sys->reserveManager.GetTunerReserveAll().size() <= 1 ){
 			//チューナなし
@@ -239,72 +334,57 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_PIPE,
 		                            [ctx](CCmdStream& cmd, CCmdStream& res) { CtrlCmdCallback(ctx->sys, cmd, res, 0, false, NULL); },
 		                            !(ctx->sys->notifyManager.IsGUI()), true);
+#ifdef _WIN32
 		//イベントオブジェクトの待機を省略したいクライアント向けにもう1つ生成する(負荷分散の目的を兼ねるのでスレッドを分ける)
 		ctx->noWaitPipeServer.StartServer(CMD2_EPG_SRV_NOWAIT_PIPE,
 		                                  [ctx](CCmdStream& cmd, CCmdStream& res) { CtrlCmdCallback(ctx->sys, cmd, res, 1, false, NULL); },
 		                                  !(ctx->sys->notifyManager.IsGUI()), true);
+#endif
 		ctx->sys->epgDB.ReloadEpgData(true);
-		SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
-		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
-		SetTimer(hwnd, TIMER_SET_RESUME, 30000, NULL);
-		SetTimer(hwnd, TIMER_CHECK, 1000, NULL);
-		ctx->sys->notifyManager.SetNotifyCallback([hwnd]() { PostMessage(hwnd, WM_APP_RECEIVE_NOTIFY, FALSE, 0); });
+		ctx->sys->msgManager.Send(ID_APP_RELOAD_EPG_CHK);
+		ctx->sys->msgManager.Send(CMessageManager::ID_TIMER, TIMER_SET_RESUME);
+		ctx->sys->msgManager.SetTimer(TIMER_SET_RESUME, 30000);
+		ctx->sys->msgManager.SetTimer(TIMER_CHECK, 1000);
+		ctx->sys->notifyManager.SetNotifyCallback([ctx]() { ctx->sys->msgManager.Post(ID_APP_RECEIVE_NOTIFY, false); });
+#ifndef _WIN32
+		ctx->sys->processLuaPostStopEvent.Reset();
+		ctx->sys->processLuaPostThread = thread_(ProcessLuaPost, ctx->sys);
+#endif
 		AddDebugLog(L"*** Server initialized ***");
-		return 0;
-	case WM_DESTROY:
+		return true;
+	case CMessageManager::ID_SIGNAL:
+		AddDebugLogFormat(L"Received signal %d", (int)pa.param1);
+		break;
+	case CMessageManager::ID_DESTROY:
+#ifdef _WIN32
 		if( ctx->resumeTimer ){
 			CloseHandle(ctx->resumeTimer);
 		}
 		if( ctx->sys->doLuaWorkerThread.joinable() ){
 			ctx->sys->doLuaWorkerThread.join();
 		}
+#else
+		ctx->sys->processLuaPostStopEvent.Set();
+		ctx->sys->processLuaPostThread.join();
+#endif
 		ctx->sys->notifyManager.SetNotifyCallback(NULL);
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
+#ifdef _WIN32
 		ctx->noWaitPipeServer.StopServer();
+#endif
 		ctx->pipeServer.StopServer();
 		ctx->sys->stoppingFlag = true;
 		ctx->sys->reserveManager.Finalize();
 		AddDebugLog(L"*** Server finalized ***");
 		//タスクトレイから削除
-		SendMessage(hwnd, WM_APP_SHOW_TRAY, FALSE, 0);
-		ctx->sys->hwndMain = NULL;
-		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
-		RemoveProp(hwnd, L"PopupSel");
-		RemoveProp(hwnd, L"PopupSelData");
-		PostQuitMessage(0);
-		return 0;
-	case WM_ENDSESSION:
-		if( wParam ){
-			DestroyWindow(hwnd);
-		}
-		return 0;
-	case WM_COPYDATA:
-		if( lParam ){
-			const COPYDATASTRUCT& cds = *(const COPYDATASTRUCT*)lParam;
-			if( cds.dwData == COPYDATA_TYPE_LUAPOST && cds.lpData ){
-				//Luaスクリプトをワーカースレッドに投入する
-				vector<WCHAR> buff((cds.cbData + 3) / sizeof(WCHAR), 0);
-				std::copy((const BYTE*)cds.lpData, (const BYTE*)cds.lpData + cds.cbData, (BYTE*)buff.data());
-				string script;
-				WtoUTF8(wstring(buff.data()), script);
-				//Luaが利用可能ならば
-				if( ctx->sys->luaDllHolder ){
-					lock_recursive_mutex lock(ctx->sys->doLuaWorkerLock);
-
-					if( ctx->sys->doLuaScriptQueue.empty() && ctx->sys->doLuaWorkerThread.joinable() ){
-						ctx->sys->doLuaWorkerThread.join();
-					}
-					ctx->sys->doLuaScriptQueue.push_back(std::move(script));
-					if( ctx->sys->doLuaWorkerThread.joinable() == false ){
-						ctx->sys->doLuaWorkerThread = thread_(DoLuaWorker, ctx->sys);
-					}
-					return TRUE;
-				}
-			}
-		}
-		return FALSE;
-	case WM_APP_RESET_SERVER:
+		ctx->sys->msgManager.Send(ID_APP_SHOW_TRAY, false, 0);
+#ifdef _WIN32
+		RemoveProp(ctx->sys->msgManager.GetHwnd(), L"PopupSel");
+		RemoveProp(ctx->sys->msgManager.GetHwnd(), L"PopupSelData");
+#endif
+		return true;
+	case ID_APP_RESET_SERVER:
 		{
 			//サーバリセット処理
 			unsigned short tcpPort_;
@@ -325,27 +405,28 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				                           [ctx](const CCmdStream& cmd, CCmdStream& res, LPCWSTR clientIP) { CtrlCmdCallback(ctx->sys, cmd, res, 2, true, clientIP); },
 				                           CtrlCmdResponseThreadCallback);
 			}
-			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
+			ctx->sys->msgManager.SetTimer(TIMER_RESET_HTTP_SERVER, 200);
 		}
-		break;
-	case WM_APP_RELOAD_EPG:
+		return true;
+	case ID_APP_RELOAD_EPG:
 		//EPGリロードを開始
 		ctx->sys->epgDB.ReloadEpgData();
 		//FALL THROUGH!
-	case WM_APP_RELOAD_EPG_CHK:
+	case ID_APP_RELOAD_EPG_CHK:
 		//EPGリロード完了のチェックを開始
 		{
 			lock_recursive_mutex lock(ctx->sys->autoAddLock);
 			ctx->sys->autoAddCheckItr = ctx->sys->epgAutoAdd.GetMap().begin();
 		}
-		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 10, NULL);
-		KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+		ctx->sys->msgManager.SetTimer(TIMER_RELOAD_EPG_CHK_PENDING, 10);
+		ctx->sys->msgManager.KillTimer(TIMER_QUERY_SHUTDOWN_PENDING);
 		ctx->shutdownPendingTick = GetU32Tick();
-		break;
-	case WM_APP_REQUEST_SHUTDOWN:
+		return true;
+#ifdef _WIN32
+	case ID_APP_REQUEST_SHUTDOWN:
 		//シャットダウン処理
 		if( ctx->sys->IsSuspendOK() ){
-			if( wParam == SD_MODE_STANDBY || wParam == SD_MODE_SUSPEND ){
+			if( pa.param1 == SD_MODE_STANDBY || pa.param1 == SD_MODE_SUSPEND ){
 				//ストリーミングを終了する
 				ctx->sys->streamingManager.clear();
 				//AwayMode解除
@@ -354,27 +435,28 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				DWORD marginSec;
 				{
 					lock_recursive_mutex lock(ctx->sys->settingLock);
-					marginSec = ctx->sys->setting.wakeTime * 60 + (lParam ? 300 : 0);
+					marginSec = ctx->sys->setting.wakeTime * 60 + (pa.param2 ? 300 : 0);
 				}
 				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, marginSec) ){
-					SetShutdown(wParam == SD_MODE_STANDBY ? 1 : 2);
-					if( lParam ){
+					SetShutdown(pa.param1 == SD_MODE_STANDBY ? 1 : 2);
+					if( pa.param2 ){
 						//再起動問い合わせ
-						if( SendMessage(hwnd, WM_APP_QUERY_SHUTDOWN, SD_MODE_INVALID, TRUE) == FALSE ){
+						if( !ctx->sys->msgManager.Send(ID_APP_QUERY_SHUTDOWN, SD_MODE_INVALID, true) ){
 							SetShutdown(4);
 						}
 					}
 				}
-			}else if( wParam == SD_MODE_SHUTDOWN ){
+			}else if( pa.param1 == SD_MODE_SHUTDOWN ){
 				SetShutdown(3);
 			}
 		}
-		break;
-	case WM_APP_REQUEST_REBOOT:
+		return true;
+	case ID_APP_REQUEST_REBOOT:
 		//再起動
 		SetShutdown(4);
-		break;
-	case WM_APP_QUERY_SHUTDOWN:
+		return true;
+	case ID_APP_QUERY_SHUTDOWN:
+		pa.result = true;
 		if( ctx->sys->notifyManager.IsGUI() ){
 			//直接尋ねる
 			if( ctx->queryShutdownContext.first == NULL ){
@@ -382,20 +464,22 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				icce.dwSize = sizeof(icce);
 				icce.dwICC = ICC_PROGRESS_CLASS;
 				InitCommonControlsEx(&icce);
-				ctx->queryShutdownContext.second.first = (BYTE)wParam;
-				ctx->queryShutdownContext.second.second = lParam != FALSE;
-				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
+				ctx->queryShutdownContext.second.first = (BYTE)pa.param1;
+				ctx->queryShutdownContext.second.second = !!pa.param2;
+				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), ctx->sys->msgManager.GetHwnd(),
+				                  QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
 			}
-		}else if( ctx->sys->QueryShutdown(lParam != FALSE, (BYTE)wParam) == false ){
+		}else if( ctx->sys->QueryShutdown(!!pa.param2, (BYTE)pa.param1) == false ){
 			//GUI経由で問い合わせ開始できなかった
-			return FALSE;
+			pa.result = false;
 		}
-		return TRUE;
-	case WM_APP_RECEIVE_NOTIFY:
+		return true;
+#endif
+	case ID_APP_RECEIVE_NOTIFY:
 		//通知を受け取る
 		{
 			NOTIFY_SRV_INFO info = {};
-			if( wParam ){
+			if( pa.param1 ){
 				//更新だけ
 				info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 				info.param1 = ctx->notifySrvStatus;
@@ -406,7 +490,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					break;
 				}
 				ctx->notifyCount = info.param3;
-				PostMessage(hwnd, WM_APP_RECEIVE_NOTIFY, FALSE, 0);
+				ctx->sys->msgManager.Post(ID_APP_RECEIVE_NOTIFY, false);
 			}
 			if( info.notifyID == NOTIFY_UPDATE_SRV_STATUS ||
 			    (info.notifyID == NOTIFY_UPDATE_PRE_REC_START && info.param4.find(L'/') != wstring::npos &&
@@ -424,13 +508,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 							ctx->notifySrvStatus = info.param1;
 						}else{
 							ctx->notifySrvStatus = SRV_STATUS_PRE_REC;
-							SetTimer(hwnd, TIMER_INC_SRV_STATUS, 1000, NULL);
+							ctx->sys->msgManager.SetTimer(TIMER_INC_SRV_STATUS, 1000);
 						}
 					}
+#ifdef _WIN32
 					if( ctx->taskFlag ){
 						NOTIFYICONDATA nid = {};
 						nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-						nid.hWnd = hwnd;
+						nid.hWnd = ctx->sys->msgManager.GetHwnd();
 						nid.uID = 1;
 						nid.hIcon = LoadSmallIcon(ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
 						                          ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN :
@@ -460,21 +545,23 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								st.wMonth, st.wDay, GetDayOfWeekName(st.wDayOfWeek), st.wHour, st.wMinute);
 						}
 						nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-						nid.uCallbackMessage = WM_APP_TRAY_PUSHICON;
+						nid.uCallbackMessage = ID_APP_TRAY_PUSHICON;
 						if( Shell_NotifyIcon(NIM_MODIFY, &nid) == FALSE && Shell_NotifyIcon(NIM_ADD, &nid) == FALSE ){
-							SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 5000, NULL);
+							ctx->sys->msgManager.SetTimer(TIMER_RETRY_ADD_TRAY, 5000);
 						}
 						if( nid.hIcon ){
 							DestroyIcon(nid.hIcon);
 						}
 					}
+#endif
 				}
 			}
+#ifdef _WIN32
 			if( ctx->noBalloonTip != 1 && CNotifyManager::ExtractTitleFromInfo(&info).first[0] ){
 				//バルーンチップ表示
 				NOTIFYICONDATA nid = {};
 				nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-				nid.hWnd = hwnd;
+				nid.hWnd = ctx->sys->msgManager.GetHwnd();
 				nid.uID = 1;
 				nid.uFlags = NIF_INFO | (ctx->noBalloonTip == 2 ? 0x40 : 0); //NIF_REALTIME
 				nid.dwInfoFlags = NIIF_INFO;
@@ -483,11 +570,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				wcsncpy_s(nid.szInfo, CNotifyManager::ExtractTitleFromInfo(&info).second, _TRUNCATE);
 				Shell_NotifyIcon(NIM_MODIFY, &nid);
 			}
+#endif
 		}
-		break;
-	case WM_APP_TRAY_PUSHICON:
+		return true;
+#ifdef _WIN32
+	case ID_APP_TRAY_PUSHICON:
 		//タスクトレイ関係
-		switch( LOWORD(lParam) ){
+		switch( LOWORD(pa.param2) ){
 		case WM_LBUTTONUP:
 			if( ctx->notifySrvStatus != 3 ){
 				OpenGUI();
@@ -500,31 +589,34 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				if( hMenu ){
 					POINT point;
 					GetCursorPos(&point);
-					SetForegroundWindow(hwnd);
-					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, hwnd, NULL);
+					SetForegroundWindow(ctx->sys->msgManager.GetHwnd());
+					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, ctx->sys->msgManager.GetHwnd(), NULL);
 					DestroyMenu(hMenu);
 				}
 			}
 			break;
 		}
 		break;
-	case WM_APP_SHOW_TRAY:
+#endif
+	case ID_APP_SHOW_TRAY:
 		//タスクトレイに表示/非表示する
-		if( ctx->taskFlag && wParam == FALSE ){
+#ifdef _WIN32
+		if( ctx->taskFlag && !pa.param1 ){
 			NOTIFYICONDATA nid = {};
 			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-			nid.hWnd = hwnd;
+			nid.hWnd = ctx->sys->msgManager.GetHwnd();
 			nid.uID = 1;
 			Shell_NotifyIcon(NIM_DELETE, &nid);
 		}
-		ctx->taskFlag = wParam != FALSE;
-		ctx->noBalloonTip = ctx->taskFlag ? (int)lParam : 1;
+#endif
+		ctx->taskFlag = !!pa.param1;
+		ctx->noBalloonTip = ctx->taskFlag ? (int)pa.param2 : 1;
 		if( ctx->taskFlag ){
-			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+			ctx->sys->msgManager.SetTimer(TIMER_RETRY_ADD_TRAY, 0);
 		}
-		return TRUE;
-	case WM_TIMER:
-		switch( wParam ){
+		return true;
+	case CMessageManager::ID_TIMER:
+		switch( pa.param1 ){
 		case TIMER_RELOAD_EPG_CHK_PENDING:
 			if( GetU32Tick() - ctx->shutdownPendingTick > 30000 ){
 				//30秒以内にシャットダウン問い合わせできなければキャンセル
@@ -555,7 +647,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					}
 					if( ctx->sys->autoAddCheckItr != ctx->sys->epgAutoAdd.GetMap().end() ){
 						//まだあるので次の呼び出しまで中断
-						break;
+						return true;
 					}
 					//完了
 					for( auto itr = ctx->sys->manualAutoAdd.GetMap().cbegin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
@@ -566,11 +658,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					}
 					ctx->sys->autoAddCheckItr = ctx->sys->epgAutoAdd.GetMap().begin();
 				}
-				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
+				ctx->sys->msgManager.KillTimer(TIMER_RELOAD_EPG_CHK_PENDING);
 				if( ctx->shutdownModePending ){
 					//このタイマはWM_TIMER以外でもKillTimer()するためメッセージキューに残った場合に対処するためシフト
 					ctx->shutdownPendingTick -= 100000;
-					SetTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING, 200, NULL);
+					ctx->sys->msgManager.SetTimer(TIMER_QUERY_SHUTDOWN_PENDING, 200);
 				}
 				if( ctx->autoAddCheckAddCountUpdated ){
 					//予約登録数の変化を通知する
@@ -580,6 +672,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 
 				ctx->sys->reserveManager.CheckTuijyu();
 
+#ifdef _WIN32
 				if( ctx->sys->useSyoboi ){
 					//しょぼいカレンダー対応
 					CSyoboiCalUtil syoboi;
@@ -587,46 +680,52 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
 					syoboi.SendReserve(&reserveList, &tunerList);
 				}
+#endif
 				AddDebugLogFormat(L"Done PostLoad EpgData %dmsec", GetU32Tick() - ctx->autoAddCheckTick);
 			}
-			break;
+			return true;
 		case TIMER_QUERY_SHUTDOWN_PENDING:
 			if( GetU32Tick() - ctx->shutdownPendingTick >= 100000 ){
 				if( GetU32Tick() - ctx->shutdownPendingTick - 100000 > 30000 ){
 					//30秒以内にシャットダウン問い合わせできなければキャンセル
-					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+					ctx->sys->msgManager.KillTimer(TIMER_QUERY_SHUTDOWN_PENDING);
 					if( ctx->shutdownModePending ){
 						ctx->shutdownModePending = SD_MODE_INVALID;
 						AddDebugLog(L"Shutdown cancelled");
 					}
 				}else if( ctx->shutdownModePending && ctx->sys->IsSuspendOK() ){
-					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
-					if( ctx->sys->IsUserWorking() == false &&
-					    SD_MODE_STANDBY <= ctx->shutdownModePending &&  ctx->shutdownModePending <= SD_MODE_SHUTDOWN ){
+					ctx->sys->msgManager.KillTimer(TIMER_QUERY_SHUTDOWN_PENDING);
+					if( SD_MODE_STANDBY <= ctx->shutdownModePending && ctx->shutdownModePending <= SD_MODE_SHUTDOWN ){
+#ifdef _WIN32
 						//シャットダウン問い合わせ
-						if( SendMessage(hwnd, WM_APP_QUERY_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending) == FALSE ){
-							SendMessage(hwnd, WM_APP_REQUEST_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending);
+						if( ctx->sys->IsUserWorking() == false &&
+						    !ctx->sys->msgManager.Send(ID_APP_QUERY_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending) ){
+							ctx->sys->msgManager.Send(ID_APP_REQUEST_SHUTDOWN, ctx->shutdownModePending, ctx->rebootFlagPending);
 						}
+#else
+						AddDebugLog(L"Shutdown is not supported");
+#endif
 					}
 					ctx->shutdownModePending = SD_MODE_INVALID;
 				}
 			}
-			break;
+			return true;
 		case TIMER_RETRY_ADD_TRAY:
-			KillTimer(hwnd, TIMER_RETRY_ADD_TRAY);
-			SendMessage(hwnd, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
-			break;
+			ctx->sys->msgManager.KillTimer(TIMER_RETRY_ADD_TRAY);
+			ctx->sys->msgManager.Send(ID_APP_RECEIVE_NOTIFY, true);
+			return true;
 		case TIMER_INC_SRV_STATUS:
 			//最大20秒
 			if( SRV_STATUS_PRE_REC <= ctx->notifySrvStatus && ctx->notifySrvStatus < SRV_STATUS_PRE_REC + 20 ){
 				ctx->notifySrvStatus++;
-				SendMessage(hwnd, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
+				ctx->sys->msgManager.Send(ID_APP_RECEIVE_NOTIFY, true);
 			}else{
-				KillTimer(hwnd, TIMER_INC_SRV_STATUS);
+				ctx->sys->msgManager.KillTimer(TIMER_INC_SRV_STATUS);
 			}
-			break;
+			return true;
 		case TIMER_SET_RESUME:
 			{
+#ifdef _WIN32
 				//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
 				DWORD marginSec;
 				{
@@ -658,6 +757,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				if( esLastFlags != esFlags ){
 					AddDebugLogFormat(L"SetThreadExecutionState(0x%08x)", (DWORD)esFlags);
 				}
+#endif
 				//チップヘルプの更新が必要かチェック
 				RESERVE_DATA r;
 				LONGLONG activeTime = ctx->sys->reserveManager.GetSleepReturnTime(GetNowI64Time(), &r);
@@ -669,10 +769,10 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				     r.title != ctx->notifyTipReserve.title) ){
 					ctx->notifyTipActiveTime = activeTime;
 					ctx->notifyTipReserve = std::move(r);
-					SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+					ctx->sys->msgManager.SetTimer(TIMER_RETRY_ADD_TRAY, 0);
 				}
 			}
-			break;
+			return true;
 		case TIMER_CHECK:
 			{
 				pair<CReserveManager::CHECK_STATUS, int> ret = ctx->sys->reserveManager.Check();
@@ -680,13 +780,13 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				case CReserveManager::CHECK_EPGCAP_END:
 					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 					ctx->sys->epgDB.ReloadEpgData(true);
-					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
+					ctx->sys->msgManager.Send(ID_APP_RELOAD_EPG_CHK);
 					{
 						lock_recursive_mutex lock(ctx->sys->settingLock);
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					}
-					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					ctx->sys->msgManager.Send(CMessageManager::ID_TIMER, TIMER_SET_RESUME);
 					break;
 				case CReserveManager::CHECK_NEED_SHUTDOWN:
 					//EPGリロードは暇なときだけ
@@ -694,26 +794,26 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						ctx->sys->epgDB.ReloadEpgData(true);
 					}
 					//チェックは必須
-					SendMessage(hwnd, WM_APP_RELOAD_EPG_CHK, 0, 0);
+					ctx->sys->msgManager.Send(ID_APP_RELOAD_EPG_CHK);
 					//要求されたシャットダウン動作を試みる
-					ctx->shutdownModePending = LOBYTE(ret.second);
-					ctx->rebootFlagPending = HIBYTE(ret.second) != 0;
+					ctx->shutdownModePending = (BYTE)ret.second;
+					ctx->rebootFlagPending = (ret.second >> 8) != 0;
 					if( ctx->shutdownModePending == SD_MODE_INVALID ){
 						lock_recursive_mutex lock(ctx->sys->settingLock);
 						ctx->shutdownModePending = (ctx->sys->setting.recEndMode + 3) % 4 + 1;
 						ctx->rebootFlagPending = ctx->sys->setting.reboot;
 					}
-					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					ctx->sys->msgManager.Send(CMessageManager::ID_TIMER, TIMER_SET_RESUME);
 					break;
 				case CReserveManager::CHECK_RESERVE_MODIFIED:
-					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					ctx->sys->msgManager.Send(CMessageManager::ID_TIMER, TIMER_SET_RESUME);
 					break;
 				}
 			}
-			break;
+			return true;
 		case TIMER_RESET_HTTP_SERVER:
 			if( ctx->httpServer.StopServer(true) ){
-				KillTimer(hwnd, TIMER_RESET_HTTP_SERVER);
+				ctx->sys->msgManager.KillTimer(TIMER_RESET_HTTP_SERVER);
 				CHttpServer::SERVER_OPTIONS op;
 				{
 					lock_recursive_mutex lock(ctx->sys->settingLock);
@@ -723,13 +823,76 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					ctx->sys->httpServerRandom = CHttpServer::CreateRandom(32);
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() == false ){
-					CEpgTimerSrvMain* sys = ctx->sys;
-					ctx->httpServer.StartServer(op, [sys](lua_State* L) { sys->InitLuaCallback(L, sys->httpServerRandom.c_str()); });
+#ifdef _WIN32
+					if( !ctx->sys->luaDllHolder ){
+						AddDebugLog(L"TIMER_RESET_HTTP_SERVER: " LUA_DLL_NAME L" not found.");
+					}else
+#endif
+					{
+						CEpgTimerSrvMain* sys = ctx->sys;
+						ctx->httpServer.StartServer(op, [sys](lua_State* L) { sys->InitLuaCallback(L, sys->httpServerRandom.c_str()); });
+					}
 				}
 			}
-			break;
+			return true;
 		}
 		break;
+	}
+	return false;
+}
+
+#ifdef _WIN32
+
+LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	if( uMsg == WM_CREATE ){
+		ctx = (MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
+	}
+	if( ctx == NULL ){
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+	}
+	LRESULT lResult;
+	if( ctx->sys->msgManager.ProcessWindowMessage(lResult, hwnd, uMsg, wParam, lParam) ){
+		if( uMsg == WM_DESTROY ){
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+			PostQuitMessage(0);
+		}
+		return lResult;
+	}
+
+	switch( uMsg ){
+	case WM_ENDSESSION:
+		if( wParam ){
+			DestroyWindow(hwnd);
+		}
+		return 0;
+	case WM_COPYDATA:
+		if( lParam ){
+			const COPYDATASTRUCT& cds = *(const COPYDATASTRUCT*)lParam;
+			if( cds.dwData == COPYDATA_TYPE_LUAPOST && cds.lpData ){
+				//Luaスクリプトをワーカースレッドに投入する
+				vector<WCHAR> buff((cds.cbData + 3) / sizeof(WCHAR), 0);
+				std::copy((const BYTE*)cds.lpData, (const BYTE*)cds.lpData + cds.cbData, (BYTE*)buff.data());
+				string script;
+				WtoUTF8(wstring(buff.data()), script);
+				//Luaが利用可能ならば
+				if( ctx->sys->luaDllHolder ){
+					lock_recursive_mutex lock(ctx->sys->doLuaWorkerLock);
+
+					if( ctx->sys->doLuaScriptQueue.empty() && ctx->sys->doLuaWorkerThread.joinable() ){
+						ctx->sys->doLuaWorkerThread.join();
+					}
+					ctx->sys->doLuaScriptQueue.push_back(std::move(script));
+					if( ctx->sys->doLuaWorkerThread.joinable() == false ){
+						ctx->sys->doLuaWorkerThread = thread_(DoLuaWorker, ctx->sys);
+					}
+					return TRUE;
+				}
+			}
+		}
+		return FALSE;
 	case WM_INITMENUPOPUP:
 		{
 			UINT id = GetMenuItemID((HMENU)wParam, 0);
@@ -764,14 +927,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_S4:
 			if( ctx->sys->IsSuspendOK() ){
 				lock_recursive_mutex lock(ctx->sys->settingLock);
-				PostMessage(hwnd, WM_APP_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
+				ctx->sys->msgManager.Post(ID_APP_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
 			}else{
 				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
 			}
 			break;
 		case IDC_BUTTON_END:
 			if( MessageBox(hwnd, SERVICE_NAME L" を終了します。", L"確認", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
-				SendMessage(hwnd, WM_CLOSE, 0, 0);
+				ctx->sys->msgManager.Send(CMessageManager::ID_CLOSE);
 			}
 			break;
 		case IDC_BUTTON_GUI:
@@ -799,7 +962,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	default:
 		if( uMsg == ctx->msgTaskbarCreated ){
 			//シェルの再起動時
-			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+			ctx->sys->msgManager.SetTimer(TIMER_RETRY_ADD_TRAY, 0);
 		}
 		break;
 	}
@@ -837,10 +1000,10 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 		case IDOK:
 			if( ctx->second.first == SD_MODE_INVALID ){
 				//再起動
-				PostMessage(GetParent(hDlg), WM_APP_REQUEST_REBOOT, 0, 0);
+				PostMessage(GetParent(hDlg), ID_APP_REQUEST_REBOOT, 0, 0);
 			}else{
 				//スタンバイ休止または電源断
-				PostMessage(GetParent(hDlg), WM_APP_REQUEST_SHUTDOWN, ctx->second.first, ctx->second.second);
+				PostMessage(GetParent(hDlg), ID_APP_REQUEST_SHUTDOWN, ctx->second.first, ctx->second.second);
 			}
 			//FALL THROUGH!
 		case IDCANCEL:
@@ -934,12 +1097,11 @@ void CEpgTimerSrvMain::InitStreamingMenuPopup(HMENU hMenu) const
 	EnableMenuItem(hMenu, IDC_BUTTON_STREAMING_NWPLAY, this->streamingManager.empty() ? MF_GRAYED : MF_ENABLED);
 }
 
+#endif
+
 void CEpgTimerSrvMain::StopMain()
 {
-	HWND hwndMain_ = this->hwndMain;
-	if( hwndMain_ ){
-		SendNotifyMessage(hwndMain_, WM_CLOSE, 0, 0);
-	}
+	this->msgManager.SendNotify(CMessageManager::ID_CLOSE);
 }
 
 bool CEpgTimerSrvMain::IsSuspendOK() const
@@ -956,9 +1118,11 @@ bool CEpgTimerSrvMain::IsSuspendOK() const
 	//シャットダウン可能で復帰が間に合うときだけ
 	return (noFileStreaming == false || this->streamingManager.empty()) &&
 	       this->reserveManager.IsActive() == false &&
-	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC &&
-	       IsFindNoSuspendExe() == false &&
-	       IsFindShareTSFile() == false;
+	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC
+#ifdef _WIN32
+	       && IsFindNoSuspendExe() == false && IsFindShareTSFile() == false
+#endif
+	       ;
 }
 
 void CEpgTimerSrvMain::ReloadNetworkSetting()
@@ -974,7 +1138,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
 	this->httpOptions = CHttpServer::LoadServerOptions(iniPath.c_str());
-	PostMessage(this->hwndMain, WM_APP_RESET_SERVER, 0, 0);
+	this->msgManager.Post(ID_APP_RESET_SERVER);
 }
 
 void CEpgTimerSrvMain::ReloadSetting(bool initialize)
@@ -982,12 +1146,19 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 	fs_path iniPath = GetModuleIniPath();
 	CEpgTimerSrvSetting::SETTING s = CEpgTimerSrvSetting::LoadSetting(iniPath.c_str());
 	this->notifyManager.SetLogFilePath(s.saveNotifyLog ? GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log").c_str() : L"");
+#ifdef _WIN32
+	//存在を確認しているだけ
+	if( !this->luaDllHolder ){
+		this->luaDllHolder.reset(UtilLoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME)));
+	}
+#endif
 	if( initialize ){
 		this->stoppingFlag = false;
 		this->reserveManager.Initialize(s);
-		//存在を確認しているだけ
-		this->luaDllHolder.reset(UtilLoadLibrary(GetModulePath().replace_filename(LUA_DLL_NAME)));
-		if( this->luaDllHolder ){
+#ifdef _WIN32
+		if( this->luaDllHolder )
+#endif
+		{
 			this->reserveManager.SetBatCustomHandler(L".lua", [this](CBatManager::BAT_WORK_INFO& work, vector<char>& buff) { DoLuaBat(work, buff); });
 		}
 	}else{
@@ -1004,13 +1175,15 @@ void CEpgTimerSrvMain::ReloadSetting(bool initialize)
 			//常駐する(CMD2_EPG_SRV_CLOSEを無視)
 			this->residentFlag = true;
 			//タスクトレイに表示するかどうか
-			PostMessage(this->hwndMain, WM_APP_SHOW_TRAY, this->setting.residentMode >= 2, this->setting.noBalloonTip);
+			this->msgManager.Post(ID_APP_SHOW_TRAY, this->setting.residentMode >= 2, this->setting.noBalloonTip);
 		}
 	}else if( this->setting.residentMode >= 2 ){
 		//チップヘルプを更新するため
-		PostMessage(this->hwndMain, WM_APP_RECEIVE_NOTIFY, TRUE, 0);
+		this->msgManager.Post(ID_APP_RECEIVE_NOTIFY, true);
 	}
+#ifdef _WIN32
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
+#endif
 }
 
 RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(LONGLONG startTime) const
@@ -1019,6 +1192,10 @@ RESERVE_DATA CEpgTimerSrvMain::GetDefaultReserveData(LONGLONG startTime) const
 
 	RESERVE_DATA r = {};
 	r.reserveID = 0x7FFFFFFF;
+#ifndef _WIN32
+	//Windowsではないことを示す
+	r.title = L"_NOWIN32_";
+#endif
 	ConvertSystemTime(startTime, &r.startTime);
 	r.startTimeEpg = r.startTime;
 	//無効かどうかを定数ではなくフラグで解釈することを示す(以前はRECMODE_SERVICE)
@@ -1045,6 +1222,8 @@ void CEpgTimerSrvMain::AdjustRecModeRange(REC_SETTING_DATA& recSetting) const
 		}
 	}
 }
+
+#ifdef _WIN32
 
 bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime, DWORD marginSec)
 {
@@ -1206,6 +1385,8 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 	}
 	return false;
 }
+
+#endif
 
 vector<RESERVE_DATA>& CEpgTimerSrvMain::PreChgReserveData(vector<RESERVE_DATA>& reserveList) const
 {
@@ -1436,7 +1617,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 
 	switch( cmd.GetParam() ){
 	case CMD2_EPG_SRV_RELOAD_EPG:
-		PostMessage(sys->hwndMain, WM_APP_RELOAD_EPG, 0, 0);
+		sys->msgManager.Post(ID_APP_RELOAD_EPG);
 		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_EPG_SRV_RELOAD_SETTING:
@@ -1643,16 +1824,20 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		{
 			WORD val;
 			if( cmd.ReadVALUE(&val) && sys->IsSuspendOK() ){
+#ifdef _WIN32
 				lock_recursive_mutex lock(sys->settingLock);
 				//再起動フラグが0xFFのときはデフォルト動作に従う
-				PostMessage(sys->hwndMain, WM_APP_REQUEST_SHUTDOWN, LOBYTE(val), HIBYTE(val) == 0xFF ? sys->setting.reboot : (HIBYTE(val) != 0));
+				sys->msgManager.Post(ID_APP_REQUEST_SHUTDOWN, LOBYTE(val), HIBYTE(val) == 0xFF ? sys->setting.reboot : (HIBYTE(val) != 0));
 				res.SetParam(CMD_SUCCESS);
+#endif
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_REBOOT:
-		PostMessage(sys->hwndMain, WM_APP_REQUEST_REBOOT, 0, 0);
+#ifdef _WIN32
+		sys->msgManager.Post(ID_APP_REQUEST_REBOOT);
 		res.SetParam(CMD_SUCCESS);
+#endif
 		break;
 	case CMD2_EPG_SRV_EPG_CAP_NOW:
 		if( sys->epgDB.IsInitialLoadingDataDone() == false ){
@@ -1899,9 +2084,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			WORD mode;
 			if( cmd.ReadVALUE(&mode) && (mode == 1 || mode == 2) ){
 				vector<wstring> fileList;
-				EnumFindFile(GetModulePath().replace_filename(mode == 1 ? fs_path(L"RecName").append(L"RecName*.dll") : fs_path(L"Write").append(L"Write*.dll")),
+				EnumFindFile(
+#ifdef EDCB_LIB_ROOT
+					fs_path(EDCB_LIB_ROOT)
+#else
+					GetModulePath().replace_filename(mode == 1 ? L"RecName" : L"Write")
+#endif
+					.append(mode == 1 ? L"RecName*" EDCB_LIB_EXT : L"Write*" EDCB_LIB_EXT),
 				             [&](UTIL_FIND_DATA& findData) -> bool {
-					if( findData.isDir == false && UtilPathEndsWith(findData.fileName.c_str(), L".dll") ){
+					if( findData.isDir == false && UtilPathEndsWith(findData.fileName.c_str(), EDCB_LIB_EXT) ){
 						fileList.push_back(std::move(findData.fileName));
 					}
 					return true;
@@ -1954,46 +2145,69 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			int n;
 			if( cmd.ReadVALUE(&n) ){
 				fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvNotify.log");
-				std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(logPath, UTIL_SHARED_READ), fclose);
+				std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(logPath, UTIL_SHARED_READ));
 				if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
-					LONGLONG count = my_ftell(fp.get());
-					if( count >= 0 ){
-						//末尾からn行だけ戻った位置をさがす
-						const DWORD sowc = sizeof(WCHAR);
-						LONGLONG pos = count = count / sowc;
-						while( pos > 1 && n > 0 ){
-							DWORD dwRead = (DWORD)min(pos - 1, 4096LL);
-							WCHAR buff[4096];
-							if( my_fseek(fp.get(), sowc * (pos - dwRead), SEEK_SET) || fread(buff, sowc, dwRead, fp.get()) != dwRead ){
+					LONGLONG pos = my_ftell(fp.get());
+					if( pos >= 0 ){
+						//末尾からn行だけ戻った位置まで読む
+#if WCHAR_MAX > 0xFFFF
+						vector<char> buff;
+						int bomLen = 0;
+#else
+						vector<WCHAR> buff;
+						int bomLen = 1;
+#endif
+						pos = pos / sizeof(buff[0]);
+						while( pos > bomLen && n > 0 ){
+							DWORD dwRead = (DWORD)min(pos - bomLen, 4096LL);
+							pos -= dwRead;
+							buff.resize(buff.size() + dwRead);
+							if( buff.size() > 64 * 1024 * 1024 ||
+							    my_fseek(fp.get(), sizeof(buff[0]) * pos, SEEK_SET) ||
+							    fread(buff.data() + buff.size() - dwRead, sizeof(buff[0]), dwRead, fp.get()) != dwRead ){
+								//改行が見つからないかリードエラーにより失敗
+								buff.clear();
 								break;
 							}
-							for( ; dwRead > 0; pos-- ){
-								if( buff[--dwRead] == L'\n' ){
-									if( count > pos ){
+							//ファイル後方がbuffの前方になるようにひっくり返す(あとで戻す)
+							std::reverse(buff.end() - dwRead, buff.end());
+							for( size_t i = buff.size() - dwRead; i < buff.size(); ){
+								if( buff[i] == 0x0A ){
+									if( i > 0 ){
 										//必要行数に達したか大きすぎる場合は完了
-										if( --n <= 0 || count - pos >= 32 * 1024 * 1024 ){
+										if( --n <= 0 || i > 32 * 1024 * 1024 ){
 											n = 0;
+											buff.resize(i);
 											break;
 										}
 									}
-									//countは末尾改行の位置で固定
-								}else if( count == pos ){
-									count--;
+									i++;
+									//最後の改行より後ろは消す
+								}else if( i == 0 ){
+									buff.erase(buff.begin());
+								}else{
+									i++;
 								}
 							}
 						}
-						if( count > pos && count - pos < 64 * 1024 * 1024 ){
-							vector<WCHAR> buff((size_t)(count - pos));
-							if( my_fseek(fp.get(), sowc * pos, SEEK_SET) == 0 &&
-							    fread(&buff.front(), sowc, buff.size(), fp.get()) == buff.size() ){
-								res.WriteVALUE(wstring(buff.begin(), buff.end()));
-								res.SetParam(CMD_SUCCESS);
-							}
+						if( buff.empty() == false ){
+							wstring retVal;
+#if WCHAR_MAX > 0xFFFF
+							UTF8toW(string(buff.rbegin(), buff.rend()), retVal);
+#else
+							retVal.assign(buff.rbegin(), buff.rend());
+#endif
+							res.WriteVALUE(retVal);
+							res.SetParam(CMD_SUCCESS);
 						}
 					}
 				}
 			}
 		}
+		break;
+	case CMD2_EPG_SRV_ENUM_TUNER_PROCESS:
+		res.WriteVALUE(sys->reserveManager.GetTunerProcessStatusAll());
+		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_EPG_SRV_NWTV_SET_CH:
 	case CMD2_EPG_SRV_NWTV_ID_SET_CH:
@@ -2634,6 +2848,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 			return true;
 		}
 		break;
+#ifdef _WIN32
 	case CMD2_EPG_SRV_GET_NETWORK_PATH:
 		if( this->compatFlags & 0x10 ){
 			//互換動作: ネットワークパス取得コマンドを実装する
@@ -2684,6 +2899,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 			return true;
 		}
 		break;
+#endif
 	case CMD2_EPG_SRV_SEARCH_PG2:
 		if( this->compatFlags & 0x20 ){
 			//互換動作: 番組検索の追加コマンドを実装する
@@ -2724,7 +2940,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 					dummy.transport_stream_id = 0;
 					dummy.service_id = 0;
 					dummy.event_id = 0;
-					GetSystemTime(&dummy.start_time);
+					ConvertSystemTime(GetNowI64Time() - I64_UTIL_TIMEZONE, &dummy.start_time);
 					for( size_t i = 0; i < key.size(); i++ ){
 						this->epgDB.SearchEpg(&key[i], 1, 0, LLONG_MAX, NULL, [&byResult](const EPGDB_EVENT_INFO* val, wstring*) {
 							if( val ){
@@ -2806,10 +3022,11 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 						path = GetCommonIniPath().replace_filename(list[i]);
 					}else{
 						//ロゴフォルダに対する特例
-						size_t namePos = array_size(LOGO_SAVE_FOLDER L"\\") - 1;
-						if( list[i].size() > namePos && UtilComparePath(list[i].substr(0, namePos).c_str(), LOGO_SAVE_FOLDER L"\\") == 0 ){
+						size_t sepPos = array_size(LOGO_SAVE_FOLDER) - 1;
+						if( list[i].size() > sepPos + 1 && (list[i][sepPos] == L'\\' || list[i][sepPos] == L'/') &&
+						    UtilComparePath(list[i].substr(0, sepPos).c_str(), LOGO_SAVE_FOLDER) == 0 ){
 							path = GetSettingPath().append(LOGO_SAVE_FOLDER);
-							wstring name = list[i].substr(namePos);
+							wstring name = list[i].substr(sepPos + 1);
 							if( name != L"*.*" ){
 								CheckFileName(name);
 							}
@@ -2826,7 +3043,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 								           findData.isDir ? 1 : 0, findData.lastWriteTime + I64_UTIL_TIMEZONE, findData.fileSize);
 								strData += prop;
 								strData += findData.fileName;
-								strData += L"\r\n";
+								strData += UTIL_NEWLINE;
 								return true;
 							});
 							if( totalSizeRemain < strData.size() ){
@@ -2834,9 +3051,18 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 								break;
 							}
 							totalSizeRemain -= strData.size();
+#if WCHAR_MAX > 0xFFFF
+							//BOMつきUTF-8
+							string strDataU;
+							WtoUTF8(strData, strDataU);
+							result[i].Data.assign((const BYTE*)strDataU.c_str(), (const BYTE*)(strDataU.c_str() + strDataU.size()));
+#else
 							//BOMつきUTF-16
 							result[i].Data.assign((const BYTE*)strData.c_str(), (const BYTE*)(strData.c_str() + strData.size()));
-						}else if( UtilPathEndsWith(path.c_str(), L".ini") ){
+#endif
+						}
+#ifdef _WIN32
+						else if( UtilPathEndsWith(path.c_str(), L".ini") ){
 							//ファイルロックを邪魔しないようAPI経由で読む
 							wstring strData = L"\xFEFF";
 							int appendModulePathState = UtilComparePath(path.filename().c_str(), L"Common.ini") == 0;
@@ -2871,8 +3097,10 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 								//BOMつきUTF-16
 								result[i].Data.assign((const BYTE*)strData.c_str(), (const BYTE*)(strData.c_str() + strData.size()));
 							}
-						}else{
-							std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
+						}
+#endif
+						else{
+							std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(path, UTIL_SECURE_READ));
 							if( fp && my_fseek(fp.get(), 0, SEEK_END) == 0 ){
 								LONGLONG fileSize = my_ftell(fp.get());
 								if( 0 < fileSize ){
@@ -2959,6 +3187,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ "ChgProtectRecFileInfo", LuaChgProtectRecFileInfo },
 		{ "DelRecFileInfo", LuaDelRecFileInfo },
 		{ "GetTunerReserveAll", LuaGetTunerReserveAll },
+		{ "GetTunerProcessStatusAll", LuaGetTunerProcessStatusAll },
 		{ "EnumAutoAdd", LuaEnumAutoAdd },
 		{ "EnumManuAdd", LuaEnumManuAdd },
 		{ "DelAutoAdd", LuaDelAutoAdd },
@@ -3020,6 +3249,12 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		"edcb.io.open=function(n,m)"
 		" local f,e=io.open(n,m)"
 		" if not f then return f,e end"
+		" edcb.io._cloexec(f)"
+		" return f;"
+		"end;"
+		"edcb.io.popen=function(p,m)"
+		" local f=io.popen(p,m)"
+		" if not f then return f end"
 		" edcb.io._cloexec(f)"
 		" return f;"
 		"end;");
@@ -3106,6 +3341,7 @@ void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& 
 	}
 }
 
+#ifdef _WIN32
 void CEpgTimerSrvMain::DoLuaWorker(CEpgTimerSrvMain* sys)
 {
 	for(;;){
@@ -3137,6 +3373,85 @@ void CEpgTimerSrvMain::DoLuaWorker(CEpgTimerSrvMain* sys)
 		}
 	}
 }
+#else
+void CEpgTimerSrvMain::ProcessLuaPost(CEpgTimerSrvMain* sys)
+{
+	fs_path path = fs_path(EDCB_INI_ROOT).append(LUAPOST_FIFO);
+	string strPath;
+	WtoUTF8(path.native(), strPath);
+	std::vector<char> scripts;
+	int fd = -1;
+	while( sys->processLuaPostStopEvent.WaitOne(0) == false ){
+		if( fd < 0 ){
+			//read()が速やかにEOFを返すことで待機できなくなるのを避けるためO_RDWR
+			fd = open(strPath.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
+			if( fd < 0 ){
+				if( errno == ENOENT ){
+					mkfifo(strPath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+				}
+				if( sys->processLuaPostStopEvent.WaitOne(1000) ){
+					break;
+				}
+				continue;
+			}
+			//送り側がオープンしているかどうかに関わらず成功する
+		}
+
+		scripts.resize(scripts.size() + 4096);
+		int n = (int)read(fd, scripts.data() + scripts.size() - 4096, 4096);
+		if( n == 0 || (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) ){
+			//終了または失敗。原則ここは踏まない
+			scripts.clear();
+			close(fd);
+			fd = -1;
+			if( sys->processLuaPostStopEvent.WaitOne(100) ){
+				break;
+			}
+		}else if( n < 0 ){
+			//待機
+			scripts.resize(scripts.size() - 4096);
+			pollfd pfds[2];
+			pfds[0].fd = sys->processLuaPostStopEvent.Handle();
+			pfds[0].events = POLLIN;
+			pfds[1].fd = fd;
+			pfds[1].events = POLLIN;
+			if( (poll(pfds, 2, -1) < 0 && errno != EINTR) || sys->processLuaPostStopEvent.WaitOne(0) ){
+				break;
+			}
+		}else{
+			scripts.resize(scripts.size() - 4096 + n);
+			for(;;){
+				auto itr = std::find(scripts.begin(), scripts.end(), '\n');
+				if( itr == scripts.end() ){
+					break;
+				}
+				*itr = '\0';
+				if( itr != scripts.begin() ){
+					lua_State* L = luaL_newstate();
+					if( L ){
+						luaL_openlibs(L);
+						sys->InitLuaCallback(L, NULL);
+						if( luaL_dostring(L, scripts.data()) != 0 ){
+							wstring werr;
+							LPCSTR err = lua_tostring(L, -1);
+							if( err ){
+								UTF8toW(err, werr);
+							}
+							AddDebugLogFormat(L"Error script: %ls", werr.c_str());
+						}
+						lua_close(L);
+					}
+				}
+				scripts.erase(scripts.begin(), itr + 1);
+			}
+		}
+	}
+	remove(strPath.c_str());
+	if( fd >= 0 ){
+		close(fd);
+	}
+}
+#endif
 
 #if 1
 //Lua-edcb空間のコールバック
@@ -3229,33 +3544,71 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 			wstring wsrc;
 			if( CompareNoCase(from, "utf-8") == 0 ){
 				UTF8toW(src, wsrc);
-			}else if( CompareNoCase(from, "cp932") == 0 ){
+			}
+#ifdef _WIN32
+			else if( CompareNoCase(from, "cp932") == 0 ){
 				AtoW(src, wsrc);
-			}else if( CompareNoCase(from, "utf-16le") == 0 ){
+			}
+#endif
+#if WCHAR_MAX <= 0xFFFF
+			else if( CompareNoCase(from, "utf-16le") == 0 ){
 				//srcは仕様により完全にアライメントされている
 				wsrc.assign((LPCWSTR)src, len / 2);
-			}else{
+			}
+#endif
+			else{
 				lua_pushnil(L);
 				return 1;
 			}
 			if( CompareNoCase(to, "utf-8") == 0 ){
 				lua_pushstring(L, ws.WtoUTF8(wsrc));
 				return 1;
-			}else if( CompareNoCase(to, "cp932") == 0 ){
+			}
+#ifdef _WIN32
+			else if( CompareNoCase(to, "cp932") == 0 ){
 				UTF8toW(ws.WtoUTF8(wsrc), wsrc);
 				string dest;
 				WtoA(wsrc, dest);
 				lua_pushstring(L, dest.c_str());
 				return 1;
-			}else if( CompareNoCase(to, "utf-16le") == 0 ){
+			}
+#endif
+#if WCHAR_MAX <= 0xFFFF
+			else if( CompareNoCase(to, "utf-16le") == 0 ){
 				UTF8toW(ws.WtoUTF8(wsrc), wsrc);
 				lua_pushlstring(L, (LPCSTR)wsrc.c_str(), wsrc.size() * 2);
 				return 1;
 			}
+#endif
 		}
 	}
 	lua_pushnil(L);
 	return 1;
+}
+
+void CEpgTimerSrvMain::RedirectRelativeIniPath(wstring& path)
+{
+	//'\'と'/'は区別しない
+	std::replace(path.begin(), path.end(), fs_path::preferred_separator == L'/' ? L'\\' : L'/', fs_path::preferred_separator);
+	size_t sepPos = path.find(fs_path::preferred_separator);
+	if( sepPos != wstring::npos ){
+		path[sepPos] = L'\0';
+		if( UtilComparePath(path.c_str(), L"Setting") == 0 ){
+			//「設定関係保存フォルダ」にリダイレクト
+			path = GetSettingPath().append(path.c_str() + sepPos + 1).native();
+			return;
+		}
+#ifdef EDCB_LIB_ROOT
+		if( UtilComparePath(path.c_str(), L"RecName") == 0 ||
+		    UtilComparePath(path.c_str(), L"Write") == 0 ){
+			//プラグインフォルダ階層を除去
+			path = GetCommonIniPath().replace_filename(path.c_str() + sepPos + 1).native();
+			return;
+		}
+#endif
+		path[sepPos] = fs_path::preferred_separator;
+	}
+	path = GetCommonIniPath().replace_filename(path).native();
 }
 
 int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
@@ -3267,22 +3620,24 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 		LPCSTR def = lua_isboolean(L, 3) ? (lua_toboolean(L, 3) ? "1" : "0") : lua_tostring(L, 3);
 		LPCSTR file = lua_tostring(L, 4);
 		if( app && key && def && file ){
-			if( CompareNoCase(key, "ModulePath") == 0 && CompareNoCase(app, "SET") == 0 && CompareNoCase(file, "Common.ini") == 0 ){
+			wstring strFile;
+			UTF8toW(file, strFile);
+			if( CompareNoCase(key, "ModuleLibPath") == 0 && CompareNoCase(app, "SET") == 0 && UtilComparePath(strFile.c_str(), L"Common.ini") == 0 ){
+				lua_pushstring(L, ws.WtoUTF8(L""
+#ifdef EDCB_LIB_ROOT
+					EDCB_LIB_ROOT
+#endif
+					));
+			}else if( CompareNoCase(key, "ModulePath") == 0 && CompareNoCase(app, "SET") == 0 && UtilComparePath(strFile.c_str(), L"Common.ini") == 0 ){
 				lua_pushstring(L, ws.WtoUTF8(GetCommonIniPath().parent_path().native()));
 			}else{
 				wstring strApp;
 				wstring strKey;
 				wstring strDef;
-				wstring strFile;
 				UTF8toW(app, strApp);
 				UTF8toW(key, strKey);
 				UTF8toW(def, strDef);
-				UTF8toW(file, strFile);
-				if( CompareNoCase(strFile.substr(0, 8), L"Setting\\") == 0 ){
-					strFile = GetSettingPath().append(strFile.substr(8)).native();
-				}else{
-					strFile = GetCommonIniPath().replace_filename(strFile).native();
-				}
+				RedirectRelativeIniPath(strFile);
 				wstring buff = GetPrivateProfileToString(strApp.c_str(), strKey.c_str(), strDef.c_str(), strFile.c_str());
 				lua_pushstring(L, ws.WtoUTF8(buff));
 			}
@@ -3309,13 +3664,14 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 			UTF8toW(key ? key : "", strKey);
 			UTF8toW(val ? val : "", strVal);
 			UTF8toW(file, strFile);
-			if( CompareNoCase(strFile.substr(0, 8), L"Setting\\") == 0 ){
-				strFile = GetSettingPath().append(strFile.substr(8)).native();
-			}else{
-				strFile = GetCommonIniPath().replace_filename(strFile).native();
+			RedirectRelativeIniPath(strFile);
+			//想定外のキーを挿入されないよう改行文字がないことを確認
+			if( strApp.find_first_of(L"\n\r") == wstring::npos &&
+			    strKey.find_first_of(L"\n\r") == wstring::npos &&
+			    strVal.find_first_of(L"\n\r") == wstring::npos ){
+				lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : NULL, val ? strVal.c_str() : NULL, strFile.c_str()));
+				return 1;
 			}
-			lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : NULL, val ? strVal.c_str() : NULL, strFile.c_str()));
-			return 1;
 		}
 	}
 	lua_pushboolean(L, false);
@@ -3325,7 +3681,7 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 int CEpgTimerSrvMain::LuaReloadEpg(lua_State* L)
 {
 	CLuaWorkspace ws(L);
-	PostMessage(ws.sys->hwndMain, WM_APP_RELOAD_EPG, 0, 0);
+	ws.sys->msgManager.Post(ID_APP_RELOAD_EPG);
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -3704,8 +4060,8 @@ int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
 			LuaHelp::reg_int(L, "tsid", r.transportStreamID);
 			LuaHelp::reg_int(L, "sid", r.serviceID);
 			LuaHelp::reg_int(L, "eid", r.eventID);
-			LuaHelp::reg_int64(L, "drops", r.drops);
-			LuaHelp::reg_int64(L, "scrambles", r.scrambles);
+			LuaHelp::reg_number(L, "drops", (double)r.drops);
+			LuaHelp::reg_number(L, "scrambles", (double)r.scrambles);
 			LuaHelp::reg_int(L, "recStatus", (int)r.recStatus);
 			LuaHelp::reg_time(L, "startTimeEpg", r.startTimeEpg);
 			LuaHelp::reg_string(L, "comment", ws.WtoUTF8(r.GetComment()));
@@ -3774,6 +4130,29 @@ int CEpgTimerSrvMain::LuaGetTunerReserveAll(lua_State* L)
 			lua_rawseti(L, -2, (int)j + 1);
 		}
 		lua_rawset(L, -3);
+		lua_rawseti(L, -2, (int)i + 1);
+	}
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaGetTunerProcessStatusAll(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	lua_newtable(L);
+	vector<TUNER_PROCESS_STATUS_INFO> list = ws.sys->reserveManager.GetTunerProcessStatusAll();
+	for( size_t i = 0; i < list.size(); i++ ){
+		lua_newtable(L);
+		LuaHelp::reg_int(L, "tunerID", (int)list[i].tunerID);
+		LuaHelp::reg_int(L, "processID", list[i].processID);
+		LuaHelp::reg_number(L, "drop", (double)list[i].drop);
+		LuaHelp::reg_number(L, "scramble", (double)list[i].scramble);
+		LuaHelp::reg_number(L, "signalLv", list[i].signalLv);
+		LuaHelp::reg_int(L, "space", list[i].space);
+		LuaHelp::reg_int(L, "ch", list[i].ch);
+		LuaHelp::reg_int(L, "onid", list[i].originalNetworkID);
+		LuaHelp::reg_int(L, "tsid", list[i].transportStreamID);
+		LuaHelp::reg_boolean(L, "recFlag", list[i].recFlag != 0);
+		LuaHelp::reg_boolean(L, "epgCapFlag", list[i].epgCapFlag != 0);
 		lua_rawseti(L, -2, (int)i + 1);
 	}
 	return 1;
@@ -3963,7 +4342,7 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 				}
 				lua_createtable(ws.L, 0, 4);
 				LuaHelp::reg_string(ws.L, "name", ws.WtoUTF8(findData.fileName));
-				LuaHelp::reg_int64(ws.L, "size", findData.fileSize);
+				LuaHelp::reg_number(ws.L, "size", (double)findData.fileSize);
 				LuaHelp::reg_boolean(ws.L, "isdir", findData.isDir);
 				SYSTEMTIME st;
 				ConvertSystemTime(findData.lastWriteTime + I64_UTIL_TIMEZONE, &st);

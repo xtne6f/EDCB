@@ -4,8 +4,7 @@ dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 vtag=GetVarInt(mg.request_info.query_string,'vtag') or -1
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML]=]..(vtag<=0 and ' PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"' or '')..[=[>
+ct:Append((vtag<=0 and DOCTYPE_HTML4_STRICT or '<!DOCTYPE html>\n')..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -24,9 +23,9 @@ if index then
   if dir then
     dirhash=mg.get_var(mg.request_info.query_string,'d')
     if dirhash then
-      for i,v in ipairs(edcb.FindFile(dir..'\\*',0) or {}) do
+      for i,v in ipairs(edcb.FindFile(PathAppend(dir,'*'),0) or {}) do
         if v.isdir and mg.md5(v.name)==dirhash then
-          dir=dir..'\\'..v.name
+          dir=PathAppend(dir,v.name)
           dirname=LIBRARY_LIST[index]..'/'..v.name
           break
         end
@@ -58,10 +57,10 @@ else
       ..'<th><a href="library.html?i='..index..'&amp;s='..(sort~='na' and 'na' or 'nd')..(dirhash and '&amp;d='..dirhash or '')..'">Name</a></tr>\n'
       ..'<tr><td><td><td><a href="library.html'..(dirhash and '?i='..index or '')..'">Parent directory ..</a></tr>\n')
     ff={}
-    for i,v in ipairs(edcb.FindFile(dir..'\\*',0) or {}) do
+    for i,v in ipairs(edcb.FindFile(PathAppend(dir,'*'),0) or {}) do
       if not v.isdir then
         for j,ext in ipairs(xlist) do
-          if #v.name>#ext and v.name:sub(-#ext):lower()==ext:lower() then
+          if #v.name>#ext and IsEqualPath(v.name:sub(-#ext),ext) then
             ff[#ff+1]=v
             break
           end
@@ -98,7 +97,7 @@ else
     ct:Append('<div id="main">\n')
     info=nil
     for i,v in ipairs(xlist) do
-      for j,w in ipairs(edcb.FindFile(dir..'\\*'..v,0) or {}) do
+      for j,w in ipairs(edcb.FindFile(PathAppend(dir,'*'..v),0) or {}) do
         if not w.isdir and mg.md5(w.name)==hash then
           info=w
           info.ists=v==tsx
@@ -125,7 +124,7 @@ else
                                          ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplate() or '</a>'))
       if info.ists then
         fsec,fsize=0,0
-        f=edcb.io.open(dir..'\\'..info.name,'rb')
+        f=edcb.io.open(PathAppend(dir,info.name),'rb')
         if f then
           fsec,fsize=GetDurationSec(f)
           f:close()
@@ -166,4 +165,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

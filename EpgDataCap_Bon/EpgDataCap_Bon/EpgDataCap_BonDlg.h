@@ -6,6 +6,7 @@
 
 #include "../../BonCtrl/BonCtrl.h"
 #include "../../Common/PipeServer.h"
+#include "AppSetting.h"
 #include "EpgDataCap_BonDef.h"
 #include "SettingDlg.h"
 
@@ -17,16 +18,7 @@ public:
 	CEpgDataCap_BonDlg();	// 標準コンストラクター
 	~CEpgDataCap_BonDlg();
 	INT_PTR DoModal();
-
-	void SetInitBon(LPCWSTR bonFile){ iniBonDriver = bonFile; }
-	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
-	void SetIniNW(BOOL networkFlag){ iniNetwork = networkFlag; };
-	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
-	void SetIniNWUDP(BOOL udpFlag){ iniUDP = udpFlag; };
-	void SetIniNWTCP(BOOL tcpFlag){ iniTCP = tcpFlag; };
-	void SetIniONID(int onid){ iniONID = onid; }
-	void SetIniTSID(int tsid){ iniTSID = tsid; }
-	void SetIniSID(int sid){ iniSID = sid; }
+	void ParseCommandLine(LPWSTR* argv, int argc);
 
 // ダイアログ データ
 	enum { IDD = IDD_EPGDATACAP_BON_DIALOG };
@@ -63,25 +55,8 @@ protected:
 	HICON m_hIcon2;
 	HANDLE m_hViewProcess;
 
-	BOOL modifyTitleBarText;
-	BOOL overlayTaskIcon;
-	BOOL minTask;
-	wstring recFileName;
-	BOOL overWriteFlag;
-	wstring viewPath;
-	wstring viewOpt;
-	BOOL viewSingle;
-	BOOL viewCloseOnExit;
-	int dropSaveThresh;
-	int scrambleSaveThresh;
-	BOOL dropLogAsUtf8;
-	DWORD tsBuffMaxCount;
-	int writeBuffMaxCount;
-	int traceBonDriverLevel;
-	int openWait;
+	APP_SETTING setting;
 	vector<wstring> recFolderList;
-	vector<NW_SEND_INFO> setUdpSendList;
-	vector<NW_SEND_INFO> setTcpSendList;
 
 	wstring iniBonDriver;
 	BOOL iniMin;
@@ -95,15 +70,15 @@ protected:
 
 	CBonCtrl bonCtrl;
 	CPipeServer pipeServer;
-	int outCtrlID;
 	vector<DWORD> cmdCtrlList;
 	const CCmdStream* cmdCapture;
 	CCmdStream* resCapture;
 
+	recursive_mutex_ statusInfoLock;
+	VIEW_APP_STATUS_INFO statusInfo;
+
 	//サービス一覧の表示と同期する。ただしこのリストには非表示サービスも含む
 	vector<CH_DATA4> serviceList;
-	WORD lastONID;
-	WORD lastTSID;
 	DWORD recCtrlID;
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;

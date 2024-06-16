@@ -367,6 +367,19 @@ public:
 		return SendCmdData(CMD2_VIEW_APP_SET_STANDBY_REC, keepFlag);
 	}
 
+	//現在の状態を詳細に取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// flags				[IN]VIEW_APP_FLAG_GET_*
+	// info					[OUT]ステータス情報
+	DWORD SendViewGetStatusDetails(
+		DWORD flags,
+		VIEW_APP_STATUS_INFO* info
+		){
+		return SendAndReceiveCmdData(CMD2_VIEW_APP_GET_STATUS_DETAILS, flags, info);
+	}
+
 	//ストリーム制御用コントロール作成
 	//戻り値：
 	// エラーコード

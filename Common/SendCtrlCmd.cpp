@@ -87,7 +87,7 @@ bool CSendCtrlCmd::PipeExists()
 			return true;
 		}
 #else
-		return UtilFileExists(EDCB_INI_ROOT + this->pipeName).first;
+		return UtilFileExists(fs_path(EDCB_INI_ROOT).append(this->pipeName)).first;
 #endif
 	}
 	return false;
@@ -147,7 +147,7 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CCmdStream& cmd, CC
 	auto closeFile = [=]() { return CloseHandle(pipe); };
 #else
 	string sockPath;
-	WtoUTF8(EDCB_INI_ROOT + pipeName, sockPath);
+	WtoUTF8(fs_path(EDCB_INI_ROOT).append(pipeName).native(), sockPath);
 	sockaddr_un addr;
 	if( sockPath.size() >= sizeof(addr.sun_path) ){
 		return CMD_ERR_INVALID_ARG;

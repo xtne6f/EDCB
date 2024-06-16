@@ -31,19 +31,23 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 
 	taskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 
-	iniView = FALSE;
-	iniNetwork = TRUE;
-	iniMin = FALSE;
+	this->iniMin = FALSE;
+	this->iniView = TRUE;
+	this->iniNetwork = TRUE;
 	this->iniUDP = FALSE;
 	this->iniTCP = FALSE;
 	this->iniONID = -1;
 	this->iniTSID = -1;
 	this->iniSID = -1;
-	this->outCtrlID = -1;
 	this->cmdCapture = NULL;
 	this->resCapture = NULL;
-	this->lastONID = 0xFFFF;
-	this->lastTSID = 0xFFFF;
+	VIEW_APP_STATUS_INFO info = {};
+	info.space = -1;
+	info.ch = -1;
+	info.originalNetworkID = -1;
+	info.transportStreamID = -1;
+	info.appID = -1;
+	this->statusInfo = info;
 	this->recCtrlID = 0;
 	this->chScanWorking = FALSE;
 	this->epgCapWorking = FALSE;
@@ -75,6 +79,52 @@ INT_PTR CEpgDataCap_BonDlg::DoModal()
 	                      NULL, DlgProc, (LPARAM)this);
 }
 
+void CEpgDataCap_BonDlg::ParseCommandLine(LPWSTR* argv, int argc)
+{
+	LPCWSTR curr = L"";
+	LPCWSTR optUpperD = NULL;
+	LPCWSTR optLowerD = NULL;
+	for( int i = 1; i < argc; i++ ){
+		if( argv[i][0] == L'-' || argv[i][0] == L'/' ){
+			curr = argv[i] + 1;
+			if( wcscmp(curr, L"D") == 0 && optUpperD == NULL ){
+				optUpperD = L"";
+			}else if( wcscmp(curr, L"d") == 0 && optLowerD == NULL ){
+				optLowerD = L"";
+			}else if( CompareNoCase(curr, L"min") == 0 ){
+				this->iniMin = TRUE;
+			}else if( CompareNoCase(curr, L"noview") == 0 ){
+				this->iniView = FALSE;
+			}else if( CompareNoCase(curr, L"nonw") == 0 ){
+				this->iniNetwork = FALSE;
+			}else if( CompareNoCase(curr, L"nwudp") == 0 ){
+				this->iniUDP = TRUE;
+			}else if( CompareNoCase(curr, L"nwtcp") == 0 ){
+				this->iniTCP = TRUE;
+			}
+		}else if( wcscmp(curr, L"D") == 0 && optUpperD && optUpperD[0] == L'\0' ){
+			optUpperD = argv[i];
+		}else if( wcscmp(curr, L"d") == 0 && optLowerD && optLowerD[0] == L'\0' ){
+			optLowerD = argv[i];
+		}else if( CompareNoCase(curr, L"nid") == 0 ){
+			this->iniONID = wcstol(argv[i], NULL, 10);
+		}else if( CompareNoCase(curr, L"tsid") == 0 ){
+			this->iniTSID = wcstol(argv[i], NULL, 10);
+		}else if( CompareNoCase(curr, L"sid") == 0 ){
+			this->iniSID = wcstol(argv[i], NULL, 10);
+		}
+	}
+	if( optUpperD ){
+		this->iniBonDriver = optUpperD;
+		AddDebugLogFormat(L"%ls", optUpperD);
+	}
+	//原作の挙動に合わせるため
+	if( optLowerD ){
+		this->iniBonDriver = optLowerD;
+		AddDebugLogFormat(L"%ls", optLowerD);
+	}
+}
+
 HICON CEpgDataCap_BonDlg::LoadLargeOrSmallIcon(int iconID, bool isLarge)
 {
 	HMODULE hModule = GetModuleHandle(L"comctl32.dll");
@@ -100,29 +150,9 @@ void CEpgDataCap_BonDlg::CheckAndSetDlgItemText(HWND wnd, int id, LPCWSTR text)
 
 void CEpgDataCap_BonDlg::ReloadSetting()
 {
-	fs_path appIniPath = GetModuleIniPath();
+	this->setting = APP_SETTING::Load(GetModuleIniPath().c_str());
 
-	//セクション単位で処理するほうが軽い
-	vector<WCHAR> buffSet = GetPrivateProfileSectionBuffer(L"SET", appIniPath.c_str());
-
-	SetSaveDebugLog(GetBufferedProfileInt(buffSet.data(), L"SaveDebugLog", 0) != 0);
-	this->modifyTitleBarText  = GetBufferedProfileInt(buffSet.data(), L"ModifyTitleBarText", 1) != 0;
-	this->overlayTaskIcon     = GetBufferedProfileInt(buffSet.data(), L"OverlayTaskIcon", 1) != 0;
-	this->minTask             = GetBufferedProfileInt(buffSet.data(), L"MinTask", 0) != 0;
-	this->recFileName         = GetBufferedProfileToString(buffSet.data(), L"RecFileName",
-	                                                       L"$DYYYY$$DMM$$DDD$-$THH$$TMM$$TSS$-$ServiceName$.ts");
-	this->overWriteFlag       = GetBufferedProfileInt(buffSet.data(), L"OverWrite", 0) != 0;
-	this->viewPath            = GetBufferedProfileToString(buffSet.data(), L"ViewPath", L"");
-	this->viewOpt             = GetBufferedProfileToString(buffSet.data(), L"ViewOption", L"");
-	this->viewSingle          = GetBufferedProfileInt(buffSet.data(), L"ViewSingle", 1) != 0;
-	this->viewCloseOnExit     = GetBufferedProfileInt(buffSet.data(), L"ViewCloseOnExit", 0) != 0;
-	this->dropSaveThresh      = GetBufferedProfileInt(buffSet.data(), L"DropSaveThresh", 0);
-	this->scrambleSaveThresh  = GetBufferedProfileInt(buffSet.data(), L"ScrambleSaveThresh", -1);
-	this->dropLogAsUtf8       = GetBufferedProfileInt(buffSet.data(), L"DropLogAsUtf8", 0) != 0;
-	this->tsBuffMaxCount      = (DWORD)GetBufferedProfileInt(buffSet.data(), L"TsBuffMaxCount", 5000);
-	this->writeBuffMaxCount   = GetBufferedProfileInt(buffSet.data(), L"WriteBuffMaxCount", -1);
-	this->traceBonDriverLevel = GetBufferedProfileInt(buffSet.data(), L"TraceBonDriverLevel", 0);
-	this->openWait            = GetBufferedProfileInt(buffSet.data(), L"OpenWait", 200);
+	SetSaveDebugLog(this->setting.saveDebugLog);
 
 	this->recFolderList.clear();
 	for( int i = 0; ; i++ ){
@@ -133,53 +163,24 @@ void CEpgDataCap_BonDlg::ReloadSetting()
 		}
 	}
 
-	this->setUdpSendList.clear();
-	this->setTcpSendList.clear();
-	for( int tcp = 0; tcp < 2; tcp++ ){
-		vector<WCHAR> buffSetNW = GetPrivateProfileSectionBuffer(tcp ? L"SET_TCP" : L"SET_UDP", appIniPath.c_str());
-		int count = GetBufferedProfileInt(buffSetNW.data(), L"Count", 0);
-		for( int i = 0; i < count; i++ ){
-			NW_SEND_INFO item;
-			WCHAR key[64];
-			swprintf_s(key, L"IP%d", i);
-			item.ipString = GetBufferedProfileToString(buffSetNW.data(), key, L"2130706433");
-			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
-				item.ipString.erase(0, 1).pop_back();
-			}else{
-				UINT ip = (int)wcstol(item.ipString.c_str(), NULL, 10);
-				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
-			}
-			swprintf_s(key, L"Port%d", i);
-			item.port = 0;
-			if( item.ipString != BON_NW_SRV_PIPE_IP ){
-				item.port = GetBufferedProfileInt(buffSetNW.data(), key, tcp ? BON_TCP_PORT_BEGIN : BON_UDP_PORT_BEGIN);
-			}
-			swprintf_s(key, L"BroadCast%d", i);
-			item.broadcastFlag = tcp ? 0 : GetBufferedProfileInt(buffSetNW.data(), key, 0);
-			item.udpMaxSendSize = tcp ? 0 : GetBufferedProfileInt(buffSet.data(), L"UDPPacket", 128) * 188;
-			(tcp ? this->setTcpSendList : this->setUdpSendList).push_back(item);
-		}
-	}
+	this->bonCtrl.SetBackGroundEpgCap(this->setting.epgCapLive,
+	                                  this->setting.epgCapRec,
+	                                  this->setting.epgCapBackBSBasic,
+	                                  this->setting.epgCapBackCS1Basic,
+	                                  this->setting.epgCapBackCS2Basic,
+	                                  this->setting.epgCapBackCS3Basic,
+	                                  this->setting.epgCapBackStartWaitSec);
 
-	this->bonCtrl.SetBackGroundEpgCap(GetBufferedProfileInt(buffSet.data(), L"EpgCapLive", 1) != 0,
-	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapRec", 1) != 0,
-	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapBackBSBasicOnly", 1) != 0,
-	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapBackCS1BasicOnly", 1) != 0,
-	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapBackCS2BasicOnly", 1) != 0,
-	                                  GetBufferedProfileInt(buffSet.data(), L"EpgCapBackCS3BasicOnly", 0) != 0,
-	                                  (DWORD)GetBufferedProfileInt(buffSet.data(), L"EpgCapBackStartWaitSec", 30));
+	this->bonCtrl.ReloadSetting(this->setting.emm,
+	                            this->setting.noLogScramble,
+	                            this->setting.parseEpgPostProcess,
+	                            this->setting.scramble,
+	                            this->setting.enableCaption,
+	                            this->setting.enableData,
+	                            this->setting.allService,
+	                            this->setting.saveLogo ? this->setting.saveLogoTypeFlags : 0);
 
-	this->bonCtrl.ReloadSetting(GetBufferedProfileInt(buffSet.data(), L"EMM", 0) != 0,
-	                            GetBufferedProfileInt(buffSet.data(), L"NoLogScramble", 0) != 0,
-	                            GetBufferedProfileInt(buffSet.data(), L"ParseEpgPostProcess", 0) != 0,
-	                            GetBufferedProfileInt(buffSet.data(), L"Scramble", 1) != 0,
-	                            GetBufferedProfileInt(buffSet.data(), L"Caption", 1) != 0,
-	                            GetBufferedProfileInt(buffSet.data(), L"Data", 0) != 0,
-	                            GetBufferedProfileInt(buffSet.data(), L"AllService", 0) != 0,
-	                            (DWORD)(GetBufferedProfileInt(buffSet.data(), L"SaveLogo", 0) == 0 ? 0 :
-	                                        GetBufferedProfileInt(buffSet.data(), L"SaveLogoTypeFlags", 32)));
-
-	EnableWindow(GetDlgItem(IDC_BUTTON_VIEW), this->viewPath.empty() == false);
+	EnableWindow(GetDlgItem(IDC_BUTTON_VIEW), this->setting.viewPath.empty() == false);
 }
 
 // CEpgDataCap_BonDlg メッセージ ハンドラー
@@ -225,7 +226,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		initOpenWait = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"OpenWait", 0, appIniPath.c_str());
 		initChgWait = GetPrivateProfileInt(this->iniBonDriver.c_str(), L"ChgWait", 0, appIniPath.c_str());
 		AddDebugLogFormat(L"%d,%d,%d,%d,%d", this->iniONID, this->iniTSID, this->iniSID, initOpenWait, initChgWait);
-	}else if( GetPrivateProfileInt(L"SET", L"OpenLast", 1, appIniPath.c_str()) ){
+	}else if( this->setting.openLast ){
 		if( this->iniONID < 0 || this->iniTSID < 0 || this->iniSID < 0 ){
 			this->iniONID = GetPrivateProfileInt(L"SET", L"LastONID", -1, appIniPath.c_str());
 			this->iniTSID = GetPrivateProfileInt(L"SET", L"LastTSID", -1, appIniPath.c_str());
@@ -390,11 +391,11 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	KillTimer(RETRY_ADD_TRAY);
 	KillTimer(TIMER_CHG_TRAY);
 	DeleteTaskBar(m_hWnd, TRAYICON_ID);
-	if( this->overlayTaskIcon ){
+	if( this->setting.overlayTaskIcon ){
 		SetOverlayIcon(NULL);
 	}
 
-	if( m_hViewProcess && this->viewSingle && this->viewCloseOnExit &&
+	if( m_hViewProcess && this->setting.viewSingle && this->setting.viewCloseOnExit &&
 	    WaitForSingleObject(m_hViewProcess, 0) == WAIT_TIMEOUT ){
 		//プロセスのトップレベルウィンドウすべてにWM_CLOSEを投げる
 		pair<int, DWORD> modeAndProcessID(0, GetProcessId(m_hViewProcess));
@@ -451,7 +452,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 		case TIMER_INIT_DLG:
 			{
 				KillTimer( TIMER_INIT_DLG );
-				if( this->iniMin == TRUE && this->minTask == TRUE){
+				if( this->iniMin && this->setting.minTask ){
 					SetTimer(RETRY_ADD_TRAY, 0, NULL);
 				    ShowWindow(m_hWnd, SW_HIDE);
 				}
@@ -462,18 +463,26 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				this->bonCtrl.Check();
 
 				int iLine = Edit_GetFirstVisibleLine(GetDlgItem(IDC_EDIT_STATUS));
-				float signal;
+				float signalLv;
 				int space;
 				int ch;
 				ULONGLONG drop = 0;
 				ULONGLONG scramble = 0;
-				this->bonCtrl.GetViewStatusInfo(&signal, &space, &ch, &drop, &scramble);
+				this->bonCtrl.GetViewStatusInfo(&signalLv, &space, &ch, &drop, &scramble);
+				{
+					lock_recursive_mutex lock(this->statusInfoLock);
+					this->statusInfo.drop = drop;
+					this->statusInfo.scramble = scramble;
+					this->statusInfo.signalLv = signalLv;
+					this->statusInfo.space = space;
+					this->statusInfo.ch = ch;
+				}
 
 				wstring statusLog = L"";
 				if( space >= 0 && ch >= 0 ){
-					Format(statusLog, L"Signal: %.02f Drop: %lld Scramble: %lld  space: %d ch: %d", signal, drop, scramble, space, ch);
+					Format(statusLog, L"Signal: %.02f Drop: %lld Scramble: %lld  space: %d ch: %d", signalLv, drop, scramble, space, ch);
 				}else{
-					Format(statusLog, L"Signal: %.02f Drop: %lld Scramble: %lld", signal, drop, scramble);
+					Format(statusLog, L"Signal: %.02f Drop: %lld Scramble: %lld", signalLv, drop, scramble);
 				}
 				statusLog += L"\r\n";
 
@@ -512,15 +521,19 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				//チャンネルスキャン中はサービス一覧などが安定しないため
 				if( this->chScanWorking == FALSE && this->bonCtrl.GetStreamID(&onid, &tsid) ){
 					//EPG取得中は別の検出ロジックがある
-					if( this->epgCapWorking == FALSE && (this->lastONID != onid || this->lastTSID != tsid) ){
+					if( this->epgCapWorking == FALSE &&
+					    (this->statusInfo.originalNetworkID != onid || this->statusInfo.transportStreamID != tsid) ){
 						//チャンネルが変化した
 						for( size_t i = 0; i < this->serviceList.size(); i++ ){
 							if( this->serviceList[i].originalNetworkID == onid &&
 							    this->serviceList[i].transportStreamID == tsid ){
 								int index = ReloadServiceList(onid, tsid, this->serviceList[i].serviceID);
 								if( index >= 0 ){
-									this->lastONID = onid;
-									this->lastTSID = tsid;
+									{
+										lock_recursive_mutex lock(this->statusInfoLock);
+										this->statusInfo.originalNetworkID = onid;
+										this->statusInfo.transportStreamID = tsid;
+									}
 									this->bonCtrl.SetNWCtrlServiceID(this->serviceList[index].serviceID);
 								}
 								break;
@@ -597,9 +610,12 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					ReloadServiceList(info.ONID, info.TSID, info.SID);
 					this->bonCtrl.SetNWCtrlServiceID(info.SID);
 					CheckAndSetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
-					if( this->lastONID != info.ONID || this->lastTSID != info.TSID ){
-						this->lastONID = info.ONID;
-						this->lastTSID = info.TSID;
+					if( this->statusInfo.originalNetworkID != info.ONID || this->statusInfo.transportStreamID != info.TSID ){
+						{
+							lock_recursive_mutex lock(this->statusInfoLock);
+							this->statusInfo.originalNetworkID = info.ONID;
+							this->statusInfo.transportStreamID = info.TSID;
+						}
 						//トレイアイコンのサービス名を更新するため
 						ChgIconStatus();
 					}
@@ -643,7 +659,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					iconID = IDI_ICON_GRAY;
 				}
 		
-				if( this->modifyTitleBarText ){
+				if( this->setting.modifyTitleBarText ){
 					WCHAR szTitle[256];
 					if( GetWindowText(m_hWnd, szTitle, 256) > 0 ){
 						wstring title = szTitle;
@@ -664,7 +680,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						}
 					}
 				}
-				if( this->overlayTaskIcon ){
+				if( this->setting.overlayTaskIcon ){
 					HICON hIcon = NULL;
 					if( iconID == IDI_ICON_RED || iconID == IDI_ICON_GREEN ){
 						hIcon = LoadLargeOrSmallIcon(iconID == IDI_ICON_RED ? IDI_ICON_OVERLAY_REC : IDI_ICON_OVERLAY_EPG, false);
@@ -674,7 +690,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						DestroyIcon(hIcon);
 					}
 				}
-				if( this->minTask && IsWindowVisible(m_hWnd) == FALSE ){
+				if( this->setting.minTask && IsWindowVisible(m_hWnd) == FALSE ){
 					wstring bonFile;
 					this->bonCtrl.GetOpenBonDriver(&bonFile);
 					WCHAR szBuff[256] = L"";
@@ -712,7 +728,7 @@ void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 	(void)cx;
 	(void)cy;
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
-	if( nType == SIZE_MINIMIZED && this->iniMin == FALSE && this->minTask ){
+	if( nType == SIZE_MINIMIZED && this->iniMin == FALSE && this->setting.minTask ){
 		SetTimer(RETRY_ADD_TRAY, 0, NULL);
 		ShowWindow(m_hWnd, SW_HIDE);
 	}
@@ -729,11 +745,11 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_VIEW_APP_OPEN:
 		//前回起動プロセスの生存を確認する
-		if( m_hViewProcess && (this->viewSingle == FALSE || WaitForSingleObject(m_hViewProcess, 0) != WAIT_TIMEOUT) ){
+		if( m_hViewProcess && (this->setting.viewSingle == false || WaitForSingleObject(m_hViewProcess, 0) != WAIT_TIMEOUT) ){
 			CloseHandle(m_hViewProcess);
 			m_hViewProcess = NULL;
 		}
-		if( m_hViewProcess == NULL && this->viewPath.empty() == false ){
+		if( m_hViewProcess == NULL && this->setting.viewPath.empty() == false ){
 			auto itrUdp = std::find_if(this->udpSendList.begin(), this->udpSendList.end(),
 				[](const NW_SEND_INFO& info) { return info.port < 0x10000; });
 			auto itrTcp = std::find_if(this->tcpSendList.begin(), this->tcpSendList.end(),
@@ -741,7 +757,7 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 			auto itrPipe = std::find_if(this->tcpSendList.begin(), this->tcpSendList.end(),
 				[](const NW_SEND_INFO& info) { return info.ipString == BON_NW_PIPE_IP && info.port < 0x10000; });
 			//実際に送信しているポート番号でマクロを置き換える
-			wstring opt = this->viewOpt;
+			wstring opt = this->setting.viewOption;
 			WCHAR szNum[16];
 			swprintf_s(szNum, L"%d", itrUdp == this->udpSendList.end() ? BON_UDP_PORT_BEGIN : itrUdp->port);
 			Replace(opt, L"$UDPPort$", szNum);
@@ -759,7 +775,7 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 			SHELLEXECUTEINFO sei = {};
 			sei.cbSize = sizeof(sei);
 			sei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
-			sei.lpFile = this->viewPath.c_str();
+			sei.lpFile = this->setting.viewPath.c_str();
 			sei.lpParameters = opt.c_str();
 			sei.nShow = SW_SHOWNORMAL;
 			if( ShellExecuteEx(&sei) ){
@@ -997,7 +1013,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonSet()
 	if( result == IDOK ){
 		ReloadSetting();
 		ReloadNWSet();
-		ReloadServiceList(this->lastONID, this->lastTSID, this->bonCtrl.GetNWCtrlServiceID());
+		ReloadServiceList(this->statusInfo.originalNetworkID, this->statusInfo.transportStreamID, this->bonCtrl.GetNWCtrlServiceID());
 	}
 }
 
@@ -1007,20 +1023,20 @@ void CEpgDataCap_BonDlg::ReloadNWSet()
 	this->tcpSendList.clear();
 	this->bonCtrl.SendUdp(NULL);
 	this->bonCtrl.SendTcp(NULL);
-	if( this->setUdpSendList.empty() == false ){
+	if( this->setting.udpSendList.empty() == false ){
 		EnableWindow(GetDlgItem(IDC_CHECK_UDP), TRUE);
 		if( Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)) ){
-			this->udpSendList = this->setUdpSendList;
+			this->udpSendList = this->setting.udpSendList;
 			this->bonCtrl.SendUdp(&this->udpSendList);
 		}
 	}else{
 		EnableWindow(GetDlgItem(IDC_CHECK_UDP), FALSE);
 		Button_SetCheck(GetDlgItem(IDC_CHECK_UDP), BST_UNCHECKED);
 	}
-	if( this->setTcpSendList.empty() == false ){
+	if( this->setting.tcpSendList.empty() == false ){
 		EnableWindow(GetDlgItem(IDC_CHECK_TCP), TRUE);
 		if( Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)) ){
-			this->tcpSendList = this->setTcpSendList;
+			this->tcpSendList = this->setting.tcpSendList;
 			this->bonCtrl.SendTcp(&this->tcpSendList);
 		}
 	}else{
@@ -1050,7 +1066,7 @@ void CEpgDataCap_BonDlg::UpdateTitleBarText()
 				sep = title.rfind(L" ○ ");
 			}
 		}
-		if( this->modifyTitleBarText ){
+		if( this->setting.modifyTitleBarText ){
 			if( sep == wstring::npos ){
 				title.insert(0, L" - ");
 				sep = 0;
@@ -1137,9 +1153,12 @@ int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 
 BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 {
-	this->lastONID = 0xFFFF;
-	this->lastTSID = 0xFFFF;
-	BOOL ret = this->bonCtrl.OpenBonDriver(fileName, this->traceBonDriverLevel, this->openWait, this->tsBuffMaxCount);
+	{
+		lock_recursive_mutex lock(this->statusInfoLock);
+		this->statusInfo.originalNetworkID = -1;
+		this->statusInfo.transportStreamID = -1;
+	}
+	BOOL ret = this->bonCtrl.OpenBonDriver(fileName, this->setting.traceBonDriverLevel, this->setting.openWait, this->setting.tsBuffMaxCount);
 	if( ret == FALSE ){
 		wstring log;
 		Format(log, L"BonDriverのオープンができませんでした\r\n%ls\r\n", fileName);
@@ -1155,8 +1174,11 @@ BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 BOOL CEpgDataCap_BonDlg::SelectService(const CH_DATA4& chData)
 {
 	if( this->bonCtrl.SetCh(chData) ){
-		this->lastONID = chData.originalNetworkID;
-		this->lastTSID = chData.transportStreamID;
+		{
+			lock_recursive_mutex lock(this->statusInfoLock);
+			this->statusInfo.originalNetworkID = chData.originalNetworkID;
+			this->statusInfo.transportStreamID = chData.transportStreamID;
+		}
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");
 		return TRUE;
 	}
@@ -1201,14 +1223,14 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 	wstring serviceName;
 	Format(serviceName, L"%04X", this->bonCtrl.GetNWCtrlServiceID());
 	for( size_t i = 0; i < this->serviceList.size(); i++ ){
-		if( this->serviceList[i].originalNetworkID == this->lastONID &&
-		    this->serviceList[i].transportStreamID == this->lastTSID &&
+		if( this->serviceList[i].originalNetworkID == this->statusInfo.originalNetworkID &&
+		    this->serviceList[i].transportStreamID == this->statusInfo.transportStreamID &&
 		    this->serviceList[i].serviceID == this->bonCtrl.GetNWCtrlServiceID() ){
 			serviceName = this->serviceList[i].serviceName;
 			break;
 		}
 	}
-	wstring fileName = this->recFileName;
+	wstring fileName = this->setting.recFileName;
 	SYSTEMTIME now;
 	ConvertSystemTime(GetNowI64Time(), &now);
 	for( int i = 0; GetTimeMacroName(i); i++ ){
@@ -1222,13 +1244,13 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 	SET_CTRL_REC_PARAM recParam;
 	recParam.ctrlID = this->recCtrlID;
 	recParam.fileName = L"padding.ts";
-	recParam.overWriteFlag = this->overWriteFlag != FALSE;
+	recParam.overWriteFlag = this->setting.overWrite;
 	recParam.createSize = 0;
 	recParam.saveFolder.resize(1);
 	recParam.saveFolder.back().recFolder = this->recFolderList[0];
 	recParam.saveFolder.back().recFileName = fileName;
 	recParam.pittariFlag = FALSE;
-	if( this->bonCtrl.StartSave(recParam, this->recFolderList, this->writeBuffMaxCount) == FALSE ){
+	if( this->bonCtrl.StartSave(recParam, this->recFolderList, this->setting.writeBuffMaxCount) == FALSE ){
 		this->bonCtrl.DeleteServiceCtrl(this->recCtrlID);
 		this->recCtrlID = 0;
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"録画を開始できませんでした\r\n");
@@ -1292,7 +1314,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckUdp()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)) ){
-		this->udpSendList = this->setUdpSendList;
+		this->udpSendList = this->setting.udpSendList;
 	}else{
 		this->udpSendList.clear();
 	}
@@ -1304,7 +1326,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckTcp()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if( Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)) ){
-		this->tcpSendList = this->setTcpSendList;
+		this->tcpSendList = this->setting.tcpSendList;
 	}else{
 		this->tcpSendList.clear();
 	}
@@ -1525,17 +1547,12 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 			return;
 		case CMD2_VIEW_APP_GET_STATUS:
 			{
-				DWORD val = VIEW_APP_ST_NORMAL;
 				BOOL chChgErr;
-				if( this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ){
-					val = VIEW_APP_ST_ERR_BON;
-				}else if( this->bonCtrl.IsRec() ){
-					val = VIEW_APP_ST_REC;
-				}else if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
-					val = VIEW_APP_ST_GET_EPG;
-				}else if( this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ){
-					val = VIEW_APP_ST_ERR_CH_CHG;
-				}
+				DWORD val =
+					this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ? VIEW_APP_ST_ERR_BON :
+					this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
+					this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
+					this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
 				res.WriteVALUE(val);
 				res.SetParam(CMD_SUCCESS);
 			}
@@ -1547,14 +1564,42 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 			return;
 		case CMD2_VIEW_APP_SET_ID:
 			AddDebugLog(L"CMD2_VIEW_APP_SET_ID");
-			if( cmd.ReadVALUE(&this->outCtrlID) ){
+			if( cmd.ReadVALUE(&this->statusInfo.appID) ){
 				res.SetParam(CMD_SUCCESS);
 			}
 			return;
 		case CMD2_VIEW_APP_GET_ID:
 			AddDebugLog(L"CMD2_VIEW_APP_GET_ID");
-			res.WriteVALUE(this->outCtrlID);
+			res.WriteVALUE(this->statusInfo.appID);
 			res.SetParam(CMD_SUCCESS);
+			return;
+		case CMD2_VIEW_APP_GET_STATUS_DETAILS:
+			{
+				DWORD flags;
+				if( cmd.ReadVALUE(&flags) ){
+					VIEW_APP_STATUS_INFO info;
+					{
+						lock_recursive_mutex lock(this->statusInfoLock);
+						info = this->statusInfo;
+					}
+					if( flags & VIEW_APP_FLAG_GET_STATUS ){
+						BOOL chChgErr;
+						info.status =
+							this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ? VIEW_APP_ST_ERR_BON :
+							this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
+							this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
+							this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
+					}
+					if( flags & VIEW_APP_FLAG_GET_DELAY ){
+						info.delaySec = this->bonCtrl.GetTimeDelay();
+					}
+					if( flags & VIEW_APP_FLAG_GET_BONDRIVER ){
+						this->bonCtrl.GetOpenBonDriver(&info.bonDriver);
+					}
+					res.WriteVALUE(info);
+					res.SetParam(CMD_SUCCESS);
+				}
+			}
 			return;
 		case CMD2_VIEW_APP_REC_FILE_PATH:
 			AddDebugLog(L"CMD2_VIEW_APP_REC_FILE_PATH");
@@ -1711,7 +1756,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 						if( this->cmdCtrlList.empty() == false &&
 						    this->bonCtrl.GetServiceID(this->cmdCtrlList.front(), &sid) && sid != 0xFFFF ){
 							this->bonCtrl.SetNWCtrlServiceID(sid);
-							ReloadServiceList(this->lastONID, this->lastTSID, sid);
+							ReloadServiceList(this->statusInfo.originalNetworkID, this->statusInfo.transportStreamID, sid);
 						}
 						res.SetParam(CMD_SUCCESS);
 					}
@@ -1737,10 +1782,10 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 			SET_CTRL_REC_PARAM val;
 			if( cmd.ReadVALUE(&val) ){
 				if( val.overWriteFlag == 2 ){
-					val.overWriteFlag = this->overWriteFlag != FALSE;
+					val.overWriteFlag = this->setting.overWrite;
 				}
 				this->bonCtrl.ClearErrCount(val.ctrlID);
-				if( this->bonCtrl.StartSave(val, this->recFolderList, this->writeBuffMaxCount) ){
+				if( this->bonCtrl.StartSave(val, this->recFolderList, this->setting.writeBuffMaxCount) ){
 					BtnUpdate(GUI_OTHER_CTRL);
 					WCHAR log[512 + 64] = L"";
 					GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
@@ -1770,8 +1815,8 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 					}else{
 						infoPath.append(fs_path(resVal.recFilePath).filename().concat(L".err").native());
 					}
-					this->bonCtrl.SaveErrCount(val.ctrlID, infoPath.native(), this->dropLogAsUtf8, this->dropSaveThresh,
-					                           this->scrambleSaveThresh, resVal.drop, resVal.scramble);
+					this->bonCtrl.SaveErrCount(val.ctrlID, infoPath.native(), this->setting.dropLogAsUtf8, this->setting.dropSaveThresh,
+					                           this->setting.scrambleSaveThresh, resVal.drop, resVal.scramble);
 				}else{
 					this->bonCtrl.GetErrCount(val.ctrlID, &resVal.drop, &resVal.scramble);
 				}

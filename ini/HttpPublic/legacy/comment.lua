@@ -16,9 +16,9 @@ if onid then
     ok,pid=edcb.IsOpenNetworkTV(n)
   end
 elseif 0<=n and n<=65535 then
-  ff=edcb.FindFile('\\\\.\\pipe\\SendTSTCP_'..n..'_*',1)
+  ff=edcb.FindFile(SendTSTCPPipePath(n..'_*',0),1)
   if ff then
-    pid=ff[1].name:match('^[A-Za-z]+_%d+_(%d+)$')
+    pid=ff[1].name:match('^[^_]+_%d+_(%d+)')
   end
 end
 

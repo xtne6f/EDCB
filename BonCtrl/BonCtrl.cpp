@@ -91,7 +91,13 @@ BOOL CBonCtrl::OpenBonDriver(
 )
 {
 	CloseBonDriver();
-	if( this->bonUtil.OpenBonDriver(GetModulePath().replace_filename(BON_DLL_FOLDER).c_str(), bonDriverFile,
+	if( this->bonUtil.OpenBonDriver(
+#ifdef EDCB_LIB_ROOT
+	                                EDCB_LIB_ROOT,
+#else
+	                                GetModulePath().replace_filename(BON_DLL_FOLDER).c_str(),
+#endif
+	                                bonDriverFile,
 	                                [=](BYTE* data, DWORD size, DWORD remain) { RecvCallback(data, size, remain, tsBuffMaxCount); },
 	                                [=](float signalLv, int space, int ch) { StatusCallback(signalLv, space, ch); }, traceLevel) ){
 		if( openWait > 0 ){
@@ -121,17 +127,16 @@ BOOL CBonCtrl::GetOpenBonDriver(
 	wstring* bonDriverFile
 	)
 {
-	BOOL ret = FALSE;
-
+	if( bonDriverFile == NULL ){
+		return this->bonUtil.IsOpen();
+	}
 	wstring strBonDriverFile = this->bonUtil.GetOpenBonDriverFileName();
 	if( strBonDriverFile.empty() == false ){
-		ret = TRUE;
-		if( bonDriverFile != NULL ){
-			*bonDriverFile = strBonDriverFile;
-		}
+		*bonDriverFile = strBonDriverFile;
+		return TRUE;
 	}
 
-	return ret;
+	return FALSE;
 }
 
 BOOL CBonCtrl::SetCh(
@@ -162,7 +167,7 @@ BOOL CBonCtrl::ProcessSetCh(
 	DWORD chNow=0;
 
 	BOOL ret = FALSE;
-	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
+	if( this->bonUtil.IsOpen() ){
 		ret = TRUE;
 		DWORD elapsed;
 		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow || this->tsOut.IsChUnknown(&elapsed) && elapsed > 15000 ){
@@ -442,7 +447,7 @@ BOOL CBonCtrl::StartChScan()
 
 	StopBackgroundEpgCap();
 
-	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
+	if( this->bonUtil.IsOpen() ){
 		this->chScanChkList.clear();
 		const vector<pair<wstring, vector<wstring>>>& spaceList = this->bonUtil.GetOriginalChList();
 		for( size_t i = 0; i < spaceList.size(); i++ ){
@@ -613,7 +618,7 @@ BOOL CBonCtrl::StartEpgCap(
 
 	StopBackgroundEpgCap();
 
-	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
+	if( this->bonUtil.IsOpen() ){
 		if( chList ){
 			this->epgCapChList.clear();
 			for( size_t i = 0; i < chList->size(); i++ ){
@@ -875,7 +880,7 @@ void CBonCtrl::StartBackgroundEpgCap()
 	StopBackgroundEpgCap();
 	if( this->chScanIndexOrStatus < ST_WORKING &&
 	    this->epgCapIndexOrStatus < ST_WORKING ){
-		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
+		if( this->bonUtil.IsOpen() ){
 			this->epgCapTick = GetU32Tick();
 			this->epgCapBackIndexOrStatus = ST_WORKING;
 		}
@@ -999,7 +1004,7 @@ void CBonCtrl::CheckLogo()
 		bool update = true;
 		if( UtilFileExists(path).first ){
 			update = false;
-			std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_READ), fclose);
+			std::unique_ptr<FILE, fclose_deleter> logoFile(UtilOpenFile(path, UTIL_SECURE_READ));
 			if( logoFile ){
 				//小さいか中身が違っていれば更新
 				for( size_t i = 0; i < result.data.size(); i++ ){
@@ -1013,7 +1018,7 @@ void CBonCtrl::CheckLogo()
 		}
 		if( update ){
 			UtilCreateDirectory(path.parent_path());
-			std::unique_ptr<FILE, decltype(&fclose)> logoFile(UtilOpenFile(path, UTIL_SECURE_WRITE), fclose);
+			std::unique_ptr<FILE, fclose_deleter> logoFile(UtilOpenFile(path, UTIL_SECURE_WRITE));
 			if( logoFile ){
 				fwrite(result.data.data(), 1, result.data.size(), logoFile.get());
 			}

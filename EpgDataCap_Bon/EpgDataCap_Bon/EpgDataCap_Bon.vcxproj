@@ -243,6 +243,7 @@
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\IniUtil.h" />
+    <ClInclude Include="..\..\Common\MessageManager.h" />
     <ClInclude Include="..\..\Common\ParseText.h" />
     <ClInclude Include="..\..\Common\ParseTextInstances.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
@@ -257,6 +258,7 @@
     <ClInclude Include="..\..\Common\TSBuffUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
     <ClInclude Include="..\..\Common\WritePlugInUtil.h" />
+    <ClInclude Include="AppSetting.h" />
     <ClInclude Include="EpgDataCap_Bon.h" />
     <ClInclude Include="EpgDataCap_BonDef.h" />
     <ClInclude Include="EpgDataCap_BonDlg.h" />
@@ -291,6 +293,7 @@
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
     <ClCompile Include="..\..\Common\IniUtil.cpp" />
+    <ClCompile Include="..\..\Common\MessageManager.cpp" />
     <ClCompile Include="..\..\Common\ParseTextInstances.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
@@ -302,6 +305,7 @@
     <ClCompile Include="..\..\Common\TSBuffUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
     <ClCompile Include="..\..\Common\WritePlugInUtil.cpp" />
+    <ClCompile Include="AppSetting.cpp" />
     <ClCompile Include="EpgDataCap_Bon.cpp" />
     <ClCompile Include="EpgDataCap_BonDlg.cpp" />
     <ClCompile Include="SetDlgApp.cpp" />

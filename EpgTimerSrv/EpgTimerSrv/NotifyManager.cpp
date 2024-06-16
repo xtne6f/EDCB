@@ -295,21 +295,32 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 
 		if( path.empty() == false && ExtractTitleFromInfo(&notifyInfo).first[0] ){
 			//ログ保存
-			std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(path, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ), fclose);
+			std::unique_ptr<FILE, fclose_deleter> fp;
+#if WCHAR_MAX <= 0xFFFF
+			fp.reset(UtilOpenFile(path, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ));
 			if( fp ){
 				fwrite(L"\xFEFF", sizeof(WCHAR), 1, fp.get());
-			}else{
+			}else
+#endif
+			{
 				fp.reset(UtilOpenFile(path, UTIL_O_CREAT_APPEND | UTIL_SH_READ));
 			}
 			if( fp ){
 				SYSTEMTIME st = notifyInfo.time;
 				wstring log;
-				Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%ls] %ls\r_",
+				Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%ls] %ls__",
 				       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
 				       ExtractTitleFromInfo(&notifyInfo).first, ExtractTitleFromInfo(&notifyInfo).second);
 				Replace(log, L"\r\n", L"  ");
-				log.back() = L'\n';
+				log.replace(log.size() - 2, 2, UTIL_NEWLINE);
+#if WCHAR_MAX > 0xFFFF
+				for( size_t i = 0; i < log.size(); i++ ){
+					char dest[4];
+					fwrite(dest, 1, codepoint_to_utf8(log[i], dest), fp.get());
+				}
+#else
 				fwrite(log.c_str(), sizeof(WCHAR), log.size(), fp.get());
+#endif
 			}
 		}
 

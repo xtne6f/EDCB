@@ -100,6 +100,7 @@
 #define CMD2_EPG_SRV_GET_CHG_CH_TVTEST		1062 //TVTestのチャンネル切り替え用の情報を取得する
 #define CMD2_EPG_SRV_PROFILE_UPDATE			1063 //設定ファイル(ini)の更新を通知させる
 #define CMD2_EPG_SRV_GET_NOTIFY_LOG			1065 //保存された情報通知ログを取得する
+#define CMD2_EPG_SRV_ENUM_TUNER_PROCESS		1066 //起動中のチューナーについてサーバーが把握している情報の一覧を取得する
 
 #define CMD2_EPG_SRV_NWTV_SET_CH			1070 //NetworkTVモードのViewアプリのチャンネルを切り替え（ID=0のみ）
 #define CMD2_EPG_SRV_NWTV_CLOSE				1071 //NetworkTVモードで起動中のViewアプリを終了（ID=0のみ）
@@ -142,6 +143,7 @@
 #define CMD2_VIEW_APP_GET_ID				1202 //識別用IDの取得
 #define CMD2_VIEW_APP_SET_STANDBY_REC		1203 //予約録画用にGUIキープ
 #define CMD2_VIEW_APP_EXEC_VIEW_APP			1204 //Viewボタン登録アプリの起動
+#define CMD2_VIEW_APP_GET_STATUS_DETAILS	1205 //現在の状態を詳細に取得
 #define CMD2_VIEW_APP_CREATE_CTRL			1221 //ストリーム制御用コントロール作成
 #define CMD2_VIEW_APP_DELETE_CTRL			1222 //ストリーム制御用コントロール削除
 #define CMD2_VIEW_APP_SET_CTRLMODE			1223 //コントロールの動作を設定（対象サービス、スクランブル、処理対象データ）

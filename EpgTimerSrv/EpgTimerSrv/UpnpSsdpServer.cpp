@@ -9,12 +9,9 @@
 #else
 #include <ifaddrs.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-typedef int SOCKET;
-static const int INVALID_SOCKET = -1;
-#define closesocket(sock) close(sock)
 #endif
 
 CUpnpSsdpServer::~CUpnpSsdpServer()
@@ -115,13 +112,23 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 24) == 0x0A ? SSDP_IF_A_PRIVATE :
 		             (ntohl(nicList[i].addr.sin_addr.s_addr) >> 16) == 0xA9FE ? SSDP_IF_LINKLOCAL : SSDP_IF_GLOBAL;
 		//SSDP待ち受けポート(UDP 1900)の作成
-		SOCKET sock;
-		if( (sys->ssdpIfTypes & ifType) == 0 || i >= FD_SETSIZE ||
-		    (sock = socket(AF_INET, SOCK_DGRAM
-#ifndef _WIN32
-		                       | SOCK_CLOEXEC
+		SOCKET sock = INVALID_SOCKET;
+		if( (sys->ssdpIfTypes & ifType) != 0 ){
+#ifdef _WIN32
+			sock = socket(AF_INET, SOCK_DGRAM, 0);
+			if( sock != INVALID_SOCKET ){
+				//ノンブロッキングモードへ
+				unsigned long x = 1;
+				if( ioctlsocket(sock, FIONBIO, &x) != 0 ){
+					closesocket(sock);
+					sock = INVALID_SOCKET;
+				}
+			}
+#else
+			sock = socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
 #endif
-		                   , 0)) == INVALID_SOCKET ){
+		}
+		if( sock == INVALID_SOCKET ){
 			nicList.erase(nicList.begin() + i);
 		}else{
 			int opt = 1;
@@ -158,28 +165,35 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 	while( sys->stopFlag == false ){
 		fd_set ready;
 		FD_ZERO(&ready);
+		int maxfd = -1;
 		for( size_t i = 0; i < nicList.size(); i++ ){
-			FD_SET(nicList[i].sock, &ready);
+#ifdef _WIN32
+			maxfd++;
+#else
+			maxfd = max(maxfd, nicList[i].sock);
+#endif
+			if( maxfd < FD_SETSIZE ){
+				FD_SET(nicList[i].sock, &ready);
+			}
 		}
-		timeval to;
-		to.tv_sec = replyList.empty() ? 1 : 0;
-		to.tv_usec = 100000;
-		if( select(0, &ready, NULL, NULL, &to) < 0 ){
-			break;
+		timeval to = {};
+		to.tv_usec = replyList.empty() ? 500000 : 100000;
+		if( maxfd >= FD_SETSIZE || select(maxfd + 1, &ready, NULL, NULL, &to) < 0 ){
+			SleepForMsec(replyList.empty() ? 500 : 100);
 		}
 		DWORD tick = GetU32Tick();
 		random = (random << 31 | random >> 1) ^ tick;
 		for( size_t i = 0; i < nicList.size(); i++ ){
-			if( FD_ISSET(nicList[i].sock, &ready) ){
-				char recvData[RECV_BUFF_SIZE];
-				SSDP_REPLY_INFO info;
+			char recvData[RECV_BUFF_SIZE];
+			SSDP_REPLY_INFO info;
 #ifdef _WIN32
-				int fromLen = sizeof(info.addr);
+			int fromLen = sizeof(info.addr);
 #else
-				socklen_t fromLen = sizeof(info.addr);
+			socklen_t fromLen = sizeof(info.addr);
 #endif
-				int recvLen = (int)recvfrom(nicList[i].sock, recvData, RECV_BUFF_SIZE - 1, 0, (sockaddr*)&info.addr, &fromLen);
-				if( recvLen < 0 || fromLen != sizeof(info.addr) ){
+			int recvLen = (int)recvfrom(nicList[i].sock, recvData, RECV_BUFF_SIZE - 1, 0, (sockaddr*)&info.addr, &fromLen);
+			if( recvLen >= 0 ){
+				if( fromLen != sizeof(info.addr) ){
 					AddDebugLog(L"SSDP recvfrom() failed.");
 				}else{
 					recvData[recvLen] = '\0';

@@ -7,8 +7,10 @@
 #ifdef _WIN32
 #include <aclapi.h>
 #else
+#include "PathUtil.h"
 #include <errno.h>
 #include <poll.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -105,7 +107,7 @@ bool CPipeServer::StartServer(
 		break;
 	}
 #else
-	WtoUTF8(EDCB_INI_ROOT + pipeName, this->sockPath);
+	WtoUTF8(fs_path(EDCB_INI_ROOT).append(pipeName).native(), this->sockPath);
 	sockaddr_un addr;
 	if( this->sockPath.size() < sizeof(addr.sun_path) ){
 		this->srvSock = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
@@ -197,6 +199,20 @@ BOOL CPipeServer::GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, b
 		LocalFree(pSecurityDesc);
 	}
 	return ret;
+}
+#else
+void CPipeServer::DeleteRemainingFiles(LPCWSTR pipeName)
+{
+	EnumFindFile(fs_path(EDCB_INI_ROOT).append(pipeName).concat(L"*"), [pipeName](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.fileName.size() > wcslen(pipeName) ){
+			int pid = (int)wcstol(findData.fileName.c_str() + wcslen(pipeName), NULL, 10);
+			if( pid > 0 && kill(pid, 0) == -1 && errno == ESRCH ){
+				AddDebugLogFormat(L"Delete remaining %ls", findData.fileName.c_str());
+				DeleteFile(fs_path(EDCB_INI_ROOT).append(findData.fileName).c_str());
+			}
+		}
+		return true;
+	});
 }
 #endif
 

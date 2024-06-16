@@ -5,7 +5,6 @@
 #include "../Common/EpgTimerUtil.h"
 
 CTSOut::CTSOut(void)
-	: epgFile(NULL, fclose)
 {
 	this->chChangeState = CH_ST_INIT;
 	this->chChangeTime = 0;
@@ -387,10 +386,20 @@ void CTSOut::StopSaveEPG(
 
 	this->epgFile.reset();
 
-	if( copy == TRUE ){
+#ifdef _WIN32
+	if( copy ){
 		CopyFile(this->epgTempFilePath.c_str(), this->epgFilePath.c_str(), FALSE );
 	}
 	DeleteFile(this->epgTempFilePath.c_str());
+#else
+	string strTempPath;
+	string strPath;
+	WtoUTF8(this->epgTempFilePath, strTempPath);
+	WtoUTF8(this->epgFilePath, strPath);
+	if( copy == FALSE || rename(strTempPath.c_str(), strPath.c_str()) != 0 ){
+		remove(strTempPath.c_str());
+	}
+#endif
 }
 
 //EPGデータの蓄積状態を取得する

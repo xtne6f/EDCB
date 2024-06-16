@@ -152,6 +152,21 @@ struct TUNER_RESERVE_INFO {
 	vector<DWORD> reserveList;
 };
 
+struct TUNER_PROCESS_STATUS_INFO {
+	DWORD tunerID;
+	int processID;
+	ULONGLONG drop;
+	ULONGLONG scramble;
+	float signalLv;
+	int space;
+	int ch;
+	int originalNetworkID;
+	int transportStreamID;
+	BYTE recFlag;
+	BYTE epgCapFlag;
+	WORD extraFlags;
+};
+
 //チューナー毎サービス情報
 struct CH_DATA4 {
 	int space;						//チューナー空間
@@ -349,6 +364,21 @@ struct MANUAL_AUTO_ADD_DATA {
 	WORD transportStreamID;			//TSID
 	WORD serviceID;					//SID
 	REC_SETTING_DATA recSetting;	//録画設定
+};
+
+//Viewアプリのステータス情報
+struct VIEW_APP_STATUS_INFO {
+	DWORD status;
+	int delaySec;
+	wstring bonDriver;
+	ULONGLONG drop;
+	ULONGLONG scramble;
+	float signalLv;
+	int space;
+	int ch;
+	int originalNetworkID;
+	int transportStreamID;
+	int appID;
 };
 
 //チャンネル・NetworkTVモード変更情報

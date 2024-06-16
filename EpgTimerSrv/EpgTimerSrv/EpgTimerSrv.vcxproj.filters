@@ -215,6 +215,9 @@
     <ClInclude Include="EpgTimerTask.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\MessageManager.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -318,6 +321,9 @@
     </ClCompile>
     <ClCompile Include="EpgTimerTask.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\MessageManager.cpp">
+      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -6,10 +6,22 @@ SHOW_DEBUG_LOG=false
 --設定メニューからの設定の変更を許可するかどうか
 ALLOW_SETTING=false
 
---メニューに「システムスタンバイ」ボタンを表示するかどうか
+--※true/falseの設定は例えばリモートアドレスと比較して接続元の限定も可能
+--ALLOW_SETTING=mg.request_info.remote_addr=='127.0.0.1' or mg.request_info.remote_addr=='::1'
+
+--メニューに「システムスタンバイ」ボタンを表示するかどうか(Windows専用)
 INDEX_ENABLE_SUSPEND=false
 --メニューの「システムスタンバイ」ボタンを「システム休止」にするかどうか
 INDEX_SUSPEND_USE_HIBERNATE=false
+
+--「プロセス管理」に表示するプロセス名のリスト(非Windows専用)
+PROCESS_MANAGEMENT_LIST={
+  'EpgDataCap_Bon',
+  'ffmpeg',
+  'nvencc',
+  'qsvencc',
+  'vceencc',
+}
 
 --各種一覧のいちどに表示する行数
 RESERVE_PAGE_COUNT=50
@@ -63,6 +75,7 @@ XCODE_FAST=1.25
 --HLSでないときはフラグメントMP4などを使ったプログレッシブダウンロード。字幕は適当な重畳手法がまだないので未対応
 --name:表示名
 --xcoder:トランスコーダーのToolsフォルダからの相対パス。'|'で複数候補を指定可。見つからなければ最終候補にパスが通っているとみなす
+--       Windows以外では".exe"が除去されて最終候補のみ参照される
 --option:$OUTPUTは必須、再生時に適宜置換される。標準入力からMPEG2-TSを受け取るようにオプションを指定する
 --filter*Fast:倍速再生用、未定義でもよい
 --editorFast:単独で倍速再生にできないトランスコーダーの手前に置く編集コマンド。指定方法はxcoderと同様
@@ -123,7 +136,7 @@ XCODE_OPTIONS={
   {
     --NVEncCの例。倍速再生にはffmpegも必要
     name='720p/h264/NVEncC',
-    xcoder='NVEncC\\NVEncC64.exe|NVEncC\\NVEncC.exe|NVEncC64.exe|NVEncC.exe',
+    xcoder='NVEncC\\NVEncC64.exe|NVEncC\\NVEncC.exe|NVEncC64.exe|nvencc.exe',
     option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --vbr 3936 --qp-min 23:26:30 --max-bitrate 8192 --vbv-bufsize 8192 --preset default $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION -m max_interleave_delta:500k $OUTPUT',
     audioStartAt=1,
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
@@ -140,7 +153,7 @@ XCODE_OPTIONS={
   {
     --QSVEncCの例。倍速再生にはffmpegも必要
     name='720p/h264/QSVEncC',
-    xcoder='QSVEncC\\QSVEncC64.exe|QSVEncC\\QSVEncC.exe|QSVEncC64.exe|QSVEncC.exe',
+    xcoder='QSVEncC\\QSVEncC64.exe|QSVEncC\\QSVEncC.exe|QSVEncC64.exe|qsvencc.exe',
     option='--input-format mpegts --input-analyze 1 --input-probesize 4M -i - --avhw --profile main --level 4.1 --qvbr 3936 --qvbr-quality 26 --fallback-rc --max-bitrate 8192 --vbv-bufsize 8192 $FILTER --output-res 1280x720 --audio-stream $AUDIO?:stereo --audio-codec $AUDIO?aac --audio-bitrate $AUDIO?160 --audio-disposition $AUDIO?default $CAPTION -m max_interleave_delta:500k $OUTPUT',
     audioStartAt=1,
     filter='--gop-len 120 --interlace tff --vpp-deinterlace normal',
@@ -185,7 +198,7 @@ ARIBB24_USE_SVG=false
 --データ放送表示機能を使うかどうか。トランスコード中に表示する場合はpsisiarc.exeを用意すること。IE非対応
 USE_DATACAST=true
 
---ライブ実況表示機能を使うかどうか
+--ライブ実況表示機能を使うかどうか(Windows専用)
 --利用には実況を扱うツール側の対応(NicoJKの場合はcommentShareMode)が必要
 USE_LIVEJK=true
 
@@ -236,6 +249,8 @@ GZIP_THRESHOLD_BYTE=4096
 POST_MAX_BYTE=1024*1024
 
 ----------定数定義ここまで----------
+
+--以下、関数名はパスカルケース、定数名はアッパースネークケースとし、変数は関数スコープに閉じ込めること
 
 function Checkbox(b)
   return ' type="checkbox" value="1"'..(b and ' checked' or '')
@@ -642,16 +657,39 @@ function TimeWithZone(t,timezone)
   return os.time(t)+90000-os.time(os.date('!*t',90000))-(timezone or 0)
 end
 
+--Windowsかどうか
+WIN32=not package.config:find('^/')
+
+--OSのディレクトリ区切りとなる文字集合
+DIR_SEPS=WIN32 and '\\/' or '/'
+
+--OSの標準ディレクトリ区切り
+DIR_SEP=WIN32 and '\\' or '/'
+
+--io.popenのバイナリオープンモード
+POPEN_BINARY=WIN32 and 'b' or ''
+
+--パスを連結する
+function PathAppend(path,more)
+  return path:gsub('['..DIR_SEPS..']*$',DIR_SEP)..more:gsub('^['..DIR_SEPS..']+','')
+end
+
+--パスとして同一かどうか
+function IsEqualPath(path1,path2)
+  return (WIN32 and path1:upper()==path2:upper()) or (not WIN32 and path1==path2)
+end
+
 --ドキュメントルートへの相対パスを取得する
 function PathToRoot()
-  return ('../'):rep(#mg.script_name:gsub('[^\\/]*[\\/]+[^\\/]*','N')-#(mg.document_root..'/'):gsub('[^\\/]*[\\/]+','N'))
+  return ('../'):rep(#mg.script_name:gsub('[^'..DIR_SEPS..']*['..DIR_SEPS..']+[^'..DIR_SEPS..']*','N')-
+                     #(mg.document_root..'/'):gsub('[^'..DIR_SEPS..']*['..DIR_SEPS..']+','N'))
 end
 
 --OSの絶対パスをドキュメントルートからの相対パスに変換する
 function NativeToDocumentPath(path)
-  local root=(mg.document_root..'/'):gsub('[\\/]+','/')
-  if path:gsub('[\\/]+','/'):sub(1,#root):lower()==root:lower() then
-    return path:gsub('[\\/]+','/'):sub(#root+1)
+  local root=(mg.document_root..'/'):gsub('['..DIR_SEPS..']+','/')
+  if IsEqualPath(path:gsub('['..DIR_SEPS..']+','/'):sub(1,#root),root) then
+    return path:gsub('['..DIR_SEPS..']+','/'):sub(#root+1)
   end
   return nil
 end
@@ -664,8 +702,8 @@ function DocumentToNativePath(path)
   path=edcb.Convert('utf-8','utf-8',path):gsub('/+','/')
   edcb.htmlEscape=esc
   --禁止文字と正規化のチェック
-  if not path:find('[\0-\x1f\x7f\\:*?"<>|]') and not path:find('%./') and not path:find('%.$') then
-    return mg.document_root..'\\'..path:gsub('/','\\')
+  if not path:find('[\0-\x1f\x7f'..(WIN32 and '\\:*?"<>|' or '')..']') and not path:find('%./') and not path:find('%.$') then
+    return PathAppend(mg.document_root,path:gsub('/',DIR_SEP))
   end
   return nil
 end
@@ -675,10 +713,16 @@ function EdcbModulePath()
   return edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')
 end
 
+--プラグインファイル等のフォルダのパス (指定されている場合)
+function EdcbLibPath()
+  local dir=edcb.GetPrivateProfile('SET','ModuleLibPath','','Common.ini')
+  return dir~='' and dir
+end
+
 --設定関係保存フォルダのパス
 function EdcbSettingPath()
   local dir=edcb.GetPrivateProfile('SET','DataSavePath','','Common.ini')
-  return dir~='' and dir or EdcbModulePath()..'\\Setting'
+  return dir~='' and dir or PathAppend(EdcbModulePath(),'Setting')
 end
 
 --録画保存フォルダのパスのリスト
@@ -703,7 +747,7 @@ end
 function EnumPlugInFileName(name)
   local esc=edcb.htmlEscape
   edcb.htmlEscape=0
-  local pattern=EdcbModulePath()..'\\'..name..'\\'..name..'*.dll'
+  local pattern=PathAppend(EdcbLibPath() or PathAppend(EdcbModulePath(),name),name)..(WIN32 and '*.dll' or '*.so')
   edcb.htmlEscape=esc
   local r={}
   for i,v in ipairs(edcb.FindFile(pattern,0) or {}) do
@@ -719,14 +763,106 @@ function EdcbHtmlEscape(s)
   return edcb.Convert('utf-8','utf-8',s)
 end
 
---プロセス名とコマンドラインのパターンに一致するコマンドをすべて終了させる
-function TerminateCommandlineLike(name,pattern)
-  if pattern=='%' then
-    edcb.os.execute('taskkill /f /im "'..name..'"')
-  elseif not edcb.os.execute('wmic process where "name=\''..name..'\' and commandline like \''..pattern..'\'" call terminate >nul') then
-    --wmicがないとき
-    edcb.os.execute('powershell -NoProfile -c "try{(gwmi win32_process -filter \\"name=\''..name..'\' and commandline like \''..pattern..'\'\\").terminate()}catch{}"')
+--単一のファイルに関する情報を探す
+function EdcbFindFilePlain(path)
+  local n=path:find('[^'..DIR_SEPS..']*$')
+  if not path:find('[*?]',n) then
+    --そのまま
+    local ff=edcb.FindFile(path,1)
+    return ff and ff[1]
   end
+  --ワイルドカード文字を含むので、その効果を打ち消すために*を?にして候補を比較
+  for i,v in ipairs(edcb.FindFile(path:sub(1,n-1)..path:sub(n):gsub('%*','?'),0) or {}) do
+    if IsEqualPath(EdcbHtmlEscape(path:sub(n)),v.name) then return v end
+  end
+  return nil
+end
+
+--プロセス名(拡張子を除いたもの)とコマンドラインのパターン(部分一致)に一致するコマンドをすべて終了させる
+function TerminateCommandlineLike(name,pattern)
+  if not WIN32 then
+    --拡張正規表現の記号はエスケープ
+    name=name:gsub('[$()*+.?[\\%]^{|}]','\\%0')
+    pattern=pattern:gsub('[$()*+.?[\\%]^{|}]','\\%0')
+    edcb.os.execute('pkill -9 -xf "'..name..(pattern=='' and '( .*)?' or
+      pattern:find('^ ') and '('..pattern..'| .*'..pattern..').*' or ' .*'..pattern..'.*')..'"')
+  elseif pattern=='' then
+    edcb.os.execute('taskkill /f /im "'..name..'.exe"')
+  elseif not edcb.os.execute('wmic process where "name=\''..name..'.exe\' and commandline like \'%'..pattern:gsub('_','[_]')..'%\'" call terminate >nul') then
+    --wmicがないとき
+    edcb.os.execute('powershell -NoProfile -c "try{(gwmi win32_process -filter \\"name=\''..name..'.exe\' and commandline like \'%'
+      ..pattern:gsub('_','[_]')..'%\'\\").terminate()}catch{}"')
+  end
+end
+
+--コマンドラインのコマンド名として使うコマンドを探す
+function FindToolsCommand(name)
+  if not WIN32 then
+    --そのまま。ただし親プロセスのシグナルマスクを継承しないようにする
+    return 'env --default-signal '..name
+  end
+  --EDCBのToolsフォルダにあるものを優先する
+  local esc=edcb.htmlEscape
+  edcb.htmlEscape=0
+  local path=PathAppend(EdcbModulePath(),PathAppend('Tools',name..'.exe'))
+  edcb.htmlEscape=esc
+  --拡張子をつけて引用符で囲む
+  return '"'..(EdcbFindFilePlain(path) and path or name..'.exe')..'"'
+end
+
+--コマンドラインの引数として使うパスを引用符で囲む
+--※Windowsでは引用符などパスとして不正な文字がpathに含まれていないことが前提
+function QuoteCommandArgForPath(path)
+  return WIN32 and '"'..path:gsub('[&%^]','^%0')..'"' or "'"..path:gsub("'","'\"'\"'").."'"
+end
+
+--SendTSTCPのストリーム取得用パイプのパス
+function SendTSTCPPipePath(name,index)
+  if WIN32 then
+    --同時利用でも名前は同じ
+    return '\\\\.\\pipe\\SendTSTCP_'..name
+  end
+  --同時利用のためのindexがつく
+  local esc=edcb.htmlEscape
+  edcb.htmlEscape=0
+  local path=PathAppend(EdcbModulePath(),'SendTSTCP_'..name..'_'..index..'.fifo')
+  edcb.htmlEscape=esc
+  return path
+end
+
+--tsmemsegのストリーム取得用パイプのパス
+function TsmemsegPipePath(name,suffix)
+  if WIN32 then
+    return '\\\\.\\pipe\\tsmemseg_'..name..suffix
+  end
+  local esc=edcb.htmlEscape
+  edcb.htmlEscape=0
+  local path=PathAppend(EdcbModulePath(),'tsmemseg_'..name..suffix..'.fifo')
+  edcb.htmlEscape=esc
+  return path
+end
+
+--tsmemsegのストリーム取得用パイプを開く
+function OpenTsmemsegPipe(name,suffix)
+  if WIN32 then
+    return edcb.io.open(TsmemsegPipePath(name,suffix),'rb')
+  end
+  for retry=1,9 do
+    local f=edcb.io.open(TsmemsegPipePath(name,suffix),'rb')
+    if not f then break end
+    --FIFOは同時に読めてしまうのでプロセス間でロックが必要
+    if edcb.io._flock_nb(f) then
+      --タイミングによっては途中から読んでしまう可能性があるので検証が必要
+      local buf=f:read(suffix=='00' and 64 or 188)
+      if buf and (suffix=='00' and #buf==64 and buf:find('^'..name) or
+                  suffix~='00' and #buf==188 and buf:find('^....'..name)) then
+        return f
+      end
+    end
+    f:close()
+    edcb.Sleep(10*retry)
+  end
+  return nil
 end
 
 --符号なし整数の時計算の差を計算する
@@ -914,6 +1050,8 @@ function GetLeNumber(buf,pos,len)
   return n
 end
 
+DOCTYPE_HTML4_STRICT='<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'
+
 --HTTP日付の文字列を取得する
 function ImfFixdate(t)
   return ('%s, %02d %s %d %02d:%02d:%02d GMT'):format(({'Sun','Mon','Tue','Wed','Thu','Fri','Sat'})[t.wday],t.day,
@@ -921,12 +1059,13 @@ function ImfFixdate(t)
 end
 
 --レスポンスを生成する
-function Response(code,ctype,charset,cl,maxage)
+function Response(code,ctype,charset,cl,cz,maxage)
   return 'HTTP/1.1 '..code..' '..mg.get_response_code_text(code)
     ..'\r\nDate: '..ImfFixdate(os.date('!*t'))
     ..'\r\nX-Frame-Options: SAMEORIGIN'
     ..(ctype and '\r\nX-Content-Type-Options: nosniff\r\nContent-Type: '..ctype..(charset and '; charset='..charset or '') or '')
     ..(cl and mg.request_info.request_method~='HEAD' and '\r\nContent-Length: '..cl or '')
+    ..(cz and '\r\nContent-Encoding: gzip' or '')
     ..'\r\nCache-Control: private, max-age='..(maxage or 0)
     ..(mg.keep_alive(not not cl) and '\r\n' or '\r\nConnection: close\r\n')
 end
@@ -1058,4 +1197,9 @@ end
 --※サーバに変更を加える要求(POSTに限らない)を処理する前にこれを呼ぶべき
 function AssertCsrf(qs)
   assert(mg.get_var(qs,'ctok')==CsrfToken() or mg.get_var(qs,'ctok')==CsrfToken(nil,-1))
+end
+
+if not WIN32 then
+  INDEX_ENABLE_SUSPEND=false
+  USE_LIVEJK=false
 end

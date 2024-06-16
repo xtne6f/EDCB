@@ -4,10 +4,13 @@
 //CP932に存在しない文字も使用する場合はこのマクロを定義する
 //#define ARIB8CHAR_USE_UNICODE
 
-#ifdef ARIB8CHAR_USE_UNICODE
-const WCHAR* const CARIB8CharDecode::TELETEXT_MARK = L"\xD83C\xDE11";
+const WCHAR* const CARIB8CharDecode::TELETEXT_MARK =
+#ifndef ARIB8CHAR_USE_UNICODE
+	L"[字]";
+#elif WCHAR_MAX > 0xFFFF
+	L"\x1F211";
 #else
-const WCHAR* const CARIB8CharDecode::TELETEXT_MARK = L"[字]";
+	L"\xD83C\xDE11";
 #endif
 
 void CARIB8CharDecode::InitPSISI(void)
@@ -669,7 +672,15 @@ BOOL CARIB8CharDecode::ToCustomFont( const BYTE bFirst, const BYTE bSecond )
 		return FALSE;
 	}
 #ifdef ARIB8CHAR_USE_UNICODE
-	m_strDecode += t.strCharUnicode;
+#if WCHAR_MAX > 0xFFFF
+	//テーブル上ではサロゲートペアで表現しているので結合する
+	if( 0xD800 <= (WORD)t.strCharUnicode[0] && (WORD)t.strCharUnicode[0] < 0xDC00 ){
+		m_strDecode += (WCHAR)(0x10000 + ((WORD)t.strCharUnicode[0] - 0xD800) * 0x400 + ((WORD)t.strCharUnicode[1] - 0xDC00));
+	}else
+#endif
+	{
+		m_strDecode += t.strCharUnicode;
+	}
 #else
 	m_strDecode += t.strChar;
 #endif

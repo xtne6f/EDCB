@@ -5,7 +5,7 @@ key=c:match('^[0-9a-f]+_[0-9][0-9]')
 
 buf=nil
 if key and #key==35 and not key:sub(-2)~='00' then
-  f=edcb.io.open('\\\\.\\pipe\\tsmemseg_'..key,'rb')
+  f=OpenTsmemsegPipe(key:sub(1,33),key:sub(-2))
   if f then
     buf=f:read(188)
     if buf and #buf==188 then

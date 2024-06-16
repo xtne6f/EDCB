@@ -2,8 +2,7 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -22,8 +21,20 @@ ct:Append([=[
     <li><a href="epglist.html">リスト番組表</a></li>
     <!--<li><a href="addprogres.html">プログラム予約追加(必要なら自作してください)</a></li>-->
     <li><a href="storage.html">ストレージ</a></li>
-    <li><a href="showlog.lua?c=8192">情報通知ログ</a></li>
-    <li><a href="showlog.lua?c=8192&amp;t=d">デバッグ出力</a></li>
+]=]..(WIN32 and '' or '    <li><a href="process.html">プロセス管理</a></li>\n')..[=[
+    <li><a href="showlog.lua?c=10000">情報通知ログ</a></li>
+    <li><a href="showlog.lua?t=d&amp;c=10000">デバッグ出力</a>
+]=])
+if SHOW_DEBUG_LOG then
+  for i,v in ipairs(edcb.FindFile(PathAppend(EdcbModulePath(),'EpgDataCap_Bon_DebugLog-*.txt'),100) or {}) do
+    logIndex=v.name:lower():match('%-([1-9]?[0-9])%.txt$')
+    if logIndex then
+      ct:Append('      <a href="showlog.lua?t=d&amp;i='..logIndex..'&amp;c=10000">[edcb-'..logIndex..']</a>\n')
+    end
+  end
+end
+ct:Append([=[
+    </li>
     <li><a href="library.html">ライブラリ</a></li>
     <li><a href="setting.html">設定メニュー</a></li>
   </ul>
@@ -68,7 +79,7 @@ ct:Append([=[
 post=AssertPost()
 
 edcbnosuspend=EdcbModulePath()..'\\Tools\\edcbnosuspend.exe'
-if edcb.FindFile(edcbnosuspend,1) then
+if WIN32 and EdcbFindFilePlain(edcbnosuspend) then
   onstat=post and mg.get_var(post,'nosuspend')
   if not onstat then
     onstat,stat,code=edcb.os.execute('tasklist /fi "imagename eq edcbnosuspend.exe" /fo csv /nh | find /i "edcbnosuspend.exe"')
@@ -112,7 +123,7 @@ if post then
     edcb.os.execute('start "" /b "'..edcbnosuspend..'" -')
     ct:Append('  <div id="result">edcbnosuspend.exeを起動しました</div>\n')
   elseif mg.get_var(post,'nosuspend')=='n' then
-    TerminateCommandlineLike('edcbnosuspend.exe','%')
+    TerminateCommandlineLike('edcbnosuspend','')
     ct:Append('  <div id="result">edcbnosuspend.exeを停止しました</div>\n')
   end
 end
@@ -128,4 +139,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

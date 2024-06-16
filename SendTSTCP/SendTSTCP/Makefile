@@ -1,21 +1,30 @@
 TARGET ?= SendTSTCP
-CPPFLAGS := -I. -DNDEBUG -D_WINDOWS -DSENDTSTCP_EXPORTS -D_UNICODE -DUNICODE $(CPPFLAGS)
-CXXFLAGS := -std=c++17 -pedantic-errors -Os $(CXXFLAGS)
-LDFLAGS2 = -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
-LDLIBS := -lws2_32 $(LDLIBS)
 WINDRES ?= windres
 DEP_ALL_H := $(wildcard ../../BonCtrl/*.h ../../Common/*.h)
 CUR_ALL_H := $(wildcard *.h)
-
-$(TARGET).dll: $(addsuffix .obj, \
+SOURCES := \
   Common__StringUtil.cpp \
   Common__TimeUtil.cpp \
-  dllmain.cpp \
   SendTSTCP.cpp \
   SendTSTCPMain.cpp \
-  stdafx.cpp \
-  SendTSTCP.rc \
-  )
+  stdafx.cpp
+
+ifeq ($(OS),Windows_NT)
+  SOURCES := $(SOURCES) dllmain.cpp SendTSTCP.rc
+  TARGETEXT = .dll
+  CPPFLAGS := -I. -DNDEBUG -D_WINDOWS -DSENDTSTCP_EXPORTS -D_UNICODE -DUNICODE $(CPPFLAGS)
+  CXXFLAGS := -std=c++17 -pedantic-errors -Os $(CXXFLAGS)
+  LDFLAGS2 = -Wl,-s,--dynamicbase,--nxcompat,--kill-at -static-libgcc -static-libstdc++ -shared $(LDFLAGS)
+  LDLIBS := -lws2_32 $(LDLIBS)
+else
+  SOURCES := $(SOURCES) Common__PathUtil.cpp
+  TARGETEXT = .so
+  CPPFLAGS := -I. -DNDEBUG -DSENDTSTCP_EXPORTS $(CPPFLAGS)
+  CXXFLAGS := -std=c++17 -pedantic-errors -Os -fPIC -pthread $(CXXFLAGS)
+  LDFLAGS2 = -Wl,-s -shared -pthread $(LDFLAGS)
+endif
+
+$(TARGET)$(TARGETEXT): $(addsuffix .obj,$(SOURCES))
 	$(CXX) $(LDFLAGS2) $^ $(LDLIBS) -o $@
 BonCtrl__%.cpp.obj: ../../BonCtrl/%.cpp stdafx.h.gch $(DEP_ALL_H)
 	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
@@ -34,4 +43,7 @@ else
 	powershell -NoProfile -Command "&{cat $<|Out-File -Encoding UTF8 $@}"
 endif
 clean:
-	$(RM) stdafx.h.gch *.obj $(TARGET).dll $(TARGET).map
+	$(RM) stdafx.h.gch *.obj $(TARGET)$(TARGETEXT) $(TARGET).map
+install: $(TARGET)$(TARGETEXT)
+	mkdir -p /usr/local/lib/edcb
+	install -m 0644 $(TARGET)$(TARGETEXT) /usr/local/lib/edcb

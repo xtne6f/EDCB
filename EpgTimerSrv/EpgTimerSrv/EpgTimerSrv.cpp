@@ -3,23 +3,33 @@
 
 #include "stdafx.h"
 #include "EpgTimerSrvMain.h"
-#include "EpgTimerTask.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/ServiceUtil.h"
-#include "../../Common/StackTrace.h"
 #include "../../Common/ThreadUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/CommonDef.h"
+#ifdef _WIN32
+#include "EpgTimerTask.h"
+#include "../../Common/ServiceUtil.h"
+#include "../../Common/StackTrace.h"
 #include <winsvc.h>
 #include <objbase.h>
 #include <shellapi.h>
+#else
+#include <signal.h>
+#endif
+
+namespace
+{
+FILE* g_debugLog;
+recursive_mutex_ g_debugLogLock;
+}
+
+#ifdef _WIN32
 
 namespace
 {
 SERVICE_STATUS_HANDLE g_hStatusHandle;
 CEpgTimerSrvMain* g_pMain;
-FILE* g_debugLog;
-recursive_mutex_ g_debugLogLock;
 
 //サービス動作用のメイン
 void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv);
@@ -145,16 +155,18 @@ void WINAPI service_main(DWORD dwArgc, LPWSTR* lpszArgv)
 
 		//メインスレッドに対するCOMの初期化
 		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-		//ここでは単純な(時間のかからない)初期化のみ行う
-		g_pMain = new CEpgTimerSrvMain;
+		{
+			//ここでは単純な(時間のかからない)初期化のみ行う
+			CEpgTimerSrvMain appMain;
+			g_pMain = &appMain;
 
-		ReportServiceStatus(SERVICE_RUNNING, SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN | SERVICE_ACCEPT_POWEREVENT, 0, 0);
+			ReportServiceStatus(SERVICE_RUNNING, SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN | SERVICE_ACCEPT_POWEREVENT, 0, 0);
 
-		if( g_pMain->Main(true) == false ){
-			AddDebugLog(L"service_main(): Failed to start");
+			if( appMain.Main(true) == false ){
+				AddDebugLog(L"service_main(): Failed to start");
+			}
+			g_pMain = NULL;
 		}
-		delete g_pMain;
-		g_pMain = NULL;
 		CoUninitialize();
 
 		ReportServiceStatus(SERVICE_STOPPED, 0, 0, 0);
@@ -205,6 +217,30 @@ void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD d
 }
 }
 
+#else
+
+int main(int argc, char** argv)
+{
+	struct sigaction sigact = {};
+	sigact.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &sigact, NULL);
+
+	util_unique_handle mutex = UtilCreateGlobalMutex(EPG_TIMER_BON_SRV_MUTEX);
+	if( mutex ){
+		SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
+		{
+			CEpgTimerSrvMain appMain;
+			if( appMain.Main(true) == false ){
+				AddDebugLog(L"main(): Failed to start");
+			}
+		}
+		SetSaveDebugLog(false);
+	}
+	return 0;
+}
+
+#endif
+
 void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutput)
 {
 	if( lpOutputString[0] ){
@@ -216,13 +252,31 @@ void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutpu
 			WCHAR t[128];
 			int n = swprintf_s(t, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
 			                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+#if WCHAR_MAX > 0xFFFF
+			for( int i = 0; i < n; i++ ){
+				char dest[4];
+				fwrite(dest, 1, codepoint_to_utf8(t[i], dest), g_debugLog);
+			}
+			for( size_t i = 0; lpOutputString[i]; i++ ){
+				char dest[4];
+				fwrite(dest, 1, codepoint_to_utf8(lpOutputString[i], dest), g_debugLog);
+			}
+#else
 			fwrite(t, sizeof(WCHAR), n, g_debugLog);
 			fwrite(lpOutputString, sizeof(WCHAR), wcslen(lpOutputString), g_debugLog);
+#endif
 			fflush(g_debugLog);
 		}
 	}
 	if( suppressDebugOutput == false ){
+#ifdef _WIN32
 		OutputDebugString(lpOutputString);
+#elif WCHAR_MAX > 0xFFFF && 0
+		for( size_t i = 0; lpOutputString[i]; i++ ){
+			char dest[4];
+			fwrite(dest, 1, codepoint_to_utf8(lpOutputString[i], dest), stderr);
+		}
+#endif
 	}
 }
 
@@ -231,10 +285,13 @@ void SetSaveDebugLog(bool saveDebugLog)
 	lock_recursive_mutex lock(g_debugLogLock);
 	if( g_debugLog == NULL && saveDebugLog ){
 		fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvDebugLog.txt");
+#if WCHAR_MAX <= 0xFFFF
 		g_debugLog = UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ);
 		if( g_debugLog ){
 			fwrite(L"\xFEFF", sizeof(WCHAR), 1, g_debugLog);
-		}else{
+		}else
+#endif
+		{
 			g_debugLog = UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ);
 		}
 		if( g_debugLog ){

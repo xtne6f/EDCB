@@ -2,8 +2,7 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -26,11 +25,13 @@ if post then
   edcb.WritePrivateProfile('SET','WakeTime',GetVarInt(post,'wakeTime',0) or 5,srvIni)
   edcb.WritePrivateProfile('SET','RecEndMode',GetVarInt(post,'recEndMode',0,3) or 2,srvIni)
   edcb.WritePrivateProfile('SET','Reboot',GetVarInt(post,'reboot')==1,srvIni)
-  edcb.WritePrivateProfile('NO_SUSPEND','NoUsePC',GetVarInt(post,'noUsePC')==1,srvIni)
-  edcb.WritePrivateProfile('NO_SUSPEND','NoUsePCTime',GetVarInt(post,'noUsePCTime',0) or 3,srvIni)
   edcb.WritePrivateProfile('NO_SUSPEND','NoFileStreaming',GetVarInt(post,'noFileStreaming')==1,srvIni)
-  edcb.WritePrivateProfile('NO_SUSPEND','NoShareFile',GetVarInt(post,'noShareFile')==1,srvIni)
   edcb.WritePrivateProfile('NO_SUSPEND','NoStandbyTime',GetVarInt(post,'noStandbyTime',0) or 10,srvIni)
+  if WIN32 then
+    edcb.WritePrivateProfile('NO_SUSPEND','NoUsePC',GetVarInt(post,'noUsePC')==1,srvIni)
+    edcb.WritePrivateProfile('NO_SUSPEND','NoUsePCTime',GetVarInt(post,'noUsePCTime',0) or 3,srvIni)
+    edcb.WritePrivateProfile('NO_SUSPEND','NoShareFile',GetVarInt(post,'noShareFile')==1,srvIni)
+  end
   edcb.WritePrivateProfile('SET','StartMargin',GetVarInt(post,'startMargin') or 5,srvIni)
   edcb.WritePrivateProfile('SET','EndMargin',GetVarInt(post,'endMargin') or 2,srvIni)
   edcb.WritePrivateProfile('SET','RecAppWakeTime',GetVarInt(post,'recAppWakeTime',0) or 2,srvIni)
@@ -40,10 +41,14 @@ if post then
                                            (GetVarInt(post,'openViewAlways',1,1) or 0)*4,srvIni)
   edcb.WritePrivateProfile('SET','RecNW',GetVarInt(post,'recNW')==1,srvIni)
   edcb.WritePrivateProfile('SET','PgInfoLog',GetVarInt(post,'pgInfoLog')==1,srvIni)
-  edcb.WritePrivateProfile('SET','PgInfoLogAsUtf8',GetVarInt(post,'pgInfoLogAsUtf8')==1,srvIni)
+  if WIN32 then
+    edcb.WritePrivateProfile('SET','PgInfoLogAsUtf8',GetVarInt(post,'pgInfoLogAsUtf8')==1,srvIni)
+  end
   edcb.WritePrivateProfile('SET','DropLog',GetVarInt(post,'dropLog')==1,srvIni)
   edcb.WritePrivateProfile('SET','RecOverWrite',GetVarInt(post,'recOverWrite')==1,srvIni)
-  edcb.WritePrivateProfile('SET','ProcessPriority',GetVarInt(post,'processPriority',0,5) or 3,srvIni)
+  if WIN32 then
+    edcb.WritePrivateProfile('SET','ProcessPriority',GetVarInt(post,'processPriority',0,5) or 3,srvIni)
+  end
   edcb.WritePrivateProfile('SET','KeepDisk',GetVarInt(post,'keepDisk')==1,srvIni)
   edcb.WritePrivateProfile('SET','Caption',GetVarInt(post,'enableCaption')==1,srvIni)
   edcb.WritePrivateProfile('SET','Data',GetVarInt(post,'enableData')==1,srvIni)
@@ -67,7 +72,7 @@ recMinWake=edcb.GetPrivateProfile('SET','RecMinWake',1,srvIni)~='0'
 recView=tonumber(edcb.GetPrivateProfile('SET','RecView',1,srvIni)) or 1
 recNW=edcb.GetPrivateProfile('SET','RecNW',0,srvIni)~='0'
 pgInfoLog=edcb.GetPrivateProfile('SET','PgInfoLog',1,srvIni)~='0'
-pgInfoLogAsUtf8=edcb.GetPrivateProfile('SET','PgInfoLogAsUtf8',0,srvIni)~='0'
+pgInfoLogAsUtf8=not WIN32 or edcb.GetPrivateProfile('SET','PgInfoLogAsUtf8',0,srvIni)~='0'
 dropLog=edcb.GetPrivateProfile('SET','DropLog',1,srvIni)~='0'
 recOverWrite=edcb.GetPrivateProfile('SET','RecOverWrite',0,srvIni)~='0'
 processPriority=tonumber(edcb.GetPrivateProfile('SET','ProcessPriority',3,srvIni)) or 3
@@ -94,12 +99,14 @@ ct:Append([=[
   </div>
   録画後動作の抑制条件
   <div class="sub-setting">
-    <a href="setting_no_suspend.html">指定プロセスが起動している場合 (前方一致)</a><br>
+    <]=]..(WIN32 and 'a href="setting_no_suspend.html"' or 'span class="inact-setting"')..'>指定プロセスが起動している場合 (前方一致)</'..(WIN32 and 'a' or 'span')..[=[><br>
     <input type="text" name="noStandbyTime" value="]=]..noStandbyTime..[=[" size="8"> 分以内に予約がある場合<br>
-    <label><input name="noUsePC"]=]..Checkbox(noUsePC)..[=[>ユーザー操作が</label>
-    <input type="text" name="noUsePCTime" value="]=]..noUsePCTime..[=[" size="8" class="enabled-on-checked"> 分以内にあった場合<br>
+    <div class="]=]..(WIN32 and '' or 'inact-setting')..[=[">
+      <label><input name="noUsePC"]=]..Checkbox(noUsePC)..[=[>ユーザー操作が</label>
+      <input type="text" name="noUsePCTime" value="]=]..noUsePCTime..[=[" size="8" class="enabled-on-checked"> 分以内にあった場合
+    </div>
     <label><input name="noFileStreaming"]=]..Checkbox(noFileStreaming)..[=[>NetworkTVモードで追っかけ再生、ストリーミング再生を行っている場合</label><br>
-    <label><input name="noShareFile"]=]..Checkbox(noShareFile)..[=[>共有フォルダのTSファイルにアクセスがある場合 (※管理者権限が必要です)</label>
+    <label class="]=]..(WIN32 and '' or 'inact-setting')..[=["><input name="noShareFile"]=]..Checkbox(noShareFile)..[=[>共有フォルダのTSファイルにアクセスがある場合 (※管理者権限が必要です)</label>
   </div>
   録画マージンのデフォルト
   <div class="sub-setting">
@@ -113,15 +120,17 @@ ct:Append([=[
   </div>
   録画用アプリ <input type="text" name="recAppWakeTime" value="]=]..recAppWakeTime..[=[" size="8"> 分前に起動する
   <div class="sub-setting">
-    プロセス優先度
-    <select name="processPriority">
-      <option value="0"]=]..Selected(processPriority==0)..[=[>リアルタイム
-      <option value="1"]=]..Selected(processPriority==1)..[=[>高
-      <option value="2"]=]..Selected(processPriority==2)..[=[>通常以上
-      <option value="3"]=]..Selected(processPriority==3)..[=[>通常
-      <option value="4"]=]..Selected(processPriority==4)..[=[>通常以下
-      <option value="5"]=]..Selected(processPriority==5)..[=[>低
-    </select><br>
+    <div class="]=]..(WIN32 and '' or 'inact-setting')..[=[">
+      プロセス優先度
+      <select name="processPriority">
+        <option value="0"]=]..Selected(processPriority==0)..[=[>リアルタイム
+        <option value="1"]=]..Selected(processPriority==1)..[=[>高
+        <option value="2"]=]..Selected(processPriority==2)..[=[>通常以上
+        <option value="3"]=]..Selected(processPriority==3)..[=[>通常
+        <option value="4"]=]..Selected(processPriority==4)..[=[>通常以下
+        <option value="5"]=]..Selected(processPriority==5)..[=[>低
+      </select>
+    </div>
     <label><input name="recMinWake"]=]..Checkbox(recMinWake)..[=[>最小化で起動する</label><br>
     <label><input name="recOverWrite"]=]..Checkbox(recOverWrite)..[=[>同一ファイル名が存在した場合に上書きする</label><br>
     <label><input name="recNW"]=]..Checkbox(recNW)..[=[>UDP、TCP送信を行う</label><br>
@@ -129,7 +138,7 @@ ct:Append([=[
     <label><input name="dropLog"]=]..Checkbox(dropLog)..[=[>ドロップログを出力する</label><br>
     <label><input name="pgInfoLog"]=]..Checkbox(pgInfoLog)..[=[>番組情報を出力する</label>
     <div class="enabled-on-checked">
-      <label><input name="pgInfoLogAsUtf8"]=]..Checkbox(pgInfoLogAsUtf8)..[=[>UTF-8で出力する</label>
+      <label class="]=]..(WIN32 and '' or 'inact-setting')..[=["><input name="pgInfoLogAsUtf8"]=]..Checkbox(pgInfoLogAsUtf8)..[=[>UTF-8で出力する</label>
     </div>
     Viewを起動する
     <div class="sub-setting">
@@ -150,4 +159,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

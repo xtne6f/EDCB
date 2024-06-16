@@ -2,8 +2,7 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -36,10 +35,12 @@ if post then
   edcb.WritePrivateProfile('SET','TCPAccessControlList',(mg.get_var(post,'tcpAccessControlList') or ''):gsub('%c',''),srvIni)
   edcb.WritePrivateProfile('SET','TCPResponseTimeoutSec',GetVarInt(post,'tcpResponseTimeoutSec',0) or 120,srvIni)
   edcb.WritePrivateProfile('SET','EpgArchivePeriodHour',(GetVarInt(post,'epgArchivePeriod',0,20000) or 0)*24,srvIni)
-  edcb.WritePrivateProfile('SET','ResidentMode',GetVarInt(post,'residentMode')~=1 and 0 or GetVarInt(post,'showTray')~=1 and 1 or 2,srvIni)
-  edcb.WritePrivateProfile('SET','NotifyTipStyle',GetVarInt(post,'notifyTipStyle')==1,srvIni)
-  edcb.WritePrivateProfile('SET','BlinkPreRec',GetVarInt(post,'blinkPreRec')==1,srvIni)
-  edcb.WritePrivateProfile('SET','NoBalloonTip',GetVarInt(post,'noBalloonTip')==1 and 1 or GetVarInt(post,'noBalloonTipRealtime')==1 and 2 or 0,srvIni)
+  if WIN32 then
+    edcb.WritePrivateProfile('SET','ResidentMode',GetVarInt(post,'residentMode')~=1 and 0 or GetVarInt(post,'showTray')~=1 and 1 or 2,srvIni)
+    edcb.WritePrivateProfile('SET','NotifyTipStyle',GetVarInt(post,'notifyTipStyle')==1,srvIni)
+    edcb.WritePrivateProfile('SET','BlinkPreRec',GetVarInt(post,'blinkPreRec')==1,srvIni)
+    edcb.WritePrivateProfile('SET','NoBalloonTip',GetVarInt(post,'noBalloonTip')==1 and 1 or GetVarInt(post,'noBalloonTipRealtime')==1 and 2 or 0,srvIni)
+  end
   edcb.WritePrivateProfile('SET','SaveNotifyLog',GetVarInt(post,'saveNotifyLog')==1,srvIni)
   edcb.WritePrivateProfile('SET','SaveDebugLog',GetVarInt(post,'saveDebugLog')==1,srvIni)
   edcb.WritePrivateProfile('SET','TimeSync',GetVarInt(post,'timeSync')==1,srvIni)
@@ -97,17 +98,20 @@ for i=0,14 do
   ct:Append('<option'..Selected(math.floor(epgArchivePeriodHour/24)==i)..'>'..i)
 end
 ct:Append([=[<option value="20000"]=]..Selected(math.floor(epgArchivePeriodHour/24)>14)..[=[>∞</select> 日前まで保存する<br>
-  <label><input name="timeSync"]=]..Checkbox(timeSync)..[=[>EPG取得時に放送波時間でPC時計を同期する (※システム時刻の変更特権が必要です)</label><br>
-  <label><input name="residentMode"]=]..Checkbox(residentMode~='0')..[=[>EpgTimerSrvを常駐させる</label>
-  <div class="enabled-on-checked">
-    <label><input name="showTray"]=]..Checkbox(residentMode~='1')..[=[>タスクトレイアイコンを表示する</label>
+  <label><input name="timeSync"]=]..Checkbox(timeSync)..[=[>EPG取得時に放送波時間でPC時計を同期する (※]=]
+    ..(WIN32 and 'システム時刻の変更特権が必要です' or '`/bin/date -s 20[0-9][0-9]-[01][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]Z`をsudoで実行します')..[=[)</label><br>
+  <div class="]=]..(WIN32 and '' or 'inact-setting')..[=[">
+    <label><input name="residentMode"]=]..Checkbox(residentMode~='0')..[=[>EpgTimerSrvを常駐させる</label>
     <div class="enabled-on-checked">
-      <label><input name="notifyTipStyle"]=]..Checkbox(notifyTipStyle)..[=[>ツールチップに次の予約を表示する</label><br>
-      <label><input name="blinkPreRec"]=]..Checkbox(blinkPreRec)..[=[>開始準備で点滅させる</label>
-    </div>
-    <label><input name="noBalloonTip"]=]..Checkbox(noBalloonTip=='1')..[=[><span class='enabled-on-checked'>バルーンチップ/トーストでの動作通知を抑制する</span></label>
-    <div class="disabled-on-checked">
-      <label><input name="noBalloonTipRealtime"]=]..Checkbox(noBalloonTip=='2')..[=[>リアルタイムで表示できなかった通知を捨てる</label>
+      <label><input name="showTray"]=]..Checkbox(residentMode~='1')..[=[>タスクトレイアイコンを表示する</label>
+      <div class="enabled-on-checked">
+        <label><input name="notifyTipStyle"]=]..Checkbox(notifyTipStyle)..[=[>ツールチップに次の予約を表示する</label><br>
+        <label><input name="blinkPreRec"]=]..Checkbox(blinkPreRec)..[=[>開始準備で点滅させる</label>
+      </div>
+      <label><input name="noBalloonTip"]=]..Checkbox(noBalloonTip=='1')..[=[><span class='enabled-on-checked'>バルーンチップ/トーストでの動作通知を抑制する</span></label>
+      <div class="disabled-on-checked">
+        <label><input name="noBalloonTipRealtime"]=]..Checkbox(noBalloonTip=='2')..[=[>リアルタイムで表示できなかった通知を捨てる</label>
+      </div>
     </div>
   </div>
   <label><input name="saveNotifyLog"]=]..Checkbox(saveNotifyLog)..[=[>情報通知ログをファイルに保存する</label><br>
@@ -124,4 +128,4 @@ ct:Append([=[<option value="20000"]=]..Selected(math.floor(epgArchivePeriodHour/
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

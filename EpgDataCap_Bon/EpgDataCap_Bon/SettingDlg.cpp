@@ -11,8 +11,8 @@
 CSettingDlg::CSettingDlg(HWND hWndOwner)
 	: m_hWnd(NULL)
 	, m_hWndOwner(hWndOwner)
+	, m_setting(APP_SETTING::Load(GetModuleIniPath().c_str()))
 {
-
 }
 
 CSettingDlg::~CSettingDlg()
@@ -31,12 +31,12 @@ INT_PTR CSettingDlg::DoModal()
 BOOL CSettingDlg::OnInitDialog()
 {
 	// TODO:  ここに初期化を追加してください
-	basicDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_BASIC), GetSafeHwnd() );
-	appDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APP), GetSafeHwnd() );
-	epgDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_EPG), GetSafeHwnd() );
-	networkDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_NW), GetSafeHwnd() );
-	appBtnDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APPBTN), GetSafeHwnd() );
-	serviceDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_SERVICE), GetSafeHwnd() );
+	basicDlg.Create(MAKEINTRESOURCE(IDD_DIALOG_SET_BASIC), GetSafeHwnd(), m_setting);
+	appDlg.Create(MAKEINTRESOURCE(IDD_DIALOG_SET_APP), GetSafeHwnd(), m_setting);
+	epgDlg.Create(MAKEINTRESOURCE(IDD_DIALOG_SET_EPG), GetSafeHwnd(), m_setting);
+	networkDlg.Create(MAKEINTRESOURCE(IDD_DIALOG_SET_NW), GetSafeHwnd(), m_setting);
+	appBtnDlg.Create(MAKEINTRESOURCE(IDD_DIALOG_SET_APPBTN), GetSafeHwnd(), m_setting);
+	serviceDlg.Create(MAKEINTRESOURCE(IDD_DIALOG_SET_SERVICE), GetSafeHwnd());
 
 	HWND hwndItems[6] = {
 		basicDlg.GetSafeHwnd(),

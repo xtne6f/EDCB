@@ -2,8 +2,7 @@
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
-ct:Append([=[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -20,7 +19,7 @@ srvIni='EpgTimerSrv.ini'
 function GetItemList()
   local esc=edcb.htmlEscape
   edcb.htmlEscape=0
-  local pattern=EdcbSettingPath()..'\\*.ChSet4.txt'
+  local pattern=PathAppend(EdcbSettingPath(),'*.ChSet4.txt')
   edcb.htmlEscape=esc
   local ret={}
   for i,v in ipairs(edcb.FindFile(pattern,0) or {}) do
@@ -40,7 +39,7 @@ function GetItemList()
         bon=bon:sub(0,#bon-1)
       end
       if bon~='' then
-        bon=bon..'.dll'
+        bon=bon..(WIN32 and '.dll' or '.so')
         for j,w in ipairs(ret) do
           if w.bon:upper()==bon:upper() then
             bon=nil
@@ -150,6 +149,7 @@ for i,v in ipairs(GetItemList()) do
 end
 ct:Append([=[
 ※上にあるBonDriverから優先的に使用します。<br>
+※チャンネルスキャンを完了したものが表示されます。<br>
 ※設定は次回起動時に適用されます。
 </div>
 <div id="footer">
@@ -159,4 +159,4 @@ ct:Append([=[
 </html>
 ]=])
 ct:Finish()
-mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len)..(ct.gzip and 'Content-Encoding: gzip\r\n' or '')..'\r\n'))
+mg.write(ct:Pop(Response(200,'text/html','utf-8',ct.len,ct.gzip)..'\r\n'))

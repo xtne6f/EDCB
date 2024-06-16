@@ -46,7 +46,7 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 			SYSTEMTIME now;
 			ConvertSystemTime(GetNowI64Time(), &now);
 			char logline[256];
-			sprintf_s(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%lld Scramble:%lld Signal: %.02f\r\n",
+			sprintf_s(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%lld Scramble:%lld Signal: %.02f%s",
 				now.wYear,
 				now.wMonth,
 				now.wDay,
@@ -55,7 +55,8 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 				now.wSecond,
 				this->drop,
 				this->scramble,
-				this->signalLv
+				this->signalLv,
+				UTIL_NEWLINE[0] == L'\r' ? "\r\n" : "\n"
 				);
 			this->log += logline;
 			this->lastLogDrop = max(this->drop, this->lastLogDrop);
@@ -168,9 +169,11 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 void CDropCount::SaveLog(const wstring& filePath, BOOL asUtf8)
 {
 	//※原作と異なりディレクトリの自動生成はしない
-	std::unique_ptr<FILE, decltype(&fclose)> fp(UtilOpenFile(filePath, UTIL_SECURE_WRITE), fclose);
+	std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(filePath, UTIL_SECURE_WRITE));
 	if( fp ){
-		fprintf_s(fp.get(), "%s%s\r\n", asUtf8 ? "\xEF\xBB\xBF" : "", this->log.c_str());
+		LPCSTR newLine = UTIL_NEWLINE[0] == L'\r' ? "\r\n" : "\n";
+		string buff = asUtf8 ? "\xEF\xBB\xBF" : "";
+		buff += this->log;
 
 		string strA;
 		for( vector<DROP_INFO>::const_iterator itr = this->infoList.begin(); itr != this->infoList.end(); itr++ ){
@@ -242,12 +245,19 @@ void CDropCount::SaveLog(const wstring& filePath, BOOL asUtf8)
 				}
 				break;
 			}
-			fprintf_s(fp.get(), "PID: 0x%04X  Total:%9lld  Drop:%9lld  Scramble: %9lld  %s\r\n",
-			          itr->first, itr->total, itr->drop, itr->scramble, desc);
+			char stats[256];
+			sprintf_s(stats, "%sPID: 0x%04X  Total:%9lld  Drop:%9lld  Scramble: %9lld  ",
+			          newLine, itr->first, itr->total, itr->drop, itr->scramble);
+			buff += stats;
+			buff += desc;
 		}
 
+		buff += newLine;
+		buff += newLine;
 		WtoA(L"使用BonDriver : " + bonFile, strA, asUtf8 ? UTIL_CONV_UTF8 : UTIL_CONV_DEFAULT);
-		fprintf_s(fp.get(), "\r\n%s\r\n", strA.c_str());
+		buff += strA;
+		buff += newLine;
+		fputs(buff.c_str(), fp.get());
 	}
 }
 

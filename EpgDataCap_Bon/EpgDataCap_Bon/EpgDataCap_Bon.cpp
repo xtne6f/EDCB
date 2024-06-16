@@ -4,24 +4,26 @@
 
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
-#include "EpgDataCap_BonDlg.h"
-#include "../../Common/StackTrace.h"
+#include "../../Common/PathUtil.h"
 #include "../../Common/ThreadUtil.h"
 #include "../../Common/TimeUtil.h"
+#ifdef _WIN32
+#include "EpgDataCap_BonDlg.h"
+#include "../../Common/StackTrace.h"
 #include <objbase.h>
 #include <shellapi.h>
+#else
+#include "EpgDataCap_BonMin.h"
+#include <signal.h>
+#endif
 
 namespace
 {
-
 FILE* g_debugLog;
 recursive_mutex_ g_debugLogLock;
-
-// 唯一の CEpgDataCap_BonApp オブジェクトです。
-
-CEpgDataCap_BonApp theApp;
-
 }
+
+#ifdef _WIN32
 
 // CEpgDataCap_BonApp コンストラクション
 
@@ -52,56 +54,12 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 #endif
 
 	CEpgDataCap_BonDlg dlg;
-	dlg.SetIniMin(FALSE);
-	dlg.SetIniView(TRUE);
-	dlg.SetIniNW(TRUE);
 
 	// コマンドオプションを解析
 	int argc;
 	LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
 	if (argv != NULL) {
-		LPCWSTR curr = L"";
-		LPCWSTR optUpperD = NULL;
-		LPCWSTR optLowerD = NULL;
-		for (int i = 1; i < argc; i++) {
-			if (argv[i][0] == L'-' || argv[i][0] == L'/') {
-				curr = argv[i] + 1;
-				if (wcscmp(curr, L"D") == 0 && optUpperD == NULL) {
-					optUpperD = L"";
-				} else if (wcscmp(curr, L"d") == 0 && optLowerD == NULL) {
-					optLowerD = L"";
-				} else if (CompareNoCase(curr, L"min") == 0) {
-					dlg.SetIniMin(TRUE);
-				} else if (CompareNoCase(curr, L"noview") == 0) {
-					dlg.SetIniView(FALSE);
-				} else if (CompareNoCase(curr, L"nonw") == 0) {
-					dlg.SetIniNW(FALSE);
-				} else if (CompareNoCase(curr, L"nwudp") == 0) {
-					dlg.SetIniNWUDP(TRUE);
-				} else if (CompareNoCase(curr, L"nwtcp") == 0) {
-					dlg.SetIniNWTCP(TRUE);
-				}
-			} else if (wcscmp(curr, L"D") == 0 && optUpperD && optUpperD[0] == L'\0') {
-				optUpperD = argv[i];
-			} else if (wcscmp(curr, L"d") == 0 && optLowerD && optLowerD[0] == L'\0') {
-				optLowerD = argv[i];
-			} else if (CompareNoCase(curr, L"nid") == 0) {
-				dlg.SetIniONID(wcstol(argv[i], NULL, 10));
-			} else if (CompareNoCase(curr, L"tsid") == 0) {
-				dlg.SetIniTSID(wcstol(argv[i], NULL, 10));
-			} else if (CompareNoCase(curr, L"sid") == 0) {
-				dlg.SetIniSID(wcstol(argv[i], NULL, 10));
-			}
-		}
-		if (optUpperD) {
-			dlg.SetInitBon(optUpperD);
-			AddDebugLogFormat(L"%ls", optUpperD);
-		}
-		// 原作の挙動に合わせるため
-		if (optLowerD) {
-			dlg.SetInitBon(optLowerD);
-			AddDebugLogFormat(L"%ls", optLowerD);
-		}
+		dlg.ParseCommandLine(argv, argc);
 		LocalFree(argv);
 	}
 
@@ -132,11 +90,32 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 	SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
 	//メインスレッドに対するCOMの初期化
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	theApp.InitInstance();
+	CEpgDataCap_BonApp().InitInstance();
 	CoUninitialize();
 	SetSaveDebugLog(false);
 	return 0;
 }
+
+#else
+
+int main(int argc, char** argv)
+{
+	if( CEpgDataCap_BonMin::ValidateCommandLine(argv, argc) == false ){
+		return 2;
+	}
+	struct sigaction sigact = {};
+	sigact.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &sigact, NULL);
+
+	SetSaveDebugLog(GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, GetModuleIniPath().c_str()) != 0);
+	CEpgDataCap_BonMin app;
+	app.ParseCommandLine(argv, argc);
+	app.Main();
+	SetSaveDebugLog(false);
+	return 0;
+}
+
+#endif
 
 void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutput)
 {
@@ -149,13 +128,31 @@ void AddDebugLogNoNewline(const wchar_t* lpOutputString, bool suppressDebugOutpu
 			WCHAR t[128];
 			int n = swprintf_s(t, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
 			                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+#if WCHAR_MAX > 0xFFFF
+			for( int i = 0; i < n; i++ ){
+				char dest[4];
+				fwrite(dest, 1, codepoint_to_utf8(t[i], dest), g_debugLog);
+			}
+			for( size_t i = 0; lpOutputString[i]; i++ ){
+				char dest[4];
+				fwrite(dest, 1, codepoint_to_utf8(lpOutputString[i], dest), g_debugLog);
+			}
+#else
 			fwrite(t, sizeof(WCHAR), n, g_debugLog);
 			fwrite(lpOutputString, sizeof(WCHAR), wcslen(lpOutputString), g_debugLog);
+#endif
 			fflush(g_debugLog);
 		}
 	}
 	if( suppressDebugOutput == false ){
+#ifdef _WIN32
 		OutputDebugString(lpOutputString);
+#elif WCHAR_MAX > 0xFFFF && 0
+		for( size_t i = 0; lpOutputString[i]; i++ ){
+			char dest[4];
+			fwrite(dest, 1, codepoint_to_utf8(lpOutputString[i], dest), stderr);
+		}
+#endif
 	}
 }
 
@@ -168,10 +165,13 @@ void SetSaveDebugLog(bool saveDebugLog)
 			WCHAR logFileName[64];
 			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
 			fs_path logPath = GetCommonIniPath().replace_filename(logFileName);
+#if WCHAR_MAX <= 0xFFFF
 			g_debugLog = UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ);
 			if( g_debugLog ){
 				fwrite(L"\xFEFF", sizeof(WCHAR), 1, g_debugLog);
-			}else{
+			}else
+#endif
+			{
 				g_debugLog = UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ);
 			}
 			if( g_debugLog ){
