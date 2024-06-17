@@ -97,6 +97,92 @@
 
 
 
+ビルド(Linux)
+----------------------------------------
+※動作確認環境はDebian(bookworm)
+
+0. makeとgccをインストール。Debian系ディストリビューションはLua5.2のパッケージも用意されている
+   ```shell
+   sudo apt install make gcc g++
+   sudo apt install liblua5.2-dev lua-zlib
+   sudo apt install openssl  # 必須でない。WebUIでSSL/TLSを利用する場合
+   ```
+   gccのバージョンは11以上を想定。RedHat系やあえて自ビルドする場合は後述「Luaモジュールのビルド」もやっておく
+
+1. つづけて以下を実行（この文書が"~/EDCB/Document"にあると仮定）  
+   ```shell
+   cd ~/EDCB/Document/Unix
+   make
+   sudo make install  # ARIB8CHAR_USE_UNICODEを定義しないEpgDataCap3.soをインストールする場合
+   sudo make install_u  # ARIB8CHAR_USE_UNICODEを定義したEpgDataCap3.soをインストールする場合
+   make extra && sudo make install_extra  # 必須でない。tsreadexなどの関連コマンドのビルド
+   ```
+   インストール先は/usr/local/binと/usr/local/lib/edcb
+
+   RedHat系は伝統的に/etc/ld.so.confに/usr/local/libを含まないので、EpgTimerSrv実行時に"liblua5.2.so: cannot open ～"みたいなのが出る場合は
+   検索パスに/usr/local/libを加えるようにEpgTimerSrvをビルドし直す
+   ```shell
+   make EpgTimerSrv.clean
+   LDFLAGS=-Wl,-rpath,/usr/local/lib make EpgTimerSrv.all
+   sudo make EpgTimerSrv.install
+   ```
+
+2. 設定ファイルなどを配置
+   ```shell
+   sudo mkdir /var/local/edcb
+   sudo chown {ユーザー}:{グループ} /var/local/edcb  # EpgTimerSrvを実行するユーザーがアクセスできるようにする
+   make setup_ini
+   ```
+   必要に応じて/var/local/edcbのパーミッションを0770などに調整すること
+
+   以上でEpgTimerSrvを実行すれば http://localhost:5510/ から各種操作が可能。Legacy WebUIについてはlynxなどテキストベースのブラウザでもひと通り操作可能。  
+   ただし、既定ではlocalhostしかWebUIにアクセスできないので必要に応じて /var/local/edcb/EpgTimerSrv.ini のHttpAccessControlListを調整する。  
+   また、既定では設定メニューからの設定の変更が不許可なので必要に応じて /var/local/edcb/HttpPublic/legacy/util.lua のALLOW_SETTINGをtrueにする。
+
+3. サービス化  
+   たとえば以下のようなsystemdのユニットファイルを作成する。{ユーザー}にはサービスを実行するユーザー名を指定する。rootでの実行は推奨しないし想定もしていない
+   ```shell
+   sudo tee /etc/systemd/system/edcb.service << 'EOS'
+   [Unit]
+   Description=EpgTimerSrv
+   After=network.target
+
+   [Service]
+   ExecStart=/usr/local/bin/EpgTimerSrv
+   Restart=always
+   StandardError=journal
+   StandardOutput=null
+   TimeoutStopSec=50
+   Type=simple
+   User={ユーザー}
+
+   [Install]
+   WantedBy=default.target
+   EOS
+
+   sudo systemctl enable edcb
+   ```
+
+
+
+Luaモジュールのビルド(Linux)
+----------------------------------------
+   ```shell
+   curl -L https://github.com/xtne6f/lua/archive/refs/heads/v5.2-luabinaries.tar.gz | tar xz
+   cd lua-5.2-luabinaries
+   make liblua5.2.so
+   sudo cp liblua5.2.so /usr/local/lib/
+   sudo ldconfig
+
+   curl -L https://github.com/xtne6f/lua-zlib/archive/refs/heads/v0.5-lua52.tar.gz | tar xz
+   cd lua-zlib-0.5-lua52
+   make libzlib52.so
+   sudo mkdir -p /usr/local/lib/lua/5.2
+   sudo cp libzlib52.so /usr/local/lib/lua/5.2/
+   ```
+
+
+
 その他
 ----------------------------------------
 - 一部のマクロを定義することでビルドをカスタマイズできる。以下主なもの
@@ -118,6 +204,4 @@
   となっている部分をインストールされている.NETのバージョンに変更するか、v4.5のTargeting Packをインストールする
 
 - gitコマンドのある環境では、versionhashgen.batを実行すればバージョン情報にコミットハッシュを埋め込むことができる。
-  versionhash.shはMSYS2などのシェル環境用
-
-- プラットフォームツールセット:LLVM-vs2014( https://releases.llvm.org/ , ver.7.0.0以降はMarketplaceに移動の模様)に対応している
+  versionhash.shはBashシェル環境用
