@@ -21,29 +21,30 @@ ct:Append(DOCTYPE_HTML4_STRICT..[=[
     EDCBの操作をブラウザから行うことができます。このWebUIではJavaScript(メディア再生や字幕表示を除く)やCookieは使用しません。<br>
     このWebUIでは公開フォルダ(HttpPublic)にないファイルには原則アクセスしません。
   </p><p>
-    EDCBの「録画保存フォルダ」を公開フォルダ配下(公開フォルダ直下のvideoフォルダを推奨)に設定すれば、リンク表示などの追加機能を利用できます。
+    EDCBの<a href="setting_rec_folder.html">録画保存フォルダ</a>を公開フォルダ配下(公開フォルダ直下のvideoフォルダを推奨)に設定すれば、リンク表示などの追加機能を利用できます。
   </p><p>
-    番組表などにはEDCBの「EPG取得対象サービス」でチェックされたサービスのみ表示します。
+    番組表などにはEDCBの<a href="setting_epg_service.html">EPG取得対象サービス</a>でチェックされたサービスのみ表示します。
   </p><p>
-    <a href="showlog.lua?c=8192&amp;t=d">デバッグ出力</a>や<a href="index.html">メニュー</a>のシステムスタンバイ機能や<a href="setting.html">設定メニュー</a>からの設定の変更はデフォルトで無効化しています。<br>
+    <a href="showlog.lua?t=d&amp;c=10000">デバッグ出力</a>や<a href="index.html">メニュー</a>のシステムスタンバイ機能や<a href="setting.html">設定メニュー</a>からの設定の変更はデフォルトで無効化しています。<br>
     必要に応じてutil.luaの定数定義を編集して有効にしてください。
   </p><p>
-    トランスコード機能(xcodeボタン)や視聴機能(viewボタン)を利用する場合は、ffmpegなどのトランスコーダーとtsreadex.exeとをEDCB直下のToolsフォルダに用意してください。<br>
-    既定ではHLS再生が有効なのでtsmemseg.exeも必要です。字幕表示のため"-d"オプション付き(master-with-dブランチ)のものを用意してください。<br>
-    後述のデータ放送の表示にはpsisiarc.exeも必要です。<br>
+    トランスコード機能(xcodeボタン)や視聴機能(viewボタン)を利用する場合は、<a href="https://ffmpeg.org/">ffmpeg</a>や<a href="https://github.com/rigaya/QSVEnc">QSVEnc</a>などのトランスコーダーと
+    <a href="https://github.com/xtne6f/tsreadex">tsreadex</a>とをEDCB直下のToolsフォルダ(Windows以外では/usr/local/binなどパスの通った場所)に用意してください。<br>
+    既定ではHLS再生が有効なので<a href="https://github.com/xtne6f/tsmemseg">tsmemseg</a>も必要です。字幕表示のため"-d"オプション付き(master-with-dブランチ)のものを用意してください。<br>
+    後述のデータ放送の表示には<a href="https://github.com/xtne6f/psisiarc">psisiarc</a>も必要です。<br>
     また、必要に応じてutil.luaの定数定義を編集してください。<br>
     トランスコーダーなどのバージョンはとくに指定しませんが、なるべく新しいものを用意してください。<br>
     ブラウザの制限により自動再生されないことがあるので、その場合は再生画面をクリックやタップしてください。
   </p><p>
-    視聴機能を利用する場合は、EpgDataCap_Bonなどの「TCP送信先」にSrvPipeを追加しておく必要があります。<br>
+    視聴機能を利用する場合は、EpgDataCap_Bonなどの<a href="setting_app_network.html">TCP送信先</a>にSrvPipeを追加しておく必要があります。<br>
     予約一覧にあるviewボタンは起動済みのEpgDataCap_Bonなどに接続して視聴するものです。<br>
     リスト番組表にあるviewボタンはNetworkTVモードによりEpgDataCap_Bonなどを起動して視聴するものです。<br>
-    NetworkTVモードでは「視聴に使用するBonDriver」をEpgTimerSrv設定で指定しておく必要があります。
+    NetworkTVモードでは<a href="setting_view_bon.html">視聴に使用するBonDriver</a>をEpgTimerSrv設定で指定しておく必要があります。
   </p><p>
     HLS再生時や<a href="https://github.com/xtne6f/b24tovtt">b24tovtt</a>出力のWebVTTが配置されたメディアファイル再生時は、<a href="https://github.com/monyone/aribb24.js">aribb24.js</a>による字幕表示ができます。<br>
     字幕つき全画面表示は再生画面の左上隅あたりをクリックやタップしてください。
   </p><p>
-    トランスコード時や視聴時、<a href="https://github.com/xtne6f/psisiarc">psisiarc</a>出力の.pscファイルが配置されたメディアファイル再生時は、<a href="https://github.com/otya128/web-bml">web-bml</a>によるデータ放送の表示ができます。<br>
+    トランスコード時や視聴時、psisiarc出力の.pscファイルが配置されたメディアファイル再生時は、<a href="https://github.com/otya128/web-bml">web-bml</a>によるデータ放送の表示ができます。<br>
     ※指定サービス対象データに「データカルーセルを含める」必要があります。
   </p><p>
     トランスコード時や視聴時、psisiarc出力の.pscファイルが配置されたメディアファイル再生時は、TVTestのNicoJKプラグインのログや実況の表示ができます。おもに録画用アプリをTVTestにしている人向けの機能です。<br>
@@ -53,9 +54,9 @@ ct:Append(DOCTYPE_HTML4_STRICT..[=[
   </p><p>
     ライブラリ機能などにある「→DL」をクリックするとメディアファイルを再生ではなくダウンロードするためのリンクを表示します。<br>
     ネットワークアドレスに対応した再生ソフトなどで利用できます。<br>
-    MP4ファイルにかぎりToolsフォルダにpsisimux.exeを用意することで「Mux-to-TS」リンクにより上記のWebVTTや.pscファイルを結合してTSファイルに変換できます。
+    MP4ファイルにかぎり<a href="https://github.com/xtne6f/psisimux">psisimux</a>を用意することで「Mux-to-TS」リンクにより上記のWebVTTや.pscファイルを結合してTSファイルに変換できます。
   </p><p>
-    tsreadex.exeを"edcbnosuspend.exe"という名前でコピーしてToolsフォルダに用意すると、<a href="index.html">メニュー</a>に「録画後動作を抑制」ボタンが現れます。<br>
+    (Windowsのみ)tsreadex.exeを"edcbnosuspend.exe"という名前でコピーしてToolsフォルダに用意すると、<a href="index.html">メニュー</a>に「録画後動作を抑制」ボタンが現れます。<br>
     このedcbnosuspend.exeをEpgTimerSrv設定の「録画後動作の抑制条件」に指定しておくことで録画後動作を一時的に抑制することができます。<br>
     ※edcbnosuspend.exeは単に起動させておくだけの何もしないプロセスです。
   </p><pre style="font-size:small">
@@ -77,6 +78,8 @@ ct:Append(DOCTYPE_HTML4_STRICT..[=[
   |    |---(他のWebUIスクリプトなど)
   |    |---index.html
   |    :
+  |
+  | (Windows以外では各コマンドはパスの通った場所に置く。以下はWindowsのみ)
   |
   |---Tools/
   |    |---asyncbuf.exe
