@@ -1339,11 +1339,11 @@ void CTunerBankCtrl::CloseTuner()
 
 bool CTunerBankCtrl::CloseOtherTuner()
 {
-#ifdef _WIN32
 	if( this->tunerPid ){
 		return false;
 	}
 	vector<DWORD> pidList;
+#ifdef _WIN32
 	//Toolhelpスナップショットを作成する
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if( hSnapshot != INVALID_HANDLE_VALUE ){
@@ -1356,6 +1356,17 @@ bool CTunerBankCtrl::CloseOtherTuner()
 		}
 		CloseHandle(hSnapshot);
 	}
+#else
+	EnumFindFile(fs_path(EDCB_INI_ROOT).append(CMD2_VIEW_CTRL_PIPE).concat(L"*"), [&pidList](UTIL_FIND_DATA& findData) -> bool {
+		if( findData.fileName.size() > wcslen(CMD2_VIEW_CTRL_PIPE) ){
+			int pid = (int)wcstol(findData.fileName.c_str() + wcslen(CMD2_VIEW_CTRL_PIPE), NULL, 10);
+			if( pid > 0 && kill(pid, 0) == 0 ){
+				pidList.push_back(pid);
+			}
+		}
+		return true;
+	});
+#endif
 	bool closed = false;
 
 	//起動中で使えるもの探す
@@ -1365,8 +1376,11 @@ bool CTunerBankCtrl::CloseOtherTuner()
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, pidList[i]);
 		if( ctrlCmd.PipeExists() ){
 			//万一のフリーズに対処するため一時的にこのバンクの管理下に置く
+#ifdef _WIN32
 			this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, FALSE, pidList[i]);
-			if( this->hTunerProcess ){
+			if( this->hTunerProcess )
+#endif
+			{
 				this->tunerPid = pidList[i];
 				wstring bonDriver;
 				int id;
@@ -1379,15 +1393,25 @@ bool CTunerBankCtrl::CloseOtherTuner()
 				    (status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_GET_EPG || status == VIEW_APP_ST_ERR_CH_CHG) ){
 					ctrlCmd.SendViewAppClose();
 					//10秒だけ終了を待つ
+#ifdef _WIN32
 					WaitForSingleObject(this->hTunerProcess, 10000);
+#else
+					for( int timeout = 10000; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+						SleepForMsec(10);
+					}
+#endif
 					closed = true;
 				}
 				lock_recursive_mutex lock(this->watchContext.lock);
+#ifdef _WIN32
 				CloseHandle(this->hTunerProcess);
+#endif
 				this->tunerPid = 0;
 			}
 		}
 	}
+
+#ifdef _WIN32
 	//TVTestで使ってるものあるかチェック
 	for( size_t i = 0; closed == false && i < pidList.size(); i++ ){
 		CSendCtrlCmd ctrlCmd;
@@ -1409,10 +1433,8 @@ bool CTunerBankCtrl::CloseOtherTuner()
 			}
 		}
 	}
-	return closed;
-#else
-	return false;
 #endif
+	return closed;
 }
 
 wstring CTunerBankCtrl::ConvertRecName(
