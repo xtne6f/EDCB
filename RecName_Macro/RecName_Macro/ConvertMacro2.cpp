@@ -7,6 +7,9 @@
 
 namespace
 {
+//マクロを展開した結果がこの長さを超えるときは失敗させる
+const size_t MACRO_RESULT_LIMIT = 64 * 1024;
+
 inline bool IsHighSurrogate(wchar_t c) { return L'\xD800' <= c && c <= L'\xDBFF'; }
 inline bool IsLowSurrogate(wchar_t c) { return L'\xDC00' <= c && c <= L'\xDFFF'; }
 }
@@ -244,7 +247,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 						return FALSE;
 					}
 					ret.replace(i, inc, func, j, IsHighSurrogate(func[j]) ? 2 : 1);
-					if( ret.size() > 64 * 1024 ){
+					if( ret.size() > MACRO_RESULT_LIMIT ){
 						return FALSE;
 					}
 					inc = IsHighSurrogate(func[j]) ? 2 : 1;
@@ -266,7 +269,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 					}
 					if( n > j && ret.compare(i, n - j, func, j, n - j) == 0 ){
 						ret.replace(i, n - j, func, n + 1, m - (n + 1));
-						if( ret.size() > 64 * 1024 ){
+						if( ret.size() > MACRO_RESULT_LIMIT ){
 							return FALSE;
 						}
 						i += m - (n + 1);
@@ -296,29 +299,48 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 				}
 			}
 		}else if( func.compare(0, 4, L"Head") == 0 && func.size() >= 5 ){
-			//足切り(Head文字数[省略記号])
+			//足切り(Head[C]文字数[省略記号])
+			bool isC = func[4] == L'C';
 			wchar_t* p;
-			size_t m = (size_t)wcstol(&func.c_str()[4], &p, 10);
-#if WCHAR_MAX > 0xFFFF
-			//UTF-16相当の長さ
+			size_t m = (size_t)wcstol(&func.c_str()[4 + isC], &p, 10);
 			bool hasSpace = false;
-			for( size_t i = 0; i < m && i < ret.size(); i++ ){
-				if( ret[i] > L'\xFFFF' ){
-					--m;
+			if( isC ){
+				//UTF-8相当の長さをwchar_tの長さに変換
+				size_t i = 0;
+				for( size_t j = 0; i < ret.size(); i++ ){
+					hasSpace = j < m;
+					if( IsHighSurrogate(ret[i]) && i + 1 < ret.size() && IsLowSurrogate(ret[i + 1]) ){
+						j += 4;
+						if( j > m ){
+							break;
+						}
+						i++;
+					}else{
+						char dest[4];
+						j += codepoint_to_utf8(ret[i], dest);
+						if( j > m ){
+							break;
+						}
+					}
 				}
-				hasSpace = m == i;
+				m = i;
+			}
+#if WCHAR_MAX > 0xFFFF
+			else{
+				//UTF-16相当の長さをwchar_tの長さに変換
+				for( size_t i = 0; i < m && i < ret.size(); i++ ){
+					if( ret[i] > L'\xFFFF' ){
+						--m;
+					}
+					hasSpace = m == i;
+				}
 			}
 #endif
 			if( m < ret.size() ){
-#if WCHAR_MAX > 0xFFFF
 				if( *p && (m > 0 || hasSpace) ){
 					if( !hasSpace ){
 						m--;
 					}
-#else
-				if( *p && m > 0 ){
-					m--;
-#endif
 				}else{
 					p = NULL;
 				}
@@ -331,29 +353,48 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 				}
 			}
 		}else if( func.compare(0, 4, L"Tail") == 0 && func.size() >= 5 ){
-			//頭切り(Tail文字数[省略記号])
+			//頭切り(Tail[C]文字数[省略記号])
+			bool isC = func[4] == L'C';
 			wchar_t* p;
-			size_t m = (size_t)wcstol(&func.c_str()[4], &p, 10);
-#if WCHAR_MAX > 0xFFFF
-			//UTF-16相当の長さ
+			size_t m = (size_t)wcstol(&func.c_str()[4 + isC], &p, 10);
 			bool hasSpace = false;
-			for( size_t i = 0; i < m && i < ret.size(); i++ ){
-				if( ret[ret.size() - 1 - i] > L'\xFFFF' ){
-					--m;
+			if( isC ){
+				//UTF-8相当の長さをwchar_tの長さに変換
+				size_t i = 0;
+				for( size_t j = 0; i < ret.size(); i++ ){
+					hasSpace = j < m;
+					if( IsLowSurrogate(ret[ret.size() - 1 - i]) && i + 1 < ret.size() && IsHighSurrogate(ret[ret.size() - 2 - i]) ){
+						j += 4;
+						if( j > m ){
+							break;
+						}
+						i++;
+					}else{
+						char dest[4];
+						j += codepoint_to_utf8(ret[ret.size() - 1 - i], dest);
+						if( j > m ){
+							break;
+						}
+					}
 				}
-				hasSpace = m == i;
+				m = i;
+			}
+#if WCHAR_MAX > 0xFFFF
+			else{
+				//UTF-16相当の長さをwchar_tの長さに変換
+				for( size_t i = 0; i < m && i < ret.size(); i++ ){
+					if( ret[ret.size() - 1 - i] > L'\xFFFF' ){
+						--m;
+					}
+					hasSpace = m == i;
+				}
 			}
 #endif
 			if( m < ret.size() ){
-#if WCHAR_MAX > 0xFFFF
 				if( *p && (m > 0 || hasSpace) ){
 					if( !hasSpace ){
 						m--;
 					}
-#else
-				if( *p && m > 0 ){
-					m--;
-#endif
 				}else{
 					p = NULL;
 				}
@@ -370,7 +411,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 		}
 	}
 
-	if( convert.size() + ret.size() > 64 * 1024 ){
+	if( convert.size() + ret.size() > MACRO_RESULT_LIMIT ){
 		return FALSE;
 	}
 	convert += ret;
