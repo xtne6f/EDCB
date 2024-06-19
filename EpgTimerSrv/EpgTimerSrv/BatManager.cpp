@@ -259,16 +259,18 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 					WtoUTF8(work.batFilePath, execPath);
 					string execDir;
 					WtoUTF8(fs_path(work.batFilePath).parent_path().native(), execDir);
+					vector<string> macroValList(work.macroList.size());
+					for( size_t i = 0; i < macroValList.size(); i++ ){
+						WtoUTF8(work.macroList[i].second, macroValList[i]);
+					}
 					pid_t pid = fork();
 					if( pid == 0 ){
 						//シグナルマスクを初期化
 						sigset_t sset;
 						sigemptyset(&sset);
 						if( sigprocmask(SIG_SETMASK, &sset, NULL) == 0 && chdir(execDir.c_str()) == 0 ){
-							for( size_t i = 0; i < work.macroList.size(); i++ ){
-								string strVal;
-								WtoUTF8(work.macroList[i].second, strVal);
-								setenv(work.macroList[i].first.c_str(), strVal.c_str(), 0);
+							for( size_t i = 0; i < macroValList.size(); i++ ){
+								setenv(work.macroList[i].first.c_str(), macroValList[i].c_str(), 0);
 							}
 							execl(execPath.c_str(), execPath.c_str(), NULL);
 						}
