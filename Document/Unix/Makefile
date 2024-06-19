@@ -61,7 +61,7 @@ install_extra: extra
 
 setup_ini:
 	[ -f /var/local/edcb/Bitrate.ini ] || iconv -f CP932 -t UTF-8 ../../ini/Bitrate.ini | tr -d '\r' >/var/local/edcb/Bitrate.ini
-	[ -f /var/local/edcb/BonCtrl.ini ] || iconv -f CP932 -t UTF-8 ../../ini/BonCtrl.ini | tr -d '\r' >/var/local/edcb/BonCtrl.ini
+	[ -f /var/local/edcb/BonCtrl.ini ] || iconv -f CP932 -t UTF-8 ../../ini/BonCtrl.ini | tr -d '\r' | sed 's/\.dll$$/.so/' >/var/local/edcb/BonCtrl.ini
 	[ -f /var/local/edcb/ContentTypeText.txt ] || tr -d '\r' <../../ini/ContentTypeText.txt >/var/local/edcb/ContentTypeText.txt
 	mkdir -p /var/local/edcb/HttpPublic
 	cp -Rn ../../ini/HttpPublic/index.html ../../ini/HttpPublic/favicon.ico ../../ini/HttpPublic/legacy /var/local/edcb/HttpPublic/
