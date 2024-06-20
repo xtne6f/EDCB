@@ -15,6 +15,7 @@
 #include <objbase.h>
 #include <shellapi.h>
 #else
+#include "../../Common/CommonResource.h"
 #include <signal.h>
 #endif
 
@@ -221,6 +222,16 @@ void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD d
 
 int main(int argc, char** argv)
 {
+	if( argc >= 2 && strcmp(argv[1], "-h") == 0 ){
+		printf("Ver.%s\n",
+#ifdef EDCB_VERSION_TEXT
+		       EDCB_VERSION_TEXT
+#else
+		       " ?"
+#endif
+		       );
+		return 2;
+	}
 	struct sigaction sigact = {};
 	sigact.sa_handler = SIG_IGN;
 	sigaction(SIGPIPE, &sigact, NULL);

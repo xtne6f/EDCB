@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "EpgDataCap_BonMin.h"
 #include "../../Common/CommonDef.h"
+#include "../../Common/CommonResource.h"
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/TimeUtil.h"
 
@@ -81,7 +82,13 @@ void CEpgDataCap_BonMin::ParseCommandLine(char** argv, int argc)
 bool CEpgDataCap_BonMin::ValidateCommandLine(char** argv, int argc)
 {
 	if( argc >= 2 && strcmp(argv[1], "-h") == 0 ){
-		printf("Usage: %s [-nonw][-nwudp][-nwtcp][-d BonDriver*][-nid x][-tsid y][-sid z][-chscan][-epgcap][-rec]\n", argv[0]);
+		printf("Ver.%s\nUsage: %s [-nonw][-nwudp][-nwtcp][-d BonDriver*][-nid x][-tsid y][-sid z][-chscan][-epgcap][-rec]\n",
+#ifdef EDCB_VERSION_TEXT
+		       EDCB_VERSION_TEXT
+#else
+		       " ?"
+#endif
+		       , argv[0]);
 		return false;
 	}
 	return true;
