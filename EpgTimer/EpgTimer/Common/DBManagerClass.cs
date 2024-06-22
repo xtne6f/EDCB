@@ -212,15 +212,17 @@ namespace EpgTimer
 
                 string logoIni = null;
                 string logoIndex = null;
-                if (Settings.Instance.ShowLogo &&
-                    logoIniBinary != null && logoIniBinary.Length > 2 && logoIniBinary[0] == 0xFF && logoIniBinary[1] == 0xFE &&
-                    logoIndexBinary != null && logoIndexBinary.Length > 2 && logoIndexBinary[0] == 0xFF && logoIndexBinary[1] == 0xFE)
+                if (Settings.Instance.ShowLogo && logoIniBinary != null && logoIndexBinary != null)
                 {
                     try
                     {
-                        //必ずUTF-16LE
-                        logoIni = Encoding.Unicode.GetString(logoIniBinary, 2, logoIniBinary.Length - 2);
-                        logoIndex = Encoding.Unicode.GetString(logoIndexBinary, 2, logoIndexBinary.Length - 2);
+                        //サーバーの環境によりUTF-8かBOMつきUTF-16LE
+                        logoIni = (logoIniBinary.Length > 2 && logoIniBinary[0] == 0xFF && logoIniBinary[1] == 0xFE ?
+                                       Encoding.Unicode.GetString(logoIniBinary) :
+                                       Encoding.UTF8.GetString(logoIniBinary)).TrimStart('\uFEFF');
+                        logoIndex = (logoIndexBinary.Length > 2 && logoIndexBinary[0] == 0xFF && logoIndexBinary[1] == 0xFE ?
+                                         Encoding.Unicode.GetString(logoIndexBinary) :
+                                         Encoding.UTF8.GetString(logoIndexBinary)).TrimStart('\uFEFF');
                     }
                     catch { }
                 }
