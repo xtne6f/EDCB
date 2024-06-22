@@ -26,6 +26,11 @@ EpgTimerTaskはEpgTimerSrvに統合しました。EpgTimerSrv.exeをコピーし
 原則能動態で説明します)。なお、仕様に影響しないバグ修正や細かいデザイン改変は省
 略します。追加機能については【追加】マークを付けています。
 
+Windows以外の環境については【UNIX】をつけて注釈します。文中で拡張子が.dllや.exe
+となっているものはWindows以外では.soや拡張子なしと読みかえてください。  
+以下、EpgTimerSrv.exeやEpgTimerSrv.iniのあるフォルダを「EDCBのルートフォルダ」と
+表現します。【UNIX】これは通常/var/local/edcbです。
+
 
 
 Readme.txtの改変点
@@ -45,6 +50,27 @@ Readme.txtの改変点
   ください。  
   Program Files等のOSが特別に管理するフォルダへの配置は避けてください。書き込み
   保護や仮想化、大規模アップデート時の退避処理によりトラブルを引き起こします。
+
+  【UNIX】EpgDataCap_BonとEpgTimerSrvは通常/usr/local/binにあるコマンドベースの
+  実行ファイルです。BonDriver、ファイル名変換PlugIn、出力PlugIn、その他のモジュ
+  ールは/usr/local/lib/edcbの直下にあり、ワイルドカードで`BonDriver*.so`に一致す
+  るものをBonDriver、`RecName*.so`に一致するものをファイル名変換PlugIn、
+  `Write*.so`に一致するものを出力PlugInと判断します。ファイル名の大文字小文字が
+  区別されることに注意してください。設定ファイルなど使用中に変化するものは
+  /var/local/edcb以下に置かれます。  
+  BonDriverは https://github.com/u-n-k-n-o-w-n/BonDriverProxy_Linux の仕様に従う
+  ものを利用できます。 https://github.com/xtne6f/BonDriverTunnel のものも利用で
+  きます。B25Decoder関係についてはとくに説明しませんが、Windowsのものと特段違い
+  はないです。  
+  `EpgDataCap_Bon -d BonDriver_foo.so -chscan`でチャンネルスキャンできます。
+  `EpgDataCap_Bon -d BonDriver_foo.so -nid {ネットワークID} -tsid {TSID} -sid {サービスID} -rec`
+  で即時録画できます(保存先は「録画フォルダ」で指定した場所)。その他の引数は
+  `EpgDataCap_Bon -h`で確認してください。  
+  EpgDataCapBon、EpgTimerSrvとも一般的なシグナル(SIGHUPかSIGINTかSIGTERM、たとえ
+  ばCtrl+C)で終了します。後処理が不十分になるので強制終了(SIGKILL)はやむをえない
+  場合をのぞき送らないでください。  
+  EpgTimerSrvはWindowsと同様にチューナー数の設定や設定後の再起動が必要です。ほと
+  んどの設定はWebUIで可能です。
 
 
 
@@ -98,7 +124,8 @@ Readme_EpgDataCap_Bon.txtの改変点
       の特別なヘッダをつけない)になります【追加】。  
       送信先を0.0.0.1(SrvPipe)にすると、TCPではなく名前付きパイプ
       `\\.\pipe\SendTSTCP_{ポート番号}_{プロセスID}`として外部ツールなどの接続を
-      待ち受けます【追加】。  
+      待ち受けます【追加】。【UNIX】EDCBのルートフォルダにFIFOファイル
+      `SendTSTCP_{ポート番号}_{プロセスID}_[01].fifo`を作ります。  
       送信先を0.0.0.2(Pipe)にすると、BonDriver_Pipe.dllに接続します【追加】。ポ
       ート番号はPipe番号になります。
 
@@ -123,8 +150,8 @@ Readme_EpgTimer.txtの改変点
 "EpgTimer.exe"を"EpgTimerNW～.exe"にファイル名をリネームすることで、EpgTimerNW相
 当の動作になります。～には任意の文字列を指定可能で、この文字列が異なるEpgTimerNW
 は多重起動できます。通常のEpgTimerも"EpgTimer～.exe"にリネームして多重起動できま
-すが、必ずEpgTimerSrvのあるフォルダに置いてください。また、リネームしたEpgTimer
-はEpgTimerSrvを連動して起動しません。  
+すが、必ずEDCBのルートフォルダに置いてください。また、リネームしたEpgTimerは
+EpgTimerSrvを連動して起動しません。  
 録画済み番組情報"RecInfo2Data.bin"は"RecInfo2.txt"に移動しました。  
 OSのタイムゾーンの影響を受けなくなりました。予約管理や画面表示等すべて日本標準時
 (UTC+9時間)で行います。
@@ -191,7 +218,7 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
   - 録画後実行bat  
     `*`以降の文字列を`$BatFileTag$`マクロとして参照できます【追加】。「"」は全角
     「”」に置換されます。意図しない展開を防ぐため、バッチでは`"$BatFileTag$"`の
-    ように引用符で囲うなどしてください。
+    ように引用符で囲うなどしてください。【UNIX】「"」の置換は行いません。
   - 録画マージン  
     完全な録画を重視する場合、開始マージンは十分に確保してください。予約管理やPC
     の状態によって数秒から十数秒程度の遅延は起こり得ます。デフォルトの開始マージ
@@ -274,7 +301,9 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
       - ファイル名の禁則文字の変換対象から「\」を除外する【追加】  
         PlugInが返すファイル名の禁則文字の変換対象から「\」を除外して、フォルダ
         階層を表現できるようにします(EpgTimerSrv.iniのNoChkYenに相当)。有効の場
-        合でも、ひとつ前の文字が「.」の場合(「.\」)は変換対象です。
+        合でも、ひとつ前の文字が「.」の場合(「.\」)は変換対象です。  
+        【UNIX】「\」ではなく「/」を除外します。「/」と制御文字(NUL～US、DEL)以
+        外の禁則文字はありません。
       - 録画中の予約削除を【追加】
         - 削除のみ(従来動作)
         - 録画済みに追加  
@@ -303,6 +332,10 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
         同期の信頼性を確保するため、150秒の放送波時間の観測を行います。EPG取得時
         間が延べ150(複数時は150÷チューナ数)秒に満たない場合は同期しません。
         特権については後述「EpgTimerAdminProxy.exeについて」も参照してください。
+        【UNIX】`/bin/date -s 20xx-xx-xxTxx:xx:xxZ`をsudoで実行するので、例えば
+        EpgTimerSrvの実行ユーザーがsudoグループ(環境によりwheelグループ)に所属し
+        ているならvisudoコマンドを使って/etc/sudoersに以下を追記すればOKです。  
+        `%sudo ALL=(ALL:ALL) NOPASSWD: /bin/date -s 20[0-9][0-9]-[01][0-9]-[0-3][0-9]T[0-2][0-9]\:[0-5][0-9]\:[0-5][0-9]Z`
       - EPG取得後も番組情報をX日前まで保存する【追加】  
         EPG取得後は過去の番組情報が消えますが、これを"EpgArc.dat"というファイル
         に保存して、番組表などに利用できるようにします。∞を指定すると、さらに過
@@ -317,11 +350,11 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
 
           ※これらはEpgTimerSrv.exeが直接表示するものについての設定です
       - 情報通知ログをファイルに保存する【追加】  
-        情報通知ログをEpgTimerSrvのあるフォルダのEpgTimerSrvNotify.logに保存しま
-        す。情報通知ログのウィンドウの表示にも利用されます。
+        情報通知ログをEDCBのルートフォルダのEpgTimerSrvNotify.logに保存します。
+        情報通知ログのウィンドウの表示にも利用されます。
       - デバッグ出力をファイルに保存する【追加】  
-        EpgTimerSrvのデバッグ出力(OutputDebugStringW)をEpgTimerSrvのあるフォルダ
-        のEpgTimerSrvDebugLog.txtに保存します。
+        EpgTimerSrvのデバッグ出力(OutputDebugStringW)をEDCBのルートフォルダの
+        EpgTimerSrvDebugLog.txtに保存します。
       - EpgTimerSrvの応答をtkntrec版互換にする【追加】  
         ※変更はEpgTimerSrv再起動後に適用されます。
         EpgTimerに対するEpgTimerSrvのふるまいをtkntrec版のEpgTimerSrvと同じにし
@@ -401,13 +434,17 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
 
 #### ■スタンバイ、休止状態への移行
   次の予約録画またはEPG取得に対して、動作設定で指定した"復帰処理開始時間"+8分、
-  かつ抑制条件で指定した時間以上の開きがある場合に移行します。
+  かつ抑制条件で指定した時間以上の開きがある場合に移行します。  
+  【UNIX】スタンバイ、休止、シャットダウン、および復帰処理は未実装です。これらの
+  タイミングでデバッグ出力に「Shutdown is not supported」を出力します。
 
 #### ■録画後のバッチファイル実行の仕様
   バッチのプロセス優先度は"通常以下"(BELOW_NORMAL_PRIORITY_CLASS)で実行します。
   PowerShellスクリプト(.ps1)またはLuaスクリプト(.lua)(lua52.dllがある場合)も使用
-  できます【追加】。LuaスクリプトはEpgTimerSrv内部のスレッドで実行します。短時間
-  の処理への使用を想定していますが、処理時間が長くなる場合は後述
+  できます【追加】。【UNIX】シェルスクリプト(.sh)またはLuaスクリプトが使用できま
+  す。シェルスクリプトには実行権限が必要です。プロセス優先度は変更しません。  
+  LuaスクリプトはEpgTimerSrv内部のスレッドで実行します。短時間の処理への使用を想
+  定していますが、処理時間が長くなる場合は後述
   [edcbグローバル変数の仕様](#Luaスクリプトのedcbグローバル変数の仕様)のSleepの
   説明を確認してください。  
   以下の拡張命令を利用できます【追加】。拡張命令はバッチファイル内のどこかに直接
@@ -423,15 +460,15 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
     るだけですが、`start /wait`を使って別のスクリプトに処理を引き継ぐときに便利
     です。マクロにUnicode文字を含む場合にも対応できます。  
     また、以下を保証します:
-      - EpgTimerSrv.exeのあるフォルダに"EpgTimer_Bon_RecEnd.bat"を作らない
+      - EDCBのルートフォルダに"EpgTimer_Bon_RecEnd.bat"を作らない
       - EpgTimer.exeを経由する間接実行はしない
       - カレントディレクトリはバッチのあるフォルダになる(Luaスクリプトを除く)
 
-    PowerShellとLuaスクリプトでは常に有効です。
+    PowerShellとLuaスクリプトでは常に有効です。【UNIX】常に有効です。
   - `_EDCBX_FORMATTIME_`  
     日時についてのマクロ(`$SDYY$`など)をISO8601形式の`$StartTime$`と
     `$DurationSecond$`に単純化します。  
-    PowerShellとLuaスクリプトでは常に有効です(簡単に整形できるため)。
+    PowerShellとLuaスクリプトでは常に有効です。【UNIX】常に有効です。
 
   取得できるマクロについては以下の3行のコマンドで確認すると手っ取り早いです。
   ```batchfile
@@ -452,6 +489,12 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
   edcb.os.execute('start echo '..s)
   ```
 
+  【UNIX】
+  ```shell
+  #!/bin/bash
+  env >/var/local/edcb/env_test.txt
+  ```
+
 #### ■マクロ
   RecName_Macro.dllについて、マクロを追加しました。【追加】
   - `$BonDriverName$` BonDriverの名前
@@ -466,24 +509,27 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
   ※関数部に`$`,`&`,`(`を含めるときは数値文字参照(`&文字コード;`)を使う
   - 【文字置換】Tr/置換文字リスト/置換後/
     - 例：番組名のA→a、`$`→B: `$Tr/A&36;/aB/(Title)$`
-    - サロゲートペアで表現される文字には使えない
+    - サロゲートペアで表現される文字にも使える
   - 【半角⇔全角】HtoZ,ZtoH
   - 【英数半角⇔全角】`HtoZ<alnum>`,`ZtoH<alnum>`
   - 【Shift_JISにない文字を?に置換】ToSJIS
+    - 【UNIX】この関数はなにもしない
   - 【文字列置換】S/置換文字列/置換後/.../
   - 【文字削除】Rm/削除文字リスト/
     - 例：番組内容から/を削除: `$Rm!/!(SubTitle)$`
-    - サロゲートペアで表現される文字には使えない
-  - 【足切り】Head文字数[省略記号]
+    - サロゲートペアで表現される文字にも使える
+  - 【足切り】Head[C]文字数[省略記号]
     - 例：番組内容を半角にして最長15文字に: `$Head15(ZtoH(SubTitle))$`
     - 例：番組名を省略記号つき最長15文字に: `$Head15~(Title)$`
-  - 【頭切り】Tail文字数[省略記号]
+    - 文字数はHeadがUTF-16換算、HeadCがUTF-8換算
+  - 【頭切り】Tail[C]文字数[省略記号]
     - 例：予約IDを4桁に: `$Tail4((0000$ReserveID$))$`
+    - 文字数はTailがUTF-16換算、TailCがUTF-8換算
 
   ※2重括弧にするとその中身を展開した結果が関数に渡される。入れ子にする場合は、
-    閉じ括弧`))$`の数が内側より多くなるように何もしない関数(`Rm..`など)で調整す
+    閉じ括弧`))$`の数が内側より多くなるようになにもしない関数(`S.`など)で調整す
     る  
-    例: `$Rm..(Head60~(($Head30~(($Title$ $SubTitle$))$ $ExtEventInfo$)))$`
+    例: `$S.(Head60~(($Head30~(($Title$ $SubTitle$))$ $ExtEventInfo$)))$`
 
 #### ■追従の仕様 (この項上書き)
   ※あいまい検索処理によるEventID変更に対する追従処理は一切行いません。  
@@ -518,21 +564,21 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
       致するイベントが存在する場合に限り、その予約を番組終了時間まで延長します。
 
 #### ■Twitter機能
-  Twitter機能は廃止しました。代わりにEpgTimerSrv.exeのあるフォルダに置かれた以下
-  のバッチファイルを実行します【追加】。取得できるマクロは従来とだいたい同じです
-  (NEW系マクロは名前からNEWを取り除いています)。`$BatFileTag$`、およびPostRecEnd
-  に限り`$RecInfoID$`、これ以外に限り`$ReserveID$`(予約ID)、`$RecMode$`(録画モー
-  ド0=全サービス～4=視聴)、`$ReserveComment$`(コメント)も取得できます。
-  - PostAddReserve(.bat|.ps1|.lua) : 予約を追加したとき(無効を除く)
+  Twitter機能は廃止しました。代わりにEDCBのルートフォルダに置かれた以下のバッチ
+  ファイルを実行します【追加】。取得できるマクロは従来とだいたい同じです(NEW系マ
+  クロは名前からNEWを取り除いています)。`$BatFileTag$`、およびPostRecEndに限り
+  `$RecInfoID$`、これ以外に限り`$ReserveID$`(予約ID)、`$RecMode$`(録画モード0=全
+  サービス～4=視聴)、`$ReserveComment$`(コメント)も取得できます。
+  - PostAddReserve(.bat|.ps1|.lua|.sh) : 予約を追加したとき(無効を除く)
     - EPG自動予約のとき`$ReserveComment$`は"EPG自動予約"という文字列で始まります
-  - PostChgReserve(.bat|.ps1|.lua) : 予約を変更したとき(無効を除く)
+  - PostChgReserve(.bat|.ps1|.lua|.sh) : 予約を変更したとき(無効を除く)
     - `$SYMDHMNEW$`～`$SEYMDHM28NEW$`は取得できません
-  - PostRecStart(.bat|.ps1|.lua) : 録画を開始したとき
-  - PostRecEnd(.bat|.ps1|.lua) : 録画を終了したとき
+  - PostRecStart(.bat|.ps1|.lua|.sh) : 録画を開始したとき
+  - PostRecEnd(.bat|.ps1|.lua|.sh) : 録画を終了したとき
     - 取得できるマクロは録画後バッチと完全に同じです
 
   また、イベント発生時に以下のバッチファイルを実行します。
-  - PostNotify(.bat|.ps1|.lua) : 更新通知が送られたとき
+  - PostNotify(.bat|.ps1|.lua|.sh) : 更新通知が送られたとき
     - 取得できるマクロは`$NotifyID$`のみです
       - `$NotifyID$`(1=EPGデータ更新, 2=予約情報更新, 3=録画結果情報更新)
     - ほかのバッチと異なり、実行中でもスリープなどの録画後動作を抑制しません
@@ -622,6 +668,13 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
 #### ■情報通知ログを自動的にファイルに保存する
   廃止しました。EpgTimerSrv側の保存機能を利用してください。
 
+#### ■しょぼいカレンダーに予約をアップロードする
+  EpgTimerSrvに組み込みのしょぼいカレンダー連携機能はHTTPSを使わない(HTTPのみ)、
+  アップロードタイミングがEPG再読み込み時のみ、など柔軟性に欠けるのでお勧めしま
+  せん(そのうち廃止するかもしれません)。【UNIX】この機能は未実装です。  
+  [ini/PostBatExamples](../ini/PostBatExamples)に更新通知を利用したスクリプト例
+  があるのでそちらをお勧めします。
+
 #### ■同一番組無効登録で番組名の比較の際に無視する文字列を指定する 【追加】
   [無]や[生]などのついた番組名も同一番組として扱いたい場合に利用することを想定し
   たもの。EpgTimerSrv.iniのSETにRecInfo2RegExpを追加することで指定可能です。文字
@@ -659,12 +712,17 @@ OSのタイムゾーンの影響を受けなくなりました。予約管理や
   - `/luapost {script}`  
     起動中のEpgTimerSrvにLuaスクリプトの実行をウィンドウメッセージで要求します
 
+  【UNIX】起動オプションはありません。`/luapost`機能についてはEDCBのルートフォル
+  ダのFIFOファイル`EpgTimerSrvLuaPost.fifo`にLuaスクリプトを書き込みます。
+
 #### ■Write_DefaultのTeeコマンド機能について 【追加】
 
 Write_Defaultの通常のファイル出力に平行して、出力と同じデータをPlugIn設定で指定
 されたコマンドの標準入力に渡します。コマンドには`$FilePath$`(出力ファイルパス)を
 指定できます。コマンドのカレントディレクトリは親プロセス(EpgDataCap_Bon.exeなど)
 のあるフォルダになります。プロセス優先度は"通常以下"で実行します。  
+【UNIX】出力ファイルパスは環境変数`$FilePath`で得られます。カレントディレクトリ
+はEDCBのルートフォルダです。プロセス優先度は変更しません。  
 録画終了後、標準入力は速やかに閉じられます(入力完了まで待機することはない)。コマ
 ンドの処理速度が録画速度を下回る場合は終了後の処理について(引数で受け取った出力
 ファイルパスをもとに処理を継続するなど)コマンド側で工夫してください。
@@ -775,13 +833,13 @@ Write_DefaultやRecName_Macroなどのプラグインの設定は、APIを使っ
 CivetWebの組み込みについて
 ----------------------------------------
 HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetWebを組み込みました。
-有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。  
+有効にする場合はEDCBのルートフォルダにlua52.dllが必要です。対応するものをDLしてください。  
 https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
 
 CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.16  
 https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
 
-SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にlibssl-3(-x64).dllとlibcrypto-3(-x64).dllが必要です。自ビルドするか信頼できるどこかから入手してください。
+SSL/TLSを利用する場合はEDCBのルートフォルダにlibssl-3(-x64).dllとlibcrypto-3(-x64).dllが必要です。自ビルドするか信頼できるどこかから入手してください。
 
 EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動してください。  
 以下のキー[=デフォルト]を利用できます:
@@ -789,7 +847,7 @@ EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動�
 - `EnableHttpSrv` [=0]  
   HTTPサーバ機能を有効にするかどうか
   - [=1]または[=2]で有効
-  - [=2]にするとEpgTimerSrv.exeと同じ場所にログファイルも出力
+  - [=2]にするとEDCBのルートフォルダにログファイルも出力
 - `HttpAccessControlList` [=`+127.0.0.1,+::1,+::ffff:127.0.0.1`]  
   アクセス制御
   - CivetWebのaccess_control_listに相当("deny all accesses"からスタート)
@@ -802,7 +860,7 @@ EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動�
   - IPv4IPv6デュアルスタックは[=+5510]
   - SSL/TLSは[=5510s]
   - 複数ポート指定方法などは本家ドキュメント参照
-- `HttpPublicFolder` [=EpgTimerSrv.exeと同じ場所の"HttpPublic"]  
+- `HttpPublicFolder` [=EDCBのルートフォルダの"HttpPublic"]  
   公開フォルダの場所
   - CivetWebのdocument_rootに相当
   - フォルダパスに日本語(マルチバイト)文字を含まないこと
@@ -851,11 +909,11 @@ EpgTimerSrv.iniのSETセクションを編集し、EpgTimerSrv.exeを再起動�
   - extra_mime_types: "ContentTypeText.txt"に追加したMIMEタイプ(従来通り)
   - lua_script_pattern: `"**.lua$|**.html$|*/api/*$"` (つまり.htmlファイルはLuaスクリプト扱いになる)
     - REST APIとの互換のため、公開フォルダ直下のapiフォルダにあるファイルもLuaスクリプト扱いになる
-  - ssl_certificate: HttpPortに文字's'を含むとき、EpgTimerSrv.exeと同じ場所の"ssl_cert.pem"
-  - ssl_ca_file: EpgTimerSrv.exeと同じ場所の"ssl_peer.pem"
+  - ssl_certificate: HttpPortに文字's'を含むとき、EDCBのルートフォルダの"ssl_cert.pem"
+  - ssl_ca_file: EDCBのルートフォルダの"ssl_peer.pem"
   - ssl_default_verify_paths: "no" (既定の証明書フォルダを参照しない)
   - ssl_verify_peer: "ssl_peer.pem"が存在するとき"yes"
-  - global_auth_file: EpgTimerSrv.exeと同じ場所の"glpasswd"
+  - global_auth_file: EDCBのルートフォルダの"glpasswd"
   - access_control_allow_origin: "" (クロスドメイン通信は拒否)
 
 公開フォルダ以下のフォルダやファイルが公開対象です(色々遊べる)。公開フォルダを用意しないと何もできません。
@@ -910,6 +968,13 @@ $hash=(Get-FileHash -Algorithm MD5 glpasswd).Hash.ToLowerInvariant()
 "root:mydomain.com:$hash" | Out-File -Encoding ascii -NoNewline glpasswd
 ```
 
+#### Bashを使った"glpasswd"の簡単な作り方
+
+```shell
+# ユーザ名root、認証領域mydomain.com、パスワードtest
+echo -n "root:mydomain.com:$(echo -n "root:mydomain.com:test" | md5sum | head -c 32)" >glpasswd
+```
+
 Luaのmg.write()について、成否のブーリアンを返すよう拡張しています(本家に取り込まれました)。
 
 
@@ -941,9 +1006,19 @@ edcb.os.execute('ping localhost',true)
 edcb.os.execute('echo %hoge% %fuga% & pause', true, {hoge='ほげ♪',fuga='ふが☆'})
 ```
 
+【UNIX】edcb.osとedcb.ioはLua標準ライブラリのosやioと基本的に同じものなので上記の追加機能はない。
+ただし、edcb.ioはファイルクローズ(FD_CLOEXEC)についてのパッチを含むのでこちらの利用を推奨。追加で以下のメソッドを持つ。
+
+`edcb.io._flock_nb( ファイルハンドル [, モード:'s'|'u'|'x' ] ) → boolean`
+- ファイルのBSDロック(flock)を操作する  
+  モード's'はLOCK_SH、'x'はLOCK_EX、'u'はLOCK_UNに相当。省略時のモードは'x'。
+  ブロックしない(LOCK_NB)。
+  成功時trueが返る。
+
 [略語の定義]
 - `B`: ブーリアン
 - `I`: 整数
+- `F`: 実数
 - `S`: 文字列
 - `TIME`: 標準ライブラリ`os.date('*t')`が返すテーブルと同じ
 - `<テーブル名>`: [後述で定義](#Luaスクリプトのテーブル定義)するテーブル
@@ -958,6 +1033,11 @@ edcb.os.execute('echo %hoge% %fuga% & pause', true, {hoge='ほげ♪',fuga='ふ�
 `serverRandom:S`
 - EpgTimerSrv.exeの起動毎に変化する256bitの暗号論的乱数  
   バッチ実行時は存在しない
+
+`CreateRandom( 生成するbyte数:I ) → S|nil`
+- 暗号論的擬似乱数を生成する  
+  1048576bytes(2097152文字)まで生成可能。
+  16進数で表現した乱数が返る。失敗するとnilが返る(通常失敗しない)。
 
 `GetGenreName( 大分類*256+中分類:I ) → S`
 - STD-B10のジャンル指定の文字列を取得する  
@@ -977,7 +1057,7 @@ edcb.os.execute('echo %hoge% %fuga% & pause', true, {hoge='ほげ♪',fuga='ふ�
 
 `Convert( to文字コード:S, from文字コード:S, 変換対象:S ) → S|nil`
 - 文字コード変換する  
-  利用できる文字コードは'utf-8' 'utf-16le' 'cp932'。
+  利用できる文字コードは'utf-8' 'utf-16le' 'cp932'。【UNIX】'utf-8'のみ。
   変換に失敗すると空文字列、利用できない文字コードを指定するとnilが返る。
   ```lua
   os.execute(edcb.Convert('cp932','utf-8','echo 表が怖い & pause'))
@@ -1001,10 +1081,16 @@ edcb.os.execute('echo %hoge% %fuga% & pause', true, {hoge='ほげ♪',fuga='ふ�
   ```lua
   v=0+edcb.GetPrivateProfile('SET','HttpPort',5510,'EpgTimerSrv.ini')
   ```
+  `\\`と`/`はどちらもフォルダ区切りとして扱われる。
   ファイル名が`'Setting\\'`で始まるときは「設定関係保存フォルダ」にリダイレクトされる。
+  【UNIX】ファイル名が`'RecName\\'`または`'Write\\'`で始まるときはEDCBフォルダにリダイレクトされる。
   特例的に以下の引数でEDCBフォルダのパスが返る。
   ```lua
   edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')
+  ```
+  【UNIX】以下の引数でEDCBのライブラリのディレクトリ(通常/usr/local/lib/edcb)のパスが返る。
+  ```lua
+  edcb.GetPrivateProfile('SET','ModuleLibPath','','Common.ini')
   ```
 
 `WritePrivateProfile( セクション:S, キー:S|nil, 値:S|I|B|nil, ファイル名:S ) → B`
@@ -1121,6 +1207,10 @@ edcb.os.execute('echo %hoge% %fuga% & pause', true, {hoge='ほげ♪',fuga='ふ�
 - チューナごとの予約の割り当て情報を取得する(tunerIDソート)  
   ただし、リストの最終要素はチューナ不足の予約を表す。
 
+`GetTunerProcessStatusAll() → <起動中のチューナ情報>のリスト`
+- 起動中のチューナについて把握している情報の一覧を取得する(tunerIDソート)  
+  各種統計情報についてはつねに把握しているとは限らないので参考程度。
+
 `EnumRecPresetInfo() → <録画プリセット>のリスト`
 - 録画プリセット情報を取得する(idソート)  
   少なくともデフォルトプリセット(id==0)は必ず返る。
@@ -1163,6 +1253,7 @@ edcb.os.execute('echo %hoge% %fuga% & pause', true, {hoge='ほげ♪',fuga='ふ�
 - Win32APIのFindFirstFileを呼ぶ  
   取得数を0とするとすべての検索結果を取得する。
   1つ以上の検索結果があるときはリスト、それ以外はnilが返る。
+  【UNIX】検索パターンのワイルドカードのうち'*'は3個まで使用可能。
 
 `OpenNetworkTV( 送信モード:I, ネットワークID:I, TSID:I, サービスID:I [, NetworkTVID:I ] ) → B[,I]`
 - NetworkTVモードを開始する、またはサービスを変更する  
@@ -1407,6 +1498,23 @@ Luaスクリプトのテーブル定義
   tunerID:I=チューナID
   tunerName:S=BonDriverファイル名
   reserveList:予約ID:Iのリスト=そのチューナに割り当てられた予約
+}
+```
+
+#### `<起動中のチューナ情報>` 定義
+```
+{
+  tunerID:I=チューナID
+  processID:I=プロセスID
+  drop:I=ドロップ数
+  scramble:I=スクランブル数
+  signalLv:F=信号レベル
+  space:I=チューナ空間、または不明(-1)
+  ch:I=物理チャンネル、または不明(-1)
+  onid:I=ネットワークID、または不明(-1)
+  tsid:I=TSID、または不明(-1)
+  recFlag:B=録画中かどうか
+  epgCapFlag:B=EPGデータ取得中かどうか
 }
 ```
 
