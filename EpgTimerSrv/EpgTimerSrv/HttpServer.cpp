@@ -108,6 +108,17 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	string extraMime;
 	WtoUTF8(extraMimeW, extraMime);
 
+	//"api"ディレクトリの特別扱いはドキュメントルートの直下にかぎる
+	string luaScriptPattern = "**.lua$|**.html$|";
+	for( size_t i = 0; i < rootPathU.size(); i++ ){
+		if( rootPathU[i] == '/' ){
+			luaScriptPattern += '/';
+		}else if( luaScriptPattern.back() != '*' ){
+			luaScriptPattern += '*';
+		}
+	}
+	luaScriptPattern += "/api/*$";
+
 	const char* options[64] = {
 		"ssi_pattern", "",
 		"enable_keep_alive", op.keepAlive ? "yes" : "no",
@@ -121,7 +132,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		"ssl_default_verify_paths", "no",
 		"ssl_cipher_list", sslCipherList.c_str(),
 		"ssl_protocol_version", sslProtocolVersion,
-		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
+		"lua_script_pattern", luaScriptPattern.c_str(),
 		"access_control_allow_origin", "",
 	};
 	int opCount = 2 * 14;
