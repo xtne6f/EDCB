@@ -111,17 +111,17 @@ else
     edcb.htmlEscape=15
     if info then
       ref=dirname..'/'..info.name
-      ct:Append('<a href="library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')..'">Parent directory ..</a><br>\n'
-        ..'→<a href="library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')
-        ..'&amp;h='..hash..ConstructTranscodeQueries(xq)
-        ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a><br>\n')
+      ct:Append('<a href="library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')..'">Parent directory ..</a><br>\n')
 
-      ct:Append((vtag==1 and VideoWrapperBegin()
-                   ..'<video id="vid" autoplay playsinline controls src="' or '<a href="')
-        ..(vtag~=0 and vtag~=1 and 'library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')..'&amp;h='..hash..'&amp;vtag=1'
-             or PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'))
-        ..'">/'..EdcbHtmlEscape(ref)..(vtag==1 and '<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
-                                         ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplate() or '</a>'))
+      if vtag==1 then
+        ct:Append(VideoWrapperBegin()
+          ..'<video id="vid" autoplay playsinline controls src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref)
+          ..'<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
+          ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplate())
+      else
+        ct:Append('<a href="library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')..'&amp;h='..hash..'&amp;vtag=1">/'..EdcbHtmlEscape(ref)
+          ..'</a>\n[<a href="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/')..'">DL</a>]')
+      end
       if info.ists then
         fsec,fsize=0,0
         f=edcb.io.open(PathAppend(dir,info.name),'rb')
@@ -137,6 +137,9 @@ else
                  ..'<input type="hidden" name="h" value="'..hash..'">\n<input type="hidden" name="vtag" value="10">\n'
                  ..'<input type="hidden" name="'..(vtag==10 and 're' or '')..'load" value="'..(xq.loadKey or edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'">\n')
           ..'<button type="submit">xcode</button>\n'
+          ..'→<a href="library.html?i='..index..(dirhash and '&amp;d='..dirhash or '')
+          ..'&amp;h='..hash..ConstructTranscodeQueries(xq)
+          ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a>\n'
           ..TranscodeSettingTemplate(xq,fsec)
           ..'</div></form>')
         if vtag==10 then
@@ -149,8 +152,8 @@ else
           end
         end
       else
-        ct:Append(' ('..math.floor(info.size/1048576)..'M)'
-          ..(vtag==0 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref)..'">Mux-to-TS</a>]' or '')..'<br>\n')
+        ct:Append((vtag~=1 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref)..'">Mux-to-TS</a>]' or '')
+          ..' ('..math.floor(info.size/1048576)..'M)<br>\n')
       end
     end
     ct:Append('</div>\n')

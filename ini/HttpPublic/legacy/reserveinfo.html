@@ -116,8 +116,7 @@ if r then
         ..('TransportStreamID:%d(0x%04X)<br>'):format(r.tsid,r.tsid)
         ..('ServiceID:%d(0x%04X)<br>'):format(r.sid,r.sid)
       )..'</dd>\n'
-    ..'    <dt>ファイル →<a href="reserveinfo.html?id='..r.reserveID..ConstructTranscodeQueries(xq)
-    ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a></dt><dd>\n')
+    ..'    <dt>ファイル</dt><dd>\n')
   ref=recFilePath and NativeToDocumentPath(recFilePath)
   if ref then
     xlist={table.unpack(MEDIA_EXTENSION_LIST)}
@@ -125,11 +124,15 @@ if r then
     for i,ext in ipairs(xlist) do
       ff=EdcbFindFilePlain(recFilePath..ext)
       if ff then
-        ct:Append((vtag==i and VideoWrapperBegin()
-                     ..'<video id="vid" autoplay playsinline controls src="' or '<a href="')
-          ..(vtag~=0 and vtag~=i and 'reserveinfo.html?id='..r.reserveID..'&amp;vtag='..i or PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'))
-          ..'">/'..EdcbHtmlEscape(ref..ext)..(vtag==i and '<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
-                                                ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplate() or '</a>'))
+        if vtag==i then
+          ct:Append(VideoWrapperBegin()
+            ..'<video id="vid" autoplay playsinline controls src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)
+            ..'<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
+            ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplate())
+        else
+          ct:Append('<a href="reserveinfo.html?id='..r.reserveID..'&amp;vtag='..i..'">/'..EdcbHtmlEscape(ref..ext)
+            ..'</a>\n[<a href="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">DL</a>]')
+        end
         if ext=='' then
           fsec,fsize=0,0
           f=edcb.io.open(recFilePath,'rb')
@@ -143,6 +146,8 @@ if r then
                  or '<input type="hidden" name="id" value="'..r.reserveID..'">\n<input type="hidden" name="vtag" value="10">\n'
                    ..'<input type="hidden" name="'..(vtag==10 and 're' or '')..'load" value="'..(xq.loadKey or edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'">\n')
             ..'<button type="submit">xcode</button>\n'
+            ..'→<a href="reserveinfo.html?id='..r.reserveID..ConstructTranscodeQueries(xq)
+            ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a>\n'
             ..TranscodeSettingTemplate(xq,fsec)
             ..'</div></form>')
           if vtag==10 then
@@ -155,8 +160,8 @@ if r then
             end
           end
         else
-          ct:Append(' ('..math.floor(ff.size/1048576)..'M)'
-            ..(vtag==0 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref..ext)..'">Mux-to-TS</a>]' or '')..'<br>\n')
+          ct:Append((vtag~=i and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref..ext)..'">Mux-to-TS</a>]' or '')
+            ..' ('..math.floor(ff.size/1048576)..'M)<br>\n')
         end
       end
     end
