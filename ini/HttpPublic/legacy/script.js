@@ -892,6 +892,14 @@ function runTranscodeScript(useDatacast,useLiveJikkyo,useJikkyoLog,ofssec,fast,p
     };
     voffset.innerText="|"+Math.floor(ofssec/60)+"m"+String(100+ofssec%60).substring(1)+"s";
   }
+  if(vid.muted){
+    var btnUnmute=document.getElementById("vid-unmute");
+    btnUnmute.style.display=null;
+    btnUnmute.onclick=function(){
+      vid.muted=false;
+      btnUnmute.style.display="none";
+    };
+  }
 }
 
 function runHlsScript(aribb24UseSvg,aribb24Option,alwaysUseHls,postQuery,hlsQuery,hlsMp4Query){

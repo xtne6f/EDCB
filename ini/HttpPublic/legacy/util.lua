@@ -417,6 +417,7 @@ function TranscodeScriptTemplate(live,caption,jikkyo,params)
 ]=]..(live and '<label><input id="cb-live" type="checkbox">live</label>\n' or '')..[=[
 <input id="vid-seek" type="range" style="display:none">
 <span id="vid-seek-status"></span>
+<button id="vid-unmute" type="button" style="display:none">🔊</button>
 <script>
 ]=]..(XCODE_VIDEO_MUTED and 'vid.muted=true;\n' or '')..(VIDEO_VOLUME and 'vid.volume='..VIDEO_VOLUME..';\n' or '')..[=[
 runTranscodeScript(]=]
