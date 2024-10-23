@@ -52,17 +52,10 @@ ct:Append([=[
   <table>
 ]=])
 
+chList=edcb.GetChDataList()
 for i=page*pageCount+1,math.min(#a,(page+1)*pageCount) do
   v=a[i].searchInfo
-  serviceName=''
-  if #v.serviceList>0 then
-    for j,w in ipairs(edcb.GetChDataList()) do
-      if w.onid==v.serviceList[1].onid and w.tsid==v.serviceList[1].tsid and w.sid==v.serviceList[1].sid then
-        serviceName=w.serviceName
-        break
-      end
-    end
-  end
+  chInfo=#v.serviceList>0 and BinarySearch(chList,v.serviceList[1],CompareFields('onid',false,'tsid',false,'sid'))
   --無効
   disAndKey=v.andKey:match('^^!{999}(.*)')
   --大小文字区別
@@ -77,7 +70,7 @@ for i=page*pageCount+1,math.min(#a,(page+1)*pageCount) do
     ..'<td'..cl..'>'..notKey
     ..'<td'..cl..'>'..note
     ..'<td'..cl..'>'..(#v.contentList>0 and edcb.GetGenreName(v.contentList[1].content_nibble)..(#v.contentList>1 and 'など' or '') or '')
-    ..'<td'..cl..'>'..serviceName..(#v.serviceList>1 and 'など' or '')
+    ..'<td'..cl..'>'..(chInfo and chInfo.serviceName or '')..(#v.serviceList>1 and 'など' or '')
     ..'<td'..cl..'>'..(RecModeTextList()[(a[i].recSetting.recMode~=5 and a[i].recSetting.recMode or a[i].recSetting.noRecMode or 1)+1] or '')
     ..'<td'..cl..'>'..a[i].recSetting.priority..'</tr>\n')
 end

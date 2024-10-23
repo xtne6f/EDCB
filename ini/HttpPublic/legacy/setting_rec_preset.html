@@ -25,8 +25,8 @@ if post then
   presetID=GetVarInt(post,'presetID') or 0
   preset=nil
   itemList=edcb.EnumRecPresetInfo()
-  for i,v in ipairs(itemList) do
-    if v.id==presetID then
+  found=BinarySearch(itemList,{id=presetID},CompareFields('id'))
+  if found then
       if mg.get_var(post,'del') then
         --デフォルトは削除できない
         if presetID~=0 then
@@ -42,8 +42,8 @@ if post then
             preset={
               name=presetName,
               recSetting={
-                recFolderList=v.recSetting.recFolderList,
-                partialRecFolder=v.recSetting.partialRecFolder
+                recFolderList=found.recSetting.recFolderList,
+                partialRecFolder=found.recSetting.partialRecFolder
               }
             }
             itemList[#itemList+1]=preset
@@ -51,12 +51,10 @@ if post then
           end
         else
           presetID=nil
-          preset=v
+          preset=found
           ct:Append('<div id="result">変更しました</div>\n')
         end
       end
-      break
-    end
   end
   if not presetID then
     --削除または追加または変更

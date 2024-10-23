@@ -439,11 +439,9 @@ function ConvertProgramText(v)
   local s=''
   if v then
     s=s..(v.startTime and FormatTimeAndDuration(v.startTime, v.durationSecond)..(v.durationSecond and '' or '～未定') or '未定')..'\n'
-    for i,w in ipairs(edcb.GetServiceList() or {}) do
-      if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
-        s=s..w.service_name
-        break
-      end
+    local found=BinarySearch(edcb.GetServiceList() or {},v,CompareFields('onid',false,'tsid',false,'sid'))
+    if found then
+      s=s..found.service_name
     end
     s=s..'\n'
     if v.shortInfo then

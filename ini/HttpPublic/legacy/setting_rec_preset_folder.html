@@ -23,14 +23,9 @@ if post and not ALLOW_SETTING then
 end
 if post then
   presetID=GetVarInt(post,'presetID') or 0
-  rs=nil
-  for i,v in ipairs(edcb.EnumRecPresetInfo()) do
-    if v.id==presetID then
-      rs=v.recSetting
-      break
-    end
-  end
-  if rs then
+  found=BinarySearch(edcb.EnumRecPresetInfo(),{id=presetID},CompareFields('id'))
+  if found then
+    rs=found.recSetting
     if mg.get_var(post,'add') then
       addFolder={recFolder=nil,writePlugIn='Write_Default'..(WIN32 and '.dll' or '.so'),recNamePlugIn=''}
       item=mg.get_var(post,'dir') or ''
@@ -106,13 +101,7 @@ else
 end
 
 edcb.htmlEscape=15
-preset=nil
-for i,v in ipairs(edcb.EnumRecPresetInfo()) do
-  if v.id==presetID then
-    preset=v
-    break
-  end
-end
+preset=BinarySearch(edcb.EnumRecPresetInfo(),{id=presetID},CompareFields('id'))
 
 if preset then
   ct:Append([=[

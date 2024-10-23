@@ -3,28 +3,19 @@ dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 function AddOrChange(dataID,post)
   local aa={dataID=dataID}
+  local found=nil
   local presetID=GetVarInt(post,'presetID',0,65534)
   if presetID then
-    for i,v in ipairs(edcb.EnumRecPresetInfo()) do
-      if v.id==presetID then
-        aa.recSetting=v.recSetting
-        break
-      end
-    end
+    found=BinarySearch(edcb.EnumRecPresetInfo(),{id=presetID},CompareFields('id'))
   elseif dataID~=0 then
-    for i,v in ipairs(edcb.EnumAutoAdd()) do
-      if v.dataID==dataID then
-        aa.recSetting=v.recSetting
-        break
-      end
-    end
+    found=BinarySearch(edcb.EnumAutoAdd(),aa,CompareFields('dataID'))
   end
-  if aa.recSetting then
+  if found then
     local useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
     aa.recSetting={
-      batFilePath=aa.recSetting.batFilePath,
-      recFolderList=aa.recSetting.recFolderList,
-      partialRecFolder=aa.recSetting.partialRecFolder,
+      batFilePath=found.recSetting.batFilePath,
+      recFolderList=found.recSetting.recFolderList,
+      partialRecFolder=found.recSetting.partialRecFolder,
       recMode=GetVarInt(post,'recEnabled')~=1 and 5 or GetVarInt(post,'recMode',0,4),
       noRecMode=GetVarInt(post,'recMode',0,4),
       tuijyuuFlag=GetVarInt(post,'tuijyuuFlag')==1,
@@ -158,12 +149,7 @@ else
     end
   end
   edcb.htmlEscape=15
-  for i,v in ipairs(edcb.EnumAutoAdd()) do
-    if v.dataID==aa.dataID then
-      aa=v
-      break
-    end
-  end
+  aa=BinarySearch(edcb.EnumAutoAdd(),aa,CompareFields('dataID')) or aa
 end
 
 if aa.searchInfo then

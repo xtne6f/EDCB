@@ -30,13 +30,8 @@ function Change(id,post)
     else
       local presetID=GetVarInt(post,'presetID',0,65534)
       if presetID then
-        r.recSetting=nil
-        for i,v in ipairs(edcb.EnumRecPresetInfo()) do
-          if v.id==presetID then
-            r.recSetting=v.recSetting
-            break
-          end
-        end
+        local found=BinarySearch(edcb.EnumRecPresetInfo(),{id=presetID},CompareFields('id'))
+        r.recSetting=found and found.recSetting
       end
       if r.recSetting then
         local useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
