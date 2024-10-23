@@ -1,3 +1,5 @@
+"use strict";
+
 function readPsiData(data,proc,startSec,ctx){
   data=new DataView(data);
   ctx=ctx||{};
@@ -338,7 +340,14 @@ function readJikkyoLog(text,proc,startSec,ctx){
   }
 }
 
+//Global variables available after runOnscreenButtonsScript() is called.
+var vid,vcont,vfull,vwrap,setSendComment,hideOnscreenButtons;
+
 function runOnscreenButtonsScript(){
+  vid=document.getElementById("vid");
+  vcont=document.getElementById("vid-cont");
+  vfull=document.getElementById("vid-full");
+  vwrap=document.getElementById("vid-wrap");
   var btn=document.createElement("button");
   btn.type="button";
   btn.innerText="full";
@@ -427,6 +436,12 @@ function runOnscreenButtonsScript(){
   };
   hideOnscreenButtons(false);
 }
+
+//Global variables available after runJikkyoScript() is called.
+var onJikkyoStream=null;
+var onJikkyoStreamError=null;
+var checkJikkyoDisplay=function(){};
+var toggleJikkyo;
 
 function runJikkyoScript(commentHeight,commentDuration,replaceTag){
   var danmaku=null;

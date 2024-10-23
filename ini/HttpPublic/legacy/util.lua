@@ -326,14 +326,8 @@ end
 
 function OnscreenButtonsScriptTemplate()
   return [=[
-<script src="script.js?ver=20241007"></script>
+<script src="script.js?ver=20241023"></script>
 <script>
-var vid=document.getElementById("vid");
-var vcont=document.getElementById("vid-cont");
-var vfull=document.getElementById("vid-full");
-var vwrap=document.getElementById("vid-wrap");
-var setSendComment;
-var hideOnscreenButtons;
 runOnscreenButtonsScript();
 </script>
 ]=]
@@ -380,20 +374,10 @@ function JikkyoScriptTemplate(live,jikkyo)
 <label class="enabled-on-checked"><input id="cb-jikkyo-onscr" type="checkbox" checked>onscr</label>
 <script src="danmaku.js"></script>
 <script>
-var onJikkyoStream=null;
-var onJikkyoStreamError=null;
-var checkJikkyoDisplay;
-var toggleJikkyo;
 runJikkyoScript(]=]..JK_COMMENT_HEIGHT..','..JK_COMMENT_DURATION..',function(tag){'..JK_CUSTOM_REPLACE..[=[
   return tag;});
 </script>
-]=] or [=[
-<script>
-var onJikkyoStream=null;
-var onJikkyoStreamError=null;
-var checkJikkyoDisplay=function(){};
-</script>
-]=]
+]=] or ''
 end
 
 function VideoScriptTemplate()
