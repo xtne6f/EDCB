@@ -200,8 +200,9 @@ if aa.searchInfo then
     ..'<label><input name="titleOnlyFlag"'..Checkbox(si.titleOnlyFlag)..'>番組名のみ検索対象にする</label><br>\n'
     ..'<label><input name="caseFlag"'..Checkbox(caseAndKey)..'>大小文字区別</label><br>\n'
     ..'<label><input name="disableFlag"'..Checkbox(disAndKey)..'>自動登録を無効にする</label><br><br>\n'
-    ..'ジャンル絞り込み（Ctrl+複数選択） <label><input name="notContetFlag"'..Checkbox(si.notContetFlag)..'>NOT扱い</label><br>\n'
-    ..'<select name="contentList" multiple size="5">\n')
+    ..'ジャンル絞り込み（Ctrl+複数選択） <label><input name="notContetFlag"'..Checkbox(si.notContetFlag)..'>NOT扱い</label>\n'
+    ..'<div class="select-with-note"><select name="contentList" multiple size="5">\n')
+  selList={}
   for _i,i in ipairs({0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,15,255}) do
     nibble1=edcb.GetGenreName(i*256+255)
     if nibble1~='' then
@@ -209,6 +210,7 @@ if aa.searchInfo then
       for j,v in ipairs(si.contentList) do
         if v.content_nibble==i*256+255 then
           ct:Append(' selected')
+          selList[#selList+1]=nibble1
           break
         end
       end
@@ -220,6 +222,7 @@ if aa.searchInfo then
           for k,v in ipairs(si.contentList) do
             if v.content_nibble==i*256+j then
               ct:Append(' selected')
+              selList[#selList+1]='('..nibble1..')'..nibble2
               break
             end
           end
@@ -228,19 +231,23 @@ if aa.searchInfo then
       end
     end
   end
-  ct:Append('</select><br><br>\n'
-    ..'サービス絞り込み（Ctrl+複数選択）<br><select name="serviceList" multiple size="5">\n')
+  ct:Append('</select>\n<span id="content-note">'..table.concat(selList,'; ',1,math.min(#selList,10))
+    ..(#selList>10 and '; ほか'..(#selList-10)..'項目' or '')..'</span><br></div><br>\n'
+    ..'サービス絞り込み（Ctrl+複数選択）<div class="select-with-note"><select name="serviceList" multiple size="5">\n')
+  selList={}
   for i,v in ipairs(SortServiceListInplace(SelectChDataList(edcb.GetChDataList()))) do
     ct:Append('<option value="'..v.onid..'-'..v.tsid..'-'..v.sid..'"')
     for j,w in ipairs(si.serviceList) do
       if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
         ct:Append(' selected')
+        selList[#selList+1]='('..NetworkType(v.onid)..') '..v.serviceName
         break
       end
     end
     ct:Append('>('..NetworkType(v.onid)..') '..v.serviceName..'\n')
   end
-  ct:Append('</select><br><br>\n'
+  ct:Append('</select>\n<span id="service-note">'..table.concat(selList,'; ',1,math.min(#selList,10))
+    ..(#selList>10 and '; ほか'..(#selList-10)..'項目' or '')..'</span><br></div><br>\n'
     ..'時間絞り込み <label><input name="notDateFlag"'..Checkbox(si.notDateFlag)..'>NOT扱い</label><br>\n'
     ..'<input type="text" name="dateList" value="')
   for i,v in ipairs(si.dateList) do
@@ -248,7 +255,20 @@ if aa.searchInfo then
       ..({'sun','mon','tue','wed','thu','fri','sat'})[v.startDayOfWeek%7+1]..v.startHour..':'..v.startMin..'-'
       ..({'sun','mon','tue','wed','thu','fri','sat'})[v.endDayOfWeek%7+1]..v.endHour..':'..v.endMin)
   end
-  ct:Append('" style="width:95%"><br>\n書式: (sun|mon|tue|wed|thu|fri|sat)H:M-(...)H:M, （例: sun23:0-mon5:0, wed3:0-wed5:0）<br><br>\n'
+  ct:Append('" style="width:95%"><br>\n書式: (sun|mon|tue|wed|thu|fri|sat)H:M-(...)H:M, （例: sun23:0-mon5:0, wed3:0-wed5:0）<br>\n'
+    ..'<div id="add-time-or-week" class="sub-setting" style="display:none">\n'
+    ..'<label><input name="timeOrWeek" type="radio" value="0" checked>曜日毎</label>\n'
+    ..'<label><input name="timeOrWeek" type="radio" value="1">期間</label>\n'
+    ..'<div><span id="check-week">\n'
+    ..'<label><input type="checkbox" value="1" name="checkDayOfWeek'
+    ..table.concat({'0">日','1">月','2">火','3">水','4">木','5">金','6">土'},'</label>\n<label><input type="checkbox" value="1" name="checkDayOfWeek')
+    ..'</label>\n</span><select name="startDayOfWeek">'
+    ..'<option value="'..table.concat({'sun" selected>日','mon">月','tue">火','wed">水','thu">木','fri">金','sat">土'},'<option value="')
+    ..'</select>\n<input name="startTime" type="time" value="00:00"> ～\n'
+    ..'<select name="endDayOfWeek">'
+    ..'<option value="'..table.concat({'sun">日','mon">月','tue">火','wed">水','thu">木','fri">金','sat" selected>土'},'<option value="')
+    ..'</select>\n<input name="endTime" type="time" value="23:59">\n'
+    ..'<button type="button">追加</button></div></div><br>\n'
     ..'スクランブル放送:\n<select name="freeCAFlag">\n'
     ..'<option value="0"'..Selected(si.freeCAFlag==0)..'>無料、有料番組を対象とする'
     ..'<option value="1"'..Selected(si.freeCAFlag==1)..'>無料番組を対象とする'
@@ -279,6 +299,66 @@ ct:Append([=[
 <div id="footer">
   <a href="autoaddepg.html]=]..(aa.dataID~=0 and '?id='..aa.dataID or '')..[=[">EPG予約一覧</a>
 </div>
+<script type="text/javascript">
+document.querySelector("select[name=contentList]").onchange=function(){
+  var selList=[];
+  var options=document.querySelectorAll("select[name=contentList] option");
+  var nibble1="";
+  for(var i=0;i<options.length;i++){
+    var s=options[i].textContent;
+    nibble1=s[0]=="　"?nibble1:s;
+    if(options[i].selected){
+      selList.push((s==nibble1?"":"("+nibble1.trim()+")")+s.trim());
+    }
+  }
+  document.getElementById("content-note").textContent=selList.slice(0,10).join("; ")+(selList.length>10?"; ほか"+(selList.length-10)+"項目":"");
+};
+document.querySelector("select[name=serviceList]").onchange=function(){
+  var selList=[];
+  var options=document.querySelectorAll("select[name=serviceList] option");
+  for(var i=0;i<options.length;i++){
+    if(options[i].selected){
+      selList.push(options[i].textContent.trim());
+    }
+  }
+  document.getElementById("service-note").textContent=selList.slice(0,10).join("; ")+(selList.length>10?"; ほか"+(selList.length-10)+"項目":"");
+};
+var timeOrWeek=document.querySelectorAll("input[name=timeOrWeek]");
+var timePeriod;
+function onchangeTimeOrWeek(){
+  timePeriod=timeOrWeek[0].checked==(timeOrWeek[0].value=="1");
+  document.getElementById("check-week").style=timePeriod?"display:none":"";
+  document.querySelector("select[name=startDayOfWeek]").style=timePeriod?"":"display:none";
+  document.querySelector("select[name=endDayOfWeek]").style=timePeriod?"":"display:none";
+}
+timeOrWeek[0].onchange=onchangeTimeOrWeek;
+timeOrWeek[1].onchange=onchangeTimeOrWeek;
+onchangeTimeOrWeek();
+document.querySelector("#add-time-or-week button").onclick=function(){
+  var st=document.querySelector("input[name=startTime]").value.match(/(\d+):(\d+)/);
+  var et=document.querySelector("input[name=endTime]").value.match(/(\d+):(\d+)/);
+  if(!st||!et)return;
+  st=Math.min(+st[2]+st[1]*60,24*60-1);
+  et=Math.min(+et[2]+et[1]*60,24*60-1);
+  var s="";
+  if(timePeriod){
+    s=document.querySelector("select[name=startDayOfWeek]").value+Math.floor(st/60)+":"+(st%60)+"-"+
+      document.querySelector("select[name=endDayOfWeek]").value+Math.floor(et/60)+":"+(et%60);
+  }else{
+    //For each day of week
+    for(var i=0;i<7;i++){
+      if(document.querySelector("input[name=checkDayOfWeek"+i+"]").checked){
+        s+=(s==""?"":", ")+(["sun","mon","tue","wed","thu","fri","sat"])[i]+Math.floor(st/60)+":"+(st%60)+"-"+
+           (["sun","mon","tue","wed","thu","fri","sat"])[st>et?(i+1)%7:i]+Math.floor(et/60)+":"+(et%60);
+      }
+    }
+  }
+  if(s=="")return;
+  var dateList=document.querySelector("input[name=dateList]");
+  dateList.value+=(dateList.value==""?"":", ")+s;
+};
+document.getElementById("add-time-or-week").style="";
+</script>
 </body>
 </html>
 ]=])

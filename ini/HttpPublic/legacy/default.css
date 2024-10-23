@@ -86,6 +86,15 @@ th, td {
   font-weight: bold;
 }
 
+.select-with-note > select {
+  float: left;
+  margin-right: 1em;
+}
+
+.select-with-note > br {
+  clear: both;
+}
+
 .page-nav {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
