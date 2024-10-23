@@ -197,9 +197,22 @@ th, td {
   position: absolute;
 }
 
-.epg-col > div > b {
+.lavel-disabled, .lavel-disabled > a {
+  background: #444;
+  color: #fff;
+  font-weight: bold;
+}
+
+.lavel-reserved, .lavel-reserved > a {
   background: #f00;
   color: #fff;
+  font-weight: bold;
+}
+
+.lavel-view, .lavel-view > a {
+  background: #00f;
+  color: #fff;
+  font-weight: bold;
 }
 
 .epg-list {
@@ -208,11 +221,6 @@ th, td {
 
 .epg-list > div {
   color: #000;
-}
-
-.epg-list > div b {
-  background: #f00;
-  color: #fff;
 }
 
 .cont-0 {

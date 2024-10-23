@@ -25,8 +25,15 @@ baseTime=(baseDate*24+4)*3600
 
 rt={}
 for i,v in ipairs(edcb.GetReserveData()) do
-  rt[v.onid..'-'..v.tsid..'-'..v.sid..'-'..v.eid]=true
+  --プログラム予約は表示範囲のみ
+  v.startTime=TimeWithZone(v.startTime)
+  if v.eid~=65535 or (baseTime+date*24*3600<=v.startTime and v.startTime<baseTime+(date*24+25)*3600) then
+    rt[#rt+1]=v
+  end
 end
+--安定ソートのためreserveIDをつける
+table.sort(rt,CompareFields('onid',false,'tsid',false,'sid',false,'eid',false,'reserveID'))
+rtComp=CompareFields('onid',false,'tsid',false,'sid',false,'eid')
 
 showServices={}
 for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
@@ -179,6 +186,9 @@ for i,v in ipairs(st) do
     left=left+EPG_SERVICE_PX+2
   end
   lastPx=0
+  programReservedStart=BinarySearchBound(rt,{onid=v.onid,tsid=v.tsid,sid=v.sid,eid=65535},rtComp)
+  programReservedEnd=BinarySearchBound(rt,{onid=v.onid,tsid=v.tsid,sid=v.sid,eid=65535},rtComp,true)
+
   for j,w in ipairs(v.et) do
     startTime=TimeWithZone(w.startTime)
     startPx=math.min(math.floor((startTime-baseTime-date*24*3600)/60)*EPG_ONE_MIN_PX, EPG_ONE_MIN_PX*60*25)
@@ -215,10 +225,32 @@ for i,v in ipairs(st) do
         end
         cont=w.contentInfoList and #w.contentInfoList>0 and math.floor(w.contentInfoList[1].content_nibble/256)%16 or 16
         ct:Append('<div class="cont-'..cont..(w.past and ' past' or '')
-          ..'" style="height:'..(endPx-lastPx)..'px;left:'..left..'px;top:'..(lastPx+1)..'px;width:'..width..'px">'
-          ..(not w.past and rt[w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid] and '<b>予</b> ' or '')
+          ..'" style="height:'..(endPx-lastPx)..'px;left:'..left..'px;top:'..(lastPx+1)..'px;width:'..width..'px">')
+        if not w.past then
+          --範囲内のプログラム予約
+          rangeStart=j>1 and startTime
+          rangeEnd=j<#v.et and TimeWithZone(v.et[j+1].startTime)
+          for k=programReservedStart,programReservedEnd-1 do
+            if (not rangeStart or rangeStart<=rt[k].startTime) and (not rangeEnd or rt[k].startTime<rangeEnd) then
+              ct:Append('<span class="lavel-'..(rt[k].recSetting.recMode==5 and 'disabled' or rt[k].recSetting.recMode==4 and 'view' or 'reserved')..'"><a href="reserveinfo.html?id='..rt[k].reserveID..'&amp;fromepg=1">プ予</a></span> ')
+            end
+          end
+        end
+        --通常予約
+        reservedIndex=not w.past and BinarySearchBound(rt,w,rtComp)
+        if not reservedIndex or reservedIndex>=programReservedStart or rt[reservedIndex].eid~=w.eid then
+          reservedIndex=nil
+        else
+          --最後以外は「重予」(重複予約)
+          while reservedIndex+1<programReservedStart and rt[reservedIndex+1].eid==w.eid do
+            ct:Append('<span class="lavel-'..(rt[reservedIndex].recSetting.recMode==5 and 'disabled' or rt[reservedIndex].recSetting.recMode==4 and 'view' or 'reserved')..'"><a href="reserveinfo.html?id='..rt[reservedIndex].reserveID..'&amp;fromepg=1">重予</a></span> ')
+            reservedIndex=reservedIndex+1
+          end
+        end
+        ct:Append((reservedIndex and '<span class="lavel-'..(rt[reservedIndex].recSetting.recMode==5 and 'disabled' or rt[reservedIndex].recSetting.recMode==4 and 'view' or 'reserved')..'">予</span> ' or '')
           ..('%02d'):format(w.startTime.min)..' <a href="'
           ..(w.past and 'epgpastinfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..TimeWithZone(w.startTime)
+            or reservedIndex and 'reserveinfo.html?id='..rt[reservedIndex].reserveID..'&amp;fromepg=1'
             or 'epginfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid)..'">'
           ..(w.shortInfo and w.shortInfo.event_name or '&nbsp;')..'</a></div>\n')
       end

@@ -85,6 +85,7 @@ ct:Append((vtag<=0 and DOCTYPE_HTML4_STRICT or '<!DOCTYPE html>\n')..[=[
 ]=])
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
+fromepg=GetVarInt(mg.request_info.query_string,'fromepg')==1
 xq=GetTranscodeQueries(mg.request_info.query_string)
 
 post=AssertPost()
@@ -125,7 +126,7 @@ if r then
             ..'<track id="vid-meta" kind="metadata" src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')
             ..'.vtt" type="text/vtt" default></video>'..VideoWrapperEnd()..'\n'..VideoScriptTemplate())
         else
-          ct:Append('<a href="reserveinfo.html?id='..r.reserveID..'&amp;vtag='..i..'">/'..EdcbHtmlEscape(ref..ext)
+          ct:Append('<a href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')..'&amp;vtag='..i..'">/'..EdcbHtmlEscape(ref..ext)
             ..'</a>\n[<a href="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">DL</a>]')
         end
         if ext=='' then
@@ -138,10 +139,12 @@ if r then
           ct:Append(' ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
             ..'<form id="vid-form" action="'..(vtag==0 and 'xcode.lua' or 'reserveinfo.html')..'"><div>\n'
             ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
-                 or '<input type="hidden" name="id" value="'..r.reserveID..'">\n<input type="hidden" name="vtag" value="10">\n'
+                 or '<input type="hidden" name="id" value="'..r.reserveID..'">\n'
+                   ..(fromepg and '<input type="hidden" name="fromepg" value="1">\n' or '')
+                   ..'<input type="hidden" name="vtag" value="10">\n'
                    ..'<input type="hidden" name="'..(vtag==10 and 're' or '')..'load" value="'..(xq.loadKey or edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'">\n')
             ..'<button type="submit">xcode</button>\n'
-            ..'→<a href="reserveinfo.html?id='..r.reserveID..ConstructTranscodeQueries(xq)
+            ..'→<a href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')..ConstructTranscodeQueries(xq)
             ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a>\n'
             ..TranscodeSettingTemplate(xq,fsec)
             ..'</div></form>')
@@ -164,7 +167,7 @@ if r then
   ct:Append('<br></dd>\n'
     ..'    <dt>'..(r.eid==65535 and '<strong>プログラム予約</strong>' or 'プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
     ..'</dt><dd>\n'
-    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')
     ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="addchg" value="y">\n'
     ..'予約日時: <input type="text" size="4" name="start-y" value="'..r.startTime.year
@@ -180,7 +183,9 @@ if r then
     ..'<button type="submit">変更</button></div></form></dd>\n'
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="reserveinfo.html"><div>\n'
-    ..'<input type="hidden" name="id" value="'..r.reserveID..'"><select name="presetID">\n')
+    ..'<input type="hidden" name="id" value="'..r.reserveID..'">\n'
+    ..(fromepg and '<input type="hidden" name="fromepg" value="1">\n' or '')
+    ..'<select name="presetID">\n')
   presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
   preset=false
   rs=r.recSetting
@@ -196,16 +201,23 @@ if r then
   ct:Append('<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
     ..'</select> <button type="submit">録画設定にロード</button></div></form></dd>\n'
     ..'    <dt>録画設定</dt><dd>\n'
-    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')
     ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="addchg" value="y">\n'
     ..RecSettingTemplate(rs)..'<button type="submit">変更</button></div></form></dd>\n'
-    ..'    <dt>-</dt><dd>\n'
-    ..'<form method="POST" action="reserve.html"><div>\n'
-    ..'<input type="hidden" name="ctok" value="'..CsrfToken('reserve.html')..'">\n'
-    ..'<input type="hidden" name="del" value="'..r.reserveID..'">\n'
-    ..'<button type="submit">削除</button></div></form></dd>\n'
+    ..'    <dt>-</dt><dd>\n')
+  if fromepg then
+    --一覧に戻ると使い勝手が悪いため
+    ct:Append('<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
+      ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+      ..'<input type="hidden" name="del" value="y">\n')
+  else
+    ct:Append('<form method="POST" action="reserve.html"><div>\n'
+      ..'<input type="hidden" name="ctok" value="'..CsrfToken('reserve.html')..'">\n'
+      ..'<input type="hidden" name="del" value="'..r.reserveID..'">\n')
+  end
+  ct:Append('<button type="submit">削除</button></div></form></dd>\n'
     ..'  </dl>\n')
 end
 

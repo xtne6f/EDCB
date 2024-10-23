@@ -99,7 +99,7 @@ ct:Append('  <dl>\n'
 if r then
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct:Append('    <dt>プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）</dt><dd>\n'
-    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..'&amp;fromepg=1'
     ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken('reserveinfo.html')..'">\n'
     ..'<input type="hidden" name="addchg" value="y">\n'
     ..'予約日時: <input type="text" size="4" name="start-y" value="'..r.startTime.year
@@ -135,7 +135,7 @@ end
 ct:Append('</select> <button type="submit">録画設定にロード</button></div></form></dd>\n'
   ..'    <dt>録画設定<dt><dd>\n'
   ..'<form method="POST" action="'
-  ..(r and 'reserveinfo.html?id='..r.reserveID or 'epginfo.html?id='..onid..'-'..tsid..'-'..sid..'-'..eid)
+  ..(r and 'reserveinfo.html?id='..r.reserveID..'&amp;fromepg=1' or 'epginfo.html?id='..onid..'-'..tsid..'-'..sid..'-'..eid)
   ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
   ..'<input type="hidden" name="ctok" value="'..CsrfToken(r and 'reserveinfo.html')..'">\n'
   ..'<input type="hidden" name="addchg" value="y">\n'
