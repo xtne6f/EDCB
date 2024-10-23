@@ -850,6 +850,36 @@ function OpenTsmemsegPipe(name,suffix)
   return nil
 end
 
+--ソート済みリストを二分探索してlower(upper)境界のインデックスを返す
+function BinarySearchBound(a,k,comp,upper)
+  local n,i=#a,1
+  while n~=i-1 do
+    local j=i+math.floor((n-i+1)/2)
+    if upper and (comp and not comp(k,a[j]) or not comp and not k<a[j]) or
+       not upper and (comp and comp(a[j],k) or not comp and a[j]<k) then i=j+1 else n=j-1 end
+  end
+  return i
+end
+
+--ソート済みリストを二分探索して一致する要素を返す
+function BinarySearch(a,k,comp)
+  local i=BinarySearchBound(a,k,comp)
+  if i<=#a and (comp and not comp(k,a[i]) or not comp and not k<a[i]) then return a[i] end
+  return nil
+end
+
+--奇数番目の引数(偶数番目は降順か否かの真偽値)で指定した1つ以上のフィールドでテーブルを比較する関数を返す
+function CompareFields(...)
+  local args={...}
+  local function comp(a,b,i)
+    i=i or 1
+    local k=args[i]
+    local desc=i<#args and args[i+1]
+    return desc and b[k]<a[k] or not desc and a[k]<b[k] or i+1<#args and a[k]==b[k] and comp(a,b,i+2)
+  end
+  return comp
+end
+
 --符号なし整数の時計算の差を計算する
 function UintCounterDiff(a,b)
   return (a+0x100000000-b)%0x100000000

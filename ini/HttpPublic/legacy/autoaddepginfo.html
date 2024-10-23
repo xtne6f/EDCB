@@ -155,9 +155,6 @@ else
   if post then
     if mg.get_var(post,'addchg') then
       ct:Append('  <div id="result">'..(AddOrChange(aa.dataID,post) and '変更しました' or '入力値不正')..'</div>\n')
-    elseif mg.get_var(post,'del') then
-      edcb.DelAutoAdd(aa.dataID)
-      ct:Append('  <div id="result">削除しました</div>\n')
     end
   end
   edcb.htmlEscape=15
@@ -283,9 +280,9 @@ if aa.searchInfo then
 
   if aa.dataID~=0 then
     ct:Append('    <dt>-</dt><dd>\n'
-      ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'"><div>\n'
-      ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
-      ..'<input type="hidden" name="del" value="y">\n'
+      ..'<form method="POST" action="autoaddepg.html"><div>\n'
+      ..'<input type="hidden" name="ctok" value="'..CsrfToken('autoaddepg.html')..'">\n'
+      ..'<input type="hidden" name="del" value="'..aa.dataID..'">\n'
       ..'<button type="submit">削除</button></div></form></dd>\n')
   end
   ct:Append('  </dl>\n')
@@ -294,7 +291,7 @@ end
 ct:Append([=[
 </div>
 <div id="footer">
-  <a href="autoaddepg.html">EPG予約一覧</a>
+  <a href="autoaddepg.html]=]..(aa.dataID~=0 and '?id='..aa.dataID or '')..[=[">EPG予約一覧</a>
 </div>
 </body>
 </html>

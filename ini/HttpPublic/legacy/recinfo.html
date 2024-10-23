@@ -15,11 +15,33 @@ ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <div class="page-nav">
   ]=])
 
+focus=nil
+post=AssertPost()
+if post then
+  focus=edcb.GetRecFileInfoBasic(GetVarInt(post,'del') or 0)
+  if focus then
+    edcb.DelRecFileInfo(focus.id)
+    ct:Append('  <div id="result">削除しました</div>\n')
+  end
+end
+
 edcb.htmlEscape=15
 a=edcb.GetRecFileInfoBasic()
+if not focus then
+  focus=GetVarInt(mg.request_info.query_string,'id')
+  focus=focus and BinarySearch(a,{id=focus},CompareFields('id'))
+end
+
 table.sort(a, function(a,b) return os.time(a.startTime) > os.time(b.startTime) end)
 pageCount=RECINFO_PAGE_COUNT
-page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/pageCount) or 0
+if focus then
+  --focusの行を含むページを探す
+  focusIndex=BinarySearchBound(a,focus,function(a,b) return os.time(a.startTime)>os.time(b.startTime) end)
+  page=math.floor(math.min(focusIndex-1,#a-1)/pageCount)
+else
+  page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/pageCount) or 0
+end
+
 pageNav=''
 if #a>pageCount then
   for i=math.max(page-1,1),math.min(math.max(page-1,1)+6,(#a+pageCount-1)/pageCount) do

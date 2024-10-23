@@ -207,18 +207,18 @@ if r then
     ..'<input type="hidden" name="addchg" value="y">\n'
     ..RecSettingTemplate(rs)..'<button type="submit">変更</button></div></form></dd>\n'
     ..'    <dt>-</dt><dd>\n'
-    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
-    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
-    ..'<input type="hidden" name="del" value="y">\n'
+    ..'<form method="POST" action="reserve.html"><div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken('reserve.html')..'">\n'
+    ..'<input type="hidden" name="del" value="'..r.reserveID..'">\n'
     ..'<button type="submit">削除</button></div></form></dd>\n'
     ..'  </dl>\n')
 end
-r=r or rdel
 
 ct:Append([=[
 </div>
 <div id="footer">
-  <a href="reserve.html">予約一覧</a> <a href="epg.html">番組表</a> <a href="epglist.html]=]..(r and '?id='..r.onid..'-'..r.tsid..'-'..r.sid..'#now' or '')..[=[">リスト番組表</a>
+  <a href="reserve.html]=]..(r and '?id='..r.reserveID or '')..[=[">予約一覧</a> <a href="epg.html">番組表</a> <a href="epglist.html]=]
+  ..((r or rdel) and '?id='..(r or rdel).onid..'-'..(r or rdel).tsid..'-'..(r or rdel).sid..'#now' or '')..[=[">リスト番組表</a>
 </div>
 </body>
 </html>

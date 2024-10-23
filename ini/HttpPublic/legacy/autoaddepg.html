@@ -15,10 +15,28 @@ ct:Append(DOCTYPE_HTML4_STRICT..[=[
 <div class="page-nav">
   ]=])
 
+focusID=nil
+post=AssertPost()
+if post then
+  focusID=GetVarInt(post,'del')
+  if focusID then
+    edcb.DelAutoAdd(focusID)
+    ct:Append('  <div id="result">削除しました</div>\n')
+  end
+end
+
 edcb.htmlEscape=15
 a=edcb.EnumAutoAdd()
 pageCount=AUTOADDEPG_PAGE_COUNT
-page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/pageCount) or 0
+focusID=focusID or GetVarInt(mg.request_info.query_string,'id')
+if focusID then
+  --focusIDの行を含むページを探す
+  focusIndex=BinarySearchBound(a,{dataID=focusID},CompareFields('dataID'))
+  page=math.floor(math.min(focusIndex-1,#a-1)/pageCount)
+else
+  page=GetVarInt(mg.request_info.query_string,'page',0,(#a-1)/pageCount) or 0
+end
+
 pageNav=''
 if #a>pageCount then
   for i=math.max(page-1,1),math.min(math.max(page-1,1)+6,(#a+pageCount-1)/pageCount) do

@@ -25,9 +25,6 @@ if post then
   if mg.get_var(post,'protect') then
     edcb.ChgProtectRecFileInfo(id,mg.get_var(post,'protect')=='y')
     ct:Append('  <div id="result">変更しました</div>\n')
-  elseif mg.get_var(post,'del') then
-    edcb.DelRecFileInfo(id)
-    ct:Append('  <div id="result">削除しました</div>\n')
   end
 end
 
@@ -114,9 +111,9 @@ if v then
     ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..v.programInfo:gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..v.errInfo:gsub('\r?\n', '<br>\n')..'</dd>\n' or '')
     ..'    <dt>-</dt><dd>\n'
-    ..'<form method="POST" action="recinfodesc.html?id='..v.id..'"><div>\n'
-    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
-    ..'<input type="hidden" name="del" value="y">\n'
+    ..'<form method="POST" action="recinfo.html"><div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken('recinfo.html')..'">\n'
+    ..'<input type="hidden" name="del" value="'..v.id..'">\n'
     ..'<button type="submit">削除</button></div></form></dd>\n'
     ..'  </dl>\n')
 end
@@ -124,7 +121,7 @@ end
 ct:Append([=[
 </div>
 <div id="footer">
-  <a href="recinfo.html">録画済み一覧</a>
+  <a href="recinfo.html]=]..(v and '?id='..v.id or '')..[=[">録画済み一覧</a>
 </div>
 </body>
 </html>
