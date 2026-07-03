@@ -14,7 +14,7 @@ namespace EpgTimer
         Process process = null;
         string processType;
 
-        public bool SetLiveCh(UInt16 ONID, UInt16 TSID, UInt16 SID)
+        public bool SetLiveCh(ushort ONID, ushort TSID, ushort SID)
         {
             try
             {
@@ -37,8 +37,8 @@ namespace EpgTimer
                     chInfo.TSID = TSID;
                     chInfo.SID = SID;
 
-                    UInt32 nwMode = 0;
-                    String nwBonDriver = "BonDriver_UDP.dll";
+                    uint nwMode = 0;
+                    string nwBonDriver = "BonDriver_UDP.dll";
                     if (Settings.Instance.NwTvModeUDP == true)
                     {
                         nwMode += 1;
@@ -53,7 +53,7 @@ namespace EpgTimer
                     {
                         if (CommonManager.CreateSrvCtrl().SendNwTVSetCh(chInfo) == ErrCode.CMD_SUCCESS)
                         {
-                            String val = "";
+                            string val = "";
                             for (int i = 0; i < 10; i++)
                             {
                                 if (cmdTvTest.SendViewGetBonDrivere(ref val) != ErrCode.CMD_SUCCESS)
@@ -72,12 +72,12 @@ namespace EpgTimer
                 }
                 else
                 {
-                    UInt64 key = CommonManager.Create64Key(ONID, TSID, SID);
+                    ulong key = CommonManager.Create64Key(ONID, TSID, SID);
                     TvTestChChgInfo chInfo = new TvTestChChgInfo();
                     ErrCode err = CommonManager.CreateSrvCtrl().SendGetChgChTVTest(key, ref chInfo);
                     if (err == ErrCode.CMD_SUCCESS)
                     {
-                        String val = "";
+                        string val = "";
                         for (int i = 0; i < 10; i++)
                         {
                             if (cmdTvTest.SendViewGetBonDrivere(ref val) != ErrCode.CMD_SUCCESS)
@@ -181,7 +181,7 @@ namespace EpgTimer
                 {
                     sendInfo.serverIP = 0x7F000001;
                     // 原作はここで自ホスト名を取得して解決したアドレスを格納している。(ないとは思うが)不具合があれば戻すこと
-                    sendInfo.serverPort = (UInt32)IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath);
+                    sendInfo.serverPort = (uint)IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath);
                 }
                 else
                 {

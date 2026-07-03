@@ -84,16 +84,16 @@ namespace EpgTimer
 
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
-            AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.ShowDialog();
+            var win = new AddManualAutoAddWindow();
+            ((MainWindow)Application.Current.MainWindow).SwapOwnedReserveWindow(win);
+            win.Show();
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)
         {
             if (listView_key.SelectedItems.Count > 0)
             {
-                List<UInt32> dataIDList = new List<uint>();
+                List<uint> dataIDList = new List<uint>();
                 foreach (ManualAutoAddDataItem info in listView_key.SelectedItems)
                 {
                     dataIDList.Add(info.ManualAutoAddInfo.dataID);
@@ -107,23 +107,17 @@ namespace EpgTimer
             if (listView_key.SelectedItem != null)
             {
                 ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
-                AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeModeData(info.ManualAutoAddInfo);
-                dlg.ShowDialog();
+                var win = new AddManualAutoAddWindow();
+                ((MainWindow)Application.Current.MainWindow).SwapOwnedReserveWindow(win);
+                win.SetChangeModeData(info.ManualAutoAddInfo);
+                win.Show();
             }
         }
 
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (listView_key.SelectedItem != null)
-            {
-                ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
-                AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeModeData(info.ManualAutoAddInfo);
-                dlg.ShowDialog();
-            }
+            button_change_Click(sender, e);
+            e.Handled = true;
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -164,7 +158,7 @@ namespace EpgTimer
                 if (menuItem.IsChecked == true)
                 {
 
-                    Settings.Instance.AutoAddManualColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
+                    Settings.Instance.AutoAddManualColumn.Add(new ListColumnInfo(menuItem.Name, double.NaN));
                     gridView_key.Columns.Add(columnList[menuItem.Name]);
                 }
                 else
@@ -198,7 +192,7 @@ namespace EpgTimer
             switch (e.Key)
             {
                 case Key.Enter:
-                    button_change.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    button_change_Click(sender, e);
                     e.Handled = true;
                     break;
                 case Key.Delete:
@@ -206,7 +200,7 @@ namespace EpgTimer
                         MessageBox.Show(listView_key.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
                                         MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
                     {
-                        button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        button_del_Click(sender, e);
                     }
                     e.Handled = true;
                     break;

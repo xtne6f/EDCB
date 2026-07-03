@@ -90,11 +90,7 @@ namespace EpgTimer
 
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
-            {
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.ShowDialog();
-            }
+            ((MainWindow)Application.Current.MainWindow).CreateSearchWindow().Show();
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)
@@ -103,7 +99,7 @@ namespace EpgTimer
             {
                 if (listView_key.SelectedItems.Count > 0)
                 {
-                    List<UInt32> dataIDList = new List<uint>();
+                    List<uint> dataIDList = new List<uint>();
                     foreach (EpgAutoDataItem info in listView_key.SelectedItems)
                     {
                         dataIDList.Add(info.EpgAutoAddInfo.dataID);
@@ -133,12 +129,8 @@ namespace EpgTimer
             //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、
             //先に自動予約登録項目を削除する。
 
-            //自動予約登録項目のリストを保持
-            List<EpgAutoDataItem> autoaddlist = new List<EpgAutoDataItem>();
-            foreach (EpgAutoDataItem item in listView_key.SelectedItems)
-            {
-                autoaddlist.Add(item);
-            }
+            //自動予約登録項目の検索条件を保持
+            List<EpgSearchKeyInfo> keyList = listView_key.SelectedItems.Cast<EpgAutoDataItem>().Select(a => a.EpgAutoAddInfo.searchInfo.DeepClone()).ToList();
 
             button_del_Click(sender, e);
 
@@ -147,19 +139,16 @@ namespace EpgTimer
                 //配下の予約の削除
 
                 //検索リストの取得
-                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
                 List<EpgEventInfo> list = new List<EpgEventInfo>();
 
-                foreach (EpgAutoDataItem item in autoaddlist)
+                foreach (EpgSearchKeyInfo key in keyList)
                 {
-                    EpgSearchKeyInfo key = item.EpgAutoAddInfo.searchInfo;
                     key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? 7 : 0);//無効解除
-                    keyList.Add(key);
                 }
 
                 CommonManager.CreateSrvCtrl().SendSearchPg(keyList, ref list);
 
-                List<UInt32> dellist = new List<UInt32>();
+                List<uint> dellist = new List<uint>();
 
                 foreach (EpgEventInfo info in list)
                 {
@@ -200,6 +189,7 @@ namespace EpgTimer
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             showDialog();
+            e.Handled = true;
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -241,7 +231,7 @@ namespace EpgTimer
                 if (menuItem.IsChecked == true)
                 {
 
-                    Settings.Instance.AutoAddEpgColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
+                    Settings.Instance.AutoAddEpgColumn.Add(new ListColumnInfo(menuItem.Name, double.NaN));
                     gridView_key.Columns.Add(columnList[menuItem.Name]);
                 }
                 else
@@ -296,10 +286,9 @@ namespace EpgTimer
             if (listView_key.SelectedItem != null)
             {
                 EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeModeData(info.EpgAutoAddInfo);
-                dlg.ShowDialog();
+                SearchWindow search = ((MainWindow)Application.Current.MainWindow).CreateSearchWindow();
+                search.SetChangeModeData(info.EpgAutoAddInfo);
+                search.Show();
             }
         }
 
@@ -335,24 +324,38 @@ namespace EpgTimer
         {
             if (resultListMoved == null) { return; }
             //
-            List<uint> dataIdList1 = new List<uint>();
-            foreach (EpgAutoDataItem item1 in resultListMoved)
-            {
-                dataIdList1.Add(item1.EpgAutoAddInfo.dataID);
-            }
-            dataIdList1.Sort();
+            List<uint> originalDataIdList = resultListMoved.Select(a => a.EpgAutoAddInfo.dataID).ToList();
+            List<uint> dataIdList = originalDataIdList.ToList();
+            dataIdList.Sort();
             //
-            List<EpgAutoAddData> addList1 = new List<EpgAutoAddData>();
-            for (int i1 = 0; i1 < resultListMoved.Count; i1++)
+            for (int i = 0; i < resultListMoved.Count; i++)
             {
-                EpgAutoDataItem item1 = resultListMoved[i1];
-                item1.EpgAutoAddInfo.dataID = dataIdList1[i1];
-                addList1.Add(item1.EpgAutoAddInfo);
-
+                resultListMoved[i].EpgAutoAddInfo.dataID = dataIdList[i];
             }
-            if (CommonManager.CreateSrvCtrl().SendChgEpgAutoAdd(addList1) != ErrCode.CMD_SUCCESS)
+            string message = null;
+            try
             {
-                MessageBox.Show("変更に失敗しました");
+                if (((MainWindow)Application.Current.MainWindow).OwnedWindows.OfType<SearchWindow>().FirstOrDefault() != null)
+                {
+                    // IDを交換するのでEPG予約条件の不慮の上書きを防ぐため
+                    message = "検索・EPG予約条件ウィンドウを閉じてください";
+                }
+                else if (CommonManager.CreateSrvCtrl().SendChgEpgAutoAdd(resultListMoved.Select(a => a.EpgAutoAddInfo).ToList()) != ErrCode.CMD_SUCCESS)
+                {
+                    message = "変更に失敗しました";
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            for (int i = 0; i < resultListMoved.Count; i++)
+            {
+                resultListMoved[i].EpgAutoAddInfo.dataID = originalDataIdList[i];
+            }
+            if (message != null)
+            {
+                MessageBox.Show(message);
             }
         }
 
@@ -412,7 +415,7 @@ namespace EpgTimer
                         MessageBox.Show(listView_key.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
                                         MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
                     {
-                        button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        button_del_Click(sender, e);
                     }
                     e.Handled = true;
                     break;
@@ -451,12 +454,12 @@ namespace EpgTimer
             }
         }
 
-        private void button_up_Click2(object sender, RoutedEventArgs e)
+        private void button_up_Click(object sender, RoutedEventArgs e)
         {
             moveItem(true);
         }
 
-        private void button_down_Click2(object sender, RoutedEventArgs e)
+        private void button_down_Click(object sender, RoutedEventArgs e)
         {
             moveItem(false);
         }

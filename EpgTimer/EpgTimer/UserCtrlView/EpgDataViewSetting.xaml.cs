@@ -94,7 +94,7 @@ namespace EpgTimer
             checkBox_highlightContentKind.IsChecked = setInfo.HighlightContentKind;
             checkBox_searchMode.IsChecked = setInfo.SearchMode;
 
-            foreach (UInt64 id in setInfo.ViewServiceList)
+            foreach (ulong id in setInfo.ViewServiceList)
             {
                 listBox_serviceView.Items.Add(
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv ? listBox_serviceTere.Items[0] :
@@ -104,7 +104,7 @@ namespace EpgTimer
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceOther ? listBox_serviceOther.Items[0] :
                     new Tuple<string, ulong>(ChSet5.Instance.ChList.ContainsKey(id) ? ChSet5.Instance.ChList[id].ServiceName : "???", id));
             }
-            foreach (UInt16 id in setInfo.ViewContentKindList)
+            foreach (ushort id in setInfo.ViewContentKindList)
             {
                 listBox_jyanruView.Items.Add(listBox_jyanru.Items.Cast<ContentKindInfo>().FirstOrDefault(info => info.ID == id) ??
                                              new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });

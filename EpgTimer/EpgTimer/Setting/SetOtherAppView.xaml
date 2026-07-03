@@ -35,6 +35,12 @@
                     <TextBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="150,70,0,0" Text="{Binding FilePlayCmd}" VerticalAlignment="Top" Width="444" />
                     <Label Content="($FilePath$:ファイルパス、$FileNameExt$:ファイル名、を指定できます)&#10;(exeパス未指定時はコマンドライン引数を無視し、ファイルパスを関連付け実行します)" HorizontalAlignment="Left" Margin="150,98,0,0" VerticalAlignment="Top" />
                     <CheckBox Content="追っかけ再生にも使用する" HorizontalAlignment="Left" IsChecked="{Binding FilePlayOnAirWithExe}" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="150,150,0,0" VerticalAlignment="Top" />
+                    <Label Content="ファイルパスの文字列置換リスト（/置換前/置換後/…） ※「フォルダを開く」機能にも適用されます" HorizontalAlignment="Left" Margin="12,200,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="32,230,0,0" Name="textBox_replacePattern" Text="{Binding FilePathReplacePattern}" VerticalAlignment="Top" Width="624" TextChanged="replaceTest_TextChanged" />
+                    <Label Content="（置換テスト）" HorizontalAlignment="Left" Margin="40,258,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="150,260,0,0" Name="textBox_replaceTest" VerticalAlignment="Top" Width="506" TextChanged="replaceTest_TextChanged" />
+                    <Label Content="（置換結果）" HorizontalAlignment="Left" Margin="40,288,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" IsReadOnly="True" Margin="150,290,0,0" Name="textBox_replaceTestResult" VerticalAlignment="Top" Width="506" />
                 </Grid>
             </TabItem>
         </TabControl>

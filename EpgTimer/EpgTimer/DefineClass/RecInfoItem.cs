@@ -33,11 +33,11 @@ namespace EpgTimer
             }
             get { return RecInfo.ProtectFlag != 0; }
         }
-        public String EventName
+        public string EventName
         {
             get { return RecInfo.Title; }
         }
-        public String ServiceName
+        public string ServiceName
         {
             get { return RecInfo.ServiceName; }
         }
@@ -61,15 +61,15 @@ namespace EpgTimer
         {
             get { return RecInfo.Scrambles; }
         }
-        public String Result
+        public string Result
         {
             get { return RecInfo.Comment; }
         }
-        public String NetworkName
+        public string NetworkName
         {
             get { return CommonManager.ConvertNetworkNameText(RecInfo.OriginalNetworkID); }
         }
-        public String RecFilePath
+        public string RecFilePath
         {
             get { return RecInfo.RecFilePath; }
         }
@@ -121,7 +121,7 @@ namespace EpgTimer
                 {
                     return null;
                 }
-                String view = "";
+                string view = "";
                 {
                     view = StartTime + "\r\n";
 

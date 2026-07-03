@@ -25,15 +25,15 @@ namespace EpgTimer
             get;
             private set;
         }
-        public String EventName
+        public string EventName
         {
             get { return ReserveInfo.Title; }
         }
-        public String ServiceName
+        public string ServiceName
         {
             get { return ReserveInfo.StationName; }
         }
-        public String NetworkName
+        public string NetworkName
         {
             get { return CommonManager.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID); }
         }
@@ -53,7 +53,7 @@ namespace EpgTimer
         {
             get { return ReserveInfo.RecSetting.IsNoRec() ? "いいえ" : "はい"; }
         }
-        public String RecMode
+        public string RecMode
         {
             get { return CommonManager.Instance.RecModeList[ReserveInfo.RecSetting.GetRecMode()]; }
         }
@@ -61,15 +61,15 @@ namespace EpgTimer
         {
             get { return ReserveInfo.RecSetting.Priority; }
         }
-        public String Tuijyu
+        public string Tuijyu
         {
             get { return ReserveInfo.RecSetting.TuijyuuFlag == 1 ? "する" : "しない"; }
         }
-        public String Pittari
+        public string Pittari
         {
             get { return ReserveInfo.RecSetting.PittariFlag == 1 ? "する" : "しない"; }
         }
-        public String Comment
+        public string Comment
         {
             get { return ReserveInfo.Comment; }
         }
@@ -81,15 +81,15 @@ namespace EpgTimer
         {
             get { return ReserveInfo.RecFileNameList; }
         }
-        public String IsProgram
+        public string IsProgram
         {
             get { return ReserveInfo.EventID == 0xFFFF ? "はい" : "いいえ"; }
         }
-        public String TunerID
+        public string TunerID
         {
             get { return ReserveInfo.RecSetting.TunerID == 0 ? "自動" : "ID:" + ReserveInfo.RecSetting.TunerID.ToString("X8"); }
         }
-        public String BatFilePath
+        public string BatFilePath
         {
             get
             {

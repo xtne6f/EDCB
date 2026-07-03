@@ -1,7 +1,7 @@
 ﻿<Window x:Class="EpgTimer.SearchWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="検索" Height="600" Width="780" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner" Closing="Window_Closing" Loaded="Window_Loaded" IsVisibleChanged="Window_IsVisibleChanged_1" PreviewKeyDown="Window_PreviewKeyDown">
+        Title="検索" Height="600" Width="780" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner" Closing="Window_Closing" Loaded="Window_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -9,17 +9,17 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <TabControl Name="tabControl1" TabStripPlacement="Bottom" Margin="0,0,0,1">
-            <TabItem Header="検索条件" Name="tabItem1" KeyDown="tabItem_searchKey_KeyDown">
+        <TabControl Name="tabControl" TabStripPlacement="Bottom" Margin="0,0,0,1">
+            <TabItem Header="検索条件" KeyDown="tabItem_searchKey_KeyDown">
                 <my:SearchKeyView x:Name="searchKeyView" />
             </TabItem>
-            <TabItem Header="録画設定" Name="tabItem2">
+            <TabItem Header="録画設定">
                 <my:RecSettingView x:Name="recSettingView" />
             </TabItem>
         </TabControl>
         <GridSplitter Background="DarkGray" Grid.Row="1" Height="2" HorizontalAlignment="Stretch" ResizeDirection="Rows" />
-        <Button Content="検索" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="12,6,0,0" Name="button_search" VerticalAlignment="Top" Width="75" Click="button_search_Click" ToolTip="Ctrl + F" />
-        <Button Content="予約" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="126,6,0,0" Name="button_add_reserve" VerticalAlignment="Top" Width="75" Click="buttonOrMenuItem_add_reserve_Click" ToolTip="Ctrl + R" />
+        <Button Content="検索" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="12,6,0,0" VerticalAlignment="Top" Width="75" Click="button_search_Click" ToolTip="Ctrl + F" />
+        <Button Content="予約" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="126,6,0,0" VerticalAlignment="Top" Width="75" Click="buttonOrMenuItem_add_reserve_Click" ToolTip="Ctrl + R" />
         <Button Content="自動予約登録条件に追加" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="244,6,0,0" Name="button_add_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_add_epgAutoAdd_Click" ToolTip="Ctrl + N" />
         <Button Content="自動予約登録条件を変更" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="450,6,0,0" Name="button_chg_epgAutoAdd" VerticalAlignment="Top" Visibility="Hidden" Width="178" Click="button_chg_epgAutoAdd_Click" ToolTip="Ctrl + S" />
         <ListView Grid.Row="2" Name="listView_result" Margin="10,39,10,10" SelectionMode="Extended" GridViewColumnHeader.Click="GridViewColumnHeader_Click">

@@ -30,7 +30,7 @@ namespace EpgTimer
             countTimer.Interval = TimeSpan.FromSeconds(1);
         }
 
-        public void SetMode(Byte reboot, Byte suspendMode)
+        public void SetMode(byte reboot, byte suspendMode)
         {
             if (reboot == 1)
             {

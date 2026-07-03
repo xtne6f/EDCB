@@ -116,10 +116,9 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="130">
-            <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" Click="button_add_Click" />
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
-            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" />
+        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="110">
+            <Button Content="追加" Height="23" Margin="0,10,0,5" Click="button_add_Click" />
+            <Button Content="削除" Height="23" Margin="0,10,0,5" ToolTip="Delete" Click="button_del_Click" />
         </StackPanel>
     </Grid>
 </UserControl>

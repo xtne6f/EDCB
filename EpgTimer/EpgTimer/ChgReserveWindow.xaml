@@ -9,7 +9,7 @@
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <TabControl Grid.Row="0" Name="tabControl" TabStripPlacement="Bottom" >
-            <TabItem Header="予約" Name="tabItem_reserve">
+            <TabItem Header="予約">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="90" />
@@ -33,12 +33,13 @@
                     <my:RecSettingView x:Name="recSettingView" Grid.Row="1" />
                 </Grid>
             </TabItem>
-            <TabItem Header="番組詳細" Name="tabItem_program">
+            <TabItem Header="番組詳細">
                 <RichTextBox IsReadOnly="True" Name="richTextBox_descInfo" VerticalScrollBarVisibility="Auto" />
             </TabItem>
         </TabControl>
-        <Button Grid.Row="1" Content="予約" Height="23" HorizontalAlignment="Left" Name="button_chg_reserve" VerticalAlignment="Top" Width="91" Click="button_chg_reserve_Click" Margin="30,8,0,0" ToolTip="Ctrl + S" />
-        <Button Content="削除" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="160,8,0,0" Name="button_del_reserve" VerticalAlignment="Top" Visibility="Hidden" Width="91" Click="button_del_reserve_Click" ToolTip="Ctrl + D" />
-        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="290,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="91" />
+        <Button Content="予約" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="30,8,0,0" Name="button_chg_reserve" VerticalAlignment="Top" Width="90" Click="button_chg_reserve_Click" ToolTip="Ctrl + S" />
+        <Button Content="削除" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="140,8,0,0" Name="button_del_reserve" VerticalAlignment="Top" Visibility="Hidden" Width="90" Click="button_del_reserve_Click" ToolTip="Ctrl + D" />
+        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="250,8,0,0" VerticalAlignment="Top" Width="100" Click="button_cancel_Click" />
+        <Button Content="番組情報を保存" Grid.Row="1" Height="23" HorizontalAlignment="Left" IsEnabled="False" Margin="400,8,0,0" Name="button_save_program" VerticalAlignment="Top" Width="120" Click="button_save_program_Click" />
     </Grid>
 </Window>

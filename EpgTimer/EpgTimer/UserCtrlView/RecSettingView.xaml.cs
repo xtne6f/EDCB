@@ -51,7 +51,7 @@ namespace EpgTimer
             UpdateView(setDefSetting);
         }
 
-        private void AddPreset(String name)
+        private void AddPreset(string name)
         {
             RecPresetItem newInfo = new RecPresetItem();
             newInfo.DisplayName = name;
@@ -93,9 +93,9 @@ namespace EpgTimer
             string saveID = "";
             for (int i = 0; i < saveList.Count; i++)
             {
-                String defName = "REC_DEF";
-                String defFolderName = "REC_DEF_FOLDER";
-                String defFolder1SegName = "REC_DEF_FOLDER_1SEG";
+                string defName = "REC_DEF";
+                string defFolderName = "REC_DEF_FOLDER";
+                string defFolder1SegName = "REC_DEF_FOLDER_1SEG";
                 RecSettingData info = saveList[i];
 
                 RecPresetItem preItem = comboBox_preSet.Items.OfType<RecPresetItem>().First(a => a.ID == i);
@@ -166,12 +166,7 @@ namespace EpgTimer
         public RecSettingData GetRecSetting()
         {
             var setInfo = new RecSettingData();
-            setInfo.RecMode = (byte)comboBox_recMode.SelectedIndex;
-            if (checkBox_enabled.IsChecked != true)
-            {
-                //録画モード情報を維持して無効化
-                setInfo.RecMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (setInfo.RecMode + 4) % 5);
-            }
+            setInfo.RecMode = CommonManager.Instance.DB.CombineRecModeAndNoRec((byte)comboBox_recMode.SelectedIndex, checkBox_enabled.IsChecked != true);
             setInfo.Priority = (byte)(comboBox_priority.SelectedIndex + 1);
             setInfo.TuijyuuFlag = (byte)(checkBox_tuijyu.IsChecked == true ? 1 : 0);
             if (checkBox_serviceMode.IsChecked == true)

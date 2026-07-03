@@ -78,6 +78,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 if (LeftDoubleClick != null)
                 {
                     LeftDoubleClick(sender, lastPopupPos);
+                    e.Handled = true;
                 }
             }
         }
@@ -262,6 +263,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                     if (LeftDoubleClick != null)
                     {
                         LeftDoubleClick(sender, cursorPos);
+                        e.Handled = true;
                     }
                 }
             }

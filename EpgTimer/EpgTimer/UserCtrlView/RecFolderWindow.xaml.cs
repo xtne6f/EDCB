@@ -24,8 +24,8 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            String plugInFile = "Write_Default.dll";
-            String recNamePlugInFile = "";
+            string plugInFile = "Write_Default.dll";
+            string recNamePlugInFile = "";
 
             var writeList = new List<string>();
             ErrCode err = CommonManager.CreateSrvCtrl().SendEnumPlugIn(2, ref writeList);

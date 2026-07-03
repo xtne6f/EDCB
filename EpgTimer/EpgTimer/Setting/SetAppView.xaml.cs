@@ -311,7 +311,7 @@ namespace EpgTimer.Setting
         /// <param name="path">出力先のファイル名(*.lnk)</param>
         /// <param name="targetPath">対象のアセンブリ(*.exe)</param>
         /// <param name="description">説明</param>
-        private void CreateShortCut(String path, String targetPath, String description)
+        private void CreateShortCut(string path, string targetPath, string description)
         {
             //using System.Reflection;
 

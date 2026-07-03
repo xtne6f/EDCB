@@ -28,15 +28,15 @@ namespace EpgTimer
             private set;
         }
 
-        public String AndKey
+        public string AndKey
         {
             get { return Regex.Replace(EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", ""); }
         }
-        public String NotKey
+        public string NotKey
         {
             get { return Regex.Replace(EpgAutoAddInfo.searchInfo.notKey, "^:note:[^ 　]*[ 　]?", ""); }
         }
-        public String Note
+        public string Note
         {
             get
             {
@@ -48,19 +48,19 @@ namespace EpgTimer
                 return "";
             }
         }
-        public String RegExp
+        public string RegExp
         {
             get { return EpgAutoAddInfo.searchInfo.regExpFlag == 1 ? "○" : "×"; }
         }
-        public String Aimai
+        public string Aimai
         {
             get { return EpgAutoAddInfo.searchInfo.aimaiFlag == 1 ? "○" : "×"; }
         }
-        public String TitleOnly
+        public string TitleOnly
         {
             get { return EpgAutoAddInfo.searchInfo.titleOnlyFlag == 1 ? "○" : "×"; }
         }
-        public String DateKey
+        public string DateKey
         {
             get
             {
@@ -81,7 +81,7 @@ namespace EpgTimer
         {
             get { return EpgAutoAddInfo.recSetting.IsNoRec() ? "いいえ" : "はい"; }
         }
-        public String RecMode
+        public string RecMode
         {
             get { return CommonManager.Instance.RecModeList[EpgAutoAddInfo.recSetting.GetRecMode()]; }
         }
@@ -89,7 +89,7 @@ namespace EpgTimer
         {
             get { return EpgAutoAddInfo.recSetting.Priority; }
         }
-        public String Tuijyu
+        public string Tuijyu
         {
             get { return EpgAutoAddInfo.recSetting.TuijyuuFlag == 1 ? "する" : "しない"; }
         }
@@ -98,11 +98,11 @@ namespace EpgTimer
             get { return EpgAutoAddInfo.addCount; }
         }
 
-        public String JyanruKey
+        public string JyanruKey
         {
             get
             {
-                String view = "";
+                string view = "";
                 {
                     // 小ジャンルを大ジャンルでまとめる
                     foreach (EpgContentData ecd1 in this.EpgAutoAddInfo.searchInfo.contentList)
@@ -143,11 +143,11 @@ namespace EpgTimer
         /// <summary>
         /// NHK総合１・東京、NHKBS1
         /// </summary>
-        public String ServiceKey
+        public string ServiceKey
         {
             get
             {
-                String view = "";
+                string view = "";
                 {
                     foreach (ulong service1 in EpgAutoAddInfo.searchInfo.serviceList)
                     {
@@ -188,11 +188,11 @@ namespace EpgTimer
         /// <summary>
         /// 地デジ、BS、CS
         /// </summary>
-        public String NetworkKey
+        public string NetworkKey
         {
             get
             {
-                String view1 = "";
+                string view1 = "";
                 {
                     List<string> networkKeyList1 = new List<string>();
                     foreach (ulong service1 in this.EpgAutoAddInfo.searchInfo.serviceList)
@@ -218,17 +218,17 @@ namespace EpgTimer
             }
         }
 
-        public String Pittari
+        public string Pittari
         {
             get { return EpgAutoAddInfo.recSetting.PittariFlag == 1 ? "する" : "しない"; }
         }
 
-        public String KeyEnabled
+        public string KeyEnabled
         {
             get { return EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}", StringComparison.Ordinal) ? "いいえ" : "はい"; }
         }
 
-        public String CaseSensitive
+        public string CaseSensitive
         {
             get { return Regex.IsMatch(EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?C!\{999\}") ? "はい" : "いいえ"; }
         }
@@ -293,7 +293,7 @@ namespace EpgTimer
                 {
                     return null;
                 }
-                String view = "";
+                string view = "";
                 {
                     if (EpgAutoAddInfo.searchInfo != null)
                     {

@@ -20,6 +20,7 @@ namespace EpgTimer
     public partial class RecInfoDescWindow : Window
     {
         private RecFileInfo recInfo = null;
+        private string pgInfoForProgramText = "";
 
         public RecInfoDescWindow()
         {
@@ -52,20 +53,20 @@ namespace EpgTimer
                     }
                 }
             }
+            string basicInfo = "";
+            string extText = "";
+            string propertyInfo = "";
             if (eventInfo != null)
             {
-                richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(
-                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicInfo) +
-                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicText),
-                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedText),
-                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo)));
+                basicInfo = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicInfoForProgramText) +
+                            CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicTextForProgramText);
+                extText = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedTextForProgramText);
+                propertyInfo = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo);
             }
             else
             {
                 // 詳細情報を分離してみる
-                string basicInfo = info.ProgramInfo;
-                string extText = "";
-                string propertyInfo = "";
+                basicInfo = info.ProgramInfo;
                 // 2個目の空行までマッチ
                 Match m = Regex.Match(basicInfo, @"^[\s\S]*?\r?\n\r?\n[\s\S]*?\r?\n\r?\n");
                 if (m.Success)
@@ -80,8 +81,10 @@ namespace EpgTimer
                         propertyInfo = propertyInfo.Substring(m.Length);
                     }
                 }
-                richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(basicInfo, extText, propertyInfo));
             }
+            richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(basicInfo, extText, propertyInfo));
+            pgInfoForProgramText = basicInfo + extText + propertyInfo;
+            button_save_program.IsEnabled = pgInfoForProgramText.Length > 0;
             textBox_errLog.Text = info.ErrInfo;
             textBox_recFilePath.Text = info.RecFilePath;
             button_rename.IsEnabled = false;
@@ -89,7 +92,10 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            tabItem_pgInfo.Focus();
+            if (tabControl.SelectedItem != null)
+            {
+                ((TabItem)tabControl.SelectedItem).Focus();
+            }
         }
 
         private void textBox_recFilePath_TextChanged(object sender, TextChangedEventArgs e)
@@ -244,7 +250,31 @@ namespace EpgTimer
                     MessageBox.Show(ex.ToString());
                 }
             }
-            DialogResult = false;
+            Close();
+        }
+
+        private void button_save_program_Click(object sender, RoutedEventArgs e)
+        {
+            CommonManager.Instance.ShowSaveProgramTextDialog(pgInfoForProgramText);
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        Close();
+                        e.Handled = true;
+                        break;
+                }
+            }
+        }
+
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }

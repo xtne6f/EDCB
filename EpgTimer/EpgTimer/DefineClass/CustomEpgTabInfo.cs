@@ -18,13 +18,13 @@ namespace EpgTimer
 
         public CustomEpgTabInfo()
         {
-            ViewServiceList = new List<UInt64>();
-            ViewContentKindList = new List<UInt16>();
+            ViewServiceList = new List<ulong>();
+            ViewContentKindList = new List<ushort>();
             StartTimeWeek = 4;
             HighlightContentKind = true;
             SearchKey = new EpgSearchKeyInfo();
         }
-        public String TabName
+        public string TabName
         {
             get;
             set;
@@ -54,12 +54,12 @@ namespace EpgTimer
             get;
             set;
         }
-        public List<UInt64> ViewServiceList
+        public List<ulong> ViewServiceList
         {
             get;
             set;
         }
-        public List<UInt16> ViewContentKindList
+        public List<ushort> ViewContentKindList
         {
             get;
             set;

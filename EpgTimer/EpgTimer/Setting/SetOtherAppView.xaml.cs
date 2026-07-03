@@ -23,6 +23,8 @@ namespace EpgTimer.Setting
         public SetOtherAppView()
         {
             InitializeComponent();
+
+            textBox_replaceTest.Text = "C:\\Test\\ファイル";
         }
 
         private void button_exe_Click(object sender, RoutedEventArgs e)
@@ -51,6 +53,12 @@ namespace EpgTimer.Setting
                 textBox_playExe.Focus();
                 textBox_playExe.Text = dlg.FileName;
             }
+        }
+
+        private void replaceTest_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            textBox_replaceTestResult.Text =
+                CommonManager.ReplaceText(textBox_replaceTest.Text, CommonManager.CreateReplaceDictionary(textBox_replacePattern.Text));
         }
     }
 }

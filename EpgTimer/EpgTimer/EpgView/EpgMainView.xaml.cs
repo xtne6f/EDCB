@@ -232,7 +232,7 @@ namespace EpgTimer
                     reserveInfo.DurationSecond = eventInfo.durationSec;
                 }
 
-                UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
+                ulong key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
                 if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                 {
                     reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
@@ -308,25 +308,27 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_no_Click(object sender, RoutedEventArgs e)
         {
+            ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+            byte originalRecMode = reserve.RecSetting.RecMode;
+            byte recMode = reserve.RecSetting.GetRecMode();
+            reserve.RecSetting.RecMode = CommonManager.Instance.DB.CombineRecModeAndNoRec(recMode, !reserve.RecSetting.IsNoRec());
+            string message = null;
             try
             {
-                ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
-                byte recMode = reserve.RecSetting.GetRecMode();
-                if (reserve.RecSetting.IsNoRec() == false)
-                {
-                    //録画モード情報を維持して無効化
-                    recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
-                }
-                reserve.RecSetting.RecMode = recMode;
                 ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(new List<ReserveData>() { reserve });
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
+                    message = CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。";
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                message = ex.ToString();
+            }
+            reserve.RecSetting.RecMode = originalRecMode;
+            if (message != null)
+            {
+                MessageBox.Show(message);
             }
         }
 
@@ -337,28 +339,30 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_recmode_Click(object sender, RoutedEventArgs e)
         {
+            ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+            byte originalRecMode = reserve.RecSetting.RecMode;
+            byte recMode = (byte)(sender == recmode_all ? 0 :
+                                  sender == recmode_only ? 1 :
+                                  sender == recmode_all_nodec ? 2 :
+                                  sender == recmode_only_nodec ? 3 : 4);
+            reserve.RecSetting.RecMode = CommonManager.Instance.DB.CombineRecModeAndNoRec(recMode, reserve.RecSetting.IsNoRec());
+            string message = null;
             try
             {
-                ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
-                byte recMode = (byte)(sender == recmode_all ? 0 :
-                                      sender == recmode_only ? 1 :
-                                      sender == recmode_all_nodec ? 2 :
-                                      sender == recmode_only_nodec ? 3 : 4);
-                if (reserve.RecSetting.IsNoRec())
-                {
-                    //録画モード情報を維持して無効化
-                    recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
-                }
-                reserve.RecSetting.RecMode = recMode;
                 ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(new List<ReserveData>() { reserve });
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
+                    message = CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。";
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                message = ex.ToString();
+            }
+            reserve.RecSetting.RecMode = originalRecMode;
+            if (message != null)
+            {
+                MessageBox.Show(message);
             }
         }
 
@@ -369,24 +373,29 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_priority_Click(object sender, RoutedEventArgs e)
         {
+            ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
+            byte originalPriority = reserve.RecSetting.Priority;
+            reserve.RecSetting.Priority = (byte)(sender == priority_1 ? 1 :
+                                                 sender == priority_2 ? 2 :
+                                                 sender == priority_3 ? 3 :
+                                                 sender == priority_4 ? 4 : 5);
+            string message = null;
             try
             {
-                ReserveData reserve = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item1;
-                reserve.RecSetting.Priority = (byte)(sender == priority_1 ? 1 :
-                                                     sender == priority_2 ? 2 :
-                                                     sender == priority_3 ? 3 :
-                                                     sender == priority_4 ? 4 : 5);
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserve);
-                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(new List<ReserveData>() { reserve });
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
+                    message = CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。";
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                message = ex.ToString();
+            }
+            reserve.RecSetting.Priority = originalPriority;
+            if (message != null)
+            {
+                MessageBox.Show(message);
             }
         }
 
@@ -397,24 +406,20 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_autoadd_Click(object sender, RoutedEventArgs e)
         {
+            ProgramViewItem programView = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item2;
+            EpgEventInfo program = programView.EventInfo;
+
+            SearchWindow search = ((MainWindow)Application.Current.MainWindow).CreateSearchWindow();
+
+            var key = new EpgSearchKeyInfo();
+            if (program.ShortInfo != null)
             {
-                ProgramViewItem programView = ((Tuple<ReserveData, ProgramViewItem>)((MenuItem)sender).DataContext).Item2;
-                EpgEventInfo program = programView.EventInfo;
-
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-
-                if (program.ShortInfo != null)
-                {
-                    key.andKey = program.ShortInfo.event_name;
-                }
-                key.serviceList.Add((long)CommonManager.Create64Key(program.original_network_id, program.transport_stream_id, program.service_id));
-
-                dlg.SetSearchDefKey(key);
-                dlg.ShowDialog();
+                key.andKey = program.ShortInfo.event_name;
             }
+            key.serviceList.Add((long)CommonManager.Create64Key(program.original_network_id, program.transport_stream_id, program.service_id));
+
+            search.SetSearchDefKey(key);
+            search.Show();
         }
 
         /// <summary>
@@ -439,7 +444,7 @@ namespace EpgTimer
         {
             var dlg = new EpgDataViewSettingWindow();
             dlg.Title += " (一時的)";
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.Owner = Application.Current.MainWindow;
             dlg.SetDefSetting(setViewInfo);
             if (dlg.ShowDialog() == true)
             {
@@ -537,15 +542,11 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void ChangeReserve(ReserveData reserveInfo)
         {
-            {
-                ChgReserveWindow dlg = new ChgReserveWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetOpenMode(setViewInfo.EpgSetting.EpgInfoOpenMode);
-                dlg.SetReserveInfo(reserveInfo);
-                if (dlg.ShowDialog() == true)
-                {
-                }
-            }
+            var win = new ChgReserveWindow();
+            win.SetOpenMode(setViewInfo.EpgSetting.EpgInfoOpenMode);
+            ((MainWindow)Application.Current.MainWindow).SwapOwnedReserveWindow(win);
+            win.SetReserveInfo(reserveInfo);
+            win.Show();
         }
 
         /// <summary>
@@ -555,16 +556,12 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void AddReserve(EpgEventInfo eventInfo, bool reservable)
         {
-            {
-                AddReserveEpgWindow dlg = new AddReserveEpgWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetOpenMode(setViewInfo.EpgSetting.EpgInfoOpenMode);
-                dlg.SetReservable(reservable);
-                dlg.SetEventInfo(eventInfo);
-                if (dlg.ShowDialog() == true)
-                {
-                }
-            }
+            var win = new AddReserveEpgWindow();
+            win.SetOpenMode(setViewInfo.EpgSetting.EpgInfoOpenMode);
+            win.SetReservable(reservable);
+            ((MainWindow)Application.Current.MainWindow).SwapOwnedReserveWindow(win);
+            win.SetEventInfo(eventInfo);
+            win.Show();
         }
 
         /// <summary>
@@ -582,14 +579,29 @@ namespace EpgTimer
         {
             DateTime lastTime = baseTime;
             baseTime = time < CommonManager.Instance.DB.EventBaseTime ? time : DateTime.MaxValue;
+            TimeSpan lastOffsetTime = TimeSpan.Zero;
+            if (timeList.Count > 0)
+            {
+                int index = Math.Max((int)(epgProgramView.scrollViewer.VerticalOffset / (60 * setViewInfo.EpgSetting.MinHeight)), 0);
+                index = Math.Min(index, timeList.Count - 1);
+                lastOffsetTime = TimeSpan.FromDays((int)timeList.Keys[index].DayOfWeek) + timeList.Keys[index].TimeOfDay;
+            }
             if (ReloadEpgData())
             {
                 updateEpgData = false;
                 ReloadReserveViewItem();
                 updateReserveData = false;
+                //現在番組表への移動では現在日時にスクロールされる。過去番組表への移動ではなるべく週の同じ日時にスクロールする
                 if (baseTime < CommonManager.Instance.DB.EventBaseTime)
                 {
-                    epgProgramView.scrollViewer.ScrollToVerticalOffset(0);
+                    for (int i = 0; i <= timeList.Count; i++)
+                    {
+                        if (i == timeList.Count || TimeSpan.FromDays((int)timeList.Keys[i].DayOfWeek) + timeList.Keys[i].TimeOfDay >= lastOffsetTime)
+                        {
+                            epgProgramView.scrollViewer.ScrollToVerticalOffset(Math.Max(i * 60 * setViewInfo.EpgSetting.MinHeight, 0));
+                            break;
+                        }
+                    }
                 }
                 return true;
             }

@@ -14,11 +14,12 @@
             <TabItem Header="予約" Name="tabItem_reserve">
                 <my:RecSettingView x:Name="recSettingView" />
             </TabItem>
-            <TabItem Header="番組詳細" Name="tabItem_program">
+            <TabItem Header="番組詳細">
                 <RichTextBox IsReadOnly="True" Name="richTextBox_descInfo" VerticalScrollBarVisibility="Auto" />
             </TabItem>
         </TabControl>
-        <Button Grid.Row="2" Content="予約" Height="23" HorizontalAlignment="Left" Name="button_add_reserve" VerticalAlignment="Top" Width="91" Click="button_add_reserve_Click" Margin="30,8,0,0" ToolTip="Ctrl + S" />
-        <Button Content="キャンセル" Grid.Row="2" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="187,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="103" />
+        <Button Content="予約" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="30,8,0,0" Name="button_add_reserve" VerticalAlignment="Top" Width="90" Click="button_add_reserve_Click" ToolTip="Ctrl + S" />
+        <Button Content="キャンセル" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="140,8,0,0" VerticalAlignment="Top" Width="100" Click="button_cancel_Click" />
+        <Button Content="番組情報を保存" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="290,8,0,0" Name="button_save_program" VerticalAlignment="Top" Width="120" Click="button_save_program_Click" />
     </Grid>
 </Window>

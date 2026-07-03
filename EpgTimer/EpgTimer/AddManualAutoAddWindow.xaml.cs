@@ -94,7 +94,7 @@ namespace EpgTimer
             {
                 CommonManager.CreateSrvCtrl().SendAddManualAdd(new List<ManualAutoAddData>() { item });
             }
-            DialogResult = true;
+            Close();
         }
 
         /// <summary>
@@ -171,6 +171,21 @@ namespace EpgTimer
                         break;
                 }
             }
+            else if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        Close();
+                        e.Handled = true;
+                        break;
+                }
+            }
+        }
+
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }

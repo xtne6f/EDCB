@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Xml.Linq;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 
@@ -127,9 +128,9 @@ namespace EpgTimer
         public bool FontBoldTitle { get; set; }
         public double DragScroll { get; set; }
         public List<string> ContentColorList { get; set; }
-        public List<UInt32> ContentCustColorList { get; set; }
+        public List<uint> ContentCustColorList { get; set; }
         public List<string> TimeColorList { get; set; }
-        public List<UInt32> TimeCustColorList { get; set; }
+        public List<uint> TimeCustColorList { get; set; }
         public string ReserveRectColorNormal { get; set; }
         public string ReserveRectColorNo { get; set; }
         public string ReserveRectColorNoTuner { get; set; }
@@ -139,10 +140,10 @@ namespace EpgTimer
         public bool ReserveRectShowMarker { get; set; }
         public string TitleColor1 { get; set; }
         public string TitleColor2 { get; set; }
-        public UInt32 TitleCustColor1 { get; set; }
-        public UInt32 TitleCustColor2 { get; set; }
+        public uint TitleCustColor1 { get; set; }
+        public uint TitleCustColor2 { get; set; }
         public string ServiceColor { get; set; }
-        public UInt32 ServiceCustColor { get; set; }
+        public uint ServiceCustColor { get; set; }
         public bool EpgToolTip { get; set; }
         public double EpgBorderLeftSize { get; set; }
         public double EpgBorderTopSize { get; set; }
@@ -229,10 +230,10 @@ namespace EpgTimer
         public bool SearchKeyNotDate { get; set; }
         public List<ContentKindInfo> SearchKeyContentList { get; set; }
         public List<EpgSearchDateInfo> SearchKeyDateItemList { get; set; }
-        public List<Int64> SearchKeyServiceList { get; set; }
+        public List<long> SearchKeyServiceList { get; set; }
         public byte SearchKeyFreeCA { get; set; }
         public byte SearchKeyChkRecEnd { get; set; }
-        public UInt16 SearchKeyChkRecDay { get; set; }
+        public ushort SearchKeyChkRecDay { get; set; }
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
         public bool RecInfoHideButton { get; set; }
@@ -247,18 +248,19 @@ namespace EpgTimer
         public bool FilePlay { get; set; }
         public string FilePlayExe { get; set; }
         public string FilePlayCmd { get; set; }
+        public string FilePathReplacePattern { get; set; }
         public bool FilePlayOnAirWithExe { get; set; }
         public List<IEPGStationInfo> IEpgStationList { get; set; }
         public string NWServerIP { get; set; }
-        public UInt32 NWServerPort { get; set; }
-        public UInt32 NWWaitPort { get; set; }
+        public uint NWServerPort { get; set; }
+        public uint NWWaitPort { get; set; }
         public string NWMacAdd { get; set; }
         public bool WakeReconnectNW { get; set; }
         public bool SuspendCloseNW { get; set; }
         public bool NgAutoEpgLoadNW { get; set; }
         public bool PrebuildEpg { get; set; }
-        public Int32 TvTestOpenWait { get; set; }
-        public Int32 TvTestChgBonWait { get; set; }
+        public int TvTestOpenWait { get; set; }
+        public int TvTestChgBonWait { get; set; }
         public int ResColorPosition { get; set; }
         public int ResAlternationCount { get; set; }
         public byte ResDefColorA { get; set; }
@@ -291,8 +293,8 @@ namespace EpgTimer
         public byte RecEndWarColorR { get; set; }
         public byte RecEndWarColorG { get; set; }
         public byte RecEndWarColorB { get; set; }
-        public UInt32 ExecBat { get; set; }
-        public UInt32 SuspendChk { get; set; }
+        public uint ExecBat { get; set; }
+        public uint SuspendChk { get; set; }
         public List<ListColumnInfo> ReserveListColumn { get; set; }
         public List<ListColumnInfo> RecInfoListColumn { get; set; }
         public List<ListColumnInfo> AutoAddEpgColumn { get; set; }
@@ -463,6 +465,7 @@ namespace EpgTimer
             r.FilePlay                  = ConvertXElem(x, w, "FilePlay", FilePlay, true);
             r.FilePlayExe               = ConvertXElem(x, w, "FilePlayExe", FilePlayExe, "");
             r.FilePlayCmd               = ConvertXElem(x, w, "FilePlayCmd", FilePlayCmd, "\"$FilePath$\"");
+            r.FilePathReplacePattern    = ConvertXElem(x, w, "FilePathReplacePattern", FilePathReplacePattern, "");
             r.FilePlayOnAirWithExe      = ConvertXElem(x, w, "FilePlayOnAirWithExe", FilePlayOnAirWithExe, true);
             r.IEpgStationList           = ConvertXElements(x, w, "IEpgStationList", IEpgStationList).ToList();
             r.NWServerIP                = ConvertXElem(x, w, "NWServerIP", NWServerIP, "");
@@ -706,7 +709,7 @@ namespace EpgTimer
                     {
                         break;
                     }
-                    System.Threading.Thread.Sleep(200 * retry);
+                    Thread.Sleep(200 * retry);
                 }
                 catch
                 {
@@ -846,7 +849,7 @@ namespace EpgTimer
                         {
                             throw;
                         }
-                        System.Threading.Thread.Sleep(200 * retry);
+                        Thread.Sleep(200 * retry);
                     }
                 }
             }
@@ -887,9 +890,9 @@ namespace EpgTimer
         public static RecSettingData CreateRecSetting(uint presetID)
         {
             var defKey = new RecSettingData();
-            String defName = "REC_DEF";
-            String defFolderName = "REC_DEF_FOLDER";
-            String defFolder1SegName = "REC_DEF_FOLDER_1SEG";
+            string defName = "REC_DEF";
+            string defFolderName = "REC_DEF_FOLDER";
+            string defFolder1SegName = "REC_DEF_FOLDER_1SEG";
 
             if (presetID > 0)
             {
@@ -898,15 +901,15 @@ namespace EpgTimer
                 defFolder1SegName += presetID.ToString();
             }
 
-            defKey.RecMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "RecMode", 1, SettingPath.TimerSrvIniPath);
+            defKey.RecMode = (byte)IniFileHandler.GetPrivateProfileInt(defName, "RecMode", 1, SettingPath.TimerSrvIniPath);
             if (defKey.IsNoRec())
             {
                 defKey.RecMode = (byte)(5 + (byte)(IniFileHandler.GetPrivateProfileInt(defName, "NoRecMode", 1, SettingPath.TimerSrvIniPath) + 4) % 5);
             }
-            defKey.Priority = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "Priority", 2, SettingPath.TimerSrvIniPath);
-            defKey.TuijyuuFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "TuijyuuFlag", 1, SettingPath.TimerSrvIniPath);
-            defKey.ServiceMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "ServiceMode", 0, SettingPath.TimerSrvIniPath);
-            defKey.PittariFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "PittariFlag", 0, SettingPath.TimerSrvIniPath);
+            defKey.Priority = (byte)IniFileHandler.GetPrivateProfileInt(defName, "Priority", 2, SettingPath.TimerSrvIniPath);
+            defKey.TuijyuuFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "TuijyuuFlag", 1, SettingPath.TimerSrvIniPath);
+            defKey.ServiceMode = (byte)IniFileHandler.GetPrivateProfileInt(defName, "ServiceMode", 0, SettingPath.TimerSrvIniPath);
+            defKey.PittariFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "PittariFlag", 0, SettingPath.TimerSrvIniPath);
 
             defKey.BatFilePath = IniFileHandler.GetPrivateProfileString(defName, "BatFilePath", "", SettingPath.TimerSrvIniPath);
 
@@ -932,14 +935,14 @@ namespace EpgTimer
                 defKey.PartialRecFolder.Add(folderInfo);
             }
 
-            defKey.SuspendMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "SuspendMode", 0, SettingPath.TimerSrvIniPath);
-            defKey.RebootFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "RebootFlag", 0, SettingPath.TimerSrvIniPath);
-            defKey.UseMargineFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "UseMargineFlag", 0, SettingPath.TimerSrvIniPath);
+            defKey.SuspendMode = (byte)IniFileHandler.GetPrivateProfileInt(defName, "SuspendMode", 0, SettingPath.TimerSrvIniPath);
+            defKey.RebootFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "RebootFlag", 0, SettingPath.TimerSrvIniPath);
+            defKey.UseMargineFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "UseMargineFlag", 0, SettingPath.TimerSrvIniPath);
             defKey.StartMargine = IniFileHandler.GetPrivateProfileInt(defName, "StartMargine", 0, SettingPath.TimerSrvIniPath);
             defKey.EndMargine = IniFileHandler.GetPrivateProfileInt(defName, "EndMargine", 0, SettingPath.TimerSrvIniPath);
-            defKey.ContinueRecFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "ContinueRec", 0, SettingPath.TimerSrvIniPath);
-            defKey.PartialRecFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "PartialRec", 0, SettingPath.TimerSrvIniPath);
-            defKey.TunerID = (UInt32)IniFileHandler.GetPrivateProfileInt(defName, "TunerID", 0, SettingPath.TimerSrvIniPath);
+            defKey.ContinueRecFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "ContinueRec", 0, SettingPath.TimerSrvIniPath);
+            defKey.PartialRecFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "PartialRec", 0, SettingPath.TimerSrvIniPath);
+            defKey.TunerID = (uint)IniFileHandler.GetPrivateProfileInt(defName, "TunerID", 0, SettingPath.TimerSrvIniPath);
             return defKey;
         }
 

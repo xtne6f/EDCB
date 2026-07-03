@@ -717,27 +717,19 @@ namespace EpgTimer
 
         void searchButton_Click(object sender, RoutedEventArgs e)
         {
-            // Hide()したSearchWindowを復帰
-            foreach (Window win1 in this.OwnedWindows)
+            SearchWindow search = OwnedWindows.OfType<SearchWindow>().FirstOrDefault();
+            if (search != null)
             {
-                if (win1 is SearchWindow)
+                //既存のウィンドウをアクティブにする
+                if (search.WindowState == WindowState.Minimized)
                 {
-                    win1.Show();
-                    return;
+                    search.WindowState = WindowState.Normal;
                 }
+                search.Activate();
             }
-            //
-            SearchCmd();
-        }
-
-        void SearchCmd()
-        {
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
+            else
             {
-                var search = new SearchWindow();
-                search.Owner = (Window)topWindow.RootVisual;
-                search.ShowDialog();
+                CreateSearchWindow().Show();
             }
         }
 
@@ -945,7 +937,7 @@ namespace EpgTimer
                     {
                         //原作では成否にかかわらずCMD_SUCCESSだったが、サーバ側の仕様と若干矛盾するので変更した
                         res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_ERR, null, 0);
-                        String exeCmd = "";
+                        string exeCmd = "";
                         (new CtrlCmdReader(new System.IO.MemoryStream(cmdData, false))).Read(ref exeCmd);
                         if (exeCmd.Length > 0 && exeCmd[0] == '"')
                         {
@@ -1006,7 +998,7 @@ namespace EpgTimer
                     {
                         res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, null, 0);
 
-                        UInt16 param = 0;
+                        ushort param = 0;
                         (new CtrlCmdReader(new System.IO.MemoryStream(cmdData, false))).Read(ref param);
 
                         Dispatcher.BeginInvoke(new Action(() => ShowSleepDialog(param)));
@@ -1017,11 +1009,11 @@ namespace EpgTimer
                     {
                         res = new Tuple<ErrCode, byte[], uint>(ErrCode.CMD_SUCCESS, null, 0);
 
-                        UInt16 param = 0;
+                        ushort param = 0;
                         (new CtrlCmdReader(new System.IO.MemoryStream(cmdData, false))).Read(ref param);
 
-                        Byte reboot = (Byte)((param & 0xFF00) >> 8);
-                        Byte suspendMode = (Byte)(param & 0x00FF);
+                        byte reboot = (byte)((param & 0xFF00) >> 8);
+                        byte suspendMode = (byte)(param & 0x00FF);
 
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
@@ -1051,7 +1043,7 @@ namespace EpgTimer
             return res;
         }
 
-        private void ShowSleepDialog(UInt16 param)
+        private void ShowSleepDialog(ushort param)
         {
             if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
             {
@@ -1063,7 +1055,7 @@ namespace EpgTimer
                 }
             }
 
-            Byte suspendMode = (Byte)(param & 0x00FF);
+            byte suspendMode = (byte)(param & 0x00FF);
 
             {
                 SuspendCheckWindow dlg = new SuspendCheckWindow();
@@ -1190,71 +1182,109 @@ namespace EpgTimer
             }));
         }
 
-        public void EmphasizeSearchButton(bool emphasize)
+        public SearchWindow CreateSearchWindow()
         {
-            var button1 = stackPanel_button.Children.Cast<Button>().First(a => (string)(a.Tag ?? a.Content) == "検索");
-            if (Settings.Instance.ViewButtonShowAsTab == false &&
-                Settings.Instance.ViewButtonList.Contains("検索") == false)
+            SearchWindow search = null;
+            foreach (Window w in OwnedWindows)
             {
-                if (emphasize)
+                //表示状態をなるべく引き継ぐ。幅と高さは内部で引き継がれる
+                if (w is SearchWindow)
                 {
-                    stackPanel_button.Children.Remove(button1);
-                    stackPanel_button.Children.Add(button1);
-                    button1.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    button1.Visibility = Visibility.Collapsed;
-                }
-            }
-
-            //検索ボタンを点滅させる
-            if (emphasize)
-            {
-                button1.Effect = new System.Windows.Media.Effects.DropShadowEffect();
-                var animation = new System.Windows.Media.Animation.DoubleAnimation
-                {
-                    From = 1.0,
-                    To = 0.7,
-                    RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
-                    AutoReverse = true
-                };
-                button1.BeginAnimation(Button.OpacityProperty, animation);
-            }
-            else
-            {
-                button1.BeginAnimation(Button.OpacityProperty, null);
-                button1.Opacity = 1;
-                button1.Effect = null;
-            }
-
-            //もしあればタブとして表示のタブも点滅させる
-            foreach (var item in tabControl_main.Items)
-            {
-                TabItem ti = item as TabItem;
-                if (ti != null && ti.Tag is string && (string)ti.Tag == "PushLike検索")
-                {
-                    if (emphasize)
+                    int index = ((SearchWindow)w).tabControl.SelectedIndex;
+                    double left = w.Left;
+                    double top = w.Top;
+                    w.Close();
+                    if (search == null)
                     {
-                        var animation = new System.Windows.Media.Animation.DoubleAnimation
-                        {
-                            From = 1.0,
-                            To = 0.1,
-                            RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
-                            AutoReverse = true
-                        };
-                        ti.BeginAnimation(TabItem.OpacityProperty, animation);
+                        search = new SearchWindow();
+                        search.WindowStartupLocation = WindowStartupLocation.Manual;
+                        search.tabControl.SelectedIndex = index;
+                        search.Left = left;
+                        search.Top = top;
                     }
-                    else
-                    {
-                        ti.BeginAnimation(TabItem.OpacityProperty, null);
-                        ti.Opacity = 1;
-                    }
-                    break;
                 }
             }
+            search = search ?? new SearchWindow();
+            search.Owner = this;
+            //所有する他のウィンドウをアクティブにできないときオーナーが最背面に移動することがあるため
+            search.Closed += (sender, e) =>
+            {
+                if (OwnedWindows.Cast<Window>().All(a => a.IsActive == false))
+                {
+                    Activate();
+                }
+            };
+            return search;
         }
 
+        public void SwapOwnedReserveWindow(Window re)
+        {
+            foreach (Window w in OwnedWindows)
+            {
+                //同系統ウィンドウの表示状態をなるべく引き継ぐ
+                if (w is AddReserveEpgWindow || w is ChgReserveWindow)
+                {
+                    if (re is AddReserveEpgWindow || re is ChgReserveWindow)
+                    {
+                        re.WindowStartupLocation = WindowStartupLocation.Manual;
+                        int openMode = w is AddReserveEpgWindow ? ((AddReserveEpgWindow)w).GetOpenMode() : ((ChgReserveWindow)w).GetOpenMode();
+                        if (re is AddReserveEpgWindow)
+                        {
+                            ((AddReserveEpgWindow)re).SetOpenMode(openMode);
+                        }
+                        else
+                        {
+                            ((ChgReserveWindow)re).SetOpenMode(openMode);
+                        }
+                        re.Left = w.Left;
+                        re.Top = w.Top;
+                        if ((w is AddReserveEpgWindow) == (re is AddReserveEpgWindow))
+                        {
+                            re.Width = w.Width;
+                            re.Height = w.Height;
+                        }
+                    }
+                    w.Close();
+                }
+                else if (w is RecInfoDescWindow)
+                {
+                    if (re is RecInfoDescWindow)
+                    {
+                        re.WindowStartupLocation = WindowStartupLocation.Manual;
+                        ((RecInfoDescWindow)re).tabControl.SelectedIndex = ((RecInfoDescWindow)w).tabControl.SelectedIndex;
+                        re.Left = w.Left;
+                        re.Top = w.Top;
+                        re.Width = w.Width;
+                        re.Height = w.Height;
+                    }
+                    w.Close();
+                }
+                else if (w is AddManualAutoAddWindow)
+                {
+                    if (re is AddManualAutoAddWindow)
+                    {
+                        re.WindowStartupLocation = WindowStartupLocation.Manual;
+                        re.Left = w.Left;
+                        re.Top = w.Top;
+                        re.Width = w.Width;
+                        re.Height = w.Height;
+                    }
+                    w.Close();
+                }
+            }
+            if (re != null)
+            {
+                re.Owner = this;
+                //所有する他のウィンドウをアクティブにできないときオーナーが最背面に移動することがあるため
+                re.Closed += (sender, e) =>
+                {
+                    if (OwnedWindows.Cast<Window>().All(a => a.IsActive == false))
+                    {
+                        Activate();
+                    }
+                };
+            }
+        }
     }
 
     /// <summary>

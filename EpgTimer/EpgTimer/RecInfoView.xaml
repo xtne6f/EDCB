@@ -53,7 +53,7 @@
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="再生" Click="button_play_Click" InputGestureText="Ctrl + P" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" InputGestureText="Ctrl + O" />
+            <MenuItem Header="フォルダを開く" Click="openFolder_Click" InputGestureText="Ctrl + O" />
         </local:ContextMenuEx>
 
     </UserControl.Resources>
@@ -176,9 +176,11 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="100">
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
-            <Button Content="再生" Height="23" Name="button_play" Margin="0,10,0,10" Click="button_play_Click" />
+        <StackPanel Grid.Column="1" Name="stackPanel_button">
+            <Button Content="削除" Height="23" Margin="0,10,0,5" Padding="10,1" ToolTip="Delete" Click="button_del_Click" />
+            <Button Content="再生" Height="23" Margin="0,10,0,5" Padding="10,1" ToolTip="Ctrl + P" Click="button_play_Click" />
+            <Button Content="自動予約登録" Height="23" Margin="0,10,0,5" Padding="10,1" Click="autoadd_Click" />
+            <Button Content="フォルダを開く" Height="23" Margin="0,10,0,5" Padding="10,1" ToolTip="Ctrl + O" Click="openFolder_Click" />
         </StackPanel>
     </Grid>
 </UserControl>

@@ -30,6 +30,6 @@
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="100,109,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="194" />
         <my:RecSettingView Margin="0,138,0,48" x:Name="recSettingView" />
         <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,0,123,12" Name="button_add" ToolTip="Ctrl + S" VerticalAlignment="Bottom" Width="75" Click="button_add_Click" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" IsCancel="True" Margin="0,0,12,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" />
+        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" Margin="0,0,12,12" VerticalAlignment="Bottom" Width="75" Click="button_cancel_Click" />
     </Grid>
 </Window>
