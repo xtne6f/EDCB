@@ -1,21 +1,59 @@
 ﻿<Window x:Class="EpgTimer.RecFolderWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="録画フォルダ、使用PlugIn設定" Height="225" Width="600" WindowStartupLocation="CenterOwner">
-
-    <Grid>
-        <Label Content="録画フォルダ" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
-        <TextBox Height="24" Margin="125,14,61,0" Name="textBox_recFolder" VerticalAlignment="Top" />
-        <Button Content="開く" Height="23" Margin="0,14,12,0" Name="button_folder" VerticalAlignment="Top" HorizontalAlignment="Right" Width="43" Click="button_folder_Click" />
-        <Label Content="出力PlugIn" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="125,46,0,0" Name="comboBox_writePlugIn" VerticalAlignment="Top" Width="254" />
-        <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="385,48,0,0" Name="button_write" VerticalAlignment="Top" Width="43" Click="button_write_Click" />
-        <Label Content="ファイル名PlugIn" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label3" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="125,80,0,0" Name="comboBox_recNamePlugIn" VerticalAlignment="Top" Width="254" />
-        <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="385,82,0,0" Name="button_recName" VerticalAlignment="Top" Width="43" Click="button_recName_Click" />
-        <Label Content="ファイル名PlugInオプション" Height="28" HorizontalAlignment="Left" Margin="12,114,0,0" VerticalAlignment="Top" />
-        <TextBox Height="24" Margin="180,114,12,0" Name="textBox_recNameOption" VerticalAlignment="Top" />
-        <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,151,99,0" Name="button_ok" VerticalAlignment="Top" Width="75" Click="button_ok_Click" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" IsCancel="True" Margin="0,151,12,0" Name="button_cancel" VerticalAlignment="Top" Width="75" />
-    </Grid>
+        SizeToContent="Height" Style="{StaticResource AppWindowStyle}" Title="録画フォルダ、使用PlugIn設定" Width="{StaticResource AppRecFolderWindowWidth}" WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="{StaticResource AppEdgeMargin}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Label Content="録画フォルダ" Style="{StaticResource AppTermLabelStyle}" />
+            <Grid Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Name="textBox_recFolder" Style="{StaticResource AppTextBoxStyle}" />
+                <Button Content="開く" Grid.Column="1" Margin="{StaticResource AppMarginL}" Name="button_folder" Style="{StaticResource AppButtonStyle}" Click="button_folder_Click" />
+            </Grid>
+            <FrameworkElement Grid.Row="1" Margin="{StaticResource AppWideMarginT}" />
+            <Label Content="出力PlugIn" Grid.Row="2" Style="{StaticResource AppTermLabelStyle}" />
+            <Grid Grid.Column="1" Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="4*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ComboBox Name="comboBox_writePlugIn" Style="{StaticResource AppComboBoxStyle}" />
+                <Button Content="設定" Grid.Column="1" Margin="{StaticResource AppMarginL}" Name="button_write" Style="{StaticResource AppButtonStyle}" Click="button_write_Click" />
+            </Grid>
+            <FrameworkElement Grid.Row="3" Margin="{StaticResource AppWideMarginT}" />
+            <Label Content="ファイル名PlugIn" Grid.Row="4" Style="{StaticResource AppTermLabelStyle}" />
+            <Grid Grid.Column="1" Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="4*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ComboBox Name="comboBox_recNamePlugIn" Style="{StaticResource AppComboBoxStyle}" />
+                <Button Content="設定" Grid.Column="1" Margin="{StaticResource AppMarginL}" Name="button_recName" Style="{StaticResource AppButtonStyle}" Click="button_recName_Click" />
+            </Grid>
+        </Grid>
+        <DockPanel Margin="{StaticResource AppWideMarginT}">
+            <Label Content="ファイル名PlugInオプション" Style="{StaticResource AppTermLabelStyle}" />
+            <TextBox Name="textBox_recNameOption" Style="{StaticResource AppTextBoxStyle}" />
+        </DockPanel>
+        <StackPanel HorizontalAlignment="Right" Margin="{StaticResource AppEdgeMarginT}" Orientation="Horizontal">
+            <Button Content="OK" Style="{StaticResource AppConfirmButtonStyle}" Click="button_ok_Click" />
+            <Button Content="キャンセル" IsCancel="True" Margin="{StaticResource AppConfirmMargin}" Style="{StaticResource AppConfirmButtonStyle}" />
+        </StackPanel>
+    </StackPanel>
 </Window>

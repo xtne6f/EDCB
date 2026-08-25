@@ -51,10 +51,27 @@ namespace EpgTimer
                     }
                 }
             }
+
+            // listBox_jyanruとlistBox_jyanruViewを最適な幅にするため
+            string refStr = "";
+            string refView = "";
             foreach (ushort id in CommonManager.Instance.ContentKindList)
             {
-                listBox_jyanru.Items.Add(new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });
+                var info = new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id };
+                listBox_jyanru.Items.Add(info);
+                string toStr = info.ToString();
+                if (toStr.Length > refStr.Length)
+                {
+                    refStr = toStr;
+                }
+                string view = info.ListBoxView;
+                if (view.Length > refView.Length)
+                {
+                    refView = view;
+                }
             }
+            listBox_jyanru_ref.Items.Add(refStr + "Aあ");
+            listBox_jyanruView_ref.Items.Add(refView);
         }
 
         /// <summary>
@@ -94,7 +111,7 @@ namespace EpgTimer
             checkBox_highlightContentKind.IsChecked = setInfo.HighlightContentKind;
             checkBox_searchMode.IsChecked = setInfo.SearchMode;
 
-            foreach (UInt64 id in setInfo.ViewServiceList)
+            foreach (ulong id in setInfo.ViewServiceList)
             {
                 listBox_serviceView.Items.Add(
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv ? listBox_serviceTere.Items[0] :
@@ -104,7 +121,7 @@ namespace EpgTimer
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceOther ? listBox_serviceOther.Items[0] :
                     new Tuple<string, ulong>(ChSet5.Instance.ChList.ContainsKey(id) ? ChSet5.Instance.ChList[id].ServiceName : "???", id));
             }
-            foreach (UInt16 id in setInfo.ViewContentKindList)
+            foreach (ushort id in setInfo.ViewContentKindList)
             {
                 listBox_jyanruView.Items.Add(listBox_jyanru.Items.Cast<ContentKindInfo>().FirstOrDefault(info => info.ID == id) ??
                                              new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });
@@ -200,7 +217,7 @@ namespace EpgTimer
         }
 
         /// <summary>
-        /// 映像のみ全追加
+        /// 映像のみ追加
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -237,13 +254,8 @@ namespace EpgTimer
                              tabItem_cs3.IsSelected ? listBox_serviceCS3 :
                              tabItem_tere.IsSelected ? listBox_serviceTere :
                              tabItem_other.IsSelected ? listBox_serviceOther : null;
-            if (target != null)
+            if (target != null && target.SelectedItem != null)
             {
-                if (target.SelectedItem == null)
-                {
-                    MessageBox.Show("アイテムが選択されていません");
-                    return;
-                }
                 var info = (Tuple<string, ulong>)target.SelectedItem;
                 if (listBox_serviceView.Items.Cast<Tuple<string, ulong>>().All(info2 => info2.Item2 != info.Item2))
                 {
@@ -351,10 +363,6 @@ namespace EpgTimer
                     listBox_jyanruView.Items.Add(listBox_jyanru.SelectedItem);
                 }
             }
-            else
-            {
-                MessageBox.Show("アイテムが選択されていません");
-            }
         }
 
         /// <summary>
@@ -382,12 +390,18 @@ namespace EpgTimer
             listBox_jyanruView.Items.Clear();
         }
 
-        private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void listBox_or_tabControl_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string text = "";
-            if (((ListBox)sender).SelectedItem != null)
+            ListBox target = sender == listBox_serviceView ? listBox_serviceView :
+                             tabItem_bs.IsSelected ? listBox_serviceBS :
+                             tabItem_cs.IsSelected ? listBox_serviceCS :
+                             tabItem_cs3.IsSelected ? listBox_serviceCS3 :
+                             tabItem_tere.IsSelected ? listBox_serviceTere :
+                             tabItem_other.IsSelected ? listBox_serviceOther : null;
+            if (target != null && target.SelectedItem != null)
             {
-                var info = (Tuple<string, ulong>)((ListBox)sender).SelectedItem;
+                var info = (Tuple<string, ulong>)target.SelectedItem;
                 if (info.Item2 >> 48 != 0)
                 {
                     text = info.Item1;
@@ -397,10 +411,10 @@ namespace EpgTimer
                     ushort onid = (ushort)(info.Item2 >> 32);
                     ushort tsid = (ushort)(info.Item2 >> 16);
                     ushort sid = (ushort)info.Item2;
-                    text = (ChSet5.Instance.ChList.ContainsKey(info.Item2) ? ChSet5.Instance.ChList[info.Item2].NetworkName : "???") + "\r\n";
-                    text += "OriginalNetworkID : " + onid + " (0x" + onid.ToString("X4") + ")\r\n";
-                    text += "TransportStreamID : " + tsid + " (0x" + tsid.ToString("X4") + ")\r\n";
-                    text += "ServiceID : " + sid + " (0x" + sid.ToString("X4") + ")" + (ChSet5.IsCS3(onid) ? " " + (sid & 0x3FF) + "ch" : "");
+                    text = (ChSet5.Instance.ChList.ContainsKey(info.Item2) ? ChSet5.Instance.ChList[info.Item2].NetworkName : "???") + "\r\n" +
+                           "OriginalNetworkID: " + onid + "(0x" + onid.ToString("X4") + ")\r\n" +
+                           "TransportStreamID: " + tsid + "(0x" + tsid.ToString("X4") + ")\r\n" +
+                           "ServiceID: " + sid + "(0x" + sid.ToString("X4") + ")" + (ChSet5.IsCS3(onid) ? " " + (sid & 0x3FF) + "ch" : "");
                 }
             }
             (sender == listBox_serviceView ? textBox_serviceView1 : textBox_serviceView2).Text = text;

@@ -1,145 +1,210 @@
 ﻿<UserControl x:Class="EpgTimer.SearchKeyView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
-             d:DesignHeight="400" d:DesignWidth="700" xmlns:my="clr-namespace:EpgTimer">
-    <Grid>
-        <Label Content="検索キーワード" Height="28" HorizontalAlignment="Left" Margin="10,8,0,0" ToolTip="【検索対象を指定】 :title:ネコ&#10;   :title:番組名&#10;   :event:番組名と番組内容&#10;   :genre:ジャンル&#10;   :video:映像情報&#10;   :audio:音声情報&#10;【個別に正規表現】 ::title:^ネコ&#10;【OR検索】 :title:ネコ | :title:猫" VerticalAlignment="Top" />
-        <Label Content="NOTキーワード" Height="28" HorizontalAlignment="Left" Margin="10,37,0,0" ToolTip="【検索対象を指定】 :title:ネコ&#10;   :title:番組名&#10;   :event:番組名と番組内容&#10;   :genre:ジャンル&#10;   :video:映像情報&#10;   :audio:音声情報&#10;【個別に正規表現】 ::title:^ネコ" VerticalAlignment="Top" />
-        <ComboBox Height="24" IsEditable="True" IsTextSearchEnabled="False" KeyUp="comboBox_andKey_KeyUp" Margin="110,10,10,0" Name="comboBox_andKey" VerticalAlignment="Top" />
-        <Grid Margin="110,39,10,0" VerticalAlignment="Top">
+             PreviewKeyDown="UserControl_PreviewKeyDown">
+    <DockPanel Margin="{StaticResource AppEdgeMarginLTR}">
+        <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition MinWidth="50" Name="columnDefinition_notKey" Width="0.6*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Name="columnDefinition_note" Width="0.4*" />
+                <ColumnDefinition Name="columnDefinition_notKey" Width="3*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Name="columnDefinition_note" Width="2*" />
             </Grid.ColumnDefinitions>
-            <ComboBox Height="24" IsEditable="True" IsTextSearchEnabled="False" KeyUp="comboBox_notKey_KeyUp" Name="comboBox_notKey" SizeChanged="comboBox_notKey_SizeChanged" VerticalAlignment="Top" />
-            <GridSplitter Background="Transparent" Grid.Column="1" HorizontalAlignment="Stretch" ResizeDirection="Columns" Width="6" />
-            <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Label Content="検索キーワード" Style="{StaticResource AppTermLabelStyle}" ToolTip="【検索対象を指定】 :title:ネコ&#10;   :title:番組名&#10;   :event:番組名と番組内容&#10;   :genre:ジャンル&#10;   :video:映像情報&#10;   :audio:音声情報&#10;【個別に正規表現】 ::title:^ネコ&#10;【OR検索】 :title:ネコ | :title:猫" />
+            <Label Content="NOTキーワード" Grid.Row="2" Style="{StaticResource AppTermLabelStyle}" ToolTip="【検索対象を指定】 :title:ネコ&#10;   :title:番組名&#10;   :event:番組名と番組内容&#10;   :genre:ジャンル&#10;   :video:映像情報&#10;   :audio:音声情報&#10;【個別に正規表現】 ::title:^ネコ" />
+            <ComboBox Grid.Column="1" Grid.ColumnSpan="3" Height="{Binding ActualHeight, ElementName=textBox_note}" IsEditable="True" IsTextSearchEnabled="False" KeyUp="comboBox_andKey_KeyUp" Name="comboBox_andKey" Style="{StaticResource AppComboBoxStyle}" />
+            <FrameworkElement Grid.Row="1" Margin="{StaticResource AppMarginT}" />
+            <ComboBox Grid.Column="1" Grid.Row="2" IsEditable="True" IsTextSearchEnabled="False" Name="comboBox_notKey" Style="{StaticResource AppComboBoxStyle}" KeyUp="comboBox_notKey_KeyUp" SizeChanged="comboBox_notKey_SizeChanged" />
+            <FrameworkElement Grid.Column="2" Grid.Row="2" Margin="{StaticResource AppMarginL}" />
+            <GridSplitter Grid.Column="2" Grid.Row="2" HorizontalAlignment="Stretch" />
+            <DockPanel Grid.Column="3"  Grid.Row="2">
+                <Label Content="メモ" Style="{StaticResource AppLabelStyle}" />
+                <TextBox Margin="{StaticResource AppMarginL}" Name="textBox_note" Style="{StaticResource AppTextBoxStyle}" />
+            </DockPanel>
+        </Grid>
+        <StackPanel DockPanel.Dock="Top" Margin="{StaticResource AppIndentMargin}" Orientation="Horizontal">
+            <Border Margin="{StaticResource AppMarginT}" Style="{StaticResource AppSearchOptionsBorderStyle}">
+                <StackPanel KeyboardNavigation.TabNavigation="Once" Orientation="Horizontal">
+                    <CheckBox Content="正規表現モード" Name="checkBox_regExp" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="あいまい検索モード" Margin="{StaticResource AppWideMarginL}" Name="checkBox_aimai" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="番組名のみ検索対象にする" Margin="{StaticResource AppWideMarginL}" Name="checkBox_titleOnly" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="大小文字区別" Margin="{StaticResource AppWideMarginL}" Name="checkBox_case" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="自動登録を無効にする" Margin="{StaticResource AppWideMarginL}" Name="checkBox_keyDisabled" Style="{StaticResource AppCheckBoxStyle}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        <Grid Margin="{StaticResource AppMarginT}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid Margin="{StaticResource AppEdgeMarginB}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Label Content="ジャンル絞り込み" Margin="{StaticResource AppMarginB}" Style="{StaticResource AppLabelStyle}" />
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ListBox Grid.RowSpan="2" HorizontalAlignment="Left" Name="listBox_content_ref" ScrollViewer.VerticalScrollBarVisibility="Visible" SelectionMode="Extended" Visibility="Hidden" />
+                    <ListBox DisplayMemberPath="ListBoxView" Grid.RowSpan="2" Name="listBox_content" SelectionMode="Extended" Width="{Binding ActualWidth, ElementName=listBox_content_ref}" />
+                    <CheckBox Content="NOT扱い" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Left" Margin="{StaticResource AppMarginL}" Name="checkBox_notContent" Style="{StaticResource AppCheckBoxStyle}" VerticalAlignment="Bottom" />
+                    <Button Content="削除" Grid.Column="1" Grid.Row="1" Margin="{StaticResource AppMarginLT}" Style="{StaticResource AppButtonStyle}" Click="button_content_del_Click" />
+                    <FrameworkElement Grid.Row="2" Margin="{StaticResource AppMarginT}" />
+                    <ComboBox Grid.Row="3" Name="comboBox_content" Style="{StaticResource AppComboBoxStyle}" />
+                    <Button Content="追加" Grid.Column="1" Grid.Row="3" Margin="{StaticResource AppMarginL}" Name="button_content_add" Style="{StaticResource AppButtonStyle}" Click="button_content_add_Click" />
+                    <Popup Name="popup_content_add" PlacementTarget="{Binding ElementName=button_content_add}" StaysOpen="False" Style="{StaticResource AppErrorMessagePopupStyle}">
+                        <ContentControl Template="{StaticResource AppErrorMessagePopupTemplate}" />
+                    </Popup>
+                </Grid>
+                <Label Content="時間絞り込み" Grid.Row="2" Margin="{StaticResource AppMarginTB}" Style="{StaticResource AppLabelStyle}" />
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ListBox Grid.RowSpan="2" HorizontalAlignment="Left" Name="listBox_date_ref" ScrollViewer.VerticalScrollBarVisibility="Visible" SelectionMode="Extended" Visibility="Hidden" />
+                    <ListBox DisplayMemberPath="Item1" Grid.RowSpan="2" Name="listBox_date" SelectionMode="Extended" Width="{Binding ActualWidth, ElementName=listBox_date_ref}" />
+                    <CheckBox Content="NOT扱い" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Left" Margin="{StaticResource AppMarginL}" Name="checkBox_notDate" Style="{StaticResource AppCheckBoxStyle}" VerticalAlignment="Bottom" />
+                    <Button Content="削除" Grid.Column="1" Grid.Row="1" Margin="{StaticResource AppMarginLT}" Style="{StaticResource AppButtonStyle}" Click="button_date_del_Click" />
+                    <StackPanel Grid.ColumnSpan="3" Grid.Row="2" Margin="{StaticResource AppMarginLT}" Orientation="Horizontal">
+                        <RadioButton Content="曜日毎" Name="radioButton_week" Style="{StaticResource AppRadioButtonStyle}" Checked="radioButton_week_Checked" />
+                        <RadioButton Content="期間" Margin="{StaticResource AppWideMarginL}" Style="{StaticResource AppRadioButtonStyle}" Checked="radioButton_time_Checked" />
+                    </StackPanel>
+                </Grid>
+                <ComboBox Grid.Row="4" HorizontalAlignment="Left" Name="comboBox_hms_ref" SelectedIndex="0" Style="{StaticResource AppComboBoxStyle}" Visibility="Hidden">
+                    <ComboBoxItem Content="88" />
+                </ComboBox>
+                <StackPanel Grid.Row="4" Margin="{StaticResource AppMarginLT}" Orientation="Horizontal">
+                    <ComboBox Name="comboBox_time_sw" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_hms_ref}" />
+                    <ComboBox Margin="{StaticResource AppMarginL}" Name="comboBox_time_sh" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_hms_ref}" />
+                    <ComboBox Margin="{StaticResource AppMarginL}" Name="comboBox_time_sm" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_hms_ref}" />
+                </StackPanel>
+                <StackPanel Grid.Row="4" KeyboardNavigation.TabNavigation="Once" Margin="{StaticResource AppMarginLT}" Orientation="Horizontal">
+                    <CheckBox Content="日" Name="checkBox_sun" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="月" Margin="{StaticResource AppMarginL}" Name="checkBox_mon" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="火" Margin="{StaticResource AppMarginL}" Name="checkBox_tue" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="水" Margin="{StaticResource AppMarginL}" Name="checkBox_wed" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="木" Margin="{StaticResource AppMarginL}" Name="checkBox_thu" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="金" Margin="{StaticResource AppMarginL}" Name="checkBox_fri" Style="{StaticResource AppCheckBoxStyle}" />
+                    <CheckBox Content="土" Margin="{StaticResource AppMarginL}" Name="checkBox_sat" Style="{StaticResource AppCheckBoxStyle}" />
+                </StackPanel>
+                <StackPanel Grid.Row="5" Margin="{StaticResource AppMarginLT}" Orientation="Horizontal">
+                    <ComboBox Name="comboBox_week_sh" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_hms_ref}" />
+                    <ComboBox Margin="{StaticResource AppMarginL}" Name="comboBox_week_sm" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_hms_ref}" />
+                    <Label Content="～" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppLabelStyle}" />
+                    <ComboBox Margin="{StaticResource AppMarginL}" Name="comboBox_time_ew" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_hms_ref}" />
+                    <ComboBox Margin="{StaticResource AppMarginL}" Name="comboBox_time_eh" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_hms_ref}" />
+                    <ComboBox Margin="{StaticResource AppMarginL}" Name="comboBox_time_em" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_hms_ref}" />
+                    <Button Content="追加" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppButtonStyle}" Click="button_date_add_Click" />
+                </StackPanel>
+            </Grid>
+            <FrameworkElement Grid.Column="1" Margin="{StaticResource AppIndentMargin}" />
+            <Grid Grid.Column="2" Margin="{StaticResource AppEdgeMarginB}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Label Content="メモ" Height="24" Margin="0,0,2,0" VerticalAlignment="Center" />
-                <TextBox Grid.Column="1" Height="24" Name="textBox_note" VerticalAlignment="Center" />
-            </Grid>
-        </Grid>
-        <Border BorderBrush="#FF8C8E94" BorderThickness="0,0,0,1" HorizontalAlignment="Left" Margin="28,70,0,0" VerticalAlignment="Top">
-            <StackPanel KeyboardNavigation.TabNavigation="Once" Margin="15,0,0,3" Orientation="Horizontal" VerticalAlignment="Top">
-                <CheckBox Content="正規表現モード" Height="16" Margin="0,0,15,0" Name="checkBox_regExp" />
-                <CheckBox Content="あいまい検索モード" Height="16" Margin="0,0,15,0" Name="checkBox_aimai" />
-                <CheckBox Content="番組名のみ検索対象にする" Height="16" Margin="0,0,15,0" Name="checkBox_titleOnly" />
-                <CheckBox Content="大小文字区別" Height="16" Margin="0,0,15,0" Name="checkBox_case" />
-                <CheckBox Content="自動登録を無効にする" Height="16" Margin="0,0,15,0" Name="checkBox_keyDisabled" />
-            </StackPanel>
-        </Border>
-        <Grid Margin="0,90,0,0" MinHeight="250" MinWidth="700">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="320" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Label Content="ジャンル絞り込み" Height="28" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" />
-                <ListBox DisplayMemberPath="ListBoxView" Margin="10,28,90,54" Name="listBox_content" SelectionMode="Extended" />
-                <CheckBox Content="NOT扱い" Height="16" HorizontalAlignment="Right" Margin="0,0,0,82" Name="checkBox_notContent" VerticalAlignment="Bottom" Width="85" />
-                <Button Click="button_content_del_Click" Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,0,25,54" VerticalAlignment="Bottom" Width="60" />
-                <ComboBox Height="23" Margin="10,0,90,28" Name="comboBox_content" VerticalAlignment="Bottom" />
-                <Button Click="button_content_add_Click" Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,0,25,28" VerticalAlignment="Bottom" Width="60" />
-                <Label Content="時間絞り込み" Height="28" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Bottom" />
-                <ListBox DisplayMemberPath="Item1" Grid.Row="1" Margin="10,0,125,82" Name="listBox_date" SelectionMode="Extended" />
-                <CheckBox Content="NOT扱い" Grid.Row="1" Height="16" HorizontalAlignment="Right" Margin="0,0,30,110" Name="checkBox_notDate" VerticalAlignment="Bottom" Width="90" />
-                <Button Click="button_date_del_Click" Content="削除" Grid.Row="1" Height="23" HorizontalAlignment="Right" Margin="0,0,60,82" VerticalAlignment="Bottom" Width="60" />
-                <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="20,0,0,35" Name="comboBox_time_sw" VerticalAlignment="Bottom" Width="44" />
-                <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="67,0,0,35" Name="comboBox_time_sh" VerticalAlignment="Bottom" Width="44" />
-                <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="114,0,0,35" Name="comboBox_time_sm" VerticalAlignment="Bottom" Width="44" />
-                <StackPanel Grid.Row="1" KeyboardNavigation.TabNavigation="Once" Margin="20,0,0,38" Orientation="Horizontal" VerticalAlignment="Bottom">
-                    <CheckBox Content="日" Height="16" Margin="0,0,5,0" Name="checkBox_sun" />
-                    <CheckBox Content="月" Height="16" Margin="0,0,5,0" Name="checkBox_mon" />
-                    <CheckBox Content="火" Height="16" Margin="0,0,5,0" Name="checkBox_tue" />
-                    <CheckBox Content="水" Height="16" Margin="0,0,5,0" Name="checkBox_wed" />
-                    <CheckBox Content="木" Height="16" Margin="0,0,5,0" Name="checkBox_thu" />
-                    <CheckBox Content="金" Height="16" Margin="0,0,5,0" Name="checkBox_fri" />
-                    <CheckBox Content="土" Height="16" Name="checkBox_sat" />
+                <Label Content="サービス絞り込み" Margin="{StaticResource AppMarginB}" Style="{StaticResource AppLabelStyle}" />
+                <ListView Name="listView_service" Grid.Row="1" Grid.ColumnSpan="2" SelectionMode="Single">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn>
+                                <GridViewColumn.Header>
+                                    <GridViewColumnHeader Content="" />
+                                </GridViewColumn.Header>
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Path=IsSelected}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
+                                <GridViewColumn.Header>
+                                    <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}" Width="{StaticResource AppSearchServiceNameColumnWidth}">
+                                <GridViewColumn.Header>
+                                    <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <StackPanel Grid.Row="2" Margin="{StaticResource AppWideMarginT}" Orientation="Horizontal">
+                    <Label Content="スクランブル放送" Style="{StaticResource AppTermLabelStyle}" />
+                    <ComboBox Name="comboBox_free" SelectedIndex="0" Style="{StaticResource AppComboBoxStyle}">
+                        <ComboBoxItem Content="無料、有料番組を対象とする" />
+                        <ComboBoxItem Content="無料番組のみ対象とする" />
+                        <ComboBoxItem Content="有料番組のみ対象とする" />
+                    </ComboBox>
                 </StackPanel>
-                <Label Content="～" Grid.Row="1" Height="28" HorizontalAlignment="Left" Margin="64,0,0,5" Name="comboBox_time_dash" VerticalAlignment="Bottom" />
-                <Label Content="～" Grid.Row="1" Height="28" HorizontalAlignment="Left" Margin="111,0,0,4" Name="comboBox_week_dash" VerticalAlignment="Bottom" />
-                <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="92,0,0,7" Name="comboBox_time_ew" VerticalAlignment="Bottom" Width="44" />
-                <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="20,0,0,7" Name="comboBox_week_sh" VerticalAlignment="Bottom" Width="44" />
-                <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="67,0,0,7" Name="comboBox_week_sm" VerticalAlignment="Bottom" Width="44" />
-                <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="139,0,0,7" Name="comboBox_time_eh" VerticalAlignment="Bottom" Width="44" />
-                <ComboBox Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="186,0,0,7" Name="comboBox_time_em" VerticalAlignment="Bottom" Width="44" />
-                <StackPanel Grid.Row="1" Margin="20,0,0,61" Orientation="Horizontal" VerticalAlignment="Bottom">
-                    <RadioButton Checked="radioButton_week_Checked" Content="曜日毎" Height="16" Margin="0,0,15,0" Name="radioButton_week" />
-                    <RadioButton Checked="radioButton_time_Checked" Content="期間" Height="16" />
+                <StackPanel Grid.Row="3" Margin="{StaticResource AppMarginT}" Orientation="Horizontal">
+                    <Label Content="番組長" Style="{StaticResource AppTermLabelStyle}" />
+                    <TextBox InputMethod.IsInputMethodEnabled="False" Name="textBox_chkDurationMin" Style="{StaticResource AppNarrowTextBoxStyle}" Text="0" />
+                    <Label Content="分以上" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppLabelStyle}" />
+                    <TextBox InputMethod.IsInputMethodEnabled="False" Margin="{StaticResource AppMarginL}" Name="textBox_chkDurationMax" Style="{StaticResource AppNarrowTextBoxStyle}" Text="0" />
+                    <Label Content="分以下(0で無制限)" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppLabelStyle}" />
                 </StackPanel>
-                <Button Click="button_date_add_Click" Content="追加" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="235,0,0,7" VerticalAlignment="Bottom" Width="60" />
-            </Grid>
-            <Label Content="サービス絞り込み" Grid.Column="1" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top" />
-            <ListView Name="listView_service" Grid.Column="1" Margin="0,28,105,168" SelectionMode="Single">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn>
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="" />
-                            </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <CheckBox IsChecked="{Binding Path=IsSelected}" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left" />
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}" Width="140">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" />
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-            <StackPanel Grid.Column="1" HorizontalAlignment="Left" Margin="0,0,0,133" Orientation="Horizontal" VerticalAlignment="Bottom">
-                <Label Content="スクランブル放送" Height="28" Margin="0,0,5,0" VerticalAlignment="Center" />
-                <ComboBox Name="comboBox_free" Height="23" SelectedIndex="0" VerticalAlignment="Center">
-                    <ComboBoxItem Content="無料、有料番組を対象とする" />
-                    <ComboBoxItem Content="無料番組のみ対象とする" />
-                    <ComboBoxItem Content="有料番組のみ対象とする" />
-                </ComboBox>
-            </StackPanel>
-            <StackPanel Grid.Column="1" HorizontalAlignment="Left" Margin="0,0,0,103" Orientation="Horizontal" VerticalAlignment="Bottom">
-                <Label Content="番組長" Height="28" Margin="0,0,5,0" VerticalAlignment="Center" />
-                <TextBox Height="24" InputMethod.IsInputMethodEnabled="False" Name="textBox_chkDurationMin" Text="0" VerticalAlignment="Center" Width="40" />
-                <Label Content="分以上" Height="28" VerticalAlignment="Center" />
-                <TextBox Height="24" InputMethod.IsInputMethodEnabled="False" Name="textBox_chkDurationMax" Text="0" VerticalAlignment="Center" Width="40" />
-                <Label Content="分以下(0で無制限)" Height="28" VerticalAlignment="Center" />
-            </StackPanel>
-            <GroupBox Grid.Column="1" Header="自動予約登録専用" Height="95" HorizontalAlignment="Left" Margin="0,0,0,5" VerticalAlignment="Bottom">
-                <Grid Margin="6,6,6,0">
-                    <CheckBox Content="同一番組名の録画結果があれば無効で登録する" Height="16" HorizontalAlignment="Left" Name="checkBox_chkRecEnd" VerticalAlignment="Top" />
-                    <StackPanel HorizontalAlignment="Left" Margin="16,18,0,0" Orientation="Horizontal" VerticalAlignment="Top">
-                        <Label Content="確認対象期間" Height="28" Margin="0,0,10,0" VerticalAlignment="Center" />
-                        <TextBox Height="24" InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Name="textBox_chkRecDay" Text="0" VerticalAlignment="Center" Width="40" />
-                        <Label Content="日前まで" Height="28" VerticalAlignment="Center" />
+                <GroupBox Grid.Row="4" Header="自動予約登録専用" Margin="{StaticResource AppMarginT}">
+                    <StackPanel Margin="{StaticResource AppMargin}">
+                        <CheckBox Content="同一番組名の録画結果があれば無効で登録する" HorizontalAlignment="Left" Name="checkBox_chkRecEnd" Style="{StaticResource AppCheckBoxStyle}" />
+                        <StackPanel Margin="{StaticResource AppIndentMargin}">
+                            <StackPanel Margin="{StaticResource AppMarginT}" Orientation="Horizontal">
+                                <Label Content="確認対象期間" Style="{StaticResource AppTermLabelStyle}" />
+                                <TextBox InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Name="textBox_chkRecDay" Style="{StaticResource AppNarrowTextBoxStyle}" Text="0" />
+                                <Label Content="日前まで" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppLabelStyle}" />
+                            </StackPanel>
+                            <CheckBox Content="全てのサービスで無効にする" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppMarginT}" Name="checkBox_chkRecNoService" Style="{StaticResource AppCheckBoxStyle}" />
+                        </StackPanel>
                     </StackPanel>
-                    <CheckBox Content="全てのサービスで無効にする" Height="16" HorizontalAlignment="Left" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Margin="16,48,0,0" Name="checkBox_chkRecNoService" VerticalAlignment="Top" />
-                </Grid>
-            </GroupBox>
-            <Button Click="button_all_on_Click" Content="全チェック" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,28,10,0" VerticalAlignment="Top" Width="90" />
-            <Button Click="button_video_on_Click" Content="映像のみ" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,54,10,0" VerticalAlignment="Top" Width="90" />
-            <Button Click="button_all_off_Click" Content="クリア" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,80,10,0" VerticalAlignment="Top" Width="90" />
-            <Button Click="button_dttv_on_Click" Content="+地デジ映像" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,106,10,0" VerticalAlignment="Top" Width="90" />
-            <Button Click="button_bs_on_Click" Content="+BS映像" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,132,10,0" VerticalAlignment="Top" Width="90" />
-            <Button Click="button_cs_on_Click" Content="+CS映像" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,158,10,0" VerticalAlignment="Top" Width="90" />
-            <Button Click="button_cs3_on_Click" Content="+CS3映像" Grid.Column="1" Height="23" HorizontalAlignment="Right" Margin="0,184,10,0" Name="button_cs3" VerticalAlignment="Top" Visibility="Hidden" Width="90" />
+                </GroupBox>
+                <StackPanel Grid.Column="2" Grid.Row="1" Grid.RowSpan="5" Margin="{StaticResource AppMarginL}">
+                    <Button Content="全チェック" Style="{StaticResource AppButtonStyle}" Click="button_all_on_Click" />
+                    <Button Content="映像のみ" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppButtonStyle}" Click="button_video_on_Click" />
+                    <Button Content="クリア" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppButtonStyle}" Click="button_all_off_Click" />
+                    <Button Content="+地デジ映像" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppButtonStyle}" Click="button_dttv_on_Click" />
+                    <Button Content="+BS映像" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppButtonStyle}" Click="button_bs_on_Click" />
+                    <Button Content="+CS映像" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppButtonStyle}" Click="button_cs_on_Click" />
+                    <Button Content="+CS3映像" Margin="{StaticResource AppMarginT}" Name="button_cs3" Style="{StaticResource AppButtonStyle}" Visibility="Hidden" Click="button_cs3_on_Click" />
+                </StackPanel>
+            </Grid>
         </Grid>
-    </Grid>
+    </DockPanel>
 </UserControl>

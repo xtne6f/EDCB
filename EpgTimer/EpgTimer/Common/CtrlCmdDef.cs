@@ -1179,6 +1179,67 @@ namespace EpgTimer
         }
     }
 
+    /// <summary>起動中のチューナー情報</summary>
+    public class TunerProcessStatusInfo : ICtrlCmdReadWrite
+    {
+        public uint tunerID;
+        public int processID;
+        public long drop;
+        public long scramble;
+        public float signalLv;
+        /// <summary>チューナ空間、または不明(-1)</summary>
+        public int space;
+        /// <summary>物理チャンネル、または不明(-1)</summary>
+        public int ch;
+        /// <summary>ネットワークID、または不明(-1)</summary>
+        public int originalNetworkID;
+        /// <summary>TSID、または不明(-1)</summary>
+        public int transportStreamID;
+        /// <summary>録画中かどうか</summary>
+        public byte recFlag;
+        /// <summary>EPGデータ取得中かどうか</summary>
+        public byte epgCapFlag;
+        /// <summary>将来用</summary>
+        private ushort extraFlags;
+
+        public void Write(MemoryStream s, ushort version)
+        {
+            var w = new CtrlCmdWriter(s, version);
+            w.Begin();
+            w.Write(tunerID);
+            w.Write(processID);
+            w.Write(drop);
+            w.Write(scramble);
+            w.Write(signalLv);
+            w.Write(space);
+            w.Write(ch);
+            w.Write(originalNetworkID);
+            w.Write(transportStreamID);
+            w.Write(recFlag);
+            w.Write(epgCapFlag);
+            w.Write(extraFlags);
+            w.End();
+        }
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref tunerID);
+            r.Read(ref processID);
+            r.Read(ref drop);
+            r.Read(ref scramble);
+            r.Read(ref signalLv);
+            r.Read(ref space);
+            r.Read(ref ch);
+            r.Read(ref originalNetworkID);
+            r.Read(ref transportStreamID);
+            r.Read(ref recFlag);
+            r.Read(ref epgCapFlag);
+            r.Read(ref extraFlags);
+            r.End();
+        }
+    }
+
     /// <summary>チャンネル・NetworkTVモード変更情報</summary>
     public class SetChInfo : ICtrlCmdReadWrite
     {

@@ -13,6 +13,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 
 namespace EpgTimer
@@ -32,6 +33,10 @@ namespace EpgTimer
         {
             InitializeComponent();
 
+            var style = (Style)listView_recinfo.FindResource("itemStyle");
+            style.BasedOn = listView_recinfo.ItemContainerStyle;
+            listView_recinfo.ItemContainerStyle = style;
+
             columnList = gridView_recinfo.Columns.ToDictionary(info => (string)((GridViewColumnHeader)info.Header).Tag);
             gridView_recinfo.Columns.Clear();
             foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
@@ -47,6 +52,11 @@ namespace EpgTimer
                 stackPanel_button.Visibility = Visibility.Collapsed;
             }
             listView_recinfo.AlternationCount = Settings.Instance.RecEndAlternationCount;
+            if (Settings.ContextMenuResourceDictionary != null)
+            {
+                listView_recinfo.ContextMenu.Resources.MergedDictionaries.Add(Settings.ContextMenuResourceDictionary);
+                ((ContextMenu)FindResource("itemMenu")).Resources.MergedDictionaries.Add(Settings.ContextMenuResourceDictionary);
+            }
         }
 
         public void SaveSize()
@@ -73,7 +83,7 @@ namespace EpgTimer
                             return;
                         }
                     }
-                    List<UInt32> IDList = new List<uint>();
+                    List<uint> IDList = new List<uint>();
                     foreach (RecInfoItem info in listView_recinfo.SelectedItems)
                     {
                         IDList.Add(info.RecInfo.ID);
@@ -150,7 +160,8 @@ namespace EpgTimer
                 listView_recinfo.ItemsSource = null;
                 return false;
             }
-            listView_recinfo.ItemsSource = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info)).ToList();
+            var dict = CommonManager.CreateReplaceDictionary(Settings.Instance.FilePathReplacePattern);
+            listView_recinfo.ItemsSource = CommonManager.Instance.DB.RecFileInfo.Values.Select(info => new RecInfoItem(info, dict)).ToList();
 
             if (columnList.ContainsKey(Settings.Instance.RecInfoColumnHead) == false)
             {
@@ -179,12 +190,22 @@ namespace EpgTimer
         {
             if (Settings.Instance.PlayDClick)
             {
-                button_play_Click(sender, e);
+                if (listView_recinfo.SelectedItem != null)
+                {
+                    var item = (RecInfoItem)listView_recinfo.SelectedItem;
+                    string errorMessage = CommonManager.Instance.FilePlay(item.RecFilePath);
+                    if (errorMessage != null && item.RecFilePath.Length > 0)
+                    {
+                        // ポップアップはすぐ閉じてしまうため
+                        MessageBox.Show(errorMessage);
+                    }
+                }
             }
             else
             {
                 button_recInfo_Click(sender, e);
             }
+            e.Handled = true;
         }
 
         private void listView_recinfo_KeyDown(object sender, KeyEventArgs e)
@@ -196,7 +217,7 @@ namespace EpgTimer
                     case Key.P:
                         if (e.IsRepeat == false)
                         {
-                            button_play.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            button_play_Click(sender, e);
                         }
                         e.Handled = true;
                         break;
@@ -229,10 +250,13 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecFileInfo info = ((RecInfoItem)listView_recinfo.SelectedItem).RecInfo;
-                if (info.RecFilePath.Length > 0)
+                var item = (RecInfoItem)listView_recinfo.SelectedItem;
+                string errorMessage = CommonManager.Instance.FilePlay(item.RecFilePath);
+                if (errorMessage != null)
                 {
-                    CommonManager.Instance.FilePlay(info.RecFilePath);
+                    popup_error.DataContext = errorMessage;
+                    popup_error.PlacementTarget = sender as Button ?? listView_recinfo.ItemContainerGenerator.ContainerFromItem(item) as UIElement ?? listView_recinfo;
+                    popup_error.IsOpen = true;
                 }
             }
         }
@@ -241,18 +265,16 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-
                 RecInfoItem item = listView_recinfo.SelectedItem as RecInfoItem;
 
+                SearchWindow search = ((MainWindow)Application.Current.MainWindow).CreateSearchWindow();
+
+                var key = new EpgSearchKeyInfo();
                 key.andKey = item.RecInfo.Title;
                 key.serviceList.Add((long)CommonManager.Create64Key(item.RecInfo.OriginalNetworkID, item.RecInfo.TransportStreamID, item.RecInfo.ServiceID));
 
-                dlg.SetSearchDefKey(key);
-                dlg.ShowDialog();
+                search.SetSearchDefKey(key);
+                search.Show();
             }
         }
 
@@ -267,42 +289,55 @@ namespace EpgTimer
             }
         }
 
+        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            popup_error.IsOpen = false;
+        }
+
         private void button_recInfo_Click(object sender, RoutedEventArgs e)
         {
             if (listView_recinfo.SelectedItem != null)
             {
                 RecFileInfo info = ((RecInfoItem)listView_recinfo.SelectedItem).RecInfo;
-                RecInfoDescWindow dlg = new RecInfoDescWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                var win = new RecInfoDescWindow();
+                ((MainWindow)Application.Current.MainWindow).SwapOwnedReserveWindow(win);
                 RecFileInfo extraRecInfo = new RecFileInfo();
                 if (CommonManager.CreateSrvCtrl().SendGetRecInfo(info.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
                 {
                     info.ProgramInfo = extraRecInfo.ProgramInfo;
                     info.ErrInfo = extraRecInfo.ErrInfo;
                 }
-                dlg.SetRecInfo(info);
-                dlg.ShowDialog();
+                win.SetRecInfo(info);
+                win.Show();
             }
         }
 
         private void openFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (listView_recinfo.SelectedItem != null && CommonManager.Instance.NWMode == false)
+            if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
-                if (info.RecFilePath.Length > 0)
+                string folderPath = "";
+                var item = (RecInfoItem)listView_recinfo.SelectedItem;
+                if (item.RecFilePath.Length > 0)
                 {
+                    string filePath =
+                        CommonManager.ReplaceText(item.RecFilePath, CommonManager.CreateReplaceDictionary(Settings.Instance.FilePathReplacePattern));
                     try
                     {
-                        if (System.IO.File.Exists(info.RecFilePath))
+                        string explorer = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+                        if (System.IO.File.Exists(filePath))
                         {
-                            using (System.Diagnostics.Process.Start("EXPLORER.EXE", "/select,\"" + info.RecFilePath + "\"")) { }
+                            using (Process.Start(new ProcessStartInfo(explorer, "/select,\"" + filePath + "\"") { UseShellExecute = false })) { }
                             return;
                         }
-                        string folderPath = System.IO.Path.GetDirectoryName(info.RecFilePath);
+                        try
+                        {
+                            folderPath = System.IO.Path.GetDirectoryName(filePath);
+                        }
+                        catch { }
                         if (System.IO.Directory.Exists(folderPath))
                         {
-                            using (System.Diagnostics.Process.Start("EXPLORER.EXE", "\"" + folderPath + "\"")) { }
+                            using (Process.Start(new ProcessStartInfo(explorer, "\"" + folderPath + "\"") { UseShellExecute = false })) { }
                             return;
                         }
                     }
@@ -312,7 +347,9 @@ namespace EpgTimer
                         return;
                     }
                 }
-                MessageBox.Show("録画フォルダが存在しません");
+                popup_error.DataContext = "録画フォルダ" + (folderPath.Length > 0 ? " \"" + folderPath + "\" " : "") + "が存在しません";
+                popup_error.PlacementTarget = sender as Button ?? listView_recinfo.ItemContainerGenerator.ContainerFromItem(item) as UIElement ?? listView_recinfo;
+                popup_error.IsOpen = true;
             }
         }
 
@@ -344,7 +381,7 @@ namespace EpgTimer
                 if (menuItem.IsChecked == true)
                 {
 
-                    Settings.Instance.RecInfoListColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
+                    Settings.Instance.RecInfoListColumn.Add(new ListColumnInfo(menuItem.Name, double.NaN));
                     gridView_recinfo.Columns.Add(columnList[menuItem.Name]);
                 }
                 else

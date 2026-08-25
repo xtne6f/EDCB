@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Media;
 using System.IO;
+using System.Diagnostics;
 
 namespace EpgTimer
 {
@@ -13,7 +16,7 @@ namespace EpgTimer
     {
         public DBManager DB { get; private set; }
         public TVTestCtrlClass TVTestCtrl { get; private set; }
-        public System.Diagnostics.Process SrvSettingProcess { get; set; }
+        public Process SrvSettingProcess { get; set; }
         public IDictionary<ushort, string> ContentKindDictionary { get; private set; }
         public IEnumerable<ushort> ContentKindList
         {
@@ -249,86 +252,85 @@ namespace EpgTimer
                 { 0xFFFF, "なし" }
             };
 
+            ComponentKindDictionary = new SortedList<ushort, string>(75)
             {
-                ComponentKindDictionary = new SortedList<ushort, string>(75)
-                {
-                    { 0x0101, "480i(525i)、アスペクト比4:3" },
-                    { 0x0102, "480i(525i)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x0103, "480i(525i)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x0104, "480i(525i)、アスペクト比 > 16:9" },
-                    { 0x0191, "2160p、アスペクト比4:3" },
-                    { 0x0192, "2160p、アスペクト比16:9 パンベクトルあり" },
-                    { 0x0193, "2160p、アスペクト比16:9 パンベクトルなし" },
-                    { 0x0194, "2160p、アスペクト比 > 16:9" },
-                    { 0x01A1, "480p(525p)、アスペクト比4:3" },
-                    { 0x01A2, "480p(525p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x01A3, "480p(525p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x01A4, "480p(525p)、アスペクト比 > 16:9" },
-                    { 0x01B1, "1080i(1125i)、アスペクト比4:3" },
-                    { 0x01B2, "1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x01B3, "1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x01B4, "1080i(1125i)、アスペクト比 > 16:9" },
-                    { 0x01C1, "720p(750p)、アスペクト比4:3" },
-                    { 0x01C2, "720p(750p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x01C3, "720p(750p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x01C4, "720p(750p)、アスペクト比 > 16:9" },
-                    { 0x01D1, "240p アスペクト比4:3" },
-                    { 0x01D2, "240p アスペクト比16:9 パンベクトルあり" },
-                    { 0x01D3, "240p アスペクト比16:9 パンベクトルなし" },
-                    { 0x01D4, "240p アスペクト比 > 16:9" },
-                    { 0x01E1, "1080p(1125p)、アスペクト比4:3" },
-                    { 0x01E2, "1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x01E3, "1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x01E4, "1080p(1125p)、アスペクト比 > 16:9" },
-                    { 0x0201, "1/0モード（シングルモノ）" },
-                    { 0x0202, "1/0＋1/0モード（デュアルモノ）" },
-                    { 0x0203, "2/0モード（ステレオ）" },
-                    { 0x0204, "2/1モード" },
-                    { 0x0205, "3/0モード" },
-                    { 0x0206, "2/2モード" },
-                    { 0x0207, "3/1モード" },
-                    { 0x0208, "3/2モード" },
-                    { 0x0209, "3/2＋LFEモード（3/2.1モード）" },
-                    { 0x020A, "3/3.1モード" },
-                    { 0x020B, "2/0/0-2/0/2-0.1モード" },
-                    { 0x020C, "5/2.1モード" },
-                    { 0x020D, "3/2/2.1モード" },
-                    { 0x020E, "2/0/0-3/0/2-0.1モード" },
-                    { 0x020F, "0/2/0-3/0/2-0.1モード" },
-                    { 0x0210, "2/0/0-3/2/3-0.2モード" },
-                    { 0x0211, "3/3/3-5/2/3-3/0/0.2モード" },
-                    { 0x0240, "視覚障害者用音声解説" },
-                    { 0x0241, "聴覚障害者用音声" },
-                    { 0x0501, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比4:3" },
-                    { 0x0502, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x0503, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x0504, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比 > 16:9" },
-                    { 0x0591, "H.264|MPEG-4 AVC、2160p、アスペクト比4:3" },
-                    { 0x0592, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルあり" },
-                    { 0x0593, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルなし" },
-                    { 0x0594, "H.264|MPEG-4 AVC、2160p、アスペクト比 > 16:9" },
-                    { 0x05A1, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比4:3" },
-                    { 0x05A2, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x05A3, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x05A4, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比 > 16:9" },
-                    { 0x05B1, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比4:3" },
-                    { 0x05B2, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x05B3, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x05B4, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比 > 16:9" },
-                    { 0x05C1, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比4:3" },
-                    { 0x05C2, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x05C3, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x05C4, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比 > 16:9" },
-                    { 0x05D1, "H.264|MPEG-4 AVC、240p アスペクト比4:3" },
-                    { 0x05D2, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルあり" },
-                    { 0x05D3, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルなし" },
-                    { 0x05D4, "H.264|MPEG-4 AVC、240p アスペクト比 > 16:9" },
-                    { 0x05E1, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比4:3" },
-                    { 0x05E2, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x05E3, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
-                };
-            }
+                { 0x0101, "480i(525i)、アスペクト比4:3" },
+                { 0x0102, "480i(525i)、アスペクト比16:9 パンベクトルあり" },
+                { 0x0103, "480i(525i)、アスペクト比16:9 パンベクトルなし" },
+                { 0x0104, "480i(525i)、アスペクト比 > 16:9" },
+                { 0x0191, "2160p、アスペクト比4:3" },
+                { 0x0192, "2160p、アスペクト比16:9 パンベクトルあり" },
+                { 0x0193, "2160p、アスペクト比16:9 パンベクトルなし" },
+                { 0x0194, "2160p、アスペクト比 > 16:9" },
+                { 0x01A1, "480p(525p)、アスペクト比4:3" },
+                { 0x01A2, "480p(525p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x01A3, "480p(525p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x01A4, "480p(525p)、アスペクト比 > 16:9" },
+                { 0x01B1, "1080i(1125i)、アスペクト比4:3" },
+                { 0x01B2, "1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
+                { 0x01B3, "1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
+                { 0x01B4, "1080i(1125i)、アスペクト比 > 16:9" },
+                { 0x01C1, "720p(750p)、アスペクト比4:3" },
+                { 0x01C2, "720p(750p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x01C3, "720p(750p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x01C4, "720p(750p)、アスペクト比 > 16:9" },
+                { 0x01D1, "240p アスペクト比4:3" },
+                { 0x01D2, "240p アスペクト比16:9 パンベクトルあり" },
+                { 0x01D3, "240p アスペクト比16:9 パンベクトルなし" },
+                { 0x01D4, "240p アスペクト比 > 16:9" },
+                { 0x01E1, "1080p(1125p)、アスペクト比4:3" },
+                { 0x01E2, "1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x01E3, "1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x01E4, "1080p(1125p)、アスペクト比 > 16:9" },
+                { 0x0201, "1/0モード（シングルモノ）" },
+                { 0x0202, "1/0＋1/0モード（デュアルモノ）" },
+                { 0x0203, "2/0モード（ステレオ）" },
+                { 0x0204, "2/1モード" },
+                { 0x0205, "3/0モード" },
+                { 0x0206, "2/2モード" },
+                { 0x0207, "3/1モード" },
+                { 0x0208, "3/2モード" },
+                { 0x0209, "3/2＋LFEモード（3/2.1モード）" },
+                { 0x020A, "3/3.1モード" },
+                { 0x020B, "2/0/0-2/0/2-0.1モード" },
+                { 0x020C, "5/2.1モード" },
+                { 0x020D, "3/2/2.1モード" },
+                { 0x020E, "2/0/0-3/0/2-0.1モード" },
+                { 0x020F, "0/2/0-3/0/2-0.1モード" },
+                { 0x0210, "2/0/0-3/2/3-0.2モード" },
+                { 0x0211, "3/3/3-5/2/3-3/0/0.2モード" },
+                { 0x0240, "視覚障害者用音声解説" },
+                { 0x0241, "聴覚障害者用音声" },
+                { 0x0501, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比4:3" },
+                { 0x0502, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルあり" },
+                { 0x0503, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルなし" },
+                { 0x0504, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比 > 16:9" },
+                { 0x0591, "H.264|MPEG-4 AVC、2160p、アスペクト比4:3" },
+                { 0x0592, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルあり" },
+                { 0x0593, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルなし" },
+                { 0x0594, "H.264|MPEG-4 AVC、2160p、アスペクト比 > 16:9" },
+                { 0x05A1, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比4:3" },
+                { 0x05A2, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x05A3, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x05A4, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比 > 16:9" },
+                { 0x05B1, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比4:3" },
+                { 0x05B2, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
+                { 0x05B3, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
+                { 0x05B4, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比 > 16:9" },
+                { 0x05C1, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比4:3" },
+                { 0x05C2, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x05C3, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x05C4, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比 > 16:9" },
+                { 0x05D1, "H.264|MPEG-4 AVC、240p アスペクト比4:3" },
+                { 0x05D2, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルあり" },
+                { 0x05D3, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルなし" },
+                { 0x05D4, "H.264|MPEG-4 AVC、240p アスペクト比 > 16:9" },
+                { 0x05E1, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比4:3" },
+                { 0x05E2, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x05E3, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
+            };
+
             RecModeList = new string[] { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴" };
             NWMode = false;
             NotifyLogList = new List<NotifySrvInfo>();
@@ -349,16 +351,14 @@ namespace EpgTimer
             return cmd;
         }
 
-        public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
+        public static ulong Create64Key(ushort ONID, ushort TSID, ushort SID)
         {
-            UInt64 key = ((UInt64)ONID) << 32 | ((UInt64)TSID) << 16 | (UInt64)SID;
-            return key;
+            return ((ulong)ONID) << 32 | ((ulong)TSID) << 16 | (ulong)SID;
         }
 
-        public static UInt64 Create64PgKey(UInt16 ONID, UInt16 TSID, UInt16 SID, UInt16 EventID)
+        public static ulong Create64PgKey(ushort ONID, ushort TSID, ushort SID, ushort EventID)
         {
-            UInt64 key = ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
-            return key;
+            return ((ulong)ONID) << 48 | ((ulong)TSID) << 32 | ((ulong)SID) << 16 | (ulong)EventID;
         }
 
         public static Dictionary<char, List<KeyValuePair<string, string>>> CreateReplaceDictionary(string pattern)
@@ -465,14 +465,26 @@ namespace EpgTimer
                 _time = timeFlag ? time : DateTime.MinValue;
                 _durationSec = durationFlag ? durationSec : double.MinValue;
             }
+            public string Format(bool forProgramText)
+            {
+                if (_time == DateTime.MinValue)
+                {
+                    return "未定";
+                }
+                string endText = double.IsNaN(_durationSec) ? "" : _durationSec == double.MinValue ? " ～ 未定" : null;
+                if (endText == null)
+                {
+                    DateTime endTime = _time.AddSeconds(_durationSec);
+                    //秒が0でない場合は秒を付加
+                    endText = endTime.ToString((forProgramText ? "～" : " ～ ") + "HH\\:mm" + (endTime.Second != 0 ? "\\:ss" : ""),
+                                               forProgramText ? CultureInfo.InvariantCulture : null);
+                }
+                return _time.ToString("yyyy\\/MM\\/dd(" + (forProgramText ? "" + "日月火水木金土"[(int)_time.DayOfWeek] : "ddd") + ") HH\\:mm" + (_time.Second != 0 ? "\\:ss" : ""),
+                                      forProgramText ? CultureInfo.InvariantCulture : null) + endText;
+            }
             public override string ToString()
             {
-                if (_time != DateTime.MinValue)
-                {
-                    return _time.ToString("yyyy\\/MM\\/dd(ddd) HH\\:mm\\:ss") + (double.IsNaN(_durationSec) ? "" :
-                           _durationSec != double.MinValue ? _time.AddSeconds(_durationSec).ToString(" ～ HH\\:mm\\:ss") : " ～ 未定");
-                }
-                return "未定";
+                return Format(false);
             }
             public int CompareTo(TimeDuration other)
             {
@@ -486,9 +498,9 @@ namespace EpgTimer
             private double _durationSec;
         }
 
-        public String ConvertReserveText(ReserveData reserveInfo)
+        public string ConvertReserveText(ReserveData reserveInfo)
         {
-            String view = new TimeDuration(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
+            string view = new TimeDuration(true, reserveInfo.StartTime, true, reserveInfo.DurationSecond) + "\r\n";
             view += reserveInfo.StationName;
             view += " (" + ConvertNetworkNameText(reserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
@@ -604,49 +616,70 @@ namespace EpgTimer
         public static string ConvertProgramText(EpgEventInfo eventInfo, EventInfoTextMode textMode)
         {
             string retText = "";
-            if (textMode == EventInfoTextMode.BasicInfo)
+            if (textMode == EventInfoTextMode.BasicInfo || textMode == EventInfoTextMode.BasicInfoForProgramText)
             {
-                string basicInfo = "";
-                UInt64 key = Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
+                if (textMode == EventInfoTextMode.BasicInfoForProgramText)
+                {
+                    //EpgTimerSrvの番組情報の形式では先頭行が時刻になる
+                    retText += new TimeDuration(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
+                                                eventInfo.DurationFlag != 0, eventInfo.durationSec).Format(true) + "\r\n";
+                }
+                ulong key = Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
                 if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                 {
-                    basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
+                    retText += ChSet5.Instance.ChList[key].ServiceName +
+                               (textMode == EventInfoTextMode.BasicInfo ? "(" + ChSet5.Instance.ChList[key].NetworkName + ")" : "");
                 }
-                basicInfo += new TimeDuration(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
-                                              eventInfo.DurationFlag != 0, eventInfo.durationSec) + "\r\n";
-                if (eventInfo.ShortInfo != null)
+                retText += "\r\n";
+                if (textMode == EventInfoTextMode.BasicInfo)
                 {
-                    basicInfo += eventInfo.ShortInfo.event_name + "\r\n\r\n";
+                    retText += new TimeDuration(eventInfo.StartTimeFlag != 0, eventInfo.start_time,
+                                                eventInfo.DurationFlag != 0, eventInfo.durationSec) + "\r\n";
                 }
-                retText = basicInfo;
+                string eventName = (eventInfo.ShortInfo != null ? eventInfo.ShortInfo.event_name : "") + "\r\n\r\n";
+                if (textMode == EventInfoTextMode.BasicInfoForProgramText)
+                {
+                    //空行を防ぐ
+                    eventName = Regex.Replace(Regex.Replace(eventName, @"^(?:\r\n)+", "") + "\r\n", @"(?:\r\n){2,}", "\r\n") + "\r\n";
+                }
+                retText += eventName;
             }
-            else if (textMode == EventInfoTextMode.BasicText)
+            else if (textMode == EventInfoTextMode.BasicText || textMode == EventInfoTextMode.BasicTextForProgramText)
             {
-                if (eventInfo.ShortInfo != null)
+                retText = (eventInfo.ShortInfo != null ? eventInfo.ShortInfo.text_char : "") + "\r\n\r\n";
+                if (textMode == EventInfoTextMode.BasicTextForProgramText)
                 {
-                    retText = eventInfo.ShortInfo.text_char + "\r\n\r\n";
+                    //空行を防ぐ
+                    retText = Regex.Replace(Regex.Replace(retText, @"^(?:\r\n)+", "") + "\r\n", @"(?:\r\n){2,}", "\r\n") + "\r\n";
                 }
             }
-            else if (textMode == EventInfoTextMode.ExtendedText)
+            else if (textMode == EventInfoTextMode.ExtendedText || textMode == EventInfoTextMode.ExtendedTextForProgramText)
             {
                 if (eventInfo.ExtInfo != null)
                 {
                     retText = eventInfo.ExtInfo.text_char + "\r\n\r\n";
+                    if (textMode == EventInfoTextMode.ExtendedTextForProgramText)
+                    {
+                        //空行2行を防ぐ
+                        retText = "詳細情報\r\n" + Regex.Replace(Regex.Replace(retText, @"^(?:\r\n)+", "") + "\r\n\r\n", @"(?:\r\n){3,}", "\r\n\r\n") + "\r\n";
+                    }
                 }
             }
             else if (textMode == EventInfoTextMode.PropertyInfo)
             {
-                //ジャンル
-                string extInfo = "ジャンル :\r\n";
+                //EpgTimerSrvの番組情報と同じ形式
+                string extInfo = "";
                 if (eventInfo.ContentInfo != null)
                 {
+                    extInfo += "ジャンル : \r\n";
                     foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                     {
-                        String content = "";
+                        string content = "";
                         int nibble1 = info.content_nibble_level_1;
                         int nibble2 = info.content_nibble_level_2;
                         if (nibble1 == 0x0E && nibble2 <= 0x01)
                         {
+                            //番組付属情報またはCS拡張用情報
                             nibble1 = info.user_nibble_1 | (0x60 + nibble2 * 16);
                             nibble2 = info.user_nibble_2;
                         }
@@ -654,63 +687,59 @@ namespace EpgTimer
                         if (Instance.ContentKindDictionary.TryGetValue((ushort)(nibble1 << 8 | 0xFF), out name))
                         {
                             content += name;
+                            if (Instance.ContentKindDictionary.TryGetValue((ushort)(nibble1 << 8 | nibble2), out name))
+                            {
+                                content += " - " + name;
+                            }
+                            else if (nibble1 != 0x0F)
+                            {
+                                content += " - (0x" + nibble2.ToString("X2") + ")";
+                            }
                         }
                         else
                         {
-                            content += "(0x" + nibble1.ToString("X2") + ")";
-                        }
-                        if (Instance.ContentKindDictionary.TryGetValue((ushort)(nibble1 << 8 | nibble2), out name))
-                        {
-                            content += " - " + name;
-                        }
-                        else if (nibble1 != 0x0F)
-                        {
-                            content += " - (0x" + nibble2.ToString("X2") + ")";
+                            content += "(0x" + nibble1.ToString("X2") + ") - (0x" + nibble2.ToString("X2") + ")";
                         }
                         extInfo += content + "\r\n";
                     }
+                    extInfo += "\r\n";
                 }
-                extInfo += "\r\n";
 
-                //映像
-                extInfo += "映像 :";
                 if (eventInfo.ComponentInfo != null)
                 {
+                    extInfo += "映像 : ";
                     int streamContent = eventInfo.ComponentInfo.stream_content;
                     int componentType = eventInfo.ComponentInfo.component_type;
                     string name;
-                    if (Instance.ComponentKindDictionary.TryGetValue((ushort)(streamContent << 8 | componentType), out name))
+                    extInfo += Instance.ComponentKindDictionary.TryGetValue((ushort)(streamContent << 8 | componentType), out name) ? name :
+                                   "(0x" + streamContent.ToString("X2") + ",0x" + componentType.ToString("X2") + ")";
+                    extInfo += "\r\n";
+                    //空行を防ぐ
+                    string textChar = Regex.Replace(Regex.Replace(eventInfo.ComponentInfo.text_char, @"^(?:\r\n)+", "") + "\r\n", @"(?:\r\n){2,}", "\r\n");
+                    if (textChar.Length > 2)
                     {
-                        extInfo += name;
-                    }
-                    if (eventInfo.ComponentInfo.text_char.Length > 0)
-                    {
-                        extInfo += "\r\n";
-                        extInfo += eventInfo.ComponentInfo.text_char;
+                        extInfo += textChar;
                     }
                 }
-                extInfo += "\r\n";
 
-                //音声
-                extInfo += "音声 :\r\n";
-                if (eventInfo.AudioInfo != null)
+                if (eventInfo.AudioInfo != null && eventInfo.AudioInfo.componentList.Count > 0)
                 {
+                    extInfo += "音声 : ";
                     foreach (EpgAudioComponentInfoData info in eventInfo.AudioInfo.componentList)
                     {
                         int streamContent = info.stream_content;
                         int componentType = info.component_type;
                         string name;
-                        if (Instance.ComponentKindDictionary.TryGetValue((ushort)(streamContent << 8 | componentType), out name))
-                        {
-                            extInfo += name;
-                        }
-                        if (info.text_char.Length > 0)
-                        {
-                            extInfo += "\r\n";
-                            extInfo += info.text_char;
-                        }
+                        extInfo += Instance.ComponentKindDictionary.TryGetValue((ushort)(streamContent << 8 | componentType), out name) ? name :
+                                       "(0x" + streamContent.ToString("X2") + ",0x" + componentType.ToString("X2") + ")";
                         extInfo += "\r\n";
-                        extInfo += "サンプリングレート :";
+                        //空行を防ぐ
+                        string textChar = Regex.Replace(Regex.Replace(info.text_char, @"^(?:\r\n)+", "") + "\r\n", @"(?:\r\n){2,}", "\r\n");
+                        if (textChar.Length > 2)
+                        {
+                            extInfo += textChar;
+                        }
+                        extInfo += "サンプリングレート : ";
                         switch (info.sampling_rate)
                         {
                             case 1:
@@ -732,6 +761,7 @@ namespace EpgTimer
                                 extInfo += "48kHz";
                                 break;
                             default:
+                                extInfo += "(0x" + info.sampling_rate.ToString("X2") + ")";
                                 break;
                         }
                         extInfo += "\r\n";
@@ -758,65 +788,60 @@ namespace EpgTimer
                 {
                     if (eventInfo.EventRelayInfo.eventDataList.Count > 0)
                     {
-                        extInfo += "イベントリレーあり：\r\n";
+                        extInfo += "イベントリレーあり : ";
                         foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
                         {
+                            extInfo += "ID:" + info.original_network_id + "(0x" + info.original_network_id.ToString("X4") + ")-" +
+                                       info.transport_stream_id + "(0x" + info.transport_stream_id.ToString("X4") + ")-" +
+                                       info.service_id + "(0x" + info.service_id.ToString("X4") + ")-" +
+                                       info.event_id + "(0x" + info.event_id.ToString("X4") + ")";
                             ulong key = Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
                             if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                             {
-                                extInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + " ";
+                                extInfo += " " + ChSet5.Instance.ChList[key].ServiceName;
                             }
-                            else
-                            {
-                                extInfo += "OriginalNetworkID : " + info.original_network_id.ToString() + " (0x" + info.original_network_id.ToString("X4") + ") ";
-                                extInfo += "TransportStreamID : " + info.transport_stream_id.ToString() + " (0x" + info.transport_stream_id.ToString("X4") + ") ";
-                                extInfo += "ServiceID : " + info.service_id.ToString() + " (0x" + info.service_id.ToString("X4") + ") ";
-                            }
-                            extInfo += "EventID : " + info.event_id.ToString() + " (0x" + info.event_id.ToString("X4") + ")\r\n";
                             extInfo += "\r\n";
                         }
                         extInfo += "\r\n";
                     }
                 }
 
-                extInfo += "OriginalNetworkID : " + eventInfo.original_network_id.ToString() + " (0x" + eventInfo.original_network_id.ToString("X4") + ")\r\n";
-                extInfo += "TransportStreamID : " + eventInfo.transport_stream_id.ToString() + " (0x" + eventInfo.transport_stream_id.ToString("X4") + ")\r\n";
-                extInfo += "ServiceID : " + eventInfo.service_id.ToString() + " (0x" + eventInfo.service_id.ToString("X4") + ")\r\n";
-                extInfo += "EventID : " + eventInfo.event_id.ToString() + " (0x" + eventInfo.event_id.ToString("X4") + ")\r\n";
+                extInfo += "OriginalNetworkID:" + eventInfo.original_network_id + "(0x" + eventInfo.original_network_id.ToString("X4") + ")\r\n" +
+                           "TransportStreamID:" + eventInfo.transport_stream_id + "(0x" + eventInfo.transport_stream_id.ToString("X4") + ")\r\n" +
+                           "ServiceID:" + eventInfo.service_id + "(0x" + eventInfo.service_id.ToString("X4") + ")\r\n" +
+                           "EventID:" + eventInfo.event_id + "(0x" + eventInfo.event_id.ToString("X4") + ")\r\n";
                 retText = extInfo;
             }
 
             return retText;
         }
 
-        public static String ConvertNetworkNameText(ushort originalNetworkID)
+        public static string ConvertNetworkNameText(ushort originalNetworkID)
         {
-            String retText = "";
             if (ChSet5.IsDttv(originalNetworkID) == true)
             {
-                retText = "地デジ";
+                return "地デジ";
             }
             else if (ChSet5.IsBS(originalNetworkID) == true)
             {
-                retText = "BS";
+                return "BS";
             }
             else if (ChSet5.IsCS1(originalNetworkID) == true)
             {
-                retText = "CS1";
+                return "CS1";
             }
             else if (ChSet5.IsCS2(originalNetworkID) == true)
             {
-                retText = "CS2";
+                return "CS2";
             }
             else if (ChSet5.IsCS3(originalNetworkID) == true)
             {
-                retText = "CS3";
+                return "CS3";
             }
             else
             {
-                retText = "その他";
+                return "その他";
             }
-            return retText;
         }
 
         public static string TrimHyphenSpace(string text)
@@ -875,7 +900,7 @@ namespace EpgTimer
                         //非表示
                         var run = new Run("- ");
                         run.FontSize = 1;
-                        run.Foreground = System.Windows.Media.Brushes.Transparent;
+                        run.Foreground = Brushes.Transparent;
                         para.Inlines.Add(run);
                         lineStart += 2;
                         //太字
@@ -892,7 +917,7 @@ namespace EpgTimer
                             para.Inlines.Add(text.Substring(plainStart, lineStart - plainStart));
                             var run = new Run("-");
                             run.FontSize = 1;
-                            run.Foreground = System.Windows.Media.Brushes.Transparent;
+                            run.Foreground = Brushes.Transparent;
                             para.Inlines.Add(run);
                             plainStart = ++lineStart;
                         }
@@ -906,7 +931,7 @@ namespace EpgTimer
                             {
                                 try
                                 {
-                                    using (System.Diagnostics.Process.Start(((Hyperlink)sender).NavigateUri.ToString())) { }
+                                    using (Process.Start(new ProcessStartInfo(((Hyperlink)sender).NavigateUri.ToString()) { UseShellExecute = true })) { }
                                 }
                                 catch (Exception ex)
                                 {
@@ -930,7 +955,7 @@ namespace EpgTimer
             return para;
         }
 
-        public void FilePlay(uint reserveID)
+        public string FilePlay(uint reserveID)
         {
             if (Settings.Instance.FilePlay && Settings.Instance.FilePlayOnAirWithExe)
             {
@@ -943,47 +968,84 @@ namespace EpgTimer
                         CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
                         if (info.filePath != "")
                         {
-                            FilePlay(info.filePath);
-                            return;
+                            return FilePlay(info.filePath);
                         }
                     }
                 }
                 catch { }
-                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+                return "録画ファイルの場所がわかりませんでした";
             }
-            else
-            {
-                TVTestCtrl.StartStreamingPlay(null, reserveID);
-            }
+            return TVTestCtrl.StartStreamingPlay(null, reserveID);
         }
 
-        public void FilePlay(String filePath)
+        public string FilePlay(string filePath)
         {
-            try
+            if (filePath.Length == 0)
             {
-                if (Settings.Instance.FilePlay)
+                return "ファイルパスが空です";
+            }
+            if (Settings.Instance.FilePlay)
+            {
+                filePath = ReplaceText(filePath, CreateReplaceDictionary(Settings.Instance.FilePathReplacePattern));
+                if (filePath.Length == 0)
+                {
+                    return "ファイルパスが空です";
+                }
+                try
                 {
                     if (Settings.Instance.FilePlayExe.Length == 0)
                     {
-                        using (System.Diagnostics.Process.Start(filePath)) { }
+                        using (Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true })) { }
                     }
                     else
                     {
-                        String cmdLine = Settings.Instance.FilePlayCmd;
+                        string cmdLine = Settings.Instance.FilePlayCmd;
                         //'$'->'\t'は再帰的な展開を防ぐため
                         cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(filePath).Replace('$', '\t'));
                         cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
-                        using (System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine)) { }
+                        using (Process.Start(new ProcessStartInfo(Settings.Instance.FilePlayExe, cmdLine) { UseShellExecute = false })) { }
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    TVTestCtrl.StartStreamingPlay(filePath, 0);
+                    return ex.Message;
+                }
+                return null;
+            }
+            return TVTestCtrl.StartStreamingPlay(filePath, 0);
+        }
+
+        private string saveProgramTextDirectory;
+
+        public void ShowSaveProgramTextDialog(string text)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog();
+            string fileName = "a.program.txt";
+            if (saveProgramTextDirectory != null)
+            {
+                dlg.InitialDirectory = saveProgramTextDirectory;
+                for (int i = 1; File.Exists(Path.Combine(saveProgramTextDirectory, fileName)); i++)
+                {
+                    fileName = "a(" + i + ").program.txt";
                 }
             }
-            catch (Exception ex)
+            dlg.DefaultExt = ".txt";
+            dlg.FileName = fileName;
+            dlg.Filter = "txt Files|*.txt|all Files|*.*";
+            if (dlg.ShowDialog() == true)
             {
-                MessageBox.Show(ex.ToString());
+                try
+                {
+                    using (var file = new StreamWriter(dlg.FileName, false, Encoding.UTF8))
+                    {
+                        file.Write(text);
+                    }
+                    saveProgramTextDirectory = Path.GetDirectoryName(dlg.FileName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
             }
         }
     }

@@ -194,9 +194,12 @@ Luaモジュールのビルド(Linux)
   ```
   放置してもたぶん問題ないが、MSB3644の警告がでる場合は"EpgTimer/EpgTimer/EpgTimer.csproj"をメモ帳で開き
   ```
-  <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
   ```
-  となっている部分をインストールされている.NETのバージョンに変更するか、v4.5のTargeting Packをインストールする
+  となっている部分をインストールされている.NETのバージョンに変更するか、v4.8のTargeting Packをインストールする
+
+- EpgTimer.exeは.NET 10でもビルド可能(.NET SDK 10をインストールして、x86build.core.batまたはx64build.core.batを実行)。
+  "EpgTimer/EpgTimer/App.xaml"のApplicationタグを編集するとFluentテーマにできる。
 
 - gitコマンドのある環境では、versionhashgen.batを実行すればバージョン情報にコミットハッシュを埋め込むことができる。
   versionhash.shはBashシェル環境用

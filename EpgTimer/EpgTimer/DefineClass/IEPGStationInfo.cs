@@ -7,12 +7,12 @@ namespace EpgTimer
 {
     public class IEPGStationInfo
     {
-        public String StationName
+        public string StationName
         {
             get;
             set;
         }
-        public UInt64 Key
+        public ulong Key
         {
             get;
             set;

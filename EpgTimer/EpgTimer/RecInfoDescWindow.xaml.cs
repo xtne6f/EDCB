@@ -20,6 +20,7 @@ namespace EpgTimer
     public partial class RecInfoDescWindow : Window
     {
         private RecFileInfo recInfo = null;
+        private string pgInfoForProgramText = "";
 
         public RecInfoDescWindow()
         {
@@ -52,20 +53,20 @@ namespace EpgTimer
                     }
                 }
             }
+            string basicInfo = "";
+            string extText = "";
+            string propertyInfo = "";
             if (eventInfo != null)
             {
-                richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(
-                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicInfo) +
-                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicText),
-                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedText),
-                    CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo)));
+                basicInfo = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicInfoForProgramText) +
+                            CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicTextForProgramText);
+                extText = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedTextForProgramText);
+                propertyInfo = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo);
             }
             else
             {
                 // 詳細情報を分離してみる
-                string basicInfo = info.ProgramInfo;
-                string extText = "";
-                string propertyInfo = "";
+                basicInfo = info.ProgramInfo;
                 // 2個目の空行までマッチ
                 Match m = Regex.Match(basicInfo, @"^[\s\S]*?\r?\n\r?\n[\s\S]*?\r?\n\r?\n");
                 if (m.Success)
@@ -80,8 +81,20 @@ namespace EpgTimer
                         propertyInfo = propertyInfo.Substring(m.Length);
                     }
                 }
-                richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(basicInfo, extText, propertyInfo));
             }
+            richTextBox_pgInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(basicInfo, extText, propertyInfo));
+#if NETCOREAPP
+#pragma warning disable WPF0001
+            // (おそらくバグにより)フォントが継承されないため
+            if (Application.Current.ThemeMode != ThemeMode.None)
+            {
+                richTextBox_pgInfo.Document.FontFamily = richTextBox_pgInfo.FontFamily;
+                richTextBox_pgInfo.Document.FontSize = richTextBox_pgInfo.FontSize;
+            }
+#pragma warning restore WPF0001
+#endif
+            pgInfoForProgramText = basicInfo + extText + propertyInfo;
+            button_save_program.IsEnabled = pgInfoForProgramText.Length > 0;
             textBox_errLog.Text = info.ErrInfo;
             textBox_recFilePath.Text = info.RecFilePath;
             button_rename.IsEnabled = false;
@@ -89,7 +102,10 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            tabItem_pgInfo.Focus();
+            if (tabControl.SelectedItem != null)
+            {
+                ((TabItem)tabControl.SelectedItem).Focus();
+            }
         }
 
         private void textBox_recFilePath_TextChanged(object sender, TextChangedEventArgs e)
@@ -127,7 +143,8 @@ namespace EpgTimer
 
                 if (destPath == null)
                 {
-                    MessageBox.Show("拡張子または移動先が不正です。", "", MessageBoxButton.OK, MessageBoxImage.Error);
+                    popup_rename.DataContext = "拡張子または移動先が不正です";
+                    popup_rename.IsOpen = true;
                     textBox_recFilePath.Text = recInfo.RecFilePath;
                 }
                 else
@@ -214,9 +231,11 @@ namespace EpgTimer
         {
             if (recInfo != null)
             {
-                if (recInfo.RecFilePath.Length > 0)
+                string errorMessage = CommonManager.Instance.FilePlay(recInfo.RecFilePath);
+                if (errorMessage != null)
                 {
-                    CommonManager.Instance.FilePlay(recInfo.RecFilePath);
+                    popup_play.DataContext = errorMessage;
+                    popup_play.IsOpen = true;
                 }
             }
         }
@@ -244,7 +263,33 @@ namespace EpgTimer
                     MessageBox.Show(ex.ToString());
                 }
             }
-            DialogResult = false;
+            Close();
+        }
+
+        private void button_save_program_Click(object sender, RoutedEventArgs e)
+        {
+            CommonManager.Instance.ShowSaveProgramTextDialog(pgInfoForProgramText);
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        Close();
+                        e.Handled = true;
+                        break;
+                }
+            }
+            popup_rename.IsOpen = false;
+            popup_play.IsOpen = false;
+        }
+
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }

@@ -1,13 +1,17 @@
 ﻿<Window x:Class="EpgTimer.AddPresetWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="プリセット名" Height="120" Width="450" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
-
-    <Grid>
-        <Label Content="プリセット名" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
-        <TextBox Height="24" Margin="100,14,12,0" Name="textBox_name" VerticalAlignment="Top" />
-        <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,44,99,0" Name="button_add" VerticalAlignment="Top" Width="43" Click="button_add_Click" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" IsCancel="True" Margin="0,44,12,0" Name="button_cancel" VerticalAlignment="Top" Width="81" />
-        <Label Content="(※設定内容も同時に変更されます)" Height="28" HorizontalAlignment="Left" Margin="79,44,0,0" Name="label_chgMsg" VerticalAlignment="Top" Visibility="Hidden" />
-    </Grid>
+        FocusManager.FocusedElement="{Binding ElementName=textBox_name}" SizeToContent="Height" Style="{StaticResource AppWindowStyle}" Title="プリセット名" Width="{StaticResource AppAddPresetWindowWidth}" WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="{StaticResource AppEdgeMargin}">
+        <DockPanel>
+            <Label Content="プリセット名" Style="{StaticResource AppTermLabelStyle}" />
+            <TextBox Name="textBox_name" Style="{StaticResource AppTextBoxStyle}" />
+        </DockPanel>
+        <StackPanel HorizontalAlignment="Right" Margin="{StaticResource AppEdgeMarginT}" Orientation="Horizontal">
+            <Label Content="(※設定内容も同時に変更されます)" Name="label_chgMsg" Style="{StaticResource AppLabelStyle}" Visibility="Collapsed" />
+            <Button Content="変更" Margin="{StaticResource AppConfirmMargin}" Name="button_chg" Style="{StaticResource AppConfirmButtonStyle}" Visibility="Collapsed" Click="button_ok_Click" />
+            <Button Content="追加" Name="button_add" Style="{StaticResource AppConfirmButtonStyle}" Click="button_ok_Click" />
+            <Button Content="キャンセル" IsCancel="True" Margin="{StaticResource AppConfirmMargin}" Name="button_cancel" Style="{StaticResource AppConfirmButtonStyle}" />
+        </StackPanel>
+    </StackPanel>
 </Window>

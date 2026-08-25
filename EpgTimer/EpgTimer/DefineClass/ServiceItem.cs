@@ -11,7 +11,7 @@ namespace EpgTimer
         public event PropertyChangedEventHandler PropertyChanged;
         private bool selected = false;
 
-        private void NotifyPropertyChanged(String info)
+        private void NotifyPropertyChanged(string info)
         {
             if (PropertyChanged != null)
             {
@@ -40,15 +40,15 @@ namespace EpgTimer
                 NotifyPropertyChanged("IsSelected");
             }
         }
-        public UInt64 ID
+        public ulong ID
         {
             get { return CommonManager.Create64Key(ServiceInfo.ONID, ServiceInfo.TSID, ServiceInfo.SID); }
         }
-        public String ServiceName
+        public string ServiceName
         {
             get { return ServiceInfo.service_name; }
         }
-        public String NetworkName
+        public string NetworkName
         {
             get { return CommonManager.ConvertNetworkNameText(ServiceInfo.ONID); }
         }

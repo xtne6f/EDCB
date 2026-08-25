@@ -1,21 +1,28 @@
 ﻿<Window x:Class="EpgTimer.SettingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="設定" Height="580" Width="780" xmlns:my="clr-namespace:EpgTimer.Setting" WindowStartupLocation="CenterOwner">
-
+        xmlns:my="clr-namespace:EpgTimer.Setting"
+        Height="{StaticResource AppSettingWindowHeight}" Style="{StaticResource AppWindowStyle}" Title="設定" Width="{StaticResource AppSettingWindowWidth}" WindowStartupLocation="CenterOwner">
     <Grid>
-        <TabControl Name="tabControl" Margin="0,0,0,42">
-            <TabItem Header="動作設定" Name="tabItem_app">
-                <my:SetAppView x:Name="setAppView" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TabControl>
+            <TabItem Header="動作設定">
+                <my:SetAppView />
             </TabItem>
-            <TabItem Header="番組表" Name="tabItem_epgView">
-                <my:SetEpgView x:Name="setEpgView" />
+            <TabItem Header="番組表">
+                <my:SetEpgView />
             </TabItem>
-            <TabItem Header="外部アプリケーション" Name="tabItem_otherApp">
-                <my:SetOtherAppView x:Name="setOtherAppView" />
+            <TabItem Header="外部アプリケーション">
+                <my:SetOtherAppView />
             </TabItem>
         </TabControl>
-        <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,0,114,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" />
-        <Button Content="キャンセル" Margin="0,0,12,12" Name="button_cancel" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Click="button_cancel_Click" />
+        <Button Content="EpgTimerSrv設定" Grid.Row="1" HorizontalAlignment="Left" Margin="{StaticResource AppEdgeMargin}" Name="button_srvSetting" Style="{StaticResource AppConfirmButtonStyle}" VerticalAlignment="Bottom" Click="button_srvSetting_Click" />
+        <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="{StaticResource AppEdgeMargin}" Orientation="Horizontal">
+            <Button Content="OK" Style="{StaticResource AppConfirmButtonStyle}" Click="button_OK_Click" />
+            <Button Content="キャンセル" Margin="{StaticResource AppConfirmMargin}" Style="{StaticResource AppConfirmButtonStyle}" Click="button_cancel_Click" />
+        </StackPanel>
     </Grid>
 </Window>

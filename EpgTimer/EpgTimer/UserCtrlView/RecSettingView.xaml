@@ -2,95 +2,181 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:my="clr-namespace:EpgTimer"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
-             d:DesignHeight="400" d:DesignWidth="700">
+             PreviewKeyDown="UserControl_PreviewKeyDown">
     <UserControl.Resources>
-        <my:BoolConverter x:Key="convert" />
+        <my:ToStringValueIsNotEqualConverter x:Key="notEqualConvert" />
+        <my:ToStringValueIsZeroOrOneConverter x:Key="invert" />
     </UserControl.Resources>
-    <Grid>
-        <Label Content="プリセット" Height="28" HorizontalAlignment="Left" Margin="12,4,0,0" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,5,0,0" Name="comboBox_preSet" VerticalAlignment="Top" Width="197" SelectionChanged="comboBox_preSet_SelectionChanged" />
-        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="305,6,0,0" Name="button_add_preset" VerticalAlignment="Top" Width="48" Click="button_add_preset_Click" />
-        <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="359,6,0,0" Name="button_chg_preset" VerticalAlignment="Top" Width="48" Click="button_chg_preset_Click" />
-        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="413,6,0,0" Name="button_del_preset" VerticalAlignment="Top" Width="48" Click="button_del_preset_Click" />
-        <Border BorderBrush="#FF8C8E94" BorderThickness="1" Margin="0,40,0,0" Padding="4,1,4,1">
-            <Grid>
-                <CheckBox Content="有効" Height="16" HorizontalAlignment="Left" Margin="11,11,0,0" Name="checkBox_enabled" VerticalAlignment="Top" />
-                <Label Content="録画モード" Height="28" HorizontalAlignment="Left" Margin="80,6,0,0" VerticalAlignment="Top" />
-                <ComboBox Height="24" HorizontalAlignment="Left" Margin="160,6,0,0" Name="comboBox_recMode" VerticalAlignment="Top" Width="200">
+    <DockPanel>
+        <Grid DockPanel.Dock="Top" Margin="{StaticResource AppEdgeMarginLR}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="4*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Label Content="プリセット" Style="{StaticResource AppTermLabelStyle}" />
+            <ComboBox Grid.Column="1" Name="comboBox_preSet" SelectionChanged="comboBox_preSet_SelectionChanged" Style="{StaticResource AppComboBoxStyle}"/>
+            <Button Content="追加" Grid.Column="2" Margin="{StaticResource AppMarginL}" Name="button_add_preset" Style="{StaticResource AppButtonStyle}" Click="button_add_preset_Click" />
+            <Button Content="変更" Grid.Column="3" Margin="{StaticResource AppMarginL}" Name="button_chg_preset" Style="{StaticResource AppButtonStyle}" Click="button_chg_preset_Click" />
+            <Button Content="削除" Grid.Column="4" Margin="{StaticResource AppMarginL}" Name="button_del_preset" Style="{StaticResource AppButtonStyle}" Click="button_del_preset_Click" />
+        </Grid>
+        <Border Margin="{StaticResource AppWideMarginT}" Style="{StaticResource AppRecSettingBorderStyle}">
+            <Grid Margin="{StaticResource AppEdgeMarginLR}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <FrameworkElement Margin="{StaticResource AppWideMarginT}" />
+                <CheckBox Content="有効" Grid.Row="1" HorizontalAlignment="Left" Margin="{StaticResource AppWideMarginR}" Name="checkBox_enabled" Style="{StaticResource AppCheckBoxStyle}" />
+                <Label Content="録画モード" Grid.Column="1" Grid.Row="1" Style="{StaticResource AppTermLabelStyle}" />
+                <ComboBox Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="1" HorizontalAlignment="Left" Name="comboBox_recMode_ref" SelectedIndex="0" Style="{StaticResource AppComboBoxStyle}" Visibility="Hidden">
+                    <ComboBoxItem Content="全指定サービス（デコード処理なし）" />
+                </ComboBox>
+                <ComboBox Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="1" HorizontalAlignment="Left" Name="comboBox_recMode" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_recMode_ref}">
                     <ComboBoxItem Content="全サービス" />
                     <ComboBoxItem Content="指定サービス" />
                     <ComboBoxItem Content="全サービス（デコード処理なし）" />
                     <ComboBoxItem Content="指定サービス（デコード処理なし）" />
                     <ComboBoxItem Content="視聴" />
                 </ComboBox>
-                <Label Content="優先度" Height="28" HorizontalAlignment="Left" Margin="80,35,0,0" VerticalAlignment="Top" />
-                <ComboBox Height="24" HorizontalAlignment="Left" Margin="160,35,0,0" Name="comboBox_priority" VerticalAlignment="Top" Width="75">
+                <FrameworkElement Grid.Row="2" Margin="{StaticResource AppMarginT}" />
+                <Label Content="優先度" Grid.Column="1" Grid.Row="3" Style="{StaticResource AppTermLabelStyle}" />
+                <ComboBox Grid.Column="2" Grid.Row="3" HorizontalAlignment="Left" Name="comboBox_priority_ref" SelectedIndex="0" Style="{StaticResource AppComboBoxStyle}" Visibility="Hidden">
+                    <ComboBoxItem Content="15 (低高)" />
+                </ComboBox>
+                <ComboBox Grid.Column="2" Grid.Row="3" HorizontalAlignment="Left" Name="comboBox_priority" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_priority_ref}">
                     <ComboBoxItem Content="1 (低)" />
                     <ComboBoxItem Content="2" />
                     <ComboBoxItem Content="3" />
                     <ComboBoxItem Content="4" />
                     <ComboBoxItem Content="5 (高)" />
                 </ComboBox>
-                <CheckBox Content="イベントリレー追従" Height="16" HorizontalAlignment="Left" Margin="405,11,0,0" Name="checkBox_tuijyu" VerticalAlignment="Top" />
-                <CheckBox Content="ぴったり（？）録画" Height="16" HorizontalAlignment="Left" Margin="405,40,0,0" Name="checkBox_pittari" VerticalAlignment="Top" />
-                <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,64,0,0" VerticalAlignment="Top" />
-                <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="160,69,0,0" Name="checkBox_margineDef" VerticalAlignment="Top" />
-                <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="255,64,0,0" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="295,66,0,0" Name="textBox_margineStart" VerticalAlignment="Top" Width="57" Text="0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <Label Content="終了" Height="28" HorizontalAlignment="Left" Margin="365,64,0,0" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="405,66,0,0" Name="textBox_margineEnd" VerticalAlignment="Top" Width="57" Text="0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <Label Content="指定サービス対象データ" Height="28" HorizontalAlignment="Left" Margin="6,93,0,0" VerticalAlignment="Top" />
-                <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="160,98,0,0" Name="checkBox_serviceMode" VerticalAlignment="Top" />
-                <CheckBox Content="字幕を含める" Height="16" HorizontalAlignment="Left" Margin="260,98,0,0" Name="checkBox_serviceCaption" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <CheckBox Content="データカルーセルを含める" Height="16" HorizontalAlignment="Left" Margin="370,98,0,0" Name="checkBox_serviceData" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <ListView Height="79" Margin="11,125,109,0" Name="listView_recFolder" VerticalAlignment="Top">
-                    <ListView.View>
-                        <GridView x:Name="gridView_recFolder">
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">
-                                <GridViewColumn.Header>
-                                    <GridViewColumnHeader Content="録画フォルダ" HorizontalContentAlignment="Left" />
-                                </GridViewColumn.Header>
-                            </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=WritePlugIn}">
-                                <GridViewColumn.Header>
-                                    <GridViewColumnHeader Content="出力PlugIn" HorizontalContentAlignment="Left" />
-                                </GridViewColumn.Header>
-                            </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=RecNamePlugIn}">
-                                <GridViewColumn.Header>
-                                    <GridViewColumnHeader Content="ファイル名PlugIn" HorizontalContentAlignment="Left" />
-                                </GridViewColumn.Header>
-                            </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=PartialRecYesNo}">
-                                <GridViewColumn.Header>
-                                    <GridViewColumnHeader Content="部分受信" HorizontalContentAlignment="Left" />
-                                </GridViewColumn.Header>
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-                <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,153,11,0" Name="button_recFolderAdd" VerticalAlignment="Top" Width="93" Click="button_recFolderAdd_Click" />
-                <Button Content="部分受信追加" Height="23" HorizontalAlignment="Right" Margin="0,181,11,0" Name="button_recFolderAdd_1seg" VerticalAlignment="Top" Width="93" Click="button_recFolderAdd_1seg_Click" />
-                <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,125,60,0" Name="button_recFolderChg" VerticalAlignment="Top" Width="44" Click="button_recFolderChg_Click" />
-                <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,125,11,0" Name="button_recFolderDel" VerticalAlignment="Top" Width="44" Click="button_recFolderDel_Click" />
-                <CheckBox Content="部分受信（ワンセグ）を別ファイルに同時出力する" Height="16" HorizontalAlignment="Left" Margin="30,208,0,0" Name="checkBox_partial" VerticalAlignment="Top" />
-                <CheckBox Content="後ろの予約を同一ファイルで出力する" Height="16" HorizontalAlignment="Left" Margin="370,208,0,0" Name="checkBox_continueRec" VerticalAlignment="Top" />
-                <Label Content="使用チューナー強制指定" Height="28" HorizontalAlignment="Left" Margin="6,231,0,0" VerticalAlignment="Top" />
-                <ComboBox Height="24" HorizontalAlignment="Left" Margin="160,231,0,0" Name="comboBox_tuner" VerticalAlignment="Top" Width="370" />
-                <Label Content="録画後動作" Height="28" HorizontalAlignment="Left" Margin="6,260,0,0" VerticalAlignment="Top" />
-                <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="90,265,0,0" Name="checkBox_suspendDef" VerticalAlignment="Top" />
-                <RadioButton Content="何もしない" Height="16" HorizontalAlignment="Left" Margin="185,265,0,0" Name="radioButton_non" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <RadioButton Content="スタンバイ" Height="16" HorizontalAlignment="Left" Margin="275,265,0,0" Name="radioButton_standby" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <RadioButton Content="休止" Height="16" HorizontalAlignment="Left" Margin="365,265,0,0" Name="radioButton_supend" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <RadioButton Content="シャットダウン" Height="16" HorizontalAlignment="Left" Margin="422,265,0,0" Name="radioButton_shutdown" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <CheckBox Content="復帰後再起動する" Height="16" HorizontalAlignment="Left" Margin="540,265,0,0" Name="checkBox_reboot" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource convert}, ConverterParameter=not}" />
-                <Label Content="録画後実行bat[*タグ]" Height="28" HorizontalAlignment="Left" Margin="6,289,0,0" VerticalAlignment="Top" />
-                <TextBox Height="24" Margin="160,291,60,0" Name="textBox_bat" VerticalAlignment="Top" />
-                <Button Content="開く" Height="23" HorizontalAlignment="Right" Margin="0,291,11,0" Name="button_bat" VerticalAlignment="Top" Width="44" Click="button_bat_Click" />
+                <CheckBox Content="イベントリレー追従" Grid.Column="5" Grid.Row="1" HorizontalAlignment="Left" Name="checkBox_tuijyu" Style="{StaticResource AppCheckBoxStyle}" />
+                <CheckBox Content="ぴったり（？）録画" Grid.Column="5" Grid.Row="3" HorizontalAlignment="Left" Name="checkBox_pittari" Style="{StaticResource AppCheckBoxStyle}" />
+                <FrameworkElement Grid.Row="4" Margin="{StaticResource AppWideMarginT}" />
+                <Label Content="録画マージン" Grid.ColumnSpan="2" Grid.Row="5" Style="{StaticResource AppTermLabelStyle}" />
+                <CheckBox Content="デフォルト" Grid.Column="2" Grid.Row="5" HorizontalAlignment="Left" Margin="{StaticResource AppMarginR}" Name="checkBox_margineDef" Style="{StaticResource AppCheckBoxStyle}" />
+                <StackPanel Grid.Column="3" Grid.Row="5" IsEnabled="{Binding IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" Orientation="Horizontal">
+                    <Label Content="開始" Style="{StaticResource AppTermLabelStyle}" />
+                    <TextBox InputMethod.IsInputMethodEnabled="False" Margin="{StaticResource AppMarginR}" Name="textBox_margineStart" Text="0" Style="{StaticResource AppNarrowTextBoxStyle}" />
+                </StackPanel>
+                <Label Content="終了" Grid.Column="4" Grid.Row="5" HorizontalAlignment="Right" IsEnabled="{Binding IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" Style="{StaticResource AppTermLabelStyle}" />
+                <TextBox Grid.Column="5" Grid.Row="5" InputMethod.IsInputMethodEnabled="False" Name="textBox_margineEnd" Text="0" IsEnabled="{Binding IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" Style="{StaticResource AppNarrowTextBoxStyle}" />
+                <FrameworkElement Grid.Row="6" Margin="{StaticResource AppWideMarginT}" />
+                <Label Content="指定サービス対象データ" Grid.ColumnSpan="2" Grid.Row="7" Style="{StaticResource AppTermLabelStyle}" />
+                <CheckBox Content="デフォルト" Grid.Column="2" Grid.Row="7" HorizontalAlignment="Left" Margin="{StaticResource AppMarginR}" Name="checkBox_serviceMode" Style="{StaticResource AppCheckBoxStyle}" />
+                <CheckBox Content="字幕を含める" Grid.Column="3" Grid.Row="7" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource invert}}" Margin="{StaticResource AppMarginR}" Name="checkBox_serviceCaption" Style="{StaticResource AppCheckBoxStyle}" />
+                <CheckBox Content="データカルーセルを含める" Grid.Column="4" Grid.ColumnSpan="2" Grid.Row="7" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource invert}}" Name="checkBox_serviceData" Style="{StaticResource AppCheckBoxStyle}" />
+                <Grid Grid.ColumnSpan="6" Grid.Row="8" Margin="{StaticResource AppWideMarginT}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ListView Height="{Binding ActualHeight, ElementName=grid_recFolderButtons}" Name="listView_recFolder">
+                        <ListView.View>
+                            <GridView x:Name="gridView_recFolder">
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="録画フォルダ" HorizontalContentAlignment="Left" />
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=WritePlugIn}">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="出力PlugIn" HorizontalContentAlignment="Left" />
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=RecNamePlugIn}">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="ファイル名PlugIn" HorizontalContentAlignment="Left" />
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=PartialRecYesNo}">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="部分受信" HorizontalContentAlignment="Left" />
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <Grid Grid.Column="1" Name="grid_recFolderButtons">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Button Content="追加" Grid.ColumnSpan="2" Grid.Row="1" Margin="{StaticResource AppMarginLT}" Name="button_recFolderAdd" Style="{StaticResource AppButtonStyle}" Click="button_recFolderAdd_Click" />
+                        <Button Content="部分受信追加" Grid.ColumnSpan="2" Grid.Row="2" Margin="{StaticResource AppMarginLT}" Name="button_recFolderAdd_1seg" Style="{StaticResource AppButtonStyle}" Click="button_recFolderAdd_1seg_Click" />
+                        <Button Content="変更" IsEnabled="{Binding SelectedIndex, ElementName=listView_recFolder, Converter={StaticResource notEqualConvert}, ConverterParameter=-1}" Margin="{StaticResource AppMarginL}" Name="button_recFolderChg" Style="{StaticResource AppButtonStyle}" Click="button_recFolderChg_Click" />
+                        <Button Content="削除" Grid.Column="1" IsEnabled="{Binding SelectedIndex, ElementName=listView_recFolder, Converter={StaticResource notEqualConvert}, ConverterParameter=-1}" Margin="{StaticResource AppMarginL}" Name="button_recFolderDel" Style="{StaticResource AppButtonStyle}" Click="button_recFolderDel_Click" />
+                        <Popup Name="popup_recFolderAdd" PlacementTarget="{Binding ElementName=button_recFolderAdd}" StaysOpen="False" Style="{StaticResource AppErrorMessagePopupStyle}">
+                            <ContentControl Template="{StaticResource AppErrorMessagePopupTemplate}" />
+                        </Popup>
+                        <Popup Name="popup_recFolderAdd_1seg" PlacementTarget="{Binding ElementName=button_recFolderAdd_1seg}" StaysOpen="False" Style="{StaticResource AppErrorMessagePopupStyle}">
+                            <ContentControl Template="{StaticResource AppErrorMessagePopupTemplate}" />
+                        </Popup>
+                    </Grid>
+                </Grid>
+                <FrameworkElement Grid.Row="9" Margin="{StaticResource AppMarginT}" />
+                <CheckBox Content="部分受信（ワンセグ）を別ファイルに同時出力する" Grid.ColumnSpan="4" Grid.Row="10" HorizontalAlignment="Left" Name="checkBox_partial" Style="{StaticResource AppCheckBoxStyle}" />
+                <CheckBox Content="後ろの予約を同一ファイルで出力する" Grid.Column="4" Grid.ColumnSpan="2" Grid.Row="10" HorizontalAlignment="Left" Name="checkBox_continueRec" Style="{StaticResource AppCheckBoxStyle}" />
+                <FrameworkElement Grid.Row="11" Margin="{StaticResource AppWideMarginT}" />
+                <Label Content="使用チューナー強制指定" Grid.ColumnSpan="2" Grid.Row="12" Style="{StaticResource AppTermLabelStyle}" />
+                <ComboBox Grid.Column="2" Grid.ColumnSpan="4" Grid.Row="12" Name="comboBox_tuner" Style="{StaticResource AppComboBoxStyle}" />
+                <FrameworkElement Grid.Row="13" Margin="{StaticResource AppWideMarginT}" />
+                <StackPanel Grid.ColumnSpan="6" Grid.Row="14" Orientation="Horizontal">
+                    <Label Content="録画後動作" Style="{StaticResource AppTermLabelStyle}" />
+                    <CheckBox Content="デフォルト" Name="checkBox_suspendDef" Style="{StaticResource AppCheckBoxStyle}" />
+                    <StackPanel IsEnabled="{Binding IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource invert}}" Orientation="Horizontal">
+                        <RadioButton Content="何もしない" Margin="{StaticResource AppWideMarginL}" Name="radioButton_non" Style="{StaticResource AppRadioButtonStyle}" />
+                        <RadioButton Content="スタンバイ" Margin="{StaticResource AppWideMarginL}" Name="radioButton_standby" Style="{StaticResource AppRadioButtonStyle}" />
+                        <RadioButton Content="休止" Margin="{StaticResource AppWideMarginL}" Name="radioButton_supend" Style="{StaticResource AppRadioButtonStyle}" />
+                        <RadioButton Content="シャットダウン" Margin="{StaticResource AppWideMarginL}" Name="radioButton_shutdown" Style="{StaticResource AppRadioButtonStyle}" />
+                        <CheckBox Content="復帰後再起動する" Margin="{StaticResource AppWideMarginL}" Name="checkBox_reboot" Style="{StaticResource AppCheckBoxStyle}" />
+                    </StackPanel>
+                </StackPanel>
+                <FrameworkElement Grid.Row="15" Margin="{StaticResource AppWideMarginT}" />
+                <Label Grid.ColumnSpan="2" Grid.Row="16" Content="録画後実行bat[*タグ]" Style="{StaticResource AppTermLabelStyle}" />
+                <Grid Grid.Column="2" Grid.ColumnSpan="4" Grid.Row="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Name="textBox_bat" Style="{StaticResource AppTextBoxStyle}" />
+                    <Button Content="開く" Grid.Column="1" Margin="{StaticResource AppMarginL}" Name="button_bat" Style="{StaticResource AppButtonStyle}" Click="button_bat_Click" />
+                </Grid>
+                <FrameworkElement Grid.Row="17" Margin="{StaticResource AppWideMarginT}" />
             </Grid>
         </Border>
-    </Grid>
+    </DockPanel>
 </UserControl>

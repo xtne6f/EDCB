@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -22,9 +23,30 @@ namespace EpgTimer
         {
             InitializeComponent();
 
+            button_srvSetting.IsEnabled = CommonManager.Instance.NWMode == false;
             DataContext = Settings.Instance.DeepCloneStaticSettings();
 
             CheckServiceSettings((Settings)DataContext, false);
+        }
+
+        private void button_srvSetting_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (CommonManager.Instance.SrvSettingProcess == null || CommonManager.Instance.SrvSettingProcess.HasExited)
+                {
+                    CommonManager.Instance.SrvSettingProcess = Process.Start(
+                        new ProcessStartInfo(System.IO.Path.Combine(SettingPath.ModulePath, "EpgTimerSrv.exe"), "/setting") { UseShellExecute = false });
+                }
+                else
+                {
+                    CommonUtil.SetForegroundWindow(CommonManager.Instance.SrvSettingProcess.MainWindowHandle);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)

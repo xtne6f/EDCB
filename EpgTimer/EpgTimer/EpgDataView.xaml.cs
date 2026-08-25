@@ -21,6 +21,7 @@ namespace EpgTimer
     {
         private bool RedrawEpg = true;
         private object jumpTarget;
+        private TabItem selectedTabItem;
 
         public EpgDataView()
         {
@@ -102,6 +103,7 @@ namespace EpgTimer
                 }
                 //タブの削除
                 tabControl.Items.Clear();
+                selectedTabItem = null;
 
                 UpdateEpgData();
             }
@@ -374,5 +376,17 @@ namespace EpgTimer
             }
         }
 
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (tabControl.SelectedItem is TabItem && tabControl.SelectedItem != selectedTabItem)
+            {
+                var item = (TabItem)tabControl.SelectedItem;
+                if (item.Content is EpgMainView && selectedTabItem != null && selectedTabItem.Content is EpgMainView && Settings.Instance.SynchronizeEpgScroll)
+                {
+                    ((EpgMainView)item.Content).ScrollTo(((EpgMainView)selectedTabItem.Content).ScrollTime(), true);
+                }
+                selectedTabItem = item;
+            }
+        }
     }
 }

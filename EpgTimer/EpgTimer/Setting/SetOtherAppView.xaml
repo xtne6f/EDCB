@@ -6,36 +6,123 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="780" d:DataContext="{d:DesignInstance local:Settings}">
+    <UserControl.Resources>
+        <local:ToStringValueIsZeroOrOneConverter x:Key="invert" />
+    </UserControl.Resources>
     <Grid>
-        <TabControl Name="tabControl">
-            <TabItem Header="TVTest連携" Name="tabItem_tvtest">
-                <Grid>
-                    <Label Content="※利用にはTVTestに EpgTimerPlugIn.tvtp か EdcbPlugIn.tvtp を追加しておく必要があります。&#10;※NetworkTVモードには EpgTimerPlugIn.tvtp が必要です。" HorizontalAlignment="Left" Margin="12,8,0,0" VerticalAlignment="Top" />
-                    <Label Content="TVTest.exeパス" HorizontalAlignment="Left" Margin="12,54,0,0" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,56,0,0" Name="textBox_exe" Text="{Binding TvTestExe}" VerticalAlignment="Top" Width="456" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,56,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" />
-                    <Label Content="コマンドライン引数" HorizontalAlignment="Left" Margin="12,86,0,0" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,88,0,0" Text="{Binding TvTestCmd}" VerticalAlignment="Top" Width="456" />
-                    <Label Content="※視聴に使用するBonDriverはEpgTimerSrv設定で選択します。" HorizontalAlignment="Left" Margin="12,144,0,0" VerticalAlignment="Top" />
-                    <CheckBox Content="NetworkTVモード(録画用アプリやEpgTimerSrvからのUDP、TCP送信)で視聴する" HorizontalAlignment="Left" IsChecked="{Binding NwTvMode}" Margin="12,187,0,0" VerticalAlignment="Top" />
-                    <CheckBox Content="UDP有効 (BonDriver__UDP.dll)" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeUDP}" Margin="44,240,0,0" VerticalAlignment="Top" />
-                    <CheckBox Content="TCP有効 (BonDriver__TCP.dll)" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeTCP}" Margin="44,262,0,0" Name="checkBox_nwTvModeTCP" VerticalAlignment="Top" />
-                    <CheckBox Content="Pipe方式 (BonDriver__NetworkPipe.dll) ※ローカル通信専用" HorizontalAlignment="Left" IsChecked="{Binding NwTvModePipe}" IsEnabled="{Binding IsChecked, ElementName=checkBox_nwTvModeTCP, UpdateSourceTrigger=PropertyChanged}" Margin="64,284,0,0" VerticalAlignment="Top" />
-                    <Label Content="(BonDriverに関するオプションは自動的に付加されます)" HorizontalAlignment="Left" Margin="134,114,0,0" VerticalAlignment="Top" />
-                    <Label Content="NetworkTVモードの送信方式 (NetworkTVモードでファイル再生する場合もチェックが必要です)" HorizontalAlignment="Left" Margin="12,212,0,0" VerticalAlignment="Top" />
-                </Grid>
+        <TabControl>
+            <TabItem Header="TVTest連携">
+                <StackPanel Margin="{StaticResource AppEdgeMargin}">
+                    <Label Content="※利用にはTVTestに EpgTimerPlugIn.tvtp か EdcbPlugIn.tvtp を追加しておく必要があります。" Style="{StaticResource AppLabelStyle}" />
+                    <Label Content="※NetworkTVモードには EpgTimerPlugIn.tvtp が必要です。" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppLabelStyle}" />
+                    <TextBlock Margin="{StaticResource AppMarginT}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Label Content="TVTest.exeパス" Style="{StaticResource AppTermLabelStyle}" />
+                        <TextBox Grid.Column="1" Name="textBox_exe" Style="{StaticResource AppTextBoxStyle}" Text="{Binding TvTestExe}" />
+                        <Button Content="開く" Grid.Column="2" Margin="{StaticResource AppMarginL}" Name="button_exe" Style="{StaticResource AppButtonStyle}" Click="button_exe_Click" />
+                        <FrameworkElement Grid.Row="1" Margin="{StaticResource AppMarginT}" />
+                        <Label Content="コマンドライン引数" Grid.Row="2" Style="{StaticResource AppTermLabelStyle}" />
+                        <TextBox Grid.Column="1" Grid.Row="2" Style="{StaticResource AppTextBoxStyle}" Text="{Binding TvTestCmd}" />
+                        <Label Content="(BonDriverに関するオプションは自動的に付加されます)" Grid.Column="1" Grid.Row="3" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppLabelStyle}" />
+                    </Grid>
+                    <Label Content="※視聴に使用するBonDriverはEpgTimerSrv設定で選択します。" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppLabelStyle}" />
+                    <TextBlock Margin="{StaticResource AppMarginT}" />
+                    <CheckBox Content="NetworkTVモード(録画用アプリやEpgTimerSrvからのUDP、TCP送信)で視聴する" HorizontalAlignment="Left" IsChecked="{Binding NwTvMode}" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppCheckBoxStyle}" />
+                    <TextBlock Margin="{StaticResource AppMarginT}" />
+                    <Label Content="NetworkTVモードの送信方式 (NetworkTVモードでファイル再生する場合もチェックが必要です)" Style="{StaticResource AppLabelStyle}" />
+                    <StackPanel Margin="{StaticResource AppIndentMargin}">
+                        <CheckBox Content="UDP有効 (BonDriver__UDP.dll)" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeUDP}" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppCheckBoxStyle}" />
+                        <CheckBox Content="TCP有効 (BonDriver__TCP.dll)" HorizontalAlignment="Left" IsChecked="{Binding NwTvModeTCP}" Margin="{StaticResource AppMarginT}" Name="checkBox_nwTvModeTCP" Style="{StaticResource AppCheckBoxStyle}" />
+                        <StackPanel Margin="{StaticResource AppIndentMargin}" Orientation="Horizontal">
+                            <CheckBox Content="Pipe方式 (BonDriver__NetworkPipe.dll) ※ローカル通信専用" IsChecked="{Binding NwTvModePipe}" IsEnabled="{Binding IsChecked, ElementName=checkBox_nwTvModeTCP, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppCheckBoxStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
             </TabItem>
-            <TabItem Header="ファイル再生" Name="tabItem_play">
-                <Grid>
-                    <CheckBox Content="有効にする (未チェック時、TVTest連携のパスが指定されていればNetworkTVモードで再生を試みます)" HorizontalAlignment="Left" IsChecked="{Binding FilePlay}" Margin="12,12,0,0" Name="checkBox_filePlay" VerticalAlignment="Top" />
-                    <Label Content="再生アプリのexeパス" HorizontalAlignment="Left" Margin="20,38,0,0" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="150,40,0,0" Name="textBox_playExe" Text="{Binding FilePlayExe}" VerticalAlignment="Top" Width="444" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="600,40,0,0" Name="button_playExe" VerticalAlignment="Top" Width="56" Click="button_playExe_Click" />
-                    <Label Content="コマンドライン引数" HorizontalAlignment="Left" Margin="20,68,0,0" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="150,70,0,0" Text="{Binding FilePlayCmd}" VerticalAlignment="Top" Width="444" />
-                    <Label Content="($FilePath$:ファイルパス、$FileNameExt$:ファイル名、を指定できます)&#10;(exeパス未指定時はコマンドライン引数を無視し、ファイルパスを関連付け実行します)" HorizontalAlignment="Left" Margin="150,98,0,0" VerticalAlignment="Top" />
-                    <CheckBox Content="追っかけ再生にも使用する" HorizontalAlignment="Left" IsChecked="{Binding FilePlayOnAirWithExe}" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="150,150,0,0" VerticalAlignment="Top" />
-                </Grid>
+            <TabItem Header="視聴・ファイル再生">
+                <StackPanel Margin="{StaticResource AppEdgeMargin}">
+                    <CheckBox Content="視聴アプリを指定 (未チェック時はTVTest連携の設定に従います)" HorizontalAlignment="Left" IsChecked="{Binding UseWatchCmd}" Margin="{StaticResource AppWideMarginB}" Name="checkBox_useWatchCmd" Style="{StaticResource AppCheckBoxStyle}" />
+                    <Grid Margin="{StaticResource AppIndentMargin}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Label Content="視聴アプリのexe・URL等" Style="{StaticResource AppTermLabelStyle}" />
+                        <TextBox Grid.Column="1" IsEnabled="{Binding IsChecked, ElementName=checkBox_useWatchCmd, UpdateSourceTrigger=PropertyChanged}" Name="textBox_watchCmd" Style="{StaticResource AppTextBoxStyle}" Text="{Binding WatchCmd}" />
+                        <Button Content="開く" Grid.Column="2" IsEnabled="{Binding IsChecked, ElementName=checkBox_useWatchCmd, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppButtonStyle}" Click="button_watchCmd_Click" />
+                        <FrameworkElement Grid.Row="1" Margin="{StaticResource AppMarginT}" />
+                        <Label Content="コマンドライン引数" Grid.Row="2" Style="{StaticResource AppTermLabelStyle}" />
+                        <TextBox Grid.Column="1" Grid.Row="2" IsEnabled="{Binding IsChecked, ElementName=checkBox_useWatchCmd, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBoxStyle}" Text="{Binding WatchCmdOpt}" />
+                        <StackPanel Grid.Column="1" Grid.Row="3" Margin="{StaticResource AppMarginT}">
+                            <Label Content="(exe・URL等、引数ともに $SID10$:ServiceID、$SID16$:16進数〃、を指定できます)" Style="{StaticResource AppLabelStyle}" />
+                            <Label Content="(ONID、TSIDについても同様です)" Style="{StaticResource AppLabelStyle}" />
+                        </StackPanel>
+                    </Grid>
+                    <CheckBox Content="再生アプリを指定 (未チェック時、TVTest連携のパスが指定されていればNetworkTVモードで再生を試みます)" HorizontalAlignment="Left" IsChecked="{Binding FilePlay}" Margin="{StaticResource AppWideMarginTB}" Name="checkBox_filePlay" Style="{StaticResource AppCheckBoxStyle}" />
+                    <Grid Margin="{StaticResource AppIndentMargin}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Label Content="再生アプリのexeパス" Style="{StaticResource AppTermLabelStyle}" />
+                        <TextBox Grid.Column="1" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Name="textBox_playExe" Style="{StaticResource AppTextBoxStyle}" Text="{Binding FilePlayExe}" />
+                        <Button Content="開く" Grid.Column="2" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppButtonStyle}" Click="button_playExe_Click" />
+                        <FrameworkElement Grid.Row="1" Margin="{StaticResource AppMarginT}" />
+                        <Label Content="コマンドライン引数" Grid.Row="2" Style="{StaticResource AppTermLabelStyle}" />
+                        <TextBox Grid.Column="1" Grid.Row="2" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBoxStyle}" Text="{Binding FilePlayCmd}" />
+                        <StackPanel Grid.Column="1" Grid.Row="3" Margin="{StaticResource AppMarginT}">
+                            <Label Content="(引数のみ $FilePath$:ファイルパス、$FileNameExt$:ファイル名、を指定できます)" Style="{StaticResource AppLabelStyle}" />
+                            <Label Content="(exeパス未指定時はコマンドライン引数を無視し、ファイルパスを関連付け実行します)" Style="{StaticResource AppLabelStyle}" />
+                            <CheckBox Content="追っかけ再生にも使用する" HorizontalAlignment="Left" IsChecked="{Binding FilePlayOnAirWithExe}" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppWideMarginT}" Style="{StaticResource AppCheckBoxStyle}" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Margin="{StaticResource AppMarginT}" />
+                    <Label Content="ファイルパスの文字列置換リスト（/置換前/置換後/…） ※「フォルダを開く」機能にも適用されます" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppLabelStyle}" />
+                    <StackPanel Margin="{StaticResource AppIndentMargin}">
+                        <TextBox Margin="{StaticResource AppWideMarginT}" Name="textBox_replacePattern" Style="{StaticResource AppTextBoxStyle}" Text="{Binding FilePathReplacePattern}" TextChanged="replaceTest_TextChanged" />
+                        <Grid Margin="{StaticResource AppMarginT}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Label Content="（置換テスト）" Style="{StaticResource AppTermLabelStyle}" />
+                            <TextBox Grid.Column="1" Name="textBox_replaceTest" Style="{StaticResource AppTextBoxStyle}" TextChanged="replaceTest_TextChanged" />
+                            <FrameworkElement Grid.Row="1" Margin="{StaticResource AppMarginT}" />
+                            <Label Content="（置換結果）" Grid.Row="2" Style="{StaticResource AppTermLabelStyle}" />
+                            <TextBox Grid.Column="1" Grid.Row="2" IsReadOnly="True" Name="textBox_replaceTestResult" Style="{StaticResource AppTextBoxStyle}" />
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
             </TabItem>
         </TabControl>
     </Grid>

@@ -1,21 +1,64 @@
 ﻿using System;
+using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace EpgTimer
 {
-    public class BoolConverter : IValueConverter
+    public class ToStringValueIsEqualConverter : IValueConverter
     {
-        public object Convert(object v, Type t, object p, System.Globalization.CultureInfo c)
+        public static bool ProcessConvert(object v, object p)
         {
-            // bool or number => bool
-            bool not = (p != null && ((string)p).IndexOf("not", StringComparison.Ordinal) >= 0);
-            return (v is bool ? (bool)v : (v ?? 0).ToString() != "0") != not;
+            // bool => 0,1
+            string s = v == null ? null : !(v is bool) ? v.ToString() : (bool)v ? "1" : "0";
+            string q = p == null ? null : !(p is bool) ? p.ToString() : (bool)v ? "1" : "0";
+            return s == q;
         }
-        public object ConvertBack(object v, Type t, object p, System.Globalization.CultureInfo c)
+        public object Convert(object v, Type t, object p, CultureInfo c)
         {
-            // bool => bool or number
-            bool not = (p != null && ((string)p).IndexOf("not", StringComparison.Ordinal) >= 0);
-            return (v is bool && (bool)v) != not ? (t == typeof(bool) ? true : (object)(byte)1) : (t == typeof(bool) ? false : (object)(byte)0);
+            return ProcessConvert(v, p);
+        }
+        public object ConvertBack(object v, Type t, object p, CultureInfo c)
+        {
+            return DependencyProperty.UnsetValue;
+        }
+    }
+
+    public class ToStringValueIsNotEqualConverter : IValueConverter
+    {
+        public object Convert(object v, Type t, object p, CultureInfo c)
+        {
+            return !ToStringValueIsEqualConverter.ProcessConvert(v, p);
+        }
+        public object ConvertBack(object v, Type t, object p, CultureInfo c)
+        {
+            return DependencyProperty.UnsetValue;
+        }
+    }
+
+    public class ToStringValueIsZeroOrOneConverter : IValueConverter
+    {
+        public object Convert(object v, Type t, object p, CultureInfo c)
+        {
+            return ToStringValueIsEqualConverter.ProcessConvert(v, "0");
+        }
+        public object ConvertBack(object v, Type t, object p, CultureInfo c)
+        {
+            t = Nullable.GetUnderlyingType(t) ?? t;
+            return !(v is bool) ? DependencyProperty.UnsetValue : t == typeof(bool) ? !(bool)v : System.Convert.ChangeType((bool)v ? 0 : 1, t);
+        }
+    }
+
+    public class ToStringValueIsOneOrZeroConverter : IValueConverter
+    {
+        public object Convert(object v, Type t, object p, CultureInfo c)
+        {
+            return !ToStringValueIsEqualConverter.ProcessConvert(v, "0");
+        }
+        public object ConvertBack(object v, Type t, object p, CultureInfo c)
+        {
+            t = Nullable.GetUnderlyingType(t) ?? t;
+            return !(v is bool) ? DependencyProperty.UnsetValue : t == typeof(bool) ? (bool)v : System.Convert.ChangeType((bool)v ? 1 : 0, t);
         }
     }
 }
