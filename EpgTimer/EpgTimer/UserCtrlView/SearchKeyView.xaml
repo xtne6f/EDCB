@@ -182,19 +182,17 @@
                     <TextBox InputMethod.IsInputMethodEnabled="False" Margin="{StaticResource AppMarginL}" Name="textBox_chkDurationMax" Style="{StaticResource AppNarrowTextBoxStyle}" Text="0" />
                     <Label Content="分以下(0で無制限)" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppLabelStyle}" />
                 </StackPanel>
-                <GroupBox Grid.Row="4" Header="自動予約登録専用" Margin="{StaticResource AppMarginT}">
-                    <StackPanel Margin="{StaticResource AppMargin}">
-                        <CheckBox Content="同一番組名の録画結果があれば無効で登録する" HorizontalAlignment="Left" Name="checkBox_chkRecEnd" Style="{StaticResource AppCheckBoxStyle}" />
-                        <StackPanel Margin="{StaticResource AppIndentMargin}">
-                            <StackPanel Margin="{StaticResource AppMarginT}" Orientation="Horizontal">
-                                <Label Content="確認対象期間" Style="{StaticResource AppTermLabelStyle}" />
-                                <TextBox InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Name="textBox_chkRecDay" Style="{StaticResource AppNarrowTextBoxStyle}" Text="0" />
-                                <Label Content="日前まで" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppLabelStyle}" />
-                            </StackPanel>
-                            <CheckBox Content="全てのサービスで無効にする" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppMarginT}" Name="checkBox_chkRecNoService" Style="{StaticResource AppCheckBoxStyle}" />
+                <StackPanel Grid.Row="4" Margin="{StaticResource AppWideMarginT}">
+                    <CheckBox Content="同一番組名の録画結果があれば無効予約で登録する" HorizontalAlignment="Left" Margin="{StaticResource AppMarginT}" Name="checkBox_chkRecEnd" Style="{StaticResource AppCheckBoxStyle}" />
+                    <StackPanel Margin="{StaticResource AppIndentMargin}">
+                        <StackPanel Margin="{StaticResource AppMarginT}" Orientation="Horizontal">
+                            <Label Content="確認対象期間" Style="{StaticResource AppTermLabelStyle}" />
+                            <TextBox InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Name="textBox_chkRecDay" Style="{StaticResource AppNarrowTextBoxStyle}" Text="0" />
+                            <Label Content="日前まで" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppLabelStyle}" />
                         </StackPanel>
+                        <CheckBox Content="全てのサービスで無効にする" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=checkBox_chkRecEnd, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppMarginT}" Name="checkBox_chkRecNoService" Style="{StaticResource AppCheckBoxStyle}" />
                     </StackPanel>
-                </GroupBox>
+                </StackPanel>
                 <StackPanel Grid.Column="2" Grid.Row="1" Grid.RowSpan="5" Margin="{StaticResource AppMarginL}">
                     <Button Content="全チェック" Style="{StaticResource AppButtonStyle}" Click="button_all_on_Click" />
                     <Button Content="映像のみ" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppButtonStyle}" Click="button_video_on_Click" />
