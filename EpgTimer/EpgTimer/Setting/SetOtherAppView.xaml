@@ -72,8 +72,8 @@
                         <Label Content="コマンドライン引数" Grid.Row="2" Style="{StaticResource AppTermLabelStyle}" />
                         <TextBox Grid.Column="1" Grid.Row="2" IsEnabled="{Binding IsChecked, ElementName=checkBox_useWatchCmd, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBoxStyle}" Text="{Binding WatchCmdOpt}" />
                         <StackPanel Grid.Column="1" Grid.Row="3" Margin="{StaticResource AppMarginT}">
-                            <Label Content="(exe・URL等、引数ともに $SID10$:ServiceID、$SID16$:16進数〃、を指定できます)" Style="{StaticResource AppLabelStyle}" />
-                            <Label Content="(ONID、TSIDについても同様です)" Style="{StaticResource AppLabelStyle}" />
+                            <Label Content="exe・URL等、引数ともに $SID10$:ServiceID、$SID16$:16進数〃、を指定できます" Style="{StaticResource AppLabelStyle}" />
+                            <Label Content="ONID、TSIDについても同様です" Style="{StaticResource AppLabelStyle}" />
                         </StackPanel>
                     </Grid>
                     <CheckBox Content="再生アプリを指定 (未チェック時、TVTest連携のパスが指定されていればNetworkTVモードで再生を試みます)" HorizontalAlignment="Left" IsChecked="{Binding FilePlay}" Margin="{StaticResource AppWideMarginTB}" Name="checkBox_filePlay" Style="{StaticResource AppCheckBoxStyle}" />
@@ -89,15 +89,16 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Label Content="再生アプリのexeパス" Style="{StaticResource AppTermLabelStyle}" />
+                        <Label Content="再生アプリのexe・URL等" Style="{StaticResource AppTermLabelStyle}" />
                         <TextBox Grid.Column="1" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Name="textBox_playExe" Style="{StaticResource AppTextBoxStyle}" Text="{Binding FilePlayExe}" />
                         <Button Content="開く" Grid.Column="2" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppButtonStyle}" Click="button_playExe_Click" />
                         <FrameworkElement Grid.Row="1" Margin="{StaticResource AppMarginT}" />
                         <Label Content="コマンドライン引数" Grid.Row="2" Style="{StaticResource AppTermLabelStyle}" />
                         <TextBox Grid.Column="1" Grid.Row="2" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBoxStyle}" Text="{Binding FilePlayCmd}" />
                         <StackPanel Grid.Column="1" Grid.Row="3" Margin="{StaticResource AppMarginT}">
-                            <Label Content="(引数のみ $FilePath$:ファイルパス、$FileNameExt$:ファイル名、を指定できます)" Style="{StaticResource AppLabelStyle}" />
-                            <Label Content="(exeパス未指定時はコマンドライン引数を無視し、ファイルパスを関連付け実行します)" Style="{StaticResource AppLabelStyle}" />
+                            <Label Content="ともに $Reserve=追っかけ時文字列$、$RecInfo=非〃$ ({}は各々IDに置換)、を指定できます" Style="{StaticResource AppLabelStyle}" />
+                            <Label Content="引数のみ $FilePath$:ファイルパス、$FileNameExt$:ファイル名、を指定できます" Style="{StaticResource AppLabelStyle}" />
+                            <Label Content="exe・URL等未指定時はコマンドライン引数を無視し、ファイルパスを関連付け実行します" Style="{StaticResource AppLabelStyle}" />
                             <CheckBox Content="追っかけ再生にも使用する" HorizontalAlignment="Left" IsChecked="{Binding FilePlayOnAirWithExe}" IsEnabled="{Binding IsChecked, ElementName=checkBox_filePlay, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppWideMarginT}" Style="{StaticResource AppCheckBoxStyle}" />
                         </StackPanel>
                     </Grid>

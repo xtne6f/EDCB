@@ -231,7 +231,7 @@ namespace EpgTimer
         {
             if (recInfo != null)
             {
-                string errorMessage = CommonManager.Instance.FilePlay(recInfo.RecFilePath);
+                string errorMessage = CommonManager.Instance.FilePlay(recInfo.RecFilePath, recInfo.ID);
                 if (errorMessage != null)
                 {
                     popup_play.DataContext = errorMessage;

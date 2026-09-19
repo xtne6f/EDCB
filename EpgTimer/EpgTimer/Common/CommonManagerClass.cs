@@ -968,7 +968,7 @@ namespace EpgTimer
                         CreateSrvCtrl().SendNwPlayClose(info.ctrlID);
                         if (info.filePath != "")
                         {
-                            return FilePlay(info.filePath);
+                            return FilePlay(info.filePath, reserveID, true);
                         }
                     }
                 }
@@ -978,7 +978,7 @@ namespace EpgTimer
             return TVTestCtrl.StartStreamingPlay(null, reserveID);
         }
 
-        public string FilePlay(string filePath)
+        public string FilePlay(string filePath, uint id, bool isReserve = false)
         {
             if (filePath.Length == 0)
             {
@@ -991,19 +991,24 @@ namespace EpgTimer
                 {
                     return "ファイルパスが空です";
                 }
+                var cmdLine = new string[] { Settings.Instance.FilePlayExe, Settings.Instance.FilePlayCmd };
+                for (int i = 0; i < 2; i++)
+                {
+                    cmdLine[i] = Regex.Replace(cmdLine[i], "\\$" + (isReserve ? "RecInfo" : "Reserve") + "=[^$]*\\$", "");
+                    cmdLine[i] = Regex.Replace(cmdLine[i], "\\$" + (isReserve ? "Reserve" : "RecInfo") + "=([^$]*)\\$", m => m.Groups[1].Value.Replace("{}", id.ToString()));
+                }
                 try
                 {
-                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    if (cmdLine[0].Length == 0)
                     {
                         using (Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true })) { }
                     }
                     else
                     {
-                        string cmdLine = Settings.Instance.FilePlayCmd;
                         //'$'->'\t'は再帰的な展開を防ぐため
-                        cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(filePath).Replace('$', '\t'));
-                        cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
-                        using (Process.Start(new ProcessStartInfo(Settings.Instance.FilePlayExe, cmdLine) { UseShellExecute = false })) { }
+                        cmdLine[1] = cmdLine[1].Replace("$FileNameExt$", Path.GetFileName(filePath).Replace('$', '\t'));
+                        cmdLine[1] = cmdLine[1].Replace("$FilePath$", filePath).Replace('\t', '$');
+                        using (Process.Start(new ProcessStartInfo(cmdLine[0], cmdLine[1]) { UseShellExecute = true })) { }
                     }
                 }
                 catch (Exception ex)

@@ -204,7 +204,7 @@ namespace EpgTimer
                 if (listView_recinfo.SelectedItem != null)
                 {
                     var item = (RecInfoItem)listView_recinfo.SelectedItem;
-                    string errorMessage = CommonManager.Instance.FilePlay(item.RecFilePath);
+                    string errorMessage = CommonManager.Instance.FilePlay(item.RecFilePath, item.ID);
                     if (errorMessage != null && item.RecFilePath.Length > 0)
                     {
                         // ポップアップはすぐ閉じてしまうため
@@ -262,7 +262,7 @@ namespace EpgTimer
             if (listView_recinfo.SelectedItem != null)
             {
                 var item = (RecInfoItem)listView_recinfo.SelectedItem;
-                string errorMessage = CommonManager.Instance.FilePlay(item.RecFilePath);
+                string errorMessage = CommonManager.Instance.FilePlay(item.RecFilePath, item.ID);
                 if (errorMessage != null)
                 {
                     popup_error.DataContext = errorMessage;
