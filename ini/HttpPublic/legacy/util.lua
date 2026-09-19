@@ -555,7 +555,7 @@ function PlaybackScriptTemplate(datacastLabel,live,jikkyo,caption,captionLabel)
   local zip=NVRAM_ZIP:match('^'..('[0-9]'):rep(7)..'$')
   local prefecture=math.floor(math.max(NVRAM_REGION<=50 and NVRAM_REGION or 0,0))
   return [=[
-<script type="text/javascript" src="script.js?ver=20260902" defer></script>
+<script type="text/javascript" src="script.js?ver=20260918" defer></script>
 ]=]..(USE_DATACAST and [=[
 <div class="remote-control" style="display:none">
   <button
@@ -1676,7 +1676,7 @@ function DefaultHeadContents()
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; media-src 'self' blob: data:; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'">
 <meta name="viewport" content="initial-scale=1">
 <script type="text/javascript" src="common.js?ver=20260824" id="common-js" data-script-name="]=]..mg.script_name:match('[0-9A-Za-z._-]*$'):lower()..[=[" defer></script>
-<link rel="stylesheet" type="text/css" href="default.css">
+<link rel="stylesheet" type="text/css" href="default.css?ver=20260918">
 ]=]..(COLOR_SCHEME~='dark' and COLOR_SCHEME~='light' and '' or
   '<style type="text/css">:root{color-scheme:'..(COLOR_SCHEME=='dark' and 'dark;--light: ;--dark' or 'light;--dark: ;--light')..':initial}</style>\n')
 end
