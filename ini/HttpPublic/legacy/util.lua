@@ -446,7 +446,7 @@ function GetTranscodeQueries(qs)
     autoCinema=XCODE_OPTIONS[option or 1].autoCinema,
     deinterlace=(XCODE_OPTIONS[option or 1].deinterlace or ''):match('^[0-9A-Za-z=]+$'),
     maxRateForDoubling=tonumber(XCODE_OPTIONS[option or 1].maxRateForDoubling),
-    offset=GetVarInt(qs,'offset',-100000,100),
+    ofssec=GetVarInt(qs,'ofssec',0,100000),
     audio2=GetVarInt(qs,'audio2')==1,
     cinema=GetVarInt(qs,'cinema')==1,
     --0は明示的に等速を表す
@@ -460,7 +460,7 @@ end
 
 function ConstructTranscodeQueries(xq)
   return (xq.option and '&amp;option='..xq.option or '')
-    ..(xq.offset and '&amp;offset='..xq.offset or '')
+    ..(xq.ofssec and '&amp;ofssec='..xq.ofssec or '')
     ..(xq.audio2 and '&amp;audio2=1' or '')
     ..(xq.cinema and '&amp;cinema=1' or '')
     ..(xq.fast and '&amp;fast='..xq.fast or '')
@@ -508,22 +508,24 @@ function TranscodeSettingTemplate(xq,forDL,fsec,chapters)
   edcb.htmlEscape=esc
   s=s..'</select>\n'
   if fsec then
-    s=s..'<select name="offset">'
+    s=s..'<select name="ofssec">'
+    local sel=false
     if fsec>0 and chapters then
       edcb.htmlEscape=15
-      local sel=nil
       for i,v in ipairs(chapters) do
         local sec=math.floor(v.pos/1000<fsec and v.pos/1000 or fsec)
         --便利のため1秒だけ引く
-        sel=sel or sec>1 and xq.offset==1-sec and i
+        sel=sel and 2 or sec>1 and (xq.ofssec or 0)==sec-1 and 1
         s=s..'<option'..(v.name:lower():find(CHAPTER_IN) and ' data-chapter-in="1"' or v.name:lower():find(CHAPTER_OUT) and ' data-chapter-out="1"' or '')
-          ..' value="'..math.min(1-sec,0)..'"'..Selected(sel==i)..' data-sec="'..sec..('">%dm%02ds '):format(math.floor(sec/60),sec%60)..EdcbHtmlEscape(v.name)
+          ..' value="'..math.max(sec-1,0)..'"'..Selected(sel==1)..('>%dm%02ds '):format(math.floor(sec/60),sec%60)..EdcbHtmlEscape(v.name)
       end
       edcb.htmlEscape=esc
     end
     for i=0,100 do
-      s=s..'<option value="'..i..'"'..Selected((xq.offset or 0)==i)..(fsec>0 and ' data-sec="'..math.floor(fsec*i/100)..'"' or '')..'>'
-        ..(fsec>0 and ('%dm%02ds'):format(math.floor(fsec*i/100/60),fsec*i/100%60)..(i%5==0 and '|'..i..'%' or '') or i..'%')
+      sel=sel and 2 or (i==100 or (xq.ofssec or 0)<math.floor(fsec*(i+1)/100)) and 1
+      local sec=math.floor(fsec*i/100)
+      --100%は終端シーク
+      s=s..'<option value="'..(i==100 and 100000 or sec)..'"'..Selected(sel==1)..('>%dm%02ds'):format(math.floor(sec/60),sec%60)..(i%5==0 and '|'..i..'%' or '')
     end
     s=s..'</select>\n'
       ..'<select name="fast">'
@@ -608,8 +610,7 @@ end
 function TranscodeScriptTemplate(live,xq,params)
   return PlaybackScriptTemplate('data',live,xq.jikkyo,xq.caption,'CC')..(live and '<label class="video-side-item"><input id="cb-live" type="checkbox"'
     ..(USE_LIVEJK and ' data-post-comment-query="ctok='..CsrfToken('comment.lua')..'&amp;n='..params.n..(params.id and '&amp;id='..params.id or '')..'"' or '')..'>live</label>\n' or '')..[=[
-<span id="vid-seek" data-initial-ofssec="]=]..math.floor((live or not xq.offset) and 0 or xq.offset<0 and -xq.offset or params.fsec*xq.offset/100)
-  ..'" data-initial-fast="'..(xq.fast and xq.fast~=0 and XCODE_FAST_RATES[xq.fast] or 1)..[=[">
+<span id="vid-seek">
 <span id="vid-seek-popup">]=]..(not live and THUMBNAIL_ON_SEEK and [=[
 <canvas style="display:none"></canvas><script type="text/javascript" src="ts-live.lua?t=-misc.js" defer></script>]=] or '')..[=[
 <div id="vid-seek-status" style="display:none"></div><input type="range" step="0.1" style="display:none" list="vid-seek-marker"></span>
@@ -1675,7 +1676,7 @@ function DefaultHeadContents()
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; media-src 'self' blob: data:; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'">
 <meta name="viewport" content="initial-scale=1">
-<script type="text/javascript" src="common.js?ver=20260824" id="common-js" data-script-name="]=]..mg.script_name:match('[0-9A-Za-z._-]*$'):lower()..[=[" defer></script>
+<script type="text/javascript" src="common.js?ver=20260918" id="common-js" data-script-name="]=]..mg.script_name:match('[0-9A-Za-z._-]*$'):lower()..[=[" defer></script>
 <link rel="stylesheet" type="text/css" href="default.css?ver=20260918">
 ]=]..(COLOR_SCHEME~='dark' and COLOR_SCHEME~='light' and '' or
   '<style type="text/css">:root{color-scheme:'..(COLOR_SCHEME=='dark' and 'dark;--light: ;--dark' or 'light;--dark: ;--light')..':initial}</style>\n')

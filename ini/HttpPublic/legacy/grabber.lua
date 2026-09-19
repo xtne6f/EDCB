@@ -5,8 +5,7 @@ fpath=mg.get_var(mg.request_info.query_string,'fname')
 if fpath then
   fpath=DocumentToNativePath(fpath)
 end
-offset=GetVarInt(mg.request_info.query_string,'offset',-100000,100) or 0
-ofssec=GetVarInt(mg.request_info.query_string,'ofssec',0,100000) or offset<0 and -offset
+ofssec=GetVarInt(mg.request_info.query_string,'ofssec',0,100000) or 0
 
 stream=nil
 if fpath then
@@ -16,29 +15,16 @@ if fpath then
   if IsEqualPath(ext,extts) then
     f=edcb.io.open(fpath,'rb')
     if f then
-      if ofssec then
-        -- 時間シーク
-        offset=0
-        if ofssec~=0 then
-          fsec,fsize=GetDurationSec(f)
-          if SeekSec(f,ofssec,fsec,fsize) then
-            offset=f:seek('cur',0) or 0
-          end
-        end
+      if ofssec==0 then
+        stream=GetIFrameVideoStream(f)
       else
-        -- 比率シーク
-        ofssec=0
-        if offset~=0 then
-          fsec,fsize=GetDurationSec(f)
-          ofssec=math.floor(fsec*offset/100)
-          if offset~=100 and SeekSec(f,ofssec,fsec,fsize) then
-            offset=f:seek('cur',0) or 0
-          else
-            offset=math.floor(fsize*offset/100/188)*188
-          end
+        -- 時間シーク
+        fsec,fsize=GetDurationSec(f)
+        if fsec>=ofssec then
+          SeekSec(f,ofssec,fsec,fsize)
+          stream=GetIFrameVideoStream(f)
         end
       end
-      stream=GetIFrameVideoStream(f)
       f:close()
     end
   end

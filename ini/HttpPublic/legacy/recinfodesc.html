@@ -132,7 +132,7 @@ if v then
             end
             f:close()
           end
-          ct:Append(' ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)\n'
+          ct:Append(' (<span id="vid-src-duration">'..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M</span>)\n'
             ..'<label class="expand-on-checked"><input type="checkbox">edit</label>\n'
             ..'<form class="expand-on-checked" method="POST" action="recinfodesc.html?id='..v.id..'"><div>\n'
             ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
@@ -161,7 +161,7 @@ if v then
                           ..' data-ctok="'..CsrfToken('xcode.lua')..'"'
                           ..' data-hls="'..(edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'"'
                           ..' data-' or ' ')..'src="'..src..'">xcode</video>')
-              ..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),shiftable)..'\n'..TranscodeScriptTemplate(false,xq,{fsec=fsec}))
+              ..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),shiftable)..'\n'..TranscodeScriptTemplate(false,xq))
           end
           ct:Append([=[
 <div style="display:none"><label><input type="checkbox" id="cb-ccinfo">字幕リスト</label>

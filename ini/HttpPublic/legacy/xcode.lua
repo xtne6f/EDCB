@@ -14,8 +14,7 @@ if fpath then
   fpath=DocumentToNativePath(fpath)
 end
 
-offset=GetVarInt(query,'offset',-100000,100) or 0
-ofssec=GetVarInt(query,'ofssec',0,100000) or offset<0 and -offset
+ofssec=GetVarInt(query,'ofssec',0,100000) or 0
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 fastRate=GetVarInt(query,'fast',1,#XCODE_FAST_RATES)
@@ -27,6 +26,7 @@ throttle=GetVarInt(query,'throttle')==1
 filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
 hlsKey=mg.get_var(query,'hls')
 hls4=GetVarInt(query,'hls4',0) or 0
+hlsCheckSrc=GetVarInt(query,'hls_x_src')==1
 caption=hlsKey and option.captionHls or option.captionNone or ''
 output=hlsKey and option.outputHls or option.output
 if hlsKey and not (ALLOW_HLS and option.outputHls) then
@@ -44,7 +44,7 @@ loadKey=reload or mg.get_var(query,'load') or ''
 hlsKey=hlsKey and fpath and mg.md5('xcode:'..hlsKey..':'..fpath)
 
 -- トランスコードを開始し、HLSの場合はインデックスファイルの情報、それ以外はMP4などのストリーム自体を返す
-function OpenTranscoder()
+function OpenTranscoder(offset)
   local searchName='xcode-'..mg.md5(loadKey):sub(17)
   if XCODE_SINGLE then
     -- パイプラインの上流をすべて終わらせる
@@ -139,7 +139,7 @@ function OpenTranscoder()
   return edcb.io.popen(WIN32 and '"'..cmd..'"' or cmd,'r'..POPEN_BINARY)
 end
 
-function OpenPsiDataArchiver()
+function OpenPsiDataArchiver(offset)
   local tsreadex=FindToolsCommand('tsreadex')
   local psisiarc=FindToolsCommand('psisiarc')
   -- 容量確保の仕組みが異なるのでWindows以外では終端への配慮は不要
@@ -231,30 +231,14 @@ if fpath then
     if IsEqualPath(ext,extts) then
       f=edcb.io.open(fpath,'rb')
       if f then
-        if ofssec then
+        if ofssec~=0 then
           -- 時間シーク
-          offset=0
-          if ofssec~=0 then
-            fsec,fsize=GetDurationSec(f)
-            -- 応答性向上のためPSI/SIは6秒(チャンク2つ)だけ手前から読む
-            if SeekSec(f,ofssec-(psidata and 6 or 0),fsec,fsize) then
-              offset=f:seek('cur',0) or 0
-            end
-          end
-        else
-          -- 比率シーク
-          ofssec=0
-          if offset~=0 then
-            fsec,fsize=GetDurationSec(f)
-            ofssec=math.floor(fsec*offset/100)
-            -- 応答性向上のためPSI/SIは6秒(チャンク2つ)だけ手前から読む
-            if offset~=100 and SeekSec(f,ofssec-(psidata and 6 or 0),fsec,fsize) then
-              offset=f:seek('cur',0) or 0
-            else
-              offset=math.floor(fsize*offset/100/188)*188
-            end
-          end
+          fsec,fsize=GetDurationSec(f)
+          ofssec=math.min(ofssec,fsec)
+          -- 応答性向上のためPSI/SIは6秒(チャンク2つ)だけ手前から読む
+          SeekSec(f,ofssec-(psidata and 6 or 0),fsec,fsize)
         end
+        offset=f:seek('cur',0) or 0
         if psidata or jikkyo then
           if jikkyo then
             tot,nid,sid=GetTotAndServiceID(f)
@@ -262,7 +246,7 @@ if fpath then
           f:close()
           f={}
           if psidata then
-            f.psi=OpenPsiDataArchiver()
+            f.psi=OpenPsiDataArchiver(offset)
             if not f.psi then
               f=nil
             end
@@ -277,7 +261,7 @@ if fpath then
           fname=fname..'.psc.txt'
         else
           f:close()
-          f=OpenTranscoder()
+          f=OpenTranscoder(offset)
           fname=fname..'.'..output[1]
         end
       end
@@ -337,6 +321,15 @@ elseif hlsKey then
       -- 最初のセグメントができるまでは2秒だけ応答保留する
       if i>10 then break end
     else
+      if hlsCheckSrc then
+        -- 現在のファイルの長さをコメントとして追記する
+        srcf=edcb.io.open(fpath,'rb')
+        if srcf then
+          fsec,fsize=GetDurationSec(srcf)
+          srcf:close()
+          m3u=m3u:gsub('#EXT%-X%-MEDIA%-SEQUENCE:','#X-SRC-DURATION:'..fsec..','..fsize..'\n%0')
+        end
+      end
       break
     end
     edcb.Sleep(200)
@@ -355,6 +348,7 @@ else
     ts={}
     baseTime=0
     basePcr=0
+    stat=nil
     while true do
       buf=f:read(188*128-#bufRemain)
       if not buf or #buf==0 then
@@ -401,6 +395,33 @@ else
           mg.cry('throttling failed')
           break
         end
+      end
+      if fname:find('%.m2t$') then
+        -- 現在のファイルの長さを1000パケット毎にNullパケットで伝える
+        now=os.time()
+        stat=stat or {now=now-4,count=0,fsec=0,fsize=0,cycle=0}
+        -- 変化が無さそうなら打ち切る
+        if stat.count<3 and math.abs(stat.now-now)>=4 then
+          stat.now=now
+          stat.count=stat.count+1
+          srcf=edcb.io.open(fpath,'rb')
+          if srcf then
+            fsec,fsize=GetDurationSec(srcf)
+            srcf:close()
+            if stat.fsec~=fsec or stat.fsize~=fsize then
+              stat.fsec=fsec
+              stat.fsize=fsize
+              stat.count=0
+            end
+          end
+        end
+        if stat.cycle+#buf>=188000 then
+          buf=buf:sub(1,188000-stat.cycle)..'\x47\x1f\xff\x10STAT'
+            ..('%06d%012.0f'):format(math.min(stat.fsec,999999),math.min(stat.fsize,999999999999))
+            ..('\0'):rep(188-26)..buf:sub(188000-stat.cycle+1)
+          stat.cycle=stat.cycle-188188
+        end
+        stat.cycle=stat.cycle+#buf
       end
       if #buf~=0 and not mg.write(buf) then
         -- キャンセルされた

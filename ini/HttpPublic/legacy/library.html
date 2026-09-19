@@ -194,7 +194,7 @@ else
           end
           f:close()
         end
-        ct:Append(' ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
+        ct:Append(' (<span id="vid-src-duration">'..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M</span>)<br>\n'
           ..'<form id="vid-form"'..(vtag<0 and ' class="transit-inplace"' or '')..' action="'..(vtag==0 and 'xcode.lua' or 'library.html')..'"><div>\n'
           ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
                or '<input type="hidden" name="d" value="'..table.concat(dirhash,',')..'">\n'
@@ -220,7 +220,7 @@ else
                         ..' data-ctok="'..CsrfToken('xcode.lua')..'"'
                         ..' data-hls="'..(edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'"'
                         ..' data-' or ' ')..'src="'..src..'">xcode</video>')
-            ..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),shiftable)..'\n'..TranscodeScriptTemplate(false,xq,{fsec=fsec}))
+            ..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),shiftable)..'\n'..TranscodeScriptTemplate(false,xq))
         end
       else
         ct:Append((vtag~=2 and vtag~=3 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref)..'" download>Mux-to-TS</a>]' or '')

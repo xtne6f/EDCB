@@ -135,11 +135,11 @@ if(window.addEventListener)window.addEventListener("DOMContentLoaded",function()
                   if(desc.dataset.seekTarget){
                     if(desc.dataset.seekTarget=="vid-form"){
                       a.onclick=function(){
-                        var vselect=document.querySelector('#vid-form select[name="offset"]');
-                        if(vselect){
+                        var selectOfssec=document.querySelector('#vid-form select[name="ofssec"]');
+                        if(selectOfssec){
                           for(var i=1;;i++){
-                            if(i==100||(vselect.options[vselect.options.length-101+i].dataset.sec||-1)>=Math.max(sec-1,0)){
-                              vselect.options[vselect.options.length-102+i].selected=true;
+                            if(i==100||selectOfssec.options[selectOfssec.options.length-101+i].value>=Math.max(sec-1,0)){
+                              selectOfssec.options[selectOfssec.options.length-102+i].selected=true;
                               break;
                             }
                           }
@@ -445,7 +445,7 @@ if(window.addEventListener)window.addEventListener("DOMContentLoaded",function()
     var lastChecked=null;
     var sel=document.querySelector("select[name=id]");
     if(sel){
-      sel.onclick=function(){
+      sel.ontouchstart=sel.onfocus=sel.onmouseover=function(){
         //Dynamically get the current event name
         if(lastChecked&&Math.abs(Date.now()-lastChecked)<30000)return;
         lastChecked=Date.now();

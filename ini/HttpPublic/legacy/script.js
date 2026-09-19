@@ -1161,9 +1161,22 @@ const runVideoScript=()=>{
 };
 
 const runTranscodeScript=()=>{
-  const vseek=document.getElementById("vid-seek");
-  vid.ofssec=+vseek.dataset.initialOfssec;
-  vid.fast=+vseek.dataset.initialFast;
+  vid.ofssec=+(vid.initSrc+"&ofssec=0").match(/&ofssec=(\d+)/)[1];
+  const selectOfssec=document.querySelector('#vid-form select[name="ofssec"]');
+  if(selectOfssec){
+    //Clamp to src duration
+    vid.ofssec=Math.min(vid.ofssec,Math.floor(selectOfssec.options[selectOfssec.options.length-2].value/0.99));
+  }
+  vid.fast=1;
+  const selectFast=document.querySelector('#vid-form select[name="fast"]');
+  if(selectFast){
+    for(const opt of selectFast.options){
+      if(opt.value==(vid.initSrc+"&fast=0").match(/&fast=(\d+)/)[1]){
+        vid.fast=+opt.textContent.substring(1);
+        break;
+      }
+    }
+  }
   const cbLive=document.getElementById("cb-live");
   const postCommentQuery=cbLive&&cbLive.dataset.postCommentQuery;
   let currentAbsTime;
@@ -1337,8 +1350,9 @@ const runTranscodeScript=()=>{
         if(!onDataStream&&!(onJikkyoStream&&!shiftable))return;
         let mHeader=null;
         ctrl=new AbortController();
-        fetch((vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc)+(onDataStream?"&psidata=1":"")+
-              (onJikkyoStream&&!shiftable?"&jikkyo=1&jkid="+jkID+"&jktm="+jkTM:"")+"&ofssec="+currentAbsTime(),{
+        fetch((vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace(/&ofssec=[^&]*/,"")+
+              "&ofssec="+currentAbsTime()+(onDataStream?"&psidata=1":"")+
+              (onJikkyoStream&&!shiftable?"&jikkyo=1&jkid="+jkID+"&jktm="+jkTM:""),{
           signal:ctrl.signal
         }).then(response=>{
           if(!response.ok)throw new Error(response.status+" "+response.statusText);
@@ -1460,21 +1474,35 @@ const runTranscodeScript=()=>{
       setTimeout(onclickJikkyo,postCommentQuery?5000:2000);
     }
   }
-  const voffset=document.getElementById("vid-offset");
-  if(voffset){
-    const vselect=document.querySelector('#vid-form select[name="offset"]');
+  if(selectOfssec){
+    const voffset=document.getElementById("vid-offset");
+    const vseek=document.getElementById("vid-seek");
     const vthumb=document.querySelector("#vid-seek canvas");
     const vstatus=document.getElementById("vid-seek-status");
     let thumbTimer=0;
     let thumbFetching=false;
-    const rangeSeekSec=n=>{
-      const i=Math.floor(n);
-      return Math.floor((vselect.options[vselect.options.length-101+Math.min(i+1,100)].dataset.sec||-1)*(n-i)-
-                        (vselect.options[vselect.options.length-101+Math.min(i,100)].dataset.sec||-1)*(n-i-1));
-    };
     const formatSec=sec=>{
-      return Math.floor(sec/60)+"m"+String(100+sec%60).substring(1)+"s";
+      return Math.floor(sec/60)+"m"+String(100+Math.floor(sec)%60).substring(1)+"s";
     };
+    let srcDuration=Math.floor(selectOfssec.options[selectOfssec.options.length-2].value/0.99);
+    let srcDurationUpdated=false;
+    vid.updateSrcDuration=(duration,size)=>{
+      const e=document.getElementById("vid-src-duration");
+      if(e)e.textContent=formatSec(duration)+"|"+Math.floor(size/1024/1024)+"M";
+      srcDuration=duration;
+      srcDurationUpdated=true;
+    };
+    const updateOfssecOptions=()=>{
+      if(srcDurationUpdated){
+        srcDurationUpdated=false;
+        for(let i=1;i<=100;i++){
+          const opt=selectOfssec.options[selectOfssec.options.length-101+i];
+          opt.textContent=formatSec(srcDuration/100*i)+opt.textContent.replace(/^[^|]*/,"");
+          if(i<100)opt.value=""+Math.floor(srcDuration/100*i);
+        }
+      }
+    };
+    selectOfssec.ontouchstart=selectOfssec.onfocus=selectOfssec.onmouseover=updateOfssecOptions;
     let mouseX=null;
     rangeSeek.ontouchend=rangeSeek.onmouseleave=()=>{
       mouseX=null;
@@ -1494,10 +1522,7 @@ const runTranscodeScript=()=>{
       //Adjust the offset between slider and mouse.
       const adjustX=(rangeSeek.clientHeight-parseFloat(getComputedStyle(rangeSeek).paddingTop)-parseFloat(getComputedStyle(rangeSeek).paddingBottom))*0.8;
       const n=Math.min(Math.max(vseek.classList.contains("active")?rangeSeek.value:(mouseX-adjustX/2)/(rangeSeek.clientWidth-adjustX)*100,0),100);
-      vstatus.innerText=formatSec(currentAbsTime())+"\u2192"+
-        (rangeSeekSec(n)>=0&&vid.seekWithoutTransition?formatSec(rangeSeekSec(n)):
-           vselect.options[vselect.options.length-101+Math.floor(n)].textContent.match(/^(?:\d+m\d+s)?/)[0])+
-        "|"+Math.floor(n)+"%";
+      vstatus.innerText=formatSec(currentAbsTime())+"\u2192"+formatSec(n/100*srcDuration)+"|"+Math.floor(n)+"%";
       vstatus.style.display=null;
       setLeft(vseek.classList.contains("active")?rangeSeek.clientWidth*(rangeSeek.value/100):mouseX);
       if(vthumb&&vid.grabFirstFrame){
@@ -1508,7 +1533,7 @@ const runTranscodeScript=()=>{
           const adjustX=(rangeSeek.clientHeight-parseFloat(getComputedStyle(rangeSeek).paddingTop)-parseFloat(getComputedStyle(rangeSeek).paddingBottom))*0.8;
           const n=Math.min(Math.max(vseek.classList.contains("active")?rangeSeek.value:(mouseX-adjustX/2)/(rangeSeek.clientWidth-adjustX)*100,0),100);
           thumbFetching=true;
-          fetch("grabber.lua"+vid.initSrc.match(/\?fname=[^&]*/)[0]+(rangeSeekSec(n)>=0&&vid.seekWithoutTransition?"&ofssec="+rangeSeekSec(n):"&offset="+Math.floor(n))).then(response=>{
+          fetch("grabber.lua"+vid.initSrc.match(/\?fname=[^&]*/)[0]+"&ofssec="+Math.floor(n/100*srcDuration)).then(response=>{
             if(response.ok)return response.arrayBuffer();
           }).then(arrayBuffer=>{
             if(mouseX!=null||vseek.classList.contains("active")){
@@ -1535,9 +1560,10 @@ const runTranscodeScript=()=>{
       popup();
     };
     rangeSeek.onchange=()=>{
-      vselect.options[vselect.options.length-101+Math.floor(rangeSeek.value)].selected=true;
-      if(rangeSeekSec(rangeSeek.value)>=0&&vid.seekWithoutTransition){
-        vid.ofssec=Math.max(rangeSeekSec(rangeSeek.value)-1,0);
+      updateOfssecOptions();
+      selectOfssec.options[selectOfssec.options.length-101+Math.floor(rangeSeek.value)].selected=true;
+      if(vid.seekWithoutTransition){
+        vid.ofssec=Math.max(Math.floor(rangeSeek.value/100*srcDuration)-1,0);
         openSubStream();
         vid.seekWithoutTransition();
         mouseX=null;
@@ -1553,61 +1579,56 @@ const runTranscodeScript=()=>{
     (vid.c||vid.e).ontimeupdate=()=>{
       const sec=currentAbsTime();
       voffset.innerText="|"+formatSec(sec);
-      for(let i=0;;i++){
-        if(i==99||(vselect.options[vselect.options.length-101+i].dataset.sec||-1)>=sec){
-          const marker=document.querySelector("#vid-seek-marker option");
-          if(vseek.classList.contains("active")){
-            marker.value=Math.abs(i-rangeSeek.value)>5?i:null;
-          }else{
-            marker.value=null;
-            rangeSeek.value=i;
-            if(rangeSeek.style.display=="none"){
-              rangeSeek.style.display=null;
-              const adjustX=(rangeSeek.clientHeight-parseFloat(getComputedStyle(rangeSeek).paddingTop)-parseFloat(getComputedStyle(rangeSeek).paddingBottom))*0.8;
-              for(let j=0;j<vselect.options.length-101;j++){
-                const opt=vselect.options[j];
-                const chapter=document.createElement("div");
-                chapter.classList.add("chapter-mark");
-                chapter.appendChild(document.createElement("div"));
-                chapter.firstElementChild.classList.add("chapter-"+(opt.dataset.chapterIn?"in":opt.dataset.chapterOut?"out":"point"));
-                const ratio=opt.dataset.sec/vselect.options[vselect.options.length-1].dataset.sec;
-                chapter.style.left=Math.floor(1000*ratio)/10+"%";
-                chapter.style.transform="translateX(-50%) translateX("+Math.floor(adjustX*(0.5-ratio))+"px)";
-                chapter.onmouseenter=()=>{
-                  vstatus.style.display=null;
-                  vstatus.innerText=opt.textContent;
-                  setLeft(rangeSeek.clientWidth*ratio);
-                };
-                chapter.onmouseleave=()=>{
-                  vstatus.style.display="none";
-                };
-                chapter.onclick=()=>{
-                  opt.selected=true;
-                  if(vid.seekWithoutTransition){
-                    vid.ofssec=Math.max(opt.dataset.sec-1,0);
-                    openSubStream();
-                    vid.seekWithoutTransition();
-                  }else{
-                    document.querySelector('#vid-form button[type="submit"]').click();
-                  }
-                };
-                document.getElementById("vid-seek-popup").appendChild(chapter);
+      const secPos=Math.floor((sec<srcDuration?sec/srcDuration:1)*1000)/10;
+      const marker=document.querySelector("#vid-seek-marker option");
+      if(vseek.classList.contains("active")){
+        marker.value=Math.abs(secPos-rangeSeek.value)>5?secPos:null;
+      }else{
+        marker.value=null;
+        rangeSeek.value=secPos;
+        if(rangeSeek.style.display=="none"){
+          rangeSeek.style.display=null;
+          const adjustX=(rangeSeek.clientHeight-parseFloat(getComputedStyle(rangeSeek).paddingTop)-parseFloat(getComputedStyle(rangeSeek).paddingBottom))*0.8;
+          for(let i=0;i<selectOfssec.options.length-101;i++){
+            const opt=selectOfssec.options[i];
+            const chapter=document.createElement("div");
+            chapter.classList.add("chapter-mark");
+            chapter.appendChild(document.createElement("div"));
+            chapter.firstElementChild.classList.add("chapter-"+(opt.dataset.chapterIn?"in":opt.dataset.chapterOut?"out":"point"));
+            const ratio=opt.value<srcDuration?opt.value/srcDuration:1;
+            chapter.style.left=Math.floor(ratio*1000)/10+"%";
+            chapter.style.transform="translateX(-50%) translateX("+Math.floor(adjustX*(0.5-ratio))+"px)";
+            chapter.onmouseenter=()=>{
+              vstatus.style.display=null;
+              vstatus.innerText=opt.textContent;
+              setLeft(rangeSeek.clientWidth*ratio);
+            };
+            chapter.onmouseleave=()=>{
+              vstatus.style.display="none";
+            };
+            chapter.onclick=()=>{
+              opt.selected=true;
+              if(vid.seekWithoutTransition){
+                vid.ofssec=Math.max(opt.value-1,0);
+                openSubStream();
+                vid.seekWithoutTransition();
+              }else{
+                document.querySelector('#vid-form button[type="submit"]').click();
               }
-            }
+            };
+            document.getElementById("vid-seek-popup").appendChild(chapter);
           }
-          break;
         }
       }
     };
     voffset.innerText="|"+formatSec(vid.ofssec);
   }
-  const vfast=document.querySelector('#vid-form select[name="fast"]');
-  if(vfast){
-    vfast.onchange=()=>{
-      if(vfast.selectedIndex>=0&&vid.seekWithoutTransition){
+  if(selectFast){
+    selectFast.onchange=()=>{
+      if(selectFast.selectedIndex>=0&&vid.seekWithoutTransition){
         vid.ofssec=currentAbsTime();
-        vid.fastParam="&fast="+vfast.options[vfast.selectedIndex].value;
-        vid.fast=1*vfast.options[vfast.selectedIndex].textContent.substring(1);
+        vid.fastParam="&fast="+selectFast.options[selectFast.selectedIndex].value;
+        vid.fast=+selectFast.options[selectFast.selectedIndex].textContent.substring(1);
         openSubStream();
         vid.seekWithoutTransition();
       }
@@ -1617,7 +1638,7 @@ const runTranscodeScript=()=>{
     let swtCount=0;
     vid.seekWithoutTransition=()=>{
       //"count" is to ensure that the src attribute is reloaded.
-      vid.e.src=(vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace("&load=","&reload=")+"&ofssec="+vid.ofssec+"&count="+(++swtCount);
+      vid.e.src=(vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace("&load=","&reload=").replace("&ofssec=[^&]*","")+"&ofssec="+vid.ofssec+"&count="+(++swtCount);
     };
     try{
       const canvas=document.createElement("canvas");
@@ -1684,10 +1705,31 @@ const runHlsScript=()=>{
       "&hls="+vid.e.dataset.hls+(!vid.e.dataset.hlsMp4||/Android.+Firefox/i.test(navigator.userAgent)?"":"&hls4="+vid.e.dataset.hlsMp4),
       "ctok="+vid.e.dataset.ctok+"&open=1",200,500).then(src=>{
       if(Hls.isSupported()){
-        const hls=new Hls({workerPath:"hls.worker.js"});
+        let checkSrcCount=5;
+        const hls=new Hls({
+          workerPath:"hls.worker.js",
+          xhrSetup:(xhr,url)=>{xhr.open("GET",url.replace("&hls_x_src=1","")+(checkSrcCount<5?"&hls_x_src=1":""));}
+        });
         hls.loadSource(src);
         hls.attachMedia(vid.e);
         hls.on(Hls.Events.MANIFEST_PARSED,()=>{vid.e.play();});
+        if(vid.updateSrcDuration){
+          let srcDuration=-1;
+          let srcSize=-1;
+          checkSrcCount=0;
+          hls.on(Hls.Events.LEVEL_LOADED,(event,data)=>{
+            checkSrcCount++;
+            if(data.details.m3u8){
+              const m=data.details.m3u8.match(/^#X-SRC-DURATION:(\d+),(\d+)/m);
+              if(m&&(srcDuration!=+m[1]||srcSize!=+m[2])){
+                if(srcDuration>=0)vid.updateSrcDuration(+m[1],+m[2]);
+                srcDuration=+m[1];
+                srcSize=+m[2];
+                checkSrcCount=0;
+              }
+            }
+          });
+        }
         hls.on(Hls.Events.FRAG_PARSING_METADATA,(event,data)=>{
           if(cap){
             for(const sample of data.samples){cap.pushID3v2Data(sample.pts,sample.data);}
@@ -1713,7 +1755,7 @@ const runHlsScript=()=>{
         const swt=()=>{
           vid.seekWithoutTransition=null;
           hls.detachMedia();
-          waitForHlsStart((vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace("&load=","&reload=")+"&ofssec="+vid.ofssec+
+          waitForHlsStart((vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace("&load=","&reload=").replace(/&ofssec=[^&]*/,"")+"&ofssec="+vid.ofssec+
             //Excludes Firefox for Android, because playback of non-keyframe fragmented MP4 is jerky.
             "&hls="+(++swtCount)+"_"+vid.e.dataset.hls+(!vid.e.dataset.hlsMp4||/Android.+Firefox/i.test(navigator.userAgent)?"":"&hls4="+vid.e.dataset.hlsMp4),
             "ctok="+vid.e.dataset.ctok+"&open=1",200,500).then(src=>{
@@ -1755,6 +1797,10 @@ const runTsliveScript=()=>{
   const vbitrate=document.getElementById("vid-bitrate");
   let bitrateStart=null;
   let bitrateTotal=0;
+  let srcStatCycle=0;
+  let srcStatPacket="";
+  let srcDuration=-1;
+  let srcSize=-1;
   let lastWidth=vid.e.width;
   let lastHeight=vid.e.height;
   let wakeLock=null;
@@ -1766,6 +1812,32 @@ const runTsliveScript=()=>{
       if(!buffer){
         setTimeout(()=>{readNext(mod,reader,ret);},1000);
         return;
+      }
+      if(vid.updateSrcDuration){
+        for(let i=0;i<inputLen;){
+          if(srcStatCycle<188000){
+            srcStatPacket="";
+            const n=Math.min(inputLen-i,188000-srcStatCycle);
+            i+=n;
+            srcStatCycle+=n;
+          }else if(srcStatCycle<188026){
+            srcStatPacket+=String.fromCharCode(ret.value[i++]);
+            srcStatCycle++;
+          }else if(srcStatCycle<188188){
+            const n=Math.min(inputLen-i,188188-srcStatCycle);
+            i+=n;
+            srcStatCycle+=n;
+          }else{
+            //Special Null packet carrying src duration
+            const m=srcStatPacket.match(/^\u0047\u001f\u00ff\u0010STAT(\d{6})(\d{12})$/);
+            if(m&&(srcDuration!=+m[1]||srcSize!=+m[2])){
+              if(srcDuration>=0)vid.updateSrcDuration(+m[1],+m[2]);
+              srcDuration=+m[1];
+              srcSize=+m[2];
+            }
+            srcStatCycle=0;
+          }
+        }
       }
       buffer.set(new Uint8Array(ret.value.buffer,ret.value.byteOffset,inputLen));
       mod.commitInputData(inputLen);
@@ -1861,8 +1933,8 @@ const runTsliveScript=()=>{
     mod.reset();
     const ctrl=new AbortController();
     //"throttle" is to avoid excessive prefetching in some browsers.
-    fetch((vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc)+
-          (abortState?"&ofssec="+vid.ofssec:"")+"&throttle=1",{signal:ctrl.signal}).then(response=>{
+    fetch((vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace(/&ofssec=[^&]*/,"")+
+          "&ofssec="+vid.ofssec+"&throttle=1",{signal:ctrl.signal}).then(response=>{
       if(!response.ok)return;
       //Reset caption
       if(cap)cap.attachMedia(null,vcont);
@@ -1885,6 +1957,7 @@ const runTsliveScript=()=>{
           ctrl.abort();
         };
       }
+      srcStatCycle=0;
       readNext(mod,response.body.getReader(),null);
       //Prevent screen sleep
       navigator.wakeLock.request("screen").then(lock=>{wakeLock=lock;});
