@@ -456,6 +456,7 @@ const runPlaybackScript=(isTrusted)=>{
     //Behave like HTMLMediaElement.
     vid.currentTime=0;
     vid.muted=false;
+    vid.paused=true;
     vid.volume=1;
     vid.c=vid;
   }
@@ -491,7 +492,10 @@ const runPlaybackScript=(isTrusted)=>{
   vwrap=document.getElementById("vid-wrap");
   window.addEventListener("load",adjustVideoMaxWidth);
   window.addEventListener("my-load",adjustVideoMaxWidth);
-  window.addEventListener("resize",adjustVideoMaxWidth);
+  window.addEventListener("resize",()=>{
+    adjustVideoMaxWidth();
+    vcont.dispatchEvent(new Event("my-resize"));
+  });
   const createButton=(t,f)=>{
     const btn=document.createElement("button");
     btn.type="button";
@@ -535,7 +539,10 @@ const runPlaybackScript=(isTrusted)=>{
           if(cbDatacast)cbDatacast.disabled=false;
           vcont.classList.remove("video-container-pip");
           pip=null;
+          vcont.dispatchEvent(new Event("my-resize"));
         };
+        pip.addEventListener("resize",()=>{vcont.dispatchEvent(new Event("my-resize"));});
+        vcont.dispatchEvent(new Event("my-resize"));
       });
     }));
   }
@@ -713,7 +720,10 @@ const runJikkyoScript=()=>{
       }else{
         comm.style.visibility=null;
         comm.style.display=null;
-        setMinimizeJikkyo(()=>{comm.classList.toggle("minimized");});
+        setMinimizeJikkyo(()=>{
+          comm.classList.toggle("minimized");
+          danmaku.resize();
+        });
         onclickJikkyoOnscr();
       }
     }
@@ -737,17 +747,18 @@ const runJikkyoScript=()=>{
     if(!danmaku){
       danmaku=new Danmaku({
         container:vcont,
-        opacity:1,
-        callback(){},
-        error(){},
-        apiBackend:{read(opt){opt.success([]);}},
         height:+cbJikkyo.dataset.commentHeight,
         duration:+cbJikkyo.dataset.commentDuration,
         paddingTop:10,
         paddingBottom:10,
-        unlimited:false,
-        api:{id:"noid",address:"noad",token:"noto",user:"nous",speedRate:1}
+        unlimited:false
       });
+      if(comm.dataset.shiftable){
+        if((vid.c||vid.e).paused)vcont.classList.add("dplayer-paused");
+        vid.e.addEventListener("pause",()=>{vcont.classList.add("dplayer-paused");});
+        vid.e.addEventListener("play",()=>{vcont.classList.remove("dplayer-paused");});
+      }
+      vcont.addEventListener("my-resize",()=>{danmaku.resize();});
     }
     checkJikkyoDisplay();
     let commHide=true;
@@ -1954,6 +1965,10 @@ const runTsliveScript=()=>{
           vid.e.onclick=null;
           mod.pause();
           abortState="paused";
+          if(!vid.paused){
+            vid.paused=true;
+            vid.e.dispatchEvent(new Event("pause"));
+          }
           ctrl.abort();
         };
       }
@@ -1963,6 +1978,10 @@ const runTsliveScript=()=>{
       navigator.wakeLock.request("screen").then(lock=>{wakeLock=lock;});
     });
     abortState="";
+    if(vid.paused){
+      vid.paused=false;
+      vid.e.dispatchEvent(new Event("play"));
+    }
   };
   const notify=s=>{
     const ctx=vid.e.getContext("2d");

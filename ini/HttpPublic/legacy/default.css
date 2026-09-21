@@ -1003,6 +1003,7 @@ td.epg-row-head {
   font-family: "Meiryo", "Kosugi Maru Bold", sans-serif;
   font-weight: bold;
   line-height: 1;
+  opacity: 1;
   pointer-events: none;
   -webkit-text-stroke: 1px #000;
   text-stroke: 1px #000;
@@ -1043,6 +1044,10 @@ td.epg-row-head {
   animation-name: danmaku-center;
   animation-timing-function: linear;
   will-change: visibility;
+}
+
+.dplayer-paused .dplayer-danmaku-move {
+  animation-play-state: paused;
 }
 
 @keyframes danmaku {
