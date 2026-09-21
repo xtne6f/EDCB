@@ -82,7 +82,7 @@ if(window.addEventListener)window.addEventListener("DOMContentLoaded",function()
     cb.checked=false;
     cb.parentElement.parentElement.style.display=null;
     var dummyVideo=null;
-    cb.onclick=function(){
+    cb.onchange=function(){
       if(unloaded())return;
       var desc=document.getElementById("ccinfo-desc");
       desc.style.display=cb.checked?null:"none";
@@ -485,7 +485,7 @@ if(window.addEventListener)window.addEventListener("DOMContentLoaded",function()
       cb.checked=false;
       cb.parentElement.parentElement.style.display=null;
       var xhr=null;
-      cb.onclick=function(){
+      cb.onchange=function(){
         var desc=document.getElementById("pginfo-desc");
         desc.style.display=cb.checked?null:"none";
         if(!cb.checked||xhr)return;
@@ -577,7 +577,7 @@ if(window.addEventListener)window.addEventListener("DOMContentLoaded",function()
     };
     var cb=document.getElementById("use-js-interpreter");
     cb.checked=!!localStorage.getItem("use_js_interpreter");
-    cb.onclick=function(){
+    cb.onchange=function(){
       if(cb.checked)localStorage.setItem("use_js_interpreter","true");
       else localStorage.removeItem("use_js_interpreter");
       document.getElementById("result").innerText=cb.dataset.result.replace(/%(.*?)%(.*?)%/,localStorage.getItem("use_js_interpreter")?"$2":"$1");

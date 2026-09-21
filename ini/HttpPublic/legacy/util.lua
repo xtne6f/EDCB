@@ -362,11 +362,22 @@ JKRDLOG_PATH=nil
 --JKRDLOG_PATH='C:\\Path\\to\\jkrdlog.exe' --Windows
 --JKRDLOG_PATH='jkrdlog' --Windows以外
 
---実況コメントの文字の高さ(px)
-JK_COMMENT_HEIGHT=32
-
---実況コメントの表示時間(秒)
-JK_COMMENT_DURATION=5
+--実況コメントのオプションのリスト(JSON表記)。2つ以上のオプションは"scr"チェックボックスで切り替えできる
+JK_COMMENT_OPTIONS_JSON=[=[
+[
+{
+  "duration":4,
+  "heightPercent":6,
+  "maxHeightPx":9999,
+  "minHeightPx":24,
+  "opacity":1,
+  "paddingBottomPercent":2,
+  "paddingTopPercent":2,
+  "textStroke":"0.03em",
+  "unlimited":false
+}
+]
+]=]
 
 --実況ログ表示機能のデジタル放送のサービスIDと、実況の番号(jk?)
 --キーの下4桁の16進数にサービスID、上1桁にネットワークID(ただし地上波は15=0xF)を指定
@@ -577,7 +588,7 @@ function PlaybackScriptTemplate(datacastLabel,live,jikkyo,caption,captionLabel)
 <script type="text/javascript" src="web_bml_play_ts.js" defer></script>
 ]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 <label class="video-side-item"><input id="cb-jikkyo"]=]..Checkbox(jikkyo)
-  ..' data-comment-height="'..JK_COMMENT_HEIGHT..'" data-comment-duration="'..JK_COMMENT_DURATION..'" data-custom-replace-json="'..mg.url_encode(JK_CUSTOM_REPLACE_JSON)..[=[">jikkyo</label>
+  ..' data-comment-options-json="'..mg.url_encode(JK_COMMENT_OPTIONS_JSON)..'" data-custom-replace-json="'..mg.url_encode(JK_CUSTOM_REPLACE_JSON)..[=[">jikkyo</label>
 <label class="video-side-item enabled-on-checked"><input id="cb-jikkyo-onscr" type="checkbox" checked>scr</label>
 <script type="text/javascript" src="danmaku.js" defer></script>
 ]=] or '')..[=[

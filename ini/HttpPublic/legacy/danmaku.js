@@ -8,7 +8,7 @@ class Danmaku {
             bottom: {},
         };
         this.showing = true;
-        this._measure('');
+        this.context = document.createElement('canvas').getContext('2d');
     }
 
     /**
@@ -21,10 +21,12 @@ class Danmaku {
      */
     draw(dan) {
         if (this.showing) {
-            const itemHeight = this.options.height;
+            const itemHeight = Math.max(Math.min((this.options.heightPercent || 7) / 100 * this.container.offsetHeight,
+                                                 this.options.maxHeightPx || Number.MAX_VALUE),
+                                        Math.max(this.options.minHeightPx || 2, 2));
             const danWidth = this.container.offsetWidth;
-            const danPaddingTop = this.options.paddingTop || 0;
-            const danPaddingBottom = this.options.paddingBottom || 0;
+            const danPaddingTop = (this.options.paddingTopPercent || 0) / 100 * this.container.offsetHeight;
+            const danPaddingBottom = (this.options.paddingBottomPercent || 0) / 100 * this.container.offsetHeight;
             const danHeight = Math.max(this.container.offsetHeight - danPaddingTop - danPaddingBottom, 0);
             const itemY = parseInt(danHeight / itemHeight);
 
@@ -145,16 +147,19 @@ class Danmaku {
     }
 
     _measure(text) {
-        if (!this.context) {
+        const itemHeight = Math.max(Math.min((this.options.heightPercent || 7) / 100 * this.container.offsetHeight,
+                                             this.options.maxHeightPx || Number.MAX_VALUE),
+                                    Math.max(this.options.minHeightPx || 2, 2));
+        if (this.contextItemHeight !== itemHeight) {
+            this.contextItemHeight = itemHeight;
             const item = document.createElement('div');
             item.classList.add('dplayer-danmaku-item');
             item.classList.add('dplayer-danmaku-item--demo');
-            item.innerText = text;
-            item.style.fontSize = Math.floor(this.options.height * 0.8) + 'px';
+            item.style.fontSize = Math.floor(itemHeight * 0.8) + 'px';
             this.container.appendChild(item);
             const measureStyle = getComputedStyle(item, null);
-            this.context = document.createElement('canvas').getContext('2d');
             this.context.font = measureStyle.getPropertyValue('font');
+            this.container.removeChild(item);
         }
         const lines = text.split('\n');
         let maxWidth = 0;

@@ -1003,10 +1003,10 @@ td.epg-row-head {
   font-family: "Meiryo", "Kosugi Maru Bold", sans-serif;
   font-weight: bold;
   line-height: 1;
-  opacity: 1;
+  opacity: var(--dplayer-danmaku-item-opacity, 1);
   pointer-events: none;
-  -webkit-text-stroke: 1px #000;
-  text-stroke: 1px #000;
+  -webkit-text-stroke: var(--dplayer-danmaku-item-text-stroke, 1px) #000;
+  text-stroke: var(--dplayer-danmaku-item-text-stroke, 1px) #000;
   user-select: none;
   white-space: nowrap;
 }
@@ -1017,8 +1017,8 @@ td.epg-row-head {
 }
 
 .dplayer-danmaku-dark {
-  -webkit-text-stroke: 1px #fff;
-  text-stroke: 1px #fff;
+  -webkit-text-stroke: var(--dplayer-danmaku-item-text-stroke, 1px) #fff;
+  text-stroke: var(--dplayer-danmaku-item-text-stroke, 1px) #fff;
 }
 
 .dplayer-danmaku-right {
