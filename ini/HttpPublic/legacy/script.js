@@ -474,19 +474,6 @@ const runPlaybackScript=(isTrusted)=>{
       btnUnmute.style.display="none";
     };
   }
-  const cbDatacast=document.getElementById("cb-datacast");
-  if(cbDatacast){
-    const prefix="nvram_prefix=receiverinfo%2F";
-    if(cbDatacast.dataset.absentZip&&!localStorage.getItem(prefix+"zipcode")){
-      localStorage.setItem(prefix+"zipcode",btoa(cbDatacast.dataset.absentZip));
-    }
-    if(cbDatacast.dataset.absentPrefecture&&!localStorage.getItem(prefix+"prefecture")){
-      localStorage.setItem(prefix+"prefecture",btoa(String.fromCharCode(cbDatacast.dataset.absentPrefecture)));
-    }
-    if(cbDatacast.dataset.absentRegion&&!localStorage.getItem(prefix+"regioncode")){
-      localStorage.setItem(prefix+"regioncode",btoa(String.fromCharCode(cbDatacast.dataset.absentRegion>>8,cbDatacast.dataset.absentRegion&0xff)));
-    }
-  }
   vcont=document.getElementById("vid-cont");
   vfull=document.getElementById("vid-full");
   vwrap=document.getElementById("vid-wrap");
@@ -527,6 +514,7 @@ const runPlaybackScript=(isTrusted)=>{
           pipWindow.document.head.appendChild(style);
         }
         vcont.classList.add("video-container-pip");
+        const cbDatacast=document.getElementById("cb-datacast");
         if(cbDatacast)cbDatacast.disabled=true;
         pip.document.body.appendChild(vcont);
         if(vseek)vcont.appendChild(vseek);
@@ -886,6 +874,34 @@ const runJikkyoScript=()=>{
   };
 };
 
+const setupDatacast=cbDatacast=>{
+  document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+  if(cbDatacast.checked){
+    const prefix="nvram_prefix=receiverinfo%2F";
+    if(cbDatacast.dataset.absentZip&&!localStorage.getItem(prefix+"zipcode")){
+      localStorage.setItem(prefix+"zipcode",btoa(cbDatacast.dataset.absentZip));
+    }
+    if(cbDatacast.dataset.absentPrefecture&&!localStorage.getItem(prefix+"prefecture")){
+      localStorage.setItem(prefix+"prefecture",btoa(String.fromCharCode(cbDatacast.dataset.absentPrefecture)));
+    }
+    if(cbDatacast.dataset.absentRegion&&!localStorage.getItem(prefix+"regioncode")){
+      localStorage.setItem(prefix+"regioncode",btoa(String.fromCharCode(cbDatacast.dataset.absentRegion>>8,cbDatacast.dataset.absentRegion&0xff)));
+    }
+    checkJikkyoDisplay();
+    vwrap.style.width=vfull.clientWidth+"px";
+    vwrap.style.height=vfull.clientHeight+"px";
+    bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
+    hideOnscreenButtons(true);
+    bmlBrowserSetInvisible(false);
+  }else{
+    hideOnscreenButtons(false);
+    bmlBrowserSetInvisible(true);
+    vwrap.style.width=null;
+    vwrap.style.height=null;
+    checkJikkyoDisplay();
+  }
+};
+
 const runVideoScript=()=>{
   const inputFile=document.getElementById("input-file");
   if(inputFile){
@@ -893,6 +909,21 @@ const runVideoScript=()=>{
       vid.e.src=URL.createObjectURL(inputFile.files[0]);
       inputFile.parentNode.parentNode.removeChild(inputFile.parentNode);
     };
+  }
+  if(vid.e.dataset.resumeParams){
+    const m=vid.e.dataset.resumeParams.match(/^(\w+),(\d+),(\d+)/);
+    if(m){
+      const s=localStorage.getItem("edcb_legacy_resume")||"";
+      vid.e.currentTime=+(s+m[1]+"_0").match(new RegExp(m[1]+"_(\\d+)"))[1];
+      const reHash=new RegExp(m[1]+"_[^\n]*\n");
+      const reTrim=new RegExp("^((?:[^\n]*\n){"+m[2]+"}).*");
+      setInterval(()=>{
+        let s=(localStorage.getItem("edcb_legacy_resume")||"").replace(reHash,"").replace(reTrim,"$1");
+        const sec=Math.floor(vid.e.currentTime);
+        if(sec>+m[3]+10&&sec<vid.e.duration-10)s=m[1]+"_"+(sec-m[3])+"\n"+s;
+        localStorage.setItem("edcb_legacy_resume",s);
+      },3000);
+    }
   }
   const cbCaption=document.getElementById("cb-caption");
   const vidTrack=document.getElementById("vid-track");
@@ -989,24 +1020,13 @@ const runVideoScript=()=>{
       };
       cbDatacast.checked=false;
       cbDatacast.onchange=()=>{
-        document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+        setupDatacast(cbDatacast);
         if(!cbDatacast.checked){
           onDataStream=null;
           onDataStreamError=null;
           openSubStream();
-          hideOnscreenButtons(false);
-          bmlBrowserSetInvisible(true);
-          vwrap.style.width=null;
-          vwrap.style.height=null;
-          checkJikkyoDisplay();
           return;
         }
-        checkJikkyoDisplay();
-        vwrap.style.width=vfull.clientWidth+"px";
-        vwrap.style.height=vfull.clientHeight+"px";
-        bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-        hideOnscreenButtons(true);
-        bmlBrowserSetInvisible(false);
         onDataStream=(pid,dict,code,pcr)=>{
           dict[code]=bmlBrowserPlayTSSection(pid,dict[code],pcr)||dict[code];
         };
@@ -1047,24 +1067,13 @@ const runVideoScript=()=>{
       const cbDatacast=document.getElementById("cb-datacast");
       cbDatacast.checked=false;
       cbDatacast.onchange=()=>{
-        document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+        setupDatacast(cbDatacast);
         if(!cbDatacast.checked){
           clearTimeout(readTimer);
           readTimer=0;
-          hideOnscreenButtons(false);
-          bmlBrowserSetInvisible(true);
-          vwrap.style.width=null;
-          vwrap.style.height=null;
-          checkJikkyoDisplay();
           return;
         }
         startRead();
-        checkJikkyoDisplay();
-        vwrap.style.width=vfull.clientWidth+"px";
-        vwrap.style.height=vfull.clientHeight+"px";
-        bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-        hideOnscreenButtons(true);
-        bmlBrowserSetInvisible(false);
         if(psiDataFetched)return;
         psiDataFetched=true;
         fetch(vid.initSrc.replace(/\.[0-9A-Za-z]+$/,"")+".psc").then(response=>{
@@ -1424,24 +1433,13 @@ const runTranscodeScript=()=>{
     if(cbDatacast){
       cbDatacast.checked=false;
       cbDatacast.onchange=()=>{
-        document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
+        setupDatacast(cbDatacast);
         if(!cbDatacast.checked){
           onDataStream=null;
           onDataStreamError=null;
           openSubStream();
-          hideOnscreenButtons(false);
-          bmlBrowserSetInvisible(true);
-          vwrap.style.width=null;
-          vwrap.style.height=null;
-          checkJikkyoDisplay();
           return;
         }
-        checkJikkyoDisplay();
-        vwrap.style.width=vfull.clientWidth+"px";
-        vwrap.style.height=vfull.clientHeight+"px";
-        bmlBrowserSetVisibleSize(vcont.clientWidth,vcont.clientHeight);
-        hideOnscreenButtons(true);
-        bmlBrowserSetInvisible(false);
         onDataStream=(pid,dict,code,pcr)=>{
           dict[code]=bmlBrowserPlayTSSection(pid,dict[code],pcr)||dict[code];
         };
@@ -1509,9 +1507,6 @@ const runTranscodeScript=()=>{
     const vstatus=document.getElementById("vid-seek-status");
     let thumbTimer=0;
     let thumbFetching=false;
-    const formatSec=sec=>{
-      return Math.floor(sec/60)+"m"+String(100+Math.floor(sec)%60).substring(1)+"s";
-    };
     let srcDuration=Math.floor(selectOfssec.options[selectOfssec.options.length-2].value/0.99);
     let srcDurationUpdated=false;
     vid.updateSrcDuration=(duration,size)=>{
@@ -1650,6 +1645,19 @@ const runTranscodeScript=()=>{
       }
     };
     voffset.innerText="|"+formatSec(vid.ofssec);
+    if(selectOfssec.dataset.resumeParams){
+      const m=selectOfssec.dataset.resumeParams.match(/^(\w+),(\d+),(\d+)/);
+      if(m){
+        const reHash=new RegExp(m[1]+"_[^\n]*\n");
+        const reTrim=new RegExp("^((?:[^\n]*\n){"+m[2]+"}).*");
+        setInterval(()=>{
+          let s=(localStorage.getItem("edcb_legacy_resume")||"").replace(reHash,"").replace(reTrim,"$1");
+          const sec=currentAbsTime();
+          if(sec>+m[3]+10)s=m[1]+"_"+(sec-m[3])+"\n"+s;
+          localStorage.setItem("edcb_legacy_resume",s);
+        },3000);
+      }
+    }
   }
   if(selectFast){
     selectFast.onchange=()=>{

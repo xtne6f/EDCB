@@ -301,6 +301,12 @@ VIDEO_MUTED=false
 --音量の初期値。0～1、nilのとき未指定
 VIDEO_VOLUME=nil
 
+--Resume(続きから再生)のためにブラウザに再生位置を記憶しておく最大数。0で記憶しない
+VIDEO_RESUME_MAX=30
+
+--Resumeするとき再生位置をこの秒数だけ戻す
+VIDEO_RESUME_REWIND_SEC=3
+
 --字幕表示のオプション(JSON表記) https://github.com/monyone/aribb24.js#options
 ARIBB24_OPTION_JSON=[=[
 {
@@ -507,7 +513,7 @@ function VideoWrapperEnd(jkList,shiftable)
   return s
 end
 
-function TranscodeSettingTemplate(xq,forDL,fsec,chapters)
+function TranscodeSettingTemplate(xq,forDL,fsec,resumeHash,chapters)
   local s='<select name="option">'
   local esc=edcb.htmlEscape
   edcb.htmlEscape=15
@@ -519,7 +525,8 @@ function TranscodeSettingTemplate(xq,forDL,fsec,chapters)
   edcb.htmlEscape=esc
   s=s..'</select>\n'
   if fsec then
-    s=s..'<select name="ofssec">'
+    s=s..'<select name="ofssec"'..(resumeHash and ' data-resume-params="'..resumeHash..','..VIDEO_RESUME_MAX..','..VIDEO_RESUME_REWIND_SEC..'"'
+                                     ..(xq.ofssec and '' or ' data-prepend-resume="1"') or '')..'>'
     local sel=false
     if fsec>0 and chapters then
       edcb.htmlEscape=15

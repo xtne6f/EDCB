@@ -161,6 +161,7 @@ else
     edcb.htmlEscape=15
     if info then
       ref=dirname..'/'..info.name
+      resumeHash=VIDEO_RESUME_MAX>0 and mg.md5(WIN32 and ref:upper() or ref)
       queryParent='?d='..table.concat(dirhash,',')..(#sort>0 and '&amp;s='..table.concat(sort,',') or '')
       vttKind=info.ists and 'metadata' or TestVttKind(PathAppend(dir,info.name):gsub('%.[0-9A-Za-z]+$','')..'.vtt')
       if vtag==2 or vtag==3 then
@@ -168,7 +169,9 @@ else
           ct:Append('<div><input id="input-file" type="file" accept="video/*">'..(info.ists and '(filename:'..mg.md5(ref:upper()):sub(27)..')' or '')..'</div>')
         end
         ct:Append(VideoWrapperBegin()
-          ..'<video id="video" autoplay playsinline controls '..(vtag%2==0 and 'data-' or '')..'src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref)
+          ..'<video id="video" autoplay playsinline controls'
+          ..(resumeHash and ' data-resume-params="'..resumeHash..','..VIDEO_RESUME_MAX..','..VIDEO_RESUME_REWIND_SEC..'"' or '')
+          ..(vtag%2==0 and ' data-' or ' ')..'src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref)
           ..(vttKind and '<track id="vid-track" kind="'..vttKind..'" '..(vttKind=='metadata' and 'default' or 'mode="disabled"')
                ..(info.ists and '' or ' src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')..'.vtt"')..' type="text/vtt">' or '')
           ..'</video>'..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),true)..'\n'..VideoScriptTemplate(info.ists,LoadAttachedChapters(PathAppend(dir,info.name))))
@@ -206,7 +209,7 @@ else
           ..'→<a href="library.html?d='..table.concat(dirhash,',')..'&amp;h='..hash
           ..(#sort>0 and '&amp;s='..table.concat(sort,',') or '')..ConstructTranscodeQueries(xq)
           ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a>\n'
-          ..TranscodeSettingTemplate(xq,vtag==0,fsec,fsec>0 and LoadAttachedChapters(PathAppend(dir,info.name)))
+          ..TranscodeSettingTemplate(xq,vtag==0,fsec,resumeHash,fsec>0 and LoadAttachedChapters(PathAppend(dir,info.name)))
           ..(vtag==0 and '<br>※OpenFile用のファイルを作成するときは[TS-Live!以外][0m00s][x1.0]を選択してxcodeしてください\n' or '')
           ..'</div></form>'..thumbs[1])
         if vtag==1 then

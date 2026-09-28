@@ -123,13 +123,16 @@ if r then
     for i,ext in ipairs(xlist) do
       ff=EdcbFindFilePlain(recFilePath..ext)
       if ff then
+        resumeHash=VIDEO_RESUME_MAX>0 and mg.md5(WIN32 and (ref..ext):upper() or ref..ext)
         if vtag==i*2 or vtag==i*2+1 then
           if vtag%2==0 then
             ct:Append('<div><input id="input-file" type="file" accept="video/*">'..(ext=='' and '(filename:'..mg.md5(ref:upper()):sub(27)..')' or '')..'</div>')
           end
           vttKind=ext=='' and 'metadata' or TestVttKind((recFilePath..ext):gsub('%.[0-9A-Za-z]+$','')..'.vtt')
           ct:Append(VideoWrapperBegin()
-            ..'<video id="video" autoplay playsinline controls '..(vtag%2==0 and 'data-' or '')..'src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)
+            ..'<video id="video" autoplay playsinline controls'
+            ..(resumeHash and ' data-resume-params="'..resumeHash..','..VIDEO_RESUME_MAX..','..VIDEO_RESUME_REWIND_SEC..'"' or '')
+            ..(vtag%2==0 and ' data-' or ' ')..'src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)
             ..(vttKind and '<track id="vid-track" kind="'..vttKind..'" '..(vttKind=='metadata' and 'default' or 'mode="disabled"')
                  ..(ext=='' and '' or ' src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')..'.vtt"')..' type="text/vtt">' or '')
             ..'</video>'..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),true)..'\n'..VideoScriptTemplate(ext=='',LoadAttachedChapters(recFilePath..ext)))
@@ -159,7 +162,7 @@ if r then
             ..'<button type="submit">xcode</button>\n'
             ..'→<a href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg='..fromepg or '')..ConstructTranscodeQueries(xq)
             ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a>\n'
-            ..TranscodeSettingTemplate(xq,vtag==0,fsec,fsec>0 and LoadAttachedChapters(recFilePath))
+            ..TranscodeSettingTemplate(xq,vtag==0,fsec,resumeHash,fsec>0 and LoadAttachedChapters(recFilePath))
             ..(vtag==0 and '<br>※OpenFile用のファイルを作成するときは[TS-Live!以外][0m00s][x1.0]を選択してxcodeしてください\n' or '')
             ..'</div></form>'..thumbs[1])
           if vtag==1 then
