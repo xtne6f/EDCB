@@ -99,23 +99,23 @@
                     </StackPanel>
                 </StackPanel>
                 <Label Content="表示サービス (同一TSでSIDを逆順にすると結合)" Grid.ColumnSpan="2" Grid.Row="1" Margin="{StaticResource AppMarginB}" Style="{StaticResource AppLabelStyle}" />
-                <ListBox DisplayMemberPath="Item1" Grid.Row="2" Name="listBox_serviceView" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
+                <ListBox DisplayMemberPath="Value" Grid.Row="2" Name="listBox_serviceView" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
                 <Label Content="サービス一覧" Grid.Column="2" Grid.Row="1" Margin="{StaticResource AppMarginB}" Style="{StaticResource AppLabelStyle}" />
                 <TabControl Grid.Column="2" Grid.Row="2" SelectionChanged="listBox_or_tabControl_service_SelectionChanged">
                     <TabItem Header="地デジ" Name="tabItem_tere">
-                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceTere" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
+                        <ListBox DisplayMemberPath="Value" Name="listBox_serviceTere" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
                     </TabItem>
                     <TabItem Header="BS" Name="tabItem_bs">
-                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceBS" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
+                        <ListBox DisplayMemberPath="Value" Name="listBox_serviceBS" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
                     </TabItem>
                     <TabItem Header="CS" Name="tabItem_cs">
-                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceCS" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
+                        <ListBox DisplayMemberPath="Value" Name="listBox_serviceCS" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
                     </TabItem>
                     <TabItem Header="CS3" Name="tabItem_cs3">
-                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceCS3" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
+                        <ListBox DisplayMemberPath="Value" Name="listBox_serviceCS3" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
                     </TabItem>
                     <TabItem Header="その他" Name="tabItem_other">
-                        <ListBox DisplayMemberPath="Item1" Name="listBox_serviceOther" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
+                        <ListBox DisplayMemberPath="Value" Name="listBox_serviceOther" SelectionChanged="listBox_or_tabControl_service_SelectionChanged" />
                     </TabItem>
                 </TabControl>
                 <TextBox Grid.Row="3" IsReadOnly="True" Margin="{StaticResource AppMarginT}" Name="textBox_serviceView_ref" Style="{StaticResource AppMultiLineTextBoxStyle}" Text="Aあ&#10;Aあ&#10;Aあ&#10;Aあ&#10;Aあ&#10;Aあ" TextWrapping="Wrap" VerticalAlignment="Top" Visibility="Hidden" />

@@ -33,12 +33,13 @@ namespace EpgTimer
                                  i == 1 ? listBox_serviceBS :
                                  i == 2 ? listBox_serviceCS :
                                  i == 3 ? listBox_serviceCS3 : listBox_serviceOther;
-                target.Items.Add(new Tuple<string, ulong>("[" + ((TabItem)target.Parent).Header + "]",
-                                                          (ulong)(i == 0 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv :
-                                                                  i == 1 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceBS :
-                                                                  i == 2 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS :
-                                                                  i == 3 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 :
-                                                                  CustomEpgTabInfo.SpecialViewServices.ViewServiceOther)));
+                // Valueの先頭文字は罫線スペース
+                target.Items.Add(new KeyValuePair<ulong, string>((ulong)(i == 0 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv :
+                                                                         i == 1 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceBS :
+                                                                         i == 2 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS :
+                                                                         i == 3 ? CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 :
+                                                                         CustomEpgTabInfo.SpecialViewServices.ViewServiceOther),
+                                                                 " [" + ((TabItem)target.Parent).Header + "]"));
                 foreach (ChSet5Item info in ChSet5.Instance.ChListSelected)
                 {
                     if (i == 0 && ChSet5.IsDttv(info.ONID) ||
@@ -47,7 +48,7 @@ namespace EpgTimer
                         i == 3 && ChSet5.IsCS3(info.ONID) ||
                         i == 4 && ChSet5.IsOther(info.ONID))
                     {
-                        target.Items.Add(new Tuple<string, ulong>(info.ServiceName, info.Key));
+                        target.Items.Add(new KeyValuePair<ulong, string>(info.Key, ' ' + info.ServiceName));
                     }
                 }
             }
@@ -113,14 +114,17 @@ namespace EpgTimer
 
             foreach (ulong id in setInfo.ViewServiceList)
             {
-                listBox_serviceView.Items.Add(
+                // Valueの先頭文字は罫線スペース
+                listBox_serviceView.Items.Add((KeyValuePair<ulong, string>)(
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceDttv ? listBox_serviceTere.Items[0] :
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceBS ? listBox_serviceBS.Items[0] :
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS ? listBox_serviceCS.Items[0] :
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceCS3 ? listBox_serviceCS3.Items[0] :
                     id == (ulong)CustomEpgTabInfo.SpecialViewServices.ViewServiceOther ? listBox_serviceOther.Items[0] :
-                    new Tuple<string, ulong>(ChSet5.Instance.ChList.ContainsKey(id) ? ChSet5.Instance.ChList[id].ServiceName : "???", id));
+                    new KeyValuePair<ulong, string>(id, ' ' + ((ChSet5.Instance.ChList.ContainsKey(id) ? ChSet5.Instance.ChList[id].ServiceName : "???")))));
             }
+            UpdateServiceViewItemMarks();
+
             foreach (ushort id in setInfo.ViewContentKindList)
             {
                 listBox_jyanruView.Items.Add(listBox_jyanru.Items.Cast<ContentKindInfo>().FirstOrDefault(info => info.ID == id) ??
@@ -180,9 +184,9 @@ namespace EpgTimer
 
             info.SearchKey = searchKey;
 
-            foreach (Tuple<string, ulong> item in listBox_serviceView.Items)
+            foreach (KeyValuePair<ulong, string> item in listBox_serviceView.Items)
             {
-                info.ViewServiceList.Add(item.Item2);
+                info.ViewServiceList.Add(item.Key);
             }
 
             foreach (ContentKindInfo item in listBox_jyanruView.Items)
@@ -206,13 +210,14 @@ namespace EpgTimer
                              tabItem_other.IsSelected ? listBox_serviceOther : null;
             if (target != null)
             {
-                foreach (var info in target.Items.Cast<Tuple<string, ulong>>().Skip(1))
+                foreach (var info in target.Items.Cast<KeyValuePair<ulong, string>>().Skip(1))
                 {
-                    if (listBox_serviceView.Items.Cast<Tuple<string, ulong>>().All(info2 => info2.Item2 != info.Item2))
+                    if (listBox_serviceView.Items.Cast<KeyValuePair<ulong, string>>().All(info2 => info2.Key != info.Key))
                     {
                         listBox_serviceView.Items.Add(info);
                     }
                 }
+                UpdateServiceViewItemMarks();
             }
         }
 
@@ -230,15 +235,16 @@ namespace EpgTimer
                              tabItem_other.IsSelected ? listBox_serviceOther : null;
             if (target != null)
             {
-                foreach (var info in target.Items.Cast<Tuple<string, ulong>>().Skip(1))
+                foreach (var info in target.Items.Cast<KeyValuePair<ulong, string>>().Skip(1))
                 {
-                    if (ChSet5.Instance.ChList.ContainsKey(info.Item2) &&
-                        ChSet5.IsVideo(ChSet5.Instance.ChList[info.Item2].ServiceType) &&
-                        listBox_serviceView.Items.Cast<Tuple<string, ulong>>().All(info2 => info2.Item2 != info.Item2))
+                    if (ChSet5.Instance.ChList.ContainsKey(info.Key) &&
+                        ChSet5.IsVideo(ChSet5.Instance.ChList[info.Key].ServiceType) &&
+                        listBox_serviceView.Items.Cast<KeyValuePair<ulong, string>>().All(info2 => info2.Key != info.Key))
                     {
                         listBox_serviceView.Items.Add(info);
                     }
                 }
+                UpdateServiceViewItemMarks();
             }
         }
 
@@ -256,11 +262,12 @@ namespace EpgTimer
                              tabItem_other.IsSelected ? listBox_serviceOther : null;
             if (target != null && target.SelectedItem != null)
             {
-                var info = (Tuple<string, ulong>)target.SelectedItem;
-                if (listBox_serviceView.Items.Cast<Tuple<string, ulong>>().All(info2 => info2.Item2 != info.Item2))
+                var info = (KeyValuePair<ulong, string>)target.SelectedItem;
+                if (listBox_serviceView.Items.Cast<KeyValuePair<ulong, string>>().All(info2 => info2.Key != info.Key))
                 {
                     listBox_serviceView.Items.Add(info);
                 }
+                UpdateServiceViewItemMarks();
             }
         }
 
@@ -277,6 +284,7 @@ namespace EpgTimer
                 listBox_serviceView.Items.RemoveAt(index);
                 listBox_serviceView.SelectedIndex = Math.Min(index, listBox_serviceView.Items.Count - 1);
             }
+            UpdateServiceViewItemMarks();
         }
 
         /// <summary>
@@ -296,18 +304,14 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_up_Click(object sender, RoutedEventArgs e)
         {
+            int index = listBox_serviceView.SelectedIndex;
+            if (index >= 1)
             {
-                if (listBox_serviceView.SelectedItem != null)
-                {
-                    if (listBox_serviceView.SelectedIndex >= 1)
-                    {
-                        object temp = listBox_serviceView.SelectedItem;
-                        int index = listBox_serviceView.SelectedIndex;
-                        listBox_serviceView.Items.RemoveAt(listBox_serviceView.SelectedIndex);
-                        listBox_serviceView.Items.Insert(index - 1, temp);
-                        listBox_serviceView.SelectedIndex = index - 1;
-                    }
-                }
+                object temp = listBox_serviceView.SelectedItem;
+                listBox_serviceView.Items.RemoveAt(index);
+                listBox_serviceView.Items.Insert(index - 1, temp);
+                listBox_serviceView.SelectedIndex = index - 1;
+                UpdateServiceViewItemMarks();
             }
         }
 
@@ -318,18 +322,14 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void button_service_down_Click(object sender, RoutedEventArgs e)
         {
+            int index = listBox_serviceView.SelectedIndex;
+            if (index >= 0 && index < listBox_serviceView.Items.Count - 1)
             {
-                if (listBox_serviceView.SelectedItem != null)
-                {
-                    if (listBox_serviceView.SelectedIndex < listBox_serviceView.Items.Count - 1)
-                    {
-                        object temp = listBox_serviceView.SelectedItem;
-                        int index = listBox_serviceView.SelectedIndex;
-                        listBox_serviceView.Items.RemoveAt(listBox_serviceView.SelectedIndex);
-                        listBox_serviceView.Items.Insert(index + 1, temp);
-                        listBox_serviceView.SelectedIndex = index + 1;
-                    }
-                }
+                object temp = listBox_serviceView.SelectedItem;
+                listBox_serviceView.Items.RemoveAt(index);
+                listBox_serviceView.Items.Insert(index + 1, temp);
+                listBox_serviceView.SelectedIndex = index + 1;
+                UpdateServiceViewItemMarks();
             }
         }
 
@@ -401,17 +401,17 @@ namespace EpgTimer
                              tabItem_other.IsSelected ? listBox_serviceOther : null;
             if (target != null && target.SelectedItem != null)
             {
-                var info = (Tuple<string, ulong>)target.SelectedItem;
-                if (info.Item2 >> 48 != 0)
+                var info = (KeyValuePair<ulong, string>)target.SelectedItem;
+                if (info.Key >> 48 != 0)
                 {
-                    text = info.Item1;
+                    text = info.Value.Substring(1);
                 }
                 else
                 {
-                    ushort onid = (ushort)(info.Item2 >> 32);
-                    ushort tsid = (ushort)(info.Item2 >> 16);
-                    ushort sid = (ushort)info.Item2;
-                    text = (ChSet5.Instance.ChList.ContainsKey(info.Item2) ? ChSet5.Instance.ChList[info.Item2].NetworkName : "???") + "\r\n" +
+                    ushort onid = (ushort)(info.Key >> 32);
+                    ushort tsid = (ushort)(info.Key >> 16);
+                    ushort sid = (ushort)info.Key;
+                    text = (ChSet5.Instance.ChList.ContainsKey(info.Key) ? ChSet5.Instance.ChList[info.Key].NetworkName : "???") + "\r\n" +
                            "OriginalNetworkID: " + onid + "(0x" + onid.ToString("X4") + ")\r\n" +
                            "TransportStreamID: " + tsid + "(0x" + tsid.ToString("X4") + ")\r\n" +
                            "ServiceID: " + sid + "(0x" + sid.ToString("X4") + ")" + (ChSet5.IsCS3(onid) ? " " + (sid & 0x3FF) + "ch" : "");
@@ -435,5 +435,25 @@ namespace EpgTimer
             }
         }
 
+        private void UpdateServiceViewItemMarks()
+        {
+            int index = listBox_serviceView.SelectedIndex;
+            ulong prevID = 0;
+            ulong id = 0;
+            for (int i = -1; i < listBox_serviceView.Items.Count; i++)
+            {
+                ulong nextID = i + 1 < listBox_serviceView.Items.Count ? ((KeyValuePair<ulong, string>)listBox_serviceView.Items[i + 1]).Key : 0;
+                if (i >= 0)
+                {
+                    bool descending = i > 0 && id >> 48 == 0 && prevID >> 48 == 0 && id >> 16 == prevID >> 16 && (ushort)id < (ushort)prevID;
+                    bool nextDescending = i + 1 < listBox_serviceView.Items.Count && id >> 48 == 0 && nextID >> 48 == 0 && id >> 16 == nextID >> 16 && (ushort)id > (ushort)nextID;
+                    char mark = descending ? (nextDescending ? '│' : '└') : nextDescending ? '┌' : '　';
+                    listBox_serviceView.Items[i] = new KeyValuePair<ulong, string>(id, mark + ((KeyValuePair<ulong, string>)listBox_serviceView.Items[i]).Value.Substring(1));
+                }
+                prevID = id;
+                id = nextID;
+            }
+            listBox_serviceView.SelectedIndex = index;
+        }
     }
 }
