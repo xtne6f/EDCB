@@ -874,7 +874,123 @@ const runJikkyoScript=()=>{
   };
 };
 
+let bmlBrowserPlayTSSection=null;
+let bmlBrowserSetInvisible=null;
+let bmlBrowserSetVisibleSize=null;
+
+const initializeBmlBrowser=()=>{
+  const roundGothic={source:"url('KosugiMaru-Regular.woff2'),local('MS Gothic')"};
+  const boldRoundGothic={source:"url('KosugiMaru-Bold.woff2'),local('MS Gothic')"};
+  const squareGothic={source:"url('Kosugi-Regular.woff2'),local('MS Gothic')"};
+  const contentElement=document.querySelector(".data-broadcasting-browser-content");
+  const indicatorElement=document.querySelector(".remote-control-indicator");
+  const bmlBrowser=new web_bml.BMLBrowser({
+    containerElement:contentElement,
+    mediaElement:vcont,
+    indicator:{
+      setUrl:(name,loading)=>{indicatorElement.textContent=(loading?"Loading... ":"")+name+"\n"+indicatorElement.textContent.replace(/[^\n]*\n?/,"");},
+      setReceivingStatus:()=>{},
+      setNetworkingGetStatus:()=>{},
+      setNetworkingPostStatus:()=>{},
+      setEventName:eventName=>{indicatorElement.textContent=indicatorElement.textContent.replace(/\n.*/,"")+"\n"+(eventName==null?"???":eventName);}
+    },
+    fonts:{
+      roundGothic,
+      boldRoundGothic,
+      squareGothic
+    },
+    log:{level:"info"},
+    tunnelPointerToVideoPlaneEnabled:true
+  });
+  for(const x of document.querySelector(".remote-control").querySelectorAll("button")){
+    x.onclick=()=>{
+      const keyCode=parseInt(x.id.split("key")[1]);
+      bmlBrowser.content.processKeyDown(keyCode);
+      bmlBrowser.content.processKeyUp(keyCode);
+    };
+  }
+  let forceInvisible=false;
+  let browserInvisible=true;
+  let windowWidth=0;
+  let windowHeight=0;
+  let contentWidth=0;
+  let contentHeight=0;
+  const onVisibleSizeChanged=()=>{
+    if(!forceInvisible&&!browserInvisible&&contentWidth>0&&contentHeight>0){
+      contentElement.style.width=windowWidth+"px";
+      contentElement.style.height=windowHeight+"px";
+      const scaleX=windowWidth/contentWidth;
+      const scaleY=windowHeight/contentHeight;
+      const s=Math.min(scaleX,scaleY);
+      contentElement.style.transform="translate("+
+        ((contentWidth*s+windowWidth)/2-contentWidth*s)+"px,"+
+        ((contentHeight*s+windowHeight)/2-contentHeight*s)+"px) scale("+s+")";
+      contentElement.style.transformOrigin="0px 0px";
+    }
+  };
+  const onInvisibleChanged=()=>{
+    if(!forceInvisible&&!browserInvisible){
+      vfull.style.display="none";
+      contentElement.style.display="block";
+      onVisibleSizeChanged();
+      vcont.style.width="100%";
+      vcont.style.height="100%";
+      vid.e.style.display="block";
+      vid.e.style.width="100%";
+      vid.e.style.height="100%";
+      const obj=bmlBrowser.getVideoElement();
+      if(obj!=null){
+        obj.appendChild(vcont);
+      }
+    }else{
+      vfull.style.display="";
+      contentElement.style.display="";
+      contentElement.style.transform="";
+      vcont.style.width="";
+      vcont.style.height="";
+      vid.e.style.display="";
+      vid.e.style.width="";
+      vid.e.style.height="";
+      vfull.insertBefore(vcont,vfull.firstChild);
+    }
+  };
+  bmlBrowser.addEventListener("invisible",e=>{
+    console.log("bmlBrowser invisible",e.detail);
+    browserInvisible=e.detail;
+    onInvisibleChanged();
+  });
+  bmlBrowser.addEventListener("load",e=>{
+    console.log("bmlBrowser load",e.detail);
+    contentWidth=e.detail.resolution.width;
+    contentHeight=e.detail.resolution.height;
+    onVisibleSizeChanged();
+  });
+  let lastPcr=-1;
+  const tsStream=web_bml.decodeTS({sendCallback:msg=>{bmlBrowser.emitMessage(msg);}});
+  bmlBrowserPlayTSSection=(pid,section,pcr)=>{
+    if(pcr!=null&&pcr>=0&&lastPcr!=pcr){
+      bmlBrowser.emitMessage({
+        type:"pcr",
+        pcrBase:pcr,
+        pcrExtension:0
+      });
+      lastPcr=pcr;
+    }
+    tsStream.pushSection(pid,section);
+  };
+  bmlBrowserSetInvisible=b=>{
+    forceInvisible=b;
+    onInvisibleChanged();
+  };
+  bmlBrowserSetVisibleSize=(w,h)=>{
+    windowWidth=w;
+    windowHeight=h;
+    onVisibleSizeChanged();
+  };
+};
+
 const setupDatacast=cbDatacast=>{
+  if(!bmlBrowserPlayTSSection)initializeBmlBrowser();
   document.querySelector(".remote-control").style.display=cbDatacast.checked?"":"none";
   if(cbDatacast.checked){
     const prefix="nvram_prefix=receiverinfo%2F";
@@ -1031,7 +1147,7 @@ const runVideoScript=()=>{
           dict[code]=bmlBrowserPlayTSSection(pid,dict[code],pcr)||dict[code];
         };
         onDataStreamError=text=>{
-          document.querySelector(".remote-control-indicator").innerText=text;
+          document.querySelector(".remote-control-indicator").textContent=text;
         };
         openSubStream();
       };
@@ -1082,7 +1198,7 @@ const runVideoScript=()=>{
         }).then(arrayBuffer=>{
           psiData=arrayBuffer;
         }).catch(e=>{
-          document.querySelector(".remote-control-indicator").innerText=""+e;
+          document.querySelector(".remote-control-indicator").textContent=""+e;
           psiDataFetched=false;
         });
       };
@@ -1444,7 +1560,7 @@ const runTranscodeScript=()=>{
           dict[code]=bmlBrowserPlayTSSection(pid,dict[code],pcr)||dict[code];
         };
         onDataStreamError=text=>{
-          document.querySelector(".remote-control-indicator").innerText=text;
+          document.querySelector(".remote-control-indicator").textContent=text;
         };
         openSubStream();
       };

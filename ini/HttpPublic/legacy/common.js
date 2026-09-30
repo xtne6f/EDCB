@@ -598,13 +598,6 @@ if(window.addEventListener)window.addEventListener("DOMContentLoaded",function()
       }
       document.getElementById("result").innerText=btnDel.dataset.result;
     };
-    var cb=document.getElementById("use-js-interpreter");
-    cb.checked=!!localStorage.getItem("use_js_interpreter");
-    cb.onchange=function(){
-      if(cb.checked)localStorage.setItem("use_js_interpreter","true");
-      else localStorage.removeItem("use_js_interpreter");
-      document.getElementById("result").innerText=cb.dataset.result.replace(/%(.*?)%(.*?)%/,localStorage.getItem("use_js_interpreter")?"$2":"$1");
-    };
   }
 
   function onRecinfodescReserveinfoLoaded(){

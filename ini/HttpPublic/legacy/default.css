@@ -915,6 +915,7 @@ td.epg-row-head {
 }
 
 .remote-control-indicator {
+  font-size: small;
   height: 3em;
   line-height: 1.5;
   overflow: hidden;

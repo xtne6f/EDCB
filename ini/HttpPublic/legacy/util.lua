@@ -487,8 +487,8 @@ end
 function VideoWrapperBegin()
   return '<div class="video-wrapper" id="vid-wrap">'
     ..'<div class="data-broadcasting-browser-container"><div class="data-broadcasting-browser-content"></div></div>'
-    ..'<div class="video-full-container arib-video-invisible-container" id="vid-full">'
-    ..'<div class="video-container arib-video-container arib-video-container-prepend arib-video-container-tunnel-pointer" id="vid-cont">'
+    ..'<div class="video-full-container" id="vid-full">'
+    ..'<div class="video-container" id="vid-cont">'
 end
 
 function VideoWrapperEnd(jkList,shiftable)
@@ -592,7 +592,7 @@ function PlaybackScriptTemplate(datacastLabel,live,jikkyo,caption,captionLabel)
   ..(zip and ' data-absent-zip="'..zip..'"' or '')
   ..(prefecture~=0 and ' data-absent-prefecture="'..prefecture..'"' or '')
   ..(prefecture~=0 and ' data-absent-region="'..GetEwsRegionCode(prefecture)..'"' or '')..'>'..datacastLabel..[=[</label>
-<script type="text/javascript" src="web_bml_play_ts.js" defer></script>
+<script type="text/javascript" src="web_bml.js" defer></script>
 ]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 <label class="video-side-item"><input id="cb-jikkyo"]=]..Checkbox(jikkyo)
   ..' data-comment-options-json="'..mg.url_encode(JK_COMMENT_OPTIONS_JSON)..'" data-custom-replace-json="'..mg.url_encode(JK_CUSTOM_REPLACE_JSON)..[=[">jikkyo</label>
