@@ -477,6 +477,12 @@ const runPlaybackScript=(isTrusted)=>{
   vcont=document.getElementById("vid-cont");
   vfull=document.getElementById("vid-full");
   vwrap=document.getElementById("vid-wrap");
+  const jumpToVideo=document.getElementById("jump-to-video");
+  jumpToVideo.style.display=null;
+  jumpToVideo.onclick=e=>{
+    e.preventDefault();
+    vwrap.scrollIntoView();
+  };
   window.addEventListener("load",adjustVideoMaxWidth);
   window.addEventListener("my-load",adjustVideoMaxWidth);
   window.addEventListener("resize",()=>{
@@ -884,6 +890,13 @@ const initializeBmlBrowser=()=>{
   const squareGothic={source:"url('Kosugi-Regular.woff2'),local('MS Gothic')"};
   const contentElement=document.querySelector(".data-broadcasting-browser-content");
   const indicatorElement=document.querySelector(".remote-control-indicator");
+  if(!window.web_bml){
+    indicatorElement.textContent="Error: web_bml module not found";
+    bmlBrowserPlayTSSection=()=>{};
+    bmlBrowserSetInvisible=()=>{};
+    bmlBrowserSetVisibleSize=()=>{};
+    return;
+  }
   const bmlBrowser=new web_bml.BMLBrowser({
     containerElement:contentElement,
     mediaElement:vcont,

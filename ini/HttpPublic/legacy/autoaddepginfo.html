@@ -272,7 +272,7 @@ if aa.searchInfo then
     ..'</select><br>\n'
     ..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
     ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下（0で無制限）<br><br>\n'
-    ..'<label><input name="chkRecEnd"'..Checkbox(si.chkRecEnd)..'>同一番組名の録画結果があれば無効で登録する</label>\n'
+    ..'<label><input name="chkRecEnd"'..Checkbox(si.chkRecEnd)..'>同一番組名の録画結果があれば無効予約で登録する</label>\n'
     ..'<div class="enabled-on-checked">\n'
     ..'<label><input name="chkRecNoService"'..Checkbox(si.chkRecNoService)..'>全てのサービスで無効にする</label><br>\n'
     ..'確認対象期間 <input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'

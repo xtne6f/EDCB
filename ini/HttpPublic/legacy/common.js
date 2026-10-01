@@ -173,7 +173,7 @@ if(window.addEventListener)window.addEventListener("DOMContentLoaded",function()
                         seekVideo(Math.max(sec-1,0));
                         if(unloadCount>0){
                           e.preventDefault();
-                          window.scrollTo(0,window.scrollY+document.getElementById(desc.dataset.seekTarget).getBoundingClientRect().top);
+                          document.getElementById(desc.dataset.seekTarget).scrollIntoView();
                         }
                       };
                     }
@@ -486,7 +486,7 @@ if(window.addEventListener)window.addEventListener("DOMContentLoaded",function()
             }
             sel.style.width=sel.offsetWidth+"px";
           }
-          var re=/<a href="epglist\.html\?id=(\d+-\d+-\d+)#now".*?<\/a><span[^>]*>.*?<\/span>([^<>]*)<\/span>/g;
+          var re=/<a href="epglist\.html\?id=(\d+-\d+-\d+)#now".*?<\/a><div[^>]*><div><span[^>]*>([^<>]*)<\/span>/g;
           var m;
           while((m=re.exec(xhr.response))!==null){
             if(m[1] in initTexts){

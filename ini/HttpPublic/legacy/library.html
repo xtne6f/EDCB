@@ -248,6 +248,7 @@ ct:Append([=[
 <div id="footer">
   <a href="]=]..(#LIBRARY_LIST~=1 and index and 'library.html">ライブラリリスト' or 'index.html">メニュー')..[=[</a>
 ]=]..(queryParent~='' and '  <a href="library.html'..queryParent..'">Parent_directory..</a>\n' or '')..[=[
+  <a href="#vid-wrap" id="jump-to-video" style="display:none">#video</a>
 </div>
 ]=])
 for i=2,#thumbs do ct:Append(thumbs[i]) end

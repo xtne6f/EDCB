@@ -42,8 +42,8 @@ SortServiceListInplace(st)
 
 if sid==0 then
   ct:Append('<div class="nav">\n<ul class="epg-list-list">\n')
-  --3時間前までの番組
-  pastEvents=edcb.EnumEventInfo(st,{startTime=os.date('!*t',now+(9-3)*3600),durationSecond=3*3600})
+  --前後6時間の番組
+  pfEvents=edcb.EnumEventInfo(st,{startTime=os.date('!*t',now+(9-3)*3600),durationSecond=6*3600})
   --並びがネットワーク種別でまとまっているときは見出しをつける
   nwType={}
   for i,v in ipairs(st) do
@@ -55,11 +55,16 @@ if sid==0 then
   end
   for i,v in ipairs(st) do
     present=nil
-    for j=BinarySearchBound(pastEvents,v,CompareFields('onid',false,'tsid',false,'sid')),#pastEvents do
-      if pastEvents[j].nid~=v.nid or pastEvents[j].tsid~=v.tsid or pastEvents[j].sid~=v.sid then
+    following=nil
+    for j=BinarySearchBound(pfEvents,v,CompareFields('onid',false,'tsid',false,'sid')),#pfEvents do
+      if pfEvents[j].nid~=v.nid or pfEvents[j].tsid~=v.tsid or pfEvents[j].sid~=v.sid then
         break
-      elseif not present or CompareTime(present.startTime,pastEvents[j].startTime) then
-        present=pastEvents[j]
+      elseif TimeWithZone(pfEvents[j].startTime,9*3600)<now then
+        if not present or CompareTime(present.startTime,pfEvents[j].startTime) then
+          present=pfEvents[j]
+        end
+      elseif not following or CompareTime(pfEvents[j].startTime,following.startTime) then
+        following=pfEvents[j]
       end
     end
     if not present then
@@ -70,14 +75,26 @@ if sid==0 then
         end
       end
     end
+    if not following then
+      --3時間後までに番組が見つからないときは9時間後まで調べる
+      for j,w in ipairs(edcb.EnumEventInfo({v},{startTime=os.date('!*t',now+9*3600),durationSecond=9*3600})) do
+        if not following or CompareTime(w.startTime,following.startTime) then
+          following=w
+        end
+      end
+    end
     if nwType and nwType~=NetworkType(v.onid) then
       nwType=NetworkType(v.onid)
       ct:Append('<li><h2>'..nwType..'</h2></li>\n')
     end
+    present=present and (not present.durationSecond or TimeWithZone(present.startTime)+present.durationSecond>now+9*3600) and present
+    presentCont=present and present.contentInfoList and #present.contentInfoList>0 and math.floor(present.contentInfoList[1].content_nibble/256)%16 or 16
+    followingCont=following and following.contentInfoList and #following.contentInfoList>0 and math.floor(following.contentInfoList[1].content_nibble/256)%16 or 16
     ct:Append('<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid
       ..'#now"><img class="logo" alt="" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</a>'
-      ..(present and (not present.durationSecond or TimeWithZone(present.startTime)+present.durationSecond>now+9*3600) and present.shortInfo and
-           '<span class="epg-present"><span><br>&emsp;</span>'..present.shortInfo.event_name..'</span>' or '')
+      ..((present and present.shortInfo or following and following.shortInfo) and '<div class="epg-present-following">'
+           ..(present and present.shortInfo and '<div><span class="epg-present cont-'..presentCont..'">'..present.shortInfo.event_name..'</span></div>' or '')
+           ..(following and following.shortInfo and '<div> / <span class="epg-following cont-'..followingCont..'">'..following.shortInfo.event_name..'</span></div>' or '')..'</div>' or '')
       ..'</li>\n')
   end
   ct:Append('</ul>\n</div>\n')
@@ -220,6 +237,7 @@ ct:Append([=[
 </div>
 <div id="footer">
   <a href="]=]..(sid==0 and 'index.html">メニュー' or 'epglist.html">サービスリスト')..[=[</a>
+  <a href="#vid-wrap" id="jump-to-video" style="display:none">#video</a>
 </div>
 </body>
 </html>

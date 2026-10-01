@@ -114,7 +114,7 @@ if v then
                  ..(ext=='' and '' or ' src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')..'.vtt"')..' type="text/vtt">' or '')
             ..'</video>'..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),true)..'\n'..VideoScriptTemplate(ext=='',LoadAttachedChapters(w.recFilePath..ext)))
         else
-          ct:Append((ext=='' and '' or '<a class="transit-inplace" href="recinfodesc.html?id='..v.id..'&amp;vtag='..(i*2+1)..'">')
+          ct:Append((ext=='' and '' or '<a'..(vtag<=0 and ' class="transit-inplace"' or '')..' href="recinfodesc.html?id='..v.id..'&amp;vtag='..(i*2+1)..'">')
             ..'/'..EdcbHtmlEscape(ref..ext)..(ext=='' and '' or '</a>')
             ..'\n[<a href="recinfodesc.html?id='..v.id..'&amp;vtag='..(i*2)..'">OpenFile</a>]'
             ..'\n[<a href="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'" download>DL</a>]')
@@ -187,7 +187,7 @@ if v then
       end
     end
   end
-  ct:Append('<br></dd>\n'
+  ct:Append('<div><a href="#vid-wrap" id="jump-to-video" style="display:none">#video</a></div><br></dd>\n'
     ..'    <dt>プロテクト</dt><dd>\n'
     ..'<form method="POST" action="recinfodesc.html?id='..v.id..'"><div>\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
