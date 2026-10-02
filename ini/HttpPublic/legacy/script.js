@@ -435,20 +435,6 @@ let vid,vcont,vfull,vwrap,setCheckLivePosition,setMinimizeJikkyo,setSendComment,
 //Seek the video to `sec` position if possible.
 let seekVideo=(sec)=>{};
 
-const adjustVideoMaxWidth=()=>{
-  if(!vwrap.style.width){
-    const r=(vid.e.clientWidth>0&&vid.e.clientHeight>0?vid.e.clientWidth/vid.e.clientHeight:16/9)*window.innerHeight/window.innerWidth-
-            document.getElementById("footer").clientHeight*1.5/window.innerHeight;
-    vcont.style.setProperty("--vcont-max-width",(r<0.5?0.5:r<1?r:1)*100+"%");
-  }
-  if(vid.c){
-    //Workaround to preserve canvas aspect ratio...
-    const r=(vid.e.width>0&&vid.e.height>0?vid.e.width/vid.e.height:16/9)*window.innerHeight/window.innerWidth;
-    if(r<1)vfull.classList.add("video-full-container-flex-row");
-    else vfull.classList.remove("video-full-container-flex-row");
-  }
-};
-
 const runPlaybackScript=(isTrusted)=>{
   vid={e:document.getElementById("video"),unmute(){(vid.c||vid.e).muted=false;}};
   vid.initSrc=vid.e.dataset.src||vid.e.getAttribute("src");
@@ -483,12 +469,24 @@ const runPlaybackScript=(isTrusted)=>{
     e.preventDefault();
     vwrap.scrollIntoView();
   };
-  window.addEventListener("load",adjustVideoMaxWidth);
-  window.addEventListener("my-load",adjustVideoMaxWidth);
-  window.addEventListener("resize",()=>{
-    adjustVideoMaxWidth();
+  const onVideoOrWindowResize=()=>{
+    if(!vwrap.style.width){
+      const r=(vid.e.clientWidth>0&&vid.e.clientHeight>0?vid.e.clientWidth/vid.e.clientHeight:16/9)*window.innerHeight/window.innerWidth-
+              document.getElementById("footer").clientHeight*1.5/window.innerHeight;
+      vcont.style.setProperty("--vcont-max-width",(r<0.5?0.5:r<1?r:1)*100+"%");
+    }
+    if(vid.c){
+      //Workaround to preserve canvas aspect ratio...
+      const r=(vid.e.width>0&&vid.e.height>0?vid.e.width/vid.e.height:16/9)*window.innerHeight/window.innerWidth;
+      if(r<1)vfull.classList.add("video-full-container-flex-row");
+      else vfull.classList.remove("video-full-container-flex-row");
+    }
     vcont.dispatchEvent(new Event("my-resize"));
-  });
+  };
+  vid.e.addEventListener(vid.c?"my-resize":"resize",onVideoOrWindowResize);
+  window.addEventListener("load",onVideoOrWindowResize);
+  window.addEventListener("my-load",onVideoOrWindowResize);
+  window.addEventListener("resize",onVideoOrWindowResize);
   const createButton=(t,f)=>{
     const btn=document.createElement("button");
     btn.type="button";
@@ -674,7 +672,6 @@ const runJikkyoScript=()=>{
     document.getElementById("jikkyo-config").classList.toggle("display");
   };
   const chats=document.getElementById("jikkyo-chats");
-  let checkScrollID=0;
   const cbJikkyo=document.getElementById("cb-jikkyo");
   let danmakuOptions=[];
   try{
@@ -748,9 +745,11 @@ const runJikkyoScript=()=>{
     div.appendChild(b);
     chats.appendChild(div);
   };
+  let checkScrollTimer=0;
+  let commHiddenOrResized=true;
   toggleJikkyo=enabled=>{
-    clearInterval(checkScrollID);
-    checkScrollID=0;
+    clearInterval(checkScrollTimer);
+    checkScrollTimer=0;
     if(!enabled){
       onJikkyoStream=null;
       onJikkyoStreamError=null;
@@ -769,20 +768,28 @@ const runJikkyoScript=()=>{
         vid.e.addEventListener("pause",()=>{vcont.classList.add("dplayer-paused");});
         vid.e.addEventListener("play",()=>{vcont.classList.remove("dplayer-paused");});
       }
-      vcont.addEventListener("my-resize",()=>{danmaku.resize();});
+      vcont.addEventListener("my-resize",()=>{
+        danmaku.resize();
+        //To prevent unintended disabling of autoScroll
+        commHiddenOrResized=true;
+      });
     }
     checkJikkyoDisplay();
-    let commHide=true;
-    checkScrollID=setInterval(()=>{
+    let autoScroll=commHiddenOrResized=true;
+    checkScrollTimer=setInterval(()=>{
       if(getComputedStyle(comm).display=="none"||getComputedStyle(vfull).display=="none"){
-        commHide=true;
+        autoScroll=commHiddenOrResized=true;
       }else{
-        const scroll=Math.abs(chats.scrollTop+chats.clientHeight-chats.scrollHeight)<chats.clientHeight/4;
+        if(comm.classList.contains("minimized")){
+          autoScroll=commHiddenOrResized=true;
+        }else{
+          autoScroll=(autoScroll&&commHiddenOrResized)||Math.abs(chats.scrollTop+chats.clientHeight-chats.scrollHeight)<chats.clientHeight/4;
+          commHiddenOrResized=false;
+        }
         //The top/bottom border of #jikkyo-comm must be 1px
         comm.style.height=vid.e.clientHeight-2+"px";
         chats.style.height=vid.e.clientHeight-2+comm.getBoundingClientRect().y-chats.getBoundingClientRect().y+"px";
-        if(commHide||scroll)chats.scrollTop=chats.scrollHeight;
-        commHide=false;
+        if(autoScroll&&!commHiddenOrResized)chats.scrollTop=chats.scrollHeight;
       }
     },1000);
     let fragment=null;
@@ -848,10 +855,16 @@ const runJikkyoScript=()=>{
       if(tag.indexOf(";T=")<0)scatterInterval=90;
       else scatterInterval=Math.min(Math.max(scatterInterval+(scatter.length>0?-10:10),100),200);
       setTimeout(()=>{
-        const scroll=Math.abs(chats.scrollTop+chats.clientHeight-chats.scrollHeight)<chats.clientHeight/4;
         if(fragment){
+          autoScroll=(autoScroll&&commHiddenOrResized)||Math.abs(chats.scrollTop+chats.clientHeight-chats.scrollHeight)<chats.clientHeight/4;
           chats.appendChild(fragment);
           fragment=null;
+          if(autoScroll){
+            while(chats.childElementCount>1000){
+              chats.removeChild(chats.firstElementChild);
+            }
+            if(!commHiddenOrResized)chats.scrollTop=chats.scrollHeight;
+          }
         }
         if(scatterInterval<100){
           danmaku.draw(scatter);
@@ -868,12 +881,6 @@ const runJikkyoScript=()=>{
             },scatterInterval*i);
           }
         }
-        if(commHide||scroll){
-          while(chats.childElementCount>1000){
-            chats.removeChild(chats.firstElementChild);
-          }
-        }
-        if(scroll)chats.scrollTop=chats.scrollHeight;
       },0);
     };
     onJikkyoStreamError=addJikkyoMessage;
@@ -2049,7 +2056,7 @@ const runTsliveScript=()=>{
     if(lastWidth!=vid.e.width||lastHeight!=vid.e.height){
       lastWidth=vid.e.width;
       lastHeight=vid.e.height;
-      adjustVideoMaxWidth();
+      vid.e.dispatchEvent(new Event("my-resize"));
     }
   };
   let cap=null;
