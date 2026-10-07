@@ -908,11 +908,11 @@ const initializeBmlBrowser=()=>{
     containerElement:contentElement,
     mediaElement:vcont,
     indicator:{
-      setUrl:(name,loading)=>{indicatorElement.textContent=(loading?"Loading... ":"")+name+"\n"+indicatorElement.textContent.replace(/[^\n]*\n?/,"");},
-      setReceivingStatus:()=>{},
+      setUrl:(name,loading)=>{indicatorElement.textContent=indicatorElement.textContent.replace(/^((?:Receiving\.\.\. )?)[^\n]*/,"$1"+((loading?"Loading... ":"")+name).replace(/\$/g,"$$"));},
+      setReceivingStatus:receiving=>{indicatorElement.textContent=(receiving?"Receiving... ":"")+indicatorElement.textContent.replace(/^Receiving\.\.\. /,"");},
       setNetworkingGetStatus:()=>{},
       setNetworkingPostStatus:()=>{},
-      setEventName:eventName=>{indicatorElement.textContent=indicatorElement.textContent.replace(/\n.*/,"")+"\n"+(eventName==null?"???":eventName);}
+      setEventName:eventName=>{indicatorElement.textContent=indicatorElement.textContent.replace(/\n[\s\S]*/,"")+"\n"+(eventName==null?"???":eventName);}
     },
     fonts:{
       roundGothic,
@@ -1052,7 +1052,7 @@ const runVideoScript=()=>{
       const s=localStorage.getItem("edcb_legacy_resume")||"";
       vid.e.currentTime=+(s+m[1]+"_0").match(new RegExp(m[1]+"_(\\d+)"))[1];
       const reHash=new RegExp(m[1]+"_[^\n]*\n");
-      const reTrim=new RegExp("^((?:[^\n]*\n){"+m[2]+"}).*");
+      const reTrim=new RegExp("^((?:[^\n]*\n){"+m[2]+"})[\\s\\S]*");
       setInterval(()=>{
         let s=(localStorage.getItem("edcb_legacy_resume")||"").replace(reHash,"").replace(reTrim,"$1");
         const sec=Math.floor(vid.e.currentTime);
@@ -1785,7 +1785,7 @@ const runTranscodeScript=()=>{
       const m=selectOfssec.dataset.resumeParams.match(/^(\w+),(\d+),(\d+)/);
       if(m){
         const reHash=new RegExp(m[1]+"_[^\n]*\n");
-        const reTrim=new RegExp("^((?:[^\n]*\n){"+m[2]+"}).*");
+        const reTrim=new RegExp("^((?:[^\n]*\n){"+m[2]+"})[\\s\\S]*");
         setInterval(()=>{
           let s=(localStorage.getItem("edcb_legacy_resume")||"").replace(reHash,"").replace(reTrim,"$1");
           const sec=currentAbsTime();
@@ -1934,6 +1934,8 @@ const runHlsScript=()=>{
             hls.loadSource(src);
             hls.attachMedia(vid.e);
             vid.seekWithoutTransition=swt;
+            //Reset caption
+            if(cap)cap.attachMedia(vid.e);
           }).catch(()=>{
             vid.e.poster=null;
           });

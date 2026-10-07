@@ -585,7 +585,6 @@ function PlaybackScriptTemplate(datacastLabel,live,jikkyo,caption,captionLabel)
     <button
       type="button" id="key]=]..table.concat({'6">1','7">2','8">3','9">4','10">5','11">6','12">7','13">8','14">9','15">10','16">11','17">12','5">0'},[=[</button><button
       type="button" id="key]=])..[=[</button></span>
-  <span class="remote-control-receiving-status" style="display:none">Loading...</span>
   <div class="remote-control-indicator"></div>
 </div>
 <label class="video-side-item"><input id="cb-datacast" type="checkbox"]=]
