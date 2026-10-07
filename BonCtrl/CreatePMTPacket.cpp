@@ -132,6 +132,9 @@ void CCreatePMTPacket::CreatePMT()
 				//階層伝送記述子
 				item.quality = descBuff[2+infoRead]&0x01;
 				item.qualityPID = ((WORD)descBuff[2+infoRead+1]&0x1F)<<8 | descBuff[2+infoRead+2];
+			}else if( descriptor_tag == 0x52 && descriptor_length >= 1 && infoRead + 2 < item.descBuffSize ){
+				//ストリーム識別記述子
+				AddDebugLogFormat(L"CCreatePMTPacket stream_type=%d component_tag=%d", item.stream_type, descBuff[2 + infoRead]);
 			}
 			infoRead += 2+descriptor_length;
 		}
