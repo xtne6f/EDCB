@@ -96,6 +96,9 @@ void CCreatePMTPacket::CreatePMT()
 		infoRead+= 2+descriptor_length;
 	}
 
+	BOOL findVHighQ = FALSE;
+	BOOL findAHighQ = FALSE;
+
 	//descriptor2
 	vector<SECOND_DESC_BUFF> secondDescBuff;
 	while( readSize+4 < (DWORD)section_length+3-4 ){
@@ -132,35 +135,22 @@ void CCreatePMTPacket::CreatePMT()
 			}
 			infoRead += 2+descriptor_length;
 		}
+		if( item.quality == 1 ){
+			//高階層あり
+			if( item.stream_type == 0x02 ){
+				//MPEG2 VIDEO
+				findVHighQ = TRUE;
+			}else if( item.stream_type == 0x0F ){
+				//MPEG2 AAC
+				findAHighQ = TRUE;
+			}
+		}
 		secondDescBuff.push_back(item);
 	}
-
-	BOOL findVHighQ = FALSE;
-	BOOL findAHighQ = FALSE;
-	BOOL findMPEG2V = FALSE;
-	BOOL findAAC = FALSE;
 
 	this->createVer++;
 	if( this->createVer > 31 ){
 		this->createVer = 0;
-	}
-
-	//データ一覧チェック
-	for( size_t i=0; i<secondDescBuff.size(); i++ ){
-		if( secondDescBuff[i].quality == 1 ){
-			//高階層あり
-			if( secondDescBuff[i].stream_type == 0x02 ){
-				findVHighQ = TRUE;
-			}else if( secondDescBuff[i].stream_type == 0x0F ){
-				findAHighQ = TRUE;
-			}
-		}
-		if( secondDescBuff[i].stream_type == 0x02 ){
-			findMPEG2V = TRUE;
-		}
-		else if( secondDescBuff[i].stream_type == 0x0F ){
-			findAAC = TRUE;
-		}
 	}
 
 	for( size_t i=0; i<secondDescBuff.size(); i++ ){
@@ -186,22 +176,6 @@ void CCreatePMTPacket::CreatePMT()
 					matched = TRUE;
 				}
 				break;
-			case 0x1B:
-				//MPEG4 VIDEO
-				if( findMPEG2V == FALSE ){
-					matched = TRUE;
-				}
-				break;
-			case 0x04:
-				//MPEG2 AUDIO
-				if( findAAC == FALSE ){
-					matched = TRUE;
-				}
-				break;
-			case 0x24:
-				//HEVC VIDEO
-				matched = TRUE;
-				break;
 			case 0x06:
 				//字幕
 				if( this->needCaption == TRUE ){
@@ -215,6 +189,7 @@ void CCreatePMTPacket::CreatePMT()
 				}
 				break;
 			default:
+				matched = TRUE;
 				break;
 		}
 		if( matched != FALSE ){

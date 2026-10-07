@@ -138,6 +138,7 @@ void COneServiceUtil::AddTSBuff(
 							       pidType.second == 0x1B ? L"MPEG4 VIDEO" :
 							       pidType.second == 0x04 ? L"MPEG2 AUDIO" :
 							       pidType.second == 0x24 ? L"HEVC VIDEO" :
+							       pidType.second == 0x11 ? L"LATM AUDIO" :
 							       pidType.second == 0x06 ? L"字幕" :
 							       pidType.second == 0x0D ? L"データカルーセル" : L"";
 							if( name.empty() ){
