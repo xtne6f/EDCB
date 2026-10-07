@@ -368,6 +368,9 @@ JKRDLOG_PATH=nil
 --JKRDLOG_PATH='C:\\Path\\to\\jkrdlog.exe' --Windows
 --JKRDLOG_PATH='jkrdlog' --Windows以外
 
+--実況コメントのNGユーザーをブラウザに記憶しておく最大数。0でNG機能なし
+JK_NG_USERS_MAX=50
+
 --実況コメントのオプションのリスト(JSON表記)。2つ以上のオプションは"scr"チェックボックスで切り替えできる
 JK_COMMENT_OPTIONS_JSON=[=[
 [
@@ -594,7 +597,9 @@ function PlaybackScriptTemplate(datacastLabel,live,jikkyo,caption,captionLabel)
 <script type="text/javascript" src="web_bml.js" defer></script>
 ]=] or '')..((live and USE_LIVEJK or not live and JKRDLOG_PATH) and [=[
 <label class="video-side-item"><input id="cb-jikkyo"]=]..Checkbox(jikkyo)
-  ..' data-comment-options-json="'..mg.url_encode(JK_COMMENT_OPTIONS_JSON)..'" data-custom-replace-json="'..mg.url_encode(JK_CUSTOM_REPLACE_JSON)..[=[">jikkyo</label>
+  ..' data-ng-users-max="'..JK_NG_USERS_MAX
+  ..'" data-comment-options-json="'..mg.url_encode(JK_COMMENT_OPTIONS_JSON)
+  ..'" data-custom-replace-json="'..mg.url_encode(JK_CUSTOM_REPLACE_JSON)..[=[">jikkyo</label>
 <label class="video-side-item enabled-on-checked"><input id="cb-jikkyo-onscr" type="checkbox" checked>scr</label>
 <script type="text/javascript" src="danmaku.js" defer></script>
 ]=] or '')..[=[

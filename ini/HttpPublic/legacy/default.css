@@ -1018,30 +1018,62 @@ td.epg-row-head {
   word-break: break-all;
 }
 
-#jikkyo-chats > .closed {
+.jikkyo-chat-message {
+  font-weight: bold;
+}
+
+.jikkyo-chat {
+  position: relative;
+}
+
+.jikkyo-chat > button {
+  height: 100%;
+  left: 0;
+  padding-bottom: 0;
+  padding-top: 0;
+  position: absolute;
+  top: 0;
+}
+
+.jikkyo-chat.closed {
   border-top: 1px dotted #aaa;
 }
 
-#jikkyo-chats > div > .nico {
+.jikkyo-chat > .nico {
   background: var(--light, #fff) var(--dark, inherit);
   color: var(--light, #00a) var(--dark, #66c);
   margin-left: 0.2em;
   margin-right: 0.2em;
 }
 
-#jikkyo-chats > div > .refuge {
+.jikkyo-chat > .refuge {
   background: var(--light, #fff) var(--dark, inherit);
   color: var(--light, #900) var(--dark, #c66);
   margin-left: 0.2em;
   margin-right: 0.2em;
 }
 
-#jikkyo-chats .dark {
+.jikkyo-chat > .dark {
   color: #fff;
 }
 
-#jikkyo-chats .light {
+.jikkyo-chat > .light {
   color: #000;
+}
+
+.jikkyo-chat.ng > .neutral {
+  color: transparent;
+  text-shadow: 0 0 0.3em var(--light, rgba(0, 0, 0, 0.7)) var(--dark, rgba(255, 255, 255, 0.7));
+}
+
+.jikkyo-chat.ng > .dark {
+  color: transparent;
+  text-shadow: 0 0 0.3em rgba(255, 255, 255, 0.7);
+}
+
+.jikkyo-chat.ng > .light {
+  color: transparent;
+  text-shadow: 0 0 0.3em rgba(0, 0, 0, 0.7);
 }
 
 :fullscreen #jikkyo-comm {

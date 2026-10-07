@@ -739,14 +739,48 @@ const runJikkyoScript=()=>{
     }
   };
   addJikkyoMessage=text=>{
-    const b=document.createElement("strong");
-    b.innerText=text;
     const div=document.createElement("div");
-    div.appendChild(b);
+    div.innerText=text;
+    div.className="jikkyo-chat-message";
     chats.appendChild(div);
   };
   let checkScrollTimer=0;
   let commHiddenOrResized=true;
+  let ngUsers="";
+  let addNGButton=()=>{};
+  if(parseInt(cbJikkyo.dataset.ngUsersMax,10)){
+    ngUsers=localStorage.getItem("edcb_legacy_jikkyo_ng_users")||"\n";
+    const btn=document.createElement("button");
+    const setupButton=user=>{
+      const ng=ngUsers.indexOf("\n"+user+"\n")>=0;
+      btn.innerText=ng?"NG\u2212":"NG\u002b";
+      btn.onclick=()=>{
+        ngUsers=(localStorage.getItem("edcb_legacy_jikkyo_ng_users")||"\n").replace("\n"+user+"\n","\n");
+        if(!ng)ngUsers="\n"+user+ngUsers;
+        ngUsers=ngUsers.replace(new RegExp("((?:\n[^\n]*){"+parseInt(cbJikkyo.dataset.ngUsersMax,10)+"}\n)[\\s\\S]*"),"$1");
+        localStorage.setItem("edcb_legacy_jikkyo_ng_users",ngUsers);
+        setupButton(user);
+        for(const e of chats.children){
+          if(e.classList.contains("jikkyo-chat")){
+            if(ngUsers.indexOf("\n"+e.dataset.user+"\n")>=0)e.classList.add("ng");
+            else e.classList.remove("ng");
+          }
+        }
+      };
+      return btn;
+    };
+    addNGButton=div=>{
+      if(window.matchMedia("(hover:hover)").matches){
+        div.onmouseenter=()=>{div.appendChild(setupButton(div.dataset.user));};
+        div.onmouseleave=()=>{div.removeChild(btn);};
+      }else{
+        div.onclick=()=>{
+          if(div.contains(btn))div.removeChild(btn);
+          else div.appendChild(setupButton(div.dataset.user));
+        };
+      }
+    };
+  }
   toggleJikkyo=enabled=>{
     clearInterval(checkScrollTimer);
     checkScrollTimer=0;
@@ -802,26 +836,33 @@ const runJikkyoScript=()=>{
         const c=parseChatTag(replaceTag(tag));
         if(c){
           if(c.yourpost)c.border="2px solid #c00";
-          scatter.push(c);
-          const dateSpan=document.createElement("span");
-          dateSpan.innerText=String(100+(Math.floor(c.date/3600)+9)%24).substring(1)+":"+
-                             String(100+Math.floor(c.date/60)%60).substring(1)+":"+
-                             String(100+c.date%60).substring(1);
+          const dateText=String(100+(Math.floor(c.date/3600)+9)%24).substring(1)+":"+
+                         String(100+Math.floor(c.date/60)%60).substring(1)+":"+
+                         String(100+c.date%60).substring(1);
           const userSpan=document.createElement(c.yourpost?"b":"span");
           userSpan.innerText="("+c.user.substring(c.user.substring(0,2)=="a:"?2:0).substring(0,3)+")";
           userSpan.className=c.refuge?"refuge":"nico";
           const span=document.createElement("span");
           span.innerText=c.text;
+          span.className="neutral";
           if(c.color!=0xffffff){
             span.style.backgroundColor=c.colorcode;
             span.className=(c.color>>16)*3+(c.color>>8)%256*6+c.color%256<255?"dark":"light";
           }
           const div=document.createElement("div");
+          div.className="jikkyo-chat";
+          div.dataset.user=c.user;
           if(closed){
-            div.className="closed";
+            div.classList.add("closed");
             closed=false;
           }
-          div.appendChild(dateSpan);
+          if(ngUsers.indexOf("\n"+c.user+"\n")>=0){
+            div.classList.add("ng");
+          }else{
+            scatter.push(c);
+          }
+          addNGButton(div);
+          div.append(dateText);
           div.appendChild(userSpan);
           div.appendChild(span);
           if(!fragment)fragment=document.createDocumentFragment();
