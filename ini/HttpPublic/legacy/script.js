@@ -1,6 +1,14 @@
 "use strict";
 //jshint browser: true, esversion: 6, varstmt: true
 
+//Seek the video to `sec` position if possible
+let seekVideo=sec=>{};
+
+//Entry point for video playback
+let runPlaybackScript;
+
+{
+
 const readPsiData=(data,proc,startSec,ctx)=>{
   data=new DataView(data);
   ctx=ctx||{};
@@ -361,7 +369,7 @@ const readJikkyoLog=(text,proc,startSec,ctx)=>{
   }
 };
 
-const getJikkyoLogStats=(text)=>{
+const getJikkyoLogStats=text=>{
   let sec=0;
   for(let pos=0;;){
     const i=text.indexOf("\n",pos);
@@ -429,13 +437,10 @@ const drawStatsGraph=(stats,now,ofs)=>{
   ctx.stroke();
 };
 
-//Global variables available after runOnscreenButtonsScript() is called.
+//Available after runPlaybackScript() is called
 let vid,vcont,vfull,vwrap,setCheckLivePosition,setMinimizeJikkyo,setSendComment,hideOnscreenButtons;
 
-//Seek the video to `sec` position if possible.
-let seekVideo=(sec)=>{};
-
-const runPlaybackScript=(isTrusted)=>{
+runPlaybackScript=isTrusted=>{
   vid={e:document.getElementById("video"),unmute(){(vid.c||vid.e).muted=false;}};
   vid.initSrc=vid.e.dataset.src||vid.e.getAttribute("src");
   if(vid.e.tagName=="CANVAS"){
@@ -648,7 +653,7 @@ const runPlaybackScript=(isTrusted)=>{
   }
 };
 
-//Global variables available after runJikkyoScript() is called.
+//Available after runJikkyoScript() is called
 let onJikkyoStream=null;
 let onJikkyoStreamError=null;
 let checkJikkyoDisplay=()=>{};
@@ -689,7 +694,7 @@ const runJikkyoScript=()=>{
     console.warn("customReplaceJson:",e);
     customReplace=[];
   }
-  const replaceTag=(tag)=>{
+  const replaceTag=tag=>{
     for(const rep of customReplace){
       tag=tag.replace(rep.regex,rep.replace);
     }
@@ -1205,7 +1210,7 @@ const runVideoScript=()=>{
           return;
         }
         onDataStream=(pid,dict,code,pcr)=>{
-          dict[code]=bmlBrowserPlayTSSection(pid,dict[code],pcr)||dict[code];
+          bmlBrowserPlayTSSection(pid,dict[code],pcr);
         };
         onDataStreamError=text=>{
           document.querySelector(".remote-control-indicator").textContent=text;
@@ -1230,7 +1235,7 @@ const runVideoScript=()=>{
           }
           videoLastSec=videoSec;
           if(psiData&&readPsiData(psiData,(sec,dict,code,pid)=>{
-              dict[code]=bmlBrowserPlayTSSection(pid,dict[code],Math.floor(sec*90000))||dict[code];
+              bmlBrowserPlayTSSection(pid,dict[code],Math.floor(sec*90000));
               return sec<videoSec;
             },startSec,ctx)!==false){
             startRead();
@@ -1362,7 +1367,7 @@ const runVideoScript=()=>{
       }
     },500);
   }
-  seekVideo=(sec)=>{
+  seekVideo=sec=>{
     vid.e.currentTime=sec;
   };
   const vidChapters=document.getElementById("vid-chapters");
@@ -1618,7 +1623,7 @@ const runTranscodeScript=()=>{
           return;
         }
         onDataStream=(pid,dict,code,pcr)=>{
-          dict[code]=bmlBrowserPlayTSSection(pid,dict[code],pcr)||dict[code];
+          bmlBrowserPlayTSSection(pid,dict[code],pcr);
         };
         onDataStreamError=text=>{
           document.querySelector(".remote-control-indicator").textContent=text;
@@ -1759,12 +1764,19 @@ const runTranscodeScript=()=>{
       vseek.classList.add("active");
       popup();
     };
+    vid.e.addEventListener("my-seeked",()=>{
+      rangeSeek.disabled=false;
+      vseek.classList.remove("seeking");
+    });
     rangeSeek.onchange=()=>{
       updateOfssecOptions();
       selectOfssec.options[selectOfssec.options.length-101+Math.floor(rangeSeek.value)].selected=true;
       if(vid.seekWithoutTransition){
         vid.ofssec=Math.max(Math.floor(rangeSeek.value/100*srcDuration)-1,0);
         openSubStream();
+        //Disable until "my-seeked" event fires to prevent unintended transitions.
+        rangeSeek.disabled=true;
+        vseek.classList.add("seeking");
         vid.seekWithoutTransition();
         mouseX=null;
         vseek.classList.remove("active");
@@ -1811,6 +1823,9 @@ const runTranscodeScript=()=>{
               if(vid.seekWithoutTransition){
                 vid.ofssec=Math.max(opt.value-1,0);
                 openSubStream();
+                //Disable until "my-seeked" event fires to prevent unintended transitions.
+                rangeSeek.disabled=true;
+                vseek.classList.add("seeking");
                 vid.seekWithoutTransition();
               }else{
                 document.querySelector('#vid-form button[type="submit"]').click();
@@ -1850,8 +1865,9 @@ const runTranscodeScript=()=>{
   if(!vid.c){
     let swtCount=0;
     vid.seekWithoutTransition=()=>{
+      vid.e.dispatchEvent(new Event("my-seeked"));
       //"count" is to ensure that the src attribute is reloaded.
-      vid.e.src=(vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace("&load=","&reload=").replace("&ofssec=[^&]*","")+"&ofssec="+vid.ofssec+"&count="+(++swtCount);
+      vid.e.src=(vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace("&load=","&reload=").replace(/&ofssec=[^&]*/,"")+"&ofssec="+vid.ofssec+"&count="+(++swtCount);
     };
     try{
       const canvas=document.createElement("canvas");
@@ -1870,7 +1886,7 @@ const runTranscodeScript=()=>{
       console.warn("poster:",e);
     }
   }
-  seekVideo=(sec)=>{
+  seekVideo=sec=>{
     if(vid.seekWithoutTransition){
       vid.ofssec=Math.floor(sec);
       openSubStream();
@@ -1972,12 +1988,14 @@ const runHlsScript=()=>{
             //Excludes Firefox for Android, because playback of non-keyframe fragmented MP4 is jerky.
             "&hls="+(++swtCount)+"_"+vid.e.dataset.hls+(!vid.e.dataset.hlsMp4||/Android.+Firefox/i.test(navigator.userAgent)?"":"&hls4="+vid.e.dataset.hlsMp4),
             "ctok="+vid.e.dataset.ctok+"&open=1",200,500).then(src=>{
+            vid.e.dispatchEvent(new Event("my-seeked"));
             hls.loadSource(src);
             hls.attachMedia(vid.e);
             vid.seekWithoutTransition=swt;
             //Reset caption
             if(cap)cap.attachMedia(vid.e);
           }).catch(()=>{
+            vid.e.dispatchEvent(new Event("my-seeked"));
             vid.e.poster=null;
           });
         };
@@ -2146,10 +2164,12 @@ const runTsliveScript=()=>{
     }
     mod.setPlaybackRate(vid.fast);
     mod.reset();
+    const seekingOrResuming=!!abortState;
     const ctrl=new AbortController();
     //"throttle" is to avoid excessive prefetching in some browsers.
     fetch((vid.fastParam?vid.initSrc.replace(/&fast=[^&]*/,"")+vid.fastParam:vid.initSrc).replace(/&ofssec=[^&]*/,"")+
           "&ofssec="+vid.ofssec+"&throttle=1",{signal:ctrl.signal}).then(response=>{
+      if(seekingOrResuming)vid.e.dispatchEvent(new Event("my-seeked"));
       if(!response.ok)return;
       //Reset caption
       if(cap)cap.attachMedia(null,vcont);
@@ -2180,6 +2200,8 @@ const runTsliveScript=()=>{
       readNext(mod,response.body.getReader(),null);
       //Prevent screen sleep
       navigator.wakeLock.request("screen").then(lock=>{wakeLock=lock;});
+    }).catch(()=>{
+      if(seekingOrResuming)vid.e.dispatchEvent(new Event("my-seeked"));
     });
     abortState="";
     if(vid.paused){
@@ -2281,3 +2303,5 @@ const runTsliveScript=()=>{
     throw e;
   });
 };
+
+}

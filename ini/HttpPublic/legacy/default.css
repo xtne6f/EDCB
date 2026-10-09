@@ -116,6 +116,10 @@ input[type="checkbox"] {
   width: 0.9em;
 }
 
+.seeking .chapter-mark {
+  pointer-events: none;
+}
+
 .chapter-in, .chapter-out, .chapter-point {
   background: var(--light, #07d) var(--dark, #c6f);
   height: 100%;
