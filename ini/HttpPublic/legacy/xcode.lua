@@ -27,7 +27,6 @@ filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option
 hlsKey=mg.get_var(query,'hls')
 hls4=GetVarInt(query,'hls4',0) or 0
 hlsCheckSrc=GetVarInt(query,'hls_x_src')==1
-caption=hlsKey and option.captionHls or option.captionNone or ''
 output=hlsKey and option.outputHls or option.output
 if hlsKey and not (ALLOW_HLS and option.outputHls) then
   -- エラーを返す
@@ -76,7 +75,7 @@ function OpenTranscoder(offset)
     cmd=' | '..xcoder..' '..option.option
       :gsub('$AUDIO',audio2)
       :gsub('$FILTER',(filter:gsub('%%','%%%%')))
-      :gsub('$CAPTION',(caption:gsub('%%','%%%%')))
+      :gsub('$CAPTION','')
       :gsub('$OUTPUT',(output[2]:gsub('%%','%%%%')))
   end
 
@@ -110,7 +109,7 @@ function OpenTranscoder(offset)
   end
   if hlsKey then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
-    cmd=cmd..' | '..tsmemseg..(hls4>0 and ' -4' or '')..' -a 10 -r 100 -m 8192 -d 3 '..(WIN32 and '' or '-g '..QuoteCommandArgForPath(EdcbModulePath(),hlsKey)..' ')..hlsKey..'_'
+    cmd=cmd..' | '..tsmemseg..(hls4>0 and ' -4' or '')..' -a 10 -r 100 -m 8192 '..(WIN32 and '' or '-g '..QuoteCommandArgForPath(EdcbModulePath(),hlsKey)..' ')..hlsKey..'_'
   elseif XCODE_BUF>0 then
     cmd=cmd..' | '..asyncbuf..' '..XCODE_BUF..' '..XCODE_PREPARE
   end
@@ -118,7 +117,9 @@ function OpenTranscoder(offset)
   local sync=WIN32 and edcb.GetPrivateProfile('SET','KeepDisk',0,'EpgTimerSrv.ini')~='0'
 
   -- "-z"はプロセス検索用
-  cmd=tsreadex..' -z edcb-legacy-'..searchName..' -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c 5 -u 2 '..QuoteCommandArgForPath(fpath,hlsKey)..cmd
+  cmd=tsreadex..' -z edcb-legacy-'..searchName..' -s '..offset..' -l 16384 -t 6'..(sync and ' -m 1' or '')..' -x 18/38/39 -n -1 -a 9 -b 1 -c '
+    ..(XCODE_USING_OLD_TRANSCODER and not option.passthroughCaption and 2 or 5)..' -u 2 '..((XCODE_USING_OLD_TRANSCODER or option.passthroughCaption) and '' or '-d 1 ')
+    ..QuoteCommandArgForPath(fpath,hlsKey)..cmd
   if hlsKey then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile(TsmemsegPipePath('*_','00'),10) or {})
