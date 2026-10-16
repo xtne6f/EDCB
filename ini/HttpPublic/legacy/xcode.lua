@@ -19,11 +19,12 @@ option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
 fastRate=GetVarInt(query,'fast',1,#XCODE_FAST_RATES)
 fastRate=fastRate and XCODE_FAST_RATES[fastRate] or 1
-filter=fastRate~=1 and (GetVarInt(query,'cinema')==1 and option.filterCinemaFastFunc and option.filterCinemaFastFunc(fastRate) or
-                        option.filterFastFunc and option.filterFastFunc(fastRate))
+filter=fastRate~=1 and (GetVarInt(query,'cinema')==1 and type(option.filterCinema)=='function' and option.filterCinema(fastRate) or
+                                                         type(option.filter)=='function' and option.filter(fastRate))
 fastRate=filter and fastRate or 1
 throttle=GetVarInt(query,'throttle')==1
-filter=filter or (GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or '')
+filter=filter or GetVarInt(query,'cinema')==1 and (type(option.filterCinema)=='function' and option.filterCinema(1) or type(option.filterCinema)=='string' and option.filterCinema) or
+                                                  type(option.filter)=='function' and option.filter(1) or type(option.filter)=='string' and option.filter or ''
 hlsKey=mg.get_var(query,'hls')
 hls4=GetVarInt(query,'hls4',0) or 0
 hlsCheckSrc=GetVarInt(query,'hls_x_src')==1

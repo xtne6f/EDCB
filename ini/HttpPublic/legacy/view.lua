@@ -14,7 +14,8 @@ end
 
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
+filter=GetVarInt(query,'cinema')==1 and (type(option.filterCinema)=='function' and option.filterCinema(1) or type(option.filterCinema)=='string' and option.filterCinema) or
+                                        type(option.filter)=='function' and option.filter(1) or type(option.filter)=='string' and option.filter or ''
 hlsKey=mg.get_var(query,'hls')
 hls4=GetVarInt(query,'hls4',0) or 0
 output=hlsKey and option.outputHls or option.output
