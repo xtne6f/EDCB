@@ -40,6 +40,15 @@ namespace EpgTimer
             return epgDataViewSetting.GetSetting();
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            // 初期ウィンドウ幅をタブアイテムの幅に適応させるため
+            if (SizeToContent != SizeToContent.Manual)
+            {
+                Width = ActualWidth;
+                SizeToContent = SizeToContent.Manual;
+            }
+        }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
         {

@@ -39,8 +39,11 @@ namespace EpgTimer
     public enum EventInfoTextMode : uint
     {
         BasicInfo,
+        BasicInfoForProgramText, //EpgTimerSrvの番組情報と同じ形式
         BasicText,
+        BasicTextForProgramText, //EpgTimerSrvの番組情報と同じ形式
         ExtendedText,
+        ExtendedTextForProgramText, //EpgTimerSrvの番組情報と同じ形式
         PropertyInfo,
     };
 

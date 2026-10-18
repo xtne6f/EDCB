@@ -12,12 +12,12 @@ namespace EpgTimer
             Tag = "";
             Width = double.NaN;
         }
-        public ListColumnInfo(String tag, double width)
+        public ListColumnInfo(string tag, double width)
         {
             Tag = tag;
             Width = width;
         }
-        public String Tag
+        public string Tag
         {
             get;
             set;

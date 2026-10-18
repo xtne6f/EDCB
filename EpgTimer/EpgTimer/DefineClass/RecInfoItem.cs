@@ -15,11 +15,17 @@ namespace EpgTimer
 {
     class RecInfoItem
     {
-        public RecInfoItem(RecFileInfo item)
+        public RecInfoItem(RecFileInfo info, Dictionary<char, List<KeyValuePair<string, string>>> replaceRecFilePathDictionary)
         {
-            this.RecInfo = item;
+            RecInfo = info;
+            ReplaceRecFilePathDictionary = replaceRecFilePathDictionary;
         }
         public RecFileInfo RecInfo
+        {
+            get;
+            private set;
+        }
+        public Dictionary<char, List<KeyValuePair<string, string>>> ReplaceRecFilePathDictionary
         {
             get;
             private set;
@@ -33,11 +39,11 @@ namespace EpgTimer
             }
             get { return RecInfo.ProtectFlag != 0; }
         }
-        public String EventName
+        public string EventName
         {
             get { return RecInfo.Title; }
         }
-        public String ServiceName
+        public string ServiceName
         {
             get { return RecInfo.ServiceName; }
         }
@@ -61,17 +67,21 @@ namespace EpgTimer
         {
             get { return RecInfo.Scrambles; }
         }
-        public String Result
+        public string Result
         {
             get { return RecInfo.Comment; }
         }
-        public String NetworkName
+        public string NetworkName
         {
             get { return CommonManager.ConvertNetworkNameText(RecInfo.OriginalNetworkID); }
         }
-        public String RecFilePath
+        public string RecFilePath
         {
             get { return RecInfo.RecFilePath; }
+        }
+        public string ReplacedRecFilePath
+        {
+            get { return CommonManager.ReplaceText(RecInfo.RecFilePath, ReplaceRecFilePathDictionary); }
         }
         public uint ID
         {
@@ -121,7 +131,7 @@ namespace EpgTimer
                 {
                     return null;
                 }
-                String view = "";
+                string view = "";
                 {
                     view = StartTime + "\r\n";
 

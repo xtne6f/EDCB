@@ -50,57 +50,61 @@ namespace EpgTimer.EpgView
             {
                 foreach (DateTime time in sortedTimeList)
                 {
-                    TextBlock item = new TextBlock();
-                    item.Height = heightPerHour - 1;
                     canvasTimeList.Add(time);
 
-                    if (weekMode == false)
+                    // 高さ合わせのため上下に同じものを置く
+                    var items = new TextBlock[2];
+                    for (int i = 0; i < 2; i++)
                     {
-                        if (time.Hour % 3 == 0 || needTimeOnly)
+                        if (weekMode == false && (time.Hour % 3 == 0 || needTimeOnly))
                         {
-                            item.Inlines.Add(new Run(time.ToString("M\\/d")));
-                            item.Inlines.Add(new LineBreak());
+                            items[i] = new TextBlock() { Style = (Style)FindResource("AppEpgTimeHeaderDateTextBlockStyle") };
+                            items[i].Inlines.Add(new Run(time.ToString("M\\/d")));
                             if (heightPerHour >= 60)
                             {
-                                Run weekday = new Run(time.ToString("ddd"));
-                                weekday.Foreground = time.DayOfWeek == DayOfWeek.Saturday ? Brushes.Blue :
-                                                     time.DayOfWeek == DayOfWeek.Sunday ? Brushes.Red : Brushes.White;
-                                weekday.FontWeight = FontWeights.Bold;
-                                item.Inlines.Add(new Run("("));
-                                item.Inlines.Add(weekday);
-                                item.Inlines.Add(new Run(")"));
-                            }
-                        }
-                        else
-                        {
-                            if (heightPerHour >= 90)
-                            {
-                                item.Inlines.Add(new LineBreak());
+                                var weekday = new Run(time.ToString("ddd"))
+                                {
+                                    Style = (Style)FindResource(
+                                        time.DayOfWeek == DayOfWeek.Saturday ? "AppEpgTimeHeaderSaturdayRunStyle" :
+                                        time.DayOfWeek == DayOfWeek.Sunday ? "AppEpgTimeHeaderSundayRunStyle" : "AppEpgTimeHeaderDayRunStyle")
+                                };
+                                items[i].Inlines.Add(new LineBreak());
+                                items[i].Inlines.Add(new Run("("));
+                                items[i].Inlines.Add(weekday);
+                                items[i].Inlines.Add(new Run(")"));
                             }
                         }
                     }
-                    if (heightPerHour >= 60)
-                    {
-                        item.Inlines.Add(new LineBreak());
-                        if (heightPerHour >= 90)
-                        {
-                            item.Inlines.Add(new LineBreak());
-                        }
-                    }
-                    Run text = new Run(time.Hour.ToString());
-                    text.FontSize = 13;
-                    text.FontWeight = FontWeights.Bold;
-                    item.Inlines.Add(text);
 
-                    item.Margin = new Thickness(1, 1, 1, 0);
-                    item.Background = brushList[time.Hour / 6];
-                    item.TextAlignment = TextAlignment.Center;
-                    item.Foreground = Brushes.White;
-                    item.FontSize = 12;
-                    stackPanel_time.Children.Add(item);
+                    var grid = new Grid()
+                    {
+                        Background = brushList[time.Hour / 6],
+                        Height = heightPerHour - 1,
+                        Margin = new Thickness(1, 1, 1, 0)
+                    };
+                    grid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+                    grid.RowDefinitions.Add(new RowDefinition());
+                    grid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+                    grid.RowDefinitions.Add(new RowDefinition());
+                    grid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+                    if (items[0] != null)
+                    {
+                        grid.Children.Add(items[0]);
+                        items[1].Visibility = Visibility.Hidden;
+                        Grid.SetRow(items[1], 4);
+                        grid.Children.Add(items[1]);
+                    }
+                    var hour = new TextBlock()
+                    {
+                        Style = (Style)FindResource("AppEpgTimeHeaderHourTextBlockStyle"),
+                        Text = time.Hour.ToString()
+                    };
+                    Grid.SetRow(hour, 2);
+                    grid.Children.Add(hour);
+                    stackPanel_time.Children.Add(grid);
                 }
                 canvasHeightPerHour = heightPerHour;
-                canvas.Height = canvasHeightPerHour * canvasTimeList.Count;
+                canvas.Height = canvasHeightPerHour * canvasTimeList.Count + stackPanel_time.Margin.Bottom;
             }
         }
 
@@ -154,11 +158,6 @@ namespace EpgTimer.EpgView
         private void scrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             e.Handled = true;
-        }
-
-        private void canvas_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            stackPanel_time.Width = canvas.ActualWidth;
         }
     }
 }

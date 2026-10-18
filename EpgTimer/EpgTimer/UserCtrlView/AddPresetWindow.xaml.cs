@@ -25,15 +25,9 @@ namespace EpgTimer
 
         public void SetMode(bool chgMode)
         {
-            if (chgMode == true)
-            {
-                button_add.Content = "変更";
-                label_chgMsg.Visibility = System.Windows.Visibility.Visible;
-            }
-            else
-            {
-                button_add.Content = "追加";
-            }
+            label_chgMsg.Visibility = chgMode ? Visibility.Visible : Visibility.Collapsed;
+            button_chg.Visibility = chgMode ? Visibility.Visible : Visibility.Collapsed;
+            button_add.Visibility = chgMode ? Visibility.Collapsed : Visibility.Visible;
         }
 
         public string PresetName
@@ -48,7 +42,7 @@ namespace EpgTimer
             }
         }
 
-        private void button_add_Click(object sender, RoutedEventArgs e)
+        private void button_ok_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
         }

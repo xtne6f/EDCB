@@ -7,24 +7,24 @@ namespace EpgTimer
 {
     public class TunerSelectInfo
     {
-        public TunerSelectInfo(String name, UInt32 id)
+        public TunerSelectInfo(string name, uint id)
         {
             Name = name;
             ID = id;
         }
-        public String Name
+        public string Name
         {
             get;
             set;
         }
-        public UInt32 ID
+        public uint ID
         {
             get;
             set;
         }
         public override string ToString()
         {
-            String view = "";
+            string view = "";
             if (ID == 0)
             {
                 view = "自動";

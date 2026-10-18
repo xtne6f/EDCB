@@ -19,11 +19,11 @@ namespace EpgTimer
             private set;
         }
 
-        public String DayOfWeek
+        public string DayOfWeek
         {
             get
             {
-                String view = "";
+                string view = "";
                 for (int i = 0; i < 7; i++)
                 {
                     if ((ManualAutoAddInfo.dayOfWeekFlag & (0x01 << i)) != 0)
@@ -35,7 +35,7 @@ namespace EpgTimer
             }
         }
 
-        public String Time
+        public string Time
         {
             get
             {
@@ -44,12 +44,12 @@ namespace EpgTimer
             }
         }
 
-        public String Title
+        public string Title
         {
             get { return ManualAutoAddInfo.title; }
         }
 
-        public String StationName
+        public string StationName
         {
             get { return ManualAutoAddInfo.stationName; }
         }
@@ -59,7 +59,7 @@ namespace EpgTimer
             get { return ManualAutoAddInfo.recSetting.IsNoRec() ? "いいえ" : "はい"; }
         }
 
-        public String RecMode
+        public string RecMode
         {
             get { return CommonManager.Instance.RecModeList[ManualAutoAddInfo.recSetting.GetRecMode()]; }
         }

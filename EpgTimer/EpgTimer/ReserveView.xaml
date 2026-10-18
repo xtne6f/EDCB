@@ -1,13 +1,10 @@
 ﻿<UserControl x:Class="EpgTimer.ReserveView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer"
-             d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
+             IsVisibleChanged="UserControl_IsVisibleChanged" PreviewKeyDown="UserControl_PreviewKeyDown">
     <UserControl.Resources>
-        <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
+        <ContextMenu x:Key="itemHeader">
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="開始日時" Name="StartTimeNoDuration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="長さ" Name="Duration" IsCheckable="True" Click="headerSelect_Click" />
@@ -30,10 +27,11 @@
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
+            <MenuItem Header="ボタン列を左に" Name="DockButtonToLeft" IsCheckable="True" Click="dockButtonToLeft_Click" />
             <Separator />
             <MenuItem Header="プログラム予約追加" Click="button_add_manual_Click" />
-        </local:ContextMenuEx>
-        <local:ContextMenuEx x:Key="itemMenu">
+        </ContextMenu>
+        <ContextMenu x:Key="itemMenu">
             <MenuItem Header="変更 (_C)" Name="cm_chg">
                 <MenuItem Header="ダイアログ表示 (_X)" Click="button_change_Click" InputGestureText="Enter" />
                 <MenuItem Header="無効にする (_R)" Name="cm_no" Click="button_no_Click" InputGestureText="Ctrl + R" />
@@ -55,25 +53,28 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
-            <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
+            <MenuItem Header="番組表へジャンプ" Click="jumpToProgramTable_Click" InputGestureText="F3" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
             <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" InputGestureText="Ctrl + P" />
             <Separator />
             <MenuItem Header="プログラム予約追加" Click="button_add_manual_Click" />
-        </local:ContextMenuEx>
+        </ContextMenu>
+        <local:ToStringValueIsNotEqualConverter x:Key="notEqualConvert" />
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" MouseEnter="listView_reserve_MouseEnter" MouseLeave="listView_reserve_MouseLeave">
+        <ListView ContextMenu="{DynamicResource itemHeader}" Grid.Column="1" Margin="{StaticResource AppEdgeMarginLTB}" Name="listView_reserve" SelectionMode="Extended" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" MouseEnter="listView_reserve_MouseEnter" MouseLeave="listView_reserve_MouseLeave">
             <ListView.Resources>
-                <Style TargetType="ListViewItem">
+                <Style x:Key="itemStyle" TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                    <Setter Property="BorderThickness" Value="5,0,0,1" />
+                    <Setter Property="BorderThickness" Value="{StaticResource AppListViewItemBorderThickness}" />
                     <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="ContextMenuOpening" Handler="listView_reserve_ContextMenuOpening" />
@@ -217,12 +218,19 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="130">
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
-            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" />
-            <Button Content="有効←→無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" />
-            <Button Content="プログラム予約追加" Height="23" Name="button_add_manual" Margin="0,10,0,10" Click="button_add_manual_Click" />
-            <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" />
+        <FrameworkElement Grid.Column="2" Margin="{StaticResource AppEdgeMarginL}" Name="frameworkElement_buttonMargin" />
+        <StackPanel Grid.Column="3" Margin="{StaticResource AppEdgeMarginT}" Name="stackPanel_button">
+            <StackPanel IsEnabled="{Binding SelectedIndex, ElementName=listView_reserve, Converter={StaticResource notEqualConvert}, ConverterParameter=-1}">
+                <Button Content="削除" Style="{StaticResource AppSideMenuButtonStyle}" ToolTip="Delete" Click="button_del_Click" />
+                <Button Content="有効←→無効" Style="{StaticResource AppSideMenuButtonStyle}" ToolTip="Ctrl + R" Click="button_no_Click" />
+                <Button Content="番組表へジャンプ" Style="{StaticResource AppSideMenuButtonStyle}" ToolTip="F3" Click="jumpToProgramTable_Click" />
+                <Button Content="自動予約登録" Style="{StaticResource AppSideMenuButtonStyle}" Click="autoadd_Click" />
+                <Button Content="追っかけ再生" Style="{StaticResource AppSideMenuButtonStyle}" ToolTip="Ctrl + P" Click="timeShiftPlay_Click" />
+            </StackPanel>
+            <Button Content="プログラム予約追加" Style="{StaticResource AppSideMenuButtonStyle}" Click="button_add_manual_Click" />
         </StackPanel>
+        <Popup Name="popup_error" StaysOpen="False" Style="{StaticResource AppErrorMessagePopupStyle}">
+            <ContentControl Template="{StaticResource AppErrorMessagePopupTemplate}" />
+        </Popup>
     </Grid>
 </UserControl>

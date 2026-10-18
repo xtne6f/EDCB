@@ -15,15 +15,15 @@
                     </StackPanel.Effect>
                     <local:EpgViewPanel x:Name="popupItemPanel" />
                 </StackPanel>
-                <Line Canvas.ZIndex="15" IsHitTestVisible="False" Name="nowLine" Opacity="0.7" Stroke="Red" StrokeThickness="3" Visibility="Hidden">
+                <Line Canvas.ZIndex="15" IsHitTestVisible="False" Name="nowLine" Style="{StaticResource AppNowLineStyle}" Visibility="Hidden">
                     <Line.Effect>
                         <DropShadowEffect BlurRadius="10" />
                     </Line.Effect>
                 </Line>
             </Canvas>
             <Popup AllowsTransparency="True" MouseLeftButtonDown="toolTip_MouseLeftButtonDown" MouseRightButtonDown="toolTip_MouseRightButtonDown" Name="toolTip" Placement="MousePoint" PopupAnimation="Fade">
-                <Border Background="DarkGray">
-                    <TextBlock Margin="2" MaxWidth="400" Name="toolTipTextBlock" TextWrapping="Wrap" />
+                <Border Style="{StaticResource AppEpgToolTipBorderStyle}">
+                    <TextBlock Name="toolTipTextBlock" Style="{StaticResource AppEpgToolTipTextBlockStyle}" />
                 </Border>
             </Popup>
         </Canvas>

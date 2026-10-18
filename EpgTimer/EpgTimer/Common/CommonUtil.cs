@@ -119,6 +119,11 @@ namespace EpgTimer
             return NativeMethods.SetForegroundWindow(hWnd);
         }
 
+        public static TimeSpan GetDoubleClickTime()
+        {
+            return TimeSpan.FromMilliseconds(NativeMethods.GetDoubleClickTime());
+        }
+
         private static class NativeMethods
         {
             [DllImport("user32.dll")]
@@ -147,6 +152,9 @@ namespace EpgTimer
 
             [DllImport("user32.dll")]
             public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+            [DllImport("user32.dll")]
+            public static extern uint GetDoubleClickTime();
         }
     }
 }

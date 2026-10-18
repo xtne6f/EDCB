@@ -1,16 +1,18 @@
 ﻿<Window x:Class="EpgTimer.SetDefSearchSettingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="検索条件" Height="500" Width="770" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner">
-
+        xmlns:my="clr-namespace:EpgTimer"
+        Height="{StaticResource AppSetDefSearchSettingWindowHeight}" Style="{StaticResource AppWindowStyle}" Width="{StaticResource AppSearchWindowWidth}" Title="検索条件" WindowStartupLocation="CenterOwner">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <my:SearchKeyView Grid.Row="0" x:Name="searchKey" />
-        <Label Content="※このOKボタンではまだ設定は保存されません。" Grid.Row="1" HorizontalAlignment="Right" Margin="0,0,205,10" VerticalAlignment="Bottom" />
-        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Right" IsCancel="True" Margin="0,0,12,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" />
-        <Button Content="OK" Grid.Row="1" Height="23" HorizontalAlignment="Right" Margin="0,0,122,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" />
+        <my:SearchKeyView x:Name="searchKey" />
+        <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="{StaticResource AppEdgeMargin}" Orientation="Horizontal">
+            <Label Content="※このOKボタンではまだ設定は保存されません。" Style="{StaticResource AppLabelStyle}" />
+            <Button Content="キャンセル" IsCancel="True" Margin="{StaticResource AppConfirmMargin}" Style="{StaticResource AppConfirmButtonStyle}" />
+            <Button Content="OK" Margin="{StaticResource AppConfirmMargin}" Style="{StaticResource AppConfirmButtonStyle}" Click="button_OK_Click" />
+        </StackPanel>
     </Grid>
 </Window>

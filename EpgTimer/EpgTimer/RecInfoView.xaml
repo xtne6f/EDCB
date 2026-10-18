@@ -1,38 +1,10 @@
 ﻿<UserControl x:Class="EpgTimer.RecInfoView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer"
-             d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
+             IsVisibleChanged="UserControl_IsVisibleChanged" PreviewKeyDown="UserControl_PreviewKeyDown">
     <UserControl.Resources>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="CheckBox">
-                        <BulletDecorator>
-                            <BulletDecorator.Bullet>
-                                <!--オフ状態のイメージ-->
-                                <Image Name="TickImage" Source="/Resources/key_no.ico" Grid.Column="0" Stretch="None" />
-                            </BulletDecorator.Bullet>
-                            <ContentPresenter VerticalAlignment="Center" Grid.Column="1"/>
-                        </BulletDecorator>
-                        <ControlTemplate.Triggers>
-                            <!--オン状態のイメージ-->
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.ico" />
-                            </Trigger>
-                            <!--未確定状態のイメージ-->
-                            <Trigger Property="IsChecked" Value="{x:Null}">
-                                <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.ico" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
+        <ContextMenu x:Key="itemHeader">
             <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="開始日時" Name="StartTimeNoDuration" IsCheckable="True" Click="headerSelect_Click" />
@@ -44,27 +16,32 @@
             <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="結果" Name="Result" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画ファイル(置換後)" Name="ReplacedRecFilePath" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
-        </local:ContextMenuEx>
-        <local:ContextMenuEx x:Key="itemMenu">
+            <MenuItem Header="ボタン列を左に" Name="DockButtonToLeft" IsCheckable="True" Click="dockButtonToLeft_Click" />
+        </ContextMenu>
+        <ContextMenu x:Key="itemMenu">
             <MenuItem Header="録画情報" Click="button_recInfo_Click" InputGestureText="Enter" />
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="再生" Click="button_play_Click" InputGestureText="Ctrl + P" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" InputGestureText="Ctrl + O" />
-        </local:ContextMenuEx>
-
+            <MenuItem Header="フォルダを開く" Click="openFolder_Click" InputGestureText="Ctrl + O" />
+        </ContextMenu>
+        <local:ToStringValueIsNotEqualConverter x:Key="notEqualConvert" />
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" MouseEnter="listView_recinfo_MouseEnter" MouseLeave="listView_recinfo_MouseLeave">
+        <ListView ContextMenu="{DynamicResource itemHeader}" Grid.Column="1" Margin="{StaticResource AppEdgeMarginLTB}" Name="listView_recinfo" SelectionMode="Extended" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" MouseEnter="listView_recinfo_MouseEnter" MouseLeave="listView_recinfo_MouseLeave">
             <ListView.Resources>
-                <Style TargetType="ListViewItem">
+                <Style BasedOn="{StaticResource AppRecInfoListViewCheckBoxStyle}" TargetType="CheckBox" />
+                <Style x:Key="itemStyle" TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
@@ -88,9 +65,7 @@
                 <GridView x:Name="gridView_recinfo">
                     <GridViewColumn>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="IsProtect">
-                                <Image Source="/Resources/key.ico" Stretch="None" />
-                            </GridViewColumnHeader>
+                            <GridViewColumnHeader ContentTemplate="{StaticResource AppRecInfoListViewIsProtectHeaderTemplate}" Tag="IsProtect" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -168,6 +143,11 @@
                             <GridViewColumnHeader Content="録画ファイル" Tag="RecFilePath" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding ReplacedRecFilePath}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画ファイル(置換後)" Tag="ReplacedRecFilePath" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding ID}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ID" Tag="ID" HorizontalContentAlignment="Left" />
@@ -176,9 +156,15 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="100">
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
-            <Button Content="再生" Height="23" Name="button_play" Margin="0,10,0,10" Click="button_play_Click" />
+        <FrameworkElement Grid.Column="2" Margin="{StaticResource AppEdgeMarginL}" Name="frameworkElement_buttonMargin" />
+        <StackPanel Grid.Column="3" IsEnabled="{Binding SelectedIndex, ElementName=listView_recinfo, Converter={StaticResource notEqualConvert}, ConverterParameter=-1}" Margin="{StaticResource AppEdgeMarginT}" Name="stackPanel_button">
+            <Button Content="削除" Style="{StaticResource AppSideMenuButtonStyle}" ToolTip="Delete" Click="button_del_Click" />
+            <Button Content="再生" Style="{StaticResource AppSideMenuButtonStyle}" ToolTip="Ctrl + P" Click="button_play_Click" />
+            <Button Content="自動予約登録" Style="{StaticResource AppSideMenuButtonStyle}" Click="autoadd_Click" />
+            <Button Content="フォルダを開く" Style="{StaticResource AppSideMenuButtonStyle}" ToolTip="Ctrl + O" Click="openFolder_Click" />
         </StackPanel>
+        <Popup Name="popup_error" StaysOpen="False" Style="{StaticResource AppErrorMessagePopupStyle}">
+            <ContentControl Template="{StaticResource AppErrorMessagePopupTemplate}" />
+        </Popup>
     </Grid>
 </UserControl>

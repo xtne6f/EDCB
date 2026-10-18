@@ -16,7 +16,7 @@ namespace EpgTimer
             get;
             private set;
         }
-        public UInt64 Key
+        public ulong Key
         {
             get { return ServiceInfo.Key; }
         }
@@ -24,7 +24,7 @@ namespace EpgTimer
         {
             return ServiceInfo.ServiceName;
         }
-        public String ToolTipView
+        public string ToolTipView
         {
             get
             {

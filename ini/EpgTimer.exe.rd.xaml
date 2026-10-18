@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <!-- このファイルをEpgTimer.exeと同じ場所に配置してデザインをカスタマイズできます -->
+<!-- EpgTimer設定の「テーマを適用する」を有効にしてください -->
+<!-- 「右クリックメニューにテーマを適用する」をカスタマイズするときはファイル名をEpgTimer.exe.rdcm.xamlにしてください -->
 <!-- テーマを適用する例 -->
 <ResourceDictionary
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -13,14 +15,4 @@
   Source="pack://application:,,,/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/classic.xaml"
   Source="pack://application:,,,/PresentationFramework.Luna, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml"
   Source="pack://application:,,,/PresentationFramework.Royale, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/royale.normalcolor.xaml"
--->
-<!-- ボタンをカスタマイズする例 -->
-<!--
-<ResourceDictionary
-  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Style TargetType="{x:Type Button}">
-    <Setter Property="Background" Value="LightGreen" />
-  </Style>
-</ResourceDictionary>
 -->

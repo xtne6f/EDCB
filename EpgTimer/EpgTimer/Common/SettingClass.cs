@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Xml.Linq;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 
@@ -98,7 +99,11 @@ namespace EpgTimer
         {
             get
             {
+#if NETCOREAPP
+                return Path.GetDirectoryName(Environment.ProcessPath);
+#else
                 return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+#endif
             }
         }
 
@@ -106,7 +111,11 @@ namespace EpgTimer
         {
             get
             {
+#if NETCOREAPP
+                return Path.GetFileName(Environment.ProcessPath);
+#else
                 return Path.GetFileName(Assembly.GetEntryAssembly().Location);
+#endif
             }
         }
     }
@@ -127,9 +136,9 @@ namespace EpgTimer
         public bool FontBoldTitle { get; set; }
         public double DragScroll { get; set; }
         public List<string> ContentColorList { get; set; }
-        public List<UInt32> ContentCustColorList { get; set; }
+        public List<uint> ContentCustColorList { get; set; }
         public List<string> TimeColorList { get; set; }
-        public List<UInt32> TimeCustColorList { get; set; }
+        public List<uint> TimeCustColorList { get; set; }
         public string ReserveRectColorNormal { get; set; }
         public string ReserveRectColorNo { get; set; }
         public string ReserveRectColorNoTuner { get; set; }
@@ -139,10 +148,10 @@ namespace EpgTimer
         public bool ReserveRectShowMarker { get; set; }
         public string TitleColor1 { get; set; }
         public string TitleColor2 { get; set; }
-        public UInt32 TitleCustColor1 { get; set; }
-        public UInt32 TitleCustColor2 { get; set; }
+        public uint TitleCustColor1 { get; set; }
+        public uint TitleCustColor2 { get; set; }
         public string ServiceColor { get; set; }
-        public UInt32 ServiceCustColor { get; set; }
+        public uint ServiceCustColor { get; set; }
         public bool EpgToolTip { get; set; }
         public double EpgBorderLeftSize { get; set; }
         public double EpgBorderTopSize { get; set; }
@@ -185,6 +194,8 @@ namespace EpgTimer
         public bool UseCustomEpgView { get; set; }
         public List<CustomEpgTabInfo> CustomEpgTabList { get; set; }
         public List<EpgSetting> EpgSettingList { get; set; }
+        public bool SynchronizeEpgScroll { get; set; }
+        public bool ToggleEpgModeOnHeaderLeftClick { get; set; }
         public bool NoToolTip { get; set; }
         public bool NoBallonTips { get; set; }
         public bool BalloonTipRealtime { get; set; }
@@ -200,6 +211,7 @@ namespace EpgTimer
         public string ResColumnHead { get; set; }
         public ListSortDirection ResSortDirection { get; set; }
         public bool ResHideButton { get; set; }
+        public bool ResDockButtonToLeft { get; set; }
         public System.Windows.WindowState LastWindowState { get; set; }
         public double MainWndLeft { get; set; }
         public double MainWndTop { get; set; }
@@ -229,36 +241,43 @@ namespace EpgTimer
         public bool SearchKeyNotDate { get; set; }
         public List<ContentKindInfo> SearchKeyContentList { get; set; }
         public List<EpgSearchDateInfo> SearchKeyDateItemList { get; set; }
-        public List<Int64> SearchKeyServiceList { get; set; }
+        public List<long> SearchKeyServiceList { get; set; }
         public byte SearchKeyFreeCA { get; set; }
         public byte SearchKeyChkRecEnd { get; set; }
-        public UInt16 SearchKeyChkRecDay { get; set; }
+        public ushort SearchKeyChkRecDay { get; set; }
         public string RecInfoColumnHead { get; set; }
         public ListSortDirection RecInfoSortDirection { get; set; }
         public bool RecInfoHideButton { get; set; }
+        public bool RecInfoDockButtonToLeft { get; set; }
         public bool AutoAddEpgHideButton { get; set; }
+        public bool AutoAddEpgDockButtonToLeft { get; set; }
         public bool AutoAddManualHideButton { get; set; }
+        public bool AutoAddManualDockButtonToLeft { get; set; }
         public string TvTestExe { get; set; }
         public string TvTestCmd { get; set; }
         public bool NwTvMode { get; set; }
         public bool NwTvModeUDP { get; set; }
         public bool NwTvModeTCP { get; set; }
         public bool NwTvModePipe { get; set; }
+        public bool UseWatchCmd { get; set; }
+        public string WatchCmd { get; set; }
+        public string WatchCmdOpt { get; set; }
         public bool FilePlay { get; set; }
         public string FilePlayExe { get; set; }
         public string FilePlayCmd { get; set; }
+        public string FilePathReplacePattern { get; set; }
         public bool FilePlayOnAirWithExe { get; set; }
         public List<IEPGStationInfo> IEpgStationList { get; set; }
         public string NWServerIP { get; set; }
-        public UInt32 NWServerPort { get; set; }
-        public UInt32 NWWaitPort { get; set; }
+        public uint NWServerPort { get; set; }
+        public uint NWWaitPort { get; set; }
         public string NWMacAdd { get; set; }
         public bool WakeReconnectNW { get; set; }
         public bool SuspendCloseNW { get; set; }
         public bool NgAutoEpgLoadNW { get; set; }
         public bool PrebuildEpg { get; set; }
-        public Int32 TvTestOpenWait { get; set; }
-        public Int32 TvTestChgBonWait { get; set; }
+        public int TvTestOpenWait { get; set; }
+        public int TvTestChgBonWait { get; set; }
         public int ResColorPosition { get; set; }
         public int ResAlternationCount { get; set; }
         public byte ResDefColorA { get; set; }
@@ -291,8 +310,11 @@ namespace EpgTimer
         public byte RecEndWarColorR { get; set; }
         public byte RecEndWarColorG { get; set; }
         public byte RecEndWarColorB { get; set; }
-        public UInt32 ExecBat { get; set; }
-        public UInt32 SuspendChk { get; set; }
+        public bool SetAppFont { get; set; }
+        public string AppFontName { get; set; }
+        public double AppFontSize { get; set; }
+        public uint ExecBat { get; set; }
+        public uint SuspendChk { get; set; }
         public List<ListColumnInfo> ReserveListColumn { get; set; }
         public List<ListColumnInfo> RecInfoListColumn { get; set; }
         public List<ListColumnInfo> AutoAddEpgColumn { get; set; }
@@ -303,6 +325,7 @@ namespace EpgTimer
         public bool ShowTray { get; set; }
         public bool MinHide { get; set; }
         public int NoStyle { get; set; }
+        public bool ApplyPostStyle { get; set; }
         public bool ApplyContextMenuStyle { get; set; }
         public int NoSendClose { get; set; }
         public string StartTab { get; set; }
@@ -395,6 +418,8 @@ namespace EpgTimer
                     x.Add(xx);
                 }
             }
+            r.SynchronizeEpgScroll      = ConvertXElem(x, w, "SynchronizeEpgScroll", SynchronizeEpgScroll, false);
+            r.ToggleEpgModeOnHeaderLeftClick = ConvertXElem(x, w, "ToggleEpgModeOnHeaderLeftClick", ToggleEpgModeOnHeaderLeftClick, false);
             r.NoToolTip                 = ConvertXElem(x, w, "NoToolTip", NoToolTip, false);
             r.NoBallonTips              = ConvertXElem(x, w, "NoBallonTips", NoBallonTips, false);
             r.BalloonTipRealtime        = ConvertXElem(x, w, "BalloonTipRealtime", BalloonTipRealtime, false);
@@ -412,6 +437,7 @@ namespace EpgTimer
             Enum.TryParse(ConvertXElem(x, w, "ResSortDirection", ResSortDirection.ToString(), ""), out sd);
             r.ResSortDirection          = sd;
             r.ResHideButton             = ConvertXElem(x, w, "ResHideButton", ResHideButton, false);
+            r.ResDockButtonToLeft       = ConvertXElem(x, w, "ResDockButtonToLeft", ResDockButtonToLeft, false);
             WindowState ws;
             Enum.TryParse(ConvertXElem(x, w, "LastWindowState", LastWindowState.ToString(), ""), out ws);
             r.LastWindowState           = ws;
@@ -452,17 +478,24 @@ namespace EpgTimer
             Enum.TryParse(ConvertXElem(x, w, "RecInfoSortDirection", RecInfoSortDirection.ToString(), ""), out sd);
             r.RecInfoSortDirection      = sd;
             r.RecInfoHideButton         = ConvertXElem(x, w, "RecInfoHideButton", RecInfoHideButton, false);
+            r.RecInfoDockButtonToLeft   = ConvertXElem(x, w, "RecInfoDockButtonToLeft", RecInfoDockButtonToLeft, false);
             r.AutoAddEpgHideButton      = ConvertXElem(x, w, "AutoAddEpgHideButton", AutoAddEpgHideButton, false);
+            r.AutoAddEpgDockButtonToLeft = ConvertXElem(x, w, "AutoAddEpgDockButtonToLeft", AutoAddEpgDockButtonToLeft, false);
             r.AutoAddManualHideButton   = ConvertXElem(x, w, "AutoAddManualHideButton", AutoAddManualHideButton, false);
+            r.AutoAddManualDockButtonToLeft = ConvertXElem(x, w, "AutoAddManualDockButtonToLeft", AutoAddManualDockButtonToLeft, false);
             r.TvTestExe                 = ConvertXElem(x, w, "TvTestExe", TvTestExe, "");
             r.TvTestCmd                 = ConvertXElem(x, w, "TvTestCmd", TvTestCmd, "");
             r.NwTvMode                  = ConvertXElem(x, w, "NwTvMode", NwTvMode, false);
             r.NwTvModeUDP               = ConvertXElem(x, w, "NwTvModeUDP", NwTvModeUDP, false);
             r.NwTvModeTCP               = ConvertXElem(x, w, "NwTvModeTCP", NwTvModeTCP, false);
             r.NwTvModePipe              = ConvertXElem(x, w, "NwTvModePipe", NwTvModePipe, false);
+            r.UseWatchCmd               = ConvertXElem(x, w, "UseWatchCmd", UseWatchCmd, false);
+            r.WatchCmd                  = ConvertXElem(x, w, "WatchCmd", WatchCmd, "");
+            r.WatchCmdOpt               = ConvertXElem(x, w, "WatchCmdOpt", WatchCmdOpt, "");
             r.FilePlay                  = ConvertXElem(x, w, "FilePlay", FilePlay, true);
             r.FilePlayExe               = ConvertXElem(x, w, "FilePlayExe", FilePlayExe, "");
             r.FilePlayCmd               = ConvertXElem(x, w, "FilePlayCmd", FilePlayCmd, "\"$FilePath$\"");
+            r.FilePathReplacePattern    = ConvertXElem(x, w, "FilePathReplacePattern", FilePathReplacePattern, "");
             r.FilePlayOnAirWithExe      = ConvertXElem(x, w, "FilePlayOnAirWithExe", FilePlayOnAirWithExe, true);
             r.IEpgStationList           = ConvertXElements(x, w, "IEpgStationList", IEpgStationList).ToList();
             r.NWServerIP                = ConvertXElem(x, w, "NWServerIP", NWServerIP, "");
@@ -507,6 +540,9 @@ namespace EpgTimer
             r.RecEndWarColorR           = (byte)ConvertXElem(x, w, "RecEndWarColorR", RecEndWarColorR, 0xFF);
             r.RecEndWarColorG           = (byte)ConvertXElem(x, w, "RecEndWarColorG", RecEndWarColorG, 0xFF);
             r.RecEndWarColorB           = (byte)ConvertXElem(x, w, "RecEndWarColorB", RecEndWarColorB, 0);
+            r.SetAppFont                = ConvertXElem(x, w, "SetAppFont", SetAppFont, false);
+            r.AppFontName               = ConvertXElem(x, w, "AppFontName", AppFontName, "メイリオ");
+            r.AppFontSize               = ConvertXElem(x, w, "AppFontSize", AppFontSize, 12);
             r.ExecBat                   = (uint)ConvertXElem(x, w, "ExecBat", ExecBat, 0);
             r.SuspendChk                = (uint)ConvertXElem(x, w, "SuspendChk", SuspendChk, 0);
             r.ReserveListColumn         = ConvertXElements(x, w, "ReserveListColumn", ReserveListColumn).ToList();
@@ -519,6 +555,7 @@ namespace EpgTimer
             r.ShowTray                  = ConvertXElem(x, w, "ShowTray", ShowTray, false);
             r.MinHide                   = ConvertXElem(x, w, "MinHide", MinHide, true);
             r.NoStyle                   = (int)ConvertXElem(x, w, "NoStyle", NoStyle, 1);
+            r.ApplyPostStyle            = ConvertXElem(x, w, "ApplyPostStyle", ApplyPostStyle, false);
             r.ApplyContextMenuStyle     = ConvertXElem(x, w, "ApplyContextMenuStyle", ApplyContextMenuStyle, false);
             r.NoSendClose               = (int)ConvertXElem(x, w, "NoSendClose", NoSendClose, 0);
             r.StartTab                  = ConvertXElem(x, w, "StartTab", StartTab, "ReserveView");
@@ -544,6 +581,7 @@ namespace EpgTimer
             dest.ResColumnHead = ResColumnHead;
             dest.ResSortDirection = ResSortDirection;
             dest.ResHideButton = ResHideButton;
+            dest.ResDockButtonToLeft = ResDockButtonToLeft;
             dest.LastWindowState = LastWindowState;
             dest.MainWndLeft = MainWndLeft;
             dest.MainWndTop = MainWndTop;
@@ -556,8 +594,11 @@ namespace EpgTimer
             dest.RecInfoColumnHead = RecInfoColumnHead;
             dest.RecInfoSortDirection = RecInfoSortDirection;
             dest.RecInfoHideButton = RecInfoHideButton;
+            dest.RecInfoDockButtonToLeft = RecInfoDockButtonToLeft;
             dest.AutoAddEpgHideButton = AutoAddEpgHideButton;
+            dest.AutoAddEpgDockButtonToLeft = AutoAddEpgDockButtonToLeft;
             dest.AutoAddManualHideButton = AutoAddManualHideButton;
+            dest.AutoAddManualDockButtonToLeft = AutoAddManualDockButtonToLeft;
             dest.NWServerIP = NWServerIP;
             dest.NWServerPort = NWServerPort;
             dest.NWWaitPort = NWWaitPort;
@@ -601,42 +642,6 @@ namespace EpgTimer
                     _brushCache = new SettingsBrushCache();
                 }
                 return _brushCache;
-            }
-        }
-
-        private static bool appResourceDictionaryInitialized;
-        private static ResourceDictionary _appResourceDictionary;
-        public static ResourceDictionary AppResourceDictionary
-        {
-            get
-            {
-                if (appResourceDictionaryInitialized == false)
-                {
-                    appResourceDictionaryInitialized = true;
-                    if (Instance.NoStyle == 0)
-                    {
-                        try
-                        {
-                            string path = Path.Combine(SettingPath.ModulePath, SettingPath.ModuleName + ".rd.xaml");
-                            if (File.Exists(path))
-                            {
-                                //ResourceDictionaryを定義したファイルがあるので本体にマージする
-                                _appResourceDictionary = (ResourceDictionary)System.Windows.Markup.XamlReader.Load(System.Xml.XmlReader.Create(path));
-                            }
-                            else
-                            {
-                                //既定のテーマ(Aero)をマージする
-                                _appResourceDictionary = (ResourceDictionary)Application.LoadComponent(
-                                    new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.ToString());
-                        }
-                    }
-                }
-                return _appResourceDictionary;
             }
         }
 
@@ -706,7 +711,7 @@ namespace EpgTimer
                     {
                         break;
                     }
-                    System.Threading.Thread.Sleep(200 * retry);
+                    Thread.Sleep(200 * retry);
                 }
                 catch
                 {
@@ -846,7 +851,7 @@ namespace EpgTimer
                         {
                             throw;
                         }
-                        System.Threading.Thread.Sleep(200 * retry);
+                        Thread.Sleep(200 * retry);
                     }
                 }
             }
@@ -887,9 +892,9 @@ namespace EpgTimer
         public static RecSettingData CreateRecSetting(uint presetID)
         {
             var defKey = new RecSettingData();
-            String defName = "REC_DEF";
-            String defFolderName = "REC_DEF_FOLDER";
-            String defFolder1SegName = "REC_DEF_FOLDER_1SEG";
+            string defName = "REC_DEF";
+            string defFolderName = "REC_DEF_FOLDER";
+            string defFolder1SegName = "REC_DEF_FOLDER_1SEG";
 
             if (presetID > 0)
             {
@@ -898,15 +903,15 @@ namespace EpgTimer
                 defFolder1SegName += presetID.ToString();
             }
 
-            defKey.RecMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "RecMode", 1, SettingPath.TimerSrvIniPath);
+            defKey.RecMode = (byte)IniFileHandler.GetPrivateProfileInt(defName, "RecMode", 1, SettingPath.TimerSrvIniPath);
             if (defKey.IsNoRec())
             {
                 defKey.RecMode = (byte)(5 + (byte)(IniFileHandler.GetPrivateProfileInt(defName, "NoRecMode", 1, SettingPath.TimerSrvIniPath) + 4) % 5);
             }
-            defKey.Priority = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "Priority", 2, SettingPath.TimerSrvIniPath);
-            defKey.TuijyuuFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "TuijyuuFlag", 1, SettingPath.TimerSrvIniPath);
-            defKey.ServiceMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "ServiceMode", 0, SettingPath.TimerSrvIniPath);
-            defKey.PittariFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "PittariFlag", 0, SettingPath.TimerSrvIniPath);
+            defKey.Priority = (byte)IniFileHandler.GetPrivateProfileInt(defName, "Priority", 2, SettingPath.TimerSrvIniPath);
+            defKey.TuijyuuFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "TuijyuuFlag", 1, SettingPath.TimerSrvIniPath);
+            defKey.ServiceMode = (byte)IniFileHandler.GetPrivateProfileInt(defName, "ServiceMode", 0, SettingPath.TimerSrvIniPath);
+            defKey.PittariFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "PittariFlag", 0, SettingPath.TimerSrvIniPath);
 
             defKey.BatFilePath = IniFileHandler.GetPrivateProfileString(defName, "BatFilePath", "", SettingPath.TimerSrvIniPath);
 
@@ -932,14 +937,14 @@ namespace EpgTimer
                 defKey.PartialRecFolder.Add(folderInfo);
             }
 
-            defKey.SuspendMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "SuspendMode", 0, SettingPath.TimerSrvIniPath);
-            defKey.RebootFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "RebootFlag", 0, SettingPath.TimerSrvIniPath);
-            defKey.UseMargineFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "UseMargineFlag", 0, SettingPath.TimerSrvIniPath);
+            defKey.SuspendMode = (byte)IniFileHandler.GetPrivateProfileInt(defName, "SuspendMode", 0, SettingPath.TimerSrvIniPath);
+            defKey.RebootFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "RebootFlag", 0, SettingPath.TimerSrvIniPath);
+            defKey.UseMargineFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "UseMargineFlag", 0, SettingPath.TimerSrvIniPath);
             defKey.StartMargine = IniFileHandler.GetPrivateProfileInt(defName, "StartMargine", 0, SettingPath.TimerSrvIniPath);
             defKey.EndMargine = IniFileHandler.GetPrivateProfileInt(defName, "EndMargine", 0, SettingPath.TimerSrvIniPath);
-            defKey.ContinueRecFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "ContinueRec", 0, SettingPath.TimerSrvIniPath);
-            defKey.PartialRecFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "PartialRec", 0, SettingPath.TimerSrvIniPath);
-            defKey.TunerID = (UInt32)IniFileHandler.GetPrivateProfileInt(defName, "TunerID", 0, SettingPath.TimerSrvIniPath);
+            defKey.ContinueRecFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "ContinueRec", 0, SettingPath.TimerSrvIniPath);
+            defKey.PartialRecFlag = (byte)IniFileHandler.GetPrivateProfileInt(defName, "PartialRec", 0, SettingPath.TimerSrvIniPath);
+            defKey.TunerID = (uint)IniFileHandler.GetPrivateProfileInt(defName, "TunerID", 0, SettingPath.TimerSrvIniPath);
             return defKey;
         }
 

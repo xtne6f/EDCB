@@ -1,19 +1,38 @@
 ﻿<Window x:Class="EpgTimer.ConnectWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ネットワーク接続" Height="228" Width="446" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
-    <Grid>
-        <Label Content="接続サーバー　IP" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
-        <TextBox Height="24" HorizontalAlignment="Left" InputMethod.PreferredImeState="Off" Margin="124,14,0,0" Name="textBox_srvIP" VerticalAlignment="Top" Width="120" />
-        <Label Content="ポート" Height="28" HorizontalAlignment="Left" Margin="250,12,0,0" Name="label2" VerticalAlignment="Top" />
-        <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="302,14,0,0" Name="textBox_srvPort" VerticalAlignment="Top" Width="86" />
-        <CheckBox Content="クライアント側に待ち受けポートを作る" Height="24" HorizontalAlignment="Left" Margin="12,50,0,0" Name="checkBox_clientPort" VerticalAlignment="Top" />
-        <TextBox Height="24" HorizontalAlignment="Left" InputMethod.IsInputMethodEnabled="False" Margin="260,48,0,0" Name="textBox_clientPort" VerticalAlignment="Top" Width="86" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_clientPort, UpdateSourceTrigger=PropertyChanged}" />
-        <Button Content="接続" Height="23" HorizontalAlignment="Left" Margin="12,80,0,0" Name="button_connect" VerticalAlignment="Top" Width="75" Click="button_connect_Click" />
-        <Button Content="マジックパケット送信" Height="23" HorizontalAlignment="Left" Margin="12,158,0,0" Name="button_wake" VerticalAlignment="Top" Width="146" Click="button_wake_Click" />
-        <Label Content="MACアドレス" Height="28" HorizontalAlignment="Left" Margin="12,124,0,0" Name="label4" VerticalAlignment="Top" />
-        <TextBox Height="24" HorizontalAlignment="Left" InputMethod.PreferredImeState="Off" Margin="102,126,0,0" Name="textBox_mac" VerticalAlignment="Top" Width="170" />
-        <Label Content="（xx-xx-xx-xx-xx-xx）" Height="28" HorizontalAlignment="Left" Margin="283,124,0,0" Name="label5" VerticalAlignment="Top" />
-        <Label Content="" Height="28" HorizontalAlignment="Left" Margin="170,156,0,0" Name="label_wakeResult" VerticalAlignment="Top" />
-    </Grid>
+        SizeToContent="Height" Style="{StaticResource AppWindowStyle}" Title="ネットワーク接続" Width="{StaticResource AppConnectWindowWidth}" WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="{StaticResource AppEdgeMargin}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Label Content="接続サーバー IP" Style="{StaticResource AppTermLabelStyle}" />
+            <TextBox Grid.Column="1" InputMethod.PreferredImeState="Off" Name="textBox_srvIP" Style="{StaticResource AppTextBoxStyle}" />
+            <Label Content="ポート" Grid.Column="2" Margin="{StaticResource AppWideMarginL}" Style="{StaticResource AppTermLabelStyle}" />
+            <TextBox Grid.Column="3" InputMethod.IsInputMethodEnabled="False" Name="textBox_srvPort" Style="{StaticResource AppNarrowTextBoxStyle}" />
+        </Grid>
+        <StackPanel Margin="{StaticResource AppMarginT}" Orientation="Horizontal">
+            <CheckBox Content="クライアント側に待ち受けポートを作る" Name="checkBox_clientPort" Style="{StaticResource AppCheckBoxStyle}" />
+            <TextBox InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, ElementName=checkBox_clientPort, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppWideMarginL}" Name="textBox_clientPort" Style="{StaticResource AppNarrowTextBoxStyle}" />
+        </StackPanel>
+        <Button Content="接続" HorizontalAlignment="Left" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppConfirmButtonStyle}" Click="button_connect_Click" />
+        <Grid Margin="{StaticResource AppWideMarginT}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Label Content="MACアドレス" Style="{StaticResource AppTermLabelStyle}" />
+            <TextBox Grid.Column="1" InputMethod.PreferredImeState="Off" Name="textBox_mac" Style="{StaticResource AppTextBoxStyle}" />
+            <Label Content="(xx-xx-xx-xx-xx-xx)" Grid.Column="2" Margin="{StaticResource AppWideMarginL}" Style="{StaticResource AppLabelStyle}" />
+        </Grid>
+        <StackPanel Margin="{StaticResource AppMarginT}" Orientation="Horizontal">
+            <Button Content="マジックパケット送信" Style="{StaticResource AppConfirmButtonStyle}" Click="button_wake_Click" />
+            <Label Margin="{StaticResource AppConfirmMargin}" Name="label_wakeResult" Style="{StaticResource AppLabelStyle}" />
+        </StackPanel>
+    </StackPanel>
 </Window>

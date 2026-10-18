@@ -1,8 +1,13 @@
-﻿<Application x:Class="EpgTimer.App"
+﻿<!-- .NET 9以降 ThemeMode="System" 属性をつけるとFluentテーマになる -->
+<Application x:Class="EpgTimer.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <!-- アプリケーション レベルでスコープされたリソースは、ここで定義する必要があります。 -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/App.rd.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

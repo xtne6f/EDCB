@@ -10,12 +10,12 @@ namespace EpgTimer
         public RecPresetItem()
         {
         }
-        public String DisplayName
+        public string DisplayName
         {
             get;
             set;
         }
-        public UInt32 ID
+        public uint ID
         {
             get;
             set;

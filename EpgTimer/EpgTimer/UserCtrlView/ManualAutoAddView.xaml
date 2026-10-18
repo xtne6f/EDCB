@@ -1,13 +1,10 @@
 ﻿<UserControl x:Class="EpgTimer.ManualAutoAddView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer"
-             d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
+             IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <local:ContextMenuEx x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True">
+        <ContextMenu x:Key="itemHeader">
             <MenuItem Header="曜日" Name="DayOfWeek" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="時間" Name="Time" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名" Name="Title" IsCheckable="True" Click="headerSelect_Click" />
@@ -21,26 +18,28 @@
             <MenuItem Header="ID" Name="ID" IsCheckable="True" Click="headerSelect_Click" />
             <Separator />
             <MenuItem Header="ボタン列を隠す" Name="HideButton" IsCheckable="True" Click="hideButton_Click" />
+            <MenuItem Header="ボタン列を左に" Name="DockButtonToLeft" IsCheckable="True" Click="dockButtonToLeft_Click" />
             <Separator />
             <MenuItem Header="追加" Click="button_add_Click" />
-        </local:ContextMenuEx>
-        <local:ContextMenuEx x:Key="itemMenu">
+        </ContextMenu>
+        <ContextMenu x:Key="itemMenu">
             <MenuItem Header="変更" Click="button_change_Click" InputGestureText="Enter" />
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
             <Separator />
             <MenuItem Header="追加" Click="button_add_Click" />
-        </local:ContextMenuEx>
+        </ContextMenu>
+        <local:ToStringValueIsNotEqualConverter x:Key="notEqualConvert" />
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" MouseEnter="listView_key_MouseEnter" MouseLeave="listView_key_MouseLeave">
+        <ListView ContextMenu="{DynamicResource itemHeader}" Grid.Column="1" Margin="{StaticResource AppEdgeMarginLTB}" Name="listView_key" SelectionMode="Extended" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" MouseEnter="listView_key_MouseEnter" MouseLeave="listView_key_MouseLeave">
             <ListView.Resources>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="ToolTipService.ShowDuration" Value="20000" />
-                    <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
+                <Style x:Key="itemStyle" TargetType="ListViewItem">
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
                     <EventSetter Event="KeyDown" Handler="listView_key_KeyDown" />
@@ -116,10 +115,12 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button" Width="130">
-            <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" Click="button_add_Click" />
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
-            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" />
+        <FrameworkElement Grid.Column="2" Margin="{StaticResource AppEdgeMarginL}" Name="frameworkElement_buttonMargin" />
+        <StackPanel Grid.Column="3" Margin="{StaticResource AppEdgeMarginT}" Name="stackPanel_button">
+            <Button Content="追加" Style="{StaticResource AppSideMenuButtonStyle}" Click="button_add_Click" />
+            <Button Content="削除" IsEnabled="{Binding SelectedIndex, ElementName=listView_key, Converter={StaticResource notEqualConvert}, ConverterParameter=-1}" Style="{StaticResource AppSideMenuButtonStyle}" ToolTip="Delete" Click="button_del_Click" />
+            <!-- EpgAutoAddViewとの幅合わせのため -->
+            <Button Content="並びを元に戻す" HorizontalAlignment="Left" Style="{StaticResource AppSideMenuButtonStyle}" VerticalAlignment="Top" Visibility="Hidden" />
         </StackPanel>
     </Grid>
 </UserControl>

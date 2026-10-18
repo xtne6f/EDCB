@@ -14,7 +14,7 @@ namespace EpgTimer
         Process process = null;
         string processType;
 
-        public bool SetLiveCh(UInt16 ONID, UInt16 TSID, UInt16 SID)
+        public bool SetLiveCh(ushort ONID, ushort TSID, ushort SID)
         {
             try
             {
@@ -37,8 +37,8 @@ namespace EpgTimer
                     chInfo.TSID = TSID;
                     chInfo.SID = SID;
 
-                    UInt32 nwMode = 0;
-                    String nwBonDriver = "BonDriver_UDP.dll";
+                    uint nwMode = 0;
+                    string nwBonDriver = "BonDriver_UDP.dll";
                     if (Settings.Instance.NwTvModeUDP == true)
                     {
                         nwMode += 1;
@@ -53,7 +53,7 @@ namespace EpgTimer
                     {
                         if (CommonManager.CreateSrvCtrl().SendNwTVSetCh(chInfo) == ErrCode.CMD_SUCCESS)
                         {
-                            String val = "";
+                            string val = "";
                             for (int i = 0; i < 10; i++)
                             {
                                 if (cmdTvTest.SendViewGetBonDrivere(ref val) != ErrCode.CMD_SUCCESS)
@@ -72,12 +72,12 @@ namespace EpgTimer
                 }
                 else
                 {
-                    UInt64 key = CommonManager.Create64Key(ONID, TSID, SID);
+                    ulong key = CommonManager.Create64Key(ONID, TSID, SID);
                     TvTestChChgInfo chInfo = new TvTestChChgInfo();
                     ErrCode err = CommonManager.CreateSrvCtrl().SendGetChgChTVTest(key, ref chInfo);
                     if (err == ErrCode.CMD_SUCCESS)
                     {
-                        String val = "";
+                        string val = "";
                         for (int i = 0; i < 10; i++)
                         {
                             if (cmdTvTest.SendViewGetBonDrivere(ref val) != ErrCode.CMD_SUCCESS)
@@ -125,21 +125,19 @@ namespace EpgTimer
             return true;
         }
 
-        public bool StartStreamingPlay(string filePath, uint reserveID)
+        public string StartStreamingPlay(string filePath, uint reserveID)
         {
             try
             {
                 if (Settings.Instance.TvTestExe.Length == 0)
                 {
-                    MessageBox.Show("TVTest.exeのパスが設定されていません");
-                    return false;
+                    return "TVTest.exeのパスが設定されていません";
                 }
                 if (CommonManager.Instance.NWMode == false && (Settings.Instance.NwTvModeTCP == false || Settings.Instance.NwTvModePipe == false))
                 {
                     if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 0)
                     {
-                        MessageBox.Show("動作設定でネットワーク接続を許可する必要があります。");
-                        return false;
+                        return "動作設定でネットワーク接続を許可する必要があります";
                     }
                 }
                 var sendInfo = new TVTestStreamingInfo();
@@ -150,7 +148,7 @@ namespace EpgTimer
                     if (err != ErrCode.CMD_SUCCESS)
                     {
                         MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "まだ録画が開始されていません。");
-                        return false;
+                        return null;
                     }
                     sendInfo.ctrlID = playInfo.ctrlID;
                     sendInfo.filePath = playInfo.filePath;
@@ -161,7 +159,7 @@ namespace EpgTimer
                     if (err != ErrCode.CMD_SUCCESS)
                     {
                         MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "ファイルを開けませんでした。");
-                        return false;
+                        return null;
                     }
                 }
 
@@ -181,7 +179,7 @@ namespace EpgTimer
                 {
                     sendInfo.serverIP = 0x7F000001;
                     // 原作はここで自ホスト名を取得して解決したアドレスを格納している。(ないとは思うが)不具合があれば戻すこと
-                    sendInfo.serverPort = (UInt32)IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath);
+                    sendInfo.serverPort = (uint)IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath);
                 }
                 else
                 {
@@ -213,7 +211,7 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.ToString());
             }
-            return true;
+            return null;
         }
 
         private void OpenTVTest(int openWait, bool acceptViewApp)
@@ -235,7 +233,7 @@ namespace EpgTimer
                 {
                     // EpgTimerPlugInと仮定
                     processType = "TvTest";
-                    process = Process.Start(Settings.Instance.TvTestExe, Settings.Instance.TvTestCmd);
+                    process = Process.Start(new ProcessStartInfo(Settings.Instance.TvTestExe, Settings.Instance.TvTestCmd) { UseShellExecute = false });
                     if (acceptViewApp)
                     {
                         for (int i = 0; i < 100; i++)

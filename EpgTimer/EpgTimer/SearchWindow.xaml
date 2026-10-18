@@ -1,30 +1,35 @@
 ﻿<Window x:Class="EpgTimer.SearchWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="検索" Height="600" Width="780" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner" Closing="Window_Closing" Loaded="Window_Loaded" IsVisibleChanged="Window_IsVisibleChanged_1" PreviewKeyDown="Window_PreviewKeyDown">
-
+        xmlns:my="clr-namespace:EpgTimer"
+        Height="{StaticResource AppSearchWindowHeight}" Style="{StaticResource AppWindowStyle}" Title="検索" Width="{StaticResource AppSearchWindowWidth}" WindowStartupLocation="CenterOwner" Closing="Window_Closing" Loaded="Window_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="405" Name="grid_Tabs" />
+            <RowDefinition Height="{StaticResource AppSearchWindowTabGridHeight}" Name="grid_Tabs" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <TabControl Name="tabControl1" TabStripPlacement="Bottom" Margin="0,0,0,1">
-            <TabItem Header="検索条件" Name="tabItem1" KeyDown="tabItem_searchKey_KeyDown">
+        <TabControl Name="tabControl" TabStripPlacement="Bottom">
+            <TabItem Header="検索条件" KeyDown="tabItem_searchKey_KeyDown">
                 <my:SearchKeyView x:Name="searchKeyView" />
             </TabItem>
-            <TabItem Header="録画設定" Name="tabItem2">
-                <my:RecSettingView x:Name="recSettingView" />
+            <TabItem Header="録画設定">
+                <my:RecSettingView Margin="{StaticResource AppEdgeMarginT}" x:Name="recSettingView" />
             </TabItem>
         </TabControl>
-        <GridSplitter Background="DarkGray" Grid.Row="1" Height="2" HorizontalAlignment="Stretch" ResizeDirection="Rows" />
-        <Button Content="検索" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="12,6,0,0" Name="button_search" VerticalAlignment="Top" Width="75" Click="button_search_Click" ToolTip="Ctrl + F" />
-        <Button Content="予約" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="126,6,0,0" Name="button_add_reserve" VerticalAlignment="Top" Width="75" Click="buttonOrMenuItem_add_reserve_Click" ToolTip="Ctrl + R" />
-        <Button Content="自動予約登録条件に追加" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="244,6,0,0" Name="button_add_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_add_epgAutoAdd_Click" ToolTip="Ctrl + N" />
-        <Button Content="自動予約登録条件を変更" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="450,6,0,0" Name="button_chg_epgAutoAdd" VerticalAlignment="Top" Visibility="Hidden" Width="178" Click="button_chg_epgAutoAdd_Click" ToolTip="Ctrl + S" />
-        <ListView Grid.Row="2" Name="listView_result" Margin="10,39,10,10" SelectionMode="Extended" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
+        <FrameworkElement Grid.Row="1" Margin="{StaticResource AppMarginT}" />
+        <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" />
+        <StackPanel Grid.Row="2" Margin="{StaticResource AppEdgeMarginLTR}" Orientation="Horizontal">
+            <Button Content="検索" Style="{StaticResource AppConfirmButtonStyle}" ToolTip="Ctrl + F" Click="button_search_Click" />
+            <Button Content="予約" Margin="{StaticResource AppWideConfirmMargin}" Style="{StaticResource AppConfirmButtonStyle}" ToolTip="Ctrl + R" Click="buttonOrMenuItem_add_reserve_Click" />
+            <Button Content="自動予約登録条件に追加" Margin="{StaticResource AppWideConfirmMargin}" Name="button_add_epgAutoAdd" Style="{StaticResource AppConfirmButtonStyle}" ToolTip="Ctrl + N" Click="button_add_epgAutoAdd_Click" />
+            <Button Content="自動予約登録条件を変更" Margin="{StaticResource AppWideConfirmMargin}" Name="button_chg_epgAutoAdd" Style="{StaticResource AppConfirmButtonStyle}" ToolTip="Ctrl + S" Visibility="Hidden" Click="button_chg_epgAutoAdd_Click" />
+        </StackPanel>
+        <ListView Grid.Row="4" Margin="{StaticResource AppEdgeMargin}" Name="listView_result" SelectionMode="Extended" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
             <ListView.Resources>
-                <my:ContextMenuEx x:Key="itemMenu">
+                <ContextMenu x:Key="itemMenu">
                     <MenuItem Header="ダイアログ表示" Click="MenuItem_Click_ShowDialog"  InputGestureText="Enter" />
                     <MenuItem Name="cmdChg" Header="予約変更 (_C)">
                         <MenuItem Header="無効にする (_R)" Name="cmdNo" Click="MenuItem_Click_No" InputGestureText="Ctrl + R" />
@@ -49,8 +54,8 @@
                     <MenuItem Name="cmdDlt" Header="予約削除" Click="MenuItem_Click_DeleteItem" />
                     <MenuItem Header="番組名で再検索" Click="MenuItem_Click_Research" />
                     <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
-                </my:ContextMenuEx>
-                <Style TargetType="ListViewItem">
+                </ContextMenu>
+                <Style x:Key="itemStyle" TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
@@ -58,7 +63,7 @@
                     <EventSetter Event="ContextMenuOpening" Handler="listView_result_ContextMenuOpening" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_result_MouseDoubleClick" />
                     <EventSetter Event="KeyDown" Handler="listView_result_KeyDown" />
-                    <Setter Property="BorderThickness" Value="5,0,0,1" />
+                    <Setter Property="BorderThickness" Value="{StaticResource AppListViewItemBorderThickness}" />
                     <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     <Setter Property="Background" Value="{Binding BackColor}" />
                     <Style.Triggers>
@@ -75,14 +80,14 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_result">
-                    <GridViewColumn Width="30">
+                    <GridViewColumn>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Path=Reserved}" Foreground="Tomato" FontWeight="Bold" />
+                                <TextBlock Style="{StaticResource AppSearchResultListViewReservedTextBlockStyle}" Text="{Binding Reserved}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="Reserved" />
+                            <GridViewColumnHeader Content="予約" HorizontalContentAlignment="Left" Tag="Reserved" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn>
