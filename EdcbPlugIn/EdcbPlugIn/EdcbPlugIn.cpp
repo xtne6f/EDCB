@@ -103,7 +103,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnServiceUpdate()
 bool CEdcbPlugIn::CMyEventHandler::OnDriverChange()
 {
 	WCHAR name[MAX_PATH];
-	if (m_outer.m_pApp->GetDriverName(name, array_size(name)) <= 0) {
+	if (m_outer.m_pApp->GetDriverName(name, static_cast<int>(array_size(name))) <= 0) {
 		name[0] = L'\0';
 	}
 	{
