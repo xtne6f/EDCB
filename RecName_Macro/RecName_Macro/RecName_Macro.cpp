@@ -136,7 +136,7 @@ BOOL WINAPI ConvertRecName2(
 	)
 {
 	PLUGIN_RESERVE_INFO infoEx;
-	memcpy(&infoEx, info, offsetof(PLUGIN_RESERVE_INFO, tunerID) + sizeof(infoEx.tunerID));
+	std::copy((const BYTE*)info, (const BYTE*)info + offsetof(PLUGIN_RESERVE_INFO, tunerID) + sizeof(infoEx.tunerID), (BYTE*)&infoEx);
 	infoEx.reserveID = 0;
 	infoEx.epgInfo = epgInfo;
 	infoEx.sizeOfStruct = 0;

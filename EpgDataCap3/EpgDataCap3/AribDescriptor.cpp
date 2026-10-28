@@ -1581,10 +1581,10 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					dp.type = (short)copySize;
 					if( copySize <= sizeof(dp.b) ){
 						//直置き
-						memcpy(dp.b, data + readSize, copySize);
+						std::copy(data + readSize, data + readSize + copySize, dp.b);
 					}else{
 						dp.pb = new BYTE[copySize];
-						memcpy(dp.pb, data + readSize, copySize);
+						std::copy(data + readSize, data + readSize + copySize, dp.pb);
 					}
 					readSize += byteSize;
 				}
@@ -1766,9 +1766,9 @@ CDescriptor::DESCRIPTOR_PROPERTY::DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY&
 	}else if( type >= 0 ){
 		if( type > (int)sizeof(b) ){
 			pb = new BYTE[type];
-			memcpy(pb, o.pb, type);
+			std::copy(o.pb, o.pb + type, pb);
 		}else{
-			memcpy(b, o.b, sizeof(b));
+			std::copy(o.b, o.b + sizeof(b), b);
 		}
 	}
 }
@@ -1791,7 +1791,7 @@ CDescriptor::DESCRIPTOR_PROPERTY& CDescriptor::DESCRIPTOR_PROPERTY::operator=(DE
 			if( type > (int)sizeof(b) ){
 				pb = o.pb;
 			}else{
-				memcpy(b, o.b, sizeof(b));
+				std::copy(o.b, o.b + sizeof(b), b);
 			}
 		}
 		o.type = TYPE_N;
