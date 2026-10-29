@@ -510,10 +510,10 @@ private:
 	CSendCtrlCmd(const CSendCtrlCmd&);
 	CSendCtrlCmd& operator=(const CSendCtrlCmd&);
 	DWORD SendCmdStream(const CCmdStream& cmd, CCmdStream* res);
-	DWORD SendCmdWithoutData(DWORD param, CCmdStream* res = NULL);
-	DWORD SendCmdWithoutData2(DWORD param, CCmdStream* res = NULL);
-	template<class T> DWORD SendCmdData(DWORD param, const T& val, CCmdStream* res = NULL);
-	template<class T> DWORD SendCmdData2(DWORD param, const T& val, CCmdStream* res = NULL);
+	DWORD SendCmdWithoutData(DWORD param, CCmdStream* res = nullptr);
+	DWORD SendCmdWithoutData2(DWORD param, CCmdStream* res = nullptr);
+	template<class T> DWORD SendCmdData(DWORD param, const T& val, CCmdStream* res = nullptr);
+	template<class T> DWORD SendCmdData2(DWORD param, const T& val, CCmdStream* res = nullptr);
 	template<class T> DWORD ReceiveCmdData(DWORD param, T* resVal);
 	template<class T> DWORD ReceiveCmdData2(DWORD param, T* resVal);
 	template<class T, class U> DWORD SendAndReceiveCmdData(DWORD param, const T& val, U* resVal);

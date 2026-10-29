@@ -220,10 +220,6 @@ RndIt upper_bound_first(RndIt first, RndIt last, const T& key)
 #pragma clang diagnostic ignored "-Wlogical-op-parentheses"
 #endif
 
-// 適切でないNULLの検出用
-//#undef NULL
-//#define NULL nullptr
-
 #ifdef _MSC_VER
 #include <sal.h>
 #define PRINTF_FORMAT_SZ _In_z_ _Printf_format_string_

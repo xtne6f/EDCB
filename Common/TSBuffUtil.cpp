@@ -175,7 +175,7 @@ BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
 
 DWORD CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE unitStartIndicator)
 {
-	if( payloadSize == 0 || payload == NULL ){
+	if( payloadSize == 0 || payload == nullptr ){
 		return ERR_ADD_NEXT;
 	}
 	if( unitStartIndicator == 0 && (sectionSize == 0 || sectionSize == sectionBuff.size()) ){

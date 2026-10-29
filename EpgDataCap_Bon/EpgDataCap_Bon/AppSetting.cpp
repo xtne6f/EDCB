@@ -79,7 +79,7 @@ APP_SETTING APP_SETTING::Load(LPCWSTR iniPath)
 			if( item.ipString.size() >= 2 && item.ipString[0] == L'[' ){
 				item.ipString.erase(0, 1).pop_back();
 			}else{
-				DWORD ip = (int)wcstol(item.ipString.c_str(), NULL, 10);
+				DWORD ip = (int)wcstol(item.ipString.c_str(), nullptr, 10);
 				Format(item.ipString, L"%d.%d.%d.%d", ip >> 24, ip >> 16 & 0xFF, ip >> 8 & 0xFF, ip & 0xFF);
 			}
 			swprintf_s(key, L"Port%d", i);

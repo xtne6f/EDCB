@@ -112,7 +112,7 @@ BOOL CWriteTSFile::AddTSBuff(
 	DWORD size
 	)
 {
-	if( data == NULL || size == 0 || this->outThread.joinable() == false ){
+	if( data == nullptr || size == 0 || this->outThread.joinable() == false ){
 		return FALSE;
 	}
 
@@ -148,7 +148,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 {
 #ifdef _WIN32
 	//プラグインがCOMを利用するかもしれないため
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 #endif
 
 	BOOL emptyFlag = TRUE;
@@ -199,7 +199,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 			}else{
 				if( i == 0 ){
 					DWORD saveFilePathSize = 0;
-					if( sys->fileList[i]->writeUtil.GetSavePath(NULL, &saveFilePathSize) && saveFilePathSize > 0 ){
+					if( sys->fileList[i]->writeUtil.GetSavePath(nullptr, &saveFilePathSize) && saveFilePathSize > 0 ){
 						vector<WCHAR> saveFilePath(saveFilePathSize);
 						if( sys->fileList[i]->writeUtil.GetSavePath(saveFilePath.data(), &saveFilePathSize) ){
 							sys->mainSaveFilePath = saveFilePath.data();
@@ -337,7 +337,7 @@ void CWriteTSFile::GetRecWriteSize(
 	LONGLONG* writeSize
 	)
 {
-	if( writeSize != NULL ){
+	if( writeSize != nullptr ){
 		lock_recursive_mutex lock(this->outThreadLock);
 		*writeSize = this->writeTotalSize < 0 ? -(this->writeTotalSize + 1) : this->writeTotalSize;
 	}

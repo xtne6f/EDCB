@@ -7,7 +7,7 @@ public:
 	~CSendTSTCPDllUtil() { UnInitialize(); }
 	bool Initialize();
 	void UnInitialize();
-	bool IsInitialized() const { return m_module != NULL; }
+	bool IsInitialized() const { return m_module != nullptr; }
 	bool AddSendAddr(LPCWSTR ip, DWORD dwPort);
 	bool AddSendAddrUdp(LPCWSTR ip, DWORD dwPort, bool broadcastFlag, int maxSendSize);
 	void ClearSendAddr();

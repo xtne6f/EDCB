@@ -18,7 +18,7 @@ LONGLONG MJDtoI64Time(DWORD mjd, DWORD bcdTime);
 DWORD GetBitrateFromIni(WORD onid, WORD tsid, WORD sid);
 
 //EPG情報をTextに変換
-wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO& info, LPCWSTR serviceName = NULL, LPCWSTR extraText = NULL);
+wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO& info, LPCWSTR serviceName = nullptr, LPCWSTR extraText = nullptr);
 wstring ConvertProgramText(const EPGDB_EVENT_INFO& info, const std::function<LPCWSTR(WORD, WORD, WORD)>& resolveServiceID);
 void AppendEpgContentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);
 void AppendEpgComponentInfoText(wstring& text, const EPGDB_EVENT_INFO& info);

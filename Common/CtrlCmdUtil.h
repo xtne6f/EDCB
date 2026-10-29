@@ -242,7 +242,7 @@ DWORD CCUTIL_WritePtrVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const
 	WriteVALUE(0, buff, buffOffset + sizeof(DWORD), (DWORD)val.size());
 	//リストの中身
 	for( size_t i = 0; i < val.size(); i++ ){
-		if( val[i] == NULL ){
+		if( val[i] == nullptr ){
 			throw std::runtime_error("");
 		}
 		pos += WriteVALUE(ver, buff, pos, *val[i]);
@@ -257,7 +257,7 @@ bool CCUTIL_ReadVectorVALUE_( WORD ver, const BYTE** buff, const BYTE* buffEnd, 
 {
 	DWORD valCount;
 	const BYTE* rb = ReadVectorIntro(buff, &buffEnd, &valCount);
-	if( rb == NULL ){
+	if( rb == nullptr ){
 		return false;
 	}
 	val->reserve(val->size() + valCount);
@@ -277,7 +277,7 @@ bool CCUTIL_ReadVectorVALUE_( WORD ver, const BYTE** buff, const BYTE* buffEnd, 
 template<class T>
 bool UtilReadVALUE( T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
-	if( val == NULL || buff == NULL ){
+	if( val == nullptr || buff == nullptr ){
 		return false;
 	}
 	const BYTE* rb = buff;
@@ -293,7 +293,7 @@ bool UtilReadVALUE( T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 template<class T>
 bool UtilReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
-	if( val == NULL || buff == NULL ){
+	if( val == nullptr || buff == nullptr ){
 		return false;
 	}
 	//2未満のコマンドバージョンは2として扱う
@@ -357,7 +357,7 @@ public:
 
 	template<class T>
 	void WriteVALUE(const T& val) {
-		Resize(CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, val));
+		Resize(CtrlCmdUtilImpl_::WriteVALUE(0, nullptr, 0, val));
 		CtrlCmdUtilImpl_::WriteVALUE(0, GetData(), 0, val);
 	}
 
@@ -365,18 +365,18 @@ public:
 	void WriteVALUE2WithVersion(WORD ver, const T& val) {
 		//2未満のコマンドバージョンは2として扱う
 		ver = max(ver, (WORD)2);
-		Resize(CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, ver) + CtrlCmdUtilImpl_::WriteVALUE(ver, NULL, 0, val));
+		Resize(CtrlCmdUtilImpl_::WriteVALUE(0, nullptr, 0, ver) + CtrlCmdUtilImpl_::WriteVALUE(ver, nullptr, 0, val));
 		CtrlCmdUtilImpl_::WriteVALUE(ver, GetData(), CtrlCmdUtilImpl_::WriteVALUE(0, GetData(), 0, ver), val);
 	}
 
 	template<class T>
 	bool ReadVALUE(T* val) const {
-		return UtilReadVALUE(val, GetData(), GetDataSize(), NULL);
+		return UtilReadVALUE(val, GetData(), GetDataSize(), nullptr);
 	}
 
 	template<class T>
 	bool ReadVALUE2WithVersion(WORD* ver, T* val) const {
-		return UtilReadVALUE2WithVersion(ver, val, GetData(), GetDataSize(), NULL);
+		return UtilReadVALUE2WithVersion(ver, val, GetData(), GetDataSize(), nullptr);
 	}
 
 private:
@@ -386,9 +386,9 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数
-void DeprecatedNewWriteVALUE( const RESERVE_DATA& val, CCmdStream& cmd, BYTE* buff = NULL );
+void DeprecatedNewWriteVALUE( const RESERVE_DATA& val, CCmdStream& cmd, BYTE* buff = nullptr );
 bool DeprecatedReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize );
 bool DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize );
-void DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, CCmdStream& cmd, BYTE* buff = NULL );
+void DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, CCmdStream& cmd, BYTE* buff = nullptr );
 
 #endif

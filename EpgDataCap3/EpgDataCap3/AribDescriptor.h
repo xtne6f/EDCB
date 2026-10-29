@@ -355,24 +355,24 @@ namespace AribDescriptor
 	public:
 		class CLoopPointer {
 		public:
-			CLoopPointer() : pl(NULL) {}
+			CLoopPointer() : pl(nullptr) {}
 		private:
 			friend CDescriptor;
 			vector<vector<DESCRIPTOR_PROPERTY>>* pl;
 			DWORD index;
 		};
 		void Clear();
-		bool DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize, si_type type, const PARSER_PAIR* customParserList = NULL);
+		bool DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize, si_type type, const PARSER_PAIR* customParserList = nullptr);
 		static DWORD GetDecodeReadSize(const BYTE* data, DWORD dataSize);
-		bool Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
+		bool Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = nullptr);
 		bool EnterLoop(CLoopPointer& lp, DWORD offset = 0) const;
 		bool SetLoopIndex(CLoopPointer& lp, DWORD index) const;
 		bool NextLoopIndex(CLoopPointer& lp) const { return SetLoopIndex(lp, lp.index + 1); }
-		DWORD GetLoopSize(CLoopPointer lp = CLoopPointer()) const { return lp.pl != NULL ? (DWORD)lp.pl->size() : 1; }
-		bool Has(property_id id, CLoopPointer lp = CLoopPointer()) const { return FindProperty(id, lp) != NULL; }
+		DWORD GetLoopSize(CLoopPointer lp = CLoopPointer()) const { return lp.pl != nullptr ? (DWORD)lp.pl->size() : 1; }
+		bool Has(property_id id, CLoopPointer lp = CLoopPointer()) const { return FindProperty(id, lp) != nullptr; }
 		DWORD GetNumber(property_id id, CLoopPointer lp = CLoopPointer()) const;
 		bool SetNumber(property_id id, DWORD n, CLoopPointer lp = CLoopPointer());
-		const BYTE* GetBinary(property_id id, DWORD* size = NULL, CLoopPointer lp = CLoopPointer()) const;
+		const BYTE* GetBinary(property_id id, DWORD* size = nullptr, CLoopPointer lp = CLoopPointer()) const;
 	private:
 		struct DESCRIPTOR_PROPERTY {
 			property_id id;

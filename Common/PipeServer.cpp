@@ -24,8 +24,8 @@ CPipeServer::CPipeServer(void)
 {
 #ifdef _WIN32
 	for( int i = 0; i < 2; i++ ){
-		this->hEventOls[i] = NULL;
-		this->hEventConnects[i] = NULL;
+		this->hEventOls[i] = nullptr;
+		this->hEventConnects[i] = nullptr;
 		this->hPipes[i] = INVALID_HANDLE_VALUE;
 	}
 #else
@@ -57,7 +57,7 @@ bool CPipeServer::StartServer(
 #ifdef _WIN32
 	for( int i = 0; i < 2; i++ ){
 		wstring eventName = (L"Global\\" + pipeName).replace(7 + pipeName.find(L"Pipe"), 4, i == 0 ? L"Connect" : L"NoWaitConnect");
-		this->hEventConnects[i] = CreateEvent(NULL, FALSE, FALSE, eventName.c_str());
+		this->hEventConnects[i] = CreateEvent(nullptr, FALSE, FALSE, eventName.c_str());
 		if( this->hEventConnects[i] && GetLastError() != ERROR_ALREADY_EXISTS ){
 
 			//NT AUTHORITY\\Authenticated Users
@@ -66,7 +66,7 @@ bool CPipeServer::StartServer(
 			SID trusteeSid;
 			//SubAuthorityCountが明らかに1なのでバッファの拡張は不要
 			DWORD cbTrusteeSid = sizeof(trusteeSid);
-			if( !CreateWellKnownSid(WinAuthenticatedUserSid, NULL, &trusteeSid, &cbTrusteeSid) ){
+			if( !CreateWellKnownSid(WinAuthenticatedUserSid, nullptr, &trusteeSid, &cbTrusteeSid) ){
 				cbTrusteeSid = 0;
 			}
 			DWORD writeDac = 0;
@@ -82,7 +82,7 @@ bool CPipeServer::StartServer(
 				writeDac = WRITE_DAC;
 			}
 			wstring pipePath = (L"\\\\.\\pipe\\" + pipeName).replace(9 + pipeName.find(L"Pipe"), 0, i == 0 ? L"" : L"NoWait");
-			this->hPipes[i] = CreateNamedPipe(pipePath.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | writeDac, 0, 1, 8192, 8192, PIPE_TIMEOUT, NULL);
+			this->hPipes[i] = CreateNamedPipe(pipePath.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | writeDac, 0, 1, 8192, 8192, PIPE_TIMEOUT, nullptr);
 			if( this->hPipes[i] != INVALID_HANDLE_VALUE ){
 				if( insecureFlag ){
 					if( writeDac && cbTrusteeSid && GrantAccessToKernelObject(this->hPipes[i], (WCHAR*)&trusteeSid, true, GENERIC_READ | GENERIC_WRITE) ){
@@ -91,7 +91,7 @@ bool CPipeServer::StartServer(
 				}else if( writeDac && GrantServerAccessToKernelObject(this->hPipes[i], GENERIC_READ | GENERIC_WRITE) ){
 					AddDebugLogFormat(L"Granted GENERIC_READ|GENERIC_WRITE on %ls to %ls", pipePath.c_str(), SERVICE_NAME);
 				}
-				this->hEventOls[i] = CreateEvent(NULL, TRUE, FALSE, NULL);
+				this->hEventOls[i] = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 				if( this->hEventOls[i] ){
 					if( i == (doNotCreateNoWaitPipe ? 0 : 1) ){
 						this->exitingFlag = false;
@@ -149,11 +149,11 @@ bool CPipeServer::StopServer(bool checkOnlyFlag)
 		}
 		if( this->hEventConnects[i] ){
 			CloseHandle(this->hEventConnects[i]);
-			this->hEventConnects[i] = NULL;
+			this->hEventConnects[i] = nullptr;
 		}
 		if( this->hEventOls[i] ){
 			CloseHandle(this->hEventOls[i]);
-			this->hEventOls[i] = NULL;
+			this->hEventOls[i] = nullptr;
 		}
 	}
 #else
@@ -180,7 +180,7 @@ BOOL CPipeServer::GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, b
 	BOOL ret = FALSE;
 	PACL pDacl;
 	PSECURITY_DESCRIPTOR pSecurityDesc;
-	if( GetSecurityInfo(handle, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, &pDacl, NULL, &pSecurityDesc) == ERROR_SUCCESS ){
+	if( GetSecurityInfo(handle, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, &pDacl, nullptr, &pSecurityDesc) == ERROR_SUCCESS ){
 		EXPLICIT_ACCESS explicitAccess = {};
 		explicitAccess.grfAccessPermissions = permissions;
 		explicitAccess.grfAccessMode = GRANT_ACCESS;
@@ -191,7 +191,7 @@ BOOL CPipeServer::GrantAccessToKernelObject(HANDLE handle, WCHAR* trusteeName, b
 		explicitAccess.Trustee.ptstrName = trusteeName;
 		PACL pNewDacl;
 		if( SetEntriesInAcl(1, &explicitAccess, pDacl, &pNewDacl) == ERROR_SUCCESS ){
-			if( SetSecurityInfo(handle, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL) == ERROR_SUCCESS ){
+			if( SetSecurityInfo(handle, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, pNewDacl, nullptr) == ERROR_SUCCESS ){
 				ret = TRUE;
 			}
 			LocalFree(pNewDacl);
@@ -205,7 +205,7 @@ void CPipeServer::DeleteRemainingFiles(LPCWSTR pipeName)
 {
 	EnumFindFile(fs_path(EDCB_INI_ROOT).append(pipeName).concat(L"*"), [pipeName](UTIL_FIND_DATA& findData) -> bool {
 		if( findData.fileName.size() > wcslen(pipeName) ){
-			int pid = (int)wcstol(findData.fileName.c_str() + wcslen(pipeName), NULL, 10);
+			int pid = (int)wcstol(findData.fileName.c_str() + wcslen(pipeName), nullptr, 10);
 			if( pid > 0 && kill(pid, 0) == -1 && errno == ESRCH ){
 				AddDebugLogFormat(L"Delete remaining %ls", findData.fileName.c_str());
 				DeleteFile(fs_path(EDCB_INI_ROOT).append(findData.fileName).c_str());
@@ -228,7 +228,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 		int olIndexes[2] = {};
 		HANDLE hEventArray[3] = { pSys->stopEvent.Handle() };
 		for( int i = 0; i < (pSys->hEventOls[1] ? 2 : 1); i++ ){
-			if( ols[i].hEvent == NULL ){
+			if( ols[i].hEvent == nullptr ){
 				OVERLAPPED olZero = {};
 				ols[i] = olZero;
 				ols[i].hEvent = pSys->hEventOls[i];
@@ -238,7 +238,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 						SetEvent(pSys->hEventOls[i]);
 					}else if( err != ERROR_IO_PENDING ){
 						//エラー
-						ols[i].hEvent = NULL;
+						ols[i].hEvent = nullptr;
 						continue;
 					}
 				}
@@ -275,28 +275,28 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 			break;
 		}else if( dwRes == WAIT_OBJECT_0 + 1 || dwRes == WAIT_OBJECT_0 + 2 ){
 			//コマンド受信
-			ols[olIndexes[dwRes - WAIT_OBJECT_0 - 1]].hEvent = NULL;
+			ols[olIndexes[dwRes - WAIT_OBJECT_0 - 1]].hEvent = nullptr;
 			HANDLE hPipe = pSys->hPipes[olIndexes[dwRes - WAIT_OBJECT_0 - 1]];
 
 			for(;;){
 				DWORD dwWrite = 0;
 				BYTE head[8];
 				DWORD n = 0;
-				for( DWORD m; n < sizeof(head) && ReadFile(hPipe, head + n, sizeof(head) - n, &m, NULL); n += m );
+				for( DWORD m; n < sizeof(head) && ReadFile(hPipe, head + n, sizeof(head) - n, &m, nullptr); n += m );
 				if( n != sizeof(head) ){
 					break;
 				}
 				CCmdStream cmd(head[0] | head[1] << 8 | head[2] << 16 | (DWORD)head[3] << 24);
 				cmd.Resize(head[4] | head[5] << 8 | head[6] << 16 | (DWORD)head[7] << 24);
 				n = 0;
-				for( DWORD m; n < cmd.GetDataSize() && ReadFile(hPipe, cmd.GetData() + n, cmd.GetDataSize() - n, &m, NULL); n += m );
+				for( DWORD m; n < cmd.GetDataSize() && ReadFile(hPipe, cmd.GetData() + n, cmd.GetDataSize() - n, &m, nullptr); n += m );
 				if( n != cmd.GetDataSize() ){
 					break;
 				}
 
 				CCmdStream res;
 				pSys->cmdProc(cmd, res);
-				if( WriteFile(hPipe, res.GetStream(), res.GetStreamSize(), &dwWrite, NULL) == FALSE ){
+				if( WriteFile(hPipe, res.GetStream(), res.GetStreamSize(), &dwWrite, nullptr) == FALSE ){
 					break;
 				}
 				FlushFileBuffers(hPipe);
@@ -325,7 +325,7 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 			}
 		}else if( pfds[1].revents & POLLIN ){
 			//コマンド受信
-			int sock = accept4(pSys->srvSock, NULL, NULL, SOCK_CLOEXEC);
+			int sock = accept4(pSys->srvSock, nullptr, nullptr, SOCK_CLOEXEC);
 			if( sock >= 0 ){
 				for(;;){
 					BYTE head[8];

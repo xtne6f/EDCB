@@ -22,9 +22,9 @@ UINT CEpgDataCap_BonDlg::taskbarCreated = 0;
 BOOL CEpgDataCap_BonDlg::disableKeyboardHook = FALSE;
 
 CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
-	: m_hWnd(NULL)
-	, m_hKeyboardHook(NULL)
-	, m_hViewProcess(NULL)
+	: m_hWnd(nullptr)
+	, m_hKeyboardHook(nullptr)
+	, m_hViewProcess(nullptr)
 {
 	m_hIcon = LoadLargeOrSmallIcon(IDI_ICON_BLUE, false);
 	m_hIcon2 = LoadLargeOrSmallIcon(IDI_ICON_BLUE, true);
@@ -39,8 +39,8 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->iniONID = -1;
 	this->iniTSID = -1;
 	this->iniSID = -1;
-	this->cmdCapture = NULL;
-	this->resCapture = NULL;
+	this->cmdCapture = nullptr;
+	this->resCapture = nullptr;
 	VIEW_APP_STATUS_INFO info = {};
 	info.space = -1;
 	info.ch = -1;
@@ -73,23 +73,23 @@ CEpgDataCap_BonDlg::~CEpgDataCap_BonDlg()
 INT_PTR CEpgDataCap_BonDlg::DoModal()
 {
 	int index = GetPrivateProfileInt(L"SET", L"DialogTemplate", 1, GetModuleIniPath().c_str());
-	return DialogBoxParam(GetModuleHandle(NULL),
+	return DialogBoxParam(GetModuleHandle(nullptr),
 	                      MAKEINTRESOURCE(index == 1 ? IDD_EPGDATACAP_BON_DIALOG_1 :
 	                                      index == 2 ? IDD_EPGDATACAP_BON_DIALOG_2 : IDD),
-	                      NULL, DlgProc, (LPARAM)this);
+	                      nullptr, DlgProc, (LPARAM)this);
 }
 
 void CEpgDataCap_BonDlg::ParseCommandLine(LPWSTR* argv, int argc)
 {
 	LPCWSTR curr = L"";
-	LPCWSTR optUpperD = NULL;
-	LPCWSTR optLowerD = NULL;
+	LPCWSTR optUpperD = nullptr;
+	LPCWSTR optLowerD = nullptr;
 	for( int i = 1; i < argc; i++ ){
 		if( argv[i][0] == L'-' || argv[i][0] == L'/' ){
 			curr = argv[i] + 1;
-			if( wcscmp(curr, L"D") == 0 && optUpperD == NULL ){
+			if( wcscmp(curr, L"D") == 0 && optUpperD == nullptr ){
 				optUpperD = L"";
-			}else if( wcscmp(curr, L"d") == 0 && optLowerD == NULL ){
+			}else if( wcscmp(curr, L"d") == 0 && optLowerD == nullptr ){
 				optLowerD = L"";
 			}else if( CompareNoCase(curr, L"min") == 0 ){
 				this->iniMin = TRUE;
@@ -107,11 +107,11 @@ void CEpgDataCap_BonDlg::ParseCommandLine(LPWSTR* argv, int argc)
 		}else if( wcscmp(curr, L"d") == 0 && optLowerD && optLowerD[0] == L'\0' ){
 			optLowerD = argv[i];
 		}else if( CompareNoCase(curr, L"nid") == 0 ){
-			this->iniONID = wcstol(argv[i], NULL, 10);
+			this->iniONID = wcstol(argv[i], nullptr, 10);
 		}else if( CompareNoCase(curr, L"tsid") == 0 ){
-			this->iniTSID = wcstol(argv[i], NULL, 10);
+			this->iniTSID = wcstol(argv[i], nullptr, 10);
 		}else if( CompareNoCase(curr, L"sid") == 0 ){
-			this->iniSID = wcstol(argv[i], NULL, 10);
+			this->iniSID = wcstol(argv[i], nullptr, 10);
 		}
 	}
 	if( optUpperD ){
@@ -132,11 +132,11 @@ HICON CEpgDataCap_BonDlg::LoadLargeOrSmallIcon(int iconID, bool isLarge)
 		HICON hIcon;
 		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*);
 		if( UtilGetProcAddress(hModule, "LoadIconMetric", pfnLoadIconMetric) &&
-		    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), isLarge ? LIM_LARGE : LIM_SMALL, &hIcon) == S_OK ){
+		    pfnLoadIconMetric(GetModuleHandle(nullptr), MAKEINTRESOURCE(iconID), isLarge ? LIM_LARGE : LIM_SMALL, &hIcon) == S_OK ){
 			return hIcon;
 		}
 	}
-	return (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), IMAGE_ICON, isLarge ? 32 : 16, isLarge ? 32 : 16, 0);
+	return (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(iconID), IMAGE_ICON, isLarge ? 32 : 16, isLarge ? 32 : 16, 0);
 }
 
 void CEpgDataCap_BonDlg::CheckAndSetDlgItemText(HWND wnd, int id, LPCWSTR text)
@@ -204,7 +204,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		}
 		ComboBox_SetCurSel(hItem, 0);
 		SendMessage(hItem, WM_SETREDRAW, TRUE, 0);
-		RedrawWindow(hItem, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+		RedrawWindow(hItem, nullptr, nullptr, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 	}
 
 	fs_path appIniPath = GetModuleIniPath();
@@ -321,8 +321,8 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		Pos.rcNormalPosition.top = top;
 		SetWindowPlacement(m_hWnd, &Pos);
 	}
-	SetTimer(TIMER_STATUS_UPDATE, 1000, NULL);
-	SetTimer(TIMER_INIT_DLG, 1, NULL);
+	SetTimer(TIMER_STATUS_UPDATE, 1000, nullptr);
+	SetTimer(TIMER_INIT_DLG, 1, nullptr);
 
 	if( this->iniNetwork == TRUE ){
 		if( this->iniUDP == TRUE || this->iniTCP == TRUE ){
@@ -371,7 +371,7 @@ BOOL CALLBACK CEpgDataCap_BonDlg::CloseViewWindowsProc(HWND hwnd, LPARAM lParam)
 	DWORD processID;
 	if( GetWindowThreadProcessId(hwnd, &processID) && processID == modeAndProcessID.second ){
 		//オーナーのいるウィンドウと、モードにより不可視のウィンドウを除く
-		if( GetWindow(hwnd, GW_OWNER) == NULL && (modeAndProcessID.first >= 2 || IsWindowVisible(hwnd)) ){
+		if( GetWindow(hwnd, GW_OWNER) == nullptr && (modeAndProcessID.first >= 2 || IsWindowVisible(hwnd)) ){
 			AddDebugLogFormat(L"Post WM_CLOSE to%ls view window:0x%08llx", IsWindowVisible(hwnd) ? L"" : L" hidden", (LONGLONG)hwnd);
 			PostMessage(hwnd, WM_CLOSE, 0, 0);
 			//ウィンドウが見つかったことを示す
@@ -392,7 +392,7 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	KillTimer(TIMER_CHG_TRAY);
 	DeleteTaskBar(m_hWnd, TRAYICON_ID);
 	if( this->setting.overlayTaskIcon ){
-		SetOverlayIcon(NULL);
+		SetOverlayIcon(nullptr);
 	}
 
 	if( m_hViewProcess && this->setting.viewSingle && this->setting.viewCloseOnExit &&
@@ -453,7 +453,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				KillTimer( TIMER_INIT_DLG );
 				if( this->iniMin && this->setting.minTask ){
-					SetTimer(RETRY_ADD_TRAY, 0, NULL);
+					SetTimer(RETRY_ADD_TRAY, 0, nullptr);
 				    ShowWindow(m_hWnd, SW_HIDE);
 				}
 			}
@@ -592,7 +592,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					if( msg.size() > 0){
 						wstring log = L"同一サービスが複数の物理チャンネルで検出されました。\r\n受信環境のよい物理チャンネルのサービスのみ残すように設定を行ってください。\r\n正常に録画できない可能性が出てきます。\r\n\r\n";
 						log += msg;
-						MessageBox(m_hWnd, log.c_str(), NULL, MB_OK);
+						MessageBox(m_hWnd, log.c_str(), nullptr, MB_OK);
 					}
 				}else{
 					this->chScanWorking = FALSE;
@@ -649,9 +649,9 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				int iconID = IDI_ICON_BLUE;
 				if( this->bonCtrl.IsRec() ){
 					iconID = IDI_ICON_RED;
-				}else if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
+				}else if( this->bonCtrl.GetEpgCapStatus(nullptr) == CBonCtrl::ST_WORKING ){
 					iconID = IDI_ICON_GREEN;
-				}else if( this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ){
+				}else if( this->bonCtrl.GetOpenBonDriver(nullptr) == FALSE ){
 					iconID = IDI_ICON_GRAY;
 				}
 		
@@ -677,7 +677,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					}
 				}
 				if( this->setting.overlayTaskIcon ){
-					HICON hIcon = NULL;
+					HICON hIcon = nullptr;
 					if( iconID == IDI_ICON_RED || iconID == IDI_ICON_GREEN ){
 						hIcon = LoadLargeOrSmallIcon(iconID == IDI_ICON_RED ? IDI_ICON_OVERLAY_REC : IDI_ICON_OVERLAY_EPG, false);
 					}
@@ -695,7 +695,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					HICON hIcon = LoadLargeOrSmallIcon(iconID, false);
 					if( nIDEvent == RETRY_ADD_TRAY ){
 						if( AddTaskBar(m_hWnd, WM_TRAY_PUSHICON, TRAYICON_ID, hIcon, buff) == FALSE ){
-							SetTimer(RETRY_ADD_TRAY, 5000, NULL);
+							SetTimer(RETRY_ADD_TRAY, 5000, nullptr);
 						}
 					}else{
 						ChgTipsTaskBar(m_hWnd, TRAYICON_ID, hIcon, buff);
@@ -725,7 +725,7 @@ void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 	(void)cy;
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 	if( nType == SIZE_MINIMIZED && this->iniMin == FALSE && this->setting.minTask ){
-		SetTimer(RETRY_ADD_TRAY, 0, NULL);
+		SetTimer(RETRY_ADD_TRAY, 0, nullptr);
 		ShowWindow(m_hWnd, SW_HIDE);
 	}
 }
@@ -743,9 +743,9 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		//前回起動プロセスの生存を確認する
 		if( m_hViewProcess && (this->setting.viewSingle == false || WaitForSingleObject(m_hViewProcess, 0) != WAIT_TIMEOUT) ){
 			CloseHandle(m_hViewProcess);
-			m_hViewProcess = NULL;
+			m_hViewProcess = nullptr;
 		}
-		if( m_hViewProcess == NULL && this->setting.viewPath.empty() == false ){
+		if( m_hViewProcess == nullptr && this->setting.viewPath.empty() == false ){
 			auto itrUdp = std::find_if(this->udpSendList.begin(), this->udpSendList.end(),
 				[](const NW_SEND_INFO& info) { return info.port < 0x10000; });
 			auto itrTcp = std::find_if(this->tcpSendList.begin(), this->tcpSendList.end(),
@@ -858,12 +858,12 @@ BOOL CEpgDataCap_BonDlg::DeleteTaskBar(HWND wnd, UINT id)
 
 void CEpgDataCap_BonDlg::ChgIconStatus()
 {
-	SetTimer(TIMER_CHG_TRAY, 0, NULL);
+	SetTimer(TIMER_CHG_TRAY, 0, nullptr);
 }
 
 LRESULT CEpgDataCap_BonDlg::OnTaskbarCreated(WPARAM, LPARAM)
 {
-	SetTimer(RETRY_ADD_TRAY, 0, NULL);
+	SetTimer(RETRY_ADD_TRAY, 0, nullptr);
 
 	return 0;
 }
@@ -1017,8 +1017,8 @@ void CEpgDataCap_BonDlg::ReloadNWSet()
 {
 	this->udpSendList.clear();
 	this->tcpSendList.clear();
-	this->bonCtrl.SendUdp(NULL);
-	this->bonCtrl.SendTcp(NULL);
+	this->bonCtrl.SendUdp(nullptr);
+	this->bonCtrl.SendTcp(nullptr);
 	if( this->setting.udpSendList.empty() == false ){
 		EnableWindow(GetDlgItem(IDC_CHECK_UDP), TRUE);
 		if( Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)) ){
@@ -1044,7 +1044,7 @@ void CEpgDataCap_BonDlg::ReloadNWSet()
 void CEpgDataCap_BonDlg::SetOverlayIcon(HICON icon)
 {
 	void* pv;
-	if( SUCCEEDED(CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, &pv)) ){
+	if( SUCCEEDED(CoCreateInstance(CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, &pv)) ){
 		((ITaskbarList3*)pv)->SetOverlayIcon(m_hWnd, icon, L"");
 		((ITaskbarList3*)pv)->Release();
 	}
@@ -1132,13 +1132,13 @@ int CEpgDataCap_BonDlg::ReloadServiceList(int selONID, int selTSID, int selSID)
 	}
 	if( updateComboBox ){
 		SendMessage(hItem, WM_SETREDRAW, TRUE, 0);
-		RedrawWindow(hItem, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+		RedrawWindow(hItem, nullptr, nullptr, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 	}
 
 	if( this->serviceList.empty() ){
 		WCHAR log[512 + 64] = L"";
 		GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-		if( wcsstr(log, L"チャンネル情報の読み込みに失敗しました\r\n") == NULL ){
+		if( wcsstr(log, L"チャンネル情報の読み込みに失敗しました\r\n") == nullptr ){
 			wcscat_s(log, L"チャンネル情報の読み込みに失敗しました\r\n");
 			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 		}
@@ -1197,7 +1197,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 void CEpgDataCap_BonDlg::OnBnClickedButtonEpg()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	if( this->bonCtrl.StartEpgCap(NULL) == FALSE ){
+	if( this->bonCtrl.StartEpgCap(nullptr) == FALSE ){
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得を開始できませんでした\r\n");
 		return;
 	}
@@ -1314,7 +1314,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckUdp()
 	}else{
 		this->udpSendList.clear();
 	}
-	this->bonCtrl.SendUdp(this->udpSendList.empty() ? NULL : &this->udpSendList);
+	this->bonCtrl.SendUdp(this->udpSendList.empty() ? nullptr : &this->udpSendList);
 }
 
 
@@ -1326,7 +1326,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckTcp()
 	}else{
 		this->tcpSendList.clear();
 	}
-	this->bonCtrl.SendTcp(this->tcpSendList.empty() ? NULL : &this->tcpSendList);
+	this->bonCtrl.SendTcp(this->tcpSendList.empty() ? nullptr : &this->tcpSendList);
 }
 
 
@@ -1345,7 +1345,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckRecSet()
 		if( nowTime > endTime ){
 			endTime += 24*60*60;
 		}
-		SetTimer(TIMER_REC_END, (endTime-nowTime)*1000, NULL );
+		SetTimer(TIMER_REC_END, (endTime-nowTime)*1000, nullptr );
 	}else{
 		BtnUpdate(GUI_REC);
 		KillTimer(TIMER_REC_END);
@@ -1402,14 +1402,14 @@ LRESULT CALLBACK CEpgDataCap_BonDlg::KeyboardProc(int nCode, WPARAM wParam, LPAR
 	if( disableKeyboardHook == FALSE && nCode == HC_ACTION && (wParam == VK_RETURN || wParam == VK_ESCAPE) && (lParam & (1 << 30)) == 0 ){
 		return TRUE;
 	}
-	return CallNextHookEx(NULL, nCode, wParam, lParam);
+	return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
 
 
 INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CEpgDataCap_BonDlg* pSys = (CEpgDataCap_BonDlg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+	if( pSys == nullptr && uMsg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch( uMsg ){
@@ -1417,11 +1417,11 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		pSys = (CEpgDataCap_BonDlg*)lParam;
 		pSys->m_hWnd = hDlg;
-		pSys->m_hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, NULL, GetCurrentThreadId());
+		pSys->m_hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, nullptr, GetCurrentThreadId());
 		return pSys->OnInitDialog();
 	case WM_NCDESTROY:
 		UnhookWindowsHookEx(pSys->m_hKeyboardHook);
-		pSys->m_hWnd = NULL;
+		pSys->m_hWnd = nullptr;
 		break;
 	case WM_DESTROY:
 		pSys->OnDestroy();
@@ -1492,7 +1492,7 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 			}
 			//デッドロック回避のためメッセージポンプを維持しつつサーバを終わらせる
 			pSys->pipeServer.StopServer(true);
-			pSys->SetTimer(TIMER_TRY_STOP_SERVER, 20, NULL);
+			pSys->SetTimer(TIMER_TRY_STOP_SERVER, 20, nullptr);
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 0);
 			return TRUE;
 		}
@@ -1545,9 +1545,9 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 			{
 				BOOL chChgErr;
 				DWORD val =
-					this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ? VIEW_APP_ST_ERR_BON :
+					this->bonCtrl.GetOpenBonDriver(nullptr) == FALSE ? VIEW_APP_ST_ERR_BON :
 					this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
-					this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
+					this->bonCtrl.GetEpgCapStatus(nullptr) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
 					this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
 				res.WriteVALUE(val);
 				res.SetParam(CMD_SUCCESS);
@@ -1581,9 +1581,9 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 					if( flags & VIEW_APP_FLAG_GET_STATUS ){
 						BOOL chChgErr;
 						info.status =
-							this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ? VIEW_APP_ST_ERR_BON :
+							this->bonCtrl.GetOpenBonDriver(nullptr) == FALSE ? VIEW_APP_ST_ERR_BON :
 							this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
-							this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
+							this->bonCtrl.GetEpgCapStatus(nullptr) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
 							this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
 					}
 					if( flags & VIEW_APP_FLAG_GET_DELAY ){
@@ -1643,8 +1643,8 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 		this->cmdCapture = &cmd;
 		this->resCapture = &res;
 		SendMessage(m_hWnd, WM_INVOKE_CTRL_CMD, 0, 0);
-		this->cmdCapture = NULL;
-		this->resCapture = NULL;
+		this->cmdCapture = nullptr;
+		this->resCapture = nullptr;
 	});
 }
 
@@ -1785,7 +1785,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 					BtnUpdate(GUI_OTHER_CTRL);
 					WCHAR log[512 + 64] = L"";
 					GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
-					if( wcsstr(log, L"予約録画中\r\n") == NULL ){
+					if( wcsstr(log, L"予約録画中\r\n") == nullptr ){
 						wcscat_s(log, L"予約録画中\r\n");
 						SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 					}

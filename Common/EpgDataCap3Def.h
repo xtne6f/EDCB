@@ -148,7 +148,7 @@ typedef struct {
 	DWORD bonDriverID;			//EpgTimerSrv内部でのBonDriver識別ID
 	DWORD tunerID;				//EpgTimerSrv内部でのチューナー識別ID
 	DWORD reserveID;			//予約ID（ConvertRecName3で必須）
-	EPG_EVENT_INFO* epgInfo;	//番組情報（存在しないときNULL）（ConvertRecName3で必須）
+	EPG_EVENT_INFO* epgInfo;	//番組情報（存在しないときnullptr）（ConvertRecName3で必須）
 	DWORD sizeOfStruct;			//未使用（0または構造体サイズで初期化）（ConvertRecName3で必須）
 } PLUGIN_RESERVE_INFO;
 

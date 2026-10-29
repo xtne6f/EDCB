@@ -123,11 +123,11 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CCmdStream& cmd, CC
 	//接続待ち
 	//CreateEvent()してはいけない。イベントを作成するのはサーバの仕事のはず
 	//CreateEvent()してしまうとサーバが終了した後は常にタイムアウトまで待たされることになる
-	HANDLE waitEvent = NULL;
+	HANDLE waitEvent = nullptr;
 	if( pipeName.find(L"Pipe") != wstring::npos ){
 		waitEvent = OpenEvent(SYNCHRONIZE, FALSE, (L"Global\\" + pipeName).replace(7 + pipeName.find(L"Pipe"), 4, L"Connect").c_str());
 	}
-	if( waitEvent == NULL ){
+	if( waitEvent == nullptr ){
 		return CMD_ERR_CONNECT;
 	}
 	DWORD dwRet = WaitForSingleObject(waitEvent, timeOut);
@@ -139,7 +139,7 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CCmdStream& cmd, CC
 	}
 
 	//接続
-	HANDLE pipe = CreateFile((L"\\\\.\\pipe\\" + pipeName).c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE pipe = CreateFile((L"\\\\.\\pipe\\" + pipeName).c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if( pipe == INVALID_HANDLE_VALUE ){
 		AddDebugLogFormat(L"*+* ConnectPipe Err:%d", GetLastError());
 		return CMD_ERR_CONNECT;
@@ -179,7 +179,7 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CCmdStream& cmd, CC
 	//送信
 	DWORD n;
 #ifdef _WIN32
-	if( WriteFile(pipe, cmd.GetStream(), cmd.GetStreamSize(), &n, NULL) == FALSE ){
+	if( WriteFile(pipe, cmd.GetStream(), cmd.GetStreamSize(), &n, nullptr) == FALSE ){
 #else
 	if( send(sock, cmd.GetStream(), cmd.GetStreamSize(), 0) != (int)cmd.GetStreamSize() ){
 #endif
@@ -191,7 +191,7 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CCmdStream& cmd, CC
 	BYTE head[8];
 	n = 0;
 #ifdef _WIN32
-	for( DWORD m; n < sizeof(head) && ReadFile(pipe, head + n, sizeof(head) - n, &m, NULL); n += m );
+	for( DWORD m; n < sizeof(head) && ReadFile(pipe, head + n, sizeof(head) - n, &m, nullptr); n += m );
 #else
 	for( int m; n < sizeof(head) && (m = (int)recv(sock, head + n, sizeof(head) - n, 0)) > 0; n += m );
 #endif
@@ -203,7 +203,7 @@ DWORD SendPipe(const wstring& pipeName, DWORD timeOut, const CCmdStream& cmd, CC
 	res->Resize(head[4] | head[5] << 8 | head[6] << 16 | (DWORD)head[7] << 24);
 	n = 0;
 #ifdef _WIN32
-	for( DWORD m; n < res->GetDataSize() && ReadFile(pipe, res->GetData() + n, res->GetDataSize() - n, &m, NULL); n += m );
+	for( DWORD m; n < res->GetDataSize() && ReadFile(pipe, res->GetData() + n, res->GetDataSize() - n, &m, nullptr); n += m );
 #else
 	for( int m; n < res->GetDataSize() && (m = (int)recv(sock, res->GetData() + n, res->GetDataSize() - n, 0)) > 0; n += m );
 #endif
@@ -258,7 +258,7 @@ DWORD SendTCP(const wstring& ip, DWORD port, DWORD timeOut, const CCmdStream& cm
 		unsigned long x = 1;
 		if( ioctlsocket(sock, FIONBIO, &x) == SOCKET_ERROR ||
 		    (connect(sock, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR &&
-		     (WSAGetLastError() != WSAEWOULDBLOCK || select((int)sock + 1, NULL, &wmask, NULL, &tv) != 1)) ){
+		     (WSAGetLastError() != WSAEWOULDBLOCK || select((int)sock + 1, nullptr, &wmask, nullptr, &tv) != 1)) ){
 			closesocket(sock);
 			sock = INVALID_SOCKET;
 		}else{
@@ -305,7 +305,7 @@ DWORD CSendCtrlCmd::SendCmdStream(const CCmdStream& cmd, CCmdStream* res)
 	DWORD ret = CMD_ERR;
 	CCmdStream tmpRes;
 
-	if( res == NULL ){
+	if( res == nullptr ){
 		res = &tmpRes;
 	}
 	if( this->tcpFlag == FALSE ){

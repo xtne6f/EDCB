@@ -5,26 +5,26 @@ namespace
 {
 IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), void* const* (WINAPI* funcCast)(LPCSTR, void*))
 {
-	void* hModule = NULL;
+	void* hModule = nullptr;
 #if defined(_WIN32) && !defined(_MSC_VER)
-	if( funcCast == NULL ){
-		if( (hModule = UtilLoadLibrary(wstring(L"IBonCast.dll"))) == NULL ){
+	if( funcCast == nullptr ){
+		if( (hModule = UtilLoadLibrary(wstring(L"IBonCast.dll"))) == nullptr ){
 			AddDebugLog(L"★IBonCast.dllがロードできません");
-			return NULL;
+			return nullptr;
 		}
 		UtilGetProcAddress(hModule, "Cast", funcCast);
 	}
 #endif
 	void* pBase;
 	void* const* table;
-	if( funcCast == NULL || (pBase = funcCreate()) == NULL || (table = funcCast("IB25Decoder@5", pBase)) == NULL ){
+	if( funcCast == nullptr || (pBase = funcCreate()) == nullptr || (table = funcCast("IB25Decoder@5", pBase)) == nullptr ){
 		AddDebugLog(L"★Castに失敗しました");
 #if defined(_WIN32) && !defined(_MSC_VER)
 		if( hModule ){
 			UtilFreeLibrary(hModule);
 		}
 #endif
-		return NULL;
+		return nullptr;
 	}
 
 	class CCastB : public IB25Decoder2
@@ -58,7 +58,7 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), void* const
 	};
 
 	CCastB* b = new CCastB(hModule, pBase, table);
-	*if2 = NULL;
+	*if2 = nullptr;
 	if( funcCast("IB25Decoder2@20", pBase) == table ){
 		*if2 = b;
 	}
@@ -67,12 +67,12 @@ IB25Decoder* CastB(IB25Decoder2** if2, IB25Decoder* (*funcCreate)(), void* const
 }
 
 CScrambleDecoderUtil::CScrambleDecoderUtil(void)
-	: module(NULL, UtilFreeLibrary)
+	: module(nullptr, UtilFreeLibrary)
 {
 	this->currentDll = L"";
 
-	this->decodeIF = NULL;
-	this->decodeIF2 = NULL;
+	this->decodeIF = nullptr;
+	this->decodeIF2 = nullptr;
 
 	this->emmEnable = false;
 }
@@ -88,7 +88,7 @@ BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 	BOOL ret = TRUE;
 
 	this->module.reset(UtilLoadLibrary(dllPath));
-	if( this->module == NULL ){
+	if( this->module == nullptr ){
 		return FALSE;
 	}
 	IB25Decoder* (*func)();
@@ -103,7 +103,7 @@ BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 		this->decodeIF = func();
 	}else
 #endif
-	if( (this->decodeIF = CastB(&this->decodeIF2, func, funcCast)) == NULL ){
+	if( (this->decodeIF = CastB(&this->decodeIF2, func, funcCast)) == nullptr ){
 		ret = FALSE;
 		goto ERR_END;
 	}
@@ -118,7 +118,7 @@ BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 				this->decodeIF2 = dynamic_cast<IB25Decoder2 *>(this->decodeIF);
 			}
 #endif
-			if( this->decodeIF2 != NULL ){
+			if( this->decodeIF2 != nullptr ){
 				//this->decodeIF2->EnableEmmProcess(false);
 				this->decodeIF2->DiscardNullPacket(true);
 				this->decodeIF2->DiscardScramblePacket(false);
@@ -127,7 +127,7 @@ BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 		}
 #ifdef _MSC_VER
 		catch(std::__non_rtti_object){
-			this->decodeIF2 = NULL;
+			this->decodeIF2 = nullptr;
 		}
 #endif
 	}
@@ -141,10 +141,10 @@ ERR_END:
 
 void CScrambleDecoderUtil::UnLoadDll()
 {
-	if( this->decodeIF != NULL ){
+	if( this->decodeIF != nullptr ){
 		this->decodeIF->Release();
-		this->decodeIF = NULL;
-		this->decodeIF2 = NULL;
+		this->decodeIF = nullptr;
+		this->decodeIF2 = nullptr;
 	}
 	this->module.reset();
 	this->currentDll = L"";
@@ -186,7 +186,7 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 
 BOOL CScrambleDecoderUtil::Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* destSize)
 {
-	if( this->decodeIF == NULL ){
+	if( this->decodeIF == nullptr ){
 		return FALSE;
 	}
 	return this->decodeIF->Decode(src, srcSize, dest, destSize);
@@ -194,7 +194,7 @@ BOOL CScrambleDecoderUtil::Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* 
 
 void CScrambleDecoderUtil::Reset()
 {
-	if( this->decodeIF == NULL ){
+	if( this->decodeIF == nullptr ){
 		return ;
 	}
 	this->decodeIF->Reset();
@@ -203,7 +203,7 @@ void CScrambleDecoderUtil::Reset()
 
 BOOL CScrambleDecoderUtil::SetEmm(BOOL enable)
 {
-	if( this->decodeIF2 == NULL ){
+	if( this->decodeIF2 == nullptr ){
 		return FALSE;
 	}
 	if( enable == TRUE ){
@@ -218,7 +218,7 @@ BOOL CScrambleDecoderUtil::SetEmm(BOOL enable)
 
 DWORD CScrambleDecoderUtil::GetEmmCount()
 {
-	if( this->decodeIF2 == NULL ){
+	if( this->decodeIF2 == nullptr ){
 		return 0;
 	}
 	return this->decodeIF2->GetEmmProcessNum();

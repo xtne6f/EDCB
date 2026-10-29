@@ -35,7 +35,7 @@ DWORD FinalizeField(wstring& str)
 	return tabCount;
 }
 
-bool ParseDateTime(LPCWSTR* token, SYSTEMTIME& st, DWORD* duration = NULL)
+bool ParseDateTime(LPCWSTR* token, SYSTEMTIME& st, DWORD* duration = nullptr)
 {
 	LONGLONG t;
 	st.wMilliseconds = 0;
@@ -169,10 +169,10 @@ void CParseChText4::SetUseViewFlag(DWORD key, BOOL useViewFlag)
 
 void CParseChText4::ParseLine(LPCWSTR parseLine)
 {
-	if( wcschr(parseLine, L'\t') == NULL ){
+	if( wcschr(parseLine, L'\t') == nullptr ){
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 	CH_DATA4 item;
 
 	NextToken(token);
@@ -260,10 +260,10 @@ bool CParseChText5::SaveTextWithExtraFields(string* saveToStr) const
 
 void CParseChText5::ParseLine(LPCWSTR parseLine)
 {
-	if( wcschr(parseLine, L'\t') == NULL ){
+	if( wcschr(parseLine, L'\t') == nullptr ){
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 	CH_DATA5 item;
 
 	NextToken(token);
@@ -333,11 +333,11 @@ void CParseContentTypeText::GetMimeType(wstring ext, wstring& mimeType) const
 
 void CParseContentTypeText::ParseLine(LPCWSTR parseLine)
 {
-	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
+	if( wcschr(parseLine, L'\t') == nullptr || parseLine[0] == L';' ){
 		//空行orコメント
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 
 	NextToken(token);
 	wstring key(token[0], token[1]);
@@ -355,10 +355,10 @@ void CParseServiceChgText::ChgText(wstring& chgText) const
 
 void CParseServiceChgText::ParseLine(LPCWSTR parseLine)
 {
-	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
+	if( wcschr(parseLine, L'\t') == nullptr || parseLine[0] == L';' ){
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 
 	NextToken(token);
 	wstring key(token[0], token[1]);
@@ -435,17 +435,17 @@ void CParseRecInfoText::ParseLine(LPCWSTR parseLine)
 	}
 	if( parseLine[0] == L';' ){
 		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
-			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, NULL, 10);
+			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, nullptr, 10);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
 			this->saveNextID = 2;
 		}
 		return;
-	}else if( wcschr(parseLine, L'\t') == NULL ){
+	}else if( wcschr(parseLine, L'\t') == nullptr ){
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 	REC_FILE_INFO_BASIC item;
 
 	NextToken(token);
@@ -462,8 +462,8 @@ void CParseRecInfoText::ParseLine(LPCWSTR parseLine)
 	item.transportStreamID = (WORD)NextTokenToInt(token);
 	item.serviceID = (WORD)NextTokenToInt(token);
 	item.eventID = (WORD)NextTokenToInt(token);
-	item.drops = wcstoll(NextToken(token), NULL, 10);
-	item.scrambles = wcstoll(NextToken(token), NULL, 10);
+	item.drops = wcstoll(NextToken(token), nullptr, 10);
+	item.scrambles = wcstoll(NextToken(token), nullptr, 10);
 	item.recStatus = (DWORD)NextTokenToInt(token);
 
 	if( ParseDateTime(token, item.startTimeEpg) == false ){
@@ -637,10 +637,10 @@ DWORD CParseRecInfo2Text::Add(const PARSE_REC_INFO2_ITEM& item)
 
 void CParseRecInfo2Text::ParseLine(LPCWSTR parseLine)
 {
-	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
+	if( wcschr(parseLine, L'\t') == nullptr || parseLine[0] == L';' ){
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 	PARSE_REC_INFO2_ITEM item;
 
 	item.originalNetworkID = (WORD)NextTokenToInt(token);
@@ -747,17 +747,17 @@ void CParseReserveText::ParseLine(LPCWSTR parseLine)
 	}
 	if( parseLine[0] == L';' ){
 		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
-			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, NULL, 10);
+			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, nullptr, 10);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
 			this->saveNextID = 2;
 		}
 		return;
-	}else if( wcschr(parseLine, L'\t') == NULL ){
+	}else if( wcschr(parseLine, L'\t') == nullptr ){
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 	RESERVE_DATA item;
 
 	if( ParseDateTime(token, item.startTime, &item.durationSecond) == false ){
@@ -987,17 +987,17 @@ void CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine)
 	}
 	if( parseLine[0] == L';' ){
 		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
-			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, NULL, 10);
+			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, nullptr, 10);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
 			this->saveNextID = 2;
 		}
 		return;
-	}else if( wcschr(parseLine, L'\t') == NULL ){
+	}else if( wcschr(parseLine, L'\t') == nullptr ){
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 	EPG_AUTO_ADD_DATA item;
 
 	item.dataID = (DWORD)NextTokenToInt(token);
@@ -1223,17 +1223,17 @@ void CParseManualAutoAddText::ParseLine(LPCWSTR parseLine)
 	}
 	if( parseLine[0] == L';' ){
 		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
-			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, NULL, 10);
+			DWORD nextID_ = (DWORD)wcstol(parseLine + 9, nullptr, 10);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
 			this->saveNextID = 2;
 		}
 		return;
-	}else if( wcschr(parseLine, L'\t') == NULL ){
+	}else if( wcschr(parseLine, L'\t') == nullptr ){
 		return;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine};
+	LPCWSTR token[3] = {nullptr, nullptr, parseLine};
 	MANUAL_AUTO_ADD_DATA item;
 
 	item.dataID = (DWORD)NextTokenToInt(token);

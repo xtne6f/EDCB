@@ -18,8 +18,8 @@ COneServiceUtil::~COneServiceUtil(void)
 	if( IsRec() ){
 		EndSave();
 	}
-	SendUdp(NULL);
-	SendTcp(NULL);
+	SendUdp(nullptr);
+	SendTcp(nullptr);
 }
 
 //処理対象ServiceIDを設定
@@ -62,7 +62,7 @@ void COneServiceUtil::SendUdpTcp(
 	sendNW.UnInitialize();
 	portMutexList.clear();
 
-	if( sendList != NULL ){
+	if( sendList != nullptr ){
 		sendNW.Initialize();
 		for( vector<NW_SEND_INFO>::iterator itr = sendList->begin(); itr != sendList->end(); itr++ ){
 			//IPアドレスであること

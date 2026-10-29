@@ -128,7 +128,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			ret += strSep1;
 		}
 	}else if( var == L"Genre" ){
-		if( epgInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
+		if( epgInfo != nullptr && epgInfo->contentInfo != nullptr && epgInfo->contentInfo->listSize > 0 ){
 			BYTE nibble1 = epgInfo->contentInfo->nibbleList[0].content_nibble_level_1;
 			BYTE nibble2 = epgInfo->contentInfo->nibbleList[0].content_nibble_level_2;
 			if( nibble1 == 0x0E && nibble2 <= 0x01 ){
@@ -141,7 +141,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			}
 		}
 	}else if( var == L"Genre2" ){
-		if( epgInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
+		if( epgInfo != nullptr && epgInfo->contentInfo != nullptr && epgInfo->contentInfo->listSize > 0 ){
 			BYTE nibble1 = epgInfo->contentInfo->nibbleList[0].content_nibble_level_1;
 			BYTE nibble2 = epgInfo->contentInfo->nibbleList[0].content_nibble_level_2;
 			if( nibble1 == 0x0E && nibble2 <= 0x01 ){
@@ -155,20 +155,20 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 			}
 		}
 	}else if( var == L"SubTitle" ){
-		if( epgInfo != NULL && epgInfo->shortInfo != NULL ){
+		if( epgInfo != nullptr && epgInfo->shortInfo != nullptr ){
 			ret = epgInfo->shortInfo->text_char;
 		}
 	}else if( var == L"SubTitle2" ){
-		if( epgInfo != NULL && epgInfo->shortInfo != NULL ){
+		if( epgInfo != nullptr && epgInfo->shortInfo != nullptr ){
 			wstring strSubTitle2 = epgInfo->shortInfo->text_char;
 			strSubTitle2 = strSubTitle2.substr(0, strSubTitle2.find(L"\r\n"));
-			LPCWSTR startsWith[] = { L"#＃第", L"0123456789０１２３４５６７８９", NULL };
+			LPCWSTR startsWith[] = { L"#＃第", L"0123456789０１２３４５６７８９", nullptr };
 			for( size_t j, i = 0; i < strSubTitle2.size(); i++ ){
 				for( j = 0; startsWith[i][j] && startsWith[i][j] != strSubTitle2[i]; j++ );
 				if( startsWith[i][j] == L'\0' ){
 					break;
 				}
-				if( startsWith[i+1] == NULL ){
+				if( startsWith[i+1] == nullptr ){
 					ret = strSubTitle2;
 					break;
 				}
@@ -342,7 +342,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 						m--;
 					}
 				}else{
-					p = NULL;
+					p = nullptr;
 				}
 				if( m > 0 && IsHighSurrogate(ret[m - 1]) ){
 					m--;
@@ -396,7 +396,7 @@ BOOL CConvertMacro2::ExpandMacro(wstring var, const PLUGIN_RESERVE_INFO* info, w
 						m--;
 					}
 				}else{
-					p = NULL;
+					p = nullptr;
 				}
 				if( m > 0 && IsLowSurrogate(ret[ret.size() - m]) ){
 					m--;

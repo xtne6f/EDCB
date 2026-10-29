@@ -10,8 +10,8 @@
 // CSetDlgEpg ダイアログ
 
 CSetDlgEpg::CSetDlgEpg()
-	: m_hWnd(NULL)
-	, m_setting(NULL)
+	: m_hWnd(nullptr)
+	, m_setting(nullptr)
 {
 
 }
@@ -23,7 +23,7 @@ CSetDlgEpg::~CSetDlgEpg()
 BOOL CSetDlgEpg::Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting)
 {
 	m_setting = &setting;
-	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
+	return CreateDialogParam(GetModuleHandle(nullptr), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != nullptr;
 }
 
 
@@ -79,7 +79,7 @@ BOOL CSetDlgEpg::OnInitDialog()
 
 void CSetDlgEpg::SaveIni(void)
 {
-	if( m_hWnd == NULL ){
+	if( m_hWnd == nullptr ){
 		return;
 	}
 	fs_path commonIniPath = GetCommonIniPath();
@@ -96,9 +96,9 @@ void CSetDlgEpg::SaveIni(void)
 	WritePrivateProfileInt( L"SET", L"EpgCapLive", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_LIVE)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"EpgCapRec", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_REC)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"ParseEpgPostProcess", Button_GetCheck(GetDlgItem(IDC_CHECK_PARSE_EPG_POST_PROC)), appIniPath.c_str() );
-	WritePrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", GetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, NULL, FALSE), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", GetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, nullptr, FALSE), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"SaveLogo", Button_GetCheck(GetDlgItem(IDC_CHECK_SAVE_LOGO)), appIniPath.c_str() );
-	WritePrivateProfileInt( L"SET", L"SaveLogoTypeFlags", GetDlgItemInt(m_hWnd, IDC_EDIT_SAVE_LOGO_TYPE, NULL, FALSE), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"SaveLogoTypeFlags", GetDlgItemInt(m_hWnd, IDC_EDIT_SAVE_LOGO_TYPE, nullptr, FALSE), appIniPath.c_str() );
 
 	BOOL chSetModified = FALSE;
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
@@ -161,7 +161,7 @@ void CSetDlgEpg::OnBnClickedSaveLogo()
 INT_PTR CALLBACK CSetDlgEpg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CSetDlgEpg* pSys = (CSetDlgEpg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+	if( pSys == nullptr && uMsg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch( uMsg ){
@@ -171,7 +171,7 @@ INT_PTR CALLBACK CSetDlgEpg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 		pSys->m_hWnd = hDlg;
 		return pSys->OnInitDialog();
 	case WM_NCDESTROY:
-		pSys->m_hWnd = NULL;
+		pSys->m_hWnd = nullptr;
 		break;
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){

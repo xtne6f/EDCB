@@ -92,7 +92,7 @@ public:
 	bool ChgCtrlReserve(TUNER_RESERVE* reserve);
 	//予約を削除する
 	//retList: 録画中であれば終了結果を追加
-	bool DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList = NULL);
+	bool DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList = nullptr);
 	//開始時間がstartTime以上の待機状態に入っていないすべての予約をクリアする
 	void ClearNoCtrl(LONGLONG startTime = 0);
 	//予約ID一覧を取得する(ソート済み)
@@ -100,7 +100,7 @@ public:
 	//チューナの状態遷移をおこない、終了した予約を取得する
 	//概ね1秒ごとに呼ぶ
 	//startedReserveIDList: TR_RECに遷移した予約ID一覧
-	vector<CHECK_RESULT> Check(vector<DWORD>* startedReserveIDList = NULL);
+	vector<CHECK_RESULT> Check(vector<DWORD>* startedReserveIDList = nullptr);
 	//チューナ全体としての状態を取得する
 	TR_STATE GetState() const;
 	//プロセスIDを取得する(GetState()がTR_IDLEのとき不定)

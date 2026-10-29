@@ -10,7 +10,7 @@ CEpgDataCap3Main::CEpgDataCap3Main(void)
 
 CEpgDataCap3Main::~CEpgDataCap3Main(void)
 {
-	decodeUtilClass.SetEpgDB(NULL);
+	decodeUtilClass.SetEpgDB(nullptr);
 }
 
 //解析対象のTSパケットを読み込ませる
@@ -28,7 +28,7 @@ void CEpgDataCap3Main::AddTSPacket(
 
 //解析データの現在のストリームＩＤを取得する
 //引数：
-// originalNetworkID		[OUT]現在のoriginalNetworkID。NULL可
+// originalNetworkID		[OUT]現在のoriginalNetworkID。nullptr可
 // transportStreamID		[OUT]現在のtransportStreamID
 BOOL CEpgDataCap3Main::GetTSID(
 	WORD* originalNetworkID,
@@ -126,13 +126,13 @@ BOOL CEpgDataCap3Main::GetEpgInfo(
 	if( nextFlag == FALSE && (*epgInfo)->StartTimeFlag != FALSE && (*epgInfo)->DurationFlag != FALSE ){
 		if( nowTime < ConvertI64Time((*epgInfo)->start_time) || ConvertI64Time((*epgInfo)->start_time) + (*epgInfo)->durationSec * I64_1SEC < nowTime ){
 			//時間内にないので失敗
-			epgInfo = NULL;
+			epgInfo = nullptr;
 			return FALSE;
 		}
 	}else if( nextFlag == TRUE && (*epgInfo)->StartTimeFlag != FALSE ){
 		if( nowTime > ConvertI64Time((*epgInfo)->start_time) ){
 			//開始時間を過ぎているので失敗
-			epgInfo = NULL;
+			epgInfo = nullptr;
 			return FALSE;
 		}
 	}

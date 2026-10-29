@@ -16,7 +16,7 @@ public:
 	// loadDllFilePath	[IN]ロードするDLLパス
 	DWORD Initialize(
 		BOOL asyncFlag,
-		LPCWSTR loadDllFilePath = NULL
+		LPCWSTR loadDllFilePath = nullptr
 		);
 
 	//DLLの開放
@@ -38,7 +38,7 @@ public:
 	//解析データの現在のストリームＩＤを取得する
 	//戻り値：
 	// エラーコード
-	// originalNetworkID		[OUT]現在のoriginalNetworkID。NULL可
+	// originalNetworkID		[OUT]現在のoriginalNetworkID。nullptr可
 	// transportStreamID		[OUT]現在のtransportStreamID
 	DWORD GetTSID(
 		WORD* originalNetworkID,
@@ -162,7 +162,7 @@ public:
 	//取得するロゴタイプをフラグで指定する
 	//引数：
 	// flags					[IN]フラグ(ロゴタイプnを取得するとき下位からnビット目をセットする)
-	// additionalNeededPids		[OUT]追加で解析したいTSパケットのPIDのリスト(0終端)。NULL可。次の呼び出しまで有効
+	// additionalNeededPids		[OUT]追加で解析したいTSパケットのPIDのリスト(0終端)。nullptr可。次の呼び出しまで有効
 	void SetLogoTypeFlags(
 		DWORD flags,
 		const WORD** additionalNeededPids

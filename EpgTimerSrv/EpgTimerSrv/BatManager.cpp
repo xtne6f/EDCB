@@ -188,7 +188,7 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 				}else{
 #ifdef _WIN32
 					bool executed = false;
-					HANDLE hProcess = NULL;
+					HANDLE hProcess = nullptr;
 					if( exDirect == false && sys->notifyManager.IsGUI() == false ){
 						//表示できないのでGUI経由で起動してみる
 						CSendCtrlCmd ctrlCmd;
@@ -236,15 +236,15 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						strParam += L'\0';
 						//ここで短絡評価するとC4701(piが未初期化)になる。おそらく偽陽性
 						if( exePath.empty() == false ){
-							if( CreateProcess(exePath.c_str(), &strParam.front(), NULL, NULL, FALSE,
+							if( CreateProcess(exePath.c_str(), &strParam.front(), nullptr, nullptr, FALSE,
 							                  BELOW_NORMAL_PRIORITY_CLASS | (exDirect ? CREATE_UNICODE_ENVIRONMENT : 0),
-							                  exDirect ? const_cast<LPWSTR>(CreateEnvironment(work).c_str()) : NULL,
-							                  exDirect ? fs_path(work.batFilePath).parent_path().c_str() : NULL, &si, &pi) ){
+							                  exDirect ? const_cast<LPWSTR>(CreateEnvironment(work).c_str()) : nullptr,
+							                  exDirect ? fs_path(work.batFilePath).parent_path().c_str() : nullptr, &si, &pi) ){
 								CloseHandle(pi.hThread);
 								hProcess = pi.hProcess;
 							}
 						}
-						if( hProcess == NULL ){
+						if( hProcess == nullptr ){
 							AddDebugLogFormat(L"BAT起動エラー：%ls", work.batFilePath.c_str());
 						}
 					}
@@ -268,17 +268,17 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						//シグナルマスクを初期化
 						sigset_t sset;
 						sigemptyset(&sset);
-						if( pthread_sigmask(SIG_SETMASK, &sset, NULL) == 0 && chdir(execDir.c_str()) == 0 ){
+						if( pthread_sigmask(SIG_SETMASK, &sset, nullptr) == 0 && chdir(execDir.c_str()) == 0 ){
 							for( size_t i = 0; i < macroValList.size(); i++ ){
 								setenv(work.macroList[i].first.c_str(), macroValList[i].c_str(), 0);
 							}
-							execl(execPath.c_str(), execPath.c_str(), NULL);
+							execl(execPath.c_str(), execPath.c_str(), nullptr);
 						}
 						exit(EXIT_FAILURE);
 					}
 					if( pid != -1 ){
 						//終了監視(効率よい手法はないものか…)
-						while( sys->batWorkStopFlag == false && waitpid(pid, NULL, WNOHANG) == 0 ){
+						while( sys->batWorkStopFlag == false && waitpid(pid, nullptr, WNOHANG) == 0 ){
 							sys->batWorkEvent.WaitOne(200);
 						}
 					}
@@ -329,10 +329,10 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 		olbuff[n] = '\0';
 		if( strstr(olbuff, "_EDCBX_BATMARGIN_=") ){
 			//一時的に断片を格納するかもしれないが最終的に正しければよい
-			exBatMargin = strtoul(strstr(olbuff, "_EDCBX_BATMARGIN_=") + 18, NULL, 10) * 60;
+			exBatMargin = strtoul(strstr(olbuff, "_EDCBX_BATMARGIN_=") + 18, nullptr, 10) * 60;
 		}
 		if( strstr(olbuff, "_EDCBX_NOTIFY_INTERVAL_=") ){
-			exNotifyInterval = strtoul(strstr(olbuff, "_EDCBX_NOTIFY_INTERVAL_=") + 24, NULL, 10) * 1000;
+			exNotifyInterval = strtoul(strstr(olbuff, "_EDCBX_NOTIFY_INTERVAL_=") + 24, nullptr, 10) * 1000;
 		}
 #ifdef _WIN32
 		if( strstr(olbuff, "_EDCBX_HIDE_") ){

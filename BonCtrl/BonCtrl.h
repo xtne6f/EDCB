@@ -69,7 +69,7 @@ public:
 	//戻り値：
 	// TRUE（成功）：FALSE（Openに失敗している）
 	//引数：
-	// bonDriverFile		[OUT]BonDriverのファイル名(NULL可)
+	// bonDriverFile		[OUT]BonDriverのファイル名(nullptr可)
 	BOOL GetOpenBonDriver(
 		wstring* bonDriverFile
 		);
@@ -144,14 +144,14 @@ public:
 
 	//UDPで送信を行う
 	//引数：
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+	// sendList		[IN/OUT]送信先リスト。nullptrで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	void SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		);
 
 	//TCPで送信を行う
 	//引数：
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+	// sendList		[IN/OUT]送信先リスト。nullptrで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	void SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		);
@@ -177,7 +177,7 @@ public:
 	// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
 	BOOL EndSave(
 		DWORD id,
-		BOOL* subRecFlag = NULL
+		BOOL* subRecFlag = nullptr
 		);
 
 	//スクランブル解除処理の動作設定
@@ -340,7 +340,7 @@ public:
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// chList		[IN]EPG取得するチャンネル一覧(NULL可)
+	// chList		[IN]EPG取得するチャンネル一覧(nullptr可)
 	BOOL StartEpgCap(
 		const vector<SET_CH_INFO>* chList
 		);
@@ -350,7 +350,7 @@ public:
 		);
 
 	//EPG取得のステータスを取得する
-	//※info==NULLの場合に限りスレッドセーフ
+	//※info==nullptrの場合に限りスレッドセーフ
 	//戻り値：
 	// ステータス
 	//引数：

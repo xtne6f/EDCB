@@ -22,7 +22,7 @@ const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 }
 
 CHttpServer::CHttpServer()
-	: mgContext(NULL)
+	: mgContext(nullptr)
 	, initedLibrary(false)
 {
 }
@@ -176,7 +176,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	mg_callbacks callbacks = {};
 	callbacks.init_lua = &InitLua;
 	this->mgContext = mg_start(&callbacks, this, options);
-	if( this->mgContext == NULL ){
+	if( this->mgContext == nullptr ){
 		StopServer();
 		return false;
 	}
@@ -244,7 +244,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 			DWORD tick = GetU32Tick();
 			while( GetU32Tick() - tick < reqTo + 10000 ){
 				if( mg_check_stop(this->mgContext) ){
-					this->mgContext = NULL;
+					this->mgContext = nullptr;
 					break;
 				}
 				SleepForMsec(10);
@@ -253,7 +253,7 @@ bool CHttpServer::StopServer(bool checkOnly)
 				AddDebugLog(L"CHttpServer::StopServer(): failed to stop service.");
 			}
 		}
-		this->mgContext = NULL;
+		this->mgContext = nullptr;
 	}
 	if( this->initedLibrary ){
 		mg_exit_library();
@@ -295,7 +295,7 @@ string CHttpServer::CreateRandom(size_t len)
 	ret.reserve(len * 2);
 #ifdef _WIN32
 	HCRYPTPROV prov;
-	if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ){
+	if( CryptAcquireContext(&prov, nullptr, nullptr, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ){
 		ULONGLONG r = 0;
 		for( size_t i = 0; i < len && CryptGenRandom(prov, 8, (BYTE*)&r); i += 8 ){
 			char x[17];
@@ -454,12 +454,12 @@ wchar_t* utf8towcsdup(const char* s, const wchar_t* prefix = L"", const wchar_t*
 		UTF8toW(s, w);
 		WtoUTF8(w, u);
 		if( u != s ){
-			return NULL;
+			return nullptr;
 		}
 		w.insert(0, prefix);
 		w.append(suffix);
 	}catch(...){
-		return NULL;
+		return nullptr;
 	}
 	wchar_t* ret = (wchar_t*)malloc((w.size() + 1) * sizeof(wchar_t));
 	if( ret ){
@@ -481,7 +481,7 @@ wchar_t* allocenv(lua_State* L, int idx)
 			wenv.assign(env, env + n);
 		}catch(...){
 			FreeEnvironmentStrings(env);
-			return NULL;
+			return nullptr;
 		}
 		FreeEnvironmentStrings(env);
 	}
@@ -516,7 +516,7 @@ wchar_t* allocenv(lua_State* L, int idx)
 				}
 			}catch(...){
 				lua_pop(L, 2);
-				return NULL;
+				return nullptr;
 			}
 		}
 		lua_pop(L, 1);
@@ -536,8 +536,8 @@ void nefree(void* p)
 }
 
 struct LStream {
-	FILE* f; //stream (NULL for incompletely created streams)
-	lua_CFunction closef; //to close stream (NULL for closed streams)
+	FILE* f; //stream (nullptr for incompletely created streams)
+	lua_CFunction closef; //to close stream (nullptr for closed streams)
 	HANDLE procf; //process handle used by f_pclose
 };
 
@@ -545,7 +545,7 @@ struct LStream {
 
 int checkmode(const char* mode)
 {
-	return *mode != '\0' && strchr("rwa", *(mode++)) != NULL &&
+	return *mode != '\0' && strchr("rwa", *(mode++)) != nullptr &&
 		(*mode != '+' || ++mode) && //skip if char is '+'
 		(*mode != 'b' || ++mode) && //skip if char is 'b'
 		(*mode == '\0');
@@ -559,7 +559,7 @@ LStream* tolstream(lua_State* L)
 int f_tostring(lua_State* L)
 {
 	LStream* p = tolstream(L);
-	if( p->closef == NULL )
+	if( p->closef == nullptr )
 		lua_pushliteral(L, "edcb_file (closed)");
 	else
 		lua_pushfstring(L, "edcb_file (%p)", p->f);
@@ -569,7 +569,7 @@ int f_tostring(lua_State* L)
 FILE* tofile(lua_State* L)
 {
 	LStream* p = tolstream(L);
-	if( p->closef == NULL )
+	if( p->closef == nullptr )
 		luaL_error(L, "attempt to use a closed file");
 	lua_assert(p->f);
 	return p->f;
@@ -578,7 +578,7 @@ FILE* tofile(lua_State* L)
 LStream* newprefile(lua_State* L)
 {
 	LStream* p = (LStream*)lua_newuserdata(L, sizeof(LStream));
-	p->closef = NULL; //mark file handle as 'closed'
+	p->closef = nullptr; //mark file handle as 'closed'
 	luaL_setmetatable(L, "EDCB_FILE*");
 	return p;
 }
@@ -587,7 +587,7 @@ int aux_close(lua_State* L)
 {
 	LStream* p = tolstream(L);
 	lua_CFunction cf = p->closef;
-	p->closef = NULL; //mark stream as closed
+	p->closef = nullptr; //mark stream as closed
 	return (*cf)(L); //close it
 }
 
@@ -600,7 +600,7 @@ int f_close(lua_State* L)
 int f_gc(lua_State* L)
 {
 	LStream* p = tolstream(L);
-	if( p->closef != NULL && p->f != NULL )
+	if( p->closef != nullptr && p->f != nullptr )
 		aux_close(L); //ignore closed and incompletely open files
 	return 0;
 }
@@ -608,7 +608,7 @@ int f_gc(lua_State* L)
 int f_fclose(lua_State* L)
 {
 	LStream* p = tolstream(L);
-	return luaL_fileresult(L, (fclose(p->f) == 0), NULL);
+	return luaL_fileresult(L, (fclose(p->f) == 0), nullptr);
 }
 
 int f_pclose(lua_State* L)
@@ -629,7 +629,7 @@ int test_eof(lua_State* L, FILE* f)
 {
 	int c = getc(f);
 	ungetc(c, f);
-	lua_pushlstring(L, NULL, 0);
+	lua_pushlstring(L, nullptr, 0);
 	return (c != EOF);
 }
 
@@ -691,7 +691,7 @@ int f_read(lua_State* L)
 		}
 	}
 	if( ferror(f) )
-		return luaL_fileresult(L, 0, NULL);
+		return luaL_fileresult(L, 0, nullptr);
 	if( !success ){
 		lua_pop(L, 1); //remove last result
 		lua_pushnil(L); //push nil instead
@@ -712,13 +712,13 @@ int f_write(lua_State* L)
 		status = status && (fwrite(s, sizeof(char), l, f) == l);
 	}
 	if( status ) return 1; //file handle already on stack top
-	else return luaL_fileresult(L, status, NULL);
+	else return luaL_fileresult(L, status, nullptr);
 }
 
 int f_seek(lua_State* L)
 {
 	static const int mode[] = { SEEK_SET, SEEK_CUR, SEEK_END };
-	static const char* const modenames[] = { "set", "cur", "end", NULL };
+	static const char* const modenames[] = { "set", "cur", "end", nullptr };
 	FILE* f = tofile(L);
 	int op = luaL_checkoption(L, 2, "cur", modenames);
 	lua_Number p3 = luaL_optnumber(L, 3, 0);
@@ -726,7 +726,7 @@ int f_seek(lua_State* L)
 	luaL_argcheck(L, (lua_Number)offset == p3, 3, "not an integer in proper range");
 	op = my_fseek(f, offset, mode[op]);
 	if( op )
-		return luaL_fileresult(L, 0, NULL); //error
+		return luaL_fileresult(L, 0, nullptr); //error
 	else{
 		lua_pushnumber(L, (lua_Number)my_ftell(f));
 		return 1;
@@ -736,17 +736,17 @@ int f_seek(lua_State* L)
 int f_setvbuf(lua_State* L)
 {
 	static const int mode[] = { _IONBF, _IOFBF, _IOLBF };
-	static const char* const modenames[] = { "no", "full", "line", NULL };
+	static const char* const modenames[] = { "no", "full", "line", nullptr };
 	FILE* f = tofile(L);
-	int op = luaL_checkoption(L, 2, NULL, modenames);
+	int op = luaL_checkoption(L, 2, nullptr, modenames);
 	lua_Integer sz = luaL_optinteger(L, 3, LUAL_BUFFERSIZE);
-	int res = setvbuf(f, NULL, mode[op], sz);
-	return luaL_fileresult(L, res == 0, NULL);
+	int res = setvbuf(f, nullptr, mode[op], sz);
+	return luaL_fileresult(L, res == 0, nullptr);
 }
 
 int f_flush(lua_State* L)
 {
-	return luaL_fileresult(L, fflush(tofile(L)) == 0, NULL);
+	return luaL_fileresult(L, fflush(tofile(L)) == 0, nullptr);
 }
 
 }
@@ -760,19 +760,19 @@ int os_execute(lua_State* L)
 	if( dw == 0 || dw >= MAX_PATH ){
 		cmdexe[0] = L'\0';
 	}
-	const char* cmd = luaL_optstring(L, 1, NULL);
-	if( cmd != NULL ){
+	const char* cmd = luaL_optstring(L, 1, nullptr);
+	if( cmd != nullptr ){
 		//EXTENDED!: show/hide console window
 		DWORD creflags = CREATE_UNICODE_ENVIRONMENT | (lua_toboolean(L, 2) ? 0 : CREATE_NO_WINDOW);
 		wchar_t* wcmd = utf8towcsdup(cmd, L" /c ");
-		luaL_argcheck(L, wcmd != NULL, 1, "utf8towcsdup");
+		luaL_argcheck(L, wcmd != nullptr, 1, "utf8towcsdup");
 		//EXTENDED!: override environment
-		wchar_t* wenv = lua_istable(L, 3) ? allocenv(L, 3) : NULL;
+		wchar_t* wenv = lua_istable(L, 3) ? allocenv(L, 3) : nullptr;
 		STARTUPINFO si = {};
 		si.cb = sizeof(si);
 		PROCESS_INFORMATION pi;
 		int stat = -1;
-		if( cmdexe[0] && CreateProcess(cmdexe, wcmd, NULL, NULL, FALSE, creflags, wenv, NULL, &si, &pi) ){
+		if( cmdexe[0] && CreateProcess(cmdexe, wcmd, nullptr, nullptr, FALSE, creflags, wenv, nullptr, &si, &pi) ){
 			CloseHandle(pi.hThread);
 			if( WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_OBJECT_0 && GetExitCodeProcess(pi.hProcess, &dw) ){
 				stat = (int)dw;
@@ -793,7 +793,7 @@ int os_remove(lua_State* L)
 {
 	const char* filename = luaL_checkstring(L, 1);
 	wchar_t* wfilename = utf8towcsdup(filename);
-	luaL_argcheck(L, wfilename != NULL, 1, "utf8towcsdup");
+	luaL_argcheck(L, wfilename != nullptr, 1, "utf8towcsdup");
 	int stat = _wremove(wfilename);
 	nefree(wfilename);
 	return luaL_fileresult(L, stat == 0, filename);
@@ -804,16 +804,16 @@ int os_rename(lua_State* L)
 	const char* fromname = luaL_checkstring(L, 1);
 	const char* toname = luaL_checkstring(L, 2);
 	wchar_t* wfromname = utf8towcsdup(fromname);
-	luaL_argcheck(L, wfromname != NULL, 1, "utf8towcsdup");
+	luaL_argcheck(L, wfromname != nullptr, 1, "utf8towcsdup");
 	wchar_t* wtoname = utf8towcsdup(toname);
-	if( wtoname == NULL ){
+	if( wtoname == nullptr ){
 		free(wfromname);
 		luaL_argerror(L, 2, "utf8towcsdup");
 	}
 	int stat = _wrename(wfromname, wtoname);
 	nefree(wtoname);
 	nefree(wfromname);
-	return luaL_fileresult(L, stat == 0, NULL);
+	return luaL_fileresult(L, stat == 0, nullptr);
 }
 
 //Refer: Lua-5.2.4/liolib.c (See Copyright Notice in lua.h)
@@ -823,13 +823,13 @@ int io_open(lua_State* L)
 	const char* filename = luaL_checkstring(L, 1);
 	const char* mode = luaL_optstring(L, 2, "r");
 	LStream* p = newprefile(L);
-	p->f = NULL;
+	p->f = nullptr;
 	p->closef = &f_fclose;
 	luaL_argcheck(L, checkmode(mode), 2, "invalid mode");
 	wchar_t* wfilename = utf8towcsdup(filename);
-	luaL_argcheck(L, wfilename != NULL, 1, "utf8towcsdup");
+	luaL_argcheck(L, wfilename != nullptr, 1, "utf8towcsdup");
 	wchar_t* wmode = utf8towcsdup(mode, L"", L"N");
-	if( wmode == NULL ){
+	if( wmode == nullptr ){
 		free(wfilename);
 		luaL_argerror(L, 2, "utf8towcsdup");
 	}
@@ -850,7 +850,7 @@ int io_open(lua_State* L)
 #endif
 	nefree(wmode);
 	nefree(wfilename);
-	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;
+	return (p->f == nullptr) ? luaL_fileresult(L, 0, filename) : 1;
 }
 
 int io_popen(lua_State* L)
@@ -863,18 +863,18 @@ int io_popen(lua_State* L)
 	LStream* p = newprefile(L);
 	luaL_argcheck(L, (mode[0] == 'r' || mode[0] == 'w') && (!mode[1] || mode[1] == 'b' && !mode[2]), 2, "invalid mode");
 	wchar_t* wfilename = utf8towcsdup(filename, L" /c ");
-	luaL_argcheck(L, wfilename != NULL, 1, "utf8towcsdup");
-	p->f = NULL;
+	luaL_argcheck(L, wfilename != nullptr, 1, "utf8towcsdup");
+	p->f = nullptr;
 	wchar_t cmdexe[MAX_PATH];
 	DWORD dw = GetEnvironmentVariable(L"ComSpec", cmdexe, MAX_PATH);
 	if( dw == 0 || dw >= MAX_PATH ){
 		cmdexe[0] = L'\0';
 	}
 	//EXTENDED!: override environment
-	wchar_t* wenv = nargs >= 4 && lua_istable(L, 4) ? allocenv(L, 4) : NULL;
+	wchar_t* wenv = nargs >= 4 && lua_istable(L, 4) ? allocenv(L, 4) : nullptr;
 	HANDLE ppipe = INVALID_HANDLE_VALUE; //parent
 	HANDLE tpipe = INVALID_HANDLE_VALUE; //temporary
-	if( cmdexe[0] && CreatePipe(mode[0] == 'r' ? &ppipe : &tpipe, mode[0] == 'r' ? &tpipe : &ppipe, NULL, 0) ){
+	if( cmdexe[0] && CreatePipe(mode[0] == 'r' ? &ppipe : &tpipe, mode[0] == 'r' ? &tpipe : &ppipe, nullptr, 0) ){
 		HANDLE cpipe; //child
 		BOOL b = DuplicateHandle(GetCurrentProcess(), tpipe, GetCurrentProcess(), &cpipe, 0, TRUE, DUPLICATE_SAME_ACCESS);
 		CloseHandle(tpipe);
@@ -886,15 +886,15 @@ int io_popen(lua_State* L)
 			si.cb = sizeof(si);
 			si.dwFlags = STARTF_USESTDHANDLES;
 			if( mode[0] == 'r' ){
-				si.hStdInput = CreateFile(L"nul", GENERIC_READ, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				si.hStdInput = CreateFile(L"nul", GENERIC_READ, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 				si.hStdOutput = cpipe;
 			}else{
 				si.hStdInput = cpipe;
-				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 			}
-			si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 			PROCESS_INFORMATION pi;
-			b = CreateProcess(cmdexe, wfilename, NULL, NULL, TRUE, creflags, wenv, NULL, &si, &pi);
+			b = CreateProcess(cmdexe, wfilename, nullptr, nullptr, TRUE, creflags, wenv, nullptr, &si, &pi);
 			if( si.hStdError != INVALID_HANDLE_VALUE ){
 				CloseHandle(si.hStdError);
 			}
@@ -929,7 +929,7 @@ int io_popen(lua_State* L)
 	nefree(wenv);
 	nefree(wfilename);
 	p->closef = &f_pclose;
-	return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;
+	return (p->f == nullptr) ? luaL_fileresult(L, 0, filename) : 1;
 }
 
 void f_createmeta(lua_State* L)
@@ -943,7 +943,7 @@ void f_createmeta(lua_State* L)
 		{ "write", f_write },
 		{ "__gc", f_gc },
 		{ "__tostring", f_tostring },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 	luaL_newmetatable(L, "EDCB_FILE*"); //create metatable for file handles
 	lua_pushvalue(L, -1); //push metatable

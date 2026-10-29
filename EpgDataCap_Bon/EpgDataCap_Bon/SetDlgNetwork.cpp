@@ -11,7 +11,7 @@
 // CSetDlgNetwork ダイアログ
 
 CSetDlgNetwork::CSetDlgNetwork()
-	: m_hWnd(NULL)
+	: m_hWnd(nullptr)
 {
 
 }
@@ -24,7 +24,7 @@ BOOL CSetDlgNetwork::Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP
 {
 	udpSendList = setting.udpSendList;
 	tcpSendList = setting.tcpSendList;
-	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
+	return CreateDialogParam(GetModuleHandle(nullptr), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != nullptr;
 }
 
 
@@ -65,13 +65,13 @@ BOOL CSetDlgNetwork::OnInitDialog()
 
 void CSetDlgNetwork::SaveIni(void)
 {
-	if( m_hWnd == NULL ){
+	if( m_hWnd == nullptr ){
 		return;
 	}
 	fs_path appIniPath = GetModuleIniPath();
 
-	WritePrivateProfileInt( L"SET", L"UDPWait", GetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_SEC, NULL, FALSE), appIniPath.c_str() );
-	WritePrivateProfileInt( L"SET", L"UDPPacket", GetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_PACKET, NULL, FALSE), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"UDPWait", GetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_SEC, nullptr, FALSE), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"UDPPacket", GetDlgItemInt(m_hWnd, IDC_EDIT_WAIT_PACKET, nullptr, FALSE), appIniPath.c_str() );
 
 	WritePrivateProfileInt( L"SET_UDP", L"Count", (int)udpSendList.size(), appIniPath.c_str() );
 	for( int i = 0; i < (int)udpSendList.size(); i++ ){
@@ -110,7 +110,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddUdp()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	WCHAR szIP[64] = {};
 	GetDlgItemText(m_hWnd, IDC_IPADDRESS_UDP, szIP, 63);
-	UINT udpPort = GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, NULL, FALSE);
+	UINT udpPort = GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_UDP, nullptr, FALSE);
 
 	NW_SEND_INFO item;
 	item.port = udpPort;
@@ -159,7 +159,7 @@ void CSetDlgNetwork::OnBnClickedButtonAddTcp()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	WCHAR szIP[64] = {};
 	GetDlgItemText(m_hWnd, IDC_IPADDRESS_TCP, szIP, 63);
-	UINT tcpPort = GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, NULL, FALSE);
+	UINT tcpPort = GetDlgItemInt(m_hWnd, IDC_EDIT_PORT_TCP, nullptr, FALSE);
 
 	NW_SEND_INFO item;
 	item.port = tcpPort;
@@ -227,7 +227,7 @@ void CSetDlgNetwork::OnBnClickedRadioTcp()
 INT_PTR CALLBACK CSetDlgNetwork::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CSetDlgNetwork* pSys = (CSetDlgNetwork*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+	if( pSys == nullptr && uMsg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch( uMsg ){
@@ -237,7 +237,7 @@ INT_PTR CALLBACK CSetDlgNetwork::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 		pSys->m_hWnd = hDlg;
 		return pSys->OnInitDialog();
 	case WM_NCDESTROY:
-		pSys->m_hWnd = NULL;
+		pSys->m_hWnd = nullptr;
 		break;
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){

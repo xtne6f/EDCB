@@ -5,7 +5,7 @@
 #include "PathUtil.h"
 
 CEpgDataCap3Util::CEpgDataCap3Util(void)
-	: module(NULL, UtilFreeLibrary)
+	: module(nullptr, UtilFreeLibrary)
 {
 	id = 0;
 }
@@ -20,7 +20,7 @@ DWORD CEpgDataCap3Util::Initialize(
 	LPCWSTR loadDllFilePath
 	)
 {
-	if( module != NULL ){
+	if( module != nullptr ){
 		return FALSE;
 	}
 	fs_path path = loadDllFilePath ? loadDllFilePath :
@@ -33,7 +33,7 @@ DWORD CEpgDataCap3Util::Initialize(
 		);
 	module.reset(UtilLoadLibrary(path));
 	DWORD err = FALSE;
-	if( module != NULL ){
+	if( module != nullptr ){
 		if( UtilGetProcAddress(module.get(), "SetDebugLogCallbackEP", pfnSetDebugLogCallbackEP3) ){
 			pfnSetDebugLogCallbackEP3(DebugLogCallback);
 		}
@@ -72,7 +72,7 @@ DWORD CEpgDataCap3Util::Initialize(
 DWORD CEpgDataCap3Util::UnInitialize(
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	DWORD err = NO_ERR;
@@ -81,7 +81,7 @@ DWORD CEpgDataCap3Util::UnInitialize(
 		id = 0;
 	}
 	if( pfnSetDebugLogCallbackEP3 ){
-		pfnSetDebugLogCallbackEP3(NULL);
+		pfnSetDebugLogCallbackEP3(nullptr);
 	}
 	module.reset();
 	return err;
@@ -92,7 +92,7 @@ DWORD CEpgDataCap3Util::AddTSPacket(
 	DWORD size
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	if( size > 188 && pfnAddTSPacketEP3(id, data, 0) != ERR_FALSE ){
@@ -108,10 +108,10 @@ DWORD CEpgDataCap3Util::GetTSID(
 	WORD* transportStreamID
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	if( originalNetworkID == NULL && pfnEnumEpgInfoListEP3 == NULL ){
+	if( originalNetworkID == nullptr && pfnEnumEpgInfoListEP3 == nullptr ){
 		return ERR_INVALID_ARG;
 	}
 	return pfnGetTSIDEP3(id, originalNetworkID, transportStreamID);
@@ -122,7 +122,7 @@ DWORD CEpgDataCap3Util::GetServiceListActual(
 	SERVICE_INFO** serviceList
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	return pfnGetServiceListActualEP3(id, serviceListSize, serviceList);
@@ -133,7 +133,7 @@ DWORD CEpgDataCap3Util::GetServiceListEpgDB(
 	SERVICE_INFO** serviceList
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	return pfnGetServiceListEpgDBEP3(id, serviceListSize, serviceList);
@@ -147,7 +147,7 @@ DWORD CEpgDataCap3Util::GetEpgInfoList(
 	EPG_EVENT_INFO** epgInfoList
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	return pfnGetEpgInfoListEP3(id, originalNetworkID, transportStreamID, serviceID, epgInfoListSize, epgInfoList);
@@ -161,14 +161,14 @@ DWORD CEpgDataCap3Util::EnumEpgInfoList(
 	void* param
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	if( pfnEnumEpgInfoListEP3 == NULL ){
+	if( pfnEnumEpgInfoListEP3 == nullptr ){
 		DWORD epgInfoListSize;
 		EPG_EVENT_INFO* epgInfoList;
 		DWORD ret = pfnGetEpgInfoListEP3(id, originalNetworkID, transportStreamID, serviceID, &epgInfoListSize, &epgInfoList);
-		if( ret == NO_ERR && enumEpgInfoListProc(epgInfoListSize, NULL, param) != FALSE ){
+		if( ret == NO_ERR && enumEpgInfoListProc(epgInfoListSize, nullptr, param) != FALSE ){
 			enumEpgInfoListProc(epgInfoListSize, epgInfoList, param);
 		}
 		return ret;
@@ -178,7 +178,7 @@ DWORD CEpgDataCap3Util::EnumEpgInfoList(
 
 void CEpgDataCap3Util::ClearSectionStatus()
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ;
 	}
 	pfnClearSectionStatusEP3(id);
@@ -188,7 +188,7 @@ EPG_SECTION_STATUS CEpgDataCap3Util::GetSectionStatus(
 	BOOL l_eitFlag
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return EpgNoData;
 	}
 	return pfnGetSectionStatusEP3(id, l_eitFlag);
@@ -201,7 +201,7 @@ pair<EPG_SECTION_STATUS, BOOL> CEpgDataCap3Util::GetSectionStatusService(
 	BOOL l_eitFlag
 	)
 {
-	if( module == NULL || pfnGetSectionStatusServiceEP3 == NULL ){
+	if( module == nullptr || pfnGetSectionStatusServiceEP3 == nullptr ){
 		return pair<EPG_SECTION_STATUS, BOOL>(EpgNoData, FALSE);
 	}
 	return pair<EPG_SECTION_STATUS, BOOL>(
@@ -216,7 +216,7 @@ DWORD CEpgDataCap3Util::GetEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	return pfnGetEpgInfoEP3(id, originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo);
@@ -231,7 +231,7 @@ DWORD CEpgDataCap3Util::SearchEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	return pfnSearchEpgInfoEP3(id, originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
@@ -242,7 +242,7 @@ void CEpgDataCap3Util::SetLogoTypeFlags(
 	const WORD** additionalNeededPids
 	)
 {
-	if( module == NULL || pfnSetLogoTypeFlagsEP3 == NULL ){
+	if( module == nullptr || pfnSetLogoTypeFlagsEP3 == nullptr ){
 		return;
 	}
 	return pfnSetLogoTypeFlagsEP3(id, flags, additionalNeededPids);
@@ -253,10 +253,10 @@ DWORD CEpgDataCap3Util::EnumLogoList(
 	void* param
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	if( pfnEnumLogoListEP3 == NULL ){
+	if( pfnEnumLogoListEP3 == nullptr ){
 		return ERR_FALSE;
 	}
 	return pfnEnumLogoListEP3(id, enumLogoListProc, param);
@@ -265,7 +265,7 @@ DWORD CEpgDataCap3Util::EnumLogoList(
 int CEpgDataCap3Util::GetTimeDelay(
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return 0;
 	}
 	return pfnGetTimeDelayEP3(id);

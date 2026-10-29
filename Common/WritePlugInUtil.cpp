@@ -5,7 +5,7 @@
 #include "PathUtil.h"
 
 CWritePlugInUtil::CWritePlugInUtil(void)
-	: module(NULL, UtilFreeLibrary)
+	: module(nullptr, UtilFreeLibrary)
 {
 	this->id = 0;
 }
@@ -19,13 +19,13 @@ BOOL CWritePlugInUtil::Initialize(
 	const wstring& loadDllFilePath
 	)
 {
-	if( module != NULL ){
+	if( module != nullptr ){
 		return FALSE;
 	}
 
 	module.reset(UtilLoadLibrary(loadDllFilePath));
 
-	if( module == NULL ){
+	if( module == nullptr ){
 		return FALSE;
 	}
 
@@ -47,7 +47,7 @@ BOOL CWritePlugInUtil::Initialize(
 
 void CWritePlugInUtil::UnInitialize()
 {
-	if( module != NULL ){
+	if( module != nullptr ){
 		pfnDeleteCtrlWP(this->id);
 		this->id = 0;
 		module.reset();
@@ -60,7 +60,7 @@ BOOL CWritePlugInUtil::Start(
 	ULONGLONG createSize
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 
@@ -70,7 +70,7 @@ BOOL CWritePlugInUtil::Start(
 BOOL CWritePlugInUtil::Stop(
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 
@@ -82,7 +82,7 @@ BOOL CWritePlugInUtil::GetSavePath(
 	DWORD* filePathSize
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 
@@ -95,7 +95,7 @@ BOOL CWritePlugInUtil::Write(
 	DWORD* writeSize
 	)
 {
-	if( module == NULL ){
+	if( module == nullptr ){
 		return ERR_NOT_INIT;
 	}
 

@@ -63,7 +63,7 @@ void CARIB8CharDecode::InitPSISI(void)
 	m_wMaxChar = 0;
 	m_dwWaitTime = 0;
 
-	m_pCaptionList = NULL;
+	m_pCaptionList = nullptr;
 
 	m_bPSI = TRUE;
 }
@@ -118,14 +118,14 @@ void CARIB8CharDecode::InitCaption(void)
 	m_wMaxChar = 0;
 	m_dwWaitTime = 0;
 
-	m_pCaptionList = NULL;
+	m_pCaptionList = nullptr;
 
 	m_bPSI = FALSE;
 }
 
 BOOL CARIB8CharDecode::PSISI( const BYTE* pbSrc, DWORD dwSrcSize, wstring* strDec )
 {
-	if( pbSrc == NULL || dwSrcSize == 0 ){
+	if( pbSrc == nullptr || dwSrcSize == 0 ){
 		return FALSE;
 	}
 	InitPSISI();
@@ -140,7 +140,7 @@ BOOL CARIB8CharDecode::PSISI( const BYTE* pbSrc, DWORD dwSrcSize, wstring* strDe
 
 BOOL CARIB8CharDecode::Caption( const BYTE* pbSrc, DWORD dwSrcSize, vector<CAPTION_DATA>* pCaptionList )
 {
-	if( pbSrc == NULL || dwSrcSize == 0 || pCaptionList == NULL){
+	if( pbSrc == nullptr || dwSrcSize == 0 || pCaptionList == nullptr ){
 		return FALSE;
 	}
 	InitCaption();
@@ -329,7 +329,7 @@ BOOL CARIB8CharDecode::C0( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwReadSiz
 			CAPTION_DATA Item;
 			Item.bClear = TRUE;
 			Item.dwWaitTime = m_dwWaitTime;
-			if( m_pCaptionList != NULL ){
+			if( m_pCaptionList != nullptr ){
 				m_pCaptionList->push_back(Item);
 			}
 			//TODO: 字幕系ではここで初期化動作が必要
@@ -1092,7 +1092,7 @@ void CARIB8CharDecode::CreateCaptionCharData(CAPTION_CHAR_DATA* pItem) const
 
 BOOL CARIB8CharDecode::IsChgPos(void)
 {
-	if( m_pCaptionList == NULL || m_strDecode.length() == 0){
+	if( m_pCaptionList == nullptr || m_strDecode.length() == 0 ){
 		return FALSE;
 	}
 	if( m_pCaptionList->size() == 0 ){

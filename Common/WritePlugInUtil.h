@@ -39,7 +39,7 @@ public:
 		);
 
 	//実際に保存しているファイルパスを取得する（再生やバッチ処理に利用される）
-	//filePathがNULL時は必要なサイズをfilePathSizeで返す
+	//filePathがnullptr時は必要なサイズをfilePathSizeで返す
 	//通常filePathSize=512で呼び出し
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）、ERR_NOT_INIT（未初期化）

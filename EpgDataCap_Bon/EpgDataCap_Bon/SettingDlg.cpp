@@ -9,7 +9,7 @@
 // CSettingDlg ダイアログ
 
 CSettingDlg::CSettingDlg(HWND hWndOwner)
-	: m_hWnd(NULL)
+	: m_hWnd(nullptr)
 	, m_hWndOwner(hWndOwner)
 	, m_setting(APP_SETTING::Load(GetModuleIniPath().c_str()))
 {
@@ -21,7 +21,7 @@ CSettingDlg::~CSettingDlg()
 
 INT_PTR CSettingDlg::DoModal()
 {
-	return DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD), m_hWndOwner, DlgProc, (LPARAM)this);
+	return DialogBoxParam(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDD), m_hWndOwner, DlgProc, (LPARAM)this);
 }
 
 
@@ -153,7 +153,7 @@ void CSettingDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 INT_PTR CALLBACK CSettingDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CSettingDlg* pSys = (CSettingDlg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+	if( pSys == nullptr && uMsg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch( uMsg ){
@@ -163,7 +163,7 @@ INT_PTR CALLBACK CSettingDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 		pSys->m_hWnd = hDlg;
 		return pSys->OnInitDialog();
 	case WM_NCDESTROY:
-		pSys->m_hWnd = NULL;
+		pSys->m_hWnd = nullptr;
 		break;
 	case WM_NOTIFY:
 		{

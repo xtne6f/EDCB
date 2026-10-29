@@ -33,7 +33,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, LONGLONG streamT
 
 	//サービスのmapを取得
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
-	SERVICE_EVENT_INFO* serviceInfo = NULL;
+	SERVICE_EVENT_INFO* serviceInfo = nullptr;
 
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
@@ -95,7 +95,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, LONGLONG streamT
 			           (duration >> 8 & 15) * 60 + (duration >> 4 & 15) * 10 + (duration & 15);
 		}
 		map<WORD, EVENT_INFO>::iterator itrEvent;
-		EVENT_INFO* eventInfo = NULL;
+		EVENT_INFO* eventInfo = nullptr;
 
 		if( eit.GetNumber(Desc::running_status, lp) == 1 || eit.GetNumber(Desc::running_status, lp) == 3 ){
 			//非実行中または停止中
@@ -429,7 +429,7 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 						const BYTE* src = eit.GetBinary(i == 0 ? Desc::item_description_char : Desc::item_char, &srcSize, lp2);
 						if( src && srcSize > 0 ){
 							if( itemDescFlag == (i != 0) && itemBuff.size() > 0 ){
-								if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), NULL) ){
+								if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), nullptr) ){
 									if( itemDescFlag ){
 										extendText += L"- ";
 									}
@@ -448,7 +448,7 @@ BOOL CEpgDBUtil::AddExtEvent(EPGDB_EVENT_INFO* eventInfo, const Desc::CDescripto
 		}while( eit.NextLoopIndex(lp) );
 
 		if( itemBuff.size() > 0 ){
-			if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), NULL) ){
+			if( this->arib.PSISI(itemBuff.data(), (DWORD)itemBuff.size(), nullptr) ){
 				if( itemDescFlag ){
 					extendText += L"- ";
 				}
@@ -903,10 +903,10 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 	}
 
 	EPGDB_EVENT_INFO* evtPF[2] = {
-		itr->second.nowEvent.empty() ? NULL : &itr->second.nowEvent.back().db,
-		itr->second.nextEvent.empty() ? NULL : &itr->second.nextEvent.back().db
+		itr->second.nowEvent.empty() ? nullptr : &itr->second.nowEvent.back().db,
+		itr->second.nextEvent.empty() ? nullptr : &itr->second.nextEvent.back().db
 	};
-	if( evtPF[0] == NULL || evtPF[1] && evtPF[0]->event_id > evtPF[1]->event_id ){
+	if( evtPF[0] == nullptr || evtPF[1] && evtPF[0]->event_id > evtPF[1]->event_id ){
 		std::swap(evtPF[0], evtPF[1]);
 	}
 	size_t listSize = itr->second.eventMap.size() +
@@ -924,13 +924,13 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 			//[p/f]を出力
 			this->epgInfoList.db.push_back(*evtPF[0]);
 			evtPF[0] = evtPF[1];
-			evtPF[1] = NULL;
+			evtPF[1] = nullptr;
 		}else{
 			if( evtPF[0] && evtPF[0]->event_id == itrEvt->first ){
 				//両方あるときは[p/f]を優先
 				this->epgInfoList.db.push_back(*evtPF[0]);
 				evtPF[0] = evtPF[1];
-				evtPF[1] = NULL;
+				evtPF[1] = nullptr;
 				if( this->epgInfoList.db.back().hasExtInfo == false && itrEvt->second.db.hasExtInfo ){
 					this->epgInfoList.db.back().hasExtInfo = true;
 					this->epgInfoList.db.back().extInfo = itrEvt->second.db.extInfo;
@@ -964,10 +964,10 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 		return FALSE;
 	}
 	EPGDB_EVENT_INFO* evtPF[2] = {
-		itr->second.nowEvent.empty() ? NULL : &itr->second.nowEvent.back().db,
-		itr->second.nextEvent.empty() ? NULL : &itr->second.nextEvent.back().db
+		itr->second.nowEvent.empty() ? nullptr : &itr->second.nowEvent.back().db,
+		itr->second.nextEvent.empty() ? nullptr : &itr->second.nextEvent.back().db
 	};
-	if( evtPF[0] == NULL || evtPF[1] && evtPF[0]->event_id > evtPF[1]->event_id ){
+	if( evtPF[0] == nullptr || evtPF[1] && evtPF[0]->event_id > evtPF[1]->event_id ){
 		std::swap(evtPF[0], evtPF[1]);
 	}
 	size_t listSize = itr->second.eventMap.size() +
@@ -976,7 +976,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	if( listSize == 0 ){
 		return FALSE;
 	}
-	if( enumEpgInfoListProc((DWORD)listSize, NULL, param) == FALSE ){
+	if( enumEpgInfoListProc((DWORD)listSize, nullptr, param) == FALSE ){
 		return TRUE;
 	}
 
@@ -990,14 +990,14 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 			//[p/f]を出力
 			data = adapter.Create(evtPF[0]);
 			evtPF[0] = evtPF[1];
-			evtPF[1] = NULL;
+			evtPF[1] = nullptr;
 		}else{
 			if( evtPF[0] && evtPF[0]->event_id == itrEvt->first ){
 				//両方あるときは[p/f]を優先
 				data = adapter.Create(evtPF[0]);
 				evtPF[0] = evtPF[1];
-				evtPF[1] = NULL;
-				if( data.extInfo == NULL && itrEvt->second.db.hasExtInfo ){
+				evtPF[1] = nullptr;
+				if( data.extInfo == nullptr && itrEvt->second.db.hasExtInfo ){
 					extInfo.text_charLength = (WORD)itrEvt->second.db.extInfo.text_char.size();
 					extInfo.text_char = itrEvt->second.db.extInfo.text_char.c_str();
 					data.extInfo = &extInfo;
@@ -1036,7 +1036,7 @@ void CEpgDBUtil::GetServiceListEpgDB(
 		this->serviceDataList[count].original_network_id = (WORD)(itr->first>>32);
 		this->serviceDataList[count].transport_stream_id = (WORD)((itr->first&0xFFFF0000)>>16);
 		this->serviceDataList[count].service_id = (WORD)(itr->first&0xFFFF);
-		this->serviceDataList[count].extInfo = NULL;
+		this->serviceDataList[count].extInfo = nullptr;
 
 		DWORD infoKey = ((DWORD)this->serviceDataList[count].original_network_id) << 16 | this->serviceDataList[count].transport_stream_id;
 		map<DWORD, DB_TS_INFO>::iterator itrInfo;

@@ -14,8 +14,8 @@ public:
 	// 成功：udpPortとtcpPortに開始ポート番号（終了or失敗：値は不変）
 	//引数：
 	// ip		[IN]送信先アドレス
-	// udpPort	[OUT]開始UDPポート番号（NULLで送信停止）
-	// tcpPort	[OUT]開始TCPポート番号（NULLで送信停止）
+	// udpPort	[OUT]開始UDPポート番号（nullptrで送信停止）
+	// tcpPort	[OUT]開始TCPポート番号（nullptrで送信停止）
 	void Send(
 		LPCWSTR ip,
 		DWORD* udpPort,

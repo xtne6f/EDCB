@@ -112,7 +112,7 @@ void ReadOldArchiveEventInfo(FILE* fp, const vector<LONGLONG>& index, size_t ind
 		buff.resize(buffSize);
 		if( fread(buff.data(), 1, buffSize, fp) == buffSize ){
 			WORD ver;
-			if( UtilReadVALUE2WithVersion(&ver, &info, buff.data(), buffSize, NULL) == false ){
+			if( UtilReadVALUE2WithVersion(&ver, &info, buff.data(), buffSize, nullptr) == false ){
 				info.eventList.clear();
 			}
 		}
@@ -305,7 +305,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 
 	//EPGデータを取得
 	DWORD serviceListSize = 0;
-	SERVICE_INFO* serviceList = NULL;
+	SERVICE_INFO* serviceList = nullptr;
 	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == FALSE ){
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
@@ -320,19 +320,19 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		item.serviceInfo.ONID = info->original_network_id;
 		item.serviceInfo.TSID = info->transport_stream_id;
 		item.serviceInfo.SID = info->service_id;
-		if( info->extInfo != NULL ){
+		if( info->extInfo != nullptr ){
 			item.serviceInfo.service_type = info->extInfo->service_type;
 			item.serviceInfo.partialReceptionFlag = info->extInfo->partialReceptionFlag;
-			if( info->extInfo->service_provider_name != NULL ){
+			if( info->extInfo->service_provider_name != nullptr ){
 				item.serviceInfo.service_provider_name = info->extInfo->service_provider_name;
 			}
-			if( info->extInfo->service_name != NULL ){
+			if( info->extInfo->service_name != nullptr ){
 				item.serviceInfo.service_name = info->extInfo->service_name;
 			}
-			if( info->extInfo->network_name != NULL ){
+			if( info->extInfo->network_name != nullptr ){
 				item.serviceInfo.network_name = info->extInfo->network_name;
 			}
-			if( info->extInfo->ts_name != NULL ){
+			if( info->extInfo->ts_name != nullptr ){
 				item.serviceInfo.ts_name = info->extInfo->ts_name;
 			}
 			item.serviceInfo.remote_control_key_id = info->extInfo->remote_control_key_id;
@@ -380,7 +380,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 		if( buff.empty() == false ){
 			WORD ver;
 			vector<EPGDB_SERVICE_EVENT_INFO> list;
-			if( UtilReadVALUE2WithVersion(&ver, &list, buff.data(), (DWORD)buff.size(), NULL) ){
+			if( UtilReadVALUE2WithVersion(&ver, &list, buff.data(), (DWORD)buff.size(), nullptr) ){
 				for( size_t i = 0; i < list.size(); i++ ){
 					LONGLONG key = Create64Key(list[i].serviceInfo.ONID, list[i].serviceInfo.TSID, list[i].serviceInfo.SID);
 					arcFromFile[key] = std::move(list[i]);
@@ -411,7 +411,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 				//キャッシュする
 				std::unique_ptr<FILE, fclose_deleter> fp(OpenOldArchive(epgArcPath.c_str(), oldCache.front()[i], UTIL_SECURE_READ));
 				if( fp ){
-					ReadOldArchiveIndex(fp.get(), buff, oldCache[1 + i], NULL);
+					ReadOldArchiveIndex(fp.get(), buff, oldCache[1 + i], nullptr);
 				}
 			}
 		}
@@ -586,7 +586,7 @@ BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVEN
 	EPGDB_SERVICE_EVENT_INFO* item = (EPGDB_SERVICE_EVENT_INFO*)param;
 
 	try{
-		if( epgInfoList == NULL ){
+		if( epgInfoList == nullptr ){
 			item->eventList.reserve(epgInfoListSize);
 		}else{
 			for( DWORD i=0; i<epgInfoListSize; i++ ){
@@ -626,7 +626,7 @@ void CEpgDBManager::SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize
                               const std::function<void(const EPGDB_EVENT_INFO*, wstring*)>& enumProc) const
 {
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	try
 #endif
 	{
@@ -646,11 +646,11 @@ void CEpgDBManager::SearchEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t keysSize
 				}
 			}else{
 				//列挙完了
-				enumProc(NULL, findKey);
+				enumProc(nullptr, findKey);
 			}
 		}) == false ){
 			//列挙なしで完了
-			enumProc(NULL, findKey);
+			enumProc(nullptr, findKey);
 		}
 	}
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
@@ -666,7 +666,7 @@ void CEpgDBManager::SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t k
                                      wstring* findKey, const std::function<void(const EPGDB_EVENT_INFO*, wstring*)>& enumProc) const
 {
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	try
 #endif
 	{
@@ -680,7 +680,7 @@ void CEpgDBManager::SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t k
 		}
 		if( ctxsSize == 0 ){
 			//列挙なしで完了
-			enumProc(NULL, findKey);
+			enumProc(nullptr, findKey);
 		}else{
 			EnumArchiveEventInfo(enumServiceKey.data(), enumServiceKey.size(), enumStart, enumEnd, deletableBeforeEnumDone,
 			                     [=, &enumProc, &ctxs](const EPGDB_EVENT_INFO* info, const EPGDB_SERVICE_INFO*) {
@@ -690,7 +690,7 @@ void CEpgDBManager::SearchArchiveEpg(const EPGDB_SEARCH_KEY_INFO* keys, size_t k
 					}
 				}else{
 					//列挙完了
-					enumProc(NULL, findKey);
+					enumProc(nullptr, findKey);
 				}
 			});
 		}
@@ -1116,7 +1116,7 @@ bool CEpgDBManager::FindKeyword(const vector<pair<wstring, RegExpPtr>>& keyList,
 		//見つかったキーを記録
 		size_t n = findKey->size();
 		for( size_t i = 0; i < keyList.size(); i++ ){
-			if( keyList[i].second == NULL ){
+			if( keyList[i].second == nullptr ){
 				if( n == 0 && findKey->empty() == false ){
 					*findKey += L' ';
 				}
@@ -1162,7 +1162,7 @@ void CEpgDBManager::AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstrin
 {
 	keyList.emplace_back(wstring(), RegExpPtr(
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
-		NULL, ComRelease
+		nullptr, ComRelease
 #endif
 		));
 	if( regExp ){
@@ -1183,7 +1183,7 @@ void CEpgDBManager::AddKeyword(vector<pair<wstring, RegExpPtr>>& keyList, wstrin
 		//RegExpオブジェクトを構築しておく
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
 		void* pv;
-		if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
+		if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, nullptr, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
 			keyList.back().second.reset((IRegExp*)pv);
 			OleCharPtr pattern(SysAllocString(key.c_str() + 7), SysFreeString);
 			if( pattern &&
@@ -1317,7 +1317,7 @@ bool CEpgDBManager::EnumEventInfoProc(LONGLONG* keys, size_t keysSize, LONGLONG 
 		}
 	}
 	//列挙完了
-	enumProc(NULL, NULL);
+	enumProc(nullptr, nullptr);
 	return true;
 }
 
@@ -1375,7 +1375,7 @@ void CEpgDBManager::EnumArchiveEventInfo(LONGLONG* keys, size_t keysSize, LONGLO
 	}
 	if( EnumEventInfoProc(keys, keysSize, enumStart, enumEnd, enumProc, true) == false ){
 		//列挙完了
-		enumProc(NULL, NULL);
+		enumProc(nullptr, nullptr);
 	}
 }
 

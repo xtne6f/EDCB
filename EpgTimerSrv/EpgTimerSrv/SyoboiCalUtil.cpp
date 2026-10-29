@@ -29,7 +29,7 @@ LONGLONG CSyoboiCalUtil::GetTimeStamp(SYSTEMTIME startTime)
 
 BOOL CSyoboiCalUtil::UrlEncodeUTF8(LPCWSTR src, string& dest)
 {
-	if( src == NULL ){
+	if( src == nullptr ){
 		return FALSE;
 	}
 
@@ -55,18 +55,18 @@ BOOL CSyoboiCalUtil::UrlEncodeUTF8(LPCWSTR src, string& dest)
 
 BOOL CSyoboiCalUtil::Base64Enc(LPCSTR src, DWORD srcSize, LPWSTR dest, DWORD* destSize)
 {
-	if( destSize == NULL ){
+	if( destSize == nullptr ){
 		return FALSE;
 	}
 	DWORD dwDst = 0;
-	if( CryptBinaryToStringW( (BYTE*)src, srcSize, CRYPT_STRING_BASE64, NULL, &dwDst ) == FALSE){
+	if( CryptBinaryToStringW( (BYTE*)src, srcSize, CRYPT_STRING_BASE64, nullptr, &dwDst ) == FALSE ){
 		return FALSE;
 	}
 	if( *destSize < dwDst+1 ){
 		*destSize = dwDst+1;
 		return FALSE;
 	}
-	if( dest != NULL ){
+	if( dest != nullptr ){
 		if( CryptBinaryToStringW( (BYTE*)src, srcSize, CRYPT_STRING_BASE64, dest, destSize ) ){
 		}
 	}
@@ -75,7 +75,7 @@ BOOL CSyoboiCalUtil::Base64Enc(LPCSTR src, DWORD srcSize, LPWSTR dest, DWORD* de
 
 BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const vector<TUNER_RESERVE_INFO>* tunerList)
 {
-	if( reserveList == NULL || tunerList == NULL ){
+	if( reserveList == nullptr || tunerList == nullptr ){
 		return FALSE;
 	}
 	if( reserveList->size() == 0 ){
@@ -124,7 +124,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	WtoUTF8(auth, authA);
 
 	DWORD destSize = 0;
-	Base64Enc(authA.c_str(), (DWORD)authA.size(), NULL, &destSize);
+	Base64Enc(authA.c_str(), (DWORD)authA.size(), nullptr, &destSize);
 	vector<WCHAR> base64(destSize + 1, L'\0');
 	Base64Enc(authA.c_str(), (DWORD)authA.size(), &base64.front(), &destSize);
 	//無駄なCRLFが混じることがあるため
@@ -208,13 +208,13 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	}else{
 		session = WinHttpOpen(L"EpgTimerSrv", WINHTTP_ACCESS_TYPE_NAMED_PROXY, proxyServerName.c_str(), WINHTTP_NO_PROXY_BYPASS, 0);
 	}
-	if( session == NULL ){
+	if( session == nullptr ){
 		return FALSE;
 	}
 
 	LPCWSTR result = L"1";
-	HINTERNET connect = NULL;
-	HINTERNET request = NULL;
+	HINTERNET connect = nullptr;
+	HINTERNET request = nullptr;
 	DWORD statusCode;
 	DWORD statusCodeSize;
 
@@ -224,14 +224,14 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	}
 	//コネクションオープン
 	connect = WinHttpConnect(session, host.c_str(), stURL.nPort, 0);
-	if( connect == NULL ){
+	if( connect == nullptr ){
 		result = L"0 Connect";
 		goto EXIT;
 	}
 	//リクエストオープン
-	request = WinHttpOpenRequest(connect, L"POST", sendUrl.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
+	request = WinHttpOpenRequest(connect, L"POST", sendUrl.c_str(), nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
 	                             stURL.nPort == INTERNET_DEFAULT_HTTPS_PORT ? WINHTTP_FLAG_SECURE : 0);
-	if( request == NULL ){
+	if( request == nullptr ){
 		result = L"0 OpenRequest";
 		goto EXIT;
 	}
@@ -239,7 +239,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 		//ProxyのIDかパスワードがあったらセット
 		if( proxyUserName.empty() == false || proxyPassword.empty() == false ){
 			if( WinHttpSetCredentials(request, WINHTTP_AUTH_TARGET_PROXY, WINHTTP_AUTH_SCHEME_BASIC,
-			                          proxyUserName.c_str(), proxyPassword.c_str(), NULL) == FALSE ){
+			                          proxyUserName.c_str(), proxyPassword.c_str(), nullptr) == FALSE ){
 				result = L"0 SetCredentials";
 				goto EXIT;
 			}
@@ -249,7 +249,7 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 		result = L"0 SendRequest";
 		goto EXIT;
 	}
-	if( WinHttpReceiveResponse(request, NULL) == FALSE ){
+	if( WinHttpReceiveResponse(request, nullptr) == FALSE ){
 		result = L"0 ReceiveResponse";
 		goto EXIT;
 	}
@@ -265,13 +265,13 @@ BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const 
 	}
 
 EXIT:
-	if( request != NULL ){
+	if( request != nullptr ){
 		WinHttpCloseHandle(request);
 	}
-	if( connect != NULL ){
+	if( connect != nullptr ){
 		WinHttpCloseHandle(connect);
 	}
-	if( session != NULL ){
+	if( session != nullptr ){
 		WinHttpCloseHandle(session);
 	}
 

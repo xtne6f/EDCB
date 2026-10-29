@@ -29,8 +29,8 @@ CEpgDataCap_BonMin::CEpgDataCap_BonMin()
 	, iniEpgCap(false)
 	, iniRec(false)
 	, msgManager(OnMessage, this)
-	, cmdCapture(NULL)
-	, resCapture(NULL)
+	, cmdCapture(nullptr)
+	, resCapture(nullptr)
 	, recCtrlID(0)
 	, chScanWorking(false)
 	, epgCapWorking(false)
@@ -64,11 +64,11 @@ void CEpgDataCap_BonMin::ParseCommandLine(char** argv, int argc)
 		}else if( i + 1 < argc && strcmp(argv[i], "-d") == 0 ){
 			UTF8toW(argv[++i], this->iniBonDriver);
 		}else if( i + 1 < argc && strcmp(argv[i], "-nid") == 0 ){
-			this->iniONID = (int)strtol(argv[++i], NULL, 10);
+			this->iniONID = (int)strtol(argv[++i], nullptr, 10);
 		}else if( i + 1 < argc && strcmp(argv[i], "-tsid") == 0 ){
-			this->iniTSID = (int)strtol(argv[++i], NULL, 10);
+			this->iniTSID = (int)strtol(argv[++i], nullptr, 10);
 		}else if( i + 1 < argc && strcmp(argv[i], "-sid") == 0 ){
-			this->iniSID = (int)strtol(argv[++i], NULL, 10);
+			this->iniSID = (int)strtol(argv[++i], nullptr, 10);
 		}else if( strcmp(argv[i], "-chscan") == 0 ){
 			this->iniChScan = true;
 		}else if( strcmp(argv[i], "-epgcap") == 0 ){
@@ -228,7 +228,7 @@ void CEpgDataCap_BonMin::OnInit()
 			return;
 		}
 	}else if( this->iniEpgCap ){
-		if( this->bonCtrl.StartEpgCap(NULL) ){
+		if( this->bonCtrl.StartEpgCap(nullptr) ){
 			this->epgCapWorking = true;
 		}else{
 			PrintStatusLog(L"Failed to start EPG capture\n");
@@ -377,9 +377,9 @@ void CEpgDataCap_BonMin::StartPipeServer()
 			{
 				BOOL chChgErr;
 				DWORD val =
-					this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ? VIEW_APP_ST_ERR_BON :
+					this->bonCtrl.GetOpenBonDriver(nullptr) == FALSE ? VIEW_APP_ST_ERR_BON :
 					this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
-					this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
+					this->bonCtrl.GetEpgCapStatus(nullptr) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
 					this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
 				res.WriteVALUE(val);
 				res.SetParam(CMD_SUCCESS);
@@ -413,9 +413,9 @@ void CEpgDataCap_BonMin::StartPipeServer()
 					if( flags & VIEW_APP_FLAG_GET_STATUS ){
 						BOOL chChgErr;
 						info.status =
-							this->bonCtrl.GetOpenBonDriver(NULL) == FALSE ? VIEW_APP_ST_ERR_BON :
+							this->bonCtrl.GetOpenBonDriver(nullptr) == FALSE ? VIEW_APP_ST_ERR_BON :
 							this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
-							this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
+							this->bonCtrl.GetEpgCapStatus(nullptr) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
 							this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
 					}
 					if( flags & VIEW_APP_FLAG_GET_DELAY ){
@@ -473,8 +473,8 @@ void CEpgDataCap_BonMin::StartPipeServer()
 		this->cmdCapture = &cmd;
 		this->resCapture = &res;
 		this->msgManager.Send(ID_APP_INVOKE_CTRL_CMD);
-		this->cmdCapture = NULL;
-		this->resCapture = NULL;
+		this->cmdCapture = nullptr;
+		this->resCapture = nullptr;
 	}) == false ){
 		AddDebugLog(L"Failed to start CmdServer");
 	}

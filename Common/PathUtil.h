@@ -118,8 +118,8 @@ enum {
 };
 
 // ファイルを開く(継承不能、共有モード制御可)
-FILE* UtilOpenFile(const wstring& path, int flags, int* apiError = NULL);
-inline FILE* UtilOpenFile(const fs_path& path, int flags, int* apiError = NULL) { return UtilOpenFile(path.native(), flags, apiError); }
+FILE* UtilOpenFile(const wstring& path, int flags, int* apiError = nullptr);
+inline FILE* UtilOpenFile(const fs_path& path, int flags, int* apiError = nullptr) { return UtilOpenFile(path.native(), flags, apiError); }
 
 // 共有ライブラリをロードする
 void* UtilLoadLibrary(const wstring& path);
@@ -131,7 +131,7 @@ void UtilFreeLibrary(void* hModule);
 // 共有ライブラリのエクスポート関数や変数のアドレスを取得する
 void* UtilGetProcAddress(void* hModule, const char* name);
 template<class T>
-bool UtilGetProcAddress(void* hModule, const char* name, T& proc) { return (proc = (T)UtilGetProcAddress(hModule, name)) != NULL; }
+bool UtilGetProcAddress(void* hModule, const char* name, T& proc) { return (proc = (T)UtilGetProcAddress(hModule, name)) != nullptr; }
 
 #ifndef _WIN32
 BOOL DeleteFile(LPCWSTR path);
@@ -140,11 +140,11 @@ BOOL DeleteFile(LPCWSTR path);
 fs_path GetDefSettingPath();
 fs_path GetSettingPath();
 #ifdef _WIN32
-fs_path GetModulePath(HMODULE hModule = NULL);
-fs_path GetModuleIniPath(HMODULE hModule = NULL);
+fs_path GetModulePath(HMODULE hModule = nullptr);
+fs_path GetModuleIniPath(HMODULE hModule = nullptr);
 #else
-fs_path GetModulePath(void* funcAddr = NULL);
-fs_path GetModuleIniPath(void* funcAddr = NULL);
+fs_path GetModulePath(void* funcAddr = nullptr);
+fs_path GetModuleIniPath(void* funcAddr = nullptr);
 #endif
 fs_path GetCommonIniPath();
 fs_path GetRecFolderPath(int index = 0);
@@ -157,7 +157,7 @@ void CheckFileName(wstring& fileName, bool noChkYen = false);
 void TouchFileAsUnicode(const fs_path& path);
 #endif
 // ファイルの存在を確認する。それがディレクトリでなければ第2返値もtrue
-pair<bool, bool> UtilFileExists(const fs_path& path, bool* mightExist = NULL);
+pair<bool, bool> UtilFileExists(const fs_path& path, bool* mightExist = nullptr);
 bool UtilCreateDirectory(const fs_path& path);
 // 再帰的にディレクトリを生成する
 bool UtilCreateDirectories(const fs_path& path);
@@ -166,7 +166,7 @@ LONGLONG UtilGetStorageFreeBytes(const fs_path& directoryPath);
 // フォルダがあるストレージの識別子を取得する。失敗時は空
 wstring UtilGetStorageID(const fs_path& directoryPath);
 // グローバルミューテックスを生成する。失敗時(既に存在するときを含む)やname未指定のときは空のハンドルを返す
-util_unique_handle UtilCreateGlobalMutex(LPCWSTR name = NULL, bool* alreadyExists = NULL);
+util_unique_handle UtilCreateGlobalMutex(LPCWSTR name = nullptr, bool* alreadyExists = nullptr);
 
 #ifndef _WIN32
 int GetPrivateProfileInt(LPCWSTR appName, LPCWSTR keyName, int nDefault, LPCWSTR fileName);

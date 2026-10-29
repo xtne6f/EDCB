@@ -12,7 +12,7 @@ BOOL CPATUtil::AddPacket(const CTSPacketUtil& packet)
 {
 	BOOL updated = FALSE;
 	if( this->buffUtil.Add188TS(packet) == TRUE ){
-		BYTE* section = NULL;
+		BYTE* section = nullptr;
 		DWORD sectionSize = 0;
 		while( this->buffUtil.GetSectionBuff(&section, &sectionSize) ){
 			updated = DecodePAT(section, sectionSize) || updated;
@@ -23,7 +23,7 @@ BOOL CPATUtil::AddPacket(const CTSPacketUtil& packet)
 
 BOOL CPATUtil::DecodePAT(BYTE* data, DWORD dataSize)
 {
-	if( data == NULL || dataSize < 3 ||
+	if( data == nullptr || dataSize < 3 ||
 	    (dataSize == this->lastSection.size() && std::equal(data, data + dataSize, this->lastSection.begin())) ){
 		//解析不要
 		return FALSE;

@@ -68,7 +68,7 @@ LONGLONG ConvertI64Time(SYSTEMTIME Time)
 
 bool ConvertSystemTime(LONGLONG i64Time, SYSTEMTIME* Time)
 {
-	if( Time != NULL ){
+	if( Time != nullptr ){
 #ifdef _WIN32
 		FILETIME fTime;
 		fTime.dwHighDateTime = (DWORD)(i64Time>>32);
@@ -103,7 +103,7 @@ LPCSTR GetTimeMacroName(int index)
 		"DYYYY", "DYY", "DMM", "DM", "DDD", "DD", "DW", "THH", "TH", "TMM", "TM", "TSS", "TS",
 		"DYYYY28", "DYY28", "DMM28", "DM28", "DDD28", "DD28", "DW28", "THH28", "TH28"
 	};
-	return index < 0 || index > 21 ? NULL : name[index];
+	return index < 0 || index > 21 ? nullptr : name[index];
 }
 
 wstring GetTimeMacroValue(int index, SYSTEMTIME Time)

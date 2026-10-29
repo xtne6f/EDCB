@@ -34,7 +34,7 @@ DWORD WINAPI InitializeEP(
 	)
 {
 	(void)asyncFlag;
-	if (id == NULL) {
+	if (id == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -69,7 +69,7 @@ DWORD WINAPI UnInitializeEP(
 	DWORD err = ERR_NOT_INIT;
 	{
 		std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.pop(id);
-		if (ptr != NULL) {
+		if (ptr != nullptr) {
 			err = NO_ERR;
 		}
 	}
@@ -78,7 +78,7 @@ DWORD WINAPI UnInitializeEP(
 }
 
 //解析対象のTSパケットを読み込ませる
-//AddTSPacketEP(id, !NULL, 0)!=ERR_FALSEのとき、sizeは188より大きくできない（互換のため）
+//AddTSPacketEP(id, !nullptr, 0)!=ERR_FALSEのとき、sizeは188より大きくできない（互換のため）
 //戻り値：
 // エラーコード
 //引数：
@@ -93,10 +93,10 @@ DWORD WINAPI AddTSPacketEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (data == NULL || size % 188 != 0) {
+	if (data == nullptr || size % 188 != 0) {
 		return ERR_INVALID_ARG;
 	}
 	if (size == 0) {
@@ -108,12 +108,12 @@ DWORD WINAPI AddTSPacketEP(
 }
 
 //解析データの現在のストリームＩＤを取得する
-//古い（EnumEpgInfoListEPが追加される以前の）バージョンでoriginalNetworkIDをNULLにしてはいけない
+//古い（EnumEpgInfoListEPが追加される以前の）バージョンでoriginalNetworkIDをnullptrにしてはいけない
 //戻り値：
 // エラーコード
 //引数：
 // id						[IN]識別ID
-// originalNetworkID		[OUT]現在のoriginalNetworkID。NULL可
+// originalNetworkID		[OUT]現在のoriginalNetworkID。nullptr可
 // transportStreamID		[OUT]現在のtransportStreamID
 DLL_EXPORT
 DWORD WINAPI GetTSIDEP(
@@ -123,10 +123,10 @@ DWORD WINAPI GetTSIDEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (transportStreamID == NULL) {
+	if (transportStreamID == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -148,10 +148,10 @@ DWORD WINAPI GetServiceListActualEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (serviceListSize == NULL || serviceList == NULL) {
+	if (serviceListSize == nullptr || serviceList == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -174,10 +174,10 @@ DWORD WINAPI GetServiceListEpgDBEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (serviceListSize == NULL || serviceList == NULL) {
+	if (serviceListSize == nullptr || serviceList == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -206,10 +206,10 @@ DWORD WINAPI GetEpgInfoListEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (epgInfoListSize == NULL || epgInfoList == NULL) {
+	if (epgInfoListSize == nullptr || epgInfoList == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -221,7 +221,7 @@ DWORD WINAPI GetEpgInfoListEP(
 
 //指定サービスの全EPG情報を列挙する
 //仕様はGetEpgInfoListEP()を継承、戻り値がNO_ERRのときコールバックが発生する
-//初回コールバックでepgInfoListSizeに全EPG情報の個数、epgInfoListにNULLが入る
+//初回コールバックでepgInfoListSizeに全EPG情報の個数、epgInfoListにnullptrが入る
 //次回からはepgInfoListSizeに列挙ごとのEPG情報の個数が入る
 //FALSEを返すと列挙を中止できる
 //引数：
@@ -238,10 +238,10 @@ DWORD WINAPI EnumEpgInfoListEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (enumEpgInfoListEPProc == NULL) {
+	if (enumEpgInfoListEPProc == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -272,10 +272,10 @@ DWORD WINAPI GetEpgInfoEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (epgInfo == NULL) {
+	if (epgInfo == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -308,10 +308,10 @@ DWORD WINAPI SearchEpgInfoEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (epgInfo == NULL) {
+	if (epgInfo == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -330,7 +330,7 @@ void WINAPI ClearSectionStatusEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return;
 	}
 
@@ -350,7 +350,7 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return EpgNoData;
 	}
 
@@ -376,7 +376,7 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusServiceEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return EpgNoData;
 	}
 
@@ -387,7 +387,7 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusServiceEP(
 //引数：
 // id						[IN]識別ID
 // flags					[IN]フラグ(ロゴタイプnを取得するとき下位からnビット目をセットする)
-// additionalNeededPids		[OUT]追加で解析したいTSパケットのPIDのリスト(0終端)。NULL可。次の呼び出しまで有効
+// additionalNeededPids		[OUT]追加で解析したいTSパケットのPIDのリスト(0終端)。nullptr可。次の呼び出しまで有効
 DLL_EXPORT
 void WINAPI SetLogoTypeFlagsEP(
 	DWORD id,
@@ -403,7 +403,7 @@ void WINAPI SetLogoTypeFlagsEP(
 
 //全ロゴを列挙する
 //戻り値がNO_ERRのときコールバックが発生する
-//初回コールバックでlogoListSizeに全ロゴの個数、logoListにNULLが入る
+//初回コールバックでlogoListSizeに全ロゴの個数、logoListにnullptrが入る
 //次回からはlogoListSizeに列挙ごとのロゴの個数が入る
 //FALSEを返すと列挙を中止できる
 //戻り値：
@@ -420,10 +420,10 @@ DWORD WINAPI EnumLogoListEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return ERR_NOT_INIT;
 	}
-	if (enumLogoListProc == NULL) {
+	if (enumLogoListProc == nullptr) {
 		return ERR_INVALID_ARG;
 	}
 
@@ -444,7 +444,7 @@ int WINAPI GetTimeDelayEP(
 	)
 {
 	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
-	if (ptr == NULL) {
+	if (ptr == nullptr) {
 		return 0;
 	}
 
@@ -470,7 +470,7 @@ DWORD WINAPI SetDebugLogCallbackEP(
 	}
 	if (g_debugLogProcCount) {
 		if (--g_debugLogProcCount == 0) {
-			g_debugLogProc = NULL;
+			g_debugLogProc = nullptr;
 		}
 		return NO_ERR;
 	}

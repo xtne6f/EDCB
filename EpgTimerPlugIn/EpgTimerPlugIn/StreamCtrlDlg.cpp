@@ -6,10 +6,10 @@
 
 CStreamCtrlDlg::CStreamCtrlDlg(void)
 {
-	this->hwnd = NULL;
+	this->hwnd = nullptr;
 	this->ctrlEnabled = FALSE;
-	this->callbackFunc = NULL;
-	this->callbackParam = NULL;
+	this->callbackFunc = nullptr;
+	this->callbackParam = nullptr;
 	this->thumbTracking = FALSE;
 	this->getPosState = 0;
 }
@@ -44,7 +44,7 @@ void CStreamCtrlDlg::SetCtrl(const TVTEST_STREAMING_INFO& info)
 			SendDlgItemMessage(this->hwnd, IDC_CHECK_TCP, BM_SETCHECK, info.tcpSend ? BST_CHECKED : BST_UNCHECKED, 0);
 			SetNWModeSend();
 			this->cmd.SendNwPlayStart(this->ctrlID);
-			SetTimer(this->hwnd, 1000, 500, NULL);
+			SetTimer(this->hwnd, 1000, 500, nullptr);
 			this->thumbTracking = FALSE;
 			this->getPosState = 0;
 		}
@@ -60,7 +60,7 @@ void CStreamCtrlDlg::SetMessageCallback(MessageCallbackFunc func, void* param)
 DWORD CStreamCtrlDlg::CreateStreamCtrlDialog(HINSTANCE hInstance, HWND parentHWND)
 {
 	this->hwnd = CreateDialogParam(hInstance,MAKEINTRESOURCE(IDD_DIALOG_NW_CTRL), parentHWND, (DLGPROC)DlgProc, (LPARAM)this );
-	if( this->hwnd == NULL ){
+	if( this->hwnd == nullptr ){
 		return FALSE;
 	}
 	this->parentHwnd = parentHWND;
@@ -69,18 +69,18 @@ DWORD CStreamCtrlDlg::CreateStreamCtrlDialog(HINSTANCE hInstance, HWND parentHWN
 
 void CStreamCtrlDlg::CloseStreamCtrlDialog()
 {
-	if( this->hwnd != NULL ){
+	if( this->hwnd != nullptr ){
 		KillTimer(this->hwnd, 1010);
 		KillTimer(this->hwnd, 1000);
 	}
-	if( this->hwnd != NULL ){
+	if( this->hwnd != nullptr ){
 		DestroyWindow(this->hwnd);
 	}
 }
 
 void CStreamCtrlDlg::StopTimer()
 {
-	if( this->hwnd != NULL ){
+	if( this->hwnd != nullptr ){
 		KillTimer(this->hwnd, 1010);
 		KillTimer(this->hwnd, 1000);
 	}
@@ -88,7 +88,7 @@ void CStreamCtrlDlg::StopTimer()
 
 BOOL CStreamCtrlDlg::ShowCtrlDlg(DWORD cmdShow)
 {
-	if( this->hwnd == NULL ){
+	if( this->hwnd == nullptr ){
 		return FALSE;
 	}
 	return ShowWindow(this->hwnd, cmdShow);
@@ -96,14 +96,14 @@ BOOL CStreamCtrlDlg::ShowCtrlDlg(DWORD cmdShow)
 
 void CStreamCtrlDlg::StartFullScreenMouseChk()
 {
-	if( this->hwnd != NULL ){
-		SetTimer(this->hwnd, 1010, 300, NULL);
+	if( this->hwnd != nullptr ){
+		SetTimer(this->hwnd, 1010, 300, nullptr);
 	}
 }
 
 void CStreamCtrlDlg::StopFullScreenMouseChk()
 {
-	if( this->hwnd != NULL ){
+	if( this->hwnd != nullptr ){
 		KillTimer(this->hwnd, 1010);
 	}
 }
@@ -111,7 +111,7 @@ void CStreamCtrlDlg::StopFullScreenMouseChk()
 LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
 	CStreamCtrlDlg* sys = (CStreamCtrlDlg*)GetWindowLongPtr(hDlgWnd, GWLP_USERDATA);
-	if( sys == NULL && msg != WM_INITDIALOG ){
+	if( sys == nullptr && msg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch (msg) {
@@ -130,7 +130,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 					case IDC_BUTTON_PLAY:
 						sys->SetNWModeSend();
 						sys->cmd.SendNwPlayStart(sys->ctrlID);
-						SetTimer(hDlgWnd, 1000, 500, NULL);
+						SetTimer(hDlgWnd, 1000, 500, nullptr);
 						sys->thumbTracking = FALSE;
 						sys->getPosState = 0;
 						break;
@@ -181,11 +181,11 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 					if( x < pt.x + 5 ){
 						x = pt.x + 5;
 					}
-					SetWindowPos(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), NULL, x, y, 0, 0, SWP_NOZORDER|SWP_NOSIZE|SWP_SHOWWINDOW);
+					SetWindowPos(GetDlgItem(hDlgWnd, IDC_EDIT_LOG), nullptr, x, y, 0, 0, SWP_NOZORDER|SWP_NOSIZE|SWP_SHOWWINDOW);
 
 					GetWindowRect(GetDlgItem(hDlgWnd, IDC_SLIDER_SEEK), &rc);
 					int cy = rc.bottom - rc.top;
-					SetWindowPos(GetDlgItem(hDlgWnd, IDC_SLIDER_SEEK), NULL, 0, 0, cx, cy, SWP_NOZORDER|SWP_NOMOVE|SWP_SHOWWINDOW);
+					SetWindowPos(GetDlgItem(hDlgWnd, IDC_SLIDER_SEEK), nullptr, 0, 0, cx, cy, SWP_NOZORDER|SWP_NOMOVE|SWP_SHOWWINDOW);
 				}
 			}
 			break;
@@ -315,7 +315,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 							}
 							sys->cmd.SendNwPlaySetPos(&item);
 							sys->cmd.SendNwPlayStart(sys->ctrlID);
-							SetTimer(hDlgWnd, 1000, 500, NULL);
+							SetTimer(hDlgWnd, 1000, 500, nullptr);
 							sys->thumbTracking = FALSE;
 							sys->getPosState = 0;
 						}
@@ -328,7 +328,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 			}
 			break;
 		default:
-			if( (msg == WM_CHG_PORT || msg == WM_PLAY_CLOSE || msg >= WM_CUSTOM) && sys->callbackFunc != NULL ){
+			if( (msg == WM_CHG_PORT || msg == WM_PLAY_CLOSE || msg >= WM_CUSTOM) && sys->callbackFunc != nullptr ){
 				return sys->callbackFunc(hDlgWnd, msg, wp, lp, sys->callbackParam);
 			}
 			return FALSE;

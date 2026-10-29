@@ -25,7 +25,7 @@ CTimeShiftUtil::~CTimeShiftUtil(void)
 {
 	StopTimeShift();
 
-	Send(L"", NULL, NULL);
+	Send(L"", nullptr, nullptr);
 }
 
 void CTimeShiftUtil::Send(
@@ -42,14 +42,14 @@ void CTimeShiftUtil::Send(
 		CSendTSTCPDllUtil* sendNW = (tcp ? &this->sendTcp : &this->sendUdp);
 		SEND_INFO* info = this->sendInfo + tcp;
 		DWORD* port = tcp ? tcpPort : udpPort;
-		if( info->ip.empty() == false && (port == NULL || info->ip != ip) ){
+		if( info->ip.empty() == false && (port == nullptr || info->ip != ip) ){
 			//終了
 			info->ip.clear();
 			sendNW->StopSend();
 			sendNW->UnInitialize();
 			mutex.reset();
 		}
-		if( port == NULL ){
+		if( port == nullptr ){
 			continue;
 		}
 		if( info->ip.empty() == false ){
@@ -319,7 +319,7 @@ LONGLONG CTimeShiftUtil::GetAvailableFileSize() const
 	if( this->filePath.empty() == false ){
 		std::unique_ptr<FILE, fclose_deleter> tmpFile;
 		FILE* fp = this->seekFile.get();
-		if( fp == NULL ){
+		if( fp == nullptr ){
 			tmpFile.reset(UtilOpenFile(this->filePath, UTIL_SHARED_READ | UTIL_SH_DELETE));
 			fp = tmpFile.get();
 		}
@@ -364,10 +364,10 @@ void CTimeShiftUtil::GetFilePos(LONGLONG* filePos, LONGLONG* fileSize)
 	lock_recursive_mutex lock(this->utilLock);
 	lock_recursive_mutex lock2(this->ioLock);
 
-	if( filePos != NULL ){
+	if( filePos != nullptr ){
 		*filePos = this->currentFilePos;
 	}
-	if( fileSize != NULL ){
+	if( fileSize != nullptr ){
 		*fileSize = GetAvailableFileSize();
 	}
 }
