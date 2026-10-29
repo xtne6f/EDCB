@@ -1,7 +1,7 @@
 ﻿// dllmain.cpp : DLL アプリケーションのエントリ ポイントを定義します。
 #include "stdafx.h"
 
-HINSTANCE g_instance = NULL;
+HINSTANCE g_instance = nullptr;
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,

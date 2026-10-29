@@ -17,7 +17,7 @@ extern HINSTANCE g_instance;
 
 
 //PlugInの名前を取得する
-//nameがNULL時は必要なサイズをnameSizeで返す
+//nameがnullptr時は必要なサイズをnameSizeで返す
 //通常nameSize=256で呼び出し
 //戻り値
 // TRUE（成功）、FALSE（失敗）
@@ -30,14 +30,14 @@ BOOL WINAPI GetPlugInName(
 	DWORD* nameSize
 	)
 {
-	if( name == NULL ){
-		if( nameSize == NULL ){
+	if( name == nullptr ){
+		if( nameSize == nullptr ){
 			return FALSE;
 		}else{
 			*nameSize = (DWORD)wcslen(PLUGIN_NAME)+1;
 		}
 	}else{
-		if( nameSize == NULL ){
+		if( nameSize == nullptr ){
 			return FALSE;
 		}else{
 			if( *nameSize < (DWORD)wcslen(PLUGIN_NAME)+1 ){
@@ -65,7 +65,7 @@ void WINAPI Setting(
 		if( GetPrivateProfileToString(L"SET", L"WritePlugin", L"*", iniPath.c_str()) == L"*" ){
 			WritePrivateProfileString(L"SET", L"WritePlugin", L";Write_Default.dll", iniPath.c_str());
 		}
-		ShellExecute(NULL, L"edit", iniPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+		ShellExecute(nullptr, L"edit", iniPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 	}
 }
 
@@ -109,7 +109,7 @@ BOOL WINAPI CreateCtrl(
 	DWORD* id
 	)
 {
-	if( id == NULL ){
+	if( id == nullptr ){
 		return FALSE;
 	}
 
@@ -145,7 +145,7 @@ BOOL WINAPI DeleteCtrl(
 	DWORD id
 	)
 {
-	if( g_instMng.pop(id) == NULL ){
+	if( g_instMng.pop(id) == nullptr ){
 		return FALSE;
 	}
 
@@ -169,7 +169,7 @@ BOOL WINAPI StartSave(
 	)
 {
 	std::shared_ptr<CWriteMain> ptr = g_instMng.find(id);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return FALSE;
 	}
 
@@ -187,7 +187,7 @@ BOOL WINAPI StopSave(
 	)
 {
 	std::shared_ptr<CWriteMain> ptr = g_instMng.find(id);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return FALSE;
 	}
 
@@ -195,7 +195,7 @@ BOOL WINAPI StopSave(
 }
 
 //実際に保存しているファイルパスを取得する（再生やバッチ処理に利用される）
-//filePathがNULL時は必要なサイズをfilePathSizeで返す
+//filePathがnullptr時は必要なサイズをfilePathSizeで返す
 //通常filePathSize=512で呼び出し
 //戻り値：
 // TRUE（成功）、FALSE（失敗）
@@ -211,13 +211,13 @@ BOOL WINAPI GetSaveFilePath(
 	)
 {
 	std::shared_ptr<CWriteMain> ptr = g_instMng.find(id);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return FALSE;
 	}
 
-	if( filePathSize == NULL ){
+	if( filePathSize == nullptr ){
 		return FALSE;
-	}else if( filePath == NULL ){
+	}else if( filePath == nullptr ){
 		*filePathSize = (DWORD)ptr->GetSavePath().size() + 1;
 	}else if( *filePathSize < (DWORD)ptr->GetSavePath().size() + 1 ){
 		*filePathSize = (DWORD)ptr->GetSavePath().size() + 1;
@@ -247,7 +247,7 @@ BOOL WINAPI AddTSBuff(
 	)
 {
 	std::shared_ptr<CWriteMain> ptr = g_instMng.find(id);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return FALSE;
 	}
 

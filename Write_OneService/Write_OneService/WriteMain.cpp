@@ -56,7 +56,7 @@ BOOL CWriteMain::Start(
 		}
 		vector<WCHAR> path;
 		DWORD pathSize = 0;
-		if( this->writePlugin->GetSavePath(NULL, &pathSize) && pathSize > 0 ){
+		if( this->writePlugin->GetSavePath(nullptr, &pathSize) && pathSize > 0 ){
 			path.resize(pathSize);
 			if( this->writePlugin->GetSavePath(&path.front(), &pathSize) == FALSE ){
 				path.clear();
@@ -121,7 +121,7 @@ BOOL CWriteMain::Write(
 	DWORD* writeSize
 	)
 {
-	if( (this->writePlugin || this->file) && data != NULL && size > 0 && writeSize != NULL ){
+	if( (this->writePlugin || this->file) && data != nullptr && size > 0 && writeSize != nullptr ){
 		*writeSize = 0;
 		if( this->targetSID == 0 ){
 			//全サービスなので何も弄らない
