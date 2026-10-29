@@ -4,7 +4,9 @@ dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 if mg.get_var(mg.request_info.query_string,'t')=='d' then
   if SHOW_DEBUG_LOG then
     logIndex=GetVarInt(mg.request_info.query_string,'i',0,99)
-    t=logIndex and 'EpgDataCap_Bon_DebugLog-'..logIndex..'.txt' or 'EpgTimerSrvDebugLog.txt'
+    t=logIndex and 'EpgDataCap_Bon_Debug-'..logIndex..'.log' or 'EpgTimerSrvDebug.log'
+    --古いログファイル名も探す
+    t=EdcbFindFilePlain(PathAppend(EdcbModulePath(),t)) and t or logIndex and 'EpgDataCap_Bon_DebugLog-'..logIndex..'.txt' or 'EpgTimerSrvDebugLog.txt'
   end
 else
   if SHOW_NOTIFY_LOG then
@@ -82,6 +84,8 @@ else
     s=edcb.Convert('utf-8','utf-16le',s) or ''
   end
   s='\n'..s:gsub('\r?\n','<br>\n')
+  --'******LOG ST'を装飾
+  s=s:gsub('(\n%[[^ <]+ )(%*%*%*%*%*%* LOG ST[^<]+)','%1<span class="log-marker">%2</span>')
   --タイムスタンプを装飾
   s=s:gsub('\n(%[[^ <]+)','\n<span class="log-marker">%1</span>'):gsub('\n(2[^ <]+ [^ <]+)','\n<span class="log-marker">%1</span>')
   ct:Append(s)

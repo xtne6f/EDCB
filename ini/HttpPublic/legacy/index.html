@@ -25,10 +25,16 @@ ct:Append(DOCTYPE_HTML4_STRICT..[=[
     <li><a href="showlog.html?t=d&amp;c=10000">デバッグ出力</a>
 ]=])
 if SHOW_DEBUG_LOG then
-  for i,v in ipairs(edcb.FindFile(PathAppend(EdcbModulePath(),'EpgDataCap_Bon_DebugLog-*.txt'),100) or {}) do
-    logIndex=v.name:lower():match('%-([1-9]?[0-9])%.txt$')
-    if logIndex then
-      ct:Append('      <a href="showlog.html?t=d&amp;i='..logIndex..'&amp;c=10000">[edcb-'..logIndex..']</a>\n')
+  logIndexes={}
+  for i,v in ipairs(edcb.FindFile(PathAppend(EdcbModulePath(),'EpgDataCap_Bon_Debug*.???'),200) or {}) do
+    --古いログファイル名も探す
+    logIndexes[#logIndexes+1]=tonumber(v.name:lower():match('^epgdatacap_bon_debug%-([1-9]?[0-9])%.log$') or
+                                       v.name:lower():match('^epgdatacap_bon_debuglog%-([1-9]?[0-9])%.txt$'))
+  end
+  table.sort(logIndexes)
+  for i,v in ipairs(logIndexes) do
+    if i==1 or logIndexes[i-1]<v then
+      ct:Append('      <a href="showlog.html?t=d&amp;i='..v..'&amp;c=10000">[edcb-'..v..']</a>\n')
     end
   end
 end
