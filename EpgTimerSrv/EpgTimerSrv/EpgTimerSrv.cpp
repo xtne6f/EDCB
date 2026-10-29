@@ -17,6 +17,7 @@
 #else
 #include "../../Common/CommonResource.h"
 #include <signal.h>
+#include <unistd.h>
 #endif
 
 namespace
@@ -295,7 +296,7 @@ void SetSaveDebugLog(bool saveDebugLog)
 {
 	lock_recursive_mutex lock(g_debugLogLock);
 	if( g_debugLog == nullptr && saveDebugLog ){
-		fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvDebugLog.txt");
+		fs_path logPath = GetCommonIniPath().replace_filename(L"EpgTimerSrvDebug.log");
 #if WCHAR_MAX <= 0xFFFF
 		g_debugLog = UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ);
 		if( g_debugLog ){
@@ -306,10 +307,18 @@ void SetSaveDebugLog(bool saveDebugLog)
 			g_debugLog = UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ);
 		}
 		if( g_debugLog ){
-			AddDebugLog(L"****** LOG START ******");
+#ifdef _WIN32
+			AddDebugLogFormat(L"****** LOG START [%u] ******", GetCurrentProcessId());
+#else
+			AddDebugLogFormat(L"****** LOG START [%d] ******", (int)getpid());
+#endif
 		}
 	}else if( g_debugLog && saveDebugLog == false ){
-		AddDebugLog(L"****** LOG STOP ******");
+#ifdef _WIN32
+		AddDebugLogFormat(L"****** LOG STOP [%u] ******", GetCurrentProcessId());
+#else
+		AddDebugLogFormat(L"****** LOG STOP [%d] ******", (int)getpid());
+#endif
 		fclose(g_debugLog);
 		g_debugLog = nullptr;
 	}

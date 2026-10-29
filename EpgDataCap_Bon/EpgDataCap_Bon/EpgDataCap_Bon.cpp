@@ -15,6 +15,7 @@
 #else
 #include "EpgDataCap_BonMin.h"
 #include <signal.h>
+#include <unistd.h>
 #endif
 
 namespace
@@ -163,7 +164,7 @@ void SetSaveDebugLog(bool saveDebugLog)
 		for( int i = 0; i < 100; i++ ){
 			//パスに添え字をつけて書き込み可能な最初のものに記録する
 			WCHAR logFileName[64];
-			swprintf_s(logFileName, L"EpgDataCap_Bon_DebugLog-%d.txt", i);
+			swprintf_s(logFileName, L"EpgDataCap_Bon_Debug-%d.log", i);
 			fs_path logPath = GetCommonIniPath().replace_filename(logFileName);
 #if WCHAR_MAX <= 0xFFFF
 			g_debugLog = UtilOpenFile(logPath, UTIL_O_EXCL_CREAT_APPEND | UTIL_SH_READ);
@@ -175,12 +176,20 @@ void SetSaveDebugLog(bool saveDebugLog)
 				g_debugLog = UtilOpenFile(logPath, UTIL_O_CREAT_APPEND | UTIL_SH_READ);
 			}
 			if( g_debugLog ){
-				AddDebugLog(L"****** LOG START ******");
+#ifdef _WIN32
+				AddDebugLogFormat(L"****** LOG START [%u] ******", GetCurrentProcessId());
+#else
+				AddDebugLogFormat(L"****** LOG START [%d] ******", (int)getpid());
+#endif
 				break;
 			}
 		}
 	}else if( g_debugLog && saveDebugLog == false ){
-		AddDebugLog(L"****** LOG STOP ******");
+#ifdef _WIN32
+		AddDebugLogFormat(L"****** LOG STOP [%u] ******", GetCurrentProcessId());
+#else
+		AddDebugLogFormat(L"****** LOG STOP [%d] ******", (int)getpid());
+#endif
 		fclose(g_debugLog);
 		g_debugLog = nullptr;
 	}
