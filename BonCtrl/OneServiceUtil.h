@@ -37,7 +37,7 @@ public:
 
 	//UDPで送信を行う
 	//引数：
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+	// sendList		[IN/OUT]送信先リスト。nullptrで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	void SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		) {
@@ -46,7 +46,7 @@ public:
 
 	//TCPで送信を行う
 	//引数：
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+	// sendList		[IN/OUT]送信先リスト。nullptrで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	void SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		) {
@@ -89,7 +89,7 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
-	BOOL EndSave(BOOL* subRecFlag = NULL);
+	BOOL EndSave(BOOL* subRecFlag = nullptr);
 
 	//録画中かどうか
 	//戻り値：

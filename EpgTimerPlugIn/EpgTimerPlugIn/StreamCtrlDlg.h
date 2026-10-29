@@ -18,7 +18,7 @@ public:
 	~CStreamCtrlDlg(void);
 
 	void SetCtrl(const TVTEST_STREAMING_INFO& info);
-	void SetMessageCallback(MessageCallbackFunc func, void* param = NULL);
+	void SetMessageCallback(MessageCallbackFunc func, void* param = nullptr);
 	DWORD CreateStreamCtrlDialog(HINSTANCE hInstance, HWND parentHWND);
 	void CloseStreamCtrlDialog();
 

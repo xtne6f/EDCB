@@ -52,7 +52,19 @@ if pid then
         end
       end
     else
-      fpost=WIN32 and edcb.io.open('\\\\.\\pipe\\post_d7b64ac2_'..pid,'w')
+      if WIN32 then
+        fpost=edcb.io.open('\\\\.\\pipe\\post_d7b64ac2_'..pid,'w')
+      else
+        for retry=1,9 do
+          fpost=EdcbFindFilePlain(PathAppend(JKTASK_BASE_DIR,'post_'..pid..'.fifo')) and
+            edcb.io.open(PathAppend(JKTASK_BASE_DIR,'post_'..pid..'.fifo'),'a')
+          -- 同時に書き込まないようプロセス間でロックが必要
+          if not fpost or edcb.io._flock_nb(fpost) then break end
+          fpost:close()
+          fpost=nil
+          edcb.Sleep(10*retry)
+        end
+      end
     end
     if fpost then
       code=500

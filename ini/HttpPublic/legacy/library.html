@@ -114,9 +114,9 @@ else
       end
     end
     if so=='da' then
-      table.sort(ff,function(a,b) return os.time(a.mtime)<os.time(b.mtime) end)
+      table.sort(ff,function(a,b) return CompareTime(a.mtime,b.mtime) end)
     elseif so=='dd' then
-      table.sort(ff,function(a,b) return os.time(a.mtime)>os.time(b.mtime) end)
+      table.sort(ff,function(a,b) return CompareTime(b.mtime,a.mtime) end)
     elseif so=='sa' then
       table.sort(ff,function(a,b) return a.size<b.size end)
     elseif so=='sd' then
@@ -161,16 +161,20 @@ else
     edcb.htmlEscape=15
     if info then
       ref=dirname..'/'..info.name
+      resumeHash=VIDEO_RESUME_MAX>0 and mg.md5(WIN32 and ref:upper() or ref)
       queryParent='?d='..table.concat(dirhash,',')..(#sort>0 and '&amp;s='..table.concat(sort,',') or '')
-
+      vttKind=info.ists and 'metadata' or TestVttKind(PathAppend(dir,info.name):gsub('%.[0-9A-Za-z]+$','')..'.vtt')
       if vtag==2 or vtag==3 then
         if vtag%2==0 then
           ct:Append('<div><input id="input-file" type="file" accept="video/*">'..(info.ists and '(filename:'..mg.md5(ref:upper()):sub(27)..')' or '')..'</div>')
         end
         ct:Append(VideoWrapperBegin()
-          ..'<video id="video" autoplay playsinline controls '..(vtag%2==0 and 'data-' or '')..'src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref)
-          ..'<track id="vid-meta" kind="metadata"'..(info.ists and '' or ' src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')..'.vtt"')..' type="text/vtt" default>'
-          ..'</video>'..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),true)..'\n'..VideoScriptTemplate(info.ists))
+          ..'<video id="video" autoplay playsinline controls'
+          ..(resumeHash and ' data-resume-params="'..resumeHash..','..VIDEO_RESUME_MAX..','..VIDEO_RESUME_REWIND_SEC..'"' or '')
+          ..(vtag%2==0 and ' data-' or ' ')..'src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref)
+          ..(vttKind and '<track id="vid-track" kind="'..vttKind..'" '..(vttKind=='metadata' and 'default' or 'mode="disabled"')
+               ..(info.ists and '' or ' src="'..PathToRoot()..mg.url_encode(ref):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')..'.vtt"')..' type="text/vtt">' or '')
+          ..'</video>'..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),true)..'\n'..VideoScriptTemplate(info.ists,LoadAttachedChapters(PathAppend(dir,info.name))))
       else
         ct:Append((info.ists and '' or '<a class="transit-inplace" href="library.html?d='..table.concat(dirhash,',')..'&amp;h='..hash..(#sort>0 and '&amp;s='..table.concat(sort,',') or '')..'&amp;vtag=3">')
           ..'/'..EdcbHtmlEscape(ref)..(info.ists and '' or '</a>')
@@ -193,7 +197,7 @@ else
           end
           f:close()
         end
-        ct:Append(' ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
+        ct:Append(' (<span id="vid-src-duration">'..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M</span>)<br>\n'
           ..'<form id="vid-form"'..(vtag<0 and ' class="transit-inplace"' or '')..' action="'..(vtag==0 and 'xcode.lua' or 'library.html')..'"><div>\n'
           ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
                or '<input type="hidden" name="d" value="'..table.concat(dirhash,',')..'">\n'
@@ -205,21 +209,21 @@ else
           ..'→<a href="library.html?d='..table.concat(dirhash,',')..'&amp;h='..hash
           ..(#sort>0 and '&amp;s='..table.concat(sort,',') or '')..ConstructTranscodeQueries(xq)
           ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a>\n'
-          ..TranscodeSettingTemplate(xq,vtag==0,fsec)
+          ..TranscodeSettingTemplate(xq,vtag==0,fsec,resumeHash,fsec>0 and LoadAttachedChapters(PathAppend(dir,info.name)))
           ..(vtag==0 and '<br>※OpenFile用のファイルを作成するときは[TS-Live!以外][0m00s][x1.0]を選択してxcodeしてください\n' or '')
           ..'</div></form>'..thumbs[1])
         if vtag==1 then
           src='xcode.lua?fname='..mg.url_encode(ref)..ConstructTranscodeQueries(xq)
           ct:Append('\n'..VideoWrapperBegin()
             ..(xq.tslive and '<canvas id="video" data-pausable="1" data-src="'..src..'"'..(xq.autoCinema and ' data-initial-auto-cinema="1"' or '')
-                               ..(xq.deinterlace and ' data-deinterlace="'..xq.deinterlace..'"' or '')..'></canvas>' or
-                 '<video id="video" autoplay playsinline controls'
+                               ..(xq.deinterlace and ' data-deinterlace="'..xq.deinterlace..'"' or '')
+                               ..(xq.maxRateForDoubling and ' data-max-rate-for-doubling="'..xq.maxRateForDoubling..'"' or '')..'></canvas>' or
+                 '<video id="video" autoplay playsinline controls'..(xq.poster and ' data-poster="'..EdcbHtmlEscape(xq.poster)..'"' or '')
                    ..(ALLOW_HLS and (ALWAYS_USE_HLS and ' data-always-use-hls="1"' or '')
                         ..' data-ctok="'..CsrfToken('xcode.lua')..'"'
                         ..' data-hls="'..(edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'"'
-                        ..(USE_MP4_HLS and ' data-hls-mp4="'..(USE_MP4_LLHLS and '2' or '1')..'"' or '')
                         ..' data-' or ' ')..'src="'..src..'">xcode</video>')
-            ..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),shiftable)..'\n'..TranscodeScriptTemplate(false,xq.caption,xq.jikkyo,xq.tslive,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
+            ..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),shiftable)..'\n'..TranscodeScriptTemplate(false,xq))
         end
       else
         ct:Append((vtag~=2 and vtag~=3 and '\n[<a href="mux_to_ts.lua?fname='..mg.url_encode(ref)..'" download>Mux-to-TS</a>]' or '')
@@ -228,12 +232,13 @@ else
       ct:Append([=[
 <div style="display:none"><label><input type="checkbox" id="cb-pginfo">番組情報</label>
 <div id="pginfo-desc" style="display:none" data-fname="]=]..EdcbHtmlEscape(ref)..[=["></div></div>
+]=]..(vttKind and [=[
 <div style="display:none"><label><input type="checkbox" id="cb-ccinfo">字幕リスト</label>
 <div id="ccinfo-desc" style="display:none"]=]
-  ..(info.ists and ' data-fname="'..EdcbHtmlEscape(ref)..'"'..((vtag==2 or vtag==3) and ' data-set-src="vid-meta"' or '')
-       or ' data-vtt="'..PathToRoot()..EdcbHtmlEscape(ref):gsub('%.[0-9A-Za-z]+$','')..'.vtt"')
+  ..(info.ists and ' data-fname="'..EdcbHtmlEscape(ref)..'"'..((vtag==2 or vtag==3) and ' data-set-src="vid-track"' or '')
+       or ' data-vtt="'..PathToRoot()..EdcbHtmlEscape(ref):gsub('%.[0-9A-Za-z]+$','')..'.vtt" data-vtt-kind="'..vttKind..'"')
   ..(vtag>=1 and vtag<=3 and ' data-seek-target="vid-wrap"' or info.ists and ' data-seek-target="vid-form"' or '')..[=[></div></div>
-]=])
+]=] or ''))
     end
     ct:Append('</div>\n')
   end
@@ -243,6 +248,7 @@ ct:Append([=[
 <div id="footer">
   <a href="]=]..(#LIBRARY_LIST~=1 and index and 'library.html">ライブラリリスト' or 'index.html">メニュー')..[=[</a>
 ]=]..(queryParent~='' and '  <a href="library.html'..queryParent..'">Parent_directory..</a>\n' or '')..[=[
+  <a href="#vid-wrap" id="jump-to-video" style="display:none">#video</a>
 </div>
 ]=])
 for i=2,#thumbs do ct:Append(thumbs[i]) end

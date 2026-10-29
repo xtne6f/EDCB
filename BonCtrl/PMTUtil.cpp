@@ -15,7 +15,7 @@ BOOL CPMTUtil::AddPacket(const CTSPacketUtil& packet)
 {
 	BOOL updated = FALSE;
 	if( buffUtil.Add188TS(packet) == TRUE ){
-		BYTE* section = NULL;
+		BYTE* section = nullptr;
 		DWORD sectionSize = 0;
 		while( buffUtil.GetSectionBuff(&section, &sectionSize) ){
 			updated = DecodePMT(section, sectionSize) || updated;
@@ -26,7 +26,7 @@ BOOL CPMTUtil::AddPacket(const CTSPacketUtil& packet)
 
 BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 {
-	if( data == NULL || dataSize < 3 ||
+	if( data == nullptr || dataSize < 3 ||
 	    (dataSize == lastSection.size() && std::equal(data, data + dataSize, lastSection.begin())) ){
 		//解析不要
 		return FALSE;

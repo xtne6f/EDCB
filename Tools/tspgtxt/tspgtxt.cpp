@@ -57,19 +57,19 @@ int main(int argc, char **argv)
 		UTF8toW(argv[i], s);
 #endif
 		if (seekRatio < 0) {
-			seekRatio = wcstod(s.c_str(), NULL);
+			seekRatio = wcstod(s.c_str(), nullptr);
 			if (seekRatio < 0 || seekRatio > 1) {
 				fputws(L"Error: -s specified value is out of range.\n", stderr);
 				return 1;
 			}
 		} else if (limitReadBytes == 0) {
-			limitReadBytes = (int)wcstol(s.c_str(), NULL, 10);
+			limitReadBytes = (int)wcstol(s.c_str(), nullptr, 10);
 			if (limitReadBytes < 48128) {
 				fputws(L"Error: -l specified value is out of range.\n", stderr);
 				return 1;
 			}
 		} else if (progNumOrIndex == 0) {
-			progNumOrIndex = (int)wcstol(s.c_str(), NULL, 10);
+			progNumOrIndex = (int)wcstol(s.c_str(), nullptr, 10);
 			if (progNumOrIndex == 0 || progNumOrIndex > 65535) {
 				fputws(L"Error: -n specified value is out of range.\n", stderr);
 				return 1;
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 
 	WORD nitPid = 0;
 	BYTE nitCounter = 0;
-	SERVICE_INFO *service = NULL;
+	SERVICE_INFO *service = nullptr;
 	CPacketInit packetInit;
 	CPATUtil patUtil;
 	BYTE inData[48128];
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
 					return onid == service->original_network_id &&
 					       tsid == service->transport_stream_id &&
 					       sid == service->service_id &&
-					       service->extInfo ? service->extInfo->service_name : NULL;
+					       service->extInfo ? service->extInfo->service_name : nullptr;
 				});
 			if (UTIL_NEWLINE[0] != L'\r') {
 				Replace(outTextW, L"\r\n", L"\n");

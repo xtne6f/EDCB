@@ -4,6 +4,7 @@
 #ifndef _WIN32
 #include "ThreadUtil.h"
 #include <queue>
+#include <unordered_set>
 #endif
 
 class CMessageManager
@@ -58,6 +59,7 @@ private:
 #else
 	struct POST {
 		int id;
+		bool byTimer;
 		INT_PTR param1;
 		INT_PTR param2;
 	};
@@ -76,6 +78,7 @@ private:
 	recursive_mutex_ m_sendLock;
 	recursive_mutex_ m_queueLock;
 	std::queue<POST> m_postQueue;
+	std::unordered_set<int> m_postByTimerSet;
 	vector<TIMER> m_timerList;
 	CAutoResetEvent m_pushEvent;
 	CAutoResetEvent m_sentEvent;

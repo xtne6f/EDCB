@@ -3,7 +3,7 @@
 #include "PathUtil.h"
 
 CReNamePlugInUtil::CReNamePlugInUtil()
-	: m_moduleHolder(NULL, UtilFreeLibrary)
+	: m_moduleHolder(nullptr, UtilFreeLibrary)
 {
 }
 
@@ -34,7 +34,7 @@ BOOL CReNamePlugInUtil::Convert(
 	wstring pattern = dllPattern;
 	wstring dllPath = dllFolder + pattern.substr(0, pattern.find('?'));
 	void* hModule = UtilLoadLibrary(dllPath);
-	if( hModule == NULL ){
+	if( hModule == nullptr ){
 		AddDebugLogFormat(L"%lsのロードに失敗しました", dllPath.c_str());
 		return FALSE;
 	}
@@ -44,7 +44,7 @@ BOOL CReNamePlugInUtil::Convert(
 	ConvertRecName3RNP pfnConvertRecName3;
 	BOOL ret;
 	if( UtilGetProcAddress(hModule, "ConvertRecName3", pfnConvertRecName3) ){
-		ret = pfnConvertRecName3(info, pattern.empty() ? NULL : pattern.c_str(), recName, recNamesize);
+		ret = pfnConvertRecName3(info, pattern.empty() ? nullptr : pattern.c_str(), recName, recNamesize);
 	}else{
 		ConvertRecName2RNP pfnConvertRecName2;
 		if( UtilGetProcAddress(hModule, "ConvertRecName2", pfnConvertRecName2) ){

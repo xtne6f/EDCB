@@ -51,14 +51,14 @@ psisiarc.tar.gz:
 	curl -Lo $@ https://github.com/xtne6f/psisiarc/archive/refs/tags/master-230324.tar.gz
 	sha256sum $@ | grep -q 54d1ab482dc0d1caed80db7858e5c4616f74986f527aabb69d443ec045ad2a02 || $(RM) $@; [ -f $@ ]
 psisimux.tar.gz:
-	curl -Lo $@ https://github.com/xtne6f/psisimux/archive/refs/tags/master-250405.tar.gz
-	sha256sum $@ | grep -q 3b729dc74d52e9b8cc49521ecfa5f4b877198a03859d736c654b121645d4e975 || $(RM) $@; [ -f $@ ]
+	curl -Lo $@ https://github.com/xtne6f/psisimux/archive/refs/tags/master-260422.tar.gz
+	sha256sum $@ | grep -q cc6996370123042ba6a1757d912a52de0cd97b3645fa32b5799f112365fa7b25 || $(RM) $@; [ -f $@ ]
 tsmemseg.tar.gz:
-	curl -Lo $@ https://github.com/xtne6f/tsmemseg/archive/refs/tags/master-with-d-250918.tar.gz
-	sha256sum $@ | grep -q 20f0cbdeb326725f529f3577efebb952856d14dd1ebce4850c5547d5b96e4c1e || $(RM) $@; [ -f $@ ]
+	curl -Lo $@ https://github.com/xtne6f/tsmemseg/archive/refs/tags/master-with-d-260611.tar.gz
+	sha256sum $@ | grep -q b0fff07fc7858aafdeac249ef628769feaffd73c3d8f4ba1d2a1996d52bf2dd2 || $(RM) $@; [ -f $@ ]
 tsreadex.tar.gz:
-	curl -Lo $@ https://github.com/xtne6f/tsreadex/archive/refs/tags/master-240517.tar.gz
-	sha256sum $@ | grep -q 1ec21917aa9c1f363d50469d54cef2c121c5086f1bb4eb27efa5297fe1139c44 || $(RM) $@; [ -f $@ ]
+	curl -Lo $@ https://github.com/xtne6f/tsreadex/archive/refs/tags/master-260428.tar.gz
+	sha256sum $@ | grep -q a60fb7aa220b4dff15b384ca28e76181de59148e8be487a728a39165dee50520 || $(RM) $@; [ -f $@ ]
 b24tovtt psisiarc psisimux tsmemseg tsreadex: b24tovtt.tar.gz psisiarc.tar.gz psisimux.tar.gz tsmemseg.tar.gz tsreadex.tar.gz
 	$(RM) -r $@-*
 	tar xf $@.tar.gz

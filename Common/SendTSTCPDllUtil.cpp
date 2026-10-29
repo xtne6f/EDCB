@@ -3,7 +3,7 @@
 #include "PathUtil.h"
 
 CSendTSTCPDllUtil::CSendTSTCPDllUtil()
-	: m_module(NULL, UtilFreeLibrary)
+	: m_module(nullptr, UtilFreeLibrary)
 {
 }
 

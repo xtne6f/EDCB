@@ -48,8 +48,8 @@ BOOL CChSetUtil::SaveChSet(
 
 	//接続待ち
 #ifdef _WIN32
-	HANDLE waitEvent = CreateEvent(NULL, FALSE, TRUE, L"Global\\" CHSET_SAVE_EVENT_WAIT);
-	if( waitEvent == NULL ){
+	HANDLE waitEvent = CreateEvent(nullptr, FALSE, TRUE, L"Global\\" CHSET_SAVE_EVENT_WAIT);
+	if( waitEvent == nullptr ){
 		return FALSE;
 	}
 	if(WaitForSingleObject(waitEvent, 10000) == WAIT_TIMEOUT){
@@ -126,7 +126,7 @@ BOOL CChSetUtil::AddServiceInfo(
 	item4.partialFlag = FALSE;
 	item4.useViewFlag = TRUE;
 	item4.remoconID = 0;
-	if( serviceInfo->extInfo != NULL ){
+	if( serviceInfo->extInfo != nullptr ){
 		item4.serviceType = serviceInfo->extInfo->service_type;
 		item4.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
 		if( IsVideoServiceType(item4.serviceType) == FALSE ){
@@ -134,9 +134,9 @@ BOOL CChSetUtil::AddServiceInfo(
 		}
 		item4.serviceName = serviceInfo->extInfo->service_name;
 		item4.chName = chName;
-		if( serviceInfo->extInfo->ts_name != NULL ){
+		if( serviceInfo->extInfo->ts_name != nullptr ){
 			item4.networkName = serviceInfo->extInfo->ts_name;
-		}else if( serviceInfo->extInfo->network_name != NULL){
+		}else if( serviceInfo->extInfo->network_name != nullptr ){
 			item4.networkName = serviceInfo->extInfo->network_name;
 		}
 		item4.remoconID = serviceInfo->extInfo->remote_control_key_id;
@@ -166,13 +166,13 @@ BOOL CChSetUtil::AddServiceInfo(
 	item5.epgCapFlag = TRUE;
 	item5.searchFlag = TRUE;
 	item5.remoconID = 0;
-	if( serviceInfo->extInfo != NULL ){
+	if( serviceInfo->extInfo != nullptr ){
 		item5.serviceType = serviceInfo->extInfo->service_type;
 		item5.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
 		item5.serviceName = serviceInfo->extInfo->service_name;
-		if( serviceInfo->extInfo->ts_name != NULL ){
+		if( serviceInfo->extInfo->ts_name != nullptr ){
 			item5.networkName = serviceInfo->extInfo->ts_name;
-		}else if( serviceInfo->extInfo->network_name != NULL){
+		}else if( serviceInfo->extInfo->network_name != nullptr ){
 			item5.networkName = serviceInfo->extInfo->network_name;
 		}
 		if( IsVideoServiceType(item4.serviceType) == FALSE ){

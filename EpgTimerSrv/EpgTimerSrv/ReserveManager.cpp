@@ -84,7 +84,7 @@ void CReserveManager::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 	//チューナがあるものだけ残す
 	for( map<LONGLONG, CH_DATA5>::const_iterator itrCh = this->chUtil.GetMap().begin(); itrCh != this->chUtil.GetMap().end(); ){
 		auto itr = this->tunerBankMap.cbegin();
-		const CH_DATA4* chData = NULL;
+		const CH_DATA4* chData = nullptr;
 		for( ; itr != this->tunerBankMap.end(); itr++ ){
 			chData = itr->second->GetCh(itrCh->second.originalNetworkID, itrCh->second.transportStreamID, itrCh->second.serviceID);
 			if( chData ){
@@ -210,7 +210,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 		reserveData->recFileNameList.clear();
 		if( getRecFileName && reserveData->recSetting.GetRecMode() != RECMODE_VIEW ){
 			CReNamePlugInUtil utilCache;
-			if( util == NULL ){
+			if( util == nullptr ){
 				util = &utilCache;
 			}
 			RESERVE_DATA& r = *reserveData;
@@ -260,7 +260,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			modified = true;
 			if( r.recSetting.IsNoRec() == false ){
 				LONGLONG startTime;
-				CalcEntireReserveTime(&startTime, NULL, r);
+				CalcEntireReserveTime(&startTime, nullptr, r);
 				minStartTime = min(startTime, minStartTime);
 				batWorkList.emplace_back();
 				AddReserveDataMacro(batWorkList.back().macroList, r, "");
@@ -311,7 +311,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 					}
 					r.overlapMode = RESERVE_EXECUTE;
 					LONGLONG startTime;
-					CalcEntireReserveTime(&startTime, NULL, itr->second);
+					CalcEntireReserveTime(&startTime, nullptr, itr->second);
 					minStartTime = min(startTime, minStartTime);
 				}
 			}else{
@@ -404,8 +404,8 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				        r.recSetting.endMargine != itr->second.recSetting.endMargine) ||
 				    r.recSetting.tunerID != itr->second.recSetting.tunerID ){
 					LONGLONG startTimeNext;
-					CalcEntireReserveTime(&startTime, NULL, itr->second);
-					CalcEntireReserveTime(&startTimeNext, NULL, r);
+					CalcEntireReserveTime(&startTime, nullptr, itr->second);
+					CalcEntireReserveTime(&startTimeNext, nullptr, r);
 					minStartTime = min(min(startTime, startTimeNext), minStartTime);
 				}
 				batWorkList.emplace_back();
@@ -440,12 +440,12 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 			if( itr->second.recSetting.IsNoRec() == false ){
 				//バンクから削除
 				for( const auto& tunerBank : this->tunerBankMap ){
-					if( tunerBank.second->DelReserve(id, this->setting.delReserveMode == 0 ? NULL : &retList) ){
+					if( tunerBank.second->DelReserve(id, this->setting.delReserveMode == 0 ? nullptr : &retList) ){
 						break;
 					}
 				}
 				LONGLONG startTime;
-				CalcEntireReserveTime(&startTime, NULL, itr->second);
+				CalcEntireReserveTime(&startTime, nullptr, itr->second);
 				minStartTime = min(startTime, minStartTime);
 			}
 		}
@@ -579,11 +579,11 @@ void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 
 	//reloadTimeより前の予約を開始時間順にソート
 	vector<pair<LONGLONG, const RESERVE_DATA*>> sortTimeMap;
-	sortTimeMap.emplace_back(reloadTime, (RESERVE_DATA*)NULL);
+	sortTimeMap.emplace_back(reloadTime, (RESERVE_DATA*)nullptr);
 	for( const auto& item : this->reserveText.GetMap() ){
 		if( item.second.recSetting.IsNoRec() == false ){
 			LONGLONG startTime;
-			CalcEntireReserveTime(&startTime, NULL, item.second);
+			CalcEntireReserveTime(&startTime, nullptr, item.second);
 			if( startTime < reloadTime ){
 				sortTimeMap.emplace_back(startTime, &item.second);
 			}
@@ -596,7 +596,7 @@ void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 		auto itrRes = itrTime;
 		for( itrRes++; itrRes != sortTimeMap.rend(); itrRes++ ){
 			LONGLONG endTime;
-			CalcEntireReserveTime(NULL, &endTime, *itrRes->second);
+			CalcEntireReserveTime(nullptr, &endTime, *itrRes->second);
 			if( endTime + CTunerBankCtrl::READY_MARGIN * I64_1SEC > itrTime->first ){
 				break;
 			}
@@ -621,7 +621,7 @@ void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 	for( const auto& item : this->reserveText.GetMap() ){
 		if( item.second.recSetting.IsNoRec() == false ){
 			LONGLONG startTime;
-			CalcEntireReserveTime(&startTime, NULL, item.second);
+			CalcEntireReserveTime(&startTime, nullptr, item.second);
 			if( startTime >= boundaryReloadTime ){
 				this->reserveText.SetOverlapMode(item.first, RESERVE_NO_EXECUTE);
 				sortTimeMap.emplace_back(startTime, &item.second);
@@ -638,7 +638,7 @@ void CReserveManager::ReloadBankMap(LONGLONG reloadTime)
 		auto itrRes = itrTime;
 		for( itrRes++; itrRes != sortTimeMap.rend(); itrRes++ ){
 			LONGLONG endTime;
-			CalcEntireReserveTime(NULL, &endTime, *itrRes->second);
+			CalcEntireReserveTime(nullptr, &endTime, *itrRes->second);
 			if( endTime + CTunerBankCtrl::READY_MARGIN * I64_1SEC > itrTime->first ){
 				break;
 			}
@@ -870,10 +870,10 @@ void CReserveManager::CalcEntireReserveTime(LONGLONG* startTime, LONGLONG* endTi
 	startMargin = max(startMargin, startTime_ - endTime_);
 	//終了マージンは元の予約開始時刻を超えて負であってはならない
 	endMargin = max(endMargin, startTime_ - min(startMargin, 0LL) - endTime_);
-	if( startTime != NULL ){
+	if( startTime != nullptr ){
 		*startTime = startTime_ - startMargin;
 	}
-	if( endTime != NULL ){
+	if( endTime != nullptr ){
 		*endTime = endTime_ + endMargin;
 	}
 }
@@ -1019,7 +1019,7 @@ void CReserveManager::CheckTuijyuTuner()
 							if( info.DurationFlag == 0 ){
 								//継続時間未定。終了まで5分を切る予約は5分伸ばす
 								LONGLONG endTime;
-								CalcEntireReserveTime(NULL, &endTime, r);
+								CalcEntireReserveTime(nullptr, &endTime, r);
 								if( endTime < GetNowI64Time() + 300 * I64_1SEC ){
 									r.durationSecond += 300;
 									r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
@@ -1034,7 +1034,7 @@ void CReserveManager::CheckTuijyuTuner()
 						}else{
 							//開始時刻未定。次(following)かつ終了まで5分を切る予約は5分伸ばす
 							LONGLONG endTime;
-							CalcEntireReserveTime(NULL, &endTime, r);
+							CalcEntireReserveTime(nullptr, &endTime, r);
 							if( i == 1 && endTime < GetNowI64Time() + 300 * I64_1SEC ){
 								r.durationSecond += 300;
 								r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
@@ -1293,7 +1293,7 @@ void CReserveManager::CheckOverTimeReserve()
 	for( size_t i = 0; i < noList.size(); i++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(noList[i]);
 		LONGLONG endTime;
-		CalcEntireReserveTime(NULL, &endTime, itr->second);
+		CalcEntireReserveTime(nullptr, &endTime, itr->second);
 		if( endTime < now ){
 			//終了時間過ぎてしまっている
 			if( itr->second.recSetting.IsNoRec() == false ){
@@ -1672,7 +1672,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 						debug = L" ";
 					}else{
 						//代理プロセス経由で時計合わせを試みる
-						HWND hwnd = FindWindowEx(HWND_MESSAGE, NULL, L"EpgTimerAdminProxy", NULL);
+						HWND hwnd = FindWindowEx(HWND_MESSAGE, nullptr, L"EpgTimerAdminProxy", nullptr);
 						FILETIME ft;
 						if( hwnd && SystemTimeToFileTime(&setTime, &ft) ){
 							DWORD_PTR result;
@@ -1736,11 +1736,11 @@ LONGLONG CReserveManager::GetSleepReturnTime(LONGLONG baseTime, RESERVE_DATA* re
 
 	//最も近い予約開始時刻を得る
 	LONGLONG nextRec = LLONG_MAX;
-	const RESERVE_DATA* nextReserveData = NULL;
+	const RESERVE_DATA* nextReserveData = nullptr;
 	for( const auto& item : this->reserveText.GetMap() ){
 		if( item.second.recSetting.IsNoRec() == false ){
 			LONGLONG startTime;
-			CalcEntireReserveTime(&startTime, NULL, item.second);
+			CalcEntireReserveTime(&startTime, nullptr, item.second);
 			if( startTime >= baseTime && startTime < nextRec ){
 				nextRec = startTime;
 				nextReserveData = &item.second;
@@ -1766,7 +1766,7 @@ LONGLONG CReserveManager::GetNearestRecReserveTime() const
 		if( item.second.recSetting.GetRecMode() != RECMODE_VIEW &&
 		    item.second.recSetting.IsNoRec() == false ){
 			LONGLONG startTime;
-			CalcEntireReserveTime(&startTime, NULL, item.second);
+			CalcEntireReserveTime(&startTime, nullptr, item.second);
 			minTime = min(startTime, minTime);
 		}
 	}
@@ -1962,9 +1962,9 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 	bool ret = false;
 
 #if !defined(EPGDB_STD_WREGEX) && defined(_WIN32)
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	void* pv;
-	if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, NULL, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
+	if( SUCCEEDED(CoCreateInstance(CLSID_RegExp, nullptr, CLSCTX_INPROC_SERVER, IID_IRegExp, &pv)) ){
 		CEpgDBManager::RegExpPtr regExp((IRegExp*)pv, CEpgDBManager::ComRelease);
 #else
 	{

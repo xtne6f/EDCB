@@ -18,8 +18,8 @@ COneServiceUtil::~COneServiceUtil(void)
 	if( IsRec() ){
 		EndSave();
 	}
-	SendUdp(NULL);
-	SendTcp(NULL);
+	SendUdp(nullptr);
+	SendTcp(nullptr);
 }
 
 //処理対象ServiceIDを設定
@@ -62,7 +62,7 @@ void COneServiceUtil::SendUdpTcp(
 	sendNW.UnInitialize();
 	portMutexList.clear();
 
-	if( sendList != NULL ){
+	if( sendList != nullptr ){
 		sendNW.Initialize();
 		for( vector<NW_SEND_INFO>::iterator itr = sendList->begin(); itr != sendList->end(); itr++ ){
 			//IPアドレスであること
@@ -138,6 +138,7 @@ void COneServiceUtil::AddTSBuff(
 							       pidType.second == 0x1B ? L"MPEG4 VIDEO" :
 							       pidType.second == 0x04 ? L"MPEG2 AUDIO" :
 							       pidType.second == 0x24 ? L"HEVC VIDEO" :
+							       pidType.second == 0x11 ? L"LATM AUDIO" :
 							       pidType.second == 0x06 ? L"字幕" :
 							       pidType.second == 0x0D ? L"データカルーセル" : L"";
 							if( name.empty() ){

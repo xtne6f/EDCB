@@ -1,14 +1,14 @@
 -- vim:set ft=lua:
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
-function AddOrChange(dataID,post)
+function AddOrChange(dataID,presetDataID,post)
   local aa={dataID=dataID}
   local found=nil
   local presetID=GetVarInt(post,'presetID',0,65534)
   if presetID then
     found=BinarySearch(edcb.EnumRecPresetInfo(),{id=presetID},CompareFields('id'))
-  elseif dataID~=0 then
-    found=BinarySearch(edcb.EnumAutoAdd(),aa,CompareFields('dataID'))
+  elseif presetDataID~=0 then
+    found=BinarySearch(edcb.EnumAutoAdd(),{dataID=presetDataID},CompareFields('dataID'))
   end
   if found then
     local useMargin=GetVarInt(post,'useDefMarginFlag')~=1 or nil
@@ -110,12 +110,12 @@ ct:Append(DOCTYPE_HTML4_STRICT..[=[
 ]=])
 
 aa={dataID=GetVarInt(mg.request_info.query_string,'id') or 0}
-if aa.dataID==0 then
+post=AssertPost()
+if aa.dataID==0 or (post and mg.get_var(post,'add')) then
   ct:Append('<h1>EPG予約 新規条件追加</h1>\n<div id="main">\n')
-  post=AssertPost()
   if post then
-    if mg.get_var(post,'addchg') then
-      ct:Append('  <div id="result">'..(AddOrChange(0,post) and '追加しました' or '入力値不正')..'</div>\n')
+    if mg.get_var(post,'add') then
+      ct:Append('  <div id="result">'..(AddOrChange(0,aa.dataID,post) and '追加しました' or '入力値不正')..'</div>\n')
     end
   else
     aa.searchInfo={
@@ -140,10 +140,9 @@ if aa.dataID==0 then
   edcb.htmlEscape=15
 else
   ct:Append('<h1>EPG予約 条件変更</h1>\n<div id="main">\n')
-  post=AssertPost()
   if post then
-    if mg.get_var(post,'addchg') then
-      ct:Append('  <div id="result">'..(AddOrChange(aa.dataID,post) and '変更しました' or '入力値不正')..'</div>\n')
+    if mg.get_var(post,'chg') then
+      ct:Append('  <div id="result">'..(AddOrChange(aa.dataID,aa.dataID,post) and '変更しました' or '入力値不正')..'</div>\n')
     end
   end
   edcb.htmlEscape=15
@@ -187,8 +186,7 @@ if aa.searchInfo then
     ..'    <dt>条件</dt><dd>\n'
     ..'<form method="POST" action="autoaddepginfo.html?id='..aa.dataID..'">\n'
     ..'<div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
-    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
-    ..'<input type="hidden" name="addchg" value="y"></div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'"></div>\n'
     ..'<div class="section"><h2>検索条件</h2>\n'
     ..'検索キーワード<br><input type="text" name="andKey" value="'..(caseAndKey or disAndKey or si.andKey)..'" style="width:95%"><br>\n'
     ..'NOTキーワード<br><input type="text" name="notKey" value="'..notKey..'" style="width:95%"><br>\n'
@@ -274,13 +272,14 @@ if aa.searchInfo then
     ..'</select><br>\n'
     ..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
     ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下（0で無制限）<br><br>\n'
-    ..'<label><input name="chkRecEnd"'..Checkbox(si.chkRecEnd)..'>同一番組名の録画結果があれば無効で登録する</label>\n'
+    ..'<label><input name="chkRecEnd"'..Checkbox(si.chkRecEnd)..'>同一番組名の録画結果があれば無効予約で登録する</label>\n'
     ..'<div class="enabled-on-checked">\n'
     ..'<label><input name="chkRecNoService"'..Checkbox(si.chkRecNoService)..'>全てのサービスで無効にする</label><br>\n'
     ..'確認対象期間 <input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
     ..'</div>\n'
     ..'</div><div class="section"><h2>録画設定</h2>\n'..RecSettingTemplate(rs)..'</div>\n'
-    ..'<div><button type="submit">'..(aa.dataID==0 and '追加' or '変更')..'</button></div></form></dd>\n')
+    ..'<div><button type="submit" name="add" value="y">追加</button>'
+    ..(aa.dataID~=0 and '\n<button type="submit" name="chg" value="y">&ensp;変更&ensp;</button>' or '')..'</div></form></dd>\n')
 
   if aa.dataID~=0 then
     ct:Append('    <dt>-</dt><dd>\n'
@@ -288,6 +287,58 @@ if aa.searchInfo then
       ..'<input type="hidden" name="ctok" value="'..CsrfToken('autoaddepg.html')..'">\n'
       ..'<input type="hidden" name="del" value="'..aa.dataID..'">\n'
       ..'<button type="submit">削除</button></div></form></dd>\n')
+    edcb.htmlEscape=0
+    aaForSearch=BinarySearch(edcb.EnumAutoAdd(),aa,CompareFields('dataID'))
+    edcb.htmlEscape=15
+    if aaForSearch then
+      now=os.time()
+      rt=edcb.GetReserveData()
+      --安定ソートのためreserveIDをつける
+      table.sort(rt,CompareFields('onid',false,'tsid',false,'sid',false,'eid',false,'reserveID'))
+      rtComp=CompareFields('onid',false,'tsid',false,'sid',false,'eid')
+      st=edcb.GetServiceList() or {}
+      stComp=CompareFields('onid',false,'tsid',false,'sid')
+      et={}
+      aaForSearch.searchInfo.andKey=aaForSearch.searchInfo.andKey:gsub('^^!{999}','')
+      for i,v in ipairs(edcb.SearchEpg(aaForSearch.searchInfo)) do
+        if v.startTime and TimeWithZone(v.startTime,9*3600)+(v.durationSecond or 0)>now then
+          et[#et+1]=v
+        end
+      end
+      table.sort(et,function(a,b) return CompareTime(a.startTime,b.startTime) end)
+      pageCount=AUTOADDEPGINFO_PAGE_COUNT
+      page=GetVarInt(mg.request_info.query_string,'page',0,(#et-1)/pageCount) or 0
+      pageNav=''
+      if #et>pageCount then
+        for i=math.max(page-1,1),math.min(math.max(page-1,1)+6,(#et+pageCount-1)/pageCount) do
+          pageNav=pageNav..(i-1==page and ((i-1)*pageCount+1)..'～ ' or '<a href="autoaddepginfo.html?id='..aa.dataID..'&amp;page='..(i-1)..'#search">'..((i-1)*pageCount+1)..'～</a> ')
+        end
+        pageNav='\n<div class="page-nav">'..(page==0 and '|&lt;&lt; ' or '<a href="autoaddepginfo.html?id='..aa.dataID..'#search">|&lt;&lt;</a> ')..pageNav
+          ..(page==math.floor((#et-1)/pageCount) and '&gt;&gt;|' or '<a href="autoaddepginfo.html?id='..aa.dataID..'&amp;page='..math.floor((#et-1)/pageCount)..'#search">&gt;&gt;|</a></div>')
+      end
+      ct:Append('    <br>\n    <dt id="search">検索結果</dt><dd>'..pageNav..'\n<table>\n')
+      for i=page*pageCount+1,math.min(#et,(page+1)*pageCount) do
+        v=et[i]
+        cont=v.contentInfoList and #v.contentInfoList>0 and math.floor(v.contentInfoList[1].content_nibble/256)%16 or 16
+        reservedIndex=BinarySearchBound(rt,v,rtComp)
+        reservedEndIndex=BinarySearchBound(rt,v,rtComp,true)
+        r=reservedIndex<reservedEndIndex and rt[reservedEndIndex-1]
+        cl=r and (r.recSetting.recMode==5 and ' class="disabled"' or r.overlapMode==1 and ' class="partially"' or r.overlapMode==2 and ' class="shortage"') or ''
+        ct:Append('<tr><td><a href="'..(r and 'reserveinfo.html?id='..r.reserveID or 'epginfo.html?id='..v.onid..'-'..v.tsid..'-'..v.sid..'-'..v.eid)..'&amp;fromepg='..(aa.dataID+1)..'">'
+          ..FormatTimeAndDuration(v.startTime,v.durationSecond)..'</a>'
+          ..'<td'..cl..'>'..(BinarySearch(st,v,stComp) or {service_name='不明'}).service_name
+          ..'<td class="cont-'..cont..'">')
+        --最後以外は「重予」(重複予約)
+        while reservedIndex+1<reservedEndIndex do
+          ct:Append('<span class="lavel-'..(rt[reservedIndex].recSetting.recMode==5 and 'disabled' or rt[reservedIndex].recSetting.recMode==4 and 'view' or 'reserved')
+            ..'"><a href="reserveinfo.html?id='..rt[reservedIndex].reserveID..'&amp;fromepg='..(aa.dataID+1)..'">重予</a></span> ')
+          reservedIndex=reservedIndex+1
+        end
+        ct:Append((r and '<span class="lavel-'..(r.recSetting.recMode==5 and 'disabled' or r.recSetting.recMode==4 and 'view' or 'reserved')..'">予</span> ' or '')
+          ..(v.shortInfo and v.shortInfo.event_name or '')..'</tr>\n')
+      end
+      ct:Append('</table>'..pageNav..'</dd>\n')
+    end
   end
   ct:Append('  </dl>\n')
 end

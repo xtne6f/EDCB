@@ -17,12 +17,12 @@ struct {
 
 void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 {
-	HANDLE hFile = CreateFile(g_path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile = CreateFile(g_path, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if( hFile != INVALID_HANDLE_VALUE ){
 		char buff[384];
 		DWORD written;
 		int len = sprintf_s(buff, "ExceptionCode = 0x%08X\r\n", exceptionCode);
-		WriteFile(hFile, buff, len, &written, NULL);
+		WriteFile(hFile, buff, len, &written, nullptr);
 		for( int i = 0; addrOffsets[i]; i++ ){
 			SYMBOL_INFO symbol[1 + (256 + sizeof(SYMBOL_INFO)) / sizeof(SYMBOL_INFO)];
 			symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
@@ -33,7 +33,7 @@ void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 			}else{
 				len = sprintf_s(buff, "Trace%02d 0x%p = ?\r\n", i, addrOffsets[i]);
 			}
-			WriteFile(hFile, buff, len, &written, NULL);
+			WriteFile(hFile, buff, len, &written, nullptr);
 		}
 		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
 		if( hSnapshot != INVALID_HANDLE_VALUE ){
@@ -47,7 +47,7 @@ void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
 						moduleA[i] = (char)modent.szModule[i];
 					}
 					len = sprintf_s(buff, "0x%p - 0x%p = %s\r\n", modent.modBaseAddr, modent.modBaseAddr + modent.modBaseSize - 1, moduleA);
-					WriteFile(hFile, buff, len, &written, NULL);
+					WriteFile(hFile, buff, len, &written, nullptr);
 				}while( Module32NextW(hSnapshot, &modent) );
 			}
 			CloseHandle(hSnapshot);
@@ -60,7 +60,7 @@ LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
 {
 	if( InterlockedExchange(&g_work.used, 1) == 0 ){
 		SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
-		if( SymInitialize(GetCurrentProcess(), NULL, TRUE) ){
+		if( SymInitialize(GetCurrentProcess(), nullptr, TRUE) ){
 			g_work.addrOffsets[0] = exceptionInfo->ExceptionRecord->ExceptionAddress;
 			g_work.contextRecord = *exceptionInfo->ContextRecord;
 			g_work.stackFrame.AddrPC.Mode = AddrModeFlat;
@@ -83,7 +83,7 @@ LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
 				IMAGE_FILE_MACHINE_I386,
 #endif
 				GetCurrentProcess(), GetCurrentThread(), &g_work.stackFrame, &g_work.contextRecord,
-				NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL); i++ ){
+				nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr); i++ ){
 				g_work.addrOffsets[i] = (PVOID)g_work.stackFrame.AddrPC.Offset;
 			}
 #endif
@@ -97,8 +97,8 @@ LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
 
 void SetOutputStackTraceOnUnhandledException(LPCWSTR pathOrNull)
 {
-	if( pathOrNull == NULL ){
-		SetUnhandledExceptionFilter(NULL);
+	if( pathOrNull == nullptr ){
+		SetUnhandledExceptionFilter(nullptr);
 	}else if( wcslen(pathOrNull) < MAX_PATH ){
 		wcscpy_s(g_path, pathOrNull);
 		SetUnhandledExceptionFilter(TopLevelExceptionFilter);

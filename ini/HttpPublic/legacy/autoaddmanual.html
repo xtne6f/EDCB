@@ -51,7 +51,7 @@ ct:Append([=[
 ]=])
 
 for i=page*pageCount+1,math.min(#a,(page+1)*pageCount) do
-  ct:Append('    <tr><td><a href="autoaddmanualinfo.html?id='..a[i].dataID..'">'..a[i].title..'&ensp;</a><td>')
+  ct:Append('    <tr><td><a href="autoaddmanualinfo.html?id='..a[i].dataID..'">'..a[i].title:gsub('^$','&emsp;')..'</a><td>')
   for j=1,7 do
     if a[i].dayOfWeekFlag%2==1 then
       ct:Append(({'日','月','火','水','木','金','土'})[j])

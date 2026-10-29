@@ -38,7 +38,7 @@ static bool SDDecodeNIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 			parserList[j++].parser = i == 0x82 ? parser0x82 : parserUnknown;
 		}
 	}
-	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_NIT, parserList) == false ||
+	if( table.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_NIT, parserList) == false ||
 	    table.GetNumber(Desc::network_id) != 1 ){
 		return false;
 	}
@@ -87,8 +87,8 @@ static bool SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		parserList[i].parser = i == 0x82 ? parser0x82 : i == 0x8A ? parser0x8A : parserUnknown;
 	}
 	parserList[255].tag = 0;
-	parserList[255].parser = NULL;
-	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_SDT, parserList) == false ||
+	parserList[255].parser = nullptr;
+	if( table.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_SDT, parserList) == false ||
 	    table.GetNumber(Desc::original_network_id) != 1 ){
 		return false;
 	}
@@ -160,8 +160,8 @@ static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		parserList[i].parser = i == 0x82 ? parser0x82 : i == 0x85 ? parser0x85 : parserUnknown;
 	}
 	parserList[255].tag = 0;
-	parserList[255].parser = NULL;
-	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_EIT, parserList) == false ||
+	parserList[255].parser = nullptr;
+	if( table.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_EIT, parserList) == false ||
 	    table.GetNumber(Desc::original_network_id) != 1 ){
 		return false;
 	}
@@ -226,7 +226,7 @@ static const struct {
 
 CDecodeUtil::CDecodeUtil(void)
 {
-	this->epgDBUtil = NULL;
+	this->epgDBUtil = nullptr;
 
 	this->totTime = 0;
 	this->tdtTime = 0;
@@ -266,7 +266,7 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	this->logoMap.clear();
 	this->downloadModuleList.clear();
 
-	if( this->epgDBUtil != NULL ){
+	if( this->epgDBUtil != nullptr ){
 		this->epgDBUtil->SetStreamChangeEvent();
 		this->epgDBUtil->ClearSectionStatus();
 	}
@@ -284,19 +284,19 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 				itr = this->buffUtilMap.emplace(itr, tsPacket.PID, CTSBuffUtil());
 			}
 			if( itr->second.Add188TS(tsPacket) == TRUE ){
-				BYTE* section = NULL;
+				BYTE* section = nullptr;
 				DWORD sectionSize = 0;
 				while( itr->second.GetSectionBuff(&section, &sectionSize) == TRUE ){
 					switch( section[0] ){
 					case 0x00:
-						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_PAT) ){
+						if( this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_PAT) ){
 							CheckPAT(tsPacket.PID, this->tableBuff);
 						}
 						break;
 					case 0x02:
 						//ロゴを取得するときだけ
 						if( this->logoTypeFlags &&
-						    this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_PMT) ){
+						    this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_PMT) ){
 							CheckPMT(this->tableBuff);
 						}
 						break;
@@ -304,7 +304,7 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 					case 0x3C:
 						//ロゴを取得するときだけ
 						if( this->logoTypeFlags &&
-						    this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_DSMCC_HEAD) &&
+						    this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_DSMCC_HEAD) &&
 						    sectionSize >= 12 ){
 							CheckDsmcc(tsPacket.PID, this->tableBuff, section + 8, sectionSize - 12);
 						}
@@ -312,7 +312,7 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 					case 0x40:
 					case 0x41:
 						{
-							bool ret = this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_NIT);
+							bool ret = this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_NIT);
 #ifdef SUPPORT_SKY_SD
 							if( ret == false || this->tableBuff.GetNumber(Desc::network_id) == 1 ){
 								ret = SDDecodeNIT(section, sectionSize, this->tableBuff);
@@ -326,7 +326,7 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 					case 0x42:
 					case 0x46:
 						{
-							bool ret = this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_SDT);
+							bool ret = this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_SDT);
 #ifdef SUPPORT_SKY_SD
 							if( ret == false || this->tableBuff.GetNumber(Desc::original_network_id) == 1 ){
 								ret = SDDecodeSDT(section, sectionSize, this->tableBuff);
@@ -338,35 +338,35 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 						}
 						break;
 					case 0x70:
-						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_TDT) ){
+						if( this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_TDT) ){
 							CheckTDT(this->tableBuff);
 						}
 						break;
 					case 0x73:
-						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_TOT) ){
+						if( this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_TOT) ){
 							CheckTDT(this->tableBuff);
 						}
 						break;
 					case 0xC4:
-						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_BIT) ){
+						if( this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_BIT) ){
 							CheckBIT(tsPacket.PID, this->tableBuff);
 						}
 						break;
 					case 0x7F:
-						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_SIT) ){
+						if( this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_SIT) ){
 							CheckSIT(this->tableBuff);
 						}
 						break;
 					case 0xC8:
 						//ロゴを取得するときだけ
 						if( this->logoTypeFlags &&
-						    this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_CDT) ){
+						    this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_CDT) ){
 							CheckCDT(this->tableBuff);
 						}
 						break;
 					default:
 						if( 0x4E <= section[0] && section[0] <= 0x6F ){
-							bool ret = this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_EIT);
+							bool ret = this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_EIT);
 #ifdef SUPPORT_SKY_SD
 							if( ret == false || this->tableBuff.GetNumber(Desc::original_network_id) == 1 ){
 								ret = SDDecodeEIT(section, sectionSize, this->tableBuff);
@@ -388,7 +388,7 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 
 void CDecodeUtil::CheckPAT(WORD PID, const Desc::CDescriptor& pat)
 {
-	if( this->patInfo == NULL ){
+	if( this->patInfo == nullptr ){
 		//初回
 		this->patInfo.reset(new Desc::CDescriptor(pat));
 	}else{
@@ -410,7 +410,7 @@ void CDecodeUtil::CheckPMT(const Desc::CDescriptor& pmt)
 	WORD pnum = (WORD)pmt.GetNumber(Desc::program_number);
 	auto itr = lower_bound_first(this->engineeringPmtMap.begin(), this->engineeringPmtMap.end(), pnum);
 	if( itr != this->engineeringPmtMap.end() && itr->first == pnum &&
-	    (itr->second == NULL ||
+	    (itr->second == nullptr ||
 	     itr->second->GetNumber(Desc::version_number) != pmt.GetNumber(Desc::version_number)) ){
 		//運用規則によりマルチセクションでない
 		itr->second.reset(new Desc::CDescriptor(pmt));
@@ -461,7 +461,7 @@ void CDecodeUtil::CheckDsmccDII(WORD PID, const BYTE* body, size_t bodySize)
 			BYTE moduleVersion = modules[i + 6];
 			size_t moduleInfoLength = modules[i + 7];
 			i += 8;
-			const char* moduleName = NULL;
+			const char* moduleName = nullptr;
 			if( i + moduleInfoLength <= modulesSize ){
 				for( size_t j = 0; j + 1 < moduleInfoLength; ){
 					size_t len = modules[i + j + 1];
@@ -590,7 +590,7 @@ void CDecodeUtil::CheckDownloadedModule(const DOWNLOAD_MODULE_DATA& dl)
 
 void CDecodeUtil::CheckNIT(WORD PID, const Desc::CDescriptor& nit)
 {
-	if( epgDBUtil != NULL ){
+	if( epgDBUtil != nullptr ){
 		epgDBUtil->AddServiceListNIT(nit);
 	}
 
@@ -690,7 +690,7 @@ void CDecodeUtil::UpdateEngineeringPmtMap()
 
 void CDecodeUtil::CheckSDT(WORD PID, const Desc::CDescriptor& sdt)
 {
-	if( epgDBUtil != NULL ){
+	if( epgDBUtil != nullptr ){
 		epgDBUtil->AddSDT(sdt);
 	}
 	//ロゴを取得するときだけ
@@ -745,7 +745,7 @@ void CDecodeUtil::CheckTDT(const Desc::CDescriptor& tdt)
 
 void CDecodeUtil::CheckEIT(WORD PID, const Desc::CDescriptor& eit)
 {
-	if( epgDBUtil != NULL ){
+	if( epgDBUtil != nullptr ){
 		LONGLONG time = 0;
 		GetNowTime(&time);
 		epgDBUtil->AddEIT(PID, eit, time);
@@ -754,7 +754,7 @@ void CDecodeUtil::CheckEIT(WORD PID, const Desc::CDescriptor& eit)
 
 void CDecodeUtil::CheckBIT(WORD PID, const Desc::CDescriptor& bit)
 {
-	if( this->bitInfo == NULL ){
+	if( this->bitInfo == nullptr ){
 		//初回
 		this->bitInfo.reset(new Desc::CDescriptor(bit));
 	}else{
@@ -786,13 +786,13 @@ void CDecodeUtil::CheckSIT(const Desc::CDescriptor& sit)
 		}while( sit.NextLoopIndex(lp) );
 	}
 
-	if( epgDBUtil != NULL ){
-		if( this->patInfo != NULL ){
+	if( epgDBUtil != nullptr ){
+		if( this->patInfo != nullptr ){
 			epgDBUtil->AddServiceListSIT((WORD)this->patInfo->GetNumber(Desc::transport_stream_id), sit);
 		}
 	}
 
-	if( this->sitInfo == NULL ){
+	if( this->sitInfo == nullptr ){
 		//初回
 		this->sitInfo.reset(new Desc::CDescriptor(sit));
 	}else{
@@ -990,7 +990,7 @@ BOOL CDecodeUtil::EnumLogoList(
 	if( this->logoMap.empty() ){
 		return FALSE;
 	}
-	if( enumLogoListProc((DWORD)this->logoMap.size(), NULL, param) ){
+	if( enumLogoListProc((DWORD)this->logoMap.size(), nullptr, param) ){
 		for( const LOGO_DATA& logo : this->logoMap ){
 			LOGO_INFO info;
 			info.onid = (WORD)(logo.first >> 32);
@@ -1011,7 +1011,7 @@ BOOL CDecodeUtil::EnumLogoList(
 }
 
 //解析データの現在のストリームＩＤを取得する
-// originalNetworkID		[OUT]現在のoriginalNetworkID。NULL可
+// originalNetworkID		[OUT]現在のoriginalNetworkID。nullptr可
 // transportStreamID		[OUT]現在のtransportStreamID
 BOOL CDecodeUtil::GetTSID(
 	WORD* originalNetworkID,
@@ -1028,7 +1028,7 @@ BOOL CDecodeUtil::GetTSID(
 		//TSID
 		*transportStreamID = (WORD)this->patInfo->GetNumber(Desc::transport_stream_id);
 		//ONID
-		if( originalNetworkID == NULL ){
+		if( originalNetworkID == nullptr ){
 			return TRUE;
 		}
 		Desc::CDescriptor::CLoopPointer lp;
@@ -1194,7 +1194,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	SERVICE_INFO** serviceList_
 	)
 {
-	if( this->sitInfo == NULL || this->patInfo == NULL ){
+	if( this->sitInfo == nullptr || this->patInfo == nullptr ){
 		return FALSE;
 	}
 
@@ -1275,7 +1275,7 @@ BOOL CDecodeUtil::GetNowTime(
 	)
 {
 	DWORD tick_;
-	if( tick == NULL ){
+	if( tick == nullptr ){
 		tick = &tick_;
 	}
 	if( this->totTime != 0 ){

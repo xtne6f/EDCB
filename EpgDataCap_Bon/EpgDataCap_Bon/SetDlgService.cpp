@@ -21,7 +21,7 @@ static LPARAM ListView_GetItemParam(HWND hItem, int iItem, int iSubItem)
 // CSetDlgService ダイアログ
 
 CSetDlgService::CSetDlgService()
-	: m_hWnd(NULL)
+	: m_hWnd(nullptr)
 {
 
 }
@@ -32,7 +32,7 @@ CSetDlgService::~CSetDlgService()
 
 BOOL CSetDlgService::Create(LPCWSTR lpszTemplateName, HWND hWndParent)
 {
-	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
+	return CreateDialogParam(GetModuleHandle(nullptr), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != nullptr;
 }
 
 
@@ -172,7 +172,7 @@ BOOL CSetDlgService::FindBonFileName(wstring src, wstring& dllName)
 
 void CSetDlgService::SaveIni()
 {
-	if( m_hWnd == NULL ){
+	if( m_hWnd == nullptr ){
 		return;
 	}
 
@@ -249,7 +249,7 @@ void CSetDlgService::OnLbnSelchangeListService()
 INT_PTR CALLBACK CSetDlgService::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CSetDlgService* pSys = (CSetDlgService*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+	if( pSys == nullptr && uMsg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch( uMsg ){
@@ -259,7 +259,7 @@ INT_PTR CALLBACK CSetDlgService::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 		pSys->m_hWnd = hDlg;
 		return pSys->OnInitDialog();
 	case WM_NCDESTROY:
-		pSys->m_hWnd = NULL;
+		pSys->m_hWnd = nullptr;
 		break;
 	case WM_NOTIFY:
 		{

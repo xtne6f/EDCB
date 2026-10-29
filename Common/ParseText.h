@@ -9,12 +9,12 @@ class CParseText
 {
 public:
 	CParseText() : isUtf8(true) {}
-	bool ParseText(LPCWSTR path = NULL);
+	bool ParseText(LPCWSTR path = nullptr);
 	const M& GetMap() const { return this->itemMap; }
 	const wstring& GetFilePath() const { return this->filePath; }
 protected:
 	typedef CParseText<M> Base;
-	bool SaveText(string* saveToStr = NULL) const;
+	bool SaveText(string* saveToStr = nullptr) const;
 	virtual void ParseLine(LPCWSTR parseLine) = 0;
 	virtual bool SaveLine(typename M::const_reference item, wstring& saveLine) const { (void)item; (void)saveLine; return false; }
 	virtual bool SaveFooterLine(wstring& saveLine) const { (void)saveLine; return false; }
@@ -29,7 +29,7 @@ bool CParseText<M>::ParseText(LPCWSTR path)
 {
 	this->itemMap.clear();
 	this->isUtf8 = true;
-	if( path != NULL ){
+	if( path != nullptr ){
 		this->filePath = path;
 	}
 	if( this->filePath.empty() ){

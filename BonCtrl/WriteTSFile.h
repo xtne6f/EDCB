@@ -39,7 +39,7 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// subRecFlag			[OUT]成功のとき、サブ録画が発生したかどうか
-	BOOL EndSave(BOOL* subRecFlag_ = NULL);
+	BOOL EndSave(BOOL* subRecFlag_ = nullptr);
 
 	//保存中かどうか
 	BOOL IsRec() { return this->outThread.joinable(); }

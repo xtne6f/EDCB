@@ -59,7 +59,7 @@ vector<SSDP_NIC_INFO> GetNICList()
 				char host[NI_MAXHOST];
 				if( (uni->Flags & IP_ADAPTER_ADDRESS_TRANSIENT) == 0 &&
 				    uni->Address.lpSockaddr->sa_family == AF_INET &&
-				    getnameinfo(uni->Address.lpSockaddr, uni->Address.iSockaddrLength, host, sizeof(host), NULL, 0, NI_NUMERICHOST) == 0 ){
+				    getnameinfo(uni->Address.lpSockaddr, uni->Address.iSockaddrLength, host, sizeof(host), nullptr, 0, NI_NUMERICHOST) == 0 ){
 					nicList.emplace_back();
 					nicList.back().addr = *(sockaddr_in*)uni->Address.lpSockaddr;
 					nicList.back().name = host;
@@ -73,7 +73,7 @@ vector<SSDP_NIC_INFO> GetNICList()
 		for( ifaddrs* p = ifap; p; p = p->ifa_next ){
 			char host[NI_MAXHOST];
 			if( p->ifa_addr->sa_family == AF_INET &&
-			    getnameinfo(p->ifa_addr, sizeof(sockaddr_in), host, sizeof(host), NULL, 0, NI_NUMERICHOST) == 0 ){
+			    getnameinfo(p->ifa_addr, sizeof(sockaddr_in), host, sizeof(host), nullptr, 0, NI_NUMERICHOST) == 0 ){
 				nicList.emplace_back();
 				nicList.back().addr = *(sockaddr_in*)p->ifa_addr;
 				nicList.back().name = host;
@@ -178,7 +178,7 @@ void CUpnpSsdpServer::SsdpThread(CUpnpSsdpServer* sys)
 		}
 		timeval to = {};
 		to.tv_usec = replyList.empty() ? 500000 : 100000;
-		if( maxfd >= FD_SETSIZE || select(maxfd + 1, &ready, NULL, NULL, &to) < 0 ){
+		if( maxfd >= FD_SETSIZE || select(maxfd + 1, &ready, nullptr, nullptr, &to) < 0 ){
 			SleepForMsec(replyList.empty() ? 500 : 100);
 		}
 		DWORD tick = GetU32Tick();
@@ -254,7 +254,7 @@ string GetMSearchReply(const char* header, const char* host, const vector<CUpnpS
 		string st;
 		for(;;){
 			const char* tail = strstr(header, "\r\n");
-			if( tail == NULL || tail == header ){
+			if( tail == nullptr || tail == header ){
 				break;
 			}
 			string prop;

@@ -29,7 +29,9 @@ ct:Append([=[
   </dl>
 </div>
 <div id="footer">
-  <a href="epg.html?date=]=]..epgDate..[=[">番組表</a> <a href="epglist.html?id=]=]..onid..'-'..tsid..'-'..sid..[=[#now">リスト番組表</a>
+  <a href="epg.html?tab=]=]
+  ..(({['地デジ']=0,['BS']=1,['CS3']=3,['その他']=4})[NetworkType(onid)] or 2)..'&amp;date='..epgDate..[=[">番組表</a> <a href="epglist.html?id=]=]
+  ..onid..'-'..tsid..'-'..sid..[=[#now">リスト番組表</a>
 </div>
 </body>
 </html>

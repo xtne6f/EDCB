@@ -102,7 +102,7 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	DWORD dwPort
 	)
 {
-	if( lpcwszIP == NULL || !lpcwszIP[0] ){
+	if( lpcwszIP == nullptr || !lpcwszIP[0] ){
 		return FALSE;
 	}
 	SEND_INFO item = {};
@@ -149,7 +149,7 @@ DWORD CSendTSTCPMain::AddSendAddrUdp(
 	int maxSendSize
 	)
 {
-	if( lpcwszIP == NULL ){
+	if( lpcwszIP == nullptr ){
 		return FALSE;
 	}
 #ifdef _WIN32
@@ -314,7 +314,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 			WCHAR* endp;
 			wcstol(findData.fileName.c_str() + wcslen(SEND_TS_TCP_0001_FIFO_BASE), &endp, 10);
 			if( *endp == L'_' ){
-				int pid = wcstol(endp + 1, NULL, 10);
+				int pid = wcstol(endp + 1, nullptr, 10);
 				if( pid > 0 && kill(pid, 0) == -1 && errno == ESRCH ){
 					AddDebugLogFormat(L"Delete remaining %ls", findData.fileName.c_str());
 					DeleteFile(fs_path(EDCB_INI_ROOT).append(findData.fileName).c_str());
@@ -368,13 +368,13 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 				//クライアントが短時間で切断→接続する場合のために複数インスタンス作る
 				for( size_t i = 0; i < array_size(itr->pipe); i++ ){
 #ifdef _WIN32
-					if( itr->olEvent[i] == NULL ){
-						itr->olEvent[i] = CreateEvent(NULL, TRUE, FALSE, NULL);
+					if( itr->olEvent[i] == nullptr ){
+						itr->olEvent[i] = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 						if( itr->olEvent[i] ){
 							wstring strPipe;
 							Format(strPipe, SEND_TS_TCP_0001_PIPE_NAME, itr->port, GetCurrentProcessId());
 							itr->pipe[i] = CreateNamedPipe(strPipe.c_str(), PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED,
-							                               0, (DWORD)array_size(itr->pipe), 48128, 0, 0, NULL);
+							                               0, (DWORD)array_size(itr->pipe), 48128, 0, 0, nullptr);
 							if( itr->pipe[i] != INVALID_HANDLE_VALUE ){
 								OVERLAPPED olZero = {};
 								itr->ol[i] = olZero;
@@ -424,13 +424,13 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 			else if( itr->strIP == "0.0.0.2" ){
 				if( bCheckConnect ){
 					//クライアントとして名前付きパイプを開く
-					if( itr->olEvent[0] == NULL ){
-						itr->olEvent[0] = CreateEvent(NULL, TRUE, FALSE, NULL);
+					if( itr->olEvent[0] == nullptr ){
+						itr->olEvent[0] = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 					}
 					if( itr->olEvent[0] && itr->pipe[0] == INVALID_HANDLE_VALUE ){
 						wstring strPipe;
 						Format(strPipe, SEND_TS_TCP_0002_PIPE_NAME, itr->port);
-						itr->pipe[0] = CreateFile(strPipe.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+						itr->pipe[0] = CreateFile(strPipe.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr);
 						if( itr->pipe[0] != INVALID_HANDLE_VALUE ){
 							itr->bConnect[0] = true;
 							itr->bPipeWriting[0] = false;
@@ -452,7 +452,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						FD_ZERO(&wmask);
 						FD_SET(itr->sock, &wmask);
 						struct timeval tv = {0, 0};
-						if( select((int)itr->sock + 1, NULL, &wmask, NULL, &tv) == 1 ){
+						if( select((int)itr->sock + 1, nullptr, &wmask, nullptr, &tv) == 1 ){
 							itr->bConnect[0] = true;
 						}else{
 							closesocket(itr->sock);
@@ -607,7 +607,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 						const vector<BYTE>* pWriteItem = &item.back();
 						if( itr->writeAheadCount[i] ){
 							lock_recursive_mutex lock(pSys->m_sendLock);
-							pWriteItem = NULL;
+							pWriteItem = nullptr;
 							if( pSys->m_TSBuff.size() >= itr->writeAheadCount[i] ){
 								auto itrAhead = pSys->m_TSBuff.cbegin();
 								std::advance(itrAhead, itr->writeAheadCount[i] - 1);
@@ -618,7 +618,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 							if( pWriteItem->size() > 8 ){
 								//書き込む
 								itr->ol[i] = olReset;
-								if( WriteFile(itr->pipe[i], pWriteItem->data() + 8, (DWORD)(pWriteItem->size() - 8), NULL, itr->ol + i) ||
+								if( WriteFile(itr->pipe[i], pWriteItem->data() + 8, (DWORD)(pWriteItem->size() - 8), nullptr, itr->ol + i) ||
 								    GetLastError() == ERROR_IO_PENDING ){
 									//待機
 									itr->bPipeWriting[i] = true;
@@ -667,7 +667,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					const vector<BYTE>* pWriteItem = &item.back();
 					if( itr->writeAheadCount[i] ){
 						lock_recursive_mutex lock(pSys->m_sendLock);
-						pWriteItem = NULL;
+						pWriteItem = nullptr;
 						if( pSys->m_TSBuff.size() >= itr->writeAheadCount[i] ){
 							auto itrAhead = pSys->m_TSBuff.cbegin();
 							std::advance(itrAhead, itr->writeAheadCount[i] - 1);
@@ -792,7 +792,7 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 					FD_ZERO(&wmask);
 					FD_SET(itr->sock, &wmask);
 					struct timeval tv10msec = {0, 10000};
-					select((int)itr->sock + 1, NULL, &wmask, NULL, &tv10msec);
+					select((int)itr->sock + 1, nullptr, &wmask, nullptr, &tv10msec);
 				}
 			}
 		}
@@ -831,12 +831,20 @@ void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)
 			}
 			if( itr->olEvent[i] ){
 				CloseHandle(itr->olEvent[i]);
-				itr->olEvent[i] = NULL;
+				itr->olEvent[i] = nullptr;
 			}
 #else
 			if( itr->strPipe[i].empty() == false ){
-				remove(itr->strPipe[i].c_str());
-				itr->strPipe[i].clear();
+				string strPipe;
+				itr->strPipe[i].swap(strPipe);
+				if( itr->pipe[i] < 0 ){
+					//確実に切断させるため拡張子の末尾を"_"にリネームして接続できないようにしてから開いてみる
+					if( rename(strPipe.c_str(), string(strPipe).replace(strPipe.size() - 1, 1, "_").c_str()) == 0 ){
+						strPipe.back() = '_';
+					}
+					itr->pipe[i] = open(strPipe.c_str(), O_WRONLY | O_NONBLOCK | O_CLOEXEC);
+				}
+				remove(strPipe.c_str());
 			}
 			if( itr->pipe[i] >= 0 ){
 				close(itr->pipe[i]);

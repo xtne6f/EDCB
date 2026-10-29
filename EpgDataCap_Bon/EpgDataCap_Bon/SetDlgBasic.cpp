@@ -12,8 +12,8 @@
 // CSetDlgBasic ダイアログ
 
 CSetDlgBasic::CSetDlgBasic()
-	: m_hWnd(NULL)
-	, m_setting(NULL)
+	: m_hWnd(nullptr)
+	, m_setting(nullptr)
 {
 
 }
@@ -25,7 +25,7 @@ CSetDlgBasic::~CSetDlgBasic()
 BOOL CSetDlgBasic::Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting)
 {
 	m_setting = &setting;
-	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
+	return CreateDialogParam(GetModuleHandle(nullptr), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != nullptr;
 }
 
 
@@ -53,7 +53,7 @@ BOOL CSetDlgBasic::OnInitDialog()
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_DIALOG_TEMPLATE), min(max(m_setting->dialogTemplate, 0), 2));
 
 	WCHAR versionText[128] = L"Ver.";
-	LoadString(GetModuleHandle(NULL), IDS_VERSION_TEXT, versionText + 4, (int)array_size(versionText) - 4);
+	LoadString(GetModuleHandle(nullptr), IDS_VERSION_TEXT, versionText + 4, (int)array_size(versionText) - 4);
 	if( wcslen(versionText) > 4 ){
 		//バージョン文字列を表示
 		SetDlgItemText(m_hWnd, IDC_STATIC_VERSION_TEXT, versionText);
@@ -65,14 +65,14 @@ BOOL CSetDlgBasic::OnInitDialog()
 
 void CSetDlgBasic::SaveIni()
 {
-	if( m_hWnd == NULL ){
+	if( m_hWnd == nullptr ){
 		return;
 	}
 	fs_path commonIniPath = GetCommonIniPath();
 
 	WCHAR settingFolderPath[512] = L"";
 	GetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, settingFolderPath, 512);
-	WritePrivateProfileString(L"SET", L"DataSavePath", UtilComparePath(settingFolderPath, GetDefSettingPath().c_str()) ? settingFolderPath : NULL, commonIniPath.c_str());
+	WritePrivateProfileString(L"SET", L"DataSavePath", UtilComparePath(settingFolderPath, GetDefSettingPath().c_str()) ? settingFolderPath : nullptr, commonIniPath.c_str());
 	UtilCreateDirectories(settingFolderPath);
 
 	int iNum = ListBox_GetCount(GetDlgItem(IDC_LIST_REC_FOLDER));
@@ -118,8 +118,8 @@ void CSetDlgBasic::OnBnClickedButtonRecPath()
 	bi.ulFlags = BIF_NEWDIALOGSTYLE;
 
 	pidlBrowse = SHBrowseForFolder(&bi);
-	if (pidlBrowse != NULL) {  
-		if (SHGetPathFromIDList(pidlBrowse, buff)) {
+	if( pidlBrowse != nullptr ){
+		if( SHGetPathFromIDList(pidlBrowse, buff) ){
 			SetDlgItemText(m_hWnd, IDC_EDIT_REC_FOLDER, buff);
 		}
 		CoTaskMemFree(pidlBrowse);
@@ -218,8 +218,8 @@ void CSetDlgBasic::OnBnClickedButtonSetPath()
 	bi.ulFlags = BIF_NEWDIALOGSTYLE;
 
 	pidlBrowse = SHBrowseForFolder(&bi);
-	if (pidlBrowse != NULL) {  
-		if (SHGetPathFromIDList(pidlBrowse, buff)) {
+	if( pidlBrowse != nullptr ){
+		if( SHGetPathFromIDList(pidlBrowse, buff) ){
 			SetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, buff);
 		}
 		CoTaskMemFree(pidlBrowse);
@@ -230,7 +230,7 @@ void CSetDlgBasic::OnBnClickedButtonSetPath()
 INT_PTR CALLBACK CSetDlgBasic::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CSetDlgBasic* pSys = (CSetDlgBasic*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+	if( pSys == nullptr && uMsg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch( uMsg ){
@@ -240,7 +240,7 @@ INT_PTR CALLBACK CSetDlgBasic::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 		pSys->m_hWnd = hDlg;
 		return pSys->OnInitDialog();
 	case WM_NCDESTROY:
-		pSys->m_hWnd = NULL;
+		pSys->m_hWnd = nullptr;
 		break;
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){

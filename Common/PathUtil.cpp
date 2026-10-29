@@ -274,7 +274,7 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 	               (flags & 31) == UTIL_O_CREAT_APPEND ? L"ab" :
 	               (flags & 31) == UTIL_O_EXCL_CREAT_WRONLY ? L"wb" :
 	               (flags & 31) == UTIL_O_EXCL_CREAT_RDWR ? L"w+b" :
-	               (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? L"ab" : NULL;
+	               (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? L"ab" : nullptr;
 	if( mode ){
 		// 共有モード制御のためAPIで開く
 		// 参考:後続が開くことのできる共有モードのパターン(双方向。*は未サポート)
@@ -286,15 +286,15 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 		// (WR,SH_RDWR)<=>(WR,SH_RDWR)*
 		HANDLE h = CreateFile(path.c_str(), ((flags & 1) ? GENERIC_READ : 0) | ((flags & 2) ? GENERIC_WRITE : 0),
 		                      ((flags & 32) ? FILE_SHARE_READ : 0) | ((flags & 64) ? FILE_SHARE_WRITE : 0) | ((flags & 128) ? FILE_SHARE_DELETE : 0),
-		                      NULL, (flags & 24) == 8 ? CREATE_ALWAYS : (flags & 24) == 16 ? OPEN_ALWAYS : (flags & 24) == 24 ? CREATE_NEW : OPEN_EXISTING,
-		                      FILE_ATTRIBUTE_NORMAL | ((flags & 256) ? FILE_FLAG_SEQUENTIAL_SCAN : 0), NULL);
+		                      nullptr, (flags & 24) == 8 ? CREATE_ALWAYS : (flags & 24) == 16 ? OPEN_ALWAYS : (flags & 24) == 24 ? CREATE_NEW : OPEN_EXISTING,
+		                      FILE_ATTRIBUTE_NORMAL | ((flags & 256) ? FILE_FLAG_SEQUENTIAL_SCAN : 0), nullptr);
 		if( h != INVALID_HANDLE_VALUE ){
 			int fd = _open_osfhandle((intptr_t)h, (flags & 4) ? _O_APPEND : 0);
 			if( fd != -1 ){
 				FILE* fp = _wfdopen(fd, mode);
 				if( fp ){
 					if( flags & 512 ){
-						setvbuf(fp, NULL, _IONBF, 0);
+						setvbuf(fp, nullptr, _IONBF, 0);
 					}
 					return fp;
 				}
@@ -314,7 +314,7 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 	                   (flags & 31) == UTIL_O_CREAT_APPEND ? "a" :
 	                   (flags & 31) == UTIL_O_EXCL_CREAT_WRONLY ? "w" :
 	                   (flags & 31) == UTIL_O_EXCL_CREAT_RDWR ? "w+" :
-	                   (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? "a" : NULL;
+	                   (flags & 31) == UTIL_O_EXCL_CREAT_APPEND ? "a" : nullptr;
 	if( mode ){
 		string strPath;
 		WtoUTF8(path, strPath);
@@ -339,7 +339,7 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 						my_fseek(fp, 0, SEEK_END);
 					}
 					if( flags & 512 ){
-						setvbuf(fp, NULL, _IONBF, 0);
+						setvbuf(fp, nullptr, _IONBF, 0);
 					}
 					return fp;
 				}
@@ -354,7 +354,7 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 		}
 	}
 #endif
-	return NULL;
+	return nullptr;
 }
 
 void* UtilLoadLibrary(const wstring& path)
@@ -386,7 +386,7 @@ void* UtilGetProcAddress(void* hModule, const char* name)
 		return dlsym(hModule, name);
 #endif
 	}
-	return NULL;
+	return nullptr;
 }
 
 #ifndef _WIN32
@@ -589,7 +589,7 @@ pair<bool, bool> UtilFileExists(const fs_path& path, bool* mightExist)
 bool UtilCreateDirectory(const fs_path& path)
 {
 #ifdef _WIN32
-	return CreateDirectory(path.c_str(), NULL) != FALSE;
+	return CreateDirectory(path.c_str(), nullptr) != FALSE;
 #else
 	string strPath;
 	WtoUTF8(path.native(), strPath);
@@ -621,7 +621,7 @@ LONGLONG UtilGetStorageFreeBytes(const fs_path& directoryPath)
 {
 #ifdef _WIN32
 	ULARGE_INTEGER li;
-	return GetDiskFreeSpaceEx(UtilGetStorageID(directoryPath).c_str(), &li, NULL, NULL) ? (LONGLONG)li.QuadPart : -1;
+	return GetDiskFreeSpaceEx(UtilGetStorageID(directoryPath).c_str(), &li, nullptr, nullptr) ? (LONGLONG)li.QuadPart : -1;
 #else
 	if( directoryPath.empty() || (directoryPath.is_relative() && directoryPath.has_root_path()) ){
 		// パスが不完全
@@ -700,17 +700,17 @@ util_unique_handle UtilCreateGlobalMutex(LPCWSTR name, bool* alreadyExists)
 		*alreadyExists = false;
 	}
 #ifdef _WIN32
-	HANDLE h = NULL;
+	HANDLE h = nullptr;
 	if( name && wcslen(name) < MAX_PATH - 7 ){
 		WCHAR sz[MAX_PATH];
 		swprintf_s(sz, L"Global\\%ls", name);
-		h = CreateMutex(NULL, FALSE, sz);
+		h = CreateMutex(nullptr, FALSE, sz);
 		if( h && GetLastError() == ERROR_ALREADY_EXISTS ){
 			if( alreadyExists ){
 				*alreadyExists = true;
 			}
 			CloseHandle(h);
-			h = NULL;
+			h = nullptr;
 		}
 	}
 	return util_unique_handle(h, CloseGlobalMutex);
@@ -723,7 +723,7 @@ util_unique_handle UtilCreateGlobalMutex(LPCWSTR name, bool* alreadyExists)
 		int apiError;
 		f->first = UtilOpenFile(path, UTIL_SECURE_WRITE, &apiError);
 		struct stat st[2];
-		if( f->first == NULL ){
+		if( f->first == nullptr ){
 			if( alreadyExists ){
 				*alreadyExists = apiError == EAGAIN;
 			}
@@ -918,6 +918,9 @@ void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DAT
 			UTIL_FIND_DATA ufd;
 			do{
 				ufd.isDir = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+				ufd.readonly = (findData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0;
+				ufd.hidden = (findData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+				ufd.system = (findData.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0;
 				ufd.lastWriteTime = (LONGLONG)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
 				ufd.fileSize = (LONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
 				ufd.fileName = findData.cFileName;
@@ -937,6 +940,7 @@ void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DAT
 		struct stat st;
 		if( stat(strPath.c_str(), &st) == 0 ){
 			UTIL_FIND_DATA ufd;
+
 			ufd.isDir = S_ISDIR(st.st_mode) != 0;
 			ufd.lastWriteTime = (LONGLONG)st.st_mtime * 10000000 + 116444736000000000;
 			ufd.fileSize = (LONGLONG)st.st_size;
@@ -952,10 +956,10 @@ void EnumFindFile(const fs_path& pattern, const std::function<bool(UTIL_FIND_DAT
 			try{
 				UTIL_FIND_DATA ufd;
 				dirent* ent;
-				while( (ent = readdir(dir)) != NULL ){
+				while( (ent = readdir(dir)) != nullptr ){
 					UTF8toW(ent->d_name, ufd.fileName);
-					LPCWSTR p[4] = {pat.c_str(), NULL, NULL};
-					LPCWSTR t[4] = {ufd.fileName.c_str(), NULL, NULL};
+					LPCWSTR p[4] = {pat.c_str(), nullptr, nullptr};
+					LPCWSTR t[4] = {ufd.fileName.c_str(), nullptr, nullptr};
 					size_t i = 0;
 					while( *p[i] || *t[i] ){
 						if( *p[i] == L'*' && (!p[i][1] || p[i][1] == L'*' || *t[i]) ){

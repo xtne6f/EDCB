@@ -11,8 +11,8 @@
 // CSetDlgAppBtn ダイアログ
 
 CSetDlgAppBtn::CSetDlgAppBtn()
-	: m_hWnd(NULL)
-	, m_setting(NULL)
+	: m_hWnd(nullptr)
+	, m_setting(nullptr)
 {
 
 }
@@ -24,7 +24,7 @@ CSetDlgAppBtn::~CSetDlgAppBtn()
 BOOL CSetDlgAppBtn::Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting)
 {
 	m_setting = &setting;
-	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
+	return CreateDialogParam(GetModuleHandle(nullptr), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != nullptr;
 }
 
 
@@ -46,7 +46,7 @@ BOOL CSetDlgAppBtn::OnInitDialog()
 
 void CSetDlgAppBtn::SaveIni(void)
 {
-	if( m_hWnd == NULL ){
+	if( m_hWnd == nullptr ){
 		return;
 	}
 	fs_path appIniPath = GetModuleIniPath();
@@ -86,7 +86,7 @@ void CSetDlgAppBtn::OnBnClickedCheckViewSingle()
 INT_PTR CALLBACK CSetDlgAppBtn::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CSetDlgAppBtn* pSys = (CSetDlgAppBtn*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+	if( pSys == nullptr && uMsg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch( uMsg ){
@@ -96,7 +96,7 @@ INT_PTR CALLBACK CSetDlgAppBtn::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 		pSys->m_hWnd = hDlg;
 		return pSys->OnInitDialog();
 	case WM_NCDESTROY:
-		pSys->m_hWnd = NULL;
+		pSys->m_hWnd = nullptr;
 		break;
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){

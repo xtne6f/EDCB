@@ -20,7 +20,7 @@ CDropCount::CDropCount(void)
 
 void CDropCount::AddData(const BYTE* data, DWORD size)
 {
-	if( data == NULL || size == 0 ){
+	if( data == nullptr || size == 0 ){
 		return ;
 	}
 	DROP_INFO item = {};

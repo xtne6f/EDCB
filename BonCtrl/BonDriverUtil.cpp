@@ -41,18 +41,18 @@ wstring Bon16CharToWString(const IBonDriver2::BON16CHAR* src)
 IBonDriver* CastB(IBonDriver2** if2, IBonDriver* (*funcCreate)())
 {
 	void* hModule = UtilLoadLibrary(wstring(L"IBonCast.dll"));
-	if( hModule == NULL ){
+	if( hModule == nullptr ){
 		AddDebugLog(L"★IBonCast.dllがロードできません");
-		return NULL;
+		return nullptr;
 	}
 	void* const* (WINAPI* funcCast)(LPCSTR, void*);
 	void* pBase;
 	void* const* table;
 	if( UtilGetProcAddress(hModule, "Cast", funcCast) == false ||
-	    (pBase = funcCreate()) == NULL || (table = funcCast("IBonDriver@10", pBase)) == NULL ){
+	    (pBase = funcCreate()) == nullptr || (table = funcCast("IBonDriver@10", pBase)) == nullptr ){
 		AddDebugLog(L"★Castに失敗しました");
 		UtilFreeLibrary(hModule);
-		return NULL;
+		return nullptr;
 	}
 
 	class CCastB : public CBonStruct2Adapter
@@ -78,8 +78,8 @@ IBonDriver* CastB(IBonDriver2** if2, IBonDriver* (*funcCreate)())
 		return *if2;
 	}
 	//IBonDriver2部分は未初期化なのでダウンキャストしてはならない
-	*if2 = NULL;
-	return new CCastB(hModule, pBase, table, NULL);
+	*if2 = nullptr;
+	return new CCastB(hModule, pBase, table, nullptr);
 }
 #endif
 }
@@ -92,7 +92,7 @@ CBonDriverUtil::CInit::CInit()
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(wc);
 	wc.lpfnWndProc = DriverWindowProc;
-	wc.hInstance = GetModuleHandle(NULL);
+	wc.hInstance = GetModuleHandle(nullptr);
 	wc.lpszClassName = L"BonDriverUtilWorker";
 	RegisterClassEx(&wc);
 #endif
@@ -164,15 +164,15 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 {
 #ifdef _WIN32
 	//BonDriverがCOMを利用するかもしれないため
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 #endif
 
-	IBonDriver* bonIF = NULL;
-	sys->bon2IF = NULL;
+	IBonDriver* bonIF = nullptr;
+	sys->bon2IF = nullptr;
 	CBonStructAdapter bonAdapter;
 	CBonStruct2Adapter bon2Adapter;
 	void* hModule = UtilLoadLibrary(fs_path(sys->loadDllFolder).append(sys->loadDllFileName));
-	if( hModule == NULL ){
+	if( hModule == nullptr ){
 		AddDebugLog(L"★BonDriverがロードできません");
 	}else{
 		const STRUCT_IBONDRIVER* (*funcCreateBonStruct)();
@@ -194,7 +194,7 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 			}else{
 #if !defined(_WIN32) || defined(_MSC_VER)
 				//受け取ったC++オブジェクトに互換性があると仮定する
-				if( (bonIF = funcCreateBonDriver()) != NULL ){
+				if( (bonIF = funcCreateBonDriver()) != nullptr ){
 					sys->bon2IF = dynamic_cast<IBonDriver2*>(bonIF);
 				}
 #else
@@ -217,20 +217,20 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 				sys->loadChList.clear();
 				for( DWORD countSpace = 0; ; countSpace++ ){
 					const IBonDriver2::BON16CHAR* spaceName = sys->bon2IF->EnumTuningSpace(countSpace);
-					if( spaceName == NULL ){
+					if( spaceName == nullptr ){
 						break;
 					}
 					sys->loadChList.emplace_back(Bon16CharToWString(spaceName), vector<wstring>());
 					for( DWORD countCh = 0; ; countCh++ ){
 						const IBonDriver2::BON16CHAR* chName = sys->bon2IF->EnumChannelName(countSpace, countCh);
-						if( chName == NULL ){
+						if( chName == nullptr ){
 							break;
 						}
 						sys->loadChList.back().second.push_back(Bon16CharToWString(chName));
 					}
 				}
 #ifdef _WIN32
-				CreateWindow(L"BonDriverUtilWorker", NULL, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandle(NULL), sys);
+				CreateWindow(L"BonDriverUtilWorker", nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_MESSAGE, nullptr, GetModuleHandle(nullptr), sys);
 				if( sys->openFlag == false ){
 					sys->loadChList.clear();
 					sys->loadTunerName.clear();
@@ -264,7 +264,7 @@ void CBonDriverUtil::DriverThread(CBonDriverUtil* sys)
 
 	//メッセージループ
 	MSG msg;
-	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
+	while( GetMessage(&msg, nullptr, 0, 0) > 0 ){
 		DispatchMessage(&msg);
 	}
 #else
@@ -310,7 +310,7 @@ bool CBonDriverUtil::OnMessage(CMessageManager::PARAMS& pa)
 		if( sys->traceLevel ){
 			AddDebugLog(L"CBonDriverUtil: #Open");
 			lock_recursive_mutex lock(sys->utilLock);
-			sys->callingName = NULL;
+			sys->callingName = nullptr;
 		}
 		{
 			lock_recursive_mutex lock(sys->utilLock);
@@ -361,13 +361,13 @@ bool CBonDriverUtil::OnMessage(CMessageManager::PARAMS& pa)
 				if( pa.param1 ){
 					//EDCBは(伝統的に)GetTsStreamのremainを利用しないので、受け取るものがなくなったらremain=0を知らせる
 					if( sys->recvFunc ){
-						sys->recvFunc(NULL, 0, 0);
+						sys->recvFunc(nullptr, 0, 0);
 					}
 				}
 			}
 			if( sys->traceLevel ){
 				lock_recursive_mutex lock(sys->utilLock);
-				sys->callingName = NULL;
+				sys->callingName = nullptr;
 				sys->statGetTsCalls++;
 				sys->statGetTsBytes += size;
 			}
@@ -387,7 +387,7 @@ bool CBonDriverUtil::OnMessage(CMessageManager::PARAMS& pa)
 			}
 			if( sys->traceLevel ){
 				lock_recursive_mutex lock(sys->utilLock);
-				sys->callingName = NULL;
+				sys->callingName = nullptr;
 			}
 		}
 		return true;
@@ -406,14 +406,14 @@ bool CBonDriverUtil::OnMessage(CMessageManager::PARAMS& pa)
 			if( sys->bon2IF->SetChannel((DWORD)pa.param1, (DWORD)pa.param2) == FALSE ){
 				if( sys->traceLevel ){
 					lock_recursive_mutex lock(sys->utilLock);
-					sys->callingName = NULL;
+					sys->callingName = nullptr;
 				}
 				return true;
 			}
 		}
 		if( sys->traceLevel ){
 			lock_recursive_mutex lock(sys->utilLock);
-			sys->callingName = NULL;
+			sys->callingName = nullptr;
 		}
 		sys->initChSetFlag = true;
 		sys->msgManager.Post(ID_APP_GET_STATUS);
@@ -430,7 +430,7 @@ bool CBonDriverUtil::OnMessage(CMessageManager::PARAMS& pa)
 			*(DWORD*)pa.param2 = sys->bon2IF->GetCurChannel();
 			if( sys->traceLevel ){
 				lock_recursive_mutex lock(sys->utilLock);
-				sys->callingName = NULL;
+				sys->callingName = nullptr;
 			}
 			pa.result = TRUE;
 		}

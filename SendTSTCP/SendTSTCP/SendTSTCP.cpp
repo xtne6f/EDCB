@@ -43,7 +43,7 @@ DWORD WINAPI UnInitializeDLL(
 	DWORD err = ERR_NOT_INIT;
 	{
 		std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.pop(iID);
-		if( ptr != NULL ){
+		if( ptr != nullptr ){
 			err = NO_ERR;
 		}
 	}
@@ -61,7 +61,7 @@ DWORD WINAPI AddSendAddrDLL(
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
@@ -81,7 +81,7 @@ DWORD WINAPI AddSendAddrUdpDLL(
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	return ptr->AddSendAddrUdp(lpcwszIP, dwPort, broadcastFlag, maxSendSize);
@@ -95,7 +95,7 @@ DWORD WINAPI ClearSendAddrDLL(
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
@@ -111,7 +111,7 @@ DWORD WINAPI StartSendDLL(
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
@@ -127,7 +127,7 @@ DWORD WINAPI StopSendDLL(
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
@@ -145,7 +145,7 @@ DWORD WINAPI AddSendDataDLL(
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
@@ -161,7 +161,7 @@ DWORD WINAPI ClearSendBuffDLL(
 	)
 {
 	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
-	if( ptr == NULL ){
+	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;

@@ -42,8 +42,8 @@ SortServiceListInplace(st)
 
 if sid==0 then
   ct:Append('<div class="nav">\n<ul class="epg-list-list">\n')
-  --3時間前までの番組
-  pastEvents=edcb.EnumEventInfo(st,{startTime=os.date('!*t',now+(9-3)*3600),durationSecond=3*3600})
+  --前後6時間の番組
+  pfEvents=edcb.EnumEventInfo(st,{startTime=os.date('!*t',now+(9-3)*3600),durationSecond=6*3600})
   --並びがネットワーク種別でまとまっているときは見出しをつける
   nwType={}
   for i,v in ipairs(st) do
@@ -55,18 +55,31 @@ if sid==0 then
   end
   for i,v in ipairs(st) do
     present=nil
-    for j=BinarySearchBound(pastEvents,v,CompareFields('onid',false,'tsid',false,'sid')),#pastEvents do
-      if pastEvents[j].nid~=v.nid or pastEvents[j].tsid~=v.tsid or pastEvents[j].sid~=v.sid then
+    following=nil
+    for j=BinarySearchBound(pfEvents,v,CompareFields('onid',false,'tsid',false,'sid')),#pfEvents do
+      if pfEvents[j].nid~=v.nid or pfEvents[j].tsid~=v.tsid or pfEvents[j].sid~=v.sid then
         break
-      elseif not present or TimeWithZone(pastEvents[j].startTime)>TimeWithZone(present.startTime) then
-        present=pastEvents[j]
+      elseif TimeWithZone(pfEvents[j].startTime,9*3600)<now then
+        if not present or CompareTime(present.startTime,pfEvents[j].startTime) then
+          present=pfEvents[j]
+        end
+      elseif not following or CompareTime(pfEvents[j].startTime,following.startTime) then
+        following=pfEvents[j]
       end
     end
     if not present then
       --3時間前までに番組が見つからないときは9時間前まで調べる
       for j,w in ipairs(edcb.EnumEventInfo({v},{startTime=os.date('!*t',now+(9-9)*3600),durationSecond=9*3600})) do
-        if not present or TimeWithZone(w.startTime)>TimeWithZone(present.startTime) then
+        if not present or CompareTime(present.startTime,w.startTime) then
           present=w
+        end
+      end
+    end
+    if not following then
+      --3時間後までに番組が見つからないときは9時間後まで調べる
+      for j,w in ipairs(edcb.EnumEventInfo({v},{startTime=os.date('!*t',now+9*3600),durationSecond=9*3600})) do
+        if not following or CompareTime(w.startTime,following.startTime) then
+          following=w
         end
       end
     end
@@ -74,18 +87,21 @@ if sid==0 then
       nwType=NetworkType(v.onid)
       ct:Append('<li><h2>'..nwType..'</h2></li>\n')
     end
+    present=present and (not present.durationSecond or TimeWithZone(present.startTime)+present.durationSecond>now+9*3600) and present
+    presentCont=present and present.contentInfoList and #present.contentInfoList>0 and math.floor(present.contentInfoList[1].content_nibble/256)%16 or 16
+    followingCont=following and following.contentInfoList and #following.contentInfoList>0 and math.floor(following.contentInfoList[1].content_nibble/256)%16 or 16
     ct:Append('<li><a href="epglist.html?id='..v.onid..'-'..v.tsid..'-'..v.sid
-      ..'#now"><img alt="" style="max-height:0.8em;width:auto" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</a>'
-      ..(present and (not present.durationSecond or TimeWithZone(present.startTime)+present.durationSecond>now+9*3600) and present.shortInfo and
-           '<span class="epg-present"><span><br>&emsp;</span>'..present.shortInfo.event_name..'</span>' or '')
+      ..'#now"><img class="logo" alt="" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</a>'
+      ..((present and present.shortInfo or following and following.shortInfo) and '<div class="epg-present-following">'
+           ..(present and present.shortInfo and '<div><span class="epg-present cont-'..presentCont..'">'..present.shortInfo.event_name..'</span></div>' or '')
+           ..(following and following.shortInfo and '<div> / <span class="epg-following cont-'..followingCont..'">'..following.shortInfo.event_name..'</span></div>' or '')..'</div>' or '')
       ..'</li>\n')
   end
   ct:Append('</ul>\n</div>\n')
 else
   rt={}
-  for i,v in ipairs(edcb.GetReserveData()) do
+  for i,v in ipairs(date>-28 and edcb.GetReserveData() or {}) do
     if v.onid==onid and v.tsid==tsid and v.sid==sid then
-      v.startTime=os.time(v.startTime)
       rt[#rt+1]=v
     end
   end
@@ -99,9 +115,9 @@ else
   et=edcb.EnumEventInfo({{onid=onid,tsid=tsid,sid=sid}},range) or {}
   for i,v in ipairs(edcb.EnumEventInfoArchive and edcb.EnumEventInfoArchive({{onid=onid,tsid=tsid,sid=sid}},range) or {}) do
     v.past=true
-    table.insert(et, v)
+    et[#et+1]=v
   end
-  table.sort(et, function(a,b) return (a.startTime and os.time(a.startTime) or 0)<(b.startTime and os.time(b.startTime) or 0) end)
+  table.sort(et,function(a,b) return CompareTime(a.startTime,b.startTime) end)
   ct:Append('<div class="page-nav">\n  <a href="epglist.html?id='..onid..'-'..tsid..'-'..sid..'&amp;date='..(date-28)..'#footer">↑↑</a>\n</div>\n')
   ct:Append('<div id="main" class="epg-list">\n')
   more=nil
@@ -112,21 +128,20 @@ else
       v.eventGroupInfo.eventDataList[1].sid~=v.sid or
       v.eventGroupInfo.eventDataList[1].eid~=v.eid)
     if not sub then
-      if v.startTime and TimeWithZone(v.startTime,9*3600)<=now and
-         #et>i and et[i+1].startTime and TimeWithZone(et[i+1].startTime,9*3600)>now then
+      if TimeWithZone(v.startTime,9*3600)<=now and #et>i and TimeWithZone(et[i+1].startTime,9*3600)>now then
         v.now=true
         more=more or 8
       end
       cont=v.contentInfoList and #v.contentInfoList>0 and math.floor(v.contentInfoList[1].content_nibble/256)%16 or 16
       ct:Append('<div class="cont-'..cont..(v.past and ' past"' or '"')..(v.now and ' id="now"' or '')..'>'
-        ..(v.startTime and ('%02d/%02d%s %02d:%02d'):format(v.startTime.month, v.startTime.day, ({'日','月','火','水','木','金','土'})[v.startTime.wday], v.startTime.hour, v.startTime.min) or '不明'))
-      if not v.past and (v.startTime or i==#et or et[i+1].startTime) then
+        ..('%02d/%02d%s %02d:%02d'):format(v.startTime.month, v.startTime.day, ({'日','月','火','水','木','金','土'})[v.startTime.wday], v.startTime.hour, v.startTime.min))
+      if not v.past then
         --範囲内のプログラム予約
-        rangeStart=i>1 and v.startTime and os.time(v.startTime)
-        rangeEnd=i<#et and os.time(et[i+1].startTime)
+        rangeStart=i>1 and v.startTime
+        rangeEnd=i<#et and et[i+1].startTime
         for j=programReservedStart,#rt do
           if rt[j].eid~=65535 then break end
-          if (not rangeStart or rangeStart<=rt[j].startTime) and (not rangeEnd or rt[j].startTime<rangeEnd) then
+          if (not rangeStart or not CompareTime(rt[j].startTime,rangeStart)) and (not rangeEnd or CompareTime(rt[j].startTime,rangeEnd)) then
             ct:Append(' <span class="lavel-'..(rt[j].recSetting.recMode==5 and 'disabled' or rt[j].recSetting.recMode==4 and 'view' or 'reserved')..'"><a href="reserveinfo.html?id='..rt[j].reserveID..'&amp;fromepg=1">プ予</a></span>')
           end
         end
@@ -206,14 +221,15 @@ else
     src='view.lua?n='..n..'&amp;id='..onid..'-'..tsid..'-'..sid..ConstructTranscodeQueries(xq)..'&amp;ctok='..CsrfToken('view.lua')
     ct:Append('\n'..VideoWrapperBegin()
       ..(xq.tslive and '<canvas id="video" data-src="'..src..'"'..(xq.autoCinema and ' data-initial-auto-cinema="1"' or '')
-                         ..(xq.deinterlace and ' data-deinterlace="'..xq.deinterlace..'"' or '')..'></canvas>' or
-           '<video id="video" autoplay playsinline controls'
+                         ..(xq.deinterlace and ' data-deinterlace="'..xq.deinterlace..'"' or '')
+                         ..(xq.maxRateForDoubling and ' data-max-rate-for-doubling="'..xq.maxRateForDoubling..'"' or '')..'></canvas>' or
+           '<video id="video" autoplay playsinline controls'..(xq.poster and ' data-poster="'..EdcbHtmlEscape(xq.poster)..'"' or '')
              ..(ALLOW_HLS and (ALWAYS_USE_HLS and ' data-always-use-hls="1"' or '')
                   ..' data-ctok="'..CsrfToken('view.lua')..'"'
                   ..' data-hls="'..(edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'"'
-                  ..(USE_MP4_HLS and ' data-hls-mp4="'..(USE_MP4_LLHLS and '2' or '1')..'"' or '')
+                  ..(USE_MP4_LLHLS and ' data-hls-mp4="2"' or '')
                   ..' data-' or ' ')..'src="'..src..'">view</video>')
-      ..VideoWrapperEnd(USE_LIVEJK and GetChatStreamNameList())..'\n'..TranscodeScriptTemplate(true,xq.caption,xq.jikkyo,xq.tslive,{n=n,id=onid..'-'..tsid..'-'..sid}))
+      ..VideoWrapperEnd(USE_LIVEJK and GetChatStreamNameList())..'\n'..TranscodeScriptTemplate(true,xq,{n=n,id=onid..'-'..tsid..'-'..sid}))
   end
 end
 ct:Append([=[
@@ -221,6 +237,7 @@ ct:Append([=[
 </div>
 <div id="footer">
   <a href="]=]..(sid==0 and 'index.html">メニュー' or 'epglist.html">サービスリスト')..[=[</a>
+  <a href="#vid-wrap" id="jump-to-video" style="display:none">#video</a>
 </div>
 </body>
 </html>

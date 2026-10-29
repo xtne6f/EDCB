@@ -13,7 +13,7 @@
 class CSettingDlg
 {
 public:
-	CSettingDlg(HWND hWndOwner = NULL);   // 標準コンストラクター
+	CSettingDlg(HWND hWndOwner = nullptr);   // 標準コンストラクター
 	~CSettingDlg();
 	INT_PTR DoModal();
 	HWND GetSafeHwnd() const{ return m_hWnd; }

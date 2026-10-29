@@ -76,12 +76,12 @@ size_t ProcessWtoA(const WCHAR* in, size_t inLen, T& out, UTIL_CONV_CODE code)
 {
 #ifdef _WIN32
 	if( code != UTIL_CONV_UTF8 ){
-		size_t n = WideCharToMultiByte((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, NULL, 0, NULL, NULL);
+		size_t n = WideCharToMultiByte((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, nullptr, 0, nullptr, nullptr);
 		if( out.size() < n + 1 ){
 			out.resize(n + 1);
 		}
 		if( n ){
-			n = WideCharToMultiByte((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, &out.front(), (int)n, NULL, NULL);
+			n = WideCharToMultiByte((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, &out.front(), (int)n, nullptr, nullptr);
 		}
 		out[n] = '\0';
 		return strlen(&out.front());
@@ -130,7 +130,7 @@ size_t ProcessAtoW(const char* in, size_t inLen, T& out, UTIL_CONV_CODE code)
 {
 #ifdef _WIN32
 	if( code != UTIL_CONV_UTF8 ){
-		size_t n = MultiByteToWideChar((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, NULL, 0);
+		size_t n = MultiByteToWideChar((code == UTIL_CONV_DEFAULT ? 932 : CP_ACP), 0, in, (int)inLen, nullptr, 0);
 		if( out.size() < n + 1 ){
 			out.resize(n + 1);
 		}

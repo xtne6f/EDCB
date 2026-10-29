@@ -3,17 +3,17 @@ dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=CreateContentBuilder(GZIP_THRESHOLD_BYTE)
 ct:Append(DOCTYPE_HTML4_STRICT..[=[
-<html lang="ja">
+<html lang="ja" class="epg-table-ancestor">
 <head>
 ]=]..DefaultHeadContents()..[=[
 <title>番組表 - EDCB</title>
 </head>
-<body>
+<body class="epg-table-ancestor"><div class="epg-table-ancestor">
 <h1>番組表</h1>
 ]=])
 
 tab=GetVarInt(mg.request_info.query_string,'tab',0,4) or 0
-cust=GetVarInt(mg.request_info.query_string,'cust',0,1) or 1
+cust=GetVarInt(mg.request_info.query_string,'cust',0,9) or 1
 date=GetVarInt(mg.request_info.query_string,'date',-10000,1000) or 0
 --dateクエリは今日(深夜4時区切り)を基準(=0)とする
 now=os.time()
@@ -22,10 +22,9 @@ baseDate=math.floor((now+(9-4)*3600)/(24*3600))
 baseTime=(baseDate*24+4)*3600
 
 rt={}
-for i,v in ipairs(edcb.GetReserveData()) do
+for i,v in ipairs(date>-2 and edcb.GetReserveData() or {}) do
   --プログラム予約は表示範囲のみ
-  v.startTime=TimeWithZone(v.startTime)
-  if v.eid~=65535 or (baseTime+date*24*3600<=v.startTime and v.startTime<baseTime+(date*24+25)*3600) then
+  if v.eid~=65535 or (baseTime+date*24*3600<=TimeWithZone(v.startTime) and TimeWithZone(v.startTime)<baseTime+(date*24+25)*3600) then
     rt[#rt+1]=v
   end
 end
@@ -35,34 +34,31 @@ rtComp=CompareFields('onid',false,'tsid',false,'sid',false,'eid')
 
 showServices={}
 for i,v in ipairs(SelectChDataList(edcb.GetChDataList())) do
-  if tab==0 and NetworkType(v.onid)=='地デジ' or
-     tab==1 and NetworkType(v.onid)=='BS' or
-     tab==2 and NetworkType(v.onid):find('^CS[12]') or
-     tab==3 and NetworkType(v.onid)=='CS3' or
-     tab==4 and NetworkType(v.onid)=='その他' then
+  if tab==(({['地デジ']=0,['BS']=1,['CS3']=3,['その他']=4})[NetworkType(v.onid)] or 2) then
     showServices[v.onid..'-'..v.tsid..'-'..v.sid]=1
   end
 end
 
-if cust~=0 then
-  for i,v in ipairs(edcb.EnumAutoAdd()) do
-    if v.searchInfo.notKey:find('^#EPG_CUST_'..cust) or
-       v.searchInfo.notKey:find('^:note:#EPG_CUST_'..cust) then
-      key=v.searchInfo
-      key.andKey=key.andKey:gsub('^^!{999}','')
-      i=1
-      while i<=#key.serviceList do
-        if showServices[key.serviceList[i].onid..'-'..key.serviceList[i].tsid..'-'..key.serviceList[i].sid]==1 then
-          --サービス絞り込みにあるものは表示
-          showServices[key.serviceList[i].onid..'-'..key.serviceList[i].tsid..'-'..key.serviceList[i].sid]=2
-          i=i+1
-        else
-          --表示されないので検索対象から除外
-          table.remove(key.serviceList,i)
-        end
-      end
-      break
+custKeys={}
+for i,v in ipairs(edcb.EnumAutoAdd()) do
+  if v.searchInfo.notKey:find('^:note:#EPG_CUST_[1-9]') then
+    custKeys[0+v.searchInfo.notKey:sub(17,17)]=v.searchInfo
+  end
+end
+key=custKeys[cust]
+if key then
+  key.andKey=key.andKey:gsub('^^!{999}','')
+  j=0
+  for i,v in ipairs(key.serviceList) do
+    --サービス絞り込みにあるものは表示。ほかは検索対象から除外
+    if showServices[v.onid..'-'..v.tsid..'-'..v.sid]==1 then
+      showServices[v.onid..'-'..v.tsid..'-'..v.sid]=2
+      j=j+1
+      key.serviceList[j]=v
     end
+  end
+  while #key.serviceList>j do
+    table.remove(key.serviceList)
   end
 end
 
@@ -111,7 +107,7 @@ for i,v in ipairs(st) do
       v.et[#v.et+1]=w
     end
   end
-  table.sort(v.et, function(a,b) return os.time(a.startTime)<os.time(b.startTime) end)
+  table.sort(v.et,function(a,b) return CompareTime(a.startTime,b.startTime) end)
 end
 
 SortServiceListInplace(st)
@@ -123,10 +119,12 @@ for i,v in ipairs({'地デジ','BS','CS','CS3','その他'}) do
          '<a href="epg.html?tab='..(i-1)..'&amp;cust='..cust..'&amp;date='..date..'">'..v..'</a>\n')
 end
 pageNav=pageNav..'  ||\n'
-for i,v in ipairs({'すべて','カスタム'}) do
-  pageNav=pageNav..'  '
-    ..(cust==i-1 and '<span class="epg-nav-sel">'..v..'</span>\n' or
-         '<a href="epg.html?tab='..tab..'&amp;cust='..(i-1)..'&amp;date='..date..'">'..v..'</a>\n')
+for i=0,9 do
+  if i<=1 or custKeys[i] then
+    pageNav=pageNav..'  '
+      ..(cust==i and '<span class="epg-nav-sel">'..(i==0 and 'すべて' or 'カスタム'..(i==1 and '' or i))..'</span>\n' or
+           '<a href="epg.html?tab='..tab..'&amp;cust='..i..'&amp;date='..date..'">'..(i==0 and 'すべて' or 'カスタム'..(i==1 and '' or i))..'</a>\n')
+  end
 end
 pageNav=pageNav..'  ||\n'
   ..'  <a href="#noon">昼</a>\n'
@@ -144,21 +142,20 @@ if minTime then
       ..(pageNav2=='' and d.month..'/' or '')..('%02d'):format(d.day)..({'日','月','火','水','木','金','土'})[d.wday]
       ..(i-baseDate==date and '</span>\n' or '</a>\n')
   end
-  pageNav2='<div class="page-nav">\n'..pageNav2..'</div>\n'
+  pageNav2='<div class="page-nav">\n'..pageNav2..'  <small>'..os.date('!%Y',baseTime+date*24*3600)..'</small>\n</div>\n'
 end
 
 rowHead=''
 tcol=1
 for i,v in ipairs(st) do
   if tcol==1 then
-    rowHead=rowHead..'<td></td>\n'
+    rowHead=rowHead..'<td class="epg-row-head"></td>\n'
   end
   tcol=(tcol<EPG_TIME_COLUMN or i==#st or v.onid==st[i+1].onid and v.tsid==st[i+1].tsid) and tcol+1 or 1
-  rowHead=rowHead..'<th style="min-width:'..(EPG_SERVICE_PX-2)..'px;width:'..(EPG_SERVICE_PX-2)
-    ..'px"><img alt="" style="max-height:0.8em;width:auto" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</th>\n'
+  rowHead=rowHead..'<th class="epg-row-head" style="min-width:'..(EPG_SERVICE_PX-2)..'px;width:'..(EPG_SERVICE_PX-2)
+    ..'px"><img class="logo" alt="" src="logo.lua?onid='..v.onid..'&amp;sid='..v.sid..'">'..v.service_name..'</th>\n'
 end
-rowTail='<tr class="epg-row-tail">\n'..rowHead..'</tr>\n'
-rowHead='<tr class="epg-row-head">\n'..rowHead..'</tr>\n'
+rowHead='<tr>\n'..rowHead..'</tr>\n'
 
 colHead='<td class="epg-col-head">\n'
 for i=4,28 do
@@ -231,10 +228,10 @@ for i,v in ipairs(st) do
           ..'" style="height:'..(endPx-lastPx)..'px;left:'..left..'px;top:'..(lastPx+1)..'px;width:'..width..'px">')
         if not w.past then
           --範囲内のプログラム予約
-          rangeStart=j>1 and startTime
-          rangeEnd=j<#v.et and TimeWithZone(v.et[j+1].startTime)
+          rangeStart=j>1 and w.startTime
+          rangeEnd=j<#v.et and v.et[j+1].startTime
           for k=programReservedStart,programReservedEnd-1 do
-            if (not rangeStart or rangeStart<=rt[k].startTime) and (not rangeEnd or rt[k].startTime<rangeEnd) then
+            if (not rangeStart or not CompareTime(rt[k].startTime,rangeStart)) and (not rangeEnd or CompareTime(rt[k].startTime,rangeEnd)) then
               ct:Append('<span class="lavel-'..(rt[k].recSetting.recMode==5 and 'disabled' or rt[k].recSetting.recMode==4 and 'view' or 'reserved')..'"><a href="reserveinfo.html?id='..rt[k].reserveID..'&amp;fromepg=1">プ予</a></span> ')
             end
           end
@@ -265,11 +262,11 @@ for i,v in ipairs(st) do
   end
 end
 
-ct:Append('</tr>\n'..rowTail..'  </table>\n</div>\n'..(#st==0 and '' or pageNav2..pageNav)..[=[
+ct:Append('</tr>\n  </table>\n</div>\n'..(#st==0 and '' or pageNav2..pageNav)..[=[
 <div id="footer">
   <a href="index.html">メニュー</a>
 </div>
-</body>
+</div></body>
 </html>
 ]=])
 ct:Finish()

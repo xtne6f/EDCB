@@ -47,7 +47,7 @@ const BYTE* ReadStructIntro( const BYTE** buff, const BYTE** buffEnd )
 	if( !ReadVALUE(0, &rb, *buffEnd, &valSize) ||
 	    valSize < sizeof(DWORD) ||
 	    valSize - sizeof(DWORD) > (size_t)(*buffEnd - rb) ){
-		return NULL;
+		return nullptr;
 	}
 	*buff = *buffEnd = rb + (valSize - sizeof(DWORD));
 	return rb;
@@ -61,7 +61,7 @@ const BYTE* ReadVectorIntro( const BYTE** buff, const BYTE** buffEnd, DWORD* val
 	    !ReadVALUE(0, &rb, *buffEnd, valCount) ||
 	    valSize < sizeof(DWORD) * 2 ||
 	    valSize - sizeof(DWORD) * 2 > (size_t)(*buffEnd - rb) ){
-		return NULL;
+		return nullptr;
 	}
 	*buff = *buffEnd = rb + (valSize - sizeof(DWORD) * 2);
 	return rb;
@@ -115,7 +115,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const wstring& val, bo
 #else
 	DWORD size = (DWORD)((val.size() + 1) * sizeof(WCHAR) + sizeof(DWORD));
 #endif
-	if( buff != NULL ){
+	if( buff != nullptr ){
 		//全体のサイズ
 		DWORD pos = buffOffset + WriteVALUE(0, buff, buffOffset, oldFormat ? size - (DWORD)sizeof(DWORD) : size);
 #if WCHAR_MAX > 0xFFFF
@@ -219,7 +219,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const FILE_DATA& val )
 	pos += WriteVALUE(ver, buff, pos, (DWORD)val.Data.size());
 	pos += WriteVALUE(ver, buff, pos, (DWORD)0);
 	if( (DWORD)val.Data.size() != 0 ){
-		if( buff != NULL ){
+		if( buff != nullptr ){
 			std::copy(val.Data.begin(), val.Data.begin() + (DWORD)val.Data.size(), buff + pos);
 		}
 		pos += (DWORD)val.Data.size();
@@ -256,7 +256,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_SETTING_DATA
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, REC_SETTING_DATA* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->recMode) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->priority) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->tuijyuuFlag) ||
@@ -314,7 +314,7 @@ bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, RESERVE_DATA* 
 	BYTE bPadding;
 	wstring strPadding;
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->title) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->startTime) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->durationSecond) ||
@@ -363,7 +363,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_IN
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_SERVICE_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ONID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->TSID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->SID) ||
@@ -391,7 +391,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SHORT_EVEN
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_SHORT_EVENT_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->event_name) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->text_char) ){
 		return false;
@@ -410,7 +410,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_EXTENDED_E
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_EXTENDED_EVENT_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->text_char) ){
 		return false;
 	}
@@ -431,7 +431,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_CONTENT_DA
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_CONTENT_DATA* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->content_nibble_level_1) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->content_nibble_level_2) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->user_nibble_1) ||
@@ -452,7 +452,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_CONTEN_INF
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_CONTEN_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->nibbleList) ){
 		return false;
 	}
@@ -473,7 +473,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_COMPONENT_
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_COMPONENT_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->stream_content) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->component_type) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->component_tag) ||
@@ -503,7 +503,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_AUDIO_COMP
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_AUDIO_COMPONENT_INFO_DATA* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->stream_content) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->component_type) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->component_tag) ||
@@ -530,7 +530,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_AUDIO_COMP
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_AUDIO_COMPONENT_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->componentList) ){
 		return false;
 	}
@@ -551,7 +551,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_EVENT_DATA
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_EVENT_DATA* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->original_network_id) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->transport_stream_id) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->service_id) ||
@@ -573,7 +573,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_EVENTGROUP
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_EVENTGROUP_INFO* val, BYTE* groupType )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, groupType) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->eventDataList) ){
 		return false;
@@ -607,7 +607,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_EVENT_INFO
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_EVENT_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->original_network_id) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->transport_stream_id) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->service_id) ||
@@ -708,7 +708,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SEARCH_DAT
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_SEARCH_DATE_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->startDayOfWeek) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->startHour) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->startMin) ||
@@ -747,7 +747,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SEARCH_KEY
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_SEARCH_KEY_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->andKey) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->notKey) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->regExpFlag) ||
@@ -800,7 +800,7 @@ bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_SEARCH_K
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SEARCH_PG_PARAM* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->keyList) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->enumStart) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->enumEnd) ){
@@ -831,7 +831,7 @@ bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, VIEW_APP_STATU
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
 	DWORD dwSignalLv;
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->status) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->delaySec) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->bonDriver) ||
@@ -866,7 +866,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CH_INFO& val
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SET_CH_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->useSID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ONID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->TSID) ||
@@ -894,7 +894,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CTRL_MODE& v
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SET_CTRL_MODE* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ctrlID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->SID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->enableScramble) ||
@@ -919,7 +919,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_FILE_SET_INF
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, REC_FILE_SET_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->recFolder) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->writePlugIn) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->recNamePlugIn) ||
@@ -949,7 +949,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CTRL_REC_PAR
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SET_CTRL_REC_PARAM* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ctrlID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->fileName) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->overWriteFlag) ||
@@ -977,7 +977,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CTRL_REC_STO
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SET_CTRL_REC_STOP_PARAM* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ctrlID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->saveErrLog) ){
 		return false;
@@ -999,7 +999,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CTRL_REC_STO
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SET_CTRL_REC_STOP_RES_PARAM* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->recFilePath) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->drop) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->scramble) ||
@@ -1040,7 +1040,7 @@ bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, REC_FILE_INFO*
 {
 	wstring strPadding;
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->id) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->recFilePath) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->title) ||
@@ -1085,7 +1085,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPG_AUTO_ADD_DAT
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPG_AUTO_ADD_DATA* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->dataID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->searchInfo) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->recSetting) ){
@@ -1114,7 +1114,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SEARCH_EPG_INFO_
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, SEARCH_EPG_INFO_PARAM* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ONID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->TSID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->SID) ||
@@ -1139,7 +1139,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const GET_EPG_PF_INFO_
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, GET_EPG_PF_INFO_PARAM* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ONID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->TSID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->SID) ||
@@ -1169,7 +1169,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const MANUAL_AUTO_ADD_
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, MANUAL_AUTO_ADD_DATA* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->dataID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->dayOfWeekFlag) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->startTime) ||
@@ -1235,7 +1235,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EV
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, EPGDB_SERVICE_EVENT_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->serviceInfo) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->eventList) ){
 		return false;
@@ -1268,7 +1268,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const NWPLAY_PLAY_INFO
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, NWPLAY_PLAY_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ctrlID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ip) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->udp) ||
@@ -1293,7 +1293,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const NWPLAY_POS_CMD& 
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, NWPLAY_POS_CMD* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ctrlID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->currentPos) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->totalPos) ){
@@ -1305,7 +1305,7 @@ bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, NWPLAY_POS_CMD
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, TVTEST_STREAMING_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->enableMode) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->ctrlID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->serverIP) ||
@@ -1346,7 +1346,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const NOTIFY_SRV_INFO&
 bool ReadVALUE( WORD ver, const BYTE** buff, const BYTE* buffEnd, NOTIFY_SRV_INFO* val )
 {
 	const BYTE* rb = ReadStructIntro(buff, &buffEnd);
-	if( rb == NULL ||
+	if( rb == nullptr ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->notifyID) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->time) ||
 	    !ReadVALUE(ver, &rb, buffEnd, &val->param1) ||
@@ -1413,7 +1413,7 @@ void DeprecatedNewWriteVALUE( const RESERVE_DATA& val, CCmdStream& cmd, BYTE* bu
 	pos += WriteVALUE(0, buff, pos, val.recSetting.startMargine);
 	pos += WriteVALUE(0, buff, pos, val.recSetting.endMargine);
 	pos += WriteVALUE(0, buff, pos, val.recSetting.serviceMode);
-	if( buff == NULL ){
+	if( buff == nullptr ){
 		cmd.Resize(pos);
 		DeprecatedNewWriteVALUE(val, cmd, cmd.GetData());
 	}
@@ -1422,7 +1422,7 @@ void DeprecatedNewWriteVALUE( const RESERVE_DATA& val, CCmdStream& cmd, BYTE* bu
 bool DeprecatedReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize )
 {
 	using namespace CtrlCmdUtilImpl_;
-	if( val == NULL || buff == NULL ){
+	if( val == nullptr || buff == nullptr ){
 		return false;
 	}
 	const BYTE* buffEnd = buff + buffSize;
@@ -1493,7 +1493,7 @@ bool DeprecatedReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize )
 bool DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize )
 {
 	using namespace CtrlCmdUtilImpl_;
-	if( val == NULL || buff == NULL ){
+	if( val == nullptr || buff == nullptr ){
 		return false;
 	}
 	const BYTE* buffEnd = buff + buffSize;
@@ -1640,7 +1640,7 @@ void DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, CCmdStream& cmd, BYTE
 	pos += WriteVALUE(0, buff, pos, (DWORD)(val.DurationFlag ? val.durationSec : 0));
 	pos += WriteVALUE(0, buff, pos, (BYTE)(val.hasComponentInfo ? val.componentInfo.component_type : 0));
 	pos += WriteVALUE(0, buff, pos, val.hasComponentInfo ? val.componentInfo.text_char : wstring(), true);
-	const EPGDB_AUDIO_COMPONENT_INFO_DATA* ac = val.hasAudioInfo && val.audioInfo.componentList.empty() == false ? &val.audioInfo.componentList[0] : NULL;
+	const EPGDB_AUDIO_COMPONENT_INFO_DATA* ac = val.hasAudioInfo && val.audioInfo.componentList.empty() == false ? &val.audioInfo.componentList[0] : nullptr;
 	pos += WriteVALUE(0, buff, pos, (BYTE)(ac ? ac->component_type : 0));
 	pos += WriteVALUE(0, buff, pos, (BYTE)(ac ? ac->ES_multi_lingual_flag : 0));
 	pos += WriteVALUE(0, buff, pos, (BYTE)(ac ? ac->main_component_flag : 0));
@@ -1670,7 +1670,7 @@ void DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, CCmdStream& cmd, BYTE
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.service_id);
 		pos += WriteVALUE(0, buff, pos, (DWORD)data.event_id);
 	}
-	if( buff == NULL ){
+	if( buff == nullptr ){
 		cmd.Resize(pos);
 		DeprecatedNewWriteVALUE(val, cmd, cmd.GetData());
 	}

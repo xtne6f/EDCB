@@ -65,7 +65,7 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 	hints.ai_protocol = IPPROTO_TCP;
 
 	struct addrinfo* result;
-	if( getaddrinfo(NULL, szPort, &hints, &result) != 0 ){
+	if( getaddrinfo(nullptr, szPort, &hints, &result) != 0 ){
 		return false;
 	}
 
@@ -111,7 +111,7 @@ void CTCPServer::StopServer()
 	}
 	if( m_sock != INVALID_SOCKET ){
 #ifdef _WIN32
-		WSAEventSelect(m_sock, NULL, 0);
+		WSAEventSelect(m_sock, nullptr, 0);
 		unsigned long x = 0;
 		ioctlsocket(m_sock, FIONBIO, &x);
 #else
@@ -151,7 +151,7 @@ bool TestAcl(struct sockaddr* addr, wstring acl)
 			return false;
 		}
 		wstring m;
-		int mm = Separate(val, L"/", val, m) ? (int)wcstol(m.c_str(), NULL, 10) : addr->sa_family == AF_INET6 ? 128 : 32;
+		int mm = Separate(val, L"/", val, m) ? (int)wcstol(m.c_str(), nullptr, 10) : addr->sa_family == AF_INET6 ? 128 : 32;
 		if( val.empty() || mm < 0 || mm > (addr->sa_family == AF_INET6 ? 128 : 32) ){
 			//書式エラー
 			return false;
@@ -162,7 +162,7 @@ bool TestAcl(struct sockaddr* addr, wstring acl)
 		hints.ai_flags = AI_NUMERICHOST;
 		hints.ai_family = addr->sa_family;
 		struct addrinfo* result;
-		if( getaddrinfo(valU.c_str() + 1, NULL, &hints, &result) != 0 ){
+		if( getaddrinfo(valU.c_str() + 1, nullptr, &hints, &result) != 0 ){
 			//書式エラー
 			return false;
 		}
@@ -210,7 +210,7 @@ int RecvAll(SOCKET sock, char* buf, int len, int flags)
 void SetBlockingMode(SOCKET sock)
 {
 #ifdef _WIN32
-	WSAEventSelect(sock, NULL, 0);
+	WSAEventSelect(sock, nullptr, 0);
 	unsigned long x = 0;
 	ioctlsocket(sock, FIONBIO, &x);
 	DWORD to = CTCPServer::SND_RCV_TIMEOUT;
@@ -315,7 +315,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					continue;
 				}
 				CCmdStream res;
-				pSys->m_cmdProc(waitList[i].cmd, res, NULL);
+				pSys->m_cmdProc(waitList[i].cmd, res, nullptr);
 				if( res.GetParam() == CMD_NO_RES ){
 					//応答は保留された
 					if( GetU32Tick() - waitList[i].tick <= pSys->m_dwResponseTimeout ){
@@ -357,7 +357,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 				}else if( TestAcl((struct sockaddr*)&client, pSys->m_acl) == false ){
 					wstring ipW;
 					char ip[NI_MAXHOST];
-					if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 ){
+					if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, nullptr, 0, NI_NUMERICHOST) == 0 ){
 						UTF8toW(ip, ipW);
 					}
 					AddDebugLogFormat(L"Deny from IP: %ls", ipW.c_str());
@@ -391,13 +391,13 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					    cmd.GetParam() == CMD2_EPG_SRV_NWPLAY_SET_IP ){
 						//接続元IPを引数に添付
 						char ip[NI_MAXHOST];
-						if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0 ){
+						if( getnameinfo((struct sockaddr*)&client, clientLen, ip, NI_MAXHOST, nullptr, 0, NI_NUMERICHOST) == 0 ){
 							UTF8toW(ip, clientIP);
 						}
 					}
 
 					CCmdStream res;
-					pSys->m_cmdProc(cmd, res, clientIP.empty() ? NULL : clientIP.c_str());
+					pSys->m_cmdProc(cmd, res, clientIP.empty() ? nullptr : clientIP.c_str());
 					if( res.GetParam() == CMD_NO_RES ){
 						if( cmd.GetParam() == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
 							//保留可能なコマンドは応答待ちリストに移動
@@ -482,7 +482,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 void CTCPServer::ResponseThread(RESPONSE_THREAD_INFO* info)
 {
 	CCmdStream res(CMD_ERR);
-	void* param = NULL;
+	void* param = nullptr;
 	if( info->sys->m_responseThreadProc ){
 		info->sys->m_responseThreadProc(info->cmd, res, RESPONSE_THREAD_INIT, param);
 	}

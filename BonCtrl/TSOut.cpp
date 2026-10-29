@@ -18,7 +18,7 @@ CTSOut::CTSOut(void)
 	this->emmEnableFlag = FALSE;
 
 	this->nextCtrlID = 1;
-	this->logoAdditionalNeededPids = NULL;
+	this->logoAdditionalNeededPids = nullptr;
 	this->noLogScramble = FALSE;
 	this->parseEpgPostProcess = FALSE;
 }
@@ -44,7 +44,7 @@ void CTSOut::SetChChangeEvent(WORD presumedONID, BOOL resetEpgUtil)
 		//EpgDataCap3は内部メソッド単位でアトミック。初期化以外はobjLockかepgUtilLockのどちらかを獲得すればよい
 		this->epgUtil.UnInitialize();
 		this->epgUtil.Initialize(FALSE);
-		this->logoAdditionalNeededPids = NULL;
+		this->logoAdditionalNeededPids = nullptr;
 	}
 }
 
@@ -53,7 +53,7 @@ BOOL CTSOut::IsChUnknown(DWORD* elapsedTime)
 	lock_recursive_mutex lock(this->objLock);
 
 	if( this->chChangeState != CH_ST_DONE ){
-		if( elapsedTime != NULL ){
+		if( elapsedTime != nullptr ){
 			*elapsedTime = this->chChangeState == CH_ST_INIT ? MAXDWORD : GetU32Tick() - this->chChangeTime;
 		}
 		return TRUE;
@@ -99,7 +99,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	//dataは同期済みかつそのサイズは188の整数倍であること
 
 	lock_recursive_mutex lock(this->objLock);
-	if( dataSize == 0 || data == NULL ){
+	if( dataSize == 0 || data == nullptr ){
 		return;
 	}
 	DWORD tick = GetU32Tick();
@@ -109,7 +109,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 	}
 	this->decodeBuff.clear();
 
-	BYTE* decodeData = NULL;
+	BYTE* decodeData = nullptr;
 	DWORD decodeSize = 0;
 	{
 		for( DWORD i=0; i<dataSize; i+=188 ){
@@ -144,7 +144,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 							//ONIDの取得は遅いことがあるので、チャンネル変更などでONIDが予測できる場合はそれを使う
 							//切り替え前との区別を確実にするためTSIDが変化する場合に限る
 							onid = this->chChangePresumedONID;
-							if( this->epgUtil.GetTSID(NULL, &tsid) == NO_ERR && tsid != this->lastTSID ){
+							if( this->epgUtil.GetTSID(nullptr, &tsid) == NO_ERR && tsid != this->lastTSID ){
 								ret = NO_ERR;
 							}
 						}
@@ -203,8 +203,8 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					decodeData = &this->decodeBuff.front();
 					decodeSize = (DWORD)this->decodeBuff.size();
 				}else{
-					if( decodeData == NULL || decodeSize == 0 ){
-						decodeData = NULL;
+					if( decodeData == nullptr || decodeSize == 0 ){
+						decodeData = nullptr;
 						decodeSize = 0;
 					}
 				}
@@ -307,7 +307,7 @@ BOOL CALLBACK CTSOut::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logo
 	CHECK_LOGO_RESULT& result = *((pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*>*)param)->first;
 	vector<pair<LONGLONG, DWORD>>& serviceListSizeMap = *((pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*>*)param)->second;
 
-	if( logoList == NULL ){
+	if( logoList == nullptr ){
 		return TRUE;
 	}
 	for( ; logoListSize > 0; logoListSize--, logoList++ ){
@@ -349,7 +349,7 @@ BOOL CTSOut::StartSaveEPG(
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
-	if( this->epgFile != NULL ){
+	if( this->epgFile != nullptr ){
 		return FALSE;
 	}
 	this->epgFilePath = epgFilePath_;
@@ -364,7 +364,7 @@ BOOL CTSOut::StartSaveEPG(
 
 	UtilCreateDirectories(fs_path(this->epgTempFilePath).parent_path());
 	this->epgFile.reset(UtilOpenFile(this->epgTempFilePath, UTIL_SECURE_WRITE));
-	if( this->epgFile == NULL ){
+	if( this->epgFile == nullptr ){
 		AddDebugLog(L"err");
 		return FALSE;
 	}
@@ -378,7 +378,7 @@ void CTSOut::StopSaveEPG(
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
-	if( this->epgFile == NULL ){
+	if( this->epgFile == nullptr ){
 		return;
 	}
 
@@ -618,7 +618,7 @@ BOOL CTSOut::GetServiceID(
 	if( itr == serviceUtilMap.end() ){
 		return FALSE;
 	}
-	if( serviceID != NULL ){
+	if( serviceID != nullptr ){
 		*serviceID = itr->second->GetSID();
 	}
 

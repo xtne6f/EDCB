@@ -27,7 +27,7 @@ BOOL CPacketInit::GetTSData(
 	DWORD* outSize
 )
 {
-	if( inData == NULL || inSize == 0 || outData == NULL || outSize == NULL ){
+	if( inData == nullptr || inSize == 0 || outData == nullptr || outSize == nullptr ){
 		return FALSE;
 	}
 

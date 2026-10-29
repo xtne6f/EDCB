@@ -34,7 +34,7 @@ public:
 	void SetChChangeEvent(WORD presumedONID = 0xFFFF, BOOL resetEpgUtil = FALSE);
 
 	//GetStreamID()が失敗する状態かどうか
-	BOOL IsChUnknown(DWORD* elapsedTime = NULL);
+	BOOL IsChUnknown(DWORD* elapsedTime = nullptr);
 
 	//現在のストリームのIDを取得する
 	//戻り値：
@@ -167,7 +167,7 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// id			[IN]制御識別ID
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+	// sendList		[IN/OUT]送信先リスト。nullptrで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	BOOL SendUdp(
 		DWORD id,
 		vector<NW_SEND_INFO>* sendList
@@ -178,7 +178,7 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// id			[IN]制御識別ID
-	// sendList		[IN/OUT]送信先リスト。NULLで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+	// sendList		[IN/OUT]送信先リスト。nullptrで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
 	BOOL SendTcp(
 		DWORD id,
 		vector<NW_SEND_INFO>* sendList
@@ -205,7 +205,7 @@ public:
 	// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
 	BOOL EndSave(
 		DWORD id,
-		BOOL* subRecFlag = NULL
+		BOOL* subRecFlag = nullptr
 		);
 
 	//スクランブル解除処理の動作設定

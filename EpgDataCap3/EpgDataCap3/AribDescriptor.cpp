@@ -1281,7 +1281,7 @@ bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSi
 {
 	Clear();
 
-	if( data == NULL ){
+	if( data == nullptr ){
 		return false;
 	}
 
@@ -1312,7 +1312,7 @@ bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSi
 		Clear();
 		return false;
 	}
-	if( decodeReadSize != NULL ){
+	if( decodeReadSize != nullptr ){
 		*decodeReadSize = readSize;
 	}
 	return true;
@@ -1320,7 +1320,7 @@ bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSi
 
 DWORD CDescriptor::GetDecodeReadSize(const BYTE* data, DWORD dataSize)
 {
-	if( data == NULL || dataSize < 2 || data[1] > dataSize - 2 ){
+	if( data == nullptr || dataSize < 2 || data[1] > dataSize - 2 ){
 		return 0;
 	}
 	return 2 + data[1];
@@ -1330,28 +1330,28 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 {
 	Clear();
 
-	if( data == NULL || dataSize == 0 ){
+	if( data == nullptr || dataSize == 0 ){
 		return false;
 	}
 
 	//記述子タグに対応するパーサを探す(customParserListを優先)
-	const short* parser = NULL;
-	if( customParserList != NULL ){
-		for( int i = 0; customParserList[i].parser != NULL; ++i ){
+	const short* parser = nullptr;
+	if( customParserList != nullptr ){
+		for( int i = 0; customParserList[i].parser != nullptr; ++i ){
 			if( customParserList[i].tag == data[0] ){
 				parser = customParserList[i].parser;
 				break;
 			}
 		}
 	}
-	if( parser == NULL ){
+	if( parser == nullptr ){
 		for( int i = 0; parserMap[i].parser != unknown_descriptor_p; ++i ){
 			if( parserMap[i].tag == data[0] ){
 				parser = parserMap[i].parser;
 				break;
 			}
 		}
-		if( parser == NULL ){
+		if( parser == nullptr ){
 			parser = unknown_descriptor_p;
 		}
 	}
@@ -1374,7 +1374,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 		Clear();
 		return false;
 	}
-	if( decodeReadSize != NULL ){
+	if( decodeReadSize != nullptr ){
 		*decodeReadSize = readSize;
 	}
 	return true;
@@ -1581,10 +1581,10 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					dp.type = (short)copySize;
 					if( copySize <= sizeof(dp.b) ){
 						//直置き
-						memcpy(dp.b, data + readSize, copySize);
+						std::copy(data + readSize, data + readSize + copySize, dp.b);
 					}else{
 						dp.pb = new BYTE[copySize];
-						memcpy(dp.pb, data + readSize, copySize);
+						std::copy(data + readSize, data + readSize + copySize, dp.pb);
 					}
 					readSize += byteSize;
 				}
@@ -1678,7 +1678,7 @@ DWORD CDescriptor::DecodeNumber(const BYTE* data, DWORD bitSize, DWORD* readSize
 
 bool CDescriptor::EnterLoop(CLoopPointer& lp, DWORD offset) const
 {
-	const vector<DESCRIPTOR_PROPERTY>* current = lp.pl != NULL ? &(*lp.pl)[lp.index] : &this->rootProperty;
+	const vector<DESCRIPTOR_PROPERTY>* current = lp.pl != nullptr ? &(*lp.pl)[lp.index] : &this->rootProperty;
 
 	for( const DESCRIPTOR_PROPERTY& dp : *current ){
 		if( dp.type == DESCRIPTOR_PROPERTY::TYPE_P && offset-- == 0 ){
@@ -1705,20 +1705,20 @@ bool CDescriptor::SetLoopIndex(CLoopPointer& lp, DWORD index) const
 
 const CDescriptor::DESCRIPTOR_PROPERTY* CDescriptor::FindProperty(property_id id, CLoopPointer lp) const
 {
-	const vector<DESCRIPTOR_PROPERTY>* current = lp.pl != NULL ? &(*lp.pl)[lp.index] : &this->rootProperty;
+	const vector<DESCRIPTOR_PROPERTY>* current = lp.pl != nullptr ? &(*lp.pl)[lp.index] : &this->rootProperty;
 
 	for( const DESCRIPTOR_PROPERTY& dp : *current ){
 		if( dp.id == id ){
 			return &dp;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 DWORD CDescriptor::GetNumber(property_id id, CLoopPointer lp) const
 {
 	const DESCRIPTOR_PROPERTY* pp = FindProperty(id, lp);
-	if( pp != NULL && pp->type == DESCRIPTOR_PROPERTY::TYPE_N ){
+	if( pp != nullptr && pp->type == DESCRIPTOR_PROPERTY::TYPE_N ){
 		return pp->n;
 	}
 	return 0;
@@ -1727,7 +1727,7 @@ DWORD CDescriptor::GetNumber(property_id id, CLoopPointer lp) const
 bool CDescriptor::SetNumber(property_id id, DWORD n, CLoopPointer lp)
 {
 	DESCRIPTOR_PROPERTY* pp = const_cast<DESCRIPTOR_PROPERTY*>(FindProperty(id, lp));
-	if( pp != NULL && pp->type == DESCRIPTOR_PROPERTY::TYPE_N ){
+	if( pp != nullptr && pp->type == DESCRIPTOR_PROPERTY::TYPE_N ){
 		pp->n = n;
 		return true;
 	}
@@ -1737,13 +1737,13 @@ bool CDescriptor::SetNumber(property_id id, DWORD n, CLoopPointer lp)
 const BYTE* CDescriptor::GetBinary(property_id id, DWORD* size, CLoopPointer lp) const
 {
 	const DESCRIPTOR_PROPERTY* pp = FindProperty(id, lp);
-	if( pp != NULL && pp->type >= 0 ){
-		if( size != NULL ){
+	if( pp != nullptr && pp->type >= 0 ){
+		if( size != nullptr ){
 			*size = pp->type;
 		}
 		return pp->type <= (int)sizeof(pp->b) ? pp->b : pp->pb;
 	}
-	return NULL;
+	return nullptr;
 }
 
 CDescriptor::DESCRIPTOR_PROPERTY::~DESCRIPTOR_PROPERTY()
@@ -1766,9 +1766,9 @@ CDescriptor::DESCRIPTOR_PROPERTY::DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY&
 	}else if( type >= 0 ){
 		if( type > (int)sizeof(b) ){
 			pb = new BYTE[type];
-			memcpy(pb, o.pb, type);
+			std::copy(o.pb, o.pb + type, pb);
 		}else{
-			memcpy(b, o.b, sizeof(b));
+			std::copy(o.b, o.b + sizeof(b), b);
 		}
 	}
 }
@@ -1791,7 +1791,7 @@ CDescriptor::DESCRIPTOR_PROPERTY& CDescriptor::DESCRIPTOR_PROPERTY::operator=(DE
 			if( type > (int)sizeof(b) ){
 				pb = o.pb;
 			}else{
-				memcpy(b, o.b, sizeof(b));
+				std::copy(o.b, o.b + sizeof(b), b);
 			}
 		}
 		o.type = TYPE_N;

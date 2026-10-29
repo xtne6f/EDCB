@@ -64,7 +64,7 @@ void CTunerBankCtrl::ReloadSetting(const CEpgTimerSrvSetting::SETTING& s)
 const CH_DATA4* CTunerBankCtrl::GetCh(WORD onid, WORD tsid, WORD sid) const
 {
 	auto itr = this->chMap.find(Create64Key(onid, tsid, sid));
-	return itr == this->chMap.end() ? NULL : &itr->second;
+	return itr == this->chMap.end() ? nullptr : &itr->second;
 }
 
 bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
@@ -213,7 +213,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 #ifdef _WIN32
 	    WaitForSingleObject(this->hTunerProcess, 0) != WAIT_TIMEOUT
 #else
-	    waitpid(this->tunerPid, NULL, WNOHANG) != 0
+	    waitpid(this->tunerPid, nullptr, WNOHANG) != 0
 #endif
 	    ){
 		//チューナが予期せず閉じられた
@@ -739,10 +739,10 @@ bool CTunerBankCtrl::FindPartialService(WORD onid, WORD tsid, WORD sid, WORD* pa
 	for( auto itr = this->chMap.lower_bound(Create64Key(onid, tsid, 0)); itr != itrEnd; itr++ ){
 		if( itr->second.partialFlag ){
 			if( itr->second.serviceID != sid ){
-				if( partialSID != NULL ){
+				if( partialSID != nullptr ){
 					*partialSID = itr->second.serviceID;
 				}
-				if( serviceName != NULL ){
+				if( serviceName != nullptr ){
 					*serviceName = itr->second.serviceName;
 				}
 				return true;
@@ -760,7 +760,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 	BYTE partialRecMode = reserve.recMode == RECMODE_VIEW ? 0 : min<BYTE>(reserve.partialRecMode, 2);
 	WORD partialSID = 0;
 	if( partialRecMode == 1 || partialRecMode == 2 ){
-		if( FindPartialService(reserve.onid, reserve.tsid, reserve.sid, &partialSID, NULL) == false ){
+		if( FindPartialService(reserve.onid, reserve.tsid, reserve.sid, &partialSID, nullptr) == false ){
 			partialSID = 0;
 			if( reserve.partialRecMode == 2 ){
 				return false;
@@ -826,7 +826,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	wstring outTextW = (append ? L"\r\n-----------------------\r\n" : this->saveProgramInfoAsUtf8 ? L"\xFEFF" : L"") +
 		ConvertProgramText(info, [this](WORD onid, WORD tsid, WORD sid) -> LPCWSTR {
 			auto itr = this->chMap.find(Create64Key(onid, tsid, sid));
-			return itr != this->chMap.end() ? itr->second.serviceName.c_str() : NULL;
+			return itr != this->chMap.end() ? itr->second.serviceName.c_str() : nullptr;
 		});
 	if( UTIL_NEWLINE[0] != L'\r' ){
 		Replace(outTextW, L"\r\n", L"\n");
@@ -975,7 +975,7 @@ bool CTunerBankCtrl::StartEpgCap(const vector<SET_CH_INFO>& setChList)
 {
 	if( setChList.empty() == false && this->tunerPid == 0 ){
 		//EPG取得についてはチューナの再利用はしない
-		if( OpenTuner(this->recMinWake, true, false, false, true, NULL) ){
+		if( OpenTuner(this->recMinWake, true, false, false, true, nullptr) ){
 			CWatchBlock watchBlock(&this->watchContext);
 			CSendCtrlCmd ctrlCmd;
 			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_PIPE, this->tunerPid);
@@ -1207,7 +1207,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		si.cb = sizeof(si);
 		//CreateProcess()のlpCommandLineはconstでないため
 		strParam += L'\0';
-		if( CreateProcess(strExecute.c_str(), &strParam.front(), NULL, NULL, FALSE, dwPriority, NULL, NULL, &si, &pi) ){
+		if( CreateProcess(strExecute.c_str(), &strParam.front(), nullptr, nullptr, FALSE, dwPriority, nullptr, nullptr, &si, &pi) ){
 			CloseHandle(pi.hThread);
 			this->hTunerProcess = pi.hProcess;
 			this->tunerPid = pi.dwProcessId;
@@ -1223,13 +1223,13 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 	for( size_t i = 0; i < strParam.size(); i += strlen(strParam.c_str() + i) + 1 ){
 		argv.push_back((char*)(strParam.c_str() + i));
 	}
-	argv.push_back(NULL);
+	argv.push_back(nullptr);
 	pid_t pid = fork();
 	if( pid == 0 ){
 		//シグナルマスクを初期化
 		sigset_t sset;
 		sigemptyset(&sset);
-		if( sigprocmask(SIG_SETMASK, &sset, NULL) == 0 ){
+		if( pthread_sigmask(SIG_SETMASK, &sset, nullptr) == 0 ){
 			execv(execU.c_str(), argv.data());
 		}
 		exit(EXIT_FAILURE);
@@ -1249,7 +1249,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 			if( WaitForSingleObject(this->hTunerProcess, 10) != WAIT_TIMEOUT ){
 #else
 			SleepForMsec(10);
-			if( waitpid(this->tunerPid, NULL, WNOHANG) != 0 ){
+			if( waitpid(this->tunerPid, nullptr, WNOHANG) != 0 ){
 #endif
 				CloseTuner();
 				return false;
@@ -1288,7 +1288,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 #else
 		kill(this->tunerPid, 9);
 		//ゾンビの回収に1秒だけ使う
-		for( int timeout = 1000; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+		for( int timeout = 1000; timeout > 0 && waitpid(this->tunerPid, nullptr, WNOHANG) == 0; timeout -= 10 ){
 			SleepForMsec(10);
 		}
 #endif
@@ -1304,7 +1304,7 @@ void CTunerBankCtrl::CloseTuner()
 #ifdef _WIN32
 		if( WaitForSingleObject(this->hTunerProcess, 0) == WAIT_TIMEOUT ){
 #else
-		if( waitpid(this->tunerPid, NULL, WNOHANG) == 0 ){
+		if( waitpid(this->tunerPid, nullptr, WNOHANG) == 0 ){
 #endif
 			CWatchBlock watchBlock(&this->watchContext);
 			CSendCtrlCmd ctrlCmd;
@@ -1316,7 +1316,7 @@ void CTunerBankCtrl::CloseTuner()
 				TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
 #else
 			bool killed = false;
-			for( int timeout = 30000; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+			for( int timeout = 30000; timeout > 0 && waitpid(this->tunerPid, nullptr, WNOHANG) == 0; timeout -= 10 ){
 				if( killed == false && timeout < 1000 ){
 					//ぶち殺す。ゾンビの回収に1秒だけ使う
 					kill(this->tunerPid, 9);
@@ -1359,7 +1359,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 #else
 	EnumFindFile(fs_path(EDCB_INI_ROOT).append(CMD2_VIEW_CTRL_PIPE).concat(L"*"), [&pidList](UTIL_FIND_DATA& findData) -> bool {
 		if( findData.fileName.size() > wcslen(CMD2_VIEW_CTRL_PIPE) ){
-			int pid = (int)wcstol(findData.fileName.c_str() + wcslen(CMD2_VIEW_CTRL_PIPE), NULL, 10);
+			int pid = (int)wcstol(findData.fileName.c_str() + wcslen(CMD2_VIEW_CTRL_PIPE), nullptr, 10);
 			if( pid > 0 && kill(pid, 0) == 0 ){
 				pidList.push_back(pid);
 			}
@@ -1396,7 +1396,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 #ifdef _WIN32
 					WaitForSingleObject(this->hTunerProcess, 10000);
 #else
-					for( int timeout = 10000; timeout > 0 && waitpid(this->tunerPid, NULL, WNOHANG) == 0; timeout -= 10 ){
+					for( int timeout = 10000; timeout > 0 && waitpid(this->tunerPid, nullptr, WNOHANG) == 0; timeout -= 10 ){
 						SleepForMsec(10);
 					}
 #endif
@@ -1467,7 +1467,7 @@ wstring CTunerBankCtrl::ConvertRecName(
 		EPG_EVENT_INFO epgInfo;
 		EPGDB_EVENT_INFO epgDBInfo;
 		CEpgEventInfoAdapter epgInfoAdapter;
-		info.epgInfo = NULL;
+		info.epgInfo = nullptr;
 		if( eid != 0xFFFF ){
 			if( epgDBManager_.SearchEpg(onid, tsid, sid, eid, &epgDBInfo) ){
 				epgInfo = epgInfoAdapter.Create(&epgDBInfo);

@@ -14,10 +14,10 @@ end
 
 option=XCODE_OPTIONS[GetVarInt(query,'option',1,#XCODE_OPTIONS) or 1]
 audio2=(GetVarInt(query,'audio2',0,1) or 0)+(option.audioStartAt or 0)
-filter=GetVarInt(query,'cinema')==1 and option.filterCinema or option.filter or ''
+filter=GetVarInt(query,'cinema')==1 and (type(option.filterCinema)=='function' and option.filterCinema(1) or type(option.filterCinema)=='string' and option.filterCinema) or
+                                        type(option.filter)=='function' and option.filter(1) or type(option.filter)=='string' and option.filter or ''
 hlsKey=mg.get_var(query,'hls')
 hls4=GetVarInt(query,'hls4',0) or 0
-caption=hlsKey and option.captionHls or option.captionNone or ''
 output=hlsKey and option.outputHls or option.output
 n=GetVarInt(query,'n') or 0
 onid,tsid,sid=GetVarServiceID(query,'id')
@@ -70,7 +70,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
     cmd=' | '..xcoder..' '..option.option
       :gsub('$AUDIO',audio2)
       :gsub('$FILTER',(filter:gsub('%%','%%%%')))
-      :gsub('$CAPTION',(caption:gsub('%%','%%%%')))
+      :gsub('$CAPTION','')
       :gsub('$OUTPUT',(output[2]:gsub('%%','%%%%')))
   end
 
@@ -91,7 +91,7 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   if hlsKey then
     -- セグメント長は既定値(2秒)なので概ねキーフレーム(4～5秒)間隔
     -- プロセス終了時に対応するNetworkTVモードも終了させる
-    cmd=cmd..' | '..tsmemseg..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -d 3 -p '..partConfigSec..' '..(WIN32 and '' or '-g '..QuoteCommandArgForPath(EdcbModulePath(),hlsKey)..' ')
+    cmd=cmd..' | '..tsmemseg..(hls4>0 and ' -4' or '')..' -a 10 -m 8192 -p '..partConfigSec..' '..(WIN32 and '' or '-g '..QuoteCommandArgForPath(EdcbModulePath(),hlsKey)..' ')
     if nwtvclose then
       cmd=cmd..(WIN32 and '-c "..\\EpgTimerSrv.exe /luapost ' or '-c "echo \\"')
         ..'ok,pid,openID=edcb.IsOpenNetworkTV('..nwtvclose[1]..');if(ok)and(openID=='..(nwtvclose[2] or 'nil')..')then;edcb.CloseNetworkTV('..nwtvclose[1]..');end'
@@ -103,7 +103,9 @@ function OpenTranscoder(pipeName,searchName,nwtvclose,targetSID)
   end
 
   -- "-z"はプロセス検索用
-  cmd=tsreadex..' -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c 5 -u 2 '..QuoteCommandArgForPath(SendTSTCPPipePath(pipeName,0),hlsKey)..cmd
+  cmd=tsreadex..' -z edcb-legacy-'..searchName..' -t 10 -m 2 -x 18/38/39 -n '..(targetSID or -1)..' -a 9 -b 1 -c '
+    ..(XCODE_USING_OLD_TRANSCODER and not option.passthroughCaption and 2 or 5)..' -u 2 '..((XCODE_USING_OLD_TRANSCODER or option.passthroughCaption) and '' or '-d 1 ')
+    ..QuoteCommandArgForPath(SendTSTCPPipePath(pipeName,0),hlsKey)..cmd
   if hlsKey then
     -- 極端に多く開けないようにする
     local indexCount=#(edcb.FindFile(TsmemsegPipePath('*_','00'),10) or {})
@@ -208,9 +210,13 @@ function OpenLiveJikkyo(pid,jkID,nid,sid)
       end
     end
   else
-    local f=WIN32 and edcb.io.open('\\\\.\\pipe\\chat_d7b64ac2_'..pid,'r')
+    local f=edcb.io.open(WIN32 and '\\\\.\\pipe\\chat_d7b64ac2_'..pid or PathAppend(JKTASK_BASE_DIR,'chat_'..pid..'.fifo'),'r')
     if not f then
       return 'No pipe found for reading comments.'
+    end
+    if not WIN32 and not edcb.io._flock_nb(f) then
+      f:close()
+      return 'Pipe for reading comments is already in use.'
     end
     return f,-1,function() f:close() end
   end

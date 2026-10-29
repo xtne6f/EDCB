@@ -4,15 +4,15 @@
 CTSPacketUtil::CTSPacketUtil(void)
 {
 	data_byteSize = 0;
-	data_byte = NULL;
+	data_byte = nullptr;
 }
 
 BOOL CTSPacketUtil::Set188TS(const BYTE* data, DWORD dataSize)
 {
 	data_byteSize = 0;
-	data_byte = NULL;
+	data_byte = nullptr;
 
-	if( data == NULL || dataSize != 188 || data[0] != 0x47 ){
+	if( data == nullptr || dataSize != 188 || data[0] != 0x47 ){
 		// Not a TS packet
 		transport_error_indicator = 0;
 		return FALSE;

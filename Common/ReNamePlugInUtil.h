@@ -21,7 +21,7 @@ public:
 #endif
 
 	//入力された予約情報と変換パターンを元に、録画時のファイル名を作成する（拡張子含む）
-	//recNameがNULL時は必要なサイズをrecNamesizeで返す
+	//recNameがnullptr時は必要なサイズをrecNamesizeで返す
 	//通常recNamesize=256で呼び出し
 	//プラグインのバージョンに応じてConvertRecName3→2→1の順に互換呼び出しを行う
 	//スレッドセーフではない

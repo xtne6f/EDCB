@@ -10,8 +10,8 @@
 // CSetDlgApp ダイアログ
 
 CSetDlgApp::CSetDlgApp()
-	: m_hWnd(NULL)
-	, m_setting(NULL)
+	: m_hWnd(nullptr)
+	, m_setting(nullptr)
 {
 
 }
@@ -23,7 +23,7 @@ CSetDlgApp::~CSetDlgApp()
 BOOL CSetDlgApp::Create(LPCWSTR lpszTemplateName, HWND hWndParent, const APP_SETTING& setting)
 {
 	m_setting = &setting;
-	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
+	return CreateDialogParam(GetModuleHandle(nullptr), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != nullptr;
 }
 
 
@@ -57,7 +57,7 @@ BOOL CSetDlgApp::OnInitDialog()
 
 void CSetDlgApp::SaveIni(void)
 {
-	if( m_hWnd == NULL ){
+	if( m_hWnd == nullptr ){
 		return;
 	}
 	fs_path appIniPath = GetModuleIniPath();
@@ -73,8 +73,8 @@ void CSetDlgApp::SaveIni(void)
 	WritePrivateProfileString( L"SET", L"RecFileName", recFileName, appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"OverWrite", Button_GetCheck(GetDlgItem(IDC_CHECK_OVER_WRITE)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"OpenLast", Button_GetCheck(GetDlgItem(IDC_CHECK_OPENLAST)), appIniPath.c_str() );
-	WritePrivateProfileInt( L"SET", L"DropSaveThresh", (int)GetDlgItemInt(m_hWnd, IDC_EDIT_DROP_SAVE_THRESH, NULL, TRUE), appIniPath.c_str() );
-	WritePrivateProfileInt( L"SET", L"ScrambleSaveThresh", (int)GetDlgItemInt(m_hWnd, IDC_EDIT_SCRAMBLE_SAVE_THRESH, NULL, TRUE), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"DropSaveThresh", (int)GetDlgItemInt(m_hWnd, IDC_EDIT_DROP_SAVE_THRESH, nullptr, TRUE), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"ScrambleSaveThresh", (int)GetDlgItemInt(m_hWnd, IDC_EDIT_SCRAMBLE_SAVE_THRESH, nullptr, TRUE), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"NoLogScramble", Button_GetCheck(GetDlgItem(IDC_CHECK_NO_LOG_SCRAMBLE)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"DropLogAsUtf8", Button_GetCheck(GetDlgItem(IDC_CHECK_DROP_LOG_AS_UTF8)), appIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"SaveDebugLog", Button_GetCheck(GetDlgItem(IDC_CHECK_SAVE_DEBUG_LOG)), appIniPath.c_str() );
@@ -87,8 +87,8 @@ void CSetDlgApp::SaveIni(void)
 		}
 	}
 	WritePrivateProfileInt( L"SET", L"TraceBonDriverLevel", traceLevel, appIniPath.c_str() );
-	WritePrivateProfileInt( L"SET", L"TsBuffMaxCount", GetDlgItemInt(m_hWnd, IDC_EDIT_TS_BUFF_MAX, NULL, FALSE), appIniPath.c_str() );
-	int buffMax = GetDlgItemInt(m_hWnd, IDC_EDIT_WRITE_BUFF_MAX, NULL, FALSE);
+	WritePrivateProfileInt( L"SET", L"TsBuffMaxCount", GetDlgItemInt(m_hWnd, IDC_EDIT_TS_BUFF_MAX, nullptr, FALSE), appIniPath.c_str() );
+	int buffMax = GetDlgItemInt(m_hWnd, IDC_EDIT_WRITE_BUFF_MAX, nullptr, FALSE);
 	WritePrivateProfileInt( L"SET", L"WriteBuffMaxCount", buffMax <= 0 ? -1 : buffMax, appIniPath.c_str() );
 }
 
@@ -97,7 +97,7 @@ INT_PTR CALLBACK CSetDlgApp::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 {
 	(void)wParam;
 	CSetDlgApp* pSys = (CSetDlgApp*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+	if( pSys == nullptr && uMsg != WM_INITDIALOG ){
 		return FALSE;
 	}
 	switch( uMsg ){
@@ -107,7 +107,7 @@ INT_PTR CALLBACK CSetDlgApp::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 		pSys->m_hWnd = hDlg;
 		return pSys->OnInitDialog();
 	case WM_NCDESTROY:
-		pSys->m_hWnd = NULL;
+		pSys->m_hWnd = nullptr;
 		break;
 	}
 	return FALSE;

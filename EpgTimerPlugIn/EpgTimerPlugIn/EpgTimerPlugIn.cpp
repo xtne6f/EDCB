@@ -97,7 +97,7 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 		}
 		this->ResetStreamingCtrlView();
 	}else{
-		this->m_pApp->SetWindowMessageCallback(NULL, NULL);
+		this->m_pApp->SetWindowMessageCallback(nullptr, nullptr);
 		this->pipeServer.StopServer();
 
 		this->ctrlDlg.ShowCtrlDlg(SW_HIDE);
@@ -112,7 +112,7 @@ bool CEpgTimerPlugIn::Finalize()
 	if( this->m_pApp->IsPluginEnabled() ){
 		this->EnablePlugin(FALSE);
 	}
-	this->ctrlDlg.SetMessageCallback(NULL);
+	this->ctrlDlg.SetMessageCallback(nullptr);
 	this->ctrlDlg.CloseStreamCtrlDialog();
 
 	if( this->nwMode ){

@@ -9,7 +9,7 @@ CMessageManager::CMessageManager(bool (*onMsg)(PARAMS&), void* ctx)
 	: m_onMsg(onMsg)
 	, m_ctx(ctx)
 #ifdef _WIN32
-	, m_hwnd(NULL)
+	, m_hwnd(nullptr)
 #else
 	, m_initialized(false)
 #endif
@@ -21,7 +21,7 @@ CMessageManager::CMessageManager(bool (*onMsg)(PARAMS&), void* ctx)
 bool CMessageManager::SetTimer(int timerID, int msec)
 {
 	HWND hwnd = m_hwnd;
-	return hwnd && timerID > 0 && ::SetTimer(hwnd, timerID, msec, NULL);
+	return hwnd && timerID > 0 && ::SetTimer(hwnd, timerID, msec, nullptr);
 }
 
 bool CMessageManager::KillTimer(int timerID)
@@ -61,13 +61,13 @@ bool CMessageManager::ProcessWindowMessage(LRESULT& ret, HWND hwnd, UINT uMsg, W
 		PARAMS pa = { (int)uMsg, (INT_PTR)wParam, lParam, 0, m_ctx };
 		if( m_onMsg(pa) ){
 			if( uMsg == WM_DESTROY ){
-				m_hwnd = NULL;
+				m_hwnd = nullptr;
 			}
 			ret = pa.result;
 			return true;
 		}
 		if( uMsg == WM_DESTROY ){
-			m_hwnd = NULL;
+			m_hwnd = nullptr;
 		}
 	}
 	return false;
@@ -138,7 +138,7 @@ bool CMessageManager::Post(int msgID, INT_PTR param1, INT_PTR param2)
 {
 	if( m_initialized && IsProcessingTargetID(msgID) ){
 		lock_recursive_mutex lock(m_queueLock);
-		POST post = { msgID, param1, param2 };
+		POST post = { msgID, false, param1, param2 };
 		m_postQueue.push(post);
 		m_pushEvent.Set();
 		if( m_handleSignal ){
@@ -170,6 +170,7 @@ bool CMessageManager::MessageLoop(bool handleSignal)
 	while( !m_postQueue.empty() ){
 		m_postQueue.pop();
 	}
+	m_postByTimerSet.clear();
 	m_timerList.clear();
 	m_pushEvent.Reset();
 	m_sentEvent.Reset();
@@ -182,7 +183,7 @@ bool CMessageManager::MessageLoop(bool handleSignal)
 		sigaddset(&sset, SIGINT);
 		sigaddset(&sset, SIGTERM);
 		sigaddset(&sset, SIGUSR2);
-		if( sigprocmask(SIG_BLOCK, &sset, NULL) != 0 ){
+		if( pthread_sigmask(SIG_BLOCK, &sset, nullptr) != 0 ){
 			return false;
 		}
 	}
@@ -202,7 +203,7 @@ bool CMessageManager::MessageLoop(bool handleSignal)
 				timespec ts;
 				ts.tv_sec = min<DWORD>(timeout, 2000) / 1000;
 				ts.tv_nsec = min<DWORD>(timeout, 2000) % 1000 * 1000000;
-				int signum = sigtimedwait(&sset, NULL, &ts);
+				int signum = sigtimedwait(&sset, nullptr, &ts);
 				if( signum == SIGHUP || signum == SIGINT || signum == SIGTERM ){
 					PARAMS pa = { ID_SIGNAL, signum, 0, 0, m_ctx };
 					if( !m_onMsg(pa) ){
@@ -228,8 +229,12 @@ bool CMessageManager::MessageLoop(bool handleSignal)
 			for( auto itr = m_timerList.begin(); itr != m_timerList.end(); ++itr ){
 				DWORD remain = itr->tick + itr->msec - now;
 				if( remain >= 0x80000000 ){
-					POST post2 = { ID_TIMER, itr->timerID, 0 };
-					m_postQueue.push(post2);
+					// キューに複数置いてはいけない
+					if( m_postByTimerSet.count(itr->timerID) == 0 ){
+						m_postByTimerSet.insert(itr->timerID);
+						POST post2 = { ID_TIMER, true, itr->timerID, 0 };
+						m_postQueue.push(post2);
+					}
 					itr->tick = now;
 					remain = itr->msec;
 				}
@@ -239,6 +244,9 @@ bool CMessageManager::MessageLoop(bool handleSignal)
 			if( queueSize > 0 ){
 				post = m_postQueue.front();
 				m_postQueue.pop();
+				if( post.byTimer ){
+					m_postByTimerSet.erase((int)post.param1);
+				}
 				if( queueSize > 1 ){
 					m_pushEvent.Set();
 				}
@@ -250,7 +258,7 @@ bool CMessageManager::MessageLoop(bool handleSignal)
 	}
 
 	if( handleSignal ){
-		sigprocmask(SIG_UNBLOCK, &sset, NULL);
+		pthread_sigmask(SIG_UNBLOCK, &sset, nullptr);
 	}
 	m_initialized = false;
 	m_sentEvent.Set();

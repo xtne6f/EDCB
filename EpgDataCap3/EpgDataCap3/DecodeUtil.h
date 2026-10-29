@@ -27,7 +27,7 @@ public:
 
 	//解析データの現在のストリームＩＤを取得する
 	//引数：
-	// originalNetworkID		[OUT]現在のoriginalNetworkID。NULL可
+	// originalNetworkID		[OUT]現在のoriginalNetworkID。nullptr可
 	// transportStreamID		[OUT]現在のtransportStreamID
 	BOOL GetTSID(
 		WORD* originalNetworkID,
@@ -49,7 +49,7 @@ public:
 	// tick				[OUT]timeを取得した時点のチックカウント
 	BOOL GetNowTime(
 		LONGLONG* time,
-		DWORD* tick = NULL
+		DWORD* tick = nullptr
 		);
 
 protected:

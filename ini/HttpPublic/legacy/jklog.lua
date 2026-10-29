@@ -101,20 +101,20 @@ function ExtractTotListAndServiceIDFromPsiData(f)
           local psi=dict[code+1]
           if not sid and pid==0 and #psi>=16 then
             -- PAT
-            sid=psi:byte(9)*256+psi:byte(10)
+            sid=GetBeNumber(psi,9,2)
             if #psi>=20 and sid==0 then
-              sid=psi:byte(13)*256+psi:byte(14)
+              sid=GetBeNumber(psi,13,2)
             end
             if sid==0 then
               sid=nil
             end
           elseif not nid and pid==16 and #psi>=5 then
             -- NIT
-            nid=psi:byte(4)*256+psi:byte(5)
+            nid=GetBeNumber(psi,4,2)
           elseif pid==20 and #psi>=8 and currTime>=0 then
             -- TDT,TOT
             local sec=(currTime+0x40000000-initTime)%0x40000000/11250
-            local mjd=psi:byte(4)*256+psi:byte(5)
+            local mjd=GetBeNumber(psi,4,2)
             local h=psi:byte(6)
             local m=psi:byte(7)
             local s=psi:byte(8)
@@ -142,9 +142,9 @@ function ExtractTotListAndServiceIDFromPsiData(f)
   return totList,nid,sid
 end
 
--- 番組情報ファイルから番組の時刻の範囲とネットワークIDとサービスIDを取得する
-function ExtractTotListAndServiceIDFromProgramText(f)
-  local totList,nid,sid=nil,nil,nil
+-- 番組情報ファイルから番組の開始時刻とネットワークIDとサービスIDを取得する
+function ExtractTotAndServiceIDFromProgramText(f)
+  local tot,nid,sid=nil,nil,nil
   -- BOMと空白類を除去
   local s=(f:read('*a') or ''):gsub('^\xef\xbb\xbf',''):gsub('[\t\r ]','')
 
@@ -155,22 +155,7 @@ function ExtractTotListAndServiceIDFromProgramText(f)
   end
   if year then
     local t={year=tonumber(year),month=tonumber(month),day=tonumber(day),hour=tonumber(hour),min=tonumber(min),sec=tonumber(sec or 0),isdst=false}
-    local tot=TimeWithZone(t,9*3600)
-    -- 終了時刻
-    hour,min,sec=s:match('^[^\n]*([0-2][0-9]):([0-5][0-9]):([0-5][0-9])\n')
-    if not hour then
-      hour,min=s:match('^[^\n]*([0-2][0-9]):([0-5][0-9])\n')
-    end
-    if hour then
-      t.hour=tonumber(hour)
-      t.min=tonumber(min)
-      t.sec=tonumber(sec or 0)
-      local totEnd=TimeWithZone(t,9*3600)
-      if totEnd<tot then
-        totEnd=totEnd+24*3600
-      end
-      totList={{sec=0,tot=tot,totEnd=totEnd}}
-    end
+    tot=TimeWithZone(t,9*3600)
   end
 
   -- 日時とサービス名と番組名をスキップ
@@ -193,7 +178,28 @@ function ExtractTotListAndServiceIDFromProgramText(f)
       end
     end
   end
-  return totList,nid,sid
+  return tot,nid,sid
+end
+
+-- カット編集された部分のTOT時刻を加算する
+function EditTotList(totList,chapters)
+  local last=totList[#totList]
+  local addSec=0
+  for i,v in ipairs(chapters or {}) do
+    if v.pos/1000>=last.sec+last.totEnd-last.tot then break end
+    local cutSec=tonumber(v.name:lower():match(CHAPTER_CUT_SEC)) or (tonumber(v.name:lower():match(CHAPTER_CUT_MSEC)) or 0)/1000
+    if cutSec>0 then
+      addSec=addSec+cutSec
+      if addSec>24*3600 then break end
+      totList[#totList+1]={
+        sec=v.pos/1000,
+        tot=last.tot+v.pos/1000+cutSec-last.sec,
+        totEnd=last.totEnd+cutSec
+      }
+      last.totEnd=last.tot+v.pos/1000-last.sec
+      last=totList[#totList]
+    end
+  end
 end
 
 code=500
@@ -211,7 +217,7 @@ if JKRDLOG_PATH then
       f=edcb.io.open(fpath,'rb')
       if f then
         code=500
-        fsec,fsize=GetDurationSec(f)
+        fsec=GetDurationSec(f)
         tot,nid,sid=GetTotAndServiceID(f)
         if fsec and tot then
           totList={{sec=0,tot=tot,totEnd=tot+fsec}}
@@ -225,21 +231,28 @@ if JKRDLOG_PATH then
         totList,nid,sid=ExtractTotListAndServiceIDFromPsiData(f)
         f:close()
       else
-        f=edcb.io.open(fpath:gsub('%.[0-9A-Za-z]+$','')..'.program.txt','rb')
-        if f then
-          code=500
-          totList,nid,sid=ExtractTotListAndServiceIDFromProgramText(f)
-          f:close()
+        fsec=GetVarInt(mg.request_info.query_string,'fsec',1,24*3600)
+        if fsec then
+          tot=nil
+          f=edcb.io.open(fpath:gsub('%.[0-9A-Za-z]+$','')..'.program.txt','rb')
+          if f then
+            code=500
+            tot,nid,sid=ExtractTotAndServiceIDFromProgramText(f)
+            f:close()
+          end
+          -- 範囲はクエリの長さ情報で補う
+          totList={{sec=0,tot=tot or 0,totEnd=(tot or 0)+fsec}}
+          EditTotList(totList,LoadAttachedChapters(fpath))
         end
       end
     end
-    if totList and nid and sid then
+    jkID=GetVarInt(mg.request_info.query_string,'jkid',1,65535)
+    jkTM=GetVarInt(mg.request_info.query_string,'jktm',1)
+    if totList and (jkTM or #totList==0 or totList[1].tot>0) and (jkID or nid and sid) then
       code=404
-      jkID=GetVarInt(mg.request_info.query_string,'jkid',1,65535)
       jkID=jkID or GetJikkyoID(nid,sid)
       if jkID then
         code=200
-        jkTM=GetVarInt(mg.request_info.query_string,'jktm',1)
         jkTM=jkTM and #totList>0 and jkTM-totList[1].tot or 0
       end
     end

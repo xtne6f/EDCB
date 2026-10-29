@@ -43,7 +43,7 @@ public:
 	//リモコンIDを設定する
 	bool SetRemoconID(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BYTE remoconID);
 	//拡張フィールド付きで保存する
-	bool SaveTextWithExtraFields(string* saveToStr = NULL) const;
+	bool SaveTextWithExtraFields(string* saveToStr = nullptr) const;
 private:
 	void ParseLine(LPCWSTR parseLine);
 	bool SaveLine(map<LONGLONG, CH_DATA5>::const_reference item, wstring& saveLine) const;

@@ -1,7 +1,7 @@
-The attached "web_bml_play_ts.js" ( https://github.com/xtne6f/web-bml ) can be
-built with the following command:
+The attached "web_bml.js" ( https://github.com/xtne6f/web-bml ) can be built
+with the following command:
 
-$ npm i && npm -w @chinachu/aribts run build && npm -w play-ts run build
+$ npm i && npm run build && npm -w bundle run build
 
 The attached "KosugiMaru-Bold.woff2", "KosugiMaru-Regular.woff2" and
 "Kosugi-Regular.woff2" were copied from
@@ -34,45 +34,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-
-/*!
- * ECMAScript 2nd Edition Interpreter
- * <https://github.com/otya128/es2>
- *
- * SPDX-FileCopyrightText: 2025 otya
- * SPDX-License-Identifier: MIT
- */
-
-/*!
- * The buffer module from node.js, for the browser.
- *
- * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
- * @license  MIT
- */
-
-/*!
- * The buffer module from node.js, for the browser.
- *
- * @author   Feross Aboukhadijeh <https://feross.org>
- * @license  MIT
- */
-
-/*! crc32.js (C) 2014-present SheetJS -- http://sheetjs.com */
-
-/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
-
-/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
-
-/**
- * JS-Interpreter
- * @license
- * Copyright 2013 Google LLC
- * SPDX-License-Identifier: Apache-2.0
- */
-
-//!! Deliberately using an API that's deprecated in node.js because
-
-//!! Discussion: github.com/node-browser-compat/atob/pull/9
-
-//!! this file is for browsers and we expect them to cope with it.

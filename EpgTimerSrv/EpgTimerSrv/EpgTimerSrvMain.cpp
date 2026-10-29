@@ -91,8 +91,8 @@ struct MAIN_WINDOW_CONTEXT {
 		: sys(sys_)
 #ifdef _WIN32
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
-		, resumeTimer(NULL)
-		, queryShutdownContext((HWND)NULL, pair<BYTE, bool>())
+		, resumeTimer(nullptr)
+		, queryShutdownContext((HWND)nullptr, pair<BYTE, bool>())
 #endif
 		, lastSetSystemRequiredTick(-1)
 		, shutdownModePending(SD_MODE_INVALID)
@@ -124,11 +124,11 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 			for( int i = 0; i < BON_NW_PORT_RANGE; i++ ){
 				WCHAR name[64];
 				swprintf_s(name, L"\\\\.\\pipe\\SendTSTCP_%d_%d", i, processID);
-				HANDLE hFile = CreateFile(name, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+				HANDLE hFile = CreateFile(name, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr);
 				if( hFile != INVALID_HANDLE_VALUE ){
 					RELAY_STREAM_CONTEXT* context = new RELAY_STREAM_CONTEXT;
 					context->hFile = hFile;
-					context->hEvent = NULL;
+					context->hEvent = nullptr;
 					param = context;
 					res.SetParam(CMD_SUCCESS);
 					return;
@@ -148,14 +148,14 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 			if( GetOverlappedResult(context.hFile, &context.ol, &n, FALSE) == FALSE ){
 				//失敗
 				CloseHandle(context.hEvent);
-				context.hEvent = NULL;
+				context.hEvent = nullptr;
 				return;
 			}
 			res.Resize(n);
 			std::copy(context.buff, context.buff + n, res.GetData());
 		}else{
-			context.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-			if( context.hEvent == NULL ){
+			context.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+			if( context.hEvent == nullptr ){
 				//失敗
 				return;
 			}
@@ -165,12 +165,12 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 		OVERLAPPED olZero = {};
 		context.ol = olZero;
 		context.ol.hEvent = context.hEvent;
-		if( ReadFile(context.hFile, context.buff, sizeof(context.buff), NULL, &context.ol) ){
+		if( ReadFile(context.hFile, context.buff, sizeof(context.buff), nullptr, &context.ol) ){
 			SetEvent(context.hEvent);
 		}else if( GetLastError() != ERROR_IO_PENDING ){
 			//失敗
 			CloseHandle(context.hEvent);
-			context.hEvent = NULL;
+			context.hEvent = nullptr;
 			res.SetParam(CMD_ERR);
 		}
 	}else if( state == CTCPServer::RESPONSE_THREAD_FIN ){
@@ -258,9 +258,9 @@ void CtrlCmdResponseThreadCallback(const CCmdStream& cmd, CCmdStream& res, CTCPS
 
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
-	, msgManager(OnMessage, NULL)
+	, msgManager(OnMessage, nullptr)
 #ifdef _WIN32
-	, luaDllHolder(NULL, UtilFreeLibrary)
+	, luaDllHolder(nullptr, UtilFreeLibrary)
 #endif
 	, nwtvUdp(false)
 	, nwtvTcp(false)
@@ -286,20 +286,20 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.lpfnWndProc = MainWndProc;
-	wc.hInstance = GetModuleHandle(NULL);
+	wc.hInstance = GetModuleHandle(nullptr);
 	wc.lpszClassName = SERVICE_NAME;
-	wc.hIcon = (HICON)LoadImage(NULL, IDI_INFORMATION, IMAGE_ICON, 0, 0, LR_SHARED);
+	wc.hIcon = (HICON)LoadImage(nullptr, IDI_INFORMATION, IMAGE_ICON, 0, 0, LR_SHARED);
 	if( RegisterClassEx(&wc) == 0 ){
 		return false;
 	}
-	if( CreateWindowEx(0, SERVICE_NAME, SERVICE_NAME, 0, 0, 0, 0, 0, NULL, NULL, GetModuleHandle(NULL), &ctx) == NULL ){
+	if( CreateWindowEx(0, SERVICE_NAME, SERVICE_NAME, 0, 0, 0, 0, 0, nullptr, nullptr, GetModuleHandle(nullptr), &ctx) == nullptr ){
 		return false;
 	}
 
 	//メッセージループ
 	MSG msg;
-	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
-		if( ctx.queryShutdownContext.first == NULL || IsDialogMessage(ctx.queryShutdownContext.first, &msg) == FALSE ){
+	while( GetMessage(&msg, nullptr, 0, 0) > 0 ){
+		if( ctx.queryShutdownContext.first == nullptr || IsDialogMessage(ctx.queryShutdownContext.first, &msg) == FALSE ){
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -332,12 +332,12 @@ bool CEpgTimerSrvMain::OnMessage(CMessageManager::PARAMS& pa)
 		ctx->sys->ReloadNetworkSetting();
 		//サービスモードでは任意アクセス可能なパイプを生成する。状況によってはセキュリティリスクなので注意
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_PIPE,
-		                            [ctx](CCmdStream& cmd, CCmdStream& res) { CtrlCmdCallback(ctx->sys, cmd, res, 0, false, NULL); },
+		                            [ctx](CCmdStream& cmd, CCmdStream& res) { CtrlCmdCallback(ctx->sys, cmd, res, 0, false, nullptr); },
 		                            !(ctx->sys->notifyManager.IsGUI()), true);
 #ifdef _WIN32
 		//イベントオブジェクトの待機を省略したいクライアント向けにもう1つ生成する(負荷分散の目的を兼ねるのでスレッドを分ける)
 		ctx->noWaitPipeServer.StartServer(CMD2_EPG_SRV_NOWAIT_PIPE,
-		                                  [ctx](CCmdStream& cmd, CCmdStream& res) { CtrlCmdCallback(ctx->sys, cmd, res, 1, false, NULL); },
+		                                  [ctx](CCmdStream& cmd, CCmdStream& res) { CtrlCmdCallback(ctx->sys, cmd, res, 1, false, nullptr); },
 		                                  !(ctx->sys->notifyManager.IsGUI()), true);
 #endif
 		ctx->sys->epgDB.ReloadEpgData(true);
@@ -367,7 +367,7 @@ bool CEpgTimerSrvMain::OnMessage(CMessageManager::PARAMS& pa)
 		ctx->sys->processLuaPostStopEvent.Set();
 		ctx->sys->processLuaPostThread.join();
 #endif
-		ctx->sys->notifyManager.SetNotifyCallback(NULL);
+		ctx->sys->notifyManager.SetNotifyCallback(nullptr);
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
 #ifdef _WIN32
@@ -459,14 +459,14 @@ bool CEpgTimerSrvMain::OnMessage(CMessageManager::PARAMS& pa)
 		pa.result = true;
 		if( ctx->sys->notifyManager.IsGUI() ){
 			//直接尋ねる
-			if( ctx->queryShutdownContext.first == NULL ){
+			if( ctx->queryShutdownContext.first == nullptr ){
 				INITCOMMONCONTROLSEX icce;
 				icce.dwSize = sizeof(icce);
 				icce.dwICC = ICC_PROGRESS_CLASS;
 				InitCommonControlsEx(&icce);
 				ctx->queryShutdownContext.second.first = (BYTE)pa.param1;
 				ctx->queryShutdownContext.second.second = !!pa.param2;
-				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), ctx->sys->msgManager.GetHwnd(),
+				CreateDialogParam(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), ctx->sys->msgManager.GetHwnd(),
 				                  QueryShutdownDlgProc, (LPARAM)&ctx->queryShutdownContext);
 			}
 		}else if( ctx->sys->QueryShutdown(!!pa.param2, (BYTE)pa.param1) == false ){
@@ -585,12 +585,12 @@ bool CEpgTimerSrvMain::OnMessage(CMessageManager::PARAMS& pa)
 			//FALL THROUGH!
 		case WM_RBUTTONUP:
 			{
-				HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU_TRAY));
+				HMENU hMenu = LoadMenu(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MENU_TRAY));
 				if( hMenu ){
 					POINT point;
 					GetCursorPos(&point);
 					SetForegroundWindow(ctx->sys->msgManager.GetHwnd());
-					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, ctx->sys->msgManager.GetHwnd(), NULL);
+					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, ctx->sys->msgManager.GetHwnd(), nullptr);
 					DestroyMenu(hMenu);
 				}
 			}
@@ -850,7 +850,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx = (MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
 	}
-	if( ctx == NULL ){
+	if( ctx == nullptr ){
 		return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	}
 	LRESULT lResult;
@@ -922,7 +922,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){
 		case IDC_BUTTON_SETTING:
-			ShellExecute(NULL, NULL, GetModulePath().c_str(), L"/setting", NULL, SW_SHOWNORMAL);
+			ShellExecute(nullptr, nullptr, GetModulePath().c_str(), L"/setting", nullptr, SW_SHOWNORMAL);
 			break;
 		case IDC_BUTTON_S3:
 		case IDC_BUTTON_S4:
@@ -930,7 +930,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				lock_recursive_mutex lock(ctx->sys->settingLock);
 				ctx->sys->msgManager.Post(ID_APP_REQUEST_SHUTDOWN, LOWORD(wParam) == IDC_BUTTON_S3 ? SD_MODE_STANDBY : SD_MODE_SUSPEND, ctx->sys->setting.reboot);
 			}else{
-				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
+				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", nullptr, MB_ICONERROR);
 			}
 			break;
 		case IDC_BUTTON_END:
@@ -983,12 +983,12 @@ INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WP
 			ctx->second.first == SD_MODE_STANDBY ? L"スタンバイに移行します。" :
 			ctx->second.first == SD_MODE_SUSPEND ? L"休止に移行します。" :
 			ctx->second.first == SD_MODE_SHUTDOWN ? L"シャットダウンします。" : L"再起動します。");
-		SetTimer(hDlg, 1, 1000, NULL);
+		SetTimer(hDlg, 1, 1000, nullptr);
 		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETRANGE, 0, MAKELONG(0, ctx->second.first == SD_MODE_INVALID ? 30 : 15));
 		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS, ctx->second.first == SD_MODE_INVALID ? 30 : 15, 0);
 		return TRUE;
 	case WM_DESTROY:
-		ctx->first = NULL;
+		ctx->first = nullptr;
 		break;
 	case WM_TIMER:
 		if( SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS,
@@ -1023,21 +1023,21 @@ HICON CEpgTimerSrvMain::LoadSmallIcon(int iconID)
 		HICON hIcon;
 		HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE, PCWSTR, int, HICON*);
 		if( UtilGetProcAddress(hModule, "LoadIconMetric", pfnLoadIconMetric) &&
-		    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), LIM_SMALL, &hIcon) == S_OK ){
+		    pfnLoadIconMetric(GetModuleHandle(nullptr), MAKEINTRESOURCE(iconID), LIM_SMALL, &hIcon) == S_OK ){
 			return hIcon;
 		}
 	}
-	return (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), IMAGE_ICON, 16, 16, 0);
+	return (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(iconID), IMAGE_ICON, 16, 16, 0);
 }
 
 void CEpgTimerSrvMain::OpenGUI()
 {
 	if( UtilFileExists(GetModulePath().replace_filename(L"EpgTimer.lnk")).first ){
 		//EpgTimer.lnk(ショートカット)を優先的に開く
-		ShellExecute(NULL, NULL, GetModulePath().replace_filename(L"EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
+		ShellExecute(nullptr, nullptr, GetModulePath().replace_filename(L"EpgTimer.lnk").c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 	}else{
 		//EpgTimer.exeがあれば起動
-		ShellExecute(NULL, NULL, GetModulePath().replace_filename(L"EpgTimer.exe").c_str(), NULL, NULL, SW_SHOWNORMAL);
+		ShellExecute(nullptr, nullptr, GetModulePath().replace_filename(L"EpgTimer.exe").c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 	}
 }
 
@@ -1230,29 +1230,29 @@ bool CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime,
 {
 	LONGLONG returnTime = this->reserveManager.GetSleepReturnTime(GetNowI64Time() + marginSec * I64_1SEC);
 	if( returnTime == LLONG_MAX ){
-		if( *resumeTimer != NULL ){
+		if( *resumeTimer != nullptr ){
 			CloseHandle(*resumeTimer);
-			*resumeTimer = NULL;
+			*resumeTimer = nullptr;
 		}
 		return true;
 	}
 	LONGLONG setTime = returnTime - marginSec * I64_1SEC;
-	if( *resumeTimer != NULL && *resumeTime == setTime ){
+	if( *resumeTimer != nullptr && *resumeTime == setTime ){
 		//同時刻でセット済み
 		return true;
 	}
-	if( *resumeTimer == NULL ){
-		*resumeTimer = CreateWaitableTimer(NULL, FALSE, NULL);
+	if( *resumeTimer == nullptr ){
+		*resumeTimer = CreateWaitableTimer(nullptr, FALSE, nullptr);
 	}
-	if( *resumeTimer != NULL ){
+	if( *resumeTimer != nullptr ){
 		LARGE_INTEGER liTime;
 		liTime.QuadPart = setTime - I64_UTIL_TIMEZONE;
-		if( SetWaitableTimer(*resumeTimer, &liTime, 0, NULL, NULL, TRUE) != FALSE ){
+		if( SetWaitableTimer(*resumeTimer, &liTime, 0, nullptr, nullptr, TRUE) != FALSE ){
 			*resumeTime = setTime;
 			return true;
 		}
 		CloseHandle(*resumeTimer);
-		*resumeTimer = NULL;
+		*resumeTimer = nullptr;
 	}
 	return false;
 }
@@ -1262,10 +1262,10 @@ void CEpgTimerSrvMain::SetShutdown(BYTE shutdownMode)
 	HANDLE hToken;
 	if ( OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken) ){
 		TOKEN_PRIVILEGES tokenPriv;
-		LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &tokenPriv.Privileges[0].Luid);
+		LookupPrivilegeValue(nullptr, SE_SHUTDOWN_NAME, &tokenPriv.Privileges[0].Luid);
 		tokenPriv.PrivilegeCount = 1;
 		tokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-		AdjustTokenPrivileges(hToken, FALSE, &tokenPriv, 0, NULL, NULL);
+		AdjustTokenPrivileges(hToken, FALSE, &tokenPriv, 0, nullptr, nullptr);
 		CloseHandle(hToken);
 	}
 	if( shutdownMode == 1 ){
@@ -1328,7 +1328,7 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 		FILE_INFO_3* info;
 		DWORD entriesread;
 		DWORD totalentries;
-		if( NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&info, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
+		if( NetFileEnum(nullptr, nullptr, nullptr, 3, (LPBYTE*)&info, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, nullptr) == NERR_Success ){
 			for( DWORD i = 0; i < entriesread; i++ ){
 				if( UtilPathEndsWith(info[i].fi3_pathname, ext) ){
 					found = true;
@@ -1338,7 +1338,7 @@ bool CEpgTimerSrvMain::IsFindShareTSFile() const
 			NetApiBufferFree(info);
 		}else{
 			//代理プロセス経由で調べる
-			HWND hwnd = FindWindowEx(HWND_MESSAGE, NULL, L"EpgTimerAdminProxy", NULL);
+			HWND hwnd = FindWindowEx(HWND_MESSAGE, nullptr, L"EpgTimerAdminProxy", nullptr);
 			if( hwnd ){
 				DWORD wp = ext[1] | ext[2] << 8 | ext[3] << 16 | (DWORD)ext[4] << 24;
 				DWORD lp = ext[5] | ext[6] << 8 | ext[7] << 16 | (DWORD)ext[8] << 24;
@@ -1500,11 +1500,11 @@ void CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, vector<R
 					    info.original_network_id, info.transport_stream_id, info.service_id, [&](const RESERVE_DATA& a) {
 					        return (separateFixedTuners == false || a.recSetting.tunerID == data.recSetting.tunerID) &&
 					               ((a.comment.compare(0, 8, L"EPG自動予約#") == 0 &&
-					                 wcstoul(a.comment.c_str() + 8, NULL, 10) == info.event_id) ||
+					                 wcstoul(a.comment.c_str() + 8, nullptr, 10) == info.event_id) ||
 					                (a.comment.compare(0, 8, L"EPG自動予約(") == 0 &&
 					                 a.comment.find(L')') != wstring::npos &&
 					                 a.comment.compare(a.comment.find(L')') + 1, 1, L"#") == 0 &&
-					                 wcstoul(a.comment.c_str() + a.comment.find(L')') + 2, NULL, 10) == info.event_id)); }) ){
+					                 wcstoul(a.comment.c_str() + a.comment.find(L')') + 2, nullptr, 10) == info.event_id)); }) ){
 						found = true;
 					}
 				}
@@ -1729,7 +1729,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		break;
 	case CMD2_EPG_SRV_ENUM_RECINFO:
 		AddDebugLog(L"CMD2_EPG_SRV_ENUM_RECINFO");
-		res.WriteVALUE(sys->reserveManager.GetRecFileInfoList(NULL));
+		res.WriteVALUE(sys->reserveManager.GetRecFileInfoList(nullptr));
 		res.SetParam(CMD_SUCCESS);
 		break;
 	case CMD2_EPG_SRV_DEL_RECINFO:
@@ -1790,7 +1790,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			vector<EPGDB_SEARCH_KEY_INFO> key;
 			if( cmd.ReadVALUE(&key) ){
 				vector<const EPGDB_EVENT_INFO*> valp;
-				sys->epgDB.SearchEpg(key.data(), key.size(), 0, LLONG_MAX, NULL, [&res, &valp](const EPGDB_EVENT_INFO* val, wstring*) {
+				sys->epgDB.SearchEpg(key.data(), key.size(), 0, LLONG_MAX, nullptr, [&res, &valp](const EPGDB_EVENT_INFO* val, wstring*) {
 					if( val ){
 						valp.push_back(val);
 					}else{
@@ -2370,7 +2370,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 					//TCP接続時は常にclientIPを使う
 					WCHAR ipv4[64];
 					swprintf_s(ipv4, L"%u.%u.%u.%u", val.ip >> 24, (val.ip >> 16) & 0xFF, (val.ip >> 8) & 0xFF, val.ip & 0xFF);
-					util->Send(tcpFlag ? clientIP : ipv4, val.udp ? &val.udpPort : NULL, val.tcp ? &val.tcpPort : NULL);
+					util->Send(tcpFlag ? clientIP : ipv4, val.udp ? &val.udpPort : nullptr, val.tcp ? &val.tcpPort : nullptr);
 					res.WriteVALUE(val);
 					res.SetParam(CMD_SUCCESS);
 				}
@@ -2482,7 +2482,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			SEARCH_PG_PARAM param;
 			if( cmd.ReadVALUE2WithVersion(&ver, &param) ){
 				vector<const EPGDB_EVENT_INFO*> valp;
-				sys->epgDB.SearchArchiveEpg(param.keyList.data(), param.keyList.size(), param.enumStart, param.enumEnd, false, NULL,
+				sys->epgDB.SearchArchiveEpg(param.keyList.data(), param.keyList.size(), param.enumStart, param.enumEnd, false, nullptr,
 				                            [=, &res, &valp](const EPGDB_EVENT_INFO* val, wstring*) {
 					if( val ){
 						valp.push_back(val);
@@ -2631,7 +2631,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			WORD ver;
 			if( cmd.ReadVALUE(&ver) ){
 				res.WriteVALUE2WithVersion(ver,
-					sys->reserveManager.GetRecFileInfoList(NULL, cmd.GetParam() == CMD2_EPG_SRV_ENUM_RECINFO2));
+					sys->reserveManager.GetRecFileInfoList(nullptr, cmd.GetParam() == CMD2_EPG_SRV_ENUM_RECINFO2));
 				res.SetParam(CMD_SUCCESS);
 			}
 		}
@@ -2789,7 +2789,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 				break;
 			}
 			sys->oldSearchList[threadIndex].clear();
-			sys->epgDB.SearchEpg(&item.searchInfo, 1, 0, LLONG_MAX, NULL, [=](const EPGDB_EVENT_INFO* val, wstring*) {
+			sys->epgDB.SearchEpg(&item.searchInfo, 1, 0, LLONG_MAX, nullptr, [=](const EPGDB_EVENT_INFO* val, wstring*) {
 				if( val ){
 					sys->oldSearchList[threadIndex].push_back(*val);
 				}
@@ -2864,7 +2864,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 					for( NET_API_STATUS ret = ERROR_MORE_DATA; netPath.empty() && ret == ERROR_MORE_DATA; ){
 						PSHARE_INFO_502 bufPtr;
 						DWORD er, tr;
-						ret = NetShareEnum(NULL, 502, (BYTE**)&bufPtr, MAX_PREFERRED_LENGTH, &er, &tr, &resume);
+						ret = NetShareEnum(nullptr, 502, (BYTE**)&bufPtr, MAX_PREFERRED_LENGTH, &er, &tr, &resume);
 						if( ret != ERROR_SUCCESS && ret != ERROR_MORE_DATA ){
 							break;
 						}
@@ -2911,7 +2911,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 				vector<EPGDB_SEARCH_KEY_INFO> key;
 				if( cmd.ReadVALUE2WithVersion(&ver, &key) ){
 					vector<const EPGDB_EVENT_INFO*> valp;
-					this->epgDB.SearchEpg(key.data(), key.size(), 0, LLONG_MAX, NULL, [=, &valp, &res](const EPGDB_EVENT_INFO* val, wstring*) {
+					this->epgDB.SearchEpg(key.data(), key.size(), 0, LLONG_MAX, nullptr, [=, &valp, &res](const EPGDB_EVENT_INFO* val, wstring*) {
 						if( val ){
 							valp.push_back(val);
 						}else{
@@ -2942,7 +2942,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 					dummy.event_id = 0;
 					ConvertSystemTime(GetNowI64Time() - I64_UTIL_TIMEZONE, &dummy.start_time);
 					for( size_t i = 0; i < key.size(); i++ ){
-						this->epgDB.SearchEpg(&key[i], 1, 0, LLONG_MAX, NULL, [&byResult](const EPGDB_EVENT_INFO* val, wstring*) {
+						this->epgDB.SearchEpg(&key[i], 1, 0, LLONG_MAX, nullptr, [&byResult](const EPGDB_EVENT_INFO* val, wstring*) {
 							if( val ){
 								byResult.push_back(*val);
 							}
@@ -3049,7 +3049,7 @@ bool CEpgTimerSrvMain::CtrlCmdProcessCompatible(const CCmdStream& cmd, CCmdStrea
 							//ファイルロックを邪魔しないようAPI経由で読む
 							wstring strData = L"\xFEFF";
 							int appendModulePathState = UtilComparePath(path.filename().c_str(), L"Common.ini") == 0;
-							wstring sectionNames = GetPrivateProfileToString(NULL, NULL, NULL, path.c_str());
+							wstring sectionNames = GetPrivateProfileToString(nullptr, nullptr, nullptr, path.c_str());
 							for( size_t j = 0; j < sectionNames.size() && sectionNames[j]; j += wcslen(sectionNames.c_str() + j) + 1 ){
 								LPCWSTR section = sectionNames.c_str() + j;
 								strData += wstring(L"[") + section + L"]\r\n";
@@ -3182,7 +3182,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ "OpenNetworkTV", LuaOpenNetworkTV },
 		{ "IsOpenNetworkTV", LuaIsOpenNetworkTV },
 		{ "CloseNetworkTV", LuaCloseNetworkTV },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 	//必要な領域をヒントに与えて"edcb"メタテーブルを作成
 	lua_createtable(L, 0, (int)array_size(closures) - 1 + 2 + 2 + 1);
@@ -3198,7 +3198,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		{ "execute", LuaHelp::os_execute },
 		{ "remove", LuaHelp::os_remove },
 		{ "rename", LuaHelp::os_rename },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 	lua_pushliteral(L, "os");
 	luaL_newlib(L, oslib);
@@ -3207,7 +3207,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 	static const luaL_Reg iolib[] = {
 		{ "open", LuaHelp::io_open },
 		{ "popen", LuaHelp::io_popen },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 	lua_pushliteral(L, "io");
 	luaL_newlib(L, iolib);
@@ -3217,7 +3217,7 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 	static const luaL_Reg iolib[] = {
 		{ "_cloexec", LuaHelp::io_cloexec },
 		{ "_flock_nb", LuaHelp::io_flock_nb },
-		{ NULL, NULL }
+		{ nullptr, nullptr }
 	};
 	lua_pushliteral(L, "io");
 	luaL_newlib(L, iolib);
@@ -3294,6 +3294,33 @@ void CEpgTimerSrvMain::InitLuaCallback(lua_State* L, LPCSTR serverRandom)
 		"  end"
 		" end end"
 		" return r;"
+		"end;"
+		//ステータスラインのない応答を500エラーのプレーンテキストにするため
+		"do"
+		" local h,n='',0"
+		" mg._write=mg.write"
+		" mg.write=function(...)"
+		"  if n>=12 then return mg._write(...) end"
+		"  for j=1,select('#',...) do"
+		"   local s=select(j,...)"
+		"   if type(s)=='number' or type(s)=='string' then"
+		"    s=tostring(s)"
+		"    while n-#h<#s do"
+		"     n=n+1"
+		"     if not s:sub(n-#h,n-#h):find(({'H','T','T','P','/','[0-9]','%.','[0-9]',' ','[0-9]','[0-9]','[0-9]'})[n]) then"
+		"      mg.keep_alive(false)"
+		"      h='HTTP/1.1 500 Internal Server Error"
+		"\\r\\nX-Content-Type-Options: nosniff\\r\\nContent-Type: text/plain"
+		"\\r\\nCache-Control: private, max-age=0\\r\\nConnection: close\\r\\n\\r\\n'..h"
+		"      n=12"
+		"     end"
+		"     if n>=12 then return mg._write(#h>0 and h,select(j,...)) end"
+		"    end"
+		"    h=h..s"
+		"   end"
+		"  end"
+		"  return true"
+		" end;"
 		"end");
 }
 
@@ -3302,7 +3329,7 @@ void CEpgTimerSrvMain::DoLuaBat(CBatManager::BAT_WORK_INFO& work, vector<char>& 
 	lua_State* L = luaL_newstate();
 	if( L ){
 		luaL_openlibs(L);
-		InitLuaCallback(L, NULL);
+		InitLuaCallback(L, nullptr);
 		lua_createtable(L, 0, 1 + (int)work.macroList.size());
 		string val;
 		WtoUTF8(work.batFilePath, val);
@@ -3337,7 +3364,7 @@ void CEpgTimerSrvMain::DoLuaWorker(CEpgTimerSrvMain* sys)
 		lua_State* L = luaL_newstate();
 		if( L ){
 			luaL_openlibs(L);
-			sys->InitLuaCallback(L, NULL);
+			sys->InitLuaCallback(L, nullptr);
 			if( luaL_dostring(L, script.c_str()) != 0 ){
 				wstring werr;
 				LPCSTR err = lua_tostring(L, -1);
@@ -3364,16 +3391,17 @@ void CEpgTimerSrvMain::ProcessLuaPost(CEpgTimerSrvMain* sys)
 	WtoUTF8(path.native(), strPath);
 	std::vector<char> scripts;
 	int fd = -1;
-	while( sys->processLuaPostStopEvent.WaitOne(0) == false ){
+	for(;;){
 		if( fd < 0 ){
 			//read()が速やかにEOFを返すことで待機できなくなるのを避けるためO_RDWR
 			fd = open(strPath.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
 			if( fd < 0 ){
-				if( errno == ENOENT ){
-					mkfifo(strPath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-				}
+				bool noent = errno == ENOENT;
 				if( sys->processLuaPostStopEvent.WaitOne(1000) ){
 					break;
+				}
+				if( noent ){
+					mkfifo(strPath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 				}
 				continue;
 			}
@@ -3385,11 +3413,11 @@ void CEpgTimerSrvMain::ProcessLuaPost(CEpgTimerSrvMain* sys)
 		if( n == 0 || (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) ){
 			//終了または失敗。原則ここは踏まない
 			scripts.clear();
-			close(fd);
-			fd = -1;
 			if( sys->processLuaPostStopEvent.WaitOne(100) ){
 				break;
 			}
+			close(fd);
+			fd = -1;
 		}else if( n < 0 ){
 			//待機
 			scripts.resize(scripts.size() - 4096);
@@ -3402,6 +3430,9 @@ void CEpgTimerSrvMain::ProcessLuaPost(CEpgTimerSrvMain* sys)
 				break;
 			}
 		}else{
+			if( sys->processLuaPostStopEvent.WaitOne(0) ){
+				break;
+			}
 			scripts.resize(scripts.size() - 4096 + n);
 			for(;;){
 				auto itr = std::find(scripts.begin(), scripts.end(), '\n');
@@ -3413,7 +3444,7 @@ void CEpgTimerSrvMain::ProcessLuaPost(CEpgTimerSrvMain* sys)
 					lua_State* L = luaL_newstate();
 					if( L ){
 						luaL_openlibs(L);
-						sys->InitLuaCallback(L, NULL);
+						sys->InitLuaCallback(L, nullptr);
 						if( luaL_dostring(L, scripts.data()) != 0 ){
 							wstring werr;
 							LPCSTR err = lua_tostring(L, -1);
@@ -3652,7 +3683,7 @@ int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
 			if( strApp.find_first_of(L"\n\r") == wstring::npos &&
 			    strKey.find_first_of(L"\n\r") == wstring::npos &&
 			    strVal.find_first_of(L"\n\r") == wstring::npos ){
-				lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : NULL, val ? strVal.c_str() : NULL, strFile.c_str()));
+				lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : nullptr, val ? strVal.c_str() : nullptr, strFile.c_str()));
 				return 1;
 			}
 		}
@@ -3911,9 +3942,9 @@ int CEpgTimerSrvMain::LuaSearchEpgProc(lua_State* L, bool archive)
 			}
 		};
 		if( archive ){
-			ws.sys->epgDB.SearchArchiveEpg(&key, 1, enumStart, enumEnd, true, NULL, enumProc);
+			ws.sys->epgDB.SearchArchiveEpg(&key, 1, enumStart, enumEnd, true, nullptr, enumProc);
 		}else{
-			ws.sys->epgDB.SearchEpg(&key, 1, enumStart, enumEnd, NULL, enumProc);
+			ws.sys->epgDB.SearchEpg(&key, 1, enumStart, enumEnd, nullptr, enumProc);
 		}
 		return 1;
 	}
@@ -4020,7 +4051,7 @@ int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
 	vector<REC_FILE_INFO> list;
 	if( getAll ){
 		lua_newtable(L);
-		list = ws.sys->reserveManager.GetRecFileInfoList(NULL, getExtraInfo);
+		list = ws.sys->reserveManager.GetRecFileInfoList(nullptr, getExtraInfo);
 	}else{
 		DWORD id = (DWORD)lua_tointeger(L, 1);
 		list.resize(1);
@@ -4327,6 +4358,11 @@ int CEpgTimerSrvMain::LuaFindFile(lua_State* L)
 				LuaHelp::reg_string(ws.L, "name", ws.WtoUTF8(findData.fileName));
 				LuaHelp::reg_number(ws.L, "size", (double)findData.fileSize);
 				LuaHelp::reg_boolean(ws.L, "isdir", findData.isDir);
+#ifdef _WIN32
+				LuaHelp::reg_boolean(ws.L, "readonly", findData.readonly);
+				LuaHelp::reg_boolean(ws.L, "hidden", findData.hidden);
+				LuaHelp::reg_boolean(ws.L, "system", findData.system);
+#endif
 				SYSTEMTIME st;
 				ConvertSystemTime(findData.lastWriteTime + I64_UTIL_TIMEZONE, &st);
 				LuaHelp::reg_time(ws.L, "mtime", st);

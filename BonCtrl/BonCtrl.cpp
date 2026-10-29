@@ -122,12 +122,12 @@ BOOL CBonCtrl::OpenBonDriver(
 //戻り値：
 // TRUE（成功）：FALSE（Openに失敗している）
 //引数：
-// bonDriverFile		[OUT]BonDriverのファイル名(NULL可)
+// bonDriverFile		[OUT]BonDriverのファイル名(nullptr可)
 BOOL CBonCtrl::GetOpenBonDriver(
 	wstring* bonDriverFile
 	)
 {
-	if( bonDriverFile == NULL ){
+	if( bonDriverFile == nullptr ){
 		return this->bonUtil.IsOpen();
 	}
 	wstring strBonDriverFile = this->bonUtil.GetOpenBonDriverFileName();
@@ -189,14 +189,14 @@ BOOL CBonCtrl::ProcessSetCh(
 // TRUE（変更中）、FALSE（完了）
 BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
 {
-	if( chChgErr != NULL ){
+	if( chChgErr != nullptr ){
 		*chChgErr = FALSE;
 	}
 	DWORD elapsed;
 	if( this->tsOut.IsChUnknown(&elapsed) && elapsed != MAXDWORD ){
 		if( elapsed > 15000 ){
 			//タイムアウトした
-			if( chChgErr != NULL ){
+			if( chChgErr != nullptr ){
 				*chChgErr = TRUE;
 			}
 			return FALSE;
@@ -244,7 +244,7 @@ void CBonCtrl::RecvCallback(BYTE* data, DWORD size, DWORD remain, DWORD tsBuffMa
 {
 	BYTE* outData;
 	DWORD outSize;
-	if( data != NULL && size != 0 && this->packetInit.GetTSData(data, size, &outData, &outSize) ){
+	if( data != nullptr && size != 0 && this->packetInit.GetTSData(data, size, &outData, &outSize) ){
 		lock_recursive_mutex lock(this->buffLock);
 		while( outSize != 0 ){
 			if( this->tsFreeList.empty() ){
@@ -508,19 +508,19 @@ CBonCtrl::JOB_STATUS CBonCtrl::GetChScanStatus(
 	if( indexOrStatus < 0 ){
 		indexOrStatus = 0;
 	}
-	if( space != NULL ){
+	if( space != nullptr ){
 		*space = this->chScanChkList[indexOrStatus].space;
 	}
-	if( ch != NULL ){
+	if( ch != nullptr ){
 		*ch = this->chScanChkList[indexOrStatus].ch;
 	}
-	if( chName != NULL ){
+	if( chName != nullptr ){
 		*chName = this->chScanChkList[indexOrStatus].chName;
 	}
-	if( chkNum != NULL ){
+	if( chkNum != nullptr ){
 		*chkNum = indexOrStatus;
 	}
-	if( totalNum != NULL ){
+	if( totalNum != nullptr ){
 		*totalNum = (DWORD)this->chScanChkList.size();
 	}
 	return ST_WORKING;
@@ -603,7 +603,7 @@ void CBonCtrl::CheckChScan()
 //戻り値：
 // TRUE（成功）、FALSE（失敗）
 //引数：
-// chList		[IN]EPG取得するチャンネル一覧(NULL可)
+// chList		[IN]EPG取得するチャンネル一覧(nullptr可)
 BOOL CBonCtrl::StartEpgCap(
 	const vector<SET_CH_INFO>* chList
 	)
@@ -654,7 +654,7 @@ void CBonCtrl::StopEpgCap(
 }
 
 //EPG取得のステータスを取得する
-//※info==NULLの場合に限りスレッドセーフ
+//※info==nullptrの場合に限りスレッドセーフ
 //戻り値：
 // ステータス
 //引数：
@@ -670,7 +670,7 @@ CBonCtrl::JOB_STATUS CBonCtrl::GetEpgCapStatus(
 	if( indexOrStatus < 0 ){
 		indexOrStatus = 0;
 	}
-	if( info != NULL ){
+	if( info != nullptr ){
 		*info = this->epgCapChList[indexOrStatus];
 	}
 	return ST_WORKING;

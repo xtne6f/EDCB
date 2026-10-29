@@ -15,7 +15,7 @@ extern HINSTANCE g_instance;
 #endif
 
 //PlugInの名前を取得する
-//nameがNULL時は必要なサイズをnameSizeで返す
+//nameがnullptr時は必要なサイズをnameSizeで返す
 //通常nameSize=256で呼び出し
 //戻り値
 // TRUE（成功）、FALSE（失敗）
@@ -28,14 +28,14 @@ BOOL WINAPI GetPlugInName(
 	DWORD* nameSize
 	)
 {
-	if( name == NULL ){
-		if( nameSize == NULL ){
+	if( name == nullptr ){
+		if( nameSize == nullptr ){
 			return FALSE;
 		}else{
 			*nameSize = (DWORD)wcslen(PLUGIN_NAME)+1;
 		}
 	}else{
-		if( nameSize == NULL ){
+		if( nameSize == nullptr ){
 			return FALSE;
 		}else{
 			if( *nameSize < (DWORD)wcslen(PLUGIN_NAME)+1 ){
@@ -71,13 +71,13 @@ void WINAPI Setting(
 #endif
 
 //入力された予約情報と変換パターンを元に、録画時のファイル名を作成する（拡張子含む）
-//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//recNameがnullptr時は必要なサイズをrecNamesizeで返す
 //通常recNamesize=256で呼び出し
 //戻り値
 // TRUE（成功）、FALSE（失敗）
 //引数：
 // info						[IN]予約情報
-// pattern					[IN]変換パターン（デフォルトのときNULL）
+// pattern					[IN]変換パターン（デフォルトのときnullptr）
 // recName					[OUT]名称
 // recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
 DLL_EXPORT
@@ -88,11 +88,11 @@ BOOL WINAPI ConvertRecName3(
 	DWORD* recNamesize
 	)
 {
-	if( recNamesize == NULL ){
+	if( recNamesize == nullptr ){
 		return FALSE;
 	}
 	wstring buff;
-	if( pattern == NULL ){
+	if( pattern == nullptr ){
 #ifdef _WIN32
 		fs_path iniPath = GetModuleIniPath(g_instance);
 #else
@@ -103,7 +103,7 @@ BOOL WINAPI ConvertRecName3(
 	}
 
 	wstring convert = CConvertMacro2::Convert(pattern, info);
-	if( recName == NULL ){
+	if( recName == nullptr ){
 		*recNamesize = (DWORD)convert.size()+1;
 	}else{
 		if( *recNamesize < (DWORD)convert.size()+1 ){
@@ -118,13 +118,13 @@ BOOL WINAPI ConvertRecName3(
 }
 
 //入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
-//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//recNameがnullptr時は必要なサイズをrecNamesizeで返す
 //通常recNamesize=256で呼び出し
 //戻り値
 // TRUE（成功）、FALSE（失敗）
 //引数：
 // info						[IN]予約情報
-// epgInfo					[IN]番組情報（EPG予約で番組情報が存在する時、存在しない場合のNULL）
+// epgInfo					[IN]番組情報（EPG予約で番組情報が存在する時、存在しない場合のnullptr）
 // recName					[OUT]名称
 // recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
 DLL_EXPORT
@@ -136,15 +136,15 @@ BOOL WINAPI ConvertRecName2(
 	)
 {
 	PLUGIN_RESERVE_INFO infoEx;
-	memcpy(&infoEx, info, offsetof(PLUGIN_RESERVE_INFO, tunerID) + sizeof(infoEx.tunerID));
+	std::copy((const BYTE*)info, (const BYTE*)info + offsetof(PLUGIN_RESERVE_INFO, tunerID) + sizeof(infoEx.tunerID), (BYTE*)&infoEx);
 	infoEx.reserveID = 0;
 	infoEx.epgInfo = epgInfo;
 	infoEx.sizeOfStruct = 0;
-	return ConvertRecName3(&infoEx, NULL, recName, recNamesize);
+	return ConvertRecName3(&infoEx, nullptr, recName, recNamesize);
 }
 
 //入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
-//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//recNameがnullptr時は必要なサイズをrecNamesizeで返す
 //通常recNamesize=256で呼び出し
 //戻り値
 // TRUE（成功）、FALSE（失敗）
@@ -159,5 +159,5 @@ BOOL WINAPI ConvertRecName(
 	DWORD* recNamesize
 	)
 {
-	return ConvertRecName2(info, NULL, recName, recNamesize);
+	return ConvertRecName2(info, nullptr, recName, recNamesize);
 }

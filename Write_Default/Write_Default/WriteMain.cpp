@@ -148,7 +148,7 @@ BOOL CWriteMain::Write(
 	DWORD* writeSize
 	)
 {
-	if( this->file && data != NULL && size > 0 ){
+	if( this->file && data != nullptr && size > 0 ){
 		*writeSize = 0;
 		if( this->writeBuff.empty() == false ){
 			//できるだけバッファにコピー。コピー済みデータは呼び出し側にとっては「保存済み」となる
@@ -214,7 +214,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 	Replace(cmd, L"$FilePath$", sys->savePath);
 	//CreateProcess()のlpCommandLineはconstでないため
 	cmd += L'\0';
-	HANDLE olEvents[] = { sys->teeThreadStopEvent.Handle(), CreateEvent(NULL, TRUE, FALSE, NULL) };
+	HANDLE olEvents[] = { sys->teeThreadStopEvent.Handle(), CreateEvent(nullptr, TRUE, FALSE, nullptr) };
 	if( olEvents[1] ){
 		WCHAR pipeName[64];
 		swprintf_s(pipeName, L"\\\\.\\pipe\\anon_%08x_%08x", GetCurrentProcessId(), GetCurrentThreadId());
@@ -225,7 +225,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 		//出力を速やかに打ち切るために非同期書き込みのパイプを作成する。CreatePipe()は非同期にできない
 		HANDLE readPipe = CreateNamedPipe(pipeName, PIPE_ACCESS_INBOUND, 0, 1, 8192, 8192, 0, &sa);
 		if( readPipe != INVALID_HANDLE_VALUE ){
-			HANDLE writePipe = CreateFile(pipeName, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+			HANDLE writePipe = CreateFile(pipeName, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr);
 			if( writePipe != INVALID_HANDLE_VALUE ){
 				//標準入力にパイプしたプロセスを起動する
 				STARTUPINFO si = {};
@@ -233,10 +233,10 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 				si.dwFlags = STARTF_USESTDHANDLES;
 				si.hStdInput = readPipe;
 				//標準(エラー)出力はnulデバイスに捨てる
-				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-				si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				si.hStdOutput = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+				si.hStdError = CreateFile(L"nul", GENERIC_WRITE, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 				PROCESS_INFORMATION pi;
-				BOOL bRet = CreateProcess(NULL, &cmd.front(), NULL, NULL, TRUE, BELOW_NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, NULL, currentDir.c_str(), &si, &pi);
+				BOOL bRet = CreateProcess(nullptr, &cmd.front(), nullptr, nullptr, TRUE, BELOW_NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, nullptr, currentDir.c_str(), &si, &pi);
 				CloseHandle(readPipe);
 				if( si.hStdOutput != INVALID_HANDLE_VALUE ){
 					CloseHandle(si.hStdOutput);
@@ -260,7 +260,7 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 						    (n = fread(sys->teeBuff.data(), 1, sys->teeBuff.size(), sys->teeFile.get())) > 0 ){
 							OVERLAPPED ol = {};
 							ol.hEvent = olEvents[1];
-							if( WriteFile(writePipe, sys->teeBuff.data(), (DWORD)n, NULL, &ol) == FALSE && GetLastError() != ERROR_IO_PENDING ){
+							if( WriteFile(writePipe, sys->teeBuff.data(), (DWORD)n, nullptr, &ol) == FALSE && GetLastError() != ERROR_IO_PENDING ){
 								//出力完了
 								break;
 							}
@@ -311,9 +311,9 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 			//シグナルマスクを初期化
 			sigset_t sset;
 			sigemptyset(&sset);
-			if( sigprocmask(SIG_SETMASK, &sset, NULL) == 0 && chdir(execDir.c_str()) == 0 ){
+			if( pthread_sigmask(SIG_SETMASK, &sset, nullptr) == 0 && chdir(execDir.c_str()) == 0 ){
 				setenv("FilePath", filePath.c_str(), 0);
-				execl("/bin/sh", "sh", "-c", cmd.c_str(), NULL);
+				execl("/bin/sh", "sh", "-c", cmd.c_str(), nullptr);
 			}
 			exit(EXIT_FAILURE);
 		}

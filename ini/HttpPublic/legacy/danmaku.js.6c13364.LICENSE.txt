@@ -1,4 +1,5 @@
-The attached "danmaku.js" is the part of DPlayer ( https://github.com/DIYgod/DPlayer ).
+The attached "danmaku.js" is based on a part of DPlayer (
+https://github.com/DIYgod/DPlayer ).
 DPlayer is licensed under the following license:
 
 The MIT License (MIT)

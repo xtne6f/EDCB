@@ -64,9 +64,10 @@ for i=page*pageCount+1,math.min(#a,(page+1)*pageCount) do
   note=(note or ''):gsub('　',''):gsub(' ',''):gsub('\\s',' '):gsub('\\m','　'):gsub('\\\\','\\')
 
   cl=disAndKey and ' class="disabled"' or ''
-  ct:Append('    <tr><td><a href="autoaddepginfo.html?id='..a[i].dataID..'">'..andKey..'&ensp;</a>'
+  ct:Append('    <tr><td><a href="autoaddepginfo.html?id='..a[i].dataID..'">'..andKey:gsub('^$','&emsp;')..'</a>'
     ..'<td'..cl..'>'..notKey
     ..'<td'..cl..'>'..note
+    ..'<td'..cl..'><a href="autoaddepginfo.html?id='..a[i].dataID..'#search">'..a[i].addCount..'</a>'
     ..'<td'..cl..'>'..(#v.contentList>0 and edcb.GetGenreName(v.contentList[1].content_nibble)..(#v.contentList>1 and 'など' or '') or '')
     ..'<td'..cl..'>'..(chInfo and chInfo.serviceName or '')..(#v.serviceList>1 and 'など' or '')
     ..'<td'..cl..'>'..(RecModeTextList()[(a[i].recSetting.recMode~=5 and a[i].recSetting.recMode or a[i].recSetting.noRecMode or 1)+1] or '')

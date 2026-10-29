@@ -87,7 +87,7 @@ ct:Append((vtag<=0 and DOCTYPE_HTML4_STRICT or '<!DOCTYPE html>\n')..[=[
 ]=])
 
 id=GetVarInt(mg.request_info.query_string,'id') or 0
-fromepg=GetVarInt(mg.request_info.query_string,'fromepg')==1
+fromepg=GetVarInt(mg.request_info.query_string,'fromepg',1)
 xq=GetTranscodeQueries(mg.request_info.query_string)
 
 post=AssertPost()
@@ -104,11 +104,8 @@ end
 thumbs={''}
 recFilePath=edcb.GetRecFilePath(id)
 edcb.htmlEscape=15
-epgDate=0
 r=edcb.GetReserveData(id)
 if r then
-  --番組表のdateクエリは今日(深夜4時区切り)を基準(=0)とする
-  epgDate=math.floor((TimeWithZone(r.startTime)-4*3600)/(24*3600))-math.floor((os.time()+(9-4)*3600)/(24*3600))
   epgInfo=ConvertProgramText(edcb.SearchEpg(r.onid,r.tsid,r.sid,r.eid))
   dur=r.startTime.hour*3600+r.startTime.min*60+r.startTime.sec+r.durationSecond
   ct:Append('  <dl>\n'
@@ -126,18 +123,23 @@ if r then
     for i,ext in ipairs(xlist) do
       ff=EdcbFindFilePlain(recFilePath..ext)
       if ff then
+        resumeHash=VIDEO_RESUME_MAX>0 and mg.md5(WIN32 and (ref..ext):upper() or ref..ext)
         if vtag==i*2 or vtag==i*2+1 then
           if vtag%2==0 then
             ct:Append('<div><input id="input-file" type="file" accept="video/*">'..(ext=='' and '(filename:'..mg.md5(ref:upper()):sub(27)..')' or '')..'</div>')
           end
+          vttKind=ext=='' and 'metadata' or TestVttKind((recFilePath..ext):gsub('%.[0-9A-Za-z]+$','')..'.vtt')
           ct:Append(VideoWrapperBegin()
-            ..'<video id="video" autoplay playsinline controls '..(vtag%2==0 and 'data-' or '')..'src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)
-            ..'<track id="vid-meta" kind="metadata"'..(ext=='' and '' or ' src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')..'.vtt"')..' type="text/vtt" default>'
-            ..'</video>'..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),true)..'\n'..VideoScriptTemplate(ext==''))
+            ..'<video id="video" autoplay playsinline controls'
+            ..(resumeHash and ' data-resume-params="'..resumeHash..','..VIDEO_RESUME_MAX..','..VIDEO_RESUME_REWIND_SEC..'"' or '')
+            ..(vtag%2==0 and ' data-' or ' ')..'src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'">/'..EdcbHtmlEscape(ref..ext)
+            ..(vttKind and '<track id="vid-track" kind="'..vttKind..'" '..(vttKind=='metadata' and 'default' or 'mode="disabled"')
+                 ..(ext=='' and '' or ' src="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/'):gsub('%.[0-9A-Za-z]+$','')..'.vtt"')..' type="text/vtt">' or '')
+            ..'</video>'..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList(),true)..'\n'..VideoScriptTemplate(ext=='',LoadAttachedChapters(recFilePath..ext)))
         else
-          ct:Append((ext=='' and '' or '<a class="transit-inplace" href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')..'&amp;vtag='..(i*2+1)..'">')
+          ct:Append((ext=='' and '' or '<a'..(vtag<=0 and ' class="transit-inplace"' or '')..' href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg='..fromepg or '')..'&amp;vtag='..(i*2+1)..'">')
             ..'/'..EdcbHtmlEscape(ref..ext)..(ext=='' and '' or '</a>')
-            ..'\n[<a href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')..'&amp;vtag='..(i*2)..'">OpenFile</a>]'
+            ..'\n[<a href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg='..fromepg or '')..'&amp;vtag='..(i*2)..'">OpenFile</a>]'
             ..'\n[<a href="'..PathToRoot()..mg.url_encode(ref..ext):gsub('%%2f','/')..'" download>DL</a>]')
         end
         if ext=='' then
@@ -150,36 +152,36 @@ if r then
             end
             f:close()
           end
-          ct:Append(' ('..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M)<br>\n'
+          ct:Append(' (<span id="vid-src-duration">'..('%dm%02ds|'):format(math.floor(fsec/60),fsec%60)..math.floor(fsize/1048576)..'M</span>)<br>\n'
             ..'<form id="vid-form"'..(vtag<0 and ' class="transit-inplace"' or '')..' action="'..(vtag==0 and 'xcode.lua' or 'reserveinfo.html')..'"><div>\n'
             ..(vtag==0 and '<input type="hidden" name="fname" value="'..EdcbHtmlEscape(ref)..'">\n'
                  or '<input type="hidden" name="id" value="'..r.reserveID..'">\n'
-                   ..(fromepg and '<input type="hidden" name="fromepg" value="1">\n' or '')
+                   ..(fromepg and '<input type="hidden" name="fromepg" value="'..fromepg..'">\n' or '')
                    ..'<input type="hidden" name="vtag" value="1">\n'
                    ..'<input type="hidden" name="'..(vtag==1 and 're' or '')..'load" value="'..(xq.loadKey or edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'">\n')
             ..'<button type="submit">xcode</button>\n'
-            ..'→<a href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')..ConstructTranscodeQueries(xq)
+            ..'→<a href="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg='..fromepg or '')..ConstructTranscodeQueries(xq)
             ..'&amp;vtag='..(vtag==0 and '-1">Video' or '0">DL')..'</a>\n'
-            ..TranscodeSettingTemplate(xq,vtag==0,fsec)
+            ..TranscodeSettingTemplate(xq,vtag==0,fsec,resumeHash,fsec>0 and LoadAttachedChapters(recFilePath))
             ..(vtag==0 and '<br>※OpenFile用のファイルを作成するときは[TS-Live!以外][0m00s][x1.0]を選択してxcodeしてください\n' or '')
             ..'</div></form>'..thumbs[1])
           if vtag==1 then
             src='xcode.lua?fname='..mg.url_encode(ref)..ConstructTranscodeQueries(xq)
             ct:Append('\n'..VideoWrapperBegin()
               ..(xq.tslive and '<canvas id="video" data-pausable="1" data-src="'..src..'"'..(xq.autoCinema and ' data-initial-auto-cinema="1"' or '')
-                                 ..(xq.deinterlace and ' data-deinterlace="'..xq.deinterlace..'"' or '')..'></canvas>' or
-                   '<video id="video" autoplay playsinline controls'
+                                 ..(xq.deinterlace and ' data-deinterlace="'..xq.deinterlace..'"' or '')
+                                 ..(xq.maxRateForDoubling and ' data-max-rate-for-doubling="'..xq.maxRateForDoubling..'"' or '')..'></canvas>' or
+                   '<video id="video" autoplay playsinline controls'..(xq.poster and ' data-poster="'..EdcbHtmlEscape(xq.poster)..'"' or '')
                      ..(ALLOW_HLS and (ALWAYS_USE_HLS and ' data-always-use-hls="1"' or '')
                           ..' data-ctok="'..CsrfToken('xcode.lua')..'"'
                           ..' data-hls="'..(edcb.CreateRandom and edcb.CreateRandom(8) or os.time()%86400)..'"'
-                          ..(USE_MP4_HLS and ' data-hls-mp4="'..(USE_MP4_LLHLS and '2' or '1')..'"' or '')
                           ..' data-' or ' ')..'src="'..src..'">xcode</video>')
-              ..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList())..'\n'..TranscodeScriptTemplate(false,xq.caption,xq.jikkyo,xq.tslive,{ofssec=fsec*(xq.offset or 0)/100,fast=xq.fast}))
+              ..VideoWrapperEnd(JKRDLOG_PATH and GetChatStreamNameList())..'\n'..TranscodeScriptTemplate(false,xq))
           end
           ct:Append([=[
 <div style="display:none"><label><input type="checkbox" id="cb-ccinfo">字幕リスト</label>
 <div id="ccinfo-desc" style="display:none" data-fname="]=]
-  ..EdcbHtmlEscape(ref)..'"'..((vtag==i*2 or vtag==i*2+1) and ' data-set-src="vid-meta"' or '')
+  ..EdcbHtmlEscape(ref)..'"'..((vtag==i*2 or vtag==i*2+1) and ' data-set-src="vid-track"' or '')
   ..' data-seek-target="vid-'..((vtag==1 or vtag==i*2 or vtag==i*2+1) and 'wrap' or 'form')..[=["></div></div>
 ]=])
         else
@@ -189,10 +191,10 @@ if r then
       end
     end
   end
-  ct:Append('<br></dd>\n'
+  ct:Append('<div><a href="#vid-wrap" id="jump-to-video" style="display:none">#video</a></div><br></dd>\n'
     ..'    <dt>'..(r.eid==65535 and '<strong>プログラム予約</strong>' or 'プログラム予約化（プログラム予約化は元に戻せません。番組を特定できなくなるため追従もできません。）')
     ..'</dt><dd>\n'
-    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg='..fromepg or '')
     ..'"><div><input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="addchg" value="y">\n'
     ..'予約日時: <input type="text" size="4" name="start-y" value="'..r.startTime.year
@@ -209,7 +211,7 @@ if r then
     ..'    <dt>プリセット</dt><dd>\n'
     ..'<form action="reserveinfo.html"><div>\n'
     ..'<input type="hidden" name="id" value="'..r.reserveID..'">\n'
-    ..(fromepg and '<input type="hidden" name="fromepg" value="1">\n' or '')
+    ..(fromepg and '<input type="hidden" name="fromepg" value="'..fromepg..'">\n' or '')
     ..'<select name="presetID">\n')
   presetID=GetVarInt(mg.request_info.query_string,'presetID') or 65535
   preset=false
@@ -226,7 +228,7 @@ if r then
   ct:Append('<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
     ..'</select> <button type="submit">録画設定にロード</button></div></form></dd>\n'
     ..'    <dt>録画設定</dt><dd>\n'
-    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg=1' or '')
+    ..'<form method="POST" action="reserveinfo.html?id='..r.reserveID..(fromepg and '&amp;fromepg='..fromepg or '')
     ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
     ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'<input type="hidden" name="addchg" value="y">\n'
@@ -234,7 +236,7 @@ if r then
     ..'    <dt>-</dt><dd>\n')
   if fromepg then
     --一覧に戻ると使い勝手が悪いため
-    ct:Append('<form method="POST" action="reserveinfo.html?id='..r.reserveID..'"><div>\n'
+    ct:Append('<form method="POST" action="reserveinfo.html?id='..r.reserveID..'&amp;fromepg='..fromepg..'"><div>\n'
       ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
       ..'<input type="hidden" name="del" value="y">\n')
   else
@@ -246,10 +248,15 @@ if r then
     ..'  </dl>\n')
 end
 
+--番組表のdateクエリは今日(深夜4時区切り)を基準(=0)とする
+epgDate=(r or rdel) and math.floor((TimeWithZone((r or rdel).startTime)-4*3600)/(24*3600))-math.floor((os.time()+(9-4)*3600)/(24*3600)) or 0
+
 ct:Append([=[
 </div>
 <div id="footer">
-  <a href="reserve.html]=]..(r and '?id='..r.reserveID or '')..[=[">予約一覧</a> <a href="epg.html?date=]=]..epgDate..[=[">番組表</a> <a href="epglist.html]=]
+  ]=]..(fromepg and fromepg>1 and '<a href="autoaddepginfo.html?id='..(fromepg-1)..'#search">EPG予約</a> ' or '')..[=[
+<a href="reserve.html]=]..(r and '?id='..r.reserveID or '')..[=[">予約一覧</a> <a href="epg.html?tab=]=]
+  ..((r or rdel) and (({['地デジ']=0,['BS']=1,['CS3']=3,['その他']=4})[NetworkType((r or rdel).onid)] or 2) or 0)..'&amp;date='..epgDate..[=[">番組表</a> <a href="epglist.html]=]
   ..((r or rdel) and '?id='..(r or rdel).onid..'-'..(r or rdel).tsid..'-'..(r or rdel).sid..'#now' or '')..[=[">リスト番組表</a>
 </div>
 ]=])

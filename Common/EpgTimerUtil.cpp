@@ -123,7 +123,7 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO& info, LPCWSTR serviceName, LP
 		text += time;
 	}
 	text += L"\r\n";
-	if( serviceName != NULL ){
+	if( serviceName != nullptr ){
 		text += serviceName;
 		text += L"\r\n";
 	}
@@ -136,7 +136,7 @@ wstring ConvertEpgInfoText(const EPGDB_EVENT_INFO& info, LPCWSTR serviceName, LP
 		ReduceCrLfAndAppend(text, info.extInfo.text_char, L"\r\n\r\n\r\n");
 	}
 
-	if( extraText != NULL ){
+	if( extraText != nullptr ){
 		text += extraText;
 	}
 	wstring buff;
@@ -502,16 +502,16 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 	dest->durationSec = src->durationSec;
 	dest->freeCAFlag = src->freeCAFlag;
 
-	dest->hasShortInfo = src->shortInfo != NULL;
+	dest->hasShortInfo = src->shortInfo != nullptr;
 	if( dest->hasShortInfo ){
 		dest->shortInfo.event_name = src->shortInfo->event_name;
 		dest->shortInfo.text_char = src->shortInfo->text_char;
 	}
-	dest->hasExtInfo = src->extInfo != NULL;
+	dest->hasExtInfo = src->extInfo != nullptr;
 	if( dest->hasExtInfo ){
 		dest->extInfo.text_char = src->extInfo->text_char;
 	}
-	dest->hasContentInfo = src->contentInfo != NULL;
+	dest->hasContentInfo = src->contentInfo != nullptr;
 	if( dest->hasContentInfo ){
 		dest->contentInfo.nibbleList.clear();
 		if( src->contentInfo->listSize > 0 ){
@@ -519,14 +519,14 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 				src->contentInfo->nibbleList, src->contentInfo->nibbleList + src->contentInfo->listSize);
 		}
 	}
-	dest->hasComponentInfo = src->componentInfo != NULL;
+	dest->hasComponentInfo = src->componentInfo != nullptr;
 	if( dest->hasComponentInfo ){
 		dest->componentInfo.stream_content = src->componentInfo->stream_content;
 		dest->componentInfo.component_type = src->componentInfo->component_type;
 		dest->componentInfo.component_tag = src->componentInfo->component_tag;
 		dest->componentInfo.text_char = src->componentInfo->text_char;
 	}
-	dest->hasAudioInfo = src->audioInfo != NULL;
+	dest->hasAudioInfo = src->audioInfo != nullptr;
 	if( dest->hasAudioInfo ){
 		dest->audioInfo.componentList.resize(src->audioInfo->listSize);
 		for( WORD i=0; i<src->audioInfo->listSize; i++ ){
@@ -544,7 +544,7 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 		}
 	}
 	dest->eventGroupInfoGroupType = 0;
-	if( src->eventGroupInfo != NULL ){
+	if( src->eventGroupInfo != nullptr ){
 		dest->eventGroupInfoGroupType = src->eventGroupInfo->group_type;
 		dest->eventGroupInfo.eventDataList.clear();
 		if( src->eventGroupInfo->event_count > 0 ){
@@ -553,7 +553,7 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 		}
 	}
 	dest->eventRelayInfoGroupType = 0;
-	if( src->eventRelayInfo != NULL ){
+	if( src->eventRelayInfo != nullptr ){
 		dest->eventRelayInfoGroupType = src->eventRelayInfo->group_type;
 		dest->eventRelayInfo.eventDataList.clear();
 		if( src->eventRelayInfo->event_count > 0 ){
@@ -676,7 +676,7 @@ EPG_EVENT_INFO CEpgEventInfoAdapter::Create(EPGDB_EVENT_INFO* ref)
 	dest.DurationFlag = r.DurationFlag;
 	dest.durationSec = r.durationSec;
 	dest.freeCAFlag = r.freeCAFlag;
-	dest.shortInfo = NULL;
+	dest.shortInfo = nullptr;
 	if( r.hasShortInfo ){
 		shortInfo.event_nameLength = (WORD)r.shortInfo.event_name.size();
 		shortInfo.event_name = r.shortInfo.event_name.c_str();
@@ -684,19 +684,19 @@ EPG_EVENT_INFO CEpgEventInfoAdapter::Create(EPGDB_EVENT_INFO* ref)
 		shortInfo.text_char = r.shortInfo.text_char.c_str();
 		dest.shortInfo = &shortInfo;
 	}
-	dest.extInfo = NULL;
+	dest.extInfo = nullptr;
 	if( r.hasExtInfo ){
 		extInfo.text_charLength = (WORD)r.extInfo.text_char.size();
 		extInfo.text_char = r.extInfo.text_char.c_str();
 		dest.extInfo = &extInfo;
 	}
-	dest.contentInfo = NULL;
+	dest.contentInfo = nullptr;
 	if( r.hasContentInfo ){
 		contentInfo.listSize = (WORD)r.contentInfo.nibbleList.size();
 		contentInfo.nibbleList = r.contentInfo.nibbleList.data();
 		dest.contentInfo = &contentInfo;
 	}
-	dest.componentInfo = NULL;
+	dest.componentInfo = nullptr;
 	if( r.hasComponentInfo ){
 		componentInfo.stream_content = r.componentInfo.stream_content;
 		componentInfo.component_type = r.componentInfo.component_type;
@@ -705,7 +705,7 @@ EPG_EVENT_INFO CEpgEventInfoAdapter::Create(EPGDB_EVENT_INFO* ref)
 		componentInfo.text_char = r.componentInfo.text_char.c_str();
 		dest.componentInfo = &componentInfo;
 	}
-	dest.audioInfo = NULL;
+	dest.audioInfo = nullptr;
 	if( r.hasAudioInfo ){
 		audioInfo.listSize = (WORD)r.audioInfo.componentList.size();
 		audioList.resize(audioInfo.listSize);
@@ -725,14 +725,14 @@ EPG_EVENT_INFO CEpgEventInfoAdapter::Create(EPGDB_EVENT_INFO* ref)
 		audioInfo.audioList = audioList.data();
 		dest.audioInfo = &audioInfo;
 	}
-	dest.eventGroupInfo = NULL;
+	dest.eventGroupInfo = nullptr;
 	if( r.eventGroupInfoGroupType ){
 		eventGroupInfo.group_type = r.eventGroupInfoGroupType;
 		eventGroupInfo.event_count = (BYTE)r.eventGroupInfo.eventDataList.size();
 		eventGroupInfo.eventDataList = r.eventGroupInfo.eventDataList.data();
 		dest.eventGroupInfo = &eventGroupInfo;
 	}
-	dest.eventRelayInfo = NULL;
+	dest.eventRelayInfo = nullptr;
 	if( r.eventRelayInfoGroupType ){
 		eventRelayInfo.group_type = r.eventRelayInfoGroupType;
 		eventRelayInfo.event_count = (BYTE)r.eventRelayInfo.eventDataList.size();
@@ -754,9 +754,9 @@ SERVICE_INFO CServiceInfoAdapter::Create(const EPGDB_SERVICE_INFO* ref)
 	extInfo.service_provider_name = r.service_provider_name.c_str();
 	extInfo.service_name = r.service_name.c_str();
 	extInfo.network_name = r.network_name.c_str();
-	//互換のためts_nameは未取得や空文字列のときNULLとすべき
-	//(service_nameはNULLにしてはいけない。BonCtrl/ChSetUtil.cppを参照)
-	extInfo.ts_name = r.ts_name.empty() ? NULL : r.ts_name.c_str();
+	//互換のためts_nameは未取得や空文字列のときnullptrとすべき
+	//(service_nameはnullptrにしてはいけない。BonCtrl/ChSetUtil.cppを参照)
+	extInfo.ts_name = r.ts_name.empty() ? nullptr : r.ts_name.c_str();
 	extInfo.remote_control_key_id = r.remote_control_key_id;
 	dest.extInfo = &extInfo;
 	return dest;
