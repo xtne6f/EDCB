@@ -105,26 +105,10 @@ public:
 	BYTE elementary_stream_priority_indicator;
 	BYTE PCR_flag;
 	BYTE OPCR_flag;
-	BYTE splicing_point_flag;
-	BYTE transport_private_data_flag;
-	BYTE adaptation_field_extension_flag;
 	ULONGLONG program_clock_reference_base;
 	WORD program_clock_reference_extension;
 	ULONGLONG original_program_clock_reference_base;
 	WORD original_program_clock_reference_extension;
-	BYTE splice_countdown;
-	BYTE transport_private_data_length;
-//	BYTE* private_data_byte;
-
-	BYTE adaptation_field_extension_length;
-	BYTE ltw_flag;
-	BYTE piecewise_rate_flag;
-	BYTE seamless_splice_flag;
-	BYTE ltw_valid_flag;
-	WORD ltw_offset;
-	DWORD piecewise_rate;
-	BYTE splice_type;
-	ULONGLONG DTS_next_AU;
 
 public:
 	CTSPacketUtil(void);
