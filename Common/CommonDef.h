@@ -1,7 +1,6 @@
 ﻿#ifndef INCLUDE_COMMON_DEF_H
 #define INCLUDE_COMMON_DEF_H
 
-#include "ErrDef.h"
 #include "StructDef.h"
 
 #define EPG_ARCHIVE_FOLDER L"EpgArc2"

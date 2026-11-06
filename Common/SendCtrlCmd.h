@@ -3,7 +3,6 @@
 #include "StructDef.h"
 
 #include "CtrlCmdDef.h"
-#include "ErrDef.h"
 #include "CtrlCmdUtil.h"
 
 class CSendCtrlCmd

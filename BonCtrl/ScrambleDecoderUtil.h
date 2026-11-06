@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include "../Common/PathUtil.h"
-#include "../Common/ErrDef.h"
-
 #include "IB25Decoder.h"
 
 class CScrambleDecoderUtil

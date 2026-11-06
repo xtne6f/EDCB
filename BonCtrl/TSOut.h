@@ -3,7 +3,6 @@
 #include "../Common/StructDef.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
-#include "../Common/ErrDef.h"
 #include "../Common/EpgDataCap3Util.h"
 #include "../Common/TSPacketUtil.h"
 #include "../Common/ThreadUtil.h"
