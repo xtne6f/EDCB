@@ -95,15 +95,13 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 #endif
 }
 
-//送信先を追加
-//戻り値：エラーコード
-DWORD CSendTSTCPMain::AddSendAddr(
+bool CSendTSTCPMain::AddSendAddr(
 	LPCWSTR lpcwszIP,
 	DWORD dwPort
 	)
 {
 	if( lpcwszIP == nullptr || !lpcwszIP[0] ){
-		return FALSE;
+		return false;
 	}
 	SEND_INFO item = {};
 	WtoUTF8(lpcwszIP, item.strIP);
@@ -126,7 +124,7 @@ DWORD CSendTSTCPMain::AddSendAddr(
 			m_wsaStartupResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 		}
 		if( m_wsaStartupResult != 0 ){
-			return FALSE;
+			return false;
 		}
 	}
 #endif
@@ -137,20 +135,18 @@ DWORD CSendTSTCPMain::AddSendAddr(
 		m_SendList.push_back(item);
 	}
 
-	return TRUE;
+	return true;
 }
 
-//送信先を追加(UDP)
-//戻り値：エラーコード
-DWORD CSendTSTCPMain::AddSendAddrUdp(
+bool CSendTSTCPMain::AddSendAddrUdp(
 	LPCWSTR lpcwszIP,
 	DWORD dwPort,
-	BOOL broadcastFlag,
+	bool broadcastFlag,
 	int maxSendSize
 	)
 {
 	if( lpcwszIP == nullptr ){
-		return FALSE;
+		return false;
 	}
 #ifdef _WIN32
 	if( m_wsaStartupResult == -1 ){
@@ -158,7 +154,7 @@ DWORD CSendTSTCPMain::AddSendAddrUdp(
 		m_wsaStartupResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	}
 	if( m_wsaStartupResult != 0 ){
-		return FALSE;
+		return false;
 	}
 #endif
 
@@ -182,7 +178,7 @@ DWORD CSendTSTCPMain::AddSendAddrUdp(
 	hints.ai_protocol = IPPROTO_UDP;
 	struct addrinfo* result;
 	if( getaddrinfo(ipA.c_str(), szPort, &hints, &result) != 0 ){
-		return FALSE;
+		return false;
 	}
 	item.udpAddrlen = result->ai_addrlen;
 	if( item.udpAddrlen <= sizeof(item.udpAddr) ){
@@ -191,7 +187,7 @@ DWORD CSendTSTCPMain::AddSendAddrUdp(
 	}
 	freeaddrinfo(result);
 	if( item.sock == INVALID_SOCKET ){
-		return FALSE;
+		return false;
 	}
 
 	if( broadcastFlag ){
@@ -203,12 +199,10 @@ DWORD CSendTSTCPMain::AddSendAddrUdp(
 	lock_recursive_mutex lock(m_sendLock);
 	m_SendList.push_back(item);
 
-	return TRUE;
+	return true;
 }
 
-//送信先クリア
-//戻り値：エラーコード
-DWORD CSendTSTCPMain::ClearSendAddr(
+void CSendTSTCPMain::ClearSendAddr(
 	)
 {
 	bool bStarted = m_sendThread.joinable();
@@ -225,40 +219,31 @@ DWORD CSendTSTCPMain::ClearSendAddr(
 	if( bStarted ){
 		StartSend();
 	}
-	return TRUE;
 }
 
-//データ送信を開始
-//戻り値：エラーコード
-DWORD CSendTSTCPMain::StartSend(
+bool CSendTSTCPMain::StartSend(
 	)
 {
 	if( m_sendThread.joinable() ){
-		return FALSE;
+		return false;
 	}
 
 	m_stopSendEvent.Reset();
 	m_sendThread = thread_(SendThread, this);
 
-	return TRUE;
+	return true;
 }
 
-//データ送信を停止
-//戻り値：エラーコード
-DWORD CSendTSTCPMain::StopSend(
+void CSendTSTCPMain::StopSend(
 	)
 {
 	if( m_sendThread.joinable() ){
 		m_stopSendEvent.Set();
 		m_sendThread.join();
 	}
-
-	return TRUE;
 }
 
-//データ送信を開始
-//戻り値：エラーコード
-DWORD CSendTSTCPMain::AddSendData(
+void CSendTSTCPMain::AddSendData(
 	BYTE* pbData,
 	DWORD dwSize
 	)
@@ -282,12 +267,9 @@ DWORD CSendTSTCPMain::AddSendData(
 			}
 		}
 	}
-	return TRUE;
 }
 
-//送信バッファをクリア
-//戻り値：エラーコード
-DWORD CSendTSTCPMain::ClearSendBuff(
+void CSendTSTCPMain::ClearSendBuff(
 	)
 {
 	lock_recursive_mutex lock(m_sendLock);
@@ -301,7 +283,6 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 	if( m_TSBuff.size() > unerasableCount ){
 		m_TSBuff.resize(unerasableCount);
 	}
-	return TRUE;
 }
 
 void CSendTSTCPMain::SendThread(CSendTSTCPMain* pSys)

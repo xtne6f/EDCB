@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "../../Common/ErrDef.h"
 #include "../../Common/CommonDef.h"
 #include "../../Common/ThreadUtil.h"
 #include <functional>

@@ -3,7 +3,6 @@
 #include "StringUtil.h"
 #include "TimeUtil.h"
 #include "CtrlCmdDef.h"
-#include "ErrDef.h"
 #ifndef _WIN32
 #include <errno.h>
 #include <netdb.h>

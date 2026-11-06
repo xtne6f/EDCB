@@ -5,7 +5,6 @@
 #include "../../Common/TVTestPlugin.h"
 
 #include "../../Common/PipeServer.h"
-#include "../../Common/ErrDef.h"
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/CtrlCmdUtil.h"
 #include "../../Common/ThreadUtil.h"

@@ -12,7 +12,7 @@ CTSOut::CTSOut(void)
 	this->lastONID = 0xFFFF;
 	this->lastTSID = 0xFFFF;
 
-	this->epgUtil.Initialize(FALSE);
+	this->epgUtil.Initialize();
 
 	this->enableDecodeFlag = FALSE;
 	this->emmEnableFlag = FALSE;
@@ -43,7 +43,7 @@ void CTSOut::SetChChangeEvent(WORD presumedONID, BOOL resetEpgUtil)
 		lock_recursive_mutex lock2(this->epgUtilLock);
 		//EpgDataCap3は内部メソッド単位でアトミック。初期化以外はobjLockかepgUtilLockのどちらかを獲得すればよい
 		this->epgUtil.UnInitialize();
-		this->epgUtil.Initialize(FALSE);
+		this->epgUtil.Initialize();
 		this->logoAdditionalNeededPids = nullptr;
 	}
 }
@@ -139,16 +139,14 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					if( this->chChangeState == CH_ST_INIT || this->chChangeState == CH_ST_WAIT_ID ){
 						WORD onid;
 						WORD tsid;
-						DWORD ret = this->epgUtil.GetTSID(&onid, &tsid);
-						if( ret != NO_ERR && this->chChangePresumedONID != 0xFFFF && this->lastTSID != 0xFFFF ){
+						bool ret = this->epgUtil.GetTSID(&onid, &tsid);
+						if( ret == false && this->chChangePresumedONID != 0xFFFF && this->lastTSID != 0xFFFF ){
 							//ONIDの取得は遅いことがあるので、チャンネル変更などでONIDが予測できる場合はそれを使う
 							//切り替え前との区別を確実にするためTSIDが変化する場合に限る
 							onid = this->chChangePresumedONID;
-							if( this->epgUtil.GetTSID(nullptr, &tsid) == NO_ERR && tsid != this->lastTSID ){
-								ret = NO_ERR;
-							}
+							ret = this->epgUtil.GetTSID(nullptr, &tsid) && tsid != this->lastTSID;
 						}
-						if( ret == NO_ERR ){
+						if( ret ){
 							if( this->chChangeState == CH_ST_INIT ){
 								AddDebugLogFormat(L"★Ch Init 0x%04X 0x%04X", onid, tsid);
 								OnChChanged(onid, tsid);
@@ -185,7 +183,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 		if( this->chChangeState == CH_ST_DONE ){
 			WORD onid;
 			WORD tsid;
-			if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
+			if( this->epgUtil.GetTSID(&onid, &tsid) ){
 				if( onid != this->lastONID || tsid != this->lastTSID ){
 					AddDebugLogFormat(L"★Ch Unexpected Change 0x%04X 0x%04X => 0x%04X 0x%04X", this->lastONID, this->lastTSID, onid, tsid);
 					OnChChanged(onid, tsid);
@@ -236,7 +234,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 		item.second->AddTSBuff(decodeData, decodeSize, [this](WORD onid, WORD tsid, WORD sid) -> int {
 			lock_recursive_mutex lock2(this->epgUtilLock);
 			EPG_EVENT_INFO* epgInfo;
-			return this->epgUtil.GetEpgInfo(onid, tsid, sid, FALSE, &epgInfo) == NO_ERR ? epgInfo->event_id : -1;
+			return this->epgUtil.GetEpgInfo(onid, tsid, sid, false, &epgInfo) ? epgInfo->event_id : -1;
 		});
 	}
 }
@@ -297,18 +295,16 @@ void CTSOut::CheckLogo(DWORD logoTypeFlags, CHECK_LOGO_RESULT& result)
 	result.dataUpdated = false;
 	result.serviceListUpdated = false;
 	if( logoTypeFlags ){
-		pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*> context(&result, &this->logoServiceListSizeMap);
-		this->epgUtil.EnumLogoList(EnumLogoListProc, &context);
+		this->epgUtil.EnumLogoList([this, &result](DWORD logoListSize, const LOGO_INFO* logoList) {
+			return EnumLogoListProc(logoListSize, logoList, this->logoServiceListSizeMap, result);
+		});
 	}
 }
 
-BOOL CALLBACK CTSOut::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, void* param)
+bool CTSOut::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, vector<pair<LONGLONG, DWORD>>& serviceListSizeMap, CHECK_LOGO_RESULT& result)
 {
-	CHECK_LOGO_RESULT& result = *((pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*>*)param)->first;
-	vector<pair<LONGLONG, DWORD>>& serviceListSizeMap = *((pair<CHECK_LOGO_RESULT*, vector<pair<LONGLONG, DWORD>>*>*)param)->second;
-
 	if( logoList == nullptr ){
-		return TRUE;
+		return true;
 	}
 	for( ; logoListSize > 0; logoListSize--, logoList++ ){
 		if( logoList->serviceListSize > 0 ){
@@ -322,7 +318,7 @@ BOOL CALLBACK CTSOut::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logo
 					result.type = logoList->type;
 					result.data.assign(logoList->data, logoList->data + logoList->dataSize);
 					result.dataUpdated = true;
-					return FALSE;
+					return false;
 				}
 				if( itr->second < logoList->serviceListSize ){
 					result.onid = logoList->onid;
@@ -331,14 +327,14 @@ BOOL CALLBACK CTSOut::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logo
 					result.serviceList.assign(logoList->serviceList, logoList->serviceList + logoList->serviceListSize);
 					result.serviceListUpdated = true;
 					itr->second = logoList->serviceListSize;
-					return FALSE;
+					return false;
 				}
 			}catch( std::bad_alloc& ){
-				return FALSE;
+				return false;
 			}
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 //EPGデータの保存を開始する
@@ -411,11 +407,11 @@ EPG_SECTION_STATUS CTSOut::GetSectionStatus(
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
 
-	return this->epgUtil.GetSectionStatus(l_eitFlag);
+	return this->epgUtil.GetSectionStatus(l_eitFlag != FALSE);
 }
 
 //指定サービスのEPGデータの蓄積状態を取得する
-pair<EPG_SECTION_STATUS, BOOL> CTSOut::GetSectionStatusService(
+pair<EPG_SECTION_STATUS, bool> CTSOut::GetSectionStatusService(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
@@ -424,7 +420,7 @@ pair<EPG_SECTION_STATUS, BOOL> CTSOut::GetSectionStatusService(
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
 
-	return this->epgUtil.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
+	return this->epgUtil.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag != FALSE);
 }
 
 //EMM処理の動作設定
@@ -483,10 +479,10 @@ BOOL CTSOut::GetLoadStatus(
 
 //自ストリームのサービス一覧を取得する
 //戻り値：
-// エラーコード
+// TRUE（成功）、FALSE（失敗）
 //引数：
-// funcGetList		[IN]戻り値がNO_ERRのときサービス情報の個数とそのリストを引数として呼び出される関数
-DWORD CTSOut::GetServiceListActual(
+// funcGetList		[IN]戻り値がTRUEのときサービス情報の個数とそのリストを引数として呼び出される関数
+BOOL CTSOut::GetServiceListActual(
 	const std::function<void(DWORD, SERVICE_INFO*)>& funcGetList
 	)
 {
@@ -494,11 +490,13 @@ DWORD CTSOut::GetServiceListActual(
 
 	DWORD serviceListSize;
 	SERVICE_INFO* serviceList;
-	DWORD ret = this->epgUtil.GetServiceListActual(&serviceListSize, &serviceList);
-	if( ret == NO_ERR && funcGetList ){
-		funcGetList(serviceListSize, serviceList);
+	if( this->epgUtil.GetServiceListActual(&serviceListSize, &serviceList) ){
+		if( funcGetList ){
+			funcGetList(serviceListSize, serviceList);
+		}
+		return TRUE;
 	}
-	return ret;
+	return FALSE;
 }
 
 //次に使用する制御IDを取得する
@@ -564,7 +562,7 @@ DWORD CTSOut::CreateServiceCtrl(
 
 //TSストリーム制御用コントロールを削除する
 //戻り値：
-// エラーコード
+// TRUE（成功）、FALSE（失敗）
 //引数：
 // id			[IN]制御識別ID
 BOOL CTSOut::DeleteServiceCtrl(
@@ -661,14 +659,14 @@ BOOL CTSOut::SendTcp(
 
 //指定サービスの現在or次のEPG情報を取得する
 //戻り値：
-// エラーコード
+// TRUE（成功）、FALSE（失敗）
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
 // serviceID				[IN]取得対象のServiceID
 // nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
 // epgInfo					[OUT]EPG情報
-DWORD CTSOut::GetEpgInfo(
+BOOL CTSOut::GetEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
@@ -678,18 +676,17 @@ DWORD CTSOut::GetEpgInfo(
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
 
-	EPG_EVENT_INFO* _epgInfo;
-	DWORD err = this->epgUtil.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, &_epgInfo);
-	if( err == NO_ERR ){
-		ConvertEpgInfo(originalNetworkID, transportStreamID, serviceID, _epgInfo, epgInfo);
+	EPG_EVENT_INFO* info;
+	if( this->epgUtil.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag != FALSE, &info) ){
+		ConvertEpgInfo(originalNetworkID, transportStreamID, serviceID, info, epgInfo);
+		return TRUE;
 	}
-
-	return err;
+	return FALSE;
 }
 
 //指定イベントのEPG情報を取得する
 //戻り値：
-// エラーコード
+// TRUE（成功）、FALSE（失敗）
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
@@ -697,7 +694,7 @@ DWORD CTSOut::GetEpgInfo(
 // eventID					[IN]取得対象のEventID
 // pfOnlyFlag				[IN]p/fからのみ検索するかどうか
 // epgInfo					[OUT]EPG情報
-DWORD CTSOut::SearchEpgInfo(
+BOOL CTSOut::SearchEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
@@ -708,13 +705,12 @@ DWORD CTSOut::SearchEpgInfo(
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
 
-	EPG_EVENT_INFO* _epgInfo;
-	DWORD err = this->epgUtil.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, &_epgInfo);
-	if( err == NO_ERR ){
-		ConvertEpgInfo(originalNetworkID, transportStreamID, serviceID, _epgInfo, epgInfo);
+	EPG_EVENT_INFO* info;
+	if( this->epgUtil.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag != 0, &info) ){
+		ConvertEpgInfo(originalNetworkID, transportStreamID, serviceID, info, epgInfo);
+		return TRUE;
 	}
-
-	return err;
+	return FALSE;
 }
 
 //PC時計を元としたストリーム時間との差を取得する

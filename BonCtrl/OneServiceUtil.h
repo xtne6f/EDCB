@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "../Common/ErrDef.h"
 #include "../Common/TSPacketUtil.h"
 #include "../Common/StringUtil.h"
 #include "../Common/SendTSTCPDllUtil.h"

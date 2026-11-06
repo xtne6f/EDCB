@@ -64,9 +64,7 @@ DWORD WINAPI AddSendAddrDLL(
 	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	DWORD dwRet = NO_ERR;
-	dwRet = ptr->AddSendAddr(lpcwszIP, dwPort);
-	return dwRet;
+	return ptr->AddSendAddr(lpcwszIP, dwPort);
 }
 
 //送信先を追加(UDP)
@@ -84,7 +82,7 @@ DWORD WINAPI AddSendAddrUdpDLL(
 	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	return ptr->AddSendAddrUdp(lpcwszIP, dwPort, broadcastFlag, maxSendSize);
+	return ptr->AddSendAddrUdp(lpcwszIP, dwPort, broadcastFlag != FALSE, maxSendSize);
 }
 
 //送信先クリア
@@ -98,9 +96,8 @@ DWORD WINAPI ClearSendAddrDLL(
 	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	DWORD dwRet = NO_ERR;
-	dwRet = ptr->ClearSendAddr();
-	return dwRet;
+	ptr->ClearSendAddr();
+	return NO_ERR;
 }
 
 //データ送信を開始
@@ -114,9 +111,7 @@ DWORD WINAPI StartSendDLL(
 	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	DWORD dwRet = NO_ERR;
-	dwRet = ptr->StartSend();
-	return dwRet;
+	return ptr->StartSend();
 }
 
 //データ送信を停止
@@ -130,12 +125,11 @@ DWORD WINAPI StopSendDLL(
 	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	DWORD dwRet = NO_ERR;
-	dwRet = ptr->StopSend();
-	return dwRet;
+	ptr->StopSend();
+	return NO_ERR;
 }
 
-//データ送信を開始
+//データを追加
 //戻り値：エラーコード
 DLL_EXPORT
 DWORD WINAPI AddSendDataDLL(
@@ -148,9 +142,8 @@ DWORD WINAPI AddSendDataDLL(
 	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	DWORD dwRet = NO_ERR;
-	dwRet = ptr->AddSendData(pbData, dwSize);
-	return dwRet;
+	ptr->AddSendData(pbData, dwSize);
+	return NO_ERR;
 }
 
 //送信バッファをクリア
@@ -164,7 +157,6 @@ DWORD WINAPI ClearSendBuffDLL(
 	if( ptr == nullptr ){
 		return ERR_NOT_INIT;
 	}
-	DWORD dwRet = NO_ERR;
-	dwRet = ptr->ClearSendBuff();
-	return dwRet;
+	ptr->ClearSendBuff();
+	return NO_ERR;
 }

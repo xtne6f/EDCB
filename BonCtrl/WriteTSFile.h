@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "../Common/StructDef.h"
-#include "../Common/ErrDef.h"
 #include "../Common/StringUtil.h"
 #include "../Common/ThreadUtil.h"
 #include "../Common/WritePlugInUtil.h"

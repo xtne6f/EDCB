@@ -189,7 +189,6 @@
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />
-    <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\PipeServer.h" />
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />

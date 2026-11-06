@@ -2,7 +2,6 @@
 #include "PipeServer.h"
 #include "StringUtil.h"
 #include "CtrlCmdDef.h"
-#include "ErrDef.h"
 #include "CommonDef.h"
 #ifdef _WIN32
 #include <aclapi.h>
