@@ -69,9 +69,6 @@
     <ClInclude Include="..\..\BonCtrl\CATUtil.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ErrDef.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\TSBuffUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>

@@ -63,7 +63,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnChannelChange()
 		lock_recursive_mutex lock(m_outer.m_streamLock);
 		// EpgDataCap3は内部メソッド単位でアトミック。UnInitialize()中にワーカースレッドにアクセスさせないよう排他制御が必要
 		m_outer.m_epgUtil.UnInitialize();
-		m_outer.m_epgUtil.Initialize(FALSE, m_outer.m_epgUtilPath.c_str());
+		m_outer.m_epgUtil.Initialize(m_outer.m_epgUtilPath.c_str());
 		m_outer.m_logoAdditionalNeededPids = nullptr;
 		m_outer.m_chChangeID = CH_CHANGE_ERR;
 		if (ret) {
@@ -205,9 +205,9 @@ bool CEdcbPlugIn::Initialize()
 		}
 	}
 	m_epgUtilPath = GetModulePath().replace_filename(L"EpgDataCap3.dll").native();
-	if (!m_edcbDir.empty() && m_epgUtil.Initialize(FALSE, m_epgUtilPath.c_str()) != NO_ERR) {
+	if (!m_edcbDir.empty() && !m_epgUtil.Initialize(m_epgUtilPath.c_str())) {
 		m_epgUtilPath = fs_path(m_edcbDir).append(L"EpgDataCap3.dll").native();
-		if (m_epgUtil.Initialize(FALSE, m_epgUtilPath.c_str()) != NO_ERR) {
+		if (!m_epgUtil.Initialize(m_epgUtilPath.c_str())) {
 			m_epgUtilPath.clear();
 		}
 	}
@@ -471,9 +471,9 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						else {
 							// 蓄積状態チェック
 							for (vector<CH_DATA5>::iterator it = chkList.begin(); it != chkList.end(); ++it) {
-								pair<EPG_SECTION_STATUS, BOOL> status = m_epgUtil.GetSectionStatusService(it->originalNetworkID, it->transportStreamID, it->serviceID, it->partialFlag);
+								pair<EPG_SECTION_STATUS, bool> status = m_epgUtil.GetSectionStatusService(it->originalNetworkID, it->transportStreamID, it->serviceID, !!it->partialFlag);
 								if (!status.second) {
-									status.first = m_epgUtil.GetSectionStatus(it->partialFlag);
+									status.first = m_epgUtil.GetSectionStatus(!!it->partialFlag);
 								}
 								if (status.first != EpgNoData) {
 									m_epgCapChkNext = true;
@@ -516,7 +516,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (GetU32Tick() - m_epgCapBackStartTick > max<DWORD>(m_epgCapBackStartWaitSec, 15) * 1000) {
 					WORD onid;
 					WORD tsid;
-					if (m_chChangeID != CH_CHANGE_OK || m_epgUtil.GetTSID(&onid, &tsid) != NO_ERR) {
+					if (m_chChangeID != CH_CHANGE_OK || !m_epgUtil.GetTSID(&onid, &tsid)) {
 						m_epgCapBack = false;
 					}
 					else if (GetU32Tick() - m_epgCapBackStartTick > m_epgCapTimeout * 60000 + max<DWORD>(m_epgCapBackStartWaitSec, 15) * 1000) {
@@ -549,9 +549,9 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 							// 蓄積状態チェック
 							bool chkNext = false;
 							for (vector<CH_DATA5>::iterator it = chkList.begin(); it != chkList.end(); ++it) {
-								pair<EPG_SECTION_STATUS, BOOL> status = m_epgUtil.GetSectionStatusService(it->originalNetworkID, it->transportStreamID, it->serviceID, it->partialFlag);
+								pair<EPG_SECTION_STATUS, bool> status = m_epgUtil.GetSectionStatusService(it->originalNetworkID, it->transportStreamID, it->serviceID, !!it->partialFlag);
 								if (!status.second) {
-									status.first = m_epgUtil.GetSectionStatus(it->partialFlag);
+									status.first = m_epgUtil.GetSectionStatus(!!it->partialFlag);
 								}
 								if (status.first != EpgNoData) {
 									chkNext = true;
@@ -767,7 +767,7 @@ void CEdcbPlugIn::CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res)
 			if (cmd.ReadVALUE(&key)) {
 				lock_recursive_mutex lock(m_streamLock);
 				EPG_EVENT_INFO *epgInfo;
-				if (m_epgUtil.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR) {
+				if (m_epgUtil.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, !!key.pfOnlyFlag, &epgInfo)) {
 					EPGDB_EVENT_INFO epgDBInfo;
 					ConvertEpgInfo(key.ONID, key.TSID, key.SID, epgInfo, &epgDBInfo);
 					res.WriteVALUE(epgDBInfo);
@@ -782,7 +782,7 @@ void CEdcbPlugIn::CtrlCmdCallback(const CCmdStream &cmd, CCmdStream &res)
 			if (cmd.ReadVALUE(&key)) {
 				lock_recursive_mutex lock(m_streamLock);
 				EPG_EVENT_INFO *epgInfo;
-				if (m_epgUtil.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR) {
+				if (m_epgUtil.GetEpgInfo(key.ONID, key.TSID, key.SID, !!key.pfNextFlag, &epgInfo)) {
 					EPGDB_EVENT_INFO epgDBInfo;
 					ConvertEpgInfo(key.ONID, key.TSID, key.SID, epgInfo, &epgDBInfo);
 					res.WriteVALUE(epgDBInfo);
@@ -1124,7 +1124,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 					this_.m_epgUtil.AddTSPacket(pData, 188);
 					WORD onid;
 					WORD tsid;
-					if (this_.m_epgUtil.GetTSID(&onid, &tsid) == NO_ERR && onid == HIWORD(this_.m_chChangeID) && tsid == LOWORD(this_.m_chChangeID)) {
+					if (this_.m_epgUtil.GetTSID(&onid, &tsid) && onid == HIWORD(this_.m_chChangeID) && tsid == LOWORD(this_.m_chChangeID)) {
 						this_.m_chChangeID = CH_CHANGE_OK;
 #ifdef SEND_PIPE_TEST
 						this_.m_serviceFilter.Clear(tsid);
@@ -1178,7 +1178,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 				if (tick - this_.m_logoTick >= 1000) {
 					this_.m_epgUtil.SetLogoTypeFlags(this_.m_logoTypeFlags, &this_.m_logoAdditionalNeededPids);
 					if (this_.m_logoTypeFlags) {
-						this_.m_epgUtil.EnumLogoList(EnumLogoListProc, &this_);
+						this_.m_epgUtil.EnumLogoList([&this_](DWORD logoListSize, const LOGO_INFO *logoList) { return this_.EnumLogoListProc(logoListSize, logoList); });
 					}
 					this_.m_logoTick = tick;
 				}
@@ -1206,7 +1206,7 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 					WORD tsid;
 					if (!it->second.filterStarted &&
 					    this_.m_chChangeID == CH_CHANGE_OK &&
-					    this_.m_epgUtil.GetTSID(nullptr, &tsid) == NO_ERR)
+					    this_.m_epgUtil.GetTSID(nullptr, &tsid))
 					{
 						it->second.filterForDropCount.SetServiceID(false, vector<WORD>(1, it->second.filterSID));
 						it->second.filterForDropCount.Clear(tsid);
@@ -1238,24 +1238,22 @@ BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)
 	return TRUE;
 }
 
-BOOL CALLBACK CEdcbPlugIn::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO *logoList, LPVOID param)
+bool CEdcbPlugIn::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO *logoList)
 {
-	CEdcbPlugIn &this_ = *static_cast<CEdcbPlugIn*>(param);
-
 	if (logoList == nullptr) {
-		return TRUE;
+		return true;
 	}
 	for (; logoListSize > 0; logoListSize--, logoList++) {
 		if (logoList->serviceListSize > 0) {
 			LONGLONG key = static_cast<LONGLONG>(logoList->onid) << 32 | static_cast<LONGLONG>(logoList->id) << 16 | logoList->type;
 			vector<pair<LONGLONG, DWORD>>::iterator itr =
-				lower_bound_first(this_.m_logoServiceListSizeMap.begin(), this_.m_logoServiceListSizeMap.end(), key);
-			if (itr == this_.m_logoServiceListSizeMap.end() || itr->first != key) {
-				this_.m_logoServiceListSizeMap.emplace(itr, key, 0);
+				lower_bound_first(m_logoServiceListSizeMap.begin(), m_logoServiceListSizeMap.end(), key);
+			if (itr == m_logoServiceListSizeMap.end() || itr->first != key) {
+				m_logoServiceListSizeMap.emplace(itr, key, 0);
 				// ロゴを保存
 				WCHAR name[64];
 				swprintf_s(name, L"%04x_%03x_000_%02x.png", logoList->onid, logoList->id, logoList->type);
-				fs_path path = this_.GetEdcbSettingPath().append(LOGO_SAVE_FOLDER).append(name);
+				fs_path path = GetEdcbSettingPath().append(LOGO_SAVE_FOLDER).append(name);
 				bool update = true;
 				if (UtilFileExists(path).first) {
 					update = false;
@@ -1279,12 +1277,12 @@ BOOL CALLBACK CEdcbPlugIn::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO 
 					}
 				}
 				// 負荷分散のため列挙を中止
-				return FALSE;
+				return false;
 			}
 
 			if (itr->second < logoList->serviceListSize) {
 				// サービスからロゴへのポインティングを保存
-				fs_path iniPath = this_.GetEdcbSettingPath().append(LOGO_SAVE_FOLDER L".ini");
+				fs_path iniPath = GetEdcbSettingPath().append(LOGO_SAVE_FOLDER L".ini");
 				for (DWORD i = 0; i < logoList->serviceListSize; i++) {
 					WCHAR name[16];
 					swprintf_s(name, L"%04X%04X", logoList->onid, logoList->serviceList[i]);
@@ -1293,11 +1291,11 @@ BOOL CALLBACK CEdcbPlugIn::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO 
 					}
 				}
 				itr->second = logoList->serviceListSize;
-				return FALSE;
+				return false;
 			}
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 TVTest::CTVTestPlugin *CreatePluginClass()

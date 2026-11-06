@@ -171,7 +171,6 @@
     <ClInclude Include="..\..\Common\Common.h" />
     <ClInclude Include="..\..\Common\EpgDataCap3Def.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
-    <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\InstanceManager.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />

@@ -77,7 +77,7 @@ private:
 	static void ReloadEpgThread();
 	// ストリームコールバック(別スレッド)
 	static BOOL CALLBACK StreamCallback(BYTE *pData, void *pClientData);
-	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO *logoList, LPVOID param);
+	bool EnumLogoListProc(DWORD logoListSize, const LOGO_INFO *logoList);
 
 	CMyEventHandler m_handler;
 	recursive_mutex_ m_streamLock;

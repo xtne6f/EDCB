@@ -20,7 +20,7 @@ BOOL CWriteMain::InitializeDownstreamPlugin(
 	this->writePlugin.reset();
 	if( pluginPath.empty() == false && !this->file ){
 		this->writePlugin.reset(new CWritePlugInUtil);
-		if( this->writePlugin->Initialize(pluginPath) == FALSE ){
+		if( this->writePlugin->Initialize(pluginPath) == false ){
 			AddDebugLog(L"★CWriteMain::InitializeDownstreamPlugin Err");
 			this->writePlugin.reset();
 		}
@@ -50,7 +50,7 @@ BOOL CWriteMain::Start(
 	}
 
 	if( this->writePlugin ){
-		if( this->writePlugin->Start(this->savePath.c_str(), overWriteFlag, createSize) == FALSE ){
+		if( this->writePlugin->Start(this->savePath.c_str(), overWriteFlag != FALSE, createSize) == false ){
 			this->savePath = L"";
 			return FALSE;
 		}
@@ -58,7 +58,7 @@ BOOL CWriteMain::Start(
 		DWORD pathSize = 0;
 		if( this->writePlugin->GetSavePath(nullptr, &pathSize) && pathSize > 0 ){
 			path.resize(pathSize);
-			if( this->writePlugin->GetSavePath(&path.front(), &pathSize) == FALSE ){
+			if( this->writePlugin->GetSavePath(&path.front(), &pathSize) == false ){
 				path.clear();
 			}
 		}
@@ -126,7 +126,7 @@ BOOL CWriteMain::Write(
 		if( this->targetSID == 0 ){
 			//全サービスなので何も弄らない
 			if( this->writePlugin ){
-				if( this->writePlugin->Write(data, size, writeSize) == FALSE ){
+				if( this->writePlugin->Write(data, size, writeSize) == false ){
 					return FALSE;
 				}
 			}else{
@@ -168,7 +168,7 @@ BOOL CWriteMain::Write(
 			}
 			DWORD write;
 			if( this->writePlugin ){
-				if( this->writePlugin->Write(&this->outBuff.front(), (DWORD)this->outBuff.size(), &write) == FALSE ){
+				if( this->writePlugin->Write(&this->outBuff.front(), (DWORD)this->outBuff.size(), &write) == false ){
 					return FALSE;
 				}
 			}else{
