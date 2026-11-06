@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "EpgDataCap3Def.h"
+#include <functional>
 
 class CEpgDataCap3Util
 {
@@ -10,48 +11,50 @@ public:
 
 	//DLLの初期化
 	//戻り値：
-	// エラーコード
+	// true（成功）、false（失敗・初期化済み）
 	//引数：
-	// asyncMode		[IN]TRUE:非同期モード、FALSE:同期モード
 	// loadDllFilePath	[IN]ロードするDLLパス
-	DWORD Initialize(
-		BOOL asyncFlag,
+	bool Initialize(
 		LPCWSTR loadDllFilePath = nullptr
 		);
 
-	//DLLの開放
-	//戻り値：
-	// エラーコード
-	DWORD UnInitialize(
+	//DLLの解放
+	void UnInitialize(
 		);
+
+	//初期化されているかどうか
+	//false（未初期化）のとき、これより下のpublicメソッドは何もせずにfalse/EpgNoData/0を返す
+	bool IsInitialized() const { return module != nullptr; }
 
 	//解析対象のTSパケットを読み込ませる
 	//戻り値：
-	// エラーコード
+	// true（成功）、false（失敗）
+	//引数：
 	// data		[IN]TSパケット
 	// size		[IN]dataのサイズ（188の整数倍であること。size>188のとき、内部メソッドが未対応ならば、メソッド呼び出しは分割される）
-	DWORD AddTSPacket(
+	bool AddTSPacket(
 		BYTE* data,
 		DWORD size
 		);
 
 	//解析データの現在のストリームＩＤを取得する
 	//戻り値：
-	// エラーコード
-	// originalNetworkID		[OUT]現在のoriginalNetworkID。nullptr可
+	// true（成功）、false（失敗）
+	//引数：
+	// originalNetworkID		[OUT]現在のoriginalNetworkID。nullptr可（nullptr未対応のときfalseが返る）
 	// transportStreamID		[OUT]現在のtransportStreamID
-	DWORD GetTSID(
+	bool GetTSID(
 		WORD* originalNetworkID,
 		WORD* transportStreamID
 		);
 
 	//自ストリームのサービス一覧を取得する
 	//戻り値：
-	// エラーコード
+	// true（成功）、false（失敗）
 	//引数：
 	// serviceListSize			[OUT]serviceListの個数
 	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetServiceListActual(
+	bool GetServiceListActual(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList
 		);
@@ -59,24 +62,25 @@ public:
 	//蓄積されたEPG情報のあるサービス一覧を取得する
 	//SERVICE_EXT_INFOの情報はない
 	//戻り値：
-	// エラーコード
+	// true（成功）、false（失敗）
 	//引数：
 	// serviceListSize			[OUT]serviceListの個数
 	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetServiceListEpgDB(
+	bool GetServiceListEpgDB(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList
 		);
 
 	//指定サービスの全EPG情報を取得する
 	//戻り値：
-	// エラーコード
+	// true（成功）、false（失敗）
+	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// epgInfoListSize			[OUT]epgInfoListの個数
 	// epgInfoList				[OUT]EPG情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetEpgInfoList(
+	bool GetEpgInfoList(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
@@ -85,15 +89,15 @@ public:
 		);
 
 	//指定サービスの全EPG情報を列挙する
+	//戻り値：
+	// true（成功）、false（失敗）
 	//引数：
 	// enumEpgInfoListProc		[IN]EPG情報のリストを取得するコールバック関数
-	// param					[IN]コールバック引数
-	DWORD EnumEpgInfoList(
+	bool EnumEpgInfoList(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
-		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param),
-		void* param
+		const std::function<bool(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList)>& enumEpgInfoListProc
 		);
 
 	//EPGデータの蓄積状態をリセットする
@@ -105,7 +109,7 @@ public:
 	//引数：
 	// l_eitFlag		[IN]L-EITのステータスを取得
 	EPG_SECTION_STATUS GetSectionStatus(
-		BOOL l_eitFlag
+		bool l_eitFlag
 		);
 
 	//指定サービスのEPGデータの蓄積状態を取得する
@@ -116,33 +120,33 @@ public:
 	// transportStreamID		[IN]取得対象のTransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// l_eitFlag				[IN]L-EITのステータスを取得
-	pair<EPG_SECTION_STATUS, BOOL> GetSectionStatusService(
+	pair<EPG_SECTION_STATUS, bool> GetSectionStatusService(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
-		BOOL l_eitFlag
+		bool l_eitFlag
 		);
 
 	//指定サービスの現在or次のEPG情報を取得する
 	//戻り値：
-	// エラーコード
+	// true（成功）、false（失敗）
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
 	// serviceID				[IN]取得対象のServiceID
-	// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
+	// nextFlag					[IN]true（次の番組）、false（現在の番組）
 	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetEpgInfo(
+	bool GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
-		BOOL nextFlag,
+		bool nextFlag,
 		EPG_EVENT_INFO** epgInfo
 		);
 
 	//指定イベントのEPG情報を取得する
 	//戻り値：
-	// エラーコード
+	// true（成功）、false（失敗）
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
@@ -150,12 +154,12 @@ public:
 	// EventID					[IN]取得対象のEventID
 	// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
 	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD SearchEpgInfo(
+	bool SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
 		WORD eventID,
-		BYTE pfOnlyFlag,
+		bool pfOnlyFlag,
 		EPG_EVENT_INFO** epgInfo
 		);
 
@@ -170,13 +174,11 @@ public:
 
 	//全ロゴを列挙する
 	//戻り値：
-	// エラーコード
+	// true（成功）、false（失敗・未対応）
 	//引数：
 	// enumLogoListProc			[IN]ロゴのリストを取得するコールバック関数
-	// param					[IN]コールバック引数
-	DWORD EnumLogoList(
-		BOOL (CALLBACK *enumLogoListProc)(DWORD logoListSize, const LOGO_INFO* logoList, void* param),
-		void* param
+	bool EnumLogoList(
+		const std::function<bool(DWORD logoListSize, const LOGO_INFO* logoList)>& enumLogoListProc
 		);
 
 	//PC時計を元としたストリーム時間との差を取得する
@@ -225,5 +227,6 @@ private:
 	SetDebugLogCallbackEP3	pfnSetDebugLogCallbackEP3;
 
 	static void CALLBACK DebugLogCallback(const WCHAR* s);
+	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param);
+	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, void* param);
 };
-

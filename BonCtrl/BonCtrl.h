@@ -117,9 +117,9 @@ public:
 		BOOL duplicateNWCtrl
 		);
 
-	//TSストリーム制御用コントロールを作成する
+	//TSストリーム制御用コントロールを削除する
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// id			[IN]制御識別ID
 	BOOL DeleteServiceCtrl(
@@ -261,14 +261,14 @@ public:
 	//指定サービスの現在or次のEPG情報を取得する
 	//※スレッドセーフ
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
 	// epgInfo					[OUT]EPG情報
-	DWORD GetEpgInfo(
+	BOOL GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
@@ -281,7 +281,7 @@ public:
 	//指定イベントのEPG情報を取得する
 	//※スレッドセーフ
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
@@ -289,7 +289,7 @@ public:
 	// eventID					[IN]取得対象のEventID
 	// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
 	// epgInfo					[OUT]EPG情報
-	DWORD SearchEpgInfo(
+	BOOL SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,

@@ -447,7 +447,7 @@ void CEpgDataCap_BonMin::StartPipeServer()
 				SEARCH_EPG_INFO_PARAM key;
 				EPGDB_EVENT_INFO epgInfo;
 				if( cmd.ReadVALUE(&key) &&
-				    this->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR ){
+				    this->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) ){
 					res.WriteVALUE(epgInfo);
 					res.SetParam(CMD_SUCCESS);
 				}
@@ -458,7 +458,7 @@ void CEpgDataCap_BonMin::StartPipeServer()
 				GET_EPG_PF_INFO_PARAM key;
 				EPGDB_EVENT_INFO epgInfo;
 				if( cmd.ReadVALUE(&key) &&
-				    this->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR ){
+				    this->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) ){
 					res.WriteVALUE(epgInfo);
 					res.SetParam(CMD_SUCCESS);
 				}

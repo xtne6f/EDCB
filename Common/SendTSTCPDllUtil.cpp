@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "SendTSTCPDllUtil.h"
+#include "ErrDef.h"
 #include "PathUtil.h"
 
 CSendTSTCPDllUtil::CSendTSTCPDllUtil()
@@ -52,7 +53,7 @@ void CSendTSTCPDllUtil::UnInitialize()
 bool CSendTSTCPDllUtil::AddSendAddr(LPCWSTR ip, DWORD dwPort)
 {
 	if( m_module ){
-		return m_pfnAddSendAddrDLL(m_iID, ip, dwPort) == TRUE;
+		return m_pfnAddSendAddrDLL(m_iID, ip, dwPort) == NO_ERR;
 	}
 	return false;
 }
@@ -60,7 +61,7 @@ bool CSendTSTCPDllUtil::AddSendAddr(LPCWSTR ip, DWORD dwPort)
 bool CSendTSTCPDllUtil::AddSendAddrUdp(LPCWSTR ip, DWORD dwPort, bool broadcastFlag, int maxSendSize)
 {
 	if( m_module && m_pfnAddSendAddrUdpDLL ){
-		return m_pfnAddSendAddrUdpDLL(m_iID, ip, dwPort, broadcastFlag, maxSendSize) == TRUE;
+		return m_pfnAddSendAddrUdpDLL(m_iID, ip, dwPort, broadcastFlag, maxSendSize) == NO_ERR;
 	}
 	return false;
 }
@@ -75,7 +76,7 @@ void CSendTSTCPDllUtil::ClearSendAddr()
 bool CSendTSTCPDllUtil::StartSend()
 {
 	if( m_module ){
-		return m_pfnStartSendDLL(m_iID) == TRUE;
+		return m_pfnStartSendDLL(m_iID) == NO_ERR;
 	}
 	return false;
 }
@@ -90,7 +91,7 @@ void CSendTSTCPDllUtil::StopSend()
 bool CSendTSTCPDllUtil::AddSendData(BYTE* pbBuff, DWORD dwSize)
 {
 	if( m_module ){
-		return m_pfnAddSendDataDLL(m_iID, pbBuff, dwSize) == TRUE;
+		return m_pfnAddSendDataDLL(m_iID, pbBuff, dwSize) == NO_ERR;
 	}
 	return false;
 }

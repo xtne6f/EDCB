@@ -159,7 +159,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 #else
 		        GetModulePath().replace_filename(L"Write")
 #endif
-		        .append(sys->fileList[i]->writePlugIn).native()) == FALSE ){
+		        .append(sys->fileList[i]->writePlugIn).native()) == false ){
 			AddDebugLog(L"CWriteTSFile::StartSave Err 3");
 			sys->fileList[i].reset();
 		}else{
@@ -178,9 +178,9 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 				}
 			}
 			//開始
-			BOOL startRes = sys->fileList[i]->writeUtil.Start(fs_path(recFolder).append(sys->fileList[i]->recFileName).c_str(),
-			                                                  sys->overWriteFlag, sys->createSize);
-			if( startRes == FALSE ){
+			bool startRes = sys->fileList[i]->writeUtil.Start(fs_path(recFolder).append(sys->fileList[i]->recFileName).c_str(),
+			                                                  sys->overWriteFlag != FALSE, sys->createSize);
+			if( startRes == false ){
 				AddDebugLog(L"CWriteTSFile::StartSave Err 2");
 				//エラー時サブフォルダでリトライ
 				if( isMainUnknownOrFree ){
@@ -190,11 +190,11 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 					if( itrFree != sys->saveFolderSub.end() ){
 						sys->subRecFlag = TRUE;
 						startRes = sys->fileList[i]->writeUtil.Start(fs_path(*itrFree).append(sys->fileList[i]->recFileName).c_str(),
-						                                             sys->overWriteFlag, sys->createSize);
+						                                             sys->overWriteFlag != FALSE, sys->createSize);
 					}
 				}
 			}
-			if( startRes == FALSE ){
+			if( startRes == false ){
 				sys->fileList[i].reset();
 			}else{
 				if( i == 0 ){
@@ -245,7 +245,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 				{
 					if( sys->fileList[i] ){
 						DWORD write = 0;
-						if( sys->fileList[i]->writeUtil.Write(data.front().data(), dataSize, &write) == FALSE ){
+						if( sys->fileList[i]->writeUtil.Write(data.front().data(), dataSize, &write) == false ){
 							//空きがなくなった
 							if( i == 0 ){
 								lock_recursive_mutex lock(sys->outThreadLock);
@@ -263,7 +263,7 @@ void CWriteTSFile::OutThread(CWriteTSFile* sys)
 								if( itrFree != sys->saveFolderSub.end() ){
 									//開始
 									if( sys->fileList[i]->writeUtil.Start(fs_path(*itrFree).append(sys->fileList[i]->recFileName).c_str(),
-									                                      sys->overWriteFlag, 0) == FALSE ){
+									                                      sys->overWriteFlag != FALSE, 0) == false ){
 										//失敗したので終わり
 										sys->fileList[i].reset();
 									}else{

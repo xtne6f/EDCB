@@ -133,7 +133,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	}
 #endif
 	CEpgDataCap3Util epgUtil;
-	if( epgUtil.Initialize(FALSE) != NO_ERR ){
+	if( epgUtil.Initialize() == false ){
 		AddDebugLog(L"★EpgDataCap3の初期化に失敗しました。");
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
@@ -306,7 +306,7 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	//EPGデータを取得
 	DWORD serviceListSize = 0;
 	SERVICE_INFO* serviceList = nullptr;
-	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == FALSE ){
+	if( epgUtil.GetServiceListEpgDB(&serviceListSize, &serviceList) == false ){
 		sys->loadForeground = false;
 		sys->initialLoadDone = true;
 		sys->loadStop = true;
@@ -337,7 +337,9 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 			}
 			item.serviceInfo.remote_control_key_id = info->extInfo->remote_control_key_id;
 		}
-		epgUtil.EnumEpgInfoList(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID, EnumEpgInfoListProc, &item);
+		epgUtil.EnumEpgInfoList(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID, [&item](DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList) {
+			return EnumEpgInfoListProc(epgInfoListSize, epgInfoList, item);
+		});
 	}
 	epgUtil.UnInitialize();
 
@@ -581,31 +583,29 @@ void CEpgDBManager::LoadThread(CEpgDBManager* sys)
 	sys->loadStop = true;
 }
 
-BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, void* param)
+bool CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, EPGDB_SERVICE_EVENT_INFO& item)
 {
-	EPGDB_SERVICE_EVENT_INFO* item = (EPGDB_SERVICE_EVENT_INFO*)param;
-
 	try{
 		if( epgInfoList == nullptr ){
-			item->eventList.reserve(epgInfoListSize);
+			item.eventList.reserve(epgInfoListSize);
 		}else{
 			for( DWORD i=0; i<epgInfoListSize; i++ ){
-				item->eventList.emplace_back();
-				ConvertEpgInfo(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, &epgInfoList[i], &item->eventList.back());
-				if( item->eventList.back().hasShortInfo ){
+				item.eventList.emplace_back();
+				ConvertEpgInfo(item.serviceInfo.ONID, item.serviceInfo.TSID, item.serviceInfo.SID, &epgInfoList[i], &item.eventList.back());
+				if( item.eventList.back().hasShortInfo ){
 					//ごく稀にAPR(改行)を含むため
-					Replace(item->eventList.back().shortInfo.event_name, L"\r\n", L"");
+					Replace(item.eventList.back().shortInfo.event_name, L"\r\n", L"");
 				}
 				//実装上は既ソートだが仕様ではないので挿入ソートしておく
-				for( size_t j = item->eventList.size() - 1; j > 0 && item->eventList[j].event_id < item->eventList[j-1].event_id; j-- ){
-					std::swap(item->eventList[j], item->eventList[j-1]);
+				for( size_t j = item.eventList.size() - 1; j > 0 && item.eventList[j].event_id < item.eventList[j-1].event_id; j-- ){
+					std::swap(item.eventList[j], item.eventList[j-1]);
 				}
 			}
 		}
 	}catch( std::bad_alloc& ){
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
 bool CEpgDBManager::IsLoadingData()

@@ -538,7 +538,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					}
 					EPGDB_EVENT_INFO eventInfo;
 					if( this->bonCtrl.GetEpgInfo(onid, tsid, this->bonCtrl.GetNWCtrlServiceID(),
-					                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) == NO_ERR ){
+					                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) ){
 						info = ConvertEpgInfoText(eventInfo);
 					}
 				}
@@ -1362,7 +1362,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 	EPGDB_EVENT_INFO eventInfo;
 	if( this->bonCtrl.GetStreamID(&onid, &tsid) &&
 	    this->bonCtrl.GetEpgInfo(onid, tsid, this->bonCtrl.GetNWCtrlServiceID(),
-	                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) == NO_ERR ){
+	                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) ){
 		info = ConvertEpgInfoText(eventInfo);
 	}
 	SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
@@ -1615,7 +1615,7 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 				SEARCH_EPG_INFO_PARAM key;
 				EPGDB_EVENT_INFO epgInfo;
 				if( cmd.ReadVALUE(&key) &&
-				    this->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == NO_ERR ){
+				    this->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) ){
 					res.WriteVALUE(epgInfo);
 					res.SetParam(CMD_SUCCESS);
 				}
@@ -1626,7 +1626,7 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 				GET_EPG_PF_INFO_PARAM key;
 				EPGDB_EVENT_INFO epgInfo;
 				if( cmd.ReadVALUE(&key) &&
-				    this->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == NO_ERR ){
+				    this->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) ){
 					res.WriteVALUE(epgInfo);
 					res.SetParam(CMD_SUCCESS);
 				}

@@ -320,9 +320,9 @@ DWORD CBonCtrl::CreateServiceCtrl(
 	return id;
 }
 
-//TSストリーム制御用コントロールを作成する
+//TSストリーム制御用コントロールを削除する
 //戻り値：
-// エラーコード
+// TRUE（成功）、FALSE（失敗）
 //引数：
 // id			[IN]制御識別ID
 BOOL CBonCtrl::DeleteServiceCtrl(
@@ -756,8 +756,8 @@ void CBonCtrl::CheckEpgCap()
 						//蓄積状態チェック
 						for( vector<SET_CH_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
 							BOOL leitFlag = this->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
-							pair<EPG_SECTION_STATUS, BOOL> status = this->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
-							if( status.second == FALSE ){
+							pair<EPG_SECTION_STATUS, bool> status = this->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
+							if( status.second == false ){
 								status.first = this->tsOut.GetSectionStatus(leitFlag);
 							}
 							if( status.first != EpgNoData ){
@@ -948,8 +948,8 @@ void CBonCtrl::CheckEpgCapBack()
 		BOOL chkNext = FALSE;
 		for( vector<SET_CH_INFO>::const_iterator itr = this->epgCapChList.begin(); itr != this->epgCapChList.end(); itr++ ){
 			BOOL leitFlag = this->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
-			pair<EPG_SECTION_STATUS, BOOL> status = this->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
-			if( status.second == FALSE ){
+			pair<EPG_SECTION_STATUS, bool> status = this->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
+			if( status.second == false ){
 				status.first = this->tsOut.GetSectionStatus(leitFlag);
 			}
 			if( status.first != EpgNoData ){

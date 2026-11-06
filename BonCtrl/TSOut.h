@@ -112,7 +112,7 @@ public:
 	// transportStreamID		[IN]取得対象のTransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// l_eitFlag				[IN]L-EITのステータスを取得
-	pair<EPG_SECTION_STATUS, BOOL> GetSectionStatusService(
+	pair<EPG_SECTION_STATUS, bool> GetSectionStatusService(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
@@ -121,10 +121,10 @@ public:
 
 	//自ストリームのサービス一覧を取得する
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// funcGetList		[IN]戻り値がNO_ERRのときサービス情報の個数とそのリストを引数として呼び出される関数
-	DWORD GetServiceListActual(
+	// funcGetList		[IN]戻り値がTRUEのときサービス情報の個数とそのリストを引数として呼び出される関数
+	BOOL GetServiceListActual(
 		const std::function<void(DWORD, SERVICE_INFO*)>& funcGetList
 		);
 
@@ -255,14 +255,14 @@ public:
 
 	//指定サービスの現在or次のEPG情報を取得する
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
 	// epgInfo					[OUT]EPG情報
-	DWORD GetEpgInfo(
+	BOOL GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
@@ -272,7 +272,7 @@ public:
 	
 	//指定イベントのEPG情報を取得する
 	//戻り値：
-	// エラーコード
+	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
@@ -280,7 +280,7 @@ public:
 	// eventID					[IN]取得対象のEventID
 	// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
 	// epgInfo					[OUT]EPG情報
-	DWORD SearchEpgInfo(
+	BOOL SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
@@ -381,7 +381,7 @@ protected:
 
 	void UpdateFilterServiceID();
 
-	static BOOL CALLBACK EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, void* param);
+	static bool EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, vector<pair<LONGLONG, DWORD>>& serviceListSizeMap, CHECK_LOGO_RESULT& result);
 
 	DWORD GetNextID();
 

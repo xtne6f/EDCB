@@ -17,46 +17,42 @@ public:
 	~CSendTSTCPMain(void);
 
 	//送信先を追加
-	//戻り値：エラーコード
-	DWORD AddSendAddr(
+	//戻り値：true(成功)、false(失敗)
+	bool AddSendAddr(
 		LPCWSTR lpcwszIP,
 		DWORD dwPort
 		);
 
 	//送信先を追加(UDP)
-	//戻り値：エラーコード
-	DWORD AddSendAddrUdp(
+	//戻り値：true(成功)、false(失敗)
+	bool AddSendAddrUdp(
 		LPCWSTR lpcwszIP,
 		DWORD dwPort,
-		BOOL broadcastFlag,
+		bool broadcastFlag,
 		int maxSendSize
 		);
 
 	//送信先クリア
-	//戻り値：エラーコード
-	DWORD ClearSendAddr(
+	void ClearSendAddr(
 		);
 
 	//データ送信を開始
-	//戻り値：エラーコード
-	DWORD StartSend(
+	//戻り値：true(成功)、false(失敗・開始済み)
+	bool StartSend(
 		);
 
 	//データ送信を停止
-	//戻り値：エラーコード
-	DWORD StopSend(
+	void StopSend(
 		);
 
-	//データ送信を開始
-	//戻り値：エラーコード
-	DWORD AddSendData(
+	//データを追加
+	void AddSendData(
 		BYTE* pbData,
 		DWORD dwSize
 		);
 
 	//送信バッファをクリア
-	//戻り値：エラーコード
-	DWORD ClearSendBuff(
+	void ClearSendBuff(
 		);
 
 
