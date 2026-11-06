@@ -446,7 +446,10 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 					if( send(sock, (const char*)res.GetStream(), res.GetStreamSize(), 0) != (int)res.GetStreamSize() ){
 						break;
 					}
-					if( res.GetParam() != OLD_CMD_NEXT ){
+#ifdef EDCB_REPLY_TO_OLD_CTRL_CMD
+					if( res.GetParam() != OLD_CMD_NEXT )
+#endif
+					{
 						//Enum用の繰り返しではない
 						shutdown(sock, 2); //SD_BOTH
 						break;

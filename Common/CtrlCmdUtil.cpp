@@ -1382,6 +1382,7 @@ void CCmdStream::Resize(DWORD dataSize)
 	}
 }
 
+#ifdef EDCB_REPLY_TO_OLD_CTRL_CMD
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数
 void DeprecatedNewWriteVALUE( const RESERVE_DATA& val, CCmdStream& cmd, BYTE* buff )
@@ -1675,3 +1676,4 @@ void DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, CCmdStream& cmd, BYTE
 		DeprecatedNewWriteVALUE(val, cmd, cmd.GetData());
 	}
 }
+#endif

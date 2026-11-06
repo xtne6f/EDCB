@@ -182,6 +182,7 @@ Luaモジュールのビルド(Linux)
 ----------------------------------------
 - 一部のマクロを定義することでビルドをカスタマイズできる。以下主なもの
   - `EDCB_RC_DIALOG_NO_FONT` (Common/CommonResource.h)
+  - `EDCB_REPLY_TO_OLD_CTRL_CMD` (EpgTimerSrv/EpgTimerSrvMain.cpp)
   - `ARIB8CHAR_USE_UNICODE` (EpgDataCap3/ARIB8CharDecode.cpp)
   - `EPGDB_STD_WREGEX` (EpgTimerSrv/EpgDBManager.h)
 

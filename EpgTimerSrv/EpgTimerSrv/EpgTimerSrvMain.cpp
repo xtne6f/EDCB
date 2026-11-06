@@ -2674,7 +2674,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			}
 		}
 		break;
-#if 1
+#ifdef EDCB_REPLY_TO_OLD_CTRL_CMD
 	////////////////////////////////////////////////////////////
 	//旧バージョン互換コマンド
 	case CMD_EPG_SRV_GET_RESERVE_INFO:
