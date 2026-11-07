@@ -23,12 +23,16 @@ if post then
   edcb.htmlEscape=15
   lastEnableTCPSrv=edcb.GetPrivateProfile('SET','EnableTCPSrv',0,srvIni)~='0'
   lastTcpIPv6=edcb.GetPrivateProfile('SET','TCPIPv6',0,srvIni)~='0'
+  lastTcpAcceptRegistration=edcb.GetPrivateProfile('SET','TCPAcceptRegistration',0,srvIni)~='0'
   lastTcpPort=edcb.GetPrivateProfile('SET','TCPPort',4510,srvIni)
   lastTcpAccessControlList=edcb.GetPrivateProfile('SET','TCPAccessControlList','+127.0.0.1,+192.168.0.0/16',srvIni)
   lastTcpResponseTimeoutSec=edcb.GetPrivateProfile('SET','TCPResponseTimeoutSec',120,srvIni)
   edcb.htmlEscape=0
   edcb.WritePrivateProfile('SET','EnableTCPSrv',GetVarInt(post,'enableTCPSrv')==1,srvIni)
   edcb.WritePrivateProfile('SET','TCPIPv6',GetVarInt(post,'tcpIPv6')==1,srvIni)
+  if WIN32 then
+    edcb.WritePrivateProfile('SET','TCPAcceptRegistration',GetVarInt(post,'tcpAcceptRegistration')==1,srvIni)
+  end
   edcb.WritePrivateProfile('SET','TCPPort',GetVarInt(post,'tcpPort',0,65535) or 4510,srvIni)
   edcb.WritePrivateProfile('SET','TCPAccessControlList',(mg.get_var(post,'tcpAccessControlList') or ''):gsub('%c',''),srvIni)
   edcb.WritePrivateProfile('SET','TCPResponseTimeoutSec',GetVarInt(post,'tcpResponseTimeoutSec',0) or 120,srvIni)
@@ -54,12 +58,14 @@ end
 edcb.htmlEscape=15
 enableTCPSrv=edcb.GetPrivateProfile('SET','EnableTCPSrv',0,srvIni)~='0'
 tcpIPv6=edcb.GetPrivateProfile('SET','TCPIPv6',0,srvIni)~='0'
+tcpAcceptRegistration=edcb.GetPrivateProfile('SET','TCPAcceptRegistration',0,srvIni)~='0'
 tcpPort=edcb.GetPrivateProfile('SET','TCPPort',4510,srvIni)
 tcpAccessControlList=edcb.GetPrivateProfile('SET','TCPAccessControlList','+127.0.0.1,+192.168.0.0/16',srvIni)
 tcpResponseTimeoutSec=edcb.GetPrivateProfile('SET','TCPResponseTimeoutSec',120,srvIni)
 if post then
   edcb.ReloadSetting(enableTCPSrv~=lastEnableTCPSrv or
                      tcpIPv6~=lastTcpIPv6 or
+                     tcpAcceptRegistration~=lastTcpAcceptRegistration or
                      tcpPort~=lastTcpPort or
                      tcpAccessControlList~=lastTcpAccessControlList or
                      tcpResponseTimeoutSec~=lastTcpResponseTimeoutSec)
@@ -86,6 +92,7 @@ ct:Append([=[
   <div class="enabled-on-checked">
     ※設定変更後にHTTPサーバーも再起動します。<br>
     <label><input name="tcpIPv6"]=]..Checkbox(tcpIPv6)..[=[>IPv6</label><br>
+    <label class="]=]..(WIN32 and '' or 'inact-setting')..[=["><input name="tcpAcceptRegistration"]=]..Checkbox(tcpAcceptRegistration)..[=[>待ち受けポート方式を許可する</label><br>
     ポート <input type="text" name="tcpPort" value="]=]..tcpPort..[=[" size="8">
     &nbsp;無通信タイムアウト(秒) <input type="text" name="tcpResponseTimeoutSec" value="]=]..tcpResponseTimeoutSec..[=[" size="8"><br>
     アクセス制御 (※必ず信頼できるPCのみアクセスできるようにしてください。)<br>

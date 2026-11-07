@@ -168,6 +168,7 @@ private:
 	CEpgTimerSrvSetting::SETTING setting;
 	unsigned short tcpPort;
 	bool tcpIPv6;
+	bool tcpAcceptRegistration;
 	DWORD tcpResponseTimeoutSec;
 	wstring tcpAccessControlList;
 	CHttpServer::SERVER_OPTIONS httpOptions;

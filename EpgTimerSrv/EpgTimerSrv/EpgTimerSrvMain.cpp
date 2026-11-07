@@ -1136,6 +1136,12 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->tcpAccessControlList = GetPrivateProfileToString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", iniPath.c_str());
 		this->tcpResponseTimeoutSec = GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str());
 		this->tcpIPv6 = GetPrivateProfileInt(L"SET", L"TCPIPv6", 0, iniPath.c_str()) != 0;
+#ifdef _WIN32
+		this->tcpAcceptRegistration = GetPrivateProfileInt(L"SET", L"TCPAcceptRegistration", 0, iniPath.c_str()) != 0;
+#else
+		//対応しない
+		this->tcpAcceptRegistration = false;
+#endif
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
 	this->httpOptions = CHttpServer::LoadServerOptions(iniPath.c_str());
@@ -1608,6 +1614,7 @@ void CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, v
 void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& cmd, CCmdStream& res, int threadIndex, bool tcpFlag, LPCWSTR clientIP)
 {
 	//この関数はthreadIndexで識別されるスレッドで同時に呼び出されるかもしれない
+	(void)threadIndex;
 	res.Resize(0);
 	res.SetParam(CMD_ERR);
 
@@ -1651,9 +1658,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			DWORD processID;
 			if( cmd.ReadVALUE(&processID) ){
 				res.SetParam(CMD_SUCCESS);
-				sys->notifyManager.UnRegistGUI(processID);
 				//登録解除後に通知しないよう、通知処理中なら少し待つ
-				if( sys->notifyManager.WaitForIdle(3000) == false ){
+				if( sys->notifyManager.UnRegistGUI(processID) && sys->notifyManager.WaitForIdle(3000) == false ){
 					AddDebugLog(L"CMD2_EPG_SRV_UNREGIST_GUI/_TCP: WaitForIdle() timed out.");
 				}
 			}
@@ -1663,8 +1669,15 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 		if( clientIP ){
 			DWORD port;
 			if( cmd.ReadVALUE(&port) ){
-				res.SetParam(CMD_SUCCESS);
-				sys->notifyManager.RegistTCP(clientIP, port);
+				bool tcpAcceptReg;
+				{
+					lock_recursive_mutex lock(sys->settingLock);
+					tcpAcceptReg = sys->tcpPort != 0 && sys->tcpAcceptRegistration;
+				}
+				if( tcpAcceptReg ){
+					res.SetParam(CMD_SUCCESS);
+					sys->notifyManager.RegistTCP(clientIP, port);
+				}
 			}
 		}
 		break;
@@ -1673,9 +1686,8 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			DWORD port;
 			if( cmd.ReadVALUE(&port) ){
 				res.SetParam(CMD_SUCCESS);
-				sys->notifyManager.UnRegistTCP(clientIP, port);
 				//登録解除後に通知しないよう、通知処理中なら少し待つ
-				if( sys->notifyManager.WaitForIdle(3000) == false ){
+				if( sys->notifyManager.UnRegistTCP(clientIP, port) && sys->notifyManager.WaitForIdle(3000) == false ){
 					AddDebugLog(L"CMD2_EPG_SRV_UNREGIST_GUI/_TCP: WaitForIdle() timed out.");
 				}
 			}

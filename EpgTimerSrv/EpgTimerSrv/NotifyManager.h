@@ -12,8 +12,8 @@ public:
 
 	void RegistGUI(DWORD processID);
 	void RegistTCP(LPCWSTR ip, DWORD port);
-	void UnRegistGUI(DWORD processID);
-	void UnRegistTCP(LPCWSTR ip, DWORD port);
+	bool UnRegistGUI(DWORD processID);
+	bool UnRegistTCP(LPCWSTR ip, DWORD port);
 	void SetNotifyCallback(const std::function<void()>& proc);
 	void SetLogFilePath(LPCWSTR path);
 	bool GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount) const;
