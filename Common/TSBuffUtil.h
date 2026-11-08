@@ -5,15 +5,20 @@
 class CTSBuffUtil
 {
 public:
-	static const DWORD ERR_ADD_NEXT = 100;
-	static const DWORD ERR_NOT_SUPPORT = 101;
+	enum ADD_RESULT {
+		ERR_FALSE,
+		NO_ERR,
+		ERR_ADD_NEXT,
+		ERR_NOT_SUPPORT,
+		INTERNAL_ERR_CARRY_OVER,
+	};
 
 	//PES(Packetized Elementary Stream)対応は廃止した
 	CTSBuffUtil();
 
-	//Add188TS()がTRUEを返せばGetSectionBuff()は1回以上成功する。このとき受け取らなかったバッファは次のAdd188TS()で消える
-	DWORD Add188TS(const CTSPacketUtil& tsPacket_);
-	BOOL GetSectionBuff(BYTE** sectionData, DWORD* dataSize);
+	//Add188TS()がNO_ERRを返せばGetSectionBuff()は1回以上成功する。このとき受け取らなかったバッファは次のAdd188TS()で消える
+	ADD_RESULT Add188TS(const CTSPacketUtil& tsPacket_);
+	bool GetSectionBuff(BYTE** sectionData, DWORD* dataSize);
 
 protected:
 	DWORD sectionSize;
@@ -22,9 +27,9 @@ protected:
 
 	WORD lastPID;
 	BYTE lastCounter;
-	BOOL duplicateFlag;
+	bool duplicateFlag;
 protected:
 	void Clear();
-	BOOL CheckCounter(const CTSPacketUtil* tsPacket);
-	DWORD AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE unitStartIndicator);
+	bool CheckCounter(const CTSPacketUtil* tsPacket);
+	ADD_RESULT AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE unitStartIndicator);
 };

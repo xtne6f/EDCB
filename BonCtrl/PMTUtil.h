@@ -8,7 +8,7 @@ class CPMTUtil
 public:
 	CPMTUtil(void);
 	//Get系メソッドの返値が変化した可能性があるとき真が返る
-	BOOL AddPacket(const CTSPacketUtil& packet);
+	bool AddPacket(const CTSPacketUtil& packet);
 	//未解析のとき0が返る
 	WORD GetProgramNumber() const { return program_number; }
 	BYTE GetVersion() const { return version_number; }
@@ -25,7 +25,7 @@ protected:
 	vector<pair<WORD, BYTE>> PIDList;
 
 protected:
-	BOOL DecodePMT(BYTE* data, DWORD dataSize);
+	bool DecodePMT(BYTE* data, DWORD dataSize);
 
 };
 

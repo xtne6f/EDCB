@@ -283,10 +283,10 @@ void CDecodeUtil::AddTSData(BYTE* data, DWORD size)
 				//まだPIDがないので新規
 				itr = this->buffUtilMap.emplace(itr, tsPacket.PID, CTSBuffUtil());
 			}
-			if( itr->second.Add188TS(tsPacket) == TRUE ){
+			if( itr->second.Add188TS(tsPacket) == CTSBuffUtil::NO_ERR ){
 				BYTE* section = nullptr;
 				DWORD sectionSize = 0;
-				while( itr->second.GetSectionBuff(&section, &sectionSize) == TRUE ){
+				while( itr->second.GetSectionBuff(&section, &sectionSize) ){
 					switch( section[0] ){
 					case 0x00:
 						if( this->tableBuff.DecodeSI(section, sectionSize, nullptr, Desc::TYPE_PAT) ){

@@ -8,7 +8,7 @@ CReNamePlugInUtil::CReNamePlugInUtil()
 }
 
 #ifdef _WIN32
-BOOL CReNamePlugInUtil::ShowSetting(
+bool CReNamePlugInUtil::ShowSetting(
 	const wstring& dllPath,
 	HWND parentWnd
 	)
@@ -17,13 +17,13 @@ BOOL CReNamePlugInUtil::ShowSetting(
 	SettingRNP pfnSetting;
 	if( UtilGetProcAddress(module.get(), "Setting", pfnSetting) ){
 		pfnSetting(parentWnd);
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 #endif
 
-BOOL CReNamePlugInUtil::Convert(
+bool CReNamePlugInUtil::Convert(
 	PLUGIN_RESERVE_INFO* info,
 	const WCHAR* dllPattern,
 	const WCHAR* dllFolder,
@@ -36,7 +36,7 @@ BOOL CReNamePlugInUtil::Convert(
 	void* hModule = UtilLoadLibrary(dllPath);
 	if( hModule == nullptr ){
 		AddDebugLogFormat(L"%lsのロードに失敗しました", dllPath.c_str());
-		return FALSE;
+		return false;
 	}
 	m_moduleHolder.reset(hModule);
 	pattern.erase(0, pattern.find('?'));
@@ -59,7 +59,7 @@ BOOL CReNamePlugInUtil::Convert(
 			}
 		}
 	}
-	return ret;
+	return ret != FALSE;
 }
 
 void CReNamePlugInUtil::CloseConvert()

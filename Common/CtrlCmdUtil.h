@@ -384,11 +384,13 @@ private:
 	vector<BYTE> buff;
 };
 
+#ifdef EDCB_REPLY_TO_OLD_CTRL_CMD
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数
 void DeprecatedNewWriteVALUE( const RESERVE_DATA& val, CCmdStream& cmd, BYTE* buff = nullptr );
 bool DeprecatedReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize );
 bool DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize );
 void DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, CCmdStream& cmd, BYTE* buff = nullptr );
+#endif
 
 #endif

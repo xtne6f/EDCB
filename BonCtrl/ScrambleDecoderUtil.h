@@ -11,15 +11,15 @@ public:
 
 	void UnLoadDll();
 
-	BOOL SetNetwork(WORD ONID, WORD TSID);
+	bool SetNetwork(WORD ONID, WORD TSID);
 
-	BOOL Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* destSize);
+	bool Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* destSize);
 
-	BOOL SetEmm(BOOL enable);
+	bool SetEmm(bool enable);
 
 	DWORD GetEmmCount();
 
-	BOOL GetLoadStatus(wstring& loadErrDll);
+	bool GetLoadStatus(wstring& loadErrDll);
 
 	void Reset();
 protected:
@@ -33,6 +33,6 @@ protected:
 	bool emmEnable;
 
 protected:
-	BOOL LoadDll(const wstring& dllPath);
+	bool LoadDll(const wstring& dllPath);
 };
 

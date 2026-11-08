@@ -16,7 +16,7 @@
 
 CSendCtrlCmd::CSendCtrlCmd(void)
 {
-	this->tcpFlag = FALSE;
+	this->tcpFlag = false;
 	this->connectTimeOut = CONNECT_TIMEOUT;
 
 	this->pipeName = CMD2_EPG_SRV_PIPE;
@@ -29,7 +29,7 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 CSendCtrlCmd::~CSendCtrlCmd(void)
 {
 #if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)
-	SetSendMode(FALSE);
+	SetSendMode(false);
 #endif
 }
 
@@ -37,18 +37,18 @@ CSendCtrlCmd::~CSendCtrlCmd(void)
 
 //コマンド送信方法の設定
 //引数：
-// tcpFlag		[IN] TRUE：TCP/IPモード、FALSE：名前付きパイプモード
+// tcpFlag		[IN] true：TCP/IPモード、false：名前付きパイプモード
 void CSendCtrlCmd::SetSendMode(
-	BOOL tcpFlag_
+	bool tcpFlag_
 	)
 {
-	if( this->tcpFlag == FALSE && tcpFlag_ ){
+	if( this->tcpFlag == false && tcpFlag_ ){
 		WSAData wsaData;
 		WSAStartup(MAKEWORD(2, 2), &wsaData);
-		this->tcpFlag = TRUE;
-	}else if( this->tcpFlag && tcpFlag_ == FALSE ){
+		this->tcpFlag = true;
+	}else if( this->tcpFlag && tcpFlag_ == false ){
 		WSACleanup();
-		this->tcpFlag = FALSE;
+		this->tcpFlag = false;
 	}
 }
 
@@ -308,7 +308,7 @@ DWORD CSendCtrlCmd::SendCmdStream(const CCmdStream& cmd, CCmdStream* res)
 	if( res == nullptr ){
 		res = &tmpRes;
 	}
-	if( this->tcpFlag == FALSE ){
+	if( this->tcpFlag == false ){
 		ret = SendPipe(this->pipeName, this->connectTimeOut, cmd, res);
 	}
 #if !defined(SEND_CTRL_CMD_NO_TCP) && defined(_WIN32)

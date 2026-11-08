@@ -200,7 +200,12 @@ void CWriteMain::TruncateFile(FILE* fp)
 #ifdef _WIN32
 	SetEndOfFile((HANDLE)_get_osfhandle(_fileno(fp)));
 #else
-	ftruncate(fileno(fp), ftello(fp));
+	while( ftruncate(fileno(fp), ftello(fp)) < 0 ){
+		if( errno != EINTR ){
+			AddDebugLogFormat(L"★CWriteMain::TruncateFile Err:errno=%d", errno);
+			break;
+		}
+	}
 #endif
 }
 

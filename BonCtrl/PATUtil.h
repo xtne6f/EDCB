@@ -8,7 +8,7 @@ class CPATUtil
 public:
 	CPATUtil();
 	//Get系メソッドの返値が変化した可能性があるとき真が返る
-	BOOL AddPacket(const CTSPacketUtil& packet);
+	bool AddPacket(const CTSPacketUtil& packet);
 	//未解析のとき0が返る
 	WORD GetTSID() const { return this->transport_stream_id; }
 	BYTE GetVersion() const { return this->version_number; }
@@ -22,5 +22,5 @@ private:
 	BYTE version_number;
 	vector<pair<WORD, WORD>> pidProgramNumberList;
 
-	BOOL DecodePAT(BYTE* data, DWORD dataSize);
+	bool DecodePAT(BYTE* data, DWORD dataSize);
 };

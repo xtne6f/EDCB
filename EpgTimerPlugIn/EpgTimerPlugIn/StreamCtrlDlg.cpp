@@ -29,7 +29,7 @@ void CStreamCtrlDlg::SetCtrl(const TVTEST_STREAMING_INFO& info)
 		this->ctrlEnabled = TRUE;
 		this->ctrlID = info.ctrlID;
 		this->ctrlIsNetwork = info.serverIP != 1;
-		this->cmd.SetSendMode(this->ctrlIsNetwork);
+		this->cmd.SetSendMode(this->ctrlIsNetwork != FALSE);
 		if( this->ctrlIsNetwork ){
 			// ネットワーク接続を使う
 			// TODO: IPv6対応。ただしBonDriver_UDP/TCPが基本未対応なのでメリットは少ない

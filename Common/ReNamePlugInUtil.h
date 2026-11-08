@@ -10,11 +10,11 @@ public:
 #ifdef _WIN32
 	//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
 	//戻り値
-	// TRUE（成功）、FALSE（失敗）
+	// true（成功）、false（失敗）
 	//引数：
 	// dllPath					[IN]プラグインDLLパス
 	// parentWnd				[IN]親ウインドウ
-	static BOOL ShowSetting(
+	static bool ShowSetting(
 		const wstring& dllPath,
 		HWND parentWnd
 		);
@@ -26,14 +26,14 @@ public:
 	//プラグインのバージョンに応じてConvertRecName3→2→1の順に互換呼び出しを行う
 	//スレッドセーフではない
 	//戻り値
-	// TRUE（成功）、FALSE（失敗）
+	// true（成功）、false（失敗）
 	//引数：
 	// info						[IN]予約情報
 	// dllPattern				[IN]プラグインDLL名、および最初の'?'に続けて変換パターン
 	// dllFolder				[IN]プラグインDLLフォルダパス(dllPatternがそのまま連結される)
 	// recName					[OUT]名称
 	// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
-	BOOL Convert(
+	bool Convert(
 		PLUGIN_RESERVE_INFO* info,
 		const WCHAR* dllPattern,
 		const WCHAR* dllFolder,

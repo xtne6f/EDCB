@@ -32,7 +32,7 @@ void CCreatePATPacket::SetParam(
 	CreatePAT();
 }
 
-BOOL CCreatePATPacket::GetPacket(
+bool CCreatePATPacket::GetPacket(
 	BYTE** buff,
 	DWORD* buffSize
 )
@@ -52,9 +52,9 @@ BOOL CCreatePATPacket::GetPacket(
 		*buff = &this->packet[0];
 		*buffSize = (DWORD)this->packet.size();
 	}else{
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
 void CCreatePATPacket::Clear()

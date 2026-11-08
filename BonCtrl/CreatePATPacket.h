@@ -16,11 +16,11 @@ public:
 
 	//作成PATのバッファポインタを取得
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	// true（成功）、false（失敗）
 	//引数：
 	// buff				[OUT]作成したPATパケットへのポインタ（次回呼び出し時まで有効）
 	// buffSize			[OUT]buffのサイズ
-	BOOL GetPacket(
+	bool GetPacket(
 		BYTE** buff,
 		DWORD* buffSize
 	);

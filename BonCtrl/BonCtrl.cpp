@@ -565,7 +565,7 @@ void CBonCtrl::CheckChScan()
 										if( wcslen(serviceList[i].extInfo->service_name) > 0 ){
 											this->chUtil.AddServiceInfo(this->chScanChkList[chkCount].space,
 											                            this->chScanChkList[chkCount].ch,
-											                            this->chScanChkList[chkCount].chName, &(serviceList[i]));
+											                            this->chScanChkList[chkCount].chName, serviceList[i]);
 										}
 									}
 									if( serviceID > currSID && serviceID < nextSID ){

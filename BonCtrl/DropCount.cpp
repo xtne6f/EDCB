@@ -93,7 +93,7 @@ void CDropCount::SetBonDriver(const wstring& bonDriver)
 	this->bonFile = bonDriver;
 }
 
-void CDropCount::SetNoLog(BOOL noLogDrop, BOOL noLogScramble)
+void CDropCount::SetNoLog(bool noLogDrop, bool noLogScramble)
 {
 	this->lastLogDrop = noLogDrop ? ULLONG_MAX : this->lastLogDrop == ULLONG_MAX ? 0 : this->lastLogDrop;
 	this->lastLogScramble = noLogScramble ? ULLONG_MAX : this->lastLogScramble == ULLONG_MAX ? 0 : this->lastLogScramble;
@@ -123,7 +123,7 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 
 	if( adaptation_field_control == 0x00 ){
 		//意味なし
-		info->duplicateFlag = FALSE;
+		info->duplicateFlag = false;
 	}else if( adaptation_field_control == 0x02 ){
 		//ペイロードが存在しない場合は増分なし
 		if( info->lastCounter != 0xFF && info->lastCounter != continuity_counter ){
@@ -132,14 +132,14 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 				this->drop++;
 			}
 		}
-		info->duplicateFlag = FALSE;
+		info->duplicateFlag = false;
 	}else{
 		if( info->lastCounter == continuity_counter ){
 			if( adaptation_field_control == 0x01 || adaptation_field_length == 0 || discontinuity_indicator == 0 ){
 				//※厳密には重送判定は前パケットとの完全比較もすべき
-				if( info->duplicateFlag == FALSE ){
+				if( info->duplicateFlag == false ){
 					//重送？一応連続と判定
-					info->duplicateFlag = TRUE;
+					info->duplicateFlag = true;
 				}else{
 					//前回重送と判断してるので不連続
 					info->drop++;
@@ -147,7 +147,7 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 				}
 			}else{
 				//不連続の判定だが正常
-				info->duplicateFlag = FALSE;
+				info->duplicateFlag = false;
 			}
 		}else{
 			//※原作はたぶんlastCounter==15またはcontinuity_counter==0のときの連続判定がバグっていた
@@ -159,14 +159,14 @@ void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 					this->drop++;
 				}
 			}
-			info->duplicateFlag = FALSE;
+			info->duplicateFlag = false;
 		}
 	}
 
 	info->lastCounter = continuity_counter;
 }
 
-void CDropCount::SaveLog(const wstring& filePath, BOOL asUtf8)
+void CDropCount::SaveLog(const wstring& filePath, bool asUtf8)
 {
 	//※原作と異なりディレクトリの自動生成はしない
 	std::unique_ptr<FILE, fclose_deleter> fp(UtilOpenFile(filePath, UTIL_SECURE_WRITE));

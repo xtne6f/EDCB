@@ -170,6 +170,7 @@
 #define CMD_NO_RES			250 //コマンドの応答を保留したい（サーバー内部で使用）
 #define CMD_NO_RES_THREAD	251 //コマンドの応答にスレッドを使いたい（サーバー内部で使用）
 
+#ifdef EDCB_REPLY_TO_OLD_CTRL_CMD
 //旧バージョン互換コマンド
 #define CMD_EPG_SRV_GET_RESERVE_INFO	12 //予約情報取得
 #define CMD_EPG_SRV_ADD_RESERVE			13 //予約追加
@@ -184,5 +185,6 @@
 #define OLD_CMD_SUCCESS			0 //成功
 #define OLD_CMD_ERR				1 //汎用エラー
 #define OLD_CMD_NEXT			2 //Enumコマンド用、続きあり
+#endif
 
 #endif

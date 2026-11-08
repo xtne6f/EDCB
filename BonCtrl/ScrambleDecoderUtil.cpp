@@ -82,19 +82,18 @@ CScrambleDecoderUtil::~CScrambleDecoderUtil(void)
 	UnLoadDll();
 }
 
-BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
+bool CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 {
 	UnLoadDll();
-	BOOL ret = TRUE;
 
 	this->module.reset(UtilLoadLibrary(dllPath));
 	if( this->module == nullptr ){
-		return FALSE;
+		return false;
 	}
 	IB25Decoder* (*func)();
 	if( UtilGetProcAddress(this->module.get(), "CreateB25Decoder", func) == false ){
-		ret = FALSE;
-		goto ERR_END;
+		UnLoadDll();
+		return false;
 	}
 	void* const* (WINAPI* funcCast)(LPCSTR, void*);
 	UtilGetProcAddress(this->module.get(), "Cast", funcCast);
@@ -104,12 +103,15 @@ BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 	}else
 #endif
 	if( (this->decodeIF = CastB(&this->decodeIF2, func, funcCast)) == nullptr ){
-		ret = FALSE;
-		goto ERR_END;
+		UnLoadDll();
+		return false;
 	}
-	if( this->decodeIF->Initialize() == FALSE ){
-		ret = FALSE;
-	}else{
+	if( this->decodeIF->Initialize() == false ){
+		UnLoadDll();
+		return false;
+	}
+
+	{
 #ifndef _MSC_VER
 		{
 #else
@@ -131,12 +133,8 @@ BOOL CScrambleDecoderUtil::LoadDll(const wstring& dllPath)
 		}
 #endif
 	}
-ERR_END:
-	if( ret == FALSE ){
-		UnLoadDll();
-	}
 
-	return ret;
+	return true;
 }
 
 void CScrambleDecoderUtil::UnLoadDll()
@@ -150,9 +148,8 @@ void CScrambleDecoderUtil::UnLoadDll()
 	this->currentDll = L"";
 }
 
-BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
+bool CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 {
-	BOOL ret = FALSE;
 	fs_path iniPath = GetCommonIniPath().replace_filename(L"BonCtrl.ini");
 
 	this->loadDll = L"";
@@ -172,24 +169,21 @@ BOOL CScrambleDecoderUtil::SetNetwork(WORD ONID, WORD TSID)
 #endif
 
 	if( UtilComparePath(dllPath.c_str(), this->currentDll.c_str()) != 0 ){
-		if( LoadDll(dllPath) == FALSE ){
+		if( LoadDll(dllPath) == false ){
 			AddDebugLogFormat(L"★%ls のロードに失敗しました。", dllPath.c_str());
 			this->currentDll = L"";
 		}else{
 			this->currentDll = dllPath;
-			ret = TRUE;
+			return true;
 		}
 	}
 
-	return ret;
+	return false;
 }
 
-BOOL CScrambleDecoderUtil::Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* destSize)
+bool CScrambleDecoderUtil::Decode(BYTE* src, DWORD srcSize, BYTE** dest, DWORD* destSize)
 {
-	if( this->decodeIF == nullptr ){
-		return FALSE;
-	}
-	return this->decodeIF->Decode(src, srcSize, dest, destSize);
+	return this->decodeIF && this->decodeIF->Decode(src, srcSize, dest, destSize);
 }
 
 void CScrambleDecoderUtil::Reset()
@@ -201,19 +195,14 @@ void CScrambleDecoderUtil::Reset()
 }
 
 
-BOOL CScrambleDecoderUtil::SetEmm(BOOL enable)
+bool CScrambleDecoderUtil::SetEmm(bool enable)
 {
 	if( this->decodeIF2 == nullptr ){
-		return FALSE;
+		return false;
 	}
-	if( enable == TRUE ){
-		this->decodeIF2->EnableEmmProcess(true);
-		this->emmEnable = true;
-	}else{
-		this->decodeIF2->EnableEmmProcess(false);
-		this->emmEnable = false;
-	}
-	return TRUE;
+	this->decodeIF2->EnableEmmProcess(enable);
+	this->emmEnable = enable;
+	return true;
 }
 
 DWORD CScrambleDecoderUtil::GetEmmCount()
@@ -224,13 +213,13 @@ DWORD CScrambleDecoderUtil::GetEmmCount()
 	return this->decodeIF2->GetEmmProcessNum();
 }
 
-BOOL CScrambleDecoderUtil::GetLoadStatus(wstring& loadErrDll)
+bool CScrambleDecoderUtil::GetLoadStatus(wstring& loadErrDll)
 {
 	if( this->currentDll.size() == 0 ){
 		loadErrDll = this->loadDll;
-		return FALSE;
+		return false;
 	}else{
-		return TRUE;
+		return true;
 	}
 }
 

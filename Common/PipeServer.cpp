@@ -299,7 +299,10 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 					break;
 				}
 				FlushFileBuffers(hPipe);
-				if( res.GetParam() != OLD_CMD_NEXT ){
+#ifdef EDCB_REPLY_TO_OLD_CTRL_CMD
+				if( res.GetParam() != OLD_CMD_NEXT )
+#endif
+				{
 					//Enum用の繰り返しではない
 					break;
 				}
@@ -346,7 +349,10 @@ void CPipeServer::ServerThread(CPipeServer* pSys)
 					if( send(sock, res.GetStream(), res.GetStreamSize(), 0) != (int)res.GetStreamSize() ){
 						break;
 					}
-					if( res.GetParam() != OLD_CMD_NEXT ){
+#ifdef EDCB_REPLY_TO_OLD_CTRL_CMD
+					if( res.GetParam() != OLD_CMD_NEXT )
+#endif
+					{
 						//Enum用の繰り返しではない
 						break;
 					}

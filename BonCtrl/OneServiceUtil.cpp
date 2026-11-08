@@ -341,7 +341,7 @@ void COneServiceUtil::SaveErrCount(
 	GetErrCount(&drop, &scramble);
 	if( (dropSaveThresh >= 0 && drop >= (ULONGLONG)dropSaveThresh) ||
 	    (scrambleSaveThresh >= 0 && scramble >= (ULONGLONG)scrambleSaveThresh) ){
-		this->dropCount.SaveLog(filePath, asUtf8);
+		this->dropCount.SaveLog(filePath, asUtf8 != FALSE);
 	}
 }
 
@@ -379,5 +379,5 @@ void COneServiceUtil::SetNoLogScramble(
 	BOOL noLog
 	)
 {
-	this->dropCount.SetNoLog(FALSE, noLog);
+	this->dropCount.SetNoLog(false, noLog != FALSE);
 }

@@ -330,18 +330,26 @@ FILE* UtilOpenFile(const wstring& path, int flags, int* apiError)
 			// UTIL_SH_READは非書き込み時のみ共有ロックとする
 			if( ((flags & 32) && (flags & 64)) ||
 			    flock(fd, ((flags & 32) && (flags & 2) == 0 ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0 ){
+				bool failed = false;
 				if( (flags & 24) == 8 ){
-					ftruncate(fd, 0);
+					while( ftruncate(fd, 0) < 0 ){
+						if( errno != EINTR ){
+							failed = true;
+							break;
+						}
+					}
 				}
-				FILE* fp = fdopen(fd, mode);
-				if( fp ){
-					if( flags & 4 ){
-						my_fseek(fp, 0, SEEK_END);
+				if( failed == false ){
+					FILE* fp = fdopen(fd, mode);
+					if( fp ){
+						if( flags & 4 ){
+							my_fseek(fp, 0, SEEK_END);
+						}
+						if( flags & 512 ){
+							setvbuf(fp, nullptr, _IONBF, 0);
+						}
+						return fp;
 					}
-					if( flags & 512 ){
-						setvbuf(fp, nullptr, _IONBF, 0);
-					}
-					return fp;
 				}
 			}
 			if( apiError ){

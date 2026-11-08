@@ -44,28 +44,30 @@ void CNotifyManager::RegistTCP(LPCWSTR ip, DWORD port)
 	SetNotifySrvStatus(0xFFFFFFFF);
 }
 
-void CNotifyManager::UnRegistGUI(DWORD processID)
+bool CNotifyManager::UnRegistGUI(DWORD processID)
 {
 	lock_recursive_mutex lock(this->managerLock);
 
 	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
 		if( this->registGUIList[i] == processID ){
 			this->registGUIList.erase(this->registGUIList.begin() + i);
-			break;
+			return true;
 		}
 	}
+	return false;
 }
 
-void CNotifyManager::UnRegistTCP(LPCWSTR ip, DWORD port)
+bool CNotifyManager::UnRegistTCP(LPCWSTR ip, DWORD port)
 {
 	lock_recursive_mutex lock(this->managerLock);
 
 	for( size_t i = 0; i < this->registTCPList.size(); i++ ){
 		if( this->registTCPList[i].first == ip && this->registTCPList[i].second == port ){
 			this->registTCPList.erase(this->registTCPList.begin() + i);
-			break;
+			return true;
 		}
 	}
+	return false;
 }
 
 void CNotifyManager::SetNotifyCallback(const std::function<void()>& proc)
@@ -329,7 +331,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 				CSendCtrlCmd sendCtrl;
 				if( tcp ){
 #ifdef _WIN32
-					sendCtrl.SetSendMode(TRUE);
+					sendCtrl.SetSendMode(true);
 					sendCtrl.SetNWSetting(registTCP[i].first, registTCP[i].second);
 #else
 					AddDebugLog(L"CNotifyManager: Notification by TCP/IP registration is not supported.");

@@ -575,6 +575,7 @@ INT_PTR CEpgTimerSrvSetting::OnInitDialog()
 	hwnd = this->hwndOther;
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_SERVER, GetPrivateProfileInt(L"SET", L"EnableTCPSrv", 0, iniPath.c_str()) != 0);
 	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_IPV6, GetPrivateProfileInt(L"SET", L"TCPIPv6", 0, iniPath.c_str()) != 0);
+	SetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_ACCEPT_REG, GetPrivateProfileInt(L"SET", L"TCPAcceptRegistration", 0, iniPath.c_str()) != 0);
 	SetDlgItemInt(hwnd, IDC_EDIT_SET_TCP_PORT, GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str()), FALSE);
 	SetDlgItemText(hwnd, IDC_EDIT_SET_TCP_ACL, GetPrivateProfileToString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", iniPath.c_str()).c_str());
 	SetDlgItemInt(hwnd, IDC_EDIT_SET_TCP_RES_TO, GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str()), FALSE);
@@ -881,6 +882,7 @@ void CEpgTimerSrvSetting::OnBnClickedOk()
 	hwnd = this->hwndOther;
 	WritePrivateProfileInt(L"SET", L"EnableTCPSrv", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_SERVER), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"TCPIPv6", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_IPV6), iniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"TCPAcceptRegistration", GetDlgButtonCheck(hwnd, IDC_CHECK_SET_TCP_ACCEPT_REG), iniPath.c_str());
 	WritePrivateProfileInt(L"SET", L"TCPPort", GetDlgItemInt(hwnd, IDC_EDIT_SET_TCP_PORT, nullptr, FALSE), iniPath.c_str());
 	GetWindowTextBuffer(GetDlgItem(hwnd, IDC_EDIT_SET_TCP_ACL), buff);
 	WritePrivateProfileString(L"SET", L"TCPAccessControlList", buff.data(), iniPath.c_str());
@@ -1263,6 +1265,7 @@ INT_PTR CALLBACK CEpgTimerSrvSetting::ChildDlgProc(HWND hDlg, UINT uMsg, WPARAM 
 			break;
 		case IDC_CHECK_SET_TCP_SERVER:
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_TCP_IPV6), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
+			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SET_TCP_ACCEPT_REG), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_TCP_PORT), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_TCP_RES_TO), GetDlgButtonCheck(hDlg, LOWORD(wParam)));
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_SET_TCP_ACL), GetDlgButtonCheck(hDlg, LOWORD(wParam)));

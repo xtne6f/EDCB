@@ -19,7 +19,7 @@ public:
 	//チャンネル情報を削除する
 	void DelCh(DWORD key);
 	//useViewFlagを設定する
-	void SetUseViewFlag(DWORD key, BOOL useViewFlag);
+	void SetUseViewFlag(DWORD key, bool useViewFlag);
 private:
 	void ParseLine(LPCWSTR parseLine);
 	bool SaveLine(map<DWORD, CH_DATA4>::const_reference item, wstring& saveLine) const;
@@ -39,7 +39,7 @@ public:
 	LONGLONG AddCh(const CH_DATA5& item);
 	void DelCh(LONGLONG key);
 	//EPGデータの取得対象かを設定する
-	bool SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL epgCapFlag);
+	bool SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, bool epgCapFlag);
 	//リモコンIDを設定する
 	bool SetRemoconID(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BYTE remoconID);
 	//拡張フィールド付きで保存する
@@ -170,8 +170,6 @@ public:
 	bool AddNGTunerID(DWORD id, DWORD tunerID);
 	//予約情報を削除する
 	bool DelReserve(DWORD id);
-	//録画開始日時でソートされた予約一覧を取得する
-	vector<pair<LONGLONG, const RESERVE_DATA*>> GetReserveList(BOOL calcMargin = FALSE, int defStartMargin = 0) const;
 	//ONID<<48|TSID<<32|SID<<16|EID,予約IDでソートされた予約一覧を取得する。戻り値は次の非const操作まで有効
 	const vector<pair<ULONGLONG, DWORD>>& GetSortByEventList() const;
 private:

@@ -11,10 +11,10 @@ CPMTUtil::CPMTUtil(void)
 	PCR_PID = 0xFFFF;
 }
 
-BOOL CPMTUtil::AddPacket(const CTSPacketUtil& packet)
+bool CPMTUtil::AddPacket(const CTSPacketUtil& packet)
 {
-	BOOL updated = FALSE;
-	if( buffUtil.Add188TS(packet) == TRUE ){
+	bool updated = false;
+	if( buffUtil.Add188TS(packet) == CTSBuffUtil::NO_ERR ){
 		BYTE* section = nullptr;
 		DWORD sectionSize = 0;
 		while( buffUtil.GetSectionBuff(&section, &sectionSize) ){
@@ -24,12 +24,12 @@ BOOL CPMTUtil::AddPacket(const CTSPacketUtil& packet)
 	return updated;
 }
 
-BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
+bool CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 {
 	if( data == nullptr || dataSize < 3 ||
 	    (dataSize == lastSection.size() && std::equal(data, data + dataSize, lastSection.begin())) ){
 		//解析不要
-		return FALSE;
+		return false;
 	}
 
 	DWORD readSize = 0;
@@ -43,27 +43,27 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
 		AddDebugLog(L"CPMTUtil::section_syntax_indicator Err");
-		return FALSE;
+		return false;
 	}
 	if( table_id != 0x02 ){
 		//table_idがおかしい
 		AddDebugLog(L"CPMTUtil::table_id Err");
-		return FALSE;
+		return false;
 	}
 	if( readSize+section_length > dataSize || section_length < 9 + 4 ){
 		//サイズ異常
 		AddDebugLogFormat(L"CPMTUtil::section_length %d Err", section_length);
-		return FALSE;
+		return false;
 	}
 	//CRCチェック
 	if( CalcCrc32(3+section_length, data) != 0 ){
 		AddDebugLog(L"CPMTUtil::crc32 Err");
-		return FALSE;
+		return false;
 	}
 	BYTE current_next_indicator = data[readSize+2]&0x01;
 	if( current_next_indicator == 0 ){
 		//解析不要
-		return FALSE;
+		return false;
 	}
 	lastSection.assign(data, data + dataSize);
 
@@ -125,5 +125,5 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		}
 	}
 
-	return TRUE;
+	return true;
 }
